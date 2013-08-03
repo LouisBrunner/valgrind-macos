@@ -3839,7 +3839,7 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
 
                      putIReg(rd, mkU32(0x0));
 
-                     if ((rddsp_mask & 0b000001) == 0b000001) {
+                     if ((rddsp_mask & 0x1) == 0x1) {
                         /* Read pos field (bits 5-0) of DSPControl register. */
                         putIReg(rd, binop(Iop_Or32,
                                           getIReg(rd),
@@ -3848,7 +3848,7 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                                                 mkU32(0x0000003F))));
                      }
 
-                     if ((rddsp_mask & 0b000010) == 0b000010) {
+                     if ((rddsp_mask & 0x2) == 0x2) {
                         /* Read scount field (bits 12-7) of DSPControl
                            register. */
                         putIReg(rd, binop(Iop_Or32,
@@ -3858,7 +3858,7 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                                                 mkU32(0x00001F80))));
                      }
 
-                     if ((rddsp_mask & 0b000100) == 0b000100) {
+                     if ((rddsp_mask & 0x4) == 0x4) {
                         /* Read C field (bit 13) of DSPControl register. */
                         putIReg(rd, binop(Iop_Or32,
                                           getIReg(rd),
@@ -3867,7 +3867,7 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                                                 mkU32(0x00002000))));
                      }
 
-                     if ((rddsp_mask & 0b001000) == 0b001000) {
+                     if ((rddsp_mask & 0x8) == 0x8) {
                         /* Read outflag field (bit s 23-16) of DSPControl
                            register. */
                         putIReg(rd, binop(Iop_Or32,
@@ -3877,7 +3877,7 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                                                 mkU32(0x00FF0000))));
                      }
 
-                     if ((rddsp_mask & 0b010000) == 0b010000) {
+                     if ((rddsp_mask & 0x10) == 0x10) {
                         /* Read ccond field (bits 31-24) of DSPControl
                            register. */
                         putIReg(rd, binop(Iop_Or32,
@@ -3887,7 +3887,7 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                                                 mkU32(0xFF000000))));
                      }
 
-                     if ((rddsp_mask & 0b100000) == 0b100000) {
+                     if ((rddsp_mask & 0x20) == 0x20) {
                         /* Read EFI field (bit 14) of DSPControl register. */
                         putIReg(rd, binop(Iop_Or32,
                                           getIReg(rd),
@@ -3896,7 +3896,7 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                                                 mkU32(0x00004000))));
                      }
 
-                     if ((rddsp_mask & 0b111111) == 0b111111) {
+                     if ((rddsp_mask & 0x3f) == 0x3f) {
                         /* Read all fields of DSPControl register. */
                         putIReg(rd, getDSPControl());
                      }
@@ -3906,7 +3906,7 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                      DIP("wrdsp r%d, mask 0x%x", rs, wrdsp_mask);
                      vassert(!mode64);
 
-                     if ((wrdsp_mask & 0b111111) == 0b111111) {
+                     if ((wrdsp_mask & 0x3f) == 0x3f) {
                         /* If mips64 put all fields of rs, except bit 15 and bit
                            6, to DSPControl register, otherwise put all except
                            bits 15, 6 and bits 31..28. */
@@ -3918,7 +3918,7 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                                             getIReg(rs),
                                             mkU32(0x0fff7fbf)));
                      } else {
-                        if ((wrdsp_mask & 0b000001) == 0b000001) {
+                        if ((wrdsp_mask & 0x1) == 0x1) {
                            /* Put bits 5-0 of rs to DSPControl register pos
                               field. */
                            putDSPControl(binop(Iop_Or32,
@@ -3930,7 +3930,7 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                                                      mkU32(0x0000003F))));
                         }
 
-                        if ((wrdsp_mask & 0b000010) == 0b000010) {
+                        if ((wrdsp_mask & 0x2) == 0x2) {
                            /* Put bits 12-7 of rs to DSPControl scount field. */
                            putDSPControl(binop(Iop_Or32,
                                                binop(Iop_And32,
@@ -3941,7 +3941,7 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                                                      mkU32(0x00001F80))));
                         }
 
-                        if ((wrdsp_mask & 0b000100) == 0b000100) {
+                        if ((wrdsp_mask & 0x4) == 0x4) {
                            /* Put bit 13 of rs to DSPControl register C
                               field. */
                            putDSPControl(binop(Iop_Or32,
@@ -3953,7 +3953,7 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                                                      mkU32(0x00002000))));
                         }
 
-                        if ((wrdsp_mask & 0b001000) == 0b001000) {
+                        if ((wrdsp_mask & 0x8) == 0x8) {
                            /* Put bits 23-16 of rs to DSPControl reg outflag
                               field. */
                            putDSPControl(binop(Iop_Or32,
@@ -3965,7 +3965,7 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                                                      mkU32(0x00FF0000))));
                         }
 
-                        if ((wrdsp_mask & 0b010000) == 0b010000) {
+                        if ((wrdsp_mask & 0x10) == 0x10) {
                            /* Put bits 31-24 of rs to DSPControl reg ccond
                               field. */
                            putDSPControl(binop(Iop_Or32,
@@ -3980,7 +3980,7 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                                         );
                         }
 
-                        if ((wrdsp_mask & 0b100000) == 0b100000) {
+                        if ((wrdsp_mask & 0x20) == 0x20) {
                            /* Put bit 14 of rs to DSPControl register EFI
                               field. */
                            putDSPControl(binop(Iop_Or32,
@@ -4004,11 +4004,11 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
 
                      putAcc(ac, mkexpr(t0));
 
-                     if (0b100000 == (shift & 0x3f)) {
+                     if (0x20 == (shift & 0x3f)) {
                         putAcc(ac, binop(Iop_32HLto64,
                                          unop(Iop_64to32, mkexpr(t0)),
                                          mkU32(0x0)));
-                     } else if (0b100000 == (shift & 0x20)) {
+                     } else if (0x20 == (shift & 0x20)) {
                         assign(t1, binop(Iop_Shl64,
                                          mkexpr(t0),
                                          unop(Iop_32to8,

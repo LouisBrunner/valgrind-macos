@@ -691,7 +691,7 @@ static struct user user_save;
 //       runtime check not yet done.
 //   0 : PTRACE_GETREGS runtime check has failed.
 //   1 : PTRACE_GETREGS defined and runtime check ok.
-#ifdef PTRACE_GETREGS
+#ifdef HAVE_PTRACE_GETREGS
 static int has_working_ptrace_getregs = -1;
 #endif
 
@@ -702,7 +702,7 @@ static
 Bool getregs (int pid, void *regs, long regs_bsz)
 {
    DEBUG(1, "getregs regs_bsz %ld\n", regs_bsz);
-#  ifdef PTRACE_GETREGS
+#  ifdef HAVE_PTRACE_GETREGS
    if (has_working_ptrace_getregs) {
       // Platforms having GETREGS
       long res;
@@ -773,7 +773,7 @@ Bool setregs (int pid, void *regs, long regs_bsz)
    DEBUG(1, "setregs regs_bsz %ld\n", regs_bsz);
 // Note : the below is checking for GETREGS, not SETREGS
 // as if one is defined and working, the other one should also work.
-#  ifdef PTRACE_GETREGS
+#  ifdef HAVE_PTRACE_GETREGS
    if (has_working_ptrace_getregs) {
       // Platforms having SETREGS
       long res;

@@ -441,6 +441,9 @@ FIXED r??
 321960  pthread_create() then alloca() causing invalid stack write errors
         FIXED 13467
 
+322851  0bXXX binary literal syntax is not standard 
+
+
 Release 3.8.1 (19 September 2012)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 3.8.1 is a bug fix release.  It fixes some assertion failures in 3.8.0

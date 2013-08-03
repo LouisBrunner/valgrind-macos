@@ -363,6 +363,8 @@ FIXED r??
 319395  Crash with unhandled instruction on STRT (Thumb) instructions
         FIXED 2722 13997
 
+319494  Fix VEX's Makefile-gcc.
+
 319858  disInstr(thumb): unhandled instruction on instruction STRBT
         FIXED 2730 13445
 

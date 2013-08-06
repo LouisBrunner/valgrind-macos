@@ -2067,7 +2067,7 @@ void usage(void)
 "             \n"
 "  --pid arg must be given if multiple Valgrind gdbservers are found.\n"
 "  --vgdb-prefix arg must be given to both Valgrind and vgdb utility\n"
-"      if you want to change the default prefix for the FIFOs communication\n"
+"      if you want to change the prefix (default %s) for the FIFOs communication\n"
 "      between the Valgrind gdbserver and vgdb.\n"
 "  --wait (default 0) tells vgdb to check during the specified number\n"
 "      of seconds if a Valgrind gdbserver can be found.\n"
@@ -2083,7 +2083,7 @@ void usage(void)
 "\n"
 "  -h --help shows this message\n"
 "  To get help from the Valgrind gdbserver, use vgdb help\n"
-"\n"
+"\n", vgdb_prefix_default()
            );
    ptrace_restrictions_msg();  
 }
@@ -2128,15 +2128,16 @@ int search_arg_pid(int arg_pid, int check_trials, Bool show_list)
       strcpy (vgdb_format, vgdb_prefix);
       strcat (vgdb_format, suffix);
       
-      strcpy (vgdb_dir_name, vgdb_prefix);
-      
-      for (is = strlen(vgdb_prefix) - 1; is >= 0; is--)
-         if (vgdb_dir_name[is] == '/') {
-            vgdb_dir_name[is+1] = '\0';
-            break;
-         }
-      if (strlen(vgdb_dir_name) == 0)
-         strcpy (vgdb_dir_name, "./");
+      if (strchr(vgdb_prefix, '/') != NULL) {
+         strcpy (vgdb_dir_name, vgdb_prefix);
+         for (is = strlen(vgdb_prefix) - 1; is >= 0; is--)
+            if (vgdb_dir_name[is] == '/') {
+               vgdb_dir_name[is+1] = '\0';
+               break;
+            }
+      } else {
+         strcpy (vgdb_dir_name, "");
+      }
 
       DEBUG(1, "searching pid in directory %s format %s\n", 
             vgdb_dir_name, vgdb_format);
@@ -2154,7 +2155,7 @@ int search_arg_pid(int arg_pid, int check_trials, Bool show_list)
            /* wait one second before checking again */
            sleep(1);
 
-         vgdb_dir = opendir (vgdb_dir_name);
+         vgdb_dir = opendir (strlen (vgdb_dir_name) ? vgdb_dir_name : "./");
          if (vgdb_dir == NULL)
             XERROR (errno, 
                     "vgdb error: opening directory %s searching vgdb fifo\n", 

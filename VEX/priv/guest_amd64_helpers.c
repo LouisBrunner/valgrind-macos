@@ -1027,6 +1027,16 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
                      binop(Iop_CmpLE64U, cc_dep2, cc_dep1));
       }
 
+      if (isU64(cc_op, AMD64G_CC_OP_SUBQ) && isU64(cond, AMD64CondNLE)) {
+         /* long sub/cmp, then NLE (signed greater than) 
+            --> test !(dst <=s src)
+            --> test (dst >s src)
+            --> test (src <s dst) */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpLT64S, cc_dep2, cc_dep1));
+
+      }
+
       if (isU64(cc_op, AMD64G_CC_OP_SUBQ) && isU64(cond, AMD64CondBE)) {
          /* long long sub/cmp, then BE (unsigned less than or equal)
             --> test dst <=u src */

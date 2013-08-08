@@ -1130,6 +1130,121 @@ static Bool parse_ignore_ranges ( const HChar* str0 )
 
 static
 __attribute__((noinline))
+void mc_LOADV128_slow ( /*OUT*/V128* res, Addr a, Bool bigendian )
+{
+   SizeT  nBits          = 128;
+   V128   vbits128;      /* result */
+   V128   pessim128;     /* only used when p-l-ok=yes */
+   SSizeT bytes_per_long = 64 / 8;
+   SSizeT szL            = nBits / 64;  /* Size in longs */
+   SSizeT szB            = bytes_per_long * szL;
+   SSizeT i, j;          /* Must be signed. */
+   SizeT  n_addrs_bad = 0;
+   Addr   ai;
+   UChar  vbits8;
+   Bool   ok;
+
+   vbits128.w64[0] = V_BITS64_UNDEFINED;
+   vbits128.w64[1] = V_BITS64_UNDEFINED;
+   pessim128.w64[0] = V_BITS64_DEFINED;
+   pessim128.w64[1] = V_BITS64_DEFINED;
+
+   tl_assert(nBits == 128);
+
+   /* Make up a 128-bit result V word, which contains the loaded data
+      for valid addresses and Defined for invalid addresses.  Iterate
+      over the bytes in the word, from the most significant down to
+      the least.  The vbits to return are calculated into vbits128.
+      Also compute the pessimising value to be used when
+      --partial-loads-ok=yes.  n_addrs_bad is redundant (the relevant
+      info can be gleaned from pessim128) but is used as a
+      cross-check. */
+   for (j = szL-1 ; j >= 0 ; j--) {
+      ULong  vbits64     = V_BITS64_UNDEFINED;
+      ULong  pessim64    = V_BITS64_DEFINED;
+      UWord  long_index = byte_offset_w(szL, bigendian, j);
+      for (i = bytes_per_long-1; i >= 0; i--) {
+         PROF_EVENT(31, "mc_LOADV128_slow(loop)");
+         ai = a + long_index*bytes_per_long + byte_offset_w(bytes_per_long,
+                                                            bigendian, i);
+         ok = get_vbits8(ai, &vbits8);
+         vbits64 <<= 8;
+         vbits64 |= vbits8;
+         if (!ok) n_addrs_bad++;
+         pessim64 <<= 8;
+         pessim64 |= (ok ? V_BITS8_DEFINED : V_BITS8_UNDEFINED);
+      }
+      vbits128.w64[long_index] = vbits64;
+      pessim128.w64[long_index] = pessim64;
+   }
+
+   /* In the common case, all the addresses involved are valid, so we
+      just return the computed V bits and have done. */
+   if (LIKELY(n_addrs_bad == 0)) {
+      *res = vbits128;
+      return;
+   }
+
+   /* If there's no possibility of getting a partial-loads-ok
+      exemption, report the error and quit. */
+   if (!MC_(clo_partial_loads_ok)) {
+      MC_(record_address_error)( VG_(get_running_tid)(), a, szB, False );
+      *res = vbits128;
+      return;
+   }
+
+   /* The partial-loads-ok excemption might apply.  Find out if it
+      does.  If so, don't report an addressing error, but do return
+      Undefined for the bytes that are out of range, so as to avoid
+      false negatives.  If it doesn't apply, just report an addressing
+      error in the usual way. */
+
+   /* Some code steps along byte strings in aligned word-sized chunks
+      even when there is only a partially defined word at the end (eg,
+      optimised strlen).  This is allowed by the memory model of
+      modern machines, since an aligned load cannot span two pages and
+      thus cannot "partially fault".
+
+      Therefore, a load from a partially-addressible place is allowed
+      if all of the following hold:
+      - the command-line flag is set [by default, it isn't]
+      - it's an aligned load
+      - at least one of the addresses in the word *is* valid
+
+      Since this suppresses the addressing error, we avoid false
+      negatives by marking bytes undefined when they come from an
+      invalid address.
+   */
+
+   /* "at least one of the addresses is invalid" */
+   tl_assert(pessim128.w64[0] != V_BITS64_DEFINED
+             || pessim128.w64[1] != V_BITS64_DEFINED);
+
+   if (0 == (a & (szB - 1)) && n_addrs_bad < szB) {
+      /* Exemption applies.  Use the previously computed pessimising
+         value for vbits128 and return the combined result, but don't
+         flag an addressing error.  The pessimising value is Defined
+         for valid addresses and Undefined for invalid addresses. */
+      /* for assumption that doing bitwise or implements UifU */
+      tl_assert(V_BIT_UNDEFINED == 1 && V_BIT_DEFINED == 0);
+      /* (really need "UifU" here...)
+         vbits128 UifU= pessim128  (is pessimised by it, iow) */
+      for (j = szL-1 ; j >= 0 ; j--)
+         vbits128.w64[j] |= pessim128.w64[j];
+      *res = vbits128;
+      return;
+   }
+
+   /* Exemption doesn't apply.  Flag an addressing error in the normal
+      way. */
+   MC_(record_address_error)( VG_(get_running_tid)(), a, szB, False );
+
+   *res = vbits128;
+}
+
+
+static
+__attribute__((noinline))
 ULong mc_LOADVn_slow ( Addr a, SizeT nBits, Bool bigendian )
 {
    PROF_EVENT(30, "mc_LOADVn_slow");
@@ -4060,33 +4175,91 @@ static void mc_pre_reg_read ( CorePart part, ThreadId tid, const HChar* s,
 
    On a 64-bit machine, it's more complex, since we're testing
    simultaneously for misalignment and for the address being at or
-   above 32G:
+   above 64G:
 
-   N_PRIMARY_BITS          == 19, so
-   N_PRIMARY_MAP           == 0x80000, so
-   N_PRIMARY_MAP-1         == 0x7FFFF, so
-   (N_PRIMARY_MAP-1) << 16 == 0x7FFFF'0000, and so
+   N_PRIMARY_BITS          == 20, so
+   N_PRIMARY_MAP           == 0x100000, so
+   N_PRIMARY_MAP-1         == 0xFFFFF, so
+   (N_PRIMARY_MAP-1) << 16 == 0xF'FFFF'0000, and so
 
-   MASK(1) = ~ ( (0x10000 - 1) | 0x7FFFF'0000 )
-           = ~ ( 0xFFFF | 0x7FFFF'0000 )
-           = ~ 0x7FFFF'FFFF
-           = 0xFFFF'FFF8'0000'0000
+   MASK(1) = ~ ( (0x10000 - 1) | 0xF'FFFF'0000 )
+           = ~ ( 0xFFFF | 0xF'FFFF'0000 )
+           = ~ 0xF'FFFF'FFFF
+           = 0xFFFF'FFF0'0000'0000
 
-   MASK(2) = ~ ( (0x10000 - 2) | 0x7FFFF'0000 )
-           = ~ ( 0xFFFE | 0x7FFFF'0000 )
-           = ~ 0x7FFFF'FFFE
-           = 0xFFFF'FFF8'0000'0001
+   MASK(2) = ~ ( (0x10000 - 2) | 0xF'FFFF'0000 )
+           = ~ ( 0xFFFE | 0xF'FFFF'0000 )
+           = ~ 0xF'FFFF'FFFE
+           = 0xFFFF'FFF0'0000'0001
 
-   MASK(4) = ~ ( (0x10000 - 4) | 0x7FFFF'0000 )
-           = ~ ( 0xFFFC | 0x7FFFF'0000 )
-           = ~ 0x7FFFF'FFFC
-           = 0xFFFF'FFF8'0000'0003
+   MASK(4) = ~ ( (0x10000 - 4) | 0xF'FFFF'0000 )
+           = ~ ( 0xFFFC | 0xF'FFFF'0000 )
+           = ~ 0xF'FFFF'FFFC
+           = 0xFFFF'FFF0'0000'0003
 
-   MASK(8) = ~ ( (0x10000 - 8) | 0x7FFFF'0000 )
-           = ~ ( 0xFFF8 | 0x7FFFF'0000 )
-           = ~ 0x7FFFF'FFF8
-           = 0xFFFF'FFF8'0000'0007
+   MASK(8) = ~ ( (0x10000 - 8) | 0xF'FFFF'0000 )
+           = ~ ( 0xFFF8 | 0xF'FFFF'0000 )
+           = ~ 0xF'FFFF'FFF8
+           = 0xFFFF'FFF0'0000'0007
 */
+
+
+/* ------------------------ Size = 16 ------------------------ */
+
+static INLINE
+void mc_LOADV128 ( /*OUT*/V128* res, Addr a, Bool isBigEndian )
+{
+   PROF_EVENT(200, "mc_LOADV128");
+
+#ifndef PERF_FAST_LOADV
+   mc_LOADV128_slow( res, a, isBigEndian );
+   return;
+#else
+   {
+      UWord   sm_off16, vabits16;
+      SecMap* sm;
+      int j;
+
+      if (UNLIKELY( UNALIGNED_OR_HIGH(a,128) )) {
+         PROF_EVENT(201, "mc_LOADV128-slow1");
+         mc_LOADV128_slow( res, a, isBigEndian );
+         return;
+      }
+
+      // Handle common cases quickly: a (and a+8) is suitably aligned,
+      // is mapped, and addressible.
+      for (j=0 ; j<2 ; ++j) {
+         sm       = get_secmap_for_reading_low(a + 8*j);
+         sm_off16 = SM_OFF_16(a + 8*j);
+         vabits16 = ((UShort*)(sm->vabits8))[sm_off16];
+
+         // Convert V bits from compact memory form to expanded
+         // register form.
+         if (LIKELY(vabits16 == VA_BITS16_DEFINED)) {
+            res->w64[j] = V_BITS64_DEFINED;
+         } else if (LIKELY(vabits16 == VA_BITS16_UNDEFINED)) {
+            res->w64[j] = V_BITS64_UNDEFINED;
+         } else {
+            /* Slow case: some block of 8 bytes are not all-defined or
+               all-undefined. */
+            PROF_EVENT(202, "mc_LOADV128-slow2");
+            mc_LOADV128_slow( res, a, isBigEndian );
+            return;
+         }
+      }
+      return;
+   }
+#endif
+}
+
+VG_REGPARM(2) void MC_(helperc_LOADV128be) ( /*OUT*/V128* res, Addr a )
+{
+   mc_LOADV128(res, a, True);
+}
+VG_REGPARM(2) void MC_(helperc_LOADV128le) ( /*OUT*/V128* res, Addr a )
+{
+   mc_LOADV128(res, a, False);
+}
 
 
 /* ------------------------ Size = 8 ------------------------ */

@@ -4186,12 +4186,6 @@ IRAtom* expr2vbits_Load_WRK ( MCEnv* mce,
                               IREndness end, IRType ty, 
                               IRAtom* addr, UInt bias, IRAtom* guard )
 {
-   void*    helper;
-   const HChar* hname;
-   IRDirty* di;
-   IRTemp   datavbits;
-   IRAtom*  addrAct;
-
    tl_assert(isOriginalAtom(mce,addr));
    tl_assert(end == Iend_LE || end == Iend_BE);
 
@@ -4203,43 +4197,59 @@ IRAtom* expr2vbits_Load_WRK ( MCEnv* mce,
       data V bits from shadow memory. */
    ty = shadowTypeV(ty);
 
+   void*        helper           = NULL;
+   const HChar* hname            = NULL;
+   Bool         ret_via_outparam = False;
+
    if (end == Iend_LE) {   
       switch (ty) {
-         case Ity_I64: helper = &MC_(helperc_LOADV64le);
-                       hname = "MC_(helperc_LOADV64le)";
-                       break;
-         case Ity_I32: helper = &MC_(helperc_LOADV32le);
-                       hname = "MC_(helperc_LOADV32le)";
-                       break;
-         case Ity_I16: helper = &MC_(helperc_LOADV16le);
-                       hname = "MC_(helperc_LOADV16le)";
-                       break;
-         case Ity_I8:  helper = &MC_(helperc_LOADV8);
-                       hname = "MC_(helperc_LOADV8)";
-                       break;
-         default:      ppIRType(ty);
-                       VG_(tool_panic)("memcheck:expr2vbits_Load_WRK(LE)");
+         case Ity_V128: helper = &MC_(helperc_LOADV128le);
+                        hname = "MC_(helperc_LOADV128le)";
+                        ret_via_outparam = True;
+                        break;
+         case Ity_I64:  helper = &MC_(helperc_LOADV64le);
+                        hname = "MC_(helperc_LOADV64le)";
+                        break;
+         case Ity_I32:  helper = &MC_(helperc_LOADV32le);
+                        hname = "MC_(helperc_LOADV32le)";
+                        break;
+         case Ity_I16:  helper = &MC_(helperc_LOADV16le);
+                        hname = "MC_(helperc_LOADV16le)";
+                        break;
+         case Ity_I8:   helper = &MC_(helperc_LOADV8);
+                        hname = "MC_(helperc_LOADV8)";
+                        break;
+         default:       ppIRType(ty);
+                        VG_(tool_panic)("memcheck:expr2vbits_Load_WRK(LE)");
       }
    } else {
       switch (ty) {
-         case Ity_I64: helper = &MC_(helperc_LOADV64be);
-                       hname = "MC_(helperc_LOADV64be)";
-                       break;
-         case Ity_I32: helper = &MC_(helperc_LOADV32be);
-                       hname = "MC_(helperc_LOADV32be)";
-                       break;
-         case Ity_I16: helper = &MC_(helperc_LOADV16be);
-                       hname = "MC_(helperc_LOADV16be)";
-                       break;
-         case Ity_I8:  helper = &MC_(helperc_LOADV8);
-                       hname = "MC_(helperc_LOADV8)";
-                       break;
-         default:      ppIRType(ty);
-                       VG_(tool_panic)("memcheck:expr2vbits_Load_WRK(BE)");
+         case Ity_V128: helper = &MC_(helperc_LOADV128be);
+                        hname = "MC_(helperc_LOADV128be)";
+                        ret_via_outparam = True;
+                        break;
+         case Ity_I64:  helper = &MC_(helperc_LOADV64be);
+                        hname = "MC_(helperc_LOADV64be)";
+                        break;
+         case Ity_I32:  helper = &MC_(helperc_LOADV32be);
+                        hname = "MC_(helperc_LOADV32be)";
+                        break;
+         case Ity_I16:  helper = &MC_(helperc_LOADV16be);
+                        hname = "MC_(helperc_LOADV16be)";
+                        break;
+         case Ity_I8:   helper = &MC_(helperc_LOADV8);
+                        hname = "MC_(helperc_LOADV8)";
+                        break;
+         default:       ppIRType(ty);
+                        VG_(tool_panic)("memcheck:expr2vbits_Load_WRK(BE)");
       }
    }
 
+   tl_assert(helper);
+   tl_assert(hname);
+
    /* Generate the actual address into addrAct. */
+   IRAtom* addrAct;
    if (bias == 0) {
       addrAct = addr;
    } else {
@@ -4254,11 +4264,22 @@ IRAtom* expr2vbits_Load_WRK ( MCEnv* mce,
 
    /* We need to have a place to park the V bits we're just about to
       read. */
-   datavbits = newTemp(mce, ty, VSh);
-   di = unsafeIRDirty_1_N( datavbits, 
-                           1/*regparms*/, 
-                           hname, VG_(fnptr_to_fnentry)( helper ), 
-                           mkIRExprVec_1( addrAct ));
+   IRTemp datavbits = newTemp(mce, ty, VSh);
+
+   /* Here's the call. */
+   IRDirty* di;
+   if (ret_via_outparam) {
+      di = unsafeIRDirty_1_N( datavbits, 
+                              2/*regparms*/, 
+                              hname, VG_(fnptr_to_fnentry)( helper ), 
+                              mkIRExprVec_2( IRExprP__VECRET, addrAct ) );
+   } else {
+      di = unsafeIRDirty_1_N( datavbits, 
+                              1/*regparms*/, 
+                              hname, VG_(fnptr_to_fnentry)( helper ), 
+                              mkIRExprVec_1( addrAct ) );
+   }
+
    setHelperAnns( mce, di );
    if (guard) {
       di->guard = guard;
@@ -4298,20 +4319,8 @@ IRAtom* expr2vbits_Load ( MCEnv* mce,
       case Ity_I16: 
       case Ity_I32: 
       case Ity_I64:
+      case Ity_V128:
          return expr2vbits_Load_WRK(mce, end, ty, addr, bias, guard);
-      case Ity_V128: {
-         IRAtom *v64hi, *v64lo;
-         if (end == Iend_LE) {
-            v64lo = expr2vbits_Load_WRK(mce, end, Ity_I64, addr, bias+0, guard);
-            v64hi = expr2vbits_Load_WRK(mce, end, Ity_I64, addr, bias+8, guard);
-         } else {
-            v64hi = expr2vbits_Load_WRK(mce, end, Ity_I64, addr, bias+0, guard);
-            v64lo = expr2vbits_Load_WRK(mce, end, Ity_I64, addr, bias+8, guard);
-         }
-         return assignNew( 'V', mce, 
-                           Ity_V128, 
-                           binop(Iop_64HLtoV128, v64hi, v64lo));
-      }
       case Ity_V256: {
          /* V256-bit case -- phrased in terms of 64 bit units (Qs),
             with Q3 being the most significant lane. */
@@ -4868,10 +4877,12 @@ void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
    /* Inputs: unmasked args
       Note: arguments are evaluated REGARDLESS of the guard expression */
    for (i = 0; d->args[i]; i++) {
-      if (d->cee->mcx_mask & (1<<i)) {
+      IRAtom* arg = d->args[i];
+      if ( (d->cee->mcx_mask & (1<<i))
+           || UNLIKELY(is_IRExprP__VECRET_or_BBPTR(arg)) ) {
          /* ignore this arg */
       } else {
-         here = mkPCastTo( mce, Ity_I32, expr2vbits(mce, d->args[i]) );
+         here = mkPCastTo( mce, Ity_I32, expr2vbits(mce, arg) );
          curr = mkUifU32(mce, here, curr);
       }
    }
@@ -5741,9 +5752,13 @@ static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
          }
       case Ist_Dirty:
          d = st->Ist.Dirty.details;
-         for (i = 0; d->args[i]; i++)
-            if (isBogusAtom(d->args[i]))
-               return True;
+         for (i = 0; d->args[i]; i++) {
+            IRAtom* atom = d->args[i];
+            if (LIKELY(!is_IRExprP__VECRET_or_BBPTR(atom))) {
+               if (isBogusAtom(atom))
+                  return True;
+            }
+         }
          if (isBogusAtom(d->guard))
             return True;
          if (d->mAddr && isBogusAtom(d->mAddr))
@@ -6629,10 +6644,12 @@ static void do_origins_Dirty ( MCEnv* mce, IRDirty* d )
    /* Inputs: unmasked args
       Note: arguments are evaluated REGARDLESS of the guard expression */
    for (i = 0; d->args[i]; i++) {
-      if (d->cee->mcx_mask & (1<<i)) {
+      IRAtom* arg = d->args[i];
+      if ( (d->cee->mcx_mask & (1<<i))
+           || UNLIKELY(is_IRExprP__VECRET_or_BBPTR(arg)) ) {
          /* ignore this arg */
       } else {
-         here = schemeE( mce, d->args[i] );
+         here = schemeE( mce, arg );
          curr = gen_maxU32( mce, curr, here );
       }
    }

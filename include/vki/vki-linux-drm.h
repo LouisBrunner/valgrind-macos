@@ -209,7 +209,7 @@ struct vki_drm_buf_pub {
 };
 struct vki_drm_buf_map {
 	int count;		/**< Length of the buffer list */
-	void __user *virtual;		/**< Mmap'd area in user-virtual */
+	void __user *virtuaL;		/**< Mmap'd area in user-virtual */
 	struct vki_drm_buf_pub __user *list;	/**< Buffer information */
 };
 struct vki_drm_dma {

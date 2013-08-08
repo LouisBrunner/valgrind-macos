@@ -1,0 +1,617 @@
+==31013== Memcheck, a memory error detector
+==31013== Copyright (C) 2002-2012, and GNU GPL'd, by Julian Seward et al.
+==31013== Using Valgrind-3.9.0.SVN and LibVEX; rerun with -h for copyright info
+==31013== Command: ./memcheck/tests/sh-mem-vec-32
+==31013== 
+
+20537   136   171    75    38    63   139    23     5   110    66   421   194    86   232   115 
+   56   198   303    65   285   137   309   203   147    37   179   137    65   181   379   118 
+   91   235    54   135   110    40   362    74   146   108   159   174   313   106   292   271 
+  183    65   277    34   250   172   283   111   141    30    26    15   184    93    79    99 
+   75    89   153   157     9   113   189    58    90    31    81    79   133   132    61   113 
+  282    15   119    12    57   361    14   250    93   116   226   215   229   275   186   126 
+  209   371    84    74    93   159   286   179    84   112    60   137   116   117   394   217 
+   77   133   197   265    72    43   280    26   604    47   194   171   199   411   123   112 
+  281    26    47    64   236    89   223    86    68   125    47   391    18   171   124   110 
+   59   135   143   240    73   242    72    59   345    20    46   415    77    87    34   125 
+  152    85   107   117   334   183     8   131    63    70    27   238     6   181    71   108 
+  242   542    53    94    50    86   181   173   141   125    33    75   409    38   109    70 
+   52   179    48    94   212    60   330   150   147    26   462   307    88   171    85    76 
+  108   108   296   253   152   124   196   227   116    12   606    61   197   120    94   269 
+  121    38    37   167   138    92   172   234   138    67    96    19   346    10    56   241 
+  142   130    85   495    65   176    87   140    46   124    70   100    78   142   270 22165 
+
+160000 copies, 30739 d_aligned, 30741 s_aligned, 7092 both_aligned
+0 failures
+
+Expect 2 x no error
+
+Expect 2 x error
+
+==31013== Invalid read of size 16
+==31013==    at 0x804858C: vector16_copy (sh-mem-vec.c:15)
+==31013==    by 0x8048FFC: main (sh-mem-vec.c:276)
+==31013==  Address 0x403505f is 1 bytes before a block of size 80,000 alloc'd
+==31013==    at 0x400602A: memalign (vg_replace_malloc.c:755)
+==31013==    by 0x80487BA: memalign16 (malloc.h:21)
+==31013==    by 0x8048ADB: main (sh-mem-vec.c:205)
+==31013== 
+==31013== Invalid write of size 8
+==31013==    at 0x804858F: vector16_copy (sh-mem-vec.c:15)
+==31013==    by 0x8049005: main (sh-mem-vec.c:277)
+==31013==  Address 0x403505f is 1 bytes before a block of size 80,000 alloc'd
+==31013==    at 0x400602A: memalign (vg_replace_malloc.c:755)
+==31013==    by 0x80487BA: memalign16 (malloc.h:21)
+==31013==    by 0x8048ADB: main (sh-mem-vec.c:205)
+==31013== 
+
+Expect 2 x no error
+
+Expect 2 x error
+
+==31013== Invalid read of size 16
+==31013==    at 0x804858C: vector16_copy (sh-mem-vec.c:15)
+==31013==    by 0x804907C: main (sh-mem-vec.c:285)
+==31013==  Address 0x40488d1 is 79,985 bytes inside a block of size 80,000 alloc'd
+==31013==    at 0x400602A: memalign (vg_replace_malloc.c:755)
+==31013==    by 0x80487BA: memalign16 (malloc.h:21)
+==31013==    by 0x8048ADB: main (sh-mem-vec.c:205)
+==31013== 
+==31013== Invalid write of size 8
+==31013==    at 0x804858F: vector16_copy (sh-mem-vec.c:15)
+==31013==    by 0x8049085: main (sh-mem-vec.c:286)
+==31013==  Address 0x40488d9 is 79,993 bytes inside a block of size 80,000 alloc'd
+==31013==    at 0x400602A: memalign (vg_replace_malloc.c:755)
+==31013==    by 0x80487BA: memalign16 (malloc.h:21)
+==31013==    by 0x8048ADB: main (sh-mem-vec.c:205)
+==31013== 
+
+------ PL Aligned case with 0 leading acc+def bytes ------
+
+
+UUdUUdUUdUUdUUdU
+
+==31013== Conditional jump or move depends on uninitialised value(s)
+==31013==    at 0x8048A8F: do_partial_load_case (sh-mem-vec.c:190)
+==31013==    by 0x80485AE: apply (sh-mem-vec.c:91)
+==31013==    by 0x80490B8: main (sh-mem-vec.c:292)
+==31013== 
+
+------ PL Aligned case with 1 leading acc+def bytes ------
+
+
+dUUdUUdUUdUUdUUd
+
+==31013== Conditional jump or move depends on uninitialised value(s)
+==31013==    at 0x8048A8F: do_partial_load_case (sh-mem-vec.c:190)
+==31013==    by 0x80485BF: apply (sh-mem-vec.c:92)
+==31013==    by 0x80490B8: main (sh-mem-vec.c:292)
+==31013== 
+
+------ PL Aligned case with 2 leading acc+def bytes ------
+
+
+ddUUdUUdUUdUUdUU
+
+==31013== Conditional jump or move depends on uninitialised value(s)
+==31013==    at 0x8048A8F: do_partial_load_case (sh-mem-vec.c:190)
+==31013==    by 0x80485D0: apply (sh-mem-vec.c:93)
+==31013==    by 0x80490B8: main (sh-mem-vec.c:292)
+==31013== 
+
+------ PL Aligned case with 3 leading acc+def bytes ------
+
+
+dddUUdUUdUUdUUdU
+
+==31013== Conditional jump or move depends on uninitialised value(s)
+==31013==    at 0x8048A8F: do_partial_load_case (sh-mem-vec.c:190)
+==31013==    by 0x80485E1: apply (sh-mem-vec.c:94)
+==31013==    by 0x80490B8: main (sh-mem-vec.c:292)
+==31013== 
+
+------ PL Aligned case with 4 leading acc+def bytes ------
+
+
+ddddUUdUUdUUdUUd
+
+==31013== Conditional jump or move depends on uninitialised value(s)
+==31013==    at 0x8048A8F: do_partial_load_case (sh-mem-vec.c:190)
+==31013==    by 0x80485F2: apply (sh-mem-vec.c:95)
+==31013==    by 0x80490B8: main (sh-mem-vec.c:292)
+==31013== 
+
+------ PL Aligned case with 5 leading acc+def bytes ------
+
+
+dddddUUdUUdUUdUU
+
+==31013== Conditional jump or move depends on uninitialised value(s)
+==31013==    at 0x8048A8F: do_partial_load_case (sh-mem-vec.c:190)
+==31013==    by 0x8048603: apply (sh-mem-vec.c:96)
+==31013==    by 0x80490B8: main (sh-mem-vec.c:292)
+==31013== 
+
+------ PL Aligned case with 6 leading acc+def bytes ------
+
+
+ddddddUUdUUdUUdU
+
+==31013== Conditional jump or move depends on uninitialised value(s)
+==31013==    at 0x8048A8F: do_partial_load_case (sh-mem-vec.c:190)
+==31013==    by 0x8048614: apply (sh-mem-vec.c:97)
+==31013==    by 0x80490B8: main (sh-mem-vec.c:292)
+==31013== 
+
+------ PL Aligned case with 7 leading acc+def bytes ------
+
+
+dddddddUUdUUdUUd
+
+==31013== Conditional jump or move depends on uninitialised value(s)
+==31013==    at 0x8048A8F: do_partial_load_case (sh-mem-vec.c:190)
+==31013==    by 0x8048625: apply (sh-mem-vec.c:98)
+==31013==    by 0x80490B8: main (sh-mem-vec.c:292)
+==31013== 
+
+------ PL Aligned case with 8 leading acc+def bytes ------
+
+
+ddddddddUUdUUdUU
+
+==31013== Conditional jump or move depends on uninitialised value(s)
+==31013==    at 0x8048A8F: do_partial_load_case (sh-mem-vec.c:190)
+==31013==    by 0x8048636: apply (sh-mem-vec.c:99)
+==31013==    by 0x80490B8: main (sh-mem-vec.c:292)
+==31013== 
+
+------ PL Aligned case with 9 leading acc+def bytes ------
+
+
+dddddddddUUdUUdU
+
+==31013== Conditional jump or move depends on uninitialised value(s)
+==31013==    at 0x8048A8F: do_partial_load_case (sh-mem-vec.c:190)
+==31013==    by 0x8048647: apply (sh-mem-vec.c:100)
+==31013==    by 0x80490B8: main (sh-mem-vec.c:292)
+==31013== 
+
+------ PL Aligned case with 10 leading acc+def bytes ------
+
+
+ddddddddddUUdUUd
+
+==31013== Conditional jump or move depends on uninitialised value(s)
+==31013==    at 0x8048A8F: do_partial_load_case (sh-mem-vec.c:190)
+==31013==    by 0x8048658: apply (sh-mem-vec.c:101)
+==31013==    by 0x80490B8: main (sh-mem-vec.c:292)
+==31013== 
+
+------ PL Aligned case with 11 leading acc+def bytes ------
+
+
+dddddddddddUUdUU
+
+==31013== Conditional jump or move depends on uninitialised value(s)
+==31013==    at 0x8048A8F: do_partial_load_case (sh-mem-vec.c:190)
+==31013==    by 0x8048669: apply (sh-mem-vec.c:102)
+==31013==    by 0x80490B8: main (sh-mem-vec.c:292)
+==31013== 
+
+------ PL Aligned case with 12 leading acc+def bytes ------
+
+
+ddddddddddddUUdU
+
+==31013== Conditional jump or move depends on uninitialised value(s)
+==31013==    at 0x8048A8F: do_partial_load_case (sh-mem-vec.c:190)
+==31013==    by 0x804867A: apply (sh-mem-vec.c:103)
+==31013==    by 0x80490B8: main (sh-mem-vec.c:292)
+==31013== 
+
+------ PL Aligned case with 13 leading acc+def bytes ------
+
+
+dddddddddddddUUd
+
+==31013== Conditional jump or move depends on uninitialised value(s)
+==31013==    at 0x8048A8F: do_partial_load_case (sh-mem-vec.c:190)
+==31013==    by 0x804868B: apply (sh-mem-vec.c:104)
+==31013==    by 0x80490B8: main (sh-mem-vec.c:292)
+==31013== 
+
+------ PL Aligned case with 14 leading acc+def bytes ------
+
+
+ddddddddddddddUU
+
+==31013== Conditional jump or move depends on uninitialised value(s)
+==31013==    at 0x8048A8F: do_partial_load_case (sh-mem-vec.c:190)
+==31013==    by 0x804869C: apply (sh-mem-vec.c:105)
+==31013==    by 0x80490B8: main (sh-mem-vec.c:292)
+==31013== 
+
+------ PL Aligned case with 15 leading acc+def bytes ------
+
+
+dddddddddddddddU
+
+==31013== Conditional jump or move depends on uninitialised value(s)
+==31013==    at 0x8048A8F: do_partial_load_case (sh-mem-vec.c:190)
+==31013==    by 0x80486AD: apply (sh-mem-vec.c:106)
+==31013==    by 0x80490B8: main (sh-mem-vec.c:292)
+==31013== 
+
+------ PL Unaligned case with 0 leading acc+def bytes ------
+
+==31013== Invalid read of size 16
+==31013==    at 0x804858C: vector16_copy (sh-mem-vec.c:15)
+==31013==    by 0x804898B: do_partial_load_case (sh-mem-vec.c:171)
+==31013==    by 0x80485AE: apply (sh-mem-vec.c:91)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013==  Address 0x4049451 is 1 bytes inside a block of size 64 alloc'd
+==31013==    at 0x400602A: memalign (vg_replace_malloc.c:755)
+==31013==    by 0x80487BA: memalign16 (malloc.h:21)
+==31013==    by 0x8048861: do_partial_load_case (sh-mem-vec.c:149)
+==31013==    by 0x80485AE: apply (sh-mem-vec.c:91)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013== 
+
+dUddUddUddUddUdd
+
+==31013== Conditional jump or move depends on uninitialised value(s)
+==31013==    at 0x8048A8F: do_partial_load_case (sh-mem-vec.c:190)
+==31013==    by 0x80485AE: apply (sh-mem-vec.c:91)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013== 
+
+------ PL Unaligned case with 1 leading acc+def bytes ------
+
+==31013== Invalid read of size 16
+==31013==    at 0x804858C: vector16_copy (sh-mem-vec.c:15)
+==31013==    by 0x804898B: do_partial_load_case (sh-mem-vec.c:171)
+==31013==    by 0x80485BF: apply (sh-mem-vec.c:92)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013==  Address 0x4049501 is 1 bytes inside a block of size 64 alloc'd
+==31013==    at 0x400602A: memalign (vg_replace_malloc.c:755)
+==31013==    by 0x80487BA: memalign16 (malloc.h:21)
+==31013==    by 0x8048861: do_partial_load_case (sh-mem-vec.c:149)
+==31013==    by 0x80485BF: apply (sh-mem-vec.c:92)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013== 
+
+ddUddUddUddUddUd
+
+==31013== Conditional jump or move depends on uninitialised value(s)
+==31013==    at 0x8048A8F: do_partial_load_case (sh-mem-vec.c:190)
+==31013==    by 0x80485BF: apply (sh-mem-vec.c:92)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013== 
+
+------ PL Unaligned case with 2 leading acc+def bytes ------
+
+==31013== Invalid read of size 16
+==31013==    at 0x804858C: vector16_copy (sh-mem-vec.c:15)
+==31013==    by 0x804898B: do_partial_load_case (sh-mem-vec.c:171)
+==31013==    by 0x80485D0: apply (sh-mem-vec.c:93)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013==  Address 0x40495b1 is 1 bytes inside a block of size 64 alloc'd
+==31013==    at 0x400602A: memalign (vg_replace_malloc.c:755)
+==31013==    by 0x80487BA: memalign16 (malloc.h:21)
+==31013==    by 0x8048861: do_partial_load_case (sh-mem-vec.c:149)
+==31013==    by 0x80485D0: apply (sh-mem-vec.c:93)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013== 
+
+dddUddUddUddUddU
+
+==31013== Conditional jump or move depends on uninitialised value(s)
+==31013==    at 0x8048A8F: do_partial_load_case (sh-mem-vec.c:190)
+==31013==    by 0x80485D0: apply (sh-mem-vec.c:93)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013== 
+
+------ PL Unaligned case with 3 leading acc+def bytes ------
+
+==31013== Invalid read of size 16
+==31013==    at 0x804858C: vector16_copy (sh-mem-vec.c:15)
+==31013==    by 0x804898B: do_partial_load_case (sh-mem-vec.c:171)
+==31013==    by 0x80485E1: apply (sh-mem-vec.c:94)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013==  Address 0x4049661 is 1 bytes inside a block of size 64 alloc'd
+==31013==    at 0x400602A: memalign (vg_replace_malloc.c:755)
+==31013==    by 0x80487BA: memalign16 (malloc.h:21)
+==31013==    by 0x8048861: do_partial_load_case (sh-mem-vec.c:149)
+==31013==    by 0x80485E1: apply (sh-mem-vec.c:94)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013== 
+
+ddddUddUddUddUdd
+
+==31013== Conditional jump or move depends on uninitialised value(s)
+==31013==    at 0x8048A8F: do_partial_load_case (sh-mem-vec.c:190)
+==31013==    by 0x80485E1: apply (sh-mem-vec.c:94)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013== 
+
+------ PL Unaligned case with 4 leading acc+def bytes ------
+
+==31013== Invalid read of size 16
+==31013==    at 0x804858C: vector16_copy (sh-mem-vec.c:15)
+==31013==    by 0x804898B: do_partial_load_case (sh-mem-vec.c:171)
+==31013==    by 0x80485F2: apply (sh-mem-vec.c:95)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013==  Address 0x4049711 is 1 bytes inside a block of size 64 alloc'd
+==31013==    at 0x400602A: memalign (vg_replace_malloc.c:755)
+==31013==    by 0x80487BA: memalign16 (malloc.h:21)
+==31013==    by 0x8048861: do_partial_load_case (sh-mem-vec.c:149)
+==31013==    by 0x80485F2: apply (sh-mem-vec.c:95)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013== 
+
+dddddUddUddUddUd
+
+==31013== Conditional jump or move depends on uninitialised value(s)
+==31013==    at 0x8048A8F: do_partial_load_case (sh-mem-vec.c:190)
+==31013==    by 0x80485F2: apply (sh-mem-vec.c:95)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013== 
+
+------ PL Unaligned case with 5 leading acc+def bytes ------
+
+==31013== Invalid read of size 16
+==31013==    at 0x804858C: vector16_copy (sh-mem-vec.c:15)
+==31013==    by 0x804898B: do_partial_load_case (sh-mem-vec.c:171)
+==31013==    by 0x8048603: apply (sh-mem-vec.c:96)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013==  Address 0x40497c1 is 1 bytes inside a block of size 64 alloc'd
+==31013==    at 0x400602A: memalign (vg_replace_malloc.c:755)
+==31013==    by 0x80487BA: memalign16 (malloc.h:21)
+==31013==    by 0x8048861: do_partial_load_case (sh-mem-vec.c:149)
+==31013==    by 0x8048603: apply (sh-mem-vec.c:96)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013== 
+
+ddddddUddUddUddU
+
+==31013== Conditional jump or move depends on uninitialised value(s)
+==31013==    at 0x8048A8F: do_partial_load_case (sh-mem-vec.c:190)
+==31013==    by 0x8048603: apply (sh-mem-vec.c:96)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013== 
+
+------ PL Unaligned case with 6 leading acc+def bytes ------
+
+==31013== Invalid read of size 16
+==31013==    at 0x804858C: vector16_copy (sh-mem-vec.c:15)
+==31013==    by 0x804898B: do_partial_load_case (sh-mem-vec.c:171)
+==31013==    by 0x8048614: apply (sh-mem-vec.c:97)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013==  Address 0x4049871 is 1 bytes inside a block of size 64 alloc'd
+==31013==    at 0x400602A: memalign (vg_replace_malloc.c:755)
+==31013==    by 0x80487BA: memalign16 (malloc.h:21)
+==31013==    by 0x8048861: do_partial_load_case (sh-mem-vec.c:149)
+==31013==    by 0x8048614: apply (sh-mem-vec.c:97)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013== 
+
+dddddddUddUddUdd
+
+==31013== Conditional jump or move depends on uninitialised value(s)
+==31013==    at 0x8048A8F: do_partial_load_case (sh-mem-vec.c:190)
+==31013==    by 0x8048614: apply (sh-mem-vec.c:97)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013== 
+
+------ PL Unaligned case with 7 leading acc+def bytes ------
+
+==31013== Invalid read of size 16
+==31013==    at 0x804858C: vector16_copy (sh-mem-vec.c:15)
+==31013==    by 0x804898B: do_partial_load_case (sh-mem-vec.c:171)
+==31013==    by 0x8048625: apply (sh-mem-vec.c:98)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013==  Address 0x4049921 is 1 bytes inside a block of size 64 alloc'd
+==31013==    at 0x400602A: memalign (vg_replace_malloc.c:755)
+==31013==    by 0x80487BA: memalign16 (malloc.h:21)
+==31013==    by 0x8048861: do_partial_load_case (sh-mem-vec.c:149)
+==31013==    by 0x8048625: apply (sh-mem-vec.c:98)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013== 
+
+ddddddddUddUddUd
+
+==31013== Conditional jump or move depends on uninitialised value(s)
+==31013==    at 0x8048A8F: do_partial_load_case (sh-mem-vec.c:190)
+==31013==    by 0x8048625: apply (sh-mem-vec.c:98)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013== 
+
+------ PL Unaligned case with 8 leading acc+def bytes ------
+
+==31013== Invalid read of size 16
+==31013==    at 0x804858C: vector16_copy (sh-mem-vec.c:15)
+==31013==    by 0x804898B: do_partial_load_case (sh-mem-vec.c:171)
+==31013==    by 0x8048636: apply (sh-mem-vec.c:99)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013==  Address 0x40499d1 is 1 bytes inside a block of size 64 alloc'd
+==31013==    at 0x400602A: memalign (vg_replace_malloc.c:755)
+==31013==    by 0x80487BA: memalign16 (malloc.h:21)
+==31013==    by 0x8048861: do_partial_load_case (sh-mem-vec.c:149)
+==31013==    by 0x8048636: apply (sh-mem-vec.c:99)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013== 
+
+dddddddddUddUddU
+
+==31013== Conditional jump or move depends on uninitialised value(s)
+==31013==    at 0x8048A8F: do_partial_load_case (sh-mem-vec.c:190)
+==31013==    by 0x8048636: apply (sh-mem-vec.c:99)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013== 
+
+------ PL Unaligned case with 9 leading acc+def bytes ------
+
+==31013== Invalid read of size 16
+==31013==    at 0x804858C: vector16_copy (sh-mem-vec.c:15)
+==31013==    by 0x804898B: do_partial_load_case (sh-mem-vec.c:171)
+==31013==    by 0x8048647: apply (sh-mem-vec.c:100)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013==  Address 0x4049a81 is 1 bytes inside a block of size 64 alloc'd
+==31013==    at 0x400602A: memalign (vg_replace_malloc.c:755)
+==31013==    by 0x80487BA: memalign16 (malloc.h:21)
+==31013==    by 0x8048861: do_partial_load_case (sh-mem-vec.c:149)
+==31013==    by 0x8048647: apply (sh-mem-vec.c:100)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013== 
+
+ddddddddddUddUdd
+
+==31013== Conditional jump or move depends on uninitialised value(s)
+==31013==    at 0x8048A8F: do_partial_load_case (sh-mem-vec.c:190)
+==31013==    by 0x8048647: apply (sh-mem-vec.c:100)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013== 
+
+------ PL Unaligned case with 10 leading acc+def bytes ------
+
+==31013== Invalid read of size 16
+==31013==    at 0x804858C: vector16_copy (sh-mem-vec.c:15)
+==31013==    by 0x804898B: do_partial_load_case (sh-mem-vec.c:171)
+==31013==    by 0x8048658: apply (sh-mem-vec.c:101)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013==  Address 0x4049b31 is 1 bytes inside a block of size 64 alloc'd
+==31013==    at 0x400602A: memalign (vg_replace_malloc.c:755)
+==31013==    by 0x80487BA: memalign16 (malloc.h:21)
+==31013==    by 0x8048861: do_partial_load_case (sh-mem-vec.c:149)
+==31013==    by 0x8048658: apply (sh-mem-vec.c:101)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013== 
+
+dddddddddddUddUd
+
+==31013== Conditional jump or move depends on uninitialised value(s)
+==31013==    at 0x8048A8F: do_partial_load_case (sh-mem-vec.c:190)
+==31013==    by 0x8048658: apply (sh-mem-vec.c:101)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013== 
+
+------ PL Unaligned case with 11 leading acc+def bytes ------
+
+==31013== Invalid read of size 16
+==31013==    at 0x804858C: vector16_copy (sh-mem-vec.c:15)
+==31013==    by 0x804898B: do_partial_load_case (sh-mem-vec.c:171)
+==31013==    by 0x8048669: apply (sh-mem-vec.c:102)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013==  Address 0x4049be1 is 1 bytes inside a block of size 64 alloc'd
+==31013==    at 0x400602A: memalign (vg_replace_malloc.c:755)
+==31013==    by 0x80487BA: memalign16 (malloc.h:21)
+==31013==    by 0x8048861: do_partial_load_case (sh-mem-vec.c:149)
+==31013==    by 0x8048669: apply (sh-mem-vec.c:102)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013== 
+
+ddddddddddddUddU
+
+==31013== Conditional jump or move depends on uninitialised value(s)
+==31013==    at 0x8048A8F: do_partial_load_case (sh-mem-vec.c:190)
+==31013==    by 0x8048669: apply (sh-mem-vec.c:102)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013== 
+
+------ PL Unaligned case with 12 leading acc+def bytes ------
+
+==31013== Invalid read of size 16
+==31013==    at 0x804858C: vector16_copy (sh-mem-vec.c:15)
+==31013==    by 0x804898B: do_partial_load_case (sh-mem-vec.c:171)
+==31013==    by 0x804867A: apply (sh-mem-vec.c:103)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013==  Address 0x4049c91 is 1 bytes inside a block of size 64 alloc'd
+==31013==    at 0x400602A: memalign (vg_replace_malloc.c:755)
+==31013==    by 0x80487BA: memalign16 (malloc.h:21)
+==31013==    by 0x8048861: do_partial_load_case (sh-mem-vec.c:149)
+==31013==    by 0x804867A: apply (sh-mem-vec.c:103)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013== 
+
+dddddddddddddUdd
+
+==31013== Conditional jump or move depends on uninitialised value(s)
+==31013==    at 0x8048A8F: do_partial_load_case (sh-mem-vec.c:190)
+==31013==    by 0x804867A: apply (sh-mem-vec.c:103)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013== 
+
+------ PL Unaligned case with 13 leading acc+def bytes ------
+
+==31013== Invalid read of size 16
+==31013==    at 0x804858C: vector16_copy (sh-mem-vec.c:15)
+==31013==    by 0x804898B: do_partial_load_case (sh-mem-vec.c:171)
+==31013==    by 0x804868B: apply (sh-mem-vec.c:104)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013==  Address 0x4049d41 is 1 bytes inside a block of size 64 alloc'd
+==31013==    at 0x400602A: memalign (vg_replace_malloc.c:755)
+==31013==    by 0x80487BA: memalign16 (malloc.h:21)
+==31013==    by 0x8048861: do_partial_load_case (sh-mem-vec.c:149)
+==31013==    by 0x804868B: apply (sh-mem-vec.c:104)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013== 
+
+ddddddddddddddUd
+
+==31013== Conditional jump or move depends on uninitialised value(s)
+==31013==    at 0x8048A8F: do_partial_load_case (sh-mem-vec.c:190)
+==31013==    by 0x804868B: apply (sh-mem-vec.c:104)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013== 
+
+------ PL Unaligned case with 14 leading acc+def bytes ------
+
+==31013== Invalid read of size 16
+==31013==    at 0x804858C: vector16_copy (sh-mem-vec.c:15)
+==31013==    by 0x804898B: do_partial_load_case (sh-mem-vec.c:171)
+==31013==    by 0x804869C: apply (sh-mem-vec.c:105)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013==  Address 0x4049df1 is 1 bytes inside a block of size 64 alloc'd
+==31013==    at 0x400602A: memalign (vg_replace_malloc.c:755)
+==31013==    by 0x80487BA: memalign16 (malloc.h:21)
+==31013==    by 0x8048861: do_partial_load_case (sh-mem-vec.c:149)
+==31013==    by 0x804869C: apply (sh-mem-vec.c:105)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013== 
+
+dddddddddddddddU
+
+==31013== Conditional jump or move depends on uninitialised value(s)
+==31013==    at 0x8048A8F: do_partial_load_case (sh-mem-vec.c:190)
+==31013==    by 0x804869C: apply (sh-mem-vec.c:105)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013== 
+
+------ PL Unaligned case with 15 leading acc+def bytes ------
+
+==31013== Invalid read of size 16
+==31013==    at 0x804858C: vector16_copy (sh-mem-vec.c:15)
+==31013==    by 0x804898B: do_partial_load_case (sh-mem-vec.c:171)
+==31013==    by 0x80486AD: apply (sh-mem-vec.c:106)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013==  Address 0x4049ea1 is 1 bytes inside a block of size 64 alloc'd
+==31013==    at 0x400602A: memalign (vg_replace_malloc.c:755)
+==31013==    by 0x80487BA: memalign16 (malloc.h:21)
+==31013==    by 0x8048861: do_partial_load_case (sh-mem-vec.c:149)
+==31013==    by 0x80486AD: apply (sh-mem-vec.c:106)
+==31013==    by 0x80490D3: main (sh-mem-vec.c:295)
+==31013== 
+
+dddddddddddddddd
+
+
+==31013== 
+==31013== HEAP SUMMARY:
+==31013==     in use at exit: 0 bytes in 0 blocks
+==31013==   total heap usage: 33 allocs, 33 frees, 82,048 bytes allocated
+==31013== 
+==31013== All heap blocks were freed -- no leaks are possible
+==31013== 
+==31013== For counts of detected and suppressed errors, rerun with: -v
+==31013== Use --track-origins=yes to see where uninitialised values come from
+==31013== ERROR SUMMARY: 51 errors from 51 contexts (suppressed: 0 from 0)

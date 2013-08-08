@@ -5118,6 +5118,151 @@ PRE(sys_fcntl)
       PRE_MEM_WRITE("fcntl(F_GETOWN_EX)", ARG3, sizeof(struct vki_f_owner_ex));
       break;
 
+   case VKI_DRM_IOCTL_VERSION:
+      if (ARG3) {
+         struct vki_drm_version *data = (struct vki_drm_version *)ARG3;
+	 PRE_MEM_WRITE("ioctl(DRM_VERSION).version_major", (Addr)&data->version_major, sizeof(data->version_major));
+         PRE_MEM_WRITE("ioctl(DRM_VERSION).version_minor", (Addr)&data->version_minor, sizeof(data->version_minor));
+         PRE_MEM_WRITE("ioctl(DRM_VERSION).version_patchlevel", (Addr)&data->version_patchlevel, sizeof(data->version_patchlevel));
+         PRE_MEM_READ("ioctl(DRM_VERSION).name_len", (Addr)&data->name_len, sizeof(data->name_len));
+         PRE_MEM_READ("ioctl(DRM_VERSION).name", (Addr)&data->name, sizeof(data->name));
+         PRE_MEM_WRITE("ioctl(DRM_VERSION).name", (Addr)data->name, data->name_len);
+         PRE_MEM_READ("ioctl(DRM_VERSION).date_len", (Addr)&data->date_len, sizeof(data->date_len));
+         PRE_MEM_READ("ioctl(DRM_VERSION).date", (Addr)&data->date, sizeof(data->date));
+         PRE_MEM_WRITE("ioctl(DRM_VERSION).date", (Addr)data->date, data->date_len);
+         PRE_MEM_READ("ioctl(DRM_VERSION).desc_len", (Addr)&data->desc_len, sizeof(data->desc_len));
+         PRE_MEM_READ("ioctl(DRM_VERSION).desc", (Addr)&data->desc, sizeof(data->desc));
+         PRE_MEM_WRITE("ioctl(DRM_VERSION).desc", (Addr)data->desc, data->desc_len);
+      }
+      break;
+   case VKI_DRM_IOCTL_GET_UNIQUE:
+      if (ARG3) {
+         struct vki_drm_unique *data = (struct vki_drm_unique *)ARG3;
+	 PRE_MEM_READ("ioctl(DRM_GET_UNIQUE).unique_len", (Addr)&data->unique_len, sizeof(data->unique_len));
+	 PRE_MEM_READ("ioctl(DRM_GET_UNIQUE).unique", (Addr)&data->unique, sizeof(data->unique));
+	 PRE_MEM_WRITE("ioctl(DRM_GET_UNIQUE).unique", (Addr)data->unique, data->unique_len);
+      }
+      break;
+   case VKI_DRM_IOCTL_GET_MAGIC:
+      if (ARG3) {
+         struct vki_drm_auth *data = (struct vki_drm_auth *)ARG3;
+         PRE_MEM_WRITE("ioctl(DRM_GET_MAGIC).magic", (Addr)&data->magic, sizeof(data->magic));
+      }
+      break;
+   case VKI_DRM_IOCTL_WAIT_VBLANK:
+      if (ARG3) {
+         union vki_drm_wait_vblank *data = (union vki_drm_wait_vblank *)ARG3;
+	 PRE_MEM_READ("ioctl(DRM_WAIT_VBLANK).request.type", (Addr)&data->request.type, sizeof(data->request.type));
+	 PRE_MEM_READ("ioctl(DRM_WAIT_VBLANK).request.sequence", (Addr)&data->request.sequence, sizeof(data->request.sequence));
+	 /* XXX: It seems request.signal isn't used */
+         PRE_MEM_WRITE("ioctl(DRM_WAIT_VBLANK).reply", (Addr)&data->reply, sizeof(data->reply));
+      }
+      break;
+   case VKI_DRM_IOCTL_GEM_CLOSE:
+      if (ARG3) {
+         struct vki_drm_gem_close *data = (struct vki_drm_gem_close *)ARG3;
+	 PRE_MEM_READ("ioctl(DRM_GEM_CLOSE).handle", (Addr)&data->handle, sizeof(data->handle));
+      }
+      break;
+   case VKI_DRM_IOCTL_GEM_FLINK:
+      if (ARG3) {
+         struct vki_drm_gem_flink *data = (struct vki_drm_gem_flink *)ARG3;
+	 PRE_MEM_READ("ioctl(DRM_GEM_FLINK).handle", (Addr)&data->handle, sizeof(data->handle));
+         PRE_MEM_WRITE("ioctl(DRM_GEM_FLINK).name", (Addr)&data->name, sizeof(data->name));
+      }
+      break;
+   case VKI_DRM_IOCTL_GEM_OPEN:
+      if (ARG3) {
+         struct vki_drm_gem_open *data = (struct vki_drm_gem_open *)ARG3;
+	 PRE_MEM_READ("ioctl(DRM_GEM_OPEN).name", (Addr)&data->name, sizeof(data->name));
+	 PRE_MEM_WRITE("ioctl(DRM_GEM_OPEN).handle", (Addr)&data->handle, sizeof(data->handle));
+	 PRE_MEM_WRITE("ioctl(DRM_GEM_OPEN).size", (Addr)&data->size, sizeof(data->size));
+      }
+      break;
+   case VKI_DRM_IOCTL_I915_GETPARAM:
+      if (ARG3) {
+         vki_drm_i915_getparam_t *data = (vki_drm_i915_getparam_t *)ARG3;
+	 PRE_MEM_READ("ioctl(DRM_I915_GETPARAM).param", (Addr)&data->param, sizeof(data->param));
+	 PRE_MEM_WRITE("ioctl(DRM_I915_GETPARAM).value", (Addr)data->value, sizeof(int));
+      }
+      break;
+   case VKI_DRM_IOCTL_I915_GEM_BUSY:
+      if (ARG3) {
+         struct vki_drm_i915_gem_busy *data = (struct vki_drm_i915_gem_busy *)ARG3;
+	 PRE_MEM_READ("ioctl(DRM_I915_GEM_BUSY).handle", (Addr)&data->handle, sizeof(data->handle));
+         PRE_MEM_WRITE("ioctl(DRM_I915_GEM_BUSY).busy", (Addr)&data->busy, sizeof(data->busy));
+      }
+      break;
+   case VKI_DRM_IOCTL_I915_GEM_CREATE:
+      if (ARG3) {
+         struct vki_drm_i915_gem_create *data = (struct vki_drm_i915_gem_create *)ARG3;
+	 PRE_MEM_READ("ioctl(DRM_I915_GEM_CREATE).size", (Addr)&data->size, sizeof(data->size));
+	 PRE_MEM_WRITE("ioctl(DRM_I915_GEM_CREATE).handle", (Addr)&data->handle, sizeof(data->handle));
+      }
+      break;
+   case VKI_DRM_IOCTL_I915_GEM_PREAD:
+      if (ARG3) {
+         struct vki_drm_i915_gem_pread *data = (struct vki_drm_i915_gem_pread *)ARG3;
+	 PRE_MEM_READ("ioctl(DRM_I915_GEM_PREAD).handle", (Addr)&data->handle, sizeof(data->handle));
+	 PRE_MEM_READ("ioctl(DRM_I915_GEM_PREAD).offset", (Addr)&data->offset, sizeof(data->offset));
+	 PRE_MEM_READ("ioctl(DRM_I915_GEM_PREAD).size", (Addr)&data->size, sizeof(data->size));
+	 PRE_MEM_READ("ioctl(DRM_I915_GEM_PREAD).data_ptr", (Addr)&data->data_ptr, sizeof(data->data_ptr));
+	 PRE_MEM_WRITE("ioctl(DRM_I915_GEM_PREAD).data_ptr", (Addr)data->data_ptr, data->size);
+      }
+      break;
+   case VKI_DRM_IOCTL_I915_GEM_PWRITE:
+      if (ARG3) {
+         struct vki_drm_i915_gem_pwrite *data = (struct vki_drm_i915_gem_pwrite *)ARG3;
+	 PRE_MEM_READ("ioctl(DRM_I915_GEM_PWRITE).handle", (Addr)&data->handle, sizeof(data->handle));
+	 PRE_MEM_READ("ioctl(DRM_I915_GEM_PWRITE).offset", (Addr)&data->offset, sizeof(data->offset));
+	 PRE_MEM_READ("ioctl(DRM_I915_GEM_PWRITE).size", (Addr)&data->size, sizeof(data->size));
+	 PRE_MEM_READ("ioctl(DRM_I915_GEM_PWRITE).data_ptr", (Addr)&data->data_ptr, sizeof(data->data_ptr));
+	 /* PRE_MEM_READ("ioctl(DRM_I915_GEM_PWRITE).data_ptr", (Addr)data->data_ptr, data->size);
+	  * NB: the buffer is allowed to contain any amount of uninitialized data (e.g.
+	  * interleaved vertex attributes may have a wide stride with uninitialized data between
+	  * consecutive vertices) */
+      }
+      break;
+   case VKI_DRM_IOCTL_I915_GEM_MMAP_GTT:
+      if (ARG3) {
+         struct vki_drm_i915_gem_mmap_gtt *data = (struct vki_drm_i915_gem_mmap_gtt *)ARG3;
+	 PRE_MEM_READ("ioctl(DRM_I915_GEM_MMAP_GTT).handle", (Addr)&data->handle, sizeof(data->handle));
+         PRE_MEM_WRITE("ioctl(DRM_I915_GEM_MMAP_GTT).offset", (Addr)&data->offset, sizeof(data->offset));
+      }
+      break;
+   case VKI_DRM_IOCTL_I915_GEM_SET_DOMAIN:
+      if (ARG3) {
+         struct vki_drm_i915_gem_set_domain *data = (struct vki_drm_i915_gem_set_domain *)ARG3;
+	 PRE_MEM_READ("ioctl(DRM_I915_GEM_SET_DOMAIN).handle", (Addr)&data->handle, sizeof(data->handle));
+	 PRE_MEM_READ("ioctl(DRM_I915_GEM_SET_DOMAIN).read_domains", (Addr)&data->read_domains, sizeof(data->read_domains));
+	 PRE_MEM_READ("ioctl(DRM_I915_GEM_SET_DOMAIN).write_domain", (Addr)&data->write_domain, sizeof(data->write_domain));
+      }
+      break;
+   case VKI_DRM_IOCTL_I915_GEM_SET_TILING:
+      if (ARG3) {
+         struct vki_drm_i915_gem_set_tiling *data = (struct vki_drm_i915_gem_set_tiling *)ARG3;
+	 PRE_MEM_READ("ioctl(DRM_I915_GEM_SET_TILING).handle", (Addr)&data->handle, sizeof(data->handle));
+         PRE_MEM_READ("ioctl(DRM_I915_GEM_SET_TILING).tiling_mode", (Addr)&data->tiling_mode, sizeof(data->tiling_mode));
+         PRE_MEM_READ("ioctl(DRM_I915_GEM_SET_TILING).stride", (Addr)&data->stride, sizeof(data->stride));
+         PRE_MEM_WRITE("ioctl(DRM_I915_GEM_SET_TILING).swizzle_mode", (Addr)&data->swizzle_mode, sizeof(data->swizzle_mode));
+      }
+      break;
+   case VKI_DRM_IOCTL_I915_GEM_GET_TILING:
+      if (ARG3) {
+         struct vki_drm_i915_gem_get_tiling *data = (struct vki_drm_i915_gem_get_tiling *)ARG3;
+	 PRE_MEM_READ("ioctl(DRM_I915_GEM_GET_TILING).handle", (Addr)&data->handle, sizeof(data->handle));
+	 PRE_MEM_WRITE("ioctl(DRM_I915_GEM_GET_TILING).tiling_mode", (Addr)&data->tiling_mode, sizeof(data->tiling_mode));
+         PRE_MEM_WRITE("ioctl(DRM_I915_GEM_GET_TILING).swizzle_mode", (Addr)&data->swizzle_mode, sizeof(data->swizzle_mode));
+      }
+      break;
+   case VKI_DRM_IOCTL_I915_GEM_GET_APERTURE:
+      if (ARG3) {
+         struct vki_drm_i915_gem_get_aperture *data = (struct vki_drm_i915_gem_get_aperture *)ARG3;
+         PRE_MEM_WRITE("ioctl(DRM_I915_GEM_GET_APERTURE).aper_size", (Addr)&data->aper_size, sizeof(data->aper_size));
+         PRE_MEM_WRITE("ioctl(DRM_I915_GEM_GET_APERTURE).aper_available_size", (Addr)&data->aper_available_size, sizeof(data->aper_available_size));
+      }
+      break;
+
    default:
       PRINT("sys_fcntl[UNKNOWN] ( %ld, %ld, %ld )", ARG1,ARG2,ARG3);
       I_die_here;
@@ -5304,6 +5449,104 @@ PRE(sys_ioctl)
       PRE_REG_READ2(long, "ioctl",
                     unsigned int, fd, unsigned int, request);
       return;
+
+   case VKI_DRM_IOCTL_VERSION:
+      if (ARG3) {
+         struct vki_drm_version *data = (struct vki_drm_version *)ARG3;
+	 POST_MEM_WRITE((Addr)&data->version_major, sizeof(data->version_major));
+         POST_MEM_WRITE((Addr)&data->version_minor, sizeof(data->version_minor));
+         POST_MEM_WRITE((Addr)&data->version_patchlevel, sizeof(data->version_patchlevel));
+         POST_MEM_WRITE((Addr)&data->name_len, sizeof(data->name_len));
+         POST_MEM_WRITE((Addr)data->name, data->name_len);
+         POST_MEM_WRITE((Addr)&data->date_len, sizeof(data->date_len));
+         POST_MEM_WRITE((Addr)data->date, data->date_len);
+         POST_MEM_WRITE((Addr)&data->desc_len, sizeof(data->desc_len));
+         POST_MEM_WRITE((Addr)data->desc, data->desc_len);
+      }
+      break;
+   case VKI_DRM_IOCTL_GET_UNIQUE:
+      if (ARG3) {
+         struct vki_drm_unique *data = (struct vki_drm_unique *)ARG3;
+	 POST_MEM_WRITE((Addr)data->unique, sizeof(data->unique_len));
+      }
+      break;
+   case VKI_DRM_IOCTL_GET_MAGIC:
+      if (ARG3) {
+         struct vki_drm_auth *data = (struct vki_drm_auth *)ARG3;
+         POST_MEM_WRITE((Addr)&data->magic, sizeof(data->magic));
+      }
+      break;
+   case VKI_DRM_IOCTL_WAIT_VBLANK:
+      if (ARG3) {
+         union vki_drm_wait_vblank *data = (union vki_drm_wait_vblank *)ARG3;
+         POST_MEM_WRITE((Addr)&data->reply, sizeof(data->reply));
+      }
+      break;
+   case VKI_DRM_IOCTL_GEM_FLINK:
+      if (ARG3) {
+         struct vki_drm_gem_flink *data = (struct vki_drm_gem_flink *)ARG3;
+         POST_MEM_WRITE((Addr)&data->name, sizeof(data->name));
+      }
+      break;
+   case VKI_DRM_IOCTL_GEM_OPEN:
+      if (ARG3) {
+         struct vki_drm_gem_open *data = (struct vki_drm_gem_open *)ARG3;
+	 POST_MEM_WRITE((Addr)&data->handle, sizeof(data->handle));
+	 POST_MEM_WRITE((Addr)&data->size, sizeof(data->size));
+      }
+      break;
+   case VKI_DRM_IOCTL_I915_GETPARAM:
+      if (ARG3) {
+         vki_drm_i915_getparam_t *data = (vki_drm_i915_getparam_t *)ARG3;
+	 POST_MEM_WRITE((Addr)data->value, sizeof(int));
+      }
+      break;
+   case VKI_DRM_IOCTL_I915_GEM_BUSY:
+      if (ARG3) {
+         struct vki_drm_i915_gem_busy *data = (struct vki_drm_i915_gem_busy *)ARG3;
+         POST_MEM_WRITE((Addr)&data->busy, sizeof(data->busy));
+      }
+      break;
+   case VKI_DRM_IOCTL_I915_GEM_CREATE:
+      if (ARG3) {
+         struct vki_drm_i915_gem_create *data = (struct vki_drm_i915_gem_create *)ARG3;
+	 POST_MEM_WRITE((Addr)&data->handle, sizeof(data->handle));
+      }
+      break;
+   case VKI_DRM_IOCTL_I915_GEM_PREAD:
+      if (ARG3) {
+         struct vki_drm_i915_gem_pread *data = (struct vki_drm_i915_gem_pread *)ARG3;
+	 POST_MEM_WRITE((Addr)data->data_ptr, data->size);
+      }
+      break;
+   case VKI_DRM_IOCTL_I915_GEM_MMAP_GTT:
+      if (ARG3) {
+         struct vki_drm_i915_gem_mmap_gtt *data = (struct vki_drm_i915_gem_mmap_gtt *)ARG3;
+         POST_MEM_WRITE((Addr)&data->offset, sizeof(data->offset));
+      }
+      break;
+   case VKI_DRM_IOCTL_I915_GEM_SET_TILING:
+      if (ARG3) {
+         struct vki_drm_i915_gem_set_tiling *data = (struct vki_drm_i915_gem_set_tiling *)ARG3;
+         POST_MEM_WRITE((Addr)&data->tiling_mode, sizeof(data->tiling_mode));
+         POST_MEM_WRITE((Addr)&data->stride, sizeof(data->stride));
+         POST_MEM_WRITE((Addr)&data->swizzle_mode, sizeof(data->swizzle_mode));
+      }
+      break;
+   case VKI_DRM_IOCTL_I915_GEM_GET_TILING:
+      if (ARG3) {
+         struct vki_drm_i915_gem_get_tiling *data = (struct vki_drm_i915_gem_get_tiling *)ARG3;
+	 POST_MEM_WRITE((Addr)&data->tiling_mode, sizeof(data->tiling_mode));
+         POST_MEM_WRITE((Addr)&data->swizzle_mode, sizeof(data->swizzle_mode));
+      }
+      break;
+   case VKI_DRM_IOCTL_I915_GEM_GET_APERTURE:
+      if (ARG3) {
+         struct vki_drm_i915_gem_get_aperture *data = (struct vki_drm_i915_gem_get_aperture *)ARG3;
+         POST_MEM_WRITE((Addr)&data->aper_size, sizeof(data->aper_size));
+         POST_MEM_WRITE((Addr)&data->aper_available_size, sizeof(data->aper_available_size));
+      }
+      break;
 
    default:
       PRINT("sys_ioctl ( %ld, 0x%lx, 0x%lx )",ARG1,ARG2,ARG3);

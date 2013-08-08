@@ -444,6 +444,10 @@ FIXED r??
         FIXED 13467
 
 322851  0bXXX binary literal syntax is not standard 
+        FIXED 2736
+
+207815  Adds some of the drm ioctls to syswrap-linux.c 
+        FIXED 13486
 
 
 Release 3.8.1 (19 September 2012)

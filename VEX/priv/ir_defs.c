@@ -1205,9 +1205,21 @@ void ppIRExpr ( IRExpr* e )
       ppIRCallee(e->Iex.CCall.cee);
       vex_printf("(");
       for (i = 0; e->Iex.CCall.args[i] != NULL; i++) {
-        ppIRExpr(e->Iex.CCall.args[i]);
-        if (e->Iex.CCall.args[i+1] != NULL)
+        IRExpr* arg = e->Iex.CCall.args[i];
+        /* We don't actually expect VECRET or BBPTR here -- BBPTR is
+           never allowable; VECRET is in principle allowable but at
+           present isn't supported.  But they are handled for
+           completeness anyway. */
+        if (arg == IRExprP__VECRET) {
+          vex_printf("VECRET");
+        } else if (arg == IRExprP__BBPTR) {
+          vex_printf("BBPTR");
+        } else {
+          ppIRExpr(arg);
+        }
+        if (e->Iex.CCall.args[i+1] != NULL) {
           vex_printf(",");
+        }
       }
       vex_printf("):");
       ppIRType(e->Iex.CCall.retty);
@@ -1246,8 +1258,6 @@ void ppIRDirty ( IRDirty* d )
    }
    vex_printf("DIRTY ");
    ppIRExpr(d->guard);
-   if (d->needsBBP)
-      vex_printf(" NeedsBBP");
    if (d->mFx != Ifx_None) {
       vex_printf(" ");
       ppIREffect(d->mFx);
@@ -1270,7 +1280,14 @@ void ppIRDirty ( IRDirty* d )
    ppIRCallee(d->cee);
    vex_printf("(");
    for (i = 0; d->args[i] != NULL; i++) {
-      ppIRExpr(d->args[i]);
+      IRExpr* arg = d->args[i];
+      if (arg == IRExprP__VECRET) {
+         vex_printf("VECRET");
+      } else if (arg == IRExprP__BBPTR) {
+         vex_printf("BBPTR");
+      } else {
+         ppIRExpr(arg);
+      }
       if (d->args[i+1] != NULL) {
          vex_printf(",");
       }
@@ -1838,7 +1855,6 @@ IRDirty* emptyIRDirty ( void ) {
    d->mFx      = Ifx_None;
    d->mAddr    = NULL;
    d->mSize    = 0;
-   d->needsBBP = False;
    d->nFxState = 0;
    return d;
 }
@@ -2174,7 +2190,6 @@ IRDirty* deepCopyIRDirty ( IRDirty* d )
    d2->mFx   = d->mFx;
    d2->mAddr = d->mAddr==NULL ? NULL : deepCopyIRExpr(d->mAddr);
    d2->mSize = d->mSize;
-   d2->needsBBP = d->needsBBP;
    d2->nFxState = d->nFxState;
    for (i = 0; i < d2->nFxState; i++)
       d2->fxState[i] = d->fxState[i];
@@ -3361,6 +3376,17 @@ Bool isPlausibleIRType ( IRType ty )
    }
 */
 
+static inline Bool isIRAtom_or_VECRET_or_BBPTR ( IRExpr* e ) {
+   /* Use this rather roundabout scheme so as to try and have the
+      number of additional conditional branches be 1 in the common
+      (non-VECRET, non-BBPTR) case, rather than 2. */
+   if (UNLIKELY(((HWord)e) & 1)) {
+      return e == IRExprP__VECRET || e == IRExprP__BBPTR;
+   } else {
+      return isIRAtom(e);
+   }
+}
+
 Bool isFlatIRStmt ( IRStmt* st )
 {
    Int      i;
@@ -3449,7 +3475,7 @@ Bool isFlatIRStmt ( IRStmt* st )
          if (!isIRAtom(di->guard)) 
             return False;
          for (i = 0; di->args[i]; i++)
-            if (!isIRAtom(di->args[i])) 
+            if (!isIRAtom_or_VECRET_or_BBPTR(di->args[i])) 
                return False;
          if (di->mAddr && !isIRAtom(di->mAddr)) 
             return False;
@@ -3589,8 +3615,17 @@ void useBeforeDef_Expr ( IRSB* bb, IRStmt* stmt, IRExpr* expr, Int* def_counts )
       case Iex_Const:
          break;
       case Iex_CCall:
-         for (i = 0; expr->Iex.CCall.args[i]; i++)
-            useBeforeDef_Expr(bb,stmt,expr->Iex.CCall.args[i],def_counts);
+         for (i = 0; expr->Iex.CCall.args[i]; i++) {
+            IRExpr* arg = expr->Iex.CCall.args[i];
+            if (UNLIKELY(((HWord)arg) & 1)) {
+               /* These aren't allowed in CCall lists.  Let's detect
+                  and throw them out here, though, rather than
+                  segfaulting a bit later on. */
+               sanityCheckFail(bb,stmt, "IRExprP__* value in CCall arg list");
+            } else {
+               useBeforeDef_Expr(bb,stmt,arg,def_counts);
+            }
+         }
          break;
       case Iex_ITE:
          useBeforeDef_Expr(bb,stmt,expr->Iex.ITE.cond,def_counts);
@@ -3662,8 +3697,15 @@ void useBeforeDef_Stmt ( IRSB* bb, IRStmt* stmt, Int* def_counts )
          break;
       case Ist_Dirty:
          d = stmt->Ist.Dirty.details;
-         for (i = 0; d->args[i] != NULL; i++)
-            useBeforeDef_Expr(bb,stmt,d->args[i],def_counts);
+         for (i = 0; d->args[i] != NULL; i++) {
+            IRExpr* arg = d->args[i];
+            if (UNLIKELY(((HWord)arg) & 1)) {
+               /* This is ensured by isFlatIRStmt */
+               vassert(arg == IRExprP__VECRET || arg == IRExprP__BBPTR);
+            } else {
+               useBeforeDef_Expr(bb,stmt,arg,def_counts);
+            }
+         }
          if (d->mFx != Ifx_None)
             useBeforeDef_Expr(bb,stmt,d->mAddr,def_counts);
          break;
@@ -3855,7 +3897,10 @@ void tcExpr ( IRSB* bb, IRStmt* stmt, IRExpr* expr, IRType gWordTy )
          for (i = 0; expr->Iex.CCall.args[i]; i++) {
             if (i >= 32)
                sanityCheckFail(bb,stmt,"Iex.CCall: > 32 args");
-            tcExpr(bb,stmt, expr->Iex.CCall.args[i], gWordTy);
+            IRExpr* arg = expr->Iex.CCall.args[i];
+            if (UNLIKELY(is_IRExprP__VECRET_or_BBPTR(arg)))
+               sanityCheckFail(bb,stmt,"Iex.CCall.args: is VECRET/BBPTR");
+            tcExpr(bb,stmt, arg, gWordTy);
          }
          if (expr->Iex.CCall.retty == Ity_I1)
             sanityCheckFail(bb,stmt,"Iex.CCall.retty: cannot return :: Ity_I1");
@@ -3877,7 +3922,7 @@ void tcExpr ( IRSB* bb, IRStmt* stmt, IRExpr* expr, IRType gWordTy )
              != typeOfIRExpr(tyenv, expr->Iex.ITE.iffalse))
             sanityCheckFail(bb,stmt,"Iex.ITE: iftrue/iffalse mismatch");
          break;
-       default: 
+      default: 
          vpanic("tcExpr");
    }
 }
@@ -4054,7 +4099,7 @@ void tcStmt ( IRSB* bb, IRStmt* stmt, IRType gWordTy )
          }
          break;
       }
-      case Ist_Dirty:
+      case Ist_Dirty: {
          /* Mostly check for various kinds of ill-formed dirty calls. */
          d = stmt->Ist.Dirty.details;
          if (d->cee == NULL) goto bad_dirty;
@@ -4068,8 +4113,6 @@ void tcStmt ( IRSB* bb, IRStmt* stmt, IRType gWordTy )
                goto bad_dirty;
          }
          if (d->nFxState < 0 || d->nFxState > VEX_N_FXSTATE)
-            goto bad_dirty;
-         if (d->nFxState == 0 && d->needsBBP)
             goto bad_dirty;
          for (i = 0; i < d->nFxState; i++) {
             if (d->fxState[i].fx == Ifx_None) goto bad_dirty;
@@ -4090,19 +4133,68 @@ void tcStmt ( IRSB* bb, IRStmt* stmt, IRType gWordTy )
          if (typeOfIRExpr(tyenv, d->guard) != Ity_I1)
             sanityCheckFail(bb,stmt,"IRStmt.Dirty.guard not :: Ity_I1");
          /* check types, minimally */
-         if (d->tmp != IRTemp_INVALID
-             && typeOfIRTemp(tyenv, d->tmp) == Ity_I1)
-            sanityCheckFail(bb,stmt,"IRStmt.Dirty.dst :: Ity_I1");
+         IRType retTy = Ity_INVALID;
+         if (d->tmp != IRTemp_INVALID) {
+            retTy = typeOfIRTemp(tyenv, d->tmp);
+            if (retTy == Ity_I1)
+               sanityCheckFail(bb,stmt,"IRStmt.Dirty.dst :: Ity_I1");
+         }
+         UInt nVECRETs = 0, nBBPTRs = 0;
          for (i = 0; d->args[i] != NULL; i++) {
             if (i >= 32)
                sanityCheckFail(bb,stmt,"IRStmt.Dirty: > 32 args");
-            if (typeOfIRExpr(tyenv, d->args[i]) == Ity_I1)
-               sanityCheckFail(bb,stmt,"IRStmt.Dirty.arg[i] :: Ity_I1");
+            IRExpr* arg = d->args[i];
+            if (UNLIKELY(((HWord)arg) & 1)) {
+               if (arg == IRExprP__VECRET) {
+                  nVECRETs++;
+               } else
+               if (arg == IRExprP__BBPTR) {
+                  nBBPTRs++;
+               } else {
+                  /* The impossibility of failure is ensured by
+                     isFlatIRStmt */
+                  vassert(0);
+               }
+            } else {
+               if (typeOfIRExpr(tyenv, arg) == Ity_I1)
+                  sanityCheckFail(bb,stmt,"IRStmt.Dirty.arg[i] :: Ity_I1");
+            }
+            if (nBBPTRs > 1) {
+               sanityCheckFail(bb,stmt,"IRStmt.Dirty.args: > 1 BBPTR arg");
+            }
+            if (nVECRETs == 1) {
+               /* Fn must return V128 or V256. */
+               if (retTy != Ity_V128 && retTy != Ity_V256)
+                  sanityCheckFail(bb,stmt,
+                                  "IRStmt.Dirty.args: VECRET present, "
+                                  "but fn does not return V128 or V256");
+            } else if (nVECRETs == 0) {
+               /* Fn must not return V128 or V256 */
+               if (retTy == Ity_V128 || retTy == Ity_V256)
+                  sanityCheckFail(bb,stmt,
+                                  "IRStmt.Dirty.args: VECRET not present, "
+                                  "but fn returns V128 or V256");
+            } else {
+               sanityCheckFail(bb,stmt,
+                               "IRStmt.Dirty.args: > 1 VECRET present");
+            }
          }
-         break;
+         if (nBBPTRs > 1) {
+            sanityCheckFail(bb,stmt,
+                            "IRStmt.Dirty.args: > 1 BBPTR present");
+         }
+         /* If you ask for the baseblock pointer, you have to make
+            some declaration about access to the guest state too. */
+         if (d->nFxState == 0 && nBBPTRs != 0) {
+            sanityCheckFail(bb,stmt,
+                            "IRStmt.Dirty.args: BBPTR requested, "
+                            "but no fxState declared");
+         }
+        break;
          bad_dirty:
          sanityCheckFail(bb,stmt,"IRStmt.Dirty: ill-formed");
          break;
+      }
       case Ist_NoOp:
          break;
       case Ist_MBE:

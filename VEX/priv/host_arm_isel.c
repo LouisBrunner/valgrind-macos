@@ -361,6 +361,12 @@ void set_VFP_rounding_mode ( ISelEnv* env, IRExpr* mode )
 static
 Bool mightRequireFixedRegs ( IRExpr* e )
 {
+   if (UNLIKELY(is_IRExprP__VECRET_or_BBPTR(e))) {
+      // These are always "safe" -- either a copy of r13(sp) in some
+      // arbitrary vreg, or a copy of r8, respectively.
+      return False;
+   }
+   /* Else it's a "normal" expression. */
    switch (e->tag) {
    case Iex_RdTmp: case Iex_Const: case Iex_Get:
       return False;
@@ -370,16 +376,20 @@ Bool mightRequireFixedRegs ( IRExpr* e )
 }
 
 
-/* Do a complete function call.  guard is a Ity_Bit expression
+/* Do a complete function call.  |guard| is a Ity_Bit expression
    indicating whether or not the call happens.  If guard==NULL, the
-   call is unconditional.  Returns True iff it managed to handle this
+   call is unconditional.  |retloc| is set to indicate where the
+   return value is after the call.  The caller (of this fn) must
+   generate code to add |stackAdjustAfterCall| to the stack pointer
+   after the call is done.  Returns True iff it managed to handle this
    combination of arg/return types, else returns False. */
 
 static
-Bool doHelperCall ( ISelEnv* env,
-                    Bool passBBP,
-                    IRExpr* guard, IRCallee* cee, IRExpr** args,
-                    RetLoc rloc )
+Bool doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
+                    /*OUT*/RetLoc* retloc,
+                    ISelEnv* env,
+                    IRExpr* guard,
+                    IRCallee* cee, IRType retTy, IRExpr** args )
 {
    ARMCondCode cc;
    HReg        argregs[ARM_N_ARGREGS];
@@ -390,16 +400,33 @@ Bool doHelperCall ( ISelEnv* env,
 
    vassert(ARM_N_ARGREGS == 4);
 
-   /* Marshal args for a call and do the call.
+   /* Set default returns.  We'll update them later if needed. */
+   *stackAdjustAfterCall = 0;
+   *retloc               = mk_RetLoc_INVALID();
 
-      If passBBP is True, r8 (the baseblock pointer) is to be passed
-      as the first arg.
+   /* These are used for cross-checking that IR-level constraints on
+      the use of IRExprP__VECRET and IRExprP__BBPTR are observed. */
+   UInt nVECRETs = 0;
+   UInt nBBPTRs  = 0;
+
+   /* Marshal args for a call and do the call.
 
       This function only deals with a tiny set of possibilities, which
       cover all helpers in practice.  The restrictions are that only
       arguments in registers are supported, hence only ARM_N_REGPARMS
       x 32 integer bits in total can be passed.  In fact the only
       supported arg types are I32 and I64.
+
+      The return type can be I{64,32} or V128.  In the V128 case, it
+      is expected that |args| will contain the special value
+      IRExprP__VECRET, in which case this routine generates code to
+      allocate space on the stack for the vector return value.  Since
+      we are not passing any scalars on the stack, it is enough to
+      preallocate the return space before marshalling any arguments,
+      in this case.
+
+      |args| may also contain IRExprP__BBPTR, in which case the
+      value in r8 is passed as the corresponding argument.
 
       Generating code which is both efficient and correct when
       parameters are to be passed in registers is difficult, for the
@@ -441,8 +468,15 @@ Bool doHelperCall ( ISelEnv* env,
       ignore it. */
 
    n_args = 0;
-   for (i = 0; args[i]; i++)
+   for (i = 0; args[i]; i++) {
+      IRExpr* arg = args[i];
+      if (UNLIKELY(arg == IRExprP__VECRET)) {
+         nVECRETs++;
+      } else if (UNLIKELY(arg == IRExprP__BBPTR)) {
+         nBBPTRs++;
+      }
       n_args++;
+   }
 
    argregs[0] = hregARM_R0();
    argregs[1] = hregARM_R1();
@@ -477,6 +511,12 @@ Bool doHelperCall ( ISelEnv* env,
          }
       }
    }
+
+   if (go_fast) {
+      if (retTy == Ity_V128 || retTy == Ity_V256)
+         go_fast = False;
+   }
+
    /* At this point the scheme to use has been established.  Generate
       code to get the arg values into the argument rregs.  If we run
       out of arg regs, give up. */
@@ -485,19 +525,20 @@ Bool doHelperCall ( ISelEnv* env,
 
       /* FAST SCHEME */
       nextArgReg = 0;
-      if (passBBP) {
-         addInstr(env, mk_iMOVds_RR( argregs[nextArgReg],
-                                     hregARM_R8() ));
-         nextArgReg++;
-      }
 
       for (i = 0; i < n_args; i++) {
-         IRType aTy = typeOfIRExpr(env->type_env, args[i]);
+         IRExpr* arg = args[i];
+
+         IRType  aTy = Ity_INVALID;
+         if (LIKELY(!is_IRExprP__VECRET_or_BBPTR(arg)))
+            aTy = typeOfIRExpr(env->type_env, arg);
+
          if (nextArgReg >= ARM_N_ARGREGS)
             return False; /* out of argregs */
+
          if (aTy == Ity_I32) {
             addInstr(env, mk_iMOVds_RR( argregs[nextArgReg],
-                                        iselIntExpr_R(env, args[i]) ));
+                                        iselIntExpr_R(env, arg) ));
             nextArgReg++;
          }
          else if (aTy == Ity_I64) {
@@ -514,11 +555,21 @@ Bool doHelperCall ( ISelEnv* env,
             if (nextArgReg >= ARM_N_ARGREGS)
                return False; /* out of argregs */
             HReg raHi, raLo;
-            iselInt64Expr(&raHi, &raLo, env, args[i]);
+            iselInt64Expr(&raHi, &raLo, env, arg);
             addInstr(env, mk_iMOVds_RR( argregs[nextArgReg], raLo ));
             nextArgReg++;
             addInstr(env, mk_iMOVds_RR( argregs[nextArgReg], raHi ));
             nextArgReg++;
+         }
+         else if (arg == IRExprP__BBPTR) {
+            vassert(0); //ATC
+            addInstr(env, mk_iMOVds_RR( argregs[nextArgReg],
+                                        hregARM_R8() ));
+            nextArgReg++;
+         }
+         else if (arg == IRExprP__VECRET) {
+            // If this happens, it denotes ill-formed IR
+            vassert(0);
          }
          else
             return False; /* unhandled arg type */
@@ -532,19 +583,16 @@ Bool doHelperCall ( ISelEnv* env,
       /* SLOW SCHEME; move via temporaries */
       nextArgReg = 0;
 
-      if (passBBP) {
-         /* This is pretty stupid; better to move directly to r0
-            after the rest of the args are done. */
-         tmpregs[nextArgReg] = newVRegI(env);
-         addInstr(env, mk_iMOVds_RR( tmpregs[nextArgReg],
-                                     hregARM_R8() ));
-         nextArgReg++;
-      }
-
       for (i = 0; i < n_args; i++) {
-         IRType aTy = typeOfIRExpr(env->type_env, args[i]);
+         IRExpr* arg = args[i];
+
+         IRType  aTy = Ity_INVALID;
+         if (LIKELY(!is_IRExprP__VECRET_or_BBPTR(arg)))
+            aTy  = typeOfIRExpr(env->type_env, arg);
+
          if (nextArgReg >= ARM_N_ARGREGS)
             return False; /* out of argregs */
+
          if (aTy == Ity_I32) {
             tmpregs[nextArgReg] = iselIntExpr_R(env, args[i]);
             nextArgReg++;
@@ -562,6 +610,17 @@ Bool doHelperCall ( ISelEnv* env,
             tmpregs[nextArgReg] = raHi;
             nextArgReg++;
          }
+         else if (arg == IRExprP__BBPTR) {
+            vassert(0); //ATC
+            tmpregs[nextArgReg] = hregARM_R8();
+            nextArgReg++;
+         }
+         else if (arg == IRExprP__VECRET) {
+            // If this happens, it denotes ill-formed IR
+            vassert(0);
+         }
+         else
+            return False; /* unhandled arg type */
       }
 
       /* Now we can compute the condition.  We can't do it earlier
@@ -595,7 +654,41 @@ Bool doHelperCall ( ISelEnv* env,
    /* Should be assured by checks above */
    vassert(nextArgReg <= ARM_N_ARGREGS);
 
-   target = (HWord)Ptr_to_ULong(cee->addr);
+   /* Do final checks, set the return values, and generate the call
+      instruction proper. */
+   vassert(nBBPTRs == 0 || nBBPTRs == 1);
+   vassert(nVECRETs == (retTy == Ity_V128 || retTy == Ity_V256) ? 1 : 0);
+   vassert(*stackAdjustAfterCall == 0);
+   vassert(is_RetLoc_INVALID(*retloc));
+   switch (retTy) {
+         case Ity_INVALID:
+            /* Function doesn't return a value. */
+            *retloc = mk_RetLoc_simple(RLPri_None);
+            break;
+         case Ity_I64:
+            *retloc = mk_RetLoc_simple(RLPri_2Int);
+            break;
+         case Ity_I32: case Ity_I16: case Ity_I8:
+            *retloc = mk_RetLoc_simple(RLPri_Int);
+            break;
+         case Ity_V128:
+            vassert(0); // ATC
+            *retloc = mk_RetLoc_spRel(RLPri_V128SpRel, 0);
+            *stackAdjustAfterCall = 16;
+            break;
+         case Ity_V256:
+            vassert(0); // ATC
+            *retloc = mk_RetLoc_spRel(RLPri_V256SpRel, 0);
+            *stackAdjustAfterCall = 32;
+            break;
+         default:
+            /* IR can denote other possible return types, but we don't
+               handle those here. */
+           vassert(0);
+   }
+
+   /* Finally, generate the call itself.  This needs the *retloc value
+      set in the switch above, which is why it's at the end. */
 
    /* nextArgReg doles out argument registers.  Since these are
       assigned in the order r0, r1, r2, r3, its numeric value at this
@@ -615,8 +708,8 @@ Bool doHelperCall ( ISelEnv* env,
       instruction, a bitmask indicating which of r0/1/2/3 carry live
       values.  But that's too much hassle. */
 
-   /* Finally, the call itself. */
-   addInstr(env, ARMInstr_Call( cc, target, nextArgReg, rloc ));
+   target = (HWord)Ptr_to_ULong(cee->addr);
+   addInstr(env, ARMInstr_Call( cc, target, nextArgReg, *retloc ));
 
    return True; /* success */
 }
@@ -1391,7 +1484,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          addInstr(env, mk_iMOVds_RR(hregARM_R0(), regL));
          addInstr(env, mk_iMOVds_RR(hregARM_R1(), regR));
          addInstr(env, ARMInstr_Call( ARMcc_AL, (HWord)Ptr_to_ULong(fn),
-                                      2, RetLocInt ));
+                                      2, mk_RetLoc_simple(RLPri_Int) ));
          addInstr(env, mk_iMOVds_RR(res, hregARM_R0()));
          return res;
       }
@@ -1680,7 +1773,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          HReg res = newVRegI(env);
          addInstr(env, mk_iMOVds_RR(hregARM_R0(), arg));
          addInstr(env, ARMInstr_Call( ARMcc_AL, (HWord)Ptr_to_ULong(fn),
-                                      1, RetLocInt ));
+                                      1, mk_RetLoc_simple(RLPri_Int) ));
          addInstr(env, mk_iMOVds_RR(res, hregARM_R0()));
          return res;
       }
@@ -1741,10 +1834,16 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          goto irreducible;
 
       /* Marshal args, do the call, clear stack. */
-      Bool ok = doHelperCall( env, False,
-                              NULL, e->Iex.CCall.cee, e->Iex.CCall.args,
-                              RetLocInt );
+      UInt   addToSp = 0;
+      RetLoc rloc    = mk_RetLoc_INVALID();
+      Bool   ok      = doHelperCall( &addToSp, &rloc, env, NULL/*guard*/,
+                                     e->Iex.CCall.cee, e->Iex.CCall.retty,
+                                     e->Iex.CCall.args );
+      /* */
       if (ok) {
+         vassert(is_sane_RetLoc(rloc));
+         vassert(rloc.pri == RLPri_Int);
+         vassert(addToSp == 0);
          addInstr(env, mk_iMOVds_RR(dst, hregARM_R0()));
          return dst;
       }
@@ -5874,69 +5973,96 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
    /* call complex ("dirty") helper function */
    case Ist_Dirty: {
       IRDirty* d = stmt->Ist.Dirty.details;
-      Bool     passBBP = False;
-
-      if (d->nFxState == 0)
-         vassert(!d->needsBBP);
-
-      passBBP = toBool(d->nFxState > 0 && d->needsBBP);
 
       /* Figure out the return type, if any. */
       IRType retty = Ity_INVALID;
       if (d->tmp != IRTemp_INVALID)
          retty = typeOfIRTemp(env->type_env, d->tmp);
 
-      /* Marshal args, do the call, clear stack, set the return value
-         to 0x555..555 if this is a conditional call that returns a
-         value and the call is skipped.  We need to set the ret-loc
-         correctly in order to implement the IRDirty semantics that
-         the return value is 0x555..555 if the call doesn't happen. */
-      RetLoc rloc = RetLocINVALID;
+      Bool retty_ok = False;
       switch (retty) {
          case Ity_INVALID: /* function doesn't return anything */
-            rloc = RetLocNone; break;
-         case Ity_I64:
-            rloc = RetLoc2Int; break;
-         case Ity_I32: case Ity_I16: case Ity_I8:
-            rloc = RetLocInt; break;
+         case Ity_I64: case Ity_I32: case Ity_I16: case Ity_I8:
+         //case Ity_V128: //ATC
+            retty_ok = True; break;
          default:
             break;
       }
-      if (rloc == RetLocINVALID)
+      if (!retty_ok)
          break; /* will go to stmt_fail: */
 
-      Bool ok = doHelperCall( env, passBBP, d->guard, d->cee, d->args, rloc );
-      if (!ok)
-         break; /* will go to stmt_fail: */
+      /* Marshal args, do the call, and set the return value to 0x555..555
+         if this is a conditional call that returns a value and the
+         call is skipped. */
+      UInt   addToSp = 0;
+      RetLoc rloc    = mk_RetLoc_INVALID();
+      doHelperCall( &addToSp, &rloc, env, d->guard, d->cee, retty, d->args );
+      vassert(is_sane_RetLoc(rloc));
 
       /* Now figure out what to do with the returned value, if any. */
-      if (d->tmp == IRTemp_INVALID)
-         /* No return value.  Nothing to do. */
-         return;
-
-      if (retty == Ity_I64) {
-         if (env->hwcaps & VEX_HWCAPS_ARM_NEON) {
-            HReg tmp = lookupIRTemp(env, d->tmp);
-            addInstr(env, ARMInstr_VXferD(True, tmp, hregARM_R1(),
-                                                     hregARM_R0()));
-         } else {
-            HReg dstHi, dstLo;
-            /* The returned value is in r1:r0.  Park it in the
-               register-pair associated with tmp. */
-            lookupIRTemp64( &dstHi, &dstLo, env, d->tmp);
-            addInstr(env, mk_iMOVds_RR(dstHi, hregARM_R1()) );
-            addInstr(env, mk_iMOVds_RR(dstLo, hregARM_R0()) );
+      switch (retty) {
+         case Ity_INVALID: {
+            /* No return value.  Nothing to do. */
+            vassert(d->tmp == IRTemp_INVALID);
+            vassert(rloc.pri == RLPri_None);
+            vassert(addToSp == 0);
+            return;
          }
-         return;
+         case Ity_I64: {
+            vassert(rloc.pri == RLPri_2Int);
+            vassert(addToSp == 0);
+            if (env->hwcaps & VEX_HWCAPS_ARM_NEON) {
+               HReg tmp = lookupIRTemp(env, d->tmp);
+               addInstr(env, ARMInstr_VXferD(True, tmp, hregARM_R1(),
+                                                        hregARM_R0()));
+            } else {
+               HReg dstHi, dstLo;
+               /* The returned value is in r1:r0.  Park it in the
+                  register-pair associated with tmp. */
+               lookupIRTemp64( &dstHi, &dstLo, env, d->tmp);
+               addInstr(env, mk_iMOVds_RR(dstHi, hregARM_R1()) );
+               addInstr(env, mk_iMOVds_RR(dstLo, hregARM_R0()) );
+            }
+            return;
+         }
+         case Ity_I32: case Ity_I16: case Ity_I8: {
+            vassert(rloc.pri == RLPri_Int);
+            vassert(addToSp == 0);
+            /* The returned value is in r0.  Park it in the register
+               associated with tmp. */
+            HReg dst = lookupIRTemp(env, d->tmp);
+            addInstr(env, mk_iMOVds_RR(dst, hregARM_R0()) );
+            return;
+         }
+         case Ity_V128: {
+            vassert(0); // ATC.  The code that this produces really
+            // needs to be looked at, to verify correctness.
+            // I don't think this can ever happen though, since the
+            // ARM front end never produces 128-bit loads/stores.
+            // Hence the following is mostly theoretical.
+            /* The returned value is on the stack, and *retloc tells
+               us where.  Fish it off the stack and then move the
+               stack pointer upwards to clear it, as directed by
+               doHelperCall. */
+            vassert(rloc.pri == RLPri_V128SpRel);
+            vassert(rloc.spOff < 256); // else ARMRI84_I84(_,0) can't encode it
+            vassert(addToSp >= 16);
+            vassert(addToSp < 256); // ditto reason as for rloc.spOff
+            HReg dst = lookupIRTemp(env, d->tmp);
+            HReg tmp = newVRegI(env);
+            HReg r13 = hregARM_R13(); // sp
+            addInstr(env, ARMInstr_Alu(ARMalu_ADD,
+                                       tmp, r13, ARMRI84_I84(rloc.spOff,0)));
+            ARMAModeN* am = mkARMAModeN_R(tmp);
+            addInstr(env, ARMInstr_NLdStQ(True/*load*/, dst, am));
+            addInstr(env, ARMInstr_Alu(ARMalu_ADD,
+                                       r13, r13, ARMRI84_I84(addToSp,0)));
+            return;
+         }
+         default:
+            /*NOTREACHED*/
+            vassert(0);
       }
-      if (retty == Ity_I32 || retty == Ity_I16 || retty == Ity_I8) {
-         /* The returned value is in r0.  Park it in the register
-            associated with tmp. */
-         HReg dst = lookupIRTemp(env, d->tmp);
-         addInstr(env, mk_iMOVds_RR(dst, hregARM_R0()) );
-         return;
-      }
-
       break;
    }
 

@@ -850,7 +850,7 @@ PPCInstr* PPCInstr_Call ( PPCCondCode cond,
    /* Only r3 .. r10 inclusive may be used as arg regs. Hence: */
    mask = (1<<3)|(1<<4)|(1<<5)|(1<<6)|(1<<7)|(1<<8)|(1<<9)|(1<<10);
    vassert(0 == (argiregs & ~mask));
-   vassert(rloc != RetLocINVALID);
+   vassert(is_sane_RetLoc(rloc));
    return i;
 }
 PPCInstr* PPCInstr_XDirect ( Addr64 dstGA, PPCAMode* amCIA,
@@ -3913,7 +3913,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
 
    case Pin_Call: {
       if (i->Pin.Call.cond.test != Pct_ALWAYS
-          && i->Pin.Call.rloc != RetLocNone) {
+          && i->Pin.Call.rloc.pri != RLPri_None) {
          /* The call might not happen (it isn't unconditional) and it
             returns a result.  In this case we will need to generate a
             control flow diamond to put 0x555..555 in the return

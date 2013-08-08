@@ -432,11 +432,11 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          emit        = (Int(*)(Bool*,UChar*,Int,HInstr*,Bool,
                                void*,void*,void*,void*))
                        emit_MIPSInstr;
-#if defined(VKI_LITTLE_ENDIAN)
+#        if defined(VKI_LITTLE_ENDIAN)
          host_is_bigendian = False;
-#elif defined(VKI_BIG_ENDIAN)
+#        elif defined(VKI_BIG_ENDIAN)
          host_is_bigendian = True;
-#endif
+#        endif
          host_word_type    = Ity_I32;
          vassert(are_valid_hwcaps(VexArchMIPS32, vta->archinfo_host.hwcaps));
          break;
@@ -456,11 +456,11 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          emit        = (Int(*)(Bool*,UChar*,Int,HInstr*,Bool,
                                void*,void*,void*,void*))
                        emit_MIPSInstr;
-#if defined(VKI_LITTLE_ENDIAN)
+#        if defined(VKI_LITTLE_ENDIAN)
          host_is_bigendian = False;
-#elif defined(VKI_BIG_ENDIAN)
+#        elif defined(VKI_BIG_ENDIAN)
          host_is_bigendian = True;
-#endif
+#        endif
          host_word_type    = Ity_I64;
          vassert(are_valid_hwcaps(VexArchMIPS64, vta->archinfo_host.hwcaps));
          break;

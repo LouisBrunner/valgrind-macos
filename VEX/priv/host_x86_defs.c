@@ -647,7 +647,7 @@ X86Instr* X86Instr_Call ( X86CondCode cond, Addr32 target, Int regparms,
    i->Xin.Call.regparms = regparms;
    i->Xin.Call.rloc     = rloc;
    vassert(regparms >= 0 && regparms <= 3);
-   vassert(rloc != RetLocINVALID);
+   vassert(is_sane_RetLoc(rloc));
    return i;
 }
 X86Instr* X86Instr_XDirect ( Addr32 dstGA, X86AMode* amEIP,
@@ -2383,7 +2383,8 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
       }
 
    case Xin_Call:
-      if (i->Xin.Call.cond != Xcc_ALWAYS && i->Xin.Call.rloc != RetLocNone) {
+      if (i->Xin.Call.cond != Xcc_ALWAYS
+          && i->Xin.Call.rloc.pri != RLPri_None) {
          /* The call might not happen (it isn't unconditional) and it
             returns a result.  In this case we will need to generate a
             control flow diamond to put 0x555..555 in the return

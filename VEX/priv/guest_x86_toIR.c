@@ -3953,10 +3953,9 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
                                 0/*regparms*/, 
                                 "x86g_dirtyhelper_FLDENV", 
                                 &x86g_dirtyhelper_FLDENV,
-                                mkIRExprVec_1( mkexpr(addr) )
+                                mkIRExprVec_2( IRExprP__BBPTR, mkexpr(addr) )
                              );
-               d->needsBBP = True;
-               d->tmp      = ew;
+               d->tmp   = ew;
                /* declare we're reading memory */
                d->mFx   = Ifx_Read;
                d->mAddr = mkexpr(addr);
@@ -4050,9 +4049,8 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
                                0/*regparms*/, 
                                "x86g_dirtyhelper_FSTENV", 
                                &x86g_dirtyhelper_FSTENV,
-                               mkIRExprVec_1( mkexpr(addr) )
+                               mkIRExprVec_2( IRExprP__BBPTR, mkexpr(addr) )
                             );
-               d->needsBBP = True;
                /* declare we're writing memory */
                d->mFx   = Ifx_Write;
                d->mAddr = mkexpr(addr);
@@ -4736,9 +4734,8 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
                                 0/*regparms*/, 
                                 "x86g_dirtyhelper_FINIT", 
                                 &x86g_dirtyhelper_FINIT,
-                                mkIRExprVec_0()
+                                mkIRExprVec_1(IRExprP__BBPTR)
                              );
-               d->needsBBP = True;
 
                /* declare we're writing guest state */
                d->nFxState = 5;
@@ -4936,10 +4933,9 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
                                 0/*regparms*/, 
                                 "x86g_dirtyhelper_FRSTOR", 
                                 &x86g_dirtyhelper_FRSTOR,
-                                mkIRExprVec_1( mkexpr(addr) )
+                                mkIRExprVec_2( IRExprP__BBPTR, mkexpr(addr) )
                              );
-               d->needsBBP = True;
-               d->tmp      = ew;
+               d->tmp   = ew;
                /* declare we're reading memory */
                d->mFx   = Ifx_Read;
                d->mAddr = mkexpr(addr);
@@ -4996,9 +4992,8 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
                                0/*regparms*/, 
                                "x86g_dirtyhelper_FSAVE", 
                                &x86g_dirtyhelper_FSAVE,
-                               mkIRExprVec_1( mkexpr(addr) )
+                               mkIRExprVec_2( IRExprP__BBPTR, mkexpr(addr) )
                             );
-               d->needsBBP = True;
                /* declare we're writing memory */
                d->mFx   = Ifx_Write;
                d->mAddr = mkexpr(addr);
@@ -8192,9 +8187,8 @@ DisResult disInstr_X86_WRK (
              0/*regparms*/, 
              "x86g_dirtyhelper_FXSAVE", 
              &x86g_dirtyhelper_FXSAVE,
-             mkIRExprVec_1( mkexpr(addr) )
+             mkIRExprVec_2( IRExprP__BBPTR, mkexpr(addr) )
           );
-      d->needsBBP = True;
 
       /* declare we're writing memory */
       d->mFx   = Ifx_Write;
@@ -8267,9 +8261,8 @@ DisResult disInstr_X86_WRK (
              0/*regparms*/, 
              "x86g_dirtyhelper_FXRSTOR", 
              &x86g_dirtyhelper_FXRSTOR,
-             mkIRExprVec_1( mkexpr(addr) )
+             mkIRExprVec_2( IRExprP__BBPTR, mkexpr(addr) )
           );
-      d->needsBBP = True;
 
       /* declare we're reading memory */
       d->mFx   = Ifx_Read;
@@ -14689,9 +14682,8 @@ DisResult disInstr_X86_WRK (
 
          vassert(fName); vassert(fAddr);
          d = unsafeIRDirty_0_N ( 0/*regparms*/, 
-                                 fName, fAddr, mkIRExprVec_0() );
+                                 fName, fAddr, mkIRExprVec_1(IRExprP__BBPTR) );
          /* declare guest state effects */
-         d->needsBBP = True;
          d->nFxState = 4;
          vex_bzero(&d->fxState, sizeof(d->fxState));
          d->fxState[0].fx     = Ifx_Modify;

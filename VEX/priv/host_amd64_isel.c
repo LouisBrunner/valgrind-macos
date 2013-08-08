@@ -366,6 +366,15 @@ static AMD64Instr* iselIntExpr_single_instruction ( ISelEnv* env,
                                                     HReg     dst,
                                                     IRExpr*  e )
 {
+   /* Per comments in doHelperCall below, appearance of
+      IRExprP__VECRET implies ill-formed IR. */
+   vassert(e != IRExprP__VECRET);
+
+   /* In this case we give out a copy of the BaseBlock pointer. */
+   if (UNLIKELY(e == IRExprP__BBPTR)) {
+      return mk_iMOVsd_RR( hregAMD64_RBP(), dst );
+   }
+
    vassert(typeOfIRExpr(env->type_env, e) == Ity_I64);
 
    if (e->tag == Iex_Const) {
@@ -409,32 +418,53 @@ static AMD64Instr* iselIntExpr_single_instruction ( ISelEnv* env,
 }
 
 
-/* Do a complete function call.  guard is a Ity_Bit expression
+/* Do a complete function call.  |guard| is a Ity_Bit expression
    indicating whether or not the call happens.  If guard==NULL, the
-   call is unconditional. */
+   call is unconditional.  |retloc| is set to indicate where the
+   return value is after the call.  The caller (of this fn) must
+   generate code to add |stackAdjustAfterCall| to the stack pointer
+   after the call is done. */
 
 static
-void doHelperCall ( ISelEnv* env, 
-                    Bool passBBP, 
-                    IRExpr* guard, IRCallee* cee, IRExpr** args,
-                    RetLoc rloc )
+void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
+                    /*OUT*/RetLoc* retloc,
+                    ISelEnv* env,
+                    IRExpr* guard,
+                    IRCallee* cee, IRType retTy, IRExpr** args )
 {
    AMD64CondCode cc;
    HReg          argregs[6];
    HReg          tmpregs[6];
    AMD64Instr*   fastinstrs[6];
-   Int           n_args, i, argreg;
+   UInt          n_args, i;
+
+   /* Set default returns.  We'll update them later if needed. */
+   *stackAdjustAfterCall = 0;
+   *retloc               = mk_RetLoc_INVALID();
+
+   /* These are used for cross-checking that IR-level constraints on
+      the use of IRExprP__VECRET and IRExprP__BBPTR are observed. */
+   UInt nVECRETs = 0;
+   UInt nBBPTRs  = 0;
 
    /* Marshal args for a call and do the call.
-
-      If passBBP is True, %rbp (the baseblock pointer) is to be passed
-      as the first arg.
 
       This function only deals with a tiny set of possibilities, which
       cover all helpers in practice.  The restrictions are that only
       arguments in registers are supported, hence only 6x64 integer
       bits in total can be passed.  In fact the only supported arg
       type is I64.
+
+      The return type can be I{64,32,16,8} or V{128,256}.  In the
+      latter two cases, it is expected that |args| will contain the
+      special value IRExprP__VECRET, in which case this routine
+      generates code to allocate space on the stack for the vector
+      return value.  Since we are not passing any scalars on the
+      stack, it is enough to preallocate the return space before
+      marshalling any arguments, in this case.
+
+      |args| may also contain IRExprP__BBPTR, in which case the
+      value in %rbp is passed as the corresponding argument.
 
       Generating code which is both efficient and correct when
       parameters are to be passed in registers is difficult, for the
@@ -461,7 +491,10 @@ void doHelperCall ( ISelEnv* env,
       fast scheme, else use the slow scheme.  Note also that only
       unconditional calls may use the fast scheme, since having to
       compute a condition expression could itself trash real
-      registers.
+      registers.  Note that for simplicity, in the case where
+      IRExprP__VECRET is present, we use the slow scheme.  This is
+      motivated by the desire to avoid any possible complexity
+      w.r.t. nested calls.
 
       Note this requires being able to examine an expression and
       determine whether or not evaluation of it might use a fixed
@@ -474,12 +507,11 @@ void doHelperCall ( ISelEnv* env,
    /* Note that the cee->regparms field is meaningless on AMD64 host
       (since there is only one calling convention) and so we always
       ignore it. */
-
    n_args = 0;
    for (i = 0; args[i]; i++)
       n_args++;
 
-   if (6 < n_args + (passBBP ? 1 : 0))
+   if (n_args > 6)
       vpanic("doHelperCall(AMD64): cannot currently handle > 6 args");
 
    argregs[0] = hregAMD64_RDI();
@@ -499,6 +531,12 @@ void doHelperCall ( ISelEnv* env,
       assume the fast scheme, and select slow if any contraindications
       (wow) appear. */
 
+   /* We'll need space on the stack for the return value.  Avoid
+      possible complications with nested calls by using the slow
+      scheme. */
+   if (retTy == Ity_V128 || retTy == Ity_V256)
+      goto slowscheme;
+
    if (guard) {
       if (guard->tag == Iex_Const 
           && guard->Iex.Const.con->tag == Ico_U1
@@ -517,26 +555,28 @@ void doHelperCall ( ISelEnv* env,
       in a buffer and emit that if we're successful. */
 
    /* FAST SCHEME */
-   argreg = 0;
-   if (passBBP) {
-      fastinstrs[argreg] = mk_iMOVsd_RR( hregAMD64_RBP(), argregs[argreg]);
-      argreg++;
-   }
-
+   /* In this loop, we process args that can be computed into the
+      destination (real) register with a single instruction, without
+      using any fixed regs.  That also includes IRExprP__BBPTR, but
+      not IRExprP__VECRET.  Indeed, if the IR is well-formed, we can
+      never see IRExprP__VECRET at this point, since the return-type
+      check above should ensure all those cases use the slow scheme
+      instead. */
+   vassert(n_args >= 0 && n_args <= 6);
    for (i = 0; i < n_args; i++) {
-      vassert(argreg < 6);
-      vassert(typeOfIRExpr(env->type_env, args[i]) == Ity_I64);
-      fastinstrs[argreg] 
-         = iselIntExpr_single_instruction( env, argregs[argreg], args[i] );
-      if (fastinstrs[argreg] == NULL)
+      IRExpr* arg = args[i];
+      if (LIKELY(!is_IRExprP__VECRET_or_BBPTR(arg))) {
+         vassert(typeOfIRExpr(env->type_env, args[i]) == Ity_I64);
+      }
+      fastinstrs[i] 
+         = iselIntExpr_single_instruction( env, argregs[i], args[i] );
+      if (fastinstrs[i] == NULL)
          goto slowscheme;
-      argreg++;
    }
 
    /* Looks like we're in luck.  Emit the accumulated instructions and
       move on to doing the call itself. */
-   vassert(argreg <= 6);
-   for (i = 0; i < argreg; i++)
+   for (i = 0; i < n_args; i++)
       addInstr(env, fastinstrs[i]);
 
    /* Fast scheme only applies for unconditional calls.  Hence: */
@@ -547,26 +587,47 @@ void doHelperCall ( ISelEnv* env,
 
    /* SLOW SCHEME; move via temporaries */
   slowscheme:
+   {}
 #  if 0 /* debug only */
    if (n_args > 0) {for (i = 0; args[i]; i++) {
    ppIRExpr(args[i]); vex_printf(" "); }
    vex_printf("\n");}
 #  endif
-   argreg = 0;
 
-   if (passBBP) {
-      /* This is pretty stupid; better to move directly to rdi
-         after the rest of the args are done. */
-      tmpregs[argreg] = newVRegI(env);
-      addInstr(env, mk_iMOVsd_RR( hregAMD64_RBP(), tmpregs[argreg]));
-      argreg++;
+   /* If we have a vector return type, allocate a place for it on the
+      stack and record its address. */
+   HReg r_vecRetAddr = INVALID_HREG;
+   if (retTy == Ity_V128) {
+      r_vecRetAddr = newVRegI(env);
+      sub_from_rsp(env, 16);
+      addInstr(env, mk_iMOVsd_RR( hregAMD64_RSP(), r_vecRetAddr ));
+   }
+   else if (retTy == Ity_V256) {
+      vassert(0); //ATC
+      r_vecRetAddr = newVRegI(env);
+      sub_from_rsp(env, 32);
+      addInstr(env, mk_iMOVsd_RR( hregAMD64_RSP(), r_vecRetAddr ));
    }
 
+   vassert(n_args >= 0 && n_args <= 6);
    for (i = 0; i < n_args; i++) {
-      vassert(argreg < 6);
-      vassert(typeOfIRExpr(env->type_env, args[i]) == Ity_I64);
-      tmpregs[argreg] = iselIntExpr_R(env, args[i]);
-      argreg++;
+      IRExpr* arg = args[i];
+      if (UNLIKELY(arg == IRExprP__BBPTR)) {
+         tmpregs[i] = newVRegI(env);
+         addInstr(env, mk_iMOVsd_RR( hregAMD64_RBP(), tmpregs[i]));
+         nBBPTRs++;
+      }
+      else if (UNLIKELY(arg == IRExprP__VECRET)) {
+         /* We stashed the address of the return slot earlier, so just
+            retrieve it now. */
+         vassert(!hregIsInvalid(r_vecRetAddr));
+         tmpregs[i] = r_vecRetAddr;
+         nVECRETs++;
+      }
+      else {
+         vassert(typeOfIRExpr(env->type_env, args[i]) == Ity_I64);
+         tmpregs[i] = iselIntExpr_R(env, args[i]);
+      }
    }
 
    /* Now we can compute the condition.  We can't do it earlier
@@ -585,21 +646,54 @@ void doHelperCall ( ISelEnv* env,
    }
 
    /* Move the args to their final destinations. */
-   for (i = 0; i < argreg; i++) {
+   for (i = 0; i < n_args; i++) {
       /* None of these insns, including any spill code that might
          be generated, may alter the condition codes. */
       addInstr( env, mk_iMOVsd_RR( tmpregs[i], argregs[i] ) );
    }
 
 
-   /* Finally, the call itself. */
+   /* Do final checks, set the return values, and generate the call
+      instruction proper. */
   handle_call:
-   addInstr(env, AMD64Instr_Call( 
-                    cc, 
-                    Ptr_to_ULong(cee->addr), 
-                    n_args + (passBBP ? 1 : 0), rloc
-                 )
-   );
+
+   if (retTy == Ity_V128 || retTy == Ity_V256) {
+      vassert(nVECRETs == 1);
+   } else {
+      vassert(nVECRETs == 0);
+   }
+
+   vassert(nBBPTRs == 0 || nBBPTRs == 1);
+
+   vassert(*stackAdjustAfterCall == 0);
+   vassert(is_RetLoc_INVALID(*retloc));
+   switch (retTy) {
+         case Ity_INVALID:
+            /* Function doesn't return a value. */
+            *retloc = mk_RetLoc_simple(RLPri_None);
+            break;
+         case Ity_I64: case Ity_I32: case Ity_I16: case Ity_I8:
+            *retloc = mk_RetLoc_simple(RLPri_Int);
+            break;
+         case Ity_V128:
+            *retloc = mk_RetLoc_spRel(RLPri_V128SpRel, 0);
+            *stackAdjustAfterCall = 16;
+            break;
+         case Ity_V256:
+            vassert(0); // ATC
+            *retloc = mk_RetLoc_spRel(RLPri_V256SpRel, 0);
+            *stackAdjustAfterCall = 32;
+            break;
+         default:
+            /* IR can denote other possible return types, but we don't
+               handle those here. */
+           vassert(0);
+   }
+
+   /* Finally, generate the call itself.  This needs the *retloc value
+      set in the switch above, which is why it's at the end. */
+   addInstr(env,
+            AMD64Instr_Call(cc, Ptr_to_ULong(cee->addr), n_args, *retloc));
 }
 
 
@@ -1136,7 +1230,8 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             addInstr(env, AMD64Instr_MovxLQ(False, argR, argR));
          addInstr(env, mk_iMOVsd_RR(argL, hregAMD64_RDI()) );
          addInstr(env, mk_iMOVsd_RR(argR, hregAMD64_RSI()) );
-         addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn, 2, RetLocInt ));
+         addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn, 2,
+                                        mk_RetLoc_simple(RLPri_Int) ));
          addInstr(env, mk_iMOVsd_RR(hregAMD64_RAX(), dst));
          return dst;
       }
@@ -1606,7 +1701,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             fn = (HWord)h_generic_calc_GetMSBs8x8;
             addInstr(env, mk_iMOVsd_RR(arg, hregAMD64_RDI()) );
             addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn,
-                                           1, RetLocInt ));
+                                           1, mk_RetLoc_simple(RLPri_Int) ));
             /* MovxLQ is not exactly the right thing here.  We just
                need to get the bottom 8 bits of RAX into dst, and zero
                out everything else.  Assuming that the helper returns
@@ -1637,7 +1732,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
                                              AMD64RMI_Mem(m16_rsp),
                                              hregAMD64_RSI() )); /* 2nd arg */
             addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn,
-                                           2, RetLocInt ));
+                                           2, mk_RetLoc_simple(RLPri_Int) ));
             /* MovxLQ is not exactly the right thing here.  We just
                need to get the bottom 16 bits of RAX into dst, and zero
                out everything else.  Assuming that the helper returns
@@ -1671,7 +1766,8 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          HReg dst = newVRegI(env);
          HReg arg = iselIntExpr_R(env, e->Iex.Unop.arg);
          addInstr(env, mk_iMOVsd_RR(arg, hregAMD64_RDI()) );
-         addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn, 1, RetLocInt ));
+         addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn, 1,
+                                        mk_RetLoc_simple(RLPri_Int) ));
          addInstr(env, mk_iMOVsd_RR(hregAMD64_RAX(), dst));
          return dst;
       }
@@ -1726,14 +1822,18 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       vassert(ty == e->Iex.CCall.retty);
 
       /* be very restrictive for now.  Only 64-bit ints allowed for
-         args, and 64 or 32 bits for return type.  Don't forget to
-         change the RetLoc if more types are allowed in future. */
+         args, and 64 or 32 bits for return type. */
       if (e->Iex.CCall.retty != Ity_I64 && e->Iex.CCall.retty != Ity_I32)
          goto irreducible;
 
       /* Marshal args, do the call. */
-      doHelperCall( env, False, NULL, e->Iex.CCall.cee, e->Iex.CCall.args,
-                    RetLocInt );
+      UInt   addToSp = 0;
+      RetLoc rloc    = mk_RetLoc_INVALID();
+      doHelperCall( &addToSp, &rloc, env, NULL/*guard*/,
+                    e->Iex.CCall.cee, e->Iex.CCall.retty, e->Iex.CCall.args );
+      vassert(is_sane_RetLoc(rloc));
+      vassert(rloc.pri == RLPri_Int);
+      vassert(addToSp == 0);
 
       /* Move to dst, and zero out the top 32 bits if the result type is
          Ity_I32.  Probably overkill, but still .. */
@@ -2278,8 +2378,15 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       vassert(cal->Iex.CCall.retty == Ity_I64); /* else ill-typed IR */
       vassert(con->Iex.Const.con->tag == Ico_U64);
       /* Marshal args, do the call. */
-      doHelperCall( env, False, NULL, cal->Iex.CCall.cee, cal->Iex.CCall.args,
-                    RetLocInt );
+      UInt   addToSp = 0;
+      RetLoc rloc    = mk_RetLoc_INVALID();
+      doHelperCall( &addToSp, &rloc, env, NULL/*guard*/,
+                    cal->Iex.CCall.cee,
+                    cal->Iex.CCall.retty, cal->Iex.CCall.args );
+      vassert(is_sane_RetLoc(rloc));
+      vassert(rloc.pri == RLPri_Int);
+      vassert(addToSp == 0);
+      /* */
       addInstr(env, AMD64Instr_Imm64(con->Iex.Const.con->Ico.U64, tmp));
       addInstr(env, AMD64Instr_Alu64R(Aalu_CMP,
                                       AMD64RMI_Reg(hregAMD64_RAX()), tmp));
@@ -2590,7 +2697,7 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
       /* call the helper */
       addInstr(env, AMD64Instr_Call( Acc_ALWAYS,
                                      (ULong)(HWord)h_generic_calc_MAddF32,
-                                     4, RetLocNone ));
+                                     4, mk_RetLoc_simple(RLPri_None) ));
       /* fetch the result from memory, using %r_argp, which the
          register allocator will keep alive across the call. */
       addInstr(env, AMD64Instr_SseLdSt(True/*isLoad*/, 4, dst,
@@ -2769,7 +2876,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       /* call the helper */
       addInstr(env, AMD64Instr_Call( Acc_ALWAYS,
                                      (ULong)(HWord)h_generic_calc_MAddF64,
-                                     4, RetLocNone ));
+                                     4, mk_RetLoc_simple(RLPri_None) ));
       /* fetch the result from memory, using %r_argp, which the
          register allocator will keep alive across the call. */
       addInstr(env, AMD64Instr_SseLdSt(True/*isLoad*/, 8, dst,
@@ -3491,7 +3598,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
                                           AMD64AMode_IR(0, hregAMD64_RDX())));
          /* call the helper */
          addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn,
-                                        3, RetLocNone ));
+                                        3, mk_RetLoc_simple(RLPri_None) ));
          /* fetch the result from memory, using %r_argp, which the
             register allocator will keep alive across the call. */
          addInstr(env, AMD64Instr_SseLdSt(True/*isLoad*/, 16, dst,
@@ -3540,7 +3647,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 
          /* call the helper */
          addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn,
-                                        3, RetLocNone ));
+                                        3, mk_RetLoc_simple(RLPri_None) ));
          /* fetch the result from memory, using %r_argp, which the
             register allocator will keep alive across the call. */
          addInstr(env, AMD64Instr_SseLdSt(True/*isLoad*/, 16, dst,
@@ -3944,7 +4051,8 @@ static void iselDVecExpr_wrk ( /*OUT*/HReg* rHi, /*OUT*/HReg* rLo,
          addInstr(env, AMD64Instr_SseLdSt(False/*!isLoad*/, 16, argRlo,
                                           AMD64AMode_IR(48, hregAMD64_RDX())));
          /* call the helper */
-         addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn, 3, RetLocNone ));
+         addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn, 3,
+                                        mk_RetLoc_simple(RLPri_None) ));
          /* Prepare 3 arg regs:
             leaq 48(%r_argp), %rdi
             leaq 64(%r_argp), %rsi
@@ -3957,7 +4065,8 @@ static void iselDVecExpr_wrk ( /*OUT*/HReg* rHi, /*OUT*/HReg* rLo,
          addInstr(env, AMD64Instr_Lea64(AMD64AMode_IR(80, argp),
                                         hregAMD64_RDX()));
          /* call the helper */
-         addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn, 3, RetLocNone ));
+         addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn, 3,
+                                        mk_RetLoc_simple(RLPri_None) ));
          /* fetch the result from memory, using %r_argp, which the
             register allocator will keep alive across the call. */
          addInstr(env, AMD64Instr_SseLdSt(True/*isLoad*/, 16, dstHi,
@@ -4018,7 +4127,8 @@ static void iselDVecExpr_wrk ( /*OUT*/HReg* rHi, /*OUT*/HReg* rLo,
          addInstr(env, AMD64Instr_SseLdSt(False/*!isLoad*/, 16, argRhi,
                                           AMD64AMode_IR(16, hregAMD64_RDX())));
          /* call the helper */
-         addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn, 3, RetLocNone ));
+         addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn, 3,
+                                        mk_RetLoc_simple(RLPri_None) ));
          /* fetch the result from memory, using %r_argp, which the
             register allocator will keep alive across the call. */
          addInstr(env, AMD64Instr_SseLdSt(True/*isLoad*/, 16, dstLo,
@@ -4322,51 +4432,67 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
    /* --------- Call to DIRTY helper --------- */
    case Ist_Dirty: {
       IRDirty* d = stmt->Ist.Dirty.details;
-      Bool     passBBP = False;
-
-      if (d->nFxState == 0)
-         vassert(!d->needsBBP);
-
-      passBBP = toBool(d->nFxState > 0 && d->needsBBP);
 
       /* Figure out the return type, if any. */
       IRType retty = Ity_INVALID;
       if (d->tmp != IRTemp_INVALID)
          retty = typeOfIRTemp(env->type_env, d->tmp);
 
-      /* Marshal args, do the call, clear stack, set the return value
-         to 0x555..555 if this is a conditional call that returns a
-         value and the call is skipped.  We need to set the ret-loc
-         correctly in order to implement the IRDirty semantics that
-         the return value is 0x555..555 if the call doesn't happen. */
-      RetLoc rloc = RetLocINVALID;
+      /* Throw out any return types we don't know about. */
+      Bool retty_ok = False;
       switch (retty) {
          case Ity_INVALID: /* function doesn't return anything */
-            rloc = RetLocNone; break;
-         case Ity_I64:
-         case Ity_I32: case Ity_I16: case Ity_I8:
-            rloc = RetLocInt; break;
+         case Ity_I64: case Ity_I32: case Ity_I16: case Ity_I8:
+         case Ity_V128:
+            retty_ok = True; break;
          default:
             break;
       }
-      if (rloc == RetLocINVALID)
+      if (!retty_ok)
          break; /* will go to stmt_fail: */
 
-      /* Marshal args, do the call, clear stack. */
-      doHelperCall( env, passBBP, d->guard, d->cee, d->args, rloc );
+      /* Marshal args, do the call, and set the return value to
+         0x555..555 if this is a conditional call that returns a value
+         and the call is skipped. */
+      UInt   addToSp = 0;
+      RetLoc rloc    = mk_RetLoc_INVALID();
+      doHelperCall( &addToSp, &rloc, env, d->guard, d->cee, retty, d->args );
+      vassert(is_sane_RetLoc(rloc));
 
       /* Now figure out what to do with the returned value, if any. */
-      if (d->tmp == IRTemp_INVALID)
-         /* No return value.  Nothing to do. */
-         return;
-
-      if (retty == Ity_I64 || retty == Ity_I32 
-          || retty == Ity_I16 || retty == Ity_I8) {
-         /* The returned value is in %rax.  Park it in the register
-            associated with tmp. */
-         HReg dst = lookupIRTemp(env, d->tmp);
-         addInstr(env, mk_iMOVsd_RR(hregAMD64_RAX(),dst) );
-         return;
+      switch (retty) {
+         case Ity_INVALID: {
+            /* No return value.  Nothing to do. */
+            vassert(d->tmp == IRTemp_INVALID);
+            vassert(rloc.pri == RLPri_None);
+            vassert(addToSp == 0);
+            return;
+         }
+         case Ity_I64: case Ity_I32: case Ity_I16: case Ity_I8: {
+            /* The returned value is in %rax.  Park it in the register
+               associated with tmp. */
+            vassert(rloc.pri == RLPri_Int);
+            vassert(addToSp == 0);
+            HReg dst = lookupIRTemp(env, d->tmp);
+            addInstr(env, mk_iMOVsd_RR(hregAMD64_RAX(),dst) );
+            return;
+         }
+         case Ity_V128: {
+            /* The returned value is on the stack, and *retloc tells
+               us where.  Fish it off the stack and then move the
+               stack pointer upwards to clear it, as directed by
+               doHelperCall. */
+            vassert(rloc.pri == RLPri_V128SpRel);
+            vassert(addToSp >= 16);
+            HReg        dst = lookupIRTemp(env, d->tmp);
+            AMD64AMode* am  = AMD64AMode_IR(rloc.spOff, hregAMD64_RSP());
+            addInstr(env, AMD64Instr_SseLdSt( True/*load*/, 16, dst, am ));
+            add_to_rsp(env, addToSp);
+            return;
+         }
+         default:
+            /*NOTREACHED*/
+            vassert(0);
       }
       break;
    }

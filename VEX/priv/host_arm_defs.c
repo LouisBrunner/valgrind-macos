@@ -1236,7 +1236,7 @@ ARMInstr* ARMInstr_Call ( ARMCondCode cond, HWord target, Int nArgRegs,
    i->ARMin.Call.target   = target;
    i->ARMin.Call.nArgRegs = nArgRegs;
    i->ARMin.Call.rloc     = rloc;
-   vassert(rloc != RetLocINVALID);
+   vassert(is_sane_RetLoc(rloc));
    return i;
 }
 ARMInstr* ARMInstr_Mul ( ARMMulOp op ) {
@@ -3398,7 +3398,7 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
             the call doesn't happen, just do the simple thing and emit
             straight-line code.  We hope this is the common case. */
          if (i->ARMin.Call.cond == ARMcc_AL/*call always happens*/
-             || i->ARMin.Call.rloc == RetLocNone/*no fixup action*/) {
+             || i->ARMin.Call.rloc.pri == RLPri_None/*no fixup action*/) {
             // r"scratchNo" = &target
             p = imm32_to_iregNo( (UInt*)p,
                                  scratchNo, (UInt)i->ARMin.Call.target );
@@ -3451,17 +3451,17 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
                = XX______(1 ^ i->ARMin.Call.cond, X1010) | (delta & 0xFFFFFF);
 
             /* Do the 'else' actions */
-            switch (i->ARMin.Call.rloc) {
-               case RetLocInt:
+            switch (i->ARMin.Call.rloc.pri) {
+               case RLPri_Int:
                   p = imm32_to_iregNo_EXACTLY2(p, /*r*/0, 0x55555555);
                   break;
-               case RetLoc2Int:
+               case RLPri_2Int:
                   vassert(0); //ATC
                   p = imm32_to_iregNo_EXACTLY2(p, /*r*/0, 0x55555555);
                   /* mov r1, r0 */
                   *p++ = 0xE1A01000;
                   break;
-               case RetLocNone: case RetLocINVALID: default:
+               case RLPri_None: case RLPri_INVALID: default:
                   vassert(0);
             }
 

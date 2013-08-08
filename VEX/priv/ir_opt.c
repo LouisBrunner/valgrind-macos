@@ -486,8 +486,11 @@ static void flatten_Stmt ( IRSB* bb, IRStmt* st )
             vassert(d2->mAddr == NULL);
          }
          d2->guard = flatten_Expr(bb, d2->guard);
-         for (i = 0; d2->args[i]; i++)
-            d2->args[i] = flatten_Expr(bb, d2->args[i]);
+         for (i = 0; d2->args[i]; i++) {
+            IRExpr* arg = d2->args[i];
+            if (LIKELY(!is_IRExprP__VECRET_or_BBPTR(arg)))
+               d2->args[i] = flatten_Expr(bb, arg);
+         }
          addStmtToIRSB(bb, IRStmt_Dirty(d2));
          break;
       case Ist_NoOp:
@@ -2560,8 +2563,11 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
          vassert(isIRAtom(d2->guard));
          d2->guard = fold_Expr(env, subst_Expr(env, d2->guard));
          for (i = 0; d2->args[i]; i++) {
-            vassert(isIRAtom(d2->args[i]));
-            d2->args[i] = fold_Expr(env, subst_Expr(env, d2->args[i]));
+            IRExpr* arg = d2->args[i];
+            if (LIKELY(!is_IRExprP__VECRET_or_BBPTR(arg))) {
+               vassert(isIRAtom(arg));
+               d2->args[i] = fold_Expr(env, subst_Expr(env, arg));
+            }
          }
          return IRStmt_Dirty(d2);
       }
@@ -2897,8 +2903,11 @@ static void addUses_Stmt ( Bool* set, IRStmt* st )
          if (d->mFx != Ifx_None)
             addUses_Expr(set, d->mAddr);
          addUses_Expr(set, d->guard);
-         for (i = 0; d->args[i] != NULL; i++)
-            addUses_Expr(set, d->args[i]);
+         for (i = 0; d->args[i] != NULL; i++) {
+            IRExpr* arg = d->args[i];
+            if (LIKELY(!is_IRExprP__VECRET_or_BBPTR(arg)))
+               addUses_Expr(set, arg);
+         }
          return;
       case Ist_NoOp:
       case Ist_IMark:
@@ -4941,8 +4950,11 @@ static void aoccCount_Stmt ( UShort* uses, IRStmt* st )
          if (d->mFx != Ifx_None)
             aoccCount_Expr(uses, d->mAddr);
          aoccCount_Expr(uses, d->guard);
-         for (i = 0; d->args[i]; i++)
-            aoccCount_Expr(uses, d->args[i]);
+         for (i = 0; d->args[i]; i++) {
+            IRExpr* arg = d->args[i];
+            if (LIKELY(!is_IRExprP__VECRET_or_BBPTR(arg)))
+               aoccCount_Expr(uses, arg);
+         }
          return;
       case Ist_NoOp:
       case Ist_IMark:
@@ -5310,8 +5322,11 @@ static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
          if (d2->mFx != Ifx_None)
             d2->mAddr = atbSubst_Expr(env, d2->mAddr);
          d2->guard = atbSubst_Expr(env, d2->guard);
-         for (i = 0; d2->args[i]; i++)
-            d2->args[i] = atbSubst_Expr(env, d2->args[i]);
+         for (i = 0; d2->args[i]; i++) {
+            IRExpr* arg = d2->args[i];
+            if (LIKELY(!is_IRExprP__VECRET_or_BBPTR(arg)))
+               d2->args[i] = atbSubst_Expr(env, arg);
+         }
          return IRStmt_Dirty(d2);
       default: 
          vex_printf("\n"); ppIRStmt(st); vex_printf("\n");
@@ -5333,11 +5348,13 @@ static Bool dirty_helper_puts ( const IRDirty *d,
    Int i;
 
    /* Passing the guest state pointer opens the door to modifying the
-      guest state under the covers. It's not allowed, but let's be
+      guest state under the covers.  It's not allowed, but let's be
       extra conservative and assume the worst. */
-   if (d->needsBBP) {
-      *requiresPreciseMemExns = True;
-      return True;
+   for (i = 0; d->args[i]; i++) {
+      if (UNLIKELY(d->args[i] == IRExprP__BBPTR)) {
+         *requiresPreciseMemExns = True;
+         return True;
+      }
    }
 
    /* Check the side effects on the guest state */
@@ -5351,7 +5368,8 @@ static Bool dirty_helper_puts ( const IRDirty *d,
          Int nRepeats = d->fxState[i].nRepeats;
          Int repeatLen = d->fxState[i].repeatLen;
 
-         if (preciseMemExnsFn(offset, offset + nRepeats * repeatLen + size - 1)) {
+         if (preciseMemExnsFn(offset,
+                              offset + nRepeats * repeatLen + size - 1)) {
             *requiresPreciseMemExns = True;
             return True;
          }
@@ -5779,8 +5797,11 @@ static void considerExpensives ( /*OUT*/Bool* hasGetIorPutI,
          case Ist_Dirty:
             d = st->Ist.Dirty.details;
             vassert(isIRAtom(d->guard));
-            for (j = 0; d->args[j]; j++)
-               vassert(isIRAtom(d->args[j]));
+            for (j = 0; d->args[j]; j++) {
+               IRExpr* arg = d->args[j];
+               if (LIKELY(!is_IRExprP__VECRET_or_BBPTR(arg)))
+                  vassert(isIRAtom(arg));
+            }
             if (d->mFx != Ifx_None)
                vassert(isIRAtom(d->mAddr));
             break;

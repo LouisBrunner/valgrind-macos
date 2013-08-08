@@ -1285,7 +1285,7 @@ MIPSInstr *MIPSInstr_Call ( MIPSCondCode cond, Addr64 target, UInt argiregs,
    mask = (1 << 4) | (1 << 5) | (1 << 6) | (1 << 7) | (1 << 8) | (1 << 9)
           | (1 << 10) | (1 << 11);
    vassert(0 == (argiregs & ~mask));
-   vassert(rloc != RetLocINVALID);
+   vassert(is_sane_RetLoc(rloc));
    return i;
 }
 
@@ -1303,7 +1303,7 @@ MIPSInstr *MIPSInstr_CallAlways ( MIPSCondCode cond, Addr64 target,
    mask = (1 << 4) | (1 << 5) | (1 << 6) | (1 << 7) | (1 << 8) | (1 << 9)
           | (1 << 10) | (1 << 11);
    vassert(0 == (argiregs & ~mask));
-   vassert(rloc != RetLocINVALID);
+   vassert(is_sane_RetLoc(rloc));
    return i;
 }
 
@@ -3286,7 +3286,8 @@ Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
       }
 
       case Min_Call: {
-         if (i->Min.Call.cond != MIPScc_AL && i->Min.Call.rloc != RetLocNone) {
+         if (i->Min.Call.cond != MIPScc_AL
+             && i->Min.Call.rloc.pri != RLPri_None) {
             /* The call might not happen (it isn't unconditional) and
                it returns a result.  In this case we will need to
                generate a control flow diamond to put 0x555..555 in

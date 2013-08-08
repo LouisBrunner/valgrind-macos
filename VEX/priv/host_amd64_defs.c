@@ -702,7 +702,7 @@ AMD64Instr* AMD64Instr_Call ( AMD64CondCode cond, Addr64 target, Int regparms,
    i->Ain.Call.regparms = regparms;
    i->Ain.Call.rloc     = rloc;
    vassert(regparms >= 0 && regparms <= 6);
-   vassert(rloc != RetLocINVALID);
+   vassert(is_sane_RetLoc(rloc));
    return i;
 }
 
@@ -2671,7 +2671,8 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
       }
 
    case Ain_Call: {
-      if (i->Ain.Call.cond != Acc_ALWAYS && i->Ain.Call.rloc != RetLocNone) {
+      if (i->Ain.Call.cond != Acc_ALWAYS
+          && i->Ain.Call.rloc.pri != RLPri_None) {
          /* The call might not happen (it isn't unconditional) and it
             returns a result.  In this case we will need to generate a
             control flow diamond to put 0x555..555 in the return

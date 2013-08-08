@@ -646,8 +646,6 @@ s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *insn)
       for (i = 1; i <= 5; ++i) {
          addHRegUse(u, HRmWrite, mkHReg(i, HRcInt64, False));
       }
-      if (! hregIsInvalid(insn->variant.helper_call.dst))
-         addHRegUse(u, HRmWrite, insn->variant.helper_call.dst);
 
       /* Ditto for floating point registers. f0 - f7 are volatile */
       for (i = 0; i <= 7; ++i) {
@@ -656,7 +654,7 @@ s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *insn)
 
       /* The registers that are used for passing arguments will be read.
          Not all of them may, but in general we need to assume that. */
-      for (i = 0; i < insn->variant.helper_call.num_args; ++i) {
+      for (i = 0; i < insn->variant.helper_call.details->num_args; ++i) {
          addHRegUse(u, HRmRead, mkHReg(s390_gprno_from_arg_index(i),
                                        HRcInt64, False));
       }
@@ -969,8 +967,6 @@ s390_insn_map_regs(HRegRemap *m, s390_insn *insn)
          As for the arguments of the helper call -- they will be loaded into
          non-virtual registers. Again, we don't need to do anything for those
          here. */
-      if (! hregIsInvalid(insn->variant.helper_call.dst)) 
-         insn->variant.helper_call.dst = lookupHRegRemap(m, insn->variant.helper_call.dst);
       break;
 
    case S390_INSN_BFP_TRIOP:
@@ -5652,17 +5648,22 @@ s390_insn_compare(UChar size, HReg src1, s390_opnd_RMI src2,
 
 s390_insn *
 s390_insn_helper_call(s390_cc_t cond, Addr64 target, UInt num_args,
-                      const HChar *name, HReg dst)
+                      const HChar *name, RetLoc rloc)
 {
    s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
+   s390_helper_call *helper_call = LibVEX_Alloc(sizeof(s390_helper_call));
 
    insn->tag  = S390_INSN_HELPER_CALL;
    insn->size = 0;  /* does not matter */
-   insn->variant.helper_call.cond = cond;
-   insn->variant.helper_call.target = target;
-   insn->variant.helper_call.num_args = num_args;
-   insn->variant.helper_call.name = name;
-   insn->variant.helper_call.dst = dst;
+   insn->variant.helper_call.details = helper_call;
+
+   helper_call->cond = cond;
+   helper_call->target = target;
+   helper_call->num_args = num_args;
+   helper_call->name = name;
+   helper_call->rloc = rloc;
+
+   vassert(is_sane_RetLoc(rloc));
 
    return insn;
 }
@@ -6736,20 +6737,12 @@ s390_insn_as_string(const s390_insn *insn)
       break;
 
    case S390_INSN_HELPER_CALL: {
-      if (! hregIsInvalid(insn->variant.helper_call.dst)) {
-         s390_sprintf(buf, "%M if (%C) %R = %s{%I}(%L)", "v-call",
-                      insn->variant.helper_call.cond,
-                      insn->variant.helper_call.dst,
-                      insn->variant.helper_call.name,
-                      insn->variant.helper_call.target,
-                      insn->variant.helper_call.num_args);
-      } else {
-         s390_sprintf(buf, "%M if (%C) %s{%I}(%L)", "v-call",
-                      insn->variant.helper_call.cond,
-                      insn->variant.helper_call.name,
-                      insn->variant.helper_call.target,
-                      insn->variant.helper_call.num_args);
-      }
+      s390_helper_call *helper_call = insn->variant.helper_call.details;
+      s390_sprintf(buf, "%M if (%C) %s{%I}(%L)", "v-call",
+                   helper_call->cond,
+                   helper_call->name,
+                   helper_call->target,
+                   helper_call->num_args);
       return buf;   /* avoid printing "size = ..." which is meaningless */
    }
 
@@ -8732,12 +8725,13 @@ s390_insn_helper_call_emit(UChar *buf, const s390_insn *insn)
    ULong target;
    UChar *ptmp = buf;
    UChar *bufIN = buf;
+   s390_helper_call *helper_call = insn->variant.helper_call.details;
 
-   cond = insn->variant.helper_call.cond;
-   target = insn->variant.helper_call.target;
+   cond = helper_call->cond;
+   target = helper_call->target;
 
    if (cond != S390_CC_ALWAYS
-       && ! hregIsInvalid(insn->variant.helper_call.dst)) {
+       && helper_call->rloc.pri != RLPri_None) {
       /* The call might not happen (it isn't unconditional) and it
          returns a result.  In this case we will need to generate a
          control flow diamond to put 0x555..555 in the return
@@ -8773,12 +8767,6 @@ s390_insn_helper_call_emit(UChar *buf, const s390_insn *insn)
    buf = s390_emit_STFPC(buf, S390_REGNO_STACK_POINTER, S390_OFFSET_SAVED_FPC_C);
 
    buf = s390_emit_BASR(buf, S390_REGNO_LINK_REGISTER, 1);      // call helper
-
-   /* Move the return value to the destination register */
-   if (! hregIsInvalid(insn->variant.helper_call.dst)) {
-      buf = s390_emit_LGR(buf, hregNumber(insn->variant.helper_call.dst),
-                          S390_REGNO_RETURN_VALUE);
-   }
 
    buf = s390_emit_LFPC(buf, S390_REGNO_STACK_POINTER,          // restore FPC
                         S390_OFFSET_SAVED_FPC_C);

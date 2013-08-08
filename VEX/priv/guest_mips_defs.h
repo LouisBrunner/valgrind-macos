@@ -83,7 +83,6 @@ extern UInt mips32_dirtyhelper_mfc0 ( UInt rd, UInt sel );
 
 extern ULong mips64_dirtyhelper_dmfc0 ( UInt rd, UInt sel );
 
-extern void mips32_dirtyhelper_sync ( UInt sync );
 
 #if defined(__mips__) && ((defined(__mips_isa_rev) && __mips_isa_rev >= 2))
 extern ULong mips64_dirtyhelper_rdhwr ( ULong rt, ULong rd );

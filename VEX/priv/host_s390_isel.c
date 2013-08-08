@@ -470,19 +470,42 @@ get_const_value_as_ulong(const IRConst *con)
    of the register allocator to throw out those reg-to-reg moves.
 */
 static void
-doHelperCall(ISelEnv *env, Bool passBBP, IRExpr *guard,
-             IRCallee *callee, IRExpr **args, HReg dst)
+doHelperCall(/*OUT*/UInt *stackAdjustAfterCall,
+             /*OUT*/RetLoc *retloc,
+             ISelEnv *env, IRExpr *guard,
+             IRCallee *callee, IRType retTy, IRExpr **args)
 {
    UInt n_args, i, argreg, size;
    ULong target;
    HReg tmpregs[S390_NUM_GPRPARMS];
    s390_cc_t cc;
 
+   /* Set default returns.  We'll update them later if needed. */
+   *stackAdjustAfterCall = 0;
+   *retloc               = mk_RetLoc_INVALID();
+
+   /* The return type can be I{64,32,16,8} or V{128,256}.  In the
+      latter two cases, it is expected that |args| will contain the
+      special value IRExprP__VECRET, in which case this routine
+      generates code to allocate space on the stack for the vector
+      return value.  Since we are not passing any scalars on the
+      stack, it is enough to preallocate the return space before
+      marshalling any arguments, in this case.
+
+      |args| may also contain IRExprP__BBPTR, in which case the value
+      in the guest state pointer register is passed as the
+      corresponding argument.
+
+      These are used for cross-checking that IR-level constraints on
+      the use of IRExprP__VECRET and IRExprP__BBPTR are observed. */
+   UInt nVECRETs = 0;
+   UInt nBBPTRs  = 0;
+
    n_args = 0;
    for (i = 0; args[i]; i++)
       ++n_args;
 
-   if (n_args > (S390_NUM_GPRPARMS - (passBBP ? 1 : 0))) {
+   if (n_args > S390_NUM_GPRPARMS) {
       vpanic("doHelperCall: too many arguments");
    }
 
@@ -493,31 +516,64 @@ doHelperCall(ISelEnv *env, Bool passBBP, IRExpr *guard,
    */
    Int arg_errors = 0;
    for (i = 0; i < n_args; ++i) {
-      IRType type = typeOfIRExpr(env->type_env, args[i]);
-      if (type != Ity_I64) {
-         ++arg_errors;
-         vex_printf("calling %s: argument #%d has type ", callee->name, i);
-         ppIRType(type);
-         vex_printf("; Ity_I64 is required\n");
+      if (UNLIKELY(args[i] == IRExprP__VECRET)) {
+         nVECRETs++;
+      } else if (UNLIKELY(args[i] == IRExprP__BBPTR)) {
+         nBBPTRs++;
+      } else {
+         IRType type = typeOfIRExpr(env->type_env, args[i]);
+         if (type != Ity_I64) {
+            ++arg_errors;
+            vex_printf("calling %s: argument #%d has type ", callee->name, i);
+            ppIRType(type);
+            vex_printf("; Ity_I64 is required\n");
+         }
       }
    }
 
    if (arg_errors)
       vpanic("cannot continue due to errors in argument passing");
 
-   argreg = 0;
+   /* If this fails, the IR is ill-formed */
+   vassert(nBBPTRs == 0 || nBBPTRs == 1);
 
-   /* If we need the guest state pointer put it in a temporary arg reg */
-   if (passBBP) {
-      tmpregs[argreg] = newVRegI(env);
-      addInstr(env, s390_insn_move(sizeof(ULong), tmpregs[argreg],
-                                   s390_hreg_guest_state_pointer()));
-      argreg++;
+   /* If we have a VECRET, allocate space on the stack for the return
+      value, and record the stack pointer after that. */
+   HReg r_vecRetAddr = INVALID_HREG;
+   if (nVECRETs == 1) {
+      /* we do not handle vector types yet */
+      vassert(0);
+      HReg sp = make_gpr(S390_REGNO_STACK_POINTER);
+      vassert(retTy == Ity_V128 || retTy == Ity_V256);
+      vassert(retTy != Ity_V256); // we don't handle that yet (if ever)
+      r_vecRetAddr = newVRegI(env);
+      addInstr(env, s390_insn_alu(4, S390_ALU_SUB, sp, s390_opnd_imm(16)));
+      addInstr(env, s390_insn_move(sizeof(ULong), r_vecRetAddr, sp));
+
+   } else {
+      // If either of these fail, the IR is ill-formed
+      vassert(retTy != Ity_V128 && retTy != Ity_V256);
+      vassert(nVECRETs == 0);
    }
+
+   argreg = 0;
 
    /* Compute the function arguments into a temporary register each */
    for (i = 0; i < n_args; i++) {
-      tmpregs[argreg] = s390_isel_int_expr(env, args[i]);
+      IRExpr *arg = args[i];
+      if(UNLIKELY(arg == IRExprP__VECRET)) {
+         /* we do not handle vector types yet */
+         vassert(0);
+         addInstr(env, s390_insn_move(sizeof(ULong), tmpregs[argreg],
+                                      r_vecRetAddr));
+      } else if (UNLIKELY(arg == IRExprP__BBPTR)) {
+         /* If we need the guest state pointer put it in a temporary arg reg */
+         tmpregs[argreg] = newVRegI(env);
+         addInstr(env, s390_insn_move(sizeof(ULong), tmpregs[argreg],
+                                      s390_hreg_guest_state_pointer()));
+      } else {
+         tmpregs[argreg] = s390_isel_int_expr(env, args[i]);
+      }
       argreg++;
    }
 
@@ -545,9 +601,39 @@ doHelperCall(ISelEnv *env, Bool passBBP, IRExpr *guard,
 
    target = Ptr_to_ULong(callee->addr);
 
+   /* Do final checks, set the return values, and generate the call
+      instruction proper. */
+   vassert(*stackAdjustAfterCall == 0);
+   vassert(is_RetLoc_INVALID(*retloc));
+   switch (retTy) {
+   case Ity_INVALID:
+      /* Function doesn't return a value. */
+      *retloc = mk_RetLoc_simple(RLPri_None);
+      break;
+   case Ity_I64: case Ity_I32: case Ity_I16: case Ity_I8:
+      *retloc = mk_RetLoc_simple(RLPri_Int);
+      break;
+   case Ity_V128:
+      /* we do not handle vector types yet */
+      vassert(0);
+      *retloc = mk_RetLoc_spRel(RLPri_V128SpRel, 0);
+      *stackAdjustAfterCall = 16;
+      break;
+   case Ity_V256:
+      /* we do not handle vector types yet */
+      vassert(0);
+      *retloc = mk_RetLoc_spRel(RLPri_V256SpRel, 0);
+      *stackAdjustAfterCall = 32;
+      break;
+   default:
+      /* IR can denote other possible return types, but we don't
+         handle those here. */
+      vassert(0);
+   }
+
    /* Finally, the call itself. */
    addInstr(env, s390_insn_helper_call(cc, (Addr64)target, n_args,
-                                       callee->name, dst));
+                                       callee->name, *retloc));
 }
 
 
@@ -1727,9 +1813,17 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
       /* --------- CCALL --------- */
    case Iex_CCall: {
       HReg dst = newVRegI(env);
+      HReg ret = make_gpr(S390_REGNO_RETURN_VALUE);
+      UInt   addToSp = 0;
+      RetLoc rloc    = mk_RetLoc_INVALID();
 
-      doHelperCall(env, False, NULL, expr->Iex.CCall.cee,
-                   expr->Iex.CCall.args, dst);
+      doHelperCall(&addToSp, &rloc, env, NULL, expr->Iex.CCall.cee,
+                   expr->Iex.CCall.retty, expr->Iex.CCall.args);
+      vassert(is_sane_RetLoc(rloc));
+      vassert(rloc.pri == RLPri_Int);
+      vassert(addToSp == 0);
+      addInstr(env, s390_insn_move(sizeof(ULong), dst, ret));
+
       return dst;
    }
 
@@ -3655,8 +3749,9 @@ no_memcpy_put:
    case Ist_Dirty: {
       IRType   retty;
       IRDirty* d = stmt->Ist.Dirty.details;
-      Bool     passBBP;
       HReg dst;
+      RetLoc rloc    = mk_RetLoc_INVALID();
+      UInt   addToSp = 0;
       Int i;
 
       /* Invalidate tracked values of those guest state registers that are
@@ -3672,15 +3767,15 @@ no_memcpy_put:
          }
       }
 
-      if (d->nFxState == 0)
-         vassert(!d->needsBBP);
-
-      passBBP = toBool(d->nFxState > 0 && d->needsBBP);
-
       if (d->tmp == IRTemp_INVALID) {
          /* No return value. */
-         dst = INVALID_HREG;
-         doHelperCall(env, passBBP, d->guard, d->cee, d->args, dst);
+         retty = Ity_INVALID;
+         doHelperCall(&addToSp, &rloc, env, d->guard,  d->cee, retty,
+                      d->args);
+         vassert(is_sane_RetLoc(rloc));
+         vassert(rloc.pri == RLPri_None);
+         vassert(addToSp == 0);
+
          return;
       }
 
@@ -3688,9 +3783,45 @@ no_memcpy_put:
       if (retty == Ity_I64 || retty == Ity_I32
           || retty == Ity_I16 || retty == Ity_I8) {
          /* Move the returned value to the destination register */
+         HReg ret = make_gpr(S390_REGNO_RETURN_VALUE);
+
          dst = lookupIRTemp(env, d->tmp);
-         doHelperCall(env, passBBP, d->guard, d->cee, d->args, dst);
+         doHelperCall(&addToSp, &rloc, env, d->guard,  d->cee, retty,
+                      d->args);
+         vassert(is_sane_RetLoc(rloc));
+         vassert(rloc.pri == RLPri_Int);
+         vassert(addToSp == 0);
+         addInstr(env, s390_insn_move(sizeof(ULong), dst, ret));
+
          return;
+      }
+      if (retty == Ity_V128) {
+         /* we do not handle vector types yet */
+         vassert(0);
+         HReg sp = make_gpr(S390_REGNO_STACK_POINTER);
+         s390_amode *am;
+
+         dst = lookupIRTemp(env, d->tmp);
+         doHelperCall(&addToSp, &rloc, env, d->guard,  d->cee, retty,
+                      d->args);
+         vassert(is_sane_RetLoc(rloc));
+         vassert(rloc.pri == RLPri_V128SpRel);
+         vassert(addToSp >= 16);
+
+         /* rloc.spOff should be zero for s390 */
+         /* cannot use fits_unsigned_12bit(rloc.spOff), so doing
+            it explicitly */
+         vassert((rloc.spOff & 0xFFF) == rloc.spOff);
+         am = s390_amode_b12(rloc.spOff, sp);
+         // JRS 2013-Aug-08: is this correct?  Looks like we're loading
+         // only 64 bits from memory, when in fact we should be loading 128.
+         addInstr(env, s390_insn_load(8, dst, am));
+         addInstr(env, s390_insn_alu(4, S390_ALU_ADD, sp,
+                                     s390_opnd_imm(addToSp)));
+         return;
+      } else {/* if (retty == Ity_V256) */
+         /* we do not handle vector types yet */
+         vassert(0);
       }
       break;
    }

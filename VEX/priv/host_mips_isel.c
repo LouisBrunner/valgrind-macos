@@ -379,12 +379,18 @@ static HReg mk_LoadRR32toFPR(ISelEnv * env, HReg r_srcHi, HReg r_srcLo)
    return fr_dst;
 }
 
-/* Do a complete function call.  guard is a Ity_Bit expression
+/* Do a complete function call.  |guard| is a Ity_Bit expression
    indicating whether or not the call happens.  If guard==NULL, the
-   call is unconditional. */
+   call is unconditional.  |retloc| is set to indicate where the
+   return value is after the call.  The caller (of this fn) must
+   generate code to add |stackAdjustAfterCall| to the stack pointer
+   after the call is done. */
 
-static void doHelperCall(ISelEnv * env, Bool passBBP, IRExpr * guard,
-                         IRCallee * cee, IRExpr ** args, RetLoc rloc)
+static void doHelperCall(/*OUT*/UInt*   stackAdjustAfterCall,
+                         /*OUT*/RetLoc* retloc,
+                         ISelEnv* env,
+                         IRExpr* guard,
+                         IRCallee* cee, IRType retTy, IRExpr** args )
 {
    MIPSCondCode cc;
    HReg argregs[MIPS_N_REGPARMS];
@@ -392,8 +398,16 @@ static void doHelperCall(ISelEnv * env, Bool passBBP, IRExpr * guard,
    Bool go_fast;
    Int n_args, i, argreg;
    UInt argiregs;
-   ULong target;
    HReg src = INVALID_HREG;
+
+   /* Set default returns.  We'll update them later if needed. */
+   *stackAdjustAfterCall = 0;
+   *retloc               = mk_RetLoc_INVALID();
+
+   /* These are used for cross-checking that IR-level constraints on
+      the use of IRExprP__VECRET and IRExprP__BBPTR are observed. */
+   UInt nVECRETs = 0;
+   UInt nBBPTRs  = 0;
 
    /* MIPS O32 calling convention: up to four registers ($a0 ... $a3)
       are allowed to be used for passing integer arguments. They correspond
@@ -406,11 +420,31 @@ static void doHelperCall(ISelEnv * env, Bool passBBP, IRExpr * guard,
       to regs GPR4 ... GPR11. Note that the cee->regparms field is meaningless
       on MIPS host (since we only implement one calling convention) and so we
       always ignore it. */
-   n_args = 0;
-   for (i = 0; args[i]; i++)
-      n_args++;
 
-   if (MIPS_N_REGPARMS < n_args + (passBBP ? 1 : 0)) {
+   /* The return type can be I{64,32,16,8} or V{128,256}.  In the
+      latter two cases, it is expected that |args| will contain the
+      special value IRExprP__VECRET, in which case this routine
+      generates code to allocate space on the stack for the vector
+      return value.  Since we are not passing any scalars on the
+      stack, it is enough to preallocate the return space before
+      marshalling any arguments, in this case.
+
+      |args| may also contain IRExprP__BBPTR, in which case the value
+      in the guest state pointer register is passed as the
+      corresponding argument. */
+
+   n_args = 0;
+   for (i = 0; args[i]; i++) {
+      IRExpr* arg = args[i];
+      if (UNLIKELY(arg == IRExprP__VECRET)) {
+         nVECRETs++;
+      } else if (UNLIKELY(arg == IRExprP__BBPTR)) {
+         nBBPTRs++;
+      }
+      n_args++;
+   }
+
+   if (n_args > MIPS_N_REGPARMS) {
       vpanic("doHelperCall(MIPS): cannot currently handle > 4 or 8 args");
    }
    if (mode64) {
@@ -423,22 +457,30 @@ static void doHelperCall(ISelEnv * env, Bool passBBP, IRExpr * guard,
       argregs[6] = hregMIPS_GPR10(mode64);
       argregs[7] = hregMIPS_GPR11(mode64);
       argiregs = 0;
+      tmpregs[0] = tmpregs[1] = tmpregs[2] =
+      tmpregs[3] = tmpregs[4] = tmpregs[5] =
+      tmpregs[6] = tmpregs[7] = INVALID_HREG;
    } else {
       argregs[0] = hregMIPS_GPR4(mode64);
       argregs[1] = hregMIPS_GPR5(mode64);
       argregs[2] = hregMIPS_GPR6(mode64);
       argregs[3] = hregMIPS_GPR7(mode64);
       argiregs = 0;
+      tmpregs[0] = tmpregs[1] = tmpregs[2] = tmpregs[3] = INVALID_HREG;
    }
-
-   tmpregs[0] = tmpregs[1] = tmpregs[2] = tmpregs[3] = INVALID_HREG;
 
    /* First decide which scheme (slow or fast) is to be used. First assume the
       fast scheme, and select slow if any contraindications (wow) appear. */
 
    go_fast = True;
 
-   if (guard) {
+   /* We'll need space on the stack for the return value.  Avoid
+      possible complications with nested calls by using the slow
+      scheme. */
+   if (retTy == Ity_V128 || retTy == Ity_V256)
+      go_fast = False;
+
+   if (go_fast && guard) {
       if (guard->tag == Iex_Const && guard->Iex.Const.con->tag == Ico_U1
           && guard->Iex.Const.con->Ico.U1 == True) {
          /* unconditional */
@@ -462,66 +504,79 @@ static void doHelperCall(ISelEnv * env, Bool passBBP, IRExpr * guard,
    if (go_fast) {
       /* FAST SCHEME */
       argreg = 0;
-      if (passBBP) {
-         argiregs |= (1 << (argreg + 4));
-         addInstr(env, mk_iMOVds_RR(argregs[argreg],
-                  GuestStatePointer(mode64)));
-         argreg++;
-      }
 
       for (i = 0; i < n_args; i++) {
+         IRExpr* arg = args[i];
          vassert(argreg < MIPS_N_REGPARMS);
-         vassert(typeOfIRExpr(env->type_env, args[i]) == Ity_I32
-                 || typeOfIRExpr(env->type_env, args[i]) == Ity_I64);
-         if (typeOfIRExpr(env->type_env, args[i]) == Ity_I32 || mode64) {
+
+         IRType  aTy = Ity_INVALID;
+         if (LIKELY(!is_IRExprP__VECRET_or_BBPTR(arg)))
+            aTy = typeOfIRExpr(env->type_env, arg);
+
+         if (aTy == Ity_I32 || mode64) {
             argiregs |= (1 << (argreg + 4));
-            addInstr(env, mk_iMOVds_RR(argregs[argreg], iselWordExpr_R(env,
-                     args[i])));
-         } else {  /* Ity_I64 */
+            addInstr(env, mk_iMOVds_RR(argregs[argreg],
+                                       iselWordExpr_R(env, arg)));
+            argreg++;
+         } else if (aTy == Ity_I64) {  /* Ity_I64 */
             if (argreg & 1) {
                argreg++;
                argiregs |= (1 << (argreg + 4));
             }
             HReg rHi, rLo;
-            iselInt64Expr(&rHi, &rLo, env, args[i]);
+            iselInt64Expr(&rHi, &rLo, env, arg);
             argiregs |= (1 << (argreg + 4));
             addInstr(env, mk_iMOVds_RR( argregs[argreg++], rHi ));
             argiregs |= (1 << (argreg + 4));
             addInstr(env, mk_iMOVds_RR( argregs[argreg], rLo));
+            argreg++;
+         } else if (arg == IRExprP__BBPTR) {
+            vassert(0);  // ATC
+            addInstr(env, mk_iMOVds_RR(argregs[argreg],
+                                       GuestStatePointer(mode64)));
+            argreg++;
+         } else if (arg == IRExprP__VECRET) {
+            // If this happens, it denotes ill-formed IR.
+            vassert(0);
          }
-         argreg++;
       }
       /* Fast scheme only applies for unconditional calls.  Hence: */
       cc = MIPScc_AL;
    } else {
       /* SLOW SCHEME; move via temporaries */
       argreg = 0;
-      if (passBBP) {
-         /* This is pretty stupid; better to move directly to r3
-            after the rest of the args are done. */
-         tmpregs[argreg] = newVRegI(env);
-         addInstr(env, mk_iMOVds_RR(tmpregs[argreg],
-                  GuestStatePointer(mode64)));
-         argreg++;
-      }
+
       for (i = 0; i < n_args; i++) {
          vassert(argreg < MIPS_N_REGPARMS);
-         vassert(typeOfIRExpr(env->type_env, args[i]) == Ity_I32
-                 || typeOfIRExpr(env->type_env, args[i]) == Ity_I64);
-         if (typeOfIRExpr(env->type_env, args[i]) == Ity_I32 || mode64) {
-            tmpregs[argreg] = iselWordExpr_R(env, args[i]);
-         } else {  /* Ity_I64 */
+         IRExpr* arg = args[i];
+
+         IRType  aTy = Ity_INVALID;
+         if (LIKELY(!is_IRExprP__VECRET_or_BBPTR(arg)))
+            aTy  = typeOfIRExpr(env->type_env, arg);
+
+         if (aTy == Ity_I32 || mode64) {
+            tmpregs[argreg] = iselWordExpr_R(env, arg);
+            argreg++;
+         } else if (aTy == Ity_I64) {  /* Ity_I64 */
             if (argreg & 1)
                argreg++;
             if (argreg + 1 >= MIPS_N_REGPARMS)
                vassert(0);  /* out of argregs */
             HReg raHi, raLo;
-            iselInt64Expr(&raHi, &raLo, env, args[i]);
+            iselInt64Expr(&raHi, &raLo, env, arg);
             tmpregs[argreg] = raLo;
             argreg++;
             tmpregs[argreg] = raHi;
+            argreg++;
+         } else if (arg == IRExprP__BBPTR) {
+            vassert(0);  // ATC
+            tmpregs[argreg] = GuestStatePointer(mode64);
+            argreg++;
          }
-         argreg++;
+         else if (arg == IRExprP__VECRET) {
+            // If this happens, it denotes ill-formed IR
+            vassert(0);
+         }
       }
 
       /* Now we can compute the condition.  We can't do it earlier
@@ -549,14 +604,49 @@ static void doHelperCall(ISelEnv * env, Bool passBBP, IRExpr * guard,
       }
    }
 
-   target = mode64 ? Ptr_to_ULong(cee->addr) :
-                     toUInt(Ptr_to_ULong(cee->addr));
+   /* Do final checks, set the return values, and generate the call
+      instruction proper. */
+   vassert(nBBPTRs == 0 || nBBPTRs == 1);
+   vassert(nVECRETs == (retTy == Ity_V128 || retTy == Ity_V256) ? 1 : 0);
+   vassert(*stackAdjustAfterCall == 0);
+   vassert(is_RetLoc_INVALID(*retloc));
+   switch (retTy) {
+      case Ity_INVALID:
+         /* Function doesn't return a value. */
+         *retloc = mk_RetLoc_simple(RLPri_None);
+         break;
+      case Ity_I64:
+         *retloc = mk_RetLoc_simple(mode64 ? RLPri_Int : RLPri_2Int);
+         break;
+      case Ity_I32: case Ity_I16: case Ity_I8:
+         *retloc = mk_RetLoc_simple(RLPri_Int);
+         break;
+      case Ity_V128:
+         vassert(0); // ATC
+         *retloc = mk_RetLoc_spRel(RLPri_V128SpRel, 0);
+         *stackAdjustAfterCall = 16;
+         break;
+      case Ity_V256:
+         vassert(0); // ATC
+         *retloc = mk_RetLoc_spRel(RLPri_V256SpRel, 0);
+         *stackAdjustAfterCall = 32;
+         break;
+      default:
+         /* IR can denote other possible return types, but we don't
+            handle those here. */
+        vassert(0);
+   }
 
-   /* Finally, the call itself. */
+   ULong target = mode64 ? Ptr_to_ULong(cee->addr) :
+                           toUInt(Ptr_to_ULong(cee->addr));
+
+   /* Finally, generate the call itself.  This needs the *retloc value
+      set in the switch above, which is why it's at the end. */
    if (cc == MIPScc_AL)
-      addInstr(env, MIPSInstr_CallAlways(cc, (Addr64)target, argiregs, rloc));
+      addInstr(env, MIPSInstr_CallAlways(cc, (Addr64)target, argiregs,
+                                         *retloc));
    else
-      addInstr(env, MIPSInstr_Call(cc, (Addr64)target, argiregs, src, rloc));
+      addInstr(env, MIPSInstr_Call(cc, (Addr64)target, argiregs, src, *retloc));
 }
 
 /*---------------------------------------------------------*/
@@ -1244,12 +1334,13 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
          }
 
          /* What's the retloc? */
-         RetLoc rloc = RetLocINVALID;
+         RetLoc rloc = mk_RetLoc_INVALID();
          if (ty == Ity_I32) {
-            rloc = RetLocInt;
+            rloc = mk_RetLoc_simple(RLPri_Int);
          }
          else if (ty == Ity_I64) {
-            rloc = mode64 ? RetLocInt : RetLoc2Int;
+            rloc = mode64 ? mk_RetLoc_simple(RLPri_Int) :
+                            mk_RetLoc_simple(RLPri_2Int);
          }
          else {
             goto irreducible;
@@ -1681,12 +1772,13 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
             break;
       }
 
-      RetLoc rloc = RetLocINVALID;
+      RetLoc rloc = mk_RetLoc_INVALID();
       if (ty == Ity_I32) {
-         rloc = RetLocInt;
+         rloc = mk_RetLoc_simple(RLPri_Int);
       }
       else if (ty == Ity_I64) {
-         rloc = mode64 ? RetLocInt : RetLoc2Int;
+         rloc = mode64 ? mk_RetLoc_simple(RLPri_Int) :
+                         mk_RetLoc_simple(RLPri_2Int);
       }
       else {
          goto irreducible;
@@ -1796,23 +1888,18 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
       /* be very restrictive for now.  Only 32/64-bit ints allowed for
          args, and 32 bits for return type.  Don't forget to change
          the RetLoc if more return types are allowed in future. */
-      if (e->Iex.CCall.retty != Ity_I32 && !mode64)
+      if (e->Iex.CCall.retty != Ity_I32)
          goto irreducible;
-
-      /* What's the retloc? */
-      RetLoc rloc = RetLocINVALID;
-      if (ty == Ity_I32) {
-         rloc = RetLocInt;
-      }
-      else if (ty == Ity_I64) {
-         rloc = mode64 ? RetLocInt : RetLoc2Int;
-      }
-      else {
-         goto irreducible;
-      }
 
       /* Marshal args, do the call, clear stack. */
-      doHelperCall(env, False, NULL, e->Iex.CCall.cee, e->Iex.CCall.args, rloc);
+      UInt   addToSp = 0;
+      RetLoc rloc    = mk_RetLoc_INVALID();
+      doHelperCall(&addToSp, &rloc, env, NULL/*guard*/, e->Iex.CCall.cee,
+                   e->Iex.CCall.retty, e->Iex.CCall.args );
+
+      vassert(is_sane_RetLoc(rloc));
+      vassert(rloc.pri == RLPri_Int);
+      vassert(addToSp == 0);
       addInstr(env, mk_iMOVds_RR(r_dst, hregMIPS_GPR2(mode64)));
       return r_dst;
    }
@@ -3704,66 +3791,92 @@ static void iselStmt(ISelEnv * env, IRStmt * stmt)
       /* --------- Call to DIRTY helper --------- */
       case Ist_Dirty: {
          IRDirty *d = stmt->Ist.Dirty.details;
-         Bool passBBP = False;
-
-         if (d->nFxState == 0)
-            vassert(!d->needsBBP);
-
-         passBBP = toBool(d->nFxState > 0 && d->needsBBP);
 
          /* Figure out the return type, if any. */
          IRType retty = Ity_INVALID;
          if (d->tmp != IRTemp_INVALID)
             retty = typeOfIRTemp(env->type_env, d->tmp);
 
-         /* Marshal args, do the call, clear stack, set the return
-            value to 0x555..555 if this is a conditional call that
-            returns a value and the call is skipped.  We need to set
-            the ret-loc correctly in order to implement the IRDirty
-            semantics that the return value is 0x555..555 if the call
-            doesn't happen. */
-         RetLoc rloc = RetLocINVALID;
+         /* Throw out any return types we don't know about. */
+         Bool retty_ok = False;
          switch (retty) {
-            case Ity_INVALID: /* function doesn't return anything */
-               rloc = RetLocNone; break;
-            case Ity_I64:
-               rloc = mode64 ? RetLocInt : RetLoc2Int; break;
-            case Ity_I32: case Ity_I16: case Ity_I8:
-               rloc = RetLocInt; break;
+            case Ity_INVALID: /* Function doesn't return anything. */
+            case Ity_V128:
+            case Ity_I64: case Ity_I32: case Ity_I16: case Ity_I8:
+               retty_ok = True; break;
             default:
                break;
          }
-         if (rloc == RetLocINVALID)
+
+         if (!retty_ok)
             break; /* will go to stmt_fail: */
 
-         /* Marshal args, do the call, clear stack. */
-         doHelperCall(env, passBBP, d->guard, d->cee, d->args, rloc);
+         /* Marshal args, do the call, clear stack, set the return value
+            to 0x555..555 if this is a conditional call that returns a
+            value and the call is skipped. */
+         UInt   addToSp = 0;
+         RetLoc rloc    = mk_RetLoc_INVALID();
+         doHelperCall( &addToSp, &rloc, env, d->guard, d->cee, retty, d->args );
+         vassert(is_sane_RetLoc(rloc));
 
          /* Now figure out what to do with the returned value, if any. */
-         if (d->tmp == IRTemp_INVALID)
-            /* No return value.  Nothing to do. */
-            return;
+         switch (retty) {
+            case Ity_INVALID: {
+               /* No return value.  Nothing to do. */
+               vassert(d->tmp == IRTemp_INVALID);
+               vassert(rloc.pri == RLPri_None);
+               vassert(addToSp == 0);
+               return;
+            }
+            case Ity_I32: case Ity_I16: case Ity_I8: {
+               /* The returned value is in $v0.  Park it in the register
+                  associated with tmp. */
+               HReg r_dst = lookupIRTemp(env, d->tmp);
+               addInstr(env, mk_iMOVds_RR(r_dst, hregMIPS_GPR2(mode64)));
+               vassert(rloc.pri == RLPri_Int);
+               vassert(addToSp == 0);
+               return;
+            }
+            case Ity_I64: {
+               if (mode64) {
+                  /* The returned value is in $v0.  Park it in the register
+                     associated with tmp. */
+                  HReg r_dst = lookupIRTemp(env, d->tmp);
+                  addInstr(env, mk_iMOVds_RR(r_dst, hregMIPS_GPR2(mode64)));
+                  vassert(rloc.pri == RLPri_Int);
+                  vassert(addToSp == 0);
+                  return;
+               } else {
+                  HReg rHi = newVRegI(env);
+                  HReg rLo = newVRegI(env);
+                  HReg dstHi, dstLo;
+                  addInstr(env, mk_iMOVds_RR(rLo, hregMIPS_GPR2(mode64)));
+                  addInstr(env, mk_iMOVds_RR(rHi, hregMIPS_GPR3(mode64)));
+                  lookupIRTemp64(&dstHi, &dstLo, env, d->tmp);
+                  addInstr(env, mk_iMOVds_RR(dstHi, rHi));
+                  addInstr(env, mk_iMOVds_RR(dstLo, rLo));
+                  return;
+               }
+            }
+            case Ity_V128: {
+               /* ATC. The code that this produces really
+                  needs to be looked at, to verify correctness.
+                  I don't think this can ever happen though, since the
+                  MIPS front end never produces 128-bit loads/stores. */
+               vassert(0);
+               vassert(rloc.pri == RLPri_V128SpRel);
+               vassert(addToSp >= 16);
+               HReg       dst = lookupIRTemp(env, d->tmp);
+               MIPSAMode* am  = MIPSAMode_IR(rloc.spOff, StackPointer(mode64));
+               addInstr(env, MIPSInstr_Load(mode64 ? 8 : 4, dst, am, mode64));
+               add_to_sp(env, addToSp);
+               return;
 
-         if (retty == Ity_I64 && !mode64) {
-            HReg rHi = newVRegI(env);
-            HReg rLo = newVRegI(env);
-            HReg dstHi, dstLo;
-            addInstr(env, mk_iMOVds_RR(rLo, hregMIPS_GPR2(mode64)));
-            addInstr(env, mk_iMOVds_RR(rHi, hregMIPS_GPR3(mode64)));
-            lookupIRTemp64(&dstHi, &dstLo, env, d->tmp);
-            addInstr(env, mk_iMOVds_RR(dstHi, rHi));
-            addInstr(env, mk_iMOVds_RR(dstLo, rLo));
-            return;
+            }
+            default:
+               /*NOTREACHED*/
+               vassert(0);
          }
-         if (retty == Ity_I8 || retty == Ity_I16 || retty == Ity_I32
-             || (retty == Ity_I64 && mode64)) {
-            /* The returned value is in %r2.  Park it in the register
-               associated with tmp. */
-            HReg r_dst = lookupIRTemp(env, d->tmp);
-            addInstr(env, mk_iMOVds_RR(r_dst, hregMIPS_GPR2(mode64)));
-            return;
-         }
-         break;
       }
 
       /* --------- Load Linked or Store Conditional --------- */

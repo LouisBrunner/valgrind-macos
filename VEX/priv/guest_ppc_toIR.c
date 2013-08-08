@@ -14377,7 +14377,8 @@ static Bool dis_av_load ( VexAbiInfo* vbi, UInt theInstr )
    case 0x006: { // lvsl (Load Vector for Shift Left, AV p123)
       IRDirty* d;
       UInt vD_off = vectorGuestRegOffset(vD_addr);
-      IRExpr** args = mkIRExprVec_3(
+      IRExpr** args = mkIRExprVec_4(
+                         IRExprP__BBPTR,
                          mkU32(vD_off), 
                          binop(Iop_And32, mkNarrowTo32(ty, mkexpr(EA)),
                                           mkU32(0xF)),
@@ -14397,7 +14398,6 @@ static Bool dis_av_load ( VexAbiInfo* vbi, UInt theInstr )
       }
       DIP("lvsl v%d,r%u,r%u\n", vD_addr, rA_addr, rB_addr);
       /* declare guest state effects */
-      d->needsBBP = True;
       d->nFxState = 1;
       vex_bzero(&d->fxState, sizeof(d->fxState));
       d->fxState[0].fx     = Ifx_Write;
@@ -14411,7 +14411,8 @@ static Bool dis_av_load ( VexAbiInfo* vbi, UInt theInstr )
    case 0x026: { // lvsr (Load Vector for Shift Right, AV p125)
       IRDirty* d;
       UInt vD_off = vectorGuestRegOffset(vD_addr);
-      IRExpr** args = mkIRExprVec_3(
+      IRExpr** args = mkIRExprVec_4(
+                         IRExprP__BBPTR,
                          mkU32(vD_off), 
                          binop(Iop_And32, mkNarrowTo32(ty, mkexpr(EA)),
                                           mkU32(0xF)),
@@ -14431,7 +14432,6 @@ static Bool dis_av_load ( VexAbiInfo* vbi, UInt theInstr )
       }
       DIP("lvsr v%d,r%u,r%u\n", vD_addr, rA_addr, rB_addr);
       /* declare guest state effects */
-      d->needsBBP = True;
       d->nFxState = 1;
       vex_bzero(&d->fxState, sizeof(d->fxState));
       d->fxState[0].fx     = Ifx_Write;

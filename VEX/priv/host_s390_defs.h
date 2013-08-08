@@ -354,6 +354,20 @@ typedef struct {
    HReg         r1;     /* clobbered register GPR #1 */
 } s390_fp_convert;
 
+/* Pseudo-insn for representing a helper call.
+   TARGET is the absolute address of the helper function
+   NUM_ARGS says how many arguments are being passed.
+   All arguments have integer type and are being passed according to ABI,
+   i.e. in registers r2, r3, r4, r5, and r6, with argument #0 being
+   passed in r2 and so forth. */
+typedef struct {
+   s390_cc_t    cond     : 16;
+   UInt         num_args : 16;
+   RetLoc       rloc;     /* where the return value will be */
+   Addr64       target;
+   const HChar *name;      /* callee's name (for debugging) */
+} s390_helper_call;
+
 typedef struct {
    s390_insn_tag tag;
    /* Usually, this is the size of the result of an operation.
@@ -440,18 +454,8 @@ typedef struct {
       struct {
          s390_cdas *details;
       } cdas;
-      /* Pseudo-insn for representing a helper call.
-         TARGET is the absolute address of the helper function
-         NUM_ARGS says how many arguments are being passed.
-         All arguments have integer type and are being passed according to ABI,
-         i.e. in registers r2, r3, r4, r5, and r6, with argument #0 being
-         passed in r2 and so forth. */
       struct {
-         s390_cc_t    cond     : 16;
-         UInt         num_args : 16;
-         HReg         dst;   /* if not INVALID_HREG, put return value here */
-         Addr64       target;
-         const HChar *name;      /* callee's name (for debugging) */
+         s390_helper_call *details;
       } helper_call;
 
       /* Floating point instructions (including conversion to/from floating
@@ -642,7 +646,7 @@ s390_insn *s390_insn_test(UChar size, s390_opnd_RMI src);
 s390_insn *s390_insn_compare(UChar size, HReg dst, s390_opnd_RMI opnd,
                              Bool signed_comparison);
 s390_insn *s390_insn_helper_call(s390_cc_t cond, Addr64 target, UInt num_args,
-                                 const HChar *name, HReg dst);
+                                 const HChar *name, RetLoc rloc);
 s390_insn *s390_insn_bfp_triop(UChar size, s390_bfp_triop_t, HReg dst,
                                HReg op2, HReg op3);
 s390_insn *s390_insn_bfp_binop(UChar size, s390_bfp_binop_t, HReg dst,

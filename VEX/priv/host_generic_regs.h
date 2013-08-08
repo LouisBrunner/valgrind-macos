@@ -256,14 +256,57 @@ extern void         addHInstr ( HInstrArray*, HInstr* );
 
 typedef
    enum {
-      RetLocINVALID, /* INVALID */
-      RetLocNone,    /* no return value (a.k.a C "void") */
-      RetLocInt,     /* in the primary int return reg */
-      RetLoc2Int     /* in both primary and secondary int ret regs */
+      RLPri_INVALID,   /* INVALID */
+      RLPri_None,      /* no return value (a.k.a C "void") */
+      RLPri_Int,       /* in the primary int return reg */
+      RLPri_2Int,      /* in both primary and secondary int ret regs */
+      RLPri_V128SpRel, /* 128-bit value, on the stack */
+      RLPri_V256SpRel  /* 256-bit value, on the stack */
+   }
+   RetLocPrimary;
+
+typedef
+   struct {
+      /* Primary description */
+      RetLocPrimary pri;
+      /* For .pri == RLPri_V128SpRel or RLPri_V256SpRel only, gives
+         the offset of the lowest addressed byte of the value,
+         relative to the stack pointer.  For all other .how values,
+         has no meaning and should be zero. */
+      Int spOff;
    }
    RetLoc;
 
 extern void ppRetLoc ( RetLoc rloc );
+
+static inline RetLoc mk_RetLoc_simple ( RetLocPrimary pri ) {
+   vassert(pri >= RLPri_INVALID && pri <= RLPri_2Int);
+   return (RetLoc){pri, 0};
+}
+
+static inline RetLoc mk_RetLoc_spRel ( RetLocPrimary pri, Int off ) {
+   vassert(pri >= RLPri_V128SpRel && pri <= RLPri_V256SpRel);
+   return (RetLoc){pri, off};
+}
+
+static inline Bool is_sane_RetLoc ( RetLoc rloc ) {
+   switch (rloc.pri) {
+      case RLPri_None: case RLPri_Int: case RLPri_2Int:
+         return rloc.spOff == 0;
+      case RLPri_V128SpRel: case RLPri_V256SpRel:
+         return True;
+      default:
+         return False;
+   }
+}
+
+static inline RetLoc mk_RetLoc_INVALID ( void ) {
+   return (RetLoc){RLPri_INVALID, 0};
+}
+
+static inline Bool is_RetLoc_INVALID ( RetLoc rl ) {
+   return rl.pri == RLPri_INVALID && rl.spOff == 0;
+}
 
 
 /*---------------------------------------------------------*/

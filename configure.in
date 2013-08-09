@@ -1771,6 +1771,28 @@ if test x$ac_have_as_ppc_mftocrf = xyes ; then
 fi
 
 
+# does the ppc assembler support "lfdp" and other phased out floating point insns?
+AC_MSG_CHECKING([if ppc32/64 asm supports phased out floating point instructions])
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  do { typedef struct {
+      double hi;
+      double lo;
+     } dbl_pair_t;
+     dbl_pair_t dbl_pair[3];
+     __asm__ volatile ("lfdp 10, %0"::"m" (dbl_pair[0]));
+   } while (0)
+]])], [
+ac_have_as_ppc_fpPO=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_as_ppc_fpPO=no
+AC_MSG_RESULT([no])
+])
+if test x$ac_have_as_ppc_fpPO = xyes ; then
+  AC_DEFINE(HAVE_AS_PPC_FPPO, 1, [Define to 1 if as supports floating point phased out category.])
+fi
+
 CFLAGS=$safe_CFLAGS
 
 # does the x86/amd64 assembler understand SSE3 instructions?

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <config.h>
 
 double foo = -1.0;
 double FRT1;
@@ -65,9 +66,15 @@ void test_lfiwax()
 ** FPp	= leftmost 64 bits stored at DS(RA)
 ** FPp+1= rightmost 64 bits stored at DS(RA)
 ** FPp must be an even float register
+**
+** The [st|l]fdp[x] instructions were put into the "Floating-Point.Phased-Out"
+** category in ISA 2.06 (i.e., POWER7 timeframe).  If valgrind and its
+** testsuite are built with -mcpu=power7 (or later), then the assembler will
+** not recognize those phased out instructions.
 */
 void test_double_pair_instrs()
 {
+#ifdef HAVE_AS_PPC_FPPO
    typedef struct {
       double hi;
       double lo;
@@ -122,6 +129,7 @@ void test_double_pair_instrs()
    __asm__ volatile ("stfdpx 10, 20, 21");
    printf("stfdpx (%f, %f) => F_hi=%f, F_lo=%f\n",
           FRT1, FRT2, dbl_pair[2].hi, dbl_pair[2].lo);
+#endif
 }
 
 

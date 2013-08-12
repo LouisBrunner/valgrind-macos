@@ -4781,6 +4781,16 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
+      case Iop_CmpNEZ64x2: {
+         HReg arg  = iselVecExpr(env, e->Iex.Unop.arg);
+         HReg zero = newVRegV(env);
+         HReg dst  = newVRegV(env);
+         addInstr(env, PPCInstr_AvBinary(Pav_XOR, zero, zero, zero));
+         addInstr(env, PPCInstr_AvBin64x2(Pav_CMPEQU, dst, arg, zero));
+         addInstr(env, PPCInstr_AvUnary(Pav_NOT, dst, dst));
+         return dst;
+      }
+
       case Iop_Recip32Fx4:    fpop = Pavfp_RCPF;    goto do_32Fx4_unary;
       case Iop_RSqrt32Fx4:    fpop = Pavfp_RSQRTF;  goto do_32Fx4_unary;
       case Iop_I32UtoFx4:     fpop = Pavfp_CVTU2F;  goto do_32Fx4_unary;
@@ -5042,6 +5052,16 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          HReg arg2 = iselVecExpr(env, e->Iex.Binop.arg2);
          HReg dst  = newVRegV(env);
          addInstr(env, PPCInstr_AvBin32x4(op, dst, arg1, arg2));
+         return dst;
+      }
+
+      case Iop_NarrowBin64to32x4:    op = Pav_PACKUU;  goto do_AvBin64x2;
+      case Iop_Add64x2:    op = Pav_ADDU;   goto do_AvBin64x2;
+      do_AvBin64x2: {
+         HReg arg1 = iselVecExpr(env, e->Iex.Binop.arg1);
+         HReg arg2 = iselVecExpr(env, e->Iex.Binop.arg2);
+         HReg dst  = newVRegV(env);
+         addInstr(env, PPCInstr_AvBin64x2(op, dst, arg1, arg2));
          return dst;
       }
 
@@ -5779,10 +5799,12 @@ HInstrArray* iselSB_PPC ( IRSB* bb,
    /* do some sanity checks */
    mask32 = VEX_HWCAPS_PPC32_F | VEX_HWCAPS_PPC32_V
             | VEX_HWCAPS_PPC32_FX | VEX_HWCAPS_PPC32_GX | VEX_HWCAPS_PPC32_VX
-            | VEX_HWCAPS_PPC32_DFP;
+            | VEX_HWCAPS_PPC32_DFP | VEX_HWCAPS_PPC32_ISA2_07;
+
 
    mask64 = VEX_HWCAPS_PPC64_V | VEX_HWCAPS_PPC64_FX
-	   | VEX_HWCAPS_PPC64_GX | VEX_HWCAPS_PPC64_VX | VEX_HWCAPS_PPC64_DFP;
+            | VEX_HWCAPS_PPC64_GX | VEX_HWCAPS_PPC64_VX | VEX_HWCAPS_PPC64_DFP
+            | VEX_HWCAPS_PPC64_ISA2_07;
 
    if (mode64) {
       vassert((hwcaps_host & mask32) == 0);

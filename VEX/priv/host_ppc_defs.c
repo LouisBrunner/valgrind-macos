@@ -674,7 +674,7 @@ const HChar* showPPCAvOp ( PPCAvOp op ) {
    case Pav_UNPCKLPIX: return "vupklpx";
 
    /* Integer binary */
-   case Pav_ADDU:      return "vaddu_m";  // b,h,w
+   case Pav_ADDU:      return "vaddu_m";  // b,h,w,dw
    case Pav_QADDU:     return "vaddu_s";  // b,h,w
    case Pav_QADDS:     return "vadds_s";  // b,h,w
      
@@ -708,7 +708,7 @@ const HChar* showPPCAvOp ( PPCAvOp op ) {
    case Pav_ROTL:      return "vrl";      // b,h,w
 
    /* Pack */
-   case Pav_PACKUU:    return "vpku_um";  // h,w
+   case Pav_PACKUU:    return "vpku_um";  // h,w,dw
    case Pav_QPACKUU:   return "vpku_us";  // h,w
    case Pav_QPACKSU:   return "vpks_us";  // h,w
    case Pav_QPACKSS:   return "vpks_ss";  // h,w
@@ -1348,6 +1348,17 @@ PPCInstr* PPCInstr_AvBin32x4 ( PPCAvOp op, HReg dst,
    i->Pin.AvBin32x4.srcR = srcR;
    return i;
 }
+PPCInstr* PPCInstr_AvBin64x2 ( PPCAvOp op, HReg dst,
+                               HReg srcL, HReg srcR ) {
+   PPCInstr* i           = LibVEX_Alloc(sizeof(PPCInstr));
+   i->tag                = Pin_AvBin64x2;
+   i->Pin.AvBin64x2.op   = op;
+   i->Pin.AvBin64x2.dst  = dst;
+   i->Pin.AvBin64x2.srcL = srcL;
+   i->Pin.AvBin64x2.srcR = srcR;
+   return i;
+}
+
 PPCInstr* PPCInstr_AvBin32Fx4 ( PPCAvFpOp op, HReg dst,
                                 HReg srcL, HReg srcR ) {
    PPCInstr* i            = LibVEX_Alloc(sizeof(PPCInstr));
@@ -1883,6 +1894,14 @@ void ppPPCInstr ( PPCInstr* i, Bool mode64 )
       vex_printf(",");
       ppHRegPPC(i->Pin.AvBin32x4.srcR);
       return;
+   case Pin_AvBin64x2:
+      vex_printf("%s(w) ", showPPCAvOp(i->Pin.AvBin64x2.op));
+      ppHRegPPC(i->Pin.AvBin64x2.dst);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.AvBin64x2.srcL);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.AvBin64x2.srcR);
+      return;
    case Pin_AvBin32Fx4:
       vex_printf("%s ", showPPCAvFpOp(i->Pin.AvBin32Fx4.op));
       ppHRegPPC(i->Pin.AvBin32Fx4.dst);
@@ -2364,6 +2383,11 @@ void getRegUsage_PPCInstr ( HRegUsage* u, PPCInstr* i, Bool mode64 )
       addHRegUse(u, HRmRead,  i->Pin.AvBin32x4.srcL);
       addHRegUse(u, HRmRead,  i->Pin.AvBin32x4.srcR);
       return;
+   case Pin_AvBin64x2:
+      addHRegUse(u, HRmWrite, i->Pin.AvBin64x2.dst);
+      addHRegUse(u, HRmRead,  i->Pin.AvBin64x2.srcL);
+      addHRegUse(u, HRmRead,  i->Pin.AvBin64x2.srcR);
+      return;
    case Pin_AvBin32Fx4:
       addHRegUse(u, HRmWrite, i->Pin.AvBin32Fx4.dst);
       addHRegUse(u, HRmRead,  i->Pin.AvBin32Fx4.srcL);
@@ -2669,6 +2693,11 @@ void mapRegs_PPCInstr ( HRegRemap* m, PPCInstr* i, Bool mode64 )
       mapReg(m, &i->Pin.AvBin32x4.dst);
       mapReg(m, &i->Pin.AvBin32x4.srcL);
       mapReg(m, &i->Pin.AvBin32x4.srcR);
+      return;
+   case Pin_AvBin64x2:
+      mapReg(m, &i->Pin.AvBin64x2.dst);
+      mapReg(m, &i->Pin.AvBin64x2.srcL);
+      mapReg(m, &i->Pin.AvBin64x2.srcR);
       return;
    case Pin_AvBin32Fx4:
       mapReg(m, &i->Pin.AvBin32Fx4.dst);
@@ -4780,6 +4809,24 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
 
       default:
          goto bad;
+      }
+      p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, opc2 );
+      goto done;
+   }
+
+   case Pin_AvBin64x2: {
+      UInt v_dst  = vregNo(i->Pin.AvBin64x2.dst);
+      UInt v_srcL = vregNo(i->Pin.AvBin64x2.srcL);
+      UInt v_srcR = vregNo(i->Pin.AvBin64x2.srcR);
+      UInt opc2;
+      switch (i->Pin.AvBin64x2.op) {
+         case Pav_ADDU:    opc2 =  192; break; // vaddudm  vector double add
+         case Pav_PACKUU:  opc2 = 1102; break; // vpkudum
+         // FIXME: We currently don't have a vector compare equal double word, so it's a hack
+         // to use vcmpequw, but it works.
+         case Pav_CMPEQU:  opc2 =  134; break; // vcmpequw
+         default:
+            goto bad;
       }
       p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, opc2 );
       goto done;

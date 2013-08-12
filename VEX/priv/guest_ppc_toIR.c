@@ -4933,11 +4933,17 @@ static Bool dis_int_store ( UInt theInstr, VexAbiInfo* vbi )
    case 0x3E:
       switch ((b1<<1) | b0) {
       case 0x0: // std (Store DWord, PPC64 p580)
+         if (!mode64)
+            return False;
+
          DIP("std r%u,%d(r%u)\n", rS_addr, simm16, rA_addr);
          storeBE( mkexpr(EA), mkexpr(rS) );
          break;
 
       case 0x1: // stdu (Store DWord, Update, PPC64 p583)
+         if (!mode64)
+            return False;
+
          DIP("stdu r%u,%d(r%u)\n", rS_addr, simm16, rA_addr);
          putIReg( rA_addr, mkexpr(EA) );
          storeBE( mkexpr(EA), mkexpr(rS) );
@@ -6463,7 +6469,7 @@ static Bool dis_proc_ctl ( VexAbiInfo* vbi, UInt theInstr )
       }
       /* not decodable */
       return False;
-    
+
    /* XFX-Form */
    case 0x153: // mfspr (Move from Special-Purpose Register, PPC32 p470)
       
@@ -6631,7 +6637,79 @@ static Bool dis_proc_ctl ( VexAbiInfo* vbi, UInt theInstr )
          return False;
       }
       break;
-      
+
+   case 0x33:                // mfvsrd
+   {
+      UChar XS = ifieldRegXS( theInstr );
+      UChar rA_addr = ifieldRegA(theInstr);
+      IRExpr * high64;
+      IRTemp vS = newTemp( Ity_V128 );
+      DIP("mfvsrd r%u,vsr%d\n", rA_addr, (UInt)XS);
+
+      /*  XS = SX || S
+       *  For SX=0, mfvsrd is treated as a Floating-Point
+       *            instruction in terms of resource availability.
+       *  For SX=1, mfvsrd is treated as a Vector instruction in
+       *            terms of resource availability.
+       *NEED TO FIGURE OUT HOW TO IMPLEMENT THE RESOURCE AVAILABILITY PART
+       */
+      assign( vS, getVSReg( XS ) );
+      high64 = unop( Iop_V128HIto64, mkexpr( vS ) );
+      putIReg( rA_addr, (mode64) ? high64 :
+      unop( Iop_64to32, high64 ) );
+      break;
+   }
+
+   case 0xB3:                // mtvsrd
+   {
+      UChar XT = ifieldRegXT( theInstr );
+      UChar rA_addr = ifieldRegA(theInstr);
+      IRTemp rA = newTemp(ty);
+      DIP("mtvsrd vsr%d,r%u\n", (UInt)XT, rA_addr);
+      /*  XS = SX || S
+       *  For SX=0, mfvsrd is treated as a Floating-Point
+       *            instruction in terms of resource availability.
+       *  For SX=1, mfvsrd is treated as a Vector instruction in
+       *            terms of resource availability.
+       *NEED TO FIGURE OUT HOW TO IMPLEMENT THE RESOURCE AVAILABILITY PART
+       */
+      assign( rA, getIReg(rA_addr) );
+
+      if (mode64)
+         putVSReg( XT, binop( Iop_64HLtoV128, mkexpr( rA ), mkU64( 0 ) ) );
+      else
+         putVSReg( XT, binop( Iop_64HLtoV128,
+                              binop( Iop_32HLto64,
+                                     mkU32( 0 ),
+                                     mkexpr( rA ) ),
+                                     mkU64( 0 ) ) );
+      break;
+   }
+
+   case 0xD3:                // mtvsrwa
+   {
+      UChar XT = ifieldRegXT( theInstr );
+      UChar rA_addr = ifieldRegA(theInstr);
+      IRTemp rA = newTemp( Ity_I32 );
+      DIP("mtvsrwa vsr%d,r%u\n", (UInt)XT, rA_addr);
+      /*  XS = SX || S
+       *  For SX=0, mtvsrwa is treated as a Floating-Point
+       *            instruction in terms of resource availability.
+       *  For SX=1, mtvsrwa is treated as a Vector instruction in
+       *            terms of resource availability.
+       *NEED TO FIGURE OUT HOW TO IMPLEMENT THE RESOURCE AVAILABILITY PART
+       */
+      if (mode64)
+         assign( rA, unop( Iop_64to32, getIReg( rA_addr ) ) );
+      else
+         assign( rA, getIReg(rA_addr) );
+
+      putVSReg( XT, binop( Iop_64HLtoV128,
+                           unop( Iop_32Sto64, mkexpr( rA ) ),
+                           mkU64( 0 ) ) );
+      break;
+   }
+
    default:
       vex_printf("dis_proc_ctl(ppc)(opc2)\n");
       return False;
@@ -11692,7 +11770,7 @@ dis_vx_conv ( UInt theInstr, UInt opc2 )
    /* Create and assign temps only as needed for the given instruction. */
    switch (opc2) {
       // scalar double-precision floating point argument
-      case 0x2B0: case 0x0b0: case 0x290: case 0x212: case 0x090:
+      case 0x2B0: case 0x0b0: case 0x290: case 0x212: case 0x216: case 0x090:
          xB = newTemp(Ity_F64);
          assign( xB,
                  unop( Iop_ReinterpI64asF64,
@@ -11730,6 +11808,11 @@ dis_vx_conv ( UInt theInstr, UInt opc2 )
          break;
       // scalar single precision argument
       case 0x292: // xscvspdp
+         xB = newTemp(Ity_I32);
+         assign( xB,
+                 unop( Iop_64HIto32, unop( Iop_V128HIto64, getVSReg( XB ) ) ) );
+         break;
+      case 0x296: // xscvspdpn (non signaling version of xscvpdp)
          xB = newTemp(Ity_I32);
          assign( xB,
                  unop( Iop_64HIto32, unop( Iop_V128HIto64, getVSReg( XB ) ) ) );
@@ -11881,6 +11964,18 @@ dis_vx_conv ( UInt theInstr, UInt opc2 )
                                  mkU32( 0 ) ),
                           mkU64( 0ULL ) ) );
          break;
+      case 0x216: /* xscvdpspn (VSX Scalar convert scalar Single-Precision to
+                              vector single Convert to Single-Precision non-signalling */
+         DIP("xscvdpspn v%u,v%u\n",  (UInt)XT, (UInt)XB);
+         putVSReg( XT,
+                   binop( Iop_64HLtoV128,
+                          binop( Iop_32HLto64,
+                                 unop( Iop_ReinterpF32asI32,
+                                       unop( Iop_TruncF64asF32,
+                                             mkexpr( xB ) ) ),
+                                             mkU32( 0 ) ),
+                                             mkU64( 0ULL ) ) );
+         break;
       case 0x090: // xscvdpuxws (VSX Scalar truncate Double-Precision to integer
                   //             and Convert to Unsigned Integer Word format with Saturate)
          DIP("xscvdpuxws v%u,v%u\n",  (UInt)XT, (UInt)XB);
@@ -11901,6 +11996,15 @@ dis_vx_conv ( UInt theInstr, UInt opc2 )
                                 unop( Iop_F32toF64,
                                       unop( Iop_ReinterpI32asF32, mkexpr( xB ) ) ) ),
                           mkU64( 0ULL ) ) );
+         break;
+      case 0x296: // xscvspdpn (VSX Scalar Convert Single-Precision to Double-Precision format Non signaling)
+         DIP("xscvspdpn v%u,v%u\n",  (UInt)XT, (UInt)XB);
+         putVSReg( XT,
+                   binop( Iop_64HLtoV128,
+                          unop( Iop_ReinterpF64asI64,
+                                unop( Iop_F32toF64,
+                                      unop( Iop_ReinterpI32asF32, mkexpr( xB ) ) ) ),
+                                      mkU64( 0ULL ) ) );
          break;
       case 0x312: // xvcvdpsp (VSX Vector round Double-Precision to single-precision
                   //           and Convert to Single-Precision format)
@@ -14627,6 +14731,11 @@ static Bool dis_av_arith ( UInt theInstr )
       putVReg( vD_addr, binop(Iop_Add32x4, mkexpr(vA), mkexpr(vB)) );
       break;
 
+   case 0x0C0: // vaddudm (Add Unsigned Double Word Modulo)
+      DIP("vaddudm v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      putVReg( vD_addr, binop(Iop_Add64x2, mkexpr(vA), mkexpr(vB)) );
+      break;
+
    case 0x200: // vaddubs (Add Unsigned Byte Saturate, AV p142)
       DIP("vaddubs v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
       putVReg( vD_addr, binop(Iop_QAdd8Ux16, mkexpr(vA), mkexpr(vB)) );
@@ -15899,6 +16008,12 @@ static Bool dis_av_pack ( UInt theInstr )
       return True;
    }
 
+   case 0x44E: // vpkudum (Pack Unsigned Double Word Unsigned Modulo)
+      DIP("vpkudum v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      putVReg( vD_addr,
+               binop(Iop_NarrowBin64to32x4, mkexpr(vA), mkexpr(vB)) );
+      return True;
+
    default:
       break; // Fall through...
    }
@@ -16431,6 +16546,7 @@ static struct vsx_insn vsx_all[] = {
       { 0x1f4, "xvtdivdp" },
       { 0x208, "xxland" },
       { 0x212, "xscvdpsp" },
+      { 0x216, "xscvdpspn" },
       { 0x228, "xxlandc" },
       { 0x248 , "xxlor" },
       { 0x268, "xxlxor" },
@@ -16439,6 +16555,7 @@ static struct vsx_insn vsx_all[] = {
       { 0x288, "xxlnor" },
       { 0x290, "xscvdpuxds" },
       { 0x292, "xscvspdp" },
+      { 0x296, "xscvspdpn" },
       { 0x2a0, "xsmindp" },
       { 0x2a4, "xsnmaddmdp" },
       { 0x2b0, "xscvdpsxds" },
@@ -16487,7 +16604,8 @@ static struct vsx_insn vsx_all[] = {
       { 0x3f0, "xvcvsxddp" },
       { 0x3f2, "xvnegdp" }
 };
-#define VSX_ALL_LEN 135
+#define VSX_ALL_LEN (sizeof vsx_all / sizeof *vsx_all)
+
 
 // ATTENTION: This search function assumes vsx_all array is sorted.
 static Int findVSXextOpCode(UInt opcode)
@@ -16565,6 +16683,7 @@ DisResult disInstr_PPC_WRK (
    Bool      allow_GX = False;
    Bool      allow_VX = False;  // Equates to "supports Power ISA 2.06
    Bool      allow_DFP = False;
+   Bool      allow_isa_2_07 = False;
    UInt      hwcaps = archinfo->hwcaps;
    Long      delta;
 
@@ -16576,6 +16695,7 @@ DisResult disInstr_PPC_WRK (
       allow_GX = (0 != (hwcaps & VEX_HWCAPS_PPC64_GX));
       allow_VX = (0 != (hwcaps & VEX_HWCAPS_PPC64_VX));
       allow_DFP = (0 != (hwcaps & VEX_HWCAPS_PPC64_DFP));
+      allow_isa_2_07 = (0 != (hwcaps & VEX_HWCAPS_PPC64_ISA2_07));
    } else {
       allow_F  = (0 != (hwcaps & VEX_HWCAPS_PPC32_F));
       allow_V  = (0 != (hwcaps & VEX_HWCAPS_PPC32_V));
@@ -16583,6 +16703,7 @@ DisResult disInstr_PPC_WRK (
       allow_GX = (0 != (hwcaps & VEX_HWCAPS_PPC32_GX));
       allow_VX = (0 != (hwcaps & VEX_HWCAPS_PPC32_VX));
       allow_DFP = (0 != (hwcaps & VEX_HWCAPS_PPC32_DFP));
+      allow_isa_2_07 = (0 != (hwcaps & VEX_HWCAPS_PPC32_ISA2_07));
    }
 
    /* The running delta */
@@ -17025,8 +17146,9 @@ DisResult disInstr_PPC_WRK (
          case 0x2B0: case 0x2F0: // xscvdpsxds, xscvsxddp
          case 0x1b0: case 0x130: // xvcvdpsxws, xvcvspsxws
          case 0x0b0: case 0x290: // xscvdpsxws, xscvdpuxds
-         case 0x212: // xscvdpsp
-         case 0x292: case 0x312: // xscvspdp, xvcvdpsp
+         case 0x212: case 0x216: // xscvdpsp, xscvdpspn
+         case 0x292: case 0x296: // xscvspdp, xscvspdpn
+         case 0x312: // xvcvdpsp
          case 0x390: case 0x190: // xvcvdpuxds, xvcvdpuxws
          case 0x3B0: case 0x310: // xvcvdpsxds, xvcvspuxds
          case 0x392: case 0x330: // xvcvspdp, xvcvspsxds
@@ -17070,7 +17192,6 @@ DisResult disInstr_PPC_WRK (
 
    /* 64bit Integer Stores */
    case 0x3E:  // std, stdu
-      if (!mode64) goto decode_failure;
       if (dis_int_store( theInstr, abiinfo )) goto decode_success;
       goto decode_failure;
 
@@ -17105,7 +17226,7 @@ DisResult disInstr_PPC_WRK (
          if (!allow_GX) goto decode_noGX;
          if (dis_fp_arith(theInstr)) goto decode_success;
          goto decode_failure;
-         
+
       default:
          break; // Fall through
       }
@@ -17455,6 +17576,8 @@ DisResult disInstr_PPC_WRK (
          goto decode_failure;
 
       /* Processor Control Instructions */
+      case 0x33:  // mfvsrd
+      case 0xB3:  case 0xD3: // mtvsrd, mtvsrwa
       case 0x200: case 0x013: case 0x153: // mcrxr, mfcr,  mfspr
       case 0x173: case 0x090: case 0x1D3: // mftb,  mtcrf, mtspr
          if (dis_proc_ctl( abiinfo, theInstr )) goto decode_success;
@@ -17662,6 +17785,11 @@ DisResult disInstr_PPC_WRK (
          if (dis_av_arith( theInstr )) goto decode_success;
          goto decode_failure;
 
+      case 0x0C0:                         // vaddudm
+         if (!allow_isa_2_07) goto decode_noP8;
+         if (dis_av_arith( theInstr )) goto decode_success;
+         goto decode_failure;
+
       /* AV Rotate, Shift */
       case 0x004: case 0x044: case 0x084: // vrlb, vrlh, vrlw
       case 0x104: case 0x144: case 0x184: // vslb, vslh, vslw
@@ -17725,6 +17853,11 @@ DisResult disInstr_PPC_WRK (
          if (dis_av_pack( theInstr )) goto decode_success;
          goto decode_failure;
 
+      case 0x44E: // vpkudum
+         if (!allow_isa_2_07) goto decode_noP8;
+         if (dis_av_pack( theInstr )) goto decode_success;
+         goto decode_failure;
+
       default:
          break;  // Fall through...
       }
@@ -17781,6 +17914,11 @@ DisResult disInstr_PPC_WRK (
       vassert(!allow_DFP);
       vex_printf("disInstr(ppc): "
                "declined to decode a Decimal Floating Point insn.\n");
+      goto decode_failure;
+   decode_noP8:
+      vassert(!allow_isa_2_07);
+      vex_printf("disInstr(ppc): "
+               "declined to decode a Power 8 insn.\n");
       goto decode_failure;
 
 
@@ -17870,10 +18008,11 @@ DisResult disInstr_PPC ( IRSB*        irsb_IN,
    /* do some sanity checks */
    mask32 = VEX_HWCAPS_PPC32_F | VEX_HWCAPS_PPC32_V
             | VEX_HWCAPS_PPC32_FX | VEX_HWCAPS_PPC32_GX | VEX_HWCAPS_PPC32_VX
-            | VEX_HWCAPS_PPC32_DFP;
+            | VEX_HWCAPS_PPC32_DFP | VEX_HWCAPS_PPC32_ISA2_07;
 
    mask64 = VEX_HWCAPS_PPC64_V | VEX_HWCAPS_PPC64_FX
-		   | VEX_HWCAPS_PPC64_GX | VEX_HWCAPS_PPC64_VX | VEX_HWCAPS_PPC64_DFP;
+            | VEX_HWCAPS_PPC64_GX | VEX_HWCAPS_PPC64_VX | VEX_HWCAPS_PPC64_DFP
+            | VEX_HWCAPS_PPC64_ISA2_07;
 
    if (mode64) {
       vassert((hwcaps_guest & mask32) == 0);

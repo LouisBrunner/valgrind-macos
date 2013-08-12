@@ -492,6 +492,7 @@ typedef
       Pin_AvBin8x16,  /* AV binary, 8x4 */
       Pin_AvBin16x8,  /* AV binary, 16x4 */
       Pin_AvBin32x4,  /* AV binary, 32x4 */
+      Pin_AvBin64x2,  /* AV binary, 64x2 */
 
       Pin_AvBin32Fx4, /* AV FP binary, 32Fx4 */
       Pin_AvUn32Fx4,  /* AV FP unary,  32Fx4 */
@@ -795,6 +796,13 @@ typedef
             HReg    srcL;
             HReg    srcR;
          } AvBin32x4;
+         /* Can only be generated for CPUs capable of ISA 2.07 or above */
+         struct {
+            PPCAvOp op;
+            HReg    dst;
+            HReg    srcL;
+            HReg    srcR;
+         } AvBin64x2;
          struct {
             PPCAvFpOp op;
             HReg      dst;
@@ -1013,6 +1021,7 @@ extern PPCInstr* PPCInstr_AvBinary   ( PPCAvOp op, HReg dst, HReg srcL, HReg src
 extern PPCInstr* PPCInstr_AvBin8x16  ( PPCAvOp op, HReg dst, HReg srcL, HReg srcR );
 extern PPCInstr* PPCInstr_AvBin16x8  ( PPCAvOp op, HReg dst, HReg srcL, HReg srcR );
 extern PPCInstr* PPCInstr_AvBin32x4  ( PPCAvOp op, HReg dst, HReg srcL, HReg srcR );
+extern PPCInstr* PPCInstr_AvBin64x2  ( PPCAvOp op, HReg dst, HReg srcL, HReg srcR );
 extern PPCInstr* PPCInstr_AvBin32Fx4 ( PPCAvFpOp op, HReg dst, HReg srcL, HReg srcR );
 extern PPCInstr* PPCInstr_AvUn32Fx4  ( PPCAvFpOp op, HReg dst, HReg src );
 extern PPCInstr* PPCInstr_AvPerm     ( HReg dst, HReg srcL, HReg srcR, HReg ctl );

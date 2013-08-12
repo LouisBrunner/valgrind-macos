@@ -1467,6 +1467,7 @@ typedef
       Iop_QNarrowBin16Sto8Sx16, Iop_QNarrowBin32Sto16Sx8,
       Iop_QNarrowBin16Uto8Ux16, Iop_QNarrowBin32Uto16Ux8,
       Iop_NarrowBin16to8x16, Iop_NarrowBin32to16x8,
+      Iop_NarrowBin64to32x4,
 
       /* NARROWING (unary) -- narrow V128 into I64 */
       Iop_NarrowUn16to8x8, Iop_NarrowUn32to16x4, Iop_NarrowUn64to32x2,

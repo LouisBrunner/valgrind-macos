@@ -16,6 +16,12 @@ EXTRA_DIST = \
 	pushfpopf.stderr.exp pushfpopf.stdout.exp pushfpopf.vgtest \
 	pushfw_x86.vgtest pushfw_x86.stdout.exp pushfw_x86.stderr.exp \
 	pushpopmem.stderr.exp pushpopmem.stdout.exp pushpopmem.vgtest \
+	sh-mem-vec128-plo-no.vgtest \
+		sh-mem-vec128-plo-no.stderr.exp \
+		sh-mem-vec128-plo-no.stdout.exp \
+	sh-mem-vec128-plo-yes.vgtest \
+		sh-mem-vec128-plo-yes.stderr.exp \
+		sh-mem-vec128-plo-yes.stdout.exp \
 	sse1_memory.stderr.exp sse1_memory.stdout.exp sse1_memory.vgtest \
 	sse2_memory.stderr.exp sse2_memory.stdout.exp sse2_memory.vgtest \
 	tronical.stderr.exp tronical.vgtest \
@@ -34,6 +40,7 @@ check_PROGRAMS = \
 	pushfpopf \
 	pushfw_x86 \
 	pushpopmem \
+	sh-mem-vec128 \
 	sse_memory \
 	tronical \
 	xor-undef-x86

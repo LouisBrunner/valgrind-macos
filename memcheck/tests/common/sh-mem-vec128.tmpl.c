@@ -209,8 +209,8 @@ static void do_partial_load_case ( U4 nInitialValid, Bool aligned )
 
 int main ( void )
 {
-  fprintf(stderr, "sh-mem-vec128: config: %s-endian, %lu-bit word size\n",
-                  get_endianness(), 8 * sizeof(void*));
+  fprintf(stderr, "sh-mem-vec128: config: %s-endian, %d-bit word size\n",
+          get_endianness(), (int)(8 * sizeof(void*)));
 
   U4 i;
   U1* buf = memalign16(N_BYTES);

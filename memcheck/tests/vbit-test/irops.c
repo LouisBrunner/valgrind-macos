@@ -806,6 +806,7 @@ static irop_t irops[] = {
   { DEFOP(Iop_QNarrowBin32Uto16Ux8, UNDEF_UNKNOWN), },
   { DEFOP(Iop_NarrowBin16to8x16, UNDEF_UNKNOWN), },
   { DEFOP(Iop_NarrowBin32to16x8, UNDEF_UNKNOWN), },
+  { DEFOP(Iop_NarrowBin64to32x4, UNDEF_UNKNOWN), },
   { DEFOP(Iop_NarrowUn16to8x8, UNDEF_UNKNOWN), },
   { DEFOP(Iop_NarrowUn32to16x4, UNDEF_UNKNOWN), },
   { DEFOP(Iop_NarrowUn64to32x2, UNDEF_UNKNOWN), },

@@ -3357,6 +3357,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          than a data steering operation. */
       case Iop_NarrowBin32to16x8: 
       case Iop_NarrowBin16to8x16: 
+      case Iop_NarrowBin64to32x4:
          return assignNew('V', mce, Ity_V128, 
                                     binop(op, vatom1, vatom2));
 

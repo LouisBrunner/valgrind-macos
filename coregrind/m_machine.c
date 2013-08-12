@@ -887,6 +887,7 @@ Bool VG_(machine_get_hwcaps)( void )
      vki_sigaction_toK_t     tmp_sigill_act,   tmp_sigfpe_act;
 
      volatile Bool have_F, have_V, have_FX, have_GX, have_VX, have_DFP;
+     volatile Bool have_isa_2_07;
      Int r;
 
      /* This is a kludge.  Really we ought to back-convert saved_act
@@ -981,6 +982,14 @@ Bool VG_(machine_get_hwcaps)( void )
         __asm__ __volatile__(".long 0xee4e8005"); /* dadd  FRT,FRA, FRB */
      }
 
+     /* Check for ISA 2.07 support. */
+     have_isa_2_07 = True;
+     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
+        have_isa_2_07 = False;
+     } else {
+        __asm__ __volatile__(".long 0x7c000166"); /* mtvsrd XT,RA */
+     }
+
      /* determine dcbz/dcbzl sizes while we still have the signal
       * handlers registered */
      find_ppc_dcbz_sz(&vai);
@@ -991,9 +1000,10 @@ Bool VG_(machine_get_hwcaps)( void )
      vg_assert(r == 0);
      r = VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
      vg_assert(r == 0);
-     VG_(debugLog)(1, "machine", "F %d V %d FX %d GX %d VX %d DFP %d\n",
+     VG_(debugLog)(1, "machine", "F %d V %d FX %d GX %d VX %d DFP %d ISA2.07 %d\n",
                     (Int)have_F, (Int)have_V, (Int)have_FX,
-                    (Int)have_GX, (Int)have_VX, (Int)have_DFP);
+                    (Int)have_GX, (Int)have_VX, (Int)have_DFP,
+                    (Int)have_isa_2_07);
      /* Make FP a prerequisite for VMX (bogusly so), and for FX and GX. */
      if (have_V && !have_F)
         have_V = False;
@@ -1014,6 +1024,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (have_GX) vai.hwcaps |= VEX_HWCAPS_PPC32_GX;
      if (have_VX) vai.hwcaps |= VEX_HWCAPS_PPC32_VX;
      if (have_DFP) vai.hwcaps |= VEX_HWCAPS_PPC32_DFP;
+     if (have_isa_2_07) vai.hwcaps |= VEX_HWCAPS_PPC32_ISA2_07;
 
      VG_(machine_get_cache_info)(&vai);
 
@@ -1030,6 +1041,7 @@ Bool VG_(machine_get_hwcaps)( void )
      vki_sigaction_toK_t     tmp_sigill_act,   tmp_sigfpe_act;
 
      volatile Bool have_F, have_V, have_FX, have_GX, have_VX, have_DFP;
+     volatile Bool have_isa_2_07;
      Int r;
 
      /* This is a kludge.  Really we ought to back-convert saved_act
@@ -1116,6 +1128,14 @@ Bool VG_(machine_get_hwcaps)( void )
         __asm__ __volatile__(".long 0xee4e8005"); /* dadd  FRT,FRA, FRB */
      }
 
+     /* Check for ISA 2.07 support. */
+     have_isa_2_07 = True;
+     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
+        have_isa_2_07 = False;
+     } else {
+        __asm__ __volatile__(".long 0x7c000166"); /* mtvsrd XT,RA */
+     }
+
      /* determine dcbz/dcbzl sizes while we still have the signal
       * handlers registered */
      find_ppc_dcbz_sz(&vai);
@@ -1123,9 +1143,10 @@ Bool VG_(machine_get_hwcaps)( void )
      VG_(sigaction)(VKI_SIGILL, &saved_sigill_act, NULL);
      VG_(sigaction)(VKI_SIGFPE, &saved_sigfpe_act, NULL);
      VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
-     VG_(debugLog)(1, "machine", "F %d V %d FX %d GX %d VX %d DFP %d\n",
+     VG_(debugLog)(1, "machine", "F %d V %d FX %d GX %d VX %d DFP %d ISA2.07 %d\n",
                     (Int)have_F, (Int)have_V, (Int)have_FX,
-                    (Int)have_GX, (Int)have_VX, (Int)have_DFP);
+                    (Int)have_GX, (Int)have_VX, (Int)have_DFP,
+                    (Int)have_isa_2_07);
      /* on ppc64, if we don't even have FP, just give up. */
      if (!have_F)
         return False;
@@ -1140,6 +1161,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (have_GX) vai.hwcaps |= VEX_HWCAPS_PPC64_GX;
      if (have_VX) vai.hwcaps |= VEX_HWCAPS_PPC64_VX;
      if (have_DFP) vai.hwcaps |= VEX_HWCAPS_PPC64_DFP;
+     if (have_isa_2_07) vai.hwcaps |= VEX_HWCAPS_PPC64_ISA2_07;
 
      VG_(machine_get_cache_info)(&vai);
 

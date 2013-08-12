@@ -35,7 +35,10 @@ EXTRA_DIST = \
 	test_dfp2.stdout.exp_Without_dcffix \
 	test_dfp3.stderr.exp test_dfp3.stdout.exp test_dfp3.vgtest \
 	test_dfp4.stderr.exp test_dfp4.stdout.exp test_dfp4.vgtest \
-	test_dfp5.stderr.exp test_dfp5.stdout.exp test_dfp5.vgtest
+	test_dfp5.stderr.exp test_dfp5.stdout.exp test_dfp5.vgtest \
+	jm_vec_isa_2_07.stderr.exp jm_vec_isa_2_07.stdout.exp jm_vec_isa_2_07.vgtest \
+	test_isa_2_07_part2.stderr.exp test_isa_2_07_part2.stdout.exp test_isa_2_07_part2.vgtest
+
 
 check_PROGRAMS = \
 	allexec \
@@ -46,7 +49,9 @@ check_PROGRAMS = \
 	test_isa_2_06_part1 \
 	test_isa_2_06_part2 \
 	test_isa_2_06_part3 \
-	test_dfp1 test_dfp2 test_dfp3 test_dfp4 test_dfp5
+	test_dfp1 test_dfp2 test_dfp3 test_dfp4 test_dfp5 \
+	test_isa_2_07_part1 \
+	test_isa_2_07_part2
 
 
 AM_CFLAGS    += @FLAG_M32@
@@ -77,6 +82,14 @@ BUILD_FLAGS_DFP =
 DFP_FLAG =
 endif
 
+if HAS_ISA_2_07
+BUILD_FLAGS_ISA_2_07 = -mcpu=power8
+ISA_2_07_FLAG = -DHAS_ISA_2_07
+else
+BUILD_FLAGS_ISA_2_07 =
+ISA_2_07_FLAG =
+endif
+
 jm_insns_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames -maltivec \
 			@FLAG_M32@ $(ALTIVEC_FLAG)
 
@@ -104,3 +117,9 @@ test_dfp4_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(DFP_FLAG) 
 
 test_dfp5_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(DFP_FLAG) \
 			@FLAG_M32@ $(BUILD_FLAGS_DFP)
+
+test_isa_2_07_part1_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(ISA_2_07_FLAG) \
+                        @FLAG_M32@ $(BUILD_FLAGS_ISA_2_07)
+
+test_isa_2_07_part2_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(ISA_2_07_FLAG) \
+			@FLAG_M64@ $(BUILD_FLAGS_ISA_2_07)

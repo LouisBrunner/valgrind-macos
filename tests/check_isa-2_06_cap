@@ -1,8 +1,9 @@
 #!/bin/sh
 
-# We use this script to check whether or not the processor supports Power ISA 2.06.
+# We use this script to check whether or not the processor supports Power ISA 2.06 or later.
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+LD_SHOW_AUXV=1 $DIR/true | grep  arch_2_06 > /dev/null 2>&1
 
-LD_SHOW_AUXV=1 /bin/true | grep  arch_2_06 > /dev/null 2>&1
 if [ "$?" -ne "0" ]; then
 	exit 1
 else

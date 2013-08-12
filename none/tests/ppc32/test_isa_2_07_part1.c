@@ -1,0 +1,1 @@
+../ppc64/test_isa_2_07_part1.c

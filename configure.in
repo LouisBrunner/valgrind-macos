@@ -1296,6 +1296,21 @@ AC_MSG_RESULT([no])
 
 AM_CONDITIONAL(BUILD_DFP_TESTS, test x$ac_gcc_have_dfp_type = xyes)
 
+# isa 2.07 checking
+AC_MSG_CHECKING([that assembler knows ISA 2.07 ])
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+]], [[
+  __asm__ __volatile__("mtvsrd 1,2 ");
+]])], [
+ac_asm_have_isa_2_07=yes
+AC_MSG_RESULT([yes])
+], [
+ac_asm_have_isa_2_07=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(HAS_ISA_2_07, test x$ac_asm_have_isa_2_07 = xyes)
 
 # Check for pthread_create@GLIBC2.0
 AC_MSG_CHECKING([for pthread_create@GLIBC2.0()])

@@ -1,0 +1,34 @@
+mfvsrd: 0102030405060708 => 0102030405060708
+mfvsrd: 090a0b0c0e0d0e0f => 090a0b0c0e0d0e0f
+mfvsrd: f1f2f3f4f5f6f7f8 => f1f2f3f4f5f6f7f8
+mfvsrd: f9fafbfcfefdfeff => f9fafbfcfefdfeff
+
+mtvsrd: 0102030405060708 => 0102030405060708
+mtvsrd: 090a0b0c0e0d0e0f => 090a0b0c0e0d0e0f
+mtvsrd: f1f2f3f4f5f6f7f8 => f1f2f3f4f5f6f7f8
+mtvsrd: f9fafbfcfefdfeff => f9fafbfcfefdfeff
+
+mtfprwa: 05060708 => 0000000005060708
+mtfprwa: 0e0d0e0f => 000000000e0d0e0f
+mtfprwa: f5f6f7f8 => fffffffff5f6f7f8
+mtfprwa: fefdfeff => fffffffffefdfeff
+
+vaddudm: 0102030405060708 @@ 0102030405060708,  ==> 020406080a0c0e10
+	090a0b0c0e0d0e0f @@ 090a0b0c0e0d0e0f,  ==> 121416181c1a1c1e
+vaddudm: 0102030405060708 @@ f1f2f3f4f5f6f7f8,  ==> f2f4f6f8fafcff00
+	090a0b0c0e0d0e0f @@ f9fafbfcfefdfeff,  ==> 030507090d0b0d0e
+vaddudm: f1f2f3f4f5f6f7f8 @@ 0102030405060708,  ==> f2f4f6f8fafcff00
+	f9fafbfcfefdfeff @@ 090a0b0c0e0d0e0f,  ==> 030507090d0b0d0e
+vaddudm: f1f2f3f4f5f6f7f8 @@ f1f2f3f4f5f6f7f8,  ==> e3e5e7e9ebedeff0
+	f9fafbfcfefdfeff @@ f9fafbfcfefdfeff,  ==> f3f5f7f9fdfbfdfe
+
+vpkudum: Inputs: 05060708 0e0d0e0f 05060708 0e0d0e0f
+         Output: 05060708 0e0d0e0f 05060708 0e0d0e0f
+vpkudum: Inputs: 05060708 0e0d0e0f f5f6f7f8 fefdfeff
+         Output: 05060708 0e0d0e0f f5f6f7f8 fefdfeff
+vpkudum: Inputs: f5f6f7f8 fefdfeff 05060708 0e0d0e0f
+         Output: f5f6f7f8 fefdfeff 05060708 0e0d0e0f
+vpkudum: Inputs: f5f6f7f8 fefdfeff f5f6f7f8 fefdfeff
+         Output: f5f6f7f8 fefdfeff f5f6f7f8 fefdfeff
+
+All done. Tested 5 different instructions

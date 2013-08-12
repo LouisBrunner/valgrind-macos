@@ -18,6 +18,12 @@ EXTRA_DIST = \
 	insn-pcmpistri.vgtest insn-pcmpistri.stdout.exp insn-pcmpistri.stderr.exp \
 	insn-pmovmskb.vgtest insn-pmovmskb.stdout.exp insn-pmovmskb.stderr.exp \
 	more_x87_fp.stderr.exp more_x87_fp.stdout.exp more_x87_fp.vgtest \
+	sh-mem-vec128-plo-no.vgtest \
+		sh-mem-vec128-plo-no.stderr.exp \
+		sh-mem-vec128-plo-no.stdout.exp \
+	sh-mem-vec128-plo-yes.vgtest \
+		sh-mem-vec128-plo-yes.stderr.exp \
+		sh-mem-vec128-plo-yes.stdout.exp \
 	sse_memory.stderr.exp sse_memory.stdout.exp sse_memory.vgtest \
 	xor-undef-amd64.stderr.exp xor-undef-amd64.stdout.exp \
 	xor-undef-amd64.vgtest
@@ -31,6 +37,7 @@ check_PROGRAMS = \
 	insn-pcmpistri \
 	insn-pmovmskb \
 	more_x87_fp \
+	sh-mem-vec128 \
 	sse_memory \
 	xor-undef-amd64
 

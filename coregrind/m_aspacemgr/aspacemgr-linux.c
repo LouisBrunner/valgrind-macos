@@ -2448,14 +2448,27 @@ SysRes VG_(am_mmap_anon_float_valgrind)( SizeT length )
       another thread can pre-empt our spot.  [At one point on the DARWIN
       branch the VKI_MAP_FIXED was commented out;  unclear if this is
       necessary or not given the second Darwin-only call that immediately
-      follows if this one fails.  --njn] */
+      follows if this one fails.  --njn]
+      Also, an inner valgrind cannot observe the mmap syscalls done by
+      the outer valgrind. The outer Valgrind might make the mmap
+      fail here, as the inner valgrind believes that a segment is free,
+      while it is in fact used by the outer valgrind.
+      So, for an inner valgrind, similarly to DARWIN, if the fixed mmap
+      fails, retry the mmap without map fixed.
+      This is a kludge which on linux is only activated for the inner.
+      The state of the inner aspacemgr is not made correct by this kludge
+      and so a.o. VG_(am_do_sync_check) could fail.
+      A proper solution implies a better collaboration between the
+      inner and the outer (e.g. inner VG_(am_get_advisory) should do
+      a client request to call the outer VG_(am_get_advisory). */
    sres = VG_(am_do_mmap_NO_NOTIFY)( 
              advised, length, 
              VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC, 
              VKI_MAP_FIXED|VKI_MAP_PRIVATE|VKI_MAP_ANONYMOUS, 
              VM_TAG_VALGRIND, 0
           );
-#if defined(VGO_darwin)
+#if defined(VGO_darwin) || defined(ENABLE_INNER)
+   /* Kludge on Darwin and inner linux if the fixed mmap failed. */
    if (sr_isError(sres)) {
        /* try again, ignoring the advisory */
        sres = VG_(am_do_mmap_NO_NOTIFY)( 
@@ -2469,7 +2482,9 @@ SysRes VG_(am_mmap_anon_float_valgrind)( SizeT length )
    if (sr_isError(sres))
       return sres;
 
-#if defined(VGO_linux)
+#if defined(VGO_linux) && !defined(ENABLE_INNER)
+   /* Doing the check only in linux not inner, as the below
+      check can fail when the kludge above has been used. */
    if (sr_Res(sres) != advised) {
       /* I don't think this can happen.  It means the kernel made a
          fixed map succeed but not at the requested location.  Try to

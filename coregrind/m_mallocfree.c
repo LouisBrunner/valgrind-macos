@@ -762,6 +762,10 @@ void VG_(out_of_memory_NORETURN) ( const HChar* who, SizeT szB )
          VG_(print_all_arena_stats) ();
          if (VG_(clo_profile_heap))
             VG_(print_arena_cc_analysis) ();
+         /* In case we are an inner valgrind, asks the outer to report
+            its memory state in its log output. */
+         INNER_REQUEST(VALGRIND_MONITOR_COMMAND("v.set log_output"));
+         INNER_REQUEST(VALGRIND_MONITOR_COMMAND("v.info memory aspacemgr"));
       }
       outputTrial++;
       VG_(message)(Vg_UserMsg, s1, who, (ULong)szB, tot_alloc);

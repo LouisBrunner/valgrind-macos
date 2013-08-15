@@ -101,8 +101,8 @@ int main ( void )
          do_ldrbt_imm_2((unsigned char*)&val_ldrbt), 137);
 
   UInt val_ldrsbt = (200 << 0) | (150 << 8) | (254 << 16) | (10 << 24);
-  printf("result is %u (should be %u)\n",
-         do_ldrsbt_imm_2((unsigned char*)&val_ldrsbt), 4294967294);
+  printf("result is %u (should be %llu)\n",
+         do_ldrsbt_imm_2((unsigned char*)&val_ldrsbt), 4294967294ULL);
 
   return 0;
 }

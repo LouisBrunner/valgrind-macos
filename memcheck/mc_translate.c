@@ -4273,7 +4273,7 @@ IRAtom* expr2vbits_Load_WRK ( MCEnv* mce,
       di = unsafeIRDirty_1_N( datavbits, 
                               2/*regparms*/, 
                               hname, VG_(fnptr_to_fnentry)( helper ), 
-                              mkIRExprVec_2( IRExprP__VECRET, addrAct ) );
+                              mkIRExprVec_2( IRExpr_VECRET(), addrAct ) );
    } else {
       di = unsafeIRDirty_1_N( datavbits, 
                               1/*regparms*/, 
@@ -4880,7 +4880,7 @@ void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
    for (i = 0; d->args[i]; i++) {
       IRAtom* arg = d->args[i];
       if ( (d->cee->mcx_mask & (1<<i))
-           || UNLIKELY(is_IRExprP__VECRET_or_BBPTR(arg)) ) {
+           || UNLIKELY(is_IRExpr_VECRET_or_BBPTR(arg)) ) {
          /* ignore this arg */
       } else {
          here = mkPCastTo( mce, Ity_I32, expr2vbits(mce, arg) );
@@ -5755,7 +5755,7 @@ static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
          d = st->Ist.Dirty.details;
          for (i = 0; d->args[i]; i++) {
             IRAtom* atom = d->args[i];
-            if (LIKELY(!is_IRExprP__VECRET_or_BBPTR(atom))) {
+            if (LIKELY(!is_IRExpr_VECRET_or_BBPTR(atom))) {
                if (isBogusAtom(atom))
                   return True;
             }
@@ -6647,7 +6647,7 @@ static void do_origins_Dirty ( MCEnv* mce, IRDirty* d )
    for (i = 0; d->args[i]; i++) {
       IRAtom* arg = d->args[i];
       if ( (d->cee->mcx_mask & (1<<i))
-           || UNLIKELY(is_IRExprP__VECRET_or_BBPTR(arg)) ) {
+           || UNLIKELY(is_IRExpr_VECRET_or_BBPTR(arg)) ) {
          /* ignore this arg */
       } else {
          here = schemeE( mce, arg );

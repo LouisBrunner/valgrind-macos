@@ -367,11 +367,11 @@ static AMD64Instr* iselIntExpr_single_instruction ( ISelEnv* env,
                                                     IRExpr*  e )
 {
    /* Per comments in doHelperCall below, appearance of
-      IRExprP__VECRET implies ill-formed IR. */
-   vassert(e != IRExprP__VECRET);
+      Iex_VECRET implies ill-formed IR. */
+   vassert(e->tag != Iex_VECRET);
 
    /* In this case we give out a copy of the BaseBlock pointer. */
-   if (UNLIKELY(e == IRExprP__BBPTR)) {
+   if (UNLIKELY(e->tag == Iex_BBPTR)) {
       return mk_iMOVsd_RR( hregAMD64_RBP(), dst );
    }
 
@@ -443,7 +443,7 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
    *retloc               = mk_RetLoc_INVALID();
 
    /* These are used for cross-checking that IR-level constraints on
-      the use of IRExprP__VECRET and IRExprP__BBPTR are observed. */
+      the use of IRExpr_VECRET() and IRExpr_BBPTR() are observed. */
    UInt nVECRETs = 0;
    UInt nBBPTRs  = 0;
 
@@ -457,13 +457,13 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
 
       The return type can be I{64,32,16,8} or V{128,256}.  In the
       latter two cases, it is expected that |args| will contain the
-      special value IRExprP__VECRET, in which case this routine
+      special node IRExpr_VECRET(), in which case this routine
       generates code to allocate space on the stack for the vector
       return value.  Since we are not passing any scalars on the
       stack, it is enough to preallocate the return space before
       marshalling any arguments, in this case.
 
-      |args| may also contain IRExprP__BBPTR, in which case the
+      |args| may also contain IRExpr_BBPTR(), in which case the
       value in %rbp is passed as the corresponding argument.
 
       Generating code which is both efficient and correct when
@@ -492,7 +492,7 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
       unconditional calls may use the fast scheme, since having to
       compute a condition expression could itself trash real
       registers.  Note that for simplicity, in the case where
-      IRExprP__VECRET is present, we use the slow scheme.  This is
+      IRExpr_VECRET() is present, we use the slow scheme.  This is
       motivated by the desire to avoid any possible complexity
       w.r.t. nested calls.
 
@@ -557,15 +557,15 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
    /* FAST SCHEME */
    /* In this loop, we process args that can be computed into the
       destination (real) register with a single instruction, without
-      using any fixed regs.  That also includes IRExprP__BBPTR, but
-      not IRExprP__VECRET.  Indeed, if the IR is well-formed, we can
-      never see IRExprP__VECRET at this point, since the return-type
+      using any fixed regs.  That also includes IRExpr_BBPTR(), but
+      not IRExpr_VECRET().  Indeed, if the IR is well-formed, we can
+      never see IRExpr_VECRET() at this point, since the return-type
       check above should ensure all those cases use the slow scheme
       instead. */
    vassert(n_args >= 0 && n_args <= 6);
    for (i = 0; i < n_args; i++) {
       IRExpr* arg = args[i];
-      if (LIKELY(!is_IRExprP__VECRET_or_BBPTR(arg))) {
+      if (LIKELY(!is_IRExpr_VECRET_or_BBPTR(arg))) {
          vassert(typeOfIRExpr(env->type_env, args[i]) == Ity_I64);
       }
       fastinstrs[i] 
@@ -612,12 +612,12 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
    vassert(n_args >= 0 && n_args <= 6);
    for (i = 0; i < n_args; i++) {
       IRExpr* arg = args[i];
-      if (UNLIKELY(arg == IRExprP__BBPTR)) {
+      if (UNLIKELY(arg->tag == Iex_BBPTR)) {
          tmpregs[i] = newVRegI(env);
          addInstr(env, mk_iMOVsd_RR( hregAMD64_RBP(), tmpregs[i]));
          nBBPTRs++;
       }
-      else if (UNLIKELY(arg == IRExprP__VECRET)) {
+      else if (UNLIKELY(arg->tag == Iex_VECRET)) {
          /* We stashed the address of the return slot earlier, so just
             retrieve it now. */
          vassert(!hregIsInvalid(r_vecRetAddr));

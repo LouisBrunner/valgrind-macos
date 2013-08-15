@@ -1680,7 +1680,9 @@ typedef
       Iex_Load,
       Iex_Const,
       Iex_ITE,
-      Iex_CCall
+      Iex_CCall,
+      Iex_VECRET,
+      Iex_BBPTR
    }
    IRExprTag;
 
@@ -1855,10 +1857,9 @@ struct _IRExpr {
          quite poor code to be generated.  Try to avoid it.
 
          In principle it would be allowable to have the arg vector
-         contain the special value IRExprP__VECRET, although not
-         IRExprP__BBPTR.  However, at the moment there is no
-         requirement for clean helper calls to be able to return V128
-         or V256 values.  Hence this is not allowed.
+         contain an IRExpr_VECRET(), although not IRExpr_BBPTR(). However,
+         at the moment there is no requirement for clean helper calls to
+         be able to return V128 or V256 values.  Hence this is not allowed.
 
          ppIRExpr output: <cee>(<args>):<retty>
                       eg. foo{0x80489304}(t1, t2):I32
@@ -1902,30 +1903,26 @@ struct _IRQop {
 };
 
 
-/* Two special constants of type IRExpr*, which can ONLY be used in
+/* Two special kinds of IRExpr, which can ONLY be used in
    argument lists for dirty helper calls (IRDirty.args) and in NO
-   OTHER PLACES.  And then only in very limited ways.  These constants
-   are not pointer-aligned and hence can't be confused with real
-   IRExpr*s nor with NULL. */
+   OTHER PLACES.  And then only in very limited ways.  */
 
 /* Denotes an argument which (in the helper) takes a pointer to a
    (naturally aligned) V128 or V256, into which the helper is expected
-   to write its result.  Use of IRExprP__VECRET is strictly
+   to write its result.  Use of IRExpr_VECRET() is strictly
    controlled.  If the helper returns a V128 or V256 value then
-   IRExprP__VECRET must appear exactly once in the arg list, although
+   IRExpr_VECRET() must appear exactly once in the arg list, although
    it can appear anywhere, and the helper must have a C 'void' return
-   type.  If the helper returns any other type, IRExprP__VECRET may
+   type.  If the helper returns any other type, IRExpr_VECRET() may
    not appear in the argument list. */
-#define IRExprP__VECRET ((IRExpr*)9)
 
 /* Denotes an void* argument which is passed to the helper, which at
    run time will point to the thread's guest state area.  This can
    only appear at most once in an argument list, and it may not appear
    at all in argument lists for clean helper calls. */
-#define IRExprP__BBPTR  ((IRExpr*)17)
 
-static inline Bool is_IRExprP__VECRET_or_BBPTR ( IRExpr* e ) {
-   return e == IRExprP__VECRET || e == IRExprP__BBPTR;
+static inline Bool is_IRExpr_VECRET_or_BBPTR ( IRExpr* e ) {
+   return e->tag == Iex_VECRET || e->tag == Iex_BBPTR;
 }
 
 
@@ -1944,6 +1941,8 @@ extern IRExpr* IRExpr_Load   ( IREndness end, IRType ty, IRExpr* addr );
 extern IRExpr* IRExpr_Const  ( IRConst* con );
 extern IRExpr* IRExpr_CCall  ( IRCallee* cee, IRType retty, IRExpr** args );
 extern IRExpr* IRExpr_ITE    ( IRExpr* cond, IRExpr* iftrue, IRExpr* iffalse );
+extern IRExpr* IRExpr_VECRET ( void );
+extern IRExpr* IRExpr_BBPTR  ( void );
 
 /* Deep-copy an IRExpr. */
 extern IRExpr* deepCopyIRExpr ( IRExpr* );
@@ -2088,10 +2087,10 @@ extern void ppIRJumpKind ( IRJumpKind );
      number of times at a fixed interval, if required.
 
    Normally, code is generated to pass just the args to the helper.
-   However, if IRExprP__BBPTR is present in the argument list (at most
+   However, if IRExpr_BBPTR() is present in the argument list (at most
    one instance is allowed), then the baseblock pointer is passed for
    that arg, so that the callee can access the guest state.  It is
-   invalid for .nFxState to be zero but IRExprP__BBPTR to be present,
+   invalid for .nFxState to be zero but IRExpr_BBPTR() to be present,
    since .nFxState==0 is a claim that the call does not access guest
    state.
 
@@ -2128,8 +2127,8 @@ typedef
          allowed. */
       IRCallee* cee;    /* where to call */
       IRExpr*   guard;  /* :: Ity_Bit.  Controls whether call happens */
-      /* The args vector may contain IRExprP__BBPTR and/or
-         IRExprP__VECRET, in both cases, at most once. */
+      /* The args vector may contain IRExpr_BBPTR() and/or
+         IRExpr_VECRET(), in both cases, at most once. */
       IRExpr**  args;   /* arg vector, ends in NULL. */
       IRTemp    tmp;    /* to assign result to, or IRTemp_INVALID if none */
 

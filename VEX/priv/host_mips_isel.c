@@ -405,7 +405,7 @@ static void doHelperCall(/*OUT*/UInt*   stackAdjustAfterCall,
    *retloc               = mk_RetLoc_INVALID();
 
    /* These are used for cross-checking that IR-level constraints on
-      the use of IRExprP__VECRET and IRExprP__BBPTR are observed. */
+      the use of IRExpr_VECRET() and IRExpr_BBPTR() are observed. */
    UInt nVECRETs = 0;
    UInt nBBPTRs  = 0;
 
@@ -423,22 +423,22 @@ static void doHelperCall(/*OUT*/UInt*   stackAdjustAfterCall,
 
    /* The return type can be I{64,32,16,8} or V{128,256}.  In the
       latter two cases, it is expected that |args| will contain the
-      special value IRExprP__VECRET, in which case this routine
+      special node IRExpr_VECRET(), in which case this routine
       generates code to allocate space on the stack for the vector
       return value.  Since we are not passing any scalars on the
       stack, it is enough to preallocate the return space before
       marshalling any arguments, in this case.
 
-      |args| may also contain IRExprP__BBPTR, in which case the value
+      |args| may also contain IRExpr_BBPTR(), in which case the value
       in the guest state pointer register is passed as the
       corresponding argument. */
 
    n_args = 0;
    for (i = 0; args[i]; i++) {
       IRExpr* arg = args[i];
-      if (UNLIKELY(arg == IRExprP__VECRET)) {
+      if (UNLIKELY(arg->tag == Iex_VECRET)) {
          nVECRETs++;
-      } else if (UNLIKELY(arg == IRExprP__BBPTR)) {
+      } else if (UNLIKELY(arg->tag == Iex_BBPTR)) {
          nBBPTRs++;
       }
       n_args++;
@@ -510,7 +510,7 @@ static void doHelperCall(/*OUT*/UInt*   stackAdjustAfterCall,
          vassert(argreg < MIPS_N_REGPARMS);
 
          IRType  aTy = Ity_INVALID;
-         if (LIKELY(!is_IRExprP__VECRET_or_BBPTR(arg)))
+         if (LIKELY(!is_IRExpr_VECRET_or_BBPTR(arg)))
             aTy = typeOfIRExpr(env->type_env, arg);
 
          if (aTy == Ity_I32 || mode64) {
@@ -530,12 +530,12 @@ static void doHelperCall(/*OUT*/UInt*   stackAdjustAfterCall,
             argiregs |= (1 << (argreg + 4));
             addInstr(env, mk_iMOVds_RR( argregs[argreg], rLo));
             argreg++;
-         } else if (arg == IRExprP__BBPTR) {
+         } else if (arg->tag == Iex_BBPTR) {
             vassert(0);  // ATC
             addInstr(env, mk_iMOVds_RR(argregs[argreg],
                                        GuestStatePointer(mode64)));
             argreg++;
-         } else if (arg == IRExprP__VECRET) {
+         } else if (arg->tag == Iex_VECRET) {
             // If this happens, it denotes ill-formed IR.
             vassert(0);
          }
@@ -551,7 +551,7 @@ static void doHelperCall(/*OUT*/UInt*   stackAdjustAfterCall,
          IRExpr* arg = args[i];
 
          IRType  aTy = Ity_INVALID;
-         if (LIKELY(!is_IRExprP__VECRET_or_BBPTR(arg)))
+         if (LIKELY(!is_IRExpr_VECRET_or_BBPTR(arg)))
             aTy  = typeOfIRExpr(env->type_env, arg);
 
          if (aTy == Ity_I32 || mode64) {
@@ -568,12 +568,12 @@ static void doHelperCall(/*OUT*/UInt*   stackAdjustAfterCall,
             argreg++;
             tmpregs[argreg] = raHi;
             argreg++;
-         } else if (arg == IRExprP__BBPTR) {
+         } else if (arg->tag == Iex_BBPTR) {
             vassert(0);  // ATC
             tmpregs[argreg] = GuestStatePointer(mode64);
             argreg++;
          }
-         else if (arg == IRExprP__VECRET) {
+         else if (arg->tag == Iex_VECRET) {
             // If this happens, it denotes ill-formed IR
             vassert(0);
          }

@@ -361,7 +361,7 @@ void set_VFP_rounding_mode ( ISelEnv* env, IRExpr* mode )
 static
 Bool mightRequireFixedRegs ( IRExpr* e )
 {
-   if (UNLIKELY(is_IRExprP__VECRET_or_BBPTR(e))) {
+   if (UNLIKELY(is_IRExpr_VECRET_or_BBPTR(e))) {
       // These are always "safe" -- either a copy of r13(sp) in some
       // arbitrary vreg, or a copy of r8, respectively.
       return False;
@@ -405,7 +405,7 @@ Bool doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
    *retloc               = mk_RetLoc_INVALID();
 
    /* These are used for cross-checking that IR-level constraints on
-      the use of IRExprP__VECRET and IRExprP__BBPTR are observed. */
+      the use of IRExpr_VECRET() and IRExpr_BBPTR() are observed. */
    UInt nVECRETs = 0;
    UInt nBBPTRs  = 0;
 
@@ -418,14 +418,14 @@ Bool doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
       supported arg types are I32 and I64.
 
       The return type can be I{64,32} or V128.  In the V128 case, it
-      is expected that |args| will contain the special value
-      IRExprP__VECRET, in which case this routine generates code to
+      is expected that |args| will contain the special node
+      IRExpr_VECRET(), in which case this routine generates code to
       allocate space on the stack for the vector return value.  Since
       we are not passing any scalars on the stack, it is enough to
       preallocate the return space before marshalling any arguments,
       in this case.
 
-      |args| may also contain IRExprP__BBPTR, in which case the
+      |args| may also contain IRExpr_BBPTR(), in which case the
       value in r8 is passed as the corresponding argument.
 
       Generating code which is both efficient and correct when
@@ -470,9 +470,9 @@ Bool doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
    n_args = 0;
    for (i = 0; args[i]; i++) {
       IRExpr* arg = args[i];
-      if (UNLIKELY(arg == IRExprP__VECRET)) {
+      if (UNLIKELY(arg->tag == Iex_VECRET)) {
          nVECRETs++;
-      } else if (UNLIKELY(arg == IRExprP__BBPTR)) {
+      } else if (UNLIKELY(arg->tag == Iex_BBPTR)) {
          nBBPTRs++;
       }
       n_args++;
@@ -530,7 +530,7 @@ Bool doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
          IRExpr* arg = args[i];
 
          IRType  aTy = Ity_INVALID;
-         if (LIKELY(!is_IRExprP__VECRET_or_BBPTR(arg)))
+         if (LIKELY(!is_IRExpr_VECRET_or_BBPTR(arg)))
             aTy = typeOfIRExpr(env->type_env, arg);
 
          if (nextArgReg >= ARM_N_ARGREGS)
@@ -561,13 +561,13 @@ Bool doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
             addInstr(env, mk_iMOVds_RR( argregs[nextArgReg], raHi ));
             nextArgReg++;
          }
-         else if (arg == IRExprP__BBPTR) {
+         else if (arg->tag == Iex_BBPTR) {
             vassert(0); //ATC
             addInstr(env, mk_iMOVds_RR( argregs[nextArgReg],
                                         hregARM_R8() ));
             nextArgReg++;
          }
-         else if (arg == IRExprP__VECRET) {
+         else if (arg->tag == Iex_VECRET) {
             // If this happens, it denotes ill-formed IR
             vassert(0);
          }
@@ -587,7 +587,7 @@ Bool doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
          IRExpr* arg = args[i];
 
          IRType  aTy = Ity_INVALID;
-         if (LIKELY(!is_IRExprP__VECRET_or_BBPTR(arg)))
+         if (LIKELY(!is_IRExpr_VECRET_or_BBPTR(arg)))
             aTy  = typeOfIRExpr(env->type_env, arg);
 
          if (nextArgReg >= ARM_N_ARGREGS)
@@ -610,12 +610,12 @@ Bool doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
             tmpregs[nextArgReg] = raHi;
             nextArgReg++;
          }
-         else if (arg == IRExprP__BBPTR) {
+         else if (arg->tag == Iex_BBPTR) {
             vassert(0); //ATC
             tmpregs[nextArgReg] = hregARM_R8();
             nextArgReg++;
          }
-         else if (arg == IRExprP__VECRET) {
+         else if (arg->tag == Iex_VECRET) {
             // If this happens, it denotes ill-formed IR
             vassert(0);
          }

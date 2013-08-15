@@ -340,19 +340,19 @@ static X86AMode* advance4 ( X86AMode* am )
 
 /* Push an arg onto the host stack, in preparation for a call to a
    helper function of some kind.  Returns the number of 32-bit words
-   pushed.  If we encounter an IRExprP__VECRET then we expect that
+   pushed.  If we encounter an IRExpr_VECRET() then we expect that
    r_vecRetAddr will be a valid register, that holds the relevant
    address. 
 */
 static Int pushArg ( ISelEnv* env, IRExpr* arg, HReg r_vecRetAddr )
 {
-   if (UNLIKELY(arg == IRExprP__VECRET)) {
+   if (UNLIKELY(arg->tag == Iex_VECRET)) {
       vassert(0); //ATC
       vassert(!hregIsInvalid(r_vecRetAddr));
       addInstr(env, X86Instr_Push(X86RMI_Reg(r_vecRetAddr)));
       return 1;
    }
-   if (UNLIKELY(arg == IRExprP__BBPTR)) {
+   if (UNLIKELY(arg->tag == Iex_BBPTR)) {
       addInstr(env, X86Instr_Push(X86RMI_Reg(hregX86_EBP())));
       return 1;
    }
@@ -402,7 +402,7 @@ void callHelperAndClearArgs ( ISelEnv* env, X86CondCode cc,
 static
 Bool mightRequireFixedRegs ( IRExpr* e )
 {
-   if (UNLIKELY(is_IRExprP__VECRET_or_BBPTR(e))) {
+   if (UNLIKELY(is_IRExpr_VECRET_or_BBPTR(e))) {
       // These are always "safe" -- either a copy of %esp in some
       // arbitrary vreg, or a copy of %ebp, respectively.
       return False;
@@ -443,7 +443,7 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
    *retloc               = mk_RetLoc_INVALID();
 
    /* These are used for cross-checking that IR-level constraints on
-      the use of IRExprP__VECRET and IRExprP__BBPTR are observed. */
+      the use of Iex_VECRET and Iex_BBPTR are observed. */
    UInt nVECRETs = 0;
    UInt nBBPTRs  = 0;
 
@@ -452,13 +452,13 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
 
       * The return type can be I{64,32,16,8} or V128.  In the V128
         case, it is expected that |args| will contain the special
-        value IRExprP__VECRET, in which case this routine generates
+        node IRExpr_VECRET(), in which case this routine generates
         code to allocate space on the stack for the vector return
         value.  Since we are not passing any scalars on the stack, it
         is enough to preallocate the return space before marshalling
         any arguments, in this case.
 
-        |args| may also contain IRExprP__BBPTR, in which case the
+        |args| may also contain IRExpr_BBPTR(), in which case the
         value in %ebp is passed as the corresponding argument.
 
       * If the callee claims regparmness of 1, 2 or 3, we must pass the
@@ -508,9 +508,9 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
    while (args[n_args]) {
       IRExpr* arg = args[n_args];
       n_args++;
-      if (UNLIKELY(arg == IRExprP__VECRET)) {
+      if (UNLIKELY(arg->tag == Iex_VECRET)) {
          nVECRETs++;
-      } else if (UNLIKELY(arg == IRExprP__BBPTR)) {
+      } else if (UNLIKELY(arg->tag == Iex_BBPTR)) {
          nBBPTRs++;
       }
    }
@@ -585,10 +585,10 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
             IRExpr* arg = args[i];
             argreg--;
             vassert(argreg >= 0);
-            if (UNLIKELY(arg == IRExprP__VECRET)) {
+            if (UNLIKELY(arg->tag == Iex_VECRET)) {
                vassert(0); //ATC
             }
-            else if (UNLIKELY(arg == IRExprP__BBPTR)) {
+            else if (UNLIKELY(arg->tag == Iex_BBPTR)) {
                vassert(0); //ATC
             } else {
                vassert(typeOfIRExpr(env->type_env, arg) == Ity_I32);
@@ -609,13 +609,13 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
             IRExpr* arg = args[i];
             argreg--;
             vassert(argreg >= 0);
-            if (UNLIKELY(arg == IRExprP__VECRET)) {
+            if (UNLIKELY(arg->tag == Iex_VECRET)) {
                vassert(!hregIsInvalid(r_vecRetAddr));
                addInstr(env, X86Instr_Alu32R(Xalu_MOV,
                                              X86RMI_Reg(r_vecRetAddr),
                                              argregs[argreg]));
             }
-            else if (UNLIKELY(arg == IRExprP__BBPTR)) {
+            else if (UNLIKELY(arg->tag == Iex_BBPTR)) {
                vassert(0); //ATC
             } else {
                vassert(typeOfIRExpr(env->type_env, arg) == Ity_I32);

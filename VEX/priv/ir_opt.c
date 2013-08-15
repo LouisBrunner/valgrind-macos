@@ -488,7 +488,7 @@ static void flatten_Stmt ( IRSB* bb, IRStmt* st )
          d2->guard = flatten_Expr(bb, d2->guard);
          for (i = 0; d2->args[i]; i++) {
             IRExpr* arg = d2->args[i];
-            if (LIKELY(!is_IRExprP__VECRET_or_BBPTR(arg)))
+            if (LIKELY(!is_IRExpr_VECRET_or_BBPTR(arg)))
                d2->args[i] = flatten_Expr(bb, arg);
          }
          addStmtToIRSB(bb, IRStmt_Dirty(d2));
@@ -2564,7 +2564,7 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
          d2->guard = fold_Expr(env, subst_Expr(env, d2->guard));
          for (i = 0; d2->args[i]; i++) {
             IRExpr* arg = d2->args[i];
-            if (LIKELY(!is_IRExprP__VECRET_or_BBPTR(arg))) {
+            if (LIKELY(!is_IRExpr_VECRET_or_BBPTR(arg))) {
                vassert(isIRAtom(arg));
                d2->args[i] = fold_Expr(env, subst_Expr(env, arg));
             }
@@ -2905,7 +2905,7 @@ static void addUses_Stmt ( Bool* set, IRStmt* st )
          addUses_Expr(set, d->guard);
          for (i = 0; d->args[i] != NULL; i++) {
             IRExpr* arg = d->args[i];
-            if (LIKELY(!is_IRExprP__VECRET_or_BBPTR(arg)))
+            if (LIKELY(!is_IRExpr_VECRET_or_BBPTR(arg)))
                addUses_Expr(set, arg);
          }
          return;
@@ -4952,7 +4952,7 @@ static void aoccCount_Stmt ( UShort* uses, IRStmt* st )
          aoccCount_Expr(uses, d->guard);
          for (i = 0; d->args[i]; i++) {
             IRExpr* arg = d->args[i];
-            if (LIKELY(!is_IRExprP__VECRET_or_BBPTR(arg)))
+            if (LIKELY(!is_IRExpr_VECRET_or_BBPTR(arg)))
                aoccCount_Expr(uses, arg);
          }
          return;
@@ -5324,7 +5324,7 @@ static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
          d2->guard = atbSubst_Expr(env, d2->guard);
          for (i = 0; d2->args[i]; i++) {
             IRExpr* arg = d2->args[i];
-            if (LIKELY(!is_IRExprP__VECRET_or_BBPTR(arg)))
+            if (LIKELY(!is_IRExpr_VECRET_or_BBPTR(arg)))
                d2->args[i] = atbSubst_Expr(env, arg);
          }
          return IRStmt_Dirty(d2);
@@ -5351,7 +5351,7 @@ static Bool dirty_helper_puts ( const IRDirty *d,
       guest state under the covers.  It's not allowed, but let's be
       extra conservative and assume the worst. */
    for (i = 0; d->args[i]; i++) {
-      if (UNLIKELY(d->args[i] == IRExprP__BBPTR)) {
+      if (UNLIKELY(d->args[i]->tag == Iex_BBPTR)) {
          *requiresPreciseMemExns = True;
          return True;
       }
@@ -5799,7 +5799,7 @@ static void considerExpensives ( /*OUT*/Bool* hasGetIorPutI,
             vassert(isIRAtom(d->guard));
             for (j = 0; d->args[j]; j++) {
                IRExpr* arg = d->args[j];
-               if (LIKELY(!is_IRExprP__VECRET_or_BBPTR(arg)))
+               if (LIKELY(!is_IRExpr_VECRET_or_BBPTR(arg)))
                   vassert(isIRAtom(arg));
             }
             if (d->mFx != Ifx_None)

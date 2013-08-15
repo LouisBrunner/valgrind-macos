@@ -12488,7 +12488,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       if (rs == 0) {  /* MFC0 */
          DIP("mfc0 r%d, r%d, %d", rt, rd, sel);
          IRTemp   val  = newTemp(Ity_I32);
-         IRExpr** args = mkIRExprVec_3 (IRExprP__BBPTR, mkU32(rd), mkU32(sel));
+         IRExpr** args = mkIRExprVec_3 (IRExpr_BBPTR(), mkU32(rd), mkU32(sel));
          IRDirty *d = unsafeIRDirty_1_N(val,
                                         0,
                                         "mips32_dirtyhelper_mfc0",
@@ -12500,7 +12500,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          /* Doubleword Move from Coprocessor 0 - DMFC0; MIPS64 */
          DIP("dmfc0 r%d, r%d, %d", rt, rd, sel);
          IRTemp   val  = newTemp(Ity_I64);
-         IRExpr** args = mkIRExprVec_3 (IRExprP__BBPTR, mkU64(rd), mkU64(sel));
+         IRExpr** args = mkIRExprVec_3 (IRExpr_BBPTR(), mkU64(rd), mkU64(sel));
          IRDirty *d = unsafeIRDirty_1_N(val,
                                         0,
                                         "mips64_dirtyhelper_dmfc0",
@@ -14166,7 +14166,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 #if defined(__mips__) && ((defined(__mips_isa_rev) && __mips_isa_rev >= 2))
             } else if (rd == 1) {
                IRTemp   val  = newTemp(Ity_I64);
-               IRExpr** args = mkIRExprVec_3 (IRExprP__BBPTR,
+               IRExpr** args = mkIRExprVec_3 (IRExpr_BBPTR(),
                                               mkU64(rt), mkU64(rd));
                IRDirty *d = unsafeIRDirty_1_N(val,
                                               0,

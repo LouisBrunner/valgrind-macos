@@ -14482,7 +14482,7 @@ static Bool dis_av_load ( VexAbiInfo* vbi, UInt theInstr )
       IRDirty* d;
       UInt vD_off = vectorGuestRegOffset(vD_addr);
       IRExpr** args = mkIRExprVec_4(
-                         IRExprP__BBPTR,
+                         IRExpr_BBPTR(),
                          mkU32(vD_off), 
                          binop(Iop_And32, mkNarrowTo32(ty, mkexpr(EA)),
                                           mkU32(0xF)),
@@ -14516,7 +14516,7 @@ static Bool dis_av_load ( VexAbiInfo* vbi, UInt theInstr )
       IRDirty* d;
       UInt vD_off = vectorGuestRegOffset(vD_addr);
       IRExpr** args = mkIRExprVec_4(
-                         IRExprP__BBPTR,
+                         IRExpr_BBPTR(),
                          mkU32(vD_off), 
                          binop(Iop_And32, mkNarrowTo32(ty, mkexpr(EA)),
                                           mkU32(0xF)),

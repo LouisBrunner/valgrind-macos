@@ -5356,7 +5356,7 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                                  0/*regparms*/, 
                                  "amd64g_dirtyhelper_FLDENV", 
                                  &amd64g_dirtyhelper_FLDENV,
-                                 mkIRExprVec_2( IRExprP__BBPTR, mkexpr(addr) )
+                                 mkIRExprVec_2( IRExpr_BBPTR(), mkexpr(addr) )
                               );
                d->tmp       = w64;
                /* declare we're reading memory */
@@ -5453,7 +5453,7 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                                0/*regparms*/, 
                                "amd64g_dirtyhelper_FSTENV", 
                                &amd64g_dirtyhelper_FSTENV,
-                               mkIRExprVec_2( IRExprP__BBPTR, mkexpr(addr) )
+                               mkIRExprVec_2( IRExpr_BBPTR(), mkexpr(addr) )
                             );
                /* declare we're writing memory */
                d->mFx   = Ifx_Write;
@@ -6106,7 +6106,7 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                                 0/*regparms*/, 
                                 "amd64g_dirtyhelper_FINIT", 
                                 &amd64g_dirtyhelper_FINIT,
-                                mkIRExprVec_1( IRExprP__BBPTR )
+                                mkIRExprVec_1( IRExpr_BBPTR() )
                              );
 
                /* declare we're writing guest state */
@@ -6321,7 +6321,7 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                          0/*regparms*/, 
                          "amd64g_dirtyhelper_FRSTOR",
                          &amd64g_dirtyhelper_FRSTOR,
-                         mkIRExprVec_2( IRExprP__BBPTR, mkexpr(addr) )
+                         mkIRExprVec_2( IRExpr_BBPTR(), mkexpr(addr) )
                       );
                   d->mSize = 108;
                }
@@ -6402,7 +6402,7 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                          0/*regparms*/, 
                          "amd64g_dirtyhelper_FNSAVE",
                          &amd64g_dirtyhelper_FNSAVE,
-                         mkIRExprVec_2( IRExprP__BBPTR, mkexpr(addr) )
+                         mkIRExprVec_2( IRExpr_BBPTR(), mkexpr(addr) )
                       );
                   d->mSize = 108;
                }
@@ -13292,7 +13292,7 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
                 0/*regparms*/, 
                 "amd64g_dirtyhelper_FXSAVE", 
                 &amd64g_dirtyhelper_FXSAVE,
-                mkIRExprVec_2( IRExprP__BBPTR, mkexpr(addr) )
+                mkIRExprVec_2( IRExpr_BBPTR(), mkexpr(addr) )
              );
 
          /* declare we're writing memory */
@@ -13370,7 +13370,7 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
                 0/*regparms*/, 
                 "amd64g_dirtyhelper_FXRSTOR", 
                 &amd64g_dirtyhelper_FXRSTOR,
-                mkIRExprVec_2( IRExprP__BBPTR, mkexpr(addr) )
+                mkIRExprVec_2( IRExpr_BBPTR(), mkexpr(addr) )
              );
 
          /* declare we're reading memory */
@@ -16917,7 +16917,7 @@ static Long dis_AESx ( VexAbiInfo* vbi, Prefix pfx,
    IRExpr*  gstOffLe     = mkU64(gstOffL);
    IRExpr*  gstOffRe     = mkU64(gstOffR);
    IRExpr** args
-      = mkIRExprVec_5( IRExprP__BBPTR, opc4, gstOffDe, gstOffLe, gstOffRe );
+      = mkIRExprVec_5( IRExpr_BBPTR(), opc4, gstOffDe, gstOffLe, gstOffRe );
 
    IRDirty* d    = unsafeIRDirty_0_N( 0/*regparms*/, nm, fn, args );
    /* It's not really a dirty call, but we can't use the clean helper
@@ -17007,7 +17007,7 @@ static Long dis_AESKEYGENASSIST ( VexAbiInfo* vbi, Prefix pfx,
    IRExpr*  gstOffLe     = mkU64(gstOffL);
    IRExpr*  gstOffRe     = mkU64(gstOffR);
    IRExpr** args
-      = mkIRExprVec_4( IRExprP__BBPTR, imme, gstOffLe, gstOffRe );
+      = mkIRExprVec_4( IRExpr_BBPTR(), imme, gstOffLe, gstOffRe );
 
    IRDirty* d    = unsafeIRDirty_0_N( 0/*regparms*/, nm, fn, args );
    /* It's not really a dirty call, but we can't use the clean helper
@@ -17936,7 +17936,7 @@ static Long dis_PCMPxSTRx ( VexAbiInfo* vbi, Prefix pfx,
    IRExpr*  edxIN        = isISTRx ? mkU64(0) : getIRegRDX(8);
    IRExpr*  eaxIN        = isISTRx ? mkU64(0) : getIRegRAX(8);
    IRExpr** args
-      = mkIRExprVec_6( IRExprP__BBPTR,
+      = mkIRExprVec_6( IRExpr_BBPTR(),
                        opc4_and_imm, gstOffLe, gstOffRe, edxIN, eaxIN );
 
    IRTemp   resT = newTemp(Ity_I64);
@@ -20711,7 +20711,7 @@ Long dis_ESC_0F (
          void*        fAddr = &amd64g_dirtyhelper_RDTSCP;
          IRDirty* d
             = unsafeIRDirty_0_N ( 0/*regparms*/, 
-                                  fName, fAddr, mkIRExprVec_1(IRExprP__BBPTR) );
+                                  fName, fAddr, mkIRExprVec_1(IRExpr_BBPTR()) );
          /* declare guest state effects */
          d->nFxState = 3;
          vex_bzero(&d->fxState, sizeof(d->fxState));
@@ -20959,7 +20959,7 @@ Long dis_ESC_0F (
 
       vassert(fName); vassert(fAddr);
       d = unsafeIRDirty_0_N ( 0/*regparms*/, 
-                              fName, fAddr, mkIRExprVec_1(IRExprP__BBPTR) );
+                              fName, fAddr, mkIRExprVec_1(IRExpr_BBPTR()) );
       /* declare guest state effects */
       d->nFxState = 4;
       vex_bzero(&d->fxState, sizeof(d->fxState));

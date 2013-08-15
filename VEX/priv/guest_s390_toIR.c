@@ -12874,10 +12874,10 @@ s390_irgen_STFLE(IRTemp op2addr)
    IRDirty *d;
    IRTemp cc = newTemp(Ity_I64);
 
-   /* IRExprP__BBPTR => Need to pass pointer to guest state to helper */
+   /* IRExpr_BBPTR() => Need to pass pointer to guest state to helper */
    d = unsafeIRDirty_1_N(cc, 0, "s390x_dirtyhelper_STFLE",
                          &s390x_dirtyhelper_STFLE,
-                         mkIRExprVec_2(IRExprP__BBPTR, mkexpr(op2addr)));
+                         mkIRExprVec_2(IRExpr_BBPTR(), mkexpr(op2addr)));
 
    d->nFxState = 1;
    vex_bzero(&d->fxState, sizeof(d->fxState));

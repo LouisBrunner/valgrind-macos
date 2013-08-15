@@ -1207,17 +1207,8 @@ void ppIRExpr ( IRExpr* e )
       vex_printf("(");
       for (i = 0; e->Iex.CCall.args[i] != NULL; i++) {
         IRExpr* arg = e->Iex.CCall.args[i];
-        /* We don't actually expect VECRET or BBPTR here -- BBPTR is
-           never allowable; VECRET is in principle allowable but at
-           present isn't supported.  But they are handled for
-           completeness anyway. */
-        if (arg == IRExprP__VECRET) {
-          vex_printf("VECRET");
-        } else if (arg == IRExprP__BBPTR) {
-          vex_printf("BBPTR");
-        } else {
-          ppIRExpr(arg);
-        }
+        ppIRExpr(arg);
+
         if (e->Iex.CCall.args[i+1] != NULL) {
           vex_printf(",");
         }
@@ -1233,6 +1224,12 @@ void ppIRExpr ( IRExpr* e )
       vex_printf(",");
       ppIRExpr(e->Iex.ITE.iffalse);
       vex_printf(")");
+      break;
+    case Iex_VECRET:
+      vex_printf("VECRET");
+      break;
+    case Iex_BBPTR:
+      vex_printf("BBPTR");
       break;
     default:
       vpanic("ppIRExpr");
@@ -1282,13 +1279,8 @@ void ppIRDirty ( IRDirty* d )
    vex_printf("(");
    for (i = 0; d->args[i] != NULL; i++) {
       IRExpr* arg = d->args[i];
-      if (arg == IRExprP__VECRET) {
-         vex_printf("VECRET");
-      } else if (arg == IRExprP__BBPTR) {
-         vex_printf("BBPTR");
-      } else {
-         ppIRExpr(arg);
-      }
+      ppIRExpr(arg);
+
       if (d->args[i+1] != NULL) {
          vex_printf(",");
       }
@@ -1750,6 +1742,16 @@ IRExpr* IRExpr_ITE ( IRExpr* cond, IRExpr* iftrue, IRExpr* iffalse ) {
    e->Iex.ITE.iffalse = iffalse;
    return e;
 }
+IRExpr* IRExpr_VECRET ( void ) {
+   IRExpr* e = LibVEX_Alloc(sizeof(IRExpr));
+   e->tag    = Iex_VECRET;
+   return e;
+}
+IRExpr* IRExpr_BBPTR ( void ) {
+   IRExpr* e = LibVEX_Alloc(sizeof(IRExpr));
+   e->tag    = Iex_BBPTR;
+   return e;
+}
 
 
 /* Constructors for NULL-terminated IRExpr expression vectors,
@@ -2175,6 +2177,12 @@ IRExpr* deepCopyIRExpr ( IRExpr* e )
          return IRExpr_ITE(deepCopyIRExpr(e->Iex.ITE.cond),
                            deepCopyIRExpr(e->Iex.ITE.iftrue),
                            deepCopyIRExpr(e->Iex.ITE.iffalse));
+      case Iex_VECRET:
+         return IRExpr_VECRET();
+
+      case Iex_BBPTR:
+         return IRExpr_BBPTR();
+
       default:
          vpanic("deepCopyIRExpr");
    }
@@ -3341,6 +3349,10 @@ IRType typeOfIRExpr ( IRTypeEnv* tyenv, IRExpr* e )
          /* return typeOfIRExpr(tyenv, e->Iex.ITE.iffalse); */
       case Iex_Binder:
          vpanic("typeOfIRExpr: Binder is not a valid expression");
+      case Iex_VECRET:
+         vpanic("typeOfIRExpr: VECRET is not a valid expression");
+      case Iex_BBPTR:
+         vpanic("typeOfIRExpr: BBPTR is not a valid expression");
       default:
          ppIRExpr(e);
          vpanic("typeOfIRExpr");
@@ -3379,14 +3391,11 @@ Bool isPlausibleIRType ( IRType ty )
 */
 
 static inline Bool isIRAtom_or_VECRET_or_BBPTR ( IRExpr* e ) {
-   /* Use this rather roundabout scheme so as to try and have the
-      number of additional conditional branches be 1 in the common
-      (non-VECRET, non-BBPTR) case, rather than 2. */
-   if (UNLIKELY(((HWord)e) & 1)) {
-      return e == IRExprP__VECRET || e == IRExprP__BBPTR;
-   } else {
-      return isIRAtom(e);
-   }
+  if (isIRAtom(e)) {
+    return True;
+  }
+
+  return UNLIKELY(is_IRExpr_VECRET_or_BBPTR(e));
 }
 
 Bool isFlatIRStmt ( IRStmt* st )
@@ -3619,7 +3628,7 @@ void useBeforeDef_Expr ( IRSB* bb, IRStmt* stmt, IRExpr* expr, Int* def_counts )
       case Iex_CCall:
          for (i = 0; expr->Iex.CCall.args[i]; i++) {
             IRExpr* arg = expr->Iex.CCall.args[i];
-            if (UNLIKELY(((HWord)arg) & 1)) {
+            if (UNLIKELY(is_IRExpr_VECRET_or_BBPTR(arg))) {
                /* These aren't allowed in CCall lists.  Let's detect
                   and throw them out here, though, rather than
                   segfaulting a bit later on. */
@@ -3701,9 +3710,9 @@ void useBeforeDef_Stmt ( IRSB* bb, IRStmt* stmt, Int* def_counts )
          d = stmt->Ist.Dirty.details;
          for (i = 0; d->args[i] != NULL; i++) {
             IRExpr* arg = d->args[i];
-            if (UNLIKELY(((HWord)arg) & 1)) {
+            if (UNLIKELY(is_IRExpr_VECRET_or_BBPTR(arg))) {
                /* This is ensured by isFlatIRStmt */
-               vassert(arg == IRExprP__VECRET || arg == IRExprP__BBPTR);
+              ;
             } else {
                useBeforeDef_Expr(bb,stmt,arg,def_counts);
             }
@@ -3900,7 +3909,7 @@ void tcExpr ( IRSB* bb, IRStmt* stmt, IRExpr* expr, IRType gWordTy )
             if (i >= 32)
                sanityCheckFail(bb,stmt,"Iex.CCall: > 32 args");
             IRExpr* arg = expr->Iex.CCall.args[i];
-            if (UNLIKELY(is_IRExprP__VECRET_or_BBPTR(arg)))
+            if (UNLIKELY(is_IRExpr_VECRET_or_BBPTR(arg)))
                sanityCheckFail(bb,stmt,"Iex.CCall.args: is VECRET/BBPTR");
             tcExpr(bb,stmt, arg, gWordTy);
          }
@@ -4146,17 +4155,10 @@ void tcStmt ( IRSB* bb, IRStmt* stmt, IRType gWordTy )
             if (i >= 32)
                sanityCheckFail(bb,stmt,"IRStmt.Dirty: > 32 args");
             IRExpr* arg = d->args[i];
-            if (UNLIKELY(((HWord)arg) & 1)) {
-               if (arg == IRExprP__VECRET) {
-                  nVECRETs++;
-               } else
-               if (arg == IRExprP__BBPTR) {
-                  nBBPTRs++;
-               } else {
-                  /* The impossibility of failure is ensured by
-                     isFlatIRStmt */
-                  vassert(0);
-               }
+            if (UNLIKELY(arg->tag == Iex_VECRET)) {
+               nVECRETs++;
+            } else if (UNLIKELY(arg->tag == Iex_BBPTR)) {
+               nBBPTRs++;
             } else {
                if (typeOfIRExpr(tyenv, arg) == Ity_I1)
                   sanityCheckFail(bb,stmt,"IRStmt.Dirty.arg[i] :: Ity_I1");

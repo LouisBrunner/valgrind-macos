@@ -486,18 +486,18 @@ doHelperCall(/*OUT*/UInt *stackAdjustAfterCall,
 
    /* The return type can be I{64,32,16,8} or V{128,256}.  In the
       latter two cases, it is expected that |args| will contain the
-      special value IRExprP__VECRET, in which case this routine
+      special node IRExpr_VECRET(), in which case this routine
       generates code to allocate space on the stack for the vector
       return value.  Since we are not passing any scalars on the
       stack, it is enough to preallocate the return space before
       marshalling any arguments, in this case.
 
-      |args| may also contain IRExprP__BBPTR, in which case the value
+      |args| may also contain IRExpr_BBPTR(), in which case the value
       in the guest state pointer register is passed as the
       corresponding argument.
 
       These are used for cross-checking that IR-level constraints on
-      the use of IRExprP__VECRET and IRExprP__BBPTR are observed. */
+      the use of IRExpr_VECRET() and IRExpr_BBPTR() are observed. */
    UInt nVECRETs = 0;
    UInt nBBPTRs  = 0;
 
@@ -516,9 +516,9 @@ doHelperCall(/*OUT*/UInt *stackAdjustAfterCall,
    */
    Int arg_errors = 0;
    for (i = 0; i < n_args; ++i) {
-      if (UNLIKELY(args[i] == IRExprP__VECRET)) {
+      if (UNLIKELY(args[i]->tag == Iex_VECRET)) {
          nVECRETs++;
-      } else if (UNLIKELY(args[i] == IRExprP__BBPTR)) {
+      } else if (UNLIKELY(args[i]->tag == Iex_BBPTR)) {
          nBBPTRs++;
       } else {
          IRType type = typeOfIRExpr(env->type_env, args[i]);
@@ -561,12 +561,12 @@ doHelperCall(/*OUT*/UInt *stackAdjustAfterCall,
    /* Compute the function arguments into a temporary register each */
    for (i = 0; i < n_args; i++) {
       IRExpr *arg = args[i];
-      if(UNLIKELY(arg == IRExprP__VECRET)) {
+      if(UNLIKELY(arg->tag == Iex_VECRET)) {
          /* we do not handle vector types yet */
          vassert(0);
          addInstr(env, s390_insn_move(sizeof(ULong), tmpregs[argreg],
                                       r_vecRetAddr));
-      } else if (UNLIKELY(arg == IRExprP__BBPTR)) {
+      } else if (UNLIKELY(arg->tag == Iex_BBPTR)) {
          /* If we need the guest state pointer put it in a temporary arg reg */
          tmpregs[argreg] = newVRegI(env);
          addInstr(env, s390_insn_move(sizeof(ULong), tmpregs[argreg],

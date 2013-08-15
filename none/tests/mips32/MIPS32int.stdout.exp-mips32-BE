@@ -1,0 +1,1115 @@
+ADD
+add $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000000
+add $t0, $t1, $t2 :: rd 0x00000001 rs 0x00000000, rt 0x00000001
+add $t0, $t1, $t2 :: rd 0x00000001 rs 0x00000001, rt 0x00000000
+add $t0, $t1, $t2 :: rd 0x00000002 rs 0x00000001, rt 0x00000001
+add $t0, $t1, $t2 :: rd 0xffffffff rs 0x00000000, rt 0xffffffff
+add $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000001, rt 0xffffffff
+add $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0x00000000
+add $t0, $t1, $t2 :: rd 0x5859704f rs 0x31415927, rt 0x27181728
+add $t0, $t1, $t2 :: rd 0xc859704f rs 0x31415927, rt 0x97181728
+add $t0, $t1, $t2 :: rd 0xffffffff rs 0xffffffff, rt 0x00000000
+add $t0, $t1, $t2 :: rd 0x80000000 rs 0x00000000, rt 0x80000000
+add $t0, $t1, $t2 :: rd 0xffffffff rs 0x7fffffff, rt 0x80000000
+ADDI
+addi $t0, $t1, 0 :: rt 0x00000000 rs 0x00000000, imm 0x00000000
+addi $t0, $t1, 1 :: rt 0x00000001 rs 0x00000000, imm 0x00000001
+addi $t0, $t1, 1 :: rt 0x00000002 rs 0x00000001, imm 0x00000000
+addi $t0, $t1, 1 :: rt 0x00000002 rs 0x00000001, imm 0x00000001
+addi $t0, $t1, -1 :: rt 0xffffffff rs 0x00000000, imm 0xffffffff
+addi $t0, $t1, -1 :: rt 0x00000000 rs 0x00000001, imm 0xffffffff
+addi $t0, $t1, 0 :: rt 0x80000000 rs 0x80000000, imm 0x00000000
+addi $t0, $t1, 0 :: rt 0xffffffff rs 0xffffffff, imm 0x00000000
+addi $t0, $t1, 0 :: rt 0x80000000 rs 0x80000000, imm 0x00000000
+ADDIU
+addiu $t0, $t1, 0 :: rt 0x00000000 rs 0x00000000, imm 0x00000000
+addiu $t0, $t1, 1 :: rt 0x00000001 rs 0x00000000, imm 0x00000001
+addiu $t0, $t1, 1 :: rt 0x00000002 rs 0x00000001, imm 0x00000000
+addiu $t0, $t1, 1 :: rt 0x00000002 rs 0x00000001, imm 0x00000001
+addiu $t0, $t1, -1 :: rt 0xffffffff rs 0x00000000, imm 0xffffffff
+addiu $t0, $t1, -1 :: rt 0x00000000 rs 0x00000001, imm 0xffffffff
+addiu $t0, $t1, 0 :: rt 0x80000000 rs 0x80000000, imm 0x00000000
+addiu $t0, $t1, 0 :: rt 0xffffffff rs 0xffffffff, imm 0x00000000
+addiu $t0, $t1, 0 :: rt 0x80000000 rs 0x80000000, imm 0x00000000
+ADDU
+addu $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000000
+addu $t0, $t1, $t2 :: rd 0x00000001 rs 0x00000000, rt 0x00000001
+addu $t0, $t1, $t2 :: rd 0x00000001 rs 0x00000001, rt 0x00000000
+addu $t0, $t1, $t2 :: rd 0x00000002 rs 0x00000001, rt 0x00000001
+addu $t0, $t1, $t2 :: rd 0xffffffff rs 0x00000000, rt 0xffffffff
+addu $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000001, rt 0xffffffff
+addu $t0, $t1, $t2 :: rd 0x5859704f rs 0x31415927, rt 0x27181728
+addu $t0, $t1, $t2 :: rd 0xc859704f rs 0x31415927, rt 0x97181728
+addu $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000000
+addu $t0, $t1, $t2 :: rd 0x00000001 rs 0x00000001, rt 0x00000000
+addu $t0, $t1, $t2 :: rd 0x00000001 rs 0x00000000, rt 0x00000001
+addu $t0, $t1, $t2 :: rd 0xffffffff rs 0xffffffff, rt 0x00000000
+addu $t0, $t1, $t2 :: rd 0xffffffff rs 0x00000000, rt 0xffffffff
+addu $t0, $t1, $t2 :: rd 0x80000000 rs 0x00000000, rt 0x80000000
+addu $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0x00000000
+addu $t0, $t1, $t2 :: rd 0x00000000 rs 0x80000000, rt 0x80000000
+addu $t0, $t1, $t2 :: rd 0xffffffff rs 0x7fffffff, rt 0x80000000
+addu $t0, $t1, $t2 :: rd 0xffffffff rs 0x80000000, rt 0x7fffffff
+addu $t0, $t1, $t2 :: rd 0xfffffffe rs 0x7fffffff, rt 0x7fffffff
+AND
+and $t0, $t1, $t2 :: rd 0x31415927 rs 0x31415927, rt 0xffffffff
+and $t0, $t1, $t2 :: rd 0x20004800 rs 0x31415927, rt 0xee00ee00
+and $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x000000ff
+and $t0, $t1, $t2 :: rd 0x00000000 rs 0xffffffff, rt 0x00000000
+and $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000001
+and $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000000
+and $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0xffffffff
+and $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0x80000000
+and $t0, $t1, $t2 :: rd 0x00000000 rs 0x7fffffff, rt 0x00000000
+and $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0x80000000
+and $t0, $t1, $t2 :: rd 0x00000000 rs 0x7fffffff, rt 0x80000000
+and $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0xff000000
+and $t0, $t1, $t2 :: rd 0x0dd00000 rs 0x7fffffff, rt 0x0dd00000
+and $t0, $t1, $t2 :: rd 0x31415927 rs 0x31415927, rt 0xffffffff
+and $t0, $t1, $t2 :: rd 0x20004800 rs 0x31415927, rt 0xee00ee00
+and $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x000000ff
+and $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000001, rt 0x00000000
+and $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000001
+and $t0, $t1, $t2 :: rd 0x00000000 rs 0xffffffff, rt 0x00000000
+and $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0xffffffff
+and $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x80000000
+and $t0, $t1, $t2 :: rd 0x00000000 rs 0x80000000, rt 0x00000000
+and $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0x80000000
+and $t0, $t1, $t2 :: rd 0x00000000 rs 0x7fffffff, rt 0x80000000
+and $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0xff000000
+and $t0, $t1, $t2 :: rd 0x0dd00000 rs 0x7fffffff, rt 0x0dd00000
+ANDI
+andi $t0, $t1, 1 :: rt 0x00000000 rs 0x00000000, imm 0x00000001
+andi $t0, $t1, 0 :: rt 0x00000000 rs 0x00000001, imm 0x00000000
+andi $t0, $t1, 1 :: rt 0x00000001 rs 0x00000001, imm 0x00000001
+andi $t0, $t1, 1 :: rt 0x00000001 rs 0x7fffffff, imm 0x00000000
+andi $t0, $t1, 0 :: rt 0x00000000 rs 0x80000000, imm 0x00000000
+andi $t0, $t1, 0x3145 :: rt 0x00003145 rs 0xffffffff, imm 0x00003145
+CLO
+clo  $t0, $t1 :: rd 0x00000000 rs 0x00000000
+clo  $t0, $t1 :: rd 0x00000000 rs 0x00000001
+clo  $t0, $t1 :: rd 0x00000000 rs 0x00000010
+clo  $t0, $t1 :: rd 0x00000020 rs 0xffffffff
+CLZ
+clz  $t0, $t1 :: rd 0x00000020 rs 0x00000000
+clz  $t0, $t1 :: rd 0x0000001f rs 0x00000001
+clz  $t0, $t1 :: rd 0x0000001b rs 0x00000010
+clz  $t0, $t1 :: rd 0x00000000 rs 0xffffffff
+DIV
+div  $t0, $t1 :: rs 0x00000006 rt 0x00000002 HI 0x00000000 LO 0x00000003 
+div  $t0, $t1 :: rs 0x7fffffff rt 0x7fffffff HI 0x00000000 LO 0x00000001 
+div  $t0, $t1 :: rs 0xffffffff rt 0x00000001 HI 0x00000000 LO 0xffffffff 
+div  $t0, $t1 :: rs 0x00000001 rt 0xffffffff HI 0x00000000 LO 0xffffffff 
+div  $t0, $t1 :: rs 0x00000002 rt 0x00000006 HI 0x00000002 LO 0x00000000 
+DIVU
+divu  $t0, $t1 :: rs 0x00000006 rt 0x00000002 HI 0x00000000 LO 0x00000003 
+divu  $t0, $t1 :: rs 0x7fffffff rt 0x7fffffff HI 0x00000000 LO 0x00000001 
+divu  $t0, $t1 :: rs 0xffffffff rt 0x00000001 HI 0x00000000 LO 0xffffffff 
+divu  $t0, $t1 :: rs 0x00000001 rt 0xffffffff HI 0x00000001 LO 0x00000000 
+divu  $t0, $t1 :: rs 0x00000002 rt 0x00000006 HI 0x00000002 LO 0x00000000 
+divu  $t0, $t1 :: rs 0x00000000 rt 0x00000002 HI 0x00000000 LO 0x00000000 
+LB
+lb $t0, 0($t1) :: rt 0x00000012
+lb $t0, 4($t1) :: rt 0x00000000
+lb $t0, 8($t1) :: rt 0x00000000
+lb $t0, 12($t1) :: rt 0xffffffff
+lb $t0, 16($t1) :: rt 0x00000023
+lb $t0, 20($t1) :: rt 0x00000024
+lb $t0, 24($t1) :: rt 0x00000025
+lb $t0, 28($t1) :: rt 0x00000026
+lb $t0, 32($t1) :: rt 0x0000003f
+lb $t0, 36($t1) :: rt 0x0000003e
+lb $t0, 40($t1) :: rt 0x00000036
+lb $t0, 44($t1) :: rt 0x0000003b
+lb $t0, 48($t1) :: rt 0x00000045
+lb $t0, 52($t1) :: rt 0x0000004e
+lb $t0, 56($t1) :: rt 0x00000047
+lb $t0, 60($t1) :: rt 0x0000004a
+lb $t0, 64($t1) :: rt 0x00000041
+lb $t0, 2($t1) :: rt 0x0000001e
+lb $t0, 6($t1) :: rt 0x00000000
+lb $t0, 10($t1) :: rt 0x00000000
+lb $t0, 14($t1) :: rt 0xffffffff
+lb $t0, 18($t1) :: rt 0x0000002e
+lb $t0, 22($t1) :: rt 0x0000002b
+lb $t0, 26($t1) :: rt 0x0000002e
+lb $t0, 30($t1) :: rt 0x0000002d
+lb $t0, 34($t1) :: rt 0x0000003f
+lb $t0, 38($t1) :: rt 0x0000003d
+LBU
+lbu $t0, 0($t1) :: rt 0x00000012
+lbu $t0, 4($t1) :: rt 0x00000000
+lbu $t0, 8($t1) :: rt 0x00000000
+lbu $t0, 12($t1) :: rt 0x000000ff
+lbu $t0, 16($t1) :: rt 0x00000023
+lbu $t0, 20($t1) :: rt 0x00000024
+lbu $t0, 24($t1) :: rt 0x00000025
+lbu $t0, 28($t1) :: rt 0x00000026
+lbu $t0, 32($t1) :: rt 0x0000003f
+lbu $t0, 36($t1) :: rt 0x0000003e
+lbu $t0, 40($t1) :: rt 0x00000036
+lbu $t0, 44($t1) :: rt 0x0000003b
+lbu $t0, 48($t1) :: rt 0x00000045
+lbu $t0, 52($t1) :: rt 0x0000004e
+lbu $t0, 56($t1) :: rt 0x00000047
+lbu $t0, 60($t1) :: rt 0x0000004a
+lbu $t0, 64($t1) :: rt 0x00000041
+lbu $t0, 2($t1) :: rt 0x0000001e
+lbu $t0, 6($t1) :: rt 0x00000000
+lbu $t0, 10($t1) :: rt 0x00000000
+lbu $t0, 14($t1) :: rt 0x000000ff
+lbu $t0, 18($t1) :: rt 0x0000002e
+lbu $t0, 22($t1) :: rt 0x0000002b
+lbu $t0, 26($t1) :: rt 0x0000002e
+lbu $t0, 30($t1) :: rt 0x0000002d
+lbu $t0, 34($t1) :: rt 0x0000003f
+lbu $t0, 38($t1) :: rt 0x0000003d
+LH
+lh $t0, 0($t1) :: rt 0x0000121f
+lh $t0, 4($t1) :: rt 0x00000000
+lh $t0, 8($t1) :: rt 0x00000000
+lh $t0, 12($t1) :: rt 0xffffffff
+lh $t0, 16($t1) :: rt 0x0000232f
+lh $t0, 20($t1) :: rt 0x0000242c
+lh $t0, 24($t1) :: rt 0x0000252a
+lh $t0, 28($t1) :: rt 0x0000262d
+lh $t0, 32($t1) :: rt 0x00003f34
+lh $t0, 36($t1) :: rt 0x00003e35
+lh $t0, 40($t1) :: rt 0x0000363a
+lh $t0, 44($t1) :: rt 0x00003b37
+lh $t0, 48($t1) :: rt 0x0000454f
+lh $t0, 52($t1) :: rt 0x00004e46
+lh $t0, 56($t1) :: rt 0x0000474d
+lh $t0, 60($t1) :: rt 0x00004a48
+lh $t0, 64($t1) :: rt 0x00004144
+lh $t0, 2($t1) :: rt 0x00001e1f
+lh $t0, 6($t1) :: rt 0x00000000
+lh $t0, 10($t1) :: rt 0x00000003
+lh $t0, 14($t1) :: rt 0xffffffff
+lh $t0, 18($t1) :: rt 0x00002e2f
+lh $t0, 22($t1) :: rt 0x00002b2b
+lh $t0, 26($t1) :: rt 0x00002e2b
+lh $t0, 30($t1) :: rt 0x00002d2a
+lh $t0, 34($t1) :: rt 0x00003f3e
+lh $t0, 38($t1) :: rt 0x00003d3c
+LHU
+lhu $t0, 0($t1) :: rt 0x0000121f
+lhu $t0, 4($t1) :: rt 0x00000000
+lhu $t0, 8($t1) :: rt 0x00000000
+lhu $t0, 12($t1) :: rt 0x0000ffff
+lhu $t0, 16($t1) :: rt 0x0000232f
+lhu $t0, 20($t1) :: rt 0x0000242c
+lhu $t0, 24($t1) :: rt 0x0000252a
+lhu $t0, 28($t1) :: rt 0x0000262d
+lhu $t0, 32($t1) :: rt 0x00003f34
+lhu $t0, 36($t1) :: rt 0x00003e35
+lhu $t0, 40($t1) :: rt 0x0000363a
+lhu $t0, 44($t1) :: rt 0x00003b37
+lhu $t0, 48($t1) :: rt 0x0000454f
+lhu $t0, 52($t1) :: rt 0x00004e46
+lhu $t0, 56($t1) :: rt 0x0000474d
+lhu $t0, 60($t1) :: rt 0x00004a48
+lhu $t0, 64($t1) :: rt 0x00004144
+lhu $t0, 2($t1) :: rt 0x00001e1f
+lhu $t0, 6($t1) :: rt 0x00000000
+lhu $t0, 10($t1) :: rt 0x00000003
+lhu $t0, 14($t1) :: rt 0x0000ffff
+lhu $t0, 18($t1) :: rt 0x00002e2f
+lhu $t0, 22($t1) :: rt 0x00002b2b
+lhu $t0, 26($t1) :: rt 0x00002e2b
+lhu $t0, 30($t1) :: rt 0x00002d2a
+lhu $t0, 34($t1) :: rt 0x00003f3e
+lhu $t0, 38($t1) :: rt 0x00003d3c
+LUI
+lui  $t0, 0xffff :: rd 0xffff0000 rs 0x0000ffff
+lui  $t0, 0xff00 :: rd 0xff000000 rs 0x0000ff00
+lui  $t0, 0xff :: rd 0x00ff0000 rs 0x000000ff
+lui  $t0, 0x0 :: rd 0x00000000 rs 0x00000000
+lui  $t0, 0x5 :: rd 0x00050000 rs 0x00000005
+lui  $t0, 0x387 :: rd 0x03870000 rs 0x00000387
+LW
+lw $t0, 0($t1) :: rt 0x121f1e1f
+lw $t0, 4($t1) :: rt 0x00000000
+lw $t0, 8($t1) :: rt 0x00000003
+lw $t0, 12($t1) :: rt 0xffffffff
+lw $t0, 16($t1) :: rt 0x232f2e2f
+lw $t0, 20($t1) :: rt 0x242c2b2b
+lw $t0, 24($t1) :: rt 0x252a2e2b
+lw $t0, 28($t1) :: rt 0x262d2d2a
+lw $t0, 32($t1) :: rt 0x3f343f3e
+lw $t0, 36($t1) :: rt 0x3e353d3c
+lw $t0, 40($t1) :: rt 0x363a3c3b
+lw $t0, 44($t1) :: rt 0x3b373b3a
+lw $t0, 48($t1) :: rt 0x454f4e45
+lw $t0, 52($t1) :: rt 0x4e464d46
+lw $t0, 56($t1) :: rt 0x474d474c
+lw $t0, 60($t1) :: rt 0x4a484a4c
+lw $t0, 64($t1) :: rt 0x41444400
+lw $t0, 2($t1) :: rt 0x1e1f0000
+lw $t0, 6($t1) :: rt 0x00000000
+lw $t0, 10($t1) :: rt 0x0003ffff
+lw $t0, 14($t1) :: rt 0xffff232f
+lw $t0, 18($t1) :: rt 0x2e2f242c
+lw $t0, 22($t1) :: rt 0x2b2b252a
+lw $t0, 26($t1) :: rt 0x2e2b262d
+lw $t0, 30($t1) :: rt 0x2d2a3f34
+lw $t0, 34($t1) :: rt 0x3f3e3e35
+lw $t0, 38($t1) :: rt 0x3d3c363a
+LWL
+lwl $t0, 0($t1) :: rt 0x121f1e1f
+lwl $t0, 4($t1) :: rt 0x00000000
+lwl $t0, 8($t1) :: rt 0x00000003
+lwl $t0, 12($t1) :: rt 0xffffffff
+lwl $t0, 16($t1) :: rt 0x232f2e2f
+lwl $t0, 20($t1) :: rt 0x242c2b2b
+lwl $t0, 24($t1) :: rt 0x252a2e2b
+lwl $t0, 28($t1) :: rt 0x262d2d2a
+lwl $t0, 32($t1) :: rt 0x3f343f3e
+lwl $t0, 36($t1) :: rt 0x3e353d3c
+lwl $t0, 40($t1) :: rt 0x363a3c3b
+lwl $t0, 44($t1) :: rt 0x3b373b3a
+lwl $t0, 48($t1) :: rt 0x454f4e45
+lwl $t0, 52($t1) :: rt 0x4e464d46
+lwl $t0, 56($t1) :: rt 0x474d474c
+lwl $t0, 60($t1) :: rt 0x4a484a4c
+lwl $t0, 64($t1) :: rt 0x41444400
+lwl $t0, 2($t1) :: rt 0x1e1f0000
+lwl $t0, 6($t1) :: rt 0x00000000
+lwl $t0, 10($t1) :: rt 0x00030000
+lwl $t0, 14($t1) :: rt 0xffff0000
+lwl $t0, 18($t1) :: rt 0x2e2f0000
+lwl $t0, 22($t1) :: rt 0x2b2b0000
+lwl $t0, 26($t1) :: rt 0x2e2b0000
+lwl $t0, 30($t1) :: rt 0x2d2a0000
+lwl $t0, 34($t1) :: rt 0x3f3e0000
+lwl $t0, 38($t1) :: rt 0x3d3c0000
+LWR
+lwr $t0, 0($t1) :: rt 0x00000012
+lwr $t0, 4($t1) :: rt 0x00000000
+lwr $t0, 8($t1) :: rt 0x00000000
+lwr $t0, 12($t1) :: rt 0x000000ff
+lwr $t0, 16($t1) :: rt 0x00000023
+lwr $t0, 20($t1) :: rt 0x00000024
+lwr $t0, 24($t1) :: rt 0x00000025
+lwr $t0, 28($t1) :: rt 0x00000026
+lwr $t0, 32($t1) :: rt 0x0000003f
+lwr $t0, 36($t1) :: rt 0x0000003e
+lwr $t0, 40($t1) :: rt 0x00000036
+lwr $t0, 44($t1) :: rt 0x0000003b
+lwr $t0, 48($t1) :: rt 0x00000045
+lwr $t0, 52($t1) :: rt 0x0000004e
+lwr $t0, 56($t1) :: rt 0x00000047
+lwr $t0, 60($t1) :: rt 0x0000004a
+lwr $t0, 64($t1) :: rt 0x00000041
+lwr $t0, 2($t1) :: rt 0x00121f1e
+lwr $t0, 6($t1) :: rt 0x00000000
+lwr $t0, 10($t1) :: rt 0x00000000
+lwr $t0, 14($t1) :: rt 0x00ffffff
+lwr $t0, 18($t1) :: rt 0x00232f2e
+lwr $t0, 22($t1) :: rt 0x00242c2b
+lwr $t0, 26($t1) :: rt 0x00252a2e
+lwr $t0, 30($t1) :: rt 0x00262d2d
+lwr $t0, 34($t1) :: rt 0x003f343f
+lwr $t0, 38($t1) :: rt 0x003e353d
+MADD
+madd  $t0, $t1 :: rs 0x00000006 rt 0x00000002 HI 0x00000000 LO 0x0000000c 
+madd  $t0, $t1 :: rs 0x00000055 rt 0x00000028 HI 0x00000000 LO 0x00000d48 
+madd  $t0, $t1 :: rs 0x00000018 rt 0x00000fff HI 0x00000000 LO 0x00017fe8 
+madd  $t0, $t1 :: rs 0x7fffffff rt 0x7fffffff HI 0x3fffffff LO 0x00000001 
+madd  $t0, $t1 :: rs 0xffffffff rt 0x00000001 HI 0xffffffff LO 0xffffffff 
+madd  $t0, $t1 :: rs 0x00000001 rt 0xffffffff HI 0xffffffff LO 0xffffffff 
+madd  $t0, $t1 :: rs 0x00000002 rt 0x00000006 HI 0x00000000 LO 0x0000000c 
+madd  $t0, $t1 :: rs 0x00000356 rt 0x00000555 HI 0x00000000 LO 0x0011c98e 
+MADDU
+maddu  $t0, $t1 :: rs 0x00000006 rt 0x00000002 HI 0x00000000 LO 0x0000000c 
+maddu  $t0, $t1 :: rs 0x00000055 rt 0x00000028 HI 0x00000000 LO 0x00000d48 
+maddu  $t0, $t1 :: rs 0x00000018 rt 0x00000fff HI 0x00000000 LO 0x00017fe8 
+maddu  $t0, $t1 :: rs 0x7fffffff rt 0x7fffffff HI 0x3fffffff LO 0x00000001 
+maddu  $t0, $t1 :: rs 0xffffffff rt 0x00000001 HI 0x00000000 LO 0xffffffff 
+maddu  $t0, $t1 :: rs 0x00000001 rt 0xffffffff HI 0x00000000 LO 0xffffffff 
+maddu  $t0, $t1 :: rs 0x00000002 rt 0x00000006 HI 0x00000000 LO 0x0000000c 
+maddu  $t0, $t1 :: rs 0x00000356 rt 0x00000555 HI 0x00000000 LO 0x0011c98e 
+MOVN
+movn $t0, $t1, $t2 :: rd 0x00000000 rs 0x31415927, rt 0x00000000
+movn $t0, $t1, $t2 :: rd 0x31415927 rs 0x31415927, rt 0x00000001
+movn $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x000000ff
+movn $t0, $t1, $t2 :: rd 0x00000000 rs 0xffffffff, rt 0x00000000
+movn $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000001
+movn $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000000
+movn $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0xffffffff
+movn $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0x00000001
+movn $t0, $t1, $t2 :: rd 0x7fffffff rs 0x7fffffff, rt 0x00000001
+movn $t0, $t1, $t2 :: rd 0x00000000 rs 0x80000000, rt 0x00000000
+movn $t0, $t1, $t2 :: rd 0x7fffffff rs 0x7fffffff, rt 0x80000000
+movn $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0x00000001
+movn $t0, $t1, $t2 :: rd 0x00000000 rs 0x7fffffff, rt 0x00000000
+movn $t0, $t1, $t2 :: rd 0x00000000 rs 0x31415927, rt 0x00000000
+movn $t0, $t1, $t2 :: rd 0x31415927 rs 0x31415927, rt 0xee00ee00
+movn $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000001
+movn $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000001, rt 0x00000000
+movn $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000001
+movn $t0, $t1, $t2 :: rd 0x00000000 rs 0xffffffff, rt 0x00000000
+movn $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0xffffffff
+movn $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x80000000
+movn $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0x00000001
+movn $t0, $t1, $t2 :: rd 0x00000000 rs 0x80000000, rt 0x00000000
+movn $t0, $t1, $t2 :: rd 0x7fffffff rs 0x7fffffff, rt 0x80000000
+movn $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0x00000001
+movn $t0, $t1, $t2 :: rd 0x00000000 rs 0x7fffffff, rt 0x00000000
+MOVZ
+movz $t0, $t1, $t2 :: rd 0x31415927 rs 0x31415927, rt 0x00000000
+movz $t0, $t1, $t2 :: rd 0x00000000 rs 0x31415927, rt 0x00000001
+movz $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x000000ff
+movz $t0, $t1, $t2 :: rd 0xffffffff rs 0xffffffff, rt 0x00000000
+movz $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000001
+movz $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000000
+movz $t0, $t1, $t2 :: rd 0x00000000 rs 0x80000000, rt 0xffffffff
+movz $t0, $t1, $t2 :: rd 0x00000000 rs 0x80000000, rt 0x00000001
+movz $t0, $t1, $t2 :: rd 0x00000000 rs 0x7fffffff, rt 0x00000001
+movz $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0x00000000
+movz $t0, $t1, $t2 :: rd 0x00000000 rs 0x7fffffff, rt 0x80000000
+movz $t0, $t1, $t2 :: rd 0x00000000 rs 0x80000000, rt 0x00000001
+movz $t0, $t1, $t2 :: rd 0x7fffffff rs 0x7fffffff, rt 0x00000000
+movz $t0, $t1, $t2 :: rd 0x31415927 rs 0x31415927, rt 0x00000000
+movz $t0, $t1, $t2 :: rd 0x00000000 rs 0x31415927, rt 0xee00ee00
+movz $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000001
+movz $t0, $t1, $t2 :: rd 0x00000001 rs 0x00000001, rt 0x00000000
+movz $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000001
+movz $t0, $t1, $t2 :: rd 0xffffffff rs 0xffffffff, rt 0x00000000
+movz $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0xffffffff
+movz $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x80000000
+movz $t0, $t1, $t2 :: rd 0x00000000 rs 0x80000000, rt 0x00000001
+movz $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0x00000000
+movz $t0, $t1, $t2 :: rd 0x00000000 rs 0x7fffffff, rt 0x80000000
+movz $t0, $t1, $t2 :: rd 0x00000000 rs 0x80000000, rt 0x00000001
+movz $t0, $t1, $t2 :: rd 0x7fffffff rs 0x7fffffff, rt 0x00000000
+MSUB
+msub  $t0, $t1 :: rs 0x00000006 rt 0x00000002 HI 0xffffffff LO 0xfffffff4 
+msub  $t0, $t1 :: rs 0x00000055 rt 0x00000028 HI 0xffffffff LO 0xfffff2b8 
+msub  $t0, $t1 :: rs 0x00000018 rt 0x00000fff HI 0xffffffff LO 0xfffe8018 
+msub  $t0, $t1 :: rs 0x7fffffff rt 0x7fffffff HI 0xc0000000 LO 0xffffffff 
+msub  $t0, $t1 :: rs 0xffffffff rt 0x00000001 HI 0x00000000 LO 0x00000001 
+msub  $t0, $t1 :: rs 0x00000001 rt 0xffffffff HI 0x00000000 LO 0x00000001 
+msub  $t0, $t1 :: rs 0x00000002 rt 0x00000006 HI 0xffffffff LO 0xfffffff4 
+msub  $t0, $t1 :: rs 0x00000356 rt 0x00000555 HI 0xffffffff LO 0xffee3672 
+MSUBU
+msubu  $t0, $t1 :: rs 0x31415927 rt 0xffffffff HI 0xcebea6d9 LO 0x31415927 
+msubu  $t0, $t1 :: rs 0x31415927 rt 0xee00ee00 HI 0xd2351152 LO 0xfd1dbe00 
+msubu  $t0, $t1 :: rs 0x00000000 rt 0x000000ff HI 0x00000000 LO 0x00000000 
+msubu  $t0, $t1 :: rs 0xffffffff rt 0x00000000 HI 0x00000000 LO 0x00000000 
+msubu  $t0, $t1 :: rs 0x00000000 rt 0x00000001 HI 0x00000000 LO 0x00000000 
+msubu  $t0, $t1 :: rs 0x00000000 rt 0x00000000 HI 0x00000000 LO 0x00000000 
+msubu  $t0, $t1 :: rs 0x80000000 rt 0xffffffff HI 0x80000000 LO 0x80000000 
+msubu  $t0, $t1 :: rs 0x80000000 rt 0x80000000 HI 0xc0000000 LO 0x00000000 
+msubu  $t0, $t1 :: rs 0x7fffffff rt 0x00000000 HI 0x00000000 LO 0x00000000 
+msubu  $t0, $t1 :: rs 0x80000000 rt 0x80000000 HI 0xc0000000 LO 0x00000000 
+msubu  $t0, $t1 :: rs 0x7fffffff rt 0x80000000 HI 0xc0000000 LO 0x80000000 
+msubu  $t0, $t1 :: rs 0x80000000 rt 0xff000000 HI 0x80800000 LO 0x00000000 
+msubu  $t0, $t1 :: rs 0x7fffffff rt 0x0dd00000 HI 0xf9180000 LO 0x0dd00000 
+msubu  $t0, $t1 :: rs 0x31415927 rt 0xffffffff HI 0xcebea6d9 LO 0x31415927 
+msubu  $t0, $t1 :: rs 0x31415927 rt 0xee00ee00 HI 0xd2351152 LO 0xfd1dbe00 
+msubu  $t0, $t1 :: rs 0x00000000 rt 0x000000ff HI 0x00000000 LO 0x00000000 
+msubu  $t0, $t1 :: rs 0x00000001 rt 0x00000000 HI 0x00000000 LO 0x00000000 
+msubu  $t0, $t1 :: rs 0x00000000 rt 0x00000001 HI 0x00000000 LO 0x00000000 
+msubu  $t0, $t1 :: rs 0xffffffff rt 0x00000000 HI 0x00000000 LO 0x00000000 
+msubu  $t0, $t1 :: rs 0x00000000 rt 0xffffffff HI 0x00000000 LO 0x00000000 
+msubu  $t0, $t1 :: rs 0x00000000 rt 0x80000000 HI 0x00000000 LO 0x00000000 
+msubu  $t0, $t1 :: rs 0x80000000 rt 0x00000000 HI 0x00000000 LO 0x00000000 
+msubu  $t0, $t1 :: rs 0x80000000 rt 0x80000000 HI 0xc0000000 LO 0x00000000 
+msubu  $t0, $t1 :: rs 0x7fffffff rt 0x80000000 HI 0xc0000000 LO 0x80000000 
+msubu  $t0, $t1 :: rs 0x80000000 rt 0xff000000 HI 0x80800000 LO 0x00000000 
+msubu  $t0, $t1 :: rs 0x7fffffff rt 0x0dd00000 HI 0xf9180000 LO 0x0dd00000 
+msubu  $t0, $t1 :: rs 0xffffffff rt 0x00000000 HI 0x00000000 LO 0x00000000 
+msubu  $t0, $t1 :: rs 0x00000000 rt 0xffffffff HI 0x00000000 LO 0x00000000 
+msubu  $t0, $t1 :: rs 0xffffffff rt 0xffffffff HI 0x00000001 LO 0xffffffff 
+msubu  $t0, $t1 :: rs 0x7fffffff rt 0x7fffffff HI 0xc0000000 LO 0xffffffff 
+msubu  $t0, $t1 :: rs 0x0000ffff rt 0x0000ffff HI 0xffffffff LO 0x0001ffff 
+MUL
+mul $t0, $t1, $t2 :: rd 0xcebea6d9 rs 0x31415927, rt 0xffffffff
+mul $t0, $t1, $t2 :: rd 0x02e24200 rs 0x31415927, rt 0xee00ee00
+mul $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x000000ff
+mul $t0, $t1, $t2 :: rd 0x00000000 rs 0xffffffff, rt 0x00000000
+mul $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000001
+mul $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000000
+mul $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0xffffffff
+mul $t0, $t1, $t2 :: rd 0x00000000 rs 0x80000000, rt 0x80000000
+mul $t0, $t1, $t2 :: rd 0x00000000 rs 0x7fffffff, rt 0x00000000
+mul $t0, $t1, $t2 :: rd 0x00000000 rs 0x80000000, rt 0x80000000
+mul $t0, $t1, $t2 :: rd 0x80000000 rs 0x7fffffff, rt 0x80000000
+mul $t0, $t1, $t2 :: rd 0x00000000 rs 0x80000000, rt 0xff000000
+mul $t0, $t1, $t2 :: rd 0xf2300000 rs 0x7fffffff, rt 0x0dd00000
+mul $t0, $t1, $t2 :: rd 0xcebea6d9 rs 0x31415927, rt 0xffffffff
+mul $t0, $t1, $t2 :: rd 0x02e24200 rs 0x31415927, rt 0xee00ee00
+mul $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x000000ff
+mul $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000001, rt 0x00000000
+mul $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000001
+mul $t0, $t1, $t2 :: rd 0x00000000 rs 0xffffffff, rt 0x00000000
+mul $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0xffffffff
+mul $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x80000000
+mul $t0, $t1, $t2 :: rd 0x00000000 rs 0x80000000, rt 0x00000000
+mul $t0, $t1, $t2 :: rd 0x00000000 rs 0x80000000, rt 0x80000000
+mul $t0, $t1, $t2 :: rd 0x80000000 rs 0x7fffffff, rt 0x80000000
+mul $t0, $t1, $t2 :: rd 0x00000000 rs 0x80000000, rt 0xff000000
+mul $t0, $t1, $t2 :: rd 0xf2300000 rs 0x7fffffff, rt 0x0dd00000
+mul $t0, $t1, $t2 :: rd 0x00000000 rs 0xffffffff, rt 0x00000000
+mul $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0xffffffff
+mul $t0, $t1, $t2 :: rd 0x00000001 rs 0xffffffff, rt 0xffffffff
+mul $t0, $t1, $t2 :: rd 0x00000001 rs 0x7fffffff, rt 0x7fffffff
+mul $t0, $t1, $t2 :: rd 0xfffe0001 rs 0x0000ffff, rt 0x0000ffff
+MULT
+mult  $t0, $t1 :: rs 0x31415927 rt 0xffffffff HI 0xffffffff LO 0xcebea6d9 
+mult  $t0, $t1 :: rs 0x31415927 rt 0xee00ee00 HI 0xfc899586 LO 0x02e24200 
+mult  $t0, $t1 :: rs 0x00000000 rt 0x000000ff HI 0x00000000 LO 0x00000000 
+mult  $t0, $t1 :: rs 0xffffffff rt 0x00000000 HI 0x00000000 LO 0x00000000 
+mult  $t0, $t1 :: rs 0x00000000 rt 0x00000001 HI 0x00000000 LO 0x00000000 
+mult  $t0, $t1 :: rs 0x00000000 rt 0x00000000 HI 0x00000000 LO 0x00000000 
+mult  $t0, $t1 :: rs 0x80000000 rt 0xffffffff HI 0x00000000 LO 0x80000000 
+mult  $t0, $t1 :: rs 0x80000000 rt 0x80000000 HI 0x40000000 LO 0x00000000 
+mult  $t0, $t1 :: rs 0x7fffffff rt 0x00000000 HI 0x00000000 LO 0x00000000 
+mult  $t0, $t1 :: rs 0x80000000 rt 0x80000000 HI 0x40000000 LO 0x00000000 
+mult  $t0, $t1 :: rs 0x7fffffff rt 0x80000000 HI 0xc0000000 LO 0x80000000 
+mult  $t0, $t1 :: rs 0x80000000 rt 0xff000000 HI 0x00800000 LO 0x00000000 
+mult  $t0, $t1 :: rs 0x7fffffff rt 0x0dd00000 HI 0x06e7ffff LO 0xf2300000 
+mult  $t0, $t1 :: rs 0x31415927 rt 0xffffffff HI 0xffffffff LO 0xcebea6d9 
+mult  $t0, $t1 :: rs 0x31415927 rt 0xee00ee00 HI 0xfc899586 LO 0x02e24200 
+mult  $t0, $t1 :: rs 0x00000000 rt 0x000000ff HI 0x00000000 LO 0x00000000 
+mult  $t0, $t1 :: rs 0x00000001 rt 0x00000000 HI 0x00000000 LO 0x00000000 
+mult  $t0, $t1 :: rs 0x00000000 rt 0x00000001 HI 0x00000000 LO 0x00000000 
+mult  $t0, $t1 :: rs 0xffffffff rt 0x00000000 HI 0x00000000 LO 0x00000000 
+mult  $t0, $t1 :: rs 0x00000000 rt 0xffffffff HI 0x00000000 LO 0x00000000 
+mult  $t0, $t1 :: rs 0x00000000 rt 0x80000000 HI 0x00000000 LO 0x00000000 
+mult  $t0, $t1 :: rs 0x80000000 rt 0x00000000 HI 0x00000000 LO 0x00000000 
+mult  $t0, $t1 :: rs 0x80000000 rt 0x80000000 HI 0x40000000 LO 0x00000000 
+mult  $t0, $t1 :: rs 0x7fffffff rt 0x80000000 HI 0xc0000000 LO 0x80000000 
+mult  $t0, $t1 :: rs 0x80000000 rt 0xff000000 HI 0x00800000 LO 0x00000000 
+mult  $t0, $t1 :: rs 0x7fffffff rt 0x0dd00000 HI 0x06e7ffff LO 0xf2300000 
+mult  $t0, $t1 :: rs 0xffffffff rt 0x00000000 HI 0x00000000 LO 0x00000000 
+mult  $t0, $t1 :: rs 0x00000000 rt 0xffffffff HI 0x00000000 LO 0x00000000 
+mult  $t0, $t1 :: rs 0xffffffff rt 0xffffffff HI 0x00000000 LO 0x00000001 
+mult  $t0, $t1 :: rs 0x7fffffff rt 0x7fffffff HI 0x3fffffff LO 0x00000001 
+mult  $t0, $t1 :: rs 0x0000ffff rt 0x0000ffff HI 0x00000000 LO 0xfffe0001 
+MULTU
+multu  $t0, $t1 :: rs 0x31415927 rt 0xffffffff HI 0x31415926 LO 0xcebea6d9 
+multu  $t0, $t1 :: rs 0x31415927 rt 0xee00ee00 HI 0x2dcaeead LO 0x02e24200 
+multu  $t0, $t1 :: rs 0x00000000 rt 0x000000ff HI 0x00000000 LO 0x00000000 
+multu  $t0, $t1 :: rs 0xffffffff rt 0x00000000 HI 0x00000000 LO 0x00000000 
+multu  $t0, $t1 :: rs 0x00000000 rt 0x00000001 HI 0x00000000 LO 0x00000000 
+multu  $t0, $t1 :: rs 0x00000000 rt 0x00000000 HI 0x00000000 LO 0x00000000 
+multu  $t0, $t1 :: rs 0x80000000 rt 0xffffffff HI 0x7fffffff LO 0x80000000 
+multu  $t0, $t1 :: rs 0x80000000 rt 0x80000000 HI 0x40000000 LO 0x00000000 
+multu  $t0, $t1 :: rs 0x7fffffff rt 0x00000000 HI 0x00000000 LO 0x00000000 
+multu  $t0, $t1 :: rs 0x80000000 rt 0x80000000 HI 0x40000000 LO 0x00000000 
+multu  $t0, $t1 :: rs 0x7fffffff rt 0x80000000 HI 0x3fffffff LO 0x80000000 
+multu  $t0, $t1 :: rs 0x80000000 rt 0xff000000 HI 0x7f800000 LO 0x00000000 
+multu  $t0, $t1 :: rs 0x7fffffff rt 0x0dd00000 HI 0x06e7ffff LO 0xf2300000 
+multu  $t0, $t1 :: rs 0x31415927 rt 0xffffffff HI 0x31415926 LO 0xcebea6d9 
+multu  $t0, $t1 :: rs 0x31415927 rt 0xee00ee00 HI 0x2dcaeead LO 0x02e24200 
+multu  $t0, $t1 :: rs 0x00000000 rt 0x000000ff HI 0x00000000 LO 0x00000000 
+multu  $t0, $t1 :: rs 0x00000001 rt 0x00000000 HI 0x00000000 LO 0x00000000 
+multu  $t0, $t1 :: rs 0x00000000 rt 0x00000001 HI 0x00000000 LO 0x00000000 
+multu  $t0, $t1 :: rs 0xffffffff rt 0x00000000 HI 0x00000000 LO 0x00000000 
+multu  $t0, $t1 :: rs 0x00000000 rt 0xffffffff HI 0x00000000 LO 0x00000000 
+multu  $t0, $t1 :: rs 0x00000000 rt 0x80000000 HI 0x00000000 LO 0x00000000 
+multu  $t0, $t1 :: rs 0x80000000 rt 0x00000000 HI 0x00000000 LO 0x00000000 
+multu  $t0, $t1 :: rs 0x80000000 rt 0x80000000 HI 0x40000000 LO 0x00000000 
+multu  $t0, $t1 :: rs 0x7fffffff rt 0x80000000 HI 0x3fffffff LO 0x80000000 
+multu  $t0, $t1 :: rs 0x80000000 rt 0xff000000 HI 0x7f800000 LO 0x00000000 
+multu  $t0, $t1 :: rs 0x7fffffff rt 0x0dd00000 HI 0x06e7ffff LO 0xf2300000 
+multu  $t0, $t1 :: rs 0xffffffff rt 0x00000000 HI 0x00000000 LO 0x00000000 
+multu  $t0, $t1 :: rs 0x00000000 rt 0xffffffff HI 0x00000000 LO 0x00000000 
+multu  $t0, $t1 :: rs 0xffffffff rt 0xffffffff HI 0xfffffffe LO 0x00000001 
+multu  $t0, $t1 :: rs 0x7fffffff rt 0x7fffffff HI 0x3fffffff LO 0x00000001 
+multu  $t0, $t1 :: rs 0x0000ffff rt 0x0000ffff HI 0x00000000 LO 0xfffe0001 
+NOR
+nor $t0, $t1, $t2 :: rd 0x00000000 rs 0x31415927, rt 0xffffffff
+nor $t0, $t1, $t2 :: rd 0x00be00d8 rs 0x31415927, rt 0xee00ee00
+nor $t0, $t1, $t2 :: rd 0xffffff00 rs 0x00000000, rt 0x000000ff
+nor $t0, $t1, $t2 :: rd 0x00000000 rs 0xffffffff, rt 0x00000000
+nor $t0, $t1, $t2 :: rd 0xfffffffe rs 0x00000000, rt 0x00000001
+nor $t0, $t1, $t2 :: rd 0xffffffff rs 0x00000000, rt 0x00000000
+nor $t0, $t1, $t2 :: rd 0x00000000 rs 0x80000000, rt 0xffffffff
+nor $t0, $t1, $t2 :: rd 0x7fffffff rs 0x80000000, rt 0x80000000
+nor $t0, $t1, $t2 :: rd 0x80000000 rs 0x7fffffff, rt 0x00000000
+nor $t0, $t1, $t2 :: rd 0x7fffffff rs 0x80000000, rt 0x80000000
+nor $t0, $t1, $t2 :: rd 0x00000000 rs 0x7fffffff, rt 0x80000000
+nor $t0, $t1, $t2 :: rd 0x00ffffff rs 0x80000000, rt 0xff000000
+nor $t0, $t1, $t2 :: rd 0x80000000 rs 0x7fffffff, rt 0x0dd00000
+nor $t0, $t1, $t2 :: rd 0x00000000 rs 0x31415927, rt 0xffffffff
+nor $t0, $t1, $t2 :: rd 0x00be00d8 rs 0x31415927, rt 0xee00ee00
+nor $t0, $t1, $t2 :: rd 0xffffff00 rs 0x00000000, rt 0x000000ff
+nor $t0, $t1, $t2 :: rd 0xfffffffe rs 0x00000001, rt 0x00000000
+nor $t0, $t1, $t2 :: rd 0xfffffffe rs 0x00000000, rt 0x00000001
+nor $t0, $t1, $t2 :: rd 0x00000000 rs 0xffffffff, rt 0x00000000
+nor $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0xffffffff
+nor $t0, $t1, $t2 :: rd 0x7fffffff rs 0x00000000, rt 0x80000000
+nor $t0, $t1, $t2 :: rd 0x7fffffff rs 0x80000000, rt 0x00000000
+nor $t0, $t1, $t2 :: rd 0x7fffffff rs 0x80000000, rt 0x80000000
+nor $t0, $t1, $t2 :: rd 0x00000000 rs 0x7fffffff, rt 0x80000000
+nor $t0, $t1, $t2 :: rd 0x00ffffff rs 0x80000000, rt 0xff000000
+nor $t0, $t1, $t2 :: rd 0x80000000 rs 0x7fffffff, rt 0x0dd00000
+nor $t0, $t1, $t2 :: rd 0x00000000 rs 0xffffffff, rt 0x00000000
+nor $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0xffffffff
+nor $t0, $t1, $t2 :: rd 0x00000000 rs 0xffffffff, rt 0xffffffff
+nor $t0, $t1, $t2 :: rd 0x80000000 rs 0x7fffffff, rt 0x7fffffff
+nor $t0, $t1, $t2 :: rd 0xffff0000 rs 0x0000ffff, rt 0x0000ffff
+NOT
+not  $t0, $t1 :: rd 0xfffffffd rs 0x00000002
+not  $t0, $t1 :: rd 0xffffffd7 rs 0x00000028
+not  $t0, $t1 :: rd 0x00000101 rs 0xfffffefe
+not  $t0, $t1 :: rd 0x80000000 rs 0x7fffffff
+not  $t0, $t1 :: rd 0x0000000a rs 0xfffffff5
+not  $t0, $t1 :: rd 0x00000000 rs 0xffffffff
+not  $t0, $t1 :: rd 0xffffffe9 rs 0x00000016
+not  $t0, $t1 :: rd 0x00000000 rs 0xffffffff
+NEGU
+negu  $t0, $t1 :: rd 0xfffffffe rs 0x00000002
+negu  $t0, $t1 :: rd 0xffffffd8 rs 0x00000028
+negu  $t0, $t1 :: rd 0x00000102 rs 0xfffffefe
+negu  $t0, $t1 :: rd 0x80000001 rs 0x7fffffff
+negu  $t0, $t1 :: rd 0x0000000b rs 0xfffffff5
+negu  $t0, $t1 :: rd 0x00000001 rs 0xffffffff
+negu  $t0, $t1 :: rd 0xffffffea rs 0x00000016
+negu  $t0, $t1 :: rd 0x00000001 rs 0xffffffff
+OR
+or $t0, $t1, $t2 :: rd 0xffffffff rs 0x31415927, rt 0xffffffff
+or $t0, $t1, $t2 :: rd 0xff41ff27 rs 0x31415927, rt 0xee00ee00
+or $t0, $t1, $t2 :: rd 0x000000ff rs 0x00000000, rt 0x000000ff
+or $t0, $t1, $t2 :: rd 0xffffffff rs 0xffffffff, rt 0x00000000
+or $t0, $t1, $t2 :: rd 0x00000001 rs 0x00000000, rt 0x00000001
+or $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000000
+or $t0, $t1, $t2 :: rd 0xffffffff rs 0x80000000, rt 0xffffffff
+or $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0x80000000
+or $t0, $t1, $t2 :: rd 0x7fffffff rs 0x7fffffff, rt 0x00000000
+or $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0x80000000
+or $t0, $t1, $t2 :: rd 0xffffffff rs 0x7fffffff, rt 0x80000000
+or $t0, $t1, $t2 :: rd 0xff000000 rs 0x80000000, rt 0xff000000
+or $t0, $t1, $t2 :: rd 0x7fffffff rs 0x7fffffff, rt 0x0dd00000
+or $t0, $t1, $t2 :: rd 0xffffffff rs 0x31415927, rt 0xffffffff
+or $t0, $t1, $t2 :: rd 0xff41ff27 rs 0x31415927, rt 0xee00ee00
+or $t0, $t1, $t2 :: rd 0x000000ff rs 0x00000000, rt 0x000000ff
+or $t0, $t1, $t2 :: rd 0x00000001 rs 0x00000001, rt 0x00000000
+or $t0, $t1, $t2 :: rd 0x00000001 rs 0x00000000, rt 0x00000001
+or $t0, $t1, $t2 :: rd 0xffffffff rs 0xffffffff, rt 0x00000000
+or $t0, $t1, $t2 :: rd 0xffffffff rs 0x00000000, rt 0xffffffff
+or $t0, $t1, $t2 :: rd 0x80000000 rs 0x00000000, rt 0x80000000
+or $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0x00000000
+or $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0x80000000
+or $t0, $t1, $t2 :: rd 0xffffffff rs 0x7fffffff, rt 0x80000000
+or $t0, $t1, $t2 :: rd 0xff000000 rs 0x80000000, rt 0xff000000
+or $t0, $t1, $t2 :: rd 0x7fffffff rs 0x7fffffff, rt 0x0dd00000
+or $t0, $t1, $t2 :: rd 0xffffffff rs 0xffffffff, rt 0x00000000
+or $t0, $t1, $t2 :: rd 0xffffffff rs 0x00000000, rt 0xffffffff
+or $t0, $t1, $t2 :: rd 0xffffffff rs 0xffffffff, rt 0xffffffff
+or $t0, $t1, $t2 :: rd 0x7fffffff rs 0x7fffffff, rt 0x7fffffff
+or $t0, $t1, $t2 :: rd 0x0000ffff rs 0x0000ffff, rt 0x0000ffff
+ORI
+ori $t0, $t1, 0xffff :: rt 0x3141ffff rs 0x31415927, imm 0x0000ffff
+ori $t0, $t1, 0xee00 :: rt 0x3141ff27 rs 0x31415927, imm 0x0000ee00
+ori $t0, $t1, 255 :: rt 0x000000ff rs 0x00000000, imm 0x000000ff
+ori $t0, $t1, 0 :: rt 0xffffffff rs 0xffffffff, imm 0x00000000
+ori $t0, $t1, 1 :: rt 0x00000001 rs 0x00000000, imm 0x00000001
+ori $t0, $t1, 0 :: rt 0x00000000 rs 0x00000000, imm 0x00000000
+ori $t0, $t1, 0x8000 :: rt 0x80008000 rs 0x80000000, imm 0x00008000
+ori $t0, $t1, 0 :: rt 0x7fffffff rs 0x7fffffff, imm 0x00000000
+ori $t0, $t1, 0x8000 :: rt 0x80008000 rs 0x80000000, imm 0x00008000
+ori $t0, $t1, 0x8000 :: rt 0x7fffffff rs 0x7fffffff, imm 0x00008000
+ori $t0, $t1, 0xff00 :: rt 0x8000ff00 rs 0x80000000, imm 0x0000ff00
+ori $t0, $t1, 0x0dd0 :: rt 0x7fffffff rs 0x7fffffff, imm 0x00000dd0
+ori $t0, $t1, 0xffff :: rt 0x3141ffff rs 0x31415927, imm 0x0000ffff
+ori $t0, $t1, 0xee00 :: rt 0x3141ff27 rs 0x31415927, imm 0x0000ee00
+ori $t0, $t1, 255 :: rt 0x000000ff rs 0x00000000, imm 0x000000ff
+ori $t0, $t1, 0 :: rt 0x00000001 rs 0x00000001, imm 0x00000000
+ori $t0, $t1, 1 :: rt 0x00000001 rs 0x00000000, imm 0x00000001
+ori $t0, $t1, 0 :: rt 0xffffffff rs 0xffffffff, imm 0x00000000
+ori $t0, $t1, 0x8000 :: rt 0x00008000 rs 0x00000000, imm 0x00008000
+ori $t0, $t1, 0 :: rt 0x00008000 rs 0x00008000, imm 0x00000000
+ori $t0, $t1, 0x8000 :: rt 0x80008000 rs 0x80000000, imm 0x00008000
+ori $t0, $t1, 0x8000 :: rt 0x7fffffff rs 0x7fffffff, imm 0x00008000
+ori $t0, $t1, 0xff00 :: rt 0x8000ff00 rs 0x80000000, imm 0x0000ff00
+ori $t0, $t1, 0x0dd0 :: rt 0x7fffffff rs 0x7fffffff, imm 0x00000dd0
+ori $t0, $t1, 0 :: rt 0x0000ffff rs 0x0000ffff, imm 0x00000000
+ori $t0, $t1, 0xffff :: rt 0x0000ffff rs 0x00000000, imm 0x0000ffff
+ori $t0, $t1, 0xffff :: rt 0xffffffff rs 0xffffffff, imm 0x0000ffff
+ori $t0, $t1, 0x7fff :: rt 0x7fffffff rs 0x7fffffff, imm 0x00007fff
+ori $t0, $t1, 0x0000 :: rt 0x0000ffff rs 0x0000ffff, imm 0x00000000
+SLL
+sll $t0, $t1, 0x00000000 :: rt 0x31415927 rs 0x31415927, imm 0x00000000
+sll $t0, $t1, 0x00000001 :: rt 0x6282b24e rs 0x31415927, imm 0x00000001
+sll $t0, $t1, 0x00000002 :: rt 0xc505649c rs 0x31415927, imm 0x00000002
+sll $t0, $t1, 0x0000000F :: rt 0xac938000 rs 0x31415927, imm 0x0000000f
+sll $t0, $t1, 0x00000010 :: rt 0x59270000 rs 0x31415927, imm 0x00000010
+sll $t0, $t1, 0x0000001F :: rt 0x80000000 rs 0x31415927, imm 0x0000001f
+sll $t0, $t1, 0x00000009 :: rt 0x82b24e00 rs 0x31415927, imm 0x00000009
+sll $t0, $t1, 0x0000000A :: rt 0x05649c00 rs 0x31415927, imm 0x0000000a
+sll $t0, $t1, 0x00000000 :: rt 0x00088000 rs 0x00088000, imm 0x00000000
+sll $t0, $t1, 0x00000001 :: rt 0x00110000 rs 0x00088000, imm 0x00000001
+sll $t0, $t1, 31 :: rt 0x00000000 rs 0x00088000, imm 0x0000001f
+sll $t0, $t1, 16 :: rt 0x00000000 rs 0x00010000, imm 0x00000010
+sll $t0, $t1, 17 :: rt 0x00000000 rs 0x00010000, imm 0x00000011
+sll $t0, $t1, 18 :: rt 0x00000000 rs 0x00010000, imm 0x00000012
+sll $t0, $t1, 0 :: rt 0x00000000 rs 0x00000000, imm 0x00000000
+SLLV
+sllv $t0, $t1, $t2 :: rd 0x80000000 rs 0x31415927, rt 0xffffffff
+sllv $t0, $t1, $t2 :: rd 0x31415927 rs 0x31415927, rt 0xee00ee00
+sllv $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x000000ff
+sllv $t0, $t1, $t2 :: rd 0xffffffff rs 0xffffffff, rt 0x00000000
+sllv $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000001
+sllv $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000000
+sllv $t0, $t1, $t2 :: rd 0x00000000 rs 0x80000000, rt 0xffffffff
+sllv $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0x80000000
+sllv $t0, $t1, $t2 :: rd 0x7fffffff rs 0x7fffffff, rt 0x00000000
+sllv $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0x80000000
+sllv $t0, $t1, $t2 :: rd 0x7fffffff rs 0x7fffffff, rt 0x80000000
+sllv $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0xff000000
+sllv $t0, $t1, $t2 :: rd 0x7fffffff rs 0x7fffffff, rt 0x0dd00000
+sllv $t0, $t1, $t2 :: rd 0x80000000 rs 0x31415927, rt 0xffffffff
+sllv $t0, $t1, $t2 :: rd 0x31415927 rs 0x31415927, rt 0xee00ee00
+sllv $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x000000ff
+sllv $t0, $t1, $t2 :: rd 0x00000001 rs 0x00000001, rt 0x00000000
+sllv $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000001
+sllv $t0, $t1, $t2 :: rd 0xffffffff rs 0xffffffff, rt 0x00000000
+sllv $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0xffffffff
+sllv $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x80000000
+sllv $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0x00000000
+sllv $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0x80000000
+sllv $t0, $t1, $t2 :: rd 0x7fffffff rs 0x7fffffff, rt 0x80000000
+sllv $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0xff000000
+sllv $t0, $t1, $t2 :: rd 0x7fffffff rs 0x7fffffff, rt 0x0dd00000
+sllv $t0, $t1, $t2 :: rd 0xffffffff rs 0xffffffff, rt 0x00000000
+sllv $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0xffffffff
+sllv $t0, $t1, $t2 :: rd 0x80000000 rs 0xffffffff, rt 0xffffffff
+sllv $t0, $t1, $t2 :: rd 0x80000000 rs 0x7fffffff, rt 0x7fffffff
+sllv $t0, $t1, $t2 :: rd 0x80000000 rs 0x0000ffff, rt 0x0000ffff
+sllv $t0, $t1, $t2 :: rd 0x31415927 rs 0x31415927, rt 0x00000000
+sllv $t0, $t1, $t2 :: rd 0x6282b24e rs 0x31415927, rt 0x00000001
+sllv $t0, $t1, $t2 :: rd 0xc505649c rs 0x31415927, rt 0x00000002
+sllv $t0, $t1, $t2 :: rd 0xac938000 rs 0x31415927, rt 0x0000000f
+sllv $t0, $t1, $t2 :: rd 0x59270000 rs 0x31415927, rt 0x00000010
+sllv $t0, $t1, $t2 :: rd 0x80000000 rs 0x31415927, rt 0x0000001f
+sllv $t0, $t1, $t2 :: rd 0x31415927 rs 0x31415927, rt 0x00000020
+sllv $t0, $t1, $t2 :: rd 0x6282b24e rs 0x31415927, rt 0x00000021
+sllv $t0, $t1, $t2 :: rd 0x00088000 rs 0x00088000, rt 0x00000000
+sllv $t0, $t1, $t2 :: rd 0x00110000 rs 0x00088000, rt 0x00000001
+sllv $t0, $t1, $t2 :: rd 0x00000000 rs 0x00088000, rt 0x0000001f
+sllv $t0, $t1, $t2 :: rd 0x00000000 rs 0x00010000, rt 0x00000010
+sllv $t0, $t1, $t2 :: rd 0x00000000 rs 0x00010000, rt 0x00000011
+sllv $t0, $t1, $t2 :: rd 0x00000000 rs 0x00010000, rt 0x00000012
+sllv $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000000
+sllv $t0, $t1, $t2 :: rd 0x80000000 rs 0x0000ffff, rt 0x0000ffff
+SLT
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x31415927, rt 0xffffffff
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x31415927, rt 0xee00ee00
+slt $t0, $t1, $t2 :: rd 0x00000001 rs 0x00000000, rt 0x000000ff
+slt $t0, $t1, $t2 :: rd 0x00000001 rs 0xffffffff, rt 0x00000000
+slt $t0, $t1, $t2 :: rd 0x00000001 rs 0x00000000, rt 0x00000001
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000000
+slt $t0, $t1, $t2 :: rd 0x00000001 rs 0x80000000, rt 0xffffffff
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x80000000, rt 0x80000000
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x7fffffff, rt 0x00000000
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x80000000, rt 0x80000000
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x7fffffff, rt 0x80000000
+slt $t0, $t1, $t2 :: rd 0x00000001 rs 0x80000000, rt 0xff000000
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x7fffffff, rt 0x0dd00000
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x31415927, rt 0xffffffff
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x31415927, rt 0xee00ee00
+slt $t0, $t1, $t2 :: rd 0x00000001 rs 0x00000000, rt 0x000000ff
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000001, rt 0x00000000
+slt $t0, $t1, $t2 :: rd 0x00000001 rs 0x00000000, rt 0x00000001
+slt $t0, $t1, $t2 :: rd 0x00000001 rs 0xffffffff, rt 0x00000000
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0xffffffff
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x80000000
+slt $t0, $t1, $t2 :: rd 0x00000001 rs 0x80000000, rt 0x00000000
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x80000000, rt 0x80000000
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x7fffffff, rt 0x80000000
+slt $t0, $t1, $t2 :: rd 0x00000001 rs 0x80000000, rt 0xff000000
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x7fffffff, rt 0x0dd00000
+slt $t0, $t1, $t2 :: rd 0x00000001 rs 0xffffffff, rt 0x00000000
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0xffffffff
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0xffffffff, rt 0xffffffff
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x7fffffff, rt 0x7fffffff
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x0000ffff, rt 0x0000ffff
+slt $t0, $t1, $t2 :: rd 0x00000001 rs 0xffffffff, rt 0x00000000
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0xffffffff
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0xffffffff, rt 0xffffffff
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x7fffffff, rt 0x7fffffff
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x0000ffff, rt 0x0000ffff
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x31415927, rt 0x00000000
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x31415927, rt 0x00000001
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x31415927, rt 0x00000002
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x31415927, rt 0x0000000f
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x31415927, rt 0x00000010
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x31415927, rt 0x0000001f
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x31415927, rt 0x00000020
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x31415927, rt 0x00000021
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x00088000, rt 0x00000000
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x00088000, rt 0x00000001
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x00088000, rt 0x0000001f
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x00010000, rt 0x00000010
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x00010000, rt 0x00000011
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x00010000, rt 0x00000012
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000000
+slt $t0, $t1, $t2 :: rd 0x00000000 rs 0x0000ffff, rt 0x0000ffff
+SLTI
+slti $t0, $t1, 0x00000000 :: rt 0x00000000 rs 0x00000001, imm 0x31415927
+slti $t0, $t1, 0x00000001 :: rt 0x00000000 rs 0x31415927, imm 0x00000001
+slti $t0, $t1, 0x00000002 :: rt 0x00000000 rs 0x31415927, imm 0x00000002
+slti $t0, $t1, 0x0000000F :: rt 0x00000000 rs 0x31415927, imm 0x0000000f
+slti $t0, $t1, 0x00000010 :: rt 0x00000000 rs 0x00000010, imm 0x00000010
+slti $t0, $t1, 0x0000001F :: rt 0x00000001 rs 0x00000010, imm 0x31415927
+slti $t0, $t1, 0x00000009 :: rt 0x00000000 rs 0x31415927, imm 0x00000009
+slti $t0, $t1, 0x0000000A :: rt 0x00000000 rs 0x31415927, imm 0x0000000a
+slti $t0, $t1, 0x00000000 :: rt 0x00000000 rs 0x00088000, imm 0x0000000a
+slti $t0, $t1, 0x00000001 :: rt 0x00000001 rs 0x00000000, imm 0x00000001
+slti $t0, $t1, 31 :: rt 0x00000000 rs 0x00088000, imm 0x0000001f
+slti $t0, $t1, 16 :: rt 0x00000000 rs 0x00010000, imm 0x00000010
+slti $t0, $t1, 17 :: rt 0x00000000 rs 0x00010000, imm 0x00000011
+slti $t0, $t1, 18 :: rt 0x00000000 rs 0x00010000, imm 0x00000012
+slti $t0, $t1, 0 :: rt 0x00000000 rs 0x00000000, imm 0x00000000
+SLTIU
+sltiu $t0, $t1, 0x00000000 :: rt 0x00000000 rs 0x00000001, imm 0x31415927
+sltiu $t0, $t1, 0x00000001 :: rt 0x00000000 rs 0x31415927, imm 0x00000001
+sltiu $t0, $t1, 0x00000002 :: rt 0x00000000 rs 0x31415927, imm 0x00000002
+sltiu $t0, $t1, 0x0000000F :: rt 0x00000000 rs 0x31415927, imm 0x0000000f
+sltiu $t0, $t1, 0x00000010 :: rt 0x00000000 rs 0x00000010, imm 0x00000010
+sltiu $t0, $t1, 0x0000001F :: rt 0x00000001 rs 0x00000010, imm 0x31415927
+sltiu $t0, $t1, 0x00000009 :: rt 0x00000000 rs 0x31415927, imm 0x00000009
+sltiu $t0, $t1, 0x0000000A :: rt 0x00000000 rs 0x31415927, imm 0x0000000a
+sltiu $t0, $t1, 0x00000000 :: rt 0x00000000 rs 0x00088000, imm 0x0000000a
+sltiu $t0, $t1, 0x00000001 :: rt 0x00000001 rs 0x00000000, imm 0x00000001
+sltiu $t0, $t1, 31 :: rt 0x00000000 rs 0x00088000, imm 0x0000001f
+sltiu $t0, $t1, 16 :: rt 0x00000000 rs 0x00010000, imm 0x00000010
+sltiu $t0, $t1, 17 :: rt 0x00000000 rs 0x00010000, imm 0x00000011
+sltiu $t0, $t1, 18 :: rt 0x00000000 rs 0x00010000, imm 0x00000012
+sltiu $t0, $t1, 0 :: rt 0x00000000 rs 0x00000000, imm 0x00000000
+SLTU
+sltu $t0, $t1, $t2 :: rd 0x00000001 rs 0x31415927, rt 0xffffffff
+sltu $t0, $t1, $t2 :: rd 0x00000001 rs 0x31415927, rt 0xee00ee00
+sltu $t0, $t1, $t2 :: rd 0x00000001 rs 0x00000000, rt 0x000000ff
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0xffffffff, rt 0x00000000
+sltu $t0, $t1, $t2 :: rd 0x00000001 rs 0x00000000, rt 0x00000001
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000000
+sltu $t0, $t1, $t2 :: rd 0x00000001 rs 0x80000000, rt 0xffffffff
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0x80000000, rt 0x80000000
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0x7fffffff, rt 0x00000000
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0x80000000, rt 0x80000000
+sltu $t0, $t1, $t2 :: rd 0x00000001 rs 0x7fffffff, rt 0x80000000
+sltu $t0, $t1, $t2 :: rd 0x00000001 rs 0x80000000, rt 0xff000000
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0x7fffffff, rt 0x0dd00000
+sltu $t0, $t1, $t2 :: rd 0x00000001 rs 0x31415927, rt 0xffffffff
+sltu $t0, $t1, $t2 :: rd 0x00000001 rs 0x31415927, rt 0xee00ee00
+sltu $t0, $t1, $t2 :: rd 0x00000001 rs 0x00000000, rt 0x000000ff
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000001, rt 0x00000000
+sltu $t0, $t1, $t2 :: rd 0x00000001 rs 0x00000000, rt 0x00000001
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0xffffffff, rt 0x00000000
+sltu $t0, $t1, $t2 :: rd 0x00000001 rs 0x00000000, rt 0xffffffff
+sltu $t0, $t1, $t2 :: rd 0x00000001 rs 0x00000000, rt 0x80000000
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0x80000000, rt 0x00000000
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0x80000000, rt 0x80000000
+sltu $t0, $t1, $t2 :: rd 0x00000001 rs 0x7fffffff, rt 0x80000000
+sltu $t0, $t1, $t2 :: rd 0x00000001 rs 0x80000000, rt 0xff000000
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0x7fffffff, rt 0x0dd00000
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0xffffffff, rt 0x00000000
+sltu $t0, $t1, $t2 :: rd 0x00000001 rs 0x00000000, rt 0xffffffff
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0xffffffff, rt 0xffffffff
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0x7fffffff, rt 0x7fffffff
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0x0000ffff, rt 0x0000ffff
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0xffffffff, rt 0x00000000
+sltu $t0, $t1, $t2 :: rd 0x00000001 rs 0x00000000, rt 0xffffffff
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0xffffffff, rt 0xffffffff
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0x7fffffff, rt 0x7fffffff
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0x0000ffff, rt 0x0000ffff
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0x31415927, rt 0x00000000
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0x31415927, rt 0x00000001
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0x31415927, rt 0x00000002
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0x31415927, rt 0x0000000f
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0x31415927, rt 0x00000010
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0x31415927, rt 0x0000001f
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0x31415927, rt 0x00000020
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0x31415927, rt 0x00000021
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0x00088000, rt 0x00000000
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0x00088000, rt 0x00000001
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0x00088000, rt 0x0000001f
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0x00010000, rt 0x00000010
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0x00010000, rt 0x00000011
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0x00010000, rt 0x00000012
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000000
+sltu $t0, $t1, $t2 :: rd 0x00000000 rs 0x0000ffff, rt 0x0000ffff
+SRA
+sra $t0, $t1, 0x00000000 :: rt 0x00000001 rs 0x00000001, imm 0x31415927
+sra $t0, $t1, 0x00000001 :: rt 0x18a0ac93 rs 0x31415927, imm 0x00000001
+sra $t0, $t1, 0x00000002 :: rt 0x0c505649 rs 0x31415927, imm 0x00000002
+sra $t0, $t1, 0x0000000F :: rt 0x00006282 rs 0x31415927, imm 0x0000000f
+sra $t0, $t1, 0x00000010 :: rt 0x00000000 rs 0x00000010, imm 0x00000010
+sra $t0, $t1, 0x0000001F :: rt 0x00000000 rs 0x00000010, imm 0x31415927
+sra $t0, $t1, 0x00000009 :: rt 0x0018a0ac rs 0x31415927, imm 0x00000009
+sra $t0, $t1, 0x0000000A :: rt 0x000c5056 rs 0x31415927, imm 0x0000000a
+sra $t0, $t1, 0x00000000 :: rt 0x00088000 rs 0x00088000, imm 0x0000000a
+sra $t0, $t1, 0x00000001 :: rt 0x00000000 rs 0x00000000, imm 0x00000001
+sra $t0, $t1, 31 :: rt 0x00000000 rs 0x00088000, imm 0x0000001f
+sra $t0, $t1, 16 :: rt 0x00000001 rs 0x00010000, imm 0x00000010
+sra $t0, $t1, 17 :: rt 0x00000000 rs 0x00010000, imm 0x00000011
+sra $t0, $t1, 18 :: rt 0x00000000 rs 0x00010000, imm 0x00000012
+sra $t0, $t1, 0 :: rt 0x00000000 rs 0x00000000, imm 0x00000000
+SRAV
+srav $t0, $t1, $t2 :: rd 0x00000000 rs 0x31415927, rt 0xffffffff
+srav $t0, $t1, $t2 :: rd 0x31415927 rs 0x31415927, rt 0xee00ee00
+srav $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x000000ff
+srav $t0, $t1, $t2 :: rd 0xffffffff rs 0xffffffff, rt 0x00000000
+srav $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000001
+srav $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000000
+srav $t0, $t1, $t2 :: rd 0xffffffff rs 0x80000000, rt 0xffffffff
+srav $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0x80000000
+srav $t0, $t1, $t2 :: rd 0x7fffffff rs 0x7fffffff, rt 0x00000000
+srav $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0x80000000
+srav $t0, $t1, $t2 :: rd 0x7fffffff rs 0x7fffffff, rt 0x80000000
+srav $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0xff000000
+srav $t0, $t1, $t2 :: rd 0x7fffffff rs 0x7fffffff, rt 0x0dd00000
+srav $t0, $t1, $t2 :: rd 0x00000000 rs 0x31415927, rt 0xffffffff
+srav $t0, $t1, $t2 :: rd 0x31415927 rs 0x31415927, rt 0xee00ee00
+srav $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x000000ff
+srav $t0, $t1, $t2 :: rd 0x00000001 rs 0x00000001, rt 0x00000000
+srav $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000001
+srav $t0, $t1, $t2 :: rd 0xffffffff rs 0xffffffff, rt 0x00000000
+srav $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0xffffffff
+srav $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x80000000
+srav $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0x00000000
+srav $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0x80000000
+srav $t0, $t1, $t2 :: rd 0x7fffffff rs 0x7fffffff, rt 0x80000000
+srav $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0xff000000
+srav $t0, $t1, $t2 :: rd 0x7fffffff rs 0x7fffffff, rt 0x0dd00000
+srav $t0, $t1, $t2 :: rd 0xffffffff rs 0xffffffff, rt 0x00000000
+srav $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0xffffffff
+srav $t0, $t1, $t2 :: rd 0xffffffff rs 0xffffffff, rt 0xffffffff
+srav $t0, $t1, $t2 :: rd 0x00000000 rs 0x7fffffff, rt 0x7fffffff
+srav $t0, $t1, $t2 :: rd 0x00000000 rs 0x0000ffff, rt 0x0000ffff
+srav $t0, $t1, $t2 :: rd 0xffffffff rs 0xffffffff, rt 0x00000000
+srav $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0xffffffff
+srav $t0, $t1, $t2 :: rd 0xffffffff rs 0xffffffff, rt 0xffffffff
+srav $t0, $t1, $t2 :: rd 0x00000000 rs 0x7fffffff, rt 0x7fffffff
+srav $t0, $t1, $t2 :: rd 0x00000000 rs 0x0000ffff, rt 0x0000ffff
+srav $t0, $t1, $t2 :: rd 0x31415927 rs 0x31415927, rt 0x00000000
+srav $t0, $t1, $t2 :: rd 0x18a0ac93 rs 0x31415927, rt 0x00000001
+srav $t0, $t1, $t2 :: rd 0x0c505649 rs 0x31415927, rt 0x00000002
+srav $t0, $t1, $t2 :: rd 0x00006282 rs 0x31415927, rt 0x0000000f
+srav $t0, $t1, $t2 :: rd 0x00003141 rs 0x31415927, rt 0x00000010
+srav $t0, $t1, $t2 :: rd 0x00000000 rs 0x31415927, rt 0x0000001f
+srav $t0, $t1, $t2 :: rd 0x31415927 rs 0x31415927, rt 0x00000020
+srav $t0, $t1, $t2 :: rd 0x18a0ac93 rs 0x31415927, rt 0x00000021
+srav $t0, $t1, $t2 :: rd 0x00088000 rs 0x00088000, rt 0x00000000
+srav $t0, $t1, $t2 :: rd 0x00044000 rs 0x00088000, rt 0x00000001
+srav $t0, $t1, $t2 :: rd 0x00000000 rs 0x00088000, rt 0x0000001f
+srav $t0, $t1, $t2 :: rd 0x00000001 rs 0x00010000, rt 0x00000010
+srav $t0, $t1, $t2 :: rd 0x00000000 rs 0x00010000, rt 0x00000011
+srav $t0, $t1, $t2 :: rd 0x00000000 rs 0x00010000, rt 0x00000012
+srav $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000000
+srav $t0, $t1, $t2 :: rd 0x00000000 rs 0x0000ffff, rt 0x0000ffff
+SRL
+srl $t0, $t1, 0x00000000 :: rt 0x00000001 rs 0x00000001, imm 0x31415927
+srl $t0, $t1, 0x00000001 :: rt 0x18a0ac93 rs 0x31415927, imm 0x00000001
+srl $t0, $t1, 0x00000002 :: rt 0x0c505649 rs 0x31415927, imm 0x00000002
+srl $t0, $t1, 0x0000000F :: rt 0x00006282 rs 0x31415927, imm 0x0000000f
+srl $t0, $t1, 0x00000010 :: rt 0x00000000 rs 0x00000010, imm 0x00000010
+srl $t0, $t1, 0x0000001F :: rt 0x00000000 rs 0x00000010, imm 0x31415927
+srl $t0, $t1, 0x00000009 :: rt 0x0018a0ac rs 0x31415927, imm 0x00000009
+srl $t0, $t1, 0x0000000A :: rt 0x000c5056 rs 0x31415927, imm 0x0000000a
+srl $t0, $t1, 0x00000000 :: rt 0x00088000 rs 0x00088000, imm 0x0000000a
+srl $t0, $t1, 0x00000001 :: rt 0x00000000 rs 0x00000000, imm 0x00000001
+srl $t0, $t1, 31 :: rt 0x00000000 rs 0x00088000, imm 0x0000001f
+srl $t0, $t1, 16 :: rt 0x00000001 rs 0x00010000, imm 0x00000010
+srl $t0, $t1, 17 :: rt 0x00000000 rs 0x00010000, imm 0x00000011
+srl $t0, $t1, 18 :: rt 0x00000000 rs 0x00010000, imm 0x00000012
+srl $t0, $t1, 0 :: rt 0x00000000 rs 0x00000000, imm 0x00000000
+SRLV
+srlv $t0, $t1, $t2 :: rd 0x00000000 rs 0x31415927, rt 0xffffffff
+srlv $t0, $t1, $t2 :: rd 0x31415927 rs 0x31415927, rt 0xee00ee00
+srlv $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x000000ff
+srlv $t0, $t1, $t2 :: rd 0xffffffff rs 0xffffffff, rt 0x00000000
+srlv $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000001
+srlv $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000000
+srlv $t0, $t1, $t2 :: rd 0x00000001 rs 0x80000000, rt 0xffffffff
+srlv $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0x80000000
+srlv $t0, $t1, $t2 :: rd 0x7fffffff rs 0x7fffffff, rt 0x00000000
+srlv $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0x80000000
+srlv $t0, $t1, $t2 :: rd 0x7fffffff rs 0x7fffffff, rt 0x80000000
+srlv $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0xff000000
+srlv $t0, $t1, $t2 :: rd 0x7fffffff rs 0x7fffffff, rt 0x0dd00000
+srlv $t0, $t1, $t2 :: rd 0x00000000 rs 0x31415927, rt 0xffffffff
+srlv $t0, $t1, $t2 :: rd 0x31415927 rs 0x31415927, rt 0xee00ee00
+srlv $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x000000ff
+srlv $t0, $t1, $t2 :: rd 0x00000001 rs 0x00000001, rt 0x00000000
+srlv $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000001
+srlv $t0, $t1, $t2 :: rd 0xffffffff rs 0xffffffff, rt 0x00000000
+srlv $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0xffffffff
+srlv $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x80000000
+srlv $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0x00000000
+srlv $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0x80000000
+srlv $t0, $t1, $t2 :: rd 0x7fffffff rs 0x7fffffff, rt 0x80000000
+srlv $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0xff000000
+srlv $t0, $t1, $t2 :: rd 0x7fffffff rs 0x7fffffff, rt 0x0dd00000
+srlv $t0, $t1, $t2 :: rd 0xffffffff rs 0xffffffff, rt 0x00000000
+srlv $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0xffffffff
+srlv $t0, $t1, $t2 :: rd 0x00000001 rs 0xffffffff, rt 0xffffffff
+srlv $t0, $t1, $t2 :: rd 0x00000000 rs 0x7fffffff, rt 0x7fffffff
+srlv $t0, $t1, $t2 :: rd 0x00000000 rs 0x0000ffff, rt 0x0000ffff
+srlv $t0, $t1, $t2 :: rd 0xffffffff rs 0xffffffff, rt 0x00000000
+srlv $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0xffffffff
+srlv $t0, $t1, $t2 :: rd 0x00000001 rs 0xffffffff, rt 0xffffffff
+srlv $t0, $t1, $t2 :: rd 0x00000000 rs 0x7fffffff, rt 0x7fffffff
+srlv $t0, $t1, $t2 :: rd 0x00000000 rs 0x0000ffff, rt 0x0000ffff
+srlv $t0, $t1, $t2 :: rd 0x31415927 rs 0x31415927, rt 0x00000000
+srlv $t0, $t1, $t2 :: rd 0x18a0ac93 rs 0x31415927, rt 0x00000001
+srlv $t0, $t1, $t2 :: rd 0x0c505649 rs 0x31415927, rt 0x00000002
+srlv $t0, $t1, $t2 :: rd 0x00006282 rs 0x31415927, rt 0x0000000f
+srlv $t0, $t1, $t2 :: rd 0x00003141 rs 0x31415927, rt 0x00000010
+srlv $t0, $t1, $t2 :: rd 0x00000000 rs 0x31415927, rt 0x0000001f
+srlv $t0, $t1, $t2 :: rd 0x31415927 rs 0x31415927, rt 0x00000020
+srlv $t0, $t1, $t2 :: rd 0x18a0ac93 rs 0x31415927, rt 0x00000021
+srlv $t0, $t1, $t2 :: rd 0x00088000 rs 0x00088000, rt 0x00000000
+srlv $t0, $t1, $t2 :: rd 0x00044000 rs 0x00088000, rt 0x00000001
+srlv $t0, $t1, $t2 :: rd 0x00000000 rs 0x00088000, rt 0x0000001f
+srlv $t0, $t1, $t2 :: rd 0x00000001 rs 0x00010000, rt 0x00000010
+srlv $t0, $t1, $t2 :: rd 0x00000000 rs 0x00010000, rt 0x00000011
+srlv $t0, $t1, $t2 :: rd 0x00000000 rs 0x00010000, rt 0x00000012
+srlv $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000000
+srlv $t0, $t1, $t2 :: rd 0x00000000 rs 0x0000ffff, rt 0x0000ffff
+SUBU
+subu $t0, $t1, $t2 :: rd 0x31415926 rs 0x31415927, rt 0x00000001
+subu $t0, $t1, $t2 :: rd 0x31414817 rs 0x31415927, rt 0x00001110
+subu $t0, $t1, $t2 :: rd 0xffffff01 rs 0x00000000, rt 0x000000ff
+subu $t0, $t1, $t2 :: rd 0xffffffff rs 0xffffffff, rt 0x00000000
+subu $t0, $t1, $t2 :: rd 0xffffffff rs 0x00000000, rt 0x00000001
+subu $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000000
+subu $t0, $t1, $t2 :: rd 0x80000001 rs 0x80000000, rt 0xffffffff
+subu $t0, $t1, $t2 :: rd 0x00000000 rs 0x80000000, rt 0x80000000
+subu $t0, $t1, $t2 :: rd 0x7fffffff rs 0x7fffffff, rt 0x00000000
+subu $t0, $t1, $t2 :: rd 0x00000000 rs 0x80000000, rt 0x80000000
+subu $t0, $t1, $t2 :: rd 0xffffffff rs 0x7fffffff, rt 0x80000000
+subu $t0, $t1, $t2 :: rd 0x81000000 rs 0x80000000, rt 0xff000000
+subu $t0, $t1, $t2 :: rd 0x722fffff rs 0x7fffffff, rt 0x0dd00000
+subu $t0, $t1, $t2 :: rd 0x31415928 rs 0x31415927, rt 0xffffffff
+subu $t0, $t1, $t2 :: rd 0x43406b27 rs 0x31415927, rt 0xee00ee00
+subu $t0, $t1, $t2 :: rd 0xffffff01 rs 0x00000000, rt 0x000000ff
+subu $t0, $t1, $t2 :: rd 0x00000001 rs 0x00000001, rt 0x00000000
+subu $t0, $t1, $t2 :: rd 0xffffffff rs 0x00000000, rt 0x00000001
+subu $t0, $t1, $t2 :: rd 0xffffffff rs 0xffffffff, rt 0x00000000
+subu $t0, $t1, $t2 :: rd 0x00000001 rs 0x00000000, rt 0xffffffff
+subu $t0, $t1, $t2 :: rd 0x80000000 rs 0x00000000, rt 0x80000000
+subu $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0x00000000
+subu $t0, $t1, $t2 :: rd 0x00000000 rs 0x80000000, rt 0x80000000
+subu $t0, $t1, $t2 :: rd 0xffffffff rs 0x7fffffff, rt 0x80000000
+subu $t0, $t1, $t2 :: rd 0x81000000 rs 0x80000000, rt 0xff000000
+subu $t0, $t1, $t2 :: rd 0x722fffff rs 0x7fffffff, rt 0x0dd00000
+subu $t0, $t1, $t2 :: rd 0xffffffff rs 0xffffffff, rt 0x00000000
+subu $t0, $t1, $t2 :: rd 0x00000001 rs 0x00000000, rt 0xffffffff
+subu $t0, $t1, $t2 :: rd 0x00000000 rs 0xffffffff, rt 0xffffffff
+subu $t0, $t1, $t2 :: rd 0x00000000 rs 0x7fffffff, rt 0x7fffffff
+subu $t0, $t1, $t2 :: rd 0x00000000 rs 0x0000ffff, rt 0x0000ffff
+subu $t0, $t1, $t2 :: rd 0xffffffff rs 0xffffffff, rt 0x00000000
+subu $t0, $t1, $t2 :: rd 0x00000001 rs 0x00000000, rt 0xffffffff
+subu $t0, $t1, $t2 :: rd 0x00000000 rs 0xffffffff, rt 0xffffffff
+subu $t0, $t1, $t2 :: rd 0x00000000 rs 0x7fffffff, rt 0x7fffffff
+subu $t0, $t1, $t2 :: rd 0x00000000 rs 0x0000ffff, rt 0x0000ffff
+subu $t0, $t1, $t2 :: rd 0x31415927 rs 0x31415927, rt 0x00000000
+subu $t0, $t1, $t2 :: rd 0x31415926 rs 0x31415927, rt 0x00000001
+subu $t0, $t1, $t2 :: rd 0x31415925 rs 0x31415927, rt 0x00000002
+subu $t0, $t1, $t2 :: rd 0x31415918 rs 0x31415927, rt 0x0000000f
+subu $t0, $t1, $t2 :: rd 0x31415917 rs 0x31415927, rt 0x00000010
+subu $t0, $t1, $t2 :: rd 0x31415908 rs 0x31415927, rt 0x0000001f
+subu $t0, $t1, $t2 :: rd 0x31415907 rs 0x31415927, rt 0x00000020
+subu $t0, $t1, $t2 :: rd 0x31415906 rs 0x31415927, rt 0x00000021
+subu $t0, $t1, $t2 :: rd 0x00088000 rs 0x00088000, rt 0x00000000
+subu $t0, $t1, $t2 :: rd 0x00087fff rs 0x00088000, rt 0x00000001
+subu $t0, $t1, $t2 :: rd 0x00087fe1 rs 0x00088000, rt 0x0000001f
+subu $t0, $t1, $t2 :: rd 0x0000fff0 rs 0x00010000, rt 0x00000010
+subu $t0, $t1, $t2 :: rd 0x0000ffef rs 0x00010000, rt 0x00000011
+subu $t0, $t1, $t2 :: rd 0x0000ffee rs 0x00010000, rt 0x00000012
+subu $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000000
+subu $t0, $t1, $t2 :: rd 0x00000000 rs 0x0000ffff, rt 0x0000ffff
+SUB
+subu $t0, $t1, $t2 :: rd 0x31415928 rs 0x31415927, rt 0xffffffff
+subu $t0, $t1, $t2 :: rd 0x0a2941ff rs 0x31415927, rt 0x27181728
+subu $t0, $t1, $t2 :: rd 0x9a2941ff rs 0x31415927, rt 0x97181728
+subu $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000000
+subu $t0, $t1, $t2 :: rd 0x00000001 rs 0x00000001, rt 0x00000000
+subu $t0, $t1, $t2 :: rd 0xffffffff rs 0x00000000, rt 0x00000001
+subu $t0, $t1, $t2 :: rd 0xffffffff rs 0xffffffff, rt 0x00000000
+subu $t0, $t1, $t2 :: rd 0x00000001 rs 0x00000000, rt 0xffffffff
+subu $t0, $t1, $t2 :: rd 0x80000000 rs 0x00000000, rt 0x80000000
+subu $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0x00000000
+subu $t0, $t1, $t2 :: rd 0x00000000 rs 0x80000000, rt 0x80000000
+subu $t0, $t1, $t2 :: rd 0xffffffff rs 0x7fffffff, rt 0x80000000
+subu $t0, $t1, $t2 :: rd 0x00000001 rs 0x80000000, rt 0x7fffffff
+subu $t0, $t1, $t2 :: rd 0x00000000 rs 0x7fffffff, rt 0x7fffffff
+XOR
+xor $t0, $t1, $t2 :: rd 0xcebea6d8 rs 0x31415927, rt 0xffffffff
+xor $t0, $t1, $t2 :: rd 0xdf41b727 rs 0x31415927, rt 0xee00ee00
+xor $t0, $t1, $t2 :: rd 0x000000ff rs 0x00000000, rt 0x000000ff
+xor $t0, $t1, $t2 :: rd 0xffffffff rs 0xffffffff, rt 0x00000000
+xor $t0, $t1, $t2 :: rd 0x00000001 rs 0x00000000, rt 0x00000001
+xor $t0, $t1, $t2 :: rd 0x00000000 rs 0x00000000, rt 0x00000000
+xor $t0, $t1, $t2 :: rd 0x7fffffff rs 0x80000000, rt 0xffffffff
+xor $t0, $t1, $t2 :: rd 0x00000000 rs 0x80000000, rt 0x80000000
+xor $t0, $t1, $t2 :: rd 0x7fffffff rs 0x7fffffff, rt 0x00000000
+xor $t0, $t1, $t2 :: rd 0x00000000 rs 0x80000000, rt 0x80000000
+xor $t0, $t1, $t2 :: rd 0xffffffff rs 0x7fffffff, rt 0x80000000
+xor $t0, $t1, $t2 :: rd 0x7f000000 rs 0x80000000, rt 0xff000000
+xor $t0, $t1, $t2 :: rd 0x722fffff rs 0x7fffffff, rt 0x0dd00000
+xor $t0, $t1, $t2 :: rd 0xcebea6d8 rs 0x31415927, rt 0xffffffff
+xor $t0, $t1, $t2 :: rd 0xdf41b727 rs 0x31415927, rt 0xee00ee00
+xor $t0, $t1, $t2 :: rd 0x000000ff rs 0x00000000, rt 0x000000ff
+xor $t0, $t1, $t2 :: rd 0x00000001 rs 0x00000001, rt 0x00000000
+xor $t0, $t1, $t2 :: rd 0x00000001 rs 0x00000000, rt 0x00000001
+xor $t0, $t1, $t2 :: rd 0xffffffff rs 0xffffffff, rt 0x00000000
+xor $t0, $t1, $t2 :: rd 0xffffffff rs 0x00000000, rt 0xffffffff
+xor $t0, $t1, $t2 :: rd 0x80000000 rs 0x00000000, rt 0x80000000
+xor $t0, $t1, $t2 :: rd 0x80000000 rs 0x80000000, rt 0x00000000
+xor $t0, $t1, $t2 :: rd 0x00000000 rs 0x80000000, rt 0x80000000
+xor $t0, $t1, $t2 :: rd 0xffffffff rs 0x7fffffff, rt 0x80000000
+xor $t0, $t1, $t2 :: rd 0x7f000000 rs 0x80000000, rt 0xff000000
+xor $t0, $t1, $t2 :: rd 0x722fffff rs 0x7fffffff, rt 0x0dd00000
+xor $t0, $t1, $t2 :: rd 0xffffffff rs 0xffffffff, rt 0x00000000
+xor $t0, $t1, $t2 :: rd 0xffffffff rs 0x00000000, rt 0xffffffff
+xor $t0, $t1, $t2 :: rd 0x00000000 rs 0xffffffff, rt 0xffffffff
+xor $t0, $t1, $t2 :: rd 0x00000000 rs 0x7fffffff, rt 0x7fffffff
+xor $t0, $t1, $t2 :: rd 0x00000000 rs 0x0000ffff, rt 0x0000ffff
+XORI
+xori $t0, $t1, 0xffff :: rt 0x3141a6d8 rs 0x31415927, imm 0x0000ffff
+xori $t0, $t1, 0xee00 :: rt 0x3141b727 rs 0x31415927, imm 0x0000ee00
+xori $t0, $t1, 255 :: rt 0x000000ff rs 0x00000000, imm 0x000000ff
+xori $t0, $t1, 0 :: rt 0xffffffff rs 0xffffffff, imm 0x00000000
+xori $t0, $t1, 1 :: rt 0x00000001 rs 0x00000000, imm 0x00000001
+xori $t0, $t1, 0 :: rt 0x00000000 rs 0x00000000, imm 0x00000000
+xori $t0, $t1, 0x8000 :: rt 0x80008000 rs 0x80000000, imm 0x00008000
+xori $t0, $t1, 0 :: rt 0x7fffffff rs 0x7fffffff, imm 0x00000000
+xori $t0, $t1, 0x8000 :: rt 0x80008000 rs 0x80000000, imm 0x00008000
+xori $t0, $t1, 0x8000 :: rt 0x7fff7fff rs 0x7fffffff, imm 0x00008000
+xori $t0, $t1, 0xff00 :: rt 0x8000ff00 rs 0x80000000, imm 0x0000ff00
+xori $t0, $t1, 0x0dd0 :: rt 0x7ffff22f rs 0x7fffffff, imm 0x00000dd0
+xori $t0, $t1, 0xffff :: rt 0x3141a6d8 rs 0x31415927, imm 0x0000ffff
+xori $t0, $t1, 0xee00 :: rt 0x3141b727 rs 0x31415927, imm 0x0000ee00
+xori $t0, $t1, 255 :: rt 0x000000ff rs 0x00000000, imm 0x000000ff
+xori $t0, $t1, 0 :: rt 0x00000001 rs 0x00000001, imm 0x00000000
+xori $t0, $t1, 1 :: rt 0x00000001 rs 0x00000000, imm 0x00000001
+xori $t0, $t1, 0 :: rt 0xffffffff rs 0xffffffff, imm 0x00000000
+xori $t0, $t1, 0x8000 :: rt 0x00008000 rs 0x00000000, imm 0x00008000
+xori $t0, $t1, 0 :: rt 0x00008000 rs 0x00008000, imm 0x00000000
+xori $t0, $t1, 0x8000 :: rt 0x80008000 rs 0x80000000, imm 0x00008000
+xori $t0, $t1, 0x8000 :: rt 0x7fff7fff rs 0x7fffffff, imm 0x00008000
+xori $t0, $t1, 0xff00 :: rt 0x8000ff00 rs 0x80000000, imm 0x0000ff00
+xori $t0, $t1, 0x0dd0 :: rt 0x7ffff22f rs 0x7fffffff, imm 0x00000dd0
+xori $t0, $t1, 0 :: rt 0x0000ffff rs 0x0000ffff, imm 0x00000000
+xori $t0, $t1, 0xffff :: rt 0x0000ffff rs 0x00000000, imm 0x0000ffff
+xori $t0, $t1, 0xffff :: rt 0xffff0000 rs 0xffffffff, imm 0x0000ffff
+xori $t0, $t1, 0x7fff :: rt 0x7fff8000 rs 0x7fffffff, imm 0x00007fff
+xori $t0, $t1, 0x0000 :: rt 0x0000ffff rs 0x0000ffff, imm 0x00000000
+MFHI MFLO
+mfhi mflo :: HI: 0x31415927, LO: 0x31415926
+mfhi mflo :: HI: 0x0, LO: 0xffffffff
+mfhi mflo :: HI: 0xffffffff, LO: 0xfffffffe
+mfhi mflo :: HI: 0xffffffff, LO: 0xfffffffe
+mfhi mflo :: HI: 0x8000, LO: 0x7fff
+mfhi mflo :: HI: 0x80000000, LO: 0x7fffffff
+mfhi mflo :: HI: 0xffff, LO: 0xfffe
+mfhi mflo :: HI: 0x7fff, LO: 0x7ffe
+mfhi mflo :: HI: 0xdd0, LO: 0xdcf
+mfhi mflo :: HI: 0xff00, LO: 0xfeff

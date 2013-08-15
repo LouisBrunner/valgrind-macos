@@ -1,0 +1,86 @@
+LDC1
+ldc1 $f0, 0($t1) :: ft 0x666666664095a266
+ldc1 $f0, 8($t1) :: ft 0x0bff00000
+ldc1 $f0, 16($t1) :: ft 0x03ff00000
+ldc1 $f0, 24($t1) :: ft 0x262d2d2a252a2e2b
+ldc1 $f0, 32($t1) :: ft 0xffffffffffffffff
+ldc1 $f0, 40($t1) :: ft 0xb487e5c941d26580
+ldc1 $f0, 48($t1) :: ft 0xb750e38842026580
+ldc1 $f0, 56($t1) :: ft 0xe2308c3a3e45798e
+ldc1 $f0, 64($t1) :: ft 0x3746f65f3fbf9add
+ldc1 $f0, 0($t1) :: ft 0x666666664095a266
+ldc1 $f0, 8($t1) :: ft 0x0bff00000
+ldc1 $f0, 16($t1) :: ft 0x03ff00000
+ldc1 $f0, 24($t1) :: ft 0x262d2d2a252a2e2b
+ldc1 $f0, 32($t1) :: ft 0xffffffffffffffff
+ldc1 $f0, 40($t1) :: ft 0xb487e5c941d26580
+ldc1 $f0, 48($t1) :: ft 0xb750e38842026580
+ldc1 $f0, 56($t1) :: ft 0xe2308c3a3e45798e
+ldc1 $f0, 0($t1) :: ft 0x666666664095a266
+ldc1 $f0, 8($t1) :: ft 0x0bff00000
+ldc1 $f0, 16($t1) :: ft 0x03ff00000
+ldc1 $f0, 24($t1) :: ft 0x262d2d2a252a2e2b
+ldc1 $f0, 32($t1) :: ft 0xffffffffffffffff
+ldc1 $f0, 40($t1) :: ft 0xb487e5c941d26580
+ldc1 $f0, 48($t1) :: ft 0xb750e38842026580
+ldc1 $f0, 56($t1) :: ft 0xe2308c3a3e45798e
+ldc1 $f0, 64($t1) :: ft 0x3746f65f3fbf9add
+ldc1 $f0, 0($t1) :: ft 0x666666664095a266
+LWC1
+lwc1 $f0, 0($t1) :: ft 0x4095a266
+lwc1 $f0, 4($t1) :: ft 0x66666666
+lwc1 $f0, 8($t1) :: ft 0xbff00000
+lwc1 $f0, 12($t1) :: ft 0x0
+lwc1 $f0, 16($t1) :: ft 0x3ff00000
+lwc1 $f0, 20($t1) :: ft 0x0
+lwc1 $f0, 24($t1) :: ft 0x252a2e2b
+lwc1 $f0, 28($t1) :: ft 0x262d2d2a
+lwc1 $f0, 32($t1) :: ft 0xffffffff
+lwc1 $f0, 36($t1) :: ft 0xffffffff
+lwc1 $f0, 40($t1) :: ft 0x41d26580
+lwc1 $f0, 44($t1) :: ft 0xb487e5c9
+lwc1 $f0, 48($t1) :: ft 0x42026580
+lwc1 $f0, 52($t1) :: ft 0xb750e388
+lwc1 $f0, 56($t1) :: ft 0x3e45798e
+lwc1 $f0, 60($t1) :: ft 0xe2308c3a
+lwc1 $f0, 64($t1) :: ft 0x3fbf9add
+lwc1 $f0, 0($t1) :: ft 0x4095a266
+lwc1 $f0, 8($t1) :: ft 0xbff00000
+lwc1 $f0, 16($t1) :: ft 0x3ff00000
+lwc1 $f0, 24($t1) :: ft 0x252a2e2b
+lwc1 $f0, 32($t1) :: ft 0xffffffff
+lwc1 $f0, 40($t1) :: ft 0x41d26580
+lwc1 $f0, 48($t1) :: ft 0x42026580
+lwc1 $f0, 56($t1) :: ft 0x3e45798e
+lwc1 $f0, 64($t1) :: ft 0x3fbf9add
+lwc1 $f0, 0($t1) :: ft 0x4095a266
+SDC1
+sdc1 $f0, 0($t0) :: out: 0x0
+sdc1 $f0, 0($t0) :: out: 0x407c83fb
+sdc1 $f0, 0($t0) :: out: 0x40080000
+sdc1 $f0, 0($t0) :: out: 0xbff00000
+sdc1 $f0, 0($t0) :: out: 0x4095a266
+sdc1 $f0, 0($t0) :: out: 0xc01d2da3
+sdc1 $f0, 0($t0) :: out: 0x41cdcd65
+sdc1 $f0, 0($t0) :: out: 0xc0b69a78
+sdc1 $f0, 0($t0) :: out: 0x409b6000
+MEM1:
+0.000000, 456.248956, 3.000000, -1.000000
+1384.600000, -7.294568, 1000000000.000000, -5786.470000
+1752.000000, 0.000000, 0.000000, 0.000000
+0.000000, 0.000000, 0.000000, 0.000000
+SWC1
+swc1 $f0, 0($t0) :: out: 0x0
+swc1 $f0, 0($t0) :: out: 0x40400000
+swc1 $f0, 0($t0) :: out: 0x44ad1333
+swc1 $f0, 0($t0) :: out: 0x4e6e6b28
+swc1 $f0, 0($t0) :: out: 0x44db0000
+swc1 $f0, 0($t0) :: out: 0x322bcc77
+swc1 $f0, 0($t0) :: out: 0xc732da7a
+swc1 $f0, 0($t0) :: out: 0x42080079
+swc1 $f0, 0($t0) :: out: 0x49d5e008
+MEM1:
+0.000000, 0.000000, 3.000000, 0.000000
+1384.599976, 0.000000, 1000000000.000000, 0.000000
+1752.000000, 0.000000, 0.000000, 0.000000
+-45786.476562, 0.000000, 34.000462, 0.000000

@@ -467,7 +467,7 @@ __asm__(
 "   move $v0, $zero             \n\t"  /* Return zero. */
 "   j    $ra                    \n\t"
 "   nop                         \n\t"
-".end VG_MINIMAL_SETJMP;        \n\t"
+".previous                      \n\t"
 "                               \n\t"
 ".globl VG_MINIMAL_LONGJMP;     \n\t"
 ".align 2;                      \n\t"
@@ -492,7 +492,8 @@ __asm__(
 "1:                             \n\t"
 "   move $v0, $a1               \n\t"  /* Return value of second argument. */
 "   j    $ra                    \n\t"
-".end VG_MINIMAL_SETJMP;        \n\t"
+"   nop                         \n\t"
+".previous                      \n\t"
 );
 #endif  /* VGP_mips32_linux */
 

@@ -192,7 +192,7 @@ UWord do_acasW(UWord* addr, UWord expected, UWord nyu )
 /* return 1 if success, 0 if failure */
 UWord do_acasW ( UWord* addr, UWord expected, UWord nyu )
 {
-  UWord old, success;
+  UWord success;
   UWord block[3] = { (UWord)addr, nyu, expected};
 
    __asm__ __volatile__(
@@ -225,7 +225,7 @@ UWord do_acasW ( UWord* addr, UWord expected, UWord nyu )
 /* return 1 if success, 0 if failure */
 UWord do_acasW ( UWord* addr, UWord expected, UWord nyu )
 {
-  UWord old, success;
+  UWord success;
   UWord block[3] = { (UWord)addr, nyu, expected};
 
    __asm__ __volatile__(

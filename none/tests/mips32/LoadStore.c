@@ -69,74 +69,74 @@ unsigned int mem2[] = {
           RTval, out); \
 }
 
-void ppMem(unsigned int* mem, int len)
+void ppMem(unsigned int* m, int len)
 {
    int i;
    printf("MEM1:\n");
    for (i = 0; i < len; i=i+4)
    {
-      printf("0x%x, 0x%x, 0x%x, 0x%x\n", mem[i], mem[i+1], mem[i+2], mem[i+3]);
-      mem[i] = 0;
-      mem[i+1] = 0;
-      mem[i+2] = 0;
-      mem[i+3] = 0;
+      printf("0x%x, 0x%x, 0x%x, 0x%x\n", m[i], m[i+1], m[i+2], m[i+3]);
+      m[i] = 0;
+      m[i+1] = 0;
+      m[i+2] = 0;
+      m[i+3] = 0;
       if (i == 2) 
       {
-         mem[i] = 0xffffffff;
-         mem[i+1] = 0;
-         mem[i+2] = 0;
-         mem[i+3] = 0;
+         m[i] = 0xffffffff;
+         m[i+1] = 0;
+         m[i+2] = 0;
+         m[i+3] = 0;
       }
    }
 }
 
-void ppMem1(unsigned int* mem, int len)
+void ppMem1(unsigned int* m, int len)
 {
    int i;
    printf("MEM:\n");
    for (i = 0; i < len; i=i+4)
    {
-      printf("0x%x, 0x%x, 0x%x, 0x%x\n", mem[i], mem[i+1], mem[i+2], mem[i+3]);
+      printf("0x%x, 0x%x, 0x%x, 0x%x\n", m[i], m[i+1], m[i+2], m[i+3]);
    }
-   mem[0] = 0x121f1e1f;
-   mem[1] = 0;
-   mem[2] = 3;
-   mem[3] = -1;
-   mem[4] = 0x232f2e2f;
-   mem[5] = 0x242c2b2b;
-   mem[6] = 0x252a2e2b;
-   mem[7] = 0x262d2d2a;
-   mem[8] = 0x3f343f3e;
-   mem[9] = 0x3e353d3c;
-   mem[10] = 0x363a3c3b;
-   mem[11] = 0x3b373b3a;
-   mem[12] = 0x454f4e45;
-   mem[13] = 0x4e464d46;
-   mem[14] = 0x474d474c;
-   mem[15] = 0x4a484a4c;
+   m[0] = 0x121f1e1f;
+   m[1] = 0;
+   m[2] = 3;
+   m[3] = -1;
+   m[4] = 0x232f2e2f;
+   m[5] = 0x242c2b2b;
+   m[6] = 0x252a2e2b;
+   m[7] = 0x262d2d2a;
+   m[8] = 0x3f343f3e;
+   m[9] = 0x3e353d3c;
+   m[10] = 0x363a3c3b;
+   m[11] = 0x3b373b3a;
+   m[12] = 0x454f4e45;
+   m[13] = 0x4e464d46;
+   m[14] = 0x474d474c;
+   m[15] = 0x4a484a4c;
 }
 
-void ppMem0(unsigned int* mem, int len)
+void ppMem0(unsigned int* m, int len)
 {
    int i;
    printf("MEM:\n");
    for (i = 0; i < len; i=i+4)
    {
-      printf("0x%x, 0x%x, 0x%x, 0x%x\n", mem[i], mem[i+1], mem[i+2], mem[i+3]);
+      printf("0x%x, 0x%x, 0x%x, 0x%x\n", m[i], m[i+1], m[i+2], m[i+3]);
    }
 
-   mem[0] = 0x0000e680;
-   mem[1] = 0x00010700;
-   mem[2] = 0x0000e7dc;
-   mem[3] = 0x0000b0d0;
-   mem[4] = 0x2ab05fd0;
-   mem[5] = 0x0000b6a0;
-   mem[6] = 0x0000be80;
-   mem[7] = 0x0000de10;
-   mem[8] = 0x0000df20;
-   mem[9] = 0x2ab05fe0;
-   mem[10] = 0x0000dfd0;
-   mem[11] = 0x00010300;
+   m[0] = 0x0000e680;
+   m[1] = 0x00010700;
+   m[2] = 0x0000e7dc;
+   m[3] = 0x0000b0d0;
+   m[4] = 0x2ab05fd0;
+   m[5] = 0x0000b6a0;
+   m[6] = 0x0000be80;
+   m[7] = 0x0000de10;
+   m[8] = 0x0000df20;
+   m[9] = 0x2ab05fe0;
+   m[10] = 0x0000dfd0;
+   m[11] = 0x00010300;
 }
 
 int main()

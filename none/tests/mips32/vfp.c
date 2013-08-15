@@ -103,22 +103,20 @@ float mem1f[] = {
 // ldxc1 $f0, $a3($v0)
 #define TESTINSN6LOADd(instruction, indexVal, fd, index, base) \
 { \
-    int out; \
     int out1; \
     int out2; \
    __asm__ volatile( \
-     "move $" #base ", %3\n\t" \
+     "move $" #base ", %2\n\t" \
      "li $" #index ", " #indexVal"\n\t" \
      instruction "\n\t" \
-     "mov.d %0, $" #fd "\n\t" \
-     "mfc1 %1, $" #fd "\n\t" \
-     "mfc1 %2, $f1\n\t" \
-     : "=&f" (out), "=&r" (out1), "=&r" (out2) \
+     "mfc1 %0, $" #fd "\n\t" \
+     "mfc1 %1, $f1\n\t" \
+     : "=&r" (out1), "=&r" (out2) \
 	 : "r" (mem) \
 	 : "cc", "memory" \
 	 ); \
-   printf("%s :: ft 0x%x\n", \
-          instruction, out); \
+   printf("%s :: ft lo: 0x%x, ft hi: 0x%x\n", \
+          instruction, out1, out2); \
 }
 // sdc1 $f0, 0($t0)
 #define TESTINST1(offset) \
@@ -196,31 +194,31 @@ float mem1f[] = {
    printf("swxc1 $f0, 0($t0) :: out: 0x%x\n", \
            out); \
 }
-void ppMem(double *mem, int len)
+void ppMem(double *m, int len)
 {
    int i;
    printf("MEM1:\n");
    for (i = 0; i < len; i=i+4)
    {
-      printf("%lf, %lf, %lf, %lf\n", mem[i], mem[i+1], mem[i+2], mem[i+3]);
-      mem[i] = 0;
-      mem[i+1] = 0;
-      mem[i+2] = 0;
-      mem[i+3] = 0;
+      printf("%lf, %lf, %lf, %lf\n", m[i], m[i+1], m[i+2], m[i+3]);
+      m[i] = 0;
+      m[i+1] = 0;
+      m[i+2] = 0;
+      m[i+3] = 0;
    }
 }
 
-void ppMemF(float *mem, int len)
+void ppMemF(float *m, int len)
 {
    int i;
    printf("MEM1:\n");
    for (i = 0; i < len; i=i+4)
    {
-      printf("%lf, %lf, %lf, %lf\n", mem[i], mem[i+1], mem[i+2], mem[i+3]);
-      mem[i] = 0;
-      mem[i+1] = 0;
-      mem[i+2] = 0;
-      mem[i+3] = 0;
+      printf("%lf, %lf, %lf, %lf\n", m[i], m[i+1], m[i+2], m[i+3]);
+      m[i] = 0;
+      m[i+1] = 0;
+      m[i+2] = 0;
+      m[i+3] = 0;
    }
 }
 

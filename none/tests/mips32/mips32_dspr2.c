@@ -545,6 +545,7 @@ void ppMem(unsigned int* _mem, int _len)
 
 int main(int argc, char **argv)
 {
+#if (__mips==32) && (__mips_isa_rev>=2)
    printf("-------- ABSQ_S.QB --------\n");
    TESTDSPINST_RD_RT_DSPC("absq_s.qb $t0, $t1", 0x00000000, t0, t1);
    TESTDSPINST_RD_RT_DSPC("absq_s.qb $t2, $t3", 0x00000286, t2, t3);
@@ -4676,6 +4677,7 @@ int main(int argc, char **argv)
                                0x79f74493, t0, t8, t0);
    TESTDSPINST_RD_RS_RT_NODSPC("subuh_r.qb $t4, $t6, $t1", 0xbd6845cd,
                                0x9c09e313, t4, t6, t1);
+#endif
 
    return 0;
 }

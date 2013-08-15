@@ -36,12 +36,12 @@
 #include "host_generic_regs.h"  /* HReg */
 
 /* Num registers used for function calls */
-#if defined(VGP_mips64_linux)
-/* a0, a1, a2, a3, a4, a5, a6, a7 */
-#define MIPS_N_REGPARMS 8
-#else
+#if defined(VGP_mips32_linux)
 /* a0, a1, a2, a3 */
 #define MIPS_N_REGPARMS 4
+#else
+/* a0, a1, a2, a3, a4, a5, a6, a7 */
+#define MIPS_N_REGPARMS 8
 #endif
 /* --------- Registers. --------- */
 

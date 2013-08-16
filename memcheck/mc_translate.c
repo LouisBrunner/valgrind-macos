@@ -4183,8 +4183,8 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
    The definedness of |guard| itself is not checked.  That is assumed
    to have been done before this point, by the caller. */
 static
-IRAtom* expr2vbits_Load_WRK ( MCEnv* mce, 
-                              IREndness end, IRType ty, 
+IRAtom* expr2vbits_Load_WRK ( MCEnv* mce,
+                              IREndness end, IRType ty,
                               IRAtom* addr, UInt bias, IRAtom* guard )
 {
    tl_assert(isOriginalAtom(mce,addr));
@@ -4202,8 +4202,12 @@ IRAtom* expr2vbits_Load_WRK ( MCEnv* mce,
    const HChar* hname            = NULL;
    Bool         ret_via_outparam = False;
 
-   if (end == Iend_LE) {   
+   if (end == Iend_LE) {
       switch (ty) {
+         case Ity_V256: helper = &MC_(helperc_LOADV256le);
+                        hname = "MC_(helperc_LOADV256le)";
+                        ret_via_outparam = True;
+                        break;
          case Ity_V128: helper = &MC_(helperc_LOADV128le);
                         hname = "MC_(helperc_LOADV128le)";
                         ret_via_outparam = True;
@@ -4225,6 +4229,10 @@ IRAtom* expr2vbits_Load_WRK ( MCEnv* mce,
       }
    } else {
       switch (ty) {
+         case Ity_V256: helper = &MC_(helperc_LOADV256be);
+                        hname = "MC_(helperc_LOADV256be)";
+                        ret_via_outparam = True;
+                        break;
          case Ity_V128: helper = &MC_(helperc_LOADV128be);
                         hname = "MC_(helperc_LOADV128be)";
                         ret_via_outparam = True;
@@ -4309,37 +4317,20 @@ IRAtom* expr2vbits_Load_WRK ( MCEnv* mce,
    definedness of |guard| before this point.
 */
 static
-IRAtom* expr2vbits_Load ( MCEnv* mce, 
-                          IREndness end, IRType ty, 
+IRAtom* expr2vbits_Load ( MCEnv* mce,
+                          IREndness end, IRType ty,
                           IRAtom* addr, UInt bias,
                           IRAtom* guard )
 {
    tl_assert(end == Iend_LE || end == Iend_BE);
    switch (shadowTypeV(ty)) {
-      case Ity_I8: 
-      case Ity_I16: 
-      case Ity_I32: 
+      case Ity_I8:
+      case Ity_I16:
+      case Ity_I32:
       case Ity_I64:
       case Ity_V128:
+      case Ity_V256:
          return expr2vbits_Load_WRK(mce, end, ty, addr, bias, guard);
-      case Ity_V256: {
-         /* V256-bit case -- phrased in terms of 64 bit units (Qs),
-            with Q3 being the most significant lane. */
-         if (end == Iend_BE) goto unhandled;
-         IRAtom* v64Q0
-            = expr2vbits_Load_WRK(mce, end, Ity_I64, addr, bias+0,  guard);
-         IRAtom* v64Q1
-            = expr2vbits_Load_WRK(mce, end, Ity_I64, addr, bias+8,  guard);
-         IRAtom* v64Q2
-            = expr2vbits_Load_WRK(mce, end, Ity_I64, addr, bias+16, guard);
-         IRAtom* v64Q3
-            = expr2vbits_Load_WRK(mce, end, Ity_I64, addr, bias+24, guard);
-         return assignNew( 'V', mce,
-                           Ity_V256,
-                           IRExpr_Qop(Iop_64x4toV256,
-                                      v64Q3, v64Q2, v64Q1, v64Q0));
-      }
-      unhandled:
       default:
          VG_(tool_panic)("expr2vbits_Load");
    }

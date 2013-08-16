@@ -1886,9 +1886,9 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
       vassert(ty == e->Iex.CCall.retty);
 
       /* be very restrictive for now.  Only 32/64-bit ints allowed for
-         args, and 32 bits for return type.  Don't forget to change
+         args, and 64 and 32 bits for return type.  Don't forget to change
          the RetLoc if more return types are allowed in future. */
-      if (e->Iex.CCall.retty != Ity_I32)
+      if (e->Iex.CCall.retty != Ity_I64 && e->Iex.CCall.retty != Ity_I32)
          goto irreducible;
 
       /* Marshal args, do the call, clear stack. */

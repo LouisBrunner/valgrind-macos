@@ -3,12 +3,14 @@
 // required vector-copy function, and then including the
 // template.
 
+#define VECTOR_BYTES 16
+
 static __attribute__((noinline))
-void vector16_copy ( void* dst, void* src )
+void vector_copy ( void* dst, void* src )
 {
   __asm__ __volatile__(
      "movups (%1), %%xmm7 ; movups %%xmm7, (%0)"
-     : /*OUT*/ : /*IN*/ "r"(dst), "r"(src) : "memory","xmm7" 
+     : /*OUT*/ : /*IN*/ "r"(dst), "r"(src) : "memory","xmm7"
   );
 }
 

@@ -1,0 +1,942 @@
+
+sh-mem-vec256: config: little-endian, 64-bit word size
+
+19543   109   126    31   206    54   112    34   102   152   335     1    36     0    23    33 
+  203     7    50   141    18   261    24   189   248    15    11     0   145   304   228   457 
+    4   367    20    32   269     3   319    51   448    85    88   166    21   228   238    41 
+  298    39    98    35    90    64     0   254   817    91   328   214   163    64     0   266 
+  214   347   234    32   536   233    13   171    91    42   332   189   177    14    81   142 
+  313   400    77     4    48   114     3   113   324    87   525   413   205   184   126   294 
+  182     0   244    88     0   254    45   134   226   248     0    27   262     0   173   244 
+  494   165   241   116   217    32   112     0   117   335   230    79   193   174    60   243 
+   19    94   163    16    59   184     1    79   247   214   378   142   239   253     0    61 
+   50    48     0   304   196   109   109   186     9   389   389     7   329   157   283   234 
+    4   724    74   247    99    92    35   376   242    54   309   549    23   264    61   143 
+   87     0    22    96   148   563   411    54   288    34     2    14    33    88    73   339 
+  122    18   347   145   208   251   266   265     3   261   146   207   831   213   146    59 
+  119    18   117   303   132   315   296    70   210   707   138   537    29   492    86   188 
+  292     6   312   158    32   107     0   259    53   379    45   115    38   324    36    32 
+    0   264   235   135   192   262    40     0   401    38   157    20     0   160   325 18430 
+
+160000 copies, 26427 d_aligned, 26424 s_aligned, 6016 both_aligned
+0 failures
+
+Expect 2 x no error
+
+Expect 2 x error
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 1 bytes before a block of size 80,000 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+Invalid write of size 8
+   ...
+ Address 0x........ is 1 bytes before a block of size 80,000 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+Expect 2 x no error
+
+Expect 2 x error
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 79,969 bytes inside a block of size 80,000 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+Invalid write of size 8
+   ...
+ Address 0x........ is 79,993 bytes inside a block of size 80,000 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+------ PL Aligned case with 0 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 0 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+dUddUddUddUddUddUddUddUddUddUddU
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Aligned case with 1 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 0 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+ddUddUddUddUddUddUddUddUddUddUdd
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Aligned case with 2 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 0 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+dddUddUddUddUddUddUddUddUddUddUd
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Aligned case with 3 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 0 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+ddddUddUddUddUddUddUddUddUddUddU
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Aligned case with 4 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 0 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+dddddUddUddUddUddUddUddUddUddUdd
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Aligned case with 5 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 0 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+ddddddUddUddUddUddUddUddUddUddUd
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Aligned case with 6 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 0 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+dddddddUddUddUddUddUddUddUddUddU
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Aligned case with 7 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 0 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+ddddddddUddUddUddUddUddUddUddUdd
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Aligned case with 8 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 0 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+dddddddddUddUddUddUddUddUddUddUd
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Aligned case with 9 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 0 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+ddddddddddUddUddUddUddUddUddUddU
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Aligned case with 10 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 0 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+dddddddddddUddUddUddUddUddUddUdd
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Aligned case with 11 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 0 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+ddddddddddddUddUddUddUddUddUddUd
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Aligned case with 12 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 0 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+dddddddddddddUddUddUddUddUddUddU
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Aligned case with 13 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 0 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+ddddddddddddddUddUddUddUddUddUdd
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Aligned case with 14 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 0 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+dddddddddddddddUddUddUddUddUddUd
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Aligned case with 15 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 0 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+ddddddddddddddddUddUddUddUddUddU
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Aligned case with 16 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 0 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+dddddddddddddddddUddUddUddUddUdd
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Aligned case with 17 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 0 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+ddddddddddddddddddUddUddUddUddUd
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Aligned case with 18 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 0 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+dddddddddddddddddddUddUddUddUddU
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Aligned case with 19 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 0 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+ddddddddddddddddddddUddUddUddUdd
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Aligned case with 20 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 0 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+dddddddddddddddddddddUddUddUddUd
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Aligned case with 21 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 0 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+ddddddddddddddddddddddUddUddUddU
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Aligned case with 22 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 0 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+dddddddddddddddddddddddUddUddUdd
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Aligned case with 23 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 0 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+ddddddddddddddddddddddddUddUddUd
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Aligned case with 24 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 0 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+dddddddddddddddddddddddddUddUddU
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Aligned case with 25 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 0 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+ddddddddddddddddddddddddddUddUdd
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Aligned case with 26 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 0 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+dddddddddddddddddddddddddddUddUd
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Aligned case with 27 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 0 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+ddddddddddddddddddddddddddddUddU
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Aligned case with 28 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 0 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+dddddddddddddddddddddddddddddUdd
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Aligned case with 29 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 0 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+ddddddddddddddddddddddddddddddUd
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Aligned case with 30 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 0 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+dddddddddddddddddddddddddddddddU
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Aligned case with 31 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 0 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+dddddddddddddddddddddddddddddddd
+
+
+------ PL Unaligned case with 0 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 1 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+dUddUddUddUddUddUddUddUddUddUddU
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Unaligned case with 1 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 1 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+ddUddUddUddUddUddUddUddUddUddUdd
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Unaligned case with 2 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 1 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+dddUddUddUddUddUddUddUddUddUddUd
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Unaligned case with 3 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 1 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+ddddUddUddUddUddUddUddUddUddUddU
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Unaligned case with 4 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 1 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+dddddUddUddUddUddUddUddUddUddUdd
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Unaligned case with 5 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 1 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+ddddddUddUddUddUddUddUddUddUddUd
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Unaligned case with 6 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 1 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+dddddddUddUddUddUddUddUddUddUddU
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Unaligned case with 7 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 1 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+ddddddddUddUddUddUddUddUddUddUdd
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Unaligned case with 8 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 1 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+dddddddddUddUddUddUddUddUddUddUd
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Unaligned case with 9 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 1 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+ddddddddddUddUddUddUddUddUddUddU
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Unaligned case with 10 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 1 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+dddddddddddUddUddUddUddUddUddUdd
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Unaligned case with 11 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 1 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+ddddddddddddUddUddUddUddUddUddUd
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Unaligned case with 12 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 1 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+dddddddddddddUddUddUddUddUddUddU
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Unaligned case with 13 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 1 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+ddddddddddddddUddUddUddUddUddUdd
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Unaligned case with 14 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 1 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+dddddddddddddddUddUddUddUddUddUd
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Unaligned case with 15 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 1 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+ddddddddddddddddUddUddUddUddUddU
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+
+------ PL Unaligned case with 16 leading acc+def bytes ------
+
+Invalid read of size 32
+   ...
+ Address 0x........ is 1 bytes inside a block of size 64 alloc'd
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: posix_memalign (vg_replace_malloc.c:...)
+   ...
+
+
+dddddddddddddddddUddUddUddUddUdd
+
+
+More than 100 errors detected.  Subsequent errors
+will still be recorded, but in less detail than before.
+
+------ PL Unaligned case with 17 leading acc+def bytes ------
+
+
+ddddddddddddddddddUddUddUddUddUd
+
+
+------ PL Unaligned case with 18 leading acc+def bytes ------
+
+
+dddddddddddddddddddUddUddUddUddU
+
+
+------ PL Unaligned case with 19 leading acc+def bytes ------
+
+
+ddddddddddddddddddddUddUddUddUdd
+
+
+------ PL Unaligned case with 20 leading acc+def bytes ------
+
+
+dddddddddddddddddddddUddUddUddUd
+
+
+------ PL Unaligned case with 21 leading acc+def bytes ------
+
+
+ddddddddddddddddddddddUddUddUddU
+
+
+------ PL Unaligned case with 22 leading acc+def bytes ------
+
+
+dddddddddddddddddddddddUddUddUdd
+
+
+------ PL Unaligned case with 23 leading acc+def bytes ------
+
+
+ddddddddddddddddddddddddUddUddUd
+
+
+------ PL Unaligned case with 24 leading acc+def bytes ------
+
+
+dddddddddddddddddddddddddUddUddU
+
+
+------ PL Unaligned case with 25 leading acc+def bytes ------
+
+
+ddddddddddddddddddddddddddUddUdd
+
+
+------ PL Unaligned case with 26 leading acc+def bytes ------
+
+
+dddddddddddddddddddddddddddUddUd
+
+
+------ PL Unaligned case with 27 leading acc+def bytes ------
+
+
+ddddddddddddddddddddddddddddUddU
+
+
+------ PL Unaligned case with 28 leading acc+def bytes ------
+
+
+dddddddddddddddddddddddddddddUdd
+
+
+------ PL Unaligned case with 29 leading acc+def bytes ------
+
+
+ddddddddddddddddddddddddddddddUd
+
+
+------ PL Unaligned case with 30 leading acc+def bytes ------
+
+
+dddddddddddddddddddddddddddddddU
+
+
+------ PL Unaligned case with 31 leading acc+def bytes ------
+
+
+dddddddddddddddddddddddddddddddd
+
+
+
+HEAP SUMMARY:
+    in use at exit: 0 bytes in 0 blocks
+  total heap usage: 65 allocs, 65 frees, 84,096 bytes allocated
+
+For a detailed leak analysis, rerun with: --leak-check=full
+
+For counts of detected and suppressed errors, rerun with: -v
+Use --track-origins=yes to see where uninitialised values come from
+ERROR SUMMARY: 130 errors from 100 contexts (suppressed: 0 from 0)

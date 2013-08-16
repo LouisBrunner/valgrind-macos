@@ -1,6 +1,11 @@
 
-// Tests shadow memory correctness for 16-byte vector loads/stores
-// Requires vector16_copy() to be specified somehow.
+// Tests shadow memory correctness for 16-byte/32-byte/etc. vector
+// loads/stores. Requires vector_copy() and VECTOR_BYTES to be
+// specified somehow.
+
+#ifndef VECTOR_BYTES
+#error "VECTOR_BYTES must be defined"
+#endif
 
 #include <assert.h>
 #include <stdlib.h>
@@ -10,7 +15,7 @@
 #include "memcheck/memcheck.h"
 
 // What we're actually testing
-// .. is vector16_copy, which should be defined before this point
+// .. is vector_copy, which should be defined before this point
 
 // All the sizes here are in *bytes*, not bits.
 
@@ -134,9 +139,9 @@ static void apply ( void(*fn)(U4,Bool), U4 arg1, Bool arg2 )
 
   // Try doing some partial-loads-ok/not-ok testing.
   /* Test cases:
-     - load, 16-aligned, all no-access 
+     - load, aligned, all no-access
          ==> addr err
-     - load, 16-aligned, 1 to 15 initial bytes accessible,
+     - load, aligned, 1 to VECTOR_BYTES-1 initial bytes accessible,
              then at least one unaccessible byte,
              then remaining bytes in any state.
          ==> if PLO then no error, but returned V bits are undefined
@@ -144,7 +149,7 @@ static void apply ( void(*fn)(U4,Bool), U4 arg1, Bool arg2 )
              else
                 error; and V bits are defined for unaccessible bytes
 
-     All of the above, but non-16-aligned:
+     All of the above, but non-aligned:
         -- all return an addressing error
   */
 
@@ -154,7 +159,10 @@ static void do_partial_load_case ( U4 nInitialValid, Bool aligned )
        "------ PL %s case with %u leading acc+def bytes ------\n\n",
              aligned ? "Aligned" : "Unaligned", nInitialValid);
 
-     U1* block = memalign16(64);
+     void *temp;
+     if (posix_memalign(&temp, VECTOR_BYTES, 64) != 0)
+         abort();
+     U1* block = temp;
      U4 j;
      for (j = 0; j < 64; j++) block[j] = 0;
 
@@ -162,10 +170,10 @@ static void do_partial_load_case ( U4 nInitialValid, Bool aligned )
 
      // Make the block have this pattern:
      // block[0 .. i-1]  accessible and defined
-     // block[i .. 15]   repeating NOACCESS, UNDEF, DEF
+     // block[i .. VECTOR_BYTES-1]   repeating NOACCESS, UNDEF, DEF
      // hence block[i], at the very least, is always NOACCESS
      U4 i = nInitialValid;
-     for (j = i; j < 16; j++) {
+     for (j = i; j < VECTOR_BYTES; j++) {
         switch ((j-i) % 3) {
            case 0: make_noaccess(&block[j]); break;
            case 1: block[j] = make_undef(block[j]); break;
@@ -175,15 +183,15 @@ static void do_partial_load_case ( U4 nInitialValid, Bool aligned )
 
      // Do the access, possibly generating an error, and show the
      // resulting V bits
-     U1 dst[16];
-     vector16_copy(&dst[0], block);
+     U1 dst[VECTOR_BYTES];
+     vector_copy(&dst[0], block);
 
-     U1 dst_vbits[16];
-     U4 r = VALGRIND_GET_VBITS(&dst[0], &dst_vbits[0], 16);
+     U1 dst_vbits[VECTOR_BYTES];
+     U4 r = VALGRIND_GET_VBITS(&dst[0], &dst_vbits[0], VECTOR_BYTES);
      assert(r == 1 || r == 0);
 
      fprintf(stderr, "\n");
-     for (j = 0; j < 16; j++) {
+     for (j = 0; j < VECTOR_BYTES; j++) {
         fprintf(stderr, "%c", dst_vbits[j] == 0 ? 'd'
                               : dst_vbits[j] == 0xFF ? 'U' : '?');
      }
@@ -192,7 +200,7 @@ static void do_partial_load_case ( U4 nInitialValid, Bool aligned )
      // Also let's use the resulting value, to check we get an undef
      // error
      U1 sum = 0;
-     for (j = 0; j < 16; j++)
+     for (j = 0; j < VECTOR_BYTES; j++)
         sum ^= dst[j];
 
      if (sum == 42) {
@@ -209,11 +217,14 @@ static void do_partial_load_case ( U4 nInitialValid, Bool aligned )
 
 int main ( void )
 {
-  fprintf(stderr, "sh-mem-vec128: config: %s-endian, %d-bit word size\n",
-          get_endianness(), (int)(8 * sizeof(void*)));
+  fprintf(stderr, "sh-mem-vec%d: config: %s-endian, %d-bit word size\n",
+          VECTOR_BYTES * 8, get_endianness(), (int)(8 * sizeof(void*)));
 
   U4 i;
-  U1* buf = memalign16(N_BYTES);
+  void *temp;
+  if (posix_memalign(&temp, VECTOR_BYTES, N_BYTES) != 0)
+      abort();
+  U1* buf = temp;
 
   // Fill |buf| with bytes, so that zero bits have a zero shadow
   // (are defined) and one bits have a one shadow (are undefined)
@@ -234,21 +245,21 @@ int main ( void )
   U4 n_fails = 0;
 
   for (i = 0; i < n_copies; i++) {
-     U4 si = randomU4() % (N_BYTES-16);
-     U4 di = randomU4() % (N_BYTES-16);
-     if (0 == (randomU1() & 7)) si &= ~(16-1);
-     if (0 == (randomU1() & 7)) di &= ~(16-1);
-     if (0 == (randomU1() & 63)) { di &= ~(16-1); si &= ~(16-1); }
+     U4 si = randomU4() % (N_BYTES-VECTOR_BYTES);
+     U4 di = randomU4() % (N_BYTES-VECTOR_BYTES);
+     if (0 == (randomU1() & 7)) si &= ~(VECTOR_BYTES-1);
+     if (0 == (randomU1() & 7)) di &= ~(VECTOR_BYTES-1);
+     if (0 == (randomU1() & 63)) { di &= ~(VECTOR_BYTES-1); si &= ~(VECTOR_BYTES-1); }
 
      void* dst = &buf[di];
      void* src = &buf[si];
 
-     if (0 == (((UWord)src) & (16-1))) n_s_aligned++;
-     if (0 == (((UWord)dst) & (16-1))) n_d_aligned++;
-     if (0 == (((UWord)src) & (16-1)) && 0 == (((UWord)dst) & (16-1)))
+     if (0 == (((UWord)src) & (VECTOR_BYTES-1))) n_s_aligned++;
+     if (0 == (((UWord)dst) & (VECTOR_BYTES-1))) n_d_aligned++;
+     if (0 == (((UWord)src) & (VECTOR_BYTES-1)) && 0 == (((UWord)dst) & (VECTOR_BYTES-1)))
        n_both_aligned++;
 
-     vector16_copy(dst, src);
+     vector_copy(dst, src);
   }
 
   U4 freq[256];
@@ -280,31 +291,30 @@ int main ( void )
 
   // Check that we can detect underruns of the block.
   fprintf(stderr, "\nExpect 2 x no error\n" );
-  vector16_copy( &buf[100], &buf[0] );
-  vector16_copy( &buf[0],   &buf[100] );
+  vector_copy( &buf[100], &buf[0] );
+  vector_copy( &buf[0],   &buf[100] );
 
   fprintf(stderr, "\nExpect 2 x error\n\n" );
-  vector16_copy( &buf[100], &buf[-1]  ); // invalid rd
-  vector16_copy( &buf[-1],  &buf[100] ); // invalid wr
+  vector_copy( &buf[100], &buf[-1]  ); // invalid rd
+  vector_copy( &buf[-1],  &buf[100] ); // invalid wr
 
   // and overruns ..
   fprintf(stderr, "\nExpect 2 x no error\n" );
-  vector16_copy( &buf[200],            &buf[N_BYTES-16 + 0] );
-  vector16_copy( &buf[N_BYTES-16 + 0], &buf[200]            );
+  vector_copy( &buf[200],            &buf[N_BYTES-VECTOR_BYTES + 0] );
+  vector_copy( &buf[N_BYTES-VECTOR_BYTES + 0], &buf[200]            );
 
   fprintf(stderr, "\nExpect 2 x error\n\n" );
-  vector16_copy( &buf[200],            &buf[N_BYTES-16 + 1] );
-  vector16_copy( &buf[N_BYTES-16 + 1], &buf[200]            );
+  vector_copy( &buf[200],            &buf[N_BYTES-VECTOR_BYTES + 1] );
+  vector_copy( &buf[N_BYTES-VECTOR_BYTES + 1], &buf[200]            );
 
   free(buf);
   fprintf(stderr, "\n");
 
-  for (i = 0; i < 16; i++)
+  for (i = 0; i < VECTOR_BYTES; i++)
      apply( do_partial_load_case, i, True/*aligned*/ );
 
-  for (i = 0; i < 16; i++)
+  for (i = 0; i < VECTOR_BYTES; i++)
      apply( do_partial_load_case, i, False/*not aligned*/ );
 
   return 0;
 }
-

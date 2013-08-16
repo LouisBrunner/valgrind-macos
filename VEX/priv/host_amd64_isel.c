@@ -603,7 +603,6 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
       addInstr(env, mk_iMOVsd_RR( hregAMD64_RSP(), r_vecRetAddr ));
    }
    else if (retTy == Ity_V256) {
-      vassert(0); //ATC
       r_vecRetAddr = newVRegI(env);
       sub_from_rsp(env, 32);
       addInstr(env, mk_iMOVsd_RR( hregAMD64_RSP(), r_vecRetAddr ));
@@ -680,7 +679,6 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
             *stackAdjustAfterCall = 16;
             break;
          case Ity_V256:
-            vassert(0); // ATC
             *retloc = mk_RetLoc_spRel(RLPri_V256SpRel, 0);
             *stackAdjustAfterCall = 32;
             break;
@@ -4443,7 +4441,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       switch (retty) {
          case Ity_INVALID: /* function doesn't return anything */
          case Ity_I64: case Ity_I32: case Ity_I16: case Ity_I8:
-         case Ity_V128:
+         case Ity_V128: case Ity_V256:
             retty_ok = True; break;
          default:
             break;
@@ -4487,6 +4485,19 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
             HReg        dst = lookupIRTemp(env, d->tmp);
             AMD64AMode* am  = AMD64AMode_IR(rloc.spOff, hregAMD64_RSP());
             addInstr(env, AMD64Instr_SseLdSt( True/*load*/, 16, dst, am ));
+            add_to_rsp(env, addToSp);
+            return;
+         }
+         case Ity_V256: {
+            /* See comments for Ity_V128. */
+            vassert(rloc.pri == RLPri_V256SpRel);
+            vassert(addToSp >= 32);
+            HReg        dstLo, dstHi;
+            lookupIRTempPair(&dstHi, &dstLo, env, d->tmp);
+            AMD64AMode* amLo  = AMD64AMode_IR(rloc.spOff, hregAMD64_RSP());
+            addInstr(env, AMD64Instr_SseLdSt( True/*load*/, 16, dstLo, amLo ));
+            AMD64AMode* amHi  = AMD64AMode_IR(rloc.spOff+16, hregAMD64_RSP());
+            addInstr(env, AMD64Instr_SseLdSt( True/*load*/, 16, dstHi, amHi ));
             add_to_rsp(env, addToSp);
             return;
          }

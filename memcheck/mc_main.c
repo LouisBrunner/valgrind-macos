@@ -1130,11 +1130,12 @@ static Bool parse_ignore_ranges ( const HChar* str0 )
 
 static
 __attribute__((noinline))
-void mc_LOADVx_slow ( /*OUT*/ULong* res, Addr a, SizeT nBits, Bool bigendian )
+void mc_LOADV_128_or_256_slow ( /*OUT*/ULong* res,
+                                Addr a, SizeT nBits, Bool bigendian )
 {
-   ULong  pessim[4];  /* only used when p-l-ok=yes */
+   ULong  pessim[4];     /* only used when p-l-ok=yes */
    SSizeT szB            = nBits / 8;
-   SSizeT szL            = szB / 8;  /* Size in longs */
+   SSizeT szL            = szB / 8;  /* Size in Longs (64-bit units) */
    SSizeT i, j;          /* Must be signed. */
    SizeT  n_addrs_bad = 0;
    Addr   ai;
@@ -1149,7 +1150,7 @@ void mc_LOADVx_slow ( /*OUT*/ULong* res, Addr a, SizeT nBits, Bool bigendian )
       the pessim array. */
    tl_assert(szL <= sizeof(pessim) / sizeof(pessim[0]));
 
-   for (j=0 ; j < szL ; j++) {
+   for (j = 0; j < szL; j++) {
       pessim[j] = V_BITS64_DEFINED;
       res[j] = V_BITS64_UNDEFINED;
    }
@@ -1162,12 +1163,12 @@ void mc_LOADVx_slow ( /*OUT*/ULong* res, Addr a, SizeT nBits, Bool bigendian )
       --partial-loads-ok=yes.  n_addrs_bad is redundant (the relevant
       info can be gleaned from the pessim array) but is used as a
       cross-check. */
-   for (j = szL-1 ; j >= 0 ; j--) {
-      ULong  vbits64     = V_BITS64_UNDEFINED;
-      ULong  pessim64    = V_BITS64_DEFINED;
-      UWord  long_index = byte_offset_w(szL, bigendian, j);
+   for (j = szL-1; j >= 0; j--) {
+      ULong vbits64    = V_BITS64_UNDEFINED;
+      ULong pessim64   = V_BITS64_DEFINED;
+      UWord long_index = byte_offset_w(szL, bigendian, j);
       for (i = 8-1; i >= 0; i--) {
-         PROF_EVENT(31, "mc_LOADV128_slow(loop)");
+         PROF_EVENT(31, "mc_LOADV_128_or_256_slow(loop)");
          ai = a + 8*long_index + byte_offset_w(8, bigendian, i);
          ok = get_vbits8(ai, &vbits8);
          vbits64 <<= 8;
@@ -1217,7 +1218,7 @@ void mc_LOADVx_slow ( /*OUT*/ULong* res, Addr a, SizeT nBits, Bool bigendian )
 
    /* "at least one of the addresses is invalid" */
    ok = False;
-   for (j=0 ; j < szL ; j++)
+   for (j = 0; j < szL; j++)
       ok |= pessim[j] != V_BITS8_DEFINED;
    tl_assert(ok);
 
@@ -1230,7 +1231,7 @@ void mc_LOADVx_slow ( /*OUT*/ULong* res, Addr a, SizeT nBits, Bool bigendian )
       tl_assert(V_BIT_UNDEFINED == 1 && V_BIT_DEFINED == 0);
       /* (really need "UifU" here...)
          vbits[j] UifU= pessim[j]  (is pessimised by it, iow) */
-      for (j = szL-1 ; j >= 0 ; j--)
+      for (j = szL-1; j >= 0; j--)
          res[j] |= pessim[j];
       return;
    }
@@ -4205,29 +4206,30 @@ static void mc_pre_reg_read ( CorePart part, ThreadId tid, const HChar* s,
 /* ------------------------ Size = 16 ------------------------ */
 
 static INLINE
-void mc_LOADVx ( /*OUT*/ULong* res, Addr a, SizeT nBits, Bool isBigEndian )
+void mc_LOADV_128_or_256 ( /*OUT*/ULong* res,
+                           Addr a, SizeT nBits, Bool isBigEndian )
 {
-   PROF_EVENT(200, "mc_LOADVx");
+   PROF_EVENT(200, "mc_LOADV_128_or_256");
 
 #ifndef PERF_FAST_LOADV
-   mc_LOADVx_slow( res, a, nBits, isBigEndian );
+   mc_LOADV_128_or_256_slow( res, a, nBits, isBigEndian );
    return;
 #else
    {
-      UWord   sm_off16, vabits16;
+      UWord   sm_off16, vabits16, j;
+      UWord   nBytes  = nBits / 8;
+      UWord   nULongs = nBytes / 8;
       SecMap* sm;
-      int j;
-      int nBytes = nBits / 8;
 
       if (UNLIKELY( UNALIGNED_OR_HIGH(a,nBits) )) {
-         PROF_EVENT(201, "mc_LOADVx-slow1");
-         mc_LOADVx_slow( res, a, nBits, isBigEndian );
+         PROF_EVENT(201, "mc_LOADV_128_or_256-slow1");
+         mc_LOADV_128_or_256_slow( res, a, nBits, isBigEndian );
          return;
       }
 
       /* Handle common cases quickly: a (and a+8 and a+16 etc.) is
          suitably aligned, is mapped, and addressible. */
-      for (j=0 ; j<nBytes/8 ; ++j) {
+      for (j = 0; j < nULongs; j++) {
          sm       = get_secmap_for_reading_low(a + 8*j);
          sm_off16 = SM_OFF_16(a + 8*j);
          vabits16 = ((UShort*)(sm->vabits8))[sm_off16];
@@ -4241,8 +4243,8 @@ void mc_LOADVx ( /*OUT*/ULong* res, Addr a, SizeT nBits, Bool isBigEndian )
          } else {
             /* Slow case: some block of 8 bytes are not all-defined or
                all-undefined. */
-            PROF_EVENT(202, "mc_LOADVx-slow2");
-            mc_LOADVx_slow( res, a, nBits, isBigEndian );
+            PROF_EVENT(202, "mc_LOADV_128_or_256-slow2");
+            mc_LOADV_128_or_256_slow( res, a, nBits, isBigEndian );
             return;
          }
       }
@@ -4253,20 +4255,20 @@ void mc_LOADVx ( /*OUT*/ULong* res, Addr a, SizeT nBits, Bool isBigEndian )
 
 VG_REGPARM(2) void MC_(helperc_LOADV256be) ( /*OUT*/V256* res, Addr a )
 {
-   mc_LOADVx(&res->w64[0], a, 256, True);
+   mc_LOADV_128_or_256(&res->w64[0], a, 256, True);
 }
 VG_REGPARM(2) void MC_(helperc_LOADV256le) ( /*OUT*/V256* res, Addr a )
 {
-   mc_LOADVx(&res->w64[0], a, 256, False);
+   mc_LOADV_128_or_256(&res->w64[0], a, 256, False);
 }
 
 VG_REGPARM(2) void MC_(helperc_LOADV128be) ( /*OUT*/V128* res, Addr a )
 {
-   mc_LOADVx(&res->w64[0], a, 128, True);
+   mc_LOADV_128_or_256(&res->w64[0], a, 128, True);
 }
 VG_REGPARM(2) void MC_(helperc_LOADV128le) ( /*OUT*/V128* res, Addr a )
 {
-   mc_LOADVx(&res->w64[0], a, 128, False);
+   mc_LOADV_128_or_256(&res->w64[0], a, 128, False);
 }
 
 /* ------------------------ Size = 8 ------------------------ */

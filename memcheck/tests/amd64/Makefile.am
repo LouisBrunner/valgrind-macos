@@ -44,9 +44,11 @@ check_PROGRAMS = \
 	insn-pmovmskb \
 	more_x87_fp \
 	sh-mem-vec128 \
-	sh-mem-vec256 \
 	sse_memory \
 	xor-undef-amd64
+if BUILD_AVX_TESTS
+ check_PROGRAMS += sh-mem-vec256
+endif
 
 AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@

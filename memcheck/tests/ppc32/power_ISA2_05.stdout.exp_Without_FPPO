@@ -1,0 +1,68 @@
+lwarx => bad0beef
+fcpsgn sign=10.101010, base=11.111111 => 11.111111
+fcpsgn sign=10.101010, base=-0.000000 => 0.000000
+fcpsgn sign=10.101010, base=0.000000 => 0.000000
+fcpsgn sign=10.101010, base=-11.111111 => 11.111111
+fcpsgn sign=-0.000000, base=11.111111 => -11.111111
+fcpsgn sign=-0.000000, base=-0.000000 => -0.000000
+fcpsgn sign=-0.000000, base=0.000000 => -0.000000
+fcpsgn sign=-0.000000, base=-11.111111 => -11.111111
+fcpsgn sign=0.000000, base=11.111111 => 11.111111
+fcpsgn sign=0.000000, base=-0.000000 => 0.000000
+fcpsgn sign=0.000000, base=0.000000 => 0.000000
+fcpsgn sign=0.000000, base=-11.111111 => 11.111111
+fcpsgn sign=-10.101010, base=11.111111 => -11.111111
+fcpsgn sign=-10.101010, base=-0.000000 => -0.000000
+fcpsgn sign=-10.101010, base=0.000000 => -0.000000
+fcpsgn sign=-10.101010, base=-11.111111 => -11.111111
+lfiwax (-1024.000000) => FRT=(ffffffff, c0900000)
+prtyw (0) => parity=0
+prtyw (1) => parity=1
+prtyw (2) => parity=0
+prtyw (3) => parity=1
+prtyw (4) => parity=0
+prtyw (5) => parity=1
+prtyw (6) => parity=0
+prtyw (7) => parity=1
+prtyw (8) => parity=0
+prtyw (9) => parity=1
+prtyw (a) => parity=0
+prtyw (b) => parity=1
+prtyw (c) => parity=0
+prtyw (d) => parity=1
+prtyw (e) => parity=0
+prtyw (f) => parity=1
+prtyw (10) => parity=0
+prtyw (11) => parity=1
+prtyw (12) => parity=0
+prtyw (13) => parity=1
+prtyw (14) => parity=0
+prtyw (15) => parity=1
+prtyw (16) => parity=0
+prtyw (17) => parity=1
+prtyw (18) => parity=0
+prtyw (19) => parity=1
+prtyw (1a) => parity=0
+prtyw (1b) => parity=1
+prtyw (1c) => parity=0
+prtyw (1d) => parity=1
+prtyw (1e) => parity=0
+prtyw (1f) => parity=1
+prtyw (20) => parity=0
+prtyw (21) => parity=1
+prtyw (22) => parity=0
+prtyw (23) => parity=1
+prtyw (24) => parity=0
+prtyw (25) => parity=1
+prtyw (26) => parity=0
+prtyw (27) => parity=1
+prtyw (28) => parity=0
+prtyw (29) => parity=1
+prtyw (2a) => parity=0
+prtyw (2b) => parity=1
+prtyw (2c) => parity=0
+prtyw (2d) => parity=1
+prtyw (2e) => parity=0
+prtyw (2f) => parity=1
+prtyw (30) => parity=0
+prtyw (31) => parity=1

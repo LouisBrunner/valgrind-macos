@@ -81,7 +81,7 @@
    specific code and/or some OS specific code. */
 #if defined(VGA_arm) || defined(VGA_x86) || defined(VGA_amd64) \
     || defined(VGA_ppc32) || defined(VGA_ppc64) || defined(VGA_s390x) \
-    || defined(VGP_mips32_linux) || defined(VGA_mips64)
+    || defined(VGA_mips32) || defined(VGA_mips64)
 #define PTRACEINVOKER
 #else
 I_die_here : (PTRACEINVOKER) architecture missing in vgdb.c
@@ -916,7 +916,8 @@ Bool invoke_gdbserver (int pid)
 #elif defined(VGA_s390x)
    sp = user_mod.regs.gprs[15];
 #elif defined(VGA_mips32)
-   sp = user_mod.regs[29*2];
+   long long *p = (long long *)user_mod.regs;
+   sp = p[29];
 #elif defined(VGA_mips64)
    sp = user_mod.regs[29];
 #else
@@ -993,17 +994,14 @@ Bool invoke_gdbserver (int pid)
       XERROR(0, "(fn32) s390x has no 32bits implementation");
 #elif defined(VGA_mips32)
       /* put check arg in register 4 */
-      user_mod.regs[4*2] = check;
-      user_mod.regs[4*2+1] = 0xffffffff; // sign extend $a0
-      /* This sign extension is needed when vgdb 32 bits runs
-         on a 64 bits OS. */
+      p[4] = check;
       /* put NULL return address in ra */
-      user_mod.regs[31*2] = bad_return;
-      user_mod.regs[31*2+1] = 0;
-      user_mod.regs[34*2] = shared32->invoke_gdbserver;
-      user_mod.regs[34*2+1] = 0;
-      user_mod.regs[25*2] = shared32->invoke_gdbserver;
-      user_mod.regs[25*2+1] = 0;
+      p[31] = bad_return;
+      p[34] = shared32->invoke_gdbserver;
+      p[25] = shared32->invoke_gdbserver;
+      /* make stack space for args */
+      p[29] = sp - 32;
+
 #elif defined(VGA_mips64)
       assert(0); // cannot vgdb a 32 bits executable with a 64 bits exe
 #else

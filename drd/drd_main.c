@@ -60,6 +60,7 @@ static Bool s_print_stats;
 static Bool s_var_info;
 static Bool s_show_stack_usage;
 static Bool s_trace_alloc;
+static Bool trace_sectsuppr;
 
 
 /**
@@ -115,6 +116,7 @@ static Bool DRD_(process_cmd_line_option)(const HChar* arg)
    else if VG_BOOL_CLO(arg, "--trace-hb",            trace_hb) {}
    else if VG_BOOL_CLO(arg, "--trace-mutex",         trace_mutex) {}
    else if VG_BOOL_CLO(arg, "--trace-rwlock",        trace_rwlock) {}
+   else if VG_BOOL_CLO(arg, "--trace-sectsuppr",     trace_sectsuppr) {}
    else if VG_BOOL_CLO(arg, "--trace-segment",       trace_segment) {}
    else if VG_BOOL_CLO(arg, "--trace-semaphore",     trace_semaphore) {}
    else if VG_BOOL_CLO(arg, "--trace-suppr",         trace_suppression) {}
@@ -250,6 +252,8 @@ static void DRD_(print_debug_usage)(void)
 "    --trace-conflict-set-bm=yes|no Trace all conflict set bitmap\n"
 "                              updates [no]. Note: enabling this option\n"
 "                              will generate a lot of output !\n"
+"    --trace-sectsuppr=yes|no  Trace which the dynamic library sections on\n"
+"                              which data race detection is suppressed.\n"
 "    --trace-segment=yes|no    Trace segment actions [no].\n"
 "    --trace-suppr=yes|no      Trace all address suppression actions [no].\n"
 );
@@ -395,8 +399,6 @@ void DRD_(clean_memory)(const Addr a1, const SizeT len)
    drd_stop_using_mem(a1, len, is_stack_memory);
    drd_start_using_mem(a1, len, is_stack_memory);
 }
-
-static const Bool trace_sectsuppr = False;
 
 /**
  * Suppress data race reports on all addresses contained in .plt, .got and

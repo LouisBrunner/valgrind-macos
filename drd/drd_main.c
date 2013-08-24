@@ -426,6 +426,22 @@ static void DRD_(suppress_relocation_conflicts)(const Addr a, const SizeT len)
 	 VG_(dmsg)("Examining %s / %s\n", VG_(DebugInfo_get_filename)(di),
 		   VG_(DebugInfo_get_soname)(di));
 
+      /*
+       * Suppress the race report on the libpthread global variable
+       * __pthread_multiple_threads. See also
+       * http://bugs.kde.org/show_bug.cgi?id=323905.
+       */
+      avma = VG_(DebugInfo_get_bss_avma)(di);
+      size = VG_(DebugInfo_get_bss_size)(di);
+      tl_assert((avma && size) || (avma == 0 && size == 0));
+      if (size > 0 &&
+          VG_(strcmp)(VG_(DebugInfo_get_soname)(di), "libpthread.so.0") == 0) {
+	 if (trace_sectsuppr)
+	    VG_(dmsg)("Suppressing .bss @ 0x%lx size %ld\n", avma, size);
+         tl_assert(VG_(DebugInfo_sect_kind)(NULL, 0, avma) == Vg_SectBSS);
+         DRD_(start_suppression)(avma, avma + size, ".bss");
+      }
+
       avma = VG_(DebugInfo_get_plt_avma)(di);
       size = VG_(DebugInfo_get_plt_size)(di);
       tl_assert((avma && size) || (avma == 0 && size == 0));

@@ -84,6 +84,8 @@ EXTRA_DIST =                                        \
 	bug-235681.vgtest			    \
 	circular_buffer.stderr.exp		    \
 	circular_buffer.vgtest			    \
+	concurrent_close.stderr.exp		    \
+	concurrent_close.vgtest			    \
 	custom_alloc.stderr.exp			    \
 	custom_alloc.vgtest			    \
 	custom_alloc_fiw.stderr.exp		    \
@@ -311,6 +313,7 @@ check_PROGRAMS =      \
   annotate_trace_memory \
   bug-235681          \
   custom_alloc        \
+  concurrent_close    \
   fp_race             \
   free_is_write	      \
   hold_lock           \
@@ -395,6 +398,7 @@ AM_CXXFLAGS += $(AM_FLAG_M3264_PRI) @FLAG_W_EXTRA@ -Wno-inline -Wno-unused-param
 LDADD = -lpthread
 
 
+concurrent_close_SOURCES    = concurrent_close.cpp
 monitor_example_SOURCES     = monitor_example.cpp
 new_delete_SOURCES          = new_delete.cpp
 

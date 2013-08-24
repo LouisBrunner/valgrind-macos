@@ -1,0 +1,4 @@
+prereq: ./supported_libpthread
+vgopts: --read-var-info=yes --check-stack-var=yes --show-confl-seg=no --num-callers=3
+prog: concurrent_close
+stderr_filter: filter_stderr

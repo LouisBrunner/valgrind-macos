@@ -184,6 +184,8 @@ DebugInfo* VG_(find_DebugInfo) ( Addr a );
 /* Fish bits out of DebugInfos. */
 Addr          VG_(DebugInfo_get_text_avma)   ( const DebugInfo *di );
 SizeT         VG_(DebugInfo_get_text_size)   ( const DebugInfo *di );
+Addr          VG_(DebugInfo_get_bss_avma)    ( const DebugInfo *di );
+SizeT         VG_(DebugInfo_get_bss_size)    ( const DebugInfo *di );
 Addr          VG_(DebugInfo_get_plt_avma)    ( const DebugInfo *di );
 SizeT         VG_(DebugInfo_get_plt_size)    ( const DebugInfo *di );
 Addr          VG_(DebugInfo_get_gotplt_avma) ( const DebugInfo *di );

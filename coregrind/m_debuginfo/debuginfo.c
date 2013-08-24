@@ -3771,6 +3771,16 @@ SizeT VG_(DebugInfo_get_text_size)(const DebugInfo* di)
    return di->text_present ? di->text_size : 0; 
 }
 
+Addr VG_(DebugInfo_get_bss_avma)(const DebugInfo* di)
+{
+   return di->bss_present ? di->bss_avma : 0; 
+}
+
+SizeT VG_(DebugInfo_get_bss_size)(const DebugInfo* di)
+{
+   return di->bss_present ? di->bss_size : 0; 
+}
+
 Addr VG_(DebugInfo_get_plt_avma)(const DebugInfo* di)
 {
    return di->plt_present ? di->plt_avma : 0; 

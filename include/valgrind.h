@@ -111,6 +111,7 @@
 #undef PLAT_x86_darwin
 #undef PLAT_amd64_darwin
 #undef PLAT_x86_win32
+#undef PLAT_amd64_win64
 #undef PLAT_x86_linux
 #undef PLAT_amd64_linux
 #undef PLAT_ppc32_linux
@@ -128,6 +129,8 @@
 #elif defined(__MINGW32__) || defined(__CYGWIN32__) \
       || (defined(_WIN32) && defined(_M_IX86))
 #  define PLAT_x86_win32 1
+#elif defined(__MINGW64__) || (defined(_WIN64) && defined(_M_X64))
+#  define PLAT_amd64_win64 1
 #elif defined(__linux__) && defined(__i386__)
 #  define PLAT_x86_linux 1
 #elif defined(__linux__) && defined(__x86_64__)
@@ -5053,14 +5056,14 @@ VALGRIND_PRINTF(const char *format, ...)
 #if defined(NVALGRIND)
    return 0;
 #else /* NVALGRIND */
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__MINGW64__)
    uintptr_t _qzz_res;
 #else
    unsigned long _qzz_res;
 #endif
    va_list vargs;
    va_start(vargs, format);
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__MINGW64__)
    _qzz_res = VALGRIND_DO_CLIENT_REQUEST_EXPR(0,
                               VG_USERREQ__PRINTF_VALIST_BY_REF,
                               (uintptr_t)format,
@@ -5091,14 +5094,14 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
 #if defined(NVALGRIND)
    return 0;
 #else /* NVALGRIND */
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__MINGW64__)
    uintptr_t _qzz_res;
 #else
    unsigned long _qzz_res;
 #endif
    va_list vargs;
    va_start(vargs, format);
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__MINGW64__)
    _qzz_res = VALGRIND_DO_CLIENT_REQUEST_EXPR(0,
                               VG_USERREQ__PRINTF_BACKTRACE_VALIST_BY_REF,
                               (uintptr_t)format,
@@ -5397,6 +5400,7 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
 #undef PLAT_x86_darwin
 #undef PLAT_amd64_darwin
 #undef PLAT_x86_win32
+#undef PLAT_amd64_win64
 #undef PLAT_x86_linux
 #undef PLAT_amd64_linux
 #undef PLAT_ppc32_linux

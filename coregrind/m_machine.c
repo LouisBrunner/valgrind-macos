@@ -701,7 +701,7 @@ Bool VG_(machine_get_hwcaps)( void )
    LibVEX_default_VexArchInfo(&vai);
 
 #if defined(VGA_x86)
-   { Bool have_sse1, have_sse2, have_cx8, have_lzcnt;
+   { Bool have_sse1, have_sse2, have_cx8, have_lzcnt, have_mmxext;
      UInt eax, ebx, ecx, edx, max_extended;
      HChar vstr[13];
      vstr[0] = 0;
@@ -738,24 +738,38 @@ Bool VG_(machine_get_hwcaps)( void )
      if (!have_cx8)
         return False;
 
-     /* Figure out if this is an AMD that can do LZCNT. */
+     /* Figure out if this is an AMD that can do mmxext and/or LZCNT. */
+     have_mmxext = False;
      have_lzcnt = False;
      if (0 == VG_(strcmp)(vstr, "AuthenticAMD")
          && max_extended >= 0x80000001) {
         VG_(cpuid)(0x80000001, 0, &eax, &ebx, &ecx, &edx);
         have_lzcnt = (ecx & (1<<5)) != 0; /* True => have LZCNT */
+
+        /* Some older AMD processors support a sse1 subset (Integer SSE). */
+        have_mmxext = !have_sse1 && ((edx & (1<<22)) != 0);
      }
 
+     /* Intel processors don't define the mmxext extension, but since it
+        is just a sse1 subset always define it when we have sse1. */
+     if (have_sse1)
+        have_mmxext = True;
+
      va = VexArchX86;
-     if (have_sse2 && have_sse1) {
-        vai.hwcaps  = VEX_HWCAPS_X86_SSE1;
+     if (have_sse2 && have_sse1 && have_mmxext) {
+        vai.hwcaps  = VEX_HWCAPS_X86_MMXEXT;
+        vai.hwcaps |= VEX_HWCAPS_X86_SSE1;
         vai.hwcaps |= VEX_HWCAPS_X86_SSE2;
         if (have_lzcnt)
            vai.hwcaps |= VEX_HWCAPS_X86_LZCNT;
         VG_(machine_x86_have_mxcsr) = 1;
-     } else if (have_sse1) {
-        vai.hwcaps  = VEX_HWCAPS_X86_SSE1;
+     } else if (have_sse1 && have_mmxext) {
+        vai.hwcaps  = VEX_HWCAPS_X86_MMXEXT;
+        vai.hwcaps |= VEX_HWCAPS_X86_SSE1;
         VG_(machine_x86_have_mxcsr) = 1;
+     } else if (have_mmxext) {
+        vai.hwcaps  = VEX_HWCAPS_X86_MMXEXT; /*integer only sse1 subset*/
+        VG_(machine_x86_have_mxcsr) = 0;
      } else {
        vai.hwcaps = 0; /*baseline - no sse at all*/
        VG_(machine_x86_have_mxcsr) = 0;

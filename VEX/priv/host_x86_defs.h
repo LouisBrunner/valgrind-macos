@@ -360,7 +360,7 @@ typedef
       Xin_Store,     /* store 16/8 bit value in memory */
       Xin_Set32,     /* convert condition code to 32-bit value */
       Xin_Bsfr32,    /* 32-bit bsf/bsr */
-      Xin_MFence,    /* mem fence (not just sse2, but sse0 and 1 too) */
+      Xin_MFence,    /* mem fence (not just sse2, but sse0 and 1/mmxext too) */
       Xin_ACAS,      /* 8/16/32-bit lock;cmpxchg */
       Xin_DACAS,     /* lock;cmpxchg8b (doubleword ACAS, 2 x 32-bit only) */
 
@@ -508,13 +508,13 @@ typedef
             HReg src;
             HReg dst;
          } Bsfr32;
-         /* Mem fence (not just sse2, but sse0 and 1 too).  In short,
-            an insn which flushes all preceding loads and stores as
-            much as possible before continuing.  On SSE2 we emit a
-            real "mfence", on SSE1 "sfence ; lock addl $0,0(%esp)" and
-            on SSE0 "lock addl $0,0(%esp)".  This insn therefore
-            carries the host's hwcaps so the assembler knows what to
-            emit. */
+         /* Mem fence (not just sse2, but sse0 and sse1/mmxext too).
+            In short, an insn which flushes all preceding loads and
+            stores as much as possible before continuing.  On SSE2
+            we emit a real "mfence", on SSE1 or the MMXEXT subset
+            "sfence ; lock addl $0,0(%esp)" and on SSE0
+            "lock addl $0,0(%esp)".  This insn therefore carries the
+            host's hwcaps so the assembler knows what to emit. */
          struct {
             UInt hwcaps;
          } MFence;

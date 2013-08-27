@@ -3251,7 +3251,8 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 {
 
 #  define REQUIRE_SSE1                                    \
-      do { if (env->hwcaps == 0/*baseline, no sse*/)      \
+      do { if (env->hwcaps == 0/*baseline, no sse*/       \
+               ||  env->hwcaps == VEX_HWCAPS_X86_MMXEXT /*Integer SSE*/) \
               goto vec_fail;                              \
       } while (0)
 
@@ -4388,7 +4389,8 @@ HInstrArray* iselSB_X86 ( IRSB* bb,
    /* sanity ... */
    vassert(arch_host == VexArchX86);
    vassert(0 == (hwcaps_host
-                 & ~(VEX_HWCAPS_X86_SSE1
+                 & ~(VEX_HWCAPS_X86_MMXEXT
+                     | VEX_HWCAPS_X86_SSE1
                      | VEX_HWCAPS_X86_SSE2
                      | VEX_HWCAPS_X86_SSE3
                      | VEX_HWCAPS_X86_LZCNT)));

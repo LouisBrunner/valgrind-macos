@@ -2207,6 +2207,63 @@ void x86g_dirtyhelper_CPUID_sse0 ( VexGuestX86State* st )
 
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (modifies guest state) */
+/* Claim to be a Athlon "Classic" (Model 2, K75 "Pluto/Orion") */
+/* But without 3DNow support (weird, but we really don't support it). */
+void x86g_dirtyhelper_CPUID_mmxext ( VexGuestX86State* st )
+{
+   switch (st->guest_EAX) {
+      /* vendor ID */
+      case 0:
+         st->guest_EAX = 0x1;
+         st->guest_EBX = 0x68747541;
+         st->guest_ECX = 0x444d4163;
+         st->guest_EDX = 0x69746e65;
+         break;
+      /* feature bits */
+      case 1:
+         st->guest_EAX = 0x621;
+         st->guest_EBX = 0x0;
+         st->guest_ECX = 0x0;
+         st->guest_EDX = 0x183f9ff;
+         break;
+      /* Highest Extended Function Supported (0x80000004 brand string) */
+      case 0x80000000:
+         st->guest_EAX = 0x80000004;
+         st->guest_EBX = 0x68747541;
+         st->guest_ECX = 0x444d4163;
+         st->guest_EDX = 0x69746e65;
+         break;
+      /* Extended Processor Info and Feature Bits */
+      case 0x80000001:
+         st->guest_EAX = 0x721;
+         st->guest_EBX = 0x0;
+         st->guest_ECX = 0x0;
+         st->guest_EDX = 0x1c3f9ff; /* Note no 3DNow. */
+         break;
+      /* Processor Brand String "AMD Athlon(tm) Processor" */
+      case 0x80000002:
+         st->guest_EAX = 0x20444d41;
+         st->guest_EBX = 0x6c687441;
+         st->guest_ECX = 0x74286e6f;
+         st->guest_EDX = 0x5020296d;
+         break;
+      case 0x80000003:
+         st->guest_EAX = 0x65636f72;
+         st->guest_EBX = 0x726f7373;
+         st->guest_ECX = 0x0;
+         st->guest_EDX = 0x0;
+         break;
+      default:
+         st->guest_EAX = 0x0;
+         st->guest_EBX = 0x0;
+         st->guest_ECX = 0x0;
+         st->guest_EDX = 0x0;
+         break;
+   }
+}
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (modifies guest state) */
 /* Claim to be the following SSE1-capable CPU:
    vendor_id       : GenuineIntel
    cpu family      : 6

@@ -71,11 +71,12 @@ typedef
    combinations. */
 
 /* x86: baseline capability is Pentium-1 (FPU, MMX, but no SSE), with
-   cmpxchg8b. */
-#define VEX_HWCAPS_X86_SSE1    (1<<1)  /* SSE1 support (Pentium III) */
-#define VEX_HWCAPS_X86_SSE2    (1<<2)  /* SSE2 support (Pentium 4) */
-#define VEX_HWCAPS_X86_SSE3    (1<<3)  /* SSE3 support (>= Prescott) */
-#define VEX_HWCAPS_X86_LZCNT   (1<<4)  /* SSE4a LZCNT insn */
+   cmpxchg8b. MMXEXT is a special AMD only subset of SSE1 (Integer SSE). */
+#define VEX_HWCAPS_X86_MMXEXT  (1<<1)  /* A subset of SSE1 on early AMD */
+#define VEX_HWCAPS_X86_SSE1    (1<<2)  /* SSE1 support (Pentium III) */
+#define VEX_HWCAPS_X86_SSE2    (1<<3)  /* SSE2 support (Pentium 4) */
+#define VEX_HWCAPS_X86_SSE3    (1<<4)  /* SSE3 support (>= Prescott) */
+#define VEX_HWCAPS_X86_LZCNT   (1<<5)  /* SSE4a LZCNT insn */
 
 /* amd64: baseline capability is SSE2, with cmpxchg8b but not
    cmpxchg16b. */

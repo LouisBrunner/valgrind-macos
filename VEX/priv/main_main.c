@@ -1202,23 +1202,25 @@ void LibVEX_default_VexAbiInfo ( /*OUT*/VexAbiInfo* vbi )
 
 static const HChar* show_hwcaps_x86 ( UInt hwcaps ) 
 {
-   /* Monotonic, SSE3 > SSE2 > SSE1 > baseline. */
+   /* Monotonic, LZCNT > SSE3 > SSE2 > SSE1 > MMXEXT > baseline. */
    switch (hwcaps) {
       case 0:
          return "x86-sse0";
-      case VEX_HWCAPS_X86_SSE1:
-         return "x86-sse1";
-      case VEX_HWCAPS_X86_SSE1 | VEX_HWCAPS_X86_SSE2:
-         return "x86-sse1-sse2";
-      case VEX_HWCAPS_X86_SSE1 | VEX_HWCAPS_X86_SSE2
+      case VEX_HWCAPS_X86_MMXEXT:
+         return "x86-mmxext";
+      case VEX_HWCAPS_X86_MMXEXT | VEX_HWCAPS_X86_SSE1:
+         return "x86-mmxext-sse1";
+      case VEX_HWCAPS_X86_MMXEXT | VEX_HWCAPS_X86_SSE1 | VEX_HWCAPS_X86_SSE2:
+         return "x86-mmxext-sse1-sse2";
+      case VEX_HWCAPS_X86_MMXEXT | VEX_HWCAPS_X86_SSE1 | VEX_HWCAPS_X86_SSE2
            | VEX_HWCAPS_X86_LZCNT:
-         return "x86-sse1-sse2-lzcnt";
-      case VEX_HWCAPS_X86_SSE1 | VEX_HWCAPS_X86_SSE2
+         return "x86-mmxext-sse1-sse2-lzcnt";
+      case VEX_HWCAPS_X86_MMXEXT | VEX_HWCAPS_X86_SSE1 | VEX_HWCAPS_X86_SSE2
            | VEX_HWCAPS_X86_SSE3:
-         return "x86-sse1-sse2-sse3";
-      case VEX_HWCAPS_X86_SSE1 | VEX_HWCAPS_X86_SSE2
+         return "x86-mmxext-sse1-sse2-sse3";
+      case VEX_HWCAPS_X86_MMXEXT | VEX_HWCAPS_X86_SSE1 | VEX_HWCAPS_X86_SSE2
            | VEX_HWCAPS_X86_SSE3 | VEX_HWCAPS_X86_LZCNT:
-         return "x86-sse1-sse2-sse3-lzcnt";
+         return "x86-mmxext-sse1-sse2-sse3-lzcnt";
       default:
          return NULL;
    }

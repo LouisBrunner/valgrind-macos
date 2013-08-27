@@ -1,3 +1,4 @@
 prog: sh-mem-vec128
+prereq: ../../../tests/x86_amd64_features x86-sse
 args: -q
 vgopts: --partial-loads-ok=yes

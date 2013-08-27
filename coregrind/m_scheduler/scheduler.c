@@ -1654,6 +1654,76 @@ static Bool os_client_request(ThreadId tid, UWord *args)
 }
 
 
+/* Write out a client message, possibly including a back trace. Return
+   the number of characters written. In case of XML output, the format
+   string as well as any arguments it requires will be XML'ified. 
+   I.e. special characters such as the angle brackets will be translated
+   into proper escape sequences. */
+static
+Int print_client_message( ThreadId tid, const HChar *format,
+                          va_list *vargsp, Bool include_backtrace)
+{
+   Int count;
+
+   if (VG_(clo_xml)) {
+      /* Translate the format string as follows:
+         <  -->  &lt;
+         >  -->  &gt;
+         &  -->  &amp;
+         %s -->  %pS
+         Yes, yes, it's simplified but in synch with 
+         myvprintf_str_XML_simplistic and VG_(debugLog_vprintf).
+      */
+
+      /* Allocate a buffer that is for sure large enough. */
+      HChar xml_format[VG_(strlen)(format) * 5 + 1];
+
+      const HChar *p;
+      HChar *q = xml_format;
+
+      for (p = format; *p; ++p) {
+         switch (*p) {
+         case '<': VG_(strcpy)(q, "&lt;");  q += 4; break;
+         case '>': VG_(strcpy)(q, "&gt;");  q += 4; break;
+         case '&': VG_(strcpy)(q, "&amp;"); q += 5; break;
+         case '%':
+            /* Careful: make sure %%s stays %%s */
+            *q++ = *p++;
+            if (*p == 's') {
+              *q++ = 'p';
+              *q++ = 'S';
+            } else {
+              *q++ = *p;
+            }
+            break;
+
+         default:
+            *q++ = *p;
+            break;
+         }
+      }
+      *q = '\0';
+
+      VG_(printf_xml)( "<clientmsg>\n" );
+      VG_(printf_xml)( "  <tid>%d</tid>\n", tid );
+      VG_(printf_xml)( "  <text>" );
+      count = VG_(vprintf_xml)( xml_format, *vargsp );
+      VG_(printf_xml)( "  </text>\n" );
+   } else {
+      count = VG_(vmessage)( Vg_ClientMsg, format, *vargsp );
+      VG_(message_flush)();
+   }
+
+   if (include_backtrace)
+      VG_(get_and_pp_StackTrace)( tid, VG_(clo_backtrace_size) );
+   
+   if (VG_(clo_xml))
+      VG_(printf_xml)( "</clientmsg>\n" );
+
+   return count;
+}
+
+
 /* Do a client request for the thread tid.  After the request, tid may
    or may not still be runnable; if not, the scheduler will have to
    choose a new thread to run.  
@@ -1708,6 +1778,7 @@ void do_client_request ( ThreadId tid )
          break;
 
       case VG_USERREQ__PRINTF: {
+         const HChar* format = (HChar *)arg[1];
          /* JRS 2010-Jan-28: this is DEPRECATED; use the
             _VALIST_BY_REF version instead */
          if (sizeof(va_list) != sizeof(UWord))
@@ -1718,13 +1789,14 @@ void do_client_request ( ThreadId tid )
          } u;
          u.uw = (unsigned long)arg[2];
          Int count = 
-            VG_(vmessage)( Vg_ClientMsg, (HChar *)arg[1], u.vargs );
-         VG_(message_flush)();
+            print_client_message( tid, format, &u.vargs,
+                                  /* include_backtrace */ False );
          SET_CLREQ_RETVAL( tid, count );
          break;
       }
 
       case VG_USERREQ__PRINTF_BACKTRACE: {
+         const HChar* format = (HChar *)arg[1];
          /* JRS 2010-Jan-28: this is DEPRECATED; use the
             _VALIST_BY_REF version instead */
          if (sizeof(va_list) != sizeof(UWord))
@@ -1735,28 +1807,29 @@ void do_client_request ( ThreadId tid )
          } u;
          u.uw = (unsigned long)arg[2];
          Int count =
-            VG_(vmessage)( Vg_ClientMsg, (HChar *)arg[1], u.vargs );
-         VG_(message_flush)();
-         VG_(get_and_pp_StackTrace)( tid, VG_(clo_backtrace_size) );
+            print_client_message( tid, format, &u.vargs,
+                                  /* include_backtrace */ True );
          SET_CLREQ_RETVAL( tid, count );
          break;
       }
 
       case VG_USERREQ__PRINTF_VALIST_BY_REF: {
+         const HChar* format = (HChar *)arg[1];
          va_list* vargsp = (va_list*)arg[2];
-         Int count = 
-            VG_(vmessage)( Vg_ClientMsg, (HChar *)arg[1], *vargsp );
-         VG_(message_flush)();
+         Int count =
+            print_client_message( tid, format, vargsp,
+                                  /* include_backtrace */ False );
+
          SET_CLREQ_RETVAL( tid, count );
          break;
       }
 
       case VG_USERREQ__PRINTF_BACKTRACE_VALIST_BY_REF: {
+         const HChar* format = (HChar *)arg[1];
          va_list* vargsp = (va_list*)arg[2];
          Int count =
-            VG_(vmessage)( Vg_ClientMsg, (HChar *)arg[1], *vargsp );
-         VG_(message_flush)();
-         VG_(get_and_pp_StackTrace)( tid, VG_(clo_backtrace_size) );
+            print_client_message( tid, format, vargsp,
+                                  /* include_backtrace */ True );
          SET_CLREQ_RETVAL( tid, count );
          break;
       }

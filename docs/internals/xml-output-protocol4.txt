@@ -190,7 +190,7 @@ the following in sequence:
   human-understandable.  In current Valgrind versions it is the
   elapsed wallclock time since process start.
 
-* Zero or more of (either ERRORCOUNTS or TOOLSPECIFIC).
+* Zero or more of (either ERRORCOUNTS, TOOLSPECIFIC, or CLIENTMSG).
 
 * The following, indicating that the program has now finished, and
   that the any final wrapup (eg, for Memcheck, leak checking) is happening.
@@ -699,3 +699,36 @@ The possible values are:
       One of various miscellaneous noteworthy conditions was observed
       (eg, thread exited whilst holding locks, "impossible" behaviour
       from the underlying threading library, etc)
+
+====================================================================
+
+CLIENTMSG
+
+CLIENTMSG defines a message that was caused by one of the following
+client requests:
+
+- VALGRIND_PRINTF
+- VALGRIND_PRINTF_BACKTRACE
+
+Definition:
+
+<clientmsg>
+  <tid>INT</tid>
+  <text>...</text>
+</clientmsg>
+
+OR
+
+<clientmsg>
+  <tid>INT</tid>
+  <text>...</text>
+  STACK
+</clientmsg>
+
+* The <tid> tag indicates the Valgrind thread number.
+
+* The <text> tag indicates the message as specified in the client request
+  (properly translated to XML).
+
+* STACK is only present in case of VALGRIND_PRINTF_BACKTRACE. See above
+  for a definition of STACK.

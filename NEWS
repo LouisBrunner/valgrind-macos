@@ -443,6 +443,9 @@ FIXED r??
 321960  pthread_create() then alloca() causing invalid stack write errors
         FIXED 13467
 
+322807  VALGRIND_PRINTF_BACKTRACE writes callstack to xml and text to stderr
+        FIXED 13516
+
 322851  0bXXX binary literal syntax is not standard 
         FIXED 2736
 

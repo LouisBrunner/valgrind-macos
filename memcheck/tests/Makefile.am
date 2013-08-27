@@ -74,6 +74,8 @@ EXTRA_DIST = \
 		buflen_check.stderr.exp-kfail \
 	bug287260.stderr.exp bug287260.vgtest \
 	calloc-overflow.stderr.exp calloc-overflow.vgtest\
+	client-msg.stderr.exp client-msg.vgtest \
+	client-msg-as-xml.stderr.exp client-msg-as-xml.vgtest \
 	clientperm.stderr.exp \
 	clientperm.stdout.exp clientperm.vgtest \
 	clireq_nofill.stderr.exp \
@@ -273,6 +275,7 @@ check_PROGRAMS = \
 	buflen_check \
 	bug287260 \
 	calloc-overflow \
+	client-msg \
 	clientperm \
 	clireq_nofill \
 	clo_redzone \

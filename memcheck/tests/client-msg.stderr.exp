@@ -1,0 +1,6 @@
+hello <> <&>%s world
+   ...
+   by 0x........: baz (client-msg.c:5)
+   by 0x........: bar (client-msg.c:10)
+   by 0x........: foo (client-msg.c:15)
+   by 0x........: main (client-msg.c:20)

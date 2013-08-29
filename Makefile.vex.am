@@ -26,6 +26,7 @@ pkginclude_HEADERS = \
 	pub/libvex_guest_arm.h \
 	pub/libvex_guest_s390x.h \
 	pub/libvex_guest_mips32.h \
+	pub/libvex_guest_mips64.h \
 	pub/libvex_s390x_common.h \
 	pub/libvex_ir.h \
 	pub/libvex_trc_values.h
@@ -71,7 +72,8 @@ pub/libvex_guest_offsets.h: auxprogs/genoffsets.c \
 			    pub/libvex_guest_ppc64.h \
 			    pub/libvex_guest_arm.h \
 			    pub/libvex_guest_s390x.h \
-			    pub/libvex_guest_mips32.h
+			    pub/libvex_guest_mips32.h \
+			    pub/libvex_guest_mips64.h
 	rm -f auxprogs/genoffsets.s
 	$(CC) $(CFLAGS) \
 	      $(LIBVEX_CFLAGS) \

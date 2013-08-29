@@ -2661,6 +2661,7 @@ AC_CONFIG_FILES([
    coregrind/Makefile 
    memcheck/Makefile
    memcheck/tests/Makefile
+   memcheck/tests/common/Makefile
    memcheck/tests/amd64/Makefile
    memcheck/tests/x86/Makefile
    memcheck/tests/linux/Makefile

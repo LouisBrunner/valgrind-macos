@@ -68,4 +68,13 @@ nobase_pkginclude_HEADERS = \
 	vki/vki-scnums-mips64-linux.h	\
 	vki/vki-scnums-darwin.h         \
 	vki/vki-xen.h                   \
+	vki/vki-xen-domctl.h		\
+	vki/vki-xen-evtchn.h		\
+	vki/vki-xen-gnttab.h		\
+	vki/vki-xen-hvm.h		\
+	vki/vki-xen-memory.h		\
+	vki/vki-xen-mmuext.h		\
+	vki/vki-xen-sysctl.h		\
+	vki/vki-xen-version.h		\
+	vki/vki-xen-x86.h		\
 	vki/vki-linux-drm.h

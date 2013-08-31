@@ -26,16 +26,14 @@ check_PROGRAMS = $(INSN_TESTS) \
 		 allexec \
 		 op00
 
-DIST_INSN_TESTS = $(INSN_TESTS) dfp-1
-
 EXTRA_DIST = \
-	$(addsuffix .stderr.exp,$(DIST_INSN_TESTS)) \
-	$(addsuffix .stdout.exp,$(DIST_INSN_TESTS)) \
-	$(addsuffix .vgtest,$(DIST_INSN_TESTS)) \
+	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
+	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
+	$(addsuffix .vgtest,$(INSN_TESTS)) \
 	ecag.stdout.exp-z10ec ecag.stdout.exp-z196 ecag.stdout.exp-zec12 \
 	op00.stderr.exp1 op00.stderr.exp2 op00.vgtest \
 	fpext_fail.vgtest fpext_fail.stderr.exp fpext_fail.stdout.exp \
-	test.h opcodes.h add.h  and.h  div.h  insert.h \
+	test.h opcodes.h add.h  and.h  div.h  insert.h dfp_utils.h \
 	mul.h  or.h  sub.h  xor.h table.h svc.h rounding.h \
 	dfp-1.stderr.exp dfp-1.stdout.exp dfp-1.vgtest \
 	dfp-2.stderr.exp dfp-2.stdout.exp dfp-2.vgtest \

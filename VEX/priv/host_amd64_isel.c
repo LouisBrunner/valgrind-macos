@@ -4476,9 +4476,9 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
             return;
          }
          case Ity_V128: {
-            /* The returned value is on the stack, and *retloc tells
-               us where.  Fish it off the stack and then move the
-               stack pointer upwards to clear it, as directed by
+            /* The returned value is on the stack, and rloc.spOff
+               tells us where.  Fish it off the stack and then move
+               the stack pointer upwards to clear it, as directed by
                doHelperCall. */
             vassert(rloc.pri == RLPri_V128SpRel);
             vassert(addToSp >= 16);

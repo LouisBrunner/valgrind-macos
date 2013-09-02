@@ -3548,9 +3548,10 @@ static void add_mapping_callback(Addr addr, SizeT len, UInt prot,
          }
          return;
 
-      } else if (nsegments[i].kind == SkAnonC ||
-                 nsegments[i].kind == SkFileC ||
-                 nsegments[i].kind == SkShmC)
+      }
+      else if (nsegments[i].kind == SkAnonC ||
+               nsegments[i].kind == SkFileC ||
+               nsegments[i].kind == SkShmC)
       {
          /* Check permissions on client regions */
          // GrP fixme
@@ -3570,6 +3571,20 @@ static void add_mapping_callback(Addr addr, SizeT len, UInt prot,
                                  "mismatch (kernel %x, V %x)\n", 
                                  (void*)nsegments[i].start,
                                  (void*)(nsegments[i].end+1), prot, seg_prot);
+            /* Add mapping for regions with protection changes */
+            ChangedSeg* cs = &css_local[css_used_local];
+            if (css_used_local < css_size_local) {
+               cs->is_added = True;
+               cs->start    = addr;
+               cs->end      = addr + len - 1;
+               cs->prot     = prot;
+               cs->offset   = offset;
+               css_used_local++;
+            } else {
+               css_overflowed = True;
+            }
+	    return;
+
          }
 
       } else {

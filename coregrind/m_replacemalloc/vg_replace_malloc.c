@@ -241,7 +241,7 @@ static inline void trigger_memcheck_error_if_undefined ( ULong x )
       void* v; \
       \
       DO_INIT; \
-      trigger_memcheck_error_if_undefined((ULong) zone); \
+      trigger_memcheck_error_if_undefined((ULong)(UWord) zone);	\
       trigger_memcheck_error_if_undefined((ULong) n); \
       MALLOC_TRACE(#fnname "(%p, %llu)", zone, (ULong)n ); \
       \
@@ -443,7 +443,7 @@ static inline void trigger_memcheck_error_if_undefined ( ULong x )
    void VG_REPLACE_FUNCTION_EZU(10040,soname,fnname) (void *zone, void *p)  \
    { \
       DO_INIT; \
-      trigger_memcheck_error_if_undefined((ULong) zone); \
+      trigger_memcheck_error_if_undefined((ULong)(UWord) zone);	\
       MALLOC_TRACE(#fnname "(%p, %p)\n", zone, p ); \
       if (p == NULL)  \
          return; \
@@ -577,7 +577,7 @@ static inline void trigger_memcheck_error_if_undefined ( ULong x )
       void* v; \
       \
       DO_INIT; \
-      trigger_memcheck_error_if_undefined((ULong) zone); \
+      trigger_memcheck_error_if_undefined((ULong)(UWord) zone); \
       trigger_memcheck_error_if_undefined((ULong) nmemb); \
       trigger_memcheck_error_if_undefined((ULong) size); \
       MALLOC_TRACE("zone_calloc(%p, %llu,%llu)", zone, (ULong)nmemb, (ULong)size ); \
@@ -708,7 +708,7 @@ static inline void trigger_memcheck_error_if_undefined ( ULong x )
       void* v; \
       \
       DO_INIT; \
-      trigger_memcheck_error_if_undefined((ULong) zone); \
+      trigger_memcheck_error_if_undefined((ULong)(UWord) zone);	\
       trigger_memcheck_error_if_undefined((ULong) n); \
       MALLOC_TRACE("zone_memalign(%p, al %llu, size %llu)", \
                    zone, (ULong)alignment, (ULong)n );  \
@@ -788,7 +788,7 @@ static inline void trigger_memcheck_error_if_undefined ( ULong x )
       static int pszB = 0; \
       if (pszB == 0) \
          pszB = my_getpagesize(); \
-      trigger_memcheck_error_if_undefined((ULong) zone); \
+      trigger_memcheck_error_if_undefined((ULong)(UWord) zone);	      \
       return VG_REPLACE_FUNCTION_EZU(10110,VG_Z_LIBC_SONAME,memalign) \
                 ((SizeT)pszB, size); \
    }
@@ -1038,8 +1038,8 @@ static size_t my_malloc_size ( void* zone, void* ptr )
    /* Implement "malloc_size" by handing the request through to the
       tool's .tl_usable_size method. */
    DO_INIT;
-   trigger_memcheck_error_if_undefined((ULong) zone);
-   trigger_memcheck_error_if_undefined((ULong) ptr);
+   trigger_memcheck_error_if_undefined((ULong)(UWord) zone);
+   trigger_memcheck_error_if_undefined((ULong)(UWord) ptr);
    size_t res = (size_t)VALGRIND_NON_SIMD_CALL1(
                            info.tl_malloc_usable_size, ptr);
    return res;

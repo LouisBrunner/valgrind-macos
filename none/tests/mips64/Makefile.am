@@ -37,7 +37,9 @@ EXTRA_DIST = \
 	test_block_size.stdout.exp test_block_size.stderr.exp \
 	test_block_size.vgtest \
 	unaligned_load.stdout.exp-BE unaligned_load.stdout.exp-LE \
-	unaligned_load.stderr.exp unaligned_load.vgtest
+	unaligned_load.stderr.exp unaligned_load.vgtest \
+	unaligned_load_store.stdout.exp-LE unaligned_load_store.stdout.exp-BE \
+	unaligned_load_store.stderr.exp unaligned_load_store.vgtest
 
 check_PROGRAMS = \
 	allexec \
@@ -58,7 +60,8 @@ check_PROGRAMS = \
 	round \
 	shift_instructions \
 	test_block_size \
-	unaligned_load
+	unaligned_load \
+	unaligned_load_store
 
 AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@

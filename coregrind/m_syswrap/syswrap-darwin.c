@@ -372,6 +372,20 @@ static OpenPort *allocated_ports;
 /* Count of open ports. */
 static Int allocated_port_count = 0;
 
+/* Create an entry for |port|, with no other info.  Assumes it doesn't
+   already exist. */
+static void port_create_vanilla(mach_port_t port)
+{
+   OpenPort* op
+     = VG_(arena_calloc)(VG_AR_CORE, "syswrap-darwin.port_create_vanilla", 
+			 sizeof(OpenPort), 1);
+   op->port = port;
+   /* Add it to the list. */
+   op->next = allocated_ports;
+   if (allocated_ports) allocated_ports->prev = op;
+   allocated_ports = op;
+   allocated_port_count++;
+}
 
 __attribute__((unused))
 static Bool port_exists(mach_port_t port)
@@ -644,7 +658,7 @@ void ML_(sync_mappings)(const HChar *when, const HChar *where, Int num)
    ok = False;
    while (!ok) {
       VG_(free)(css);   // css is NULL on first iteration;  that's ok.
-      css = VG_(malloc)("sys_wrap.sync_mappings", css_size*sizeof(ChangedSeg));
+      css = VG_(calloc)("sys_wrap.sync_mappings", css_size, sizeof(ChangedSeg));
       ok = VG_(get_changed_segments)(when, where, css, css_size, &css_used);
       css_size *= 2;
    } 
@@ -652,23 +666,25 @@ void ML_(sync_mappings)(const HChar *when, const HChar *where, Int num)
    // Now add/remove them.
    for (i = 0; i < css_used; i++) {
       ChangedSeg* cs = &css[i];
-      const Char* action;
       if (cs->is_added) {
          ML_(notify_core_and_tool_of_mmap)(
                cs->start, cs->end - cs->start + 1,
                cs->prot, VKI_MAP_PRIVATE, 0, cs->offset);
          // should this call VG_(di_notify_mmap) also?
-         action = "added";
-
       } else {
          ML_(notify_core_and_tool_of_munmap)(
                cs->start, cs->end - cs->start + 1);
-         action = "removed";
       }
       if (VG_(clo_trace_syscalls)) {
-          VG_(debugLog)(0, "syswrap-darwin",
-                        "  %s region 0x%010lx..0x%010lx at %s (%s)\n", 
-                        action, cs->start, cs->end + 1, where, when);
+          if (cs->is_added) {
+             VG_(debugLog)(0, "syswrap-darwin",
+                "  added region 0x%010lx..0x%010lx prot %u at %s (%s)\n", 
+                cs->start, cs->end + 1, (UInt)cs->prot, where, when);
+	  } else {
+             VG_(debugLog)(0, "syswrap-darwin",
+                "  removed region 0x%010lx..0x%010lx at %s (%s)\n", 
+                cs->start, cs->end + 1, where, when);
+	  }
       }
    }
 
@@ -1701,6 +1717,12 @@ PRE(settid)
 {
     PRINT("settid(%ld, %ld)", ARG1, ARG2);
     PRE_REG_READ2(long, "settid", vki_uid_t, "uid", vki_gid_t, "gid");
+}
+
+PRE(gettid)
+{
+    PRINT("gettid()");
+    PRE_REG_READ0(long, gettid);
 }
 
 /* XXX need to check whether we need POST operations for
@@ -6718,6 +6740,14 @@ PRE(bootstrap_register)
    PRINT("bootstrap_register(port 0x%x, \"%s\")",
          req->service_port.name, req->service_name);
 
+   /* The required entry in the allocated_ports list (mapping) might
+      not exist, due perhaps to broken syscall wrappers (mach__N etc).
+      Create a minimal entry so that assign_port_name below doesn't
+      cause an assertion. */
+   if (!port_exists(req->service_port.name)) {
+      port_create_vanilla(req->service_port.name);
+   }
+
    assign_port_name(req->service_port.name, req->service_name);
 
    AFTER = POST_FN(bootstrap_register);
@@ -7747,10 +7777,11 @@ PRE(thread_fast_set_cthread_self)
 }
 
 
-#if DARWIN_VERS >= DARWIN_10_7
 /* ---------------------------------------------------------------------
    Added for OSX 10.7 (Lion)
    ------------------------------------------------------------------ */
+
+#if DARWIN_VERS >= DARWIN_10_7
 
 PRE(getaudit_addr)
 {
@@ -7762,7 +7793,6 @@ POST(getaudit_addr)
 {
    POST_MEM_WRITE(ARG1, ARG2);
 }
-#endif
 
 PRE(psynch_mutexwait)
 {
@@ -7842,16 +7872,18 @@ POST(psynch_cvclrprepost)
 {
 }
 
+#endif /* DARWIN_VERS >= DARWIN_10_7 */
+
 
 /* ---------------------------------------------------------------------
    Added for OSX 10.8 (Mountain Lion)
    ------------------------------------------------------------------ */
 
-#if DARWIN_VERS == DARWIN_10_8
+#if DARWIN_VERS >= DARWIN_10_8
 
 PRE(mach__10)
 {
-   PRINT("mach__10(ARGUMENTS_UNKNOWN)");
+   PRINT("mach__10(FIXME,ARGUMENTS_UNKNOWN)");
 }
 POST(mach__10)
 {
@@ -7860,7 +7892,7 @@ POST(mach__10)
 
 PRE(mach__12)
 {
-   PRINT("mach__12(ARGUMENTS_UNKNOWN)");
+   PRINT("mach__12(FIXME,ARGUMENTS_UNKNOWN)");
 }
 POST(mach__12)
 {
@@ -7869,35 +7901,59 @@ POST(mach__12)
 
 PRE(mach__14)
 {
-   PRINT("mach__14(ARGUMENTS_UNKNOWN)");
+   PRINT("mach__14(FIXME,ARGUMENTS_UNKNOWN)");
 }
 
 PRE(mach__16)
 {
-   PRINT("mach__16(ARGUMENTS_UNKNOWN)");
+   PRINT("mach__16(FIXME,ARGUMENTS_UNKNOWN)");
+}
+
+PRE(mach__17)
+{
+   PRINT("mach__17(FIXME,ARGUMENTS_UNKNOWN)");
 }
 
 PRE(mach__18)
 {
-   PRINT("mach__18(ARGUMENTS_UNKNOWN)");
+   PRINT("mach__18(FIXME,ARGUMENTS_UNKNOWN)");
 }
 
 PRE(mach__19)
 {
-   PRINT("mach__19(ARGUMENTS_UNKNOWN)");
+   PRINT("mach__19(FIXME,ARGUMENTS_UNKNOWN)");
 }
 
 PRE(mach__20)
 {
-   PRINT("mach__20(ARGUMENTS_UNKNOWN)");
+   PRINT("mach__20(FIXME,ARGUMENTS_UNKNOWN)");
 }
 
 PRE(mach__21)
 {
-   PRINT("mach__21(ARGUMENTS_UNKNOWN)");
+   PRINT("mach__21(FIXME,ARGUMENTS_UNKNOWN)");
 }
 
-#endif /* DARWIN_VERS == DARWIN_10_8 */
+PRE(mach__22)
+{
+   PRINT("mach__22(FIXME,ARGUMENTS_UNKNOWN)");
+}
+
+PRE(mach__23)
+{
+   PRINT("mach__23(FIXME,ARGUMENTS_UNKNOWN)");
+}
+
+PRE(iopolicysys)
+{
+   PRINT("iopolicysys(FIXME)(0x%lx, 0x%lx, 0x%lx)", ARG1, ARG2, ARG3);
+   /* mem effects unknown */
+}
+POST(iopolicysys)
+{
+}
+
+#endif /* DARWIN_VERS >= DARWIN_10_8 */
 
 
 /* ---------------------------------------------------------------------
@@ -8223,7 +8279,9 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACX_(__NR_fchmod_extended,fchmod_extended), 
    MACXY(__NR_access_extended,access_extended), 
    MACX_(__NR_settid,         settid), 
-// _____(__NR_gettid), 
+#if DARWIN_VERS >= DARWIN_10_8
+   MACX_(__NR_gettid, gettid),  // 286
+#endif
 // _____(__NR_setsgroups), 
 // _____(__NR_getsgroups), 
 // _____(__NR_setwgroups), 
@@ -8263,7 +8321,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACX_(__NR_aio_write,      aio_write), 
 // _____(__NR_lio_listio),   // 320
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(321)),   // ???
-// _____(__NR_iopolicysys), 
+   MACXY(__NR_iopolicysys, iopolicysys), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(323)),   // ???
 // _____(__NR_mlockall), 
 // _____(__NR_munlockall), 
@@ -8433,26 +8491,24 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
 
 #  if DARWIN_VERS == DARWIN_10_8
    MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(16), mach__16), 
-#  else
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(16)), 
-#  endif
-
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(17)), 
-
-#  if DARWIN_VERS == DARWIN_10_8
+   MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(17), mach__17), 
    MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(18), mach__18), 
    MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(19), mach__19), 
    MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(20), mach__20),
    MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(21), mach__21), 
+   MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(22), mach__22), 
+   MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(23), mach__23), 
 #  else
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(16)), 
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(17)), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(18)), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(19)), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(20)), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(21)), 
-#  endif
-
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(22)), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(23)), 
+#  endif
+
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(24)), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(25)), 
    MACXY(__NR_mach_reply_port, mach_reply_port), 

@@ -12846,10 +12846,13 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
          /* rt content - adjusted */
          t5 = newTemp(Ity_I32);
-         assign(t5, binop(Iop_And32, mkNarrowTo32(ty, getIReg(rt)),
-                    binop(Iop_Shr32, mkU32(0xFFFFFFFF), narrowTo(Ity_I8,
-                    binop(Iop_Shl32, binop(Iop_Add32, mkexpr(t4), mkU32(0x1)),
-                    mkU8(0x3))))));
+         assign(t5, binop(Iop_And32,
+                          mkNarrowTo32(ty, getIReg(rt)),
+                          binop(Iop_Shr32,
+                                mkU32(0x00FFFFFF),
+                                      narrowTo(Ity_I8, binop(Iop_Mul32,
+                                                             mkU32(0x08),
+                                                             mkexpr(t4))))));
 
          putIReg(rt, mkWidenFrom32(ty, binop(Iop_Or32, mkexpr(t5),
                                              mkexpr(t3)), True));
@@ -12868,10 +12871,13 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
          /* rt content - adjusted */
          t5 = newTemp(Ity_I32);
-         assign(t5, binop(Iop_And32, unop(Iop_64HIto32, getIReg(rt)),
-                    binop(Iop_Shr32, mkU32(0xFFFFFFFF), narrowTo(Ity_I8,
-                    binop(Iop_Shl32, binop(Iop_Add32, mkexpr(t4), mkU32(0x1)),
-                    mkU8(0x3))))));
+         assign(t5, binop(Iop_And32,
+                          mkNarrowTo32(ty, getIReg(rt)),
+                          binop(Iop_Shr32,
+                                mkU32(0x00FFFFFF),
+                                      narrowTo(Ity_I8, binop(Iop_Mul32,
+                                                             mkU32(0x08),
+                                                             mkexpr(t4))))));
 
          putIReg(rt, mkWidenFrom32(ty, binop(Iop_Or32, mkexpr(t5),
                                              mkexpr(t3)), True));
@@ -12887,7 +12893,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 #endif
 
          /* t2 = word addr */
-         /* t4 = addr mod 8 */
+         /* t4 = addr mod 4 */
          LWX_SWX_PATTERN;
 
          /* t3 = word content - shifted */
@@ -12898,9 +12904,13 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
          /* rt content  - adjusted */
          t5 = newTemp(Ity_I32);
-         assign(t5, binop(Iop_And32, getIReg(rt), binop(Iop_Shr32,
-                    mkU32(0xFFFFFFFF), narrowTo(Ity_I8, binop(Iop_Shl32,
-                    binop(Iop_Add32, mkexpr(t4), mkU32(0x1)), mkU8(0x3))))));
+         assign(t5, binop(Iop_And32,
+                          getIReg(rt),
+                          binop(Iop_Shr32,
+                                mkU32(0x00FFFFFF),
+                                      narrowTo(Ity_I8, binop(Iop_Mul32,
+                                                             mkU32(0x08),
+                                                             mkexpr(t4))))));
 
          putIReg(rt, binop(Iop_Or32, mkexpr(t5), mkexpr(t3)));
       }
@@ -12944,7 +12954,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
          /* rt content  - adjusted */
          t5 = newTemp(Ity_I32);
-         assign(t5, binop(Iop_And32, unop(Iop_64HIto32, getIReg(rt)),
+         assign(t5, binop(Iop_And32, mkNarrowTo32(ty, getIReg(rt)),
                 unop(Iop_Not32, binop(Iop_Shr32, mkU32(0xFFFFFFFF),
                 narrowTo(Ity_I8, binop(Iop_Shl32, mkexpr(t4), mkU8(0x3)))))));
 

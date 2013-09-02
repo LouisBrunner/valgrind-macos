@@ -432,16 +432,27 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
       lock. */
    VG_(acquire_BigLock_LL)("wqthread_hijack");
 
-   if (0) VG_(printf)("wqthread_hijack: self %#lx, kport %#lx, "
-                      "stackaddr %#lx, workitem %#lx, reuse %d, sp %#lx\n", 
-                      self, kport, stackaddr, workitem, reuse, sp);
+   if (0) VG_(printf)(
+             "wqthread_hijack: self %#lx, kport %#lx, "
+	     "stackaddr %#lx, workitem %#lx, reuse/flags %x, sp %#lx\n", 
+	     self, kport, stackaddr, workitem, reuse, sp);
 
    /* Start the thread with all signals blocked.  VG_(scheduler) will
       set the mask correctly when we finally get there. */
    VG_(sigfillset)(&blockall);
    VG_(sigprocmask)(VKI_SIG_SETMASK, &blockall, NULL);
 
-   if (reuse) {
+   /* For 10.7 and earlier, |reuse| appeared to be used as a simple
+      boolean.  In 10.8 and later its name changed to |flags| and has
+      various other bits OR-d into it too, so it's necessary to fish
+      out just the relevant parts.  Hence: */
+#  if DARWIN_VERS <= DARWIN_10_7
+   Bool is_reuse = reuse != 0;
+#  elif DARWIN_VERS == DARWIN_10_8
+   Bool is_reuse = (reuse & 0x20000 /* == WQ_FLAG_THREAD_REUSE */) != 0;
+#  endif
+
+   if (is_reuse) {
 
      /* For whatever reason, tst->os_state.pthread appear to have a
         constant offset of 96 on 10.7, but zero on 10.6 and 10.5.  No
@@ -493,7 +504,7 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
    stacksize = 512*1024;  // wq stacks are always DEFAULT_STACK_SIZE
    stack = VG_PGROUNDUP(sp) - stacksize;
 
-   if (reuse) {
+   if (is_reuse) {
       // Continue V's thread back in the scheduler. 
       // The client thread is of course in another location entirely.
 

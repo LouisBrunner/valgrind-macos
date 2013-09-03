@@ -44,9 +44,9 @@ CALLGRIND_SOURCES_COMMON = \
 	jumps.c \
 	main.c \
 	sim.c \
-	threads.c \
-	../cachegrind/cg_arch.c
+	threads.c
 
+# We sneakily include "cg_branchpred.c" and "cg_arch.c" from cachegrind
 CALLGRIND_CFLAGS_COMMON = -I$(top_srcdir)/cachegrind
 
 callgrind_@VGCONF_ARCH_PRI@_@VGCONF_OS@_SOURCES      = \

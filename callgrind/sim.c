@@ -44,7 +44,7 @@
 */
 
 /* Cache configuration */
-#include "cg_arch.h"
+#include "cg_arch.c"
 
 /* additional structures for cache use info, separated
  * according usage frequency:

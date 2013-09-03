@@ -45,7 +45,7 @@ CALLGRIND_SOURCES_COMMON = \
 	main.c \
 	sim.c \
 	threads.c \
-	../cachegrind/cg-arch.c
+	../cachegrind/cg_arch.c
 
 CALLGRIND_CFLAGS_COMMON = -I$(top_srcdir)/cachegrind
 

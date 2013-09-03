@@ -4457,8 +4457,11 @@ static void deltaIRStmt ( IRStmt* st, Int delta )
       case Ist_Dirty:
          d = st->Ist.Dirty.details;
          deltaIRExpr(d->guard, delta);
-         for (i = 0; d->args[i]; i++)
-            deltaIRExpr(d->args[i], delta);
+         for (i = 0; d->args[i]; i++) {
+            IRExpr* arg = d->args[i];
+            if (LIKELY(!is_IRExpr_VECRET_or_BBPTR(arg)))
+               deltaIRExpr(arg, delta);
+         }
          if (d->tmp != IRTemp_INVALID)
             d->tmp += delta;
          if (d->mAddr)

@@ -652,7 +652,7 @@ static Bool check_uuid_matches ( DiSlice sli, UChar* uuid )
       UInt i;
       /* Scan through the 1K chunk we got, looking for the start char. */
       for (i = 0; i < (UInt)nGot; i++) {
-         if (buf[i] != first)
+         if (LIKELY(buf[i] != first))
             continue;
          /* first char matches.  See if we can get 16 bytes at this
             offset, and compare. */
@@ -662,8 +662,8 @@ static Bool check_uuid_matches ( DiSlice sli, UChar* uuid )
             if (0 == VG_(memcmp)(&buff16[0], &uuid[0], 16))
                return True;
          }
-         curr_off += nGot;
       }
+      curr_off += nGot;
    }
    return False;
 }

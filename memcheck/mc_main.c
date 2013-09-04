@@ -5369,21 +5369,21 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
                 False  /* is client request */ ); 
             /* we are before the first character on next line, print a \n. */
             if ((i % 32) == 0 && i != 0)
-               VG_(gdb_printf) ("\n");
+               VG_(printf) ("\n");
             /* we are before the next block of 4 starts, print a space. */
             else if ((i % 4) == 0 && i != 0)
-               VG_(gdb_printf) (" ");
+               VG_(printf) (" ");
             if (res == 1) {
-               VG_(gdb_printf) ("%02x", vbits);
+               VG_(printf) ("%02x", vbits);
             } else {
                tl_assert(3 == res);
                unaddressable++;
-               VG_(gdb_printf) ("__");
+               VG_(printf) ("__");
             }
          }
-         VG_(gdb_printf) ("\n");
+         VG_(printf) ("\n");
          if (unaddressable) {
-            VG_(gdb_printf)
+            VG_(printf)
                ("Address %p len %ld has %d bytes unaddressable\n",
                 (void *)address, szB, unaddressable);
          }
@@ -5517,17 +5517,17 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
       case -1: break;
       case  0: 
          if (is_mem_addressable ( address, szB, &bad_addr ))
-            VG_(gdb_printf) ("Address %p len %ld addressable\n", 
+            VG_(printf) ("Address %p len %ld addressable\n", 
                              (void *)address, szB);
          else
-            VG_(gdb_printf)
+            VG_(printf)
                ("Address %p len %ld not addressable:\nbad address %p\n",
                 (void *)address, szB, (void *) bad_addr);
          MC_(pp_describe_addr) (address);
          break;
       case  1: res = is_mem_defined ( address, szB, &bad_addr, &otag );
          if (MC_AddrErr == res)
-            VG_(gdb_printf)
+            VG_(printf)
                ("Address %p len %ld not addressable:\nbad address %p\n",
                 (void *)address, szB, (void *) bad_addr);
          else if (MC_ValueErr == res) {
@@ -5543,7 +5543,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
                src = ""; break;
             default: tl_assert(0);
             }
-            VG_(gdb_printf) 
+            VG_(printf) 
                ("Address %p len %ld not defined:\n"
                 "Uninitialised value at %p%s\n",
                 (void *)address, szB, (void *) bad_addr, src);
@@ -5554,8 +5554,8 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
             }
          }
          else
-            VG_(gdb_printf) ("Address %p len %ld defined\n",
-                             (void *)address, szB);
+            VG_(printf) ("Address %p len %ld defined\n",
+                         (void *)address, szB);
          MC_(pp_describe_addr) (address);
          break;
       default: tl_assert(0);

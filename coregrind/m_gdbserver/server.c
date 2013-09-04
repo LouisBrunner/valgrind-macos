@@ -122,6 +122,31 @@ void kill_request (const char *msg)
    VG_(exit) (0);
 }
 
+// s is a NULL terminated string made of O or more words (separated by spaces).
+// Returns a pointer to the Nth word in s.
+// If Nth word does not exist, return a pointer to the last (0) byte of s.
+static
+const char *wordn (const char *s, int n)
+{
+   int word_seen = 0;
+   Bool searching_word = True;
+
+   while (*s) {
+      if (*s == ' ')
+         searching_word = True;
+      else {
+         if (searching_word) {
+            searching_word = False;
+            word_seen++;
+            if (word_seen == n)
+               return s;
+         }
+      }
+      s++;
+   }
+   return s;
+}
+
 /* handle_gdb_valgrind_command handles the provided mon string command.
    If command is recognised, return 1 else return 0.
    Note that in case of ambiguous command, 1 is returned.
@@ -130,13 +155,13 @@ void kill_request (const char *msg)
    'v.set *_output' is handled.
 */
 static
-int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
+int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
 {
    UWord ret = 0;
    char s[strlen(mon)+1]; /* copy for strtok_r */
-   char* wcmd;
-   HChar* ssaveptr;
-   const char* endptr;
+   char *wcmd;
+   HChar *ssaveptr;
+   const char *endptr;
    int   kwdid;
    int int_value;
 
@@ -175,7 +200,7 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
 "  v.wait [<ms>]           : sleep <ms> (default 0) then continue\n"
 "  v.info all_errors       : show all errors found so far\n"
 "  v.info last_error       : show last error found\n"
-"  v.info n_errs_found     : show the nr of errors found so far\n"
+"  v.info n_errs_found [msg] : show the nr of errors found so far and the given msg\n"
 "  v.info open_fds         : show open file descriptors (only if --track-fds=yes)\n"
 "  v.kill                  : kill the Valgrind process\n"
 "  v.set gdb_output        : set valgrind output to gdb\n"
@@ -222,15 +247,15 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
          if (*endptr != '\0') {
             VG_(gdb_printf) ("missing or malformed integer value\n");
          } else if (kwdid == 0) {
-            VG_(gdb_printf) ("vgdb-error value changed from %d to %d\n",
+            VG_(printf) ("vgdb-error value changed from %d to %d\n",
                              VG_(dyn_vgdb_error), int_value);
             VG_(dyn_vgdb_error) = int_value;
          } else if (kwdid == 1) {
-            VG_(gdb_printf) ("debuglog value changed from %d to %d\n",
+            VG_(printf) ("debuglog value changed from %d to %d\n",
                              VG_(debugLog_getLevel)(), int_value);
             VG_(debugLog_startup) (int_value, "gdbsrv");
          } else if (kwdid == 2) {
-            VG_(gdb_printf)
+            VG_(printf)
                ("merge-recursive-frames value changed from %d to %d\n",
                 VG_(clo_merge_recursive_frames), int_value);
             VG_(clo_merge_recursive_frames) = int_value;
@@ -273,10 +298,11 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
          VG_(show_all_errors)(/* verbosity */ 2, /* xml */ False);
          break;
       case  1: // n_errs_found
-         VG_(gdb_printf) ("n_errs_found %d n_errs_shown %d (vgdb-error %d)\n", 
-                          VG_(get_n_errs_found) (),
-                          VG_(get_n_errs_shown) (),
-                          VG_(dyn_vgdb_error));
+         VG_(printf) ("n_errs_found %d n_errs_shown %d (vgdb-error %d) %s\n",
+                      VG_(get_n_errs_found) (),
+                      VG_(get_n_errs_shown) (),
+                      VG_(dyn_vgdb_error),
+                      wordn (mon, 3));
          break;
       case 2: // last_error
          VG_(show_last_error)();
@@ -328,10 +354,10 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
       wcmd = strtok_r (NULL, " ", &ssaveptr);
       if (wcmd != NULL) {
          int_value = strtol (wcmd, NULL, 10);
-         VG_(gdb_printf) ("gdbserver: continuing in %d ms ...\n", int_value);
+         VG_(printf) ("gdbserver: continuing in %d ms ...\n", int_value);
          VG_(poll)(NULL, 0, int_value);
       }
-      VG_(gdb_printf) ("gdbserver: continuing after wait ...\n");
+      VG_(printf) ("gdbserver: continuing after wait ...\n");
       ret = 1;
       break;
    case  4: /* v.kill */
@@ -410,7 +436,7 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
    Note that in case of ambiguous command, 1 is returned.
 */
 static
-int handle_gdb_monitor_command (char* mon)
+int handle_gdb_monitor_command (char *mon)
 {
    UWord ret = 0;
    UWord tool_ret = 0;
@@ -449,6 +475,8 @@ int handle_gdb_monitor_command (char* mon)
                     &tool_ret);
       VG_(dyn_vgdb_error) = save_dyn_vgdb_error;
    }
+
+   VG_(message_flush) ();
 
    /* restore or set the desired output */
    VG_(log_output_sink).fd = sink_wanted_at_return.fd;
@@ -496,7 +524,7 @@ void handle_set (char *arg_own_buf, int *new_packet_len_p)
    arg_own_buf[0] = 0;
 }
 
-Bool VG_(client_monitor_command) (HChar* cmd)
+Bool VG_(client_monitor_command) (HChar *cmd)
 {
    const Bool connected = remote_connected();
    const int saved_command_output_to_log = command_output_to_log;
@@ -535,9 +563,6 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
       cmd[cmdlen] = '\0';
        
       if (handle_gdb_monitor_command (cmd)) {
-         /* In case the command is from a standalone vgdb,
-            connection will be closed soon => flush the output. */
-         VG_(message_flush) ();
          write_ok (arg_own_buf);
          return;
       } else {

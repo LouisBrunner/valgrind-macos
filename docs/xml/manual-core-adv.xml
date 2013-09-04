@@ -657,7 +657,7 @@ ambiguous, the Valgrind gdbserver will report the list of commands (or
 argument values) that can match:
 <programlisting><![CDATA[
 (gdb) mo v. n
-v. can match v.set v.info v.wait v.kill v.translate
+v. can match v.set v.info v.wait v.kill v.translate v.do
 (gdb) mo v.i n
 n_errs_found 0 n_errs_shown 0 (vgdb-error 0)
 (gdb) 
@@ -1293,9 +1293,15 @@ client request.
   </listitem>
 
   <listitem>
-    <para><varname>v.info n_errs_found</varname> shows the number of
+    <para><varname>v.info n_errs_found [msg]</varname> shows the number of
     errors found so far, the nr of errors shown so far and the current
-    value of the <option>--vgdb-error</option> argument.</para>
+    value of the <option>--vgdb-error</option> argument. The optional
+    <computeroutput>msg</computeroutput> (one or more words) is appended.
+    Typically, this can be used to insert markers in a process output
+    file between several tests executed in sequence by a process
+    started only once. This allows to associate the errors reported
+    by Valgrind with the specific test that produced these errors.
+    </para>
   </listitem>
 
   <listitem>

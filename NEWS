@@ -42,6 +42,11 @@ Release 3.9.0 (?? ?????? 201?)
   - Addition of GDB server monitor command 'v.info open_fds' that gives the
     list of open file descriptors and additional details.
 
+  - Optional message in the 'v.info n_errs_found' monitor command (e.g.
+     'v.info n_errs_found test 1234 finished'), allowing to have
+    a comment string in the process output, separating errors of different
+    tests (or test phases).
+
   - Addition of GDB server monitor command 'v.info execontext' that shows
     information about the stack traces recorded by Valgrind.
     This can be used to analyse one possible cause of Valgrind high
@@ -448,6 +453,10 @@ FIXED r??
 
 322851  0bXXX binary literal syntax is not standard 
         FIXED 2736
+
+324514  gdbserver monitor cmd output behaviour consistency + allow user
+        to put a "marker" msg in process log output
+        FIXED 13532
 
 207815  Adds some of the drm ioctls to syswrap-linux.c 
         FIXED 13486

@@ -130,6 +130,19 @@ extern void VG_(needs_watchpoint) (
 
 // can be used during the processing of the VG_USERREQ__GDB_MONITOR_COMMAND 
 // tool client request to output information to gdb or vgdb.
+// The output of VG_(gdb_printf) is not subject to 'output control'
+// by the user: e.g. the monitor command 'v.set log_output' has no effect.
+// The output of VG_(gdb_printf) is given to gdb/vgdb. The only case
+// in which this output is not given to gdb/vgdb is when the connection
+// with gdb/vgdb has been lost : in such a case, output is written
+// to the valgrind log output.
+// To produce some output which is subject to user output control via
+// monitor command v.set gdb_output or mixed output, use VG_(printf)
+// or VG_(umsg) or similar.
+// Typically, VG_(gdb_printf) has to be used when there is no point
+// having this output in the output log of Valgrind. Examples
+// is the monitor help output, or if vgdb is used to implement
+// 'tool control scripts' such as callgrind_control.
 extern UInt VG_(gdb_printf) ( const HChar *format, ... ) PRINTF_CHECK(1, 2);
 
 /* Utility functions to (e.g.) parse gdb monitor commands.

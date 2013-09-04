@@ -58,6 +58,10 @@ finish
 delete
 continue
 monitor v.info n_errs_found 
+monitor v.info n_errs_found a
+monitor v.info n_errs_found    b  
+monitor v.info n_errs_found c d
+monitor v.info n_errs_found eeeeeee    fffffff    ggggggg
 # inferior call "in the middle" of an instruction is not working at least
 # on all platforms, so comment the below.
 # print whoami("after error: inferior call pushed from mcbreak.stdinB.gdb")

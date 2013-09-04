@@ -74,7 +74,9 @@ void send_bytes_to_logging_sink ( OutputSink* sink, const HChar* msg, Int nbytes
          any more output. */
       if (sink->fd >= 0)
          VG_(write)( sink->fd, msg, nbytes );
-      else if (sink->fd == -2)
+      else if (sink->fd == -2 && nbytes > 0)
+         /* send to gdb the provided data, which must be
+            a null terminated string with len >= 1 */
          VG_(gdb_printf)("%s", msg);
    }
 }

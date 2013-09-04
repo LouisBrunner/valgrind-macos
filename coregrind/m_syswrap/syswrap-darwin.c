@@ -1517,8 +1517,13 @@ PRE(workq_ops)
       // GrP fixme may block?
       break;
    case VKI_WQOPS_QUEUE_NEWSPISUPP:
-      break; // JRS don't think we need to do anything here
-
+      // JRS don't think we need to do anything here -- this just checks
+      // whether some newer functionality is supported
+      break;
+   case VKI_WQOPS_QUEUE_REQTHREADS:
+      // JRS uh, looks like it queues up a bunch of threads, or some such?
+      *flags |= SfMayBlock; // the kernel sources take a spinlock, so play safe
+      break;
    case VKI_WQOPS_THREAD_RETURN: {
       // The interesting case. The kernel will do one of two things:
       // 1. Return normally. We continue; libc proceeds to stop the thread.
@@ -1535,7 +1540,6 @@ PRE(workq_ops)
       *flags |= SfMayBlock;  // GrP fixme true?
       break;
    }
-
    default:
       VG_(printf)("UNKNOWN workq_ops option %ld\n", ARG1);
       break;

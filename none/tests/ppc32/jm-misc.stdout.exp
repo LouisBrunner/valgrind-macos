@@ -1,0 +1,8 @@
+Miscellaneous test: Data cache insns:
+   dcbtct with various hint values completes with no exceptions
+
+   dcbtds with various hint values completes with no exceptions
+
+   dcbtst with various hint values completes with no exceptions
+
+All done. Tested 3 different instructions

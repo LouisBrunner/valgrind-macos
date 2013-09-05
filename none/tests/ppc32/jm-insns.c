@@ -353,6 +353,7 @@ enum test_flags {
     PPC_LDX_ARGS   = 0x00000009,  // family: ldst
     PPC_ST_ARGS    = 0x0000000A,  // family: ldst
     PPC_STX_ARGS   = 0x0000000B,  // family: ldst
+    PPC_ONE_IMM    = 0x0000000C,  // PPC_MISC family
     PPC_NB_ARGS    = 0x0000000F,
     /* Type */
     PPC_ARITH      = 0x00000100,
@@ -361,6 +362,7 @@ enum test_flags {
     PPC_CROP       = 0x00000400,
     PPC_LDST       = 0x00000500,
     PPC_POPCNT     = 0x00000600,
+    PPC_ANY        = 0x00000700,
     PPC_TYPE       = 0x00000F00,
     /* Family */
     PPC_INTEGER    = 0x00010000,
@@ -368,6 +370,7 @@ enum test_flags {
     PPC_405        = 0x00030000,
     PPC_ALTIVEC    = 0x00040000,
     PPC_FALTIVEC   = 0x00050000,
+    PPC_MISC       = 0x00060000,
     PPC_FAMILY     = 0x000F0000,
     /* Flags: these may be combined, so use separate bitfields. */
     PPC_CR         = 0x01000000,
@@ -3314,6 +3317,43 @@ static test_t tests_av_float_ops_spe[] = {
 };
 #endif /* defined (HAS_ALTIVEC) */
 
+/* Power ISA 2.03 support dcbtct and dcbtstct with valid hint values b00000 - 0b00111.
+ * The ISA 2.06 added support for more valid hint values, but rather than tie ourselves
+ * in knots trying to test all permuations of ISAs and valid hint values, we'll just
+ * verify some of the base hint values from ISA 2.03.
+ *
+ * In a similar vein, in ISA 2.03, dcbtds had valid values of 0b01000 - 0b01010, whereas
+ * ISA 2.06 expanded the range of valid hint values to 0b01000 - 0b01111.  We just test
+ * one of the ISA 2.03-supported values for dcbtds.
+ */
+static void test_dcbtct (void)
+{
+   __asm__ __volatile__ ("dcbt   %0, %1, 1" : : "b" (r17), "r" (r14));
+   __asm__ __volatile__ ("dcbt   %0, %1, 7" : : "b" (r17), "r" (r14));
+}
+
+static void test_dcbtds (void)
+{
+   __asm__ __volatile__ ("dcbt   %0, %1, 10" : : "b" (r17), "r" (r14));
+   __asm__ __volatile__ ("dcbt   %0, %1, 0"  : : "b" (r17), "r" (r14));
+   __asm__ __volatile__ ("dcbt   %0, %1, 16" : : "b" (r17), "r" (r14));
+}
+
+static void test_dcbtst (void)
+{
+   __asm__ __volatile__ ("dcbtst %0, %1,  6" : : "b" (r17), "r" (r14));
+   __asm__ __volatile__ ("dcbtst %0, %1, 15" : : "b" (r17), "r" (r14));
+}
+
+
+static test_t tests_dcbt[] = {
+    { &test_dcbtct       , "   dcbtct", },
+    { &test_dcbtds       , "   dcbtds", },
+    { &test_dcbtst       , "   dcbtst", },
+    { NULL,                   NULL,           },
+};
+
+
 #if defined (IS_PPC405)
 static void test_macchw (void)
 {
@@ -4154,6 +4194,11 @@ static test_table_t all_tests[] = {
         0x00050207,
     },
 #endif /* defined (HAS_ALTIVEC) */
+    {
+        tests_dcbt,
+        "Miscellaneous test: Data cache insns",
+        0x0006070C,
+    },
 #if defined (IS_PPC405)
     {
         tests_p4m_ops_two     ,
@@ -5646,6 +5691,28 @@ static test_loop_t int_loops[] = {
    &test_int_ld_two_regs,
    &test_int_st_two_regs_imm16,
    &test_int_st_three_regs,
+};
+
+static void test_dcbt_ops (const char* name, test_func_t func,
+                           unused uint32_t test_flags)
+{
+   unsigned long * data = (unsigned long *)malloc(4096 * sizeof(unsigned long));
+   HWord_t base;
+
+   base  = (HWord_t)data;
+   size_t offs = 100 * sizeof(unsigned long);    // some arbitrary offset)
+
+   r17  = base;
+   r14  = offs;
+
+   (*func)();
+
+   printf("%s with various hint values completes with no exceptions\n", name);
+   free(data);
+}
+
+static test_loop_t misc_loops[] = {
+   &test_dcbt_ops,
 };
 
 #if !defined (NO_FLOAT)
@@ -7339,7 +7406,7 @@ static int check_name (const char* name, const char *filter,
 typedef struct insn_sel_flags_t_struct {
    int one_arg, two_args, three_args;
    int arith, logical, compare, ldst;
-   int integer, floats, p405, altivec, faltivec;
+   int integer, floats, p405, altivec, faltivec, misc;
    int cr;
 } insn_sel_flags_t;
 
@@ -7378,6 +7445,7 @@ static void do_tests ( insn_sel_flags_t seln_flags,
           (family == PPC_FLOAT    && !seln_flags.floats) ||
           (family == PPC_405      && !seln_flags.p405) ||
           (family == PPC_ALTIVEC  && !seln_flags.altivec) ||
+          (family == PPC_MISC  && !seln_flags.misc) ||
           (family == PPC_FALTIVEC && !seln_flags.faltivec))
          continue;
       /* Check flags update */
@@ -7390,6 +7458,9 @@ static void do_tests ( insn_sel_flags_t seln_flags,
       switch (family) {
       case PPC_INTEGER:
          loop = &int_loops[nb_args - 1];
+         break;
+      case PPC_MISC:
+         loop = &misc_loops[0];
          break;
       case PPC_FLOAT:
 #if !defined (NO_FLOAT)
@@ -7491,6 +7562,7 @@ static void usage (void)
            "\t-i: test integer instructions (default)\n"
            "\t-f: test floating point instructions\n"
            "\t-a: test altivec instructions\n"
+           "\t-m: test miscellaneous instructions\n"
            "\t-A: test all (int, fp, altivec) instructions\n"
            "\t-v: be verbose\n"
            "\t-h: display this help and exit\n"
@@ -7637,6 +7709,7 @@ int main (int argc, char **argv)
       ./jm-insns -i   => int insns
       ./jm-insns -f   => fp  insns
       ./jm-insns -a   => av  insns
+      ./jm-insns -m   => miscellaneous insns
       ./jm-insns -A   => int, fp and avinsns
    */
    char *filter = NULL;
@@ -7655,13 +7728,14 @@ int main (int argc, char **argv)
    // Family
    flags.integer    = 0;
    flags.floats     = 0;
+   flags.misc       = 0;
    flags.p405       = 0;
    flags.altivec    = 0;
    flags.faltivec   = 0;
    // Flags
    flags.cr         = 2;
 
-   while ((c = getopt(argc, argv, "ifahvA")) != -1) {
+   while ((c = getopt(argc, argv, "ifmahvA")) != -1) {
       switch (c) {
       case 'i':
          flags.integer  = 1;
@@ -7672,6 +7746,9 @@ int main (int argc, char **argv)
       case 'a':
          flags.altivec  = 1;
          flags.faltivec = 1;
+         break;
+      case 'm':
+         flags.misc     = 1;
          break;
       case 'A':
          flags.integer  = 1;

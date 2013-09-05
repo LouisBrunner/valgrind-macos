@@ -8,6 +8,7 @@ EXTRA_DIST = \
 	jm-fp.stderr.exp  jm-fp.stdout.exp  jm-fp.vgtest \
 	jm-vmx.stderr.exp jm-vmx.stdout.exp jm-vmx.stdout.exp_Minus_nan \
 	jm-vmx.vgtest \
+	jm-misc.stderr.exp jm-misc.stdout.exp jm-misc.vgtest \
 	lsw.stderr.exp lsw.stdout.exp lsw.vgtest \
 	std_reg_imm.vgtest std_reg_imm.stderr.exp std_reg_imm.stdout.exp \
 	round.stderr.exp round.stdout.exp round.vgtest \

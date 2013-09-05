@@ -6737,14 +6737,16 @@ static Bool dis_cache_manage ( UInt         theInstr,
 
    IRType ty     = mode64 ? Ity_I64 : Ity_I32;
 
-   /* For dcbt, the lowest two bits of b21to25 encode an
-      access-direction hint (TH field) which we ignore.  Well, that's
-      what the PowerPC documentation says.  In fact xlc -O4 on POWER5
-      seems to generate values of 8 and 10 for b21to25. */
-   if (opc1 == 0x1F && opc2 == 0x116) {
-     /* b21to25 &= ~3; */ /* if the docs were true */
-     b21to25 = 0; /* blunt instrument */
+   // Check for valid hint values for dcbt and dcbtst as currently described in
+   // ISA 2.07.  If valid, then we simply set b21to25 to zero since we have no
+   // means of modeling the hint anyway.
+   if (opc1 == 0x1F && ((opc2 == 0x116) || (opc2 == 0xF6))) {
+      if (b21to25 == 0b10000 || b21to25 < 0b10000)
+         b21to25 = 0;
    }
+   if (opc1 == 0x1F && opc2 == 0x116 && b21to25 == 0b10001)
+      b21to25 = 0;
+
    if (opc1 == 0x1F && opc2 == 0x3F6) { // dcbz
       if (b21to25 == 1) {
          is_dcbzl = True;

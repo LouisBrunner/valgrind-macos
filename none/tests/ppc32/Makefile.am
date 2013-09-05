@@ -122,4 +122,4 @@ test_isa_2_07_part1_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(
                         @FLAG_M32@ $(BUILD_FLAGS_ISA_2_07)
 
 test_isa_2_07_part2_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(ISA_2_07_FLAG) \
-			@FLAG_M64@ $(BUILD_FLAGS_ISA_2_07)
+			@FLAG_M32@ $(BUILD_FLAGS_ISA_2_07)

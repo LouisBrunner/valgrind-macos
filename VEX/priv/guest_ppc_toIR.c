@@ -2121,6 +2121,22 @@ static void set_XER_OV_64( UInt op, IRExpr* res,
                          binop( Iop_CmpLE64U, argR, argL ) );
      break;
 
+   case /* 18 */ PPCG_FLAG_OP_MULLD: {
+      IRTemp  t128;
+      /* OV true if result can't be represented in 64 bits
+         i.e sHi != sign extension of sLo */
+      t128 = newTemp(Ity_I128);
+      assign( t128, binop(Iop_MullS64, argL, argR) );
+      xer_ov 
+         = binop( Iop_CmpNE64,
+                  unop(Iop_128HIto64, mkexpr(t128)),
+                  binop( Iop_Sar64,
+                         unop(Iop_128to64, mkexpr(t128)),
+                         mkU8(63))
+                  );
+      break;
+   }
+      
    default: 
       vex_printf("set_XER_OV: op = %u\n", op);
       vpanic("set_XER_OV(ppc64)");
@@ -3483,7 +3499,7 @@ static Bool dis_int_arith ( UInt theInstr )
              rD_addr, rA_addr, rB_addr);
          assign( rD, binop(Iop_Mul64, mkexpr(rA), mkexpr(rB)) );
          if (flag_OE) {
-            set_XER_OV( ty, PPCG_FLAG_OP_MULLW, 
+            set_XER_OV( ty, PPCG_FLAG_OP_MULLD, 
                         mkexpr(rD), mkexpr(rA), mkexpr(rB) );
          }
          break;

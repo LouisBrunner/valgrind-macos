@@ -134,6 +134,7 @@ enum {
    /* 15 */ PPCG_FLAG_OP_DIVWEU,  // divweuo
    /* 16 */ PPCG_FLAG_OP_DIVWE,   // divweo
    /* 17 */ PPCG_FLAG_OP_DIVDEU,  // divdeuo
+   /* 18 */ PPCG_FLAG_OP_MULLD,   // mulldo
    PPCG_FLAG_OP_NUMBER
 };
 

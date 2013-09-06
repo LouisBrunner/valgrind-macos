@@ -6741,10 +6741,10 @@ static Bool dis_cache_manage ( UInt         theInstr,
    // ISA 2.07.  If valid, then we simply set b21to25 to zero since we have no
    // means of modeling the hint anyway.
    if (opc1 == 0x1F && ((opc2 == 0x116) || (opc2 == 0xF6))) {
-      if (b21to25 == 0b10000 || b21to25 < 0b10000)
+      if (b21to25 == 0x10 || b21to25 < 0x10)
          b21to25 = 0;
    }
-   if (opc1 == 0x1F && opc2 == 0x116 && b21to25 == 0b10001)
+   if (opc1 == 0x1F && opc2 == 0x116 && b21to25 == 0x11)
       b21to25 = 0;
 
    if (opc1 == 0x1F && opc2 == 0x3F6) { // dcbz

@@ -530,6 +530,11 @@ static void test_mulld (void)
     __asm__ __volatile__ ("mulld        17, 14, 15");
 }
 
+static void test_mulldo (void)
+{
+    __asm__ __volatile__ ("mulldo        17, 14, 15");
+}
+
 static void test_mulhd (void)
 {
     __asm__ __volatile__ ("mulhd        17, 14, 15");
@@ -572,6 +577,7 @@ static test_t tests_ia_ops_two[] = {
     { &test_mulhd           , "       mulhd", },
     { &test_mulhdu          , "      mulhdu", },
     { &test_mulld           , "       mulld", },
+    { &test_mulldo          , "      mulldo", },
     { &test_divd            , "        divd", },
     { &test_divdu           , "       divdu", },
 #endif // #ifdef __powerpc64__
@@ -674,6 +680,11 @@ static void test_mulld_ (void)
     __asm__ __volatile__ ("mulld.       17, 14, 15");
 }
 
+static void test_mulldo_ (void)
+{
+    __asm__ __volatile__ ("mulldo.       17, 14, 15");
+}
+
 static void test_divd_ (void)
 {
     __asm__ __volatile__ ("divd.        17, 14, 15");
@@ -706,6 +717,7 @@ static test_t tests_iar_ops_two[] = {
     { &test_mulhd_          , "      mulhd.", },
     { &test_mulhdu_         , "     mulhdu.", },
     { &test_mulld_          , "      mulld.", },
+    { &test_mulldo_          , "    mulldo.", },
     { &test_divd_           , "       divd.", },
     { &test_divdu_          , "      divdu.", },
 #endif // #ifdef __powerpc64__

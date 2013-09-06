@@ -5023,6 +5023,9 @@ static IRExpr* fold_IRExpr_Unop ( IROp op, IRExpr* aa )
 {
    switch (op) {
    case Iop_CmpwNEZ64:
+      /* CmpwNEZ64( CmpwNEZ64 ( x ) ) --> CmpwNEZ64 ( x ) */
+      if (is_Unop(aa, Iop_CmpwNEZ64))
+         return IRExpr_Unop( Iop_CmpwNEZ64, aa->Iex.Unop.arg );
       /* CmpwNEZ64( Or64 ( CmpwNEZ64(x), y ) ) --> CmpwNEZ64( Or64( x, y ) ) */
       if (is_Binop(aa, Iop_Or64) 
           && is_Unop(aa->Iex.Binop.arg1, Iop_CmpwNEZ64))
@@ -5044,6 +5047,9 @@ static IRExpr* fold_IRExpr_Unop ( IROp op, IRExpr* aa )
       /* CmpNEZ64( Left64(x) ) --> CmpNEZ64(x) */
       if (is_Unop(aa, Iop_Left64)) 
          return IRExpr_Unop(Iop_CmpNEZ64, aa->Iex.Unop.arg);
+      /* CmpNEZ64( 1Uto64(X) ) --> X */
+      if (is_Unop(aa, Iop_1Uto64))
+         return aa->Iex.Unop.arg;
       break;
    case Iop_CmpwNEZ32:
       /* CmpwNEZ32( CmpwNEZ32 ( x ) ) --> CmpwNEZ32 ( x ) */
@@ -5057,6 +5063,9 @@ static IRExpr* fold_IRExpr_Unop ( IROp op, IRExpr* aa )
       /* CmpNEZ32( 1Uto32(X) ) --> X */
       if (is_Unop(aa, Iop_1Uto32))
          return aa->Iex.Unop.arg;
+      /* CmpNEZ32( 64to32( CmpwNEZ64(X) ) ) --> CmpNEZ64(X) */
+      if (is_Unop(aa, Iop_64to32) && is_Unop(aa->Iex.Unop.arg, Iop_CmpwNEZ64))
+         return IRExpr_Unop(Iop_CmpNEZ64, aa->Iex.Unop.arg->Iex.Unop.arg);
       break;
    case Iop_CmpNEZ8:
       /* CmpNEZ8( 1Uto8(X) ) --> X */

@@ -129,8 +129,10 @@
 
 #ifndef __powerpc64__
 typedef uint32_t  HWord_t;
+#define ZERO 0
 #else
 typedef uint64_t  HWord_t;
+#define ZERO 0ULL
 #endif /* __powerpc64__ */
 
 typedef uint64_t Word_t;
@@ -181,6 +183,8 @@ register double f15 __asm__ ("fr15");
 register double f16 __asm__ ("fr16");
 register double f17 __asm__ ("fr17");
 register HWord_t r14 __asm__ ("r14");
+register HWord_t r15 __asm__ ("r15");
+register HWord_t r16 __asm__ ("r16");
 register HWord_t r17 __asm__ ("r17");
 
 typedef void (*test_func_t) (void);
@@ -264,6 +268,65 @@ typedef struct special {
                    unused uint32_t test_flags);
 } special_t;
 
+static void test_stq(void)
+{
+  __asm__ __volatile__ ("stq  %0, 0(%1)" : :"r" (r14), "r" (r16));
+}
+
+static test_t tests_istq_ops_two_i16[] = {
+    { &test_stq             , "stq", },
+    { NULL,                   NULL,           },
+};
+
+static void test_lq(void)
+{
+  __asm__ __volatile__ ("lq  %0, 0(%1)" : :"r" (r14), "r" (r16));
+}
+
+static test_t tests_ildq_ops_two_i16[] = {
+    { &test_lq              , "lq", },
+    { NULL,                   NULL,          },
+};
+
+
+Word_t * mem_resv;
+static void test_stqcx(void)
+{
+  /* Have to do the lqarx to the memory address to create the reservation
+   * or the store will not occur.
+   */
+  __asm__ __volatile__ ("lqarx  %0, %1, %2" : :"r" (r14), "r" (r16),"r" (r17));
+  r14 = (HWord_t) 0xABEFCD0145236789ULL;
+  r15 = (HWord_t) 0x1155337744226688ULL;
+  __asm__ __volatile__ ("stqcx. %0, %1, %2" : :"r" (r14), "r" (r16),"r" (r17));
+}
+
+static test_t tests_stq_ops_three[] = {
+    { &test_stqcx           , "stqcx.", },
+    { NULL,                   NULL,           },
+};
+
+static void test_lqarx(void)
+{
+  __asm__ __volatile__ ("lqarx  %0, %1, %2, 0" : :"r" (r14), "r" (r16),"r" (r17));
+}
+
+static test_t tests_ldq_ops_three[] = {
+    { &test_lqarx           , "lqarx", },
+    { NULL,                   NULL,           },
+};
+
+static void test_fmrgew (void)
+{
+    __asm__ __volatile__ ("fmrgew        17,14,15");
+};
+
+static void test_fmrgow (void)
+{
+    __asm__ __volatile__ ("fmrgow        17,14,15");
+};
+
+
 
 // VSX move instructions
 static void test_mfvsrd (void)
@@ -271,10 +334,21 @@ static void test_mfvsrd (void)
    __asm__ __volatile__ ("mfvsrd %0,%x1" : "=r" (r14) : "ws" (vec_inA));
 };
 
+static void test_mfvsrwz (void)
+{
+   __asm__ __volatile__ ("mfvsrwz %0,%x1" : "=r" (r14) : "ws" (vec_inA));
+};
+
 static void test_mtvsrd (void)
 {
    __asm__ __volatile__ ("mtvsrd %x0,%1" : "=ws" (vec_out) : "r" (r14));
 };
+
+static void test_mtvsrwz (void)
+{
+   __asm__ __volatile__ ("mtvsrwz %x0,%1" : "=ws" (vec_out) : "r" (r14));
+};
+
 
 static void test_mtfprwa (void)
 {
@@ -283,7 +357,9 @@ static void test_mtfprwa (void)
 
 static test_t tests_move_ops_spe[] = {
   { &test_mfvsrd          , "mfvsrd" },
+  { &test_mfvsrwz         , "mfvsrwz" },
   { &test_mtvsrd          , "mtvsrd" },
+  { &test_mtvsrwz         , "mtvsrwz" },
   { &test_mtfprwa         , "mtfprwa" },
   { NULL,                   NULL }
 };
@@ -321,6 +397,144 @@ static void build_vdargs_table (void)
    vdargs[2] = 0xF1F2F3F4F5F6F7F8ULL;
    vdargs[3] = 0xF9FAFBFCFEFDFEFFULL;
 }
+
+static double *fargs = NULL;
+static int nb_fargs = 0;
+
+static inline void register_farg (void *farg,
+                                  int s, uint16_t _exp, uint64_t mant)
+{
+   uint64_t tmp;
+
+   tmp = ((uint64_t)s << 63) | ((uint64_t)_exp << 52) | mant;
+   *(uint64_t *)farg = tmp;
+   AB_DPRINTF("%d %03x %013llx => %016llx %0e\n",
+              s, _exp, mant, *(uint64_t *)farg, *(double *)farg);
+}
+
+static void build_fargs_table (void)
+{
+   /* Double precision:
+    * Sign goes from zero to one               (1 bit)
+    * Exponent goes from 0 to ((1 << 12) - 1)  (11 bits)
+    * Mantissa goes from 1 to ((1 << 52) - 1)  (52 bits)
+    * + special values:
+    * +0.0      : 0 0x000 0x0000000000000 => 0x0000000000000000
+    * -0.0      : 1 0x000 0x0000000000000 => 0x8000000000000000
+    * +infinity : 0 0x7FF 0x0000000000000 => 0x7FF0000000000000
+    * -infinity : 1 0x7FF 0x0000000000000 => 0xFFF0000000000000
+    * +QNaN     : 0 0x7FF 0x7FFFFFFFFFFFF => 0x7FF7FFFFFFFFFFFF
+    * -QNaN     : 1 0x7FF 0x7FFFFFFFFFFFF => 0xFFF7FFFFFFFFFFFF
+    * +SNaN     : 0 0x7FF 0x8000000000000 => 0x7FF8000000000000
+    * -SNaN     : 1 0x7FF 0x8000000000000 => 0xFFF8000000000000
+    * (8 values)
+
+    * Ref only:
+    * Single precision
+    * Sign:     1 bit
+    * Exponent: 8 bits
+    * Mantissa: 23 bits
+    * +0.0      : 0 0x00 0x000000 => 0x00000000
+    * -0.0      : 1 0x00 0x000000 => 0x80000000
+    * +infinity : 0 0xFF 0x000000 => 0x7F800000
+    * -infinity : 1 0xFF 0x000000 => 0xFF800000
+    * +QNaN     : 0 0xFF 0x3FFFFF => 0x7FBFFFFF
+    * -QNaN     : 1 0xFF 0x3FFFFF => 0xFFBFFFFF
+    * +SNaN     : 0 0xFF 0x400000 => 0x7FC00000
+    * -SNaN     : 1 0xFF 0x400000 => 0xFFC00000
+    */
+   uint64_t mant;
+   uint16_t _exp, e0, e1;
+   int s;
+   int i=0;
+
+   /* Note: VEX isn't so hot with denormals, so don't bother
+      testing them: set _exp > 0
+   */
+
+   if ( arg_list_size == 1 ) {   // Large
+      fargs = malloc(200 * sizeof(double));
+      for (s=0; s<2; s++) {
+         for (e0=0; e0<2; e0++) {
+            for (e1=0x001; ; e1 = ((e1 + 1) << 2) + 6) {
+               if (e1 >= 0x400)
+                  e1 = 0x3fe;
+               _exp = (e0 << 10) | e1;
+               for (mant = 0x0000000000001ULL; mant < (1ULL << 52);
+                    /* Add 'random' bits */
+                    mant = ((mant + 0x4A6) << 13) + 0x359) {
+                  register_farg(&fargs[i++], s, _exp, mant);
+               }
+               if (e1 == 0x3fe)
+                  break;
+            }
+         }
+      }
+   } else {                      // Default
+      fargs = malloc(16 * sizeof(double));
+      for (s=0; s<2; s++) {                                // x2
+            for (e1=0x001; ; e1 = ((e1 + 1) << 13) + 7) {  // x2
+               if (e1 >= 0x400)
+                  e1 = 0x3fe;
+               _exp = e1;
+               for (mant = 0x0000000000001ULL; mant < (1ULL << 52);
+                    /* Add 'random' bits */
+                    mant = ((mant + 0x4A6) << 29) + 0x359) {  // x2
+                  register_farg(&fargs[i++], s, _exp, mant);
+               }
+               if (e1 == 0x3fe)
+                  break;
+            }
+      }
+   }
+
+   /* Special values */
+   /* +0.0      : 0 0x000 0x0000000000000 */
+   s = 0;
+   _exp = 0x000;
+   mant = 0x0000000000000ULL;
+   register_farg(&fargs[i++], s, _exp, mant);
+   /* -0.0      : 1 0x000 0x0000000000000 */
+   s = 1;
+   _exp = 0x000;
+   mant = 0x0000000000000ULL;
+   register_farg(&fargs[i++], s, _exp, mant);
+   /* +infinity : 0 0x7FF 0x0000000000000  */
+   s = 0;
+   _exp = 0x7FF;
+   mant = 0x0000000000000ULL;
+   register_farg(&fargs[i++], s, _exp, mant);
+   /* -infinity : 1 0x7FF 0x0000000000000 */
+   s = 1;
+   _exp = 0x7FF;
+   mant = 0x0000000000000ULL;
+   register_farg(&fargs[i++], s, _exp, mant);
+   /* +QNaN     : 0 0x7FF 0x7FFFFFFFFFFFF */
+   s = 0;
+   _exp = 0x7FF;
+   mant = 0x7FFFFFFFFFFFFULL;
+   register_farg(&fargs[i++], s, _exp, mant);
+   /* -QNaN     : 1 0x7FF 0x7FFFFFFFFFFFF */
+   s = 1;
+   _exp = 0x7FF;
+   mant = 0x7FFFFFFFFFFFFULL;
+   register_farg(&fargs[i++], s, _exp, mant);
+   /* +SNaN     : 0 0x7FF 0x8000000000000 */
+   s = 0;
+   _exp = 0x7FF;
+   mant = 0x8000000000000ULL;
+   register_farg(&fargs[i++], s, _exp, mant);
+   /* -SNaN     : 1 0x7FF 0x8000000000000 */
+   s = 1;
+   _exp = 0x7FF;
+   mant = 0x8000000000000ULL;
+   register_farg(&fargs[i++], s, _exp, mant);
+   AB_DPRINTF("Registered %d fargs values\n", i);
+
+   nb_fargs = i;
+}
+
+
 
 static int check_filter (char *filter)
 {
@@ -371,6 +585,39 @@ typedef struct insn_sel_flags_t_struct {
    int cr;
 } insn_sel_flags_t;
 
+static void test_float_two_args (const char* name, test_func_t func,
+                                 unused uint32_t test_flags)
+{
+   double res;
+   Word_t u0, u1, ur;
+   volatile uint32_t flags;
+   int i, j;
+
+   for (i=0; i<nb_fargs; i+=3) {
+      for (j=0; j<nb_fargs; j+=5) {
+         u0 = *(Word_t *)(&fargs[i]);
+         u1 = *(Word_t *)(&fargs[j]);
+         f14 = fargs[i];
+         f15 = fargs[j];
+
+         SET_FPSCR_ZERO;
+         SET_CR_XER_ZERO;
+         (*func)();
+         GET_CR(flags);
+         res = f17;
+         ur = *(uint64_t *)(&res);
+
+         printf("%s %016llx, %016llx => %016llx",
+                name, u0, u1, ur);
+#if defined TEST_FLOAT_FLAGS
+         printf(" (%08x)", flags);
+#endif
+         printf("\n");
+      }
+      if (verbose) printf("\n");
+   }
+}
+
 
 static void mfvs(const char* name, test_func_t func,
                  unused uint32_t test_flags)
@@ -380,9 +627,10 @@ static void mfvs(const char* name, test_func_t func,
     */
    int i;
    volatile Word_t result;
+   result = 0ULL;
 
    for (i=0; i < NB_VDARGS; i++) {
-      r14 = 0ULL;
+      r14 = ZERO;
       vec_inA = (vector unsigned long long){ vdargs[i], 0ULL };
 
       (*func)();
@@ -452,17 +700,25 @@ static void test_special (special_t *table,
 
 static special_t special_move_ops[] = {
    {
-      "mfvsrd",  /* move from vector to scalar reg */
+      "mfvsrd",  /* move from vector to scalar reg doubleword */
       &mfvs,
    },
    {
-      "mtvsrd",  /* move from scalar to vector reg */
+      "mtvsrd",  /* move from scalar to vector reg doubleword */
       &mtvs,
    },
    {
       "mtfprwa", /* (extended mnemonic for mtvsrwa) move from scalar to vector reg with two’s-complement */
       &mtvs2s,
    },
+   {
+      "mfvsrwz", /* move from vector to scalar reg word */
+      &mfvs,
+   },
+   {
+      "mtvsrwz", /* move from scalar to vector reg word */
+      &mtvs2s,
+   }
 };
 
 static void test_move_special(const char* name, test_func_t func,
@@ -514,17 +770,201 @@ static void test_av_dint_two_args (const char* name, test_func_t func,
    }
 }
 
-/* Used in do_tests, indexed by flags->nb_args
-   Elements correspond to enum test_flags::num args
-*/
-static test_loop_t altivec_mov_loops[] = {
+static void test_int_stq_two_regs_imm16 (const char* name,
+                                        test_func_t func_IN,
+                                        unused uint32_t test_flags)
+{
+   /* Store quad word from register pair */
+   int offs, k;
+   HWord_t base;
+   Word_t *iargs_priv;
+
+   // private iargs table to store to, note storing pair of regs
+   iargs_priv = memalign16(2 * sizeof(Word_t));
+
+   base = (HWord_t)&iargs_priv[0];
+   for (k = 0; k < 2; k++)  // clear array
+      iargs_priv[k] = 0;
+
+   offs = 0;
+
+   /* setup source register pair */
+   r14 = (HWord_t) 0xABCDEF0123456789ULL;
+   r15 = (HWord_t) 0x1133557722446688ULL;
+
+   r16 = base;                 // store to r16 + offs
+
+   (*func_IN)();
+
+#ifndef __powerpc64__
+   printf("%s %08x,%08x, %2d => "
+#else
+   printf("%s %016llx,%016llx, %3d => "
+#endif
+            "%016llx,%016llx)\n",
+            name, r14, r15, offs, iargs_priv[0], iargs_priv[1]);
+
+   if (verbose) printf("\n");
+   free(iargs_priv);
+}
+
+
+static void test_int_stq_three_regs (const char* name,
+                                     test_func_t func_IN,
+                                     unused uint32_t test_flags)
+{
+   /* Store quad word from register pair */
+   volatile uint32_t flags, xer;
+   int k;
+   HWord_t base;
+
+   base = (HWord_t)&mem_resv[0];
+   for (k = 0; k < 2; k++)  // setup array for lqarx inst
+      mem_resv[k] = k;
+
+   /* setup source register pair for store */
+   r14 = ZERO;
+   r15 = ZERO;
+   r16 = base;                 // store to r16 + r17
+   r17 = ZERO;
+
+   /* In order for the store to occur, the lqarx instruction must first
+    * be used to load from the address thus creating a reservation at the
+    * memory address.  The lqarx instruction is done in the test_stqcx(),
+    * then registers 14, r15 are changed to the data to be stored in memory
+    * by the stqcx instruction.
+    */
+   SET_CR_XER_ZERO;
+   (*func_IN)();
+   GET_CR_XER(flags,xer);
+#ifndef __powerpc64__
+   printf("%s %08x,%08x, =>  "
+#else
+   printf("%s %016llx,%016llx => "
+#endif
+            "%016llx,%016llx; CR=%08x\n",
+            name, r14, r15, mem_resv[0], mem_resv[1], flags);
+
+   if (verbose) printf("\n");
+}
+
+static void test_int_ldq_two_regs_imm16 (const char* name,
+                                        test_func_t func_IN,
+                                        unused uint32_t test_flags)
+{
+   /* load quad word from register pair */
+   volatile uint32_t flags, xer;
+   Word_t * mem_priv;
+   HWord_t base;
+
+   // private iargs table to store to, note storing pair of regs
+   mem_priv = memalign16(2 * sizeof(Word_t));  // want 128-bits
+
+   base = (HWord_t)&mem_priv[0];
+
+   mem_priv[0] = 0xAACCEE0011335577ULL;
+   mem_priv[1] = 0xABCDEF0123456789ULL;
+
+   r14 = 0;
+   r15 = 0;
+   r16 = base;                 // fetch from r16 + offs
+   SET_CR_XER_ZERO;
+   (*func_IN)();
+   GET_CR_XER(flags,xer);
+
+#ifndef __powerpc64__
+   printf("%s (0x%016llx, 0x%016llx) =>  (reg_pair = %08x,%08x)\n",
+#else
+   printf("%s (0x%016llx, 0x%016llx) =>  (reg_pair = 0x%016llx, 0x%016llx)\n",
+#endif
+          name, mem_priv[0], mem_priv[1], r14, r15);
+
+   if (verbose) printf("\n");
+
+   free(mem_priv);
+}
+
+static void test_int_ldq_three_regs (const char* name,
+                                     test_func_t func_IN,
+                                     unused uint32_t test_flags)
+{
+   /* load quad word from register pair */
+   HWord_t base;
+
+   base = (HWord_t)&mem_resv[0];
+
+   mem_resv[0] = 0xAACCEE0011335577ULL;
+   mem_resv[1] = 0xABCDEF0123456789ULL;
+
+   r14 = 0;
+   r15 = 0;
+   r16 = base;                 // fetch from r16 + r17
+   r17 = 0;
+
+   (*func_IN)();
+
+#ifndef __powerpc64__
+   printf("%s (0x%016llx, 0x%016llx) =>  (reg_pair = 0x%08x, 0x%08x)\n",
+#else
+   printf("%s (0x%016llx, 0x%016llx) =>  (reg_pair = 0x%016llx, 0x%016llx)\n",
+#endif
+          name, mem_resv[0], mem_resv[1], r14, r15);
+   if (verbose) printf("\n");
+
+}
+
+
+
+/* Used in do_tests */
+enum ALTIVEC_LOOPS {
+   ALTV_MOV,
+   ALTV_INT
+};
+static test_loop_t altivec_loops[] = {
    &test_move_special,
+   &test_av_dint_two_args,
    NULL
 };
 
-static test_loop_t altivec_dint_loops[] = {
-   &test_av_dint_two_args,
-   NULL
+/* Used in do_tests, indexed by flags->nb_args
+   Elements correspond to enum test_flags::num args
+*/
+static test_loop_t int_loops[] = {
+  /* The #defines for the family, number registers need the array
+   * to be properly indexed.  This test is for the new ISA 2.0.7
+   * instructions.  The infrastructure has been left for the momemnt
+   */
+   NULL, //&test_int_one_arg,
+   NULL, //&test_int_two_args,
+   NULL, //&test_int_three_args,
+   NULL, //&test_int_two_args,
+   NULL, //&test_int_one_reg_imm16,
+   NULL, //&test_int_one_reg_imm16,
+   NULL, //&test_int_special,
+   NULL, //&test_int_ld_one_reg_imm16,
+   NULL, //&test_int_ld_two_regs,
+   NULL, //&test_int_st_two_regs_imm16,
+   NULL, //&test_int_st_three_regs,
+   &test_int_stq_two_regs_imm16,
+   &test_int_ldq_two_regs_imm16,
+   &test_int_stq_three_regs,
+   &test_int_ldq_three_regs,
+};
+
+/* Used in do_tests, indexed by flags->nb_args
+   Elements correspond to enum test_flags::num args
+   Must have NULL for last entry.
+ */
+static test_loop_t float_loops[] = {
+   NULL,
+   &test_float_two_args,
+};
+
+
+static test_t tests_fa_ops_two[] = {
+    { &test_fmrgew          , "fmrgew", },
+    { &test_fmrgow          , "fmrgow", },
+    { NULL,                   NULL,           },
 };
 
 static test_table_t all_tests[] = {
@@ -537,6 +977,31 @@ static test_table_t all_tests[] = {
        tests_aa_dbl_ops_two,
        "PC altivec double word integer insns with two args",
        PPC_ALTIVEC | PPC_ARITH | PPC_TWO_ARGS,
+   },
+   {
+      tests_istq_ops_two_i16,
+      "PPC store quadword insns\n    with one register + one 16 bits immediate args with flags update",
+      0x0001050c,
+   },
+   {
+      tests_ildq_ops_two_i16,
+      "PPC load quadword insns\n    with one register + one 16 bits immediate args with flags update",
+      0x0001050d,
+   },
+   {
+       tests_ldq_ops_three,
+       "PPC load quadword insns\n    with three register args",
+       0x0001050f,
+   },
+   {
+       tests_stq_ops_three,
+       "PPC store quadword insns\n    with three register args",
+       0x0001050e,
+   },
+   {
+       tests_fa_ops_two,
+       "PPC floating point arith insns with two args",
+       0x00020102,
    },
    { NULL,                   NULL,               0x00000000, },
 };
@@ -593,20 +1058,21 @@ static void do_tests ( insn_sel_flags_t seln_flags,
       /* Select the test loop */
       switch (family) {
       case PPC_INTEGER:
-         printf("Currently there are no integer tests enabled in this testsuite.\n");
+         mem_resv = memalign16(2 * sizeof(HWord_t));  // want 128-bits
+         loop = &int_loops[nb_args - 1];
          break;
 
       case PPC_FLOAT:
-         printf("Currently there are no float tests enabled in this testsuite.\n");
+         loop = &float_loops[nb_args - 1];
          break;
 
       case PPC_ALTIVEC:
          switch (type) {
             case PPC_MOV:
-               loop = &altivec_mov_loops[0];
+               loop = &altivec_loops[ALTV_MOV];
                break;
             case PPC_ARITH:
-               loop = &altivec_dint_loops[0];
+               loop = &altivec_loops[ALTV_INT];
                break;
             default:
                printf("No altivec test defined for type %x\n", type);
@@ -689,6 +1155,7 @@ int main (int argc, char **argv)
          flags.integer  = 1;
          break;
       case 'f':
+         build_fargs_table();
          flags.floats   = 1;
          break;
       case 'a':

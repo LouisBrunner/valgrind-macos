@@ -3,10 +3,20 @@ mfvsrd: 090a0b0c0e0d0e0f => 090a0b0c0e0d0e0f
 mfvsrd: f1f2f3f4f5f6f7f8 => f1f2f3f4f5f6f7f8
 mfvsrd: f9fafbfcfefdfeff => f9fafbfcfefdfeff
 
+mfvsrwz: 0102030405060708 => 0000000005060708
+mfvsrwz: 090a0b0c0e0d0e0f => 000000000e0d0e0f
+mfvsrwz: f1f2f3f4f5f6f7f8 => 00000000f5f6f7f8
+mfvsrwz: f9fafbfcfefdfeff => 00000000fefdfeff
+
 mtvsrd: 0102030405060708 => 0102030405060708
 mtvsrd: 090a0b0c0e0d0e0f => 090a0b0c0e0d0e0f
 mtvsrd: f1f2f3f4f5f6f7f8 => f1f2f3f4f5f6f7f8
 mtvsrd: f9fafbfcfefdfeff => f9fafbfcfefdfeff
+
+mtvsrwz: 05060708 => 0000000005060708
+mtvsrwz: 0e0d0e0f => 000000000e0d0e0f
+mtvsrwz: f5f6f7f8 => 00000000f5f6f7f8
+mtvsrwz: fefdfeff => 00000000fefdfeff
 
 mtfprwa: 05060708 => 0000000005060708
 mtfprwa: 0e0d0e0f => 000000000e0d0e0f
@@ -31,4 +41,4 @@ vpkudum: Inputs: f5f6f7f8 fefdfeff 05060708 0e0d0e0f
 vpkudum: Inputs: f5f6f7f8 fefdfeff f5f6f7f8 fefdfeff
          Output: f5f6f7f8 fefdfeff f5f6f7f8 fefdfeff
 
-All done. Tested 5 different instructions
+All done. Tested 7 different instructions

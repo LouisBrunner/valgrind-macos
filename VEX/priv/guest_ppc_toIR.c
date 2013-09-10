@@ -1531,7 +1531,7 @@ static IRExpr* addr_align( IRExpr* addr, UChar align )
    restart of the current insn. */
 static void gen_SIGBUS_if_misaligned ( IRTemp addr, UChar align )
 {
-   vassert(align == 4 || align == 8);
+   vassert(align == 4 || align == 8 || align == 16);
    if (mode64) {
       vassert(typeOfIRTemp(irsb->tyenv, addr) == Ity_I64);
       stmt(
@@ -4553,9 +4553,16 @@ static Bool dis_int_load ( UInt theInstr )
    case 0x1F: // register offset
       assign( EA, ea_rAor0_idxd( rA_addr, rB_addr ) );
       break;
+   case 0x38: // immediate offset: 64bit: lq: maskoff
+              // lowest 4 bits of immediate before forming EA
+      simm16 = simm16 & 0xFFFFFFF0;
+      assign( EA, ea_rAor0_simm( rA_addr, simm16  ) );
+      break;
    case 0x3A: // immediate offset: 64bit: ld/ldu/lwa: mask off
               // lowest 2 bits of immediate before forming EA
       simm16 = simm16 & 0xFFFFFFFC;
+      assign( EA, ea_rAor0_simm( rA_addr, simm16  ) );
+      break;
    default:   // immediate offset
       assign( EA, ea_rAor0_simm( rA_addr, simm16  ) );
       break;
@@ -4777,6 +4784,33 @@ static Bool dis_int_load ( UInt theInstr )
       }
       break;
 
+   case 0x38: {
+      IRTemp  high = newTemp(ty);
+      IRTemp  low  = newTemp(ty);
+      /* DQ Form - 128bit Loads. Lowest bits [1:0] are the PT field. */
+      DIP("lq r%u,%d(r%u)\n", rD_addr, simm16, rA_addr);
+      /* NOTE: there are some changes to XER[41:42] that have not been
+       * implemented.
+       */
+      // trap if EA misaligned on 16 byte address
+      if (mode64) {
+         assign(high, loadBE(ty, mkexpr( EA ) ) );
+         assign(low, loadBE(ty, binop( Iop_Add64,
+                                       mkexpr( EA ),
+                                       mkU64( 8 ) ) ) );
+      } else {
+         assign(high, loadBE(ty, binop( Iop_Add32,
+                                        mkexpr( EA ),
+                                        mkU32( 4 ) ) ) );
+         assign(low, loadBE(ty, binop( Iop_Add32,
+                                        mkexpr( EA ),
+                                        mkU32( 12 ) ) ) );
+      }
+      gen_SIGBUS_if_misaligned( EA, 16 );
+      putIReg( rD_addr,  mkexpr( high) );
+      putIReg( rD_addr+1,  mkexpr( low) );
+      break;
+   }
    default:
       vex_printf("dis_int_load(ppc)(opc1)\n");
       return False;
@@ -4814,7 +4848,7 @@ static Bool dis_int_store ( UInt theInstr, VexAbiInfo* vbi )
    case 0x1F: // register offset
       assign( EA, ea_rAor0_idxd( rA_addr, rB_addr ) );
       break;
-   case 0x3E: // immediate offset: 64bit: std/stdu: mask off
+   case 0x3E: // immediate offset: 64bit: std/stdu/stq: mask off
               // lowest 2 bits of immediate before forming EA
       simm16 = simm16 & 0xFFFFFFFC;
    default:   // immediate offset
@@ -4965,6 +4999,30 @@ static Bool dis_int_store ( UInt theInstr, VexAbiInfo* vbi )
          storeBE( mkexpr(EA), mkexpr(rS) );
          break;
 
+      case 0x2: { // stq (Store QuadWord, Update, PPC64 p583)
+         IRTemp EA_hi = newTemp(ty);
+         IRTemp EA_lo = newTemp(ty);
+         DIP("stq r%u,%d(r%u)\n", rS_addr, simm16, rA_addr);
+
+         if (mode64) {
+            /* upper 64-bits */
+            assign( EA_hi, ea_rAor0_simm( rA_addr, simm16 ) );
+
+            /* lower 64-bits */
+            assign( EA_lo, ea_rAor0_simm( rA_addr, simm16+8 ) );
+         } else {
+            /* upper half of upper 64-bits */
+            assign( EA_hi, ea_rAor0_simm( rA_addr, simm16+4 ) );
+
+            /* lower half of upper 64-bits */
+            assign( EA_lo, ea_rAor0_simm( rA_addr, simm16+12 ) );
+         }
+         putIReg( rA_addr, mkexpr(EA_hi) );
+         storeBE( mkexpr(EA_hi), mkexpr(rS) );
+         putIReg( rA_addr, mkexpr( EA_lo) );
+         storeBE( mkexpr(EA_lo), getIReg( rS_addr+1 ) );
+         break;
+      }
       default:
          vex_printf("dis_int_load(ppc)(0x3A, opc2)\n");
          return False;
@@ -6032,6 +6090,81 @@ static Bool dis_memsync ( UInt theInstr )
          break;
       }
 
+      /* 128bit Memsync */
+      case 0x114: { // lqarx (Load QuadWord and Reserve Indexed)
+         IRTemp res_hi = newTemp(ty);
+         IRTemp res_lo = newTemp(ty);
+
+         /* According to the PowerPC ISA version 2.07, b0 (called EH
+            in the documentation) is merely a hint bit to the
+            hardware, I think as to whether or not contention is
+            likely.  So we can just ignore it. */
+         DIP("lqarx r%u,r%u,r%u,EH=%u\n", rD_addr, rA_addr, rB_addr, (UInt)b0);
+
+         // trap if misaligned
+         gen_SIGBUS_if_misaligned( EA, 16 );
+
+         // and actually do the load
+         if (mode64) {
+            stmt( IRStmt_LLSC( Iend_BE, res_hi,
+                               mkexpr(EA), NULL/*this is a load*/) );
+            stmt( IRStmt_LLSC( Iend_BE, res_lo,
+                               binop(Iop_Add64, mkexpr(EA), mkU64(8) ),
+                               NULL/*this is a load*/) );
+         } else {
+            stmt( IRStmt_LLSC( Iend_BE, res_hi,
+                               binop( Iop_Add32, mkexpr(EA), mkU32(4) ),
+                               NULL/*this is a load*/) );
+            stmt( IRStmt_LLSC( Iend_BE, res_lo,
+                               binop( Iop_Add32, mkexpr(EA), mkU32(12) ),
+                               NULL/*this is a load*/) );
+         }
+         putIReg( rD_addr,   mkexpr(res_hi) );
+         putIReg( rD_addr+1, mkexpr(res_lo) );
+         break;
+      }
+
+      case 0x0B6: { // stqcx. (Store QuadWord Condition Indexd, PPC64)
+         // A marginally simplified version of the stwcx. case
+         IRTemp rS_hi = newTemp(ty);
+         IRTemp rS_lo = newTemp(ty);
+         IRTemp resSC;
+         if (b0 != 1) {
+            vex_printf("dis_memsync(ppc)(stqcx.,b0)\n");
+            return False;
+         }
+
+         DIP("stqcx. r%u,r%u,r%u\n", rS_addr, rA_addr, rB_addr);
+
+         // trap if misaligned
+         gen_SIGBUS_if_misaligned( EA, 16 );
+         // Get the data to be stored
+         assign( rS_hi, getIReg(rS_addr) );
+         assign( rS_lo, getIReg(rS_addr+1) );
+
+         // Do the store, and get success/failure bit into resSC
+         resSC = newTemp(Ity_I1);
+
+         if (mode64) {
+            stmt( IRStmt_LLSC( Iend_BE, resSC, mkexpr(EA), mkexpr(rS_hi) ) );
+            storeBE(binop( Iop_Add64, mkexpr(EA), mkU64(8) ), mkexpr(rS_lo) );
+         } else {
+            stmt( IRStmt_LLSC( Iend_BE, resSC, binop( Iop_Add32,
+                                                      mkexpr(EA),
+                                                      mkU32(4) ),
+                                                      mkexpr(rS_hi) ) );
+            storeBE(binop(Iop_Add32, mkexpr(EA), mkU32(12) ), mkexpr(rS_lo) );
+         }
+
+         // Set CR0[LT GT EQ S0] = 0b000 || XER[SO]  on failure
+         // Set CR0[LT GT EQ S0] = 0b001 || XER[SO]  on success
+         putCR321(0, binop( Iop_Shl8,
+                            unop(Iop_1Uto8, mkexpr(resSC) ),
+                            mkU8(1)));
+         putCR0(0, getXER_SO());
+         break;
+      }
+
       default:
          vex_printf("dis_memsync(ppc)(opc2)\n");
          return False;
@@ -6647,7 +6780,7 @@ static Bool dis_proc_ctl ( VexAbiInfo* vbi, UInt theInstr )
          DIP("mtvrsave r%u\n", rS_addr);
          putGST( PPC_GST_VRSAVE, mkNarrowTo32(ty, mkexpr(rS)) );
          break;
-         
+
       default:
          vex_printf("dis_proc_ctl(ppc)(mtspr,SPR)(%u)\n", SPR);
          return False;
@@ -6667,12 +6800,37 @@ static Bool dis_proc_ctl ( VexAbiInfo* vbi, UInt theInstr )
        *            instruction in terms of resource availability.
        *  For SX=1, mfvsrd is treated as a Vector instruction in
        *            terms of resource availability.
-       *NEED TO FIGURE OUT HOW TO IMPLEMENT THE RESOURCE AVAILABILITY PART
+       * FIXME: NEED TO FIGURE OUT HOW TO IMPLEMENT THE RESOURCE AVAILABILITY PART
        */
       assign( vS, getVSReg( XS ) );
       high64 = unop( Iop_V128HIto64, mkexpr( vS ) );
       putIReg( rA_addr, (mode64) ? high64 :
       unop( Iop_64to32, high64 ) );
+      break;
+   }
+
+   case 0x73:                // mfvsrwz
+   {
+      UChar XS = ifieldRegXS( theInstr );
+      UChar rA_addr = ifieldRegA(theInstr);
+      IRExpr * high64;
+      IRTemp vS = newTemp( Ity_V128 );
+      DIP("mfvsrwz r%u,vsr%d\n", rA_addr, (UInt)XS);
+      /*  XS = SX || S
+       *  For SX=0, mfvsrwz is treated as a Floating-Point
+       *            instruction in terms of resource availability.
+       *  For SX=1, mfvsrwz is treated as a Vector instruction in
+       *            terms of resource availability.
+       * FIXME: NEED TO FIGURE OUT HOW TO IMPLEMENT THE RESOURCE AVAILABILITY PART
+       */
+
+      assign( vS, getVSReg( XS ) );
+      high64 = unop( Iop_V128HIto64, mkexpr( vS ) );
+      /* move value to the destination setting the upper 32-bits to zero */
+      putIReg( rA_addr, (mode64) ?
+                                  binop( Iop_And64, high64, mkU64( 0xFFFFFFFF ) ) :
+                                  unop(  Iop_64to32,
+                                         binop( Iop_And64, high64, mkU64( 0xFFFFFFFF ) ) ) );
       break;
    }
 
@@ -6687,7 +6845,7 @@ static Bool dis_proc_ctl ( VexAbiInfo* vbi, UInt theInstr )
        *            instruction in terms of resource availability.
        *  For SX=1, mfvsrd is treated as a Vector instruction in
        *            terms of resource availability.
-       *NEED TO FIGURE OUT HOW TO IMPLEMENT THE RESOURCE AVAILABILITY PART
+       * FIXME: NEED TO FIGURE OUT HOW TO IMPLEMENT THE RESOURCE AVAILABILITY PART
        */
       assign( rA, getIReg(rA_addr) );
 
@@ -6713,7 +6871,7 @@ static Bool dis_proc_ctl ( VexAbiInfo* vbi, UInt theInstr )
        *            instruction in terms of resource availability.
        *  For SX=1, mtvsrwa is treated as a Vector instruction in
        *            terms of resource availability.
-       *NEED TO FIGURE OUT HOW TO IMPLEMENT THE RESOURCE AVAILABILITY PART
+       * FIXME: NEED TO FIGURE OUT HOW TO IMPLEMENT THE RESOURCE AVAILABILITY PART
        */
       if (mode64)
          assign( rA, unop( Iop_64to32, getIReg( rA_addr ) ) );
@@ -6725,6 +6883,30 @@ static Bool dis_proc_ctl ( VexAbiInfo* vbi, UInt theInstr )
                            mkU64( 0 ) ) );
       break;
    }
+
+   case 0xF3:                // mtvsrwz
+      {
+         UChar XT = ifieldRegXT( theInstr );
+         UChar rA_addr = ifieldRegA(theInstr);
+         IRTemp rA = newTemp( Ity_I32 );
+         DIP("mtvsrwz vsr%d,r%u\n", rA_addr, (UInt)XT);
+         /*  XS = SX || S
+          *  For SX=0, mtvsrwz is treated as a Floating-Point
+          *            instruction in terms of resource availability.
+          *  For SX=1, mtvsrwz is treated as a Vector instruction in
+          *            terms of resource availability.
+          * FIXME: NEED TO FIGURE OUT HOW TO IMPLEMENT THE RESOURCE AVAILABILITY PART
+          */
+         if (mode64)
+             assign( rA, unop( Iop_64to32, getIReg( rA_addr ) ) );
+         else
+             assign( rA, getIReg(rA_addr) );
+
+         putVSReg( XT, binop( Iop_64HLtoV128,
+                              binop( Iop_32HLto64, mkU32( 0 ), mkexpr ( rA ) ),
+                              mkU64( 0 ) ) );
+         break;
+      }
 
    default:
       vex_printf("dis_proc_ctl(ppc)(opc2)\n");
@@ -8481,6 +8663,60 @@ static Bool dis_fp_pair ( UInt theInstr )
    return True;
 }
 
+
+/*
+  Floating Point Merge Instructions
+*/
+static Bool dis_fp_merge ( UInt theInstr )
+{
+   /* X-Form */
+   UInt  opc2     = ifieldOPClo10(theInstr);
+   UChar frD_addr = ifieldRegDS(theInstr);
+   UChar frA_addr = ifieldRegA(theInstr);
+   UChar frB_addr = ifieldRegB(theInstr);
+
+   IRTemp frD = newTemp(Ity_F64);
+   IRTemp frA = newTemp(Ity_F64);
+   IRTemp frB = newTemp(Ity_F64);
+
+   assign( frA, getFReg(frA_addr));
+   assign( frB, getFReg(frB_addr));
+
+   switch (opc2) {
+   case 0x3c6: // fmrgew floating merge even word
+      DIP("fmrgew fr%u,fr%u,fr%u\n", frD_addr, frA_addr, frB_addr);
+
+      assign( frD, unop( Iop_ReinterpI64asF64,
+                         binop( Iop_32HLto64,
+                                unop( Iop_64HIto32,
+                                      unop( Iop_ReinterpF64asI64,
+                                            mkexpr(frA) ) ),
+                                unop( Iop_64HIto32,
+                                      unop( Iop_ReinterpF64asI64,
+                                            mkexpr(frB) ) ) ) ) );
+   break;
+
+   case 0x346: // fmrgow floating merge odd word
+      DIP("fmrgow fr%u,fr%u,fr%u\n", frD_addr, frA_addr, frB_addr);
+
+      assign( frD, unop( Iop_ReinterpI64asF64,
+                         binop( Iop_32HLto64,
+                                unop( Iop_64to32,
+                                      unop( Iop_ReinterpF64asI64,
+                                            mkexpr(frA) ) ),
+                                unop( Iop_64to32,
+                                      unop( Iop_ReinterpF64asI64,
+                                            mkexpr(frB) ) ) ) ) );
+   break;
+
+   default:
+      vex_printf("dis_fp_merge(ppc)(opc2)\n");
+      return False;
+   }
+
+   putFReg( frD_addr, mkexpr(frD) );
+   return True;
+}
 
 /*
   Floating Point Move Instructions
@@ -16930,6 +17166,11 @@ DisResult disInstr_PPC_WRK (
       if (dis_fp_pair( theInstr )) goto decode_success;
       goto decode_failure;
 
+   /* 128-bit Integer Load */
+   case 0x38:  // lq
+      if (dis_int_load( theInstr )) goto decode_success;
+      goto decode_failure;
+
    /* 64bit Integer Loads */
    case 0x3A:  // ld, ldu, lwa
       if (!mode64) goto decode_failure;
@@ -17209,7 +17450,7 @@ DisResult disInstr_PPC_WRK (
    }
 
    /* 64bit Integer Stores */
-   case 0x3E:  // std, stdu
+   case 0x3E:  // std, stdu, stq
       if (dis_int_store( theInstr, abiinfo )) goto decode_success;
       goto decode_failure;
 
@@ -17347,6 +17588,10 @@ DisResult disInstr_PPC_WRK (
          if (dis_fp_move( theInstr )) goto decode_success;
          goto decode_failure;
 
+      case 0x3c6: case 0x346:          // fmrgew, fmrgow
+         if (dis_fp_merge( theInstr )) goto decode_success;
+         goto decode_failure;
+
       /* Floating Point Status/Control Register Instructions */         
       case 0x026: // mtfsb1
       case 0x040: // mcrfs
@@ -17431,7 +17676,7 @@ DisResult disInstr_PPC_WRK (
       case 0x096: // isync
          if (dis_memsync( theInstr )) goto decode_success;
          goto decode_failure;
-         
+
       default:
          goto decode_failure;
       }
@@ -17593,11 +17838,16 @@ DisResult disInstr_PPC_WRK (
          if (dis_memsync( theInstr )) goto decode_success;
          goto decode_failure;
 
+      case 0x114: case 0x0B6: // lqarx, stqcx.
+         if (dis_memsync( theInstr )) goto decode_success;
+         goto decode_failure;
+
       /* Processor Control Instructions */
-      case 0x33:  // mfvsrd
-      case 0xB3:  case 0xD3: // mtvsrd, mtvsrwa
+      case 0x33:  case 0x73: // mfvsrd, mfvsrwz
+      case 0xB3:  case 0xD3: case 0xF3: // mtvsrd, mtvsrwa, mtvsrwz
       case 0x200: case 0x013: case 0x153: // mcrxr, mfcr,  mfspr
       case 0x173: case 0x090: case 0x1D3: // mftb,  mtcrf, mtspr
+      case 0x220:                         // mcrxrt
          if (dis_proc_ctl( abiinfo, theInstr )) goto decode_success;
          goto decode_failure;
 

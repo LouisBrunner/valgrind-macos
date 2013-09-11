@@ -4719,6 +4719,44 @@ static IRSB* maybe_loop_unroll_BB ( IRSB* bb0, Addr64 my_addr )
    under most circumstances. */
 #define A_NENV 10
 
+/* An interval. Used to record the bytes in the guest state accessed
+   by a Put[I] statement or by (one or more) Get[I] expression(s). In 
+   case of several Get[I] expressions, the lower/upper bounds are recorded.
+   This is conservative but cheap.
+   E.g. a Put of 8 bytes at address 100 would be recorded as [100,107].
+   E.g. an expression that reads 8 bytes at offset 100 and 4 bytes at
+   offset 200 would be recorded as [100,203] */
+typedef
+   struct {
+      Bool present;
+      Int  low;
+      Int  high;
+   }
+   Interval;
+
+static inline Bool
+intervals_overlap(Interval i1, Interval i2)
+{
+   return (i1.low >= i2.low && i1.low <= i2.high) ||
+          (i2.low >= i1.low && i2.low <= i1.high);
+}
+
+static inline void
+update_interval(Interval *i, Int low, Int high)
+{
+   vassert(low <= high);
+
+   if (i->present) {
+      if (low  < i->low)  i->low  = low;
+      if (high > i->high) i->high = high;
+   } else {
+      i->present = True;
+      i->low  = low;
+      i->high = high;
+   }
+}
+
+
 /* bindee == NULL   ===  slot is not in use
    bindee != NULL   ===  slot is in use
 */
@@ -4727,7 +4765,8 @@ typedef
       IRTemp  binder;
       IRExpr* bindee;
       Bool    doesLoad;
-      Bool    doesGet;
+      /* Record the bytes of the guest state BINDEE reads from. */
+      Interval getInterval;
    }
    ATmpInfo;
 
@@ -4751,48 +4790,56 @@ static void ppAEnv ( ATmpInfo* env )
    a Get.  Be careful ... this really controls how much the
    tree-builder can reorder the code, so getting it right is critical.
 */
-static void setHints_Expr (Bool* doesLoad, Bool* doesGet, IRExpr* e )
+static void setHints_Expr (Bool* doesLoad, Interval* getInterval, IRExpr* e )
 {
    Int i;
    switch (e->tag) {
       case Iex_CCall:
          for (i = 0; e->Iex.CCall.args[i]; i++)
-            setHints_Expr(doesLoad, doesGet, e->Iex.CCall.args[i]);
+            setHints_Expr(doesLoad, getInterval, e->Iex.CCall.args[i]);
          return;
       case Iex_ITE:
-         setHints_Expr(doesLoad, doesGet, e->Iex.ITE.cond);
-         setHints_Expr(doesLoad, doesGet, e->Iex.ITE.iftrue);
-         setHints_Expr(doesLoad, doesGet, e->Iex.ITE.iffalse);
+         setHints_Expr(doesLoad, getInterval, e->Iex.ITE.cond);
+         setHints_Expr(doesLoad, getInterval, e->Iex.ITE.iftrue);
+         setHints_Expr(doesLoad, getInterval, e->Iex.ITE.iffalse);
          return;
       case Iex_Qop:
-         setHints_Expr(doesLoad, doesGet, e->Iex.Qop.details->arg1);
-         setHints_Expr(doesLoad, doesGet, e->Iex.Qop.details->arg2);
-         setHints_Expr(doesLoad, doesGet, e->Iex.Qop.details->arg3);
-         setHints_Expr(doesLoad, doesGet, e->Iex.Qop.details->arg4);
+         setHints_Expr(doesLoad, getInterval, e->Iex.Qop.details->arg1);
+         setHints_Expr(doesLoad, getInterval, e->Iex.Qop.details->arg2);
+         setHints_Expr(doesLoad, getInterval, e->Iex.Qop.details->arg3);
+         setHints_Expr(doesLoad, getInterval, e->Iex.Qop.details->arg4);
          return;
       case Iex_Triop:
-         setHints_Expr(doesLoad, doesGet, e->Iex.Triop.details->arg1);
-         setHints_Expr(doesLoad, doesGet, e->Iex.Triop.details->arg2);
-         setHints_Expr(doesLoad, doesGet, e->Iex.Triop.details->arg3);
+         setHints_Expr(doesLoad, getInterval, e->Iex.Triop.details->arg1);
+         setHints_Expr(doesLoad, getInterval, e->Iex.Triop.details->arg2);
+         setHints_Expr(doesLoad, getInterval, e->Iex.Triop.details->arg3);
          return;
       case Iex_Binop:
-         setHints_Expr(doesLoad, doesGet, e->Iex.Binop.arg1);
-         setHints_Expr(doesLoad, doesGet, e->Iex.Binop.arg2);
+         setHints_Expr(doesLoad, getInterval, e->Iex.Binop.arg1);
+         setHints_Expr(doesLoad, getInterval, e->Iex.Binop.arg2);
          return;
       case Iex_Unop:
-         setHints_Expr(doesLoad, doesGet, e->Iex.Unop.arg);
+         setHints_Expr(doesLoad, getInterval, e->Iex.Unop.arg);
          return;
       case Iex_Load:
          *doesLoad = True;
-         setHints_Expr(doesLoad, doesGet, e->Iex.Load.addr);
+         setHints_Expr(doesLoad, getInterval, e->Iex.Load.addr);
          return;
-      case Iex_Get:
-         *doesGet = True;
+      case Iex_Get: {
+         Int low = e->Iex.Get.offset;
+         Int high = low + sizeofIRType(e->Iex.Get.ty) - 1;
+         update_interval(getInterval, low, high);
          return;
-      case Iex_GetI:
-         *doesGet = True;
-         setHints_Expr(doesLoad, doesGet, e->Iex.GetI.ix);
+      }
+      case Iex_GetI: {
+         IRRegArray *descr = e->Iex.GetI.descr;
+         Int size = sizeofIRType(descr->elemTy);
+         Int low  = descr->base;
+         Int high = low + descr->nElems * size - 1;
+         update_interval(getInterval, low, high);
+         setHints_Expr(doesLoad, getInterval, e->Iex.GetI.ix);
          return;
+      }
       case Iex_RdTmp:
       case Iex_Const:
          return;
@@ -4814,7 +4861,9 @@ static void addToEnvFront ( ATmpInfo* env, IRTemp binder, IRExpr* bindee )
    env[0].binder   = binder;
    env[0].bindee   = bindee;
    env[0].doesLoad = False; /* filled in later */
-   env[0].doesGet  = False; /* filled in later */
+   env[0].getInterval.present  = False; /* filled in later */
+   env[0].getInterval.low  = -1; /* filled in later */
+   env[0].getInterval.high = -1; /* filled in later */
 }
 
 /* Given uses :: array of UShort, indexed by IRTemp
@@ -5350,11 +5399,12 @@ static Bool dirty_helper_stores ( const IRDirty *d )
 }
 
 inline
-static Bool dirty_helper_puts ( const IRDirty *d,
-                                Bool (*preciseMemExnsFn)(Int, Int),
-                                Bool *requiresPreciseMemExns )
+static Interval dirty_helper_puts ( const IRDirty *d,
+                                    Bool (*preciseMemExnsFn)(Int, Int),
+                                    Bool *requiresPreciseMemExns )
 {
    Int i;
+   Interval interval;
 
    /* Passing the guest state pointer opens the door to modifying the
       guest state under the covers.  It's not allowed, but let's be
@@ -5362,12 +5412,17 @@ static Bool dirty_helper_puts ( const IRDirty *d,
    for (i = 0; d->args[i]; i++) {
       if (UNLIKELY(d->args[i]->tag == Iex_BBPTR)) {
          *requiresPreciseMemExns = True;
-         return True;
+         /* Assume all guest state is written. */
+         interval.present = True;
+         interval.low  = 0;
+         interval.high = 0x7FFFFFFF;
+         return interval;
       }
    }
 
    /* Check the side effects on the guest state */
-   Bool ret = False;
+   interval.present = False;
+   interval.low = interval.high = -1;
    *requiresPreciseMemExns = False;
 
    for (i = 0; i < d->nFxState; ++i) {
@@ -5380,28 +5435,33 @@ static Bool dirty_helper_puts ( const IRDirty *d,
          if (preciseMemExnsFn(offset,
                               offset + nRepeats * repeatLen + size - 1)) {
             *requiresPreciseMemExns = True;
-            return True;
          }
-         ret = True;
+         update_interval(&interval, offset,
+                         offset + nRepeats * repeatLen + size - 1);
       }
    }
 
-   return ret;
+   return interval;
 }
 
-/* Return true if st modifies the guest state. Via requiresPreciseMemExns
+/* Return an interval if st modifies the guest state. Via requiresPreciseMemExns
    return whether or not that modification requires precise exceptions. */
-static Bool stmt_modifies_guest_state ( IRSB *bb, const IRStmt *st,
-                                        Bool (*preciseMemExnsFn)(Int,Int),
-                                        Bool *requiresPreciseMemExns )
+static Interval stmt_modifies_guest_state ( IRSB *bb, const IRStmt *st,
+                                            Bool (*preciseMemExnsFn)(Int,Int),
+                                            Bool *requiresPreciseMemExns )
 {
+   Interval interval;
+
    switch (st->tag) {
    case Ist_Put: {
       Int offset = st->Ist.Put.offset;
       Int size = sizeofIRType(typeOfIRExpr(bb->tyenv, st->Ist.Put.data));
 
       *requiresPreciseMemExns = preciseMemExnsFn(offset, offset + size - 1);
-      return True;
+      interval.present = True;
+      interval.low  = offset;
+      interval.high = offset + size - 1;
+      return interval;
    }
 
    case Ist_PutI: {
@@ -5415,7 +5475,10 @@ static Bool stmt_modifies_guest_state ( IRSB *bb, const IRStmt *st,
          needed when in fact they are not. */
       *requiresPreciseMemExns = 
          preciseMemExnsFn(offset, offset + descr->nElems * size - 1);
-      return True;
+      interval.present = True;
+      interval.low  = offset;
+      interval.high = offset + descr->nElems * size - 1;
+      return interval;
    }
 
    case Ist_Dirty:
@@ -5424,7 +5487,10 @@ static Bool stmt_modifies_guest_state ( IRSB *bb, const IRStmt *st,
 
    default:
       *requiresPreciseMemExns = False;
-      return False;
+      interval.present = False;
+      interval.low  = -1;
+      interval.high = -1;
+      return interval;
    }
 }
 
@@ -5432,7 +5498,8 @@ static Bool stmt_modifies_guest_state ( IRSB *bb, const IRStmt *st,
                                           Bool (*preciseMemExnsFn)(Int,Int) )
 {
    Int      i, j, k, m;
-   Bool     stmtPuts, stmtStores, invalidateMe;
+   Bool     stmtStores, invalidateMe;
+   Interval putInterval;
    IRStmt*  st;
    IRStmt*  st2;
    ATmpInfo env[A_NENV];
@@ -5548,7 +5615,7 @@ static Bool stmt_modifies_guest_state ( IRSB *bb, const IRStmt *st,
          e  = st->Ist.WrTmp.data;
          e2 = atbSubst_Expr(env, e);
          addToEnvFront(env, st->Ist.WrTmp.tmp, e2);
-         setHints_Expr(&env[0].doesLoad, &env[0].doesGet, e2);
+         setHints_Expr(&env[0].doesLoad, &env[0].getInterval, e2);
          /* don't advance j, as we are deleting this stmt and instead
             holding it temporarily in the env. */
          continue; /* for (i = 0; i < bb->stmts_used; i++) loop */
@@ -5563,12 +5630,12 @@ static Bool stmt_modifies_guest_state ( IRSB *bb, const IRStmt *st,
          they originally entered env -- that means from oldest to
          youngest. */
 
-      /* stmtPuts/stmtStores characterise what the stmt under
+      /* putInterval/stmtStores characterise what the stmt under
          consideration does, or might do (sidely safe @ True). */
 
       Bool putRequiresPreciseMemExns;
-      stmtPuts = stmt_modifies_guest_state( bb, st, preciseMemExnsFn,
-                                            &putRequiresPreciseMemExns);
+      putInterval = stmt_modifies_guest_state( bb, st, preciseMemExnsFn,
+                                               &putRequiresPreciseMemExns);
 
       /* be True if this stmt writes memory or might do (==> we don't
          want to reorder other loads or stores relative to it).  Also,
@@ -5591,8 +5658,9 @@ static Bool stmt_modifies_guest_state ( IRSB *bb, const IRStmt *st,
             = toBool(
               /* a store invalidates loaded data */
               (env[k].doesLoad && stmtStores)
-              /* a put invalidates get'd data */
-              || (env[k].doesGet && stmtPuts)
+              /* a put invalidates get'd data, if they overlap */
+              || ((env[k].getInterval.present && putInterval.present) &&
+                  intervals_overlap(env[k].getInterval, putInterval))
               /* a put invalidates loaded data. That means, in essense, that
                  a load expression cannot be substituted into a statement
                  that follows the put. But there is nothing wrong doing so
@@ -5601,7 +5669,8 @@ static Bool stmt_modifies_guest_state ( IRSB *bb, const IRStmt *st,
                  updates the IP in the guest state. If the load generates
                  a segfault, the wrong address (line number) would be
                  reported. */
-              || (env[k].doesLoad && stmtPuts && putRequiresPreciseMemExns)
+              || (env[k].doesLoad && putInterval.present &&
+                  putRequiresPreciseMemExns)
               /* probably overly conservative: a memory bus event
                  invalidates absolutely everything, so that all
                  computation prior to it is forced to complete before

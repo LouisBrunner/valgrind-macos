@@ -1551,6 +1551,7 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
             return r_dst;
          }
 
+         case Iop_1Uto64:
          case Iop_8Uto16:
          case Iop_8Uto64:
          case Iop_16Uto64: {
@@ -1573,10 +1574,6 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
                                          r_dst, r_dst, MIPSRH_Imm(False, 32)));
             return r_dst;
          }
-
-         case Iop_1Uto64:
-            vassert(mode64);
-            return iselWordExpr_R(env, e->Iex.Unop.arg);
 
          case Iop_64HIto32: {
             if (env->mode64) {
@@ -1685,8 +1682,13 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
                goto irreducible;
             HReg r_dst = newVRegI(env);
             HReg r_src = iselWordExpr_R(env, e->Iex.Unop.arg);
-            addInstr(env, MIPSInstr_Alu(Malu_SUB, r_dst, hregMIPS_GPR0(mode64),
-                          MIPSRH_Reg(r_src)));
+            if (op_unop == Iop_Left64) {
+               addInstr(env, MIPSInstr_Alu(Malu_DSUB, r_dst, hregMIPS_GPR0(mode64),
+                             MIPSRH_Reg(r_src)));
+            } else {
+               addInstr(env, MIPSInstr_Alu(Malu_SUB, r_dst, hregMIPS_GPR0(mode64),
+                             MIPSRH_Reg(r_src)));
+            }
             addInstr(env, MIPSInstr_Alu(Malu_OR, r_dst, r_dst,
                           MIPSRH_Reg(r_src)));
             return r_dst;
@@ -1733,7 +1735,7 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
             vassert(env->mode64);
             tmp1 = iselWordExpr_R(env, e->Iex.Unop.arg);
 
-            addInstr(env, MIPSInstr_Alu(Malu_SUB, tmp2, hregMIPS_GPR0(mode64),
+            addInstr(env, MIPSInstr_Alu(Malu_DSUB, tmp2, hregMIPS_GPR0(mode64),
                           MIPSRH_Reg(tmp1)));
 
             addInstr(env, MIPSInstr_Alu(Malu_OR, tmp2, tmp2, MIPSRH_Reg(tmp1)));

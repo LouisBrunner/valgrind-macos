@@ -1518,7 +1518,7 @@ Bool VG_(machine_get_hwcaps)( void )
 #endif
 }
 
-/* Notify host cpu cache line size. */
+/* Notify host cpu instruction cache line size. */
 #if defined(VGA_ppc32)
 void VG_(machine_ppc32_set_clszB)( Int szB )
 {
@@ -1536,7 +1536,7 @@ void VG_(machine_ppc32_set_clszB)( Int szB )
 #endif
 
 
-/* Notify host cpu cache line size. */
+/* Notify host cpu instruction cache line size. */
 #if defined(VGA_ppc64)
 void VG_(machine_ppc64_set_clszB)( Int szB )
 {

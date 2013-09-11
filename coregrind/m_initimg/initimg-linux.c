@@ -713,7 +713,7 @@ Addr setup_client_stack( void*  init_sp,
             if (auxv->u.a_val > 0) {
                VG_(machine_ppc32_set_clszB)( auxv->u.a_val );
                VG_(debugLog)(2, "initimg", 
-                                "PPC32 cache line size %u (type %u)\n", 
+                                "PPC32 icache line size %u (type %u)\n", 
                                 (UInt)auxv->u.a_val, (UInt)auxv->a_type );
             }
 #           elif defined(VGP_ppc64_linux)
@@ -721,7 +721,7 @@ Addr setup_client_stack( void*  init_sp,
             if (auxv->u.a_val > 0) {
                VG_(machine_ppc64_set_clszB)( auxv->u.a_val );
                VG_(debugLog)(2, "initimg", 
-                                "PPC64 cache line size %u (type %u)\n", 
+                                "PPC64 icache line size %u (type %u)\n", 
                                 (UInt)auxv->u.a_val, (UInt)auxv->a_type );
             }
 #           endif

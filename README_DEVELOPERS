@@ -161,6 +161,9 @@ This section explains :
        --run-libc-freeres=no --tool=cachegrind -v \
        inner/.../bin/valgrind --vgdb-prefix=./inner --tool=none -v prog
 
+Note: You must use a "make install"-ed valgrind.
+Do *not* use vg-in-place for the outer valgrind.
+
 If you omit the --trace-children=yes, you'll only monitor Inner's launcher
 program, not its stage2. Outer needs --run-libc-freeres=no, as otherwise
 it will try to find and run __libc_freeres in the inner, while libc is not
@@ -217,6 +220,9 @@ When using self-hosting with an outer Callgrind tool, use '--pop-on-jump'
  --outer-args allows to give specific arguments to the outer tool,
  replacing the default one provided by vg_regtest.
 
+Note: --outer-valgrind must be a "make install"-ed valgrind.
+Do *not* use vg-in-place.
+
 When an outer valgrind runs an inner valgrind, a regression test
 produces one additional file <testname>.outer.log which contains the
 errors detected by the outer valgrind.  E.g. for an outer memcheck, it
@@ -238,10 +244,14 @@ the irrelevant or benign errors found in the inner.
     perl perf/vg_perf --outer-valgrind=../outer/.../bin/valgrind \
                       --outer-tool=callgrind perf
 
+Note: --outer-valgrind must be a "make install"-ed valgrind.
+Do *not* use vg-in-place.
+
  To compare the performance of multiple Valgrind versions, do :
     perl perf/vg_perf --outer-valgrind=../outer/.../bin/valgrind \
       --vg=../inner_xxxx --vg=../inner_yyyy perf
-  (where inner_xxxx and inner_yyyy are the versions to compare).
+  (where inner_xxxx and inner_yyyy are the toplevel directories of
+  the versions to compare).
   Cachegrind and cg_diff are particularly handy to obtain a delta
   between the two versions.
 

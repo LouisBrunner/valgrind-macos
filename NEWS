@@ -461,6 +461,41 @@ FIXED r??
 207815  Adds some of the drm ioctls to syswrap-linux.c 
         FIXED 13486
 
+321969  ppc32 and ppc64 don't support [lf]setxattr
+        FIXED r13449
+
+322368  Assertion failure in wqthread_hijack under OS X 10.8
+        FIXED 13523
+
+322807  VALGRIND_PRINTF_BACKTRACE writes callstack to xml and text to stderr
+        FIXED r13516
+
+322851  0bXXX binary literal syntax is not standard
+        FIXED 2736
+
+323116  The memcheck/tests/ppc64/power_ISA2_05.c fails to build with recent binutils
+        FIXED 13490 13505 13506
+
+323713  Support mmxext (integer sse) subset on i386 (athlon)
+        FIXED 2745 13515
+
+323905  Probable false positive from Valgrind/drd on close()
+        FIXED r13511
+
+323912  valgrind.h header isn't compatible for mingw64
+        FIXED r13513
+
+324514  gdbserver monitor cmd output behaviour consistency + allow user
+        to put a "marker" msg in process output
+        FIXED 13532
+
+324546  none/tests/ppc32 test_isa_2_07_part2 requests -m64
+        FIXED 13533
+
+324582  When access is made to freed memory, report both allocation
+        and freeing callstack
+        FIXED 13223
+
 
 Release 3.8.1 (19 September 2012)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

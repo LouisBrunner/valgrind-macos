@@ -2926,6 +2926,36 @@ static IRExpr * is_NaN_32(IRTemp src)
    return mkAND1( NaN_exp, binop( Iop_CmpNE32, frac_part, mkU32( 0 ) ) );
 }
 
+/* This function takes an Ity_I32 input argument interpreted
+ * as a single-precision floating point value. If src is a
+ * SNaN, it is changed to a QNaN and returned; otherwise,
+ * the original value is returned.
+ */
+static IRExpr * handle_SNaN_to_QNaN_32(IRExpr * src)
+{
+#define SNAN_MASK32 0x00400000
+   IRTemp tmp = newTemp(Ity_I32);
+   IRTemp mask = newTemp(Ity_I32);
+   IRTemp is_SNAN = newTemp(Ity_I1);
+
+   vassert( typeOfIRExpr(irsb->tyenv, src ) == Ity_I32 );
+   assign(tmp, src);
+
+   /* check if input is SNaN, if it is convert to QNaN */
+   assign( is_SNAN,
+           mkAND1( is_NaN_32( tmp ),
+                   binop( Iop_CmpEQ32,
+                          binop( Iop_And32, mkexpr( tmp ),
+                                 mkU32( SNAN_MASK32 ) ),
+                          mkU32( 0 ) ) ) );
+   /* create mask with QNaN bit set to make it a QNaN if tmp is SNaN */
+   assign ( mask, binop( Iop_And32,
+                         unop( Iop_1Sto32, mkexpr( is_SNAN ) ),
+                         mkU32( SNAN_MASK32 ) ) );
+   return binop( Iop_Or32, mkexpr( mask ), mkexpr( tmp) );
+}
+
+
 /* This helper function performs the negation part of operations of the form:
  *    "Negate Multiply-<op>"
  *  where "<op>" is either "Add" or "Sub".
@@ -12062,9 +12092,11 @@ dis_vx_conv ( UInt theInstr, UInt opc2 )
          break;
       // scalar single precision argument
       case 0x292: // xscvspdp
-         xB = newTemp(Ity_I32);
-         assign( xB,
-                 unop( Iop_64HIto32, unop( Iop_V128HIto64, getVSReg( XB ) ) ) );
+         xB  = newTemp(Ity_I32);
+
+         assign( xB, handle_SNaN_to_QNaN_32(unop( Iop_64HIto32,
+                                                  unop( Iop_V128HIto64,
+                                                        getVSReg( XB ) ) ) ) );
          break;
       case 0x296: // xscvspdpn (non signaling version of xscvpdp)
          xB = newTemp(Ity_I32);
@@ -12311,10 +12343,12 @@ dis_vx_conv ( UInt theInstr, UInt opc2 )
                    binop( Iop_64HLtoV128,
                           unop( Iop_ReinterpF64asI64,
                                 unop( Iop_F32toF64,
-                                      unop( Iop_ReinterpI32asF32, mkexpr( b3 ) ) ) ),
+                                      unop( Iop_ReinterpI32asF32,
+                                            handle_SNaN_to_QNaN_32( mkexpr( b3 ) ) ) ) ),
                           unop( Iop_ReinterpF64asI64,
                                 unop( Iop_F32toF64,
-                                      unop( Iop_ReinterpI32asF32, mkexpr( b1 ) ) ) ) ) );
+                                      unop( Iop_ReinterpI32asF32,
+                                            handle_SNaN_to_QNaN_32( mkexpr( b1 ) ) ) ) ) ) );
          break;
       case 0x330: // xvcvspsxds (VSX Vector truncate Single-Precision to integer and
                   //           Convert to Signed Integer Doubleword format with Saturate)

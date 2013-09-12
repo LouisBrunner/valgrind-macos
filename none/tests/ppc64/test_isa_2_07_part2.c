@@ -119,6 +119,14 @@ static inline void register_farg (void *farg,
               s, _exp, mant, *(uint64_t *)farg, *(double *)farg);
 }
 
+static inline void register_sp_farg (void *farg,
+                                     int s, uint16_t _exp, uint32_t mant)
+{
+   uint32_t tmp;
+   tmp = ((uint32_t)s << 31) | ((uint32_t)_exp << 23) | mant;
+   *(uint32_t *)farg = tmp;
+}
+
 
 typedef struct fp_test_args {
    int fra_idx;
@@ -149,15 +157,16 @@ static void build_special_fargs_table(void)
    6      1   000   0x0000000000000ULL         -0.0 (-zero)
    7      0   7ff   0x0000000000000ULL         +infinity
    8      1   7ff   0x0000000000000ULL         -infinity
-   9      0   7ff   0x7FFFFFFFFFFFFULL         +QNaN
-   10     1   7ff   0x7FFFFFFFFFFFFULL         -QNaN
-   11     0   7ff   0x8000000000000ULL         +SNaN
-   12     1   7ff   0x8000000000000ULL         -SNaN
+   9      0   7ff   0x7FFFFFFFFFFFFULL         +SNaN
+   10     1   7ff   0x7FFFFFFFFFFFFULL         -SNaN
+   11     0   7ff   0x8000000000000ULL         +QNaN
+   12     1   7ff   0x8000000000000ULL         -QNaN
    13     1   000   0x8340000078000ULL         Denormalized val (zero exp and non-zero fraction)
    14     1   40d   0x0650f5a07b353ULL         Negative finite number
     */
 
    uint64_t mant;
+   uint32_t mant_sp;
    uint16_t _exp;
    int s;
    int j, i = 0;
@@ -227,28 +236,42 @@ static void build_special_fargs_table(void)
    mant = 0x0000000000000ULL;
    register_farg(&spec_fargs[i++], s, _exp, mant);
 
-   /* +QNaN     : 0 0x7FF 0x7FFFFFFFFFFFF */
+   /*
+    * This comment applies to values #9 and #10 below:
+    * When src is a SNaN, it's converted to a QNaN first before rounding to single-precision,
+    * so we can't just copy the double-precision value to the corresponding slot in the
+    * single-precision array (i.e., in the loop at the end of this function).  Instead, we
+    * have to manually set the bits using register_sp_farg().
+    */
+
+   /* +SNaN     : 0 0x7FF 0x7FFFFFFFFFFFF */
    // #9
    s = 0;
    _exp = 0x7FF;
    mant = 0x7FFFFFFFFFFFFULL;
    register_farg(&spec_fargs[i++], s, _exp, mant);
+   _exp = 0xff;
+   mant_sp = 0x3FFFFF;
+   register_sp_farg(&spec_sp_fargs[i-1], s, _exp, mant_sp);
 
-   /* -QNaN     : 1 0x7FF 0x7FFFFFFFFFFFF */
+   /* -SNaN     : 1 0x7FF 0x7FFFFFFFFFFFF */
    // #10
    s = 1;
    _exp = 0x7FF;
    mant = 0x7FFFFFFFFFFFFULL;
    register_farg(&spec_fargs[i++], s, _exp, mant);
+   _exp = 0xff;
+   mant_sp = 0x3FFFFF;
+   register_sp_farg(&spec_sp_fargs[i-1], s, _exp, mant_sp);
 
-   /* +SNaN     : 0 0x7FF 0x8000000000000 */
+   /* +QNaN     : 0 0x7FF 0x8000000000000 */
    // #11
    s = 0;
    _exp = 0x7FF;
    mant = 0x8000000000000ULL;
    register_farg(&spec_fargs[i++], s, _exp, mant);
 
-   /* -SNaN     : 1 0x7FF 0x8000000000000 */
+   /* -QNaN     : 1 0x7FF 0x8000000000000 */
    // #12
    s = 1;
    _exp = 0x7FF;
@@ -303,7 +326,8 @@ static void build_special_fargs_table(void)
 
    nb_special_fargs = i;
    for (j = 0; j < i; j++) {
-      spec_sp_fargs[j] = spec_fargs[j];
+      if (!(j == 9 || j == 10))
+         spec_sp_fargs[j] = spec_fargs[j];
    }
 }
 

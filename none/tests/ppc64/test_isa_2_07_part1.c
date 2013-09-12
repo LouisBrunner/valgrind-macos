@@ -423,10 +423,10 @@ static void build_fargs_table (void)
     * -0.0      : 1 0x000 0x0000000000000 => 0x8000000000000000
     * +infinity : 0 0x7FF 0x0000000000000 => 0x7FF0000000000000
     * -infinity : 1 0x7FF 0x0000000000000 => 0xFFF0000000000000
-    * +QNaN     : 0 0x7FF 0x7FFFFFFFFFFFF => 0x7FF7FFFFFFFFFFFF
-    * -QNaN     : 1 0x7FF 0x7FFFFFFFFFFFF => 0xFFF7FFFFFFFFFFFF
-    * +SNaN     : 0 0x7FF 0x8000000000000 => 0x7FF8000000000000
-    * -SNaN     : 1 0x7FF 0x8000000000000 => 0xFFF8000000000000
+    * +QNaN     : 0 0x7FF 0x8000000000000 => 0x7FF8000000000000
+    * -QNaN     : 1 0x7FF 0x8000000000000 => 0xFFF8000000000000
+    * +SNaN     : 0 0x7FF 0x7FFFFFFFFFFFF => 0x7FF7FFFFFFFFFFFF
+    * -SNaN     : 1 0x7FF 0x7FFFFFFFFFFFF => 0xFFF7FFFFFFFFFFFF
     * (8 values)
 
     * Ref only:
@@ -438,10 +438,10 @@ static void build_fargs_table (void)
     * -0.0      : 1 0x00 0x000000 => 0x80000000
     * +infinity : 0 0xFF 0x000000 => 0x7F800000
     * -infinity : 1 0xFF 0x000000 => 0xFF800000
-    * +QNaN     : 0 0xFF 0x3FFFFF => 0x7FBFFFFF
-    * -QNaN     : 1 0xFF 0x3FFFFF => 0xFFBFFFFF
-    * +SNaN     : 0 0xFF 0x400000 => 0x7FC00000
-    * -SNaN     : 1 0xFF 0x400000 => 0xFFC00000
+    * +QNaN     : 0 0xFF 0x400000 => 0x7FC00000
+    * -QNaN     : 1 0xFF 0x400000 => 0xFFC00000
+    * +SNaN     : 0 0xFF 0x3FFFFF => 0x7FBFFFFF
+    * -SNaN     : 1 0xFF 0x3FFFFF => 0xFFBFFFFF
     */
    uint64_t mant;
    uint16_t _exp, e0, e1;

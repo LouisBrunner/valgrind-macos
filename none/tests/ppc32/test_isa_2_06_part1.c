@@ -124,10 +124,10 @@ static void build_fargs_table(void)
  * -0.0      : 1 0x000 0x0000000000000 => 0x8000000000000000
  * +infinity : 0 0x7FF 0x0000000000000 => 0x7FF0000000000000
  * -infinity : 1 0x7FF 0x0000000000000 => 0xFFF0000000000000
- * +QNaN     : 0 0x7FF 0x7FFFFFFFFFFFF => 0x7FF7FFFFFFFFFFFF
- * -QNaN     : 1 0x7FF 0x7FFFFFFFFFFFF => 0xFFF7FFFFFFFFFFFF
- * +SNaN     : 0 0x7FF 0x8000000000000 => 0x7FF8000000000000
- * -SNaN     : 1 0x7FF 0x8000000000000 => 0xFFF8000000000000
+ * +QNaN     : 0 0x7FF 0x8000000000000 => 0x7FF8000000000000
+ * -QNaN     : 1 0x7FF 0x8000000000000 => 0xFFF8000000000000
+ * +SNaN     : 0 0x7FF 0x7FFFFFFFFFFFF => 0x7FF7FFFFFFFFFFFF
+ * -SNaN     : 1 0x7FF 0x7FFFFFFFFFFFF => 0xFFF7FFFFFFFFFFFF
  * (8 values)
  *
  * Single precision
@@ -138,10 +138,10 @@ static void build_fargs_table(void)
  * -0.0      : 1 0x00 0x000000 => 0x80000000
  * +infinity : 0 0xFF 0x000000 => 0x7F800000
  * -infinity : 1 0xFF 0x000000 => 0xFF800000
- * +QNaN     : 0 0xFF 0x3FFFFF => 0x7FBFFFFF
- * -QNaN     : 1 0xFF 0x3FFFFF => 0xFFBFFFFF
- * +SNaN     : 0 0xFF 0x400000 => 0x7FC00000
- * -SNaN     : 1 0xFF 0x400000 => 0xFFC00000
+ * +QNaN     : 0 0xFF 0x400000 => 0x7FC00000
+ * -QNaN     : 1 0xFF 0x400000 => 0xFFC00000
+ * +SNaN     : 0 0xFF 0x3FFFFF => 0x7FBFFFFF
+ * -SNaN     : 1 0xFF 0x3FFFFF => 0xFFBFFFFF
 */
 {
    uint64_t mant;
@@ -836,10 +836,10 @@ static void build_special_fargs_table(void)
    6      1   000   0x0000000000000ULL         -0.0 (-zero)
    7      0   7ff   0x0000000000000ULL         +infinity
    8      1   7ff   0x0000000000000ULL         -infinity
-   9      0   7ff   0x7FFFFFFFFFFFFULL         +QNaN
-   10     1   7ff   0x7FFFFFFFFFFFFULL         -QNaN
-   11     0   7ff   0x8000000000000ULL         +SNaN
-   12     1   7ff   0x8000000000000ULL         -SNaN
+   9      0   7ff   0x7FFFFFFFFFFFFULL         +SNaN
+   10     1   7ff   0x7FFFFFFFFFFFFULL         -SNaN
+   11     0   7ff   0x8000000000000ULL         +QNaN
+   12     1   7ff   0x8000000000000ULL         -QNaN
    13     1   000   0x8340000078000ULL         Denormalized val (zero exp and non-zero fraction)
    14     1   40d   0x0650f5a07b353ULL         Negative finite number
     */
@@ -1011,28 +1011,28 @@ static void build_special_fargs_table(void)
    mant = 0x0000000000000ULL;
    register_farg(&spec_fargs[i++], s, _exp, mant);
 
-   /* +QNaN     : 0 0x7FF 0x7FFFFFFFFFFFF */
+   /* +SNaN     : 0 0x7FF 0x7FFFFFFFFFFFF */
    // #9
    s = 0;
    _exp = 0x7FF;
    mant = 0x7FFFFFFFFFFFFULL;
    register_farg(&spec_fargs[i++], s, _exp, mant);
 
-   /* -QNaN     : 1 0x7FF 0x7FFFFFFFFFFFF */
+   /* -SNaN     : 1 0x7FF 0x7FFFFFFFFFFFF */
    // #10
    s = 1;
    _exp = 0x7FF;
    mant = 0x7FFFFFFFFFFFFULL;
    register_farg(&spec_fargs[i++], s, _exp, mant);
 
-   /* +SNaN     : 0 0x7FF 0x8000000000000 */
+   /* +QNaN     : 0 0x7FF 0x8000000000000 */
    // #11
    s = 0;
    _exp = 0x7FF;
    mant = 0x8000000000000ULL;
    register_farg(&spec_fargs[i++], s, _exp, mant);
 
-   /* -SNaN     : 1 0x7FF 0x8000000000000 */
+   /* -QNaN     : 1 0x7FF 0x8000000000000 */
    // #12
    s = 1;
    _exp = 0x7FF;

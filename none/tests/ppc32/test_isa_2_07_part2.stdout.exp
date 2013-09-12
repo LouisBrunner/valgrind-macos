@@ -29,8 +29,8 @@ Test VSX vector and scalar single argument instructions
 #6: xscvspdpn conv(80000000) = 8000000000000000
 #7: xscvspdpn conv(7f800000) = 7ff0000000000000
 #8: xscvspdpn conv(ff800000) = fff0000000000000
-#9: xscvspdpn conv(7fffffff) = 7fffffffe0000000
-#10: xscvspdpn conv(ffffffff) = ffffffffe0000000
+#9: xscvspdpn conv(7fbfffff) = 7ff7ffffe0000000
+#10: xscvspdpn conv(ffbfffff) = fff7ffffe0000000
 #11: xscvspdpn conv(7fc00000) = 7ff8000000000000
 #12: xscvspdpn conv(ffc00000) = fff8000000000000
 #13: xscvspdpn conv(80000000) = 8000000000000000

@@ -59,7 +59,7 @@ Test VSX vector and scalar single argument instructions
 
 #0: xvrsqrtesp 1/x-sqrt(3ec00000) ==> PASS); 1/x-sqrt(42780000) ==> PASS); 1/x-sqrt(00000000) ==> PASS); 1/x-sqrt(7f800000) ==> PASS)
 #1: xvrsqrtesp 1/x-sqrt(00000000) ==> PASS); 1/x-sqrt(00000000) ==> PASS); 1/x-sqrt(80000000) ==> PASS); 1/x-sqrt(7f800000) ==> PASS)
-#2: xvrsqrtesp 1/x-sqrt(ff800000) ==> PASS); 1/x-sqrt(7fffffff) ==> PASS); 1/x-sqrt(ffffffff) ==> PASS); 1/x-sqrt(7fc00000) ==> PASS)
+#2: xvrsqrtesp 1/x-sqrt(ff800000) ==> PASS); 1/x-sqrt(7fbfffff) ==> PASS); 1/x-sqrt(ffbfffff) ==> PASS); 1/x-sqrt(7fc00000) ==> PASS)
 #3: xvrsqrtesp 1/x-sqrt(ffc00000) ==> PASS); 1/x-sqrt(80000000) ==> PASS); 1/x-sqrt(c683287b) ==> PASS); 1/x-sqrt(49192c2d) ==> PASS)
 #4: xvrsqrtesp 1/x-sqrt(49c1288d) ==> PASS); 1/x-sqrt(418977ad) ==> PASS); 1/x-sqrt(428a5faf) ==> PASS); 1/x-sqrt(44bb5fcc) ==> PASS)
 
@@ -75,7 +75,7 @@ Test VSX vector and scalar single argument instructions
 
 #0: xvsqrtsp sqrt(3ec00000) = 3f1cc470; sqrt(42780000) = 40fbf7dc; sqrt(00000000) = 00000000; sqrt(7f800000) = 7f800000
 #1: xvsqrtsp sqrt(00000000) = 00000000; sqrt(00000000) = 00000000; sqrt(80000000) = 80000000; sqrt(7f800000) = 7f800000
-#2: xvsqrtsp sqrt(ff800000) = 7fc00000; sqrt(7fffffff) = 7ffffffc; sqrt(ffffffff) = fffffffc; sqrt(7fc00000) = 7fc00000
+#2: xvsqrtsp sqrt(ff800000) = 7fc00000; sqrt(7fbfffff) = 7ffffffc; sqrt(ffbfffff) = fffffffc; sqrt(7fc00000) = 7fc00000
 #3: xvsqrtsp sqrt(ffc00000) = ffc00000; sqrt(80000000) = 80000000; sqrt(c683287b) = 7fc00000; sqrt(49192c2d) = 44460548
 #4: xvsqrtsp sqrt(49c1288d) = 449d3d50; sqrt(418977ad) = 4084a638; sqrt(428a5faf) = 410515f8; sqrt(44bb5fcc) = 421ade08
 
@@ -130,8 +130,8 @@ Test VSX vector and scalar single argument instructions
 #6: xscvspdp conv(80000000) = 8000000000000000
 #7: xscvspdp conv(7f800000) = 7ff0000000000000
 #8: xscvspdp conv(ff800000) = fff0000000000000
-#9: xscvspdp conv(7fffffff) = 7fffffffe0000000
-#10: xscvspdp conv(ffffffff) = ffffffffe0000000
+#9: xscvspdp conv(7fbfffff) = 7fffffffe0000000
+#10: xscvspdp conv(ffbfffff) = ffffffffe0000000
 #11: xscvspdp conv(7fc00000) = 7ff8000000000000
 #12: xscvspdp conv(ffc00000) = fff8000000000000
 #13: xscvspdp conv(80000000) = 8000000000000000
@@ -179,8 +179,8 @@ Test VSX vector and scalar single argument instructions
 #1: xvcvspdp conv(00000000) = 0000000000000000; conv(7f800000) = 7ff0000000000000
 #2: xvcvspdp conv(00000000) = 0000000000000000; conv(00000000) = 0000000000000000
 #3: xvcvspdp conv(80000000) = 8000000000000000; conv(7f800000) = 7ff0000000000000
-#4: xvcvspdp conv(ff800000) = fff0000000000000; conv(7fffffff) = 7fffffffe0000000
-#5: xvcvspdp conv(ffffffff) = ffffffffe0000000; conv(7fc00000) = 7ff8000000000000
+#4: xvcvspdp conv(ff800000) = fff0000000000000; conv(7fbfffff) = 7fffffffe0000000
+#5: xvcvspdp conv(ffbfffff) = ffffffffe0000000; conv(7fc00000) = 7ff8000000000000
 #6: xvcvspdp conv(ffc00000) = fff8000000000000; conv(80000000) = 8000000000000000
 #7: xvcvspdp conv(c683287b) = c0d0650f60000000; conv(49192c2d) = 41232585a0000000
 #8: xvcvspdp conv(49c1288d) = 41382511a0000000; conv(418977ad) = 40312ef5a0000000
@@ -190,8 +190,8 @@ Test VSX vector and scalar single argument instructions
 #1: xvcvspsxds conv(00000000) = 0000000000000000; conv(7f800000) = 7fffffffffffffff
 #2: xvcvspsxds conv(00000000) = 0000000000000000; conv(00000000) = 0000000000000000
 #3: xvcvspsxds conv(80000000) = 0000000000000000; conv(7f800000) = 7fffffffffffffff
-#4: xvcvspsxds conv(ff800000) = 8000000000000000; conv(7fffffff) = 8000000000000000
-#5: xvcvspsxds conv(ffffffff) = 8000000000000000; conv(7fc00000) = 8000000000000000
+#4: xvcvspsxds conv(ff800000) = 8000000000000000; conv(7fbfffff) = 8000000000000000
+#5: xvcvspsxds conv(ffbfffff) = 8000000000000000; conv(7fc00000) = 8000000000000000
 #6: xvcvspsxds conv(ffc00000) = 8000000000000000; conv(80000000) = 0000000000000000
 #7: xvcvspsxds conv(c683287b) = ffffffffffffbe6c; conv(49192c2d) = 00000000000992c2
 #8: xvcvspsxds conv(49c1288d) = 0000000000182511; conv(418977ad) = 0000000000000011
@@ -212,8 +212,8 @@ Test VSX vector and scalar single argument instructions
 #1: xvcvspuxds conv(00000000) = 0000000000000000; conv(7f800000) = ffffffffffffffff
 #2: xvcvspuxds conv(00000000) = 0000000000000000; conv(00000000) = 0000000000000000
 #3: xvcvspuxds conv(80000000) = 0000000000000000; conv(7f800000) = ffffffffffffffff
-#4: xvcvspuxds conv(ff800000) = 0000000000000000; conv(7fffffff) = 0000000000000000
-#5: xvcvspuxds conv(ffffffff) = 0000000000000000; conv(7fc00000) = 0000000000000000
+#4: xvcvspuxds conv(ff800000) = 0000000000000000; conv(7fbfffff) = 0000000000000000
+#5: xvcvspuxds conv(ffbfffff) = 0000000000000000; conv(7fc00000) = 0000000000000000
 #6: xvcvspuxds conv(ffc00000) = 0000000000000000; conv(80000000) = 0000000000000000
 #7: xvcvspuxds conv(c683287b) = 0000000000000000; conv(49192c2d) = 00000000000992c2
 #8: xvcvspuxds conv(49c1288d) = 0000000000182511; conv(418977ad) = 0000000000000011
@@ -221,7 +221,7 @@ Test VSX vector and scalar single argument instructions
 
 #0: xvcvspuxws conv(3ec00000) = 00000000; conv(42780000) = 0000003e; conv(00000000) = 00000000; conv(7f800000) = ffffffff
 #1: xvcvspuxws conv(00000000) = 00000000; conv(00000000) = 00000000; conv(80000000) = 00000000; conv(7f800000) = ffffffff
-#2: xvcvspuxws conv(ff800000) = 00000000; conv(7fffffff) = 00000000; conv(ffffffff) = 00000000; conv(7fc00000) = 00000000
+#2: xvcvspuxws conv(ff800000) = 00000000; conv(7fbfffff) = 00000000; conv(ffbfffff) = 00000000; conv(7fc00000) = 00000000
 #3: xvcvspuxws conv(ffc00000) = 00000000; conv(80000000) = 00000000; conv(c683287b) = 00000000; conv(49192c2d) = 000992c2
 #4: xvcvspuxws conv(49c1288d) = 00182511; conv(418977ad) = 00000011; conv(428a5faf) = 00000045; conv(44bb5fcc) = 000005da
 
@@ -323,13 +323,13 @@ Test VSX vector and scalar single argument instructions
 
 #0: xvabssp abs(3ec00000) = 3ec00000; abs(42780000) = 42780000; abs(00000000) = 00000000; abs(7f800000) = 7f800000
 #1: xvabssp abs(00000000) = 00000000; abs(00000000) = 00000000; abs(80000000) = 00000000; abs(7f800000) = 7f800000
-#2: xvabssp abs(ff800000) = 7f800000; abs(7fffffff) = 7fffffff; abs(ffffffff) = 7fffffff; abs(7fc00000) = 7fc00000
+#2: xvabssp abs(ff800000) = 7f800000; abs(7fbfffff) = 7fbfffff; abs(ffbfffff) = 7fbfffff; abs(7fc00000) = 7fc00000
 #3: xvabssp abs(ffc00000) = 7fc00000; abs(80000000) = 00000000; abs(c683287b) = 4683287b; abs(49192c2d) = 49192c2d
 #4: xvabssp abs(49c1288d) = 49c1288d; abs(418977ad) = 418977ad; abs(428a5faf) = 428a5faf; abs(44bb5fcc) = 44bb5fcc
 
 #0: xvnabssp nabs(3ec00000) = bec00000; nabs(42780000) = c2780000; nabs(00000000) = 80000000; nabs(7f800000) = ff800000
 #1: xvnabssp nabs(00000000) = 80000000; nabs(00000000) = 80000000; nabs(80000000) = 80000000; nabs(7f800000) = ff800000
-#2: xvnabssp nabs(ff800000) = ff800000; nabs(7fffffff) = ffffffff; nabs(ffffffff) = ffffffff; nabs(7fc00000) = ffc00000
+#2: xvnabssp nabs(ff800000) = ff800000; nabs(7fbfffff) = ffbfffff; nabs(ffbfffff) = ffbfffff; nabs(7fc00000) = ffc00000
 #3: xvnabssp nabs(ffc00000) = ffc00000; nabs(80000000) = 80000000; nabs(c683287b) = c683287b; nabs(49192c2d) = c9192c2d
 #4: xvnabssp nabs(49c1288d) = c9c1288d; nabs(418977ad) = c18977ad; nabs(428a5faf) = c28a5faf; nabs(44bb5fcc) = c4bb5fcc
 
@@ -390,31 +390,31 @@ Test VSX vector and scalar single argument instructions
 
 #0: xvrspi round(3ec00000) = 00000000; round(42780000) = 42780000; round(00000000) = 00000000; round(7f800000) = 7f800000
 #1: xvrspi round(00000000) = 00000000; round(00000000) = 00000000; round(80000000) = 80000000; round(7f800000) = 7f800000
-#2: xvrspi round(ff800000) = ff800000; round(7fffffff) = 7fffffff; round(ffffffff) = ffffffff; round(7fc00000) = 7fc00000
+#2: xvrspi round(ff800000) = ff800000; round(7fbfffff) = 7fffffff; round(ffbfffff) = ffffffff; round(7fc00000) = 7fc00000
 #3: xvrspi round(ffc00000) = ffc00000; round(80000000) = 80000000; round(c683287b) = c6832800; round(49192c2d) = 49192c30
 #4: xvrspi round(49c1288d) = 49c12890; round(418977ad) = 41880000; round(428a5faf) = 428a0000; round(44bb5fcc) = 44bb6000
 
 #0: xvrspic round(3ec00000) = 00000000; round(42780000) = 42780000; round(00000000) = 00000000; round(7f800000) = 7f800000
 #1: xvrspic round(00000000) = 00000000; round(00000000) = 00000000; round(80000000) = 80000000; round(7f800000) = 7f800000
-#2: xvrspic round(ff800000) = ff800000; round(7fffffff) = 7fffffff; round(ffffffff) = ffffffff; round(7fc00000) = 7fc00000
+#2: xvrspic round(ff800000) = ff800000; round(7fbfffff) = 7fffffff; round(ffbfffff) = ffffffff; round(7fc00000) = 7fc00000
 #3: xvrspic round(ffc00000) = ffc00000; round(80000000) = 80000000; round(c683287b) = c6832800; round(49192c2d) = 49192c30
 #4: xvrspic round(49c1288d) = 49c12890; round(418977ad) = 41880000; round(428a5faf) = 428a0000; round(44bb5fcc) = 44bb6000
 
 #0: xvrspim round(3ec00000) = 00000000; round(42780000) = 42780000; round(00000000) = 00000000; round(7f800000) = 7f800000
 #1: xvrspim round(00000000) = 00000000; round(00000000) = 00000000; round(80000000) = 80000000; round(7f800000) = 7f800000
-#2: xvrspim round(ff800000) = ff800000; round(7fffffff) = 7fffffff; round(ffffffff) = ffffffff; round(7fc00000) = 7fc00000
+#2: xvrspim round(ff800000) = ff800000; round(7fbfffff) = 7fffffff; round(ffbfffff) = ffffffff; round(7fc00000) = 7fc00000
 #3: xvrspim round(ffc00000) = ffc00000; round(80000000) = 80000000; round(c683287b) = c6832a00; round(49192c2d) = 49192c20
 #4: xvrspim round(49c1288d) = 49c12888; round(418977ad) = 41880000; round(428a5faf) = 428a0000; round(44bb5fcc) = 44bb4000
 
 #0: xvrspip round(3ec00000) = 3f800000; round(42780000) = 42780000; round(00000000) = 00000000; round(7f800000) = 7f800000
 #1: xvrspip round(00000000) = 00000000; round(00000000) = 00000000; round(80000000) = 80000000; round(7f800000) = 7f800000
-#2: xvrspip round(ff800000) = ff800000; round(7fffffff) = 7fffffff; round(ffffffff) = ffffffff; round(7fc00000) = 7fc00000
+#2: xvrspip round(ff800000) = ff800000; round(7fbfffff) = 7fffffff; round(ffbfffff) = ffffffff; round(7fc00000) = 7fc00000
 #3: xvrspip round(ffc00000) = ffc00000; round(80000000) = 80000000; round(c683287b) = c6832800; round(49192c2d) = 49192c30
 #4: xvrspip round(49c1288d) = 49c12890; round(418977ad) = 41900000; round(428a5faf) = 428c0000; round(44bb5fcc) = 44bb6000
 
 #0: xvrspiz round(3ec00000) = 00000000; round(42780000) = 42780000; round(00000000) = 00000000; round(7f800000) = 7f800000
 #1: xvrspiz round(00000000) = 00000000; round(00000000) = 00000000; round(80000000) = 80000000; round(7f800000) = 7f800000
-#2: xvrspiz round(ff800000) = ff800000; round(7fffffff) = 7fffffff; round(ffffffff) = ffffffff; round(7fc00000) = 7fc00000
+#2: xvrspiz round(ff800000) = ff800000; round(7fbfffff) = 7fffffff; round(ffbfffff) = ffffffff; round(7fc00000) = 7fc00000
 #3: xvrspiz round(ffc00000) = ffc00000; round(80000000) = 80000000; round(c683287b) = c6832800; round(49192c2d) = 49192c20
 #4: xvrspiz round(49c1288d) = 49c12888; round(418977ad) = 41880000; round(428a5faf) = 428a0000; round(44bb5fcc) = 44bb4000
 
@@ -543,7 +543,7 @@ Test vector and scalar tdiv and tsqrt instructions
 
 #0: xvtsqrtsp test-sqrt(3ec00000); test-sqrt(42780000); test-sqrt(00000000); test-sqrt(7f800000) ? e (CRx)
 #1: xvtsqrtsp test-sqrt(00000000); test-sqrt(00000000); test-sqrt(80000000); test-sqrt(7f800000) ? e (CRx)
-#2: xvtsqrtsp test-sqrt(ff800000); test-sqrt(7fffffff); test-sqrt(ffffffff); test-sqrt(7fc00000) ? e (CRx)
+#2: xvtsqrtsp test-sqrt(ff800000); test-sqrt(7fbfffff); test-sqrt(ffbfffff); test-sqrt(7fc00000) ? e (CRx)
 #3: xvtsqrtsp test-sqrt(ffc00000); test-sqrt(80000000); test-sqrt(c683287b); test-sqrt(49192c2d) ? e (CRx)
 #4: xvtsqrtsp test-sqrt(49c1288d); test-sqrt(418977ad); test-sqrt(428a5faf); test-sqrt(44bb5fcc) ? 8 (CRx)
 
@@ -583,21 +583,21 @@ Test vector and scalar tdiv and tsqrt instructions
 #33: xvtdivdp 40976bf982440000 test-div 40976bf982440000 AND 40976bf982440000 test-div 40514bf5d2300000 ? cc=8
 
 #0: xvtdivsp ff800000 test-div ff800000 AND ff800000 test-div c683287b AND 49192c2d test-div 49c1288d AND ff800000 test-div 00000000 ? cc=e
-#1: xvtdivsp ff800000 test-div 00000000 AND ff800000 test-div 7f800000 AND ff800000 test-div 7fffffff AND ff800000 test-div 7fc00000 ? cc=e
+#1: xvtdivsp ff800000 test-div 00000000 AND ff800000 test-div 7f800000 AND ff800000 test-div 7fbfffff AND ff800000 test-div 7fc00000 ? cc=e
 #2: xvtdivsp c683287b test-div ff800000 AND c683287b test-div c683287b AND c683287b test-div 80000000 AND c683287b test-div 00000000 ? cc=e
-#3: xvtdivsp c683287b test-div 00000000 AND c683287b test-div 7f800000 AND c683287b test-div 7fffffff AND c683287b test-div 7fc00000 ? cc=e
+#3: xvtdivsp c683287b test-div 00000000 AND c683287b test-div 7f800000 AND c683287b test-div 7fbfffff AND c683287b test-div 7fc00000 ? cc=e
 #4: xvtdivsp 80000000 test-div ff800000 AND 80000000 test-div c683287b AND 80000000 test-div 80000000 AND 80000000 test-div 00000000 ? cc=e
-#5: xvtdivsp 80000000 test-div 00000000 AND 80000000 test-div 7f800000 AND 80000000 test-div 7fffffff AND 80000000 test-div 7fc00000 ? cc=e
+#5: xvtdivsp 80000000 test-div 00000000 AND 80000000 test-div 7f800000 AND 80000000 test-div 7fbfffff AND 80000000 test-div 7fc00000 ? cc=e
 #6: xvtdivsp 00000000 test-div ff800000 AND 00000000 test-div c683287b AND 00000000 test-div 80000000 AND 00000000 test-div 00000000 ? cc=e
-#7: xvtdivsp 00000000 test-div 00000000 AND 00000000 test-div 7f800000 AND 00000000 test-div 7fffffff AND 00000000 test-div 7fc00000 ? cc=e
+#7: xvtdivsp 00000000 test-div 00000000 AND 00000000 test-div 7f800000 AND 00000000 test-div 7fbfffff AND 00000000 test-div 7fc00000 ? cc=e
 #8: xvtdivsp 00000000 test-div ff800000 AND 00000000 test-div c683287b AND 00000000 test-div 80000000 AND 00000000 test-div 00000000 ? cc=e
-#9: xvtdivsp 00000000 test-div 42780000 AND 00000000 test-div 7f800000 AND 00000000 test-div 7fffffff AND 00000000 test-div 7fc00000 ? cc=e
+#9: xvtdivsp 00000000 test-div 42780000 AND 00000000 test-div 7f800000 AND 00000000 test-div 7fbfffff AND 00000000 test-div 7fc00000 ? cc=e
 #10: xvtdivsp 7f800000 test-div ff800000 AND 7f800000 test-div c683287b AND 7f800000 test-div 80000000 AND 7f800000 test-div 00000000 ? cc=e
-#11: xvtdivsp 7f800000 test-div 00000000 AND 7f800000 test-div 7f800000 AND 7f800000 test-div 7fffffff AND 7f800000 test-div 7fc00000 ? cc=e
-#12: xvtdivsp ffffffff test-div ff800000 AND ffffffff test-div c683287b AND ffc00000 test-div 80000000 AND ffc00000 test-div 00000000 ? cc=e
-#13: xvtdivsp ffffffff test-div 00000000 AND ffffffff test-div 7f800000 AND ffffffff test-div 7fffffff AND ffffffff test-div 7fc00000 ? cc=e
+#11: xvtdivsp 7f800000 test-div 00000000 AND 7f800000 test-div 7f800000 AND 7f800000 test-div 7fbfffff AND 7f800000 test-div 7fc00000 ? cc=e
+#12: xvtdivsp ffbfffff test-div ff800000 AND ffbfffff test-div c683287b AND ffc00000 test-div 80000000 AND ffc00000 test-div 00000000 ? cc=e
+#13: xvtdivsp ffbfffff test-div 00000000 AND ffbfffff test-div 7f800000 AND ffbfffff test-div 7fbfffff AND ffbfffff test-div 7fc00000 ? cc=e
 #14: xvtdivsp ffc00000 test-div ff800000 AND ffc00000 test-div c683287b AND ffc00000 test-div 80000000 AND 49192c2d test-div 49c1288d ? cc=e
-#15: xvtdivsp 49192c2d test-div 49c1288d AND 7fffffff test-div 7fc00000 AND 7fc00000 test-div 7fc00000 AND 7fc00000 test-div ffc00000 ? cc=a
+#15: xvtdivsp 49192c2d test-div 49c1288d AND 7fbfffff test-div 7fc00000 AND 7fc00000 test-div 7fc00000 AND 7fc00000 test-div ffc00000 ? cc=a
 #16: xvtdivsp 49c1288d test-div 428a5faf AND 418977ad test-div 49c1288d AND 44bb5fcc test-div 44bb5fcc AND 44bb5fcc test-div 428a5faf ? cc=8
 
 Test popcntw instruction

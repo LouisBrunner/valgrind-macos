@@ -196,32 +196,6 @@ LibVEX_GuestAMD64_put_rflag_c ( ULong new_carry_flag,
                                 /*MOD*/VexGuestAMD64State* vex_state );
 
 
-#if 0
-/* Convert a saved x87 FPU image (as created by fsave) and write it
-   into the supplied VexGuestX86State structure.  The non-FP parts of
-   said structure are left unchanged.  
-*/
-extern 
-void LibVEX_GuestX86_put_x87 ( /*IN*/UChar* x87_state, 
-                               /*OUT*/VexGuestX86State* vex_state );
-
-/* Extract from the supplied VexGuestX86State structure, an x87 FPU
-   image. */
-extern 
-void LibVEX_GuestX86_get_x87 ( /*IN*/const VexGuestX86State* vex_state, 
-                               /*OUT*/UChar* x87_state );
-
-
-/* Given a 32-bit word containing native x86 %eflags values, set the
-   eflag-related fields in the supplied VexGuestX86State accordingly.
-   All other fields are left unchanged.  */
-
-extern
-void LibVEX_GuestX86_put_eflags ( UInt eflags_native,
-                                  /*OUT*/VexGuestX86State* vex_state );
-
-#endif /* 0 */
-
 #endif /* ndef __LIBVEX_PUB_GUEST_AMD64_H */
 
 /*---------------------------------------------------------------*/

@@ -20937,15 +20937,17 @@ Long dis_ESC_0F (
       const HChar*   fName = NULL;
       void*    fAddr = NULL;
       if (haveF2orF3(pfx)) goto decode_failure;
-      if (archinfo->hwcaps == (VEX_HWCAPS_AMD64_SSE3
-                               |VEX_HWCAPS_AMD64_CX16 
-                               |VEX_HWCAPS_AMD64_AVX)) {
+      /* This isn't entirely correct, CPUID should depend on the VEX
+         capabilities, not on the underlying CPU. See bug #324882. */
+      if ((archinfo->hwcaps & VEX_HWCAPS_AMD64_SSE3) &&
+          (archinfo->hwcaps & VEX_HWCAPS_AMD64_CX16) &&
+          (archinfo->hwcaps & VEX_HWCAPS_AMD64_AVX)) {
          fName = "amd64g_dirtyhelper_CPUID_avx_and_cx16";
          fAddr = &amd64g_dirtyhelper_CPUID_avx_and_cx16;
          /* This is a Core-i5-2300-like machine */
       }
-      else if (archinfo->hwcaps == (VEX_HWCAPS_AMD64_SSE3
-                                    |VEX_HWCAPS_AMD64_CX16)) {
+      else if ((archinfo->hwcaps & VEX_HWCAPS_AMD64_SSE3) &&
+               (archinfo->hwcaps & VEX_HWCAPS_AMD64_CX16)) {
          fName = "amd64g_dirtyhelper_CPUID_sse42_and_cx16";
          fAddr = &amd64g_dirtyhelper_CPUID_sse42_and_cx16;
          /* This is a Core-i5-670-like machine */

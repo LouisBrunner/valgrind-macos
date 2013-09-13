@@ -2357,10 +2357,39 @@ guest_s390x_spechelper(const HChar *function_name, IRExpr **args,
                           mkU64(0)));
       }
 
-missed:
-      ;
+      goto missed;
    }
 
+   /* --------- Specialising "s390_calculate_cond" --------- */
+
+   if (vex_streq(function_name, "s390_calculate_cc")) {
+      IRExpr *cc_op_expr, *cc_dep1;
+      ULong cc_op;
+
+      vassert(arity == 4);
+
+      cc_op_expr = args[0];
+
+      /* The necessary requirement for all optimizations here is that
+         cc_op is constant. So check that upfront. */
+      if (! isC64(cc_op_expr)) return NULL;
+
+      cc_op   = cc_op_expr->Iex.Const.con->Ico.U64;
+      cc_dep1 = args[1];
+
+      if (cc_op == S390_CC_OP_BITWISE) {
+         return unop(Iop_1Uto32,
+                     binop(Iop_CmpNE64, cc_dep1, mkU64(0)));
+      }
+
+      if (cc_op == S390_CC_OP_SET) {
+         return unop(Iop_64to32, cc_dep1);
+      }
+
+      goto missed;
+   }
+
+missed:
    return NULL;
 }
 

@@ -80,7 +80,7 @@
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_oset.h"
-#include "pub_tool_poolalloc.h"
+#include "pub_core_poolalloc.h"
 
 /*--------------------------------------------------------------------*/
 /*--- Types and constants                                          ---*/

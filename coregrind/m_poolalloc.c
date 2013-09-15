@@ -29,8 +29,8 @@
 #include "pub_core_basics.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
-#include "pub_tool_xarray.h"
-#include "pub_tool_poolalloc.h" /* self */
+#include "pub_core_xarray.h"
+#include "pub_core_poolalloc.h" /* self */
 
 struct _PoolAlloc {
    UWord   nrRef;         /* nr reference to this pool allocator */

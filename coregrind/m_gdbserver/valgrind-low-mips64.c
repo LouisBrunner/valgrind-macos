@@ -27,7 +27,7 @@
 #include "regcache.h"
 
 #include "pub_core_aspacemgr.h"
-#include "pub_tool_machine.h"
+#include "pub_core_machine.h"
 #include "pub_core_debuginfo.h"
 #include "pub_core_threadstate.h"
 #include "pub_core_transtab.h"

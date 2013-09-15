@@ -41,10 +41,10 @@
 #include "pub_core_syscall.h"
 #include "pub_core_vki.h"
 #include "pub_core_vkiscnums.h"    // __NR_futex
-#include "pub_tool_libcproc.h"
-#include "pub_tool_mallocfree.h"
-#include "pub_tool_threadstate.h"
-#include "pub_tool_inner.h"
+#include "pub_core_libcproc.h"
+#include "pub_core_mallocfree.h"
+#include "pub_core_threadstate.h"
+#include "pub_core_inner.h"
 #if defined(ENABLE_INNER_CLIENT_REQUEST)
 #include "helgrind/helgrind.h"
 #endif

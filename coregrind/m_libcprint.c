@@ -31,7 +31,7 @@
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
 #include "pub_core_debuglog.h"
-#include "pub_tool_gdbserver.h"  // VG_(gdb_printf)
+#include "pub_core_gdbserver.h"  // VG_(gdb_printf)
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcfile.h"   // VG_(write)(), VG_(write_socket)()

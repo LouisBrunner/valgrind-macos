@@ -29,8 +29,8 @@
 
 #include "config.h"
 #include "pub_core_basics.h"
-#include "pub_tool_libcbase.h"
-#include "pub_tool_mallocfree.h"
+#include "pub_core_libcbase.h"
+#include "pub_core_mallocfree.h"
 #include "priv_sema.h"
 #include "priv_sched-lock.h"
 #include "priv_sched-lock-impl.h"

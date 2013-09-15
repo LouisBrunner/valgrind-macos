@@ -29,11 +29,11 @@
 #include "valgrind_low.h"
 #include "gdb/signals.h"
 #include "pub_core_aspacemgr.h"
-#include "pub_tool_machine.h"
+#include "pub_core_machine.h"
 #include "pub_core_threadstate.h"
 #include "pub_core_transtab.h"
 #include "pub_core_gdbserver.h" 
-#include "pub_tool_debuginfo.h"
+#include "pub_core_debuginfo.h"
 
 
 /* the_low_target defines the architecture specific aspects depending

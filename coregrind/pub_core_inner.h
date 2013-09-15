@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Utilities for inner Valgrind                pub_tool_inner.h ---*/
+/*--- Utilities for inner Valgrind                pub_core_inner.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -28,8 +28,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __PUB_TOOL_INNER_H
-#define __PUB_TOOL_INNER_H
+#ifndef __PUB_CORE_INNER_H
+#define __PUB_CORE_INNER_H
 
 //--------------------------------------------------------------------
 // PURPOSE: This header should be imported by every  file in Valgrind
@@ -65,7 +65,7 @@
 
 #endif
 
-#endif   // __PUB_TOOL_INNER_H
+#endif   // __PUB_CORE_INNER_H
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

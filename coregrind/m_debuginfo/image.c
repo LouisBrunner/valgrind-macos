@@ -39,11 +39,11 @@
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
+#include "pub_core_libcproc.h"     /* VG_(read_millisecond_timer) */
 #include "pub_core_libcfile.h"
 #include "priv_misc.h"             /* dinfo_zalloc/free/strdup */
 #include "priv_image.h"            /* self */
 
-#include "pub_tool_libcproc.h" // RMME
 #include "minilzo.h"
 
 #define CACHE_ENTRY_SIZE_BITS (12+1)

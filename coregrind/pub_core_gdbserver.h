@@ -31,6 +31,7 @@
 #define __PUB_CORE_GDBSERVER_H
 
 #include "pub_tool_gdbserver.h"
+#include "pub_core_threadstate.h"   // VgSchedReturnCode
 
 /* Return the path prefix for the named pipes (FIFOs) used by vgdb/gdb
    to communicate with valgrind */

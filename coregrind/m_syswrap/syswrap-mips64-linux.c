@@ -59,7 +59,7 @@
 #include "pub_core_xarray.h"
 #include "pub_core_clientstate.h"  /* VG_(brk_base), VG_(brk_limit) */
 #include "pub_core_errormgr.h"
-#include "pub_tool_gdbserver.h"    /* VG_(gdbserver) */
+#include "pub_core_gdbserver.h"    /* VG_(gdbserver) */
 #include "pub_core_libcfile.h"
 #include "pub_core_machine.h"      /* VG_(get_SP) */
 #include "pub_core_mallocfree.h"

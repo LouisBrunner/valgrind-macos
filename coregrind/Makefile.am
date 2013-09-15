@@ -156,6 +156,7 @@ noinst_HEADERS = \
 	pub_core_gdbserver.h	\
 	pub_core_hashtable.h	\
 	pub_core_initimg.h	\
+	pub_core_inner.h	\
 	pub_core_libcbase.h	\
 	pub_core_libcassert.h	\
 	pub_core_libcfile.h	\
@@ -169,6 +170,7 @@ noinst_HEADERS = \
 	pub_core_options.h	\
 	pub_core_oset.h		\
 	pub_core_redir.h	\
+	pub_core_poolalloc.h	\
 	pub_core_replacemalloc.h\
 	pub_core_sbprofile.h	\
 	pub_core_scheduler.h	\

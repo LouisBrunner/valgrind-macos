@@ -43,7 +43,7 @@
 #include "pub_core_transtab.h"
 #include "pub_core_tooliface.h"
 
-#include "pub_tool_inner.h"
+#include "pub_core_inner.h"
 #if defined(ENABLE_INNER_CLIENT_REQUEST)
 #include "memcheck/memcheck.h"
 #endif

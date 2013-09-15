@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- A simple pool (memory) allocator.     pub_tool_poolalloc.h ---*/
+/*--- A simple pool (memory) allocator.       pub_tool_poolalloc.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -28,8 +28,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __PUB_TOOL_GROUPALLOC_H
-#define __PUB_TOOL_GROUPALLOC_H
+#ifndef __PUB_TOOL_POOLALLOC_H
+#define __PUB_TOOL_POOLALLOC_H
 
 //--------------------------------------------------------------------
 // PURPOSE: Provides efficient allocation and free of elements of

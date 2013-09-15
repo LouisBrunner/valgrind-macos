@@ -31,6 +31,8 @@
 #include "pub_core_basics.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcprint.h"
+#include "pub_core_libcassert.h"
+#include "pub_core_tooliface.h"       // VG_(needs)
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
 #include "pub_core_replacemalloc.h"
@@ -69,6 +71,13 @@ Bool VG_(replacement_malloc_process_cmd_line_option)(const HChar* arg)
       return False;
 
    return True;
+}
+
+SizeT VG_(malloc_effective_client_redzone_size)(void)
+{
+   vg_assert(VG_(needs).malloc_replacement);
+
+   return VG_(arena_redzone_size)(VG_AR_CLIENT);
 }
 
 /*------------------------------------------------------------*/

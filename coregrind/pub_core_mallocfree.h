@@ -117,6 +117,8 @@ extern HChar* VG_(arena_strdup)  ( ArenaId aid, const HChar* cc,
 
 extern SizeT VG_(arena_malloc_usable_size) ( ArenaId aid, void* payload );
 
+extern SizeT VG_(arena_redzone_size) ( ArenaId aid );
+
 extern void  VG_(mallinfo) ( ThreadId tid, struct vg_mallinfo* mi );
 
 // VG_(arena_perm_malloc) is for permanent allocation of small blocks.

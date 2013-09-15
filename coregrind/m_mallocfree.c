@@ -511,16 +511,6 @@ static ArenaId arenaP_to_ArenaId ( Arena *a )
    return arena;
 }
 
-SizeT VG_(malloc_effective_client_redzone_size)(void)
-{
-   vg_assert(VG_(needs).malloc_replacement);
-   ensure_mm_init (VG_AR_CLIENT);
-   /*  ensure_mm_init will call arena_init if not yet done.
-       This then ensures that the arena redzone size is properly
-       initialised. */
-   return arenaId_to_ArenaP(VG_AR_CLIENT)->rz_szB;
-}
-
 // Initialise an arena.  rz_szB is the (default) minimum redzone size;
 // It might be overriden by VG_(clo_redzone_size) or VG_(clo_core_redzone_size).
 // it might be made bigger to ensure that VG_MIN_MALLOC_SZB is observed.
@@ -2186,6 +2176,14 @@ void VG_(mallinfo) ( ThreadId tid, struct vg_mallinfo* mi )
    mi->keepcost = 0; // may want some value in here
 }
 
+SizeT VG_(arena_redzone_size) ( ArenaId aid )
+{
+   ensure_mm_init (VG_AR_CLIENT);
+   /*  ensure_mm_init will call arena_init if not yet done.
+       This then ensures that the arena redzone size is properly
+       initialised. */
+   return arenaId_to_ArenaP(aid)->rz_szB;
+}
 
 /*------------------------------------------------------------*/
 /*--- Services layered on top of malloc/free.              ---*/

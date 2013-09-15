@@ -10,6 +10,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#if defined(__mips__)
+#include <asm/cachectl.h>
+#include <sys/syscall.h>
+#endif
 #include "tests/sys_mman.h"
 
 #define FN_SIZE   996      // Must be big enough to hold the compiled f()
@@ -58,7 +62,11 @@ int main(int argc, char* argv[])
    for (i = 0; i < n_fns; i++) {
       memcpy(&a[FN_SIZE*i], f, FN_SIZE);
    }
-   
+
+#if defined(__mips__)
+   syscall(__NR_cacheflush, a, FN_SIZE * n_fns, ICACHE);
+#endif
+
    for (h = 0; h < n_reps; h += 1) {
       for (i = 0; i < n_fns; i += 4) {
          int(*f1)(int,int) = (void*)&a[FN_SIZE*(i+0)];

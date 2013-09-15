@@ -32,6 +32,8 @@
 #ifndef __PUB_TOOL_SPARSEWA_H
 #define __PUB_TOOL_SPARSEWA_H
 
+#include "pub_tool_basics.h"   // UWord
+
 //--------------------------------------------------------------------
 // PURPOSE: (see coregrind/pub_core_sparsewa.h for details)
 //--------------------------------------------------------------------

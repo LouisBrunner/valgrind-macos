@@ -31,6 +31,9 @@
 #ifndef __PUB_CORE_SCHEDULER_H
 #define __PUB_CORE_SCHEDULER_H
 
+#include "pub_core_basics.h"        // VG_ macro
+#include "pub_core_threadstate.h"   // VgSchedReturnCode
+
 //--------------------------------------------------------------------
 // PURPOSE: This module is the scheduler, which is the main loop
 // controlling the running of all the program's threads.

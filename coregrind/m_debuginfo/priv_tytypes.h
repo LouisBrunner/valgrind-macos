@@ -36,6 +36,10 @@
 #ifndef __PRIV_TYTYPES_H
 #define __PRIV_TYTYPES_H
 
+#include "pub_core_basics.h"   // UWord
+#include "pub_core_xarray.h"   // XArray
+#include "priv_misc.h"         // MaybeULong
+
 typedef
    enum {
       Te_EMPTY=10, /* empty (contains no info) */

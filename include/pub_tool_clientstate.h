@@ -31,6 +31,9 @@
 #ifndef __PUB_TOOL_CLIENTSTATE_H
 #define __PUB_TOOL_CLIENTSTATE_H
 
+#include "pub_tool_basics.h"   // VG_ macro
+#include "pub_tool_xarray.h"   // XArray
+
 /* Note, this header requires pub_{core,tool}_xarray.h to be
    included ahead of it. */
 

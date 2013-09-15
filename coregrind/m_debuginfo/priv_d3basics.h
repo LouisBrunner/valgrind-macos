@@ -38,6 +38,8 @@
 #ifndef __PRIV_D3BASICS_H
 #define __PRIV_D3BASICS_H
 
+#include "pub_core_basics.h"       // Addr
+#include "pub_core_debuginfo.h"    // DebugInfo
 
 /* This stuff is taken from gdb-6.6/include/elf/dwarf2.h, which is
    GPL2+.

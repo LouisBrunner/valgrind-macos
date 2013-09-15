@@ -32,6 +32,8 @@
 #ifndef __PUB_TOOL_SEQMATCH_H
 #define __PUB_TOOL_SEQMATCH_H
 
+#include "pub_tool_basics.h"   // UWord
+
 /* Perform totally abstractified sequence matching, of an input
    sequence against a pattern sequence.  The pattern sequence may
    include '*' elements (matches any number of anything) and '?'

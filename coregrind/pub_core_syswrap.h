@@ -31,6 +31,9 @@
 #ifndef __PUB_CORE_SYSWRAP_H
 #define __PUB_CORE_SYSWRAP_H
 
+#include "pub_core_basics.h"        // VG_ macro
+#include "pub_core_threadstate.h"   // ThreadArchState
+
 //--------------------------------------------------------------------
 // PURPOSE: This module contains all the syscall junk:  mostly PRE/POST
 // wrappers, but also the main syscall jacketing code.

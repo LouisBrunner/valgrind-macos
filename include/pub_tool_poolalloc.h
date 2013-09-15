@@ -31,6 +31,8 @@
 #ifndef __PUB_TOOL_POOLALLOC_H
 #define __PUB_TOOL_POOLALLOC_H
 
+#include "pub_tool_basics.h"   // UWord
+
 //--------------------------------------------------------------------
 // PURPOSE: Provides efficient allocation and free of elements of
 // the same size.

@@ -37,11 +37,13 @@
 #ifndef __PRIV_READDWARF3_H
 #define __PRIV_READDWARF3_H
 
+#include "pub_core_debuginfo.h"   // DebugInfo
+#include "priv_image.h"           // DiSlice
 
 /* Read variables and types from DWARF3 ".debug_info" sections. */
 void 
 ML_(new_dwarf3_reader) (
-   struct _DebugInfo* di,
+   DebugInfo* di,
    DiSlice escn_debug_info,      DiSlice escn_debug_types,
    DiSlice escn_debug_abbv,      DiSlice escn_debug_line,
    DiSlice escn_debug_str,       DiSlice escn_debug_ranges,

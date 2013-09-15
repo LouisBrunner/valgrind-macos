@@ -41,6 +41,7 @@
 
 #include "pub_tool_threadstate.h"
 #include "pub_core_libcsetjmp.h"   // VG_MINIMAL_JMP_BUF
+#include "pub_core_vki.h"          // vki_sigset_t
 
 /*------------------------------------------------------------*/
 /*--- Types                                                ---*/

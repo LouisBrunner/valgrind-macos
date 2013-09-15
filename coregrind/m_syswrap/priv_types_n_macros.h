@@ -32,6 +32,8 @@
 #ifndef __PRIV_TYPES_N_MACROS_H
 #define __PRIV_TYPES_N_MACROS_H
 
+#include "pub_core_basics.h"    // Addr
+
 /* requires #include "pub_core_options.h" */
 /* requires #include "pub_core_signals.h" */
 

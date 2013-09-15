@@ -31,6 +31,8 @@
 #ifndef __PUB_TOOL_LIBCBASSERT_H
 #define __PUB_TOOL_LIBCBASSERT_H
 
+#include "pub_tool_basics.h"   // VG_ macro
+
 #define tl_assert(expr)                                                 \
   ((void) (LIKELY(expr) ? 0 :                                           \
            (VG_(assert_fail) (/*isCore?*/False, #expr,                  \

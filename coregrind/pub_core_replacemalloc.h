@@ -37,6 +37,7 @@
 //--------------------------------------------------------------------
 
 #include "pub_tool_replacemalloc.h"
+#include "pub_core_mallocfree.h"      // vg_mallinfo
 
 // things vg_replace_malloc.o needs to know about
 struct vg_mallocfunc_info {

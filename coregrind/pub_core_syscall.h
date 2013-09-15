@@ -31,6 +31,8 @@
 #ifndef __PUB_CORE_SYSCALL_H
 #define __PUB_CORE_SYSCALL_H
 
+#include "pub_core_basics.h"   // VG_ macro
+
 //--------------------------------------------------------------------
 // PURPOSE: This module contains the code for actually executing syscalls.
 //--------------------------------------------------------------------

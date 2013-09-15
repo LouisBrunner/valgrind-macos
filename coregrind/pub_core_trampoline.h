@@ -31,6 +31,8 @@
 #ifndef __PUB_CORE_TRAMPOLINE_H
 #define __PUB_CORE_TRAMPOLINE_H
 
+#include "pub_core_basics.h"   // VG_ macro
+
 //--------------------------------------------------------------------
 // PURPOSE: This module defines a few replacement functions for Linux
 // vsyscalls, which we can't implement directly.  It also contains

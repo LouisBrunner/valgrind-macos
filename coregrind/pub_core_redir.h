@@ -55,7 +55,8 @@
 //--------------------------------------------------------------------
 
 #include "pub_tool_redir.h"
-
+#include "pub_core_basics.h"      // Addr
+#include "pub_core_debuginfo.h"   // DebugInfo
 
 //--------------------------------------------------------------------
 // Notifications - by which we are told of state changes

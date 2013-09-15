@@ -32,6 +32,8 @@
 #ifndef __PRIV_SCHED_LOCK_H
 #define __PRIV_SCHED_LOCK_H
 
+#include "pub_core_basics.h"   // Bool
+
 struct sched_lock;
 
 enum SchedLockType { sched_lock_generic, sched_lock_ticket };

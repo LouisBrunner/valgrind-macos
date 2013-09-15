@@ -31,6 +31,9 @@
 #ifndef __PUB_TOOL_LIBCBSIGNAL_H
 #define __PUB_TOOL_LIBCBSIGNAL_H
 
+#include "pub_tool_basics.h"   // VG_ macro
+#include "pub_tool_vki.h"      // vki_sigset
+
 /* Note that these use the vki_ (kernel) structure
    definitions, which are different in places from those that glibc
    defines.  Since we're operating right at the kernel interface, glibc's view

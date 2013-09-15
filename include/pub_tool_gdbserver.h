@@ -30,6 +30,7 @@
 #ifndef __PUB_TOOL_GDBSERVER_H
 #define __PUB_TOOL_GDBSERVER_H
 
+#include "pub_tool_basics.h"   // VG_ macro
 #include "libvex.h"
 #include "libvex_ir.h"
 

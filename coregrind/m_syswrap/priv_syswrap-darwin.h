@@ -31,7 +31,8 @@
 #ifndef __PRIV_SYSWRAP_DARWIN_H
 #define __PRIV_SYSWRAP_DARWIN_H
 
-/* requires #include "priv_types_n_macros.h" */
+#include "pub_core_basics.h"         // ThreadId
+#include "priv_types_n_macros.h"     // DECL_TEMPLATE
 
 // syswrap-darwin.c
 Addr allocstack ( ThreadId tid );

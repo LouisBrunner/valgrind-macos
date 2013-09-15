@@ -31,6 +31,8 @@
 #ifndef __PUB_CORE_UME_H
 #define __PUB_CORE_UME_H
 
+#include "pub_core_basics.h"   // VG_ macro
+
 //--------------------------------------------------------------------
 // PURPOSE: This module implements user-mode execve, ie. program loading
 // and exec'ing.

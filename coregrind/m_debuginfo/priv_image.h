@@ -30,6 +30,11 @@
 
 /* Contributed by Julian Seward <jseward@acm.org> */
 
+#ifndef __PRIV_IMAGE_H
+#define __PRIV_IMAGE_H
+
+#include "pub_core_basics.h"    // ULong
+#include "priv_misc.h"          // ML_(dinfo_zalloc)
 
 /*------------------------------------------------------------*/
 /*--- DiImage -- abstract images                           ---*/
@@ -339,7 +344,7 @@ static inline Addr ML_(cur_step_Addr) ( DiCursor* c ) {
    }
 }
 
-
+#endif /* ndef __PRIV_IMAGE_H */
 
 /*--------------------------------------------------------------------*/
 /*--- end                                             priv_image.h ---*/

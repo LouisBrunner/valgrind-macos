@@ -32,6 +32,8 @@
 #ifndef __PUB_CORE_SBPROFILE_H
 #define __PUB_CORE_SBPROFILE_H
 
+#include "pub_core_basics.h"   // VG_ macro
+
 /* Get and print a profile.  Also, zero out the counters so that if we
    call it again later, the second call will only show new work done
    since the first call.  ecs_done == 0 is taken to mean this is a

@@ -31,6 +31,8 @@
 #ifndef __PUB_TOOL_XARRAY_H
 #define __PUB_TOOL_XARRAY_H
 
+#include "pub_tool_basics.h"    // Word
+
 //--------------------------------------------------------------------
 // PURPOSE: Provides a simple but useful structure, which is an array
 // in which elements can be added at the end.  The array is expanded

@@ -34,6 +34,7 @@
 #define __PUB_TOOL_VKISCNUMS_H
 
 #include "pub_tool_vkiscnums_asm.h"
+#include "pub_tool_basics.h"    // Word
 
 
 // This converts a syscall number into a string, suitable for printing.  It is

@@ -31,6 +31,7 @@
 #ifndef __PUB_CORE_COMMANDLINE_H
 #define __PUB_CORE_COMMANDLINE_H
 
+#include "pub_core_basics.h"      // VG_ macro
 
 /* Split up the args presented by the launcher to m_main.main(), and
    park them in VG_(args_for_client), VG_(args_for_valgrind) and

@@ -31,7 +31,8 @@
 #ifndef __PRIV_SYSWRAP_LINUX_H
 #define __PRIV_SYSWRAP_LINUX_H
 
-/* requires #include "priv_types_n_macros.h" */
+#include "pub_core_basics.h"     // ThreadId
+#include "priv_types_n_macros.h" // DECL_TEMPLATE
 
 // Clone-related functions
 extern Word ML_(start_thread_NORETURN) ( void* arg );

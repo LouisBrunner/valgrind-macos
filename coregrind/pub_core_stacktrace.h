@@ -37,6 +37,7 @@
 //--------------------------------------------------------------------
 
 #include "pub_tool_stacktrace.h"
+#include "pub_core_basics.h"         // UnwindStartRegs
 
 // Variant that gives a little more control over the stack-walking
 // (this is the "worker" function that actually does the walking).

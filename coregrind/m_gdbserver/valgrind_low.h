@@ -26,6 +26,9 @@
 #ifndef VALGRIND_LOW_H
 #define VALGRIND_LOW_H
 
+#include "pub_core_basics.h"    // ThreadId
+#include "server.h"             // CORE_ADDR
+
 /* defines the characteristics of the "low" valgrind target architecture.
    In other words, struct valgrind_target_ops defines the functions and 
    data which are specific to the architecture (x86 or amd64 or 

@@ -30,6 +30,8 @@
 #ifndef __PUB_TOOL_EXECONTEXT_H
 #define __PUB_TOOL_EXECONTEXT_H
 
+#include "pub_tool_basics.h"   // ThreadID
+
 // It's an abstract type.
 typedef
    struct _ExeContext

@@ -22,6 +22,8 @@
 #ifndef REGCACHE_H
 #define REGCACHE_H
 
+#include "pub_core_basics.h"    // Bool
+
 struct inferior_list_entry;
 
 /* Create a new register cache for INFERIOR.  */

@@ -26,6 +26,9 @@
 #ifndef TARGET_H
 #define TARGET_H
 
+#include "pub_core_basics.h"    // Addr
+#include "server.h"             // CORE_ADDR
+
 /* This file defines the architecture independent Valgrind gdbserver
    high level operations such as read memory, get/set registers, ...
 

@@ -32,6 +32,8 @@
 #ifndef __PUB_TOOL_MALLOCFREE_H
 #define __PUB_TOOL_MALLOCFREE_H
 
+#include "pub_tool_basics.h"   // SizeT
+
 // These can be for allocating memory used by tools.
 // Nb: the allocators *always succeed* -- they never return NULL (Valgrind
 // will abort if they can't allocate the memory).

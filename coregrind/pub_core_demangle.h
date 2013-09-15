@@ -31,6 +31,8 @@
 #ifndef __PUB_CORE_DEMANGLE_H
 #define __PUB_CORE_DEMANGLE_H
 
+#include "pub_core_basics.h"      // VG_ macro
+
 //--------------------------------------------------------------------
 // PURPOSE: This module exports functions for demangling C++ and 
 // Z-encoded names.

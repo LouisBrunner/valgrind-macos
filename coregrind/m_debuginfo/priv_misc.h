@@ -36,6 +36,7 @@
 #ifndef __PRIV_MISC_H
 #define __PRIV_MISC_H
 
+#include "pub_core_basics.h"    // SizeT
 
 /* Allocate(zeroed), free, strdup, memdup, all in VG_AR_DINFO. */
 void*  ML_(dinfo_zalloc)( const HChar* cc, SizeT szB );

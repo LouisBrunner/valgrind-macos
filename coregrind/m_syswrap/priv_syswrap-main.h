@@ -31,6 +31,9 @@
 #ifndef __PRIV_SYSWRAP_MAIN_H
 #define __PRIV_SYSWRAP_MAIN_H
 
+#include "pub_core_basics.h"        // ThreadID
+#include "pub_core_threadstate.h"   // ThreadArchState
+
 /* Back up a thread so as to restart a system call. */
 extern
 void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch );

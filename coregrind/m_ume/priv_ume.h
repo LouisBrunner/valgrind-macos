@@ -32,6 +32,8 @@
 #ifndef __PRIV_UME_H
 #define __PRIV_UME_H
 
+#include "pub_core_ume.h"   // ExeInfo
+
 extern int VG_(do_exec_inner)(const HChar *exe, ExeInfo *info);
 
 #if defined(VGO_linux)

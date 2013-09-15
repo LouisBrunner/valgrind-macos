@@ -31,6 +31,8 @@
 #ifndef __PRIV_SEMA_H
 #define __PRIV_SEMA_H
 
+#include "pub_core_basics.h"   // Bool
+
 /* Not really a semaphore, but use a pipe for a token-passing scheme */
 typedef struct {
    Int  pipe[2];

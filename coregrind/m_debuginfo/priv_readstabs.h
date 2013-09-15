@@ -31,6 +31,9 @@
 #ifndef __PRIV_READSTABS_H
 #define __PRIV_READSTABS_H
 
+#include "pub_core_basics.h"      // UChar
+#include "pub_core_debuginfo.h"   // DebugInfo
+
 /*
    Stabs reader greatly improved by Nick Nethercote, Apr 02.
    This module was also extensively hacked on by Jeremy Fitzhardinge
@@ -41,7 +44,7 @@
    Stabs reader
    -------------------- */
 extern
-void ML_(read_debuginfo_stabs) ( struct _DebugInfo* di,
+void ML_(read_debuginfo_stabs) ( DebugInfo* di,
                                  UChar* stabC,   Int stab_sz,
                                  HChar* stabstr, Int stabstr_sz );
 

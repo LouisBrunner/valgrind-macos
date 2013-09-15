@@ -32,6 +32,9 @@
 #ifndef __PRIV_READMACHO_H
 #define __PRIV_READMACHO_H
 
+#include "pub_core_basics.h"     // SizeT
+#include "pub_core_debuginfo.h"  // DebugInfo
+
 /* Identify a Mach-O object file by peering at the first few bytes of
    it. */
 extern Bool ML_(is_macho_object_file)( const void* buf, SizeT size );
@@ -42,7 +45,7 @@ extern Bool ML_(is_macho_object_file)( const void* buf, SizeT size );
    info) and anything else we want, into the tables within the
    supplied DebugInfo.
 */
-extern Bool ML_(read_macho_debug_info) ( struct _DebugInfo* si );
+extern Bool ML_(read_macho_debug_info) ( DebugInfo* si );
 
 
 #endif /* ndef __PRIV_READMACHO_H */

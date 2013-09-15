@@ -36,6 +36,8 @@
 // running program.
 //--------------------------------------------------------------------
 
+#include "pub_core_basics.h"      // ThreadId
+
 extern void VG_(start_debugger) ( ThreadId tid );
 
 #endif   // __PUB_CORE_DEBUGGER_H

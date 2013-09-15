@@ -31,6 +31,8 @@
 #ifndef __PUB_TOOL_SIGNALS_H
 #define __PUB_TOOL_SIGNALS_H
 
+#include "pub_tool_basics.h"   // Addr
+
 // Register an interest in apparently internal faults; used code which
 // wanders around dangerous memory (ie, leakcheck).  The catcher is
 // not expected to return.

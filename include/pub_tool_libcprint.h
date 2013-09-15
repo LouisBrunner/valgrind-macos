@@ -31,6 +31,8 @@
 #ifndef __PUB_TOOL_LIBCPRINT_H
 #define __PUB_TOOL_LIBCPRINT_H
 
+#include "pub_tool_basics.h"      // VG_ macro
+
 /* ---------------------------------------------------------------------
    Formatting functions
    ------------------------------------------------------------------ */

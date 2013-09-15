@@ -40,6 +40,7 @@
 //--------------------------------------------------------------------
 
 #include "pub_core_dispatch_asm.h"
+#include "pub_core_basics.h"        // Addr
 
 /* Run translations, with the given guest state, and starting by
    running the host code at 'host_addr'.  It is almost always the case

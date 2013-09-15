@@ -31,6 +31,8 @@
 #ifndef __PUB_CORE_CPUID_H
 #define __PUB_CORE_CPUID_H
 
+#include "pub_core_basics.h"      // VG_ macro
+
 //--------------------------------------------------------------------
 // PURPOSE: This module provides Valgrind's interface to the x86/amd64
 // CPUID instruction.

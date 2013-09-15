@@ -31,6 +31,8 @@
 #ifndef __PUB_TOOL_DEBUGINFO_H
 #define __PUB_TOOL_DEBUGINFO_H
 
+#include "pub_tool_basics.h"   // VG_ macro
+
 /*====================================================================*/
 /*=== Obtaining debug information                                  ===*/
 /*====================================================================*/

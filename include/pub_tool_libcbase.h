@@ -31,6 +31,8 @@
 #ifndef __PUB_TOOL_LIBCBASE_H
 #define __PUB_TOOL_LIBCBASE_H
 
+#include "pub_tool_basics.h"   // VG_ macro
+
 /* ---------------------------------------------------------------------
    Char functions.
    ------------------------------------------------------------------ */

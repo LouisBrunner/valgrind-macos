@@ -31,6 +31,7 @@
 #ifndef __PUB_TOOL_OPTIONS_H
 #define __PUB_TOOL_OPTIONS_H
 
+#include "pub_tool_basics.h"     // for VG_ macro
 #include "libvex.h"              // for VexControl
 
 

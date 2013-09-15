@@ -31,7 +31,9 @@
 #ifndef __PRIV_SYSWRAP_GENERIC_H
 #define __PRIV_SYSWRAP_GENERIC_H
 
-/* requires #include "priv_types_n_macros.h" */
+#include "pub_core_basics.h"      // ThreadId
+#include "pub_core_vki.h"         // vki_msghdr
+#include "priv_types_n_macros.h"  // DECL_TEMPLATE
 
 
 // Return true if address range entirely contained within client

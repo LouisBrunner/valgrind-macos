@@ -31,6 +31,8 @@
 #ifndef __PUB_TOOL_ASPACEHL_H
 #define __PUB_TOOL_ASPACEHL_H
 
+#include "pub_tool_basics.h"   // VG_ macro
+
 // Extract from aspacem a vector of the current segment start
 // addresses.  The vector is dynamically allocated and should be freed
 // by the caller when done.  REQUIRES m_mallocfree to be running.

@@ -52,6 +52,8 @@
 #ifndef __PUB_TOOL_WORDFM_H
 #define __PUB_TOOL_WORDFM_H
 
+#include "pub_tool_basics.h"    // Word
+
 //------------------------------------------------------------------//
 //---                           WordFM                           ---//
 //---                      Public interface                      ---//

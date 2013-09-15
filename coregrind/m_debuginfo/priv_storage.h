@@ -43,6 +43,11 @@
 #ifndef __PRIV_STORAGE_H
 #define __PRIV_STORAGE_H
 
+#include "pub_core_basics.h"   // Addr
+#include "pub_core_xarray.h"   // XArray
+#include "priv_d3basics.h"     // GExpr et al.
+#include "priv_image.h"        // DiCursor
+
 /* --------------------- SYMBOLS --------------------- */
 
 /* A structure to hold an ELF/MachO symbol (very crudely).  Usually

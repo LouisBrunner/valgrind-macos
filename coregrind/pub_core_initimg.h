@@ -32,6 +32,7 @@
 #ifndef __PUB_CORE_INITIMG_H
 #define __PUB_CORE_INITIMG_H
 
+#include "pub_core_basics.h"      // Addr
 
 //--------------------------------------------------------------------
 // PURPOSE: Map the client executable into memory, then set up its

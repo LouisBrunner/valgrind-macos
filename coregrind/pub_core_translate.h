@@ -31,6 +31,8 @@
 #ifndef __PUB_CORE_TRANSLATE_H
 #define __PUB_CORE_TRANSLATE_H
 
+#include "pub_core_basics.h"   // VG_ macro
+
 //--------------------------------------------------------------------
 // PURPOSE: This module is Valgrind's interface to the JITter.  It's
 // basically a wrapper around Vex.

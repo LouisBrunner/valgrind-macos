@@ -31,6 +31,8 @@
 #ifndef __PUB_TOOL_REPLACEMALLOC_H
 #define __PUB_TOOL_REPLACEMALLOC_H
 
+#include "pub_tool_basics.h"   // Addr
+
 /* If a tool replaces malloc() et al, the easiest way to do so is to
    link libreplacemalloc_toolpreload.o into its vgpreload_*.so file, and
    use the functions declared below.  You can do it from scratch,

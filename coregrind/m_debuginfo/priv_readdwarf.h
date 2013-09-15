@@ -31,6 +31,9 @@
 #ifndef __PRIV_READDWARF_H
 #define __PRIV_READDWARF_H
 
+#include "pub_core_debuginfo.h"   // DebugInfo
+#include "priv_image.h"           // DiSlice
+
 /*
    Stabs reader greatly improved by Nick Nethercote, Apr 02.
    This module was also extensively hacked on by Jeremy Fitzhardinge
@@ -43,7 +46,7 @@
    -------------------- */
 extern
 void ML_(read_debuginfo_dwarf3)
-        ( struct _DebugInfo* di,
+        ( DebugInfo* di,
           DiSlice escn_debug_info,      /* .debug_info */
           DiSlice escn_debug_types,     /* .debug_types */
           DiSlice escn_debug_abbv,      /* .debug_abbrev */
@@ -55,7 +58,7 @@ void ML_(read_debuginfo_dwarf3)
    DWARF1 reader
    -------------------- */
 extern
-void ML_(read_debuginfo_dwarf1) ( struct _DebugInfo* di,
+void ML_(read_debuginfo_dwarf1) ( DebugInfo* di,
                                   UChar* dwarf1d, Int dwarf1d_sz,
                                   UChar* dwarf1l, Int dwarf1l_sz );
 
@@ -64,7 +67,7 @@ void ML_(read_debuginfo_dwarf1) ( struct _DebugInfo* di,
    -------------------- */
 extern
 void ML_(read_callframe_info_dwarf3)
-        ( /*OUT*/struct _DebugInfo* di,
+        ( /*OUT*/ DebugInfo* di,
           DiSlice escn_frame, Addr frame_avma, Bool is_ehframe );
 
 

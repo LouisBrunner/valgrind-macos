@@ -31,6 +31,7 @@
 #ifndef __PUB_TOOL_MACHINE_H
 #define __PUB_TOOL_MACHINE_H
 
+#include "pub_tool_basics.h"           // ThreadID
 #include "libvex.h"                    // VexArchInfo
 
 #if defined(VGP_x86_linux)

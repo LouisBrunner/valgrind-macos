@@ -31,6 +31,9 @@
 #ifndef __PUB_CORE_COREDUMP_H
 #define __PUB_CORE_COREDUMP_H
 
+#include "pub_core_basics.h"      // ThreadId
+#include "pub_core_vki.h"         // vki_siginfo_t
+
 //--------------------------------------------------------------------
 // PURPOSE: This module produces a core dump when asked.
 //--------------------------------------------------------------------

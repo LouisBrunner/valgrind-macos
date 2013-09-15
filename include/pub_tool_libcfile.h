@@ -31,6 +31,9 @@
 #ifndef __PUB_TOOL_LIBCFILE_H
 #define __PUB_TOOL_LIBCFILE_H
 
+#include "pub_tool_basics.h"   // VG_ macro
+#include "pub_tool_vki.h"      // vki_dirent et al.
+
 /* ---------------------------------------------------------------------
    File-related functions.
    ------------------------------------------------------------------ */

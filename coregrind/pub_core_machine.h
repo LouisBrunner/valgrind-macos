@@ -38,6 +38,7 @@
 //--------------------------------------------------------------------
 
 #include "pub_tool_machine.h"
+#include "pub_core_basics.h"      // UnwindStartRegs
 
 // XXX: this is *really* the wrong spot for these things
 #if defined(VGP_x86_linux)

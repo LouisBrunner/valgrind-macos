@@ -42,6 +42,7 @@
    that means the only thing to be done here is ... */
 
 #include "pub_tool_vki.h"
+#include "pub_core_basics.h"   // VG_ macro
 
 /* Do initial consistency checks on some of the definitions to do with
    signals (vki_sigset_t and vki_sigaction_{toK,fromK}_t).  This stuff

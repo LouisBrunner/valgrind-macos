@@ -31,6 +31,8 @@
 #ifndef __PUB_CORE_STACKS_H
 #define __PUB_CORE_STACKS_H
 
+#include "pub_core_basics.h"    // VG_ macro
+
 //--------------------------------------------------------------------
 // PURPOSE: This module deals with the registration of stacks for the
 // purposes of detecting stack switches.

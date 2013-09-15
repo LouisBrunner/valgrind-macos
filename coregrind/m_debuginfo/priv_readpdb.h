@@ -37,6 +37,9 @@
 #ifndef __PRIV_READPDB_H
 #define __PRIV_READPDB_H
 
+#include "pub_core_basics.h"     // Addr
+#include "pub_core_debuginfo.h"  // DebugInfo
+
 /* Returns True if OK, False for any kind of failure. */
 extern Bool ML_(read_pdb_debug_info)(
                DebugInfo* di,

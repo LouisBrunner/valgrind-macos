@@ -31,6 +31,8 @@
 #ifndef __PUB_TOOL_OSET_H
 #define __PUB_TOOL_OSET_H
 
+#include "pub_tool_basics.h"   // Word
+
 // This module implements an ordered set, a data structure with fast
 // (eg. amortised log(n) or better) insertion, lookup and deletion of
 // elements.  It does not allow duplicates, and will assert if you insert a

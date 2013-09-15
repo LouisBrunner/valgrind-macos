@@ -32,8 +32,7 @@
 #ifndef __PRIV_SYSWRAP_LINUX_VARIANTS_H
 #define __PRIV_SYSWRAP_LINUX_VARIANTS_H
 
-/* requires #include "priv_types_n_macros.h" */
-
+#include "pub_core_basics.h"   // ThreadId
 
 /* ---------------------------------------------------------------
    BProc wrappers

@@ -37,6 +37,7 @@
 //--------------------------------------------------------------------
 
 #include "pub_tool_libcassert.h"
+#include "pub_core_basics.h"      // UnwindStartRegs
 
 // Useful for making failing stubs, when certain things haven't yet been
 // implemented.

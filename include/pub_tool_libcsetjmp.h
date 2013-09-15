@@ -32,6 +32,8 @@
 #ifndef __PUB_TOOL_LIBCSETJMP_H
 #define __PUB_TOOL_LIBCSETJMP_H
 
+#include "pub_tool_basics.h"   // UWord
+
 //--------------------------------------------------------------------
 // PURPOSE: Provides a minimal setjmp/longjmp facility, that saves/
 // restores integer registers, but not necessarily anything more.

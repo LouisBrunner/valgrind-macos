@@ -31,6 +31,7 @@
 #ifndef __PUB_TOOL_ASPACEMGR_H
 #define __PUB_TOOL_ASPACEMGR_H
 
+#include "pub_tool_basics.h"   // VG_ macro
 
 //--------------------------------------------------------------
 // Definition of address-space segments

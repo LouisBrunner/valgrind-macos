@@ -1,0 +1,50 @@
+Invalid write of size 1
+   at 0x........: bad_things (threadname.c:16)
+   by 0x........: main (threadname.c:68)
+ Address 0x........ is 0 bytes after a block of size 1 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: bad_things (threadname.c:15)
+   by 0x........: main (threadname.c:68)
+
+Thread 2:
+Invalid write of size 1
+   at 0x........: bad_things (threadname.c:16)
+   by 0x........: child_fn_0 (threadname.c:53)
+   ...
+ Address 0x........ is 0 bytes after a block of size 2 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: bad_things (threadname.c:15)
+   by 0x........: child_fn_0 (threadname.c:53)
+   ...
+
+Thread 3 try1:
+Invalid write of size 1
+   at 0x........: bad_things (threadname.c:16)
+   by 0x........: child_fn_1 (threadname.c:38)
+   ...
+ Address 0x........ is 0 bytes after a block of size 3 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: bad_things (threadname.c:15)
+   by 0x........: child_fn_1 (threadname.c:38)
+   ...
+
+Thread 4 012345678901234:
+Invalid write of size 1
+   at 0x........: bad_things (threadname.c:16)
+   by 0x........: child_fn_2 (threadname.c:26)
+   ...
+ Address 0x........ is 0 bytes after a block of size 4 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: bad_things (threadname.c:15)
+   by 0x........: child_fn_2 (threadname.c:26)
+   ...
+
+Thread 1:
+Invalid write of size 1
+   at 0x........: bad_things (threadname.c:16)
+   by 0x........: main (threadname.c:76)
+ Address 0x........ is 0 bytes after a block of size 5 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: bad_things (threadname.c:15)
+   by 0x........: main (threadname.c:76)
+

@@ -1,0 +1,2 @@
+prog: threadname
+vgopts: -q

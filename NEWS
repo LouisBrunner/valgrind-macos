@@ -464,6 +464,9 @@ FIXED r??
 321969  ppc32 and ppc64 don't support [lf]setxattr
         FIXED r13449
 
+322254  Show threadname together with tid if set by application
+        FIXED r13553
+
 322368  Assertion failure in wqthread_hijack under OS X 10.8
         FIXED 13523
 

@@ -591,6 +591,10 @@ static void pp_Error ( Error* err, Bool allow_db_attach, Bool xml )
       VG_(printf_xml)("<error>\n");
       VG_(printf_xml)("  <unique>0x%x</unique>\n", err->unique);
       VG_(printf_xml)("  <tid>%d</tid>\n", err->tid);
+      ThreadState* tst = VG_(get_ThreadState)(err->tid);
+      if (tst->thread_name) {
+         VG_(printf_xml)("  <threadname>%s</threadname>\n", tst->thread_name);
+      }
 
       /* actually print it */
       VG_TDICT_CALL( tool_pp_Error, err );
@@ -608,7 +612,12 @@ static void pp_Error ( Error* err, Bool allow_db_attach, Bool xml )
 
       if (VG_(tdict).tool_show_ThreadIDs_for_errors
           && err->tid > 0 && err->tid != last_tid_printed) {
-         VG_(umsg)("Thread %d:\n", err->tid );
+         ThreadState* tst = VG_(get_ThreadState)(err->tid);
+         if (tst->thread_name) {
+            VG_(umsg)("Thread %d %s:\n", err->tid, tst->thread_name );
+         } else {
+            VG_(umsg)("Thread %d:\n", err->tid );
+         }
          last_tid_printed = err->tid;
       }
    

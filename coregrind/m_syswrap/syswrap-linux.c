@@ -946,6 +946,18 @@ POST(sys_prctl)
    case VKI_PR_GET_ENDIAN:
       POST_MEM_WRITE(ARG2, sizeof(Int));
       break;
+   case VKI_PR_SET_NAME:
+      {
+         const HChar* new_name = (const HChar*) ARG2;
+         if (new_name) {    // Paranoia
+            ThreadState* tst = VG_(get_ThreadState)(tid);
+
+            /* Don't bother reusing the memory. This is a rare event. */
+            tst->thread_name =
+              VG_(arena_strdup)(VG_AR_CORE, "syswrap.prctl", new_name);
+         }
+      }
+      break;
    }
 }
 

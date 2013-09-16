@@ -408,6 +408,7 @@ following:
   <error>
      <unique>HEX64</unique>
      <tid>INT</tid>
+     <threadname>NAME</threadname>    if set
      <kind>KIND</kind>
 
      (either WHAT or XWHAT)
@@ -427,6 +428,10 @@ following:
 * The <tid> tag indicates the Valgrind thread number.  This value
   is arbitrary but may be used to determine which threads produced
   which errors (at least, the first instance of each error).
+
+* The <threadname> tag identifies the name of the thread if it was
+  set by the client application. If no name was set, the tag is
+  omitted.
 
 * The <kind> tag specifies one of a small number of fixed error types,
   so that GUIs may roughly categorise errors by type if they want.

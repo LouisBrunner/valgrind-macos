@@ -260,7 +260,10 @@ EXTRA_DIST = \
 	wrap8.vgtest wrap8.stdout.exp wrap8.stderr.exp \
 	wrap8.stdout.exp2 wrap8.stderr.exp2 \
 	writev1.stderr.exp writev1.vgtest \
-	xml1.stderr.exp xml1.stdout.exp xml1.vgtest xml1.stderr.exp-s390x-mvc
+	xml1.stderr.exp xml1.stdout.exp xml1.vgtest xml1.stderr.exp-s390x-mvc \
+	threadname.vgtest threadname.stdout.exp threadname.stderr.exp \
+	threadname_xml.vgtest threadname_xml.stdout.exp \
+	threadname_xml.stderr.exp
 
 check_PROGRAMS = \
 	accounting \
@@ -335,7 +338,8 @@ check_PROGRAMS = \
 	wcs \
 	xml1 \
 	wrap1 wrap2 wrap3 wrap4 wrap5 wrap6 wrap7 wrap7so.so wrap8 \
-	writev1
+	writev1 \
+	threadname
 
 if DWARF4
 check_PROGRAMS += dw4
@@ -367,6 +371,7 @@ dw4_CFLAGS		= $(AM_CFLAGS) -gdwarf-4 -fdebug-types-section
 err_disable3_LDADD 	= -lpthread
 err_disable4_LDADD 	= -lpthread
 thread_alloca_LDADD     = -lpthread
+threadname_LDADD 	= -lpthread
 
 error_counts_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 

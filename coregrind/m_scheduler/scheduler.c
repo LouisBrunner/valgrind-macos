@@ -238,6 +238,7 @@ ThreadId VG_(alloc_ThreadState) ( void )
       if (VG_(threads)[i].status == VgTs_Empty) {
 	 VG_(threads)[i].status = VgTs_Init;
 	 VG_(threads)[i].exitreason = VgSrc_None;
+	 VG_(threads)[i].thread_name = NULL;
          return i;
       }
    }
@@ -616,6 +617,7 @@ ThreadId VG_(scheduler_init_phase1) ( void )
       VG_(threads)[i].client_stack_szB          = 0;
       VG_(threads)[i].client_stack_highest_word = (Addr)NULL;
       VG_(threads)[i].err_disablement_level     = 0;
+      VG_(threads)[i].thread_name               = NULL;
    }
 
    tid_main = VG_(alloc_ThreadState)();

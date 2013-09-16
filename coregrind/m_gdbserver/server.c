@@ -588,10 +588,18 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
       ti = gdb_id_to_thread (gdb_id);
       if (ti != NULL) {
          tst = (ThreadState *) inferior_target_data (ti);
-         /* Additional info is the tid and the thread status. */
-         VG_(snprintf) (status, sizeof(status), "tid %d %s",
-                        tst->tid, 
-                        VG_(name_of_ThreadStatus)(tst->status));
+         /* Additional info is the tid, the thread status and the thread's
+            name, if any. */
+         if (tst->thread_name) {
+            VG_(snprintf) (status, sizeof(status), "tid %d %s %s",
+                           tst->tid, 
+                           VG_(name_of_ThreadStatus)(tst->status),
+                           tst->thread_name);
+         } else {
+            VG_(snprintf) (status, sizeof(status), "tid %d %s",
+                           tst->tid, 
+                           VG_(name_of_ThreadStatus)(tst->status));
+         }
          hexify (arg_own_buf, status, strlen(status));
          return;
       } else {

@@ -2200,7 +2200,8 @@ void* VG_(arena_calloc) ( ArenaId aid, const HChar* cc,
 
    p = VG_(arena_malloc) ( aid, cc, size );
 
-   VG_(memset)(p, 0, size);
+   if (p != NULL)
+     VG_(memset)(p, 0, size);
 
    return p;
 }

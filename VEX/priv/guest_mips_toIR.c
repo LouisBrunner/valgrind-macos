@@ -13551,7 +13551,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                putLO(mkWidenFrom32(ty, unop(Iop_64to32, mkexpr(t5)), True));
             } else {
                if ( (1 <= ac) && ( 3 >= ac) ) {
-                  if ((archinfo->hwcaps & VEX_MIPS_ASE_DSP)) {
+                  if (VEX_MIPS_PROC_DSP(archinfo->hwcaps)) {
                      /* If DSP is present -> DSP ASE MADD */
                      UInt retVal = disDSPInstr_MIPS_WRK ( cins );
                      if (0 != retVal ) {
@@ -13614,7 +13614,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             putLO(mkWidenFrom32(ty, unop(Iop_64to32, mkexpr(t5)), True));
          } else {
             if ( (1 <= ac) && ( 3 >= ac) ) {
-               if ((archinfo->hwcaps & VEX_MIPS_ASE_DSP)) {
+               if (VEX_MIPS_PROC_DSP(archinfo->hwcaps)) {
                   /* If DSP is present -> DSP ASE MADDU */
                   UInt retVal = disDSPInstr_MIPS_WRK ( cins );
                   if (0 != retVal ) {
@@ -13676,7 +13676,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             putLO(mkWidenFrom32(ty, unop(Iop_64to32, mkexpr(t5)), True));
          } else {
             if ( (1 <= ac) && ( 3 >= ac) ) {
-               if ((archinfo->hwcaps & VEX_MIPS_ASE_DSP)) {
+               if (VEX_MIPS_PROC_DSP(archinfo->hwcaps)) {
                   /* If DSP is present -> DSP ASE MSUB */
                   UInt retVal = disDSPInstr_MIPS_WRK ( cins );
                   if (0 != retVal ) {
@@ -13742,7 +13742,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             putLO(mkWidenFrom32(ty, unop(Iop_64to32, mkexpr(t5)), True));
          } else {
             if ( (1 <= ac) && ( 3 >= ac) ) {
-               if ((archinfo->hwcaps & VEX_MIPS_ASE_DSP)) {
+               if (VEX_MIPS_PROC_DSP(archinfo->hwcaps)) {
                   /* If DSP is present -> DSP ASE MSUBU */
                   UInt retVal = disDSPInstr_MIPS_WRK ( cins );
                   if (0 != retVal ) {
@@ -14332,7 +14332,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       case 0xA:  /* LX */
       case 0xC:  /* INSV */
       case 0x38: {  /* EXTR.W */
-         if ((archinfo->hwcaps & VEX_MIPS_ASE_DSP)) {
+         if (VEX_MIPS_PROC_DSP(archinfo->hwcaps)) {
             UInt retVal = disDSPInstr_MIPS_WRK ( cins );
             if (0 != retVal ) {
                goto decode_failure_dsp;
@@ -14348,7 +14348,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             case  0xC:  /* SUBU_S.PH */
             case  0xD:  /* ADDU_S.PH */
             case 0x1E: {  /* MULQ_S.PH */
-               if ((archinfo->hwcaps & VEX_MIPS_ASE_DSP2P)) {
+               if (VEX_MIPS_PROC_DSP2(archinfo->hwcaps)) {
                   UInt retVal = disDSPInstr_MIPS_WRK ( cins );
                   if (0 != retVal ) {
                      goto decode_failure_dsp;
@@ -14360,7 +14360,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                break;
             }
             default: {
-               if ((archinfo->hwcaps & VEX_MIPS_ASE_DSP)) {
+               if (VEX_MIPS_PROC_DSP(archinfo->hwcaps)) {
                   UInt retVal = disDSPInstr_MIPS_WRK ( cins );
                   if (0 != retVal ) {
                      goto decode_failure_dsp;
@@ -14382,7 +14382,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             case 0x0D:  /* PRECR.QB.PH */
             case 0x1E:  /* PRECR_SRA.PH.W */
             case 0x1F: {  /* PRECR_SRA_R.PH.W */
-               if ((archinfo->hwcaps & VEX_MIPS_ASE_DSP2P)) {
+               if (VEX_MIPS_PROC_DSP2(archinfo->hwcaps)) {
                   UInt retVal = disDSPInstr_MIPS_WRK ( cins );
                   if (0 != retVal ) {
                      goto decode_failure_dsp;
@@ -14394,7 +14394,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                break;
             }
             default: {
-               if ((archinfo->hwcaps & VEX_MIPS_ASE_DSP)) {
+               if (VEX_MIPS_PROC_DSP(archinfo->hwcaps)) {
                   UInt retVal = disDSPInstr_MIPS_WRK ( cins );
                   if (0 != retVal ) {
                      goto decode_failure_dsp;
@@ -14411,7 +14411,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       case 0x12: {  /* ABSQ_S.PH */
          switch(sa){
             case 0x1: {  /* ABSQ_S.QB */
-               if ((archinfo->hwcaps & VEX_MIPS_ASE_DSP2P)) {
+               if (VEX_MIPS_PROC_DSP2(archinfo->hwcaps)) {
                   UInt retVal = disDSPInstr_MIPS_WRK ( cins );
                   if (0 != retVal ) {
                      goto decode_failure_dsp;
@@ -14423,7 +14423,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                break;
             }
             default: {
-               if ((archinfo->hwcaps & VEX_MIPS_ASE_DSP)) {
+               if (VEX_MIPS_PROC_DSP(archinfo->hwcaps)) {
                   UInt retVal = disDSPInstr_MIPS_WRK ( cins );
                   if (0 != retVal ) {
                      goto decode_failure_dsp;
@@ -14445,7 +14445,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             case 0x07:  /* SHRAV_R.QB */
             case 0x19:  /* SHLR.PH */
             case 0x1B: {  /* SHLRV.PH */
-               if ((archinfo->hwcaps & VEX_MIPS_ASE_DSP2P)) {
+               if (VEX_MIPS_PROC_DSP2(archinfo->hwcaps)) {
                   UInt retVal = disDSPInstr_MIPS_WRK ( cins );
                   if (0 != retVal ) {
                      goto decode_failure_dsp;
@@ -14457,7 +14457,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                break;
             }
             default: {
-               if ((archinfo->hwcaps & VEX_MIPS_ASE_DSP)) {
+               if (VEX_MIPS_PROC_DSP(archinfo->hwcaps)) {
                   UInt retVal = disDSPInstr_MIPS_WRK ( cins );
                   if (0 != retVal ) {
                      goto decode_failure_dsp;
@@ -14482,7 +14482,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             case 0x1B:  /* DPSQX_SA.W.PH */
             case  0x9:  /* DPSX.W.PH */
             case  0x2: {  /* MULSA.W.PH */
-               if ((archinfo->hwcaps & VEX_MIPS_ASE_DSP2P)) {
+               if (VEX_MIPS_PROC_DSP2(archinfo->hwcaps)) {
                   UInt retVal = disDSPInstr_MIPS_WRK ( cins );
                   if (0 != retVal ) {
                      goto decode_failure_dsp;
@@ -14494,7 +14494,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                break;
             }
             default: {
-               if ((archinfo->hwcaps & VEX_MIPS_ASE_DSP)) {
+               if (VEX_MIPS_PROC_DSP(archinfo->hwcaps)) {
                   UInt retVal = disDSPInstr_MIPS_WRK ( cins );
                   if (0 != retVal ) {
                      goto decode_failure_dsp;
@@ -14510,7 +14510,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       }
       case 0x18:  /* ADDUH.QB/MUL.PH */
       case 0x31: {  /* APPEND */
-         if ((archinfo->hwcaps & VEX_MIPS_ASE_DSP2P)) {
+         if (VEX_MIPS_PROC_DSP2(archinfo->hwcaps)) {
             UInt retVal = disDSPInstr_MIPS_WRK ( cins );
             if (0 != retVal ) {
                goto decode_failure_dsp;
@@ -14527,7 +14527,8 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       break;  /* Special3 */
 
    case 0x3B:
-      if (0x3B == function && (archinfo->hwcaps & VEX_PRID_COMP_BROADCOM)) {
+      if (0x3B == function &&
+          (VEX_MIPS_COMP_ID(archinfo->hwcaps) == VEX_PRID_COMP_BROADCOM)) {
          /*RDHWR*/
          DIP("rdhwr r%d, r%d", rt, rd);
          if (rd == 29) {
@@ -14634,7 +14635,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
       case 0x18:  {  /* MULT */
          if ( (1 <= ac) && ( 3 >= ac) ) {
-            if ((archinfo->hwcaps & VEX_MIPS_ASE_DSP)) {
+            if (VEX_MIPS_PROC_DSP(archinfo->hwcaps)) {
                /* If DSP is present -> DSP ASE MULT */
                UInt retVal = disDSPInstr_MIPS_WRK ( cins );
                if (0 != retVal ) {
@@ -14658,7 +14659,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       }
       case 0x19:  {  /* MULTU */
          if ( (1 <= ac) && ( 3 >= ac) ) {
-            if ((archinfo->hwcaps & VEX_MIPS_ASE_DSP)) {
+            if (VEX_MIPS_PROC_DSP(archinfo->hwcaps)) {
                /* If DSP is present -> DSP ASE MULTU */
                UInt retVal = disDSPInstr_MIPS_WRK ( cins );
                if (0 != retVal ) {
@@ -14810,7 +14811,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          break;
 
       case 0x10: {  /* MFHI */
-         if ((archinfo->hwcaps & VEX_MIPS_ASE_DSP)) {
+         if (VEX_MIPS_PROC_DSP(archinfo->hwcaps)) {
             /* If DSP is present -> DSP ASE MFHI */
             UInt retVal = disDSPInstr_MIPS_WRK ( cins );
             if (0 != retVal ) {
@@ -14825,7 +14826,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       }
 
       case 0x11:  {  /* MTHI */
-         if ((archinfo->hwcaps & VEX_MIPS_ASE_DSP)) {
+         if (VEX_MIPS_PROC_DSP(archinfo->hwcaps)) {
             /* If DSP is present -> DSP ASE MTHI */
             UInt retVal = disDSPInstr_MIPS_WRK ( cins );
             if (0 != retVal ) {
@@ -14840,7 +14841,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       }
 
       case 0x12:  {  /* MFLO */
-         if ((archinfo->hwcaps & VEX_MIPS_ASE_DSP)) {
+         if (VEX_MIPS_PROC_DSP(archinfo->hwcaps)) {
             /* If DSP is present -> DSP ASE MFLO */
             UInt retVal = disDSPInstr_MIPS_WRK ( cins );
             if (0 != retVal ) {
@@ -14855,7 +14856,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       }
 
       case 0x13:  {  /* MTLO */
-         if ((archinfo->hwcaps & VEX_MIPS_ASE_DSP)) {
+         if (VEX_MIPS_PROC_DSP(archinfo->hwcaps)) {
             /* If DSP is present -> DSP ASE MTLO */
             UInt retVal = disDSPInstr_MIPS_WRK ( cins );
             if (0 != retVal ) {

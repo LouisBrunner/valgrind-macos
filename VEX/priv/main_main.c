@@ -1428,26 +1428,31 @@ static const HChar* show_hwcaps_s390x ( UInt hwcaps )
 static const HChar* show_hwcaps_mips32 ( UInt hwcaps )
 {
    /* MIPS baseline. */
-   if (hwcaps & VEX_PRID_COMP_MIPS == VEX_PRID_COMP_MIPS) {
+   if (VEX_MIPS_COMP_ID(hwcaps) == VEX_PRID_COMP_MIPS) {
       /* MIPS baseline with dspr2. */
-      if (hwcaps & VEX_MIPS_ASE_DSP2P == VEX_MIPS_ASE_DSP2P) {
+      if (VEX_MIPS_PROC_DSP2(hwcaps)) {
          return "MIPS-baseline-dspr2";
       }
       /* MIPS baseline with dsp. */
-      if (hwcaps & VEX_MIPS_ASE_DSP == VEX_MIPS_ASE_DSP) {
+      if (VEX_MIPS_PROC_DSP(hwcaps)) {
          return "MIPS-baseline-dsp";
       }
       return "MIPS-baseline";
    }
 
    /* Broadcom baseline. */
-   if (hwcaps & VEX_PRID_COMP_BROADCOM == VEX_PRID_COMP_BROADCOM) {
+   if (VEX_MIPS_COMP_ID(hwcaps) == VEX_PRID_COMP_BROADCOM) {
       return "Broadcom-baseline";
    }
 
    /* Netlogic baseline. */
-   if (hwcaps & VEX_PRID_COMP_NETLOGIC == VEX_PRID_COMP_NETLOGIC) {
+   if (VEX_MIPS_COMP_ID(hwcaps) == VEX_PRID_COMP_NETLOGIC) {
       return "Netlogic-baseline";
+   }
+
+   /* Cavium baseline. */
+   if (VEX_MIPS_COMP_ID(hwcaps) == VEX_PRID_COMP_CAVIUM) {
+      return "Cavium-baseline";
    }
 
    return NULL;

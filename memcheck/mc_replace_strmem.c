@@ -35,7 +35,7 @@
 #include "pub_tool_hashtable.h"
 #include "pub_tool_redir.h"
 #include "pub_tool_tooliface.h"
-#include "valgrind.h"
+#include "pub_tool_clreq.h"
 
 #include "mc_include.h"
 #include "memcheck.h"

@@ -45,7 +45,7 @@
 #include "pub_core_gdbserver.h"
 #include "pub_core_aspacemgr.h"
 #include "pub_core_vki.h"
-#include "valgrind.h"
+#include "pub_core_clreq.h"
 
 /*------------- interface m_gdbserver <=> low level gdbserver */
 

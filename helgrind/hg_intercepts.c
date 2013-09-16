@@ -54,7 +54,7 @@
 
 #include "pub_tool_basics.h"
 #include "pub_tool_redir.h"
-#include "valgrind.h"
+#include "pub_tool_clreq.h"
 #include "helgrind.h"
 #include "config.h"
 

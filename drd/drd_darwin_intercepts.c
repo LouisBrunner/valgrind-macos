@@ -23,7 +23,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include "valgrind.h"
+#include "pub_tool_clreq.h"
 #include "drd.h"
 #include "pub_tool_redir.h"
 

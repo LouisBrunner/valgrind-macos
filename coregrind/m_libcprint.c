@@ -38,7 +38,7 @@
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"   // VG_(getpid)(), VG_(read_millisecond_timer()
 #include "pub_core_options.h"
-#include "valgrind.h"            // For RUNNING_ON_VALGRIND
+#include "pub_core_clreq.h"      // For RUNNING_ON_VALGRIND
 
 
 /* ---------------------------------------------------------------------

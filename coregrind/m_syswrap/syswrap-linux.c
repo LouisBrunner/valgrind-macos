@@ -57,7 +57,7 @@
 #include "pub_core_syswrap.h"
 #include "pub_core_inner.h"
 #if defined(ENABLE_INNER_CLIENT_REQUEST)
-#include "valgrind.h"
+#include "pub_core_clreq.h"
 #endif
 
 #include "priv_types_n_macros.h"

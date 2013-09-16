@@ -182,7 +182,7 @@ Number of snapshots: 50
 #include "pub_tool_clientstate.h"
 #include "pub_tool_gdbserver.h"
 
-#include "valgrind.h"           // For {MALLOC,FREE}LIKE_BLOCK
+#include "pub_tool_clreq.h"           // For {MALLOC,FREE}LIKE_BLOCK
 
 //------------------------------------------------------------*/
 //--- Overview of operation                                ---*/

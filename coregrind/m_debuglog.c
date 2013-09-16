@@ -54,7 +54,7 @@
 #include "pub_core_basics.h"     /* basic types */
 #include "pub_core_vkiscnums.h"  /* for syscall numbers */
 #include "pub_core_debuglog.h"   /* our own iface */
-#include "valgrind.h"            /* for RUNNING_ON_VALGRIND */
+#include "pub_core_clreq.h"      /* for RUNNING_ON_VALGRIND */
 
 static Bool clo_xml;
 

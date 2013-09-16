@@ -633,6 +633,7 @@ static UInt VG_(get_machine_model)(void)
    const char *search_MIPS_str = "MIPS";
    const char *search_Broadcom_str = "Broadcom";
    const char *search_Netlogic_str = "Netlogic";
+   const char *search_Cavium_str= "Cavium";
    Int    n, fh;
    SysRes fd;
    SizeT  num_bytes, file_buf_size;
@@ -677,6 +678,8 @@ static UInt VG_(get_machine_model)(void)
        return VEX_PRID_COMP_BROADCOM;
    if (VG_(strstr) (file_buf, search_Netlogic_str) != NULL)
        return VEX_PRID_COMP_NETLOGIC;
+   if (VG_(strstr)(file_buf, search_Cavium_str) != NULL)
+       return VEX_PRID_COMP_CAVIUM;
    if (VG_(strstr) (file_buf, search_MIPS_str) != NULL)
        return VEX_PRID_COMP_MIPS;
 
@@ -1471,28 +1474,36 @@ Bool VG_(machine_get_hwcaps)( void )
      tmp_sigill_act.ksa_handler = handler_unsup_insn;
      VG_(sigaction)(VKI_SIGILL, &tmp_sigill_act, NULL);
 
-     /* DSP instructions. */
-     have_DSP = True;
-     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
-        have_DSP = False;
-     } else {
-        __asm__ __volatile__(".word 0x7c3f44b8"); /* rddsp t0, 0x3f */
-     }
-
-     /* DSPr2 instructions. */
-     have_DSPr2 = True;
-     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
-        have_DSPr2 = False;
-     } else {
-        __asm__ __volatile__(".word 0x7d095351"); /* precr.qb.ph t2, t0, t1 */
+     if (model == VEX_PRID_COMP_MIPS) {
+        /* DSPr2 instructions. */
+        have_DSPr2 = True;
+        if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
+           have_DSPr2 = False;
+        } else {
+           __asm__ __volatile__(".word 0x7d095351"); /* precr.qb.ph t2, t0, t1 */
+        }
+        if (have_DSPr2) {
+           /* We assume it's 74K, since it can run DSPr2. */
+           vai.hwcaps |= VEX_PRID_IMP_74K;
+        } else {
+           /* DSP instructions. */
+           have_DSP = True;
+           if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
+              have_DSP = False;
+           } else {
+              __asm__ __volatile__(".word 0x7c3f44b8"); /* rddsp t0, 0x3f */
+           }
+           if (have_DSP) {
+              /* We assume it's 34K, since it has support for DSP. */
+              vai.hwcaps |= VEX_PRID_IMP_34K;
+           }
+        }
      }
 
      VG_(convert_sigaction_fromK_to_toK)(&saved_sigill_act, &tmp_sigill_act);
      VG_(sigaction)(VKI_SIGILL, &tmp_sigill_act, NULL);
      VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
 
-     if (have_DSP) vai.hwcaps |= VEX_MIPS_ASE_DSP;
-     if (have_DSPr2) vai.hwcaps |= VEX_MIPS_ASE_DSP2P;
      VG_(debugLog)(1, "machine", "hwcaps = 0x%x\n", vai.hwcaps);
      VG_(machine_get_cache_info)(&vai);
 

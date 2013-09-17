@@ -2201,6 +2201,7 @@ AC_CHECK_FUNCS([     \
         pthread_rwlock_timedwrlock \
         pthread_spin_lock          \
         pthread_yield              \
+        pthread_setname_np         \
         readlinkat   \
         semtimedop   \
         signalfd     \
@@ -2227,6 +2228,8 @@ AM_CONDITIONAL([HAVE_PTHREAD_MUTEX_TIMEDLOCK],
                [test x$ac_cv_func_pthread_mutex_timedlock = xyes])
 AM_CONDITIONAL([HAVE_PTHREAD_SPINLOCK],
                [test x$ac_cv_func_pthread_spin_lock = xyes])
+AM_CONDITIONAL([HAVE_PTHREAD_SETNAME_NP],
+               [test x$ac_cv_func_pthread_setname_np = xyes])
 
 if test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX \
      -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX ; then

@@ -261,9 +261,8 @@ EXTRA_DIST = \
 	wrap8.stdout.exp2 wrap8.stderr.exp2 \
 	writev1.stderr.exp writev1.vgtest \
 	xml1.stderr.exp xml1.stdout.exp xml1.vgtest xml1.stderr.exp-s390x-mvc \
-	threadname.vgtest threadname.stdout.exp threadname.stderr.exp \
-	threadname_xml.vgtest threadname_xml.stdout.exp \
-	threadname_xml.stderr.exp
+	threadname.vgtest threadname.stderr.exp \
+	threadname_xml.vgtest threadname_xml.stderr.exp
 
 check_PROGRAMS = \
 	accounting \
@@ -338,8 +337,7 @@ check_PROGRAMS = \
 	wcs \
 	xml1 \
 	wrap1 wrap2 wrap3 wrap4 wrap5 wrap6 wrap7 wrap7so.so wrap8 \
-	writev1 \
-	threadname
+	writev1
 
 if DWARF4
 check_PROGRAMS += dw4
@@ -347,6 +345,10 @@ endif
 
 if HAVE_GNU_STPNCPY
 check_PROGRAMS += stpncpy
+endif
+
+if HAVE_PTHREAD_SETNAME_NP
+check_PROGRAMS += threadname 
 endif
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)

@@ -185,11 +185,6 @@
       <file>drd_pthread_intercepts.c</file>
       <line>...</line>
     </frame>
-    <frame>
-      <ip>0x........</ip>
-      <obj>...</obj>
-      <fn>start_thread</fn>
-    </frame>
   </stack>
   <auxwhat>Address 0x........ is at offset 0 from 0x.........</auxwhat>
   <allocation_context>

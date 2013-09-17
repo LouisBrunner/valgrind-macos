@@ -12,6 +12,7 @@ dist_noinst_SCRIPTS = \
 	filter_numbers \
 	filter_stderr_basic \
 	filter_sink \
+	filter_xml_frames \
 	platform_test \
 	vg_regtest
 

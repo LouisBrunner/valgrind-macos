@@ -102,14 +102,6 @@
       <file>threadname.c</file>
       <line>...</line>
     </frame>
-    <frame>
-      <ip>0x........</ip>
-      <obj>...</obj>
-      <fn>start_thread</fn>
-      <dir>...</dir>
-      <file>pthread_create.c</file>
-      <line>...</line>
-    </frame>
   </stack>
   <auxwhat>Address 0x........ is 0 bytes after a block of size 2 alloc'd</auxwhat>
   <stack>
@@ -137,14 +129,6 @@
       <file>threadname.c</file>
       <line>...</line>
     </frame>
-    <frame>
-      <ip>0x........</ip>
-      <obj>...</obj>
-      <fn>start_thread</fn>
-      <dir>...</dir>
-      <file>pthread_create.c</file>
-      <line>...</line>
-    </frame>
   </stack>
 </error>
 
@@ -169,14 +153,6 @@
       <fn>child_fn_1</fn>
       <dir>...</dir>
       <file>threadname.c</file>
-      <line>...</line>
-    </frame>
-    <frame>
-      <ip>0x........</ip>
-      <obj>...</obj>
-      <fn>start_thread</fn>
-      <dir>...</dir>
-      <file>pthread_create.c</file>
       <line>...</line>
     </frame>
   </stack>
@@ -206,14 +182,6 @@
       <file>threadname.c</file>
       <line>...</line>
     </frame>
-    <frame>
-      <ip>0x........</ip>
-      <obj>...</obj>
-      <fn>start_thread</fn>
-      <dir>...</dir>
-      <file>pthread_create.c</file>
-      <line>...</line>
-    </frame>
   </stack>
 </error>
 
@@ -238,14 +206,6 @@
       <fn>child_fn_2</fn>
       <dir>...</dir>
       <file>threadname.c</file>
-      <line>...</line>
-    </frame>
-    <frame>
-      <ip>0x........</ip>
-      <obj>...</obj>
-      <fn>start_thread</fn>
-      <dir>...</dir>
-      <file>pthread_create.c</file>
       <line>...</line>
     </frame>
   </stack>
@@ -273,14 +233,6 @@
       <fn>child_fn_2</fn>
       <dir>...</dir>
       <file>threadname.c</file>
-      <line>...</line>
-    </frame>
-    <frame>
-      <ip>0x........</ip>
-      <obj>...</obj>
-      <fn>start_thread</fn>
-      <dir>...</dir>
-      <file>pthread_create.c</file>
       <line>...</line>
     </frame>
   </stack>

@@ -1,0 +1,40 @@
+#! /usr/bin/env perl
+
+# Remove <frame>.....</frame> containing an <obj> poining to
+# some system library.
+
+use strict;
+use warnings;
+
+my $in_frame = 0;
+my $frame = "";
+my $ignore_frame = 0;
+
+while (my $line = <>)
+{
+    if (! $in_frame) {
+        if ($line =~ /<frame>/) {
+            $frame = $line;
+            $in_frame = 1;
+            $ignore_frame = 0
+        } else {
+            print $line;
+        }
+        next;
+    }
+
+# We're in a frame
+    $frame .= $line;
+    if ($line =~ /<\/frame>/) {
+        if (! $ignore_frame) {
+            print $frame;
+        }
+        $in_frame = 0;
+    } else {
+# The may require tweaking; currently  /lib and /usr/lib are matched
+        $ignore_frame = 1 if ($line =~ /<obj>\/lib/);
+        $ignore_frame = 1 if ($line =~ /<obj>\/usr\/lib/);
+    }
+}
+
+exit 0;

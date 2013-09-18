@@ -1092,6 +1092,128 @@ ULong mips64_dirtyhelper_rdhwr ( ULong rt, ULong rd )
 }
 #endif
 
+#define ASM_VOLATILE_ROUND32(fs, inst)                              \
+   __asm__ volatile("ctc1    %3,  $31"  "\n\t"                      \
+                    "mtc1    %1,  $f0"  "\n\t"                      \
+                    "mtc1    %2,  $f1"  "\n\t"                      \
+                    ""#inst" $f0, $f0"  "\n\t"                      \
+                    "cfc1    %0,  $31"  "\n\t"                      \
+                    : "=r" (ret)                                    \
+                    : "r" (addr[fs]), "r" (addr[fs+1]), "r" (fcsr)  \
+                    : "$f0", "$f1"                                  \
+                   );
+
+#define ASM_VOLATILE_ROUND64(fs, inst)                              \
+   __asm__ volatile("ctc1     %2,  $31"  "\n\t"                     \
+                    "dmtc1    %1,  $f0"  "\n\t"                     \
+                    ""#inst"  $f0, $f0"  "\n\t"                     \
+                    "cfc1     %0,  $31"  "\n\t"                     \
+                    : "=r" (ret)                                    \
+                    : "r" (addr[fs]), "r" (fcsr)                    \
+                    : "$f0"                                         \
+                   );
+
+/* TODO: Add cases for all fpu instructions because all fpu instructions are
+         change the value of FCSR register. */
+extern UInt mips_dirtyhelper_calculate_FCSR ( void* gs, UInt fs, flt_op inst )
+{
+   UInt ret = 0;
+#if defined(VGA_mips32)
+   VexGuestMIPS32State* guest_state = (VexGuestMIPS32State*)gs;
+   UInt *addr = (UInt *)&guest_state->guest_f0;
+#define ASM_VOLATILE_ROUND(fs, inst) ASM_VOLATILE_ROUND32(fs, inst)
+#else
+   VexGuestMIPS64State* guest_state = (VexGuestMIPS64State*)gs;
+   ULong *addr = (ULong *)&guest_state->guest_f0;
+#define ASM_VOLATILE_ROUND(fs, inst) ASM_VOLATILE_ROUND64(fs, inst)
+#endif
+   UInt fcsr = guest_state->guest_FCSR;
+   switch (inst) {
+      case ROUNDWD:
+         ASM_VOLATILE_ROUND(fs, round.w.d)
+         break;
+      case FLOORWS:
+         ASM_VOLATILE_ROUND(fs, floor.w.s)
+         break;
+      case FLOORWD:
+         ASM_VOLATILE_ROUND(fs, floor.w.d)
+         break;
+      case TRUNCWS:
+         ASM_VOLATILE_ROUND(fs, trunc.w.s)
+         break;
+      case TRUNCWD:
+         ASM_VOLATILE_ROUND(fs, trunc.w.d)
+         break;
+      case CEILWS:
+         ASM_VOLATILE_ROUND(fs, ceil.w.s)
+         break;
+      case CEILWD:
+         ASM_VOLATILE_ROUND(fs, ceil.w.d)
+         break;
+      case CEILLS:
+         ASM_VOLATILE_ROUND(fs, ceil.l.s)
+         break;
+      case CEILLD:
+         ASM_VOLATILE_ROUND(fs, ceil.l.d)
+         break;
+      case ROUNDLS:
+         ASM_VOLATILE_ROUND(fs, round.l.s)
+         break;
+      case ROUNDLD:
+         ASM_VOLATILE_ROUND(fs, round.l.d)
+         break;
+      case TRUNCLS:
+         ASM_VOLATILE_ROUND(fs, trunc.l.s)
+         break;
+      case TRUNCLD:
+         ASM_VOLATILE_ROUND(fs, trunc.l.d)
+         break;
+      case CVTDS:
+         ASM_VOLATILE_ROUND(fs, cvt.d.s)
+         break;
+      case CVTDW:
+         ASM_VOLATILE_ROUND(fs, cvt.d.w)
+         break;
+      case CVTDL:
+         ASM_VOLATILE_ROUND(fs, cvt.d.l)
+         break;
+      case CVTSW:
+         ASM_VOLATILE_ROUND(fs, cvt.s.w)
+         break;
+      case CVTSD:
+         ASM_VOLATILE_ROUND(fs, cvt.s.d)
+         break;
+      case CVTSL:
+         ASM_VOLATILE_ROUND(fs, cvt.s.l)
+         break;
+      case CVTWS:
+         ASM_VOLATILE_ROUND(fs, cvt.w.s)
+         break;
+      case CVTWD:
+         ASM_VOLATILE_ROUND(fs, cvt.w.d)
+         break;
+      case CVTLS:
+         ASM_VOLATILE_ROUND(fs, cvt.l.s)
+         break;
+      case CVTLD:
+         ASM_VOLATILE_ROUND(fs, cvt.l.d)
+         break;
+      case FLOORLS:
+         ASM_VOLATILE_ROUND(fs, floor.l.s)
+         break;
+      case FLOORLD:
+         ASM_VOLATILE_ROUND(fs, floor.l.d)
+         break;
+      case ROUNDWS:
+         ASM_VOLATILE_ROUND(fs, round.w.s)
+         break;
+      default:
+         vassert(0);
+         break;
+   }
+   return ret;
+}
+
 /*---------------------------------------------------------------*/
 /*--- end                                guest_mips_helpers.c ---*/
 /*---------------------------------------------------------------*/

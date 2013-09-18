@@ -554,7 +554,7 @@ static void doHelperCall(/*OUT*/UInt*   stackAdjustAfterCall,
          if (LIKELY(!is_IRExpr_VECRET_or_BBPTR(arg)))
             aTy  = typeOfIRExpr(env->type_env, arg);
 
-         if (aTy == Ity_I32 || mode64) {
+         if (aTy == Ity_I32 || (mode64 && arg->tag != Iex_BBPTR)) {
             tmpregs[argreg] = iselWordExpr_R(env, arg);
             argreg++;
          } else if (aTy == Ity_I64) {  /* Ity_I64 */
@@ -569,7 +569,6 @@ static void doHelperCall(/*OUT*/UInt*   stackAdjustAfterCall,
             tmpregs[argreg] = raHi;
             argreg++;
          } else if (arg->tag == Iex_BBPTR) {
-            vassert(0);  // ATC
             tmpregs[argreg] = GuestStatePointer(mode64);
             argreg++;
          }

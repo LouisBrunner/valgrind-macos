@@ -78,6 +78,15 @@ extern VexGuestLayout mips64Guest_layout;
 /*---------------------------------------------------------*/
 /*---                mips guest helpers                 ---*/
 /*---------------------------------------------------------*/
+typedef enum {
+   CEILWS=0, CEILWD,  CEILLS,  CEILLD,
+   FLOORWS,  FLOORWD, FLOORLS, FLOORLD,
+   ROUNDWS,  ROUNDWD, ROUNDLS, ROUNDLD,
+   TRUNCWS,  TRUNCWD, TRUNCLS, TRUNCLD,
+   CVTDS,    CVTDW,   CVTSD,   CVTSW,
+   CVTWS,    CVTWD,   CVTDL,   CVTLS,
+   CVTLD,    CVTSL
+} flt_op;
 
 extern UInt mips32_dirtyhelper_mfc0 ( UInt rd, UInt sel );
 
@@ -87,6 +96,9 @@ extern ULong mips64_dirtyhelper_dmfc0 ( UInt rd, UInt sel );
 #if defined(__mips__) && ((defined(__mips_isa_rev) && __mips_isa_rev >= 2))
 extern ULong mips64_dirtyhelper_rdhwr ( ULong rt, ULong rd );
 #endif
+
+extern UInt mips_dirtyhelper_calculate_FCSR ( void* guest_state, UInt fs,
+                                              flt_op op );
 
 /*---------------------------------------------------------*/
 /*---               Condition code stuff                ---*/

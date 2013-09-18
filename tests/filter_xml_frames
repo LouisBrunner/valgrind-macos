@@ -1,14 +1,23 @@
 #! /usr/bin/env perl
 
-# Remove <frame>.....</frame> containing an <obj> poining to
-# some system library.
+# Remove certain <frame>.....</frame> records that are suspected to point
+# to some kind of system library. Those are
+# - frames with <obj>/lib/....
+# - frames with <obj>/usr/lib/....
+# - frames without source informatino and without a function name
+#
+# There may be others...
 
 use strict;
 use warnings;
 
 my $in_frame = 0;
 my $frame = "";
-my $ignore_frame = 0;
+
+# Info about the current frame
+my $has_source_info   = 0;    # <dir>, <file>, <line>
+my $has_function_name = 0;    # <fn>
+my $has_system_obj    = 0;    # <obj>/lib...   or  <obj>/usr/lib...
 
 while (my $line = <>)
 {
@@ -16,7 +25,7 @@ while (my $line = <>)
         if ($line =~ /<frame>/) {
             $frame = $line;
             $in_frame = 1;
-            $ignore_frame = 0
+            $has_source_info = $has_function_name = $has_system_obj = 0;
         } else {
             print $line;
         }
@@ -26,14 +35,19 @@ while (my $line = <>)
 # We're in a frame
     $frame .= $line;
     if ($line =~ /<\/frame>/) {
+# Is this a frame we want to keep?
+        my $ignore_frame = $has_system_obj ||
+            (! $has_source_info && ! $has_function_name);
         if (! $ignore_frame) {
             print $frame;
         }
         $in_frame = 0;
     } else {
-# The may require tweaking; currently  /lib and /usr/lib are matched
-        $ignore_frame = 1 if ($line =~ /<obj>\/lib/);
-        $ignore_frame = 1 if ($line =~ /<obj>\/usr\/lib/);
+        $has_source_info   = 1 if ($line =~ /<(dir|file|line)>/);
+        $has_function_name = 1 if ($line =~ /<fn>/);
+# This may require tweaking; currently  /lib and /usr/lib are matched
+        $has_system_obj = 1 if ($line =~ /<obj>\/lib/);
+        $has_system_obj = 1 if ($line =~ /<obj>\/usr\/lib/);
     }
 }
 

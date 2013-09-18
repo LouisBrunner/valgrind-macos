@@ -168,6 +168,7 @@ case I chased).
 #include <stdint.h>
 #include "tests/sys_mman.h"
 #include "tests/malloc.h"       // memalign16
+#include "./opcodes.h"
 
 #define STATIC_ASSERT(e) sizeof(struct { int:-!(e); })
 
@@ -3340,21 +3341,24 @@ static test_t tests_av_float_ops_spe[] = {
  */
 static void test_dcbtct (void)
 {
-   __asm__ __volatile__ ("dcbt   %0, %1, 1" : : "b" (r17), "r" (r14));
-   __asm__ __volatile__ ("dcbt   %0, %1, 7" : : "b" (r17), "r" (r14));
+   /*  dcbt RA, RB, TH */
+   ASM_DCBT(17, 14, 1);
+   ASM_DCBT(17, 14, 7);
 }
 
 static void test_dcbtds (void)
 {
-   __asm__ __volatile__ ("dcbt   %0, %1, 10" : : "b" (r17), "r" (r14));
-   __asm__ __volatile__ ("dcbt   %0, %1, 0"  : : "b" (r17), "r" (r14));
-   __asm__ __volatile__ ("dcbt   %0, %1, 16" : : "b" (r17), "r" (r14));
+   /*  dcbt RA, RB, TH */
+   ASM_DCBT(17, 14, 10);
+   ASM_DCBT(17, 14, 0);
+   ASM_DCBT(17, 14, 16);
 }
 
 static void test_dcbtst (void)
 {
-   __asm__ __volatile__ ("dcbtst %0, %1,  6" : : "b" (r17), "r" (r14));
-   __asm__ __volatile__ ("dcbtst %0, %1, 15" : : "b" (r17), "r" (r14));
+   /*  dcbtst RA, RB, TH */
+   ASM_DCBTST(17, 14, 6);
+   ASM_DCBTST(17, 14, 15);
 }
 
 

@@ -20035,34 +20035,37 @@ Long dis_ESC_NONE (
       DIP(haveF3(pfx) ? "rep ; ret\n" : "ret\n");
       return delta;
 
-   case 0xC6: /* MOV Ib,Eb */
+   case 0xC6: /* C6 /0 = MOV Ib,Eb */
       sz = 1;
-      goto do_Mov_I_E;
-   case 0xC7: /* MOV Iv,Ev */
-      goto do_Mov_I_E;
-   do_Mov_I_E:
-      if (haveF2orF3(pfx)) goto decode_failure;
+      goto maybe_do_Mov_I_E;
+   case 0xC7: /* C7 /0 = MOV Iv,Ev */
+      goto maybe_do_Mov_I_E;
+   maybe_do_Mov_I_E:
       modrm = getUChar(delta);
-      if (epartIsReg(modrm)) {
-         delta++; /* mod/rm byte */
-         d64 = getSDisp(imin(4,sz),delta); 
-         delta += imin(4,sz);
-         putIRegE(sz, pfx, modrm, 
-                      mkU(szToITy(sz), d64 & mkSizeMask(sz)));
-         DIP("mov%c $%lld, %s\n", nameISize(sz), 
-                                  (Long)d64, 
-                                  nameIRegE(sz,pfx,modrm));
-      } else {
-         addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 
-                           /*xtra*/imin(4,sz) );
-         delta += alen;
-         d64 = getSDisp(imin(4,sz),delta);
-         delta += imin(4,sz);
-         storeLE(mkexpr(addr), 
-                 mkU(szToITy(sz), d64 & mkSizeMask(sz)));
-         DIP("mov%c $%lld, %s\n", nameISize(sz), (Long)d64, dis_buf);
+      if (gregLO3ofRM(modrm) == 0) {
+         if (haveF2orF3(pfx)) goto decode_failure;
+         if (epartIsReg(modrm)) {
+            delta++; /* mod/rm byte */
+            d64 = getSDisp(imin(4,sz),delta); 
+            delta += imin(4,sz);
+            putIRegE(sz, pfx, modrm, 
+                         mkU(szToITy(sz), d64 & mkSizeMask(sz)));
+            DIP("mov%c $%lld, %s\n", nameISize(sz), 
+                                     (Long)d64, 
+                                     nameIRegE(sz,pfx,modrm));
+         } else {
+            addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 
+                              /*xtra*/imin(4,sz) );
+            delta += alen;
+            d64 = getSDisp(imin(4,sz),delta);
+            delta += imin(4,sz);
+            storeLE(mkexpr(addr), 
+                    mkU(szToITy(sz), d64 & mkSizeMask(sz)));
+            DIP("mov%c $%lld, %s\n", nameISize(sz), (Long)d64, dis_buf);
+         }
+         return delta;
       }
-      return delta;
+      goto decode_failure;
 
    case 0xC8: /* ENTER */
       /* Same comments re operand size as for LEAVE below apply.

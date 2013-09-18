@@ -13503,28 +13503,31 @@ DisResult disInstr_X86_WRK (
       DIP("mov%c $0x%x,%s\n", nameISize(sz), d32, nameIReg(sz,opc-0xB8));
       break;
 
-   case 0xC6: /* MOV Ib,Eb */
+   case 0xC6: /* C6 /0 = MOV Ib,Eb */
       sz = 1;
-      goto do_Mov_I_E;
-   case 0xC7: /* MOV Iv,Ev */
-      goto do_Mov_I_E;
+      goto maybe_do_Mov_I_E;
+   case 0xC7: /* C7 /0 = MOV Iv,Ev */
+      goto maybe_do_Mov_I_E;
 
-   do_Mov_I_E:
+   maybe_do_Mov_I_E:
       modrm = getIByte(delta);
-      if (epartIsReg(modrm)) {
-         delta++; /* mod/rm byte */
-         d32 = getUDisp(sz,delta); delta += sz;
-         putIReg(sz, eregOfRM(modrm), mkU(szToITy(sz), d32));
-         DIP("mov%c $0x%x, %s\n", nameISize(sz), d32, 
-                                  nameIReg(sz,eregOfRM(modrm)));
-      } else {
-         addr = disAMode ( &alen, sorb, delta, dis_buf );
-         delta += alen;
-         d32 = getUDisp(sz,delta); delta += sz;
-         storeLE(mkexpr(addr), mkU(szToITy(sz), d32));
-         DIP("mov%c $0x%x, %s\n", nameISize(sz), d32, dis_buf);
+      if (gregOfRM(modrm) == 0) {
+         if (epartIsReg(modrm)) {
+            delta++; /* mod/rm byte */
+            d32 = getUDisp(sz,delta); delta += sz;
+            putIReg(sz, eregOfRM(modrm), mkU(szToITy(sz), d32));
+            DIP("mov%c $0x%x, %s\n", nameISize(sz), d32, 
+                                     nameIReg(sz,eregOfRM(modrm)));
+         } else {
+            addr = disAMode ( &alen, sorb, delta, dis_buf );
+            delta += alen;
+            d32 = getUDisp(sz,delta); delta += sz;
+            storeLE(mkexpr(addr), mkU(szToITy(sz), d32));
+            DIP("mov%c $0x%x, %s\n", nameISize(sz), d32, dis_buf);
+         }
+         break;
       }
-      break;
+      goto decode_failure;
 
    /* ------------------------ opl imm, A ----------------- */
 

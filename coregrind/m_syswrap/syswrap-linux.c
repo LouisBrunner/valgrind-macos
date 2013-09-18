@@ -951,10 +951,13 @@ POST(sys_prctl)
          const HChar* new_name = (const HChar*) ARG2;
          if (new_name) {    // Paranoia
             ThreadState* tst = VG_(get_ThreadState)(tid);
+            SizeT new_len = VG_(strlen)(new_name);
 
             /* Don't bother reusing the memory. This is a rare event. */
             tst->thread_name =
-              VG_(arena_strdup)(VG_AR_CORE, "syswrap.prctl", new_name);
+              VG_(arena_realloc)(VG_AR_CORE, "syswrap.prctl",
+                                 tst->thread_name, new_len + 1);
+            VG_(strcpy)(tst->thread_name, new_name);
          }
       }
       break;

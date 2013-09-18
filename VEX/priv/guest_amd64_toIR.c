@@ -20065,6 +20065,26 @@ Long dis_ESC_NONE (
          }
          return delta;
       }
+      /* BEGIN HACKY SUPPORT FOR xbegin */
+      if (0/*CURRENTLY DISABLED*/ &&
+          modrm == 0xF8 && !haveF2orF3(pfx) && sz == 4) {
+         delta++; /* mod/rm byte */
+         d64 = getSDisp(4,delta); 
+         delta += 4;
+         guest_RIP_next_mustcheck = True;
+         guest_RIP_next_assumed   = guest_RIP_bbstart + delta;
+         Addr64 failAddr = guest_RIP_bbstart + delta + d64;
+         /* EAX contains the failure status code.  Bit 3 is "Set if an
+            internal buffer overflowed", which seems like the
+            least-bogus choice we can make here. */
+         putIRegRAX(4, mkU32(1<<3));
+         /* And jump to the fail address. */
+         jmp_lit(dres, Ijk_Boring, failAddr);
+         vassert(dres->whatNext == Dis_StopHere);
+         DIP("xbeginq 0x%llx\n", failAddr);
+         return delta;
+      }
+      /* END HACKY SUPPORT FOR xbegin */
       goto decode_failure;
 
    case 0xC8: /* ENTER */

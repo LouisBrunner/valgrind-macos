@@ -30,7 +30,8 @@ EXTRA_DIST = \
 	mips32_dspr2.stdout.exp mips32_dspr2.stderr.exp \
 	mips32_dspr2.stdout.exp-mips32 mips32_dspr2.vgtest \
 	unaligned_load_store.stdout.exp-LE unaligned_load_store.stdout.exp-BE \
-	unaligned_load_store.stderr.exp unaligned_load_store.vgtest
+	unaligned_load_store.stderr.exp unaligned_load_store.vgtest \
+	test_fcsr.stdout.exp test_fcsr.stderr.exp test_fcsr.vgtest
 
 check_PROGRAMS = \
 	allexec \
@@ -48,7 +49,8 @@ check_PROGRAMS = \
 	bug320057-mips32 \
 	mips32_dsp \
 	mips32_dspr2 \
-	unaligned_load_store
+	unaligned_load_store \
+	test_fcsr
 
 AM_CFLAGS    += @FLAG_M32@
 AM_CXXFLAGS  += @FLAG_M32@

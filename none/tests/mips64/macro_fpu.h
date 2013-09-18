@@ -52,147 +52,163 @@ const char *flt_round_op_names[] = {
    "cvt.l.d", "cvt.s.l",
 };
 
-#define UNOPdd(op)         \
-   fd_d = 0;               \
-   __asm__ __volatile__(   \
-      op" %0, %1"  "\n\t"  \
-      : "=f"(fd_d)         \
-      : "f"(fs_d[i])       \
+#define UNOPdd(op)               \
+   fd_d = 0;                     \
+   __asm__ __volatile__(         \
+      op"   %1, %2"   "\n\t"     \
+      "cfc1 %0, $31"  "\n\t"     \
+      : "=r" (fcsr), "=f"(fd_d)  \
+      : "f"(fs_d[i])             \
    );
 
-#define UNOPff(op)        \
-   fd_f = 0;              \
-   __asm__ __volatile__(  \
-      op" %0, %1"  "\n\t" \
-      : "=f"(fd_f)        \
-      : "f"(fs_f[i])      \
+#define UNOPff(op)               \
+   fd_f = 0;                     \
+   __asm__ __volatile__(         \
+      op"   %1, %2"   "\n\t"     \
+      "cfc1 %0, $31"  "\n\t"     \
+      : "=r" (fcsr), "=f"(fd_f)  \
+      : "f"(fs_f[i])             \
    );
 
-#define UNOPfd(op)        \
-   fd_d = 0;              \
-   __asm__ __volatile__(  \
-      op" %0, %1"  "\n\t" \
-      : "=f"(fd_d)        \
-      : "f"(fs_f[i])      \
+#define UNOPfd(op)               \
+   fd_d = 0;                     \
+   __asm__ __volatile__(         \
+      op"   %1, %2"   "\n\t"     \
+      "cfc1 %0, $31"  "\n\t"     \
+      : "=r" (fcsr), "=f"(fd_d)  \
+      : "f"(fs_f[i])             \
    );
 
-#define UNOPdf(op)        \
-   fd_f = 0;              \
-   __asm__ __volatile__(  \
-      op" %0, %1"  "\n\t" \
-      : "=f"(fd_f)        \
-      : "f"(fs_d[i])      \
+#define UNOPdf(op)               \
+   fd_f = 0;                     \
+   __asm__ __volatile__(         \
+      op"   %1, %2"   "\n\t"     \
+      "cfc1 %0, $31"  "\n\t"     \
+      : "=r" (fcsr), "=f"(fd_f)  \
+      : "f"(fs_d[i])             \
    );
 
-#define UNOPfw(op)             \
-   fd_w = 0;                   \
-   __asm__ __volatile__(       \
-      op"   $f0, %1"   "\n\t"  \
-      "mfc1 %0,  $f0"  "\n\t"  \
-      : "=r"(fd_w)             \
-      : "f"(fs_f[i])           \
-      : "$f0"                  \
+#define UNOPfw(op)               \
+   fd_w = 0;                     \
+   __asm__ __volatile__(         \
+      op"   $f0, %2"   "\n\t"    \
+      "mfc1 %1,  $f0"  "\n\t"    \
+      "cfc1 %0,  $31"  "\n\t"    \
+      : "=r" (fcsr), "=r"(fd_w)  \
+      : "f"(fs_f[i])             \
+      : "$f0"                    \
    );
 
-#define UNOPdw(op)             \
-   fd_w = 0;                   \
-   __asm__ __volatile__(       \
-      op"   $f0, %1"   "\n\t"  \
-      "mfc1 %0,  $f0"  "\n\t"  \
-      : "=r"(fd_w)             \
-      : "f"(fs_d[i])           \
-      : "$f0"                  \
+#define UNOPdw(op)               \
+   fd_w = 0;                     \
+   __asm__ __volatile__(         \
+      op"   $f0, %2"   "\n\t"    \
+      "mfc1 %1,  $f0"  "\n\t"    \
+      "cfc1 %0,  $31"  "\n\t"    \
+      : "=r" (fcsr), "=r"(fd_w)  \
+      : "f"(fs_d[i])             \
+      : "$f0"                    \
    );
 
-#define UNOPwd(op)            \
-   fd_d = 0;                  \
-   __asm__ __volatile__(      \
-      "mtc1 %1, $f0"  "\n\t"  \
-      op"   %0, $f0"  "\n\t"  \
-      : "=f"(fd_d)            \
-      : "r"(fs_w[i])          \
-      : "$f0"                 \
+#define UNOPwd(op)               \
+   fd_d = 0;                     \
+   __asm__ __volatile__(         \
+      "mtc1 %2,  $f0"  "\n\t"    \
+      op"   %1,  $f0"  "\n\t"    \
+      "cfc1 %0,  $31"  "\n\t"    \
+      : "=r" (fcsr), "=f"(fd_d)  \
+      : "r"(fs_w[i])             \
+      : "$f0"                    \
    );
 
-#define UNOPwf(op)            \
-   fd_f = 0;                  \
-   __asm__ __volatile__(      \
-      "mtc1 %1, $f0"  "\n\t"  \
-      op"   %0, $f0"  "\n\t"  \
-      : "=f"(fd_f)            \
-      : "r"(fs_w[i])          \
-      : "$f0"                 \
+#define UNOPwf(op)               \
+   fd_f = 0;                     \
+   __asm__ __volatile__(         \
+      "mtc1 %2,  $f0"  "\n\t"    \
+      op"   %1,  $f0"  "\n\t"    \
+      "cfc1 %0,  $31"  "\n\t"    \
+      : "=r" (fcsr), "=f"(fd_f)  \
+      : "r"(fs_w[i])             \
+      : "$f0"                    \
    );
 
-#define UNOPld(op)             \
-   fd_d = 0;                   \
-   __asm__ __volatile__(       \
-      "dmtc1 %1, $f0"  "\n\t"  \
-      op"    %0, $f0"  "\n\t"  \
-      : "=f"(fd_d)             \
-      : "r"(fs_l[i])           \
-      : "$f0"                  \
+#define UNOPld(op)               \
+   fd_d = 0;                     \
+   __asm__ __volatile__(         \
+      "dmtc1 %2, $f0"  "\n\t"    \
+      op"    %1, $f0"  "\n\t"    \
+      "cfc1  %0, $31"  "\n\t"    \
+      : "=r" (fcsr), "=f"(fd_d)  \
+      : "r"(fs_l[i])             \
+      : "$f0"                    \
    );
 
-#define UNOPdl(op)              \
-   fd_l = 0;                    \
-   __asm__ __volatile__(        \
-      op"    $f0, %1"   "\n\t"  \
-      "dmfc1 %0,  $f0"  "\n\t"  \
-      : "=r"(fd_l)              \
-      : "f"(fs_d[i])            \
-      : "$f0"                   \
+#define UNOPdl(op)               \
+   fd_l = 0;                     \
+   __asm__ __volatile__(         \
+      op"    $f0, %2"   "\n\t"   \
+      "dmfc1 %1,  $f0"  "\n\t"   \
+      "cfc1  %0,  $31"  "\n\t"   \
+      : "=r" (fcsr), "=r"(fd_l)  \
+      : "f"(fs_d[i])             \
+      : "$f0"                    \
    );
 
-#define UNOPls(op)             \
-   fd_f = 0;                   \
-   __asm__ __volatile__(       \
-      "dmtc1 %1, $f0"  "\n\t"  \
-      op"    %0, $f0"  "\n\t"  \
-      : "=f"(fd_f)             \
-      : "r"(fs_l[i])           \
-      : "$f0"                  \
+#define UNOPls(op)               \
+   fd_f = 0;                     \
+   __asm__ __volatile__(         \
+      "dmtc1 %2, $f0"  "\n\t"    \
+      op"    %1, $f0"  "\n\t"    \
+      "cfc1  %0, $31"  "\n\t"    \
+      : "=r" (fcsr), "=f"(fd_f)  \
+      : "r"(fs_l[i])             \
+      : "$f0"                    \
    );
 
-#define UNOPsl(op)              \
-   fd_l = 0;                    \
-   __asm__ __volatile__(        \
-      op"    $f0, %1"   "\n\t"  \
-      "dmfc1 %0,  $f0"  "\n\t"  \
-      : "=r"(fd_l)              \
-      : "f"(fs_f[i])            \
-      : "$f0"                   \
+#define UNOPsl(op)               \
+   fd_l = 0;                     \
+   __asm__ __volatile__(         \
+      op"    $f0, %2"   "\n\t"   \
+      "dmfc1 %1,  $f0"  "\n\t"   \
+      "cfc1  %0,  $31"  "\n\t"   \
+      : "=r" (fcsr), "=r"(fd_l)  \
+      : "f"(fs_f[i])             \
+      : "$f0"                    \
    );
 
 #define BINOPf(op)                    \
    fd_f = 0;                          \
    __asm__ __volatile__(              \
-      op" %0, %1, %2"  "\n\t"         \
-      : "=f" (fd_f)                   \
+      op"    %1, %2, %3"  "\n\t"      \
+      "cfc1  %0, $31"     "\n\t"      \
+      : "=r" (fcsr), "=f" (fd_f)      \
       : "f" (fs_f[i]), "f" (ft_f[i])  \
    );
 
 #define BINOPd(op)                    \
    fd_d = 0;                          \
    __asm__ __volatile__(              \
-      op" %0, %1, %2"  "\n\t"         \
-      : "=f"(fd_d)                    \
+      op" %1, %2, %3"  "\n\t"         \
+      "cfc1  %0, $31"     "\n\t"      \
+      : "=r" (fcsr), "=f"(fd_d)       \
       : "f" (fs_d[i]), "f" (ft_d[i])  \
    );
 
 #define TRIOPf(op)                                    \
    fd_f = 0;                                          \
    __asm__ __volatile__(                              \
-      op" %0, %1, %2, %3"  "\n\t"                     \
-      : "=f" (fd_f)                                   \
+      op"    %1, %2, %3, %4"  "\n\t"                  \
+      "cfc1  %0, $31"         "\n\t"                  \
+      : "=r" (fcsr), "=f" (fd_f)                      \
       : "f" (fr_f[i]), "f" (fs_f[i]) , "f" (ft_f[i])  \
    );
 
 #define TRIOPd(op)                                    \
    fd_d = 0;                                          \
    __asm__ __volatile__(                              \
-      op" %0, %1, %2, %3"  "\n\t"                     \
-      : "=f"(fd_d)                                    \
+      op"    %1, %2, %3, %4"  "\n\t"                  \
+      "cfc1  %0, $31"         "\n\t"                  \
+      : "=r" (fcsr), "=f"(fd_d)                       \
       : "f" (fr_d[i]), "f" (fs_d[i]) , "f" (ft_d[i])  \
    );
 

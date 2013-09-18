@@ -1,0 +1,2 @@
+prog: test_fcsr
+vgopts: -q

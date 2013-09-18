@@ -7,6 +7,7 @@ int arithmeticOperations(flt_art_op_t op)
    double fd_d = 0;
    float fd_f = 0;
    int i = 0;
+   int fcsr = 0;
    round_mode_t rm;
    for (rm = TO_NEAREST; rm <= TO_MINUS_INFINITY; rm ++) {
       set_rounding_mode(rm);

@@ -940,6 +940,16 @@ static UShort extend_s_10to16(UInt x)
    return (UShort) ((((Int) x) << 22) >> 22);
 }
 
+static ULong extend_s_10to32(UInt x)
+{
+   return (ULong)((((Long) x) << 22) >> 22);
+}
+
+static ULong extend_s_10to64(UInt x)
+{
+   return (ULong)((((Long) x) << 54) >> 54);
+}
+
 static UInt extend_s_16to32(UInt x)
 {
    return (UInt) ((((Int) x) << 16) >> 16);
@@ -2050,6 +2060,118 @@ static Bool dis_instr_branch ( UInt theInstr, DisResult * dres,
          return False;
       }
    *set = IRStmt_Exit(eCond, jmpKind, mkSzConst(ty, addrTgt), OFFB_PC);
+   return True;
+}
+
+/*********************************************************/
+/*---         Cavium Specific Instructions            ---*/
+/*********************************************************/
+static Bool dis_instr_CVM ( UInt theInstr )
+{
+   UChar  opc2     = get_function(theInstr);
+   UChar  regRs    = get_rs(theInstr);
+   UChar  regRt    = get_rt(theInstr);
+   UChar  regRd    = get_rd(theInstr);
+   UInt   imm 	   = get_imm(theInstr);
+   UChar  lenM1    = get_msb(theInstr);
+   UChar  p        = get_lsb(theInstr);
+   IRType ty       = mode64? Ity_I64 : Ity_I32;
+   IRTemp tmp      = newTemp(ty);
+   IRTemp tmpRs    = newTemp(ty);
+   IRTemp tmpRt    = newTemp(ty);
+   UInt size;
+   assign(tmpRs, getIReg(regRs));
+
+   switch(opc2) { 
+      case 0x03: {  /* DMUL rd, rs, rt */
+         DIP("dmul r%d, r%d, r%d", regRd, regRs, regRt);
+         IRType t0 = newTemp(Ity_I128);
+         assign(t0, binop(Iop_MullU64, getIReg(regRs), getIReg(regRt)));
+         putIReg(regRd, unop(Iop_128to64, mkexpr(t0)));
+         break;
+      }
+      case 0x32:  /* 5. CINS rd, rs, p, lenm1 */
+         DIP("cins r%u, r%u, %d, %d\n", regRt, regRs, p, lenM1); 
+         assign ( tmp  , binop(Iop_Shl64, mkexpr(tmpRs), mkU8(64-( lenM1+1 ))));
+         assign ( tmpRt, binop(Iop_Shr64, mkexpr( tmp ), mkU8(64-(p+lenM1+1))));
+         putIReg( regRt, mkexpr(tmpRt));
+         break;
+
+      case 0x33:  /* 6. CINS32 rd, rs, p+32, lenm1 */
+         DIP("cins32 r%u, r%u, %d, %d\n", regRt, regRs, p+32, lenM1);
+         assign ( tmp  , binop(Iop_Shl64, mkexpr(tmpRs), mkU8(64-( lenM1+1 ))));
+         assign ( tmpRt, binop(Iop_Shr64, mkexpr( tmp ), mkU8(32-(p+lenM1+1))));
+         putIReg( regRt, mkexpr(tmpRt));
+         break;
+
+      case 0x3A:  /* 3. EXTS rt, rs, p len */
+         DIP("exts r%u, r%u, %d, %d\n", regRt, regRs, p, lenM1); 
+         size = lenM1 + 1;  /* lenm1+1 */
+         UChar lsAmt = 64 - (p + size);  /* p+lenm1+1 */
+         UChar rsAmt = 64 - size;  /* lenm1+1 */
+         tmp = newTemp(Ity_I64);
+         assign(tmp, binop(Iop_Shl64, mkexpr(tmpRs), mkU8(lsAmt)));
+         putIReg(regRt, binop(Iop_Sar64, mkexpr(tmp), mkU8(rsAmt)));
+         break;
+
+      case 0x3B:  /* 4. EXTS32 rt, rs, p len */
+         DIP("exts32 r%u, r%u, %d, %d\n", regRt, regRs, p, lenM1); 
+         assign ( tmp  , binop(Iop_Shl64, mkexpr(tmpRs), mkU8(32-(p+lenM1+1))));
+         assign ( tmpRt, binop(Iop_Sar64, mkexpr(tmp)  , mkU8(64-(lenM1+1))) );
+         putIReg( regRt, mkexpr(tmpRt));
+         break;
+
+      case 0x2B:  /* 20. SNE rd, rs, rt */
+         DIP("sne r%d, r%d, r%d", regRd,regRs, regRt);
+         if (mode64)
+            putIReg(regRd, unop(Iop_1Uto64, binop(Iop_CmpNE64, getIReg(regRs),
+                                                  getIReg(regRt))));
+         else
+            putIReg(regRd,unop(Iop_1Uto32, binop(Iop_CmpNE32, getIReg(regRs),
+                                                 getIReg(regRt))));
+         break;
+
+      case 0x2A:  /* Set Equals - SEQ; Cavium OCTEON */
+         DIP("seq r%d, r%d, %d", regRd, regRs, regRt);
+         if (mode64)
+            putIReg(regRd, unop(Iop_1Uto64,
+                                binop(Iop_CmpEQ64, getIReg(regRs),
+                                      getIReg(regRt))));
+         else
+            putIReg(regRd, unop(Iop_1Uto32,
+                                binop(Iop_CmpEQ32, getIReg(regRs),
+                                      getIReg(regRt))));
+         break;
+
+      case 0x2E:  /* Set Equals Immediate - SEQI; Cavium OCTEON */
+         DIP("seqi r%d, r%d, %d", regRt, regRs, imm);
+         if (mode64)
+            putIReg(regRt, unop(Iop_1Uto64,
+                                binop(Iop_CmpEQ64, getIReg(regRs),
+                                      mkU64(extend_s_10to64(imm)))));
+         else
+            putIReg(regRt, unop(Iop_1Uto32,
+                                binop(Iop_CmpEQ32, getIReg(regRs),
+                                      mkU32(extend_s_10to32(imm)))));
+         break;
+
+      case 0x2F:  /* Set Not Equals Immediate - SNEI; Cavium OCTEON */
+         DIP("snei r%d, r%d, %d", regRt, regRs, imm);
+         if (mode64)
+            putIReg(regRt, unop(Iop_1Uto64,
+                             binop(Iop_CmpNE64,
+                                   getIReg(regRs),
+                                   mkU64(extend_s_10to64(imm)))));
+         else
+            putIReg(regRt, unop(Iop_1Uto32,
+                             binop(Iop_CmpNE32,
+                                   getIReg(regRs),
+                                   mkU32(extend_s_10to32(imm)))));
+         break;
+
+      default:
+       return False;
+   }
    return True;
 }
 
@@ -13512,6 +13634,18 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
    case 0x1C:  /* Special2 */
       switch (function) {
+      /* Cavium Specific instructions */
+      case 0x03: case 0x32: case 0x33:  /* DMUL, CINS , CINS32 */
+      case 0x3A: case 0x3B: case 0x2B:  /* EXT,  EXT32, SNE    */
+      case 0x2A: case 0x2E: case 0x2F:  /* SEQ,  SEQI,  SNEI   */
+         if (VEX_MIPS_COMP_ID(archinfo->hwcaps) == VEX_PRID_COMP_CAVIUM) {
+            if (dis_instr_CVM(cins))
+               break;
+            goto decode_failure;
+         } else {
+            goto decode_failure;
+         }
+         break;
       case 0x02: {  /* MUL */
          DIP("mul r%d, r%d, r%d", rd, rs, rt);
          if (mode64) {

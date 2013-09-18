@@ -10,6 +10,7 @@ EXTRA_DIST = \
 	branch_and_jump_instructions.stdout.exp \
 	branch_and_jump_instructions.stderr.exp branch_and_jump_instructions.vgtest \
 	branches.stdout.exp branches.stderr.exp branches.vgtest \
+	cvm_ins.stdout.exp cvm_ins.stderr.exp cvm_ins.vgtest \
 	extract_insert_bit_field.stdout.exp-mips64 \
 	extract_insert_bit_field.stdout.exp-mips64r2 \
 	extract_insert_bit_field.stderr.exp extract_insert_bit_field.vgtest \
@@ -46,6 +47,7 @@ check_PROGRAMS = \
 	arithmetic_instruction \
 	branch_and_jump_instructions \
 	branches \
+	cvm_ins \
 	extract_insert_bit_field \
 	fpu_arithmetic \
 	fpu_branches \
@@ -68,3 +70,5 @@ AM_CXXFLAGS  += @FLAG_M64@
 AM_CCASFLAGS += @FLAG_M64@
 
 allexec_CFLAGS          = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
+
+cvm_ins_CFLAGS = $(AM_CFLAGS) -g -O0 -march=octeon

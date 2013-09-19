@@ -1118,7 +1118,7 @@ ULong mips64_dirtyhelper_rdhwr ( ULong rt, ULong rd )
 extern UInt mips_dirtyhelper_calculate_FCSR ( void* gs, UInt fs, flt_op inst )
 {
    UInt ret = 0;
-#if defined(__mips__) && ((defined(__mips_isa_rev) && __mips_isa_rev >= 2))
+#if defined(__mips__)
 #if defined(VGA_mips32)
    VexGuestMIPS32State* guest_state = (VexGuestMIPS32State*)gs;
    UInt *addr = (UInt *)&guest_state->guest_f0;

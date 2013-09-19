@@ -541,9 +541,6 @@ Tue Jul  2 12:15:07 CEST 2013
 322279  vgdb fails on OSX Mountain Lion
         WONTFIX
 
-322294  Add initial support for IBM Power ISA 2.07
-        FIXED 2740 13494, but needs close
-
 322499  False positive 'uninitialized bytes' error with fwrite
         INVALID
 
@@ -611,9 +608,6 @@ Tue Jul  2 12:15:07 CEST 2013
         triggers false positive
         Has patch from pbos
 
-323437  Phase 2 support for IBM Power ISA 2.07
-        Has patch; unclear why not landed
-
 323448  Check for memory overlap in sprintf()-like functions
         Wishlist
 
@@ -675,15 +669,8 @@ Tue Jul  2 12:15:07 CEST 2013
 324486  WARNING: unhandled syscall: 310
         Hmm, tricky, sys_unshare.
 
-324518  ppc64: Emulation of dcbt instructions does not handle non-zero hint fields
-        FIXED 2753; needs closing though.
-
 324525  valgrind can not detect any leak
         PROBABLE INVALID; needs closing.
-
-324594  Fix overflow computation and add test-cases for Power ISA 2.06
-        insns: mulldo/mulldo.
-        FIXED 2754 13537; needs closing.
 
 324765  ppc64: illegal instruction when executing none/tests/ppc64/jm-misc
 
@@ -697,4 +684,10 @@ Tue Jul  2 12:15:07 CEST 2013
 324834  Unhandled instructions in Microsoft C run-time (msvcrt.dll) for x86_64
         Should be easy to fix
 
-Thu Sep 12 13:55:05 CEST 2013
+324882  CPUID should depend on VEX capabilities, not on underlying CPU
+        Middle-term cleanup; not urgent
+
+324894  Phase 3 support for IBM Power ISA 2.07
+        Waiting for review (but by who?)
+
+Thu Sep 19 10:34:49 CEST 2013

@@ -499,6 +499,19 @@ FIXED r??
         and freeing callstack
         FIXED 13223
 
+324594  Fix overflow computation and add test-cases for Power ISA 2.06
+        insns: mulldo/mulldo.
+        FIXED 2754 13537; needs closing.
+
+324518  ppc64: Emulation of dcbt instructions does not handle non-zero hint fields
+        FIXED 2753; needs closing though.
+
+323437  Phase 2 support for IBM Power ISA 2.07
+        FIXED 2753 13539
+
+322294  Add initial support for IBM Power ISA 2.07
+        FIXED 2740 13494, but needs close
+
 
 Release 3.8.1 (19 September 2012)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

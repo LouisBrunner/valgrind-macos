@@ -1,0 +1,38 @@
+#!/bin/sh
+
+#-------------------------------------------------------------------
+#
+# This script is invoked after regression testing has finished
+# It performs various consistency checks.
+#
+# Arguments passed to this script are (from left to right)
+# - absolute path name of valgrind's root directory
+# - list of directories being passed to check_makefile_consistency
+#
+#-------------------------------------------------------------------
+
+# echo "$@"
+
+abs_top_srcdir="$1"
+test_dir="$abs_top_srcdir/tests"
+shift
+
+errors=0
+
+#-------------------------------------------------------------------
+
+echo "...checking makefile consistency"
+$test_dir/check_makefile_consistency "$@"
+if [ $? != 0 ]; then
+   errors=1
+fi
+
+#-------------------------------------------------------------------
+
+echo "...checking header files and include directives"
+$test_dir/check_headers_and_includes "$abs_top_srcdir"
+if [ $? != 0 ]; then
+   errors=1
+fi
+
+exit $errors

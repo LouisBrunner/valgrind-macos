@@ -1,0 +1,292 @@
+#!/usr/bin/env perl
+
+#-------------------------------------------------------------------
+# Check header files and #include directives
+#
+# (1) include/*.h must not include pub_core_...h
+# (2) coregrind/pub_core_xyzzy.h may include pub_tool_xyzzy.h
+#     other coregrind headers may not include pub_tool_xyzzy.h
+# (3) coregrind/ *.c must not include pub_tool_xyzzy.h
+# (4) tool *.[ch] files must not include pub_core_...h
+# (5) include pub_core/tool_clreq.h instead of valgrind.h except in tools'
+#     export headers
+#-------------------------------------------------------------------
+
+use strict;
+use warnings;
+use Getopt::Long;
+
+my $this_script = "check_headers_and_includes";
+
+# The list of top-level directories is divided into three sets:
+#
+# (1) coregrind directories
+# (2) tool directories
+# (3) directories to ignore
+#
+# If a directory is found that does not belong to any of those sets, the
+# script will terminate unsuccessfully.
+
+my %coregrind_dirs = (
+    "include" => 1,
+    "coregrind" => 1,
+    );
+
+my %tool_dirs = (
+    "none" => 1,
+    "lackey" => 1,
+    "massif" => 1,
+    "memcheck" => 1,
+    "drd" => 1,
+    "helgrind", => 1,
+    "callgrind" => 1,
+    "cachegrind" => 1,
+    "exp-bbv" => 1,
+    "exp-dhat" => 1,
+    "exp-sgcheck" => 1
+    );
+
+my %dirs_to_ignore = (
+    ".deps" => 1,
+    ".svn" => 1,
+    ".in_place" => 1,
+    "VEX" => 1,
+    "docs" => 1,
+    "auxprogs" => 1,
+    "autom4te.cache" => 1,
+    "nightly" => 1,
+    "perf" => 1,
+    "tests" => 1,
+    "gdbserver_tests" => 1,
+    "mpi" => 1
+    );
+
+my %tool_export_header = (
+    "drd/drd.h" => 1,
+    "helgrind/helgrind.h" => 1,
+    "memcheck/memcheck.h" => 1,
+    "callgrind/callgrind.h" => 1
+    );
+
+my $usage=<<EOF;
+USAGE
+
+  $this_script
+
+    [--debug]          Debugging output
+
+    dir ...            Directories to process
+EOF
+
+my $debug = 0;
+my $num_errors = 0;
+
+&main;
+
+sub main {
+    GetOptions( "debug"  => \$debug ) || die $usage;
+
+    my $argc = $#ARGV + 1;
+
+    if ($argc < 1) {
+        die $usage;
+    }
+
+    foreach my $dir (@ARGV) {
+        process_dir(undef, $dir, 0);
+    }
+
+    my $rc = ($num_errors == 0) ? 0 : 1;
+    exit $rc;
+}
+
+sub process_dir {
+    my ($path, $dir, $depth) = @_;
+    my $hdir;
+
+    if ($depth == 0) {
+# The root directory is always processed
+    } elsif ($depth == 1) {
+# Toplevel directories
+        return if ($dirs_to_ignore{$dir});
+
+        if (! $tool_dirs{$dir} && ! $coregrind_dirs{$dir}) {
+            die "Unknown directory '$dir'. Please update $this_script\n";
+        }
+    } else {
+# Subdirectories
+        return if ($dirs_to_ignore{$dir});
+    }
+
+    print "DIR = $dir   DEPTH = $depth\n" if ($debug);
+
+    chdir($dir) || die "Cannot chdir '$dir'\n";
+
+    opendir($hdir, ".") || die "cannot open directory '.'";
+
+    while (my $file = readdir($hdir)) {
+        next if ($file eq ".");
+        next if ($file eq "..");
+
+# Subdirectories
+        if (-d $file) {
+            my $full_path = defined $path ? "$path/$file" : $file;
+            process_dir($full_path, $file, $depth + 1);
+            next;
+        }
+
+# Regular files; only interested in *.c and *.h
+        next if (! ($file =~ /\.[ch]$/));
+        my $path_name = defined $path ? "$path/$file" : $file;
+        process_file($path_name);
+    }
+    close($hdir);
+    chdir("..") || die "Cannot chdir '..'\n";
+}
+
+#---------------------------------------------------------------------
+# Given a path name strip leading directories.
+#---------------------------------------------------------------------
+sub basename {
+    my ($path_name) = @_;
+    my $file = $path_name;
+
+    $file =~ s/^.*\///;
+
+    return $file;
+}
+
+#---------------------------------------------------------------------
+# Return 1, if file is located in <valgrind>/include
+#---------------------------------------------------------------------
+sub is_coregrind_export_header {
+    my ($path_name) = @_;
+
+    return ($path_name =~ /^include\//) ? 1 : 0;
+}
+
+#---------------------------------------------------------------------
+# Return 1, if file is located underneath <valgrind>/coregrind
+#---------------------------------------------------------------------
+sub is_coregrind_file {
+    my ($path_name) = @_;
+
+    return ($path_name =~ /^coregrind\//) ? 1 : 0;
+}
+
+#---------------------------------------------------------------------
+# Return 1, if file is located underneath <valgrind>/<tool>
+#---------------------------------------------------------------------
+sub is_tool_file {
+    my ($path_name) = @_;
+
+    for my $tool (keys %tool_dirs) {
+        return 1 if ($path_name =~ /^$tool\//);
+    }
+    return 0
+}
+
+#---------------------------------------------------------------------
+# Return array of files #include'd by file.
+#---------------------------------------------------------------------
+sub get_included_files {
+    my ($path_name) = @_;
+    my @includes = ();
+    my $file = basename($path_name);
+
+    open(FILE, "<$file") || die "Cannot open file '$file'";
+
+    while (my $line = <FILE>) {
+        if ($line =~ /^\s*#\s*include "([^"]*)"/) {
+            push @includes, $1;
+        }
+        if ($line =~ /^\s*#\s*include <([^>]*)>/) {
+            push @includes, $1;
+        }
+    }
+    close FILE;
+    return @includes;
+}
+
+#---------------------------------------------------------------------
+# Check a file from <valgrind>/include
+#---------------------------------------------------------------------
+sub check_coregrind_export_header {
+    my ($path_name) = @_;
+
+    foreach my $inc (get_included_files($path_name)) {
+        $inc = basename($inc);
+# Must not include pub_core_....
+        if ($inc =~ /pub_core_/) {
+            error("File $path_name must not include $inc\n");
+        }
+# Only pub_tool_clreq.h may include valgrind.h
+        if (($inc eq "valgrind.h") && ($path_name ne "include/pub_tool_clreq.h")) {
+            error("File $path_name should include pub_tool_clreq.h instead of $inc\n");
+        }
+    }
+}
+
+#---------------------------------------------------------------------
+# Check a file from <valgrind>/coregrind
+#---------------------------------------------------------------------
+sub check_coregrind_file {
+    my ($path_name) = @_;
+    my $file = basename($path_name);
+
+    foreach my $inc (get_included_files($path_name)) {
+        print "\tINCLUDE $inc\n" if ($debug);
+# Only pub_tool_xyzzy.h may include pub_core_xyzzy.h
+        if ($inc =~ /pub_tool_/) {
+            my $buddy = $inc;
+            $buddy =~ s/pub_tool/pub_core/;
+            if ($file ne $buddy) {
+                error("File $path_name must not include $inc\n");
+            }
+        }
+# Must not include valgrind.h
+        if ($inc eq "valgrind.h") {
+            error("File $path_name should include pub_core_clreq.h instead of $inc\n");
+        }
+    }
+}
+
+#---------------------------------------------------------------------
+# Check a file from <valgrind>/<tool>
+#---------------------------------------------------------------------
+sub check_tool_file {
+    my ($path_name) = @_;
+    my $file = basename($path_name);
+
+    foreach my $inc (get_included_files($path_name)) {
+        print "\tINCLUDE $inc\n" if ($debug);
+# Must not include pub_core_...
+        if ($inc =~ /pub_core_/) {
+            error("File $path_name must not include $inc\n");
+        }
+# Must not include valgrind.h unless this is an export header
+        if ($inc eq "valgrind.h" && ! $tool_export_header{$path_name}) {
+            error("File $path_name should include pub_tool_clreq.h instead of $inc\n");
+        }
+    }
+}
+
+sub process_file {
+    my ($path_name) = @_;
+
+    print "FILE = $path_name\n" if ($debug);
+
+    if (is_coregrind_export_header($path_name)) {
+        check_coregrind_export_header($path_name);
+    } elsif (is_coregrind_file($path_name)) {
+        check_coregrind_file($path_name);
+    } elsif (is_tool_file($path_name)) {
+        check_tool_file($path_name);
+    }
+}
+
+sub error {
+    my ($message) = @_;
+    print STDERR "*** $message";
+    ++$num_errors;
+}

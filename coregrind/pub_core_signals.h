@@ -36,7 +36,7 @@
 //--------------------------------------------------------------------
 
 #include "pub_tool_signals.h"       // I want to get rid of this header...
-#include "pub_tool_vki.h"           // vki_sigset_t et al.
+#include "pub_core_vki.h"           // vki_sigset_t et al.
 
 /* Highest signal the kernel will let us use */
 extern Int VG_(max_signal);

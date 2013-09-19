@@ -33,7 +33,7 @@
 #define __PUB_CORE_SIGFRAME_H
 
 #include "pub_core_basics.h"     // VG_ macro
-#include "pub_tool_vki.h"        // vki_sigset_t et al.
+#include "pub_core_vki.h"        // vki_sigset_t et al.
 
 //--------------------------------------------------------------------
 // PURPOSE: This module creates and destroys signal delivery frames

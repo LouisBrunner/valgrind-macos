@@ -3666,7 +3666,7 @@ static void init_CIE ( CIE* cie )
    cie->saw_z_augmentation = False;
 }
 
-#define N_CIEs 5000
+#define N_CIEs 8000
 static CIE the_CIEs[N_CIEs];
 
 

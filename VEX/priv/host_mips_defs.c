@@ -743,6 +743,9 @@ const HChar *showMIPSFpOp(MIPSFpOp op)
       case Mfp_ROUNDWD:
          ret = "round.w.d";
          break;
+      case Mfp_ROUNDLD:
+         ret = "round.l.d";
+         break;
       case Mfp_FLOORWS:
          ret = "floor.w.s";
          break;
@@ -2552,31 +2555,19 @@ static UChar *doAMode_RR(UChar * p, UInt opc1, UInt rSD, MIPSAMode * am,
    }
 
    if (mode64) {
-   /* addiu sp, sp, -8
-      sd rA, 0(sp)
-      daddu rA, rA, rB
-      sd/ld r_dst, 0(rA)
-      ld rA, 0(sp)
-      daddiu sp, sp, 8 */
-      p = mkFormI(p, 25, 29, 29, 0xFFF8);
-      p = mkFormI(p, 63, 29, rA, 0);
+      /* daddu rA, rA, rB$
+         sd/ld r_dst, 0(rA)$
+         dsubu rA, rA, rB */
       p = mkFormR(p, 0, rA, rB, rA, 0, 45);
       p = mkFormI(p, opc1, rA, r_dst, 0);
-      p = mkFormI(p, 55, 29, rA, 0);
-      p = mkFormI(p, 25, 29, 29, 8);
+      p = mkFormR(p, 0, rA, rB, rA, 0, 47);
    } else {
-   /* addiu sp, sp, -4
-      sw rA, 0(sp)
-      addu rA, rA, rB
-      sw/lw r_dst, 0(rA)
-      lw rA, 0(sp)
-      addiu sp, sp, 4 */
-      p = mkFormI(p, 9, 29, 29, 0xFFFC);
-      p = mkFormI(p, 43, 29, rA, 0);
+      /* addu rA, rA, rB
+         sw/lw r_dst, 0(rA)
+         subu rA, rA, rB */
       p = mkFormR(p, 0, rA, rB, rA, 0, 33);
       p = mkFormI(p, opc1, rA, r_dst, 0);
-      p = mkFormI(p, 35, 29, rA, 0);
-      p = mkFormI(p, 9, 29, 29, 4);
+      p = mkFormR(p, 0, rA, rB, rA, 0, 35);
    }
    if (opc1 >= 40) {
       /* store */
@@ -3096,26 +3087,16 @@ Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
 
          switch (i->Min.Cmp.cond) {
             case MIPScc_EQ:
-               /* addiu r_dst, r0, 1
-                  beq r_srcL, r_srcR, 2
-                  nop
-                  addiu r_dst, r0, 0
-                */
-               p = mkFormI(p, 9, 0, r_dst, 1);
-               p = mkFormI(p, 4, r_srcL, r_srcR, 2);
-               p = mkFormR(p, 0, 0, 0, 0, 0, 0);
-               p = mkFormI(p, 9, 0, r_dst, 0);
+               /* xor r_dst, r_srcL, r_srcR
+                  sltiu r_dst, r_dst, 1 */
+               p = mkFormR(p, 0, r_srcL, r_srcR, r_dst, 0, 38);
+               p = mkFormI(p, 11, r_dst, r_dst, 1);
                break;
             case MIPScc_NE:
-               /* addiu r_dst, r0, 1
-                  bne r_srcL, r_srcR, 2
-                  nop
-                  addiu r_dst, r0, 0
-                */
-               p = mkFormI(p, 9, 0, r_dst, 1);
-               p = mkFormI(p, 5, r_srcL, r_srcR, 2);
-               p = mkFormR(p, 0, 0, 0, 0, 0, 0);
-               p = mkFormI(p, 9, 0, r_dst, 0);
+               /* xor r_dst, r_srcL, r_srcR
+                  sltu r_dst, zero, r_dst */
+               p = mkFormR(p, 0, r_srcL, r_srcR, r_dst, 0, 38);
+               p = mkFormR(p, 0, 0, r_dst, r_dst, 0, 43);
                break;
             case MIPScc_LT:
                /* slt r_dst, r_srcL, r_srcR */
@@ -3126,24 +3107,16 @@ Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
                p = mkFormR(p, 0, r_srcL, r_srcR, r_dst, 0, 43);
                break;
             case MIPScc_LE:
-               /* addiu r_dst, r0, 1
-                  beq r_srcL, r_srcR, 2
-                  nop
-                  slt r_dst, r_srcL, r_srcR */
-               p = mkFormI(p, 9, 0, r_dst, 1);
-               p = mkFormI(p, 4, r_srcL, r_srcR, 2);
-               p = mkFormR(p, 0, 0, 0, 0, 0, 0);
-               p = mkFormR(p, 0, r_srcL, r_srcR, r_dst, 0, 42);
+               /* slt r_dst, r_srcR, r_srcL
+                  xori r_dst, r_dst, 1 */
+               p = mkFormR(p, 0, r_srcR, r_srcL, r_dst, 0, 42);
+               p = mkFormI(p, 14, r_dst, r_dst, 1);
                break;
             case MIPScc_LS:
-               /* addiu r_dst, r0, 1
-                  beq r_srcL, r_srcR, 2
-                  nop
-                  sltu r_dst, r_srcL, r_srcR */
-               p = mkFormI(p, 9, 0, r_dst, 1);
-               p = mkFormI(p, 4, r_srcL, r_srcR, 2);
-               p = mkFormR(p, 0, 0, 0, 0, 0, 0);
-               p = mkFormR(p, 0, r_srcL, r_srcR, r_dst, 0, 43);
+               /* sltu r_dst, rsrcR, r_srcL
+                  xori r_dsr, r_dst, 1 */
+               p = mkFormR(p, 0, r_srcR, r_srcL, r_dst, 0, 43);
+               p = mkFormI(p, 14, r_dst, r_dst, 1);
                break;
             default:
                goto bad;
@@ -3971,6 +3944,11 @@ Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
                fr_dst = fregNo(i->Min.FpConvert.dst, mode64);
                fr_src = dregNo(i->Min.FpConvert.src);
                p = mkFormR(p, 0x11, 0x11, 0, fr_src, fr_dst, 0x0C);
+               break;
+            case Mfp_ROUNDLD:
+               fr_dst = dregNo(i->Min.FpConvert.dst);
+               fr_src = dregNo(i->Min.FpConvert.src);
+               p = mkFormR(p, 0x11, 0x11, 0, fr_src, fr_dst, 0x08);
                break;
             case Mfp_FLOORWS:
                fr_dst = fregNo(i->Min.FpConvert.dst, mode64);

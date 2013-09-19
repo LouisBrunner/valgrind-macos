@@ -56,8 +56,16 @@
 /*------------------ CONSTANTS ------------------*/
 
 /* Number of sectors the TC is divided into.  If you need a larger
-   overall translation cache, increase this value. */
-#define N_SECTORS 8
+   overall translation cache, increase this value.  On Android, space
+   is limited, so try to get by with fewer sectors.  On other
+   platforms we can go to town.  16 sectors gives theoretical capacity
+   of about 440MB of JITted code in 1.05 million translations
+   (realistically, about 2/3 of that) for Memcheck. */
+#if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)
+# define N_SECTORS 6
+#else
+# define N_SECTORS 16
+#endif
 
 /* Number of TC entries in each sector.  This needs to be a prime
    number to work properly, it must be <= 65535 (so that a TT index

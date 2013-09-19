@@ -56,6 +56,15 @@ Release 3.9.0 (?? ?????? 201?)
     'v.do expensive_sanity_check_general' that checks the sanity
     of various Valgrind aspects, including the Valgrind heap.
 
+  - remote debuginfo server + overhaul of debuginfo reading
+
+  - some fixes for OSX 10.8
+
+  - partial-loads-ok now works for 16 and 32 byte loads
+    and in general improved handling of vectorised code
+
+
+
 * ==================== FIXED BUGS ====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"
@@ -230,6 +239,8 @@ m = merged into 3_8_BRANCH
         FIXED 13294
 
 315545    [390] (find_TTEntry_from_hcode): Assertion '(UChar*)sec->tt[tteNo].tcptr <= (UChar*)hcode' failed
+321814   == 315545
+
 316535    [390] Use of |signed int| instead of (unsigned) |size_t| in valgrind messages...
 315959    [390] valgrind man page has bogus SGCHECK (and no BBV) OPTIONS section
 316144    [390] valgrind.1 manpage contains unknown ??? strings for some core option references
@@ -511,6 +522,43 @@ FIXED r??
 
 322294  Add initial support for IBM Power ISA 2.07
         FIXED 2740 13494, but needs close
+
+324816  Incorrect VEX implementation for xscvspdp/xvcvspdp regarding SNaN inputs
+        FIXED 2760 13544
+
+324765  ppc64: illegal instruction when executing none/tests/ppc64/jm-misc
+        FIXED 13562
+
+323893  SSE3 not available on amd cpus in valgrind
+        No action so far; maybe MJW can look at it
+        FIXED 2761
+
+320895  add fanotify support (patch included)
+        FIXED 13460
+
+320057  We have problems when we try to mmap more than 12 memory pages
+        on MIPS32 when we are using Valgrind
+        FIXED 13450
+
+319505  [MIPSEL] Crash: unhandled UNRAY operator.
+        FIXED 2729
+
+319494  VEX Makefile-gcc standalone build update after r2702
+        FIXED 2702
+
+318929  Crash with: disInstr(thumb): 0xF321 0x0001 (ssat16)
+        FIXED 2721 13396
+
+318773  unhandled instruction bytes: 0xF3 0x48 0x0F 0xBC 0xC2 0xC3 0x66 0x0F
+        tzcnt? == 295808, but not closed
+        FIXED 2478
+
+318203  setsockopt handling needs to handle SOL_SOCKET/SO_ATTACH_FILTER
+        FIXED 13461
+
+316761  syscall open_by_handle_at (304 on amd64, 342 on x86) not handled
+        FIXED 13459
+
 
 
 Release 3.8.1 (19 September 2012)

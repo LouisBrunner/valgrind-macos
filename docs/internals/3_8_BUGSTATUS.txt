@@ -327,97 +327,82 @@ gcp libnss3.so debuginfo read hang
 316034  Building valgrind with gcc (4.7, trunk) fails on MacOS X 10.8
 
 -- Mon Mar  4 11:36:17 CET 2013
+XXX 20 Sept 2013: triaged back to here
 
-!! 294285 LoPresti 16-byte helper returns
+294285  --partial-loads-ok does not work for 16-byte SSE loads
+        FIXED (multiple commits)
+        Requires regtest hookup on ppc
 
 316382  Support for AMDs FMA4 instructions seem to be missing
         No action so far
+        Severity: high  Audience: low
 
 316528  Dump for cachegrind
         Wishlist
 
 316612  A -Wunused-value warning from Clang when including memcheck.h
         Probably needs doc update
-
-316613  valgrind seg-faults in get_StackTrace_wrk under 32-bit
-        x86 app using makecontext
-        WONTFIX (is that the correct resolution?)
+        Severity: low  Audience: med
 
 316696  fluidanimate program of parsec 2.1 stuck (do not finish
         for more than 5 hours)
         No action so far (DRD specific)
-
-316761  syscall open_by_handle_at (304 on amd64, 342 on x86) not handled
-        Has patch; looks plausible; no action so far
+        NEEDINFO
+        Severity: high  Audience: low
 
 316874  amd64->IR: 0xC4 0xE2 0xF8 0xF2 0x85 0x30 0xFF 0xFF
         Probably some AMD FMA insn?
-        QUERIED
+        Severity: high  Audience: low
 
 316903  memcheck/tests/origin5-bz2 FAIL with gcc-4.5+
         Possibly a real bug
+        Severity: med  Audience: med
 
 317078  _mm_madd_epi16, undefined * 0 should not give uninitialised result
         True, but probably difficult to fix without perf hit
+        Prio: low
 
 317127  Fedora18/x86_64 --sanity-level=3 : aspacem segment mismatch
         Diagnosed (BTRFS specific); unclear what to do, if anything
 
 317208  vex x86->IR: unhandled instruction bytes: 0xC8 0x0 0x0 0x0
         "enter $0,$0" created by D language compiler
-
-317311  Helgrind shouldn't report errors for memories allocated
-        inside pthread/mutex methods
-        FreeBSD+Helgrind weirdness
+        Severity: high  Audience: low
 
 317381  helgrind warns about xchg vs suppressed store
         No action so far.  Not sure there's an easy fix for this.
+        Severity: med  Audience: low
 
 317390  Patch for FBLD/FBSTP/FTST
         Needs cleanup+test cases.  Queried.
+        Severity: high  Audience: low
 
 317441  Add support for AMD's LWP (LightWeight Profiling) architecture
         extension
         Contains plausible infrastructure patch; no insns so far tho
+        This is going to need some working through.  Probably OK.
+        Not sure if can make 3.9.
+        Severity: high  Audience: low
 
 317698  parse_var_DIE: confused by: DW_TAG_compile_unit using
         Intel 13.0 update 3 compiler
         Reporter has queried Intel since this might be an ICC bug
+        NEEDINFO
+        Severity: med  Audience: low
 
 317893  massif terminates without any message
-        Probably just a memory limit thing.  Close as a dup, but
-        of what?
+        Probably just a memory limit thing.  Close as a dup, but of what?
+        NEEDINFO
 
 318030  addHRegUse takes a lot of CPU time; band-aid speedup
         patch within
         No action so far
+        Needs review; would be nice to redo this with a more robust API
 
 318050  libmpiwrap fails to compile with out-of-source build
-        Has simple-sounding fix; should commit.
+        FIX 3.9 (commit)
 
 Thu Apr 11 18:16:04 CEST 2013
-
-318203  setsockopt handling needs to handle SOL_SOCKET/SO_ATTACH_FILTER
-        Has patch, looks plausible
-
-318505  Valgrind (callgrind) cannot handle recvmmsg system call
-        INVALID (old version)
-
-318575  Does not running. CRC mismatch wanted 0fcc7297
-        Probably invalid -- inability to find ld.so symbols at startup
-
-318656  (dpps) vex x86->IR: 0x66 0xf 0x3a 0x40 0xc1 0xf1
-        WONTFIX (SSE4 on 32-bit x86)
-
-318773  unhandled instruction bytes: 0xF3 0x48 0x0F 0xBC 0xC2 0xC3 0x66 0x0F
-        tzcnt? == 295808, but not closed
-
-318929  Crash with: disInstr(thumb): 0xF321 0x0001 (ssat16)
-        FIXED 2721 13396
-
-319225  QA Notice: Package triggers severe warnings which indicate
-        that it may exhibit random runtime failures.
-        We should close as WONTFIX
 
 319237  [PATCH] Added support for ELF injection
         FreeBSD-specific
@@ -430,59 +415,54 @@ Thu Apr 11 18:16:04 CEST 2013
 
 319307  Patches to let test suite run in parallel
         Looks plausible
+        Wishlist, effectively (has patch)
 
 319393  bad rounding in cvtsi2ss instruction
         Not started.  Looks valid.  (double rounding)
+        Severity: med  Audience: low
 
 319419  unhandled syscall: unix:369
-        OSX specific
-
-319494  VEX Makefile-gcc standalone build update after r2702
-        Has patch; should land it.
-
-319505  [MIPSEL] Crash: unhandled UNRAY operator.
-        --> petarj
+        OSX108-specific
 
 319547  helgrind gives false positives on rwlocks
-        Needs investigation
+        Needs investigation.  Quite possibly a real bug.
+        Severity: med  Audience: med
 
 319896  vex amd64->IR: 0x8C 0xE0
         Probably requires proper segment support, but need to check.
-
-319968  disInstr(arm): 0x69746E65  (valgrind_v3.81, cortex-A9)
-        INVALID (needs closing)
-
-320058  We have problems when we try to mmap more than 12 memory pages
-        on MIPS32 when we are using Valgrind
-        --> petarj
+        Severity: high  Audience: low
 
 320082  disInstr(thumb): unhandled instruction on instruction LDRB
         Has patch
         LDRB; surely already supported?  Queried.
+        MMhmh, untestable?
+        Severity: high  Audience: low
 
 320100  Add nanosecond timer support
         A bigger patch depends on it, but that has not appeared yet
+        Wishlist, + as yet incomplete
 
 320131  WARNING: unhandled syscall: 369 on ARM (prlimit64)
-        Has patch
+        FIX 3.9 (the simple patch)
 
 320546  valgrind exits with "Assertion 'in_rx' failed"
         for /system/lib/libva-android.so on Android 4.0.4
         Need more info (the .so); queried.
+        MAYBE FIX 3.9 (potentially serious)
 
 320661  vgModuleLocal_read_elf_debug_info(): "Assertion '!di->soname'
         failed" on weird files
-        Has patch; needs resync (Queried)
-
-320895  add fanotify support (patch included)
-        Has patches but need more work; queried
+        Has patch;
+        FIX 3.9 (commit); looks very simple
 
 320965  Unrecognised instruction __ieee754_pow_sse2
         Not sure what this is.  Queried.
+        Severity: high  Audience: low (??)
 
 320998  vex amd64->IR pcmpestri and pcmpestrm SSE4.2 instructions are
         unsupported (by version 3.8.1)
         PCMPxSTRx $0x30, $0x40
+        Severity: high  Audience: low
 
 321396  Add Support for Freescale e500v2 SPE Architecture.
         Is metabug? -- no patch, no details
@@ -493,14 +473,8 @@ Thu Apr 11 18:16:04 CEST 2013
 321401  Add Support for Freescale e6500 Architecture.
         No patch, no details
 
-321444  Multi-byte fill options
-        Wishlist
-
 321681  printf false positive
-        Probably WONTFIX
-
-321814  stepping through breakpoints in attached gdb process crashes valgrind
-        OSX specific; queried
+        Severity: med  Audience: low
 
 321836  valgrind cross compilation failure on Ubuntu machine
         MIPS specific?
@@ -509,185 +483,176 @@ Tue Jul  2 12:15:07 CEST 2013
 
 321888  Unhandled instruction: LDRH (Thumb)
         Has patch; plausible (needs checking)
+        FIX 3.9 (commit)
 
 321891  Unhandled instruction: LDRHT (Thumb)
         Has patch; plausible (needs checking)
+        FIX 3.9 (commit)
 
 321892  Unhandled instruction: LDRSH (Thumb)
         Has patch; plausible (needs checking)
+        FIX 3.9 (commit)
 
 321902  disInstr(ARM): 0xECECA102
 321903  == 321902
-
-322064  Instruction not recognized on i7 with gcc -march=native
-        INVALID (AVX)
-
-322131  unhandled instruction bytes: 0xC5 0xFB 0x10 0x8D 0xC8 0xFB 0xFF 0xFF
-        INVALID (AVX)
+        MAYBE 3.9 (query vgolubev)
 
 322150  Add Support for Cavium Octeon Instructions
         MIPS64; has patch; assigned to Petar
+        MAYBE 3.9 (query Petar)
 
 322254  Show threadname together with tid if set by application
         Contains plausible looking patch (what's with XML output??)
+        FIX 3.9 (commit)
 
 322256  Provide more callstacks on memory pool related errors
         Contains plausible patch; needs looking at
+        Severity: low  Audience: low
 
 322258  No thread notification is printed if new thread reused tid of 
         old thread that triggered last error
         Contains plausible patch.  Is bug fix.  (should take)
-
-322279  vgdb fails on OSX Mountain Lion
-        WONTFIX
-
-322499  False positive 'uninitialized bytes' error with fwrite
-        INVALID
+        FIX 3.9 (commit)
 
 322563  vex mips->IR: unhandled instruction bytes: 0x70 0x83 0xF0 0x3A
         MIPS; assigned to Petar
-
-322566  Compilation failed on MAC OSX Darwin 10.8.0: option "-arch x86_64"
-        not recognized by gcc 4.6.0
-        QUERIED.  Maybe use of FSF gcc instead of XCode variant?
+        MAYBE 3.9 (query Petar)
 
 322586  Unknown instruction (bextr) in ld-2.15.so with --march=native on AMD FX-8350
         AMD specific.  Uninvestigated.
+        Severity: high  Audience: low (??)
 
 322593  Power 8 code to implement Transactional support
         Implements pass-to-host scheme; not intended to land.
+        Severity: low (right now)  Audience: low
 
 322621  False positives with pthread_barrier_wait / helgrind
-        Uninvestigated.
-
-322691  chainXDirect_ARM: Assertion is_imm32_to_iregNo_EXACTLY2 fails
-        QUERIED
-
-322780  false positive due to use of red zone in openssl
-        QUERIED, but is essentially an openssl problem.  Probable wontfix.
-
-322818  disInstr(thumb): unhandled instruction: 0xEEBB 0x0BC8
-        INVALID (is already fixed?)
-
-322935  disInstr(arm): unhandled instruction: 0xF1010200 (SETEND BE)
-        Probably WONTFIX
+        Severity: med  Audience: low
 
 323020  more mysteries in valgrind thread stack handling
         QUERIED
+        Severity: med  Audience: low
 
 323035  Unhandled instruction: LDRSHT(Thumb)
         Has patch; plausible (needs checking)
+        FIX 3.9 (commit)
 
 323036  Unhandled instruction: SMMLS (ARM and Thumb)
         Has patch; plausible (needs checking) (duplication?)
+        FIX 3.9 (commit)
 
 323046  Implement ANNOTATE_THREAD_NAME() Hellgrind annotation
         Request for implementation
         QUERIED .. is 322254 good enough?
+        Severity: low  Audience: med
 
 323175  Unhandled instruction: SMLALD (ARM + Thumb)
         Has patch; plausible (needs checking) (duplication?)
+        FIX 3.9 (commit)
 
 323177  Unhandled instruction: SMLSLD (ARM + Thumb)
         Has patch; plausible (needs checking) (duplication?)
+        FIX 3.9 (commit)
 
 323178  Unhandled instruction: PLDW register (ARM)
         Has patch; plausible (needs checking)
+        FIX 3.9 (commit)
 
 323179  Unhandled instruction: PLDW immediate (ARM)
         Has patch; plausible (needs checking)
+        FIX 3.9 (commit)
 
 323268  New calls for custom memory allocators
         Obscure; needs investigation
+        Severity: low  Audience: low
 
-323431  vex amd64->IR:  0x8F 0xE8 0x78 0xA2 0xC1 0x40 0xC5 0xFB
+323431  vex amd64->IR: 0x8F 0xE8 0x78 0xA2 0xC1 0x40 0xC5 0xFB
         AMD-specific?
+        Severity: high  Audience: low (??)
+        FIX 3.9 if can do it at no risk and no CPUID hassle
+        -- ask mjw
 
 323432  Calling pthread_cond_destroy() or pthread_mutex_destroy()
         with PTHREAD_COND_INITIALIZER/PTHREAD_MUTEX_INITIALIZER
         triggers false positive
         Has patch from pbos
+        FIX 3.9
 
 323448  Check for memory overlap in sprintf()-like functions
-        Wishlist
+        Severity: low  Wishlist
 
 323464  VALGRIND_MEMPOOL_ALLOC problems with size >= 2^32
         64-bit uncleanness; no action so far; QUERIED
-
-323495  Detect when declared buffer size is too big
-        WONTFIX
+        Severity: med  Audience: low
 
 323777  Documentation does not warn of sgcheck+darwin incompatibility
-        True; should fix.
+        FIX 3.9
 
 323803  Transactional memory instructions are not supported for Power
         This is TM scheme 1 (immediate fail).  Needs landing.
-
-323893  SSE3 not available on amd cpus in valgrind
-        No action so far; maybe MJW can look at it
+        FIX 3.9 (?? queried Carl)
 
 324047  Valgrind doesn't support [LDR,ST]{S}[B,H]T ARM instructions
         Has patch; plausible (needs checking) (aren't these done already?)
+        FIX 3.9 (commit)
 
 324050  Helgrind: SEGV because of unaligned stack when using movdqa
         Needs to be looked at.  Is this real, or some Gentoo-caused
         breakage?
+        Severity: high (hg crash)  Audience: low
 
 324078  Track and show in logs which thread allocated memory
         Probably sync-event-loss in Helgrind
+        Severity: high  (hg correctness bug?)  Audience: low
 
 324081  3.8.1 Valgrind periodically hangs in long-running application
-        NEEDINFO
+        NEEDINFO (requested)
 
 324149  helgrind: When pthread_cond_timedwait returns ETIMEDOUT, helgrind
         thinks the condvar is still waited on
-        Has patches; needs looking at
-
-324156  memcheck probably reports false memory leak in pciutils library
-        INVALID
-
-324179  massif crashes on exit, valgrind --tool=memcheck is fine
-        PROBABLE INVALID; QUERIED
+        Has patches; needs looking at (LOOKS OK)
+        FIX 3.9 (commit)
 
 324181  mmap does not handle MAP_32BIT
         Should at least detect and fail this case
+        FIX 3.9 (to fail MAP_32BIT; should be easy)
 
 324227  memcheck false positive leak when a thread calls exit+block only
         reachable via other thread live register
         Inconclusive, after discussions with Philippe
+        Severity: low  Audience: med
 
 324261  errorcount in xml output remains empty (no error pairs mentioned)
         Hmm, looks like a real bug.
+        Severity: med  Audience: low
 
 324421  Support for fanotify API on ARM architecture
         Has simple patch; should apply.
-
-324472  Documentation incorrect:
-        valgrind: --track-origins no longer accepted in 3.8.1
-        INVALID
+        FIX 3.9 (trivial patch)
 
 324486  WARNING: unhandled syscall: 310
+        == 166355
         Hmm, tricky, sys_unshare.
+        Severity: high  Audience: low
 
 324525  valgrind can not detect any leak
         PROBABLE INVALID; needs closing.
-
-324765  ppc64: illegal instruction when executing none/tests/ppc64/jm-misc
+        Severity: med  Audience: low
 
 324809  show nightly regression tests results (and later performance) in a
         nice html page on valgrind.org
         In progress
-
-324816  Incorrect VEX implementation for xscvspdp/xvcvspdp regarding SNaN inputs
-        Has patch; seems plausible.  Carl to review?
+        Severity: low  Audience: low
 
 324834  Unhandled instructions in Microsoft C run-time (msvcrt.dll) for x86_64
-        Should be easy to fix
+        Should be easy to fix; queried
+        Severity: high  Audience: low        
 
 324882  CPUID should depend on VEX capabilities, not on underlying CPU
         Middle-term cleanup; not urgent
 
 324894  Phase 3 support for IBM Power ISA 2.07
         Waiting for review (but by who?)
+        MAYBE 3.9
 
 Thu Sep 19 10:34:49 CEST 2013

@@ -264,11 +264,22 @@
 
 /* ------ start of STATE for the address-space manager ------ */
 
-/* Max number of segments we can track. */
-#define VG_N_SEGMENTS 5000
+/* Max number of segments we can track.  On Android, virtual address
+   space is limited, so keep a low limit -- 5000 x sizef(NSegment) is
+   360KB. */
+#if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)
+# define VG_N_SEGMENTS 5000
+#else
+# define VG_N_SEGMENTS 30000
+#endif
 
-/* Max number of segment file names we can track. */
-#define VG_N_SEGNAMES 1000
+/* Max number of segment file names we can track.  These are big (1002
+   bytes) so on Android limit the space usage to ~1MB. */
+#if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)
+# define VG_N_SEGNAMES 1000
+#else
+# define VG_N_SEGNAMES 6000
+#endif
 
 /* Max length of a segment file name. */
 #define VG_MAX_SEGNAMELEN 1000

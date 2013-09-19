@@ -107,16 +107,16 @@
      reliable way to establish the initial boundaries.
 
      64-bit Linux is similar except for the important detail that the
-     upper boundary is set to 32G.  The reason is so that all
+     upper boundary is set to 64G.  The reason is so that all
      anonymous mappings (basically all client data areas) are kept
-     below 32G, since that is the maximum range that memcheck can
+     below 64G, since that is the maximum range that memcheck can
      track shadow memory using a fast 2-level sparse array.  It can go
-     beyond that but runs much more slowly.  The 32G limit is
+     beyond that but runs much more slowly.  The 64G limit is
      arbitrary and is trivially changed.  So, with the current
      settings, programs on 64-bit Linux will appear to run out of
-     address space and presumably fail at the 32G limit.  Given the
-     9/8 space overhead of Memcheck, that means you should be able to
-     memcheckify programs that use up to about 14G natively.
+     address space and presumably fail at the 64G limit.  Given the
+     considerable space overhead of Memcheck, that means you should be
+     able to memcheckify programs that use up to about 32G natively.
 
    Note that the aspacem_minAddr/aspacem_maxAddr limits apply only to
    anonymous mappings.  The client can still do fixed and hinted maps
@@ -1637,7 +1637,7 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
 
    suggested_clstack_top = -1; // ignored; Mach-O specifies its stack
 
-#else
+#else /* !defined(VGO_darwin) */
 
    /* Establish address limits and block out unusable parts
       accordingly. */
@@ -1670,7 +1670,7 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
    suggested_clstack_top = aspacem_maxAddr - 16*1024*1024ULL
                                            + VKI_PAGE_SIZE;
 
-#endif
+#endif /* #else of 'defined(VGO_darwin)' */
 
    aspacem_assert(VG_IS_PAGE_ALIGNED(aspacem_minAddr));
    aspacem_assert(VG_IS_PAGE_ALIGNED(aspacem_maxAddr + 1));

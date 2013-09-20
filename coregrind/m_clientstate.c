@@ -69,7 +69,7 @@ Int VG_(cl_cmdline_fd) = -1;
 Int VG_(cl_auxv_fd) = -1;
 
 // Command line pieces, after they have been extracted from argv in
-// m_main.main().  The payload vectors are allocated in VG_AR_TOOL
+// m_main.main().  The payload vectors are allocated in VG_AR_CORE
 // (the default arena).  They are never freed.
 
 /* Args for the client. */

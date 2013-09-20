@@ -684,16 +684,10 @@ void ensure_mm_init ( ArenaId aid )
       // Initialise the non-client arenas
       // Similarly to client arena, big allocations will be unsplittable.
       arena_init ( VG_AR_CORE,      "core",     CORE_REDZONE_DEFAULT_SZB,
-                   1048576, 1048576+1 );
-      arena_init ( VG_AR_TOOL,      "tool",     CORE_REDZONE_DEFAULT_SZB,
                    4194304, 4194304+1 );
       arena_init ( VG_AR_DINFO,     "dinfo",    CORE_REDZONE_DEFAULT_SZB,
                    1048576, 1048576+1 );
       arena_init ( VG_AR_DEMANGLE,  "demangle", CORE_REDZONE_DEFAULT_SZB,
-                   65536,   65536+1 );
-      arena_init ( VG_AR_EXECTXT,   "exectxt",  CORE_REDZONE_DEFAULT_SZB,
-                   1048576, 1048576+1 );
-      arena_init ( VG_AR_ERRORS,    "errors",   CORE_REDZONE_DEFAULT_SZB,
                    65536,   65536+1 );
       arena_init ( VG_AR_TTAUX,     "ttaux",    CORE_REDZONE_DEFAULT_SZB,
                    65536,   65536+1 );
@@ -2307,27 +2301,27 @@ void* VG_(arena_perm_malloc) ( ArenaId aid, SizeT size, Int align  )
 
 void* VG_(malloc) ( const HChar* cc, SizeT nbytes )
 {
-   return VG_(arena_malloc) ( VG_AR_TOOL, cc, nbytes );
+   return VG_(arena_malloc) ( VG_AR_CORE, cc, nbytes );
 }
 
 void  VG_(free) ( void* ptr )
 {
-   VG_(arena_free) ( VG_AR_TOOL, ptr );
+   VG_(arena_free) ( VG_AR_CORE, ptr );
 }
 
 void* VG_(calloc) ( const HChar* cc, SizeT nmemb, SizeT bytes_per_memb )
 {
-   return VG_(arena_calloc) ( VG_AR_TOOL, cc, nmemb, bytes_per_memb );
+   return VG_(arena_calloc) ( VG_AR_CORE, cc, nmemb, bytes_per_memb );
 }
 
 void* VG_(realloc) ( const HChar* cc, void* ptr, SizeT size )
 {
-   return VG_(arena_realloc) ( VG_AR_TOOL, cc, ptr, size );
+   return VG_(arena_realloc) ( VG_AR_CORE, cc, ptr, size );
 }
 
 HChar* VG_(strdup) ( const HChar* cc, const HChar* s )
 {
-   return VG_(arena_strdup) ( VG_AR_TOOL, cc, s ); 
+   return VG_(arena_strdup) ( VG_AR_CORE, cc, s ); 
 }
 
 // Useful for querying user blocks.           
@@ -2338,7 +2332,7 @@ SizeT VG_(malloc_usable_size) ( void* p )
   
 void* VG_(perm_malloc) ( SizeT size, Int align  )
 {
-   return VG_(arena_perm_malloc) ( VG_AR_TOOL, size, align );
+   return VG_(arena_perm_malloc) ( VG_AR_CORE, size, align );
 }
 
 

@@ -791,7 +791,7 @@ void VG_(maybe_record_error) ( ThreadId tid,
    */
 
    /* copy main part */
-   p = VG_(arena_malloc)(VG_AR_ERRORS, "errormgr.mre.1", sizeof(Error));
+   p = VG_(malloc)("errormgr.mre.1", sizeof(Error));
    *p = err;
 
    /* update 'extra' */

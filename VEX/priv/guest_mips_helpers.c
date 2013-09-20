@@ -1093,24 +1093,28 @@ ULong mips64_dirtyhelper_rdhwr ( ULong rt, ULong rd )
 #endif
 
 #define ASM_VOLATILE_ROUND32(fs, inst)                              \
-   __asm__ volatile("ctc1    %3,  $31"  "\n\t"                      \
+   __asm__ volatile("cfc1    $t0, $31"  "\n\t"                      \
+                    "ctc1    %3,  $31"  "\n\t"                      \
                     "mtc1    %1,  $f0"  "\n\t"                      \
                     "mtc1    %2,  $f1"  "\n\t"                      \
                     ""#inst" $f0, $f0"  "\n\t"                      \
                     "cfc1    %0,  $31"  "\n\t"                      \
+                    "ctc1    $t0, $31"  "\n\t"                      \
                     : "=r" (ret)                                    \
                     : "r" (addr[fs]), "r" (addr[fs+1]), "r" (fcsr)  \
-                    : "$f0", "$f1"                                  \
+                    : "t0", "$f0", "$f1"                            \
                    );
 
 #define ASM_VOLATILE_ROUND64(fs, inst)                              \
-   __asm__ volatile("ctc1     %2,  $31"  "\n\t"                     \
+   __asm__ volatile("cfc1     $t0, $31"  "\n\t"                     \
+                    "ctc1     %2,  $31"  "\n\t"                     \
                     "dmtc1    %1,  $f0"  "\n\t"                     \
                     ""#inst"  $f0, $f0"  "\n\t"                     \
                     "cfc1     %0,  $31"  "\n\t"                     \
+                    "ctc1     $t0, $31"  "\n\t"                     \
                     : "=r" (ret)                                    \
                     : "r" (addr[fs]), "r" (fcsr)                    \
-                    : "$f0"                                         \
+                    : "t0", "$f0"                                   \
                    );
 
 /* TODO: Add cases for all fpu instructions because all fpu instructions are

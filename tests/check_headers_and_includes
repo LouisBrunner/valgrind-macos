@@ -50,6 +50,7 @@ my %dirs_to_ignore = (
     ".deps" => 1,
     ".svn" => 1,
     ".in_place" => 1,
+    "Inst" => 1,            # the nightly scripts creates this
     "VEX" => 1,
     "docs" => 1,
     "auxprogs" => 1,

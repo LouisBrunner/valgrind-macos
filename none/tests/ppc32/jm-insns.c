@@ -555,6 +555,16 @@ static void test_divdu (void)
 {
     __asm__ __volatile__ ("divdu        17, 14, 15");
 }
+
+static void test_divdo (void)
+{
+    __asm__ __volatile__ ("divdo        17, 14, 15");
+}
+
+static void test_divduo (void)
+{
+    __asm__ __volatile__ ("divduo        17, 14, 15");
+}
 #endif // #ifdef __powerpc64__
 
 static test_t tests_ia_ops_two[] = {
@@ -581,6 +591,8 @@ static test_t tests_ia_ops_two[] = {
     { &test_mulldo          , "      mulldo", },
     { &test_divd            , "        divd", },
     { &test_divdu           , "       divdu", },
+    { &test_divdo           , "       divdo", },
+    { &test_divduo          , "      divduo", },
 #endif // #ifdef __powerpc64__
     { NULL,                   NULL,           },
 };
@@ -695,6 +707,16 @@ static void test_divdu_ (void)
 {
     __asm__ __volatile__ ("divdu.       17, 14, 15");
 }
+
+static void test_divdo_ (void)
+{
+    __asm__ __volatile__ ("divdo.        17, 14, 15");
+}
+
+static void test_divduo_ (void)
+{
+    __asm__ __volatile__ ("divduo.       17, 14, 15");
+}
 #endif // #ifdef __powerpc64__
 
 static test_t tests_iar_ops_two[] = {
@@ -721,6 +743,8 @@ static test_t tests_iar_ops_two[] = {
     { &test_mulldo_          , "    mulldo.", },
     { &test_divd_           , "       divd.", },
     { &test_divdu_          , "      divdu.", },
+    { &test_divdo_          , "      divdo.", },
+    { &test_divduo_         , "     divduo.", },
 #endif // #ifdef __powerpc64__
     { NULL,                   NULL,           },
 };

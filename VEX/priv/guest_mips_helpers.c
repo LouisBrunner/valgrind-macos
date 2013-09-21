@@ -1155,11 +1155,51 @@ extern UInt mips_dirtyhelper_calculate_FCSR ( void* gs, UInt fs, flt_op inst )
       case CEILWD:
          ASM_VOLATILE_ROUND(fs, ceil.w.d)
          break;
+      case CVTDS:
+         ASM_VOLATILE_ROUND(fs, cvt.d.s)
+         break;
+      case CVTDW:
+         ASM_VOLATILE_ROUND(fs, cvt.d.w)
+         break;
+      case CVTSW:
+         ASM_VOLATILE_ROUND(fs, cvt.s.w)
+         break;
+      case CVTSD:
+         ASM_VOLATILE_ROUND(fs, cvt.s.d)
+         break;
+      case CVTWS:
+         ASM_VOLATILE_ROUND(fs, cvt.w.s)
+         break;
+      case CVTWD:
+         ASM_VOLATILE_ROUND(fs, cvt.w.d)
+         break;
+      case ROUNDWS:
+         ASM_VOLATILE_ROUND(fs, round.w.s)
+         break;
+#if defined(__mips_isa_rev) && (__mips_isa_rev >= 2)
       case CEILLS:
          ASM_VOLATILE_ROUND(fs, ceil.l.s)
          break;
       case CEILLD:
          ASM_VOLATILE_ROUND(fs, ceil.l.d)
+         break;
+      case CVTDL:
+         ASM_VOLATILE_ROUND(fs, cvt.d.l)
+         break;
+      case CVTLS:
+         ASM_VOLATILE_ROUND(fs, cvt.l.s)
+         break;
+      case CVTLD:
+         ASM_VOLATILE_ROUND(fs, cvt.l.d)
+         break;
+      case CVTSL:
+         ASM_VOLATILE_ROUND(fs, cvt.s.l)
+         break;
+      case FLOORLS:
+         ASM_VOLATILE_ROUND(fs, floor.l.s)
+         break;
+      case FLOORLD:
+         ASM_VOLATILE_ROUND(fs, floor.l.d)
          break;
       case ROUNDLS:
          ASM_VOLATILE_ROUND(fs, round.l.s)
@@ -1173,45 +1213,7 @@ extern UInt mips_dirtyhelper_calculate_FCSR ( void* gs, UInt fs, flt_op inst )
       case TRUNCLD:
          ASM_VOLATILE_ROUND(fs, trunc.l.d)
          break;
-      case CVTDS:
-         ASM_VOLATILE_ROUND(fs, cvt.d.s)
-         break;
-      case CVTDW:
-         ASM_VOLATILE_ROUND(fs, cvt.d.w)
-         break;
-      case CVTDL:
-         ASM_VOLATILE_ROUND(fs, cvt.d.l)
-         break;
-      case CVTSW:
-         ASM_VOLATILE_ROUND(fs, cvt.s.w)
-         break;
-      case CVTSD:
-         ASM_VOLATILE_ROUND(fs, cvt.s.d)
-         break;
-      case CVTSL:
-         ASM_VOLATILE_ROUND(fs, cvt.s.l)
-         break;
-      case CVTWS:
-         ASM_VOLATILE_ROUND(fs, cvt.w.s)
-         break;
-      case CVTWD:
-         ASM_VOLATILE_ROUND(fs, cvt.w.d)
-         break;
-      case CVTLS:
-         ASM_VOLATILE_ROUND(fs, cvt.l.s)
-         break;
-      case CVTLD:
-         ASM_VOLATILE_ROUND(fs, cvt.l.d)
-         break;
-      case FLOORLS:
-         ASM_VOLATILE_ROUND(fs, floor.l.s)
-         break;
-      case FLOORLD:
-         ASM_VOLATILE_ROUND(fs, floor.l.d)
-         break;
-      case ROUNDWS:
-         ASM_VOLATILE_ROUND(fs, round.w.s)
-         break;
+#endif
       default:
          vassert(0);
          break;

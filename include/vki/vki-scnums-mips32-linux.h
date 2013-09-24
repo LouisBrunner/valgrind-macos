@@ -380,6 +380,8 @@
 #define __NR_open_by_handle_at          (__NR_Linux + 340)
 #define __NR_clock_adjtime              (__NR_Linux + 341)
 #define __NR_syncfs                     (__NR_Linux + 342)
+#define __NR_process_vm_readv           (__NR_Linux + 345)
+#define __NR_process_vm_writev          (__NR_Linux + 346)
 
 /*
  * Offset of the last Linux o32 flavoured syscall

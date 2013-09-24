@@ -1176,7 +1176,8 @@ extern UInt mips_dirtyhelper_calculate_FCSR ( void* gs, UInt fs, flt_op inst )
       case ROUNDWS:
          ASM_VOLATILE_ROUND(fs, round.w.s)
          break;
-#if defined(__mips_isa_rev) && (__mips_isa_rev >= 2)
+#if ((__mips == 32) && defined(__mips_isa_rev) && (__mips_isa_rev >= 2)) \
+    || (__mips == 64)
       case CEILLS:
          ASM_VOLATILE_ROUND(fs, ceil.l.s)
          break;

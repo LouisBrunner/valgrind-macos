@@ -559,6 +559,17 @@ FIXED r??
 316761  syscall open_by_handle_at (304 on amd64, 342 on x86) not handled
         FIXED 13459
 
+311922  WARNING: unhandled syscall: 170
+        FIXED 13458
+
+309823  Generate errors for still reachable blocks
+        FIXED 13170
+
+309323  print unrecognized instuction on MIPS
+        FIXED ????
+
+308930  syscall name_to_handle_at (303 on amd64) not handled
+        FIXED 13304
 
 
 Release 3.8.1 (19 September 2012)

@@ -159,17 +159,12 @@ gcp libnss3.so debuginfo read hang
 
 307500  Valgrind docs have two <title> tags
         QUERIED (unclear how to fix)
-
-307555  The impossible happened! (OSX 10.8.1 V segfault)
-        Probably invalid
+        Severity: low
 
 307557  Leaks on Mac OS X 10.7.5 libraries at 
         ImageLoader::recursiveInitialization
         SHOULD FIX (simple extra supp)
-
-307612  SIGILL while profiling a program compiled using g++ 4.6.3
-        and march=native flag on Intel(R) Core(TM) i7-2670QM CPU @ 2.20GHz
-        INVALID (AVX on 3.7.0)
+        FIX 3.9
 
 308027  Warning: negative range in .debug_loc section
         QUERIED -- not sure this needs fixing or not
@@ -187,7 +182,7 @@ gcp libnss3.so debuginfo read hang
 
 289578  Backtraces with ARM unwind tables (=without debug symbols) and
         support for offline symbol resolving
-        Has patch for command line enabling of stack-scan -- COMMIT
+        3.9 FIX (cleanup and partial commit -- stack scan)
 
 197915  80-bit floats are not supported on x86 and x86-64
         indeed, yes.
@@ -201,31 +196,22 @@ gcp libnss3.so debuginfo read hang
 
 308668  pthread rwlock_rdlock doesn't understand modifications in
         some cases (Helgrind)
-        No action so far
+        Real; no action so far
 
 308729  vex x86->IR: unhandled instruction bytes 0xf 0x5
         HAS_PATCH, but NEEDINFO
 
-212419  false positive "lock order violated" (A+B vs A)
-        INVALID
-        related: 243232 Inconsistent Lock Orderings report with trylock
+243232  Inconsistent Lock Orderings report with trylock
+        Almost certainly real (+ probably a dup).  No action so far.
 
 237920  valgrind segfault on fork failure
-        Uninvestigated
+        Uninvestigated; filed by JJ
 
 308816  valgrind GPF in signal handler context 3.8.1 (allignment 
         Needs investigation
-
-308930  syscall name_to_handle_at (303 on amd64) not handled
-        HAS_PATCH, needs looking at
-
-308977  specify Install Directory for my target platform.
-        Wishlist
+        Maybe fixed?
 
 309100  s390x: Testcases for extended BFP
-        No action so far
-
-309323  print unrecognized instuction on MIPS
         No action so far
 
 309430  Self hosting ppc64 encounters a vassert error on operand type
@@ -233,18 +219,18 @@ gcp libnss3.so debuginfo read hang
 
 309554  Unhandled syscall remap_file_pages (216)
         No action so far
+        Possibly difficult to implement
 
 309721  add client request returning current value of a statistic (e.g. Ir)
-        No action yet (wishlist?)
+        Wishlist.  No action yet.
 
 309783  Valgrind does not support separate source and build directories
         Has patch, but needs further checking
-
-309823  Generate errors for still reachable blocks
-        May be closable -- queried Philippe
+        Does not appear to be much enthusiasm for this
 
 309827  add support for nvidia (nvmem) ioctls
         A bunch of Android hackery from VladV; needs pulling apart
+        FIX 3.9 (commit)
 
 309831  3.8.1: disInstr(arm): unhandled instruction: 0xECECA102
         (stcl, gdb disassembles to stfp) .. IWMMXT
@@ -252,82 +238,78 @@ gcp libnss3.so debuginfo read hang
 
 310188  need better diagnostic when mmap() fails with EINVAL
         No patch so far
+        Severity: low
 
 310692  [coregrind] Thread scheduling regression?
         Spinlockery
+        Severity: med  Audience: low
 
 311093  massif and memcheck fail to redirect malloc calls on
         statically linked application
-        Unclear what's going on
+        Probably INVALID
 
 -- Wed Dec  5 23:41:20 CET 2012
+XXX 20 Sept 2013: triaged back to here
 
 311544  sys_fork() calls VG_(do_atfork_pre)() AFTER forking()
-        No action; needs checking
-
-311607  Unable to run matlab R2010a/R2012b (with JVM) under valgrind
-        OLD (V 3.5); NEEDINFO
+        FIX 3.9 (easy)
 
 311649  exhausting fds can leak created files
-        Probably true; NEEDINFO
+        Probably true; NEEDINFO; possible WONTFIX; QUERIED
 
 311655  --log-file=FILE leads to apparent fd leak ("Open file
         descriptor 3: $LOGFILE")
         Probably true; should fix.
+        Severity: med  Audience: low
 
 311827  OS X 10.8.2 (eq_SyscallStatus): the 'impossible' happened.
-        OSX108 problems
-
-311922  WARNING: unhandled syscall: 170
-        Syscall; no action yet.  Might be easy to fix.
+        OSX10.8  Maybe fixed in the trunk already.  QUERIED
 
 312989  ioctl handling needs to do POST handling on generic ioctls and
         needs to handle BPF ioctls
-        HAS_PATCH OSX10
+        OSX10.8 FIX 3.9 (commit)
 
 313275  False positives for shared memory semaphores/mutexes/conditions
         No action so far.  Has testcase patches.
+        Potentially important to fix, but does not look easy.
 
 313276  helgrind does not recognize shared memory initialized
         semaphores, mutexes, conditions
         == 313275, pretty much
+        Severity: med  Audience: low
 
 313875  cr_libinit.c:183 cri_init: sigaction() failed: Invalid argument
         No action so far
+        Severity: high  Audience: low
 
 ** [Bug 291310] FXSAVE instruction marks memory as undefined on amd64
-        REOP
-
-314101  Valgrind (ARM) - disInstr(thumb): unhandled instruction: 0xDF01 0x4770
-        NEEDINFO (possibly invalid)
+        Severity: med  Audience: low
 
 314236  OS X 10.8 testsuite build failure: test million.o
         OSX108  No action so far.
+        Severity: low  Audience: med
 
 314365  enable VEX to run asm helpers that do callee register saving
         In progress; not sure whether this is a good idea
 
 315199  vgcore file for threaded app does not show which thread crashed
         HAS_PATCH; needs review
-
-315828  massif "internal error" vgPlain_arena_free when RPATH includes
-        /usr/local/lib
-        WONTFIX
+        Severity: low  Audience: med
 
 -- Thu Feb 28 09:54:56 CET 2013
 
-315919  vangrind hangs while trying to perform a write()
-        Probably invalid (strange interaction with -pg ?)
-
 315936  UNKNOWN task message [id 3403, to mach_task_self(), reply
         0x2603] when running fork()ing tests on Mac OS X
+        OSX10.8
 
 315952  tun/tap ioctls are not supported
+        QUERIED; leaving open for now
+        Severity: med  Audience: low
 
 316034  Building valgrind with gcc (4.7, trunk) fails on MacOS X 10.8
+        Probably WONTFIX.
 
 -- Mon Mar  4 11:36:17 CET 2013
-XXX 20 Sept 2013: triaged back to here
 
 294285  --partial-loads-ok does not work for 16-byte SSE loads
         FIXED (multiple commits)

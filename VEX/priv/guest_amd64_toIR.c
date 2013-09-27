@@ -20066,8 +20066,8 @@ Long dis_ESC_NONE (
          return delta;
       }
       /* BEGIN HACKY SUPPORT FOR xbegin */
-      if (0/*CURRENTLY DISABLED*/ &&
-          modrm == 0xF8 && !haveF2orF3(pfx) && sz == 4) {
+      if (modrm == 0xF8 && !have66orF2orF3(pfx) && sz == 4
+          && (archinfo->hwcaps & VEX_HWCAPS_AMD64_AVX2)) {
          delta++; /* mod/rm byte */
          d64 = getSDisp(4,delta); 
          delta += 4;
@@ -20723,6 +20723,22 @@ Long dis_ESC_0F (
          putIRegRDX(4, mkU32(0));
          return delta;
       }
+      /* BEGIN HACKY SUPPORT FOR xtest */
+      /* 0F 01 D6 = XTEST */
+      if (modrm == 0xD6 && (archinfo->hwcaps & VEX_HWCAPS_AMD64_AVX2)) {
+         /* Sets ZF because there never is a transaction, and all
+            CF, OF, SF, PF and AF are always cleared by xtest. */
+         delta += 1;
+         DIP("xtest\n");
+         stmt( IRStmt_Put( OFFB_CC_OP,   mkU64(AMD64G_CC_OP_COPY) ));
+         stmt( IRStmt_Put( OFFB_CC_DEP2, mkU64(0) ));
+         stmt( IRStmt_Put( OFFB_CC_DEP1, mkU64(AMD64G_CC_MASK_Z) ));
+         /* Set NDEP even though it isn't used.  This makes redundant-PUT
+            elimination of previous stores to this field work better. */
+         stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
+         return delta;
+      }
+      /* END HACKY SUPPORT FOR xtest */
       /* 0F 01 F9 = RDTSCP */
       if (modrm == 0xF9 && (archinfo->hwcaps & VEX_HWCAPS_AMD64_RDTSCP)) {
          delta += 1;

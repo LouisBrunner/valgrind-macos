@@ -86,6 +86,18 @@ To set up nightly testing for a machine, do the following.
     - ABT_JOBS: allows parallel builds -- it's passed as the argument to
       "make -j" when building Valgrind and the tests.  The default is 1.
 
+    - ABT_PERF: unset or set to "" mean 'do not run perf tests' (default value)
+                set to "--vg=../valgrind-new" (run perf tests for new tree)
+                set to "--vg=../valgrind-new --vg=../valgrind-old"
+                (run  perf tests for "new" and for "24 hours ago",
+                 to compare the performances between the 2 trees).
+      
+    - ABT_PERF_TOOLS: --tools=.... option of perf/vg_perf.
+      (default value: all non experimental tools)
+
+    - ABT_PERF_REPS: --reps=... option of perf/vg_perf
+      (default value: --reps=3)
+
     Note that the appropriate syntax to use in this file will depend on the
     shell from which the $DIR/bin/nightly script is run (which in turn may
     depend on what shell is used by cron or any similar program).

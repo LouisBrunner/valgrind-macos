@@ -116,6 +116,13 @@ if [ "${ABT_RUN_REGTEST}" = "" ]; then
   ABT_RUN_REGTEST="make regtest"
 fi
 
+if [ "${ABT_PERF_TOOLS}" = "" ]; then
+  ABT_PERF_TOOLS="--tools=none,memcheck,callgrind,helgrind,cachegrind,drd,massif"
+fi
+if [ "${ABT_PERF_REPS}" = "" ]; then
+  ABT_PERF_REPS="--reps=3"
+fi
+
 
 #----------------------------------------------------------------------------
 # Check out, build, test
@@ -183,6 +190,15 @@ for logfile in old new ; do
       tail -20 $logfile.verbose >> $logfile.short
    )
 done
+
+# if requested, run regression tests and produce results in perflogfile.out
+if [ "${ABT_PERF}" != "" ]; then
+   cd valgrind-new
+   echo ${ABT_PERF_TOOLS} ${ABT_PERF_REPS} ${ABT_PERF} > ../perflogfile
+   (time perl perf/vg_perf ${ABT_PERF_TOOLS} ${ABT_PERF_REPS} ${ABT_PERF} perf) >> ../perflogfile 2>&1
+   cd ..
+fi
+
 
 #----------------------------------------------------------------------------
 # Prepare results and send
@@ -255,6 +271,11 @@ if [ $changed != 0 ] ; then
    echo                                                     >> final
    cat diff.short                                           >> final
    echo                                                     >> final
+fi
+
+# add perf results if requested
+if [ "${ABT_PERF}" != "" ]; then
+   cat perflogfile                                             >> final
 fi
 
 # Gather up the diffs (at most the first 100 lines for each one) into a

@@ -1,0 +1,2 @@
+prog: tm1
+prereq: test -x tm1 && ../../../tests/x86_amd64_features amd64-avx

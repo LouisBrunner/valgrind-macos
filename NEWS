@@ -586,6 +586,24 @@ FIXED r??
         == https://bugzilla.redhat.com/show_bug.cgi?id=730303
         FIXED 13567
 
+321891  Unhandled instruction: LDRHT (Thumb)
+        FIXED 2777 13583
+
+323035  Unhandled instruction: LDRSHT(Thumb)
+        FIXED 2777 13583
+
+324047  Valgrind doesn't support [LDR,ST]{S}[B,H]T ARM instructions
+        FIXED 2777 13583
+
+323036  Unhandled instruction: SMMLS (ARM and Thumb)
+        FIXED 2778 13584
+
+323175  Unhandled instruction: SMLALD (ARM + Thumb)
+        FIXED 2778 13584
+
+323177  Unhandled instruction: SMLSLD (ARM + Thumb)
+        FIXED 2778 13584
+
 
 Release 3.8.1 (19 September 2012)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -459,10 +459,6 @@ Tue Jul  2 12:15:07 CEST 2013
         Has patch; plausible (needs checking)
         FIX 3.9 (commit)
 
-321891 *Unhandled instruction: LDRHT (Thumb)
-        Has patch; plausible (needs checking)
-        FIX 3.9 (commit)
-
 321892 *Unhandled instruction: LDRSH (Thumb)
         Has patch; plausible (needs checking)
         FIX 3.9 (commit)
@@ -507,26 +503,10 @@ Tue Jul  2 12:15:07 CEST 2013
         QUERIED
         Severity: med  Audience: low
 
-323035 *Unhandled instruction: LDRSHT(Thumb)
-        Has patch; plausible (needs checking)
-        FIX 3.9 (commit)
-
-323036 *Unhandled instruction: SMMLS (ARM and Thumb)
-        Has patch; plausible (needs checking) (duplication?)
-        FIX 3.9 (commit)
-
 323046  Implement ANNOTATE_THREAD_NAME() Hellgrind annotation
         Request for implementation
         QUERIED .. is 322254 good enough?
         Severity: low  Audience: med
-
-323175 *Unhandled instruction: SMLALD (ARM + Thumb)
-        Has patch; plausible (needs checking) (duplication?)
-        FIX 3.9 (commit)
-
-323177 *Unhandled instruction: SMLSLD (ARM + Thumb)
-        Has patch; plausible (needs checking) (duplication?)
-        FIX 3.9 (commit)
 
 323178 *Unhandled instruction: PLDW register (ARM)
         Has patch; plausible (needs checking)
@@ -565,10 +545,6 @@ Tue Jul  2 12:15:07 CEST 2013
 323803 *Transactional memory instructions are not supported for Power
         This is TM scheme 1 (immediate fail).  Needs landing.
         FIX 3.9 (?? queried Carl)
-
-324047 *Valgrind doesn't support [LDR,ST]{S}[B,H]T ARM instructions
-        Has patch; plausible (needs checking) (aren't these done already?)
-        FIX 3.9 (commit)
 
 324050  Helgrind: SEGV because of unaligned stack when using movdqa
         Needs to be looked at.  Is this real, or some Gentoo-caused

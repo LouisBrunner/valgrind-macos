@@ -16419,6 +16419,437 @@ DisResult disInstr_ARM_WRK (
       goto decode_success;
    }
 
+   /* -------------- (A1) LDRT reg+/-#imm12 -------------- */
+   /* Load Register Unprivileged:
+      ldrt<c> Rt, [Rn] {, #+/-imm12}
+   */
+   if ( (INSN(27,20) & BITS8(1,1,1,1,0,1,1,1)) == BITS8(0,1,0,0,0,0,1,1) ) {
+      UInt rT     = INSN(15,12);
+      UInt rN     = INSN(19,16);
+      UInt imm12  = INSN(11,0);
+      UInt bU     = INSN(23,23);
+      Bool valid  = True;
+      if (rT == 15 || rN == 15 || rN == rT) valid = False;
+      if (valid) {
+         IRTemp newRt = newTemp(Ity_I32);
+         loadGuardedLE( newRt,
+                        ILGop_Ident32, getIRegA(rN), getIRegA(rT), condT );
+         putIRegA(rT, mkexpr(newRt), IRTemp_INVALID, Ijk_Boring);
+         IRExpr* erN = binop(bU ? Iop_Add32 : Iop_Sub32,
+                             getIRegA(rN), mkU32(imm12));
+         putIRegA(rN, erN, condT, Ijk_Boring);
+         DIP("ldrt%s r%u, [r%u], #%c%u\n",
+             nCC(INSN_COND), rT, rN, bU ? '+' : '-', imm12);
+         goto decode_success;
+      }
+   }
+
+   /* -------------- (A2) LDRT reg+/-reg with shift -------------- */
+   /* Load Register Unprivileged:
+      ldrt<c> Rt, [Rn], +/-Rm{, shift}
+   */
+   if ( (INSN(27,20) & BITS8(1,1,1,1,0,1,1,1)) == BITS8(0,1,1,0,0,0,1,1)
+        && INSN(4,4) == 0 ) {
+      UInt rT     = INSN(15,12);
+      UInt rN     = INSN(19,16);
+      UInt rM     = INSN(3,0);
+      UInt imm5   = INSN(11,7);
+      UInt bU     = INSN(23,23);
+      UInt type   = INSN(6,5);
+      Bool valid  = True;
+      if (rT == 15 || rN == 15 || rN == rT || rM == 15
+          /* || (ArchVersion() < 6 && rM == rN) */)
+         valid = False;
+      if (valid) {
+         IRTemp newRt = newTemp(Ity_I32);
+         loadGuardedLE( newRt,
+                        ILGop_Ident32, getIRegA(rN), getIRegA(rT), condT );
+         putIRegA(rT, mkexpr(newRt), IRTemp_INVALID, Ijk_Boring);
+         // dis_buf generated is slightly bogus, in fact.
+         IRExpr* erN = mk_EA_reg_plusminus_shifted_reg(rN, bU, rM,
+                                                       type, imm5, dis_buf);
+         putIRegA(rN, erN, condT, Ijk_Boring);
+         DIP("ldrt%s r%u, %s\n", nCC(INSN_COND), rT, dis_buf);
+         goto decode_success;
+      }
+   }
+
+   /* -------------- (A1) LDRBT reg+/-#imm12 -------------- */
+   /* Load Register Byte Unprivileged:
+      ldrbt<c> Rt, [Rn], #+/-imm12
+   */
+   if ( (INSN(27,20) & BITS8(1,1,1,1,0,1,1,1)) == BITS8(0,1,0,0,0,1,1,1) ) {
+      UInt rT     = INSN(15,12);
+      UInt rN     = INSN(19,16);
+      UInt imm12  = INSN(11,0);
+      UInt bU     = INSN(23,23);
+      Bool valid  = True;
+      if (rT == 15 || rN == 15 || rN == rT) valid = False;
+      if (valid) {
+         IRTemp newRt = newTemp(Ity_I32);
+         loadGuardedLE( newRt,
+                        ILGop_8Uto32, getIRegA(rN), getIRegA(rT), condT );
+         putIRegA(rT, mkexpr(newRt), IRTemp_INVALID, Ijk_Boring);
+         IRExpr* erN = binop(bU ? Iop_Add32 : Iop_Sub32,
+                             getIRegA(rN), mkU32(imm12));
+         putIRegA(rN, erN, condT, Ijk_Boring);
+         DIP("ldrbt%s r%u, [r%u], #%c%u\n",
+             nCC(INSN_COND), rT, rN, bU ? '+' : '-', imm12);
+         goto decode_success;
+      }
+   }
+
+   /* -------------- (A2) LDRBT reg+/-reg with shift -------------- */
+   /* Load Register Byte Unprivileged:
+      ldrbt<c> Rt, [Rn], +/-Rm{, shift}
+   */
+   if ( (INSN(27,20) & BITS8(1,1,1,1,0,1,1,1)) == BITS8(0,1,1,0,0,1,1,1)
+        && INSN(4,4) == 0 ) {
+      UInt rT     = INSN(15,12);
+      UInt rN     = INSN(19,16);
+      UInt rM     = INSN(3,0);
+      UInt imm5   = INSN(11,7);
+      UInt bU     = INSN(23,23);
+      UInt type   = INSN(6,5);
+      Bool valid  = True;
+      if (rT == 15 || rN == 15 || rN == rT || rM == 15
+          /* || (ArchVersion() < 6 && rM == rN) */)
+         valid = False;
+      if (valid) {
+         IRTemp newRt = newTemp(Ity_I32);
+         loadGuardedLE( newRt,
+                        ILGop_8Uto32, getIRegA(rN), getIRegA(rT), condT );
+         putIRegA(rT, mkexpr(newRt), IRTemp_INVALID, Ijk_Boring);
+         // dis_buf generated is slightly bogus, in fact.
+         IRExpr* erN = mk_EA_reg_plusminus_shifted_reg(rN, bU, rM,
+                                                       type, imm5, dis_buf);
+         putIRegA(rN, erN, condT, Ijk_Boring);
+         DIP("ldrbt%s r%u, %s\n", nCC(INSN_COND), rT, dis_buf);
+         goto decode_success;
+      }
+   }
+
+   /* -------------- (A1) LDRHT reg+#imm8 -------------- */
+   /* Load Register Halfword Unprivileged:
+      ldrht<c> Rt, [Rn] {, #+/-imm8}
+   */
+   if ( (INSN(27,20) & BITS8(1,1,1,1,0,1,1,1)) == BITS8(0,0,0,0,0,1,1,1)
+       && INSN(7,4) == BITS4(1,0,1,1) ) {
+      UInt rT    = INSN(15,12);
+      UInt rN    = INSN(19,16);
+      UInt bU    = INSN(23,23);
+      UInt imm4H = INSN(11,8);
+      UInt imm4L = INSN(3,0);
+      UInt imm8  = (imm4H << 4) | imm4L;
+      Bool valid = True;
+      if (rT == 15 || rN == 15 || rN == rT)
+         valid = False;
+      if (valid) {
+         IRTemp newRt = newTemp(Ity_I32);
+         loadGuardedLE( newRt,
+                        ILGop_16Uto32, getIRegA(rN), getIRegA(rT), condT );
+         putIRegA(rT, mkexpr(newRt), IRTemp_INVALID, Ijk_Boring);
+         IRExpr* erN = binop(bU ? Iop_Add32 : Iop_Sub32,
+                             getIRegA(rN), mkU32(imm8));
+         putIRegA(rN, erN, condT, Ijk_Boring);
+         DIP("ldrht%s r%u, [r%u], #%c%u\n",
+             nCC(INSN_COND), rT, rN, bU ? '+' : '-', imm8);
+         goto decode_success;
+      }
+   }
+
+   /* -------------- (A2) LDRHT reg+/-reg -------------- */
+   /* Load Register Halfword Unprivileged:
+      ldrht<c> Rt, [Rn], +/-Rm
+   */
+   if ( (INSN(27,20) & BITS8(1,1,1,1,0,1,1,1)) == BITS8(0,0,0,0,0,0,1,1)
+       && INSN(11,4) == BITS8(0,0,0,0,1,0,1,1) ) {
+      UInt rT    = INSN(15,12);
+      UInt rN    = INSN(19,16);
+      UInt rM    = INSN(3,0);
+      UInt bU    = INSN(23,23);
+      Bool valid = True;
+      if (rT == 15 || rN == 15 || rN == rT || rM == 15)
+         valid = False;
+      if (valid) {
+         IRTemp newRt = newTemp(Ity_I32);
+         loadGuardedLE( newRt,
+                        ILGop_16Uto32, getIRegA(rN), getIRegA(rT), condT );
+         putIRegA(rT, mkexpr(newRt), IRTemp_INVALID, Ijk_Boring);
+         IRExpr* erN = binop(bU ? Iop_Add32 : Iop_Sub32,
+                             getIRegA(rN), getIRegA(rM));
+         putIRegA(rN, erN, condT, Ijk_Boring);
+         DIP("ldrht%s r%u, [r%u], %cr%u\n",
+             nCC(INSN_COND), rT, rN, bU ? '+' : '-', rM);
+         goto decode_success;
+      }
+   }
+
+   /* -------------- (A1) LDRSHT reg+#imm8 -------------- */
+   /* Load Register Signed Halfword Unprivileged:
+      ldrsht<c> Rt, [Rn] {, #+/-imm8}
+   */
+   if ( (INSN(27,20) & BITS8(1,1,1,1,0,1,1,1)) == BITS8(0,0,0,0,0,1,1,1)
+       && INSN(7,4) == BITS4(1,1,1,1)) {
+      UInt rT    = INSN(15,12);
+      UInt rN    = INSN(19,16);
+      UInt bU    = INSN(23,23);
+      UInt imm4H = INSN(11,8);
+      UInt imm4L = INSN(3,0);
+      UInt imm8  = (imm4H << 4) | imm4L;
+      Bool valid = True;
+      if (rN == 15 || rT == 15 || rN == rT)
+         valid = False;
+      if (valid) {
+         IRTemp newRt = newTemp(Ity_I32);
+         loadGuardedLE( newRt,
+                        ILGop_16Sto32, getIRegA(rN), getIRegA(rT), condT );
+         putIRegA(rT, mkexpr(newRt), IRTemp_INVALID, Ijk_Boring);
+         IRExpr* erN = binop(bU ? Iop_Add32 : Iop_Sub32,
+                             getIRegA(rN), mkU32(imm8));
+         putIRegA(rN, erN, condT, Ijk_Boring);
+         DIP("ldrsht%s r%u, [r%u], #%c%u\n",
+             nCC(INSN_COND), rT, rN, bU ? '+' : '-', imm8);
+         goto decode_success;
+      }
+   }
+
+   /* -------------- (A2) LDRSHT reg+/-reg -------------- */
+   /* Load Register Signed Halfword Unprivileged:
+      ldrsht<c> Rt, [Rn], +/-Rm
+   */
+   if ( (INSN(27,20) & BITS8(1,1,1,1,0,1,1,1)) == BITS8(0,0,0,0,0,0,1,1)
+       && INSN(11,4) == BITS8(0,0,0,0,1,1,1,1)) {
+      UInt rT    = INSN(15,12);
+      UInt rN    = INSN(19,16);
+      UInt rM    = INSN(3,0);
+      UInt bU    = INSN(23,23);
+      Bool valid = True;
+      if (rN == 15 || rT == 15 || rN == rT || rM == 15)
+         valid = False;
+      if (valid) {
+         IRTemp newRt = newTemp(Ity_I32);
+         loadGuardedLE( newRt,
+                        ILGop_16Sto32, getIRegA(rN), getIRegA(rT), condT );
+         putIRegA(rT, mkexpr(newRt), IRTemp_INVALID, Ijk_Boring);
+         IRExpr* erN = binop(bU ? Iop_Add32 : Iop_Sub32,
+                             getIRegA(rN), getIRegA(rM));
+         putIRegA(rN, erN, condT, Ijk_Boring);
+         DIP("ldrsht%s r%u, [r%u], %cr%u\n",
+             nCC(INSN_COND), rT, rN, bU ? '+' : '-', rM);
+         goto decode_success;
+      }
+   }
+
+   /* -------------- (A1) LDRSBT reg+#imm8 -------------- */
+   /* Load Register Signed Byte Unprivileged:
+      ldrsbt<c> Rt, [Rn] {, #+/-imm8}
+   */
+   if ( (INSN(27,20) & BITS8(1,1,1,1,0,1,1,1)) == BITS8(0,0,0,0,0,1,1,1)
+       && INSN(7,4) == BITS4(1,1,0,1)) {
+      UInt rT    = INSN(15,12);
+      UInt rN    = INSN(19,16);
+      UInt bU    = INSN(23,23);
+      UInt imm4H = INSN(11,8);
+      UInt imm4L = INSN(3,0);
+      UInt imm8  = (imm4H << 4) | imm4L;
+      Bool valid = True;
+      if (rT == 15 || rN == 15 || rN == rT)
+         valid = False;
+      if (valid) {
+         IRTemp newRt = newTemp(Ity_I32);
+         loadGuardedLE( newRt,
+                        ILGop_8Sto32, getIRegA(rN), getIRegA(rT), condT );
+         putIRegA(rT, mkexpr(newRt), IRTemp_INVALID, Ijk_Boring);
+         IRExpr* erN = binop(bU ? Iop_Add32 : Iop_Sub32,
+                             getIRegA(rN), mkU32(imm8));
+         putIRegA(rN, erN, condT, Ijk_Boring);
+         DIP("ldrsbt%s r%u, [r%u], #%c%u\n",
+             nCC(INSN_COND), rT, rN, bU ? '+' : '-', imm8);
+         goto decode_success;
+      }
+   }
+
+   /* -------------- (A2) LDRSBT reg+/-reg -------------- */
+   /* Load Register Signed Byte Unprivileged:
+      ldrsbt<c> Rt, [Rn], +/-Rm
+   */
+   if ( (INSN(27,20) & BITS8(1,1,1,1,0,1,1,1)) == BITS8(0,0,0,0,0,0,1,1)
+       && INSN(11,4) == BITS8(0,0,0,0,1,1,0,1)) {
+      UInt rT    = INSN(15,12);
+      UInt rN    = INSN(19,16);
+      UInt bU    = INSN(23,23);
+      UInt rM    = INSN(3,0);
+      Bool valid = True;
+      if (rT == 15 || rN == 15 || rN == rT || rM == 15)
+         valid = False;
+      if (valid) {
+         IRTemp newRt = newTemp(Ity_I32);
+         loadGuardedLE( newRt,
+                        ILGop_8Sto32, getIRegA(rN), getIRegA(rT), condT );
+         putIRegA(rT, mkexpr(newRt), IRTemp_INVALID, Ijk_Boring);
+         IRExpr* erN = binop(bU ? Iop_Add32 : Iop_Sub32,
+                             getIRegA(rN), getIRegA(rM));
+         putIRegA(rN, erN, condT, Ijk_Boring);
+         DIP("ldrsbt%s r%u, [r%u], %cr%u\n",
+             nCC(INSN_COND), rT, rN, bU ? '+' : '-', rM);
+         goto decode_success;
+      }
+   }
+
+   /* -------------- (A1) STRBT reg+#imm12 -------------- */
+   /* Store Register Byte Unprivileged:
+      strbt<c> Rt, [Rn], #+/-imm12
+   */
+   if ( (INSN(27,20) & BITS8(1,1,1,1,0,1,1,1)) == BITS8(0,1,0,0,0,1,1,0) ) {
+      UInt rT     = INSN(15,12);
+      UInt rN     = INSN(19,16);
+      UInt imm12  = INSN(11,0);
+      UInt bU     = INSN(23,23);
+      Bool valid = True;
+      if (rT == 15 || rN == 15 || rN == rT) valid = False;
+      if (valid) {
+         IRExpr* address = getIRegA(rN);
+         IRExpr* data = unop(Iop_32to8, getIRegA(rT));
+         storeGuardedLE( address, data, condT);
+         IRExpr* newRn = binop(bU ? Iop_Add32 : Iop_Sub32,
+                               getIRegA(rN), mkU32(imm12));
+         putIRegA(rN, newRn, condT, Ijk_Boring);
+         DIP("strbt%s r%u, [r%u], #%c%u\n",
+             nCC(INSN_COND), rT, rN, bU ? '+' : '-', imm12);
+         goto decode_success;
+      }
+   }
+
+   /* -------------- (A2) STRBT reg+/-reg -------------- */
+   /* Store Register Byte Unprivileged:
+      strbt<c> Rt, [Rn], +/-Rm{, shift}
+   */
+   if ( (INSN(27,20) & BITS8(1,1,1,1,0,1,1,1)) == BITS8(0,1,1,0,0,1,1,0)
+       && INSN(4,4) == 0) {
+      UInt rT     = INSN(15,12);
+      UInt rN     = INSN(19,16);
+      UInt imm5   = INSN(11,7);
+      UInt type   = INSN(6,5);
+      UInt rM     = INSN(3,0);
+      UInt bU     = INSN(23,23);
+      Bool valid  = True;
+      if (rT == 15 || rN == 15 || rN == rT || rM == 15) valid = False;
+      if (valid) {
+         IRExpr* address = getIRegA(rN);
+         IRExpr* data = unop(Iop_32to8, getIRegA(rT));
+         storeGuardedLE( address, data, condT);
+         // dis_buf generated is slightly bogus, in fact.
+         IRExpr* erN = mk_EA_reg_plusminus_shifted_reg(rN, bU, rM,
+                                                       type, imm5, dis_buf);
+         putIRegA(rN, erN, condT, Ijk_Boring);
+         DIP("strbt%s r%u, %s\n", nCC(INSN_COND), rT, dis_buf);
+         goto decode_success;
+      }
+   }
+
+   /* -------------- (A1) STRHT reg+#imm8 -------------- */
+   /* Store Register Halfword Unprivileged:
+      strht<c> Rt, [Rn], #+/-imm8
+   */
+   if ( (INSN(27,20) & BITS8(1,1,1,1,0,1,1,1)) == BITS8(0,0,0,0,0,1,1,0)
+       && INSN(7,4) == BITS4(1,0,1,1) ) {
+      UInt rT    = INSN(15,12);
+      UInt rN    = INSN(19,16);
+      UInt imm4H = INSN(11,8);
+      UInt imm4L = INSN(3,0);
+      UInt imm8  = (imm4H << 4) | imm4L;
+      UInt bU    = INSN(23,23);
+      Bool valid = True;
+      if (rT == 15 || rN == 15 || rN == rT) valid = False;
+      if (valid) {
+         IRExpr* address = getIRegA(rN);
+         IRExpr* data = unop(Iop_32to16, getIRegA(rT));
+         storeGuardedLE( address, data, condT);
+         IRExpr* newRn = binop(bU ? Iop_Add32 : Iop_Sub32,
+                               getIRegA(rN), mkU32(imm8));
+         putIRegA(rN, newRn, condT, Ijk_Boring);
+         DIP("strht%s r%u, [r%u], #%c%u\n",
+             nCC(INSN_COND), rT, rN, bU ? '+' : '-', imm8);
+         goto decode_success;
+      }
+   }
+
+   /* -------------- (A2) STRHT reg+reg -------------- */
+   /* Store Register Halfword Unprivileged:
+      strht<c> Rt, [Rn], +/-Rm
+   */
+   if ( (INSN(27,20) & BITS8(1,1,1,1,0,1,1,1)) == BITS8(0,0,0,0,0,0,1,0)
+       && INSN(11,4) == BITS8(0,0,0,0,1,0,1,1) ) {
+      UInt rT    = INSN(15,12);
+      UInt rN    = INSN(19,16);
+      UInt rM    = INSN(3,0);
+      UInt bU    = INSN(23,23);
+      Bool valid = True;
+      if (rT == 15 || rN == 15 || rN == rT || rM == 15) valid = False;
+      if (valid) {
+         IRExpr* address = getIRegA(rN);
+         IRExpr* data = unop(Iop_32to16, getIRegA(rT));
+         storeGuardedLE( address, data, condT);
+         IRExpr* newRn = binop(bU ? Iop_Add32 : Iop_Sub32,
+                               getIRegA(rN), getIRegA(rM));
+         putIRegA(rN, newRn, condT, Ijk_Boring);
+         DIP("strht%s r%u, [r%u], %cr%u\n",
+             nCC(INSN_COND), rT, rN, bU ? '+' : '-', rM);
+         goto decode_success;
+      }
+   }
+
+   /* -------------- (A1) STRT reg+imm12 -------------- */
+   /* Store Register Unprivileged:
+      strt<c> Rt, [Rn], #+/-imm12
+   */
+   if ( (INSN(27,20) & BITS8(1,1,1,1,0,1,1,1)) == BITS8(0,1,0,0,0,0,1,0) ) {
+      UInt rT    = INSN(15,12);
+      UInt rN    = INSN(19,16);
+      UInt imm12 = INSN(11,0);
+      UInt bU    = INSN(23,23);
+      Bool valid = True;
+      if (rN == 15 || rN == rT) valid = False;
+      if (valid) {
+         IRExpr* address = getIRegA(rN);
+         storeGuardedLE( address, getIRegA(rT), condT);
+         IRExpr* newRn = binop(bU ? Iop_Add32 : Iop_Sub32,
+                               getIRegA(rN), mkU32(imm12));
+         putIRegA(rN, newRn, condT, Ijk_Boring);
+         DIP("strt%s r%u, [r%u], %c%u\n",
+             nCC(INSN_COND), rT, rN, bU ? '+' : '-', imm12);
+         goto decode_success;
+      }
+   }
+
+   /* -------------- (A2) STRT reg+reg -------------- */
+   /* Store Register Unprivileged:
+      strt<c> Rt, [Rn], +/-Rm{, shift}
+   */
+   if ( (INSN(27,20) & BITS8(1,1,1,1,0,1,1,1)) == BITS8(0,1,1,0,0,0,1,0)
+       && INSN(4,4) == 0 ) {
+      UInt rT    = INSN(15,12);
+      UInt rN    = INSN(19,16);
+      UInt rM    = INSN(3,0);
+      UInt type  = INSN(6,5);
+      UInt imm5  = INSN(11,7);
+      UInt bU    = INSN(23,23);
+      Bool valid = True;
+      if (rN == 15 || rN == rT || rM == 15) valid = False;
+      /* FIXME We didn't do:
+         if ArchVersion() < 6 && rM == rN then UNPREDICTABLE */
+      if (valid) {
+         storeGuardedLE( getIRegA(rN), getIRegA(rT), condT);
+         // dis_buf generated is slightly bogus, in fact.
+         IRExpr* erN = mk_EA_reg_plusminus_shifted_reg(rN, bU, rM,
+                                                       type, imm5, dis_buf);
+         putIRegA(rN, erN, condT, Ijk_Boring);
+         DIP("strt%s r%u, %s\n", nCC(INSN_COND), rT, dis_buf);
+         goto decode_success;
+      }
+   }
+
    /* ----------------------------------------------------------- */
    /* -- ARMv7 instructions                                    -- */
    /* ----------------------------------------------------------- */
@@ -20865,6 +21296,64 @@ DisResult disInstr_THUMB_WRK (
          storeGuardedLE( address, data, condT );
          put_ITSTATE(new_itstate);
          DIP("strbt r%u, [r%u, #%u]\n", rT, rN, imm8);
+         goto decode_success;
+      }
+   }
+
+   /* -------------- (T1) LDRHT reg+#imm8 -------------- */
+   /* Load Register Halfword Unprivileged:
+      ldrht Rt, [Rn, #imm8]
+   */
+   if (INSN0(15,6) == BITS10(1,1,1,1,1,0,0,0,0,0) && INSN0(5,4) == BITS2(1,1)
+       && INSN1(11,8) == BITS4(1,1,1,0)) {
+      UInt rN    = INSN0(3,0);
+      Bool valid = True;
+      if (rN == 15) {
+         /* In this case our instruction is LDRH (literal), in fact:
+            LDRH (literal) was realized earlier, so we don't want to
+            make it twice. */
+         valid = False;
+      }
+      UInt rT    = INSN1(15,12);
+      UInt imm8  = INSN1(7,0);
+      if (isBadRegT(rT)) valid = False;
+      if (valid) {
+         put_ITSTATE(old_itstate);
+         IRExpr* ea = binop(Iop_Add32, getIRegT(rN), mkU32(imm8));
+         IRTemp newRt = newTemp(Ity_I32);
+         loadGuardedLE( newRt, ILGop_16Uto32, ea, llGetIReg(rT), condT );
+         putIRegT(rT, mkexpr(newRt), IRTemp_INVALID);
+         put_ITSTATE(new_itstate);
+         DIP("ldrht r%u, [r%u, #%u]\n", rT, rN, imm8);
+         goto decode_success;
+      }
+   }
+
+   /* -------------- (T1) LDRSHT reg+#imm8 -------------- */
+   /* Load Register Signed Halfword Unprivileged:
+      ldrsht Rt, [Rn, #imm8]
+   */
+   if (INSN0(15,6) == BITS10(1,1,1,1,1,0,0,1,0,0) && INSN0(5,4) == BITS2(1,1)
+       && INSN1(11,8) == BITS4(1,1,1,0)) {
+      UInt rN    = INSN0(3,0);
+      Bool valid = True;
+      if (rN == 15) {
+         /* In this case our instruction is LDRSH (literal), in fact:
+            LDRSH (literal) was realized earlier, so we don't want to
+            make it twice. */
+         valid = False;
+      }
+      UInt rT    = INSN1(15,12);
+      UInt imm8  = INSN1(7,0);
+      if (isBadRegT(rT)) valid = False;
+      if (valid) {
+         put_ITSTATE(old_itstate);
+         IRExpr* ea = binop(Iop_Add32, getIRegT(rN), mkU32(imm8));
+         IRTemp newRt = newTemp(Ity_I32);
+         loadGuardedLE( newRt, ILGop_16Sto32, ea, llGetIReg(rT), condT );
+         putIRegT(rT, mkexpr(newRt), IRTemp_INVALID);
+         put_ITSTATE(new_itstate);
+         DIP("ldrsht r%u, [r%u, #%u]\n", rT, rN, imm8);
          goto decode_success;
       }
    }

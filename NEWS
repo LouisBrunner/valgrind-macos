@@ -571,6 +571,13 @@ FIXED r??
 308930  syscall name_to_handle_at (303 on amd64) not handled
         FIXED 13304
 
+307113  s390x: DFP support
+        FIXED
+
+164485  VG_N_SEGNAMES and VG_N_SEGMENTS are (still) too small
+        == https://bugzilla.redhat.com/show_bug.cgi?id=730303
+        FIXED 13567
+
 
 Release 3.8.1 (19 September 2012)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -5021,11 +5021,61 @@ LeakCheckMode MC_(clo_leak_check)             = LC_Summary;
 VgRes         MC_(clo_leak_resolution)        = Vg_HighRes;
 UInt          MC_(clo_show_leak_kinds)        = R2S(Possible) | R2S(Unreached);
 UInt          MC_(clo_error_for_leak_kinds)   = R2S(Possible) | R2S(Unreached);
+UInt          MC_(clo_leak_check_heuristics)  = 0;
 Bool          MC_(clo_workaround_gcc296_bugs) = False;
 Int           MC_(clo_malloc_fill)            = -1;
 Int           MC_(clo_free_fill)              = -1;
 KeepStacktraces MC_(clo_keep_stacktraces)     = KS_alloc_then_free;
 Int           MC_(clo_mc_level)               = 2;
+
+static Bool MC_(parse_leak_heuristics) ( const HChar *str0, UInt *lhs )
+{
+   SizeT str0len = VG_(strlen)(str0);
+   if (str0len > 1000) return False; /* "obviously invalid" */
+   HChar  tok_str0[str0len+1];
+   HChar *saveptr;
+   HChar *token;
+
+   Bool seen_all_kw = False;
+   Bool seen_none_kw = False;
+
+   VG_(strcpy) (tok_str0, str0);
+   *lhs = 0;
+
+   for (token = VG_(strtok_r)(tok_str0, ",", &saveptr);
+        token;
+        token = VG_(strtok_r)(NULL, ",", &saveptr)) {
+      if      (0 == VG_(strcmp)(token, "stdstring"))
+         *lhs |= H2S(LchStdString);
+      else if (0 == VG_(strcmp)(token, "newarray"))
+         *lhs |= H2S(LchNewArray);
+      else if (0 == VG_(strcmp)(token, "multipleinheritance"))
+         *lhs |= H2S(LchMultipleInheritance);
+      else if (0 == VG_(strcmp)(token, "all"))
+         seen_all_kw = True;
+      else if (0 == VG_(strcmp)(token, "none"))
+         seen_none_kw = True;
+      else
+         return False;
+   }
+
+   if (seen_all_kw) {
+      if (seen_none_kw || *lhs)
+         return False; // mixing all with either none or a specific value.
+      *lhs = HallS;
+   } else if (seen_none_kw) {
+      if (seen_all_kw || *lhs)
+         return False; // mixing none with either all or a specific value.
+      *lhs = 0;
+   } else {
+      // seen neither all or none, we must see at least one value
+      if (*lhs == 0)
+         return False;
+   }
+
+   return True;
+}
+
 
 static Bool mc_process_cmd_line_options(const HChar* arg)
 {
@@ -5077,6 +5127,10 @@ static Bool mc_process_cmd_line_options(const HChar* arg)
    }
    else if VG_STR_CLO(arg, "--show-leak-kinds", tmp_str) {
       if (!MC_(parse_leak_kinds)(tmp_str, &MC_(clo_show_leak_kinds)))
+         return False;
+   }
+   else if VG_STR_CLO(arg, "--leak-check-heuristics", tmp_str) {
+      if (!MC_(parse_leak_heuristics)(tmp_str, &MC_(clo_leak_check_heuristics)))
          return False;
    }
    else if (VG_BOOL_CLO(arg, "--show-reachable", tmp_show)) {
@@ -5182,6 +5236,9 @@ static void mc_print_usage(void)
 "    --errors-for-leak-kinds=kind1,kind2,..  which leak kinds are errors?\n"
 "                                            [definite,possible]\n"
 "        where kind is one of definite indirect possible reachable all none\n"
+"    --leak-check-heuristics=heur1,heur2,... which heuristics to use for\n"
+"        improving leak search false positive [none]\n"
+"        where heur is one of stdstring newarray multipleinheritance all none\n"
 "    --show-reachable=yes             same as --show-leak-kinds=all\n"
 "    --show-reachable=no --show-possibly-lost=yes\n"
 "                                     same as --show-leak-kinds=definite,possible\n"
@@ -5313,10 +5370,12 @@ static void print_monitor_help ( void )
 "            and outputs a description of <addr>\n"
 "  leak_check [full*|summary]\n"
 "                [kinds kind1,kind2,...|reachable|possibleleak*|definiteleak]\n"
+"                [heuristics heur1,heur2,...]\n"
 "                [increased*|changed|any]\n"
 "                [unlimited*|limited <max_loss_records_output>]\n"
 "            * = defaults\n"
 "        where kind is one of definite indirect possible reachable all none\n"
+"        where heur is one of stdstring newarray multipleinheritance all none\n"
 "        Examples: leak_check\n"
 "                  leak_check summary any\n"
 "                  leak_check full kinds indirect,possible\n"
@@ -5408,6 +5467,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
          switch (VG_(keyword_id) 
                  ("full summary "
                   "kinds reachable possibleleak definiteleak "
+                  "heuristics "
                   "increased changed any "
                   "unlimited limited ",
                   kw, kwd_report_all)) {
@@ -5436,15 +5496,24 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
          case  5: /* definiteleak */
             lcp.show_leak_kinds = R2S(Unreached);
             break;
-         case  6: /* increased */
+         case  6: { /* heuristics */
+            wcmd = VG_(strtok_r) (NULL, " ", &ssaveptr);
+            if (wcmd == NULL || !MC_(parse_leak_heuristics)(wcmd,
+                                                            &lcp.heuristics)) {
+               VG_(gdb_printf) ("missing or malformed heuristics set\n");
+               err++;
+            }
+            break;
+         }
+         case  7: /* increased */
             lcp.deltamode = LCD_Increased; break;
-         case  7: /* changed */
+         case  8: /* changed */
             lcp.deltamode = LCD_Changed; break;
-         case  8: /* any */
+         case  9: /* any */
             lcp.deltamode = LCD_Any; break;
-         case  9: /* unlimited */
+         case 10: /* unlimited */
             lcp.max_loss_records_output = 999999999; break;
-         case 10: { /* limited */
+         case 11: { /* limited */
             Int int_value;
             const HChar* endptr;
 
@@ -5515,7 +5584,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
       switch (kwdid) {
       case -2: break;
       case -1: break;
-      case  0: 
+      case  0: /* addressable */
          if (is_mem_addressable ( address, szB, &bad_addr ))
             VG_(printf) ("Address %p len %ld addressable\n", 
                              (void *)address, szB);
@@ -5525,7 +5594,8 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
                 (void *)address, szB, (void *) bad_addr);
          MC_(pp_describe_addr) (address);
          break;
-      case  1: res = is_mem_defined ( address, szB, &bad_addr, &otag );
+      case  1: /* defined */
+         res = is_mem_defined ( address, szB, &bad_addr, &otag );
          if (MC_AddrErr == res)
             VG_(printf)
                ("Address %p len %ld not addressable:\nbad address %p\n",
@@ -5679,6 +5749,7 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
           
          lcp.show_leak_kinds = MC_(clo_show_leak_kinds);
          lcp.errors_for_leak_kinds = MC_(clo_error_for_leak_kinds);
+         lcp.heuristics = MC_(clo_leak_check_heuristics);
 
          if (arg[2] == 0)
             lcp.deltamode = LCD_Any;
@@ -6458,6 +6529,7 @@ static void mc_fini ( Int exitcode )
       LeakCheckParams lcp;
       lcp.mode = MC_(clo_leak_check);
       lcp.show_leak_kinds = MC_(clo_show_leak_kinds);
+      lcp.heuristics = MC_(clo_leak_check_heuristics);
       lcp.errors_for_leak_kinds = MC_(clo_error_for_leak_kinds);
       lcp.deltamode = LCD_Any;
       lcp.max_loss_records_output = 999999999;

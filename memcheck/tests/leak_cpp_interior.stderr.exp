@@ -1,0 +1,81 @@
+
+valgrind output will go to log
+VALGRIND_DO_LEAK_CHECK
+4 bytes in 1 blocks are definitely lost in loss record ... of ...
+   by 0x........: main (leak_cpp_interior.cpp:72)
+
+LEAK SUMMARY:
+   definitely lost: 4 bytes in 1 blocks
+   indirectly lost: 0 bytes in 0 blocks
+     possibly lost: 0 bytes in 0 blocks
+   still reachable: 111 bytes in 7 blocks
+                      of which reachable via heuristic:
+                        stdstring          : 56 bytes in 2 blocks
+                        newarray           : 7 bytes in 1 blocks
+                        multipleinheritance: 24 bytes in 2 blocks
+        suppressed: 0 bytes in 0 blocks
+Reachable blocks (those to which a pointer was found) are not shown.
+To see them, rerun with: --leak-check=full --show-leak-kinds=all
+
+leak_check summary heuristics multipleinheritance
+LEAK SUMMARY:
+   definitely lost: 4 (+0) bytes in 1 (+0) blocks
+   indirectly lost: 0 (+0) bytes in 0 (+0) blocks
+     possibly lost: 63 (+63) bytes in 3 (+3) blocks
+   still reachable: 48 (-63) bytes in 4 (-3) blocks
+                      of which reachable via heuristic:
+                        stdstring          : 0 (-56) bytes in 0 (-2) blocks
+                        newarray           : 0 (-7) bytes in 0 (-1) blocks
+                        multipleinheritance: 24 (+0) bytes in 2 (+0) blocks
+        suppressed: 0 (+0) bytes in 0 (+0) blocks
+To see details of leaked memory, give 'full' arg to leak_check
+
+leak_check summary any heuristics newarray
+LEAK SUMMARY:
+   definitely lost: 4 (+0) bytes in 1 (+0) blocks
+   indirectly lost: 0 (+0) bytes in 0 (+0) blocks
+     possibly lost: 80 (+17) bytes in 4 (+1) blocks
+   still reachable: 31 (-17) bytes in 3 (-1) blocks
+                      of which reachable via heuristic:
+                        newarray           : 7 (+7) bytes in 1 (+1) blocks
+                        multipleinheritance: 0 (-24) bytes in 0 (-2) blocks
+        suppressed: 0 (+0) bytes in 0 (+0) blocks
+To see details of leaked memory, give 'full' arg to leak_check
+
+leak_check summary heuristics stdstring
+LEAK SUMMARY:
+   definitely lost: 4 (+0) bytes in 1 (+0) blocks
+   indirectly lost: 0 (+0) bytes in 0 (+0) blocks
+     possibly lost: 31 (-49) bytes in 3 (-1) blocks
+   still reachable: 80 (+49) bytes in 4 (+1) blocks
+                      of which reachable via heuristic:
+                        stdstring          : 56 (+56) bytes in 2 (+2) blocks
+                        newarray           : 0 (-7) bytes in 0 (-1) blocks
+        suppressed: 0 (+0) bytes in 0 (+0) blocks
+To see details of leaked memory, give 'full' arg to leak_check
+
+destruct MyClass
+destruct MyClass
+destruct MyClass
+destruct Ce
+destruct Be
+destruct Ae
+destruct Ce
+destruct Be
+destruct Ae
+destruct C
+destruct B
+destruct A
+destruct C
+destruct B
+destruct A
+Finished!
+
+HEAP SUMMARY:
+    in use at exit: 0 bytes in 0 blocks
+  total heap usage: 8 allocs, 8 frees, 115 bytes allocated
+
+All heap blocks were freed -- no leaks are possible
+
+For counts of detected and suppressed errors, rerun with: -v
+ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

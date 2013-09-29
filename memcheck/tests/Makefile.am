@@ -88,6 +88,7 @@ EXTRA_DIST = \
 	cond_st.vgtest cond_st.stdout.exp cond_st.stderr.exp-arm \
 		cond_st.stderr.exp-64bit-non-arm \
 		cond_st.stderr.exp-32bit-non-arm \
+	leak_cpp_interior.stderr.exp leak_cpp_interior.stderr.exp-64bit leak_cpp_interior.vgtest \
 	custom_alloc.stderr.exp custom_alloc.vgtest \
 		custom_alloc.stderr.exp-s390x-mvc \
 	custom-overlap.stderr.exp custom-overlap.vgtest \
@@ -282,6 +283,7 @@ check_PROGRAMS = \
 	clireq_nofill \
 	clo_redzone \
 	cond_ld_st \
+	leak_cpp_interior \
 	custom_alloc \
 	custom-overlap \
 	deep-backtrace \
@@ -364,6 +366,8 @@ atomic_incs_CFLAGS = $(AM_CFLAGS) -mdynamic-no-pic
 else
 atomic_incs_CFLAGS = $(AM_CFLAGS)
 endif
+
+leak_cpp_interior_SOURCES	= leak_cpp_interior.cpp
 
 deep_templates_SOURCES	= deep_templates.cpp
 deep_templates_CXXFLAGS	= $(AM_CFLAGS) -O -gstabs

@@ -1,0 +1,2 @@
+prog: leak_cpp_interior
+vgopts: --leak-check=summary --leak-check-heuristics=multipleinheritance,stdstring,newarray 

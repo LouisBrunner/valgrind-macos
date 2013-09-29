@@ -20,6 +20,13 @@ Release 3.9.0 (?? ?????? 201?)
     This is a.o. useful to avoid definite leaks being "catched"
     by a suppression entry aimed at suppressing possibly lost blocks.
 
+  - The option --leak-check-heuristics=heur1,heur2,... can activate
+    various heuristics to decrease the number of false positive
+    "possible leaks" for C++ code. The available heuristics are
+    detecting valid interior pointers to std::stdstring, to new[] allocated
+    arrays with elements having destructors and to interior pointers pointing
+    to an inner part of a C++ object using multiple inheritance.
+
   - The option --keep-stacktraces controls which stack trace(s) to keep for
     malloc'd and/or free'd blocks. This can be used to obtain more information
     for 'use after free' errors or to decrease Valgrind memory and/or cpu usage
@@ -93,6 +100,7 @@ m = merged into 3_8_BRANCH
 274695    [390] s390x: Support "compare to/from logical" instructions (z196)
 275800    [390] s390x: Add support for the ecag instruction (part 1)
 275800    [390] s390x: Autodetect cache info (part 2)
+280271    Valgrind reports possible memory leaks on still-reachable std::string
 284540    [390] Memcheck shouldn't count suppressions matching still-reachable allocations
 296311    [390] Wrong stack traces due to -fomit-frame-pointer (x86) 
 

@@ -25,10 +25,12 @@ memcheck monitor commands:
             and outputs a description of <addr>
   leak_check [full*|summary]
                 [kinds kind1,kind2,...|reachable|possibleleak*|definiteleak]
+                [heuristics heur1,heur2,...]
                 [increased*|changed|any]
                 [unlimited*|limited <max_loss_records_output>]
             * = defaults
         where kind is one of definite indirect possible reachable all none
+        where heur is one of stdstring newarray multipleinheritance all none
         Examples: leak_check
                   leak_check summary any
                   leak_check full kinds indirect,possible
@@ -78,10 +80,12 @@ memcheck monitor commands:
             and outputs a description of <addr>
   leak_check [full*|summary]
                 [kinds kind1,kind2,...|reachable|possibleleak*|definiteleak]
+                [heuristics heur1,heur2,...]
                 [increased*|changed|any]
                 [unlimited*|limited <max_loss_records_output>]
             * = defaults
         where kind is one of definite indirect possible reachable all none
+        where heur is one of stdstring newarray multipleinheritance all none
         Examples: leak_check
                   leak_check summary any
                   leak_check full kinds indirect,possible

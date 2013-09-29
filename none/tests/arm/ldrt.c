@@ -34,6 +34,24 @@ __attribute__((noinline)) void do_strbt_imm_132 ( unsigned char* p, UInt* val )
   );
 }
 
+__attribute__((noinline)) UInt do_ldrht_imm_1 (unsigned char* val)
+{
+  UInt res;
+  __asm__ __volatile__(
+      "mov r4, %1 ; ldrht r5, [r4, #1]; mov %0, r5"
+      : "=r"(res) : "r"(val) : "r4", "r5"
+  );
+  return res;
+}
+
+__attribute__((noinline)) void do_ldrsht_imm_1 (UInt* res)
+{
+  __asm__ __volatile__(
+     "mov r4, %1 ; ldrsht r5, [r4, #1] ; str r5, [r4, #0]"
+     : "+r"(res) : : "r4", "r5", "memory"
+  );
+}
+
 __attribute__((noinline)) void do_strht_imm_132 ( unsigned char* p, UInt* val )
 {
   __asm__ __volatile__(
@@ -103,6 +121,15 @@ int main ( void )
   UInt val_ldrsbt = (200 << 0) | (150 << 8) | (254 << 16) | (10 << 24);
   printf("result is %u (should be %llu)\n",
          do_ldrsbt_imm_2((unsigned char*)&val_ldrsbt), 4294967294ULL);
+
+
+  UInt val_ldrht = 0xABFEFD8D;
+  printf("result is %u (should be %u)\n",
+         do_ldrht_imm_1((unsigned char*)(&val_ldrht)), 65277);
+
+  UInt val_ldrsht = 0x00BADFAA;
+  do_ldrsht_imm_1(&val_ldrsht);
+  printf("result is 0x%x (should be 0x%x)\n", val_ldrsht, 0xFFFFBADF);
 
   return 0;
 }

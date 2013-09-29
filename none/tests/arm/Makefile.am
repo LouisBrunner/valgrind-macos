@@ -6,6 +6,7 @@ dist_noinst_SCRIPTS = filter_stderr
 EXTRA_DIST = \
 	intdiv.stdout.exp intdiv.stderr.exp intdiv.vgtest \
 	ldrt.stdout.exp ldrt.stderr.exp ldrt.vgtest \
+	ldrt_arm.stdout.exp ldrt_arm.stderr.exp ldrt_arm.vgtest \
 	neon128.stdout.exp neon128.stderr.exp neon128.vgtest \
 	neon64.stdout.exp neon64.stderr.exp neon64.vgtest \
 	v6intARM.stdout.exp v6intARM.stderr.exp v6intARM.vgtest \
@@ -19,6 +20,7 @@ check_PROGRAMS = \
 	allexec \
 	intdiv \
 	ldrt \
+	ldrt_arm \
 	neon128 \
 	neon64 \
 	v6intARM \
@@ -60,3 +62,4 @@ neon64_CFLAGS     = $(AM_CFLAGS) -g -O0 -mcpu=cortex-a8 \
 
 intdiv_CFLAGS	  = $(AM_CFLAGS) -g -mcpu=cortex-a15 -mthumb
 ldrt_CFLAGS	  = $(AM_CFLAGS) -g -mcpu=cortex-a8 -mthumb
+ldrt_arm_CFLAGS	  = $(AM_CFLAGS) -g -mcpu=cortex-a8 -marm

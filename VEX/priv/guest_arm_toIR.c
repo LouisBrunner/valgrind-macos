@@ -12301,6 +12301,240 @@ static Bool decode_V6MEDIA_instruction (
      /* fall through */
    }
 
+   /* ----------------- smmls{r}<c> <Rd>,<Rn>,<Rm>,<Ra> ------------------- */
+   {
+     UInt rD = 99, rN = 99, rM = 99, rA = 99;
+     Bool round  = False;
+     Bool gate   = False;
+
+     if (isT) {
+        if (INSNT0(15,7) == BITS9(1,1,1,1,1,0,1,1,0)
+            && INSNT0(6,4) == BITS3(1,1,0)
+            && INSNT1(7,5) == BITS3(0,0,0)) {
+           round = INSNT1(4,4);
+           rA    = INSNT1(15,12);
+           rD    = INSNT1(11,8);
+           rM    = INSNT1(3,0);
+           rN    = INSNT0(3,0);
+           if (!isBadRegT(rD)
+               && !isBadRegT(rN) && !isBadRegT(rM) && !isBadRegT(rA))
+              gate = True;
+        }
+     } else {
+        if (INSNA(27,20) == BITS8(0,1,1,1,0,1,0,1)
+            && INSNA(15,12) != BITS4(1,1,1,1)
+            && (INSNA(7,4) & BITS4(1,1,0,1)) == BITS4(1,1,0,1)) {
+           round = INSNA(5,5);
+           rD    = INSNA(19,16);
+           rA    = INSNA(15,12);
+           rM    = INSNA(11,8);
+           rN    = INSNA(3,0);
+           if (rD != 15 && rM != 15 && rN != 15)
+              gate = True;
+        }
+     }
+     if (gate) {
+        IRTemp irt_rA   = newTemp(Ity_I32);
+        IRTemp irt_rN   = newTemp(Ity_I32);
+        IRTemp irt_rM   = newTemp(Ity_I32);
+        assign( irt_rA, isT ? getIRegT(rA) : getIRegA(rA) );
+        assign( irt_rN, isT ? getIRegT(rN) : getIRegA(rN) );
+        assign( irt_rM, isT ? getIRegT(rM) : getIRegA(rM) );
+        IRExpr* res
+        = unop(Iop_64HIto32,
+               binop(Iop_Add64,
+                     binop(Iop_Sub64,
+                           binop(Iop_32HLto64, mkexpr(irt_rA), mkU32(0)),
+                           binop(Iop_MullS32, mkexpr(irt_rN), mkexpr(irt_rM))),
+                     mkU64(round ? 0x80000000ULL : 0ULL)));
+        if (isT)
+           putIRegT( rD, res, condT );
+        else
+           putIRegA(rD, res, condT, Ijk_Boring);
+        DIP("smmls%s%s r%u, r%u, r%u, r%u\n",
+            round ? "r" : "", nCC(conq), rD, rN, rM, rA);
+        return True;
+     }
+     /* fall through */
+   }
+
+   /* -------------- smlald{x}<c> <RdLo>,<RdHi>,<Rn>,<Rm> ---------------- */
+   {
+     UInt rN = 99, rDlo = 99, rDhi = 99, rM = 99;
+     Bool m_swap = False;
+     Bool gate   = False;
+
+     if (isT) {
+        if (INSNT0(15,4) == 0xFBC &&
+            (INSNT1(7,4) & BITS4(1,1,1,0)) == BITS4(1,1,0,0)) {
+           rN     = INSNT0(3,0);
+           rDlo   = INSNT1(15,12);
+           rDhi   = INSNT1(11,8);
+           rM     = INSNT1(3,0);
+           m_swap = (INSNT1(4,4) & 1) == 1;
+           if (!isBadRegT(rDlo) && !isBadRegT(rDhi) && !isBadRegT(rN)
+               && !isBadRegT(rM) && rDhi != rDlo)
+              gate = True;
+        }
+     } else {
+        if (INSNA(27,20) == BITS8(0,1,1,1,0,1,0,0)
+            && (INSNA(7,4) & BITS4(1,1,0,1)) == BITS4(0,0,0,1)) {
+           rN     = INSNA(3,0);
+           rDlo   = INSNA(15,12);
+           rDhi   = INSNA(19,16);
+           rM     = INSNA(11,8);
+           m_swap = ( INSNA(5,5) & 1 ) == 1;
+           if (rDlo != 15 && rDhi != 15
+               && rN != 15 && rM != 15 && rDlo != rDhi)
+              gate = True;
+        }
+     }
+
+     if (gate) {
+        IRTemp irt_rM   = newTemp(Ity_I32);
+        IRTemp irt_rN   = newTemp(Ity_I32);
+        IRTemp irt_rDhi = newTemp(Ity_I32);
+        IRTemp irt_rDlo = newTemp(Ity_I32);
+        IRTemp op_2     = newTemp(Ity_I32);
+        IRTemp pr_1     = newTemp(Ity_I64);
+        IRTemp pr_2     = newTemp(Ity_I64);
+        IRTemp result   = newTemp(Ity_I64);
+        IRTemp resHi    = newTemp(Ity_I32);
+        IRTemp resLo    = newTemp(Ity_I32);
+        assign( irt_rM, isT ? getIRegT(rM) : getIRegA(rM));
+        assign( irt_rN, isT ? getIRegT(rN) : getIRegA(rN));
+        assign( irt_rDhi, isT ? getIRegT(rDhi) : getIRegA(rDhi));
+        assign( irt_rDlo, isT ? getIRegT(rDlo) : getIRegA(rDlo));
+        assign( op_2, genROR32(irt_rM, m_swap ? 16 : 0) );
+        assign( pr_1, binop(Iop_MullS32,
+                            unop(Iop_16Sto32,
+                                 unop(Iop_32to16, mkexpr(irt_rN))
+                            ),
+                            unop(Iop_16Sto32,
+                                 unop(Iop_32to16, mkexpr(op_2))
+                            )
+                      )
+        );
+        assign( pr_2, binop(Iop_MullS32,
+                            binop(Iop_Sar32, mkexpr(irt_rN), mkU8(16)),
+                            binop(Iop_Sar32, mkexpr(op_2), mkU8(16))
+                      )
+        );
+        assign( result, binop(Iop_Add64,
+                              binop(Iop_Add64,
+                                    mkexpr(pr_1),
+                                    mkexpr(pr_2)
+                              ),
+                              binop(Iop_32HLto64,
+                                    mkexpr(irt_rDhi),
+                                    mkexpr(irt_rDlo)
+                              )
+                        )
+        );
+        assign( resHi, unop(Iop_64HIto32, mkexpr(result)) );
+        assign( resLo, unop(Iop_64to32, mkexpr(result)) );
+        if (isT) {
+           putIRegT( rDhi, mkexpr(resHi), condT );
+           putIRegT( rDlo, mkexpr(resLo), condT );
+        } else {
+           putIRegA( rDhi, mkexpr(resHi), condT, Ijk_Boring );
+           putIRegA( rDlo, mkexpr(resLo), condT, Ijk_Boring );
+        }
+        DIP("smlald%c%s r%u, r%u, r%u, r%u\n",
+            m_swap ? 'x' : ' ', nCC(conq), rDlo, rDhi, rN, rM);
+        return True;
+     }
+     /* fall through */
+   }
+
+   /* -------------- smlsld{x}<c> <RdLo>,<RdHi>,<Rn>,<Rm> ---------------- */
+   {
+     UInt rN = 99, rDlo = 99, rDhi = 99, rM = 99;
+     Bool m_swap = False;
+     Bool gate   = False;
+
+     if (isT) {
+        if ((INSNT0(15,4) == 0xFBD &&
+            (INSNT1(7,4) & BITS4(1,1,1,0)) == BITS4(1,1,0,0))) {
+           rN     = INSNT0(3,0);
+           rDlo   = INSNT1(15,12);
+           rDhi   = INSNT1(11,8);
+           rM     = INSNT1(3,0);
+           m_swap = (INSNT1(4,4) & 1) == 1;
+           if (!isBadRegT(rDlo) && !isBadRegT(rDhi) && !isBadRegT(rN) &&
+               !isBadRegT(rM) && rDhi != rDlo)
+              gate = True;
+        }
+     } else {
+        if (INSNA(27,20) == BITS8(0,1,1,1,0,1,0,0) &&
+            (INSNA(7,4) & BITS4(1,1,0,1)) == BITS4(0,1,0,1)) {
+           rN     = INSNA(3,0);
+           rDlo   = INSNA(15,12);
+           rDhi   = INSNA(19,16);
+           rM     = INSNA(11,8);
+           m_swap = (INSNA(5,5) & 1) == 1;
+           if (rDlo != 15 && rDhi != 15 &&
+               rN != 15 && rM != 15 && rDlo != rDhi)
+              gate = True;
+        }
+     }
+     if (gate) {
+        IRTemp irt_rM   = newTemp(Ity_I32);
+        IRTemp irt_rN   = newTemp(Ity_I32);
+        IRTemp irt_rDhi = newTemp(Ity_I32);
+        IRTemp irt_rDlo = newTemp(Ity_I32);
+        IRTemp op_2     = newTemp(Ity_I32);
+        IRTemp pr_1     = newTemp(Ity_I64);
+        IRTemp pr_2     = newTemp(Ity_I64);
+        IRTemp result   = newTemp(Ity_I64);
+        IRTemp resHi    = newTemp(Ity_I32);
+        IRTemp resLo    = newTemp(Ity_I32);
+        assign( irt_rM, isT ? getIRegT(rM) : getIRegA(rM) );
+        assign( irt_rN, isT ? getIRegT(rN) : getIRegA(rN) );
+        assign( irt_rDhi, isT ? getIRegT(rDhi) : getIRegA(rDhi) );
+        assign( irt_rDlo, isT ? getIRegT(rDlo) : getIRegA(rDlo) );
+        assign( op_2, genROR32(irt_rM, m_swap ? 16 : 0) );
+        assign( pr_1, binop(Iop_MullS32,
+                            unop(Iop_16Sto32,
+                                 unop(Iop_32to16, mkexpr(irt_rN))
+                            ),
+                            unop(Iop_16Sto32,
+                                 unop(Iop_32to16, mkexpr(op_2))
+                            )
+                      )
+        );
+        assign( pr_2, binop(Iop_MullS32,
+                            binop(Iop_Sar32, mkexpr(irt_rN), mkU8(16)),
+                            binop(Iop_Sar32, mkexpr(op_2), mkU8(16))
+                      )
+        );
+        assign( result, binop(Iop_Add64,
+                              binop(Iop_Sub64,
+                                    mkexpr(pr_1),
+                                    mkexpr(pr_2)
+                              ),
+                              binop(Iop_32HLto64,
+                                    mkexpr(irt_rDhi),
+                                    mkexpr(irt_rDlo)
+                              )
+                        )
+        );
+        assign( resHi, unop(Iop_64HIto32, mkexpr(result)) );
+        assign( resLo, unop(Iop_64to32, mkexpr(result)) );
+        if (isT) {
+           putIRegT( rDhi, mkexpr(resHi), condT );
+           putIRegT( rDlo, mkexpr(resLo), condT );
+        } else {
+           putIRegA( rDhi, mkexpr(resHi), condT, Ijk_Boring );
+           putIRegA( rDlo, mkexpr(resLo), condT, Ijk_Boring );
+        }
+        DIP("smlsld%c%s r%u, r%u, r%u, r%u\n",
+            m_swap ? 'x' : ' ', nCC(conq), rDlo, rDhi, rN, rM);
+        return True;
+     }
+     /* fall through */
+   }
+
    /* ---------- Doesn't match anything. ---------- */
    return False;
 

@@ -1997,6 +1997,28 @@ AC_MSG_RESULT([no])
 AM_CONDITIONAL(BUILD_AVX2_TESTS, test x$ac_have_as_avx2 = xyes)
 
 
+# does the x86/amd64 assembler understand TSX instructions?
+# Note, this doesn't generate a C-level symbol.  It generates a
+# automake-level symbol (BUILD_TSX_TESTS), used in test Makefile.am's
+AC_MSG_CHECKING([if x86/amd64 assembler speaks TSX])
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  do {
+   __asm__ __volatile__(
+      "       xbegin Lfoo  \n\t"
+      "Lfoo:  xend         \n\t");
+  } while (0)
+]])], [
+ac_have_as_tsx=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_as_tsx=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(BUILD_TSX_TESTS, test x$ac_have_as_tsx = xyes)
+
+
 # does the x86/amd64 assembler understand BMI1 and BMI2 instructions?
 # Note, this doesn't generate a C-level symbol.  It generates a
 # automake-level symbol (BUILD_BMI_TESTS), used in test Makefile.am's

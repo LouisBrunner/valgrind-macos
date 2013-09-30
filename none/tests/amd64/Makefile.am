@@ -114,7 +114,10 @@ if BUILD_VPCLMULQDQ_TESTS
 endif
 endif
 if BUILD_AVX2_TESTS
-  check_PROGRAMS += avx2-1 tm1
+  check_PROGRAMS += avx2-1
+endif
+if BUILD_TSX_TESTS
+  check_PROGRAMS += tm1
 endif
 if BUILD_BMI_TESTS
  check_PROGRAMS += bmi

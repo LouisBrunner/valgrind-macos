@@ -3,19 +3,21 @@ Requirements
 ------------
 - You need GCC 3.4 or later to compile the s390 port.
 - A working combination of autotools is required.
-- To run valgrind a z900 machine or any later model is needed.
+- To run valgrind a z10 machine or any later model is needed.
+  Older machine models down to and including z900 may work but have
+  not been tested extensively.
 
 
 Limitations
 -----------
 - 31-bit client programs are not supported.
 - Hexadecimal floating point is not supported.
-- memcheck, massif, lackey, and none are supported.
-- cachegrind is supported on z10 and newer models. On older models,
-  a z10 cache architecture will be assumed.
+- memcheck, cachegrind, drd, halgrind, massif, lackey, and none are
+  supported. 
+- On machine models predating z10, cachegrind will assume a z10 cache
+  architecture. Otherwise, cachegrind will query the hosts cache system
+  and use those parameters.
 - callgrind and all experimental tools are currently not supported.
-- helgrind and drd seem to work on SLES10,11 and RHEL5,6 on z9,z10 and z196
-  but might fail on other hardware/software combinations.
 - Some gcc versions use mvc to copy 4/8 byte values. This will affect some
   debug messages. Valgrind will complain about 4 or 8 one-byte reads/writes
   instead of just 1 read/write.

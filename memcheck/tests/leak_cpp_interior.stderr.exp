@@ -2,7 +2,8 @@
 valgrind output will go to log
 VALGRIND_DO_LEAK_CHECK
 4 bytes in 1 blocks are definitely lost in loss record ... of ...
-   by 0x........: main (leak_cpp_interior.cpp:72)
+   by 0x........: doit() (leak_cpp_interior.cpp:83)
+   by 0x........: main (leak_cpp_interior.cpp:98)
 
 LEAK SUMMARY:
    definitely lost: 4 bytes in 1 blocks

@@ -65,21 +65,37 @@ struct C : public A, public B
    } 
 };
 
+std::string str;
+std::string str2;
+MyClass *ptr;
+MyClass *ptr2;
+Be *ptrBCe;
+Ae *ptrACe;
+B *ptrBC;
+A *ptrAC;
+
+
+void doit(void)
+{
+  str = "Valgrind"; // interior ptr.
+  str2 = str;
+  ptr = new MyClass[3]; // interior ptr.
+  ptr2 = new MyClass[0]; // "interior but exterior ptr".
+  // ptr2 points after the chunk, is wrongly considered by memcheck as definitely leaked.
+
+  ptrBCe = new Ce;  // interior ptr.
+  ptrACe = new Ce;  // not an interior pointer.
+  ptrBC = new C;  // interior ptr.
+  ptrAC = new C;  // not an interior pointer.
+  
+  
+  str2 += " rocks (str2)\n"; // interior ptr.
+}
+
+
 int main() { 
-   std::string str = "Valgrind"; // interior ptr.
-   std::string str2 = str;
-   MyClass *ptr = new MyClass[3]; // interior ptr.
-   MyClass *ptr2 = new MyClass[0]; // "interior but exterior ptr".
-   // ptr2 points after the chunk, is wrongly considered by memcheck as definitely leaked.
 
-   Be *ptrBCe = new Ce;  // interior ptr.
-   Ae *ptrACe = new Ce;  // not an interior pointer.
-   B *ptrBC = new C;  // interior ptr.
-   A *ptrAC = new C;  // not an interior pointer.
-
-
-   str2 += " rocks (str2)\n"; // interior ptr.
-
+   doit();
    VALGRIND_MONITOR_COMMAND("v.set log_output");
 
    fprintf(stderr, "VALGRIND_DO_LEAK_CHECK\n");

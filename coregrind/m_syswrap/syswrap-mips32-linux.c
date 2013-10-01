@@ -448,14 +448,15 @@ static SysRes mips_PRE_sys_mmap(ThreadId tid,
       mreq.rkind = MAny;
    }
 
-   if ((VKI_SHMLBA > VKI_PAGE_SIZE) && (VKI_MAP_SHARED & arg4)) {
+   if ((VKI_SHMLBA > VKI_PAGE_SIZE) && (VKI_MAP_SHARED & arg4)
+       && !(VKI_MAP_FIXED & arg4))
       mreq.len = arg2 + VKI_SHMLBA - VKI_PAGE_SIZE;
-   }
 
    /* Enquire ... */
    advised = VG_(am_get_advisory)( &mreq, True/*client*/, &mreq_ok );
 
-   if ((VKI_SHMLBA > VKI_PAGE_SIZE) && (VKI_MAP_SHARED & arg4))
+   if ((VKI_SHMLBA > VKI_PAGE_SIZE) && (VKI_MAP_SHARED & arg4)
+       && !(VKI_MAP_FIXED & arg4))
       advised = VG_ROUNDUP(advised, VKI_SHMLBA);
 
    if (!mreq_ok) {

@@ -32,6 +32,114 @@ vaddudm: f1f2f3f4f5f6f7f8 @@ 0102030405060708,  ==> f2f4f6f8fafcff00
 vaddudm: f1f2f3f4f5f6f7f8 @@ f1f2f3f4f5f6f7f8,  ==> e3e5e7e9ebedeff0
 	f9fafbfcfefdfeff @@ f9fafbfcfefdfeff,  ==> f3f5f7f9fdfbfdfe
 
+vsubudm: 0102030405060708 @@ 0102030405060708,  ==> 0000000000000000
+	090a0b0c0e0d0e0f @@ 090a0b0c0e0d0e0f,  ==> 0000000000000000
+vsubudm: 0102030405060708 @@ f1f2f3f4f5f6f7f8,  ==> 0f0f0f0f0f0f0f10
+	090a0b0c0e0d0e0f @@ f9fafbfcfefdfeff,  ==> 0f0f0f0f0f0f0f10
+vsubudm: f1f2f3f4f5f6f7f8 @@ 0102030405060708,  ==> f0f0f0f0f0f0f0f0
+	f9fafbfcfefdfeff @@ 090a0b0c0e0d0e0f,  ==> f0f0f0f0f0f0f0f0
+vsubudm: f1f2f3f4f5f6f7f8 @@ f1f2f3f4f5f6f7f8,  ==> 0000000000000000
+	f9fafbfcfefdfeff @@ f9fafbfcfefdfeff,  ==> 0000000000000000
+
+vmaxud: 0102030405060708 @@ 0102030405060708,  ==> 0102030405060708
+	090a0b0c0e0d0e0f @@ 090a0b0c0e0d0e0f,  ==> 090a0b0c0e0d0e0f
+vmaxud: 0102030405060708 @@ f1f2f3f4f5f6f7f8,  ==> f1f2f3f4f5f6f7f8
+	090a0b0c0e0d0e0f @@ f9fafbfcfefdfeff,  ==> f9fafbfcfefdfeff
+vmaxud: f1f2f3f4f5f6f7f8 @@ 0102030405060708,  ==> f1f2f3f4f5f6f7f8
+	f9fafbfcfefdfeff @@ 090a0b0c0e0d0e0f,  ==> f9fafbfcfefdfeff
+vmaxud: f1f2f3f4f5f6f7f8 @@ f1f2f3f4f5f6f7f8,  ==> f1f2f3f4f5f6f7f8
+	f9fafbfcfefdfeff @@ f9fafbfcfefdfeff,  ==> f9fafbfcfefdfeff
+
+vmaxsd: 0102030405060708 @@ 0102030405060708,  ==> 0102030405060708
+	090a0b0c0e0d0e0f @@ 090a0b0c0e0d0e0f,  ==> 090a0b0c0e0d0e0f
+vmaxsd: 0102030405060708 @@ f1f2f3f4f5f6f7f8,  ==> 0102030405060708
+	090a0b0c0e0d0e0f @@ f9fafbfcfefdfeff,  ==> 090a0b0c0e0d0e0f
+vmaxsd: f1f2f3f4f5f6f7f8 @@ 0102030405060708,  ==> 0102030405060708
+	f9fafbfcfefdfeff @@ 090a0b0c0e0d0e0f,  ==> 090a0b0c0e0d0e0f
+vmaxsd: f1f2f3f4f5f6f7f8 @@ f1f2f3f4f5f6f7f8,  ==> f1f2f3f4f5f6f7f8
+	f9fafbfcfefdfeff @@ f9fafbfcfefdfeff,  ==> f9fafbfcfefdfeff
+
+vminud: 0102030405060708 @@ 0102030405060708,  ==> 0102030405060708
+	090a0b0c0e0d0e0f @@ 090a0b0c0e0d0e0f,  ==> 090a0b0c0e0d0e0f
+vminud: 0102030405060708 @@ f1f2f3f4f5f6f7f8,  ==> 0102030405060708
+	090a0b0c0e0d0e0f @@ f9fafbfcfefdfeff,  ==> 090a0b0c0e0d0e0f
+vminud: f1f2f3f4f5f6f7f8 @@ 0102030405060708,  ==> 0102030405060708
+	f9fafbfcfefdfeff @@ 090a0b0c0e0d0e0f,  ==> 090a0b0c0e0d0e0f
+vminud: f1f2f3f4f5f6f7f8 @@ f1f2f3f4f5f6f7f8,  ==> f1f2f3f4f5f6f7f8
+	f9fafbfcfefdfeff @@ f9fafbfcfefdfeff,  ==> f9fafbfcfefdfeff
+
+vminsd: 0102030405060708 @@ 0102030405060708,  ==> 0102030405060708
+	090a0b0c0e0d0e0f @@ 090a0b0c0e0d0e0f,  ==> 090a0b0c0e0d0e0f
+vminsd: 0102030405060708 @@ f1f2f3f4f5f6f7f8,  ==> f1f2f3f4f5f6f7f8
+	090a0b0c0e0d0e0f @@ f9fafbfcfefdfeff,  ==> f9fafbfcfefdfeff
+vminsd: f1f2f3f4f5f6f7f8 @@ 0102030405060708,  ==> f1f2f3f4f5f6f7f8
+	f9fafbfcfefdfeff @@ 090a0b0c0e0d0e0f,  ==> f9fafbfcfefdfeff
+vminsd: f1f2f3f4f5f6f7f8 @@ f1f2f3f4f5f6f7f8,  ==> f1f2f3f4f5f6f7f8
+	f9fafbfcfefdfeff @@ f9fafbfcfefdfeff,  ==> f9fafbfcfefdfeff
+
+vcmpequd: 0102030405060708 @@ 0102030405060708,  ==> ffffffffffffffff
+	090a0b0c0e0d0e0f @@ 090a0b0c0e0d0e0f,  ==> ffffffffffffffff
+vcmpequd: 0102030405060708 @@ f1f2f3f4f5f6f7f8,  ==> 0000000000000000
+	090a0b0c0e0d0e0f @@ f9fafbfcfefdfeff,  ==> 0000000000000000
+vcmpequd: f1f2f3f4f5f6f7f8 @@ 0102030405060708,  ==> 0000000000000000
+	f9fafbfcfefdfeff @@ 090a0b0c0e0d0e0f,  ==> 0000000000000000
+vcmpequd: f1f2f3f4f5f6f7f8 @@ f1f2f3f4f5f6f7f8,  ==> ffffffffffffffff
+	f9fafbfcfefdfeff @@ f9fafbfcfefdfeff,  ==> ffffffffffffffff
+
+vcmpgtud: 0102030405060708 @@ 0102030405060708,  ==> 0000000000000000
+	090a0b0c0e0d0e0f @@ 090a0b0c0e0d0e0f,  ==> 0000000000000000
+vcmpgtud: 0102030405060708 @@ f1f2f3f4f5f6f7f8,  ==> 0000000000000000
+	090a0b0c0e0d0e0f @@ f9fafbfcfefdfeff,  ==> 0000000000000000
+vcmpgtud: f1f2f3f4f5f6f7f8 @@ 0102030405060708,  ==> ffffffffffffffff
+	f9fafbfcfefdfeff @@ 090a0b0c0e0d0e0f,  ==> ffffffffffffffff
+vcmpgtud: f1f2f3f4f5f6f7f8 @@ f1f2f3f4f5f6f7f8,  ==> 0000000000000000
+	f9fafbfcfefdfeff @@ f9fafbfcfefdfeff,  ==> 0000000000000000
+
+vcmpgtsd: 0102030405060708 @@ 0102030405060708,  ==> 0000000000000000
+	090a0b0c0e0d0e0f @@ 090a0b0c0e0d0e0f,  ==> 0000000000000000
+vcmpgtsd: 0102030405060708 @@ f1f2f3f4f5f6f7f8,  ==> ffffffffffffffff
+	090a0b0c0e0d0e0f @@ f9fafbfcfefdfeff,  ==> ffffffffffffffff
+vcmpgtsd: f1f2f3f4f5f6f7f8 @@ 0102030405060708,  ==> 0000000000000000
+	f9fafbfcfefdfeff @@ 090a0b0c0e0d0e0f,  ==> 0000000000000000
+vcmpgtsd: f1f2f3f4f5f6f7f8 @@ f1f2f3f4f5f6f7f8,  ==> 0000000000000000
+	f9fafbfcfefdfeff @@ f9fafbfcfefdfeff,  ==> 0000000000000000
+
+vrld: 0102030405060708 @@ 0102030405060708,  ==> 0203040506070801
+	090a0b0c0e0d0e0f @@ 090a0b0c0e0d0e0f,  ==> 0586070687078485
+vrld: 0102030405060708 @@ f1f2f3f4f5f6f7f8,  ==> 0801020304050607
+	090a0b0c0e0d0e0f @@ f9fafbfcfefdfeff,  ==> 8485058607068707
+vrld: f1f2f3f4f5f6f7f8 @@ 0102030405060708,  ==> f2f3f4f5f6f7f8f1
+	f9fafbfcfefdfeff @@ 090a0b0c0e0d0e0f,  ==> 7dfe7f7eff7ffcfd
+vrld: f1f2f3f4f5f6f7f8 @@ f1f2f3f4f5f6f7f8,  ==> f8f1f2f3f4f5f6f7
+	f9fafbfcfefdfeff @@ f9fafbfcfefdfeff,  ==> fcfd7dfe7f7eff7f
+
+vsld: 0102030405060708 @@ 0102030405060708,  ==> 0203040506070800
+	090a0b0c0e0d0e0f @@ 090a0b0c0e0d0e0f,  ==> 0586070687078000
+vsld: 0102030405060708 @@ f1f2f3f4f5f6f7f8,  ==> 0800000000000000
+	090a0b0c0e0d0e0f @@ f9fafbfcfefdfeff,  ==> 8000000000000000
+vsld: f1f2f3f4f5f6f7f8 @@ 0102030405060708,  ==> f2f3f4f5f6f7f800
+	f9fafbfcfefdfeff @@ 090a0b0c0e0d0e0f,  ==> 7dfe7f7eff7f8000
+vsld: f1f2f3f4f5f6f7f8 @@ f1f2f3f4f5f6f7f8,  ==> f800000000000000
+	f9fafbfcfefdfeff @@ f9fafbfcfefdfeff,  ==> 8000000000000000
+
+vsrad: 0102030405060708 @@ 0102030405060708,  ==> 0001020304050607
+	090a0b0c0e0d0e0f @@ 090a0b0c0e0d0e0f,  ==> 0000121416181c1a
+vsrad: 0102030405060708 @@ f1f2f3f4f5f6f7f8,  ==> 0000000000000001
+	090a0b0c0e0d0e0f @@ f9fafbfcfefdfeff,  ==> 0000000000000000
+vsrad: f1f2f3f4f5f6f7f8 @@ 0102030405060708,  ==> fff1f2f3f4f5f6f7
+	f9fafbfcfefdfeff @@ 090a0b0c0e0d0e0f,  ==> fffff3f5f7f9fdfb
+vsrad: f1f2f3f4f5f6f7f8 @@ f1f2f3f4f5f6f7f8,  ==> fffffffffffffff1
+	f9fafbfcfefdfeff @@ f9fafbfcfefdfeff,  ==> ffffffffffffffff
+
+vsrd: 0102030405060708 @@ 0102030405060708,  ==> 0001020304050607
+	090a0b0c0e0d0e0f @@ 090a0b0c0e0d0e0f,  ==> 0000121416181c1a
+vsrd: 0102030405060708 @@ f1f2f3f4f5f6f7f8,  ==> 0000000000000001
+	090a0b0c0e0d0e0f @@ f9fafbfcfefdfeff,  ==> 0000000000000000
+vsrd: f1f2f3f4f5f6f7f8 @@ 0102030405060708,  ==> 00f1f2f3f4f5f6f7
+	f9fafbfcfefdfeff @@ 090a0b0c0e0d0e0f,  ==> 0001f3f5f7f9fdfb
+vsrd: f1f2f3f4f5f6f7f8 @@ f1f2f3f4f5f6f7f8,  ==> 00000000000000f1
+	f9fafbfcfefdfeff @@ f9fafbfcfefdfeff,  ==> 0000000000000001
+
 vpkudum: Inputs: 05060708 0e0d0e0f 05060708 0e0d0e0f
          Output: 05060708 0e0d0e0f 05060708 0e0d0e0f
 vpkudum: Inputs: 05060708 0e0d0e0f f5f6f7f8 fefdfeff
@@ -41,4 +149,60 @@ vpkudum: Inputs: f5f6f7f8 fefdfeff 05060708 0e0d0e0f
 vpkudum: Inputs: f5f6f7f8 fefdfeff f5f6f7f8 fefdfeff
          Output: f5f6f7f8 fefdfeff f5f6f7f8 fefdfeff
 
-All done. Tested 7 different instructions
+vmulouw: 01020304 05060708 090a0b0c 0e0d0e0f ==> 00193c6aa4917040 00c56e34124ba4e1
+vmulouw: 01020304 05060708 090a0b0c 0e0d0e0f ==> 04d39d63184f87c0 0dfee4d8b9c6e2f1
+vmulouw: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff ==> 04d39d63184f87c0 0dfee4d8b9c6e2f1
+vmulouw: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff ==> ec52a4e230d08040 fdfd020406050201
+
+vmuluwm: 01020304 05060708 090a0b0c 0e0d0e0f ==> 14191810a4917040 b56a0890124ba4e1
+vmuluwm: 01020304 05060708 090a0b0c 0e0d0e0f ==> 7c8fabd0184f87c0 346fa3d0b9c6e2f1
+vmuluwm: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff ==> 7c8fabd0184f87c0 346fa3d0b9c6e2f1
+vmuluwm: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff ==> 89c9209030d08040 5838201006050201
+
+vmulosw: 01020304 05060708 090a0b0c 0e0d0e0f ==> 00193c6aa4917040 00c56e34124ba4e1
+vmulosw: 01020304 05060708 090a0b0c 0e0d0e0f ==> ffcd965b184f87c0 fff1d6c9b9c6e2f1
+vmulosw: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff ==> ffcd965b184f87c0 fff1d6c9b9c6e2f1
+vmulosw: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff ==> 0064b4f230d08040 0001040606050201
+
+vmuleuw: 01020304 05060708 090a0b0c 0e0d0e0f ==> 0001040a14191810 0051b52bb56a0890
+vmuleuw: 01020304 05060708 090a0b0c 0e0d0e0f ==> 00f3d9b37c8fabd0 08d3a173346fa3d0
+vmuleuw: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff ==> 00f3d9b37c8fabd0 08d3a173346fa3d0
+vmuleuw: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff ==> e4ab55e389c92090 f41a344158382010
+
+vmulesw: 01020304 05060708 090a0b0c 0e0d0e0f ==> 0001040a14191810 0051b52bb56a0890
+vmulesw: 01020304 05060708 090a0b0c 0e0d0e0f ==> fff1d6af7c8fabd0 ffc99667346fa3d0
+vmulesw: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff ==> fff1d6af7c8fabd0 ffc99667346fa3d0
+vmulesw: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff ==> 00c56dfb89c92090 00243c4958382010
+
+vmrgew: 01020304 05060708 090a0b0c 0e0d0e0f ==> 0102030401020304 090a0b0c090a0b0c
+vmrgew: 01020304 05060708 090a0b0c 0e0d0e0f ==> 01020304f1f2f3f4 090a0b0cf9fafbfc
+vmrgew: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff ==> f1f2f3f401020304 f9fafbfc090a0b0c
+vmrgew: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff ==> f1f2f3f4f1f2f3f4 f9fafbfcf9fafbfc
+
+vmrgow: 01020304 05060708 090a0b0c 0e0d0e0f ==> 0506070805060708 0e0d0e0f0e0d0e0f
+vmrgow: 01020304 05060708 090a0b0c 0e0d0e0f ==> 05060708f5f6f7f8 0e0d0e0ffefdfeff
+vmrgow: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff ==> f5f6f7f805060708 fefdfeff0e0d0e0f
+vmrgow: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff ==> f5f6f7f8f5f6f7f8 fefdfefffefdfeff
+
+vpkudus: 000000007c118a2b, 00000000f1112345 @@ 000000007c118a2b, 00000000f1112345  ==> 7c118a2b f1112345 7c118a2b f1112345
+vpkudus: 000000007c118a2b, 00000000f1112345 @@ 01f2f3f4f5f6f7f8, f9fafbfcfefdfeff  ==> 7c118a2b f1112345 ffffffff ffffffff
+vpkudus: 01f2f3f4f5f6f7f8, f9fafbfcfefdfeff @@ 000000007c118a2b, 00000000f1112345  ==> ffffffff ffffffff 7c118a2b f1112345
+vpkudus: 01f2f3f4f5f6f7f8, f9fafbfcfefdfeff @@ 01f2f3f4f5f6f7f8, f9fafbfcfefdfeff  ==> ffffffff ffffffff ffffffff ffffffff
+
+vpksdus: 000000007c118a2b, 00000000f1112345 @@ 000000007c118a2b, 00000000f1112345  ==> 7c118a2b f1112345 7c118a2b f1112345
+vpksdus: 000000007c118a2b, 00000000f1112345 @@ 01f2f3f4f5f6f7f8, f9fafbfcfefdfeff  ==> 7c118a2b f1112345 ffffffff 00000000
+vpksdus: 01f2f3f4f5f6f7f8, f9fafbfcfefdfeff @@ 000000007c118a2b, 00000000f1112345  ==> ffffffff 00000000 7c118a2b f1112345
+vpksdus: 01f2f3f4f5f6f7f8, f9fafbfcfefdfeff @@ 01f2f3f4f5f6f7f8, f9fafbfcfefdfeff  ==> ffffffff 00000000 ffffffff 00000000
+
+vpksdss: 000000007c118a2b, 00000000f1112345 @@ 000000007c118a2b, 00000000f1112345  ==> 7c118a2b 7fffffff 7c118a2b 7fffffff
+vpksdss: 000000007c118a2b, 00000000f1112345 @@ 01f2f3f4f5f6f7f8, f9fafbfcfefdfeff  ==> 7c118a2b 7fffffff 7fffffff 80000000
+vpksdss: 01f2f3f4f5f6f7f8, f9fafbfcfefdfeff @@ 000000007c118a2b, 00000000f1112345  ==> 7fffffff 80000000 7c118a2b 7fffffff
+vpksdss: 01f2f3f4f5f6f7f8, f9fafbfcfefdfeff @@ 01f2f3f4f5f6f7f8, f9fafbfcfefdfeff  ==> 7fffffff 80000000 7fffffff 80000000
+
+vupkhsw: 01020304 05060708 090a0b0c 0e0d0e0f ==> 0000000001020304 0000000005060708
+vupkhsw: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff ==> fffffffff1f2f3f4 fffffffff5f6f7f8
+
+vupklsw: 01020304 05060708 090a0b0c 0e0d0e0f ==> 00000000090a0b0c 000000000e0d0e0f
+vupklsw: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff ==> fffffffff9fafbfc fffffffffefdfeff
+
+All done. Tested 31 different instructions

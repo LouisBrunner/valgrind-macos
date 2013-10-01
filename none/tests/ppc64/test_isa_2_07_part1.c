@@ -2,7 +2,7 @@
 /* HOW TO COMPILE:
 
  * 32bit build:
-   gcc -Winline -Wall -g -O -mregnames -maltivec
+   gcc -Winline -Wall -g -O -mregnames -maltivec -m32
  * 64bit build:
    gcc -Winline -Wall -g -O -mregnames -maltivec -m64
 
@@ -176,6 +176,7 @@ enum {
 #define DEFAULT_VSCR 0x0
 
 static vector unsigned long long vec_out, vec_inA, vec_inB;
+static vector unsigned int vec_inA_wd, vec_inB_wd;
 
 /* XXXX these must all be callee-save regs! */
 register double f14 __asm__ ("fr14");
@@ -229,6 +230,8 @@ enum test_flags {
     PPC_CROP       = 0x00000400,
     PPC_LDST       = 0x00000500,
     PPC_POPCNT     = 0x00000600,
+    PPC_ARITH_DRES = 0x00000700,
+    PPC_DOUBLE_IN_IRES = 0x00000800,
     PPC_MOV        = 0x00000A00,
     PPC_TYPE       = 0x00000F00,
     /* Family */
@@ -237,6 +240,7 @@ enum test_flags {
     PPC_405        = 0x00030000,  // Leave so we keep numbering consistent
     PPC_ALTIVEC    = 0x00040000,
     PPC_FALTIVEC   = 0x00050000,
+    PPC_ALTIVECD   = 0x00060000,    /* double word Altivec tests */
     PPC_FAMILY     = 0x000F0000,
     /* Flags: these may be combined, so use separate bitfields. */
     PPC_CR         = 0x01000000,
@@ -253,6 +257,7 @@ enum test_flags {
 #else
 #define AB_DPRINTF(fmt, args...) do { } while (0)
 #endif
+
 
 #if defined (DEBUG_FILTER)
 #define FDPRINTF(fmt, args...) do { fprintf(stderr, fmt , ##args); } while (0)
@@ -364,28 +369,192 @@ static test_t tests_move_ops_spe[] = {
   { NULL,                   NULL }
 };
 
-/* Vector Double Word tests.
- * NOTE: Since these are "vector" instructions versus VSX, we must use
- * vector constraints. */
-static void test_vaddudm (void)
-{
-   __asm__ __volatile__ ("vaddudm %0, %1, %2" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
-}
-
+/* NOTE: Since these are "vector" instructions versus VSX, we must use
+ * vector constraints.
+ *
+ * Vector Double Word tests.
+ */
 static void test_vpkudum (void)
 {
    __asm__ __volatile__ ("vpkudum %0, %1, %2" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
 }
 
-static test_t tests_aa_dbl_ops_two[] = {
+static void test_vaddudm (void)
+{
+   __asm__ __volatile__ ("vaddudm %0, %1, %2" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
+}
+
+static void test_vsubudm (void)
+{
+   __asm__ __volatile__ ("vsubudm %0, %1, %2" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
+}
+
+static void test_vmaxud (void)
+{
+   __asm__ __volatile__ ("vmaxud %0, %1, %2" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
+}
+
+static void test_vmaxsd (void)
+{
+   __asm__ __volatile__ ("vmaxsd %0, %1, %2" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
+}
+
+static void test_vminud (void)
+{
+   __asm__ __volatile__ ("vminud %0, %1, %2" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
+}
+
+static void test_vminsd (void)
+{
+   __asm__ __volatile__ ("vminsd %0, %1, %2" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
+}
+
+static void test_vcmpequd (void)
+{
+   __asm__ __volatile__ ("vcmpequd %0, %1, %2" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
+}
+
+static void test_vcmpgtud (void)
+{
+   __asm__ __volatile__ ("vcmpgtud %0, %1, %2" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
+}
+
+static void test_vcmpgtsd (void)
+{
+   __asm__ __volatile__ ("vcmpgtsd %0, %1, %2" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
+}
+
+static void test_vrld (void)
+{
+   __asm__ __volatile__ ("vrld %0, %1, %2" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
+}
+
+static void test_vsld (void)
+{
+   __asm__ __volatile__ ("vsld %0, %1, %2" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
+}
+
+static void test_vsrad (void)
+{
+   __asm__ __volatile__ ("vsrad %0, %1, %2" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
+}
+
+static void test_vsrd (void)
+{
+   __asm__ __volatile__ ("vsrd %0, %1, %2" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
+}
+
+/* Vector Double Word saturate tests.*/
+
+static void test_vpkudus (void)
+{
+   __asm__ __volatile__ ("vpkudus %0, %1, %2" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
+}
+
+static void test_vpksdus (void)
+{
+   __asm__ __volatile__ ("vpksdus %0, %1, %2" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
+}
+
+static void test_vpksdss (void)
+{
+   __asm__ __volatile__ ("vpksdss %0, %1, %2" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
+}
+
+
+/* Vector unpack two words from one vector arg */
+static void test_vupkhsw (void)
+{
+    __asm__ __volatile__ ("vupkhsw %0, %1" : "=v" (vec_out): "v" (vec_inB_wd));
+}
+
+static void test_vupklsw (void)
+{
+    __asm__ __volatile__ ("vupklsw %0, %1" : "=v" (vec_out): "v" (vec_inB_wd));
+}
+
+
+/* Vector Integer Word tests.*/
+static void test_vmulouw (void)
+{
+  __asm__ __volatile__ ("vmulouw %0, %1, %2" : "=v" (vec_out): "v" (vec_inA_wd),"v" (vec_inB_wd));
+}
+
+static void test_vmuluwm (void)
+{
+    __asm__ __volatile__ ("vmuluwm %0, %1, %2" : "=v" (vec_out): "v" (vec_inA_wd),"v" (vec_inB_wd));
+}
+
+static void test_vmulosw (void)
+{
+    __asm__ __volatile__ ("vmulosw %0, %1, %2" : "=v" (vec_out): "v" (vec_inA_wd),"v" (vec_inB_wd));
+}
+
+static void test_vmuleuw (void)
+{
+    __asm__ __volatile__ ("vmuleuw %0, %1, %2" : "=v" (vec_out): "v" (vec_inA_wd),"v" (vec_inB_wd));
+}
+
+static void test_vmulesw (void)
+{
+    __asm__ __volatile__ ("vmulesw %0, %1, %2" : "=v" (vec_out): "v" (vec_inA_wd),"v" (vec_inB_wd));
+}
+
+static void test_vmrgew (void)
+{
+    __asm__ __volatile__ ("vmrgew %0, %1, %2" : "=v" (vec_out): "v" (vec_inA_wd),"v" (vec_inB_wd));
+}
+
+static void test_vmrgow (void)
+{
+    __asm__ __volatile__ ("vmrgow %0, %1, %2" : "=v" (vec_out): "v" (vec_inA_wd),"v" (vec_inB_wd));
+}
+
+static test_t tests_aa_word_ops_one_arg_dres[] = {
+  { &test_vupkhsw         , "vupkhsw" },
+  { &test_vupklsw         , "vupklsw" },
+  { NULL                  , NULL      }
+};
+static test_t tests_aa_word_ops_two_args_dres[] = {
+  { &test_vmulouw         , "vmulouw" },
+  { &test_vmuluwm         , "vmuluwm" },
+  { &test_vmulosw         , "vmulosw" },
+  { &test_vmuleuw         , "vmuleuw" },
+  { &test_vmulesw         , "vmulesw" },
+  { &test_vmrgew          , "vmrgew" },
+  { &test_vmrgow          , "vmrgow" },
+  { NULL                  , NULL      }
+};
+
+static test_t tests_aa_dbl_ops_two_args[] = {
   { &test_vaddudm         , "vaddudm", },
-  { &test_vpkudum         , "vpkudum",  },
-  { NULL,                   NULL,           },
+  { &test_vsubudm         , "vsubudm", },
+  { &test_vmaxud          , "vmaxud", },
+  { &test_vmaxsd          , "vmaxsd", },
+  { &test_vminud          , "vminud", },
+  { &test_vminsd          , "vminsd", },
+  { &test_vcmpequd        , "vcmpequd", },
+  { &test_vcmpgtud        , "vcmpgtud", },
+  { &test_vcmpgtsd        , "vcmpgtsd", },
+  { &test_vrld            , "vrld", },
+  { &test_vsld            , "vsld", },
+  { &test_vsrad           , "vsrad", },
+  { &test_vsrd            , "vsrd", },
+  { &test_vpkudum         , "vpkudum", },
+  { NULL                  , NULL,      },
+};
+
+static test_t tests_aa_dbl_to_int_two_args[] = {
+  { &test_vpkudus         , "vpkudus", },
+  { &test_vpksdus         , "vpksdus", },
+  { &test_vpksdss         , "vpksdss", },
+  { NULL                  , NULL,      },
 };
 
 static int verbose = 0;
 static int arg_list_size = 0;
 static unsigned long long * vdargs = NULL;
+static unsigned long long * vdargs_x = NULL;
 #define NB_VDARGS 4
 
 static void build_vdargs_table (void)
@@ -396,6 +565,38 @@ static void build_vdargs_table (void)
    vdargs[1] = 0x090A0B0C0E0D0E0FULL;
    vdargs[2] = 0xF1F2F3F4F5F6F7F8ULL;
    vdargs[3] = 0xF9FAFBFCFEFDFEFFULL;
+
+   vdargs_x = memalign16(NB_VDARGS * sizeof(unsigned long long));
+   vdargs_x[0] = 0x000000007c118a2bULL;
+   vdargs_x[1] = 0x00000000f1112345ULL;
+   vdargs_x[2] = 0x01F2F3F4F5F6F7F8ULL;
+   vdargs_x[3] = 0xF9FAFBFCFEFDFEFFULL;
+}
+
+static unsigned int * vwargs = NULL;
+#define NB_VWARGS 8
+
+static void build_vwargs_table (void)
+{
+   // Each VSX register holds 4 integer word values
+   size_t i = 0;
+   vwargs = memalign(8, 8 * sizeof(int));
+   assert(vwargs);
+   assert(0 == ((8-1) & (unsigned long)vwargs));
+   vwargs[i++] = 0x01020304;
+   vwargs[i++] = 0x05060708;
+   vwargs[i++] = 0x090A0B0C;
+   vwargs[i++] = 0x0E0D0E0F;
+   vwargs[i++] = 0xF1F2F3F4;
+   vwargs[i++] = 0xF5F6F7F8;
+   vwargs[i++] = 0xF9FAFBFC;
+   vwargs[i++] = 0xFEFDFEFF;
+}
+
+static void build_vargs_table (void)
+{
+   build_vdargs_table();
+   build_vwargs_table();
 }
 
 static double *fargs = NULL;
@@ -770,6 +971,76 @@ static void test_av_dint_two_args (const char* name, test_func_t func,
    }
 }
 
+/* Vector doubleword-to-int tests, two input args, integer result */
+static void test_av_dint_to_int_two_args (const char* name, test_func_t func,
+                                          unused uint32_t test_flags)
+{
+
+   unsigned int * dst_int;
+   int i,j;
+   for (i = 0; i < NB_VDARGS; i+=2) {
+      vec_inA = (vector unsigned long long){ vdargs_x[i], vdargs_x[i+1] };
+      for (j = 0; j < NB_VDARGS; j+=2) {
+         vec_inB = (vector unsigned long long){ vdargs_x[j], vdargs_x[j+1] };
+         vec_out = (vector unsigned long long){ 0,0 };
+
+         (*func)();
+         dst_int = (unsigned int *)&vec_out;
+
+         printf("%s: ", name);
+         printf("%016llx, %016llx @@ %016llx, %016llx ",
+                vdargs_x[i], vdargs_x[i+1],
+                vdargs_x[j], vdargs_x[j+1]);
+         printf(" ==> %08x %08x %08x %08x\n", dst_int[0], dst_int[1],
+                dst_int[2], dst_int[3]);
+      }
+   }
+}
+
+/* Vector Word tests; two integer args, with double word result */
+
+static void test_av_wint_two_args_dres (const char* name, test_func_t func,
+                                        unused uint32_t test_flags)
+{
+
+   unsigned long long * dst;
+   int i,j;
+
+   for (i = 0; i < NB_VWARGS; i+=4) {
+      vec_inA_wd = (vector unsigned int){ vwargs[i], vwargs[i+1], vwargs[i+2], vwargs[i+3] };
+      for (j = 0; j < NB_VWARGS; j+=4) {
+         vec_inB_wd = (vector unsigned int){ vwargs[j], vwargs[j+1], vwargs[j+2], vwargs[j+3] };
+         vec_out = (vector unsigned long long){ 0, 0 };
+
+         (*func)();
+         dst  = (unsigned long long *)&vec_out;
+         printf("%s: ", name);
+         printf("%08x %08x %08x %08x ==> %016llx %016llx\n",
+                vwargs[i], vwargs[i+1], vwargs[i+2], vwargs[i+3], dst[0], dst[1]);
+      }
+   }
+}
+
+/* Vector Word tests; one input arg, with double word result */
+
+static void test_av_wint_one_arg_dres (const char* name, test_func_t func,
+                                       unused uint32_t test_flags)
+{
+   unsigned long long * dst;
+   int i;
+   for (i = 0; i < NB_VWARGS; i+=4) {
+      vec_inB_wd = (vector unsigned int){ vwargs[i], vwargs[i+1], vwargs[i+2], vwargs[i+3] };
+      vec_out = (vector unsigned long long){ 0, 0 };
+
+      (*func)();
+      dst  = (unsigned long long *)&vec_out;
+      printf("%s: ", name);
+      printf("%08x %08x %08x %08x ==> %016llx %016llx\n",
+             vwargs[i], vwargs[i+1], vwargs[i+2], vwargs[i+3], dst[0], dst[1]);
+   }
+}
+
+
 static void test_int_stq_two_regs_imm16 (const char* name,
                                         test_func_t func_IN,
                                         unused uint32_t test_flags)
@@ -915,14 +1186,24 @@ static void test_int_ldq_three_regs (const char* name,
 
 
 
-/* Used in do_tests */
+/* The ALTIVEC_LOOPS and altive_loops defined below are used in do_tests.
+ * Add new values to the end; do not change order, since the altivec_loops
+ * array is indexed using the enumerated values defined by ALTIVEC_LOOPS.
+ */
 enum ALTIVEC_LOOPS {
    ALTV_MOV,
-   ALTV_INT
+   ALTV_DINT,
+   ALTV_INT_DRES,
+   ALTV_DINT_IRES,
+   ALTV_ONE_INT_DRES
 };
+
 static test_loop_t altivec_loops[] = {
    &test_move_special,
    &test_av_dint_two_args,
+   &test_av_wint_two_args_dres,
+   &test_av_dint_to_int_two_args,
+   &test_av_wint_one_arg_dres,
    NULL
 };
 
@@ -971,12 +1252,27 @@ static test_table_t all_tests[] = {
    {
        tests_move_ops_spe,
        "PPC VSR special move insns",
-       PPC_ALTIVEC | PPC_MOV | PPC_ONE_ARG,
+       PPC_ALTIVECD | PPC_MOV | PPC_ONE_ARG,
    },
    {
-       tests_aa_dbl_ops_two,
-       "PC altivec double word integer insns with two args",
-       PPC_ALTIVEC | PPC_ARITH | PPC_TWO_ARGS,
+       tests_aa_dbl_ops_two_args,
+       "PPC altivec double word integer insns (arith, compare) with two args",
+       PPC_ALTIVECD | PPC_ARITH | PPC_TWO_ARGS,
+   },
+   {
+       tests_aa_word_ops_two_args_dres,
+       "PPC altivec integer word instructions with two input args, double word result",
+       PPC_ALTIVEC | PPC_ARITH_DRES | PPC_TWO_ARGS,
+   },
+   {
+       tests_aa_dbl_to_int_two_args,
+       "PPC altivec doubleword-to-integer instructions with two input args, saturated integer result",
+       PPC_ALTIVECD | PPC_DOUBLE_IN_IRES | PPC_TWO_ARGS,
+   },
+   {
+       tests_aa_word_ops_one_arg_dres,
+       "PPC altivec integer word instructions with one input arg, double word result",
+       PPC_ALTIVEC | PPC_ARITH_DRES | PPC_ONE_ARG,
    },
    {
       tests_istq_ops_two_i16,
@@ -1042,6 +1338,7 @@ static void do_tests ( insn_sel_flags_t seln_flags,
       if ((family == PPC_INTEGER  && !seln_flags.integer) ||
           (family == PPC_FLOAT    && !seln_flags.floats)  ||
           (family == PPC_ALTIVEC && !seln_flags.altivec)  ||
+          (family == PPC_ALTIVECD && !seln_flags.altivec)  ||
           (family == PPC_FALTIVEC && !seln_flags.faltivec)) {
          continue;
       }
@@ -1066,21 +1363,43 @@ static void do_tests ( insn_sel_flags_t seln_flags,
          loop = &float_loops[nb_args - 1];
          break;
 
-      case PPC_ALTIVEC:
+      case PPC_ALTIVECD:
          switch (type) {
-            case PPC_MOV:
-               loop = &altivec_loops[ALTV_MOV];
-               break;
-            case PPC_ARITH:
-               loop = &altivec_loops[ALTV_INT];
-               break;
-            default:
-               printf("No altivec test defined for type %x\n", type);
+         case PPC_MOV:
+            loop = &altivec_loops[ALTV_MOV];
+            break;
+         case PPC_ARITH:
+            loop = &altivec_loops[ALTV_DINT];
+            break;
+         case PPC_DOUBLE_IN_IRES:
+            loop = &altivec_loops[ALTV_DINT_IRES];
+            break;
+         default:
+            printf("No altivec test defined for type %x\n", type);
          }
          break;
 
       case PPC_FALTIVEC:
          printf("Currently there are no floating altivec tests in this testsuite.\n");
+         break;
+
+      case PPC_ALTIVEC:
+         switch (type) {
+         case PPC_ARITH_DRES:
+            switch (nb_args) {
+            case 1:
+               loop = &altivec_loops[ALTV_ONE_INT_DRES];
+               break;
+            case 2:
+               loop = &altivec_loops[ALTV_INT_DRES];
+               break;
+            default:
+               printf("No altivec test defined for number args %d\n", nb_args);
+            }
+            break;
+         default:
+            printf("No altivec test defined for type %x\n", type);
+         }
          break;
 
       default:
@@ -1183,7 +1502,7 @@ int main (int argc, char **argv)
 
    arg_list_size = 0;
 
-   build_vdargs_table();
+   build_vargs_table();
    if (verbose > 1) {
       printf("\nInstruction Selection:\n");
       printf("  n_args: \n");

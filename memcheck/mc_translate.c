@@ -2301,6 +2301,8 @@ IROp vanillaNarrowingOpOfShape ( IROp qnarrowOp )
       case Iop_QNarrowBin16Sto8Ux16:
       case Iop_QNarrowBin16Sto8Sx16:
       case Iop_QNarrowBin16Uto8Ux16:
+      case Iop_QNarrowBin64Sto32Sx4:
+      case Iop_QNarrowBin64Uto32Ux4:
          return Iop_NarrowBin16to8x16;
       case Iop_QNarrowBin32Sto16Ux8:
       case Iop_QNarrowBin32Sto16Sx8:
@@ -2338,6 +2340,8 @@ IRAtom* vectorNarrowBinV128 ( MCEnv* mce, IROp narrow_op,
    IRAtom *at1, *at2, *at3;
    IRAtom* (*pcast)( MCEnv*, IRAtom* );
    switch (narrow_op) {
+      case Iop_QNarrowBin64Sto32Sx4: pcast = mkPCast32x4; break;
+      case Iop_QNarrowBin64Uto32Ux4: pcast = mkPCast32x4; break;
       case Iop_QNarrowBin32Sto16Sx8: pcast = mkPCast32x4; break;
       case Iop_QNarrowBin32Uto16Ux8: pcast = mkPCast32x4; break;
       case Iop_QNarrowBin32Sto16Ux8: pcast = mkPCast32x4; break;
@@ -3034,6 +3038,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_Sar32x4:
       case Iop_Sal32x4:
       case Iop_Rol32x4:
+      case Iop_Rol64x2:
          return mkUifUV128(mce,
                    assignNew('V', mce, Ity_V128, binop(op, vatom1, atom2)),
                    mkPCast32x4(mce,vatom2)
@@ -3131,8 +3136,13 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
 
       case Iop_Sub64x2:
       case Iop_Add64x2:
+      case Iop_Max64Sx2:
+      case Iop_Max64Ux2:
+      case Iop_Min64Sx2:
+      case Iop_Min64Ux2:
       case Iop_CmpEQ64x2:
       case Iop_CmpGT64Sx2:
+      case Iop_CmpGT64Ux2:
       case Iop_QSal64x2:
       case Iop_QShl64x2:
       case Iop_QAdd64Ux2:
@@ -3141,6 +3151,8 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_QSub64Sx2:
          return binary64Ix2(mce, vatom1, vatom2);
 
+      case Iop_QNarrowBin64Sto32Sx4:
+      case Iop_QNarrowBin64Uto32Ux4:
       case Iop_QNarrowBin32Sto16Sx8:
       case Iop_QNarrowBin32Uto16Ux8:
       case Iop_QNarrowBin32Sto16Ux8:
@@ -3349,6 +3361,16 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          at = assignNew('V', mce, Ity_V128, binop(Iop_ShlN16x8, at, mkU8(8)));
          at = assignNew('V', mce, Ity_V128, binop(Iop_SarN16x8, at, mkU8(8)));
 	 return at;
+      }
+
+      /* Same deal as Iop_MullEven16{S,U}x8 */
+      case Iop_MullEven32Ux4:
+      case Iop_MullEven32Sx4: {
+         IRAtom* at;
+         at = binary32Ix4(mce,vatom1,vatom2);
+         at = assignNew('V', mce, Ity_V128, binop(Iop_ShlN64x2, at, mkU8(32)));
+         at = assignNew('V', mce, Ity_V128, binop(Iop_SarN64x2, at, mkU8(32)));
+         return at;
       }
 
       /* narrow 2xV128 into 1xV128, hi half from left arg, in a 2 x

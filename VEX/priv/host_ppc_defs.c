@@ -675,17 +675,18 @@ const HChar* showPPCAvOp ( PPCAvOp op ) {
 
    /* Integer binary */
    case Pav_ADDU:      return "vaddu_m";  // b,h,w,dw
-   case Pav_QADDU:     return "vaddu_s";  // b,h,w
-   case Pav_QADDS:     return "vadds_s";  // b,h,w
+   case Pav_QADDU:     return "vaddu_s";  // b,h,w,dw
+   case Pav_QADDS:     return "vadds_s";  // b,h,w,dw
      
-   case Pav_SUBU:      return "vsubu_m";  // b,h,w
-   case Pav_QSUBU:     return "vsubu_s";  // b,h,w
-   case Pav_QSUBS:     return "vsubs_s";  // b,h,w
+   case Pav_SUBU:      return "vsubu_m";  // b,h,w,dw
+   case Pav_QSUBU:     return "vsubu_s";  // b,h,w,dw
+   case Pav_QSUBS:     return "vsubs_s";  // b,h,w,dw
      
-   case Pav_OMULU:     return "vmulou";   // b,h
-   case Pav_OMULS:     return "vmulos";   // b,h
-   case Pav_EMULU:     return "vmuleu";   // b,h
-   case Pav_EMULS:     return "vmules";   // b,h
+   case Pav_MULU:      return "vmulu";    // w
+   case Pav_OMULU:     return "vmulou";   // b,h,w
+   case Pav_OMULS:     return "vmulos";   // b,h,w
+   case Pav_EMULU:     return "vmuleu";   // b,h,w
+   case Pav_EMULS:     return "vmules";   // b,h,w
   
    case Pav_AVGU:      return "vavgu";    // b,h,w
    case Pav_AVGS:      return "vavgs";    // b,h,w
@@ -702,10 +703,10 @@ const HChar* showPPCAvOp ( PPCAvOp op ) {
    case Pav_CMPGTS:    return "vcmpgts";  // b,h,w
 
    /* Shift */
-   case Pav_SHL:       return "vsl";      // ' ',b,h,w
-   case Pav_SHR:       return "vsr";      // ' ',b,h,w
-   case Pav_SAR:       return "vsra";     // b,h,w
-   case Pav_ROTL:      return "vrl";      // b,h,w
+   case Pav_SHL:       return "vsl";      // ' ',b,h,w,dw
+   case Pav_SHR:       return "vsr";      // ' ',b,h,w,dw
+   case Pav_SAR:       return "vsra";     // b,h,w,dw
+   case Pav_ROTL:      return "vrl";      // b,h,w,dw
 
    /* Pack */
    case Pav_PACKUU:    return "vpku_um";  // h,w,dw
@@ -717,6 +718,10 @@ const HChar* showPPCAvOp ( PPCAvOp op ) {
    /* Merge */
    case Pav_MRGHI:     return "vmrgh";    // b,h,w
    case Pav_MRGLO:     return "vmrgl";    // b,h,w
+
+   /* Concatenation */
+   case Pav_CATODD:     return "vmrgow";    // w
+   case Pav_CATEVEN:    return "vmrgew";    // w
 
    default: vpanic("showPPCAvOp");
    }
@@ -1386,6 +1391,7 @@ PPCInstr* PPCInstr_AvPerm ( HReg dst, HReg srcL, HReg srcR, HReg ctl ) {
    i->Pin.AvPerm.ctl  = ctl;
    return i;
 }
+
 PPCInstr* PPCInstr_AvSel ( HReg ctl, HReg dst, HReg srcL, HReg srcR ) {
    PPCInstr* i       = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag            = Pin_AvSel;
@@ -4781,6 +4787,12 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       case Pav_QSUBU:   opc2 = 1664; break; // vsubuws
       case Pav_QSUBS:   opc2 = 1920; break; // vsubsws
 
+      case Pav_MULU:    opc2 =  137; break; // vmuluwm
+      case Pav_OMULU:   opc2 =  136; break; // vmulouw
+      case Pav_OMULS:   opc2 =  392; break; // vmulosw
+      case Pav_EMULU:   opc2 =  648; break; // vmuleuw
+      case Pav_EMULS:   opc2 =  904; break; // vmulesw
+
       case Pav_AVGU:    opc2 = 1154; break; // vavguw
       case Pav_AVGS:    opc2 = 1410; break; // vavgsw
 
@@ -4807,6 +4819,9 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       case Pav_MRGHI:   opc2 =  140; break; // vmrghw
       case Pav_MRGLO:   opc2 =  396; break; // vmrglw
 
+      case Pav_CATODD:  opc2 = 1676; break; // vmrgow
+      case Pav_CATEVEN: opc2 = 1932; break; // vmrgew
+
       default:
          goto bad;
       }
@@ -4820,13 +4835,26 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       UInt v_srcR = vregNo(i->Pin.AvBin64x2.srcR);
       UInt opc2;
       switch (i->Pin.AvBin64x2.op) {
-         case Pav_ADDU:    opc2 =  192; break; // vaddudm  vector double add
-         case Pav_PACKUU:  opc2 = 1102; break; // vpkudum
-         // FIXME: We currently don't have a vector compare equal double word, so it's a hack
-         // to use vcmpequw, but it works.
-         case Pav_CMPEQU:  opc2 =  134; break; // vcmpequw
-         default:
-            goto bad;
+      case Pav_ADDU:    opc2 =  192; break; // vaddudm  vector double add
+      case Pav_SUBU:    opc2 = 1216; break; // vsubudm  vector double add
+      case Pav_MAXU:    opc2 =  194; break; // vmaxud   vector double max
+      case Pav_MAXS:    opc2 =  450; break; // vmaxsd   vector double max
+      case Pav_MINU:    opc2 =  706; break; // vminud   vector double min
+      case Pav_MINS:    opc2 =  962; break; // vminsd   vector double min
+      case Pav_CMPEQU:  opc2 =  199; break; // vcmpequd vector double compare
+      case Pav_CMPGTU:  opc2 =  711; break; // vcmpgtud vector double compare
+      case Pav_CMPGTS:  opc2 =  967; break; // vcmpgtsd vector double compare
+      case Pav_SHL:     opc2 = 1476; break; // vsld
+      case Pav_SHR:     opc2 = 1732; break; // vsrd
+      case Pav_SAR:     opc2 =  964; break; // vsrad
+      case Pav_ROTL:    opc2 =  196; break; // vrld
+      case Pav_PACKUU:  opc2 = 1102; break; // vpkudum
+      case Pav_QPACKUU: opc2 = 1230; break; // vpkudus, vpksdus (emulated)
+      case Pav_QPACKSS: opc2 = 1486; break; // vpksdsm
+      case Pav_MRGHI:   opc2 = 1614; break; // vmrghw
+      case Pav_MRGLO:   opc2 = 1742; break; // vmrglw
+      default:
+         goto bad;
       }
       p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, opc2 );
       goto done;

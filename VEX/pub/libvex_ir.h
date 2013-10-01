@@ -1382,8 +1382,8 @@ typedef
                     Iop_MulHi16Ux8, Iop_MulHi32Ux4,
                     Iop_MulHi16Sx8, Iop_MulHi32Sx4,
       /* (widening signed/unsigned of even lanes, with lowest lane=zero) */
-      Iop_MullEven8Ux16, Iop_MullEven16Ux8,
-      Iop_MullEven8Sx16, Iop_MullEven16Sx8,
+      Iop_MullEven8Ux16, Iop_MullEven16Ux8, Iop_MullEven32Ux4,
+      Iop_MullEven8Sx16, Iop_MullEven16Sx8, Iop_MullEven32Sx4,
       /* FIXME: document these */
       Iop_Mull8Ux8, Iop_Mull8Sx8,
       Iop_Mull16Ux4, Iop_Mull16Sx4,
@@ -1424,15 +1424,15 @@ typedef
       Iop_Avg8Sx16, Iop_Avg16Sx8, Iop_Avg32Sx4,
 
       /* MIN/MAX */
-      Iop_Max8Sx16, Iop_Max16Sx8, Iop_Max32Sx4,
-      Iop_Max8Ux16, Iop_Max16Ux8, Iop_Max32Ux4,
-      Iop_Min8Sx16, Iop_Min16Sx8, Iop_Min32Sx4,
-      Iop_Min8Ux16, Iop_Min16Ux8, Iop_Min32Ux4,
+      Iop_Max8Sx16, Iop_Max16Sx8, Iop_Max32Sx4, Iop_Max64Sx2,
+      Iop_Max8Ux16, Iop_Max16Ux8, Iop_Max32Ux4, Iop_Max64Ux2,
+      Iop_Min8Sx16, Iop_Min16Sx8, Iop_Min32Sx4, Iop_Min64Sx2,
+      Iop_Min8Ux16, Iop_Min16Ux8, Iop_Min32Ux4, Iop_Min64Ux2,
 
       /* COMPARISON */
       Iop_CmpEQ8x16,  Iop_CmpEQ16x8,  Iop_CmpEQ32x4,  Iop_CmpEQ64x2,
       Iop_CmpGT8Sx16, Iop_CmpGT16Sx8, Iop_CmpGT32Sx4, Iop_CmpGT64Sx2,
-      Iop_CmpGT8Ux16, Iop_CmpGT16Ux8, Iop_CmpGT32Ux4,
+      Iop_CmpGT8Ux16, Iop_CmpGT16Ux8, Iop_CmpGT32Ux4, Iop_CmpGT64Ux2,
 
       /* COUNT ones / leading zeroes / leading sign bits (not including topmost
          bit) */
@@ -1450,7 +1450,7 @@ typedef
       Iop_Shr8x16, Iop_Shr16x8, Iop_Shr32x4, Iop_Shr64x2,
       Iop_Sar8x16, Iop_Sar16x8, Iop_Sar32x4, Iop_Sar64x2,
       Iop_Sal8x16, Iop_Sal16x8, Iop_Sal32x4, Iop_Sal64x2,
-      Iop_Rol8x16, Iop_Rol16x8, Iop_Rol32x4,
+      Iop_Rol8x16, Iop_Rol16x8, Iop_Rol32x4, Iop_Rol64x2,
 
       /* VECTOR x VECTOR SATURATING SHIFT */
       Iop_QShl8x16, Iop_QShl16x8, Iop_QShl32x4, Iop_QShl64x2,
@@ -1467,6 +1467,7 @@ typedef
       Iop_QNarrowBin16Sto8Sx16, Iop_QNarrowBin32Sto16Sx8,
       Iop_QNarrowBin16Uto8Ux16, Iop_QNarrowBin32Uto16Ux8,
       Iop_NarrowBin16to8x16, Iop_NarrowBin32to16x8,
+      Iop_QNarrowBin64Sto32Sx4, Iop_QNarrowBin64Uto32Ux4,
       Iop_NarrowBin64to32x4,
 
       /* NARROWING (unary) -- narrow V128 into I64 */

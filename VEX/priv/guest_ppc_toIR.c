@@ -878,10 +878,21 @@ static IRExpr* mkV128from4x64U ( IRExpr* t3, IRExpr* t2,
             binop(Iop_ShrV128, expr_vA, mkU8(16)), \
             binop(Iop_ShrV128, expr_vB, mkU8(16)))
 
+#define MK_Iop_MullOdd32Ux4( expr_vA, expr_vB ) \
+      binop(Iop_MullEven32Ux4, \
+            binop(Iop_ShrV128, expr_vA, mkU8(32)), \
+            binop(Iop_ShrV128, expr_vB, mkU8(32)))
+
 #define MK_Iop_MullOdd16Sx8( expr_vA, expr_vB ) \
       binop(Iop_MullEven16Sx8, \
             binop(Iop_ShrV128, expr_vA, mkU8(16)), \
             binop(Iop_ShrV128, expr_vB, mkU8(16)))
+
+#define MK_Iop_MullOdd32Sx4( expr_vA, expr_vB ) \
+      binop(Iop_MullEven32Sx4, \
+            binop(Iop_ShrV128, expr_vA, mkU8(32)), \
+            binop(Iop_ShrV128, expr_vB, mkU8(32)))
+
 
 static IRExpr* /* :: Ity_I64 */ mk64lo32Sto64 ( IRExpr* src )
 {
@@ -6604,8 +6615,11 @@ static Bool dis_proc_ctl ( VexAbiInfo* vbi, UInt theInstr )
    /* Reorder TBR field as per PPC32 p475 */
    TBR = ((TBR & 31) << 5) | ((TBR >> 5) & 31);
    
-   if (opc1 != 0x1F || b0 != 0) {
-      vex_printf("dis_proc_ctl(ppc)(opc1|b0)\n");
+   /* b0 = 0, inst is treated as floating point inst for reservation purposes
+    * b0 = 1, inst is treated as vector inst for reservation purposes
+    */
+   if (opc1 != 0x1F) {
+      vex_printf("dis_proc_ctl(ppc)(opc1|b%d)\n", b0);
       return False;
    }
    
@@ -15087,6 +15101,11 @@ static Bool dis_av_arith ( UInt theInstr )
       putVReg( vD_addr, binop(Iop_Sub32x4, mkexpr(vA), mkexpr(vB)) );
       break;
 
+   case 0x4C0: // vsubudm (Subtract Unsigned Double Word Modulo)
+      DIP("vsubudm v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      putVReg( vD_addr, binop(Iop_Sub64x2, mkexpr(vA), mkexpr(vB)) );
+      break;
+
    case 0x600: // vsububs (Subtract Unsigned Byte Saturate, AV p266)
       DIP("vsububs v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
       putVReg( vD_addr, binop(Iop_QSub8Ux16, mkexpr(vA), mkexpr(vB)) );
@@ -15140,6 +15159,11 @@ static Bool dis_av_arith ( UInt theInstr )
       putVReg( vD_addr, binop(Iop_Max32Ux4, mkexpr(vA), mkexpr(vB)) );
       break;
 
+   case 0x0C2: // vmaxud (Maximum Unsigned Double word)
+      DIP("vmaxud v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      putVReg( vD_addr, binop(Iop_Max64Ux2, mkexpr(vA), mkexpr(vB)) );
+      break;
+
    case 0x102: // vmaxsb (Maximum Signed Byte, AV p179)
       DIP("vmaxsb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
       putVReg( vD_addr, binop(Iop_Max8Sx16, mkexpr(vA), mkexpr(vB)) );
@@ -15155,6 +15179,10 @@ static Bool dis_av_arith ( UInt theInstr )
       putVReg( vD_addr, binop(Iop_Max32Sx4, mkexpr(vA), mkexpr(vB)) );
       break;
 
+   case 0x1C2: // vmaxsd (Maximum Signed Double word)
+      DIP("vmaxsd v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      putVReg( vD_addr, binop(Iop_Max64Sx2, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    /* Minimum */
    case 0x202: // vminub (Minimum Unsigned Byte, AV p191)
@@ -15172,6 +15200,11 @@ static Bool dis_av_arith ( UInt theInstr )
       putVReg( vD_addr, binop(Iop_Min32Ux4, mkexpr(vA), mkexpr(vB)) );
       break;
 
+   case 0x2C2: // vminud (Minimum Unsigned Double Word)
+      DIP("vminud v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      putVReg( vD_addr, binop(Iop_Min64Ux2, mkexpr(vA), mkexpr(vB)) );
+      break;
+
    case 0x302: // vminsb (Minimum Signed Byte, AV p188)
       DIP("vminsb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
       putVReg( vD_addr, binop(Iop_Min8Sx16, mkexpr(vA), mkexpr(vB)) );
@@ -15185,6 +15218,11 @@ static Bool dis_av_arith ( UInt theInstr )
    case 0x382: // vminsw (Minimum Signed Word, AV p190)
       DIP("vminsw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
       putVReg( vD_addr, binop(Iop_Min32Sx4, mkexpr(vA), mkexpr(vB)) );
+      break;
+
+   case 0x3C2: // vminsd (Minimum Signed Double Word)
+      DIP("vminsd v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      putVReg( vD_addr, binop(Iop_Min64Sx2, mkexpr(vA), mkexpr(vB)) );
       break;
 
 
@@ -15233,6 +15271,16 @@ static Bool dis_av_arith ( UInt theInstr )
                binop(Iop_MullEven16Ux8, mkexpr(vA), mkexpr(vB)));
       break;
 
+   case 0x088: // vmulouw (Multiply Odd Unsigned Word)
+      DIP("vmulouw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      putVReg( vD_addr, binop( Iop_MullEven32Ux4, mkexpr(vA), mkexpr(vB) ) );
+      break;
+
+   case 0x089: // vmuluwm (Multiply Unsigned Word Modulo)
+      DIP("vmuluwm v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      putVReg( vD_addr, binop( Iop_Mul32x4, mkexpr(vA), mkexpr(vB) ) );
+      break;
+
    case 0x108: // vmulosb (Multiply Odd Signed Byte, AV p211)
       DIP("vmulosb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
       putVReg( vD_addr,
@@ -15245,6 +15293,11 @@ static Bool dis_av_arith ( UInt theInstr )
                binop(Iop_MullEven16Sx8, mkexpr(vA), mkexpr(vB)));
       break;
 
+   case 0x188: // vmulosw (Multiply Odd Signed Word)
+      DIP("vmulosw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      putVReg( vD_addr, binop( Iop_MullEven32Sx4, mkexpr(vA), mkexpr(vB) ) );
+      break;
+
    case 0x208: // vmuleub (Multiply Even Unsigned Byte, AV p209)
       DIP("vmuleub v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
       putVReg( vD_addr, MK_Iop_MullOdd8Ux16( mkexpr(vA), mkexpr(vB) ));
@@ -15253,6 +15306,11 @@ static Bool dis_av_arith ( UInt theInstr )
    case 0x248: // vmuleuh (Multiply Even Unsigned Half Word, AV p210)
       DIP("vmuleuh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
       putVReg( vD_addr, MK_Iop_MullOdd16Ux8( mkexpr(vA), mkexpr(vB) ));
+      break;
+
+   case 0x288: // vmuleuw (Multiply Even Unsigned Word)
+      DIP("vmuleuw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      putVReg( vD_addr, MK_Iop_MullOdd32Ux4( mkexpr(vA), mkexpr(vB) ) );
       break;
 
    case 0x308: // vmulesb (Multiply Even Signed Byte, AV p207)
@@ -15265,6 +15323,10 @@ static Bool dis_av_arith ( UInt theInstr )
       putVReg( vD_addr, MK_Iop_MullOdd16Sx8( mkexpr(vA), mkexpr(vB) ));
       break;
 
+   case 0x388: // vmulesw (Multiply Even Signed Word)
+      DIP("vmulesw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      putVReg( vD_addr, MK_Iop_MullOdd32Sx4( mkexpr(vA), mkexpr(vB) ) );
+      break;
 
    /* Sum Across Partial */
    case 0x608: { // vsum4ubs (Sum Partial (1/4) UB Saturate, AV p275)
@@ -15516,6 +15578,12 @@ static Bool dis_av_cmp ( UInt theInstr )
       assign( vD, binop(Iop_CmpEQ32x4, mkexpr(vA), mkexpr(vB)) );
       break;
 
+   case 0x0C7: // vcmpequd (Compare Equal-to Unsigned Doubleword)
+      DIP("vcmpequd%s v%d,v%d,v%d\n", (flag_rC ? ".":""),
+                                      vD_addr, vA_addr, vB_addr);
+      assign( vD, binop(Iop_CmpEQ64x2, mkexpr(vA), mkexpr(vB)) );
+      break;
+
    case 0x206: // vcmpgtub (Compare Greater-than Unsigned B, AV p168)
       DIP("vcmpgtub%s v%d,v%d,v%d\n", (flag_rC ? ".":""),
                                       vD_addr, vA_addr, vB_addr);
@@ -15534,6 +15602,12 @@ static Bool dis_av_cmp ( UInt theInstr )
       assign( vD, binop(Iop_CmpGT32Ux4, mkexpr(vA), mkexpr(vB)) );
       break;
 
+   case 0x2C7: // vcmpgtud (Compare Greater-than Unsigned double)
+      DIP("vcmpgtud%s v%d,v%d,v%d\n", (flag_rC ? ".":""),
+                                      vD_addr, vA_addr, vB_addr);
+      assign( vD, binop(Iop_CmpGT64Ux2, mkexpr(vA), mkexpr(vB)) );
+      break;
+
    case 0x306: // vcmpgtsb (Compare Greater-than Signed B, AV p165)
       DIP("vcmpgtsb%s v%d,v%d,v%d\n", (flag_rC ? ".":""),
                                        vD_addr, vA_addr, vB_addr);
@@ -15550,6 +15624,12 @@ static Bool dis_av_cmp ( UInt theInstr )
       DIP("vcmpgtsw%s v%d,v%d,v%d\n", (flag_rC ? ".":""),
                                       vD_addr, vA_addr, vB_addr);
       assign( vD, binop(Iop_CmpGT32Sx4, mkexpr(vA), mkexpr(vB)) );
+      break;
+
+   case 0x3C7: // vcmpgtsd (Compare Greater-than Signed double)
+      DIP("vcmpgtsd%s v%d,v%d,v%d\n", (flag_rC ? ".":""),
+                                      vD_addr, vA_addr, vB_addr);
+      assign( vD, binop(Iop_CmpGT64Sx2, mkexpr(vA), mkexpr(vB)) );
       break;
 
    default:
@@ -15870,6 +15950,11 @@ static Bool dis_av_shift ( UInt theInstr )
       putVReg( vD_addr, binop(Iop_Rol32x4, mkexpr(vA), mkexpr(vB)) );
       break;
 
+   case 0x0C4: // vrld (Rotate Left Integer Double Word)
+      DIP("vrld v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      putVReg( vD_addr, binop(Iop_Rol64x2, mkexpr(vA), mkexpr(vB)) );
+      break;
+
 
    /* Shift Left */
    case 0x104: // vslb (Shift Left Integer B, AV p240)
@@ -15885,6 +15970,11 @@ static Bool dis_av_shift ( UInt theInstr )
    case 0x184: // vslw (Shift Left Integer W, AV p244)
       DIP("vslw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
       putVReg( vD_addr, binop(Iop_Shl32x4, mkexpr(vA), mkexpr(vB)) );
+      break;
+
+   case 0x5C4: // vsld (Shift Left Integer Double Word)
+      DIP("vsld v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      putVReg( vD_addr, binop(Iop_Shl64x2, mkexpr(vA), mkexpr(vB)) );
       break;
 
    case 0x1C4: { // vsl (Shift Left, AV p239)
@@ -15950,6 +16040,11 @@ static Bool dis_av_shift ( UInt theInstr )
       putVReg( vD_addr, binop(Iop_Sar32x4, mkexpr(vA), mkexpr(vB)) );
       break;
 
+   case 0x3C4: // vsrad (Shift Right Alg Double Word)
+      DIP("vsrad v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      putVReg( vD_addr, binop(Iop_Sar64x2, mkexpr(vA), mkexpr(vB)) );
+      break;
+
    case 0x44C: { // vsro (Shift Right by Octet, AV p258)
       IRTemp sh = newTemp(Ity_I8);
       DIP("vsro v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
@@ -15960,6 +16055,12 @@ static Bool dis_av_shift ( UInt theInstr )
                binop(Iop_ShrV128, mkexpr(vA), mkexpr(sh)) );
       break;
    }
+
+   case 0x6C4: // vsrd (Shift Right Double Word)
+      DIP("vsrd v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      putVReg( vD_addr, binop(Iop_Shr64x2, mkexpr(vA), mkexpr(vB)) );
+      break;
+
 
    default:
       vex_printf("dis_av_shift(ppc)(opc2)\n");
@@ -16142,6 +16243,28 @@ static Bool dis_av_permute ( UInt theInstr )
                unop(Iop_Dup32x4, mkU32(extend_s_8to32(SIMM_8))) );
       break;
 
+   case 0x68C: // vmrgow (Merge Odd Word)
+     DIP("vmrgow v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      /*   VD[0] <- VA[1]
+           VD[1] <- VB[1]
+           VD[2] <- VA[3]
+           VD[3] <- VB[3]
+      */
+      putVReg( vD_addr,
+               binop(Iop_CatOddLanes32x4, mkexpr(vA), mkexpr(vB) ) );
+      break;
+
+   case 0x78C: // vmrgew (Merge Even Word)
+      DIP("vmrgew v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      /*   VD[0] <- VA[0]
+           VD[1] <- VB[0]
+           VD[2] <- VA[2]
+           VD[3] <- VB[2]
+      */
+      putVReg( vD_addr,
+               binop(Iop_CatEvenLanes32x4, mkexpr(vA), mkexpr(vB) ) );
+      break;
+
    default:
       vex_printf("dis_av_permute(ppc)(opc2)\n");
       return False;
@@ -16172,7 +16295,6 @@ static Bool dis_av_pack ( UInt theInstr )
       vex_printf("dis_av_pack(ppc)(instr)\n");
       return False;
    }
-
    switch (opc2) {
    /* Packing */
    case 0x00E: // vpkuhum (Pack Unsigned HW Unsigned Modulo, AV p224)
@@ -16302,6 +16424,42 @@ static Bool dis_av_pack ( UInt theInstr )
                binop(Iop_NarrowBin64to32x4, mkexpr(vA), mkexpr(vB)) );
       return True;
 
+   case 0x4CE: // vpkudus (Pack Unsigned Double Word Unsigned Saturate)
+      DIP("vpkudus v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      putVReg( vD_addr,
+               binop(Iop_QNarrowBin64Uto32Ux4, mkexpr(vA), mkexpr(vB)) );
+      // TODO: set VSCR[SAT]
+      return True;
+
+   case 0x54E: { // vpksdus (Pack Signed Double Word Unsigned Saturate)
+      // This insn does a doubled signed->double unsigned saturating conversion
+      // Conversion done here, then uses unsigned->unsigned vpk insn:
+      //  => UnsignedSaturatingNarrow( x & ~ (x >>s 31) )
+      // This is similar to the technique used for vpkswus, except done
+      // with double word integers versus word integers.
+      IRTemp vA_tmp = newTemp(Ity_V128);
+      IRTemp vB_tmp = newTemp(Ity_V128);
+      DIP("vpksdus v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      assign( vA_tmp, binop(Iop_AndV128, mkexpr(vA),
+                            unop(Iop_NotV128,
+                                 binop(Iop_SarN64x2,
+                                       mkexpr(vA), mkU8(63)))) );
+      assign( vB_tmp, binop(Iop_AndV128, mkexpr(vB),
+                            unop(Iop_NotV128,
+                                 binop(Iop_SarN64x2,
+                                       mkexpr(vB), mkU8(63)))) );
+      putVReg( vD_addr, binop(Iop_QNarrowBin64Uto32Ux4,
+                              mkexpr(vA_tmp), mkexpr(vB_tmp)) );
+      // TODO: set VSCR[SAT]
+      return True;
+   }
+
+   case 0x5CE: // vpksdss (Pack Signed double word Signed Saturate)
+      DIP("vpksdss v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      putVReg( vD_addr,
+               binop(Iop_QNarrowBin64Sto32Sx4, mkexpr(vA), mkexpr(vB)) );
+      // TODO: set VSCR[SAT]
+      return True;
    default:
       break; // Fall through...
    }
@@ -16411,6 +16569,20 @@ static Bool dis_av_pack ( UInt theInstr )
                binop(Iop_OrV128,
                      binop(Iop_ShlN32x4, mkexpr(z01), mkU8(16)),
                      mkexpr(z23)) );
+      break;
+   }
+   case 0x64E: { // vupkhsw (Unpack High Signed Word)
+      DIP("vupkhsw v%d,v%d\n", vD_addr, vB_addr);
+      assign( signs, binop(Iop_CmpGT32Sx4, mkexpr(zeros), mkexpr(vB)) );
+      putVReg( vD_addr,
+               binop(Iop_InterleaveHI32x4, mkexpr(signs), mkexpr(vB)) );
+      break;
+   }
+   case 0x6CE: { // vupklsw (Unpack Low Signed Word)
+      DIP("vupklsw v%d,v%d\n", vD_addr, vB_addr);
+      assign( signs, binop(Iop_CmpGT32Sx4, mkexpr(zeros), mkexpr(vB)) );
+      putVReg( vD_addr,
+               binop(Iop_InterleaveLO32x4, mkexpr(signs), mkexpr(vB)) );
       break;
    }
    default:
@@ -18087,7 +18259,11 @@ DisResult disInstr_PPC_WRK (
          if (dis_av_arith( theInstr )) goto decode_success;
          goto decode_failure;
 
-      case 0x0C0:                         // vaddudm
+      case 0x088: case 0x089:             // vmulouw, vmuluwm
+      case 0x0C0: case 0x0C2:             // vaddudm, vmaxud
+      case 0x1C2: case 0x2C2: case 0x3C2: // vnaxsd, vminud, vminsd
+      case 0x188: case 0x288: case 0x388: // vmulosw, vmuleuw, vmulesw
+      case 0x4C0:                         // vsubudm
          if (!allow_isa_2_07) goto decode_noP8;
          if (dis_av_arith( theInstr )) goto decode_success;
          goto decode_failure;
@@ -18102,6 +18278,12 @@ DisResult disInstr_PPC_WRK (
          if (!allow_V) goto decode_noV;
          if (dis_av_shift( theInstr )) goto decode_success;
          goto decode_failure;
+
+      case 0x0C4:                         // vrld
+      case 0x3C4: case 0x5C4: case 0x6C4: // vsrad, vsld, vsrd
+          if (!allow_isa_2_07) goto decode_noP8;
+          if (dis_av_shift( theInstr )) goto decode_success;
+          goto decode_failure;
 
       /* AV Logic */
       case 0x404: case 0x444: case 0x484: // vand, vandc, vor
@@ -18143,6 +18325,11 @@ DisResult disInstr_PPC_WRK (
          if (dis_av_permute( theInstr )) goto decode_success;
          goto decode_failure;
 
+      case 0x68C: case 0x78C:             // vmrgow, vmrgew
+          if (!allow_isa_2_07) goto decode_noP8;
+          if (dis_av_permute( theInstr )) goto decode_success;
+          goto decode_failure;
+
       /* AV Pack, Unpack */
       case 0x00E: case 0x04E: case 0x08E: // vpkuhum, vpkuwum, vpkuhus
       case 0x0CE:                         // vpkuwus
@@ -18151,11 +18338,12 @@ DisResult disInstr_PPC_WRK (
       case 0x20E: case 0x24E: case 0x28E: // vupkhsb, vupkhsh, vupklsb
       case 0x2CE:                         // vupklsh
       case 0x30E: case 0x34E: case 0x3CE: // vpkpx, vupkhpx, vupklpx
-         if (!allow_V) goto decode_noV;
-         if (dis_av_pack( theInstr )) goto decode_success;
-         goto decode_failure;
+          if (!allow_V) goto decode_noV;
+          if (dis_av_pack( theInstr )) goto decode_success;
+          goto decode_failure;
 
-      case 0x44E: // vpkudum
+      case 0x44E: case 0x4CE: case 0x54E: // vpkudum, vpkudus, vpksdus
+      case 0x5CE: case 0x64E: case 0x6cE: // vpksdss, vupkhsw, vupklsw
          if (!allow_isa_2_07) goto decode_noP8;
          if (dis_av_pack( theInstr )) goto decode_success;
          goto decode_failure;
@@ -18174,6 +18362,13 @@ DisResult disInstr_PPC_WRK (
          if (!allow_V) goto decode_noV;
          if (dis_av_cmp( theInstr )) goto decode_success;
          goto decode_failure;
+
+      case 0x0C7:                         // vcmpequd
+      case 0x2C7:                         // vcmpgtud
+      case 0x3C7:                         // vcmpgtsd
+          if (!allow_isa_2_07) goto decode_noP8;
+          if (dis_av_cmp( theInstr )) goto decode_success;
+          goto decode_failure;
 
       /* AV Floating Point Compare */
       case 0x0C6: case 0x1C6: case 0x2C6: // vcmpeqfp, vcmpgefp, vcmpgtfp

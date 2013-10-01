@@ -5044,9 +5044,14 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_Max32Sx4:   op = Pav_MAXS;   goto do_AvBin32x4;
       case Iop_Min32Ux4:   op = Pav_MINU;   goto do_AvBin32x4;
       case Iop_Min32Sx4:   op = Pav_MINS;   goto do_AvBin32x4;
+      case Iop_Mul32x4:    op = Pav_MULU;   goto do_AvBin32x4;
+      case Iop_MullEven32Ux4: op = Pav_OMULU;  goto do_AvBin32x4;
+      case Iop_MullEven32Sx4: op = Pav_OMULS;  goto do_AvBin32x4;
       case Iop_CmpEQ32x4:  op = Pav_CMPEQU; goto do_AvBin32x4;
       case Iop_CmpGT32Ux4: op = Pav_CMPGTU; goto do_AvBin32x4;
       case Iop_CmpGT32Sx4: op = Pav_CMPGTS; goto do_AvBin32x4;
+      case Iop_CatOddLanes32x4:  op = Pav_CATODD;  goto do_AvBin32x4;
+      case Iop_CatEvenLanes32x4: op = Pav_CATEVEN; goto do_AvBin32x4;
       do_AvBin32x4: {
          HReg arg1 = iselVecExpr(env, e->Iex.Binop.arg1);
          HReg arg2 = iselVecExpr(env, e->Iex.Binop.arg2);
@@ -5055,8 +5060,24 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
+      case Iop_Shl64x2:    op = Pav_SHL;    goto do_AvBin64x2;
+      case Iop_Shr64x2:    op = Pav_SHR;    goto do_AvBin64x2;
+      case Iop_Sar64x2:    op = Pav_SAR;    goto do_AvBin64x2;
+      case Iop_Rol64x2:    op = Pav_ROTL;   goto do_AvBin64x2;
       case Iop_NarrowBin64to32x4:    op = Pav_PACKUU;  goto do_AvBin64x2;
+      case Iop_QNarrowBin64Sto32Sx4: op = Pav_QPACKSS; goto do_AvBin64x2;
+      case Iop_QNarrowBin64Uto32Ux4: op = Pav_QPACKUU; goto do_AvBin64x2;
+      case Iop_InterleaveHI64x2:  op = Pav_MRGHI;  goto do_AvBin64x2;
+      case Iop_InterleaveLO64x2:  op = Pav_MRGLO;  goto do_AvBin64x2;
       case Iop_Add64x2:    op = Pav_ADDU;   goto do_AvBin64x2;
+      case Iop_Sub64x2:    op = Pav_SUBU;   goto do_AvBin64x2;
+      case Iop_Max64Ux2:   op = Pav_MAXU;   goto do_AvBin64x2;
+      case Iop_Max64Sx2:   op = Pav_MAXS;   goto do_AvBin64x2;
+      case Iop_Min64Ux2:   op = Pav_MINU;   goto do_AvBin64x2;
+      case Iop_Min64Sx2:   op = Pav_MINS;   goto do_AvBin64x2;
+      case Iop_CmpEQ64x2:  op = Pav_CMPEQU; goto do_AvBin64x2;
+      case Iop_CmpGT64Ux2: op = Pav_CMPGTU; goto do_AvBin64x2;
+      case Iop_CmpGT64Sx2: op = Pav_CMPGTS; goto do_AvBin64x2;
       do_AvBin64x2: {
          HReg arg1 = iselVecExpr(env, e->Iex.Binop.arg1);
          HReg arg2 = iselVecExpr(env, e->Iex.Binop.arg2);
@@ -5094,6 +5115,17 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          HReg dst    = newVRegV(env);
          HReg v_shft = mk_AvDuplicateRI(env, e->Iex.Binop.arg2);
          addInstr(env, PPCInstr_AvBin32x4(op, dst, r_src, v_shft));
+         return dst;
+      }
+
+      case Iop_ShlN64x2: op = Pav_SHL; goto do_AvShift64x2;
+      case Iop_ShrN64x2: op = Pav_SHR; goto do_AvShift64x2;
+      case Iop_SarN64x2: op = Pav_SAR; goto do_AvShift64x2;
+      do_AvShift64x2: {
+         HReg r_src  = iselVecExpr(env, e->Iex.Binop.arg1);
+         HReg dst    = newVRegV(env);
+         HReg v_shft = mk_AvDuplicateRI(env, e->Iex.Binop.arg2);
+         addInstr(env, PPCInstr_AvBin64x2(op, dst, r_src, v_shft));
          return dst;
       }
 

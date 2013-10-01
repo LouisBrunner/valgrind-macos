@@ -405,6 +405,7 @@ typedef
       Pav_AND, Pav_OR, Pav_XOR,            /* Bitwise */
       Pav_ADDU, Pav_QADDU, Pav_QADDS,
       Pav_SUBU, Pav_QSUBU, Pav_QSUBS,
+      Pav_MULU,
       Pav_OMULU, Pav_OMULS, Pav_EMULU, Pav_EMULS,
       Pav_AVGU, Pav_AVGS,
       Pav_MAXU, Pav_MAXS,
@@ -422,6 +423,9 @@ typedef
 
       /* Merge */
       Pav_MRGHI, Pav_MRGLO,
+
+      /* Concatenation */
+      Pav_CATODD, Pav_CATEVEN,
    }
    PPCAvOp;
 

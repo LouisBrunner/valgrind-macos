@@ -66,7 +66,7 @@ static inline U1 randomU1 ( void )
 static inline U1 self_shadow ( U1 x )
 {
    U1 res = 0xFF;
-   VALGRIND_MAKE_MEM_UNDEFINED(&res, 1);
+   (void) VALGRIND_MAKE_MEM_UNDEFINED(&res, 1);
    res &= x;
    return res;
 }
@@ -82,20 +82,20 @@ static inline U1 get_shadow ( U1 x )
 static inline U1 make_def ( U1 x )
 {
    U1 y = x;
-   VALGRIND_MAKE_MEM_DEFINED(&y, 1);
+   (void) VALGRIND_MAKE_MEM_DEFINED(&y, 1);
    return y;
 }
 
 static inline U1 make_undef ( U1 x )
 {
    U1 y = x;
-   VALGRIND_MAKE_MEM_UNDEFINED(&y, 1);
+   (void) VALGRIND_MAKE_MEM_UNDEFINED(&y, 1);
    return y;
 }
 
 static void make_noaccess ( U1* dst )
 {
-   VALGRIND_MAKE_MEM_NOACCESS(dst, 1);
+  (void) VALGRIND_MAKE_MEM_NOACCESS(dst, 1);
 }
 
 static void apply ( void(*fn)(U4,Bool), U4 arg1, Bool arg2 )

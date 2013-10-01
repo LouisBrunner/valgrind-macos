@@ -112,7 +112,7 @@ int main(void)
    // User block, marked as undefined
    {
       int  undef_user_int = 0;
-      VALGRIND_MAKE_MEM_UNDEFINED(&undef_user_int, sizeof(int));
+      (void) VALGRIND_MAKE_MEM_UNDEFINED(&undef_user_int, sizeof(int));
       fprintf(stderr, "\nUndef 8 of 8 (MAKE_MEM_UNDEFINED)\n");
       x += (undef_user_int == 0x12345678 ? 16 : 27);
    }

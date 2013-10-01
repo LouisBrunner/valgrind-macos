@@ -55,16 +55,16 @@ int main(int argc, char**argv)
 
    doit(argc, argv); // with default value of our argument.
 
-   VALGRIND_MONITOR_COMMAND("v.set merge-recursive-frames 3");
+   (void) VALGRIND_MONITOR_COMMAND("v.set merge-recursive-frames 3");
    doit(argc, argv);
 
-   VALGRIND_MONITOR_COMMAND("v.set merge-recursive-frames 2");
+   (void) VALGRIND_MONITOR_COMMAND("v.set merge-recursive-frames 2");
    doit(argc, argv);
 
-   VALGRIND_MONITOR_COMMAND("v.set merge-recursive-frames 1");
+   (void) VALGRIND_MONITOR_COMMAND("v.set merge-recursive-frames 1");
    doit(argc, argv);
 
-   VALGRIND_MONITOR_COMMAND("v.set merge-recursive-frames 0");
+   (void) VALGRIND_MONITOR_COMMAND("v.set merge-recursive-frames 0");
    doit(argc, argv);
 
    return 0;

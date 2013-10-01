@@ -32,12 +32,12 @@ typedef  unsigned char  Bool;
 
 static void make_undef ( void* addr, size_t len )
 {
-   VALGRIND_MAKE_MEM_UNDEFINED(addr, len);
+  (void) VALGRIND_MAKE_MEM_UNDEFINED(addr, len);
 }
 
 static void make_def ( void* addr, size_t len )
 {
-   VALGRIND_MAKE_MEM_DEFINED(addr, len);
+  (void) VALGRIND_MAKE_MEM_DEFINED(addr, len);
 }
 
 // Returns either |*src| or |alt|.

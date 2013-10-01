@@ -101,8 +101,8 @@ __attribute__((noinline)) int t6(void)
    {
       int* ptr_to_3_undef_ints = calloc(3, sizeof(int));
       int* ptr_to_middle       = (int*)((long)ptr_to_3_undef_ints + 6);
-      VALGRIND_MAKE_MEM_UNDEFINED(ptr_to_3_undef_ints, 6);
-      VALGRIND_MAKE_MEM_UNDEFINED(ptr_to_middle,       6);
+      (void) VALGRIND_MAKE_MEM_UNDEFINED(ptr_to_3_undef_ints, 6);
+      (void) VALGRIND_MAKE_MEM_UNDEFINED(ptr_to_middle,       6);
       fprintf(stderr, "\nUndef 6 of 8 (32 bit undef, unaligned, strange, #1)\n");
       y += (*(ptr_to_3_undef_ints + 0)  == 0x12345678 ? 16 : 27);
       fprintf(stderr, "\nUndef 7 of 8 (32 bit undef, unaligned, strange, #2)\n");

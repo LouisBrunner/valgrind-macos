@@ -200,13 +200,13 @@ void f(void)
    VALGRIND_DO_LEAK_CHECK;
 
    // make b10[4000] undefined. This should create a leak.
-   VALGRIND_MAKE_MEM_UNDEFINED (&b10[4000], sizeof(char*));
+   (void) VALGRIND_MAKE_MEM_UNDEFINED (&b10[4000], sizeof(char*));
    fprintf(stderr, "expecting a leak\n");
    fflush(stderr);
    VALGRIND_DO_LEAK_CHECK;
 
    // make  b10[4000] defined again.
-   VALGRIND_MAKE_MEM_DEFINED (&b10[4000], sizeof(char*));
+   (void) VALGRIND_MAKE_MEM_DEFINED (&b10[4000], sizeof(char*));
 
    // now make some bricolage to have some pages around b10[4000]
    // unreadable. The leak check should recover from that
@@ -222,7 +222,7 @@ void f(void)
       perror ("sysconf failed");
    
    if (RUNNING_ON_VALGRIND)
-      VALGRIND_NON_SIMD_CALL2(non_simd_mprotect, RNDPAGEDOWN(&b10[4000]), 2 * pagesize);
+     (void) VALGRIND_NON_SIMD_CALL2(non_simd_mprotect, RNDPAGEDOWN(&b10[4000]), 2 * pagesize);
    else
       mprotect_result = mprotect((void*) RNDPAGEDOWN(&b10[4000]), 2 * pagesize, PROT_NONE);
    fprintf(stderr, "mprotect result %d\n", mprotect_result);

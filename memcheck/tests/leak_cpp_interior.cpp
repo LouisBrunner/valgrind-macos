@@ -96,18 +96,18 @@ void doit(void)
 int main() { 
 
    doit();
-   VALGRIND_MONITOR_COMMAND("v.set log_output");
+   (void) VALGRIND_MONITOR_COMMAND("v.set log_output");
 
    fprintf(stderr, "VALGRIND_DO_LEAK_CHECK\n");
    VALGRIND_DO_LEAK_CHECK; // All possible leaks should be detected, giving only reachable data.
 
    // Check individually each heuristic
    fprintf(stderr, "leak_check summary heuristics multipleinheritance\n");
-   VALGRIND_MONITOR_COMMAND("leak_check summary heuristics multipleinheritance");
+   (void) VALGRIND_MONITOR_COMMAND("leak_check summary heuristics multipleinheritance");
    fprintf(stderr, "leak_check summary any heuristics newarray\n");
-   VALGRIND_MONITOR_COMMAND("leak_check summary heuristics newarray");
+   (void) VALGRIND_MONITOR_COMMAND("leak_check summary heuristics newarray");
    fprintf(stderr, "leak_check summary heuristics stdstring\n");
-   VALGRIND_MONITOR_COMMAND("leak_check summary heuristics stdstring");
+   (void) VALGRIND_MONITOR_COMMAND("leak_check summary heuristics stdstring");
 
    delete [] ptr;
    delete [] ptr2;

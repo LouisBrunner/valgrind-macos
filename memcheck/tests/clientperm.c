@@ -7,7 +7,7 @@
 int main1 ( void )
 {
   int xxx, i;
-  for (i = 0; i < 10; i++) VALGRIND_CHECK_VALUE_IS_DEFINED(xxx);
+  for (i = 0; i < 10; i++) (void) VALGRIND_CHECK_VALUE_IS_DEFINED(xxx);
   return 0;
 }
 
@@ -17,10 +17,10 @@ int main ( void )
    char* aa = calloc(100,1);
    sum = 0;
 
-   VALGRIND_CHECK_MEM_IS_DEFINED(aa,100);
+   (void) VALGRIND_CHECK_MEM_IS_DEFINED(aa,100);
 
    m = VALGRIND_MAKE_MEM_UNDEFINED( &aa[49], 1 );
-   VALGRIND_CHECK_MEM_IS_ADDRESSABLE(aa,100);
+   (void) VALGRIND_CHECK_MEM_IS_ADDRESSABLE(aa,100);
 
    printf("m_na: returned value is %d\n", m );
 

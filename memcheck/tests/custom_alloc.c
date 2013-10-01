@@ -22,7 +22,7 @@ void* get_superblock(void)
    // program to be using it unless its handed out by custom_alloc()
 
    // with redzones, better not to have it
-   VALGRIND_MAKE_MEM_NOACCESS(p, SUPERBLOCK_SIZE);
+   (void) VALGRIND_MAKE_MEM_NOACCESS(p, SUPERBLOCK_SIZE);
 
    return p;
 }
@@ -122,7 +122,7 @@ int main(void)
 
    // Make the entire array defined again such that it can be verified whether
    // the red zone is marked properly when resizing in place.
-   VALGRIND_MAKE_MEM_DEFINED(array, sizeof(int) * 10);
+   (void) VALGRIND_MAKE_MEM_DEFINED(array, sizeof(int) * 10);
 
    VALGRIND_RESIZEINPLACE_BLOCK(array, sizeof(int) * 5, sizeof(int) * 7, RZ);
    if (array[5]) array[4]++; // uninitialized read of array[5]

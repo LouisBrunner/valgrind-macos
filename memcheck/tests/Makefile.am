@@ -385,6 +385,8 @@ execve1_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 
 execve2_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 
+fprw_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
+
 inits_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 
 long_namespace_xml_SOURCES = long_namespace_xml.cpp
@@ -397,6 +399,8 @@ mismatches_SOURCES	= mismatches.cpp
 
 new_nothrow_SOURCES 	= new_nothrow.cpp
 new_override_SOURCES 	= new_override.cpp
+
+origin1_yes_CFLAGS      = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 
 origin2_not_quite_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 
@@ -415,9 +419,16 @@ overlap_CFLAGS		= $(AM_CFLAGS) -fno-builtin-memcpy -fno-builtin-strcpy
 
 str_tester_CFLAGS	= $(AM_CFLAGS) -Wno-shadow
 
+supp_CFLAGS             = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
+
 supp_unknown_SOURCES	= badjump.c
+supp_unknown_CFLAGS     = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
+
 supp1_SOURCES		= supp.c
+supp1_CFLAGS            = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
+
 supp2_SOURCES		= supp.c
+supp2_CFLAGS            = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 
 vcpu_bz2_CFLAGS		= $(AM_CFLAGS) -O2
 vcpu_fbench_CFLAGS	= $(AM_CFLAGS) -O2

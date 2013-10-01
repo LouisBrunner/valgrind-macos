@@ -40,7 +40,7 @@ U8 build(int size, U1 byte)
    U8 mask = 0;
    U8 shres;
    U8 res = 0xffffffffffffffffULL, res2;
-   VALGRIND_MAKE_MEM_UNDEFINED(&res, 8);
+   (void)VALGRIND_MAKE_MEM_UNDEFINED(&res, 8);
    assert(1 == size || 2 == size || 4 == size || 8 == size);
 
    for (i = 0; i < size; i++) {
@@ -63,7 +63,7 @@ U8 build(int size, U1 byte)
 U1 make_defined ( U1 x )
 {
    volatile U1 xx = x;
-   VALGRIND_MAKE_MEM_DEFINED(&xx, 1);
+   (void)VALGRIND_MAKE_MEM_DEFINED(&xx, 1);
    return xx;
 }
 

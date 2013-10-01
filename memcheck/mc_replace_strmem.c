@@ -1796,7 +1796,7 @@ int VG_WRAP_FUNCTION_ZU(VG_Z_LIBC_SONAME, setenv)
     if (value)
         for (p = value; *p; p++)
             __asm__ __volatile__("" ::: "memory");
-    VALGRIND_CHECK_VALUE_IS_DEFINED (overwrite);
+    (void) VALGRIND_CHECK_VALUE_IS_DEFINED (overwrite);
     CALL_FN_W_WWW(result, fn, name, value, overwrite);
     return result;
 }

@@ -40,7 +40,7 @@ allocate_pool()
   assert(p->buf);
   memset(p->buf, 0, p->allocated);
   VALGRIND_CREATE_MEMPOOL(p, 0, 0);
-  VALGRIND_MAKE_MEM_NOACCESS(p->buf, p->allocated);
+  (void) VALGRIND_MAKE_MEM_NOACCESS(p->buf, p->allocated);
   return p;
 }
 

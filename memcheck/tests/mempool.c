@@ -46,7 +46,7 @@ pool *make_pool()
 
    p->size = p->left = SUPERBLOCK_SIZE;
    p->levels = NULL;
-   VALGRIND_MAKE_MEM_NOACCESS(p->where, SUPERBLOCK_SIZE);
+   (void) VALGRIND_MAKE_MEM_NOACCESS(p->where, SUPERBLOCK_SIZE);
    return p;
 }
 
@@ -72,7 +72,7 @@ void pop(pool *p)
    level_list *l = p->levels;
    p->levels = l->next;
    VALGRIND_DESTROY_MEMPOOL(l->where);
-   VALGRIND_MAKE_MEM_NOACCESS(l->where, p->where-l->where);
+   (void) VALGRIND_MAKE_MEM_NOACCESS(l->where, p->where-l->where);
    p->where = l->where;
    if(USE_MMAP)
       munmap(l, sizeof(level_list));

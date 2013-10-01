@@ -34,18 +34,18 @@ static void test1()
 {
 	char *m = mm(0, pgsz * 5, PROT_READ);
 
-	VALGRIND_CHECK_MEM_IS_DEFINED(m, pgsz*5); /* all defined */
+	(void) VALGRIND_CHECK_MEM_IS_DEFINED(m, pgsz*5); /* all defined */
 }
 
 /* Case 2 - unmapped memory is unaddressable+undefined */
 static void test2()
 {
 	char *m = mm(0, pgsz * 5, PROT_READ|PROT_WRITE);
-	VALGRIND_CHECK_MEM_IS_DEFINED(m, pgsz*5); /* all OK */
+	(void) VALGRIND_CHECK_MEM_IS_DEFINED(m, pgsz*5); /* all OK */
 
 	munmap(&m[pgsz*2], pgsz);
 
-	VALGRIND_CHECK_MEM_IS_DEFINED(&m[pgsz*2], pgsz); /* undefined */
+	(void) VALGRIND_CHECK_MEM_IS_DEFINED(&m[pgsz*2], pgsz); /* undefined */
 
 	/* XXX need a memcheck request to test addressability */
 	m[pgsz*2] = 'x';	/* unmapped fault */
@@ -56,9 +56,9 @@ static void test3()
 {
 	char *m = mm(0, pgsz * 5, PROT_READ|PROT_WRITE);
 
-	VALGRIND_MAKE_MEM_UNDEFINED(&m[pgsz], pgsz);
+	(void) VALGRIND_MAKE_MEM_UNDEFINED(&m[pgsz], pgsz);
 	mm(&m[pgsz], pgsz, PROT_READ);
-	VALGRIND_CHECK_MEM_IS_DEFINED(&m[pgsz], pgsz); /* OK */
+	(void) VALGRIND_CHECK_MEM_IS_DEFINED(&m[pgsz], pgsz); /* OK */
 }
 
 /* Case 4 - mprotect doesn't affect addressability */
@@ -67,7 +67,7 @@ static void test4()
 	char *m = mm(0, pgsz * 5, PROT_READ|PROT_WRITE);
 
 	mprotect(m, pgsz, PROT_WRITE);
-	VALGRIND_CHECK_MEM_IS_DEFINED(m, pgsz); /* OK */
+	(void) VALGRIND_CHECK_MEM_IS_DEFINED(m, pgsz); /* OK */
 	m[44] = 'y';		/* OK */
 
 	mprotect(m, pgsz*5, PROT_NONE);
@@ -79,16 +79,16 @@ static void test5()
 {
 	char *m = mm(0, pgsz * 5, PROT_READ|PROT_WRITE);
 	
-	VALGRIND_MAKE_MEM_UNDEFINED(m, pgsz*5);
+	(void) VALGRIND_MAKE_MEM_UNDEFINED(m, pgsz*5);
 	memset(m, 'x', 10);
-	VALGRIND_CHECK_MEM_IS_DEFINED(m, 10);	/* OK */
-	VALGRIND_CHECK_MEM_IS_DEFINED(m+10, 10); /* BAD */
+	(void) VALGRIND_CHECK_MEM_IS_DEFINED(m, 10);	/* OK */
+	(void) VALGRIND_CHECK_MEM_IS_DEFINED(m+10, 10); /* BAD */
 
 	mprotect(m, pgsz*5, PROT_NONE);
 	mprotect(m, pgsz*5, PROT_READ);
 
-	VALGRIND_CHECK_MEM_IS_DEFINED(m, 10);	/* still OK */
-	VALGRIND_CHECK_MEM_IS_DEFINED(m+20, 10); /* BAD */
+	(void) VALGRIND_CHECK_MEM_IS_DEFINED(m, 10);	/* still OK */
+	(void) VALGRIND_CHECK_MEM_IS_DEFINED(m+20, 10); /* BAD */
 }
 
 static struct test {

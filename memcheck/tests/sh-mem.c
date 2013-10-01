@@ -41,7 +41,7 @@ U8 build(int size, U1 byte)
    U8 mask = 0;
    U8 shres;
    U8 res = 0xffffffffffffffffULL, res2;
-   VALGRIND_MAKE_MEM_UNDEFINED(&res, 8);
+   (void)VALGRIND_MAKE_MEM_UNDEFINED(&res, 8);
    assert(1 == size || 2 == size || 4 == size || 8 == size);
 
    for (i = 0; i < size; i++) {
@@ -116,7 +116,7 @@ int main(void)
    //
    // which is useful for testing below.
    undefA = calloc(1, 256);         // one for each possible undefinedness value
-   VALGRIND_MAKE_MEM_UNDEFINED(undefA, 256);
+   (void)VALGRIND_MAKE_MEM_UNDEFINED(undefA, 256);
    for (i = 0; i < 256; i++) {
       undefA[i] &= i; 
    }
@@ -157,8 +157,8 @@ int main(void)
            /* the output of build() into a variable of type 'Ty'. */ \
             U8  tmpDef     = tmp; \
             ITy undefN_ITyDef = undefN_ITy; \
-            VALGRIND_MAKE_MEM_DEFINED(&tmpDef,        8  ); \
-            VALGRIND_MAKE_MEM_DEFINED(&undefN_ITyDef, NNN); \
+            (void)VALGRIND_MAKE_MEM_DEFINED(&tmpDef,        8  );       \
+            (void)VALGRIND_MAKE_MEM_DEFINED(&undefN_ITyDef, NNN);       \
             assert(tmpDef == (U8)undefN_ITyDef); \
          } \
          \

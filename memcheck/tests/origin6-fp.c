@@ -72,7 +72,7 @@ void setup_arr ( /*OUT*/double** arr, int nArr )
       arr[i][j] = (double)(i * j);
       if (i == nArr/2 && j == nArr/2) {
          unsigned char* p = (unsigned char*)&arr[i][j];
-         VALGRIND_MAKE_MEM_UNDEFINED(p, 1);
+         (void) VALGRIND_MAKE_MEM_UNDEFINED(p, 1);
       }
     }
   }

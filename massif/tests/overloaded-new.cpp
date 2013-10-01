@@ -34,12 +34,12 @@ __attribute__((noinline)) void* operator new[] (std::size_t n, std::nothrow_t co
     return malloc(n);
 }
 
-__attribute__((noinline)) void operator delete (void* p)
+__attribute__((noinline)) void operator delete (void* p) throw()
 {
     return free(p);
 }
 
-__attribute__((noinline)) void operator delete[] (void* p)
+__attribute__((noinline)) void operator delete[] (void* p) throw()
 {
     return free(p);
 }

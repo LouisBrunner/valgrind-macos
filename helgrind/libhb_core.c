@@ -6492,7 +6492,7 @@ static inline Bool TRACEME(Addr a, SizeT szB) {
    if (XXX2 && a <= XXX2 && XXX2 <= a+szB) return True;
    return False;
 }
-static void trace ( Thr* thr, Addr a, SizeT szB, const const HChar* s ) 
+static void trace ( Thr* thr, Addr a, SizeT szB, const HChar* s ) 
 {
   SVal sv = zsm_sread08(a);
   VG_(printf)("thr %p (%#lx,%lu) %s: 0x%016llx ", thr,a,szB,s,sv);

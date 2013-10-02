@@ -41,7 +41,8 @@ EXTRA_DIST = \
 	jm_vec_isa_2_07.stderr.exp jm_vec_isa_2_07.stdout.exp jm_vec_isa_2_07.vgtest \
 	jm_fp_isa_2_07.stderr.exp jm_fp_isa_2_07.stdout.exp jm_fp_isa_2_07.vgtest \
 	jm_int_isa_2_07.stderr.exp jm_int_isa_2_07.stdout.exp jm_int_isa_2_07.vgtest \
-	test_isa_2_07_part2.stderr.exp test_isa_2_07_part2.stdout.exp test_isa_2_07_part2.vgtest
+	test_isa_2_07_part2.stderr.exp test_isa_2_07_part2.stdout.exp test_isa_2_07_part2.vgtest \
+	test_tm.stderr.exp test_tm.stdout.exp test_tm.vgtest
 
 
 check_PROGRAMS = \
@@ -55,8 +56,8 @@ check_PROGRAMS = \
 	test_isa_2_06_part3 \
 	test_dfp1 test_dfp2 test_dfp3 test_dfp4 test_dfp5 \
 	test_isa_2_07_part1 \
-	test_isa_2_07_part2
-
+	test_isa_2_07_part2 \
+	test_tm
 
 AM_CFLAGS    += @FLAG_M32@
 AM_CXXFLAGS  += @FLAG_M32@
@@ -126,4 +127,7 @@ test_isa_2_07_part1_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(
                         @FLAG_M32@ $(BUILD_FLAGS_ISA_2_07)
 
 test_isa_2_07_part2_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(ISA_2_07_FLAG) \
+			@FLAG_M32@ $(BUILD_FLAGS_ISA_2_07)
+
+test_tm_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mhtm -mregnames $(ISA_2_07_FLAG) \
 			@FLAG_M32@ $(BUILD_FLAGS_ISA_2_07)

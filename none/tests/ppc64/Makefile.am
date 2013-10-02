@@ -69,7 +69,7 @@ DFP_FLAG =
 endif
 
 if HAS_ISA_2_07
-BUILD_FLAGS_ISA_2_07 = -mcpu=power8
+BUILD_FLAGS_ISA_2_07 =  -mhtm -mcpu=power8
 ISA_2_07_FLAG = -DHAS_ISA_2_07
 else
 BUILD_FLAGS_ISA_2_07 =
@@ -108,5 +108,5 @@ test_isa_2_07_part1_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(
 test_isa_2_07_part2_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(ISA_2_07_FLAG) \
 			@FLAG_M64@ $(BUILD_FLAGS_ISA_2_07)
 
-test_tm_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mhtm -mregnames $(ISA_2_07_FLAG) \
+test_tm_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(ISA_2_07_FLAG) \
 			@FLAG_M64@ $(BUILD_FLAGS_ISA_2_07)

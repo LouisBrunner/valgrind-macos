@@ -19,6 +19,7 @@ AM_MAINTAINER_MODE
 # Checks for various programs.
 #----------------------------------------------------------------------------
 CFLAGS="-Wno-long-long $CFLAGS"
+CXXFLAGS="-Wno-long-long $CXXFLAGS"
 
 AC_PROG_LN_S
 AC_PROG_CC
@@ -1520,6 +1521,7 @@ CFLAGS=$safe_CFLAGS
 
 if test x$no_write_strings = xyes; then
   CFLAGS="$CFLAGS -Wwrite-strings"
+  CXXFLAGS="$CXXFLAGS -Wwrite-strings"
 fi
 
 AM_CONDITIONAL(HAS_WRITE_STRINGS_WARNING, test x$no_write_strings = xyes)
@@ -1669,6 +1671,7 @@ AC_SUBST(FLAG_FNO_STACK_PROTECTOR)
 
 if test x$no_stack_protector = xyes; then
   CFLAGS="$CFLAGS -fno-stack-protector"
+  CXXFLAGS="$CXXFLAGS -fno-stack-protector"
 fi
 
 
@@ -2619,7 +2622,7 @@ AM_CONDITIONAL([ENABLE_LINUX_TICKET_LOCK_SECONDARY],
 # does libstdc++ support annotating shared pointers ?
 AC_MSG_CHECKING([if libstdc++ supports annotating shared pointers])
 
-safe_CXXFLAGS=$CFLAGS
+safe_CXXFLAGS=$CXXFLAGS
 CXXFLAGS="-std=c++0x"
 
 AC_LANG_PUSH(C++)

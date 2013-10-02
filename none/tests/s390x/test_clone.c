@@ -83,4 +83,5 @@ int main(void)
    forkish();
    threadish();
    EXIT(1);
+   return 0;      // shuts up the compiler
 }

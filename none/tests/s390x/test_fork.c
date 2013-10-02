@@ -16,4 +16,5 @@ int main()
       break;
    }
    EXIT(0);
+   return 0;      // shuts up the compiler
 }

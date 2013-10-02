@@ -2,6 +2,7 @@
 include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS = \
+	check_headers_and_includes \
 	check_isa-2_06_cap \
 	check_makefile_consistency \
 	check_dfp_cap \
@@ -14,6 +15,7 @@ dist_noinst_SCRIPTS = \
 	filter_sink \
 	filter_xml_frames \
 	platform_test \
+	post_regtest_checks \
 	vg_regtest
 
 noinst_HEADERS = \

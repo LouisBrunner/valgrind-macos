@@ -49,6 +49,7 @@ my %tool_dirs = (
 my %dirs_to_ignore = (
     ".deps" => 1,
     ".svn" => 1,
+    ".git" => 1,            # allow git mirrors of the svn repo
     ".in_place" => 1,
     "Inst" => 1,            # the nightly scripts creates this
     "VEX" => 1,

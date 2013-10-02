@@ -12,8 +12,8 @@ int main (int argc, char **argv)
    s1 = DO( open("/dev/null", O_RDONLY) );
    s2 = DO( open("/dev/null", O_RDONLY) );
 
-   DO( dup2(s1, 20) );  // dup s1 as fd 20
-   DO( dup2(s1, s2) );  // dup s1 as fd s2, which closes existing s2 fd
+   (void) DO( dup2(s1, 20) );  // dup s1 as fd 20
+   (void) DO( dup2(s1, s2) );  // dup s1 as fd s2, which closes existing s2 fd
 
    return 0;
 }

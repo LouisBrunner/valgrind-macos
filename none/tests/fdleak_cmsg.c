@@ -47,8 +47,8 @@ void server (void)
    sprintf(addr.sun_path, "%s", sock);
 
    unlink(sock);
-   DO( bind(s, (struct sockaddr *)&addr, sizeof(addr)) );
-   DO( listen(s, 5) );
+   (void) DO( bind(s, (struct sockaddr *)&addr, sizeof(addr)) );
+   (void) DO( listen(s, 5) );
 
    {
       int x;
@@ -77,7 +77,7 @@ void server (void)
       msg.msg_iov = iov;
       msg.msg_iovlen = 1;
 
-      DO( sendmsg(x, &msg, 0) );
+      (void) DO( sendmsg(x, &msg, 0) );
    }
 }
 
@@ -164,8 +164,8 @@ int main (int argc, char **argv)
 
    wait(&status);
 
-   DO( unlink(filea) );
-   DO( unlink(fileb) );
-   DO( unlink(sock) );
+   (void) DO( unlink(filea) );
+   (void) DO( unlink(fileb) );
+   (void) DO( unlink(sock) );
    return 0;
 }

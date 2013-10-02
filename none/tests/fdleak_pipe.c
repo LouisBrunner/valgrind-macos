@@ -7,7 +7,7 @@ int main (int argc, char **argv)
 
    CLOSE_INHERITED_FDS;
 
-   DO( pipe(fds) );
+   (void) DO( pipe(fds) );
 
    return 0;
 }

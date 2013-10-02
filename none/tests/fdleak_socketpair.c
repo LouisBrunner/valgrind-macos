@@ -9,7 +9,7 @@ int main (int argc, char **argv)
 
    CLOSE_INHERITED_FDS;
 
-   DO( socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC, fds) );
+   (void) DO( socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC, fds) );
 
    return 0;
 }

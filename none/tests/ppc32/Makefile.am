@@ -26,6 +26,7 @@ EXTRA_DIST = \
 	twi.stderr.exp twi.stdout.exp twi.vgtest \
 	tw.stderr.exp tw.stdout.exp tw.vgtest \
 	xlc_dbl_u32.stderr.exp xlc_dbl_u32.stdout.exp xlc_dbl_u32.vgtest \
+	opcodes.h \
 	power5+_round.stderr.exp power5+_round.stdout.exp power5+_round.vgtest \
 	power6_bcmp.stderr.exp power6_bcmp.stdout.exp power6_bcmp.vgtest \
 	test_isa_2_06_part1.stderr.exp  test_isa_2_06_part1.stdout.exp  test_isa_2_06_part1.vgtest \

@@ -14,6 +14,7 @@ EXTRA_DIST = \
 	round.stderr.exp round.stdout.exp round.vgtest \
 	twi_tdi.stderr.exp twi_tdi.stdout.exp twi_tdi.vgtest \
 	tw_td.stderr.exp tw_td.stdout.exp tw_td.vgtest \
+	opcodes.h \
 	power6_bcmp.stderr.exp power6_bcmp.stdout.exp power6_bcmp.vgtest \
 	power6_mf_gpr.stderr.exp power6_mf_gpr.stdout.exp power6_mf_gpr.vgtest \
 	test_isa_2_06_part1.stderr.exp  test_isa_2_06_part1.stdout.exp  test_isa_2_06_part1.vgtest \

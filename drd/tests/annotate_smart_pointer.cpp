@@ -29,6 +29,7 @@
 #include <climits>     // PTHREAD_STACK_MIN
 #include <iostream>    // std::cerr
 #include <stdlib.h>    // atoi()
+#include <vector>
 #ifdef _WIN32
 #include <process.h>   // _beginthreadex()
 #include <windows.h>   // CRITICAL_SECTION
@@ -311,12 +312,11 @@ int main(int argc, char** argv)
 
   for (int j = 0; j < iterations; ++j)
   {
-    Thread T[nthreads];
-
+    std::vector<Thread> T(nthreads);
     smart_ptr<counter> p(new counter);
     p->post_increment();
-    for (int i = 0; i < nthreads; ++i)
-      T[i].Create(thread_func, new smart_ptr<counter>(p));
+    for (std::vector<Thread>::iterator q = T.begin(); q != T.end(); q++)
+      q->Create(thread_func, new smart_ptr<counter>(p));
     {
       // Avoid that counter.m_mutex introduces a false ordering on the
       // counter.m_count accesses.
@@ -324,8 +324,8 @@ int main(int argc, char** argv)
       nanosleep(&delay, 0);
     }
     p = NULL;
-    for (int i = 0; i < nthreads; ++i)
-      T[i].Join();
+    for (std::vector<Thread>::iterator q = T.begin(); q != T.end(); q++)
+      q->Join();
   }
   std::cerr << "Done.\n";
   return 0;

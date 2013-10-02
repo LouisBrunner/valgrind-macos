@@ -1034,7 +1034,11 @@ lc_scan_memory(Addr start, SizeT len, Bool is_prior_definite,
                                      ch->data, addr, pp_heuristic(h));
                         }
                      }
-                     tl_assert (h == N_LEAK_CHECK_HEURISTICS - 1);
+                     // Verify the loop above has properly scanned all heuristics.
+                     // If the below fails, it probably means the LeakCheckHeuristic
+                     // enum is not in sync anymore with the above loop and/or
+                     // with N_LEAK_CHECK_HEURISTICS.
+                     tl_assert (h == N_LEAK_CHECK_HEURISTICS);
                   }
                }
             }

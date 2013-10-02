@@ -513,7 +513,7 @@ typedef
   }
   LeakCheckHeuristic;
 
-// Nr of heuristics.
+// Nr of heuristics, including the LchNone heuristic.
 #define N_LEAK_CHECK_HEURISTICS 4
 
 // Build mask to check or set Heuristic h membership

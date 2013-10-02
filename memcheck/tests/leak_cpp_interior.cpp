@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string>
+#include <sstream>
 #include "../memcheck.h"
 // Derived from test provided by Timur Iskhodzhanov (bug 280271)
-
 
 class MyClass
 { 
@@ -74,12 +74,18 @@ Ae *ptrACe;
 B *ptrBC;
 A *ptrAC;
 
+char who_points_at_cmd[100];
 
 void doit(void)
 {
   str = "Valgrind"; // interior ptr.
   str2 = str;
   ptr = new MyClass[3]; // interior ptr.
+  
+  // prepare the who_points_at cmd we will run.
+  // Do it here to avoid having ptr or its exterior ptr kept in a register.
+  sprintf(who_points_at_cmd, "who_points_at %p 20", (char*)ptr - sizeof(void*));
+
   ptr2 = new MyClass[0]; // "interior but exterior ptr".
   // ptr2 points after the chunk, is wrongly considered by memcheck as definitely leaked.
 
@@ -108,6 +114,9 @@ int main() {
    (void) VALGRIND_MONITOR_COMMAND("leak_check summary heuristics newarray");
    fprintf(stderr, "leak_check summary heuristics stdstring\n");
    (void) VALGRIND_MONITOR_COMMAND("leak_check summary heuristics stdstring");
+
+   // Test the who_points_at when the block is pointed to with an interior ptr.
+   (void) VALGRIND_MONITOR_COMMAND(who_points_at_cmd);
 
    delete [] ptr;
    delete [] ptr2;

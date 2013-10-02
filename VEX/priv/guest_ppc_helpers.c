@@ -511,7 +511,8 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
    vex_state->guest_IP_AT_SYSCALL = 0;
    vex_state->guest_SPRG3_RO = 0;
 
-   vex_state->padding = 0;
+   vex_state->padding1 = 0;
+   vex_state->padding2 = 0;
 }
 
 
@@ -676,10 +677,9 @@ void LibVEX_GuestPPC64_initialise ( /*OUT*/VexGuestPPC64State* vex_state )
 
    vex_state->guest_IP_AT_SYSCALL = 0;
    vex_state->guest_SPRG3_RO = 0;
-
-   vex_state->padding2 = 0;
-   vex_state->padding3 = 0;
-   vex_state->padding4 = 0;
+   vex_state->guest_TFHAR  = 0;
+   vex_state->guest_TFIAR  = 0;
+   vex_state->guest_TEXASR = 0;
 }
 
 

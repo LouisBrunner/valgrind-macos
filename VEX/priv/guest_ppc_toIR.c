@@ -232,6 +232,9 @@ static void* fnptr_to_fnentry( VexAbiInfo* vbi, void* f )
 #define OFFB_TILEN       offsetofPPCGuestState(guest_TILEN)
 #define OFFB_NRADDR      offsetofPPCGuestState(guest_NRADDR)
 #define OFFB_NRADDR_GPR2 offsetofPPCGuestState(guest_NRADDR_GPR2)
+#define OFFB_TFHAR       offsetofPPCGuestState(guest_TFHAR)
+#define OFFB_TEXASR      offsetofPPCGuestState(guest_TEXASR)
+#define OFFB_TFIAR       offsetofPPCGuestState(guest_TFIAR)
 
 
 /*------------------------------------------------------------*/
@@ -378,6 +381,9 @@ typedef enum {
     PPC_GST_TILEN,  // For icbi: length of area to invalidate
     PPC_GST_IP_AT_SYSCALL, // the CIA of the most recently executed SC insn
     PPC_GST_SPRG3_RO, // SPRG3
+    PPC_GST_TFHAR,  // Transactional Failure Handler Address Register
+    PPC_GST_TFIAR,  // Transactional Failure Instruction Address Register
+    PPC_GST_TEXASR, // Transactional EXception And Summary Register
     PPC_GST_MAX
 } PPC_GST;
 
@@ -2546,6 +2552,15 @@ static IRExpr* /* :: Ity_I32/64 */ getGST ( PPC_GST reg )
                          binop( Iop_Shl32, getXER_CA32(), mkU8(29)),
                          getXER_BC32()));
 
+   case PPC_GST_TFHAR:
+      return IRExpr_Get( OFFB_TFHAR, ty );
+
+   case PPC_GST_TEXASR:
+      return IRExpr_Get( OFFB_TEXASR, ty );
+
+   case PPC_GST_TFIAR:
+      return IRExpr_Get( OFFB_TFIAR, ty );
+
    default:
       vex_printf("getGST(ppc): reg = %u", reg);
       vpanic("getGST(ppc)");
@@ -2707,6 +2722,18 @@ static void putGST ( PPC_GST reg, IRExpr* src )
       stmt( IRStmt_Put( OFFB_TILEN, src) );
       break;
       
+   case PPC_GST_TEXASR:
+      vassert( ty_src == Ity_I64 );
+      stmt( IRStmt_Put( OFFB_TEXASR, src ) );
+      break;
+   case PPC_GST_TFIAR:
+      vassert( ty_src == Ity_I64 );
+      stmt( IRStmt_Put( OFFB_TFIAR, src ) );
+      break;
+   case PPC_GST_TFHAR:
+      vassert( ty_src == Ity_I64 );
+      stmt( IRStmt_Put( OFFB_TFHAR, src ) );
+      break;
    default:
       vex_printf("putGST(ppc): reg = %u", reg);
       vpanic("putGST(ppc)");
@@ -3050,6 +3077,50 @@ static IRTemp getNegatedResult_32(IRTemp intermediateResult)
                          mkU8( 31 ) ) ) );
 
    return negatedResult;
+}
+
+/*------------------------------------------------------------*/
+/* Transactional memory helpers
+ *
+ *------------------------------------------------------------*/
+
+static ULong generate_TMreason( UInt failure_code,
+                                             UInt persistant,
+                                             UInt nest_overflow,
+                                             UInt tm_exact )
+{
+   ULong tm_err_code =
+     ( (ULong) 0) << (63-6)   /* Failure code */
+     | ( (ULong) persistant) << (63-7)     /* Failure persistant */
+     | ( (ULong) 0) << (63-8)   /* Disallowed */
+     | ( (ULong) nest_overflow) << (63-9)   /* Nesting Overflow */
+     | ( (ULong) 0) << (63-10)  /* Footprint Overflow */
+     | ( (ULong) 0) << (63-11)  /* Self-Induced Conflict */
+     | ( (ULong) 0) << (63-12)  /* Non-Transactional Conflict */
+     | ( (ULong) 0) << (63-13)  /* Transactional Conflict */
+     | ( (ULong) 0) << (63-14)  /* Translation Invalidation Conflict */
+     | ( (ULong) 0) << (63-15)  /* Implementation-specific */
+     | ( (ULong) 0) << (63-16)  /* Instruction Fetch Conflict */
+     | ( (ULong) 0) << (63-30)  /* Reserved */
+     | ( (ULong) 0) << (63-31)  /* Abort */
+     | ( (ULong) 0) << (63-32)  /* Suspend */
+     | ( (ULong) 0) << (63-33)  /* Reserved */
+     | ( (ULong) 0) << (63-35)  /* Privilege */
+     | ( (ULong) 0) << (63-36)  /* Failure Summary */
+     | ( (ULong) tm_exact) << (63-37)  /* TFIAR Exact */
+     | ( (ULong) 0) << (63-38)  /* ROT */
+     | ( (ULong) 0) << (63-51)  /* Reserved */
+     | ( (ULong) 0) << (63-63);  /* Transaction Level */
+
+     return tm_err_code;
+}
+
+static void storeTMfailure( Addr64 err_address, ULong tm_reason,
+                            Addr64 handler_address )
+{
+   putGST( PPC_GST_TFIAR,  mkU64( err_address ) );
+   putGST( PPC_GST_TEXASR, mkU64( tm_reason ) );
+   putGST( PPC_GST_TFHAR,  mkU64( handler_address ) );
 }
 
 /*------------------------------------------------------------*/
@@ -6680,6 +6751,18 @@ static Bool dis_proc_ctl ( VexAbiInfo* vbi, UInt theInstr )
          DIP("mfctr r%u\n", rD_addr);
          putIReg( rD_addr, getGST( PPC_GST_CTR ) ); 
          break;
+      case 0x80:  // 128
+         DIP("mfspr r%u (TFHAR)\n", rD_addr);
+         putIReg( rD_addr, getGST( PPC_GST_TFHAR) );
+         break;
+      case 0x81:  // 129
+         DIP("mfspr r%u (TFIAR)\n", rD_addr);
+         putIReg( rD_addr, getGST( PPC_GST_TFIAR) );
+         break;
+      case 0x82:  // 130
+         DIP("mfspr r%u (TEXASR)\n", rD_addr);
+         putIReg( rD_addr, getGST( PPC_GST_TEXASR) );
+         break;
       case 0x100: 
          DIP("mfvrsave r%u\n", rD_addr);
          putIReg( rD_addr, mkWidenFrom32(ty, getGST( PPC_GST_VRSAVE ),
@@ -6824,7 +6907,18 @@ static Bool dis_proc_ctl ( VexAbiInfo* vbi, UInt theInstr )
          DIP("mtvrsave r%u\n", rS_addr);
          putGST( PPC_GST_VRSAVE, mkNarrowTo32(ty, mkexpr(rS)) );
          break;
-
+      case 0x80:  // 128
+         DIP("mtspr r%u (TFHAR)\n", rS_addr);
+         putGST( PPC_GST_TFHAR, mkexpr(rS) );
+         break;
+      case 0x81:  // 129
+         DIP("mtspr r%u (TFIAR)\n", rS_addr);
+         putGST( PPC_GST_TFIAR, mkexpr(rS) );
+         break;
+      case 0x82:  // 130
+         DIP("mtspr r%u (TEXASR)\n", rS_addr);
+         putGST( PPC_GST_TEXASR, mkexpr(rS) );
+         break;
       default:
          vex_printf("dis_proc_ctl(ppc)(mtspr,SPR)(%u)\n", SPR);
          return False;
@@ -16894,6 +16988,148 @@ static Bool dis_av_fp_convert ( UInt theInstr )
    return True;
 }
 
+static Bool dis_transactional_memory ( UInt theInstr, UInt nextInstr,
+                                       VexAbiInfo* vbi,
+                                       /*OUT*/DisResult* dres,
+                                       Bool (*resteerOkFn)(void*,Addr64),
+                                       void* callback_opaque )
+{
+   UInt   opc2      = IFIELD( theInstr, 1, 10 );
+
+   switch (opc2) {
+   case 0x28E: {        //tbegin.
+      /* The current implementation is to just fail the tbegin and execute
+       * the failure path.  The failure path is assumed to be functionaly
+       * equivalent to the transactional path with the needed data locking
+       * to ensure correctness.  The tend is just a noop and shouldn't
+       * actually get executed.
+       *   1) set cr0 to 0x2
+       *   2) Initialize TFHAR to CIA+4
+       *   3) Initialize TEXASR
+       *   4) Initialize TFIAR (probably to CIA, ie, the address of tbegin.)
+       *   5) Continue executing at the next instruction.
+       */
+      UInt R = IFIELD( theInstr, 21, 1 );
+
+      ULong tm_reason;
+      UInt failure_code = 0;  /* Forcing failure, will not be due to tabort
+                               * or treclaim.
+                               */
+      UInt persistant = 1;    /* set persistant since we are always failing
+                               * the tbegin.
+                               */
+      UInt nest_overflow = 1; /* Alowed nesting depth overflow, we use this
+                                 as the reason for failing the trasaction */
+      UInt tm_exact   = 1;    /* have exact address for failure */
+
+      DIP("tbegin. %d\n", R);
+
+      /* Set the CR0 field to indicate the tbegin failed.  Then let
+       * the code do the branch to the failure path.
+       *
+       * 000 || 0  Transaction initiation successful,
+       *           unnested (Transaction state of
+       *           Non-transactional prior to tbegin.)
+       * 010 || 0  Transaction initiation successful, nested
+       *           (Transaction state of Transactional
+       *           prior to tbegin.)
+       * 001 || 0  Transaction initiation unsuccessful,
+       *           (Transaction state of Suspended prior
+       *           to tbegin.)
+       */
+      putCR321( 0, mkU8( 0x2 ) );
+
+      tm_reason = generate_TMreason( failure_code, persistant,
+                                     nest_overflow, tm_exact );
+
+      storeTMfailure( guest_CIA_curr_instr, tm_reason,
+                      guest_CIA_curr_instr+4 );
+
+      return True;
+
+      break;
+   }
+
+   case 0x2AE: {        //tend.
+      /* The tend. is just a noop.  Do nothing */
+      UInt A = IFIELD( theInstr, 25, 1 );
+
+      DIP("tend. %d\n", A);
+      break;
+   }
+
+   case 0x2EE: {        //tsr.
+      /* The tsr. is just a noop.  Do nothing */
+      UInt L = IFIELD( theInstr, 21, 1 );
+
+      DIP("tsr. %d\n", L);
+      break;
+   }
+
+   case 0x2CE: {        //tcheck.
+      /* The tcheck. is just a noop.  Do nothing */
+      UInt BF = IFIELD( theInstr, 25, 1 );
+
+      DIP("tcheck. %d\n", BF);
+      break;
+   }
+
+   case 0x30E: {        //tbortwc.
+      /* The tabortwc. is just a noop.  Do nothing */
+      UInt TO = IFIELD( theInstr, 25, 1 );
+      UInt RA = IFIELD( theInstr, 16, 5 );
+      UInt RB = IFIELD( theInstr, 11, 5 );
+
+      DIP("tabortwc. %d,%d,%d\n", TO, RA, RB);
+      break;
+   }
+
+   case 0x32E: {        //tbortdc.
+      /* The tabortdc. is just a noop.  Do nothing */
+      UInt TO = IFIELD( theInstr, 25, 1 );
+      UInt RA = IFIELD( theInstr, 16, 5 );
+      UInt RB = IFIELD( theInstr, 11, 5 );
+
+      DIP("tabortdc. %d,%d,%d\n", TO, RA, RB);
+      break;
+   }
+
+   case 0x34E: {        //tbortwci.
+      /* The tabortwci. is just a noop.  Do nothing */
+      UInt TO = IFIELD( theInstr, 25, 1 );
+      UInt RA = IFIELD( theInstr, 16, 5 );
+      UInt SI = IFIELD( theInstr, 11, 5 );
+
+      DIP("tabortwci. %d,%d,%d\n", TO, RA, SI);
+      break;
+   }
+
+   case 0x36E: {        //tbortdci.
+      /* The tabortdci. is just a noop.  Do nothing */
+      UInt TO = IFIELD( theInstr, 25, 1 );
+      UInt RA = IFIELD( theInstr, 16, 5 );
+      UInt SI = IFIELD( theInstr, 11, 5 );
+
+      DIP("tabortdci. %d,%d,%d\n", TO, RA, SI);
+      break;
+   }
+
+   case 0x38E: {        //tbort.
+      /* The tabort. is just a noop.  Do nothing */
+      UInt RA = IFIELD( theInstr, 16, 5 );
+
+      DIP("tabort. %d\n", RA);
+      break;
+   }
+
+   default:
+      vex_printf("dis_transactional_memory(ppc): unrecognized instruction\n");
+      return False;
+   }
+
+   return True;
+}
+
 
 /* The 0x3C primary opcode (VSX category) uses several different forms of
  * extended opcodes:
@@ -17949,6 +18185,17 @@ DisResult disInstr_PPC_WRK (
       case 0x19C: case 0x13C:             // orc,  xor
       case 0x2DF: case 0x25F:            // mftgpr, mffgpr
          if (dis_int_logic( theInstr )) goto decode_success;
+         goto decode_failure;
+
+      case 0x28E: case 0x2AE:             // tbegin., tend.
+      case 0x2EE: case 0x2CE: case 0x30E: // tsr., tcheck., tabortwc.
+      case 0x32E: case 0x34E: case 0x36E: // tabortdc., tabortwci., tabortdci.
+      case 0x38E:                         // tabort.
+      if (dis_transactional_memory( theInstr,
+                                    getUIntBigendianly( (UChar*)(&guest_code[delta + 4])),
+                                    abiinfo, &dres,
+                                    resteerOkFn, callback_opaque))
+            goto decode_success;
          goto decode_failure;
 
       /* 64bit Integer Logical Instructions */

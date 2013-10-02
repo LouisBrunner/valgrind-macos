@@ -279,11 +279,10 @@ typedef
          threading on AIX. */
       /* 1648 */ ULong guest_SPRG3_RO;
 
-      /* offsets in comments are wrong ..*/
-      /* Padding to make it have an 16-aligned size */
-      /* 1656 */ ULong padding2;
-      /* 16XX */ ULong padding3;
-      /* 16XX */ ULong padding4;
+      /* 1656 */ ULong guest_TFHAR;     // Transaction Failure Handler Address Register 
+      /* 1664 */ ULong guest_TEXASR;    // Transaction EXception And Summary Register
+      /* 1672 */ ULong guest_TFIAR;     // Transaction Failure Instruction Address Register
+
    }
    VexGuestPPC64State;
 

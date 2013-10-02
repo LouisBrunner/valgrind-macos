@@ -237,9 +237,14 @@ typedef
       /* SPRG3, which AIUI is readonly in user space.  Needed for
          threading on AIX. */
       /* 1352 */ UInt guest_SPRG3_RO;
+      /* 1356 */ UInt  padding1;
+      /* 1360 */ ULong guest_TFHAR;     // Transaction Failure Handler Address Register 
+      /* 1368 */ ULong guest_TEXASR;    // Transaction EXception And Summary Register
+      /* 1376 */ ULong guest_TFIAR;     // Transaction Failure Instruction Address Register
 
       /* Padding to make it have an 8-aligned size */
-      /* 1356 */ UInt  padding;
+      /* 1384 */ UInt  padding2;
+
    }
    VexGuestPPC32State;
 

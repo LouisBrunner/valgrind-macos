@@ -7,14 +7,15 @@
 #include <sys/mman.h>
 #include <sys/syscall.h>
 
-typedef unsigned long          UWord;
+typedef unsigned long            UWord;
+typedef unsigned long long int   ULong;
+// Below code is copied from m_syscall.c
+// Refer to this file for syscall convention.
+#if defined(VGP_x86_linux)
 extern UWord do_syscall_WRK (UWord syscall_no, 
                              UWord a1, UWord a2, UWord a3,
                              UWord a4, UWord a5, UWord a6
                              );
-// Below code is copied from m_syscall.c
-// Refer to this file for syscall convention.
-#if defined(VGP_x86_linux)
 asm(
 ".text\n"
 ".globl do_syscall_WRK\n"
@@ -104,7 +105,6 @@ asm(
 ".previous\n"
 );
 #elif defined(VGP_s390x_linux)
-typedef  unsigned long long int   ULong;
 UWord do_syscall_WRK (
    UWord syscall_no,
    UWord arg1, UWord arg2, UWord arg3,

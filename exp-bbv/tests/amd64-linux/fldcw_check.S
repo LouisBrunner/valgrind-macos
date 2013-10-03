@@ -132,7 +132,7 @@ big_loop:
 	fnstcw	saved_cw		# store control word to mem
 	movzwl	saved_cw, %eax		# load cw from mem, zero extending
 	movb	$12, %ah		# set cw for "round to zero"
-	movw	%rax, cw		# store back to memory
+	movw	%ax, cw			# store back to memory
 	fldcw	cw   			# save new rounding mode
 	fistpl	result			# save stack value as integer to mem
 	fldcw	saved_cw		# restore old cw

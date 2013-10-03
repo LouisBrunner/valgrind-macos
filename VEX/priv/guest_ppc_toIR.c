@@ -12194,7 +12194,7 @@ dis_vx_conv ( UInt theInstr, UInt opc2 )
          assign( xB2, unop( Iop_V128to64, getVSReg( XB ) ) );
          break;
       // scalar [un]signed integer doubleword argument
-      case 0x2F0: case 0x2D0:
+      case 0x250: case 0x270: case 0x2D0: case 0x2F0:
          xB = newTemp(Ity_I64);
          assign( xB, unop( Iop_V128HIto64, getVSReg( XB ) ) );
          break;
@@ -12255,6 +12255,20 @@ dis_vx_conv ( UInt theInstr, UInt opc2 )
                                  mkexpr( xB ) ),
                                  mkU64( 0ULL ) ) );
          break;
+      case 0x270:
+         // xscvsxdsp (VSX Scalar Convert and round Signed Integer Doubleword
+         //             to Single-Precision format)
+         DIP("xscvsxdsp v%u,v%u\n",  (UInt)XT, (UInt)XB);
+         putVSReg( XT,
+                   binop( Iop_64HLtoV128,
+                          unop( Iop_ReinterpF64asI64,
+                                binop( Iop_RoundF64toF32,
+                                       get_IR_roundingmode(),
+                                       binop( Iop_I64StoF64,
+                                              get_IR_roundingmode(),
+                                              mkexpr( xB ) ) ) ),
+                          mkU64( 0 ) ) );
+         break;
       case 0x2F0:
          // xscvsxddp (VSX Scalar Convert and round Signed Integer Doubleword to
          //            Double-Precision format)
@@ -12264,6 +12278,20 @@ dis_vx_conv ( UInt theInstr, UInt opc2 )
                                                 binop( Iop_I64StoF64, get_IR_roundingmode(),
                                                        mkexpr( xB ) ) ),
                                                        mkU64( 0 ) ) );
+         break;
+      case 0x250:
+         // xscvuxdsp (VSX Scalar Convert and round Unsigned Integer
+         //            Doubleword to Singel-Precision format)
+         DIP("xscvuxdsp v%u,v%u\n",  (UInt)XT, (UInt)XB);
+         putVSReg( XT,
+                   binop( Iop_64HLtoV128,
+                          unop( Iop_ReinterpF64asI64,
+                                binop( Iop_RoundF64toF32,
+                                       get_IR_roundingmode(),
+                                       binop( Iop_I64UtoF64,
+                                              get_IR_roundingmode(),
+                                              mkexpr( xB ) ) ) ),
+                          mkU64( 0 ) ) );
          break;
       case 0x2D0:
          // xscvuxddp (VSX Scalar Convert and round Unsigned Integer Doubleword to
@@ -12359,7 +12387,7 @@ dis_vx_conv ( UInt theInstr, UInt opc2 )
                           mkU64( 0ULL ) ) );
          break;
       case 0x216: /* xscvdpspn (VSX Scalar convert scalar Single-Precision to
-                              vector single Convert to Single-Precision non-signalling */
+                              vector Single-Precision non-signalling */
          DIP("xscvdpspn v%u,v%u\n",  (UInt)XT, (UInt)XB);
          putVSReg( XT,
                    binop( Iop_64HLtoV128,
@@ -12367,8 +12395,8 @@ dis_vx_conv ( UInt theInstr, UInt opc2 )
                                  unop( Iop_ReinterpF32asI32,
                                        unop( Iop_TruncF64asF32,
                                              mkexpr( xB ) ) ),
-                                             mkU32( 0 ) ),
-                                             mkU64( 0ULL ) ) );
+                                 mkU32( 0 ) ),
+                          mkU64( 0ULL ) ) );
          break;
       case 0x090: // xscvdpuxws (VSX Scalar truncate Double-Precision to integer
                   //             and Convert to Unsigned Integer Word format with Saturate)
@@ -12382,7 +12410,7 @@ dis_vx_conv ( UInt theInstr, UInt opc2 )
                                         mkexpr( xB ) ) ),
                           mkU64( 0ULL ) ) );
          break;
-      case 0x292: // xscvspdp (VSX Scalar Convert Single-Precision to Double-Precision format)
+      case 0x292: // xscvspdp (VSX Scalar Convert Single-Precision to Double-Precision format, signaling)
          DIP("xscvspdp v%u,v%u\n",  (UInt)XT, (UInt)XB);
          putVSReg( XT,
                    binop( Iop_64HLtoV128,
@@ -13966,6 +13994,26 @@ dis_vxs_arith ( UInt theInstr, UInt opc2 )
     * element to zero where it makes sense to do so.
     */
    switch (opc2) {
+      case 0x000: // xsaddsp  (VSX Scalar Add Single-Precision)
+         DIP("xsaddsp v%d,v%d,v%d\n", (UInt)XT, (UInt)XA, (UInt)XB);
+         putVSReg( XT, binop( Iop_64HLtoV128,
+                              unop( Iop_ReinterpF64asI64,
+                                    binop( Iop_RoundF64toF32, rm,
+                                           triop( Iop_AddF64, rm,
+                                                  mkexpr( frA ),
+                                                  mkexpr( frB ) ) ) ),
+                              mkU64( 0 ) ) );
+         break;
+      case 0x020: // xssubsp  (VSX Scalar Subtract Single-Precision)
+         DIP("xssubsp v%d,v%d,v%d\n", (UInt)XT, (UInt)XA, (UInt)XB);
+         putVSReg( XT, binop( Iop_64HLtoV128,
+                              unop( Iop_ReinterpF64asI64,
+                                    binop( Iop_RoundF64toF32, rm,
+                                           triop( Iop_SubF64, rm,
+                                                  mkexpr( frA ),
+                                                  mkexpr( frB ) ) ) ),
+                              mkU64( 0 ) ) );
+         break;
       case 0x080: // xsadddp (VSX scalar add double-precision)
          DIP("xsadddp v%d,v%d,v%d\n", (UInt)XT, (UInt)XA, (UInt)XB);
          putVSReg( XT, binop( Iop_64HLtoV128, unop( Iop_ReinterpF64asI64,
@@ -13973,6 +14021,16 @@ dis_vxs_arith ( UInt theInstr, UInt opc2 )
                                                            mkexpr( frA ),
                                                            mkexpr( frB ) ) ),
                               mkU64( 0 ) ) );
+         break;
+      case 0x060: // xsdivsp (VSX scalar divide single-precision)
+         DIP("xsdivsp v%d,v%d,v%d\n", (UInt)XT, (UInt)XA, (UInt)XB);
+         putVSReg( XT, binop( Iop_64HLtoV128,
+                              unop( Iop_ReinterpF64asI64,
+                                    binop( Iop_RoundF64toF32, rm,
+                                           triop( Iop_DivF64, rm,
+                                                  mkexpr( frA ),
+                                                  mkexpr( frB ) ) ) ),
+                               mkU64( 0 ) ) );
          break;
       case 0x0E0: // xsdivdp (VSX scalar divide double-precision)
          DIP("xsdivdp v%d,v%d,v%d\n", (UInt)XT, (UInt)XA, (UInt)XB);
@@ -13982,6 +14040,26 @@ dis_vxs_arith ( UInt theInstr, UInt opc2 )
                                                            mkexpr( frB ) ) ),
                               mkU64( 0 ) ) );
          break;
+      case 0x004: case 0x024: /* xsmaddasp, xsmaddmsp (VSX scalar multiply-add
+                               * single-precision)
+                               */
+      {
+         IRTemp frT = newTemp(Ity_F64);
+         Bool mdp = opc2 == 0x024;
+         DIP("xsmadd%ssp v%d,v%d,v%d\n", mdp ? "m" : "a", (UInt)XT, (UInt)XA, (UInt)XB);
+         assign( frT, unop( Iop_ReinterpI64asF64, unop( Iop_V128HIto64,
+                                                        getVSReg( XT ) ) ) );
+         putVSReg( XT,
+                   binop( Iop_64HLtoV128,
+                          unop( Iop_ReinterpF64asI64,
+                                binop( Iop_RoundF64toF32, rm,
+                                       qop( Iop_MAddF64, rm,
+                                            mkexpr( frA ),
+                                            mkexpr( mdp ? frT : frB ),
+                                            mkexpr( mdp ? frB : frT ) ) ) ),
+                          mkU64( 0 ) ) );
+         break;
+      }
       case 0x084: case 0x0A4: // xsmaddadp, xsmaddmdp (VSX scalar multiply-add double-precision)
       {
          IRTemp frT = newTemp(Ity_F64);
@@ -13995,6 +14073,26 @@ dis_vxs_arith ( UInt theInstr, UInt opc2 )
                                                          mkexpr( mdp ? frT : frB ),
                                                          mkexpr( mdp ? frB : frT ) ) ),
                               mkU64( 0 ) ) );
+         break;
+      }
+      case 0x044: case 0x064: /* xsmsubasp, xsmsubmsp (VSX scalar
+                               * multiply-subtract single-precision)
+			       */
+      {
+         IRTemp frT = newTemp(Ity_F64);
+         Bool mdp = opc2 == 0x064;
+         DIP("xsmsub%ssp v%d,v%d,v%d\n", mdp ? "m" : "a", (UInt)XT, (UInt)XA, (UInt)XB);
+         assign( frT, unop( Iop_ReinterpI64asF64, unop( Iop_V128HIto64,
+                                                        getVSReg( XT ) ) ) );
+         putVSReg( XT,
+                   binop( Iop_64HLtoV128,
+                          unop( Iop_ReinterpF64asI64,
+                                binop( Iop_RoundF64toF32, rm,
+                                       qop( Iop_MSubF64, rm,
+                                            mkexpr( frA ),
+                                            mkexpr( mdp ? frT : frB ),
+                                            mkexpr( mdp ? frB : frT ) ) ) ),
+                          mkU64( 0 ) ) );
          break;
       }
       case 0x0C4: case 0x0E4: // xsmsubadp, xsmsubmdp (VSX scalar multiply-subtract double-precision)
@@ -14037,6 +14135,56 @@ dis_vxs_arith ( UInt theInstr, UInt opc2 )
                               mkU64( 0 ) ) );
          break;
       }
+      case 0x204: case 0x224: /* xsnmaddasp, xsnmaddmsp (VSX scalar
+                               * multiply-add single-precision)
+                               */
+      {
+         Bool mdp = opc2 == 0x224;
+         IRTemp frT = newTemp(Ity_F64);
+         IRTemp maddResult = newTemp(Ity_I64);
+
+         DIP("xsnmadd%ssp v%d,v%d,v%d\n", mdp ? "m" : "a", (UInt)XT, (UInt)XA, (UInt)XB);
+         assign( frT, unop( Iop_ReinterpI64asF64, unop( Iop_V128HIto64,
+                                                        getVSReg( XT ) ) ) );
+         assign( maddResult,
+                 unop( Iop_ReinterpF64asI64,
+                       binop( Iop_RoundF64toF32, rm,
+                              qop( Iop_MAddF64, rm,
+                                   mkexpr( frA ),
+                                   mkexpr( mdp ? frT : frB ),
+                                   mkexpr( mdp ? frB : frT ) ) ) ) );
+
+         putVSReg( XT, binop( Iop_64HLtoV128,
+                              mkexpr( getNegatedResult(maddResult) ),
+                              mkU64( 0 ) ) );
+         break;
+      }
+      case 0x244: case 0x264: /* xsnmsubasp, xsnmsubmsp (VSX Scalar Negative
+                               * Multiply-Subtract Single-Precision)
+                               */
+      {
+         IRTemp frT = newTemp(Ity_F64);
+         Bool mdp = opc2 == 0x264;
+         IRTemp msubResult = newTemp(Ity_I64);
+
+         DIP("xsnmsub%ssp v%d,v%d,v%d\n", mdp ? "m" : "a", (UInt)XT, (UInt)XA, (UInt)XB);
+         assign( frT, unop( Iop_ReinterpI64asF64, unop( Iop_V128HIto64,
+                                                        getVSReg( XT ) ) ) );
+         assign( msubResult,
+                 unop( Iop_ReinterpF64asI64,
+                       binop( Iop_RoundF64toF32, rm,
+                              qop( Iop_MSubF64, rm,
+                                   mkexpr( frA ),
+                                   mkexpr( mdp ? frT : frB ),
+                                   mkexpr( mdp ? frB : frT ) ) ) ) );
+
+         putVSReg( XT, binop( Iop_64HLtoV128,
+                              mkexpr( getNegatedResult(msubResult) ),
+                              mkU64( 0 ) ) );
+
+         break;
+      }
+
       case 0x2C4: case 0x2E4: // xsnmsubadp, xsnmsubmdp (VSX Scalar Negative Multiply-Subtract Double-Precision)
       {
          IRTemp frT = newTemp(Ity_F64);
@@ -14058,6 +14206,17 @@ dis_vxs_arith ( UInt theInstr, UInt opc2 )
          break;
       }
 
+      case 0x040: // xsmulsp (VSX Scalar Multiply Single-Precision)
+         DIP("xsmulsp v%d,v%d,v%d\n", (UInt)XT, (UInt)XA, (UInt)XB);
+         putVSReg( XT, binop( Iop_64HLtoV128,
+                              unop( Iop_ReinterpF64asI64,
+                                    binop( Iop_RoundF64toF32, rm,
+                                           triop( Iop_MulF64, rm,
+                                                   mkexpr( frA ),
+                                                   mkexpr( frB ) ) ) ),
+                              mkU64( 0 ) ) );
+         break;
+
       case 0x0C0: // xsmuldp (VSX Scalar Multiply Double-Precision)
          DIP("xsmuldp v%d,v%d,v%d\n", (UInt)XT, (UInt)XA, (UInt)XB);
          putVSReg( XT, binop( Iop_64HLtoV128, unop( Iop_ReinterpF64asI64,
@@ -14073,6 +14232,17 @@ dis_vxs_arith ( UInt theInstr, UInt opc2 )
                                                            mkexpr( frA ),
                                                            mkexpr( frB ) ) ),
                               mkU64( 0 ) ) );
+         break;
+
+      case 0x016: // xssqrtsp (VSX Scalar Square Root Single-Precision)
+         DIP("xssqrtsp v%d,v%d\n", (UInt)XT, (UInt)XB);
+         putVSReg( XT,
+                   binop( Iop_64HLtoV128,
+                          unop( Iop_ReinterpF64asI64,
+                                binop( Iop_RoundF64toF32, rm,
+                                       binop( Iop_SqrtF64, rm,
+                                              mkexpr( frB ) ) ) ),
+                          mkU64( 0 ) ) );
          break;
 
       case 0x096: // xssqrtdp (VSX Scalar Square Root Double-Precision)
@@ -14465,6 +14635,41 @@ dis_vxs_misc( UInt theInstr, UInt opc2 )
                           mkU64( 0 ) ) );
          break;
       }
+      case 0x034: // xsresp (VSX Scalar Reciprocal Estimate single-Precision)
+      case 0x014: /* xsrsqrtesp (VSX Scalar Reciprocal Square Root Estimate
+                   * single-Precision)
+                   */
+      {
+         IRTemp frB = newTemp(Ity_F64);
+         IRTemp sqrt = newTemp(Ity_F64);
+         IRExpr* ieee_one = IRExpr_Const(IRConst_F64i(0x3ff0000000000000ULL));
+         IRExpr* rm  = get_IR_roundingmode();
+         Bool redp = opc2 == 0x034;
+         DIP("%s v%d,v%d\n", redp ? "xsresp" : "xsrsqrtesp", (UInt)XT,
+             (UInt)XB);
+
+         assign( frB,
+                 unop( Iop_ReinterpI64asF64,
+                       unop( Iop_V128HIto64, mkexpr( vB ) ) ) );
+
+         if (!redp)
+            assign( sqrt,
+                    binop( Iop_SqrtF64,
+                           rm,
+                           mkexpr(frB) ) );
+         putVSReg( XT,
+                      binop( Iop_64HLtoV128,
+                             unop( Iop_ReinterpF64asI64,
+                                   binop( Iop_RoundF64toF32, rm,
+                                          triop( Iop_DivF64,
+                                                 rm,
+                                                 ieee_one,
+                                                 redp ? mkexpr( frB ) :
+                                                        mkexpr( sqrt ) ) ) ),
+                             mkU64( 0 ) ) );
+         break;
+      }
+
       case 0x0B4: // xsredp (VSX Scalar Reciprocal Estimate Double-Precision)
       case 0x094: // xsrsqrtedp (VSX Scalar Reciprocal Square Root Estimate Double-Precision)
 
@@ -14492,6 +14697,24 @@ dis_vxs_misc( UInt theInstr, UInt opc2 )
                                           ieee_one,
                                           redp ? mkexpr( frB ) : mkexpr( sqrt ) ) ),
                              mkU64( 0 ) ) );
+         break;
+      }
+
+      case 0x232: // xsrsp (VSX Scalar Round to Single-Precision)
+      {
+         IRTemp frB = newTemp(Ity_F64);
+         IRExpr* rm  = get_IR_roundingmode();
+         DIP("xsrsp v%d, v%d\n", (UInt)XT, (UInt)XB);
+         assign( frB,
+                 unop( Iop_ReinterpI64asF64,
+                       unop( Iop_V128HIto64, mkexpr( vB ) ) ) );
+
+         putVSReg( XT, binop( Iop_64HLtoV128,
+                              unop( Iop_ReinterpF64asI64,
+                                    binop( Iop_RoundF64toF32,
+                                           rm,
+                                           mkexpr( frB ) ) ),
+                              mkU64( 0 ) ) );
          break;
       }
 
@@ -14547,6 +14770,24 @@ dis_vx_logic ( UInt theInstr, UInt opc2 )
          putVSReg( XT, binop( Iop_AndV128, mkexpr( vA ), unop( Iop_NotV128,
                                                                mkexpr( vB ) ) ) );
          break;
+      case 0x2A8: // xxlorc (VSX Logical OR with complement)
+         DIP("xxlorc v%d,v%d,v%d\n", (UInt)XT, (UInt)XA, (UInt)XB);
+         putVSReg( XT, binop( Iop_OrV128,
+                              mkexpr( vA ),
+                              unop( Iop_NotV128, mkexpr( vB ) ) ) );
+         break;
+      case 0x2C8: // xxlnand (VSX Logical NAND)
+         DIP("xxlnand v%d,v%d,v%d\n", (UInt)XT, (UInt)XA, (UInt)XB);
+         putVSReg( XT, unop( Iop_NotV128,
+                             binop( Iop_AndV128, mkexpr( vA ),
+                                    mkexpr( vB ) ) ) );
+         break;
+      case 0x2E8: // xxleqv (VSX Logical Equivalence)
+         DIP("xxleqv v%d,v%d,v%d\n", (UInt)XT, (UInt)XA, (UInt)XB);
+         putVSReg( XT, unop( Iop_NotV128,
+                             binop( Iop_XorV128,
+                             mkexpr( vA ), mkexpr( vB ) ) ) );
+         break;
       default:
          vex_printf( "dis_vx_logic(ppc)(opc2)\n" );
          return False;
@@ -14579,6 +14820,43 @@ dis_vx_load ( UInt theInstr )
    assign( EA, ea_rAor0_idxd( rA_addr, rB_addr ) );
 
    switch (opc2) {
+   case 0x00C: // lxsiwzx (Load VSX Scalar as Integer Word and Zero Indexed)
+   {
+      IRExpr * exp;
+      DIP("lxsiwzx %d,r%u,r%u\n", (UInt)XT, rA_addr, rB_addr);
+      exp = unop( Iop_64HIto32, loadBE( Ity_I64, mkexpr( EA ) ) );
+      putVSReg( XT, binop( Iop_64HLtoV128,
+                           unop( Iop_32Uto64, exp),
+                           mkU64(0) ) );
+      break;
+   }
+   case 0x04C: // lxsiwax (Load VSX Scalar as Integer Word Algebraic Indexed)
+   {
+      IRExpr * exp;
+      DIP("lxsiwax %d,r%u,r%u\n", (UInt)XT, rA_addr, rB_addr);
+      exp = unop( Iop_64HIto32, loadBE( Ity_I64, mkexpr( EA ) ) );
+      putVSReg( XT, binop( Iop_64HLtoV128,
+                           unop( Iop_32Sto64, exp),
+                           mkU64(0) ) );
+      break;
+   }
+   case 0x20C: // lxsspx (Load VSX Scalar Single-Precision Indexed)
+   {
+      IRExpr * exp;
+      DIP("lxsspx %d,r%u,r%u\n", (UInt)XT, rA_addr, rB_addr);
+      /* Take 32-bit floating point value in the upper half of the fetched
+       * 64-bit value, convert to 64-bit floating point value and load into
+       * top word of V128.
+       */
+      exp = unop( Iop_ReinterpF64asI64,
+                  unop( Iop_F32toF64,
+                        unop( Iop_ReinterpI32asF32,
+                              unop( Iop_64HIto32,
+                                    loadBE( Ity_I64, mkexpr( EA ) ) ) ) ) );
+
+      putVSReg( XT, binop( Iop_64HLtoV128, exp, mkU64( 0 ) ) );
+      break;
+   }
    case 0x24C: // lxsdx
    {
       IRExpr * exp;
@@ -14670,6 +14948,31 @@ dis_vx_store ( UInt theInstr )
    assign( vS, getVSReg( XS ) );
 
    switch (opc2) {
+   case 0x08C:
+   {
+     /* Need the next to the most significant 32-bit word from
+      * the 128-bit vector.
+      */
+      IRExpr * high64, * low32;
+      DIP("stxsiwx %d,r%u,r%u\n", (UInt)XS, rA_addr, rB_addr);
+      high64 = unop( Iop_V128HIto64, mkexpr( vS ) );
+      low32  = unop( Iop_64to32, high64 );
+      storeBE( mkexpr( EA ), low32 );
+      break;
+   }
+   case 0x28C:
+   {
+      IRTemp high64 = newTemp(Ity_F64);
+      IRTemp val32  = newTemp(Ity_I32);
+      DIP("stxsspx %d,r%u,r%u\n", (UInt)XS, rA_addr, rB_addr);
+      assign(high64, unop( Iop_ReinterpI64asF64,
+                           unop( Iop_V128HIto64, mkexpr( vS ) ) ) );
+      assign(val32, unop( Iop_ReinterpF32asI32,
+                          unop( Iop_TruncF64asF32,
+                                mkexpr(high64) ) ) );
+      storeBE( mkexpr( EA ), mkexpr( val32 ) );
+      break;
+   }
    case 0x2CC:
    {
       IRExpr * high64;
@@ -17162,10 +17465,21 @@ struct vsx_insn {
 
 //  ATTENTION:  Keep this array sorted on the opcocde!!!
 static struct vsx_insn vsx_all[] = {
+      { 0x0, "xsaddsp" },
+      { 0x4, "xsmaddasp" },
       { 0x8, "xxsldwi" },
+      { 0x14, "xsrsqrtesp" },
+      { 0x16, "xssqrtsp" },
       { 0x18, "xxsel" },
+      { 0x20, "xssubsp" },
+      { 0x24, "xsmaddmsp" },
       { 0x28, "xxpermdi" },
+      { 0x34, "xsresp" },
+      { 0x40, "xsmulsp" },
+      { 0x44, "xsmsubasp" },
       { 0x48, "xxmrghw" },
+      { 0x60, "xsdivsp" },
+      { 0x64, "xsmsubmsp" },
       { 0x80, "xsadddp" },
       { 0x84, "xsmaddadp" },
       { 0x8c, "xscmpudp" },
@@ -17240,12 +17554,19 @@ static struct vsx_insn vsx_all[] = {
       { 0x1f0, "xvcvsxwdp" },
       { 0x1f2, "xvrdpim" },
       { 0x1f4, "xvtdivdp" },
+      { 0x204, "xsnmaddasp" },
       { 0x208, "xxland" },
       { 0x212, "xscvdpsp" },
       { 0x216, "xscvdpspn" },
+      { 0x224, "xsnmaddmsp" },
       { 0x228, "xxlandc" },
-      { 0x248 , "xxlor" },
+      { 0x232, "xxrsp" },
+      { 0x244, "xsnmsubasp" },
+      { 0x248, "xxlor" },
+      { 0x250, "xscvuxdsp" },
+      { 0x264, "xsnmsubmsp" },
       { 0x268, "xxlxor" },
+      { 0x270, "xscvsxdsp" },
       { 0x280, "xsmaxdp" },
       { 0x284, "xsnmaddadp" },
       { 0x288, "xxlnor" },
@@ -17254,13 +17575,16 @@ static struct vsx_insn vsx_all[] = {
       { 0x296, "xscvspdpn" },
       { 0x2a0, "xsmindp" },
       { 0x2a4, "xsnmaddmdp" },
+      { 0x2a8, "xxlorc" },
       { 0x2b0, "xscvdpsxds" },
       { 0x2b2, "xsabsdp" },
       { 0x2c0, "xscpsgndp" },
       { 0x2c4, "xsnmsubadp" },
+      { 0x2c8, "xxlnand" },
       { 0x2d0, "xscvuxddp" },
       { 0x2d2, "xsnabsdp" },
       { 0x2e4, "xsnmsubmdp" },
+      { 0x2e8, "xxleqv" },
       { 0x2f0, "xscvsxddp" },
       { 0x2f2, "xsnegdp" },
       { 0x300, "xvmaxsp" },
@@ -17775,37 +18099,45 @@ DisResult disInstr_PPC_WRK (
        * is non-standard.  These normalized values are given in the opcode
        * appendices of the ISA 2.06 document.
        */
-      if (vsxOpc2 == 0)
-         goto decode_failure;
 
       switch (vsxOpc2) {
          case 0x8: case 0x28: case 0x48: case 0xc8: // xxsldwi, xxpermdi, xxmrghw, xxmrglw
          case 0x018: case 0x148: // xxsel, xxspltw
             if (dis_vx_permute_misc(theInstr, vsxOpc2)) goto decode_success;
             goto decode_failure;
-         case 0x268: case 0x248: case 0x288: case 0x208: case 0x228: // xxlxor, xxlor, xxlnor, xxland, xxlandc
+         case 0x268: case 0x248: case 0x288: // xxlxor, xxlor, xxlnor,
+         case 0x208: case 0x228: case 0x2A8: // xxland, xxlandc, xxlorc
+         case 0x2C8: case 0x2E8: // xxlnand, xxleqv
             if (dis_vx_logic(theInstr, vsxOpc2)) goto decode_success;
             goto decode_failure;
          case 0x2B2: case 0x2C0: // xsabsdp, xscpsgndp
          case 0x2D2: case 0x2F2: // xsnabsdp, xsnegdp
          case 0x280: case 0x2A0: // xsmaxdp, xsmindp
          case 0x0F2: case 0x0D2: // xsrdpim, xsrdpip
+         case 0x034: case 0x014: // xsresp, xsrsqrtesp
          case 0x0B4: case 0x094: // xsredp, xsrsqrtedp
          case 0x0D6: case 0x0B2: // xsrdpic, xsrdpiz
-         case 0x092: // xsrdpi
+         case 0x092: case 0x232: // xsrdpi, xsrsp
             if (dis_vxs_misc(theInstr, vsxOpc2)) goto decode_success;
             goto decode_failure;
          case 0x08C: case 0x0AC: // xscmpudp, xscmpodp
             if (dis_vx_cmp(theInstr, vsxOpc2)) goto decode_success;
             goto decode_failure;
-         case 0x080: case 0x0E0: // xsadddp, xsdivdp
+         case 0x0:   case 0x020: // xsaddsp, xssubsp
+         case 0x080:             // xsadddp
+         case 0x060: case 0x0E0: // xsdivsp, xsdivdp
+         case 0x004: case 0x024: // xsmaddasp, xsmaddmsp
          case 0x084: case 0x0A4: // xsmaddadp, xsmaddmdp
+         case 0x044: case 0x064: // xsmsubasp, xsmsubmsp
          case 0x0C4: case 0x0E4: // xsmsubadp, xsmsubmdp
+         case 0x204: case 0x224: // xsnmaddasp, xsnmaddmsp
          case 0x284: case 0x2A4: // xsnmaddadp, xsnmaddmdp
+         case 0x244: case 0x264: // xsnmsubasp, xsnmsubmsp
          case 0x2C4: case 0x2E4: // xsnmsubadp, xsnmsubmdp
-         case 0x0C0: case 0x0A0: // xsmuldp, xssubdp
-         case 0x096: case 0x0F4: // xssqrtdp, xstdivdp
-         case 0x0D4: // xstsqrtdp
+         case 0x040: case 0x0C0: // xsmulsp, xsmuldp
+         case 0x0A0:             // xssubdp
+         case 0x016: case 0x096: // xssqrtsp,xssqrtdp
+         case 0x0F4: case 0x0D4: // xstdivdp, xstsqrtdp
             if (dis_vxs_arith(theInstr, vsxOpc2)) goto decode_success;
             goto decode_failure;
          case 0x180: // xvadddp
@@ -17833,6 +18165,7 @@ DisResult disInstr_PPC_WRK (
             if (dis_vxv_sp_arith(theInstr, vsxOpc2)) goto decode_success;
             goto decode_failure;
 
+         case 0x250:             // xscvuxdsp
          case 0x2D0: case 0x3d0: // xscvuxddp, xvcvuxddp
          case 0x350: case 0x1d0: // xvcvuxdsp, xvcvuxwdp
          case 0x090: // xscvdpuxws
@@ -17844,7 +18177,8 @@ DisResult disInstr_PPC_WRK (
             if (dis_vx_conv(theInstr, vsxOpc2)) goto decode_success;
             goto decode_failure;
 
-         case 0x2B0: case 0x2F0: // xscvdpsxds, xscvsxddp
+         case 0x2B0: // xscvdpsxds
+         case 0x270: case 0x2F0: // xscvsxdsp, xscvsxddp
          case 0x1b0: case 0x130: // xvcvdpsxws, xvcvspsxws
          case 0x0b0: case 0x290: // xscvdpsxws, xscvdpuxds
          case 0x212: case 0x216: // xscvdpsp, xscvdpspn
@@ -18387,6 +18721,9 @@ DisResult disInstr_PPC_WRK (
          goto decode_failure;
 
       /* VSX Load */
+      case 0x00C: // lxsiwzx
+      case 0x04C: // lxsiwax
+      case 0x20C: // lxsspx
       case 0x24C: // lxsdx
       case 0x34C: // lxvd2x
       case 0x14C: // lxvdsx
@@ -18399,6 +18736,8 @@ DisResult disInstr_PPC_WRK (
           goto decode_failure;
 
       /* VSX Store */
+      case 0x08C: // stxsiwx
+      case 0x28C: // stxsspx
       case 0x2CC: // stxsdx
       case 0x3CC: // stxvd2x
       case 0x38C: // stxvw4x

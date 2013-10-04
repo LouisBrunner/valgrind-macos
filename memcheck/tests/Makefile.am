@@ -287,7 +287,6 @@ check_PROGRAMS = \
 	custom_alloc \
 	custom-overlap \
 	deep-backtrace \
-	deep_templates \
 	describe-block \
 	doublefree error_counts errs1 exitprog execve1 execve2 erringfds \
 	err_disable1 err_disable2 err_disable3 err_disable4 \
@@ -351,6 +350,10 @@ endif
 
 if HAVE_PTHREAD_SETNAME_NP
 check_PROGRAMS += threadname 
+endif
+
+if HAVE_GSTABS
+check_PROGRAMS += deep_templates
 endif
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)

@@ -1715,6 +1715,59 @@ AM_CONDITIONAL(DWARF4, test x$ac_have_dwarf4 = xyes)
 CFLAGS=$safe_CFLAGS
 
 
+# does this compiler support -gstabs ?
+
+AC_MSG_CHECKING([if gcc accepts -gstabs])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-gstabs"
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  return 0;
+]])], [
+ac_have_gstabs=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_gstabs=no
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+AM_CONDITIONAL([HAVE_GSTABS], [test x$ac_have_gstabs = xyes])
+
+
+# does this compiler support nested functions ?
+
+AC_MSG_CHECKING([if gcc accepts nested functions])
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  int foo() { return 1; }
+  return foo();
+]])], [
+ac_have_nested_functions=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_nested_functions=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL([HAVE_NESTED_FUNCTIONS], [test x$ac_have_nested_functions = xyes])
+
+
+# does this compiler support the 'p' constraint in ASM statements ?
+
+AC_MSG_CHECKING([if gcc accepts the 'p' constraint in asm statements])
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+   char *p;
+   __asm__ __volatile__ ("movdqa (%0),%%xmm6\n" : "=p" (p));
+]])], [
+ac_have_asm_constraint_p=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_asm_constraint_p=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL([HAVE_ASM_CONSTRAINT_P], [test x$ac_have_asm_constraint_p = xyes])
+
+
 # We want to use use the -Ttext-segment option to the linker.
 # GNU (bfd) ld supports this directly. Newer GNU gold linkers
 # support it as an alias of -Ttext. Sadly GNU (bfd) ld's -Ttext
@@ -1927,6 +1980,46 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
 ])
 
 AM_CONDITIONAL([BUILD_LZCNT_TESTS], [test x$ac_have_as_lzcnt = xyes])
+
+
+# does the x86/amd64 assembler understand the LOOPNEL instruction?
+# Note, this doesn't generate a C-level symbol.  It generates a
+# automake-level symbol (BUILD_LOOPNEL_TESTS), used in test Makefile.am's
+AC_MSG_CHECKING([if x86/amd64 assembler supports 'loopnel'])
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  do { 		 
+      __asm__ __volatile__("1:  loopnel 1b\n");
+  } while (0)
+]])], [
+  ac_have_as_loopnel=yes
+  AC_MSG_RESULT([yes])
+], [
+  ac_have_as_loopnel=no
+  AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL([BUILD_LOOPNEL_TESTS], [test x$ac_have_as_loopnel = xyes])
+
+
+# does the x86/amd64 assembler understand ADDR32 ?
+# Note, this doesn't generate a C-level symbol.  It generates a
+# automake-level symbol (BUILD_ADDR32_TESTS), used in test Makefile.am's
+AC_MSG_CHECKING([if x86/amd64 assembler supports 'addr32'])
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  do { 		 
+      asm volatile ("addr32 rep movsb");
+  } while (0)
+]])], [
+  ac_have_as_addr32=yes
+  AC_MSG_RESULT([yes])
+], [
+  ac_have_as_addr32=no
+  AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL([BUILD_ADDR32_TESTS], [test x$ac_have_as_addr32 = xyes])
 
 
 # does the x86/amd64 assembler understand SSE 4.2 instructions?

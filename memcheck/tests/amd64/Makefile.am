@@ -40,7 +40,6 @@ check_PROGRAMS = \
 	bug279698 \
 	fxsave-amd64 \
 	insn-bsfl \
-	insn-pcmpistri \
 	insn-pmovmskb \
 	more_x87_fp \
 	sh-mem-vec128 \
@@ -48,6 +47,9 @@ check_PROGRAMS = \
 	xor-undef-amd64
 if BUILD_AVX_TESTS
  check_PROGRAMS += sh-mem-vec256
+endif
+if HAVE_ASM_CONSTRAINT_P
+ check_PROGRAMS += insn-pcmpistri
 endif
 
 AM_CFLAGS    += @FLAG_M64@

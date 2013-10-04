@@ -186,7 +186,6 @@ check_PROGRAMS = \
 	floored fork fucomip \
 	mmap_fcntl_bug \
 	munmap_exe map_unaligned map_unmap mq \
-	nestedfns \
 	pending \
 	procfs-cmdline-exe \
 	pth_atfork1 pth_blockedsig pth_cancel1 pth_cancel2 pth_cvsimple \
@@ -211,6 +210,10 @@ check_PROGRAMS = \
 	coolo_sigaction \
 	gxx304 \
 	process_vm_readv_writev
+
+if HAVE_NESTED_FUNCTIONS
+   check_PROGRAMS += nestedfns
+endif
 
 # DDD:
 # - manythreads and thread-exits have lots of this:

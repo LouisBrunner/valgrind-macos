@@ -119,6 +119,8 @@ if test "x`${CC} --version | $SED -n -e 's/.*\(clang\) version.*/\1/p'`" = "xcla
     is_clang="clang"
     # Don't use -dumpversion with clang: it will always produce "4.2.1".
     gcc_version=`${CC} --version | $SED -n -e 's/.*clang version \([0-9.]*\).*$/\1/p'`
+    CFLAGS="$CFLAGS -Wno-tautological-compare -Wno-cast-align -Wno-self-assign"
+    CXXFLAGS="$CXXFLAGS -Wno-tautological-compare -Wno-cast-align -Wno-self-assign"
 else
     is_clang="notclang"
     gcc_version=`${CC} -dumpversion 2>/dev/null`
@@ -127,6 +129,7 @@ else
     fi
 fi
 ]
+AM_CONDITIONAL(COMPILER_IS_CLANG, test $is_clang = clang)
 
 case "${is_clang}-${gcc_version}" in
      notclang-3.*)

@@ -864,7 +864,6 @@ Bool VG_(OSetWord_Next)(AvlTree* t, UWord* val)
 // function supplied to VG_(OSetGen_Create).
 void VG_(OSetGen_ResetIterAt)(AvlTree* oset, const void* k)
 {
-   Int     i;
    AvlNode *n, *t;
    Word    cmpresS; /* signed */
    UWord   cmpresU; /* unsigned */
@@ -909,13 +908,6 @@ void VG_(OSetGen_ResetIterAt)(AvlTree* oset, const void* k)
          stackPush(oset, t, 2);
       }
       t = cmpresU==0 ? t->left : t->right;
-   }
-   if (stackPop(oset, &n, &i)) {
-      // If we've pushed something to stack and did not find the exact key,
-      // we must fix the top element of stack.
-      vg_assert(i == 2);
-      stackPush(oset, n, 3);
-      // the stack looks like {2, 2, ..., 2, 3}
    }
 }
 

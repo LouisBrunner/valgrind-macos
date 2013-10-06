@@ -85,9 +85,10 @@ static Word wordCmp(void* vkey, void* velem)
 void example1singleset(OSet* oset, char *descr)
 {
    Int  i, n;
-   Word v, prev;
-   Word* vs[NN];
-   Word *pv;
+   UWord v, prev;
+   UWord* vs[NN];
+   UWord *pv;
+   UWord  sorted_elts[NN]; // Used to test VG_(OSetGen_ResetIterAt)
 
    // Try some operations on an empty OSet to ensure they don't screw up.
    vg_assert( ! VG_(OSetGen_Contains)(oset, &v) );
@@ -100,13 +101,14 @@ void example1singleset(OSet* oset, char *descr)
    // and shuffle them randomly.
    for (i = 0; i < NN; i++) {
       vs[i] = VG_(OSetGen_AllocNode)(oset, sizeof(Word));
-      *(vs[i]) = 2*i;
+      *(vs[i]) = 2*(i+1);
+      sorted_elts[i] = *(vs[i]);
    }
    seed = 0;
    for (i = 0; i < NN; i++) {
-      Word r1  = myrandom() % NN;
-      Word r2  = myrandom() % NN;
-      Word* tmp= vs[r1];
+      UWord r1  = myrandom() % NN;
+      UWord r2  = myrandom() % NN;
+      UWord* tmp= vs[r1];
       vs[r1]   = vs[r2];
       vs[r2]   = tmp;
    }
@@ -124,15 +126,60 @@ void example1singleset(OSet* oset, char *descr)
       assert( VG_(OSetGen_Contains)(oset, vs[i]) );
    }
 
+#define FULLCHECKEVERY 20
+   // Check VG_(OSetGen_ResetIterAt) works before, at, and after each element.
+   // For some elements, we check all the successive elements.
+   for (i = 0; i < NN; i++) {
+      UWord k;
+      UWord *pval;
+      Int j;
+
+      // check ResetIterAt just before an elt gives this elt.
+      k = sorted_elts[i] - 1;
+      VG_(OSetGen_ResetIterAt) (oset, &k);
+      // Check all elts till the end
+      for (j = i; j < NN; j++) {
+         pval = VG_(OSetGen_Next)(oset);
+         assert (*pval == sorted_elts[j]);
+         if (i % FULLCHECKEVERY != 0) break;
+      }
+
+      // check ResetIterAt at an elt gives this elt.
+      k = sorted_elts[i];
+      VG_(OSetGen_ResetIterAt) (oset, &k);
+      // Check all elts till the end
+      for (j = i; j < NN; j++) {
+         pval = VG_(OSetGen_Next)(oset);
+         assert (*pval == sorted_elts[j]);
+         if (i % FULLCHECKEVERY != 0) break;
+      }
+
+      // check ResetIterAt after an elt gives the next elt or nothing
+      // when we reset after the last elt.
+      k = sorted_elts[i] + 1;
+      VG_(OSetGen_ResetIterAt) (oset, &k);
+      if (i < NN - 1) {
+         for (j = i+1; j < NN; j++) {
+            pval = VG_(OSetGen_Next)(oset);
+            assert (*pval == sorted_elts[j]);
+            if (i % FULLCHECKEVERY != 0) break;
+         }
+      } else {
+         pval = VG_(OSetGen_Next)(oset);
+         assert (pval == NULL);
+      }
+      
+   }
+
    // Check we cannot find elements we did not insert, below, within (odd
    // numbers), and above the inserted elements.
-   v = -1;
+   v = 0;
    assert( ! VG_(OSetGen_Contains)(oset, &v) );
    for (i = 0; i < NN; i++) {
       v = *(vs[i]) + 1;
       assert( ! VG_(OSetGen_Contains)(oset, &v) );
    }
-   v = NN*2;
+   v = 2*(NN+1);
    assert( ! VG_(OSetGen_Contains)(oset, &v) );
 
    // Check we can find all the elements we inserted, and the right values
@@ -145,10 +192,10 @@ void example1singleset(OSet* oset, char *descr)
    // there is the right number of them.
    n = 0;
    pv = NULL;
-   prev = -1;
+   prev = 0;
    VG_(OSetGen_ResetIter)(oset);
    while ( (pv = VG_(OSetGen_Next)(oset)) ) {
-      Word curr = *pv;
+      UWord curr = *pv;
       assert(prev < curr); 
       prev = curr;
       n++;
@@ -212,7 +259,7 @@ void example1(void)
 {
    OSet *oset, *oset_empty_clone;
 
-   // Create a static OSet of Ints.  This one uses fast (built-in)
+   // Create a static OSet of UWords.  This one uses fast (built-in)
    // comparisons.
 
    // First a single oset, no pool allocator.
@@ -255,10 +302,10 @@ void example1(void)
 void example1b(void)
 {
    Int  i, n;
-   Word v = 0, prev;
-   Word vs[NN];
+   UWord v = 0, prev;
+   UWord vs[NN];
 
-   // Create a static OSet of Ints.  This one uses fast (built-in)
+   // Create a static OSet of UWords.  This one uses fast (built-in)
    // comparisons.
    OSet* oset = VG_(OSetWord_Create)(allocate_node, "oset_test.2", free_node);
 
@@ -275,9 +322,9 @@ void example1b(void)
    }
    seed = 0;
    for (i = 0; i < NN; i++) {
-      Word r1  = myrandom() % NN;
-      Word r2  = myrandom() % NN;
-      Word tmp = vs[r1];
+      UWord r1  = myrandom() % NN;
+      UWord r2  = myrandom() % NN;
+      UWord tmp = vs[r1];
       vs[r1]   = vs[r2];
       vs[r2]   = tmp;
    }
@@ -297,7 +344,7 @@ void example1b(void)
 
    // Check we cannot find elements we did not insert, below, within (odd
    // numbers), and above the inserted elements.
-   v = -1;
+   v = 0xffffffff;
    assert( ! VG_(OSetWord_Contains)(oset, v) );
    for (i = 0; i < NN; i++) {
       v = vs[i] + 1;
@@ -314,11 +361,14 @@ void example1b(void)
    // Check that we can iterate over the OSet elements in sorted order, and
    // there is the right number of them.
    n = 0;
-   prev = -1;
+   prev = 0;
    VG_(OSetWord_ResetIter)(oset);
    while ( VG_(OSetWord_Next)(oset, (UWord *)&v) ) {
-      Word curr = v;
-      assert(prev < curr); 
+      UWord curr = v;
+      if (n == 0)
+         assert(prev == curr); 
+      else
+         assert(prev < curr); 
       prev = curr;
       n++;
    }

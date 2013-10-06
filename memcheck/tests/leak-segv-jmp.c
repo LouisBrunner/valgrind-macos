@@ -190,9 +190,12 @@ void f(void)
 {
    long pagesize;
 #define RNDPAGEDOWN(a) ((long)a & ~(pagesize-1))
+   int i;
+   const int nr_ptr = (10000 * 4)/sizeof(char*);
 
-   b10 = malloc ((10000 * 4)/sizeof(char*) * sizeof(char*));
-
+   b10 = calloc (nr_ptr * sizeof(char*), 1);
+   for (i = 0; i < nr_ptr; i++)
+      b10[i] = (char*)b10;
    b10[4000] = malloc (1000);
    
    fprintf(stderr, "expecting no leaks\n");
@@ -228,6 +231,22 @@ void f(void)
    fprintf(stderr, "mprotect result %d\n", mprotect_result);
 
    fprintf(stderr, "expecting a leak again\n");
+   fflush(stderr);
+   VALGRIND_DO_LEAK_CHECK;
+
+   if (RUNNING_ON_VALGRIND)
+     (void) VALGRIND_NON_SIMD_CALL2(non_simd_mprotect,
+                                    RNDPAGEDOWN(&b10[0]),
+                                    RNDPAGEDOWN(&(b10[nr_ptr-1]))
+                                    - RNDPAGEDOWN(&(b10[0])));
+   else
+      mprotect_result = mprotect((void*) RNDPAGEDOWN(&b10[0]),
+                                 RNDPAGEDOWN(&(b10[nr_ptr-1]))
+                                 - RNDPAGEDOWN(&(b10[0])),
+                                 PROT_NONE);
+   fprintf(stderr, "full mprotect result %d\n", mprotect_result);
+
+   fprintf(stderr, "expecting a leak again after full mprotect\n");
    fflush(stderr);
    VALGRIND_DO_LEAK_CHECK;
 

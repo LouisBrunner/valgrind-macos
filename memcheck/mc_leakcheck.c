@@ -488,6 +488,9 @@ static Int  lc_markstack_top;
 // Keeps track of how many bytes of memory we've scanned, for printing.
 // (Nb: We don't keep track of how many register bytes we've scanned.)
 static SizeT lc_scanned_szB;
+// Keeps track of how many bytes we have not scanned due to read errors that
+// caused a signal such as SIGSEGV.
+static SizeT lc_sig_skipped_szB;
 
 
 SizeT MC_(bytes_leaked)     = 0;
@@ -886,14 +889,17 @@ lc_push_if_a_chunk_ptr(Addr ptr,
 
 
 static VG_MINIMAL_JMP_BUF(memscan_jmpbuf);
+static volatile Addr bad_scanned_addr;
 
 static
 void scan_all_valid_memory_catcher ( Int sigNo, Addr addr )
 {
    if (0)
       VG_(printf)("OUCH! sig=%d addr=%#lx\n", sigNo, addr);
-   if (sigNo == VKI_SIGSEGV || sigNo == VKI_SIGBUS)
+   if (sigNo == VKI_SIGSEGV || sigNo == VKI_SIGBUS) {
+      bad_scanned_addr = addr;
       VG_MINIMAL_LONGJMP(memscan_jmpbuf);
+   }
 }
 
 // lc_scan_memory has 2 modes:
@@ -935,8 +941,8 @@ lc_scan_memory(Addr start, SizeT len, Bool is_prior_definite,
       end portions of the block if they are not aligned on sizeof(Addr):
       These cannot be a valid pointer, and calls to MC_(is_valid_aligned_word)
       will assert for a non aligned address. */
-   Addr ptr = VG_ROUNDUP(start,     sizeof(Addr));
-   Addr end = VG_ROUNDDN(start+len, sizeof(Addr));
+   Addr ptr = VG_ROUNDUP(start, sizeof(Addr));
+   const Addr end = VG_ROUNDDN(start+len, sizeof(Addr));
    vki_sigset_t sigmask;
 
    if (VG_DEBUG_LEAKCHECK)
@@ -966,10 +972,28 @@ lc_scan_memory(Addr start, SizeT len, Bool is_prior_definite,
       // if not, skip onto the next page.
       ptr = VG_PGROUNDUP(ptr+1);        // First page is bad - skip it.
    }
-   /* This optimisation and below loop is based on some relationships between
-      VKI_PAGE_SIZE, SM_SIZE and sizeof(Addr) which are asserted in
+   /* The above optimisation and below loop is based on some relationships
+      between VKI_PAGE_SIZE, SM_SIZE and sizeof(Addr) which are asserted in
       MC_(detect_memory_leaks). */
 
+   // During scan, we check with aspacemgr that each page is readable and
+   // belongs to client.
+   // We still protect against SIGSEGV and SIGBUS e.g. in case aspacemgr is
+   // desynchronised with the real page mappings.
+   // Such a desynchronisation could happen due to an aspacemgr bug.
+   // Note that if the application is using mprotect(NONE), then
+   // a page can be unreadable but have addressable and defined
+   // VA bits (see mc_main.c function mc_new_mem_mprotect).
+   if (VG_MINIMAL_SETJMP(memscan_jmpbuf) != 0) {
+      // Catch read error ...
+      // We need to restore the signal mask, because we were
+      // longjmped out of a signal handler.
+      VG_(sigprocmask)(VKI_SIG_SETMASK, &sigmask, NULL);
+      lc_sig_skipped_szB += sizeof(Addr);
+      tl_assert(bad_scanned_addr >= VG_ROUNDUP(start, sizeof(Addr)));
+      tl_assert(bad_scanned_addr < VG_ROUNDDN(start+len, sizeof(Addr)));
+      ptr = bad_scanned_addr + sizeof(Addr); // Unaddressable, - skip it.
+   }
    while (ptr < end) {
       Addr addr;
 
@@ -987,29 +1011,11 @@ lc_scan_memory(Addr start, SizeT len, Bool is_prior_definite,
             ptr += VKI_PAGE_SIZE;      // Bad page - skip it.
             continue;
          }
-         // aspacemgr indicates the page is readable and belongs to client.
-         // We still probe the page explicitely in case aspacemgr is
-         // desynchronised with the real page mappings.
-         // Such a desynchronisation can happen due to an aspacemgr bug.
-         // Note that if the application is using mprotect(NONE), then
-         // a page can be unreadable but have addressable and defined
-         // VA bits (see mc_main.c function mc_new_mem_mprotect).
-         if (VG_MINIMAL_SETJMP(memscan_jmpbuf) == 0) {
-            // Try a read in the beginning of the page ...
-            Addr test = *(volatile Addr *)ptr;
-            __asm__ __volatile__("": :"r"(test) : "cc","memory");
-         } else {
-            // Catch read error ...
-            // We need to restore the signal mask, because we were
-            // longjmped out of a signal handler.
-            VG_(sigprocmask)(VKI_SIG_SETMASK, &sigmask, NULL);
-            ptr += VKI_PAGE_SIZE;      // Bad page - skip it.
-            continue;
-         }
       }
 
       if ( MC_(is_valid_aligned_word)(ptr) ) {
          lc_scanned_szB += sizeof(Addr);
+         // If the below read fails, we will longjmp to the loop begin.
          addr = *(Addr *)ptr;
          // If we get here, the scanned word is in valid memory.  Now
          // let's see if its contents point to a chunk.
@@ -1034,10 +1040,10 @@ lc_scan_memory(Addr start, SizeT len, Bool is_prior_definite,
                                      ch->data, addr, pp_heuristic(h));
                         }
                      }
-                     // Verify the loop above has properly scanned all heuristics.
-                     // If the below fails, it probably means the LeakCheckHeuristic
-                     // enum is not in sync anymore with the above loop and/or
-                     // with N_LEAK_CHECK_HEURISTICS.
+                     // Verify the loop above has properly scanned all
+                     // heuristics. If the below fails, it probably means the
+                     // LeakCheckHeuristic enum is not in sync anymore with the
+                     // above loop and/or with N_LEAK_CHECK_HEURISTICS.
                      tl_assert (h == N_LEAK_CHECK_HEURISTICS);
                   }
                }
@@ -1556,6 +1562,7 @@ static void scan_memory_root_set(Addr searched, SizeT szB)
    tl_assert(seg_starts && n_seg_starts > 0);
 
    lc_scanned_szB = 0;
+   lc_sig_skipped_szB = 0;
 
    // VG_(am_show_nsegments)( 0, "leakcheck");
    for (i = 0; i < n_seg_starts; i++) {
@@ -1757,6 +1764,9 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckParams* lcp)
 
    if (VG_(clo_verbosity) > 1 && !VG_(clo_xml)) {
       VG_(umsg)("Checked %'lu bytes\n", lc_scanned_szB);
+      if (lc_sig_skipped_szB > 0)
+         VG_(umsg)("Skipped %'lu bytes due to read errors\n",
+                   lc_sig_skipped_szB);
       VG_(umsg)( "\n" );
    }
 

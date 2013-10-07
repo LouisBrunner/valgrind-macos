@@ -192,11 +192,11 @@ VG_(disp_cp_xindir):
         sll $14, $14, 3
 
         /* t2 = (addr of VG_(tt_fast)) + t1 */
-        la $13, VG_(tt_fast)
-        addu $13, $13, $14
+        dla $13, VG_(tt_fast)
+        daddu $13, $13, $14
 
         ld $12, 0($13) /* t3 = VG_(tt_fast)[hash] :: ULong* */
-        addi $13, $13, 8
+        daddi $13, $13, 8
         ld $25, 0($13) /* little-endian, so comparing 1st 32bit word */
         nop
 

@@ -3960,6 +3960,11 @@ Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
                fr_src = dregNo(i->Min.FpConvert.src);
                p = mkFormR(p, 0x11, 0x11, 0, fr_src, fr_dst, 0x0F);
                break;
+            case Mfp_FLOORLD:
+               fr_dst = dregNo(i->Min.FpConvert.dst);
+               fr_src = dregNo(i->Min.FpConvert.src);
+               p = mkFormR(p, 0x11, 0x11, 0, fr_src, fr_dst, 0x0B);
+               break;
 
             default:
                goto bad;

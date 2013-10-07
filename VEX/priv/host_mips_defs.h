@@ -367,7 +367,7 @@ typedef enum {
    Mfp_CVTWS, Mfp_CVTDL, Mfp_CVTSL, Mfp_CVTLS, Mfp_CVTLD, Mfp_TRULS, Mfp_TRULD,
    Mfp_TRUWS, Mfp_TRUWD, Mfp_FLOORWS, Mfp_FLOORWD, Mfp_ROUNDWS, Mfp_ROUNDWD,
    Mfp_CVTDW, Mfp_CMP, Mfp_CEILWS, Mfp_CEILWD, Mfp_CEILLS, Mfp_CEILLD,
-   Mfp_CVTDS, Mfp_ROUNDLD
+   Mfp_CVTDS, Mfp_ROUNDLD, Mfp_FLOORLD
 
 } MIPSFpOp;
 

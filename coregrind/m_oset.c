@@ -864,7 +864,7 @@ Bool VG_(OSetWord_Next)(AvlTree* t, UWord* val)
 // function supplied to VG_(OSetGen_Create).
 void VG_(OSetGen_ResetIterAt)(AvlTree* oset, const void* k)
 {
-   AvlNode *n, *t;
+   AvlNode *t;
    Word    cmpresS; /* signed */
    UWord   cmpresU; /* unsigned */
 
@@ -874,7 +874,6 @@ void VG_(OSetGen_ResetIterAt)(AvlTree* oset, const void* k)
    if (!oset->root)
       return;
 
-   n = NULL;
    // We need to do regular search and fill in the stack.
    t = oset->root;
 

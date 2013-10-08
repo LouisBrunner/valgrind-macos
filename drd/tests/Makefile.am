@@ -367,7 +367,7 @@ endif
 
 # clang 3.3 will generate errors about libstdc++ headers from 
 # gcc (Ubuntu/Linaro 4.6.3-1ubuntu5) 4.6.3
-if ! COMPILER_IS_CLANG
+if CXX_CAN_INCLUDE_THREAD_HEADER
 if HAVE_SHARED_POINTER_ANNOTATION
 check_PROGRAMS += \
   std_thread

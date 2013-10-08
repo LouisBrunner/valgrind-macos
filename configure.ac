@@ -1381,6 +1381,30 @@ AC_MSG_RESULT([no])
 ])
 
 
+# Check whether compiler can process #include <thread> without errors
+# clang 3.3 cannot process <thread> from e.g.
+# gcc (Ubuntu/Linaro 4.6.3-1ubuntu5) 4.6.3
+
+AC_MSG_CHECKING([that C++ compiler can include <thread> header file])
+AC_LANG(C++)
+safe_CXXFLAGS=$CXXFLAGS
+CXXFLAGS=-std=c++0x
+
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([
+#include <thread> 
+])],
+[
+ac_cxx_can_include_thread_header=yes
+AC_MSG_RESULT([yes])
+], [
+ac_cxx_can_include_thread_header=no
+AC_MSG_RESULT([no])
+])
+CXXFLAGS=$safe_CXXFLAGS
+AC_LANG(C)
+
+AM_CONDITIONAL(CXX_CAN_INCLUDE_THREAD_HEADER, test x$ac_cxx_can_include_thread_header = xyes)
+
 #----------------------------------------------------------------------------
 # Checking for supported compiler flags.
 #----------------------------------------------------------------------------

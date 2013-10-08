@@ -14,7 +14,7 @@ while (<>)
     s/\(within \/.*(libc|libSystem).*\)$/(within \/...libc...)/;
 
     # Filter out dynamic loader
-    s/\(in \/.*ld-.*so\)$//;
+    s/ \(in \/.*ld-.*so\)$//;
 
     # Remove the filename -- on some platforms (eg. Linux) it will be in
     # libc, on some (eg. Darwin) it will be in the main executable.

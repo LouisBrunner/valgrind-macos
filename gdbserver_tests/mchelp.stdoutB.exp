@@ -29,8 +29,8 @@ memcheck monitor commands:
                 [increased*|changed|any]
                 [unlimited*|limited <max_loss_records_output>]
             * = defaults
-        where kind is one of definite indirect possible reachable all none
-        where heur is one of stdstring newarray multipleinheritance all none
+       where kind is one of definite indirect possible reachable all none
+       where heur is one of stdstring newarray multipleinheritance all none*
         Examples: leak_check
                   leak_check summary any
                   leak_check full kinds indirect,possible
@@ -84,8 +84,8 @@ memcheck monitor commands:
                 [increased*|changed|any]
                 [unlimited*|limited <max_loss_records_output>]
             * = defaults
-        where kind is one of definite indirect possible reachable all none
-        where heur is one of stdstring newarray multipleinheritance all none
+       where kind is one of definite indirect possible reachable all none
+       where heur is one of stdstring newarray multipleinheritance all none*
         Examples: leak_check
                   leak_check summary any
                   leak_check full kinds indirect,possible

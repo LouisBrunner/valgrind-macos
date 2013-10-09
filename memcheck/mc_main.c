@@ -5374,8 +5374,8 @@ static void print_monitor_help ( void )
 "                [increased*|changed|any]\n"
 "                [unlimited*|limited <max_loss_records_output>]\n"
 "            * = defaults\n"
-"        where kind is one of definite indirect possible reachable all none\n"
-"        where heur is one of stdstring newarray multipleinheritance all none\n"
+"       where kind is one of definite indirect possible reachable all none\n"
+"       where heur is one of stdstring newarray multipleinheritance all none*\n"
 "        Examples: leak_check\n"
 "                  leak_check summary any\n"
 "                  leak_check full kinds indirect,possible\n"
@@ -5456,7 +5456,8 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
       
       lcp.mode               = LC_Full;
       lcp.show_leak_kinds    = R2S(Possible) | R2S(Unreached);
-      lcp.errors_for_leak_kinds = 0; /* no errors for interactive leak search. */
+      lcp.errors_for_leak_kinds = 0; // no errors for interactive leak search.
+      lcp.heuristics         = 0;
       lcp.deltamode          = LCD_Increased;
       lcp.max_loss_records_output = 999999999;
       lcp.requested_by_monitor_command = True;

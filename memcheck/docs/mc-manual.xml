@@ -1603,18 +1603,19 @@ Address 0x8049E28 len 1 defined
   <listitem>
     <para><varname>leak_check [full*|summary]
                               [kinds &lt;set&gt;|reachable|possibleleak*|definiteleak]
+                              [heuristics heur1,heur2,...]
                               [increased*|changed|any]
                               [unlimited*|limited &lt;max_loss_records_output&gt;]
           </varname>
     performs a leak check. The <varname>*</varname> in the arguments
     indicates the default values. </para>
 
-    <para> If the first argument is <varname>summary</varname>, only a
-    summary of the leak search is given; otherwise a full leak report
-    is produced.  A full leak report gives detailed information for
-    each leak: the stack trace where the leaked blocks were allocated,
-    the number of blocks leaked and their total size.  When a full
-    report is requested, the next two arguments further specify what
+    <para> If the <varname>[full*|summary]</varname> argument is
+    <varname>summary</varname>, only a summary of the leak search is given;
+    otherwise a full leak report is produced.  A full leak report gives
+    detailed information for each leak: the stack trace where the leaked blocks
+    were allocated, the number of blocks leaked and their total size.  When a
+    full report is requested, the next two arguments further specify what
     kind of leaks to report.  A leak's details are shown if they match
     both the second and third argument. A full leak report might
     output detailed information for many leaks. The nr of leaks for
@@ -1624,9 +1625,9 @@ Address 0x8049E28 len 1 defined
     search  outputs the records with the biggest number of bytes.
     </para>
 
-    <para>The second argument controls what kind of blocks are shown for
-    a <varname>full</varname> leak search.  The set of leak kinds to show
-    can be specified using a <varname>&lt;set&gt;</varname> similarly
+    <para>The <varname>kinds</varname> argument controls what kind of blocks
+    are shown for a <varname>full</varname> leak search.  The set of leak kinds
+    to show can be specified using a <varname>&lt;set&gt;</varname> similarly
     to the command line option <option>--show-leak-kinds</option>.
     Alternatively, the  value <varname>definiteleak</varname> 
     is equivalent to <varname>kinds definite</varname>, the
@@ -1638,8 +1639,16 @@ Address 0x8049E28 len 1 defined
     all</varname>).
     </para>
 
-    <para>The third argument controls what kinds of changes are shown
-    for a <varname>full</varname> leak search. The
+    <para>The <varname>heuristics</varname> argument controls the heuristics
+    used during the leak search. The set of heuristics to use can be specified
+    using a <varname>&lt;set&gt;</varname> similarly
+    to the command line option <option>--leak-check-heuristics</option>.
+    The default value for the <varname>heuristics</varname> argument is
+    <varname>heuristics none</varname>.
+    </para>
+
+    <para>The <varname>[increased*|changed|any]</varname> argument controls what
+    kinds of changes are shown for a <varname>full</varname> leak search. The
     value <varname>increased</varname> specifies that only block
     allocation stacks with an increased number of leaked bytes or
     blocks since the previous leak check should be shown.  The

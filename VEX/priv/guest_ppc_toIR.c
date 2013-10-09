@@ -17425,6 +17425,20 @@ static Bool dis_transactional_memory ( UInt theInstr, UInt nextInstr,
       break;
    }
 
+   case 0x3AE: {        //treclaim.
+      /* The treclaim. is just a noop.  Do nothing */
+      UInt RA = IFIELD( theInstr, 16, 5 );
+
+      DIP("treclaim. %d\n", RA);
+      break;
+   }
+
+   case 0x3EE: {        //trechkpt.
+      /* The trechkpt. is just a noop.  Do nothing */
+      DIP("trechkpt.\n");
+      break;
+   }
+
    default:
       vex_printf("dis_transactional_memory(ppc): unrecognized instruction\n");
       return False;
@@ -18524,7 +18538,7 @@ DisResult disInstr_PPC_WRK (
       case 0x28E: case 0x2AE:             // tbegin., tend.
       case 0x2EE: case 0x2CE: case 0x30E: // tsr., tcheck., tabortwc.
       case 0x32E: case 0x34E: case 0x36E: // tabortdc., tabortwci., tabortdci.
-      case 0x38E:                         // tabort.
+      case 0x38E: case 0x3AE: case 0x3EE: // tabort., treclaim., trechkpt.
       if (dis_transactional_memory( theInstr,
                                     getUIntBigendianly( (UChar*)(&guest_code[delta + 4])),
                                     abiinfo, &dres,

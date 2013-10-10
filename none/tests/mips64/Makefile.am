@@ -75,3 +75,4 @@ AM_CCASFLAGS += @FLAG_M64@
 allexec_CFLAGS          = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 
 cvm_ins_CFLAGS = $(AM_CFLAGS) -g -O0 -march=octeon
+fpu_arithmetic_CFLAGS = $(AM_CFLAGS) -lm

@@ -2691,7 +2691,6 @@ swc1 :: offset: 0x3ec, out: 0xbcb4666d00000000
 swc1 :: offset: 0x3f0, out: 0xb8757bda00000000
 swc1 :: offset: 0x3f4, out: 0xb5365d0300000000
 swc1 :: offset: 0x3f8, out: 0xb1f740b400000000
-swc1 :: offset: 0x3fc, out: 0xc22032c600000000
 --- SDXC1 ---
 sdxc1 :: offset: 0x0, out: 0x12bd6aa
 sdxc1 :: offset: 0x8, out: 0x0
@@ -3077,4 +3076,3 @@ swxc1 :: offset: 0x3ec, out: 0xd519d322
 swxc1 :: offset: 0x3f0, out: 0xd519d32200000000
 swxc1 :: offset: 0x3f4, out: 0xde230867
 swxc1 :: offset: 0x3f8, out: 0xde23086700000000
-swxc1 :: offset: 0x3fc, out: 0xa630f6ad

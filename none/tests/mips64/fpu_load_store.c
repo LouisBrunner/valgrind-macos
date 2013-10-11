@@ -49,7 +49,7 @@ int main()
 
    init_reg_val_zero();
    printf("--- SWC1 ---\n");
-   for (i = 0; i < N*s1; i = i+4) {
+   for (i = 0; i < (N-1)*s1; i = i+4) {
       TEST4("swc1", i);
    }
 
@@ -61,7 +61,7 @@ int main()
 
    init_reg_val_zero();
    printf("--- SWXC1 ---\n");
-   for (i = 0; i < N*s1; i = i+4) {
+   for (i = 0; i < (N-1)*s1; i = i+4) {
       TEST6("swxc1", i);
    }
 

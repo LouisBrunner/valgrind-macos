@@ -685,19 +685,25 @@ static LeakCheckHeuristic heuristic_reachedness (Addr ptr,
       // Detects inner pointers to Std::String for layout being
       //     length capacity refcount char_array[] \0
       // where ptr points to the beginning of the char_array.
-      if ( ptr == ch->data + 3 * sizeof(SizeT)) {
-         const SizeT length = *((SizeT*)ch->data);
-         const SizeT capacity = *((SizeT*)ch->data+1);
-         if (length <= capacity
-             && (3 * sizeof(SizeT) + capacity + 1 == ch->szB)) {
-            // ??? could check there is no null byte from ptr to ptr+length-1
-            // ???    and that there is a null byte at ptr+length.
-            // ???
-            // ??? could check that ch->allockind is MC_AllocNew ???
-            // ??? probably not a good idea, as I guess stdstring
-            // ??? allocator can be done via custom allocator
-            // ??? or even a call to malloc ????
-            return LchStdString;
+      // Note: we check definedness for length and capacity but
+      // not for refcount, as refcount size might be smaller than
+      // a SizeT, giving a uninitialised hole in the first 3 SizeT.
+      if ( ptr == ch->data + 3 * sizeof(SizeT)
+           && MC_(is_valid_aligned_word)(ch->data + sizeof(SizeT))) {
+         const SizeT capacity = *((SizeT*)(ch->data + sizeof(SizeT)));
+         if (3 * sizeof(SizeT) + capacity + 1 == ch->szB
+            && MC_(is_valid_aligned_word)(ch->data)) {
+            const SizeT length = *((SizeT*)ch->data);
+            if (length <= capacity) {
+               // ??? could check there is no null byte from ptr to ptr+length-1
+               // ???    and that there is a null byte at ptr+length.
+               // ???
+               // ??? could check that ch->allockind is MC_AllocNew ???
+               // ??? probably not a good idea, as I guess stdstring
+               // ??? allocator can be done via custom allocator
+               // ??? or even a call to malloc ????
+               return LchStdString;
+            }
          }
       }
    }
@@ -718,7 +724,8 @@ static LeakCheckHeuristic heuristic_reachedness (Addr ptr,
       // 0-sized block. This trick does not work for 'new MyClass[0]'
       // because a chunk "word-sized" is allocated to store the (0) nr
       // of elements.
-      if ( ptr == ch->data + sizeof(SizeT)) {
+      if ( ptr == ch->data + sizeof(SizeT)
+           && MC_(is_valid_aligned_word)(ch->data)) {
          const SizeT nr_elts = *((SizeT*)ch->data);
          if (nr_elts > 0 && (ch->szB - sizeof(SizeT)) % nr_elts == 0) {
             // ??? could check that ch->allockind is MC_AllocNewVec ???
@@ -730,7 +737,8 @@ static LeakCheckHeuristic heuristic_reachedness (Addr ptr,
    if (HiS(LchMultipleInheritance, heur_set)) {
       // Detect inner pointer used for multiple inheritance.
       // Assumption is that the vtable pointers are before the object.
-      if (VG_IS_WORD_ALIGNED(ptr)) {
+      if (VG_IS_WORD_ALIGNED(ptr)
+          && MC_(is_valid_aligned_word)(ptr)) {
          Addr first_addr;
          Addr inner_addr;
 
@@ -744,7 +752,8 @@ static LeakCheckHeuristic heuristic_reachedness (Addr ptr,
          // in the last page.
          inner_addr = *((Addr*)ptr);
          if (VG_IS_WORD_ALIGNED(inner_addr) 
-             && inner_addr >= (Addr)VKI_PAGE_SIZE) {
+             && inner_addr >= (Addr)VKI_PAGE_SIZE
+             && MC_(is_valid_aligned_word)(ch->data)) {
             first_addr = *((Addr*)ch->data);
             if (VG_IS_WORD_ALIGNED(first_addr)
                 && first_addr >= (Addr)VKI_PAGE_SIZE
@@ -775,15 +784,10 @@ lc_push_without_clique_if_a_chunk_ptr(Addr ptr, Bool is_prior_definite)
       return;
 
    if (ex->state == Reachable) {
-      // If block was considered reachable via an heuristic,
-      // and it is now directly reachable via ptr, clear the
-      // heuristic.
-      if (ex->heuristic && ptr == ch->data) {
-         // ch was up to now considered as reachable dur to
-         // ex->heuristic. We have a direct ptr now => clear
-         // the heuristic field.
+      if (ex->heuristic && ptr == ch->data)
+         // If block was considered reachable via an heuristic, and it is now
+         // directly reachable via ptr, clear the heuristic field.
          ex->heuristic = LchNone;
-      }
       return;
    }
    

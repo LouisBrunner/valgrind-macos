@@ -4228,7 +4228,7 @@ ULong dis_Grp5 ( VexAbiInfo* vbi,
             break;
          case 2: /* call Ev */
             /* Ignore any sz value and operate as if sz==8. */
-            if (!(sz == 4 || sz == 8)) goto unhandled;
+            if (!(sz == 4 || sz == 8)) goto unhandledR;
             sz = 8;
             t3 = newTemp(Ity_I64);
             assign(t3, getIRegE(sz,pfx,modrm));
@@ -4243,7 +4243,7 @@ ULong dis_Grp5 ( VexAbiInfo* vbi,
             break;
          case 4: /* jmp Ev */
             /* Ignore any sz value and operate as if sz==8. */
-            if (!(sz == 4 || sz == 8)) goto unhandled;
+            if (!(sz == 4 || sz == 8)) goto unhandledR;
             sz = 8;
             t3 = newTemp(Ity_I64);
             assign(t3, getIRegE(sz,pfx,modrm));
@@ -4251,7 +4251,23 @@ ULong dis_Grp5 ( VexAbiInfo* vbi,
             vassert(dres->whatNext == Dis_StopHere);
             showSz = False;
             break;
-         default: 
+         case 6: /* PUSH Ev */
+            /* There is no encoding for 32-bit operand size; hence ... */
+            if (sz == 4) sz = 8;
+            if (sz == 8 || sz == 2) {
+               ty = szToITy(sz); /* redo it, since sz might have changed */
+               t3 = newTemp(ty);
+               assign(t3, getIRegE(sz,pfx,modrm));
+               t2 = newTemp(Ity_I64);
+               assign( t2, binop(Iop_Sub64,getIReg64(R_RSP),mkU64(sz)) );
+               putIReg64(R_RSP, mkexpr(t2) );
+               storeLE( mkexpr(t2), mkexpr(t3) );
+               break;
+            } else {
+               goto unhandledR; /* awaiting test case */
+            }
+         default:
+         unhandledR:
             *decode_OK = False;
             return delta;
       }
@@ -4292,7 +4308,7 @@ ULong dis_Grp5 ( VexAbiInfo* vbi,
             break;
          case 2: /* call Ev */
             /* Ignore any sz value and operate as if sz==8. */
-            if (!(sz == 4 || sz == 8)) goto unhandled;
+            if (!(sz == 4 || sz == 8)) goto unhandledM;
             sz = 8;
             t3 = newTemp(Ity_I64);
             assign(t3, loadLE(Ity_I64,mkexpr(addr)));
@@ -4307,7 +4323,7 @@ ULong dis_Grp5 ( VexAbiInfo* vbi,
             break;
          case 4: /* JMP Ev */
             /* Ignore any sz value and operate as if sz==8. */
-            if (!(sz == 4 || sz == 8)) goto unhandled;
+            if (!(sz == 4 || sz == 8)) goto unhandledM;
             sz = 8;
             t3 = newTemp(Ity_I64);
             assign(t3, loadLE(Ity_I64,mkexpr(addr)));
@@ -4318,20 +4334,20 @@ ULong dis_Grp5 ( VexAbiInfo* vbi,
          case 6: /* PUSH Ev */
             /* There is no encoding for 32-bit operand size; hence ... */
             if (sz == 4) sz = 8;
-            if (!(sz == 8 || sz == 2)) goto unhandled;
-            if (sz == 8) {
-               t3 = newTemp(Ity_I64);
-               assign(t3, loadLE(Ity_I64,mkexpr(addr)));
+            if (sz == 8 || sz == 2) {
+               ty = szToITy(sz); /* redo it, since sz might have changed */
+               t3 = newTemp(ty);
+               assign(t3, loadLE(ty,mkexpr(addr)));
                t2 = newTemp(Ity_I64);
                assign( t2, binop(Iop_Sub64,getIReg64(R_RSP),mkU64(sz)) );
                putIReg64(R_RSP, mkexpr(t2) );
                storeLE( mkexpr(t2), mkexpr(t3) );
                break;
             } else {
-               goto unhandled; /* awaiting test case */
+               goto unhandledM; /* awaiting test case */
             }
          default: 
-         unhandled:
+         unhandledM:
             *decode_OK = False;
             return delta;
       }

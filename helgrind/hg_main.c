@@ -1873,19 +1873,29 @@ void evh__HG_PTHREAD_MUTEX_INIT_POST( ThreadId tid,
 }
 
 static
-void evh__HG_PTHREAD_MUTEX_DESTROY_PRE( ThreadId tid, void* mutex )
+void evh__HG_PTHREAD_MUTEX_DESTROY_PRE( ThreadId tid, void* mutex,
+                                        Bool mutex_is_init )
 {
    Thread* thr;
    Lock*   lk;
    if (SHOW_EVENTS >= 1)
-      VG_(printf)("evh__hg_PTHREAD_MUTEX_DESTROY_PRE(ctid=%d, %p)\n", 
-                  (Int)tid, (void*)mutex );
+      VG_(printf)("evh__hg_PTHREAD_MUTEX_DESTROY_PRE"
+                  "(ctid=%d, %p, isInit=%d)\n", 
+                  (Int)tid, (void*)mutex, (Int)mutex_is_init );
 
    thr = map_threads_maybe_lookup( tid );
    /* cannot fail - Thread* must already exist */
    tl_assert( HG_(is_sane_Thread)(thr) );
 
    lk = map_locks_maybe_lookup( (Addr)mutex );
+
+   if (lk == NULL && mutex_is_init) {
+      /* We're destroying a mutex which we don't have any record of,
+         and which appears to have the value PTHREAD_MUTEX_INITIALIZER.
+         Assume it never got used, and so we don't need to do anything
+         more. */
+      goto out;
+   }
 
    if (lk == NULL || (lk->kind != LK_nonRec && lk->kind != LK_mbRec)) {
       HG_(record_error_Misc)(
@@ -1915,6 +1925,7 @@ void evh__HG_PTHREAD_MUTEX_DESTROY_PRE( ThreadId tid, void* mutex )
       del_LockN( lk );
    }
 
+  out:
    if (HG_(clo_sanity_flags) & SCE_LOCKS)
       all__sanity_check("evh__hg_PTHREAD_MUTEX_DESTROY_PRE");
 }
@@ -2077,7 +2088,7 @@ static void evh__HG_PTHREAD_SPIN_LOCK_POST( ThreadId tid,
 static void evh__HG_PTHREAD_SPIN_DESTROY_PRE( ThreadId tid, 
                                               void* slock )
 {
-   evh__HG_PTHREAD_MUTEX_DESTROY_PRE( tid, slock );
+   evh__HG_PTHREAD_MUTEX_DESTROY_PRE( tid, slock, 0/*!isInit*/ );
 }
 
 
@@ -2148,7 +2159,8 @@ static CVInfo* map_cond_to_CVInfo_lookup_NO_alloc ( void* cond ) {
    }
 }
 
-static void map_cond_to_CVInfo_delete ( ThreadId tid, void* cond ) {
+static void map_cond_to_CVInfo_delete ( ThreadId tid,
+                                        void* cond, Bool cond_is_init ) {
    Thread*   thr;
    UWord keyW, valW;
 
@@ -2162,9 +2174,9 @@ static void map_cond_to_CVInfo_delete ( ThreadId tid, void* cond ) {
       tl_assert(cvi);
       tl_assert(cvi->so);
       if (cvi->nWaiters > 0) {
-         HG_(record_error_Misc)(thr,
-                                "pthread_cond_destroy:"
-                                " destruction of condition variable being waited upon");
+         HG_(record_error_Misc)(
+            thr, "pthread_cond_destroy:"
+                 " destruction of condition variable being waited upon");
          /* Destroying a cond var being waited upon outcome is EBUSY and
             variable is not destroyed. */
          return;
@@ -2175,8 +2187,14 @@ static void map_cond_to_CVInfo_delete ( ThreadId tid, void* cond ) {
       cvi->mx_ga = 0;
       HG_(free)(cvi);
    } else {
-      HG_(record_error_Misc)(thr,
-                             "pthread_cond_destroy: destruction of unknown cond var");
+      /* We have no record of this CV.  So complain about it
+         .. except, don't bother to complain if it has exactly the
+         value PTHREAD_COND_INITIALIZER, since it might be that the CV
+         was initialised like that but never used. */
+      if (!cond_is_init) {
+         HG_(record_error_Misc)(
+            thr, "pthread_cond_destroy: destruction of unknown cond var");
+      }
    }
 }
 
@@ -2395,17 +2413,17 @@ static void evh__HG_PTHREAD_COND_INIT_POST ( ThreadId tid,
 
 
 static void evh__HG_PTHREAD_COND_DESTROY_PRE ( ThreadId tid,
-                                               void* cond )
+                                               void* cond, Bool cond_is_init )
 {
    /* Deal with destroy events.  The only purpose is to free storage
       associated with the CV, so as to avoid any possible resource
       leaks. */
    if (SHOW_EVENTS >= 1)
       VG_(printf)("evh__HG_PTHREAD_COND_DESTROY_PRE"
-                  "(ctid=%d, cond=%p)\n", 
-                  (Int)tid, (void*)cond );
+                  "(ctid=%d, cond=%p, cond_is_init=%d)\n", 
+                  (Int)tid, (void*)cond, (Int)cond_is_init );
 
-   map_cond_to_CVInfo_delete( tid, cond );
+   map_cond_to_CVInfo_delete( tid, cond, cond_is_init );
 }
 
 
@@ -4821,8 +4839,9 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
          evh__HG_PTHREAD_MUTEX_INIT_POST( tid, (void*)args[1], args[2] );
          break;
 
+      /* mutex=arg[1], mutex_is_init=arg[2] */
       case _VG_USERREQ__HG_PTHREAD_MUTEX_DESTROY_PRE:
-         evh__HG_PTHREAD_MUTEX_DESTROY_PRE( tid, (void*)args[1] );
+         evh__HG_PTHREAD_MUTEX_DESTROY_PRE( tid, (void*)args[1], args[2] != 0 );
          break;
 
       case _VG_USERREQ__HG_PTHREAD_MUTEX_UNLOCK_PRE:   // pth_mx_t*
@@ -4866,9 +4885,9 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
                                          (void*)args[1], (void*)args[2] );
 	 break;
 
-      /* cond=arg[1] */
+      /* cond=arg[1], cond_is_init=arg[2] */
       case _VG_USERREQ__HG_PTHREAD_COND_DESTROY_PRE:
-         evh__HG_PTHREAD_COND_DESTROY_PRE( tid, (void*)args[1] );
+         evh__HG_PTHREAD_COND_DESTROY_PRE( tid, (void*)args[1], args[2] != 0 );
          break;
 
       /* Thread successfully completed pthread_cond_wait, cond=arg[1],

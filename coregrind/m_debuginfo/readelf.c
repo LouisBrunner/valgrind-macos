@@ -1654,6 +1654,13 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                if (!loaded) {
                   ML_(symerr)(di, False,
                               "ELF section outside all mapped regions");
+                  /* This problem might be solved by further memory mappings.
+                     Avoid the vg_assert(!di->soname) at the beginning of this
+                     function if DYNAMIC section has been already processed. */
+                  if (di->soname) {
+                     ML_(dinfo_free)(di->soname);
+                     di->soname = NULL;
+                  }
                   goto out;
                }
             }

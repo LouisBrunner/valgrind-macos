@@ -685,8 +685,8 @@ static int pthread_cond_wait_WRK(pthread_cond_t* cond,
    }
 
    if (ret == 0 && mutex_is_valid) {
-      DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_COND_WAIT_POST,
-                   pthread_cond_t*,cond, pthread_mutex_t*,mutex);
+      DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_COND_WAIT_POST,
+                    pthread_cond_t*,cond, pthread_mutex_t*,mutex, long,0);
    }
 
    if (ret != 0) {
@@ -773,9 +773,10 @@ static int pthread_cond_timedwait_WRK(pthread_cond_t* cond,
                   pthread_mutex_t*,mutex);
    }
 
-   if (ret == 0 && mutex_is_valid) {
-      DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_COND_WAIT_POST,
-                   pthread_cond_t*,cond, pthread_mutex_t*,mutex);
+   if ((ret == 0 || ret == ETIMEDOUT) && mutex_is_valid) {
+      DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_COND_WAIT_POST,
+                    pthread_cond_t*,cond, pthread_mutex_t*,mutex,
+                    long,ret == ETIMEDOUT);
    }
 
    if (ret != 0 && ret != ETIMEDOUT) {

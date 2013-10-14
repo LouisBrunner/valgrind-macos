@@ -2329,7 +2329,8 @@ static Bool evh__HG_PTHREAD_COND_WAIT_PRE ( ThreadId tid,
 }
 
 static void evh__HG_PTHREAD_COND_WAIT_POST ( ThreadId tid,
-                                             void* cond, void* mutex )
+                                             void* cond, void* mutex,
+                                             Bool timeout)
 {
    /* A pthread_cond_wait(cond, mutex) completed successfully.  Find
       the SO for this cond, and 'recv' from it so as to acquire a
@@ -2339,8 +2340,8 @@ static void evh__HG_PTHREAD_COND_WAIT_POST ( ThreadId tid,
 
    if (SHOW_EVENTS >= 1)
       VG_(printf)("evh__HG_PTHREAD_COND_WAIT_POST"
-                  "(ctid=%d, cond=%p, mutex=%p)\n", 
-                  (Int)tid, (void*)cond, (void*)mutex );
+                  "(ctid=%d, cond=%p, mutex=%p)\n, timeout=%d",
+                  (Int)tid, (void*)cond, (void*)mutex, (Int)timeout );
 
    thr = map_threads_maybe_lookup( tid );
    tl_assert(thr); /* cannot fail - Thread* must already exist */
@@ -2362,7 +2363,7 @@ static void evh__HG_PTHREAD_COND_WAIT_POST ( ThreadId tid,
    tl_assert(cvi->so);
    tl_assert(cvi->nWaiters > 0);
 
-   if (!libhb_so_everSent(cvi->so)) {
+   if (!timeout && !libhb_so_everSent(cvi->so)) {
       /* Hmm.  How can a wait on 'cond' succeed if nobody signalled
          it?  If this happened it would surely be a bug in the threads
          library.  Or one of those fabled "spurious wakeups". */
@@ -4874,7 +4875,8 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
          mutex=arg[2] */
       case _VG_USERREQ__HG_PTHREAD_COND_WAIT_POST:
          evh__HG_PTHREAD_COND_WAIT_POST( tid,
-                                         (void*)args[1], (void*)args[2] );
+                                         (void*)args[1], (void*)args[2],
+                                         (Bool)args[3] );
          break;
 
       case _VG_USERREQ__HG_PTHREAD_RWLOCK_INIT_POST:

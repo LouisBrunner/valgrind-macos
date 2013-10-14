@@ -7102,7 +7102,7 @@ static Bool dis_cache_manage ( UInt         theInstr,
    }
 
    /* stay sane .. */
-   vassert(lineszB == 32 || lineszB == 64 || lineszB == 128);
+   vassert(lineszB == 16 || lineszB == 32 || lineszB == 64 || lineszB == 128);
    
    switch (opc2) {
 //zz    case 0x2F6: // dcba (Data Cache Block Allocate, PPC32 p380)

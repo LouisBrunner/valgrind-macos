@@ -1996,7 +1996,7 @@ ML_(generic_PRE_sys_mmap) ( ThreadId tid,
    MapRequest mreq;
    Bool       mreq_ok;
 
-#if defined(VGO_darwin)
+#  if defined(VGO_darwin)
    // Nb: we can't use this on Darwin, it has races:
    // * needs to RETRY if advisory succeeds but map fails  
    //   (could have been some other thread in a nonblocking call)
@@ -2004,7 +2004,7 @@ ML_(generic_PRE_sys_mmap) ( ThreadId tid,
    //   (mmap will cheerfully smash whatever's already there, which might 
    //   be a new mapping from some other thread in a nonblocking call)
    VG_(core_panic)("can't use ML_(generic_PRE_sys_mmap) on Darwin");
-#endif
+#  endif
 
    if (arg2 == 0) {
       /* SuSV3 says: If len is zero, mmap() shall fail and no mapping
@@ -2026,6 +2026,15 @@ ML_(generic_PRE_sys_mmap) ( ThreadId tid,
          passed _SC_PAGESIZE or _SC_PAGE_SIZE. */
       return VG_(mk_SysRes_Error)( VKI_EINVAL );
    }
+
+#  if defined(VKI_MAP_32BIT)
+   /* We can't support MAP_32BIT (at least, not without significant
+      complication), and it's royally unportable, so if the client
+      asks for it, just fail it. */
+   if (arg4 & VKI_MAP_32BIT) {
+      return VG_(mk_SysRes_Error)( VKI_ENOMEM );
+   }
+#  endif
 
    /* Figure out what kind of allocation constraints there are
       (fixed/hint/any), and ask aspacem what we should do. */

@@ -486,7 +486,7 @@ static void find_ppc_dcbz_sz(VexArchInfo *arch_info)
       if (!test_block[i])
          ++dcbz_szB;
    }
-   vg_assert(dcbz_szB == 32 || dcbz_szB == 64 || dcbz_szB == 128);
+   vg_assert(dcbz_szB == 16 || dcbz_szB == 32 || dcbz_szB == 64 || dcbz_szB == 128);
 
    /* dcbzl clears 128B on G5/PPC970, and usually 32B on other platforms */
    if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
@@ -504,7 +504,7 @@ static void find_ppc_dcbz_sz(VexArchInfo *arch_info)
          if (!test_block[i])
             ++dcbzl_szB;
       }
-      vg_assert(dcbzl_szB == 32 || dcbzl_szB == 64 || dcbzl_szB == 128);
+      vg_assert(dcbzl_szB == 16 || dcbzl_szB == 32 || dcbzl_szB == 64 || dcbzl_szB == 128);
    }
 
    arch_info->ppc_dcbz_szB  = dcbz_szB;
@@ -1541,7 +1541,7 @@ void VG_(machine_ppc32_set_clszB)( Int szB )
    vg_assert(vai.ppc_icache_line_szB == 0
              || vai.ppc_icache_line_szB == szB);
 
-   vg_assert(szB == 32 || szB == 64 || szB == 128);
+   vg_assert(szB == 16 || szB == 32 || szB == 64 || szB == 128);
    vai.ppc_icache_line_szB = szB;
 }
 #endif
@@ -1559,7 +1559,7 @@ void VG_(machine_ppc64_set_clszB)( Int szB )
    vg_assert(vai.ppc_icache_line_szB == 0
              || vai.ppc_icache_line_szB == szB);
 
-   vg_assert(szB == 32 || szB == 64 || szB == 128);
+   vg_assert(szB == 16 || szB == 32 || szB == 64 || szB == 128);
    vai.ppc_icache_line_szB = szB;
 }
 #endif

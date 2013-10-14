@@ -200,12 +200,12 @@
 
 # See https://bugs.kde.org/show_bug.cgi?id=188572 about this;  it's
 # unavoidable due to BSD setenv() semantics.
-#{
-#   macos-__setenv-leak-see-our-bug-188572
-#   Memcheck:Leak
-#   fun:malloc_zone_malloc
-#   fun:__setenv
-#}
+{
+   macos-__setenv-leak-see-our-bug-188572
+   Memcheck:Leak
+   fun:malloc_zone_malloc
+   fun:__setenv
+}
 
 #{
 #   libSystem-keymgr-leak-at-exit
@@ -216,3 +216,14 @@
 #   fun:__keymgr_initializer
 #   fun:libSystem_initializer
 #}
+
+# From Gary Kwong
+{
+   macos-malloc_set_zone_name-see-our-bug-307557
+   Memcheck:Leak
+   fun:malloc_zone_malloc
+   ...
+   fun:malloc_set_zone_name
+   ...
+   fun:init__zone0
+}

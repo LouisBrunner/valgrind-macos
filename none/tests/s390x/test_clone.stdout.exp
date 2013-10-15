@@ -1,9 +1,0 @@
-MAIN_proc
-child_start
-child_end
-wait returned:1
-MAIN_proc_end
-MAIN_thread
-MAIN_thread_end
-thread_start
-thread_end

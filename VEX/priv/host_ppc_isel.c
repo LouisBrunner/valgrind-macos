@@ -4845,6 +4845,26 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_Dup32x4:
          return mk_AvDuplicateRI(env, e->Iex.Unop.arg);
 
+      case Iop_CipherSV128: op = Pav_CIPHERSUBV128; goto do_AvCipherV128Un;
+      do_AvCipherV128Un: {
+         HReg arg = iselVecExpr(env, e->Iex.Unop.arg);
+         HReg dst = newVRegV(env);
+         addInstr(env, PPCInstr_AvCipherV128Unary(op, dst, arg));
+         return dst;
+      }
+
+      case Iop_Clz8Sx16: fpop = Pav_ZEROCNTBYTE;   goto do_zerocnt;
+      case Iop_Clz16Sx8: fpop = Pav_ZEROCNTHALF;   goto do_zerocnt;
+      case Iop_Clz32Sx4: fpop = Pav_ZEROCNTWORD;   goto do_zerocnt;
+      case Iop_Clz64x2:  fpop = Pav_ZEROCNTDBL;    goto do_zerocnt;
+      do_zerocnt:
+      {
+        HReg arg = iselVecExpr(env, e->Iex.Unop.arg);
+        HReg dst = newVRegV(env);
+        addInstr(env, PPCInstr_AvUnary(fpop, dst, arg));
+        return dst;
+      }
+
       default:
          break;
       } /* switch (e->Iex.Unop.op) */
@@ -4981,6 +5001,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_CmpEQ8x16:  op = Pav_CMPEQU; goto do_AvBin8x16;
       case Iop_CmpGT8Ux16: op = Pav_CMPGTU; goto do_AvBin8x16;
       case Iop_CmpGT8Sx16: op = Pav_CMPGTS; goto do_AvBin8x16;
+      case Iop_PolynomialMulAdd8x16: op = Pav_POLYMULADD; goto do_AvBin8x16;
       do_AvBin8x16: {
          HReg arg1 = iselVecExpr(env, e->Iex.Binop.arg1);
          HReg arg2 = iselVecExpr(env, e->Iex.Binop.arg2);
@@ -5015,6 +5036,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_CmpEQ16x8:  op = Pav_CMPEQU; goto do_AvBin16x8;
       case Iop_CmpGT16Ux8: op = Pav_CMPGTU; goto do_AvBin16x8;
       case Iop_CmpGT16Sx8: op = Pav_CMPGTS; goto do_AvBin16x8;
+      case Iop_PolynomialMulAdd16x8: op = Pav_POLYMULADD; goto do_AvBin16x8;
       do_AvBin16x8: {
          HReg arg1 = iselVecExpr(env, e->Iex.Binop.arg1);
          HReg arg2 = iselVecExpr(env, e->Iex.Binop.arg2);
@@ -5052,6 +5074,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_CmpGT32Sx4: op = Pav_CMPGTS; goto do_AvBin32x4;
       case Iop_CatOddLanes32x4:  op = Pav_CATODD;  goto do_AvBin32x4;
       case Iop_CatEvenLanes32x4: op = Pav_CATEVEN; goto do_AvBin32x4;
+      case Iop_PolynomialMulAdd32x4: op = Pav_POLYMULADD; goto do_AvBin32x4;
       do_AvBin32x4: {
          HReg arg1 = iselVecExpr(env, e->Iex.Binop.arg1);
          HReg arg2 = iselVecExpr(env, e->Iex.Binop.arg2);
@@ -5078,6 +5101,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_CmpEQ64x2:  op = Pav_CMPEQU; goto do_AvBin64x2;
       case Iop_CmpGT64Ux2: op = Pav_CMPGTU; goto do_AvBin64x2;
       case Iop_CmpGT64Sx2: op = Pav_CMPGTS; goto do_AvBin64x2;
+      case Iop_PolynomialMulAdd64x2: op = Pav_POLYMULADD; goto do_AvBin64x2;
       do_AvBin64x2: {
          HReg arg1 = iselVecExpr(env, e->Iex.Binop.arg1);
          HReg arg2 = iselVecExpr(env, e->Iex.Binop.arg2);
@@ -5148,10 +5172,51 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
+      case Iop_CipherV128:  op = Pav_CIPHERV128;   goto do_AvCipherV128;
+      case Iop_CipherLV128: op = Pav_CIPHERLV128;  goto do_AvCipherV128;
+      case Iop_NCipherV128: op = Pav_NCIPHERV128;  goto do_AvCipherV128;
+      case Iop_NCipherLV128:op = Pav_NCIPHERLV128; goto do_AvCipherV128;
+      do_AvCipherV128: {
+         HReg arg1 = iselVecExpr(env, e->Iex.Binop.arg1);
+         HReg arg2 = iselVecExpr(env, e->Iex.Binop.arg2);
+         HReg dst  = newVRegV(env);
+         addInstr(env, PPCInstr_AvCipherV128Binary(op, dst, arg1, arg2));
+         return dst;
+      }
+
+      case Iop_SHA256:op = Pav_SHA256; goto do_AvHashV128;
+      case Iop_SHA512:op = Pav_SHA512; goto do_AvHashV128;
+      do_AvHashV128: {
+         HReg arg1 = iselVecExpr(env, e->Iex.Binop.arg1);
+         HReg dst  = newVRegV(env);
+         PPCRI* s_field = iselWordExpr_RI(env, e->Iex.Binop.arg2);
+         addInstr(env, PPCInstr_AvHashV128Binary(op, dst, arg1, s_field));
+         return dst;
+      }
       default:
          break;
       } /* switch (e->Iex.Binop.op) */
    } /* if (e->tag == Iex_Binop) */
+
+   if (e->tag == Iex_Triop) {
+      IRTriop *triop = e->Iex.Triop.details;
+      switch (triop->op) {
+      case Iop_BCDAdd:op = Pav_BCDAdd; goto do_AvBCDV128;
+      case Iop_BCDSub:op = Pav_BCDSub; goto do_AvBCDV128;
+      do_AvBCDV128: {
+         HReg arg1 = iselVecExpr(env, triop->arg1);
+         HReg arg2 = iselVecExpr(env, triop->arg2);
+         HReg dst  = newVRegV(env);
+         PPCRI* ps = iselWordExpr_RI(env, triop->arg3);
+         addInstr(env, PPCInstr_AvBCDV128Trinary(op, dst, arg1, arg2, ps));
+         return dst;
+      }
+
+      default:
+         break;
+      } /* switch (e->Iex.Triop.op) */
+   } /* if (e->tag == Iex_Trinop) */
+
 
    if (e->tag == Iex_Const ) {
       vassert(e->Iex.Const.con->tag == Ico_V128);

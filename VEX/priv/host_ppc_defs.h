@@ -426,6 +426,22 @@ typedef
 
       /* Concatenation */
       Pav_CATODD, Pav_CATEVEN,
+
+      /* Polynomial Multipy-Add */
+      Pav_POLYMULADD,
+
+      /* Cipher */
+      Pav_CIPHERV128, Pav_CIPHERLV128, Pav_NCIPHERV128, Pav_NCIPHERLV128,
+      Pav_CIPHERSUBV128,
+
+      /* Hash */
+      Pav_SHA256, Pav_SHA512,
+
+      /* BCD Arithmetic */
+      Pav_BCDAdd, Pav_BCDSub,
+
+      /* zero count */
+      Pav_ZEROCNTBYTE, Pav_ZEROCNTWORD, Pav_ZEROCNTHALF, Pav_ZEROCNTDBL,
    }
    PPCAvOp;
 
@@ -507,6 +523,10 @@ typedef
       Pin_AvSplat,    /* One elem repeated throughout dst */
       Pin_AvLdVSCR,   /* mtvscr */
       Pin_AvCMov,     /* AV conditional move */
+      Pin_AvCipherV128Unary,  /* AV Vector unary Cipher */
+      Pin_AvCipherV128Binary, /* AV Vector binary Cipher */
+      Pin_AvHashV128Binary, /* AV Vector binary Hash */
+      Pin_AvBCDV128Trinary, /* BCD Arithmetic */
       Pin_Dfp64Unary,   /* DFP64  unary op */
       Pin_Dfp128Unary,  /* DFP128 unary op */
       Pin_DfpShift,     /* Decimal floating point shift by immediate value */
@@ -854,6 +874,30 @@ typedef
             HReg src;
          } AvLdVSCR;
          struct {
+            PPCAvOp   op;
+            HReg      dst;
+            HReg      src;
+         } AvCipherV128Unary;
+         struct {
+            PPCAvOp     op;
+            HReg       dst;
+            HReg       src;
+            PPCRI* s_field;
+         } AvHashV128Binary;
+         struct {
+            PPCAvOp     op;
+            HReg       dst;
+            HReg      src1;
+            HReg      src2;
+            PPCRI*      ps;
+         } AvBCDV128Trinary;
+         struct {
+            PPCAvOp   op;
+            HReg      dst;
+            HReg      srcL;
+            HReg      srcR;
+         } AvCipherV128Binary;
+         struct {
             PPCFpOp op;
             HReg dst;
             HReg src;
@@ -1034,7 +1078,15 @@ extern PPCInstr* PPCInstr_AvShlDbl   ( UChar shift, HReg dst, HReg srcL, HReg sr
 extern PPCInstr* PPCInstr_AvSplat    ( UChar sz, HReg dst, PPCVI5s* src );
 extern PPCInstr* PPCInstr_AvCMov     ( PPCCondCode, HReg dst, HReg src );
 extern PPCInstr* PPCInstr_AvLdVSCR   ( HReg src );
-
+extern PPCInstr* PPCInstr_AvCipherV128Unary  ( PPCAvOp op, HReg dst,
+                                               HReg srcR );
+extern PPCInstr* PPCInstr_AvCipherV128Binary ( PPCAvOp op, HReg dst,
+                                               HReg srcL, HReg srcR );
+extern PPCInstr* PPCInstr_AvHashV128Binary ( PPCAvOp op, HReg dst,
+                                             HReg src, PPCRI* s_field );
+extern PPCInstr* PPCInstr_AvBCDV128Trinary ( PPCAvOp op, HReg dst,
+                                             HReg src1, HReg src2,
+                                             PPCRI* ps );
 extern PPCInstr* PPCInstr_Dfp64Unary  ( PPCFpOp op, HReg dst, HReg src );
 extern PPCInstr* PPCInstr_Dfp64Binary ( PPCFpOp op, HReg dst, HReg srcL,
                                         HReg srcR );

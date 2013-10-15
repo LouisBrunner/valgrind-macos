@@ -896,6 +896,7 @@ typedef
       Iop_Cnt8x8,
       Iop_Clz8Sx8, Iop_Clz16Sx4, Iop_Clz32Sx2,
       Iop_Cls8Sx8, Iop_Cls16Sx4, Iop_Cls32Sx2,
+      Iop_Clz64x2,
 
       /* VECTOR x VECTOR SHIFT / ROTATE */
       Iop_Shl8x8, Iop_Shl16x4, Iop_Shl32x2,
@@ -1237,6 +1238,12 @@ typedef
        */
       Iop_BCDtoDPB,
 
+      /* BCD arithmetic instructions, (V128, V128) -> V128
+       * The BCD format is the same as that used in the BCD<->DPB conversion
+       * routines, except using 124 digits (vs 60) plus the trailing 4-bit signed code.
+       * */
+      Iop_BCDAdd, Iop_BCDSub,
+
       /* Conversion I64 -> D64 */
       Iop_ReinterpI64asD64,
 
@@ -1402,6 +1409,39 @@ typedef
          polynoms over {0, 1}. */
       Iop_PolynomialMul8x16, /* (V128, V128) -> V128 */
       Iop_PolynomialMull8x8, /*   (I64, I64) -> V128 */
+
+      /* Vector Polynomial multiplication add.   (V128, V128) -> V128
+
+       *** Below is the algorithm for the instructions. These Iops could
+           be emulated to get this functionality, but the emulation would
+           be long and messy.
+
+        Example for polynomial multiply add for vector of bytes
+        do i = 0 to 15
+            prod[i].bit[0:14] <- 0
+            srcA <- VR[argL].byte[i]
+            srcB <- VR[argR].byte[i]
+            do j = 0 to 7
+                do k = 0 to j
+                    gbit <- srcA.bit[k] & srcB.bit[j-k]
+                    prod[i].bit[j] <- prod[i].bit[j] ^ gbit
+                end
+            end
+
+            do j = 8 to 14
+                do k = j-7 to 7
+                     gbit <- (srcA.bit[k] & srcB.bit[j-k])
+                     prod[i].bit[j] <- prod[i].bit[j] ^ gbit
+                end
+            end
+        end
+
+        do i = 0 to 7
+            VR[dst].hword[i] <- 0b0 || (prod[2×i] ^ prod[2×i+1])
+        end
+      */
+      Iop_PolynomialMulAdd8x16, Iop_PolynomialMulAdd16x8,
+      Iop_PolynomialMulAdd32x4, Iop_PolynomialMulAdd64x2,
 
       /* PAIRWISE operations */
       /* Iop_PwFoo16x4( [a,b,c,d], [e,f,g,h] ) =
@@ -1597,6 +1637,17 @@ typedef
       Iop_Avg8Ux32, Iop_Avg16Ux16,
 
       Iop_Perm32x8,
+
+      /* (V128, V128) -> V128 */
+      Iop_CipherV128, Iop_CipherLV128, Iop_CipherSV128,
+      Iop_NCipherV128, Iop_NCipherLV128,
+
+      /* Hash instructions, Federal Information Processing Standards
+       * Publication 180-3 Secure Hash Standard. */
+      /* (V128, I8) -> V128; The I8 input arg is (ST | SIX), where ST and
+       * SIX are fields from the insn. See ISA 2.07 description of
+       * vshasigmad and vshasigmaw insns.*/
+      Iop_SHA512, Iop_SHA256,
 
       /* ------------------ 256-bit SIMD FP. ------------------ */
       Iop_Add64Fx4,

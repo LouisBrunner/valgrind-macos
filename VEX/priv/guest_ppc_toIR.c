@@ -791,6 +791,16 @@ static void breakV128to4x32( IRExpr* t128,
    assign( *t0, unop(Iop_64to32,   mkexpr(lo64)) );
 }
 
+static IRExpr* mkV128from32( IRTemp t3, IRTemp t2,
+                               IRTemp t1, IRTemp t0 )
+{
+   return
+      binop( Iop_64HLtoV128,
+             binop(Iop_32HLto64, mkexpr(t3), mkexpr(t2)),
+             binop(Iop_32HLto64, mkexpr(t1), mkexpr(t0))
+   );
+}
+
 
 /* Signed saturating narrow 64S to 32 */
 static IRExpr* mkQNarrow64Sto32 ( IRExpr* t64 )
@@ -1364,12 +1374,29 @@ static Int guestCR0offset ( UInt cr )
    }
 }
 
+typedef enum {
+   _placeholder0,
+   _placeholder1,
+   _placeholder2,
+   BYTE,
+   HWORD,
+   WORD,
+   DWORD
+} _popcount_data_type;
+
 /* Generate an IR sequence to do a popcount operation on the supplied
    IRTemp, and return a new IRTemp holding the result.  'ty' may be
    Ity_I32 or Ity_I64 only. */
-static IRTemp gen_POPCOUNT ( IRType ty, IRTemp src, Bool byte_count )
+static IRTemp gen_POPCOUNT ( IRType ty, IRTemp src, _popcount_data_type data_type )
 {
-   Int i, shift[6], max;
+  /* Do count across 2^data_type bits,
+     byte:        data_type = 3
+     half word:   data_type = 4
+     word:        data_type = 5
+     double word: data_type = 6  (not supported for 32-bit type)
+    */
+   Int shift[6];
+   _popcount_data_type idx, i;
    IRTemp mask[6];
    IRTemp old = IRTemp_INVALID;
    IRTemp nyu = IRTemp_INVALID;
@@ -1377,17 +1404,10 @@ static IRTemp gen_POPCOUNT ( IRType ty, IRTemp src, Bool byte_count )
    vassert(ty == Ity_I64 || ty == Ity_I32);
 
    if (ty == Ity_I32) {
-      if (byte_count)
-         /* Return the population count across each byte not across the entire
-          * 32-bit value.  Stop after third iteration.
-          */
-         max = 3;
-      else
-         max = 5;
 
-      for (i = 0; i < 5; i++) {
-         mask[i]  = newTemp(ty);
-         shift[i] = 1 << i;
+      for (idx = 0; idx < WORD; idx++) {
+         mask[idx]  = newTemp(ty);
+         shift[idx] = 1 << idx;
       }
       assign(mask[0], mkU32(0x55555555));
       assign(mask[1], mkU32(0x33333333));
@@ -1395,7 +1415,7 @@ static IRTemp gen_POPCOUNT ( IRType ty, IRTemp src, Bool byte_count )
       assign(mask[3], mkU32(0x00FF00FF));
       assign(mask[4], mkU32(0x0000FFFF));
       old = src;
-      for (i = 0; i < max; i++) {
+      for (i = 0; i < data_type; i++) {
          nyu = newTemp(ty);
          assign(nyu,
                 binop(Iop_Add32,
@@ -1409,16 +1429,11 @@ static IRTemp gen_POPCOUNT ( IRType ty, IRTemp src, Bool byte_count )
       }
       return nyu;
    }
-// else, ty == Ity_I64
-   if (byte_count)
-      /* Return the population count across each byte not across the entire
-       * 64-bit value.  Stop after third iteration.
-       */
-      max = 3;
-   else
-      max = 6;
 
-   for (i = 0; i < 6; i++) {
+// else, ty == Ity_I64
+   vassert(mode64);
+
+   for (i = 0; i < DWORD; i++) {
       mask[i] = newTemp( Ity_I64 );
       shift[i] = 1 << i;
    }
@@ -1429,7 +1444,7 @@ static IRTemp gen_POPCOUNT ( IRType ty, IRTemp src, Bool byte_count )
    assign( mask[4], mkU64( 0x0000FFFF0000FFFFULL ) );
    assign( mask[5], mkU64( 0x00000000FFFFFFFFULL ) );
    old = src;
-   for (i = 0; i < max; i++) {
+   for (i = 0; i < data_type; i++) {
       nyu = newTemp( Ity_I64 );
       assign( nyu,
               binop( Iop_Add64,
@@ -1440,6 +1455,60 @@ static IRTemp gen_POPCOUNT ( IRType ty, IRTemp src, Bool byte_count )
       old = nyu;
    }
    return nyu;
+}
+
+/* Special purpose population count function for
+ * vpopcntd in 32-bit mode.
+ */
+static IRTemp gen_vpopcntd_mode32 ( IRTemp src1, IRTemp src2 )
+{
+   Int i, shift[6];
+   IRTemp mask[6];
+   IRTemp old = IRTemp_INVALID;
+   IRTemp nyu1 = IRTemp_INVALID;
+   IRTemp nyu2 = IRTemp_INVALID;
+   IRTemp retval = newTemp(Ity_I64);
+
+   vassert(!mode64);
+
+   for (i = 0; i < WORD; i++) {
+      mask[i]  = newTemp(Ity_I32);
+      shift[i] = 1 << i;
+   }
+   assign(mask[0], mkU32(0x55555555));
+   assign(mask[1], mkU32(0x33333333));
+   assign(mask[2], mkU32(0x0F0F0F0F));
+   assign(mask[3], mkU32(0x00FF00FF));
+   assign(mask[4], mkU32(0x0000FFFF));
+   old = src1;
+   for (i = 0; i < WORD; i++) {
+      nyu1 = newTemp(Ity_I32);
+      assign(nyu1,
+             binop(Iop_Add32,
+                   binop(Iop_And32,
+                         mkexpr(old),
+                         mkexpr(mask[i])),
+                   binop(Iop_And32,
+                         binop(Iop_Shr32, mkexpr(old), mkU8(shift[i])),
+                         mkexpr(mask[i]))));
+      old = nyu1;
+   }
+
+   old = src2;
+   for (i = 0; i < WORD; i++) {
+      nyu2 = newTemp(Ity_I32);
+      assign(nyu2,
+             binop(Iop_Add32,
+                   binop(Iop_And32,
+                         mkexpr(old),
+                         mkexpr(mask[i])),
+                   binop(Iop_And32,
+                         binop(Iop_Shr32, mkexpr(old), mkU8(shift[i])),
+                         mkexpr(mask[i]))));
+      old = nyu2;
+   }
+   assign(retval, unop(Iop_32Uto64, binop(Iop_Add32, mkexpr(nyu1), mkexpr(nyu2))));
+   return retval;
 }
 
 
@@ -4143,7 +4212,7 @@ static Bool dis_int_logic ( UInt theInstr )
       case 0x1FA: // popcntd (population count doubleword
       {
     	  DIP("popcntd r%u,r%u\n", rA_addr, rS_addr);
-    	  IRTemp result = gen_POPCOUNT(ty, rS, False);
+    	  IRTemp result = gen_POPCOUNT(ty, rS, DWORD);
     	  putIReg( rA_addr, mkexpr(result) );
     	  return True;
       }
@@ -4156,11 +4225,11 @@ static Bool dis_int_logic ( UInt theInstr )
             IRTemp argHi = newTemp(Ity_I32);
             assign(argLo, unop(Iop_64to32, mkexpr(rS)));
             assign(argHi, unop(Iop_64HIto32, mkexpr(rS)));
-            resultLo = gen_POPCOUNT(Ity_I32, argLo, False);
-            resultHi = gen_POPCOUNT(Ity_I32, argHi, False);
+            resultLo = gen_POPCOUNT(Ity_I32, argLo, WORD);
+            resultHi = gen_POPCOUNT(Ity_I32, argHi, WORD);
             putIReg( rA_addr, binop(Iop_32HLto64, mkexpr(resultHi), mkexpr(resultLo)));
          } else {
-            IRTemp result = gen_POPCOUNT(ty, rS, False);
+            IRTemp result = gen_POPCOUNT(ty, rS, WORD);
             putIReg( rA_addr, mkexpr(result) );
          }
          return True;
@@ -4175,12 +4244,12 @@ static Bool dis_int_logic ( UInt theInstr )
             IRTemp argHi = newTemp(Ity_I32);
             assign(argLo, unop(Iop_64to32, mkexpr(rS)));
             assign(argHi, unop(Iop_64HIto32, mkexpr(rS)));
-            resultLo = gen_POPCOUNT(Ity_I32, argLo, True);
-            resultHi = gen_POPCOUNT(Ity_I32, argHi, True);
+            resultLo = gen_POPCOUNT(Ity_I32, argLo, BYTE);
+            resultHi = gen_POPCOUNT(Ity_I32, argHi, BYTE);
             putIReg( rA_addr, binop(Iop_32HLto64, mkexpr(resultHi),
                                     mkexpr(resultLo)));
          } else {
-            IRTemp result = gen_POPCOUNT(ty, rS, True);
+            IRTemp result = gen_POPCOUNT(ty, rS, BYTE);
             putIReg( rA_addr, mkexpr(result) );
          }
          return True;
@@ -13201,6 +13270,167 @@ dis_vxv_sp_arith ( UInt theInstr, UInt opc2 )
    return True;
 }
 
+/*
+ * VSX vector Population Count
+ */
+static Bool
+dis_vxv_population_count ( UInt theInstr, UInt opc2 )
+{
+   UChar vRB_addr = ifieldRegB(theInstr);
+   UChar vRT_addr = ifieldRegDS(theInstr);
+   UChar opc1 = ifieldOPC( theInstr );
+   IRTemp vB = newTemp(Ity_V128);
+   assign( vB, getVReg(vRB_addr));
+
+   if (opc1 != 0x4) {
+      vex_printf( "dis_vxv_population_count(ppc)(instr)\n" );
+      return False;
+   }
+
+   switch (opc2) {
+      case 0x702:    // vclzb
+         DIP("vclzb v%d,v%d\n", vRT_addr, vRB_addr);
+         putVReg( vRT_addr, unop(Iop_Clz8Sx16, mkexpr( vB ) ) );
+         break;
+
+      case 0x742:    // vclzh
+         DIP("vclzh v%d,v%d\n", vRT_addr, vRB_addr);
+         putVReg( vRT_addr, unop(Iop_Clz16Sx8, mkexpr( vB ) ) );
+         break;
+
+      case 0x782:    // vclzw
+         DIP("vclzw v%d,v%d\n", vRT_addr, vRB_addr);
+         putVReg( vRT_addr, unop(Iop_Clz32Sx4, mkexpr( vB ) ) );
+         break;
+
+      case 0x7C2:    // vclzd
+         DIP("vclzd v%d,v%d\n", vRT_addr, vRB_addr);
+         putVReg( vRT_addr, unop(Iop_Clz64x2, mkexpr( vB ) ) );
+         break;
+
+      case 0x703:    // vpopcntb
+      {
+         /* Break vector into 32-bit words and do the population count
+          * on byte in the words
+          */
+         IRType ty = Ity_I32;
+         IRTemp bits0_31, bits32_63, bits64_95, bits96_127;
+         bits0_31 = bits32_63 = bits64_95 = bits96_127 = IRTemp_INVALID;
+         IRTemp cnt_bits0_31, cnt_bits32_63, cnt_bits64_95, cnt_bits96_127;
+         cnt_bits0_31 = cnt_bits32_63 = cnt_bits64_95 = cnt_bits96_127 = IRTemp_INVALID;
+
+         DIP("vpopcntb v%d,v%d\n", vRT_addr, vRB_addr);
+         breakV128to4x32(mkexpr( vB), &bits96_127, &bits64_95, &bits32_63, &bits0_31 );
+         cnt_bits0_31   = gen_POPCOUNT(ty, bits0_31,   BYTE);
+         cnt_bits32_63  = gen_POPCOUNT(ty, bits32_63,  BYTE);
+         cnt_bits64_95  = gen_POPCOUNT(ty, bits64_95,  BYTE);
+         cnt_bits96_127 = gen_POPCOUNT(ty, bits96_127, BYTE);
+
+         putVReg( vRT_addr, mkV128from32(cnt_bits96_127, cnt_bits64_95,
+                                         cnt_bits32_63, cnt_bits0_31) );
+         break;
+      }
+
+      case 0x743:    // vpopcnth
+      {
+         /* Break vector into 32-bit words and do the population count
+          * for each half word
+          */
+         IRType ty = Ity_I32;
+         IRTemp bits0_31, bits32_63, bits64_95, bits96_127;
+         bits0_31 = bits32_63 = bits64_95 = bits96_127 = IRTemp_INVALID;
+         IRTemp cnt_bits0_31, cnt_bits32_63, cnt_bits64_95, cnt_bits96_127;
+         cnt_bits0_31 = cnt_bits32_63 = cnt_bits64_95 = cnt_bits96_127 = IRTemp_INVALID;
+
+         DIP("vpopcnth v%d,v%d\n", vRT_addr, vRB_addr);
+         breakV128to4x32(mkexpr( vB), &bits96_127, &bits64_95, &bits32_63, &bits0_31 );
+
+         cnt_bits0_31   = gen_POPCOUNT(ty, bits0_31,   HWORD);
+         cnt_bits32_63  = gen_POPCOUNT(ty, bits32_63,  HWORD);
+         cnt_bits64_95  = gen_POPCOUNT(ty, bits64_95,  HWORD);
+         cnt_bits96_127 = gen_POPCOUNT(ty, bits96_127, HWORD);
+
+         putVReg( vRT_addr, mkV128from32(cnt_bits96_127, cnt_bits64_95,
+                                         cnt_bits32_63, cnt_bits0_31) );
+         break;
+      }
+
+      case 0x783:    // vpopcntw
+      {
+         /* Break vector into 32-bit words and do the population count
+          * on each word.
+          */
+         IRType ty = Ity_I32;
+         IRTemp bits0_31, bits32_63, bits64_95, bits96_127;
+         bits0_31 = bits32_63 = bits64_95 = bits96_127 = IRTemp_INVALID;
+         IRTemp cnt_bits0_31, cnt_bits32_63, cnt_bits64_95, cnt_bits96_127;
+         cnt_bits0_31 = cnt_bits32_63 = cnt_bits64_95 = cnt_bits96_127 = IRTemp_INVALID;
+
+         DIP("vpopcntw v%d,v%d\n", vRT_addr, vRB_addr);
+         breakV128to4x32(mkexpr( vB), &bits96_127, &bits64_95, &bits32_63, &bits0_31 );
+
+         cnt_bits0_31   = gen_POPCOUNT(ty, bits0_31,   WORD);
+         cnt_bits32_63  = gen_POPCOUNT(ty, bits32_63,  WORD);
+         cnt_bits64_95  = gen_POPCOUNT(ty, bits64_95,  WORD);
+         cnt_bits96_127 = gen_POPCOUNT(ty, bits96_127, WORD);
+
+         putVReg( vRT_addr, mkV128from32(cnt_bits96_127, cnt_bits64_95,
+                                         cnt_bits32_63, cnt_bits0_31) );
+         break;
+      }
+
+      case 0x7C3:    // vpopcntd
+      {
+         if (mode64) {
+            /* Break vector into 64-bit double words and do the population count
+             * on each double word.
+             */
+            IRType ty = Ity_I64;
+            IRTemp bits0_63   = newTemp(Ity_I64);
+            IRTemp bits64_127 = newTemp(Ity_I64);
+            IRTemp cnt_bits0_63   = newTemp(Ity_I64);
+            IRTemp cnt_bits64_127 = newTemp(Ity_I64);
+
+            DIP("vpopcntd v%d,v%d\n", vRT_addr, vRB_addr);
+
+            assign(bits0_63,   unop( Iop_V128to64,   mkexpr( vB ) ) );
+            assign(bits64_127, unop( Iop_V128HIto64, mkexpr( vB ) ) );
+            cnt_bits0_63   = gen_POPCOUNT(ty, bits0_63,   DWORD);
+            cnt_bits64_127 = gen_POPCOUNT(ty, bits64_127, DWORD);
+
+            putVReg( vRT_addr, binop( Iop_64HLtoV128,
+                                      mkexpr( cnt_bits64_127 ),
+                                      mkexpr( cnt_bits0_63 ) ) );
+         } else {
+            /* Break vector into 32-bit words and do the population count
+             * on each doubleword.
+             */
+            IRTemp bits0_31, bits32_63, bits64_95, bits96_127;
+            bits0_31 = bits32_63 = bits64_95 = bits96_127 = IRTemp_INVALID;
+            IRTemp cnt_bits0_63   = newTemp(Ity_I64);
+            IRTemp cnt_bits64_127  = newTemp(Ity_I64);
+
+            DIP("vpopcntd v%d,v%d\n", vRT_addr, vRB_addr);
+            breakV128to4x32(mkexpr( vB), &bits96_127, &bits64_95, &bits32_63, &bits0_31 );
+
+            cnt_bits0_63   = gen_vpopcntd_mode32(bits0_31, bits32_63);
+            cnt_bits64_127 = gen_vpopcntd_mode32(bits64_95, bits96_127);
+
+            putVReg( vRT_addr, binop( Iop_64HLtoV128,
+                                      mkexpr( cnt_bits64_127 ),
+                                      mkexpr( cnt_bits0_63 ) ) );
+         }
+         break;
+      }
+
+      default:
+         vex_printf("dis_vxv_population_count(ppc)(opc2)\n");
+         return False;
+      break;
+   }
+   return True;
+}
+
 typedef enum {
    PPC_CMP_EQ = 2,
    PPC_CMP_GT = 4,
@@ -15925,6 +16155,27 @@ static Bool dis_av_logic ( UInt theInstr )
          unop(Iop_NotV128, binop(Iop_OrV128, mkexpr(vA), mkexpr(vB))) );
       break;
 
+   case 0x544: // vorc (vA Or'd with complement of vb)
+      DIP("vorc v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      putVReg( vD_addr, binop( Iop_OrV128,
+                               mkexpr( vA ),
+                               unop( Iop_NotV128, mkexpr( vB ) ) ) );
+      break;
+
+   case 0x584: // vnand (Nand)
+      DIP("vnand v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      putVReg( vD_addr, unop( Iop_NotV128,
+                              binop(Iop_AndV128, mkexpr( vA ),
+                              mkexpr( vB ) ) ) );
+      break;
+
+   case 0x684: // veqv (complemented XOr)
+      DIP("veqv v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      putVReg( vD_addr, unop( Iop_NotV128,
+                              binop( Iop_XorV128, mkexpr( vA ),
+                              mkexpr( vB ) ) ) );
+      break;
+
    default:
       vex_printf("dis_av_logic(ppc)(opc2=0x%x)\n", opc2);
       return False;
@@ -16309,6 +16560,60 @@ static Bool dis_av_multarith ( UInt theInstr )
 }
 
 /*
+  AltiVec Polynomial Multiply-Sum Instructions
+*/
+static Bool dis_av_polymultarith ( UInt theInstr )
+{
+   /* VA-Form */
+   UChar opc1     = ifieldOPC(theInstr);
+   UChar vD_addr  = ifieldRegDS(theInstr);
+   UChar vA_addr  = ifieldRegA(theInstr);
+   UChar vB_addr  = ifieldRegB(theInstr);
+   UChar vC_addr  = ifieldRegC(theInstr);
+   UInt  opc2     = IFIELD(theInstr, 0, 11);
+   IRTemp vA    = newTemp(Ity_V128);
+   IRTemp vB    = newTemp(Ity_V128);
+   IRTemp vC    = newTemp(Ity_V128);
+
+   assign( vA, getVReg(vA_addr));
+   assign( vB, getVReg(vB_addr));
+   assign( vC, getVReg(vC_addr));
+
+   if (opc1 != 0x4) {
+      vex_printf("dis_av_polymultarith(ppc)(instr)\n");
+      return False;
+   }
+
+   switch (opc2) {
+      /* Polynomial Multiply-Add */
+      case 0x408:  // vpmsumb   Vector Polynomial Multipy-sum Byte
+         DIP("vpmsumb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+         putVReg( vD_addr, binop(Iop_PolynomialMulAdd8x16,
+                                 mkexpr(vA), mkexpr(vB)) );
+         break;
+      case 0x448:  // vpmsumd   Vector Polynomial Multipy-sum Double Word
+         DIP("vpmsumd v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+         putVReg( vD_addr, binop(Iop_PolynomialMulAdd64x2,
+                                 mkexpr(vA), mkexpr(vB)) );
+         break;
+      case 0x488:  // vpmsumw   Vector Polynomial Multipy-sum Word
+         DIP("vpmsumw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+         putVReg( vD_addr, binop(Iop_PolynomialMulAdd32x4,
+                                 mkexpr(vA), mkexpr(vB)) );
+         break;
+      case 0x4C8:  // vpmsumh   Vector Polynomial Multipy-sum Half Word
+         DIP("vpmsumh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+         putVReg( vD_addr, binop(Iop_PolynomialMulAdd16x8,
+                                 mkexpr(vA), mkexpr(vB)) );
+         break;
+      default:
+         vex_printf("dis_av_polymultarith(ppc)(opc2=0x%x)\n", opc2);
+         return False;
+   }
+   return True;
+}
+
+/*
   AltiVec Shift/Rotate Instructions
 */
 static Bool dis_av_shift ( UInt theInstr )
@@ -16550,7 +16855,25 @@ static Bool dis_av_permute ( UInt theInstr )
                   binop(Iop_ShlV128, mkexpr(vA), mkU8(SHB_uimm4*8)),
                   binop(Iop_ShrV128, mkexpr(vB), mkU8((16-SHB_uimm4)*8))) );
       return True;
+   case 0x2D: {  // vpermxor (Vector Permute and Exclusive-OR)
+      IRTemp a_perm  = newTemp(Ity_V128);
+      IRTemp b_perm  = newTemp(Ity_V128);
+      IRTemp vrc_a   = newTemp(Ity_V128);
+      IRTemp vrc_b   = newTemp(Ity_V128);
 
+      /* IBM index  is 0:7, Change index value to index 7:0 */
+      assign( vrc_b, binop( Iop_AndV128, mkexpr( vC ),
+                            unop( Iop_Dup8x16, mkU8( 0xF ) ) ) );
+      assign( vrc_a, binop( Iop_ShrV128,
+                            binop( Iop_AndV128, mkexpr( vC ),
+                                   unop( Iop_Dup8x16, mkU8( 0xF0 ) ) ),
+                            mkU8 ( 4 ) ) );
+      assign( a_perm, binop( Iop_Perm8x16, mkexpr( vA ), mkexpr( vrc_a ) ) );
+      assign( b_perm, binop( Iop_Perm8x16, mkexpr( vB ), mkexpr( vrc_b ) ) );
+      putVReg( vD_addr, binop( Iop_XorV128,
+                               mkexpr( a_perm ), mkexpr( b_perm) ) );
+      return True;
+   }
    default:
      break; // Fall through...
    }
@@ -16989,6 +17312,158 @@ static Bool dis_av_pack ( UInt theInstr )
    return True;
 }
 
+/*
+  AltiVec Cipher Instructions
+*/
+static Bool dis_av_cipher ( UInt theInstr )
+{
+   /* VX-Form */
+   UChar opc1     = ifieldOPC(theInstr);
+   UChar vD_addr  = ifieldRegDS(theInstr);
+   UChar vA_addr  = ifieldRegA(theInstr);
+   UChar vB_addr  = ifieldRegB(theInstr);
+   UInt  opc2     = IFIELD( theInstr, 0, 11 );
+
+   IRTemp vA    = newTemp(Ity_V128);
+   IRTemp vB    = newTemp(Ity_V128);
+   assign( vA, getVReg(vA_addr));
+   assign( vB, getVReg(vB_addr));
+
+   if (opc1 != 0x4) {
+      vex_printf("dis_av_cipher(ppc)(instr)\n");
+      return False;
+   }
+   switch (opc2) {
+      case 0x508: // vcipher (Vector Inverser Cipher)
+         DIP("vcipher v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+         putVReg( vD_addr,
+                  binop(Iop_CipherV128, mkexpr(vA), mkexpr(vB)) );
+         return True;
+
+      case 0x509: // vcipherlast (Vector Inverser Cipher Last)
+         DIP("vcipherlast v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+         putVReg( vD_addr,
+                  binop(Iop_CipherLV128, mkexpr(vA), mkexpr(vB)) );
+         return True;
+
+      case 0x548: // vncipher (Vector Inverser Cipher)
+         DIP("vncipher v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+         putVReg( vD_addr,
+                  binop(Iop_NCipherV128, mkexpr(vA), mkexpr(vB)) );
+         return True;
+
+      case 0x549: // vncipherlast (Vector Inverser Cipher Last)
+         DIP("vncipherlast v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+         putVReg( vD_addr,
+                  binop(Iop_NCipherLV128, mkexpr(vA), mkexpr(vB)) );
+         return True;
+
+      case 0x5C8: /* vsbox (Vector SubBytes, this does the cipher
+       * subBytes transform)
+       */
+         DIP("vsbox v%d,v%d\n", vD_addr, vA_addr);
+         putVReg( vD_addr,
+                  unop(Iop_CipherSV128, mkexpr(vA) ) );
+         return True;
+
+      default:
+         vex_printf("dis_av_cipher(ppc)(opc2)\n");
+         return False;
+   }
+   return True;
+}
+
+/*
+  AltiVec Secure Hash Instructions
+*/
+static Bool dis_av_hash ( UInt theInstr )
+{
+   /* VX-Form */
+   UChar opc1     = ifieldOPC(theInstr);
+   UChar vRT_addr = ifieldRegDS(theInstr);
+   UChar vRA_addr  = ifieldRegA(theInstr);
+   UChar s_field  = IFIELD( theInstr, 11, 5 );  // st and six field
+   UChar st       = IFIELD( theInstr, 15, 1 );  // st
+   UChar six      = IFIELD( theInstr, 11, 4 );  // six field
+   UInt  opc2     = IFIELD( theInstr, 0, 11 );
+
+   IRTemp vA    = newTemp(Ity_V128);
+   IRTemp dst    = newTemp(Ity_V128);
+   assign( vA, getVReg(vRA_addr));
+
+   if (opc1 != 0x4) {
+      vex_printf("dis_av_hash(ppc)(instr)\n");
+      return False;
+   }
+
+   switch (opc2) {
+      case 0x682:  // vshasigmaw
+         DIP("vshasigmaw v%d,v%d,%u,%u\n", vRT_addr, vRA_addr, st, six);
+         assign( dst, binop( Iop_SHA256, mkexpr( vA ), mkU8( s_field) ) );
+         putVReg( vRT_addr, mkexpr(dst));
+         return True;
+
+      case 0x6C2:  // vshasigmad,
+         DIP("vshasigmad v%d,v%d,%u,%u\n", vRT_addr, vRA_addr, st, six);
+         putVReg( vRT_addr, binop( Iop_SHA512, mkexpr( vA ), mkU8( s_field) ) );
+         return True;
+
+      default:
+         vex_printf("dis_av_hash(ppc)(opc2)\n");
+         return False;
+   }
+   return True;
+}
+
+/*
+  AltiVec BCD Arithmetic instructions.
+  These instructions modify CR6 for various conditions in the result,
+  including when an overflow occurs.  We could easily detect all conditions
+  except when an overflow occurs.  But since we can't be 100% accurate
+  in our emulation of CR6, it seems best to just not support it all.
+*/
+static Bool dis_av_bcd ( UInt theInstr )
+{
+   /* VX-Form */
+   UChar opc1     = ifieldOPC(theInstr);
+   UChar vRT_addr = ifieldRegDS(theInstr);
+   UChar vRA_addr = ifieldRegA(theInstr);
+   UChar vRB_addr = ifieldRegB(theInstr);
+   UChar ps       = IFIELD( theInstr, 9, 1 );
+   UInt  opc2     = IFIELD( theInstr, 0, 9 );
+
+   IRTemp vA    = newTemp(Ity_V128);
+   IRTemp vB    = newTemp(Ity_V128);
+   IRTemp dst    = newTemp(Ity_V128);
+   assign( vA, getVReg(vRA_addr));
+   assign( vB, getVReg(vRB_addr));
+
+   if (opc1 != 0x4) {
+      vex_printf("dis_av_bcd(ppc)(instr)\n");
+      return False;
+   }
+
+   switch (opc2) {
+   case 0x1:  // bcdadd
+     DIP("bcdadd. v%d,v%d,v%d,%u\n", vRT_addr, vRA_addr, vRB_addr, ps);
+     assign( dst, triop( Iop_BCDAdd, mkexpr( vA ),
+                         mkexpr( vB ), mkU8( ps ) ) );
+     putVReg( vRT_addr, mkexpr(dst));
+     return True;
+
+   case 0x41:  // bcdsub
+     DIP("bcdsub. v%d,v%d,v%d,%u\n", vRT_addr, vRA_addr, vRB_addr, ps);
+     assign( dst, triop( Iop_BCDSub, mkexpr( vA ),
+                         mkexpr( vB ), mkU8( ps ) ) );
+     putVReg( vRT_addr, mkexpr(dst));
+     return True;
+
+   default:
+      vex_printf("dis_av_bcd(ppc)(opc2)\n");
+      return False;
+   }
+   return True;
+}
 
 /*
   AltiVec Floating Point Arithmetic Instructions
@@ -18822,10 +19297,27 @@ DisResult disInstr_PPC_WRK (
          if (dis_av_permute( theInstr )) goto decode_success;
          goto decode_failure;
 
+      case 0x2D:                       // vpermxor
+         if (!allow_isa_2_07) goto decode_noP8;
+         if (dis_av_permute( theInstr )) goto decode_success;
+         goto decode_failure;
+
       /* AV Floating Point Mult-Add/Sub */
       case 0x2E: case 0x2F:            // vmaddfp, vnmsubfp
          if (!allow_V) goto decode_noV;
          if (dis_av_fp_arith( theInstr )) goto decode_success;
+         goto decode_failure;
+
+      default:
+         break;  // Fall through...
+      }
+
+      opc2 = IFIELD(theInstr, 0, 9);
+      switch (opc2) {
+      /* BCD arithmetic */
+      case 0x1: case 0x41:             // bcdadd, bcdsub
+         if (!allow_isa_2_07) goto decode_noP8;
+         if (dis_av_bcd( theInstr )) goto decode_success;
          goto decode_failure;
 
       default:
@@ -18868,6 +19360,13 @@ DisResult disInstr_PPC_WRK (
          if (dis_av_arith( theInstr )) goto decode_success;
          goto decode_failure;
 
+      /* AV Polynomial Vector Multiply Add */
+      case 0x408: case 0x448:            // vpmsumb, vpmsumd
+      case 0x488: case 0x4C8:            // vpmsumw, vpmsumh
+         if (!allow_isa_2_07) goto decode_noP8;
+         if (dis_av_polymultarith( theInstr )) goto decode_success;
+         goto decode_failure;
+
       /* AV Rotate, Shift */
       case 0x004: case 0x044: case 0x084: // vrlb, vrlh, vrlw
       case 0x104: case 0x144: case 0x184: // vslb, vslh, vslw
@@ -18889,6 +19388,12 @@ DisResult disInstr_PPC_WRK (
       case 0x404: case 0x444: case 0x484: // vand, vandc, vor
       case 0x4C4: case 0x504:             // vxor, vnor
          if (!allow_V) goto decode_noV;
+         if (dis_av_logic( theInstr )) goto decode_success;
+         goto decode_failure;
+
+      case 0x544:                         // vorc
+      case 0x584: case 0x684:             // vnand, veqv
+         if (!allow_isa_2_07) goto decode_noP8;
          if (dis_av_logic( theInstr )) goto decode_success;
          goto decode_failure;
 
@@ -18946,6 +19451,30 @@ DisResult disInstr_PPC_WRK (
       case 0x5CE: case 0x64E: case 0x6cE: // vpksdss, vupkhsw, vupklsw
          if (!allow_isa_2_07) goto decode_noP8;
          if (dis_av_pack( theInstr )) goto decode_success;
+         goto decode_failure;
+
+      case 0x508: case 0x509:             // vcipher, vcipherlast
+      case 0x548: case 0x549:             // vncipher, vncipherlast
+      case 0x5C8:                         // vsbox
+         if (!allow_isa_2_07) goto decode_noP8;
+         if (dis_av_cipher( theInstr )) goto decode_success;
+         goto decode_failure;
+
+      case 0x6C2: case 0x682:             // vshasigmaw, vshasigmad
+         if (!allow_isa_2_07) goto decode_noP8;
+         if (dis_av_hash( theInstr )) goto decode_success;
+         goto decode_failure;
+
+      case 0x702: case 0x742:             // vclzb, vclzh
+      case 0x782: case 0x7c2:             // vclzw, vclzd
+         if (!allow_isa_2_07) goto decode_noP8;
+         if (dis_vxv_population_count( theInstr, opc2 )) goto decode_success;
+         goto decode_failure;
+
+      case 0x703: case 0x743:             // vpopcntb, vpopcnth
+      case 0x783: case 0x7c3:             // vpopcntw, vpopcntd
+         if (!allow_isa_2_07) goto decode_noP8;
+         if (dis_vxv_population_count( theInstr, opc2 )) goto decode_success;
          goto decode_failure;
 
       default:

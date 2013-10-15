@@ -782,6 +782,15 @@ void ppIROp ( IROp op )
       case Iop_MullEven16Sx8: vex_printf("MullEven16Sx8"); return;
       case Iop_MullEven32Sx4: vex_printf("MullEven32Sx4"); return;
 
+      case Iop_PolynomialMulAdd8x16:
+         vex_printf("PolynomialMulAdd8x16"); return;
+      case Iop_PolynomialMulAdd16x8:
+         vex_printf("PolynomialMulAdd16x8"); return;
+      case Iop_PolynomialMulAdd32x4:
+         vex_printf("PolynomialMulAdd32x4"); return;
+      case Iop_PolynomialMulAdd64x2:
+         vex_printf("PolynomialMulAdd64x2"); return;
+
       case Iop_Avg8Ux16: vex_printf("Avg8Ux16"); return;
       case Iop_Avg16Ux8: vex_printf("Avg16Ux8"); return;
       case Iop_Avg32Ux4: vex_printf("Avg32Ux4"); return;
@@ -824,6 +833,7 @@ void ppIROp ( IROp op )
       case Iop_Clz8Sx16: vex_printf("Clz8Sx16"); return;
       case Iop_Clz16Sx8: vex_printf("Clz16Sx8"); return;
       case Iop_Clz32Sx4: vex_printf("Clz32Sx4"); return;
+      case Iop_Clz64x2: vex_printf("Clz64x2"); return;
       case Iop_Cls8Sx16: vex_printf("Cls8Sx16"); return;
       case Iop_Cls16Sx8: vex_printf("Cls16Sx8"); return;
       case Iop_Cls32Sx4: vex_printf("Cls32Sx4"); return;
@@ -1126,6 +1136,17 @@ void ppIROp ( IROp op )
       case Iop_SarN32x8:   vex_printf("SarN32x8"); return;
 
       case Iop_Perm32x8:   vex_printf("Perm32x8"); return;
+
+      case Iop_CipherV128:   vex_printf("CipherV128"); return;
+      case Iop_CipherLV128:  vex_printf("CipherLV128"); return;
+      case Iop_NCipherV128:  vex_printf("NCipherV128"); return;
+      case Iop_NCipherLV128: vex_printf("NCipherLV128"); return;
+      case Iop_CipherSV128:  vex_printf("CipherSV128"); return;
+
+      case Iop_SHA256:  vex_printf("SHA256"); return;
+      case Iop_SHA512:  vex_printf("SHA512"); return;
+      case Iop_BCDAdd:  vex_printf("BCDAdd"); return;
+      case Iop_BCDSub:  vex_printf("BCDSub"); return;
 
       default: vpanic("ppIROp(1)");
    }
@@ -2795,6 +2816,8 @@ void typeOfPrimop ( IROp op,
       case Iop_QSub32Sx4: case Iop_QSub64Sx2:
       case Iop_Mul8x16: case Iop_Mul16x8: case Iop_Mul32x4:
       case Iop_PolynomialMul8x16:
+      case Iop_PolynomialMulAdd8x16: case Iop_PolynomialMulAdd16x8:
+      case Iop_PolynomialMulAdd32x4: case Iop_PolynomialMulAdd64x2:
       case Iop_MulHi16Ux8: case Iop_MulHi32Ux4: 
       case Iop_MulHi16Sx8: case Iop_MulHi32Sx4: 
       case Iop_QDMulHi16Sx8: case Iop_QDMulHi32Sx4:
@@ -2845,6 +2868,10 @@ void typeOfPrimop ( IROp op,
       case Iop_Perm8x16: case Iop_Perm32x4:
       case Iop_Recps32Fx4:
       case Iop_Rsqrts32Fx4:
+      case Iop_CipherV128:
+      case Iop_CipherLV128:
+      case Iop_NCipherV128:
+      case Iop_NCipherLV128:
          BINARY(Ity_V128,Ity_V128, Ity_V128);
 
       case Iop_PolynomialMull8x8:
@@ -2864,7 +2891,7 @@ void typeOfPrimop ( IROp op,
       case Iop_CmpNEZ8x16: case Iop_CmpNEZ16x8:
       case Iop_CmpNEZ32x4: case Iop_CmpNEZ64x2:
       case Iop_Cnt8x16:
-      case Iop_Clz8Sx16: case Iop_Clz16Sx8: case Iop_Clz32Sx4:
+      case Iop_Clz8Sx16: case Iop_Clz16Sx8: case Iop_Clz32Sx4: case Iop_Clz64x2:
       case Iop_Cls8Sx16: case Iop_Cls16Sx8: case Iop_Cls32Sx4:
       case Iop_PwAddL8Ux16: case Iop_PwAddL16Ux8: case Iop_PwAddL32Ux4:
       case Iop_PwAddL8Sx16: case Iop_PwAddL16Sx8: case Iop_PwAddL32Sx4:
@@ -2873,6 +2900,7 @@ void typeOfPrimop ( IROp op,
       case Iop_Reverse16_8x16:
       case Iop_Neg32Fx4:
       case Iop_Abs8x16: case Iop_Abs16x8: case Iop_Abs32x4:
+      case Iop_CipherSV128:
          UNARY(Ity_V128, Ity_V128);
 
       case Iop_ShlV128: case Iop_ShrV128:
@@ -2888,6 +2916,7 @@ void typeOfPrimop ( IROp op,
       case Iop_QShlN32Sx4: case Iop_QShlN64Sx2:
       case Iop_QSalN8x16: case Iop_QSalN16x8:
       case Iop_QSalN32x4: case Iop_QSalN64x2:
+      case Iop_SHA256:    case Iop_SHA512:
          BINARY(Ity_V128,Ity_I8, Ity_V128);
 
       case Iop_F32ToFixed32Ux4_RZ:
@@ -2928,6 +2957,9 @@ void typeOfPrimop ( IROp op,
       case Iop_ExtractV128:
          TERNARY(Ity_V128, Ity_V128, Ity_I8, Ity_V128);
 
+      case Iop_BCDAdd:
+      case Iop_BCDSub:
+         TERNARY(Ity_V128,Ity_V128, Ity_I8, Ity_V128);
       case Iop_QDMulLong16Sx4: case Iop_QDMulLong32Sx2:
          BINARY(Ity_I64, Ity_I64, Ity_V128);
 

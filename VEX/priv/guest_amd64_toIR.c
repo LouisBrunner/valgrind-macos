@@ -3095,7 +3095,7 @@ ULong dis_op2_G_E ( VexAbiInfo* vbi,
       assign(src,  getIRegG(size,pfx,rm));
 
       if (addSubCarry && op8 == Iop_Add8) {
-         if (pfx & PFX_LOCK) {
+         if (haveLOCK(pfx)) {
             /* cas-style store */
             helper_ADC( size, dst1, dst0, src,
                         /*store*/addr, dst0/*expVal*/, guest_RIP_curr_instr );
@@ -3106,7 +3106,7 @@ ULong dis_op2_G_E ( VexAbiInfo* vbi,
          }
       } else
       if (addSubCarry && op8 == Iop_Sub8) {
-         if (pfx & PFX_LOCK) {
+         if (haveLOCK(pfx)) {
             /* cas-style store */
             helper_SBB( size, dst1, dst0, src,
                         /*store*/addr, dst0/*expVal*/, guest_RIP_curr_instr );
@@ -3118,7 +3118,7 @@ ULong dis_op2_G_E ( VexAbiInfo* vbi,
       } else {
          assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
          if (keep) {
-            if (pfx & PFX_LOCK) {
+            if (haveLOCK(pfx)) {
                if (0) vex_printf("locked case\n" );
                casLE( mkexpr(addr),
                       mkexpr(dst0)/*expval*/, 
@@ -3456,7 +3456,7 @@ ULong dis_Grp1 ( VexAbiInfo* vbi,
       assign(src, mkU(ty,d64 & mask));
 
       if (gregLO3ofRM(modrm) == 2 /* ADC */) {
-         if (pfx & PFX_LOCK) {
+         if (haveLOCK(pfx)) {
             /* cas-style store */
             helper_ADC( sz, dst1, dst0, src,
                        /*store*/addr, dst0/*expVal*/, guest_RIP_curr_instr );
@@ -3467,7 +3467,7 @@ ULong dis_Grp1 ( VexAbiInfo* vbi,
          }
       } else 
       if (gregLO3ofRM(modrm) == 3 /* SBB */) {
-         if (pfx & PFX_LOCK) {
+         if (haveLOCK(pfx)) {
             /* cas-style store */
             helper_SBB( sz, dst1, dst0, src,
                        /*store*/addr, dst0/*expVal*/, guest_RIP_curr_instr );
@@ -3479,7 +3479,7 @@ ULong dis_Grp1 ( VexAbiInfo* vbi,
       } else {
          assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
          if (gregLO3ofRM(modrm) < 7) {
-            if (pfx & PFX_LOCK) {
+            if (haveLOCK(pfx)) {
                casLE( mkexpr(addr), mkexpr(dst0)/*expVal*/, 
                                     mkexpr(dst1)/*newVal*/,
                                     guest_RIP_curr_instr );
@@ -3882,7 +3882,7 @@ ULong dis_Grp8_Imm ( VexAbiInfo* vbi,
       if (epartIsReg(modrm)) {
         putIRegE(sz, pfx, modrm, narrowTo(ty, mkexpr(t2m)));
       } else {
-         if (pfx & PFX_LOCK) {
+         if (haveLOCK(pfx)) {
             casLE( mkexpr(t_addr),
                    narrowTo(ty, mkexpr(t2))/*expd*/,
                    narrowTo(ty, mkexpr(t2m))/*new*/,
@@ -4114,7 +4114,7 @@ ULong dis_Grp3 ( VexAbiInfo* vbi,
          case 2: /* NOT */
             dst1 = newTemp(ty);
             assign(dst1, unop(mkSizedOp(ty,Iop_Not8), mkexpr(t1)));
-            if (pfx & PFX_LOCK) {
+            if (haveLOCK(pfx)) {
                casLE( mkexpr(addr), mkexpr(t1)/*expd*/, mkexpr(dst1)/*new*/,
                                     guest_RIP_curr_instr );
             } else {
@@ -4130,7 +4130,7 @@ ULong dis_Grp3 ( VexAbiInfo* vbi,
             assign(src,  mkexpr(t1));
             assign(dst1, binop(mkSizedOp(ty,Iop_Sub8), mkexpr(dst0),
                                                        mkexpr(src)));
-            if (pfx & PFX_LOCK) {
+            if (haveLOCK(pfx)) {
                casLE( mkexpr(addr), mkexpr(t1)/*expd*/, mkexpr(dst1)/*new*/,
                                     guest_RIP_curr_instr );
             } else {
@@ -4217,7 +4217,7 @@ ULong dis_Grp4 ( VexAbiInfo* vbi,
       switch (gregLO3ofRM(modrm)) {
          case 0: /* INC */
             assign(t2, binop(Iop_Add8, mkexpr(t1), mkU8(1)));
-            if (pfx & PFX_LOCK) {
+            if (haveLOCK(pfx)) {
                casLE( mkexpr(addr), mkexpr(t1)/*expd*/, mkexpr(t2)/*new*/, 
                       guest_RIP_curr_instr );
             } else {
@@ -4227,7 +4227,7 @@ ULong dis_Grp4 ( VexAbiInfo* vbi,
             break;
          case 1: /* DEC */
             assign(t2, binop(Iop_Sub8, mkexpr(t1), mkU8(1)));
-            if (pfx & PFX_LOCK) {
+            if (haveLOCK(pfx)) {
                casLE( mkexpr(addr), mkexpr(t1)/*expd*/, mkexpr(t2)/*new*/, 
                       guest_RIP_curr_instr );
             } else {
@@ -4356,7 +4356,7 @@ ULong dis_Grp5 ( VexAbiInfo* vbi,
             t2 = newTemp(ty);
             assign(t2, binop(mkSizedOp(ty,Iop_Add8),
                              mkexpr(t1), mkU(ty,1)));
-            if (pfx & PFX_LOCK) {
+            if (haveLOCK(pfx)) {
                casLE( mkexpr(addr),
                       mkexpr(t1), mkexpr(t2), guest_RIP_curr_instr );
             } else {
@@ -4368,7 +4368,7 @@ ULong dis_Grp5 ( VexAbiInfo* vbi,
             t2 = newTemp(ty);
             assign(t2, binop(mkSizedOp(ty,Iop_Sub8),
                              mkexpr(t1), mkU(ty,1)));
-            if (pfx & PFX_LOCK) {
+            if (haveLOCK(pfx)) {
                casLE( mkexpr(addr),
                       mkexpr(t1), mkexpr(t2), guest_RIP_curr_instr );
             } else {
@@ -7949,7 +7949,7 @@ ULong dis_bt_G_E ( VexAbiInfo* vbi,
          default: 
             vpanic("dis_bt_G_E(amd64)");
       }
-      if ((pfx & PFX_LOCK) && !epartIsReg(modrm)) {
+      if ((haveLOCK(pfx)) && !epartIsReg(modrm)) {
          casLE( mkexpr(t_addr1), mkexpr(t_fetched)/*expd*/,
                                  mkexpr(t_new)/*new*/,
                                  guest_RIP_curr_instr );
@@ -8259,7 +8259,7 @@ ULong dis_cmpxchg_G_E ( /*OUT*/Bool* ok,
                                nameIRegG(size,pfx,rm),
                                nameIRegE(size,pfx,rm) );
    } 
-   else if (!epartIsReg(rm) && !(pfx & PFX_LOCK)) {
+   else if (!epartIsReg(rm) && !haveLOCK(pfx)) {
       /* case 2 */
       addr = disAMode ( &len, vbi, pfx, delta0, dis_buf, 0 );
       assign( dest, loadLE(ty, mkexpr(addr)) );
@@ -8275,7 +8275,7 @@ ULong dis_cmpxchg_G_E ( /*OUT*/Bool* ok,
       DIP("cmpxchg%c %s,%s\n", nameISize(size), 
                                nameIRegG(size,pfx,rm), dis_buf);
    }
-   else if (!epartIsReg(rm) && (pfx & PFX_LOCK)) {
+   else if (!epartIsReg(rm) && haveLOCK(pfx)) {
       /* case 3 */
       /* src is new value.  acc is expected value.  dest is old value.
          Compute success from the output of the IRCAS, and steer the
@@ -8409,7 +8409,7 @@ ULong dis_xadd_G_E ( /*OUT*/Bool* decode_ok,
       *decode_ok = True;
       return 1+delta0;
    }
-   else if (!epartIsReg(rm) && !(pfx & PFX_LOCK)) {
+   else if (!epartIsReg(rm) && !haveLOCK(pfx)) {
       /* case 2 */
       IRTemp addr = disAMode ( &len, vbi, pfx, delta0, dis_buf, 0 );
       assign( tmpd,  loadLE(ty, mkexpr(addr)) );
@@ -8424,7 +8424,7 @@ ULong dis_xadd_G_E ( /*OUT*/Bool* decode_ok,
       *decode_ok = True;
       return len+delta0;
    }
-   else if (!epartIsReg(rm) && (pfx & PFX_LOCK)) {
+   else if (!epartIsReg(rm) && haveLOCK(pfx)) {
       /* case 3 */
       IRTemp addr = disAMode ( &len, vbi, pfx, delta0, dis_buf, 0 );
       assign( tmpd,  loadLE(ty, mkexpr(addr)) );
@@ -31086,7 +31086,7 @@ DisResult disInstr_AMD64_WRK (
    /* Now we should be looking at the primary opcode byte or the
       leading escapes.  Check that any LOCK prefix is actually
       allowed. */
-   if (pfx & PFX_LOCK) {
+   if (haveLOCK(pfx)) {
       if (can_be_used_with_LOCK_prefix( (UChar*)&guest_code[delta] )) {
          DIP("lock ");
       } else {

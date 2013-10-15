@@ -945,6 +945,11 @@ lc_scan_memory(Addr start, SizeT len, Bool is_prior_definite,
       end portions of the block if they are not aligned on sizeof(Addr):
       These cannot be a valid pointer, and calls to MC_(is_valid_aligned_word)
       will assert for a non aligned address. */
+#if defined(VGA_s390x)
+   // Define ptr as volatile, as on this platform, the value of ptr
+   // is read in code executed via a longjmp.
+   volatile
+#endif
    Addr ptr = VG_ROUNDUP(start, sizeof(Addr));
    const Addr end = VG_ROUNDDN(start+len, sizeof(Addr));
    vki_sigset_t sigmask;
@@ -993,10 +998,22 @@ lc_scan_memory(Addr start, SizeT len, Bool is_prior_definite,
       // We need to restore the signal mask, because we were
       // longjmped out of a signal handler.
       VG_(sigprocmask)(VKI_SIG_SETMASK, &sigmask, NULL);
+#     if defined(VGA_s390x)
+      // For a SIGSEGV, s390 delivers the page address of the bad address.
+      // For a SIGBUS, old s390 kernels deliver a NULL address.
+      // bad_scanned_addr can thus not be used.
+      // So, on this platform, we always skip a full page from ptr.
+      // The below implies to mark ptr as volatile, as we read the value
+      // after a longjmp to here.
+      lc_sig_skipped_szB += VKI_PAGE_SIZE;
+      ptr = ptr + VKI_PAGE_SIZE; // Unaddressable, - skip it.
+#     else
+      // On other platforms, just skip one Addr.
       lc_sig_skipped_szB += sizeof(Addr);
       tl_assert(bad_scanned_addr >= VG_ROUNDUP(start, sizeof(Addr)));
       tl_assert(bad_scanned_addr < VG_ROUNDDN(start+len, sizeof(Addr)));
       ptr = bad_scanned_addr + sizeof(Addr); // Unaddressable, - skip it.
+#endif
    }
    while (ptr < end) {
       Addr addr;

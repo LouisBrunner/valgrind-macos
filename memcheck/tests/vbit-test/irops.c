@@ -751,6 +751,7 @@ static irop_t irops[] = {
   { DEFOP(Iop_Clz8Sx16, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Clz16Sx8, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Clz32Sx4, UNDEF_UNKNOWN), },
+  { DEFOP(Iop_Clz64x2, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Cls8Sx16, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Cls16Sx8, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Cls32Sx4, UNDEF_UNKNOWN), },
@@ -960,6 +961,19 @@ static irop_t irops[] = {
   { DEFOP(Iop_Min32Fx8, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Max64Fx4, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Min64Fx4, UNDEF_UNKNOWN), },
+  { DEFOP(Iop_BCDAdd, UNDEF_UNKNOWN), },
+  { DEFOP(Iop_BCDSub, UNDEF_UNKNOWN), },
+  { DEFOP(Iop_PolynomialMulAdd8x16, UNDEF_UNKNOWN), },
+  { DEFOP(Iop_PolynomialMulAdd16x8, UNDEF_UNKNOWN), },
+  { DEFOP(Iop_PolynomialMulAdd32x4, UNDEF_UNKNOWN), },
+  { DEFOP(Iop_PolynomialMulAdd64x2, UNDEF_UNKNOWN), },
+  { DEFOP(Iop_CipherV128,   UNDEF_UNKNOWN), },
+  { DEFOP(Iop_CipherLV128,  UNDEF_UNKNOWN), },
+  { DEFOP(Iop_CipherSV128,  UNDEF_UNKNOWN), },
+  { DEFOP(Iop_NCipherV128,  UNDEF_UNKNOWN), },
+  { DEFOP(Iop_NCipherLV128, UNDEF_UNKNOWN), },
+  { DEFOP(Iop_SHA512, UNDEF_UNKNOWN), },
+  { DEFOP(Iop_SHA256, UNDEF_UNKNOWN), },
 };
 
 

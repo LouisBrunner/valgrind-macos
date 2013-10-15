@@ -2709,6 +2709,12 @@ IRAtom* expr2vbits_Triop ( MCEnv* mce,
       case Iop_SetElem32x2:
          complainIfUndefined(mce, atom2, NULL);
          return assignNew('V', mce, Ity_I64, triop(op, vatom1, atom2, vatom3));
+      /* BCDIops */
+      case Iop_BCDAdd:
+      case Iop_BCDSub:
+         complainIfUndefined(mce, atom3, NULL);
+         return assignNew('V', mce, Ity_V128, triop(op, vatom1, vatom2, atom3));
+
       default:
          ppIROp(op);
          VG_(tool_panic)("memcheck:expr2vbits_Triop");
@@ -3086,6 +3092,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_Add8x16:
       case Iop_Mul8x16:
       case Iop_PolynomialMul8x16:
+      case Iop_PolynomialMulAdd8x16:
          return binary8Ix16(mce, vatom1, vatom2);
 
       case Iop_QSub16Ux8:
@@ -3110,6 +3117,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_Add16x8:
       case Iop_QDMulHi16Sx8:
       case Iop_QRDMulHi16Sx8:
+      case Iop_PolynomialMulAdd16x8:
          return binary16Ix8(mce, vatom1, vatom2);
 
       case Iop_Sub32x4:
@@ -3132,6 +3140,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_Mul32x4:
       case Iop_QDMulHi32Sx4:
       case Iop_QRDMulHi32Sx4:
+      case Iop_PolynomialMulAdd32x4:
          return binary32Ix4(mce, vatom1, vatom2);
 
       case Iop_Sub64x2:
@@ -3149,7 +3158,12 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_QAdd64Sx2:
       case Iop_QSub64Ux2:
       case Iop_QSub64Sx2:
-         return binary64Ix2(mce, vatom1, vatom2);
+      case Iop_PolynomialMulAdd64x2:
+      case Iop_CipherV128:
+      case Iop_CipherLV128:
+      case Iop_NCipherV128:
+      case Iop_NCipherLV128:
+        return binary64Ix2(mce, vatom1, vatom2);
 
       case Iop_QNarrowBin64Sto32Sx4:
       case Iop_QNarrowBin64Uto32Ux4:
@@ -3388,6 +3402,12 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          /* Same scheme as with all other shifts.  Note: 10 Nov 05:
             this is wrong now, scalar shifts are done properly lazily.
             Vector shifts should be fixed too. */
+         complainIfUndefined(mce, atom2, NULL);
+         return assignNew('V', mce, Ity_V128, binop(op, vatom1, atom2));
+
+      /* SHA Iops */
+      case Iop_SHA256:
+      case Iop_SHA512:
          complainIfUndefined(mce, atom2, NULL);
          return assignNew('V', mce, Ity_V128, binop(op, vatom1, atom2));
 
@@ -4128,6 +4148,8 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
          return mkPCastTo(mce, Ity_I64, vatom);
 
       case Iop_CmpNEZ64x2:
+      case Iop_CipherSV128:
+      case Iop_Clz64x2:
          return mkPCast64x2(mce, vatom);
 
       case Iop_NarrowUn16to8x8:

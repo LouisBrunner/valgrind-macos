@@ -7,7 +7,7 @@
    gcc -Winline -Wall -g -O -mregnames -maltivec -m64
 
 
- * jm_insns_isa_2_07.c:
+ * test_isa_2_07_part1.c:
  * PPC tests for the ISA 2.07.  This file is based on the
  * jm-insns.c file for the new instructions in the ISA 2.07.  The
  * test structure has been kept the same as the original file to
@@ -175,7 +175,7 @@ enum {
 
 #define DEFAULT_VSCR 0x0
 
-static vector unsigned long long vec_out, vec_inA, vec_inB;
+static vector unsigned long long vec_out, vec_inA, vec_inB, vec_inC;
 static vector unsigned int vec_inA_wd, vec_inB_wd;
 
 /* XXXX these must all be callee-save regs! */
@@ -233,6 +233,7 @@ enum test_flags {
     PPC_ARITH_DRES = 0x00000700,
     PPC_DOUBLE_IN_IRES = 0x00000800,
     PPC_MOV        = 0x00000A00,
+    PPC_SHA_OR_BCD = 0x00000B00,
     PPC_TYPE       = 0x00000F00,
     /* Family */
     PPC_INTEGER    = 0x00010000,
@@ -510,11 +511,188 @@ static void test_vmrgow (void)
     __asm__ __volatile__ ("vmrgow %0, %1, %2" : "=v" (vec_out): "v" (vec_inA_wd),"v" (vec_inB_wd));
 }
 
+static void test_vpmsumb (void)
+{
+    __asm__ __volatile__ ("vpmsumb %0, %1, %2" : "=v" (vec_out): "v" (vec_inA_wd),"v" (vec_inB_wd));
+}
+
+static void test_vpmsumh (void)
+{
+    __asm__ __volatile__ ("vpmsumh %0, %1, %2" : "=v" (vec_out): "v" (vec_inA_wd),"v" (vec_inB_wd));
+}
+
+static void test_vpmsumw (void)
+{
+    __asm__ __volatile__ ("vpmsumw %0, %1, %2" : "=v" (vec_out): "v" (vec_inA_wd),"v" (vec_inB_wd));
+}
+
+static void test_vpermxor (void)
+{
+  __asm__ __volatile__ ("vpermxor %0, %1, %2, %3" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB),"v" (vec_inC));
+}
+
+static void test_vpmsumd (void)
+{
+    __asm__ __volatile__ ("vpmsumd %0, %1, %2" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
+}
+
+static void test_vnand (void)
+{
+    __asm__ __volatile__ ("vnand %0, %1, %2" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
+}
+
+static void test_vorc (void)
+{
+    __asm__ __volatile__ ("vorc %0, %1, %2" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
+}
+
+static void test_veqv (void)
+{
+    __asm__ __volatile__ ("veqv %0, %1, %2" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
+}
+
+static void test_vcipher (void)
+{
+    __asm__ __volatile__ ("vcipher %0, %1, %2" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
+}
+
+static void test_vcipherlast (void)
+{
+    __asm__ __volatile__ ("vcipherlast %0, %1, %2" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
+}
+
+static void test_vncipher (void)
+{
+    __asm__ __volatile__ ("vncipher %0, %1, %2" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
+}
+
+static void test_vncipherlast (void)
+{
+    __asm__ __volatile__ ("vncipherlast %0, %1, %2" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
+}
+
+static void test_vclzb (void)
+{
+    __asm__ __volatile__ ("vclzb %0, %1" : "=v" (vec_out): "v" (vec_inB));
+}
+
+static void test_vclzw (void)
+{
+    __asm__ __volatile__ ("vclzw %0, %1" : "=v" (vec_out): "v" (vec_inB));
+}
+
+static void test_vclzh (void)
+{
+    __asm__ __volatile__ ("vclzh %0, %1" : "=v" (vec_out): "v" (vec_inB));
+}
+
+static void test_vclzd (void)
+{
+    __asm__ __volatile__ ("vclzd %0, %1" : "=v" (vec_out): "v" (vec_inB));
+}
+
+static void test_vpopcntb (void)
+{
+    __asm__ __volatile__ ("vpopcntb %0, %1" : "=v" (vec_out): "v" (vec_inB));
+}
+
+static void test_vpopcnth (void)
+{
+    __asm__ __volatile__ ("vpopcnth %0, %1" : "=v" (vec_out): "v" (vec_inB));
+}
+
+static void test_vpopcntw (void)
+{
+    __asm__ __volatile__ ("vpopcntw %0, %1" : "=v" (vec_out): "v" (vec_inB));
+}
+
+static void test_vpopcntd (void)
+{
+    __asm__ __volatile__ ("vpopcntd %0, %1" : "=v" (vec_out): "v" (vec_inB));
+}
+
+static void test_vsbox (void)
+{
+    __asm__ __volatile__ ("vsbox %0, %1" : "=v" (vec_out): "v" (vec_inB));
+}
+
+static int st_six;
+static void test_vshasigmad (void)
+{
+   switch (st_six) {
+   case 0x00:
+      __asm__ __volatile__ ("vshasigmad %0, %1, 0, 0" : "=v" (vec_out): "v" (vec_inA));
+      break;
+   case 0x0f:
+      __asm__ __volatile__ ("vshasigmad %0, %1, 0, 15" : "=v" (vec_out): "v" (vec_inA));
+      break;
+   case 0x10:
+      __asm__ __volatile__ ("vshasigmad %0, %1, 1, 0" : "=v" (vec_out): "v" (vec_inA));
+      break;
+   case 0x1f:
+      __asm__ __volatile__ ("vshasigmad %0, %1, 1, 15" : "=v" (vec_out): "v" (vec_inA));
+      break;
+   }
+}
+
+static void test_vshasigmaw (void)
+{
+   switch (st_six) {
+   case 0x00:
+      __asm__ __volatile__ ("vshasigmaw %0, %1, 0, 0" : "=v" (vec_out): "v" (vec_inA));
+      break;
+   case 0x0f:
+      __asm__ __volatile__ ("vshasigmaw %0, %1, 0, 15" : "=v" (vec_out): "v" (vec_inA));
+      break;
+   case 0x10:
+      __asm__ __volatile__ ("vshasigmaw %0, %1, 1, 0" : "=v" (vec_out): "v" (vec_inA));
+      break;
+   case 0x1f:
+      __asm__ __volatile__ ("vshasigmaw %0, %1, 1, 15" : "=v" (vec_out): "v" (vec_inA));
+      break;
+   }
+}
+
+static int PS_bit;
+static void test_bcdadd (void)
+{
+   if (PS_bit)
+      __asm__ __volatile__ ("bcdadd. %0, %1, %2, 1" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
+   else
+      __asm__ __volatile__ ("bcdadd. %0, %1, %2, 0" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
+}
+
+static void test_bcdsub (void)
+{
+   if (PS_bit)
+      __asm__ __volatile__ ("bcdsub. %0, %1, %2, 1" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
+   else
+      __asm__ __volatile__ ("bcdsub. %0, %1, %2, 0" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
+}
+
+static test_t tests_aa_bcd_ops[] = {
+  { &test_bcdadd        , "bcdadd." },
+  { &test_bcdsub        , "bcdsub." },
+  { NULL                , NULL      },
+};
+
+static test_t tests_aa_SHA_ops[] = {
+  { &test_vshasigmad    , "vshasigmad" },
+  { &test_vshasigmaw    , "vshasigmaw" },
+  { NULL                , NULL         },
+};
+
+static test_t tests_aa_ops_three[] = {
+  { &test_vpermxor        , "vpermxor" },
+  { NULL                  , NULL       },
+};
+
 static test_t tests_aa_word_ops_one_arg_dres[] = {
   { &test_vupkhsw         , "vupkhsw" },
   { &test_vupklsw         , "vupklsw" },
   { NULL                  , NULL      }
 };
+
 static test_t tests_aa_word_ops_two_args_dres[] = {
   { &test_vmulouw         , "vmulouw" },
   { &test_vmuluwm         , "vmuluwm" },
@@ -523,6 +701,9 @@ static test_t tests_aa_word_ops_two_args_dres[] = {
   { &test_vmulesw         , "vmulesw" },
   { &test_vmrgew          , "vmrgew" },
   { &test_vmrgow          , "vmrgow" },
+  { &test_vpmsumb         , "vpmsumb" },
+  { &test_vpmsumh         , "vpmsumh" },
+  { &test_vpmsumw         , "vpmsumw" },
   { NULL                  , NULL      }
 };
 
@@ -541,7 +722,28 @@ static test_t tests_aa_dbl_ops_two_args[] = {
   { &test_vsrad           , "vsrad", },
   { &test_vsrd            , "vsrd", },
   { &test_vpkudum         , "vpkudum", },
+  { &test_vpmsumd         , "vpmsumd", },
+  { &test_vnand           , "vnand", },
+  { &test_vorc            , "vorc", },
+  { &test_veqv            , "veqv", },
+  { &test_vcipher         , "vcipher" },
+  { &test_vcipherlast     , "vcipherlast" },
+  { &test_vncipher        , "vncipher" },
+  { &test_vncipherlast    , "vncipherlast" },
   { NULL                  , NULL,      },
+};
+
+static test_t tests_aa_dbl_ops_one_arg[] = {
+  { &test_vclzb           , "vclzb" },
+  { &test_vclzw           , "vclzw" },
+  { &test_vclzh           , "vclzh" },
+  { &test_vclzd           , "vclzd" },
+  { &test_vpopcntb        , "vpopcntb" },
+  { &test_vpopcnth        , "vpopcnth" },
+  { &test_vpopcntw        , "vpopcntw" },
+  { &test_vpopcntd        , "vpopcntd" },
+  { &test_vsbox           , "vsbox" },
+  { NULL                  , NULL,      }
 };
 
 static test_t tests_aa_dbl_to_int_two_args[] = {
@@ -592,6 +794,18 @@ static void build_vwargs_table (void)
    vwargs[i++] = 0xF9FAFBFC;
    vwargs[i++] = 0xFEFDFEFF;
 }
+
+static unsigned long long vbcd_args[] __attribute__ ((aligned (16))) = {
+   0x8045090189321003ULL, // Negative BCD value
+   0x001122334556677dULL,
+   0x0000107600000001ULL, // Positive BCD value
+   0x319293945142031aULL,
+   0x0ULL,                // Valid BCD zero
+   0xaULL,
+   0x0ULL,                // Invalid BCD zero (no sign code)
+   0x0ULL
+};
+#define NUM_VBCD_VALS (sizeof vbcd_args/sizeof vbcd_args[0])
 
 static void build_vargs_table (void)
 {
@@ -962,10 +1176,79 @@ static void test_av_dint_two_args (const char* name, test_func_t func,
             printf("         Output: %08x %08x %08x %08x\n", dst_int[0], dst_int[1],
                    dst_int[2], dst_int[3]);
          } else {
-            printf("%016llx @@ %016llx, ", vdargs[i], vdargs[j]);
+            printf("%016llx @@ %016llx ", vdargs[i], vdargs[j]);
             printf(" ==> %016llx\n", dst[0]);
-            printf("\t%016llx @@ %016llx, ", vdargs[i+1], vdargs[j+1]);
+            printf("\t%016llx @@ %016llx ", vdargs[i+1], vdargs[j+1]);
             printf(" ==> %016llx\n", dst[1]);
+         }
+      }
+   }
+}
+
+static void test_av_dint_one_arg (const char* name, test_func_t func,
+                                  unused uint32_t test_flags)
+{
+
+   unsigned long long * dst;
+   int i;
+
+   for (i = 0; i < NB_VDARGS; i+=2) {
+      vec_inB = (vector unsigned long long){ vdargs[i], vdargs[i+1] };
+      vec_out = (vector unsigned long long){ 0,0 };
+
+      (*func)();
+      dst  = (unsigned long long*)&vec_out;
+
+      printf("%s: ", name);
+      printf("%016llx @@ %016llx ", vdargs[i], vdargs[i + 1]);
+      printf(" ==> %016llx%016llx\n", dst[0], dst[1]);
+   }
+}
+
+static void test_av_dint_one_arg_SHA (const char* name, test_func_t func,
+                                      unused uint32_t test_flags)
+{
+   unsigned long long * dst;
+   int i, st, six;
+
+   for (i = 0; i < NB_VDARGS; i+=2) {
+      vec_inA = (vector unsigned long long){ vdargs[i], vdargs[i+1] };
+      vec_out = (vector unsigned long long){ 0,0 };
+
+      for (st = 0; st < 2; st++) {
+         for (six = 0; six < 16; six+=15) {
+            st_six = (st << 4) | six;
+            (*func)();
+            dst  = (unsigned long long*)&vec_out;
+
+            printf("%s: ", name);
+            printf("%016llx @@ %016llx ", vdargs[i], vdargs[i + 1]);
+            printf(" ==> %016llx || %016llx\n", dst[0], dst[1]);
+         }
+      }
+   }
+}
+
+static void test_av_bcd (const char* name, test_func_t func,
+                         unused uint32_t test_flags)
+{
+   unsigned long long * dst;
+   int i, j;
+
+   for (i = 0; i < NUM_VBCD_VALS; i+=2) {
+      vec_inA = (vector unsigned long long){ vbcd_args[i], vbcd_args[i +1 ] };
+      for (j = 0; j < NUM_VBCD_VALS; j+=2) {
+         vec_inB = (vector unsigned long long){ vbcd_args[j], vbcd_args[j +1 ] };
+         vec_out = (vector unsigned long long){ 0, 0 };
+
+         for (PS_bit = 0; PS_bit < 2; PS_bit++) {
+            (*func)();
+            dst  = (unsigned long long*)&vec_out;
+            printf("%s: ", name);
+            printf("%016llx || %016llx @@ %016llx || %016llx",
+                   vbcd_args[i], vbcd_args[i + 1],
+                   vbcd_args[j], vbcd_args[j + 1]);
+            printf(" ==> %016llx || %016llx\n", dst[0], dst[1]);
          }
       }
    }
@@ -1184,6 +1467,32 @@ static void test_int_ldq_three_regs (const char* name,
 
 }
 
+static void test_av_int_three_args (const char* name, test_func_t func,
+                                    unused uint32_t test_flags)
+{
+
+   unsigned long long * dst;
+   int i,j, k;
+   for (i = 0; i < NB_VDARGS; i+=2) {
+      vec_inA = (vector unsigned long long){ vdargs[i], vdargs[i+1] };
+      for (j = 0; j < NB_VDARGS; j+=2) {
+         vec_inB = (vector unsigned long long){ vdargs[j], vdargs[j+1] };
+         for (k = 0; k < NB_VDARGS; k+=2) {
+            vec_inC = (vector unsigned long long){ vdargs[k], vdargs[k+1] };
+            vec_out = (vector unsigned long long){ 0,0 };
+
+            (*func)();
+            dst  = (unsigned long long*)&vec_out;
+
+            printf("%s: ", name);
+            printf("%016llx @@ %016llx @@ %016llx ", vdargs[i], vdargs[j], vdargs[k]);
+            printf(" ==> %016llx\n", dst[0]);
+            printf("\t%016llx @@ %016llx @@ %016llx ", vdargs[i+1], vdargs[j+1], vdargs[k+1]);
+            printf(" ==> %016llx\n", dst[1]);
+         }
+      }
+   }
+}
 
 
 /* The ALTIVEC_LOOPS and altive_loops defined below are used in do_tests.
@@ -1195,7 +1504,11 @@ enum ALTIVEC_LOOPS {
    ALTV_DINT,
    ALTV_INT_DRES,
    ALTV_DINT_IRES,
-   ALTV_ONE_INT_DRES
+   ALTV_ONE_INT_DRES,
+   ALTV_DINT_THREE_ARGS,
+   ALTV_DINT_ONE_ARG,
+   ALTV_SHA,
+   ATLV_BCD
 };
 
 static test_loop_t altivec_loops[] = {
@@ -1204,6 +1517,10 @@ static test_loop_t altivec_loops[] = {
    &test_av_wint_two_args_dres,
    &test_av_dint_to_int_two_args,
    &test_av_wint_one_arg_dres,
+   &test_av_int_three_args,
+   &test_av_dint_one_arg,
+   &test_av_dint_one_arg_SHA,
+   &test_av_bcd,
    NULL
 };
 
@@ -1299,6 +1616,26 @@ static test_table_t all_tests[] = {
        "PPC floating point arith insns with two args",
        0x00020102,
    },
+   {
+       tests_aa_ops_three    ,
+       "PPC altivec integer logical insns with three args",
+       0x00060203,
+   },
+   {
+       tests_aa_dbl_ops_one_arg,
+       "PPC altivec one vector input arg, hex result",
+       0x00060201,
+   },
+   {
+       tests_aa_SHA_ops,
+       "PPC altivec SSH insns",
+       0x00040B01,
+   },
+   {
+       tests_aa_bcd_ops,
+       "PPC altivec BCD insns",
+       0x00040B02,
+   },
    { NULL,                   NULL,               0x00000000, },
 };
 
@@ -1374,6 +1711,12 @@ static void do_tests ( insn_sel_flags_t seln_flags,
          case PPC_DOUBLE_IN_IRES:
             loop = &altivec_loops[ALTV_DINT_IRES];
             break;
+         case PPC_LOGICAL:
+            if (nb_args == 3)
+               loop = &altivec_loops[ALTV_DINT_THREE_ARGS];
+            else if (nb_args ==1)
+               loop = &altivec_loops[ALTV_DINT_ONE_ARG];
+            break;
          default:
             printf("No altivec test defined for type %x\n", type);
          }
@@ -1386,6 +1729,7 @@ static void do_tests ( insn_sel_flags_t seln_flags,
       case PPC_ALTIVEC:
          switch (type) {
          case PPC_ARITH_DRES:
+         {
             switch (nb_args) {
             case 1:
                loop = &altivec_loops[ALTV_ONE_INT_DRES];
@@ -1396,6 +1740,13 @@ static void do_tests ( insn_sel_flags_t seln_flags,
             default:
                printf("No altivec test defined for number args %d\n", nb_args);
             }
+            break;
+         }
+         case PPC_SHA_OR_BCD:
+            if (nb_args == 1)
+               loop = &altivec_loops[ALTV_SHA];
+            else
+               loop = &altivec_loops[ATLV_BCD];
             break;
          default:
             printf("No altivec test defined for type %x\n", type);

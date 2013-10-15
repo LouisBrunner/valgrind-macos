@@ -703,6 +703,9 @@ static Int getRexB ( Prefix pfx ) {
 static Bool haveF2orF3 ( Prefix pfx ) {
    return toBool((pfx & (PFX_F2|PFX_F3)) > 0);
 }
+static Bool haveF2andF3 ( Prefix pfx ) {
+   return toBool((pfx & (PFX_F2|PFX_F3)) == (PFX_F2|PFX_F3));
+}
 static Bool haveF2 ( Prefix pfx ) {
    return toBool((pfx & PFX_F2) > 0);
 }
@@ -715,6 +718,9 @@ static Bool have66 ( Prefix pfx ) {
 }
 static Bool haveASO ( Prefix pfx ) {
    return toBool((pfx & PFX_ASO) > 0);
+}
+static Bool haveLOCK ( Prefix pfx ) {
+   return toBool((pfx & PFX_LOCK) > 0);
 }
 
 /* Return True iff pfx has 66 set and F2 and F3 clear */
@@ -3186,6 +3192,7 @@ ULong dis_mov_E_G ( VexAbiInfo* vbi,
       mov reg, reg-or-mem
    Is passed the a ptr to the modRM byte, and the data size.  Returns
    the address advanced completely over this instruction.
+   We have to decide here whether F2 or F3 are acceptable.  F2 never is.
 
    G(src) is reg.
    E(dst) is reg-or-mem
@@ -3198,16 +3205,20 @@ ULong dis_mov_E_G ( VexAbiInfo* vbi,
                        ST tmpv, (tmpa) 
 */
 static
-ULong dis_mov_G_E ( VexAbiInfo* vbi,
-                    Prefix      pfx,
-                    Int         size, 
-                    Long        delta0 )
+ULong dis_mov_G_E ( VexAbiInfo*  vbi,
+                    Prefix       pfx,
+                    Int          size, 
+                    Long         delta0,
+                    /*OUT*/Bool* ok )
 {
-   Int len;
+   Int   len;
    UChar rm = getUChar(delta0);
    HChar dis_buf[50];
 
+   *ok = True;
+
    if (epartIsReg(rm)) {
+      if (haveF2orF3(pfx)) { *ok = False; return delta0; }
       putIRegE(size, pfx, rm, getIRegG(size, pfx, rm));
       DIP("mov%c %s,%s\n", nameISize(size),
                            nameIRegG(size,pfx,rm),
@@ -3217,6 +3228,8 @@ ULong dis_mov_G_E ( VexAbiInfo* vbi,
 
    /* E refers to memory */    
    {
+      if (haveF2(pfx)) { *ok = False; return delta0; }
+      /* F3(XRELEASE) is acceptable, though. */
       IRTemp addr = disAMode ( &len, vbi, pfx, delta0, dis_buf, 0 );
       storeLE( mkexpr(addr), getIRegG(size, pfx, rm) );
       DIP("mov%c %s,%s\n", nameISize(size), 
@@ -3786,6 +3799,24 @@ ULong dis_Grp8_Imm ( VexAbiInfo* vbi,
    /* we're optimists :-) */
    *decode_OK = True;
 
+   /* Check whether F2 or F3 are acceptable. */
+   if (epartIsReg(modrm)) {
+      /* F2 or F3 are not allowed in the register case. */
+      if (haveF2orF3(pfx)) {
+         *decode_OK = False;
+         return delta;
+     }
+   } else {
+      /* F2 or F3 (but not both) are allowable provided LOCK is also
+         present. */
+      if (haveF2orF3(pfx)) {
+         if (haveF2andF3(pfx) || !haveLOCK(pfx)) {
+            *decode_OK = False;
+            return delta;
+         }
+      }
+   }
+
    /* Limit src_val -- the bit offset -- to something within a word.
       The Intel docs say that literal offsets larger than a word are
       masked in this way. */
@@ -3956,7 +3987,8 @@ static void codegen_mulL_A_D ( Int sz, Bool syned,
 }
 
 
-/* Group 3 extended opcodes. */
+/* Group 3 extended opcodes.  We have to decide here whether F2 and F3
+   might be valid.*/
 static 
 ULong dis_Grp3 ( VexAbiInfo* vbi, 
                  Prefix pfx, Int sz, Long delta, Bool* decode_OK )
@@ -3972,6 +4004,8 @@ ULong dis_Grp3 ( VexAbiInfo* vbi,
    *decode_OK = True;
    modrm = getUChar(delta);
    if (epartIsReg(modrm)) {
+      /* F2/XACQ and F3/XREL are always invalid in the non-mem case. */
+      if (haveF2orF3(pfx)) goto unhandled;
       switch (gregLO3ofRM(modrm)) {
          case 0: { /* TEST */
             delta++; 
@@ -4044,6 +4078,14 @@ ULong dis_Grp3 ( VexAbiInfo* vbi,
             vpanic("Grp3(amd64,R)");
       }
    } else {
+      /* Decide if F2/XACQ or F3/XREL might be valid. */
+      Bool validF2orF3 = haveF2orF3(pfx) ? False : True;
+      if ((gregLO3ofRM(modrm) == 3/*NEG*/ || gregLO3ofRM(modrm) == 2/*NOT*/)
+          && haveF2orF3(pfx) && !haveF2andF3(pfx) && haveLOCK(pfx)) {
+         validF2orF3 = True;
+      }
+      if (!validF2orF3) goto unhandled;
+      /* */
       addr = disAMode ( &len, vbi, pfx, delta, dis_buf,
                         /* we have to inform disAMode of any immediate
                            bytes used */
@@ -4117,10 +4159,14 @@ ULong dis_Grp3 ( VexAbiInfo* vbi,
       }
    }
    return delta;
+  unhandled:
+   *decode_OK = False;
+   return delta;
 }
 
 
-/* Group 4 extended opcodes. */
+/* Group 4 extended opcodes.  We have to decide here whether F2 and F3
+   might be valid. */
 static
 ULong dis_Grp4 ( VexAbiInfo* vbi,
                  Prefix pfx, Long delta, Bool* decode_OK )
@@ -4136,6 +4182,8 @@ ULong dis_Grp4 ( VexAbiInfo* vbi,
 
    modrm = getUChar(delta);
    if (epartIsReg(modrm)) {
+      /* F2/XACQ and F3/XREL are always invalid in the non-mem case. */
+      if (haveF2orF3(pfx)) goto unhandled;
       assign(t1, getIRegE(1, pfx, modrm));
       switch (gregLO3ofRM(modrm)) {
          case 0: /* INC */
@@ -4156,6 +4204,14 @@ ULong dis_Grp4 ( VexAbiInfo* vbi,
       DIP("%sb %s\n", nameGrp4(gregLO3ofRM(modrm)),
                       nameIRegE(1, pfx, modrm));
    } else {
+      /* Decide if F2/XACQ or F3/XREL might be valid. */
+      Bool validF2orF3 = haveF2orF3(pfx) ? False : True;
+      if ((gregLO3ofRM(modrm) == 0/*INC*/ || gregLO3ofRM(modrm) == 1/*DEC*/)
+          && haveF2orF3(pfx) && !haveF2andF3(pfx) && haveLOCK(pfx)) {
+         validF2orF3 = True;
+      }
+      if (!validF2orF3) goto unhandled;
+      /* */
       IRTemp addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
       assign( t1, loadLE(ty, mkexpr(addr)) );
       switch (gregLO3ofRM(modrm)) {
@@ -4187,10 +4243,14 @@ ULong dis_Grp4 ( VexAbiInfo* vbi,
       DIP("%sb %s\n", nameGrp4(gregLO3ofRM(modrm)), dis_buf);
    }
    return delta;
+  unhandled:
+   *decode_OK = False;
+   return delta;
 }
 
 
-/* Group 5 extended opcodes. */
+/* Group 5 extended opcodes.  We have to decide here whether F2 and F3
+   might be valid. */
 static
 ULong dis_Grp5 ( VexAbiInfo* vbi,
                  Prefix pfx, Int sz, Long delta,
@@ -4210,6 +4270,8 @@ ULong dis_Grp5 ( VexAbiInfo* vbi,
 
    modrm = getUChar(delta);
    if (epartIsReg(modrm)) {
+      /* F2/XACQ and F3/XREL are always invalid in the non-mem case. */
+      if (haveF2orF3(pfx)) goto unhandledR;
       assign(t1, getIRegE(sz,pfx,modrm));
       switch (gregLO3ofRM(modrm)) {
          case 0: /* INC */
@@ -4276,6 +4338,14 @@ ULong dis_Grp5 ( VexAbiInfo* vbi,
                        showSz ? nameISize(sz) : ' ', 
                        nameIRegE(sz, pfx, modrm));
    } else {
+      /* Decide if F2/XACQ or F3/XREL might be valid. */
+      Bool validF2orF3 = haveF2orF3(pfx) ? False : True;
+      if ((gregLO3ofRM(modrm) == 0/*INC*/ || gregLO3ofRM(modrm) == 1/*DEC*/)
+          && haveF2orF3(pfx) && !haveF2andF3(pfx) && haveLOCK(pfx)) {
+         validF2orF3 = True;
+      }
+      if (!validF2orF3) goto unhandledM;
+      /* */
       addr = disAMode ( &len, vbi, pfx, delta, dis_buf, 0 );
       if (gregLO3ofRM(modrm) != 2 && gregLO3ofRM(modrm) != 4
                                   && gregLO3ofRM(modrm) != 6) {
@@ -7750,13 +7820,14 @@ static const HChar* nameBtOp ( BtOp op )
 
 static
 ULong dis_bt_G_E ( VexAbiInfo* vbi,
-                   Prefix pfx, Int sz, Long delta, BtOp op )
+                   Prefix pfx, Int sz, Long delta, BtOp op,
+                   /*OUT*/Bool* decode_OK )
 {
    HChar  dis_buf[50];
    UChar  modrm;
    Int    len;
    IRTemp t_fetched, t_bitno0, t_bitno1, t_bitno2, t_addr0, 
-     t_addr1, t_rsp, t_mask, t_new;
+          t_addr1, t_rsp, t_mask, t_new;
 
    vassert(sz == 2 || sz == 4 || sz == 8);
 
@@ -7771,6 +7842,24 @@ ULong dis_bt_G_E ( VexAbiInfo* vbi,
    t_bitno2  = newTemp(Ity_I8);
    t_addr1   = newTemp(Ity_I64);
    modrm     = getUChar(delta);
+
+   *decode_OK = True;
+   if (epartIsReg(modrm)) {
+      /* F2 and F3 are never acceptable. */
+      if (haveF2orF3(pfx)) {
+         *decode_OK = False;
+         return delta;
+      }
+   } else {
+      /* F2 or F3 (but not both) are allowed, provided LOCK is also
+         present, and only for the BTC/BTS/BTR cases (not BT). */
+      if (haveF2orF3(pfx)) {
+         if (haveF2andF3(pfx) || !haveLOCK(pfx) || op == BtOpNone) {
+            *decode_OK = False;
+            return delta;
+         }
+      }
+   }
 
    assign( t_bitno0, widenSto64(getIRegG(sz, pfx, modrm)) );
    
@@ -8136,6 +8225,23 @@ ULong dis_cmpxchg_G_E ( /*OUT*/Bool* ok,
 
       reg-mem, locked: use IRCAS
    */
+
+   /* Decide whether F2 or F3 are acceptable.  Never for register
+      case, but for the memory case, one or the other is OK provided
+      LOCK is also present. */
+   if (epartIsReg(rm)) {
+      if (haveF2orF3(pfx)) {
+         *ok = False;
+         return delta0;
+      }
+   } else {
+      if (haveF2orF3(pfx)) {
+         if (haveF2andF3(pfx) || !haveLOCK(pfx)) {
+            *ok = False;
+            return delta0;
+         }
+      }
+   }
 
    if (epartIsReg(rm)) {
       /* case 1 */
@@ -19062,16 +19168,48 @@ Long dis_ESC_NONE (
    HChar  dis_buf[50];
 
    Long   delta = deltaIN;
-   UChar  opc   = getUChar(delta);
-   delta++;
+   UChar  opc   = getUChar(delta); delta++;
+
+   /* delta now points at the modrm byte.  In most of the cases that
+      follow, neither the F2 nor F3 prefixes are allowed.  However,
+      for some basic arithmetic operations we have to allow F2/XACQ or
+      F3/XREL in the case where the destination is memory and the LOCK
+      prefix is also present.  Do this check by looking at the modrm
+      byte but not advancing delta over it. */
+   /* By default, F2 and F3 are not allowed, so let's start off with
+      that setting. */
+   Bool validF2orF3 = haveF2orF3(pfx) ? False : True;
+   { UChar tmp_modrm = getUChar(delta);
+     switch (opc) {
+        case 0x00: /* ADD Gb,Eb */  case 0x01: /* ADD Gv,Ev */
+        case 0x08: /* OR  Gb,Eb */  case 0x09: /* OR  Gv,Ev */
+        case 0x10: /* ADC Gb,Eb */  case 0x11: /* ADC Gv,Ev */
+        case 0x18: /* SBB Gb,Eb */  case 0x19: /* SBB Gv,Ev */
+        case 0x20: /* AND Gb,Eb */  case 0x21: /* AND Gv,Ev */
+        case 0x28: /* SUB Gb,Eb */  case 0x29: /* SUB Gv,Ev */
+        case 0x30: /* XOR Gb,Eb */  case 0x31: /* XOR Gv,Ev */
+           if (!epartIsReg(tmp_modrm)
+               && haveF2orF3(pfx) && !haveF2andF3(pfx) && haveLOCK(pfx)) {
+              /* dst is mem, and we have F2 or F3 but not both */
+              validF2orF3 = True;
+           }
+           break;
+        default:
+           break;
+     }
+   }
+
+   /* Now, in the switch below, for the opc values examined by the
+      switch above, use validF2orF3 rather than looking at pfx
+      directly. */
    switch (opc) {
 
    case 0x00: /* ADD Gb,Eb */
-      if (haveF2orF3(pfx)) goto decode_failure;
+      if (!validF2orF3) goto decode_failure;
       delta = dis_op2_G_E ( vbi, pfx, False, Iop_Add8, True, 1, delta, "add" );
       return delta;
    case 0x01: /* ADD Gv,Ev */
-      if (haveF2orF3(pfx)) goto decode_failure;
+      if (!validF2orF3) goto decode_failure;
       delta = dis_op2_G_E ( vbi, pfx, False, Iop_Add8, True, sz, delta, "add" );
       return delta;
 
@@ -19094,11 +19232,11 @@ Long dis_ESC_NONE (
       return delta;
 
    case 0x08: /* OR Gb,Eb */
-      if (haveF2orF3(pfx)) goto decode_failure;
+      if (!validF2orF3) goto decode_failure;
       delta = dis_op2_G_E ( vbi, pfx, False, Iop_Or8, True, 1, delta, "or" );
       return delta;
    case 0x09: /* OR Gv,Ev */
-      if (haveF2orF3(pfx)) goto decode_failure;
+      if (!validF2orF3) goto decode_failure;
       delta = dis_op2_G_E ( vbi, pfx, False, Iop_Or8, True, sz, delta, "or" );
       return delta;
 
@@ -19121,11 +19259,11 @@ Long dis_ESC_NONE (
       return delta;
 
    case 0x10: /* ADC Gb,Eb */
-      if (haveF2orF3(pfx)) goto decode_failure;
+      if (!validF2orF3) goto decode_failure;
       delta = dis_op2_G_E ( vbi, pfx, True, Iop_Add8, True, 1, delta, "adc" );
       return delta;
    case 0x11: /* ADC Gv,Ev */
-      if (haveF2orF3(pfx)) goto decode_failure;
+      if (!validF2orF3) goto decode_failure;
       delta = dis_op2_G_E ( vbi, pfx, True, Iop_Add8, True, sz, delta, "adc" );
       return delta;
 
@@ -19148,11 +19286,11 @@ Long dis_ESC_NONE (
       return delta;
 
    case 0x18: /* SBB Gb,Eb */
-      if (haveF2orF3(pfx)) goto decode_failure;
+      if (!validF2orF3) goto decode_failure;
       delta = dis_op2_G_E ( vbi, pfx, True, Iop_Sub8, True, 1, delta, "sbb" );
       return delta;
    case 0x19: /* SBB Gv,Ev */
-      if (haveF2orF3(pfx)) goto decode_failure;
+      if (!validF2orF3) goto decode_failure;
       delta = dis_op2_G_E ( vbi, pfx, True, Iop_Sub8, True, sz, delta, "sbb" );
       return delta;
 
@@ -19175,11 +19313,11 @@ Long dis_ESC_NONE (
       return delta;
 
    case 0x20: /* AND Gb,Eb */
-      if (haveF2orF3(pfx)) goto decode_failure;
+      if (!validF2orF3) goto decode_failure;
       delta = dis_op2_G_E ( vbi, pfx, False, Iop_And8, True, 1, delta, "and" );
       return delta;
    case 0x21: /* AND Gv,Ev */
-      if (haveF2orF3(pfx)) goto decode_failure;
+      if (!validF2orF3) goto decode_failure;
       delta = dis_op2_G_E ( vbi, pfx, False, Iop_And8, True, sz, delta, "and" );
       return delta;
 
@@ -19202,11 +19340,11 @@ Long dis_ESC_NONE (
       return delta;
 
    case 0x28: /* SUB Gb,Eb */
-      if (haveF2orF3(pfx)) goto decode_failure;
+      if (!validF2orF3) goto decode_failure;
       delta = dis_op2_G_E ( vbi, pfx, False, Iop_Sub8, True, 1, delta, "sub" );
       return delta;
    case 0x29: /* SUB Gv,Ev */
-      if (haveF2orF3(pfx)) goto decode_failure;
+      if (!validF2orF3) goto decode_failure;
       delta = dis_op2_G_E ( vbi, pfx, False, Iop_Sub8, True, sz, delta, "sub" );
       return delta;
 
@@ -19223,18 +19361,17 @@ Long dis_ESC_NONE (
       if (haveF2orF3(pfx)) goto decode_failure;
       delta = dis_op_imm_A(1, False, Iop_Sub8, True, delta, "sub" );
       return delta;
-
    case 0x2D: /* SUB Iv, eAX */
       if (haveF2orF3(pfx)) goto decode_failure;
       delta = dis_op_imm_A( sz, False, Iop_Sub8, True, delta, "sub" );
       return delta;
 
    case 0x30: /* XOR Gb,Eb */
-      if (haveF2orF3(pfx)) goto decode_failure;
+      if (!validF2orF3) goto decode_failure;
       delta = dis_op2_G_E ( vbi, pfx, False, Iop_Xor8, True, 1, delta, "xor" );
       return delta;
    case 0x31: /* XOR Gv,Ev */
-      if (haveF2orF3(pfx)) goto decode_failure;
+      if (!validF2orF3) goto decode_failure;
       delta = dis_op2_G_E ( vbi, pfx, False, Iop_Xor8, True, sz, delta, "xor" );
       return delta;
 
@@ -19470,8 +19607,17 @@ Long dis_ESC_NONE (
    }
 
    case 0x80: /* Grp1 Ib,Eb */
-      if (haveF2orF3(pfx)) goto decode_failure;
       modrm = getUChar(delta);
+      /* Disallow F2/XACQ and F3/XREL for the non-mem case.  Allow
+         just one for the mem case and also require LOCK in this case.
+         Note that this erroneously allows XACQ/XREL on CMP since we
+         don't check the subopcode here.  No big deal. */
+      if (epartIsReg(modrm) && haveF2orF3(pfx))
+         goto decode_failure;
+      if (!epartIsReg(modrm) && haveF2andF3(pfx))
+         goto decode_failure;
+      if (!epartIsReg(modrm) && haveF2orF3(pfx) && !haveLOCK(pfx))
+         goto decode_failure;
       am_sz = lengthAMode(pfx,delta);
       sz    = 1;
       d_sz  = 1;
@@ -19480,8 +19626,14 @@ Long dis_ESC_NONE (
       return delta;
 
    case 0x81: /* Grp1 Iv,Ev */
-      if (haveF2orF3(pfx)) goto decode_failure;
       modrm = getUChar(delta);
+      /* Same comment as for case 0x80 just above. */
+      if (epartIsReg(modrm) && haveF2orF3(pfx))
+         goto decode_failure;
+      if (!epartIsReg(modrm) && haveF2andF3(pfx))
+         goto decode_failure;
+      if (!epartIsReg(modrm) && haveF2orF3(pfx) && !haveLOCK(pfx))
+         goto decode_failure;
       am_sz = lengthAMode(pfx,delta);
       d_sz  = imin(sz,4);
       d64   = getSDisp(d_sz, delta + am_sz);
@@ -19508,17 +19660,25 @@ Long dis_ESC_NONE (
       return delta;
 
    /* XCHG reg,mem automatically asserts LOCK# even without a LOCK
-      prefix.  Therefore, surround it with a IRStmt_MBE(Imbe_BusLock)
-      and IRStmt_MBE(Imbe_BusUnlock) pair.  But be careful; if it is
-      used with an explicit LOCK prefix, we don't want to end up with
-      two IRStmt_MBE(Imbe_BusLock)s -- one made here and one made by
-      the generic LOCK logic at the top of disInstr. */
+      prefix.  Therefore, generate CAS regardless of the presence or
+      otherwise of a LOCK prefix. */
    case 0x86: /* XCHG Gb,Eb */
       sz = 1;
       /* Fall through ... */
    case 0x87: /* XCHG Gv,Ev */
-      if (haveF2orF3(pfx)) goto decode_failure;
       modrm = getUChar(delta);
+      /* Check whether F2 or F3 are allowable.  For the mem case, one
+         or the othter but not both are.  We don't care about the
+         presence of LOCK in this case -- XCHG is unusual in this
+         respect. */
+      if (haveF2orF3(pfx)) {
+         if (epartIsReg(modrm)) { 
+            goto decode_failure;
+         } else {
+            if (haveF2andF3(pfx))
+               goto decode_failure;
+         }
+      }
       ty = szToITy(sz);
       t1 = newTemp(ty); t2 = newTemp(ty);
       if (epartIsReg(modrm)) {
@@ -19544,15 +19704,21 @@ Long dis_ESC_NONE (
       }
       return delta;
 
-   case 0x88: /* MOV Gb,Eb */
-      if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_mov_G_E(vbi, pfx, 1, delta);
+   case 0x88: { /* MOV Gb,Eb */
+      /* We let dis_mov_G_E decide whether F3(XRELEASE) is allowable. */
+      Bool ok = True;
+      delta = dis_mov_G_E(vbi, pfx, 1, delta, &ok);
+      if (!ok) goto decode_failure;
       return delta;
+   }
 
-   case 0x89: /* MOV Gv,Ev */
-      if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_mov_G_E(vbi, pfx, sz, delta);
+   case 0x89: { /* MOV Gv,Ev */
+      /* We let dis_mov_G_E decide whether F3(XRELEASE) is allowable. */
+      Bool ok = True;
+      delta = dis_mov_G_E(vbi, pfx, sz, delta, &ok);
+      if (!ok) goto decode_failure;
       return delta;
+   }
 
    case 0x8A: /* MOV Eb,Gb */
       if (haveF2orF3(pfx)) goto decode_failure;
@@ -20059,8 +20225,9 @@ Long dis_ESC_NONE (
    maybe_do_Mov_I_E:
       modrm = getUChar(delta);
       if (gregLO3ofRM(modrm) == 0) {
-         if (haveF2orF3(pfx)) goto decode_failure;
          if (epartIsReg(modrm)) {
+            /* Neither F2 nor F3 are allowable. */
+            if (haveF2orF3(pfx)) goto decode_failure;
             delta++; /* mod/rm byte */
             d64 = getSDisp(imin(4,sz),delta); 
             delta += imin(4,sz);
@@ -20070,6 +20237,8 @@ Long dis_ESC_NONE (
                                      (Long)d64, 
                                      nameIRegE(sz,pfx,modrm));
          } else {
+            if (haveF2(pfx)) goto decode_failure;
+            /* F3(XRELEASE) is allowable here */
             addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 
                               /*xtra*/imin(4,sz) );
             delta += alen;
@@ -20526,7 +20695,8 @@ Long dis_ESC_NONE (
 
    case 0xF6: { /* Grp3 Eb */
       Bool decode_OK = True;
-      if (haveF2orF3(pfx)) goto decode_failure;
+      /* RM'd: if (haveF2orF3(pfx)) goto decode_failure; */
+      /* We now let dis_Grp3 itself decide if F2 and/or F3 are valid */
       delta = dis_Grp3 ( vbi, pfx, 1, delta, &decode_OK );
       if (!decode_OK) goto decode_failure;
       return delta;
@@ -20534,7 +20704,8 @@ Long dis_ESC_NONE (
 
    case 0xF7: { /* Grp3 Ev */
       Bool decode_OK = True;
-      if (haveF2orF3(pfx)) goto decode_failure;
+      /* RM'd: if (haveF2orF3(pfx)) goto decode_failure; */
+      /* We now let dis_Grp3 itself decide if F2 and/or F3 are valid */
       delta = dis_Grp3 ( vbi, pfx, sz, delta, &decode_OK );
       if (!decode_OK) goto decode_failure;
       return delta;
@@ -20554,7 +20725,8 @@ Long dis_ESC_NONE (
 
    case 0xFE: { /* Grp4 Eb */
       Bool decode_OK = True;
-      if (haveF2orF3(pfx)) goto decode_failure;
+      /* RM'd: if (haveF2orF3(pfx)) goto decode_failure; */
+      /* We now let dis_Grp4 itself decide if F2 and/or F3 are valid */
       delta = dis_Grp4 ( vbi, pfx, delta, &decode_OK );
       if (!decode_OK) goto decode_failure;
       return delta;
@@ -20562,7 +20734,8 @@ Long dis_ESC_NONE (
 
    case 0xFF: { /* Grp5 Ev */
       Bool decode_OK = True;
-      if (haveF2orF3(pfx)) goto decode_failure;
+      /* RM'd: if (haveF2orF3(pfx)) goto decode_failure; */
+      /* We now let dis_Grp5 itself decide if F2 and/or F3 are valid */
       delta = dis_Grp5 ( vbi, pfx, sz, delta, dres, &decode_OK );
       if (!decode_OK) goto decode_failure;
       return delta;
@@ -21041,11 +21214,14 @@ Long dis_ESC_0F (
       return delta;
    }
 
-   case 0xA3: /* BT Gv,Ev */
-      if (haveF2orF3(pfx)) goto decode_failure;
+   case 0xA3: { /* BT Gv,Ev */
+      /* We let dis_bt_G_E decide whether F2 or F3 are allowable. */
+      Bool ok = True;
       if (sz != 8 && sz != 4 && sz != 2) goto decode_failure;
-      delta = dis_bt_G_E ( vbi, pfx, sz, delta, BtOpNone );
+      delta = dis_bt_G_E ( vbi, pfx, sz, delta, BtOpNone, &ok );
+      if (!ok) goto decode_failure;
       return delta;
+   }
 
    case 0xA4: /* SHLDv imm8,Gv,Ev */
       modrm = getUChar(delta);
@@ -21065,11 +21241,14 @@ Long dis_ESC_0F (
                  "%cl", True /* left */ );
       return delta;
 
-   case 0xAB: /* BTS Gv,Ev */
-      if (haveF2orF3(pfx)) goto decode_failure;
+   case 0xAB: { /* BTS Gv,Ev */
+      /* We let dis_bt_G_E decide whether F2 or F3 are allowable. */
+      Bool ok = True;
       if (sz != 8 && sz != 4 && sz != 2) goto decode_failure;
-      delta = dis_bt_G_E ( vbi, pfx, sz, delta, BtOpSet );
+      delta = dis_bt_G_E ( vbi, pfx, sz, delta, BtOpSet, &ok );
+      if (!ok) goto decode_failure;
       return delta;
+   }
 
    case 0xAC: /* SHRDv imm8,Gv,Ev */
       modrm = getUChar(delta);
@@ -21094,28 +21273,31 @@ Long dis_ESC_0F (
       delta = dis_mul_E_G ( vbi, pfx, sz, delta );
       return delta;
 
+   case 0xB0: { /* CMPXCHG Gb,Eb */
+      Bool ok = True;
+      /* We let dis_cmpxchg_G_E decide whether F2 or F3 are allowable. */
+      delta = dis_cmpxchg_G_E ( &ok, vbi, pfx, 1, delta );
+      if (!ok) goto decode_failure;
+      return delta;
+   }
+
    case 0xB1: { /* CMPXCHG Gv,Ev (allowed in 16,32,64 bit) */
       Bool ok = True;
-      if (haveF2orF3(pfx)) goto decode_failure;
+      /* We let dis_cmpxchg_G_E decide whether F2 or F3 are allowable. */
       if (sz != 2 && sz != 4 && sz != 8) goto decode_failure;
       delta = dis_cmpxchg_G_E ( &ok, vbi, pfx, sz, delta );
       if (!ok) goto decode_failure;
       return delta;
    }
 
-   case 0xB0: { /* CMPXCHG Gb,Eb */
+   case 0xB3: { /* BTR Gv,Ev */
+      /* We let dis_bt_G_E decide whether F2 or F3 are allowable. */
       Bool ok = True;
-      if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_cmpxchg_G_E ( &ok, vbi, pfx, 1, delta );
+      if (sz != 8 && sz != 4 && sz != 2) goto decode_failure;
+      delta = dis_bt_G_E ( vbi, pfx, sz, delta, BtOpReset, &ok );
       if (!ok) goto decode_failure;
       return delta;
    }
-
-   case 0xB3: /* BTR Gv,Ev */
-      if (haveF2orF3(pfx)) goto decode_failure;
-      if (sz != 8 && sz != 4 && sz != 2) goto decode_failure;
-      delta = dis_bt_G_E ( vbi, pfx, sz, delta, BtOpReset );
-      return delta;
 
    case 0xB6: /* MOVZXb Eb,Gv */
       if (haveF2orF3(pfx)) goto decode_failure;
@@ -21132,8 +21314,8 @@ Long dis_ESC_0F (
       return delta;
 
    case 0xBA: { /* Grp8 Ib,Ev */
+      /* We let dis_Grp8_Imm decide whether F2 or F3 are allowable. */
       Bool decode_OK = False;
-      if (haveF2orF3(pfx)) goto decode_failure;
       modrm = getUChar(delta);
       am_sz = lengthAMode(pfx,delta);
       d64   = getSDisp8(delta + am_sz);
@@ -21144,11 +21326,14 @@ Long dis_ESC_0F (
       return delta;
    }
 
-   case 0xBB: /* BTC Gv,Ev */
-      if (haveF2orF3(pfx)) goto decode_failure;
+   case 0xBB: { /* BTC Gv,Ev */
+      /* We let dis_bt_G_E decide whether F2 or F3 are allowable. */
+      Bool ok = False;
       if (sz != 8 && sz != 4 && sz != 2) goto decode_failure;
-      delta = dis_bt_G_E ( vbi, pfx, sz, delta, BtOpComp );
+      delta = dis_bt_G_E ( vbi, pfx, sz, delta, BtOpComp, &ok );
+      if (!ok) goto decode_failure;
       return delta;
+   }
 
    case 0xBC: /* BSF Gv,Ev */
       if (!haveF2orF3(pfx)
@@ -21231,13 +21416,21 @@ Long dis_ESC_0F (
       *expect_CAS = True;
 
       /* Decode, and generate address. */
-      if (have66orF2orF3(pfx)) goto decode_failure;
+      if (have66(pfx)) goto decode_failure;
       if (sz != 4 && sz != 8) goto decode_failure;
       if (sz == 8 && !(archinfo->hwcaps & VEX_HWCAPS_AMD64_CX16))
          goto decode_failure;
       modrm = getUChar(delta);
       if (epartIsReg(modrm)) goto decode_failure;
       if (gregLO3ofRM(modrm) != 1) goto decode_failure;
+      if (haveF2orF3(pfx)) {
+         /* Since the e-part is memory only, F2 or F3 (one or the
+            other) is acceptable if LOCK is also present.  But only
+            for cmpxchg8b. */
+         if (sz == 8) goto decode_failure;
+         if (haveF2andF3(pfx) || !haveLOCK(pfx)) goto decode_failure;
+      }
+
       addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
       delta += alen;
 

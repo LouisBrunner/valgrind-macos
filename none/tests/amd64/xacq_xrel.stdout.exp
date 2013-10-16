@@ -1,0 +1,21 @@
+result for 'add' is a385b7d8caf2a7b9
+result for 'adc' is a385b7d8caf2a7bd
+result for 'and' is 0000000001010000
+result for 'or ' is 775d75555f7fddff
+result for 'sbb' is 0724f2d2dfb804eb
+result for 'sub' is 0724f2d2dfb804f1
+result for 'xor' is 5555555555555555
+result for 'dec' is 555555555555554d
+result for 'inc' is 555555555555555d
+result for 'neg' is 5555555555555555
+result for 'not' is 5555555555555555
+result for 'btc' is 57d555555f554d55
+result for 'btr' is 5555555555554515
+result for 'bts' is 57d555555f555d55
+result for 'cmpxchg' is 271831415927d459
+result for 'cmpxchg8b' is 5566778800000000
+result for 'xadd' is d1c2dbecb622f897
+result for 'xchg' is 5555555555555555
+result for 'xchg-no-lock' is 5555555555555555
+result for 'mov-reg' is 591831d459d45959
+result for 'mov-imm' is 42fffff00dab89bd

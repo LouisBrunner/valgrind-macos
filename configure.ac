@@ -2120,7 +2120,8 @@ AC_MSG_RESULT([no])
 AM_CONDITIONAL(BUILD_AVX2_TESTS, test x$ac_have_as_avx2 = xyes)
 
 
-# does the x86/amd64 assembler understand TSX instructions?
+# does the x86/amd64 assembler understand TSX instructions and
+# the XACQUIRE/XRELEASE prefixes?
 # Note, this doesn't generate a C-level symbol.  It generates a
 # automake-level symbol (BUILD_TSX_TESTS), used in test Makefile.am's
 AC_MSG_CHECKING([if x86/amd64 assembler speaks TSX])
@@ -2129,7 +2130,10 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   do {
    __asm__ __volatile__(
       "       xbegin Lfoo  \n\t"
-      "Lfoo:  xend         \n\t");
+      "Lfoo:  xend         \n\t"
+      "       xacquire lock incq 0(%rsp)     \n\t"
+      "       xrelease lock incq 0(%rsp)     \n"
+   );
   } while (0)
 ]])], [
 ac_have_as_tsx=yes

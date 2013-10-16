@@ -164,9 +164,11 @@ void do_cmpxchg8b ( void )
    __asm__ __volatile__(
       "xorq     %%rax, %%rax"     "\n\t"
       "xorq     %%rdx, %%rdx"     "\n\t"
+      "movabsq $0x1122334455667788, %%rcx"   "\n\t"
+      "movabsq $0xffeeddccbbaa9988, %%rdx"   "\n\t"
       "xacquire lock cmpxchg8b (%0)"     "\n\t"
       "xrelease lock cmpxchg8b (%0)"     "\n\t"
-      : : "r"(&n) : "cc", "memory", "rax", "rdx"
+      : : "r"(&n) : "cc", "memory", "rax", "rdx", "rcx", "rdx"
    );
    printf("result for '%-3s' is %016llx\n", "cmpxchg8b", n);
 }

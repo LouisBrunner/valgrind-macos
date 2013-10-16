@@ -80,6 +80,7 @@ EXTRA_DIST = \
 	slahf-amd64.stderr.exp slahf-amd64.stdout.exp \
 	slahf-amd64.vgtest \
 	tm1.vgtest tm1.stderr.exp tm1.stdout.exp \
+	xacq_xrel.stderr.exp xacq_xrel.stdout.exp xacq_xrel.vgtest \
 	xadd.stderr.exp xadd.stdout.exp xadd.vgtest
 
 check_PROGRAMS = \
@@ -119,7 +120,7 @@ if BUILD_AVX2_TESTS
   check_PROGRAMS += avx2-1
 endif
 if BUILD_TSX_TESTS
-  check_PROGRAMS += tm1
+  check_PROGRAMS += tm1 xacq_xrel
 endif
 if BUILD_BMI_TESTS
  check_PROGRAMS += bmi

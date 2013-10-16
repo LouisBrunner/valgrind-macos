@@ -2986,7 +2986,7 @@ asm(
     "\tdaddu  $25, $9, $10\n"
     "\tjalr   $25\n"
     "\tnop\n"
-".end __start\n"
+".previous\n"
 );
 #else
 #  error "Unknown linux platform"

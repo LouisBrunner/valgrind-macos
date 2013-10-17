@@ -32,6 +32,12 @@ Release 3.9.0 (?? ?????? 201?)
     for 'use after free' errors or to decrease Valgrind memory and/or cpu usage
     by recording less information for heap blocks.
 
+  - The list of used suppressions (shown when giving the -v option)
+    now shows for the leak suppressions how many blocks and bytes were
+    suppressed during the last leak search for each suppression.
+    The suppression count for a leak suppression shows the total nr
+    of loss records which were suppressed by this suppression.
+
 * ==================== OTHER CHANGES ====================
 
   - Option --merge-recursive-frames=<number> tells Valgrind to
@@ -62,6 +68,9 @@ Release 3.9.0 (?? ?????? 201?)
   - Addition of GDB server monitor command
     'v.do expensive_sanity_check_general' that checks the sanity
     of various Valgrind aspects, including the Valgrind heap.
+
+  - The list of used suppressions (shown when giving the -v option)
+    now gives the filename and linenr where the suppression is defined.
 
   - remote debuginfo server + overhaul of debuginfo reading
 

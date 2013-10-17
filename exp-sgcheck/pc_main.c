@@ -105,7 +105,9 @@ static void pc_pre_clo_init(void)
                                  pc_read_extra_suppression_info,
                                  pc_error_matches_suppression,
                                  pc_get_error_name,
-                                 pc_get_extra_suppression_info);
+                                 pc_get_extra_suppression_info,
+                                 pc_print_extra_suppression_use,
+                                 pc_update_extra_suppression_use);
 
    VG_(needs_xml_output)        ();
 

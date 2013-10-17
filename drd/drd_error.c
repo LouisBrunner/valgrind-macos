@@ -608,6 +608,19 @@ Bool drd_get_extra_suppression_info(Error* e,
    return False;
 }
 
+static
+Bool drd_print_extra_suppression_use(Supp* su,
+                                     /*OUT*/HChar* buf, Int nBuf)
+{
+   return False;
+}
+
+static
+void  drd_update_extra_suppresion_use(Error* e, Supp* supp)
+{
+   return;
+}
+
 /** Tell the Valgrind core about DRD's error handlers. */
 void DRD_(register_error_handlers)(void)
 {
@@ -620,5 +633,7 @@ void DRD_(register_error_handlers)(void)
                           drd_read_extra_suppression_info,
                           drd_error_matches_suppression,
                           drd_get_error_name,
-                          drd_get_extra_suppression_info);
+                          drd_get_extra_suppression_info,
+                          drd_print_extra_suppression_use,
+                          drd_update_extra_suppresion_use);
 }

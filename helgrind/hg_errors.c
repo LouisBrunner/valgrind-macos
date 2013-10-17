@@ -1396,6 +1396,19 @@ Bool HG_(get_extra_suppression_info) ( Error* err,
    return False;
 }
 
+Bool HG_(print_extra_suppression_use) ( Supp* su,
+                                        /*OUT*/HChar* buf, Int nBuf )
+{
+   /* Do nothing */
+   return False;
+}
+
+void HG_(update_extra_suppression_use) ( Error* err, Supp* su )
+{
+   /* Do nothing */
+   return;
+}
+
 
 /*--------------------------------------------------------------------*/
 /*--- end                                              hg_errors.c ---*/

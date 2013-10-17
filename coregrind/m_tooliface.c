@@ -234,7 +234,9 @@ void VG_(needs_tool_errors)(
    Bool (*read_extra) (Int, HChar**, SizeT*, Int*, Supp*),
    Bool (*matches)    (Error*, Supp*),
    const HChar* (*name) (Error*),
-   Bool (*get_xtra_si)(Error*,/*OUT*/HChar*,Int)
+   Bool (*get_xtra_si)(Error*,/*OUT*/HChar*,Int),
+   Bool (*print_xtra_su)(Supp*,/*OUT*/HChar*,Int),
+   void (*update_xtra_su)(Error*, Supp*)
 )
 {
    VG_(needs).tool_errors = True;
@@ -248,6 +250,8 @@ void VG_(needs_tool_errors)(
    VG_(tdict).tool_error_matches_suppression    = matches;
    VG_(tdict).tool_get_error_name               = name;
    VG_(tdict).tool_get_extra_suppression_info   = get_xtra_si;
+   VG_(tdict).tool_print_extra_suppression_use  = print_xtra_su;
+   VG_(tdict).tool_update_extra_suppression_use = update_xtra_su;
 }
 
 void VG_(needs_command_line_options)(

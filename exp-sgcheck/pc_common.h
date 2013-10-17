@@ -58,6 +58,9 @@ Bool pc_error_matches_suppression (Error* err, Supp* su);
 const HChar* pc_get_error_name ( Error* err );
 Bool pc_get_extra_suppression_info ( Error* err,
                                      /*OUT*/HChar* buf, Int nBuf );
+Bool pc_print_extra_suppression_use ( Supp* su,
+                                      /*OUT*/HChar* buf, Int nBuf );
+void pc_update_extra_suppression_use (Error* err, Supp* su);
 
 extern Bool h_clo_partial_loads_ok;
 /* extern Bool h_clo_lossage_check; */

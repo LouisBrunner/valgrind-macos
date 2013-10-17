@@ -1166,10 +1166,27 @@ leak kinds are matched by this suppression entry.
 <computeroutput>&lt;set&gt;</computeroutput> is specified similarly
 to the option <option>--show-leak-kinds</option>.
 If this optional extra line is not present, the suppression entry will match
-all leak kinds.
-</para>
+all leak kinds. </para>
 
 <para>The other memcheck error kinds do not have extra lines.</para>
+
+<para>
+If you give the <option>-v</option> option, Valgrind will print
+the list of used suppressions at the end of the execution.
+For a leak suppression, this output gives the number of different
+loss records that matches the suppression, the number of bytes
+and blocks suppressed by the suppressions.
+In case several leak searches are done, the number of bytes and blocks
+are reset to 0 before a new leak search. Note that the number of different
+loss records is not reset to 0.
+<para>In the example below, in the last leak search, 7 blocks and 96 bytes have
+been suppressed by the <option>some_leak_suppression</option>
+suppression. </para>
+<programlisting><![CDATA[
+--21041-- used_suppression:     10 some_other_leak_suppression s.supp:14 suppressed: 12,400 bytes in 1 blocks
+--21041-- used_suppression:     39 some_leak_suppression s.supp:2 suppressed: 96 bytes in 7 blocks
+]]></programlisting>
+</para>
 
 <para>The first line of the calling context: for <varname>ValueN</varname>
 and <varname>AddrN</varname> errors, it is either the name of the function

@@ -474,6 +474,10 @@ static UInt detect_memory_leaks_last_heuristics;
 // The below avoids replicating the delta_mode in each LossRecord.
 LeakCheckDeltaMode MC_(detect_memory_leaks_last_delta_mode);
 
+// Each leak search run increments the below generation counter.
+// A used suppression during a leak search will contain this
+// generation number.
+UInt MC_(leak_search_gen);
 
 // Records chunks that are currently being processed.  Each element in the
 // stack is an index into lc_chunks and lc_extras.  Its size is
@@ -1646,7 +1650,7 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckParams* lcp)
    // before checking for (smaller) page skipping.
    tl_assert((SM_SIZE % VKI_PAGE_SIZE) == 0);
 
-
+   MC_(leak_search_gen)++;
    MC_(detect_memory_leaks_last_delta_mode) = lcp->deltamode;
    detect_memory_leaks_last_heuristics = lcp->heuristics;
 

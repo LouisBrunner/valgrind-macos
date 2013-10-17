@@ -793,6 +793,16 @@ Bool pc_get_extra_suppression_info ( Error* err,
    }
 }
 
+Bool pc_print_extra_suppression_use ( Supp* su,
+                                      /*OUT*/HChar* buf, Int nBuf )
+{
+   return False;
+}
+
+void pc_update_extra_suppression_use (Error* err, Supp* su)
+{
+   return;
+}
 
 /*--------------------------------------------------------------------*/
 /*--- end                                              pc_common.c ---*/

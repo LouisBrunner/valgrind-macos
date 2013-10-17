@@ -913,12 +913,19 @@ static Bool show_used_suppressions ( void )
                                  "  </pair>\n",
                                  su->count, su->sname );
       } else {
+         HChar       xtra[256]; /* assumed big enough (is overrun-safe) */
+         Bool        anyXtra;
          // blank line before the first shown suppression, if any
          if (!any_supp)
             VG_(dmsg)("\n");
-         VG_(dmsg)("used_suppression: %6d %s %s:%d\n", su->count, su->sname,
+         VG_(memset)(xtra, 0, sizeof(xtra));
+         anyXtra = VG_TDICT_CALL(tool_print_extra_suppression_use,
+                                 su, xtra, sizeof(xtra));
+         vg_assert(xtra[sizeof(xtra)-1] == 0);
+         VG_(dmsg)("used_suppression: %6d %s %s:%d%s%s\n", su->count, su->sname,
                    VG_(clo_suppressions)[su->clo_suppressions_i],
-                   su->sname_lineno);
+                   su->sname_lineno,
+                   anyXtra ? " " : "", xtra);
       }
       any_supp = True;
    }
@@ -1659,8 +1666,9 @@ static Supp* is_suppressible_error ( Error* err )
    /* Conceptually, ip2fo contains an array of function names and an array of
       object names, corresponding to the array of IP of err->where.
       These names are just computed 'on demand' (so once maximum),
-      then stored (efficiently, avoiding too many allocs) in ip2fo to be re-usable
-      for the matching of the same IP with the next suppression pattern. 
+      then stored (efficiently, avoiding too many allocs) in ip2fo to be
+      re-usable for the matching of the same IP with the next suppression
+      pattern. 
 
       VG_(generic_match) gets this 'IP to Fun or Obj name completer' as one
       of its arguments. It will then pass it to the function
@@ -1687,7 +1695,10 @@ static Supp* is_suppressible_error ( Error* err )
       em_supplist_cmps++;
       if (supp_matches_error(su, err) 
           && supp_matches_callers(&ip2fo, su)) {
-         /* got a match.  Move this entry to the head of the list
+         /* got a match.  */
+         /* Inform the tool that err is suppressed by su. */
+         (void)VG_TDICT_CALL(tool_update_extra_suppression_use, err, su);
+         /* Move this entry to the head of the list
             in the hope of making future searches cheaper. */
          if (su_prev) {
             vg_assert(su_prev->next == su);

@@ -6699,7 +6699,9 @@ static void mc_pre_clo_init(void)
                                    MC_(read_extra_suppression_info),
                                    MC_(error_matches_suppression),
                                    MC_(get_error_name),
-                                   MC_(get_extra_suppression_info));
+                                   MC_(get_extra_suppression_info),
+                                   MC_(print_extra_suppression_use),
+                                   MC_(update_extra_suppression_use));
    VG_(needs_libc_freeres)        ();
    VG_(needs_command_line_options)(mc_process_cmd_line_options,
                                    mc_print_usage,

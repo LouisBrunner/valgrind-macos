@@ -351,6 +351,10 @@ typedef
 
 void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckParams * lcp);
 
+// Each time a leak search is done, the leak search generation
+// MC_(leak_search_gen) is incremented.
+extern UInt MC_(leak_search_gen);
+
 // maintains the lcp.deltamode given in the last call to detect_memory_leaks
 extern LeakCheckDeltaMode MC_(detect_memory_leaks_last_delta_mode);
 
@@ -404,6 +408,9 @@ Bool MC_(error_matches_suppression) ( Error* err, Supp* su );
 
 Bool MC_(get_extra_suppression_info) ( Error* err,
                                        /*OUT*/HChar* buf, Int nBuf );
+Bool MC_(print_extra_suppression_use) ( Supp* su,
+                                        /*OUT*/HChar* buf, Int nBuf );
+void MC_(update_extra_suppression_use) ( Error* err, Supp* su );
 
 const HChar* MC_(get_error_name) ( Error* err );
 

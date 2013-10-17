@@ -384,14 +384,17 @@ suppression mechanism is designed to allow precise yet flexible
 specification of errors to suppress.</para>
 
 <para>If you use the <option>-v</option> option, at the end of execution,
-Valgrind prints out one line for each used suppression, giving its name
-and the number of times it got used.  Here's the suppressions used by a
-run of <computeroutput>valgrind --tool=memcheck ls -l</computeroutput>:</para>
+Valgrind prints out one line for each used suppression, giving the number of times
+it got used, its name and the filename and line number where the suppression is
+defined. Depending on the suppression kind, the filename and line number are optionally
+followed by additional information (such as the number of blocks and bytes suppressed
+by a memcheck leak suppression). Here's the suppressions used by a
+run of <computeroutput>valgrind -v --tool=memcheck ls -l</computeroutput>:</para>
 
 <programlisting><![CDATA[
---27579-- supp: 1 socketcall.connect(serv_addr)/__libc_connect/__nscd_getgrgid_r
---27579-- supp: 1 socketcall.connect(serv_addr)/__libc_connect/__nscd_getpwuid_r
---27579-- supp: 6 strrchr/_dl_map_object_from_fd/_dl_map_object]]></programlisting>
+--1610-- used_suppression:      2 dl-hack3-cond-1 /usr/lib/valgrind/default.supp:1234
+--1610-- used_suppression:      2 glibc-2.5.x-on-SUSE-10.2-(PPC)-2a /usr/lib/valgrind/default.supp:1234
+]]></programlisting>
 
 <para>Multiple suppressions files are allowed.  By default, Valgrind
 uses <filename>$PREFIX/lib/valgrind/default.supp</filename>.  You can

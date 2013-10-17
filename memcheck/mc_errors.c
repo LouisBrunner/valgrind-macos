@@ -1532,6 +1532,14 @@ typedef struct _MC_LeakSuppExtra MC_LeakSuppExtra;
 
 struct _MC_LeakSuppExtra {
    UInt match_leak_kinds;
+
+   /* Maintains nr of blocks and bytes suppressed with this suppression
+      during the leak search identified by leak_search_gen.
+      blocks_suppressed and bytes_suppressed are reset to 0 when
+      used the first time during a leak search. */
+   SizeT blocks_suppressed;
+   SizeT bytes_suppressed;
+   UInt  leak_search_gen;
 };
 
 Bool MC_(read_extra_suppression_info) ( Int fd, HChar** bufpp,
@@ -1549,6 +1557,9 @@ Bool MC_(read_extra_suppression_info) ( Int fd, HChar** bufpp,
       MC_LeakSuppExtra* lse;
       lse = VG_(malloc)("mc.resi.2", sizeof(MC_LeakSuppExtra));
       lse->match_leak_kinds = RallS;
+      lse->blocks_suppressed = 0;
+      lse->bytes_suppressed = 0;
+      lse->leak_search_gen = 0;
       VG_(set_supp_extra)(su, lse); // By default, all kinds will match.
       eof = VG_(get_line) ( fd, bufpp, nBufp, lineno );
       if (eof) return True; // old LeakSupp style, no match-leak-kinds line.
@@ -1617,6 +1628,13 @@ Bool MC_(error_matches_suppression) ( Error* err, Supp* su )
       case LeakSupp:
          if (ekind == Err_Leak) {
             MC_LeakSuppExtra* lse = (MC_LeakSuppExtra*) VG_(get_supp_extra)(su);
+            if (lse->leak_search_gen != MC_(leak_search_gen)) {
+               // First time we see this suppression during this leak search.
+               // => reset the counters to 0.
+               lse->blocks_suppressed = 0;
+               lse->bytes_suppressed = 0;
+               lse->leak_search_gen = MC_(leak_search_gen);
+            }
             return RiS(extra->Err.Leak.lr->key.state, lse->match_leak_kinds);
          } else
             return False;
@@ -1695,6 +1713,37 @@ Bool MC_(get_extra_suppression_info) ( Error* err,
    }
 }
 
+Bool MC_(print_extra_suppression_use) ( Supp *su,
+                                        /*OUT*/HChar *buf, Int nBuf )
+{
+   if (VG_(get_supp_kind)(su) == LeakSupp) {
+      MC_LeakSuppExtra *lse = (MC_LeakSuppExtra*) VG_(get_supp_extra) (su);
+
+      if (lse->leak_search_gen == MC_(leak_search_gen)
+          && lse->blocks_suppressed > 0) {
+         VG_(snprintf) (buf, nBuf-1, 
+                        "suppressed: %'lu bytes in %'lu blocks",
+                        lse->bytes_suppressed,
+                        lse->blocks_suppressed);
+         return True;
+      } else
+         return False;
+   } else
+      return False;
+}
+
+void MC_(update_extra_suppression_use) ( Error* err, Supp* su)
+{
+   if (VG_(get_supp_kind)(su) == LeakSupp) {
+      MC_LeakSuppExtra *lse = (MC_LeakSuppExtra*) VG_(get_supp_extra) (su);
+      MC_Error* extra = VG_(get_error_extra)(err);
+
+      tl_assert (lse->leak_search_gen = MC_(leak_search_gen));
+      lse->blocks_suppressed += extra->Err.Leak.lr->num_blocks;
+      lse->bytes_suppressed 
+         += extra->Err.Leak.lr->szB + extra->Err.Leak.lr->indirect_szB;
+   }
+}
 
 /*--------------------------------------------------------------------*/
 /*--- end                                              mc_errors.c ---*/

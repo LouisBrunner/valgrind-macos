@@ -53,7 +53,28 @@ extern __attribute__((aligned(16)))
 
 #define TRANSTAB_BOGUS_GUEST_ADDR ((Addr)1)
 
+
+/* Initialises the TC, using VG_(clo_num_transtab_sectors).
+   VG_(clo_num_transtab_sectors) must be >= MIN_N_SECTORS
+   and <= MAX_N_SECTORS. */
 extern void VG_(init_tt_tc)       ( void );
+
+
+/* Limits for number of sectors the TC is divided into.  If you need a larger
+   overall translation cache, increase MAX_N_SECTORS. */ 
+#define MIN_N_SECTORS 2
+#define MAX_N_SECTORS 32
+
+/* Default for the nr of sectors, if not overriden by command line.
+   On Android, space is limited, so try to get by with fewer sectors.
+   On other platforms we can go to town.  16 sectors gives theoretical
+   capacity of about 440MB of JITted code in 1.05 million translations
+   (realistically, about 2/3 of that) for Memcheck. */
+#if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)
+# define N_SECTORS_DEFAULT 6
+#else
+# define N_SECTORS_DEFAULT 16
+#endif
 
 extern
 void VG_(add_to_transtab)( VexGuestExtents* vge,

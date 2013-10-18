@@ -200,6 +200,8 @@ static void usage_NORETURN ( Bool debug_help )
 "                              handle non-standard kernel variants\n"
 "    --merge-recursive-frames=<number>  merge frames between identical\n"
 "           program counters in max <number> frames) [0]\n"
+"    --num-transtab-sectors=<number> size of translated code cache [%d]\n"
+"           more sectors may increase the performance, but use more memory.\n"
 "    --show-emwarns=no|yes     show warnings about emulation limits? [no]\n"
 "    --require-text-symbol=:sonamepattern:symbolpattern    abort run if the\n"
 "                              stated shared object doesn't have the stated\n"
@@ -306,7 +308,8 @@ static void usage_NORETURN ( Bool debug_help )
                default_alignment          /* char* */,
                default_redzone_size       /* char* */,
                VG_(clo_vgdb_poll)         /* int */,
-               VG_(vgdb_prefix_default)() /* char* */
+               VG_(vgdb_prefix_default)() /* char* */,
+               N_SECTORS_DEFAULT          /* int */
                ); 
    if (VG_(details).name) {
       VG_(printf)("  user options for %s:\n", VG_(details).name);
@@ -606,6 +609,9 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
       else if VG_INT_CLO (arg, "--sanity-level",     VG_(clo_sanity_level)) {}
       else if VG_BINT_CLO(arg, "--num-callers",      VG_(clo_backtrace_size), 1,
                                                      VG_DEEPEST_BACKTRACE) {}
+      else if VG_BINT_CLO(arg, "--num-transtab-sectors",
+                               VG_(clo_num_transtab_sectors),
+                               MIN_N_SECTORS, MAX_N_SECTORS) {}
       else if VG_BINT_CLO(arg, "--merge-recursive-frames",
                                VG_(clo_merge_recursive_frames), 0,
                                VG_DEEPEST_BACKTRACE) {}

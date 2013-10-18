@@ -1,6 +1,7 @@
 // This artificial program runs a lot of code.  The exact amount depends on
-// the command line -- if any command line args are given, it does exactly
+// the command line -- if an arg "0" is given, it does exactly
 // the same amount of work, but using four times as much code.
+// If an arg >= 1 is given, the amount of code is multiplied by this arg.
 //
 // It's a stress test for Valgrind's translation speed;  natively the two
 // modes run in about the same time (the I-cache effects aren't big enough
@@ -9,6 +10,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <assert.h>
 #if defined(__mips__)
 #include <asm/cachectl.h>
@@ -39,11 +41,6 @@ int main(int argc, char* argv[])
    int h, i, sum1 = 0, sum2 = 0, sum3 = 0, sum4 = 0;
    int n_fns, n_reps;
 
-   char* a = mmap(0, FN_SIZE * N_LOOPS, 
-                     PROT_EXEC|PROT_WRITE, 
-                     MAP_PRIVATE|MAP_ANONYMOUS, -1,0);
-   assert(a != (char*)MAP_FAILED);
-
    if (argc <= 1) {
       // Mode 1: not so much code
       n_fns  = N_LOOPS / RATIO;
@@ -51,12 +48,21 @@ int main(int argc, char* argv[])
       printf("mode 1: ");
    } else {
       // Mode 2: lots of code
-      n_fns  = N_LOOPS;
+      const int mul = atoi(argv[1]);
+      if (mul == 0)
+         n_fns = N_LOOPS;
+      else
+         n_fns = N_LOOPS * mul;
       n_reps = 1;
       printf("mode 1: ");
    }
    printf("%d copies of f(), %d reps\n", n_fns, n_reps);
    
+   char* a = mmap(0, FN_SIZE * n_fns, 
+                     PROT_EXEC|PROT_WRITE, 
+                     MAP_PRIVATE|MAP_ANONYMOUS, -1,0);
+   assert(a != (char*)MAP_FAILED);
+
    // Make a whole lot of copies of f().  FN_SIZE is much bigger than f()
    // will ever be (we hope).
    for (i = 0; i < n_fns; i++) {

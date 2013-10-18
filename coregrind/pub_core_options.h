@@ -272,6 +272,9 @@ extern Word VG_(clo_main_stacksize);
    Note that the value is changeable by a gdbsrv command. */
 extern Int VG_(clo_merge_recursive_frames);
 
+/* Max number of sectors that will be used by the translation code cache. */
+extern UInt VG_(clo_num_transtab_sectors);
+
 /* Delay startup to allow GDB to be attached?  Default: NO */
 extern Bool VG_(clo_wait_for_gdb);
 

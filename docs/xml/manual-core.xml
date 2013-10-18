@@ -1852,6 +1852,28 @@ need to use them.</para>
    </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.num-transtab-sectors" xreflabel="--num-transtab-sectors">
+    <term>
+      <option><![CDATA[--num-transtab-sectors=<number> [default: 6 or 16] ]]></option>
+    </term>
+    <listitem>
+      <para>Valgrind translates and instruments your program code. The
+      translations are stored in a translation cache organized in
+      sectors. If the cache is full, the sector containing the older
+      translations is emptied and recycled. If these old translations
+      are needed again, Valgrind must re-translate and re-instrument
+      the corresponding program code. If the "executed instructions"
+      working set of a program is big, increasing the number of
+      sectors may improve the performance by reducing the number of
+      re-translations needed.  A sector is lazily allocated but once
+      allocated, it permanently uses several MB depending
+      on the tool (about 40 MB per sector for memcheck).
+      Use the option <option>--stats=yes</option> to obtain precise
+      information about the memory used by a sector and the allocation
+      and recycling of sectors.</para>
+   </listitem>
+  </varlistentry>
+
   <varlistentry id="opt.show-emwarns" xreflabel="--show-emwarns">
     <term>
       <option><![CDATA[--show-emwarns=<yes|no> [default: no] ]]></option>

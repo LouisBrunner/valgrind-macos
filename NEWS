@@ -40,6 +40,13 @@ Release 3.9.0 (?? ?????? 201?)
 
 * ==================== OTHER CHANGES ====================
 
+  - The default nr of sectors in the translation cache has been 
+    decreased to 6 on android platforms, and increased to 16
+    on all other platforms. A sector (lazily allocated) uses several
+    MB depending on the tool (about 40MB for memcheck).
+    The option --num-transtab-sectors allows to specify how
+    many sectors Valgrind can allocate.
+
   - Option --merge-recursive-frames=<number> tells Valgrind to
     detect and merge (collapse) recursive calls when recording stack traces.
     When your program has recursive algorithms, this limits

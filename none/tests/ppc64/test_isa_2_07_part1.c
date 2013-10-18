@@ -242,6 +242,7 @@ enum test_flags {
     PPC_ALTIVEC    = 0x00040000,
     PPC_FALTIVEC   = 0x00050000,
     PPC_ALTIVECD   = 0x00060000,    /* double word Altivec tests */
+    PPC_ALTIVECQ   = 0x00070000,
     PPC_FAMILY     = 0x000F0000,
     /* Flags: these may be combined, so use separate bitfields. */
     PPC_CR         = 0x01000000,
@@ -670,6 +671,74 @@ static void test_bcdsub (void)
       __asm__ __volatile__ ("bcdsub. %0, %1, %2, 0" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
 }
 
+static void test_vaddcuq (void)
+{
+   __asm__ __volatile__ ("vaddcuq %0, %1, %2" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
+}
+
+static void test_vadduqm (void)
+{
+   __asm__ __volatile__ ("vadduqm %0, %1, %2" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
+}
+
+static void test_vaddecuq (void)
+{
+  __asm__ __volatile__ ("vaddecuq %0, %1, %2, %3" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB),"v" (vec_inC));
+}
+
+static void test_vaddeuqm (void)
+{
+  __asm__ __volatile__ ("vaddeuqm %0, %1, %2, %3" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB),"v" (vec_inC));
+}
+
+static void test_vsubcuq (void)
+{
+   __asm__ __volatile__ ("vsubcuq %0, %1, %2" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
+}
+
+static void test_vsubuqm (void)
+{
+   __asm__ __volatile__ ("vsubuqm %0, %1, %2" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
+}
+
+static void test_vsubecuq (void)
+{
+  __asm__ __volatile__ ("vsubecuq %0, %1, %2, %3" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB),"v" (vec_inC));
+}
+
+static void test_vsubeuqm (void)
+{
+  __asm__ __volatile__ ("vsubeuqm %0, %1, %2, %3" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB),"v" (vec_inC));
+}
+
+static void test_vbpermq (void)
+{
+   __asm__ __volatile__ ("vbpermq %0, %1, %2" : "=v" (vec_out): "v" (vec_inA),"v" (vec_inB));
+}
+
+static void test_vgbbd (void)
+{
+    __asm__ __volatile__ ("vgbbd %0, %1" : "=v" (vec_out): "v" (vec_inB));
+}
+
+
+static test_t tests_aa_quadword_two_args[] = {
+  { &test_vaddcuq       , "vaddcuq" },
+  { &test_vadduqm       , "vadduqm" },
+  { &test_vsubcuq       , "vsubcuq" },
+  { &test_vsubuqm       , "vsubuqm" },
+  { &test_vbpermq       , "vbpermq" },
+  { NULL                , NULL      },
+};
+
+static test_t tests_aa_quadword_three_args[] = {
+  { &test_vaddecuq      , "vaddecuq" },
+  { &test_vaddeuqm      , "vaddeuqm" },
+  { &test_vsubecuq      , "vsubecuq" },
+  { &test_vsubeuqm      , "vsubeuqm" },
+  { NULL                , NULL      },
+};
+
 static test_t tests_aa_bcd_ops[] = {
   { &test_bcdadd        , "bcdadd." },
   { &test_bcdsub        , "bcdsub." },
@@ -743,6 +812,7 @@ static test_t tests_aa_dbl_ops_one_arg[] = {
   { &test_vpopcntw        , "vpopcntw" },
   { &test_vpopcntd        , "vpopcntd" },
   { &test_vsbox           , "vsbox" },
+  { &test_vgbbd           , "vgbbd" },
   { NULL                  , NULL,      }
 };
 
@@ -1151,6 +1221,7 @@ static void test_av_dint_two_args (const char* name, test_func_t func,
    unsigned long long * dst;
    unsigned int * dst_int;
    int i,j;
+   int family = test_flags & PPC_FAMILY;
    int is_vpkudum;
    if (strcmp(name, "vpkudum") == 0)
       is_vpkudum = 1;
@@ -1175,6 +1246,10 @@ static void test_av_dint_two_args (const char* name, test_func_t func,
                    vdargs[j+1] & 0x00000000ffffffffULL);
             printf("         Output: %08x %08x %08x %08x\n", dst_int[0], dst_int[1],
                    dst_int[2], dst_int[3]);
+         } else if (family == PPC_ALTIVECQ) {
+            printf("%016llx%016llx @@ %016llx%016llx ==> %016llx%016llx\n",
+                   vdargs[i], vdargs[i+1], vdargs[j], vdargs[j+1],
+                   dst[0], dst[1]);
          } else {
             printf("%016llx @@ %016llx ", vdargs[i], vdargs[j]);
             printf(" ==> %016llx\n", dst[0]);
@@ -1467,28 +1542,43 @@ static void test_int_ldq_three_regs (const char* name,
 
 }
 
-static void test_av_int_three_args (const char* name, test_func_t func,
-                                    unused uint32_t test_flags)
+static void test_av_dint_three_args (const char* name, test_func_t func,
+                                     unused uint32_t test_flags)
 {
 
    unsigned long long * dst;
    int i,j, k;
+   int family = test_flags & PPC_FAMILY;
+   unsigned long long cin_vals[] = {
+                                    // First pair of ULLs have LSB=0, so cin is '0'.
+                                    // Second pair of ULLs have LSB=1, so cin is '1'.
+                                    0xf000000000000000ULL, 0xf000000000000000ULL,
+                                    0xf000000000000000ULL, 0xf000000000000001ULL
+   };
    for (i = 0; i < NB_VDARGS; i+=2) {
       vec_inA = (vector unsigned long long){ vdargs[i], vdargs[i+1] };
       for (j = 0; j < NB_VDARGS; j+=2) {
          vec_inB = (vector unsigned long long){ vdargs[j], vdargs[j+1] };
-         for (k = 0; k < NB_VDARGS; k+=2) {
-            vec_inC = (vector unsigned long long){ vdargs[k], vdargs[k+1] };
+         for (k = 0; k < 4; k+=2) {
+            if (family == PPC_ALTIVECQ)
+               vec_inC = (vector unsigned long long){ cin_vals[k], cin_vals[k+1] };
+            else
+               vec_inC = (vector unsigned long long){ vdargs[k], vdargs[k+1] };
             vec_out = (vector unsigned long long){ 0,0 };
 
             (*func)();
             dst  = (unsigned long long*)&vec_out;
-
             printf("%s: ", name);
-            printf("%016llx @@ %016llx @@ %016llx ", vdargs[i], vdargs[j], vdargs[k]);
-            printf(" ==> %016llx\n", dst[0]);
-            printf("\t%016llx @@ %016llx @@ %016llx ", vdargs[i+1], vdargs[j+1], vdargs[k+1]);
-            printf(" ==> %016llx\n", dst[1]);
+            if (family == PPC_ALTIVECQ) {
+               printf("%016llx%016llx @@ %016llx%016llx @@ %llx ==> %016llx%016llx\n",
+                      vdargs[i], vdargs[i+1], vdargs[j], vdargs[j+1], cin_vals[k+1],
+                      dst[0], dst[1]);
+            } else {
+               printf("%016llx @@ %016llx @@ %016llx ", vdargs[i], vdargs[j], vdargs[k]);
+               printf(" ==> %016llx\n", dst[0]);
+               printf("\t%016llx @@ %016llx @@ %016llx ", vdargs[i+1], vdargs[j+1], vdargs[k+1]);
+               printf(" ==> %016llx\n", dst[1]);
+            }
          }
       }
    }
@@ -1517,7 +1607,7 @@ static test_loop_t altivec_loops[] = {
    &test_av_wint_two_args_dres,
    &test_av_dint_to_int_two_args,
    &test_av_wint_one_arg_dres,
-   &test_av_int_three_args,
+   &test_av_dint_three_args,
    &test_av_dint_one_arg,
    &test_av_dint_one_arg_SHA,
    &test_av_bcd,
@@ -1636,6 +1726,16 @@ static test_table_t all_tests[] = {
        "PPC altivec BCD insns",
        0x00040B02,
    },
+   {
+       tests_aa_quadword_two_args,
+       "PPC altivec quadword insns, two input args",
+       0x00070102,
+   },
+   {
+       tests_aa_quadword_three_args,
+       "PPC altivec quadword insns, three input args",
+       0x00070103
+   },
    { NULL,                   NULL,               0x00000000, },
 };
 
@@ -1676,6 +1776,7 @@ static void do_tests ( insn_sel_flags_t seln_flags,
           (family == PPC_FLOAT    && !seln_flags.floats)  ||
           (family == PPC_ALTIVEC && !seln_flags.altivec)  ||
           (family == PPC_ALTIVECD && !seln_flags.altivec)  ||
+          (family == PPC_ALTIVECQ && !seln_flags.altivec)  ||
           (family == PPC_FALTIVEC && !seln_flags.faltivec)) {
          continue;
       }
@@ -1700,6 +1801,12 @@ static void do_tests ( insn_sel_flags_t seln_flags,
          loop = &float_loops[nb_args - 1];
          break;
 
+      case PPC_ALTIVECQ:
+         if (nb_args == 2)
+            loop = &altivec_loops[ALTV_DINT];
+         else if (nb_args == 3)
+            loop = &altivec_loops[ALTV_DINT_THREE_ARGS];
+         break;
       case PPC_ALTIVECD:
          switch (type) {
          case PPC_MOV:

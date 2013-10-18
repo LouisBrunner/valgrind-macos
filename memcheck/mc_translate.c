@@ -4152,6 +4152,9 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_Clz64x2:
          return mkPCast64x2(mce, vatom);
 
+      case Iop_PwBitMtxXpose64x2:
+         return assignNew('V', mce, Ity_V128, unop(op, vatom));
+
       case Iop_NarrowUn16to8x8:
       case Iop_NarrowUn32to16x4:
       case Iop_NarrowUn64to32x2:

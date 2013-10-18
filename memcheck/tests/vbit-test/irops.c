@@ -974,6 +974,7 @@ static irop_t irops[] = {
   { DEFOP(Iop_NCipherLV128, UNDEF_UNKNOWN), },
   { DEFOP(Iop_SHA512, UNDEF_UNKNOWN), },
   { DEFOP(Iop_SHA256, UNDEF_UNKNOWN), },
+  { DEFOP(Iop_PwBitMtxXpose64x2, UNDEF_UNKNOWN), },
 };
 
 

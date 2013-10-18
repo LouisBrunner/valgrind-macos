@@ -957,6 +957,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    /* Loop unwinding the stack. */
    Bool do_stack_scan = False;
 
+   /* First try the Official Way, using Dwarf CFI. */
    while (True) {
       if (debug) {
          VG_(printf)("i: %d, r15: 0x%lx, r13: 0x%lx\n",
@@ -977,12 +978,17 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
          if (UNLIKELY(cmrf > 0)) {RECURSIVE_MERGE(cmrf,ips,i);};
          continue;
       }
+
       /* No luck.  We have to give up. */
       do_stack_scan = True;
       break;
    }
 
-   if (0/*DISABLED BY DEFAULT*/ && do_stack_scan && i < max_n_ips && i <= 2) {
+   /* Now try Plan B (maybe) -- stack scanning.  This often gives
+      pretty bad results, so this has to be enabled explicitly by the
+      user. */
+   if (do_stack_scan
+       && i < max_n_ips && i < (Int)VG_(clo_unw_stack_scan_thresh)) {
       Int  nByStackScan = 0;
       Addr lr = uregs.r14;
       Addr sp = uregs.r13 & ~3;
@@ -1015,7 +1021,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
                if (fps) fps[i] = 0;
                ips[i++] = cand;
                if (UNLIKELY(cmrf > 0)) {RECURSIVE_MERGE(cmrf,ips,i);};
-               if (++nByStackScan >= 5) break;
+               if (++nByStackScan >= VG_(clo_unw_stack_scan_frames)) break;
             }
          }
          sp += 4;

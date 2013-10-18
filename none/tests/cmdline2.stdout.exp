@@ -100,6 +100,11 @@ usage: valgrind [options] prog-and-args
                   in the main exe:  --soname-synonyms=somalloc=NONE
                   in libxyzzy.so:   --soname-synonyms=somalloc=libxyzzy.so
     --sigill-diagnostics=yes|no  warn about illegal instructions? [yes]
+    --unw-stack-scan-thresh=<number>   Enable stack-scan unwind if fewer
+                  than <number> good frames found  [0, meaning "disabled"]
+                  NOTE: stack scanning is only available on arm-linux.
+    --unw-stack-scan-frames=<number>   Max number of frames that can be
+                  recovered by stack scanning [5]
 
   user options for Nulgrind:
     (none)

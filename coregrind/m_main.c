@@ -212,6 +212,11 @@ static void usage_NORETURN ( Bool debug_help )
 "                  in the main exe:  --soname-synonyms=somalloc=NONE\n"
 "                  in libxyzzy.so:   --soname-synonyms=somalloc=libxyzzy.so\n"
 "    --sigill-diagnostics=yes|no  warn about illegal instructions? [yes]\n"
+"    --unw-stack-scan-thresh=<number>   Enable stack-scan unwind if fewer\n"
+"                  than <number> good frames found  [0, meaning \"disabled\"]\n"
+"                  NOTE: stack scanning is only available on arm-linux.\n"
+"    --unw-stack-scan-frames=<number>   Max number of frames that can be\n"
+"                  recovered by stack scanning [5]\n"
 "\n";
 
    const HChar usage2[] = 
@@ -797,6 +802,11 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
                                VG_(clo_gen_suppressions), 1) {}
       else if VG_XACT_CLO(arg, "--gen-suppressions=all",
                                VG_(clo_gen_suppressions), 2) {}
+
+      else if VG_BINT_CLO(arg, "--unw-stack-scan-thresh",
+                          VG_(clo_unw_stack_scan_thresh), 0, 100) {}
+      else if VG_BINT_CLO(arg, "--unw-stack-scan-frames",
+                          VG_(clo_unw_stack_scan_frames), 0, 32) {}
 
       else if ( ! VG_(needs).command_line_options
              || ! VG_TDICT_CALL(tool_process_cmd_line_option, arg) ) {

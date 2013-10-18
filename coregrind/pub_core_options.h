@@ -318,6 +318,19 @@ extern Bool VG_(should_we_trace_this_child) ( HChar* child_exe_name,
    depends on verbosity (False if -q). */
 extern Bool VG_(clo_sigill_diag);
 
+/* Unwind using stack scanning (a nasty hack at the best of times)
+   when the normal CFI/FP-chain scan fails.  If the number of
+   "normally" recovered frames is below this number, stack scanning
+   will be used (on platforms on which it is supported, currently only
+   arm-linux).  The default value of zero has the effect of disabling
+   stack scanning.  Default: zero*/
+extern UInt VG_(clo_unw_stack_scan_thresh);
+
+/* If stack scanning is used, this is how many frames it may recover.
+   Since it tends to pick up a lot of junk, this value is set pretty
+   low by default.  Default: 5 */
+extern UInt VG_(clo_unw_stack_scan_frames);
+
 #endif   // __PUB_CORE_OPTIONS_H
 
 /*--------------------------------------------------------------------*/

@@ -125,6 +125,9 @@ VgSmc  VG_(clo_smc_check)      = Vg_SmcStack;
 const HChar* VG_(clo_kernel_variant) = NULL;
 Bool   VG_(clo_dsymutil)       = False;
 Bool   VG_(clo_sigill_diag)    = True;
+UInt   VG_(clo_unw_stack_scan_thresh) = 0; /* disabled by default */
+UInt   VG_(clo_unw_stack_scan_frames) = 5;
+
 
 /*====================================================================*/
 /*=== File expansion                                               ===*/

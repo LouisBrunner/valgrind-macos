@@ -8,11 +8,11 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2012 Nicholas Nethercote
+   Copyright (C) 2000-2013 Nicholas Nethercote
       njn@valgrind.org
-   Copyright (C) 2004-2012 Paul Mackerras
+   Copyright (C) 2004-2013 Paul Mackerras
       paulus@samba.org
-   Copyright (C) 2008-2012 Evan Geller
+   Copyright (C) 2008-2013 Evan Geller
       gaze@bea.ms
 
    This program is free software; you can redistribute it and/or

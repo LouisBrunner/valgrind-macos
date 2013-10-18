@@ -9,13 +9,13 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2007-2012 Julian Seward
+   Copyright (C) 2007-2013 Julian Seward
       jseward@acm.org
 
    This code is based on previous work by Nicholas Nethercote
    (coregrind/m_oset.c) which is
 
-   Copyright (C) 2005-2012 Nicholas Nethercote
+   Copyright (C) 2005-2013 Nicholas Nethercote
        njn@valgrind.org
 
    which in turn was derived partially from:

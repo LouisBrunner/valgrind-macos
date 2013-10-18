@@ -8325,7 +8325,9 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACX_(__NR_aio_write,      aio_write), 
 // _____(__NR_lio_listio),   // 320
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(321)),   // ???
+#if DARWIN_VERS >= DARWIN_10_8
    MACXY(__NR_iopolicysys, iopolicysys), 
+#endif
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(323)),   // ???
 // _____(__NR_mlockall), 
 // _____(__NR_munlockall), 

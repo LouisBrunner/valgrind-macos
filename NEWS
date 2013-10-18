@@ -8,6 +8,14 @@ Release 3.9.0 (?? ?????? 201?)
   Support for s390x Decimal Floating Point instructions on hosts that
   have the DFP facility installed.
 
+  Power8 (Power ISA 2.?? support)
+
+  AVX2 support
+
+  Intel HTM support (kind of)
+  Power HTM support (kind of)
+
+
 * ==================== TOOL CHANGES ====================
 * Memcheck:
 
@@ -86,6 +94,7 @@ Release 3.9.0 (?? ?????? 201?)
   - partial-loads-ok now works for 16 and 32 byte loads
     and in general improved handling of vectorised code
 
+  - unwind-by-stack-scan for ARM
 
 
 * ==================== FIXED BUGS ====================
@@ -622,6 +631,58 @@ FIXED r??
 
 324421  Support for fanotify API on ARM architecture
         FIXED 13586
+
+307557  Leaks on Mac OS X 10.7.5 libraries at ImageLoader::recursiveInit[..]
+        FIXED 13636
+
+308135  PPC32 MPC8xx has 16 bytes cache size
+        FIXED 2785 13637
+
+318050  libmpiwrap fails to compile with out-of-source build
+        FIXED 13638
+
+320131  WARNING: unhandled syscall: 369 on ARM (prlimit64)
+        FIXED 13639
+
+320661  vgModuleLocal_read_elf_debug_info(): "Assertion '!di->soname'
+        FIXED 13640
+
+324149  helgrind: When pthread_cond_timedwait returns ETIMEDOUT, helgrind
+        FIXED 13641
+
+323432  Calling pthread_cond_destroy() or pthread_mutex_destroy()
+        FIXED 13642
+
+324181  mmap does not handle MAP_32BIT
+        FIXED 13644
+
+324834  Unhandled instructions in Microsoft C run-time for x86_64
+        FIXED 2786
+
+* Support for Haswell RTM (restricted transactional memory insns) is
+  in, but Haswell HLE isn't supported yet.  To make this work requires
+  the x86_64 insn decoder to accept XACQUIRE/XRELEASE prefixes (F2/F3)
+  on certain memory instructions as listed by the Intel documentation.
+  Should be easy.
+DONE
+
+320998  vex amd64->IR pcmpestri and pcmpestrm SSE4.2 instruction
+        FIXED 2791 13654
+
+289578  Backtraces with ARM unwind tables (stack scan flags)
+        FIXED 13657
+
+326113  valgrind libvex hwcaps error on AMD64 
+        FIXED 13656
+
+324894  Phase 3 support for IBM Power ISA 2.07
+        FIXED 13594 2779
+
+323803  Transactional memory instructions are not supported for Power
+        FIXED 2780 13607 13608
+
+322563  vex mips->IR: 0x70 0x83 0xF0 0x3A
+        FIXED 13558 2765
 
 
 Release 3.8.1 (19 September 2012)

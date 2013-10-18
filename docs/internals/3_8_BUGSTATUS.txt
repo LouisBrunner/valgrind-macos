@@ -154,16 +154,8 @@ gcp libnss3.so debuginfo read hang
         QUERIED (unclear how to fix)
         Severity: low
 
-307557 *Leaks on Mac OS X 10.7.5 libraries at 
-        ImageLoader::recursiveInitialization
-        SHOULD FIX (simple extra supp)
-        FIX 3.9
-
 308027  Warning: negative range in .debug_loc section
         QUERIED -- not sure this needs fixing or not
-
-308135 *PPC32 MPC8xx has 16 bytes cache size
-        HAS_PATCH -- should take this
 
 79362   Debug info is lost for .so files when they are dlclose'd
         Still alive!
@@ -172,10 +164,6 @@ gcp libnss3.so debuginfo read hang
         FreeBSD -- although FreeBSD maintainers may not be aware
 
 ------ Thu Oct 11 18:51:26 CEST 2012
-
-289578 *Backtraces with ARM unwind tables (=without debug symbols) and
-        support for offline symbol resolving
-        3.9 FIX (cleanup and partial commit -- stack scan)
 
 197915  80-bit floats are not supported on x86 and x86-64
         indeed, yes.
@@ -373,9 +361,6 @@ gcp libnss3.so debuginfo read hang
         No action so far
         Needs review; would be nice to redo this with a more robust API
 
-318050 *libmpiwrap fails to compile with out-of-source build
-        FIX 3.9 (commit)
-
 Thu Apr 11 18:16:04 CEST 2013
 
 319237  [PATCH] Added support for ELF injection
@@ -416,27 +401,14 @@ Thu Apr 11 18:16:04 CEST 2013
         A bigger patch depends on it, but that has not appeared yet
         Wishlist, + as yet incomplete
 
-320131 *WARNING: unhandled syscall: 369 on ARM (prlimit64)
-        FIX 3.9 (the simple patch)
-
 320546  valgrind exits with "Assertion 'in_rx' failed"
         for /system/lib/libva-android.so on Android 4.0.4
         Need more info (the .so); queried.
         MAYBE FIX 3.9 (potentially serious)
 
-320661 *vgModuleLocal_read_elf_debug_info(): "Assertion '!di->soname'
-        failed" on weird files
-        Has patch;
-        FIX 3.9 (commit); looks very simple
-
 320965  Unrecognised instruction __ieee754_pow_sse2
         Not sure what this is.  Queried.
         Severity: high  Audience: low (??)
-
-320998 *vex amd64->IR pcmpestri and pcmpestrm SSE4.2 instructions are
-        unsupported (by version 3.8.1)
-        PCMPxSTRx $0x30, $0x40
-        Severity: high  Audience: low
 
 321396  Add Support for Freescale e500v2 SPE Architecture.
         Is metabug? -- no patch, no details
@@ -480,10 +452,6 @@ Tue Jul  2 12:15:07 CEST 2013
         Contains plausible patch.  Is bug fix.  (should take)
         FIX 3.9 (commit)
 
-322563 *vex mips->IR: unhandled instruction bytes: 0x70 0x83 0xF0 0x3A
-        MIPS; assigned to Petar
-        MAYBE 3.9 (query Petar)
-
 322586  Unknown instruction (bextr) in ld-2.15.so with --march=native on AMD FX-8350
         AMD specific.  Uninvestigated.
         Severity: high  Audience: low (??)
@@ -522,12 +490,6 @@ Tue Jul  2 12:15:07 CEST 2013
         FIX 3.9 if can do it at no risk and no CPUID hassle
         -- ask mjw
 
-323432 *Calling pthread_cond_destroy() or pthread_mutex_destroy()
-        with PTHREAD_COND_INITIALIZER/PTHREAD_MUTEX_INITIALIZER
-        triggers false positive
-        Has patch from pbos
-        FIX 3.9
-
 323448  Check for memory overlap in sprintf()-like functions
         Severity: low  Wishlist
 
@@ -537,10 +499,6 @@ Tue Jul  2 12:15:07 CEST 2013
 
 323777 *Documentation does not warn of sgcheck+darwin incompatibility
         FIX 3.9
-
-323803 *Transactional memory instructions are not supported for Power
-        This is TM scheme 1 (immediate fail).  Needs landing.
-        FIX 3.9 (?? queried Carl)
 
 324050  Helgrind: SEGV because of unaligned stack when using movdqa
         Needs to be looked at.  Is this real, or some Gentoo-caused
@@ -553,15 +511,6 @@ Tue Jul  2 12:15:07 CEST 2013
 
 324081  3.8.1 Valgrind periodically hangs in long-running application
         NEEDINFO (requested)
-
-324149 *helgrind: When pthread_cond_timedwait returns ETIMEDOUT, helgrind
-        thinks the condvar is still waited on
-        Has patches; needs looking at (LOOKS OK)
-        FIX 3.9 (commit)
-
-324181 *mmap does not handle MAP_32BIT
-        Should at least detect and fail this case
-        FIX 3.9 (to fail MAP_32BIT; should be easy)
 
 324227  memcheck false positive leak when a thread calls exit+block only
         reachable via other thread live register
@@ -586,15 +535,7 @@ Tue Jul  2 12:15:07 CEST 2013
         In progress
         Severity: low  Audience: low
 
-324834 *Unhandled instructions in Microsoft C run-time (msvcrt.dll) for x86_64
-        Should be easy to fix; queried
-        Severity: high  Audience: low        
-
 324882  CPUID should depend on VEX capabilities, not on underlying CPU
         Middle-term cleanup; not urgent
-
-324894 *Phase 3 support for IBM Power ISA 2.07
-        Waiting to land
-        MAYBE 3.9
 
 Thu Sep 19 10:34:49 CEST 2013

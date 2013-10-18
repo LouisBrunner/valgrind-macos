@@ -18032,7 +18032,7 @@ static Long dis_PCMPxSTRx ( VexAbiInfo* vbi, Prefix pfx,
       case 0x00:
       case 0x02: case 0x08: case 0x0A: case 0x0C: case 0x12:
       case 0x1A: case 0x38: case 0x3A: case 0x44: case 0x4A:
-      case 0x46:
+      case 0x46: case 0x30: case 0x40:
          break;
       case 0x01: // the 16-bit character versions of the above
       case 0x03: case 0x09: case 0x0B: case 0x0D: case 0x13:

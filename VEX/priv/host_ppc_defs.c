@@ -744,6 +744,10 @@ const HChar* showPPCAvOp ( PPCAvOp op ) {
    case Pav_ZEROCNTHALF: case Pav_ZEROCNTDBL:
       return "vclz_";                           // b, h, w, d
 
+   /* vector gather (byte-by-byte bit matrix transpose) */
+   case Pav_BITMTXXPOSE:
+      return "vgbbd";
+
    default: vpanic("showPPCAvOp");
    }
 }
@@ -4773,6 +4777,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       case Pav_ZEROCNTHALF: opc2 = 1858; break; // vclzh
       case Pav_ZEROCNTWORD: opc2 = 1922; break; // vclzw
       case Pav_ZEROCNTDBL:  opc2 = 1986; break; // vclzd
+      case Pav_BITMTXXPOSE: opc2 = 1292; break; // vgbbd
       default:
          goto bad;
       }

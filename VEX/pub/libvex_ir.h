@@ -1456,6 +1456,13 @@ typedef
       Iop_PwAddL8Ux16, Iop_PwAddL16Ux8, Iop_PwAddL32Ux4,
       Iop_PwAddL8Sx16, Iop_PwAddL16Sx8, Iop_PwAddL32Sx4,
 
+      /* Other unary pairwise ops */
+
+      /* Vector bit matrix transpose.  (V128) -> V128 */
+      /* For each doubleword element of the source vector, an 8-bit x 8-bit
+       * matrix transpose is performed. */
+      Iop_PwBitMtxXpose64x2,
+
       /* ABSOLUTE VALUE */
       Iop_Abs8x16, Iop_Abs16x8, Iop_Abs32x4,
 

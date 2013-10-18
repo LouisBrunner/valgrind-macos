@@ -4857,6 +4857,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_Clz16Sx8: fpop = Pav_ZEROCNTHALF;   goto do_zerocnt;
       case Iop_Clz32Sx4: fpop = Pav_ZEROCNTWORD;   goto do_zerocnt;
       case Iop_Clz64x2:  fpop = Pav_ZEROCNTDBL;    goto do_zerocnt;
+      case Iop_PwBitMtxXpose64x2: fpop = Pav_BITMTXXPOSE;  goto do_zerocnt;
       do_zerocnt:
       {
         HReg arg = iselVecExpr(env, e->Iex.Unop.arg);

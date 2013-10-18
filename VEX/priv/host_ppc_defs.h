@@ -442,6 +442,9 @@ typedef
 
       /* zero count */
       Pav_ZEROCNTBYTE, Pav_ZEROCNTWORD, Pav_ZEROCNTHALF, Pav_ZEROCNTDBL,
+
+      /* Vector bit matrix transpose by byte */
+      Pav_BITMTXXPOSE,
    }
    PPCAvOp;
 

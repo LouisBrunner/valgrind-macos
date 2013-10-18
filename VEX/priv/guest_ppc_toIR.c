@@ -13271,10 +13271,10 @@ dis_vxv_sp_arith ( UInt theInstr, UInt opc2 )
 }
 
 /*
- * VSX vector Population Count
+ * Vector Population Count/bit matrix transpose
  */
 static Bool
-dis_vxv_population_count ( UInt theInstr, UInt opc2 )
+dis_av_count_bitTranspose ( UInt theInstr, UInt opc2 )
 {
    UChar vRB_addr = ifieldRegB(theInstr);
    UChar vRT_addr = ifieldRegDS(theInstr);
@@ -13283,7 +13283,7 @@ dis_vxv_population_count ( UInt theInstr, UInt opc2 )
    assign( vB, getVReg(vRB_addr));
 
    if (opc1 != 0x4) {
-      vex_printf( "dis_vxv_population_count(ppc)(instr)\n" );
+      vex_printf( "dis_av_count_bitTranspose(ppc)(instr)\n" );
       return False;
    }
 
@@ -13423,8 +13423,13 @@ dis_vxv_population_count ( UInt theInstr, UInt opc2 )
          break;
       }
 
+      case 0x50C:  // vgbbd Vector Gather Bits by Bytes by Doubleword
+         DIP("vgbbd v%d,v%d\n", vRT_addr, vRB_addr);
+         putVReg( vRT_addr, unop( Iop_PwBitMtxXpose64x2, mkexpr( vB ) ) );
+         break;
+
       default:
-         vex_printf("dis_vxv_population_count(ppc)(opc2)\n");
+         vex_printf("dis_av_count_bitTranspose(ppc)(opc2)\n");
          return False;
       break;
    }
@@ -17416,6 +17421,285 @@ static Bool dis_av_hash ( UInt theInstr )
 }
 
 /*
+ * This function is used by the Vector add/subtract [extended] modulo/carry
+ * instructions.
+ *   - For the non-extended add instructions, the cin arg is set to zero.
+ *   - For the extended add instructions, cin is the integer value of
+ *     src3.bit[127].
+ *   - For the non-extended subtract instructions, src1 is added to the one's
+ *     complement of src2 + 1.  We re-use the cin argument to hold the '1'
+ *     value for this operation.
+ *   - For the extended subtract instructions, cin is the integer value of src3.bit[127].
+ */
+static IRTemp _get_quad_modulo_or_carry(IRExpr * vecA, IRExpr * vecB,
+                                        IRExpr * cin, Bool modulo)
+{
+   IRTemp _vecA_32   = IRTemp_INVALID;
+   IRTemp _vecB_32   = IRTemp_INVALID;
+   IRTemp res_32     = IRTemp_INVALID;
+   IRTemp result     = IRTemp_INVALID;
+   IRTemp tmp_result = IRTemp_INVALID;
+   IRTemp carry      = IRTemp_INVALID;
+   Int i;
+   IRExpr * _vecA_low64 =  unop( Iop_V128to64, vecA );
+   IRExpr * _vecB_low64 =  unop( Iop_V128to64, vecB );
+   IRExpr * _vecA_high64 = unop( Iop_V128HIto64, vecA );
+   IRExpr * _vecB_high64 = unop( Iop_V128HIto64, vecB );
+
+   for (i = 0; i < 4; i++) {
+      _vecA_32 = newTemp(Ity_I32);
+      _vecB_32 = newTemp(Ity_I32);
+      res_32   = newTemp(Ity_I32);
+      switch (i) {
+      case 0:
+         assign(_vecA_32, unop( Iop_64to32, _vecA_low64 ) );
+         assign(_vecB_32, unop( Iop_64to32, _vecB_low64 ) );
+         break;
+      case 1:
+         assign(_vecA_32, unop( Iop_64HIto32, _vecA_low64 ) );
+         assign(_vecB_32, unop( Iop_64HIto32, _vecB_low64 ) );
+         break;
+      case 2:
+         assign(_vecA_32, unop( Iop_64to32, _vecA_high64 ) );
+         assign(_vecB_32, unop( Iop_64to32, _vecB_high64 ) );
+         break;
+      case 3:
+         assign(_vecA_32, unop( Iop_64HIto32, _vecA_high64 ) );
+         assign(_vecB_32, unop( Iop_64HIto32, _vecB_high64 ) );
+         break;
+      }
+
+      assign(res_32, binop( Iop_Add32,
+                            binop( Iop_Add32,
+                                   binop ( Iop_Add32,
+                                           mkexpr(_vecA_32),
+                                           mkexpr(_vecB_32) ),
+                                   (i == 0) ? mkU32(0) : mkexpr(carry) ),
+                            (i == 0) ? cin : mkU32(0) ) );
+      if (modulo) {
+         result = newTemp(Ity_V128);
+         assign(result, binop( Iop_OrV128,
+                              (i == 0) ? binop( Iop_64HLtoV128,
+                                                mkU64(0),
+                                                mkU64(0) ) : mkexpr(tmp_result),
+                              binop( Iop_ShlV128,
+                                     binop( Iop_64HLtoV128,
+                                            mkU64(0),
+                                            binop( Iop_32HLto64,
+                                                   mkU32(0),
+                                                   mkexpr(res_32) ) ),
+                                     mkU8(i * 32) ) ) );
+         tmp_result = newTemp(Ity_V128);
+         assign(tmp_result, mkexpr(result));
+      }
+      carry = newTemp(Ity_I32);
+      assign(carry, unop(Iop_1Uto32, binop( Iop_CmpLT32U,
+                                            mkexpr(res_32),
+                                            mkexpr(_vecA_32 ) ) ) );
+   }
+   if (modulo)
+      return result;
+   else
+      return carry;
+}
+
+
+static Bool dis_av_quad ( UInt theInstr )
+{
+   /* VX-Form */
+   UChar opc1     = ifieldOPC(theInstr);
+   UChar vRT_addr = ifieldRegDS(theInstr);
+   UChar vRA_addr = ifieldRegA(theInstr);
+   UChar vRB_addr = ifieldRegB(theInstr);
+   UChar vRC_addr;
+   UInt  opc2     = IFIELD( theInstr, 0, 11 );
+
+   IRTemp vA    = newTemp(Ity_V128);
+   IRTemp vB    = newTemp(Ity_V128);
+   IRTemp vC    = IRTemp_INVALID;
+   IRTemp cin    = IRTemp_INVALID;
+   assign( vA, getVReg(vRA_addr));
+   assign( vB, getVReg(vRB_addr));
+
+   if (opc1 != 0x4) {
+      vex_printf("dis_av_quad(ppc)(instr)\n");
+      return False;
+   }
+
+   switch (opc2) {
+   case 0x140:  // vaddcuq
+     DIP("vaddcuq v%d,v%d,v%d\n", vRT_addr, vRA_addr, vRB_addr);
+     putVReg( vRT_addr, unop( Iop_32UtoV128,
+                              mkexpr(_get_quad_modulo_or_carry(mkexpr(vA),
+                                                               mkexpr(vB),
+                                                               mkU32(0), False) ) ) );
+     return True;
+   case 0x100: // vadduqm
+      DIP("vadduqm v%d,v%d,v%d\n", vRT_addr, vRA_addr, vRB_addr);
+      putVReg( vRT_addr, mkexpr(_get_quad_modulo_or_carry(mkexpr(vA),
+                                                          mkexpr(vB), mkU32(0), True) ) );
+      return True;
+   case 0x540: // vsubcuq
+      DIP("vsubcuq v%d,v%d,v%d\n", vRT_addr, vRA_addr, vRB_addr);
+      putVReg( vRT_addr,
+               unop( Iop_32UtoV128,
+                     mkexpr(_get_quad_modulo_or_carry(mkexpr(vA),
+                                                      unop( Iop_NotV128,
+                                                            mkexpr(vB) ),
+                                                      mkU32(1), False) ) ) );
+      return True;
+   case 0x500: // vsubuqm
+      DIP("vsubuqm v%d,v%d,v%d\n", vRT_addr, vRA_addr, vRB_addr);
+      putVReg( vRT_addr,
+               mkexpr(_get_quad_modulo_or_carry(mkexpr(vA),
+                                                unop( Iop_NotV128, mkexpr(vB) ),
+                                                mkU32(1), True) ) );
+      return True;
+   case 0x054C: // vbpermq
+   {
+#define BPERMD_IDX_MASK 0x00000000000000FFULL
+#define BPERMD_BIT_MASK 0x8000000000000000ULL
+      int i;
+      IRExpr * vB_expr = mkexpr(vB);
+      IRExpr * res = binop(Iop_AndV128, mkV128(0), mkV128(0));
+      DIP("vbpermq v%d,v%d,v%d\n", vRT_addr, vRA_addr, vRB_addr);
+      for (i = 0; i < 16; i++) {
+         IRTemp idx_tmp = newTemp( Ity_V128 );
+         IRTemp perm_bit = newTemp( Ity_V128 );
+         IRTemp idx = newTemp( Ity_I8 );
+         IRTemp idx_LT127 = newTemp( Ity_I1 );
+         IRTemp idx_LT127_ity128 = newTemp( Ity_V128 );
+
+         assign( idx_tmp,
+                 binop( Iop_AndV128,
+                        binop( Iop_64HLtoV128,
+                               mkU64(0),
+                               mkU64(BPERMD_IDX_MASK) ),
+                        vB_expr ) );
+         assign( idx_LT127,
+                 binop( Iop_CmpEQ32,
+                        unop ( Iop_64to32,
+                               unop( Iop_V128to64, binop( Iop_ShrV128,
+                                                          mkexpr(idx_tmp),
+                                                          mkU8(7) ) ) ),
+                        mkU32(0) ) );
+
+         /* Below, we set idx to determine which bit of vA to use for the
+          * perm bit.  If idx_LT127 is 0, the perm bit is forced to '0'.
+          */
+         assign( idx,
+                 binop( Iop_And8,
+                        unop( Iop_1Sto8,
+                              mkexpr(idx_LT127) ),
+                        unop( Iop_32to8,
+                              unop( Iop_V128to32, mkexpr( idx_tmp ) ) ) ) );
+
+         assign( idx_LT127_ity128,
+                 binop( Iop_64HLtoV128,
+                        mkU64(0),
+                        unop( Iop_32Uto64,
+                              unop( Iop_1Uto32, mkexpr(idx_LT127 ) ) ) ) );
+         assign( perm_bit,
+                 binop( Iop_AndV128,
+                        mkexpr( idx_LT127_ity128 ),
+                        binop( Iop_ShrV128,
+                               binop( Iop_AndV128,
+                                      binop (Iop_64HLtoV128,
+                                             mkU64( BPERMD_BIT_MASK ),
+                                             mkU64(0)),
+                                      binop( Iop_ShlV128,
+                                             mkexpr( vA ),
+                                             mkexpr( idx ) ) ),
+                               mkU8( 127 ) ) ) );
+         res = binop( Iop_OrV128,
+                      res,
+                      binop( Iop_ShlV128,
+                             mkexpr( perm_bit ),
+                             mkU8( i ) ) );
+         vB_expr = binop( Iop_ShrV128, vB_expr, mkU8( 8 ) );
+      }
+      putVReg( vRT_addr, res);
+      return True;
+#undef BPERMD_IDX_MASK
+#undef BPERMD_BIT_MASK
+   }
+
+   default:
+      break;  // fall through
+   }
+
+   opc2     = IFIELD( theInstr, 0, 6 );
+   vRC_addr = ifieldRegC(theInstr);
+   vC = newTemp(Ity_V128);
+   cin = newTemp(Ity_I32);
+   switch (opc2) {
+      case 0x3D: // vaddecuq
+         assign( vC, getVReg(vRC_addr));
+         DIP("vaddecuq v%d,v%d,v%d,v%d\n", vRT_addr, vRA_addr, vRB_addr,
+             vRC_addr);
+         assign(cin, binop( Iop_And32,
+                            unop( Iop_64to32,
+                                  unop( Iop_V128to64, mkexpr(vC) ) ),
+                            mkU32(1) ) );
+         putVReg( vRT_addr,
+                  unop( Iop_32UtoV128,
+                        mkexpr(_get_quad_modulo_or_carry(mkexpr(vA), mkexpr(vB),
+                                                         mkexpr(cin),
+                                                         False) ) ) );
+         return True;
+      case 0x3C: // vaddeuqm
+         assign( vC, getVReg(vRC_addr));
+         DIP("vaddeuqm v%d,v%d,v%d,v%d\n", vRT_addr, vRA_addr, vRB_addr,
+             vRC_addr);
+         assign(cin, binop( Iop_And32,
+                            unop( Iop_64to32,
+                                  unop( Iop_V128to64, mkexpr(vC) ) ),
+                            mkU32(1) ) );
+         putVReg( vRT_addr,
+                  mkexpr(_get_quad_modulo_or_carry(mkexpr(vA), mkexpr(vB),
+                                                   mkexpr(cin),
+                                                   True) ) );
+         return True;
+      case 0x3F: // vsubecuq
+         assign( vC, getVReg(vRC_addr));
+         DIP("vsubecuq v%d,v%d,v%d,v%d\n", vRT_addr, vRA_addr, vRB_addr,
+             vRC_addr);
+         assign(cin, binop( Iop_And32,
+                            unop( Iop_64to32,
+                                  unop( Iop_V128to64, mkexpr(vC) ) ),
+                            mkU32(1) ) );
+         putVReg( vRT_addr,
+                  unop( Iop_32UtoV128,
+                        mkexpr(_get_quad_modulo_or_carry(mkexpr(vA),
+                                                         unop( Iop_NotV128,
+                                                               mkexpr(vB) ),
+                                                         mkexpr(cin),
+                                                         False) ) ) );
+         return True;
+      case 0x3E: // vsubeuqm
+         assign( vC, getVReg(vRC_addr));
+         DIP("vsubeuqm v%d,v%d,v%d,v%d\n", vRT_addr, vRA_addr, vRB_addr,
+             vRC_addr);
+         assign(cin, binop( Iop_And32,
+                            unop( Iop_64to32,
+                                  unop( Iop_V128to64, mkexpr(vC) ) ),
+                            mkU32(1) ) );
+         putVReg( vRT_addr,
+                  mkexpr(_get_quad_modulo_or_carry(mkexpr(vA),
+                                                   unop( Iop_NotV128, mkexpr(vB) ),
+                                                   mkexpr(cin),
+                                                   True) ) );
+         return True;
+      default:
+         vex_printf("dis_av_quad(ppc)(opc2.2)\n");
+         return False;
+   }
+
+   return True;
+}
+
+
+/*
   AltiVec BCD Arithmetic instructions.
   These instructions modify CR6 for various conditions in the result,
   including when an overflow occurs.  We could easily detect all conditions
@@ -19308,6 +19592,12 @@ DisResult disInstr_PPC_WRK (
          if (dis_av_fp_arith( theInstr )) goto decode_success;
          goto decode_failure;
 
+      case 0x3D: case 0x3C:            // vaddecuq, vaddeuqm
+      case 0x3F: case 0x3E:            // vsubecuq, vsubeuqm
+         if (!allow_V) goto decode_noV;
+         if (dis_av_quad( theInstr)) goto decode_success;
+         goto decode_failure;
+
       default:
          break;  // Fall through...
       }
@@ -19468,13 +19758,25 @@ DisResult disInstr_PPC_WRK (
       case 0x702: case 0x742:             // vclzb, vclzh
       case 0x782: case 0x7c2:             // vclzw, vclzd
          if (!allow_isa_2_07) goto decode_noP8;
-         if (dis_vxv_population_count( theInstr, opc2 )) goto decode_success;
+         if (dis_av_count_bitTranspose( theInstr, opc2 )) goto decode_success;
          goto decode_failure;
 
       case 0x703: case 0x743:             // vpopcntb, vpopcnth
       case 0x783: case 0x7c3:             // vpopcntw, vpopcntd
          if (!allow_isa_2_07) goto decode_noP8;
-         if (dis_vxv_population_count( theInstr, opc2 )) goto decode_success;
+         if (dis_av_count_bitTranspose( theInstr, opc2 )) goto decode_success;
+         goto decode_failure;
+
+      case 0x50c:                         // vgbbd
+         if (!allow_isa_2_07) goto decode_noP8;
+         if (dis_av_count_bitTranspose( theInstr, opc2 )) goto decode_success;
+         goto decode_failure;
+
+      case 0x140: case 0x100:             // vaddcuq, vadduqm
+      case 0x540: case 0x500:             // vsubcuq, vsubuqm
+      case 0x54C:                         // vbpermq
+         if (!allow_V) goto decode_noV;
+         if (dis_av_quad( theInstr)) goto decode_success;
          goto decode_failure;
 
       default:

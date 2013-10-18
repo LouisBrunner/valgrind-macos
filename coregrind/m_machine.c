@@ -868,13 +868,13 @@ Bool VG_(machine_get_hwcaps)( void )
         have_rdtscp = (edx & (1<<27)) != 0; /* True => have RDTSVCP */
      }
 
-     /* Check for BMI1 and AVX2. */
+     /* Check for BMI1 and AVX2. If we have AVX1 (plus OS support). */
      have_bmi = False;
      have_avx2 = False;
-     if (max_basic >= 7) {
+     if (have_avx && max_basic >= 7) {
         VG_(cpuid)(7, 0, &eax, &ebx, &ecx, &edx);
         have_bmi = (ebx & (1<<3)) != 0; /* True => have BMI1 */
-        have_avx2 = have_avx && ((ebx & (1<<5)) != 0); /* True => have AVX2 */
+        have_avx2 = (ebx & (1<<5)) != 0; /* True => have AVX2 */
      }
 
      va         = VexArchAMD64;

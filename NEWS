@@ -620,6 +620,9 @@ FIXED r??
 323177  Unhandled instruction: SMLSLD (ARM + Thumb)
         FIXED 2778 13584
 
+324421  Support for fanotify API on ARM architecture
+        FIXED 13586
+
 
 Release 3.8.1 (19 September 2012)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

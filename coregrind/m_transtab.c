@@ -57,7 +57,7 @@
 UInt VG_(clo_num_transtab_sectors) = N_SECTORS_DEFAULT;
 /* Nr of sectors.
    Will be set by VG_(init_tt_tc) to VG_(clo_num_transtab_sectors). */
-static int n_sectors;
+static UInt n_sectors = 0;
 
 /*------------------ CONSTANTS ------------------*/
 /* Number of TC entries in each sector.  This needs to be a prime
@@ -354,7 +354,7 @@ static Int    youngest_sector = -1;
 
 /* The number of ULongs in each TCEntry area.  This is computed once
    at startup and does not change. */
-static Int    tc_sector_szQ;
+static Int    tc_sector_szQ = 0;
 
 
 /* A list of sector numbers, in the order which they should be
@@ -2174,7 +2174,7 @@ static void unredir_discard_translations( Addr64 guest_start, ULong range )
 
 void VG_(init_tt_tc) ( void )
 {
-   Int i, j, avg_codeszQ;
+   Int i, avg_codeszQ;
 
    vg_assert(!init_done);
    init_done = True;
@@ -2208,23 +2208,15 @@ void VG_(init_tt_tc) ( void )
    vg_assert(n_sectors >= MIN_N_SECTORS);
    vg_assert(n_sectors <= MAX_N_SECTORS);
 
-   /* Initialise the sectors */
+   /* Initialise the sectors, even the ones we aren't going to use.
+      Set all fields to zero. */
    youngest_sector = 0;
-   for (i = 0; i < n_sectors; i++) {
-      sectors[i].tc = NULL;
-      sectors[i].tt = NULL;
-      sectors[i].tc_next = NULL;
-      sectors[i].tt_n_inuse = 0;
-      for (j = 0; j < ECLASS_N; j++) {
-         sectors[i].ec2tte_size[j] = 0;
-         sectors[i].ec2tte_used[j] = 0;
-         sectors[i].ec2tte[j] = NULL;
-      }
-      sectors[i].host_extents = NULL;
-   }
+   for (i = 0; i < MAX_N_SECTORS; i++)
+      VG_(memset)(&sectors[i], 0, sizeof(sectors[i]));
 
-   /* Initialise the sector_search_order hint table. */
-   for (i = 0; i < n_sectors; i++)
+   /* Initialise the sector_search_order hint table, including the
+      entries we aren't going to use. */
+   for (i = 0; i < MAX_N_SECTORS; i++)
       sector_search_order[i] = -1;
 
    /* Initialise the fast cache. */

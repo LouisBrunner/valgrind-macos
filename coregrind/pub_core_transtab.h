@@ -63,7 +63,7 @@ extern void VG_(init_tt_tc)       ( void );
 /* Limits for number of sectors the TC is divided into.  If you need a larger
    overall translation cache, increase MAX_N_SECTORS. */ 
 #define MIN_N_SECTORS 2
-#define MAX_N_SECTORS 32
+#define MAX_N_SECTORS 24
 
 /* Default for the nr of sectors, if not overriden by command line.
    On Android, space is limited, so try to get by with fewer sectors.

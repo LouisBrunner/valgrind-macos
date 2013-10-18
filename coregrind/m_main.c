@@ -201,7 +201,7 @@ static void usage_NORETURN ( Bool debug_help )
 "    --merge-recursive-frames=<number>  merge frames between identical\n"
 "           program counters in max <number> frames) [0]\n"
 "    --num-transtab-sectors=<number> size of translated code cache [%d]\n"
-"           more sectors may increase the performance, but use more memory.\n"
+"           more sectors may increase performance, but use more memory.\n"
 "    --show-emwarns=no|yes     show warnings about emulation limits? [no]\n"
 "    --require-text-symbol=:sonamepattern:symbolpattern    abort run if the\n"
 "                              stated shared object doesn't have the stated\n"

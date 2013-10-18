@@ -471,10 +471,6 @@ Tue Jul  2 12:15:07 CEST 2013
         MIPS64; has patch; assigned to Petar
         MAYBE 3.9 (query Petar)
 
-322254 *Show threadname together with tid if set by application
-        Contains plausible looking patch (what's with XML output??)
-        FIX 3.9 (commit)
-
 322256  Provide more callstacks on memory pool related errors
         Contains plausible patch; needs looking at
         Severity: low  Audience: low
@@ -575,10 +571,6 @@ Tue Jul  2 12:15:07 CEST 2013
 324261  errorcount in xml output remains empty (no error pairs mentioned)
         Hmm, looks like a real bug.
         Severity: med  Audience: low
-
-324421 *Support for fanotify API on ARM architecture
-        Has simple patch; should apply.
-        FIX 3.9 (trivial patch)
 
 324486  WARNING: unhandled syscall: 310
         == 166355

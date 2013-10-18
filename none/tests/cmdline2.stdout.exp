@@ -89,7 +89,7 @@ usage: valgrind [options] prog-and-args
     --merge-recursive-frames=<number>  merge frames between identical
            program counters in max <number> frames) [0]
     --num-transtab-sectors=<number> size of translated code cache [16]
-           more sectors may increase the performance, but use more memory.
+           more sectors may increase performance, but use more memory.
     --show-emwarns=no|yes     show warnings about emulation limits? [no]
     --require-text-symbol=:sonamepattern:symbolpattern    abort run if the
                               stated shared object doesn't have the stated

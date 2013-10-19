@@ -2,7 +2,6 @@
 Requirements
 ------------
 - You need GCC 3.4 or later to compile the s390 port.
-- A working combination of autotools is required.
 - To run valgrind a z10 machine or any later model is needed.
   Older machine models down to and including z900 may work but have
   not been tested extensively.
@@ -18,9 +17,9 @@ Limitations
   architecture. Otherwise, cachegrind will query the hosts cache system
   and use those parameters.
 - callgrind and all experimental tools are currently not supported.
-- Some gcc versions use mvc to copy 4/8 byte values. This will affect some
-  debug messages. Valgrind will complain about 4 or 8 one-byte reads/writes
-  instead of just 1 read/write.
+- Some gcc versions use mvc to copy 4/8 byte values. This will affect
+  certain debug messages. For example, memcheck will complain about
+  4 one-byte reads/writes instead of just a single read/write.
 
 
 Hardware facilities

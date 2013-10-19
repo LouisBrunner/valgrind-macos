@@ -1,8 +1,9 @@
 
 Supported platforms
 -------------------
-- MIPS32 and MIPS32r2 platforms are currently supported.
+- MIPS32 and MIPS64 platforms are currently supported.
 - Both little-endian and big-endian cores are supported.
+- MIPS DSP ASE on MIPS32 platforms is supported.
 
 
 Building V for MIPS
@@ -11,8 +12,9 @@ Building V for MIPS
 expects that native GCC is configured correctly and optimized for the platform.
 Yet, this may not be the case with some Debian distributions which configure
 GCC to compile to "mips1" by default. Depending on a target platform, using
-CFLAGS="-mips32r2" or CFLAGS="-mips32" will do the trick and compile Valgrind
-correctly.
+CFLAGS="-mips32r2", CFLAGS="-mips32" or CFLAGS="-mips64" or
+CFLAGS="-mips64 -mabi=64" will do the trick and compile Valgrind correctly.
+
 - Use of cross-toolchain is supported as well.
 - Example of configure line and additional configure options:
 
@@ -35,17 +37,18 @@ correctly.
  * --build=mips-linux is needed if you want to build it for MIPS32 on 64-bit
    MIPS system.
 
- * If you are compiling Valgrind with gcc version older then gcc (GCC) 4.5.1
-   you must specify CFLAGS="-mips32r2 -mplt", e.g.
+ * If you are compiling Valgrind for mips32 with gcc version older then
+   gcc (GCC) 4.5.1, you must specify CFLAGS="-mips32r2 -mplt", e.g.
+
    ./configure --prefix=<path_to_install_directory>
    CFLAGS="-mips32r2 -mplt"
 
 
 Limitations
 -----------
-- Currently, memcheck, massif, lackey, callgrind and none are supported.
-- Support for helgrind, drd and exp-ptrcheck is still incomplete.
-- Some Valgrind tests for MIPS expect mips32r2 architecture and will not
-compile when target is one of the older instruction sets.
+- Some gdb tests will fail when gdb (GDB) older than 7.5 is used and gdb is
+  not compiled with '--with-expat=yes'.
+- You can not compile tests for DSP ASE if you are using gcc (GCC) older
+  then 4.6.1 due to a bug in the toolchain.
 - Older GCC may have issues with some inline assembly blocks. Get a toolchain
-based on newer GCC versions, if possible.
+  based on newer GCC versions, if possible.

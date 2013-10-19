@@ -3,7 +3,10 @@ Release 3.9.0 (?? ?????? 201?)
 
 * ================== PLATFORM CHANGES =================
 
-  mips64-linux support
+* Support for MIPS64 LE and BE running Linux. Valgrind has been tested
+  on MIPS64 Debian Squeeze and Debian Wheezy distributions.
+
+* Support for MIPS DSP ASE on MIPS32 platforms.
 
   Support for s390x Decimal Floating Point instructions on hosts that
   have the DFP facility installed.

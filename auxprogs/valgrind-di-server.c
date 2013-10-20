@@ -780,7 +780,7 @@ static Bool handle_transaction ( int conn_no )
          this slot.  But check anyway. */
       Bool ok = True;
       if (req_session_id != conn_state[conn_no].session_id) {
-         req = mk_Frame_asciiz("FAIL", "READ: invalid session ID");
+         res = mk_Frame_asciiz("FAIL", "READ: invalid session ID");
          ok = False;
       }
       /* Check we're connected to a file, and if so range-check the

@@ -1844,7 +1844,7 @@ need to use them.</para>
       A value of 1 will cause stack traces of simple recursive algorithms
       (for example, a factorial implementation) to be collapsed.
       A value of 2 will usually be needed to collapsed stack traces produced
-      by recursive algorithms such binary trees, quick sort, ...
+      by recursive algorithms such as binary trees, quick sort, ...
       Higher values might be needed for more complex recursive algorithms.
       </para>
       <para>Note: recursive calls are detected based on program counters.
@@ -1868,7 +1868,7 @@ need to use them.</para>
       program is big, increasing the number of sectors may improve
       performance by reducing the number of re-translations needed.
       Sectors are allocated on demand.  Once allocated, a sector can
-      never be freed, and occupies considerable space, on the tool
+      never be freed, and occupies considerable space, depending on the tool
       (about 40 MB per sector for Memcheck).  Use the
       option <option>--stats=yes</option> to obtain precise
       information about the memory used by a sector and the allocation

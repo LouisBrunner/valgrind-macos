@@ -70,6 +70,7 @@
  STRLEN(VG_Z_LIBC_SONAME,          strlen)
  STRLEN(VG_Z_LD_LINUX_SO_2,        strlen)
  STRLEN(VG_Z_LD_LINUX_X86_64_SO_2, strlen)
+ STRLEN(VG_Z_LIBC_SONAME,          __GI_strlen)
 #elif defined(VGO_darwin)
  STRLEN(VG_Z_LIBC_SONAME,          strlen)
 #endif

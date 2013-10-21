@@ -133,7 +133,8 @@ void VG_(set_syscall_return_shadows) ( ThreadId tid,
                                        UWord s1err, UWord s2err );
 
 // Apply a function 'f' to all the general purpose registers in all the
-// current threads.
+// current threads. This is all live threads, or (when the process is exiting)
+// all threads that were instructed to die by the thread calling exit.
 // This is very Memcheck-specific -- it's used to find the roots when
 // doing leak checking.
 extern void VG_(apply_to_GP_regs)(void (*f)(ThreadId tid,

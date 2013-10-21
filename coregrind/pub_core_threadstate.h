@@ -70,7 +70,8 @@ typedef
    enum { 
       VgSrc_None,	 /* not exiting yet */
       VgSrc_ExitThread,  /* just this thread is exiting */
-      VgSrc_ExitProcess, /* entire process is exiting */
+      VgSrc_ExitProcess, /* this thread is exiting due to another thread
+                            calling exit() */
       VgSrc_FatalSig	 /* Killed by the default action of a fatal
 			    signal */
    }
@@ -387,6 +388,9 @@ void VG_(init_Threads)(void);
 
 // Convert a ThreadStatus to a string.
 const HChar* VG_(name_of_ThreadStatus) ( ThreadStatus status );
+
+// Convert a VgSchedReturnCode to a string.
+const HChar* VG_(name_of_VgSchedReturnCode) ( VgSchedReturnCode retcode );
 
 /* Get the ThreadState for a particular thread */
 extern ThreadState *VG_(get_ThreadState) ( ThreadId tid );

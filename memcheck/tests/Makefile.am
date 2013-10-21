@@ -197,6 +197,7 @@ EXTRA_DIST = \
 	pointer-trace.vgtest \
 	pointer-trace.stderr.exp \
 	post-syscall.stderr.exp post-syscall.vgtest \
+	reach_thread_register.stderr.exp reach_thread_register.vgtest \
 	realloc1.stderr.exp realloc1.vgtest \
 	realloc2.stderr.exp realloc2.vgtest \
 	realloc3.stderr.exp realloc3.vgtest \
@@ -318,6 +319,7 @@ check_PROGRAMS = \
 	partial_load pdb-realloc pdb-realloc2 \
 	pipe pointer-trace \
 	post-syscall \
+	reach_thread_register \
 	realloc1 realloc2 realloc3 \
 	recursive-merge \
 	sbfragment \
@@ -379,6 +381,8 @@ dw4_CFLAGS		= $(AM_CFLAGS) -gdwarf-4 -fdebug-types-section
 
 err_disable3_LDADD 	= -lpthread
 err_disable4_LDADD 	= -lpthread
+reach_thread_register_CFLAGS	= $(AM_CFLAGS) -O2
+reach_thread_register_LDADD     = -lpthread
 thread_alloca_LDADD     = -lpthread
 threadname_LDADD 	= -lpthread
 

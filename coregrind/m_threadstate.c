@@ -78,6 +78,17 @@ const HChar* VG_(name_of_ThreadStatus) ( ThreadStatus status )
   }
 }
 
+const HChar* VG_(name_of_VgSchedReturnCode) ( VgSchedReturnCode retcode )
+{
+   switch (retcode) {
+   case VgSrc_None:        return "VgSrc_None";
+   case VgSrc_ExitThread:  return "VgSrc_ExitThread";
+   case VgSrc_ExitProcess: return "VgSrc_ExitProcess";
+   case VgSrc_FatalSig:    return "VgSrc_FatalSig";
+   default:                return "VgSrc_???";
+  }
+}
+
 ThreadState *VG_(get_ThreadState)(ThreadId tid)
 {
    vg_assert(tid >= 0 && tid < VG_N_THREADS);

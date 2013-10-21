@@ -212,6 +212,7 @@ static void apply_to_GPs_of_tid(ThreadId tid, void (*f)(ThreadId,
                                                         const HChar*, Addr))
 {
    VexGuestArchState* vex = &(VG_(get_ThreadState)(tid)->arch.vex);
+   VG_(debugLog)(2, "machine", "apply_to_GPs_of_tid %d\n", tid);
 #if defined(VGA_x86)
    (*f)(tid, "EAX", vex->guest_EAX);
    (*f)(tid, "ECX", vex->guest_ECX);
@@ -349,7 +350,10 @@ void VG_(apply_to_GP_regs)(void (*f)(ThreadId, const HChar*, UWord))
    ThreadId tid;
 
    for (tid = 1; tid < VG_N_THREADS; tid++) {
-      if (VG_(is_valid_tid)(tid)) {
+      if (VG_(is_valid_tid)(tid)
+          || VG_(threads)[tid].exitreason == VgSrc_ExitProcess) {
+         // live thread or thread instructed to die by another thread that
+         // called exit.
          apply_to_GPs_of_tid(tid, f);
       }
    }

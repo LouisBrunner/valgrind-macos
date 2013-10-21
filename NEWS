@@ -690,6 +690,10 @@ DONE
 322563  vex mips->IR: 0x70 0x83 0xF0 0x3A
         FIXED 13558 2765
 
+324227  memcheck false positive leak when a thread calls exit+block
+        only reachable via other thread live register
+        FIXED
+
 326091  drd: Avoid that optimized strlen() implementations trigger
         false positive race reports.
         FIXED 13664

@@ -108,8 +108,8 @@ static VgSchedReturnCode thread_wrapper(Word /*ThreadId*/ tidW)
    vg_assert(VG_(is_running_thread)(tid));
 
    VG_(debugLog)(1, "syswrap-linux", 
-                    "thread_wrapper(tid=%lld): exit\n", 
-                    (ULong)tidW);
+                    "thread_wrapper(tid=%lld): exit, schedreturncode %s\n", 
+                    (ULong)tidW, VG_(name_of_VgSchedReturnCode)(ret));
 
    /* Return to caller, still holding the lock. */
    return ret;
@@ -197,7 +197,6 @@ static void run_a_thread_NORETURN ( Word tidW )
          carry on to show final tool results, then exit the entire system. 
          Use the continuation pointer set at startup in m_main. */
       ( * VG_(address_of_m_main_shutdown_actions_NORETURN) ) (tid, src);
-
    } else {
 
       VG_(debugLog)(1, "syswrap-linux", 
@@ -689,9 +688,20 @@ PRE(sys_exit_group)
    PRE_REG_READ1(void, "exit_group", int, status);
 
    tst = VG_(get_ThreadState)(tid);
-
    /* A little complex; find all the threads with the same threadgroup
       as this one (including this one), and mark them to exit */
+   /* It is unclear how one can get a threadgroup in this process which
+      is not the threadgroup of the calling thread:
+      The assignments to threadgroups are:
+        = 0; /// scheduler.c os_state_clear
+        = getpid(); /// scheduler.c in child after fork
+        = getpid(); /// this file, in thread_wrapper
+        = ptst->os_state.threadgroup; /// syswrap-*-linux.c,
+                           copying the thread group of the thread doing clone
+      So, the only case where the threadgroup might be different to the getpid
+      value is in the child, just after fork. But then the fork syscall is
+      still going on, the forked thread has had no chance yet to make this
+      syscall. */
    for (t = 1; t < VG_N_THREADS; t++) {
       if ( /* not alive */
            VG_(threads)[t].status == VgTs_Empty 
@@ -700,13 +710,40 @@ PRE(sys_exit_group)
            VG_(threads)[t].os_state.threadgroup != tst->os_state.threadgroup
          )
          continue;
-
-      VG_(threads)[t].exitreason = VgSrc_ExitThread;
+      /* Assign the exit code, VG_(nuke_all_threads_except) will assign
+         the exitreason. */
       VG_(threads)[t].os_state.exitcode = ARG1;
-
-      if (t != tid)
-	 VG_(get_thread_out_of_syscall)(t); /* unblock it, if blocked */
    }
+
+   /* Indicate in all other threads that the process is exiting.
+      Then wait using VG_(reap_threads) for these threads to disappear.
+      
+      Can this give a deadlock if another thread is calling exit in parallel
+      and would then wait for this thread to disappear ?
+      The answer is no:
+      Other threads are either blocked in a syscall or have yielded the CPU.
+      
+      A thread that has yielded the CPU is trying to get the big lock in
+      VG_(scheduler). This thread will get the CPU thanks to the call
+      to VG_(reap_threads). The scheduler will then check for signals,
+      kill the process if this is a fatal signal, and otherwise prepare
+      the thread for handling this signal. After this preparation, if
+      the thread status is VG_(is_exiting), the scheduler exits the thread.
+      So, a thread that has yielded the CPU does not have a chance to
+      call exit => no deadlock for this thread.
+      
+      VG_(nuke_all_threads_except) will send the VG_SIGVGKILL signal
+      to all threads blocked in a syscall.
+      The syscall will be interrupted, and the control will go to the
+      scheduler. The scheduler will then return, as the thread is in
+      exiting state. */
+
+   VG_(nuke_all_threads_except)( tid, VgSrc_ExitProcess );
+   VG_(reap_threads)(tid);
+   VG_(threads)[tid].exitreason = VgSrc_ExitThread;
+   /* we do assign VgSrc_ExitThread and not VgSrc_ExitProcess, as this thread
+      is the thread calling exit_group and so its registers must be considered
+      as not reachable. See pub_tool_machine.h VG_(apply_to_GP_regs). */
 
    /* We have to claim the syscall already succeeded. */
    SET_STATUS_Success(0);

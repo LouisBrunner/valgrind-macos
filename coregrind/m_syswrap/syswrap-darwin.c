@@ -5031,7 +5031,7 @@ PRE(task_get_special_port)
       PRINT("task_get_special_port(%s, TASK_BOOTSTRAP_PORT)", 
             name_for_port(MACH_REMOTE));
       break;
-#if DARWIN_VERS != DARWIN_10_8
+#if DARWIN_VERS < DARWIN_10_8
    /* These disappeared in 10.8 */
    case TASK_WIRED_LEDGER_PORT:
       PRINT("task_get_special_port(%s, TASK_WIRED_LEDGER_PORT)", 
@@ -5080,7 +5080,7 @@ POST(task_get_special_port)
    case TASK_HOST_PORT:
       assign_port_name(reply->special_port.name, "host");
       break;
-#if DARWIN_VERS != DARWIN_10_8
+#if DARWIN_VERS < DARWIN_10_8
    /* These disappeared in 10.8 */
    case TASK_WIRED_LEDGER_PORT:
       assign_port_name(reply->special_port.name, "wired-ledger");
@@ -6554,7 +6554,7 @@ PRE(bsdthread_terminate)
    if (ARG4) semaphore_signal((semaphore_t)ARG4);
    if (ARG1  &&  ARG2) {
        ML_(notify_core_and_tool_of_munmap)(ARG1, ARG2);
-#      if DARWIN_VERS == DARWIN_10_8
+#      if DARWIN_VERS >= DARWIN_10_8
        /* JRS 2012 Aug 02: ugly hack: vm_deallocate disappeared from
           the mig output.  Work around it for the time being. */
        VG_(do_syscall2)(__NR_munmap, ARG1, ARG2);
@@ -8471,7 +8471,7 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(8)), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(9)), 
 
-#  if DARWIN_VERS == DARWIN_10_8
+#  if DARWIN_VERS >= DARWIN_10_8
    MACXY(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(10), mach__10), 
 #  else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(10)), 
@@ -8479,7 +8479,7 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(11)), 
 
-#  if DARWIN_VERS == DARWIN_10_8
+#  if DARWIN_VERS >= DARWIN_10_8
    MACXY(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(12), mach__12), 
 #  else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(12)), 
@@ -8487,7 +8487,7 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(13)), 
 
-#  if DARWIN_VERS == DARWIN_10_8
+#  if DARWIN_VERS >= DARWIN_10_8
    MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(14), mach__14), 
 #  else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(14)), 
@@ -8495,7 +8495,7 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(15)), 
 
-#  if DARWIN_VERS == DARWIN_10_8
+#  if DARWIN_VERS >= DARWIN_10_8
    MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(16), mach__16), 
    MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(17), mach__17), 
    MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(18), mach__18), 

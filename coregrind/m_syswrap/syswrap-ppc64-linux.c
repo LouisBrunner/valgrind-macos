@@ -890,7 +890,7 @@ static SyscallTableEntry syscall_table[] = {
 // _____(__NR_rt_sigpending,     sys_rt_sigpending),      // 175
    LINXY(__NR_rt_sigtimedwait,   sys_rt_sigtimedwait),    // 176
    LINXY(__NR_rt_sigqueueinfo,   sys_rt_sigqueueinfo),    // 177
-// _____(__NR_rt_sigsuspend,     sys_rt_sigsuspend),      // 178
+   LINX_(__NR_rt_sigsuspend,     sys_rt_sigsuspend),      // 178
    GENXY(__NR_pread64,           sys_pread64),            // 179
 
    GENX_(__NR_pwrite64,          sys_pwrite64),           // 180

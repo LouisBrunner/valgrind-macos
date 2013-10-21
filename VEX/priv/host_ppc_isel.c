@@ -2312,12 +2312,11 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 
    /* --------- CCALL --------- */
    case Iex_CCall: {
-      HReg    r_dst = newVRegI(env);
-      vassert(ty == Ity_I32);
+      vassert(ty == e->Iex.CCall.retty); /* well-formedness of IR */
 
       /* be very restrictive for now.  Only 32/64-bit ints allowed for
-         args, and 32 bits for return type. */
-      if (e->Iex.CCall.retty != Ity_I32)
+         args, and 32 bits or host machine word for return type. */
+      if (!(ty == Ity_I32 || (mode64 && ty == Ity_I64)))
          goto irreducible;
 
       /* Marshal args, do the call, clear stack. */
@@ -2330,6 +2329,7 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       vassert(addToSp == 0);
 
       /* GPR3 now holds the destination address from Pin_Goto */
+      HReg r_dst = newVRegI(env);
       addInstr(env, mk_iMOVds_RR(r_dst, hregPPC_GPR3(mode64)));
       return r_dst;
    }

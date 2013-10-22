@@ -1530,19 +1530,6 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    struct vki_rlimit zero = { 0, 0 };
    XArray* addr2dihandle = NULL;
 
-   // For an inner Valgrind, register the interim stack asap.
-   // This is needed to allow the outer valgrind to do stacktraces during init.
-   // Note that this stack is not unregistered when the main thread
-   // is switching to the (real) stack. Unregistering this would imply
-   // to save the stack id in a global variable, and have a "if"
-   // in run_a_thread_NORETURN to do the unregistration only for the
-   // main thread. This unregistration is not worth this complexity.
-   INNER_REQUEST
-      ((void) VALGRIND_STACK_REGISTER
-       (&VG_(interim_stack).bytes[0],
-        &VG_(interim_stack).bytes[0] + sizeof(VG_(interim_stack))));
-
-
    //============================================================
    //
    // Nb: startup is complex.  Prerequisites are shown at every step.
@@ -3029,6 +3016,18 @@ void _start_in_C_linux ( UWord* pArgc )
    HChar** argv = (HChar**)&pArgc[1];
    HChar** envp = (HChar**)&pArgc[1+argc+1];
 
+   // For an inner Valgrind, register the interim stack asap.
+   // This is needed to allow the outer valgrind to do stacktraces during init.
+   // Note that this stack is not unregistered when the main thread
+   // is switching to the (real) stack. Unregistering this would imply
+   // to save the stack id in a global variable, and have a "if"
+   // in run_a_thread_NORETURN to do the unregistration only for the
+   // main thread. This unregistration is not worth this complexity.
+   INNER_REQUEST
+      ((void) VALGRIND_STACK_REGISTER
+       (&VG_(interim_stack).bytes[0],
+        &VG_(interim_stack).bytes[0] + sizeof(VG_(interim_stack))));
+
    VG_(memset)( &the_iicii, 0, sizeof(the_iicii) );
    VG_(memset)( &the_iifii, 0, sizeof(the_iifii) );
 
@@ -3161,6 +3160,12 @@ void _start_in_C_darwin ( UWord* pArgc )
    Int     argc = *(Int *)pArgc;  // not pArgc[0] on LP64
    HChar** argv = (HChar**)&pArgc[1];
    HChar** envp = (HChar**)&pArgc[1+argc+1];
+
+   // See _start_in_C_linux
+   INNER_REQUEST
+      ((void) VALGRIND_STACK_REGISTER
+       (&VG_(interim_stack).bytes[0],
+        &VG_(interim_stack).bytes[0] + sizeof(VG_(interim_stack))));
 
    VG_(memset)( &the_iicii, 0, sizeof(the_iicii) );
    VG_(memset)( &the_iifii, 0, sizeof(the_iifii) );

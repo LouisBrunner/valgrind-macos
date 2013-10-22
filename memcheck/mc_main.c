@@ -1363,6 +1363,23 @@ ULong mc_LOADVn_slow ( Addr a, SizeT nBits, Bool bigendian )
       return vbits64;
    }
 
+   /* Also, in appears that gcc generates string-stepping code in
+      32-bit chunks on 64 bit platforms.  So, also grant an exception
+      for this case.  Note that the first clause of the conditional
+      (VG_WORDSIZE == 8) is known at compile time, so the whole clause
+      will get folded out in 32 bit builds. */
+   if (VG_WORDSIZE == 8
+       && VG_IS_4_ALIGNED(a) && nBits == 32 && n_addrs_bad < 4) {
+      tl_assert(V_BIT_UNDEFINED == 1 && V_BIT_DEFINED == 0);
+      /* (really need "UifU" here...)
+         vbits64 UifU= pessim64  (is pessimised by it, iow) */
+      vbits64 |= pessim64;
+      /* Mark the upper 32 bits as undefined, just to be on the safe
+         side. */
+      vbits64 |= (((ULong)V_BITS32_UNDEFINED) << 32);
+      return vbits64;
+   }
+
    /* Exemption doesn't apply.  Flag an addressing error in the normal
       way. */
    MC_(record_address_error)( VG_(get_running_tid)(), a, szB, False );

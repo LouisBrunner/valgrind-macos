@@ -512,11 +512,6 @@ Tue Jul  2 12:15:07 CEST 2013
 324081  3.8.1 Valgrind periodically hangs in long-running application
         NEEDINFO (requested)
 
-324227  memcheck false positive leak when a thread calls exit+block only
-        reachable via other thread live register
-        Inconclusive, after discussions with Philippe
-        Severity: low  Audience: med
-
 324261  errorcount in xml output remains empty (no error pairs mentioned)
         Hmm, looks like a real bug.
         Severity: med  Audience: low

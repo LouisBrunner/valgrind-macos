@@ -11,10 +11,9 @@ Release 3.9.0 (?? ?????? 201?)
   Support for s390x Decimal Floating Point instructions on hosts that
   have the DFP facility installed.
 
-  Power8 (Power ISA 2.?? support)
+  Power8 (Power ISA 2.07 support)
 
-  AVX2 support
-
+  Intel AVX2 support
   Intel HTM support (kind of)
   Power HTM support (kind of)
 
@@ -88,14 +87,14 @@ Release 3.9.0 (?? ?????? 201?)
     of various Valgrind aspects, including the Valgrind heap.
 
   - The list of used suppressions (shown when giving the -v option)
-    now gives the filename and linenr where the suppression is defined.
+    now gives the filename and line number where the suppression is defined.
 
   - remote debuginfo server + overhaul of debuginfo reading
 
   - some fixes for OSX 10.8
 
   - partial-loads-ok now works for 16 and 32 byte loads
-    and in general improved handling of vectorised code
+    and in general improved handling of vectorised code on Memcheck
 
   - unwind-by-stack-scan for ARM
 
@@ -692,11 +691,14 @@ DONE
 
 324227  memcheck false positive leak when a thread calls exit+block
         only reachable via other thread live register
-        FIXED
+        FIXED 13670
 
 326091  drd: Avoid that optimized strlen() implementations trigger
         false positive race reports.
         FIXED 13664
+
+309430  Self hosting ppc64 encounters a vassert error on operand type
+        FIXED 2793
 
 
 Release 3.8.1 (19 September 2012)

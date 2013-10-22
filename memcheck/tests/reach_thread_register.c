@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <config.h>
 
-/* test based on code from Alexander Potapenko, slightly modified. */
+/* test based on code from Jeffrey Yasskin, slightly modified. */
 /* Reproduces a false positive leak when a pointer is (only) in a live
    thread register, and another thread calls exit */
 

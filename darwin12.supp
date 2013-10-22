@@ -229,6 +229,111 @@
    obj:*AppKit.framework/Versions/C/AppKit
 }
 
+#########################################################
+## Leaks (apparently) in even hello-world style programs
+
+{
+   OSX108:leak-1
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc_zone_malloc
+   fun:_ZN4objc8DenseMapIP11objc_objectmL*
+   fun:arr_init
+}
+
+{
+   OSX108:leak-2
+   Memcheck:Leak
+   fun:malloc_zone_malloc
+   fun:*NX*Map*
+   fun:*NX*Map*
+}
+
+{
+   OSX108:leak-3
+   Memcheck:Leak
+   fun:malloc_zone_malloc
+   fun:*NX*Map*
+   fun:*image*
+}
+
+{
+   OSX108:leak-4
+   Memcheck:Leak
+   fun:malloc_zone_malloc
+   fun:*NX*Map*
+   fun:*remap*
+}
+
+{
+   OSX108:leak-5
+   Memcheck:Leak
+   fun:malloc_zone_malloc
+   fun:*NX*Map*
+   fun:*future*
+}
+
+{
+   OSX108:leak-6
+   Memcheck:Leak
+   fun:malloc_zone_malloc
+   fun:*strdup*
+   fun:*NX*Map*
+}
+
+{
+   OSX108:leak-7
+   Memcheck:Leak
+   fun:malloc_zone_malloc
+   fun:*NX*Map*
+   fun:*attached*
+}
+
+{
+   OSX108:leak-8
+   Memcheck:Leak
+   fun:malloc_zone_malloc
+   fun:*NX*Map*
+   fun:dlopen
+}
+
+{
+   OSX108:leak-9
+   Memcheck:Leak
+   fun:malloc
+   fun:*PerThread*
+   fun:dlopen
+}
+
+{
+   OSX108:leak-10
+   Memcheck:Leak
+   fun:malloc_zone_calloc
+   fun:*NX*Hash*
+}
+
+{
+   OSX108:leak-11
+   Memcheck:Leak
+   fun:malloc_zone_calloc
+   fun:*map*
+   fun:*map*
+}
+
+{
+   OSX108:leak-12
+   Memcheck:Leak
+   fun:malloc_zone_calloc
+   fun:*fetch_pthread_data*
+}
+
+{
+   OSX108:leak-13
+   Memcheck:Leak
+   fun:malloc_zone_malloc
+   fun:recursive_mutex_init
+   fun:_objc_init
+}
 
 ##----------------------------------------------------------------------##
 # Memcheck

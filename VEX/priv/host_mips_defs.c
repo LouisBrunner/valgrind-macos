@@ -2101,7 +2101,7 @@ void getRegUsage_MIPSInstr(HRegUsage * u, MIPSInstr * i, Bool mode64)
          addHRegUse(u, HRmRead, i->Min.FpGpMove.src);
          return;
       case Min_MoveCond:
-         addHRegUse(u, HRmWrite, i->Min.MoveCond.dst);
+         addHRegUse(u, HRmModify, i->Min.MoveCond.dst);
          addHRegUse(u, HRmRead, i->Min.MoveCond.src);
          addHRegUse(u, HRmRead, i->Min.MoveCond.cond);
          return;

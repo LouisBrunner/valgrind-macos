@@ -2123,7 +2123,7 @@ static Bool dis_instr_CVM ( UInt theInstr )
    UInt size;
    assign(tmpRs, getIReg(regRs));
 
-   switch(opc2) { 
+   switch(opc2) {
       case 0x03: {  /* DMUL rd, rs, rt */
          DIP("dmul r%d, r%d, r%d", regRd, regRs, regRt);
          IRType t0 = newTemp(Ity_I128);
@@ -2132,7 +2132,7 @@ static Bool dis_instr_CVM ( UInt theInstr )
          break;
       }
       case 0x32:  /* 5. CINS rd, rs, p, lenm1 */
-         DIP("cins r%u, r%u, %d, %d\n", regRt, regRs, p, lenM1); 
+         DIP("cins r%u, r%u, %d, %d\n", regRt, regRs, p, lenM1);
          assign ( tmp  , binop(Iop_Shl64, mkexpr(tmpRs), mkU8(64-( lenM1+1 ))));
          assign ( tmpRt, binop(Iop_Shr64, mkexpr( tmp ), mkU8(64-(p+lenM1+1))));
          putIReg( regRt, mkexpr(tmpRt));
@@ -2146,7 +2146,7 @@ static Bool dis_instr_CVM ( UInt theInstr )
          break;
 
       case 0x3A:  /* 3. EXTS rt, rs, p len */
-         DIP("exts r%u, r%u, %d, %d\n", regRt, regRs, p, lenM1); 
+         DIP("exts r%u, r%u, %d, %d\n", regRt, regRs, p, lenM1);
          size = lenM1 + 1;  /* lenm1+1 */
          UChar lsAmt = 64 - (p + size);  /* p+lenm1+1 */
          UChar rsAmt = 64 - size;  /* lenm1+1 */
@@ -2156,7 +2156,7 @@ static Bool dis_instr_CVM ( UInt theInstr )
          break;
 
       case 0x3B:  /* 4. EXTS32 rt, rs, p len */
-         DIP("exts32 r%u, r%u, %d, %d\n", regRt, regRs, p, lenM1); 
+         DIP("exts32 r%u, r%u, %d, %d\n", regRt, regRs, p, lenM1);
          assign ( tmp  , binop(Iop_Shl64, mkexpr(tmpRs), mkU8(32-(p+lenM1+1))));
          assign ( tmpRt, binop(Iop_Sar64, mkexpr(tmp)  , mkU8(64-(lenM1+1))) );
          putIReg( regRt, mkexpr(tmpRt));
@@ -2223,7 +2223,7 @@ static Bool dis_instr_CVM ( UInt theInstr )
 static UInt disDSPInstr_MIPS_WRK ( UInt cins )
 {
    IRTemp t0, t1 = 0, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14,
-          t15, t16, t17, t18;
+          t15, t16, t17;
    UInt opcode, rs, rt, rd, sa, function, ac, ac_mfhilo, rddsp_mask,
         wrdsp_mask, dsp_imm, shift;
 
@@ -2875,40 +2875,123 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                      t0 = newTemp(Ity_I64);
                      t1 = newTemp(Ity_I64);
                      t2 = newTemp(Ity_I32);
-                     t3 = newTemp(Ity_I32);
-                     t4 = newTemp(Ity_I32);
+                     t3 = newTemp(Ity_I1);
+                     t4 = newTemp(Ity_I1);
+                     t5 = newTemp(Ity_I1);
+                     t6 = newTemp(Ity_I1);
+                     t7 = newTemp(Ity_I32);
+                     t8 = newTemp(Ity_I64);
+                     t9 = newTemp(Ity_I64);
+                     t10 = newTemp(Ity_I1);
+                     t11 = newTemp(Ity_I1);
+                     t12 = newTemp(Ity_I1);
+                     t13 = newTemp(Ity_I1);
+                     t14 = newTemp(Ity_I32);
 
                      assign(t0, getAcc(ac));
-                     assign(t1, binop(Iop_Sar64, mkexpr(t0), mkU8(rs)));
-                     putIReg(rt, unop(Iop_64to32, mkexpr(t1)));
+                     if (0 == rs) {
+                        assign(t1, mkexpr(t0));
+                     } else {
+                        assign(t1, binop(Iop_Sar64, mkexpr(t0), mkU8(rs)));
+                     }
+                     /* Check if bits 63..31 of the result in t1 aren't 0. */
+                     assign(t3, binop(Iop_CmpNE32,
+                                      unop(Iop_64HIto32,
+                                           mkexpr(t1)),
+                                      mkU32(0)));
+                     assign(t4, binop(Iop_CmpNE32,
+                                      binop(Iop_And32,
+                                            unop(Iop_64to32,
+                                                 mkexpr(t1)),
+                                            mkU32(0x80000000)),
+                                      mkU32(0)));
+                     /* Check if bits 63..31 of the result in t1 aren't
+                        0x1ffffffff. */
+                     assign(t5, binop(Iop_CmpNE32,
+                                      unop(Iop_64HIto32,
+                                           mkexpr(t1)),
+                                      mkU32(0xffffffff)));
+                     assign(t6, binop(Iop_CmpNE32,
+                                      binop(Iop_And32,
+                                            unop(Iop_64to32,
+                                                 mkexpr(t1)),
+                                            mkU32(0x80000000)),
+                                      mkU32(0x80000000)));
+                     /* If bits 63..31 aren't 0 nor 0x1ffffffff, set DSP
+                        control register. */
+                     assign(t7, binop(Iop_And32,
+                                      binop(Iop_Or32,
+                                            unop(Iop_1Sto32, mkexpr(t3)),
+                                            unop(Iop_1Sto32, mkexpr(t4))),
+                                      binop(Iop_Or32,
+                                            unop(Iop_1Sto32, mkexpr(t5)),
+                                            unop(Iop_1Sto32, mkexpr(t6)))));
+                     putDSPControl(IRExpr_ITE(binop(Iop_CmpNE32,
+                                                    mkexpr(t7),
+                                                    mkU32(0)),
+                                              binop(Iop_Or32,
+                                                    getDSPControl(),
+                                                    mkU32(0x00800000)),
+                                              getDSPControl()));
 
-                     assign(t2, binop(Iop_Or32,
-                                      getDSPControl(), mkU32(0x00800000)));
+                     /* If the last discarded bit is 1, there would be carry
+                        when rounding, otherwise there wouldn't. We use that
+                        fact and just add the value of the last discarded bit
+                        to the least sifgnificant bit of the shifted value
+                        from acc. */
+                     if (0 == rs) {
+                        assign(t8, mkU64(0x0ULL));
+                     } else {
+                        assign(t8, binop(Iop_And64,
+                                         binop(Iop_Shr64,
+                                               mkexpr(t0),
+                                               mkU8(rs-1)),
+                                         mkU64(0x1ULL)));
+                     }
+                     assign(t9, binop(Iop_Add64, mkexpr(t1), mkexpr(t8)));
 
-                     /* Check if signOut == signIn */
-                     assign(t3, IRExpr_ITE(binop(Iop_CmpEQ32,
-                                                 binop(Iop_And32,
-                                                       unop(Iop_64HIto32,
-                                                            mkexpr(t0)),
-                                                       mkU32(0x80000000)),
-                                                 binop(Iop_And32,
-                                                       getIReg(rt),
-                                                       mkU32(0x80000000))),
-                                           getDSPControl(),
-                                           mkexpr(t2)));
+                     /* Repeat previous steps for the rounded value. */
+                     assign(t10, binop(Iop_CmpNE32,
+                                      unop(Iop_64HIto32,
+                                           mkexpr(t9)),
+                                      mkU32(0)));
+                     assign(t11, binop(Iop_CmpNE32,
+                                      binop(Iop_And32,
+                                            unop(Iop_64to32,
+                                                 mkexpr(t9)),
+                                            mkU32(0x80000000)),
+                                      mkU32(0)));
 
-                     assign(t4, IRExpr_ITE(binop(Iop_CmpNE32,
-                                                 unop(Iop_64HIto32,
-                                                      mkexpr(t1)),
-                                                 mkU32(0x0)),
-                                           IRExpr_ITE(binop(Iop_CmpNE32,
-                                                            unop(Iop_64HIto32,
-                                                                 mkexpr(t1)),
-                                                            mkU32(0xffffffff)),
-                                                      mkexpr(t2),
-                                                      mkexpr(t3)),
-                                           mkexpr(t3)));
-                     putDSPControl(mkexpr(t4));
+                     assign(t12, binop(Iop_CmpNE32,
+                                      unop(Iop_64HIto32,
+                                           mkexpr(t9)),
+                                      mkU32(0xffffffff)));
+                     assign(t13, binop(Iop_CmpNE32,
+                                      binop(Iop_And32,
+                                            unop(Iop_64to32,
+                                                 mkexpr(t9)),
+                                            mkU32(0x80000000)),
+                                      mkU32(0x80000000)));
+
+                     assign(t14, binop(Iop_And32,
+                                      binop(Iop_Or32,
+                                            unop(Iop_1Sto32, mkexpr(t10)),
+                                            unop(Iop_1Sto32, mkexpr(t11))),
+                                      binop(Iop_Or32,
+                                            unop(Iop_1Sto32, mkexpr(t12)),
+                                            unop(Iop_1Sto32, mkexpr(t13)))));
+                     putDSPControl(IRExpr_ITE(binop(Iop_CmpNE32,
+                                                    mkexpr(t14),
+                                                    mkU32(0)),
+                                              binop(Iop_Or32,
+                                                    getDSPControl(),
+                                                    mkU32(0x00800000)),
+                                              getDSPControl()));
+                     if (0 == rs) {
+                        putIReg(rt, unop(Iop_64to32, mkexpr(t0)));
+                     } else {
+                        putIReg(rt, unop(Iop_64to32, mkexpr(t1)));
+                     }
                      break;
                   }
                   case 0x1: {  /* EXTRV.W */
@@ -2917,43 +3000,133 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                      t0 = newTemp(Ity_I64);
                      t1 = newTemp(Ity_I64);
                      t2 = newTemp(Ity_I32);
-                     t3 = newTemp(Ity_I32);
+                     t3 = newTemp(Ity_I1);
                      t4 = newTemp(Ity_I1);
+                     t5 = newTemp(Ity_I1);
+                     t6 = newTemp(Ity_I1);
+                     t7 = newTemp(Ity_I32);
+                     t8 = newTemp(Ity_I64);
+                     t9 = newTemp(Ity_I64);
+                     t10 = newTemp(Ity_I1);
+                     t11 = newTemp(Ity_I1);
+                     t12 = newTemp(Ity_I1);
+                     t13 = newTemp(Ity_I1);
+                     t14 = newTemp(Ity_I32);
+                     t15 = newTemp(Ity_I8);
 
+                     assign(t15, unop(Iop_32to8,
+                                      binop(Iop_And32,
+                                            getIReg(rs),
+                                            mkU32(0x1f))));
                      assign(t0, getAcc(ac));
-                     assign(t1, binop(Iop_Sar64,
-                                      mkexpr(t0),
-                                      unop(Iop_32to8,
-                                           binop(Iop_And32,
-                                                 getIReg(rs),
-                                                 mkU32(0x1f)))));
-                     putIReg(rt, unop(Iop_64to32, mkexpr(t1)));
+                     assign(t1, binop(Iop_Sar64, mkexpr(t0), mkexpr(t15)));
+                     putIReg(rt, IRExpr_ITE(binop(Iop_CmpEQ32,
+                                                        unop(Iop_8Uto32,
+                                                             mkexpr(t15)),
+                                                        mkU32(0)),
+                                                  unop(Iop_64to32, mkexpr(t0)),
+                                                  unop(Iop_64to32, mkexpr(t1))));
 
-                     assign(t2, binop(Iop_Or32,
-                                      getDSPControl(), mkU32(0x00800000)));
-
-                     /* Check if signOut == signIn */
-                     assign(t3, IRExpr_ITE(binop(Iop_CmpEQ32,
-                                                 binop(Iop_And32,
-                                                       unop(Iop_64HIto32,
-                                                            mkexpr(t0)),
-                                                       mkU32(0x80000000)),
-                                                 binop(Iop_And32,
-                                                       getIReg(rt),
-                                                       mkU32(0x80000000))),
-                                           getDSPControl(),
-                                           mkexpr(t2)));
+                     /* Check if bits 63..31 of the result in t1 aren't 0. */
+                     assign(t3, binop(Iop_CmpNE32,
+                                      unop(Iop_64HIto32,
+                                           mkexpr(t1)),
+                                      mkU32(0)));
                      assign(t4, binop(Iop_CmpNE32,
-                                      unop(Iop_64HIto32, mkexpr(t1)),
+                                      binop(Iop_And32,
+                                            unop(Iop_64to32,
+                                                 mkexpr(t1)),
+                                            mkU32(0x80000000)),
+                                      mkU32(0)));
+                     /* Check if bits 63..31 of the result in t1 aren't
+                        0x1ffffffff. */
+                     assign(t5, binop(Iop_CmpNE32,
+                                      unop(Iop_64HIto32,
+                                           mkexpr(t1)),
                                       mkU32(0xffffffff)));
+                     assign(t6, binop(Iop_CmpNE32,
+                                      binop(Iop_And32,
+                                            unop(Iop_64to32,
+                                                 mkexpr(t1)),
+                                            mkU32(0x80000000)),
+                                      mkU32(0x80000000)));
+                     /* If bits 63..31 aren't 0 nor 0x1ffffffff, set DSP
+                        control register. */
+                     assign(t7, binop(Iop_And32,
+                                      binop(Iop_Or32,
+                                            unop(Iop_1Sto32, mkexpr(t3)),
+                                            unop(Iop_1Sto32, mkexpr(t4))),
+                                      binop(Iop_Or32,
+                                            unop(Iop_1Sto32, mkexpr(t5)),
+                                            unop(Iop_1Sto32, mkexpr(t6)))));
                      putDSPControl(IRExpr_ITE(binop(Iop_CmpNE32,
-                                                    unop(Iop_64HIto32,
-                                                         mkexpr(t1)),
-                                                    mkU32(0x0)),
-                                              IRExpr_ITE(mkexpr(t4),
-                                                         mkexpr(t2),
-                                                         mkexpr(t3)),
-                                              mkexpr(t3)));
+                                                    mkexpr(t7),
+                                                    mkU32(0)),
+                                              binop(Iop_Or32,
+                                                    getDSPControl(),
+                                                    mkU32(0x00800000)),
+                                              getDSPControl()));
+
+                     /* If the last discarded bit is 1, there would be carry
+                        when rounding, otherwise there wouldn't. We use that
+                        fact and just add the value of the last discarded bit
+                        to the least sifgnificant bit of the shifted value
+                        from acc. */
+                     assign(t8,
+                            IRExpr_ITE(binop(Iop_CmpEQ32,
+                                             unop(Iop_8Uto32,
+                                                  mkexpr(t15)),
+                                             mkU32(0)),
+                                       mkU64(0x0ULL),
+                                       binop(Iop_And64,
+                                             binop(Iop_Shr64,
+                                                   mkexpr(t0),
+                                                   unop(Iop_32to8,
+                                                        binop(Iop_Sub32,
+                                                              unop(Iop_8Uto32,
+                                                                   mkexpr(t15)),
+                                                                   mkU32(1)))),
+                                             mkU64(0x1ULL))));
+
+                     assign(t9, binop(Iop_Add64, mkexpr(t1), mkexpr(t8)));
+
+                     /* Repeat previous steps for the rounded value. */
+                     assign(t10, binop(Iop_CmpNE32,
+                                      unop(Iop_64HIto32,
+                                           mkexpr(t9)),
+                                      mkU32(0)));
+                     assign(t11, binop(Iop_CmpNE32,
+                                      binop(Iop_And32,
+                                            unop(Iop_64to32,
+                                                 mkexpr(t9)),
+                                            mkU32(0x80000000)),
+                                      mkU32(0)));
+
+                     assign(t12, binop(Iop_CmpNE32,
+                                      unop(Iop_64HIto32,
+                                           mkexpr(t9)),
+                                      mkU32(0xffffffff)));
+                     assign(t13, binop(Iop_CmpNE32,
+                                      binop(Iop_And32,
+                                            unop(Iop_64to32,
+                                                 mkexpr(t9)),
+                                            mkU32(0x80000000)),
+                                      mkU32(0x80000000)));
+
+                     assign(t14, binop(Iop_And32,
+                                      binop(Iop_Or32,
+                                            unop(Iop_1Sto32, mkexpr(t10)),
+                                            unop(Iop_1Sto32, mkexpr(t11))),
+                                      binop(Iop_Or32,
+                                            unop(Iop_1Sto32, mkexpr(t12)),
+                                            unop(Iop_1Sto32, mkexpr(t13)))));
+                     putDSPControl(IRExpr_ITE(binop(Iop_CmpNE32,
+                                                    mkexpr(t14),
+                                                    mkU32(0)),
+                                              binop(Iop_Or32,
+                                                    getDSPControl(),
+                                                    mkU32(0x00800000)),
+                                              getDSPControl()));
                      break;
                   }
                   case 0x2: {  /* EXTP */
@@ -3140,61 +3313,131 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                      t0 = newTemp(Ity_I64);
                      t1 = newTemp(Ity_I64);
                      t2 = newTemp(Ity_I32);
-                     t4 = newTemp(Ity_I32);
-                     t5 = newTemp(Ity_I64);
-                     t6 = newTemp(Ity_I64);
+                     t3 = newTemp(Ity_I1);
+                     t4 = newTemp(Ity_I1);
+                     t5 = newTemp(Ity_I1);
+                     t6 = newTemp(Ity_I1);
+                     t7 = newTemp(Ity_I32);
+                     t8 = newTemp(Ity_I64);
+                     t9 = newTemp(Ity_I64);
+                     t10 = newTemp(Ity_I1);
+                     t11 = newTemp(Ity_I1);
+                     t12 = newTemp(Ity_I1);
+                     t13 = newTemp(Ity_I1);
+                     t14 = newTemp(Ity_I32);
+                     t15 = newTemp(Ity_I64);
+                     t16 = newTemp(Ity_I1);
 
                      assign(t0, getAcc(ac));
-                     if (0 == rs) {
-                        putIReg(rt, unop(Iop_64to32, mkexpr(t0)));
-                     } else {
-                        assign(t1, binop(Iop_Sar64, mkexpr(t0), mkU8(rs)));
+                     assign(t16, binop(Iop_CmpEQ32,
+                                       mkU32(rs),
+                                       mkU32(0)));
+                     assign(t1, IRExpr_ITE(mkexpr(t16),
+                                           mkexpr(t0),
+                                           binop(Iop_Sar64,
+                                                 mkexpr(t0),
+                                                 mkU8(rs))));
+                     /* If the last discarded bit is 1, there would be carry
+                        when rounding, otherwise there wouldn't. We use that
+                        fact and just add the value of the last discarded bit
+                        to the least significant bit of the shifted value
+                        from acc. */
+                     assign(t15, binop(Iop_Shr64,
+                                       mkexpr(t0),
+                                       unop(Iop_32to8,
+                                            binop(Iop_Sub32,
+                                                  binop(Iop_And32,
+                                                        mkU32(rs),
+                                                        mkU32(0x1f)),
+                                                  mkU32(1)))));
 
-                        assign(t2, binop(Iop_Or32,
-                                         getDSPControl(), mkU32(0x800000)));
+                     assign(t8,
+                            IRExpr_ITE(mkexpr(t16),
+                                       mkU64(0x0ULL),
+                                       binop(Iop_And64,
+                                             mkexpr(t15),
+                                             mkU64(0x0000000000000001ULL))));
+                     assign(t9, binop(Iop_Add64, mkexpr(t1), mkexpr(t8)));
+                     putIReg(rt, unop(Iop_64to32, mkexpr(t9)));
 
-                        putDSPControl(IRExpr_ITE(
-                                      binop(Iop_CmpNE32,
-                                            unop(Iop_64HIto32, mkexpr(t1)),
-                                            mkU32(0x0)),
-                                      IRExpr_ITE(binop(Iop_CmpNE32,
-                                                       unop(Iop_64HIto32,
-                                                            mkexpr(t1)),
-                                                       mkU32(0xffffffff)),
-                                                 mkexpr(t2),
-                                                 getDSPControl()),
-                                      getDSPControl()));
+                     /* Check if bits 63..31 of the result in t1 aren't 0. */
+                     assign(t3, binop(Iop_CmpNE32,
+                                      unop(Iop_64HIto32,
+                                           mkexpr(t1)),
+                                      mkU32(0)));
+                     assign(t4, binop(Iop_CmpNE32,
+                                      binop(Iop_And32,
+                                            unop(Iop_64to32,
+                                                 mkexpr(t1)),
+                                            mkU32(0x80000000)),
+                                      mkU32(0)));
 
-                        assign(t4, binop(Iop_Or32,
-                                         getDSPControl(), mkU32(0x800000)));
-                        /* If the last discarded bit is 1, there would be carry
-                           when rounding, otherwise there wouldn't. We use that
-                           fact and just add the value of the last discarded bit
-                           to the least sifgnificant bit of the shifted value
-                           from acc. */
-                        assign(t5, binop(Iop_Shr64,
-                                         binop(Iop_And64,
-                                               mkexpr(t0),
-                                               binop(Iop_Shl64,
-                                                     mkU64(0x1ULL),
-                                                     mkU8(rs-1))),
-                                         mkU8(rs-1)));
+                     /* Check if bits 63..31 of the result in t1 aren't
+                        0x1ffffffff. */
+                     assign(t5, binop(Iop_CmpNE32,
+                                      unop(Iop_64HIto32,
+                                           mkexpr(t1)),
+                                      mkU32(0xffffffff)));
+                     assign(t6, binop(Iop_CmpNE32,
+                                      binop(Iop_And32,
+                                            unop(Iop_64to32,
+                                                 mkexpr(t1)),
+                                            mkU32(0x80000000)),
+                                      mkU32(0x80000000)));
+                     /* If bits 63..31 aren't 0 nor 0x1ffffffff, set DSP
+                        control register. */
+                     assign(t7, binop(Iop_And32,
+                                      binop(Iop_Or32,
+                                            unop(Iop_1Sto32, mkexpr(t3)),
+                                            unop(Iop_1Sto32, mkexpr(t4))),
+                                      binop(Iop_Or32,
+                                            unop(Iop_1Sto32, mkexpr(t5)),
+                                            unop(Iop_1Sto32, mkexpr(t6)))));
+                     putDSPControl(IRExpr_ITE(binop(Iop_CmpNE32,
+                                                    mkexpr(t7),
+                                                    mkU32(0)),
+                                              binop(Iop_Or32,
+                                                    getDSPControl(),
+                                                    mkU32(0x00800000)),
+                                              getDSPControl()));
 
-                        assign(t6, binop(Iop_Add64, mkexpr(t1), mkexpr(t5)));
+                     /* Repeat previous steps for the rounded value. */
+                     assign(t10, binop(Iop_CmpNE32,
+                                      unop(Iop_64HIto32,
+                                           mkexpr(t9)),
+                                      mkU32(0)));
+                     assign(t11, binop(Iop_CmpNE32,
+                                      binop(Iop_And32,
+                                            unop(Iop_64to32,
+                                                 mkexpr(t9)),
+                                            mkU32(0x80000000)),
+                                      mkU32(0)));
 
-                        putDSPControl(IRExpr_ITE(
-                                      binop(Iop_CmpNE32,
-                                            unop(Iop_64HIto32, mkexpr(t6)),
-                                                 mkU32(0x0)),
-                                            IRExpr_ITE(binop(Iop_CmpNE32,
-                                                             unop(Iop_64HIto32,
-                                                                  mkexpr(t6)),
-                                                             mkU32(0xffffffff)),
-                                                       mkexpr(t4),
-                                                       getDSPControl()),
-                                            getDSPControl()));
-                        putIReg(rt, unop(Iop_64to32, mkexpr(t6)));
-                     }
+                     assign(t12, binop(Iop_CmpNE32,
+                                      unop(Iop_64HIto32,
+                                           mkexpr(t9)),
+                                      mkU32(0xffffffff)));
+                     assign(t13, binop(Iop_CmpNE32,
+                                      binop(Iop_And32,
+                                            unop(Iop_64to32,
+                                                 mkexpr(t9)),
+                                            mkU32(0x80000000)),
+                                      mkU32(0x80000000)));
+
+                     assign(t14, binop(Iop_And32,
+                                      binop(Iop_Or32,
+                                            unop(Iop_1Sto32, mkexpr(t10)),
+                                            unop(Iop_1Sto32, mkexpr(t11))),
+                                      binop(Iop_Or32,
+                                            unop(Iop_1Sto32, mkexpr(t12)),
+                                            unop(Iop_1Sto32, mkexpr(t13)))));
+                     putDSPControl(IRExpr_ITE(binop(Iop_CmpNE32,
+                                                    mkexpr(t14),
+                                                    mkU32(0)),
+                                              binop(Iop_Or32,
+                                                    getDSPControl(),
+                                                    mkU32(0x00800000)),
+                                              getDSPControl()));
                      break;
                   }
                   case 0x5: {  /* EXTRV_R.W */
@@ -3203,79 +3446,129 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                      t0 = newTemp(Ity_I64);
                      t1 = newTemp(Ity_I64);
                      t2 = newTemp(Ity_I32);
-                     t4 = newTemp(Ity_I32);
-                     t5 = newTemp(Ity_I64);
-                     t6 = newTemp(Ity_I64);
+                     t3 = newTemp(Ity_I1);
+                     t4 = newTemp(Ity_I1);
+                     t5 = newTemp(Ity_I1);
+                     t6 = newTemp(Ity_I1);
+                     t7 = newTemp(Ity_I32);
+                     t8 = newTemp(Ity_I64);
+                     t9 = newTemp(Ity_I64);
+                     t10 = newTemp(Ity_I1);
+                     t11 = newTemp(Ity_I1);
+                     t12 = newTemp(Ity_I1);
+                     t13 = newTemp(Ity_I1);
+                     t14 = newTemp(Ity_I32);
+                     t15 = newTemp(Ity_I8);
 
+                     assign(t15, unop(Iop_32to8,
+                                      binop(Iop_And32,
+                                            getIReg(rs),
+                                            mkU32(0x1f))));
                      assign(t0, getAcc(ac));
+                     assign(t1, binop(Iop_Sar64, mkexpr(t0), mkexpr(t15)));
 
-                     assign(t1, binop(Iop_Sar64,
-                                      mkexpr(t0),
-                                      unop(Iop_32to8,
-                                           binop(Iop_And32,
-                                                 getIReg(rs),
-                                                 mkU32(0x1f)))));
+                     /* Check if bits 63..31 of the result in t1 aren't 0. */
+                     assign(t3, binop(Iop_CmpNE32,
+                                      unop(Iop_64HIto32,
+                                           mkexpr(t1)),
+                                      mkU32(0)));
+                     assign(t4, binop(Iop_CmpNE32,
+                                      binop(Iop_And32,
+                                            unop(Iop_64to32,
+                                                 mkexpr(t1)),
+                                            mkU32(0x80000000)),
+                                      mkU32(0)));
+                     /* Check if bits 63..31 of the result in t1 aren't
+                        0x1ffffffff. */
+                     assign(t5, binop(Iop_CmpNE32,
+                                      unop(Iop_64HIto32,
+                                           mkexpr(t1)),
+                                      mkU32(0xffffffff)));
+                     assign(t6, binop(Iop_CmpNE32,
+                                      binop(Iop_And32,
+                                            unop(Iop_64to32,
+                                                 mkexpr(t1)),
+                                            mkU32(0x80000000)),
+                                      mkU32(0x80000000)));
+                     /* If bits 63..31 aren't 0 nor 0x1ffffffff, set DSP
+                        control register. */
+                     assign(t7, binop(Iop_And32,
+                                      binop(Iop_Or32,
+                                            unop(Iop_1Sto32, mkexpr(t3)),
+                                            unop(Iop_1Sto32, mkexpr(t4))),
+                                      binop(Iop_Or32,
+                                            unop(Iop_1Sto32, mkexpr(t5)),
+                                            unop(Iop_1Sto32, mkexpr(t6)))));
+                     putDSPControl(IRExpr_ITE(binop(Iop_CmpNE32,
+                                                    mkexpr(t7),
+                                                    mkU32(0)),
+                                              binop(Iop_Or32,
+                                                    getDSPControl(),
+                                                    mkU32(0x00800000)),
+                                              getDSPControl()));
 
-                     assign(t2, binop(Iop_Or32,
-                                      getDSPControl(), mkU32(0x00800000)));
-
-                     putDSPControl(IRExpr_ITE(
-                                   binop(Iop_CmpNE32,
-                                         unop(Iop_64HIto32, mkexpr(t1)),
-                                         mkU32(0x0)),
-                                   IRExpr_ITE(binop(Iop_CmpNE32,
-                                                    unop(Iop_64HIto32,
-                                                         mkexpr(t1)),
-                                                    mkU32(0xffffffff)),
-                                              mkexpr(t2),
-                                              getDSPControl()),
-                                   getDSPControl()));
-
-                     assign(t4, binop(Iop_Or32,
-                                      getDSPControl(), mkU32(0x00800000)));
                      /* If the last discarded bit is 1, there would be carry
                         when rounding, otherwise there wouldn't. We use that
-                        fact and just add the value of the last discarded bit to
-                        the least sifgnificant bit of the shifted value from
-                        acc. */
-                     assign(t5, binop(Iop_Shr64,
-                                      binop(Iop_And64,
-                                            mkexpr(t0),
-                                            binop(Iop_Shl64,
-                                                  mkU64(0x1ULL),
-                                                  unop(Iop_32to8,
-                                                       binop(Iop_Sub32,
-                                                             binop(Iop_And32,
-                                                                   getIReg(rs),
-                                                                   mkU32(0x1f)),
-                                                             mkU32(0x1))))),
-                                      unop(Iop_32to8,
-                                           binop(Iop_Sub32,
-                                                 binop(Iop_And32,
-                                                       getIReg(rs),
-                                                       mkU32(0x1f)),
-                                                 mkU32(0x1)))));
+                        fact and just add the value of the last discarded bit
+                        to the least sifgnificant bit of the shifted value
+                        from acc. */
+                     assign(t8,
+                            IRExpr_ITE(binop(Iop_CmpEQ32,
+                                             unop(Iop_8Uto32,
+                                                  mkexpr(t15)),
+                                             mkU32(0)),
+                                       mkU64(0x0ULL),
+                                       binop(Iop_And64,
+                                             binop(Iop_Shr64,
+                                                   mkexpr(t0),
+                                                   unop(Iop_32to8,
+                                                        binop(Iop_Sub32,
+                                                              unop(Iop_8Uto32,
+                                                                   mkexpr(t15)),
+                                                                   mkU32(1)))),
+                                             mkU64(0x1ULL))));
 
-                     assign(t6, binop(Iop_Add64, mkexpr(t1), mkexpr(t5)));
+                     assign(t9, binop(Iop_Add64, mkexpr(t1), mkexpr(t8)));
+                     /* Put rounded value in destination register. */
+                     putIReg(rt, unop(Iop_64to32, mkexpr(t9)));
 
-                     putDSPControl(IRExpr_ITE(
-                                   binop(Iop_CmpNE32,
-                                         unop(Iop_64HIto32, mkexpr(t6)),
-                                         mkU32(0x0)),
-                                   IRExpr_ITE(binop(Iop_CmpNE32,
-                                                    unop(Iop_64HIto32,
-                                                         mkexpr(t6)),
-                                                    mkU32(0xffffffff)),
-                                              mkexpr(t4),
-                                              getDSPControl()),
-                                   getDSPControl()));
-                     putIReg(rt, IRExpr_ITE(binop(Iop_CmpEQ32,
-                                                  binop(Iop_And32,
-                                                        getIReg(rs),
-                                                        mkU32(0x1f)),
-                                                  mkU32(0x0)),
-                                            unop(Iop_64to32, mkexpr(t0)),
-                                            unop(Iop_64to32, mkexpr(t6))));
+                     /* Repeat previous steps for the rounded value. */
+                     assign(t10, binop(Iop_CmpNE32,
+                                      unop(Iop_64HIto32,
+                                           mkexpr(t9)),
+                                      mkU32(0)));
+                     assign(t11, binop(Iop_CmpNE32,
+                                      binop(Iop_And32,
+                                            unop(Iop_64to32,
+                                                 mkexpr(t9)),
+                                            mkU32(0x80000000)),
+                                      mkU32(0)));
+
+                     assign(t12, binop(Iop_CmpNE32,
+                                      unop(Iop_64HIto32,
+                                           mkexpr(t9)),
+                                      mkU32(0xffffffff)));
+                     assign(t13, binop(Iop_CmpNE32,
+                                      binop(Iop_And32,
+                                            unop(Iop_64to32,
+                                                 mkexpr(t9)),
+                                            mkU32(0x80000000)),
+                                      mkU32(0x80000000)));
+
+                     assign(t14, binop(Iop_And32,
+                                      binop(Iop_Or32,
+                                            unop(Iop_1Sto32, mkexpr(t10)),
+                                            unop(Iop_1Sto32, mkexpr(t11))),
+                                      binop(Iop_Or32,
+                                            unop(Iop_1Sto32, mkexpr(t12)),
+                                            unop(Iop_1Sto32, mkexpr(t13)))));
+                     putDSPControl(IRExpr_ITE(binop(Iop_CmpNE32,
+                                                    mkexpr(t14),
+                                                    mkU32(0)),
+                                              binop(Iop_Or32,
+                                                    getDSPControl(),
+                                                    mkU32(0x00800000)),
+                                              getDSPControl()));
                      break;
                   }
                   case 0x6: {  /* EXTR_RS.W */
@@ -3283,81 +3576,136 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                      vassert(!mode64);
                      t0 = newTemp(Ity_I64);
                      t1 = newTemp(Ity_I64);
-                     t2 = newTemp(Ity_I64);
-                     t3 = newTemp(Ity_I32);
-                     t4 = newTemp(Ity_I32);
-                     t5 = newTemp(Ity_I32);
-                     t6 = newTemp(Ity_I32);
+                     t2 = newTemp(Ity_I32);
+                     t3 = newTemp(Ity_I1);
+                     t4 = newTemp(Ity_I1);
+                     t5 = newTemp(Ity_I1);
+                     t6 = newTemp(Ity_I1);
+                     t7 = newTemp(Ity_I32);
+                     t8 = newTemp(Ity_I64);
+                     t9 = newTemp(Ity_I64);
+                     t10 = newTemp(Ity_I1);
+                     t11 = newTemp(Ity_I1);
+                     t12 = newTemp(Ity_I1);
+                     t13 = newTemp(Ity_I1);
+                     t14 = newTemp(Ity_I32);
+                     t16 = newTemp(Ity_I32);
 
-                     if (0 != rs) {
-                        assign(t0, getAcc(ac));
+                     assign(t0, getAcc(ac));
+                     if (0 == rs) {
+                        assign(t1, mkexpr(t0));
+                     } else {
                         assign(t1, binop(Iop_Sar64, mkexpr(t0), mkU8(rs)));
-                        putDSPControl(IRExpr_ITE(
-                                      binop(Iop_CmpNE32,
-                                            unop(Iop_64HIto32, mkexpr(t1)),
-                                            mkU32(0x0)),
-                                      IRExpr_ITE(binop(Iop_CmpNE32,
-                                                       unop(Iop_64HIto32,
-                                                            mkexpr(t1)),
-                                                       mkU32(0xffffffff)),
-                                                 binop(Iop_Or32,
-                                                       getDSPControl(),
-                                                       mkU32(0x00800000)),
-                                                 getDSPControl()),
-                                      getDSPControl()));
-                        /* If the last discarded bit is 1, there would be carry
-                           when rounding, otherwise there wouldn't. We use that
-                           fact and just add the value of the last discarded bit
-                           to the least sifgnificant bit of the shifted value
-                           from acc. */
-                        assign(t2, binop(Iop_Add64,
-                                         mkexpr(t1),
-                                         binop(Iop_Shr64,
-                                               binop(Iop_And64,
-                                                     mkexpr(t0),
-                                                     binop(Iop_Shl64,
-                                                           mkU64(0x1ULL),
-                                                           unop(Iop_32to8,
-                                                                mkU32(rs-1)))),
-                                               unop(Iop_32to8, mkU32(rs-1)))));
-                        assign(t6, IRExpr_ITE(binop(Iop_CmpNE32,
-                                                    unop(Iop_64HIto32,
-                                                         mkexpr(t2)),
-                                                    mkU32(0xffffffff)),
+                     }
+
+                     /* Check if bits 63..31 of the result in t1 aren't 0. */
+                     assign(t3, binop(Iop_CmpNE32,
+                                      unop(Iop_64HIto32,
+                                           mkexpr(t1)),
+                                      mkU32(0)));
+                     assign(t4, binop(Iop_CmpNE32,
+                                      binop(Iop_And32,
+                                            unop(Iop_64to32,
+                                                 mkexpr(t1)),
+                                            mkU32(0x80000000)),
+                                      mkU32(0)));
+                     /* Check if bits 63..31 of the result in t1 aren't
+                        0x1ffffffff. */
+                     assign(t5, binop(Iop_CmpNE32,
+                                      unop(Iop_64HIto32,
+                                           mkexpr(t1)),
+                                      mkU32(0xffffffff)));
+                     assign(t6, binop(Iop_CmpNE32,
+                                      binop(Iop_And32,
+                                            unop(Iop_64to32,
+                                                 mkexpr(t1)),
+                                            mkU32(0x80000000)),
+                                      mkU32(0x80000000)));
+                     /* If bits 63..31 aren't 0 nor 0x1ffffffff, set DSP
+                        control register. */
+                     assign(t7, binop(Iop_And32,
+                                      binop(Iop_Or32,
+                                            unop(Iop_1Sto32, mkexpr(t3)),
+                                            unop(Iop_1Sto32, mkexpr(t4))),
+                                      binop(Iop_Or32,
+                                            unop(Iop_1Sto32, mkexpr(t5)),
+                                            unop(Iop_1Sto32, mkexpr(t6)))));
+                     putDSPControl(IRExpr_ITE(binop(Iop_CmpNE32,
+                                                    mkexpr(t7),
+                                                    mkU32(0)),
                                               binop(Iop_Or32,
                                                     getDSPControl(),
                                                     mkU32(0x00800000)),
                                               getDSPControl()));
-                        putDSPControl(IRExpr_ITE(binop(Iop_CmpNE32,
-                                                       unop(Iop_64HIto32,
-                                                            mkexpr(t2)),
-                                                       mkU32(0x0)),
-                                                 mkexpr(t6),
-                                                 getDSPControl()));
-                        assign(t3, IRExpr_ITE(binop(Iop_CmpEQ32,
-                                                    binop(Iop_And32,
-                                                          unop(Iop_64HIto32,
-                                                               mkexpr(t2)),
-                                                          mkU32(0x80000000)),
-                                                    mkU32(0x0)),
-                                              mkU32(0x7fffffff),
-                                              mkU32(0x80000000)));
-                        assign(t4, IRExpr_ITE(binop(Iop_CmpNE32,
-                                                    unop(Iop_64HIto32,
-                                                         mkexpr(t2)),
-                                                    mkU32(0xffffffff)),
-                                              mkexpr(t3),
-                                              unop(Iop_64to32, mkexpr(t2))));
-                        assign(t5, IRExpr_ITE(binop(Iop_CmpNE32,
-                                                    unop(Iop_64HIto32,
-                                                         mkexpr(t2)),
-                                                    mkU32(0x0)),
-                                              mkexpr(t4),
-                                              unop(Iop_64to32, mkexpr(t2))));
-                        putIReg(rt, mkexpr(t5));
+
+                     /* If the last discarded bit is 1, there would be carry
+                        when rounding, otherwise there wouldn't. We use that
+                        fact and just add the value of the last discarded bit
+                        to the least sifgnificant bit of the shifted value
+                        from acc. */
+                     if (0 == rs) {
+                        assign(t8, mkU64(0x0ULL));
                      } else {
-                        putIReg(rt, unop(Iop_64to32, getAcc(ac)));
+                        assign(t8, binop(Iop_And64,
+                                         binop(Iop_Shr64,
+                                               mkexpr(t0),
+                                               mkU8(rs-1)),
+                                         mkU64(0x1ULL)));
                      }
+
+                     assign(t9, binop(Iop_Add64, mkexpr(t1), mkexpr(t8)));
+
+                     /* Repeat previous steps for the rounded value. */
+                     assign(t10, binop(Iop_CmpNE32,
+                                      unop(Iop_64HIto32,
+                                           mkexpr(t9)),
+                                      mkU32(0)));
+                     assign(t11, binop(Iop_CmpNE32,
+                                      binop(Iop_And32,
+                                            unop(Iop_64to32,
+                                                 mkexpr(t9)),
+                                            mkU32(0x80000000)),
+                                      mkU32(0)));
+
+                     assign(t12, binop(Iop_CmpNE32,
+                                      unop(Iop_64HIto32,
+                                           mkexpr(t9)),
+                                      mkU32(0xffffffff)));
+                     assign(t13, binop(Iop_CmpNE32,
+                                      binop(Iop_And32,
+                                            unop(Iop_64to32,
+                                                 mkexpr(t9)),
+                                            mkU32(0x80000000)),
+                                      mkU32(0x80000000)));
+
+                     assign(t14, binop(Iop_And32,
+                                      binop(Iop_Or32,
+                                            unop(Iop_1Sto32, mkexpr(t10)),
+                                            unop(Iop_1Sto32, mkexpr(t11))),
+                                      binop(Iop_Or32,
+                                            unop(Iop_1Sto32, mkexpr(t12)),
+                                            unop(Iop_1Sto32, mkexpr(t13)))));
+                     putDSPControl(IRExpr_ITE(binop(Iop_CmpNE32,
+                                                    mkexpr(t14),
+                                                    mkU32(0)),
+                                              binop(Iop_Or32,
+                                                    getDSPControl(),
+                                                    mkU32(0x00800000)),
+                                              getDSPControl()));
+
+                     assign(t16, binop(Iop_And32,
+                                       unop(Iop_64HIto32,
+                                            mkexpr(t9)),
+                                       mkU32(0x80000000)));
+                     putIReg(rt, IRExpr_ITE(binop(Iop_CmpNE32,
+                                                  mkexpr(t14),
+                                                  mkU32(0)),
+                                            IRExpr_ITE(binop(Iop_CmpEQ32,
+                                                             mkexpr(t16),
+                                                             mkU32(0)),
+                                                       mkU32(0x7fffffff),
+                                                       mkU32(0x80000000)),
+                                            unop(Iop_64to32, mkexpr(t9))));
                      break;
                   }
                   case 0x7: {  /* EXTRV_RS.W */
@@ -3366,104 +3714,146 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                      t0 = newTemp(Ity_I64);
                      t1 = newTemp(Ity_I64);
                      t2 = newTemp(Ity_I32);
-                     t4 = newTemp(Ity_I32);
-                     t5 = newTemp(Ity_I64);
-                     t6 = newTemp(Ity_I64);
+                     t3 = newTemp(Ity_I1);
+                     t4 = newTemp(Ity_I1);
+                     t5 = newTemp(Ity_I1);
+                     t6 = newTemp(Ity_I1);
                      t7 = newTemp(Ity_I32);
-                     t8 = newTemp(Ity_I32);
-                     t9 = newTemp(Ity_I32);
-                     t10 = newTemp(Ity_I32);
+                     t8 = newTemp(Ity_I64);
+                     t9 = newTemp(Ity_I64);
+                     t10 = newTemp(Ity_I1);
+                     t11 = newTemp(Ity_I1);
+                     t12 = newTemp(Ity_I1);
+                     t13 = newTemp(Ity_I1);
+                     t14 = newTemp(Ity_I32);
+                     t15 = newTemp(Ity_I32);
+                     t16 = newTemp(Ity_I32);
+                     t17 = newTemp(Ity_I1);
 
+                     assign(t15, binop(Iop_And32,
+                                       getIReg(rs),
+                                       mkU32(0x1f)));
+                     assign(t17, binop(Iop_CmpEQ32,
+                                       mkexpr(t15),
+                                       mkU32(0)));
                      assign(t0, getAcc(ac));
+                     assign(t1, IRExpr_ITE(mkexpr(t17),
+                                           mkexpr(t0),
+                                           binop(Iop_Sar64,
+                                                 mkexpr(t0),
+                                                 unop(Iop_32to8,
+                                                      mkexpr(t15)))));
 
-                     assign(t1, binop(Iop_Sar64,
-                                      mkexpr(t0),
-                                      unop(Iop_32to8, binop(Iop_And32,
-                                                            getIReg(rs),
-                                                            mkU32(0x1f)))));
+                     /* Check if bits 63..31 of the result in t1 aren't 0. */
+                     assign(t3, binop(Iop_CmpNE32,
+                                      unop(Iop_64HIto32,
+                                           mkexpr(t1)),
+                                      mkU32(0)));
+                     assign(t4, binop(Iop_CmpNE32,
+                                      binop(Iop_And32,
+                                            unop(Iop_64to32,
+                                                 mkexpr(t1)),
+                                            mkU32(0x80000000)),
+                                      mkU32(0)));
+                     /* Check if bits 63..31 of the result in t1 aren't
+                        0x1ffffffff. */
+                     assign(t5, binop(Iop_CmpNE32,
+                                      unop(Iop_64HIto32,
+                                           mkexpr(t1)),
+                                      mkU32(0xffffffff)));
+                     assign(t6, binop(Iop_CmpNE32,
+                                      binop(Iop_And32,
+                                            unop(Iop_64to32,
+                                                 mkexpr(t1)),
+                                            mkU32(0x80000000)),
+                                      mkU32(0x80000000)));
+                     /* If bits 63..31 aren't 0 nor 0x1ffffffff, set DSP
+                        control register. */
+                     assign(t7, binop(Iop_And32,
+                                      binop(Iop_Or32,
+                                            unop(Iop_1Sto32, mkexpr(t3)),
+                                            unop(Iop_1Sto32, mkexpr(t4))),
+                                      binop(Iop_Or32,
+                                            unop(Iop_1Sto32, mkexpr(t5)),
+                                            unop(Iop_1Sto32, mkexpr(t6)))));
+                     putDSPControl(IRExpr_ITE(binop(Iop_CmpNE32,
+                                                    mkexpr(t7),
+                                                    mkU32(0)),
+                                              binop(Iop_Or32,
+                                                    getDSPControl(),
+                                                    mkU32(0x00800000)),
+                                              getDSPControl()));
 
-                     assign(t2, binop(Iop_Or32,
-                                      getDSPControl(), mkU32(0x00800000)));
-
-                     assign(t10, IRExpr_ITE(binop(Iop_CmpNE32,
-                                                  unop(Iop_64HIto32,
-                                                       mkexpr(t1)),
-                                                  mkU32(0x0)),
-                                            IRExpr_ITE(binop(Iop_CmpNE32,
-                                                             unop(Iop_64HIto32,
-                                                                  mkexpr(t1)),
-                                                             mkU32(0xffffffff)),
-                                                       mkexpr(t2),
-                                                       getDSPControl()),
-                                            getDSPControl()));
-
-                     putDSPControl(mkexpr(t10));
-
-                     assign(t4, binop(Iop_Or32,
-                                      getDSPControl(), mkU32(0x00800000)));
                      /* If the last discarded bit is 1, there would be carry
                         when rounding, otherwise there wouldn't. We use that
-                        fact and just add the value of the last discarded bit to
-                        the least sifgnificant bit of the shifted value from
-                        acc. */
-                     assign(t5, binop(Iop_Shr64,
-                                      binop(Iop_And64,
-                                            mkexpr(t0),
-                                            binop(Iop_Shl64,
-                                                  mkU64(0x1ULL),
-                                                  unop(Iop_32to8,
-                                                       binop(Iop_Sub32,
-                                                             binop(Iop_And32,
-                                                                   getIReg(rs),
-                                                                   mkU32(0x1f)),
-                                                             mkU32(0x1))))),
-                                      unop(Iop_32to8,
-                                           binop(Iop_Sub32,
-                                                 binop(Iop_And32,
-                                                       getIReg(rs),
-                                                       mkU32(0x1f)),
-                                                 mkU32(0x1)))));
+                        fact and just add the value of the last discarded bit
+                        to the least sifgnificant bit of the shifted value
+                        from acc. */
+                     assign(t8,
+                            IRExpr_ITE(mkexpr(t17),
+                                       mkU64(0x0ULL),
+                                       binop(Iop_And64,
+                                             binop(Iop_Shr64,
+                                                   mkexpr(t0),
+                                                   unop(Iop_32to8,
+                                                        binop(Iop_Sub32,
+                                                              mkexpr(t15),
+                                                              mkU32(1)))),
+                                             mkU64(0x1ULL))));
 
-                     assign(t6, binop(Iop_Add64, mkexpr(t1), mkexpr(t5)));
+                     assign(t9, binop(Iop_Add64, mkexpr(t1), mkexpr(t8)));
 
-                     assign(t8, IRExpr_ITE(binop(Iop_CmpNE32,
-                                                 unop(Iop_64HIto32,
-                                                      mkexpr(t6)),
-                                                 mkU32(0xffffffff)),
-                                           mkexpr(t4),
-                                           getDSPControl()));
+                     /* Repeat previous steps for the rounded value. */
+                     assign(t10, binop(Iop_CmpNE32,
+                                      unop(Iop_64HIto32,
+                                           mkexpr(t9)),
+                                      mkU32(0)));
+                     assign(t11, binop(Iop_CmpNE32,
+                                      binop(Iop_And32,
+                                            unop(Iop_64to32,
+                                                 mkexpr(t9)),
+                                            mkU32(0x80000000)),
+                                      mkU32(0)));
+
+                     assign(t12, binop(Iop_CmpNE32,
+                                      unop(Iop_64HIto32,
+                                           mkexpr(t9)),
+                                      mkU32(0xffffffff)));
+                     assign(t13, binop(Iop_CmpNE32,
+                                      binop(Iop_And32,
+                                            unop(Iop_64to32,
+                                                 mkexpr(t9)),
+                                            mkU32(0x80000000)),
+                                      mkU32(0x80000000)));
+
+                     assign(t14, binop(Iop_And32,
+                                      binop(Iop_Or32,
+                                            unop(Iop_1Sto32, mkexpr(t10)),
+                                            unop(Iop_1Sto32, mkexpr(t11))),
+                                      binop(Iop_Or32,
+                                            unop(Iop_1Sto32, mkexpr(t12)),
+                                            unop(Iop_1Sto32, mkexpr(t13)))));
                      putDSPControl(IRExpr_ITE(binop(Iop_CmpNE32,
-                                                    unop(Iop_64HIto32,
-                                                         mkexpr(t6)),
-                                                    mkU32(0x0)),
-                                              mkexpr(t8),
+                                                    mkexpr(t14),
+                                                    mkU32(0)),
+                                              binop(Iop_Or32,
+                                                    getDSPControl(),
+                                                    mkU32(0x00800000)),
                                               getDSPControl()));
-                     assign(t9, IRExpr_ITE(binop(Iop_CmpEQ32,
-                                                 binop(Iop_And32,
-                                                       unop(Iop_64HIto32,
-                                                            mkexpr(t6)),
+
+                     assign(t16, binop(Iop_And32,
+                                       unop(Iop_64HIto32,
+                                            mkexpr(t9)),
+                                       mkU32(0x80000000)));
+                     putIReg(rt, IRExpr_ITE(binop(Iop_CmpNE32,
+                                                  mkexpr(t14),
+                                                  mkU32(0)),
+                                            IRExpr_ITE(binop(Iop_CmpEQ32,
+                                                             mkexpr(t16),
+                                                             mkU32(0)),
+                                                       mkU32(0x7fffffff),
                                                        mkU32(0x80000000)),
-                                                 mkU32(0x0)),
-                                           mkU32(0x7fffffff),
-                                           mkU32(0x80000000)));
-                     assign(t7, IRExpr_ITE(binop(Iop_CmpNE32,
-                                                 unop(Iop_64HIto32, mkexpr(t6)),
-                                                 mkU32(0x0)),
-                                           IRExpr_ITE(binop(Iop_CmpNE32,
-                                                            unop(Iop_64HIto32,
-                                                                 mkexpr(t6)),
-                                                            mkU32(0xffffffff)),
-                                                      mkexpr(t9),
-                                                      unop(Iop_64to32,
-                                                           mkexpr(t6))),
-                                           unop(Iop_64to32, mkexpr(t6))));
-                     putIReg(rt, IRExpr_ITE(binop(Iop_CmpEQ32,
-                                                  binop(Iop_And32,
-                                                        getIReg(rs),
-                                                        mkU32(0x1f)),
-                                                  mkU32(0x0)),
-                                            unop(Iop_64to32, mkexpr(t0)),
-                                            mkexpr(t7)));
+                                            unop(Iop_64to32, mkexpr(t9))));
                      break;
                   }
                   case 0xA: {  /* EXTPDP */
@@ -3678,9 +4068,7 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                      t5 = newTemp(Ity_I32);
                      t6 = newTemp(Ity_I64);
                      t7 = newTemp(Ity_I32);
-                     t8 = newTemp(Ity_I32);
                      t9 = newTemp(Ity_I32);
-                     t10 = newTemp(Ity_I1);
 
                      assign(t0, getAcc(ac));
 
@@ -3689,12 +4077,10 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                      assign(t2, binop(Iop_Or32,
                                       getDSPControl(), mkU32(0x00800000)));
 
-                     assign(t9, binop(Iop_Shl32,
-                                      binop(Iop_And32,
-                                            unop(Iop_64to32,
-                                                 mkexpr(t1)),
-                                            mkU32(0x00008000)),
-                                      mkU8(16)));
+                     assign(t9, binop(Iop_And32,
+                                      unop(Iop_64to32,
+                                           mkexpr(t1)),
+                                      mkU32(0x80000000)));
                      putDSPControl(IRExpr_ITE(binop(Iop_CmpNE32,
                                                     mkexpr(t9),
                                                     binop(Iop_And32,
@@ -3711,120 +4097,79 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                      assign(t3, binop(Iop_Sub64,
                                       mkexpr(t1),
                                       mkU64(0x0000000000007fffULL)));
-                     assign(t4, binop(Iop_Or32,
-                                      unop(Iop_1Uto32,
-                                           binop(Iop_CmpNE32,
-                                                 mkU32(0),
-                                                 binop(Iop_And32,
-                                                       unop(Iop_64HIto32,
-                                                            mkexpr(t3)),
-                                                       mkU32(0x7fffffff)))),
-                                      unop(Iop_1Uto32,
-                                           binop(Iop_CmpNE32,
-                                                 mkU32(0),
-                                                 binop(Iop_And32,
+                     assign(t4, binop(Iop_And32,
+                                       binop(Iop_Or32,
+                                            unop(Iop_1Sto32,
+                                                 binop(Iop_CmpNE32,
+                                                       mkU32(0),
+                                                       binop(Iop_And32,
+                                                             unop(Iop_64HIto32,
+                                                                  mkexpr(t3)),
+                                                             mkU32(0x7fffffff)))),
+                                            unop(Iop_1Sto32,
+                                                 binop(Iop_CmpNE32,
+                                                       mkU32(0),
                                                        unop(Iop_64to32,
-                                                            mkexpr(t3)),
-                                                       mkU32(0xffffffff))))));
-
-                     assign(t5, IRExpr_ITE(unop(Iop_32to1,
-                                                binop(Iop_Shr32,
-                                                      binop(Iop_And32,
-                                                            unop(Iop_64HIto32,
-                                                                 mkexpr(t3)),
-                                                            mkU32(0x80000000)),
-                                                      mkU8(31))),
-                                           unop(Iop_64to32, mkexpr(t1)),
-                                           IRExpr_ITE(binop(Iop_CmpNE32,
-                                                            mkexpr(t4),
-                                                            mkU32(0x0)),
-                                                      mkU32(0x7fff),
-                                                      unop(Iop_64to32,
-                                                           mkexpr(t1)))));
-
-                     assign(t10, unop(Iop_32to1,
-                                      binop(Iop_Shr32,
-                                            binop(Iop_And32,
-                                                  unop(Iop_64HIto32,
-                                                       mkexpr(t3)),
-                                                   mkU32(0x80000000)),
-                                            mkU8(31))));
-                     putDSPControl(IRExpr_ITE(mkexpr(t10),
-                                             getDSPControl(),
-                                             IRExpr_ITE(binop(Iop_CmpNE32,
-                                                              mkexpr(t4),
-                                                              mkU32(0x0)),
-                                                        binop(Iop_Or32,
-                                                             getDSPControl(),
-                                                             mkU32(0x00800000)),
-                                                        getDSPControl())));
-
+                                                            mkexpr(t3))))),
+                                       unop(Iop_1Sto32,
+                                            binop(Iop_CmpEQ32,
+                                                  binop(Iop_And32,
+                                                        unop(Iop_64HIto32,
+                                                                  mkexpr(t3)),
+                                                             mkU32(0x80000000)),
+                                                  mkU32(0)))));
+                     putDSPControl(IRExpr_ITE(binop(Iop_CmpNE32,
+                                                    mkU32(0),
+                                                    mkexpr(t4)),
+                                              binop(Iop_Or32,
+                                                    getDSPControl(),
+                                                    mkU32(0x00800000)),
+                                              getDSPControl()));
                      /* Check if t1<0xffffffffffff8000 (0xffffffffffff8000-t1)>0
-                        1. subtract t1 from 0x7fff
+                        1. subtract t1 from 0xffffffffffff8000
                         2. if the resulting number is positive (sign bit = 0)
                             and any of the other bits is 1, the value is > 0 */
                      assign(t6, binop(Iop_Sub64,
                                        mkU64(0xffffffffffff8000ULL),
                                        mkexpr(t1)));
-
-                     assign(t7, binop(Iop_Or32,
-                                      unop(Iop_1Uto32,
-                                           binop(Iop_CmpNE32,
-                                                 mkU32(0),
-                                                 binop(Iop_And32,
-                                                       unop(Iop_64HIto32,
-                                                            mkexpr(t6)),
-                                                       mkU32(0x7fffffff)))),
-                                      unop(Iop_1Uto32,
-                                           binop(Iop_CmpNE32,
-                                                 mkU32(0),
-                                                 binop(Iop_And32,
-                                                       unop(Iop_64to32,
-                                                            mkexpr(t6)),
-                                                       mkU32(0xffffffff))))));
-
-                     assign(t8, IRExpr_ITE(unop(Iop_32to1,
-                                                binop(Iop_Shr32,
-                                                      binop(Iop_And32,
-                                                            unop(Iop_64HIto32,
-                                                                 mkexpr(t6)),
-                                                            mkU32(0x80000000)),
-                                                      mkU8(31))),
-                                           unop(Iop_64to32, mkexpr(t1)),
-                                           IRExpr_ITE(binop(Iop_CmpNE32,
-                                                            mkexpr(t7),
-                                                            mkU32(0x0)),
-                                                      mkU32(0xffff8000),
-                                                      unop(Iop_64to32,
-                                                           mkexpr(t1)))));
-                     putDSPControl(IRExpr_ITE(unop(Iop_32to1,
-                                                   binop(Iop_Shr32,
-                                                         binop(Iop_And32,
-                                                             unop(Iop_64HIto32,
-                                                                   mkexpr(t6)),
-                                                             mkU32(0x80000000)),
-                                                         mkU8(31))),
-                                              getDSPControl(),
-                                              IRExpr_ITE(binop(Iop_CmpNE32,
-                                                               mkexpr(t7),
-                                                               mkU32(0x0)),
-                                                         binop(Iop_Or32,
-                                                             getDSPControl(),
-                                                             mkU32(0x00800000)),
-                                                         getDSPControl())));
-
-                     /* If the shifted value is positive, it can only be >0x7fff
-                        and the final result is the value stored in t5,
-                        otherwise, the final result is in t8. */
-                     putIReg(rt, IRExpr_ITE(unop(Iop_32to1,
-                                                 binop(Iop_Shr32,
+                     assign(t7, binop(Iop_And32,
+                                      binop(Iop_Or32,
+                                            unop(Iop_1Sto32,
+                                                 binop(Iop_CmpNE32,
+                                                       mkU32(0),
                                                        binop(Iop_And32,
                                                              unop(Iop_64HIto32,
-                                                                  mkexpr(t1)),
+                                                                  mkexpr(t6)),
+                                                             mkU32(0x7fffffff)))),
+                                            unop(Iop_1Sto32,
+                                                 binop(Iop_CmpNE32,
+                                                       mkU32(0),
+                                                       unop(Iop_64to32,
+                                                            mkexpr(t6))))),
+                                      unop(Iop_1Sto32,
+                                            binop(Iop_CmpEQ32,
+                                                  binop(Iop_And32,
+                                                        unop(Iop_64HIto32,
+                                                                  mkexpr(t6)),
                                                              mkU32(0x80000000)),
-                                                       mkU8(31))),
-                                            mkexpr(t8),
-                                            mkexpr(t5)));
+                                                  mkU32(0)))));
+                     putDSPControl(IRExpr_ITE(binop(Iop_CmpNE32,
+                                                    mkU32(0),
+                                                    mkexpr(t7)),
+                                              binop(Iop_Or32,
+                                                    getDSPControl(),
+                                                    mkU32(0x00800000)),
+                                              getDSPControl()));
+                     putIReg(rt, IRExpr_ITE(binop(Iop_CmpNE32,
+                                                    mkU32(0),
+                                                    mkexpr(t4)),
+                                            mkU32(0x00007fff),
+                                            IRExpr_ITE(binop(Iop_CmpNE32,
+                                                             mkU32(0),
+                                                             mkexpr(t7)),
+                                                       mkU32(0xffff8000),
+                                                       unop(Iop_64to32,
+                                                            mkexpr(t1)))));
                      break;
                   }
                   case 0xF: {  /* EXTRV_S.H */
@@ -3838,10 +4183,7 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                      t5 = newTemp(Ity_I32);
                      t6 = newTemp(Ity_I64);
                      t7 = newTemp(Ity_I32);
-                     t8 = newTemp(Ity_I32);
                      t9 = newTemp(Ity_I32);
-                     t10 = newTemp(Ity_I32);
-                     t11 = newTemp(Ity_I32);
 
                      assign(t0, getAcc(ac));
 
@@ -3855,12 +4197,10 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                      assign(t2, binop(Iop_Or32,
                                       getDSPControl(), mkU32(0x00800000)));
 
-                     assign(t9, binop(Iop_Shl32,
-                                      binop(Iop_And32,
-                                            unop(Iop_64to32,
-                                                 mkexpr(t1)),
-                                            mkU32(0x00008000)),
-                                      mkU8(16)));
+                     assign(t9, binop(Iop_And32,
+                                      unop(Iop_64to32,
+                                           mkexpr(t1)),
+                                      mkU32(0x80000000)));
                      putDSPControl(IRExpr_ITE(binop(Iop_CmpNE32,
                                                     mkexpr(t9),
                                                     binop(Iop_And32,
@@ -3873,127 +4213,83 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                      /* Check if t1 > 0x7fff ((t1 - 0x7fff) > 0)
                         1. subtract 0x7fff from t1
                         2. if the resulting number is positive (sign bit = 0)
-                            and any of the other bits is 1, the value is > 0 */
+                           and any of the other bits is 1, the value is > 0. */
                      assign(t3, binop(Iop_Sub64,
                                       mkexpr(t1),
                                       mkU64(0x0000000000007fffULL)));
-                     assign(t4, binop(Iop_Or32,
-                                      unop(Iop_1Uto32,
-                                           binop(Iop_CmpNE32,
-                                                 mkU32(0),
-                                                 binop(Iop_And32,
-                                                       unop(Iop_64HIto32,
-                                                            mkexpr(t3)),
-                                                       mkU32(0x7fffffff)))),
-                                      unop(Iop_1Uto32,
-                                           binop(Iop_CmpNE32,
-                                                 mkU32(0),
-                                                 binop(Iop_And32,
-                                                       unop(Iop_64to32,
-                                                            mkexpr(t3)),
-                                                       mkU32(0xffffffff))))));
-
-                     assign(t5, IRExpr_ITE(unop(Iop_32to1,
-                                                binop(Iop_Shr32,
-                                                      binop(Iop_And32,
-                                                            unop(Iop_64HIto32,
-                                                                 mkexpr(t3)),
-                                                            mkU32(0x80000000)),
-                                                      mkU8(31))),
-                                           unop(Iop_64to32, mkexpr(t1)),
-                                           IRExpr_ITE(binop(Iop_CmpNE32,
-                                                            mkexpr(t4),
-                                                            mkU32(0x0)),
-                                                      mkU32(0x7fff),
-                                                      unop(Iop_64to32,
-                                                           mkexpr(t1)))));
-
-                     assign(t10, binop(Iop_Shr32,
-                                       binop(Iop_And32,
-                                             unop(Iop_64HIto32,
-                                                  mkexpr(t3)),
-                                             mkU32(0x80000000)),
-                                       mkU8(31)));
-                     assign(t11, IRExpr_ITE(binop(Iop_CmpNE32,
-                                                  mkexpr(t4),
-                                                  mkU32(0x0)),
-                                            binop(Iop_Or32,
-                                                  getDSPControl(),
-                                                  mkU32(0x00800000)),
-                                            getDSPControl()));
-                     putDSPControl(IRExpr_ITE(unop(Iop_32to1,
-                                                   mkexpr(t10)),
-                                              getDSPControl(),
-                                              mkexpr(t11)));
-
-                     /* Check if t1<0xffffffffffff8000
-                        1. subtract t1 from 0x7fff
-                        2. if the resulting number is positive (sign bit == 0)
-                            and any of the other bits is 1, the value is > 0 */
-                     assign(t6, binop(Iop_Sub64,
-                                      mkU64(0xffffffffffff8000ULL),
-                                      mkexpr(t1)));
-
-                     assign(t7, binop(Iop_Or32,
-                                      unop(Iop_1Uto32,
-                                           binop(Iop_CmpNE32,
-                                                 mkU32(0),
-                                                 binop(Iop_And32,
-                                                       unop(Iop_64HIto32,
-                                                            mkexpr(t6)),
-                                                       mkU32(0x7fffffff)))),
-                                      unop(Iop_1Uto32,
-                                           binop(Iop_CmpNE32,
-                                                 mkU32(0),
-                                                 binop(Iop_And32,
-                                                       unop(Iop_64to32,
-                                                            mkexpr(t6)),
-                                                       mkU32(0xffffffff))))));
-
-                     assign(t8, IRExpr_ITE(unop(Iop_32to1,
-                                                binop(Iop_Shr32,
-                                                      binop(Iop_And32,
-                                                            unop(Iop_64HIto32,
-                                                                 mkexpr(t6)),
-                                                            mkU32(0x80000000)),
-                                                      mkU8(31))),
-                                           unop(Iop_64to32, mkexpr(t1)),
-                                           IRExpr_ITE(binop(Iop_CmpNE32,
-                                                            mkexpr(t7),
-                                                            mkU32(0x0)),
-                                                      mkU32(0xffff8000),
-                                                      unop(Iop_64to32,
-                                                           mkexpr(t1)))));
-                     putDSPControl(IRExpr_ITE(unop(Iop_32to1,
-                                                  binop(Iop_Shr32,
-                                                        binop(Iop_And32,
-                                                              unop(Iop_64HIto32,
-                                                                   mkexpr(t6)),
-                                                              mkU32(0x80000000)
-                                                             ),
-                                                        mkU8(31))),
-                                              getDSPControl(),
-                                              IRExpr_ITE(binop(Iop_CmpNE32,
-                                                               mkexpr(t7),
-                                                               mkU32(0x0)),
-                                                         binop(Iop_Or32,
-                                                               getDSPControl(),
-                                                               mkU32(0x00800000)
-                                                              ),
-                                                         getDSPControl())));
-
-                     /* If the shifted value is positive, it can only be >0x7fff
-                        and the final result is the value stored in t5,
-                        otherwise, the final result is in t8. */
-                     putIReg(rt, IRExpr_ITE(unop(Iop_32to1,
-                                                 binop(Iop_Shr32,
+                     assign(t4, binop(Iop_And32,
+                                       binop(Iop_Or32,
+                                            unop(Iop_1Sto32,
+                                                 binop(Iop_CmpNE32,
+                                                       mkU32(0),
                                                        binop(Iop_And32,
                                                              unop(Iop_64HIto32,
-                                                                  mkexpr(t1)),
+                                                                  mkexpr(t3)),
+                                                             mkU32(0x7fffffff)))),
+                                            unop(Iop_1Sto32,
+                                                 binop(Iop_CmpNE32,
+                                                       mkU32(0),
+                                                       unop(Iop_64to32,
+                                                            mkexpr(t3))))),
+                                       unop(Iop_1Sto32,
+                                            binop(Iop_CmpEQ32,
+                                                  binop(Iop_And32,
+                                                        unop(Iop_64HIto32,
+                                                                  mkexpr(t3)),
                                                              mkU32(0x80000000)),
-                                                       mkU8(31))),
-                                            mkexpr(t8),
-                                            mkexpr(t5)));
+                                                  mkU32(0)))));
+                     putDSPControl(IRExpr_ITE(binop(Iop_CmpNE32,
+                                                    mkU32(0),
+                                                    mkexpr(t4)),
+                                              binop(Iop_Or32,
+                                                    getDSPControl(),
+                                                    mkU32(0x00800000)),
+                                              getDSPControl()));
+                     /* Check if t1<0xffffffffffff8000 (0xffffffffffff8000-t1)>0
+                        1. subtract t1 from 0xffffffffffff8000
+                        2. if the resulting number is positive (sign bit = 0)
+                            and any of the other bits is 1, the value is > 0 */
+                     assign(t6, binop(Iop_Sub64,
+                                       mkU64(0xffffffffffff8000ULL),
+                                       mkexpr(t1)));
+                     assign(t7, binop(Iop_And32,
+                                      binop(Iop_Or32,
+                                            unop(Iop_1Sto32,
+                                                 binop(Iop_CmpNE32,
+                                                       mkU32(0),
+                                                       binop(Iop_And32,
+                                                             unop(Iop_64HIto32,
+                                                                  mkexpr(t6)),
+                                                             mkU32(0x7fffffff)))),
+                                            unop(Iop_1Sto32,
+                                                 binop(Iop_CmpNE32,
+                                                       mkU32(0),
+                                                       unop(Iop_64to32,
+                                                            mkexpr(t6))))),
+                                      unop(Iop_1Sto32,
+                                            binop(Iop_CmpEQ32,
+                                                  binop(Iop_And32,
+                                                        unop(Iop_64HIto32,
+                                                                  mkexpr(t6)),
+                                                             mkU32(0x80000000)),
+                                                  mkU32(0)))));
+                     putDSPControl(IRExpr_ITE(binop(Iop_CmpNE32,
+                                                    mkU32(0),
+                                                    mkexpr(t7)),
+                                              binop(Iop_Or32,
+                                                    getDSPControl(),
+                                                    mkU32(0x00800000)),
+                                              getDSPControl()));
+                     putIReg(rt, IRExpr_ITE(binop(Iop_CmpNE32,
+                                                    mkU32(0),
+                                                    mkexpr(t4)),
+                                            mkU32(0x00007fff),
+                                            IRExpr_ITE(binop(Iop_CmpNE32,
+                                                             mkU32(0),
+                                                             mkexpr(t7)),
+                                                       mkU32(0xffff8000),
+                                                       unop(Iop_64to32,
+                                                            mkexpr(t1)))));
                      break;
                   }
                   case 0x12: {  /* RDDSP*/
@@ -4192,38 +4488,38 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                      DIP("shilov ac%d, r%d", ac, rs);
                      vassert(!mode64);
                      t0 = newTemp(Ity_I64);
-                     t1 = newTemp(Ity_I64);
-                     t2 = newTemp(Ity_I32);
-                     t3 = newTemp(Ity_I1);
+                     t1 = newTemp(Ity_I32);
+                     t2 = newTemp(Ity_I1);
+                     t3 = newTemp(Ity_I64);
                      t4 = newTemp(Ity_I64);
-                     t5 = newTemp(Ity_I64);
 
                      assign(t0, getAcc(ac));
-                     assign(t2, binop(Iop_And32, getIReg(rs), mkU32(0x3f)));
-                     assign(t3, binop(Iop_CmpEQ32, mkexpr(t2), mkU32(0x20)));
-
-                     assign(t4, binop(Iop_Shl64,
+                     assign(t1, binop(Iop_And32, getIReg(rs), mkU32(0x3f)));
+                     assign(t2, binop(Iop_CmpEQ32, mkexpr(t1), mkU32(0x20)));
+                     assign(t3, binop(Iop_Shl64,
                                       mkexpr(t0),
                                       unop(Iop_32to8,
                                            binop(Iop_Add32,
                                                  unop(Iop_Not32,
-                                                      mkexpr(t2)),
+                                                      mkexpr(t1)),
                                                  mkU32(0x1)))));
-                     assign(t5, binop(Iop_Shr64,
+                     assign(t4, binop(Iop_Shr64,
                                       mkexpr(t0),
                                       unop(Iop_32to8,
-                                           mkexpr(t2))));
-                     putAcc(ac, IRExpr_ITE(mkexpr(t3),
-                                           binop(Iop_32HLto64,
-                                                 unop(Iop_64to32, mkexpr(t0)),
-                                                 mkU32(0x0)),
-                                           IRExpr_ITE(binop(Iop_CmpEQ32,
-                                                            binop(Iop_And32,
-                                                                  mkexpr(t2),
-                                                                  mkU32(0x20)),
-                                                            mkU32(0x20)),
-                                                      mkexpr(t4),
-                                                      mkexpr(t5))));
+                                           mkexpr(t1))));
+
+                     putAcc(ac,
+                            IRExpr_ITE(mkexpr(t2),
+                                       binop(Iop_32HLto64,
+                                             unop(Iop_64to32, mkexpr(t0)),
+                                             mkU32(0x0)),
+                                       IRExpr_ITE(binop(Iop_CmpEQ32,
+                                                        binop(Iop_And32,
+                                                              mkexpr(t1),
+                                                              mkU32(0x20)),
+                                                        mkU32(0x20)),
+                                                  mkexpr(t3),
+                                                  mkexpr(t4))));
                      break;
                   }
                   case 0x1F: {  /* MTHLIP */
@@ -7201,160 +7497,113 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                      t0 = newTemp(Ity_I32);
                      t1 = newTemp(Ity_I1);
                      t2 = newTemp(Ity_I1);
-                     t3 = newTemp(Ity_I1);
-                     t4 = newTemp(Ity_I32);
-                     t5 = newTemp(Ity_I32);
-                     t6 = newTemp(Ity_I1);
+                     t3 = newTemp(Ity_I32);
+                     t4 = newTemp(Ity_I1);
+                     t5 = newTemp(Ity_I1);
+                     t6 = newTemp(Ity_I32);
                      t7 = newTemp(Ity_I1);
                      t8 = newTemp(Ity_I1);
-                     t9 = newTemp(Ity_I32);
-                     t10 = newTemp(Ity_I32);
-                     t11 = newTemp(Ity_I1);
-                     t12 = newTemp(Ity_I1);
-                     t13 = newTemp(Ity_I1);
-                     t14 = newTemp(Ity_I32);
-                     t15 = newTemp(Ity_I32);
-                     t16 = newTemp(Ity_I1);
-                     t17 = newTemp(Ity_I1);
-                     t18 = newTemp(Ity_I32);
+                     t9 = newTemp(Ity_I1);
+                     t10 = newTemp(Ity_I1);
 
                      if (0 == rs) {
                         putIReg(rd, getIReg(rt));
                      } else {
-                        /* Shift bits 7..0. */
+                        /* Shift bits 7..0 and 23..16. */
                         assign(t0, binop(Iop_Shl32,
-                                         unop(Iop_8Uto32,
-                                              unop(Iop_32to8, getIReg(rt))),
-                                         unop(Iop_32to8,
-                                              binop(Iop_And32,
-                                                    mkU32(rs),
-                                                    mkU32(0x7)))));
-                        /* Check if discard isn't 0x0 and 0xffffffff. */
+                                         binop(Iop_And32,
+                                               getIReg(rt),
+                                               mkU32(0x00ff00ff)),
+                                         mkU8(rs)));
                         assign(t1, binop(Iop_CmpNE32,
-                                         unop(Iop_8Uto32,
-                                              unop(Iop_16HIto8,
-                                                   unop(Iop_32to16,
-                                                        mkexpr(t0)))),
-                                         mkU32(0x00000000)));
+                                        binop(Iop_And32,
+                                              mkexpr(t0),
+                                              mkU32(0xff000000)),
+                                        mkU32(0x00000000)));
                         assign(t2, binop(Iop_CmpNE32,
-                                         unop(Iop_8Uto32,
-                                              unop(Iop_16HIto8,
-                                                   unop(Iop_32to16,
-                                                        mkexpr(t0)))),
-                                         mkU32(0x000000ff)));
-                        assign(t4, binop(Iop_Or32,
-                                         getDSPControl(), mkU32(0x400000)));
-                        putDSPControl(IRExpr_ITE(mkexpr(t1),
-                                                 IRExpr_ITE(mkexpr(t2),
-                                                            mkexpr(t4),
-                                                            getDSPControl()),
-                                                 getDSPControl()));
-
-                        /* Shift bits 15..8. */
-                        assign(t5, binop(Iop_Shl32,
-                                         unop(Iop_8Uto32,
-                                              unop(Iop_16HIto8,
-                                                   unop(Iop_32to16,
-                                                        getIReg(rt)))),
-                                         unop(Iop_32to8,
-                                              binop(Iop_And32,
-                                                    mkU32(rs),
-                                                    mkU32(0x7)))));
-                        /* Check if discard isn't 0x0 and 0xffffffff. */
-                        assign(t6, binop(Iop_CmpNE32,
-                                         unop(Iop_8Uto32,
-                                              unop(Iop_16HIto8,
-                                                   unop(Iop_32to16,
-                                                        mkexpr(t5)))),
-                                         mkU32(0x00000000)));
+                                        binop(Iop_And32,
+                                              mkexpr(t0),
+                                              mkU32(0xff000000)),
+                                        mkU32(0xff000000)));
                         assign(t7, binop(Iop_CmpNE32,
-                                         unop(Iop_8Uto32,
-                                              unop(Iop_16HIto8,
-                                                   unop(Iop_32to16,
-                                                        mkexpr(t5)))),
-                                         mkU32(0x000000ff)));
-                        assign(t9, binop(Iop_Or32,
-                                         getDSPControl(),
-                                         mkU32(0x400000)));
-                        putDSPControl(IRExpr_ITE(mkexpr(t6),
-                                                 IRExpr_ITE(mkexpr(t7),
-                                                            mkexpr(t9),
-                                                            getDSPControl()),
-                                                 getDSPControl()));
-
-                        /* Shift bits 23..16. */
-                        assign(t10, binop(Iop_Shl32,
-                                          unop(Iop_8Uto32,
-                                               unop(Iop_16to8,
-                                                    unop(Iop_32HIto16,
-                                                         getIReg(rt)))),
-                                          unop(Iop_32to8,
+                                        binop(Iop_And32,
+                                              mkexpr(t0),
+                                              mkU32(0x0000ff00)),
+                                        mkU32(0x00000000)));
+                        assign(t8, binop(Iop_CmpNE32,
+                                        binop(Iop_And32,
+                                              mkexpr(t0),
+                                              mkU32(0x0000ff00)),
+                                        mkU32(0x000ff00)));
+                        /* Shift bits 15..8 and 31..24. */
+                        assign(t3, binop(Iop_Shl32,
+                                         binop(Iop_Shr32,
                                                binop(Iop_And32,
-                                                     mkU32(rs),
-                                                     mkU32(0x7)))));
-                        /* Check if discard isn't 0x0 and 0xffffffff. */
-                        assign(t11, binop(Iop_CmpNE32,
-                                          unop(Iop_8Uto32,
-                                               unop(Iop_16HIto8,
-                                                    unop(Iop_32to16,
-                                                         mkexpr(t10)))),
-                                          mkU32(0x00000000)));
-                        assign(t12, binop(Iop_CmpNE32,
-                                          unop(Iop_8Uto32,
-                                               unop(Iop_16HIto8,
-                                                    unop(Iop_32to16,
-                                                         mkexpr(t10)))),
-                                          mkU32(0x000000ff)));
+                                                     getIReg(rt),
+                                                     mkU32(0xff00ff00)),
+                                               mkU8(8)),
+                                         mkU8(rs)));
+                        assign(t4, binop(Iop_CmpNE32,
+                                        binop(Iop_And32,
+                                              mkexpr(t3),
+                                              mkU32(0xff000000)),
+                                        mkU32(0x00000000)));
+                        assign(t5, binop(Iop_CmpNE32,
+                                        binop(Iop_And32,
+                                              mkexpr(t3),
+                                              mkU32(0xff000000)),
+                                        mkU32(0xff000000)));
+                        assign(t9, binop(Iop_CmpNE32,
+                                        binop(Iop_And32,
+                                              mkexpr(t3),
+                                              mkU32(0x0000ff00)),
+                                        mkU32(0x00000000)));
+                        assign(t10, binop(Iop_CmpNE32,
+                                        binop(Iop_And32,
+                                              mkexpr(t3),
+                                              mkU32(0x0000ff00)),
+                                        mkU32(0x0000ff00)));
 
-                        assign(t14, binop(Iop_Or32,
-                                          getDSPControl(),
-                                          mkU32(0x400000)));
-                        putDSPControl(IRExpr_ITE(mkexpr(t11),
-                                                 IRExpr_ITE(mkexpr(t12),
-                                                            mkexpr(t14),
-                                                            getDSPControl()),
-                                                 getDSPControl()));
-
-                        /* Shift bits 31..24. */
-                        assign(t15, binop(Iop_Shl32,
-                                          unop(Iop_8Uto32,
-                                               unop(Iop_16HIto8,
-                                                    unop(Iop_32HIto16,
-                                                         getIReg(rt)))),
-                                          unop(Iop_32to8,
+                        assign(t6, binop(Iop_Or32,
+                                         binop(Iop_Or32,
                                                binop(Iop_And32,
-                                                     mkU32(rs),
-                                                     mkU32(0x7)))));
-                        /* Check if discard isn't 0x0 and 0xffffffff. */
-                        assign(t16, binop(Iop_CmpNE32,
-                                          unop(Iop_8Uto32,
-                                               unop(Iop_16HIto8,
-                                                    unop(Iop_32to16,
-                                                         mkexpr(t15)))),
-                                          mkU32(0x00000000)));
-                        assign(t17, binop(Iop_CmpNE32,
-                                          unop(Iop_8Uto32,
-                                               unop(Iop_16HIto8,
-                                                    unop(Iop_32to16,
-                                                         mkexpr(t15)))),
-                                          mkU32(0x000000ff)));
+                                                     unop(Iop_1Uto32,
+                                                          mkexpr(t1)),
+                                                     unop(Iop_1Uto32,
+                                                          mkexpr(t2))),
+                                               binop(Iop_And32,
+                                                     unop(Iop_1Uto32,
+                                                          mkexpr(t7)),
+                                                     unop(Iop_1Uto32,
+                                                          mkexpr(t8)))),
+                                         binop(Iop_Or32,
+                                               binop(Iop_And32,
+                                                     unop(Iop_1Uto32,
+                                                          mkexpr(t4)),
+                                                     unop(Iop_1Uto32,
+                                                          mkexpr(t5))),
+                                               binop(Iop_And32,
+                                                     unop(Iop_1Uto32,
+                                                          mkexpr(t9)),
+                                                     unop(Iop_1Uto32,
+                                                          mkexpr(t10))))));
 
-                        assign(t18, binop(Iop_Or32,
-                                          getDSPControl(),
-                                          mkU32(0x400000)));
-                        putDSPControl(IRExpr_ITE(mkexpr(t16),
-                                                 IRExpr_ITE(mkexpr(t17),
-                                                            mkexpr(t18),
-                                                            getDSPControl()),
+                        putDSPControl(IRExpr_ITE(binop(Iop_CmpNE32,
+                                                       mkexpr(t6),
+                                                       mkU32(0x0)),
+                                                 binop(Iop_Or32,
+                                                       getDSPControl(),
+                                                       mkU32(0x400000)),
                                                  getDSPControl()));
-
-                        putIReg(rd, binop(Iop_16HLto32,
-                                          binop(Iop_8HLto16,
-                                                unop(Iop_32to8, mkexpr(t15)),
-                                                unop(Iop_32to8, mkexpr(t10))),
-                                          binop(Iop_8HLto16,
-                                                unop(Iop_32to8, mkexpr(t5)),
-                                                unop(Iop_32to8, mkexpr(t0)))));
+                        putIReg(rd, binop(Iop_Or32,
+                                          binop(Iop_Shl32,
+                                                binop(Iop_And32,
+                                                      mkexpr(t3),
+                                                      mkU32(0x00ff00ff)),
+                                                mkU8(8)),
+                                          binop(Iop_And32,
+                                                mkexpr(t0),
+                                                mkU32(0x00ff00ff))));
                      }
                      break;
                   }
@@ -7422,165 +7671,119 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                      t0 = newTemp(Ity_I32);
                      t1 = newTemp(Ity_I1);
                      t2 = newTemp(Ity_I1);
-                     t3 = newTemp(Ity_I1);
-                     t4 = newTemp(Ity_I32);
-                     t5 = newTemp(Ity_I32);
-                     t6 = newTemp(Ity_I1);
+                     t3 = newTemp(Ity_I32);
+                     t4 = newTemp(Ity_I1);
+                     t5 = newTemp(Ity_I1);
+                     t6 = newTemp(Ity_I32);
                      t7 = newTemp(Ity_I1);
                      t8 = newTemp(Ity_I1);
-                     t9 = newTemp(Ity_I32);
-                     t10 = newTemp(Ity_I32);
-                     t11 = newTemp(Ity_I1);
-                     t12 = newTemp(Ity_I1);
-                     t13 = newTemp(Ity_I1);
-                     t14 = newTemp(Ity_I32);
-                     t15 = newTemp(Ity_I32);
-                     t16 = newTemp(Ity_I1);
-                     t17 = newTemp(Ity_I1);
-                     t18 = newTemp(Ity_I32);
+                     t9 = newTemp(Ity_I1);
+                     t10 = newTemp(Ity_I1);
+                     t11 = newTemp(Ity_I8);
 
-                     /* Shift bits 7..0. */
+                     assign(t11, unop(Iop_32to8,
+                                      binop(Iop_And32,
+                                            getIReg(rs),
+                                            mkU32(0x7))));
+                     /* Shift bits 7..0 and 23..16. */
                      assign(t0, binop(Iop_Shl32,
-                                      unop(Iop_8Uto32,
-                                           unop(Iop_32to8, getIReg(rt))),
-                                      unop(Iop_32to8,
-                                           binop(Iop_And32,
-                                                 getIReg(rs),
-                                                 mkU32(0x7)))));
-                     /* Check if discard isn't 0x0 and 0xffffffff. */
-                     assign(t1, binop(Iop_CmpNE32,
-                                      unop(Iop_8Uto32,
-                                           unop(Iop_16HIto8,
-                                                unop(Iop_32to16, mkexpr(t0)))),
-                                      mkU32(0x00000000)));
-                     assign(t2, binop(Iop_CmpNE32,
-                                      unop(Iop_8Uto32,
-                                           unop(Iop_16HIto8,
-                                                unop(Iop_32to16, mkexpr(t0)))),
-                                      mkU32(0x000000ff)));
-
-                     assign(t4, binop(Iop_Or32,
-                                      getDSPControl(),
-                                      mkU32(0x400000)));
-                     putDSPControl(IRExpr_ITE(mkexpr(t1),
-                                              IRExpr_ITE(mkexpr(t2),
-                                                         mkexpr(t4),
-                                                         getDSPControl()),
-                                              getDSPControl()));
-
-                     /* Shift bits 15..8. */
-                     assign(t5, binop(Iop_Shl32,
-                                      unop(Iop_8Uto32,
-                                           unop(Iop_16HIto8,
-                                                unop(Iop_32to16, getIReg(rt)))),
-                                      unop(Iop_32to8,
-                                           binop(Iop_And32,
-                                                 getIReg(rs),
-                                                 mkU32(0x7)))));
-                     /* Check if discard isn't 0x0 and 0xffffffff. */
-                     assign(t6, binop(Iop_CmpNE32,
-                                      unop(Iop_8Uto32,
-                                           unop(Iop_16HIto8,
-                                                unop(Iop_32to16, mkexpr(t5)))),
-                                       mkU32(0x00000000)));
-                     assign(t7, binop(Iop_CmpNE32,
-                                      unop(Iop_8Uto32,
-                                           unop(Iop_16HIto8,
-                                                unop(Iop_32to16, mkexpr(t5)))),
-                                      mkU32(0x000000ff)));
-
-                     assign(t9, binop(Iop_Or32,
-                                      getDSPControl(),
-                                      mkU32(0x400000)));
-                     putDSPControl(IRExpr_ITE(mkexpr(t6),
-                                              IRExpr_ITE(mkexpr(t7),
-                                                         mkexpr(t9),
-                                                         getDSPControl()),
-                                              getDSPControl()));
-
-                     /* Shift bits 23..16. */
-                     assign(t10, binop(Iop_Shl32,
-                                       unop(Iop_8Uto32,
-                                            unop(Iop_16to8,
-                                                 unop(Iop_32HIto16,
-                                                      getIReg(rt)))),
-                                       unop(Iop_32to8,
-                                            binop(Iop_And32,
-                                                  getIReg(rs),
-                                                  mkU32(0x7)))));
-                     /* Check if discard isn't 0x0 and 0xffffffff. */
-                     assign(t11, binop(Iop_CmpNE32,
-                                       unop(Iop_8Uto32,
-                                            unop(Iop_16HIto8,
-                                                 unop(Iop_32to16,
-                                                      mkexpr(t10)))),
-                                       mkU32(0x00000000)));
-                     assign(t12, binop(Iop_CmpNE32,
-                                       unop(Iop_8Uto32,
-                                            unop(Iop_16HIto8,
-                                                 unop(Iop_32to16,
-                                                      mkexpr(t10)))),
-                                       mkU32(0x000000ff)));
-
-                     assign(t14, binop(Iop_Or32,
-                                       getDSPControl(),
-                                       mkU32(0x400000)));
-                     putDSPControl(IRExpr_ITE(mkexpr(t11),
-                                              IRExpr_ITE(mkexpr(t12),
-                                                         mkexpr(t14),
-                                                         getDSPControl()),
-                                              getDSPControl()));
-
-                     /* Shift bits 31..24. */
-                     assign(t15, binop(Iop_Shl32,
-                                       unop(Iop_8Uto32,
-                                            unop(Iop_16HIto8,
-                                                 unop(Iop_32HIto16,
-                                                      getIReg(rt)))),
-                                       unop(Iop_32to8,
-                                            binop(Iop_And32,
-                                                  getIReg(rs),
-                                                  mkU32(0x7)))));
-                     /* Check if discard isn't 0x0 and 0xffffffff. */
-                     assign(t16, binop(Iop_CmpNE32,
-                                       unop(Iop_8Uto32,
-                                            unop(Iop_16HIto8,
-                                                 unop(Iop_32to16,
-                                                      mkexpr(t15)))),
-                                       mkU32(0x00000000)));
-                     assign(t17, binop(Iop_CmpNE32,
-                                       unop(Iop_8Uto32,
-                                            unop(Iop_16HIto8,
-                                                 unop(Iop_32to16,
-                                                      mkexpr(t15)))),
-                                       mkU32(0x000000ff)));
-
-                     assign(t18, binop(Iop_Or32,
-                                       getDSPControl(),
-                                       mkU32(0x400000)));
-                     putDSPControl(IRExpr_ITE(mkexpr(t16),
-                                              IRExpr_ITE(mkexpr(t17),
-                                                         mkexpr(t18),
-                                                         getDSPControl()),
-                                              getDSPControl()));
-
-                     putIReg(rd, IRExpr_ITE(binop(Iop_CmpEQ32,
-                                                  binop(Iop_And32,
-                                                        getIReg(rs),
-                                                        mkU32(0x7)),
-                                                  mkU32(0x0)),
+                                      binop(Iop_And32,
                                             getIReg(rt),
-                                            binop(Iop_16HLto32,
-                                                  binop(Iop_8HLto16,
-                                                        unop(Iop_32to8,
-                                                             mkexpr(t15)),
-                                                        unop(Iop_32to8,
-                                                             mkexpr(t10))),
-                                                  binop(Iop_8HLto16,
-                                                        unop(Iop_32to8,
-                                                             mkexpr(t5)),
-                                                        unop(Iop_32to8,
-                                                             mkexpr(t0))))));
+                                            mkU32(0x00ff00ff)),
+                                      mkexpr(t11)));
+                     assign(t1, binop(Iop_CmpNE32,
+                                     binop(Iop_And32,
+                                           mkexpr(t0),
+                                           mkU32(0xff000000)),
+                                     mkU32(0x00000000)));
+                     assign(t2, binop(Iop_CmpNE32,
+                                     binop(Iop_And32,
+                                           mkexpr(t0),
+                                           mkU32(0xff000000)),
+                                     mkU32(0xff000000)));
+                     assign(t7, binop(Iop_CmpNE32,
+                                     binop(Iop_And32,
+                                           mkexpr(t0),
+                                           mkU32(0x0000ff00)),
+                                     mkU32(0x00000000)));
+                     assign(t8, binop(Iop_CmpNE32,
+                                     binop(Iop_And32,
+                                           mkexpr(t0),
+                                           mkU32(0x0000ff00)),
+                                     mkU32(0x000ff00)));
+                     /* Shift bits 15..8 and 31..24. */
+                     assign(t3, binop(Iop_Shl32,
+                                      binop(Iop_Shr32,
+                                            binop(Iop_And32,
+                                                  getIReg(rt),
+                                                  mkU32(0xff00ff00)),
+                                            mkU8(8)),
+                                      mkexpr(t11)));
+                     assign(t4, binop(Iop_CmpNE32,
+                                     binop(Iop_And32,
+                                           mkexpr(t3),
+                                           mkU32(0xff000000)),
+                                     mkU32(0x00000000)));
+                     assign(t5, binop(Iop_CmpNE32,
+                                     binop(Iop_And32,
+                                           mkexpr(t3),
+                                           mkU32(0xff000000)),
+                                     mkU32(0xff000000)));
+                     assign(t9, binop(Iop_CmpNE32,
+                                     binop(Iop_And32,
+                                           mkexpr(t3),
+                                           mkU32(0x0000ff00)),
+                                     mkU32(0x00000000)));
+                     assign(t10, binop(Iop_CmpNE32,
+                                     binop(Iop_And32,
+                                           mkexpr(t3),
+                                           mkU32(0x0000ff00)),
+                                     mkU32(0x0000ff00)));
+
+                     assign(t6, binop(Iop_Or32,
+                                      binop(Iop_Or32,
+                                            binop(Iop_And32,
+                                                  unop(Iop_1Uto32,
+                                                       mkexpr(t1)),
+                                                  unop(Iop_1Uto32,
+                                                       mkexpr(t2))),
+                                            binop(Iop_And32,
+                                                  unop(Iop_1Uto32,
+                                                       mkexpr(t7)),
+                                                  unop(Iop_1Uto32,
+                                                       mkexpr(t8)))),
+                                      binop(Iop_Or32,
+                                            binop(Iop_And32,
+                                                  unop(Iop_1Uto32,
+                                                       mkexpr(t4)),
+                                                  unop(Iop_1Uto32,
+                                                       mkexpr(t5))),
+                                            binop(Iop_And32,
+                                                  unop(Iop_1Uto32,
+                                                       mkexpr(t9)),
+                                                  unop(Iop_1Uto32,
+                                                       mkexpr(t10))))));
+
+                     putDSPControl(IRExpr_ITE(binop(Iop_CmpNE32,
+                                                    mkexpr(t6),
+                                                    mkU32(0x0)),
+                                              binop(Iop_Or32,
+                                                    getDSPControl(),
+                                                    mkU32(0x400000)),
+                                              getDSPControl()));
+                     putIReg(rd, IRExpr_ITE(binop(Iop_CmpEQ32,
+                                                  unop(Iop_8Uto32, mkexpr(t11)),
+                                                  mkU32(0)),
+                                            getIReg(rt),
+                                            binop(Iop_Or32,
+                                                  binop(Iop_Shl32,
+                                                        binop(Iop_And32,
+                                                              mkexpr(t3),
+                                                              mkU32(0xff00ff)),
+                                                        mkU8(8)),
+                                                  binop(Iop_And32,
+                                                        mkexpr(t0),
+                                                        mkU32(0x00ff00ff)))));
                      break;
                   }
                   case 0x1: {  /* SHRLV.QB */
@@ -8075,7 +8278,10 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                      t1 = newTemp(Ity_I32);
                      t2 = newTemp(Ity_I32);
                      t3 = newTemp(Ity_I32);
-                     t4 = newTemp(Ity_I1);
+                     t4 = newTemp(Ity_I32);
+                     t5 = newTemp(Ity_I32);
+                     t6 = newTemp(Ity_I32);
+                     t7 = newTemp(Ity_I32);
 
                      if (0 == rs) {
                         putIReg(rd, getIReg(rt));
@@ -8086,21 +8292,27 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                                               unop(Iop_32to16, getIReg(rt))),
                                          mkU8(rs)));
 
-                        assign(t2, IRExpr_ITE(binop(Iop_CmpNE32,
-                                                    unop(Iop_16Sto32,
-                                                         unop(Iop_32HIto16,
-                                                              mkexpr(t0))),
-                                                    mkU32(0xffffffff)),
-                                              binop(Iop_Or32,
-                                                    getDSPControl(),
-                                                    mkU32(0x400000)),
-                                              getDSPControl()));
-                        putDSPControl(IRExpr_ITE(binop(Iop_CmpNE32,
-                                                       unop(Iop_16Sto32,
-                                                            unop(Iop_32HIto16,
-                                                                 mkexpr(t0))),
-                                                       mkU32(0x00000000)),
-                                                 mkexpr(t2),
+                        assign(t1, unop(Iop_1Uto32,
+                                        binop(Iop_CmpNE32,
+                                               binop(Iop_Sar32,
+                                                     mkexpr(t0),
+                                                     mkU8(16)),
+                                               mkU32(0))));
+                        assign(t2, unop(Iop_1Uto32,
+                                        binop(Iop_CmpNE32,
+                                              binop(Iop_Sar32,
+                                                    mkexpr(t0),
+                                                    mkU8(16)),
+                                              mkU32(0xffffffff))));
+                        assign(t3, binop(Iop_And32,
+                                         mkexpr(t1),
+                                         mkexpr(t2)));
+                        putDSPControl(IRExpr_ITE(binop(Iop_CmpEQ32,
+                                                       mkexpr(t3),
+                                                       mkU32(0x1)),
+                                                 binop(Iop_Or32,
+                                                       getDSPControl(),
+                                                       mkU32(0x400000)),
                                                  getDSPControl()));
                         putDSPControl(IRExpr_ITE(binop(Iop_CmpEQ32,
                                                        binop(Iop_And32,
@@ -8115,46 +8327,56 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                                                        getDSPControl(),
                                                        mkU32(0x400000))));
                         /* Shift higher 16 bits. */
-                        assign(t1, binop(Iop_Shl32,
+                        assign(t4, binop(Iop_Shl32,
                                          unop(Iop_16Sto32,
                                               unop(Iop_32HIto16, getIReg(rt))),
                                          mkU8(rs)));
 
-                        assign(t3, IRExpr_ITE(binop(Iop_CmpNE32,
-                                                    unop(Iop_16Sto32,
-                                                         unop(Iop_32HIto16,
-                                                              mkexpr(t1))),
-                                                    mkU32(0xffffffff)),
-                                              binop(Iop_Or32,
-                                                    getDSPControl(),
-                                                    mkU32(0x400000)),
-                                              getDSPControl()));
-                        putDSPControl(IRExpr_ITE(binop(Iop_CmpNE32,
-                                                     unop(Iop_16Sto32,
-                                                          unop(Iop_32HIto16,
-                                                               mkexpr(t1))),
-                                                     mkU32(0x00000000)),
-                                                mkexpr(t3),
-                                                getDSPControl()));
-                        assign(t4, binop(Iop_CmpEQ32,
-                                         binop(Iop_Shr32,
-                                               binop(Iop_And32,
-                                                     getIReg(rt),
-                                                     mkU32(0x80000000)),
-                                               mkU8(31)),
-                                         binop(Iop_Shr32,
-                                               binop(Iop_And32,
-                                                     mkexpr(t1),
-                                                     mkU32(0x00008000)),
-                                               mkU8(15))));
-                        putDSPControl(IRExpr_ITE(mkexpr(t4),
+                        assign(t5, unop(Iop_1Uto32,
+                                        binop(Iop_CmpNE32,
+                                               binop(Iop_Sar32,
+                                                     mkexpr(t4),
+                                                     mkU8(16)),
+                                               mkU32(0))));
+                        assign(t6, unop(Iop_1Uto32,
+                                        binop(Iop_CmpNE32,
+                                              binop(Iop_Sar32,
+                                                    mkexpr(t4),
+                                                    mkU8(16)),
+                                              mkU32(0xffffffff))));
+                        assign(t7, binop(Iop_And32,
+                                         mkexpr(t5),
+                                         mkexpr(t6)));
+                        putDSPControl(IRExpr_ITE(binop(Iop_CmpEQ32,
+                                                       mkexpr(t7),
+                                                       mkU32(0x1)),
+                                                 binop(Iop_Or32,
+                                                       getDSPControl(),
+                                                       mkU32(0x400000)),
+                                                 getDSPControl()));
+                        putDSPControl(IRExpr_ITE(binop(Iop_CmpEQ32,
+                                                       mkexpr(t7),
+                                                       mkU32(0x1)),
+                                                 binop(Iop_Or32,
+                                                       getDSPControl(),
+                                                       mkU32(0x400000)),
+                                                 getDSPControl()));
+                        putDSPControl(IRExpr_ITE(binop(Iop_CmpEQ32,
+                                                       binop(Iop_And32,
+                                                             getIReg(rt),
+                                                             mkU32(0x80000000)),
+                                                       binop(Iop_Shl32,
+                                                             binop(Iop_And32,
+                                                                   mkexpr(t4),
+                                                                   mkU32(0x00008000)),
+                                                             mkU8(16))
+                                                      ),
                                                  getDSPControl(),
                                                  binop(Iop_Or32,
                                                        getDSPControl(),
                                                        mkU32(0x400000))));
-
                         putIReg(rd, binop(Iop_16HLto32,
-                                          unop(Iop_32to16, mkexpr(t1)),
+                                          unop(Iop_32to16, mkexpr(t4)),
                                           unop(Iop_32to16, mkexpr(t0))));
                      }
                      break;
@@ -8323,18 +8545,20 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                      DIP("shll_s.ph r%d, r%d, %d", rd, rt, rs);
                      vassert(!mode64);
                      t0 = newTemp(Ity_I32);
-                     t1 = newTemp(Ity_I16);
-                     t2 = newTemp(Ity_I16);
-                     t3 = newTemp(Ity_I16);
+                     t1 = newTemp(Ity_I32);
+                     t2 = newTemp(Ity_I32);
+                     t3 = newTemp(Ity_I32);
                      t4 = newTemp(Ity_I32);
-                     t5 = newTemp(Ity_I16);
-                     t6 = newTemp(Ity_I16);
-                     t7 = newTemp(Ity_I16);
+                     t5 = newTemp(Ity_I32);
+                     t6 = newTemp(Ity_I32);
+                     t7 = newTemp(Ity_I32);
                      t8 = newTemp(Ity_I32);
                      t9 = newTemp(Ity_I32);
-                     t10 = newTemp(Ity_I1);
-                     t11 = newTemp(Ity_I16);
-                     t12 = newTemp(Ity_I16);
+                     t10 = newTemp(Ity_I32);
+                     t11 = newTemp(Ity_I32);
+                     t12 = newTemp(Ity_I32);
+                     t13 = newTemp(Ity_I32);
+                     t14 = newTemp(Ity_I32);
 
                      if (0 == rs) {
                         putIReg(rd, getIReg(rt));
@@ -8345,146 +8569,158 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                                               unop(Iop_32to16, getIReg(rt))),
                                          mkU8(rs)));
 
-                        assign(t1, IRExpr_ITE(binop(Iop_CmpEQ32,
-                                                    binop(Iop_And32,
-                                                          getIReg(rt),
-                                                          mkU32(0x00008000)),
-                                                    mkU32(0x0)),
-                                              mkU16(0x7fff),
-                                              mkU16(0x8000)));
-                        assign(t2,
-                               IRExpr_ITE(binop(Iop_CmpEQ32,
-                                                binop(Iop_Shr32,
-                                                      binop(Iop_And32,
-                                                            getIReg(rt),
-                                                            mkU32(0x00008000)),
-                                                      mkU8(15)),
-                                                binop(Iop_Shr32,
-                                                      binop(Iop_And32,
-                                                            mkexpr(t0),
-                                                            mkU32(0x00008000)),
-                                                      mkU8(15))),
-                                          unop(Iop_32to16, mkexpr(t0)),
-                                          mkexpr(t1)));
-                        assign(t11, IRExpr_ITE(binop(Iop_CmpNE32,
-                                                     unop(Iop_16Sto32,
-                                                          unop(Iop_32HIto16,
-                                                               mkexpr(t0))),
-                                                     mkU32(0xffffffff)),
-                                               mkexpr(t1),
-                                               mkexpr(t2)));
-                        assign(t3,
-                               IRExpr_ITE(binop(Iop_CmpNE32,
-                                                unop(Iop_16Sto32,
-                                                     unop(Iop_32HIto16,
-                                                          mkexpr(t0))),
-                                                mkU32(0x00000000)),
-                                          mkexpr(t11),
-                                          mkexpr(t2)));
-                        assign(t8, IRExpr_ITE(binop(Iop_CmpNE32,
-                                                    unop(Iop_16Sto32,
-                                                         unop(Iop_32HIto16,
-                                                              mkexpr(t0))),
-                                                    mkU32(0xffffffff)),
-                                              binop(Iop_Or32,
-                                                    getDSPControl(),
-                                                    mkU32(0x400000)),
-                                              getDSPControl()));
-                        putDSPControl(IRExpr_ITE(binop(Iop_CmpNE32,
-                                                       unop(Iop_16Sto32,
-                                                            unop(Iop_32HIto16,
-                                                                 mkexpr(t0))),
-                                                       mkU32(0x00000000)),
-                                                mkexpr(t8),
-                                                getDSPControl()));
+                        assign(t1, unop(Iop_1Uto32,
+                                        binop(Iop_CmpNE32,
+                                               binop(Iop_Sar32,
+                                                     mkexpr(t0),
+                                                     mkU8(16)),
+                                               mkU32(0))));
+                        assign(t2, unop(Iop_1Uto32,
+                                        binop(Iop_CmpNE32,
+                                              binop(Iop_Sar32,
+                                                    mkexpr(t0),
+                                                    mkU8(16)),
+                                              mkU32(0xffffffff))));
+                        assign(t3, binop(Iop_And32,
+                                         mkexpr(t1),
+                                         mkexpr(t2)));
+                        putDSPControl(IRExpr_ITE(binop(Iop_CmpEQ32,
+                                                       mkexpr(t3),
+                                                       mkU32(0x1)),
+                                                 binop(Iop_Or32,
+                                                       getDSPControl(),
+                                                       mkU32(0x400000)),
+                                                 getDSPControl()));
                         putDSPControl(IRExpr_ITE(binop(Iop_CmpEQ32,
                                                        binop(Iop_And32,
                                                              getIReg(rt),
                                                              mkU32(0x00008000)),
                                                        binop(Iop_And32,
-                                                            mkexpr(t0),
-                                                            mkU32(0x00008000))),
+                                                             mkexpr(t0),
+                                                             mkU32(0x00008000))
+                                                      ),
                                                  getDSPControl(),
                                                  binop(Iop_Or32,
                                                        getDSPControl(),
                                                        mkU32(0x400000))));
+                        assign(t8,
+                               IRExpr_ITE(binop(Iop_CmpEQ32,
+                                                mkexpr(t3),
+                                                mkU32(0x1)),
+                                          IRExpr_ITE(binop(Iop_CmpEQ32,
+                                                           binop(Iop_And32,
+                                                                 getIReg(rt),
+                                                                 mkU32(0x8000)),
+                                                           mkU32(0)),
+                                                     mkU32(0x00007fff),
+                                                     mkU32(0x00008000)),
+                                          binop(Iop_And32,
+                                                mkexpr(t0),
+                                                mkU32(0x0000ffff))));
+                        assign(t10,
+                               IRExpr_ITE(binop(Iop_CmpEQ32,
+                                                binop(Iop_And32,
+                                                      getIReg(rt),
+                                                      mkU32(0x00008000)),
+                                                binop(Iop_And32,
+                                                      mkexpr(t0),
+                                                      mkU32(0x00008000))),
+                                          mkexpr(t8),
+                                          IRExpr_ITE(binop(Iop_CmpEQ32,
+                                                           binop(Iop_And32,
+                                                                 getIReg(rt),
+                                                                 mkU32(0x8000)),
+                                                           mkU32(0)),
+                                                     mkU32(0x00007fff),
+                                                     mkU32(0x00008000))));
                         /* Shift higher 16 bits. */
                         assign(t4, binop(Iop_Shl32,
                                          unop(Iop_16Sto32,
                                               unop(Iop_32HIto16, getIReg(rt))),
                                          mkU8(rs)));
 
-                        assign(t5, IRExpr_ITE(binop(Iop_CmpEQ32,
-                                                    binop(Iop_And32,
-                                                          getIReg(rt),
-                                                          mkU32(0x80000000)),
-                                                    mkU32(0x0)),
-                                              mkU16(0x7fff),
-                                              mkU16(0x8000)));
-                        assign(t6,
-                               IRExpr_ITE(binop(Iop_CmpEQ32,
-                                                binop(Iop_Shr32,
-                                                      binop(Iop_And32,
-                                                            getIReg(rt),
-                                                            mkU32(0x80000000)),
-                                                      mkU8(31)),
-                                                binop(Iop_Shr32,
-                                                      binop(Iop_And32,
-                                                            mkexpr(t4),
-                                                            mkU32(0x00008000)),
-                                                      mkU8(15))),
-                                          unop(Iop_32to16, mkexpr(t4)),
-                                          mkexpr(t5)));
-                        assign(t12, IRExpr_ITE(binop(Iop_CmpNE32,
-                                                     unop(Iop_16Sto32,
-                                                          unop(Iop_32HIto16,
-                                                               mkexpr(t4))),
-                                                     mkU32(0xffffffff)),
-                                               mkexpr(t5),
-                                               mkexpr(t6)));
-                        assign(t7,
-                               IRExpr_ITE(binop(Iop_CmpNE32,
-                                                unop(Iop_16Sto32,
-                                                     unop(Iop_32HIto16,
-                                                          mkexpr(t4))),
-                                                mkU32(0x00000000)),
-                                          mkexpr(t12),
-                                          mkexpr(t6)));
-                        assign(t9, IRExpr_ITE(binop(Iop_CmpNE32,
-                                                    unop(Iop_16Sto32,
-                                                      unop(Iop_32HIto16,
-                                                           mkexpr(t4))),
-                                                    mkU32(0xffffffff)),
-                                              binop(Iop_Or32,
-                                                    getDSPControl(),
-                                                    mkU32(0x400000)),
-                                              getDSPControl()));
-                        putDSPControl(IRExpr_ITE(binop(Iop_CmpNE32,
-                                                       unop(Iop_16Sto32,
-                                                            unop(Iop_32HIto16,
-                                                                 mkexpr(t4))),
-                                                       mkU32(0x00000000)),
-                                                 mkexpr(t9),
+                        assign(t5, unop(Iop_1Uto32,
+                                        binop(Iop_CmpNE32,
+                                               binop(Iop_Sar32,
+                                                     mkexpr(t4),
+                                                     mkU8(16)),
+                                               mkU32(0))));
+                        assign(t6, unop(Iop_1Uto32,
+                                        binop(Iop_CmpNE32,
+                                              binop(Iop_Sar32,
+                                                    mkexpr(t4),
+                                                    mkU8(16)),
+                                              mkU32(0xffffffff))));
+                        assign(t7, binop(Iop_And32,
+                                         mkexpr(t5),
+                                         mkexpr(t6)));
+                        putDSPControl(IRExpr_ITE(binop(Iop_CmpEQ32,
+                                                       mkexpr(t7),
+                                                       mkU32(0x1)),
+                                                 binop(Iop_Or32,
+                                                       getDSPControl(),
+                                                       mkU32(0x400000)),
                                                  getDSPControl()));
-                        assign(t10, binop(Iop_CmpEQ32,
-                                          binop(Iop_Shr32,
-                                                binop(Iop_And32,
-                                                      getIReg(rt),
-                                                      mkU32(0x80000000)),
-                                                mkU8(31)),
-                                          binop(Iop_Shr32,
-                                                binop(Iop_And32,
-                                                      mkexpr(t4),
-                                                      mkU32(0x00008000)),
-                                                mkU8(15))));
-                        putDSPControl(IRExpr_ITE(mkexpr(t10),
+                        putDSPControl(IRExpr_ITE(binop(Iop_CmpEQ32,
+                                                       mkexpr(t7),
+                                                       mkU32(0x1)),
+                                                 binop(Iop_Or32,
+                                                       getDSPControl(),
+                                                       mkU32(0x400000)),
+                                                 getDSPControl()));
+                        assign(t12, binop(Iop_Shl32,
+                                          binop(Iop_And32,
+                                                mkexpr(t4),
+                                                mkU32(0x8000)),
+                                          mkU8(16)));
+                        putDSPControl(IRExpr_ITE(binop(Iop_CmpEQ32,
+                                                       binop(Iop_And32,
+                                                             getIReg(rt),
+                                                             mkU32(0x80000000)),
+                                                       mkexpr(t12)),
                                                  getDSPControl(),
                                                  binop(Iop_Or32,
                                                        getDSPControl(),
                                                        mkU32(0x400000))));
-
-                        putIReg(rd, binop(Iop_16HLto32,
-                                          mkexpr(t7), mkexpr(t3)));
+                        assign(t13, IRExpr_ITE(binop(Iop_CmpEQ32,
+                                                     binop(Iop_And32,
+                                                           getIReg(rt),
+                                                           mkU32(0x80000000)),
+                                                     mkU32(0)),
+                                               mkU32(0x7fff0000),
+                                               mkU32(0x80000000)));
+                        assign(t9,
+                               IRExpr_ITE(binop(Iop_CmpEQ32,
+                                                mkexpr(t7),
+                                                mkU32(0x1)),
+                                          mkexpr(t13),
+                                          binop(Iop_Shl32,
+                                                binop(Iop_And32,
+                                                      mkexpr(t4),
+                                                      mkU32(0x0000ffff)),
+                                                mkU8(16))));
+                        assign(t14, IRExpr_ITE(binop(Iop_CmpEQ32,
+                                                     binop(Iop_And32,
+                                                           getIReg(rt),
+                                                           mkU32(0x80000000)),
+                                                     mkU32(0)),
+                                               mkU32(0x7fff0000),
+                                               mkU32(0x80000000)));
+                        assign(t11,
+                               IRExpr_ITE(binop(Iop_CmpEQ32,
+                                                binop(Iop_And32,
+                                                      getIReg(rt),
+                                                      mkU32(0x80000000)),
+                                                binop(Iop_Shl32,
+                                                      binop(Iop_And32,
+                                                            mkexpr(t4),
+                                                            mkU32(0x00008000)),
+                                                      mkU8(16))),
+                                          mkexpr(t9),
+                                          mkexpr(t14)));
+                        putIReg(rd, binop(Iop_Or32,
+                                          mkexpr(t10),
+                                          mkexpr(t11)));
                      }
                      break;
                   }
@@ -10831,10 +11067,9 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                      t8 = newTemp(Ity_I64);
                      t9 = newTemp(Ity_I64);
                      t10 = newTemp(Ity_I32);
-                     t11 = newTemp(Ity_I32);
 
                      assign(t0, getAcc(ac));
-                     /* Calculate first cross dot product and saturate if
+                     /* Calculate the first cross dot product and saturate if
                         needed. */
                      assign(t1, unop(Iop_32Sto64,
                                      binop(Iop_Shl32,
@@ -10859,23 +11094,28 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                                            unop(Iop_32to16, getIReg(rt))),
                                       mkU32(0x00008000)));
 
-                     assign(t4,
-                            IRExpr_ITE(mkexpr(t2),
-                                       IRExpr_ITE(mkexpr(t3),
-                                                  mkU64(0x000000007fffffffULL),
-                                                  mkexpr(t1)),
-                                       mkexpr(t1)));
+                     assign(t4, IRExpr_ITE(binop(Iop_CmpNE32,
+                                                 binop(Iop_And32,
+                                                       unop(Iop_1Sto32,
+                                                            mkexpr(t2)),
+                                                       unop(Iop_1Sto32,
+                                                            mkexpr(t3))),
+                                                 mkU32(0)),
+                                           mkU64(0x000000007fffffffULL),
+                                           mkexpr(t1)));
 
-                     putDSPControl(IRExpr_ITE(mkexpr(t2),
-                                              IRExpr_ITE(mkexpr(t3),
-                                                         binop(Iop_Or32,
-                                                               getDSPControl(),
-                                                               binop(Iop_Shl32,
-                                                                     mkU32(0x1),
-                                                                     mkU8(ac+16)
-                                                                    )
-                                                              ),
-                                                         getDSPControl()),
+                     putDSPControl(IRExpr_ITE(binop(Iop_CmpNE32,
+                                                    binop(Iop_And32,
+                                                          unop(Iop_1Sto32,
+                                                               mkexpr(t2)),
+                                                          unop(Iop_1Sto32,
+                                                               mkexpr(t3))),
+                                                    mkU32(0)),
+                                              binop(Iop_Or32,
+                                                    getDSPControl(),
+                                                    binop(Iop_Shl32,
+                                                          mkU32(0x1),
+                                                          mkU8(ac+16))),
                                               getDSPControl()));
                      /* Calculate second cross dot product and saturate if
                         needed. */
@@ -10902,29 +11142,35 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                                            unop(Iop_32HIto16, getIReg(rt))),
                                       mkU32(0x00008000)));
 
-                     assign(t8,
-                            IRExpr_ITE(mkexpr(t6),
-                                       IRExpr_ITE(mkexpr(t7),
-                                                  mkU64(0x000000007fffffffULL),
-                                                  mkexpr(t5)),
-                                       mkexpr(t5)));
+                     assign(t8, IRExpr_ITE(binop(Iop_CmpNE32,
+                                                 binop(Iop_And32,
+                                                       unop(Iop_1Sto32,
+                                                            mkexpr(t6)),
+                                                       unop(Iop_1Sto32,
+                                                            mkexpr(t7))),
+                                                 mkU32(0)),
+                                           mkU64(0x000000007fffffffULL),
+                                           mkexpr(t5)));
 
-                     putDSPControl(IRExpr_ITE(mkexpr(t6),
-                                              IRExpr_ITE(mkexpr(t7),
-                                                         binop(Iop_Or32,
-                                                               getDSPControl(),
-                                                               binop(Iop_Shl32,
-                                                                     mkU32(0x1),
-                                                                     mkU8(ac+16)
-                                                                    )
-                                                              ),
-                                                         getDSPControl()),
+                     putDSPControl(IRExpr_ITE(binop(Iop_CmpNE32,
+                                                    binop(Iop_And32,
+                                                          unop(Iop_1Sto32,
+                                                               mkexpr(t6)),
+                                                          unop(Iop_1Sto32,
+                                                               mkexpr(t7))),
+                                                    mkU32(0)),
+                                              binop(Iop_Or32,
+                                                    getDSPControl(),
+                                                    binop(Iop_Shl32,
+                                                          mkU32(0x1),
+                                                          mkU8(ac+16))),
                                               getDSPControl()));
-                     /* Add intermediate products with value in the
+                     /* Subtract intermediate products from value in the
                         accumulator. */
-                     assign(t9, binop(Iop_Add64,
-                                     mkexpr(t0),
-                                     binop(Iop_Add64, mkexpr(t8), mkexpr(t4))));
+                     assign(t9,
+                            binop(Iop_Add64,
+                                  mkexpr(t0),
+                                  binop(Iop_Add64, mkexpr(t8), mkexpr(t4))));
 
                      putAcc(ac,
                             IRExpr_ITE(binop(Iop_CmpEQ32,
@@ -10949,38 +11195,28 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                                                         mkU32(0xffffffff)),
                                                   mkU64(0xffffffff80000000ULL),
                                                   mkexpr(t9))));
-                     assign(t10, IRExpr_ITE(binop(Iop_CmpNE32,
-                                                  unop(Iop_64HIto32,
-                                                       binop(Iop_Shl64,
-                                                             mkexpr(t9),
-                                                             mkU8(1))),
-                                                  mkU32(0x0)),
-                                            binop(Iop_Or32,
-                                                  getDSPControl(),
-                                                  binop(Iop_Shl32,
-                                                        mkU32(0x1),
-                                                        mkU8(ac+16))),
-                                            getDSPControl()));
-                     assign(t11, IRExpr_ITE(binop(Iop_CmpNE32,
-                                                  unop(Iop_64HIto32,
-                                                       binop(Iop_Shl64,
-                                                             mkexpr(t9),
-                                                             mkU8(1))),
-                                                  mkU32(0xffffffff)),
-                                            binop(Iop_Or32,
-                                                  getDSPControl(),
-                                                  binop(Iop_Shl32,
-                                                        mkU32(0x1),
-                                                        mkU8(ac+16))),
-                                            getDSPControl()));
+                     assign(t10, IRExpr_ITE(binop(Iop_CmpEQ32,
+                                                  unop(Iop_64to32,
+                                                       mkexpr(t9)),
+                                                  unop(Iop_64to32,
+                                                       getAcc(ac))),
+                                           getDSPControl(),
+                                           binop(Iop_Or32,
+                                                 getDSPControl(),
+                                                 binop(Iop_Shl32,
+                                                       mkU32(0x1),
+                                                       mkU8(ac+16)))));
                      putDSPControl(IRExpr_ITE(binop(Iop_CmpEQ32,
-                                                    binop(Iop_And32,
-                                                          unop(Iop_64HIto32,
-                                                               mkexpr(t9)),
-                                                          mkU32(0x80000000)),
-                                                    mkU32(0x0)),
+                                                    unop(Iop_64HIto32,
+                                                         mkexpr(t9)),
+                                                    unop(Iop_64HIto32,
+                                                         getAcc(ac))),
                                               mkexpr(t10),
-                                              mkexpr(t11)));
+                                              binop(Iop_Or32,
+                                                    getDSPControl(),
+                                                    binop(Iop_Shl32,
+                                                          mkU32(0x1),
+                                                          mkU8(ac+16)))));
                      break;
                   }
                   case 0x1B: {  /* DPSQX_SA.W.PH */
@@ -10997,10 +11233,9 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                      t8 = newTemp(Ity_I64);
                      t9 = newTemp(Ity_I64);
                      t10 = newTemp(Ity_I32);
-                     t11 = newTemp(Ity_I32);
 
                      assign(t0, getAcc(ac));
-                     /* Calculate first cross dot product and saturate if
+                     /* Calculate the first cross dot product and saturate if
                         needed. */
                      assign(t1, unop(Iop_32Sto64,
                                      binop(Iop_Shl32,
@@ -11025,23 +11260,28 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                                            unop(Iop_32to16, getIReg(rt))),
                                       mkU32(0x00008000)));
 
-                     assign(t4,
-                            IRExpr_ITE(mkexpr(t2),
-                                       IRExpr_ITE(mkexpr(t3),
-                                                  mkU64(0x000000007fffffffULL),
-                                                  mkexpr(t1)),
-                                       mkexpr(t1)));
+                     assign(t4, IRExpr_ITE(binop(Iop_CmpNE32,
+                                                 binop(Iop_And32,
+                                                       unop(Iop_1Sto32,
+                                                            mkexpr(t2)),
+                                                       unop(Iop_1Sto32,
+                                                            mkexpr(t3))),
+                                                 mkU32(0)),
+                                           mkU64(0x000000007fffffffULL),
+                                           mkexpr(t1)));
 
-                     putDSPControl(IRExpr_ITE(mkexpr(t2),
-                                              IRExpr_ITE(mkexpr(t3),
-                                                         binop(Iop_Or32,
-                                                               getDSPControl(),
-                                                               binop(Iop_Shl32,
-                                                                     mkU32(0x1),
-                                                                     mkU8(ac+16)
-                                                                    )
-                                                              ),
-                                                         getDSPControl()),
+                     putDSPControl(IRExpr_ITE(binop(Iop_CmpNE32,
+                                                    binop(Iop_And32,
+                                                          unop(Iop_1Sto32,
+                                                               mkexpr(t2)),
+                                                          unop(Iop_1Sto32,
+                                                               mkexpr(t3))),
+                                                    mkU32(0)),
+                                              binop(Iop_Or32,
+                                                    getDSPControl(),
+                                                    binop(Iop_Shl32,
+                                                          mkU32(0x1),
+                                                          mkU8(ac+16))),
                                               getDSPControl()));
                      /* Calculate second cross dot product and saturate if
                         needed. */
@@ -11060,31 +11300,36 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                         intermediate product and write to DSPControl
                         register. */
                      assign(t6, binop(Iop_CmpEQ32,
-                                      binop(Iop_And32,
-                                            getIReg(rs),
-                                            mkU32(0x0000ffff)),
+                                      unop(Iop_16Uto32,
+                                           unop(Iop_32to16, getIReg(rs))),
                                       mkU32(0x00008000)));
                      assign(t7, binop(Iop_CmpEQ32,
-                                      binop(Iop_And32,
-                                            getIReg(rt),
-                                            mkU32(0xffff0000)),
-                                      mkU32(0x80000000)));
+                                      unop(Iop_16Uto32,
+                                           unop(Iop_32HIto16, getIReg(rt))),
+                                      mkU32(0x00008000)));
 
-                     assign(t8,
-                            IRExpr_ITE(mkexpr(t6),
-                                       IRExpr_ITE(mkexpr(t7),
-                                                  mkU64(0x000000007fffffffULL),
-                                                  mkexpr(t5)),
-                                       mkexpr(t5)));
+                     assign(t8, IRExpr_ITE(binop(Iop_CmpNE32,
+                                                 binop(Iop_And32,
+                                                       unop(Iop_1Sto32,
+                                                            mkexpr(t6)),
+                                                       unop(Iop_1Sto32,
+                                                            mkexpr(t7))),
+                                                 mkU32(0)),
+                                           mkU64(0x000000007fffffffULL),
+                                           mkexpr(t5)));
 
-                     putDSPControl(IRExpr_ITE(mkexpr(t6),
-                                              IRExpr_ITE(mkexpr(t7),
-                                                         binop(Iop_Or32,
-                                                         getDSPControl(),
-                                                         binop(Iop_Shl32,
-                                                               mkU32(0x1),
-                                                               mkU8(ac+16))),
-                                                         getDSPControl()),
+                     putDSPControl(IRExpr_ITE(binop(Iop_CmpNE32,
+                                                    binop(Iop_And32,
+                                                          unop(Iop_1Sto32,
+                                                               mkexpr(t6)),
+                                                          unop(Iop_1Sto32,
+                                                               mkexpr(t7))),
+                                                    mkU32(0)),
+                                              binop(Iop_Or32,
+                                                    getDSPControl(),
+                                                    binop(Iop_Shl32,
+                                                          mkU32(0x1),
+                                                          mkU8(ac+16))),
                                               getDSPControl()));
                      /* Subtract intermediate products from value in the
                         accumulator. */
@@ -11116,38 +11361,28 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
                                                         mkU32(0xffffffff)),
                                                   mkU64(0xffffffff80000000ULL),
                                                   mkexpr(t9))));
-                     assign(t10, IRExpr_ITE(binop(Iop_CmpNE32,
-                                                  unop(Iop_64HIto32,
-                                                       binop(Iop_Shl64,
-                                                             mkexpr(t9),
-                                                             mkU8(1))),
-                                                  mkU32(0x0)),
-                                            binop(Iop_Or32,
-                                                  getDSPControl(),
-                                                  binop(Iop_Shl32,
-                                                        mkU32(0x1),
-                                                        mkU8(ac+16))),
-                                            getDSPControl()));
-                     assign(t11, IRExpr_ITE(binop(Iop_CmpNE32,
-                                                  unop(Iop_64HIto32,
-                                                       binop(Iop_Shl64,
-                                                             mkexpr(t9),
-                                                             mkU8(1))),
-                                                  mkU32(0xffffffff)),
-                                            binop(Iop_Or32,
-                                                  getDSPControl(),
-                                                  binop(Iop_Shl32,
-                                                        mkU32(0x1),
-                                                        mkU8(ac+16))),
-                                            getDSPControl()));
+                     assign(t10, IRExpr_ITE(binop(Iop_CmpEQ32,
+                                                  unop(Iop_64to32,
+                                                       mkexpr(t9)),
+                                                  unop(Iop_64to32,
+                                                       getAcc(ac))),
+                                           getDSPControl(),
+                                           binop(Iop_Or32,
+                                                 getDSPControl(),
+                                                 binop(Iop_Shl32,
+                                                       mkU32(0x1),
+                                                       mkU8(ac+16)))));
                      putDSPControl(IRExpr_ITE(binop(Iop_CmpEQ32,
-                                                    binop(Iop_And32,
-                                                          unop(Iop_64HIto32,
-                                                               mkexpr(t9)),
-                                                          mkU32(0x80000000)),
-                                                    mkU32(0x0)),
+                                                    unop(Iop_64HIto32,
+                                                         mkexpr(t9)),
+                                                    unop(Iop_64HIto32,
+                                                         getAcc(ac))),
                                               mkexpr(t10),
-                                              mkexpr(t11)));
+                                              binop(Iop_Or32,
+                                                    getDSPControl(),
+                                                    binop(Iop_Shl32,
+                                                          mkU32(0x1),
+                                                          mkU8(ac+16)))));
                      break;
                   }
                   default:

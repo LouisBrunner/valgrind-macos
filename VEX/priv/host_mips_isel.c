@@ -235,7 +235,8 @@ static MIPSRH *iselWordExpr_RH(ISelEnv * env, Bool syned, IRExpr * e);
 static MIPSRH *iselWordExpr_RH5u_wrk(ISelEnv * env, IRExpr * e);
 static MIPSRH *iselWordExpr_RH5u(ISelEnv * env, IRExpr * e);
 
-/* In 64-bit mode ONLY */
+/* Compute an I8 into a reg-or-6-bit-unsigned-immediate, the latter being an immediate in
+   the range 1 .. 63 inclusive.  Used for doing shift amounts. */
 static MIPSRH *iselWordExpr_RH6u_wrk(ISelEnv * env, IRExpr * e);
 static MIPSRH *iselWordExpr_RH6u(ISelEnv * env, IRExpr * e);
 
@@ -1789,34 +1790,14 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
       if ((ty == Ity_I8 || ty == Ity_I16 ||
            ty == Ity_I32 || ((ty == Ity_I64))) &&
            typeOfIRExpr(env->type_env, e->Iex.ITE.cond) == Ity_I1) {
+         HReg r_dst  = iselWordExpr_R(env, e->Iex.ITE.iffalse);
+         HReg r1     = iselWordExpr_R(env, e->Iex.ITE.iftrue);
+         HReg r_cond = iselWordExpr_R(env, e->Iex.ITE.cond);
          /*
-          * r_dst = cond && r1
-          * cond = not(cond)
-          * tmp = cond && r0
-          * r_dst = tmp + r_dst
+          * r_dst = r0
+          * movn r_dst, r1, r_cond
           */
-         HReg r0 = iselWordExpr_R(env, e->Iex.ITE.iffalse);
-         HReg r1 = iselWordExpr_R(env, e->Iex.ITE.iftrue);
-         HReg r_cond_1 = iselWordExpr_R(env, e->Iex.ITE.cond);
-         HReg r_cond = newVRegI(env);
-         HReg mask = newVRegI(env);
-         HReg r_dst = newVRegI(env);
-         HReg r_tmp = newVRegI(env);
-         HReg r_tmp1 = newVRegI(env);
-         HReg r_cond_neg = newVRegI(env);
-         /* r_cond = 0 - r_cond_1 */
-         addInstr(env, MIPSInstr_LI(mask, 0x0));
-         addInstr(env, MIPSInstr_Alu(Malu_SUB, r_cond,
-                                     mask, MIPSRH_Reg(r_cond_1)));
-
-         addInstr(env, MIPSInstr_Alu(Malu_AND, r_tmp, r_cond, MIPSRH_Reg(r1)));
-         addInstr(env, MIPSInstr_Alu(Malu_NOR, r_cond_neg, r_cond,
-                       MIPSRH_Reg(r_cond)));
-         addInstr(env, MIPSInstr_Alu(Malu_AND, r_tmp1, r_cond_neg,
-                       MIPSRH_Reg(r0)));
-         addInstr(env, MIPSInstr_Alu(Malu_ADD, r_dst, r_tmp,
-                       MIPSRH_Reg(r_tmp1)));
-
+         addInstr(env, MIPSInstr_MoveCond(MMoveCond_movn, r_dst, r1, r_cond));
          return r_dst;
       }
       break;
@@ -2009,7 +1990,6 @@ static MIPSRH *iselWordExpr_RH5u_wrk(ISelEnv * env, IRExpr * e)
 static MIPSRH *iselWordExpr_RH6u ( ISelEnv * env, IRExpr * e )
 {
    MIPSRH *ri;
-   vassert(env->mode64);
    ri = iselWordExpr_RH6u_wrk(env, e);
    /* sanity checks ... */
    switch (ri->tag) {
@@ -2436,7 +2416,8 @@ static void iselInt64Expr_wrk(HReg * rHi, HReg * rLo, ISelEnv * env, IRExpr * e)
             /* Check if borrow is nedded. */
             addInstr(env, MIPSInstr_Cmp(False, size32, borrow, xLo, yLo, cc));
 
-            addInstr(env, MIPSInstr_Alu(Malu_ADD, yHi, yHi, MIPSRH_Reg(borrow)));
+            addInstr(env, MIPSInstr_Alu(Malu_ADD, yHi, yHi,
+                                        MIPSRH_Reg(borrow)));
             addInstr(env, MIPSInstr_Alu(Malu_SUB, tHi, xHi, MIPSRH_Reg(yHi)));
 
             *rHi = tHi;
@@ -2505,177 +2486,271 @@ static void iselInt64Expr_wrk(HReg * rHi, HReg * rLo, ISelEnv * env, IRExpr * e)
          }
 
          case Iop_Shr64: {
-            HReg xLo, xHi;
-            HReg tLo = newVRegI(env);
-            HReg tLo1 = newVRegI(env);
-            HReg tHi = newVRegI(env);
-            HReg tmp = newVRegI(env);
-            HReg tmp2 = newVRegI(env);
-            HReg tmp3 = newVRegI(env);
-            HReg mask = newVRegI(env);
-            HReg tMask = newVRegI(env);
-            HReg discard = newVRegI(env);
-            HReg discard1 = newVRegI(env);
+#if defined (_MIPSEL)
+            /* 64-bit logical shift right based on what gcc generates:
+               <shift>:
+               nor  v0, zero, a2
+               sll  a3, a1, 0x1
+               sllv a3, a3, v0
+               srlv v0, a0, a2
+               srlv v1, a1, a2
+               andi a0, a2, 0x20
+               or   v0, a3, v0
+               movn v0, v1, a0
+               jr   ra
+               movn v1, zero, a0
+            */
+            HReg a0, a1;
+            HReg a0tmp = newVRegI(env);
+            HReg a2 = newVRegI(env);
+            HReg a3 = newVRegI(env);
+            HReg v0 = newVRegI(env);
+            HReg v1 = newVRegI(env);
+            HReg zero = newVRegI(env);
+            MIPSRH *sa = NULL;
 
-            /* We assume any literal values are on the second operand. */
-            iselInt64Expr(&xHi, &xLo, env, e->Iex.Binop.arg1);
-            MIPSRH *ri_srcR = NULL;
-            MIPSRH *ri_srcR_sub = NULL;
+            iselInt64Expr(&a1, &a0, env, e->Iex.Binop.arg1);
+            sa = iselWordExpr_RH6u(env, e->Iex.Binop.arg2);
 
-            ri_srcR = iselWordExpr_RH5u(env, e->Iex.Binop.arg2);
-            ri_srcR_sub = iselWordExpr_RH(env, True /*signed */ ,
-                                          e->Iex.Binop.arg2);
+            if (sa->tag == Mrh_Imm) {
+               addInstr(env, MIPSInstr_LI(a2, sa->Mrh.Imm.imm16));
+            }
+            else {
+               addInstr(env, MIPSInstr_Alu(Malu_AND, a2, sa->Mrh.Reg.reg,
+                                           MIPSRH_Imm(False, 0x3f)));
+            }
 
-            /* Steps:
-               1. Take shift-amount (arg2) least significant bits from upper
-                  half of 64bit input value (arg1)
-               2. Shift upper half
-               3. Shift lower half
-               4. Put discarded bits (those from step 1) to most significant
-                  bit positions of lower half */
+            addInstr(env, MIPSInstr_LI(zero, 0x00000000));
+            /* nor  v0, zero, a2 */
+            addInstr(env, MIPSInstr_Alu(Malu_NOR, v0, zero, MIPSRH_Reg(a2)));
+            /* sll  a3, a1, 0x1 */
+            addInstr(env, MIPSInstr_Shft(Mshft_SLL, True /* 32bit shift */,
+                                         a3, a1, MIPSRH_Imm(False, 0x1)));
+            /* sllv a3, a3, v0 */
+            addInstr(env, MIPSInstr_Shft(Mshft_SLL, True /* 32bit shift */,
+                                         a3, a3, MIPSRH_Reg(v0)));
+            /* srlv v0, a0, a2 */
+            addInstr(env, MIPSInstr_Shft(Mshft_SRL, True /* 32bit shift */,
+                                         v0, a0, MIPSRH_Reg(a2)));
+            /* srlv v1, a1, a2 */
+            addInstr(env, MIPSInstr_Shft(Mshft_SRL, True /* 32bit shift */,
+                                         v1, a1, MIPSRH_Reg(a2)));
+            /* andi a0, a2, 0x20 */
+            addInstr(env, MIPSInstr_Alu(Malu_AND, a0tmp, a2,
+                                        MIPSRH_Imm(False, 0x20)));
+            /* or   v0, a3, v0 */
+            addInstr(env, MIPSInstr_Alu(Malu_OR, v0, a3, MIPSRH_Reg(v0)));
 
-            /* Mask for extraction of bits that will be discarded. */
-            addInstr(env, MIPSInstr_LI(tmp, 0xffffffff));
-            addInstr(env, MIPSInstr_Shft(Mshft_SLL, True /*32bit shift */,
-                                         tMask, tmp, ri_srcR));
-            addInstr(env, MIPSInstr_Alu(Malu_NOR, mask,
-                                        tMask, MIPSRH_Reg(tMask)));
+            /* movn    v0, v1, a0 */
+            addInstr(env, MIPSInstr_MoveCond(MMoveCond_movn, v0, v1, a0tmp));
+            /* movn    v1, zero, a0 */
+            addInstr(env, MIPSInstr_MoveCond(MMoveCond_movn, v1, zero, a0tmp));
 
-            /* Extraction of bits that will be discarded. */
-            addInstr(env, MIPSInstr_Alu(Malu_AND, discard, xHi,
-                                        MIPSRH_Reg(mask)));
-            /* Position discarded bits to most significant bit positions. */
-            addInstr(env, MIPSInstr_LI(tmp3, 32));
-            addInstr(env, MIPSInstr_Alu(Malu_SUB, tmp2,
-                                        tmp3, ri_srcR_sub));
-            addInstr(env, MIPSInstr_Shft(Mshft_SLL, True /*32bit shift */,
-                                         discard1, discard, MIPSRH_Reg(tmp2)));
-
-            addInstr(env, MIPSInstr_Shft(Mshft_SRL, True /*32bit shift */,
-                                         tHi, xHi, ri_srcR));
-            addInstr(env, MIPSInstr_Shft(Mshft_SRL, True /*32bit shift */,
-                                         tLo1, xLo, ri_srcR));
-
-            addInstr(env, MIPSInstr_Alu(Malu_OR, tLo,
-                                        tLo1, MIPSRH_Reg(discard1)));
-            *rHi = tHi;
-            *rLo = tLo;
+            *rHi = v1;
+            *rLo = v0;
             return;
+#elif defined (_MIPSEB)
+            /* 64-bit logical shift right based on what gcc generates:
+               <shift>:
+               nor  v0, zero, a2
+               sll  a3, a0, 0x1
+               sllv a3, a3, v0
+               srlv v1, a1, a2
+               andi v0, a2, 0x20
+               or   v1, a3, v1
+               srlv a2, a0, a2
+               movn v1, a2, v0
+               movn a2, zero, v0
+               jr   ra
+               move v0, a2
+            */
+            HReg a0, a1;
+            HReg a2 = newVRegI(env);
+            HReg a2tmp = newVRegI(env);
+            HReg a3 = newVRegI(env);
+            HReg v0 = newVRegI(env);
+            HReg v1 = newVRegI(env);
+            HReg zero = newVRegI(env);
+            MIPSRH *sa = NULL;
+
+            iselInt64Expr(&a0, &a1, env, e->Iex.Binop.arg1);
+            sa = iselWordExpr_RH6u(env, e->Iex.Binop.arg2);
+
+            if (sa->tag == Mrh_Imm) {
+               addInstr(env, MIPSInstr_LI(a2, sa->Mrh.Imm.imm16));
+            }
+            else {
+               addInstr(env, MIPSInstr_Alu(Malu_AND, a2, sa->Mrh.Reg.reg,
+                                           MIPSRH_Imm(False, 0x3f)));
+            }
+
+            addInstr(env, MIPSInstr_LI(zero, 0x00000000));
+            /* nor v0, zero, a2 */
+            addInstr(env, MIPSInstr_Alu(Malu_NOR, v0, zero, MIPSRH_Reg(a2)));
+            /* sll a3, a0, 0x1 */
+            addInstr(env, MIPSInstr_Shft(Mshft_SLL, True /* 32bit shift */,
+                                         a3, a0, MIPSRH_Imm(False, 0x1)));
+            /* sllv a3, a3, v0 */
+            addInstr(env, MIPSInstr_Shft(Mshft_SLL, True /* 32bit shift */,
+                                         a3, a3, MIPSRH_Reg(v0)));
+            /* srlv v1, a1, a2 */
+            addInstr(env, MIPSInstr_Shft(Mshft_SRL, True /* 32bit shift */,
+                                         v1, a1, MIPSRH_Reg(a2)));
+            /* andi v0, a2, 0x20 */
+            addInstr(env, MIPSInstr_Alu(Malu_AND, v0, a2,
+                                        MIPSRH_Imm(False, 0x20)));
+            /* or v1, a3, v1 */
+            addInstr(env, MIPSInstr_Alu(Malu_OR, v1, a3, MIPSRH_Reg(v1)));
+            /* srlv a2, a0, a2 */
+            addInstr(env, MIPSInstr_Shft(Mshft_SRL, True /* 32bit shift */,
+                             a2tmp, a0, MIPSRH_Reg(a2)));
+
+            /* movn v1, a2, v0 */
+            addInstr(env, MIPSInstr_MoveCond(MMoveCond_movn, v1, a2tmp, v0));
+            /* movn  a2, zero, v0 */
+            addInstr(env, MIPSInstr_MoveCond(MMoveCond_movn, a2tmp, zero, v0));
+            /* move v0, a2 */
+            addInstr(env, mk_iMOVds_RR(v0, a2tmp));
+
+            *rHi = v0;
+            *rLo = v1;
+            return;
+#endif
          }
+
          case Iop_Shl64: {
-            HReg xLo, xHi;
-            HReg tLo = newVRegI(env);
-            HReg tHi1 = newVRegI(env);
-            HReg tHi = newVRegI(env);
-            HReg tmp = newVRegI(env);
-            HReg tmp2 = newVRegI(env);
-            HReg tmp3 = newVRegI(env);
-            HReg mask = newVRegI(env);
-            HReg tMask = newVRegI(env);
-            HReg discard = newVRegI(env);
-            HReg discard1 = newVRegI(env);
+            /* 64-bit shift left based on what gcc generates:
+               <shift>:
+               nor  v0,zero,a2
+               srl  a3,a0,0x1
+               srlv a3,a3,v0
+               sllv v1,a1,a2
+               andi v0,a2,0x20
+               or   v1,a3,v1
+               sllv a2,a0,a2
+               movn v1,a2,v0
+               movn a2,zero,v0
+               jr   ra
+               move v0,a2
+            */
+            HReg a0, a1;
+            HReg a2 = newVRegI(env);
+            HReg a3 = newVRegI(env);
+            HReg v0 = newVRegI(env);
+            HReg v1 = newVRegI(env);
+            HReg zero = newVRegI(env);
+            MIPSRH *sa = NULL;
 
-            /* We assume any literal values are on the second operand. */
-            iselInt64Expr(&xHi, &xLo, env, e->Iex.Binop.arg1);
-            MIPSRH *ri_srcR = NULL;
-            MIPSRH *ri_srcR_sub = NULL;
+            iselInt64Expr(&a1, &a0, env, e->Iex.Binop.arg1);
+            sa = iselWordExpr_RH6u(env, e->Iex.Binop.arg2);
 
-            ri_srcR = iselWordExpr_RH5u(env, e->Iex.Binop.arg2);
-            ri_srcR_sub = iselWordExpr_RH(env, True /*signed */ ,
-                                          e->Iex.Binop.arg2);
+            if (sa->tag == Mrh_Imm) {
+               addInstr(env, MIPSInstr_LI(a2, sa->Mrh.Imm.imm16));
+            }
+            else {
+               addInstr(env, MIPSInstr_Alu(Malu_AND, a2, sa->Mrh.Reg.reg,
+                                           MIPSRH_Imm(False, 0x3f)));
+            }
 
-            /* Steps:
-               1. Take shift-amount (arg2) most significant bits from lower
-                  half of 64bit input value (arg1)
-               2. Shift lower half
-               3. Shift upper half
-               4. Put discarded bits (those from step 1) to least significant
-                  bit positions of upper half */
+            addInstr(env, MIPSInstr_LI(zero, 0x00000000));
+            /* nor v0, zero, a2 */
+            addInstr(env, MIPSInstr_Alu(Malu_NOR, v0, zero, MIPSRH_Reg(a2)));
+            /* srl a3, a0, 0x1 */
+            addInstr(env, MIPSInstr_Shft(Mshft_SRL, True /* 32bit shift */,
+                                         a3, a0, MIPSRH_Imm(False, 0x1)));
+            /* srlv a3, a3, v0 */
+            addInstr(env, MIPSInstr_Shft(Mshft_SRL, True /* 32bit shift */,
+                                         a3, a3, MIPSRH_Reg(v0)));
+            /* sllv v1, a1, a2 */
+            addInstr(env, MIPSInstr_Shft(Mshft_SLL, True /* 32bit shift */,
+                                         v1, a1, MIPSRH_Reg(a2)));
+            /* andi v0, a2, 0x20 */
+            addInstr(env, MIPSInstr_Alu(Malu_AND, v0, a2,
+                                        MIPSRH_Imm(False, 0x20)));
+            /* or v1, a3, v1 */
+            addInstr(env, MIPSInstr_Alu(Malu_OR, v1, a3, MIPSRH_Reg(v1)));
+            /* sllv a2, a0, a2 */
+            addInstr(env, MIPSInstr_Shft(Mshft_SLL, True /* 32bit shift */,
+                                         a2, a0, MIPSRH_Reg(a2)));
 
-            /* Mask for extraction of bits that will be discarded. */
-            addInstr(env, MIPSInstr_LI(tmp, 0xffffffff));
-            addInstr(env, MIPSInstr_Shft(Mshft_SRL, True /*32bit shift */,
-                                         tMask, tmp, ri_srcR));
-            addInstr(env, MIPSInstr_Alu(Malu_NOR, mask,
-                                        tMask, MIPSRH_Reg(tMask)));
+            /* movn v1, a2, v0 */
+            addInstr(env, MIPSInstr_MoveCond(MMoveCond_movn, v1, a2, v0));
+            /* movn a2, zero, v0 */
+            addInstr(env, MIPSInstr_MoveCond(MMoveCond_movn, a2, zero, v0));
+            addInstr(env, mk_iMOVds_RR(v0, a2));
 
-            /* Extraction of bits that will be discarded. */
-            addInstr(env, MIPSInstr_Alu(Malu_AND, discard, xLo,
-                                        MIPSRH_Reg(mask)));
-            /* Position discarded bits to least significant bit positions. */
-            addInstr(env, MIPSInstr_LI(tmp3, 32));
-            addInstr(env, MIPSInstr_Alu(Malu_SUB, tmp2,
-                                        tmp3, ri_srcR_sub));
-            addInstr(env, MIPSInstr_Shft(Mshft_SRL, True /*32bit shift */,
-                                         discard1, discard, MIPSRH_Reg(tmp2)));
-
-            addInstr(env, MIPSInstr_Shft(Mshft_SLL, True /*32bit shift */,
-                                         tHi1, xHi, ri_srcR));
-            addInstr(env, MIPSInstr_Shft(Mshft_SLL, True /*32bit shift */,
-                                         tLo, xLo, ri_srcR));
-
-            addInstr(env, MIPSInstr_Alu(Malu_OR, tHi,
-                                        tHi1, MIPSRH_Reg(discard1)));
-            *rHi = tHi;
-            *rLo = tLo;
+            *rHi = v1;
+            *rLo = v0;
             return;
          }
+
          case Iop_Sar64: {
-            HReg xLo, xHi;
-            HReg tLo = newVRegI(env);
-            HReg tLo1 = newVRegI(env);
-            HReg tHi = newVRegI(env);
-            HReg tmp = newVRegI(env);
-            HReg tmp2 = newVRegI(env);
-            HReg tmp3 = newVRegI(env);
-            HReg mask = newVRegI(env);
-            HReg tMask = newVRegI(env);
-            HReg discard = newVRegI(env);
-            HReg discard1 = newVRegI(env);
+            /* 64-bit arithmetic shift right based on what gcc generates:
+               <shift>:
+               nor  v0, zero, a2
+               sll  a3, a1, 0x1
+               sllv a3, a3, v0
+               srlv v0, a0, a2
+               srav v1, a1, a2
+               andi a0, a2, 0x20
+               sra  a1, a1, 0x1f
+               or   v0, a3, v0
+               movn v0, v1, a0
+               jr   ra
+               movn v1, a1, a0
+            */
+            HReg a0, a1;
+            HReg a0tmp = newVRegI(env);
+            HReg a1tmp = newVRegI(env);
+            HReg a2 = newVRegI(env);
+            HReg a3 = newVRegI(env);
+            HReg v0 = newVRegI(env);
+            HReg v1 = newVRegI(env);
+            HReg zero = newVRegI(env);
+            MIPSRH *sa = NULL;
 
-            /* We assume any literal values are on the second operand. */
-            iselInt64Expr(&xHi, &xLo, env, e->Iex.Binop.arg1);
-            MIPSRH *ri_srcR = NULL;
-            MIPSRH *ri_srcR_sub = NULL;
+            iselInt64Expr(&a1, &a0, env, e->Iex.Binop.arg1);
+            sa = iselWordExpr_RH6u(env, e->Iex.Binop.arg2);
 
-            ri_srcR = iselWordExpr_RH5u(env, e->Iex.Binop.arg2);
-            ri_srcR_sub = iselWordExpr_RH(env, True /*signed */ ,
-                                          e->Iex.Binop.arg2);
+            if (sa->tag == Mrh_Imm) {
+               addInstr(env, MIPSInstr_LI(a2, sa->Mrh.Imm.imm16));
+            }
+            else {
+               addInstr(env, MIPSInstr_Alu(Malu_AND, a2, sa->Mrh.Reg.reg,
+                                           MIPSRH_Imm(False, 0x3f)));
+            }
 
-            /* Steps:
-               1. Take shift-amount (arg2) least significant bits from upper
-                  half of 64bit input value (arg1)
-               2. Shift upper half
-               3. Shift lower half
-               4. Put discarded bits (those from step 1) to most significant
-                  bit positions of lower half */
+            addInstr(env, MIPSInstr_LI(zero, 0x00000000));
+            /* nor  v0, zero, a2 */
+            addInstr(env, MIPSInstr_Alu(Malu_NOR, v0, zero, MIPSRH_Reg(a2)));
+            /* sll  a3, a1, 0x1 */
+            addInstr(env, MIPSInstr_Shft(Mshft_SLL, True /* 32bit shift */,
+                                         a3, a1, MIPSRH_Imm(False, 0x1)));
+            /* sllv a3, a3, v0 */
+            addInstr(env, MIPSInstr_Shft(Mshft_SLL, True /* 32bit shift */,
+                                         a3, a3, MIPSRH_Reg(v0)));
+            /* srlv v0, a0, a2 */
+            addInstr(env, MIPSInstr_Shft(Mshft_SRL, True /* 32bit shift */,
+                                         v0, a0, MIPSRH_Reg(a2)));
+            /* srav v1, a1, a2 */
+            addInstr(env, MIPSInstr_Shft(Mshft_SRA, True /* 32bit shift */,
+                                         v1, a1, MIPSRH_Reg(a2)));
+            /* andi a0, a2, 0x20 */
+            addInstr(env, MIPSInstr_Alu(Malu_AND, a0tmp, a2,
+                                        MIPSRH_Imm(False, 0x20)));
+            /* sra a1, a1, 0x1f */
+            addInstr(env, MIPSInstr_Shft(Mshft_SRA, True /* 32bit shift */,
+                                         a1tmp, a1, MIPSRH_Imm(False, 0x1f)));
+            /* or   v0, a3, v0 */
+            addInstr(env, MIPSInstr_Alu(Malu_OR, v0, a3, MIPSRH_Reg(v0)));
 
-            /* Mask for extraction of bits that will be discarded. */
-            addInstr(env, MIPSInstr_LI(tmp, 0xffffffff));
-            addInstr(env, MIPSInstr_Shft(Mshft_SLL, True /*32bit shift */,
-                                         tMask, tmp, ri_srcR));
-            addInstr(env, MIPSInstr_Alu(Malu_NOR, mask,
-                                        tMask, MIPSRH_Reg(tMask)));
+            /* movn    v0, v1, a0 */
+            addInstr(env, MIPSInstr_MoveCond(MMoveCond_movn, v0, v1, a0tmp));
+            /* movn    v1, a1, a0 */
+            addInstr(env, MIPSInstr_MoveCond(MMoveCond_movn, v1, a1tmp, a0tmp));
 
-            /* Extraction of bits that will be discarded. */
-            addInstr(env, MIPSInstr_Alu(Malu_AND, discard, xHi,
-                                        MIPSRH_Reg(mask)));
-            /* Position discarded bits to most significant bit positions. */
-            addInstr(env, MIPSInstr_LI(tmp3, 32));
-            addInstr(env, MIPSInstr_Alu(Malu_SUB, tmp2,
-                                        tmp3, ri_srcR_sub));
-            addInstr(env, MIPSInstr_Shft(Mshft_SLL, True /*32bit shift */,
-                                         discard1, discard, MIPSRH_Reg(tmp2)));
-
-            addInstr(env, MIPSInstr_Shft(Mshft_SRA, True /*32bit shift */,
-                                         tHi, xHi, ri_srcR));
-            addInstr(env, MIPSInstr_Shft(Mshft_SRL, True /*32bit shift */,
-                                         tLo1, xLo, ri_srcR));
-
-            addInstr(env, MIPSInstr_Alu(Malu_OR, tLo,
-                                        tLo1, MIPSRH_Reg(discard1)));
-            *rHi = tHi;
-            *rLo = tLo;
+            *rHi = v1;
+            *rLo = v0;
             return;
          }
 
@@ -2695,7 +2770,7 @@ static void iselInt64Expr_wrk(HReg * rHi, HReg * rLo, ISelEnv * env, IRExpr * e)
 
             addInstr(env, MIPSInstr_Shft(Mshft_SLL, True, tmp, src,
                           MIPSRH_Imm(False, 31)));
-            addInstr(env, MIPSInstr_Shft(Mshft_SRA, True, tmp, src,
+            addInstr(env, MIPSInstr_Shft(Mshft_SRA, True, tmp, tmp,
                           MIPSRH_Imm(False, 31)));
 
             addInstr(env, mk_iMOVds_RR(tHi, tmp));
@@ -2748,35 +2823,31 @@ static void iselInt64Expr_wrk(HReg * rHi, HReg * rLo, ISelEnv * env, IRExpr * e)
          }
 
          case Iop_Left64: {
-            HReg yLo, yHi, borrow;
+            HReg yHi, yLo;
             HReg tHi  = newVRegI(env);
             HReg tLo  = newVRegI(env);
+            HReg tmp  = newVRegI(env);
+            HReg tmp1  = newVRegI(env);
+            HReg tmp2  = newVRegI(env);
             HReg zero = newVRegI(env);
-            Bool size32 = True;
             MIPSCondCode cc = MIPScc_LO;
-
-            borrow = newVRegI(env);
 
             /* yHi:yLo = arg */
             iselInt64Expr(&yHi, &yLo, env, e->Iex.Unop.arg);
             /* zero = 0 */
             addInstr(env, MIPSInstr_LI(zero, 0x00000000));
 
-            /* tLo = 0 - yLo */
-            addInstr(env, MIPSInstr_Alu(Malu_SUB, tLo, zero, MIPSRH_Reg(yLo)));
+            /* tmp2:tmp1 = 0 - (yHi:yLo)*/
+            addInstr(env, MIPSInstr_Alu(Malu_SUB, tmp2, zero, MIPSRH_Reg(yLo)));
+            addInstr(env, MIPSInstr_Cmp(False, True, tmp1, zero, tmp2, cc));
+            addInstr(env, MIPSInstr_Alu(Malu_SUB, tmp, zero, MIPSRH_Reg(yHi)));
+            addInstr(env, MIPSInstr_Alu(Malu_SUB, tmp1, tmp, MIPSRH_Reg(tmp1)));
 
-            /* Check if borrow is needed. */
-            addInstr(env, MIPSInstr_Cmp(False, size32, borrow, zero, yLo, cc));
-
-            /* tHi = 0 - (yHi + borrow) */
-            addInstr(env, MIPSInstr_Alu(Malu_ADD,
-                                        yHi, yHi, MIPSRH_Reg(borrow)));
-            addInstr(env, MIPSInstr_Alu(Malu_SUB, tHi, zero, MIPSRH_Reg(yHi)));
-            /* So now we have tHi:tLo = -arg.  To finish off, or 'arg'
+            /* So now we have tmp2:tmp1 = -arg.  To finish off, or 'arg'
                back in, so as to give the final result
                tHi:tLo = arg | -arg. */
-            addInstr(env, MIPSInstr_Alu(Malu_OR, tHi, tHi, MIPSRH_Reg(yHi)));
-            addInstr(env, MIPSInstr_Alu(Malu_OR, tLo, tLo, MIPSRH_Reg(yLo)));
+            addInstr(env, MIPSInstr_Alu(Malu_OR, tHi, yHi, MIPSRH_Reg(tmp1)));
+            addInstr(env, MIPSInstr_Alu(Malu_OR, tLo, yLo, MIPSRH_Reg(tmp2)));
             *rHi = tHi;
             *rLo = tLo;
             return;

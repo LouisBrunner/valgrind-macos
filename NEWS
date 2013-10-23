@@ -172,7 +172,6 @@ where XXXXXX is the bug number as listed below.
 
 123837  system call: 4th argument is optional, depending on cmd
 135425  memcheck should tell you where Freed blocks were Mallocd
-135425  memcheck should tell you where Freed blocks were Mallocd
 164485  VG_N_SEGNAMES and VG_N_SEGMENTS are (still) too small
 207815  Adds some of the drm ioctls to syswrap-linux.c 
 251569  vex amd64->IR: 0xF 0x1 0xF9 0xBF 0x90 0xD0 0x3 0x0 (RDTSCP)
@@ -181,7 +180,6 @@ where XXXXXX is the bug number as listed below.
 263034  Crash when loading some PPC64 binaries
 269599  Increase deepest backtrace
 274695  s390x: Support "compare to/from logical" instructions (z196)
-275800  s390x: Add support for the ecag instruction (part 1)
 275800  s390x: Autodetect cache info (part 2)
 280271  Valgrind reports possible memory leaks on still-reachable std::string
 284540  Memcheck shouldn't count suppressions matching still-reachable [..]
@@ -201,7 +199,6 @@ where XXXXXX is the bug number as listed below.
 307101  sys_capget second argument can be NULL
 307103  sys_openat: If pathname is absolute, then dirfd is ignored.
 307106  amd64->IR: f0 0f c0 02 (lock xadd byte)
-307113  s390x: DFP support
 307113  s390x: DFP support
 307141  valgrind does't work in mips-linux system
 307155  filter_gdb should filter out syscall-template.S T_PSEUDO
@@ -236,7 +233,6 @@ where XXXXXX is the bug number as listed below.
 309430  Self hosting ppc64 encounters a vassert error on operand type
 309600  valgrind is a bit confused about 0-sized sections
 309823  Generate errors for still reachable blocks
-309823  Generate errors for still reachable blocks
 309921  PCMPISTRI validity bit propagation is imprecise
 309922  none/tests/ppc64/test_dfp5 sometimes fails
 310169  The Iop_CmpORD class of Iops is not supported by the vbit checker.
@@ -269,13 +265,10 @@ where XXXXXX is the bug number as listed below.
 315689  disInstr(thumb): unhandled instruction: 0xF852 0x0E10 (LDRT)
 315738  disInstr(arm): unhandled instruction: 0xEEBE0BEE (vcvt.s32.f64)
 315959  valgrind man page has bogus SGCHECK (and no BBV) OPTIONS section
-315959  valgrind man page has bogus SGCHECK (and no BBV) OPTIONS section
-316144  valgrind.1 manpage contains unknown ??? strings [..]
 316144  valgrind.1 manpage contains unknown ??? strings [..]
 316145  callgrind command line options in manpage reference (unknown) [..]
 316145  callgrind command line options in manpage reference [..]
 316181  drd: Fixed a 4x slowdown for certain applications
-316181  x264 program of parsec 2.1 stuck (do not finish)
 316503  Valgrind does not support SSE4 "movntdqa" instruction
 316535  Use of |signed int| instead of |size_t| in valgrind messages
 316696   fluidanimate program of parsec 2.1 stuck 
@@ -295,7 +288,6 @@ where XXXXXX is the bug number as listed below.
 318932  Add missing PPC64 and PPC32 system call support
 319235  --db-attach=yes is broken with Yama (ptrace scoping) enabled
 319395  Crash with unhandled instruction on STRT (Thumb) instructions
-319494  Fix VEX's Makefile-gcc.
 319494  VEX Makefile-gcc standalone build update after r2702
 319505  [MIPSEL] Crash: unhandled UNRAY operator.
 319858  disInstr(thumb): unhandled instruction on instruction STRBT

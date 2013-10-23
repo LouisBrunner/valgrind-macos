@@ -1,0 +1,4 @@
+prereq: test -e std_list && ./supported_libpthread
+vgopts: --check-stack-var=yes --show-confl-seg=no
+prog: std_list
+stderr_filter: filter_stderr

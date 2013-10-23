@@ -24,7 +24,7 @@ EXTRA_DIST = \
 	SignalException.stderr.exp SignalException.vgtest \
 	bug320057-mips32.stdout.exp bug320057-mips32.stderr.exp \
 	bug320057-mips32.vgtest \
-	mips32_dsp.stdout.exp mips32_dsp.stdout.exp-BE \
+	mips32_dsp.stdout.exp-LE mips32_dsp.stdout.exp-BE \
 	mips32_dsp.stderr.exp mips32_dsp.vgtest \
 	mips32_dspr2.stdout.exp mips32_dspr2.stderr.exp \
 	mips32_dspr2.vgtest \

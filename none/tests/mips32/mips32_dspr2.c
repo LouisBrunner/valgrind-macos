@@ -2328,7 +2328,7 @@ int main(int argc, char **argv)
    TESTDSPINST_AC_RS_RT_DSPC("dpsqx_sa.w.ph $ac0, $t5, $t3", "ac0", 0x80000000,
                              0x80000000, 0x00000000, 0x00000001, t5, t3);
    TESTDSPINST_AC_RS_RT_DSPC("dpsqx_sa.w.ph $ac1, $t2, $t4", "ac1", 0x00010001,
-                             0xffffffff, 0xffffffff, 0xffffffff, t2, t4);
+                             0xcfffefff, 0xffffffff, 0xffffffff, t2, t4);
    TESTDSPINST_AC_RS_RT_DSPC("dpsqx_sa.w.ph $ac2, $t0, $t8", "ac2", 0x7fff7fff,
                              0x7fff7fff, 0xffffffff, 0xffffffff, t0, t8);
    TESTDSPINST_AC_RS_RT_DSPC("dpsqx_sa.w.ph $ac0, $t0, $t1", "ac0", 0x0000c420,
@@ -2340,7 +2340,7 @@ int main(int argc, char **argv)
    TESTDSPINST_AC_RS_RT_DSPC("dpsqx_sa.w.ph $ac3, $t6, $t7", "ac3", 0xaaaaaaaa,
                              0x55555555, 0xffffffff, 0xabababab, t6, t7);
    TESTDSPINST_AC_RS_RT_DSPC("dpsqx_sa.w.ph $ac0, $t5, $t3", "ac0", 0x00000018,
-                             0xffff2435, 0xffffffff, 0xfc79b4d2, t5, t3);
+                             0xfbff2435, 0xffffffff, 0xfc79b4d2, t5, t3);
    TESTDSPINST_AC_RS_RT_DSPC("dpsqx_sa.w.ph $ac1, $t2, $t4", "ac1", 0xbabababa,
                              0xabababab, 0x00000000, 0x00000000, t2, t4);
    TESTDSPINST_AC_RS_RT_DSPC("dpsqx_sa.w.ph $ac2, $t0, $t8", "ac2", 0xf0f0f0f0,
@@ -2363,8 +2363,8 @@ int main(int argc, char **argv)
                              0x93474bde, 0xffffffff, 0x93474bde, t0, t8);
    TESTDSPINST_AC_RS_RT_DSPC("dpsqx_sa.w.ph $ac3, $t4, $t5", "ac3", 0x7c000790,
                              0xfc0007ff, 0xffffffff, 0xfabfabfa, t4, t5);
-   TESTDSPINST_AC_RS_RT_DSPC("dpsqx_sa.w.ph $ac2, $t0, $t8", "ac2", 0xffffffff,
-                             0xffffffff, 0x00000000, 0x083b3571, t0, t8);
+   TESTDSPINST_AC_RS_RT_DSPC("dpsqx_sa.w.ph $ac2, $t0, $t8", "ac2", 0xbfff54ff,
+                             0xfb32ff01, 0x00000000, 0x083b3571, t0, t8);
    TESTDSPINST_AC_RS_RT_DSPC("dpsqx_sa.w.ph $ac0, $t0, $t1", "ac0", 0x24a3291e,
                              0x5648e540, 0xffffffff, 0xb9743941, t0, t1);
    TESTDSPINST_AC_RS_RT_DSPC("dpsqx_sa.w.ph $ac1, $t2, $t3", "ac1", 0xdd91eebf,
@@ -2399,7 +2399,7 @@ int main(int argc, char **argv)
                              0xc1037fa4, 0xffffffff, 0x9493110e, t4, t5);
    TESTDSPINST_AC_RS_RT_DSPC("dpsqx_sa.w.ph $ac1, $t2, $t4", "ac1", 0x55555555,
                              0xcb4ab48f, 0xffffffff, 0xbb246228, t2, t4);
-   TESTDSPINST_AC_RS_RT_DSPC("dpsqx_sa.w.ph $ac2, $t0, $t8", "ac2", 0xffff8000,
+   TESTDSPINST_AC_RS_RT_DSPC("dpsqx_sa.w.ph $ac2, $t0, $t8", "ac2", 0x0fff8000,
                              0xaf8f8000, 0x00000000, 0x339d8d88, t0, t8);
    TESTDSPINST_AC_RS_RT_DSPC("dpsqx_sa.w.ph $ac0, $t0, $t1", "ac0", 0xabababab,
                              0x87df4510, 0x00000000, 0x70974249, t0, t1);
@@ -2411,7 +2411,7 @@ int main(int argc, char **argv)
                              0x006a54f2, 0x00000000, 0x0cd6b508, t6, t7);
    TESTDSPINST_AC_RS_RT_DSPC("dpsqx_sa.w.ph $ac0, $t5, $t3", "ac0", 0x00086755,
                              0x79f74493, 0x00000000, 0x6731e282, t5, t3);
-   TESTDSPINST_AC_RS_RT_DSPC("dpsqx_sa.w.ph $ac1, $t2, $t4", "ac1", 0xffff8000,
+   TESTDSPINST_AC_RS_RT_DSPC("dpsqx_sa.w.ph $ac1, $t2, $t4", "ac1", 0x98548000,
                              0x9c098000, 0xffffffff, 0xb6edf28f, t2, t4);
 
    printf("-------- DPSX.W.PH --------\n");

@@ -912,13 +912,13 @@ dpsqx_sa.w.ph $ac0, $t0, $t1 :: rs 0x00000004 rt 0x40000000 inHI 0x00000000 inLO
 dpsqx_sa.w.ph $ac1, $t2, $t3 :: rs 0x80002435 rt 0x80003421 inHI 0x00000000 inLO 0x40000000 outHI 0x00000000 outLO 0x7fffffff dspCtrl 0x00020000
 dpsqx_sa.w.ph $ac3, $t6, $t7 :: rs 0x76548000 rt 0x73468000 inHI 0x00000000 inLO 0x7fffffff outHI 0x00000000 outLO 0x7fffffff dspCtrl 0x00080000
 dpsqx_sa.w.ph $ac0, $t5, $t3 :: rs 0x80000000 rt 0x80000000 inHI 0x00000000 inLO 0x00000001 outHI 0x00000000 outLO 0x00000001 dspCtrl 0x00000000
-dpsqx_sa.w.ph $ac1, $t2, $t4 :: rs 0x00010001 rt 0xffffffff inHI 0xffffffff inLO 0xffffffff outHI 0x00000000 outLO 0x00000003 dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac1, $t2, $t4 :: rs 0x00010001 rt 0xcfffefff inHI 0xffffffff inLO 0xffffffff outHI 0x00000000 outLO 0x00008003 dspCtrl 0x00000000
 dpsqx_sa.w.ph $ac2, $t0, $t8 :: rs 0x7fff7fff rt 0x7fff7fff inHI 0xffffffff inLO 0xffffffff outHI 0xffffffff outLO 0x80000000 dspCtrl 0x00040000
 dpsqx_sa.w.ph $ac0, $t0, $t1 :: rs 0x0000c420 rt 0x00000555 inHI 0x00000000 inLO 0x0fde3126 outHI 0x00000000 outLO 0x0fde3126 dspCtrl 0x00000000
 dpsqx_sa.w.ph $ac1, $t2, $t3 :: rs 0x00000000 rt 0x00000000 inHI 0x00000000 inLO 0x55555555 outHI 0x00000000 outLO 0x55555555 dspCtrl 0x00000000
 dpsqx_sa.w.ph $ac2, $t4, $t1 :: rs 0x80000000 rt 0x80000000 inHI 0xffffffff inLO 0xffff2435 outHI 0xffffffff outLO 0xffff2435 dspCtrl 0x00000000
 dpsqx_sa.w.ph $ac3, $t6, $t7 :: rs 0xaaaaaaaa rt 0x55555555 inHI 0xffffffff inLO 0xabababab outHI 0x00000000 outLO 0x1d7339e3 dspCtrl 0x00000000
-dpsqx_sa.w.ph $ac0, $t5, $t3 :: rs 0x00000018 rt 0xffff2435 inHI 0xffffffff inLO 0xfc79b4d2 outHI 0xffffffff outLO 0xfc79b502 dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac0, $t5, $t3 :: rs 0x00000018 rt 0xfbff2435 inHI 0xffffffff inLO 0xfc79b4d2 outHI 0xffffffff outLO 0xfc7a7502 dspCtrl 0x00000000
 dpsqx_sa.w.ph $ac1, $t2, $t4 :: rs 0xbabababa rt 0xabababab inHI 0x00000000 inLO 0x00000000 outHI 0xffffffff outLO 0xa4b81f08 dspCtrl 0x00000000
 dpsqx_sa.w.ph $ac2, $t0, $t8 :: rs 0xf0f0f0f0 rt 0xfc79b4d2 inHI 0x00000000 inLO 0x00000000 outHI 0xffffffff outLO 0xf6bcf360 dspCtrl 0x00000000
 dpsqx_sa.w.ph $ac3, $t4, $t5 :: rs 0xfbde3976 rt 0x00000000 inHI 0x00000000 inLO 0x12349876 outHI 0x00000000 outLO 0x12349876 dspCtrl 0x00000000
@@ -930,7 +930,7 @@ dpsqx_sa.w.ph $ac0, $t5, $t3 :: rs 0xcacacaca rt 0x1bdbdbdb inHI 0x00000000 inLO
 dpsqx_sa.w.ph $ac1, $t2, $t4 :: rs 0xbacabaca rt 0xdecadeca inHI 0xffffffff inLO 0xdecadeca outHI 0xffffffff outLO 0xbae0a13a dspCtrl 0x00000000
 dpsqx_sa.w.ph $ac2, $t0, $t8 :: rs 0x12fadeb4 rt 0x93474bde inHI 0xffffffff inLO 0x93474bde outHI 0xffffffff outLO 0x80000000 dspCtrl 0x00040000
 dpsqx_sa.w.ph $ac3, $t4, $t5 :: rs 0x7c000790 rt 0xfc0007ff inHI 0xffffffff inLO 0xfabfabfa outHI 0xffffffff outLO 0xf33d23fa dspCtrl 0x00000000
-dpsqx_sa.w.ph $ac2, $t0, $t8 :: rs 0xffffffff rt 0xffffffff inHI 0x00000000 inLO 0x083b3571 outHI 0x00000000 outLO 0x083b356d dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac2, $t0, $t8 :: rs 0xbfff54ff rt 0xfb32ff01 inHI 0x00000000 inLO 0x083b3571 outHI 0x00000000 outLO 0x0aec75d7 dspCtrl 0x00000000
 dpsqx_sa.w.ph $ac0, $t0, $t1 :: rs 0x24a3291e rt 0x5648e540 inHI 0xffffffff inLO 0xb9743941 outHI 0xffffffff outLO 0xa56500e1 dspCtrl 0x00000000
 dpsqx_sa.w.ph $ac1, $t2, $t3 :: rs 0xdd91eebf rt 0xc54f79e6 inHI 0xffffffff inLO 0xbce5f924 outHI 0xffffffff outLO 0xd5c776b6 dspCtrl 0x00000000
 dpsqx_sa.w.ph $ac2, $t4, $t1 :: rs 0xf7ce2ec6 rt 0x5fc92974 inHI 0xffffffff inLO 0xcc3c201c outHI 0xffffffff outLO 0xabe32a80 dspCtrl 0x00000000
@@ -948,13 +948,13 @@ dpsqx_sa.w.ph $ac1, $t2, $t4 :: rs 0x00000555 rt 0xb6edf28f inHI 0x00000000 inLO
 dpsqx_sa.w.ph $ac2, $t0, $t8 :: rs 0x00000000 rt 0x4b4ec9ca inHI 0x00000000 inLO 0x71c8315f outHI 0x00000000 outLO 0x71c8315f dspCtrl 0x00000000
 dpsqx_sa.w.ph $ac3, $t4, $t5 :: rs 0x80000000 rt 0xc1037fa4 inHI 0xffffffff inLO 0x9493110e outHI 0x00000000 outLO 0x1437110e dspCtrl 0x00000000
 dpsqx_sa.w.ph $ac1, $t2, $t4 :: rs 0x55555555 rt 0xcb4ab48f inHI 0xffffffff inLO 0xbb246228 outHI 0x00000000 outLO 0x1093620e dspCtrl 0x00000000
-dpsqx_sa.w.ph $ac2, $t0, $t8 :: rs 0xffff8000 rt 0xaf8f8000 inHI 0x00000000 inLO 0x339d8d88 outHI 0xffffffff outLO 0xe32b8d88 dspCtrl 0x00000000
+dpsqx_sa.w.ph $ac2, $t0, $t8 :: rs 0x0fff8000 rt 0xaf8f8000 inHI 0x00000000 inLO 0x339d8d88 outHI 0xffffffff outLO 0xf32b8d88 dspCtrl 0x00000000
 dpsqx_sa.w.ph $ac0, $t0, $t1 :: rs 0xabababab rt 0x87df4510 inHI 0x00000000 inLO 0x70974249 outHI 0x00000000 outLO 0x4ef230ff dspCtrl 0x00000000
 dpsqx_sa.w.ph $ac1, $t2, $t3 :: rs 0xfc79b4d2 rt 0xabf4e8e1 inHI 0xffffffff inLO 0x8a8d4e7d outHI 0xffffffff outLO 0x80000000 dspCtrl 0x00020000
 dpsqx_sa.w.ph $ac2, $t4, $t1 :: rs 0x00000000 rt 0xf4c0eeac inHI 0xffffffff inLO 0xeb1b4335 outHI 0xffffffff outLO 0xeb1b4335 dspCtrl 0x00000000
 dpsqx_sa.w.ph $ac3, $t6, $t7 :: rs 0x00354565 rt 0x006a54f2 inHI 0x00000000 inLO 0x0cd6b508 outHI 0x00000000 outLO 0x0c7a1130 dspCtrl 0x00000000
 dpsqx_sa.w.ph $ac0, $t5, $t3 :: rs 0x00086755 rt 0x79f74493 inHI 0x00000000 inLO 0x6731e282 outHI 0x00000000 outLO 0x04b7d94c dspCtrl 0x00000000
-dpsqx_sa.w.ph $ac1, $t2, $t4 :: rs 0xffff8000 rt 0x9c098000 inHI 0xffffffff inLO 0xb6edf28f outHI 0xffffffff outLO 0x80000000 dspCtrl 0x00020000
+dpsqx_sa.w.ph $ac1, $t2, $t4 :: rs 0x98548000 rt 0x9c098000 inHI 0xffffffff inLO 0xb6edf28f outHI 0xffffffff outLO 0x80000000 dspCtrl 0x00020000
 -------- DPSX.W.PH --------
 dpsx.w.ph   HIout=0xffffffff, LOout=0x000075fe, HIin=0xffffffff, LOin=0x00000000, RSval=0x3277ffff, RTval=0x4387ffff
 dpsx.w.ph   HIout=0x00000000, LOout=0x00000000, HIin=0x00000000, LOin=0x00000000, RSval=0x00000004, RTval=0x00000005

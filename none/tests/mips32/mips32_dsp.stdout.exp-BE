@@ -11,14 +11,14 @@ absq_s.ph $t0, $t1 :: rd 0x23534870 rt 0x23534870 DSPControl 0x0
 absq_s.ph $t2, $t3 :: rd 0x05555214 rt 0x0555adec DSPControl 0x0
 absq_s.ph $t4, $t1 :: rd 0x67f57cde rt 0x980b7cde DSPControl 0x0
 absq_s.ph $t6, $t7 :: rd 0x068d437b rt 0xf973437b DSPControl 0x0
-absq_s.ph $t5, $t3 :: rd 0x6cb94bde rt 0x93474bde DSPControl 0x0
+absq_s.ph $t5, $t3 :: rd 0x23c54b6e rt 0x23c54b6e DSPControl 0x0
 absq_s.ph $t2, $t4 :: rd 0x55555555 rt 0x55555555 DSPControl 0x0
 absq_s.ph $t0, $t8 :: rd 0x3b2501e0 rt 0xc4dbfe20 DSPControl 0x0
 absq_s.ph $t4, $t4 :: rd 0x73467f44 rt 0x734680bc DSPControl 0x0
 absq_s.ph $t0, $t1 :: rd 0x00354565 rt 0x00354565 DSPControl 0x0
 absq_s.ph $t2, $t3 :: rd 0x45364536 rt 0xbacabaca DSPControl 0x0
-absq_s.ph $t4, $t1 :: rd 0x21362136 rt 0xdecadeca DSPControl 0x0
-absq_s.ph $t6, $t7 :: rd 0x00000286 rt 0x00000286 DSPControl 0x0
+absq_s.ph $t4, $t1 :: rd 0x245d7137 rt 0xdba38ec9 DSPControl 0x0
+absq_s.ph $t6, $t7 :: rd 0x0b300286 rt 0x0b300286 DSPControl 0x0
 absq_s.ph $t5, $t3 :: rd 0x54555455 rt 0xabababab DSPControl 0x0
 absq_s.ph $t2, $t4 :: rd 0x00086755 rt 0x00086755 DSPControl 0x0
 absq_s.ph $t0, $t8 :: rd 0x70717080 rt 0x8f8f8f80 DSPControl 0x0
@@ -56,14 +56,14 @@ absq_s.w $t0, $t1 :: rd 0x23534870 rt 0x23534870 DSPControl 0x0
 absq_s.w $t2, $t3 :: rd 0x0555adec rt 0x0555adec DSPControl 0x0
 absq_s.w $t4, $t1 :: rd 0x67f48322 rt 0x980b7cde DSPControl 0x0
 absq_s.w $t6, $t7 :: rd 0x068cbc85 rt 0xf973437b DSPControl 0x0
-absq_s.w $t5, $t3 :: rd 0x6cb8b422 rt 0x93474bde DSPControl 0x0
+absq_s.w $t5, $t3 :: rd 0x23c54b6e rt 0x23c54b6e DSPControl 0x0
 absq_s.w $t2, $t4 :: rd 0x55555555 rt 0x55555555 DSPControl 0x0
 absq_s.w $t0, $t8 :: rd 0x3b2401e0 rt 0xc4dbfe20 DSPControl 0x0
 absq_s.w $t4, $t4 :: rd 0x734680bc rt 0x734680bc DSPControl 0x0
 absq_s.w $t0, $t1 :: rd 0x00354565 rt 0x00354565 DSPControl 0x0
 absq_s.w $t2, $t3 :: rd 0x45354536 rt 0xbacabaca DSPControl 0x0
-absq_s.w $t4, $t1 :: rd 0x21352136 rt 0xdecadeca DSPControl 0x0
-absq_s.w $t6, $t7 :: rd 0x00000286 rt 0x00000286 DSPControl 0x0
+absq_s.w $t4, $t1 :: rd 0x245c7137 rt 0xdba38ec9 DSPControl 0x0
+absq_s.w $t6, $t7 :: rd 0x0b300286 rt 0x0b300286 DSPControl 0x0
 absq_s.w $t5, $t3 :: rd 0x54545455 rt 0xabababab DSPControl 0x0
 absq_s.w $t2, $t4 :: rd 0x00086755 rt 0x00086755 DSPControl 0x0
 absq_s.w $t0, $t8 :: rd 0x70707080 rt 0x8f8f8f80 DSPControl 0x0
@@ -94,17 +94,17 @@ addq.ph $t2, $t3, $t4 :: rs 0x00045fb2 rt 0x00000286 out 0x00046238 DSPCtrl 0x00
 addq.ph $t4, $t1, $t5 :: rs 0x00002435 rt 0xffff3421 out 0xffff5856 DSPCtrl 0x00000000
 addq.ph $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0x7aabcd74 DSPCtrl 0x00000000
 addq.ph $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0x7973437b DSPCtrl 0x00100000
-addq.ph $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x00000000 DSPCtrl 0x00000000
-addq.ph $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0xfffefffe DSPCtrl 0x00100000
-addq.ph $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000c975 DSPCtrl 0x00000000
+addq.ph $t2, $t4, $t8 :: rs 0x00010001 rt 0xfa3259ff out 0xfa335a00 DSPCtrl 0x00000000
+addq.ph $t0, $t8, $t0 :: rs 0x7fff7322 rt 0x77ff7fff out 0xf7fef321 DSPCtrl 0x00100000
+addq.ph $t4, $t6, $t1 :: rs 0x0034c420 rt 0x00000555 out 0x0034c975 DSPCtrl 0x00000000
 addq.ph $t2, $t3, $t4 :: rs 0x00000004 rt 0x40000000 out 0x40000004 DSPCtrl 0x00000000
 addq.ph $t4, $t1, $t5 :: rs 0x80002435 rt 0x80003421 out 0x00005856 DSPCtrl 0x00100000
 addq.ph $t6, $t7, $t3 :: rs 0x76548000 rt 0x73468000 out 0xe99a0000 DSPCtrl 0x00100000
-addq.ph $t5, $t3, $t2 :: rs 0x80000000 rt 0x80000000 out 0x00000000 DSPCtrl 0x00100000
+addq.ph $t5, $t3, $t2 :: rs 0x80000000 rt 0x80620020 out 0x00620020 DSPCtrl 0x00100000
 addq.ph $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x00000000 DSPCtrl 0x00000000
 addq.ph $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0xfffefffe DSPCtrl 0x00100000
 addq.ph $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000c975 DSPCtrl 0x00000000
-addq.ph $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
+addq.ph $t0, $t1, $t2 :: rs 0x000a2300 rt 0x83bc1900 out 0x83c63c00 DSPCtrl 0x00000000
 addq.ph $t2, $t3, $t4 :: rs 0x80000000 rt 0x80000000 out 0x00000000 DSPCtrl 0x00100000
 addq.ph $t4, $t1, $t5 :: rs 0xaaaaaaaa rt 0x55555555 out 0xffffffff DSPCtrl 0x00000000
 addq.ph $t6, $t7, $t3 :: rs 0x00000018 rt 0xffff2435 out 0xffff244d DSPCtrl 0x00000000
@@ -134,57 +134,62 @@ addq_s.ph $t2, $t3, $t4 :: rs 0x00045fb2 rt 0x00000286 out 0x00046238 DSPCtrl 0x
 addq_s.ph $t4, $t1, $t5 :: rs 0x00002435 rt 0xffff3421 out 0xffff5856 DSPCtrl 0x00000000
 addq_s.ph $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0x7aabcd74 DSPCtrl 0x00000000
 addq_s.ph $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0x8000437b DSPCtrl 0x00100000
-addq_s.ph $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x00000000 DSPCtrl 0x00000000
-addq_s.ph $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x7fff7fff DSPCtrl 0x00100000
-addq_s.ph $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000c975 DSPCtrl 0x00000000
-addq_s.ph $t2, $t3, $t4 :: rs 0x00000004 rt 0x40000000 out 0x40000004 DSPCtrl 0x00000000
-addq_s.ph $t4, $t1, $t5 :: rs 0x80002435 rt 0x80003421 out 0x80005856 DSPCtrl 0x00100000
-addq_s.ph $t6, $t7, $t3 :: rs 0x76548000 rt 0x73468000 out 0x7fff8000 DSPCtrl 0x00100000
+addq_s.ph $t0, $t1, $t2 :: rs 0x00010001 rt 0xfa3259ff out 0xfa335a00 DSPCtrl 0x00000000
+addq_s.ph $t2, $t3, $t4 :: rs 0x7fff7322 rt 0x77ff7fff out 0x7fff7fff DSPCtrl 0x00100000
+addq_s.ph $t4, $t1, $t5 :: rs 0x0034c420 rt 0x00000555 out 0x0034c975 DSPCtrl 0x00000000
+addq_s.ph $t6, $t7, $t3 :: rs 0x00000004 rt 0x40000000 out 0x40000004 DSPCtrl 0x00000000
+addq_s.ph $t5, $t3, $t2 :: rs 0x80002435 rt 0x80003421 out 0x80005856 DSPCtrl 0x00100000
+addq_s.ph $t2, $t4, $t8 :: rs 0x76548000 rt 0x73468000 out 0x7fff8000 DSPCtrl 0x00100000
+addq_s.ph $t0, $t8, $t0 :: rs 0x80000000 rt 0x80620020 out 0x80000020 DSPCtrl 0x00100000
+addq_s.ph $t4, $t6, $t1 :: rs 0x00010001 rt 0xffffffff out 0x00000000 DSPCtrl 0x00000000
+addq_s.ph $t2, $t3, $t4 :: rs 0x7fff7fff rt 0x7fff7fff out 0x7fff7fff DSPCtrl 0x00100000
+addq_s.ph $t4, $t1, $t5 :: rs 0x0000c420 rt 0x00000555 out 0x0000c975 DSPCtrl 0x00000000
+addq_s.ph $t6, $t7, $t3 :: rs 0x000a2300 rt 0x83bc1900 out 0x83c63c00 DSPCtrl 0x00000000
 addq_s.ph $t5, $t3, $t2 :: rs 0x80000000 rt 0x80000000 out 0x80000000 DSPCtrl 0x00100000
-addq_s.ph $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x00000000 DSPCtrl 0x00000000
-addq_s.ph $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x7fff7fff DSPCtrl 0x00100000
-addq_s.ph $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000c975 DSPCtrl 0x00000000
-addq_s.ph $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
-addq_s.ph $t2, $t3, $t4 :: rs 0x80000000 rt 0x80000000 out 0x80000000 DSPCtrl 0x00100000
-addq_s.ph $t4, $t1, $t5 :: rs 0xaaaaaaaa rt 0x55555555 out 0xffffffff DSPCtrl 0x00000000
-addq_s.ph $t6, $t7, $t3 :: rs 0x00000018 rt 0xffff2435 out 0xffff244d DSPCtrl 0x00000000
-addq_s.ph $t5, $t3, $t2 :: rs 0xbabababa rt 0xabababab out 0x80008000 DSPCtrl 0x00100000
-addq_s.ph $t2, $t4, $t8 :: rs 0xf0f0f0f0 rt 0xfc79b4d2 out 0xed69a5c2 DSPCtrl 0x00000000
-addq_s.ph $t0, $t8, $t0 :: rs 0xfbde3976 rt 0x00000000 out 0xfbde3976 DSPCtrl 0x00000000
-addq_s.ph $t4, $t6, $t1 :: rs 0x23534870 rt 0x00354565 out 0x23887fff DSPCtrl 0x00100000
-addq_s.ph $t0, $t1, $t2 :: rs 0x980b7cde rt 0x00086755 out 0x98137fff DSPCtrl 0x00100000
-addq_s.ph $t2, $t3, $t4 :: rs 0x00000018 rt 0x8f8f8f8f out 0x8f8f8fa7 DSPCtrl 0x00000000
-addq_s.ph $t4, $t1, $t5 :: rs 0x92784656 rt 0xeeeeeeee out 0x81663544 DSPCtrl 0x00000000
-addq_s.ph $t6, $t7, $t3 :: rs 0xcacacaca rt 0x1bdbdbdb out 0xe6a5a6a5 DSPCtrl 0x00000000
-addq_s.ph $t5, $t3, $t2 :: rs 0xbacabaca rt 0xdecadeca out 0x99949994 DSPCtrl 0x00000000
-addq_s.ph $t2, $t4, $t8 :: rs 0x12fadeb4 rt 0x93474bde out 0xa6412a92 DSPCtrl 0x00000000
-addq_s.ph $t0, $t8, $t0 :: rs 0x7c000790 rt 0xfc0007ff out 0x78000f8f DSPCtrl 0x00000000
-addq_s.ph $t4, $t6, $t1 :: rs 0xffffffff rt 0xffffffff out 0xfffefffe DSPCtrl 0x00000000
-addq_s.ph $t0, $t1, $t2 :: rs 0xf2f4df1f rt 0xcb4ab48f out 0xbe3e93ae DSPCtrl 0x00000000
-addq_s.ph $t2, $t3, $t4 :: rs 0x435f909a rt 0xaf8f7e18 out 0xf2ee0eb2 DSPCtrl 0x00000000
-addq_s.ph $t4, $t1, $t5 :: rs 0x2106ba5f rt 0x87df4510 out 0xa8e5ff6f DSPCtrl 0x00000000
-addq_s.ph $t6, $t7, $t3 :: rs 0x246a6376 rt 0xabf4e8e1 out 0xd05e4c57 DSPCtrl 0x00000000
-addq_s.ph $t5, $t3, $t2 :: rs 0x1046a1a3 rt 0xf4c0eeac out 0x0506904f DSPCtrl 0x00000000
-addq_s.ph $t2, $t4, $t8 :: rs 0x638ca515 rt 0x006a54f2 out 0x63f6fa07 DSPCtrl 0x00000000
-addq_s.ph $t0, $t8, $t0 :: rs 0xf63e7a9d rt 0x79f74493 out 0x70357fff DSPCtrl 0x00100000
-addq_s.ph $t4, $t6, $t1 :: rs 0xbd6845cd rt 0x9c09e313 out 0x800028e0 DSPCtrl 0x00100000
+addq_s.ph $t2, $t4, $t8 :: rs 0xaaaaaaaa rt 0x55555555 out 0xffffffff DSPCtrl 0x00000000
+addq_s.ph $t0, $t8, $t0 :: rs 0x00000018 rt 0xffff2435 out 0xffff244d DSPCtrl 0x00000000
+addq_s.ph $t4, $t6, $t1 :: rs 0xbabababa rt 0xabababab out 0x80008000 DSPCtrl 0x00100000
+addq_s.ph $t0, $t1, $t2 :: rs 0xf0f0f0f0 rt 0xfc79b4d2 out 0xed69a5c2 DSPCtrl 0x00000000
+addq_s.ph $t2, $t3, $t4 :: rs 0xfbde3976 rt 0x00000000 out 0xfbde3976 DSPCtrl 0x00000000
+addq_s.ph $t4, $t1, $t5 :: rs 0x23534870 rt 0x00354565 out 0x23887fff DSPCtrl 0x00100000
+addq_s.ph $t6, $t7, $t3 :: rs 0x980b7cde rt 0x00086755 out 0x98137fff DSPCtrl 0x00100000
+addq_s.ph $t5, $t3, $t2 :: rs 0x00000018 rt 0x8f8f8f8f out 0x8f8f8fa7 DSPCtrl 0x00000000
+addq_s.ph $t2, $t4, $t8 :: rs 0x92784656 rt 0xeeeeeeee out 0x81663544 DSPCtrl 0x00000000
+addq_s.ph $t0, $t8, $t0 :: rs 0xcacacaca rt 0x1bdbdbdb out 0xe6a5a6a5 DSPCtrl 0x00000000
+addq_s.ph $t4, $t6, $t1 :: rs 0xbacabaca rt 0xdecadeca out 0x99949994 DSPCtrl 0x00000000
+addq_s.ph $t0, $t1, $t2 :: rs 0x12fadeb4 rt 0x93474bde out 0xa6412a92 DSPCtrl 0x00000000
+addq_s.ph $t2, $t3, $t4 :: rs 0x7c000790 rt 0xfc0007ff out 0x78000f8f DSPCtrl 0x00000000
+addq_s.ph $t4, $t1, $t5 :: rs 0xffffffff rt 0xffffffff out 0xfffefffe DSPCtrl 0x00000000
+addq_s.ph $t6, $t7, $t3 :: rs 0xf2f4df1f rt 0xcb4ab48f out 0xbe3e93ae DSPCtrl 0x00000000
+addq_s.ph $t5, $t3, $t2 :: rs 0x435f909a rt 0xaf8f7e18 out 0xf2ee0eb2 DSPCtrl 0x00000000
+addq_s.ph $t2, $t4, $t8 :: rs 0x2106ba5f rt 0x87df4510 out 0xa8e5ff6f DSPCtrl 0x00000000
+addq_s.ph $t0, $t8, $t0 :: rs 0x246a6376 rt 0xabf4e8e1 out 0xd05e4c57 DSPCtrl 0x00000000
+addq_s.ph $t4, $t6, $t1 :: rs 0x1046a1a3 rt 0xf4c0eeac out 0x0506904f DSPCtrl 0x00000000
+addq_s.ph $t0, $t1, $t2 :: rs 0x638ca515 rt 0x006a54f2 out 0x63f6fa07 DSPCtrl 0x00000000
+addq_s.ph $t2, $t3, $t4 :: rs 0xf63e7a9d rt 0x79f74493 out 0x70357fff DSPCtrl 0x00100000
+addq_s.ph $t4, $t1, $t5 :: rs 0xbd6845cd rt 0x9c09e313 out 0x800028e0 DSPCtrl 0x00100000
+addq_s.ph $t6, $t7, $t3 :: rs 0x234ba291 rt 0xbb64981c out 0xdeaf8000 DSPCtrl 0x00100000
+addq_s.ph $t5, $t3, $t2 :: rs 0x120934de rt 0xad2c7601 out 0xbf357fff DSPCtrl 0x00100000
+addq_s.ph $t2, $t4, $t8 :: rs 0xf5643908 rt 0xbaff3492 out 0xb0636d9a DSPCtrl 0x00000000
+addq_s.ph $t0, $t8, $t0 :: rs 0x88503331 rt 0xd60e34a2 out 0x800067d3 DSPCtrl 0x00100000
+addq_s.ph $t4, $t6, $t1 :: rs 0x7b5309ac rt 0xc5487201 out 0x409b7bad DSPCtrl 0x00000000
 -------- ADDQ_S.W --------
 addq_s.w $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
 addq_s.w $t2, $t3, $t4 :: rs 0x00045fb2 rt 0x00000286 out 0x00046238 DSPCtrl 0x00000000
 addq_s.w $t4, $t1, $t5 :: rs 0x00002435 rt 0xffff3421 out 0xffff5856 DSPCtrl 0x00000000
 addq_s.w $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0x7aabcd74 DSPCtrl 0x00000000
 addq_s.w $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0x80000000 DSPCtrl 0x00100000
-addq_s.w $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x00010000 DSPCtrl 0x00000000
-addq_s.w $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x7fffffff DSPCtrl 0x00100000
-addq_s.w $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000c975 DSPCtrl 0x00000000
+addq_s.w $t2, $t4, $t8 :: rs 0x00010001 rt 0xfa3259ff out 0xfa335a00 DSPCtrl 0x00000000
+addq_s.w $t0, $t8, $t0 :: rs 0x7fff7322 rt 0x77ff7fff out 0x7fffffff DSPCtrl 0x00100000
+addq_s.w $t4, $t6, $t1 :: rs 0x0034c420 rt 0x00000555 out 0x0034c975 DSPCtrl 0x00000000
 addq_s.w $t2, $t3, $t4 :: rs 0x00000004 rt 0x40000000 out 0x40000004 DSPCtrl 0x00000000
 addq_s.w $t4, $t1, $t5 :: rs 0x80002435 rt 0x80003421 out 0x80000000 DSPCtrl 0x00100000
 addq_s.w $t6, $t7, $t3 :: rs 0x76548000 rt 0x73468000 out 0x7fffffff DSPCtrl 0x00100000
-addq_s.w $t5, $t3, $t2 :: rs 0x80000000 rt 0x80000000 out 0x80000000 DSPCtrl 0x00100000
+addq_s.w $t5, $t3, $t2 :: rs 0x80000000 rt 0x80620020 out 0x80000000 DSPCtrl 0x00100000
 addq_s.w $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x00010000 DSPCtrl 0x00000000
 addq_s.w $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x7fffffff DSPCtrl 0x00100000
 addq_s.w $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000c975 DSPCtrl 0x00000000
-addq_s.w $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
+addq_s.w $t0, $t1, $t2 :: rs 0x000a2300 rt 0x83bc1900 out 0x83c63c00 DSPCtrl 0x00000000
 addq_s.w $t2, $t3, $t4 :: rs 0x80000000 rt 0x80000000 out 0x80000000 DSPCtrl 0x00100000
 addq_s.w $t4, $t1, $t5 :: rs 0xaaaaaaaa rt 0x55555555 out 0xffffffff DSPCtrl 0x00000000
 addq_s.w $t6, $t7, $t3 :: rs 0x00000018 rt 0xffff2435 out 0xffff244d DSPCtrl 0x00000000
@@ -214,17 +219,17 @@ addsc $t2, $t3, $t4 :: rs 0x00045fb2 rt 0x00000286 out 0x00046238 DSPCtrl 0x0000
 addsc $t4, $t1, $t5 :: rs 0x00002435 rt 0xffff3421 out 0xffff5856 DSPCtrl 0x00000000
 addsc $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0x7aabcd74 DSPCtrl 0x00000000
 addsc $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0x7973437b DSPCtrl 0x00002000
-addsc $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x00010000 DSPCtrl 0x00002000
-addsc $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0xfffefffe DSPCtrl 0x00000000
-addsc $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000c975 DSPCtrl 0x00000000
+addsc $t2, $t4, $t8 :: rs 0x00010001 rt 0xfa3259ff out 0xfa335a00 DSPCtrl 0x00000000
+addsc $t0, $t8, $t0 :: rs 0x7fff7322 rt 0x77ff7fff out 0xf7fef321 DSPCtrl 0x00000000
+addsc $t4, $t6, $t1 :: rs 0x0034c420 rt 0x00000555 out 0x0034c975 DSPCtrl 0x00000000
 addsc $t2, $t3, $t4 :: rs 0x00000004 rt 0x40000000 out 0x40000004 DSPCtrl 0x00000000
 addsc $t4, $t1, $t5 :: rs 0x80002435 rt 0x80003421 out 0x00005856 DSPCtrl 0x00002000
 addsc $t6, $t7, $t3 :: rs 0x76548000 rt 0x73468000 out 0xe99b0000 DSPCtrl 0x00000000
-addsc $t5, $t3, $t2 :: rs 0x80000000 rt 0x80000000 out 0x00000000 DSPCtrl 0x00002000
+addsc $t5, $t3, $t2 :: rs 0x80000000 rt 0x80620020 out 0x00620020 DSPCtrl 0x00002000
 addsc $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x00010000 DSPCtrl 0x00002000
 addsc $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0xfffefffe DSPCtrl 0x00000000
 addsc $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000c975 DSPCtrl 0x00000000
-addsc $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
+addsc $t0, $t1, $t2 :: rs 0x000a2300 rt 0x83bc1900 out 0x83c63c00 DSPCtrl 0x00000000
 addsc $t2, $t3, $t4 :: rs 0x80000000 rt 0x80000000 out 0x00000000 DSPCtrl 0x00002000
 addsc $t4, $t1, $t5 :: rs 0xaaaaaaaa rt 0x55555555 out 0xffffffff DSPCtrl 0x00000000
 addsc $t6, $t7, $t3 :: rs 0x00000018 rt 0xffff2435 out 0xffff244d DSPCtrl 0x00000000
@@ -254,17 +259,17 @@ addu.qb $t2, $t3, $t4 :: rs 0x00045fb2 rt 0x00000286 out 0x00046138 DSPCtrl 0x00
 addu.qb $t4, $t1, $t5 :: rs 0x00002435 rt 0xffff3421 out 0xffff5856 DSPCtrl 0x00000000
 addu.qb $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0x7aabcc74 DSPCtrl 0x00100000
 addu.qb $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0x7973437b DSPCtrl 0x00100000
-addu.qb $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0xff00ff00 DSPCtrl 0x00100000
-addu.qb $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0xfefefefe DSPCtrl 0x00100000
-addu.qb $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000c975 DSPCtrl 0x00000000
+addu.qb $t2, $t4, $t8 :: rs 0x00010001 rt 0xfa3259ff out 0xfa335900 DSPCtrl 0x00100000
+addu.qb $t0, $t8, $t0 :: rs 0x7fff7322 rt 0x77ff7fff out 0xf6fef221 DSPCtrl 0x00100000
+addu.qb $t4, $t6, $t1 :: rs 0x0034c420 rt 0x00000555 out 0x0034c975 DSPCtrl 0x00000000
 addu.qb $t2, $t3, $t4 :: rs 0x00000004 rt 0x40000000 out 0x40000004 DSPCtrl 0x00000000
 addu.qb $t4, $t1, $t5 :: rs 0x80002435 rt 0x80003421 out 0x00005856 DSPCtrl 0x00100000
 addu.qb $t6, $t7, $t3 :: rs 0x76548000 rt 0x73468000 out 0xe99a0000 DSPCtrl 0x00100000
-addu.qb $t5, $t3, $t2 :: rs 0x80000000 rt 0x80000000 out 0x00000000 DSPCtrl 0x00100000
+addu.qb $t5, $t3, $t2 :: rs 0x80000000 rt 0x80620020 out 0x00620020 DSPCtrl 0x00100000
 addu.qb $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0xff00ff00 DSPCtrl 0x00100000
 addu.qb $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0xfefefefe DSPCtrl 0x00100000
 addu.qb $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000c975 DSPCtrl 0x00000000
-addu.qb $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
+addu.qb $t0, $t1, $t2 :: rs 0x000a2300 rt 0x83bc1900 out 0x83c63c00 DSPCtrl 0x00000000
 addu.qb $t2, $t3, $t4 :: rs 0x80000000 rt 0x80000000 out 0x00000000 DSPCtrl 0x00100000
 addu.qb $t4, $t1, $t5 :: rs 0xaaaaaaaa rt 0x55555555 out 0xffffffff DSPCtrl 0x00000000
 addu.qb $t6, $t7, $t3 :: rs 0x00000018 rt 0xffff2435 out 0xffff244d DSPCtrl 0x00000000
@@ -294,17 +299,17 @@ addu_s.qb $t2, $t3, $t4 :: rs 0x00045fb2 rt 0x00000286 out 0x000461ff DSPCtrl 0x
 addu_s.qb $t4, $t1, $t5 :: rs 0x00002435 rt 0xffff3421 out 0xffff5856 DSPCtrl 0x00000000
 addu_s.qb $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0x7aabccff DSPCtrl 0x00100000
 addu_s.qb $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0xff73437b DSPCtrl 0x00100000
-addu_s.qb $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0xffffffff DSPCtrl 0x00100000
-addu_s.qb $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0xfefffeff DSPCtrl 0x00100000
-addu_s.qb $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000c975 DSPCtrl 0x00000000
+addu_s.qb $t2, $t4, $t8 :: rs 0x00010001 rt 0xfa3259ff out 0xfa3359ff DSPCtrl 0x00100000
+addu_s.qb $t0, $t8, $t0 :: rs 0x7fff7322 rt 0x77ff7fff out 0xf6fff2ff DSPCtrl 0x00100000
+addu_s.qb $t4, $t6, $t1 :: rs 0x0034c420 rt 0x00000555 out 0x0034c975 DSPCtrl 0x00000000
 addu_s.qb $t2, $t3, $t4 :: rs 0x00000004 rt 0x40000000 out 0x40000004 DSPCtrl 0x00000000
 addu_s.qb $t4, $t1, $t5 :: rs 0x80002435 rt 0x80003421 out 0xff005856 DSPCtrl 0x00100000
 addu_s.qb $t6, $t7, $t3 :: rs 0x76548000 rt 0x73468000 out 0xe99aff00 DSPCtrl 0x00100000
-addu_s.qb $t5, $t3, $t2 :: rs 0x80000000 rt 0x80000000 out 0xff000000 DSPCtrl 0x00100000
+addu_s.qb $t5, $t3, $t2 :: rs 0x80000000 rt 0x80620020 out 0xff620020 DSPCtrl 0x00100000
 addu_s.qb $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0xffffffff DSPCtrl 0x00100000
 addu_s.qb $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0xfefffeff DSPCtrl 0x00100000
 addu_s.qb $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000c975 DSPCtrl 0x00000000
-addu_s.qb $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
+addu_s.qb $t0, $t1, $t2 :: rs 0x000a2300 rt 0x83bc1900 out 0x83c63c00 DSPCtrl 0x00000000
 addu_s.qb $t2, $t3, $t4 :: rs 0x80000000 rt 0x80000000 out 0xff000000 DSPCtrl 0x00100000
 addu_s.qb $t4, $t1, $t5 :: rs 0xaaaaaaaa rt 0x55555555 out 0xffffffff DSPCtrl 0x00000000
 addu_s.qb $t6, $t7, $t3 :: rs 0x00000018 rt 0xffff2435 out 0xffff244d DSPCtrl 0x00000000
@@ -334,17 +339,17 @@ addwc $t2, $t3, $t4 :: rs 0x00045fb2 rt 0x00000286 out 0x00046238 DSPCtrl 0x0000
 addwc $t4, $t1, $t5 :: rs 0x00002435 rt 0xffff3421 out 0xffff5856 DSPCtrl 0x00000000
 addwc $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0x7aabcd74 DSPCtrl 0x00000000
 addwc $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0x7973437b DSPCtrl 0x00100000
-addwc $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x00010000 DSPCtrl 0x00000000
-addwc $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0xfffefffe DSPCtrl 0x00100000
-addwc $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000c975 DSPCtrl 0x00000000
+addwc $t2, $t4, $t8 :: rs 0x00010001 rt 0xfa3259ff out 0xfa335a00 DSPCtrl 0x00000000
+addwc $t0, $t8, $t0 :: rs 0x7fff7322 rt 0x77ff7fff out 0xf7fef321 DSPCtrl 0x00100000
+addwc $t4, $t6, $t1 :: rs 0x0034c420 rt 0x00000555 out 0x0034c975 DSPCtrl 0x00000000
 addwc $t2, $t3, $t4 :: rs 0x00000004 rt 0x40000000 out 0x40000004 DSPCtrl 0x00000000
 addwc $t4, $t1, $t5 :: rs 0x80002435 rt 0x80003421 out 0x00005856 DSPCtrl 0x00100000
 addwc $t6, $t7, $t3 :: rs 0x76548000 rt 0x73468000 out 0xe99b0000 DSPCtrl 0x00100000
-addwc $t5, $t3, $t2 :: rs 0x80000000 rt 0x80000000 out 0x00000000 DSPCtrl 0x00100000
+addwc $t5, $t3, $t2 :: rs 0x80000000 rt 0x80620020 out 0x00620020 DSPCtrl 0x00100000
 addwc $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x00010000 DSPCtrl 0x00000000
 addwc $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0xfffefffe DSPCtrl 0x00100000
 addwc $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000c975 DSPCtrl 0x00000000
-addwc $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
+addwc $t0, $t1, $t2 :: rs 0x000a2300 rt 0x83bc1900 out 0x83c63c00 DSPCtrl 0x00000000
 addwc $t2, $t3, $t4 :: rs 0x80000000 rt 0x80000000 out 0x00000000 DSPCtrl 0x00100000
 addwc $t4, $t1, $t5 :: rs 0xaaaaaaaa rt 0x55555555 out 0xffffffff DSPCtrl 0x00000000
 addwc $t6, $t7, $t3 :: rs 0x00000018 rt 0xffff2435 out 0xffff244d DSPCtrl 0x00000000
@@ -369,15 +374,15 @@ addwc $t2, $t4, $t8 :: rs 0x638ca515 rt 0x006a54f2 out 0x63f6fa07 DSPCtrl 0x0000
 addwc $t0, $t8, $t0 :: rs 0xf63e7a9d rt 0x79f74493 out 0x7035bf30 DSPCtrl 0x00000000
 addwc $t4, $t6, $t1 :: rs 0xbd6845cd rt 0x9c09e313 out 0x597228e0 DSPCtrl 0x00100000
 -------- BITREV --------
-bitrev $t0, $t1 :: rd 0x00000000 rt 0x00000000 
+bitrev $t0, $t1 :: rd 0x00000012 rt 0x09ba4800 
 bitrev $t2, $t3 :: rd 0x0000614c rt 0x80003286 
 bitrev $t4, $t1 :: rd 0x0000ac24 rt 0xfabc2435 
 bitrev $t6, $t7 :: rd 0x00000001 rt 0x73468000 
-bitrev $t5, $t3 :: rd 0x00000000 rt 0x80000000 
-bitrev $t2, $t4 :: rd 0x0000ffff rt 0xffffffff 
+bitrev $t5, $t3 :: rd 0x00000096 rt 0x803c6900 
+bitrev $t2, $t4 :: rd 0x0000f492 rt 0xffad492f 
 bitrev $t0, $t8 :: rd 0x0000fffa rt 0xfff45fff 
 bitrev $t2, $t4 :: rd 0x0000aaa0 rt 0x00000555 
-bitrev $t0, $t1 :: rd 0x00000000 rt 0x00000000 
+bitrev $t0, $t1 :: rd 0x000010cf rt 0x0098f308 
 bitrev $t2, $t3 :: rd 0x00000000 rt 0x80000000 
 bitrev $t4, $t1 :: rd 0x0000aaaa rt 0x55555555 
 bitrev $t6, $t7 :: rd 0x0000ac24 rt 0xffff2435 
@@ -518,18 +523,18 @@ cmp.le.ph $t2, $t4 :: rs 0x638ca515 rt 0x006a54f2 DSPCtrl 0x01000000
 cmp.le.ph $t0, $t8 :: rs 0xf63e7a9d rt 0x79f74493 DSPCtrl 0x02000000 
 cmp.le.ph $t4, $t6 :: rs 0xbd6845cd rt 0x9c09e313 DSPCtrl 0x00000000 
 -------- CMPGU.EQ.QB --------
-cmpgu.eq.qb $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x0000000f
+cmpgu.eq.qb $t0, $t1, $t2 :: rs 0x00672300 rt 0x00000000 out 0x00000009
 cmpgu.eq.qb $t2, $t3, $t4 :: rs 0x00045fb2 rt 0x00000286 out 0x00000008
 cmpgu.eq.qb $t4, $t1, $t5 :: rs 0x00002435 rt 0xffff3421 out 0x00000000
 cmpgu.eq.qb $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0x00000000
 cmpgu.eq.qb $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0x00000000
-cmpgu.eq.qb $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x00000000
-cmpgu.eq.qb $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x0000000f
-cmpgu.eq.qb $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000000c
+cmpgu.eq.qb $t2, $t4, $t8 :: rs 0x00010001 rt 0xf08b4631 out 0x00000000
+cmpgu.eq.qb $t0, $t8, $t0 :: rs 0x5cbd891a rt 0x7fff7fff out 0x00000000
+cmpgu.eq.qb $t4, $t6, $t1 :: rs 0x0000c420 rt 0x0ab64555 out 0x00000000
 cmpgu.eq.qb $t2, $t3, $t4 :: rs 0x00000004 rt 0x40000000 out 0x00000006
 cmpgu.eq.qb $t4, $t1, $t5 :: rs 0x80002435 rt 0x80003421 out 0x0000000c
 cmpgu.eq.qb $t6, $t7, $t3 :: rs 0x76548000 rt 0x73468000 out 0x00000003
-cmpgu.eq.qb $t5, $t3, $t2 :: rs 0x80000000 rt 0x80000000 out 0x0000000f
+cmpgu.eq.qb $t5, $t3, $t2 :: rs 0x8007c560 rt 0x80000000 out 0x00000008
 cmpgu.eq.qb $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x00000000
 cmpgu.eq.qb $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x0000000f
 cmpgu.eq.qb $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000000c
@@ -558,18 +563,18 @@ cmpgu.eq.qb $t2, $t4, $t8 :: rs 0x638ca515 rt 0x006a54f2 out 0x00000000
 cmpgu.eq.qb $t0, $t8, $t0 :: rs 0xf63e7a9d rt 0x79f74493 out 0x00000000
 cmpgu.eq.qb $t4, $t6, $t1 :: rs 0xbd6845cd rt 0x9c09e313 out 0x00000000
 -------- CMPGU.LT.QB --------
-cmpgu.lt.qb $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000
+cmpgu.lt.qb $t0, $t1, $t2 :: rs 0x00672300 rt 0x00000000 out 0x00000000
 cmpgu.lt.qb $t2, $t3, $t4 :: rs 0x00045fb2 rt 0x00000286 out 0x00000000
 cmpgu.lt.qb $t4, $t1, $t5 :: rs 0x00002435 rt 0xffff3421 out 0x0000000e
 cmpgu.lt.qb $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0x0000000b
 cmpgu.lt.qb $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0x00000000
-cmpgu.lt.qb $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x0000000f
-cmpgu.lt.qb $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x00000000
-cmpgu.lt.qb $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x00000001
+cmpgu.lt.qb $t2, $t4, $t8 :: rs 0x00010001 rt 0xf08b4631 out 0x0000000f
+cmpgu.lt.qb $t0, $t8, $t0 :: rs 0x5cbd891a rt 0x7fff7fff out 0x0000000d
+cmpgu.lt.qb $t4, $t6, $t1 :: rs 0x0000c420 rt 0x0ab64555 out 0x0000000d
 cmpgu.lt.qb $t2, $t3, $t4 :: rs 0x00000004 rt 0x40000000 out 0x00000008
 cmpgu.lt.qb $t4, $t1, $t5 :: rs 0x80002435 rt 0x80003421 out 0x00000002
 cmpgu.lt.qb $t6, $t7, $t3 :: rs 0x76548000 rt 0x73468000 out 0x00000000
-cmpgu.lt.qb $t5, $t3, $t2 :: rs 0x80000000 rt 0x80000000 out 0x00000000
+cmpgu.lt.qb $t5, $t3, $t2 :: rs 0x8007c560 rt 0x80000000 out 0x00000000
 cmpgu.lt.qb $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x0000000f
 cmpgu.lt.qb $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x00000000
 cmpgu.lt.qb $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x00000001
@@ -598,18 +603,18 @@ cmpgu.lt.qb $t2, $t4, $t8 :: rs 0x638ca515 rt 0x006a54f2 out 0x00000001
 cmpgu.lt.qb $t0, $t8, $t0 :: rs 0xf63e7a9d rt 0x79f74493 out 0x00000004
 cmpgu.lt.qb $t4, $t6, $t1 :: rs 0xbd6845cd rt 0x9c09e313 out 0x00000002
 -------- CMPGU.LE.QB --------
-cmpgu.le.qb $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x0000000f
+cmpgu.le.qb $t0, $t1, $t2 :: rs 0x00672300 rt 0x00000000 out 0x00000009
 cmpgu.le.qb $t2, $t3, $t4 :: rs 0x00045fb2 rt 0x00000286 out 0x00000008
 cmpgu.le.qb $t4, $t1, $t5 :: rs 0x00002435 rt 0xffff3421 out 0x0000000e
 cmpgu.le.qb $t6, $t7, $t3 :: rs 0x07654cb8 rt 0x734680bc out 0x0000000b
 cmpgu.le.qb $t5, $t3, $t2 :: rs 0xf973437b rt 0x80000000 out 0x00000000
-cmpgu.le.qb $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x0000000f
-cmpgu.le.qb $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x0000000f
-cmpgu.le.qb $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000000d
+cmpgu.le.qb $t2, $t4, $t8 :: rs 0x00010001 rt 0xf08b4631 out 0x0000000f
+cmpgu.le.qb $t0, $t8, $t0 :: rs 0x5cbd891a rt 0x7fff7fff out 0x0000000d
+cmpgu.le.qb $t4, $t6, $t1 :: rs 0x0000c420 rt 0x0ab64555 out 0x0000000d
 cmpgu.le.qb $t2, $t3, $t4 :: rs 0x00000004 rt 0x40000000 out 0x0000000e
 cmpgu.le.qb $t4, $t1, $t5 :: rs 0x80002435 rt 0x80003421 out 0x0000000e
 cmpgu.le.qb $t6, $t7, $t3 :: rs 0x76548000 rt 0x73468000 out 0x00000003
-cmpgu.le.qb $t5, $t3, $t2 :: rs 0x80000000 rt 0x80000000 out 0x0000000f
+cmpgu.le.qb $t5, $t3, $t2 :: rs 0x8007c560 rt 0x80000000 out 0x00000008
 cmpgu.le.qb $t2, $t4, $t8 :: rs 0x00010001 rt 0xffffffff out 0x0000000f
 cmpgu.le.qb $t0, $t8, $t0 :: rs 0x7fff7fff rt 0x7fff7fff out 0x0000000f
 cmpgu.le.qb $t4, $t6, $t1 :: rs 0x0000c420 rt 0x00000555 out 0x0000000d
@@ -1206,6 +1211,11 @@ extpv $t2, $ac3, $t1 :: rt 0x000006ee ac3 0x92784656eeeeeeee rs 0xcacacaca DSPCt
 extpv $t3, $ac0, $t1 :: rt 0x000002ca ac0 0xcacacaca1bdbdbdb rs 0xbacabaca DSPCtrl 0x0000003a
 extpv $t4, $ac1, $t4 :: rt 0x0000056f ac1 0xbacabacadecadeca rs 0x1bdbdbdb DSPCtrl 0x00000013
 -------- EXTR_S.H --------
+extr_s.h $t4, $ac3,  0 :: rt 0x00000000 ac3 0x0000000000000000 size  0 DSPCtrl 0x00000000
+extr_s.h $t5, $ac0, 31 :: rt 0x00007fff ac0 0x7fffffffcbcdef01 size 31 DSPCtrl 0x00800000
+extr_s.h $t6, $ac1, 31 :: rt 0x00007fff ac1 0x3fffffff2bcdef01 size 31 DSPCtrl 0x00800000
+extr_s.h $t7, $ac2,  0 :: rt 0xffff8000 ac2 0xff34bc6fffffffff size  0 DSPCtrl 0x00800000
+extr_s.h $t8, $ac3,  1 :: rt 0x00007fff ac3 0x00000000fffffffe size  1 DSPCtrl 0x00800000
 extr_s.h $t1, $ac0, 31 :: rt 0xffff8000 ac0 0x8000000080000000 size 31 DSPCtrl 0x00800000
 extr_s.h $t2, $ac1, 17 :: rt 0xffff8000 ac1 0x8000000180000002 size 17 DSPCtrl 0x00800000
 extr_s.h $t3, $ac2,  4 :: rt 0x00000000 ac2 0x0000000000000006 size  4 DSPCtrl 0x00000000
@@ -1215,7 +1225,6 @@ extr_s.h $t6, $ac1,  8 :: rt 0xffff8000 ac1 0xffffffff00000001 size  8 DSPCtrl 0
 extr_s.h $t7, $ac2, 16 :: rt 0x00007fff ac2 0x00000001ffffffff size 16 DSPCtrl 0x00800000
 extr_s.h $t8, $ac3, 22 :: rt 0xffffffff ac3 0xffffffffffffffff size 22 DSPCtrl 0x00000000
 extr_s.h $t0, $ac0,  9 :: rt 0x00007fff ac0 0x0000cdfe0fde3126 size  9 DSPCtrl 0x00800000
-extr_s.h $t1, $ac1,  5 :: rt 0xffff8000 ac1 0xaaaaaaaa55555555 size  5 DSPCtrl 0x00800000
 extr_s.h $t2, $ac2, 14 :: rt 0x00007fff ac2 0x00000018ffff2435 size 14 DSPCtrl 0x00800000
 extr_s.h $t1, $ac1, 20 :: rt 0xffff8000 ac1 0xaaaaaaaa55555555 size 20 DSPCtrl 0x00800000
 extr_s.h $t2, $ac2, 16 :: rt 0x00007fff ac2 0x00000018ffff2435 size 16 DSPCtrl 0x00800000
@@ -1255,6 +1264,11 @@ extr_s.h $t2, $ac3,  2 :: rt 0x00007fff ac3 0x00000000006a54f2 size  2 DSPCtrl 0
 extr_s.h $t3, $ac0,  1 :: rt 0x00007fff ac0 0x0000000079f74493 size  1 DSPCtrl 0x00800000
 extr_s.h $t4, $ac1,  0 :: rt 0xffff8000 ac1 0xffffffff9c09e313 size  0 DSPCtrl 0x00800000
 -------- EXTR.W --------
+extr.w $t4, $ac3,  0 :: rt 0x00000000 ac3 0x0000000000000000 size  0 DSPCtrl 0x00000000
+extr.w $t5, $ac0, 31 :: rt 0xffffffff ac0 0x7fffffffcbcdef01 size 31 DSPCtrl 0x00800000
+extr.w $t6, $ac1, 31 :: rt 0x7ffffffe ac1 0x3fffffff2bcdef01 size 31 DSPCtrl 0x00000000
+extr.w $t7, $ac2,  0 :: rt 0xffffffff ac2 0xffffffffffffffff size  0 DSPCtrl 0x00000000
+extr.w $t8, $ac3,  1 :: rt 0x7fffffff ac3 0x00000000fffffffe size  1 DSPCtrl 0x00000000
 extr.w $t1, $ac0, 31 :: rt 0x00000001 ac0 0x8000000080000000 size 31 DSPCtrl 0x00800000
 extr.w $t2, $ac1, 17 :: rt 0x0000c000 ac1 0x8000000180000002 size 17 DSPCtrl 0x00800000
 extr.w $t3, $ac2,  4 :: rt 0x00000000 ac2 0x0000000000000006 size  4 DSPCtrl 0x00000000
@@ -1264,7 +1278,6 @@ extr.w $t6, $ac1,  8 :: rt 0xff000000 ac1 0xffffffff00000001 size  8 DSPCtrl 0x0
 extr.w $t7, $ac2, 16 :: rt 0x0001ffff ac2 0x00000001ffffffff size 16 DSPCtrl 0x00000000
 extr.w $t8, $ac3, 22 :: rt 0xffffffff ac3 0xffffffffffffffff size 22 DSPCtrl 0x00000000
 extr.w $t0, $ac0,  9 :: rt 0xff7e8718 ac0 0x0000cdfefd0e3126 size  9 DSPCtrl 0x00800000
-extr.w $t1, $ac1,  5 :: rt 0x52aaaaaa ac1 0xaaaaaaaa55555555 size  5 DSPCtrl 0x00800000
 extr.w $t2, $ac2, 14 :: rt 0x0063fffc ac2 0x00000018ffff2435 size 14 DSPCtrl 0x00000000
 extr.w $t1, $ac1, 20 :: rt 0xaaaaa555 ac1 0xaaaaaaaa55555555 size 20 DSPCtrl 0x00800000
 extr.w $t2, $ac2, 16 :: rt 0x0018ffff ac2 0x00000018ffff2435 size 16 DSPCtrl 0x00000000
@@ -1304,12 +1317,17 @@ extr.w $t2, $ac3,  2 :: rt 0x001a953c ac3 0x00000000006a54f2 size  2 DSPCtrl 0x0
 extr.w $t3, $ac0,  1 :: rt 0x3cfba249 ac0 0x0000000079f74493 size  1 DSPCtrl 0x00000000
 extr.w $t4, $ac1,  0 :: rt 0x9c09e313 ac1 0xffffffff9c09e313 size  0 DSPCtrl 0x00000000
 -------- EXTR_R.W --------
-extr_r.w $t1, $ac0, 31 :: rt 0xffffffff ac0 0xffffffff80000000 size 31 DSPCtrl 0x00000000
-extr_r.w $t3, $ac2,  4 :: rt 0x00000000 ac2 0x0000000000000006 size  4 DSPCtrl 0x00000000
-extr_r.w $t5, $ac0,  3 :: rt 0x10000000 ac0 0x000000007fffffff size  3 DSPCtrl 0x00000000
-extr_r.w $t6, $ac1,  8 :: rt 0x00000000 ac1 0x0000000000000001 size  8 DSPCtrl 0x00000000
-extr_r.w $t7, $ac2, 16 :: rt 0x00000000 ac2 0xffffffffffffffff size 16 DSPCtrl 0x00000000
-extr_r.w $t0, $ac0,  9 :: rt 0xfffe8719 ac0 0xfffffffffd0e3126 size  9 DSPCtrl 0x00000000
+extr_r.w $t4, $ac3,  0 :: rt 0x00000000 ac3 0x0000000000000000 size  0 DSPCtrl 0x00000000
+extr_r.w $t5, $ac0, 31 :: rt 0x00000000 ac0 0x7fffffffcbcdef01 size 31 DSPCtrl 0x00800000
+extr_r.w $t6, $ac1, 31 :: rt 0x7ffffffe ac1 0x3fffffff2bcdef01 size 31 DSPCtrl 0x00000000
+extr_r.w $t7, $ac2,  0 :: rt 0xffffffff ac2 0x987b2fffffffffff size  0 DSPCtrl 0x00800000
+extr_r.w $t8, $ac3,  1 :: rt 0x7fffffff ac3 0x000cd320fffffffe size  1 DSPCtrl 0x00800000
+extr_r.w $t1, $ac0, 31 :: rt 0xfff36a83 ac0 0xfff9b54180000000 size 31 DSPCtrl 0x00000000
+extr_r.w $t3, $ac2,  4 :: rt 0xc0000000 ac2 0x0008b31c00000006 size  4 DSPCtrl 0x00800000
+extr_r.w $t5, $ac0,  3 :: rt 0xb0000000 ac0 0x0086b3ad7fffffff size  3 DSPCtrl 0x00800000
+extr_r.w $t6, $ac1,  8 :: rt 0x51000000 ac1 0x00097b5100000001 size  8 DSPCtrl 0x00800000
+extr_r.w $t7, $ac2, 16 :: rt 0x44000000 ac2 0xfcde43ffffffffff size 16 DSPCtrl 0x00800000
+extr_r.w $t0, $ac0,  9 :: rt 0x137e8719 ac0 0xffffca26fd0e3126 size  9 DSPCtrl 0x00800000
 extr_r.w $t1, $ac1,  5 :: rt 0x02aaaaab ac1 0x0000000055555555 size  5 DSPCtrl 0x00000000
 extr_r.w $t2, $ac2, 14 :: rt 0xfffffffd ac2 0xffffffffffff2435 size 14 DSPCtrl 0x00000000
 extr_r.w $t1, $ac1, 20 :: rt 0x00000555 ac1 0x0000000055555555 size 20 DSPCtrl 0x00000000
@@ -1320,11 +1338,11 @@ extr_r.w $t3, $ac3,  6 :: rt 0xfeaeaeaf ac3 0xffffffffabababab size  6 DSPCtrl 0
 extr_r.w $t4, $ac0, 13 :: rt 0xffffe3ce ac0 0xfffffffffc79b4d2 size 13 DSPCtrl 0x00000000
 extr_r.w $t5, $ac1, 19 :: rt 0x00000000 ac1 0x0000000000000000 size 19 DSPCtrl 0x00000000
 extr_r.w $t6, $ac2, 27 :: rt 0x00000000 ac2 0x0000000000000000 size 27 DSPCtrl 0x00000000
-extr_r.w $t7, $ac3,  7 :: rt 0x00246931 ac3 0x0000000012349876 size  7 DSPCtrl 0x00000000
-extr_r.w $t8, $ac0, 11 :: rt 0x000006a9 ac0 0x0000000000354565 size 11 DSPCtrl 0x00000000
-extr_r.w $t0, $ac1, 26 :: rt 0xffffffe0 ac1 0xffffffff80006755 size 26 DSPCtrl 0x00000000
-extr_r.w $t1, $ac2, 15 :: rt 0xffff1f1f ac2 0xffffffff8f8f8f8f size 15 DSPCtrl 0x00000000
-extr_r.w $t2, $ac3,  2 :: rt 0xfbbbbbbc ac3 0xffffffffeeeeeeee size  2 DSPCtrl 0x00000000
+extr_r.w $t7, $ac3,  7 :: rt 0x00246931 ac3 0x02934b0012349876 size  7 DSPCtrl 0x00800000
+extr_r.w $t8, $ac0, 11 :: rt 0x5a0006a9 ac0 0x0008cad000354565 size 11 DSPCtrl 0x00800000
+extr_r.w $t0, $ac1, 26 :: rt 0x9723ffe0 ac1 0xf65c8fff80006755 size 26 DSPCtrl 0x00800000
+extr_r.w $t1, $ac2, 15 :: rt 0xe0031f1f ac2 0xfffff0018f8f8f8f size 15 DSPCtrl 0x00000000
+extr_r.w $t2, $ac3,  2 :: rt 0x3bbbbbbc ac3 0xbad69420eeeeeeee size  2 DSPCtrl 0x00800000
 extr_r.w $t3, $ac0,  1 :: rt 0x0dededee ac0 0x000000001bdbdbdb size  1 DSPCtrl 0x00000000
 extr_r.w $t4, $ac1,  0 :: rt 0xdecadeca ac1 0xffffffffdecadeca size  0 DSPCtrl 0x00000000
 extr_r.w $t5, $ac0,  3 :: rt 0x0bf9252f ac0 0x000000005fc92974 size  3 DSPCtrl 0x00000000
@@ -1350,12 +1368,17 @@ extr_r.w $t2, $ac3,  2 :: rt 0x001a953d ac3 0x00000000006a54f2 size  2 DSPCtrl 0
 extr_r.w $t3, $ac0,  1 :: rt 0x3cfba24a ac0 0x0000000079f74493 size  1 DSPCtrl 0x00000000
 extr_r.w $t4, $ac1,  0 :: rt 0x9c09e313 ac1 0xffffffff9c09e313 size  0 DSPCtrl 0x00000000
 -------- EXTR_RS.W --------
-extr_rs.w $t3, $ac2,  4 :: rt 0x00000000 ac2 0x0000000000000006 size  4 DSPCtrl 0x00000000
-extr_rs.w $t5, $ac0,  3 :: rt 0x10000000 ac0 0x000000007fffffff size  3 DSPCtrl 0x00000000
-extr_rs.w $t6, $ac1,  8 :: rt 0x00000000 ac1 0x0000000000000001 size  8 DSPCtrl 0x00000000
-extr_rs.w $t7, $ac2, 16 :: rt 0x00000000 ac2 0xffffffffffffffff size 16 DSPCtrl 0x00000000
-extr_rs.w $t8, $ac3, 22 :: rt 0x00000000 ac3 0xffffffffffffffff size  2 DSPCtrl 0x00000000
-extr_rs.w $t0, $ac0,  9 :: rt 0xfffe8719 ac0 0xfffffffffd0e3126 size  9 DSPCtrl 0x00000000
+extr_rs.w $t4, $ac3,  0 :: rt 0x00000000 ac3 0x0000000000000000 size  0 DSPCtrl 0x00000000
+extr_rs.w $t5, $ac0, 31 :: rt 0x7fffffff ac0 0x7fffffffcbcdef01 size 31 DSPCtrl 0x00800000
+extr_rs.w $t6, $ac1, 31 :: rt 0x7ffffffe ac1 0x3fffffff2bcdef01 size 31 DSPCtrl 0x00000000
+extr_rs.w $t7, $ac2,  0 :: rt 0x80000000 ac2 0x987b2fffffffffff size  0 DSPCtrl 0x00800000
+extr_rs.w $t8, $ac3,  1 :: rt 0x7fffffff ac3 0x000cd320fffffffe size  1 DSPCtrl 0x00800000
+extr_rs.w $t3, $ac2,  4 :: rt 0x80000000 ac2 0xfff9b54180000000 size  4 DSPCtrl 0x00800000
+extr_rs.w $t5, $ac0,  3 :: rt 0x7fffffff ac0 0x0008b31c00000006 size  3 DSPCtrl 0x00800000
+extr_rs.w $t6, $ac1,  8 :: rt 0x7fffffff ac1 0x0086b3ad7fffffff size  8 DSPCtrl 0x00800000
+extr_rs.w $t7, $ac2, 16 :: rt 0x7fffffff ac2 0x00097b5100000001 size 16 DSPCtrl 0x00800000
+extr_rs.w $t8, $ac3, 22 :: rt 0x80000000 ac3 0xfcde43ffffffffff size  2 DSPCtrl 0x00800000
+extr_rs.w $t0, $ac0,  9 :: rt 0x80000000 ac0 0xffffca26fd0e3126 size  9 DSPCtrl 0x00800000
 extr_rs.w $t1, $ac1,  5 :: rt 0x02aaaaab ac1 0x0000000055555555 size  5 DSPCtrl 0x00000000
 extr_rs.w $t2, $ac2, 14 :: rt 0xfffffffd ac2 0xffffffffffff2435 size 14 DSPCtrl 0x00000000
 extr_rs.w $t1, $ac1, 20 :: rt 0x00000555 ac1 0x0000000055555555 size  0 DSPCtrl 0x00000000
@@ -1366,11 +1389,11 @@ extr_rs.w $t3, $ac3,  6 :: rt 0xfeaeaeaf ac3 0xffffffffabababab size  6 DSPCtrl 
 extr_rs.w $t4, $ac0, 13 :: rt 0xffffe3ce ac0 0xfffffffffc79b4d2 size 13 DSPCtrl 0x00000000
 extr_rs.w $t5, $ac1, 19 :: rt 0x00000000 ac1 0x0000000000000000 size 19 DSPCtrl 0x00000000
 extr_rs.w $t6, $ac2, 27 :: rt 0x00000000 ac2 0x0000000000000000 size 27 DSPCtrl 0x00000000
-extr_rs.w $t7, $ac3,  7 :: rt 0x00246931 ac3 0x0000000012349876 size  7 DSPCtrl 0x00000000
-extr_rs.w $t8, $ac0, 11 :: rt 0x000006a9 ac0 0x0000000000354565 size 11 DSPCtrl 0x00000000
-extr_rs.w $t0, $ac1, 26 :: rt 0xffffffe0 ac1 0xffffffff80006755 size 26 DSPCtrl 0x00000000
-extr_rs.w $t1, $ac2, 15 :: rt 0xffff1f1f ac2 0xffffffff8f8f8f8f size 15 DSPCtrl 0x00000000
-extr_rs.w $t2, $ac3,  2 :: rt 0xfbbbbbbc ac3 0xffffffffeeeeeeee size  2 DSPCtrl 0x00000000
+extr_rs.w $t7, $ac3,  7 :: rt 0x7fffffff ac3 0x02934b0012349876 size  7 DSPCtrl 0x00800000
+extr_rs.w $t8, $ac0, 11 :: rt 0x7fffffff ac0 0x0008cad000354565 size 11 DSPCtrl 0x00800000
+extr_rs.w $t0, $ac1, 26 :: rt 0x80000000 ac1 0xf65c8fff80006755 size 26 DSPCtrl 0x00800000
+extr_rs.w $t1, $ac2, 15 :: rt 0xe0031f1f ac2 0xfffff0018f8f8f8f size 15 DSPCtrl 0x00000000
+extr_rs.w $t2, $ac3,  2 :: rt 0x80000000 ac3 0xbad69420eeeeeeee size  2 DSPCtrl 0x00800000
 extr_rs.w $t3, $ac0,  1 :: rt 0x0dededee ac0 0x000000001bdbdbdb size  1 DSPCtrl 0x00000000
 extr_rs.w $t4, $ac1,  0 :: rt 0xdecadeca ac1 0xffffffffdecadeca size  0 DSPCtrl 0x00000000
 extr_rs.w $t5, $ac0,  3 :: rt 0x0bf9252f ac0 0x000000005fc92974 size  3 DSPCtrl 0x00000000
@@ -1396,6 +1419,11 @@ extr_rs.w $t2, $ac3,  2 :: rt 0x001a953d ac3 0x00000000006a54f2 size  2 DSPCtrl 
 extr_rs.w $t3, $ac0,  1 :: rt 0x3cfba24a ac0 0x0000000079f74493 size  1 DSPCtrl 0x00000000
 extr_rs.w $t4, $ac1,  0 :: rt 0x9c09e313 ac1 0xffffffff9c09e313 size  0 DSPCtrl 0x00000000
 -------- EXTRV_S.H --------
+extrv_s.h $t1, $ac1, $t3 :: rt 0x00000000 ac1 0x0000000000000000 rs 0xbababa00 DSPCtrl 0x00000000
+extrv_s.h $t2, $ac2, $t4 :: rt 0x00007fff ac2 0x7fffffffcbcdef01 rs 0xfbde391f DSPCtrl 0x00800000
+extrv_s.h $t1, $ac1, $t7 :: rt 0x00007fff ac1 0x3fffffff2bcdef01 rs 0x5555551f DSPCtrl 0x00800000
+extrv_s.h $t2, $ac2, $t5 :: rt 0xffffffff ac2 0xffffffffffffffff rs 0x0000cd00 DSPCtrl 0x00000000
+extrv_s.h $t1, $ac1, $t2 :: rt 0x00007fff ac1 0x00000000fffffffe rs 0x80000001 DSPCtrl 0x00800000
 extrv_s.h $t2, $ac1, $t1 :: rt 0xffff8000 ac1 0x8000000180000002 rs 0x12349876 DSPCtrl 0x00800000
 extrv_s.h $t1, $ac0, $t0 :: rt 0xffff8000 ac0 0x8000000080000000 rs 0x12349876 DSPCtrl 0x00800000
 extrv_s.h $t3, $ac2, $t2 :: rt 0x00000000 ac2 0x0000000000000006 rs 0x00354565 DSPCtrl 0x00000000
@@ -1445,9 +1473,14 @@ extrv_s.h $t2, $ac3, $t8 :: rt 0x00000003 ac3 0x00000000006a54f2 rs 0xeb1b4335 D
 extrv_s.h $t3, $ac0, $t0 :: rt 0x00007fff ac0 0x0000000079f74493 rs 0x0cd6b508 DSPCtrl 0x00800000
 extrv_s.h $t4, $ac1, $t1 :: rt 0xffff8000 ac1 0xffffffff9c09e313 rs 0x6731e282 DSPCtrl 0x00800000
 -------- EXTRV.W --------
-extrv.w $t1, $ac1, $t3 :: rt 0x52aaaaaa ac1 0xaaaaaaaa55555555 rs 0xbababa05 DSPCtrl 0x00800000
+extrv.w $t1, $ac1, $t3 :: rt 0x00000000 ac1 0x0000000000000000 rs 0xbababa00 DSPCtrl 0x00000000
+extrv.w $t2, $ac2, $t4 :: rt 0xffffffff ac2 0x7fffffffcbcdef01 rs 0xfbde391f DSPCtrl 0x00800000
+extrv.w $t1, $ac1, $t7 :: rt 0x7ffffffe ac1 0x3fffffff2bcdef01 rs 0x5555551f DSPCtrl 0x00000000
+extrv.w $t2, $ac2, $t5 :: rt 0xffffffff ac2 0xffffffffffffffff rs 0x0000cd00 DSPCtrl 0x00000000
+extrv.w $t1, $ac1, $t2 :: rt 0x7fffffff ac1 0x00000000fffffffe rs 0x80000001 DSPCtrl 0x00000000
+extrv.w $t1, $ac1, $t3 :: rt 0xd2aaaaaa ac1 0xaaabad3a55555555 rs 0xbababa05 DSPCtrl 0x00800000
 extrv.w $t2, $ac2, $t4 :: rt 0x0063fffc ac2 0x00000018ffff2435 rs 0xfbde390e DSPCtrl 0x00000000
-extrv.w $t1, $ac1, $t7 :: rt 0xaaaaa555 ac1 0xaaaaaaaa55555555 rs 0x55555514 DSPCtrl 0x00800000
+extrv.w $t1, $ac1, $t7 :: rt 0xaa221555 ac1 0xaaaaa22155555555 rs 0x55555514 DSPCtrl 0x00800000
 extrv.w $t2, $ac2, $t5 :: rt 0x0018ffff ac2 0x00000018ffff2435 rs 0x0000cd10 DSPCtrl 0x00000000
 extrv.w $t1, $ac1, $t2 :: rt 0x52aaaaaa ac1 0xaaaaaaaa55555555 rs 0x80000005 DSPCtrl 0x00800000
 extrv.w $t2, $ac2, $t3 :: rt 0x000063ff ac2 0x00000018ffff2435 rs 0x7fffff16 DSPCtrl 0x00000000
@@ -1494,6 +1527,11 @@ extrv.w $t2, $ac3, $t8 :: rt 0x00000003 ac3 0x00000000006a54f2 rs 0xeb1b4335 DSP
 extrv.w $t3, $ac0, $t0 :: rt 0x0079f744 ac0 0x0000000079f74493 rs 0x0cd6b508 DSPCtrl 0x00000000
 extrv.w $t4, $ac1, $t1 :: rt 0xe70278c4 ac1 0xffffffff9c09e313 rs 0x6731e282 DSPCtrl 0x00000000
 -------- EXTRV_R.W --------
+extrv_r.w $t1, $ac1, $t3 :: rt 0x00000000 ac1 0x0000000000000000 rs 0xbababa00 DSPCtrl 0x00000000
+extrv_r.w $t2, $ac2, $t4 :: rt 0x00000000 ac2 0x7fffffffcbcdef01 rs 0xfbde391f DSPCtrl 0x00800000
+extrv_r.w $t1, $ac1, $t7 :: rt 0x7ffffffe ac1 0x3fffffff2bcdef01 rs 0x5555551f DSPCtrl 0x00000000
+extrv_r.w $t2, $ac2, $t5 :: rt 0xffffffff ac2 0xffffffffffffffff rs 0x0000cd00 DSPCtrl 0x00000000
+extrv_r.w $t1, $ac1, $t2 :: rt 0x7fffffff ac1 0x00000000fffffffe rs 0x80000001 DSPCtrl 0x00000000
 extrv_r.w $t1, $ac1, $t3 :: rt 0x02aaaaab ac1 0x0000000055555555 rs 0xbababa05 DSPCtrl 0x00000000
 extrv_r.w $t2, $ac2, $t4 :: rt 0xfffffffd ac2 0xffffffffffff2435 rs 0xfbde390e DSPCtrl 0x00000000
 extrv_r.w $t1, $ac1, $t7 :: rt 0x00000555 ac1 0x0000000055555555 rs 0x55555514 DSPCtrl 0x00000000
@@ -1518,29 +1556,35 @@ extrv_r.w $t1, $ac2, $t9 :: rt 0xfffe3e3e ac2 0xffffffff8f8f8f8f rs 0xeeeeeeee D
 extrv_r.w $t2, $ac3, $t1 :: rt 0xfffbbbbc ac3 0xffffffffeeeeeeee rs 0xcacacaca DSPCtrl 0x00000000
 extrv_r.w $t3, $ac0, $t1 :: rt 0x0006f6f7 ac0 0x000000001bdbdbdb rs 0xbacabaca DSPCtrl 0x00000000
 extrv_r.w $t4, $ac1, $t4 :: rt 0xfff7b2b8 ac1 0xffffffffdecadeca rs 0x1bdbdbdb DSPCtrl 0x00000000
-extrv_r.w $t5, $ac0, $t8 :: rt 0x000002fe ac0 0x000000005fc92974 rs 0xffff2435 DSPCtrl 0x00000000
+extrv_r.w $t5, $ac0, $t8 :: rt 0x878782fe ac0 0xf0f0f0f05fc92974 rs 0xffff2435 DSPCtrl 0x00800000
 extrv_r.w $t6, $ac1, $t0 :: rt 0x000003f0 ac1 0x000000007e08184e rs 0x55555555 DSPCtrl 0x00000000
-extrv_r.w $t7, $ac2, $t1 :: rt 0x0000038e ac2 0x0000000071c8315f rs 0xffff2435 DSPCtrl 0x00000000
-extrv_r.w $t8, $ac3, $t2 :: rt 0xfffffca5 ac3 0xffffffff9493110e rs 0x55555555 DSPCtrl 0x00000000
-extrv_r.w $t0, $ac0, $t3 :: rt 0xfffffdd9 ac0 0xffffffffbb246228 rs 0xffff2435 DSPCtrl 0x00000000
-extrv_r.w $t1, $ac1, $t4 :: rt 0x000673b2 ac1 0x00000000339d8d88 rs 0xabababab DSPCtrl 0x00000000
-extrv_r.w $t2, $ac2, $t5 :: rt 0x00001c26 ac2 0x0000000070974249 rs 0xfc79b4d2 DSPCtrl 0x00000000
-extrv_r.w $t1, $ac1, $t6 :: rt 0x8a8d4e7d ac1 0xffffffff8a8d4e7d rs 0x00000000 DSPCtrl 0x00000000
-extrv_r.w $t2, $ac2, $t7 :: rt 0xeb1b4335 ac2 0xffffffffeb1b4335 rs 0x00000000 DSPCtrl 0x00000000
-extrv_r.w $t1, $ac1, $t8 :: rt 0x00000033 ac1 0x000000000cd6b508 rs 0x12349876 DSPCtrl 0x00000000
+extrv_r.w $t7, $ac2, $t1 :: rt 0xf1cbb38e ac2 0xfbde397671c8315f rs 0xffff2435 DSPCtrl 0x00800000
+extrv_r.w $t8, $ac3, $t2 :: rt 0x6bb2a4a5 ac3 0x0bed76549493110e rs 0x55555555 DSPCtrl 0x00800000
+extrv_r.w $t0, $ac0, $t3 :: rt 0x9a4385d9 ac0 0x23534870bb246228 rs 0xffff2435 DSPCtrl 0x00800000
+extrv_r.w $t1, $ac1, $t4 :: rt 0x9bc673b2 ac1 0x980b7cde339d8d88 rs 0xabababab DSPCtrl 0x00800000
+extrv_r.w $t2, $ac2, $t5 :: rt 0x00061c26 ac2 0x0000001870974249 rs 0xfc79b4d2 DSPCtrl 0x00000000
+extrv_r.w $t1, $ac1, $t6 :: rt 0x8a8d4e7d ac1 0x927846568a8d4e7d rs 0x00000000 DSPCtrl 0x00800000
+extrv_r.w $t2, $ac2, $t7 :: rt 0xeb1b4335 ac2 0xcacacacaeb1b4335 rs 0x00000000 DSPCtrl 0x00800000
+extrv_r.w $t1, $ac1, $t8 :: rt 0x2aeb2833 ac1 0xbacabaca0cd6b508 rs 0x12349876 DSPCtrl 0x00800000
 extrv_r.w $t2, $ac2, $t0 :: rt 0x03398f14 ac2 0x000000006731e282 rs 0x00354565 DSPCtrl 0x00000000
-extrv_r.w $t3, $ac3, $t1 :: rt 0xfffffdb7 ac3 0xffffffffb6edf28f rs 0x00086755 DSPCtrl 0x00000000
+extrv_r.w $t3, $ac3, $t1 :: rt 0x000005b7 ac3 0x00000000b6edf28f rs 0x00086755 DSPCtrl 0x00000000
 extrv_r.w $t4, $ac0, $t2 :: rt 0x0000969e ac0 0x000000004b4ec9ca rs 0x8f8f8f8f DSPCtrl 0x00000000
 extrv_r.w $t5, $ac1, $t3 :: rt 0xffff040e ac1 0xffffffffc1037fa4 rs 0xeeeeeeee DSPCtrl 0x00000000
 extrv_r.w $t6, $ac2, $t3 :: rt 0xfffffff9 ac2 0xffffffffcb4ab48f rs 0x1bdbdbdb DSPCtrl 0x00000000
-extrv_r.w $t7, $ac3, $t4 :: rt 0xffaf8f7e ac3 0xffffffffaf8f7e18 rs 0xbb246228 DSPCtrl 0x00000000
-extrv_r.w $t8, $ac0, $t5 :: rt 0xff87df45 ac0 0xffffffff87df4510 rs 0x339d8d88 DSPCtrl 0x00000000
+extrv_r.w $t7, $ac3, $t4 :: rt 0x00af8f7e ac3 0x00000000af8f7e18 rs 0xbb246228 DSPCtrl 0x00000000
+extrv_r.w $t8, $ac0, $t5 :: rt 0x0087df45 ac0 0x0000000087df4510 rs 0x339d8d88 DSPCtrl 0x00000000
 extrv_r.w $t0, $ac1, $t6 :: rt 0xffd5fa74 ac1 0xffffffffabf4e8e1 rs 0x70974249 DSPCtrl 0x00000000
 extrv_r.w $t1, $ac2, $t7 :: rt 0x00000000 ac2 0xfffffffff4c0eeac rs 0x8a8d4e7d DSPCtrl 0x00000000
 extrv_r.w $t2, $ac3, $t8 :: rt 0x00000003 ac3 0x00000000006a54f2 rs 0xeb1b4335 DSPCtrl 0x00000000
 extrv_r.w $t3, $ac0, $t0 :: rt 0x0079f745 ac0 0x0000000079f74493 rs 0x0cd6b508 DSPCtrl 0x00000000
 extrv_r.w $t4, $ac1, $t1 :: rt 0xe70278c5 ac1 0xffffffff9c09e313 rs 0x6731e282 DSPCtrl 0x00000000
 -------- EXTRV_RS.W --------
+extrv_rs.w $t1, $ac1, $t3 :: rt 0x00000000 ac1 0x0000000000000000 rs 0xbababa00 DSPCtrl 0x00000000
+extrv_rs.w $t1, $ac1, $t3 :: rt 0x80000000 ac1 0x987b2fffffffffff rs 0xbababa00 DSPCtrl 0x00800000
+extrv_rs.w $t2, $ac2, $t4 :: rt 0x7fffffff ac2 0x7fffffffcbcdef01 rs 0xfbde391f DSPCtrl 0x00800000
+extrv_rs.w $t1, $ac1, $t7 :: rt 0x7ffffffe ac1 0x3fffffff2bcdef01 rs 0x5555551f DSPCtrl 0x00000000
+extrv_rs.w $t2, $ac2, $t5 :: rt 0xffffffff ac2 0xffffffffffffffff rs 0x0000cd00 DSPCtrl 0x00000000
+extrv_rs.w $t1, $ac1, $t2 :: rt 0x7fffffff ac1 0x00000000fffffffe rs 0x80000001 DSPCtrl 0x00000000
 extrv_rs.w $t1, $ac1, $t3 :: rt 0x02aaaaab ac1 0x0000000055555555 rs 0xbababa05 DSPCtrl 0x00000000
 extrv_rs.w $t2, $ac2, $t4 :: rt 0xfffffffd ac2 0xffffffffffff2435 rs 0xfbde390e DSPCtrl 0x00000000
 extrv_rs.w $t1, $ac1, $t7 :: rt 0x00000555 ac1 0x0000000055555555 rs 0x55555514 DSPCtrl 0x00000000
@@ -1555,16 +1599,16 @@ extrv_rs.w $t5, $ac0, $t6 :: rt 0x02000000 ac0 0x000000007fffffff rs 0x0fde3126 
 extrv_rs.w $t7, $ac2, $t8 :: rt 0x00000000 ac2 0xffffffffffffffff rs 0xaaaaaaaa DSPCtrl 0x00000000
 extrv_rs.w $t8, $ac3, $t9 :: rt 0x00000000 ac3 0xffffffffffffffff rs 0xffff2435 DSPCtrl 0x00000000
 extrv_rs.w $t4, $ac0, $t3 :: rt 0xfffffff2 ac0 0xfffffffffc79b4d2 rs 0x12349876 DSPCtrl 0x00000000
-extrv_rs.w $t5, $ac1, $t4 :: rt 0x00000000 ac1 0x0000000000000000 rs 0x00354565 DSPCtrl 0x00000000
+extrv_rs.w $t5, $ac1, $t4 :: rt 0x80000000 ac1 0xf0f0f0f000000000 rs 0x00354565 DSPCtrl 0x00800000
 extrv_rs.w $t6, $ac2, $t5 :: rt 0x00000000 ac2 0x0000000000000000 rs 0x00086755 DSPCtrl 0x00000000
-extrv_rs.w $t7, $ac3, $t6 :: rt 0x00000012 ac3 0x0000000012349876 rs 0x00000018 DSPCtrl 0x00000000
-extrv_rs.w $t8, $ac0, $t7 :: rt 0x00000035 ac0 0x0000000000354565 rs 0x23534870 DSPCtrl 0x00000000
-extrv_rs.w $t0, $ac1, $t8 :: rt 0x00000000 ac1 0x0000000000086755 rs 0x92784656 DSPCtrl 0x00000000
-extrv_rs.w $t1, $ac2, $t9 :: rt 0xfffe3e3e ac2 0xffffffff8f8f8f8f rs 0xeeeeeeee DSPCtrl 0x00000000
-extrv_rs.w $t2, $ac3, $t1 :: rt 0xfffbbbbc ac3 0xffffffffeeeeeeee rs 0xcacacaca DSPCtrl 0x00000000
-extrv_rs.w $t3, $ac0, $t1 :: rt 0x0006f6f7 ac0 0x000000001bdbdbdb rs 0xbacabaca DSPCtrl 0x00000000
-extrv_rs.w $t4, $ac1, $t4 :: rt 0xfff7b2b8 ac1 0xffffffffdecadeca rs 0x1bdbdbdb DSPCtrl 0x00000000
-extrv_rs.w $t5, $ac0, $t8 :: rt 0x000002fe ac0 0x000000005fc92974 rs 0xffff2435 DSPCtrl 0x00000000
+extrv_rs.w $t7, $ac3, $t6 :: rt 0x80000000 ac3 0xfbde397612349876 rs 0x00000018 DSPCtrl 0x00800000
+extrv_rs.w $t8, $ac0, $t7 :: rt 0x7fffffff ac0 0x0bed765400354565 rs 0x23534870 DSPCtrl 0x00800000
+extrv_rs.w $t0, $ac1, $t8 :: rt 0x7fffffff ac1 0x2353487000086755 rs 0x92784656 DSPCtrl 0x00800000
+extrv_rs.w $t1, $ac2, $t9 :: rt 0x80000000 ac2 0x980b7cde8f8f8f8f rs 0xeeeeeeee DSPCtrl 0x00800000
+extrv_rs.w $t2, $ac3, $t1 :: rt 0x063bbbbc ac3 0x00000018eeeeeeee rs 0xcacacaca DSPCtrl 0x00000000
+extrv_rs.w $t3, $ac0, $t1 :: rt 0x80000000 ac0 0x927846561bdbdbdb rs 0xbacabaca DSPCtrl 0x00800000
+extrv_rs.w $t4, $ac1, $t4 :: rt 0x80000000 ac1 0xcacacacadecadeca rs 0x1bdbdbdb DSPCtrl 0x00800000
+extrv_rs.w $t5, $ac0, $t8 :: rt 0x80000000 ac0 0xbacabaca5fc92974 rs 0xffff2435 DSPCtrl 0x00800000
 extrv_rs.w $t6, $ac1, $t0 :: rt 0x000003f0 ac1 0x000000007e08184e rs 0x55555555 DSPCtrl 0x00000000
 extrv_rs.w $t7, $ac2, $t1 :: rt 0x0000038e ac2 0x0000000071c8315f rs 0xffff2435 DSPCtrl 0x00000000
 extrv_rs.w $t8, $ac3, $t2 :: rt 0xfffffca5 ac3 0xffffffff9493110e rs 0x55555555 DSPCtrl 0x00000000
@@ -3936,6 +3980,11 @@ subq.ph $t2, $t4, $t8 :: rs 0x638ca515 rt 0x006a54f2 out 0x63225023 DSPCtrl 0x00
 subq.ph $t0, $t8, $t0 :: rs 0xf63e7a9d rt 0x79f74493 out 0x7c47360a DSPCtrl 0x00100000
 subq.ph $t4, $t6, $t1 :: rs 0xbd6845cd rt 0x9c09e313 out 0x215f62ba DSPCtrl 0x00000000
 -------- SUBQ_S.PH --------
+subq_s.ph $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
+subq_s.ph $t2, $t3, $t4 :: rs 0x00020002 rt 0x00010001 out 0x00010001 DSPCtrl 0x00000000
+subq_s.ph $t4, $t1, $t5 :: rs 0x0002fffe rt 0x0001ffff out 0x0001ffff DSPCtrl 0x00000000
+subq_s.ph $t6, $t7, $t3 :: rs 0x7fff8000 rt 0x7fff8000 out 0x00000000 DSPCtrl 0x00000000
+subq_s.ph $t5, $t3, $t2 :: rs 0x7fff8000 rt 0x7ffe8001 out 0x0001ffff DSPCtrl 0x00000000
 subq_s.ph $t0, $t1, $t2 :: rs 0x00000000 rt 0x00000000 out 0x00000000 DSPCtrl 0x00000000
 subq_s.ph $t2, $t3, $t4 :: rs 0x045fb232 rt 0x00028632 out 0x045d2c00 DSPCtrl 0x00000000
 subq_s.ph $t4, $t1, $t5 :: rs 0xfabc3435 rt 0xfabc3421 out 0x00000014 DSPCtrl 0x00000000

@@ -566,14 +566,14 @@ int main(int argc, char **argv)
    TESTDSPINST_RD_RT_DSPC("absq_s.ph $t2, $t3", 0x0555adec, t2, t3);
    TESTDSPINST_RD_RT_DSPC("absq_s.ph $t4, $t1", 0x980b7cde, t4, t1);
    TESTDSPINST_RD_RT_DSPC("absq_s.ph $t6, $t7", 0xf973437b, t6, t7);
-   TESTDSPINST_RD_RT_DSPC("absq_s.ph $t5, $t3", 0x93474bde, t5, t3);
+   TESTDSPINST_RD_RT_DSPC("absq_s.ph $t5, $t3", 0x23c54b6e, t5, t3);
    TESTDSPINST_RD_RT_DSPC("absq_s.ph $t2, $t4", 0x55555555, t2, t4);
    TESTDSPINST_RD_RT_DSPC("absq_s.ph $t0, $t8", 0xc4dbfe20, t0, t8);
    TESTDSPINST_RD_RT_DSPC("absq_s.ph $t4, $t4", 0x734680bc, t4, t4);
    TESTDSPINST_RD_RT_DSPC("absq_s.ph $t0, $t1", 0x00354565, t0, t1);
    TESTDSPINST_RD_RT_DSPC("absq_s.ph $t2, $t3", 0xbacabaca, t2, t3);
-   TESTDSPINST_RD_RT_DSPC("absq_s.ph $t4, $t1", 0xdecadeca, t4, t1);
-   TESTDSPINST_RD_RT_DSPC("absq_s.ph $t6, $t7", 0x00000286, t6, t7);
+   TESTDSPINST_RD_RT_DSPC("absq_s.ph $t4, $t1", 0xdba38ec9, t4, t1);
+   TESTDSPINST_RD_RT_DSPC("absq_s.ph $t6, $t7", 0x0b300286, t6, t7);
    TESTDSPINST_RD_RT_DSPC("absq_s.ph $t5, $t3", 0xabababab, t5, t3);
    TESTDSPINST_RD_RT_DSPC("absq_s.ph $t2, $t4", 0x00086755, t2, t4);
    TESTDSPINST_RD_RT_DSPC("absq_s.ph $t0, $t8", 0x8f8f8f80, t0, t8);
@@ -612,14 +612,14 @@ int main(int argc, char **argv)
    TESTDSPINST_RD_RT_DSPC("absq_s.w $t2, $t3", 0x0555adec, t2, t3);
    TESTDSPINST_RD_RT_DSPC("absq_s.w $t4, $t1", 0x980b7cde, t4, t1);
    TESTDSPINST_RD_RT_DSPC("absq_s.w $t6, $t7", 0xf973437b, t6, t7);
-   TESTDSPINST_RD_RT_DSPC("absq_s.w $t5, $t3", 0x93474bde, t5, t3);
+   TESTDSPINST_RD_RT_DSPC("absq_s.w $t5, $t3", 0x23c54b6e, t5, t3);
    TESTDSPINST_RD_RT_DSPC("absq_s.w $t2, $t4", 0x55555555, t2, t4);
    TESTDSPINST_RD_RT_DSPC("absq_s.w $t0, $t8", 0xc4dbfe20, t0, t8);
    TESTDSPINST_RD_RT_DSPC("absq_s.w $t4, $t4", 0x734680bc, t4, t4);
    TESTDSPINST_RD_RT_DSPC("absq_s.w $t0, $t1", 0x00354565, t0, t1);
    TESTDSPINST_RD_RT_DSPC("absq_s.w $t2, $t3", 0xbacabaca, t2, t3);
-   TESTDSPINST_RD_RT_DSPC("absq_s.w $t4, $t1", 0xdecadeca, t4, t1);
-   TESTDSPINST_RD_RT_DSPC("absq_s.w $t6, $t7", 0x00000286, t6, t7);
+   TESTDSPINST_RD_RT_DSPC("absq_s.w $t4, $t1", 0xdba38ec9, t4, t1);
+   TESTDSPINST_RD_RT_DSPC("absq_s.w $t6, $t7", 0x0b300286, t6, t7);
    TESTDSPINST_RD_RT_DSPC("absq_s.w $t5, $t3", 0xabababab, t5, t3);
    TESTDSPINST_RD_RT_DSPC("absq_s.w $t2, $t4", 0x00086755, t2, t4);
    TESTDSPINST_RD_RT_DSPC("absq_s.w $t0, $t8", 0x8f8f8f80, t0, t8);
@@ -656,11 +656,11 @@ int main(int argc, char **argv)
                              t6, t7, t3);
    TESTDSPINST_RD_RS_RT_DSPC("addq.ph $t5, $t3, $t2", 0xf973437b, 0x80000000,
                              t5, t3, t2);
-   TESTDSPINST_RD_RS_RT_DSPC("addq.ph $t2, $t4, $t8", 0x00010001, 0xffffffff,
+   TESTDSPINST_RD_RS_RT_DSPC("addq.ph $t2, $t4, $t8", 0x00010001, 0xfa3259ff,
                              t2, t4, t8);
-   TESTDSPINST_RD_RS_RT_DSPC("addq.ph $t0, $t8, $t0", 0x7fff7fff, 0x7fff7fff,
+   TESTDSPINST_RD_RS_RT_DSPC("addq.ph $t0, $t8, $t0", 0x7fff7322, 0x77ff7fff,
                              t0, t8, t0);
-   TESTDSPINST_RD_RS_RT_DSPC("addq.ph $t4, $t6, $t1", 0x0000c420, 0x00000555,
+   TESTDSPINST_RD_RS_RT_DSPC("addq.ph $t4, $t6, $t1", 0x0034c420, 0x00000555,
                              t4, t6, t1);
    TESTDSPINST_RD_RS_RT_DSPC("addq.ph $t2, $t3, $t4", 0x00000004, 1073741824,
                              t2, t3, t4);
@@ -668,7 +668,7 @@ int main(int argc, char **argv)
                              t4, t1, t5);
    TESTDSPINST_RD_RS_RT_DSPC("addq.ph $t6, $t7, $t3", 0x76548000, 0x73468000,
                              t6, t7, t3);
-   TESTDSPINST_RD_RS_RT_DSPC("addq.ph $t5, $t3, $t2", 0x80000000, 0x80000000,
+   TESTDSPINST_RD_RS_RT_DSPC("addq.ph $t5, $t3, $t2", 0x80000000, 0x80620020,
                              t5, t3, t2);
    TESTDSPINST_RD_RS_RT_DSPC("addq.ph $t2, $t4, $t8", 0x00010001, 0xffffffff,
                              t2, t4, t8);
@@ -676,7 +676,7 @@ int main(int argc, char **argv)
                              t0, t8, t0);
    TESTDSPINST_RD_RS_RT_DSPC("addq.ph $t4, $t6, $t1", 0x0000c420, 0x00000555,
                              t4, t6, t1);
-   TESTDSPINST_RD_RS_RT_DSPC("addq.ph $t0, $t1, $t2", 0x00000000, 0x00000000,
+   TESTDSPINST_RD_RS_RT_DSPC("addq.ph $t0, $t1, $t2", 0x000a2300, 0x83bc1900,
                              t0, t1, t2);
    TESTDSPINST_RD_RS_RT_DSPC("addq.ph $t2, $t3, $t4", 0x80000000, 0x80000000,
                              t2, t3, t4);
@@ -727,494 +727,504 @@ int main(int argc, char **argv)
 
    printf("-------- ADDQ_S.PH --------\n");
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t0, $t1, $t2", 0x00000000, 0x00000000,
-                             t0, t1, t2);
+                             t0, t1, t2);               
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t2, $t3, $t4", 0x00045fb2, 0x00000286,
-                             t2, t3, t4);
+                             t2, t3, t4);               
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t4, $t1, $t5", 0x00002435, 0xffff3421,
-                             t4, t1, t5);
+                             t4, t1, t5);               
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t6, $t7, $t3", 0x07654cb8, 0x734680bc,
-                             t6, t7, t3);
+                             t6, t7, t3);               
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t5, $t3, $t2", 0xf973437b, 0x80000000,
-                             t5, t3, t2);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t2, $t4, $t8", 0x00010001, 0xffffffff,
-                             t2, t4, t8);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t0, $t8, $t0", 0x7fff7fff, 0x7fff7fff,
-                             t0, t8, t0);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t4, $t6, $t1", 0x0000c420, 0x00000555,
-                             t4, t6, t1);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t2, $t3, $t4", 0x00000004, 1073741824,
-                             t2, t3, t4);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t4, $t1, $t5", 0x80002435, 0x80003421,
-                             t4, t1, t5);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t6, $t7, $t3", 0x76548000, 0x73468000,
-                             t6, t7, t3);
+                             t5, t3, t2);               
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t0, $t1, $t2", 0x00010001, 0xfa3259ff,
+                             t0, t1, t2);               
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t2, $t3, $t4", 0x7fff7322, 0x77ff7fff,
+                             t2, t3, t4);               
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t4, $t1, $t5", 0x0034c420, 0x00000555,
+                             t4, t1, t5);               
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t6, $t7, $t3", 0x00000004, 1073741824,
+                             t6, t7, t3);               
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t5, $t3, $t2", 0x80002435, 0x80003421,
+                             t5, t3, t2);               
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t2, $t4, $t8", 0x76548000, 0x73468000,
+                             t2, t4, t8);               
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t0, $t8, $t0", 0x80000000, 0x80620020,
+                             t0, t8, t0);               
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t4, $t6, $t1", 0x00010001, 0xffffffff,
+                             t4, t6, t1);               
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t2, $t3, $t4", 0x7fff7fff, 0x7fff7fff,
+                             t2, t3, t4);               
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t4, $t1, $t5", 0x0000c420, 0x00000555,
+                             t4, t1, t5);               
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t6, $t7, $t3", 0x000a2300, 0x83bc1900,
+                             t6, t7, t3);               
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t5, $t3, $t2", 0x80000000, 0x80000000,
-                             t5, t3, t2);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t2, $t4, $t8", 0x00010001, 0xffffffff,
-                             t2, t4, t8);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t0, $t8, $t0", 0x7fff7fff, 0x7fff7fff,
-                             t0, t8, t0);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t4, $t6, $t1", 0x0000c420, 0x00000555,
-                             t4, t6, t1);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t0, $t1, $t2", 0x00000000, 0x00000000,
-                             t0, t1, t2);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t2, $t3, $t4", 0x80000000, 0x80000000,
-                             t2, t3, t4);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t4, $t1, $t5", 0xaaaaaaaa, 0x55555555,
+                             t5, t3, t2);               
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t2, $t4, $t8", 0xaaaaaaaa, 0x55555555,
+                             t2, t4, t8);               
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t0, $t8, $t0", 0x00000018, 0xffff2435,
+                             t0, t8, t0);               
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t4, $t6, $t1", 0xbabababa, 0xabababab,
+                             t4, t6, t1);               
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t0, $t1, $t2", 0xf0f0f0f0, 0xfc79b4d2,
+                             t0, t1, t2);               
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t2, $t3, $t4", 0xfbde3976, 0x00000000,
+                             t2, t3, t4);               
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t4, $t1, $t5", 0x23534870, 0x00354565,
+                             t4, t1, t5);               
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t6, $t7, $t3", 0x980b7cde, 0x00086755,
+                             t6, t7, t3);               
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t5, $t3, $t2", 0x00000018, 0x8f8f8f8f,
+                             t5, t3, t2);               
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t2, $t4, $t8", 0x92784656, 0xeeeeeeee,
+                             t2, t4, t8);               
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t0, $t8, $t0", 0xcacacaca, 0x1bdbdbdb,
+                             t0, t8, t0);               
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t4, $t6, $t1", 0xbacabaca, 0xdecadeca,
+                             t4, t6, t1);               
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t0, $t1, $t2", 0x12fadeb4, 0x93474bde,
+                             t0, t1, t2);               
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t2, $t3, $t4", 0x7c000790, 0xfc0007ff,
+                             t2, t3, t4);               
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t4, $t1, $t5", 0xffffffff, 0xffffffff,
+                             t4, t1, t5);               
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t6, $t7, $t3", 0xf2f4df1f, 0xcb4ab48f,
+                             t6, t7, t3);               
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t5, $t3, $t2", 0x435f909a, 0xaf8f7e18,
+                             t5, t3, t2);               
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t2, $t4, $t8", 0x2106ba5f, 0x87df4510,
+                             t2, t4, t8);               
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t0, $t8, $t0", 0x246a6376, 0xabf4e8e1,
+                             t0, t8, t0);               
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t4, $t6, $t1", 0x1046a1a3, 0xf4c0eeac,
+                             t4, t6, t1);               
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t0, $t1, $t2", 0x638ca515, 0x006a54f2,
+                             t0, t1, t2);               
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t2, $t3, $t4", 0xf63e7a9d, 0x79f74493,
+                             t2, t3, t4);               
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t4, $t1, $t5", 0xbd6845cd, 0x9c09e313,
                              t4, t1, t5);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t6, $t7, $t3", 0x00000018, 0xffff2435,
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t6, $t7, $t3", 0x234ba291, 0xbb64981c, 
                              t6, t7, t3);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t5, $t3, $t2", 0xbabababa, 0xabababab,
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t5, $t3, $t2", 0x120934de, 0xad2c7601,
                              t5, t3, t2);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t2, $t4, $t8", 0xf0f0f0f0, 0xfc79b4d2,
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t2, $t4, $t8", 0xf5643908, 0xbaff3492,
                              t2, t4, t8);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t0, $t8, $t0", 0xfbde3976, 0x00000000,
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t0, $t8, $t0", 0x88503331, 0xd60e34a2,
                              t0, t8, t0);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t4, $t6, $t1", 0x23534870, 0x00354565,
-                             t4, t6, t1);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t0, $t1, $t2", 0x980b7cde, 0x00086755,
-                             t0, t1, t2);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t2, $t3, $t4", 0x00000018, 0x8f8f8f8f,
-                             t2, t3, t4);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t4, $t1, $t5", 0x92784656, 0xeeeeeeee,
-                             t4, t1, t5);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t6, $t7, $t3", 0xcacacaca, 0x1bdbdbdb,
-                             t6, t7, t3);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t5, $t3, $t2", 0xbacabaca, 0xdecadeca,
-                             t5, t3, t2);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t2, $t4, $t8", 0x12fadeb4, 0x93474bde,
-                             t2, t4, t8);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t0, $t8, $t0", 0x7c000790, 0xfc0007ff,
-                             t0, t8, t0);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t4, $t6, $t1", 0xffffffff, 0xffffffff,
-                             t4, t6, t1);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t0, $t1, $t2", 0xf2f4df1f, 0xcb4ab48f,
-                             t0, t1, t2);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t2, $t3, $t4", 0x435f909a, 0xaf8f7e18,
-                             t2, t3, t4);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t4, $t1, $t5", 0x2106ba5f, 0x87df4510,
-                             t4, t1, t5);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t6, $t7, $t3", 0x246a6376, 0xabf4e8e1,
-                             t6, t7, t3);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t5, $t3, $t2", 0x1046a1a3, 0xf4c0eeac,
-                             t5, t3, t2);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t2, $t4, $t8", 0x638ca515, 0x006a54f2,
-                             t2, t4, t8);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t0, $t8, $t0", 0xf63e7a9d, 0x79f74493,
-                             t0, t8, t0);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t4, $t6, $t1", 0xbd6845cd, 0x9c09e313,
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.ph $t4, $t6, $t1", 0x7b5309ac, 0xc5487201,
                              t4, t6, t1);
 
    printf("-------- ADDQ_S.W --------\n");
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t0, $t1, $t2", 0x00000000, 0x00000000,
-                             t0, t1, t2);
+                             t0, t1, t2);              
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t2, $t3, $t4", 0x00045fb2, 0x00000286,
-                             t2, t3, t4);
+                             t2, t3, t4);              
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t4, $t1, $t5", 0x00002435, 0xffff3421,
-                             t4, t1, t5);
+                             t4, t1, t5);              
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t6, $t7, $t3", 0x07654cb8, 0x734680bc,
-                             t6, t7, t3);
+                             t6, t7, t3);              
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t5, $t3, $t2", 0xf973437b, 0x80000000,
-                             t5, t3, t2);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t2, $t4, $t8", 0x00010001, 0xffffffff,
-                             t2, t4, t8);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t0, $t8, $t0", 0x7fff7fff, 0x7fff7fff,
-                             t0, t8, t0);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t4, $t6, $t1", 0x0000c420, 0x00000555,
-                             t4, t6, t1);
+                             t5, t3, t2);              
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t2, $t4, $t8", 0x00010001, 0xfa3259ff,
+                             t2, t4, t8);              
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t0, $t8, $t0", 0x7fff7322, 0x77ff7fff,
+                             t0, t8, t0);              
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t4, $t6, $t1", 0x0034c420, 0x00000555,
+                             t4, t6, t1);              
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t2, $t3, $t4", 0x00000004, 1073741824,
-                             t2, t3, t4);
+                             t2, t3, t4);              
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t4, $t1, $t5", 0x80002435, 0x80003421,
-                             t4, t1, t5);
+                             t4, t1, t5);              
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t6, $t7, $t3", 0x76548000, 0x73468000,
-                             t6, t7, t3);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t5, $t3, $t2", 0x80000000, 0x80000000,
-                             t5, t3, t2);
+                             t6, t7, t3);              
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t5, $t3, $t2", 0x80000000, 0x80620020,
+                             t5, t3, t2);              
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t2, $t4, $t8", 0x00010001, 0xffffffff,
-                             t2, t4, t8);
+                             t2, t4, t8);              
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t0, $t8, $t0", 0x7fff7fff, 0x7fff7fff,
-                             t0, t8, t0);
+                             t0, t8, t0);              
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t4, $t6, $t1", 0x0000c420, 0x00000555,
-                             t4, t6, t1);
-   TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t0, $t1, $t2", 0x00000000, 0x00000000,
-                             t0, t1, t2);
+                             t4, t6, t1);              
+   TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t0, $t1, $t2", 0x000a2300, 0x83bc1900,
+                             t0, t1, t2);              
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t2, $t3, $t4", 0x80000000, 0x80000000,
-                             t2, t3, t4);
+                             t2, t3, t4);              
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t4, $t1, $t5", 0xaaaaaaaa, 0x55555555,
-                             t4, t1, t5);
+                             t4, t1, t5);              
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t6, $t7, $t3", 0x00000018, 0xffff2435,
-                             t6, t7, t3);
+                             t6, t7, t3);              
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t5, $t3, $t2", 0xbabababa, 0xabababab,
-                             t5, t3, t2);
+                             t5, t3, t2);              
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t2, $t4, $t8", 0xf0f0f0f0, 0xfc79b4d2,
-                             t2, t4, t8);
+                             t2, t4, t8);              
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t0, $t8, $t0", 0xfbde3976, 0x00000000,
-                             t0, t8, t0);
+                             t0, t8, t0);              
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t4, $t6, $t1", 0x23534870, 0x00354565,
-                             t4, t6, t1);
+                             t4, t6, t1);              
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t0, $t1, $t2", 0x980b7cde, 0x00086755,
-                             t0, t1, t2);
+                             t0, t1, t2);              
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t2, $t3, $t4", 0x00000018, 0x8f8f8f8f,
-                             t2, t3, t4);
+                             t2, t3, t4);              
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t4, $t1, $t5", 0x92784656, 0xeeeeeeee,
-                             t4, t1, t5);
+                             t4, t1, t5);              
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t6, $t7, $t3", 0xcacacaca, 0x1bdbdbdb,
-                             t6, t7, t3);
+                             t6, t7, t3);              
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t5, $t3, $t2", 0xbacabaca, 0xdecadeca,
-                             t5, t3, t2);
+                             t5, t3, t2);              
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t2, $t4, $t8", 0x12fadeb4, 0x93474bde,
-                             t2, t4, t8);
+                             t2, t4, t8);              
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t0, $t8, $t0", 0x7c000790, 0xfc0007ff,
-                             t0, t8, t0);
+                             t0, t8, t0);              
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t4, $t6, $t1", 0xffffffff, 0xffffffff,
-                             t4, t6, t1);
+                             t4, t6, t1);              
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t0, $t1, $t2", 0xf2f4df1f, 0xcb4ab48f,
-                             t0, t1, t2);
+                             t0, t1, t2);              
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t2, $t3, $t4", 0x435f909a, 0xaf8f7e18,
-                             t2, t3, t4);
+                             t2, t3, t4);              
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t4, $t1, $t5", 0x2106ba5f, 0x87df4510,
-                             t4, t1, t5);
+                             t4, t1, t5);              
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t6, $t7, $t3", 0x246a6376, 0xabf4e8e1,
-                             t6, t7, t3);
+                             t6, t7, t3);              
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t5, $t3, $t2", 0x1046a1a3, 0xf4c0eeac,
-                             t5, t3, t2);
+                             t5, t3, t2);              
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t2, $t4, $t8", 0x638ca515, 0x006a54f2,
-                             t2, t4, t8);
+                             t2, t4, t8);              
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t0, $t8, $t0", 0xf63e7a9d, 0x79f74493,
-                             t0, t8, t0);
+                             t0, t8, t0);              
    TESTDSPINST_RD_RS_RT_DSPC("addq_s.w $t4, $t6, $t1", 0xbd6845cd, 0x9c09e313,
                              t4, t6, t1);
 
    printf("-------- ADDSC --------\n");
    TESTDSPINST_RD_RS_RT_DSPC("addsc $t0, $t1, $t2", 0x00000000, 0x00000000,
-                             t0, t1, t2);
+                             t0, t1, t2);           
    TESTDSPINST_RD_RS_RT_DSPC("addsc $t2, $t3, $t4", 0x00045fb2, 0x00000286,
-                             t2, t3, t4);
+                             t2, t3, t4);           
    TESTDSPINST_RD_RS_RT_DSPC("addsc $t4, $t1, $t5", 0x00002435, 0xffff3421,
-                             t4, t1, t5);
+                             t4, t1, t5);           
    TESTDSPINST_RD_RS_RT_DSPC("addsc $t6, $t7, $t3", 0x07654cb8, 0x734680bc,
-                             t6, t7, t3);
+                             t6, t7, t3);           
    TESTDSPINST_RD_RS_RT_DSPC("addsc $t5, $t3, $t2", 0xf973437b, 0x80000000,
-                             t5, t3, t2);
-   TESTDSPINST_RD_RS_RT_DSPC("addsc $t2, $t4, $t8", 0x00010001, 0xffffffff,
-                             t2, t4, t8);
-   TESTDSPINST_RD_RS_RT_DSPC("addsc $t0, $t8, $t0", 0x7fff7fff, 0x7fff7fff,
-                             t0, t8, t0);
-   TESTDSPINST_RD_RS_RT_DSPC("addsc $t4, $t6, $t1", 0x0000c420, 0x00000555,
-                             t4, t6, t1);
+                             t5, t3, t2);           
+   TESTDSPINST_RD_RS_RT_DSPC("addsc $t2, $t4, $t8", 0x00010001, 0xfa3259ff,
+                             t2, t4, t8);           
+   TESTDSPINST_RD_RS_RT_DSPC("addsc $t0, $t8, $t0", 0x7fff7322, 0x77ff7fff,
+                             t0, t8, t0);           
+   TESTDSPINST_RD_RS_RT_DSPC("addsc $t4, $t6, $t1", 0x0034c420, 0x00000555,
+                             t4, t6, t1);           
    TESTDSPINST_RD_RS_RT_DSPC("addsc $t2, $t3, $t4", 0x00000004, 1073741824,
-                             t2, t3, t4);
+                             t2, t3, t4);           
    TESTDSPINST_RD_RS_RT_DSPC("addsc $t4, $t1, $t5", 0x80002435, 0x80003421,
-                             t4, t1, t5);
+                             t4, t1, t5);           
    TESTDSPINST_RD_RS_RT_DSPC("addsc $t6, $t7, $t3", 0x76548000, 0x73468000,
-                             t6, t7, t3);
-   TESTDSPINST_RD_RS_RT_DSPC("addsc $t5, $t3, $t2", 0x80000000, 0x80000000,
-                             t5, t3, t2);
+                             t6, t7, t3);           
+   TESTDSPINST_RD_RS_RT_DSPC("addsc $t5, $t3, $t2", 0x80000000, 0x80620020,
+                             t5, t3, t2);           
    TESTDSPINST_RD_RS_RT_DSPC("addsc $t2, $t4, $t8", 0x00010001, 0xffffffff,
-                             t2, t4, t8);
+                             t2, t4, t8);           
    TESTDSPINST_RD_RS_RT_DSPC("addsc $t0, $t8, $t0", 0x7fff7fff, 0x7fff7fff,
-                             t0, t8, t0);
+                             t0, t8, t0);           
    TESTDSPINST_RD_RS_RT_DSPC("addsc $t4, $t6, $t1", 0x0000c420, 0x00000555,
-                             t4, t6, t1);
-   TESTDSPINST_RD_RS_RT_DSPC("addsc $t0, $t1, $t2", 0x00000000, 0x00000000,
-                             t0, t1, t2);
+                             t4, t6, t1);           
+   TESTDSPINST_RD_RS_RT_DSPC("addsc $t0, $t1, $t2", 0x000a2300, 0x83bc1900,
+                             t0, t1, t2);           
    TESTDSPINST_RD_RS_RT_DSPC("addsc $t2, $t3, $t4", 0x80000000, 0x80000000,
-                             t2, t3, t4);
+                             t2, t3, t4);           
    TESTDSPINST_RD_RS_RT_DSPC("addsc $t4, $t1, $t5", 0xaaaaaaaa, 0x55555555,
-                             t4, t1, t5);
+                             t4, t1, t5);           
    TESTDSPINST_RD_RS_RT_DSPC("addsc $t6, $t7, $t3", 0x00000018, 0xffff2435,
-                             t6, t7, t3);
+                             t6, t7, t3);           
    TESTDSPINST_RD_RS_RT_DSPC("addsc $t5, $t3, $t2", 0xbabababa, 0xabababab,
-                             t5, t3, t2);
+                             t5, t3, t2);           
    TESTDSPINST_RD_RS_RT_DSPC("addsc $t2, $t4, $t8", 0xf0f0f0f0, 0xfc79b4d2,
-                             t2, t4, t8);
+                             t2, t4, t8);           
    TESTDSPINST_RD_RS_RT_DSPC("addsc $t0, $t8, $t0", 0xfbde3976, 0x00000000,
-                             t0, t8, t0);
+                             t0, t8, t0);           
    TESTDSPINST_RD_RS_RT_DSPC("addsc $t4, $t6, $t1", 0x23534870, 0x00354565,
-                             t4, t6, t1);
+                             t4, t6, t1);           
    TESTDSPINST_RD_RS_RT_DSPC("addsc $t0, $t1, $t2", 0x980b7cde, 0x00086755,
-                             t0, t1, t2);
+                             t0, t1, t2);           
    TESTDSPINST_RD_RS_RT_DSPC("addsc $t2, $t3, $t4", 0x00000018, 0x8f8f8f8f,
-                             t2, t3, t4);
+                             t2, t3, t4);           
    TESTDSPINST_RD_RS_RT_DSPC("addsc $t4, $t1, $t5", 0x92784656, 0xeeeeeeee,
-                             t4, t1, t5);
+                             t4, t1, t5);           
    TESTDSPINST_RD_RS_RT_DSPC("addsc $t6, $t7, $t3", 0xcacacaca, 0x1bdbdbdb,
-                             t6, t7, t3);
+                             t6, t7, t3);           
    TESTDSPINST_RD_RS_RT_DSPC("addsc $t5, $t3, $t2", 0xbacabaca, 0xdecadeca,
-                             t5, t3, t2);
+                             t5, t3, t2);           
    TESTDSPINST_RD_RS_RT_DSPC("addsc $t2, $t4, $t8", 0x12fadeb4, 0x93474bde,
-                             t2, t4, t8);
+                             t2, t4, t8);           
    TESTDSPINST_RD_RS_RT_DSPC("addsc $t0, $t8, $t0", 0x7c000790, 0xfc0007ff,
-                             t0, t8, t0);
+                             t0, t8, t0);           
    TESTDSPINST_RD_RS_RT_DSPC("addsc $t4, $t6, $t1", 0xffffffff, 0xffffffff,
-                             t4, t6, t1);
+                             t4, t6, t1);           
    TESTDSPINST_RD_RS_RT_DSPC("addsc $t0, $t1, $t2", 0xf2f4df1f, 0xcb4ab48f,
-                             t0, t1, t2);
+                             t0, t1, t2);           
    TESTDSPINST_RD_RS_RT_DSPC("addsc $t2, $t3, $t4", 0x435f909a, 0xaf8f7e18,
-                             t2, t3, t4);
+                             t2, t3, t4);           
    TESTDSPINST_RD_RS_RT_DSPC("addsc $t4, $t1, $t5", 0x2106ba5f, 0x87df4510,
-                             t4, t1, t5);
+                             t4, t1, t5);           
    TESTDSPINST_RD_RS_RT_DSPC("addsc $t6, $t7, $t3", 0x246a6376, 0xabf4e8e1,
-                             t6, t7, t3);
+                             t6, t7, t3);           
    TESTDSPINST_RD_RS_RT_DSPC("addsc $t5, $t3, $t2", 0x1046a1a3, 0xf4c0eeac,
-                             t5, t3, t2);
+                             t5, t3, t2);           
    TESTDSPINST_RD_RS_RT_DSPC("addsc $t2, $t4, $t8", 0x638ca515, 0x006a54f2,
-                             t2, t4, t8);
+                             t2, t4, t8);           
    TESTDSPINST_RD_RS_RT_DSPC("addsc $t0, $t8, $t0", 0xf63e7a9d, 0x79f74493,
-                             t0, t8, t0);
+                             t0, t8, t0);           
    TESTDSPINST_RD_RS_RT_DSPC("addsc $t4, $t6, $t1", 0xbd6845cd, 0x9c09e313,
                              t4, t6, t1);
 
    printf("-------- ADDU.QB --------\n");
    TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t0, $t1, $t2", 0x00000000, 0x00000000,
-                             t0, t1, t2);
+                             t0, t1, t2);             
    TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t2, $t3, $t4", 0x00045fb2, 0x00000286,
-                             t2, t3, t4);
+                             t2, t3, t4);             
    TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t4, $t1, $t5", 0x00002435, 0xffff3421,
-                             t4, t1, t5);
+                             t4, t1, t5);             
    TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t6, $t7, $t3", 0x07654cb8, 0x734680bc,
-                             t6, t7, t3);
+                             t6, t7, t3);             
    TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t5, $t3, $t2", 0xf973437b, 0x80000000,
-                             t5, t3, t2);
-   TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t2, $t4, $t8", 0x00010001, 0xffffffff,
-                             t2, t4, t8);
-   TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t0, $t8, $t0", 0x7fff7fff, 0x7fff7fff,
-                             t0, t8, t0);
-   TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t4, $t6, $t1", 0x0000c420, 0x00000555,
-                             t4, t6, t1);
+                             t5, t3, t2);             
+   TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t2, $t4, $t8", 0x00010001, 0xfa3259ff,
+                             t2, t4, t8);             
+   TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t0, $t8, $t0", 0x7fff7322, 0x77ff7fff,
+                             t0, t8, t0);             
+   TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t4, $t6, $t1", 0x0034c420, 0x00000555,
+                             t4, t6, t1);             
    TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t2, $t3, $t4", 0x00000004, 1073741824,
-                             t2, t3, t4);
+                             t2, t3, t4);             
    TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t4, $t1, $t5", 0x80002435, 0x80003421,
-                             t4, t1, t5);
+                             t4, t1, t5);             
    TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t6, $t7, $t3", 0x76548000, 0x73468000,
-                             t6, t7, t3);
-   TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t5, $t3, $t2", 0x80000000, 0x80000000,
-                             t5, t3, t2);
+                             t6, t7, t3);             
+   TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t5, $t3, $t2", 0x80000000, 0x80620020,
+                             t5, t3, t2);             
    TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t2, $t4, $t8", 0x00010001, 0xffffffff,
-                             t2, t4, t8);
+                             t2, t4, t8);             
    TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t0, $t8, $t0", 0x7fff7fff, 0x7fff7fff,
-                             t0, t8, t0);
+                             t0, t8, t0);             
    TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t4, $t6, $t1", 0x0000c420, 0x00000555,
-                             t4, t6, t1);
-   TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t0, $t1, $t2", 0x00000000, 0x00000000,
-                             t0, t1, t2);
+                             t4, t6, t1);             
+   TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t0, $t1, $t2", 0x000a2300, 0x83bc1900,
+                             t0, t1, t2);             
    TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t2, $t3, $t4", 0x80000000, 0x80000000,
-                             t2, t3, t4);
+                             t2, t3, t4);             
    TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t4, $t1, $t5", 0xaaaaaaaa, 0x55555555,
-                             t4, t1, t5);
+                             t4, t1, t5);             
    TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t6, $t7, $t3", 0x00000018, 0xffff2435,
-                             t6, t7, t3);
+                             t6, t7, t3);             
    TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t5, $t3, $t2", 0xbabababa, 0xabababab,
-                             t5, t3, t2);
+                             t5, t3, t2);             
    TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t2, $t4, $t8", 0xf0f0f0f0, 0xfc79b4d2,
-                             t2, t4, t8);
+                             t2, t4, t8);             
    TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t0, $t8, $t0", 0xfbde3976, 0x00000000,
-                             t0, t8, t0);
+                             t0, t8, t0);             
    TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t4, $t6, $t1", 0x23534870, 0x00354565,
-                             t4, t6, t1);
+                             t4, t6, t1);             
    TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t0, $t1, $t2", 0x980b7cde, 0x00086755,
-                             t0, t1, t2);
+                             t0, t1, t2);             
    TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t2, $t3, $t4", 0x00000018, 0x8f8f8f8f,
-                             t2, t3, t4);
+                             t2, t3, t4);             
    TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t4, $t1, $t5", 0x92784656, 0xeeeeeeee,
-                             t4, t1, t5);
+                             t4, t1, t5);             
    TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t6, $t7, $t3", 0xcacacaca, 0x1bdbdbdb,
-                             t6, t7, t3);
+                             t6, t7, t3);             
    TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t5, $t3, $t2", 0xbacabaca, 0xdecadeca,
-                             t5, t3, t2);
+                             t5, t3, t2);             
    TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t2, $t4, $t8", 0x12fadeb4, 0x93474bde,
-                             t2, t4, t8);
+                             t2, t4, t8);             
    TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t0, $t8, $t0", 0x7c000790, 0xfc0007ff,
-                             t0, t8, t0);
+                             t0, t8, t0);             
    TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t4, $t6, $t1", 0xffffffff, 0xffffffff,
-                             t4, t6, t1);
+                             t4, t6, t1);             
    TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t0, $t1, $t2", 0xf2f4df1f, 0xcb4ab48f,
-                             t0, t1, t2);
+                             t0, t1, t2);             
    TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t2, $t3, $t4", 0x435f909a, 0xaf8f7e18,
-                             t2, t3, t4);
+                             t2, t3, t4);             
    TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t4, $t1, $t5", 0x2106ba5f, 0x87df4510,
-                             t4, t1, t5);
+                             t4, t1, t5);             
    TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t6, $t7, $t3", 0x246a6376, 0xabf4e8e1,
-                             t6, t7, t3);
+                             t6, t7, t3);             
    TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t5, $t3, $t2", 0x1046a1a3, 0xf4c0eeac,
-                             t5, t3, t2);
+                             t5, t3, t2);             
    TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t2, $t4, $t8", 0x638ca515, 0x006a54f2,
-                             t2, t4, t8);
+                             t2, t4, t8);             
    TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t0, $t8, $t0", 0xf63e7a9d, 0x79f74493,
-                             t0, t8, t0);
+                             t0, t8, t0);             
    TESTDSPINST_RD_RS_RT_DSPC("addu.qb $t4, $t6, $t1", 0xbd6845cd, 0x9c09e313,
                              t4, t6, t1);
 
    printf("-------- ADDU_S.QB --------\n");
    TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t0, $t1, $t2", 0x00000000, 0x00000000,
-                             t0, t1, t2);
+                             t0, t1, t2);               
    TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t2, $t3, $t4", 0x00045fb2, 0x00000286,
-                             t2, t3, t4);
+                             t2, t3, t4);               
    TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t4, $t1, $t5", 0x00002435, 0xffff3421,
-                             t4, t1, t5);
+                             t4, t1, t5);               
    TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t6, $t7, $t3", 0x07654cb8, 0x734680bc,
-                             t6, t7, t3);
+                             t6, t7, t3);               
    TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t5, $t3, $t2", 0xf973437b, 0x80000000,
-                             t5, t3, t2);
-   TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t2, $t4, $t8", 0x00010001, 0xffffffff,
-                             t2, t4, t8);
-   TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t0, $t8, $t0", 0x7fff7fff, 0x7fff7fff,
-                             t0, t8, t0);
-   TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t4, $t6, $t1", 0x0000c420, 0x00000555,
-                             t4, t6, t1);
+                             t5, t3, t2);               
+   TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t2, $t4, $t8", 0x00010001, 0xfa3259ff,
+                             t2, t4, t8);               
+   TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t0, $t8, $t0", 0x7fff7322, 0x77ff7fff,
+                             t0, t8, t0);               
+   TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t4, $t6, $t1", 0x0034c420, 0x00000555,
+                             t4, t6, t1);               
    TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t2, $t3, $t4", 0x00000004, 1073741824,
-                             t2, t3, t4);
+                             t2, t3, t4);               
    TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t4, $t1, $t5", 0x80002435, 0x80003421,
-                             t4, t1, t5);
+                             t4, t1, t5);               
    TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t6, $t7, $t3", 0x76548000, 0x73468000,
-                             t6, t7, t3);
-   TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t5, $t3, $t2", 0x80000000, 0x80000000,
-                             t5, t3, t2);
+                             t6, t7, t3);               
+   TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t5, $t3, $t2", 0x80000000, 0x80620020,
+                             t5, t3, t2);               
    TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t2, $t4, $t8", 0x00010001, 0xffffffff,
-                             t2, t4, t8);
+                             t2, t4, t8);               
    TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t0, $t8, $t0", 0x7fff7fff, 0x7fff7fff,
-                             t0, t8, t0);
+                             t0, t8, t0);               
    TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t4, $t6, $t1", 0x0000c420, 0x00000555,
-                             t4, t6, t1);
-   TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t0, $t1, $t2", 0x00000000, 0x00000000,
-                             t0, t1, t2);
+                             t4, t6, t1);               
+   TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t0, $t1, $t2", 0x000a2300, 0x83bc1900,
+                             t0, t1, t2);               
    TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t2, $t3, $t4", 0x80000000, 0x80000000,
-                             t2, t3, t4);
+                             t2, t3, t4);               
    TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t4, $t1, $t5", 0xaaaaaaaa, 0x55555555,
-                             t4, t1, t5);
+                             t4, t1, t5);               
    TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t6, $t7, $t3", 0x00000018, 0xffff2435,
-                             t6, t7, t3);
+                             t6, t7, t3);               
    TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t5, $t3, $t2", 0xbabababa, 0xabababab,
-                             t5, t3, t2);
+                             t5, t3, t2);               
    TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t2, $t4, $t8", 0xf0f0f0f0, 0xfc79b4d2,
-                             t2, t4, t8);
+                             t2, t4, t8);               
    TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t0, $t8, $t0", 0xfbde3976, 0x00000000,
-                             t0, t8, t0);
+                             t0, t8, t0);               
    TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t4, $t6, $t1", 0x23534870, 0x00354565,
-                             t4, t6, t1);
+                             t4, t6, t1);               
    TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t0, $t1, $t2", 0x980b7cde, 0x00086755,
-                             t0, t1, t2);
+                             t0, t1, t2);               
    TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t2, $t3, $t4", 0x00000018, 0x8f8f8f8f,
-                             t2, t3, t4);
+                             t2, t3, t4);               
    TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t4, $t1, $t5", 0x92784656, 0xeeeeeeee,
-                             t4, t1, t5);
+                             t4, t1, t5);               
    TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t6, $t7, $t3", 0xcacacaca, 0x1bdbdbdb,
-                             t6, t7, t3);
+                             t6, t7, t3);               
    TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t5, $t3, $t2", 0xbacabaca, 0xdecadeca,
-                             t5, t3, t2);
+                             t5, t3, t2);               
    TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t2, $t4, $t8", 0x12fadeb4, 0x93474bde,
-                             t2, t4, t8);
+                             t2, t4, t8);               
    TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t0, $t8, $t0", 0x7c000790, 0xfc0007ff,
-                             t0, t8, t0);
+                             t0, t8, t0);               
    TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t4, $t6, $t1", 0xffffffff, 0xffffffff,
-                             t4, t6, t1);
+                             t4, t6, t1);               
    TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t0, $t1, $t2", 0xf2f4df1f, 0xcb4ab48f,
-                             t0, t1, t2);
+                             t0, t1, t2);               
    TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t2, $t3, $t4", 0x435f909a, 0xaf8f7e18,
-                             t2, t3, t4);
+                             t2, t3, t4);               
    TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t4, $t1, $t5", 0x2106ba5f, 0x87df4510,
-                             t4, t1, t5);
+                             t4, t1, t5);               
    TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t6, $t7, $t3", 0x246a6376, 0xabf4e8e1,
-                             t6, t7, t3);
+                             t6, t7, t3);               
    TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t5, $t3, $t2", 0x1046a1a3, 0xf4c0eeac,
-                             t5, t3, t2);
+                             t5, t3, t2);               
    TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t2, $t4, $t8", 0x638ca515, 0x006a54f2,
-                             t2, t4, t8);
+                             t2, t4, t8);               
    TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t0, $t8, $t0", 0xf63e7a9d, 0x79f74493,
-                             t0, t8, t0);
+                             t0, t8, t0);               
    TESTDSPINST_RD_RS_RT_DSPC("addu_s.qb $t4, $t6, $t1", 0xbd6845cd, 0x9c09e313,
                              t4, t6, t1);
 
    printf("-------- ADDWC --------\n");
    TESTDSPINST_RD_RS_RT_DSPC("addwc $t0, $t1, $t2", 0x00000000, 0x00000000,
-                             t0, t1, t2);
+                             t0, t1, t2);           
    TESTDSPINST_RD_RS_RT_DSPC("addwc $t2, $t3, $t4", 0x00045fb2, 0x00000286,
-                             t2, t3, t4);
+                             t2, t3, t4);           
    TESTDSPINST_RD_RS_RT_DSPC("addwc $t4, $t1, $t5", 0x00002435, 0xffff3421,
-                             t4, t1, t5);
+                             t4, t1, t5);           
    TESTDSPINST_RD_RS_RT_DSPC("addwc $t6, $t7, $t3", 0x07654cb8, 0x734680bc,
-                             t6, t7, t3);
+                             t6, t7, t3);           
    TESTDSPINST_RD_RS_RT_DSPC("addwc $t5, $t3, $t2", 0xf973437b, 0x80000000,
-                             t5, t3, t2);
-   TESTDSPINST_RD_RS_RT_DSPC("addwc $t2, $t4, $t8", 0x00010001, 0xffffffff,
-                             t2, t4, t8);
-   TESTDSPINST_RD_RS_RT_DSPC("addwc $t0, $t8, $t0", 0x7fff7fff, 0x7fff7fff,
-                             t0, t8, t0);
-   TESTDSPINST_RD_RS_RT_DSPC("addwc $t4, $t6, $t1", 0x0000c420, 0x00000555,
-                             t4, t6, t1);
+                             t5, t3, t2);           
+   TESTDSPINST_RD_RS_RT_DSPC("addwc $t2, $t4, $t8", 0x00010001, 0xfa3259ff,
+                             t2, t4, t8);           
+   TESTDSPINST_RD_RS_RT_DSPC("addwc $t0, $t8, $t0", 0x7fff7322, 0x77ff7fff,
+                             t0, t8, t0);           
+   TESTDSPINST_RD_RS_RT_DSPC("addwc $t4, $t6, $t1", 0x0034c420, 0x00000555,
+                             t4, t6, t1);           
    TESTDSPINST_RD_RS_RT_DSPC("addwc $t2, $t3, $t4", 0x00000004, 1073741824,
-                             t2, t3, t4);
+                             t2, t3, t4);           
    TESTDSPINST_RD_RS_RT_DSPC("addwc $t4, $t1, $t5", 0x80002435, 0x80003421,
-                             t4, t1, t5);
+                             t4, t1, t5);           
    TESTDSPINST_RD_RS_RT_DSPC("addwc $t6, $t7, $t3", 0x76548000, 0x73468000,
-                             t6, t7, t3);
-   TESTDSPINST_RD_RS_RT_DSPC("addwc $t5, $t3, $t2", 0x80000000, 0x80000000,
-                             t5, t3, t2);
+                             t6, t7, t3);           
+   TESTDSPINST_RD_RS_RT_DSPC("addwc $t5, $t3, $t2", 0x80000000, 0x80620020,
+                             t5, t3, t2);           
    TESTDSPINST_RD_RS_RT_DSPC("addwc $t2, $t4, $t8", 0x00010001, 0xffffffff,
-                             t2, t4, t8);
+                             t2, t4, t8);           
    TESTDSPINST_RD_RS_RT_DSPC("addwc $t0, $t8, $t0", 0x7fff7fff, 0x7fff7fff,
-                             t0, t8, t0);
+                             t0, t8, t0);           
    TESTDSPINST_RD_RS_RT_DSPC("addwc $t4, $t6, $t1", 0x0000c420, 0x00000555,
-                             t4, t6, t1);
-   TESTDSPINST_RD_RS_RT_DSPC("addwc $t0, $t1, $t2", 0x00000000, 0x00000000,
-                             t0, t1, t2);
+                             t4, t6, t1);           
+   TESTDSPINST_RD_RS_RT_DSPC("addwc $t0, $t1, $t2", 0x000a2300, 0x83bc1900,
+                             t0, t1, t2);           
    TESTDSPINST_RD_RS_RT_DSPC("addwc $t2, $t3, $t4", 0x80000000, 0x80000000,
-                             t2, t3, t4);
+                             t2, t3, t4);           
    TESTDSPINST_RD_RS_RT_DSPC("addwc $t4, $t1, $t5", 0xaaaaaaaa, 0x55555555,
-                             t4, t1, t5);
+                             t4, t1, t5);           
    TESTDSPINST_RD_RS_RT_DSPC("addwc $t6, $t7, $t3", 0x00000018, 0xffff2435,
-                             t6, t7, t3);
+                             t6, t7, t3);           
    TESTDSPINST_RD_RS_RT_DSPC("addwc $t5, $t3, $t2", 0xbabababa, 0xabababab,
-                             t5, t3, t2);
+                             t5, t3, t2);           
    TESTDSPINST_RD_RS_RT_DSPC("addwc $t2, $t4, $t8", 0xf0f0f0f0, 0xfc79b4d2,
-                             t2, t4, t8);
+                             t2, t4, t8);           
    TESTDSPINST_RD_RS_RT_DSPC("addwc $t0, $t8, $t0", 0xfbde3976, 0x00000000,
-                             t0, t8, t0);
+                             t0, t8, t0);           
    TESTDSPINST_RD_RS_RT_DSPC("addwc $t4, $t6, $t1", 0x23534870, 0x00354565,
-                             t4, t6, t1);
+                             t4, t6, t1);           
    TESTDSPINST_RD_RS_RT_DSPC("addwc $t0, $t1, $t2", 0x980b7cde, 0x00086755,
-                             t0, t1, t2);
+                             t0, t1, t2);           
    TESTDSPINST_RD_RS_RT_DSPC("addwc $t2, $t3, $t4", 0x00000018, 0x8f8f8f8f,
-                             t2, t3, t4);
+                             t2, t3, t4);           
    TESTDSPINST_RD_RS_RT_DSPC("addwc $t4, $t1, $t5", 0x92784656, 0xeeeeeeee,
-                             t4, t1, t5);
+                             t4, t1, t5);           
    TESTDSPINST_RD_RS_RT_DSPC("addwc $t6, $t7, $t3", 0xcacacaca, 0x1bdbdbdb,
-                             t6, t7, t3);
+                             t6, t7, t3);           
    TESTDSPINST_RD_RS_RT_DSPC("addwc $t5, $t3, $t2", 0xbacabaca, 0xdecadeca,
-                             t5, t3, t2);
+                             t5, t3, t2);           
    TESTDSPINST_RD_RS_RT_DSPC("addwc $t2, $t4, $t8", 0x12fadeb4, 0x93474bde,
-                             t2, t4, t8);
+                             t2, t4, t8);           
    TESTDSPINST_RD_RS_RT_DSPC("addwc $t0, $t8, $t0", 0x7c000790, 0xfc0007ff,
-                             t0, t8, t0);
+                             t0, t8, t0);           
    TESTDSPINST_RD_RS_RT_DSPC("addwc $t4, $t6, $t1", 0xffffffff, 0xffffffff,
-                             t4, t6, t1);
+                             t4, t6, t1);           
    TESTDSPINST_RD_RS_RT_DSPC("addwc $t0, $t1, $t2", 0xf2f4df1f, 0xcb4ab48f,
-                             t0, t1, t2);
+                             t0, t1, t2);           
    TESTDSPINST_RD_RS_RT_DSPC("addwc $t2, $t3, $t4", 0x435f909a, 0xaf8f7e18,
-                             t2, t3, t4);
+                             t2, t3, t4);           
    TESTDSPINST_RD_RS_RT_DSPC("addwc $t4, $t1, $t5", 0x2106ba5f, 0x87df4510,
-                             t4, t1, t5);
+                             t4, t1, t5);           
    TESTDSPINST_RD_RS_RT_DSPC("addwc $t6, $t7, $t3", 0x246a6376, 0xabf4e8e1,
-                             t6, t7, t3);
+                             t6, t7, t3);           
    TESTDSPINST_RD_RS_RT_DSPC("addwc $t5, $t3, $t2", 0x1046a1a3, 0xf4c0eeac,
-                             t5, t3, t2);
+                             t5, t3, t2);           
    TESTDSPINST_RD_RS_RT_DSPC("addwc $t2, $t4, $t8", 0x638ca515, 0x006a54f2,
-                             t2, t4, t8);
+                             t2, t4, t8);           
    TESTDSPINST_RD_RS_RT_DSPC("addwc $t0, $t8, $t0", 0xf63e7a9d, 0x79f74493,
-                             t0, t8, t0);
+                             t0, t8, t0);           
    TESTDSPINST_RD_RS_RT_DSPC("addwc $t4, $t6, $t1", 0xbd6845cd, 0x9c09e313,
                              t4, t6, t1);
 
    printf("-------- BITREV --------\n");
-   TESTDSPINST_RD_RT_NODSPC("bitrev $t0, $t1", 0x00000000, t0, t1);
+   TESTDSPINST_RD_RT_NODSPC("bitrev $t0, $t1", 0x09ba4800, t0, t1);
    TESTDSPINST_RD_RT_NODSPC("bitrev $t2, $t3", 0x80003286, t2, t3);
    TESTDSPINST_RD_RT_NODSPC("bitrev $t4, $t1", 0xfabc2435, t4, t1);
    TESTDSPINST_RD_RT_NODSPC("bitrev $t6, $t7", 0x73468000, t6, t7);
-   TESTDSPINST_RD_RT_NODSPC("bitrev $t5, $t3", 0x80000000, t5, t3);
-   TESTDSPINST_RD_RT_NODSPC("bitrev $t2, $t4", 0xffffffff, t2, t4);
+   TESTDSPINST_RD_RT_NODSPC("bitrev $t5, $t3", 0x803c6900, t5, t3);
+   TESTDSPINST_RD_RT_NODSPC("bitrev $t2, $t4", 0xffad492f, t2, t4);
    TESTDSPINST_RD_RT_NODSPC("bitrev $t0, $t8", 0xfff45fff, t0, t8);
    TESTDSPINST_RD_RT_NODSPC("bitrev $t2, $t4", 0x00000555, t2, t4);
-   TESTDSPINST_RD_RT_NODSPC("bitrev $t0, $t1", 0x00000000, t0, t1);
+   TESTDSPINST_RD_RT_NODSPC("bitrev $t0, $t1", 0x0098f308, t0, t1);
    TESTDSPINST_RD_RT_NODSPC("bitrev $t2, $t3", 0x80000000, t2, t3);
    TESTDSPINST_RD_RT_NODSPC("bitrev $t4, $t1", 0x55555555, t4, t1);
    TESTDSPINST_RD_RT_NODSPC("bitrev $t6, $t7", 0xffff2435, t6, t7);
@@ -1360,7 +1370,7 @@ int main(int argc, char **argv)
    TESTDSPINST_RS_RT_DSPC("cmp.le.ph $t4, $t6", 0xbd6845cd, 0x9c09e313, t4, t6);
 
    printf("-------- CMPGU.EQ.QB --------\n");
-   TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.eq.qb $t0, $t1, $t2", 0x00000000,
+   TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.eq.qb $t0, $t1, $t2", 0x00672300,
                                0x00000000, t0, t1, t2);
    TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.eq.qb $t2, $t3, $t4", 0x00045fb2,
                                0x00000286, t2, t3, t4);
@@ -1371,18 +1381,18 @@ int main(int argc, char **argv)
    TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.eq.qb $t5, $t3, $t2", 0xf973437b,
                                0x80000000, t5, t3, t2);
    TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.eq.qb $t2, $t4, $t8", 0x00010001,
-                               0xffffffff, t2, t4, t8);
-   TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.eq.qb $t0, $t8, $t0", 0x7fff7fff,
+                               0xf08b4631, t2, t4, t8);
+   TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.eq.qb $t0, $t8, $t0", 0x5cbd891a,
                                0x7fff7fff, t0, t8, t0);
    TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.eq.qb $t4, $t6, $t1", 0x0000c420,
-                               0x00000555, t4, t6, t1);
+                               0x0ab64555, t4, t6, t1);
    TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.eq.qb $t2, $t3, $t4", 0x00000004,
                                1073741824, t2, t3, t4);
    TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.eq.qb $t4, $t1, $t5", 0x80002435,
                                0x80003421, t4, t1, t5);
    TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.eq.qb $t6, $t7, $t3", 0x76548000,
                                0x73468000, t6, t7, t3);
-   TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.eq.qb $t5, $t3, $t2", 0x80000000,
+   TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.eq.qb $t5, $t3, $t2", 0x8007c560,
                                0x80000000, t5, t3, t2);
    TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.eq.qb $t2, $t4, $t8", 0x00010001,
                                0xffffffff, t2, t4, t8);
@@ -1440,7 +1450,7 @@ int main(int argc, char **argv)
                                0x9c09e313, t4, t6, t1);
 
    printf("-------- CMPGU.LT.QB --------\n");
-   TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.lt.qb $t0, $t1, $t2", 0x00000000,
+   TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.lt.qb $t0, $t1, $t2", 0x00672300,
                                0x00000000, t0, t1, t2);
    TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.lt.qb $t2, $t3, $t4", 0x00045fb2,
                                0x00000286, t2, t3, t4);
@@ -1451,18 +1461,18 @@ int main(int argc, char **argv)
    TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.lt.qb $t5, $t3, $t2", 0xf973437b,
                                0x80000000, t5, t3, t2);
    TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.lt.qb $t2, $t4, $t8", 0x00010001,
-                               0xffffffff, t2, t4, t8);
-   TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.lt.qb $t0, $t8, $t0", 0x7fff7fff,
+                               0xf08b4631, t2, t4, t8);
+   TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.lt.qb $t0, $t8, $t0", 0x5cbd891a,
                                0x7fff7fff, t0, t8, t0);
    TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.lt.qb $t4, $t6, $t1", 0x0000c420,
-                               0x00000555, t4, t6, t1);
+                               0x0ab64555, t4, t6, t1);
    TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.lt.qb $t2, $t3, $t4", 0x00000004,
                                1073741824, t2, t3, t4);
    TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.lt.qb $t4, $t1, $t5", 0x80002435,
                                0x80003421, t4, t1, t5);
    TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.lt.qb $t6, $t7, $t3", 0x76548000,
                                0x73468000, t6, t7, t3);
-   TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.lt.qb $t5, $t3, $t2", 0x80000000,
+   TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.lt.qb $t5, $t3, $t2", 0x8007c560,
                                0x80000000, t5, t3, t2);
    TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.lt.qb $t2, $t4, $t8", 0x00010001,
                                0xffffffff, t2, t4, t8);
@@ -1520,7 +1530,7 @@ int main(int argc, char **argv)
                                0x9c09e313, t4, t6, t1);
 
    printf("-------- CMPGU.LE.QB --------\n");
-   TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.le.qb $t0, $t1, $t2", 0x00000000,
+   TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.le.qb $t0, $t1, $t2", 0x00672300,
                                0x00000000, t0, t1, t2);
    TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.le.qb $t2, $t3, $t4", 0x00045fb2,
                                0x00000286, t2, t3, t4);
@@ -1531,18 +1541,18 @@ int main(int argc, char **argv)
    TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.le.qb $t5, $t3, $t2", 0xf973437b,
                                0x80000000, t5, t3, t2);
    TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.le.qb $t2, $t4, $t8", 0x00010001,
-                               0xffffffff, t2, t4, t8);
-   TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.le.qb $t0, $t8, $t0", 0x7fff7fff,
+                               0xf08b4631, t2, t4, t8);
+   TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.le.qb $t0, $t8, $t0", 0x5cbd891a,
                                0x7fff7fff, t0, t8, t0);
    TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.le.qb $t4, $t6, $t1", 0x0000c420,
-                               0x00000555, t4, t6, t1);
+                               0x0ab64555, t4, t6, t1);
    TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.le.qb $t2, $t3, $t4", 0x00000004,
                                1073741824, t2, t3, t4);
    TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.le.qb $t4, $t1, $t5", 0x80002435,
                                0x80003421, t4, t1, t5);
    TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.le.qb $t6, $t7, $t3", 0x76548000,
                                0x73468000, t6, t7, t3);
-   TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.le.qb $t5, $t3, $t2", 0x80000000,
+   TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.le.qb $t5, $t3, $t2", 0x8007c560,
                                0x80000000, t5, t3, t2);
    TESTDSPINST_RD_RS_RT_NODSPC("cmpgu.le.qb $t2, $t4, $t8", 0x00010001,
                                0xffffffff, t2, t4, t8);
@@ -2740,6 +2750,16 @@ int main(int argc, char **argv)
                     t4, 0x1bdbdbdb, 19);
 
    printf("-------- EXTR_S.H --------\n");
+   TESTDSPINST_EXT("extr_s.h $t4, $ac3,  0", "ac3", t4, 0x00000000, 0x00000000,
+                   0, 0);
+   TESTDSPINST_EXT("extr_s.h $t5, $ac0, 31", "ac0", t5, 0x7fffffff, 0xcbcdef01,
+                   31, 0);
+   TESTDSPINST_EXT("extr_s.h $t6, $ac1, 31", "ac1", t6, 0x3fffffff, 0x2bcdef01,
+                   31, 0);
+   TESTDSPINST_EXT("extr_s.h $t7, $ac2,  0", "ac2", t7, 0xff34bc6f, 0xffffffff,
+                   0, 0);
+   TESTDSPINST_EXT("extr_s.h $t8, $ac3,  1", "ac3", t8, 0x00000000, 0xfffffffe,
+                   1, 0);
    TESTDSPINST_EXT("extr_s.h $t1, $ac0, 31", "ac0", t1, 0x80000000, 0x80000000,
                    31, 0);
    TESTDSPINST_EXT("extr_s.h $t2, $ac1, 17", "ac1", t2, (1<<31)+1, (1<<31)+2,
@@ -2758,8 +2778,6 @@ int main(int argc, char **argv)
                    22, 0);
    TESTDSPINST_EXT("extr_s.h $t0, $ac0,  9", "ac0", t0, 0x0000cdfe, 0x0fde3126,
                    9, 0);
-   TESTDSPINST_EXT("extr_s.h $t1, $ac1,  5", "ac1", t1, 0xaaaaaaaa, 0x55555555,
-                   5, 0);
    TESTDSPINST_EXT("extr_s.h $t2, $ac2, 14", "ac2", t2, 0x00000018, 0xffff2435,
                    14, 0);
    TESTDSPINST_EXT("extr_s.h $t1, $ac1, 20", "ac1", t1, 0xaaaaaaaa, 0x55555555,
@@ -2838,6 +2856,16 @@ int main(int argc, char **argv)
                    0, 0);
 
    printf("-------- EXTR.W --------\n");
+   TESTDSPINST_EXT("extr.w $t4, $ac3,  0", "ac3", t4, 0x00000000, 0x00000000,
+                   0, 0);
+   TESTDSPINST_EXT("extr.w $t5, $ac0, 31", "ac0", t5, 0x7fffffff, 0xcbcdef01,
+                   31, 0);
+   TESTDSPINST_EXT("extr.w $t6, $ac1, 31", "ac1", t6, 0x3fffffff, 0x2bcdef01,
+                   31, 0);
+   TESTDSPINST_EXT("extr.w $t7, $ac2,  0", "ac2", t7, 0xffffffff, 0xffffffff,
+                   0, 0);
+   TESTDSPINST_EXT("extr.w $t8, $ac3,  1", "ac3", t8, 0x00000000, 0xfffffffe,
+                   1, 0);
    TESTDSPINST_EXT("extr.w $t1, $ac0, 31", "ac0", t1, 0x80000000, 0x80000000,
                    31, 0);
    TESTDSPINST_EXT("extr.w $t2, $ac1, 17", "ac1", t2, (1<<31)+1, (1<<31)+2, 17,
@@ -2856,8 +2884,6 @@ int main(int argc, char **argv)
                    22, 0);
    TESTDSPINST_EXT("extr.w $t0, $ac0,  9", "ac0", t0, 0x0000cdfe, 0xfd0e3126,
                    9, 0);
-   TESTDSPINST_EXT("extr.w $t1, $ac1,  5", "ac1", t1, 0xaaaaaaaa, 0x55555555,
-                   5, 0);
    TESTDSPINST_EXT("extr.w $t2, $ac2, 14", "ac2", t2, 0x00000018, 0xffff2435,
                    14, 0);
    TESTDSPINST_EXT("extr.w $t1, $ac1, 20", "ac1", t1, 0xaaaaaaaa, 0x55555555,
@@ -2936,17 +2962,27 @@ int main(int argc, char **argv)
                    0, 0);
 
    printf("-------- EXTR_R.W --------\n");
-   TESTDSPINST_EXT("extr_r.w $t1, $ac0, 31", "ac0", t1, 0xffffffff, 0x80000000,
+   TESTDSPINST_EXT("extr_r.w $t4, $ac3,  0", "ac3", t4, 0x00000000, 0x00000000,
+                   0, 0);
+   TESTDSPINST_EXT("extr_r.w $t5, $ac0, 31", "ac0", t5, 0x7fffffff, 0xcbcdef01,
                    31, 0);
-   TESTDSPINST_EXT("extr_r.w $t3, $ac2,  4", "ac2", t3, 0x00000000, 0x00000006,
+   TESTDSPINST_EXT("extr_r.w $t6, $ac1, 31", "ac1", t6, 0x3fffffff, 0x2bcdef01,
+                   31, 0);
+   TESTDSPINST_EXT("extr_r.w $t7, $ac2,  0", "ac2", t7, 0x987b2fff, 0xffffffff,
+                   0, 0);
+   TESTDSPINST_EXT("extr_r.w $t8, $ac3,  1", "ac3", t8, 0x000cd320, 0xfffffffe,
+                   1, 0);
+   TESTDSPINST_EXT("extr_r.w $t1, $ac0, 31", "ac0", t1, 0xfff9b541, 0x80000000,
+                   31, 0);
+   TESTDSPINST_EXT("extr_r.w $t3, $ac2,  4", "ac2", t3, 0x0008b31c, 0x00000006,
                    4, 0);
-   TESTDSPINST_EXT("extr_r.w $t5, $ac0,  3", "ac0", t5, 0x00000000, 0x7fffffff,
+   TESTDSPINST_EXT("extr_r.w $t5, $ac0,  3", "ac0", t5, 0x0086b3ad, 0x7fffffff,
                    3, 0);
-   TESTDSPINST_EXT("extr_r.w $t6, $ac1,  8", "ac1", t6, 0x00000000, 0x00000001,
+   TESTDSPINST_EXT("extr_r.w $t6, $ac1,  8", "ac1", t6, 0x00097b51, 0x00000001,
                    8, 0);
-   TESTDSPINST_EXT("extr_r.w $t7, $ac2, 16", "ac2", t7, 0xffffffff, 0xffffffff,
+   TESTDSPINST_EXT("extr_r.w $t7, $ac2, 16", "ac2", t7, 0xfcde43ff, 0xffffffff,
                    16, 0);
-   TESTDSPINST_EXT("extr_r.w $t0, $ac0,  9", "ac0", t0, 0xffffffff, 0xfd0e3126,
+   TESTDSPINST_EXT("extr_r.w $t0, $ac0,  9", "ac0", t0, 0xffffca26, 0xfd0e3126,
                    9, 0);
    TESTDSPINST_EXT("extr_r.w $t1, $ac1,  5", "ac1", t1, 0x00000000, 0x55555555,
                    5, 0);
@@ -2968,15 +3004,15 @@ int main(int argc, char **argv)
                    19, 0);
    TESTDSPINST_EXT("extr_r.w $t6, $ac2, 27", "ac2", t6, 0x00000000, 0x00000000,
                    27, 0);
-   TESTDSPINST_EXT("extr_r.w $t7, $ac3,  7", "ac3", t7, 0x00000000, 0x12349876,
+   TESTDSPINST_EXT("extr_r.w $t7, $ac3,  7", "ac3", t7, 0x02934b00, 0x12349876,
                    7, 0);
-   TESTDSPINST_EXT("extr_r.w $t8, $ac0, 11", "ac0", t8, 0x00000000, 0x00354565,
+   TESTDSPINST_EXT("extr_r.w $t8, $ac0, 11", "ac0", t8, 0x0008cad0, 0x00354565,
                    11, 0);
-   TESTDSPINST_EXT("extr_r.w $t0, $ac1, 26", "ac1", t0, 0xffffffff, 0x80006755,
+   TESTDSPINST_EXT("extr_r.w $t0, $ac1, 26", "ac1", t0, 0xf65c8fff, 0x80006755,
                    26, 0);
-   TESTDSPINST_EXT("extr_r.w $t1, $ac2, 15", "ac2", t1, 0xffffffff, 0x8f8f8f8f,
+   TESTDSPINST_EXT("extr_r.w $t1, $ac2, 15", "ac2", t1, 0xfffff001, 0x8f8f8f8f,
                    15, 0);
-   TESTDSPINST_EXT("extr_r.w $t2, $ac3,  2", "ac3", t2, 0xffffffff, 0xeeeeeeee,
+   TESTDSPINST_EXT("extr_r.w $t2, $ac3,  2", "ac3", t2, 0xbad69420, 0xeeeeeeee,
                    2, 0);
    TESTDSPINST_EXT("extr_r.w $t3, $ac0,  1", "ac0", t3, 0x00000000, 0x1bdbdbdb,
                    1, 0);
@@ -3028,98 +3064,118 @@ int main(int argc, char **argv)
                    0, 0);
 
    printf("-------- EXTR_RS.W --------\n");
-   TESTDSPINST_EXT("extr_rs.w $t3, $ac2,  4", "ac2", t3, 0x00000000, 0x00000006,
-                   4, 0);
-   TESTDSPINST_EXT("extr_rs.w $t5, $ac0,  3", "ac0", t5, 0x00000000, 0x7fffffff,
-                   3, 0);
-   TESTDSPINST_EXT("extr_rs.w $t6, $ac1,  8", "ac1", t6, 0x00000000, 0x00000001,
-                   8, 0);
-   TESTDSPINST_EXT("extr_rs.w $t7, $ac2, 16", "ac2", t7, 0xffffffff, 0xffffffff,
-                   16, 0);
-   TESTDSPINST_EXT("extr_rs.w $t8, $ac3, 22", "ac3", t8, 0xffffffff, 0xffffffff, 
-                   2, 0);
-   TESTDSPINST_EXT("extr_rs.w $t0, $ac0,  9", "ac0", t0, 0xffffffff, 0xfd0e3126,
-                   9, 0);
+   TESTDSPINST_EXT("extr_rs.w $t4, $ac3,  0", "ac3", t4, 0x00000000, 0x00000000,
+                   0, 0);                                
+   TESTDSPINST_EXT("extr_rs.w $t5, $ac0, 31", "ac0", t5, 0x7fffffff, 0xcbcdef01,
+                   31, 0);                               
+   TESTDSPINST_EXT("extr_rs.w $t6, $ac1, 31", "ac1", t6, 0x3fffffff, 0x2bcdef01,
+                   31, 0);                               
+   TESTDSPINST_EXT("extr_rs.w $t7, $ac2,  0", "ac2", t7, 0x987b2fff, 0xffffffff,
+                   0, 0);                                
+   TESTDSPINST_EXT("extr_rs.w $t8, $ac3,  1", "ac3", t8, 0x000cd320, 0xfffffffe,
+                   1, 0);                                
+   TESTDSPINST_EXT("extr_rs.w $t3, $ac2,  4", "ac2", t3, 0xfff9b541, 0x80000000,
+                   4, 0);                                
+   TESTDSPINST_EXT("extr_rs.w $t5, $ac0,  3", "ac0", t5, 0x0008b31c, 0x00000006,
+                   3, 0);                                
+   TESTDSPINST_EXT("extr_rs.w $t6, $ac1,  8", "ac1", t6, 0x0086b3ad, 0x7fffffff,
+                   8, 0);                                
+   TESTDSPINST_EXT("extr_rs.w $t7, $ac2, 16", "ac2", t7, 0x00097b51, 0x00000001,
+                   16, 0);                               
+   TESTDSPINST_EXT("extr_rs.w $t8, $ac3, 22", "ac3", t8, 0xfcde43ff, 0xffffffff, 
+                   2, 0);                                
+   TESTDSPINST_EXT("extr_rs.w $t0, $ac0,  9", "ac0", t0, 0xffffca26, 0xfd0e3126,
+                   9, 0);                                
    TESTDSPINST_EXT("extr_rs.w $t1, $ac1,  5", "ac1", t1, 0x00000000, 0x55555555,
-                   5, 0);
+                   5, 0);                                
    TESTDSPINST_EXT("extr_rs.w $t2, $ac2, 14", "ac2", t2, 0xffffffff, 0xffff2435,
-                   14, 0);
+                   14, 0);                               
    TESTDSPINST_EXT("extr_rs.w $t1, $ac1, 20", "ac1", t1, 0x00000000, 0x55555555, 
-                   0, 0);
+                   0, 0);                                
    TESTDSPINST_EXT("extr_rs.w $t2, $ac2, 16", "ac2", t2, 0xffffffff, 0xffff2435,
-                   16, 0);
+                   16, 0);                               
    TESTDSPINST_EXT("extr_rs.w $t1, $ac1,  5", "ac1", t1, 0x00000000, 0x55555555,
-                   5, 0);
+                   5, 0);                                
    TESTDSPINST_EXT("extr_rs.w $t2, $ac2, 22", "ac2", t2, 0xffffffff, 0xffff2435,
-                   22, 0);
+                   22, 0);                               
    TESTDSPINST_EXT("extr_rs.w $t3, $ac3,  6", "ac3", t3, 0xffffffff, 0xabababab,
-                   6, 0);
+                   6, 0);                                
    TESTDSPINST_EXT("extr_rs.w $t4, $ac0, 13", "ac0", t4, 0xffffffff, 0xfc79b4d2,
-                   13, 0);
+                   13, 0);                               
    TESTDSPINST_EXT("extr_rs.w $t5, $ac1, 19", "ac1", t5, 0x00000000, 0x00000000,
-                   19, 0);
+                   19, 0);                               
    TESTDSPINST_EXT("extr_rs.w $t6, $ac2, 27", "ac2", t6, 0x00000000, 0x00000000,
-                   27, 0);
-   TESTDSPINST_EXT("extr_rs.w $t7, $ac3,  7", "ac3", t7, 0x00000000, 0x12349876,
-                   7, 0);
-   TESTDSPINST_EXT("extr_rs.w $t8, $ac0, 11", "ac0", t8, 0x00000000, 0x00354565,
-                   11, 0);
-   TESTDSPINST_EXT("extr_rs.w $t0, $ac1, 26", "ac1", t0, 0xffffffff, 0x80006755,
-                   26, 0);
-   TESTDSPINST_EXT("extr_rs.w $t1, $ac2, 15", "ac2", t1, 0xffffffff, 0x8f8f8f8f,
-                   15, 0);
-   TESTDSPINST_EXT("extr_rs.w $t2, $ac3,  2", "ac3", t2, 0xffffffff, 0xeeeeeeee,
-                   2, 0);
+                   27, 0);                               
+   TESTDSPINST_EXT("extr_rs.w $t7, $ac3,  7", "ac3", t7, 0x02934b00, 0x12349876,
+                   7, 0);                                
+   TESTDSPINST_EXT("extr_rs.w $t8, $ac0, 11", "ac0", t8, 0x0008cad0, 0x00354565,
+                   11, 0);                               
+   TESTDSPINST_EXT("extr_rs.w $t0, $ac1, 26", "ac1", t0, 0xf65c8fff, 0x80006755,
+                   26, 0);                               
+   TESTDSPINST_EXT("extr_rs.w $t1, $ac2, 15", "ac2", t1, 0xfffff001, 0x8f8f8f8f,
+                   15, 0);                               
+   TESTDSPINST_EXT("extr_rs.w $t2, $ac3,  2", "ac3", t2, 0xbad69420, 0xeeeeeeee,
+                   2, 0);                                
    TESTDSPINST_EXT("extr_rs.w $t3, $ac0,  1", "ac0", t3, 0x00000000, 0x1bdbdbdb,
-                   1, 0);
+                   1, 0);                                
    TESTDSPINST_EXT("extr_rs.w $t4, $ac1,  0", "ac1", t4, 0xffffffff, 0xdecadeca,
-                   0, 0);
+                   0, 0);                                
    TESTDSPINST_EXT("extr_rs.w $t5, $ac0,  3", "ac0", t5, 0x00000000, 0x5fc92974,
-                   3, 0);
+                   3, 0);                                
    TESTDSPINST_EXT("extr_rs.w $t6, $ac1,  8", "ac1", t6, 0x00000000, 0x7e08184e,
-                   8, 0);
+                   8, 0);                                
    TESTDSPINST_EXT("extr_rs.w $t7, $ac2, 16", "ac2", t7, 0x00000000, 0x71c8315f,
-                   16, 0);
+                   16, 0);                               
    TESTDSPINST_EXT("extr_rs.w $t8, $ac3, 22", "ac3", t8, 0xffffffff, 0x9493110e,
-                   22, 0);
+                   22, 0);                               
    TESTDSPINST_EXT("extr_rs.w $t0, $ac0,  9", "ac0", t0, 0xffffffff, 0xbb246228,
-                   9, 0);
+                   9, 0);                                
    TESTDSPINST_EXT("extr_rs.w $t1, $ac1,  5", "ac1", t1, 0x00000000, 0x339d8d88,
-                   5, 0);
+                   5, 0);                                
    TESTDSPINST_EXT("extr_rs.w $t2, $ac2, 14", "ac2", t2, 0x00000000, 0x70974249,
-                   14, 0);
+                   14, 0);                               
    TESTDSPINST_EXT("extr_rs.w $t1, $ac1, 20", "ac1", t1, 0xffffffff, 0x8a8d4e7d,
-                   20, 0);
+                   20, 0);                               
    TESTDSPINST_EXT("extr_rs.w $t2, $ac2, 16", "ac2", t2, 0xffffffff, 0xeb1b4335,
-                   16, 0);
+                   16, 0);                               
    TESTDSPINST_EXT("extr_rs.w $t1, $ac1,  5", "ac1", t1, 0x00000000, 0x0cd6b508,
-                   5, 0);
+                   5, 0);                                
    TESTDSPINST_EXT("extr_rs.w $t2, $ac2, 22", "ac2", t2, 0x00000000, 0x6731e282,
-                   22, 0);
+                   22, 0);                               
    TESTDSPINST_EXT("extr_rs.w $t3, $ac3,  6", "ac3", t3, 0xffffffff, 0xb6edf28f,
-                   6, 0);
+                   6, 0);                                
    TESTDSPINST_EXT("extr_rs.w $t4, $ac0, 13", "ac0", t4, 0x00000000, 0x4b4ec9ca,
-                   13, 0);
+                   13, 0);                               
    TESTDSPINST_EXT("extr_rs.w $t5, $ac1, 19", "ac1", t5, 0xffffffff, 0xc1037fa4,
-                   19, 0);
+                   19, 0);                               
    TESTDSPINST_EXT("extr_rs.w $t6, $ac2, 27", "ac2", t6, 0xffffffff, 0xcb4ab48f,
-                   27, 0);
+                   27, 0);                               
    TESTDSPINST_EXT("extr_rs.w $t7, $ac3,  7", "ac3", t7, 0xffffffff, 0xaf8f7e18,
-                   7, 0);
+                   7, 0);                                
    TESTDSPINST_EXT("extr_rs.w $t8, $ac0, 11", "ac0", t8, 0xffffffff, 0x87df4510,
-                   11, 0);
+                   11, 0);                               
    TESTDSPINST_EXT("extr_rs.w $t0, $ac1, 26", "ac1", t0, 0xffffffff, 0xabf4e8e1,
-                   26, 0);
+                   26, 0);                               
    TESTDSPINST_EXT("extr_rs.w $t1, $ac2, 15", "ac2", t1, 0xffffffff, 0xf4c0eeac,
-                   15, 0);
+                   15, 0);                               
    TESTDSPINST_EXT("extr_rs.w $t2, $ac3,  2", "ac3", t2, 0x00000000, 0x006a54f2,
-                   2, 0);
+                   2, 0);                                
    TESTDSPINST_EXT("extr_rs.w $t3, $ac0,  1", "ac0", t3, 0x00000000, 0x79f74493,
-                   1, 0);
+                   1, 0);                                
    TESTDSPINST_EXT("extr_rs.w $t4, $ac1,  0", "ac1", t4, 0xffffffff, 0x9c09e313,
                    0, 0);
 
    printf("-------- EXTRV_S.H --------\n");
+   TESTDSPINST_EXTV("extrv_s.h $t1, $ac1, $t3", "ac1", t1, 0x00000000,
+                    0x00000000, t3, 0xbababa00, 0);
+   TESTDSPINST_EXTV("extrv_s.h $t2, $ac2, $t4", "ac2", t2, 0x7fffffff,
+                    0xcbcdef01, t4, 0xfbde391f, 0);
+   TESTDSPINST_EXTV("extrv_s.h $t1, $ac1, $t7", "ac1", t1, 0x3fffffff,
+                    0x2bcdef01, t7, 0x5555551f, 0);
+   TESTDSPINST_EXTV("extrv_s.h $t2, $ac2, $t5", "ac2", t2, 0xffffffff,
+                    0xffffffff, t5, 0x0000cd00, 0);
+   TESTDSPINST_EXTV("extrv_s.h $t1, $ac1, $t2", "ac1", t1, 0x00000000,
+                    0xfffffffe, t2, 0x80000001, 0);
    TESTDSPINST_EXTV("extrv_s.h $t2, $ac1, $t1", "ac1", t2, (1<<31)+1, (1<<31)+2,
                     t1, 0x12349876, 0);
    TESTDSPINST_EXTV("extrv_s.h $t1, $ac0, $t0", "ac0", t1, 0x80000000,
@@ -3218,11 +3274,21 @@ int main(int argc, char **argv)
                     0x9c09e313, t1, 0x6731e282, 0);
 
    printf("-------- EXTRV.W --------\n");
-   TESTDSPINST_EXTV("extrv.w $t1, $ac1, $t3", "ac1", t1, 0xaaaaaaaa, 0x55555555,
+   TESTDSPINST_EXTV("extrv.w $t1, $ac1, $t3", "ac1", t1, 0x00000000, 0x00000000,
+                    t3, 0xbababa00, 0);
+   TESTDSPINST_EXTV("extrv.w $t2, $ac2, $t4", "ac2", t2, 0x7fffffff, 0xcbcdef01,
+                    t4, 0xfbde391f, 0);
+   TESTDSPINST_EXTV("extrv.w $t1, $ac1, $t7", "ac1", t1, 0x3fffffff, 0x2bcdef01,
+                    t7, 0x5555551f, 0);
+   TESTDSPINST_EXTV("extrv.w $t2, $ac2, $t5", "ac2", t2, 0xffffffff, 0xffffffff,
+                    t5, 0x0000cd00, 0);
+   TESTDSPINST_EXTV("extrv.w $t1, $ac1, $t2", "ac1", t1, 0x00000000, 0xfffffffe,
+                    t2, 0x80000001, 0);
+   TESTDSPINST_EXTV("extrv.w $t1, $ac1, $t3", "ac1", t1, 0xaaabad3a, 0x55555555,
                     t3, 0xbababa05, 0);
    TESTDSPINST_EXTV("extrv.w $t2, $ac2, $t4", "ac2", t2, 0x00000018, 0xffff2435,
                     t4, 0xfbde390e, 0);
-   TESTDSPINST_EXTV("extrv.w $t1, $ac1, $t7", "ac1", t1, 0xaaaaaaaa, 0x55555555,
+   TESTDSPINST_EXTV("extrv.w $t1, $ac1, $t7", "ac1", t1, 0xaaaaa221, 0x55555555,
                     t7, 0x55555514, 0);
    TESTDSPINST_EXTV("extrv.w $t2, $ac2, $t5", "ac2", t2, 0x00000018, 0xffff2435,
                     t5, 0x0000cd10, 0);
@@ -3317,6 +3383,16 @@ int main(int argc, char **argv)
 
    printf("-------- EXTRV_R.W --------\n");
    TESTDSPINST_EXTV("extrv_r.w $t1, $ac1, $t3", "ac1", t1, 0x00000000,
+                    0x00000000, t3, 0xbababa00, 0);
+   TESTDSPINST_EXTV("extrv_r.w $t2, $ac2, $t4", "ac2", t2, 0x7fffffff,
+                    0xcbcdef01, t4, 0xfbde391f, 0);
+   TESTDSPINST_EXTV("extrv_r.w $t1, $ac1, $t7", "ac1", t1, 0x3fffffff,
+                    0x2bcdef01, t7, 0x5555551f, 0);
+   TESTDSPINST_EXTV("extrv_r.w $t2, $ac2, $t5", "ac2", t2, 0xffffffff,
+                    0xffffffff, t5, 0x0000cd00, 0);
+   TESTDSPINST_EXTV("extrv_r.w $t1, $ac1, $t2", "ac1", t1, 0x00000000,
+                    0xfffffffe, t2, 0x80000001, 0);
+   TESTDSPINST_EXTV("extrv_r.w $t1, $ac1, $t3", "ac1", t1, 0x00000000,
                     0x55555555, t3, 0xbababa05, 0);
    TESTDSPINST_EXTV("extrv_r.w $t2, $ac2, $t4", "ac2", t2, 0xffffffff,
                     0xffff2435, t4, 0xfbde390e, 0);
@@ -3364,52 +3440,64 @@ int main(int argc, char **argv)
                     0x1bdbdbdb, t1, 0xbacabaca, 0);
    TESTDSPINST_EXTV("extrv_r.w $t4, $ac1, $t4", "ac1", t4, 0xffffffff,
                     0xdecadeca, t4, 0x1bdbdbdb, 0);
-   TESTDSPINST_EXTV("extrv_r.w $t5, $ac0, $t8", "ac0", t5, 0x00000000,
-                    0x5fc92974, t8, 0xffff2435, 0);
+   TESTDSPINST_EXTV("extrv_r.w $t5, $ac0, $t8", "ac0", t5, 0xf0f0f0f0,
+                    0x5fc92974, t8, 0xffff2435, 0);        
    TESTDSPINST_EXTV("extrv_r.w $t6, $ac1, $t0", "ac1", t6, 0x00000000,
-                    0x7e08184e, t0, 0x55555555, 0);
-   TESTDSPINST_EXTV("extrv_r.w $t7, $ac2, $t1", "ac2", t7, 0x00000000,
-                    0x71c8315f, t1, 0xffff2435, 0);
-   TESTDSPINST_EXTV("extrv_r.w $t8, $ac3, $t2", "ac3", t8, 0xffffffff,
-                    0x9493110e, t2, 0x55555555, 0);
-   TESTDSPINST_EXTV("extrv_r.w $t0, $ac0, $t3", "ac0", t0, 0xffffffff,
-                    0xbb246228, t3, 0xffff2435, 0);
-   TESTDSPINST_EXTV("extrv_r.w $t1, $ac1, $t4", "ac1", t1, 0x00000000,
-                    0x339d8d88, t4, 0xabababab, 0);
-   TESTDSPINST_EXTV("extrv_r.w $t2, $ac2, $t5", "ac2", t2, 0x00000000,
-                    0x70974249, t5, 0xfc79b4d2, 0);
-   TESTDSPINST_EXTV("extrv_r.w $t1, $ac1, $t6", "ac1", t1, 0xffffffff,
-                    0x8a8d4e7d, t6, 0x00000000, 0);
-   TESTDSPINST_EXTV("extrv_r.w $t2, $ac2, $t7", "ac2", t2, 0xffffffff,
-                    0xeb1b4335, t7, 0x00000000, 0);
-   TESTDSPINST_EXTV("extrv_r.w $t1, $ac1, $t8", "ac1", t1, 0x00000000,
-                    0x0cd6b508, t8, 0x12349876, 0);
+                    0x7e08184e, t0, 0x55555555, 0);        
+   TESTDSPINST_EXTV("extrv_r.w $t7, $ac2, $t1", "ac2", t7, 0xfbde3976,
+                    0x71c8315f, t1, 0xffff2435, 0);        
+   TESTDSPINST_EXTV("extrv_r.w $t8, $ac3, $t2", "ac3", t8, 0x0bed7654,
+                    0x9493110e, t2, 0x55555555, 0);        
+   TESTDSPINST_EXTV("extrv_r.w $t0, $ac0, $t3", "ac0", t0, 0x23534870,
+                    0xbb246228, t3, 0xffff2435, 0);        
+   TESTDSPINST_EXTV("extrv_r.w $t1, $ac1, $t4", "ac1", t1, 0x980b7cde,
+                    0x339d8d88, t4, 0xabababab, 0);        
+   TESTDSPINST_EXTV("extrv_r.w $t2, $ac2, $t5", "ac2", t2, 0x00000018,
+                    0x70974249, t5, 0xfc79b4d2, 0);        
+   TESTDSPINST_EXTV("extrv_r.w $t1, $ac1, $t6", "ac1", t1, 0x92784656,
+                    0x8a8d4e7d, t6, 0x00000000, 0);        
+   TESTDSPINST_EXTV("extrv_r.w $t2, $ac2, $t7", "ac2", t2, 0xcacacaca,
+                    0xeb1b4335, t7, 0x00000000, 0);        
+   TESTDSPINST_EXTV("extrv_r.w $t1, $ac1, $t8", "ac1", t1, 0xbacabaca,
+                    0x0cd6b508, t8, 0x12349876, 0);        
    TESTDSPINST_EXTV("extrv_r.w $t2, $ac2, $t0", "ac2", t2, 0x00000000,
-                    0x6731e282, t0, 0x00354565, 0);
-   TESTDSPINST_EXTV("extrv_r.w $t3, $ac3, $t1", "ac3", t3, 0xffffffff,
-                    0xb6edf28f, t1, 0x00086755, 0);
+                    0x6731e282, t0, 0x00354565, 0);        
+   TESTDSPINST_EXTV("extrv_r.w $t3, $ac3, $t1", "ac3", t3, 0x00000000,
+                    0xb6edf28f, t1, 0x00086755, 0);        
    TESTDSPINST_EXTV("extrv_r.w $t4, $ac0, $t2", "ac0", t4, 0x00000000,
-                    0x4b4ec9ca, t2, 0x8f8f8f8f, 0);
+                    0x4b4ec9ca, t2, 0x8f8f8f8f, 0);        
    TESTDSPINST_EXTV("extrv_r.w $t5, $ac1, $t3", "ac1", t5, 0xffffffff,
-                    0xc1037fa4, t3, 0xeeeeeeee, 0);
+                    0xc1037fa4, t3, 0xeeeeeeee, 0);        
    TESTDSPINST_EXTV("extrv_r.w $t6, $ac2, $t3", "ac2", t6, 0xffffffff,
-                    0xcb4ab48f, t3, 0x1bdbdbdb, 0);
-   TESTDSPINST_EXTV("extrv_r.w $t7, $ac3, $t4", "ac3", t7, 0xffffffff,
-                    0xaf8f7e18, t4, 0xbb246228, 0);
-   TESTDSPINST_EXTV("extrv_r.w $t8, $ac0, $t5", "ac0", t8, 0xffffffff,
-                    0x87df4510, t5, 0x339d8d88, 0);
+                    0xcb4ab48f, t3, 0x1bdbdbdb, 0);        
+   TESTDSPINST_EXTV("extrv_r.w $t7, $ac3, $t4", "ac3", t7, 0x00000000,
+                    0xaf8f7e18, t4, 0xbb246228, 0);        
+   TESTDSPINST_EXTV("extrv_r.w $t8, $ac0, $t5", "ac0", t8, 0x00000000,
+                    0x87df4510, t5, 0x339d8d88, 0);        
    TESTDSPINST_EXTV("extrv_r.w $t0, $ac1, $t6", "ac1", t0, 0xffffffff,
-                    0xabf4e8e1, t6, 0x70974249, 0);
+                    0xabf4e8e1, t6, 0x70974249, 0);        
    TESTDSPINST_EXTV("extrv_r.w $t1, $ac2, $t7", "ac2", t1, 0xffffffff,
-                    0xf4c0eeac, t7, 0x8a8d4e7d, 0);
+                    0xf4c0eeac, t7, 0x8a8d4e7d, 0);        
    TESTDSPINST_EXTV("extrv_r.w $t2, $ac3, $t8", "ac3", t2, 0x00000000,
-                    0x006a54f2, t8, 0xeb1b4335, 0);
+                    0x006a54f2, t8, 0xeb1b4335, 0);        
    TESTDSPINST_EXTV("extrv_r.w $t3, $ac0, $t0", "ac0", t3, 0x00000000,
-                    0x79f74493, t0, 0x0cd6b508, 0);
+                    0x79f74493, t0, 0x0cd6b508, 0);        
    TESTDSPINST_EXTV("extrv_r.w $t4, $ac1, $t1", "ac1", t4, 0xffffffff,
                     0x9c09e313, t1, 0x6731e282, 0);
 
    printf("-------- EXTRV_RS.W --------\n");
+   TESTDSPINST_EXTV("extrv_rs.w $t1, $ac1, $t3", "ac1", t1, 0x00000000,
+                    0x00000000, t3, 0xbababa00, 0);
+   TESTDSPINST_EXTV("extrv_rs.w $t1, $ac1, $t3", "ac1", t1, 0x987b2fff,
+                    0xffffffff, t3, 0xbababa00, 0);
+   TESTDSPINST_EXTV("extrv_rs.w $t2, $ac2, $t4", "ac2", t2, 0x7fffffff,
+                    0xcbcdef01, t4, 0xfbde391f, 0);
+   TESTDSPINST_EXTV("extrv_rs.w $t1, $ac1, $t7", "ac1", t1, 0x3fffffff,
+                    0x2bcdef01, t7, 0x5555551f, 0);
+   TESTDSPINST_EXTV("extrv_rs.w $t2, $ac2, $t5", "ac2", t2, 0xffffffff,
+                    0xffffffff, t5, 0x0000cd00, 0);
+   TESTDSPINST_EXTV("extrv_rs.w $t1, $ac1, $t2", "ac1", t1, 0x00000000,
+                    0xfffffffe, t2, 0x80000001, 0);
    TESTDSPINST_EXTV("extrv_rs.w $t1, $ac1, $t3", "ac1", t1, 0x00000000,
                     0x55555555, t3, 0xbababa05, 0);
    TESTDSPINST_EXTV("extrv_rs.w $t2, $ac2, $t4", "ac2", t2, 0xffffffff,
@@ -3438,25 +3526,25 @@ int main(int argc, char **argv)
                     0xffffffff, t9, 0xffff2435, 0);
    TESTDSPINST_EXTV("extrv_rs.w $t4, $ac0, $t3", "ac0", t4, 0xffffffff,
                     0xfc79b4d2, t3, 0x12349876, 0);
-   TESTDSPINST_EXTV("extrv_rs.w $t5, $ac1, $t4", "ac1", t5, 0x00000000,
-                    0x00000000, t4, 0x00354565, 0);
+   TESTDSPINST_EXTV("extrv_rs.w $t5, $ac1, $t4", "ac1", t5, 0xf0f0f0f0,
+                    0x00000000, t4, 0x00354565, 0);         
    TESTDSPINST_EXTV("extrv_rs.w $t6, $ac2, $t5", "ac2", t6, 0x00000000,
-                    0x00000000, t5, 0x00086755, 0);
-   TESTDSPINST_EXTV("extrv_rs.w $t7, $ac3, $t6", "ac3", t7, 0x00000000,
-                    0x12349876, t6, 0x00000018, 0);
-   TESTDSPINST_EXTV("extrv_rs.w $t8, $ac0, $t7", "ac0", t8, 0x00000000,
-                    0x00354565, t7, 0x23534870, 0);
-   TESTDSPINST_EXTV("extrv_rs.w $t0, $ac1, $t8", "ac1", t0, 0x00000000,
-                    0x00086755, t8, 0x92784656, 0);
-   TESTDSPINST_EXTV("extrv_rs.w $t1, $ac2, $t9", "ac2", t1, 0xffffffff,
-                    0x8f8f8f8f, t9, 0xeeeeeeee, 0);
-   TESTDSPINST_EXTV("extrv_rs.w $t2, $ac3, $t1", "ac3", t2, 0xffffffff,
-                    0xeeeeeeee, t1, 0xcacacaca, 0);
-   TESTDSPINST_EXTV("extrv_rs.w $t3, $ac0, $t1", "ac0", t3, 0x00000000,
-                    0x1bdbdbdb, t1, 0xbacabaca, 0);
-   TESTDSPINST_EXTV("extrv_rs.w $t4, $ac1, $t4", "ac1", t4, 0xffffffff,
-                    0xdecadeca, t4, 0x1bdbdbdb, 0);
-   TESTDSPINST_EXTV("extrv_rs.w $t5, $ac0, $t8", "ac0", t5, 0x00000000,
+                    0x00000000, t5, 0x00086755, 0);         
+   TESTDSPINST_EXTV("extrv_rs.w $t7, $ac3, $t6", "ac3", t7, 0xfbde3976,
+                    0x12349876, t6, 0x00000018, 0);         
+   TESTDSPINST_EXTV("extrv_rs.w $t8, $ac0, $t7", "ac0", t8, 0x0bed7654,
+                    0x00354565, t7, 0x23534870, 0);         
+   TESTDSPINST_EXTV("extrv_rs.w $t0, $ac1, $t8", "ac1", t0, 0x23534870,
+                    0x00086755, t8, 0x92784656, 0);         
+   TESTDSPINST_EXTV("extrv_rs.w $t1, $ac2, $t9", "ac2", t1, 0x980b7cde,
+                    0x8f8f8f8f, t9, 0xeeeeeeee, 0);         
+   TESTDSPINST_EXTV("extrv_rs.w $t2, $ac3, $t1", "ac3", t2, 0x00000018,
+                    0xeeeeeeee, t1, 0xcacacaca, 0);         
+   TESTDSPINST_EXTV("extrv_rs.w $t3, $ac0, $t1", "ac0", t3, 0x92784656,
+                    0x1bdbdbdb, t1, 0xbacabaca, 0);         
+   TESTDSPINST_EXTV("extrv_rs.w $t4, $ac1, $t4", "ac1", t4, 0xcacacaca,
+                    0xdecadeca, t4, 0x1bdbdbdb, 0);         
+   TESTDSPINST_EXTV("extrv_rs.w $t5, $ac0, $t8", "ac0", t5, 0xbacabaca,
                     0x5fc92974, t8, 0xffff2435, 0);
    TESTDSPINST_EXTV("extrv_rs.w $t6, $ac1, $t0", "ac1", t6, 0x00000000,
                     0x7e08184e, t0, 0x55555555, 0);
@@ -7163,6 +7251,16 @@ int main(int argc, char **argv)
                              t4, t6, t1);
 
    printf("-------- SUBQ_S.PH --------\n");
+   TESTDSPINST_RD_RS_RT_DSPC("subq_s.ph $t0, $t1, $t2", 0x00000000, 0x00000000,
+                             t0, t1, t2);
+   TESTDSPINST_RD_RS_RT_DSPC("subq_s.ph $t2, $t3, $t4", 0x00020002, 0x00010001,
+                             t2, t3, t4);
+   TESTDSPINST_RD_RS_RT_DSPC("subq_s.ph $t4, $t1, $t5", 0x0002fffe, 0x0001ffff,
+                             t4, t1, t5);
+   TESTDSPINST_RD_RS_RT_DSPC("subq_s.ph $t6, $t7, $t3", 0x7fff8000, 0x7fff8000,
+                             t6, t7, t3);
+   TESTDSPINST_RD_RS_RT_DSPC("subq_s.ph $t5, $t3, $t2", 0x7fff8000, 0x7ffe8001,
+                             t5, t3, t2);
    TESTDSPINST_RD_RS_RT_DSPC("subq_s.ph $t0, $t1, $t2", 0x00000000, 0x00000000,
                              t0, t1, t2);
    TESTDSPINST_RD_RS_RT_DSPC("subq_s.ph $t2, $t3, $t4", 0x045fb232, 0x00028632,

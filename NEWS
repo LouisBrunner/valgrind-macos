@@ -1,7 +1,7 @@
 
 Release 3.9.0 (XX October 2013)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-3.8.0 is a feature release with many improvements and the usual
+3.9.0 is a feature release with many improvements and the usual
 collection of bug fixes.
 
 This release supports X86/Linux, AMD64/Linux, ARM/Linux, PPC32/Linux,
@@ -53,8 +53,8 @@ MacOSX 10.8 is significantly improved relative to the 3.8.0 release.
     of valid interior pointers to std::stdstring, to new[] allocated
     arrays with elements having destructors and to interior pointers
     pointing to an inner part of a C++ object using multiple
-    inheritance.  They can be selected individually using the option
-    The option --leak-check-heuristics=heur1,heur2,...
+    inheritance.  They can be selected individually using the
+    option --leak-check-heuristics=heur1,heur2,...
 
   - Better control of stacktrace acquisition for heap-allocated
     blocks.  Using the --keep-stacktraces option, it is possible to
@@ -67,11 +67,6 @@ MacOSX 10.8 is significantly improved relative to the 3.8.0 release.
     suppressions (shown when the -v option is given) now shows, for
     each leak suppressions, how many blocks and bytes it suppressed
     during the last leak search.
-
-  - Line numbers for used suppressions.  The list of used suppressions
-    (shown when the -v option is given) now shows, for each used
-    suppression, the file name and line number where the suppression
-    is defined.
 
 * Helgrind:
 
@@ -131,6 +126,11 @@ MacOSX 10.8 is significantly improved relative to the 3.8.0 release.
   uninteresting repeated calls.  This is controlled by the command
   line option --merge-recursive-frame and by the monitor command
   "v.set merge-recursive-frames".
+
+* File name and line numbers for used suppressions.  The list of used
+  suppressions (shown when the -v option is given) now shows, for each
+  used suppression, the file name and line number where the suppression
+  is defined.
 
 * New and modified GDB server monitor features:
 

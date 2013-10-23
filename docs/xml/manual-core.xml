@@ -1019,6 +1019,69 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
     </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.unw-stack-scan-thresh"
+                xreflabel="--unw-stack-scan-thresh">
+    <term>
+      <option><![CDATA[--unw-stack-scan-thresh=<number> [default: 0] ]]></option>
+    </term>
+    <term>
+      <option><![CDATA[--unw-stack-scan-frames=<number> [default: 5] ]]></option>
+    </term>
+    <listitem>
+      <para>Stack-scanning support is available only on ARM
+      targets.</para>
+
+      <para>These flags enable and control stack unwinding by stack
+      scanning.  When the normal stack unwinding mechanisms -- usage
+      of Dwarf CFI records, and frame-pointer following -- fail, stack
+      scanning may be able to recover a stack trace.</para>
+
+      <para>Note that stack scanning is an imprecise, heuristic
+      mechanism that may give very misleading results, or none at all.
+      It should be used only in emergencies, when normal unwinding
+      fails, and it is important to nevertheless have stack
+      traces.</para>
+
+      <para>Stack scanning is a simple technique: the unwinder reads
+      words from the stack, and tries to guess which of them might be
+      return addresses, by checking to see if they point just after
+      ARM or Thumb call instructions.  If so, the word is added to the
+      backtrace.</para>
+
+      <para>The main danger occurs when a function call returns,
+      leaving its return address exposed, and a new function is
+      called, but the new function does not overwrite the old address.
+      The result of this is that the backtrace may contain entries for
+      functions which have already returned, and so be very
+      confusing.</para>
+
+      <para>A second limitation of this implementation is that it will
+      scan only the page (4KB, normally) containing the starting stack
+      pointer.  If the stack frames are large, this may result in only
+      a few (or not even any) being present in the trace.  Also, if
+      you are unlucky and have an initial stack pointer near the end
+      of its containing page, the scan may miss all interesting
+      frames.</para>
+
+      <para>By default stack scanning is disabled.  The normal use
+      case is to ask for it when a stack trace would otherwise be very
+      short.  So, to enable it,
+      use <computeroutput>--unw-stack-scan-thresh=number</computeroutput>.
+      This requests Valgrind to try using stack scanning to "extend"
+      stack traces which contain fewer
+      than <computeroutput>number</computeroutput> frames.</para>
+
+      <para>If stack scanning does take place, it will only generate
+      at most the number of frames specified
+      by <computeroutput>--unw-stack-scan-frames</computeroutput>.
+      Typically, stack scanning generates so many garbage entries that
+      this value is set to a low value (5) by default.  In no case
+      will a stack trace larger than the value specified
+      by <computeroutput>--num-callers</computeroutput> be
+      created.</para>
+    </listitem>
+  </varlistentry>
+
   <varlistentry id="opt.error-limit" xreflabel="--error-limit">
     <term>
       <option><![CDATA[--error-limit=<yes|no> [default: yes] ]]></option>
@@ -1057,17 +1120,19 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
       <option>--quiet</option> is given. The default can always be explicitly
       overridden by giving this option.</para>
 
-      <para>When enabled a warning message will be printed with some
-      diagnostics whenever some instruction is encountered that valgrind
-      cannot decode or translate before the program is given a SIGILL signal.
+      <para>When enabled, a warning message will be printed, along with some
+      diagnostics, whenever an instruction is encountered that Valgrind
+      cannot decode or translate, before the program is given a SIGILL signal.
       Often an illegal instruction indicates a bug in the program or missing
-      support for the particular instruction in Valgrind. But some programs
+      support for the particular instruction in Valgrind.  But some programs
       do deliberately try to execute an instruction that might be missing
-      and trap the SIGILL signal to detect processor features.</para>
+      and trap the SIGILL signal to detect processor features.  Using
+      this flag makes it possible to avoid the diagnostic output
+      that you would otherwise get in such cases.</para>
     </listitem>
   </varlistentry>
 
-  <varlistentry id="opt.stack-traces" xreflabel="--show-below-main">
+  <varlistentry id="opt.show-below-main" xreflabel="--show-below-main">
     <term>
       <option><![CDATA[--show-below-main=<yes|no> [default: no] ]]></option>
     </term>
@@ -1170,6 +1235,83 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
       <para>This flag should only be specified once.  If it is
       specified multiple times, only the last instance is
       honoured.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.debuginfo-server" xreflabel="--debuginfo-server">
+    <term>
+      <option><![CDATA[--debuginfo-server=ipaddr:port [default: undefined and unused]]]></option>
+    </term>
+    <listitem>
+      <para>This is a new, experimental, feature introduced in version
+      3.9.0.</para>
+
+      <para>In some scenarios it may be convenient to read debuginfo
+      from objects stored on a different machine.  With this flag,
+      Valgrind will query a debuginfo server running
+      on <computeroutput>ipaddr</computeroutput> and listening on
+      port <computeroutput>port</computeroutput>, if it cannot find
+      the debuginfo object in the local filesystem.</para>
+
+      <para>The debuginfo server must accept TCP connections on
+      port <computeroutput>port</computeroutput>.  The debuginfo
+      server is contained in the source
+      file <computeroutput>auxprogs/valgrind-di-server.c</computeroutput>.
+      It will only serve from the directory it is started
+      in.  <computeroutput>port</computeroutput> defaults to 1500 in
+      both client and server if not specified.</para>
+
+      <para>If Valgrind looks for the debuginfo for
+      <computeroutput>/w/x/y/zz.so</computeroutput> by using the
+      debuginfo server, it will strip the pathname components and
+      merely request <computeroutput>zz.so</computeroutput> on the
+      server.  That in turn will look only in its current working
+      directory for a matching debuginfo object.</para>
+
+      <para>The debuginfo data is transmitted in small fragments (8
+      KB) as requested by Valgrind.  Each block is compressed using
+      LZO to reduce transmission time.  The implementation has been
+      tuned for best performance over a single-stage 802.11g (WiFi)
+      network link.</para>
+
+      <para>Note that checks for matching primary vs debug objects,
+      using GNU debuglink CRC scheme, are performed even when using
+      the debuginfo server.  To disable such checking, you need to
+      also specify
+      <computeroutput>--allow-mismatched-debuginfo=yes</computeroutput>.
+      </para>
+
+      <para>By default the Valgrind build system will
+      build <computeroutput>valgrind-di-server</computeroutput> for
+      the target platform, which is almost certainly not what you
+      want.  So far we have been unable to find out how to get
+      automake/autoconf to build it for the build platform.  If
+      you want to use it, you will have to recompile it by hand using
+      the command shown at the top
+      of <computeroutput>auxprogs/valgrind-di-server.c</computeroutput>.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.allow-mismatched-debuginfo"
+                xreflabel="--allow-mismatched-debuginfo">
+    <term>
+      <option><![CDATA[--allow-mismatched-debuginfo=no|yes [no] ]]></option>
+    </term>
+    <listitem>
+      <para>When reading debuginfo from separate debuginfo objects,
+      Valgrind will by default check that the main and debuginfo
+      objects match, using the GNU debuglink mechanism.  This
+      guarantees that it does not read debuginfo from out of date
+      debuginfo objects, and also ensures that Valgrind can't crash as
+      a result of mismatches.</para>
+
+      <para>This check can be overridden using 
+      <computeroutput>--allow-mismatched-debuginfo=yes</computeroutput>.
+      This may be useful when the debuginfo and main objects have not
+      been split in the proper way.  Be careful when using this,
+      though: it disables all consistency checking, and Valgrind has
+      been observed to crash when the main and debuginfo objects don't
+      match.</para>
     </listitem>
   </varlistentry>
 
@@ -1824,14 +1966,16 @@ need to use them.</para>
       <option><![CDATA[--merge-recursive-frames=<number> [default: 0] ]]></option>
     </term>
     <listitem>
-      <para>Some recursive algorithms (such as balanced binary tree
-      implementations) have the property to create many different
-      stack traces, containing cycles of calls.  A cycle is defined by
-      two identical program counters separated by 0 or more other
-      program counters.  Valgrind might then use a lot of memory to
-      record these stack traces, containing repeated uninteresting
-      recursive calls instead of more interesting information such as
-      the function that has initiated the recursive call.
+      <para>Some recursive algorithms, for example balanced binary
+      tree implementations, create many different stack traces, each
+      containing cycles of calls.  A cycle is defined as two identical
+      program counter values separated by zero or more other program
+      counter values.  Valgrind may then use a lot of memory to store
+      all these stack traces.  This is a poor use of memory
+      considering that such stack traces contain repeated
+      uninteresting recursive calls instead of more interesting
+      information such as the function that has initiated the
+      recursive call.
       </para>
       <para>The option <option>--merge-recursive-frames=&lt;number&gt;</option>
       instructs Valgrind to detect and merge recursive call cycles
@@ -1843,27 +1987,29 @@ need to use them.</para>
       The value 0 (the default) causes no recursive call merging.
       A value of 1 will cause stack traces of simple recursive algorithms
       (for example, a factorial implementation) to be collapsed.
-      A value of 2 will usually be needed to collapsed stack traces produced
-      by recursive algorithms such as binary trees, quick sort, ...
+      A value of 2 will usually be needed to collapse stack traces produced
+      by recursive algorithms such as binary trees, quick sort, etc.
       Higher values might be needed for more complex recursive algorithms.
       </para>
-      <para>Note: recursive calls are detected based on program counters.
-      The cycles are not detected based on function names. </para>
+      <para>Note: recursive calls are detected by analysis of program
+      counter values.  They are not detected by looking at function
+      names.</para>
    </listitem>
   </varlistentry>
 
   <varlistentry id="opt.num-transtab-sectors" xreflabel="--num-transtab-sectors">
     <term>
-      <option><![CDATA[--num-transtab-sectors=<number> [default: 6 or 16] ]]></option>
+      <option><![CDATA[--num-transtab-sectors=<number> [default: 6
+      for Android platforms, 16 for all others] ]]></option>
     </term>
     <listitem>
       <para>Valgrind translates and instruments your program's machine
       code in small fragments. The translations are stored in a
       translation cache that is divided into a number of sections
       (sectors). If the cache is full, the sector containing the
-      oldest translations is emptied and recycled. If these old
+      oldest translations is emptied and reused. If these old
       translations are needed again, Valgrind must re-translate and
-      re-instrument the corresponding program code, which is
+      re-instrument the corresponding machine code, which is
       expensive.  If the "executed instructions" working set of a
       program is big, increasing the number of sectors may improve
       performance by reducing the number of re-translations needed.

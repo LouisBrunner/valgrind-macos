@@ -25,10 +25,9 @@ EXTRA_DIST = \
 	bug320057-mips32.stdout.exp bug320057-mips32.stderr.exp \
 	bug320057-mips32.vgtest \
 	mips32_dsp.stdout.exp mips32_dsp.stdout.exp-BE \
-	mips32_dsp.stdout.exp-mips32 mips32_dsp.stderr.exp \
-	mips32_dsp.vgtest \
+	mips32_dsp.stderr.exp mips32_dsp.vgtest \
 	mips32_dspr2.stdout.exp mips32_dspr2.stderr.exp \
-	mips32_dspr2.stdout.exp-mips32 mips32_dspr2.vgtest \
+	mips32_dspr2.vgtest \
 	unaligned_load_store.stdout.exp-LE unaligned_load_store.stdout.exp-BE \
 	unaligned_load_store.stderr.exp unaligned_load_store.vgtest \
 	test_fcsr.stdout.exp test_fcsr.stderr.exp test_fcsr.vgtest

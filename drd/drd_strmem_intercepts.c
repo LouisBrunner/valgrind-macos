@@ -53,6 +53,7 @@
 // Apparently index() is the same thing as strchr()
 #if defined(VGO_linux)
  STRCHR(VG_Z_LIBC_SONAME,          strchr)
+ STRCHR(VG_Z_LIBC_SONAME,          __GI_strchr)
  STRCHR(VG_Z_LIBC_SONAME,          index)
  STRCHR(VG_Z_LD_LINUX_SO_2,        strchr)
  STRCHR(VG_Z_LD_LINUX_SO_2,        index)
@@ -117,6 +118,7 @@
 
 #if defined(VGO_linux)
  STRCPY(VG_Z_LIBC_SONAME, strcpy)
+ STRCPY(VG_Z_LIBC_SONAME, __GI_strcpy)
 #elif defined(VGO_darwin)
  STRCPY(VG_Z_LIBC_SONAME, strcpy)
 #endif
@@ -142,6 +144,7 @@
 
 #if defined(VGO_linux)
  STRCMP(VG_Z_LIBC_SONAME,          strcmp)
+ STRCMP(VG_Z_LIBC_SONAME,          __GI_strcmp)
  STRCMP(VG_Z_LD_LINUX_X86_64_SO_2, strcmp)
  STRCMP(VG_Z_LD64_SO_1,            strcmp)
 #elif defined(VGO_darwin)

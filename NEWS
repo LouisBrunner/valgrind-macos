@@ -162,6 +162,10 @@ MacOSX 10.8 is significantly improved relative to the 3.8.0 release.
   translate.  The actual behavior -- delivery of SIGILL to the
   application -- is unchanged.
 
+* The maximum amount of memory that Valgrind can use on 64 bit targets
+  has been increased from 32GB to 64GB.  This should make it possible
+  to run applications on Memcheck that natively require up to about 35GB.
+
 * ==================== FIXED BUGS ====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"

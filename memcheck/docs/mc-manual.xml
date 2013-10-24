@@ -1158,51 +1158,67 @@ Memcheck:suppression_type]]></programlisting>
 information line at this point, which is the name of the offending
 system call parameter. </para>
 
-<para>
-<computeroutput>Leak</computeroutput> errors have an optional extra
-information line. This optional extra information line has the
-following format:</para>
+<para><computeroutput>Leak</computeroutput> errors have an optional
+extra information line, with the following format:</para>
 <programlisting><![CDATA[
 match-leak-kinds:<set>]]></programlisting>
 <para>where <computeroutput>&lt;set&gt;</computeroutput> specifies which
 leak kinds are matched by this suppression entry. 
-<computeroutput>&lt;set&gt;</computeroutput> is specified similarly
-to the option <option>--show-leak-kinds</option>.
-If this optional extra line is not present, the suppression entry will match
-all leak kinds. </para>
+<computeroutput>&lt;set&gt;</computeroutput> is specified in the
+same way as with the option <option>--show-leak-kinds</option>, that is,
+one of the following:</para>
+<itemizedlist>
+  <listitem>a comma separated list of one or more of
+    <option>definite indirect possible reachable</option>.
+  </listitem>
 
-<para>The other memcheck error kinds do not have extra lines.</para>
+  <listitem><option>all</option> to specify the complete set (all leak kinds).
+  </listitem>
+
+  <listitem><option>none</option> for the empty set.
+  </listitem>
+</itemizedlist>
+<para>If this optional extra line is not present, the suppression
+entry will match all leak kinds.</para>
+
+<para>Be aware that leak suppressions that are created using
+<option>--gen-suppressions</option> will contain this optional extra
+line, and therefore may match fewer leaks than you expect.  You may
+want to remove the line before using the generated
+suppressions.</para>
+
+<para>The other Memcheck error kinds do not have extra lines.</para>
 
 <para>
 If you give the <option>-v</option> option, Valgrind will print
-the list of used suppressions at the end of the execution.
+the list of used suppressions at the end of execution.
 For a leak suppression, this output gives the number of different
-loss records that matches the suppression, the number of bytes
-and blocks suppressed by the suppressions.
-In case several leak searches are done, the number of bytes and blocks
-are reset to 0 before a new leak search. Note that the number of different
-loss records is not reset to 0.
+loss records that match the suppression, and the number of bytes
+and blocks suppressed by the suppression.
+If the run contains multiple leak checks, the number of bytes and blocks
+are reset to zero before each new leak check. Note that the number of different
+loss records is not reset to zero.</para>
 <para>In the example below, in the last leak search, 7 blocks and 96 bytes have
-been suppressed by the <option>some_leak_suppression</option>
-suppression. </para>
+been suppressed by a suppression with the name
+<option>some_leak_suppression</option>:</para>
 <programlisting><![CDATA[
 --21041-- used_suppression:     10 some_other_leak_suppression s.supp:14 suppressed: 12,400 bytes in 1 blocks
 --21041-- used_suppression:     39 some_leak_suppression s.supp:2 suppressed: 96 bytes in 7 blocks
 ]]></programlisting>
-</para>
 
-<para>The first line of the calling context: for <varname>ValueN</varname>
-and <varname>AddrN</varname> errors, it is either the name of the function
-in which the error occurred, or, failing that, the full path of the
-<filename>.so</filename> file
-or executable containing the error location.  For <varname>Free</varname> errors, is the name
-of the function doing the freeing (eg, <function>free</function>,
-<function>__builtin_vec_delete</function>, etc).  For
-<varname>Overlap</varname> errors, is the name of the function with the
-overlapping arguments (eg.  <function>memcpy</function>,
-<function>strcpy</function>, etc).</para>
+<para>For <varname>ValueN</varname> and <varname>AddrN</varname>
+errors, the first line of the calling context is either the name of
+the function in which the error occurred, or, failing that, the full
+path of the <filename>.so</filename> file or executable containing the
+error location.  For <varname>Free</varname> errors, the first line is
+the name of the function doing the freeing (eg,
+<function>free</function>, <function>__builtin_vec_delete</function>,
+etc).  For <varname>Overlap</varname> errors, the first line is the name of the
+function with the overlapping arguments (eg.
+<function>memcpy</function>, <function>strcpy</function>, etc).</para>
 
-<para>Lastly, there's the rest of the calling context.</para>
+<para>The last part of any suppression specifies the rest of the
+calling context that needs to be matched.</para>
 
 </sect1>
 

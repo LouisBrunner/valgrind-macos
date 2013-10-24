@@ -48,6 +48,11 @@ MacOSX 10.8 is significantly improved relative to the 3.8.0 release.
     --errors-for-leak-kinds=kind1,kind2,.. and an optional
     "match-leak-kinds:" line in suppression entries, respectively.
 
+    Note that generated leak suppressions contain this new line and
+    are therefore more specific than in previous releases.  To get the
+    same behaviour as previous releases, remove the "match-leak-kinds:"
+    line from generated suppressions before using them.
+
   - Reduced "possible leak" reports from the leak checker by the use
     of better heuristics.  The available heuristics provide detection
     of valid interior pointers to std::stdstring, to new[] allocated

@@ -37,6 +37,8 @@
 #include "pub_tool_clreq.h"
 
 
+/*---------------------- strchr ----------------------*/
+
 #define STRCHR(soname, fnname) \
    char* VG_REPLACE_FUNCTION_ZU(soname,fnname)(const char* s, int c); \
    char* VG_REPLACE_FUNCTION_ZU(soname,fnname)(const char* s, int c) \
@@ -65,6 +67,8 @@
 #endif
 
 
+/*---------------------- strnlen ----------------------*/
+
 #define STRNLEN(soname, fnname)                                         \
    SizeT VG_REPLACE_FUNCTION_ZU(soname,fnname) ( const char* str, SizeT n ); \
    SizeT VG_REPLACE_FUNCTION_ZU(soname,fnname) ( const char* str, SizeT n ) \
@@ -80,6 +84,8 @@
  STRNLEN(VG_Z_LIBC_SONAME, strnlen)
 #endif
 
+
+/*---------------------- strlen ----------------------*/
 
 // Note that this replacement often doesn't get used because gcc inlines
 // calls to strlen() with its own built-in version.  This can be very
@@ -104,6 +110,8 @@
 #endif
 
 
+/*---------------------- strcpy ----------------------*/
+
 #define STRCPY(soname, fnname)                                          \
  char* VG_REPLACE_FUNCTION_ZU(soname, fnname)(char* dst, const char* src); \
  char* VG_REPLACE_FUNCTION_ZU(soname, fnname)(char* dst, const char* src) \
@@ -123,6 +131,8 @@
  STRCPY(VG_Z_LIBC_SONAME, strcpy)
 #endif
 
+
+/*---------------------- strcmp ----------------------*/
 
 #define STRCMP(soname, fnname)                                          \
  int VG_REPLACE_FUNCTION_ZU(soname,fnname)(const char* s1, const char* s2); \
@@ -151,6 +161,8 @@
  STRCMP(VG_Z_LIBC_SONAME,          strcmp)
 #endif
 
+
+/*---------------------- memcpy ----------------------*/
 
 #define MEMCPY(soname, fnname)                                          \
    void* VG_REPLACE_FUNCTION_ZU(soname,fnname)                          \
@@ -243,6 +255,33 @@
  MEMCPY(VG_Z_LIBC_SONAME,  memcpyZDVARIANTZDsse3x) /* memcpy$VARIANT$sse3x */
  MEMCPY(VG_Z_LIBC_SONAME,  memcpyZDVARIANTZDsse42) /* memcpy$VARIANT$sse42 */
 
+#endif
+
+
+/*---------------------- stpcpy ----------------------*/
+
+/* Copy SRC to DEST, returning the address of the terminating '\0' in
+   DEST. (minor variant of strcpy) */
+#define STPCPY(soname, fnname)                                          \
+ char* VG_REPLACE_FUNCTION_EZU(20200,soname,fnname)                     \
+      (char* dst, const char* src);                                     \
+ char* VG_REPLACE_FUNCTION_EZU(20200,soname,fnname)                     \
+      (char* dst, const char* src)                                      \
+ {                                                                      \
+    while (*src) *dst++ = *src++;                                       \
+    *dst = 0;                                                           \
+                                                                        \
+    return dst;                                                         \
+ }
+
+#if defined(VGO_linux)
+ STPCPY(VG_Z_LIBC_SONAME,          stpcpy)
+ STPCPY(VG_Z_LIBC_SONAME,          __GI_stpcpy)
+ STPCPY(VG_Z_LD_LINUX_SO_2,        stpcpy)
+ STPCPY(VG_Z_LD_LINUX_X86_64_SO_2, stpcpy)
+#elif defined(VGO_darwin)
+ //STPCPY(VG_Z_LIBC_SONAME,          stpcpy)
+ //STPCPY(VG_Z_DYLD,                 stpcpy)
 #endif
 
 

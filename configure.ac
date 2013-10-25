@@ -564,9 +564,10 @@ case "$ARCH_MAX-$VGCONF_OS" in
         VGCONF_ARCH_SEC=""
         VGCONF_PLATFORM_PRI_CAPS="S390X_LINUX"
         VGCONF_PLATFORM_SEC_CAPS=""
-        # we want to have the generated code close to the dispatcher
-        valt_load_address_pri_norml="0x401000000"
-        valt_load_address_pri_inner="0x410000000"
+        # To improve branch prediction hit rate we want to have
+        # the generated code close to valgrind (host) code
+        valt_load_address_pri_norml="0x800000000"
+        valt_load_address_pri_inner="0x810000000"
         valt_load_address_sec_norml="0xUNSET"
         valt_load_address_sec_inner="0xUNSET"
         AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])

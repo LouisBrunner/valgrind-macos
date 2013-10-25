@@ -160,8 +160,13 @@ static Bool DRD_(process_cmd_line_option)(const HChar* arg)
       DRD_(start_tracing_address_range)(addr, addr + 1, False);
    }
    if (ptrace_address) {
-      const Addr addr = VG_(strtoll16)(ptrace_address, 0);
-      DRD_(start_tracing_address_range)(addr, addr + 1, True);
+      char *plus = VG_(strchr)(ptrace_address, '+');
+      Addr addr, length;
+      if (plus)
+         *plus = '\0';
+      addr = VG_(strtoll16)(ptrace_address, 0);
+      length = plus ? VG_(strtoll16)(plus + 1, 0) : 1;
+      DRD_(start_tracing_address_range)(addr, addr + length, True);
    }
    if (trace_barrier != -1)
       DRD_(barrier_set_trace)(trace_barrier);
@@ -224,13 +229,14 @@ static void DRD_(print_usage)(void)
 "    --show-stack-usage=yes|no Print stack usage at thread exit time [no].\n"
 "\n"
 "  drd options for monitoring process behavior:\n"
-"    --ptrace-addr=<address>   Trace all load and store activity for the\n"
-"                              specified address and keep doing that even after\n"
-"                              the memory at that address has been freed and\n"
-"                              reallocated [off].\n"
+"    --ptrace-addr=<address>[+<length>] Trace all load and store activity for\n"
+"                              the specified address range and keep doing that\n"
+"                              even after the memory at that address has been\n"
+"                              freed and reallocated [off].\n"
 "    --trace-addr=<address>    Trace all load and store activity for the\n"
 "                              specified address [off].\n"
-"    --trace-alloc=yes|no      Trace all memory allocations and deallocations\n""                              [no].\n"
+"    --trace-alloc=yes|no      Trace all memory allocations and deallocations\n"
+"                              [no].\n"
 "    --trace-barrier=yes|no    Trace all barrier activity [no].\n"
 "    --trace-cond=yes|no       Trace all condition variable activity [no].\n"
 "    --trace-fork-join=yes|no  Trace all thread fork/join activity [no].\n"

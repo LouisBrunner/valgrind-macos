@@ -37,6 +37,40 @@
 #include "pub_tool_clreq.h"
 
 
+/*---------------------- strrchr ----------------------*/
+
+#define STRRCHR(soname, fnname) \
+   char* VG_REPLACE_FUNCTION_EZU(20010,soname,fnname)( const char* s, int c ); \
+   char* VG_REPLACE_FUNCTION_EZU(20010,soname,fnname)( const char* s, int c ) \
+   {                                                                    \
+      HChar ch = (HChar)c;                                              \
+      const HChar* p = s;                                               \
+      const HChar* last = NULL;                                         \
+      while (True) {                                                    \
+         if (*p == ch) last = p;                                        \
+         if (*p == 0) return (HChar *)last;                             \
+         p++;                                                           \
+      }                                                                 \
+   }
+
+// Apparently rindex() is the same thing as strrchr()
+#if defined(VGO_linux)
+ STRRCHR(VG_Z_LIBC_SONAME,   strrchr)
+ STRRCHR(VG_Z_LIBC_SONAME,   rindex)
+ STRRCHR(VG_Z_LIBC_SONAME,   __GI_strrchr)
+ STRRCHR(VG_Z_LD_LINUX_SO_2, rindex)
+#if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)
+  STRRCHR(NONE, __dl_strrchr); /* in /system/bin/linker */
+#endif
+#elif defined(VGO_darwin)
+ //STRRCHR(VG_Z_LIBC_SONAME,   strrchr)
+ //STRRCHR(VG_Z_LIBC_SONAME,   rindex)
+ //STRRCHR(VG_Z_DYLD,          strrchr)
+ //STRRCHR(VG_Z_DYLD,          rindex)
+ STRRCHR(VG_Z_LIBC_SONAME, strrchr)
+#endif
+   
+
 /*---------------------- strchr ----------------------*/
 
 #define STRCHR(soname, fnname) \
@@ -162,6 +196,55 @@
 #endif
 
 
+/*---------------------- memchr ----------------------*/
+
+#define MEMCHR(soname, fnname) \
+ void* VG_REPLACE_FUNCTION_EZU(20170,soname,fnname)     \
+      (const void *s, int c, SizeT n);                  \
+ void* VG_REPLACE_FUNCTION_EZU(20170,soname,fnname)     \
+      (const void *s, int c, SizeT n)                   \
+ {                                                      \
+    SizeT i;                                            \
+    UChar c0 = (UChar)c;                                \
+    UChar* p = (UChar*)s;                               \
+    for (i = 0; i < n; i++)                             \
+       if (p[i] == c0) return (void*)(&p[i]);           \
+    return NULL;                                        \
+ }
+
+#if defined(VGO_linux)
+ MEMCHR(VG_Z_LIBC_SONAME, memchr)
+ MEMCHR(VG_Z_LIBC_SONAME, __GI_memchr)
+#elif defined(VGO_darwin)
+ //MEMCHR(VG_Z_LIBC_SONAME, memchr)
+ //MEMCHR(VG_Z_DYLD,        memchr)
+#endif
+
+
+/*---------------------- memrchr ----------------------*/
+
+#define MEMRCHR(soname, fnname) \
+ void* VG_REPLACE_FUNCTION_EZU(20360,soname,fnname)     \
+      (const void *s, int c, SizeT n);                  \
+ void* VG_REPLACE_FUNCTION_EZU(20360,soname,fnname)     \
+      (const void *s, int c, SizeT n)                   \
+ {                                                      \
+    SizeT i;                                            \
+    UChar c0 = (UChar)c;                                \
+    UChar* p = (UChar*)s;                               \
+    for (i = 0; i < n; i++)                             \
+       if (p[n-1-i] == c0) return (void*)(&p[n-1-i]);   \
+    return NULL;                                        \
+ }
+
+#if defined(VGO_linux)
+ MEMRCHR(VG_Z_LIBC_SONAME, memrchr)
+#elif defined(VGO_darwin)
+ //MEMRCHR(VG_Z_LIBC_SONAME, memrchr)
+ //MEMRCHR(VG_Z_DYLD,        memrchr)
+#endif
+
+
 /*---------------------- memcpy ----------------------*/
 
 #define MEMCPY(soname, fnname)                                          \
@@ -236,6 +319,7 @@
 
 #if defined(VGO_linux)
  MEMCPY(VG_Z_LIBC_SONAME,    memcpy)
+ MEMCPY(VG_Z_LIBC_SONAME,    __GI_memcpy)
  MEMCPY(VG_Z_LD_SO_1,        memcpy) /* ld.so.1 */
  MEMCPY(VG_Z_LD64_SO_1,      memcpy) /* ld64.so.1 */
  /* icc9 blats these around all over the place.  Not only in the main
@@ -255,6 +339,46 @@
  MEMCPY(VG_Z_LIBC_SONAME,  memcpyZDVARIANTZDsse3x) /* memcpy$VARIANT$sse3x */
  MEMCPY(VG_Z_LIBC_SONAME,  memcpyZDVARIANTZDsse42) /* memcpy$VARIANT$sse42 */
 
+#endif
+
+
+/*---------------------- memcmp ----------------------*/
+
+#define MEMCMP(soname, fnname) \
+ int VG_REPLACE_FUNCTION_EZU(20190,soname,fnname)         \
+      (const void *s1V, const void *s2V, SizeT n);        \
+ int VG_REPLACE_FUNCTION_EZU(20190,soname,fnname)         \
+      (const void *s1V, const void *s2V, SizeT n)       \
+ {                                                      \
+    int res;                                            \
+    UChar a0;                                           \
+    UChar b0;                                           \
+    const UChar* s1 = s1V;                              \
+    const UChar* s2 = s2V;                              \
+                                                        \
+    while (n != 0) {                                    \
+       a0 = s1[0];                                      \
+       b0 = s2[0];                                      \
+       s1 += 1;                                         \
+       s2 += 1;                                         \
+       res = ((int)a0) - ((int)b0);                     \
+       if (res != 0)                                    \
+          return res;                                   \
+       n -= 1;                                          \
+    }                                                   \
+    return 0;                                           \
+ }
+
+#if defined(VGO_linux)
+ MEMCMP(VG_Z_LIBC_SONAME, memcmp)
+ MEMCMP(VG_Z_LIBC_SONAME, __GI_memcmp)
+ MEMCMP(VG_Z_LIBC_SONAME, bcmp)
+ MEMCMP(VG_Z_LD_SO_1,     bcmp)
+#elif defined(VGO_darwin)
+ //MEMCMP(VG_Z_LIBC_SONAME, memcmp)
+ //MEMCMP(VG_Z_LIBC_SONAME, bcmp)
+ //MEMCMP(VG_Z_DYLD,        memcmp)
+ //MEMCMP(VG_Z_DYLD,        bcmp)
 #endif
 
 

@@ -58,6 +58,9 @@
  STRRCHR(VG_Z_LIBC_SONAME,   strrchr)
  STRRCHR(VG_Z_LIBC_SONAME,   rindex)
  STRRCHR(VG_Z_LIBC_SONAME,   __GI_strrchr)
+ STRRCHR(VG_Z_LIBC_SONAME,   __strrchr_sse2)
+ STRRCHR(VG_Z_LIBC_SONAME,   __strrchr_sse2_no_bsf)
+ STRRCHR(VG_Z_LIBC_SONAME,   __strrchr_sse42)
  STRRCHR(VG_Z_LD_LINUX_SO_2, rindex)
 #if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)
   STRRCHR(NONE, __dl_strrchr); /* in /system/bin/linker */
@@ -90,6 +93,8 @@
 #if defined(VGO_linux)
  STRCHR(VG_Z_LIBC_SONAME,          strchr)
  STRCHR(VG_Z_LIBC_SONAME,          __GI_strchr)
+ STRCHR(VG_Z_LIBC_SONAME,          __strchr_sse2)
+ STRCHR(VG_Z_LIBC_SONAME,          __strchr_sse2_no_bsf)
  STRCHR(VG_Z_LIBC_SONAME,          index)
  STRCHR(VG_Z_LD_LINUX_SO_2,        strchr)
  STRCHR(VG_Z_LD_LINUX_SO_2,        index)
@@ -136,9 +141,12 @@
 
 #if defined(VGO_linux)
  STRLEN(VG_Z_LIBC_SONAME,          strlen)
+ STRLEN(VG_Z_LIBC_SONAME,          __GI_strlen)
+ STRLEN(VG_Z_LIBC_SONAME,          __strlen_sse2)
+ STRLEN(VG_Z_LIBC_SONAME,          __strlen_sse2_no_bsf)
+ STRLEN(VG_Z_LIBC_SONAME,          __strlen_sse42)
  STRLEN(VG_Z_LD_LINUX_SO_2,        strlen)
  STRLEN(VG_Z_LD_LINUX_X86_64_SO_2, strlen)
- STRLEN(VG_Z_LIBC_SONAME,          __GI_strlen)
 #elif defined(VGO_darwin)
  STRLEN(VG_Z_LIBC_SONAME,          strlen)
 #endif
@@ -189,6 +197,8 @@
 #if defined(VGO_linux)
  STRCMP(VG_Z_LIBC_SONAME,          strcmp)
  STRCMP(VG_Z_LIBC_SONAME,          __GI_strcmp)
+ STRCMP(VG_Z_LIBC_SONAME,          __strcmp_sse2)
+ STRCMP(VG_Z_LIBC_SONAME,          __strcmp_sse42)
  STRCMP(VG_Z_LD_LINUX_X86_64_SO_2, strcmp)
  STRCMP(VG_Z_LD64_SO_1,            strcmp)
 #elif defined(VGO_darwin)
@@ -320,6 +330,7 @@
 #if defined(VGO_linux)
  MEMCPY(VG_Z_LIBC_SONAME,    memcpy)
  MEMCPY(VG_Z_LIBC_SONAME,    __GI_memcpy)
+ MEMCPY(VG_Z_LIBC_SONAME,    __memcpy_sse2)
  MEMCPY(VG_Z_LD_SO_1,        memcpy) /* ld.so.1 */
  MEMCPY(VG_Z_LD64_SO_1,      memcpy) /* ld64.so.1 */
  /* icc9 blats these around all over the place.  Not only in the main
@@ -372,6 +383,8 @@
 #if defined(VGO_linux)
  MEMCMP(VG_Z_LIBC_SONAME, memcmp)
  MEMCMP(VG_Z_LIBC_SONAME, __GI_memcmp)
+ MEMCMP(VG_Z_LIBC_SONAME, __memcmp_sse2)
+ MEMCMP(VG_Z_LIBC_SONAME, __memcmp_sse4_1)
  MEMCMP(VG_Z_LIBC_SONAME, bcmp)
  MEMCMP(VG_Z_LD_SO_1,     bcmp)
 #elif defined(VGO_darwin)
@@ -401,11 +414,60 @@
 #if defined(VGO_linux)
  STPCPY(VG_Z_LIBC_SONAME,          stpcpy)
  STPCPY(VG_Z_LIBC_SONAME,          __GI_stpcpy)
+ STPCPY(VG_Z_LIBC_SONAME,          __stpcpy_sse2)
+ STPCPY(VG_Z_LIBC_SONAME,          __stpcpy_sse2_unaligned)
  STPCPY(VG_Z_LD_LINUX_SO_2,        stpcpy)
  STPCPY(VG_Z_LD_LINUX_X86_64_SO_2, stpcpy)
 #elif defined(VGO_darwin)
  //STPCPY(VG_Z_LIBC_SONAME,          stpcpy)
  //STPCPY(VG_Z_DYLD,                 stpcpy)
+#endif
+
+
+/*---------------------- strstr ----------------------*/
+
+#define STRSTR(soname, fnname)                                  \
+ char* VG_REPLACE_FUNCTION_EZU(20310,soname,fnname)             \
+      (const char* haystack, const char* needle);               \
+ char* VG_REPLACE_FUNCTION_EZU(20310,soname,fnname)             \
+      (const char* haystack, const char* needle)                \
+ {                                                              \
+    const HChar* h = haystack;                                  \
+    const HChar* n = needle;                                    \
+                                                                \
+    /* find the length of n, not including terminating zero */  \
+    UWord nlen = 0;                                             \
+    while (n[nlen]) nlen++;                                     \
+                                                                \
+    /* if n is the empty string, match immediately. */          \
+    if (nlen == 0) return (HChar *)h;                           \
+                                                                \
+    /* assert(nlen >= 1); */                                    \
+    HChar n0 = n[0];                                            \
+                                                                \
+    while (1) {                                                 \
+       const HChar hh = *h;                                     \
+       if (hh == 0) return NULL;                                \
+       if (hh != n0) { h++; continue; }                         \
+                                                                \
+       UWord i;                                                 \
+       for (i = 0; i < nlen; i++) {                             \
+          if (n[i] != h[i])                                     \
+             break;                                             \
+       }                                                        \
+       /* assert(i >= 0 && i <= nlen); */                       \
+       if (i == nlen)                                           \
+          return (HChar *)h;                                    \
+                                                                \
+       h++;                                                     \
+    }                                                           \
+ }
+
+#if defined(VGO_linux)
+ STRSTR(VG_Z_LIBC_SONAME,          strstr)
+ STRSTR(VG_Z_LIBC_SONAME,          __strstr_sse2)
+ STRSTR(VG_Z_LIBC_SONAME,          __strstr_sse42)
+#elif defined(VGO_darwin)
 #endif
 
 

@@ -42,7 +42,8 @@ EXTRA_DIST = \
 	unaligned_load_store.stdout.exp-LE unaligned_load_store.stdout.exp-BE \
 	unaligned_load_store.stderr.exp unaligned_load_store.vgtest \
 	test_fcsr.stdout.exp test_fcsr.stderr.exp \
-	test_fcsr.vgtest
+	test_fcsr.vgtest \
+	const.h macro_fpu.h macro_int.h macro_load_store.h rounding_mode.h
 
 check_PROGRAMS = \
 	allexec \

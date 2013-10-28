@@ -79,6 +79,9 @@ Jakub Jelinek helped out extensively with the AVX and AVX2 support.
 Mark Wielaard fixed a bunch of bugs and acts as our Fedora/RHEL
 liaison.
 
+Maran Pakkirisamy implemented support for decimal floating point on
+s390.
+
 Many, many people sent bug reports, patches, and helpful feedback.
 
 Development of Valgrind was supported in part by the Tri-Lab Partners

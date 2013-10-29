@@ -174,6 +174,66 @@
 #endif
 
 
+/*---------------------- strncpy ----------------------*/
+
+#define STRNCPY(soname, fnname)                                         \
+ char* VG_REPLACE_FUNCTION_EZU(20090,soname,fnname)                     \
+      (char* dst, const char* src, SizeT n);                            \
+ char* VG_REPLACE_FUNCTION_EZU(20090,soname,fnname)                     \
+      (char* dst, const char* src, SizeT n)                             \
+ {                                                                      \
+    HChar* dst_orig = dst;                                              \
+    SizeT m = 0;                                                        \
+                                                                        \
+    while (m < n && *src) { m++; *dst++ = *src++; }                     \
+    while (m++ < n) *dst++ = 0; /* must pad remainder with nulls */     \
+                                                                        \
+    return dst_orig;                                                    \
+ }
+
+#if defined(VGO_linux)
+ STRNCPY(VG_Z_LIBC_SONAME, strncpy)
+ STRNCPY(VG_Z_LIBC_SONAME, __GI_strncpy)
+ STRNCPY(VG_Z_LIBC_SONAME, __strncpy_sse2_unaligned)
+#elif defined(VGO_darwin)
+ //STRNCPY(VG_Z_LIBC_SONAME, strncpy)
+ //STRNCPY(VG_Z_DYLD,        strncpy)
+ STRNCPY(VG_Z_LIBC_SONAME, strncpy)
+#endif
+
+
+/*---------------------- strncmp ----------------------*/
+
+#define STRNCMP(soname, fnname)                                 \
+ int VG_REPLACE_FUNCTION_EZU(20110,soname,fnname)               \
+      (const char* s1, const char* s2, SizeT nmax);             \
+ int VG_REPLACE_FUNCTION_EZU(20110,soname,fnname)               \
+      (const char* s1, const char* s2, SizeT nmax)              \
+ {                                                              \
+    SizeT n = 0;                                                \
+    while (True) {                                              \
+       if (n >= nmax) return 0;                                 \
+       if (*s1 == 0 && *s2 == 0) return 0;                      \
+       if (*s1 == 0) return -1;                                 \
+       if (*s2 == 0) return 1;                                  \
+                                                                \
+       if (*(const UChar*)s1 < *(const UChar*)s2) return -1;    \
+       if (*(const UChar*)s1 > *(const UChar*)s2) return 1;     \
+                                                                \
+       s1++; s2++; n++;                                         \
+    }                                                           \
+ }
+
+#if defined(VGO_linux)
+ STRNCMP(VG_Z_LIBC_SONAME, strncmp)
+ STRNCMP(VG_Z_LIBC_SONAME, __GI_strncmp)
+#elif defined(VGO_darwin)
+ //STRNCMP(VG_Z_LIBC_SONAME, strncmp)
+ //STRNCMP(VG_Z_DYLD,        strncmp)
+ STRNCMP(VG_Z_LIBC_SONAME,        strncmp)
+#endif
+
+
 /*---------------------- strcmp ----------------------*/
 
 #define STRCMP(soname, fnname)                                          \

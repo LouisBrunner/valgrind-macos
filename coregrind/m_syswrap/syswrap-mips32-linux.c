@@ -764,11 +764,11 @@ PRE (sys_set_thread_area)
 /* Very much MIPS specific */
 PRE (sys_cacheflush)
 {
-  PRINT ("cacheflush (%lx, %#lx, %#lx)", ARG1, ARG2, ARG3);
-  PRE_REG_READ3 (long, "cacheflush", void *, addrlow, void *, addrhigh, int,
-                 flags);
-  VG_ (discard_translations) ((Addr64) ARG1, ((ULong) ARG2) - ((ULong) ARG1) +
-                              1ULL /*paranoia */ , "PRE(sys_cacheflush)");
+  PRINT ("cacheflush (%lx, %lx, %lx)", ARG1, ARG2, ARG3);
+  PRE_REG_READ3(long, "cacheflush", unsigned long, addr,
+                int, nbytes, int, cache);
+  VG_ (discard_translations) ((Addr64) ARG1, ((ULong) ARG2),
+                              "PRE(sys_cacheflush)");
   SET_STATUS_Success (0);
 }
 
@@ -884,7 +884,7 @@ static SyscallTableEntry syscall_main_table[] = {
    GENX_ (__NR_getppid,                sys_getppid),                 // 64
    GENX_ (__NR_getpgrp,                sys_getpgrp),                 // 65
    GENX_ (__NR_setsid,                 sys_setsid),                  // 66
-   //   PLAXY(__NR_sigaction,         sys_sigaction),         // 67
+   LINXY (__NR_sigaction,              sys_sigaction),               // 67
    //..    //   (__NR_sgetmask,          sys_sgetmask),          // 68
    //..    //   (__NR_ssetmask,          sys_ssetmask),          // 69
    GENX_ (__NR_setreuid,               sys_setreuid),                // 70

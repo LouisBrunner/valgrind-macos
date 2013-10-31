@@ -1,5 +1,5 @@
 
-Release 3.9.0 (XX October 2013)
+Release 3.9.0 (31 October 2013)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 3.9.0 is a feature release with many improvements and the usual
 collection of bug fixes.
@@ -372,7 +372,7 @@ n-i-bz  patch to allow fair-sched on android
 n-i-bz  report error for vgdb snapshot requested before execution
 n-i-bz  same as 303624 (fixed in 3.8.0), but for x86 android
 
-(3.9.0: XX October 2013, vex rYYYY, valgrind rZZZZZ)
+(3.9.0: 31 October 2013, vex r2796, valgrind r13708)
 
 
 

@@ -7606,7 +7606,7 @@ s390_irgen_RISBG(UChar r1, UChar r2, UChar i3, UChar i4, UChar i5)
       put_gpr_dw0(r1, binop(Iop_And64, mkexpr(op2), mkU64(mask)));
    }
    assign(result, get_gpr_dw0(r1));
-   s390_cc_thunk_putS(S390_CC_OP_LOAD_AND_TEST, op2);
+   s390_cc_thunk_putS(S390_CC_OP_LOAD_AND_TEST, result);
 
    return "risbg";
 }

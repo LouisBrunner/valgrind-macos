@@ -11,7 +11,7 @@ INSN_TESTS = clc clcle cvb cvd icm lpr tcxb lam_stam xc mvst add sub mul \
              ex_sig ex_clone cu14 cu14_1 cu41 fpconv ecag fpext fpext_warn \
              rounding-1 rounding-2 rounding-3 rounding-4 rounding-5 bfp-1 \
              bfp-2 bfp-3 bfp-4 srnm srnmb comp-1 comp-2 exrl tmll tm stmg \
-	     ex clst mvc test_fork test_sig rounding-6 \
+	     ex clst mvc test_fork test_sig rounding-6 rxsbg\
 	     spechelper-alr spechelper-algr \
 	     spechelper-slr spechelper-slgr \
 	     spechelper-cr  spechelper-clr  \

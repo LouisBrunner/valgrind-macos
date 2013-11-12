@@ -885,6 +885,10 @@ void CLG_(setup_bbcc)(BB* bb)
   }
   
   CLG_(current_state).bbcc = bbcc;
+  /* Even though this will be set in instrumented code directly before
+   * side exits, it needs to be set to 0 here in case an exception
+   * happens in first instructions of the BB */
+  CLG_(current_state).jmps_passed = 0;
   // needed for log_* handlers called in this BB
   CLG_(bb_base)   = bb->obj->offset + bb->offset;
   CLG_(cost_base) = bbcc->cost;

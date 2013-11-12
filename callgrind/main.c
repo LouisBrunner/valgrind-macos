@@ -1243,9 +1243,10 @@ IRSB* CLG_(instrument)( VgCallbackClosure* closure,
 	    /* Update global variable jmps_passed before the jump
 	     * A correction is needed if VEX inverted the last jump condition
 	    */
+	    UInt val = inverted ? cJumps+1 : cJumps;
 	    addConstMemStoreStmt( clgs.sbOut,
 				  (UWord) &CLG_(current_state).jmps_passed,
-                                  inverted ? cJumps+1 : cJumps, hWordTy);
+				  val, hWordTy);
 	    cJumps++;
 
 	    break;
@@ -1289,10 +1290,12 @@ IRSB* CLG_(instrument)( VgCallbackClosure* closure,
    /* At the end of the bb.  Flush outstandings. */
    flushEvents( &clgs );
 
-   /* Always update global variable jmps_passed at end of bb.
+   /* Update global variable jmps_passed at end of SB.
+    * As CLG_(current_state).jmps_passed is reset to 0 in setup_bbcc,
+    * this can be omitted if there is no conditional jump in this SB.
     * A correction is needed if VEX inverted the last jump condition
     */
-   {
+   if (cJumps>0) {
       UInt jmps_passed = cJumps;
       if (clgs.bb->cjmp_inverted) jmps_passed--;
       addConstMemStoreStmt( clgs.sbOut,

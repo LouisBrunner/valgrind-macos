@@ -523,7 +523,8 @@ struct _exec_state {
   Bool     collect;
   Context* cxt;
   
-  Int   jmps_passed; /* number of conditional jumps passed in last BB */
+  /* number of conditional jumps passed in last BB */
+  Int   jmps_passed;
   BBCC* bbcc;      /* last BB executed */
   BBCC* nonskipped;
 

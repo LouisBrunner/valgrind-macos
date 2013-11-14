@@ -1107,145 +1107,211 @@ ULong mips64_dirtyhelper_rdhwr ( ULong rt, ULong rd )
 }
 #endif
 
-#define ASM_VOLATILE_ROUND32(fs, inst)                              \
-   __asm__ volatile("cfc1    $t0, $31"  "\n\t"                      \
-                    "ctc1    %2,  $31"  "\n\t"                      \
-                    "mtc1    %1,  $f0"  "\n\t"                      \
-                    ""#inst" $f0, $f0"  "\n\t"                      \
-                    "cfc1    %0,  $31"  "\n\t"                      \
-                    "ctc1    $t0, $31"  "\n\t"                      \
+#define ASM_VOLATILE_UNARY32(inst)                                  \
+   __asm__ volatile("cfc1  $t0,  $31"   "\n\t"                      \
+                    "ctc1  %2,   $31"   "\n\t"                      \
+                    "mtc1  %1,   $f20"  "\n\t"                      \
+                    #inst" $f20, $f20"  "\n\t"                      \
+                    "cfc1  %0,   $31"   "\n\t"                      \
+                    "ctc1  $t0,  $31"   "\n\t"                      \
                     : "=r" (ret)                                    \
-                    : "r" (loVal), "r" (fcsr)                       \
-                    : "t0", "$f0", "$f1"                            \
+                    : "r" (loFsVal), "r" (fcsr)                     \
+                    : "t0", "$f20"                                  \
                    );
 
-#define ASM_VOLATILE_ROUND32_DOUBLE(fs, inst)                       \
-   __asm__ volatile("cfc1    $t0, $31"  "\n\t"                      \
-                    "ctc1    %3,  $31"  "\n\t"                      \
-                    "mtc1    %1,  $f0"  "\n\t"                      \
-                    "mtc1    %2,  $f1"  "\n\t"                      \
-                    ""#inst" $f0, $f0"  "\n\t"                      \
-                    "cfc1    %0,  $31"  "\n\t"                      \
-                    "ctc1    $t0, $31"  "\n\t"                      \
+#define ASM_VOLATILE_UNARY32_DOUBLE(inst)                           \
+   __asm__ volatile("cfc1  $t0,  $31"   "\n\t"                      \
+                    "ctc1  %3,   $31"   "\n\t"                      \
+                    "mtc1  %1,   $f20"  "\n\t"                      \
+                    "mtc1  %2,   $f21"  "\n\t"                      \
+                    #inst" $f20, $f20"  "\n\t"                      \
+                    "cfc1  %0,   $31"   "\n\t"                      \
+                    "ctc1  $t0,  $31"   "\n\t"                      \
                     : "=r" (ret)                                    \
-                    : "r" (loVal), "r" (hiVal), "r" (fcsr)          \
-                    : "t0", "$f0", "$f1"                            \
+                    : "r" (loFsVal), "r" (hiFsVal), "r" (fcsr)      \
+                    : "t0", "$f20", "$f21"                          \
                    );
 
-#define ASM_VOLATILE_ROUND64(fs, inst)                              \
-   __asm__ volatile("cfc1     $t0, $31"  "\n\t"                     \
-                    "ctc1     %2,  $31"  "\n\t"                     \
-                    "dmtc1    %1,  $f0"  "\n\t"                     \
-                    ""#inst"  $f0, $f0"  "\n\t"                     \
-                    "cfc1     %0,  $31"  "\n\t"                     \
-                    "ctc1     $t0, $31"  "\n\t"                     \
+#define ASM_VOLATILE_UNARY64(inst)                                  \
+   __asm__ volatile("cfc1   $t0,  $31"   "\n\t"                     \
+                    "ctc1   %2,   $31"   "\n\t"                     \
+                    "dmtc1  %1,   $f24"  "\n\t"                     \
+                    #inst"  $f24, $f24"  "\n\t"                     \
+                    "cfc1   %0,   $31"   "\n\t"                     \
+                    "ctc1   $t0,  $31"   "\n\t"                     \
                     : "=r" (ret)                                    \
-                    : "r" (addr[fs]), "r" (fcsr)                    \
-                    : "t0", "$f0"                                   \
+                    : "r" (fsVal), "r" (fcsr)                       \
+                    : "t0", "$f24"                                  \
+                   );
+
+#define ASM_VOLATILE_BINARY32(inst)                                 \
+   __asm__ volatile("cfc1  $t0,  $31"         "\n\t"                \
+                    "ctc1  %3,   $31"         "\n\t"                \
+                    "mtc1  %1,   $f20"        "\n\t"                \
+                    "mtc1  %2,   $f22"        "\n\t"                \
+                    #inst" $f20, $f20, $f22"  "\n\t"                \
+                    "cfc1  %0,   $31"         "\n\t"                \
+                    "ctc1  $t0,  $31"         "\n\t"                \
+                    : "=r" (ret)                                    \
+                    : "r" (loFsVal), "r" (loFtVal), "r" (fcsr)      \
+                    : "t0", "$f20", "$f22"                          \
+                   );
+
+#define ASM_VOLATILE_BINARY32_DOUBLE(inst)                          \
+   __asm__ volatile("cfc1  $t0,  $31"         "\n\t"                \
+                    "ctc1  %5,   $31"         "\n\t"                \
+                    "mtc1  %1,   $f20"        "\n\t"                \
+                    "mtc1  %2,   $f21"        "\n\t"                \
+                    "mtc1  %3,   $f22"        "\n\t"                \
+                    "mtc1  %4,   $f23"        "\n\t"                \
+                    #inst" $f20, $f20, $f22"  "\n\t"                \
+                    "cfc1  %0,   $31"         "\n\t"                \
+                    "ctc1  $t0,  $31"         "\n\t"                \
+                    : "=r" (ret)                                    \
+                    : "r" (loFsVal), "r" (hiFsVal), "r" (loFtVal),  \
+                      "r" (hiFtVal), "r" (fcsr)                     \
+                    : "t0", "$f20", "$f21", "$f22", "$f23"          \
+                   );
+
+#define ASM_VOLATILE_BINARY64(inst)                                 \
+   __asm__ volatile("cfc1  $t0,  $31"         "\n\t"                \
+                    "ctc1  %3,   $31"         "\n\t"                \
+                    "dmtc1 %1,   $f24"        "\n\t"                \
+                    "dmtc1 %2,   $f25"        "\n\t"                \
+                    #inst" $f24, $f24, $f25"  "\n\t"                \
+                    "cfc1  %0,   $31"         "\n\t"                \
+                    "ctc1  $t0,  $31"         "\n\t"                \
+                    : "=r" (ret)                                    \
+                    : "r" (fsVal), "r" (ftVal), "r" (fcsr)          \
+                    : "t0", "$f24", "$f25"                          \
                    );
 
 /* TODO: Add cases for all fpu instructions because all fpu instructions are
          change the value of FCSR register. */
-extern UInt mips_dirtyhelper_calculate_FCSR ( void* gs, UInt fs, flt_op inst )
+extern UInt mips_dirtyhelper_calculate_FCSR ( void* gs, UInt fs, UInt ft,
+                                              flt_op inst )
 {
    UInt ret = 0;
 #if defined(__mips__)
 #if defined(VGA_mips32)
    VexGuestMIPS32State* guest_state = (VexGuestMIPS32State*)gs;
-   UInt *addr = (UInt *)&guest_state->guest_f0;
-   UInt loVal = addr[fs];
-   UInt hiVal = addr[fs+1];
-#define ASM_VOLATILE_ROUND(fs, inst)        ASM_VOLATILE_ROUND32(fs, inst)
-#define ASM_VOLATILE_ROUND_DOUBLE(fs, inst) ASM_VOLATILE_ROUND32_DOUBLE(fs, inst)
+   UInt *addr    = (UInt *)&guest_state->guest_f0;
+   UInt loFsVal  = addr[fs];
+   UInt hiFsVal  = addr[fs+1];
+   UInt loFtVal  = addr[ft];
+   UInt hiFtVal  = addr[ft+1];
+#define ASM_VOLATILE_UNARY(inst)         ASM_VOLATILE_UNARY32(inst)
+#define ASM_VOLATILE_UNARY_DOUBLE(inst)  ASM_VOLATILE_UNARY32_DOUBLE(inst)
+#define ASM_VOLATILE_BINARY(inst)        ASM_VOLATILE_BINARY32(inst)
+#define ASM_VOLATILE_BINARY_DOUBLE(inst) ASM_VOLATILE_BINARY32_DOUBLE(inst)
 #else
    VexGuestMIPS64State* guest_state = (VexGuestMIPS64State*)gs;
    ULong *addr = (ULong *)&guest_state->guest_f0;
-#define ASM_VOLATILE_ROUND(fs, inst)        ASM_VOLATILE_ROUND64(fs, inst)
-#define ASM_VOLATILE_ROUND_DOUBLE(fs, inst) ASM_VOLATILE_ROUND64(fs, inst)
+   ULong fsVal = addr[fs];
+   ULong ftVal = addr[ft];
+#define ASM_VOLATILE_UNARY(inst)         ASM_VOLATILE_UNARY64(inst)
+#define ASM_VOLATILE_UNARY_DOUBLE(inst)  ASM_VOLATILE_UNARY64(inst)
+#define ASM_VOLATILE_BINARY(inst)        ASM_VOLATILE_BINARY64(inst)
+#define ASM_VOLATILE_BINARY_DOUBLE(inst) ASM_VOLATILE_BINARY64(inst)
 #endif
    UInt fcsr = guest_state->guest_FCSR;
    switch (inst) {
       case ROUNDWD:
-         ASM_VOLATILE_ROUND_DOUBLE(fs, round.w.d)
+         ASM_VOLATILE_UNARY_DOUBLE(round.w.d)
          break;
       case FLOORWS:
-         ASM_VOLATILE_ROUND(fs, floor.w.s)
+         ASM_VOLATILE_UNARY(floor.w.s)
          break;
       case FLOORWD:
-         ASM_VOLATILE_ROUND_DOUBLE(fs, floor.w.d)
+         ASM_VOLATILE_UNARY_DOUBLE(floor.w.d)
          break;
       case TRUNCWS:
-         ASM_VOLATILE_ROUND(fs, trunc.w.s)
+         ASM_VOLATILE_UNARY(trunc.w.s)
          break;
       case TRUNCWD:
-         ASM_VOLATILE_ROUND_DOUBLE(fs, trunc.w.d)
+         ASM_VOLATILE_UNARY_DOUBLE(trunc.w.d)
          break;
       case CEILWS:
-         ASM_VOLATILE_ROUND(fs, ceil.w.s)
+         ASM_VOLATILE_UNARY(ceil.w.s)
          break;
       case CEILWD:
-         ASM_VOLATILE_ROUND_DOUBLE(fs, ceil.w.d)
+         ASM_VOLATILE_UNARY_DOUBLE(ceil.w.d)
          break;
       case CVTDS:
-         ASM_VOLATILE_ROUND(fs, cvt.d.s)
+         ASM_VOLATILE_UNARY(cvt.d.s)
          break;
       case CVTDW:
-         ASM_VOLATILE_ROUND(fs, cvt.d.w)
+         ASM_VOLATILE_UNARY(cvt.d.w)
          break;
       case CVTSW:
-         ASM_VOLATILE_ROUND(fs, cvt.s.w)
+         ASM_VOLATILE_UNARY(cvt.s.w)
          break;
       case CVTSD:
-         ASM_VOLATILE_ROUND_DOUBLE(fs, cvt.s.d)
+         ASM_VOLATILE_UNARY_DOUBLE(cvt.s.d)
          break;
       case CVTWS:
-         ASM_VOLATILE_ROUND(fs, cvt.w.s)
+         ASM_VOLATILE_UNARY(cvt.w.s)
          break;
       case CVTWD:
-         ASM_VOLATILE_ROUND_DOUBLE(fs, cvt.w.d)
+         ASM_VOLATILE_UNARY_DOUBLE(cvt.w.d)
          break;
       case ROUNDWS:
-         ASM_VOLATILE_ROUND(fs, round.w.s)
+         ASM_VOLATILE_UNARY(round.w.s)
          break;
 #if ((__mips == 32) && defined(__mips_isa_rev) && (__mips_isa_rev >= 2)) \
     || (__mips == 64)
       case CEILLS:
-         ASM_VOLATILE_ROUND(fs, ceil.l.s)
+         ASM_VOLATILE_UNARY(ceil.l.s)
          break;
       case CEILLD:
-         ASM_VOLATILE_ROUND_DOUBLE(fs, ceil.l.d)
+         ASM_VOLATILE_UNARY_DOUBLE(ceil.l.d)
          break;
       case CVTDL:
-         ASM_VOLATILE_ROUND_DOUBLE(fs, cvt.d.l)
+         ASM_VOLATILE_UNARY_DOUBLE(cvt.d.l)
          break;
       case CVTLS:
-         ASM_VOLATILE_ROUND(fs, cvt.l.s)
+         ASM_VOLATILE_UNARY(cvt.l.s)
          break;
       case CVTLD:
-         ASM_VOLATILE_ROUND_DOUBLE(fs, cvt.l.d)
+         ASM_VOLATILE_UNARY_DOUBLE(cvt.l.d)
          break;
       case CVTSL:
-         ASM_VOLATILE_ROUND_DOUBLE(fs, cvt.s.l)
+         ASM_VOLATILE_UNARY_DOUBLE(cvt.s.l)
          break;
       case FLOORLS:
-         ASM_VOLATILE_ROUND(fs, floor.l.s)
+         ASM_VOLATILE_UNARY(floor.l.s)
          break;
       case FLOORLD:
-         ASM_VOLATILE_ROUND_DOUBLE(fs, floor.l.d)
+         ASM_VOLATILE_UNARY_DOUBLE(floor.l.d)
          break;
       case ROUNDLS:
-         ASM_VOLATILE_ROUND(fs, round.l.s)
+         ASM_VOLATILE_UNARY(round.l.s)
          break;
       case ROUNDLD:
-         ASM_VOLATILE_ROUND_DOUBLE(fs, round.l.d)
+         ASM_VOLATILE_UNARY_DOUBLE(round.l.d)
          break;
       case TRUNCLS:
-         ASM_VOLATILE_ROUND(fs, trunc.l.s)
+         ASM_VOLATILE_UNARY(trunc.l.s)
          break;
       case TRUNCLD:
-         ASM_VOLATILE_ROUND_DOUBLE(fs, trunc.l.d)
+         ASM_VOLATILE_UNARY_DOUBLE(trunc.l.d)
          break;
 #endif
+      case ADDS:
+          ASM_VOLATILE_BINARY(add.s)
+          break;
+      case ADDD:
+          ASM_VOLATILE_BINARY_DOUBLE(add.d)
+          break;
+      case SUBS:
+          ASM_VOLATILE_BINARY(sub.s)
+          break;
+      case SUBD:
+          ASM_VOLATILE_BINARY_DOUBLE(sub.d)
+          break;
+      case DIVS:
+          ASM_VOLATILE_BINARY(div.s)
+          break;
       default:
          vassert(0);
          break;

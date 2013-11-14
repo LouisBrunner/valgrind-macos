@@ -3226,7 +3226,6 @@ static HReg iselFltExpr_wrk(ISelEnv * env, IRExpr * e)
 
          case Iop_SqrtF32:
          case Iop_SqrtF64: {
-            /* first arg is rounding mode; we ignore it. */
             Bool sz32 = e->Iex.Binop.op == Iop_SqrtF32;
             HReg src = iselFltExpr(env, e->Iex.Binop.arg2);
             HReg dst = newVRegF(env);
@@ -3455,10 +3454,11 @@ static HReg iselDblExpr_wrk(ISelEnv * env, IRExpr * e)
          }
 
          case Iop_SqrtF64: {
-            /* first arg is rounding mode; we ignore it. */
             HReg src = iselDblExpr(env, e->Iex.Binop.arg2);
             HReg dst = newVRegD(env);
+            set_MIPS_rounding_mode(env, e->Iex.Binop.arg1);
             addInstr(env, MIPSInstr_FpUnary(Mfp_SQRTD, dst, src));
+            set_MIPS_rounding_default(env);
             return dst;
          }
 
@@ -3483,6 +3483,9 @@ static HReg iselDblExpr_wrk(ISelEnv * env, IRExpr * e)
                case Iop_DivF64:
                   op = Mfp_DIVD;
                   break;
+               case Iop_DivF32:
+                  op = Mfp_DIVS;
+                  break;
                case Iop_MulF64:
                   op = Mfp_MULD;
                   break;
@@ -3495,7 +3498,9 @@ static HReg iselDblExpr_wrk(ISelEnv * env, IRExpr * e)
                default:
                   vassert(0);
             }
+            set_MIPS_rounding_mode(env, e->Iex.Triop.details->arg1);
             addInstr(env, MIPSInstr_FpBinary(op, dst, argL, argR));
+            set_MIPS_rounding_default(env);
             return dst;
          }
          default:

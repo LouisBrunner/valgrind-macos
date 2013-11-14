@@ -85,7 +85,8 @@ typedef enum {
    TRUNCWS,  TRUNCWD, TRUNCLS, TRUNCLD,
    CVTDS,    CVTDW,   CVTSD,   CVTSW,
    CVTWS,    CVTWD,   CVTDL,   CVTLS,
-   CVTLD,    CVTSL
+   CVTLD,    CVTSL,   ADDS,    ADDD,
+   SUBS,     SUBD,    DIVS
 } flt_op;
 
 extern UInt mips32_dirtyhelper_mfc0 ( UInt rd, UInt sel );
@@ -99,7 +100,7 @@ extern ULong mips64_dirtyhelper_rdhwr ( ULong rt, ULong rd );
 #endif
 
 extern UInt mips_dirtyhelper_calculate_FCSR ( void* guest_state, UInt fs,
-                                              flt_op op );
+                                              UInt ft, flt_op op );
 
 /*---------------------------------------------------------*/
 /*---               Condition code stuff                ---*/

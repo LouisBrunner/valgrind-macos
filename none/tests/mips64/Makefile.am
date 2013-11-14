@@ -43,7 +43,8 @@ EXTRA_DIST = \
 	unaligned_load_store.stderr.exp unaligned_load_store.vgtest \
 	test_fcsr.stdout.exp test_fcsr.stderr.exp \
 	test_fcsr.vgtest \
-	const.h macro_fpu.h macro_int.h macro_load_store.h rounding_mode.h
+	const.h macro_fpu.h macro_int.h macro_load_store.h rounding_mode.h \
+	test_math.stdout.exp test_math.stderr.exp test_math.vgtest
 
 check_PROGRAMS = \
 	allexec \
@@ -67,7 +68,8 @@ check_PROGRAMS = \
 	test_block_size \
 	unaligned_load \
 	unaligned_load_store \
-	test_fcsr
+	test_fcsr \
+	test_math
 
 AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@
@@ -77,3 +79,6 @@ allexec_CFLAGS          = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 
 cvm_ins_CFLAGS = $(AM_CFLAGS) -g -O0 -march=octeon
 fpu_arithmetic_CFLAGS = $(AM_CFLAGS) -lm
+
+# C++ tests
+test_math_SOURCES          = test_math.cpp

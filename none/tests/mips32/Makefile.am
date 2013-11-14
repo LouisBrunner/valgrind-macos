@@ -30,7 +30,8 @@ EXTRA_DIST = \
 	mips32_dspr2.vgtest \
 	unaligned_load_store.stdout.exp-LE unaligned_load_store.stdout.exp-BE \
 	unaligned_load_store.stderr.exp unaligned_load_store.vgtest \
-	test_fcsr.stdout.exp test_fcsr.stderr.exp test_fcsr.vgtest
+	test_fcsr.stdout.exp test_fcsr.stderr.exp test_fcsr.vgtest \
+	test_math.stdout.exp test_math.stderr.exp test_math.vgtest
 
 check_PROGRAMS = \
 	allexec \
@@ -49,7 +50,8 @@ check_PROGRAMS = \
 	mips32_dsp \
 	mips32_dspr2 \
 	unaligned_load_store \
-	test_fcsr
+	test_fcsr \
+	test_math
 
 AM_CFLAGS    += @FLAG_M32@
 AM_CXXFLAGS  += @FLAG_M32@
@@ -57,3 +59,6 @@ AM_CCASFLAGS += @FLAG_M32@
 
 allexec_CFLAGS          = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 bug320057_mips32_LDFLAGS = -lrt
+
+# C++ tests
+test_math_SOURCES          = test_math.cpp

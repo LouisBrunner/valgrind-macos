@@ -1,0 +1,55 @@
+fesetround(FE_UPWARD)
+lrint(1234.01): 1235
+lrintf(1234.01f): 1235
+lrintl(1234.01): 1235
+fesetround(FE_TOWARDZERO)
+lrint(1234.01): 1234
+lrintf(1234.01f): 1234
+lrintl(1234.01): 1234
+fesetround(FE_UPWARD)
+llrint(1234.01): 1235
+llrintf(1234.01f): 1235
+llrintf(1234.01f): 1235
+fesetround(FE_TOWARDZERO)
+llrint(1234.01): 1234
+llrintf(1234.01f): 1234
+llrintl(1234.01): 1234
+fesetround(FE_UPWARD)
+feclearexcept(FE_ALL_EXCEPT)
+rint(1234.0): 1234.000000
+(fetestexcept(FE_ALL_EXCEPT) & FE_INEXACT): 0
+rint(1234.01): 1235.000000
+(fetestexcept(FE_ALL_EXCEPT) & FE_INEXACT): 4
+feclearexcept(FE_ALL_EXCEPT)
+rintf(1234.0f): 1234.000000
+(fetestexcept(FE_ALL_EXCEPT) & FE_INEXACT): 0
+rintf(1234.01f): 1235.000000
+(fetestexcept(FE_ALL_EXCEPT) & FE_INEXACT): 4
+feclearexcept(FE_ALL_EXCEPT)
+rintl(1234.0): 1234.000000
+(fetestexcept(FE_ALL_EXCEPT) & FE_INEXACT): 0
+rintl(1234.01): 1235.000000
+(fetestexcept(FE_ALL_EXCEPT) & FE_INEXACT): 4
+fesetround(FE_TOWARDZERO)
+rint(1234.01): 1234.000000
+rintf(1234.01f): 1234.000000
+rintl(1234.01): 1234.000000
+fesetround(FE_UPWARD)
+feclearexcept(FE_ALL_EXCEPT)
+nearbyint(1234.0): 1234.000000
+nearbyint(1234.01): 1235.000000
+feclearexcept(FE_ALL_EXCEPT)
+nearbyintf(1234.0f): 1234.000000
+nearbyintf(1234.01f): 1235.000000
+feclearexcept(FE_ALL_EXCEPT)
+nearbyintl(1234.0f): 1234.000000
+nearbyintl(1234.01f): 1235.000000
+fesetround(FE_TOWARDZERO)
+nearbyint(1234.01): 1234.000000
+nearbyintf(1234.01f): 1234.000000
+nearbyintl(1234.01): 1234.000000
+log(M_E): 1.000000
+tgamma(5.0): 24.000000
+cbrt(27.0): 3.000000
+feclearexcept(FE_ALL_EXCEPT): 0
+raised: 32

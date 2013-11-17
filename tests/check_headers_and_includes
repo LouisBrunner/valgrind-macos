@@ -14,9 +14,10 @@
 
 use strict;
 use warnings;
+use File::Basename;
 use Getopt::Long;
 
-my $this_script = "check_headers_and_includes";
+my $this_script = basename($0);
 
 # The list of top-level directories is divided into three sets:
 #
@@ -144,18 +145,6 @@ sub process_dir {
     }
     close($hdir);
     chdir("..") || die "Cannot chdir '..'\n";
-}
-
-#---------------------------------------------------------------------
-# Given a path name strip leading directories.
-#---------------------------------------------------------------------
-sub basename {
-    my ($path_name) = @_;
-    my $file = $path_name;
-
-    $file =~ s/^.*\///;
-
-    return $file;
 }
 
 #---------------------------------------------------------------------

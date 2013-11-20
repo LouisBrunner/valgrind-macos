@@ -2609,7 +2609,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       vg_assert(aimg == NULL);
 
       if (debugaltlink_escn.img != NULL) {
-         UInt buildid_offset = ML_(img_strlen)(debugaltlink_escn.img, 0)+1;
+         UInt buildid_offset = ML_(img_strlen)(debugaltlink_escn.img,
+                                               debugaltlink_escn.ioff)+1;
 
          vg_assert(buildid_offset < debugaltlink_escn.szB);
 

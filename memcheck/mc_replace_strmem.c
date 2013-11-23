@@ -9,7 +9,7 @@
    This file is part of MemCheck, a heavyweight Valgrind tool for
    detecting memory errors.
 
-   Copyright (C) 2000-2013 Julian Seward 
+   Copyright (C) 2000-2013 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -105,7 +105,7 @@
 */
 
 
-/* Figure out if [dst .. dst+dstlen-1] overlaps with 
+/* Figure out if [dst .. dst+dstlen-1] overlaps with
                  [src .. src+srclen-1].
    We assume that the address ranges do not wrap around
    (which is safe since on Linux addresses >= 0xC0000000
@@ -132,7 +132,7 @@ Bool is_overlap ( void* dst, const void* src, SizeT dstlen, SizeT srclen )
    else if (loD < loS) {
       return !(hiD < loS);
    }
-   else { 
+   else {
       /* They start at same place.  Since we know neither of them has
          zero length, they must overlap. */
       return True;
@@ -200,7 +200,7 @@ static inline void my_exit ( int x )
  STRRCHR(VG_Z_LIBC_SONAME, strrchr)
 
 #endif
-   
+
 
 /*---------------------- strchr ----------------------*/
 
@@ -313,10 +313,10 @@ static inline void my_exit ( int x )
 
 /*---------------------- strlcat ----------------------*/
 
-/* Append src to dst. n is the size of dst's buffer. dst is guaranteed 
-   to be nul-terminated after the copy, unless n <= strlen(dst_orig). 
-   Returns min(n, strlen(dst_orig)) + strlen(src_orig). 
-   Truncation occurred if retval >= n. 
+/* Append src to dst. n is the size of dst's buffer. dst is guaranteed
+   to be nul-terminated after the copy, unless n <= strlen(dst_orig).
+   Returns min(n, strlen(dst_orig)) + strlen(src_orig).
+   Truncation occurred if retval >= n.
 */
 #define STRLCAT(soname, fnname) \
    SizeT VG_REPLACE_FUNCTION_EZU(20050,soname,fnname) \
@@ -380,7 +380,7 @@ static inline void my_exit ( int x )
  //STRNLEN(VG_Z_LIBC_SONAME, strnlen)
 
 #endif
-   
+
 
 /*---------------------- strlen ----------------------*/
 
@@ -487,7 +487,7 @@ static inline void my_exit ( int x )
 
 /*---------------------- strlcpy ----------------------*/
 
-/* Copy up to n-1 bytes from src to dst. Then nul-terminate dst if n > 0. 
+/* Copy up to n-1 bytes from src to dst. Then nul-terminate dst if n > 0.
    Returns strlen(src). Does not zero-fill the remainder of dst. */
 #define STRLCPY(soname, fnname) \
    SizeT VG_REPLACE_FUNCTION_EZU(20100,soname,fnname) \

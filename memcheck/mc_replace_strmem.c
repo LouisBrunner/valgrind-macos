@@ -809,7 +809,7 @@ static inline void my_exit ( int x )
       const Addr WM = WS - 1;        /* 7 or 3 */ \
       \
       if (len > 0) { \
-         if (dst < src) { \
+         if (dst < src || !is_overlap(dst, src, len, len)) { \
          \
             /* Copying backwards. */ \
             SizeT n = len; \

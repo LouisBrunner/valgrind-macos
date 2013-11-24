@@ -42,6 +42,7 @@ my %tool_dirs = (
     "helgrind", => 1,
     "callgrind" => 1,
     "cachegrind" => 1,
+    "shared" => 1,
     "exp-bbv" => 1,
     "exp-dhat" => 1,
     "exp-sgcheck" => 1

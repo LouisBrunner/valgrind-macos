@@ -1,12 +1,12 @@
 Conditional jump or move depends on uninitialised value(s)
-   at 0x........: __GI_strchr (mc_replace_strmem.c:...)
+   at 0x........: strchr (vg_replace_strmem.c:...)
    by 0x........: main (strchr.c:15)
 
 Conditional jump or move depends on uninitialised value(s)
-   at 0x........: __GI_strchr (mc_replace_strmem.c:...)
+   at 0x........: strchr (vg_replace_strmem.c:...)
    by 0x........: main (strchr.c:15)
 
 Conditional jump or move depends on uninitialised value(s)
-   at 0x........: __GI_strrchr (mc_replace_strmem.c:...)
+   at 0x........: strrchr (vg_replace_strmem.c:...)
    by 0x........: main (strchr.c:16)
 

@@ -7,7 +7,7 @@ use strict;
 # A list of files specific to the tool at hand. Line numbers in
 # these files will be removed from backtrace entries matching these files.
 #---------------------------------------------------------------------
-my @tool_files = ( "mc_replace_strmem.c", "vg_replace_malloc.c" );
+my @tool_files = ( "vg_replace_strmem.c", "vg_replace_malloc.c" );
 
 
 sub massage_backtrace_line ($$$) {

@@ -1,4 +1,4 @@
 Conditional jump or move depends on uninitialised value(s)
-   at 0x........: memcmp (mc_replace_strmem.c:...)
+   at 0x........: memcmp (vg_replace_strmem.c:...)
    by 0x........: main (memcmptest.c:13)
 

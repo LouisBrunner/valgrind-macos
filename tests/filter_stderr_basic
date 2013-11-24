@@ -47,6 +47,10 @@ sed "/warning: line info addresses out of order/d" |
 # complete list of messages in the bash source file siglist.c.
 perl -n -e 'print if !/^(Segmentation fault|Alarm clock|Aborted|Bus error)( \(core dumped\))?$/' |
 
+# Translate intercepted glibc functions back to their canonical name
+perl -p -e "s/: memcpy\@\@?GLIBC_[.1-9]+ \(vg_replace_strmem.c:...\)/: memcpy \(vg_replace_strmem.c:...\)/" |
+sed -e "s/: \(__GI_\|__\|\)\(memcmp\|memcpy\|strcpy\|strncpy\|strchr\|strrchr\)\(\|_sse4_1\|_sse42\|_sse2_unaligned\) (vg_replace_strmem.c:/: \2 (vg_replace_strmem.c:/" |
+
 # Remove any ": dumping core" message as the user might have a
 # limit set that prevents the core dump
 sed "s/\(signal [0-9]* (SIG[A-Z]*)\): dumping core/\1/" |

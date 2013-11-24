@@ -1,8 +1,6 @@
 #! /bin/sh
 
-# mc_replace_strmem.c [r]index and [__GI_]str[r]chr are the same.
+# vg_replace_strmem.c [r]index and [__GI_]str[r]chr are the same.
 ./filter_stderr "$@" |
-sed -e "s/: __GI_strchr (mc_replace_strmem.c:/: strchr (mc_replace_strmem.c:/" |
-sed -e "s/: strchr (mc_replace_strmem.c:/: index (mc_replace_strmem.c:/" |
-sed -e "s/: __GI_strrchr (mc_replace_strmem.c:/: strrchr (mc_replace_strmem.c:/" |
-sed -e "s/: strrchr (mc_replace_strmem.c:/: rindex (mc_replace_strmem.c:/"
+sed -e "s/: strchr (vg_replace_strmem.c:/: index (vg_replace_strmem.c:/;
+        s/: strrchr (vg_replace_strmem.c:/: rindex (vg_replace_strmem.c:/"

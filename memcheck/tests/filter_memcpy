@@ -1,8 +1,0 @@
-#! /bin/sh
-
-# mc_replace_strmem.c intercepts various memcpy glibc versions.
-# mc_replace_strmem.c str[n]cpy and __GI_str[n]cpy are the same.
-./filter_stderr "$@" |
-perl -p -e "s/: memcpy\@\@?GLIBC_[.1-9]+ \(mc_replace_strmem.c:...\)/: memcpy \(mc_replace_strmem.c:...\)/" |
-sed -e "s/: __GI_strcpy (mc_replace_strmem.c:/: strcpy (mc_replace_strmem.c:/" |
-sed -e "s/: __GI_strncpy (mc_replace_strmem.c:/: strncpy (mc_replace_strmem.c:/"

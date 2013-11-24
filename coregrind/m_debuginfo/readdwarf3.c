@@ -2926,19 +2926,17 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
                = cook_die_using_form( cc, (UWord)cts.u.val, form );
          }
       }
-      /* Do we have something that looks sane? */
-      if (/* must have a name */
-          typeE.Te.TyTyDef.name == NULL
-          /* However gcc gnat Ada generates minimal typedef
-             such as the below => accept no name for Ada.
-             <6><91cc>: DW_TAG_typedef
-                DW_AT_abstract_ori: <9066>
-          */
-          && parser->language != 'A'
-          /* but the referred-to type can be absent */)
-         goto bad_DIE;
-      else
-         goto acquire_Type;
+      /* Do we have something that looks sane?
+         gcc gnat Ada generates minimal typedef
+         such as the below
+         <6><91cc>: DW_TAG_typedef
+            DW_AT_abstract_ori: <9066>
+         g++ for OMP can generate artificial functions that have
+         parameters that refer to pointers to unnamed typedefs.
+         See https://bugs.kde.org/show_bug.cgi?id=273475
+         So we cannot require a name for a DW_TAG_typedef.
+      */
+      goto acquire_Type;
    }
 
    if (dtag == DW_TAG_subroutine_type) {

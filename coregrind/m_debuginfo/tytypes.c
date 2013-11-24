@@ -265,8 +265,8 @@ void ML_(pp_TyEnt_C_ishly)( XArray* /* of TyEnt */ tyents,
          VG_(printf)("&&");
          break;
       case Te_TyEnum:
-         if (!ent->Te.TyEnum.name) goto unhandled;
-         VG_(printf)("enum %s", ent->Te.TyEnum.name);
+         VG_(printf)("enum %s", ent->Te.TyEnum.name ? ent->Te.TyEnum.name
+                                                    : "<anonymous>" );
          break;
       case Te_TyStOrUn:
          VG_(printf)("%s %s",
@@ -287,8 +287,8 @@ void ML_(pp_TyEnt_C_ishly)( XArray* /* of TyEnt */ tyents,
          }
          break;
       case Te_TyTyDef:
-         if (!ent->Te.TyTyDef.name) goto unhandled;
-         VG_(printf)("%s", ent->Te.TyTyDef.name);
+         VG_(printf)("%s", ent->Te.TyTyDef.name ? ent->Te.TyTyDef.name
+                                                : "<anonymous>" );
          break;
       case Te_TyFn:
          VG_(printf)("%s", "<function_type>");

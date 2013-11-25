@@ -173,6 +173,7 @@ EXTRA_DIST = \
 	origin5-bz2.vgtest origin5-bz2.stdout.exp \
 	origin5-bz2.stderr.exp-glibc25-x86 \
 	origin5-bz2.stderr.exp-glibc25-amd64 \
+	origin5-bz2.stderr.exp-glibc25-amd64-b \
 	origin5-bz2.stderr.exp-glibc27-ppc64 \
 	origin5-bz2.stderr.exp-glibc212-s390x \
 	origin5-bz2.stderr.exp-glibc234-s390x \

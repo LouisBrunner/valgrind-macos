@@ -1,0 +1,16 @@
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: index (vg_replace_strmem.c:...)
+   by 0x........: main (strchr.c:15)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: index (vg_replace_strmem.c:...)
+   by 0x........: main (strchr.c:15)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: rindex (vg_replace_strmem.c:...)
+   by 0x........: main (strchr.c:16)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: rindex (vg_replace_strmem.c:...)
+   by 0x........: main (strchr.c:16)
+

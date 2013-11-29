@@ -74,7 +74,10 @@ port.
 Dragos Tatulea modified the arm-android port so it also works on
 x86-android.
 
-Jakub Jelinek helped out with the AVX support.
+Jakub Jelinek helped out extensively with the AVX and AVX2 support.
+
+Mark Wielaard fixed a bunch of bugs and acts as our Fedora/RHEL
+liaison.
 
 Maran Pakkirisamy implemented support for decimal floating point on
 s390.

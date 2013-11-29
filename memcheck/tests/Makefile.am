@@ -318,7 +318,6 @@ check_PROGRAMS = \
 	partial_load pdb-realloc pdb-realloc2 \
 	pipe pointer-trace \
 	post-syscall \
-	reach_thread_register \
 	realloc1 realloc2 realloc3 \
 	recursive-merge \
 	sbfragment \
@@ -351,6 +350,10 @@ endif
 
 if HAVE_PTHREAD_SETNAME_NP
 check_PROGRAMS += threadname 
+endif
+
+if HAVE_PTHREAD_BARRIER
+check_PROGRAMS += reach_thread_register
 endif
 
 if HAVE_GSTABS

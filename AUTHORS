@@ -76,6 +76,9 @@ x86-android.
 
 Jakub Jelinek helped out with the AVX support.
 
+Maran Pakkirisamy implemented support for decimal floating point on
+s390.
+
 Many, many people sent bug reports, patches, and helpful feedback.
 
 Development of Valgrind was supported in part by the Tri-Lab Partners

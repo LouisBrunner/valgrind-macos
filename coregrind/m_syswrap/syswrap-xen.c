@@ -590,6 +590,14 @@ PRE(domctl)
            __PRE_XEN_DOMCTL_READ(gethvmcontext, hvmcontext, size);
        break;
 
+   case VKI_XEN_DOMCTL_sethvmcontext:
+       __PRE_XEN_DOMCTL_READ(sethvmcontext, hvmcontext, size);
+       __PRE_XEN_DOMCTL_READ(sethvmcontext, hvmcontext, buffer);
+       PRE_MEM_READ("XEN_DOMCTL_sethvmcontext *buffer",
+                    (Addr)domctl->u.hvmcontext.buffer.p,
+                    domctl->u.hvmcontext.size);
+       break;
+
    case VKI_XEN_DOMCTL_max_mem:
       PRE_XEN_DOMCTL_READ(max_mem, max_memkb);
       break;
@@ -1068,6 +1076,7 @@ POST(domctl){
    case VKI_XEN_DOMCTL_setnodeaffinity:
    case VKI_XEN_DOMCTL_set_cpuid:
    case VKI_XEN_DOMCTL_unpausedomain:
+   case VKI_XEN_DOMCTL_sethvmcontext:
       /* No output fields */
       break;
 

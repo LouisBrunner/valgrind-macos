@@ -243,6 +243,13 @@ struct vki_xen_guest_tsc_info {
 typedef struct vki_xen_guest_tsc_info vki_xen_guest_tsc_info_t;
 DEFINE_VKI_XEN_GUEST_HANDLE(vki_xen_guest_tsc_info_t);
 
+struct vki_xen_domctl_hvmcontext {
+    vki_uint32_t size; /* IN/OUT size of buffer */
+    VKI_XEN_GUEST_HANDLE_64(vki_uint8) buffer; /* IN/OUT */
+};
+typedef struct vki_xen_domctl_hvmcontext vki_xen_domctl_hvmcontext_t;
+DEFINE_VKI_XEN_GUEST_HANDLE(vki_xen_domctl_hvmcontext_t);
+
 struct vki_xen_domctl_tsc_info {
     VKI_XEN_GUEST_HANDLE_64(vki_xen_guest_tsc_info_t) out_info; /* OUT */
     vki_xen_guest_tsc_info_t info; /* IN */
@@ -291,7 +298,7 @@ struct vki_xen_domctl {
         //struct vki_xen_domctl_disable_migrate   disable_migrate;
         struct vki_xen_domctl_tsc_info          tsc_info;
         //struct vki_xen_domctl_real_mode_area    real_mode_area;
-        //struct vki_xen_domctl_hvmcontext        hvmcontext;
+        struct vki_xen_domctl_hvmcontext        hvmcontext;
         //struct vki_xen_domctl_hvmcontext_partial hvmcontext_partial;
         struct vki_xen_domctl_address_size      address_size;
         //struct vki_xen_domctl_sendtrigger       sendtrigger;

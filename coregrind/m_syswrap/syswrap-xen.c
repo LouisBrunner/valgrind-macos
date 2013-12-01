@@ -581,6 +581,15 @@ PRE(domctl)
       PRE_XEN_DOMCTL_READ(createdomain, flags);
       break;
 
+   case VKI_XEN_DOMCTL_gethvmcontext:
+       /* Xen unconditionally reads the 'buffer' pointer */
+       __PRE_XEN_DOMCTL_READ(gethvmcontext, hvmcontext, buffer);
+       /* Xen only consumes 'size' if 'buffer' is non NULL. A NULL
+        * buffer is a request for the required size. */
+       if ( domctl->u.hvmcontext.buffer.p )
+           __PRE_XEN_DOMCTL_READ(gethvmcontext, hvmcontext, size);
+       break;
+
    case VKI_XEN_DOMCTL_max_mem:
       PRE_XEN_DOMCTL_READ(max_mem, max_memkb);
       break;
@@ -1076,6 +1085,16 @@ POST(domctl){
       POST_XEN_DOMCTL_WRITE(getvcpuinfo, cpu_time);
       POST_XEN_DOMCTL_WRITE(getvcpuinfo, cpu);
       break;
+
+   case VKI_XEN_DOMCTL_gethvmcontext:
+       /* Xen unconditionally writes size... */
+       __POST_XEN_DOMCTL_WRITE(gethvmcontext, hvmcontext, size);
+       /* ...but only writes to the buffer if it was non NULL */
+       if ( domctl->u.hvmcontext.buffer.p )
+           POST_MEM_WRITE((Addr)domctl->u.hvmcontext.buffer.p,
+                          sizeof(*domctl->u.hvmcontext.buffer.p)
+                          * domctl->u.hvmcontext.size);
+       break;
 
    case VKI_XEN_DOMCTL_scheduler_op:
       if ( domctl->u.scheduler_op.cmd == VKI_XEN_DOMCTL_SCHEDOP_getinfo ) {

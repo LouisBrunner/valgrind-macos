@@ -759,6 +759,10 @@ PRE(domctl)
        }
        break;
 
+   case VKI_XEN_DOMCTL_set_max_evtchn:
+      PRE_XEN_DOMCTL_READ(set_max_evtchn, max_port);
+      break;
+
    default:
       bad_subop(tid, layout, arrghs, status, flags,
                 "__HYPERVISOR_domctl", domctl->cmd);
@@ -1149,6 +1153,7 @@ POST(domctl){
    case VKI_XEN_DOMCTL_set_cpuid:
    case VKI_XEN_DOMCTL_unpausedomain:
    case VKI_XEN_DOMCTL_sethvmcontext:
+   case VKI_XEN_DOMCTL_set_max_evtchn:
       /* No output fields */
       break;
 

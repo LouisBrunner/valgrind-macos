@@ -401,6 +401,17 @@ PRE(sysctl) {
 	 PRE_XEN_SYSCTL_READ(getdomaininfolist_00000009, max_domains);
 	 PRE_XEN_SYSCTL_READ(getdomaininfolist_00000009, buffer);
 	 break;
+      case 0x0000000a:
+	 PRE_XEN_SYSCTL_READ(getdomaininfolist_0000000a, first_domain);
+	 PRE_XEN_SYSCTL_READ(getdomaininfolist_0000000a, max_domains);
+	 PRE_XEN_SYSCTL_READ(getdomaininfolist_0000000a, buffer);
+	 break;
+      default:
+          VG_(dmsg)("WARNING: XEN_SYSCTL_getdomaininfolist for sysctl version "
+                    "%"PRIx32" not implemented yet\n",
+                    sysctl->interface_version);
+          SET_STATUS_Failure(VKI_EINVAL);
+          return;
       }
       break;
 
@@ -800,6 +811,12 @@ POST(sysctl)
 	 POST_MEM_WRITE((Addr)sysctl->u.getdomaininfolist_00000009.buffer.p,
 			sizeof(*sysctl->u.getdomaininfolist_00000009.buffer.p)
 			* sysctl->u.getdomaininfolist_00000009.num_domains);
+	 break;
+      case 0x0000000a:
+	 POST_XEN_SYSCTL_WRITE(getdomaininfolist_0000000a, num_domains);
+	 POST_MEM_WRITE((Addr)sysctl->u.getdomaininfolist_0000000a.buffer.p,
+			sizeof(*sysctl->u.getdomaininfolist_0000000a.buffer.p)
+			* sysctl->u.getdomaininfolist_0000000a.num_domains);
 	 break;
       }
       break;

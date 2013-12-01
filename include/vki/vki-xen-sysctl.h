@@ -56,6 +56,15 @@ struct vki_xen_sysctl_getdomaininfolist_00000009 {
     vki_uint32_t              num_domains;
 };
 
+struct vki_xen_sysctl_getdomaininfolist_0000000a {
+    /* IN variables. */
+    vki_xen_domid_t           first_domain;
+    vki_uint32_t              max_domains;
+    VKI_XEN_GUEST_HANDLE_64(vki_xen_domctl_getdomaininfo_00000009_t) buffer;
+    /* OUT variables. */
+    vki_uint32_t              num_domains;
+};
+
 #define VKI_XEN_SYSCTL_CPUPOOL_OP_CREATE                1  /* C */
 #define VKI_XEN_SYSCTL_CPUPOOL_OP_DESTROY               2  /* D */
 #define VKI_XEN_SYSCTL_CPUPOOL_OP_INFO                  3  /* I */
@@ -139,6 +148,7 @@ struct vki_xen_sysctl {
         //struct vki_xen_sysctl_perfc_op          perfc_op;
         struct vki_xen_sysctl_getdomaininfolist_00000008 getdomaininfolist_00000008;
         struct vki_xen_sysctl_getdomaininfolist_00000009 getdomaininfolist_00000009;
+        struct vki_xen_sysctl_getdomaininfolist_0000000a getdomaininfolist_0000000a;
         //struct vki_xen_sysctl_debug_keys        debug_keys;
         //struct vki_xen_sysctl_getcpuinfo        getcpuinfo;
         //struct vki_xen_sysctl_availheap         availheap;

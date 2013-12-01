@@ -7,7 +7,7 @@ prog: sleepers
 args: 1 10000000 0 -S-S-S-S
 vgopts: --tool=none --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-nlsigvgdb
 stderr_filter: filter_stderr
-prereq: test -e gdb -a -f vgdb.ptraceinvoker
+prereq: test -e gdb -a -f vgdb.invoker
 progB: gdb
 argsB: --quiet -l 60 --nx ./sleepers
 stdinB: nlsigvgdb.stdinB.gdb

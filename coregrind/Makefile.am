@@ -59,7 +59,22 @@ valgrind_CFLAGS += -static
 valgrind_LDFLAGS   += -Wl,-z,noexecstack
 endif
 
+
 vgdb_SOURCES = vgdb.c
+if VGCONF_OS_IS_LINUX
+if VGCONF_PLATVARIANT_IS_ANDROID
+vgdb_SOURCES += vgdb-invoker-none.c
+else
+vgdb_SOURCES += vgdb-invoker-ptrace.c
+endif
+endif
+if VGCONF_OS_IS_DARWIN
+# Some darwin specific stuff is needed as ptrace is not
+# fully supported on MacOS. Till we find someone courageous
+# having access to Darwin, 'none' implementation is used.
+vgdb_SOURCES += vgdb-invoker-none.c
+endif
+
 vgdb_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
 vgdb_CFLAGS    = $(AM_CFLAGS_PRI)
 vgdb_CCASFLAGS = $(AM_CCASFLAGS_PRI)

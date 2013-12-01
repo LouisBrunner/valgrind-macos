@@ -165,7 +165,7 @@ will check after 100ms if the characters it has written have been read
 by valgrind. If not, vgdb will force the invocation of the gdbserver
 code inside the valgrind process.
 
-This forced invocation is implemented using the ptrace system call:
+On Linux, this forced invocation is implemented using the ptrace system call:
 using ptrace, vgdb will cause the valgrind process to call the
 gdbserver code.
 
@@ -272,10 +272,12 @@ Then adapt the set of functions needed to initialize the structure
 Optional but heavily recommended:
 To have a proper wake up of a Valgrind process with all threads
 blocked in a system call, some architecture specific code
-has to be done in vgdb.c : search for PTRACEINVOKER processor symbol
-to see what has to be completed.
+has to be done in vgdb-invoker-*.c.
+Typically, for a linux system supporting ptrace, you have to modify
+vgdb-invoker-ptrace.c.
 
-For Linux based platforms, all the ptrace calls should be ok.
+For Linux based platforms, all the ptrace calls in vgdb-invoker-ptrace.c
+should be ok.
 The only thing needed is the code needed to "push a dummy call" on the stack,
 i.e. assign the relevant registers in the struct user_regs_struct, and push
 values on the stack according to the ABI.
@@ -335,7 +337,6 @@ TODO and/or additional nice things to have
      in memory for the last (or selected?) error.
   v.break on fn calls/entry/exit + commands associated to it 
     (such as search leaks)?
-
 
 
 * currently jump(s) and inferior call(s) are somewhat dangerous

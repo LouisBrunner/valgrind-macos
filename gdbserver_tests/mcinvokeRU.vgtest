@@ -4,8 +4,8 @@ prog: sleepers
 args: 1 0 1000000000 B-B-B-B-
 vgopts: --tool=memcheck --vgdb=yes --vgdb-prefix=./vgdb-prefix-mcinvokeRU
 stderr_filter: filter_make_empty
-# as the Valgrind process is always busy, we do not need the vgdb.ptraceinvoker prereq.
-# We even disable ptrace invoker to avoid spurious attach error message
+# as the Valgrind process is always busy, we do not need the vgdb.invoker prereq.
+# We even disable invoker to avoid spurious attach error message
 # on kernels where ptrace is restricted.
 progB: invoker
 argsB: 10 --vgdb-prefix=./vgdb-prefix-mcinvokeRU --max-invoke-ms=0 --wait=60 -c v.wait 0

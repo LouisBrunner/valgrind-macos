@@ -24,7 +24,7 @@ To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
 
-
+326462  Refactor vgdb to isolate invoker stuff into separate module
 326983  Clear direction flag after tests on amd64.
 327238  Callgrind Assertion 'passed <= last_bb->cjmp_count' failed
 327837  dwz compressed alternate .debug_info and .debug_str not read correctly

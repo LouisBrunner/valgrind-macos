@@ -99,11 +99,11 @@ ln -f -s ../coregrind/vgdb gdbserver_tests/vgdb
 # if ptrace not implemented in vgdb or OS restricts the initial attach,
 # some tests would block for a loooonnnng time.
 if gdbserver_tests/vgdb --help 2>&1 |
-    grep -e 'ptrace invoker not implemented' > /dev/null
+    grep -e 'invoker not implemented' > /dev/null
 then
-    rm -f gdbserver_tests/vgdb.ptraceinvoker
+    rm -f gdbserver_tests/vgdb.invoker
 else
-    touch gdbserver_tests/vgdb.ptraceinvoker
+    touch gdbserver_tests/vgdb.invoker
 fi
 
 # cleanup the possibly big garbage previously collected output

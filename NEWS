@@ -4,6 +4,8 @@ Release 3.10.0 (?? ?????? 201?)
 
 * ================== PLATFORM CHANGES =================
 
+328205  Implement additional Xen hypercalls
+
 * ==================== TOOL CHANGES ====================
 
 * Helgrind:

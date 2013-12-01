@@ -163,6 +163,10 @@ struct vki_xen_domctl_nodeaffinity {
 typedef struct vki_xen_domctl_nodeaffinity vki_xen_domctl_nodeaffinity_t;
 DEFINE_VKI_XEN_GUEST_HANDLE(vki_xen_domctl_nodeaffinity_t);
 
+struct vki_xen_domctl_getpageframeinfo3 {
+    vki_xen_uint64_aligned_t num; /* IN */
+    VKI_XEN_GUEST_HANDLE_64(vki_xen_pfn_t) array; /* IN/OUT */
+};
 
 struct vki_xen_domctl_vcpuaffinity {
     vki_uint32_t  vcpu;              /* IN */
@@ -278,7 +282,7 @@ struct vki_xen_domctl {
         //struct vki_xen_domctl_getmemlist        getmemlist;
         //struct vki_xen_domctl_getpageframeinfo  getpageframeinfo;
         //struct vki_xen_domctl_getpageframeinfo2 getpageframeinfo2;
-        //struct vki_xen_domctl_getpageframeinfo3 getpageframeinfo3;
+        struct vki_xen_domctl_getpageframeinfo3 getpageframeinfo3;
         struct vki_xen_domctl_nodeaffinity      nodeaffinity;
         struct vki_xen_domctl_vcpuaffinity      vcpuaffinity;
         //struct vki_xen_domctl_shadow_op         shadow_op;

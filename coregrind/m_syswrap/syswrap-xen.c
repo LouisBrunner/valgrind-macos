@@ -673,6 +673,14 @@ PRE(domctl)
                    (Addr)&domctl->u.cpuid, sizeof(domctl->u.cpuid));
       break;
 
+   case VKI_XEN_DOMCTL_getpageframeinfo3:
+       PRE_XEN_DOMCTL_READ(getpageframeinfo3, num);
+       PRE_XEN_DOMCTL_READ(getpageframeinfo3, array.p);
+       PRE_MEM_READ("XEN_DOMCTL_getpageframeinfo3 *u.getpageframeinfo3.array.p",
+                    (Addr)domctl->u.getpageframeinfo3.array.p,
+                    domctl->u.getpageframeinfo3.num * sizeof(vki_xen_pfn_t));
+       break;
+
    case VKI_XEN_DOMCTL_getvcpuextstate:
       __PRE_XEN_DOMCTL_READ(getvcpuextstate, vcpuextstate, vcpu);
       __PRE_XEN_DOMCTL_READ(getvcpuextstate, vcpuextstate, xfeature_mask);
@@ -1181,6 +1189,12 @@ POST(domctl){
    case VKI_XEN_DOMCTL_getvcpucontext:
       __POST_XEN_DOMCTL_WRITE(getvcpucontext, vcpucontext, ctxt.p);
       break;
+
+   case VKI_XEN_DOMCTL_getpageframeinfo3:
+       POST_MEM_WRITE((Addr)domctl->u.getpageframeinfo3.array.p,
+                      domctl->u.getpageframeinfo3.num * sizeof(vki_xen_pfn_t));
+       break;
+
 
    case VKI_XEN_DOMCTL_getvcpuextstate:
       __POST_XEN_DOMCTL_WRITE(getvcpuextstate, vcpuextstate, xfeature_mask);

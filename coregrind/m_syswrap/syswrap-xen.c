@@ -172,6 +172,22 @@ PRE(memory_op)
       break;
    }
 
+   case VKI_XENMEM_add_to_physmap: {
+       struct vki_xen_add_to_physmap *arg =
+           (struct vki_xen_add_to_physmap *)ARG2;
+       PRE_MEM_READ("XENMEM_add_to_physmap domid",
+                    (Addr)&arg->domid, sizeof(arg->domid));
+       PRE_MEM_READ("XENMEM_add_to_physmap size",
+                    (Addr)&arg->size, sizeof(arg->size));
+       PRE_MEM_READ("XENMEM_add_to_physmap space",
+                    (Addr)&arg->space, sizeof(arg->space));
+       PRE_MEM_READ("XENMEM_add_to_physmap idx",
+                    (Addr)&arg->idx, sizeof(arg->idx));
+       PRE_MEM_READ("XENMEM_add_to_physmap gpfn",
+                    (Addr)&arg->gpfn, sizeof(arg->gpfn));
+       break;
+   };
+
    case VKI_XENMEM_get_sharing_freed_pages:
    case VKI_XENMEM_get_sharing_shared_pages:
       break;
@@ -772,6 +788,13 @@ POST(memory_op)
        POST_MEM_WRITE((Addr)arg->extent_start.p,
                       sizeof(vki_xen_pfn_t) * arg->nr_extents);
        break;
+   }
+
+   case VKI_XENMEM_add_to_physmap: {
+       struct vki_xen_add_to_physmap *arg =
+           (struct vki_xen_add_to_physmap *)ARG2;
+       if (arg->space == VKI_XENMAPSPACE_gmfn_range)
+           POST_MEM_WRITE(ARG2, sizeof(*arg));
    }
 
    case VKI_XENMEM_get_sharing_freed_pages:

@@ -46,6 +46,21 @@ struct vki_xen_machphys_mfn_list {
     unsigned int nr_extents; /* OUT */
 };
 
+struct vki_xen_add_to_physmap {
+    vki_xen_domid_t domid;
+    vki_uint16_t size;
+
+#define VKI_XENMAPSPACE_shared_info  0
+#define VKI_XENMAPSPACE_grant_table  1
+#define VKI_XENMAPSPACE_gmfn         2
+#define VKI_XENMAPSPACE_gmfn_range   3
+#define VKI_XENMAPSPACE_gmfn_foreign 4
+
+    unsigned int space;
+    vki_xen_ulong_t idx;
+    vki_xen_pfn_t gpfn;
+};
+
 #endif // __VKI_XEN_MEMORY_H
 
 /*--------------------------------------------------------------------*/

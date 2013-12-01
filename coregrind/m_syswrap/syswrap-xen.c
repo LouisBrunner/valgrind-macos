@@ -433,6 +433,18 @@ PRE(sysctl) {
       __PRE_XEN_SYSCTL_READ(_sysctl, _sysctl, _field)
 
    switch (sysctl->cmd) {
+   case VKI_XEN_SYSCTL_readconsole:
+       /* These are all unconditionally read */
+       PRE_XEN_SYSCTL_READ(readconsole, clear);
+       PRE_XEN_SYSCTL_READ(readconsole, incremental);
+       PRE_XEN_SYSCTL_READ(readconsole, buffer);
+       PRE_XEN_SYSCTL_READ(readconsole, count);
+
+       /* 'index' only read if 'incremental' is nonzero */
+       if (sysctl->u.readconsole.incremental)
+           PRE_XEN_SYSCTL_READ(readconsole, index);
+       break;
+
    case VKI_XEN_SYSCTL_getdomaininfolist:
       switch (sysctl->interface_version)
       {
@@ -984,6 +996,11 @@ POST(sysctl)
       __POST_XEN_SYSCTL_WRITE(_sysctl, _sysctl, _field)
 
    switch (sysctl->cmd) {
+   case VKI_XEN_SYSCTL_readconsole:
+       POST_MEM_WRITE((Addr)sysctl->u.readconsole.buffer.p,
+                      sysctl->u.readconsole.count * sizeof(char));
+       break;
+
    case VKI_XEN_SYSCTL_getdomaininfolist:
       switch (sysctl->interface_version)
       {

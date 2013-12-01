@@ -38,6 +38,27 @@
 #define VKI_XEN_SYSCTL_scheduler_op                  19
 #define VKI_XEN_SYSCTL_coverage_op                   20
 
+struct vki_xen_sysctl_readconsole {
+    /* IN */
+    vki_uint8_t clear;
+    vki_uint8_t incremental;
+
+    vki_uint8_t pad0, pad1;
+
+    /*
+     * IN:  Start index for consumption if @incremental.
+     * OUT: End index after consuming from the console.
+     */
+    vki_uint32_t index;
+    VKI_XEN_GUEST_HANDLE_64(char) buffer; /* IN */
+
+    /*
+     * IN:  size of buffer.
+     * OUT: bytes written into buffer.
+     */
+    vki_uint32_t count;
+};
+
 struct vki_xen_sysctl_getdomaininfolist_00000008 {
     /* IN variables. */
     vki_xen_domid_t           first_domain;
@@ -138,7 +159,7 @@ struct vki_xen_sysctl {
     vki_uint32_t cmd;
     vki_uint32_t interface_version; /* XEN_SYSCTL_INTERFACE_VERSION */
     union {
-        //struct vki_xen_sysctl_readconsole       readconsole;
+        struct vki_xen_sysctl_readconsole       readconsole;
         //struct vki_xen_sysctl_tbuf_op           tbuf_op;
         struct vki_xen_sysctl_physinfo_00000008 physinfo_00000008;
         struct vki_xen_sysctl_physinfo_0000000a physinfo_0000000a;

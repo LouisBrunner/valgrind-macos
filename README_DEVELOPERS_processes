@@ -1,0 +1,94 @@
+This file documents various "processes" that are used by Valgrind
+developers for development and release activities.
+This file contains one section for each process.
+A summary of each process is given here. Each process is described
+more in details afterwards.
+
+
+* Update of the NEWS file: NEWS describes fixed bugs and new features.
+  It is updated and committed together with the code fixing the bug/implementing
+  the feature.
+
+* Major release production: 
+  See docs/internals/release-HOWTO.txt (currently a bit out of date)
+
+* Minor/correction release production: TBD
+
+
+Processes detailed descriptions:
+
+Update of the NEWS file.
+========================
+  The NEWS file gives for each release:
+    - the list of fixed bugs,
+    - a short description of each functional change,
+    - a short description of each technical change impacting the users.
+  
+  The update of the NEWS file should be committed together with the
+  code change (or as part of the last committed change) that fixes the
+  bug or implements the new feature/technical change.
+  The documentation (e.g. user manual) should also be committed as part of
+  the code change.
+
+  Fixing a bug
+  ------------
+  When fixing a bug, add a line in the 'FIXED BUGS' section of
+  the NEWS file.  Keep the list of bugs sorted by bugzilla entry number.
+
+  Once you have commit the change, update the bug status in bugzilla,
+  adding in the comment the revision number of the commit fixing the bug.
+
+  If a bug is not entered in bugzilla (not encouraged), use "n-i-bz"
+  and add the bug line at the end of the bug list.
+
+  The file docs/internals/X_Y_BUGSTATUS.txt (where X_Y is the last
+  major release e.g. 3_9) contains information/statuses for some bugs.
+  If a bug is fixed, remove the (possible) bug info from this file.
+
+  Implementing a change
+  ---------------------
+  When implementing a functional or 'user impacting' technical change,
+  add a short description of the change in the relevant sub-section
+  (e.g. TOOL CHANGES, PLATFORM CHANGES, ...).
+
+
+  Some special cases:
+  -------------------
+  Some bugs or changes only touch the VEX SVN repository, so it is not
+  possible to commit the NEWS change together with the code changes.
+  In such a case, first commit the VEX change. Then just after, commit
+  the NEWS change. In the bugzilla status, reference (at least) the Valgrind
+  revision number.
+
+  Some changes or bug fixes are very big and might be implemented over
+  a significant period. In such a case, update the NEWS as part of the
+  final commit.
+  If relevant, you might already update the NEWS file as part of
+  earlier commits, using the word 'PARTIAL' to indicate that the change or
+  bug fix is not complete yet.
+
+  Some bugs are reported more than once in bugzilla.
+  Also document in NEWS that such duplicated bugs have been fixed, using a line
+  such as:
+     308333 == 307106
+  to indicate that the bug 308333 is a duplicate of 307106, and was thus
+  fixed in the commit that fixed 307106.
+  Change also the status of the duplicated bug  in bugzilla,
+  indicating in the comment the commit revision that fixed the 'master bug'.
+
+
+
+Minor/correction release:
+=========================
+Describe here how to do changes and bug fixed in a minor (correction) release
+and how/when to merge the branch to the trunk.
+
+Proposal to be discussed:
+When a bug is fixed on the branch, the NEWS file is updated on the branch
+(i.e. a 3.9.1 section is created if needed).
+
+When often to merge the branch to trunk ?
+  after each fix ?
+  just after the correction release is produced ?
+
+How is the branch merged to the trunk ?

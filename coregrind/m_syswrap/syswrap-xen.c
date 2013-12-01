@@ -696,6 +696,49 @@ PRE(domctl)
       __PRE_XEN_DOMCTL_READ(getvcpuextstate, vcpuextstate, buffer);
       break;
 
+   case VKI_XEN_DOMCTL_shadow_op:
+       PRE_XEN_DOMCTL_READ(shadow_op, op);
+
+       switch(domctl->u.shadow_op.op)
+       {
+       case VKI_XEN_DOMCTL_SHADOW_OP_OFF:
+           /* No further inputs */
+           break;
+
+       case VKI_XEN_DOMCTL_SHADOW_OP_ENABLE:
+           PRE_XEN_DOMCTL_READ(shadow_op, mode);
+           switch(domctl->u.shadow_op.mode)
+           {
+           case XEN_DOMCTL_SHADOW_ENABLE_LOG_DIRTY:
+               goto domctl_shadow_op_enable_logdirty;
+
+
+           default:
+               bad_subop(tid, layout, arrghs, status, flags,
+                         "__HYPERVISOR_domctl shadowop mode",
+                         domctl->u.shadow_op.mode);
+               break;
+           }
+
+       case VKI_XEN_DOMCTL_SHADOW_OP_ENABLE_LOGDIRTY:
+       domctl_shadow_op_enable_logdirty:
+           /* No further inputs */
+           break;
+
+       case VKI_XEN_DOMCTL_SHADOW_OP_CLEAN:
+       case VKI_XEN_DOMCTL_SHADOW_OP_PEEK:
+           PRE_XEN_DOMCTL_READ(shadow_op, dirty_bitmap);
+           PRE_XEN_DOMCTL_READ(shadow_op, pages);
+           break;
+
+       default:
+           bad_subop(tid, layout, arrghs, status, flags,
+                     "__HYPERVISOR_domctl shadow(10)",
+                     domctl->u.shadow_op.op);
+           break;
+       }
+       break;
+
    default:
       bad_subop(tid, layout, arrghs, status, flags,
                 "__HYPERVISOR_domctl", domctl->cmd);
@@ -1212,6 +1255,27 @@ POST(domctl){
                      domctl->u.vcpuextstate.size);
       break;
 
+   case VKI_XEN_DOMCTL_shadow_op:
+       switch(domctl->u.shadow_op.op)
+       {
+       case VKI_XEN_DOMCTL_SHADOW_OP_OFF:
+           /* No outputs */
+           break;
+
+       case VKI_XEN_DOMCTL_SHADOW_OP_CLEAN:
+       case VKI_XEN_DOMCTL_SHADOW_OP_PEEK:
+           POST_XEN_DOMCTL_WRITE(shadow_op, pages);
+           POST_XEN_DOMCTL_WRITE(shadow_op, stats.fault_count);
+           POST_XEN_DOMCTL_WRITE(shadow_op, stats.dirty_count);
+           if(domctl->u.shadow_op.dirty_bitmap.p)
+               POST_MEM_WRITE((Addr)domctl->u.shadow_op.dirty_bitmap.p,
+                              domctl->u.shadow_op.pages * sizeof(vki_uint8_t));
+           break;
+
+       default:
+           break;
+       }
+       break;
    }
 #undef POST_XEN_DOMCTL_WRITE
 #undef __POST_XEN_DOMCTL_WRITE

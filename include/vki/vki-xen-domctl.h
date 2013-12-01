@@ -173,6 +173,40 @@ struct vki_xen_domctl_vcpuaffinity {
     struct vki_xenctl_bitmap cpumap; /* IN/OUT */
 };
 
+struct vki_xen_domctl_shadow_op_stats {
+    vki_uint32_t fault_count;
+    vki_uint32_t dirty_count;
+};
+
+/* vki_xen_domctl_shadow_op.op is an utter mess for compatibily reasons. */
+
+struct vki_xen_domctl_shadow_op {
+    vki_uint32_t op; /* IN */
+
+#define VKI_XEN_DOMCTL_SHADOW_OP_OFF               0
+#define VKI_XEN_DOMCTL_SHADOW_OP_ENABLE           32
+#define VKI_XEN_DOMCTL_SHADOW_OP_CLEAN            11
+#define VKI_XEN_DOMCTL_SHADOW_OP_PEEK             12
+#define VKI_XEN_DOMCTL_SHADOW_OP_GET_ALLOCATION   30
+#define VKI_XEN_DOMCTL_SHADOW_OP_SET_ALLOCATION   31
+
+#define VKI_XEN_DOMCTL_SHADOW_OP_ENABLE_TEST       1
+#define VKI_XEN_DOMCTL_SHADOW_OP_ENABLE_LOGDIRTY   2
+#define VKI_XEN_DOMCTL_SHADOW_OP_ENABLE_TRANSLATE  3
+
+    vki_uint32_t mode;
+
+#define XEN_DOMCTL_SHADOW_ENABLE_REFCOUNT  (1 << 1)
+#define XEN_DOMCTL_SHADOW_ENABLE_LOG_DIRTY (1 << 2)
+#define XEN_DOMCTL_SHADOW_ENABLE_TRANSLATE (1 << 3)
+#define XEN_DOMCTL_SHADOW_ENABLE_EXTERNAL  (1 << 4)
+
+    vki_uint32_t mb;
+    VKI_XEN_GUEST_HANDLE_64(vki_uint8) dirty_bitmap;
+    vki_xen_uint64_aligned_t pages;
+    struct vki_xen_domctl_shadow_op_stats stats;
+};
+
 struct vki_xen_domctl_max_mem {
     /* IN variables. */
     vki_xen_uint64_aligned_t max_memkb;
@@ -285,7 +319,7 @@ struct vki_xen_domctl {
         struct vki_xen_domctl_getpageframeinfo3 getpageframeinfo3;
         struct vki_xen_domctl_nodeaffinity      nodeaffinity;
         struct vki_xen_domctl_vcpuaffinity      vcpuaffinity;
-        //struct vki_xen_domctl_shadow_op         shadow_op;
+        struct vki_xen_domctl_shadow_op         shadow_op;
         struct vki_xen_domctl_max_mem           max_mem;
         struct vki_xen_domctl_vcpucontext       vcpucontext;
         struct vki_xen_domctl_getvcpuinfo       getvcpuinfo;

@@ -98,6 +98,11 @@ PRE(memory_op)
        /* No inputs */
        break;
 
+   case VKI_XENMEM_maximum_gpfn:
+       PRE_MEM_READ("XENMEM_maximum_gpfn domid",
+                    (Addr)ARG2, sizeof(vki_xen_domid_t));
+       break;
+
    case VKI_XENMEM_set_memory_map: {
       struct vki_xen_foreign_memory_map *arg =
 	      (struct vki_xen_foreign_memory_map *)ARG2;
@@ -737,6 +742,7 @@ POST(memory_op)
    case VKI_XENMEM_set_memory_map:
    case VKI_XENMEM_decrease_reservation:
    case VKI_XENMEM_claim_pages:
+   case VKI_XENMEM_maximum_gpfn:
       /* No outputs */
       break;
    case VKI_XENMEM_increase_reservation:

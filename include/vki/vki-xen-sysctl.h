@@ -104,6 +104,12 @@ struct vki_xen_sysctl_cpupool_op {
     struct vki_xenctl_bitmap cpumap; /*     OUT: IF */
 };
 
+struct vki_xen_sysctl_debug_keys {
+    /* IN variables. */
+    VKI_XEN_GUEST_HANDLE_64(char) keys;
+    vki_uint32_t nr_keys;
+};
+
 struct vki_xen_sysctl_topologyinfo {
     vki_uint32_t max_cpu_index;
     VKI_XEN_GUEST_HANDLE_64(vki_uint32) cpu_to_core;
@@ -170,7 +176,7 @@ struct vki_xen_sysctl {
         struct vki_xen_sysctl_getdomaininfolist_00000008 getdomaininfolist_00000008;
         struct vki_xen_sysctl_getdomaininfolist_00000009 getdomaininfolist_00000009;
         struct vki_xen_sysctl_getdomaininfolist_0000000a getdomaininfolist_0000000a;
-        //struct vki_xen_sysctl_debug_keys        debug_keys;
+        struct vki_xen_sysctl_debug_keys        debug_keys;
         //struct vki_xen_sysctl_getcpuinfo        getcpuinfo;
         //struct vki_xen_sysctl_availheap         availheap;
         //struct vki_xen_sysctl_get_pmstat        get_pmstat;

@@ -472,6 +472,14 @@ PRE(sysctl) {
       }
       break;
 
+   case VKI_XEN_SYSCTL_debug_keys:
+       PRE_XEN_SYSCTL_READ(debug_keys, keys);
+       PRE_XEN_SYSCTL_READ(debug_keys, nr_keys);
+       PRE_MEM_READ("XEN_SYSCTL_debug_keys *keys",
+                    (Addr)sysctl->u.debug_keys.keys.p,
+                    sysctl->u.debug_keys.nr_keys * sizeof(char));
+       break;
+
    case VKI_XEN_SYSCTL_sched_id:
        /* No inputs */
        break;
@@ -1100,6 +1108,10 @@ POST(sysctl)
       POST_MEM_WRITE((Addr)sysctl->u.numainfo.node_to_node_distance.p,
                      sizeof(uint32_t) * sysctl->u.numainfo.max_node_index);
       break;
+
+   /* No outputs */
+   case VKI_XEN_SYSCTL_debug_keys:
+       break;
    }
 #undef POST_XEN_SYSCTL_WRITE
 #undef __POST_XEN_SYSCTL_WRITE

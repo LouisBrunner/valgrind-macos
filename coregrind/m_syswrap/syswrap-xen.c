@@ -103,6 +103,16 @@ PRE(memory_op)
                     (Addr)ARG2, sizeof(vki_xen_domid_t));
        break;
 
+   case VKI_XENMEM_machphys_mfn_list: {
+       struct vki_xen_machphys_mfn_list *arg =
+           (struct vki_xen_machphys_mfn_list *)ARG2;
+       PRE_MEM_READ("XENMEM_machphys_mfn_list max_extents",
+                    (Addr)&arg->max_extents, sizeof(arg->max_extents));
+       PRE_MEM_READ("XENMEM_machphys_mfn_list extent_start",
+                    (Addr)&arg->extent_start, sizeof(arg->extent_start));
+       break;
+   }
+
    case VKI_XENMEM_set_memory_map: {
       struct vki_xen_foreign_memory_map *arg =
 	      (struct vki_xen_foreign_memory_map *)ARG2;
@@ -753,6 +763,15 @@ POST(memory_op)
       POST_MEM_WRITE((Addr)memory_reservation->extent_start.p,
                      sizeof(vki_xen_pfn_t) * memory_reservation->nr_extents);
       break;
+   }
+
+   case VKI_XENMEM_machphys_mfn_list: {
+       struct vki_xen_machphys_mfn_list *arg =
+           (struct vki_xen_machphys_mfn_list *)ARG2;
+       POST_MEM_WRITE((Addr)&arg->nr_extents, sizeof(arg->nr_extents));
+       POST_MEM_WRITE((Addr)arg->extent_start.p,
+                      sizeof(vki_xen_pfn_t) * arg->nr_extents);
+       break;
    }
 
    case VKI_XENMEM_get_sharing_freed_pages:

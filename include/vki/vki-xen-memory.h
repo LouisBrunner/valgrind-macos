@@ -40,6 +40,12 @@ struct xen_memory_reservation {
     vki_xen_domid_t domid;
 };
 
+struct vki_xen_machphys_mfn_list {
+    unsigned int max_extents; /* IN */
+    VKI_XEN_GUEST_HANDLE(vki_xen_pfn_t) extent_start; /* OUT */
+    unsigned int nr_extents; /* OUT */
+};
+
 #endif // __VKI_XEN_MEMORY_H
 
 /*--------------------------------------------------------------------*/

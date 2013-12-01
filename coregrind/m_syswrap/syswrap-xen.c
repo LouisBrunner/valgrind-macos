@@ -188,6 +188,15 @@ PRE(memory_op)
        break;
    };
 
+   case VKI_XENMEM_remove_from_physmap: {
+       struct vki_xen_remove_from_physmap *arg =
+           (struct vki_xen_remove_from_physmap *)ARG2;
+       PRE_MEM_READ("XENMEM_remove_from_physmap domid",
+                    (Addr)&arg->domid, sizeof(arg->domid));
+       PRE_MEM_READ("XENMEM_remove_from_physmap gpfn",
+                    (Addr)&arg->gpfn, sizeof(arg->gpfn));
+   }
+
    case VKI_XENMEM_get_sharing_freed_pages:
    case VKI_XENMEM_get_sharing_shared_pages:
       break;
@@ -769,6 +778,7 @@ POST(memory_op)
    case VKI_XENMEM_decrease_reservation:
    case VKI_XENMEM_claim_pages:
    case VKI_XENMEM_maximum_gpfn:
+   case VKI_XENMEM_remove_from_physmap:
       /* No outputs */
       break;
    case VKI_XENMEM_increase_reservation:

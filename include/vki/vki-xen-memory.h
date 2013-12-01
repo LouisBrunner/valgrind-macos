@@ -61,6 +61,11 @@ struct vki_xen_add_to_physmap {
     vki_xen_pfn_t gpfn;
 };
 
+struct vki_xen_remove_from_physmap {
+    vki_xen_domid_t domid;
+    vki_xen_pfn_t gpfn;
+};
+
 #endif // __VKI_XEN_MEMORY_H
 
 /*--------------------------------------------------------------------*/

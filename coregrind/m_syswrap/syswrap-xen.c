@@ -93,6 +93,11 @@ PRE(memory_op)
    PRINT("__HYPERVISOR_memory_op ( %ld, %lx )", ARG1, ARG2);
 
    switch (ARG1) {
+
+   case VKI_XENMEM_maximum_ram_page:
+       /* No inputs */
+       break;
+
    case VKI_XENMEM_set_memory_map: {
       struct vki_xen_foreign_memory_map *arg =
 	      (struct vki_xen_foreign_memory_map *)ARG2;
@@ -728,6 +733,7 @@ PRE(tmem_op)
 POST(memory_op)
 {
    switch (ARG1) {
+   case VKI_XENMEM_maximum_ram_page:
    case VKI_XENMEM_set_memory_map:
    case VKI_XENMEM_decrease_reservation:
    case VKI_XENMEM_claim_pages:

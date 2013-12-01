@@ -54,6 +54,7 @@
 #include "pub_tool_vki.h"       // VKI_PAGE_SIZE
 #include "pub_tool_libcproc.h"  // VG_(atfork)
 #include "pub_tool_aspacemgr.h" // VG_(am_is_valid_for_client)
+#include "pub_tool_poolalloc.h"
 
 #include "hg_basics.h"
 #include "hg_wordset.h"
@@ -3943,14 +3944,17 @@ typedef
    (obviously). */
 static VgHashTable hg_mallocmeta_table = NULL;
 
+/* MallocMeta are small elements. We use a pool to avoid
+   the overhead of malloc for each MallocMeta. */
+static PoolAlloc *MallocMeta_poolalloc = NULL;
 
 static MallocMeta* new_MallocMeta ( void ) {
-   MallocMeta* md = HG_(zalloc)( "hg.new_MallocMeta.1", sizeof(MallocMeta) );
-   tl_assert(md);
+   MallocMeta* md = VG_(allocEltPA) (MallocMeta_poolalloc);
+   VG_(memset)(md, 0, sizeof(MallocMeta));
    return md;
 }
 static void delete_MallocMeta ( MallocMeta* md ) {
-   HG_(free)(md);
+   VG_(freeEltPA)(MallocMeta_poolalloc, md);
 }
 
 
@@ -5358,6 +5362,12 @@ static void hg_pre_clo_init ( void )
    tl_assert( sizeof(UWord) == sizeof(Addr) );
    hg_mallocmeta_table
       = VG_(HT_construct)( "hg_malloc_metadata_table" );
+
+   MallocMeta_poolalloc = VG_(newPA) ( sizeof(MallocMeta),
+                                       1000,
+                                       HG_(zalloc),
+                                       "hg_malloc_metadata_pool",
+                                       HG_(free));
 
    // add a callback to clean up on (threaded) fork.
    VG_(atfork)(NULL/*pre*/, NULL/*parent*/, evh__atfork_child/*child*/);

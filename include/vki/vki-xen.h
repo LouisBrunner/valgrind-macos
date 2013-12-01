@@ -58,6 +58,7 @@ typedef vki_uint16_t vki_xen_domid_t;
 #endif
 
 DEFINE_VKI_XEN_GUEST_HANDLE(void);
+DEFINE_VKI_XEN_GUEST_HANDLE(char);
 DEFINE_VKI_XEN_GUEST_HANDLE(vki_xen_pfn_t);
 
 __DEFINE_VKI_XEN_GUEST_HANDLE(vki_ulong, unsigned long);
@@ -84,6 +85,7 @@ struct vki_xenctl_bitmap {
 #include <vki/vki-xen-gnttab.h>
 #include <vki/vki-xen-version.h>
 #include <vki/vki-xen-hvm.h>
+#include <vki/vki-xen-tmem.h>
 
 #endif // __VKI_XEN_H
 

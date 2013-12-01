@@ -670,6 +670,61 @@ PRE(hvm_op)
 #undef PRE_XEN_HVMOP_READ
 }
 
+PRE(tmem_op)
+{
+    struct vki_xen_tmem_op *tmem = (struct vki_xen_tmem_op *)ARG1;
+
+    PRINT("__HYPERVISOR_tmem_op ( %d )", tmem->cmd);
+
+    /* Common part for xen_tmem_op:
+     *    vki_uint32_t cmd;
+     */
+    PRE_MEM_READ("__HYPERVISOR_tmem_op cmd", ARG1, sizeof(vki_uint32_t));
+
+
+#define __PRE_XEN_TMEMOP_READ(_tmem, _union, _field)                    \
+    PRE_MEM_READ("XEN_tmem_op_" #_tmem " u." #_union "." #_field,       \
+                 (Addr)&tmem->u._union._field,                          \
+                 sizeof(tmem->u._union._field))
+#define PRE_XEN_TMEMOP_READ(_tmem, _field)                              \
+    __PRE_XEN_TMEMOP_READ(_tmem, _tmem, _field)
+
+    switch(tmem->cmd) {
+
+    case VKI_XEN_TMEM_control:
+
+        /* Common part for control hypercall:
+         *    vki_int32_t pool_id;
+         *    vki_uint32_t subop;
+         */
+        PRE_MEM_READ("__HYPERVISOR_tmem_op pool_id",
+                     (Addr)&tmem->pool_id, sizeof(&tmem->pool_id));
+        PRE_XEN_TMEMOP_READ(ctrl, subop);
+
+        switch (tmem->u.ctrl.subop) {
+
+        case VKI_XEN_TMEMC_save_begin:
+            PRE_XEN_TMEMOP_READ(ctrl, cli_id);
+            PRE_XEN_TMEMOP_READ(ctrl, arg1);
+            PRE_XEN_TMEMOP_READ(ctrl, buf);
+            break;
+
+        default:
+            bad_subop(tid, layout, arrghs, status, flags,
+                      "__HYPERVISOR_tmem_op_control", tmem->u.ctrl.subop);
+        }
+
+        break;
+
+    default:
+        bad_subop(tid, layout, arrghs, status, flags,
+                  "__HYPERVISOR_tmem_op", ARG1);
+    }
+
+#undef PRE_XEN_TMEMOP_READ
+#undef __PRE_XEN_TMEMOP_READ
+}
+
 POST(memory_op)
 {
    switch (ARG1) {
@@ -1080,6 +1135,24 @@ POST(hvm_op)
 #undef POST_XEN_HVMOP_WRITE
 }
 
+POST(tmem_op)
+{
+    struct vki_xen_tmem_op *tmem = (struct vki_xen_tmem_op *)ARG1;
+
+    switch(tmem->cmd) {
+
+    case VKI_XEN_TMEM_control:
+
+        switch(tmem->u.ctrl.subop) {
+            /* No outputs */
+            case VKI_XEN_TMEMC_save_begin:
+                break;
+        }
+
+        break;
+    }
+}
+
 typedef
    struct {
       SyscallTableEntry entry;
@@ -1140,7 +1213,7 @@ static XenHypercallTableEntry hypercall_table[] = {
    HYPXY(__VKI_XEN_sysctl,                  sysctl,            1), // 35
    HYPXY(__VKI_XEN_domctl,                  domctl,            1), // 36
    //    __VKI_XEN_kexec_op                                        // 37
-   //    __VKI_XEN_tmem_op                                         // 38
+   HYPXY(__VKI_XEN_tmem_op,                 tmem_op,           1), // 38
 };
 
 static void bad_before ( ThreadId              tid,

@@ -1,4 +1,4 @@
-/* 
+/*
    Check that a fault signal handler gets the expected info
  */
 #include <signal.h>

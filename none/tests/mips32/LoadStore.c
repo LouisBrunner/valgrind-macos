@@ -80,7 +80,7 @@ void ppMem(unsigned int* m, int len)
       m[i+1] = 0;
       m[i+2] = 0;
       m[i+3] = 0;
-      if (i == 2) 
+      if (i == 2)
       {
          m[i] = 0xffffffff;
          m[i+1] = 0;

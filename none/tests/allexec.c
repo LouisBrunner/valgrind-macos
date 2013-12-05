@@ -33,7 +33,7 @@ void test_allexec (char *exec)
    these links points to the same executable to ensure this test works
    everywhere the same.
    No arguments or more arguments means just print its args. */
-int main(int argc, char **argv, char **envp) 
+int main(int argc, char **argv, char **envp)
 {
    if ( (argc == 2) && (strcmp (argv[1], "exec") == 0)) {
       S("%s will exec ./allexec32\n", argv[0]);

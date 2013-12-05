@@ -364,7 +364,7 @@ int main()
    TESTINST1(64);
    ppMem(mem1, 16);
 
-#if (__mips==32) && (__mips_isa_rev>=2) 
+#if (__mips==32) && (__mips_isa_rev>=2)
    printf("SDXC1\n");
    TESTINST1a(0);
    TESTINST1a(8);
@@ -390,7 +390,7 @@ int main()
    TESTINST2(64);
    ppMemF(mem1f, 16);
 
-#if (__mips==32) && (__mips_isa_rev>=2) 
+#if (__mips==32) && (__mips_isa_rev>=2)
    printf("SWXC1\n");
    TESTINST2a(0);
    TESTINST2a(8);

@@ -241,7 +241,7 @@
         out, RSval); \
 }
 
-int main() 
+int main()
 {
    printf("b \n");
    TESTINST1(0, v0);

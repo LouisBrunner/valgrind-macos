@@ -128,21 +128,21 @@ movf $t0, $t1, $fcc4 :: out: 0x19, RDval: 0xffffffff, RSval: 0x19, cc: 0
 movf $t0, $t1, $fcc4 :: out: 0x0, RDval: 0xffffffff, RSval: 0x0, cc: 1
 movf $t0, $t1, $fcc4 :: out: 0x42, RDval: 0xffffffff, RSval: 0x42, cc: 0
 MOVF.S
-movf.s $f4, $f6, $fcc0 :: out: -45786.476562, cc: 1
-movf.s $f4, $f6, $fcc0 :: out: -45786.476562, cc: 1
-movf.s $f4, $f6, $fcc0 :: out: -45786.476562, cc: 1
-movf.s $f4, $f6, $fcc0 :: out: -45786.476562, cc: 1
-movf.s $f4, $f6, $fcc0 :: out: -45786.476562, cc: 1
-movf.s $f4, $f6, $fcc0 :: out: -45786.476562, cc: 1
-movf.s $f4, $f6, $fcc0 :: out: -45786.476562, cc: 1
-movf.s $f4, $f6, $fcc0 :: out: -45786.476562, cc: 1
-movf.s $f4, $f6, $fcc0 :: out: -45786.476562, cc: 1
-movf.s $f4, $f6, $fcc0 :: out: -45786.476562, cc: 1
-movf.s $f4, $f6, $fcc0 :: out: -45786.476562, cc: 1
-movf.s $f4, $f6, $fcc0 :: out: -45786.476562, cc: 1
-movf.s $f4, $f6, $fcc0 :: out: -45786.476562, cc: 1
-movf.s $f4, $f6, $fcc0 :: out: -45786.476562, cc: 1
-movf.s $f4, $f6, $fcc0 :: out: -45786.476562, cc: 1
+movf.s $f4, $f6, $fcc0 :: out: 456.248962, cc: 1
+movf.s $f4, $f6, $fcc0 :: out: 456.248962, cc: 1
+movf.s $f4, $f6, $fcc0 :: out: 456.248962, cc: 1
+movf.s $f4, $f6, $fcc0 :: out: 456.248962, cc: 1
+movf.s $f4, $f6, $fcc0 :: out: 456.248962, cc: 1
+movf.s $f4, $f6, $fcc0 :: out: 456.248962, cc: 1
+movf.s $f4, $f6, $fcc0 :: out: 456.248962, cc: 1
+movf.s $f4, $f6, $fcc0 :: out: 456.248962, cc: 1
+movf.s $f4, $f6, $fcc0 :: out: 456.248962, cc: 1
+movf.s $f4, $f6, $fcc0 :: out: 456.248962, cc: 1
+movf.s $f4, $f6, $fcc0 :: out: 456.248962, cc: 1
+movf.s $f4, $f6, $fcc0 :: out: 456.248962, cc: 1
+movf.s $f4, $f6, $fcc0 :: out: 456.248962, cc: 1
+movf.s $f4, $f6, $fcc0 :: out: 456.248962, cc: 1
+movf.s $f4, $f6, $fcc0 :: out: 456.248962, cc: 1
 movf.s $f4, $f6, $fcc0 :: out: 0.000000, cc: 0
 movf.s $f4, $f6, $fcc0 :: out: 456.248962, cc: 0
 movf.s $f4, $f6, $fcc0 :: out: 3.000000, cc: 0
@@ -159,21 +159,21 @@ movf.s $f4, $f6, $fcc0 :: out: -45786.476562, cc: 0
 movf.s $f4, $f6, $fcc0 :: out: 456.248962, cc: 0
 movf.s $f4, $f6, $fcc0 :: out: 34.000462, cc: 0
 MOVF.D
-movf.d $f4, $f6, $fcc0 :: out: 0x42080079 0x43e41fde, cc: 1
-movf.d $f4, $f6, $fcc0 :: out: 0x42080079 0x43e41fde, cc: 1
-movf.d $f4, $f6, $fcc0 :: out: 0x42080079 0x43e41fde, cc: 1
-movf.d $f4, $f6, $fcc0 :: out: 0x42080079 0x43e41fde, cc: 1
-movf.d $f4, $f6, $fcc0 :: out: 0x42080079 0x43e41fde, cc: 1
-movf.d $f4, $f6, $fcc0 :: out: 0x42080079 0x43e41fde, cc: 1
-movf.d $f4, $f6, $fcc0 :: out: 0x42080079 0x43e41fde, cc: 1
-movf.d $f4, $f6, $fcc0 :: out: 0x42080079 0x43e41fde, cc: 1
-movf.d $f4, $f6, $fcc0 :: out: 0x42080079 0x43e41fde, cc: 1
-movf.d $f4, $f6, $fcc0 :: out: 0x42080079 0x43e41fde, cc: 1
-movf.d $f4, $f6, $fcc0 :: out: 0x42080079 0x43e41fde, cc: 1
-movf.d $f4, $f6, $fcc0 :: out: 0x42080079 0x43e41fde, cc: 1
-movf.d $f4, $f6, $fcc0 :: out: 0x42080079 0x43e41fde, cc: 1
-movf.d $f4, $f6, $fcc0 :: out: 0x42080079 0x43e41fde, cc: 1
-movf.d $f4, $f6, $fcc0 :: out: 0x42080079 0x43e41fde, cc: 1
+movf.d $f4, $f6, $fcc0 :: out: 0xbff00000 0x0, cc: 1
+movf.d $f4, $f6, $fcc0 :: out: 0xbff00000 0x0, cc: 1
+movf.d $f4, $f6, $fcc0 :: out: 0xbff00000 0x0, cc: 1
+movf.d $f4, $f6, $fcc0 :: out: 0xbff00000 0x0, cc: 1
+movf.d $f4, $f6, $fcc0 :: out: 0xbff00000 0x0, cc: 1
+movf.d $f4, $f6, $fcc0 :: out: 0xbff00000 0x0, cc: 1
+movf.d $f4, $f6, $fcc0 :: out: 0xbff00000 0x0, cc: 1
+movf.d $f4, $f6, $fcc0 :: out: 0xbff00000 0x0, cc: 1
+movf.d $f4, $f6, $fcc0 :: out: 0xbff00000 0x0, cc: 1
+movf.d $f4, $f6, $fcc0 :: out: 0xbff00000 0x0, cc: 1
+movf.d $f4, $f6, $fcc0 :: out: 0xbff00000 0x0, cc: 1
+movf.d $f4, $f6, $fcc0 :: out: 0xbff00000 0x0, cc: 1
+movf.d $f4, $f6, $fcc0 :: out: 0xbff00000 0x0, cc: 1
+movf.d $f4, $f6, $fcc0 :: out: 0xbff00000 0x0, cc: 1
+movf.d $f4, $f6, $fcc0 :: out: 0xbff00000 0x0, cc: 1
 movf.d $f4, $f6, $fcc0 :: out: 0x42026580 0xb750e388, cc: 0
 movf.d $f4, $f6, $fcc0 :: out: 0x3e45798e 0xe2308c3a, cc: 0
 movf.d $f4, $f6, $fcc0 :: out: 0x3fbf9add 0x3746f65f, cc: 0
@@ -256,21 +256,21 @@ movt.s $f4, $f6, $fcc0 :: out: -248562.765625, cc: 1
 movt.s $f4, $f6, $fcc0 :: out: -45786.476562, cc: 1
 movt.s $f4, $f6, $fcc0 :: out: 456.248962, cc: 1
 movt.s $f4, $f6, $fcc0 :: out: 34.000462, cc: 1
-movt.s $f4, $f6, $fcc0 :: out: 34.000462, cc: 0
-movt.s $f4, $f6, $fcc0 :: out: 34.000462, cc: 0
-movt.s $f4, $f6, $fcc0 :: out: 34.000462, cc: 0
-movt.s $f4, $f6, $fcc0 :: out: 34.000462, cc: 0
-movt.s $f4, $f6, $fcc0 :: out: 34.000462, cc: 0
-movt.s $f4, $f6, $fcc0 :: out: 34.000462, cc: 0
-movt.s $f4, $f6, $fcc0 :: out: 34.000462, cc: 0
-movt.s $f4, $f6, $fcc0 :: out: 34.000462, cc: 0
-movt.s $f4, $f6, $fcc0 :: out: 34.000462, cc: 0
-movt.s $f4, $f6, $fcc0 :: out: 34.000462, cc: 0
-movt.s $f4, $f6, $fcc0 :: out: 34.000462, cc: 0
-movt.s $f4, $f6, $fcc0 :: out: 34.000462, cc: 0
-movt.s $f4, $f6, $fcc0 :: out: 34.000462, cc: 0
-movt.s $f4, $f6, $fcc0 :: out: 34.000462, cc: 0
-movt.s $f4, $f6, $fcc0 :: out: 34.000462, cc: 0
+movt.s $f4, $f6, $fcc0 :: out: 456.248962, cc: 0
+movt.s $f4, $f6, $fcc0 :: out: 456.248962, cc: 0
+movt.s $f4, $f6, $fcc0 :: out: 456.248962, cc: 0
+movt.s $f4, $f6, $fcc0 :: out: 456.248962, cc: 0
+movt.s $f4, $f6, $fcc0 :: out: 456.248962, cc: 0
+movt.s $f4, $f6, $fcc0 :: out: 456.248962, cc: 0
+movt.s $f4, $f6, $fcc0 :: out: 456.248962, cc: 0
+movt.s $f4, $f6, $fcc0 :: out: 456.248962, cc: 0
+movt.s $f4, $f6, $fcc0 :: out: 456.248962, cc: 0
+movt.s $f4, $f6, $fcc0 :: out: 456.248962, cc: 0
+movt.s $f4, $f6, $fcc0 :: out: 456.248962, cc: 0
+movt.s $f4, $f6, $fcc0 :: out: 456.248962, cc: 0
+movt.s $f4, $f6, $fcc0 :: out: 456.248962, cc: 0
+movt.s $f4, $f6, $fcc0 :: out: 456.248962, cc: 0
+movt.s $f4, $f6, $fcc0 :: out: 456.248962, cc: 0
 MOVT.D
 movt.d $f4, $f6, $fcc0 :: out: 0x4095a266 0x66666666, cc: 1
 movt.d $f4, $f6, $fcc0 :: out: 0xbff00000 0x0, cc: 1
@@ -287,21 +287,21 @@ movt.d $f4, $f6, $fcc0 :: out: 0x3ff00000 0x0, cc: 1
 movt.d $f4, $f6, $fcc0 :: out: 0x252a2e2b 0x262d2d2a, cc: 1
 movt.d $f4, $f6, $fcc0 :: out: 0xffffffff 0xffffffff, cc: 1
 movt.d $f4, $f6, $fcc0 :: out: 0x41d26580 0xb487e5c9, cc: 1
-movt.d $f4, $f6, $fcc0 :: out: 0x41d26580 0xb487e5c9, cc: 0
-movt.d $f4, $f6, $fcc0 :: out: 0x41d26580 0xb487e5c9, cc: 0
-movt.d $f4, $f6, $fcc0 :: out: 0x41d26580 0xb487e5c9, cc: 0
-movt.d $f4, $f6, $fcc0 :: out: 0x41d26580 0xb487e5c9, cc: 0
-movt.d $f4, $f6, $fcc0 :: out: 0x41d26580 0xb487e5c9, cc: 0
-movt.d $f4, $f6, $fcc0 :: out: 0x41d26580 0xb487e5c9, cc: 0
-movt.d $f4, $f6, $fcc0 :: out: 0x41d26580 0xb487e5c9, cc: 0
-movt.d $f4, $f6, $fcc0 :: out: 0x41d26580 0xb487e5c9, cc: 0
-movt.d $f4, $f6, $fcc0 :: out: 0x41d26580 0xb487e5c9, cc: 0
-movt.d $f4, $f6, $fcc0 :: out: 0x41d26580 0xb487e5c9, cc: 0
-movt.d $f4, $f6, $fcc0 :: out: 0x41d26580 0xb487e5c9, cc: 0
-movt.d $f4, $f6, $fcc0 :: out: 0x41d26580 0xb487e5c9, cc: 0
-movt.d $f4, $f6, $fcc0 :: out: 0x41d26580 0xb487e5c9, cc: 0
-movt.d $f4, $f6, $fcc0 :: out: 0x41d26580 0xb487e5c9, cc: 0
-movt.d $f4, $f6, $fcc0 :: out: 0x41d26580 0xb487e5c9, cc: 0
+movt.d $f4, $f6, $fcc0 :: out: 0xbff00000 0x0, cc: 0
+movt.d $f4, $f6, $fcc0 :: out: 0xbff00000 0x0, cc: 0
+movt.d $f4, $f6, $fcc0 :: out: 0xbff00000 0x0, cc: 0
+movt.d $f4, $f6, $fcc0 :: out: 0xbff00000 0x0, cc: 0
+movt.d $f4, $f6, $fcc0 :: out: 0xbff00000 0x0, cc: 0
+movt.d $f4, $f6, $fcc0 :: out: 0xbff00000 0x0, cc: 0
+movt.d $f4, $f6, $fcc0 :: out: 0xbff00000 0x0, cc: 0
+movt.d $f4, $f6, $fcc0 :: out: 0xbff00000 0x0, cc: 0
+movt.d $f4, $f6, $fcc0 :: out: 0xbff00000 0x0, cc: 0
+movt.d $f4, $f6, $fcc0 :: out: 0xbff00000 0x0, cc: 0
+movt.d $f4, $f6, $fcc0 :: out: 0xbff00000 0x0, cc: 0
+movt.d $f4, $f6, $fcc0 :: out: 0xbff00000 0x0, cc: 0
+movt.d $f4, $f6, $fcc0 :: out: 0xbff00000 0x0, cc: 0
+movt.d $f4, $f6, $fcc0 :: out: 0xbff00000 0x0, cc: 0
+movt.d $f4, $f6, $fcc0 :: out: 0xbff00000 0x0, cc: 0
 MOVZ.S
 movz.s $f0, $f2, $t3 :: fs rt 0x0
 movz.s $f0, $f2, $t3 :: fs rt 0x0

@@ -168,6 +168,7 @@ unsigned int mem[] = {
      "mtc1 $t1, $f2\n\t" \
      "c.eq.s $f0, $f2\n\t" \
      "move $t0, %2\n\t" \
+     "lwc1 $" #FD ", 4($t0)\n\t" \
      "lwc1 $" #FS ", "#offset"($t0)\n\t" \
      instruction "\n\t" \
      "mov.s %0, $" #FD"\n\t" \
@@ -190,8 +191,9 @@ unsigned int mem[] = {
      "move $t1, %3\n\t" \
      "mtc1 $t0, $f0\n\t" \
      "mtc1 $t1, $f2\n\t" \
-     "c.eq.s $f0, $f2\n\t" \
      "move $t0, %4\n\t" \
+     "ldc1 $f4, 8($t0)\n\t" \
+     "c.eq.s $f0, $f2\n\t" \
      "ldc1 $" #FS ", "#offset"($t0)\n\t" \
      instruction "\n\t" \
      "mov.d %0, $" #FD"\n\t" \

@@ -30,7 +30,7 @@ unsigned int mem1[] = {
 
 unsigned int mem2[100];
 
-int main () 
+int main ()
 {
    int i, out;
    for (i = 0; i < 100; i++)

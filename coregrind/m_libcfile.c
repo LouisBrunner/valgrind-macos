@@ -456,7 +456,7 @@ Bool VG_(get_startup_wd) ( HChar* buf, SizeT size )
    return True;
 }
 
-Int VG_(poll) (struct vki_pollfd *fds, Int nfds, Int timeout)
+SysRes VG_(poll) (struct vki_pollfd *fds, Int nfds, Int timeout)
 {
    SysRes res;
 #  if defined(VGO_linux)
@@ -466,7 +466,7 @@ Int VG_(poll) (struct vki_pollfd *fds, Int nfds, Int timeout)
 #  else
 #    error "Unknown OS"
 #  endif
-   return sr_isError(res) ? -1 : sr_Res(res);
+   return res;
 }
 
 

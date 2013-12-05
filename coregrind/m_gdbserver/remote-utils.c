@@ -268,10 +268,10 @@ void remote_open (const HChar *name)
       VG_(umsg)("TO CONTROL THIS PROCESS USING vgdb (which you probably\n"
                 "don't want to do, unless you know exactly what you're doing,\n"
                 "or are doing some strange experiment):\n"
-                "  %s/../../bin/vgdb --pid=%d%s%s ...command...\n",
-                VG_(libdir),
-                pid, (name_default ? "" : " --vgdb-prefix="),
-                (name_default ? "" : name));
+                "  %s/../../bin/vgdb%s%s --pid=%d ...command...\n",
+                VG_(libdir), (name_default ? "" : " --vgdb-prefix="),
+                (name_default ? "" : name),
+                pid);
    }
    if (VG_(clo_verbosity) > 1 
        || VG_(clo_vgdb_error) < 999999999) {
@@ -280,11 +280,11 @@ void remote_open (const HChar *name)
          "TO DEBUG THIS PROCESS USING GDB: start GDB like this\n"
          "  /path/to/gdb %s\n"
          "and then give GDB the following command\n"
-         "  target remote | %s/../../bin/vgdb --pid=%d%s%s\n",
+         "  target remote | %s/../../bin/vgdb%s%s --pid=%d\n",
          VG_(args_the_exename),
-         VG_(libdir),
-         pid, (name_default ? "" : " --vgdb-prefix="), 
-         (name_default ? "" : name)
+         VG_(libdir), (name_default ? "" : " --vgdb-prefix="), 
+         (name_default ? "" : name),
+         pid
       );
       VG_(umsg)("--pid is optional if only one valgrind process is running\n");
       VG_(umsg)("\n");

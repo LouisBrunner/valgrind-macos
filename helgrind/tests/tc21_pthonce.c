@@ -81,6 +81,7 @@ int main ( void ) {
 
    id_arg = (int *)malloc(NUM_THREADS*sizeof(int));
 
+   printf("main: Hello\n");
    for (i = 0; i < NUM_THREADS; i++) {
       id_arg[i] = i;
       r= pthread_create(&threads[i], NULL, child, &id_arg[i]);

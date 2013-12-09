@@ -20251,7 +20251,7 @@ Long dis_ESC_NONE (
          return delta;
       }
       /* BEGIN HACKY SUPPORT FOR xbegin */
-      if (modrm == 0xF8 && !have66orF2orF3(pfx) && sz == 4
+      if (opc == 0xC7 && modrm == 0xF8 && !have66orF2orF3(pfx) && sz == 4
           && (archinfo->hwcaps & VEX_HWCAPS_AMD64_AVX)) {
          delta++; /* mod/rm byte */
          d64 = getSDisp(4,delta); 
@@ -20270,6 +20270,16 @@ Long dis_ESC_NONE (
          return delta;
       }
       /* END HACKY SUPPORT FOR xbegin */
+      /* BEGIN HACKY SUPPORT FOR xabort */
+      if (opc == 0xC6 && modrm == 0xF8 && !have66orF2orF3(pfx) && sz == 1
+          && (archinfo->hwcaps & VEX_HWCAPS_AMD64_AVX)) {
+         delta++; /* mod/rm byte */
+         abyte = getUChar(delta); delta++;
+         /* There is never a real transaction in progress, so do nothing. */
+         DIP("xabort $%d", (Int)abyte);
+         return delta;
+      }
+      /* END HACKY SUPPORT FOR xabort */
       goto decode_failure;
 
    case 0xC8: /* ENTER */

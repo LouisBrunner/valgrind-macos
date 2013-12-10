@@ -1,0 +1,4 @@
+prereq: test -e std_atomic && ./supported_libpthread
+vgopts: --check-stack-var=yes --show-confl-seg=no
+prog: std_atomic 1
+stderr_filter: filter_stderr

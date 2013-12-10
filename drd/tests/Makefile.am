@@ -230,6 +230,8 @@ EXTRA_DIST =                                        \
 	sigalrm.vgtest                              \
 	sigaltstack.stderr.exp                      \
 	sigaltstack.vgtest                          \
+	std_atomic.stderr.exp		  	    \
+	std_atomic.vgtest			            \
 	std_list.stderr.exp		  	    \
 	std_list.vgtest			            \
 	std_string.stderr.exp		  	    \
@@ -376,6 +378,7 @@ endif
 if CXX_CAN_INCLUDE_THREAD_HEADER
 if HAVE_SHARED_POINTER_ANNOTATION
 check_PROGRAMS += \
+  std_atomic      \
   std_list        \
   std_string      \
   std_thread
@@ -457,6 +460,9 @@ endif
 if HAVE_PTHREAD_BARRIER
 matinv_LDADD                = $(LDADD) -lm
 endif
+
+std_atomic_SOURCES          = std_atomic.cpp
+std_atomic_CXXFLAGS         = $(AM_CXXFLAGS) -std=c++0x -Wno-sign-compare
 
 std_list_SOURCES            = std_list.cpp
 std_list_CXXFLAGS           = $(AM_CXXFLAGS) -std=c++0x -Wno-sign-compare

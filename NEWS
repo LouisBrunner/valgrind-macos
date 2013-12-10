@@ -31,6 +31,7 @@ where XXXXXX is the bug number as listed below.
 327916  DW_TAG_typedef may have no name
 328100  XABORT not implemented
 328205  Implement additional Xen hypercalls
+328455  s390x: SIGILL after emitting wrong register pair for ldxbr
 
 Release 3.9.0 (31 October 2013)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

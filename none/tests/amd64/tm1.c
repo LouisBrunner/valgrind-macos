@@ -58,5 +58,9 @@ int main ( void )
      : : "r"(&n) : "cc", "memory"
   );
   */
+
+  __asm__ __volatile__( "xabort $0x1" );
+  printf("xabort: outside transaction is nop.\n");
+
   return 0;
 }

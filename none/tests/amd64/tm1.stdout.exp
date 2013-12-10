@@ -1,2 +1,3 @@
 transactionally_apply: ok = 0 (expected 0)
 xtest: rflags.Z = 1 (expected 1)
+xabort: outside transaction is nop.

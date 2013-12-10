@@ -5861,7 +5861,6 @@ s390_insn_bfp128_convert(UChar size, s390_bfp_conv_t tag, HReg dst_hi,
    } else {
       /* From 16 bytes to smaller size */
       vassert(is_valid_fp128_regpair(op_hi, op_lo));
-      vassert(hregIsInvalid(dst_lo));
    }
 
    insn->tag  = S390_INSN_BFP_CONVERT;
@@ -5891,11 +5890,11 @@ s390_insn_bfp128_convert_to(UChar size, s390_bfp_conv_t tag, HReg dst_hi,
 
 
 s390_insn *
-s390_insn_bfp128_convert_from(UChar size, s390_bfp_conv_t tag, HReg dst,
-                              HReg op_hi, HReg op_lo,
+s390_insn_bfp128_convert_from(UChar size, s390_bfp_conv_t tag, HReg dst_hi,
+                              HReg dst_lo, HReg op_hi, HReg op_lo,
                               s390_bfp_round_t rounding_mode)
 {
-   return s390_insn_bfp128_convert(size, tag, dst, INVALID_HREG, op_hi, op_lo,
+   return s390_insn_bfp128_convert(size, tag, dst_hi, dst_lo, op_hi, op_lo,
                                    rounding_mode);
 }
 
@@ -6192,7 +6191,6 @@ s390_insn_dfp128_convert(UChar size, s390_dfp_conv_t tag, HReg dst_hi,
    } else {
       /* From 16 bytes to smaller size */
       vassert(is_valid_fp128_regpair(op_hi, op_lo));
-      vassert(hregIsInvalid(dst_lo));
    }
 
    insn->tag  = S390_INSN_DFP_CONVERT;
@@ -6222,11 +6220,11 @@ s390_insn_dfp128_convert_to(UChar size, s390_dfp_conv_t tag, HReg dst_hi,
 
 
 s390_insn *
-s390_insn_dfp128_convert_from(UChar size, s390_dfp_conv_t tag, HReg dst,
-                              HReg op_hi, HReg op_lo,
+s390_insn_dfp128_convert_from(UChar size, s390_dfp_conv_t tag, HReg dst_hi,
+                              HReg dst_lo, HReg op_hi, HReg op_lo,
                               s390_dfp_round_t rounding_mode)
 {
-   return s390_insn_dfp128_convert(size, tag, dst, INVALID_HREG, op_hi, op_lo,
+   return s390_insn_dfp128_convert(size, tag, dst_hi, dst_lo, op_hi, op_lo,
                                    rounding_mode);
 }
 

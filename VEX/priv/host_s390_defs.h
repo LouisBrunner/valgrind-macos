@@ -665,8 +665,8 @@ s390_insn *s390_insn_bfp128_compare(UChar size, HReg dst, HReg op1_hi,
 s390_insn *s390_insn_bfp128_convert_to(UChar size, s390_bfp_conv_t,
                                        HReg dst_hi, HReg dst_lo, HReg op);
 s390_insn *s390_insn_bfp128_convert_from(UChar size, s390_bfp_conv_t,
-                                         HReg dst, HReg op_hi, HReg op_lo,
-                                         s390_bfp_round_t);
+                                         HReg dst_hi, HReg dst_lo, HReg op_hi,
+                                         HReg op_lo, s390_bfp_round_t);
 s390_insn *s390_insn_dfp_binop(UChar size, s390_dfp_binop_t, HReg dst,
                                HReg op2, HReg op3,
                                s390_dfp_round_t rounding_mode);
@@ -699,8 +699,8 @@ s390_insn *s390_insn_dfp128_compare(UChar size, s390_dfp_cmp_t, HReg dst,
 s390_insn *s390_insn_dfp128_convert_to(UChar size, s390_dfp_conv_t,
                                        HReg dst_hi, HReg dst_lo, HReg op);
 s390_insn *s390_insn_dfp128_convert_from(UChar size, s390_dfp_conv_t,
-                                         HReg dst, HReg op_hi, HReg op_lo,
-                                         s390_dfp_round_t);
+                                         HReg dst_hi, HReg dst_lo, HReg op_hi,
+                                         HReg op_lo, s390_dfp_round_t);
 s390_insn *s390_insn_dfp128_reround(UChar size, HReg dst_hi, HReg dst_lo,
                                     HReg op2, HReg op3_hi, HReg op3_lo,
                                     s390_dfp_round_t);

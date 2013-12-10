@@ -1257,7 +1257,8 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
          addInstr(env, s390_insn_move(8, f15, op_lo));
 
          rounding_mode = get_bfp_rounding_mode(env, arg1);
-         addInstr(env, s390_insn_bfp128_convert_from(size, conv, res, f13, f15,
+         addInstr(env, s390_insn_bfp128_convert_from(size, conv, res,
+                                                     INVALID_HREG, f13, f15,
                                                      rounding_mode));
          return res;
       }
@@ -1290,7 +1291,8 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
             addInstr(env, s390_insn_move(8, f15, op_lo));
 
             rounding_mode = get_dfp_rounding_mode(env, arg1);
-            addInstr(env, s390_insn_dfp128_convert_from(size, dconv, res, f13,
+            addInstr(env, s390_insn_dfp128_convert_from(size, dconv, res,
+                                                        INVALID_HREG, f13,
                                                         f15, rounding_mode));
             return res;
          }
@@ -2455,7 +2457,7 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
 
       case Iop_F128toF64:
       case Iop_F128toF32: {
-         HReg op_hi, op_lo, f13, f15;
+         HReg op_hi, op_lo, f12, f13, f14, f15;
          s390_bfp_round_t rounding_mode;
 
          conv = op == Iop_F128toF32 ? S390_BFP_F128_TO_F32
@@ -2463,15 +2465,18 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
 
          s390_isel_float128_expr(&op_hi, &op_lo, env, left);
 
-         /* We use non-virtual registers as pairs (f13, f15) */
+         /* We use non-virtual registers as pairs (f13, f15) and (f12, f14)) */
+         f12 = make_fpr(12);
          f13 = make_fpr(13);
+         f14 = make_fpr(14);
          f15 = make_fpr(15);
 
          /* operand --> (f13, f15) */
          addInstr(env, s390_insn_move(8, f13, op_hi));
          addInstr(env, s390_insn_move(8, f15, op_lo));
 
-         dst = newVRegF(env);
+         /* result --> (f12, f14) */
+
          /* load-rounded has a rounding mode field when the floating point
             extension facility is installed. */
          if (s390_host_has_fpext) {
@@ -2480,8 +2485,12 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
             set_bfp_rounding_mode_in_fpc(env, irrm);
             rounding_mode = S390_BFP_ROUND_PER_FPC;
          }
-         addInstr(env, s390_insn_bfp128_convert_from(size, conv, dst, f13, f15,
-                                                     rounding_mode));
+
+         addInstr(env, s390_insn_bfp128_convert_from(size, conv, f12, f14,
+                                                     f13, f15, rounding_mode));
+         dst = newVRegF(env);
+         addInstr(env, s390_insn_move(8, dst, f12));
+
          return dst;
       }
       }
@@ -3044,22 +3053,25 @@ s390_isel_dfp_expr_wrk(ISelEnv *env, IRExpr *expr)
       }
 
       case Iop_D128toD64: {
-         HReg op_hi, op_lo, f13, f15;
+         HReg op_hi, op_lo, f12, f13, f14, f15;
          s390_dfp_round_t rounding_mode;
 
          conv = S390_DFP_D128_TO_D64;
 
          s390_isel_dfp128_expr(&op_hi, &op_lo, env, left);
 
-         /* We use non-virtual registers as pairs (f13, f15) */
+         /* We use non-virtual registers as pairs (f13, f15) and (f12, f14) */
+         f12 = make_fpr(12);
          f13 = make_fpr(13);
+         f14 = make_fpr(14);
          f15 = make_fpr(15);
 
          /* operand --> (f13, f15) */
          addInstr(env, s390_insn_move(8, f13, op_hi));
          addInstr(env, s390_insn_move(8, f15, op_lo));
 
-         dst = newVRegF(env);
+         /* result --> (f12, f14) */
+ 
          /* load-rounded has a rounding mode field when the floating point
             extension facility is installed. */
          if (s390_host_has_fpext) {
@@ -3068,8 +3080,11 @@ s390_isel_dfp_expr_wrk(ISelEnv *env, IRExpr *expr)
             set_dfp_rounding_mode_in_fpc(env, irrm);
             rounding_mode = S390_DFP_ROUND_PER_FPC_0;
          }
-         addInstr(env, s390_insn_dfp128_convert_from(size, conv, dst, f13, f15,
-                                                     rounding_mode));
+         addInstr(env, s390_insn_dfp128_convert_from(size, conv, f12, f14,
+                                                     f13, f15, rounding_mode));
+         dst = newVRegF(env);
+         addInstr(env, s390_insn_move(8, dst, f12));
+
          return dst;
       }
 

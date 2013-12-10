@@ -29,6 +29,7 @@ where XXXXXX is the bug number as listed below.
 327238  Callgrind Assertion 'passed <= last_bb->cjmp_count' failed
 327837  dwz compressed alternate .debug_info and .debug_str not read correctly
 327916  DW_TAG_typedef may have no name
+328100  XABORT not implemented
 328205  Implement additional Xen hypercalls
 
 Release 3.9.0 (31 October 2013)

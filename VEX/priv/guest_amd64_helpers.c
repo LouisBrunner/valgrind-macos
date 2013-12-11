@@ -3777,6 +3777,7 @@ void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state )
 
    vex_state->guest_DFLAG   = 1; /* forwards */
    vex_state->guest_IDFLAG  = 0;
+   vex_state->guest_ACFLAG  = 0;
 
    /* HACK: represent the offset associated with %fs==0. This
       assumes that %fs is only ever zero. */

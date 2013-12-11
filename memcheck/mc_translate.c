@@ -5736,6 +5736,8 @@ static Bool isBogusAtom ( IRAtom* at )
    return (/*32*/    n == 0xFEFEFEFFULL
            /*32*/ || n == 0x80808080ULL
            /*32*/ || n == 0x7F7F7F7FULL
+           /*32*/ || n == 0x7EFEFEFFULL
+           /*32*/ || n == 0x81010100ULL
            /*64*/ || n == 0xFFFFFFFFFEFEFEFFULL
            /*64*/ || n == 0xFEFEFEFEFEFEFEFFULL
            /*64*/ || n == 0x0000000000008080ULL
@@ -5760,7 +5762,8 @@ static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
             case Iex_Const:
                return isBogusAtom(e);
             case Iex_Unop: 
-               return isBogusAtom(e->Iex.Unop.arg);
+               return isBogusAtom(e->Iex.Unop.arg)
+                      || e->Iex.Unop.op == Iop_GetMSBs8x16;
             case Iex_GetI:
                return isBogusAtom(e->Iex.GetI.ix);
             case Iex_Binop: 

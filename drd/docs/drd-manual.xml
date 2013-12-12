@@ -385,30 +385,29 @@ behavior of the DRD tool itself:</para>
       <para>
         Whether to report races between accessing memory and freeing
         memory. Enabling this option may cause DRD to run slightly
-        slower. Notes:
-	<itemizedlist>
-	  <listitem>
-	    <para>
-	      Don't enable this option when using custom memory allocators
-	      that use
-	      the <computeroutput>VG_USERREQ__MALLOCLIKE_BLOCK</computeroutput>
-	      and <computeroutput>VG_USERREQ__FREELIKE_BLOCK</computeroutput>
-	      because that would result in false positives.
-	    </para>
-	  </listitem>
-	  <listitem>
-	    <para>Don't enable this option when using reference-counted
-	      objects because that will result in false positives, even when
-	      that code has been annotated properly with
-	      <computeroutput>ANNOTATE_HAPPENS_BEFORE</computeroutput>
-	      and <computeroutput>ANNOTATE_HAPPENS_AFTER</computeroutput>. See
-	      e.g.  the output of the following command for an example:
-	      <computeroutput>valgrind --tool=drd --free-is-write=yes
-		drd/tests/annotate_smart_pointer</computeroutput>.
-	    </para>
-	  </listitem>
-	</itemizedlist>
-      </para>
+        slower. Notes:</para>
+      <itemizedlist>
+	<listitem>
+	  <para>
+	    Don't enable this option when using custom memory allocators
+	    that use
+	    the <computeroutput>VG_USERREQ__MALLOCLIKE_BLOCK</computeroutput>
+	    and <computeroutput>VG_USERREQ__FREELIKE_BLOCK</computeroutput>
+	    because that would result in false positives.
+	  </para>
+	</listitem>
+	<listitem>
+	  <para>Don't enable this option when using reference-counted
+	    objects because that will result in false positives, even when
+	    that code has been annotated properly with
+	    <computeroutput>ANNOTATE_HAPPENS_BEFORE</computeroutput>
+	    and <computeroutput>ANNOTATE_HAPPENS_AFTER</computeroutput>. See
+	    e.g.  the output of the following command for an example:
+	    <computeroutput>valgrind --tool=drd --free-is-write=yes
+	      drd/tests/annotate_smart_pointer</computeroutput>.
+	  </para>
+	</listitem>
+      </itemizedlist>
     </listitem>
   </varlistentry>
   <varlistentry>

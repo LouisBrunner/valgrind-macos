@@ -1907,7 +1907,7 @@ need to use them.</para>
       between fairness and performance. For more details about the
       Valgrind thread serialisation scheme and its impact on
       performance and thread scheduling, see
-      <xref linkend="&vg-pthreads-perf-sched-id;"/>.
+      <xref linkend="&vg-pthreads-perf-sched-id;"/>.</para>
 
       <itemizedlist>
         <listitem> <para>The value <option>--fair-sched=yes</option>
@@ -1935,7 +1935,7 @@ need to use them.</para>
          highest performance.</para>
         </listitem>
       </itemizedlist>
-    </para></listitem>
+    </listitem>
 
   </varlistentry>
 

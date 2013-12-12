@@ -610,14 +610,14 @@ when <option>--leak-check=full</option> is specified. </para>
 in one of the following ways:
 
 <itemizedlist>
-  <listitem>a comma separated list of one or more of
-    <option>definite indirect possible reachable</option>.
+  <listitem><para>a comma separated list of one or more of
+    <option>definite indirect possible reachable</option>.</para>
   </listitem>
 
-  <listitem><option>all</option> to specify the complete set (all leak kinds).
+  <listitem><para><option>all</option> to specify the complete set (all leak kinds).</para>
   </listitem>
 
-  <listitem><option>none</option> for the empty set.
+  <listitem><para><option>none</option> for the empty set.</para>
   </listitem>
 </itemizedlist>
 
@@ -721,16 +721,16 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
       one of the following ways:
 
         <itemizedlist>
-          <listitem>a comma separated list of one or more of
-            <option>definite indirect possible reachable</option>.
+          <listitem><para>a comma separated list of one or more of
+            <option>definite indirect possible reachable</option>.</para>
           </listitem>
           
-          <listitem><option>all</option> to specify the complete set (all leak kinds).
+          <listitem><para><option>all</option> to specify the complete set (all leak kinds).
             It is equivalent to
-            <option>--show-leak-kinds=definite,indirect,possible,reachable</option>.
+            <option>--show-leak-kinds=definite,indirect,possible,reachable</option>.</para>
           </listitem>
           
-          <listitem><option>none</option> for the empty set.
+          <listitem><para><option>none</option> for the empty set.</para>
           </listitem>
         </itemizedlist>
       </para>
@@ -763,17 +763,17 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
         The heuristic set is specified in one of the following ways:
 
         <itemizedlist>
-          <listitem>a comma separated list of one or more of
-            <option>stdstring newarray multipleinheritance</option>.
+          <listitem><para>a comma separated list of one or more of
+            <option>stdstring newarray multipleinheritance</option>.</para>
           </listitem>
           
-          <listitem><option>all</option> to activate the complete set of
+          <listitem><para><option>all</option> to activate the complete set of
             heuristics.
             It is equivalent to
-            <option>--leak-check-heuristics=stdstring,newarray,multipleinheritance</option>.
+            <option>--leak-check-heuristics=stdstring,newarray,multipleinheritance</option>.</para>
           </listitem>
           
-          <listitem><option>none</option> for the empty set.
+          <listitem><para><option>none</option> for the empty set.</para>
           </listitem>
         </itemizedlist>
       </para>
@@ -797,18 +797,24 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
       <para>These options provide an alternative way to specify the leak kinds to show:
         <itemizedlist>
           <listitem>
+	    <para>
             <option>--show-reachable=no --show-possibly-lost=yes</option> is equivalent to
             <option>--show-leak-kinds=definite,possible</option>.
+	    </para>
           </listitem>
           <listitem>
+	    <para>
             <option>--show-reachable=no --show-possibly-lost=no</option> is equivalent to
             <option>--show-leak-kinds=definite</option>.
+	    </para>
           </listitem>
           <listitem>
+	    <para>
             <option>--show-reachable=yes</option> is equivalent to
             <option>--show-leak-kinds=all</option>.
             Note that  <option>--show-possibly-lost=no</option> has no effect
             if <option>--show-reachable=yes</option> is specified.
+	    </para>
           </listitem>
         </itemizedlist>
       </para>

@@ -32,6 +32,7 @@ where XXXXXX is the bug number as listed below.
 328100  XABORT not implemented
 328205  Implement additional Xen hypercalls
 328455  s390x: SIGILL after emitting wrong register pair for ldxbr
+328711  valgrind.1 manpage "memcheck options" section is badly generated
 
 Release 3.9.0 (31 October 2013)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

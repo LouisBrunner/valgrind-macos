@@ -11,6 +11,11 @@ Release 3.10.0 (?? ?????? 201?)
 
 * ==================== OTHER CHANGES ====================
 
+* New and modified GDB server monitor features:
+
+  - A new monitor command "v.info stats" that shows various valgrind core and tool
+    statistics.
+
 * ==================== FIXED BUGS ====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"

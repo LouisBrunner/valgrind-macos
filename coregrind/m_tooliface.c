@@ -92,6 +92,7 @@ VgNeeds VG_(needs) = {
    .client_requests      = False,
    .syscall_wrapper      = False,
    .sanity_checks        = False,
+   .print_stats          = False,
    .var_info	         = False,
    .malloc_replacement   = False,
    .xml_output           = False,
@@ -292,6 +293,14 @@ void VG_(needs_sanity_checks)(
    VG_(needs).sanity_checks = True;
    VG_(tdict).tool_cheap_sanity_check     = cheap;
    VG_(tdict).tool_expensive_sanity_check = expen;
+}
+
+void VG_(needs_print_stats) (
+   void (*print_stats)(void)
+)
+{
+   VG_(needs).print_stats = True;
+   VG_(tdict).tool_print_stats = print_stats;
 }
 
 void VG_(needs_malloc_replacement)(

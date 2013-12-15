@@ -5133,6 +5133,67 @@ static void hg_print_debug_usage ( void )
     );
 }
 
+static void hg_print_stats (void)
+{
+
+   if (1) {
+      VG_(printf)("\n");
+      HG_(ppWSUstats)( univ_lsets, "univ_lsets" );
+      if (HG_(clo_track_lockorders)) {
+         VG_(printf)("\n");
+         HG_(ppWSUstats)( univ_laog,  "univ_laog" );
+      }
+   }
+
+   //zz       VG_(printf)("\n");
+   //zz       VG_(printf)(" hbefore: %'10lu queries\n",        stats__hbefore_queries);
+   //zz       VG_(printf)(" hbefore: %'10lu cache 0 hits\n",   stats__hbefore_cache0s);
+   //zz       VG_(printf)(" hbefore: %'10lu cache > 0 hits\n", stats__hbefore_cacheNs);
+   //zz       VG_(printf)(" hbefore: %'10lu graph searches\n", stats__hbefore_gsearches);
+   //zz       VG_(printf)(" hbefore: %'10lu   of which slow\n",
+   //zz                   stats__hbefore_gsearches - stats__hbefore_gsearchFs);
+   //zz       VG_(printf)(" hbefore: %'10lu stack high water mark\n",
+   //zz                   stats__hbefore_stk_hwm);
+   //zz       VG_(printf)(" hbefore: %'10lu cache invals\n",   stats__hbefore_invals);
+   //zz       VG_(printf)(" hbefore: %'10lu probes\n",         stats__hbefore_probes);
+
+   VG_(printf)("\n");
+   VG_(printf)("        locksets: %'8d unique lock sets\n",
+               (Int)HG_(cardinalityWSU)( univ_lsets ));
+   if (HG_(clo_track_lockorders)) {
+      VG_(printf)("       univ_laog: %'8d unique lock sets\n",
+                  (Int)HG_(cardinalityWSU)( univ_laog ));
+   }
+
+   //VG_(printf)("L(ast)L(ock) map: %'8lu inserts (%d map size)\n",
+   //            stats__ga_LL_adds,
+   //            (Int)(ga_to_lastlock ? VG_(sizeFM)( ga_to_lastlock ) : 0) );
+
+   VG_(printf)("  LockN-to-P map: %'8llu queries (%llu map size)\n",
+               HG_(stats__LockN_to_P_queries),
+               HG_(stats__LockN_to_P_get_map_size)() );
+
+   VG_(printf)("string table map: %'8llu queries (%llu map size)\n",
+               HG_(stats__string_table_queries),
+               HG_(stats__string_table_get_map_size)() );
+   if (HG_(clo_track_lockorders)) {
+      VG_(printf)("            LAOG: %'8d map size\n",
+                  (Int)(laog ? VG_(sizeFM)( laog ) : 0));
+      VG_(printf)(" LAOG exposition: %'8d map size\n",
+                  (Int)(laog_exposition ? VG_(sizeFM)( laog_exposition ) : 0));
+   }
+
+   VG_(printf)("           locks: %'8lu acquires, "
+               "%'lu releases\n",
+               stats__lockN_acquires,
+               stats__lockN_releases
+              );
+   VG_(printf)("   sanity checks: %'8lu\n", stats__sanity_checks);
+
+   VG_(printf)("\n");
+   libhb_shutdown(True); // This in fact only print stats.
+}
+
 static void hg_fini ( Int exitcode )
 {
    if (VG_(clo_verbosity) == 1 && !VG_(clo_xml)) {
@@ -5154,65 +5215,8 @@ static void hg_fini ( Int exitcode )
    if (HG_(clo_sanity_flags))
       all__sanity_check("SK_(fini)");
 
-   if (VG_(clo_stats)) {
-
-      if (1) {
-         VG_(printf)("\n");
-         HG_(ppWSUstats)( univ_lsets, "univ_lsets" );
-         if (HG_(clo_track_lockorders)) {
-            VG_(printf)("\n");
-            HG_(ppWSUstats)( univ_laog,  "univ_laog" );
-         }
-      }
-
-      //zz       VG_(printf)("\n");
-      //zz       VG_(printf)(" hbefore: %'10lu queries\n",        stats__hbefore_queries);
-      //zz       VG_(printf)(" hbefore: %'10lu cache 0 hits\n",   stats__hbefore_cache0s);
-      //zz       VG_(printf)(" hbefore: %'10lu cache > 0 hits\n", stats__hbefore_cacheNs);
-      //zz       VG_(printf)(" hbefore: %'10lu graph searches\n", stats__hbefore_gsearches);
-      //zz       VG_(printf)(" hbefore: %'10lu   of which slow\n",
-      //zz                   stats__hbefore_gsearches - stats__hbefore_gsearchFs);
-      //zz       VG_(printf)(" hbefore: %'10lu stack high water mark\n",
-      //zz                   stats__hbefore_stk_hwm);
-      //zz       VG_(printf)(" hbefore: %'10lu cache invals\n",   stats__hbefore_invals);
-      //zz       VG_(printf)(" hbefore: %'10lu probes\n",         stats__hbefore_probes);
-
-      VG_(printf)("\n");
-      VG_(printf)("        locksets: %'8d unique lock sets\n",
-                  (Int)HG_(cardinalityWSU)( univ_lsets ));
-      if (HG_(clo_track_lockorders)) {
-         VG_(printf)("       univ_laog: %'8d unique lock sets\n",
-                     (Int)HG_(cardinalityWSU)( univ_laog ));
-      }
-
-      //VG_(printf)("L(ast)L(ock) map: %'8lu inserts (%d map size)\n",
-      //            stats__ga_LL_adds,
-      //            (Int)(ga_to_lastlock ? VG_(sizeFM)( ga_to_lastlock ) : 0) );
-
-      VG_(printf)("  LockN-to-P map: %'8llu queries (%llu map size)\n",
-                  HG_(stats__LockN_to_P_queries),
-                  HG_(stats__LockN_to_P_get_map_size)() );
-
-      VG_(printf)("string table map: %'8llu queries (%llu map size)\n",
-                  HG_(stats__string_table_queries),
-                  HG_(stats__string_table_get_map_size)() );
-      if (HG_(clo_track_lockorders)) {
-         VG_(printf)("            LAOG: %'8d map size\n",
-                     (Int)(laog ? VG_(sizeFM)( laog ) : 0));
-         VG_(printf)(" LAOG exposition: %'8d map size\n",
-                     (Int)(laog_exposition ? VG_(sizeFM)( laog_exposition ) : 0));
-      }
-         
-      VG_(printf)("           locks: %'8lu acquires, "
-                  "%'lu releases\n",
-                  stats__lockN_acquires,
-                  stats__lockN_releases
-                 );
-      VG_(printf)("   sanity checks: %'8lu\n", stats__sanity_checks);
-
-      VG_(printf)("\n");
-      libhb_shutdown(True);
-   }
+   if (VG_(clo_stats))
+      hg_print_stats();
 }
 
 /* FIXME: move these somewhere sane */
@@ -5304,6 +5308,8 @@ static void hg_pre_clo_init ( void )
    // FIXME?
    //VG_(needs_sanity_checks)       (hg_cheap_sanity_check,
    //                                hg_expensive_sanity_check);
+
+   VG_(needs_print_stats) (hg_print_stats);
 
    VG_(needs_malloc_replacement)  (hg_cli__malloc,
                                    hg_cli____builtin_new,

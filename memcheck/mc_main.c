@@ -6539,6 +6539,98 @@ static void print_SM_info(const HChar* type, Int n_SMs)
       n_SMs * sizeof(SecMap) / (1024 * 1024UL) );
 }
 
+static void mc_print_stats (void)
+{
+   SizeT max_secVBit_szB, max_SMs_szB, max_shmem_szB;
+
+   VG_(message)(Vg_DebugMsg,
+      " memcheck: sanity checks: %d cheap, %d expensive\n",
+      n_sanity_cheap, n_sanity_expensive );
+   VG_(message)(Vg_DebugMsg,
+      " memcheck: auxmaps: %lld auxmap entries (%lldk, %lldM) in use\n",
+      n_auxmap_L2_nodes, 
+      n_auxmap_L2_nodes * 64, 
+      n_auxmap_L2_nodes / 16 );
+   VG_(message)(Vg_DebugMsg,
+      " memcheck: auxmaps_L1: %lld searches, %lld cmps, ratio %lld:10\n",
+      n_auxmap_L1_searches, n_auxmap_L1_cmps,
+      (10ULL * n_auxmap_L1_cmps) 
+         / (n_auxmap_L1_searches ? n_auxmap_L1_searches : 1) 
+   );   
+   VG_(message)(Vg_DebugMsg,
+      " memcheck: auxmaps_L2: %lld searches, %lld nodes\n",
+      n_auxmap_L2_searches, n_auxmap_L2_nodes
+   );   
+
+   print_SM_info("n_issued     ", n_issued_SMs);
+   print_SM_info("n_deissued   ", n_deissued_SMs);
+   print_SM_info("max_noaccess ", max_noaccess_SMs);
+   print_SM_info("max_undefined", max_undefined_SMs);
+   print_SM_info("max_defined  ", max_defined_SMs);
+   print_SM_info("max_non_DSM  ", max_non_DSM_SMs);
+
+   // Three DSMs, plus the non-DSM ones
+   max_SMs_szB = (3 + max_non_DSM_SMs) * sizeof(SecMap);
+   // The 3*sizeof(Word) bytes is the AVL node metadata size.
+   // The VG_ROUNDUP is because the OSet pool allocator will/must align
+   // the elements on pointer size.
+   // Note that the pool allocator has some additional small overhead
+   // which is not counted in the below.
+   // Hardwiring this logic sucks, but I don't see how else to do it.
+   max_secVBit_szB = max_secVBit_nodes * 
+         (3*sizeof(Word) + VG_ROUNDUP(sizeof(SecVBitNode), sizeof(void*)));
+   max_shmem_szB   = sizeof(primary_map) + max_SMs_szB + max_secVBit_szB;
+
+   VG_(message)(Vg_DebugMsg,
+      " memcheck: max sec V bit nodes:    %d (%ldk, %ldM)\n",
+      max_secVBit_nodes, max_secVBit_szB / 1024,
+                         max_secVBit_szB / (1024 * 1024));
+   VG_(message)(Vg_DebugMsg,
+      " memcheck: set_sec_vbits8 calls: %llu (new: %llu, updates: %llu)\n",
+      sec_vbits_new_nodes + sec_vbits_updates,
+      sec_vbits_new_nodes, sec_vbits_updates );
+   VG_(message)(Vg_DebugMsg,
+      " memcheck: max shadow mem size:   %ldk, %ldM\n",
+      max_shmem_szB / 1024, max_shmem_szB / (1024 * 1024));
+
+   if (MC_(clo_mc_level) >= 3) {
+      VG_(message)(Vg_DebugMsg,
+                   " ocacheL1: %'12lu refs   %'12lu misses (%'lu lossage)\n",
+                   stats_ocacheL1_find, 
+                   stats_ocacheL1_misses,
+                   stats_ocacheL1_lossage );
+      VG_(message)(Vg_DebugMsg,
+                   " ocacheL1: %'12lu at 0   %'12lu at 1\n",
+                   stats_ocacheL1_find - stats_ocacheL1_misses 
+                      - stats_ocacheL1_found_at_1 
+                      - stats_ocacheL1_found_at_N,
+                   stats_ocacheL1_found_at_1 );
+      VG_(message)(Vg_DebugMsg,
+                   " ocacheL1: %'12lu at 2+  %'12lu move-fwds\n",
+                   stats_ocacheL1_found_at_N,
+                   stats_ocacheL1_movefwds );
+      VG_(message)(Vg_DebugMsg,
+                   " ocacheL1: %'12lu sizeB  %'12u useful\n",
+                   (UWord)sizeof(OCache),
+                   4 * OC_W32S_PER_LINE * OC_LINES_PER_SET * OC_N_SETS );
+      VG_(message)(Vg_DebugMsg,
+                   " ocacheL2: %'12lu refs   %'12lu misses\n",
+                   stats__ocacheL2_refs, 
+                   stats__ocacheL2_misses );
+      VG_(message)(Vg_DebugMsg,
+                   " ocacheL2:    %'9lu max nodes %'9lu curr nodes\n",
+                   stats__ocacheL2_n_nodes_max,
+                   stats__ocacheL2_n_nodes );
+      VG_(message)(Vg_DebugMsg,
+                   " niacache: %'12lu refs   %'12lu misses\n",
+                   stats__nia_cache_queries, stats__nia_cache_misses);
+   } else {
+      tl_assert(ocacheL1 == NULL);
+      tl_assert(ocacheL2 == NULL);
+   }
+}
+
+
 static void mc_fini ( Int exitcode )
 {
    MC_(print_malloc_stats)();
@@ -6576,95 +6668,8 @@ static void mc_fini ( Int exitcode )
 
    done_prof_mem();
 
-   if (VG_(clo_stats)) {
-      SizeT max_secVBit_szB, max_SMs_szB, max_shmem_szB;
-      
-      VG_(message)(Vg_DebugMsg,
-         " memcheck: sanity checks: %d cheap, %d expensive\n",
-         n_sanity_cheap, n_sanity_expensive );
-      VG_(message)(Vg_DebugMsg,
-         " memcheck: auxmaps: %lld auxmap entries (%lldk, %lldM) in use\n",
-         n_auxmap_L2_nodes, 
-         n_auxmap_L2_nodes * 64, 
-         n_auxmap_L2_nodes / 16 );
-      VG_(message)(Vg_DebugMsg,
-         " memcheck: auxmaps_L1: %lld searches, %lld cmps, ratio %lld:10\n",
-         n_auxmap_L1_searches, n_auxmap_L1_cmps,
-         (10ULL * n_auxmap_L1_cmps) 
-            / (n_auxmap_L1_searches ? n_auxmap_L1_searches : 1) 
-      );   
-      VG_(message)(Vg_DebugMsg,
-         " memcheck: auxmaps_L2: %lld searches, %lld nodes\n",
-         n_auxmap_L2_searches, n_auxmap_L2_nodes
-      );   
-
-      print_SM_info("n_issued     ", n_issued_SMs);
-      print_SM_info("n_deissued   ", n_deissued_SMs);
-      print_SM_info("max_noaccess ", max_noaccess_SMs);
-      print_SM_info("max_undefined", max_undefined_SMs);
-      print_SM_info("max_defined  ", max_defined_SMs);
-      print_SM_info("max_non_DSM  ", max_non_DSM_SMs);
-
-      // Three DSMs, plus the non-DSM ones
-      max_SMs_szB = (3 + max_non_DSM_SMs) * sizeof(SecMap);
-      // The 3*sizeof(Word) bytes is the AVL node metadata size.
-      // The VG_ROUNDUP is because the OSet pool allocator will/must align
-      // the elements on pointer size.
-      // Note that the pool allocator has some additional small overhead
-      // which is not counted in the below.
-      // Hardwiring this logic sucks, but I don't see how else to do it.
-      max_secVBit_szB = max_secVBit_nodes * 
-            (3*sizeof(Word) + VG_ROUNDUP(sizeof(SecVBitNode), sizeof(void*)));
-      max_shmem_szB   = sizeof(primary_map) + max_SMs_szB + max_secVBit_szB;
-
-      VG_(message)(Vg_DebugMsg,
-         " memcheck: max sec V bit nodes:    %d (%ldk, %ldM)\n",
-         max_secVBit_nodes, max_secVBit_szB / 1024,
-                            max_secVBit_szB / (1024 * 1024));
-      VG_(message)(Vg_DebugMsg,
-         " memcheck: set_sec_vbits8 calls: %llu (new: %llu, updates: %llu)\n",
-         sec_vbits_new_nodes + sec_vbits_updates,
-         sec_vbits_new_nodes, sec_vbits_updates );
-      VG_(message)(Vg_DebugMsg,
-         " memcheck: max shadow mem size:   %ldk, %ldM\n",
-         max_shmem_szB / 1024, max_shmem_szB / (1024 * 1024));
-
-      if (MC_(clo_mc_level) >= 3) {
-         VG_(message)(Vg_DebugMsg,
-                      " ocacheL1: %'12lu refs   %'12lu misses (%'lu lossage)\n",
-                      stats_ocacheL1_find, 
-                      stats_ocacheL1_misses,
-                      stats_ocacheL1_lossage );
-         VG_(message)(Vg_DebugMsg,
-                      " ocacheL1: %'12lu at 0   %'12lu at 1\n",
-                      stats_ocacheL1_find - stats_ocacheL1_misses 
-                         - stats_ocacheL1_found_at_1 
-                         - stats_ocacheL1_found_at_N,
-                      stats_ocacheL1_found_at_1 );
-         VG_(message)(Vg_DebugMsg,
-                      " ocacheL1: %'12lu at 2+  %'12lu move-fwds\n",
-                      stats_ocacheL1_found_at_N,
-                      stats_ocacheL1_movefwds );
-         VG_(message)(Vg_DebugMsg,
-                      " ocacheL1: %'12lu sizeB  %'12u useful\n",
-                      (UWord)sizeof(OCache),
-                      4 * OC_W32S_PER_LINE * OC_LINES_PER_SET * OC_N_SETS );
-         VG_(message)(Vg_DebugMsg,
-                      " ocacheL2: %'12lu refs   %'12lu misses\n",
-                      stats__ocacheL2_refs, 
-                      stats__ocacheL2_misses );
-         VG_(message)(Vg_DebugMsg,
-                      " ocacheL2:    %'9lu max nodes %'9lu curr nodes\n",
-                      stats__ocacheL2_n_nodes_max,
-                      stats__ocacheL2_n_nodes );
-         VG_(message)(Vg_DebugMsg,
-                      " niacache: %'12lu refs   %'12lu misses\n",
-                      stats__nia_cache_queries, stats__nia_cache_misses);
-      } else {
-         tl_assert(ocacheL1 == NULL);
-         tl_assert(ocacheL2 == NULL);
-      }
-   }
+   if (VG_(clo_stats))
+      mc_print_stats();
 
    if (0) {
       VG_(message)(Vg_DebugMsg, 
@@ -6726,6 +6731,7 @@ static void mc_pre_clo_init(void)
    VG_(needs_client_requests)     (mc_handle_client_request);
    VG_(needs_sanity_checks)       (mc_cheap_sanity_check,
                                    mc_expensive_sanity_check);
+   VG_(needs_print_stats)         (mc_print_stats);
    VG_(needs_malloc_replacement)  (MC_(malloc),
                                    MC_(__builtin_new),
                                    MC_(__builtin_vec_new),

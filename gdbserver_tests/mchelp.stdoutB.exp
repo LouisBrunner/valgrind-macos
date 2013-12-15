@@ -62,6 +62,7 @@ debugging valgrind internals monitor commands:
      (with aspacemgr arg, also shows valgrind segments on log ouput)
   v.info exectxt          : show stacktraces and stats of all execontexts
   v.info scheduler        : show valgrind thread state and stacktrace
+  v.info stats            : show various valgrind and tool stats
   v.set debuglog <level>  : set valgrind debug log level to <level>
   v.translate <addr> [<traceflags>]  : debug translation of <addr> with <traceflags>
     (default traceflags 0b00100000 : show after instrumentation)

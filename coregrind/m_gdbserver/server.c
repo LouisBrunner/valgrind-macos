@@ -30,6 +30,7 @@
 #include "pub_core_execontext.h"
 #include "pub_core_syswrap.h"      // VG_(show_open_fds)
 #include "pub_core_scheduler.h"
+#include "pub_core_transtab.h"
 
 unsigned long cont_thread;
 unsigned long general_thread;
@@ -216,6 +217,7 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
 "     (with aspacemgr arg, also shows valgrind segments on log ouput)\n"
 "  v.info exectxt          : show stacktraces and stats of all execontexts\n"
 "  v.info scheduler        : show valgrind thread state and stacktrace\n"
+"  v.info stats            : show various valgrind and tool stats\n"
 "  v.set debuglog <level>  : set valgrind debug log level to <level>\n"
 "  v.translate <addr> [<traceflags>]  : debug translation of <addr> with <traceflags>\n"
 "    (default traceflags 0b00100000 : show after instrumentation)\n"
@@ -288,7 +290,7 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
       wcmd = strtok_r (NULL, " ", &ssaveptr);
       switch (kwdid = VG_(keyword_id) 
               ("all_errors n_errs_found last_error gdbserver_status memory"
-               " scheduler open_fds exectxt",
+               " scheduler stats open_fds exectxt",
                wcmd, kwd_report_all)) {
       case -2:
       case -1: 
@@ -311,6 +313,8 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
          VG_(gdbserver_status_output)();
          break;
       case  4: /* memory */
+         VG_(printf) ("%llu bytes have already been allocated.\n",
+                      VG_(am_get_anonsize_total)());
          VG_(print_all_arena_stats) ();
          if (VG_(clo_profile_heap))
             VG_(print_arena_cc_analysis) ();
@@ -332,7 +336,18 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
          VG_(show_sched_status) ();
          ret = 1;
          break;
-      case  6: /* open_fds */
+      case  6: /* stats */
+         VG_(print_translation_stats)();
+         VG_(print_tt_tc_stats)();
+         VG_(print_scheduler_stats)();
+         VG_(print_ExeContext_stats)( False /* with_stacktraces */ );
+         VG_(print_errormgr_stats)();
+         if (VG_(needs).print_stats) {
+            VG_TDICT_CALL(tool_print_stats);
+         }
+         ret = 1;
+         break;
+      case  7: /* open_fds */
          if (VG_(clo_track_fds))
             VG_(show_open_fds) ("");
          else
@@ -341,7 +356,7 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
                 " to show open fds\n");
          ret = 1;
          break;
-      case  7: /* exectxt */
+      case  8: /* exectxt */
          VG_(print_ExeContext_stats) (True /* with_stacktraces */);
          ret = 1;
          break;

@@ -88,6 +88,7 @@ typedef
       Bool client_requests;
       Bool syscall_wrapper;
       Bool sanity_checks;
+      Bool print_stats;
       Bool var_info;
       Bool malloc_replacement;
       Bool xml_output;
@@ -148,6 +149,9 @@ typedef struct {
    // VG_(needs).sanity_checks
    Bool (*tool_cheap_sanity_check)(void);
    Bool (*tool_expensive_sanity_check)(void);
+
+   // VG_(needs).print_stats
+   void (*tool_print_stats)(void);
 
    // VG_(needs).malloc_replacement
    void* (*tool_malloc)              (ThreadId, SizeT);

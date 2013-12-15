@@ -451,6 +451,13 @@ extern void VG_(needs_sanity_checks) (
    Bool(*expensive_sanity_check)(void)
 );
 
+/* Can the tool produce stats during execution? */
+extern void VG_(needs_print_stats) (
+   // Print out tool status. Note that the stats at end of execution
+   // should be output by the VG_(basic_tool_funcs) "fini" function.
+   void (*print_stats)(void)
+);
+
 /* Do we need to see variable type and location information? */
 extern void VG_(needs_var_info) ( void );
 

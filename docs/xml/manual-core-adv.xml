@@ -1436,6 +1436,13 @@ problems or bugs.</para>
   </listitem>
 
   <listitem>
+    <para><varname>v.info stats</varname> shows various valgrind core and
+    tool statistics. With this, Valgrind and tool statistics can
+    be examined while running, even without option <option>--stats=yes</option>.
+    </para>
+  </listitem>
+
+  <listitem>
     <para><varname>v.set debuglog &lt;intvalue&gt;</varname> sets the
     Valgrind debug log level to &lt;intvalue&gt;.  This allows to
     dynamically change the log level of Valgrind e.g. when a problem

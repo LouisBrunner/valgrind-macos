@@ -39,7 +39,7 @@
 //--------------------------------------------------------------------
 
 extern void VG_(make_coredump) ( ThreadId tid, const vki_siginfo_t *si,
-                                 UInt max_size );
+                                 ULong max_size );
 
 #endif   // __PUB_CORE_COREDUMP_H
 

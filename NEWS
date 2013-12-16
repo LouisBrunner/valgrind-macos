@@ -13,8 +13,8 @@ Release 3.10.0 (?? ?????? 201?)
 
 * New and modified GDB server monitor features:
 
-  - A new monitor command "v.info stats" that shows various valgrind core and tool
-    statistics.
+  - A new monitor command "v.info stats" that shows various valgrind core and
+    tool statistics.
 
 * ==================== FIXED BUGS ====================
 
@@ -29,6 +29,7 @@ To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
 
+325714  Empty vgcore but RLIMIT_CORE is big enough (too big) 
 326462  Refactor vgdb to isolate invoker stuff into separate module
 326983  Clear direction flag after tests on amd64.
 327238  Callgrind Assertion 'passed <= last_bb->cjmp_count' failed

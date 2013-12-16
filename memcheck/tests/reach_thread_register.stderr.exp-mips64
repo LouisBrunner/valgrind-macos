@@ -1,0 +1,6 @@
+Abandoning the helper.
+272 bytes in 1 blocks are definitely lost in loss record ... of ...
+   at 0x........: calloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (reach_thread_register.c:47)
+

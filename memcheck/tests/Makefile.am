@@ -198,6 +198,8 @@ EXTRA_DIST = \
 	pointer-trace.stderr.exp \
 	post-syscall.stderr.exp post-syscall.vgtest \
 	reach_thread_register.stderr.exp reach_thread_register.vgtest \
+		reach_thread_register.stderr.exp-mips32 \
+		reach_thread_register.stderr.exp-mips64 \
 	realloc1.stderr.exp realloc1.vgtest \
 	realloc2.stderr.exp realloc2.vgtest \
 	realloc3.stderr.exp realloc3.vgtest \

@@ -1810,6 +1810,78 @@ void branchsim_printstat(int l1, int l2, int l3)
     VG_(umsg)("Mispred rate:  %s (%s     + %s   )\n", buf1, buf2,buf3);
 }
 
+static
+void clg_print_stats(void)
+{
+   int BB_lookups =
+     CLG_(stat).full_debug_BBs +
+     CLG_(stat).fn_name_debug_BBs +
+     CLG_(stat).file_line_debug_BBs +
+     CLG_(stat).no_debug_BBs;
+
+   /* Hash table stats */
+   VG_(message)(Vg_DebugMsg, "Distinct objects: %d\n",
+		CLG_(stat).distinct_objs);
+   VG_(message)(Vg_DebugMsg, "Distinct files:   %d\n",
+		CLG_(stat).distinct_files);
+   VG_(message)(Vg_DebugMsg, "Distinct fns:     %d\n",
+		CLG_(stat).distinct_fns);
+   VG_(message)(Vg_DebugMsg, "Distinct contexts:%d\n",
+		CLG_(stat).distinct_contexts);
+   VG_(message)(Vg_DebugMsg, "Distinct BBs:     %d\n",
+		CLG_(stat).distinct_bbs);
+   VG_(message)(Vg_DebugMsg, "Cost entries:     %d (Chunks %d)\n",
+		CLG_(costarray_entries), CLG_(costarray_chunks));
+   VG_(message)(Vg_DebugMsg, "Distinct BBCCs:   %d\n",
+		CLG_(stat).distinct_bbccs);
+   VG_(message)(Vg_DebugMsg, "Distinct JCCs:    %d\n",
+		CLG_(stat).distinct_jccs);
+   VG_(message)(Vg_DebugMsg, "Distinct skips:   %d\n",
+		CLG_(stat).distinct_skips);
+   VG_(message)(Vg_DebugMsg, "BB lookups:       %d\n",
+		BB_lookups);
+   if (BB_lookups>0) {
+      VG_(message)(Vg_DebugMsg, "With full      debug info:%3d%% (%d)\n",
+		   CLG_(stat).full_debug_BBs    * 100 / BB_lookups,
+		   CLG_(stat).full_debug_BBs);
+      VG_(message)(Vg_DebugMsg, "With file/line debug info:%3d%% (%d)\n",
+		   CLG_(stat).file_line_debug_BBs * 100 / BB_lookups,
+		   CLG_(stat).file_line_debug_BBs);
+      VG_(message)(Vg_DebugMsg, "With fn name   debug info:%3d%% (%d)\n",
+		   CLG_(stat).fn_name_debug_BBs * 100 / BB_lookups,
+		   CLG_(stat).fn_name_debug_BBs);
+      VG_(message)(Vg_DebugMsg, "With no        debug info:%3d%% (%d)\n",
+		   CLG_(stat).no_debug_BBs      * 100 / BB_lookups,
+		   CLG_(stat).no_debug_BBs);
+   }
+   VG_(message)(Vg_DebugMsg, "BBCC Clones:       %d\n",
+		CLG_(stat).bbcc_clones);
+   VG_(message)(Vg_DebugMsg, "BBs Retranslated:  %d\n",
+		CLG_(stat).bb_retranslations);
+   VG_(message)(Vg_DebugMsg, "Distinct instrs:   %d\n",
+		CLG_(stat).distinct_instrs);
+   VG_(message)(Vg_DebugMsg, "");
+
+   VG_(message)(Vg_DebugMsg, "LRU Contxt Misses: %d\n",
+		CLG_(stat).cxt_lru_misses);
+   VG_(message)(Vg_DebugMsg, "LRU BBCC Misses:   %d\n",
+		CLG_(stat).bbcc_lru_misses);
+   VG_(message)(Vg_DebugMsg, "LRU JCC Misses:    %d\n",
+		CLG_(stat).jcc_lru_misses);
+   VG_(message)(Vg_DebugMsg, "BBs Executed:      %llu\n",
+		CLG_(stat).bb_executions);
+   VG_(message)(Vg_DebugMsg, "Calls:             %llu\n",
+		CLG_(stat).call_counter);
+   VG_(message)(Vg_DebugMsg, "CondJMP followed:  %llu\n",
+		CLG_(stat).jcnd_counter);
+   VG_(message)(Vg_DebugMsg, "Boring JMPs:       %llu\n",
+		CLG_(stat).jump_counter);
+   VG_(message)(Vg_DebugMsg, "Recursive calls:   %llu\n",
+		CLG_(stat).rec_call_counter);
+   VG_(message)(Vg_DebugMsg, "Returns:           %llu\n",
+		CLG_(stat).ret_counter);
+}
+
 
 static
 void finish(void)
@@ -1831,77 +1903,10 @@ void finish(void)
 
   if (VG_(clo_verbosity) == 0) return;
   
-  /* Hash table stats */
   if (VG_(clo_stats)) {
-    int BB_lookups =
-      CLG_(stat).full_debug_BBs +
-      CLG_(stat).fn_name_debug_BBs +
-      CLG_(stat).file_line_debug_BBs +
-      CLG_(stat).no_debug_BBs;
-    
     VG_(message)(Vg_DebugMsg, "\n");
-    VG_(message)(Vg_DebugMsg, "Distinct objects: %d\n",
-		 CLG_(stat).distinct_objs);
-    VG_(message)(Vg_DebugMsg, "Distinct files:   %d\n",
-		 CLG_(stat).distinct_files);
-    VG_(message)(Vg_DebugMsg, "Distinct fns:     %d\n",
-		 CLG_(stat).distinct_fns);
-    VG_(message)(Vg_DebugMsg, "Distinct contexts:%d\n",
-		 CLG_(stat).distinct_contexts);
-    VG_(message)(Vg_DebugMsg, "Distinct BBs:     %d\n",
-		 CLG_(stat).distinct_bbs);
-    VG_(message)(Vg_DebugMsg, "Cost entries:     %d (Chunks %d)\n",
-		 CLG_(costarray_entries), CLG_(costarray_chunks));
-    VG_(message)(Vg_DebugMsg, "Distinct BBCCs:   %d\n",
-		 CLG_(stat).distinct_bbccs);
-    VG_(message)(Vg_DebugMsg, "Distinct JCCs:    %d\n",
-		 CLG_(stat).distinct_jccs);
-    VG_(message)(Vg_DebugMsg, "Distinct skips:   %d\n",
-		 CLG_(stat).distinct_skips);
-    VG_(message)(Vg_DebugMsg, "BB lookups:       %d\n",
-		 BB_lookups);
-    if (BB_lookups>0) {
-      VG_(message)(Vg_DebugMsg, "With full      debug info:%3d%% (%d)\n", 
-		   CLG_(stat).full_debug_BBs    * 100 / BB_lookups,
-		   CLG_(stat).full_debug_BBs);
-      VG_(message)(Vg_DebugMsg, "With file/line debug info:%3d%% (%d)\n", 
-		   CLG_(stat).file_line_debug_BBs * 100 / BB_lookups,
-		   CLG_(stat).file_line_debug_BBs);
-      VG_(message)(Vg_DebugMsg, "With fn name   debug info:%3d%% (%d)\n", 
-		   CLG_(stat).fn_name_debug_BBs * 100 / BB_lookups,
-		   CLG_(stat).fn_name_debug_BBs);
-      VG_(message)(Vg_DebugMsg, "With no        debug info:%3d%% (%d)\n", 
-		   CLG_(stat).no_debug_BBs      * 100 / BB_lookups,
-		   CLG_(stat).no_debug_BBs);
-    }
-    VG_(message)(Vg_DebugMsg, "BBCC Clones:       %d\n",
-		 CLG_(stat).bbcc_clones);
-    VG_(message)(Vg_DebugMsg, "BBs Retranslated:  %d\n",
-		 CLG_(stat).bb_retranslations);
-    VG_(message)(Vg_DebugMsg, "Distinct instrs:   %d\n",
-		 CLG_(stat).distinct_instrs);
-    VG_(message)(Vg_DebugMsg, "");
-    
-    VG_(message)(Vg_DebugMsg, "LRU Contxt Misses: %d\n",
-		 CLG_(stat).cxt_lru_misses);
-    VG_(message)(Vg_DebugMsg, "LRU BBCC Misses:   %d\n",
-		 CLG_(stat).bbcc_lru_misses);
-    VG_(message)(Vg_DebugMsg, "LRU JCC Misses:    %d\n",
-		 CLG_(stat).jcc_lru_misses);
-    VG_(message)(Vg_DebugMsg, "BBs Executed:      %llu\n",
-		 CLG_(stat).bb_executions);
-    VG_(message)(Vg_DebugMsg, "Calls:             %llu\n",
-		 CLG_(stat).call_counter);
-    VG_(message)(Vg_DebugMsg, "CondJMP followed:  %llu\n",
-		 CLG_(stat).jcnd_counter);
-    VG_(message)(Vg_DebugMsg, "Boring JMPs:       %llu\n",
-		 CLG_(stat).jump_counter);
-    VG_(message)(Vg_DebugMsg, "Recursive calls:   %llu\n",
-		 CLG_(stat).rec_call_counter);
-    VG_(message)(Vg_DebugMsg, "Returns:           %llu\n",
-		 CLG_(stat).ret_counter);
-
-    VG_(message)(Vg_DebugMsg, "");
+    clg_print_stats();
+    VG_(message)(Vg_DebugMsg, "\n");
   }
 
   CLG_(sprint_eventmapping)(buf, CLG_(dumpmap));
@@ -2051,6 +2056,7 @@ void CLG_(pre_clo_init)(void)
 				    CLG_(print_debug_usage));
 
     VG_(needs_client_requests)(CLG_(handle_client_request));
+    VG_(needs_print_stats)    (clg_print_stats);
     VG_(needs_syscall_wrapper)(CLG_(pre_syscalltime),
 			       CLG_(post_syscalltime));
 

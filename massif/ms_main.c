@@ -226,12 +226,6 @@ Number of snapshots: 50
       VG_(dmsg)("Massif: " format, ##args); \
    }
 
-// Used for printing stats when clo_stats == True.
-#define STATS(format, args...) \
-   if (VG_(clo_stats)) { \
-      VG_(dmsg)("Massif: " format, ##args); \
-   }
-
 //------------------------------------------------------------//
 //--- Statistics                                           ---//
 //------------------------------------------------------------//
@@ -2428,17 +2422,11 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
    }
 }
 
-//------------------------------------------------------------//
-//--- Finalisation                                         ---//
-//------------------------------------------------------------//
-
-static void ms_fini(Int exit_status)
+static void ms_print_stats (void)
 {
-   // Output.
-   write_snapshots_array_to_file();
+#define STATS(format, args...) \
+      VG_(dmsg)("Massif: " format, ##args)
 
-   // Stats
-   tl_assert(n_xpts > 0);  // always have alloc_xpt
    STATS("heap allocs:           %u\n", n_heap_allocs);
    STATS("heap reallocs:         %u\n", n_heap_reallocs);
    STATS("heap frees:            %u\n", n_heap_frees);
@@ -2461,6 +2449,23 @@ static void ms_fini(Int exit_status)
    STATS("peak snapshots:        %u\n", n_peak_snapshots);
    STATS("cullings:              %u\n", n_cullings);
    STATS("XCon redos:            %u\n", n_XCon_redos);
+#undef STATS
+}
+
+//------------------------------------------------------------//
+//--- Finalisation                                         ---//
+//------------------------------------------------------------//
+
+static void ms_fini(Int exit_status)
+{
+   // Output.
+   write_snapshots_array_to_file();
+
+   // Stats
+   tl_assert(n_xpts > 0);  // always have alloc_xpt
+
+   if (VG_(clo_stats))
+      ms_print_stats();
 }
 
 
@@ -2594,6 +2599,7 @@ static void ms_pre_clo_init(void)
    VG_(needs_client_requests)     (ms_handle_client_request);
    VG_(needs_sanity_checks)       (ms_cheap_sanity_check,
                                    ms_expensive_sanity_check);
+   VG_(needs_print_stats)         (ms_print_stats);
    VG_(needs_malloc_replacement)  (ms_malloc,
                                    ms___builtin_new,
                                    ms___builtin_vec_new,

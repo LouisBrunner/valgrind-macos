@@ -33,6 +33,7 @@ where XXXXXX is the bug number as listed below.
 326462  Refactor vgdb to isolate invoker stuff into separate module
 326983  Clear direction flag after tests on amd64.
 327238  Callgrind Assertion 'passed <= last_bb->cjmp_count' failed
+327284  s390x: Fix translation of the risbg instruction
 327837  dwz compressed alternate .debug_info and .debug_str not read correctly
 327916  DW_TAG_typedef may have no name
 328100  XABORT not implemented

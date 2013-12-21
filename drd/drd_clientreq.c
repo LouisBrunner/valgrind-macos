@@ -81,7 +81,16 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
    const DrdThreadId drd_tid = DRD_(thread_get_running_tid)();
 
    tl_assert(vg_tid == VG_(get_running_tid()));
-   tl_assert(DRD_(VgThreadIdToDrdThreadId)(vg_tid) == drd_tid);
+   tl_assert(DRD_(VgThreadIdToDrdThreadId)(vg_tid) == drd_tid
+             || (VG_USERREQ__GDB_MONITOR_COMMAND == arg[0]
+                 && vg_tid == VG_INVALID_THREADID));
+   /* Check the consistency of vg_tid and drd_tid, unless
+      vgdb has forced the invokation of a gdb monitor cmd
+      when no threads was running (i.e. all threads blocked
+      in a syscall. In such a case, vg_tid is invalid,
+      its conversion to a drd thread id gives also an invalid
+      drd thread id, but drd_tid is not invalid (probably
+      equal to the last running drd thread. */
 
    switch (arg[0])
    {

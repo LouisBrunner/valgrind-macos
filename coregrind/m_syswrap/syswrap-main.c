@@ -467,7 +467,15 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
 #elif defined(VGP_mips32_linux)
    VexGuestMIPS32State* gst = (VexGuestMIPS32State*)gst_vanilla;
    canonical->sysno = gst->guest_r2;    // v0
-   if (canonical->sysno != __NR_syscall) {
+   if (canonical->sysno == __NR_exit) {
+      canonical->arg1 = gst->guest_r4;    // a0
+      canonical->arg2 = 0;
+      canonical->arg3 = 0;
+      canonical->arg4 = 0;
+      canonical->arg5 = 0;
+      canonical->arg6 = 0;
+      canonical->arg8 = 0;
+   } else if (canonical->sysno != __NR_syscall) {
       canonical->arg1  = gst->guest_r4;    // a0
       canonical->arg2  = gst->guest_r5;    // a1
       canonical->arg3  = gst->guest_r6;    // a2

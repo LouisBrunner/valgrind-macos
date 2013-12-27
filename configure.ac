@@ -957,9 +957,9 @@ DEFAULT_SUPP="exp-sgcheck.supp ${DEFAULT_SUPP}"
 # Normally the PLAT = (ARCH, OS) characterisation of the platform is enough.
 # But there are times where we need a bit more control.  The motivating
 # and currently only case is Android: this is almost identical to
-# {x86,arm}-linux, but not quite.  So this introduces the concept of platform
-# variant tags, which get passed in the compile as -DVGPV_<arch>_<os>_<variant>
-# along with the main -DVGP_<arch>_<os> definition.
+# {x86,arm,mips}-linux, but not quite.  So this introduces the concept of
+# platform variant tags, which get passed in the compile as
+# -DVGPV_<arch>_<os>_<variant> along with the main -DVGP_<arch>_<os> definition.
 #
 # In almost all cases, the <variant> bit is "vanilla".  But for Android
 # it is "android" instead.

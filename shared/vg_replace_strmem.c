@@ -144,7 +144,8 @@ Bool is_overlap ( void* dst, const void* src, SizeT dstlen, SizeT srclen )
 __attribute__ ((__noreturn__))
 static inline void my_exit ( int x )
 {
-#  if defined(VGPV_arm_linux_android)
+#  if defined(VGPV_arm_linux_android) || defined(VGPV_mips32_linux_android) \
+      || defined(VGPV_mips32_linux_android)
    __asm__ __volatile__(".word 0xFFFFFFFF");
    while (1) {}
 #  elif defined(VGPV_x86_linux_android)
@@ -192,7 +193,8 @@ static inline void my_exit ( int x )
  STRRCHR(VG_Z_LIBC_SONAME,   __strrchr_sse2_no_bsf)
  STRRCHR(VG_Z_LIBC_SONAME,   __strrchr_sse42)
  STRRCHR(VG_Z_LD_LINUX_SO_2, rindex)
-#if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)
+#if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android) \
+    || defined(VGPV_mips32_linux_android)
   STRRCHR(NONE, __dl_strrchr); /* in /system/bin/linker */
 #endif
 
@@ -414,7 +416,8 @@ static inline void my_exit ( int x )
  STRLEN(VG_Z_LIBC_SONAME,          __strlen_sse42)
  STRLEN(VG_Z_LD_LINUX_SO_2,        strlen)
  STRLEN(VG_Z_LD_LINUX_X86_64_SO_2, strlen)
-# if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)
+# if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android) \
+     || defined(VGPV_mips32_linux_android)
   STRLEN(NONE, __dl_strlen); /* in /system/bin/linker */
 # endif
 
@@ -527,7 +530,8 @@ static inline void my_exit ( int x )
 
 #if defined(VGO_linux)
 
-#if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)
+#if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android) \
+    || defined(VGPV_mips32_linux_android)
  STRLCPY(VG_Z_LIBC_SONAME, strlcpy);
 #endif
 
@@ -599,7 +603,8 @@ static inline void my_exit ( int x )
    }
 
 #if defined(VGO_linux)
-# if !defined(VGPV_arm_linux_android) && !defined(VGPV_x86_linux_android)
+# if !defined(VGPV_arm_linux_android) && !defined(VGPV_x86_linux_android) \
+     && !defined(VGPV_mips32_linux_android)
   STRCASECMP(VG_Z_LIBC_SONAME, strcasecmp)
   STRCASECMP(VG_Z_LIBC_SONAME, __GI_strcasecmp)
 # endif
@@ -636,7 +641,8 @@ static inline void my_exit ( int x )
    }
 
 #if defined(VGO_linux)
-# if !defined(VGPV_arm_linux_android) && !defined(VGPV_x86_linux_android)
+# if !defined(VGPV_arm_linux_android) && !defined(VGPV_x86_linux_android) \
+     && !defined(VGPV_mips32_linux_android)
   STRNCASECMP(VG_Z_LIBC_SONAME, strncasecmp)
   STRNCASECMP(VG_Z_LIBC_SONAME, __GI_strncasecmp)
 # endif
@@ -748,7 +754,8 @@ static inline void my_exit ( int x )
  STRCMP(VG_Z_LIBC_SONAME,          __strcmp_sse42)
  STRCMP(VG_Z_LD_LINUX_X86_64_SO_2, strcmp)
  STRCMP(VG_Z_LD64_SO_1,            strcmp)
-# if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)
+# if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android) \
+     || defined(VGPV_mips32_linux_android)
   STRCMP(NONE, __dl_strcmp); /* in /system/bin/linker */
 # endif
 
@@ -1612,7 +1619,8 @@ static inline void my_exit ( int x )
    }
 
 #if defined(VGO_linux)
-# if !defined(VGPV_arm_linux_android) && !defined(VGPV_x86_linux_android)
+# if !defined(VGPV_arm_linux_android) && !defined(VGPV_x86_linux_android) \
+     && !defined(VGPV_mips32_linux_android)
   STRCASESTR(VG_Z_LIBC_SONAME,      strcasestr)
 # endif
 

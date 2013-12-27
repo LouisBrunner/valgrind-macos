@@ -116,7 +116,7 @@
 __attribute__ ((__noreturn__))
 static inline void my_exit ( int x )
 {
-#  if defined(VGPV_arm_linux_android)
+#  if defined(VGPV_arm_linux_android) || defined(VGPV_mips32_linux_android)
    __asm__ __volatile__(".word 0xFFFFFFFF");
    while (1) {}
 #  elif defined(VGPV_x86_linux_android)
@@ -131,7 +131,8 @@ static inline void my_exit ( int x )
 /* Same problem with getpagesize. */
 static inline int my_getpagesize ( void )
 {
-#  if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)
+#  if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android) \
+      || defined(VGPV_mips32_linux_android)
    return 4096; /* kludge - link failure on Android, for some reason */
 #  else
    extern int getpagesize (void);
@@ -939,7 +940,8 @@ static inline void trigger_memcheck_error_if_undefined ( ULong x )
  MALLOC_USABLE_SIZE(SO_SYN_MALLOC,    malloc_usable_size);
  MALLOC_USABLE_SIZE(VG_Z_LIBC_SONAME, malloc_size);
  MALLOC_USABLE_SIZE(SO_SYN_MALLOC,    malloc_size);
-# if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)
+# if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android) \
+     || defined(VGPV_mips32_linux_android)
   MALLOC_USABLE_SIZE(VG_Z_LIBC_SONAME, dlmalloc_usable_size);
   MALLOC_USABLE_SIZE(SO_SYN_MALLOC,    dlmalloc_usable_size);
 # endif

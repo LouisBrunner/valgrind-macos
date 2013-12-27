@@ -6764,7 +6764,8 @@ PRE(sys_ioctl)
       /* These just take an int by value */
       break;
 
-#  if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)
+#  if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android) \
+      || defined(VGPV_mips32_linux_android)
    /* ashmem */
    case VKI_ASHMEM_GET_SIZE:
    case VKI_ASHMEM_SET_SIZE:
@@ -6957,7 +6958,8 @@ POST(sys_ioctl)
 
    /* --- BEGIN special IOCTL handlers for specific Android hardware --- */
 
-#  if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)
+#  if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android) \
+      || defined(VGPV_mips32_linux_android)
 
 #  if defined(ANDROID_HARDWARE_nexus_s)
 
@@ -7875,7 +7877,8 @@ POST(sys_ioctl)
       }
       break;
 
-#  if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)
+#  if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android) \
+      || defined(VGPV_mips32_linux_android)
    /* ashmem */
    case VKI_ASHMEM_GET_SIZE:
    case VKI_ASHMEM_SET_SIZE:

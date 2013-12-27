@@ -36,7 +36,8 @@
 
 /* "on Linux (except android), or on Darwin" */
 #if (defined(VGO_linux) && \
-    !(defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)) \
+    !(defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android) \
+      || defined(VGPV_mips32_linux_android)) \
     || defined(VGO_darwin))
 
 #include "pub_core_basics.h"

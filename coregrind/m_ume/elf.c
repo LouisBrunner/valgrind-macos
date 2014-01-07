@@ -310,11 +310,6 @@ Int VG_(load_ELF)(Int fd, const HChar* name, /*MOD*/ExeInfo* info)
    void *entry;
    ESZ(Addr) ebase = 0;
 
-   /* The difference between where the interpreter got mapped and
-      where it asked to be mapped.  Needed for computing the ppc64 ELF
-      entry point and initial tocptr (R2) value. */
-   ESZ(Word) interp_offset = 0;
-
 #  if defined(HAVE_PIE)
    ebase = info->exe_base;
 #  endif
@@ -500,8 +495,7 @@ Int VG_(load_ELF)(Int fd, const HChar* name, /*MOD*/ExeInfo* info)
       VG_(close)(interp->fd);
 
       entry = (void *)(advised - interp_addr + interp->e.e_entry);
-      info->interp_base = (ESZ(Addr))advised;
-      interp_offset = advised - interp_addr;
+      info->interp_offset = advised - interp_addr;
 
       VG_(free)(interp->p);
       VG_(free)(interp);
@@ -518,12 +512,11 @@ Int VG_(load_ELF)(Int fd, const HChar* name, /*MOD*/ExeInfo* info)
       is the static chain value. */
    info->init_ip  = ((ULong*)entry)[0];
    info->init_toc = ((ULong*)entry)[1];
-   info->init_ip  += interp_offset;
-   info->init_toc += interp_offset;
+   info->init_ip  += info->interp_offset;
+   info->init_toc += info->interp_offset;
 #else
    info->init_ip  = (Addr)entry;
    info->init_toc = 0; /* meaningless on this platform */
-   (void) interp_offset; /* stop gcc complaining it is unused */
 #endif
    VG_(free)(e->p);
    VG_(free)(e);

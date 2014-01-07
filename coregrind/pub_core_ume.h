@@ -52,10 +52,10 @@ typedef
       Addr exe_end;      // INOUT: highest (allowed) address
 
 #if !defined(VGO_darwin)
-      Addr phdr;         // OUT: address phdr was mapped at
-      Int  phnum;        // OUT: number of phdrs
-      UInt stack_prot;   // OUT: stack permissions
-      Addr interp_base;  // OUT: where interpreter (ld.so) was mapped
+      Addr     phdr;          // OUT: address phdr was mapped at
+      Int      phnum;         // OUT: number of phdrs
+      UInt     stack_prot;    // OUT: stack permissions
+      PtrdiffT interp_offset; // OUT: relocation offset for ld.so
 #else
       Addr  stack_start;      // OUT: address of start of stack segment (hot)
       Addr  stack_end;        // OUT: address of end of stack segment (cold)

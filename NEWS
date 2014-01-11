@@ -9,6 +9,10 @@ Release 3.10.0 (?? ?????? 201?)
 
 * Helgrind:
 
+* Callgrind:
+  - callgrind_control now supports the --vgdb-prefix argument,
+    which is needed if valgrind was started with this same argument.
+
 * ==================== OTHER CHANGES ====================
 
 * New and modified GDB server monitor features:

@@ -55,7 +55,8 @@ VgVgdb VG_(clo_vgdb)           = Vg_VgdbYes;
 #endif
 Int    VG_(clo_vgdb_poll)      = 5000; 
 Int    VG_(clo_vgdb_error)     = 999999999;
-const HChar* VG_(clo_vgdb_prefix)    = NULL;
+const HChar *VG_(clo_vgdb_prefix)    = NULL;
+const HChar *VG_(arg_vgdb_prefix)    = NULL;
 Bool   VG_(clo_vgdb_shadow_registers) = False;
 
 Bool   VG_(clo_db_attach)      = False;

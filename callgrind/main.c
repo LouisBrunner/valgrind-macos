@@ -2024,7 +2024,9 @@ void CLG_(post_clo_init)(void)
 
    if (VG_(clo_verbosity > 0)) {
       VG_(message)(Vg_UserMsg,
-                   "For interactive control, run 'callgrind_control -h'.\n");
+                   "For interactive control, run 'callgrind_control%s%s -h'.\n",
+                   (VG_(arg_vgdb_prefix) ? " " : ""),
+                   (VG_(arg_vgdb_prefix) ? VG_(arg_vgdb_prefix) : ""));
    }
 }
 

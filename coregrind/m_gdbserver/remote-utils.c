@@ -234,7 +234,6 @@ void remote_open (const HChar *name)
        offsetof(ThreadState, os_state) + offsetof(ThreadOSstate, lwpid),
        0};
    const int pid = VG_(getpid)();
-   const int name_default = strcmp(name, VG_(vgdb_prefix_default)()) == 0;
    Addr addr_shared;
    SysRes o;
    int shared_mem_fd = INVALID_DESCRIPTOR;
@@ -274,8 +273,9 @@ void remote_open (const HChar *name)
                 "don't want to do, unless you know exactly what you're doing,\n"
                 "or are doing some strange experiment):\n"
                 "  %s/../../bin/vgdb%s%s --pid=%d ...command...\n",
-                VG_(libdir), (name_default ? "" : " --vgdb-prefix="),
-                (name_default ? "" : name),
+                VG_(libdir),
+                (VG_(arg_vgdb_prefix) ? " " : ""),
+                (VG_(arg_vgdb_prefix) ? VG_(arg_vgdb_prefix) : ""),
                 pid);
    }
    if (VG_(clo_verbosity) > 1 
@@ -287,8 +287,9 @@ void remote_open (const HChar *name)
          "and then give GDB the following command\n"
          "  target remote | %s/../../bin/vgdb%s%s --pid=%d\n",
          VG_(args_the_exename),
-         VG_(libdir), (name_default ? "" : " --vgdb-prefix="), 
-         (name_default ? "" : name),
+         VG_(libdir),
+         (VG_(arg_vgdb_prefix) ? " " : ""),
+         (VG_(arg_vgdb_prefix) ? VG_(arg_vgdb_prefix) : ""),
          pid
       );
       VG_(umsg)("--pid is optional if only one valgrind process is running\n");
@@ -1119,7 +1120,7 @@ int decode_X_packet (char *from, int packet_len, CORE_ADDR *mem_addr_ptr,
 }
 
 
-/* Return the path prefix for the named pipes (FIFOs) used by vgdb/gdb
+/* Return the default path prefix for the named pipes (FIFOs) used by vgdb/gdb
    to communicate with valgrind */
 HChar *
 VG_(vgdb_prefix_default)(void)

@@ -33,9 +33,9 @@
 #include "pub_tool_gdbserver.h"
 #include "pub_core_threadstate.h"   // VgSchedReturnCode
 
-/* Return the path prefix for the named pipes (FIFOs) used by vgdb/gdb
+/* Return the default path prefix for the named pipes (FIFOs) used by vgdb/gdb
    to communicate with valgrind */
-HChar*  VG_(vgdb_prefix_default)(void);
+HChar* VG_(vgdb_prefix_default)(void);
 
 // After a fork or after an exec, call the below to (possibly) terminate
 // the previous gdbserver and then activate a new gdbserver

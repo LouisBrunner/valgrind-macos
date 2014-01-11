@@ -155,6 +155,14 @@ extern Bool VG_(clo_stats);
    can be changed dynamically.*/
 extern Int VG_(clo_vgdb_error);
 
+/* If user has provided the --vgdb-prefix command line option,
+   VG_(arg_vgdb_prefix) points at the provided argument (including the
+   '--vgdb-prefix=' string).
+   Otherwise, it is NULL.
+   Typically, this is used by tools to produce user message with the
+   expected vgdb prefix argument, if the user has changed the default. */
+extern const HChar *VG_(arg_vgdb_prefix);
+
 /* Emit all messages as XML? default: NO */
 /* If clo_xml is set, various other options are set in a non-default
    way.  See vg_main.c and mc_main.c. */

@@ -1400,12 +1400,13 @@ their arguments.</para>
   </varlistentry>
 
   <varlistentry>
-    <term><option><![CDATA[-w=<dir>]]></option></term>
+    <term><option><![CDATA[--vgdb-prefix=<prefix>]]></option></term>
     <listitem>
-      <para>Specify the startup directory of an active Callgrind run. On some
-      systems, active Callgrind runs can not be detected. To be able to
-      control these, the failed auto-detection can be worked around by
-      specifying the directory where a Callgrind run was started.</para>
+      <para>Specify the vgdb prefix to use by callgrind_control.
+      callgrind_control internally uses vgdb to find and control the active
+      Callgrind runs. If the <option>--vgdb-prefix</option> option was used
+      for launching valgrind, then the same option must be given to
+      callgrind_control.</para>
     </listitem>
   </varlistentry>
 </variablelist>

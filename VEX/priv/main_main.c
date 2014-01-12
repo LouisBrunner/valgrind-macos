@@ -38,6 +38,7 @@
 #include "libvex_guest_x86.h"
 #include "libvex_guest_amd64.h"
 #include "libvex_guest_arm.h"
+#include "libvex_guest_arm64.h"
 #include "libvex_guest_ppc32.h"
 #include "libvex_guest_ppc64.h"
 #include "libvex_guest_s390x.h"
@@ -53,6 +54,7 @@
 #include "host_amd64_defs.h"
 #include "host_ppc_defs.h"
 #include "host_arm_defs.h"
+#include "host_arm64_defs.h"
 #include "host_s390_defs.h"
 #include "host_mips_defs.h"
 
@@ -60,6 +62,7 @@
 #include "guest_x86_defs.h"
 #include "guest_amd64_defs.h"
 #include "guest_arm_defs.h"
+#include "guest_arm64_defs.h"
 #include "guest_ppc_defs.h"
 #include "guest_s390_defs.h"
 #include "guest_mips_defs.h"
@@ -417,6 +420,30 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          vassert(are_valid_hwcaps(VexArchARM, vta->archinfo_host.hwcaps));
          break;
 
+      case VexArchARM64:
+         mode64      = True;
+         getAllocableRegs_ARM64 ( &n_available_real_regs,
+                                  &available_real_regs );
+         isMove      = (Bool(*)(HInstr*,HReg*,HReg*)) isMove_ARM64Instr;
+         getRegUsage = (void(*)(HRegUsage*,HInstr*, Bool))
+                       getRegUsage_ARM64Instr;
+         mapRegs     = (void(*)(HRegRemap*,HInstr*, Bool))
+                       mapRegs_ARM64Instr;
+         genSpill    = (void(*)(HInstr**,HInstr**,HReg,Int,Bool))
+                       genSpill_ARM64;
+         genReload   = (void(*)(HInstr**,HInstr**,HReg,Int,Bool))
+                       genReload_ARM64;
+         ppInstr     = (void(*)(HInstr*, Bool)) ppARM64Instr;
+         ppReg       = (void(*)(HReg)) ppHRegARM64;
+         iselSB      = iselSB_ARM64;
+         emit        = (Int(*)(Bool*,UChar*,Int,HInstr*,Bool,
+                               void*,void*,void*,void*))
+                       emit_ARM64Instr;
+         host_is_bigendian = False;
+         host_word_type    = Ity_I64;
+         vassert(are_valid_hwcaps(VexArchARM64, vta->archinfo_host.hwcaps));
+         break;
+
       case VexArchMIPS32:
          mode64      = False;
          getAllocableRegs_MIPS ( &n_available_real_regs,
@@ -591,6 +618,26 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          vassert(sizeof( ((VexGuestARMState*)0)->guest_TISTART) == 4);
          vassert(sizeof( ((VexGuestARMState*)0)->guest_TILEN  ) == 4);
          vassert(sizeof( ((VexGuestARMState*)0)->guest_NRADDR ) == 4);
+         break;
+
+      case VexArchARM64:
+         preciseMemExnsFn     = guest_arm64_state_requires_precise_mem_exns;
+         disInstrFn           = disInstr_ARM64;
+         specHelper           = guest_arm64_spechelper;
+         guest_sizeB          = sizeof(VexGuestARM64State);
+         guest_word_type      = Ity_I64;
+         guest_layout         = &arm64Guest_layout;
+         offB_TISTART         = offsetof(VexGuestARM64State,guest_TISTART);
+         offB_TILEN           = offsetof(VexGuestARM64State,guest_TILEN);
+         offB_GUEST_IP        = offsetof(VexGuestARM64State,guest_PC);
+         szB_GUEST_IP         = sizeof( ((VexGuestARM64State*)0)->guest_PC );
+         offB_HOST_EvC_COUNTER  = offsetof(VexGuestARM64State,host_EvC_COUNTER);
+         offB_HOST_EvC_FAILADDR = offsetof(VexGuestARM64State,host_EvC_FAILADDR);
+         vassert(are_valid_hwcaps(VexArchARM64, vta->archinfo_guest.hwcaps));
+         vassert(0 == sizeof(VexGuestARM64State) % 16);
+         vassert(sizeof( ((VexGuestARM64State*)0)->guest_TISTART) == 8);
+         vassert(sizeof( ((VexGuestARM64State*)0)->guest_TILEN  ) == 8);
+         vassert(sizeof( ((VexGuestARM64State*)0)->guest_NRADDR ) == 8);
          break;
 
       case VexArchMIPS32:
@@ -958,6 +1005,8 @@ VexInvalRange LibVEX_Chain ( VexArch arch_host,
          chainXDirect = chainXDirect_AMD64; break;
       case VexArchARM:
          chainXDirect = chainXDirect_ARM; break;
+      case VexArchARM64:
+         chainXDirect = chainXDirect_ARM64; break;
       case VexArchS390X:
          chainXDirect = chainXDirect_S390; break;
       case VexArchPPC32:
@@ -1038,6 +1087,8 @@ Int LibVEX_evCheckSzB ( VexArch arch_host )
             cached = evCheckSzB_AMD64(); break;
          case VexArchARM:
             cached = evCheckSzB_ARM(); break;
+         case VexArchARM64:
+            cached = evCheckSzB_ARM64(); break;
          case VexArchS390X:
             cached = evCheckSzB_S390(); break;
          case VexArchPPC32:
@@ -1152,6 +1203,7 @@ const HChar* LibVEX_ppVexArch ( VexArch arch )
       case VexArchX86:      return "X86";
       case VexArchAMD64:    return "AMD64";
       case VexArchARM:      return "ARM";
+      case VexArchARM64:    return "ARM64";
       case VexArchPPC32:    return "PPC32";
       case VexArchPPC64:    return "PPC64";
       case VexArchS390X:    return "S390X";
@@ -1381,6 +1433,15 @@ static const HChar* show_hwcaps_arm ( UInt hwcaps )
    return NULL;
 }
 
+static const HChar* show_hwcaps_arm64 ( UInt hwcaps )
+{
+   /* Since there are no variants, just insist that hwcaps is zero,
+      and declare it invalid otherwise. */
+  if (hwcaps == 0)
+     return "baseline";
+  return NULL;
+}
+
 static const HChar* show_hwcaps_s390x ( UInt hwcaps )
 {
    static const HChar prefix[] = "s390x";
@@ -1472,6 +1533,7 @@ static const HChar* show_hwcaps ( VexArch arch, UInt hwcaps )
       case VexArchPPC32:  return show_hwcaps_ppc32(hwcaps);
       case VexArchPPC64:  return show_hwcaps_ppc64(hwcaps);
       case VexArchARM:    return show_hwcaps_arm(hwcaps);
+      case VexArchARM64:  return show_hwcaps_arm64(hwcaps);
       case VexArchS390X:  return show_hwcaps_s390x(hwcaps);
       case VexArchMIPS32: return show_hwcaps_mips32(hwcaps);
       case VexArchMIPS64: return show_hwcaps_mips64(hwcaps);

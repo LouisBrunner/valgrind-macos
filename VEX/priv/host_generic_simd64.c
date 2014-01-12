@@ -1553,10 +1553,22 @@ ULong h_calc_BCDtoDPB( ULong bcd )
 
 /* ----------------------------------------------------- */
 /* Signed and unsigned integer division, that behave like
-   the ARMv7 UDIV ansd SDIV instructions. */
+   the ARMv7 UDIV ansd SDIV instructions.
+
+   sdiv32 also behaves like 64-bit v8 SDIV on w-regs.
+   udiv32 also behaves like 64-bit v8 UDIV on w-regs.
+*/
 /* ----------------------------------------------------- */
 
 UInt h_calc_udiv32_w_arm_semantics ( UInt x, UInt y )
+{
+   // Division by zero --> zero
+   if (UNLIKELY(y == 0)) return 0;
+   // C requires rounding towards zero, which is also what we need.
+   return x / y;
+}
+
+ULong h_calc_udiv64_w_arm_semantics ( ULong x, ULong y )
 {
    // Division by zero --> zero
    if (UNLIKELY(y == 0)) return 0;
@@ -1568,10 +1580,25 @@ Int h_calc_sdiv32_w_arm_semantics ( Int x, Int y )
 {
    // Division by zero --> zero
    if (UNLIKELY(y == 0)) return 0;
-   // The single case that produces an unpresentable result
+   // The single case that produces an unrepresentable result
    if (UNLIKELY( ((UInt)x) == ((UInt)0x80000000)
                  && ((UInt)y) == ((UInt)0xFFFFFFFF) ))
       return (Int)(UInt)0x80000000;
+   // Else return the result rounded towards zero.  C89 says
+   // this is implementation defined (in the signed case), but gcc
+   // promises to round towards zero.  Nevertheless, at startup,
+   // in main_main.c, do a check for that.
+   return x / y;
+}
+
+Long h_calc_sdiv64_w_arm_semantics ( Long x, Long y )
+{
+   // Division by zero --> zero
+   if (UNLIKELY(y == 0)) return 0;
+   // The single case that produces an unrepresentable result
+   if (UNLIKELY( ((ULong)x) == ((ULong)0x8000000000000000ULL )
+                 && ((ULong)y) == ((ULong)0xFFFFFFFFFFFFFFFFULL ) ))
+      return (Long)(ULong)0x8000000000000000ULL;
    // Else return the result rounded towards zero.  C89 says
    // this is implementation defined (in the signed case), but gcc
    // promises to round towards zero.  Nevertheless, at startup,

@@ -166,8 +166,11 @@ extern ULong h_calc_BCDtoDPB ( ULong bcd );
 
 // Signed and unsigned integer division, that behave like
 // the ARMv7 UDIV and SDIV instructions.
-extern UInt  h_calc_udiv32_w_arm_semantics ( UInt, UInt );
-extern  Int  h_calc_sdiv32_w_arm_semantics (  Int,  Int );
+extern UInt  h_calc_udiv32_w_arm_semantics ( UInt,  UInt  );
+extern ULong h_calc_udiv64_w_arm_semantics ( ULong, ULong );
+extern Int   h_calc_sdiv32_w_arm_semantics ( Int,   Int   );
+extern Long  h_calc_sdiv64_w_arm_semantics ( Long,  Long  );
+
 
 #endif /* ndef __VEX_HOST_GENERIC_SIMD64_H */
 

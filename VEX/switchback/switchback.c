@@ -17,11 +17,17 @@ CacheLineSize to the right value.  Values we currently know of:
 
    imac (G3):   32
    G5 (ppc970): 128
+
+ARM64:
+  (cd .. && make -f Makefile-gcc libvex-arm64-linux.a) \
+     && $CC -Wall -O -g -o switchback switchback.c linker.c \
+     ../libvex-arm64-linux.a test_emfloat.c
 */
 
 #include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -31,6 +37,7 @@ CacheLineSize to the right value.  Values we currently know of:
 #include "../pub/libvex_guest_amd64.h"
 #include "../pub/libvex_guest_ppc32.h"
 #include "../pub/libvex_guest_ppc64.h"
+#include "../pub/libvex_guest_arm64.h"
 #include "../pub/libvex.h"
 #include "../pub/libvex_trc_values.h"
 #include "linker.h"
@@ -46,30 +53,14 @@ static Int   n_translations_made = 0;
 #  define VexSubArch                VexSubArchX86_sse1
 #  define GuestPC                   guest_EIP
 #  define CacheLineSize             0/*irrelevant*/
-#elif defined(__x86_64__)
-#  define VexGuestState             VexGuestAMD64State
-#  define LibVEX_Guest_initialise   LibVEX_GuestAMD64_initialise
-#  define VexArch                   VexArchAMD64
-#  define VexSubArch                VexSubArch_NONE
-#  define GuestPC                   guest_RIP
-#  define CacheLineSize             0/*irrelevant*/
-#elif defined(__powerpc__)
 
-#if !defined(__powerpc64__) // ppc32
-#  define VexGuestState             VexGuestPPC32State
-#  define LibVEX_Guest_initialise   LibVEX_GuestPPC32_initialise
-#  define VexArch                   VexArchPPC32
-#  define VexSubArch                VexSubArchPPC32_FI
-#  define GuestPC                   guest_CIA
-#  define CacheLineSize             128
-#else
-#  define VexGuestState             VexGuestPPC64State
-#  define LibVEX_Guest_initialise   LibVEX_GuestPPC64_initialise
-#  define VexArch                   VexArchPPC64
-#  define VexSubArch                VexSubArchPPC64_FI
-#  define GuestPC                   guest_CIA
-#  define CacheLineSize             128
-#endif
+#elif defined(__aarch64__) && !defined(__arm__)
+#  define VexGuestState             VexGuestARM64State
+#  define LibVEX_Guest_initialise   LibVEX_GuestARM64_initialise
+#  define VexArch                   VexArchARM64
+#  define VexSubArch                VexSubArch_NONE
+#  define GuestPC                   guest_PC
+#  define CacheLineSize             0/*irrelevant*/
 
 #else
 #   error "Unknown arch"
@@ -83,12 +74,15 @@ static Int   n_translations_made = 0;
 /* 2: show selected insns */
 /* 1: show after reg-alloc */
 /* 0: show final assembly */
-#define TEST_FLAGS (1<<7)|(1<<3)|(1<<2)|(1<<1)|(1<<0)
-#define DEBUG_TRACE_FLAGS 0//(1<<7)|(0<<6)|(0<<5)|(0<<4)|(1<<3)|(1<<2)|(1<<1)|(1<<0)
+#define TEST_FLAGS ((1<<7)|(1<<3)|(1<<2)|(1<<1)|(1<<0))
+#define DEBUG_TRACE_FLAGS ((0<<7)|(0<<6)|(0<<5)|(0<<4)| \
+                           (0<<3)|(0<<2)|(0<<1)|(0<<0))
+
+typedef  unsigned long int  Addr;
 
 
 /* guest state */
-UInt gstack[50000];
+ULong gstack[64000] __attribute__((aligned(16)));
 VexGuestState gst;
 VexControl vcon;
 
@@ -96,6 +90,7 @@ VexControl vcon;
 /* i386:  helper1 = &gst, helper2 = %EFLAGS */
 /* amd64: helper1 = &gst, helper2 = %EFLAGS */
 /* ppc32: helper1 = &gst, helper2 = %CR, helper3 = %XER */
+/* arm64: helper1 = &gst, helper2 = 32x0:NZCV:28x0 */
 HWord sb_helper1 = 0;
 HWord sb_helper2 = 0;
 HWord sb_helper3 = 0;
@@ -111,25 +106,14 @@ ULong*          trans_tableP[N_TRANS_TABLE];
 Int trans_cache_used = 0;
 Int trans_table_used = 0;
 
-static Bool chase_into_ok ( Addr64 dst ) { return False; }
-
-#if 0
-// local_sys_write_stderr(&c,1);
-static void local_sys_write_stderr ( HChar* buf, Int n )
-{
-   UInt __res;
-   __asm__ volatile (
-      "li %%r0,4\n\t"      /* set %r0 = __NR_write */
-      "li %%r3,1\n\t"      /* set %r3 = stdout */
-      "mr %%r4,%1\n\t"     /* set %r4 = buf */
-      "mr %%r5,%2\n\t"     /* set %r5 = n */
-      "sc\n\t"             /* write(stderr, buf, n) */
-      "mr %0,%%r3\n"       /* set __res = r3 */
-      : "=mr" (__res)
-      : "g" (buf), "g" (n)
-      : "r0", "r3", "r4", "r5" );
+static Bool chase_into_ok ( void* opaque, Addr64 dst ) {
+   return False;
 }
-#endif
+
+static UInt needs_self_check ( void* opaque, VexGuestExtents* vge ) {
+   return 0;
+}
+
 
 /* For providing services. */
 static HWord serviceFn ( HWord arg1, HWord arg2 )
@@ -156,12 +140,132 @@ static HWord serviceFn ( HWord arg1, HWord arg2 )
 }
 
 
+// needed for arm64 ?
+static void invalidate_icache(void *ptr, unsigned long nbytes)
+{
+   // This function, invalidate_icache, for arm64_linux,
+   // is copied from
+   // https://github.com/armvixl/vixl/blob/master/src/a64/cpu-a64.cc
+   // which has the following copyright notice:
+   /*
+   Copyright 2013, ARM Limited
+   All rights reserved.
+
+   Redistribution and use in source and binary forms, with or without
+   modification, are permitted provided that the following conditions are met:
+   
+   * Redistributions of source code must retain the above copyright notice,
+     this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above copyright notice,
+     this list of conditions and the following disclaimer in the documentation
+     and/or other materials provided with the distribution.
+   * Neither the name of ARM Limited nor the names of its contributors may be
+     used to endorse or promote products derived from this software without
+     specific prior written permission.
+
+   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS CONTRIBUTORS "AS IS" AND
+   ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+   DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+   FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+   DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+   SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+   CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+   OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+   */
+
+   // Ask what the I and D line sizes are
+   UInt cache_type_register;
+   // Copy the content of the cache type register to a core register.
+   __asm__ __volatile__ ("mrs %[ctr], ctr_el0" // NOLINT
+                         : [ctr] "=r" (cache_type_register));
+
+   const Int kDCacheLineSizeShift = 16;
+   const Int kICacheLineSizeShift = 0;
+   const UInt kDCacheLineSizeMask = 0xf << kDCacheLineSizeShift;
+   const UInt kICacheLineSizeMask = 0xf << kICacheLineSizeShift;
+
+   // The cache type register holds the size of the I and D caches as a power of
+   // two.
+   const UInt dcache_line_size_power_of_two =
+       (cache_type_register & kDCacheLineSizeMask) >> kDCacheLineSizeShift;
+   const UInt icache_line_size_power_of_two =
+       (cache_type_register & kICacheLineSizeMask) >> kICacheLineSizeShift;
+
+   const UInt dcache_line_size_ = 1 << dcache_line_size_power_of_two;
+   const UInt icache_line_size_ = 1 << icache_line_size_power_of_two;
+
+   Addr start = (Addr)ptr;
+   // Sizes will be used to generate a mask big enough to cover a pointer.
+   Addr dsize = (Addr)dcache_line_size_;
+   Addr isize = (Addr)icache_line_size_;
+
+   // Cache line sizes are always a power of 2.
+   Addr dstart = start & ~(dsize - 1);
+   Addr istart = start & ~(isize - 1);
+   Addr end    = start + nbytes;
+
+   __asm__ __volatile__ (
+     // Clean every line of the D cache containing the target data.
+     "0: \n\t"
+     // dc : Data Cache maintenance
+     // c : Clean
+     // va : by (Virtual) Address
+     // u : to the point of Unification
+     // The point of unification for a processor is the point by which the
+     // instruction and data caches are guaranteed to see the same copy of a
+     // memory location. See ARM DDI 0406B page B2-12 for more information.
+     "dc cvau, %[dline] \n\t"
+     "add %[dline], %[dline], %[dsize] \n\t"
+     "cmp %[dline], %[end] \n\t"
+     "b.lt 0b \n\t"
+     // Barrier to make sure the effect of the code above is visible to the rest
+     // of the world.
+     // dsb : Data Synchronisation Barrier
+     // ish : Inner SHareable domain
+     // The point of unification for an Inner Shareable shareability domain is
+     // the point by which the instruction and data caches of all the processors
+     // in that Inner Shareable shareability domain are guaranteed to see the
+     // same copy of a memory location. See ARM DDI 0406B page B2-12 for more
+     // information.
+     "dsb ish \n\t"
+     // Invalidate every line of the I cache containing the target data.
+     "1: \n\t"
+     // ic : instruction cache maintenance
+     // i : invalidate
+     // va : by address
+     // u : to the point of unification
+     "ic ivau, %[iline] \n\t"
+     "add %[iline], %[iline], %[isize] \n\t"
+     "cmp %[iline], %[end] \n\t"
+     "b.lt 1b \n\t"
+     // Barrier to make sure the effect of the code above is visible to the rest
+     // of the world.
+     "dsb ish \n\t"
+     // Barrier to ensure any prefetching which happened before this code is
+     // discarded.
+     // isb : Instruction Synchronisation Barrier
+     "isb \n\t"
+     : [dline] "+r" (dstart),
+       [iline] "+r" (istart)
+     : [dsize] "r" (dsize),
+       [isize] "r" (isize),
+       [end] "r" (end)
+     // This code does not write to memory but without the dependency gcc might
+     // move this code before the code is generated.
+     : "cc", "memory"
+   );
+
+}
+
+
 /* -------------------- */
 /* continue execution on the real CPU (never returns) */
-extern void switchback_asm(void);
 
 #if defined(__i386__)
 
+extern void switchback_asm(void);
 asm(
 "switchback_asm:\n"
 "   movl sb_helper1, %eax\n"  // eax = guest state ptr
@@ -187,250 +291,120 @@ void switchback ( void )
    switchback_asm(); // never returns
 }
 
-#elif defined(__x86_64__)
+#elif defined(__aarch64__)
 
+extern void switchback_asm(HWord x0_gst, HWord x1_pstate);
 asm(
-"switchback_asm:\n"
-"   movq sb_helper1, %rax\n"  // rax = guest state ptr
-"   movq  32(%rax), %rsp\n"   // switch stacks
-"   pushq 168(%rax)\n"        // push continuation addr
-"   movq sb_helper2, %rbx\n"  // get eflags
-"   pushq %rbx\n"             // eflags:CA
-"   pushq 0(%rax)\n"          // RAX:eflags:CA
-"   movq 8(%rax), %rcx\n" 
-"   movq 16(%rax), %rdx\n" 
-"   movq 24(%rax), %rbx\n" 
-"   movq 40(%rax), %rbp\n"
-"   movq 48(%rax), %rsi\n"
-"   movq 56(%rax), %rdi\n"
+"switchback_asm:"
+"   mrs x30, nzcv"  "\n"
+"   and x30, x30, #0xFFFFFFFF0FFFFFFF"  "\n"
+"   and x1,  x1,  #0x00000000F0000000"  "\n"
+"   orr x30, x30, x1"  "\n"
+"   msr nzcv, x30"  "\n"
 
-"   movq 64(%rax), %r8\n"
-"   movq 72(%rax), %r9\n"
-"   movq 80(%rax), %r10\n"
-"   movq 88(%rax), %r11\n"
-"   movq 96(%rax), %r12\n"
-"   movq 104(%rax), %r13\n"
-"   movq 112(%rax), %r14\n"
-"   movq 120(%rax), %r15\n"
+"   ldr x30, [x0, #16 + 8*37]"  "\n"
+"   msr tpidr_el0, x30"  "\n"
 
-"   popq %rax\n"
-"   popfq\n"
-"   ret\n"
+"   ldr x30, [x0, #16 + 8*31]"  "\n"
+"   mov sp,  x30"  "\n"
+
+"   add x30, x0, #(16 + 8*38 + 16*0)"  "\n"
+"   ldr q0,  [x30], #16"   "\n"
+"   ldr q1,  [x30], #16"   "\n"
+"   ldr q2,  [x30], #16"   "\n"
+"   ldr q3,  [x30], #16"   "\n"
+"   ldr q4,  [x30], #16"   "\n"
+"   ldr q5,  [x30], #16"   "\n"
+"   ldr q6,  [x30], #16"   "\n"
+"   ldr q7,  [x30], #16"   "\n"
+"   ldr q8,  [x30], #16"   "\n"
+"   ldr q9,  [x30], #16"   "\n"
+"   ldr q10, [x30], #16"   "\n"
+"   ldr q11, [x30], #16"   "\n"
+"   ldr q12, [x30], #16"   "\n"
+"   ldr q13, [x30], #16"   "\n"
+"   ldr q14, [x30], #16"   "\n"
+"   ldr q15, [x30], #16"   "\n"
+"   ldr q16, [x30], #16"   "\n"
+"   ldr q17, [x30], #16"   "\n"
+"   ldr q18, [x30], #16"   "\n"
+"   ldr q19, [x30], #16"   "\n"
+"   ldr q20, [x30], #16"   "\n"
+"   ldr q21, [x30], #16"   "\n"
+"   ldr q22, [x30], #16"   "\n"
+"   ldr q23, [x30], #16"   "\n"
+"   ldr q24, [x30], #16"   "\n"
+"   ldr q25, [x30], #16"   "\n"
+"   ldr q26, [x30], #16"   "\n"
+"   ldr q27, [x30], #16"   "\n"
+"   ldr q28, [x30], #16"   "\n"
+"   ldr q29, [x30], #16"   "\n"
+"   ldr q30, [x30], #16"   "\n"
+"   ldr q31, [x30], #16"   "\n"
+
+"   ldr x30, [x0, #16+8*30]"  "\n"
+"   ldr x29, [x0, #16+8*29]"  "\n"
+"   ldr x28, [x0, #16+8*28]"  "\n"
+"   ldr x27, [x0, #16+8*27]"  "\n"
+"   ldr x26, [x0, #16+8*26]"  "\n"
+"   ldr x25, [x0, #16+8*25]"  "\n"
+"   ldr x24, [x0, #16+8*24]"  "\n"
+"   ldr x23, [x0, #16+8*23]"  "\n"
+"   ldr x22, [x0, #16+8*22]"  "\n"
+"   ldr x21, [x0, #16+8*21]"  "\n"
+"   ldr x20, [x0, #16+8*20]"  "\n"
+"   ldr x19, [x0, #16+8*19]"  "\n"
+"   ldr x18, [x0, #16+8*18]"  "\n"
+"   ldr x17, [x0, #16+8*17]"  "\n"
+"   ldr x16, [x0, #16+8*16]"  "\n"
+"   ldr x15, [x0, #16+8*15]"  "\n"
+"   ldr x14, [x0, #16+8*14]"  "\n"
+"   ldr x13, [x0, #16+8*13]"  "\n"
+"   ldr x12, [x0, #16+8*12]"  "\n"
+"   ldr x11, [x0, #16+8*11]"  "\n"
+"   ldr x10, [x0, #16+8*10]"  "\n"
+"   ldr x9,  [x0, #16+8*9]"   "\n"
+"   ldr x8,  [x0, #16+8*8]"   "\n"
+"   ldr x7,  [x0, #16+8*7]"   "\n"
+"   ldr x6,  [x0, #16+8*6]"   "\n"
+"   ldr x5,  [x0, #16+8*5]"   "\n"
+"   ldr x4,  [x0, #16+8*4]"   "\n"
+"   ldr x3,  [x0, #16+8*3]"   "\n"
+"   ldr x2,  [x0, #16+8*2]"   "\n"
+"   ldr x1,  [x0, #16+8*1]"   "\n"
+"   ldr x0,  [x0, #16+8*0]"   "\n"
+
+"nop_start_point:"            "\n"
+"   nop"  "\n" // this will be converted into a relative jump
+"nop_end_point:"              "\n"
 );
+
+extern void nop_start_point(void);
+extern void nop_end_point(void);
+
 void switchback ( void )
 {
-   sb_helper1 = (HWord)&gst;
-   sb_helper2 = LibVEX_GuestAMD64_get_rflags(&gst);
-   switchback_asm(); // never returns
-}
+  assert(offsetof(VexGuestARM64State, guest_X0)  == 16 + 8*0);
+  assert(offsetof(VexGuestARM64State, guest_X30) == 16 + 8*30);
+  assert(offsetof(VexGuestARM64State, guest_SP)  == 16 + 8*31);
+  assert(offsetof(VexGuestARM64State, guest_TPIDR_EL0) == 16 + 8*37);
+  assert(offsetof(VexGuestARM64State, guest_Q0)  == 16 + 8*38 + 16*0);
 
-#elif defined(__powerpc__)
+  HWord arg0 = (HWord)&gst;
+  HWord arg1 = LibVEX_GuestARM64_get_nzcv(&gst);
 
-static void invalidate_icache(void *ptr, int nbytes)
-{
-   unsigned long startaddr = (unsigned long) ptr;
-   unsigned long endaddr = startaddr + nbytes;
-   unsigned long addr;
-   unsigned long cls = CacheLineSize;
+  /* Copy the entire switchback_asm procedure into writable and
+     executable memory. */
 
-   startaddr &= ~(cls - 1);
-   for (addr = startaddr; addr < endaddr; addr += cls)
-      asm volatile("dcbst 0,%0" : : "r" (addr));
-   asm volatile("sync");
-   for (addr = startaddr; addr < endaddr; addr += cls)
-      asm volatile("icbi 0,%0" : : "r" (addr));
-   asm volatile("sync; isync");
-}
+  UChar* sa_start     = (UChar*)&switchback_asm;
+  UChar* sa_nop_start = (UChar*)&nop_start_point;
+  UChar* sa_end       = (UChar*)&nop_end_point;
 
-
-#if !defined(__powerpc64__) // ppc32
-asm(
-"switchback_asm:\n"
-// gst
-"   lis  %r31,sb_helper1@ha\n"      // get hi-wd of guest_state_ptr addr
-"   lwz  %r31,sb_helper1@l(%r31)\n" // load word of guest_state_ptr to r31
-
-// LR
-"   lwz  %r3,900(%r31)\n"           // guest_LR
-"   mtlr %r3\n"                     // move to LR
-
-// CR
-"   lis  %r3,sb_helper2@ha\n"       // get hi-wd of flags addr
-"   lwz  %r3,sb_helper2@l(%r3)\n"   // load flags word to r3
-"   mtcr %r3\n"                     // move r3 to CR
-
-// CTR
-"   lwz %r3,904(%r31)\n"       // guest_CTR
-"   mtctr %r3\n"               // move r3 to CTR
-
-// XER
-"   lis  %r3,sb_helper3@ha\n"       // get hi-wd of xer addr
-"   lwz  %r3,sb_helper3@l(%r3)\n"   // load xer word to r3
-"   mtxer %r3\n"                     // move r3 to XER
-
-
-// GPR's
-"   lwz %r0,    0(%r31)\n"
-"   lwz %r1,    4(%r31)\n"     // switch stacks (r1 = SP)
-"   lwz %r2,    8(%r31)\n"
-"   lwz %r3,   12(%r31)\n"
-"   lwz %r4,   16(%r31)\n"
-"   lwz %r5,   20(%r31)\n"
-"   lwz %r6,   24(%r31)\n"
-"   lwz %r7,   28(%r31)\n"
-"   lwz %r8,   32(%r31)\n"
-"   lwz %r9,   36(%r31)\n"
-"   lwz %r10,  40(%r31)\n"
-"   lwz %r11,  44(%r31)\n"
-"   lwz %r12,  48(%r31)\n"
-"   lwz %r13,  52(%r31)\n"
-"   lwz %r14,  56(%r31)\n"
-"   lwz %r15,  60(%r31)\n"
-"   lwz %r16,  64(%r31)\n"
-"   lwz %r17,  68(%r31)\n"
-"   lwz %r18,  72(%r31)\n"
-"   lwz %r19,  76(%r31)\n"
-"   lwz %r20,  80(%r31)\n"
-"   lwz %r21,  84(%r31)\n"
-"   lwz %r22,  88(%r31)\n"
-"   lwz %r23,  92(%r31)\n"
-"   lwz %r24,  96(%r31)\n"
-"   lwz %r25, 100(%r31)\n"
-"   lwz %r26, 104(%r31)\n"
-"   lwz %r27, 108(%r31)\n"
-"   lwz %r28, 112(%r31)\n"
-"   lwz %r29, 116(%r31)\n"
-"   lwz %r30, 120(%r31)\n"
-"   lwz %r31, 124(%r31)\n"
-"nop_start_point:\n"
-"   nop\n"
-"   nop\n"
-"   nop\n"
-"   nop\n"
-"   nop\n"
-"nop_end_point:\n"
-);
-
-#else // ppc64
-
-asm(
-".text\n"
-"   .global switchback_asm\n"
-"   .section \".opd\",\"aw\"\n"
-"   .align 3\n"
-"switchback_asm:\n"
-"   .quad .switchback_asm,.TOC.@tocbase,0\n"
-"   .previous\n"
-"   .type .switchback_asm,@function\n"
-"   .global  .switchback_asm\n"
-".switchback_asm:\n"
-"switchback_asm_undotted:\n"
-
-// gst: load word of guest_state_ptr to r31
-"   lis    %r31,sb_helper1@highest\n"
-"   ori    %r31,%r31,sb_helper1@higher\n"
-"   rldicr %r31,%r31,32,31\n"
-"   oris   %r31,%r31,sb_helper1@h\n"
-"   ori    %r31,%r31,sb_helper1@l\n"
-"   ld     %r31,0(%r31)\n"
-
-
-// LR
-"   ld   %r3,1032(%r31)\n"          // guest_LR
-"   mtlr %r3\n"                     // move to LR
-
-// CR
-"   lis    %r3,sb_helper2@highest\n"
-"   ori    %r3,%r3,sb_helper2@higher\n"
-"   rldicr %r3,%r3,32,31\n"
-"   oris   %r3,%r3,sb_helper2@h\n"
-"   ori    %r3,%r3,sb_helper2@l\n"
-"   ld     %r3,0(%r3)\n"            // load flags word to r3
-"   mtcr   %r3\n"                   // move r3 to CR
-
-// CTR
-"   ld     %r3,1040(%r31)\n"        // guest_CTR
-"   mtctr  %r3\n"                   // move r3 to CTR
-
-// XER
-"   lis    %r3,sb_helper3@highest\n"
-"   ori    %r3,%r3,sb_helper3@higher\n"
-"   rldicr %r3,%r3,32,31\n"
-"   oris   %r3,%r3,sb_helper3@h\n"
-"   ori    %r3,%r3,sb_helper3@l\n"
-"   ld     %r3,0(%r3)\n"            // load xer word to r3
-"   mtxer  %r3\n"                   // move r3 to XER
-
-// GPR's
-"   ld %r0,    0(%r31)\n"
-"   ld %r1,    8(%r31)\n"     // switch stacks (r1 = SP)
-"   ld %r2,   16(%r31)\n"
-"   ld %r3,   24(%r31)\n"
-"   ld %r4,   32(%r31)\n"
-"   ld %r5,   40(%r31)\n"
-"   ld %r6,   48(%r31)\n"
-"   ld %r7,   56(%r31)\n"
-"   ld %r8,   64(%r31)\n"
-"   ld %r9,   72(%r31)\n"
-"   ld %r10,  80(%r31)\n"
-"   ld %r11,  88(%r31)\n"
-"   ld %r12,  96(%r31)\n"
-"   ld %r13, 104(%r31)\n"
-"   ld %r14, 112(%r31)\n"
-"   ld %r15, 120(%r31)\n"
-"   ld %r16, 128(%r31)\n"
-"   ld %r17, 136(%r31)\n"
-"   ld %r18, 144(%r31)\n"
-"   ld %r19, 152(%r31)\n"
-"   ld %r20, 160(%r31)\n"
-"   ld %r21, 168(%r31)\n"
-"   ld %r22, 176(%r31)\n"
-"   ld %r23, 184(%r31)\n"
-"   ld %r24, 192(%r31)\n"
-"   ld %r25, 200(%r31)\n"
-"   ld %r26, 208(%r31)\n"
-"   ld %r27, 216(%r31)\n"
-"   ld %r28, 224(%r31)\n"
-"   ld %r29, 232(%r31)\n"
-"   ld %r30, 240(%r31)\n"
-"   ld %r31, 248(%r31)\n"
-"nop_start_point:\n"
-"   nop\n"
-"   nop\n"
-"   nop\n"
-"   nop\n"
-"   nop\n"
-"nop_end_point:\n"
-);
-#endif
-
-extern void switchback_asm_undotted;
-extern void nop_start_point;
-extern void nop_end_point;
-void switchback ( void )
-{
-   Int i;
-   /* blargh.  Copy the entire switchback_asm procedure into new
-      memory on which can can set both write and execute permissions,
-      so we can poke around with it and then run the results. */
-
-#if defined(__powerpc64__) // ppc32
-   UChar* sa_start     = (UChar*)&switchback_asm_undotted;
-#else
-   UChar* sa_start     = (UChar*)&switchback_asm;
-#endif
-   UChar* sa_nop_start = (UChar*)&nop_start_point;
-   UChar* sa_end       = (UChar*)&nop_end_point;
-
-#if 0
-   printf("sa_start     %p\n", sa_start );
-   printf("sa_nop_start %p\n", sa_nop_start);
-   printf("sa_end       %p\n", sa_end);
-#endif
-   Int nbytes       = sa_end - sa_start;
-   Int off_nopstart = sa_nop_start - sa_start;
-   if (0)
-      printf("nbytes = %d, nopstart = %d\n", nbytes, off_nopstart);
+  Int i;
+  Int nbytes       = sa_end - sa_start;
+  Int off_nopstart = sa_nop_start - sa_start;
+  if (0)
+     printf("nbytes = %d, nopstart = %d\n", nbytes, off_nopstart);
 
    /* copy it into mallocville */
    UChar* copy = mymalloc(nbytes);
@@ -440,74 +414,80 @@ void switchback ( void )
 
    UInt* p = (UInt*)(&copy[off_nopstart]);
 
-#if !defined(__powerpc64__) // ppc32
-   Addr32 addr_of_nop = (Addr32)p;
-   Addr32 where_to_go = gst.guest_CIA;
-   Int    diff = ((Int)where_to_go) - ((Int)addr_of_nop);
-
-#if 0
-   printf("addr of first nop = 0x%x\n", addr_of_nop);
-   printf("where to go       = 0x%x\n", where_to_go);
-   printf("diff = 0x%x\n", diff);
-#endif
-
-#else // ppc64
    Addr64 addr_of_nop = (Addr64)p;
-   Addr64 where_to_go = gst.guest_CIA;
+   Addr64 where_to_go = gst.guest_PC;
    Long   diff = ((Long)where_to_go) - ((Long)addr_of_nop);
 
-#if 0
-   printf("addr of first nop = 0x%llx\n", addr_of_nop);
-   printf("where to go       = 0x%llx\n", where_to_go);
-   printf("diff = 0x%llx\n", diff);
-#endif
-#endif
+   if (0) {
+     printf("addr of first nop = 0x%llx\n", addr_of_nop);
+     printf("where to go       = 0x%llx\n", where_to_go);
+     printf("diff = 0x%llx\n", diff);
+   }
 
-   if (diff < -0x2000000 || diff >= 0x2000000) {
+   if (diff < -0x8000000LL || diff >= 0x8000000LL) {
      // we're hosed.  Give up
      printf("hosed -- offset too large\n");
      assert(0);
    }
 
-   sb_helper1 = (HWord)&gst;
-#if !defined(__powerpc64__) // ppc32
-   sb_helper2 = LibVEX_GuestPPC32_get_CR(&gst);
-   sb_helper3 = LibVEX_GuestPPC32_get_XER(&gst);
-#else // ppc64
-   sb_helper2 = LibVEX_GuestPPC64_get_CR(&gst);
-   sb_helper3 = LibVEX_GuestPPC64_get_XER(&gst);
-#endif
-
    /* stay sane ... */
-   assert(p[0] == 24<<26); /* nop */
+   assert(p[0] == 0xd503201f); /* nop */
 
    /* branch to diff */
-   p[0] = ((18<<26) | (((diff >> 2) & 0xFFFFFF) << 2) | (0<<1) | (0<<0));
+   p[0] = 0x14000000 | ((diff >> 2) & 0x3FFFFFF);
 
    invalidate_icache( copy, nbytes );
 
-#if defined(__powerpc64__)
-   //printf("jumping to %p\n", copy);
-   { ULong faketoc[3];
-     void* v;
-     faketoc[0] = (ULong)copy;
-     v = &faketoc[0];
-     ( (void(*)(void)) v )();
-   }
-#else
-   ( (void(*)(void))copy )();
-#endif
+   ( (void(*)(HWord,HWord))copy )(arg0, arg1);
 }
 
 #else
-#   error "Unknown arch (switchback)"
+# error "Unknown plat"
 #endif
 
-/* -------------------- */
-static HWord f, gp, res;
-extern void run_translation_asm(void);
 
-#if defined(__i386__)
+
+/* -------------------- */
+// f    holds is the host code address
+// gp   holds the guest state pointer to use
+// res  is to hold the result.  Or some such.
+static HWord block[2]; // f, gp;
+extern HWord run_translation_asm(void);
+
+extern void disp_chain_assisted(void);
+
+#if defined(__aarch64__)
+asm(
+"run_translation_asm:"            "\n"
+"   stp  x29, x30, [sp, #-16]!"   "\n"
+"   stp  x27, x28, [sp, #-16]!"   "\n"
+"   stp  x25, x26, [sp, #-16]!"   "\n"
+"   stp  x23, x24, [sp, #-16]!"   "\n"
+"   stp  x21, x22, [sp, #-16]!"   "\n"
+"   stp  x19, x20, [sp, #-16]!"   "\n"
+"   stp  x0,  xzr, [sp, #-16]!"   "\n"
+"   adrp x0, block"               "\n"
+"   add  x0, x0, :lo12:block"     "\n"
+"   ldr  x21, [x0, #8]"           "\n"  // load GSP
+"   ldr  x1,  [x0, #0]"           "\n"  // Host address
+"   br   x1"                 "\n"  // go (we wind up at disp_chain_assisted)
+
+"disp_chain_assisted:"            "\n" // x21 holds the trc.  Return it.
+"   mov  x1, x21" "\n"
+    /* Restore int regs, but not x1. */
+"   ldp  x0,  xzr, [sp], #16"    "\n"
+"   ldp  x19, x20, [sp], #16"    "\n"
+"   ldp  x21, x22, [sp], #16"    "\n"
+"   ldp  x23, x24, [sp], #16"    "\n"
+"   ldp  x25, x26, [sp], #16"    "\n"
+"   ldp  x27, x28, [sp], #16"    "\n"
+"   ldp  x29, x30, [sp], #16"    "\n"
+"   mov  x0, x1"                 "\n"
+"   ret"                         "\n"
+);
+
+#elif defined(__i386__)
+
 asm(
 "run_translation_asm:\n"
 "   pushal\n"
@@ -519,277 +499,24 @@ asm(
 "   ret\n"
 );
 
-#elif defined(__x86_64__)
-asm(
-"run_translation_asm:\n"
-
-"   pushq %rax\n"
-"   pushq %rbx\n"
-"   pushq %rcx\n"
-"   pushq %rdx\n"
-"   pushq %rbp\n"
-"   pushq %rsi\n"
-"   pushq %rdi\n"
-"   pushq %r8\n"
-"   pushq %r9\n"
-"   pushq %r10\n"
-"   pushq %r11\n"
-"   pushq %r12\n"
-"   pushq %r13\n"
-"   pushq %r14\n"
-"   pushq %r15\n"
-
-"   movq gp, %rbp\n"
-"   movq f, %rax\n"
-"   call *%rax\n"
-"   movq %rax, res\n"
-
-"   popq  %r15\n"
-"   popq  %r14\n"
-"   popq  %r13\n"
-"   popq  %r12\n"
-"   popq  %r11\n"
-"   popq  %r10\n"
-"   popq  %r9\n"
-"   popq  %r8\n"
-"   popq  %rdi\n"
-"   popq  %rsi\n"
-"   popq  %rbp\n"
-"   popq  %rdx\n"
-"   popq  %rcx\n"
-"   popq  %rbx\n"
-"   popq  %rax\n"
-
-"   ret\n"
-);
-
-#elif defined(__powerpc__)
-
-#if !defined(__powerpc64__) // ppc32
-asm(
-"run_translation_asm:\n"
-
-// create new stack:
-// save old sp at first word & update sp
-"   stwu 1,-256(1)\n"
-
-// save LR
-"   mflr %r0\n"
-"   stw  %r0,260(%r1)\n"
-
-// leave hole @ 4(%r1) for a callee to save it's LR
-// no params
-// no need to save non-volatile CR fields
-
-// store registers to stack: just the callee-saved regs
-"   stw %r13,  8(%r1)\n"
-"   stw %r14, 12(%r1)\n"
-"   stw %r15, 16(%r1)\n"
-"   stw %r16, 20(%r1)\n"
-"   stw %r17, 24(%r1)\n"
-"   stw %r18, 28(%r1)\n"
-"   stw %r19, 32(%r1)\n"
-"   stw %r20, 36(%r1)\n"
-"   stw %r21, 40(%r1)\n"
-"   stw %r22, 44(%r1)\n"
-"   stw %r23, 48(%r1)\n"
-"   stw %r24, 52(%r1)\n"
-"   stw %r25, 56(%r1)\n"
-"   stw %r26, 60(%r1)\n"
-"   stw %r27, 64(%r1)\n"
-"   stw %r28, 68(%r1)\n"
-"   stw %r29, 72(%r1)\n"
-"   stw %r30, 76(%r1)\n"
-"   stw %r31, 80(%r1)\n"
-
-// r31 (guest state ptr) := global var "gp"
-"   lis %r31,gp@ha\n"
-"   lwz %r31,gp@l(%r31)\n"
-
-// call translation address in global var "f"
-"   lis %r4,f@ha\n"
-"   lwz %r4,f@l(%r4)\n"
-"   mtctr %r4\n"
-"   bctrl\n"
-
-// save return value (in r3) into global var "res"
-"   lis %r5,res@ha\n"
-"   stw %r3,res@l(%r5)\n"
-
-// save possibly modified guest state ptr (r31) in "gp"
-"   lis %r5,gp@ha\n"
-"   stw %r31,gp@l(%r5)\n"
-
-// reload registers from stack
-"   lwz %r13,  8(%r1)\n"
-"   lwz %r14, 12(%r1)\n"
-"   lwz %r15, 16(%r1)\n"
-"   lwz %r16, 20(%r1)\n"
-"   lwz %r17, 24(%r1)\n"
-"   lwz %r18, 28(%r1)\n"
-"   lwz %r19, 32(%r1)\n"
-"   lwz %r20, 36(%r1)\n"
-"   lwz %r21, 40(%r1)\n"
-"   lwz %r22, 44(%r1)\n"
-"   lwz %r23, 48(%r1)\n"
-"   lwz %r24, 52(%r1)\n"
-"   lwz %r25, 56(%r1)\n"
-"   lwz %r26, 60(%r1)\n"
-"   lwz %r27, 64(%r1)\n"
-"   lwz %r28, 68(%r1)\n"
-"   lwz %r29, 72(%r1)\n"
-"   lwz %r30, 76(%r1)\n"
-"   lwz %r31, 80(%r1)\n"
-
-// restore LR
-"   lwz  %r0,260(%r1)\n"
-"   mtlr %r0\n"
-
-// restore previous stack pointer
-"   addi %r1,%r1,256\n"
-
-// return
-"   blr"
-);
-
-#else // ppc64
-
-asm(
-".text\n"
-"   .global run_translation_asm\n"
-"   .section \".opd\",\"aw\"\n"
-"   .align 3\n"
-"run_translation_asm:\n"
-"   .quad .run_translation_asm,.TOC.@tocbase,0\n"
-"   .previous\n"
-"   .type .run_translation_asm,@function\n"
-"   .global  .run_translation_asm\n"
-".run_translation_asm:\n"
-
-// save LR,CTR
-"   mflr  %r0\n"
-"   std   %r0,16(%r1)\n"
-"   mfctr %r0\n"
-"   std   %r0,8(%r1)\n"
-
-// create new stack:
-// save old sp at first word & update sp
-"   stdu 1,-256(1)\n"
-
-// leave hole @ 4(%r1) for a callee to save it's LR
-// no params
-// no need to save non-volatile CR fields
-
-// store registers to stack: just the callee-saved regs
-"   std %r13,  48(%r1)\n"
-"   std %r14,  56(%r1)\n"
-"   std %r15,  64(%r1)\n"
-"   std %r16,  72(%r1)\n"
-"   std %r17,  80(%r1)\n"
-"   std %r18,  88(%r1)\n"
-"   std %r19,  96(%r1)\n"
-"   std %r20, 104(%r1)\n"
-"   std %r21, 112(%r1)\n"
-"   std %r22, 120(%r1)\n"
-"   std %r23, 128(%r1)\n"
-"   std %r24, 136(%r1)\n"
-"   std %r25, 144(%r1)\n"
-"   std %r26, 152(%r1)\n"
-"   std %r27, 160(%r1)\n"
-"   std %r28, 168(%r1)\n"
-"   std %r29, 176(%r1)\n"
-"   std %r30, 184(%r1)\n"
-"   std %r31, 192(%r1)\n"
-
-// r31 (guest state ptr) := global var "gp"
-"   lis    %r31,gp@highest\n"
-"   ori    %r31,%r31,gp@higher\n"
-"   rldicr %r31,%r31,32,31\n"
-"   oris   %r31,%r31,gp@h\n"
-"   ori    %r31,%r31,gp@l\n"
-"   ld     %r31,0(%r31)\n"
-
-// call translation address in global var "f"
-"   lis    %r4,f@highest\n"
-"   ori    %r4,%r4,f@higher\n"
-"   rldicr %r4,%r4,32,31\n"
-"   oris   %r4,%r4,f@h\n"
-"   ori    %r4,%r4,f@l\n"
-"   ld     %r4,0(%r4)\n"
-"   mtctr  %r4\n"
-"   bctrl\n"
-
-// save return value (in r3) into global var "res"
-"   lis    %r5,res@highest\n"
-"   ori    %r5,%r5,res@higher\n"
-"   rldicr %r5,%r5,32,31\n"
-"   oris   %r5,%r5,res@h\n"
-"   ori    %r5,%r5,res@l\n"
-"   std    %r3,0(%r5)\n"
-
-// save possibly modified guest state ptr (r31) in "gp"
-"   lis    %r5,gp@highest\n"
-"   ori    %r5,%r5,gp@higher\n"
-"   rldicr %r5,%r5,32,31\n"
-"   oris   %r5,%r5,gp@h\n"
-"   ori    %r5,%r5,gp@l\n"
-"   std    %r31,0(%r5)\n"
-
-// reload registers from stack
-"   ld %r13,  48(%r1)\n"
-"   ld %r14,  56(%r1)\n"
-"   ld %r15,  64(%r1)\n"
-"   ld %r16,  72(%r1)\n"
-"   ld %r17,  80(%r1)\n"
-"   ld %r18,  88(%r1)\n"
-"   ld %r19,  96(%r1)\n"
-"   ld %r20, 104(%r1)\n"
-"   ld %r21, 112(%r1)\n"
-"   ld %r22, 120(%r1)\n"
-"   ld %r23, 128(%r1)\n"
-"   ld %r24, 136(%r1)\n"
-"   ld %r25, 144(%r1)\n"
-"   ld %r26, 152(%r1)\n"
-"   ld %r27, 160(%r1)\n"
-"   ld %r28, 168(%r1)\n"
-"   ld %r29, 176(%r1)\n"
-"   ld %r30, 184(%r1)\n"
-"   ld %r31, 192(%r1)\n"
-
-// restore previous stack pointer
-"   addi %r1,%r1,256\n"
-
-// restore LR,CTR
-"   ld    %r0,16(%r1)\n"
-"   mtlr  %r0\n"
-"   ld    %r0,8(%r1)\n"
-"   mtctr %r0\n"
-
-// return
-"   blr"
-);
-#endif
-
 #else
-
-#   error "Unknown arch"
+# error "Unknown arch"
 #endif
 
-/* Run a translation at host address 'translation'.  Return
-   True if Vex asked for an translation cache flush as a result.
+
+/* Run a translation at host address 'translation' and return the TRC.
 */
-Bool run_translation ( HWord translation )
+HWord run_translation ( HWord translation )
 {
    if (0 && DEBUG_TRACE_FLAGS) {
       printf(" run translation %p\n", (void*)translation );
       printf(" simulated bb: %llu\n", n_bbs_done);
    }
-   f = translation;
-   gp = (HWord)&gst;
-   run_translation_asm();
-   gst.GuestPC = res;
+   block[0] = translation;
+   block[1] = (HWord)&gst;
+   HWord trc = run_translation_asm();
    n_bbs_done ++;
-   return gp==VEX_TRC_JMP_TINVAL;
+   return trc;
 }
 
 HWord find_translation ( Addr64 guest_addr )
@@ -832,6 +559,10 @@ void make_translation ( Addr64 guest_addr, Bool verbose )
    VexArchInfo vex_archinfo;
    Int trans_used, i, ws_needed;
 
+   memset(&vta, 0, sizeof(vta));
+   memset(&tres, 0, sizeof(tres));
+   memset(&vex_archinfo, 0, sizeof(vex_archinfo));
+
    if (trans_table_used >= N_TRANS_TABLE
        || trans_cache_used >= N_TRANS_CACHE-1000) {
       /* If things are looking to full, just dump
@@ -845,8 +576,8 @@ void make_translation ( Addr64 guest_addr, Bool verbose )
       printf("make translation %p\n", ULong_to_Ptr(guest_addr));
 
    LibVEX_default_VexArchInfo(&vex_archinfo);
-   vex_archinfo.subarch = VexSubArch;
-   vex_archinfo.ppc_icache_line_szB = CacheLineSize;
+   //vex_archinfo.subarch = VexSubArch;
+   //vex_archinfo.ppc_icache_line_szB = CacheLineSize;
 
    /* */
    vta.arch_guest       = VexArch;
@@ -855,7 +586,6 @@ void make_translation ( Addr64 guest_addr, Bool verbose )
    vta.archinfo_host    = vex_archinfo;
    vta.guest_bytes      = (UChar*)ULong_to_Ptr(guest_addr);
    vta.guest_bytes_addr = (Addr64)guest_addr;
-   vta.guest_bytes_addr_noredir = (Addr64)guest_addr;
    vta.chase_into_ok    = chase_into_ok;
 //   vta.guest_extents    = &vge;
    vta.guest_extents    = &trans_table[trans_table_used];
@@ -864,14 +594,21 @@ void make_translation ( Addr64 guest_addr, Bool verbose )
    vta.host_bytes_used  = &trans_used;
    vta.instrument1      = NULL;
    vta.instrument2      = NULL;
-   vta.do_self_check    = False;
+   vta.needs_self_check = needs_self_check;
    vta.traceflags       = verbose ? TEST_FLAGS : DEBUG_TRACE_FLAGS;
-   vta.dispatch         = NULL;
+
+   vta.disp_cp_chain_me_to_slowEP = NULL; //disp_chain_fast;
+   vta.disp_cp_chain_me_to_fastEP = NULL; //disp_chain_slow;
+   vta.disp_cp_xindir             = NULL; //disp_chain_indir;
+   vta.disp_cp_xassisted          = disp_chain_assisted;
+
    vta.addProfInc       = False;
 
    tres = LibVEX_Translate ( &vta );
 
-   assert(tres == VexTransOK);
+   assert(tres.status == VexTransOK);
+   assert(tres.offs_profInc == -1);
+
    ws_needed = (trans_used+7) / 8;
    assert(ws_needed > 0);
    assert(trans_cache_used + ws_needed < N_TRANS_CACHE);
@@ -883,7 +620,7 @@ void make_translation ( Addr64 guest_addr, Bool verbose )
       *dst = *src;
    }
 
-#if defined(__powerpc__)
+#if defined(__aarch64__)
    invalidate_icache( &trans_cache[trans_cache_used], trans_used );
 #endif
 
@@ -893,6 +630,7 @@ void make_translation ( Addr64 guest_addr, Bool verbose )
 }
 
 
+__attribute__((unused))
 static Bool overlap ( Addr64 start, UInt len, VexGuestExtents* vge )
 {
    Int i;
@@ -906,26 +644,6 @@ static Bool overlap ( Addr64 start, UInt len, VexGuestExtents* vge )
    }
    return False; /* no overlap */
 }
-
-static void dump_translations ( Addr64 start, UInt len )
-{
-   Int i, j;
-   j = 0;
-   for (i = 0; i < trans_table_used; i++) {
-      if (overlap(start, len, &trans_table[i])) {
-         /* do nothing */
-      } else {
-         assert(j <= i);
-         trans_table[j] = trans_table[i];
-         trans_tableP[j] = trans_tableP[i];
-	 j++;
-      }
-   }
-   assert(j >= 0 && j <= trans_table_used);
-   if (0) printf("dumped %d translations\n", trans_table_used - j);
-   trans_table_used = j;
-}
-
 
 static ULong  stopAfter = 0;
 static UChar* entryP    = NULL;
@@ -955,18 +673,14 @@ static void run_simulator ( void )
    static Addr64 last_guest = 0;
    Addr64 next_guest;
    HWord next_host;
-   Bool need_inval;
    while (1) {
       next_guest = gst.GuestPC;
 
       if (0)
          printf("\nnext_guest: 0x%x\n", (UInt)next_guest);
 
-#if defined(__powerpc64__)
-      if (next_guest == Ptr_to_ULong( (void*)(*(ULong*)(&serviceFn)) )) {
-#else
       if (next_guest == Ptr_to_ULong(&serviceFn)) {
-#endif
+
          /* "do" the function call to serviceFn */
 #        if defined(__i386__)
          {
@@ -976,19 +690,11 @@ static void run_simulator ( void )
             gst.guest_ESP = esp+4;
             next_guest = gst.guest_EIP;
          }
-#        elif defined(__x86_64__)
+#        elif defined(__aarch64__)
          {
-            HWord esp = gst.guest_RSP;
-            gst.guest_RIP = *(UInt*)(esp+0);
-            gst.guest_RAX = serviceFn( gst.guest_RDI, gst.guest_RSI );
-            gst.guest_RSP = esp+8;
-            next_guest = gst.guest_RIP;
-         }
-#        elif defined(__powerpc__)
-         {
-            gst.guest_GPR3 = serviceFn( gst.guest_GPR3, gst.guest_GPR4 );
-            gst.guest_CIA  = gst.guest_LR;
-            next_guest     = gst.guest_CIA;
+            gst.guest_X0 = serviceFn( gst.guest_X0, gst.guest_X1 );
+            gst.guest_PC = gst.guest_X30;
+            next_guest   = gst.guest_PC;
          }
 #        else
 #        error "Unknown arch"
@@ -1023,13 +729,12 @@ static void run_simulator ( void )
       }
 
       last_guest = next_guest;
-      need_inval = run_translation(next_host);
-      if (need_inval) {
-#if defined(__powerpc__)
-         dump_translations( (Addr64)gst.guest_TISTART, gst.guest_TILEN );
-	 if (0) printf("dump translations done\n");
-#endif
+      HWord trc = run_translation(next_host);
+      if (0) printf("------- trc = %lu\n", trc);
+      if (trc != VEX_TRC_JMP_BORING) {
+        if (1) printf("------- trc = %lu\n", trc);
       }
+      assert(trc == VEX_TRC_JMP_BORING);
    }
 }
 
@@ -1042,61 +747,6 @@ static void usage ( void )
    exit(1);
 }
 
-#if defined(__powerpc__)
-
-#if !defined(__powerpc64__) // ppc32
-UInt saved_R2;
-asm(
-"get_R2:\n"
-"   lis  %r10,saved_R2@ha\n"
-"   stw  %r2,saved_R2@l(%r10)\n"
-"   blr\n"
-);
-#else // ppc64
-ULong saved_R2;
-ULong saved_R13;
-asm(
-".text\n"
-"   .global get_R2\n"
-"   .section \".opd\",\"aw\"\n"
-"   .align 3\n"
-"get_R2:\n"
-"   .quad .get_R2,.TOC.@tocbase,0\n"
-"   .previous\n"
-"   .type .get_R2,@function\n"
-"   .global  .get_R2\n"
-".get_R2:\n"
-"   lis    %r10,saved_R2@highest\n"
-"   ori    %r10,%r10,saved_R2@higher\n"
-"   rldicr %r10,%r10,32,31\n"
-"   oris   %r10,%r10,saved_R2@h\n"
-"   ori    %r10,%r10,saved_R2@l\n"
-"   std    %r2,0(%r10)\n"
-"   blr\n"
-);
-asm(
-".text\n"
-"   .global get_R13\n"
-"   .section \".opd\",\"aw\"\n"
-"   .align 3\n"
-"get_R13:\n"
-"   .quad .get_R13,.TOC.@tocbase,0\n"
-"   .previous\n"
-"   .type .get_R13,@function\n"
-"   .global  .get_R13\n"
-".get_R13:\n"
-"   lis    %r10,saved_R13@highest\n"
-"   ori    %r10,%r10,saved_R13@higher\n"
-"   rldicr %r10,%r10,32,31\n"
-"   oris   %r10,%r10,saved_R13@h\n"
-"   ori    %r10,%r10,saved_R13@l\n"
-"   std    %r13,0(%r10)\n"
-"   blr\n"
-);
-#endif
-extern void get_R2 ( void );
-extern void get_R13 ( void );
-#endif
 
 int main ( Int argc, HChar** argv )
 {
@@ -1114,44 +764,30 @@ int main ( Int argc, HChar** argv )
    }
 
    LibVEX_default_VexControl(&vcon);
-   vcon.guest_max_insns=50;
+   vcon.guest_max_insns=50 - 49;
    vcon.guest_chase_thresh=0;
    vcon.iropt_level=2;
 
    LibVEX_Init( failure_exit, log_bytes, 1, False, &vcon );
    LibVEX_Guest_initialise(&gst);
+   gst.host_EvC_COUNTER  = 999999999; // so we should never get an exit
+   gst.host_EvC_FAILADDR = 0x5a5a5a5a5a5a5a5a;
 
    /* set up as if a call to the entry point passing serviceFn as 
       the one and only parameter */
 #  if defined(__i386__)
    gst.guest_EIP = (UInt)entryP;
-   gst.guest_ESP = (UInt)&gstack[25000];
+   gst.guest_ESP = (UInt)&gstack[32000];
    *(UInt*)(gst.guest_ESP+4) = (UInt)serviceFn;
    *(UInt*)(gst.guest_ESP+0) = 0x12345678;
-#  elif defined(__x86_64__)
-   gst.guest_RIP = (ULong)entryP;
-   gst.guest_RSP = (ULong)&gstack[25000];
-   gst.guest_RDI = (ULong)serviceFn;
-   *(ULong*)(gst.guest_RSP+0) = 0x12345678AABBCCDDULL;
-#  elif defined(__powerpc__)
-   get_R2();
 
-#if !defined(__powerpc64__) // ppc32
-   gst.guest_CIA   = (UInt)entryP;
-   gst.guest_GPR1  = (UInt)&gstack[25000]; /* stack pointer */
-   gst.guest_GPR3  = (UInt)serviceFn; /* param to entry */
-   gst.guest_GPR2  = saved_R2;
-   gst.guest_LR    = 0x12345678; /* bogus return address */
-#else // ppc64
-   get_R13();
-   gst.guest_CIA   = * (ULong*)entryP;
-   gst.guest_GPR1  = (ULong)&gstack[25000]; /* stack pointer */
-   gst.guest_GPR3  = (ULong)serviceFn;      /* param to entry */
-   gst.guest_GPR2  = saved_R2;
-   gst.guest_GPR13 = saved_R13;
-   gst.guest_LR    = 0x1234567812345678ULL; /* bogus return address */
-//   printf("setting CIA to %p\n", (void*)gst.guest_CIA);
-#endif
+#  elif defined(__aarch64__)
+   gst.guest_PC = (ULong)entryP;
+   gst.guest_SP = (ULong)&gstack[32000];
+   gst.guest_X0 = (ULong)serviceFn;
+   HWord tpidr_el0 = 0;
+   __asm__ __volatile__("mrs %0, tpidr_el0" : "=r"(tpidr_el0));
+   gst.guest_TPIDR_EL0 = tpidr_el0;
 
 #  else
 #  error "Unknown arch"

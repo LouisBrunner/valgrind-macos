@@ -1178,6 +1178,14 @@ static Bool isZeroU32 ( IRExpr* e )
                   && e->Iex.Const.con->Ico.U32 == 0);
 }
 
+/* Is this literally IRExpr_Const(IRConst_U64(0)) ? */
+static Bool isZeroU64 ( IRExpr* e )
+{
+   return toBool( e->tag == Iex_Const 
+                  && e->Iex.Const.con->tag == Ico_U64
+                  && e->Iex.Const.con->Ico.U64 == 0);
+}
+
 /* Is this an integer constant with value 0 ? */
 static Bool isZeroU ( IRExpr* e )
 {
@@ -1224,6 +1232,7 @@ static IRExpr* mkZeroOfPrimopResultType ( IROp op )
       case Iop_Xor16: return IRExpr_Const(IRConst_U16(0));
       case Iop_Sub32:
       case Iop_Xor32: return IRExpr_Const(IRConst_U32(0));
+      case Iop_And64:
       case Iop_Sub64:
       case Iop_Xor64: return IRExpr_Const(IRConst_U64(0));
       case Iop_XorV128: return IRExpr_Const(IRConst_V128(0));
@@ -2147,6 +2156,14 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
                   ==> t, for some IRTemp t */
                if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
                   e2 = e->Iex.Binop.arg1;
+                  break;
+               }
+               if (/* could handle other And cases here too, but so
+                      far not */
+                   e->Iex.Binop.op == Iop_And64
+                   && (isZeroU64(e->Iex.Binop.arg1)
+                       || isZeroU64(e->Iex.Binop.arg2))) {
+                  e2 =  mkZeroOfPrimopResultType(e->Iex.Binop.op);
                   break;
                }
                break;

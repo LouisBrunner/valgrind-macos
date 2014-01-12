@@ -154,11 +154,11 @@ LibVEX_GuestS390X_initialise(VexGuestS390XState *state)
 Bool
 guest_s390x_state_requires_precise_mem_exns(Int minoff, Int maxoff)
 {
-   Int lr_min = S390X_GUEST_OFFSET(guest_LR);
+   Int lr_min = S390X_GUEST_OFFSET(guest_s390_LR);
    Int lr_max = lr_min + 8 - 1;
-   Int sp_min = S390X_GUEST_OFFSET(guest_SP);
+   Int sp_min = S390X_GUEST_OFFSET(guest_s390_SP);
    Int sp_max = sp_min + 8 - 1;
-   Int fp_min = S390X_GUEST_OFFSET(guest_FP);
+   Int fp_min = S390X_GUEST_OFFSET(guest_s390_FP);
    Int fp_max = fp_min + 8 - 1;
    Int ia_min = S390X_GUEST_OFFSET(guest_IA);
    Int ia_max = ia_min + 8 - 1;
@@ -203,11 +203,11 @@ VexGuestLayout s390xGuest_layout = {
    .total_sizeB = sizeof(VexGuestS390XState),
 
    /* Describe the stack pointer. */
-   .offset_SP = S390X_GUEST_OFFSET(guest_SP),
+   .offset_SP = S390X_GUEST_OFFSET(guest_s390_SP),
    .sizeof_SP = 8,
 
    /* Describe the frame pointer. */
-   .offset_FP = S390X_GUEST_OFFSET(guest_FP),
+   .offset_FP = S390X_GUEST_OFFSET(guest_s390_FP),
    .sizeof_FP = 8,
 
    /* Describe the instruction pointer. */

@@ -33,6 +33,8 @@ static int debug_linker = 0;
 #   define i386_TARGET_ARCH
 #elif defined (__powerpc__)
 #   define ppc32_TARGET_ARCH
+#elif defined(__aarch64__)
+#   define arm64_TARGET_ARCH
 #else
 #   error "Unknown arch"
 #endif
@@ -62,7 +64,7 @@ static UInt  mymalloc_used = 0;
 void* mymalloc ( Int n )
 {
    void* p;
-#if defined(__powerpc64__)
+#if defined(__powerpc64__) || defined(__aarch64__)
    while ((ULong)(mymalloc_area+mymalloc_used) & 0xFFF)
 #else
    while ((UInt)(mymalloc_area+mymalloc_used) & 0xFFF)

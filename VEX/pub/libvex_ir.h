@@ -1691,7 +1691,7 @@ typedef
       Irrm_PosINF               = 2,  // Round to positive infinity
       Irrm_ZERO                 = 3,  // Round toward zero
       Irrm_NEAREST_TIE_AWAY_0   = 4,  // Round to nearest, ties away from 0
-      Irrm_PREPARE_SHORTER      = 5,  // Round to prepare for storter 
+      Irrm_PREPARE_SHORTER      = 5,  // Round to prepare for shorter 
                                       // precision
       Irrm_AWAY_FROM_ZERO       = 6,  // Round to away from 0
       Irrm_NEAREST_TIE_TOWARD_0 = 7   // Round to nearest, ties towards 0

@@ -55,6 +55,7 @@ typedef
       VexArchX86, 
       VexArchAMD64, 
       VexArchARM,
+      VexArchARM64,
       VexArchPPC32,
       VexArchPPC64,
       VexArchS390X,
@@ -172,6 +173,9 @@ typedef
 /* Get an ARM architecure level from HWCAPS */
 #define VEX_ARM_ARCHLEVEL(x) ((x) & 0x3f)
 
+/* ARM64: baseline capability is AArch64 v8. */
+/* (no definitions since no variants so far) */
+
 /* MIPS baseline capability */
 /* Assigned Company values for bits 23:16 of the PRId Register
    (CP0 register 15, select 0).  As of the MIPS32 and MIPS64 specs from
@@ -212,6 +216,7 @@ typedef
 
 extern const HChar* LibVEX_ppVexArch    ( VexArch );
 extern const HChar* LibVEX_ppVexHwCaps  ( VexArch, UInt );
+
 
 /* The various kinds of caches */
 typedef enum {
@@ -906,6 +911,14 @@ extern void LibVEX_InitIRI ( const IRICB * );
    ppc64
    ~~~~~
    Same as ppc32.
+
+   arm32
+   ~~~~~
+   r8 is GSP.
+
+   arm64
+   ~~~~~
+   r21 is GSP.
 
    ALL GUEST ARCHITECTURES
    ~~~~~~~~~~~~~~~~~~~~~~~

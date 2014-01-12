@@ -51,6 +51,7 @@
 #include "../pub/libvex_guest_ppc32.h"
 #include "../pub/libvex_guest_ppc64.h"
 #include "../pub/libvex_guest_arm.h"
+#include "../pub/libvex_guest_arm64.h"
 #include "../pub/libvex_guest_s390x.h"
 #include "../pub/libvex_guest_mips32.h"
 #include "../pub/libvex_guest_mips64.h"
@@ -158,6 +159,19 @@ void foo ( void )
    GENOFFSET(ARM,arm,R13);
    GENOFFSET(ARM,arm,R14);
    GENOFFSET(ARM,arm,R15T);
+
+   // arm64
+   GENOFFSET(ARM64,arm64,X0);
+   GENOFFSET(ARM64,arm64,X1);
+   GENOFFSET(ARM64,arm64,X2);
+   GENOFFSET(ARM64,arm64,X3);
+   GENOFFSET(ARM64,arm64,X4);
+   GENOFFSET(ARM64,arm64,X5);
+   GENOFFSET(ARM64,arm64,X6);
+   GENOFFSET(ARM64,arm64,X7);
+   GENOFFSET(ARM64,arm64,X8);
+   GENOFFSET(ARM64,arm64,SP);
+   GENOFFSET(ARM64,arm64,PC);
 
    // s390x
    GENOFFSET(S390X,s390x,r2);

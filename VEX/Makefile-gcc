@@ -50,12 +50,14 @@ LIB_OBJS = 	priv/ir_defs.o                          \
 		priv/host_x86_defs.o			\
 		priv/host_amd64_defs.o			\
 		priv/host_arm_defs.o			\
+		priv/host_arm64_defs.o			\
 		priv/host_ppc_defs.o			\
 		priv/host_s390_defs.o			\
 		priv/host_mips_defs.o			\
 		priv/host_x86_isel.o			\
 		priv/host_amd64_isel.o			\
 		priv/host_arm_isel.o			\
+		priv/host_arm64_isel.o			\
 		priv/host_ppc_isel.o			\
 		priv/host_s390_isel.o			\
 		priv/host_mips_isel.o			\
@@ -70,12 +72,14 @@ LIB_OBJS = 	priv/ir_defs.o                          \
 		priv/guest_x86_helpers.o		\
 		priv/guest_amd64_helpers.o		\
 		priv/guest_arm_helpers.o		\
+		priv/guest_arm64_helpers.o		\
 		priv/guest_ppc_helpers.o		\
 		priv/guest_s390_helpers.o		\
 		priv/guest_mips_helpers.o		\
 		priv/guest_x86_toIR.o			\
 		priv/guest_amd64_toIR.o			\
 		priv/guest_arm_toIR.o			\
+		priv/guest_arm64_toIR.o			\
 		priv/guest_ppc_toIR.o                   \
 		priv/guest_s390_toIR.o			\
 		priv/guest_mips_toIR.o
@@ -194,6 +198,12 @@ TAG-amd64-darwin:
 	if [ ! -f TAG-amd64-darwin ] ; then rm -f $(LIB_OBJS) TAG-* libvex.a ; fi
 	touch TAG-amd64-darwin
 
+libvex-arm64-linux.a: TAG-arm64-linux libvex.a
+	mv -f libvex.a libvex-arm64-linux.a
+TAG-arm64-linux:
+	if [ ! -f TAG-arm64-linux ] ; then rm -f $(LIB_OBJS) TAG-* libvex.a ; fi
+	touch TAG-arm64-linux
+
 
 clean:
 	rm -f $(LIB_OBJS) *.a vex test_main.o TAG-* \
@@ -273,6 +283,10 @@ priv/host_arm_defs.o: $(ALL_HEADERS) priv/host_arm_defs.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_arm_defs.o \
 					 -c priv/host_arm_defs.c
 
+priv/host_arm64_defs.o: $(ALL_HEADERS) priv/host_arm64_defs.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_arm64_defs.o \
+					 -c priv/host_arm64_defs.c
+
 priv/host_ppc_defs.o: $(ALL_HEADERS) priv/host_ppc_defs.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_ppc_defs.o \
 					 -c priv/host_ppc_defs.c
@@ -296,6 +310,10 @@ priv/host_amd64_isel.o: $(ALL_HEADERS) priv/host_amd64_isel.c
 priv/host_arm_isel.o: $(ALL_HEADERS) priv/host_arm_isel.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_arm_isel.o \
 					 -c priv/host_arm_isel.c
+
+priv/host_arm64_isel.o: $(ALL_HEADERS) priv/host_arm64_isel.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_arm64_isel.o \
+					 -c priv/host_arm64_isel.c
 
 priv/host_ppc_isel.o: $(ALL_HEADERS) priv/host_ppc_isel.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_ppc_isel.o \
@@ -361,9 +379,17 @@ priv/guest_arm_helpers.o: $(ALL_HEADERS) priv/guest_arm_helpers.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest_arm_helpers.o \
 					 -c priv/guest_arm_helpers.c
 
+priv/guest_arm64_helpers.o: $(ALL_HEADERS) priv/guest_arm64_helpers.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest_arm64_helpers.o \
+					 -c priv/guest_arm64_helpers.c
+
 priv/guest_arm_toIR.o: $(ALL_HEADERS) priv/guest_arm_toIR.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest_arm_toIR.o \
 					 -c priv/guest_arm_toIR.c
+
+priv/guest_arm64_toIR.o: $(ALL_HEADERS) priv/guest_arm64_toIR.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest_arm64_toIR.o \
+					 -c priv/guest_arm64_toIR.c
 
 priv/guest_ppc_helpers.o: $(ALL_HEADERS) priv/guest_ppc_helpers.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest_ppc_helpers.o \

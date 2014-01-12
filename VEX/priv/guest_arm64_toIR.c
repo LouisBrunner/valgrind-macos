@@ -4338,7 +4338,7 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
       UInt  dd   = INSN(4,0);
       ULong imm  = VFPExpandImm(imm8, isD ? 64 : 32);
       if (!isD) {
-         vassert(0 == (imm & 0xFFFFFFFF00000000));
+         vassert(0 == (imm & 0xFFFFFFFF00000000ULL));
       }
       putQReg128(dd, mkV128(0));
       putQReg(dd, isD ? mkU64(imm) : mkU32(imm & 0xFFFFFFFFULL));

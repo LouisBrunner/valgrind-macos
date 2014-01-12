@@ -76,6 +76,11 @@
 # define MC_SIZEOF_GUEST_STATE sizeof(VexGuestARMState)
 #endif
 
+#if defined(VGA_arm64)
+# include "libvex_guest_arm64.h"
+# define MC_SIZEOF_GUEST_STATE sizeof(VexGuestARM64State)
+#endif
+
 #if defined(VGA_mips32)
 # include "libvex_guest_mips32.h"
 # define MC_SIZEOF_GUEST_STATE sizeof(VexGuestMIPS32State)
@@ -957,6 +962,27 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
 #  undef GOF
 #  undef SZB
 
+   /* --------------------- arm64 --------------------- */
+
+#  elif defined(VGA_arm64)
+
+#  define GOF(_fieldname) \
+      (offsetof(VexGuestARM64State,guest_##_fieldname))
+#  define SZB(_fieldname) \
+      (sizeof(((VexGuestARM64State*)0)->guest_##_fieldname))
+
+   Int  o     = offset;
+   Int  sz    = szB;
+   tl_assert(sz > 0);
+   tl_assert(host_is_little_endian());
+   (void)o; // RMME -- just to stop gcc warning that o is unused
+
+   VG_(printf)("MC_(get_otrack_shadow_offset)(arm64)(off=%d,sz=%d)\n",
+               offset,szB);
+   tl_assert(0);
+#  undef GOF
+#  undef SZB
+
    /* --------------------- mips32 --------------------- */
 
 #  elif defined(VGA_mips32)
@@ -1239,6 +1265,13 @@ IRType MC_(get_otrack_reg_array_equiv_int_type) ( IRRegArray* arr )
    /* --------------------- arm --------------------- */
 #  elif defined(VGA_arm)
    VG_(printf)("get_reg_array_equiv_int_type(arm): unhandled: ");
+   ppIRRegArray(arr);
+   VG_(printf)("\n");
+   tl_assert(0);
+
+   /* --------------------- arm64 --------------------- */
+#  elif defined(VGA_arm64)
+   VG_(printf)("get_reg_array_equiv_int_type(arm64): unhandled: ");
    ppIRRegArray(arr);
    VG_(printf)("\n");
    tl_assert(0);

@@ -367,6 +367,14 @@ configure_caches(cache_t *I1c, cache_t *D1c, cache_t *LLc,
    *D1c = (cache_t) {  16384, 4, 64 };
    *LLc = (cache_t) { 262144, 8, 64 };
 
+#elif defined(VGA_arm64)
+
+   // Copy the 32-bit ARM version until such time as we have
+   // some real hardware to run on
+   *I1c = (cache_t) {  16384, 4, 64 };
+   *D1c = (cache_t) {  16384, 4, 64 };
+   *LLc = (cache_t) { 262144, 8, 64 };
+
 #elif defined(VGA_s390x)
    //
    // Here is the cache data from older machine models:

@@ -134,6 +134,46 @@ insns have reg+offset forms for offsets only up to 1020, which
 often isn't enough.
 
 
+arm64-linux
+~~~~~~~~~~~
+
+Reg        Callee     Arg
+Name       Saves?     Reg?       Comment              Vex-uses?
+---------------------------------------------------------------
+r0                    int#0      ret#0 (??)
+r1                    int#1      ret#1 (??)
+r2-7                  int#2..7 
+r8                              "Indirect res loc reg"
+r9                              "Temporary regs"      chaining scratch
+r10-15                          "Temporary regs"      avail
+r16(IP0)
+r17(IP1)
+r18                             "Platform reg"
+r19-20     maybe                "Temporary regs"
+r21        y                    "Callee saved"        GSP
+r22-28     y                    "Callee saved"
+r29(FP)    y
+r30(LR)    y
+
+NZCV                            "Status register"
+
+Is there a TLS register?
+
+x21 is the GSP.  x9 is a scratch chaining/spill temp.  Neither
+are available to the register allocator.
+
+Q registers:
+It's a little awkward. Basically, D registers are the same as ARM,
+so d0-d7 and d16-d31 are caller-saved, but d8-d15 are callee-saved.
+
+Q registers are the same, except that the upper 64 bits of q8-q15
+are caller-saved.
+
+The idea is that you only need to preserve D registers, not Q
+registers.
+
+
+
 s390x-linux
 ~~~~~~~~~~~
 

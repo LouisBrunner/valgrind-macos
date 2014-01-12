@@ -233,7 +233,7 @@ static void fill_prpsinfo(const ThreadState *tst,
 }
 
 static void fill_prstatus(const ThreadState *tst, 
-			  struct vki_elf_prstatus *prs, 
+			  /*OUT*/struct vki_elf_prstatus *prs, 
 			  const vki_siginfo_t *si)
 {
    struct vki_user_regs_struct *regs;
@@ -252,12 +252,11 @@ static void fill_prstatus(const ThreadState *tst,
    prs->pr_pgrp = VG_(getpgrp)();
    prs->pr_sid = VG_(getpgrp)();
    
-#ifdef VGP_s390x_linux
+#if defined(VGP_s390x_linux)
    /* prs->pr_reg has struct type. Need to take address. */
    regs = (struct vki_user_regs_struct *)&(prs->pr_reg);
 #else
    regs = (struct vki_user_regs_struct *)prs->pr_reg;
-
    vg_assert(sizeof(*regs) == sizeof(prs->pr_reg));
 #endif
 
@@ -301,10 +300,6 @@ static void fill_prstatus(const ThreadState *tst,
    regs->r13    = arch->vex.guest_R13;
    regs->r14    = arch->vex.guest_R14;
    regs->r15    = arch->vex.guest_R15;
-
-//::    regs->cs     = arch->vex.guest_CS;
-//::    regs->fs     = arch->vex.guest_FS;
-//::    regs->gs     = arch->vex.guest_GS;
 
 #elif defined(VGP_ppc32_linux)
 #  define DO(n)  regs->gpr[n] = arch->vex.guest_GPR##n
@@ -367,6 +362,10 @@ static void fill_prstatus(const ThreadState *tst,
    regs->ARM_pc   = arch->vex.guest_R15T;
    regs->ARM_cpsr = LibVEX_GuestARM_get_cpsr( &arch->vex );
 
+#elif defined(VGP_arm64_linux)
+   (void)arch;
+   I_die_here;
+
 #elif defined(VGP_s390x_linux)
 #  define DO(n)  regs->gprs[n] = arch->vex.guest_r##n
    DO(0);  DO(1);  DO(2);  DO(3);  DO(4);  DO(5);  DO(6);  DO(7);
@@ -377,6 +376,7 @@ static void fill_prstatus(const ThreadState *tst,
    DO(8);  DO(9);  DO(10); DO(11); DO(12); DO(13); DO(14); DO(15);
 #  undef DO
    regs->orig_gpr2 = arch->vex.guest_r2;
+
 #elif defined(VGP_mips32_linux)
 #  define DO(n)  regs->MIPS_r##n = arch->vex.guest_r##n
    DO(0);  DO(1);  DO(2);  DO(3);  DO(4);  DO(5);  DO(6);  DO(7);
@@ -386,6 +386,7 @@ static void fill_prstatus(const ThreadState *tst,
 #  undef DO
    regs->MIPS_hi   = arch->vex.guest_HI;
    regs->MIPS_lo   = arch->vex.guest_LO;
+
 #elif defined(VGP_mips64_linux)
 #  define DO(n)  regs->MIPS_r##n = arch->vex.guest_r##n
    DO(0);  DO(1);  DO(2);  DO(3);  DO(4);  DO(5);  DO(6);  DO(7);
@@ -395,6 +396,7 @@ static void fill_prstatus(const ThreadState *tst,
 #  undef DO
    regs->MIPS_hi   = arch->vex.guest_HI;
    regs->MIPS_lo   = arch->vex.guest_LO;
+
 #else
 #  error Unknown ELF platform
 #endif
@@ -469,6 +471,9 @@ static void fill_fpu(const ThreadState *tst, vki_elf_fpregset_t *fpu)
 
 #elif defined(VGP_arm_linux)
    // umm ...
+
+#elif defined(VGP_arm64_linux)
+   I_die_here;
 
 #elif defined(VGP_s390x_linux)
 #  define DO(n)  fpu->fprs[n].ui = arch->vex.guest_f##n
@@ -606,15 +611,12 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, ULong max_size)
       if (VG_(threads)[i].status == VgTs_Empty)
 	 continue;
 
-#     if defined(VGP_x86_linux)
-#     if !defined(VGPV_arm_linux_android) && !defined(VGPV_x86_linux_android) \
-         && !defined(VGPV_mips32_linux_android)
+#     if defined(VGP_x86_linux) && !defined(VGPV_x86_linux_android)
       {
          vki_elf_fpxregset_t xfpu;
          fill_xfpu(&VG_(threads)[i], &xfpu);
          add_note(&notelist, "LINUX", NT_PRXFPREG, &xfpu, sizeof(xfpu));
       }
-#     endif
 #     endif
 
       fill_fpu(&VG_(threads)[i], &fpu);

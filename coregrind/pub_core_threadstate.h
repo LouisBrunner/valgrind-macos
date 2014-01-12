@@ -88,6 +88,8 @@ typedef
    typedef VexGuestPPC64State VexGuestArchState;
 #elif defined(VGA_arm)
    typedef VexGuestARMState   VexGuestArchState;
+#elif defined(VGA_arm64)
+   typedef VexGuestARM64State VexGuestArchState;
 #elif defined(VGA_s390x)
    typedef VexGuestS390XState VexGuestArchState;
 #elif defined(VGA_mips32)

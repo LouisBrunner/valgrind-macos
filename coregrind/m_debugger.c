@@ -232,6 +232,47 @@ static Int ptrace_setregs(Int pid, VexGuestArchState* vex)
    uregs.ARM_cpsr = LibVEX_GuestARM_get_cpsr(vex);
    return VG_(ptrace)(VKI_PTRACE_SETREGS, pid, NULL, &uregs);
 
+#elif defined(VGP_arm64_linux)
+   I_die_here;
+   //ATC
+   struct vki_user_pt_regs uregs;
+   VG_(memset)(&uregs, 0, sizeof(uregs));
+   uregs.regs[0]  = vex->guest_X0;
+   uregs.regs[1]  = vex->guest_X1;
+   uregs.regs[2]  = vex->guest_X2;
+   uregs.regs[3]  = vex->guest_X3;
+   uregs.regs[4]  = vex->guest_X4;
+   uregs.regs[5]  = vex->guest_X5;
+   uregs.regs[6]  = vex->guest_X6;
+   uregs.regs[7]  = vex->guest_X7;
+   uregs.regs[8]  = vex->guest_X8;
+   uregs.regs[9]  = vex->guest_X9;
+   uregs.regs[10] = vex->guest_X10;
+   uregs.regs[11] = vex->guest_X11;
+   uregs.regs[12] = vex->guest_X12;
+   uregs.regs[13] = vex->guest_X13;
+   uregs.regs[14] = vex->guest_X14;
+   uregs.regs[15] = vex->guest_X15;
+   uregs.regs[16] = vex->guest_X16;
+   uregs.regs[17] = vex->guest_X17;
+   uregs.regs[18] = vex->guest_X18;
+   uregs.regs[19] = vex->guest_X19;
+   uregs.regs[20] = vex->guest_X20;
+   uregs.regs[21] = vex->guest_X21;
+   uregs.regs[22] = vex->guest_X22;
+   uregs.regs[23] = vex->guest_X23;
+   uregs.regs[24] = vex->guest_X24;
+   uregs.regs[25] = vex->guest_X25;
+   uregs.regs[26] = vex->guest_X26;
+   uregs.regs[27] = vex->guest_X27;
+   uregs.regs[28] = vex->guest_X28;
+   uregs.regs[29] = vex->guest_X29;
+   uregs.regs[30] = vex->guest_X30;
+   uregs.sp       = vex->guest_SP;
+   uregs.pc       = vex->guest_PC;
+   uregs.pstate   = LibVEX_GuestARM64_get_nzcv(vex); /* is this correct? */
+   return VG_(ptrace)(VKI_PTRACE_SETREGS, pid, NULL, &uregs);
+
 #elif defined(VGP_x86_darwin)
    I_die_here;
 

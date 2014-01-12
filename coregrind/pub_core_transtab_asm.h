@@ -37,10 +37,10 @@
    On x86/amd64, the cache index is computed as
    'address[VG_TT_FAST_BITS-1 : 0]'.
 
-   On ppc32/ppc64, the bottom two bits of instruction addresses are
-   zero, which means that function causes only 1/4 of the entries to
-   ever be used.  So instead the function is '(address >>u
-   2)[VG_TT_FAST_BITS-1 : 0]' on those targets.
+   On ppc32/ppc64/mips32/mips64/arm64, the bottom two bits of
+   instruction addresses are zero, which means that function causes
+   only 1/4 of the entries to ever be used.  So instead the function
+   is '(address >>u 2)[VG_TT_FAST_BITS-1 : 0]' on those targets.
 
    On ARM we shift by 1, since Thumb insns can be of size 2, hence to
    minimise collisions and maximise cache utilisation we need to take
@@ -63,7 +63,7 @@
 #  define VG_TT_FAST_HASH(_addr)  ((((UWord)(_addr)) >> 1) & VG_TT_FAST_MASK)
 
 #elif defined(VGA_ppc32) || defined(VGA_ppc64) || defined(VGA_mips32) \
-      || defined(VGA_mips64)
+      || defined(VGA_mips64) || defined(VGA_arm64)
 #  define VG_TT_FAST_HASH(_addr)  ((((UWord)(_addr)) >> 2) & VG_TT_FAST_MASK)
 
 #else

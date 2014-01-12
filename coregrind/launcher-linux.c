@@ -57,6 +57,10 @@
 #define EM_X86_64 62    // elf.h doesn't define this on some older systems
 #endif
 
+#ifndef EM_AARCH64
+#define EM_AARCH64 183  // ditto
+#endif
+
 /* Report fatal errors */
 __attribute__((noreturn))
 static void barf ( const char *format, ... )
@@ -220,6 +224,10 @@ static const char *select_platform(const char *clientname)
                 (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
                  ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
                platform = "mips64-linux";
+            } else if (ehdr->e_machine == EM_AARCH64 &&
+                (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
+                 ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
+               platform = "arm64-linux";
             }
          } else if (header[EI_DATA] == ELFDATA2MSB) {
 #           if !defined(VGPV_arm_linux_android) \
@@ -309,12 +317,13 @@ int main(int argc, char** argv, char** envp)
       target, because on most ppc64-linux setups, the basic /bin,
       /usr/bin, etc, stuff is built in 32-bit mode, not 64-bit
       mode. */
-   if ((0==strcmp(VG_PLATFORM,"x86-linux"))   ||
-       (0==strcmp(VG_PLATFORM,"amd64-linux")) ||
-       (0==strcmp(VG_PLATFORM,"ppc32-linux")) ||
-       (0==strcmp(VG_PLATFORM,"ppc64-linux")) ||
-       (0==strcmp(VG_PLATFORM,"arm-linux"))   ||
-       (0==strcmp(VG_PLATFORM,"s390x-linux")) ||
+   if ((0==strcmp(VG_PLATFORM,"x86-linux"))    ||
+       (0==strcmp(VG_PLATFORM,"amd64-linux"))  ||
+       (0==strcmp(VG_PLATFORM,"ppc32-linux"))  ||
+       (0==strcmp(VG_PLATFORM,"ppc64-linux"))  ||
+       (0==strcmp(VG_PLATFORM,"arm-linux"))    ||
+       (0==strcmp(VG_PLATFORM,"arm64-linux"))  ||
+       (0==strcmp(VG_PLATFORM,"s390x-linux"))  ||
        (0==strcmp(VG_PLATFORM,"mips32-linux")) ||
        (0==strcmp(VG_PLATFORM,"mips64-linux")))
       default_platform = VG_PLATFORM;

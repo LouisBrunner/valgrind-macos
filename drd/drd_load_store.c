@@ -47,6 +47,8 @@
 #define STACK_POINTER_OFFSET OFFSET_ppc64_GPR1
 #elif defined(VGA_arm)
 #define STACK_POINTER_OFFSET OFFSET_arm_R13
+#elif defined(VGA_arm64)
+#define STACK_POINTER_OFFSET OFFSET_arm64_SP
 #elif defined(VGA_s390x)
 #define STACK_POINTER_OFFSET OFFSET_s390x_r15
 #elif defined(VGA_mips32)

@@ -63,8 +63,8 @@ typedef struct {
 
 /* PAGE_SHIFT determines the page size, unfortunately
    page size might vary between 32-bit and 64-bit ppc kernels */
-extern unsigned long VKI_PAGE_SHIFT;
-extern unsigned long VKI_PAGE_SIZE;
+extern UWord VKI_PAGE_SHIFT;
+extern UWord VKI_PAGE_SIZE;
 #define VKI_MAX_PAGE_SHIFT	16
 #define VKI_MAX_PAGE_SIZE	(1UL << VKI_MAX_PAGE_SHIFT)
 

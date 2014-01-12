@@ -209,6 +209,8 @@ static void run_a_thread_NORETURN ( Word tidW )
       /* This releases the run lock */
       VG_(exit_thread)(tid);
       vg_assert(tst->status == VgTs_Zombie);
+      vg_assert(sizeof(tst->status) == 4);
+      vg_assert(sizeof(tst->os_state.exitcode) == sizeof(Word));
 
       INNER_REQUEST (VALGRIND_STACK_DEREGISTER (registered_vgstack_id));
 
@@ -264,6 +266,16 @@ static void run_a_thread_NORETURN ( Word tidW )
          : "r" (VgTs_Empty), "n" (__NR_exit), "m" (tst->os_state.exitcode)
          : "r0", "r7"
       );
+#elif defined(VGP_arm64_linux)
+      asm volatile (
+         "str  %w1, %0\n"     /* set tst->status = VgTs_Empty (32-bit store) */
+         "mov  x8,  %2\n"     /* set %r7 = __NR_exit */
+         "ldr  x0,  %3\n"     /* set %r0 = tst->os_state.exitcode */
+         "svc  0x00000000\n"  /* exit(tst->os_state.exitcode) */
+         : "=m" (tst->status)
+         : "r" (VgTs_Empty), "n" (__NR_exit), "m" (tst->os_state.exitcode)
+         : "r0", "r7"
+      );
 #elif defined(VGP_s390x_linux)
       asm volatile (
          "st   %1, %0\n"        /* set tst->status = VgTs_Empty */
@@ -276,7 +288,7 @@ static void run_a_thread_NORETURN ( Word tidW )
 #elif defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
       asm volatile (
          "sw   %1, %0\n\t"     /* set tst->status = VgTs_Empty */
-         "li  	$2, %2\n\t"     /* set v0 = __NR_exit */
+         "li   $2, %2\n\t"     /* set v0 = __NR_exit */
          "lw   $4, %3\n\t"     /* set a0 = tst->os_state.exitcode */
          "syscall\n\t"         /* exit(tst->os_state.exitcode) */
          "nop"
@@ -428,7 +440,7 @@ SysRes ML_(do_fork_clone) ( ThreadId tid, UInt flags,
 #if defined(VGP_x86_linux) \
     || defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux) \
     || defined(VGP_arm_linux) || defined(VGP_mips32_linux) \
-    || defined(VGP_mips64_linux)
+    || defined(VGP_mips64_linux) || defined(VGP_arm64_linux)
    res = VG_(do_syscall5)( __NR_clone, flags, 
                            (UWord)NULL, (UWord)parent_tidptr, 
                            (UWord)NULL, (UWord)child_tidptr );

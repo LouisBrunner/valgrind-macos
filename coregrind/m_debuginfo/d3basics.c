@@ -420,6 +420,8 @@ static Bool get_Dwarf_Reg( /*OUT*/Addr* a, Word regno, RegSummary* regs )
 #  elif defined(VGP_mips64_linux)
    if (regno == 29) { *a = regs->sp; return True; }
    if (regno == 30) { *a = regs->fp; return True; }
+#  elif defined(VGP_arm64_linux)
+   I_die_here;
 #  else
 #    error "Unknown platform"
 #  endif

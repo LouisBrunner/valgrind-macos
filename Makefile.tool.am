@@ -52,6 +52,9 @@ TOOL_LDFLAGS_PPC64_LINUX = \
 TOOL_LDFLAGS_ARM_LINUX = \
 	$(TOOL_LDFLAGS_COMMON_LINUX) @FLAG_M32@
 
+TOOL_LDFLAGS_ARM64_LINUX = \
+	$(TOOL_LDFLAGS_COMMON_LINUX) @FLAG_M64@
+
 TOOL_LDFLAGS_S390X_LINUX = \
 	$(TOOL_LDFLAGS_COMMON_LINUX) @FLAG_M64@
 
@@ -105,6 +108,9 @@ LIBREPLACEMALLOC_PPC64_LINUX = \
 LIBREPLACEMALLOC_ARM_LINUX = \
 	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-arm-linux.a
 
+LIBREPLACEMALLOC_ARM64_LINUX = \
+	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-arm64-linux.a
+
 LIBREPLACEMALLOC_X86_DARWIN = \
 	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-x86-darwin.a
 
@@ -143,6 +149,11 @@ LIBREPLACEMALLOC_LDFLAGS_PPC64_LINUX = \
 LIBREPLACEMALLOC_LDFLAGS_ARM_LINUX = \
 	-Wl,--whole-archive \
 	$(LIBREPLACEMALLOC_ARM_LINUX) \
+	-Wl,--no-whole-archive
+
+LIBREPLACEMALLOC_LDFLAGS_ARM64_LINUX = \
+	-Wl,--whole-archive \
+	$(LIBREPLACEMALLOC_ARM64_LINUX) \
 	-Wl,--no-whole-archive
 
 LIBREPLACEMALLOC_LDFLAGS_X86_DARWIN = \

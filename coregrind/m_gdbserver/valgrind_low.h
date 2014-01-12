@@ -73,6 +73,7 @@ struct valgrind_target_ops
 extern void x86_init_architecture (struct valgrind_target_ops *target);
 extern void amd64_init_architecture (struct valgrind_target_ops *target);
 extern void arm_init_architecture (struct valgrind_target_ops *target);
+extern void arm64_init_architecture (struct valgrind_target_ops *target);
 extern void ppc32_init_architecture (struct valgrind_target_ops *target);
 extern void ppc64_init_architecture (struct valgrind_target_ops *target);
 extern void s390x_init_architecture (struct valgrind_target_ops *target);

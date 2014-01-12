@@ -1034,6 +1034,24 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 
 #endif
 
+/* ------------------------ arm64 ------------------------- */
+
+#if defined(VGP_arm64_linux)
+
+UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
+                               /*OUT*/Addr* ips, UInt max_n_ips,
+                               /*OUT*/Addr* sps, /*OUT*/Addr* fps,
+                               UnwindStartRegs* startRegs,
+                               Addr fp_max_orig )
+{
+   ips[0] = startRegs->r_pc;
+   if (sps) sps[0] = startRegs->r_sp;
+   if (fps) fps[0] = startRegs->misc.ARM64.x29;
+   return 1;
+}
+
+#endif
+
 /* ------------------------ s390x ------------------------- */
 
 #if defined(VGP_s390x_linux)

@@ -641,6 +641,8 @@ void valgrind_initialize_target(void)
    amd64_init_architecture(&the_low_target);
 #elif defined(VGA_arm)
    arm_init_architecture(&the_low_target);
+#elif defined(VGA_arm64)
+   arm_init_architecture(&the_low_target);
 #elif defined(VGA_ppc32)
    ppc32_init_architecture(&the_low_target);
 #elif defined(VGA_ppc64)
@@ -652,6 +654,6 @@ void valgrind_initialize_target(void)
 #elif defined(VGA_mips64)
    mips64_init_architecture(&the_low_target);
 #else
-   architecture missing in target.c valgrind_initialize_target
+   #error "architecture missing in target.c valgrind_initialize_target"
 #endif
 }

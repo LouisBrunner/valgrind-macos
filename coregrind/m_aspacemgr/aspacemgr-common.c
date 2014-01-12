@@ -152,15 +152,19 @@ SysRes VG_(am_do_mmap_NO_NOTIFY)( Addr start, SizeT length, UInt prot,
 {
    SysRes res;
    aspacem_assert(VG_IS_PAGE_ALIGNED(offset));
-#  if defined(VGP_x86_linux) || defined(VGP_ppc32_linux) \
-      || defined(VGP_arm_linux)
+
+#  if defined(VGP_arm64_linux)
+   res = VG_(do_syscall6)(__NR3264_mmap, (UWord)start, length, 
+                         prot, flags, fd, offset);
+#  elif defined(VGP_x86_linux) || defined(VGP_ppc32_linux) \
+        || defined(VGP_arm_linux)
    /* mmap2 uses 4096 chunks even if actual page size is bigger. */
    aspacem_assert((offset % 4096) == 0);
    res = VG_(do_syscall6)(__NR_mmap2, (UWord)start, length,
                           prot, flags, fd, offset / 4096);
 #  elif defined(VGP_amd64_linux) || defined(VGP_ppc64_linux) \
         || defined(VGP_s390x_linux) || defined(VGP_mips32_linux) \
-        || defined(VGP_mips64_linux)
+        || defined(VGP_mips64_linux) || defined(VGP_arm64_linux)
    res = VG_(do_syscall6)(__NR_mmap, (UWord)start, length, 
                          prot, flags, fd, offset);
 #  elif defined(VGP_x86_darwin)
@@ -242,8 +246,14 @@ SysRes ML_(am_do_relocate_nooverlap_mapping_NO_NOTIFY)(
 /* --- Pertaining to files --- */
 
 SysRes ML_(am_open) ( const HChar* pathname, Int flags, Int mode )
-{  
+{
+#  if defined(VGP_arm64_linux)
+   /* ARM64 wants to use __NR_openat rather than __NR_open. */
+   SysRes res = VG_(do_syscall4)(__NR_openat,
+                                 VKI_AT_FDCWD, (UWord)pathname, flags, mode);
+#  else
    SysRes res = VG_(do_syscall3)(__NR_open, (UWord)pathname, flags, mode);
+#  endif
    return res;
 }
 
@@ -261,7 +271,12 @@ void ML_(am_close) ( Int fd )
 Int ML_(am_readlink)(HChar* path, HChar* buf, UInt bufsiz)
 {
    SysRes res;
+#  if defined(VGP_arm64_linux)
+   res = VG_(do_syscall4)(__NR_readlinkat, VKI_AT_FDCWD,
+                                           (UWord)path, (UWord)buf, bufsiz);
+#  else
    res = VG_(do_syscall3)(__NR_readlink, (UWord)path, (UWord)buf, bufsiz);
+#  endif
    return sr_isError(res) ? -1 : sr_Res(res);
 }
 

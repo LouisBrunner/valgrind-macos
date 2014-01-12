@@ -58,6 +58,8 @@
 #  include "libvex_guest_ppc64.h"
 #elif defined(VGA_arm)
 #  include "libvex_guest_arm.h"
+#elif defined(VGA_arm64)
+#  include "libvex_guest_arm64.h"
 #elif defined(VGA_s390x)
 #  include "libvex_guest_s390x.h"
 #elif defined(VGA_mips32)
@@ -108,6 +110,11 @@ typedef
             UInt r11;
             UInt r7;
          } ARM;
+         struct {
+            // FIXME ARM64 is this correct?
+            ULong x29; /* FP */
+            ULong x30; /* LR */
+         } ARM64;
          struct {
             ULong r_fp;
             ULong r_lr;

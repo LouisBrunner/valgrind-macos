@@ -66,6 +66,11 @@
 #  define VG_ELF_MACHINE      EM_ARM
 #  define VG_ELF_CLASS        ELFCLASS32
 #  undef  VG_PLAT_USES_PPCTOC
+#elif defined(VGP_arm64_linux)
+#  define VG_ELF_DATA2XXX     ELFDATA2LSB
+#  define VG_ELF_MACHINE      EM_AARCH64
+#  define VG_ELF_CLASS        ELFCLASS64
+#  undef  VG_PLAT_USES_PPCTOC
 #elif defined(VGO_darwin)
 #  undef  VG_ELF_DATA2XXX
 #  undef  VG_ELF_MACHINE
@@ -122,6 +127,10 @@
 #  define VG_INSTR_PTR        guest_R15T
 #  define VG_STACK_PTR        guest_R13
 #  define VG_FRAME_PTR        guest_R11
+#elif defined(VGA_arm64)
+#  define VG_INSTR_PTR        guest_PC
+#  define VG_STACK_PTR        guest_SP
+#  define VG_FRAME_PTR        guest_SP   // FIXME: is this right?
 #elif defined(VGA_s390x)
 #  define VG_INSTR_PTR        guest_IA
 #  define VG_STACK_PTR        guest_SP

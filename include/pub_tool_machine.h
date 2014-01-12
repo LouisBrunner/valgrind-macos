@@ -67,6 +67,12 @@
 #  define VG_CLREQ_SZB             20
 #  define VG_STACK_REDZONE_SZB      0
 
+#elif defined(VGP_arm64_linux)
+#  define VG_MIN_INSTR_SZB          4
+#  define VG_MAX_INSTR_SZB          4 
+#  define VG_CLREQ_SZB             20
+#  define VG_STACK_REDZONE_SZB      0
+
 #elif defined(VGP_s390x_linux)
 #  define VG_MIN_INSTR_SZB          2
 #  define VG_MAX_INSTR_SZB          6
@@ -123,14 +129,6 @@ void
 VG_(set_shadow_regs_area) ( ThreadId tid, 
                             /*DST*/Int shadowNo, PtrdiffT offset, SizeT size,
                             /*SRC*/const UChar* src );
-
-// Sets the shadow values for the syscall return value register(s).
-// This is platform specific.
-void VG_(set_syscall_return_shadows) ( ThreadId tid,
-                                       /* shadow vals for the result */
-                                       UWord s1res, UWord s2res,
-                                       /* shadow vals for the error val */
-                                       UWord s1err, UWord s2err );
 
 // Apply a function 'f' to all the general purpose registers in all the
 // current threads. This is all live threads, or (when the process is exiting)

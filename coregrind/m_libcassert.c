@@ -136,6 +136,25 @@
         (srP)->misc.ARM.r11 = block[4];                   \
         (srP)->misc.ARM.r7  = block[5];                   \
       }
+#elif defined(VGP_arm64_linux)
+#  define GET_STARTREGS(srP)                              \
+      { ULong block[4];                                   \
+        __asm__ __volatile__(                             \
+           "adr x19, 0;"                                  \
+           "str x19, [%0, #+0];"   /* pc */               \
+           "mov x19, sp;"                                 \
+           "str x19, [%0, #+8];"   /* sp */               \
+           "str x29, [%0, #+16];"  /* fp */               \
+           "str x30, [%0, #+24];"  /* lr */               \
+           : /* out */                                    \
+           : /* in */ "r"(&block[0])                      \
+           : /* trash */ "memory","x19"                   \
+        );                                                \
+        (srP)->r_pc = block[0];                           \
+        (srP)->r_sp = block[1];                           \
+        (srP)->misc.ARM64.x29 = block[2];                 \
+        (srP)->misc.ARM64.x30 = block[3];                 \
+      }
 #elif defined(VGP_s390x_linux)
 #  define GET_STARTREGS(srP)                              \
       { ULong ia, sp, fp, lr;                             \

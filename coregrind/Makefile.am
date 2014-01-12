@@ -61,11 +61,18 @@ endif
 
 
 vgdb_SOURCES = vgdb.c
+if VGCONF_PLATFORMS_INCLUDE_ARM64_LINUX
+# vgdb-invoker-ptrace.c isn't buildable on arm64-linux yet
+# so skip it.  Unfortunately this also causes it to be skipped
+# for 32-bit ARM builds which are part of a bi-arch ARM build.
+vgdb_SOURCES += vgdb-invoker-none.c
+else
 if VGCONF_OS_IS_LINUX
 if VGCONF_PLATVARIANT_IS_ANDROID
 vgdb_SOURCES += vgdb-invoker-none.c
 else
 vgdb_SOURCES += vgdb-invoker-ptrace.c
+endif
 endif
 endif
 if VGCONF_OS_IS_DARWIN
@@ -329,6 +336,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_dispatch/dispatch-ppc32-linux.S \
 	m_dispatch/dispatch-ppc64-linux.S \
 	m_dispatch/dispatch-arm-linux.S \
+	m_dispatch/dispatch-arm64-linux.S \
 	m_dispatch/dispatch-s390x-linux.S \
 	m_dispatch/dispatch-mips32-linux.S \
 	m_dispatch/dispatch-mips64-linux.S \
@@ -345,6 +353,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_gdbserver/valgrind-low-x86.c \
 	m_gdbserver/valgrind-low-amd64.c \
 	m_gdbserver/valgrind-low-arm.c \
+	m_gdbserver/valgrind-low-arm64.c \
 	m_gdbserver/valgrind-low-ppc32.c \
 	m_gdbserver/valgrind-low-ppc64.c \
 	m_gdbserver/valgrind-low-s390x.c \
@@ -368,6 +377,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_sigframe/sigframe-ppc32-linux.c \
 	m_sigframe/sigframe-ppc64-linux.c \
 	m_sigframe/sigframe-arm-linux.c \
+	m_sigframe/sigframe-arm64-linux.c \
 	m_sigframe/sigframe-s390x-linux.c \
 	m_sigframe/sigframe-mips32-linux.c \
 	m_sigframe/sigframe-mips64-linux.c \
@@ -378,6 +388,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_syswrap/syscall-ppc32-linux.S \
 	m_syswrap/syscall-ppc64-linux.S \
 	m_syswrap/syscall-arm-linux.S \
+	m_syswrap/syscall-arm64-linux.S \
 	m_syswrap/syscall-s390x-linux.S \
 	m_syswrap/syscall-mips32-linux.S \
 	m_syswrap/syscall-mips64-linux.S \
@@ -393,6 +404,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_syswrap/syswrap-ppc32-linux.c \
 	m_syswrap/syswrap-ppc64-linux.c \
 	m_syswrap/syswrap-arm-linux.c \
+	m_syswrap/syswrap-arm64-linux.c \
 	m_syswrap/syswrap-s390x-linux.c \
 	m_syswrap/syswrap-mips32-linux.c \
 	m_syswrap/syswrap-mips64-linux.c \

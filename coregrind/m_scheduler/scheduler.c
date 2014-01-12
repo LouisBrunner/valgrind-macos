@@ -790,12 +790,21 @@ static void do_pre_run_checks ( ThreadState* tst )
    vg_assert(VG_IS_8_ALIGNED(& tst->arch.vex_shadow2.guest_D1));
 #  endif
 
+#  if defined(VGA_arm64)
+   vg_assert(VG_IS_8_ALIGNED(& tst->arch.vex.guest_X0));
+   vg_assert(VG_IS_8_ALIGNED(& tst->arch.vex_shadow1.guest_X0));
+   vg_assert(VG_IS_8_ALIGNED(& tst->arch.vex_shadow2.guest_X0));
+   vg_assert(VG_IS_16_ALIGNED(& tst->arch.vex.guest_Q0));
+   vg_assert(VG_IS_16_ALIGNED(& tst->arch.vex_shadow1.guest_Q0));
+   vg_assert(VG_IS_16_ALIGNED(& tst->arch.vex_shadow2.guest_Q0));
+#  endif
+
 #  if defined(VGA_s390x)
    /* no special requirements */
 #  endif
 
 #  if defined(VGA_mips32) || defined(VGA_mips64)
-  /* no special requirements */
+   /* no special requirements */
 #  endif
 }
 
@@ -1598,6 +1607,9 @@ void VG_(nuke_all_threads_except) ( ThreadId me, VgSchedReturnCode src )
 #elif defined(VGA_arm)
 #  define VG_CLREQ_ARGS       guest_R4
 #  define VG_CLREQ_RET        guest_R3
+#elif defined(VGA_arm64)
+#  define VG_CLREQ_ARGS       guest_X4
+#  define VG_CLREQ_RET        guest_X3
 #elif defined (VGA_s390x)
 #  define VG_CLREQ_ARGS       guest_r2
 #  define VG_CLREQ_RET        guest_r3

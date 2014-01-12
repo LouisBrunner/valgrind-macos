@@ -1,13 +1,14 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Support for doing system calls.        syscall-arm-linux.S ---*/
+/*--- Support for doing system calls.        syscall-arm64-linux.S ---*/
 /*--------------------------------------------------------------------*/
 
 /*
   This file is part of Valgrind, a dynamic binary instrumentation
   framework.
 
-  Copyright (C) 2008-2013 Evan Geller (gaze@bea.ms)
+  Copyright (C) 2013-2013 OpenWorks
+     info@open-works.net
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as
@@ -27,7 +28,7 @@
   The GNU General Public License is contained in the file COPYING.
 */
 
-#if defined(VGP_arm_linux)
+#if defined(VGP_arm64_linux)
 
 #include "pub_core_basics_asm.h"
 #include "pub_core_vkiscnums_asm.h"
@@ -48,8 +49,8 @@
         interactions.
 
         The syscall number is taken from the argument, even though it
-        should also be in regs->m_R7.  The syscall result is written
-        back to regs->m_R0 on completion.
+        should also be in guest_state->guest_X8.  The syscall result
+	is written back to guest_state->guest_X0 on completion.
 
         Returns 0 if the syscall was successfully called (even if the
         syscall itself failed), or a nonzero error code in the lowest
@@ -64,65 +65,91 @@
         Prototype:
 
    UWord ML_(do_syscall_for_client_WRK)(
-              Int syscallno,                 // r0
-              void* guest_state,             // r1
-              const vki_sigset_t *sysmask,   // r2
-              const vki_sigset_t *postmask,  // r3
-              Int nsigwords)                 // [sp, #0]
+              Int syscallno,                 // x0
+              void* guest_state,             // x1
+              const vki_sigset_t *sysmask,   // x2
+              const vki_sigset_t *postmask,  // x3
+              Int nsigwords)                 // x4
 */
-/* from vki_arch.h */
+/* from vki-arm64-linux.h */
 #define VKI_SIG_SETMASK 2
 
 .globl ML_(do_syscall_for_client_WRK)
 ML_(do_syscall_for_client_WRK):
 
    /* Stash callee-saves and our args on the stack */
-   push {r0, r1, r3, r4, r5, r7, fp, lr}
+   stp  x29, x30, [sp, #-16]!
+   stp  x27, x28, [sp, #-16]!
+   stp  x25, x26, [sp, #-16]!
+   stp  x23, x24, [sp, #-16]!
+   stp  x21, x22, [sp, #-16]!
+   stp  x19, x20, [sp, #-16]!
+   stp  x4,  x5,  [sp, #-16]!
+   stp  x2,  x3,  [sp, #-16]!
+   stp  x0,  x1,  [sp, #-16]!
 
 1:
 
-   mov r7, #__NR_rt_sigprocmask
-   mov r0, #VKI_SIG_SETMASK 
-   mov r1, r2 /* sysmask */
-   mov r2, r3 /* postmask */
-   ldr r3, [sp, #32] /* nsigwords */
+   mov x8, #__NR_rt_sigprocmask
+   mov x0, #VKI_SIG_SETMASK 
+   mov x1, x2 /* sysmask */
+   mov x2, x3 /* postmask */
+   mov x3, x4 /* nsigwords */
    svc 0x00000000
 
 
-   ldr r5, [sp, #4] /* guest_state */
+   ldr x5, [sp, #8] /* saved x1 == guest_state */
 
-   ldr r7, [sp, #0] /* syscall# */
-   ldr r0, [r5, #OFFSET_arm_R0]
-   ldr r1, [r5, #OFFSET_arm_R1]
-   ldr r2, [r5, #OFFSET_arm_R2]
-   ldr r3, [r5, #OFFSET_arm_R3]
-   ldr r4, [r5, #OFFSET_arm_R4]
-   ldr r5, [r5, #OFFSET_arm_R5]
+   ldr x8, [sp, #0] /* saved x0 == syscall# */
+   ldr x0, [x5, #OFFSET_arm64_X0]
+   ldr x1, [x5, #OFFSET_arm64_X1]
+   ldr x2, [x5, #OFFSET_arm64_X2]
+   ldr x3, [x5, #OFFSET_arm64_X3]
+   ldr x4, [x5, #OFFSET_arm64_X4]
+   ldr x5, [x5, #OFFSET_arm64_X5]
 
 2: svc 0x00000000
 3:
-   ldr r5, [sp, #4] /* guest_state */
-   str r0, [r5, #OFFSET_arm_R0]
+   ldr x5, [sp, #8] /* saved x1 == guest_state */
+   str x0, [x5, #OFFSET_arm64_X0]
 
 4:
-   mov r7, #__NR_rt_sigprocmask
-   mov r0, #VKI_SIG_SETMASK 
-   ldr r1, [sp, #8] /* postmask */
-   mov r2, #0
-   ldr r3, [sp, #32] /* nsigwords */
+   mov x8, #__NR_rt_sigprocmask
+   mov x0, #VKI_SIG_SETMASK 
+   ldr x1, [sp, #24] /* saved x3 == postmask */
+   mov x2, #0
+   ldr x3, [sp, #32] /* saved x4 == nsigwords */
    svc 0x00000000
 
-   cmp r0, #0
+   cmp x0, #0
    blt 7f
-   add sp, sp, #4 /* r0 contains return value */
 
-5: /* Success */
-   mov r0, #0
-   pop {r1, r3, r4, r5, r7, fp, pc}
-
+5: /* Success: return zero */
+   mov  x0, #0
+   ldp  xzr, x1,  [sp], #16
+   ldp  x2,  x3,  [sp], #16
+   ldp  x4,  x5,  [sp], #16
+   ldp  x19, x20, [sp], #16
+   ldp  x21, x22, [sp], #16
+   ldp  x23, x24, [sp], #16
+   ldp  x25, x26, [sp], #16
+   ldp  x27, x28, [sp], #16
+   ldp  x29, x30, [sp], #16
+   ret
+        
 7: /* Failure: return 0x8000 | error code */
-   orr r0, r0, #0x8000
-   pop {r1, r3, r4, r5, r7, fp, pc}
+   orr  x0, x0, #0x8000
+   ldp  xzr, x1,  [sp], #16
+   ldp  x2,  x3,  [sp], #16
+   ldp  x4,  x5,  [sp], #16
+   ldp  x19, x20, [sp], #16
+   ldp  x21, x22, [sp], #16
+   ldp  x23, x24, [sp], #16
+   ldp  x25, x26, [sp], #16
+   ldp  x27, x28, [sp], #16
+   ldp  x29, x30, [sp], #16
+   ret
+
 
 
 .section .rodata
@@ -135,11 +162,11 @@ ML_(do_syscall_for_client_WRK):
 .globl ML_(blksys_complete)
 .globl ML_(blksys_committed)
 .globl ML_(blksys_finished)
-ML_(blksys_setup):      .long 1b
-ML_(blksys_restart):    .long 2b
-ML_(blksys_complete):   .long 3b
-ML_(blksys_committed):  .long 4b
-ML_(blksys_finished):   .long 5b
+ML_(blksys_setup):      .quad 1b
+ML_(blksys_restart):    .quad 2b
+ML_(blksys_complete):   .quad 3b
+ML_(blksys_committed):  .quad 4b
+ML_(blksys_finished):   .quad 5b
 
 /* Let the linker know we don't need an executable stack */
 .section .note.GNU-stack,"",%progbits

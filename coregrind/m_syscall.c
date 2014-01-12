@@ -128,6 +128,18 @@ SysRes VG_(mk_SysRes_arm_linux) ( Int val ) {
    return res;
 }
 
+SysRes VG_(mk_SysRes_arm64_linux) ( Long val ) {
+   SysRes res;
+   res._valEx   = 0; /* unused except on mips-linux */
+   res._isError = val >= -4095 && val <= -1;
+   if (res._isError) {
+      res._val = (ULong)(-val);
+   } else {
+      res._val = (ULong)val;
+   }
+   return res;
+}
+
 /* MIPS uses a3 != 0 to flag an error */
 SysRes VG_(mk_SysRes_mips32_linux) ( UWord v0, UWord v1, UWord a3 ) {
    SysRes res;
@@ -437,6 +449,34 @@ asm(
 ".previous\n"
 );
 
+#elif defined(VGP_arm64_linux)
+/* I think the conventions are:
+   args  in r0 r1 r2 r3 r4 r5
+   sysno in r8
+   return value in r0, w/ same conventions as x86-linux, viz r0 in
+   -4096 .. -1 is an error value.  All other values are success
+   values.
+
+   r0 to r5 remain unchanged, but syscall_no is in r6 and needs 
+   to be moved to r8 (??)
+*/
+extern UWord do_syscall_WRK (
+          UWord a1, UWord a2, UWord a3,
+          UWord a4, UWord a5, UWord a6,
+          UWord syscall_no
+       );
+asm(
+".text\n"
+".globl do_syscall_WRK\n"
+"do_syscall_WRK:\n"
+"        mov x8, x6\n"
+"        mov x6, 0\n"
+"        mov x7, 0\n"
+"        svc 0\n"
+"        ret\n"
+".previous\n"
+);
+
 #elif defined(VGP_x86_darwin)
 
 /* Incoming args (syscall number + up to 8 args) come in on the stack
@@ -695,6 +735,10 @@ SysRes VG_(do_syscall) ( UWord sysno, UWord a1, UWord a2, UWord a3,
 #  elif defined(VGP_arm_linux)
    UWord val = do_syscall_WRK(a1,a2,a3,a4,a5,a6,sysno);
    return VG_(mk_SysRes_arm_linux)( val );
+
+#  elif defined(VGP_arm64_linux)
+   UWord val = do_syscall_WRK(a1,a2,a3,a4,a5,a6,sysno);
+   return VG_(mk_SysRes_arm64_linux)( val );
 
 #  elif defined(VGP_x86_darwin)
    UInt  wLO = 0, wHI = 0, err = 0;

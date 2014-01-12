@@ -277,6 +277,18 @@ typedef
       Int   fp_off;
    }
    DiCfSI;
+#elif defined(VGA_arm64)
+/* Be generic until we know more about what's needed. */
+typedef
+   struct {
+      Addr  base;
+      UInt  len;
+      UChar cfa_how; /* a CFIC_ value */
+      UChar ra_how;  /* a CFIR_ value */
+      Int   cfa_off;
+      Int   ra_off;
+   }
+   DiCfSI;
 #else
 #  error "Unknown arch"
 #endif

@@ -103,6 +103,7 @@ static UInt local_sys_getpid ( void )
 }
 
 #elif defined(VGP_amd64_linux)
+
 __attribute__((noinline))
 static UInt local_sys_write_stderr ( const HChar* buf, Int n )
 {
@@ -267,6 +268,42 @@ static UInt local_sys_getpid ( void )
    return __res;
 }
 
+#elif defined(VGP_arm64_linux)
+
+static UInt local_sys_write_stderr ( const HChar* buf, Int n )
+{
+   volatile ULong block[2];
+   block[0] = (ULong)buf;
+   block[1] = (ULong)n;
+   __asm__ volatile (
+      "mov  x0, #2\n\t"        /* stderr */
+      "ldr  x1, [%0]\n\t"      /* buf */
+      "ldr  x2, [%0, #8]\n\t"  /* n */
+      "mov  x8, #"VG_STRINGIFY(__NR_write)"\n\t"
+      "svc  0x0\n"          /* write() */
+      "str  x0, [%0]\n\t"
+      :
+      : "r" (block)
+      : "x0","x1","x2","x7"
+   );
+   if (block[0] < 0)
+      block[0] = -1;
+   return (UInt)block[0];
+}
+
+static UInt local_sys_getpid ( void )
+{
+   UInt __res;
+   __asm__ volatile (
+      "mov  x8, #"VG_STRINGIFY(__NR_getpid)"\n"
+      "svc  0x0\n"      /* getpid() */
+      "mov  %0, x0\n"
+      : "=r" (__res)
+      :
+      : "x0", "x8" );
+   return (UInt)__res;
+}
+
 #elif defined(VGP_x86_darwin)
 
 /* We would use VG_DARWIN_SYSNO_TO_KERNEL instead of VG_DARWIN_SYSNO_INDEX
@@ -350,6 +387,7 @@ static UInt local_sys_getpid ( void )
 }
 
 #elif defined(VGP_s390x_linux)
+
 static UInt local_sys_write_stderr ( const HChar* buf, Int n )
 {
    register Int          r2     asm("2") = 2;      /* file descriptor STDERR */
@@ -391,6 +429,7 @@ static UInt local_sys_getpid ( void )
 }
 
 #elif defined(VGP_mips32_linux)
+
 static UInt local_sys_write_stderr ( const HChar* buf, Int n )
 {
    volatile Int block[2];
@@ -428,6 +467,7 @@ static UInt local_sys_getpid ( void )
 }
 
 #elif defined(VGP_mips64_linux)
+
 static UInt local_sys_write_stderr ( const HChar* buf, Int n )
 {
    volatile Long block[2];

@@ -1841,6 +1841,10 @@ void ML_(read_debuginfo_dwarf1) (
 #  define FP_REG         12
 #  define SP_REG         13
 #  define RA_REG_DEFAULT 14    //???
+#elif defined(VGP_arm64_linux)
+#  define FP_REG         29    //???
+#  define SP_REG         31    //???
+#  define RA_REG_DEFAULT 30    //???
 #elif defined(VGP_x86_darwin)
 #  define FP_REG         5
 #  define SP_REG         4
@@ -2179,6 +2183,8 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
       si->cfa_how = CFIC_IA_SPREL;
 #     elif defined(VGA_arm)
       si->cfa_how = CFIC_ARM_R13REL;
+#     elif defined(VGA_arm64)
+      I_die_here;
 #     else
       si->cfa_how = 0; /* invalid */
 #     endif
@@ -2206,6 +2212,8 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
       si->cfa_how = CFIC_ARM_R7REL;
       si->cfa_off = ctxs->cfa_off;
    }
+#  elif defined(VGA_arm64)
+   if (1) { I_die_here; } // do we need any arm64 specifics here?
 #  endif
    else {
       why = 1;
@@ -2248,6 +2256,7 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
       default:                                                \
          why = 2; goto failed; /* otherwise give up */        \
    }
+
 
 #  if defined(VGA_x86) || defined(VGA_amd64)
 
@@ -2339,8 +2348,9 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
 
    return True;
 
-
 #  elif defined(VGA_s390x)
+
+   /* --- entire tail of this fn specialised for s390 --- */
 
    SUMMARISE_HOW(si->ra_how, si->ra_off,
                              ctxs->reg[ctx->ra_reg] );
@@ -2387,7 +2397,6 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
 
    return True;
 
-
 #  elif defined(VGA_mips32) || defined(VGA_mips64)
  
    /* --- entire tail of this fn specialised for mips --- */
@@ -2431,9 +2440,12 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
 
    return True;
 
-
+#  elif defined(VGA_arm64)
+   I_die_here;
 
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64)
+   /* These don't use CFI based unwinding (is that really true?) */
+
 #  else
 #    error "Unknown arch"
 #  endif
@@ -2521,6 +2533,8 @@ static Int copy_convert_CfiExpr_tree ( XArray*        dstxa,
             return ML_(CfiExpr_CfiReg)( dstxa, Creg_IA_BP );
          if (dwreg == srcuc->ra_reg)
             return ML_(CfiExpr_CfiReg)( dstxa, Creg_IA_IP );
+#        elif defined(VGA_arm64)
+         I_die_here;
 #        elif defined(VGA_ppc32) || defined(VGA_ppc64)
 #        else
 #           error "Unknown arch"

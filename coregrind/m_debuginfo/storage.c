@@ -195,6 +195,8 @@ void ML_(ppDiCfSI) ( XArray* /* of CfiExpr */ exprs, DiCfSI* si )
    SHOW_HOW(si->sp_how, si->sp_off);
    VG_(printf)(" FP=");
    SHOW_HOW(si->fp_how, si->fp_off);
+#  elif defined(VGA_arm64)
+   I_die_here;
 #  else
 #    error "Unknown arch"
 #  endif

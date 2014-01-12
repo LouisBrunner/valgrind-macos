@@ -103,6 +103,10 @@ extern UInt  VG_(arm_linux_REDIR_FOR_strlen)( void* );
 extern void* VG_(arm_linux_REDIR_FOR_memcpy)( void*, void*, Int );
 #endif
 
+#if defined(VGP_arm64_linux)
+extern Addr  VG_(arm64_linux_SUBST_FOR_rt_sigreturn);
+#endif
+
 #if defined(VGP_x86_darwin)
 extern Addr  VG_(x86_darwin_SUBST_FOR_sigreturn);
 extern SizeT VG_(x86_darwin_REDIR_FOR_strlen)( void* );

@@ -70,6 +70,7 @@
    arm    r7    r0   r1   r2   r3   r4   r5   n/a  n/a  r0        (== ARG1)
    mips32 v0    a0   a1   a2   a3 stack stack n/a  n/a  v0        (== NUM)
    mips64 v0    a0   a1   a2   a3   a4   a5   a6   a7   v0        (== NUM)
+   arm64  x8    x0   x1   x2   x3   x4   x5   n/a  n/a  x0 ??     (== ARG1??)
 
    On s390x the svc instruction is used for system calls. The system call
    number is encoded in the instruction (8 bit immediate field). Since Linux
@@ -464,6 +465,18 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
    canonical->arg7  = 0;
    canonical->arg8  = 0;
 
+#elif defined(VGP_arm64_linux)
+   VexGuestARM64State* gst = (VexGuestARM64State*)gst_vanilla;
+   canonical->sysno = gst->guest_X8;
+   canonical->arg1  = gst->guest_X0;
+   canonical->arg2  = gst->guest_X1;
+   canonical->arg3  = gst->guest_X2;
+   canonical->arg4  = gst->guest_X3;
+   canonical->arg5  = gst->guest_X4;
+   canonical->arg6  = gst->guest_X5;
+   canonical->arg7  = 0;
+   canonical->arg8  = 0;
+
 #elif defined(VGP_mips32_linux)
    VexGuestMIPS32State* gst = (VexGuestMIPS32State*)gst_vanilla;
    canonical->sysno = gst->guest_r2;    // v0
@@ -694,6 +707,16 @@ void putSyscallArgsIntoGuestState ( /*IN*/ SyscallArgs*       canonical,
    gst->guest_R4 = canonical->arg5;
    gst->guest_R5 = canonical->arg6;
 
+#elif defined(VGP_arm64_linux)
+   VexGuestARM64State* gst = (VexGuestARM64State*)gst_vanilla;
+   gst->guest_X8 = canonical->sysno;
+   gst->guest_X0 = canonical->arg1;
+   gst->guest_X1 = canonical->arg2;
+   gst->guest_X2 = canonical->arg3;
+   gst->guest_X3 = canonical->arg4;
+   gst->guest_X4 = canonical->arg5;
+   gst->guest_X5 = canonical->arg6;
+
 #elif defined(VGP_x86_darwin)
    VexGuestX86State* gst = (VexGuestX86State*)gst_vanilla;
    UWord *stack = (UWord *)gst->guest_ESP;
@@ -746,8 +769,8 @@ void putSyscallArgsIntoGuestState ( /*IN*/ SyscallArgs*       canonical,
       gst->guest_r5 = canonical->arg2;
       gst->guest_r6 = canonical->arg3;
       gst->guest_r7 = canonical->arg4;
-      *((UInt*) (gst->guest_r29 + 16)) = canonical->arg5;    // 16(guest_GPR29/sp)
-      *((UInt*) (gst->guest_r29 + 20)) = canonical->arg6;    // 20(sp)
+      *((UInt*) (gst->guest_r29 + 16)) = canonical->arg5; // 16(guest_GPR29/sp)
+      *((UInt*) (gst->guest_r29 + 20)) = canonical->arg6; // 20(sp)
    } else {
       canonical->arg8 = 0;
       gst->guest_r2 = __NR_syscall;
@@ -755,9 +778,9 @@ void putSyscallArgsIntoGuestState ( /*IN*/ SyscallArgs*       canonical,
       gst->guest_r5 = canonical->arg1;
       gst->guest_r6 = canonical->arg2;
       gst->guest_r7 = canonical->arg3;
-      *((UInt*) (gst->guest_r29 + 16)) = canonical->arg4;    // 16(guest_GPR29/sp)
-      *((UInt*) (gst->guest_r29 + 20)) = canonical->arg5;    // 20(sp)
-      *((UInt*) (gst->guest_r29 + 24)) = canonical->arg6;    // 24(sp)
+      *((UInt*) (gst->guest_r29 + 16)) = canonical->arg4; // 16(guest_GPR29/sp)
+      *((UInt*) (gst->guest_r29 + 20)) = canonical->arg5; // 20(sp)
+      *((UInt*) (gst->guest_r29 + 24)) = canonical->arg6; // 24(sp)
    }
 
 #elif defined(VGP_mips64_linux)
@@ -805,6 +828,11 @@ void getSyscallStatusFromGuestState ( /*OUT*/SyscallStatus*     canonical,
 #  elif defined(VGP_arm_linux)
    VexGuestARMState* gst = (VexGuestARMState*)gst_vanilla;
    canonical->sres = VG_(mk_SysRes_arm_linux)( gst->guest_R0 );
+   canonical->what = SsComplete;
+
+#  elif defined(VGP_arm64_linux)
+   VexGuestARM64State* gst = (VexGuestARM64State*)gst_vanilla;
+   canonical->sres = VG_(mk_SysRes_arm64_linux)( gst->guest_X0 );
    canonical->what = SsComplete;
 
 #  elif defined(VGP_mips32_linux)
@@ -980,6 +1008,20 @@ void putSyscallStatusIntoGuestState ( /*IN*/ ThreadId tid,
    VG_TRACK( post_reg_write, Vg_CoreSysCall, tid, 
              OFFSET_arm_R0, sizeof(UWord) );
 
+#  elif defined(VGP_arm64_linux)
+   VexGuestARM64State* gst = (VexGuestARM64State*)gst_vanilla;
+   vg_assert(canonical->what == SsComplete);
+   if (sr_isError(canonical->sres)) {
+      /* This isn't exactly right, in that really a Failure with res
+         not in the range 1 .. 4095 is unrepresentable in the
+         Linux-arm64 scheme.  Oh well. */
+      gst->guest_X0 = - (Long)sr_Err(canonical->sres);
+   } else {
+      gst->guest_X0 = sr_Res(canonical->sres);
+   }
+   VG_TRACK( post_reg_write, Vg_CoreSysCall, tid, 
+             OFFSET_arm64_X0, sizeof(UWord) );
+
 #elif defined(VGP_x86_darwin)
    VexGuestX86State* gst = (VexGuestX86State*)gst_vanilla;
    SysRes sres = canonical->sres;
@@ -1104,6 +1146,8 @@ void putSyscallStatusIntoGuestState ( /*IN*/ ThreadId tid,
 static
 void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout )
 {
+   VG_(bzero_inline)(layout, sizeof(*layout));
+
 #if defined(VGP_x86_linux)
    layout->o_sysno  = OFFSET_x86_EAX;
    layout->o_arg1   = OFFSET_x86_EBX;
@@ -1156,6 +1200,17 @@ void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout )
    layout->o_arg4   = OFFSET_arm_R3;
    layout->o_arg5   = OFFSET_arm_R4;
    layout->o_arg6   = OFFSET_arm_R5;
+   layout->uu_arg7  = -1; /* impossible value */
+   layout->uu_arg8  = -1; /* impossible value */
+
+#elif defined(VGP_arm64_linux)
+   layout->o_sysno  = OFFSET_arm64_X8;
+   layout->o_arg1   = OFFSET_arm64_X0;
+   layout->o_arg2   = OFFSET_arm64_X1;
+   layout->o_arg3   = OFFSET_arm64_X2;
+   layout->o_arg4   = OFFSET_arm64_X3;
+   layout->o_arg5   = OFFSET_arm64_X4;
+   layout->o_arg6   = OFFSET_arm64_X5;
    layout->uu_arg7  = -1; /* impossible value */
    layout->uu_arg8  = -1; /* impossible value */
 
@@ -1989,6 +2044,10 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
       }
       vg_assert(valid);
    }
+
+#elif defined(VGP_arm64_linux)
+   // probably simplest to copy the ppc version
+   I_die_here;
 
 #elif defined(VGP_x86_darwin)
    arch->vex.guest_EIP = arch->vex.guest_IP_AT_SYSCALL; 

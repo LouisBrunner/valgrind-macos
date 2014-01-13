@@ -124,7 +124,7 @@ extern void* VG_(memmove)( void *d, const void *s, SizeT sz );
 extern void* VG_(memset) ( void *s, Int c, SizeT sz );
 extern Int   VG_(memcmp) ( const void* s1, const void* s2, SizeT n );
 
-/* Zero out up to 8 words quickly in-line.  Do not use this for blocks
+/* Zero out up to 12 words quickly in-line.  Do not use this for blocks
    of size which are unknown at compile time, since the whole point is
    for it to be inlined, and then for gcc to remove all code except
    for the relevant 'sz' case. */
@@ -135,6 +135,18 @@ static void VG_(bzero_inline) ( void* s, SizeT sz )
        && LIKELY(0 == (((Addr)s) & (Addr)(sizeof(UWord)-1)))) {
       UWord* p = (UWord*)s;
       switch (sz / (SizeT)sizeof(UWord)) {
+          case 12: p[0] = p[1] = p[2] = p[3]
+                  = p[4] = p[5] = p[6] = p[7] 
+                  = p[8] = p[9] = p[10] = p[11] = 0UL; return;
+          case 11: p[0] = p[1] = p[2] = p[3]
+                  = p[4] = p[5] = p[6] = p[7] 
+                  = p[8] = p[9] = p[10] = 0UL; return;
+          case 10: p[0] = p[1] = p[2] = p[3]
+                  = p[4] = p[5] = p[6] = p[7] 
+                  = p[8] = p[9] = 0UL; return;
+          case 9: p[0] = p[1] = p[2] = p[3]
+                  = p[4] = p[5] = p[6] = p[7] 
+                  = p[8] = 0UL; return;
           case 8: p[0] = p[1] = p[2] = p[3]
                   = p[4] = p[5] = p[6] = p[7] = 0UL; return;
           case 7: p[0] = p[1] = p[2] = p[3]

@@ -111,7 +111,6 @@ typedef
             UInt r7;
          } ARM;
          struct {
-            // FIXME ARM64 is this correct?
             ULong x29; /* FP */
             ULong x30; /* LR */
          } ARM64;

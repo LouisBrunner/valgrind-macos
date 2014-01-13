@@ -1840,11 +1840,11 @@ void ML_(read_debuginfo_dwarf1) (
 #elif defined(VGP_arm_linux)
 #  define FP_REG         12
 #  define SP_REG         13
-#  define RA_REG_DEFAULT 14    //???
+#  define RA_REG_DEFAULT 14
 #elif defined(VGP_arm64_linux)
-#  define FP_REG         29    //???
-#  define SP_REG         31    //???
-#  define RA_REG_DEFAULT 30    //???
+#  define FP_REG         29
+#  define SP_REG         31
+#  define RA_REG_DEFAULT 30
 #elif defined(VGP_x86_darwin)
 #  define FP_REG         5
 #  define SP_REG         4
@@ -1878,6 +1878,8 @@ void ML_(read_debuginfo_dwarf1) (
 # define N_CFI_REGS 72
 #elif defined(VGP_arm_linux)
 # define N_CFI_REGS 320
+#elif defined(VGP_arm64_linux)
+# define N_CFI_REGS 128
 #else
 # define N_CFI_REGS 20
 #endif
@@ -2100,6 +2102,11 @@ static void initUnwindContext ( /*OUT*/UnwindContext* ctx )
       ctx->state[j].reg[12].tag = RR_Same;
       ctx->state[j].reg[7].tag  = RR_Same;
       /* this can't be right though: R12 (IP) isn't callee saved. */
+#     elif defined(VGA_arm64)
+      /* Callee-saved registers (that we are interested in) should
+         start out as RR_Same. */
+      ctx->state[j].reg[29/*FP*/].tag = RR_Same;
+      ctx->state[j].reg[30/*LR*/].tag = RR_Same;
 #     endif
    }
 }
@@ -2121,7 +2128,7 @@ typedef
 
 static void initCfiSI ( DiCfSI* si )
 {
-   VG_(memset)(si, 0, sizeof(*si));
+   VG_(bzero_inline)(si, sizeof(*si));
 }
 
 
@@ -2184,7 +2191,7 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
 #     elif defined(VGA_arm)
       si->cfa_how = CFIC_ARM_R13REL;
 #     elif defined(VGA_arm64)
-      I_die_here;
+      si->cfa_how = CFIC_ARM64_SPREL;
 #     else
       si->cfa_how = 0; /* invalid */
 #     endif
@@ -2197,6 +2204,8 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
       si->cfa_how = CFIC_IA_BPREL;
 #     elif defined(VGA_arm)
       si->cfa_how = CFIC_ARM_R12REL;
+#     elif defined(VGA_arm64)
+      si->cfa_how = CFIC_ARM64_X29REL;
 #     else
       si->cfa_how = 0; /* invalid */
 #     endif
@@ -2213,7 +2222,7 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
       si->cfa_off = ctxs->cfa_off;
    }
 #  elif defined(VGA_arm64)
-   if (1) { I_die_here; } // do we need any arm64 specifics here?
+   // do we need any arm64 specifics here?
 #  endif
    else {
       why = 1;
@@ -2348,6 +2357,48 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
 
    return True;
 
+#  elif defined(VGA_arm64)
+
+   /* --- entire tail of this fn specialised for arm64 --- */
+
+   SUMMARISE_HOW(si->x30_how, si->x30_off, ctxs->reg[30/*LR*/]);
+   SUMMARISE_HOW(si->x29_how, si->x29_off, ctxs->reg[29/*FP*/]);
+
+   if (ctxs->reg[30/*LR*/].tag == RR_Same
+       && ctx->ra_reg == 30/*as we expect it always to be*/) {
+      /* Generate a trivial CfiExpr, which merely says "x30".  First
+         ensure this DebugInfo has a cfsi_expr array in which to park
+         it. */
+      if (!debuginfo->cfsi_exprs)
+         debuginfo->cfsi_exprs = VG_(newXA)( ML_(dinfo_zalloc),
+                                             "di.ccCt.2a-arm64",
+                                             ML_(dinfo_free),
+                                             sizeof(CfiExpr) );
+      si->ra_off = ML_(CfiExpr_CfiReg)( debuginfo->cfsi_exprs,
+                                        Creg_ARM64_X30);
+      si->ra_how = CFIR_EXPR;
+   } else {
+      /* Just summarise it in the normal way */
+      SUMMARISE_HOW(si->ra_how, si->ra_off, ctxs->reg[ctx->ra_reg]);
+   }
+
+   /* on arm64, it seems the old SP value before the call is always
+      the same as the CFA.  Therefore ... */
+   si->sp_how = CFIR_CFAREL;
+   si->sp_off = 0;
+
+   /* bogus looking range?  Note, we require that the difference is
+      representable in 32 bits. */
+   if (loc_start >= ctx->loc) 
+      { why = 4; goto failed; }
+   if (ctx->loc - loc_start > 10000000 /* let's say */)
+      { why = 5; goto failed; }
+
+   si->base = loc_start + ctx->initloc;
+   si->len  = (UInt)(ctx->loc - loc_start);
+
+   return True;
+
 #  elif defined(VGA_s390x)
 
    /* --- entire tail of this fn specialised for s390 --- */
@@ -2440,15 +2491,14 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
 
    return True;
 
-#  elif defined(VGA_arm64)
-   I_die_here;
-
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64)
    /* These don't use CFI based unwinding (is that really true?) */
 
 #  else
 #    error "Unknown arch"
 #  endif
+
+   /* --- non-specialised code after this point --- */
 
 #  undef SUMMARISE_HOW
 

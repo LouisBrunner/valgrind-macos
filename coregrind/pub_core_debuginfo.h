@@ -114,7 +114,7 @@ typedef
    D3UnwindRegs;
 #elif defined(VGA_arm64)
 typedef
-   struct { Addr pc; Addr sp; Addr lr; Addr fp; } /* PC, 31, 30, 29 */
+   struct { Addr pc; Addr sp; Addr x30; Addr x29; } /* PC, SP, LR, FP */
    D3UnwindRegs;
 #elif defined(VGA_ppc32) || defined(VGA_ppc64)
 typedef

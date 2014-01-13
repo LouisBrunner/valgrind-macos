@@ -2115,7 +2115,7 @@ UWord evalCfiExpr ( XArray* exprs, Int ix,
             case Creg_MIPS_RA: return eec->uregs->ra;
 #           elif defined(VGA_ppc32) || defined(VGA_ppc64)
 #           elif defined(VGP_arm64_linux)
-            I_die_here;
+            case Creg_ARM64_X30: return eec->uregs->x30;
 #           else
 #             error "Unsupported arch"
 #           endif
@@ -2361,7 +2361,12 @@ static Addr compute_cfa ( D3UnwindRegs* uregs,
          break;
 #     elif defined(VGA_ppc32) || defined(VGA_ppc64)
 #     elif defined(VGP_arm64_linux)
-      I_die_here;
+      case CFIC_ARM64_SPREL: 
+         cfa = cfsi->cfa_off + uregs->sp;
+         break;
+      case CFIC_ARM64_X29REL: 
+         cfa = cfsi->cfa_off + uregs->x29;
+         break;
 #     else
 #       error "Unsupported arch"
 #     endif
@@ -2437,6 +2442,8 @@ Addr ML_(get_CFA) ( Addr ip, Addr sp, Addr fp,
    {E,R}SP, {E,R}BP.
 
    For arm, the unwound registers are: R7 R11 R12 R13 R14 R15.
+
+   For arm64, the unwound registers are: X29(FP) X30(LR) SP PC.
 */
 Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
                         Addr min_accessible,
@@ -2459,7 +2466,7 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
    ipHere = uregsHere->pc;
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64)
 #  elif defined(VGP_arm64_linux)
-   I_die_here;
+   ipHere = uregsHere->pc;
 #  else
 #    error "Unknown arch"
 #  endif
@@ -2541,7 +2548,10 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
    COMPUTE(uregsPrev.fp, uregsHere->fp, cfsi->fp_how, cfsi->fp_off);
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64)
 #  elif defined(VGP_arm64_linux)
-   I_die_here;
+   COMPUTE(uregsPrev.pc,  uregsHere->pc,  cfsi->ra_how,  cfsi->ra_off);
+   COMPUTE(uregsPrev.sp,  uregsHere->sp,  cfsi->sp_how,  cfsi->sp_off);
+   COMPUTE(uregsPrev.x30, uregsHere->x30, cfsi->x30_how, cfsi->x30_off);
+   COMPUTE(uregsPrev.x29, uregsHere->x29, cfsi->x29_how, cfsi->x29_off);
 #  else
 #    error "Unknown arch"
 #  endif

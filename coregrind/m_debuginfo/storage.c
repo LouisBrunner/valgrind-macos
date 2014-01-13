@@ -162,6 +162,12 @@ void ML_(ppDiCfSI) ( XArray* /* of CfiExpr */ exprs, DiCfSI* si )
       case CFIC_ARM_R7REL: 
          VG_(printf)("let cfa=oldR7+%d", si->cfa_off); 
          break;
+      case CFIC_ARM64_SPREL: 
+         VG_(printf)("let cfa=oldSP+%d", si->cfa_off); 
+         break;
+      case CFIC_ARM64_X29REL: 
+         VG_(printf)("let cfa=oldX29+%d", si->cfa_off); 
+         break;
       case CFIC_EXPR: 
          VG_(printf)("let cfa={"); 
          ML_(ppCfiExpr)(exprs, si->cfa_off);
@@ -196,7 +202,12 @@ void ML_(ppDiCfSI) ( XArray* /* of CfiExpr */ exprs, DiCfSI* si )
    VG_(printf)(" FP=");
    SHOW_HOW(si->fp_how, si->fp_off);
 #  elif defined(VGA_arm64)
-   I_die_here;
+   VG_(printf)(" SP=");
+   SHOW_HOW(si->sp_how, si->sp_off);
+   VG_(printf)(" X30=");
+   SHOW_HOW(si->x30_how, si->x30_off);
+   VG_(printf)(" X29=");
+   SHOW_HOW(si->x29_how, si->x29_off);
 #  else
 #    error "Unknown arch"
 #  endif
@@ -671,15 +682,16 @@ static void ppCfiBinop ( CfiBinop op )
 static void ppCfiReg ( CfiReg reg )
 {
    switch (reg) {
-      case Creg_IA_SP:   VG_(printf)("xSP"); break;
-      case Creg_IA_BP:   VG_(printf)("xBP"); break;
-      case Creg_IA_IP:   VG_(printf)("xIP"); break;
-      case Creg_ARM_R13: VG_(printf)("R13"); break;
-      case Creg_ARM_R12: VG_(printf)("R12"); break;
-      case Creg_ARM_R15: VG_(printf)("R15"); break;
-      case Creg_ARM_R14: VG_(printf)("R14"); break;
-      case Creg_MIPS_RA: VG_(printf)("RA"); break;
-      case Creg_S390_R14: VG_(printf)("R14"); break;
+      case Creg_IA_SP:     VG_(printf)("xSP"); break;
+      case Creg_IA_BP:     VG_(printf)("xBP"); break;
+      case Creg_IA_IP:     VG_(printf)("xIP"); break;
+      case Creg_ARM_R13:   VG_(printf)("R13"); break;
+      case Creg_ARM_R12:   VG_(printf)("R12"); break;
+      case Creg_ARM_R15:   VG_(printf)("R15"); break;
+      case Creg_ARM_R14:   VG_(printf)("R14"); break;
+      case Creg_ARM64_X30: VG_(printf)("X30"); break;
+      case Creg_MIPS_RA:   VG_(printf)("RA"); break;
+      case Creg_S390_R14:  VG_(printf)("R14"); break;
       default: vg_assert(0);
    }
 }

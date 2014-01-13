@@ -133,7 +133,7 @@ typedef
      cfa = case cfa_how of
               CFIC_IA_SPREL -> {e,r}sp + cfa_off
               CFIC_IA_BPREL -> {e,r}bp + cfa_off
-              CFIR_IA_EXPR  -> expr whose index is in cfa_off
+              CFIC_EXPR     -> expr whose index is in cfa_off
 
    Once that is done, the previous frame's {e,r}sp/{e,r}bp values and
    this frame's {e,r}ra value can be calculated like this:
@@ -150,11 +150,11 @@ typedef
    keep track of:
 
      cfa = case cfa_how of
-              CFIC_R13REL -> r13 + cfa_off
-              CFIC_R12REL -> r12 + cfa_off
-              CFIC_R11REL -> r11 + cfa_off
-              CFIC_R7REL  -> r7  + cfa_off
-              CFIR_EXPR   -> expr whose index is in cfa_off
+              CFIC_ARM_R13REL -> r13 + cfa_off
+              CFIC_ARM_R12REL -> r12 + cfa_off
+              CFIC_ARM_R11REL -> r11 + cfa_off
+              CFIC_ARM_R7REL  -> r7  + cfa_off
+              CFIR_EXPR       -> expr whose index is in cfa_off
 
      old_r14/r13/r12/r11/r7/ra
          = case r14/r13/r12/r11/r7/ra_how of
@@ -164,13 +164,28 @@ typedef
               CFIR_MEMCFAREL -> *( cfa + r14/r13/r12/r11/r7/ra_off )
               CFIR_EXPR      -> expr whose index is in r14/r13/r12/r11/r7/ra_off
 
+   On ARM64:
+
+     cfa = case cfa_how of
+              CFIC_ARM64_SPREL  -> sp + cfa_off
+              CFIC_ARM64_X29REL -> x29 + cfa_off
+              CFIC_EXPR         -> expr whose index is in cfa_off
+
+     old_sp/x30/x29/ra
+         = case sp/x30/x29/ra_how of
+              CFIR_UNKNOWN   -> we don't know, sorry
+              CFIR_SAME      -> same as it was before
+              CFIR_CFAREL    -> cfa + sp/x30/x29/ra_how
+              CFIR_MEMCFAREL -> *( cfa + sp/x30/x29/ra_how )
+              CFIR_EXPR      -> expr whose index is in sp/x30/x29/ra_off
+
    On s390x we have a similar logic as x86 or amd64. We need the stack pointer
    (r15), the frame pointer r11 (like BP) and together with the instruction
    address in the PSW we can calculate the previous values:
      cfa = case cfa_how of
               CFIC_IA_SPREL -> r15 + cfa_off
               CFIC_IA_BPREL -> r11 + cfa_off
-              CFIR_IA_EXPR  -> expr whose index is in cfa_off
+              CFIC_EXPR     -> expr whose index is in cfa_off
 
      old_sp/fp/ra
          = case sp/fp/ra_how of
@@ -183,12 +198,13 @@ typedef
 
 #define CFIC_IA_SPREL     ((UChar)1)
 #define CFIC_IA_BPREL     ((UChar)2)
-#define CFIC_IA_EXPR      ((UChar)3)
-#define CFIC_ARM_R13REL   ((UChar)4)
-#define CFIC_ARM_R12REL   ((UChar)5)
-#define CFIC_ARM_R11REL   ((UChar)6)
-#define CFIC_ARM_R7REL    ((UChar)7)
-#define CFIC_EXPR         ((UChar)8)  /* all targets */
+#define CFIC_ARM_R13REL   ((UChar)3)
+#define CFIC_ARM_R12REL   ((UChar)4)
+#define CFIC_ARM_R11REL   ((UChar)5)
+#define CFIC_ARM_R7REL    ((UChar)6)
+#define CFIC_ARM64_SPREL  ((UChar)7)
+#define CFIC_ARM64_X29REL ((UChar)8)
+#define CFIC_EXPR         ((UChar)9)  /* all targets */
 
 #define CFIR_UNKNOWN      ((UChar)64)
 #define CFIR_SAME         ((UChar)65)
@@ -230,6 +246,23 @@ typedef
       Int   r12_off;
       Int   r11_off;
       Int   r7_off;
+   }
+   DiCfSI;
+#elif defined(VGA_arm64)
+typedef
+   struct {
+      Addr  base;
+      UInt  len;
+      UChar cfa_how; /* a CFIC_ value */
+      UChar ra_how;  /* a CFIR_ value */
+      UChar sp_how;  /* a CFIR_ value */ /*dw31=SP*/
+      UChar x30_how; /* a CFIR_ value */ /*dw30=LR*/
+      UChar x29_how; /* a CFIR_ value */ /*dw29=FP*/
+      Int   cfa_off;
+      Int   ra_off;
+      Int   sp_off;
+      Int   x30_off;
+      Int   x29_off;
    }
    DiCfSI;
 #elif defined(VGA_ppc32) || defined(VGA_ppc64)
@@ -277,18 +310,6 @@ typedef
       Int   fp_off;
    }
    DiCfSI;
-#elif defined(VGA_arm64)
-/* Be generic until we know more about what's needed. */
-typedef
-   struct {
-      Addr  base;
-      UInt  len;
-      UChar cfa_how; /* a CFIC_ value */
-      UChar ra_how;  /* a CFIR_ value */
-      Int   cfa_off;
-      Int   ra_off;
-   }
-   DiCfSI;
 #else
 #  error "Unknown arch"
 #endif
@@ -328,6 +349,7 @@ typedef
       Creg_ARM_R12,
       Creg_ARM_R15,
       Creg_ARM_R14,
+      Creg_ARM64_X30,
       Creg_S390_R14,
       Creg_MIPS_RA
    }

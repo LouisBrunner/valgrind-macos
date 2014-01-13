@@ -1044,10 +1044,88 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
                                UnwindStartRegs* startRegs,
                                Addr fp_max_orig )
 {
-   ips[0] = startRegs->r_pc;
-   if (sps) sps[0] = startRegs->r_sp;
-   if (fps) fps[0] = startRegs->misc.ARM64.x29;
-   return 1;
+   Bool  debug = False;
+   Int   i;
+   Addr  fp_max;
+   UInt  n_found = 0;
+   const Int cmrf = VG_(clo_merge_recursive_frames);
+
+   vg_assert(sizeof(Addr) == sizeof(UWord));
+   vg_assert(sizeof(Addr) == sizeof(void*));
+
+   D3UnwindRegs uregs;
+   uregs.pc = startRegs->r_pc;
+   uregs.sp = startRegs->r_sp;
+   uregs.x30 = startRegs->misc.ARM64.x30;
+   uregs.x29 = startRegs->misc.ARM64.x29;
+   Addr fp_min = uregs.sp;
+
+   /* Snaffle IPs from the client's stack into ips[0 .. max_n_ips-1],
+      stopping when the trail goes cold, which we guess to be
+      when FP is not a reasonable stack location. */
+
+   // JRS 2002-sep-17: hack, to round up fp_max to the end of the
+   // current page, at least.  Dunno if it helps.
+   // NJN 2002-sep-17: seems to -- stack traces look like 1.0.X again
+   fp_max = VG_PGROUNDUP(fp_max_orig);
+   if (fp_max >= sizeof(Addr))
+      fp_max -= sizeof(Addr);
+
+   if (debug)
+      VG_(printf)("\nmax_n_ips=%d fp_min=0x%lx fp_max_orig=0x%lx, "
+                  "fp_max=0x%lx PC=0x%lx SP=0x%lx\n",
+                  max_n_ips, fp_min, fp_max_orig, fp_max,
+                  uregs.pc, uregs.sp);
+
+   /* Assertion broken before main() is reached in pthreaded programs;  the
+    * offending stack traces only have one item.  --njn, 2002-aug-16 */
+   /* vg_assert(fp_min <= fp_max);*/
+   // On Darwin, this kicks in for pthread-related stack traces, so they're
+   // only 1 entry long which is wrong.
+   if (fp_min + 512 >= fp_max) {
+      /* If the stack limits look bogus, don't poke around ... but
+         don't bomb out either. */
+      if (sps) sps[0] = uregs.sp;
+      if (fps) fps[0] = uregs.x29;
+      ips[0] = uregs.pc;
+      return 1;
+   } 
+
+   /* */
+
+   if (sps) sps[0] = uregs.sp;
+   if (fps) fps[0] = uregs.x29;
+   ips[0] = uregs.pc;
+   i = 1;
+
+   /* Loop unwinding the stack, using CFI. */
+   while (True) {
+      if (debug) {
+         VG_(printf)("i: %d, pc: 0x%lx, sp: 0x%lx\n",
+                     i, uregs.pc, uregs.sp);
+      }
+
+      if (i >= max_n_ips)
+         break;
+
+      if (VG_(use_CF_info)( &uregs, fp_min, fp_max )) {
+         if (sps) sps[i] = uregs.sp;
+         if (fps) fps[i] = uregs.x29;
+         ips[i++] = uregs.pc - 1;
+         if (debug)
+            VG_(printf)("USING CFI: pc: 0x%lx, sp: 0x%lx\n",
+                        uregs.pc, uregs.sp);
+         uregs.pc = uregs.pc - 1;
+         if (UNLIKELY(cmrf > 0)) {RECURSIVE_MERGE(cmrf,ips,i);};
+         continue;
+      }
+
+      /* No luck.  We have to give up. */
+      break;
+   }
+
+   n_found = i;
+   return n_found;
 }
 
 #endif

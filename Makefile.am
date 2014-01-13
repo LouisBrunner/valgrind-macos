@@ -104,6 +104,7 @@ EXTRA_DIST = \
 	README.android \
 	README.android_emulator \
 	README.mips \
+	README.aarch64 \
 	NEWS.old \
 	valgrind.pc.in \
 	valgrind.spec.in \

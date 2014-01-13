@@ -149,7 +149,7 @@ r10-15                          "Temporary regs"      avail
 r16(IP0)
 r17(IP1)
 r18                             "Platform reg"
-r19-20     maybe                "Temporary regs"
+r19-20                          "Temporary regs"
 r21        y                    "Callee saved"        GSP
 r22-28     y                    "Callee saved"
 r29(FP)    y

@@ -170,7 +170,7 @@ void foo ( void )
    GENOFFSET(ARM64,arm64,X6);
    GENOFFSET(ARM64,arm64,X7);
    GENOFFSET(ARM64,arm64,X8);
-   GENOFFSET(ARM64,arm64,SP);
+   GENOFFSET(ARM64,arm64,XSP);
    GENOFFSET(ARM64,arm64,PC);
 
    // s390x

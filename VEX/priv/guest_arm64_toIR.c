@@ -612,7 +612,7 @@ static IRTemp mathREPLICATE ( IRType ty, IRTemp arg, UInt imm )
 #define OFFB_X29      offsetof(VexGuestARM64State,guest_X29)
 #define OFFB_X30      offsetof(VexGuestARM64State,guest_X30)
 
-#define OFFB_SP       offsetof(VexGuestARM64State,guest_SP)
+#define OFFB_XSP      offsetof(VexGuestARM64State,guest_XSP)
 #define OFFB_PC       offsetof(VexGuestARM64State,guest_PC)
 
 #define OFFB_CC_OP    offsetof(VexGuestARM64State,guest_CC_OP)
@@ -715,7 +715,7 @@ static Int offsetIReg64 ( UInt iregNo )
 
 static Int offsetIReg64orSP ( UInt iregNo )
 {
-   return iregNo == 31  ? OFFB_SP  : offsetIReg64(iregNo);
+   return iregNo == 31  ? OFFB_XSP  : offsetIReg64(iregNo);
 }
 
 static const HChar* nameIReg64orZR ( UInt iregNo )

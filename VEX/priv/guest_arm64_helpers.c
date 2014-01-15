@@ -1205,13 +1205,13 @@ void LibVEX_GuestARM64_initialise ( /*OUT*/VexGuestARM64State* vex_state )
 Bool guest_arm64_state_requires_precise_mem_exns ( Int minoff, 
                                                    Int maxoff)
 {
-   Int sp_min = offsetof(VexGuestARM64State, guest_SP);
-   Int sp_max = sp_min + 8 - 1;
-   Int pc_min = offsetof(VexGuestARM64State, guest_PC);
-   Int pc_max = pc_min + 8 - 1;
+   Int xsp_min = offsetof(VexGuestARM64State, guest_XSP);
+   Int xsp_max = xsp_min + 8 - 1;
+   Int pc_min  = offsetof(VexGuestARM64State, guest_PC);
+   Int pc_max  = pc_min + 8 - 1;
 
-   if (maxoff < sp_min || minoff > sp_max) {
-      /* no overlap with sp */
+   if (maxoff < xsp_min || minoff > xsp_max) {
+      /* no overlap with xsp */
       if (vex_control.iropt_register_updates == VexRegUpdSpAtMemAccess)
          return False; // We only need to check stack pointer.
    } else {
@@ -1258,7 +1258,7 @@ VexGuestLayout
           .total_sizeB = sizeof(VexGuestARM64State),
 
           /* Describe the stack pointer. */
-          .offset_SP = offsetof(VexGuestARM64State,guest_SP),
+          .offset_SP = offsetof(VexGuestARM64State,guest_XSP),
           .sizeof_SP = 8,
 
           /* Describe the instruction pointer. */

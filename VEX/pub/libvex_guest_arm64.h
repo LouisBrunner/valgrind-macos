@@ -76,7 +76,7 @@ typedef
       ULong guest_X28;
       ULong guest_X29;
       ULong guest_X30;     /* link register */
-      ULong guest_SP;
+      ULong guest_XSP;
       ULong guest_PC;
 
       /* 4-word thunk used to calculate N(sign) Z(zero) C(carry,

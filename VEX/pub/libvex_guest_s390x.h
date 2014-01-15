@@ -166,9 +166,9 @@ void LibVEX_GuestS390X_initialise(VexGuestS390XState *);
 /*--- Dedicated registers                                  ---*/
 /*------------------------------------------------------------*/
 
-#define guest_s390_LR guest_r14  /* Link register */
-#define guest_s390_SP guest_r15  /* Stack pointer */
-#define guest_s390_FP guest_r11  /* Frame pointer */
+#define guest_LR guest_r14  /* Link register */
+#define guest_SP guest_r15  /* Stack pointer */
+#define guest_FP guest_r11  /* Frame pointer */
 
 /*---------------------------------------------------------------*/
 /*--- end                                libvex_guest_s390x.h ---*/

@@ -268,7 +268,7 @@ static Int ptrace_setregs(Int pid, VexGuestArchState* vex)
    uregs.regs[28] = vex->guest_X28;
    uregs.regs[29] = vex->guest_X29;
    uregs.regs[30] = vex->guest_X30;
-   uregs.sp       = vex->guest_SP;
+   uregs.sp       = vex->guest_XSP;
    uregs.pc       = vex->guest_PC;
    uregs.pstate   = LibVEX_GuestARM64_get_nzcv(vex); /* is this correct? */
    return VG_(ptrace)(VKI_PTRACE_SETREGS, pid, NULL, &uregs);

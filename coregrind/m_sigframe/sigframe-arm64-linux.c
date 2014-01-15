@@ -143,7 +143,7 @@ static void synth_ucontext( ThreadId tid, const vki_siginfo_t *si,
    SC2(24);  SC2(25);  SC2(26);  SC2(27);
    SC2(28);  SC2(29);  SC2(30);
 #  undef SC2
-   sc->sp = tst->arch.vex.guest_SP;
+   sc->sp = tst->arch.vex.guest_XSP;
    sc->pc = tst->arch.vex.guest_PC;
    sc->pstate = 0; /* slack .. could do better */
 
@@ -268,7 +268,7 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
 
    vg_assert(VG_(is_valid_tid)(tid));
    tst = VG_(get_ThreadState)(tid);
-   sp = tst->arch.vex.guest_SP;
+   sp = tst->arch.vex.guest_XSP;
 
 //ZZ    if (has_siginfo) {
       struct rt_sigframe *frame = (struct rt_sigframe *)sp;

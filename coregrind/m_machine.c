@@ -99,7 +99,7 @@ void VG_(get_UnwindStartRegs) ( /*OUT*/UnwindStartRegs* regs,
       = VG_(threads)[tid].arch.vex.guest_R7;
 #  elif defined(VGA_arm64)
    regs->r_pc = VG_(threads)[tid].arch.vex.guest_PC;
-   regs->r_sp = VG_(threads)[tid].arch.vex.guest_SP;
+   regs->r_sp = VG_(threads)[tid].arch.vex.guest_XSP;
    regs->misc.ARM64.x29 = VG_(threads)[tid].arch.vex.guest_X29;
    regs->misc.ARM64.x30 = VG_(threads)[tid].arch.vex.guest_X30;
 #  elif defined(VGA_s390x)

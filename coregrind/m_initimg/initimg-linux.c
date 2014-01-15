@@ -1064,8 +1064,8 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
    VG_(memset)(&arch->vex_shadow1, 0, sizeof(VexGuestARM64State));
    VG_(memset)(&arch->vex_shadow2, 0, sizeof(VexGuestARM64State));
 
-   arch->vex.guest_SP = iifii.initial_client_SP;
-   arch->vex.guest_PC = iifii.initial_client_IP;
+   arch->vex.guest_XSP = iifii.initial_client_SP;
+   arch->vex.guest_PC  = iifii.initial_client_IP;
 
 #  elif defined(VGP_s390x_linux)
    vg_assert(0 == sizeof(VexGuestS390XState) % 16);

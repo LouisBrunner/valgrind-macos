@@ -129,8 +129,8 @@
 #  define VG_FRAME_PTR        guest_R11
 #elif defined(VGA_arm64)
 #  define VG_INSTR_PTR        guest_PC
-#  define VG_STACK_PTR        guest_SP
-#  define VG_FRAME_PTR        guest_SP   // FIXME: is this right?
+#  define VG_STACK_PTR        guest_XSP
+#  define VG_FRAME_PTR        guest_X29   // FIXME: is this right?
 #elif defined(VGA_s390x)
 #  define VG_INSTR_PTR        guest_IA
 #  define VG_STACK_PTR        guest_SP

@@ -481,9 +481,11 @@ typedef
       Iop_DivS32,   // ditto, signed
       Iop_DivU64,   // :: I64,I64 -> I64 (simple div, no mod)
       Iop_DivS64,   // ditto, signed
-      Iop_DivU64E,  // :: I64,I64 -> I64 (dividend is 64-bit arg (hi) concat with 64 0's (low))
+      Iop_DivU64E,  // :: I64,I64 -> I64 (dividend is 64-bit arg (hi)
+                    //                    concat with 64 0's (low))
       Iop_DivS64E,  // ditto, signed
-      Iop_DivU32E,  // :: I32,I32 -> I32 (dividend is 32-bit arg (hi) concat with 32 0's (low))
+      Iop_DivU32E,  // :: I32,I32 -> I32 (dividend is 32-bit arg (hi)
+                    // concat with 32 0's (low))
       Iop_DivS32E,  // ditto, signed
 
       Iop_DivModU64to32, // :: I64,I32 -> I64
@@ -1296,9 +1298,9 @@ typedef
       /* Unlike the standard fp conversions, these irops take no
          rounding mode argument. Instead the irop trailers _R{M,P,N,Z}
          indicate the mode: {-inf, +inf, nearest, zero} respectively. */
-      Iop_I32UtoFx4,  Iop_I32StoFx4,       /* I32x4 -> F32x4       */
+      Iop_I32UtoFx4,     Iop_I32StoFx4,       /* I32x4 -> F32x4       */
       Iop_FtoI32Ux4_RZ,  Iop_FtoI32Sx4_RZ,    /* F32x4 -> I32x4       */
-      Iop_QFtoI32Ux4_RZ, Iop_QFtoI32Sx4_RZ,   /* F32x4 -> I32x4 (with saturation) */
+      Iop_QFtoI32Ux4_RZ, Iop_QFtoI32Sx4_RZ,   /* F32x4 -> I32x4 (saturating) */
       Iop_RoundF32x4_RM, Iop_RoundF32x4_RP,   /* round to fp integer  */
       Iop_RoundF32x4_RN, Iop_RoundF32x4_RZ,   /* round to fp integer  */
       /* Fixed32 format is floating-point number with fixed number of fraction
@@ -1519,7 +1521,8 @@ typedef
 
       /* NARROWING (unary) -- narrow V128 into I64 */
       Iop_NarrowUn16to8x8, Iop_NarrowUn32to16x4, Iop_NarrowUn64to32x2,
-      /* Saturating narrowing from signed source to signed/unsigned destination */
+      /* Saturating narrowing from signed source to signed/unsigned
+         destination */
       Iop_QNarrowUn16Sto8Sx8, Iop_QNarrowUn32Sto16Sx4, Iop_QNarrowUn64Sto32Sx2,
       Iop_QNarrowUn16Sto8Ux8, Iop_QNarrowUn32Sto16Ux4, Iop_QNarrowUn64Sto32Ux2,
       /* Saturating narrowing from unsigned source to unsigned destination */

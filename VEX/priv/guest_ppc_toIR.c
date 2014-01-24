@@ -5233,6 +5233,7 @@ static Bool dis_int_ldst_mult ( UInt theInstr )
 
    Int     simm16 = extend_s_16to32(uimm16);
    IRType  ty     = mode64 ? Ity_I64 : Ity_I32;
+   IROp    mkAdd  = mode64 ? Iop_Add64 : Iop_Add32;
    IRTemp  EA     = newTemp(ty);
    UInt    r      = 0;
    UInt    ea_off = 0;
@@ -5248,7 +5249,7 @@ static Bool dis_int_ldst_mult ( UInt theInstr )
       }
       DIP("lmw r%u,%d(r%u)\n", rD_addr, simm16, rA_addr);
       for (r = rD_addr; r <= 31; r++) {
-         irx_addr = binop(Iop_Add32, mkexpr(EA), mkU32(ea_off));
+         irx_addr = binop(mkAdd, mkexpr(EA), mode64 ? mkU64(ea_off) : mkU32(ea_off));
          putIReg( r, mkWidenFrom32(ty, loadBE(Ity_I32, irx_addr ),
                                        False) );
          ea_off += 4;
@@ -5258,7 +5259,7 @@ static Bool dis_int_ldst_mult ( UInt theInstr )
    case 0x2F: // stmw (Store Multiple Word, PPC32 p527)
       DIP("stmw r%u,%d(r%u)\n", rS_addr, simm16, rA_addr);
       for (r = rS_addr; r <= 31; r++) {
-         irx_addr = binop(Iop_Add32, mkexpr(EA), mkU32(ea_off));
+         irx_addr = binop(mkAdd, mkexpr(EA), mode64 ? mkU64(ea_off) : mkU32(ea_off));
          storeBE( irx_addr, mkNarrowTo32(ty, getIReg(r)) );
          ea_off += 4;
       }

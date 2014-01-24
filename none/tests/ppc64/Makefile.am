@@ -31,7 +31,8 @@ EXTRA_DIST = \
 	jm_int_isa_2_07.stderr.exp jm_int_isa_2_07.stdout.exp jm_int_isa_2_07.vgtest \
 	test_isa_2_07_part2.stderr.exp test_isa_2_07_part2.stdout.exp test_isa_2_07_part2.vgtest \
 	test_tm.stderr.exp test_tm.stdout.exp test_tm.vgtest \
-	test_touch_tm.stderr.exp test_touch_tm.stdout.exp test_touch_tm.vgtest
+	test_touch_tm.stderr.exp test_touch_tm.stdout.exp test_touch_tm.vgtest \
+	ldst_multiple.stderr.exp ldst_multiple.stdout.exp ldst_multiple.vgtest
 
 check_PROGRAMS = \
 	allexec \
@@ -39,7 +40,7 @@ check_PROGRAMS = \
 	power6_mf_gpr test_isa_2_06_part1 test_isa_2_06_part2 \
 	test_isa_2_06_part3 test_dfp1 test_dfp2 test_dfp3 test_dfp4 \
 	test_dfp5 test_isa_2_07_part1 test_isa_2_07_part2 \
-	test_tm test_touch_tm
+	test_tm test_touch_tm ldst_multiple
 
 AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@

@@ -6856,6 +6856,27 @@ void dis_ret ( /*MOD*/DisResult* dres, UInt d32 )
 /*--- SSE/SSE2/SSE3 helpers                                ---*/
 /*------------------------------------------------------------*/
 
+/* Indicates whether the op requires a rounding-mode argument.  Note
+   that this covers only vector floating point arithmetic ops, and
+   omits the scalar ones that need rounding modes.  Note also that
+   inconsistencies here will get picked up later by the IR sanity
+   checker, so this isn't correctness-critical. */
+static Bool requiresRMode ( IROp op )
+{
+   switch (op) {
+      /* 128 bit ops */
+      case Iop_Add32Fx4: case Iop_Sub32Fx4:
+      case Iop_Mul32Fx4: case Iop_Div32Fx4:
+      case Iop_Add64Fx2: case Iop_Sub64Fx2:
+      case Iop_Mul64Fx2: case Iop_Div64Fx2:
+         return True;
+      default:
+         break;
+   }
+   return False;
+}
+
+
 /* Worker function; do not call directly. 
    Handles full width G = G `op` E   and   G = (not G) `op` E.
 */
@@ -6874,18 +6895,30 @@ static UInt dis_SSE_E_to_G_all_wrk (
       = invertG ? unop(Iop_NotV128, getXMMReg(gregOfRM(rm)))
                 : getXMMReg(gregOfRM(rm));
    if (epartIsReg(rm)) {
-      putXMMReg( gregOfRM(rm), 
-                 binop(op, gpart,
-                           getXMMReg(eregOfRM(rm))) );
+      putXMMReg(
+         gregOfRM(rm),
+         requiresRMode(op)
+            ? triop(op, get_FAKE_roundingmode(), /* XXXROUNDINGFIXME */
+                        gpart,
+                        getXMMReg(eregOfRM(rm)))
+            : binop(op, gpart,
+                        getXMMReg(eregOfRM(rm)))
+      );
       DIP("%s %s,%s\n", opname,
                         nameXMMReg(eregOfRM(rm)),
                         nameXMMReg(gregOfRM(rm)) );
       return delta+1;
    } else {
       addr = disAMode ( &alen, sorb, delta, dis_buf );
-      putXMMReg( gregOfRM(rm), 
-                 binop(op, gpart,
-                           loadLE(Ity_V128, mkexpr(addr))) );
+      putXMMReg(
+         gregOfRM(rm), 
+         requiresRMode(op)
+            ? triop(op, get_FAKE_roundingmode(), /* XXXROUNDINGFIXME */
+                        gpart,
+                        loadLE(Ity_V128, mkexpr(addr)))
+            : binop(op, gpart,
+                        loadLE(Ity_V128, mkexpr(addr)))
+      );
       DIP("%s %s,%s\n", opname,
                         dis_buf,
                         nameXMMReg(gregOfRM(rm)) );
@@ -11712,6 +11745,7 @@ DisResult disInstr_X86_WRK (
       IRTemp gV   = newTemp(Ity_V128);
       IRTemp addV = newTemp(Ity_V128);
       IRTemp subV = newTemp(Ity_V128);
+      IRTemp rm     = newTemp(Ity_I32);
       a3 = a2 = a1 = a0 = s3 = s2 = s1 = s0 = IRTemp_INVALID;
 
       modrm = insn[3];
@@ -11730,8 +11764,9 @@ DisResult disInstr_X86_WRK (
 
       assign( gV, getXMMReg(gregOfRM(modrm)) );
 
-      assign( addV, binop(Iop_Add32Fx4, mkexpr(gV), mkexpr(eV)) );
-      assign( subV, binop(Iop_Sub32Fx4, mkexpr(gV), mkexpr(eV)) );
+      assign( rm, get_FAKE_roundingmode() ); /* XXXROUNDINGFIXME */
+      assign( addV, triop(Iop_Add32Fx4, mkexpr(rm), mkexpr(gV), mkexpr(eV)) );
+      assign( subV, triop(Iop_Sub32Fx4, mkexpr(rm), mkexpr(gV), mkexpr(eV)) );
 
       breakup128to32s( addV, &a3, &a2, &a1, &a0 );
       breakup128to32s( subV, &s3, &s2, &s1, &s0 );
@@ -11748,6 +11783,7 @@ DisResult disInstr_X86_WRK (
       IRTemp subV = newTemp(Ity_V128);
       IRTemp a1     = newTemp(Ity_I64);
       IRTemp s0     = newTemp(Ity_I64);
+      IRTemp rm     = newTemp(Ity_I32);
 
       modrm = insn[2];
       if (epartIsReg(modrm)) {
@@ -11765,8 +11801,9 @@ DisResult disInstr_X86_WRK (
 
       assign( gV, getXMMReg(gregOfRM(modrm)) );
 
-      assign( addV, binop(Iop_Add64Fx2, mkexpr(gV), mkexpr(eV)) );
-      assign( subV, binop(Iop_Sub64Fx2, mkexpr(gV), mkexpr(eV)) );
+      assign( rm, get_FAKE_roundingmode() ); /* XXXROUNDINGFIXME */
+      assign( addV, triop(Iop_Add64Fx2, mkexpr(rm), mkexpr(gV), mkexpr(eV)) );
+      assign( subV, triop(Iop_Sub64Fx2, mkexpr(rm), mkexpr(gV), mkexpr(eV)) );
 
       assign( a1, unop(Iop_V128HIto64, mkexpr(addV) ));
       assign( s0, unop(Iop_V128to64,   mkexpr(subV) ));
@@ -11785,6 +11822,7 @@ DisResult disInstr_X86_WRK (
       IRTemp gV     = newTemp(Ity_V128);
       IRTemp leftV  = newTemp(Ity_V128);
       IRTemp rightV = newTemp(Ity_V128);
+      IRTemp rm     = newTemp(Ity_I32);
       Bool   isAdd  = insn[2] == 0x7C;
       const HChar* str = isAdd ? "add" : "sub";
       e3 = e2 = e1 = e0 = g3 = g2 = g1 = g0 = IRTemp_INVALID;
@@ -11811,9 +11849,10 @@ DisResult disInstr_X86_WRK (
       assign( leftV,  mk128from32s( e2, e0, g2, g0 ) );
       assign( rightV, mk128from32s( e3, e1, g3, g1 ) );
 
+      assign( rm, get_FAKE_roundingmode() ); /* XXXROUNDINGFIXME */
       putXMMReg( gregOfRM(modrm), 
-                 binop(isAdd ? Iop_Add32Fx4 : Iop_Sub32Fx4, 
-                       mkexpr(leftV), mkexpr(rightV) ) );
+                 triop(isAdd ? Iop_Add32Fx4 : Iop_Sub32Fx4, 
+                       mkexpr(rm), mkexpr(leftV), mkexpr(rightV) ) );
       goto decode_success;
    }
 
@@ -11828,6 +11867,7 @@ DisResult disInstr_X86_WRK (
       IRTemp gV     = newTemp(Ity_V128);
       IRTemp leftV  = newTemp(Ity_V128);
       IRTemp rightV = newTemp(Ity_V128);
+      IRTemp rm     = newTemp(Ity_I32);
       Bool   isAdd  = insn[1] == 0x7C;
       const HChar* str = isAdd ? "add" : "sub";
 
@@ -11855,9 +11895,10 @@ DisResult disInstr_X86_WRK (
       assign( leftV,  binop(Iop_64HLtoV128, mkexpr(e0),mkexpr(g0)) );
       assign( rightV, binop(Iop_64HLtoV128, mkexpr(e1),mkexpr(g1)) );
 
+      assign( rm, get_FAKE_roundingmode() ); /* XXXROUNDINGFIXME */
       putXMMReg( gregOfRM(modrm), 
-                 binop(isAdd ? Iop_Add64Fx2 : Iop_Sub64Fx2, 
-                       mkexpr(leftV), mkexpr(rightV) ) );
+                 triop(isAdd ? Iop_Add64Fx2 : Iop_Sub64Fx2, 
+                       mkexpr(rm), mkexpr(leftV), mkexpr(rightV) ) );
       goto decode_success;
    }
 

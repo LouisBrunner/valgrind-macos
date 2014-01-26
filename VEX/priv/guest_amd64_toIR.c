@@ -8548,6 +8548,32 @@ void dis_ret ( /*MOD*/DisResult* dres, VexAbiInfo* vbi, ULong d64 )
 /*--- SSE/SSE2/SSE3 helpers                                ---*/
 /*------------------------------------------------------------*/
 
+/* Indicates whether the op requires a rounding-mode argument.  Note
+   that this covers only vector floating point arithmetic ops, and
+   omits the scalar ones that need rounding modes.  Note also that
+   inconsistencies here will get picked up later by the IR sanity
+   checker, so this isn't correctness-critical. */
+static Bool requiresRMode ( IROp op )
+{
+   switch (op) {
+      /* 128 bit ops */
+      case Iop_Add32Fx4: case Iop_Sub32Fx4:
+      case Iop_Mul32Fx4: case Iop_Div32Fx4:
+      case Iop_Add64Fx2: case Iop_Sub64Fx2:
+      case Iop_Mul64Fx2: case Iop_Div64Fx2:
+      /* 256 bit ops */
+      case Iop_Add32Fx8: case Iop_Sub32Fx8:
+      case Iop_Mul32Fx8: case Iop_Div32Fx8:
+      case Iop_Add64Fx4: case Iop_Sub64Fx4:
+      case Iop_Mul64Fx4: case Iop_Div64Fx4:
+         return True;
+      default:
+         break;
+   }
+   return False;
+}
+
+
 /* Worker function; do not call directly. 
    Handles full width G = G `op` E   and   G = (not G) `op` E.
 */
@@ -8563,22 +8589,35 @@ static ULong dis_SSE_E_to_G_all_wrk (
    Int     alen;
    IRTemp  addr;
    UChar   rm = getUChar(delta);
+   Bool    needsRMode = requiresRMode(op);
    IRExpr* gpart
       = invertG ? unop(Iop_NotV128, getXMMReg(gregOfRexRM(pfx,rm)))
                 : getXMMReg(gregOfRexRM(pfx,rm));
    if (epartIsReg(rm)) {
-      putXMMReg( gregOfRexRM(pfx,rm), 
-                 binop(op, gpart,
-                           getXMMReg(eregOfRexRM(pfx,rm))) );
+      putXMMReg(
+         gregOfRexRM(pfx,rm),
+         needsRMode
+            ? triop(op, get_FAKE_roundingmode(), /* XXXROUNDINGFIXME */
+                        gpart,
+                        getXMMReg(eregOfRexRM(pfx,rm)))
+            : binop(op, gpart,
+                        getXMMReg(eregOfRexRM(pfx,rm)))
+      );
       DIP("%s %s,%s\n", opname,
                         nameXMMReg(eregOfRexRM(pfx,rm)),
                         nameXMMReg(gregOfRexRM(pfx,rm)) );
       return delta+1;
    } else {
       addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
-      putXMMReg( gregOfRexRM(pfx,rm), 
-                 binop(op, gpart,
-                           loadLE(Ity_V128, mkexpr(addr))) );
+      putXMMReg(
+         gregOfRexRM(pfx,rm), 
+         needsRMode
+            ? triop(op, get_FAKE_roundingmode(), /* XXXROUNDINGFIXME */
+                        gpart,
+                        loadLE(Ity_V128, mkexpr(addr)))
+            : binop(op, gpart,
+                        loadLE(Ity_V128, mkexpr(addr)))
+      );
       DIP("%s %s,%s\n", opname,
                         dis_buf,
                         nameXMMReg(gregOfRexRM(pfx,rm)) );
@@ -10982,9 +11021,11 @@ static IRTemp math_ADDSUBPD_128 ( IRTemp dV, IRTemp sV )
    IRTemp subV = newTemp(Ity_V128);
    IRTemp a1   = newTemp(Ity_I64);
    IRTemp s0   = newTemp(Ity_I64);
+   IRTemp rm   = newTemp(Ity_I32);
 
-   assign( addV, binop(Iop_Add64Fx2, mkexpr(dV), mkexpr(sV)) );
-   assign( subV, binop(Iop_Sub64Fx2, mkexpr(dV), mkexpr(sV)) );
+   assign( rm, get_FAKE_roundingmode() ); /* XXXROUNDINGFIXME */
+   assign( addV, triop(Iop_Add64Fx2, mkexpr(rm), mkexpr(dV), mkexpr(sV)) );
+   assign( subV, triop(Iop_Sub64Fx2, mkexpr(rm), mkexpr(dV), mkexpr(sV)) );
 
    assign( a1, unop(Iop_V128HIto64, mkexpr(addV) ));
    assign( s0, unop(Iop_V128to64,   mkexpr(subV) ));
@@ -11000,10 +11041,12 @@ static IRTemp math_ADDSUBPD_256 ( IRTemp dV, IRTemp sV )
    IRTemp a3, a2, a1, a0, s3, s2, s1, s0;
    IRTemp addV = newTemp(Ity_V256);
    IRTemp subV = newTemp(Ity_V256);
+   IRTemp rm   = newTemp(Ity_I32);
    a3 = a2 = a1 = a0 = s3 = s2 = s1 = s0 = IRTemp_INVALID;
 
-   assign( addV, binop(Iop_Add64Fx4, mkexpr(dV), mkexpr(sV)) );
-   assign( subV, binop(Iop_Sub64Fx4, mkexpr(dV), mkexpr(sV)) );
+   assign( rm, get_FAKE_roundingmode() ); /* XXXROUNDINGFIXME */
+   assign( addV, triop(Iop_Add64Fx4, mkexpr(rm), mkexpr(dV), mkexpr(sV)) );
+   assign( subV, triop(Iop_Sub64Fx4, mkexpr(rm), mkexpr(dV), mkexpr(sV)) );
 
    breakupV256to64s( addV, &a3, &a2, &a1, &a0 );
    breakupV256to64s( subV, &s3, &s2, &s1, &s0 );
@@ -11019,10 +11062,12 @@ static IRTemp math_ADDSUBPS_128 ( IRTemp dV, IRTemp sV )
    IRTemp a3, a2, a1, a0, s3, s2, s1, s0;
    IRTemp addV = newTemp(Ity_V128);
    IRTemp subV = newTemp(Ity_V128);
+   IRTemp rm   = newTemp(Ity_I32);
    a3 = a2 = a1 = a0 = s3 = s2 = s1 = s0 = IRTemp_INVALID;
 
-   assign( addV, binop(Iop_Add32Fx4, mkexpr(dV), mkexpr(sV)) );
-   assign( subV, binop(Iop_Sub32Fx4, mkexpr(dV), mkexpr(sV)) );
+   assign( rm, get_FAKE_roundingmode() ); /* XXXROUNDINGFIXME */
+   assign( addV, triop(Iop_Add32Fx4, mkexpr(rm), mkexpr(dV), mkexpr(sV)) );
+   assign( subV, triop(Iop_Sub32Fx4, mkexpr(rm), mkexpr(dV), mkexpr(sV)) );
 
    breakupV128to32s( addV, &a3, &a2, &a1, &a0 );
    breakupV128to32s( subV, &s3, &s2, &s1, &s0 );
@@ -11039,11 +11084,13 @@ static IRTemp math_ADDSUBPS_256 ( IRTemp dV, IRTemp sV )
    IRTemp s7, s6, s5, s4, s3, s2, s1, s0;
    IRTemp addV = newTemp(Ity_V256);
    IRTemp subV = newTemp(Ity_V256);
+   IRTemp rm   = newTemp(Ity_I32);
    a7 = a6 = a5 = a4 = a3 = a2 = a1 = a0 = IRTemp_INVALID;
    s7 = s6 = s5 = s4 = s3 = s2 = s1 = s0 = IRTemp_INVALID;
 
-   assign( addV, binop(Iop_Add32Fx8, mkexpr(dV), mkexpr(sV)) );
-   assign( subV, binop(Iop_Sub32Fx8, mkexpr(dV), mkexpr(sV)) );
+   assign( rm, get_FAKE_roundingmode() ); /* XXXROUNDINGFIXME */
+   assign( addV, triop(Iop_Add32Fx8, mkexpr(rm), mkexpr(dV), mkexpr(sV)) );
+   assign( subV, triop(Iop_Sub32Fx8, mkexpr(rm), mkexpr(dV), mkexpr(sV)) );
 
    breakupV256to32s( addV, &a7, &a6, &a5, &a4, &a3, &a2, &a1, &a0 );
    breakupV256to32s( subV, &s7, &s6, &s5, &s4, &s3, &s2, &s1, &s0 );
@@ -14594,6 +14641,7 @@ static IRTemp math_HADDPS_128 ( IRTemp dV, IRTemp sV, Bool isAdd )
    IRTemp s3, s2, s1, s0, d3, d2, d1, d0;
    IRTemp leftV  = newTemp(Ity_V128);
    IRTemp rightV = newTemp(Ity_V128);
+   IRTemp rm     = newTemp(Ity_I32);
    s3 = s2 = s1 = s0 = d3 = d2 = d1 = d0 = IRTemp_INVALID;
 
    breakupV128to32s( sV, &s3, &s2, &s1, &s0 );
@@ -14603,8 +14651,9 @@ static IRTemp math_HADDPS_128 ( IRTemp dV, IRTemp sV, Bool isAdd )
    assign( rightV, mkV128from32s( s3, s1, d3, d1 ) );
 
    IRTemp res = newTemp(Ity_V128);
-   assign( res, binop(isAdd ? Iop_Add32Fx4 : Iop_Sub32Fx4, 
-                              mkexpr(leftV), mkexpr(rightV) ) );
+   assign( rm, get_FAKE_roundingmode() ); /* XXXROUNDINGFIXME */
+   assign( res, triop(isAdd ? Iop_Add32Fx4 : Iop_Sub32Fx4,
+                      mkexpr(rm), mkexpr(leftV), mkexpr(rightV) ) );
    return res;
 }
 
@@ -14614,6 +14663,7 @@ static IRTemp math_HADDPD_128 ( IRTemp dV, IRTemp sV, Bool isAdd )
    IRTemp s1, s0, d1, d0;
    IRTemp leftV  = newTemp(Ity_V128);
    IRTemp rightV = newTemp(Ity_V128);
+   IRTemp rm     = newTemp(Ity_I32);
    s1 = s0 = d1 = d0 = IRTemp_INVALID;
 
    breakupV128to64s( sV, &s1, &s0 );
@@ -14623,8 +14673,9 @@ static IRTemp math_HADDPD_128 ( IRTemp dV, IRTemp sV, Bool isAdd )
    assign( rightV, binop(Iop_64HLtoV128, mkexpr(s1), mkexpr(d1)) );
 
    IRTemp res = newTemp(Ity_V128);
-   assign( res, binop(isAdd ? Iop_Add64Fx2 : Iop_Sub64Fx2,
-                              mkexpr(leftV), mkexpr(rightV) ) );
+   assign( rm, get_FAKE_roundingmode() ); /* XXXROUNDINGFIXME */
+   assign( res, triop(isAdd ? Iop_Add64Fx2 : Iop_Sub64Fx2,
+                      mkexpr(rm), mkexpr(leftV), mkexpr(rightV) ) );
    return res;
 }
 
@@ -18271,8 +18322,11 @@ static IRTemp math_DPPD_128 ( IRTemp src_vec, IRTemp dst_vec, UInt imm8 )
    UShort imm8_perms[4] = { 0x0000, 0x00FF, 0xFF00, 0xFFFF };
    IRTemp and_vec = newTemp(Ity_V128);
    IRTemp sum_vec = newTemp(Ity_V128);
+   IRTemp rm      = newTemp(Ity_I32);
+   assign( rm, get_FAKE_roundingmode() ); /* XXXROUNDINGFIXME */
    assign( and_vec, binop( Iop_AndV128,
-                           binop( Iop_Mul64Fx2,
+                           triop( Iop_Mul64Fx2,
+                                  mkexpr(rm),
                                   mkexpr(dst_vec), mkexpr(src_vec) ),
                            mkV128( imm8_perms[ ((imm8 >> 4) & 3) ] ) ) );
 
@@ -18296,6 +18350,7 @@ static IRTemp math_DPPS_128 ( IRTemp src_vec, IRTemp dst_vec, UInt imm8 )
    IRTemp tmp_prod_vec = newTemp(Ity_V128);
    IRTemp prod_vec     = newTemp(Ity_V128);
    IRTemp sum_vec      = newTemp(Ity_V128);
+   IRTemp rm           = newTemp(Ity_I32);
    IRTemp v3, v2, v1, v0;
    v3 = v2 = v1 = v0   = IRTemp_INVALID;
    UShort imm8_perms[16] = { 0x0000, 0x000F, 0x00F0, 0x00FF, 0x0F00, 
@@ -18303,15 +18358,17 @@ static IRTemp math_DPPS_128 ( IRTemp src_vec, IRTemp dst_vec, UInt imm8 )
                              0xF0F0, 0xF0FF, 0xFF00, 0xFF0F, 0xFFF0,
                              0xFFFF };
 
+   assign( rm, get_FAKE_roundingmode() ); /* XXXROUNDINGFIXME */
    assign( tmp_prod_vec, 
            binop( Iop_AndV128, 
-                  binop( Iop_Mul32Fx4, mkexpr(dst_vec),
-                                       mkexpr(src_vec) ), 
+                  triop( Iop_Mul32Fx4,
+                         mkexpr(rm), mkexpr(dst_vec), mkexpr(src_vec) ), 
                   mkV128( imm8_perms[((imm8 >> 4)& 15)] ) ) );
    breakupV128to32s( tmp_prod_vec, &v3, &v2, &v1, &v0 );
    assign( prod_vec, mkV128from32s( v3, v1, v2, v0 ) );
 
-   assign( sum_vec, binop( Iop_Add32Fx4,
+   assign( sum_vec, triop( Iop_Add32Fx4,
+                           mkexpr(rm),
                            binop( Iop_InterleaveHI32x4, 
                                   mkexpr(prod_vec), mkexpr(prod_vec) ), 
                            binop( Iop_InterleaveLO32x4, 
@@ -18319,7 +18376,8 @@ static IRTemp math_DPPS_128 ( IRTemp src_vec, IRTemp dst_vec, UInt imm8 )
 
    IRTemp res = newTemp(Ity_V128);
    assign( res, binop( Iop_AndV128, 
-                       binop( Iop_Add32Fx4,
+                       triop( Iop_Add32Fx4,
+                              mkexpr(rm),
                               binop( Iop_InterleaveHI32x4,
                                      mkexpr(sum_vec), mkexpr(sum_vec) ), 
                               binop( Iop_InterleaveLO32x4,
@@ -21898,8 +21956,17 @@ Long dis_VEX_NDS_128_AnySimdPfx_0F_WIG (
    if (op != Iop_INVALID) {
       vassert(opFn == NULL);
       res = newTemp(Ity_V128);
-      assign(res, swapArgs ? binop(op, mkexpr(tSR), mkexpr(tSL))
-                           : binop(op, mkexpr(tSL), mkexpr(tSR)));
+      if (requiresRMode(op)) {
+         IRTemp rm = newTemp(Ity_I32);
+         assign(rm, get_FAKE_roundingmode()); /* XXXROUNDINGFIXME */
+         assign(res, swapArgs
+                        ? triop(op, mkexpr(rm), mkexpr(tSR), mkexpr(tSL))
+                        : triop(op, mkexpr(rm), mkexpr(tSL), mkexpr(tSR)));
+      } else {
+         assign(res, swapArgs
+                        ? binop(op, mkexpr(tSR), mkexpr(tSL))
+                        : binop(op, mkexpr(tSL), mkexpr(tSR)));
+      }
    } else {
       vassert(opFn != NULL);
       res = swapArgs ? opFn(tSR, tSL) : opFn(tSL, tSR);
@@ -22802,8 +22869,17 @@ Long dis_VEX_NDS_256_AnySimdPfx_0F_WIG (
    if (op != Iop_INVALID) {
       vassert(opFn == NULL);
       res = newTemp(Ity_V256);
-      assign(res, swapArgs ? binop(op, mkexpr(tSR), mkexpr(tSL))
-                           : binop(op, mkexpr(tSL), mkexpr(tSR)));
+      if (requiresRMode(op)) {
+         IRTemp rm = newTemp(Ity_I32);
+         assign(rm, get_FAKE_roundingmode()); /* XXXROUNDINGFIXME */
+         assign(res, swapArgs
+                        ? triop(op, mkexpr(rm), mkexpr(tSR), mkexpr(tSL))
+                        : triop(op, mkexpr(rm), mkexpr(tSL), mkexpr(tSR)));
+      } else {
+         assign(res, swapArgs
+                        ? binop(op, mkexpr(tSR), mkexpr(tSL))
+                        : binop(op, mkexpr(tSL), mkexpr(tSR)));
+      }
    } else {
       vassert(opFn != NULL);
       res = swapArgs ? opFn(tSR, tSL) : opFn(tSL, tSR);

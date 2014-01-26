@@ -1242,8 +1242,8 @@ typedef
 
       /* BCD arithmetic instructions, (V128, V128) -> V128
        * The BCD format is the same as that used in the BCD<->DPB conversion
-       * routines, except using 124 digits (vs 60) plus the trailing 4-bit signed code.
-       * */
+       * routines, except using 124 digits (vs 60) plus the trailing 4-bit
+       * signed code. */
       Iop_BCDAdd, Iop_BCDSub,
 
       /* Conversion I64 -> D64 */
@@ -1256,8 +1256,10 @@ typedef
 
       /* --- 32x4 vector FP --- */
 
-      /* binary */
+      /* ternary :: IRRoundingMode(I32) x V128 x V128 -> V128 */
       Iop_Add32Fx4, Iop_Sub32Fx4, Iop_Mul32Fx4, Iop_Div32Fx4, 
+
+      /* binary */
       Iop_Max32Fx4, Iop_Min32Fx4,
       Iop_Add32Fx2, Iop_Sub32Fx2,
       /* Note: For the following compares, the ppc and arm front-ends assume a
@@ -1328,8 +1330,10 @@ typedef
 
       /* --- 64x2 vector FP --- */
 
-      /* binary */
+      /* ternary :: IRRoundingMode(I32) x V128 x V128 -> V128 */
       Iop_Add64Fx2, Iop_Sub64Fx2, Iop_Mul64Fx2, Iop_Div64Fx2, 
+
+      /* binary */
       Iop_Max64Fx2, Iop_Min64Fx2,
       Iop_CmpEQ64Fx2, Iop_CmpLT64Fx2, Iop_CmpLE64Fx2, Iop_CmpUN64Fx2, 
 
@@ -1660,14 +1664,10 @@ typedef
       Iop_SHA512, Iop_SHA256,
 
       /* ------------------ 256-bit SIMD FP. ------------------ */
-      Iop_Add64Fx4,
-      Iop_Sub64Fx4,
-      Iop_Mul64Fx4,
-      Iop_Div64Fx4,
-      Iop_Add32Fx8,
-      Iop_Sub32Fx8,
-      Iop_Mul32Fx8,
-      Iop_Div32Fx8,
+
+      /* ternary :: IRRoundingMode(I32) x V256 x V256 -> V256 */
+      Iop_Add64Fx4, Iop_Sub64Fx4, Iop_Mul64Fx4, Iop_Div64Fx4,
+      Iop_Add32Fx8, Iop_Sub32Fx8, Iop_Mul32Fx8, Iop_Div32Fx8,
 
       Iop_Sqrt32Fx8,
       Iop_Sqrt64Fx4,

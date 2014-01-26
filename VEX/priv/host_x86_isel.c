@@ -3554,12 +3554,8 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_CmpLT32Fx4: op = Xsse_CMPLTF; goto do_32Fx4;
       case Iop_CmpLE32Fx4: op = Xsse_CMPLEF; goto do_32Fx4;
       case Iop_CmpUN32Fx4: op = Xsse_CMPUNF; goto do_32Fx4;
-      case Iop_Add32Fx4:   op = Xsse_ADDF;   goto do_32Fx4;
-      case Iop_Div32Fx4:   op = Xsse_DIVF;   goto do_32Fx4;
       case Iop_Max32Fx4:   op = Xsse_MAXF;   goto do_32Fx4;
       case Iop_Min32Fx4:   op = Xsse_MINF;   goto do_32Fx4;
-      case Iop_Mul32Fx4:   op = Xsse_MULF;   goto do_32Fx4;
-      case Iop_Sub32Fx4:   op = Xsse_SUBF;   goto do_32Fx4;
       do_32Fx4:
       {
          HReg argL = iselVecExpr(env, e->Iex.Binop.arg1);
@@ -3574,12 +3570,8 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_CmpLT64Fx2: op = Xsse_CMPLTF; goto do_64Fx2;
       case Iop_CmpLE64Fx2: op = Xsse_CMPLEF; goto do_64Fx2;
       case Iop_CmpUN64Fx2: op = Xsse_CMPUNF; goto do_64Fx2;
-      case Iop_Add64Fx2:   op = Xsse_ADDF;   goto do_64Fx2;
-      case Iop_Div64Fx2:   op = Xsse_DIVF;   goto do_64Fx2;
       case Iop_Max64Fx2:   op = Xsse_MAXF;   goto do_64Fx2;
       case Iop_Min64Fx2:   op = Xsse_MINF;   goto do_64Fx2;
-      case Iop_Mul64Fx2:   op = Xsse_MULF;   goto do_64Fx2;
-      case Iop_Sub64Fx2:   op = Xsse_SUBF;   goto do_64Fx2;
       do_64Fx2:
       {
          HReg argL = iselVecExpr(env, e->Iex.Binop.arg1);
@@ -3789,6 +3781,50 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          break;
    } /* switch (e->Iex.Binop.op) */
    } /* if (e->tag == Iex_Binop) */
+
+
+   if (e->tag == Iex_Triop) {
+   IRTriop *triop = e->Iex.Triop.details;
+   switch (triop->op) {
+
+      case Iop_Add32Fx4: op = Xsse_ADDF; goto do_32Fx4_w_rm;
+      case Iop_Sub32Fx4: op = Xsse_SUBF; goto do_32Fx4_w_rm;
+      case Iop_Mul32Fx4: op = Xsse_MULF; goto do_32Fx4_w_rm;
+      case Iop_Div32Fx4: op = Xsse_DIVF; goto do_32Fx4_w_rm;
+      do_32Fx4_w_rm:
+      {
+         HReg argL = iselVecExpr(env, triop->arg2);
+         HReg argR = iselVecExpr(env, triop->arg3);
+         HReg dst = newVRegV(env);
+         addInstr(env, mk_vMOVsd_RR(argL, dst));
+         /* XXXROUNDINGFIXME */
+         /* set roundingmode here */
+         addInstr(env, X86Instr_Sse32Fx4(op, argR, dst));
+         return dst;
+      }
+
+      case Iop_Add64Fx2: op = Xsse_ADDF; goto do_64Fx2_w_rm;
+      case Iop_Sub64Fx2: op = Xsse_SUBF; goto do_64Fx2_w_rm;
+      case Iop_Mul64Fx2: op = Xsse_MULF; goto do_64Fx2_w_rm;
+      case Iop_Div64Fx2: op = Xsse_DIVF; goto do_64Fx2_w_rm;
+      do_64Fx2_w_rm:
+      {
+         HReg argL = iselVecExpr(env, triop->arg2);
+         HReg argR = iselVecExpr(env, triop->arg3);
+         HReg dst = newVRegV(env);
+         REQUIRE_SSE2;
+         addInstr(env, mk_vMOVsd_RR(argL, dst));
+         /* XXXROUNDINGFIXME */
+         /* set roundingmode here */
+         addInstr(env, X86Instr_Sse64Fx2(op, argR, dst));
+         return dst;
+      }
+
+      default:
+         break;
+   } /* switch (triop->op) */
+   } /* if (e->tag == Iex_Triop) */
+
 
    if (e->tag == Iex_ITE) { // VFD
       HReg r1  = iselVecExpr(env, e->Iex.ITE.iftrue);

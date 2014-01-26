@@ -1186,6 +1186,22 @@ static Bool isZeroU64 ( IRExpr* e )
                   && e->Iex.Const.con->Ico.U64 == 0);
 }
 
+/* Is this literally IRExpr_Const(IRConst_V128(0)) ? */
+static Bool isZeroV128 ( IRExpr* e )
+{
+   return toBool( e->tag == Iex_Const 
+                  && e->Iex.Const.con->tag == Ico_V128
+                  && e->Iex.Const.con->Ico.V128 == 0x0000);
+}
+
+/* Is this literally IRExpr_Const(IRConst_V256(0)) ? */
+static Bool isZeroV256 ( IRExpr* e )
+{
+   return toBool( e->tag == Iex_Const 
+                  && e->Iex.Const.con->tag == Ico_V256
+                  && e->Iex.Const.con->Ico.V256 == 0x00000000);
+}
+
 /* Is this an integer constant with value 0 ? */
 static Bool isZeroU ( IRExpr* e )
 {
@@ -1999,6 +2015,17 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
                }
                break;
             }
+            /* Same reasoning for the 256-bit version. */
+            case Iop_V128HLtoV256: {
+               IRExpr* argHi = e->Iex.Binop.arg1;
+               IRExpr* argLo = e->Iex.Binop.arg2;
+               if (isZeroV128(argHi) && isZeroV128(argLo)) {
+                  e2 = IRExpr_Const(IRConst_V256(0));
+               } else {
+                  goto unhandled;
+               }
+               break;
+            }
 
             /* -- V128 stuff -- */
             case Iop_InterleaveLO8x16: {
@@ -2174,6 +2201,29 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
                if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
                   e2 = e->Iex.Binop.arg1;
                   break;
+               }
+               /* OrV128(t,0) ==> t */
+               if (e->Iex.Binop.op == Iop_OrV128) {
+                  if (isZeroV128(e->Iex.Binop.arg2)) {
+                     e2 = e->Iex.Binop.arg1;
+                     break;
+                  }
+                  if (isZeroV128(e->Iex.Binop.arg1)) {
+                     e2 = e->Iex.Binop.arg2;
+                     break;
+                  }
+               }
+               /* OrV256(t,0) ==> t */
+               if (e->Iex.Binop.op == Iop_OrV256) {
+                  if (isZeroV256(e->Iex.Binop.arg2)) {
+                     e2 = e->Iex.Binop.arg1;
+                     break;
+                  }
+                  //Disabled because there's no known test case right now.
+                  //if (isZeroV256(e->Iex.Binop.arg1)) {
+                  //   e2 = e->Iex.Binop.arg2;
+                  //   break;
+                  //}
                }
                break;
 

@@ -848,6 +848,23 @@ static const HChar* showARM64FpUnaryOp ( ARM64FpUnaryOp op ) {
    }
 }
 
+static void showARM64VecBinOp(/*OUT*/const HChar** nm,
+                              /*OUT*/const HChar** ar, ARM64VecBinOp op ) {
+   switch (op) {
+      case ARM64vecb_ADD64x2:  *nm = "add "; *ar = "2d"; return;
+      case ARM64vecb_ADD32x4:  *nm = "add "; *ar = "4s"; return;
+      case ARM64vecb_ADD16x8:  *nm = "add "; *ar = "8h"; return;
+      case ARM64vecb_SUB64x2:  *nm = "sub "; *ar = "2d"; return;
+      case ARM64vecb_SUB32x4:  *nm = "sub "; *ar = "4s"; return;
+      case ARM64vecb_SUB16x8:  *nm = "sub "; *ar = "8h"; return;
+      case ARM64vecb_FADD64x2: *nm = "fadd"; *ar = "2d"; return;
+      case ARM64vecb_FSUB64x2: *nm = "fsub"; *ar = "2d"; return;
+      case ARM64vecb_FMUL64x2: *nm = "fmul"; *ar = "2d"; return;
+      case ARM64vecb_FDIV64x2: *nm = "fdiv"; *ar = "2d"; return;
+      default: vpanic("showARM64VecBinOp");
+   }
+}
+
 //ZZ const HChar* showARMNeonBinOp ( ARMNeonBinOp op ) {
 //ZZ    switch (op) {
 //ZZ       case ARMneon_VAND: return "vand";
@@ -1512,6 +1529,25 @@ ARM64Instr* ARM64Instr_FPCR ( Bool toFPCR, HReg iReg ) {
    i->ARM64in.FPCR.iReg   = iReg;
    return i;
 }
+ARM64Instr* ARM64Instr_VBinV ( ARM64VecBinOp op,
+                               HReg dst, HReg argL, HReg argR ) {
+   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   i->tag                = ARM64in_VBinV;
+   i->ARM64in.VBinV.op   = op;
+   i->ARM64in.VBinV.dst  = dst;
+   i->ARM64in.VBinV.argL = argL;
+   i->ARM64in.VBinV.argR = argR;
+   return i;
+}
+ARM64Instr* ARM64Instr_VNarrowV ( UInt dszBlg2, HReg dst, HReg src ) {
+   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   i->tag                      = ARM64in_VNarrowV;
+   i->ARM64in.VNarrowV.dszBlg2 = dszBlg2;
+   i->ARM64in.VNarrowV.dst     = dst;
+   i->ARM64in.VNarrowV.src     = src;
+   vassert(dszBlg2 == 0 || dszBlg2 == 1 || dszBlg2 == 2);
+   return i;
+}
 //ZZ ARMInstr* ARMInstr_VAluS ( ARMVfpOp op, HReg dst, HReg argL, HReg argR ) {
 //ZZ    ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
 //ZZ    i->tag              = ARMin_VAluS;
@@ -2104,6 +2140,30 @@ void ppARM64Instr ( ARM64Instr* i ) {
             vex_printf(", fpcr");
          }
          return;
+      case ARM64in_VBinV: {
+         const HChar* nm = "??";
+         const HChar* ar = "??";
+         showARM64VecBinOp(&nm, &ar, i->ARM64in.VBinV.op);
+         vex_printf("%s   ", nm);
+         ppHRegARM64(i->ARM64in.VBinV.dst);
+         vex_printf(".%s, ", ar);
+         ppHRegARM64(i->ARM64in.VBinV.argL);
+         vex_printf(".%s, ", ar);
+         ppHRegARM64(i->ARM64in.VBinV.argR);
+         vex_printf(".%s", ar);
+         return;
+      }
+      case ARM64in_VNarrowV: {
+         UInt dszBlg2 = i->ARM64in.VNarrowV.dszBlg2;
+         const HChar* darr[3] = { "8b", "4h", "2s" };
+         const HChar* sarr[3] = { "8h", "4s", "2d" };
+         vex_printf("xtn    ");
+         ppHRegARM64(i->ARM64in.VNarrowV.dst);
+         vex_printf(".%s, ", dszBlg2 < 3 ? darr[dszBlg2] : "??");
+         ppHRegARM64(i->ARM64in.VNarrowV.src);
+         vex_printf(".%s", dszBlg2 < 3 ? sarr[dszBlg2] : "??");
+         return;
+      }
 //ZZ       case ARMin_VAluS:
 //ZZ          vex_printf("f%-3ss ", showARMVfpOp(i->ARMin.VAluS.op));
 //ZZ          ppHRegARM(i->ARMin.VAluS.dst);
@@ -2567,6 +2627,15 @@ void getRegUsage_ARM64Instr ( HRegUsage* u, ARM64Instr* i, Bool mode64 )
          else
             addHRegUse(u, HRmWrite, i->ARM64in.FPCR.iReg);
          return;
+      case ARM64in_VBinV:
+         addHRegUse(u, HRmWrite, i->ARM64in.VBinV.dst);
+         addHRegUse(u, HRmRead, i->ARM64in.VBinV.argL);
+         addHRegUse(u, HRmRead, i->ARM64in.VBinV.argR);
+         return;
+      case ARM64in_VNarrowV:
+         addHRegUse(u, HRmWrite, i->ARM64in.VNarrowV.dst);
+         addHRegUse(u, HRmRead, i->ARM64in.VNarrowV.src);
+         return;
 //ZZ       case ARMin_VAluS:
 //ZZ          addHRegUse(u, HRmWrite, i->ARMin.VAluS.dst);
 //ZZ          addHRegUse(u, HRmRead, i->ARMin.VAluS.argL);
@@ -2841,6 +2910,15 @@ void mapRegs_ARM64Instr ( HRegRemap* m, ARM64Instr* i, Bool mode64 )
          return;
       case ARM64in_FPCR:
          i->ARM64in.FPCR.iReg = lookupHRegRemap(m, i->ARM64in.FPCR.iReg);
+         return;
+      case ARM64in_VBinV:
+         i->ARM64in.VBinV.dst  = lookupHRegRemap(m, i->ARM64in.VBinV.dst);
+         i->ARM64in.VBinV.argL = lookupHRegRemap(m, i->ARM64in.VBinV.argL);
+         i->ARM64in.VBinV.argR = lookupHRegRemap(m, i->ARM64in.VBinV.argR);
+         return;
+      case ARM64in_VNarrowV:
+         i->ARM64in.VNarrowV.dst = lookupHRegRemap(m, i->ARM64in.VNarrowV.dst);
+         i->ARM64in.VNarrowV.src = lookupHRegRemap(m, i->ARM64in.VNarrowV.src);
          return;
 //ZZ       case ARMin_VAluS:
 //ZZ          i->ARMin.VAluS.dst  = lookupHRegRemap(m, i->ARMin.VAluS.dst);
@@ -3117,15 +3195,16 @@ static inline UChar qregNo ( HReg r )
 #define X110 BITS4(0, 1,1,0)
 #define X111 BITS4(0, 1,1,1)
 
-#define BITS8(zzb7,zzb6,zzb5,zzb4,zzb3,zzb2,zzb1,zzb0) \
-  ((BITS4(zzb7,zzb6,zzb5,zzb4) << 4) | BITS4(zzb3,zzb2,zzb1,zzb0))
-
 #define X0000 BITS4(0,0,0,0)
 #define X0001 BITS4(0,0,0,1)
 #define X0010 BITS4(0,0,1,0)
 #define X0011 BITS4(0,0,1,1)
 
+#define BITS8(zzb7,zzb6,zzb5,zzb4,zzb3,zzb2,zzb1,zzb0) \
+  ((BITS4(zzb7,zzb6,zzb5,zzb4) << 4) | BITS4(zzb3,zzb2,zzb1,zzb0))
+
 #define X00000   BITS8(0,0,0, 0,0,0,0,0)
+#define X00001   BITS8(0,0,0, 0,0,0,0,1)
 #define X00111   BITS8(0,0,0, 0,0,1,1,1)
 #define X01000   BITS8(0,0,0, 0,1,0,0,0)
 #define X10000   BITS8(0,0,0, 1,0,0,0,0)
@@ -3143,14 +3222,18 @@ static inline UChar qregNo ( HReg r )
 #define X010001  BITS8(0,0, 0,1,0,0,0,1)
 #define X011010  BITS8(0,0, 0,1,1,0,1,0)
 #define X011111  BITS8(0,0, 0,1,1,1,1,1)
+#define X100001  BITS8(0,0, 1,0,0,0,0,1)
 #define X100100  BITS8(0,0, 1,0,0,1,0,0)
 #define X100101  BITS8(0,0, 1,0,0,1,0,1)
 #define X100110  BITS8(0,0, 1,0,0,1,1,0)
 #define X110000  BITS8(0,0, 1,1,0,0,0,0)
 #define X110001  BITS8(0,0, 1,1,0,0,0,1)
+#define X110101  BITS8(0,0, 1,1,0,1,0,1)
+#define X110111  BITS8(0,0, 1,1,0,1,1,1)
 #define X111000  BITS8(0,0, 1,1,1,0,0,0)
 #define X111001  BITS8(0,0, 1,1,1,0,0,1)
 #define X111101  BITS8(0,0, 1,1,1,1,0,1)
+#define X111111  BITS8(0,0, 1,1,1,1,1,1)
 
 #define X00100000  BITS8(0,0,1,0,0,0,0,0)
 #define X00100001  BITS8(0,0,1,0,0,0,0,1)
@@ -3165,6 +3248,10 @@ static inline UChar qregNo ( HReg r )
 #define X01100010  BITS8(0,1,1,0,0,0,1,0)
 #define X01100011  BITS8(0,1,1,0,0,0,1,1)
 #define X01110000  BITS8(0,1,1,1,0,0,0,0)
+#define X01110001  BITS8(0,1,1,1,0,0,0,1)
+#define X01110011  BITS8(0,1,1,1,0,0,1,1)
+#define X01110101  BITS8(0,1,1,1,0,1,0,1)
+#define X01110111  BITS8(0,1,1,1,0,1,1,1)
 #define X11000001  BITS8(1,1,0,0,0,0,0,1)
 #define X11000011  BITS8(1,1,0,0,0,0,1,1)
 #define X11010100  BITS8(1,1,0,1,0,1,0,0)
@@ -4418,7 +4505,7 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
          /* 31  28    23 21 20 18  15     9 4
             000 11110 00 1  00 010 000000 n d  SCVTF Sd, Wn
             000 11110 01 1  00 010 000000 n d  SCVTF Dd, Wn
-            100 11110 00 1  00 010 000000 n d  SCVTF Sd, Xn x
+            100 11110 00 1  00 010 000000 n d  SCVTF Sd, Xn
             100 11110 01 1  00 010 000000 n d  SCVTF Dd, Xn
             000 11110 00 1  00 011 000000 n d  UCVTF Sd, Wn
             000 11110 01 1  00 011 000000 n d  UCVTF Dd, Wn
@@ -4520,16 +4607,6 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
             *p++ = X_3_5_8_6_5_5(X000, X11110, X01100010, X010000, nn, dd);
          }
          goto done;
-      }
-      case ARM64in_FPCR: {
-         Bool toFPCR = i->ARM64in.FPCR.toFPCR;
-         UInt iReg   = iregNo(i->ARM64in.FPCR.iReg);
-         if (toFPCR) {
-            /* 0xD51B44 000 Rt  MSR fpcr, rT */
-            *p++ = 0xD51B4400 | (iReg & 0x1F);
-            goto done;
-         }
-         goto bad; // FPCR -> iReg case currently ATC
       }
       case ARM64in_VUnaryD: {
          /* 31        23 21     16 14    9 4
@@ -4651,6 +4728,75 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
          UInt sN = dregNo(i->ARM64in.VCmpS.argL);
          UInt sM = dregNo(i->ARM64in.VCmpS.argR);
          *p++ = X_3_8_5_6_5_5(X000, X11110001, sM, X001000, sN, X00000);
+         goto done;
+      }
+      case ARM64in_FPCR: {
+         Bool toFPCR = i->ARM64in.FPCR.toFPCR;
+         UInt iReg   = iregNo(i->ARM64in.FPCR.iReg);
+         if (toFPCR) {
+            /* 0xD51B44 000 Rt  MSR fpcr, rT */
+            *p++ = 0xD51B4400 | (iReg & 0x1F);
+            goto done;
+         }
+         goto bad; // FPCR -> iReg case currently ATC
+      }
+      case ARM64in_VBinV: {
+         /* 31        23   20 15     9 4
+            010 01110 11 1 m  100001 n d   ADD Vd.2d, Vn.2d, Vm.2d
+            010 01110 10 1 m  100001 n d   ADD Vd.4s, Vn.4s, Vm.4s
+            011 01110 11 1 m  100001 n d   SUB Vd.2d, Vn.2d, Vm.2d
+            011 01110 10 1 m  100001 n d   SUB Vd.4s, Vn.4s, Vm.4s
+            011 01110 01 1 m  100001 n d   SUB Vd.8h, Vn.8h, Vm.8h
+            010 01110 01 1 m  110101 n d   FADD Vd.2d, Vn.2d, Vm.2d
+            010 01110 11 1 m  110101 n d   FSUB Vd.2d, Vn.2d, Vm.2d
+            011 01110 01 1 m  110111 n d   FMUL Vd.2d, Vn.2d, Vm.2d
+            011 01110 01 1 m  111111 n d   FDIV Vd.2d, Vn.2d, Vm.2d
+         */
+         UInt vD = qregNo(i->ARM64in.VBinV.dst);
+         UInt vN = qregNo(i->ARM64in.VBinV.argL);
+         UInt vM = qregNo(i->ARM64in.VBinV.argR);
+         switch (i->ARM64in.VBinV.op) {
+            case ARM64vecb_ADD64x2:
+               *p++ = X_3_8_5_6_5_5(X010, X01110111, vM, X100001, vN, vD);
+               break;
+            case ARM64vecb_SUB64x2:
+               *p++ = X_3_8_5_6_5_5(X011, X01110111, vM, X100001, vN, vD);
+               break;
+            case ARM64vecb_SUB32x4:
+               *p++ = X_3_8_5_6_5_5(X011, X01110101, vM, X100001, vN, vD);
+               break;
+            case ARM64vecb_SUB16x8:
+               *p++ = X_3_8_5_6_5_5(X011, X01110011, vM, X100001, vN, vD);
+               break;
+            case ARM64vecb_FADD64x2:
+               *p++ = X_3_8_5_6_5_5(X010, X01110011, vM, X110101, vN, vD);
+               break;
+            case ARM64vecb_FSUB64x2:
+               *p++ = X_3_8_5_6_5_5(X010, X01110111, vM, X110101, vN, vD);
+               break;
+            case ARM64vecb_FMUL64x2:
+               *p++ = X_3_8_5_6_5_5(X011, X01110011, vM, X110111, vN, vD);
+               break;
+            case ARM64vecb_FDIV64x2:
+               *p++ = X_3_8_5_6_5_5(X011, X01110011, vM, X111111, vN, vD);
+               break;
+            default:
+               goto bad;
+         }
+         goto done;
+      }
+      case ARM64in_VNarrowV: {
+         /* 31        23 21      15     9 4
+            000 01110 00 1,00001 001010 n d  XTN Vd.8b, Vn.8h
+            000 01110 01 1,00001 001010 n d  XTN Vd.4h, Vn.4s
+            000 01110 10 1,00001 001010 n d  XTN Vd.2s, Vn.2d
+         */
+         UInt vD = qregNo(i->ARM64in.VNarrowV.dst);
+         UInt vN = qregNo(i->ARM64in.VNarrowV.src);
+         UInt dszBlg2 = i->ARM64in.VNarrowV.dszBlg2;
+         vassert(dszBlg2 >= 0 && dszBlg2 <= 2);
+         *p++ = X_3_8_5_6_5_5(X000, X01110001 | (dszBlg2 << 1),
+                              X00001, X001010, vN, vD);
          goto done;
       }
 //ZZ       case ARMin_VAluS: {

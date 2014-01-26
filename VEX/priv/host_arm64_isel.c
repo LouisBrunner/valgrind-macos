@@ -2118,7 +2118,21 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
                                            ARM64sh_SAR));
             return dst;
          }
-
+         case Iop_NarrowUn32to16x4:
+         case Iop_NarrowUn64to32x2: {
+            HReg src = iselV128Expr(env, e->Iex.Unop.arg);
+            HReg tmp = newVRegV(env);
+            HReg dst = newVRegI(env);
+            UInt dszBlg2 = 3; /* illegal */
+            switch (e->Iex.Unop.op) {
+               case Iop_NarrowUn32to16x4: dszBlg2 = 1; break; // 32to16_x4
+               case Iop_NarrowUn64to32x2: dszBlg2 = 2; break; // 64to32_x2
+               default: vassert(0);
+            }
+            addInstr(env, ARM64Instr_VNarrowV(dszBlg2, tmp, src));
+            addInstr(env, ARM64Instr_VXfromQ(dst, tmp, 0/*laneNo*/));
+            return dst;
+         }
 //ZZ          case Iop_64HIto32: {
 //ZZ             HReg rHi, rLo;
 //ZZ             iselInt64Expr(&rHi,&rLo, env, e->Iex.Unop.arg);
@@ -4835,49 +4849,24 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
 //ZZ          case Iop_Add8x16:
 //ZZ          case Iop_Add16x8:
 //ZZ          case Iop_Add32x4:
-//ZZ          case Iop_Add64x2: {
-//ZZ             /* 
-//ZZ             FIXME: remove this if not used
-//ZZ             DECLARE_PATTERN(p_vrhadd_32sx4);
-//ZZ             ULong one = (1LL << 32) | 1LL;
-//ZZ             DEFINE_PATTERN(p_vrhadd_32sx4,
-//ZZ                   binop(Iop_Add32x4,
-//ZZ                         binop(Iop_Add32x4,
-//ZZ                               binop(Iop_SarN32x4,
-//ZZ                                     bind(0),
-//ZZ                                     mkU8(1)),
-//ZZ                               binop(Iop_SarN32x4,
-//ZZ                                     bind(1),
-//ZZ                                     mkU8(1))),
-//ZZ                         binop(Iop_SarN32x4,
-//ZZ                               binop(Iop_Add32x4,
-//ZZ                                     binop(Iop_Add32x4,
-//ZZ                                           binop(Iop_AndV128,
-//ZZ                                                 bind(0),
-//ZZ                                                 mkU128(one)),
-//ZZ                                           binop(Iop_AndV128,
-//ZZ                                                 bind(1),
-//ZZ                                                 mkU128(one))),
-//ZZ                                     mkU128(one)),
-//ZZ                               mkU8(1))));
-//ZZ             */
-//ZZ             HReg res = newVRegV(env);
-//ZZ             HReg argL = iselNeonExpr(env, e->Iex.Binop.arg1);
-//ZZ             HReg argR = iselNeonExpr(env, e->Iex.Binop.arg2);
-//ZZ             UInt size;
-//ZZ             switch (e->Iex.Binop.op) {
-//ZZ                case Iop_Add8x16: size = 0; break;
-//ZZ                case Iop_Add16x8: size = 1; break;
-//ZZ                case Iop_Add32x4: size = 2; break;
-//ZZ                case Iop_Add64x2: size = 3; break;
-//ZZ                default:
-//ZZ                   ppIROp(e->Iex.Binop.op);
-//ZZ                   vpanic("Illegal element size in VADD");
-//ZZ             }
-//ZZ             addInstr(env, ARMInstr_NBinary(ARMneon_VADD,
-//ZZ                                            res, argL, argR, size, True));
-//ZZ             return res;
-//ZZ          }
+         case Iop_Add64x2:
+         case Iop_Sub64x2:
+         case Iop_Sub32x4:
+         case Iop_Sub16x8: {
+            HReg res  = newVRegV(env);
+            HReg argL = iselV128Expr(env, e->Iex.Binop.arg1);
+            HReg argR = iselV128Expr(env, e->Iex.Binop.arg2);
+            ARM64VecBinOp op = ARM64vecb_INVALID;
+            switch (e->Iex.Binop.op) {
+               case Iop_Add64x2: op = ARM64vecb_ADD64x2; break;
+               case Iop_Sub64x2: op = ARM64vecb_SUB64x2; break;
+               case Iop_Sub32x4: op = ARM64vecb_SUB32x4; break;
+               case Iop_Sub16x8: op = ARM64vecb_SUB16x8; break;
+               default: vassert(0);
+            }
+            addInstr(env, ARM64Instr_VBinV(op, res, argL, argR));
+            return res;
+         }
 //ZZ          case Iop_Add32Fx4: {
 //ZZ             HReg res = newVRegV(env);
 //ZZ             HReg argL = iselNeonExpr(env, e->Iex.Binop.arg1);
@@ -5750,9 +5739,25 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
       } /* switch on the binop */
    } /* if (e->tag == Iex_Binop) */
 
-//ZZ    if (e->tag == Iex_Triop) {
-//ZZ       IRTriop *triop = e->Iex.Triop.details;
-//ZZ 
+   if (e->tag == Iex_Triop) {
+      IRTriop*      triop  = e->Iex.Triop.details;
+      ARM64VecBinOp vecbop = ARM64vecb_INVALID;
+      switch (triop->op) {
+         case Iop_Add64Fx2: vecbop = ARM64vecb_FADD64x2; break;
+         case Iop_Sub64Fx2: vecbop = ARM64vecb_FSUB64x2; break;
+         case Iop_Mul64Fx2: vecbop = ARM64vecb_FMUL64x2; break;
+         case Iop_Div64Fx2: vecbop = ARM64vecb_FDIV64x2; break;
+         default: break;
+      }
+      if (vecbop != ARM64vecb_INVALID) {
+         HReg argL = iselV128Expr(env, triop->arg2);
+         HReg argR = iselV128Expr(env, triop->arg3);
+         HReg dst  = newVRegV(env);
+         set_FPCR_rounding_mode(env, triop->arg1);
+         addInstr(env, ARM64Instr_VBinV(vecbop, dst, argL, argR));
+         return dst;
+      }
+
 //ZZ       switch (triop->op) {
 //ZZ          case Iop_ExtractV128: {
 //ZZ             HReg res = newVRegV(env);
@@ -5776,8 +5781,8 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
 //ZZ          default:
 //ZZ             break;
 //ZZ       }
-//ZZ    }
-//ZZ 
+   }
+
 //ZZ    if (e->tag == Iex_ITE) { // VFD
 //ZZ       ARMCondCode cc;
 //ZZ       HReg r1  = iselNeonExpr(env, e->Iex.ITE.iftrue);

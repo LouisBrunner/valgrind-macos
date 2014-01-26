@@ -694,6 +694,7 @@ void ppIROp ( IROp op )
 
       case Iop_64UtoV128:   vex_printf("64UtoV128"); return;
       case Iop_SetV128lo64: vex_printf("SetV128lo64"); return;
+      case Iop_ZeroHI64:    vex_printf("ZeroHI64"); return;
 
       case Iop_32UtoV128:   vex_printf("32UtoV128"); return;
       case Iop_V128to32:    vex_printf("V128to32"); return;

@@ -119,7 +119,7 @@ typedef
 
 typedef
    enum {
-      ARM64am_RI9=1,  /* reg + simm9 */
+      ARM64am_RI9=10, /* reg + simm9 */
       ARM64am_RI12,   /* reg + uimm12 * szB (iow, scaled by access size) */
       ARM64am_RR      /* reg1 + reg2 */
    }
@@ -155,8 +155,8 @@ extern ARM64AMode* ARM64AMode_RR   ( HReg base, HReg index );
 
 typedef
    enum {
-      ARM64riA_I12=4, /* uimm12 << 0 or 12 only */
-      ARM64riA_R      /* reg */
+      ARM64riA_I12=20, /* uimm12 << 0 or 12 only */
+      ARM64riA_R       /* reg */
    }
    ARM64RIATag;
 
@@ -212,7 +212,7 @@ extern ARM64RIL* ARM64RIL_R   ( HReg );
 
 typedef
    enum {
-      ARM64ri6_I6=8,  /* uimm6, 1 .. 63 only */
+      ARM64ri6_I6=30, /* uimm6, 1 .. 63 only */
       ARM64ri6_R      /* reg */
    }
    ARM64RI6Tag;
@@ -239,7 +239,7 @@ extern ARM64RI6* ARM64RI6_R  ( HReg );
 
 typedef
    enum {
-      ARM64lo_AND=10,
+      ARM64lo_AND=40,
       ARM64lo_OR,
       ARM64lo_XOR
    }
@@ -247,7 +247,7 @@ typedef
 
 typedef
    enum {
-      ARM64sh_SHL=13,
+      ARM64sh_SHL=50,
       ARM64sh_SHR,
       ARM64sh_SAR
    }
@@ -255,7 +255,7 @@ typedef
 
 typedef
    enum {
-      ARM64un_NEG=16,
+      ARM64un_NEG=60,
       ARM64un_NOT,
       ARM64un_CLZ,
    }
@@ -263,7 +263,7 @@ typedef
 
 typedef
    enum {
-      ARM64mul_PLAIN=60, /* lo64(64 * 64)  */
+      ARM64mul_PLAIN=70, /* lo64(64 * 64)  */
       ARM64mul_ZX,       /* hi64(64 *u 64) */
       ARM64mul_SX        /* hi64(64 *s 64) */
    }
@@ -273,7 +273,7 @@ typedef
    /* These characterise an integer-FP conversion, but don't imply any
       particular direction. */
    enum {
-      ARM64cvt_F32_I32S=65,
+      ARM64cvt_F32_I32S=80,
       ARM64cvt_F64_I32S,
       ARM64cvt_F32_I64S,
       ARM64cvt_F64_I64S,
@@ -287,7 +287,7 @@ typedef
 
 typedef
    enum {
-      ARM64fpb_ADD=75,
+      ARM64fpb_ADD=100,
       ARM64fpb_SUB,
       ARM64fpb_MUL,
       ARM64fpb_DIV,
@@ -297,13 +297,29 @@ typedef
 
 typedef
    enum {
-      ARM64fpu_NEG=82,
+      ARM64fpu_NEG=110,
       ARM64fpu_ABS,
       ARM64fpu_SQRT,
       ARM64fpu_RINT,
       ARM64fpu_INVALID
    }
    ARM64FpUnaryOp;
+
+typedef
+   enum {
+      ARM64vecb_ADD64x2=120,
+      ARM64vecb_ADD32x4,
+      ARM64vecb_ADD16x8,
+      ARM64vecb_SUB64x2,
+      ARM64vecb_SUB32x4,
+      ARM64vecb_SUB16x8,
+      ARM64vecb_FADD64x2,
+      ARM64vecb_FSUB64x2,
+      ARM64vecb_FMUL64x2,
+      ARM64vecb_FDIV64x2,
+      ARM64vecb_INVALID
+   }
+   ARM64VecBinOp;
 
 //ZZ extern const HChar* showARMVfpUnaryOp ( ARMVfpUnaryOp op );
 //ZZ 
@@ -470,7 +486,7 @@ typedef
       ARM64in_Mul,
 //ZZ       ARMin_LdrEX,
 //ZZ       ARMin_StrEX,
-      /* vector */
+      /* ARM64in_V*: scalar ops involving vector registers */
       ARM64in_VLdStS,   /* 32-bit FP load/store, with imm offset  */
       ARM64in_VLdStD,   /* 64-bit FP load/store, with imm offset  */
       ARM64in_VLdStQ,
@@ -484,6 +500,9 @@ typedef
       ARM64in_VCmpD,
       ARM64in_VCmpS,
       ARM64in_FPCR,
+      /* ARM64in_V*V: vector ops on vector registers */
+      ARM64in_VBinV,
+      ARM64in_VNarrowV,
 //ZZ       ARMin_VAluS,
 //ZZ       ARMin_VCMovD,
 //ZZ       ARMin_VCMovS,
@@ -749,6 +768,20 @@ typedef
             Bool toFPCR;
             HReg iReg;
          } FPCR;
+         /* binary vector operation on vector registers */
+         struct {
+            ARM64VecBinOp op;
+            HReg          dst;
+            HReg          argL;
+            HReg          argR;
+         } VBinV;
+         /* vector narrowing, Q -> Q.  Result goes in the bottom half
+            of dst and the top half is zeroed out.  Iow is XTN. */
+        struct {
+           UInt dszBlg2; // 0: 16to8_x8  1: 32to16_x4  2: 64to32_x2
+           HReg dst;     // Q reg
+           HReg src;     // Q reg
+        } VNarrowV;
 //ZZ          /* 32-bit FP binary arithmetic */
 //ZZ          struct {
 //ZZ             ARMVfpOp op;
@@ -949,6 +982,8 @@ extern ARM64Instr* ARM64Instr_VBinS   ( ARM64FpBinOp op, HReg, HReg, HReg );
 extern ARM64Instr* ARM64Instr_VCmpD   ( HReg argL, HReg argR );
 extern ARM64Instr* ARM64Instr_VCmpS   ( HReg argL, HReg argR );
 extern ARM64Instr* ARM64Instr_FPCR    ( Bool toFPCR, HReg iReg );
+extern ARM64Instr* ARM64Instr_VBinV   ( ARM64VecBinOp op, HReg, HReg, HReg );
+extern ARM64Instr* ARM64Instr_VNarrowV ( UInt dszBlg2, HReg dst, HReg src );
 //ZZ extern ARMInstr* ARMInstr_VAluS    ( ARMVfpOp op, HReg, HReg, HReg );
 //ZZ extern ARMInstr* ARMInstr_VCMovD   ( ARMCondCode, HReg dst, HReg src );
 //ZZ extern ARMInstr* ARMInstr_VCMovS   ( ARMCondCode, HReg dst, HReg src );

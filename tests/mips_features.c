@@ -47,7 +47,7 @@ static int mipsCPUInfo(const char *search_string) {
 static int go(char *feature)
 {
    int cpuinfo;
-   if ( (strcmp(feature, "mips32-dsp") == 0)) {
+   if (strcmp(feature, "mips32-dsp") == 0) {
       const char *dsp = "dsp";
       cpuinfo = mipsCPUInfo(dsp);
       if (cpuinfo == 1) {
@@ -55,7 +55,7 @@ static int go(char *feature)
       } else{
          return FEATURE_NOT_PRESENT;
       }
-   } else if ((strcmp(feature, "mips32-dspr2") == 0)) {
+   } else if (strcmp(feature, "mips32-dspr2") == 0) {
       const char *dsp2 = "dsp2";
       cpuinfo = mipsCPUInfo(dsp2);
       if (cpuinfo == 1) {
@@ -63,9 +63,17 @@ static int go(char *feature)
       } else{
          return FEATURE_NOT_PRESENT;
       }
-   } else if ((strcmp(feature, "cavium-octeon") == 0)) {
+   } else if (strcmp(feature, "cavium-octeon") == 0) {
       const char *cavium = "Cavium Octeon";
       cpuinfo = mipsCPUInfo(cavium);
+      if (cpuinfo == 1) {
+         return FEATURE_PRESENT;
+      } else{
+         return FEATURE_NOT_PRESENT;
+      }
+   } else if (strcmp(feature, "cavium-octeon2") == 0) {
+      const char *cavium2 = "Cavium Octeon II";
+      cpuinfo = mipsCPUInfo(cavium2);
       if (cpuinfo == 1) {
          return FEATURE_PRESENT;
       } else{

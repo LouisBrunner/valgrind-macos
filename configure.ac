@@ -1490,6 +1490,45 @@ CFLAGS=$safe_CFLAGS
 AC_SUBST(FLAG_M64)
 
 
+# does this compiler support -march=octeon (Cavium OCTEON I Specific) ?
+AC_MSG_CHECKING([if gcc accepts -march=octeon])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="$CFLAGS -march=octeon"
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  return 0;
+]])], [
+FLAG_OCTEON="-march=octeon"
+AC_MSG_RESULT([yes])
+], [
+FLAG_OCTEON=""
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
+AC_SUBST(FLAG_OCTEON)
+
+# does this compiler support -march=octeon2 (Cavium OCTEON II Specific) ?
+AC_MSG_CHECKING([if gcc accepts -march=octeon2])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="$CFLAGS -march=octeon2"
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  return 0;
+]])], [
+FLAG_OCTEON2="-march=octeon2"
+AC_MSG_RESULT([yes])
+], [
+FLAG_OCTEON2=""
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
+AC_SUBST(FLAG_OCTEON2)
+
+
 # does this compiler support -mmmx ?
 AC_MSG_CHECKING([if gcc accepts -mmmx])
 

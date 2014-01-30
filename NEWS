@@ -47,6 +47,7 @@ where XXXXXX is the bug number as listed below.
 328711  valgrind.1 manpage "memcheck options" section is badly generated
 329612  Incorrect handling of AT_BASE for image execution 
 330459  --track-fds=yes doesn't track eventfds
+330469  Add clock_adjtime syscall support
 
 Release 3.9.0 (31 October 2013)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

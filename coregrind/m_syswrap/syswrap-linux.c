@@ -814,6 +814,40 @@ POST(sys_adjtimex)
    POST_MEM_WRITE( ARG1, sizeof(struct vki_timex) );
 }
 
+PRE(sys_clock_adjtime)
+{
+   struct vki_timex *tx = (struct vki_timex *)ARG2;
+   PRINT("sys_clock_adjtime ( %ld, %#lx )", ARG1,ARG2);
+   PRE_REG_READ2(long, "clock_adjtime", vki_clockid_t, id, struct timex *, buf);
+   PRE_MEM_READ( "clock_adjtime(timex->modes)", ARG2, sizeof(tx->modes));
+
+#define ADJX(bits,field)                                \
+   if (tx->modes & (bits))                              \
+      PRE_MEM_READ( "clock_adjtime(timex->"#field")",   \
+                    (Addr)&tx->field, sizeof(tx->field))
+
+   if (tx->modes & VKI_ADJ_ADJTIME) {
+      if (!(tx->modes & VKI_ADJ_OFFSET_READONLY))
+         PRE_MEM_READ( "clock_adjtime(timex->offset)", (Addr)&tx->offset, sizeof(tx->offset));
+   } else {
+      ADJX(VKI_ADJ_OFFSET, offset);
+      ADJX(VKI_ADJ_FREQUENCY, freq);
+      ADJX(VKI_ADJ_MAXERROR, maxerror);
+      ADJX(VKI_ADJ_ESTERROR, esterror);
+      ADJX(VKI_ADJ_STATUS, status);
+      ADJX(VKI_ADJ_TIMECONST|VKI_ADJ_TAI, constant);
+      ADJX(VKI_ADJ_TICK, tick);
+   }
+#undef ADJX
+
+   PRE_MEM_WRITE( "adjtimex(timex)", ARG2, sizeof(struct vki_timex));
+}
+
+POST(sys_clock_adjtime)
+{
+   POST_MEM_WRITE( ARG2, sizeof(struct vki_timex) );
+}
+
 PRE(sys_ioperm)
 {
    PRINT("sys_ioperm ( %ld, %ld, %ld )", ARG1, ARG2, ARG3 );

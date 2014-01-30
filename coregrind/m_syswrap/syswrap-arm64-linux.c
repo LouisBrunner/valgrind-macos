@@ -1295,7 +1295,8 @@ static SyscallTableEntry syscall_main_table[] = {
 //ZZ    LINXY(__NR_accept4,           sys_accept4),          // 366
 //ZZ 
 //ZZ    LINXY(__NR_name_to_handle_at, sys_name_to_handle_at),// 370
-//ZZ    LINXY(__NR_open_by_handle_at, sys_open_by_handle_at) // 371
+//ZZ    LINXY(__NR_open_by_handle_at, sys_open_by_handle_at),// 371
+//ZZ    LINXY(__NR_clock_adjtime,     sys_clock_adjtime)     // 372
 };
 
 

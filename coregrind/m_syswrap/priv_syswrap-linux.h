@@ -146,6 +146,7 @@ DECL_TEMPLATE(linux, sys_clock_settime);
 DECL_TEMPLATE(linux, sys_clock_gettime);
 DECL_TEMPLATE(linux, sys_clock_getres);
 DECL_TEMPLATE(linux, sys_clock_nanosleep);
+DECL_TEMPLATE(linux, sys_clock_adjtime);
 
 DECL_TEMPLATE(linux, sys_timer_create);      // Linux: varies across archs?
 DECL_TEMPLATE(linux, sys_timer_settime);

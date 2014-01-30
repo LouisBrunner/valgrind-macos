@@ -1034,13 +1034,13 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_utimensat,  sys_utimensat),                             // 315
    LINXY(__NR_signalfd,  sys_signalfd),                               // 316
    GENX_(317, sys_ni_syscall), /* unimplemented (by the kernel) */    // 317
-   LINX_(__NR_eventfd,  sys_eventfd),                                 // 318
+   LINXY(__NR_eventfd,  sys_eventfd),                                 // 318
    LINXY(__NR_timerfd_create,  sys_timerfd_create),                   // 319
 
    LINXY(__NR_timerfd_settime,  sys_timerfd_settime),                 // 320
    LINXY(__NR_timerfd_gettime,  sys_timerfd_gettime),                 // 321
    LINXY(__NR_signalfd4,  sys_signalfd4),                             // 322
-   LINX_(__NR_eventfd2,  sys_eventfd2),                               // 323
+   LINXY(__NR_eventfd2,  sys_eventfd2),                               // 323
    LINXY(__NR_inotify_init1,  sys_inotify_init1),                     // 324
 
    LINXY(__NR_pipe2,  sys_pipe2),                                     // 325

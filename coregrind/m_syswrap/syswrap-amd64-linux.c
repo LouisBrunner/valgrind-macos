@@ -1048,7 +1048,7 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_epoll_pwait,       sys_epoll_pwait),      // 281
    LINXY(__NR_signalfd,          sys_signalfd),         // 282
    LINXY(__NR_timerfd_create,    sys_timerfd_create),   // 283
-   LINX_(__NR_eventfd,           sys_eventfd),          // 284
+   LINXY(__NR_eventfd,           sys_eventfd),          // 284
 
    LINX_(__NR_fallocate,         sys_fallocate),        // 285
    LINXY(__NR_timerfd_settime,   sys_timerfd_settime),  // 286
@@ -1056,7 +1056,7 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_accept4,           sys_accept4),          // 288
    LINXY(__NR_signalfd4,         sys_signalfd4),        // 289
 
-   LINX_(__NR_eventfd2,          sys_eventfd2),         // 290
+   LINXY(__NR_eventfd2,          sys_eventfd2),         // 290
    LINXY(__NR_epoll_create1,     sys_epoll_create1),    // 291
    LINXY(__NR_dup3,              sys_dup3),             // 292
    LINXY(__NR_pipe2,             sys_pipe2),            // 293

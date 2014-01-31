@@ -120,28 +120,29 @@ typedef enum {
 
 int main()
 {
+#if (_MIPS_ARCH_OCTEON)
    int i, j;
    cvm_op op;
    for (op = EXTS; op <= SEQ; op++) {
-       switch(op) {
+      switch(op) {
          case EXTS: {  /* To extract and sign-extend a bit field that starts
                           from the lower 32 bits of a register. */
-           for(i = 0; i <= 255; i+=4)
-             TESTINST1("exts $t1, $t2, 1, 7", reg_val[i], t1, t2, 1, 7);
-           break;
+            for(i = 0; i <= 255; i+=4)
+               TESTINST1("exts $t1, $t2, 1, 7", reg_val[i], t1, t2, 1, 7);
+            break;
          }
 
          case EXTS32: { /* To extract and sign-extend a bit field that starts
                            from the upper 32 bits of a register. */
-           for(i = 0; i <= 255; i+=4)
-             TESTINST1("exts32 $t1, $t2, 1 , 7",  reg_val[i], t1, t2,1,7);
-           break;
+            for(i = 0; i <= 255; i+=4)
+               TESTINST1("exts32 $t1, $t2, 1 , 7",  reg_val[i], t1, t2, 1, 7);
+            break;
          }
 
          case CINS:{  /* To insert a bit field that starts in the lower 32 bits
                          of a register. */
             for(i = 0; i <= 255; i+=4)
-               TESTINST1("cins $t1, $t2, 2 , 9",  reg_val[i], t1, t2,2,9);
+               TESTINST1("cins $t1, $t2, 2 , 9",  reg_val[i], t1, t2, 2, 9);
             break;
          }
 
@@ -153,10 +154,10 @@ int main()
          }
 
          case SEQ: {  /* To record the result of an equals comparison. */
-           for(i = 0; i <= 255; i+=4)
-              for(j = 0; j <= 255; j+=4)
-                 TESTINST2("seq $t1, $t2 ,$t3 ", reg_val[i], reg_val[j],
-                                                 t1, t2, t3);
+            for(i = 0; i <= 255; i+=4)
+               for(j = 0; j <= 255; j+=4)
+                  TESTINST2("seq $t1, $t2 ,$t3 ", reg_val[i], reg_val[j],
+                                                  t1, t2, t3);
             break;
          }
 
@@ -192,5 +193,6 @@ int main()
          }
       }
    }
+#endif
    return 0;
 }

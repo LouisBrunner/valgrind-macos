@@ -10,7 +10,10 @@ EXTRA_DIST = \
 	branch_and_jump_instructions.stdout.exp \
 	branch_and_jump_instructions.stderr.exp branch_and_jump_instructions.vgtest \
 	branches.stdout.exp branches.stderr.exp branches.vgtest \
-	cvm_ins.stdout.exp cvm_ins.stderr.exp cvm_ins.vgtest \
+	cvm_ins.stdout.exp cvm_ins.stdout.exp-non-octeon \
+	cvm_ins.stderr.exp cvm_ins.vgtest \
+	cvm_lx_ins.stdout.exp-LE cvm_lx_ins.stdout.exp-non-octeon \
+	cvm_lx_ins.stderr.exp cvm_lx_ins.vgtest \
 	extract_insert_bit_field.stdout.exp-mips64 \
 	extract_insert_bit_field.stdout.exp-mips64r2 \
 	extract_insert_bit_field.stderr.exp extract_insert_bit_field.vgtest \
@@ -52,6 +55,7 @@ check_PROGRAMS = \
 	branch_and_jump_instructions \
 	branches \
 	cvm_ins \
+	cvm_lx_ins \
 	extract_insert_bit_field \
 	fpu_arithmetic \
 	fpu_branches \
@@ -77,7 +81,8 @@ AM_CCASFLAGS += @FLAG_M64@
 
 allexec_CFLAGS          = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 
-cvm_ins_CFLAGS = $(AM_CFLAGS) -g -O0 -march=octeon
+cvm_ins_CFLAGS = $(AM_CFLAGS) -g -O0 @FLAG_OCTEON@
+cvm_lx_ins_CFLAGS = $(AM_CFLAGS) -g -O0 @FLAG_OCTEON2@
 fpu_arithmetic_CFLAGS = $(AM_CFLAGS) -lm
 
 # C++ tests

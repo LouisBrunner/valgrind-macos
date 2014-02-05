@@ -206,3 +206,20 @@ callee saved
 
 ubfm/sbfm etc: special case cases that are simple shifts, as iropt
 can't always simplify the general-case IR to a shift in such cases.
+
+
+LDP,STP (immediate, simm7) (FP&VEC)
+should zero out hi parts of dst registers in the LDP case
+
+
+DUP insns: use Iop_Dup8x16, Iop_Dup16x8, Iop_Dup32x4
+rather than doing it "by hand"
+
+
+Any place where ZeroHI64ofV128 is used in conjunction with
+FP vector IROps: find a way to make sure that arithmetic on
+the upper half of the values is "harmless."
+
+
+math_MINMAXV: use real Iop_Cat{Odd,Even}Lanes ops rather than
+inline scalar code

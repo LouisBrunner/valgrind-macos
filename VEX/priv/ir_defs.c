@@ -694,7 +694,11 @@ void ppIROp ( IROp op )
 
       case Iop_64UtoV128:   vex_printf("64UtoV128"); return;
       case Iop_SetV128lo64: vex_printf("SetV128lo64"); return;
-      case Iop_ZeroHI64:    vex_printf("ZeroHI64"); return;
+
+      case Iop_ZeroHI64ofV128:  vex_printf("ZeroHI64ofV128"); return;
+      case Iop_ZeroHI96ofV128:  vex_printf("ZeroHI96ofV128"); return;
+      case Iop_ZeroHI112ofV128: vex_printf("ZeroHI112ofV128"); return;
+      case Iop_ZeroHI120ofV128: vex_printf("ZeroHI120ofV128"); return;
 
       case Iop_32UtoV128:   vex_printf("32UtoV128"); return;
       case Iop_V128to32:    vex_printf("V128to32"); return;
@@ -2905,6 +2909,8 @@ void typeOfPrimop ( IROp op,
       case Iop_Abs8x16: case Iop_Abs16x8: case Iop_Abs32x4:
       case Iop_CipherSV128:
       case Iop_PwBitMtxXpose64x2:
+      case Iop_ZeroHI64ofV128:  case Iop_ZeroHI96ofV128:
+      case Iop_ZeroHI112ofV128: case Iop_ZeroHI120ofV128:
          UNARY(Ity_V128, Ity_V128);
 
       case Iop_ShlV128: case Iop_ShrV128:

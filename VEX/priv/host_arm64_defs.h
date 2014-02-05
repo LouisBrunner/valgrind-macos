@@ -317,6 +317,16 @@ typedef
       ARM64vecb_FSUB64x2,
       ARM64vecb_FMUL64x2,
       ARM64vecb_FDIV64x2,
+      ARM64vecb_FADD32x4,
+      ARM64vecb_FSUB32x4,
+      ARM64vecb_FMUL32x4,
+      ARM64vecb_FDIV32x4,
+      ARM64vecb_UMAX32x4,
+      ARM64vecb_UMAX16x8,
+      ARM64vecb_UMIN32x4,
+      ARM64vecb_UMIN16x8,
+      ARM64vecb_AND,
+      ARM64vecb_ORR,
       ARM64vecb_INVALID
    }
    ARM64VecBinOp;

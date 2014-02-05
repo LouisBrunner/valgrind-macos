@@ -1363,8 +1363,11 @@ typedef
       Iop_64UtoV128,
       Iop_SetV128lo64,
 
-      /* Copies lower 64 bits, zeroes out upper 64 bits. */
-      Iop_ZeroHI64,     // :: V128 -> V128
+      /* Copies lower 64/32/16/8 bits, zeroes out the rest. */
+      Iop_ZeroHI64ofV128,    // :: V128 -> V128
+      Iop_ZeroHI96ofV128,    // :: V128 -> V128
+      Iop_ZeroHI112ofV128,   // :: V128 -> V128
+      Iop_ZeroHI120ofV128,   // :: V128 -> V128
 
       /* 32 <-> 128 bit vector */
       Iop_32UtoV128,

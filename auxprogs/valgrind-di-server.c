@@ -743,6 +743,8 @@ static Bool handle_transaction ( int conn_no )
          fd = open((char*)filename, O_RDONLY);
          if (fd == -1) {
             res = mk_Frame_asciiz("FAIL", "OPEN: cannot open file");
+            printf("(%d) SessionID %llu: open failed for \"%s\"\n",
+                   conn_count, conn_state[conn_no].session_id, filename );
             ok = False;
          } else {
             assert(fd > 2);

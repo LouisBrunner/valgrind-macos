@@ -857,6 +857,8 @@ static void showARM64VecBinOp(/*OUT*/const HChar** nm,
       case ARM64vecb_SUB64x2:  *nm = "sub "; *ar = "2d"; return;
       case ARM64vecb_SUB32x4:  *nm = "sub "; *ar = "4s"; return;
       case ARM64vecb_SUB16x8:  *nm = "sub "; *ar = "8h"; return;
+      case ARM64vecb_MUL32x4:  *nm = "mul "; *ar = "4s"; return;
+      case ARM64vecb_MUL16x8:  *nm = "mul "; *ar = "8h"; return;
       case ARM64vecb_FADD64x2: *nm = "fadd"; *ar = "2d"; return;
       case ARM64vecb_FSUB64x2: *nm = "fsub"; *ar = "2d"; return;
       case ARM64vecb_FMUL64x2: *nm = "fmul"; *ar = "2d"; return;
@@ -869,6 +871,10 @@ static void showARM64VecBinOp(/*OUT*/const HChar** nm,
       case ARM64vecb_UMAX16x8: *nm = "umax"; *ar = "8h"; return;
       case ARM64vecb_UMIN32x4: *nm = "umin"; *ar = "4s"; return;
       case ARM64vecb_UMIN16x8: *nm = "umin"; *ar = "8h"; return;
+      case ARM64vecb_SMAX32x4: *nm = "smax"; *ar = "4s"; return;
+      case ARM64vecb_SMAX16x8: *nm = "smax"; *ar = "8h"; return;
+      case ARM64vecb_SMIN32x4: *nm = "smin"; *ar = "4s"; return;
+      case ARM64vecb_SMIN16x8: *nm = "smin"; *ar = "8h"; return;
       case ARM64vecb_AND:      *nm = "and "; *ar = "all"; return;
       case ARM64vecb_ORR:      *nm = "orr "; *ar = "all"; return;
       default: vpanic("showARM64VecBinOp");
@@ -3239,6 +3245,7 @@ static inline UChar qregNo ( HReg r )
 #define X100100  BITS8(0,0, 1,0,0,1,0,0)
 #define X100101  BITS8(0,0, 1,0,0,1,0,1)
 #define X100110  BITS8(0,0, 1,0,0,1,1,0)
+#define X100111  BITS8(0,0, 1,0,0,1,1,1)
 #define X110000  BITS8(0,0, 1,1,0,0,0,0)
 #define X110001  BITS8(0,0, 1,1,0,0,0,1)
 #define X110101  BITS8(0,0, 1,1,0,1,0,1)
@@ -4757,21 +4764,35 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
          /* 31        23   20 15     9 4
             010 01110 11 1 m  100001 n d   ADD Vd.2d, Vn.2d, Vm.2d
             010 01110 10 1 m  100001 n d   ADD Vd.4s, Vn.4s, Vm.4s
+            010 01110 01 1 m  100001 n d   ADD Vd.8h, Vn.8h, Vm.8h
+
             011 01110 11 1 m  100001 n d   SUB Vd.2d, Vn.2d, Vm.2d
             011 01110 10 1 m  100001 n d   SUB Vd.4s, Vn.4s, Vm.4s
             011 01110 01 1 m  100001 n d   SUB Vd.8h, Vn.8h, Vm.8h
+
+            010 01110 10 1 m  100111 n d   MUL Vd.4s, Vn.4s, Vm.4s
+            010 01110 01 1 m  100111 n d   MUL Vd.8h, Vn.8h, Vm.8h
+
             010 01110 01 1 m  110101 n d   FADD Vd.2d, Vn.2d, Vm.2d
             010 01110 00 1 m  110101 n d   FADD Vd.4s, Vn.4s, Vm.4s
             010 01110 11 1 m  110101 n d   FSUB Vd.2d, Vn.2d, Vm.2d
             010 01110 10 1 m  110101 n d   FSUB Vd.4s, Vn.4s, Vm.4s
+
             011 01110 01 1 m  110111 n d   FMUL Vd.2d, Vn.2d, Vm.2d
             011 01110 00 1 m  110111 n d   FMUL Vd.4s, Vn.4s, Vm.4s
             011 01110 01 1 m  111111 n d   FDIV Vd.2d, Vn.2d, Vm.2d
             011 01110 00 1 m  111111 n d   FDIV Vd.4s, Vn.4s, Vm.4s
+
             011 01110 10 1 m  011001 n d   UMAX Vd.4s, Vn.4s, Vm.4s
             011 01110 01 1 m  011001 n d   UMAX Vd.8h, Vn.8h, Vm.8h
             011 01110 10 1 m  011011 n d   UMIN Vd.4s, Vn.4s, Vm.4s
             011 01110 01 1 m  011011 n d   UMIN Vd.8h, Vn.8h, Vm.8h
+
+            010 01110 10 1 m  011001 n d   SMAX Vd.4s, Vn.4s, Vm.4s
+            010 01110 01 1 m  011001 n d   SMAX Vd.8h, Vn.8h, Vm.8h
+            010 01110 10 1 m  011011 n d   SMIN Vd.4s, Vn.4s, Vm.4s
+            010 01110 01 1 m  011011 n d   SMIN Vd.8h, Vn.8h, Vm.8h
+
             010 01110 00 1 m  000111 n d   AND Vd, Vn, Vm
             010 01110 10 1 m  000111 n d   ORR Vd, Vn, Vm
          */
@@ -4782,7 +4803,12 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
             case ARM64vecb_ADD64x2:
                *p++ = X_3_8_5_6_5_5(X010, X01110111, vM, X100001, vN, vD);
                break;
-            // ADD32x4
+            case ARM64vecb_ADD32x4:
+               *p++ = X_3_8_5_6_5_5(X010, X01110101, vM, X100001, vN, vD);
+               break;
+            case ARM64vecb_ADD16x8:
+               *p++ = X_3_8_5_6_5_5(X010, X01110011, vM, X100001, vN, vD);
+               break;
             case ARM64vecb_SUB64x2:
                *p++ = X_3_8_5_6_5_5(X011, X01110111, vM, X100001, vN, vD);
                break;
@@ -4791,6 +4817,12 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
                break;
             case ARM64vecb_SUB16x8:
                *p++ = X_3_8_5_6_5_5(X011, X01110011, vM, X100001, vN, vD);
+               break;
+            case ARM64vecb_MUL32x4:
+               *p++ = X_3_8_5_6_5_5(X010, X01110101, vM, X100111, vN, vD);
+               break;
+            case ARM64vecb_MUL16x8:
+               *p++ = X_3_8_5_6_5_5(X010, X01110011, vM, X100111, vN, vD);
                break;
             case ARM64vecb_FADD64x2:
                *p++ = X_3_8_5_6_5_5(X010, X01110011, vM, X110101, vN, vD);
@@ -4816,6 +4848,7 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
             case ARM64vecb_FDIV32x4:
                *p++ = X_3_8_5_6_5_5(X011, X01110001, vM, X111111, vN, vD);
                break;
+
             case ARM64vecb_UMAX32x4:
                *p++ = X_3_8_5_6_5_5(X011, X01110101, vM, X011001, vN, vD);
                break;
@@ -4828,6 +4861,20 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
             case ARM64vecb_UMIN16x8:
                *p++ = X_3_8_5_6_5_5(X011, X01110011, vM, X011011, vN, vD);
                break;
+
+            case ARM64vecb_SMAX32x4:
+               *p++ = X_3_8_5_6_5_5(X010, X01110101, vM, X011001, vN, vD);
+               break;
+            case ARM64vecb_SMAX16x8:
+               *p++ = X_3_8_5_6_5_5(X010, X01110011, vM, X011001, vN, vD);
+               break;
+            case ARM64vecb_SMIN32x4:
+               *p++ = X_3_8_5_6_5_5(X010, X01110101, vM, X011011, vN, vD);
+               break;
+            case ARM64vecb_SMIN16x8:
+               *p++ = X_3_8_5_6_5_5(X010, X01110011, vM, X011011, vN, vD);
+               break;
+
             case ARM64vecb_ORR:
                goto bad; //ATC
                *p++ = X_3_8_5_6_5_5(X010, X01110101, vM, X000111, vN, vD);

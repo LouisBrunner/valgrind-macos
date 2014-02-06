@@ -1417,8 +1417,8 @@ typedef
       Iop_QRDMulHi16Sx8, Iop_QRDMulHi32Sx4,
       /* Doubling saturating multiplication (long) (I64, I64) -> V128 */
       Iop_QDMulLong16Sx4, Iop_QDMulLong32Sx2,
-      /* Plynomial multiplication treats it's arguments as coefficients of
-         polynoms over {0, 1}. */
+      /* Polynomial multiplication treats its arguments as
+         coefficients of polynomials over {0, 1}. */
       Iop_PolynomialMul8x16, /* (V128, V128) -> V128 */
       Iop_PolynomialMull8x8, /*   (I64, I64) -> V128 */
 

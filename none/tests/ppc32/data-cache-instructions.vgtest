@@ -1,0 +1,2 @@
+prereq: ../../../tests/power_insn_available dcbzl
+prog: data-cache-instructions

@@ -1,0 +1,3 @@
+Passed dcbzl test at aligned address within the test block.
+Passed dcbzl test at un-aligned (1 modulo block_size) address within the test block.
+Passed dcbzl test at un-aligned ((block_size - 1) modulo block_size) address within the test block.

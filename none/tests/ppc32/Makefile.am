@@ -44,7 +44,8 @@ EXTRA_DIST = \
 	test_isa_2_07_part2.stderr.exp test_isa_2_07_part2.stdout.exp test_isa_2_07_part2.vgtest \
 	test_tm.stderr.exp test_tm.stdout.exp test_tm.vgtest \
 	test_touch_tm.stderr.exp test_touch_tm.stdout.exp test_touch_tm.vgtest \
-	ldst_multiple.stderr.exp ldst_multiple.stdout.exp ldst_multiple.vgtest
+	ldst_multiple.stderr.exp ldst_multiple.stdout.exp ldst_multiple.vgtest \
+	data-cache-instructions.stderr.exp data-cache-instructions.stdout.exp data-cache-instructions.vgtest
 
 
 check_PROGRAMS = \
@@ -61,7 +62,8 @@ check_PROGRAMS = \
 	test_isa_2_07_part2 \
 	test_tm \
 	test_touch_tm \
-	ldst_multiple
+	ldst_multiple \
+	data-cache-instructions
 
 AM_CFLAGS    += @FLAG_M32@
 AM_CXXFLAGS  += @FLAG_M32@

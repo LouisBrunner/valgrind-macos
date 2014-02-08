@@ -243,8 +243,14 @@ static void DRD_(sema_up)(DrdSema* sema)
  * statement because some of the PTHREAD_MUTEX_ macro's may have the same
  * value.
  */
-static MutexT DRD_(pthread_to_drd_mutex_type)(const int kind)
+static MutexT DRD_(pthread_to_drd_mutex_type)(int kind)
 {
+   /*
+    * See also PTHREAD_MUTEX_KIND_MASK_NP in glibc source file
+    * <nptl/pthreadP.h>.
+    */
+   kind &= 3;
+
    if (kind == PTHREAD_MUTEX_RECURSIVE)
       return mutex_type_recursive_mutex;
    else if (kind == PTHREAD_MUTEX_ERRORCHECK)
@@ -258,9 +264,7 @@ static MutexT DRD_(pthread_to_drd_mutex_type)(const int kind)
       return mutex_type_default_mutex;
 #endif
    else
-   {
       return mutex_type_invalid_mutex;
-   }
 }
 
 #define IS_ALIGNED(p) (((uintptr_t)(p) & (sizeof(*(p)) - 1)) == 0)

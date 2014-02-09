@@ -1269,7 +1269,7 @@ PRE(sys_ppoll)
                     (Addr)(&ufds[i].fd), sizeof(ufds[i].fd) );
       PRE_MEM_READ( "ppoll(ufds.events)",
                     (Addr)(&ufds[i].events), sizeof(ufds[i].events) );
-      PRE_MEM_WRITE( "ppoll(ufd.reventss)",
+      PRE_MEM_WRITE( "ppoll(ufd.revents)",
                      (Addr)(&ufds[i].revents), sizeof(ufds[i].revents) );
    }
 

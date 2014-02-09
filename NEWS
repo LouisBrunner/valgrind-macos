@@ -48,6 +48,7 @@ where XXXXXX is the bug number as listed below.
 329612  Incorrect handling of AT_BASE for image execution 
 330459  --track-fds=yes doesn't track eventfds
 330469  Add clock_adjtime syscall support
+330941  Typo in PRE(poll) syscall wrapper
 
 Release 3.9.0 (31 October 2013)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

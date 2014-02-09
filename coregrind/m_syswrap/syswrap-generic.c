@@ -3785,7 +3785,7 @@ PRE(sys_poll)
                     (Addr)(&ufds[i].fd), sizeof(ufds[i].fd) );
       PRE_MEM_READ( "poll(ufds.events)",
                     (Addr)(&ufds[i].events), sizeof(ufds[i].events) );
-      PRE_MEM_WRITE( "poll(ufds.reventss)",
+      PRE_MEM_WRITE( "poll(ufds.revents)",
                      (Addr)(&ufds[i].revents), sizeof(ufds[i].revents) );
    }
 }

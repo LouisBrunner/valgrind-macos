@@ -15222,6 +15222,14 @@ DisResult disInstr_X86_WRK (
          break;
       }
 
+      case 0x05: /* AMD's syscall */
+         stmt( IRStmt_Put( OFFB_IP_AT_SYSCALL,
+              mkU32(guest_EIP_curr_instr) ) );
+         jmp_lit(&dres, Ijk_Sys_syscall, ((Addr32)guest_EIP_bbstart)+delta);
+         vassert(dres.whatNext == Dis_StopHere);
+         DIP("syscall\n");
+         break;
+
       /* =-=-=-=-=-=-=-=-=- unimp2 =-=-=-=-=-=-=-=-=-=-= */
 
       default:

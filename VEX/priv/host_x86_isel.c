@@ -4280,6 +4280,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          case Ijk_Sys_int128:
          case Ijk_Sys_int129:
          case Ijk_Sys_int130:
+         case Ijk_Sys_syscall:
          case Ijk_Sys_sysenter:
          case Ijk_TInval:
          case Ijk_Yield:
@@ -4378,6 +4379,7 @@ static void iselNext ( ISelEnv* env,
       case Ijk_Sys_int128:
       case Ijk_Sys_int129:
       case Ijk_Sys_int130:
+      case Ijk_Sys_syscall:
       case Ijk_Sys_sysenter:
       case Ijk_TInval:
       case Ijk_Yield:

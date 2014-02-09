@@ -34,6 +34,7 @@ To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
 
+308729  vex x86->IR: unhandled instruction bytes 0xf 0x5 (syscall) 
 325714  Empty vgcore but RLIMIT_CORE is big enough (too big) 
 326462  Refactor vgdb to isolate invoker stuff into separate module
 326983  Clear direction flag after tests on amd64.
@@ -48,6 +49,7 @@ where XXXXXX is the bug number as listed below.
 329612  Incorrect handling of AT_BASE for image execution 
 330459  --track-fds=yes doesn't track eventfds
 330469  Add clock_adjtime syscall support
+330939  Support for AMD's syscall instruction on x86
 330941  Typo in PRE(poll) syscall wrapper
 
 Release 3.9.0 (31 October 2013)

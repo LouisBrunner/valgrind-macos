@@ -249,7 +249,8 @@ static MutexT DRD_(pthread_to_drd_mutex_type)(int kind)
     * See also PTHREAD_MUTEX_KIND_MASK_NP in glibc source file
     * <nptl/pthreadP.h>.
     */
-   kind &= 3;
+   kind &= PTHREAD_MUTEX_RECURSIVE | PTHREAD_MUTEX_ERRORCHECK |
+      PTHREAD_MUTEX_NORMAL | PTHREAD_MUTEX_DEFAULT;
 
    if (kind == PTHREAD_MUTEX_RECURSIVE)
       return mutex_type_recursive_mutex;

@@ -78,9 +78,9 @@
    concerned) but have meaning for supporting Valgrind.  A special
    instruction is flagged by a 16-byte preamble:
 
-      32-bit mode: 54001800 54006800 5400E800 54009800
-                   (rlwinm 0,0,3,0,0; rlwinm 0,0,13,0,0; 
-                    rlwinm 0,0,29,0,0; rlwinm 0,0,19,0,0)
+      32-bit mode: 5400183E 5400683E 5400E83E 5400983E
+                   (rlwinm 0,0,3,0,31; rlwinm 0,0,13,0,31; 
+                    rlwinm 0,0,29,0,31; rlwinm 0,0,19,0,31)
 
       64-bit mode: 78001800 78006800 7800E802 78009802
                    (rotldi 0,0,3; rotldi 0,0,13;
@@ -18523,20 +18523,20 @@ DisResult disInstr_PPC_WRK (
       UChar* code = (UChar*)(guest_code + delta);
       /* Spot the 16-byte preamble: 
          32-bit mode:
-            54001800  rlwinm 0,0,3,0,0
-            54006800  rlwinm 0,0,13,0,0
-            5400E800  rlwinm 0,0,29,0,0
-            54009800  rlwinm 0,0,19,0,0
+            5400183E  rlwinm 0,0,3,0,31
+            5400683E  rlwinm 0,0,13,0,31
+            5400E83E  rlwinm 0,0,29,0,31
+            5400983E  rlwinm 0,0,19,0,31
          64-bit mode:
             78001800  rotldi 0,0,3
             78006800  rotldi 0,0,13
             7800E802  rotldi 0,0,61
             78009802  rotldi 0,0,51
       */
-      UInt word1 = mode64 ? 0x78001800 : 0x54001800;
-      UInt word2 = mode64 ? 0x78006800 : 0x54006800;
-      UInt word3 = mode64 ? 0x7800E802 : 0x5400E800;
-      UInt word4 = mode64 ? 0x78009802 : 0x54009800;
+      UInt word1 = mode64 ? 0x78001800 : 0x5400183E;
+      UInt word2 = mode64 ? 0x78006800 : 0x5400683E;
+      UInt word3 = mode64 ? 0x7800E802 : 0x5400E83E;
+      UInt word4 = mode64 ? 0x78009802 : 0x5400983E;
       if (getUIntBigendianly(code+ 0) == word1 &&
           getUIntBigendianly(code+ 4) == word2 &&
           getUIntBigendianly(code+ 8) == word3 &&

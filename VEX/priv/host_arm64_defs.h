@@ -325,17 +325,31 @@ typedef
       ARM64vecb_FDIV32x4,
       ARM64vecb_UMAX32x4,
       ARM64vecb_UMAX16x8,
+      ARM64vecb_UMAX8x16,
       ARM64vecb_UMIN32x4,
       ARM64vecb_UMIN16x8,
+      ARM64vecb_UMIN8x16,
       ARM64vecb_SMAX32x4,
       ARM64vecb_SMAX16x8,
+      ARM64vecb_SMAX8x16,
       ARM64vecb_SMIN32x4,
       ARM64vecb_SMIN16x8,
+      ARM64vecb_SMIN8x16,
       ARM64vecb_AND,
       ARM64vecb_ORR,
       ARM64vecb_INVALID
    }
    ARM64VecBinOp;
+
+typedef
+   enum {
+      ARM64vecu_FNEG64x2=300,
+      ARM64vecu_FNEG32x4,
+      ARM64vecu_FABS64x2,
+      ARM64vecu_FABS32x4,
+      ARM64vecu_INVALID
+   }
+   ARM64VecUnaryOp;
 
 //ZZ extern const HChar* showARMVfpUnaryOp ( ARMVfpUnaryOp op );
 //ZZ 
@@ -518,6 +532,7 @@ typedef
       ARM64in_FPCR,
       /* ARM64in_V*V: vector ops on vector registers */
       ARM64in_VBinV,
+      ARM64in_VUnaryV,
       ARM64in_VNarrowV,
 //ZZ       ARMin_VAluS,
 //ZZ       ARMin_VCMovD,
@@ -791,6 +806,12 @@ typedef
             HReg          argL;
             HReg          argR;
          } VBinV;
+         /* unary vector operation on vector registers */
+         struct {
+            ARM64VecUnaryOp op;
+            HReg            dst;
+            HReg            arg;
+         } VUnaryV;
          /* vector narrowing, Q -> Q.  Result goes in the bottom half
             of dst and the top half is zeroed out.  Iow is XTN. */
         struct {
@@ -999,6 +1020,7 @@ extern ARM64Instr* ARM64Instr_VCmpD   ( HReg argL, HReg argR );
 extern ARM64Instr* ARM64Instr_VCmpS   ( HReg argL, HReg argR );
 extern ARM64Instr* ARM64Instr_FPCR    ( Bool toFPCR, HReg iReg );
 extern ARM64Instr* ARM64Instr_VBinV   ( ARM64VecBinOp op, HReg, HReg, HReg );
+extern ARM64Instr* ARM64Instr_VUnaryV ( ARM64VecUnaryOp op, HReg, HReg );
 extern ARM64Instr* ARM64Instr_VNarrowV ( UInt dszBlg2, HReg dst, HReg src );
 //ZZ extern ARMInstr* ARMInstr_VAluS    ( ARMVfpOp op, HReg, HReg, HReg );
 //ZZ extern ARMInstr* ARMInstr_VCMovD   ( ARMCondCode, HReg dst, HReg src );

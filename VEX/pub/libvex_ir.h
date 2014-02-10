@@ -1267,13 +1267,11 @@ typedef
       Iop_CmpEQ32Fx4, Iop_CmpLT32Fx4, Iop_CmpLE32Fx4, Iop_CmpUN32Fx4,
       Iop_CmpGT32Fx4, Iop_CmpGE32Fx4,
 
-      /* Vector Absolute */
-      Iop_Abs32Fx4,
-
       /* Pairwise Max and Min. See integer pairwise operations for details. */
       Iop_PwMax32Fx4, Iop_PwMin32Fx4,
 
       /* unary */
+      Iop_Abs32Fx4,
       Iop_Sqrt32Fx4, Iop_RSqrt32Fx4,
       Iop_Neg32Fx4,
 
@@ -1338,7 +1336,12 @@ typedef
       Iop_CmpEQ64Fx2, Iop_CmpLT64Fx2, Iop_CmpLE64Fx2, Iop_CmpUN64Fx2, 
 
       /* unary */
-      Iop_Recip64Fx2, Iop_Sqrt64Fx2, Iop_RSqrt64Fx2,
+      Iop_Abs64Fx2,
+      Iop_Sqrt64Fx2, Iop_RSqrt64Fx2,
+      Iop_Neg64Fx2,
+
+      /* Vector Reciprocal Estimate */
+      Iop_Recip64Fx2, 
 
       /* --- 64x2 lowest-lane-only scalar FP --- */
 

@@ -4376,6 +4376,8 @@ static IRExpr* mk_CatEvenLanes32x4 ( IRTemp, IRTemp );
 static IRExpr* mk_CatOddLanes32x4  ( IRTemp, IRTemp );
 static IRExpr* mk_CatEvenLanes16x8 ( IRTemp, IRTemp );
 static IRExpr* mk_CatOddLanes16x8  ( IRTemp, IRTemp );
+static IRExpr* mk_CatEvenLanes8x16 ( IRTemp, IRTemp );
+static IRExpr* mk_CatOddLanes8x16  ( IRTemp, IRTemp );
 /* end FIXME -- rm temp scaffolding */
 
 /* Generate N copies of |bit| in the bottom of a ULong. */
@@ -4390,6 +4392,28 @@ static ULong Replicate ( ULong bit, Int N )
    }
 }
 
+static ULong Replicate32x2 ( ULong bits32 )
+{
+   vassert(0 == (bits32 & ~0xFFFFFFFFULL));
+   return (bits32 << 32) | bits32;
+}
+
+static ULong Replicate16x4 ( ULong bits16 )
+{
+   vassert(0 == (bits16 & ~0xFFFFULL));
+   return Replicate32x2((bits16 << 16) | bits16);
+}
+
+static ULong Replicate8x8 ( ULong bits8 )
+{
+   vassert(0 == (bits8 & ~0xFFULL));
+   return Replicate16x4((bits8 << 8) | bits8);
+}
+
+/* Expand the VFPExpandImm-style encoding in the bottom 8 bits of
+   |imm8| to either a 32-bit value if N is 32 or a 64 bit value if N
+   is 64.  In the former case, the upper 32 bits of the returned value
+   are guaranteed to be zero. */
 static ULong VFPExpandImm ( ULong imm8, Int N )
 {
    vassert(imm8 <= 0xFF);
@@ -4410,6 +4434,88 @@ static ULong VFPExpandImm ( ULong imm8, Int N )
    ULong res = (sign << (E+F)) | (exp << F) | frac;
    return res;
 }
+
+/* Expand an AdvSIMDExpandImm-style encoding into a 64-bit value.
+   This might fail, as indicated by the returned Bool.  Page 2530 of
+   the manual. */
+static Bool AdvSIMDExpandImm ( /*OUT*/ULong* res,
+                               UInt op, UInt cmode, UInt imm8 )
+{
+   vassert(op <= 1);
+   vassert(cmode <= 15);
+   vassert(imm8 <= 255);
+
+   *res = 0; /* will overwrite iff returning True */
+
+   ULong imm64    = 0;
+   Bool  testimm8 = False;
+
+   switch (cmode >> 1) {
+      case 0:
+         testimm8 = False; imm64 = Replicate32x2(imm8); break;
+      case 1:
+         testimm8 = True; imm64 = Replicate32x2(imm8 << 8); break;
+      case 2:
+         testimm8 = True; imm64 = Replicate32x2(imm8 << 16); break;
+      case 3:
+         testimm8 = True; imm64 = Replicate32x2(imm8 << 24); break;
+      case 4:
+          testimm8 = False; imm64 = Replicate16x4(imm8); break;
+      case 5:
+          testimm8 = True; imm64 = Replicate16x4(imm8 << 8); break;
+      case 6:
+          testimm8 = True;
+          if ((cmode & 1) == 0)
+              imm64 = Replicate32x2((imm8 << 8) | 0xFF);
+          else
+              imm64 = Replicate32x2((imm8 << 16) | 0xFFFF);
+          break;
+      case 7:
+         testimm8 = False;
+         if ((cmode & 1) == 0 && op == 0)
+             imm64 = Replicate8x8(imm8);
+         if ((cmode & 1) == 0 && op == 1) {
+             imm64 = 0;   imm64 |= (imm8 & 0x80) ? 0xFF : 0x00;
+             imm64 <<= 8; imm64 |= (imm8 & 0x40) ? 0xFF : 0x00;
+             imm64 <<= 8; imm64 |= (imm8 & 0x20) ? 0xFF : 0x00;
+             imm64 <<= 8; imm64 |= (imm8 & 0x10) ? 0xFF : 0x00;
+             imm64 <<= 8; imm64 |= (imm8 & 0x08) ? 0xFF : 0x00;
+             imm64 <<= 8; imm64 |= (imm8 & 0x04) ? 0xFF : 0x00;
+             imm64 <<= 8; imm64 |= (imm8 & 0x02) ? 0xFF : 0x00;
+             imm64 <<= 8; imm64 |= (imm8 & 0x01) ? 0xFF : 0x00;
+         }
+         if ((cmode & 1) == 1 && op == 0) {
+            ULong imm8_7  = (imm8 >> 7) & 1;
+            ULong imm8_6  = (imm8 >> 6) & 1;
+            ULong imm8_50 = imm8 & 63;
+            ULong imm32 = (imm8_7                 << (1 + 5 + 6 + 19))
+                          | ((imm8_6 ^ 1)         << (5 + 6 + 19))
+                          | (Replicate(imm8_6, 5) << (6 + 19))
+                          | (imm8_50              << 19);
+            imm64 = Replicate32x2(imm32);
+         }
+         if ((cmode & 1) == 1 && op == 1) {
+            // imm64 = imm8<7>:NOT(imm8<6>)
+            //                :Replicate(imm8<6>,8):imm8<5:0>:Zeros(48);
+            ULong imm8_7  = (imm8 >> 7) & 1;
+            ULong imm8_6  = (imm8 >> 6) & 1;
+            ULong imm8_50 = imm8 & 63;
+            imm64 = (imm8_7 << 63) | ((imm8_6 ^ 1) << 62)
+                    | (Replicate(imm8_6, 8) << 54)
+                    | (imm8_50 << 48);
+         }
+         break;
+      default:
+        vassert(0);
+   }
+
+   if (testimm8 && imm8 == 0)
+      return False;
+
+   *res = imm64;
+   return True;
+}
+
 
 /* Help a bit for decoding laneage for vector operations that can be
    of the form 4x32, 2x64 or 2x32-and-zero-upper-half, as encoded by Q
@@ -4489,7 +4595,105 @@ static IRTemp math_MINMAXV ( IRTemp src, IROp op )
    switch (op) {
       case Iop_Min8Sx16: case Iop_Min8Ux16:
       case Iop_Max8Sx16: case Iop_Max8Ux16: {
-         return IRTemp_INVALID; // ATC
+         /* NB: temp naming here is misleading -- the naming is for 8
+            lanes of 16 bit, whereas what is being operated on is 16
+            lanes of 8 bits. */
+         IRTemp x76543210 = src;
+         IRTemp x76547654 = newTemp(Ity_V128);
+         IRTemp x32103210 = newTemp(Ity_V128);
+         assign(x76547654, mk_CatOddLanes64x2 (x76543210, x76543210));
+         assign(x32103210, mk_CatEvenLanes64x2(x76543210, x76543210));
+         IRTemp x76767676 = newTemp(Ity_V128);
+         IRTemp x54545454 = newTemp(Ity_V128);
+         IRTemp x32323232 = newTemp(Ity_V128);
+         IRTemp x10101010 = newTemp(Ity_V128);
+         assign(x76767676, mk_CatOddLanes32x4 (x76547654, x76547654));
+         assign(x54545454, mk_CatEvenLanes32x4(x76547654, x76547654));
+         assign(x32323232, mk_CatOddLanes32x4 (x32103210, x32103210));
+         assign(x10101010, mk_CatEvenLanes32x4(x32103210, x32103210));
+         IRTemp x77777777 = newTemp(Ity_V128);
+         IRTemp x66666666 = newTemp(Ity_V128);
+         IRTemp x55555555 = newTemp(Ity_V128);
+         IRTemp x44444444 = newTemp(Ity_V128);
+         IRTemp x33333333 = newTemp(Ity_V128);
+         IRTemp x22222222 = newTemp(Ity_V128);
+         IRTemp x11111111 = newTemp(Ity_V128);
+         IRTemp x00000000 = newTemp(Ity_V128);
+         assign(x77777777, mk_CatOddLanes16x8 (x76767676, x76767676));
+         assign(x66666666, mk_CatEvenLanes16x8(x76767676, x76767676));
+         assign(x55555555, mk_CatOddLanes16x8 (x54545454, x54545454));
+         assign(x44444444, mk_CatEvenLanes16x8(x54545454, x54545454));
+         assign(x33333333, mk_CatOddLanes16x8 (x32323232, x32323232));
+         assign(x22222222, mk_CatEvenLanes16x8(x32323232, x32323232));
+         assign(x11111111, mk_CatOddLanes16x8 (x10101010, x10101010));
+         assign(x00000000, mk_CatEvenLanes16x8(x10101010, x10101010));
+         /* Naming not misleading after here. */
+         IRTemp xAllF = newTemp(Ity_V128);
+         IRTemp xAllE = newTemp(Ity_V128);
+         IRTemp xAllD = newTemp(Ity_V128);
+         IRTemp xAllC = newTemp(Ity_V128);
+         IRTemp xAllB = newTemp(Ity_V128);
+         IRTemp xAllA = newTemp(Ity_V128);
+         IRTemp xAll9 = newTemp(Ity_V128);
+         IRTemp xAll8 = newTemp(Ity_V128);
+         IRTemp xAll7 = newTemp(Ity_V128);
+         IRTemp xAll6 = newTemp(Ity_V128);
+         IRTemp xAll5 = newTemp(Ity_V128);
+         IRTemp xAll4 = newTemp(Ity_V128);
+         IRTemp xAll3 = newTemp(Ity_V128);
+         IRTemp xAll2 = newTemp(Ity_V128);
+         IRTemp xAll1 = newTemp(Ity_V128);
+         IRTemp xAll0 = newTemp(Ity_V128);
+         assign(xAllF, mk_CatOddLanes8x16 (x77777777, x77777777));
+         assign(xAllE, mk_CatEvenLanes8x16(x77777777, x77777777));
+         assign(xAllD, mk_CatOddLanes8x16 (x66666666, x66666666));
+         assign(xAllC, mk_CatEvenLanes8x16(x66666666, x66666666));
+         assign(xAllB, mk_CatOddLanes8x16 (x55555555, x55555555));
+         assign(xAllA, mk_CatEvenLanes8x16(x55555555, x55555555));
+         assign(xAll9, mk_CatOddLanes8x16 (x44444444, x44444444));
+         assign(xAll8, mk_CatEvenLanes8x16(x44444444, x44444444));
+         assign(xAll7, mk_CatOddLanes8x16 (x33333333, x33333333));
+         assign(xAll6, mk_CatEvenLanes8x16(x33333333, x33333333));
+         assign(xAll5, mk_CatOddLanes8x16 (x22222222, x22222222));
+         assign(xAll4, mk_CatEvenLanes8x16(x22222222, x22222222));
+         assign(xAll3, mk_CatOddLanes8x16 (x11111111, x11111111));
+         assign(xAll2, mk_CatEvenLanes8x16(x11111111, x11111111));
+         assign(xAll1, mk_CatOddLanes8x16 (x00000000, x00000000));
+         assign(xAll0, mk_CatEvenLanes8x16(x00000000, x00000000));
+         IRTemp maxFE = newTemp(Ity_V128);
+         IRTemp maxDC = newTemp(Ity_V128);
+         IRTemp maxBA = newTemp(Ity_V128);
+         IRTemp max98 = newTemp(Ity_V128);
+         IRTemp max76 = newTemp(Ity_V128);
+         IRTemp max54 = newTemp(Ity_V128);
+         IRTemp max32 = newTemp(Ity_V128);
+         IRTemp max10 = newTemp(Ity_V128);
+         assign(maxFE, binop(op, mkexpr(xAllF), mkexpr(xAllE)));
+         assign(maxDC, binop(op, mkexpr(xAllD), mkexpr(xAllC)));
+         assign(maxBA, binop(op, mkexpr(xAllB), mkexpr(xAllA)));
+         assign(max98, binop(op, mkexpr(xAll9), mkexpr(xAll8)));
+         assign(max76, binop(op, mkexpr(xAll7), mkexpr(xAll6)));
+         assign(max54, binop(op, mkexpr(xAll5), mkexpr(xAll4)));
+         assign(max32, binop(op, mkexpr(xAll3), mkexpr(xAll2)));
+         assign(max10, binop(op, mkexpr(xAll1), mkexpr(xAll0)));
+         IRTemp maxFEDC = newTemp(Ity_V128);
+         IRTemp maxBA98 = newTemp(Ity_V128);
+         IRTemp max7654 = newTemp(Ity_V128);
+         IRTemp max3210 = newTemp(Ity_V128);
+         assign(maxFEDC, binop(op, mkexpr(maxFE), mkexpr(maxDC)));
+         assign(maxBA98, binop(op, mkexpr(maxBA), mkexpr(max98)));
+         assign(max7654, binop(op, mkexpr(max76), mkexpr(max54)));
+         assign(max3210, binop(op, mkexpr(max32), mkexpr(max10)));
+         IRTemp maxFEDCBA98 = newTemp(Ity_V128);
+         IRTemp max76543210 = newTemp(Ity_V128);
+         assign(maxFEDCBA98, binop(op, mkexpr(maxFEDC), mkexpr(maxBA98)));
+         assign(max76543210, binop(op, mkexpr(max7654), mkexpr(max3210)));
+         IRTemp maxAllLanes = newTemp(Ity_V128);
+         assign(maxAllLanes, binop(op, mkexpr(maxFEDCBA98),
+                                       mkexpr(max76543210)));
+         IRTemp res = newTemp(Ity_V128);
+         assign(res, unop(Iop_ZeroHI120ofV128, mkexpr(maxAllLanes)));
+         return res;
       }
       case Iop_Min16Sx8: case Iop_Min16Ux8:
       case Iop_Max16Sx8: case Iop_Max16Ux8: {
@@ -4672,6 +4876,80 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
+#if 0
+   /* -------------- FMOV (vector, immediate) -------------- */
+   /* 31  28          18  15     9     4
+      011 01111 00000 abc 111101 defgh d  FMOV Vd.2d, #imm
+      0q0 01111 00000 abc 111101 defgh d  FMOV Vd.2s, #imm (q=0)
+                                          FMOV Vd.4s, #imm (q=1)
+   */
+   if (INSN(31,31) == 0
+       && INSN(28,19) == BITS10(0,1,1,1,1,0,0,0,0,0)
+       && INSN(15,10) == BITS6(1,1,1,1,0,1)
+       && INSN(30,29) != BITS2(0,1)) {
+      UInt  bitQ    = INSN(30,30);
+      UInt  bitOP   = INSN(29,29);
+      UInt  cmode   = INSN(15,12);
+      UInt  imm8    = (INSN(18,16) << 5) | INSN(9,5);
+      UInt  dd      = INSN(4,0);
+      ULong imm64lo = 0;
+      Bool  ok      = AdvSIMDExpandImm(&imm64lo, bitOP, cmode, imm8);
+      vassert(! (bitOP == 1 && bitQ == 0) );
+      if (ok) {
+         ULong imm64hi = (bitQ == 0 && bitOP == 0)  ? 0  : imm64lo;
+         putQReg128(dd, binop(Iop_64HLtoV128, mkU64(imm64hi), mkU64(imm64lo)));
+         const HChar* ar[4] = { "2s", "??", "4s", "2d" };
+         DIP("fmov %s.%s, #0x%llx\n",
+             nameQReg128(dd), ar[INSN(30,29)], imm64lo);
+         return True;
+      }
+      /* else fall through */
+   }
+#else
+   /* -------------- {FMOV,MOVI} (vector, immediate) -------------- */
+   /* 31    28          18  15    11 9     4
+      0q op 01111 00000 abc cmode 01 defgh d  MOV Dd,   #imm (q=0)
+                                              MOV Vd.2d #imm (q=1)
+      Allowable op:cmode
+         FMOV = 1:1111
+         MOVI = 0:xx00, 1:0x00, 1:10x0, 1:110x, 11110
+   */
+   if (INSN(31,31) == 0
+       && INSN(28,19) == BITS10(0,1,1,1,1,0,0,0,0,0)
+       && INSN(11,10) == BITS2(0,1)) {
+      UInt  bitQ     = INSN(30,30);
+      UInt  bitOP    = INSN(29,29);
+      UInt  cmode    = INSN(15,12);
+      UInt  imm8     = (INSN(18,16) << 5) | INSN(9,5);
+      UInt  dd       = INSN(4,0);
+      ULong imm64lo  = 0;
+      UInt  op_cmode = (bitOP << 4) | cmode;
+      Bool  ok       = False;
+      switch (op_cmode) {
+         case BITS5(1,1,1,1,1): // 1:1111
+         case BITS5(0,0,0,0,0): case BITS5(0,0,1,0,0):
+         case BITS5(0,1,0,0,0): case BITS5(0,1,1,0,0): // 0:xx00
+         case BITS5(1,0,0,0,0): case BITS5(1,0,1,0,0): // 1:0x00
+         case BITS5(1,1,0,0,0): case BITS5(1,1,0,1,0): // 1:10x0
+         case BITS5(1,1,1,0,0): case BITS5(1,1,1,0,1): // 1:110x
+         case BITS5(1,1,1,1,0): // 1:1110
+            ok = True; break;
+         default:
+           break;
+      }
+      if (ok) {
+         ok = AdvSIMDExpandImm(&imm64lo, bitOP, cmode, imm8);
+      }
+      if (ok) {
+         ULong imm64hi = (bitQ == 0 && bitOP == 0)  ? 0  : imm64lo;
+         putQReg128(dd, binop(Iop_64HLtoV128, mkU64(imm64hi), mkU64(imm64lo)));
+         DIP("mov %s, #0x016%llx'%016llx\n", nameQReg128(dd), imm64hi, imm64lo);
+         return True;
+      }
+      /* else fall through */
+   }
+#endif
+
    /* -------------- {S,U}CVTF (scalar, integer) -------------- */
    /* 31  28    23 21 20 18  15     9 4                  ix
       000 11110 00 1  00 010 000000 n d  SCVTF Sd, Wn    0
@@ -4757,7 +5035,7 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
       000 11110 01 10000 00 10000 n d  FMOV Dd, Dn
       ------------------ 01 ---------  FABS ------
       ------------------ 10 ---------  FNEG ------
-      ------------------ 11 ---------  FQSRT -----
+      ------------------ 11 ---------  FSQRT -----
    */
    if (INSN(31,23) == BITS9(0,0,0,1,1,1,1,0,0)
        && INSN(21,17) == BITS5(1,0,0,0,0)
@@ -4796,6 +5074,39 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
          return True;
       }
       /* else fall through; other cases are ATC */
+   }
+
+   /* ---------------- F{ABS,NEG} (vector) ---------------- */
+   /* 31  28      22 21    16       9 4
+      0q0 01110 1 sz 10000 01111 10 n d  FABS Vd.T, Vn.T
+      0q1 01110 1 sz 10000 01111 10 n d  FNEG Vd.T, Vn.T
+   */
+   if (INSN(31,31) == 0 && INSN(28,23) == BITS6(0,1,1,1,0,1)
+       && INSN(21,17) == BITS5(1,0,0,0,0)
+       && INSN(16,10) == BITS7(0,1,1,1,1,1,0)) {
+      UInt bitQ   = INSN(30,30);
+      UInt bitSZ  = INSN(22,22);
+      Bool isFNEG = INSN(29,29) == 1;
+      UInt nn     = INSN(9,5);
+      UInt dd     = INSN(4,0);
+      const HChar* ar = "??";
+      IRType tyF    = Ity_INVALID;
+      Bool   zeroHI = False;
+      Bool   ok     = getLaneInfo_Q_SZ(NULL, &tyF, NULL, &zeroHI, &ar,
+                                       (Bool)bitQ, (Bool)bitSZ);
+      if (ok) {
+         vassert(tyF == Ity_F64 || tyF == Ity_I32);
+         IROp op = (tyF == Ity_F64) ? (isFNEG ? Iop_Neg64Fx2 : Iop_Abs64Fx2)
+                                    : (isFNEG ? Iop_Neg32Fx4 : Iop_Abs32Fx4);
+         IRTemp res = newTemp(Ity_V128);
+         assign(res, unop(op, getQReg128(nn)));
+         putQReg128(dd, zeroHI ? unop(Iop_ZeroHI64ofV128, mkexpr(res))
+                               : mkexpr(res));
+         DIP("%s %s.%s, %s.%s\n", isFNEG ? "fneg" : "fabs",
+             nameQReg128(dd), ar, nameQReg128(nn), ar);
+         return True;
+      }
+      /* else fall through */
    }
 
    /* -------------------- FCMP,FCMPE -------------------- */
@@ -5179,6 +5490,23 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
              nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(mm), arr);
          return True;
       }
+      if (ok && ix >= 5 && ix <= 6) {
+         IROp opADD = laneTy==Ity_F64 ? Iop_Add64Fx2 : Iop_Add32Fx4;
+         IROp opSUB = laneTy==Ity_F64 ? Iop_Sub64Fx2 : Iop_Sub32Fx4;
+         IROp opMUL = laneTy==Ity_F64 ? Iop_Mul64Fx2 : Iop_Mul32Fx4;
+         IRTemp rm = mk_get_IR_rounding_mode();
+         IRTemp t1 = newTemp(Ity_V128);
+         IRTemp t2 = newTemp(Ity_V128);
+         // FIXME: double rounding; use FMA primops instead
+         assign(t1, triop(opMUL,
+                          mkexpr(rm), getQReg128(nn), getQReg128(mm)));
+         assign(t2, triop(ix == 5 ? opADD : opSUB,
+                          mkexpr(rm), getQReg128(dd), mkexpr(t1)));
+         putQReg128(dd, mkexpr(t2));
+         DIP("%s %s.%s, %s.%s, %s.%s\n", ix == 5 ? "fmla" : "fmls",
+             nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(mm), arr);
+         return True;
+      }
    }
 
    /* ---------------- ADD/SUB (vector) ---------------- */
@@ -5402,6 +5730,36 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
          return True;
       }
       /* else fall through */
+   }
+
+   /* ------------ {AND,BIC,ORR,ORN} (vector) ------------ */
+   /* 31  28    23  20 15     9 4
+      0q0 01110 001 m  000111 n d  AND Vd.T, Vn.T, Vm.T
+      0q0 01110 011 m  000111 n d  BIC Vd.T, Vn.T, Vm.T
+      0q0 01110 101 m  000111 n d  ORR Vd.T, Vn.T, Vm.T
+      0q0 01110 111 m  000111 n d  ORN Vd.T, Vn.T, Vm.T
+      T is 16b when q==1, 8b when q==0
+   */
+   if (INSN(31,31) == 0 && INSN(29,24) == BITS6(0,0,1,1,1,0)
+       && INSN(21,21) == 1 && INSN(15,10) == BITS6(0,0,0,1,1,1)) {
+      Bool   isQ    = INSN(30,30) == 1;
+      Bool   isORR  = INSN(23,23) == 1;
+      Bool   invert = INSN(22,22) == 1;
+      UInt   mm     = INSN(20,16);
+      UInt   nn     = INSN(9,5);
+      UInt   dd     = INSN(4,0);
+      IRTemp res    = newTemp(Ity_V128);
+      assign(res, binop(isORR ? Iop_OrV128 : Iop_AndV128,
+                        getQReg128(nn),
+                        invert ? unop(Iop_NotV128, getQReg128(mm))
+                               : getQReg128(mm)));
+      putQReg128(dd, isQ ? mkexpr(res)
+                         : unop(Iop_ZeroHI64ofV128, mkexpr(res)));
+      const HChar* names[4] = { "and", "bic", "orr", "orn" };
+      const HChar* ar = isQ ? "16b" : "8b";
+      DIP("%s %s.%s, %s.%s, %s.%s\n", names[INSN(23,22)],
+          nameQReg128(dd), ar, nameQReg128(nn), ar, nameQReg128(mm), ar);
+      return True;
    }
 
    /* -------------------- XTN{,2} -------------------- */
@@ -6149,6 +6507,183 @@ static IRExpr* mk_CatOddLanes16x8 ( IRTemp a76543210, IRTemp b76543210 )
   breakV128to16s(&a7, NULL, &a5, NULL, &a3, NULL, &a1, NULL, a76543210);
   breakV128to16s(&b7, NULL, &b5, NULL, &b3, NULL, &b1, NULL, b76543210);
   return mkexpr(mkV128from16s(a7, a5, a3, a1, b7, b5, b3, b1));
+}
+
+////////////////////////////////////////////////////////////////
+// 8x16 operations
+//
+
+static void breakV128to8s ( IRTemp* outF, IRTemp* outE, IRTemp* outD, 
+                            IRTemp* outC, IRTemp* outB, IRTemp* outA, 
+                            IRTemp* out9, IRTemp* out8, 
+                            IRTemp* out7, IRTemp* out6, IRTemp* out5,
+                            IRTemp* out4, IRTemp* out3, IRTemp* out2,
+                            IRTemp* out1,IRTemp* out0, IRTemp v128 )
+{
+  if (outF) *outF = newTemp(Ity_I64);
+  if (outE) *outE = newTemp(Ity_I64);
+  if (outD) *outD = newTemp(Ity_I64);
+  if (outC) *outC = newTemp(Ity_I64);
+  if (outB) *outB = newTemp(Ity_I64);
+  if (outA) *outA = newTemp(Ity_I64);
+  if (out9) *out9 = newTemp(Ity_I64);
+  if (out8) *out8 = newTemp(Ity_I64);
+  if (out7) *out7 = newTemp(Ity_I64);
+  if (out6) *out6 = newTemp(Ity_I64);
+  if (out5) *out5 = newTemp(Ity_I64);
+  if (out4) *out4 = newTemp(Ity_I64);
+  if (out3) *out3 = newTemp(Ity_I64);
+  if (out2) *out2 = newTemp(Ity_I64);
+  if (out1) *out1 = newTemp(Ity_I64);
+  if (out0) *out0 = newTemp(Ity_I64);
+  IRTemp hi64 = newTemp(Ity_I64);
+  IRTemp lo64 = newTemp(Ity_I64);
+  assign(hi64, unop(Iop_V128HIto64, mkexpr(v128)) );
+  assign(lo64, unop(Iop_V128to64,   mkexpr(v128)) );
+  if (outF)
+    assign(*outF, binop(Iop_And64,
+                        binop(Iop_Shr64, mkexpr(hi64), mkU8(56)),
+                        mkU64(0xFF)));
+  if (outE)
+    assign(*outE, binop(Iop_And64,
+                        binop(Iop_Shr64, mkexpr(hi64), mkU8(48)),
+                        mkU64(0xFF)));
+  if (outD)
+    assign(*outD, binop(Iop_And64,
+                        binop(Iop_Shr64, mkexpr(hi64), mkU8(40)),
+                        mkU64(0xFF)));
+  if (outC)
+    assign(*outC, binop(Iop_And64,
+                        binop(Iop_Shr64, mkexpr(hi64), mkU8(32)),
+                        mkU64(0xFF)));
+  if (outB)
+    assign(*outB, binop(Iop_And64,
+                        binop(Iop_Shr64, mkexpr(hi64), mkU8(24)),
+                        mkU64(0xFF)));
+  if (outA)
+    assign(*outA, binop(Iop_And64,
+                        binop(Iop_Shr64, mkexpr(hi64), mkU8(16)),
+                        mkU64(0xFF)));
+  if (out9)
+    assign(*out9, binop(Iop_And64,
+                        binop(Iop_Shr64, mkexpr(hi64), mkU8(8)),
+                        mkU64(0xFF)));
+  if (out8)
+    assign(*out8, binop(Iop_And64,
+                        binop(Iop_Shr64, mkexpr(hi64), mkU8(0)),
+                        mkU64(0xFF)));
+  if (out7)
+    assign(*out7, binop(Iop_And64,
+                        binop(Iop_Shr64, mkexpr(lo64), mkU8(56)),
+                        mkU64(0xFF)));
+  if (out6)
+    assign(*out6, binop(Iop_And64,
+                        binop(Iop_Shr64, mkexpr(lo64), mkU8(48)),
+                        mkU64(0xFF)));
+  if (out5)
+    assign(*out5, binop(Iop_And64,
+                        binop(Iop_Shr64, mkexpr(lo64), mkU8(40)),
+                        mkU64(0xFF)));
+  if (out4)
+    assign(*out4, binop(Iop_And64,
+                        binop(Iop_Shr64, mkexpr(lo64), mkU8(32)),
+                        mkU64(0xFF)));
+  if (out3)
+    assign(*out3, binop(Iop_And64,
+                        binop(Iop_Shr64, mkexpr(lo64), mkU8(24)),
+                        mkU64(0xFF)));
+  if (out2)
+    assign(*out2, binop(Iop_And64,
+                        binop(Iop_Shr64, mkexpr(lo64), mkU8(16)),
+                        mkU64(0xFF)));
+  if (out1)
+    assign(*out1, binop(Iop_And64,
+                        binop(Iop_Shr64, mkexpr(lo64), mkU8(8)),
+                        mkU64(0xFF)));
+  if (out0)
+    assign(*out0, binop(Iop_And64,
+                        binop(Iop_Shr64, mkexpr(lo64), mkU8(0)),
+                        mkU64(0xFF)));
+}
+
+static IRTemp mkV128from8s ( IRTemp inF, IRTemp inE, IRTemp inD, IRTemp inC,
+                             IRTemp inB, IRTemp inA, IRTemp in9, IRTemp in8,
+                             IRTemp in7, IRTemp in6, IRTemp in5, IRTemp in4,
+                             IRTemp in3, IRTemp in2, IRTemp in1, IRTemp in0 )
+{
+  IRTemp vFE = newTemp(Ity_I64);
+  IRTemp vDC = newTemp(Ity_I64);
+  IRTemp vBA = newTemp(Ity_I64);
+  IRTemp v98 = newTemp(Ity_I64);
+  IRTemp v76 = newTemp(Ity_I64);
+  IRTemp v54 = newTemp(Ity_I64);
+  IRTemp v32 = newTemp(Ity_I64);
+  IRTemp v10 = newTemp(Ity_I64);
+  assign(vFE, binop(Iop_Or64,
+                    binop(Iop_Shl64,
+                          binop(Iop_And64, mkexpr(inF), mkU64(0xFF)), mkU8(8)),
+                    binop(Iop_And64, mkexpr(inE), mkU64(0xFF))));
+  assign(vDC, binop(Iop_Or64,
+                    binop(Iop_Shl64,
+                          binop(Iop_And64, mkexpr(inD), mkU64(0xFF)), mkU8(8)),
+                    binop(Iop_And64, mkexpr(inC), mkU64(0xFF))));
+  assign(vBA, binop(Iop_Or64,
+                    binop(Iop_Shl64,
+                          binop(Iop_And64, mkexpr(inB), mkU64(0xFF)), mkU8(8)),
+                    binop(Iop_And64, mkexpr(inA), mkU64(0xFF))));
+  assign(v98, binop(Iop_Or64,
+                    binop(Iop_Shl64,
+                          binop(Iop_And64, mkexpr(in9), mkU64(0xFF)), mkU8(8)),
+                    binop(Iop_And64, mkexpr(in8), mkU64(0xFF))));
+  assign(v76, binop(Iop_Or64,
+                    binop(Iop_Shl64,
+                          binop(Iop_And64, mkexpr(in7), mkU64(0xFF)), mkU8(8)),
+                    binop(Iop_And64, mkexpr(in6), mkU64(0xFF))));
+  assign(v54, binop(Iop_Or64,
+                    binop(Iop_Shl64,
+                          binop(Iop_And64, mkexpr(in5), mkU64(0xFF)), mkU8(8)),
+                    binop(Iop_And64, mkexpr(in4), mkU64(0xFF))));
+  assign(v32, binop(Iop_Or64,
+                    binop(Iop_Shl64,
+                          binop(Iop_And64, mkexpr(in3), mkU64(0xFF)), mkU8(8)),
+                    binop(Iop_And64, mkexpr(in2), mkU64(0xFF))));
+  assign(v10, binop(Iop_Or64,
+                    binop(Iop_Shl64,
+                          binop(Iop_And64, mkexpr(in1), mkU64(0xFF)), mkU8(8)),
+                    binop(Iop_And64, mkexpr(in0), mkU64(0xFF))));
+  return mkV128from16s(vFE, vDC, vBA, v98, v76, v54, v32, v10);
+}
+
+static IRExpr* mk_CatEvenLanes8x16 ( IRTemp aFEDCBA9876543210,
+                                     IRTemp bFEDCBA9876543210 )
+{
+  // returns aE aC aA a8 a6 a4 a2 a0 bE bC bA b8 b6 b4 b2 b0
+  IRTemp aE, aC, aA, a8, a6, a4, a2, a0, bE, bC, bA, b8, b6, b4, b2, b0;
+  breakV128to8s(NULL, &aE, NULL, &aC, NULL, &aA, NULL, &a8, 
+                NULL, &a6, NULL, &a4, NULL, &a2, NULL, &a0,
+                aFEDCBA9876543210);
+  breakV128to8s(NULL, &bE, NULL, &bC, NULL, &bA, NULL, &b8, 
+                NULL, &b6, NULL, &b4, NULL, &b2, NULL, &b0,
+                bFEDCBA9876543210);
+  return mkexpr(mkV128from8s(aE, aC, aA, a8, a6, a4, a2, a0,
+                             bE, bC, bA, b8, b6, b4, b2, b0));
+}
+
+static IRExpr* mk_CatOddLanes8x16 ( IRTemp aFEDCBA9876543210,
+                                    IRTemp bFEDCBA9876543210 )
+{
+  // returns aF aD aB a9 a7 a5 a3 a1 bF bD bB b9 b7 b5 b3 b1
+  IRTemp aF, aD, aB, a9, a7, a5, a3, a1, bF, bD, bB, b9, b7, b5, b3, b1;
+  breakV128to8s(&aF, NULL, &aD, NULL, &aB, NULL, &a9, NULL,
+                &a7, NULL, &a5, NULL, &a3, NULL, &a1, NULL,
+                aFEDCBA9876543210);
+
+  breakV128to8s(&bF, NULL, &bD, NULL, &bB, NULL, &b9, NULL,
+                &b7, NULL, &b5, NULL, &b3, NULL, &b1, NULL,
+                aFEDCBA9876543210);
+
+  return mkexpr(mkV128from8s(aF, aD, aB, a9, a7, a5, a3, a1,
+                             bF, bD, bB, b9, b7, b5, b3, b1));
 }
 
 

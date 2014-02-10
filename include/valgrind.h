@@ -450,8 +450,8 @@ typedef
    OrigFn;
 
 #define __SPECIAL_INSTRUCTION_PREAMBLE                            \
-                     "rlwinm 0,0,3,0,0  ; rlwinm 0,0,13,0,0\n\t"  \
-                     "rlwinm 0,0,29,0,0 ; rlwinm 0,0,19,0,0\n\t"
+                    "rlwinm 0,0,3,0,31  ; rlwinm 0,0,13,0,31\n\t" \
+                    "rlwinm 0,0,29,0,31 ; rlwinm 0,0,19,0,31\n\t"
 
 #define VALGRIND_DO_CLIENT_REQUEST_EXPR(                          \
         _zzq_default, _zzq_request,                               \

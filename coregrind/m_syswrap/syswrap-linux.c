@@ -5528,9 +5528,10 @@ PRE(sys_ioctl)
       /* SCSI no operand */
    case VKI_SCSI_IOCTL_DOORLOCK:
    case VKI_SCSI_IOCTL_DOORUNLOCK:
-      
+
    /* KVM ioctls that dont check for a numeric value as parameter */
    case VKI_KVM_S390_ENABLE_SIE:
+   case VKI_KVM_CREATE_IRQCHIP:
    case VKI_KVM_S390_INITIAL_RESET:
 
    /* vhost without parameter */
@@ -6889,7 +6890,7 @@ PRE(sys_ioctl)
                        ir->num_rsp * sizeof(struct vki_inquiry_info));
       }
       break;
-      
+
    /* KVM ioctls that check for a numeric value as parameter */
    case VKI_KVM_GET_API_VERSION:
    case VKI_KVM_CREATE_VM:
@@ -7982,6 +7983,7 @@ POST(sys_ioctl)
    case VKI_KVM_GET_VCPU_MMAP_SIZE:
    case VKI_KVM_S390_ENABLE_SIE:
    case VKI_KVM_CREATE_VCPU:
+   case VKI_KVM_CREATE_IRQCHIP:
    case VKI_KVM_RUN:
    case VKI_KVM_S390_INITIAL_RESET:
       break;

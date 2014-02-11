@@ -51,6 +51,7 @@ where XXXXXX is the bug number as listed below.
 330469  Add clock_adjtime syscall support
 330939  Support for AMD's syscall instruction on x86
 330941  Typo in PRE(poll) syscall wrapper
+n-i-bz  Fix KVM_CREATE_IRQCHIP ioctl handling
 
 Release 3.9.0 (31 October 2013)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

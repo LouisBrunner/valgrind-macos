@@ -106,7 +106,11 @@ Bool VG_(resolve_filename) ( Int fd, HChar* buf, Int n_buf )
 
 SysRes VG_(mknod) ( const HChar* pathname, Int mode, UWord dev )
 {  
-#  if defined(VGO_linux) || defined(VGO_darwin)
+#  if defined(VGP_arm64_linux)
+   /* ARM64 wants to use __NR_mknodat rather than __NR_mknod. */
+   SysRes res = VG_(do_syscall4)(__NR_mknodat,
+                                 VKI_AT_FDCWD, (UWord)pathname, mode, dev);
+#  elif defined(VGO_linux) || defined(VGO_darwin)
    SysRes res = VG_(do_syscall3)(__NR_mknod,
                                  (UWord)pathname, mode, dev);
 #  else
@@ -477,7 +481,18 @@ Bool VG_(get_startup_wd) ( HChar* buf, SizeT size )
 SysRes VG_(poll) (struct vki_pollfd *fds, Int nfds, Int timeout)
 {
    SysRes res;
-#  if defined(VGO_linux)
+#  if defined(VGP_arm64_linux)
+   /* ARM64 wants to use __NR_ppoll rather than __NR_poll. */
+   struct vki_timespec timeout_ts;
+   if (timeout >= 0) {
+      timeout_ts.tv_sec = timeout / 1000;
+      timeout_ts.tv_nsec = ((long)timeout % 1000) * 1000000;
+   }
+   res = VG_(do_syscall4)(__NR_ppoll,
+                          (UWord)fds, nfds, 
+                          (UWord)(timeout >= 0 ? &timeout_ts : NULL),
+                          (UWord)NULL);
+#  elif defined(VGO_linux)
    res = VG_(do_syscall3)(__NR_poll, (UWord)fds, nfds, timeout);
 #  elif defined(VGO_darwin)
    res = VG_(do_syscall3)(__NR_poll_nocancel, (UWord)fds, nfds, timeout);

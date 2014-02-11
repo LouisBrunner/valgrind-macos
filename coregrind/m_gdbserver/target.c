@@ -642,7 +642,7 @@ void valgrind_initialize_target(void)
 #elif defined(VGA_arm)
    arm_init_architecture(&the_low_target);
 #elif defined(VGA_arm64)
-   arm_init_architecture(&the_low_target);
+   arm64_init_architecture(&the_low_target);
 #elif defined(VGA_ppc32)
    ppc32_init_architecture(&the_low_target);
 #elif defined(VGA_ppc64)

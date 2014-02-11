@@ -908,7 +908,11 @@ Bool VG_(gdbserver_activity) (ThreadId tid)
    switch (remote_desc_activity("VG_(gdbserver_activity)")) {
    case 0: ret = False; break;
    case 1: ret = True; break;
-   case 2: call_gdbserver (tid, init_reason); ret = False; break;
+   case 2: 
+      remote_finish(reset_after_error);
+      call_gdbserver (tid, init_reason); 
+      ret = False; 
+      break;
    default: vg_assert (0);
    }
    busy--;

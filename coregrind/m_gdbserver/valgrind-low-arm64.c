@@ -1,6 +1,6 @@
 /* Low level interface to valgrind, for the remote server for GDB integrated
    in valgrind.
-   Copyright (C) 2011
+   Copyright (C) 2014
    Free Software Foundation, Inc.
 
    This file is part of VALGRIND.
@@ -37,271 +37,220 @@
 
 #include "libvex_guest_arm64.h"
 
-//ZZ static struct reg regs[] = {
-//ZZ   { "r0", 0, 32 },
-//ZZ   { "r1", 32, 32 },
-//ZZ   { "r2", 64, 32 },
-//ZZ   { "r3", 96, 32 },
-//ZZ   { "r4", 128, 32 },
-//ZZ   { "r5", 160, 32 },
-//ZZ   { "r6", 192, 32 },
-//ZZ   { "r7", 224, 32 },
-//ZZ   { "r8", 256, 32 },
-//ZZ   { "r9", 288, 32 },
-//ZZ   { "r10", 320, 32 },
-//ZZ   { "r11", 352, 32 },
-//ZZ   { "r12", 384, 32 },
-//ZZ   { "sp", 416, 32 },
-//ZZ   { "lr", 448, 32 },
-//ZZ   { "pc", 480, 32 },
-//ZZ   { "", 512, 0 }, // It seems these entries are needed 
-//ZZ   { "", 512, 0 }, // as previous versions of arm <-> gdb placed 
-//ZZ   { "", 512, 0 }, // some floating point registers here. So, cpsr 
-//ZZ   { "", 512, 0 }, // must be register 25.
-//ZZ   { "", 512, 0 },
-//ZZ   { "", 512, 0 },
-//ZZ   { "", 512, 0 },
-//ZZ   { "", 512, 0 },
-//ZZ   { "", 512, 0 },
-//ZZ   { "cpsr", 512, 32 },
-//ZZ   { "d0", 544, 64 },
-//ZZ   { "d1", 608, 64 },
-//ZZ   { "d2", 672, 64 },
-//ZZ   { "d3", 736, 64 },
-//ZZ   { "d4", 800, 64 },
-//ZZ   { "d5", 864, 64 },
-//ZZ   { "d6", 928, 64 },
-//ZZ   { "d7", 992, 64 },
-//ZZ   { "d8", 1056, 64 },
-//ZZ   { "d9", 1120, 64 },
-//ZZ   { "d10", 1184, 64 },
-//ZZ   { "d11", 1248, 64 },
-//ZZ   { "d12", 1312, 64 },
-//ZZ   { "d13", 1376, 64 },
-//ZZ   { "d14", 1440, 64 },
-//ZZ   { "d15", 1504, 64 },
-//ZZ   { "d16", 1568, 64 },
-//ZZ   { "d17", 1632, 64 },
-//ZZ   { "d18", 1696, 64 },
-//ZZ   { "d19", 1760, 64 },
-//ZZ   { "d20", 1824, 64 },
-//ZZ   { "d21", 1888, 64 },
-//ZZ   { "d22", 1952, 64 },
-//ZZ   { "d23", 2016, 64 },
-//ZZ   { "d24", 2080, 64 },
-//ZZ   { "d25", 2144, 64 },
-//ZZ   { "d26", 2208, 64 },
-//ZZ   { "d27", 2272, 64 },
-//ZZ   { "d28", 2336, 64 },
-//ZZ   { "d29", 2400, 64 },
-//ZZ   { "d30", 2464, 64 },
-//ZZ   { "d31", 2528, 64 },
-//ZZ   { "fpscr", 2592, 32 }
-//ZZ };
-//ZZ static const char *expedite_regs[] = { "r11", "sp", "pc", 0 };
-//ZZ #define num_regs (sizeof (regs) / sizeof (regs[0]))
-//ZZ 
-//ZZ static
-//ZZ CORE_ADDR get_pc (void)
-//ZZ {
-//ZZ    unsigned long pc;
-//ZZ 
-//ZZ    collect_register_by_name ("pc", &pc);
-//ZZ    
-//ZZ    dlog(1, "stop pc is %p\n", (void *) pc);
-//ZZ    return pc;
-//ZZ }
-//ZZ 
-//ZZ static
-//ZZ void set_pc (CORE_ADDR newpc)
-//ZZ {
-//ZZ    Bool mod;
-//ZZ    supply_register_by_name ("pc", &newpc, &mod);
-//ZZ    if (mod)
-//ZZ       dlog(1, "set pc to %p\n", C2v (newpc));
-//ZZ    else
-//ZZ       dlog(1, "set pc not changed %p\n", C2v (newpc));
-//ZZ }
-//ZZ 
-//ZZ Addr thumb_pc (Addr pc)
-//ZZ {
-//ZZ    // If the thumb bit (bit 0) is already set, we trust it.
-//ZZ    if (pc & 1) {
-//ZZ       dlog (1, "%p = thumb (bit0 is set)\n", C2v (pc));
-//ZZ       return pc;
-//ZZ    }
-//ZZ 
-//ZZ    // Here, bit 0 is not set.
-//ZZ    // For a pc aligned on 4 bytes, we have to use the debug
-//ZZ    // info to determine the thumb-ness.
-//ZZ    // else (aligned on 2 bytes), we trust this is a thumb
-//ZZ    // address and we set the thumb bit.
-//ZZ 
-//ZZ    if (pc & 2) {
-//ZZ       dlog (1, "bit0 not set, bit1 set => %p = thumb\n", C2v (pc));
-//ZZ       return pc | 1;
-//ZZ    }
-//ZZ 
-//ZZ    // pc aligned on 4 bytes. We need to use debug info.
-//ZZ    {
-//ZZ       HChar fnname[200]; // ??? max size
-//ZZ       Addr entrypoint;
-//ZZ       Addr ptoc; // unused but needed.
-//ZZ       // If this is a thumb instruction, we need to ask
-//ZZ       // the debug info with the bit0 set
-//ZZ       // (why can't debug info do that for us ???)
-//ZZ       // (why if this is a 4 bytes thumb instruction ???)
-//ZZ       if (VG_(get_fnname_raw) (pc | 1, fnname, 200)) {
-//ZZ          if (VG_(lookup_symbol_SLOW)( "*", fnname, &entrypoint, &ptoc )) {
-//ZZ             dlog (1, "fnname %s lookupsym %p => %p %s.\n",
-//ZZ                   fnname, C2v(entrypoint), C2v(pc),
-//ZZ                   (entrypoint & 1 ? "thumb" : "arm"));
-//ZZ             if (entrypoint & 1)
-//ZZ                return pc | 1;
-//ZZ             else
-//ZZ                return pc;
-//ZZ             
-//ZZ          } else {
-//ZZ             dlog (1, "%p fnname %s lookupsym failed?. Assume arm\n",
-//ZZ                   C2v (pc), fnname);
-//ZZ             return pc;
-//ZZ          }
-//ZZ       } else {
-//ZZ          // Can't find function name. We assume this is arm
-//ZZ          dlog (1, "%p unknown fnname?. Assume arm\n", C2v (pc));
-//ZZ          return pc;
-//ZZ       }
-//ZZ    }
-//ZZ }
-//ZZ 
-//ZZ /* store registers in the guest state (gdbserver_to_valgrind)
-//ZZ    or fetch register from the guest state (valgrind_to_gdbserver). */
-//ZZ static
-//ZZ void transfer_register (ThreadId tid, int abs_regno, void * buf,
-//ZZ                         transfer_direction dir, int size, Bool *mod)
-//ZZ {
-//ZZ    ThreadState* tst = VG_(get_ThreadState)(tid);
-//ZZ    int set = abs_regno / num_regs;
-//ZZ    int regno = abs_regno % num_regs;
-//ZZ    *mod = False;
-//ZZ 
-//ZZ    VexGuestARMState* arm = (VexGuestARMState*) get_arch (set, tst);
-//ZZ 
-//ZZ    switch (regno) { 
-//ZZ    // numbers here have to match the order of regs above
-//ZZ    // Attention: gdb order does not match valgrind order.
-//ZZ    case 0:  VG_(transfer) (&arm->guest_R0,   buf, dir, size, mod); break;
-//ZZ    case 1:  VG_(transfer) (&arm->guest_R1,   buf, dir, size, mod); break;
-//ZZ    case 2:  VG_(transfer) (&arm->guest_R2,   buf, dir, size, mod); break;
-//ZZ    case 3:  VG_(transfer) (&arm->guest_R3,   buf, dir, size, mod); break;
-//ZZ    case 4:  VG_(transfer) (&arm->guest_R4,   buf, dir, size, mod); break;
-//ZZ    case 5:  VG_(transfer) (&arm->guest_R5,   buf, dir, size, mod); break;
-//ZZ    case 6:  VG_(transfer) (&arm->guest_R6,   buf, dir, size, mod); break;
-//ZZ    case 7:  VG_(transfer) (&arm->guest_R7,   buf, dir, size, mod); break;
-//ZZ    case 8:  VG_(transfer) (&arm->guest_R8,   buf, dir, size, mod); break;
-//ZZ    case 9:  VG_(transfer) (&arm->guest_R9,   buf, dir, size, mod); break;
-//ZZ    case 10: VG_(transfer) (&arm->guest_R10,  buf, dir, size, mod); break;
-//ZZ    case 11: VG_(transfer) (&arm->guest_R11,  buf, dir, size, mod); break;
-//ZZ    case 12: VG_(transfer) (&arm->guest_R12,  buf, dir, size, mod); break;
-//ZZ    case 13: VG_(transfer) (&arm->guest_R13,  buf, dir, size, mod); break;
-//ZZ    case 14: VG_(transfer) (&arm->guest_R14,  buf, dir, size, mod); break;
-//ZZ    case 15: { 
-//ZZ       VG_(transfer) (&arm->guest_R15T, buf, dir, size, mod);
-//ZZ       if (dir == gdbserver_to_valgrind && *mod) {
-//ZZ          // If gdb is changing the PC, we have to set the thumb bit
-//ZZ          // if needed.
-//ZZ          arm->guest_R15T = thumb_pc(arm->guest_R15T);
-//ZZ       }
-//ZZ       break;
-//ZZ    }
-//ZZ    case 16:
-//ZZ    case 17:
-//ZZ    case 18:
-//ZZ    case 19:
-//ZZ    case 20: /* 9 "empty registers". See struct reg regs above. */
-//ZZ    case 21:
-//ZZ    case 22:
-//ZZ    case 23:
-//ZZ    case 24: *mod = False; break;
-//ZZ    case 25: {
-//ZZ       UInt cpsr = LibVEX_GuestARM_get_cpsr (arm);
-//ZZ       if (dir == valgrind_to_gdbserver) {
-//ZZ          VG_(transfer) (&cpsr, buf, dir, size, mod); 
-//ZZ       } else {
-//ZZ #      if 0
-//ZZ          UInt newcpsr;
-//ZZ          VG_(transfer) (&newcpsr, buf, dir, size, mod);
-//ZZ          *mod = newcpsr != cpsr;
-//ZZ          // GDBTD ???? see FIXME in guest_arm_helpers.c
-//ZZ          LibVEX_GuestARM_put_flags (newcpsr, arm);
-//ZZ #      else
-//ZZ          *mod = False;
-//ZZ #      endif
-//ZZ       }
-//ZZ       break;
-//ZZ    }
-//ZZ    case 26: VG_(transfer) (&arm->guest_D0,  buf, dir, size, mod); break;
-//ZZ    case 27: VG_(transfer) (&arm->guest_D1,  buf, dir, size, mod); break;
-//ZZ    case 28: VG_(transfer) (&arm->guest_D2,  buf, dir, size, mod); break;
-//ZZ    case 29: VG_(transfer) (&arm->guest_D3,  buf, dir, size, mod); break;
-//ZZ    case 30: VG_(transfer) (&arm->guest_D4,  buf, dir, size, mod); break;
-//ZZ    case 31: VG_(transfer) (&arm->guest_D5,  buf, dir, size, mod); break;
-//ZZ    case 32: VG_(transfer) (&arm->guest_D6,  buf, dir, size, mod); break;
-//ZZ    case 33: VG_(transfer) (&arm->guest_D7,  buf, dir, size, mod); break;
-//ZZ    case 34: VG_(transfer) (&arm->guest_D8,  buf, dir, size, mod); break;
-//ZZ    case 35: VG_(transfer) (&arm->guest_D9,  buf, dir, size, mod); break;
-//ZZ    case 36: VG_(transfer) (&arm->guest_D10, buf, dir, size, mod); break;
-//ZZ    case 37: VG_(transfer) (&arm->guest_D11, buf, dir, size, mod); break;
-//ZZ    case 38: VG_(transfer) (&arm->guest_D12, buf, dir, size, mod); break;
-//ZZ    case 39: VG_(transfer) (&arm->guest_D13, buf, dir, size, mod); break;
-//ZZ    case 40: VG_(transfer) (&arm->guest_D14, buf, dir, size, mod); break;
-//ZZ    case 41: VG_(transfer) (&arm->guest_D15, buf, dir, size, mod); break;
-//ZZ    case 42: VG_(transfer) (&arm->guest_D16, buf, dir, size, mod); break;
-//ZZ    case 43: VG_(transfer) (&arm->guest_D17, buf, dir, size, mod); break;
-//ZZ    case 44: VG_(transfer) (&arm->guest_D18, buf, dir, size, mod); break;
-//ZZ    case 45: VG_(transfer) (&arm->guest_D19, buf, dir, size, mod); break;
-//ZZ    case 46: VG_(transfer) (&arm->guest_D20, buf, dir, size, mod); break;
-//ZZ    case 47: VG_(transfer) (&arm->guest_D21, buf, dir, size, mod); break;
-//ZZ    case 48: VG_(transfer) (&arm->guest_D22, buf, dir, size, mod); break;
-//ZZ    case 49: VG_(transfer) (&arm->guest_D23, buf, dir, size, mod); break;
-//ZZ    case 50: VG_(transfer) (&arm->guest_D24, buf, dir, size, mod); break;
-//ZZ    case 51: VG_(transfer) (&arm->guest_D25, buf, dir, size, mod); break;
-//ZZ    case 52: VG_(transfer) (&arm->guest_D26, buf, dir, size, mod); break;
-//ZZ    case 53: VG_(transfer) (&arm->guest_D27, buf, dir, size, mod); break;
-//ZZ    case 54: VG_(transfer) (&arm->guest_D28, buf, dir, size, mod); break;
-//ZZ    case 55: VG_(transfer) (&arm->guest_D29, buf, dir, size, mod); break;
-//ZZ    case 56: VG_(transfer) (&arm->guest_D30, buf, dir, size, mod); break;
-//ZZ    case 57: VG_(transfer) (&arm->guest_D31, buf, dir, size, mod); break;
-//ZZ    case 58: VG_(transfer) (&arm->guest_FPSCR, buf, dir, size, mod); break;
-//ZZ    default: vg_assert(0);
-//ZZ    }
-//ZZ }
-//ZZ 
-//ZZ static
-//ZZ const char* target_xml (Bool shadow_mode)
-//ZZ {
-//ZZ    if (shadow_mode) {
-//ZZ       return "arm-with-vfpv3-valgrind.xml";
-//ZZ    } else {
-//ZZ       return "arm-with-vfpv3.xml";
-//ZZ    }  
-//ZZ }
-//ZZ 
-//ZZ static struct valgrind_target_ops low_target = {
-//ZZ    num_regs,
-//ZZ    regs,
-//ZZ    13, //SP
-//ZZ    transfer_register,
-//ZZ    get_pc,
-//ZZ    set_pc,
-//ZZ    "arm",
-//ZZ    target_xml
-//ZZ };
+static struct reg regs[] = {
+  { "x0", 0, 64 },
+  { "x1", 64, 64 },
+  { "x2", 128, 64 },
+  { "x3", 192, 64 },
+  { "x4", 256, 64 },
+  { "x5", 320, 64 },
+  { "x6", 384, 64 },
+  { "x7", 448, 64 },
+  { "x8", 512, 64 },
+  { "x9", 576, 64 },
+  { "x10", 640, 64 },
+  { "x11", 704, 64 },
+  { "x12", 768, 64 },
+  { "x13", 832, 64 },
+  { "x14", 896, 64 },
+  { "x15", 960, 64 },
+  { "x16", 1024, 64 },
+  { "x17", 1088, 64 },
+  { "x18", 1152, 64 },
+  { "x19", 1216, 64 },
+  { "x20", 1280, 64 },
+  { "x21", 1344, 64 },
+  { "x22", 1408, 64 },
+  { "x23", 1472, 64 },
+  { "x24", 1536, 64 },
+  { "x25", 1600, 64 },
+  { "x26", 1664, 64 },
+  { "x27", 1728, 64 },
+  { "x28", 1792, 64 },
+  { "x29", 1856, 64 },
+  { "x30", 1920, 64 },
+  { "sp", 1984, 64 },
+  { "pc", 2048, 64 },
+  { "cpsr", 2112, 32 },
+  { "v0", 2144, 128 },
+  { "v1", 2272, 128 },
+  { "v2", 2400, 128 },
+  { "v3", 2528, 128 },
+  { "v4", 2656, 128 },
+  { "v5", 2784, 128 },
+  { "v6", 2912, 128 },
+  { "v7", 3040, 128 },
+  { "v8", 3168, 128 },
+  { "v9", 3296, 128 },
+  { "v10", 3424, 128 },
+  { "v11", 3552, 128 },
+  { "v12", 3680, 128 },
+  { "v13", 3808, 128 },
+  { "v14", 3936, 128 },
+  { "v15", 4064, 128 },
+  { "v16", 4192, 128 },
+  { "v17", 4320, 128 },
+  { "v18", 4448, 128 },
+  { "v19", 4576, 128 },
+  { "v20", 4704, 128 },
+  { "v21", 4832, 128 },
+  { "v22", 4960, 128 },
+  { "v23", 5088, 128 },
+  { "v24", 5216, 128 },
+  { "v25", 5344, 128 },
+  { "v26", 5472, 128 },
+  { "v27", 5600, 128 },
+  { "v28", 5728, 128 },
+  { "v29", 5856, 128 },
+  { "v30", 5984, 128 },
+  { "v31", 6112, 128 },
+  { "fpsr", 6240, 32 },
+  { "fpcr", 6272, 32 },
+};
+
+static const char *expedite_regs[] = { "x29", "sp", "pc", 0 };
+
+#define num_regs (sizeof (regs) / sizeof (regs[0]))
+
+static
+CORE_ADDR get_pc (void)
+{
+   unsigned long pc;
+
+   collect_register_by_name ("pc", &pc);
+   
+   dlog(1, "stop pc is %p\n", (void *) pc);
+   return pc;
+}
+
+static
+void set_pc (CORE_ADDR newpc)
+{
+   Bool mod;
+   supply_register_by_name ("pc", &newpc, &mod);
+   if (mod)
+      dlog(1, "set pc to %p\n", C2v (newpc));
+   else
+      dlog(1, "set pc not changed %p\n", C2v (newpc));
+}
+
+/* store registers in the guest state (gdbserver_to_valgrind)
+   or fetch register from the guest state (valgrind_to_gdbserver). */
+static
+void transfer_register (ThreadId tid, int abs_regno, void * buf,
+                        transfer_direction dir, int size, Bool *mod)
+{
+   ThreadState* tst = VG_(get_ThreadState)(tid);
+   int set = abs_regno / num_regs;
+   int regno = abs_regno % num_regs;
+   *mod = False;
+
+   VexGuestARM64State* arm = (VexGuestARM64State*) get_arch (set, tst);
+
+   switch (regno) { 
+   // numbers here have to match the order of regs above
+   // Attention: gdb order does not match valgrind order.
+   case 0:  VG_(transfer) (&arm->guest_X0,   buf, dir, size, mod); break;
+   case 1:  VG_(transfer) (&arm->guest_X1,   buf, dir, size, mod); break;
+   case 2:  VG_(transfer) (&arm->guest_X2,   buf, dir, size, mod); break;
+   case 3:  VG_(transfer) (&arm->guest_X3,   buf, dir, size, mod); break;
+   case 4:  VG_(transfer) (&arm->guest_X4,   buf, dir, size, mod); break;
+   case 5:  VG_(transfer) (&arm->guest_X5,   buf, dir, size, mod); break;
+   case 6:  VG_(transfer) (&arm->guest_X6,   buf, dir, size, mod); break;
+   case 7:  VG_(transfer) (&arm->guest_X7,   buf, dir, size, mod); break;
+   case 8:  VG_(transfer) (&arm->guest_X8,   buf, dir, size, mod); break;
+   case 9:  VG_(transfer) (&arm->guest_X9,   buf, dir, size, mod); break;
+   case 10: VG_(transfer) (&arm->guest_X10,  buf, dir, size, mod); break;
+   case 11: VG_(transfer) (&arm->guest_X11,  buf, dir, size, mod); break;
+   case 12: VG_(transfer) (&arm->guest_X12,  buf, dir, size, mod); break;
+   case 13: VG_(transfer) (&arm->guest_X13,  buf, dir, size, mod); break;
+   case 14: VG_(transfer) (&arm->guest_X14,  buf, dir, size, mod); break;
+   case 15: VG_(transfer) (&arm->guest_X15,  buf, dir, size, mod); break;
+   case 16: VG_(transfer) (&arm->guest_X16,  buf, dir, size, mod); break;
+   case 17: VG_(transfer) (&arm->guest_X17,  buf, dir, size, mod); break;
+   case 18: VG_(transfer) (&arm->guest_X18,  buf, dir, size, mod); break;
+   case 19: VG_(transfer) (&arm->guest_X19,  buf, dir, size, mod); break;
+   case 20: VG_(transfer) (&arm->guest_X20,  buf, dir, size, mod); break;
+   case 21: VG_(transfer) (&arm->guest_X21,  buf, dir, size, mod); break;
+   case 22: VG_(transfer) (&arm->guest_X22,  buf, dir, size, mod); break;
+   case 23: VG_(transfer) (&arm->guest_X23,  buf, dir, size, mod); break;
+   case 24: VG_(transfer) (&arm->guest_X24,  buf, dir, size, mod); break;
+   case 25: VG_(transfer) (&arm->guest_X25,  buf, dir, size, mod); break;
+   case 26: VG_(transfer) (&arm->guest_X26,  buf, dir, size, mod); break;
+   case 27: VG_(transfer) (&arm->guest_X27,  buf, dir, size, mod); break;
+   case 28: VG_(transfer) (&arm->guest_X28,  buf, dir, size, mod); break;
+   case 29: VG_(transfer) (&arm->guest_X29,  buf, dir, size, mod); break;
+   case 30: VG_(transfer) (&arm->guest_X30,  buf, dir, size, mod); break;
+   case 31: VG_(transfer) (&arm->guest_XSP,  buf, dir, size, mod); break;
+   case 32: VG_(transfer) (&arm->guest_PC,   buf, dir, size, mod); break;
+   case 33: *mod = False; // GDBTD cpsr what to do for arm64 ???
+
+   case 34: VG_(transfer) (&arm->guest_Q0,  buf, dir, size, mod); break;
+   case 35: VG_(transfer) (&arm->guest_Q1,  buf, dir, size, mod); break;
+   case 36: VG_(transfer) (&arm->guest_Q2,  buf, dir, size, mod); break;
+   case 37: VG_(transfer) (&arm->guest_Q3,  buf, dir, size, mod); break;
+   case 38: VG_(transfer) (&arm->guest_Q4,  buf, dir, size, mod); break;
+   case 39: VG_(transfer) (&arm->guest_Q5,  buf, dir, size, mod); break;
+   case 40: VG_(transfer) (&arm->guest_Q6,  buf, dir, size, mod); break;
+   case 41: VG_(transfer) (&arm->guest_Q7,  buf, dir, size, mod); break;
+   case 42: VG_(transfer) (&arm->guest_Q8,  buf, dir, size, mod); break;
+   case 43: VG_(transfer) (&arm->guest_Q9,  buf, dir, size, mod); break;
+   case 44: VG_(transfer) (&arm->guest_Q10, buf, dir, size, mod); break;
+   case 45: VG_(transfer) (&arm->guest_Q11, buf, dir, size, mod); break;
+   case 46: VG_(transfer) (&arm->guest_Q12, buf, dir, size, mod); break;
+   case 47: VG_(transfer) (&arm->guest_Q13, buf, dir, size, mod); break;
+   case 48: VG_(transfer) (&arm->guest_Q14, buf, dir, size, mod); break;
+   case 49: VG_(transfer) (&arm->guest_Q15, buf, dir, size, mod); break;
+   case 50: VG_(transfer) (&arm->guest_Q16, buf, dir, size, mod); break;
+   case 51: VG_(transfer) (&arm->guest_Q17, buf, dir, size, mod); break;
+   case 52: VG_(transfer) (&arm->guest_Q18, buf, dir, size, mod); break;
+   case 53: VG_(transfer) (&arm->guest_Q19, buf, dir, size, mod); break;
+   case 54: VG_(transfer) (&arm->guest_Q20, buf, dir, size, mod); break;
+   case 55: VG_(transfer) (&arm->guest_Q21, buf, dir, size, mod); break;
+   case 56: VG_(transfer) (&arm->guest_Q22, buf, dir, size, mod); break;
+   case 57: VG_(transfer) (&arm->guest_Q23, buf, dir, size, mod); break;
+   case 58: VG_(transfer) (&arm->guest_Q24, buf, dir, size, mod); break;
+   case 59: VG_(transfer) (&arm->guest_Q25, buf, dir, size, mod); break;
+   case 60: VG_(transfer) (&arm->guest_Q26, buf, dir, size, mod); break;
+   case 61: VG_(transfer) (&arm->guest_Q27, buf, dir, size, mod); break;
+   case 62: VG_(transfer) (&arm->guest_Q28, buf, dir, size, mod); break;
+   case 63: VG_(transfer) (&arm->guest_Q29, buf, dir, size, mod); break;
+   case 64: VG_(transfer) (&arm->guest_Q30, buf, dir, size, mod); break;
+   case 65: VG_(transfer) (&arm->guest_Q31, buf, dir, size, mod); break;
+   case 66: VG_(transfer) (&arm->guest_FPSR, buf, dir, size, mod); break;
+   case 67: VG_(transfer) (&arm->guest_FPCR, buf, dir, size, mod); break;
+   default: vg_assert(0);
+   }
+}
+
+static
+const char* target_xml (Bool shadow_mode)
+{
+   return NULL;
+#if 0
+   GDBTD
+   if (shadow_mode) {
+      return "arm-with-vfpv3-valgrind.xml";
+   } else {
+      return "arm-with-vfpv3.xml";
+   }
+#endif 
+}
+
+static struct valgrind_target_ops low_target = {
+   num_regs,
+   regs,
+   31, //SP
+   transfer_register,
+   get_pc,
+   set_pc,
+   "arm64",
+   target_xml
+};
 
 void arm64_init_architecture (struct valgrind_target_ops *target)
 {
-  vg_assert(0); // IMPLEMENT ME
-  //ZZ    *target = low_target;
-  //ZZ    set_register_cache (regs, num_regs);
-  //ZZ    gdbserver_expedite_regs = expedite_regs;
+   *target = low_target;
+   set_register_cache (regs, num_regs);
+   gdbserver_expedite_regs = expedite_regs;
 }

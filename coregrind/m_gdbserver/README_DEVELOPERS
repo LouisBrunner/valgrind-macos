@@ -260,7 +260,7 @@ The data structures 'struct reg regs'
 and 'const char *expedite_regs' are build from files
 in the gdb sources, e.g. for an new arch hal9000
    cd gdb/regformats
-   ./regdat.sh reg-hal9000.dat hal9000
+   sh ./regdat.sh reg-hal9000.dat hal9000
 
 From the generated file hal9000, you copy/paste in
 valgrind-low-hal9000.c the two needed data structures and change their

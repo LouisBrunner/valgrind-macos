@@ -273,12 +273,19 @@ s390_amode_bx20(Int d, HReg b, HReg x)
 }
 
 
-/* Construct an AMODE for accessing the guest state at OFFSET */
+/* Construct an AMODE for accessing the guest state at OFFSET. 
+   OFFSET can be at most 3 * sizeof(VexGuestS390XState) + LibVEX_N_SPILL_BYTES
+   which may be too large for a B12 addressing mode. 
+   Use a B20 amode as a fallback which will be safe for any offset.
+*/
 s390_amode *
 s390_amode_for_guest_state(Int offset)
 {
    if (fits_unsigned_12bit(offset))
       return s390_amode_b12(offset, s390_hreg_guest_state_pointer());
+
+   if (fits_signed_20bit(offset))
+      return s390_amode_b20(offset, s390_hreg_guest_state_pointer());
 
    vpanic("invalid guest state offset");
 }
@@ -458,7 +465,6 @@ genSpill_S390(HInstr **i1, HInstr **i2, HReg rreg, Int offsetB, Bool mode64)
    s390_amode *am;
 
    vassert(offsetB >= 0);
-   vassert(offsetB <= (1 << 12));  /* because we use b12 amode */
    vassert(!hregIsVirtual(rreg));
 
    *i1 = *i2 = NULL;
@@ -485,7 +491,6 @@ genReload_S390(HInstr **i1, HInstr **i2, HReg rreg, Int offsetB, Bool mode64)
    s390_amode *am;
 
    vassert(offsetB >= 0);
-   vassert(offsetB <= (1 << 12));  /* because we use b12 amode */
    vassert(!hregIsVirtual(rreg));
 
    *i1 = *i2 = NULL;

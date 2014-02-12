@@ -313,8 +313,37 @@ static void apply_to_GPs_of_tid(ThreadId tid, void (*f)(ThreadId,
    (*f)(tid, "r30", vex->guest_r30);
    (*f)(tid, "r31", vex->guest_r31);
 #elif defined(VGA_arm64)
-   (void)vex; /* temporarily avoid unused-var warning from gcc */
-   I_die_here;
+   (*f)(tid, "x0" , vex->guest_X0 );
+   (*f)(tid, "x1" , vex->guest_X1 );
+   (*f)(tid, "x2" , vex->guest_X2 );
+   (*f)(tid, "x3" , vex->guest_X3 );
+   (*f)(tid, "x4" , vex->guest_X4 );
+   (*f)(tid, "x5" , vex->guest_X5 );
+   (*f)(tid, "x6" , vex->guest_X6 );
+   (*f)(tid, "x7" , vex->guest_X7 );
+   (*f)(tid, "x8" , vex->guest_X8 );
+   (*f)(tid, "x9" , vex->guest_X9 );
+   (*f)(tid, "x10", vex->guest_X10);
+   (*f)(tid, "x11", vex->guest_X11);
+   (*f)(tid, "x12", vex->guest_X12);
+   (*f)(tid, "x13", vex->guest_X13);
+   (*f)(tid, "x14", vex->guest_X14);
+   (*f)(tid, "x15", vex->guest_X15);
+   (*f)(tid, "x16", vex->guest_X16);
+   (*f)(tid, "x17", vex->guest_X17);
+   (*f)(tid, "x18", vex->guest_X18);
+   (*f)(tid, "x19", vex->guest_X19);
+   (*f)(tid, "x20", vex->guest_X20);
+   (*f)(tid, "x21", vex->guest_X21);
+   (*f)(tid, "x22", vex->guest_X22);
+   (*f)(tid, "x23", vex->guest_X23);
+   (*f)(tid, "x24", vex->guest_X24);
+   (*f)(tid, "x25", vex->guest_X25);
+   (*f)(tid, "x26", vex->guest_X26);
+   (*f)(tid, "x27", vex->guest_X27);
+   (*f)(tid, "x28", vex->guest_X28);
+   (*f)(tid, "x29", vex->guest_X29);
+   (*f)(tid, "x30", vex->guest_X30);
 #else
 #  error Unknown arch
 #endif

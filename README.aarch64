@@ -13,7 +13,13 @@ Current limitations, as of mid-Jan 2014.
 
 * almost no support of vector (SIMD) instructions
 
-* Integration with the built in GDB server doesn't work yet.
+* Integration with the built in GDB server:
+   - basically works but breakpoints are causing crashes due to missing
+     unchainXDirect_ARM64 needed by LibVEX_UnChain. 
+   - still to do:
+      arm64 xml register description files (allowing shadow registers to be looked at).
+      ptrace invoker : currently disabled for both arm and arm64
+      cpsr transfer to/from gdb to be looked at (see also arm equivalent code)
 
 There has been extensive testing of the baseline simulation of integer
 and FP instructions.  Memcheck is also believed to work, at least for

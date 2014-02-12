@@ -15,9 +15,11 @@ Current limitations, as of mid-Jan 2014.
 
 * Integration with the built in GDB server:
    - basically works but breakpoints are causing crashes due to missing
-     unchainXDirect_ARM64 needed by LibVEX_UnChain. 
+     unchainXDirect_ARM64 needed by LibVEX_UnChain.
+     Use --vgdb=full to bypass the problem.  
    - still to do:
-      arm64 xml register description files (allowing shadow registers to be looked at).
+      arm64 xml register description files (allowing shadow registers
+                                            to be looked at).
       ptrace invoker : currently disabled for both arm and arm64
       cpsr transfer to/from gdb to be looked at (see also arm equivalent code)
 

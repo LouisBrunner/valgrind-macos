@@ -219,15 +219,19 @@ static void add_gs_address (Addr addr, GS_Kind kind, const HChar* from)
    VG_(HT_add_node)(gs_addresses, p);
    /* It should be sufficient to discard a range of 1.
       We use 2 to ensure the below is not sensitive to the presence
-      of thumb bit in the range of addresses to discard. */ 
-   VG_(discard_translations) (addr, 2, from);
+      of thumb bit in the range of addresses to discard. 
+      No need to discard translations for Vg_VgdbFull as all
+      instructions are in any case vgdb-instrumented. */
+   if (VG_(clo_vgdb) != Vg_VgdbFull)
+      VG_(discard_translations) (addr, 2, from);
 }
 
 static void remove_gs_address (GS_Address* g, const HChar* from)
 {
    VG_(HT_remove) (gs_addresses, g->addr);
-   // See add_gs_address for the explanation for the range 2 below.
-   VG_(discard_translations) (g->addr, 2, from);
+   // See add_gs_address for the explanation for condition and the range 2 below.
+   if (VG_(clo_vgdb) != Vg_VgdbFull)
+      VG_(discard_translations) (g->addr, 2, from);
    VG_(arena_free) (VG_AR_CORE, g);
 }
 

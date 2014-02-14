@@ -2278,6 +2278,31 @@ static Bool dis_instr_CVM ( UInt theInstr )
          switch(opc2) {
             case 0x0A: {  // lx - Load indexed instructions
                switch (get_sa(theInstr)) {
+                  case 0x00: {  // LWX rd, index(base)
+                     DIP("lwx r%d, r%d(r%d)", regRd, regRt, regRs);
+                     LOADX_STORE_PATTERN;
+                     putIReg(regRd, mkWidenFrom32(ty, load(Ity_I32, mkexpr(t1)),
+                                                  True));
+                     break;
+                  }
+                  case 0x08: {  // LDX rd, index(base)
+                     DIP("ldx r%d, r%d(r%d)", regRd, regRt, regRs);
+                     vassert(mode64); /* Currently Implemented only for n64 */
+                     LOADX_STORE_PATTERN;
+                     putIReg(regRd, load(Ity_I64, mkexpr(t1)));
+                     break;
+                  }
+                  case 0x06: {  // LBUX rd, index(base)
+                     DIP("lbux r%d, r%d(r%d)", regRd, regRt, regRs);
+                     LOADX_STORE_PATTERN;
+                     if (mode64)
+                        putIReg(regRd, unop(Iop_8Uto64, load(Ity_I8,
+                                                             mkexpr(t1))));
+                     else
+                        putIReg(regRd, unop(Iop_8Uto32, load(Ity_I8,
+                                                             mkexpr(t1))));
+                     break;
+                  }
                   case 0x10: {  // LWUX rd, index(base) (Cavium OCTEON)
                      DIP("lwux r%d, r%d(r%d)", regRd, regRt, regRs);
                      LOADX_STORE_PATTERN; /* same for both 32 and 64 modes*/

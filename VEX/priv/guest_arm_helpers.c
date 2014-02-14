@@ -1030,10 +1030,6 @@ void LibVEX_GuestARM_initialise ( /*OUT*/VexGuestARMState* vex_state )
    vex_state->guest_ITSTATE = 0;
 
    vex_state->padding1 = 0;
-   vex_state->padding2 = 0;
-   vex_state->padding3 = 0;
-   vex_state->padding4 = 0;
-   vex_state->padding5 = 0;
 }
 
 

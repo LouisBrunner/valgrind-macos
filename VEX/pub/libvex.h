@@ -521,7 +521,7 @@ extern void LibVEX_ShowAllocStats ( void );
 typedef
    struct {
       /* Total size of the guest state, in bytes.  Must be
-         8-aligned. */
+         16-aligned. */
       Int total_sizeB;
       /* Whereabouts is the stack pointer? */
       Int offset_SP;

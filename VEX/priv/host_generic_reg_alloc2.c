@@ -399,9 +399,9 @@ HInstrArray* doRegisterAllocation (
       not at each insn processed. */
    Bool do_sanity_check;
 
-   vassert(0 == (guest_sizeB % 32));
-   vassert(0 == (LibVEX_N_SPILL_BYTES % 32));
-   vassert(0 == (N_SPILL64S % 4));
+   vassert(0 == (guest_sizeB % 16));
+   vassert(0 == (LibVEX_N_SPILL_BYTES % 16));
+   vassert(0 == (N_SPILL64S % 2));
 
    /* The live range numbers are signed shorts, and so limiting the
       number of insns to 15000 comfortably guards against them

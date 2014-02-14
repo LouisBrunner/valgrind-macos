@@ -145,7 +145,7 @@ typedef
         ULong host_EvC_FAILADDR; /* 600 */
         UInt host_EvC_COUNTER;   /* 608 */
         UInt guest_COND;         /* 612 */
-        UInt padding[6];
+        UInt padding[2];
 } VexGuestMIPS64State;
 
 /*---------------------------------------------------------------*/

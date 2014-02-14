@@ -2764,11 +2764,7 @@ void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state )
    vex_state->guest_SC_CLASS = 0;
    vex_state->guest_IP_AT_SYSCALL = 0;
 
-   Int i;
-   for (i = 0; i < sizeof(vex_state->padding)
-                   / sizeof(vex_state->padding[0]); i++) {
-      vex_state->padding[i] = 0;
-   }
+   vex_state->padding1 = 0;
 }
 
 

@@ -193,12 +193,8 @@ typedef
       */
       UInt guest_ITSTATE;
 
-      /* Padding to make it have an 32-aligned size */
+      /* Padding to make it have an 16-aligned size */
       UInt padding1;
-      UInt padding2;
-      UInt padding3;
-      UInt padding4;
-      UInt padding5;
    }
    VexGuestARMState;
 

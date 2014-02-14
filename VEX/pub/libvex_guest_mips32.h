@@ -148,7 +148,7 @@ typedef
         ULong guest_ac2;        /* 344 */
         ULong guest_ac3;        /* 352 */
         
-        UInt padding[6];
+        UInt padding[2];
 } VexGuestMIPS32State;
 /*---------------------------------------------------------------*/
 /*--- Utility functions for MIPS32 guest stuff.               ---*/

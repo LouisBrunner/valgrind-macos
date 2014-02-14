@@ -220,8 +220,8 @@ typedef
          been interrupted by a signal. */
       UInt guest_IP_AT_SYSCALL;
 
-      /* Padding to make it have an 32-aligned size */
-      UInt padding[5];
+      /* Padding to make it have an 16-aligned size */
+      UInt padding1;
    }
    VexGuestX86State;
 

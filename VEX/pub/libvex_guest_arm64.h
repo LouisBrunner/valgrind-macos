@@ -158,7 +158,7 @@ typedef
          does get set when required. */
       UInt  guest_FPSR;
 
-      /* Padding to make it have an 32-aligned size */
+      /* Padding to make it have an 16-aligned size */
       UInt  pad_end_0;
       ULong pad_end_1;
    }

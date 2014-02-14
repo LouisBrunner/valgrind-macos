@@ -1,0 +1,3 @@
+prog: LoadIndexedInstructions
+prereq: ../../../tests/mips_features cavium-octeon2
+vgopts: -q

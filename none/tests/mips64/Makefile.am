@@ -12,7 +12,8 @@ EXTRA_DIST = \
 	branches.stdout.exp branches.stderr.exp branches.vgtest \
 	cvm_ins.stdout.exp cvm_ins.stdout.exp-non-octeon \
 	cvm_ins.stderr.exp cvm_ins.vgtest \
-	cvm_lx_ins.stdout.exp-LE cvm_lx_ins.stdout.exp-non-octeon \
+	cvm_lx_ins.stdout.exp-LE cvm_lx_ins.stdout.exp-BE \
+	cvm_lx_ins.stdout.exp-non-octeon \
 	cvm_lx_ins.stderr.exp cvm_lx_ins.vgtest \
 	extract_insert_bit_field.stdout.exp-mips64 \
 	extract_insert_bit_field.stdout.exp-mips64r2 \

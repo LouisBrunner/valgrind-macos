@@ -337,6 +337,8 @@ typedef
       ARM64vecb_SMIN8x16,
       ARM64vecb_AND,
       ARM64vecb_ORR,
+      ARM64vecb_XOR,
+      ARM64vecb_CMEQ64x2,
       ARM64vecb_INVALID
    }
    ARM64VecBinOp;
@@ -347,9 +349,18 @@ typedef
       ARM64vecu_FNEG32x4,
       ARM64vecu_FABS64x2,
       ARM64vecu_FABS32x4,
+      ARM64vecu_NOT,
       ARM64vecu_INVALID
    }
    ARM64VecUnaryOp;
+
+typedef
+   enum {
+      ARM64vecsh_USHR64x2=350,
+      ARM64vecsh_SSHR64x2,
+      ARM64vecsh_INVALID
+   }
+   ARM64VecShiftOp;
 
 //ZZ extern const HChar* showARMVfpUnaryOp ( ARMVfpUnaryOp op );
 //ZZ 
@@ -534,6 +545,7 @@ typedef
       ARM64in_VBinV,
       ARM64in_VUnaryV,
       ARM64in_VNarrowV,
+      ARM64in_VShiftImmV,
 //ZZ       ARMin_VAluS,
 //ZZ       ARMin_VCMovD,
 //ZZ       ARMin_VCMovS,
@@ -819,6 +831,15 @@ typedef
            HReg dst;     // Q reg
            HReg src;     // Q reg
         } VNarrowV;
+        /* Vector shift by immediate.  |amt| needs to be > 0 and <
+           implied lane size of |op|.  Zero shifts and out of range
+           shifts are not allowed. */
+        struct {
+           ARM64VecShiftOp op;
+           HReg            dst;
+           HReg            src;
+           UInt            amt;
+        } VShiftImmV;
 //ZZ          /* 32-bit FP binary arithmetic */
 //ZZ          struct {
 //ZZ             ARMVfpOp op;
@@ -1022,6 +1043,8 @@ extern ARM64Instr* ARM64Instr_FPCR    ( Bool toFPCR, HReg iReg );
 extern ARM64Instr* ARM64Instr_VBinV   ( ARM64VecBinOp op, HReg, HReg, HReg );
 extern ARM64Instr* ARM64Instr_VUnaryV ( ARM64VecUnaryOp op, HReg, HReg );
 extern ARM64Instr* ARM64Instr_VNarrowV ( UInt dszBlg2, HReg dst, HReg src );
+extern ARM64Instr* ARM64Instr_VShiftImmV ( ARM64VecShiftOp op,
+                                           HReg dst, HReg src, UInt amt );
 //ZZ extern ARMInstr* ARMInstr_VAluS    ( ARMVfpOp op, HReg, HReg, HReg );
 //ZZ extern ARMInstr* ARMInstr_VCMovD   ( ARMCondCode, HReg dst, HReg src );
 //ZZ extern ARMInstr* ARMInstr_VCMovS   ( ARMCondCode, HReg dst, HReg src );

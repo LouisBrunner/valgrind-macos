@@ -4361,11 +4361,15 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
 
       /* Other cases */
       switch (e->Iex.Unop.op) {
+         case Iop_NotV128:
+         case Iop_Abs64Fx2:
          case Iop_Neg64Fx2: {
             HReg res = newVRegV(env);
             HReg arg = iselV128Expr(env, e->Iex.Unop.arg);
             ARM64VecUnaryOp op = ARM64vecu_INVALID;
             switch (e->Iex.Unop.op) {
+               case Iop_NotV128:  op = ARM64vecu_NOT;      break;
+               case Iop_Abs64Fx2: op = ARM64vecu_FABS64x2; break;
                case Iop_Neg64Fx2: op = ARM64vecu_FNEG64x2; break;
                default: vassert(0);
             }
@@ -4852,6 +4856,7 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
 //ZZ          case Iop_Add32x4:
          case Iop_AndV128:
          case Iop_OrV128:
+         case Iop_XorV128:
          case Iop_Max32Ux4:
          case Iop_Max16Ux8:
          case Iop_Max8Ux16:
@@ -4869,32 +4874,35 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_Sub32x4:
          case Iop_Sub16x8:
          case Iop_Mul32x4:
-         case Iop_Mul16x8: {
+         case Iop_Mul16x8:
+         case Iop_CmpEQ64x2: {
             HReg res  = newVRegV(env);
             HReg argL = iselV128Expr(env, e->Iex.Binop.arg1);
             HReg argR = iselV128Expr(env, e->Iex.Binop.arg2);
             ARM64VecBinOp op = ARM64vecb_INVALID;
             switch (e->Iex.Binop.op) {
-               case Iop_AndV128:  op = ARM64vecb_AND; break;
-               case Iop_OrV128:   op = ARM64vecb_ORR; break;
-               case Iop_Max32Ux4: op = ARM64vecb_UMAX32x4; break;
-               case Iop_Max16Ux8: op = ARM64vecb_UMAX16x8; break;
-               case Iop_Max8Ux16: op = ARM64vecb_UMAX8x16; break;
-               case Iop_Min32Ux4: op = ARM64vecb_UMIN32x4; break;
-               case Iop_Min16Ux8: op = ARM64vecb_UMIN16x8; break;
-               case Iop_Min8Ux16: op = ARM64vecb_UMIN8x16; break;
-               case Iop_Max32Sx4: op = ARM64vecb_SMAX32x4; break;
-               case Iop_Max16Sx8: op = ARM64vecb_SMAX16x8; break;
-               case Iop_Min32Sx4: op = ARM64vecb_SMIN32x4; break;
-               case Iop_Min16Sx8: op = ARM64vecb_SMIN16x8; break;
-               case Iop_Add64x2:  op = ARM64vecb_ADD64x2; break;
-               case Iop_Add32x4:  op = ARM64vecb_ADD32x4; break;
-               case Iop_Add16x8:  op = ARM64vecb_ADD16x8; break;
-               case Iop_Sub64x2:  op = ARM64vecb_SUB64x2; break;
-               case Iop_Sub32x4:  op = ARM64vecb_SUB32x4; break;
-               case Iop_Sub16x8:  op = ARM64vecb_SUB16x8; break;
-               case Iop_Mul32x4:  op = ARM64vecb_MUL32x4; break;
-               case Iop_Mul16x8:  op = ARM64vecb_MUL16x8; break;
+               case Iop_AndV128:   op = ARM64vecb_AND; break;
+               case Iop_OrV128:    op = ARM64vecb_ORR; break;
+               case Iop_XorV128:   op = ARM64vecb_XOR; break;
+               case Iop_Max32Ux4:  op = ARM64vecb_UMAX32x4; break;
+               case Iop_Max16Ux8:  op = ARM64vecb_UMAX16x8; break;
+               case Iop_Max8Ux16:  op = ARM64vecb_UMAX8x16; break;
+               case Iop_Min32Ux4:  op = ARM64vecb_UMIN32x4; break;
+               case Iop_Min16Ux8:  op = ARM64vecb_UMIN16x8; break;
+               case Iop_Min8Ux16:  op = ARM64vecb_UMIN8x16; break;
+               case Iop_Max32Sx4:  op = ARM64vecb_SMAX32x4; break;
+               case Iop_Max16Sx8:  op = ARM64vecb_SMAX16x8; break;
+               case Iop_Min32Sx4:  op = ARM64vecb_SMIN32x4; break;
+               case Iop_Min16Sx8:  op = ARM64vecb_SMIN16x8; break;
+               case Iop_Add64x2:   op = ARM64vecb_ADD64x2; break;
+               case Iop_Add32x4:   op = ARM64vecb_ADD32x4; break;
+               case Iop_Add16x8:   op = ARM64vecb_ADD16x8; break;
+               case Iop_Sub64x2:   op = ARM64vecb_SUB64x2; break;
+               case Iop_Sub32x4:   op = ARM64vecb_SUB32x4; break;
+               case Iop_Sub16x8:   op = ARM64vecb_SUB16x8; break;
+               case Iop_Mul32x4:   op = ARM64vecb_MUL32x4; break;
+               case Iop_Mul16x8:   op = ARM64vecb_MUL16x8; break;
+               case Iop_CmpEQ64x2: op = ARM64vecb_CMEQ64x2; break;
                default: vassert(0);
             }
             addInstr(env, ARM64Instr_VBinV(op, res, argL, argR));
@@ -5393,27 +5401,32 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
 //ZZ          case Iop_ShrN8x16:
 //ZZ          case Iop_ShrN16x8:
 //ZZ          case Iop_ShrN32x4:
-//ZZ          case Iop_ShrN64x2: {
-//ZZ             HReg res = newVRegV(env);
-//ZZ             HReg tmp = newVRegV(env);
-//ZZ             HReg argL = iselNeonExpr(env, e->Iex.Binop.arg1);
-//ZZ             HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
-//ZZ             HReg argR2 = newVRegI(env);
-//ZZ             UInt size;
-//ZZ             switch (e->Iex.Binop.op) {
-//ZZ                case Iop_ShrN8x16: size = 0; break;
-//ZZ                case Iop_ShrN16x8: size = 1; break;
-//ZZ                case Iop_ShrN32x4: size = 2; break;
-//ZZ                case Iop_ShrN64x2: size = 3; break;
-//ZZ                default: vassert(0);
-//ZZ             }
-//ZZ             addInstr(env, ARMInstr_Unary(ARMun_NEG, argR2, argR));
-//ZZ             addInstr(env, ARMInstr_NUnary(ARMneon_DUP,
-//ZZ                                           tmp, argR2, 0, True));
-//ZZ             addInstr(env, ARMInstr_NShift(ARMneon_VSHL,
-//ZZ                                           res, argL, tmp, size, True));
-//ZZ             return res;
-//ZZ          }
+         case Iop_ShrN64x2:
+         case Iop_SarN64x2: {
+            IRExpr* argL = e->Iex.Binop.arg1;
+            IRExpr* argR = e->Iex.Binop.arg2;
+            if (argR->tag == Iex_Const && argR->Iex.Const.con->tag == Ico_U8) {
+               UInt amt   = argR->Iex.Const.con->Ico.U8;
+               UInt limit = 0;
+               ARM64VecShiftOp op = ARM64vecsh_INVALID;
+               switch (e->Iex.Binop.op) {
+                  case Iop_ShrN64x2:
+                     op = ARM64vecsh_USHR64x2; limit = 63; break;
+                  case Iop_SarN64x2:
+                     op = ARM64vecsh_SSHR64x2; limit = 63; break;
+                  default:
+                     vassert(0);
+               }
+               if (op != ARM64vecsh_INVALID && amt > 0 && amt <= limit) {
+                  HReg src = iselV128Expr(env, argL);
+                  HReg dst = newVRegV(env);
+                  addInstr(env, ARM64Instr_VShiftImmV(op, dst, src, amt));
+                  return dst;
+               }
+            }
+            /* else fall out; this is unhandled */
+            break;
+         }
 //ZZ          case Iop_ShlN8x16:
 //ZZ          case Iop_ShlN16x8:
 //ZZ          case Iop_ShlN32x4:

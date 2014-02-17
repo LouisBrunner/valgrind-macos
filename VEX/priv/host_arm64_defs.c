@@ -200,7 +200,6 @@ void getAllocableRegs_ARM64 ( Int* nregs, HReg** arr )
 }
 
 
-
 /* --------- Condition codes, ARM64 encoding. --------- */
 
 static const HChar* showARM64CondCode ( ARM64CondCode cond ) {
@@ -881,6 +880,8 @@ static void showARM64VecBinOp(/*OUT*/const HChar** nm,
       case ARM64vecb_SMIN8x16: *nm = "smin"; *ar = "16b"; return;
       case ARM64vecb_AND:      *nm = "and "; *ar = "all"; return;
       case ARM64vecb_ORR:      *nm = "orr "; *ar = "all"; return;
+      case ARM64vecb_XOR:      *nm = "eor "; *ar = "all"; return;
+      case ARM64vecb_CMEQ64x2: *nm = "cmeq"; *ar = "2d";  return;
       default: vpanic("showARM64VecBinOp");
    }
 }
@@ -889,11 +890,23 @@ static void showARM64VecUnaryOp(/*OUT*/const HChar** nm,
                                 /*OUT*/const HChar** ar, ARM64VecUnaryOp op )
 {
    switch (op) {
-      case ARM64vecu_FNEG64x2: *nm = "fneg "; *ar = "2d"; return;
+      case ARM64vecu_FNEG64x2: *nm = "fneg "; *ar = "2d";  return;
       case ARM64vecu_FNEG32x4: *nm = "fneg "; *ar = "4s";  return;
       case ARM64vecu_FABS64x2: *nm = "fabs "; *ar = "2d";  return;
       case ARM64vecu_FABS32x4: *nm = "fabs "; *ar = "4s";  return;
-      default: vpanic("showARM64VecBinOp");
+      case ARM64vecu_NOT:      *nm = "not  "; *ar = "all"; return;
+      default: vpanic("showARM64VecUnaryOp");
+   }
+}
+
+static void showARM64VecShiftOp(/*OUT*/const HChar** nm,
+                                /*OUT*/const HChar** ar,
+                                ARM64VecShiftOp op )
+{
+   switch (op) {
+      case ARM64vecsh_USHR64x2: *nm = "ushr  "; *ar = "2d";  return;
+      case ARM64vecsh_SSHR64x2: *nm = "sshr  "; *ar = "2d";  return;
+      default: vpanic("showARM64VecShiftImmOp");
    }
 }
 
@@ -1588,6 +1601,25 @@ ARM64Instr* ARM64Instr_VNarrowV ( UInt dszBlg2, HReg dst, HReg src ) {
    vassert(dszBlg2 == 0 || dszBlg2 == 1 || dszBlg2 == 2);
    return i;
 }
+ARM64Instr* ARM64Instr_VShiftImmV ( ARM64VecShiftOp op,
+                                    HReg dst, HReg src, UInt amt ) {
+   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   i->tag                    = ARM64in_VShiftImmV;
+   i->ARM64in.VShiftImmV.op  = op;
+   i->ARM64in.VShiftImmV.dst = dst;
+   i->ARM64in.VShiftImmV.src = src;
+   i->ARM64in.VShiftImmV.amt = amt;
+   UInt maxSh = 0;
+   switch (op) {
+      case ARM64vecsh_USHR64x2: case ARM64vecsh_SSHR64x2:
+         maxSh = 63; break;
+      default:
+         vassert(0);
+   }
+   vassert(maxSh > 0);
+   vassert(amt > 0 && amt <= maxSh);
+   return i;
+}
 //ZZ ARMInstr* ARMInstr_VAluS ( ARMVfpOp op, HReg dst, HReg argL, HReg argR ) {
 //ZZ    ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
 //ZZ    i->tag              = ARMin_VAluS;
@@ -2215,6 +2247,17 @@ void ppARM64Instr ( ARM64Instr* i ) {
          vex_printf(".%s", dszBlg2 < 3 ? sarr[dszBlg2] : "??");
          return;
       }
+      case ARM64in_VShiftImmV: {
+         const HChar* nm = "??";
+         const HChar* ar = "??";
+         showARM64VecShiftOp(&nm, &ar, i->ARM64in.VShiftImmV.op);
+         vex_printf("%s ", nm);
+         ppHRegARM64(i->ARM64in.VShiftImmV.dst);
+         vex_printf(".%s, ", ar);
+         ppHRegARM64(i->ARM64in.VShiftImmV.src);
+         vex_printf(".%s, #%u", ar, i->ARM64in.VShiftImmV.amt);
+         return;
+      }
 //ZZ       case ARMin_VAluS:
 //ZZ          vex_printf("f%-3ss ", showARMVfpOp(i->ARMin.VAluS.op));
 //ZZ          ppHRegARM(i->ARMin.VAluS.dst);
@@ -2691,6 +2734,10 @@ void getRegUsage_ARM64Instr ( HRegUsage* u, ARM64Instr* i, Bool mode64 )
          addHRegUse(u, HRmWrite, i->ARM64in.VNarrowV.dst);
          addHRegUse(u, HRmRead, i->ARM64in.VNarrowV.src);
          return;
+      case ARM64in_VShiftImmV:
+         addHRegUse(u, HRmWrite, i->ARM64in.VShiftImmV.dst);
+         addHRegUse(u, HRmRead, i->ARM64in.VShiftImmV.src);
+         return;
 //ZZ       case ARMin_VAluS:
 //ZZ          addHRegUse(u, HRmWrite, i->ARMin.VAluS.dst);
 //ZZ          addHRegUse(u, HRmRead, i->ARMin.VAluS.argL);
@@ -2978,6 +3025,12 @@ void mapRegs_ARM64Instr ( HRegRemap* m, ARM64Instr* i, Bool mode64 )
       case ARM64in_VNarrowV:
          i->ARM64in.VNarrowV.dst = lookupHRegRemap(m, i->ARM64in.VNarrowV.dst);
          i->ARM64in.VNarrowV.src = lookupHRegRemap(m, i->ARM64in.VNarrowV.src);
+         return;
+      case ARM64in_VShiftImmV:
+         i->ARM64in.VShiftImmV.dst
+            = lookupHRegRemap(m, i->ARM64in.VShiftImmV.dst);
+         i->ARM64in.VShiftImmV.src
+            = lookupHRegRemap(m, i->ARM64in.VShiftImmV.src);
          return;
 //ZZ       case ARMin_VAluS:
 //ZZ          i->ARMin.VAluS.dst  = lookupHRegRemap(m, i->ARMin.VAluS.dst);
@@ -3272,6 +3325,7 @@ static inline UChar qregNo ( HReg r )
 #define X11111   BITS8(0,0,0, 1,1,1,1,1)
 
 #define X000000  BITS8(0,0, 0,0,0,0,0,0)
+#define X000001  BITS8(0,0, 0,0,0,0,0,1)
 #define X000100  BITS8(0,0, 0,0,0,1,0,0)
 #define X000111  BITS8(0,0, 0,0,0,1,1,1)
 #define X001000  BITS8(0,0, 0,0,1,0,0,0)
@@ -3280,11 +3334,14 @@ static inline UChar qregNo ( HReg r )
 #define X001111  BITS8(0,0, 0,0,1,1,1,1)
 #define X010000  BITS8(0,0, 0,1,0,0,0,0)
 #define X010001  BITS8(0,0, 0,1,0,0,0,1)
+#define X010110  BITS8(0,0, 0,1,0,1,1,0)
 #define X011001  BITS8(0,0, 0,1,1,0,0,1)
 #define X011010  BITS8(0,0, 0,1,1,0,1,0)
 #define X011011  BITS8(0,0, 0,1,1,0,1,1)
+#define X011110  BITS8(0,0, 0,1,1,1,1,0)
 #define X011111  BITS8(0,0, 0,1,1,1,1,1)
 #define X100001  BITS8(0,0, 1,0,0,0,0,1)
+#define X100011  BITS8(0,0, 1,0,0,0,1,1)
 #define X100100  BITS8(0,0, 1,0,0,1,0,0)
 #define X100101  BITS8(0,0, 1,0,0,1,0,1)
 #define X100110  BITS8(0,0, 1,0,0,1,1,0)
@@ -3298,6 +3355,8 @@ static inline UChar qregNo ( HReg r )
 #define X111101  BITS8(0,0, 1,1,1,1,0,1)
 #define X111110  BITS8(0,0, 1,1,1,1,1,0)
 #define X111111  BITS8(0,0, 1,1,1,1,1,1)
+
+#define X1000000  BITS8(0, 1,0,0,0,0,0,0)
 
 #define X00100000  BITS8(0,0,1,0,0,0,0,0)
 #define X00100001  BITS8(0,0,1,0,0,0,0,1)
@@ -3415,6 +3474,25 @@ static inline UInt X_3_5_8_6_5_5 ( UInt f1, UInt f2, UInt f3,
    w = (w <<  3) | f1;
    w = (w <<  5) | f2;
    w = (w <<  8) | f3;
+   w = (w <<  6) | f4;
+   w = (w <<  5) | f5;
+   w = (w <<  5) | f6;
+   return w;
+}
+
+static inline UInt X_3_6_7_6_5_5 ( UInt f1, UInt f2, UInt f3,
+                                   UInt f4, UInt f5, UInt f6 ) {
+   vassert(3+6+7+6+5+5 == 32);
+   vassert(f1 < (1<<3));
+   vassert(f2 < (1<<6));
+   vassert(f3 < (1<<7));
+   vassert(f4 < (1<<6));
+   vassert(f5 < (1<<5));
+   vassert(f6 < (1<<5));
+   UInt w = 0;
+   w = (w <<  3) | f1;
+   w = (w <<  6) | f2;
+   w = (w <<  7) | f3;
    w = (w <<  6) | f4;
    w = (w <<  5) | f5;
    w = (w <<  5) | f6;
@@ -4843,6 +4921,11 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
 
             010 01110 00 1 m  000111 n d   AND Vd, Vn, Vm
             010 01110 10 1 m  000111 n d   ORR Vd, Vn, Vm
+            011 01110 00 1 m  000111 n d   EOR Vd, Vn, Vm
+
+            011 01110 11 1 m  100011 n d   CMEQ Vd.2d, Vn.2d, Vm.2d
+            011 01110 11 1 m  001101 n d   CMHI Vd.2d, Vn.2d, Vm.2d  >u, ATC
+            010 01110 11 1 m  001101 n d   CMGT Vd.2d, Vn.2d, Vm.2d  >s, ATC
          */
          UInt vD = qregNo(i->ARM64in.VBinV.dst);
          UInt vN = qregNo(i->ARM64in.VBinV.argL);
@@ -4931,12 +5014,20 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
                *p++ = X_3_8_5_6_5_5(X010, X01110011, vM, X011011, vN, vD);
                break;
 
-            case ARM64vecb_ORR:
-               *p++ = X_3_8_5_6_5_5(X010, X01110101, vM, X000111, vN, vD);
-               break;
             case ARM64vecb_AND:
                *p++ = X_3_8_5_6_5_5(X010, X01110001, vM, X000111, vN, vD);
                break;
+            case ARM64vecb_ORR:
+               *p++ = X_3_8_5_6_5_5(X010, X01110101, vM, X000111, vN, vD);
+               break;
+            case ARM64vecb_XOR:
+               *p++ = X_3_8_5_6_5_5(X011, X01110001, vM, X000111, vN, vD);
+               break;
+
+            case ARM64vecb_CMEQ64x2:
+               *p++ = X_3_8_5_6_5_5(X011, X01110111, vM, X100011, vN, vD);
+               break;
+
             default:
                goto bad;
          }
@@ -4944,16 +5035,23 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
       }
       case ARM64in_VUnaryV: {
          /* 31        23   20    15     9 4
-            010 01110 11 1 00000 111110 n d  FABS Vd.2d, Vn.2d
-            010 01110 10 1 00000 111110 n d  FABS Vd.4s, Vn.4s
-            011 01110 11 1 00000 111110 n d  FNEG Vd.2d, Vn.2d
-            011 01110 10 1 00000 111110 n d  FNEG Vd.4s, Vn.4s
+            010 01110 11 1 00000 111110 n d  FABS Vd.2d,  Vn.2d
+            010 01110 10 1 00000 111110 n d  FABS Vd.4s,  Vn.4s
+            011 01110 11 1 00000 111110 n d  FNEG Vd.2d,  Vn.2d
+            011 01110 10 1 00000 111110 n d  FNEG Vd.4s,  Vn.4s
+            011 01110 00 1 00000 010110 n d  NOT  Vd.16b, Vn.16b
          */
          UInt vD = qregNo(i->ARM64in.VUnaryV.dst);
          UInt vN = qregNo(i->ARM64in.VUnaryV.arg);
          switch (i->ARM64in.VUnaryV.op) {
+            case ARM64vecu_FABS64x2:
+               *p++ = X_3_8_5_6_5_5(X010, X01110111, X00000, X111110, vN, vD);
+               break;
             case ARM64vecu_FNEG64x2:
                *p++ = X_3_8_5_6_5_5(X011, X01110111, X00000, X111110, vN, vD);
+               break;
+            case ARM64vecu_NOT:
+               *p++ = X_3_8_5_6_5_5(X011, X01110001, X00000, X010110, vN, vD);
                break;
             default:
                goto bad;
@@ -4973,6 +5071,37 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
          *p++ = X_3_8_5_6_5_5(X000, X01110001 | (dszBlg2 << 1),
                               X00001, X001010, vN, vD);
          goto done;
+      }
+      case ARM64in_VShiftImmV: {
+         /*
+            0q1 011110 immh immb 000001 n d  USHR Vd.T, Vn.T, #sh
+            0q0 011110 immh immb 000001 n d  SSHR Vd.T, Vn.T, #sh
+            where immh:immb
+               = case T of 
+                    2d  | sh in 1..63 -> let xxxxxx = 64-sh in 1xxx:xxx
+                    4s  | sh in 1..31 -> let  xxxxx = 32-sh in 01xx:xxx
+                    8h  | sh in 1..15 -> let   xxxx = 16-sh in 001x:xxx
+                    16b | sh in 1..7  -> let    xxx =  8-sh in 0001:xxx
+         */
+         UInt vD = qregNo(i->ARM64in.VShiftImmV.dst);
+         UInt vN = qregNo(i->ARM64in.VShiftImmV.src);
+         UInt sh = i->ARM64in.VShiftImmV.amt;
+         ARM64VecShiftOp op = i->ARM64in.VShiftImmV.op;
+         Bool syned = False;
+         switch (op) {
+            case ARM64vecsh_SSHR64x2: syned = True;
+            case ARM64vecsh_USHR64x2: /* fallthrough */
+               if (sh >= 1 && sh <= 63) {
+                  UInt xxxxxx = 64-sh;
+                  *p++ = X_3_6_7_6_5_5(syned ? X010 : X011, X011110,
+                                       X1000000 | xxxxxx, X000001, vN, vD);
+                  goto done;
+               }
+               break;
+            default:
+               break;
+         }
+         goto bad;
       }
 //ZZ       case ARMin_VAluS: {
 //ZZ          UInt dN = fregNo(i->ARMin.VAluS.argL);

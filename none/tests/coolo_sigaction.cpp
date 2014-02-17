@@ -40,7 +40,6 @@ void setupHandlers()
 
 int main()
 {
-    int i;
     char buffer[200];
     setupHandlers();
     FILE *p = popen("echo Hallo World", "r");
@@ -48,7 +47,6 @@ int main()
         int n = fread(buffer, 200, 1, p);
         __attribute__((unused)) ssize_t nw = write(2, buffer, n);
     }
-    fclose(p);
-    for (i = 0; i < 1000000; i++) ;
+    pclose(p);
     return 0;
 }

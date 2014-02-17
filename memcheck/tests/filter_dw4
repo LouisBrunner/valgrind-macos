@@ -1,0 +1,8 @@
+#! /bin/sh
+
+# Size of structure s1 differs between 32-bit and 64-bit programs.
+sed "s/inside a block of size [0-9]* alloc'd/inside a block of size ... alloc'd/" |
+
+./filter_stderr "$@"
+
+exit 0

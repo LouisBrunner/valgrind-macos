@@ -52,6 +52,7 @@ where XXXXXX is the bug number as listed below.
 330469  Add clock_adjtime syscall support
 330939  Support for AMD's syscall instruction on x86
 330941  Typo in PRE(poll) syscall wrapper
+331254  Fix expected output for memcheck/tests/dw4
 331255  Fix race condition in test none/tests/coolo_sigaction
 331257  Fix type of jump buffer in test none/tests/faultstatus
 n-i-bz  Fix KVM_CREATE_IRQCHIP ioctl handling

@@ -1490,6 +1490,46 @@ CFLAGS=$safe_CFLAGS
 AC_SUBST(FLAG_M64)
 
 
+# does this compiler support -march=mips32 (mips32 default) ?
+AC_MSG_CHECKING([if gcc accepts -march=mips32])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="$CFLAGS -march=mips32"
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  return 0;
+]])], [
+FLAG_MIPS32="-march=mips32"
+AC_MSG_RESULT([yes])
+], [
+FLAG_MIPS32=""
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
+AC_SUBST(FLAG_MIPS32)
+
+
+# does this compiler support -march=mips64 (mips64 default) ?
+AC_MSG_CHECKING([if gcc accepts -march=mips64])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="$CFLAGS -march=mips64"
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  return 0;
+]])], [
+FLAG_MIPS64="-march=mips64"
+AC_MSG_RESULT([yes])
+], [
+FLAG_MIPS64=""
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
+AC_SUBST(FLAG_MIPS64)
+
+
 # does this compiler support -march=octeon (Cavium OCTEON I Specific) ?
 AC_MSG_CHECKING([if gcc accepts -march=octeon])
 
@@ -1508,6 +1548,7 @@ AC_MSG_RESULT([no])
 CFLAGS=$safe_CFLAGS
 
 AC_SUBST(FLAG_OCTEON)
+
 
 # does this compiler support -march=octeon2 (Cavium OCTEON II Specific) ?
 AC_MSG_CHECKING([if gcc accepts -march=octeon2])

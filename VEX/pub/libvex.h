@@ -200,10 +200,15 @@ typedef
 #define VEX_PRID_IMP_34K        0x9500
 #define VEX_PRID_IMP_74K        0x9700
 
+/* CPU has FPU and 32 dbl. prec. FP registers */
+#define VEX_PRID_CPU_32FPR      0x00000040
+
 /* Get MIPS Company ID from HWCAPS */
 #define VEX_MIPS_COMP_ID(x) ((x) & 0x00FF0000)
 /* Get MIPS Processor ID from HWCAPS */
-#define VEX_MIPS_PROC_ID(x) ((x) & 0x0000FFFF)
+#define VEX_MIPS_PROC_ID(x) ((x) & 0x0000FF00)
+/* Get MIPS Revision from HWCAPS */
+#define VEX_MIPS_REV(x) ((x) & 0x000000FF)
 /* Check if the processor supports DSP ASE Rev 2. */
 #define VEX_MIPS_PROC_DSP2(x) ((VEX_MIPS_COMP_ID(x) == VEX_PRID_COMP_MIPS) && \
                                (VEX_MIPS_PROC_ID(x) == VEX_PRID_IMP_74K))

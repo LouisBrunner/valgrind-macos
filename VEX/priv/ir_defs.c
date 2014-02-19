@@ -1414,6 +1414,7 @@ void ppIRJumpKind ( IRJumpKind kind )
       case Ijk_MapFail:       vex_printf("MapFail"); break;
       case Ijk_TInval:        vex_printf("Invalidate"); break;
       case Ijk_NoRedir:       vex_printf("NoRedir"); break;
+      case Ijk_SigILL:        vex_printf("SigILL"); break;
       case Ijk_SigTRAP:       vex_printf("SigTRAP"); break;
       case Ijk_SigSEGV:       vex_printf("SigSEGV"); break;
       case Ijk_SigBUS:        vex_printf("SigBUS"); break;

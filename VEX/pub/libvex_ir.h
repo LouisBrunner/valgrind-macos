@@ -2107,6 +2107,7 @@ typedef
       Ijk_MapFail,        /* Vex-provided address translation failed */
       Ijk_TInval,         /* Invalidate translations before continuing. */
       Ijk_NoRedir,        /* Jump to un-redirected guest addr */
+      Ijk_SigILL,         /* current instruction synths SIGILL */
       Ijk_SigTRAP,        /* current instruction synths SIGTRAP */
       Ijk_SigSEGV,        /* current instruction synths SIGSEGV */
       Ijk_SigBUS,         /* current instruction synths SIGBUS */

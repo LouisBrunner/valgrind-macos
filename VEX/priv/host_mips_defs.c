@@ -37,7 +37,7 @@
 #include "host_mips_defs.h"
 
 /* guest_COND offset. */
-#define COND_OFFSET(__mode64) (__mode64 ? 612 : 316)
+#define COND_OFFSET(__mode64) (__mode64 ? 612 : 448)
 
 /* Register number for guest state pointer in host code. */
 #define GuestSP 23
@@ -81,7 +81,7 @@ void ppHRegMIPS(HReg reg, Bool mode64)
 
    /* But specific for real regs. */
    vassert(hregClass(reg) == HRcInt32 || hregClass(reg) == HRcInt64 ||
-      hregClass(reg) == HRcFlt32 || hregClass(reg) == HRcFlt64);
+           hregClass(reg) == HRcFlt32 || hregClass(reg) == HRcFlt64);
 
    /* But specific for real regs. */
    switch (hregClass(reg)) {
@@ -91,7 +91,6 @@ void ppHRegMIPS(HReg reg, Bool mode64)
          vex_printf("%s", ireg32_names[r]);
          return;
       case HRcInt64:
-         vassert(mode64);
          r = hregNumber (reg);
          vassert (r >= 0 && r < 32);
          vex_printf ("%s", ireg32_names[r]);
@@ -773,6 +772,12 @@ const HChar *showMIPSFpOp(MIPSFpOp op)
       case Mfp_CVTWD:
          ret = "cvt.w.d";
          break;
+      case Mfp_CVTLD:
+         ret = "cvt.l.d";
+         break;
+      case Mfp_CVTLS:
+         ret = "cvt.l.s";
+         break;
       case Mfp_TRUWD:
          ret = "trunc.w.d";
          break;
@@ -801,6 +806,7 @@ const HChar *showMIPSFpOp(MIPSFpOp op)
          ret = "C.cond.d";
          break;
       default:
+         vex_printf("Unknown op: %d", op);
          vpanic("showMIPSFpOp");
          break;
    }
@@ -1864,7 +1870,7 @@ void ppMIPSInstr(MIPSInstr * i, Bool mode64)
          return;
       }
       case Min_FpGpMove: {
-         vex_printf("%s", showMIPSFpGpMoveOp(i->Min.FpGpMove.op));
+         vex_printf("%s ", showMIPSFpGpMoveOp(i->Min.FpGpMove.op));
          ppHRegMIPS(i->Min.FpGpMove.dst, mode64);
          vex_printf(", ");
          ppHRegMIPS(i->Min.FpGpMove.src, mode64);
@@ -2380,7 +2386,6 @@ static UInt iregNo(HReg r, Bool mode64)
 static UChar fregNo(HReg r, Bool mode64)
 {
    UInt n;
-   vassert(hregClass(r) == (mode64 ? HRcFlt64 : HRcFlt32));
    vassert(!hregIsVirtual(r));
    n = hregNumber(r);
    vassert(n <= 31);
@@ -2390,7 +2395,6 @@ static UChar fregNo(HReg r, Bool mode64)
 static UChar dregNo(HReg r)
 {
    UInt n;
-   vassert(hregClass(r) == HRcFlt64);
    vassert(!hregIsVirtual(r));
    n = hregNumber(r);
    vassert(n <= 31);
@@ -3457,6 +3461,7 @@ Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
             case Ijk_NoDecode:      trcval = VEX_TRC_JMP_NODECODE;      break;
             case Ijk_TInval:        trcval = VEX_TRC_JMP_TINVAL;        break;
             case Ijk_NoRedir:       trcval = VEX_TRC_JMP_NOREDIR;       break;
+            case Ijk_SigILL:        trcval = VEX_TRC_JMP_SIGILL;        break;
             case Ijk_SigTRAP:       trcval = VEX_TRC_JMP_SIGTRAP;       break;
             /* case Ijk_SigSEGV:   trcval = VEX_TRC_JMP_SIGSEGV;       break; */
             case Ijk_SigBUS:        trcval = VEX_TRC_JMP_SIGBUS;        break;
@@ -3886,8 +3891,13 @@ Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
                p = mkFormR(p, 0x11, 0x15, 0, fr_src, fr_dst, 0x20);
                break;
             case Mfp_CVTLS:
-               fr_dst = fregNo(i->Min.FpConvert.dst, mode64);
-               fr_src = dregNo(i->Min.FpConvert.src);
+               if (mode64) {
+                  fr_dst = fregNo(i->Min.FpConvert.dst, mode64);
+                  fr_src = dregNo(i->Min.FpConvert.src);
+               } else {
+                  fr_dst = dregNo(i->Min.FpConvert.dst);
+                  fr_src = fregNo(i->Min.FpConvert.src, mode64);
+               }
                p = mkFormR(p, 0x11, 0x10, 0, fr_src, fr_dst, 0x25);
                break;
             case Mfp_CVTLD:

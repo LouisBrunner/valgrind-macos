@@ -99,8 +99,12 @@ extern UInt mips32_dirtyhelper_rdhwr ( UInt rt, UInt rd );
 extern ULong mips64_dirtyhelper_rdhwr ( ULong rt, ULong rd );
 #endif
 
-extern UInt mips_dirtyhelper_calculate_FCSR ( void* guest_state, UInt fs,
-                                              UInt ft, flt_op op );
+/* Calculate FCSR in fp32 mode. */
+extern UInt mips_dirtyhelper_calculate_FCSR_fp32 ( void* guest_state, UInt fs,
+                                                   UInt ft, flt_op op );
+/* Calculate FCSR in fp64 mode. */
+extern UInt mips_dirtyhelper_calculate_FCSR_fp64 ( void* guest_state, UInt fs,
+                                                   UInt ft, flt_op op );
 
 /*---------------------------------------------------------*/
 /*---               Condition code stuff                ---*/

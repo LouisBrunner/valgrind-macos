@@ -18,7 +18,6 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
 325874  Crash KCachegrind while load big file
 326026  Iop names for count leading zeros/sign bits incorrectly imply a "signedness" in incoming lanes
 326436  False positive in libstdc++ std::list::push_back
-326444  Cavium MIPS Octeon Specific Load Indexed Instructions
 326469  unhandled instruction bytes: 0x66 0xF 0x3A 0x63 0xC1 0xE 0x89 0xC8
 326487  child of debugged process exits without becoming zombie
 326623  A false positive conflict report in a field assignment in a constructor

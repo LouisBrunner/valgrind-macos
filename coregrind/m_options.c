@@ -168,18 +168,8 @@ HChar* VG_(expand_file_name)(const HChar* option_name, const HChar* format)
       goto bad;
    }
 
-   // If 'format' starts with a '/', do not prefix with startup dir.
-   if (format[0] != '/') {
-      j += VG_(strlen)(base_dir);
-   }
-
-   // The 10 is slop, it should be enough in most cases.
-   len = j + VG_(strlen)(format) + 10;
+   len = VG_(strlen)(format) + 1;
    out = VG_(malloc)( "options.efn.1", len );
-   if (format[0] != '/') {
-      VG_(strcpy)(out, base_dir);
-      out[j++] = '/';
-   }
 
 #define ENSURE_THIS_MUCH_SPACE(x) \
    if (j + x >= len) { \
@@ -260,6 +250,18 @@ HChar* VG_(expand_file_name)(const HChar* option_name, const HChar* format)
    }
    ENSURE_THIS_MUCH_SPACE(1);
    out[j++] = 0;
+
+   // If 'out' is not an absolute path name, prefix it with the startup dir.
+   if (out[0] != '/') {
+      len = VG_(strlen)(base_dir) + 1 + VG_(strlen)(out) + 1;
+
+      HChar *absout = VG_(malloc)("options.efn.4", len);
+      VG_(strcpy)(absout, base_dir);
+      VG_(strcat)(absout, "/");
+      VG_(strcat)(absout, out);
+      VG_(free)(out);
+      out = absout;
+   }
 
    return out;
 

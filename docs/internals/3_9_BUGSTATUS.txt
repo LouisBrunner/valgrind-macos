@@ -38,7 +38,6 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
 327138  valgrind.h __VALGRIND_MINOR__  says 8, in 3.9.0 tarball
 327151  valgrind appears to stop compiling when it enters the drd directory
 327155  Valgrind compilation hang on MIPS
-327212  expand_file_name prepends current directory when expansion starts with /
 327223  Support for Cavium MIPS Octeon Atomic and Count Instructions
 327238  assertion failure in Callgrind: bbcc.c:585 (vgCallgrind_setup_bbcc): Assertion 'passed <= last_bb->cjmp_count' failed
 327284  s390x VEX miscompilation of -march=z10 binary

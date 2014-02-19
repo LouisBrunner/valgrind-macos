@@ -1116,10 +1116,10 @@ extern VexInvalRange chainXDirect_ARM64 ( void* place_to_chain,
                                           void* disp_cp_chain_me_EXPECTED,
                                           void* place_to_jump_to );
 
-//ZZ extern VexInvalRange unchainXDirect_ARM ( void* place_to_unchain,
-//ZZ                                           void* place_to_jump_to_EXPECTED,
-//ZZ                                           void* disp_cp_chain_me );
-//ZZ 
+extern VexInvalRange unchainXDirect_ARM64 ( void* place_to_unchain,
+                                            void* place_to_jump_to_EXPECTED,
+                                            void* disp_cp_chain_me );
+
 //ZZ /* Patch the counter location into an existing ProfInc point. */
 //ZZ extern VexInvalRange patchProfInc_ARM ( void*  place_to_patch,
 //ZZ                                         ULong* location_of_counter );

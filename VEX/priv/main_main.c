@@ -1048,6 +1048,8 @@ VexInvalRange LibVEX_UnChain ( VexArch arch_host,
          unchainXDirect = unchainXDirect_AMD64; break;
       case VexArchARM:
          unchainXDirect = unchainXDirect_ARM; break;
+      case VexArchARM64:
+         unchainXDirect = unchainXDirect_ARM64; break;
       case VexArchS390X:
          unchainXDirect = unchainXDirect_S390; break;
       case VexArchPPC32:

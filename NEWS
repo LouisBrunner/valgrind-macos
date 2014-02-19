@@ -5,6 +5,7 @@ Release 3.10.0 (?? ?????? 201?)
 * ================== PLATFORM CHANGES =================
 
 * Support for Android on MIPS32.
+* Support for 64bit FPU on MIPS32 platforms.
 
 * ==================== TOOL CHANGES ====================
 

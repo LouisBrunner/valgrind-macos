@@ -200,6 +200,7 @@ const HChar* name_of_sched_event ( UInt event )
    switch (event) {
       case VEX_TRC_JMP_TINVAL:         return "TINVAL";
       case VEX_TRC_JMP_NOREDIR:        return "NOREDIR";
+      case VEX_TRC_JMP_SIGILL:         return "SIGILL";
       case VEX_TRC_JMP_SIGTRAP:        return "SIGTRAP";
       case VEX_TRC_JMP_SIGSEGV:        return "SIGSEGV";
       case VEX_TRC_JMP_SIGBUS:         return "SIGBUS";
@@ -1433,6 +1434,10 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
          VG_(exit)(1);
          break;
       }
+
+      case VEX_TRC_JMP_SIGILL:
+         VG_(synth_sigill)(tid, VG_(get_IP)(tid));
+         break;
 
       case VEX_TRC_JMP_SIGTRAP:
          VG_(synth_sigtrap)(tid);

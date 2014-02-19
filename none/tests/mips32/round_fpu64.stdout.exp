@@ -1,0 +1,1961 @@
+-------------------------- test FPU Conversion Operations Using the FCSR Rounding Mode --------------------------
+roundig mode: near
+cvt.l.s 0 0.000000
+fcsr: 0x0
+cvt.l.s 456 456.250000
+fcsr: 0x1004
+cvt.l.s 3 3.000000
+fcsr: 0x0
+cvt.l.s -1 -1.000000
+fcsr: 0x0
+cvt.l.s 1384 1384.500000
+fcsr: 0x1004
+cvt.l.s -7 -7.250000
+fcsr: 0x1004
+cvt.l.s 1000000000 1000000000.000000
+fcsr: 0x0
+cvt.l.s -5786 -5786.250000
+fcsr: 0x1004
+cvt.l.s 1752 1752.000000
+fcsr: 0x0
+cvt.l.s 0 0.015625
+fcsr: 0x1004
+cvt.l.s 0 0.031250
+fcsr: 0x1004
+cvt.l.s -248563 -248562.750000
+fcsr: 0x1004
+cvt.l.s -45786 -45786.500000
+fcsr: 0x1004
+cvt.l.s 456 456.000000
+fcsr: 0x0
+cvt.l.s 34 34.031250
+fcsr: 0x1004
+cvt.l.s 45787 45786.750000
+fcsr: 0x1004
+cvt.l.s 1752065 1752065.000000
+fcsr: 0x0
+cvt.l.s 107 107.000000
+fcsr: 0x0
+cvt.l.s -45667 -45667.250000
+fcsr: 0x1004
+cvt.l.s -7 -7.000000
+fcsr: 0x0
+cvt.l.s -347856 -347856.500000
+fcsr: 0x1004
+cvt.l.s 356047 356047.000000
+fcsr: 0x0
+cvt.l.s -1 -1.250000
+fcsr: 0x1004
+cvt.l.s 23 23.062500
+fcsr: 0x1004
+roundig mode: zero
+cvt.l.s 0 0.000000
+fcsr: 0x1
+cvt.l.s 456 456.250000
+fcsr: 0x1005
+cvt.l.s 3 3.000000
+fcsr: 0x1
+cvt.l.s -1 -1.000000
+fcsr: 0x1
+cvt.l.s 1384 1384.500000
+fcsr: 0x1005
+cvt.l.s -7 -7.250000
+fcsr: 0x1005
+cvt.l.s 1000000000 1000000000.000000
+fcsr: 0x1
+cvt.l.s -5786 -5786.250000
+fcsr: 0x1005
+cvt.l.s 1752 1752.000000
+fcsr: 0x1
+cvt.l.s 0 0.015625
+fcsr: 0x1005
+cvt.l.s 0 0.031250
+fcsr: 0x1005
+cvt.l.s -248562 -248562.750000
+fcsr: 0x1005
+cvt.l.s -45786 -45786.500000
+fcsr: 0x1005
+cvt.l.s 456 456.000000
+fcsr: 0x1
+cvt.l.s 34 34.031250
+fcsr: 0x1005
+cvt.l.s 45786 45786.750000
+fcsr: 0x1005
+cvt.l.s 1752065 1752065.000000
+fcsr: 0x1
+cvt.l.s 107 107.000000
+fcsr: 0x1
+cvt.l.s -45667 -45667.250000
+fcsr: 0x1005
+cvt.l.s -7 -7.000000
+fcsr: 0x1
+cvt.l.s -347856 -347856.500000
+fcsr: 0x1005
+cvt.l.s 356047 356047.000000
+fcsr: 0x1
+cvt.l.s -1 -1.250000
+fcsr: 0x1005
+cvt.l.s 23 23.062500
+fcsr: 0x1005
+roundig mode: +inf
+cvt.l.s 0 0.000000
+fcsr: 0x2
+cvt.l.s 457 456.250000
+fcsr: 0x1006
+cvt.l.s 3 3.000000
+fcsr: 0x2
+cvt.l.s -1 -1.000000
+fcsr: 0x2
+cvt.l.s 1385 1384.500000
+fcsr: 0x1006
+cvt.l.s -7 -7.250000
+fcsr: 0x1006
+cvt.l.s 1000000000 1000000000.000000
+fcsr: 0x2
+cvt.l.s -5786 -5786.250000
+fcsr: 0x1006
+cvt.l.s 1752 1752.000000
+fcsr: 0x2
+cvt.l.s 1 0.015625
+fcsr: 0x1006
+cvt.l.s 1 0.031250
+fcsr: 0x1006
+cvt.l.s -248562 -248562.750000
+fcsr: 0x1006
+cvt.l.s -45786 -45786.500000
+fcsr: 0x1006
+cvt.l.s 456 456.000000
+fcsr: 0x2
+cvt.l.s 35 34.031250
+fcsr: 0x1006
+cvt.l.s 45787 45786.750000
+fcsr: 0x1006
+cvt.l.s 1752065 1752065.000000
+fcsr: 0x2
+cvt.l.s 107 107.000000
+fcsr: 0x2
+cvt.l.s -45667 -45667.250000
+fcsr: 0x1006
+cvt.l.s -7 -7.000000
+fcsr: 0x2
+cvt.l.s -347856 -347856.500000
+fcsr: 0x1006
+cvt.l.s 356047 356047.000000
+fcsr: 0x2
+cvt.l.s -1 -1.250000
+fcsr: 0x1006
+cvt.l.s 24 23.062500
+fcsr: 0x1006
+roundig mode: -inf
+cvt.l.s 0 0.000000
+fcsr: 0x3
+cvt.l.s 456 456.250000
+fcsr: 0x1007
+cvt.l.s 3 3.000000
+fcsr: 0x3
+cvt.l.s -1 -1.000000
+fcsr: 0x3
+cvt.l.s 1384 1384.500000
+fcsr: 0x1007
+cvt.l.s -8 -7.250000
+fcsr: 0x1007
+cvt.l.s 1000000000 1000000000.000000
+fcsr: 0x3
+cvt.l.s -5787 -5786.250000
+fcsr: 0x1007
+cvt.l.s 1752 1752.000000
+fcsr: 0x3
+cvt.l.s 0 0.015625
+fcsr: 0x1007
+cvt.l.s 0 0.031250
+fcsr: 0x1007
+cvt.l.s -248563 -248562.750000
+fcsr: 0x1007
+cvt.l.s -45787 -45786.500000
+fcsr: 0x1007
+cvt.l.s 456 456.000000
+fcsr: 0x3
+cvt.l.s 34 34.031250
+fcsr: 0x1007
+cvt.l.s 45786 45786.750000
+fcsr: 0x1007
+cvt.l.s 1752065 1752065.000000
+fcsr: 0x3
+cvt.l.s 107 107.000000
+fcsr: 0x3
+cvt.l.s -45668 -45667.250000
+fcsr: 0x1007
+cvt.l.s -7 -7.000000
+fcsr: 0x3
+cvt.l.s -347857 -347856.500000
+fcsr: 0x1007
+cvt.l.s 356047 356047.000000
+fcsr: 0x3
+cvt.l.s -2 -1.250000
+fcsr: 0x1007
+cvt.l.s 23 23.062500
+fcsr: 0x1007
+roundig mode: near
+cvt.l.d 0 0.000000
+fcsr: 0x0
+cvt.l.d 456 456.250000
+fcsr: 0x1004
+cvt.l.d 3 3.000000
+fcsr: 0x0
+cvt.l.d -1 -1.000000
+fcsr: 0x0
+cvt.l.d 1384 1384.500000
+fcsr: 0x1004
+cvt.l.d -7 -7.250000
+fcsr: 0x1004
+cvt.l.d 1000000000 1000000000.000000
+fcsr: 0x0
+cvt.l.d -5786 -5786.250000
+fcsr: 0x1004
+cvt.l.d 1752 1752.000000
+fcsr: 0x0
+cvt.l.d 0 0.015625
+fcsr: 0x1004
+cvt.l.d 0 0.031250
+fcsr: 0x1004
+cvt.l.d -24856226678934 -24856226678933.750000
+fcsr: 0x1004
+cvt.l.d -45786 -45786.500000
+fcsr: 0x1004
+cvt.l.d 456 456.000000
+fcsr: 0x0
+cvt.l.d 34 34.031250
+fcsr: 0x1004
+cvt.l.d 45787 45786.750000
+fcsr: 0x1004
+cvt.l.d 1752065 1752065.000000
+fcsr: 0x0
+cvt.l.d 107 107.000000
+fcsr: 0x0
+cvt.l.d -45667 -45667.250000
+fcsr: 0x1004
+cvt.l.d -7 -7.000000
+fcsr: 0x0
+cvt.l.d -347856 -347856.500000
+fcsr: 0x1004
+cvt.l.d 356047 356047.000000
+fcsr: 0x0
+cvt.l.d -1 -1.250000
+fcsr: 0x1004
+cvt.l.d 23 23.062500
+fcsr: 0x1004
+roundig mode: zero
+cvt.l.d 0 0.000000
+fcsr: 0x1
+cvt.l.d 456 456.250000
+fcsr: 0x1005
+cvt.l.d 3 3.000000
+fcsr: 0x1
+cvt.l.d -1 -1.000000
+fcsr: 0x1
+cvt.l.d 1384 1384.500000
+fcsr: 0x1005
+cvt.l.d -7 -7.250000
+fcsr: 0x1005
+cvt.l.d 1000000000 1000000000.000000
+fcsr: 0x1
+cvt.l.d -5786 -5786.250000
+fcsr: 0x1005
+cvt.l.d 1752 1752.000000
+fcsr: 0x1
+cvt.l.d 0 0.015625
+fcsr: 0x1005
+cvt.l.d 0 0.031250
+fcsr: 0x1005
+cvt.l.d -24856226678933 -24856226678933.750000
+fcsr: 0x1005
+cvt.l.d -45786 -45786.500000
+fcsr: 0x1005
+cvt.l.d 456 456.000000
+fcsr: 0x1
+cvt.l.d 34 34.031250
+fcsr: 0x1005
+cvt.l.d 45786 45786.750000
+fcsr: 0x1005
+cvt.l.d 1752065 1752065.000000
+fcsr: 0x1
+cvt.l.d 107 107.000000
+fcsr: 0x1
+cvt.l.d -45667 -45667.250000
+fcsr: 0x1005
+cvt.l.d -7 -7.000000
+fcsr: 0x1
+cvt.l.d -347856 -347856.500000
+fcsr: 0x1005
+cvt.l.d 356047 356047.000000
+fcsr: 0x1
+cvt.l.d -1 -1.250000
+fcsr: 0x1005
+cvt.l.d 23 23.062500
+fcsr: 0x1005
+roundig mode: +inf
+cvt.l.d 0 0.000000
+fcsr: 0x2
+cvt.l.d 457 456.250000
+fcsr: 0x1006
+cvt.l.d 3 3.000000
+fcsr: 0x2
+cvt.l.d -1 -1.000000
+fcsr: 0x2
+cvt.l.d 1385 1384.500000
+fcsr: 0x1006
+cvt.l.d -7 -7.250000
+fcsr: 0x1006
+cvt.l.d 1000000000 1000000000.000000
+fcsr: 0x2
+cvt.l.d -5786 -5786.250000
+fcsr: 0x1006
+cvt.l.d 1752 1752.000000
+fcsr: 0x2
+cvt.l.d 1 0.015625
+fcsr: 0x1006
+cvt.l.d 1 0.031250
+fcsr: 0x1006
+cvt.l.d -24856226678933 -24856226678933.750000
+fcsr: 0x1006
+cvt.l.d -45786 -45786.500000
+fcsr: 0x1006
+cvt.l.d 456 456.000000
+fcsr: 0x2
+cvt.l.d 35 34.031250
+fcsr: 0x1006
+cvt.l.d 45787 45786.750000
+fcsr: 0x1006
+cvt.l.d 1752065 1752065.000000
+fcsr: 0x2
+cvt.l.d 107 107.000000
+fcsr: 0x2
+cvt.l.d -45667 -45667.250000
+fcsr: 0x1006
+cvt.l.d -7 -7.000000
+fcsr: 0x2
+cvt.l.d -347856 -347856.500000
+fcsr: 0x1006
+cvt.l.d 356047 356047.000000
+fcsr: 0x2
+cvt.l.d -1 -1.250000
+fcsr: 0x1006
+cvt.l.d 24 23.062500
+fcsr: 0x1006
+roundig mode: -inf
+cvt.l.d 0 0.000000
+fcsr: 0x3
+cvt.l.d 456 456.250000
+fcsr: 0x1007
+cvt.l.d 3 3.000000
+fcsr: 0x3
+cvt.l.d -1 -1.000000
+fcsr: 0x3
+cvt.l.d 1384 1384.500000
+fcsr: 0x1007
+cvt.l.d -8 -7.250000
+fcsr: 0x1007
+cvt.l.d 1000000000 1000000000.000000
+fcsr: 0x3
+cvt.l.d -5787 -5786.250000
+fcsr: 0x1007
+cvt.l.d 1752 1752.000000
+fcsr: 0x3
+cvt.l.d 0 0.015625
+fcsr: 0x1007
+cvt.l.d 0 0.031250
+fcsr: 0x1007
+cvt.l.d -24856226678934 -24856226678933.750000
+fcsr: 0x1007
+cvt.l.d -45787 -45786.500000
+fcsr: 0x1007
+cvt.l.d 456 456.000000
+fcsr: 0x3
+cvt.l.d 34 34.031250
+fcsr: 0x1007
+cvt.l.d 45786 45786.750000
+fcsr: 0x1007
+cvt.l.d 1752065 1752065.000000
+fcsr: 0x3
+cvt.l.d 107 107.000000
+fcsr: 0x3
+cvt.l.d -45668 -45667.250000
+fcsr: 0x1007
+cvt.l.d -7 -7.000000
+fcsr: 0x3
+cvt.l.d -347857 -347856.500000
+fcsr: 0x1007
+cvt.l.d 356047 356047.000000
+fcsr: 0x3
+cvt.l.d -2 -1.250000
+fcsr: 0x1007
+cvt.l.d 23 23.062500
+fcsr: 0x1007
+roundig mode: near
+round.l.s 0 0.000000
+fcsr: 0x0
+round.l.s 456 456.250000
+fcsr: 0x1004
+round.l.s 3 3.000000
+fcsr: 0x0
+round.l.s -1 -1.000000
+fcsr: 0x0
+round.l.s 1384 1384.500000
+fcsr: 0x1004
+round.l.s -7 -7.250000
+fcsr: 0x1004
+round.l.s 1000000000 1000000000.000000
+fcsr: 0x0
+round.l.s -5786 -5786.250000
+fcsr: 0x1004
+round.l.s 1752 1752.000000
+fcsr: 0x0
+round.l.s 0 0.015625
+fcsr: 0x1004
+round.l.s 0 0.031250
+fcsr: 0x1004
+round.l.s -248563 -248562.750000
+fcsr: 0x1004
+round.l.s -45786 -45786.500000
+fcsr: 0x1004
+round.l.s 456 456.000000
+fcsr: 0x0
+round.l.s 34 34.031250
+fcsr: 0x1004
+round.l.s 45787 45786.750000
+fcsr: 0x1004
+round.l.s 1752065 1752065.000000
+fcsr: 0x0
+round.l.s 107 107.000000
+fcsr: 0x0
+round.l.s -45667 -45667.250000
+fcsr: 0x1004
+round.l.s -7 -7.000000
+fcsr: 0x0
+round.l.s -347856 -347856.500000
+fcsr: 0x1004
+round.l.s 356047 356047.000000
+fcsr: 0x0
+round.l.s -1 -1.250000
+fcsr: 0x1004
+round.l.s 23 23.062500
+fcsr: 0x1004
+roundig mode: zero
+round.l.s 0 0.000000
+fcsr: 0x1
+round.l.s 456 456.250000
+fcsr: 0x1005
+round.l.s 3 3.000000
+fcsr: 0x1
+round.l.s -1 -1.000000
+fcsr: 0x1
+round.l.s 1384 1384.500000
+fcsr: 0x1005
+round.l.s -7 -7.250000
+fcsr: 0x1005
+round.l.s 1000000000 1000000000.000000
+fcsr: 0x1
+round.l.s -5786 -5786.250000
+fcsr: 0x1005
+round.l.s 1752 1752.000000
+fcsr: 0x1
+round.l.s 0 0.015625
+fcsr: 0x1005
+round.l.s 0 0.031250
+fcsr: 0x1005
+round.l.s -248563 -248562.750000
+fcsr: 0x1005
+round.l.s -45786 -45786.500000
+fcsr: 0x1005
+round.l.s 456 456.000000
+fcsr: 0x1
+round.l.s 34 34.031250
+fcsr: 0x1005
+round.l.s 45787 45786.750000
+fcsr: 0x1005
+round.l.s 1752065 1752065.000000
+fcsr: 0x1
+round.l.s 107 107.000000
+fcsr: 0x1
+round.l.s -45667 -45667.250000
+fcsr: 0x1005
+round.l.s -7 -7.000000
+fcsr: 0x1
+round.l.s -347856 -347856.500000
+fcsr: 0x1005
+round.l.s 356047 356047.000000
+fcsr: 0x1
+round.l.s -1 -1.250000
+fcsr: 0x1005
+round.l.s 23 23.062500
+fcsr: 0x1005
+roundig mode: +inf
+round.l.s 0 0.000000
+fcsr: 0x2
+round.l.s 456 456.250000
+fcsr: 0x1006
+round.l.s 3 3.000000
+fcsr: 0x2
+round.l.s -1 -1.000000
+fcsr: 0x2
+round.l.s 1384 1384.500000
+fcsr: 0x1006
+round.l.s -7 -7.250000
+fcsr: 0x1006
+round.l.s 1000000000 1000000000.000000
+fcsr: 0x2
+round.l.s -5786 -5786.250000
+fcsr: 0x1006
+round.l.s 1752 1752.000000
+fcsr: 0x2
+round.l.s 0 0.015625
+fcsr: 0x1006
+round.l.s 0 0.031250
+fcsr: 0x1006
+round.l.s -248563 -248562.750000
+fcsr: 0x1006
+round.l.s -45786 -45786.500000
+fcsr: 0x1006
+round.l.s 456 456.000000
+fcsr: 0x2
+round.l.s 34 34.031250
+fcsr: 0x1006
+round.l.s 45787 45786.750000
+fcsr: 0x1006
+round.l.s 1752065 1752065.000000
+fcsr: 0x2
+round.l.s 107 107.000000
+fcsr: 0x2
+round.l.s -45667 -45667.250000
+fcsr: 0x1006
+round.l.s -7 -7.000000
+fcsr: 0x2
+round.l.s -347856 -347856.500000
+fcsr: 0x1006
+round.l.s 356047 356047.000000
+fcsr: 0x2
+round.l.s -1 -1.250000
+fcsr: 0x1006
+round.l.s 23 23.062500
+fcsr: 0x1006
+roundig mode: -inf
+round.l.s 0 0.000000
+fcsr: 0x3
+round.l.s 456 456.250000
+fcsr: 0x1007
+round.l.s 3 3.000000
+fcsr: 0x3
+round.l.s -1 -1.000000
+fcsr: 0x3
+round.l.s 1384 1384.500000
+fcsr: 0x1007
+round.l.s -7 -7.250000
+fcsr: 0x1007
+round.l.s 1000000000 1000000000.000000
+fcsr: 0x3
+round.l.s -5786 -5786.250000
+fcsr: 0x1007
+round.l.s 1752 1752.000000
+fcsr: 0x3
+round.l.s 0 0.015625
+fcsr: 0x1007
+round.l.s 0 0.031250
+fcsr: 0x1007
+round.l.s -248563 -248562.750000
+fcsr: 0x1007
+round.l.s -45786 -45786.500000
+fcsr: 0x1007
+round.l.s 456 456.000000
+fcsr: 0x3
+round.l.s 34 34.031250
+fcsr: 0x1007
+round.l.s 45787 45786.750000
+fcsr: 0x1007
+round.l.s 1752065 1752065.000000
+fcsr: 0x3
+round.l.s 107 107.000000
+fcsr: 0x3
+round.l.s -45667 -45667.250000
+fcsr: 0x1007
+round.l.s -7 -7.000000
+fcsr: 0x3
+round.l.s -347856 -347856.500000
+fcsr: 0x1007
+round.l.s 356047 356047.000000
+fcsr: 0x3
+round.l.s -1 -1.250000
+fcsr: 0x1007
+round.l.s 23 23.062500
+fcsr: 0x1007
+roundig mode: near
+round.l.d 0 0.000000
+fcsr: 0x0
+round.l.d 456 456.250000
+fcsr: 0x1004
+round.l.d 3 3.000000
+fcsr: 0x0
+round.l.d -1 -1.000000
+fcsr: 0x0
+round.l.d 1384 1384.500000
+fcsr: 0x1004
+round.l.d -7 -7.250000
+fcsr: 0x1004
+round.l.d 1000000000 1000000000.000000
+fcsr: 0x0
+round.l.d -5786 -5786.250000
+fcsr: 0x1004
+round.l.d 1752 1752.000000
+fcsr: 0x0
+round.l.d 0 0.015625
+fcsr: 0x1004
+round.l.d 0 0.031250
+fcsr: 0x1004
+round.l.d -24856226678934 -24856226678933.750000
+fcsr: 0x1004
+round.l.d -45786 -45786.500000
+fcsr: 0x1004
+round.l.d 456 456.000000
+fcsr: 0x0
+round.l.d 34 34.031250
+fcsr: 0x1004
+round.l.d 45787 45786.750000
+fcsr: 0x1004
+round.l.d 1752065 1752065.000000
+fcsr: 0x0
+round.l.d 107 107.000000
+fcsr: 0x0
+round.l.d -45667 -45667.250000
+fcsr: 0x1004
+round.l.d -7 -7.000000
+fcsr: 0x0
+round.l.d -347856 -347856.500000
+fcsr: 0x1004
+round.l.d 356047 356047.000000
+fcsr: 0x0
+round.l.d -1 -1.250000
+fcsr: 0x1004
+round.l.d 23 23.062500
+fcsr: 0x1004
+roundig mode: zero
+round.l.d 0 0.000000
+fcsr: 0x1
+round.l.d 456 456.250000
+fcsr: 0x1005
+round.l.d 3 3.000000
+fcsr: 0x1
+round.l.d -1 -1.000000
+fcsr: 0x1
+round.l.d 1384 1384.500000
+fcsr: 0x1005
+round.l.d -7 -7.250000
+fcsr: 0x1005
+round.l.d 1000000000 1000000000.000000
+fcsr: 0x1
+round.l.d -5786 -5786.250000
+fcsr: 0x1005
+round.l.d 1752 1752.000000
+fcsr: 0x1
+round.l.d 0 0.015625
+fcsr: 0x1005
+round.l.d 0 0.031250
+fcsr: 0x1005
+round.l.d -24856226678934 -24856226678933.750000
+fcsr: 0x1005
+round.l.d -45786 -45786.500000
+fcsr: 0x1005
+round.l.d 456 456.000000
+fcsr: 0x1
+round.l.d 34 34.031250
+fcsr: 0x1005
+round.l.d 45787 45786.750000
+fcsr: 0x1005
+round.l.d 1752065 1752065.000000
+fcsr: 0x1
+round.l.d 107 107.000000
+fcsr: 0x1
+round.l.d -45667 -45667.250000
+fcsr: 0x1005
+round.l.d -7 -7.000000
+fcsr: 0x1
+round.l.d -347856 -347856.500000
+fcsr: 0x1005
+round.l.d 356047 356047.000000
+fcsr: 0x1
+round.l.d -1 -1.250000
+fcsr: 0x1005
+round.l.d 23 23.062500
+fcsr: 0x1005
+roundig mode: +inf
+round.l.d 0 0.000000
+fcsr: 0x2
+round.l.d 456 456.250000
+fcsr: 0x1006
+round.l.d 3 3.000000
+fcsr: 0x2
+round.l.d -1 -1.000000
+fcsr: 0x2
+round.l.d 1384 1384.500000
+fcsr: 0x1006
+round.l.d -7 -7.250000
+fcsr: 0x1006
+round.l.d 1000000000 1000000000.000000
+fcsr: 0x2
+round.l.d -5786 -5786.250000
+fcsr: 0x1006
+round.l.d 1752 1752.000000
+fcsr: 0x2
+round.l.d 0 0.015625
+fcsr: 0x1006
+round.l.d 0 0.031250
+fcsr: 0x1006
+round.l.d -24856226678934 -24856226678933.750000
+fcsr: 0x1006
+round.l.d -45786 -45786.500000
+fcsr: 0x1006
+round.l.d 456 456.000000
+fcsr: 0x2
+round.l.d 34 34.031250
+fcsr: 0x1006
+round.l.d 45787 45786.750000
+fcsr: 0x1006
+round.l.d 1752065 1752065.000000
+fcsr: 0x2
+round.l.d 107 107.000000
+fcsr: 0x2
+round.l.d -45667 -45667.250000
+fcsr: 0x1006
+round.l.d -7 -7.000000
+fcsr: 0x2
+round.l.d -347856 -347856.500000
+fcsr: 0x1006
+round.l.d 356047 356047.000000
+fcsr: 0x2
+round.l.d -1 -1.250000
+fcsr: 0x1006
+round.l.d 23 23.062500
+fcsr: 0x1006
+roundig mode: -inf
+round.l.d 0 0.000000
+fcsr: 0x3
+round.l.d 456 456.250000
+fcsr: 0x1007
+round.l.d 3 3.000000
+fcsr: 0x3
+round.l.d -1 -1.000000
+fcsr: 0x3
+round.l.d 1384 1384.500000
+fcsr: 0x1007
+round.l.d -7 -7.250000
+fcsr: 0x1007
+round.l.d 1000000000 1000000000.000000
+fcsr: 0x3
+round.l.d -5786 -5786.250000
+fcsr: 0x1007
+round.l.d 1752 1752.000000
+fcsr: 0x3
+round.l.d 0 0.015625
+fcsr: 0x1007
+round.l.d 0 0.031250
+fcsr: 0x1007
+round.l.d -24856226678934 -24856226678933.750000
+fcsr: 0x1007
+round.l.d -45786 -45786.500000
+fcsr: 0x1007
+round.l.d 456 456.000000
+fcsr: 0x3
+round.l.d 34 34.031250
+fcsr: 0x1007
+round.l.d 45787 45786.750000
+fcsr: 0x1007
+round.l.d 1752065 1752065.000000
+fcsr: 0x3
+round.l.d 107 107.000000
+fcsr: 0x3
+round.l.d -45667 -45667.250000
+fcsr: 0x1007
+round.l.d -7 -7.000000
+fcsr: 0x3
+round.l.d -347856 -347856.500000
+fcsr: 0x1007
+round.l.d 356047 356047.000000
+fcsr: 0x3
+round.l.d -1 -1.250000
+fcsr: 0x1007
+round.l.d 23 23.062500
+fcsr: 0x1007
+roundig mode: near
+trunc.l.s 0 0.000000
+fcsr: 0x0
+trunc.l.s 456 456.250000
+fcsr: 0x1004
+trunc.l.s 3 3.000000
+fcsr: 0x0
+trunc.l.s -1 -1.000000
+fcsr: 0x0
+trunc.l.s 1384 1384.500000
+fcsr: 0x1004
+trunc.l.s -7 -7.250000
+fcsr: 0x1004
+trunc.l.s 1000000000 1000000000.000000
+fcsr: 0x0
+trunc.l.s -5786 -5786.250000
+fcsr: 0x1004
+trunc.l.s 1752 1752.000000
+fcsr: 0x0
+trunc.l.s 0 0.015625
+fcsr: 0x1004
+trunc.l.s 0 0.031250
+fcsr: 0x1004
+trunc.l.s -248562 -248562.750000
+fcsr: 0x1004
+trunc.l.s -45786 -45786.500000
+fcsr: 0x1004
+trunc.l.s 456 456.000000
+fcsr: 0x0
+trunc.l.s 34 34.031250
+fcsr: 0x1004
+trunc.l.s 45786 45786.750000
+fcsr: 0x1004
+trunc.l.s 1752065 1752065.000000
+fcsr: 0x0
+trunc.l.s 107 107.000000
+fcsr: 0x0
+trunc.l.s -45667 -45667.250000
+fcsr: 0x1004
+trunc.l.s -7 -7.000000
+fcsr: 0x0
+trunc.l.s -347856 -347856.500000
+fcsr: 0x1004
+trunc.l.s 356047 356047.000000
+fcsr: 0x0
+trunc.l.s -1 -1.250000
+fcsr: 0x1004
+trunc.l.s 23 23.062500
+fcsr: 0x1004
+roundig mode: zero
+trunc.l.s 0 0.000000
+fcsr: 0x1
+trunc.l.s 456 456.250000
+fcsr: 0x1005
+trunc.l.s 3 3.000000
+fcsr: 0x1
+trunc.l.s -1 -1.000000
+fcsr: 0x1
+trunc.l.s 1384 1384.500000
+fcsr: 0x1005
+trunc.l.s -7 -7.250000
+fcsr: 0x1005
+trunc.l.s 1000000000 1000000000.000000
+fcsr: 0x1
+trunc.l.s -5786 -5786.250000
+fcsr: 0x1005
+trunc.l.s 1752 1752.000000
+fcsr: 0x1
+trunc.l.s 0 0.015625
+fcsr: 0x1005
+trunc.l.s 0 0.031250
+fcsr: 0x1005
+trunc.l.s -248562 -248562.750000
+fcsr: 0x1005
+trunc.l.s -45786 -45786.500000
+fcsr: 0x1005
+trunc.l.s 456 456.000000
+fcsr: 0x1
+trunc.l.s 34 34.031250
+fcsr: 0x1005
+trunc.l.s 45786 45786.750000
+fcsr: 0x1005
+trunc.l.s 1752065 1752065.000000
+fcsr: 0x1
+trunc.l.s 107 107.000000
+fcsr: 0x1
+trunc.l.s -45667 -45667.250000
+fcsr: 0x1005
+trunc.l.s -7 -7.000000
+fcsr: 0x1
+trunc.l.s -347856 -347856.500000
+fcsr: 0x1005
+trunc.l.s 356047 356047.000000
+fcsr: 0x1
+trunc.l.s -1 -1.250000
+fcsr: 0x1005
+trunc.l.s 23 23.062500
+fcsr: 0x1005
+roundig mode: +inf
+trunc.l.s 0 0.000000
+fcsr: 0x2
+trunc.l.s 456 456.250000
+fcsr: 0x1006
+trunc.l.s 3 3.000000
+fcsr: 0x2
+trunc.l.s -1 -1.000000
+fcsr: 0x2
+trunc.l.s 1384 1384.500000
+fcsr: 0x1006
+trunc.l.s -7 -7.250000
+fcsr: 0x1006
+trunc.l.s 1000000000 1000000000.000000
+fcsr: 0x2
+trunc.l.s -5786 -5786.250000
+fcsr: 0x1006
+trunc.l.s 1752 1752.000000
+fcsr: 0x2
+trunc.l.s 0 0.015625
+fcsr: 0x1006
+trunc.l.s 0 0.031250
+fcsr: 0x1006
+trunc.l.s -248562 -248562.750000
+fcsr: 0x1006
+trunc.l.s -45786 -45786.500000
+fcsr: 0x1006
+trunc.l.s 456 456.000000
+fcsr: 0x2
+trunc.l.s 34 34.031250
+fcsr: 0x1006
+trunc.l.s 45786 45786.750000
+fcsr: 0x1006
+trunc.l.s 1752065 1752065.000000
+fcsr: 0x2
+trunc.l.s 107 107.000000
+fcsr: 0x2
+trunc.l.s -45667 -45667.250000
+fcsr: 0x1006
+trunc.l.s -7 -7.000000
+fcsr: 0x2
+trunc.l.s -347856 -347856.500000
+fcsr: 0x1006
+trunc.l.s 356047 356047.000000
+fcsr: 0x2
+trunc.l.s -1 -1.250000
+fcsr: 0x1006
+trunc.l.s 23 23.062500
+fcsr: 0x1006
+roundig mode: -inf
+trunc.l.s 0 0.000000
+fcsr: 0x3
+trunc.l.s 456 456.250000
+fcsr: 0x1007
+trunc.l.s 3 3.000000
+fcsr: 0x3
+trunc.l.s -1 -1.000000
+fcsr: 0x3
+trunc.l.s 1384 1384.500000
+fcsr: 0x1007
+trunc.l.s -7 -7.250000
+fcsr: 0x1007
+trunc.l.s 1000000000 1000000000.000000
+fcsr: 0x3
+trunc.l.s -5786 -5786.250000
+fcsr: 0x1007
+trunc.l.s 1752 1752.000000
+fcsr: 0x3
+trunc.l.s 0 0.015625
+fcsr: 0x1007
+trunc.l.s 0 0.031250
+fcsr: 0x1007
+trunc.l.s -248562 -248562.750000
+fcsr: 0x1007
+trunc.l.s -45786 -45786.500000
+fcsr: 0x1007
+trunc.l.s 456 456.000000
+fcsr: 0x3
+trunc.l.s 34 34.031250
+fcsr: 0x1007
+trunc.l.s 45786 45786.750000
+fcsr: 0x1007
+trunc.l.s 1752065 1752065.000000
+fcsr: 0x3
+trunc.l.s 107 107.000000
+fcsr: 0x3
+trunc.l.s -45667 -45667.250000
+fcsr: 0x1007
+trunc.l.s -7 -7.000000
+fcsr: 0x3
+trunc.l.s -347856 -347856.500000
+fcsr: 0x1007
+trunc.l.s 356047 356047.000000
+fcsr: 0x3
+trunc.l.s -1 -1.250000
+fcsr: 0x1007
+trunc.l.s 23 23.062500
+fcsr: 0x1007
+roundig mode: near
+trunc.l.d 0 0.000000
+fcsr: 0x0
+trunc.l.d 456 456.250000
+fcsr: 0x1004
+trunc.l.d 3 3.000000
+fcsr: 0x0
+trunc.l.d -1 -1.000000
+fcsr: 0x0
+trunc.l.d 1384 1384.500000
+fcsr: 0x1004
+trunc.l.d -7 -7.250000
+fcsr: 0x1004
+trunc.l.d 1000000000 1000000000.000000
+fcsr: 0x0
+trunc.l.d -5786 -5786.250000
+fcsr: 0x1004
+trunc.l.d 1752 1752.000000
+fcsr: 0x0
+trunc.l.d 0 0.015625
+fcsr: 0x1004
+trunc.l.d 0 0.031250
+fcsr: 0x1004
+trunc.l.d -24856226678933 -24856226678933.750000
+fcsr: 0x1004
+trunc.l.d -45786 -45786.500000
+fcsr: 0x1004
+trunc.l.d 456 456.000000
+fcsr: 0x0
+trunc.l.d 34 34.031250
+fcsr: 0x1004
+trunc.l.d 45786 45786.750000
+fcsr: 0x1004
+trunc.l.d 1752065 1752065.000000
+fcsr: 0x0
+trunc.l.d 107 107.000000
+fcsr: 0x0
+trunc.l.d -45667 -45667.250000
+fcsr: 0x1004
+trunc.l.d -7 -7.000000
+fcsr: 0x0
+trunc.l.d -347856 -347856.500000
+fcsr: 0x1004
+trunc.l.d 356047 356047.000000
+fcsr: 0x0
+trunc.l.d -1 -1.250000
+fcsr: 0x1004
+trunc.l.d 23 23.062500
+fcsr: 0x1004
+roundig mode: zero
+trunc.l.d 0 0.000000
+fcsr: 0x1
+trunc.l.d 456 456.250000
+fcsr: 0x1005
+trunc.l.d 3 3.000000
+fcsr: 0x1
+trunc.l.d -1 -1.000000
+fcsr: 0x1
+trunc.l.d 1384 1384.500000
+fcsr: 0x1005
+trunc.l.d -7 -7.250000
+fcsr: 0x1005
+trunc.l.d 1000000000 1000000000.000000
+fcsr: 0x1
+trunc.l.d -5786 -5786.250000
+fcsr: 0x1005
+trunc.l.d 1752 1752.000000
+fcsr: 0x1
+trunc.l.d 0 0.015625
+fcsr: 0x1005
+trunc.l.d 0 0.031250
+fcsr: 0x1005
+trunc.l.d -24856226678933 -24856226678933.750000
+fcsr: 0x1005
+trunc.l.d -45786 -45786.500000
+fcsr: 0x1005
+trunc.l.d 456 456.000000
+fcsr: 0x1
+trunc.l.d 34 34.031250
+fcsr: 0x1005
+trunc.l.d 45786 45786.750000
+fcsr: 0x1005
+trunc.l.d 1752065 1752065.000000
+fcsr: 0x1
+trunc.l.d 107 107.000000
+fcsr: 0x1
+trunc.l.d -45667 -45667.250000
+fcsr: 0x1005
+trunc.l.d -7 -7.000000
+fcsr: 0x1
+trunc.l.d -347856 -347856.500000
+fcsr: 0x1005
+trunc.l.d 356047 356047.000000
+fcsr: 0x1
+trunc.l.d -1 -1.250000
+fcsr: 0x1005
+trunc.l.d 23 23.062500
+fcsr: 0x1005
+roundig mode: +inf
+trunc.l.d 0 0.000000
+fcsr: 0x2
+trunc.l.d 456 456.250000
+fcsr: 0x1006
+trunc.l.d 3 3.000000
+fcsr: 0x2
+trunc.l.d -1 -1.000000
+fcsr: 0x2
+trunc.l.d 1384 1384.500000
+fcsr: 0x1006
+trunc.l.d -7 -7.250000
+fcsr: 0x1006
+trunc.l.d 1000000000 1000000000.000000
+fcsr: 0x2
+trunc.l.d -5786 -5786.250000
+fcsr: 0x1006
+trunc.l.d 1752 1752.000000
+fcsr: 0x2
+trunc.l.d 0 0.015625
+fcsr: 0x1006
+trunc.l.d 0 0.031250
+fcsr: 0x1006
+trunc.l.d -24856226678933 -24856226678933.750000
+fcsr: 0x1006
+trunc.l.d -45786 -45786.500000
+fcsr: 0x1006
+trunc.l.d 456 456.000000
+fcsr: 0x2
+trunc.l.d 34 34.031250
+fcsr: 0x1006
+trunc.l.d 45786 45786.750000
+fcsr: 0x1006
+trunc.l.d 1752065 1752065.000000
+fcsr: 0x2
+trunc.l.d 107 107.000000
+fcsr: 0x2
+trunc.l.d -45667 -45667.250000
+fcsr: 0x1006
+trunc.l.d -7 -7.000000
+fcsr: 0x2
+trunc.l.d -347856 -347856.500000
+fcsr: 0x1006
+trunc.l.d 356047 356047.000000
+fcsr: 0x2
+trunc.l.d -1 -1.250000
+fcsr: 0x1006
+trunc.l.d 23 23.062500
+fcsr: 0x1006
+roundig mode: -inf
+trunc.l.d 0 0.000000
+fcsr: 0x3
+trunc.l.d 456 456.250000
+fcsr: 0x1007
+trunc.l.d 3 3.000000
+fcsr: 0x3
+trunc.l.d -1 -1.000000
+fcsr: 0x3
+trunc.l.d 1384 1384.500000
+fcsr: 0x1007
+trunc.l.d -7 -7.250000
+fcsr: 0x1007
+trunc.l.d 1000000000 1000000000.000000
+fcsr: 0x3
+trunc.l.d -5786 -5786.250000
+fcsr: 0x1007
+trunc.l.d 1752 1752.000000
+fcsr: 0x3
+trunc.l.d 0 0.015625
+fcsr: 0x1007
+trunc.l.d 0 0.031250
+fcsr: 0x1007
+trunc.l.d -24856226678933 -24856226678933.750000
+fcsr: 0x1007
+trunc.l.d -45786 -45786.500000
+fcsr: 0x1007
+trunc.l.d 456 456.000000
+fcsr: 0x3
+trunc.l.d 34 34.031250
+fcsr: 0x1007
+trunc.l.d 45786 45786.750000
+fcsr: 0x1007
+trunc.l.d 1752065 1752065.000000
+fcsr: 0x3
+trunc.l.d 107 107.000000
+fcsr: 0x3
+trunc.l.d -45667 -45667.250000
+fcsr: 0x1007
+trunc.l.d -7 -7.000000
+fcsr: 0x3
+trunc.l.d -347856 -347856.500000
+fcsr: 0x1007
+trunc.l.d 356047 356047.000000
+fcsr: 0x3
+trunc.l.d -1 -1.250000
+fcsr: 0x1007
+trunc.l.d 23 23.062500
+fcsr: 0x1007
+roundig mode: near
+floor.l.s 0 0.000000
+fcsr: 0x0
+floor.l.s 456 456.250000
+fcsr: 0x1004
+floor.l.s 3 3.000000
+fcsr: 0x0
+floor.l.s -1 -1.000000
+fcsr: 0x0
+floor.l.s 1384 1384.500000
+fcsr: 0x1004
+floor.l.s -8 -7.250000
+fcsr: 0x1004
+floor.l.s 1000000000 1000000000.000000
+fcsr: 0x0
+floor.l.s -5787 -5786.250000
+fcsr: 0x1004
+floor.l.s 1752 1752.000000
+fcsr: 0x0
+floor.l.s 0 0.015625
+fcsr: 0x1004
+floor.l.s 0 0.031250
+fcsr: 0x1004
+floor.l.s -248563 -248562.750000
+fcsr: 0x1004
+floor.l.s -45787 -45786.500000
+fcsr: 0x1004
+floor.l.s 456 456.000000
+fcsr: 0x0
+floor.l.s 34 34.031250
+fcsr: 0x1004
+floor.l.s 45786 45786.750000
+fcsr: 0x1004
+floor.l.s 1752065 1752065.000000
+fcsr: 0x0
+floor.l.s 107 107.000000
+fcsr: 0x0
+floor.l.s -45668 -45667.250000
+fcsr: 0x1004
+floor.l.s -7 -7.000000
+fcsr: 0x0
+floor.l.s -347857 -347856.500000
+fcsr: 0x1004
+floor.l.s 356047 356047.000000
+fcsr: 0x0
+floor.l.s -2 -1.250000
+fcsr: 0x1004
+floor.l.s 23 23.062500
+fcsr: 0x1004
+roundig mode: zero
+floor.l.s 0 0.000000
+fcsr: 0x1
+floor.l.s 456 456.250000
+fcsr: 0x1005
+floor.l.s 3 3.000000
+fcsr: 0x1
+floor.l.s -1 -1.000000
+fcsr: 0x1
+floor.l.s 1384 1384.500000
+fcsr: 0x1005
+floor.l.s -8 -7.250000
+fcsr: 0x1005
+floor.l.s 1000000000 1000000000.000000
+fcsr: 0x1
+floor.l.s -5787 -5786.250000
+fcsr: 0x1005
+floor.l.s 1752 1752.000000
+fcsr: 0x1
+floor.l.s 0 0.015625
+fcsr: 0x1005
+floor.l.s 0 0.031250
+fcsr: 0x1005
+floor.l.s -248563 -248562.750000
+fcsr: 0x1005
+floor.l.s -45787 -45786.500000
+fcsr: 0x1005
+floor.l.s 456 456.000000
+fcsr: 0x1
+floor.l.s 34 34.031250
+fcsr: 0x1005
+floor.l.s 45786 45786.750000
+fcsr: 0x1005
+floor.l.s 1752065 1752065.000000
+fcsr: 0x1
+floor.l.s 107 107.000000
+fcsr: 0x1
+floor.l.s -45668 -45667.250000
+fcsr: 0x1005
+floor.l.s -7 -7.000000
+fcsr: 0x1
+floor.l.s -347857 -347856.500000
+fcsr: 0x1005
+floor.l.s 356047 356047.000000
+fcsr: 0x1
+floor.l.s -2 -1.250000
+fcsr: 0x1005
+floor.l.s 23 23.062500
+fcsr: 0x1005
+roundig mode: +inf
+floor.l.s 0 0.000000
+fcsr: 0x2
+floor.l.s 456 456.250000
+fcsr: 0x1006
+floor.l.s 3 3.000000
+fcsr: 0x2
+floor.l.s -1 -1.000000
+fcsr: 0x2
+floor.l.s 1384 1384.500000
+fcsr: 0x1006
+floor.l.s -8 -7.250000
+fcsr: 0x1006
+floor.l.s 1000000000 1000000000.000000
+fcsr: 0x2
+floor.l.s -5787 -5786.250000
+fcsr: 0x1006
+floor.l.s 1752 1752.000000
+fcsr: 0x2
+floor.l.s 0 0.015625
+fcsr: 0x1006
+floor.l.s 0 0.031250
+fcsr: 0x1006
+floor.l.s -248563 -248562.750000
+fcsr: 0x1006
+floor.l.s -45787 -45786.500000
+fcsr: 0x1006
+floor.l.s 456 456.000000
+fcsr: 0x2
+floor.l.s 34 34.031250
+fcsr: 0x1006
+floor.l.s 45786 45786.750000
+fcsr: 0x1006
+floor.l.s 1752065 1752065.000000
+fcsr: 0x2
+floor.l.s 107 107.000000
+fcsr: 0x2
+floor.l.s -45668 -45667.250000
+fcsr: 0x1006
+floor.l.s -7 -7.000000
+fcsr: 0x2
+floor.l.s -347857 -347856.500000
+fcsr: 0x1006
+floor.l.s 356047 356047.000000
+fcsr: 0x2
+floor.l.s -2 -1.250000
+fcsr: 0x1006
+floor.l.s 23 23.062500
+fcsr: 0x1006
+roundig mode: -inf
+floor.l.s 0 0.000000
+fcsr: 0x3
+floor.l.s 456 456.250000
+fcsr: 0x1007
+floor.l.s 3 3.000000
+fcsr: 0x3
+floor.l.s -1 -1.000000
+fcsr: 0x3
+floor.l.s 1384 1384.500000
+fcsr: 0x1007
+floor.l.s -8 -7.250000
+fcsr: 0x1007
+floor.l.s 1000000000 1000000000.000000
+fcsr: 0x3
+floor.l.s -5787 -5786.250000
+fcsr: 0x1007
+floor.l.s 1752 1752.000000
+fcsr: 0x3
+floor.l.s 0 0.015625
+fcsr: 0x1007
+floor.l.s 0 0.031250
+fcsr: 0x1007
+floor.l.s -248563 -248562.750000
+fcsr: 0x1007
+floor.l.s -45787 -45786.500000
+fcsr: 0x1007
+floor.l.s 456 456.000000
+fcsr: 0x3
+floor.l.s 34 34.031250
+fcsr: 0x1007
+floor.l.s 45786 45786.750000
+fcsr: 0x1007
+floor.l.s 1752065 1752065.000000
+fcsr: 0x3
+floor.l.s 107 107.000000
+fcsr: 0x3
+floor.l.s -45668 -45667.250000
+fcsr: 0x1007
+floor.l.s -7 -7.000000
+fcsr: 0x3
+floor.l.s -347857 -347856.500000
+fcsr: 0x1007
+floor.l.s 356047 356047.000000
+fcsr: 0x3
+floor.l.s -2 -1.250000
+fcsr: 0x1007
+floor.l.s 23 23.062500
+fcsr: 0x1007
+roundig mode: near
+floor.l.dceil.l.s 0 0.000000
+fcsr: 0x0
+floor.l.dceil.l.s 456 456.250000
+fcsr: 0x1004
+floor.l.dceil.l.s 3 3.000000
+fcsr: 0x0
+floor.l.dceil.l.s -1 -1.000000
+fcsr: 0x0
+floor.l.dceil.l.s 1384 1384.500000
+fcsr: 0x1004
+floor.l.dceil.l.s -8 -7.250000
+fcsr: 0x1004
+floor.l.dceil.l.s 1000000000 1000000000.000000
+fcsr: 0x0
+floor.l.dceil.l.s -5787 -5786.250000
+fcsr: 0x1004
+floor.l.dceil.l.s 1752 1752.000000
+fcsr: 0x0
+floor.l.dceil.l.s 0 0.015625
+fcsr: 0x1004
+floor.l.dceil.l.s 0 0.031250
+fcsr: 0x1004
+floor.l.dceil.l.s -24856226678934 -24856226678933.750000
+fcsr: 0x1004
+floor.l.dceil.l.s -45787 -45786.500000
+fcsr: 0x1004
+floor.l.dceil.l.s 456 456.000000
+fcsr: 0x0
+floor.l.dceil.l.s 34 34.031250
+fcsr: 0x1004
+floor.l.dceil.l.s 45786 45786.750000
+fcsr: 0x1004
+floor.l.dceil.l.s 1752065 1752065.000000
+fcsr: 0x0
+floor.l.dceil.l.s 107 107.000000
+fcsr: 0x0
+floor.l.dceil.l.s -45668 -45667.250000
+fcsr: 0x1004
+floor.l.dceil.l.s -7 -7.000000
+fcsr: 0x0
+floor.l.dceil.l.s -347857 -347856.500000
+fcsr: 0x1004
+floor.l.dceil.l.s 356047 356047.000000
+fcsr: 0x0
+floor.l.dceil.l.s -2 -1.250000
+fcsr: 0x1004
+floor.l.dceil.l.s 23 23.062500
+fcsr: 0x1004
+roundig mode: zero
+floor.l.dceil.l.s 0 0.000000
+fcsr: 0x1
+floor.l.dceil.l.s 456 456.250000
+fcsr: 0x1005
+floor.l.dceil.l.s 3 3.000000
+fcsr: 0x1
+floor.l.dceil.l.s -1 -1.000000
+fcsr: 0x1
+floor.l.dceil.l.s 1384 1384.500000
+fcsr: 0x1005
+floor.l.dceil.l.s -8 -7.250000
+fcsr: 0x1005
+floor.l.dceil.l.s 1000000000 1000000000.000000
+fcsr: 0x1
+floor.l.dceil.l.s -5787 -5786.250000
+fcsr: 0x1005
+floor.l.dceil.l.s 1752 1752.000000
+fcsr: 0x1
+floor.l.dceil.l.s 0 0.015625
+fcsr: 0x1005
+floor.l.dceil.l.s 0 0.031250
+fcsr: 0x1005
+floor.l.dceil.l.s -24856226678934 -24856226678933.750000
+fcsr: 0x1005
+floor.l.dceil.l.s -45787 -45786.500000
+fcsr: 0x1005
+floor.l.dceil.l.s 456 456.000000
+fcsr: 0x1
+floor.l.dceil.l.s 34 34.031250
+fcsr: 0x1005
+floor.l.dceil.l.s 45786 45786.750000
+fcsr: 0x1005
+floor.l.dceil.l.s 1752065 1752065.000000
+fcsr: 0x1
+floor.l.dceil.l.s 107 107.000000
+fcsr: 0x1
+floor.l.dceil.l.s -45668 -45667.250000
+fcsr: 0x1005
+floor.l.dceil.l.s -7 -7.000000
+fcsr: 0x1
+floor.l.dceil.l.s -347857 -347856.500000
+fcsr: 0x1005
+floor.l.dceil.l.s 356047 356047.000000
+fcsr: 0x1
+floor.l.dceil.l.s -2 -1.250000
+fcsr: 0x1005
+floor.l.dceil.l.s 23 23.062500
+fcsr: 0x1005
+roundig mode: +inf
+floor.l.dceil.l.s 0 0.000000
+fcsr: 0x2
+floor.l.dceil.l.s 456 456.250000
+fcsr: 0x1006
+floor.l.dceil.l.s 3 3.000000
+fcsr: 0x2
+floor.l.dceil.l.s -1 -1.000000
+fcsr: 0x2
+floor.l.dceil.l.s 1384 1384.500000
+fcsr: 0x1006
+floor.l.dceil.l.s -8 -7.250000
+fcsr: 0x1006
+floor.l.dceil.l.s 1000000000 1000000000.000000
+fcsr: 0x2
+floor.l.dceil.l.s -5787 -5786.250000
+fcsr: 0x1006
+floor.l.dceil.l.s 1752 1752.000000
+fcsr: 0x2
+floor.l.dceil.l.s 0 0.015625
+fcsr: 0x1006
+floor.l.dceil.l.s 0 0.031250
+fcsr: 0x1006
+floor.l.dceil.l.s -24856226678934 -24856226678933.750000
+fcsr: 0x1006
+floor.l.dceil.l.s -45787 -45786.500000
+fcsr: 0x1006
+floor.l.dceil.l.s 456 456.000000
+fcsr: 0x2
+floor.l.dceil.l.s 34 34.031250
+fcsr: 0x1006
+floor.l.dceil.l.s 45786 45786.750000
+fcsr: 0x1006
+floor.l.dceil.l.s 1752065 1752065.000000
+fcsr: 0x2
+floor.l.dceil.l.s 107 107.000000
+fcsr: 0x2
+floor.l.dceil.l.s -45668 -45667.250000
+fcsr: 0x1006
+floor.l.dceil.l.s -7 -7.000000
+fcsr: 0x2
+floor.l.dceil.l.s -347857 -347856.500000
+fcsr: 0x1006
+floor.l.dceil.l.s 356047 356047.000000
+fcsr: 0x2
+floor.l.dceil.l.s -2 -1.250000
+fcsr: 0x1006
+floor.l.dceil.l.s 23 23.062500
+fcsr: 0x1006
+roundig mode: -inf
+floor.l.dceil.l.s 0 0.000000
+fcsr: 0x3
+floor.l.dceil.l.s 456 456.250000
+fcsr: 0x1007
+floor.l.dceil.l.s 3 3.000000
+fcsr: 0x3
+floor.l.dceil.l.s -1 -1.000000
+fcsr: 0x3
+floor.l.dceil.l.s 1384 1384.500000
+fcsr: 0x1007
+floor.l.dceil.l.s -8 -7.250000
+fcsr: 0x1007
+floor.l.dceil.l.s 1000000000 1000000000.000000
+fcsr: 0x3
+floor.l.dceil.l.s -5787 -5786.250000
+fcsr: 0x1007
+floor.l.dceil.l.s 1752 1752.000000
+fcsr: 0x3
+floor.l.dceil.l.s 0 0.015625
+fcsr: 0x1007
+floor.l.dceil.l.s 0 0.031250
+fcsr: 0x1007
+floor.l.dceil.l.s -24856226678934 -24856226678933.750000
+fcsr: 0x1007
+floor.l.dceil.l.s -45787 -45786.500000
+fcsr: 0x1007
+floor.l.dceil.l.s 456 456.000000
+fcsr: 0x3
+floor.l.dceil.l.s 34 34.031250
+fcsr: 0x1007
+floor.l.dceil.l.s 45786 45786.750000
+fcsr: 0x1007
+floor.l.dceil.l.s 1752065 1752065.000000
+fcsr: 0x3
+floor.l.dceil.l.s 107 107.000000
+fcsr: 0x3
+floor.l.dceil.l.s -45668 -45667.250000
+fcsr: 0x1007
+floor.l.dceil.l.s -7 -7.000000
+fcsr: 0x3
+floor.l.dceil.l.s -347857 -347856.500000
+fcsr: 0x1007
+floor.l.dceil.l.s 356047 356047.000000
+fcsr: 0x3
+floor.l.dceil.l.s -2 -1.250000
+fcsr: 0x1007
+floor.l.dceil.l.s 23 23.062500
+fcsr: 0x1007
+roundig mode: near
+ceil.l.d 0 0.000000
+fcsr: 0x0
+ceil.l.d 457 456.250000
+fcsr: 0x1004
+ceil.l.d 3 3.000000
+fcsr: 0x0
+ceil.l.d -1 -1.000000
+fcsr: 0x0
+ceil.l.d 1385 1384.500000
+fcsr: 0x1004
+ceil.l.d -7 -7.250000
+fcsr: 0x1004
+ceil.l.d 1000000000 1000000000.000000
+fcsr: 0x0
+ceil.l.d -5786 -5786.250000
+fcsr: 0x1004
+ceil.l.d 1752 1752.000000
+fcsr: 0x0
+ceil.l.d 1 0.015625
+fcsr: 0x1004
+ceil.l.d 1 0.031250
+fcsr: 0x1004
+ceil.l.d -248562 -248562.750000
+fcsr: 0x1004
+ceil.l.d -45786 -45786.500000
+fcsr: 0x1004
+ceil.l.d 456 456.000000
+fcsr: 0x0
+ceil.l.d 35 34.031250
+fcsr: 0x1004
+ceil.l.d 45787 45786.750000
+fcsr: 0x1004
+ceil.l.d 1752065 1752065.000000
+fcsr: 0x0
+ceil.l.d 107 107.000000
+fcsr: 0x0
+ceil.l.d -45667 -45667.250000
+fcsr: 0x1004
+ceil.l.d -7 -7.000000
+fcsr: 0x0
+ceil.l.d -347856 -347856.500000
+fcsr: 0x1004
+ceil.l.d 356047 356047.000000
+fcsr: 0x0
+ceil.l.d -1 -1.250000
+fcsr: 0x1004
+ceil.l.d 24 23.062500
+fcsr: 0x1004
+roundig mode: zero
+ceil.l.d 0 0.000000
+fcsr: 0x1
+ceil.l.d 457 456.250000
+fcsr: 0x1005
+ceil.l.d 3 3.000000
+fcsr: 0x1
+ceil.l.d -1 -1.000000
+fcsr: 0x1
+ceil.l.d 1385 1384.500000
+fcsr: 0x1005
+ceil.l.d -7 -7.250000
+fcsr: 0x1005
+ceil.l.d 1000000000 1000000000.000000
+fcsr: 0x1
+ceil.l.d -5786 -5786.250000
+fcsr: 0x1005
+ceil.l.d 1752 1752.000000
+fcsr: 0x1
+ceil.l.d 1 0.015625
+fcsr: 0x1005
+ceil.l.d 1 0.031250
+fcsr: 0x1005
+ceil.l.d -248562 -248562.750000
+fcsr: 0x1005
+ceil.l.d -45786 -45786.500000
+fcsr: 0x1005
+ceil.l.d 456 456.000000
+fcsr: 0x1
+ceil.l.d 35 34.031250
+fcsr: 0x1005
+ceil.l.d 45787 45786.750000
+fcsr: 0x1005
+ceil.l.d 1752065 1752065.000000
+fcsr: 0x1
+ceil.l.d 107 107.000000
+fcsr: 0x1
+ceil.l.d -45667 -45667.250000
+fcsr: 0x1005
+ceil.l.d -7 -7.000000
+fcsr: 0x1
+ceil.l.d -347856 -347856.500000
+fcsr: 0x1005
+ceil.l.d 356047 356047.000000
+fcsr: 0x1
+ceil.l.d -1 -1.250000
+fcsr: 0x1005
+ceil.l.d 24 23.062500
+fcsr: 0x1005
+roundig mode: +inf
+ceil.l.d 0 0.000000
+fcsr: 0x2
+ceil.l.d 457 456.250000
+fcsr: 0x1006
+ceil.l.d 3 3.000000
+fcsr: 0x2
+ceil.l.d -1 -1.000000
+fcsr: 0x2
+ceil.l.d 1385 1384.500000
+fcsr: 0x1006
+ceil.l.d -7 -7.250000
+fcsr: 0x1006
+ceil.l.d 1000000000 1000000000.000000
+fcsr: 0x2
+ceil.l.d -5786 -5786.250000
+fcsr: 0x1006
+ceil.l.d 1752 1752.000000
+fcsr: 0x2
+ceil.l.d 1 0.015625
+fcsr: 0x1006
+ceil.l.d 1 0.031250
+fcsr: 0x1006
+ceil.l.d -248562 -248562.750000
+fcsr: 0x1006
+ceil.l.d -45786 -45786.500000
+fcsr: 0x1006
+ceil.l.d 456 456.000000
+fcsr: 0x2
+ceil.l.d 35 34.031250
+fcsr: 0x1006
+ceil.l.d 45787 45786.750000
+fcsr: 0x1006
+ceil.l.d 1752065 1752065.000000
+fcsr: 0x2
+ceil.l.d 107 107.000000
+fcsr: 0x2
+ceil.l.d -45667 -45667.250000
+fcsr: 0x1006
+ceil.l.d -7 -7.000000
+fcsr: 0x2
+ceil.l.d -347856 -347856.500000
+fcsr: 0x1006
+ceil.l.d 356047 356047.000000
+fcsr: 0x2
+ceil.l.d -1 -1.250000
+fcsr: 0x1006
+ceil.l.d 24 23.062500
+fcsr: 0x1006
+roundig mode: -inf
+ceil.l.d 0 0.000000
+fcsr: 0x3
+ceil.l.d 457 456.250000
+fcsr: 0x1007
+ceil.l.d 3 3.000000
+fcsr: 0x3
+ceil.l.d -1 -1.000000
+fcsr: 0x3
+ceil.l.d 1385 1384.500000
+fcsr: 0x1007
+ceil.l.d -7 -7.250000
+fcsr: 0x1007
+ceil.l.d 1000000000 1000000000.000000
+fcsr: 0x3
+ceil.l.d -5786 -5786.250000
+fcsr: 0x1007
+ceil.l.d 1752 1752.000000
+fcsr: 0x3
+ceil.l.d 1 0.015625
+fcsr: 0x1007
+ceil.l.d 1 0.031250
+fcsr: 0x1007
+ceil.l.d -248562 -248562.750000
+fcsr: 0x1007
+ceil.l.d -45786 -45786.500000
+fcsr: 0x1007
+ceil.l.d 456 456.000000
+fcsr: 0x3
+ceil.l.d 35 34.031250
+fcsr: 0x1007
+ceil.l.d 45787 45786.750000
+fcsr: 0x1007
+ceil.l.d 1752065 1752065.000000
+fcsr: 0x3
+ceil.l.d 107 107.000000
+fcsr: 0x3
+ceil.l.d -45667 -45667.250000
+fcsr: 0x1007
+ceil.l.d -7 -7.000000
+fcsr: 0x3
+ceil.l.d -347856 -347856.500000
+fcsr: 0x1007
+ceil.l.d 356047 356047.000000
+fcsr: 0x3
+ceil.l.d -1 -1.250000
+fcsr: 0x1007
+ceil.l.d 24 23.062500
+fcsr: 0x1007
+roundig mode: near
+near 0 0.000000
+fcsr: 0x0
+near 457 456.250000
+fcsr: 0x1004
+near 3 3.000000
+fcsr: 0x0
+near -1 -1.000000
+fcsr: 0x0
+near 1385 1384.500000
+fcsr: 0x1004
+near -7 -7.250000
+fcsr: 0x1004
+near 1000000000 1000000000.000000
+fcsr: 0x0
+near -5786 -5786.250000
+fcsr: 0x1004
+near 1752 1752.000000
+fcsr: 0x0
+near 1 0.015625
+fcsr: 0x1004
+near 1 0.031250
+fcsr: 0x1004
+near -24856226678933 -24856226678933.750000
+fcsr: 0x1004
+near -45786 -45786.500000
+fcsr: 0x1004
+near 456 456.000000
+fcsr: 0x0
+near 35 34.031250
+fcsr: 0x1004
+near 45787 45786.750000
+fcsr: 0x1004
+near 1752065 1752065.000000
+fcsr: 0x0
+near 107 107.000000
+fcsr: 0x0
+near -45667 -45667.250000
+fcsr: 0x1004
+near -7 -7.000000
+fcsr: 0x0
+near -347856 -347856.500000
+fcsr: 0x1004
+near 356047 356047.000000
+fcsr: 0x0
+near -1 -1.250000
+fcsr: 0x1004
+near 24 23.062500
+fcsr: 0x1004
+roundig mode: zero
+near 0 0.000000
+fcsr: 0x1
+near 457 456.250000
+fcsr: 0x1005
+near 3 3.000000
+fcsr: 0x1
+near -1 -1.000000
+fcsr: 0x1
+near 1385 1384.500000
+fcsr: 0x1005
+near -7 -7.250000
+fcsr: 0x1005
+near 1000000000 1000000000.000000
+fcsr: 0x1
+near -5786 -5786.250000
+fcsr: 0x1005
+near 1752 1752.000000
+fcsr: 0x1
+near 1 0.015625
+fcsr: 0x1005
+near 1 0.031250
+fcsr: 0x1005
+near -24856226678933 -24856226678933.750000
+fcsr: 0x1005
+near -45786 -45786.500000
+fcsr: 0x1005
+near 456 456.000000
+fcsr: 0x1
+near 35 34.031250
+fcsr: 0x1005
+near 45787 45786.750000
+fcsr: 0x1005
+near 1752065 1752065.000000
+fcsr: 0x1
+near 107 107.000000
+fcsr: 0x1
+near -45667 -45667.250000
+fcsr: 0x1005
+near -7 -7.000000
+fcsr: 0x1
+near -347856 -347856.500000
+fcsr: 0x1005
+near 356047 356047.000000
+fcsr: 0x1
+near -1 -1.250000
+fcsr: 0x1005
+near 24 23.062500
+fcsr: 0x1005
+roundig mode: +inf
+near 0 0.000000
+fcsr: 0x2
+near 457 456.250000
+fcsr: 0x1006
+near 3 3.000000
+fcsr: 0x2
+near -1 -1.000000
+fcsr: 0x2
+near 1385 1384.500000
+fcsr: 0x1006
+near -7 -7.250000
+fcsr: 0x1006
+near 1000000000 1000000000.000000
+fcsr: 0x2
+near -5786 -5786.250000
+fcsr: 0x1006
+near 1752 1752.000000
+fcsr: 0x2
+near 1 0.015625
+fcsr: 0x1006
+near 1 0.031250
+fcsr: 0x1006
+near -24856226678933 -24856226678933.750000
+fcsr: 0x1006
+near -45786 -45786.500000
+fcsr: 0x1006
+near 456 456.000000
+fcsr: 0x2
+near 35 34.031250
+fcsr: 0x1006
+near 45787 45786.750000
+fcsr: 0x1006
+near 1752065 1752065.000000
+fcsr: 0x2
+near 107 107.000000
+fcsr: 0x2
+near -45667 -45667.250000
+fcsr: 0x1006
+near -7 -7.000000
+fcsr: 0x2
+near -347856 -347856.500000
+fcsr: 0x1006
+near 356047 356047.000000
+fcsr: 0x2
+near -1 -1.250000
+fcsr: 0x1006
+near 24 23.062500
+fcsr: 0x1006
+roundig mode: -inf
+near 0 0.000000
+fcsr: 0x3
+near 457 456.250000
+fcsr: 0x1007
+near 3 3.000000
+fcsr: 0x3
+near -1 -1.000000
+fcsr: 0x3
+near 1385 1384.500000
+fcsr: 0x1007
+near -7 -7.250000
+fcsr: 0x1007
+near 1000000000 1000000000.000000
+fcsr: 0x3
+near -5786 -5786.250000
+fcsr: 0x1007
+near 1752 1752.000000
+fcsr: 0x3
+near 1 0.015625
+fcsr: 0x1007
+near 1 0.031250
+fcsr: 0x1007
+near -24856226678933 -24856226678933.750000
+fcsr: 0x1007
+near -45786 -45786.500000
+fcsr: 0x1007
+near 456 456.000000
+fcsr: 0x3
+near 35 34.031250
+fcsr: 0x1007
+near 45787 45786.750000
+fcsr: 0x1007
+near 1752065 1752065.000000
+fcsr: 0x3
+near 107 107.000000
+fcsr: 0x3
+near -45667 -45667.250000
+fcsr: 0x1007
+near -7 -7.000000
+fcsr: 0x3
+near -347856 -347856.500000
+fcsr: 0x1007
+near 356047 356047.000000
+fcsr: 0x3
+near -1 -1.250000
+fcsr: 0x1007
+near 24 23.062500
+fcsr: 0x1007

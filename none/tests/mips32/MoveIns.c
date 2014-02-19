@@ -181,6 +181,32 @@ unsigned int mem[] = {
 }
 
 // movf.d fd, fs
+#if (__mips_fpr==64)
+#define TESTINSNMOVE2d(instruction, FD, FS, cc, offset) \
+{ \
+   double out; \
+   int out1; \
+   int out2; \
+   __asm__ volatile( \
+     "li $t0, 1\n\t" \
+     "mtc1 $t0, $f0\n\t" \
+     "mtc1 %3,  $f2\n\t" \
+     "move $t0, %4\n\t" \
+     "ldc1 $f4, 8($t0)\n\t" \
+     "c.eq.s $f0, $f2\n\t" \
+     "ldc1 $" #FS ", "#offset"($t0)\n\t" \
+     instruction "\n\t" \
+     "mov.d %0, $" #FD"\n\t" \
+     "mfc1 %1, $f4\n\t" \
+     "mfhc1 %2, $f4\n\t" \
+     : "=&f" (out), "=&r" (out1), "=&r" (out2) \
+	 : "r" (cc), "r" (mem) \
+	 : "t0", "t1", "cc", "memory" \
+	 ); \
+   printf("%s :: out: 0x%x 0x%x, cc: %d\n", \
+          instruction, out1, out2, cc); \
+}
+#else
 #define TESTINSNMOVE2d(instruction, FD, FS, cc, offset) \
 { \
    double out; \
@@ -206,6 +232,7 @@ unsigned int mem[] = {
    printf("%s :: out: 0x%x 0x%x, cc: %d\n", \
           instruction, out1, out2, cc); \
 }
+#endif
 
 // movn.s fd, fs, rt
 #define TESTINSNMOVEN1s(instruction, offset, RTval, FD, FS, RT) \

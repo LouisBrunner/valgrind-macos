@@ -1,0 +1,2 @@
+prog: round_fpu64
+vgopts: -q

@@ -43,7 +43,29 @@ float mem1f[] = {
    0, 0, 0, 0,
    0, 0, 0, 0
 };
+
 // ldc1 $f0, 0($t1)
+#if (__mips_fpr==64)
+#define TESTINSN5LOAD(instruction, RTval, offset, RT) \
+{ \
+    double out; \
+    int out1; \
+    int out2; \
+   __asm__ volatile( \
+     "move $t1, %3\n\t" \
+     "li $t0, " #RTval"\n\t" \
+     instruction "\n\t" \
+     "mov.d %0, $" #RT "\n\t" \
+     "mfc1 %1, $" #RT "\n\t" \
+     "mfhc1 %2, $" #RT "\n\t" \
+     : "=&f" (out), "=&r" (out1), "=&r" (out2) \
+     : "r" (mem), "r" (RTval) \
+     : "cc", "memory" \
+     ); \
+   printf("%s :: ft 0x%x%x\n", \
+          instruction, out1, out2); \
+}
+#else
 #define TESTINSN5LOAD(instruction, RTval, offset, RT) \
 { \
     double out; \
@@ -57,12 +79,13 @@ float mem1f[] = {
      "mfc1 %1, $" #RT "\n\t" \
      "mfc1 %2, $f1\n\t" \
      : "=&f" (out), "=&r" (out1), "=&r" (out2) \
-	 : "r" (mem), "r" (RTval) \
-	 : "cc", "memory" \
-	 ); \
+     : "r" (mem), "r" (RTval) \
+     : "cc", "memory" \
+     ); \
    printf("%s :: ft 0x%x%x\n", \
           instruction, out1, out2); \
 }
+#endif
 
 // lwc1 $f0, 0($t1)
 #define TESTINSN5LOADw(instruction, RTval, offset, RT) \
@@ -76,9 +99,9 @@ float mem1f[] = {
      "mov.d %0, $" #RT "\n\t" \
      "mfc1 %1, $" #RT "\n\t" \
      : "=&f" (out), "=&r" (out1) \
-	 : "r" (mem), "r" (RTval) \
-	 : "cc", "memory" \
-	 ); \
+     : "r" (mem), "r" (RTval) \
+     : "cc", "memory" \
+     ); \
    printf("%s :: ft 0x%x\n", \
           instruction, out1); \
 }
@@ -93,14 +116,33 @@ float mem1f[] = {
      instruction "\n\t" \
      "mfc1 %0, $" #fd "\n\t" \
      : "=&r" (out) \
-	 : "r" (mem) \
-	 : "cc", "memory" \
-	 ); \
+     : "r" (mem) \
+     : "cc", "memory" \
+     ); \
    printf("%s :: ft 0x%x\n", \
           instruction, out); \
 }
 
 // ldxc1 $f0, $a3($v0)
+#if (__mips_fpr==64)
+#define TESTINSN6LOADd(instruction, indexVal, fd, index, base) \
+{ \
+    int out1; \
+    int out2; \
+   __asm__ volatile( \
+     "move $" #base ", %2\n\t" \
+     "li $" #index ", " #indexVal"\n\t" \
+     instruction "\n\t" \
+     "mfc1 %0, $" #fd "\n\t" \
+     "mfhc1 %1, $" #fd "\n\t" \
+     : "=&r" (out1), "=&r" (out2) \
+     : "r" (mem) \
+     : "cc", "memory" \
+     ); \
+   printf("%s :: ft lo: 0x%x, ft hi: 0x%x\n", \
+          instruction, out1, out2); \
+}
+#else
 #define TESTINSN6LOADd(instruction, indexVal, fd, index, base) \
 { \
     int out1; \
@@ -112,12 +154,14 @@ float mem1f[] = {
      "mfc1 %0, $" #fd "\n\t" \
      "mfc1 %1, $f1\n\t" \
      : "=&r" (out1), "=&r" (out2) \
-	 : "r" (mem) \
-	 : "cc", "memory" \
-	 ); \
+     : "r" (mem) \
+     : "cc", "memory" \
+     ); \
    printf("%s :: ft lo: 0x%x, ft hi: 0x%x\n", \
           instruction, out1, out2); \
 }
+#endif
+
 // sdc1 $f0, 0($t0)
 #define TESTINST1(offset) \
 { \
@@ -129,9 +173,9 @@ float mem1f[] = {
      "sdc1 $f0, "#offset"($t0) \n\t" \
      "lw %0, "#offset"($t0)\n\t" \
      : "=&r" (out) \
-	 : "r" (mem1), "r" (fs_d) \
-	 : "t1", "t0", "cc", "memory" \
-	 ); \
+     : "r" (mem1), "r" (fs_d) \
+     : "t1", "t0", "cc", "memory" \
+     ); \
    printf("sdc1 $f0, 0($t0) :: out: 0x%x\n", \
            out); \
 }
@@ -151,9 +195,9 @@ float mem1f[] = {
      "addi $t0, $t0, 4 \n\t" \
      "lw %1, "#offset"($t0)\n\t" \
      : "=&r" (out), "=&r" (out1) \
-	 : "r" (mem1), "r" (fs_d) \
-	 : "t2", "t1", "t0", "cc", "memory" \
-	 ); \
+     : "r" (mem1), "r" (fs_d) \
+     : "t2", "t1", "t0", "cc", "memory" \
+     ); \
    printf("sdc1 $f0, #t2($t0) :: out: 0x%x : out1: 0x%x\n", \
            out, out1); \
 }
@@ -169,9 +213,9 @@ float mem1f[] = {
      "swc1 $f0, "#offset"($t0) \n\t" \
      "lw %0, "#offset"($t0)\n\t" \
      : "=&r" (out) \
-	 : "r" (mem1f), "r" (fs_f) \
-	 : "t1", "t0", "cc", "memory" \
-	 ); \
+     : "r" (mem1f), "r" (fs_f) \
+     : "t1", "t0", "cc", "memory" \
+     ); \
    printf("swc1 $f0, 0($t0) :: out: 0x%x\n", \
            out); \
 }
@@ -188,9 +232,9 @@ float mem1f[] = {
      "swxc1 $f0, $t2($t0) \n\t" \
      "lw %0, "#offset"($t0)\n\t" \
      : "=&r" (out) \
-	 : "r" (mem1f), "r" (fs_f) \
-	 : "t2", "t1", "t0", "cc", "memory" \
-	 ); \
+     : "r" (mem1f), "r" (fs_f) \
+     : "t2", "t1", "t0", "cc", "memory" \
+     ); \
    printf("swxc1 $f0, 0($t0) :: out: 0x%x\n", \
            out); \
 }

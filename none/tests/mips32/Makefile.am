@@ -31,7 +31,9 @@ EXTRA_DIST = \
 	unaligned_load_store.stdout.exp-LE unaligned_load_store.stdout.exp-BE \
 	unaligned_load_store.stderr.exp unaligned_load_store.vgtest \
 	test_fcsr.stdout.exp test_fcsr.stderr.exp test_fcsr.vgtest \
-	test_math.stdout.exp test_math.stderr.exp test_math.vgtest
+	test_math.stdout.exp test_math.stderr.exp test_math.vgtest \
+	round_fpu64.stdout.exp round_fpu64.stdout.exp-fpu32 \
+	round_fpu64.stderr.exp round_fpu64.vgtest
 
 check_PROGRAMS = \
 	allexec \
@@ -51,7 +53,8 @@ check_PROGRAMS = \
 	mips32_dspr2 \
 	unaligned_load_store \
 	test_fcsr \
-	test_math
+	test_math \
+	round_fpu64
 
 AM_CFLAGS    += @FLAG_M32@
 AM_CXXFLAGS  += @FLAG_M32@

@@ -4,19 +4,19 @@ fcsr: 0x0
 ceil.w.s 457 456.250000
 fcsr: 0x1004
 ceil.w.s 3 3.000000
-fcsr: 0x4
+fcsr: 0x0
 ceil.w.s -1 -1.000000
-fcsr: 0x4
+fcsr: 0x0
 ceil.w.s 1385 1384.500000
 fcsr: 0x1004
 ceil.w.s -7 -7.250000
 fcsr: 0x1004
 ceil.w.s 1000000000 1000000000.000000
-fcsr: 0x4
+fcsr: 0x0
 ceil.w.s -5786 -5786.250000
 fcsr: 0x1004
 ceil.w.s 1752 1752.000000
-fcsr: 0x4
+fcsr: 0x0
 ceil.w.s 1 0.015625
 fcsr: 0x1004
 ceil.w.s 1 0.031250
@@ -26,45 +26,45 @@ fcsr: 0x1004
 ceil.w.s -45786 -45786.500000
 fcsr: 0x1004
 ceil.w.s 456 456.000000
-fcsr: 0x4
+fcsr: 0x0
 ceil.w.s 35 34.031250
 fcsr: 0x1004
 ceil.w.s 45787 45786.750000
 fcsr: 0x1004
 ceil.w.s 1752065 1752065.000000
-fcsr: 0x4
+fcsr: 0x0
 ceil.w.s 107 107.000000
-fcsr: 0x4
+fcsr: 0x0
 ceil.w.s -45667 -45667.250000
 fcsr: 0x1004
 ceil.w.s -7 -7.000000
-fcsr: 0x4
+fcsr: 0x0
 ceil.w.s -347856 -347856.500000
 fcsr: 0x1004
 ceil.w.s 356047 356047.000000
-fcsr: 0x4
+fcsr: 0x0
 ceil.w.s -1 -1.250000
 fcsr: 0x1004
 ceil.w.s 24 23.062500
 fcsr: 0x1004
 ceil.w.d 0 0.000000
-fcsr: 0x4
+fcsr: 0x0
 ceil.w.d 457 456.250000
 fcsr: 0x1004
 ceil.w.d 3 3.000000
-fcsr: 0x4
+fcsr: 0x0
 ceil.w.d -1 -1.000000
-fcsr: 0x4
+fcsr: 0x0
 ceil.w.d 1385 1384.500000
 fcsr: 0x1004
 ceil.w.d -7 -7.250000
 fcsr: 0x1004
 ceil.w.d 1000000000 1000000000.000000
-fcsr: 0x4
+fcsr: 0x0
 ceil.w.d -5786 -5786.250000
 fcsr: 0x1004
 ceil.w.d 1752 1752.000000
-fcsr: 0x4
+fcsr: 0x0
 ceil.w.d 1 0.015625
 fcsr: 0x1004
 ceil.w.d 1 0.031250
@@ -74,45 +74,45 @@ fcsr: 0x1004
 ceil.w.d -45786 -45786.500000
 fcsr: 0x1004
 ceil.w.d 456 456.000000
-fcsr: 0x4
+fcsr: 0x0
 ceil.w.d 35 34.031250
 fcsr: 0x1004
 ceil.w.d 45787 45786.750000
 fcsr: 0x1004
 ceil.w.d 1752065 1752065.000000
-fcsr: 0x4
+fcsr: 0x0
 ceil.w.d 107 107.000000
-fcsr: 0x4
+fcsr: 0x0
 ceil.w.d -45667 -45667.250000
 fcsr: 0x1004
 ceil.w.d -7 -7.000000
-fcsr: 0x4
+fcsr: 0x0
 ceil.w.d -347856 -347856.500000
 fcsr: 0x1004
 ceil.w.d 356047 356047.000000
-fcsr: 0x4
+fcsr: 0x0
 ceil.w.d -1 -1.250000
 fcsr: 0x1004
 ceil.w.d 24 23.062500
 fcsr: 0x1004
 floor.w.s 0 0.000000
-fcsr: 0x4
+fcsr: 0x0
 floor.w.s 456 456.250000
 fcsr: 0x1004
 floor.w.s 3 3.000000
-fcsr: 0x4
+fcsr: 0x0
 floor.w.s -1 -1.000000
-fcsr: 0x4
+fcsr: 0x0
 floor.w.s 1384 1384.500000
 fcsr: 0x1004
 floor.w.s -8 -7.250000
 fcsr: 0x1004
 floor.w.s 1000000000 1000000000.000000
-fcsr: 0x4
+fcsr: 0x0
 floor.w.s -5787 -5786.250000
 fcsr: 0x1004
 floor.w.s 1752 1752.000000
-fcsr: 0x4
+fcsr: 0x0
 floor.w.s 0 0.015625
 fcsr: 0x1004
 floor.w.s 0 0.031250
@@ -122,45 +122,45 @@ fcsr: 0x1004
 floor.w.s -45787 -45786.500000
 fcsr: 0x1004
 floor.w.s 456 456.000000
-fcsr: 0x4
+fcsr: 0x0
 floor.w.s 34 34.031250
 fcsr: 0x1004
 floor.w.s 45786 45786.750000
 fcsr: 0x1004
 floor.w.s 1752065 1752065.000000
-fcsr: 0x4
+fcsr: 0x0
 floor.w.s 107 107.000000
-fcsr: 0x4
+fcsr: 0x0
 floor.w.s -45668 -45667.250000
 fcsr: 0x1004
 floor.w.s -7 -7.000000
-fcsr: 0x4
+fcsr: 0x0
 floor.w.s -347857 -347856.500000
 fcsr: 0x1004
 floor.w.s 356047 356047.000000
-fcsr: 0x4
+fcsr: 0x0
 floor.w.s -2 -1.250000
 fcsr: 0x1004
 floor.w.s 23 23.062500
 fcsr: 0x1004
 floor.w.d 0 0.000000
-fcsr: 0x4
+fcsr: 0x0
 floor.w.d 456 456.250000
 fcsr: 0x1004
 floor.w.d 3 3.000000
-fcsr: 0x4
+fcsr: 0x0
 floor.w.d -1 -1.000000
-fcsr: 0x4
+fcsr: 0x0
 floor.w.d 1384 1384.500000
 fcsr: 0x1004
 floor.w.d -8 -7.250000
 fcsr: 0x1004
 floor.w.d 1000000000 1000000000.000000
-fcsr: 0x4
+fcsr: 0x0
 floor.w.d -5787 -5786.250000
 fcsr: 0x1004
 floor.w.d 1752 1752.000000
-fcsr: 0x4
+fcsr: 0x0
 floor.w.d 0 0.015625
 fcsr: 0x1004
 floor.w.d 0 0.031250
@@ -170,45 +170,45 @@ fcsr: 0x1004
 floor.w.d -45787 -45786.500000
 fcsr: 0x1004
 floor.w.d 456 456.000000
-fcsr: 0x4
+fcsr: 0x0
 floor.w.d 34 34.031250
 fcsr: 0x1004
 floor.w.d 45786 45786.750000
 fcsr: 0x1004
 floor.w.d 1752065 1752065.000000
-fcsr: 0x4
+fcsr: 0x0
 floor.w.d 107 107.000000
-fcsr: 0x4
+fcsr: 0x0
 floor.w.d -45668 -45667.250000
 fcsr: 0x1004
 floor.w.d -7 -7.000000
-fcsr: 0x4
+fcsr: 0x0
 floor.w.d -347857 -347856.500000
 fcsr: 0x1004
 floor.w.d 356047 356047.000000
-fcsr: 0x4
+fcsr: 0x0
 floor.w.d -2 -1.250000
 fcsr: 0x1004
 floor.w.d 23 23.062500
 fcsr: 0x1004
 round.w.s 0 0.000000
-fcsr: 0x4
+fcsr: 0x0
 round.w.s 456 456.250000
 fcsr: 0x1004
 round.w.s 3 3.000000
-fcsr: 0x4
+fcsr: 0x0
 round.w.s -1 -1.000000
-fcsr: 0x4
+fcsr: 0x0
 round.w.s 1384 1384.500000
 fcsr: 0x1004
 round.w.s -7 -7.250000
 fcsr: 0x1004
 round.w.s 1000000000 1000000000.000000
-fcsr: 0x4
+fcsr: 0x0
 round.w.s -5786 -5786.250000
 fcsr: 0x1004
 round.w.s 1752 1752.000000
-fcsr: 0x4
+fcsr: 0x0
 round.w.s 0 0.015625
 fcsr: 0x1004
 round.w.s 0 0.031250
@@ -218,45 +218,45 @@ fcsr: 0x1004
 round.w.s -45786 -45786.500000
 fcsr: 0x1004
 round.w.s 456 456.000000
-fcsr: 0x4
+fcsr: 0x0
 round.w.s 34 34.031250
 fcsr: 0x1004
 round.w.s 45787 45786.750000
 fcsr: 0x1004
 round.w.s 1752065 1752065.000000
-fcsr: 0x4
+fcsr: 0x0
 round.w.s 107 107.000000
-fcsr: 0x4
+fcsr: 0x0
 round.w.s -45667 -45667.250000
 fcsr: 0x1004
 round.w.s -7 -7.000000
-fcsr: 0x4
+fcsr: 0x0
 round.w.s -347856 -347856.500000
 fcsr: 0x1004
 round.w.s 356047 356047.000000
-fcsr: 0x4
+fcsr: 0x0
 round.w.s -1 -1.250000
 fcsr: 0x1004
 round.w.s 23 23.062500
 fcsr: 0x1004
 round.w.d 0 0.000000
-fcsr: 0x4
+fcsr: 0x0
 round.w.d 456 456.250000
 fcsr: 0x1004
 round.w.d 3 3.000000
-fcsr: 0x4
+fcsr: 0x0
 round.w.d -1 -1.000000
-fcsr: 0x4
+fcsr: 0x0
 round.w.d 1384 1384.500000
 fcsr: 0x1004
 round.w.d -7 -7.250000
 fcsr: 0x1004
 round.w.d 1000000000 1000000000.000000
-fcsr: 0x4
+fcsr: 0x0
 round.w.d -5786 -5786.250000
 fcsr: 0x1004
 round.w.d 1752 1752.000000
-fcsr: 0x4
+fcsr: 0x0
 round.w.d 0 0.015625
 fcsr: 0x1004
 round.w.d 0 0.031250
@@ -266,45 +266,45 @@ fcsr: 0x1004
 round.w.d -45786 -45786.500000
 fcsr: 0x1004
 round.w.d 456 456.000000
-fcsr: 0x4
+fcsr: 0x0
 round.w.d 34 34.031250
 fcsr: 0x1004
 round.w.d 45787 45786.750000
 fcsr: 0x1004
 round.w.d 1752065 1752065.000000
-fcsr: 0x4
+fcsr: 0x0
 round.w.d 107 107.000000
-fcsr: 0x4
+fcsr: 0x0
 round.w.d -45667 -45667.250000
 fcsr: 0x1004
 round.w.d -7 -7.000000
-fcsr: 0x4
+fcsr: 0x0
 round.w.d -347856 -347856.500000
 fcsr: 0x1004
 round.w.d 356047 356047.000000
-fcsr: 0x4
+fcsr: 0x0
 round.w.d -1 -1.250000
 fcsr: 0x1004
 round.w.d 23 23.062500
 fcsr: 0x1004
 trunc.w.s 0 0.000000
-fcsr: 0x4
+fcsr: 0x0
 trunc.w.s 456 456.250000
 fcsr: 0x1004
 trunc.w.s 3 3.000000
-fcsr: 0x4
+fcsr: 0x0
 trunc.w.s -1 -1.000000
-fcsr: 0x4
+fcsr: 0x0
 trunc.w.s 1384 1384.500000
 fcsr: 0x1004
 trunc.w.s -7 -7.250000
 fcsr: 0x1004
 trunc.w.s 1000000000 1000000000.000000
-fcsr: 0x4
+fcsr: 0x0
 trunc.w.s -5786 -5786.250000
 fcsr: 0x1004
 trunc.w.s 1752 1752.000000
-fcsr: 0x4
+fcsr: 0x0
 trunc.w.s 0 0.015625
 fcsr: 0x1004
 trunc.w.s 0 0.031250
@@ -314,45 +314,45 @@ fcsr: 0x1004
 trunc.w.s -45786 -45786.500000
 fcsr: 0x1004
 trunc.w.s 456 456.000000
-fcsr: 0x4
+fcsr: 0x0
 trunc.w.s 34 34.031250
 fcsr: 0x1004
 trunc.w.s 45786 45786.750000
 fcsr: 0x1004
 trunc.w.s 1752065 1752065.000000
-fcsr: 0x4
+fcsr: 0x0
 trunc.w.s 107 107.000000
-fcsr: 0x4
+fcsr: 0x0
 trunc.w.s -45667 -45667.250000
 fcsr: 0x1004
 trunc.w.s -7 -7.000000
-fcsr: 0x4
+fcsr: 0x0
 trunc.w.s -347856 -347856.500000
 fcsr: 0x1004
 trunc.w.s 356047 356047.000000
-fcsr: 0x4
+fcsr: 0x0
 trunc.w.s -1 -1.250000
 fcsr: 0x1004
 trunc.w.s 23 23.062500
 fcsr: 0x1004
 trunc.w.d 0 0.000000
-fcsr: 0x4
+fcsr: 0x0
 trunc.w.d 456 456.250000
 fcsr: 0x1004
 trunc.w.d 3 3.000000
-fcsr: 0x4
+fcsr: 0x0
 trunc.w.d -1 -1.000000
-fcsr: 0x4
+fcsr: 0x0
 trunc.w.d 1384 1384.500000
 fcsr: 0x1004
 trunc.w.d -7 -7.250000
 fcsr: 0x1004
 trunc.w.d 1000000000 1000000000.000000
-fcsr: 0x4
+fcsr: 0x0
 trunc.w.d -5786 -5786.250000
 fcsr: 0x1004
 trunc.w.d 1752 1752.000000
-fcsr: 0x4
+fcsr: 0x0
 trunc.w.d 0 0.015625
 fcsr: 0x1004
 trunc.w.d 0 0.031250
@@ -362,23 +362,23 @@ fcsr: 0x1004
 trunc.w.d -45786 -45786.500000
 fcsr: 0x1004
 trunc.w.d 456 456.000000
-fcsr: 0x4
+fcsr: 0x0
 trunc.w.d 34 34.031250
 fcsr: 0x1004
 trunc.w.d 45786 45786.750000
 fcsr: 0x1004
 trunc.w.d 1752065 1752065.000000
-fcsr: 0x4
+fcsr: 0x0
 trunc.w.d 107 107.000000
-fcsr: 0x4
+fcsr: 0x0
 trunc.w.d -45667 -45667.250000
 fcsr: 0x1004
 trunc.w.d -7 -7.000000
-fcsr: 0x4
+fcsr: 0x0
 trunc.w.d -347856 -347856.500000
 fcsr: 0x1004
 trunc.w.d 356047 356047.000000
-fcsr: 0x4
+fcsr: 0x0
 trunc.w.d -1 -1.250000
 fcsr: 0x1004
 trunc.w.d 23 23.062500
@@ -386,807 +386,807 @@ fcsr: 0x1004
 -------------------------- test FPU Conversion Operations Using the FCSR Rounding Mode --------------------------
 roundig mode: near
 cvt.d.s 0.000000 0.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.s 456.250000 456.250000
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.s 3.000000 3.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.s -1.000000 -1.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.s 1384.500000 1384.500000
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.s -7.250000 -7.250000
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.s 1000000000.000000 1000000000.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.s -5786.250000 -5786.250000
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.s 1752.000000 1752.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.s 0.015625 0.015625
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.s 0.031250 0.031250
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.s -248562.750000 -248562.750000
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.s -45786.500000 -45786.500000
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.s 456.000000 456.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.s 34.031250 34.031250
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.s 45786.750000 45786.750000
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.s 1752065.000000 1752065.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.s 107.000000 107.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.s -45667.250000 -45667.250000
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.s -7.000000 -7.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.s -347856.500000 -347856.500000
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.s 356047.000000 356047.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.s -1.250000 -1.250000
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.s 23.062500 23.062500
-fcsr: 0x4
+fcsr: 0x0
 roundig mode: zero
 cvt.d.s 0.000000 0.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.s 456.250000 456.250000
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.s 3.000000 3.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.s -1.000000 -1.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.s 1384.500000 1384.500000
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.s -7.250000 -7.250000
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.s 1000000000.000000 1000000000.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.s -5786.250000 -5786.250000
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.s 1752.000000 1752.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.s 0.015625 0.015625
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.s 0.031250 0.031250
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.s -248562.750000 -248562.750000
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.s -45786.500000 -45786.500000
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.s 456.000000 456.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.s 34.031250 34.031250
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.s 45786.750000 45786.750000
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.s 1752065.000000 1752065.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.s 107.000000 107.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.s -45667.250000 -45667.250000
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.s -7.000000 -7.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.s -347856.500000 -347856.500000
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.s 356047.000000 356047.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.s -1.250000 -1.250000
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.s 23.062500 23.062500
-fcsr: 0x5
+fcsr: 0x1
 roundig mode: +inf
 cvt.d.s 0.000000 0.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.s 456.250000 456.250000
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.s 3.000000 3.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.s -1.000000 -1.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.s 1384.500000 1384.500000
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.s -7.250000 -7.250000
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.s 1000000000.000000 1000000000.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.s -5786.250000 -5786.250000
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.s 1752.000000 1752.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.s 0.015625 0.015625
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.s 0.031250 0.031250
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.s -248562.750000 -248562.750000
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.s -45786.500000 -45786.500000
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.s 456.000000 456.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.s 34.031250 34.031250
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.s 45786.750000 45786.750000
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.s 1752065.000000 1752065.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.s 107.000000 107.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.s -45667.250000 -45667.250000
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.s -7.000000 -7.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.s -347856.500000 -347856.500000
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.s 356047.000000 356047.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.s -1.250000 -1.250000
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.s 23.062500 23.062500
-fcsr: 0x6
+fcsr: 0x2
 roundig mode: -inf
 cvt.d.s 0.000000 0.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.s 456.250000 456.250000
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.s 3.000000 3.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.s -1.000000 -1.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.s 1384.500000 1384.500000
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.s -7.250000 -7.250000
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.s 1000000000.000000 1000000000.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.s -5786.250000 -5786.250000
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.s 1752.000000 1752.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.s 0.015625 0.015625
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.s 0.031250 0.031250
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.s -248562.750000 -248562.750000
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.s -45786.500000 -45786.500000
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.s 456.000000 456.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.s 34.031250 34.031250
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.s 45786.750000 45786.750000
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.s 1752065.000000 1752065.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.s 107.000000 107.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.s -45667.250000 -45667.250000
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.s -7.000000 -7.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.s -347856.500000 -347856.500000
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.s 356047.000000 356047.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.s -1.250000 -1.250000
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.s 23.062500 23.062500
-fcsr: 0x7
+fcsr: 0x3
 roundig mode: near
 cvt.d.w 0.000000 0
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.w 456.000000 456
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.w 3.000000 3
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.w -1.000000 -1
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.w -1.000000 -1
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.w 356.000000 356
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.w 1000000000.000000 1000000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.w -5786.000000 -5786
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.w 1752.000000 1752
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.w 24575.000000 24575
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.w 10.000000 10
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.w -248562.000000 -248562
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.w -45786.000000 -45786
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.w 456.000000 456
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.w 34.000000 34
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.w 45786.000000 45786
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.w 1752065.000000 1752065
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.w 107.000000 107
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.w -45667.000000 -45667
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.w -7.000000 -7
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.w -347856.000000 -347856
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.w -2147483648.000000 -2147483648
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.w 268435455.000000 268435455
-fcsr: 0x4
+fcsr: 0x0
 cvt.d.w 23.000000 23
-fcsr: 0x4
+fcsr: 0x0
 roundig mode: zero
 cvt.d.w 0.000000 0
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.w 456.000000 456
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.w 3.000000 3
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.w -1.000000 -1
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.w -1.000000 -1
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.w 356.000000 356
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.w 1000000000.000000 1000000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.w -5786.000000 -5786
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.w 1752.000000 1752
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.w 24575.000000 24575
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.w 10.000000 10
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.w -248562.000000 -248562
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.w -45786.000000 -45786
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.w 456.000000 456
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.w 34.000000 34
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.w 45786.000000 45786
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.w 1752065.000000 1752065
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.w 107.000000 107
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.w -45667.000000 -45667
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.w -7.000000 -7
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.w -347856.000000 -347856
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.w -2147483648.000000 -2147483648
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.w 268435455.000000 268435455
-fcsr: 0x5
+fcsr: 0x1
 cvt.d.w 23.000000 23
-fcsr: 0x5
+fcsr: 0x1
 roundig mode: +inf
 cvt.d.w 0.000000 0
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.w 456.000000 456
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.w 3.000000 3
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.w -1.000000 -1
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.w -1.000000 -1
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.w 356.000000 356
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.w 1000000000.000000 1000000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.w -5786.000000 -5786
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.w 1752.000000 1752
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.w 24575.000000 24575
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.w 10.000000 10
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.w -248562.000000 -248562
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.w -45786.000000 -45786
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.w 456.000000 456
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.w 34.000000 34
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.w 45786.000000 45786
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.w 1752065.000000 1752065
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.w 107.000000 107
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.w -45667.000000 -45667
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.w -7.000000 -7
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.w -347856.000000 -347856
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.w -2147483648.000000 -2147483648
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.w 268435455.000000 268435455
-fcsr: 0x6
+fcsr: 0x2
 cvt.d.w 23.000000 23
-fcsr: 0x6
+fcsr: 0x2
 roundig mode: -inf
 cvt.d.w 0.000000 0
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.w 456.000000 456
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.w 3.000000 3
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.w -1.000000 -1
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.w -1.000000 -1
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.w 356.000000 356
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.w 1000000000.000000 1000000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.w -5786.000000 -5786
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.w 1752.000000 1752
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.w 24575.000000 24575
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.w 10.000000 10
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.w -248562.000000 -248562
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.w -45786.000000 -45786
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.w 456.000000 456
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.w 34.000000 34
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.w 45786.000000 45786
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.w 1752065.000000 1752065
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.w 107.000000 107
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.w -45667.000000 -45667
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.w -7.000000 -7
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.w -347856.000000 -347856
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.w -2147483648.000000 -2147483648
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.w 268435455.000000 268435455
-fcsr: 0x7
+fcsr: 0x3
 cvt.d.w 23.000000 23
-fcsr: 0x7
+fcsr: 0x3
 roundig mode: near
 cvt.s.d 0.000000 0.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.d 456.250000 456.250000
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.d 3.000000 3.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.d -1.000000 -1.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.d 1384.500000 1384.500000
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.d -7.250000 -7.250000
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.d 1000000000.000000 1000000000.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.d -5786.250000 -5786.250000
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.d 1752.000000 1752.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.d 0.015625 0.015625
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.d 0.031250 0.031250
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.d -248562.750000 -248562.750000
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.d -45786.500000 -45786.500000
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.d 456.000000 456.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.d 34.031250 34.031250
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.d 45786.750000 45786.750000
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.d 1752065.000000 1752065.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.d 107.000000 107.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.d -45667.250000 -45667.250000
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.d -7.000000 -7.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.d -347856.500000 -347856.500000
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.d 356047.000000 356047.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.d -1.250000 -1.250000
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.d 23.062500 23.062500
-fcsr: 0x4
+fcsr: 0x0
 roundig mode: zero
 cvt.s.d 0.000000 0.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.d 456.250000 456.250000
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.d 3.000000 3.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.d -1.000000 -1.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.d 1384.500000 1384.500000
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.d -7.250000 -7.250000
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.d 1000000000.000000 1000000000.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.d -5786.250000 -5786.250000
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.d 1752.000000 1752.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.d 0.015625 0.015625
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.d 0.031250 0.031250
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.d -248562.750000 -248562.750000
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.d -45786.500000 -45786.500000
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.d 456.000000 456.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.d 34.031250 34.031250
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.d 45786.750000 45786.750000
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.d 1752065.000000 1752065.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.d 107.000000 107.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.d -45667.250000 -45667.250000
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.d -7.000000 -7.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.d -347856.500000 -347856.500000
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.d 356047.000000 356047.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.d -1.250000 -1.250000
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.d 23.062500 23.062500
-fcsr: 0x5
+fcsr: 0x1
 roundig mode: +inf
 cvt.s.d 0.000000 0.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.d 456.250000 456.250000
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.d 3.000000 3.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.d -1.000000 -1.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.d 1384.500000 1384.500000
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.d -7.250000 -7.250000
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.d 1000000000.000000 1000000000.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.d -5786.250000 -5786.250000
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.d 1752.000000 1752.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.d 0.015625 0.015625
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.d 0.031250 0.031250
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.d -248562.750000 -248562.750000
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.d -45786.500000 -45786.500000
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.d 456.000000 456.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.d 34.031250 34.031250
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.d 45786.750000 45786.750000
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.d 1752065.000000 1752065.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.d 107.000000 107.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.d -45667.250000 -45667.250000
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.d -7.000000 -7.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.d -347856.500000 -347856.500000
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.d 356047.000000 356047.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.d -1.250000 -1.250000
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.d 23.062500 23.062500
-fcsr: 0x6
+fcsr: 0x2
 roundig mode: -inf
 cvt.s.d 0.000000 0.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.d 456.250000 456.250000
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.d 3.000000 3.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.d -1.000000 -1.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.d 1384.500000 1384.500000
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.d -7.250000 -7.250000
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.d 1000000000.000000 1000000000.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.d -5786.250000 -5786.250000
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.d 1752.000000 1752.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.d 0.015625 0.015625
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.d 0.031250 0.031250
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.d -248562.750000 -248562.750000
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.d -45786.500000 -45786.500000
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.d 456.000000 456.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.d 34.031250 34.031250
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.d 45786.750000 45786.750000
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.d 1752065.000000 1752065.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.d 107.000000 107.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.d -45667.250000 -45667.250000
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.d -7.000000 -7.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.d -347856.500000 -347856.500000
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.d 356047.000000 356047.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.d -1.250000 -1.250000
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.d 23.062500 23.062500
-fcsr: 0x7
+fcsr: 0x3
 roundig mode: near
 cvt.s.w 0.000000 0
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.w 456.000000 456
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.w 3.000000 3
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.w -1.000000 -1
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.w -1.000000 -1
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.w 356.000000 356
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.w 1000000000.000000 1000000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.w -5786.000000 -5786
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.w 1752.000000 1752
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.w 24575.000000 24575
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.w 10.000000 10
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.w -248562.000000 -248562
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.w -45786.000000 -45786
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.w 456.000000 456
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.w 34.000000 34
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.w 45786.000000 45786
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.w 1752065.000000 1752065
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.w 107.000000 107
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.w -45667.000000 -45667
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.w -7.000000 -7
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.w -347856.000000 -347856
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.w -2147483648.000000 -2147483648
-fcsr: 0x4
+fcsr: 0x0
 cvt.s.w 268435456.000000 268435455
 fcsr: 0x1004
 cvt.s.w 23.000000 23
-fcsr: 0x4
+fcsr: 0x0
 roundig mode: zero
 cvt.s.w 0.000000 0
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.w 456.000000 456
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.w 3.000000 3
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.w -1.000000 -1
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.w -1.000000 -1
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.w 356.000000 356
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.w 1000000000.000000 1000000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.w -5786.000000 -5786
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.w 1752.000000 1752
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.w 24575.000000 24575
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.w 10.000000 10
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.w -248562.000000 -248562
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.w -45786.000000 -45786
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.w 456.000000 456
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.w 34.000000 34
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.w 45786.000000 45786
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.w 1752065.000000 1752065
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.w 107.000000 107
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.w -45667.000000 -45667
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.w -7.000000 -7
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.w -347856.000000 -347856
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.w -2147483648.000000 -2147483648
-fcsr: 0x5
+fcsr: 0x1
 cvt.s.w 268435440.000000 268435455
 fcsr: 0x1005
 cvt.s.w 23.000000 23
-fcsr: 0x5
+fcsr: 0x1
 roundig mode: +inf
 cvt.s.w 0.000000 0
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.w 456.000000 456
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.w 3.000000 3
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.w -1.000000 -1
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.w -1.000000 -1
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.w 356.000000 356
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.w 1000000000.000000 1000000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.w -5786.000000 -5786
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.w 1752.000000 1752
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.w 24575.000000 24575
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.w 10.000000 10
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.w -248562.000000 -248562
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.w -45786.000000 -45786
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.w 456.000000 456
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.w 34.000000 34
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.w 45786.000000 45786
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.w 1752065.000000 1752065
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.w 107.000000 107
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.w -45667.000000 -45667
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.w -7.000000 -7
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.w -347856.000000 -347856
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.w -2147483648.000000 -2147483648
-fcsr: 0x6
+fcsr: 0x2
 cvt.s.w 268435456.000000 268435455
 fcsr: 0x1006
 cvt.s.w 23.000000 23
-fcsr: 0x6
+fcsr: 0x2
 roundig mode: -inf
 cvt.s.w 0.000000 0
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.w 456.000000 456
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.w 3.000000 3
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.w -1.000000 -1
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.w -1.000000 -1
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.w 356.000000 356
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.w 1000000000.000000 1000000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.w -5786.000000 -5786
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.w 1752.000000 1752
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.w 24575.000000 24575
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.w 10.000000 10
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.w -248562.000000 -248562
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.w -45786.000000 -45786
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.w 456.000000 456
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.w 34.000000 34
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.w 45786.000000 45786
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.w 1752065.000000 1752065
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.w 107.000000 107
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.w -45667.000000 -45667
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.w -7.000000 -7
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.w -347856.000000 -347856
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.w -2147483648.000000 -2147483648
-fcsr: 0x7
+fcsr: 0x3
 cvt.s.w 268435440.000000 268435455
 fcsr: 0x1007
 cvt.s.w 23.000000 23
-fcsr: 0x7
+fcsr: 0x3
 roundig mode: near
 cvt.w.s 0 0.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.w.s 456 456.250000
 fcsr: 0x1004
 cvt.w.s 3 3.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.w.s -1 -1.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.w.s 1384 1384.500000
 fcsr: 0x1004
 cvt.w.s -7 -7.250000
 fcsr: 0x1004
 cvt.w.s 1000000000 1000000000.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.w.s -5786 -5786.250000
 fcsr: 0x1004
 cvt.w.s 1752 1752.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.w.s 0 0.015625
 fcsr: 0x1004
 cvt.w.s 0 0.031250
@@ -1196,46 +1196,46 @@ fcsr: 0x1004
 cvt.w.s -45786 -45786.500000
 fcsr: 0x1004
 cvt.w.s 456 456.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.w.s 34 34.031250
 fcsr: 0x1004
 cvt.w.s 45787 45786.750000
 fcsr: 0x1004
 cvt.w.s 1752065 1752065.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.w.s 107 107.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.w.s -45667 -45667.250000
 fcsr: 0x1004
 cvt.w.s -7 -7.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.w.s -347856 -347856.500000
 fcsr: 0x1004
 cvt.w.s 356047 356047.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.w.s -1 -1.250000
 fcsr: 0x1004
 cvt.w.s 23 23.062500
 fcsr: 0x1004
 roundig mode: zero
 cvt.w.s 0 0.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.w.s 456 456.250000
 fcsr: 0x1005
 cvt.w.s 3 3.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.w.s -1 -1.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.w.s 1384 1384.500000
 fcsr: 0x1005
 cvt.w.s -7 -7.250000
 fcsr: 0x1005
 cvt.w.s 1000000000 1000000000.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.w.s -5786 -5786.250000
 fcsr: 0x1005
 cvt.w.s 1752 1752.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.w.s 0 0.015625
 fcsr: 0x1005
 cvt.w.s 0 0.031250
@@ -1245,46 +1245,46 @@ fcsr: 0x1005
 cvt.w.s -45786 -45786.500000
 fcsr: 0x1005
 cvt.w.s 456 456.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.w.s 34 34.031250
 fcsr: 0x1005
 cvt.w.s 45786 45786.750000
 fcsr: 0x1005
 cvt.w.s 1752065 1752065.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.w.s 107 107.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.w.s -45667 -45667.250000
 fcsr: 0x1005
 cvt.w.s -7 -7.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.w.s -347856 -347856.500000
 fcsr: 0x1005
 cvt.w.s 356047 356047.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.w.s -1 -1.250000
 fcsr: 0x1005
 cvt.w.s 23 23.062500
 fcsr: 0x1005
 roundig mode: +inf
 cvt.w.s 0 0.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.w.s 457 456.250000
 fcsr: 0x1006
 cvt.w.s 3 3.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.w.s -1 -1.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.w.s 1385 1384.500000
 fcsr: 0x1006
 cvt.w.s -7 -7.250000
 fcsr: 0x1006
 cvt.w.s 1000000000 1000000000.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.w.s -5786 -5786.250000
 fcsr: 0x1006
 cvt.w.s 1752 1752.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.w.s 1 0.015625
 fcsr: 0x1006
 cvt.w.s 1 0.031250
@@ -1294,46 +1294,46 @@ fcsr: 0x1006
 cvt.w.s -45786 -45786.500000
 fcsr: 0x1006
 cvt.w.s 456 456.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.w.s 35 34.031250
 fcsr: 0x1006
 cvt.w.s 45787 45786.750000
 fcsr: 0x1006
 cvt.w.s 1752065 1752065.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.w.s 107 107.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.w.s -45667 -45667.250000
 fcsr: 0x1006
 cvt.w.s -7 -7.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.w.s -347856 -347856.500000
 fcsr: 0x1006
 cvt.w.s 356047 356047.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.w.s -1 -1.250000
 fcsr: 0x1006
 cvt.w.s 24 23.062500
 fcsr: 0x1006
 roundig mode: -inf
 cvt.w.s 0 0.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.w.s 456 456.250000
 fcsr: 0x1007
 cvt.w.s 3 3.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.w.s -1 -1.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.w.s 1384 1384.500000
 fcsr: 0x1007
 cvt.w.s -8 -7.250000
 fcsr: 0x1007
 cvt.w.s 1000000000 1000000000.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.w.s -5787 -5786.250000
 fcsr: 0x1007
 cvt.w.s 1752 1752.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.w.s 0 0.015625
 fcsr: 0x1007
 cvt.w.s 0 0.031250
@@ -1343,46 +1343,46 @@ fcsr: 0x1007
 cvt.w.s -45787 -45786.500000
 fcsr: 0x1007
 cvt.w.s 456 456.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.w.s 34 34.031250
 fcsr: 0x1007
 cvt.w.s 45786 45786.750000
 fcsr: 0x1007
 cvt.w.s 1752065 1752065.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.w.s 107 107.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.w.s -45668 -45667.250000
 fcsr: 0x1007
 cvt.w.s -7 -7.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.w.s -347857 -347856.500000
 fcsr: 0x1007
 cvt.w.s 356047 356047.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.w.s -2 -1.250000
 fcsr: 0x1007
 cvt.w.s 23 23.062500
 fcsr: 0x1007
 roundig mode: near
 cvt.w.d 0 0.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.w.d 456 456.250000
 fcsr: 0x1004
 cvt.w.d 3 3.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.w.d -1 -1.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.w.d 1384 1384.500000
 fcsr: 0x1004
 cvt.w.d -7 -7.250000
 fcsr: 0x1004
 cvt.w.d 1000000000 1000000000.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.w.d -5786 -5786.250000
 fcsr: 0x1004
 cvt.w.d 1752 1752.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.w.d 0 0.015625
 fcsr: 0x1004
 cvt.w.d 0 0.031250
@@ -1392,46 +1392,46 @@ fcsr: 0x1004
 cvt.w.d -45786 -45786.500000
 fcsr: 0x1004
 cvt.w.d 456 456.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.w.d 34 34.031250
 fcsr: 0x1004
 cvt.w.d 45787 45786.750000
 fcsr: 0x1004
 cvt.w.d 1752065 1752065.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.w.d 107 107.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.w.d -45667 -45667.250000
 fcsr: 0x1004
 cvt.w.d -7 -7.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.w.d -347856 -347856.500000
 fcsr: 0x1004
 cvt.w.d 356047 356047.000000
-fcsr: 0x4
+fcsr: 0x0
 cvt.w.d -1 -1.250000
 fcsr: 0x1004
 cvt.w.d 23 23.062500
 fcsr: 0x1004
 roundig mode: zero
 cvt.w.d 0 0.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.w.d 456 456.250000
 fcsr: 0x1005
 cvt.w.d 3 3.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.w.d -1 -1.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.w.d 1384 1384.500000
 fcsr: 0x1005
 cvt.w.d -7 -7.250000
 fcsr: 0x1005
 cvt.w.d 1000000000 1000000000.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.w.d -5786 -5786.250000
 fcsr: 0x1005
 cvt.w.d 1752 1752.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.w.d 0 0.015625
 fcsr: 0x1005
 cvt.w.d 0 0.031250
@@ -1441,46 +1441,46 @@ fcsr: 0x1005
 cvt.w.d -45786 -45786.500000
 fcsr: 0x1005
 cvt.w.d 456 456.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.w.d 34 34.031250
 fcsr: 0x1005
 cvt.w.d 45786 45786.750000
 fcsr: 0x1005
 cvt.w.d 1752065 1752065.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.w.d 107 107.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.w.d -45667 -45667.250000
 fcsr: 0x1005
 cvt.w.d -7 -7.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.w.d -347856 -347856.500000
 fcsr: 0x1005
 cvt.w.d 356047 356047.000000
-fcsr: 0x5
+fcsr: 0x1
 cvt.w.d -1 -1.250000
 fcsr: 0x1005
 cvt.w.d 23 23.062500
 fcsr: 0x1005
 roundig mode: +inf
 cvt.w.d 0 0.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.w.d 457 456.250000
 fcsr: 0x1006
 cvt.w.d 3 3.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.w.d -1 -1.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.w.d 1385 1384.500000
 fcsr: 0x1006
 cvt.w.d -7 -7.250000
 fcsr: 0x1006
 cvt.w.d 1000000000 1000000000.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.w.d -5786 -5786.250000
 fcsr: 0x1006
 cvt.w.d 1752 1752.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.w.d 1 0.015625
 fcsr: 0x1006
 cvt.w.d 1 0.031250
@@ -1490,46 +1490,46 @@ fcsr: 0x1006
 cvt.w.d -45786 -45786.500000
 fcsr: 0x1006
 cvt.w.d 456 456.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.w.d 35 34.031250
 fcsr: 0x1006
 cvt.w.d 45787 45786.750000
 fcsr: 0x1006
 cvt.w.d 1752065 1752065.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.w.d 107 107.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.w.d -45667 -45667.250000
 fcsr: 0x1006
 cvt.w.d -7 -7.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.w.d -347856 -347856.500000
 fcsr: 0x1006
 cvt.w.d 356047 356047.000000
-fcsr: 0x6
+fcsr: 0x2
 cvt.w.d -1 -1.250000
 fcsr: 0x1006
 cvt.w.d 24 23.062500
 fcsr: 0x1006
 roundig mode: -inf
 cvt.w.d 0 0.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.w.d 456 456.250000
 fcsr: 0x1007
 cvt.w.d 3 3.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.w.d -1 -1.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.w.d 1384 1384.500000
 fcsr: 0x1007
 cvt.w.d -8 -7.250000
 fcsr: 0x1007
 cvt.w.d 1000000000 1000000000.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.w.d -5787 -5786.250000
 fcsr: 0x1007
 cvt.w.d 1752 1752.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.w.d 0 0.015625
 fcsr: 0x1007
 cvt.w.d 0 0.031250
@@ -1539,23 +1539,23 @@ fcsr: 0x1007
 cvt.w.d -45787 -45786.500000
 fcsr: 0x1007
 cvt.w.d 456 456.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.w.d 34 34.031250
 fcsr: 0x1007
 cvt.w.d 45786 45786.750000
 fcsr: 0x1007
 cvt.w.d 1752065 1752065.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.w.d 107 107.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.w.d -45668 -45667.250000
 fcsr: 0x1007
 cvt.w.d -7 -7.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.w.d -347857 -347856.500000
 fcsr: 0x1007
 cvt.w.d 356047 356047.000000
-fcsr: 0x7
+fcsr: 0x3
 cvt.w.d -2 -1.250000
 fcsr: 0x1007
 cvt.w.d 23 23.062500

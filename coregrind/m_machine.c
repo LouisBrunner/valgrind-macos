@@ -1459,6 +1459,8 @@ Bool VG_(machine_get_hwcaps)( void )
 
 #elif defined(VGA_mips32)
    {
+     /* Define the position of F64 bit in FIR register. */
+#    define FP64 22
      va = VexArchMIPS32;
      UInt model = VG_(get_machine_model)();
      if (model == -1)
@@ -1519,6 +1521,16 @@ Bool VG_(machine_get_hwcaps)( void )
               vai.hwcaps |= VEX_PRID_IMP_34K;
            }
         }
+     }
+
+     /* Check if CPU has FPU and 32 dbl. prec. FP registers */
+     int FIR = 0;
+     __asm__ __volatile__(
+        "cfc1 %0, $0"  "\n\t"
+        : "=r" (FIR)
+     );
+     if (FIR & (1 << FP64)) {
+        vai.hwcaps |= VEX_PRID_CPU_32FPR;
      }
 
      VG_(convert_sigaction_fromK_to_toK)(&saved_sigill_act, &tmp_sigill_act);

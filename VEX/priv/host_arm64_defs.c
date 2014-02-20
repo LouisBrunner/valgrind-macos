@@ -1442,24 +1442,28 @@ ARM64Instr* ARM64Instr_Mul ( HReg dst, HReg argL, HReg argR,
    i->ARM64in.Mul.op   = op;
    return i;
 }
-//ZZ ARMInstr* ARMInstr_Mul ( ARMMulOp op ) {
-//ZZ    ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
-//ZZ    i->tag          = ARMin_Mul;
-//ZZ    i->ARMin.Mul.op = op;
-//ZZ    return i;
-//ZZ }
-//ZZ ARMInstr* ARMInstr_LdrEX ( Int szB ) {
-//ZZ    ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
-//ZZ    i->tag             = ARMin_LdrEX;
-//ZZ    i->ARMin.LdrEX.szB = szB;
-//ZZ    vassert(szB == 8 || szB == 4 || szB == 2 || szB == 1);
-//ZZ    return i;
-//ZZ }
-//ZZ ARMInstr* ARMInstr_StrEX ( Int szB ) {
-//ZZ    ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
-//ZZ    i->tag             = ARMin_StrEX;
-//ZZ    i->ARMin.StrEX.szB = szB;
-//ZZ    vassert(szB == 8 || szB == 4 || szB == 2 || szB == 1);
+ARM64Instr* ARM64Instr_LdrEX ( Int szB ) {
+   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   i->tag               = ARM64in_LdrEX;
+   i->ARM64in.LdrEX.szB = szB;
+   vassert(szB == 8 || szB == 4 || szB == 2 || szB == 1);
+   return i;
+}
+ARM64Instr* ARM64Instr_StrEX ( Int szB ) {
+   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   i->tag               = ARM64in_StrEX;
+   i->ARM64in.StrEX.szB = szB;
+   vassert(szB == 8 || szB == 4 || szB == 2 || szB == 1);
+   return i;
+}
+ARM64Instr* ARM64Instr_MFence ( void ) {
+   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   i->tag        = ARM64in_MFence;
+   return i;
+}
+//ZZ ARM64Instr* ARM64Instr_CLREX( void ) {
+//ZZ    ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+//ZZ    i->tag        = ARM64in_CLREX;
 //ZZ    return i;
 //ZZ }
 ARM64Instr* ARM64Instr_VLdStS ( Bool isLoad, HReg sD, HReg rN, UInt uimm12 ) {
@@ -1672,16 +1676,6 @@ ARM64Instr* ARM64Instr_VShiftImmV ( ARM64VecShiftOp op,
 //ZZ    i->ARMin.VCvtID.syned = syned;
 //ZZ    i->ARMin.VCvtID.dst   = dst;
 //ZZ    i->ARMin.VCvtID.src   = src;
-//ZZ    return i;
-//ZZ }
-//ZZ ARMInstr* ARMInstr_MFence ( void ) {
-//ZZ    ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
-//ZZ    i->tag      = ARMin_MFence;
-//ZZ    return i;
-//ZZ }
-//ZZ ARMInstr* ARMInstr_CLREX( void ) {
-//ZZ    ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
-//ZZ    i->tag      = ARMin_CLREX;
 //ZZ    return i;
 //ZZ }
 //ZZ ARMInstr* ARMInstr_NLdStD ( Bool isLoad, HReg dD, ARMAModeN *amode ) {
@@ -2061,28 +2055,37 @@ void ppARM64Instr ( ARM64Instr* i ) {
          vex_printf(", ");
          ppHRegARM64(i->ARM64in.Mul.argR);
          return;
-//ZZ       case ARMin_LdrEX: {
-//ZZ          const HChar* sz = "";
-//ZZ          switch (i->ARMin.LdrEX.szB) {
-//ZZ             case 1: sz = "b"; break; case 2: sz = "h"; break;
-//ZZ             case 8: sz = "d"; break; case 4: break;
-//ZZ             default: vassert(0);
-//ZZ          }      
-//ZZ          vex_printf("ldrex%s %sr2, [r4]",
-//ZZ                     sz, i->ARMin.LdrEX.szB == 8 ? "r3:" : "");
+
+      case ARM64in_LdrEX: {
+         const HChar* sz = " ";
+         switch (i->ARM64in.LdrEX.szB) {
+            case 1: sz = "b"; break;
+            case 2: sz = "h"; break;
+            case 4: case 8: break;
+            default: vassert(0);
+         }
+         vex_printf("ldxr%s  %c2, [x4]",
+                    sz, i->ARM64in.LdrEX.szB == 8 ? 'x' : 'w');
+         return;
+      }
+      case ARM64in_StrEX: {
+         const HChar* sz = " ";
+         switch (i->ARM64in.StrEX.szB) {
+            case 1: sz = "b"; break;
+            case 2: sz = "h"; break;
+            case 4: case 8: break;
+            default: vassert(0);
+         }
+         vex_printf("stxr%s  w0, %c2, [x4]",
+                    sz, i->ARM64in.StrEX.szB == 8 ? 'x' : 'w');
+         return;
+      }
+      case ARM64in_MFence:
+         vex_printf("(mfence) dsb sy; dmb sy; isb");
+         return;
+//ZZ       case ARM64in_CLREX:
+//ZZ          vex_printf("clrex");
 //ZZ          return;
-//ZZ       }
-//ZZ       case ARMin_StrEX: {
-//ZZ          const HChar* sz = "";
-//ZZ          switch (i->ARMin.StrEX.szB) {
-//ZZ             case 1: sz = "b"; break; case 2: sz = "h"; break;
-//ZZ             case 8: sz = "d"; break; case 4: break;
-//ZZ             default: vassert(0);
-//ZZ          }      
-//ZZ          vex_printf("strex%s r0, %sr2, [r4]",
-//ZZ                     sz, i->ARMin.StrEX.szB == 8 ? "r3:" : "");
-//ZZ          return;
-//ZZ       }
       case ARM64in_VLdStS:
          if (i->ARM64in.VLdStS.isLoad) {
             vex_printf("ldr    ");
@@ -2319,12 +2322,6 @@ void ppARM64Instr ( ARM64Instr* i ) {
 //ZZ          ppHRegARM(i->ARMin.VCvtID.src);
 //ZZ          return;
 //ZZ       }
-//ZZ       case ARMin_MFence:
-//ZZ          vex_printf("(mfence) dsb sy; dmb sy; isb");
-//ZZ          return;
-//ZZ       case ARMin_CLREX:
-//ZZ          vex_printf("clrex");
-//ZZ          return;
 //ZZ       case ARMin_NLdStD:
 //ZZ          if (i->ARMin.NLdStD.isLoad)
 //ZZ             vex_printf("vld1.32 {");
@@ -2641,18 +2638,18 @@ void getRegUsage_ARM64Instr ( HRegUsage* u, ARM64Instr* i, Bool mode64 )
          addHRegUse(u, HRmRead,  i->ARM64in.Mul.argL);
          addHRegUse(u, HRmRead,  i->ARM64in.Mul.argR);
          return;
-//ZZ       case ARMin_LdrEX:
-//ZZ          addHRegUse(u, HRmRead, hregARM_R4());
-//ZZ          addHRegUse(u, HRmWrite, hregARM_R2());
-//ZZ          if (i->ARMin.LdrEX.szB == 8)
-//ZZ             addHRegUse(u, HRmWrite, hregARM_R3());
-//ZZ          return;
-//ZZ       case ARMin_StrEX:
-//ZZ          addHRegUse(u, HRmRead, hregARM_R4());
-//ZZ          addHRegUse(u, HRmWrite, hregARM_R0());
-//ZZ          addHRegUse(u, HRmRead, hregARM_R2());
-//ZZ          if (i->ARMin.StrEX.szB == 8)
-//ZZ             addHRegUse(u, HRmRead, hregARM_R3());
+      case ARM64in_LdrEX:
+         addHRegUse(u, HRmRead, hregARM64_X4());
+         addHRegUse(u, HRmWrite, hregARM64_X2());
+         return;
+      case ARM64in_StrEX:
+         addHRegUse(u, HRmRead, hregARM64_X4());
+         addHRegUse(u, HRmWrite, hregARM64_X0());
+         addHRegUse(u, HRmRead, hregARM64_X2());
+         return;
+      case ARM64in_MFence:
+         return;
+//ZZ       case ARMin_CLREX:
 //ZZ          return;
       case ARM64in_VLdStS:
          addHRegUse(u, HRmRead, i->ARM64in.VLdStS.rN);
@@ -2780,10 +2777,6 @@ void getRegUsage_ARM64Instr ( HRegUsage* u, ARM64Instr* i, Bool mode64 )
 //ZZ       case ARMin_VCvtID:
 //ZZ          addHRegUse(u, HRmWrite, i->ARMin.VCvtID.dst);
 //ZZ          addHRegUse(u, HRmRead,  i->ARMin.VCvtID.src);
-//ZZ          return;
-//ZZ       case ARMin_MFence:
-//ZZ          return;
-//ZZ       case ARMin_CLREX:
 //ZZ          return;
 //ZZ       case ARMin_NLdStD:
 //ZZ          if (i->ARMin.NLdStD.isLoad)
@@ -2954,11 +2947,13 @@ void mapRegs_ARM64Instr ( HRegRemap* m, ARM64Instr* i, Bool mode64 )
          i->ARM64in.Mul.argL = lookupHRegRemap(m, i->ARM64in.Mul.argL);
          i->ARM64in.Mul.argR = lookupHRegRemap(m, i->ARM64in.Mul.argR);
          break;
-//ZZ       case ARMin_Mul:
-//ZZ          return;
-//ZZ       case ARMin_LdrEX:
-//ZZ          return;
-//ZZ       case ARMin_StrEX:
+      case ARM64in_LdrEX:
+         return;
+      case ARM64in_StrEX:
+         return;
+      case ARM64in_MFence:
+         return;
+//ZZ       case ARMin_CLREX:
 //ZZ          return;
       case ARM64in_VLdStS:
          i->ARM64in.VLdStS.sD = lookupHRegRemap(m, i->ARM64in.VLdStS.sD);
@@ -3057,10 +3052,6 @@ void mapRegs_ARM64Instr ( HRegRemap* m, ARM64Instr* i, Bool mode64 )
 //ZZ       case ARMin_VCvtID:
 //ZZ          i->ARMin.VCvtID.dst = lookupHRegRemap(m, i->ARMin.VCvtID.dst);
 //ZZ          i->ARMin.VCvtID.src = lookupHRegRemap(m, i->ARMin.VCvtID.src);
-//ZZ          return;
-//ZZ       case ARMin_MFence:
-//ZZ          return;
-//ZZ       case ARMin_CLREX:
 //ZZ          return;
 //ZZ       case ARMin_NLdStD:
 //ZZ          i->ARMin.NLdStD.dD = lookupHRegRemap(m, i->ARMin.NLdStD.dD);
@@ -4564,36 +4555,48 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
          }
          goto bad;
       }
-//ZZ       case ARMin_LdrEX: {
-//ZZ          /* E1D42F9F   ldrexb r2, [r4]
-//ZZ             E1F42F9F   ldrexh r2, [r4]
-//ZZ             E1942F9F   ldrex  r2, [r4]
-//ZZ             E1B42F9F   ldrexd r2, r3, [r4]
-//ZZ          */
-//ZZ          switch (i->ARMin.LdrEX.szB) {
-//ZZ             case 1: *p++ = 0xE1D42F9F; goto done;
-//ZZ             case 2: *p++ = 0xE1F42F9F; goto done;
-//ZZ             case 4: *p++ = 0xE1942F9F; goto done;
-//ZZ             case 8: *p++ = 0xE1B42F9F; goto done;
-//ZZ             default: break;
-//ZZ          }
-//ZZ          goto bad;
-//ZZ       }
-//ZZ       case ARMin_StrEX: {
-//ZZ          /* E1C40F92   strexb r0, r2, [r4]
-//ZZ             E1E40F92   strexh r0, r2, [r4]
-//ZZ             E1840F92   strex  r0, r2, [r4]
-//ZZ             E1A40F92   strexd r0, r2, r3, [r4]
-//ZZ          */
-//ZZ          switch (i->ARMin.StrEX.szB) {
-//ZZ             case 1: *p++ = 0xE1C40F92; goto done;
-//ZZ             case 2: *p++ = 0xE1E40F92; goto done;
-//ZZ             case 4: *p++ = 0xE1840F92; goto done;
-//ZZ             case 8: *p++ = 0xE1A40F92; goto done;
-//ZZ             default: break;
-//ZZ          }
-//ZZ          goto bad;
-//ZZ       }
+      case ARM64in_LdrEX: {
+         /* 085F7C82   ldxrb w2, [x4]
+            485F7C82   ldxrh w2, [x4]
+            885F7C82   ldxr  w2, [x4]
+            C85F7C82   ldxr  x2, [x4]
+         */
+         switch (i->ARM64in.LdrEX.szB) {
+            case 1: *p++ = 0x085F7C82; goto done;
+            case 2: *p++ = 0x485F7C82; goto done;
+            case 4: *p++ = 0x885F7C82; goto done;
+            case 8: *p++ = 0xC85F7C82; goto done;
+            default: break;
+         }
+         goto bad;
+      }
+      case ARM64in_StrEX: {
+         /* 08007C82   stxrb w0, w2, [x4]
+            48007C82   stxrh w0, w2, [x4]
+            88007C82   stxr  w0, w2, [x4]
+            C8007C82   stxr  w0, x2, [x4]
+         */
+         switch (i->ARM64in.StrEX.szB) {
+            case 1: *p++ = 0x08007C82; goto done;
+            case 2: *p++ = 0x48007C82; goto done;
+            case 4: *p++ = 0x88007C82; goto done;
+            case 8: *p++ = 0xC8007C82; goto done;
+            default: break;
+         }
+         goto bad;
+      }
+      case ARM64in_MFence: {
+         *p++ = 0xD5033F9F; /* DSB sy */
+         *p++ = 0xD5033FBF; /* DMB sy */
+         *p++ = 0xD5033FDF; /* ISB */
+         goto done;
+      }
+      //case ARM64in_CLREX: {
+      //   //ATC, but believed to be correct
+      //   goto bad;
+      //   *p++ = 0xD5033F5F; /* clrex */
+      //   goto done;
+      //}
       case ARM64in_VLdStS: {
          /* 10 111101 01 imm12 n t   LDR St, [Xn|SP, #imm12 * 4]
             10 111101 00 imm12 n t   STR St, [Xn|SP, #imm12 * 4]
@@ -5256,22 +5259,6 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
 //ZZ          }
 //ZZ          /*UNREACHED*/
 //ZZ          vassert(0);
-//ZZ       }
-//ZZ       case ARMin_MFence: {
-//ZZ          // It's not clear (to me) how these relate to the ARMv7
-//ZZ          // versions, so let's just use the v7 versions as they
-//ZZ          // are at least well documented.
-//ZZ          //*p++ = 0xEE070F9A; /* mcr 15,0,r0,c7,c10,4 (DSB) */
-//ZZ          //*p++ = 0xEE070FBA; /* mcr 15,0,r0,c7,c10,5 (DMB) */
-//ZZ          //*p++ = 0xEE070F95; /* mcr 15,0,r0,c7,c5,4  (ISB) */
-//ZZ          *p++ = 0xF57FF04F; /* DSB sy */
-//ZZ          *p++ = 0xF57FF05F; /* DMB sy */
-//ZZ          *p++ = 0xF57FF06F; /* ISB */
-//ZZ          goto done;
-//ZZ       }
-//ZZ       case ARMin_CLREX: {
-//ZZ          *p++ = 0xF57FF01F; /* clrex */
-//ZZ          goto done;
 //ZZ       }
 //ZZ       case ARMin_NLdStD: {
 //ZZ          UInt regD = dregNo(i->ARMin.NLdStD.dD);

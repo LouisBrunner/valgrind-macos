@@ -4483,6 +4483,17 @@ Int sizeofIRType ( IRType ty )
    }
 }
 
+IRType integerIRTypeOfSize ( Int szB )
+{
+   switch (szB) {
+      case 8: return Ity_I64;
+      case 4: return Ity_I32;
+      case 2: return Ity_I16;
+      case 1: return Ity_I8;
+      default: vpanic("integerIRTypeOfSize");
+   }
+}
+
 IRExpr* mkIRExpr_HWord ( HWord hw )
 {
    vassert(sizeof(void*) == sizeof(HWord));

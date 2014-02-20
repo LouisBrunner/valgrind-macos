@@ -2157,17 +2157,19 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 //ZZ             }
 //ZZ             return rLo;
 //ZZ          }
-//ZZ 
-//ZZ          case Iop_1Uto32:
-//ZZ             /* 1Uto32(tmp).  Since I1 values generated into registers
-//ZZ                are guaranteed to have value either only zero or one,
-//ZZ                we can simply return the value of the register in this
-//ZZ                case. */
-//ZZ             if (e->Iex.Unop.arg->tag == Iex_RdTmp) {
-//ZZ                HReg dst = lookupIRTemp(env, e->Iex.Unop.arg->Iex.RdTmp.tmp);
-//ZZ                return dst;
-//ZZ             }
-//ZZ             /* else fall through */
+
+         case Iop_1Uto64:
+            /* 1Uto64(tmp). */
+            if (e->Iex.Unop.arg->tag == Iex_RdTmp) {
+               ARM64RIL* one = mb_mkARM64RIL_I(1);
+               HReg src = lookupIRTemp(env, e->Iex.Unop.arg->Iex.RdTmp.tmp);
+               HReg dst = newVRegI(env);
+               vassert(one);
+               addInstr(env, ARM64Instr_Logic(dst, src, one, ARM64lo_AND));
+               return dst;
+            }
+            /* else fall through */
+            break; // RM when 1Uto8 is implemented
 //ZZ          case Iop_1Uto8: {
 //ZZ             HReg        dst  = newVRegI(env);
 //ZZ             ARMCondCode cond = iselCondCode(env, e->Iex.Unop.arg);
@@ -6611,109 +6613,83 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       break;
    }
 
-//ZZ    /* --------- Load Linked and Store Conditional --------- */
-//ZZ    case Ist_LLSC: {
-//ZZ       if (stmt->Ist.LLSC.storedata == NULL) {
-//ZZ          /* LL */
-//ZZ          IRTemp res = stmt->Ist.LLSC.result;
-//ZZ          IRType ty  = typeOfIRTemp(env->type_env, res);
-//ZZ          if (ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8) {
-//ZZ             Int  szB   = 0;
-//ZZ             HReg r_dst = lookupIRTemp(env, res);
-//ZZ             HReg raddr = iselIntExpr_R(env, stmt->Ist.LLSC.addr);
-//ZZ             switch (ty) {
-//ZZ                case Ity_I8:  szB = 1; break;
-//ZZ                case Ity_I16: szB = 2; break;
-//ZZ                case Ity_I32: szB = 4; break;
-//ZZ                default:      vassert(0);
-//ZZ             }
-//ZZ             addInstr(env, mk_iMOVds_RR(hregARM_R4(), raddr));
-//ZZ             addInstr(env, ARMInstr_LdrEX(szB));
-//ZZ             addInstr(env, mk_iMOVds_RR(r_dst, hregARM_R2()));
-//ZZ             return;
-//ZZ          }
-//ZZ          if (ty == Ity_I64) {
-//ZZ             HReg raddr = iselIntExpr_R(env, stmt->Ist.LLSC.addr);
-//ZZ             addInstr(env, mk_iMOVds_RR(hregARM_R4(), raddr));
-//ZZ             addInstr(env, ARMInstr_LdrEX(8));
-//ZZ             /* Result is in r3:r2.  On a non-NEON capable CPU, we must
-//ZZ                move it into a result register pair.  On a NEON capable
-//ZZ                CPU, the result register will be a 64 bit NEON
-//ZZ                register, so we must move it there instead. */
-//ZZ             if (env->hwcaps & VEX_HWCAPS_ARM_NEON) {
-//ZZ                HReg dst = lookupIRTemp(env, res);
-//ZZ                addInstr(env, ARMInstr_VXferD(True, dst, hregARM_R3(),
-//ZZ                                                         hregARM_R2()));
-//ZZ             } else {
-//ZZ                HReg r_dst_hi, r_dst_lo;
-//ZZ                lookupIRTemp64(&r_dst_hi, &r_dst_lo, env, res);
-//ZZ                addInstr(env, mk_iMOVds_RR(r_dst_lo, hregARM_R2()));
-//ZZ                addInstr(env, mk_iMOVds_RR(r_dst_hi, hregARM_R3()));
-//ZZ             }
-//ZZ             return;
-//ZZ          }
-//ZZ          /*NOTREACHED*/
-//ZZ          vassert(0); 
-//ZZ       } else {
-//ZZ          /* SC */
-//ZZ          IRType tyd = typeOfIRExpr(env->type_env, stmt->Ist.LLSC.storedata);
-//ZZ          if (tyd == Ity_I32 || tyd == Ity_I16 || tyd == Ity_I8) {
-//ZZ             Int  szB = 0;
-//ZZ             HReg rD  = iselIntExpr_R(env, stmt->Ist.LLSC.storedata);
-//ZZ             HReg rA  = iselIntExpr_R(env, stmt->Ist.LLSC.addr);
-//ZZ             switch (tyd) {
-//ZZ                case Ity_I8:  szB = 1; break;
-//ZZ                case Ity_I16: szB = 2; break;
-//ZZ                case Ity_I32: szB = 4; break;
-//ZZ                default:      vassert(0);
-//ZZ             }
-//ZZ             addInstr(env, mk_iMOVds_RR(hregARM_R2(), rD));
-//ZZ             addInstr(env, mk_iMOVds_RR(hregARM_R4(), rA));
-//ZZ             addInstr(env, ARMInstr_StrEX(szB));
-//ZZ          } else {
-//ZZ             vassert(tyd == Ity_I64);
-//ZZ             /* This is really ugly.  There is no is/is-not NEON
-//ZZ                decision akin to the case for LL, because iselInt64Expr
-//ZZ                fudges this for us, and always gets the result into two
-//ZZ                GPRs even if this means moving it from a NEON
-//ZZ                register. */
-//ZZ             HReg rDhi, rDlo;
-//ZZ             iselInt64Expr(&rDhi, &rDlo, env, stmt->Ist.LLSC.storedata);
-//ZZ             HReg rA = iselIntExpr_R(env, stmt->Ist.LLSC.addr);
-//ZZ             addInstr(env, mk_iMOVds_RR(hregARM_R2(), rDlo));
-//ZZ             addInstr(env, mk_iMOVds_RR(hregARM_R3(), rDhi));
-//ZZ             addInstr(env, mk_iMOVds_RR(hregARM_R4(), rA));
-//ZZ             addInstr(env, ARMInstr_StrEX(8));
-//ZZ          }
-//ZZ          /* now r0 is 1 if failed, 0 if success.  Change to IR
-//ZZ             conventions (0 is fail, 1 is success).  Also transfer
-//ZZ             result to r_res. */
-//ZZ          IRTemp   res   = stmt->Ist.LLSC.result;
-//ZZ          IRType   ty    = typeOfIRTemp(env->type_env, res);
-//ZZ          HReg     r_res = lookupIRTemp(env, res);
-//ZZ          ARMRI84* one   = ARMRI84_I84(1,0);
-//ZZ          vassert(ty == Ity_I1);
-//ZZ          addInstr(env, ARMInstr_Alu(ARMalu_XOR, r_res, hregARM_R0(), one));
-//ZZ          /* And be conservative -- mask off all but the lowest bit */
-//ZZ          addInstr(env, ARMInstr_Alu(ARMalu_AND, r_res, r_res, one));
-//ZZ          return;
-//ZZ       }
-//ZZ       break;
-//ZZ    }
-//ZZ 
-//ZZ    /* --------- MEM FENCE --------- */
-//ZZ    case Ist_MBE:
-//ZZ       switch (stmt->Ist.MBE.event) {
-//ZZ          case Imbe_Fence:
-//ZZ             addInstr(env, ARMInstr_MFence());
-//ZZ             return;
+   /* --------- Load Linked and Store Conditional --------- */
+   case Ist_LLSC: {
+      if (stmt->Ist.LLSC.storedata == NULL) {
+         /* LL */
+         IRTemp res = stmt->Ist.LLSC.result;
+         IRType ty  = typeOfIRTemp(env->type_env, res);
+         if (ty == Ity_I64 || ty == Ity_I32 
+             || ty == Ity_I16 || ty == Ity_I8) {
+            Int  szB   = 0;
+            HReg r_dst = lookupIRTemp(env, res);
+            HReg raddr = iselIntExpr_R(env, stmt->Ist.LLSC.addr);
+            switch (ty) {
+               case Ity_I8:  szB = 1; break;
+               case Ity_I16: szB = 2; break;
+               case Ity_I32: szB = 4; break;
+               case Ity_I64: szB = 8; break;
+               default:      vassert(0);
+            }
+            addInstr(env, ARM64Instr_MovI(hregARM64_X4(), raddr));
+            addInstr(env, ARM64Instr_LdrEX(szB));
+            addInstr(env, ARM64Instr_MovI(r_dst, hregARM64_X2()));
+            return;
+         }
+         goto stmt_fail;
+      } else {
+         /* SC */
+         IRType tyd = typeOfIRExpr(env->type_env, stmt->Ist.LLSC.storedata);
+         if (tyd == Ity_I64 || tyd == Ity_I32
+             || tyd == Ity_I16 || tyd == Ity_I8) {
+            Int  szB = 0;
+            HReg rD  = iselIntExpr_R(env, stmt->Ist.LLSC.storedata);
+            HReg rA  = iselIntExpr_R(env, stmt->Ist.LLSC.addr);
+            switch (tyd) {
+               case Ity_I8:  szB = 1; break;
+               case Ity_I16: szB = 2; break;
+               case Ity_I32: szB = 4; break;
+               case Ity_I64: szB = 8; break;
+               default:      vassert(0);
+            }
+            addInstr(env, ARM64Instr_MovI(hregARM64_X2(), rD));
+            addInstr(env, ARM64Instr_MovI(hregARM64_X4(), rA));
+            addInstr(env, ARM64Instr_StrEX(szB));
+         } else {
+            goto stmt_fail;
+         }
+         /* now r0 is 1 if failed, 0 if success.  Change to IR
+            conventions (0 is fail, 1 is success).  Also transfer
+            result to r_res. */
+         IRTemp    res   = stmt->Ist.LLSC.result;
+         IRType    ty    = typeOfIRTemp(env->type_env, res);
+         HReg      r_res = lookupIRTemp(env, res);
+         ARM64RIL* one   = mb_mkARM64RIL_I(1);
+         vassert(ty == Ity_I1);
+         vassert(one);
+         addInstr(env, ARM64Instr_Logic(r_res, hregARM64_X0(), one,
+                                        ARM64lo_XOR));
+         /* And be conservative -- mask off all but the lowest bit. */
+         addInstr(env, ARM64Instr_Logic(r_res, r_res, one,
+                                        ARM64lo_AND));
+         return;
+      }
+      break;
+   }
+
+   /* --------- MEM FENCE --------- */
+   case Ist_MBE:
+      switch (stmt->Ist.MBE.event) {
+         case Imbe_Fence:
+            addInstr(env, ARM64Instr_MFence());
+            return;
 //ZZ          case Imbe_CancelReservation:
 //ZZ             addInstr(env, ARMInstr_CLREX());
 //ZZ             return;
-//ZZ          default:
-//ZZ             break;
-//ZZ       }
-//ZZ       break;
+         default:
+            break;
+      }
+      break;
 
    /* --------- INSTR MARK --------- */
    /* Doesn't generate any executable code ... */

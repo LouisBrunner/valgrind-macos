@@ -242,6 +242,10 @@ extern void ppIRType ( IRType );
 /* Get the size (in bytes) of an IRType */ 
 extern Int sizeofIRType ( IRType );
 
+/* Translate 1/2/4/8 into Ity_I{8,16,32,64} respectively.  Asserts on
+   any other input. */
+extern IRType integerIRTypeOfSize ( Int szB );
+
 
 /* ------------------ Endianness ------------------ */
 
@@ -2862,11 +2866,11 @@ extern Bool isPlausibleIRType ( IRType ty );
 /*---------------------------------------------------------------*/
 /*--- IR injection                                            ---*/
 /*---------------------------------------------------------------*/
+
 void vex_inject_ir(IRSB *, IREndness);
 
 
 #endif /* ndef __LIBVEX_IR_H */
-
 
 /*---------------------------------------------------------------*/
 /*---                                             libvex_ir.h ---*/

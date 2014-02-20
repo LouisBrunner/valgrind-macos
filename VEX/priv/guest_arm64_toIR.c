@@ -575,6 +575,31 @@ static IRTemp mathREPLICATE ( IRType ty, IRTemp arg, UInt imm )
    return res;
 }
 
+/* U-widen 8/16/32/64 bit int expr to 64. */
+static IRExpr* widenUto64 ( IRType srcTy, IRExpr* e )
+{
+   switch (srcTy) {
+      case Ity_I64: return e;
+      case Ity_I32: return unop(Iop_32Uto64, e);
+      case Ity_I16: return unop(Iop_16Uto64, e);
+      case Ity_I8:  return unop(Iop_8Uto64, e);
+      default: vpanic("widenUto64(arm64)");
+   }
+}
+
+/* Narrow 64 bit int expr to 8/16/32/64.  Clearly only some
+   of these combinations make sense. */
+static IRExpr* narrowFrom64 ( IRType dstTy, IRExpr* e )
+{
+   switch (dstTy) {
+      case Ity_I64: return e;
+      case Ity_I32: return unop(Iop_64to32, e);
+      case Ity_I16: return unop(Iop_64to16, e);
+      case Ity_I8:  return unop(Iop_64to8, e);
+      default: vpanic("narrowFrom64(arm64)");
+   }
+}
+
 
 /*------------------------------------------------------------*/
 /*--- Helpers for accessing guest registers.               ---*/
@@ -3990,25 +4015,19 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn)
 
    /* ---------- LD1/ST1 (single structure, post index) ---------- */
    /* 31        23
-      0100 1100 1001 1111 0111 11 N T  ST1 {vT.2d}, [xN|SP], #16
-      0100 1100 1101 1111 0111 11 N T  LD1 {vT.2d}, [xN|SP], #16
-      0100 1100 1001 1111 0111 10 N T  ST1 {vT.4s}, [xN|SP], #16
-      0100 1100 1101 1111 0111 10 N T  LD1 {vT.4s}, [xN|SP], #16
-      0100 1100 1001 1111 0111 01 N T  ST1 {vT.8h}, [xN|SP], #16
-      0100 1100 1101 1111 0111 01 N T  LD1 {vT.8h}, [xN|SP], #16
-      ..
+      0100 1100 1001 1111 0111 11 N T  ST1 {vT.2d},  [xN|SP], #16
+      0100 1100 1101 1111 0111 11 N T  LD1 {vT.2d},  [xN|SP], #16
+      0100 1100 1001 1111 0111 10 N T  ST1 {vT.4s},  [xN|SP], #16
+      0100 1100 1101 1111 0111 10 N T  LD1 {vT.4s},  [xN|SP], #16
+      0100 1100 1001 1111 0111 01 N T  ST1 {vT.8h},  [xN|SP], #16
+      0100 1100 1101 1111 0111 01 N T  LD1 {vT.8h},  [xN|SP], #16
+      0100 1100 1001 1111 0111 00 N T  ST1 {vT.16b}, [xN|SP], #16
       0100 1100 1101 1111 0111 00 N T  LD1 {vT.16b}, [xN|SP], #16
       Note that #16 is implied and cannot be any other value.
       FIXME does this assume that the host is little endian?
    */
-   if (   (insn & 0xFFFFFC00) == 0x4C9F7C00 // ST1 {vT.2d}, [xN|SP], #16
-       || (insn & 0xFFFFFC00) == 0x4CDF7C00 // LD1 {vT.2d}, [xN|SP], #16
-       || (insn & 0xFFFFFC00) == 0x4C9F7800 // ST1 {vT.4s}, [xN|SP], #16
-       || (insn & 0xFFFFFC00) == 0x4CDF7800 // LD1 {vT.4s}, [xN|SP], #16
-       || (insn & 0xFFFFFC00) == 0x4C9F7400 // ST1 {vT.8h}, [xN|SP], #16
-       || (insn & 0xFFFFFC00) == 0x4CDF7400 // LD1 {vT.8h}, [xN|SP], #16
-       /* */
-       || (insn & 0xFFFFFC00) == 0x4CDF7000 // LD1 {vT.16b}, [xN|SP], #16
+   if (   (insn & 0xFFFFF000) == 0x4CDF7000 // LD1 cases
+       || (insn & 0xFFFFF000) == 0x4C9F7000 // ST1 cases
       ) {
       Bool   isLD = INSN(22,22) == 1;
       UInt   rN   = INSN(9,5);
@@ -4051,56 +4070,61 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
-   /* FIXME Temporary hacks to get through ld.so FIXME */
-
-   /* -------------------- LD{A}XR -------------------- */
-   /* FIXME: this is a hack; needs real atomicity stuff. */
-   /* 31       29        20 19           9 4
-      1x(size) 001000010 1  1111 1 11111 n t   LDAXR Rt, [Xn|SP]
-      1x(size) 001000010 1  1111 0 11111 n t   LDXR  Rt, [Xn|SP]
+   /* ------------------ LD{,A}X{R,RH,RB} ------------------ */
+   /* ------------------ ST{,L}X{R,RH,RB} ------------------ */
+   /* 31 29     23  20      14    9 4
+      sz 001000 010 11111 0 11111 n t   LDX{R,RH,RB}  Rt, [Xn|SP]
+      sz 001000 010 11111 1 11111 n t   LDAX{R,RH,RB} Rt, [Xn|SP]
+      sz 001000 000 s     0 11111 n t   STX{R,RH,RB}  Ws, Rt, [Xn|SP]
+      sz 001000 000 s     1 11111 n t   STLX{R,RH,RB} Ws, Rt, [Xn|SP]
    */
-   if (INSN(29,20) == BITS10(0,0,1,0,0,0,0,1,0,1)
-       && (INSN(19,10) == BITS10(1,1,1,1,1,1,1,1,1,1)
-           || INSN(19,10) == BITS10(1,1,1,1,0,1,1,1,1,1))
-       && INSN(31,31) == 1) {
-      Bool is64 = INSN(30,30) == 1;
-      Bool isA  = INSN(15,15) == 1;
-      UInt nn   = INSN(9,5);
-      UInt tt   = INSN(4,0);
-      if (is64) {
-         putIReg64orZR(tt, loadLE(Ity_I64, getIReg64orSP(nn)));
-      } else {
-         putIReg32orZR(tt, loadLE(Ity_I32, getIReg64orSP(nn)));
-      }
-      DIP("ld%sxr %s, [%s]\n",
-          isA ? "s" : "", nameIRegOrZR(is64, tt), nameIReg64orSP(nn));
-      return True;
-   }
+   if (INSN(29,23) == BITS7(0,0,1,0,0,0,0)
+       && (INSN(23,21) & BITS3(1,0,1)) == BITS3(0,0,0)
+       && INSN(14,10) == BITS5(1,1,1,1,1)) {
+     UInt szBlg2     = INSN(31,30);
+     Bool isLD       = INSN(22,22) == 1;
+     Bool isAcqOrRel = INSN(15,15) == 1;
+     UInt ss         = INSN(20,16);
+     UInt nn         = INSN(9,5);
+     UInt tt         = INSN(4,0);
 
-   /* -------------------- ST{L}XR -------------------- */
-   /* FIXME: this is a hack; needs real atomicity stuff. */
-   /* 31       29        20 15 14    9 4
-      1x(size) 001000000 s  0  11111 n t   STXR  Ws, Rt, [Xn|SP]
-      1x(size) 001000000 s  1  11111 n t   STLXR Ws, Rt, [Xn|SP]
-      with the result coding that Ws == 0 iff the store succeeded
-   */
-   if (INSN(29,21) == BITS9(0,0,1,0,0,0,0,0,0)
-       && INSN(14,10) == BITS5(1,1,1,1,1) && INSN(31,31) == 1) {
-      Bool is64 = INSN(30,30) == 1;
-      UInt ss   = INSN(20,16);
-      Bool isL  = INSN(15,15) == 1;
-      UInt nn   = INSN(9,5);
-      UInt tt   = INSN(4,0);
-      if (is64) {
-         storeLE(getIReg64orSP(nn), getIReg64orZR(tt));
-      } else {
-         storeLE(getIReg64orSP(nn), getIReg32orZR(tt));
-      }
-      putIReg32orZR(ss, mkU32(0));
-      DIP("st%sxr %s, %s, [%s]\n",
-          isL ? "s" : "",
-          nameIReg32orZR(ss), nameIRegOrZR(is64, tt), nameIReg64orSP(nn));
-      return True;
+     vassert(szBlg2 < 4);
+     UInt   szB = 1 << szBlg2; /* 1, 2, 4 or 8 */
+     IRType ty  = integerIRTypeOfSize(szB);
+     const HChar* suffix[4] = { "rb", "rh", "r", "r" };
+
+     IRTemp ea = newTemp(Ity_I64);
+     assign(ea, getIReg64orSP(nn));
+     /* FIXME generate check that ea is szB-aligned */
+
+     if (isLD && ss == BITS5(1,1,1,1,1)) {
+        IRTemp res = newTemp(ty);
+        stmt(IRStmt_LLSC(Iend_LE, res, mkexpr(ea), NULL/*LL*/));
+        putIReg64orZR(tt, widenUto64(ty, mkexpr(res)));
+        if (isAcqOrRel) {
+           stmt(IRStmt_MBE(Imbe_Fence));
+        }
+        DIP("ld%sx%s %s, [%s]\n", isAcqOrRel ? "a" : "", suffix[szBlg2],
+            nameIRegOrZR(szB == 8, tt), nameIReg64orSP(nn));
+        return True;
+     }
+     if (!isLD) {
+        if (isAcqOrRel) {
+           stmt(IRStmt_MBE(Imbe_Fence));
+        }
+        IRTemp  res  = newTemp(Ity_I1);
+        IRExpr* data = narrowFrom64(ty, getIReg64orZR(tt));
+        stmt(IRStmt_LLSC(Iend_LE, res, mkexpr(ea), data));
+        /* IR semantics: res is 1 if store succeeds, 0 if it fails.
+           Need to set rS to 1 on failure, 0 on success. */
+        putIReg64orZR(ss, binop(Iop_Xor64, unop(Iop_1Uto64, mkexpr(res)),
+                                           mkU64(1)));
+        DIP("st%sx%s %s, %s, [%s]\n", isAcqOrRel ? "a" : "", suffix[szBlg2],
+            nameIRegOrZR(False, ss),
+            nameIRegOrZR(szB == 8, tt), nameIReg64orSP(nn));
+        return True;
+     }
+     /* else fall through */
    }
 
    vex_printf("ARM64 front end: load_store\n");
@@ -4307,8 +4331,8 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
    /* Cases for FPSR 
-      0xD51B44 001 Rt  MSR fpcr, rT
-      0xD53B44 001 Rt  MSR rT, fpcr
+      0xD51B44 001 Rt  MSR fpsr, rT
+      0xD53B44 001 Rt  MSR rT, fpsr
    */
    if (   (INSN(31,0) & 0xFFFFFFE0) == 0xD51B4420 /*MSR*/
        || (INSN(31,0) & 0xFFFFFFE0) == 0xD53B4420 /*MRS*/) {

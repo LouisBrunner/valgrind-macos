@@ -525,8 +525,10 @@ typedef
       ARM64in_AddToSP,     /* move SP by small, signed constant */
       ARM64in_FromSP,      /* move SP to integer register */
       ARM64in_Mul,
-//ZZ       ARMin_LdrEX,
-//ZZ       ARMin_StrEX,
+      ARM64in_LdrEX,
+      ARM64in_StrEX,
+      ARM64in_MFence,
+//ZZ       ARMin_CLREX,
       /* ARM64in_V*: scalar ops involving vector registers */
       ARM64in_VLdStS,   /* 32-bit FP load/store, with imm offset  */
       ARM64in_VLdStD,   /* 64-bit FP load/store, with imm offset  */
@@ -552,8 +554,6 @@ typedef
 //ZZ       ARMin_VXferD,
 //ZZ       ARMin_VXferS,
 //ZZ       ARMin_VCvtID,
-//ZZ       ARMin_MFence,
-//ZZ       ARMin_CLREX,
 //ZZ       /* Neon */
 //ZZ       ARMin_NLdStD,
 //ZZ       ARMin_NUnary,
@@ -712,22 +712,23 @@ typedef
             HReg       argR;
             ARM64MulOp op;
          } Mul;
-//ZZ          /* LDREX{,H,B} r2, [r4]  and
-//ZZ             LDREXD r2, r3, [r4]   (on LE hosts, transferred value is r3:r2)
-//ZZ             Again, hardwired registers since this is not performance
-//ZZ             critical, and there are possibly constraints on the
-//ZZ             registers that we can't express in the register allocator.*/
+         /* LDXR{,H,B} x2, [x4] */
+         struct {
+            Int  szB; /* 1, 2, 4 or 8 */
+         } LdrEX;
+         /* STXR{,H,B} w0, x2, [x4] */
+         struct {
+            Int  szB; /* 1, 2, 4 or 8 */
+         } StrEX;
+         /* Mem fence.  An insn which fences all loads and stores as
+            much as possible before continuing.  On ARM64 we emit the
+            sequence "dsb sy ; dmb sy ; isb sy", which is probably
+            total nuclear overkill, but better safe than sorry. */
+         struct {
+         } MFence;
+//ZZ          /* A CLREX instruction. */
 //ZZ          struct {
-//ZZ             Int  szB; /* 1, 2, 4 or 8 */
-//ZZ          } LdrEX;
-//ZZ          /* STREX{,H,B} r0, r2, [r4]  and  
-//ZZ             STREXD r0, r2, r3, [r4]   (on LE hosts, transferred value is r3:r2)
-//ZZ             r0 = SC( [r4] = r2 )      (8, 16, 32 bit transfers)
-//ZZ             r0 = SC( [r4] = r3:r2)    (64 bit transfers)
-//ZZ             Ditto comment re fixed registers. */
-//ZZ          struct {
-//ZZ             Int  szB; /* 1, 2, 4 or 8 */
-//ZZ          } StrEX;
+//ZZ          } CLREX;
          /* --- INSTRUCTIONS INVOLVING VECTOR REGISTERS --- */
          /* 32-bit Fp load/store */
          struct {
@@ -882,20 +883,6 @@ typedef
 //ZZ             HReg dst;
 //ZZ             HReg src;
 //ZZ          } VCvtID;
-//ZZ          /* Mem fence.  An insn which fences all loads and stores as
-//ZZ             much as possible before continuing.  On ARM we emit the
-//ZZ             sequence
-//ZZ                mcr 15,0,r0,c7,c10,4 (DSB)
-//ZZ                mcr 15,0,r0,c7,c10,5 (DMB)
-//ZZ                mcr 15,0,r0,c7,c5,4 (ISB)
-//ZZ             which is probably total overkill, but better safe than
-//ZZ             sorry.
-//ZZ          */
-//ZZ          struct {
-//ZZ          } MFence;
-//ZZ          /* A CLREX instruction. */
-//ZZ          struct {
-//ZZ          } CLREX;
 //ZZ          /* Neon data processing instruction: 3 registers of the same
 //ZZ             length */
 //ZZ          struct {
@@ -1020,10 +1007,10 @@ extern ARM64Instr* ARM64Instr_AddToSP ( Int simm );
 extern ARM64Instr* ARM64Instr_FromSP  ( HReg dst );
 extern ARM64Instr* ARM64Instr_Mul     ( HReg dst, HReg argL, HReg argR,
                                         ARM64MulOp op );
-
-//ZZ extern ARMInstr* ARMInstr_Mul      ( ARMMulOp op );
-//ZZ extern ARMInstr* ARMInstr_LdrEX    ( Int szB );
-//ZZ extern ARMInstr* ARMInstr_StrEX    ( Int szB );
+extern ARM64Instr* ARM64Instr_LdrEX   ( Int szB );
+extern ARM64Instr* ARM64Instr_StrEX   ( Int szB );
+extern ARM64Instr* ARM64Instr_MFence  ( void );
+//ZZ extern ARMInstr* ARMInstr_CLREX    ( void );
 extern ARM64Instr* ARM64Instr_VLdStS  ( Bool isLoad, HReg sD, HReg rN,
                                         UInt uimm12 /* 0 .. 16380, 0 % 4 */ );
 extern ARM64Instr* ARM64Instr_VLdStD  ( Bool isLoad, HReg dD, HReg rN,
@@ -1052,8 +1039,6 @@ extern ARM64Instr* ARM64Instr_VShiftImmV ( ARM64VecShiftOp op,
 //ZZ extern ARMInstr* ARMInstr_VXferS   ( Bool toS, HReg fD, HReg rLo );
 //ZZ extern ARMInstr* ARMInstr_VCvtID   ( Bool iToD, Bool syned,
 //ZZ                                      HReg dst, HReg src );
-//ZZ extern ARMInstr* ARMInstr_MFence   ( void );
-//ZZ extern ARMInstr* ARMInstr_CLREX    ( void );
 //ZZ extern ARMInstr* ARMInstr_NLdStD   ( Bool isLoad, HReg, ARMAModeN* );
 //ZZ extern ARMInstr* ARMInstr_NUnary   ( ARMNeonUnOp, HReg, HReg, UInt, Bool );
 //ZZ extern ARMInstr* ARMInstr_NUnaryS  ( ARMNeonUnOpS, ARMNRS*, ARMNRS*,

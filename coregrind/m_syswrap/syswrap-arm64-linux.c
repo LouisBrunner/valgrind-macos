@@ -896,7 +896,7 @@ static SyscallTableEntry syscall_main_table[] = {
    GENXY(__NR_read,              sys_read),              // 63
    GENX_(__NR_write,             sys_write),             // 64
    GENX_(__NR_writev,            sys_writev),            // 66
-
+   LINXY(__NR_ppoll,             sys_ppoll),             // 73
    LINX_(__NR_readlinkat,        sys_readlinkat),        // 78
 
    // FIXME IS THIS CORRECT?
@@ -910,6 +910,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_set_robust_list,   sys_set_robust_list),   // 99
    GENXY(__NR_nanosleep,         sys_nanosleep),         // 101
    LINXY(__NR_clock_gettime,     sys_clock_gettime),     // 113
+   GENX_(__NR_kill,              sys_kill),              // 129
    LINX_(__NR_tgkill,            sys_tgkill),            // 131 */Linux
    LINXY(__NR_rt_sigaction,      sys_rt_sigaction),      // 134
    LINXY(__NR_rt_sigprocmask,    sys_rt_sigprocmask),    // 135
@@ -927,6 +928,7 @@ static SyscallTableEntry syscall_main_table[] = {
    GENX_(__NR_getegid,           sys_getegid),           // 177
    LINX_(__NR_gettid,            sys_gettid),            // 178
    LINXY(__NR_socket,            sys_socket),            // 198
+   LINXY(__NR_socketpair,        sys_socketpair),        // 199
    LINX_(__NR_connect,           sys_connect),           // 203
    GENX_(__NR_brk,               sys_brk),               // 214
    GENXY(__NR_munmap,            sys_munmap),            // 215
@@ -982,7 +984,6 @@ static SyscallTableEntry syscall_main_table[] = {
 //ZZ 
 //ZZ //   GENX_(__NR_ftime,             sys_ni_syscall),     // 35
 //ZZ    GENX_(__NR_sync,              sys_sync),           // 36
-//ZZ    GENX_(__NR_kill,              sys_kill),           // 37
 //ZZ    GENX_(__NR_rename,            sys_rename),         // 38
 //ZZ    GENX_(__NR_mkdir,             sys_mkdir),          // 39
 //ZZ 
@@ -1265,7 +1266,6 @@ static SyscallTableEntry syscall_main_table[] = {
 //ZZ    LINXY(__NR_accept,            sys_accept),         // 285
 //ZZ    LINXY(__NR_getsockname,       sys_getsockname),    // 286
 //ZZ    LINXY(__NR_getpeername,       sys_getpeername),    // 287
-//ZZ    LINXY(__NR_socketpair,        sys_socketpair),     // 288
 //ZZ    LINX_(__NR_send,              sys_send),
 //ZZ    LINX_(__NR_sendto,            sys_sendto),         // 290
 //ZZ    LINXY(__NR_recv,              sys_recv),
@@ -1340,7 +1340,6 @@ static SyscallTableEntry syscall_main_table[] = {
 //ZZ    // From here onwards, please ensure the numbers are correct.
 //ZZ 
 //ZZ    LINX_(__NR_pselect6,          sys_pselect6),         // 335
-//ZZ    LINXY(__NR_ppoll,             sys_ppoll),            // 336
 //ZZ 
 //ZZ    LINXY(__NR_epoll_pwait,       sys_epoll_pwait),      // 346
 //ZZ 

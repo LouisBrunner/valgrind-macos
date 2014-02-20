@@ -515,15 +515,18 @@ typedef vki_elf_greg_t vki_elf_gregset_t[VKI_ELF_NGREG];
 typedef struct vki_user_fpsimd_state vki_elf_fpregset_t;
 
 //----------------------------------------------------------------------
-// From linux-3.10.5/include/uapi/asm-generic/ucontext.h
+// From linux-3.10.5/arch/arm64/include/asm/ucontext.h
 //----------------------------------------------------------------------
 
 struct vki_ucontext {
-	unsigned long		uc_flags;
-	struct vki_ucontext    *uc_link;
-	vki_stack_t		uc_stack;
-	struct vki_sigcontext	uc_mcontext;
-	vki_sigset_t		uc_sigmask;
+        unsigned long           uc_flags;
+        struct vki_ucontext    *uc_link;
+        vki_stack_t             uc_stack;
+        vki_sigset_t            uc_sigmask;
+        /* glibc uses a 1024-bit sigset_t */
+        __vki_u8                __unused[1024 / 8 - sizeof(vki_sigset_t)];
+        /* last for future expansion */
+        struct vki_sigcontext   uc_mcontext;
 };
 
 //ZZ //----------------------------------------------------------------------

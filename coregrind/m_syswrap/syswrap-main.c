@@ -2046,8 +2046,25 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
    }
 
 #elif defined(VGP_arm64_linux)
-   // probably simplest to copy the ppc version
-   I_die_here;
+   arch->vex.guest_PC -= 4;             // sizeof(arm64 instr)
+
+   /* Make sure our caller is actually sane, and we're really backing
+      back over a syscall.
+
+      svc #0 == d4 00 00 01
+   */
+   {
+      UChar *p = (UChar *)arch->vex.guest_PC;
+
+      if (p[0] != 0x01 || p[1] != 0x00 || p[2] != 0x00 || p[3] != 0xD4)
+         VG_(message)(
+            Vg_DebugMsg,
+            "?! restarting over syscall at %#llx %02x %02x %02x %02x\n",
+            arch->vex.guest_PC + 0ULL, p[0], p[1], p[2], p[3]
+          );
+
+      vg_assert(p[0] == 0x01 && p[1] == 0x00 && p[2] == 0x00 && p[3] == 0xD4);
+   }
 
 #elif defined(VGP_x86_darwin)
    arch->vex.guest_EIP = arch->vex.guest_IP_AT_SYSCALL; 

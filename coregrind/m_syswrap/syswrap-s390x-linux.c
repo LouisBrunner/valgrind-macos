@@ -1044,7 +1044,7 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_inotify_init1,  sys_inotify_init1),                     // 324
 
    LINXY(__NR_pipe2,  sys_pipe2),                                     // 325
-   // (__NR_dup3,  ),
+   LINXY(__NR_dup3,  sys_dup3),                                       // 326
    LINXY(__NR_epoll_create1,  sys_epoll_create1),                     // 327
    LINXY(__NR_preadv, sys_preadv),                                    // 328
    LINX_(__NR_pwritev, sys_pwritev),                                  // 329

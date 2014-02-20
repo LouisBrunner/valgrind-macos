@@ -57,6 +57,7 @@ where XXXXXX is the bug number as listed below.
 331254  Fix expected output for memcheck/tests/dw4
 331255  Fix race condition in test none/tests/coolo_sigaction
 331257  Fix type of jump buffer in test none/tests/faultstatus
+331337  s390x WARNING: unhandled syscall: 326 (dup3)
 n-i-bz  Fix KVM_CREATE_IRQCHIP ioctl handling
 
 Release 3.9.0 (31 October 2013)

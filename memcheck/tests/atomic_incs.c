@@ -96,6 +96,24 @@ __attribute__((noinline)) void atomic_add_8bit ( char* p, int n )
          : /*trash*/ "memory", "cc", "r5", "r8", "r9", "r10", "r4"
       );
    } while (block[2] != 0);
+#elif defined(VGA_arm64)
+   unsigned long long int block[3]
+      = { (unsigned long long int)p, (unsigned long long int)n,
+          0xFFFFFFFFFFFFFFFFULL};
+   do {
+      __asm__ __volatile__(
+         "mov   x5, %0"         "\n\t"
+         "ldr   x9, [x5, #0]"   "\n\t" // p
+         "ldr   x10, [x5, #8]"  "\n\t" // n
+         "ldxrb w8, [x9]"       "\n\t"
+         "add   x8, x8, x10"    "\n\t"
+         "stxrb w4, w8, [x9]"    "\n\t"
+         "str   x4, [x5, #16]"   "\n\t"
+         : /*out*/
+         : /*in*/ "r"(&block[0])
+         : /*trash*/ "memory", "cc", "x5", "x8", "x9", "x10", "x4"
+      );
+   } while (block[2] != 0);
 #elif defined(VGA_s390x)
    int dummy;
    __asm__ __volatile__(
@@ -277,6 +295,24 @@ __attribute__((noinline)) void atomic_add_16bit ( short* p, int n )
          : /*trash*/ "memory", "cc", "r5", "r8", "r9", "r10", "r4"
       );
    } while (block[2] != 0);
+#elif defined(VGA_arm64)
+   unsigned long long int block[3]
+      = { (unsigned long long int)p, (unsigned long long int)n,
+          0xFFFFFFFFFFFFFFFFULL};
+   do {
+      __asm__ __volatile__(
+         "mov   x5, %0"         "\n\t"
+         "ldr   x9, [x5, #0]"   "\n\t" // p
+         "ldr   x10, [x5, #8]"  "\n\t" // n
+         "ldxrh w8, [x9]"       "\n\t"
+         "add   x8, x8, x10"    "\n\t"
+         "stxrh w4, w8, [x9]"    "\n\t"
+         "str   x4, [x5, #16]"   "\n\t"
+         : /*out*/
+         : /*in*/ "r"(&block[0])
+         : /*trash*/ "memory", "cc", "x5", "x8", "x9", "x10", "x4"
+      );
+   } while (block[2] != 0);
 #elif defined(VGA_s390x)
    int dummy;
    __asm__ __volatile__(
@@ -455,6 +491,24 @@ __attribute__((noinline)) void atomic_add_32bit ( int* p, int n )
          : /*trash*/ "memory", "cc", "r5", "r8", "r9", "r10", "r4"
       );
    } while (block[2] != 0);
+#elif defined(VGA_arm64)
+   unsigned long long int block[3]
+      = { (unsigned long long int)p, (unsigned long long int)n,
+          0xFFFFFFFFFFFFFFFFULL};
+   do {
+      __asm__ __volatile__(
+         "mov   x5, %0"         "\n\t"
+         "ldr   x9, [x5, #0]"   "\n\t" // p
+         "ldr   x10, [x5, #8]"  "\n\t" // n
+         "ldxr  w8, [x9]"       "\n\t"
+         "add   x8, x8, x10"    "\n\t"
+         "stxr  w4, w8, [x9]"    "\n\t"
+         "str   x4, [x5, #16]"   "\n\t"
+         : /*out*/
+         : /*in*/ "r"(&block[0])
+         : /*trash*/ "memory", "cc", "x5", "x8", "x9", "x10", "x4"
+      );
+   } while (block[2] != 0);
 #elif defined(VGA_s390x)
    __asm__ __volatile__(
       "   l	0,%0\n\t"
@@ -555,6 +609,24 @@ __attribute__((noinline)) void atomic_add_64bit ( long long int* p, int n )
          : /*trash*/ "memory", "cc", "r5", "r0", "r1", "r8", "r2", "r3"
       );
    } while (block[2] != 0xFFFFFFFF00000000ULL);
+#elif defined(VGA_arm64)
+   unsigned long long int block[3]
+      = { (unsigned long long int)p, (unsigned long long int)n,
+          0xFFFFFFFFFFFFFFFFULL};
+   do {
+      __asm__ __volatile__(
+         "mov   x5, %0"         "\n\t"
+         "ldr   x9, [x5, #0]"   "\n\t" // p
+         "ldr   x10, [x5, #8]"  "\n\t" // n
+         "ldxr  x8, [x9]"       "\n\t"
+         "add   x8, x8, x10"    "\n\t"
+         "stxr  w4, x8, [x9]"   "\n\t"
+         "str   x4, [x5, #16]"   "\n\t"
+         : /*out*/
+         : /*in*/ "r"(&block[0])
+         : /*trash*/ "memory", "cc", "x5", "x8", "x9", "x10", "x4"
+      );
+   } while (block[2] != 0);
 #elif defined(VGA_s390x)
    __asm__ __volatile__(
       "   lg	0,%0\n\t"

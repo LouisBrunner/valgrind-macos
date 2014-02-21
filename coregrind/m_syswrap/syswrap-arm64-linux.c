@@ -137,22 +137,21 @@ asm(
 	    int    flags	in x0
 	    void*  child_stack	in x1
 	    pid_t* parent_tid	in x2
-	    pid_t* child_tid	in x3
-	    void*  tls_ptr      in x4
+	    void*  tls_ptr      in x3
+	    pid_t* child_tid	in x4
 
 	Returns a Long encoded in the linux-arm64 way, not a SysRes.
-        x10-x20 are caller save, so they might be useful.
 */
 #define __NR_CLONE        VG_STRINGIFY(__NR_clone)
 #define __NR_EXIT         VG_STRINGIFY(__NR_exit)
 
 extern
 Long do_syscall_clone_arm64_linux ( Word (*fn)(void *), 
-                                    void* stack, 
+                                    void* child_stack, 
                                     Long  flags, 
                                     void* arg,
-                                    Long* child_tid,
-                                    Long* parent_tid,
+                                    Int*  child_tid,
+                                    Int*  parent_tid,
                                     void* tls );
 asm(
 ".text\n"
@@ -168,8 +167,8 @@ asm(
 "       mov    x0, x2\n"            // syscall arg1: flags
 "       mov    x1, x1\n"            // syscall arg2: child_stack
 "       mov    x2, x5\n"            // syscall arg3: parent_tid
-"       mov    x3, x4\n"            // syscall arg4: child_tid
-"       mov    x4, x6\n"            // syscall arg5: tls_ptr
+"       mov    x3, x6\n"            // syscall arg4: tls_ptr
+"       mov    x4, x4\n"            // syscall arg5: child_tid
 
 "       svc    0\n"                 // clone()
 
@@ -215,10 +214,11 @@ static void assign_guest_tls(ThreadId ctid, Addr tlsptr);
    for SP.
  */
 static SysRes do_clone ( ThreadId ptid, 
-                         ULong flags, Addr xsp, 
-                         Long* parent_tidptr, 
-                         Long* child_tidptr, 
-                         Addr child_tls )
+                         ULong flags,
+                         Addr  child_xsp, 
+                         Int*  parent_tidptr, 
+                         Int*  child_tidptr, 
+                         Addr  child_tls )
 {
    const Bool debug = False;
 
@@ -260,8 +260,8 @@ static SysRes do_clone ( ThreadId ptid,
       child. */
    ctst->arch.vex.guest_X0 = 0;
 
-   if (xsp != 0)
-      ctst->arch.vex.guest_XSP = xsp;
+   if (child_xsp != 0)
+      ctst->arch.vex.guest_XSP = child_xsp;
 
    ctst->os_state.parent = ptid;
 
@@ -285,20 +285,20 @@ static SysRes do_clone ( ThreadId ptid,
       memory mappings and try to derive some useful information.  We
       assume that xsp starts near its highest possible value, and can
       only go down to the start of the mmaped segment. */
-   seg = VG_(am_find_nsegment)((Addr)xsp);
+   seg = VG_(am_find_nsegment)((Addr)child_xsp);
    if (seg && seg->kind != SkResvn) {
-      ctst->client_stack_highest_word = (Addr)VG_PGROUNDUP(xsp);
+      ctst->client_stack_highest_word = (Addr)VG_PGROUNDUP(child_xsp);
       ctst->client_stack_szB = ctst->client_stack_highest_word - seg->start;
    
       VG_(register_stack)(seg->start, ctst->client_stack_highest_word);
    
       if (debug)
          VG_(printf)("tid %d: guessed client stack range %#lx-%#lx\n",
-         ctid, seg->start, VG_PGROUNDUP(xsp));
+         ctid, seg->start, VG_PGROUNDUP(child_xsp));
    } else {
       VG_(message)(
          Vg_UserMsg,
-         "!? New thread %d starts with sp+%#lx) unmapped\n", ctid, xsp
+         "!? New thread %d starts with sp+%#lx) unmapped\n", ctid, child_xsp
       );
       ctst->client_stack_szB  = 0;
    }
@@ -534,6 +534,16 @@ PRE(sys_mmap)
 //ZZ    POST_MEM_WRITE( ARG2, sizeof(struct vki_stat64) );
 //ZZ }
 
+/* Aarch64 seems to use CONFIG_CLONE_BACKWARDS in the kernel.  See:
+      http://dev.gentoo.org/~vapier/aarch64/linux-3.12.6.config
+      http://people.redhat.com/wcohen/aarch64/aarch64_config
+   from linux-3.10.5/kernel/fork.c 
+    #ifdef CONFIG_CLONE_BACKWARDS
+    SYSCALL_DEFINE5(clone, unsigned long, clone_flags, unsigned long, newsp,
+                     int __user *, parent_tidptr,
+                     int, tls_val,
+                     int __user *, child_tidptr)
+*/
 PRE(sys_clone)
 {
    UInt cloneflags;
@@ -554,14 +564,6 @@ PRE(sys_clone)
          return;
       }
    }
-   if (ARG1 & (VKI_CLONE_CHILD_SETTID | VKI_CLONE_CHILD_CLEARTID)) {
-      PRE_MEM_WRITE("clone(child_tidptr)", ARG5, sizeof(Int));
-      if (!VG_(am_is_valid_for_client)(ARG5, sizeof(Int), 
-                                             VKI_PROT_WRITE)) {
-         SET_STATUS_Failure( VKI_EFAULT );
-         return;
-      }
-   }
 //ZZ    if (ARG1 & VKI_CLONE_SETTLS) {
 //ZZ       PRE_MEM_READ("clone(tls_user_desc)", ARG4, sizeof(vki_modify_ldt_t));
 //ZZ       if (!VG_(am_is_valid_for_client)(ARG4, sizeof(vki_modify_ldt_t), 
@@ -570,6 +572,14 @@ PRE(sys_clone)
 //ZZ          return;
 //ZZ       }
 //ZZ    }
+   if (ARG1 & (VKI_CLONE_CHILD_SETTID | VKI_CLONE_CHILD_CLEARTID)) {
+      PRE_MEM_WRITE("clone(child_tidptr)", ARG5, sizeof(Int));
+      if (!VG_(am_is_valid_for_client)(ARG5, sizeof(Int), 
+                                             VKI_PROT_WRITE)) {
+         SET_STATUS_Failure( VKI_EFAULT );
+         return;
+      }
+   }
 
    cloneflags = ARG1;
 
@@ -585,11 +595,11 @@ PRE(sys_clone)
       /* thread creation */
       SET_STATUS_from_SysRes(
          do_clone(tid,
-                  ARG1,          /* flags */
-                  (Addr)ARG2,    /* child SP */
-                  (Long *)ARG3,  /* parent_tidptr */
-                  (Long *)ARG5,  /* child_tidptr */
-                  (Addr)ARG4));  /* set_tls */
+                  ARG1,         /* flags */
+                  (Addr)ARG2,   /* child SP */
+                  (Int*)ARG3,   /* parent_tidptr */
+                  (Int*)ARG5,   /* child_tidptr */
+                  (Addr)ARG4)); /* tls_val */
       break;
 
    case VKI_CLONE_VFORK | VKI_CLONE_VM: /* vfork */
@@ -599,9 +609,9 @@ PRE(sys_clone)
    case 0: /* plain fork */
       SET_STATUS_from_SysRes(
          ML_(do_fork_clone)(tid,
-                       cloneflags,      /* flags */
-                       (Int *)ARG3,     /* parent_tidptr */
-                       (Int *)ARG5));   /* child_tidptr */
+                       cloneflags,     /* flags */
+                       (Int*)ARG3,     /* parent_tidptr */
+                       (Int*)ARG5));   /* child_tidptr */
       break;
 
    default:
@@ -871,6 +881,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_getxattr,          sys_getxattr),          // 8
    LINXY(__NR_lgetxattr,         sys_lgetxattr),         // 9
    GENXY(__NR_getcwd,            sys_getcwd),            // 17
+   GENXY(__NR_dup,               sys_dup),               // 23
    LINXY(__NR_dup3,              sys_dup3),              // 24
 
    // FIXME IS THIS CORRECT?
@@ -896,6 +907,7 @@ static SyscallTableEntry syscall_main_table[] = {
    GENXY(__NR_read,              sys_read),              // 63
    GENX_(__NR_write,             sys_write),             // 64
    GENX_(__NR_writev,            sys_writev),            // 66
+   LINX_(__NR_pselect6,          sys_pselect6),          // 72
    LINXY(__NR_ppoll,             sys_ppoll),             // 73
    LINX_(__NR_readlinkat,        sys_readlinkat),        // 78
 
@@ -915,10 +927,14 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_rt_sigaction,      sys_rt_sigaction),      // 134
    LINXY(__NR_rt_sigprocmask,    sys_rt_sigprocmask),    // 135
    PLAX_(__NR_rt_sigreturn,      sys_rt_sigreturn),      // 139
+   LINX_(__NR_setresuid,         sys_setresuid),         // 147
+   GENX_(__NR_setpgid,           sys_setpgid),           // 154
    GENX_(__NR_getpgid,           sys_getpgid),           // 155
    GENXY(__NR_uname,             sys_newuname),          // 160
    GENXY(__NR_getrlimit,         sys_old_getrlimit),     // 163
+   GENX_(__NR_setrlimit,         sys_setrlimit),         // 164
    GENXY(__NR_getrusage,         sys_getrusage),         // 165
+   GENX_(__NR_umask,             sys_umask),             // 166
    GENXY(__NR_gettimeofday,      sys_gettimeofday),      // 169
    GENX_(__NR_getpid,            sys_getpid),            // 172
    GENX_(__NR_getppid,           sys_getppid),           // 173
@@ -929,7 +945,16 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_gettid,            sys_gettid),            // 178
    LINXY(__NR_socket,            sys_socket),            // 198
    LINXY(__NR_socketpair,        sys_socketpair),        // 199
+   LINX_(__NR_bind,              sys_bind),              // 200
    LINX_(__NR_connect,           sys_connect),           // 203
+   LINXY(__NR_getsockname,       sys_getsockname),       // 204
+   LINXY(__NR_getpeername,       sys_getpeername),       // 205
+   LINX_(__NR_sendto,            sys_sendto),            // 206
+   LINX_(__NR_setsockopt,        sys_setsockopt),        // 208
+   LINXY(__NR_getsockopt,        sys_getsockopt),        // 209
+   LINX_(__NR_shutdown,          sys_shutdown),          // 210
+   LINX_(__NR_sendmsg,           sys_sendmsg),           // 211
+   LINXY(__NR_recvmsg,           sys_recvmsg),           // 212
    GENX_(__NR_brk,               sys_brk),               // 214
    GENXY(__NR_munmap,            sys_munmap),            // 215
    PLAX_(__NR_clone,             sys_clone),             // 220
@@ -988,7 +1013,6 @@ static SyscallTableEntry syscall_main_table[] = {
 //ZZ    GENX_(__NR_mkdir,             sys_mkdir),          // 39
 //ZZ 
 //ZZ    GENX_(__NR_rmdir,             sys_rmdir),          // 40
-//ZZ    GENXY(__NR_dup,               sys_dup),            // 41
 //ZZ    LINXY(__NR_pipe,              sys_pipe),           // 42
 //ZZ    GENXY(__NR_times,             sys_times),          // 43
 //ZZ //   GENX_(__NR_prof,              sys_ni_syscall),     // 44
@@ -1005,11 +1029,9 @@ static SyscallTableEntry syscall_main_table[] = {
 //ZZ 
 //ZZ    LINXY(__NR_fcntl,             sys_fcntl),          // 55
 //ZZ //   GENX_(__NR_mpx,               sys_ni_syscall),     // 56
-//ZZ    GENX_(__NR_setpgid,           sys_setpgid),        // 57
 //ZZ //   GENX_(__NR_ulimit,            sys_ni_syscall),     // 58
 //ZZ //zz    //   (__NR_oldolduname,       sys_olduname),       // 59 Linux -- obsolete
 //ZZ //zz 
-//ZZ    GENX_(__NR_umask,             sys_umask),          // 60
 //ZZ    GENX_(__NR_chroot,            sys_chroot),         // 61
 //ZZ //zz    //   (__NR_ustat,             sys_ustat)           // 62 SVr4 -- deprecated
 //ZZ    GENXY(__NR_dup2,              sys_dup2),           // 63
@@ -1027,7 +1049,6 @@ static SyscallTableEntry syscall_main_table[] = {
 //ZZ    LINXY(__NR_sigpending,        sys_sigpending),     // 73
 //ZZ //zz    //   (__NR_sethostname,       sys_sethostname),    // 74 */*
 //ZZ //zz 
-//ZZ    GENX_(__NR_setrlimit,         sys_setrlimit),      // 75
 //ZZ    GENXY(__NR_getrlimit,         sys_old_getrlimit),  // 76
 //ZZ    GENX_(__NR_settimeofday,      sys_settimeofday),   // 79
 //ZZ 
@@ -1261,20 +1282,11 @@ static SyscallTableEntry syscall_main_table[] = {
 //ZZ    LINXY(__NR_mq_getsetattr,     sys_mq_getsetattr),  // (mq_open+5)
 //ZZ    LINXY(__NR_waitid,            sys_waitid),         // 280
 //ZZ 
-//ZZ    LINX_(__NR_bind,              sys_bind),           // 282
 //ZZ    LINX_(__NR_listen,            sys_listen),         // 284
 //ZZ    LINXY(__NR_accept,            sys_accept),         // 285
-//ZZ    LINXY(__NR_getsockname,       sys_getsockname),    // 286
-//ZZ    LINXY(__NR_getpeername,       sys_getpeername),    // 287
 //ZZ    LINX_(__NR_send,              sys_send),
-//ZZ    LINX_(__NR_sendto,            sys_sendto),         // 290
 //ZZ    LINXY(__NR_recv,              sys_recv),
 //ZZ    LINXY(__NR_recvfrom,          sys_recvfrom),       // 292
-//ZZ    LINX_(__NR_shutdown,          sys_shutdown),       // 293
-//ZZ    LINX_(__NR_setsockopt,        sys_setsockopt),     // 294
-//ZZ    LINXY(__NR_getsockopt,        sys_getsockopt),     // 295
-//ZZ    LINX_(__NR_sendmsg,           sys_sendmsg),        // 296
-//ZZ    LINXY(__NR_recvmsg,           sys_recvmsg),        // 297
 //ZZ    LINX_(__NR_semop,             sys_semop),          // 298 
 //ZZ    LINX_(__NR_semget,            sys_semget),         // 299
 //ZZ    LINXY(__NR_semctl,            sys_semctl),         // 300
@@ -1339,7 +1351,6 @@ static SyscallTableEntry syscall_main_table[] = {
 //ZZ    // correspond to what's in include/vki/vki-scnums-arm-linux.h.
 //ZZ    // From here onwards, please ensure the numbers are correct.
 //ZZ 
-//ZZ    LINX_(__NR_pselect6,          sys_pselect6),         // 335
 //ZZ 
 //ZZ    LINXY(__NR_epoll_pwait,       sys_epoll_pwait),      // 346
 //ZZ 

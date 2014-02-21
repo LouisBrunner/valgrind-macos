@@ -42,6 +42,7 @@ DIST_SUBDIRS = x86 amd64 ppc32 ppc64 s390x linux \
 dist_noinst_SCRIPTS = \
 	filter_addressable \
 	filter_allocs \
+	filter_dw4 \
 	filter_leak_cases_possible \
 	filter_stderr filter_xml \
 	filter_strchr \

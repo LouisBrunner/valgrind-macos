@@ -4368,16 +4368,27 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn)
       }
       return True;
    }
+   /* Cases for DCZID_EL0
+      Don't support arbitrary reads and writes to this register.  Just
+      return the value 16, which indicates that the DC ZVA instruction
+      is not permitted, so we don't have to emulate it.
+      D5 3B 00 111 Rt  MRS rT, dczid_el0
+   */
+   if ((INSN(31,0) & 0xFFFFFFE0) == 0xD53B00E0) {
+      UInt tt = INSN(4,0);
+      putIReg64orZR(tt, mkU64(1<<4));
+      DIP("mrs %s, dczid_el0 (FAKED)\n", nameIReg64orZR(tt));
+      return True;
+   }
 
-   /* FIXME Temporary hacks to get through ld.so FIXME */
-   /* ------------------ ISB ------------------ */
+   /* ------------------ ISB, DSB ------------------ */
    if (INSN(31,0) == 0xD5033FDF) {
-      /* FIXME: not really a nop */
+      stmt(IRStmt_MBE(Imbe_Fence));
       DIP("isb\n");
       return True;
    }
    if (INSN(31,0) == 0xD5033BBF) {
-      /* FIXME: not really a nop */
+      stmt(IRStmt_MBE(Imbe_Fence));
       DIP("dmb ish\n");
       return True;
    }

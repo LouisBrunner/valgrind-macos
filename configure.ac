@@ -1961,7 +1961,7 @@ CFLAGS=$safe_CFLAGS
 # (Pedantically if the linker is gold then -Ttext is fine, but newer
 # gold versions also support -Ttext-segment. So just assume that unless
 # we can use -Ttext-segment we need to strip the build-id NOTEs.
-if test "x${linker_using_t_text}" == "xyes"; then
+if test "x${linker_using_t_text}" = "xyes"; then
 AC_MSG_NOTICE([ld -Ttext used, need to strip build-id NOTEs.])
 # does the linker support -Wl,--build-id=none ?  Note, it's
 # important that we test indirectly via whichever C compiler

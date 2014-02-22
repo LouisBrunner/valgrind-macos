@@ -14,7 +14,6 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
 325628  Phase 5 support for IBM Power ISA 2.07
 325751  Missing the  two privileged Power PC Transactional Memory Instructions
 325816  Phase 6 support for IBM Power ISA 2.07
-325856  sgcheck generates internal Valgrind error on IBM Power
 325874  Crash KCachegrind while load big file
 326026  Iop names for count leading zeros/sign bits incorrectly imply a "signedness" in incoming lanes
 326436  False positive in libstdc++ std::list::push_back

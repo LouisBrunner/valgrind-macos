@@ -62,7 +62,19 @@ static void pc_pre_clo_init(void)
 #endif
 #if defined(VGA_s390x)
    /* fixs390: to be done. */
-   VG_(printf)("SGCheck doesn't work s390x yet, sorry.\n");
+   VG_(printf)("SGCheck doesn't work on s390x yet, sorry.\n");
+   VG_(exit)(1);
+#endif
+#if defined(VGA_ppc32) || defined(VGA_ppc64)
+   VG_(printf)("SGCheck doesn't work on PPC yet, sorry.\n");
+   VG_(exit)(1);
+#endif
+#if defined(VGA_arm) || defined(VGA_arm64)
+   VG_(printf)("SGCheck doesn't work on ARM yet, sorry.\n");
+   VG_(exit)(1);
+#endif
+#if defined(VGA_mips32) || defined(VGA_mips64)
+   VG_(printf)("SGCheck doesn't work on MIPS yet, sorry.\n");
    VG_(exit)(1);
 #endif
 

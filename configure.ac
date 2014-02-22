@@ -771,7 +771,7 @@ AC_ARG_WITH(pagesize,
  
 if test "$psize" = "0"; then
     psizer=`getconf PAGESIZE`
-    let "psize=${psizer}/1024"
+    psize=$((${psizer}/1024))
 fi
 
 if test "$psize" = "4"; then

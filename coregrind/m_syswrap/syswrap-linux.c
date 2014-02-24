@@ -2183,7 +2183,8 @@ PRE(sys_timer_create)
                     sizeof(int) );
       PRE_MEM_READ( "timer_create(evp.sigev_notify)", (Addr)&evp->sigev_notify,
                     sizeof(int) );
-      if ((evp->sigev_notify & VKI_SIGEV_THREAD_ID) != 0)
+      if (ML_(safe_to_deref)(&evp->sigev_notify, sizeof(int))
+          && (evp->sigev_notify & VKI_SIGEV_THREAD_ID) != 0)
          PRE_MEM_READ( "timer_create(evp.sigev_notify_thread_id)",
                        (Addr)&evp->vki_sigev_notify_thread_id, sizeof(int) );
    }

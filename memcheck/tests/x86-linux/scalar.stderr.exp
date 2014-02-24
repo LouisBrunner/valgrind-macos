@@ -3602,7 +3602,17 @@ Syscall param timer_create(timerid) contains uninitialised byte(s)
    ...
    by 0x........: main (scalar.c:1158)
 
-Syscall param timer_create(evp) points to unaddressable byte(s)
+Syscall param timer_create(evp.sigev_value) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c:1158)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param timer_create(evp.sigev_signo) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c:1158)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param timer_create(evp.sigev_notify) points to unaddressable byte(s)
    ...
    by 0x........: main (scalar.c:1158)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd

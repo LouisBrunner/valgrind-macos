@@ -1078,9 +1078,9 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
    VG_(memset)(&arch->vex_shadow1, 0xFF, sizeof(VexGuestS390XState));
    VG_(memset)(&arch->vex_shadow2, 0x00, sizeof(VexGuestS390XState));
    /* ... except SP, FPC, and IA */
-   VG_(memset)(&arch->vex_shadow1 + VG_O_STACK_PTR, 0x00, 8);
-   VG_(memset)(&arch->vex_shadow1 + VG_O_FPC_REG,   0x00, 4);
-   VG_(memset)(&arch->vex_shadow1 + VG_O_INSTR_PTR, 0x00, 8);
+   arch->vex_shadow1.guest_SP = 0;
+   arch->vex_shadow1.guest_fpc = 0;
+   arch->vex_shadow1.guest_IA = 0;
 
    /* Put essential stuff into the new state. */
    arch->vex.guest_SP = iifii.initial_client_SP;

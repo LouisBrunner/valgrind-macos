@@ -608,7 +608,7 @@ void ML_(record_fd_open_nameless)(ThreadId tid, Int fd)
 }
 
 static
-HChar *unix2name(struct vki_sockaddr_un *sa, UInt len, HChar *name)
+HChar *unix_to_name(struct vki_sockaddr_un *sa, UInt len, HChar *name)
 {
    if (sa == NULL || len == 0 || sa->sun_path[0] == '\0') {
       VG_(sprintf)(name, "<unknown>");
@@ -620,20 +620,80 @@ HChar *unix2name(struct vki_sockaddr_un *sa, UInt len, HChar *name)
 }
 
 static
-HChar *inet2name(struct vki_sockaddr_in *sa, UInt len, HChar *name)
+HChar *inet_to_name(struct vki_sockaddr_in *sa, UInt len, HChar *name)
 {
    if (sa == NULL || len == 0) {
       VG_(sprintf)(name, "<unknown>");
+   } else if (sa->sin_port == 0) {
+      VG_(sprintf)(name, "<unbound>");
    } else {
       UInt addr = VG_(ntohl)(sa->sin_addr.s_addr);
-      if (addr == 0) {
-         VG_(sprintf)(name, "<unbound>");
-      } else {
-         VG_(sprintf)(name, "%u.%u.%u.%u:%u",
-                      (addr>>24) & 0xFF, (addr>>16) & 0xFF,
-                      (addr>>8) & 0xFF, addr & 0xFF,
-                      VG_(ntohs)(sa->sin_port));
+      VG_(sprintf)(name, "%u.%u.%u.%u:%u",
+                   (addr>>24) & 0xFF, (addr>>16) & 0xFF,
+                   (addr>>8) & 0xFF, addr & 0xFF,
+                   VG_(ntohs)(sa->sin_port));
+   }
+
+   return name;
+}
+
+static
+void inet6_format(HChar *s, const UChar ip[16])
+{
+   static const unsigned char V4mappedprefix[12] = {0,0,0,0,0,0,0,0,0,0,0xff,0xff};
+
+   if (!VG_(memcmp)(ip, V4mappedprefix, 12)) {
+      struct vki_in_addr *sin_addr = (struct vki_in_addr *)(ip + 12);
+      UInt addr = VG_(ntohl)(sin_addr->s_addr);
+
+      VG_(sprintf)(s, "::ffff:%u.%u.%u.%u",
+                   (addr>>24) & 0xFF, (addr>>16) & 0xFF,
+                   (addr>>8) & 0xFF, addr & 0xFF);
+   } else {
+      Bool compressing = False;
+      Bool compressed = False;
+      Int len = 0;
+      Int i;
+
+      for (i = 0; i < 16; i += 2) {
+         UInt word = ((UInt)ip[i] << 8) | (UInt)ip[i+1];
+         if (word == 0 && !compressed) {
+            compressing = True;
+         } else {
+            if (compressing) {
+               compressing = False;
+               compressed = True;
+               s[len++] = ':';
+            }
+            if (i > 0) {
+               s[len++] = ':';
+            }
+            len += VG_(sprintf)(s + len, "%x", word);
+         }
       }
+
+      if (compressing) {
+         s[len++] = ':';
+         s[len++] = ':';
+      }
+
+      s[len++] = 0;
+   }
+
+   return;
+}
+
+static
+HChar *inet6_to_name(struct vki_sockaddr_in6 *sa, UInt len, HChar *name)
+{
+   if (sa == NULL || len == 0) {
+      VG_(sprintf)(name, "<unknown>");
+   } else if (sa->sin6_port == 0) {
+      VG_(sprintf)(name, "<unbound>");
+   } else {
+      char addr[128];
+      inet6_format(addr, (void *)&(sa->sin6_addr));
+      VG_(sprintf)(name, "[%s]:%u", addr, VG_(ntohs)(sa->sin6_port));
    }
 
    return name;
@@ -648,6 +708,7 @@ getsockdetails(Int fd)
    union u {
       struct vki_sockaddr a;
       struct vki_sockaddr_in in;
+      struct vki_sockaddr_in6 in6;
       struct vki_sockaddr_un un;
    } laddr;
    Int llen;
@@ -665,18 +726,34 @@ getsockdetails(Int fd)
 
          if (VG_(getpeername)(fd, (struct vki_sockaddr *)&paddr, &plen) != -1) {
             VG_(message)(Vg_UserMsg, "Open AF_INET socket %d: %s <-> %s\n", fd,
-                         inet2name(&(laddr.in), llen, lname),
-                         inet2name(&paddr, plen, pname));
+                         inet_to_name(&(laddr.in), llen, lname),
+                         inet_to_name(&paddr, plen, pname));
          } else {
             VG_(message)(Vg_UserMsg, "Open AF_INET socket %d: %s <-> unbound\n",
-                         fd, inet2name(&(laddr.in), llen, lname));
+                         fd, inet_to_name(&(laddr.in), llen, lname));
+         }
+         return;
+         }
+      case VKI_AF_INET6: {
+         static char lname[128];
+         static char pname[128];
+         struct vki_sockaddr_in6 paddr;
+         Int plen = sizeof(struct vki_sockaddr_in6);
+
+         if (VG_(getpeername)(fd, (struct vki_sockaddr *)&paddr, &plen) != -1) {
+            VG_(message)(Vg_UserMsg, "Open AF_INET6 socket %d: %s <-> %s\n", fd,
+                         inet6_to_name(&(laddr.in6), llen, lname),
+                         inet6_to_name(&paddr, plen, pname));
+         } else {
+            VG_(message)(Vg_UserMsg, "Open AF_INET6 socket %d: %s <-> unbound\n",
+                         fd, inet6_to_name(&(laddr.in6), llen, lname));
          }
          return;
          }
       case VKI_AF_UNIX: {
          static char lname[256];
          VG_(message)(Vg_UserMsg, "Open AF_UNIX socket %d: %s\n", fd,
-                      unix2name(&(laddr.un), llen, lname));
+                      unix_to_name(&(laddr.un), llen, lname));
          return;
          }
       default:

@@ -35,6 +35,7 @@ To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
 
+175819  Support for ipv6 socket reporting with --track-fds
 308729  vex x86->IR: unhandled instruction bytes 0xf 0x5 (syscall) 
 325714  Empty vgcore but RLIMIT_CORE is big enough (too big) 
 325856  Make SGCheck fail gracefully on unsupported platforms

@@ -544,6 +544,9 @@ typedef struct vki_siginfo {
 #define VKI_SIGEV_PAD_SIZE	((VKI_SIGEV_MAX_SIZE - VKI___ARCH_SIGEV_PREAMBLE_SIZE) \
 		/ sizeof(int))
 
+/* This is the flag the kernel handles, userspace/glibc handles SEGEV_THEAD. */
+#define VKI_SIGEV_THREAD_ID	4
+
 typedef struct vki_sigevent {
 	vki_sigval_t sigev_value;
 	int sigev_signo;
@@ -558,6 +561,8 @@ typedef struct vki_sigevent {
 		} _sigev_thread;
 	} _sigev_un;
 } vki_sigevent_t;
+
+#define vki_sigev_notify_thread_id	_sigev_un._tid
 
 //----------------------------------------------------------------------
 // From elsewhere...

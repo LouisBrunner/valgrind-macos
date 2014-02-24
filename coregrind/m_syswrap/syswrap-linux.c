@@ -2175,8 +2175,18 @@ PRE(sys_timer_create)
    PRE_REG_READ3(long, "timer_create",
                  vki_clockid_t, clockid, struct sigevent *, evp,
                  vki_timer_t *, timerid);
-   if (ARG2 != 0)
-      PRE_MEM_READ( "timer_create(evp)", ARG2, sizeof(struct vki_sigevent) );
+   if (ARG2 != 0) {
+      struct vki_sigevent *evp = (struct vki_sigevent *) ARG2;
+      PRE_MEM_READ( "timer_create(evp.sigev_value)", (Addr)&evp->sigev_value,
+                    sizeof(vki_sigval_t) );
+      PRE_MEM_READ( "timer_create(evp.sigev_signo)", (Addr)&evp->sigev_signo,
+                    sizeof(int) );
+      PRE_MEM_READ( "timer_create(evp.sigev_notify)", (Addr)&evp->sigev_notify,
+                    sizeof(int) );
+      if ((evp->sigev_notify & VKI_SIGEV_THREAD_ID) != 0)
+         PRE_MEM_READ( "timer_create(evp.sigev_notify_thread_id)",
+                       (Addr)&evp->vki_sigev_notify_thread_id, sizeof(int) );
+   }
    PRE_MEM_WRITE( "timer_create(timerid)", ARG3, sizeof(vki_timer_t) );
 }
 POST(sys_timer_create)

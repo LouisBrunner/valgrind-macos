@@ -60,6 +60,7 @@ where XXXXXX is the bug number as listed below.
 331257  Fix type of jump buffer in test none/tests/faultstatus
 331305  configure uses bash specific syntax
 331337  s390x WARNING: unhandled syscall: 326 (dup3)
+331380  Syscall param timer_create(evp) points to uninitialised byte(s)
 n-i-bz  Fix KVM_CREATE_IRQCHIP ioctl handling
 
 Release 3.9.0 (31 October 2013)

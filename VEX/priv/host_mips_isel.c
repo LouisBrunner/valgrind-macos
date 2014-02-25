@@ -1123,29 +1123,24 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
 
             /* Create in dst, the IRCmpF64Result encoded result. */
             /* chech for EQ */
-            addInstr(env, MIPSInstr_FpCompare(Mfp_CMP, tmp, r_srcL, r_srcR,
-                                              toUChar(2)));
-            addInstr(env, MIPSInstr_Shft(Mshft_SRA, True, r_ccMIPS, tmp,
-                                         MIPSRH_Imm(False, 22)));
+            addInstr(env, MIPSInstr_FpCompare(Mfp_CMP_EQ, tmp, r_srcL, r_srcR));
+            addInstr(env, MIPSInstr_Shft(Mshft_SLL, True, r_ccMIPS, tmp,
+                                         MIPSRH_Imm(False, 1)));
             /* chech for UN */
-            addInstr(env, MIPSInstr_FpCompare(Mfp_CMP, tmp, r_srcL, r_srcR,
-                                              toUChar(1)));
-            addInstr(env, MIPSInstr_Shft(Mshft_SRA, True, tmp, tmp,
-                                        MIPSRH_Imm(False, 23)));
+            addInstr(env, MIPSInstr_FpCompare(Mfp_CMP_UN, tmp, r_srcL, r_srcR));
             addInstr(env, MIPSInstr_Alu(Malu_OR, r_ccMIPS, r_ccMIPS,
                                         MIPSRH_Reg(tmp)));
             /* chech for LT */
-            addInstr(env, MIPSInstr_FpCompare(Mfp_CMP, tmp, r_srcL, r_srcR,
-                                              toUChar(12)));
-            addInstr(env, MIPSInstr_Shft(Mshft_SRA, True, tmp,
-                                         tmp, MIPSRH_Imm(False, 21)));
+            addInstr(env, MIPSInstr_FpCompare(Mfp_CMP_LT, tmp, r_srcL, r_srcR));
+            addInstr(env, MIPSInstr_Shft(Mshft_SLL, True, tmp,
+                                         tmp, MIPSRH_Imm(False, 2)));
             addInstr(env, MIPSInstr_Alu(Malu_OR, r_ccMIPS, r_ccMIPS,
                                         MIPSRH_Reg(tmp)));
             /* chech for GT */
-            addInstr(env, MIPSInstr_FpCompare(Mfp_CMP, tmp, r_srcL, r_srcR,
-                                              toUChar(15)));
-            addInstr(env, MIPSInstr_Shft(Mshft_SRA, True, tmp, tmp,
-                                         MIPSRH_Imm(False, 20)));
+            addInstr(env, MIPSInstr_FpCompare(Mfp_CMP_NGT,
+                                              tmp, r_srcL, r_srcR));
+            addInstr(env, MIPSInstr_Shft(Mshft_SLL, True, tmp, tmp,
+                                         MIPSRH_Imm(False, 3)));
 
             addInstr(env, MIPSInstr_Alu(Malu_NOR, tmp, tmp, MIPSRH_Reg(tmp)));
             addInstr(env, MIPSInstr_Alu(Malu_AND, tmp, tmp,

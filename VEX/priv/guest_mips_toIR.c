@@ -1697,22 +1697,22 @@ static IROp mkSzOp ( IRType ty, IROp op8 )
 static const HChar* showCondCode(UInt code) {
    const HChar* ret;
    switch (code) {
-      case 0: ret = "F"; break;
-      case 1: ret = "UN"; break;
-      case 2: ret = "EQ"; break;
-      case 3: ret = "UEQ"; break;
-      case 4: ret = "OLT"; break;
-      case 5: ret = "ULT"; break;
-      case 6: ret = "OLE"; break;
-      case 7: ret = "ULE"; break;
-      case 8: ret = "SF"; break;
-      case 9: ret = "NGLE"; break;
-      case 10: ret = "SEQ"; break;
-      case 11: ret = "NGL"; break;
-      case 12: ret = "LT"; break;
-      case 13: ret = "NGE"; break;
-      case 14: ret = "LE"; break;
-      case 15: ret = "NGT"; break;
+      case 0: ret = "f"; break;
+      case 1: ret = "un"; break;
+      case 2: ret = "eq"; break;
+      case 3: ret = "ueq"; break;
+      case 4: ret = "olt"; break;
+      case 5: ret = "ult"; break;
+      case 6: ret = "ole"; break;
+      case 7: ret = "ule"; break;
+      case 8: ret = "sf"; break;
+      case 9: ret = "ngle"; break;
+      case 10: ret = "seq"; break;
+      case 11: ret = "ngl"; break;
+      case 12: ret = "lt"; break;
+      case 13: ret = "nge"; break;
+      case 14: ret = "le"; break;
+      case 15: ret = "ngt"; break;
       default: vpanic("showCondCode"); break;
    }
    return ret;
@@ -1733,7 +1733,7 @@ static Bool dis_instr_CCondFmt ( UInt cins )
       UInt fpc_cc = get_fpc_cc(cins);
       switch (fmt) {
          case 0x10: {  /* C.cond.S */
-            DIP("C.%s.S %d, f%d, f%d", showCondCode(cond), fpc_cc, fs, ft);
+            DIP("c.%s.s %d, f%d, f%d", showCondCode(cond), fpc_cc, fs, ft);
             if (fp_mode64) {
                t0 = newTemp(Ity_I32);
                t1 = newTemp(Ity_I32);
@@ -1942,7 +1942,7 @@ static Bool dis_instr_CCondFmt ( UInt cins )
             break;
 
          case 0x11: {  /* C.cond.D */
-            DIP("C.%s.D %d, f%d, f%d", showCondCode(cond), fpc_cc, fs, ft);
+            DIP("c.%s.d %d, f%d, f%d", showCondCode(cond), fpc_cc, fs, ft);
             t0 = newTemp(Ity_I32);
             t1 = newTemp(Ity_I32);
             t2 = newTemp(Ity_I32);

@@ -802,8 +802,17 @@ const HChar *showMIPSFpOp(MIPSFpOp op)
       case Mfp_CEILLD:
          ret = "ceil.l.d";
          break;
-      case Mfp_CMP:
-         ret = "C.cond.d";
+      case Mfp_CMP_UN:
+         ret = "c.un.d";
+         break;
+      case Mfp_CMP_EQ:
+         ret = "c.eq.d";
+         break;
+      case Mfp_CMP_LT:
+         ret = "c.lt.d";
+         break;
+      case Mfp_CMP_NGT:
+         ret = "c.ngt.d";
          break;
       default:
          vex_printf("Unknown op: %d", op);
@@ -1503,8 +1512,7 @@ MIPSInstr *MIPSInstr_FpConvert(MIPSFpOp op, HReg dst, HReg src)
 
 }
 
-MIPSInstr *MIPSInstr_FpCompare(MIPSFpOp op, HReg dst, HReg srcL, HReg srcR,
-                               UChar cond1)
+MIPSInstr *MIPSInstr_FpCompare(MIPSFpOp op, HReg dst, HReg srcL, HReg srcR)
 {
    MIPSInstr *i = LibVEX_Alloc(sizeof(MIPSInstr));
    i->tag = Min_FpCompare;
@@ -1512,7 +1520,6 @@ MIPSInstr *MIPSInstr_FpCompare(MIPSFpOp op, HReg dst, HReg srcL, HReg srcR,
    i->Min.FpCompare.dst = dst;
    i->Min.FpCompare.srcL = srcL;
    i->Min.FpCompare.srcR = srcR;
-   i->Min.FpCompare.cond1 = cond1;
    return i;
 }
 
@@ -1817,7 +1824,6 @@ void ppMIPSInstr(MIPSInstr * i, Bool mode64)
          ppHRegMIPS(i->Min.FpCompare.srcL, mode64);
          vex_printf(",");
          ppHRegMIPS(i->Min.FpCompare.srcR, mode64);
-         vex_printf(" cond: %c", i->Min.FpCompare.cond1);
          return;
       case Min_FpMulAcc:
          vex_printf("%s ", showMIPSFpOp(i->Min.FpMulAcc.op));
@@ -3983,19 +3989,35 @@ Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
       }
 
       case Min_FpCompare: {
-         UInt r_dst = iregNo(i->Min.FpCompare.dst, mode64);
+         UInt r_dst   = iregNo(i->Min.FpCompare.dst, mode64);
          UInt fr_srcL = dregNo(i->Min.FpCompare.srcL);
          UInt fr_srcR = dregNo(i->Min.FpCompare.srcR);
 
+         UInt op;
          switch (i->Min.FpConvert.op) {
-            case Mfp_CMP:
-               p = mkFormR(p, 0x11, 0x11, fr_srcL, fr_srcR, 0,
-                          (i->Min.FpCompare.cond1 + 48));
-               p = mkFormR(p, 0x11, 0x2, r_dst, 31, 0, 0);
+            case Mfp_CMP_UN:
+               op = 1;
                break;
+            case Mfp_CMP_EQ:
+               op = 2;
+               break;
+            case Mfp_CMP_LT:
+               op = 12;
+               break;
+            case Mfp_CMP_NGT:
+               op = 15;
+               break;               
             default:
                goto bad;
          }
+         /* c.cond.d fr_srcL, fr_srcR
+            cfc1     r_dst,   $31
+            srl      r_dst,   r_dst, 23
+            andi     r_dst,   r_dst, 1 */
+         p = mkFormR(p, 0x11, 0x11, fr_srcL, fr_srcR, 0, op + 48);
+         p = mkFormR(p, 0x11, 0x2, r_dst, 31, 0, 0);
+         p = mkFormS(p, 0, r_dst, 0, r_dst, 23, 2);
+         p = mkFormI(p, 12, r_dst, r_dst, 1);
          goto done;
       }
 

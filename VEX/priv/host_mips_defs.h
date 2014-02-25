@@ -366,8 +366,11 @@ typedef enum {
    Mfp_CVTSD, Mfp_CVTSW, Mfp_CVTWD,
    Mfp_CVTWS, Mfp_CVTDL, Mfp_CVTSL, Mfp_CVTLS, Mfp_CVTLD, Mfp_TRULS, Mfp_TRULD,
    Mfp_TRUWS, Mfp_TRUWD, Mfp_FLOORWS, Mfp_FLOORWD, Mfp_ROUNDWS, Mfp_ROUNDWD,
-   Mfp_CVTDW, Mfp_CMP, Mfp_CEILWS, Mfp_CEILWD, Mfp_CEILLS, Mfp_CEILLD,
-   Mfp_CVTDS, Mfp_ROUNDLD, Mfp_FLOORLD
+   Mfp_CVTDW, Mfp_CEILWS, Mfp_CEILWD, Mfp_CEILLS, Mfp_CEILLD, Mfp_CVTDS,
+   Mfp_ROUNDLD, Mfp_FLOORLD,
+
+   /* FP compare */
+   Mfp_CMP_UN, Mfp_CMP_EQ, Mfp_CMP_LT, Mfp_CMP_NGT
 
 } MIPSFpOp;
 
@@ -664,7 +667,7 @@ extern MIPSInstr *MIPSInstr_FpTernary ( MIPSFpOp op, HReg dst, HReg src1,
                                         HReg src2, HReg src3 );
 extern MIPSInstr *MIPSInstr_FpConvert(MIPSFpOp op, HReg dst, HReg src);
 extern MIPSInstr *MIPSInstr_FpCompare(MIPSFpOp op, HReg dst, HReg srcL,
-                  HReg srcR, UChar cond1);
+                                      HReg srcR);
 extern MIPSInstr *MIPSInstr_FpMulAcc(MIPSFpOp op, HReg dst, HReg srcML,
                                      HReg srcMR, HReg srcAcc);
 extern MIPSInstr *MIPSInstr_FpLdSt(Bool isLoad, UChar sz, HReg, MIPSAMode *);

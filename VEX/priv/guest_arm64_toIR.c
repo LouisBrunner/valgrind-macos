@@ -239,6 +239,10 @@ static ULong sx_to_64 ( ULong x, UInt n )
    (((_b10) << 10)  \
     | BITS10(_b9,_b8,_b7,_b6,_b5,_b4,_b3,_b2,_b1,_b0))
 
+#define BITS12(_b11, _b10,_b9,_b8,_b7,_b6,_b5,_b4,_b3,_b2,_b1,_b0) \
+   (((_b11) << 11)  \
+    | BITS11(_b10,_b9,_b8,_b7,_b6,_b5,_b4,_b3,_b2,_b1,_b0))
+
 // produces _uint[_bMax:_bMin]
 #define SLICE_UInt(_uint,_bMax,_bMin)  \
    (( ((UInt)(_uint)) >> (_bMin))  \
@@ -1547,22 +1551,22 @@ void setFlags_COPY ( IRTemp nzcv_28x0 )
 /*------------------------------------------------------------*/
 
 /* Generates a 64-bit byte swap. */
-static IRTemp math_BSWAP64 ( IRTemp t1 )
+static IRTemp math_BYTESWAP64 ( IRTemp src )
 {
-   IRTemp t2  = newTemp(Ity_I64);
    IRTemp m8  = newTemp(Ity_I64);
    IRTemp s8  = newTemp(Ity_I64);
    IRTemp m16 = newTemp(Ity_I64);
    IRTemp s16 = newTemp(Ity_I64);
    IRTemp m32 = newTemp(Ity_I64);
+   IRTemp res = newTemp(Ity_I64);
    assign( m8, mkU64(0xFF00FF00FF00FF00ULL) );
    assign( s8,
            binop(Iop_Or64,
                  binop(Iop_Shr64,
-                       binop(Iop_And64,mkexpr(t1),mkexpr(m8)),
+                       binop(Iop_And64,mkexpr(src),mkexpr(m8)),
                        mkU8(8)),
                  binop(Iop_And64,
-                       binop(Iop_Shl64,mkexpr(t1),mkU8(8)),
+                       binop(Iop_Shl64,mkexpr(src),mkU8(8)),
                        mkexpr(m8))
                  ) 
            );
@@ -1580,7 +1584,7 @@ static IRTemp math_BSWAP64 ( IRTemp t1 )
            );
 
    assign( m32, mkU64(0xFFFFFFFF00000000ULL) );
-   assign( t2,
+   assign( res,
            binop(Iop_Or64,
                  binop(Iop_Shr64,
                        binop(Iop_And64,mkexpr(s16),mkexpr(m32)),
@@ -1590,7 +1594,55 @@ static IRTemp math_BSWAP64 ( IRTemp t1 )
                        mkexpr(m32))
                  ) 
            );
-   return t2;
+   return res;
+}
+
+
+/* Generates a 64-bit bit swap. */
+static IRTemp math_BITSWAP64 ( IRTemp src )
+{
+   IRTemp m1 = newTemp(Ity_I64);
+   IRTemp s1 = newTemp(Ity_I64);
+   IRTemp m2 = newTemp(Ity_I64);
+   IRTemp s2 = newTemp(Ity_I64);
+   IRTemp m4 = newTemp(Ity_I64);
+   IRTemp s4 = newTemp(Ity_I64);
+   assign( m1, mkU64(0xAAAAAAAAAAAAAAAAULL) );
+   assign( s1,
+           binop(Iop_Or64,
+                 binop(Iop_Shr64,
+                       binop(Iop_And64,mkexpr(src),mkexpr(m1)),
+                       mkU8(1)),
+                 binop(Iop_And64,
+                       binop(Iop_Shl64,mkexpr(src),mkU8(1)),
+                       mkexpr(m1))
+                 ) 
+           );
+
+   assign( m2, mkU64(0xCCCCCCCCCCCCCCCCULL) );
+   assign( s2,
+           binop(Iop_Or64,
+                 binop(Iop_Shr64,
+                       binop(Iop_And64,mkexpr(s1),mkexpr(m2)),
+                       mkU8(2)),
+                 binop(Iop_And64,
+                       binop(Iop_Shl64,mkexpr(s1),mkU8(2)),
+                       mkexpr(m2))
+                 ) 
+           );
+
+   assign( m4, mkU64(0xF0F0F0F0F0F0F0F0ULL) );
+   assign( s4,
+           binop(Iop_Or64,
+                 binop(Iop_Shr64,
+                       binop(Iop_And64,mkexpr(s2),mkexpr(m4)),
+                       mkU8(4)),
+                 binop(Iop_And64,
+                       binop(Iop_Shl64,mkexpr(s2),mkU8(4)),
+                       mkexpr(m4))
+                 ) 
+           );
+   return math_BYTESWAP64(s4);
 }
 
 
@@ -2651,37 +2703,53 @@ Bool dis_ARM64_data_processing_register(/*MB_OUT*/DisResult* dres,
    /* -------------- REV/REV16/REV32/RBIT -------------- */   
    /* 31 30 28       20    15   11 9 4
 
-      1  10 11010110 00000 0000 11 n d    REV   Xd, Xn
-      0  10 11010110 00000 0000 10 n d    REV   Wd, Wn
+      1  10 11010110 00000 0000 11 n d    (1)  REV   Xd, Xn
+      0  10 11010110 00000 0000 10 n d    (2)  REV   Wd, Wn
 
-      1  10 11010110 00000 0000 01 n d    REV16 Xd, Xn
-      0  10 11010110 00000 0000 01 n d    REV16 Wd, Wn
+      1  10 11010110 00000 0000 00 n d    (3)  RBIT  Xd, Xn
+      0  10 11010110 00000 0000 00 n d    (4)  RBIT  Wd, Wn
 
-      1  10 11010110 00000 0000 10 n d    REV32 Xd, Xn
+      1  10 11010110 00000 0000 01 n d    (5) REV16 Xd, Xn
+      0  10 11010110 00000 0000 01 n d    (6) REV16 Wd, Wn
 
-      1  10 11010110 00000 0000 00 n d    RBIT  Xd, Xn
-      0  10 11010110 00000 0000 00 n d    RBIT  Wd, Wn
+      1  10 11010110 00000 0000 10 n d    (7) REV32 Xd, Xn
+
    */
-   /* Only REV is currently implemented. */
+   /* Only REV and RBIT are currently implemented. */
    if (INSN(30,21) == BITS10(1,0,1,1,0,1,0,1,1,0)
-       && INSN(20,11) == BITS10(0,0,0,0,0,0,0,0,0,1)
-       && INSN(31,31) == INSN(10,10)) {
-      Bool   is64 = INSN(31,31) == 1;
-      UInt   nn   = INSN(9,5);
-      UInt   dd   = INSN(4,0);
-      IRTemp src  = newTemp(Ity_I64);
-      IRTemp dst  = IRTemp_INVALID;
-      if (is64) {
-         assign(src, getIReg64orZR(nn));
-         dst = math_BSWAP64(src);
-         putIReg64orZR(dd, mkexpr(dst));
-      } else {
-         assign(src, binop(Iop_Shl64, getIReg64orZR(nn), mkU8(32)));
-         dst = math_BSWAP64(src);
-         putIReg32orZR(dd, unop(Iop_64to32, mkexpr(dst)));
+       && INSN(20,12) == BITS9(0,0,0,0,0,0,0,0,0)) {
+      UInt b31 = INSN(31,31);
+      UInt opc = INSN(11,10);
+
+      UInt ix = 0;
+      /**/ if (b31 == 1 && opc == BITS2(1,1)) ix = 1; 
+      else if (b31 == 0 && opc == BITS2(1,0)) ix = 2; 
+      else if (b31 == 1 && opc == BITS2(0,0)) ix = 3; 
+      else if (b31 == 0 && opc == BITS2(0,0)) ix = 4; 
+      else if (b31 == 1 && opc == BITS2(0,1)) ix = 5; 
+      else if (b31 == 0 && opc == BITS2(0,1)) ix = 6; 
+      else if (b31 == 1 && opc == BITS2(1,0)) ix = 7; 
+      if (ix >= 1 && ix <= 4) {
+         Bool   is64  = ix == 1 || ix == 3;
+         Bool   isBIT = ix == 3 || ix == 4;
+         UInt   nn    = INSN(9,5);
+         UInt   dd    = INSN(4,0);
+         IRTemp src   = newTemp(Ity_I64);
+         IRTemp dst   = IRTemp_INVALID;
+         if (is64) {
+            assign(src, getIReg64orZR(nn));
+            dst = isBIT ? math_BITSWAP64(src) : math_BYTESWAP64(src);
+            putIReg64orZR(dd, mkexpr(dst));
+         } else {
+            assign(src, binop(Iop_Shl64, getIReg64orZR(nn), mkU8(32)));
+            dst = isBIT ? math_BITSWAP64(src) : math_BYTESWAP64(src);
+            putIReg32orZR(dd, unop(Iop_64to32, mkexpr(dst)));
+         }
+         DIP("%s %s, %s\n", isBIT ? "rbit" : "rev",
+             nameIRegOrZR(is64,dd), nameIRegOrZR(is64,nn));
+         return True;
       }
-      DIP("rev %s, %s\n", nameIRegOrZR(is64,dd), nameIRegOrZR(is64,nn));
-      return True;
+      /* else fall through */
    }
 
    /* -------------------- CLZ/CLS -------------------- */   
@@ -4081,50 +4149,89 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn)
    if (INSN(29,23) == BITS7(0,0,1,0,0,0,0)
        && (INSN(23,21) & BITS3(1,0,1)) == BITS3(0,0,0)
        && INSN(14,10) == BITS5(1,1,1,1,1)) {
-     UInt szBlg2     = INSN(31,30);
-     Bool isLD       = INSN(22,22) == 1;
-     Bool isAcqOrRel = INSN(15,15) == 1;
-     UInt ss         = INSN(20,16);
-     UInt nn         = INSN(9,5);
-     UInt tt         = INSN(4,0);
+      UInt szBlg2     = INSN(31,30);
+      Bool isLD       = INSN(22,22) == 1;
+      Bool isAcqOrRel = INSN(15,15) == 1;
+      UInt ss         = INSN(20,16);
+      UInt nn         = INSN(9,5);
+      UInt tt         = INSN(4,0);
 
-     vassert(szBlg2 < 4);
-     UInt   szB = 1 << szBlg2; /* 1, 2, 4 or 8 */
-     IRType ty  = integerIRTypeOfSize(szB);
-     const HChar* suffix[4] = { "rb", "rh", "r", "r" };
+      vassert(szBlg2 < 4);
+      UInt   szB = 1 << szBlg2; /* 1, 2, 4 or 8 */
+      IRType ty  = integerIRTypeOfSize(szB);
+      const HChar* suffix[4] = { "rb", "rh", "r", "r" };
 
-     IRTemp ea = newTemp(Ity_I64);
-     assign(ea, getIReg64orSP(nn));
-     /* FIXME generate check that ea is szB-aligned */
+      IRTemp ea = newTemp(Ity_I64);
+      assign(ea, getIReg64orSP(nn));
+      /* FIXME generate check that ea is szB-aligned */
 
-     if (isLD && ss == BITS5(1,1,1,1,1)) {
-        IRTemp res = newTemp(ty);
-        stmt(IRStmt_LLSC(Iend_LE, res, mkexpr(ea), NULL/*LL*/));
-        putIReg64orZR(tt, widenUto64(ty, mkexpr(res)));
-        if (isAcqOrRel) {
-           stmt(IRStmt_MBE(Imbe_Fence));
-        }
-        DIP("ld%sx%s %s, [%s]\n", isAcqOrRel ? "a" : "", suffix[szBlg2],
-            nameIRegOrZR(szB == 8, tt), nameIReg64orSP(nn));
-        return True;
-     }
-     if (!isLD) {
-        if (isAcqOrRel) {
-           stmt(IRStmt_MBE(Imbe_Fence));
-        }
-        IRTemp  res  = newTemp(Ity_I1);
-        IRExpr* data = narrowFrom64(ty, getIReg64orZR(tt));
-        stmt(IRStmt_LLSC(Iend_LE, res, mkexpr(ea), data));
-        /* IR semantics: res is 1 if store succeeds, 0 if it fails.
-           Need to set rS to 1 on failure, 0 on success. */
-        putIReg64orZR(ss, binop(Iop_Xor64, unop(Iop_1Uto64, mkexpr(res)),
-                                           mkU64(1)));
-        DIP("st%sx%s %s, %s, [%s]\n", isAcqOrRel ? "a" : "", suffix[szBlg2],
-            nameIRegOrZR(False, ss),
-            nameIRegOrZR(szB == 8, tt), nameIReg64orSP(nn));
-        return True;
-     }
-     /* else fall through */
+      if (isLD && ss == BITS5(1,1,1,1,1)) {
+         IRTemp res = newTemp(ty);
+         stmt(IRStmt_LLSC(Iend_LE, res, mkexpr(ea), NULL/*LL*/));
+         putIReg64orZR(tt, widenUto64(ty, mkexpr(res)));
+         if (isAcqOrRel) {
+            stmt(IRStmt_MBE(Imbe_Fence));
+         }
+         DIP("ld%sx%s %s, [%s]\n", isAcqOrRel ? "a" : "", suffix[szBlg2],
+             nameIRegOrZR(szB == 8, tt), nameIReg64orSP(nn));
+         return True;
+      }
+      if (!isLD) {
+         if (isAcqOrRel) {
+            stmt(IRStmt_MBE(Imbe_Fence));
+         }
+         IRTemp  res  = newTemp(Ity_I1);
+         IRExpr* data = narrowFrom64(ty, getIReg64orZR(tt));
+         stmt(IRStmt_LLSC(Iend_LE, res, mkexpr(ea), data));
+         /* IR semantics: res is 1 if store succeeds, 0 if it fails.
+            Need to set rS to 1 on failure, 0 on success. */
+         putIReg64orZR(ss, binop(Iop_Xor64, unop(Iop_1Uto64, mkexpr(res)),
+                                            mkU64(1)));
+         DIP("st%sx%s %s, %s, [%s]\n", isAcqOrRel ? "a" : "", suffix[szBlg2],
+             nameIRegOrZR(False, ss),
+             nameIRegOrZR(szB == 8, tt), nameIReg64orSP(nn));
+         return True;
+      }
+      /* else fall through */
+   }
+
+   /* ------------------ LDA{R,RH,RB} ------------------ */
+   /* ------------------ STL{R,RH,RB} ------------------ */
+   /* 31 29     23  20      14    9 4
+      sz 001000 110 11111 1 11111 n t   LDAR<sz> Rt, [Xn|SP]
+      sz 001000 100 11111 1 11111 n t   STLR<sz> Rt, [Xn|SP]
+   */
+   if (INSN(29,23) == BITS7(0,0,1,0,0,0,1)
+       && INSN(21,10) == BITS12(0,1,1,1,1,1,1,1,1,1,1,1)) {
+      UInt szBlg2 = INSN(31,30);
+      Bool isLD   = INSN(22,22) == 1;
+      UInt nn     = INSN(9,5);
+      UInt tt     = INSN(4,0);
+
+      vassert(szBlg2 < 4);
+      UInt   szB = 1 << szBlg2; /* 1, 2, 4 or 8 */
+      IRType ty  = integerIRTypeOfSize(szB);
+      const HChar* suffix[4] = { "rb", "rh", "r", "r" };
+
+      IRTemp ea = newTemp(Ity_I64);
+      assign(ea, getIReg64orSP(nn));
+      /* FIXME generate check that ea is szB-aligned */
+
+      if (isLD) {
+         IRTemp res = newTemp(ty);
+         assign(res, loadLE(ty, mkexpr(ea)));
+         putIReg64orZR(tt, widenUto64(ty, mkexpr(res)));
+         stmt(IRStmt_MBE(Imbe_Fence));
+         DIP("lda%s %s, [%s]\n", suffix[szBlg2],
+             nameIRegOrZR(szB == 8, tt), nameIReg64orSP(nn));
+      } else {
+         stmt(IRStmt_MBE(Imbe_Fence));
+         IRExpr* data = narrowFrom64(ty, getIReg64orZR(tt));
+         storeLE(mkexpr(ea), data);
+         DIP("stl%s %s, [%s]\n", suffix[szBlg2],
+             nameIRegOrZR(szB == 8, tt), nameIReg64orSP(nn));
+      }
+      return True;
    }
 
    vex_printf("ARM64 front end: load_store\n");
@@ -4390,6 +4497,12 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn)
    if (INSN(31,0) == 0xD5033BBF) {
       stmt(IRStmt_MBE(Imbe_Fence));
       DIP("dmb ish\n");
+      return True;
+   }
+
+   /* -------------------- NOP -------------------- */
+   if (INSN(31,0) == 0xD503201F) {
+      DIP("nop\n");
       return True;
    }
 
@@ -6677,7 +6790,7 @@ DisResult disInstr_ARM64 ( IRSB*        irsb_IN,
                                  archinfo, abiinfo );
    if (ok) {
       /* All decode successes end up here. */
-      vassert(dres.len == 4 /*|| dres.len == 20*/);
+      vassert(dres.len == 4 || dres.len == 20);
       switch (dres.whatNext) {
          case Dis_Continue:
             putPC( mkU64(dres.len + guest_PC_curr_instr) );

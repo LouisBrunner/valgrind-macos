@@ -971,11 +971,17 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
 #  define SZB(_fieldname) \
       (sizeof(((VexGuestARM64State*)0)->guest_##_fieldname))
 
-   Int  o     = offset;
-   Int  sz    = szB;
+   Int  o    = offset;
+   Int  sz   = szB;
+   Bool is48 = sz == 8 || sz == 4;
+
    tl_assert(sz > 0);
    tl_assert(host_is_little_endian());
-   (void)o; // RMME -- just to stop gcc warning that o is unused
+
+   if (o == GOF(X0)  && is48) return o;
+   if (o == GOF(X1)  && is48) return o;
+   if (o == GOF(X2)  && is48) return o;
+   if (o == GOF(X3)  && is48) return o;
 
    VG_(printf)("MC_(get_otrack_shadow_offset)(arm64)(off=%d,sz=%d)\n",
                offset,szB);

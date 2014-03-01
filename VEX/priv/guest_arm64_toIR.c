@@ -970,6 +970,8 @@ static Int offsetQRegLane ( UInt qregNo, IRType laneTy, UInt laneNo )
       stupid types. */
    UInt laneSzB = 0;
    switch (laneTy) {
+      case Ity_I8:                 laneSzB = 1;  break;
+      case Ity_I16:                laneSzB = 2;  break;
       case Ity_F32: case Ity_I32:  laneSzB = 4;  break;
       case Ity_F64: case Ity_I64:  laneSzB = 8;  break;
       case Ity_V128:               laneSzB = 16; break;
@@ -1087,6 +1089,9 @@ static void putQRegLane ( UInt qregNo, UInt laneNo, IRExpr* e )
    Int    off     = offsetQRegLane(qregNo, laneTy, laneNo);
    switch (laneTy) {
       case Ity_F64: case Ity_I64:
+      case Ity_I32:
+      case Ity_I16:
+      case Ity_I8:
          break;
       default:
          vassert(0); // Other cases are ATC
@@ -3280,7 +3285,6 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn)
             putIReg64orZR(rT2, loadLE(Ity_I64, 
                                       binop(Iop_Add64,mkexpr(tTA),mkU64(8))));
          } else if (bL == 1 && bX == 0) {
-            vassert(0); //ATC
             // 32 bit load
             putIReg32orZR(rT1, loadLE(Ity_I32,
                                       binop(Iop_Add64,mkexpr(tTA),mkU64(0))));
@@ -5065,36 +5069,6 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
-#if 0
-   /* -------------- FMOV (vector, immediate) -------------- */
-   /* 31  28          18  15     9     4
-      011 01111 00000 abc 111101 defgh d  FMOV Vd.2d, #imm
-      0q0 01111 00000 abc 111101 defgh d  FMOV Vd.2s, #imm (q=0)
-                                          FMOV Vd.4s, #imm (q=1)
-   */
-   if (INSN(31,31) == 0
-       && INSN(28,19) == BITS10(0,1,1,1,1,0,0,0,0,0)
-       && INSN(15,10) == BITS6(1,1,1,1,0,1)
-       && INSN(30,29) != BITS2(0,1)) {
-      UInt  bitQ    = INSN(30,30);
-      UInt  bitOP   = INSN(29,29);
-      UInt  cmode   = INSN(15,12);
-      UInt  imm8    = (INSN(18,16) << 5) | INSN(9,5);
-      UInt  dd      = INSN(4,0);
-      ULong imm64lo = 0;
-      Bool  ok      = AdvSIMDExpandImm(&imm64lo, bitOP, cmode, imm8);
-      vassert(! (bitOP == 1 && bitQ == 0) );
-      if (ok) {
-         ULong imm64hi = (bitQ == 0 && bitOP == 0)  ? 0  : imm64lo;
-         putQReg128(dd, binop(Iop_64HLtoV128, mkU64(imm64hi), mkU64(imm64lo)));
-         const HChar* ar[4] = { "2s", "??", "4s", "2d" };
-         DIP("fmov %s.%s, #0x%llx\n",
-             nameQReg128(dd), ar[INSN(30,29)], imm64lo);
-         return True;
-      }
-      /* else fall through */
-   }
-#else
    /* -------------- {FMOV,MOVI} (vector, immediate) -------------- */
    /* 31    28          18  15    11 9     4
       0q op 01111 00000 abc cmode 01 defgh d  MOV Dd,   #imm (q=0)
@@ -5137,7 +5111,6 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
       }
       /* else fall through */
    }
-#endif
 
    /* -------------- {S,U}CVTF (scalar, integer) -------------- */
    /* 31  28    23 21 20 18  15     9 4                  ix
@@ -5177,7 +5150,7 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
-   /* -------------- F{ADD,SUB,MUL,DIV} (scalar) -------------- */
+   /* ------------ F{ADD,SUB,MUL,DIV,NMUL} (scalar) ------------ */
    /* 31        23  20 15   11 9 4
       ---------------- 0000 ------   FMUL  --------
       000 11110 001 m  0001 10 n d   FDIV  Sd,Sn,Sm
@@ -5848,7 +5821,7 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
       Bool isQ    = INSN(30,30) == 1;
       Bool isU    = INSN(29,29) == 1;
       UInt szBlg2 = INSN(23,22);
-      Bool isMAX  = INSN(12,12) == 0;
+      Bool isMAX  = INSN(11,11) == 0;
       UInt mm     = INSN(20,16);
       UInt nn     = INSN(9,5);
       UInt dd     = INSN(4,0);
@@ -5923,7 +5896,7 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
             source into the upper half, so we can then treat it the
             same as the full width case. */
          IRTemp tN2 = newTemp(Ity_V128);
-         assign(tN2, zeroHI ? mk_CatOddLanes64x2(tN1,tN1) : mkexpr(tN1));
+         assign(tN2, zeroHI ? mk_CatEvenLanes64x2(tN1,tN1) : mkexpr(tN1));
          IRTemp res = math_MINMAXV(tN2, op);
          if (res == IRTemp_INVALID)
             return False; /* means math_MINMAXV
@@ -6097,22 +6070,22 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
       const IROp opNOT = Iop_NotV128;
       IRExpr* res = NULL;
       switch (op) {
-         case BITS2(0,0):
+         case BITS2(0,0): /* EOR */
             res = binop(opXOR, mkexpr(argM), mkexpr(argN));
             break;
-         case BITS2(0,1):
+         case BITS2(0,1): /* BSL */
             res = binop(opXOR, mkexpr(argM),
                                binop(opAND,
                                      binop(opXOR, mkexpr(argM), mkexpr(argN)),
                                      mkexpr(argD)));
             break;
-         case BITS2(1,0):
+         case BITS2(1,0): /* BIT */
             res = binop(opXOR, mkexpr(argD),
                                binop(opAND,
                                      binop(opXOR, mkexpr(argD), mkexpr(argN)),
                                      mkexpr(argM)));
             break;
-         case BITS2(1,1):
+         case BITS2(1,1): /* BIF */
             res = binop(opXOR, mkexpr(argD),
                                binop(opAND,
                                      binop(opXOR, mkexpr(argD), mkexpr(argN)),
@@ -6179,9 +6152,11 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
       0q0 011110 immh immb 101001 n d  SSHLL Vd.Ta, Vn.Tb, #sh
       0q1 011110 immh immb 101001 n d  USHLL Vd.Ta, Vn.Tb, #sh
       where Ta,Tb,sh
-        = case immh of 0001 -> 8h, 8b(q0)/16b(q1), immh:immb - 8  (0..7)
-                       001x -> 4s, 4h(q0)/8h(q1),  immh:immb - 16 (0..15)
+        = case immh of 1xxx -> invalid
                        01xx -> 2d, 2s(q0)/4s(q1),  immh:immb - 32 (0..31)
+                       001x -> 4s, 4h(q0)/8h(q1),  immh:immb - 16 (0..15)
+                       0001 -> 8h, 8b(q0)/16b(q1), immh:immb - 8  (0..7)
+                       0000 -> AdvSIMD modified immediate (???)
    */
    if (INSN(31,31) == 0 && INSN(28,23) == BITS6(0,1,1,1,1,0)
        && INSN(15,10) == BITS6(1,0,1,0,0,1)) {
@@ -6200,14 +6175,17 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
       const HChar* tb = "??";
       assign(src, getQReg128(nn));
       assign(zero, mkV128(0x0000));
-      if (immh & 1) {
-         sh = immhb - 8;
-         vassert(sh < 8); /* so 8-sh is 1..8 */
-         ta = "8h";
-         tb = isQ ? "16b" : "8b";
-         IRExpr* tmp = isQ ? mk_InterleaveHI8x16(src, zero) 
-                           : mk_InterleaveLO8x16(src, zero);
-         res = binop(isU ? Iop_ShrN16x8 : Iop_SarN16x8, tmp, mkU8(8-sh));
+      if (immh & 8) {
+         /* invalid; don't assign to res */
+      }
+      else if (immh & 4) {
+         sh = immhb - 32;
+         vassert(sh < 32); /* so 32-sh is 1..32 */
+         ta = "2d";
+         tb = isQ ? "4s" : "2s";
+         IRExpr* tmp = isQ ? mk_InterleaveHI32x4(src, zero) 
+                           : mk_InterleaveLO32x4(src, zero);
+         res = binop(isU ? Iop_ShrN64x2 : Iop_SarN64x2, tmp, mkU8(32-sh));
       }
       else if (immh & 2) {
          sh = immhb - 16;
@@ -6218,14 +6196,17 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
                            : mk_InterleaveLO16x8(src, zero);
          res = binop(isU ? Iop_ShrN32x4 : Iop_SarN32x4, tmp, mkU8(16-sh));
       }
-      else if (immh & 4) {
-         sh = immhb - 32;
-         vassert(sh < 32); /* so 32-sh is 1..32 */
-         ta = "2d";
-         tb = isQ ? "4s" : "2s";
-         IRExpr* tmp = isQ ? mk_InterleaveHI32x4(src, zero) 
-                           : mk_InterleaveLO32x4(src, zero);
-         res = binop(isU ? Iop_ShrN64x2 : Iop_SarN64x2, tmp, mkU8(32-sh));
+      else if (immh & 1) {
+         sh = immhb - 8;
+         vassert(sh < 8); /* so 8-sh is 1..8 */
+         ta = "8h";
+         tb = isQ ? "16b" : "8b";
+         IRExpr* tmp = isQ ? mk_InterleaveHI8x16(src, zero) 
+                           : mk_InterleaveLO8x16(src, zero);
+         res = binop(isU ? Iop_ShrN16x8 : Iop_SarN16x8, tmp, mkU8(8-sh));
+      } else {
+         vassert(immh == 0);
+         /* invalid; don't assign to res */
       }
       /* */
       if (res) {

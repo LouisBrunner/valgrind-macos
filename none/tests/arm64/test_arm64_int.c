@@ -1,11 +1,13 @@
 
-// To compile:
-// aarch64-linux-gnu-gcc -Wall -g -O0 -o test_arm64_int test_arm64_int.c
-
-// The ubfm/sbfm/bfm tests are huge and take ages to compile and run.
-// Set TEST_BFM to 0 to skip them.
-#define TEST_BFM 1
-
+/* To compile:
+   aarch64-linux-gnu-gcc -Wall -g -O0 -o test_arm64_int test_arm64_int.c \
+      -DTEST_BFM=1  # (or 0)
+   The ubfm/sbfm/bfm tests are huge and take ages to compile and run.
+   Set TEST_BFM to 0 to skip them.
+*/
+#ifndef TEST_BFM
+# define TEST_BFM 1
+#endif
 
 #include <stdio.h>
 
@@ -122,7 +124,8 @@ typedef  unsigned long long int  ULong;
 }
 
 // Same as TESTINST2 except it doesn't print the RN value, since
-// that may differ between runs (it's a stack address).
+// that may differ between runs (it's a stack address).  Also,
+// claim it trashes x28 so that can be used as scratch if needed.
 #define TESTINST2_hide2(instruction, RNval, RD, RN, carryin) \
 { \
    ULong out; \
@@ -136,7 +139,7 @@ typedef  unsigned long long int  ULong;
       "mrs %1,nzcv;" \
       : "=&r" (out), "=&r" (nzcv_out) \
       : "r" (RNval), "r" (nzcv_in) \
-      : #RD, #RN, "cc", "memory" \
+      : #RD, #RN, "cc", "memory", "x28"  \
    ); \
    printf("%s :: rd %016llx rn (hidden), " \
           "cin %d, nzcv %08llx %c%c%c%c\n",       \
@@ -350,11 +353,9 @@ TESTINST2("subs x3, x4, #0xD87, lsl #0", 0x8000000000000d86, x3, x4, 0);
 TESTINST2("subs x3, x4, #0xD87, lsl #0", 0x8000000000000d87, x3, x4, 0);
 TESTINST2("subs x3, x4, #0xD87, lsl #0", 0x8000000000000d88, x3, x4, 0);
 
-#if 0
 ////////////////////////////////////////////////////////////////
-printf("ADR/ADRP\n");
-TESTINST1("adrp x27, #0x987", x27, 0);
-#endif
+printf("ADR/ADRP MISSING (results are PC dependant)\n");
+//TESTINST1("adrp x27, #0x987", x27, 0);
 
 ////////////////////////////////////////////////////////////////
 printf("AND(imm)\n");
@@ -10276,6 +10277,18 @@ TESTINST2("rev w11,w23", 0x9a1140d0fd1dbf6c, x11,x23,0);
 
 
 ////////////////////////////////////////////////////////////////
+printf("RBIT\n");
+
+TESTINST2("rbit x11,x23", 0xfd79baaee550b488, x11,x23,0);
+TESTINST2("rbit x11,x23", 0xe861540945421773, x11,x23,0);
+TESTINST2("rbit x11,x23", 0x9a1140d0fd1dbf6c, x11,x23,0);
+
+TESTINST2("rbit w11,w23", 0xfd79baaee550b488, x11,x23,0);
+TESTINST2("rbit w11,w23", 0xe861540945421773, x11,x23,0);
+TESTINST2("rbit w11,w23", 0x9a1140d0fd1dbf6c, x11,x23,0);
+
+
+////////////////////////////////////////////////////////////////
 printf("CLZ\n");
 
 TESTINST2("clz x17, x22", 0xFFFFFFFFFFFFFFFFULL, x17, x22, 0);
@@ -10512,26 +10525,54 @@ RESET;
 
 
 ////////////////////////////////////////////////////////////////
-printf("LDR,STR (immediate, uimm12)");
+printf("LDR,STR (immediate, uimm12) (STR cases are MISSING)");
 TESTINST2_hide2("ldr  x21, [x22, #24]", AREA_MID, x21,x22,0);
 TESTINST2_hide2("ldr  w21, [x22, #20]", AREA_MID, x21,x22,0);
 TESTINST2_hide2("ldrh w21, [x22, #44]", AREA_MID, x21,x22,0);
 TESTINST2_hide2("ldrb w21, [x22, #56]", AREA_MID, x21,x22,0);
 
 ////////////////////////////////////////////////////////////////
-printf("LDUR,STUR (immediate, simm9) (wb is unchecked)\n");
+printf("LDUR,STUR (immediate, simm9) (STR cases and wb check are MISSING)\n");
 TESTINST2_hide2("ldr x21, [x22], #-24", AREA_MID, x21,x22,0);
 TESTINST2_hide2("ldr x21, [x22, #-40]!", AREA_MID, x21,x22,0);
 TESTINST2_hide2("ldr x21, [x22, #-48]", AREA_MID, x21,x22,0);
+printf("LDUR,STUR (immediate, simm9): STR cases are MISSING");
 
 ////////////////////////////////////////////////////////////////
-printf("LDP,STP (immediate, simm7)\n");
+// TESTINST2_hide2 allows use of x28 as scratch
+printf("LDP,STP (immediate, simm7) (STR cases and wb check is MISSING)\n");
+
+TESTINST2_hide2("ldp x21, x28, [x22], #-24 ; add x21,x21,x28", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldp x21, x28, [x22], #-24 ; eor x21,x21,x28", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldp x21, x28, [x22, #-40]! ; add x21,x21,x28", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldp x21, x28, [x22, #-40]! ; eor x21,x21,x28", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldp x21, x28, [x22, #-40] ; add x21,x21,x28", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldp x21, x28, [x22, #-40] ; eor x21,x21,x28", AREA_MID, x21,x22,0);
+
+TESTINST2_hide2("ldp w21, w28, [x22], #-24 ; add x21,x21,x28", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldp w21, w28, [x22], #-24 ; eor x21,x21,x28", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldp w21, w28, [x22, #-40]! ; add x21,x21,x28", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldp w21, w28, [x22, #-40]! ; eor x21,x21,x28", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldp w21, w28, [x22, #-40] ; add x21,x21,x28", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldp w21, w28, [x22, #-40] ; eor x21,x21,x28", AREA_MID, x21,x22,0);
 
 ////////////////////////////////////////////////////////////////
+// This is a bit tricky.  We load the value from just before and
+// just after the actual instruction.  Because TESTINSN2_hide2 
+// generates two fixed insns either side of the test insn, these 
+// should be constant and hence "safe" to check.
+
 printf("LDR (literal, int reg)\n");
+TESTINST2_hide2("xyzzy00: ldr  x21, xyzzy00 - 8", AREA_MID, x21,x22,0);
+TESTINST2_hide2("xyzzy01: ldr  x21, xyzzy01 + 0", AREA_MID, x21,x22,0);
+TESTINST2_hide2("xyzzy02: ldr  x21, xyzzy02 + 8", AREA_MID, x21,x22,0);
+
+TESTINST2_hide2("xyzzy03: ldr  x21, xyzzy03 - 4", AREA_MID, x21,x22,0);
+TESTINST2_hide2("xyzzy04: ldr  x21, xyzzy04 + 0", AREA_MID, x21,x22,0);
+TESTINST2_hide2("xyzzy05: ldr  x21, xyzzy05 + 4", AREA_MID, x21,x22,0);
 
 ////////////////////////////////////////////////////////////////
-printf("{LD,ST}R (integer register)\n");
+printf("{LD,ST}R (integer register) (entirely MISSING)\n");
 
 ////////////////////////////////////////////////////////////////
 printf("LDRS{B,H,W} (uimm12)\n");
@@ -10542,7 +10583,7 @@ TESTINST2_hide2("ldrsb x21, [x22, #88]", AREA_MID, x21,x22,0);
 TESTINST2_hide2("ldrsb w21, [x22, #56]", AREA_MID, x21,x22,0);
 
 ////////////////////////////////////////////////////////////////
-printf("LDRS{B,H,W} (simm9, upd)\n");
+printf("LDRS{B,H,W} (simm9, upd) (upd check is MISSING)\n");
 TESTINST2_hide2("ldrsw x21, [x22, #-24]!", AREA_MID, x21,x22,0);
 TESTINST2_hide2("ldrsh x21, [x22, #-20]!", AREA_MID, x21,x22,0);
 TESTINST2_hide2("ldrsh w21, [x22, #-44]!", AREA_MID, x21,x22,0);
@@ -10562,6 +10603,12 @@ TESTINST2_hide2("ldrsh x21, [x22, #-20]", AREA_MID, x21,x22,0);
 TESTINST2_hide2("ldrsh w21, [x22, #-44]", AREA_MID, x21,x22,0);
 TESTINST2_hide2("ldrsb x21, [x22, #-88]", AREA_MID, x21,x22,0);
 TESTINST2_hide2("ldrsb w21, [x22, #-56]", AREA_MID, x21,x22,0);
+
+////////////////////////////////////////////////////////////////
+printf("LDP,STP (immediate, simm7) (FP&VEC) (entirely MISSING)\n");
+
+////////////////////////////////////////////////////////////////
+printf("{LD,ST}R (vector register) (entirely MISSING)\n");
 
 ////////////////////////////////////////////////////////////////
 printf("LDRS{B,H,W} (integer register, SX)\n");
@@ -10601,9 +10648,41 @@ TESTINST3_hide2and3("ldrsb w21, [x22,w23,uxtw #0]", AREA_MID, 5, x21,x22,x23,0);
 TESTINST3_hide2and3("ldrsb w21, [x22,w23,sxtw #0]", AREA_MID, -5ULL, x21,x22,x23,0);
 TESTINST3_hide2and3("ldrsb w21, [x22,w23,sxtw #0]", AREA_MID, -5ULL, x21,x22,x23,0);
 
+////////////////////////////////////////////////////////////////
+printf("LDR/STR (immediate, SIMD&FP, unsigned offset) (entirely MISSING)\n");
 
 ////////////////////////////////////////////////////////////////
-printf("LD{A}XR\n");
+printf("LDR/STR (immediate, SIMD&FP, pre/post index) (entirely MISSING)\n");
+
+////////////////////////////////////////////////////////////////
+printf("LDUR/STUR (unscaled offset, SIMD&FP) (entirely MISSING)\n");
+
+////////////////////////////////////////////////////////////////
+printf("LDR (literal, SIMD&FP) (entirely MISSING)\n");
+
+////////////////////////////////////////////////////////////////
+printf("LD1/ST1 (single structure, no offset) (entirely MISSING)\n");
+
+////////////////////////////////////////////////////////////////
+printf("LD1/ST1 (single structure, post index) (entirely MISSING)\n");
+
+////////////////////////////////////////////////////////////////
+printf("LD{,A}X{R,RH,RB} (entirely MISSING)\n");
+
+////////////////////////////////////////////////////////////////
+printf("ST{,L}X{R,RH,RB} (entirely MISSING)\n");
+
+////////////////////////////////////////////////////////////////
+printf("LDA{R,RH,RB}\n");
+TESTINST2_hide2("ldar  x21, [x22]", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldar  w21, [x22]", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldarh w21, [x22]", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldarb w21, [x22]", AREA_MID, x21,x22,0);
+
+////////////////////////////////////////////////////////////////
+printf("STL{R,RH,RB} (entirely MISSING)\n");
+
+
 
 return 0;
 }

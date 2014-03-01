@@ -31,7 +31,7 @@ pair()
 pair x86                        amd64
 pair ppc32                      ppc64
 pair s390x_unexisting_in_32bits s390x
-pair arm                        arm_unexisting_in_64bits
+pair arm                        arm64
 pair mips32                     mips64
 
 exit 0

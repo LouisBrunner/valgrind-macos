@@ -4347,6 +4347,7 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
      /* Iop_ZeroHIXXofV128 cases */
       UShort imm16 = 0;
       switch (e->Iex.Unop.op) {
+         case Iop_ZeroHI64ofV128:  imm16 = 0x00FF; break;
          case Iop_ZeroHI96ofV128:  imm16 = 0x000F; break;
          case Iop_ZeroHI112ofV128: imm16 = 0x0003; break;
          case Iop_ZeroHI120ofV128: imm16 = 0x0001; break;
@@ -4867,8 +4868,10 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_Min8Ux16:
          case Iop_Max32Sx4:
          case Iop_Max16Sx8:
+         case Iop_Max8Sx16:
          case Iop_Min32Sx4:
          case Iop_Min16Sx8:
+         case Iop_Min8Sx16:
          case Iop_Add64x2:
          case Iop_Add32x4:
          case Iop_Add16x8:
@@ -4894,8 +4897,10 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
                case Iop_Min8Ux16:  op = ARM64vecb_UMIN8x16; break;
                case Iop_Max32Sx4:  op = ARM64vecb_SMAX32x4; break;
                case Iop_Max16Sx8:  op = ARM64vecb_SMAX16x8; break;
+               case Iop_Max8Sx16:  op = ARM64vecb_SMAX8x16; break;
                case Iop_Min32Sx4:  op = ARM64vecb_SMIN32x4; break;
                case Iop_Min16Sx8:  op = ARM64vecb_SMIN16x8; break;
+               case Iop_Min8Sx16:  op = ARM64vecb_SMIN8x16; break;
                case Iop_Add64x2:   op = ARM64vecb_ADD64x2; break;
                case Iop_Add32x4:   op = ARM64vecb_ADD32x4; break;
                case Iop_Add16x8:   op = ARM64vecb_ADD16x8; break;

@@ -4916,11 +4916,13 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
             011 01110 01 1 m  011011 n d   UMIN Vd.8h,  Vn.8h,  Vm.8h
             011 01110 00 1 m  011011 n d   UMIN Vd.16b, Vn.16b, Vm.16b
 
-            010 01110 10 1 m  011001 n d   SMAX Vd.4s, Vn.4s, Vm.4s
-            010 01110 01 1 m  011001 n d   SMAX Vd.8h, Vn.8h, Vm.8h
+            010 01110 10 1 m  011001 n d   SMAX Vd.4s,  Vn.4s,  Vm.4s
+            010 01110 01 1 m  011001 n d   SMAX Vd.8h,  Vn.8h,  Vm.8h
+            010 01110 00 1 m  011001 n d   SMAX Vd.16b, Vn.16b, Vm.16b
 
-            010 01110 10 1 m  011011 n d   SMIN Vd.4s, Vn.4s, Vm.4s
-            010 01110 01 1 m  011011 n d   SMIN Vd.8h, Vn.8h, Vm.8h
+            010 01110 10 1 m  011011 n d   SMIN Vd.4s,  Vn.4s,  Vm.4s
+            010 01110 01 1 m  011011 n d   SMIN Vd.8h,  Vn.8h,  Vm.8h
+            010 01110 00 1 m  011011 n d   SMIN Vd.16b, Vn.16b, Vm.16b
 
             010 01110 00 1 m  000111 n d   AND Vd, Vn, Vm
             010 01110 10 1 m  000111 n d   ORR Vd, Vn, Vm
@@ -5009,12 +5011,18 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
             case ARM64vecb_SMAX16x8:
                *p++ = X_3_8_5_6_5_5(X010, X01110011, vM, X011001, vN, vD);
                break;
+            case ARM64vecb_SMAX8x16:
+               *p++ = X_3_8_5_6_5_5(X010, X01110001, vM, X011001, vN, vD);
+               break;
 
             case ARM64vecb_SMIN32x4:
                *p++ = X_3_8_5_6_5_5(X010, X01110101, vM, X011011, vN, vD);
                break;
             case ARM64vecb_SMIN16x8:
                *p++ = X_3_8_5_6_5_5(X010, X01110011, vM, X011011, vN, vD);
+               break;
+            case ARM64vecb_SMIN8x16:
+               *p++ = X_3_8_5_6_5_5(X010, X01110001, vM, X011011, vN, vD);
                break;
 
             case ARM64vecb_AND:
@@ -6003,6 +6011,12 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
             /* movi rD, #0xFFFFFFFF == 0x2F 0x00 0xE5 111 rD */
             vassert(rQ < 32);
             *p++ = 0x2F00E5E0 | rQ;
+            goto done;
+         }
+         if (imm == 0x00FF) {
+            /* movi rD, #0xFFFFFFFFFFFFFFFF == 0x2F 0x07 0xE7 111 rD */
+            vassert(rQ < 32);
+            *p++ = 0x2F07E7E0 | rQ;
             goto done;
          }
          goto bad; /* no other handled cases right now */

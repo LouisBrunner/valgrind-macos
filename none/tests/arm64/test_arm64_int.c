@@ -10289,6 +10289,26 @@ TESTINST2("rbit w11,w23", 0x9a1140d0fd1dbf6c, x11,x23,0);
 
 
 ////////////////////////////////////////////////////////////////
+printf("REV16\n");
+
+TESTINST2("rev16 x11,x23", 0xfd79baaee550b488, x11,x23,0);
+TESTINST2("rev16 x11,x23", 0xe861540945421773, x11,x23,0);
+TESTINST2("rev16 x11,x23", 0x9a1140d0fd1dbf6c, x11,x23,0);
+
+TESTINST2("rev16 w11,w23", 0xfd79baaee550b488, x11,x23,0);
+TESTINST2("rev16 w11,w23", 0xe861540945421773, x11,x23,0);
+TESTINST2("rev16 w11,w23", 0x9a1140d0fd1dbf6c, x11,x23,0);
+
+
+////////////////////////////////////////////////////////////////
+printf("REV32\n");
+
+TESTINST2("rev32 x11,x23", 0xfd79baaee550b488, x11,x23,0);
+TESTINST2("rev32 x11,x23", 0xe861540945421773, x11,x23,0);
+TESTINST2("rev32 x11,x23", 0x9a1140d0fd1dbf6c, x11,x23,0);
+
+
+////////////////////////////////////////////////////////////////
 printf("CLZ\n");
 
 TESTINST2("clz x17, x22", 0xFFFFFFFFFFFFFFFFULL, x17, x22, 0);

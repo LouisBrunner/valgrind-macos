@@ -881,6 +881,9 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_getxattr,          sys_getxattr),          // 8
    LINXY(__NR_lgetxattr,         sys_lgetxattr),         // 9
    GENXY(__NR_getcwd,            sys_getcwd),            // 17
+   LINXY(__NR_epoll_create1,     sys_epoll_create1),     // 20
+   LINX_(__NR_epoll_ctl,         sys_epoll_ctl),         // 21
+   LINXY(__NR_epoll_pwait,       sys_epoll_pwait),       // 22
    GENXY(__NR_dup,               sys_dup),               // 23
    LINXY(__NR_dup3,              sys_dup3),              // 24
 
@@ -945,6 +948,7 @@ static SyscallTableEntry syscall_main_table[] = {
    GENX_(__NR_setrlimit,         sys_setrlimit),         // 164
    GENXY(__NR_getrusage,         sys_getrusage),         // 165
    GENX_(__NR_umask,             sys_umask),             // 166
+   LINXY(__NR_prctl,             sys_prctl),             // 167 
    GENXY(__NR_gettimeofday,      sys_gettimeofday),      // 169
    GENX_(__NR_getpid,            sys_getpid),            // 172
    GENX_(__NR_getppid,           sys_getppid),           // 173

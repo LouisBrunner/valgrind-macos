@@ -2253,7 +2253,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
    /* --------- GET --------- */
    case Iex_Get: {
       if (ty == Ity_I64
-          && 0 == (e->Iex.Get.offset & 7) && e->Iex.Get.offset < 8192-8) {
+          && 0 == (e->Iex.Get.offset & 7) && e->Iex.Get.offset < (8<<12)-8) {
          HReg        dst = newVRegI(env);
          ARM64AMode* am
             = mk_baseblock_64bit_access_amode(e->Iex.Get.offset);
@@ -2261,11 +2261,27 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
       if (ty == Ity_I32
-          && 0 == (e->Iex.Get.offset & 3) && e->Iex.Get.offset < 4096-4) {
+          && 0 == (e->Iex.Get.offset & 3) && e->Iex.Get.offset < (4<<12)-4) {
          HReg        dst = newVRegI(env);
          ARM64AMode* am
             = mk_baseblock_32bit_access_amode(e->Iex.Get.offset);
          addInstr(env, ARM64Instr_LdSt32(True/*isLoad*/, dst, am));
+         return dst;
+      }
+      if (ty == Ity_I16
+          && 0 == (e->Iex.Get.offset & 1) && e->Iex.Get.offset < (2<<12)-2) {
+         HReg        dst = newVRegI(env);
+         ARM64AMode* am
+            = mk_baseblock_16bit_access_amode(e->Iex.Get.offset);
+         addInstr(env, ARM64Instr_LdSt16(True/*isLoad*/, dst, am));
+         return dst;
+      }
+      if (ty == Ity_I8
+          /* && no alignment check */ && e->Iex.Get.offset < (1<<12)-1) {
+         HReg        dst = newVRegI(env);
+         ARM64AMode* am
+            = mk_baseblock_8bit_access_amode(e->Iex.Get.offset);
+         addInstr(env, ARM64Instr_LdSt8(True/*isLoad*/, dst, am));
          return dst;
       }
       break;
@@ -5409,7 +5425,8 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
 //ZZ          case Iop_ShrN16x8:
 //ZZ          case Iop_ShrN32x4:
          case Iop_ShrN64x2:
-         case Iop_SarN64x2: {
+         case Iop_SarN64x2:
+         case Iop_ShlN32x4: {
             IRExpr* argL = e->Iex.Binop.arg1;
             IRExpr* argR = e->Iex.Binop.arg2;
             if (argR->tag == Iex_Const && argR->Iex.Const.con->tag == Ico_U8) {
@@ -5421,6 +5438,8 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
                      op = ARM64vecsh_USHR64x2; limit = 63; break;
                   case Iop_SarN64x2:
                      op = ARM64vecsh_SSHR64x2; limit = 63; break;
+                  case Iop_ShlN32x4:
+                     op = ARM64vecsh_SHL32x4;  limit = 31; break;
                   default:
                      vassert(0);
                }

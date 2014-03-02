@@ -906,6 +906,7 @@ static void showARM64VecShiftOp(/*OUT*/const HChar** nm,
    switch (op) {
       case ARM64vecsh_USHR64x2: *nm = "ushr  "; *ar = "2d";  return;
       case ARM64vecsh_SSHR64x2: *nm = "sshr  "; *ar = "2d";  return;
+      case ARM64vecsh_SHL32x4:  *nm = "shl   "; *ar = "4s";  return;
       default: vpanic("showARM64VecShiftImmOp");
    }
 }
@@ -1617,6 +1618,8 @@ ARM64Instr* ARM64Instr_VShiftImmV ( ARM64VecShiftOp op,
    switch (op) {
       case ARM64vecsh_USHR64x2: case ARM64vecsh_SSHR64x2:
          maxSh = 63; break;
+      case ARM64vecsh_SHL32x4:
+         maxSh = 31; break;
       default:
          vassert(0);
    }
@@ -3325,6 +3328,7 @@ static inline UChar qregNo ( HReg r )
 #define X001111  BITS8(0,0, 0,0,1,1,1,1)
 #define X010000  BITS8(0,0, 0,1,0,0,0,0)
 #define X010001  BITS8(0,0, 0,1,0,0,0,1)
+#define X010101  BITS8(0,0, 0,1,0,1,0,1)
 #define X010110  BITS8(0,0, 0,1,0,1,1,0)
 #define X011001  BITS8(0,0, 0,1,1,0,0,1)
 #define X011010  BITS8(0,0, 0,1,1,0,1,0)
@@ -3347,6 +3351,7 @@ static inline UChar qregNo ( HReg r )
 #define X111110  BITS8(0,0, 1,1,1,1,1,0)
 #define X111111  BITS8(0,0, 1,1,1,1,1,1)
 
+#define X0100000  BITS8(0, 0,1,0,0,0,0,0)
 #define X1000000  BITS8(0, 1,0,0,0,0,0,0)
 
 #define X00100000  BITS8(0,0,1,0,0,0,0,0)
@@ -5093,6 +5098,14 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
                     4s  | sh in 1..31 -> let  xxxxx = 32-sh in 01xx:xxx
                     8h  | sh in 1..15 -> let   xxxx = 16-sh in 001x:xxx
                     16b | sh in 1..7  -> let    xxx =  8-sh in 0001:xxx
+
+            0q0 011110 immh immb 010101 n d  SHL Vd.T, Vn.T, #sh
+            where immh:immb
+               = case T of 
+                    2d  | sh in 1..63 -> let xxxxxx = sh in 1xxx:xxx
+                    4s  | sh in 1..31 -> let  xxxxx = sh in 01xx:xxx
+                    8h  | sh in 1..15 -> let   xxxx = sh in 001x:xxx
+                    16b | sh in 1..7  -> let    xxx = sh in 0001:xxx
          */
          UInt vD = qregNo(i->ARM64in.VShiftImmV.dst);
          UInt vN = qregNo(i->ARM64in.VShiftImmV.src);
@@ -5106,6 +5119,14 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
                   UInt xxxxxx = 64-sh;
                   *p++ = X_3_6_7_6_5_5(syned ? X010 : X011, X011110,
                                        X1000000 | xxxxxx, X000001, vN, vD);
+                  goto done;
+               }
+               break;
+            case ARM64vecsh_SHL32x4:
+               if (sh >= 1 && sh <= 31) {
+                  UInt xxxxx = sh;
+                  *p++ = X_3_6_7_6_5_5(X010, X011110,
+                                       X0100000 | xxxxx, X010101, vN, vD);
                   goto done;
                }
                break;

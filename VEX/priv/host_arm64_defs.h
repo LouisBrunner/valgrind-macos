@@ -358,6 +358,7 @@ typedef
    enum {
       ARM64vecsh_USHR64x2=350,
       ARM64vecsh_SSHR64x2,
+      ARM64vecsh_SHL32x4,
       ARM64vecsh_INVALID
    }
    ARM64VecShiftOp;

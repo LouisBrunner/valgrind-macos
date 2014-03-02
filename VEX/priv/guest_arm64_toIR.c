@@ -1089,7 +1089,7 @@ static void putQRegLane ( UInt qregNo, UInt laneNo, IRExpr* e )
    Int    off     = offsetQRegLane(qregNo, laneTy, laneNo);
    switch (laneTy) {
       case Ity_F64: case Ity_I64:
-      case Ity_I32:
+      case Ity_I32: case Ity_F32:
       case Ity_I16:
       case Ity_I8:
          break;
@@ -1099,12 +1099,13 @@ static void putQRegLane ( UInt qregNo, UInt laneNo, IRExpr* e )
    stmt(IRStmt_Put(off, e));
 }
 
-/* Get from the least significant lane of a Qreg. */
+/* Get from a specified lane of a Qreg. */
 static IRExpr* getQRegLane ( UInt qregNo, UInt laneNo, IRType laneTy )
 {
    Int off = offsetQRegLane(qregNo, laneTy, laneNo);
    switch (laneTy) {
-      case Ity_I64: case Ity_I32:
+      case Ity_I64: case Ity_I32: case Ity_I16: case Ity_I8:
+      case Ity_F64:
          break;
       default:
          vassert(0); // Other cases are ATC
@@ -1555,101 +1556,62 @@ void setFlags_COPY ( IRTemp nzcv_28x0 )
 /*--- Misc math helpers                                    ---*/
 /*------------------------------------------------------------*/
 
-/* Generates a 64-bit byte swap. */
-static IRTemp math_BYTESWAP64 ( IRTemp src )
+/* Generate IR for ((x & mask) >>u sh) | ((x << sh) & mask) */
+static IRTemp math_SWAPHELPER ( IRTemp x, ULong mask, Int sh )
 {
-   IRTemp m8  = newTemp(Ity_I64);
-   IRTemp s8  = newTemp(Ity_I64);
-   IRTemp m16 = newTemp(Ity_I64);
-   IRTemp s16 = newTemp(Ity_I64);
-   IRTemp m32 = newTemp(Ity_I64);
-   IRTemp res = newTemp(Ity_I64);
-   assign( m8, mkU64(0xFF00FF00FF00FF00ULL) );
-   assign( s8,
-           binop(Iop_Or64,
-                 binop(Iop_Shr64,
-                       binop(Iop_And64,mkexpr(src),mkexpr(m8)),
-                       mkU8(8)),
-                 binop(Iop_And64,
-                       binop(Iop_Shl64,mkexpr(src),mkU8(8)),
-                       mkexpr(m8))
-                 ) 
-           );
-
-   assign( m16, mkU64(0xFFFF0000FFFF0000ULL) );
-   assign( s16,
-           binop(Iop_Or64,
-                 binop(Iop_Shr64,
-                       binop(Iop_And64,mkexpr(s8),mkexpr(m16)),
-                       mkU8(16)),
-                 binop(Iop_And64,
-                       binop(Iop_Shl64,mkexpr(s8),mkU8(16)),
-                       mkexpr(m16))
-                 ) 
-           );
-
-   assign( m32, mkU64(0xFFFFFFFF00000000ULL) );
+   IRTemp maskT = newTemp(Ity_I64);
+   IRTemp res   = newTemp(Ity_I64);
+   vassert(sh >= 1 && sh <= 63);
+   assign(maskT, mkU64(mask));
    assign( res,
            binop(Iop_Or64,
                  binop(Iop_Shr64,
-                       binop(Iop_And64,mkexpr(s16),mkexpr(m32)),
-                       mkU8(32)),
+                       binop(Iop_And64,mkexpr(x),mkexpr(maskT)),
+                       mkU8(sh)),
                  binop(Iop_And64,
-                       binop(Iop_Shl64,mkexpr(s16),mkU8(32)),
-                       mkexpr(m32))
+                       binop(Iop_Shl64,mkexpr(x),mkU8(sh)),
+                       mkexpr(maskT))
                  ) 
            );
    return res;
 }
 
+/* Generates byte swaps within 32-bit lanes. */
+static IRTemp math_UINTSWAP64 ( IRTemp src )
+{
+   IRTemp res;
+   res = math_SWAPHELPER(src, 0xFF00FF00FF00FF00ULL, 8);
+   res = math_SWAPHELPER(res, 0xFFFF0000FFFF0000ULL, 16);
+   return res;
+}
+
+/* Generates byte swaps within 16-bit lanes. */
+static IRTemp math_USHORTSWAP64 ( IRTemp src )
+{
+   IRTemp res;
+   res = math_SWAPHELPER(src, 0xFF00FF00FF00FF00ULL, 8);
+   return res;
+}
+
+/* Generates a 64-bit byte swap. */
+static IRTemp math_BYTESWAP64 ( IRTemp src )
+{
+   IRTemp res;
+   res = math_SWAPHELPER(src, 0xFF00FF00FF00FF00ULL, 8);
+   res = math_SWAPHELPER(res, 0xFFFF0000FFFF0000ULL, 16);
+   res = math_SWAPHELPER(res, 0xFFFFFFFF00000000ULL, 32);
+   return res;
+}
 
 /* Generates a 64-bit bit swap. */
 static IRTemp math_BITSWAP64 ( IRTemp src )
 {
-   IRTemp m1 = newTemp(Ity_I64);
-   IRTemp s1 = newTemp(Ity_I64);
-   IRTemp m2 = newTemp(Ity_I64);
-   IRTemp s2 = newTemp(Ity_I64);
-   IRTemp m4 = newTemp(Ity_I64);
-   IRTemp s4 = newTemp(Ity_I64);
-   assign( m1, mkU64(0xAAAAAAAAAAAAAAAAULL) );
-   assign( s1,
-           binop(Iop_Or64,
-                 binop(Iop_Shr64,
-                       binop(Iop_And64,mkexpr(src),mkexpr(m1)),
-                       mkU8(1)),
-                 binop(Iop_And64,
-                       binop(Iop_Shl64,mkexpr(src),mkU8(1)),
-                       mkexpr(m1))
-                 ) 
-           );
-
-   assign( m2, mkU64(0xCCCCCCCCCCCCCCCCULL) );
-   assign( s2,
-           binop(Iop_Or64,
-                 binop(Iop_Shr64,
-                       binop(Iop_And64,mkexpr(s1),mkexpr(m2)),
-                       mkU8(2)),
-                 binop(Iop_And64,
-                       binop(Iop_Shl64,mkexpr(s1),mkU8(2)),
-                       mkexpr(m2))
-                 ) 
-           );
-
-   assign( m4, mkU64(0xF0F0F0F0F0F0F0F0ULL) );
-   assign( s4,
-           binop(Iop_Or64,
-                 binop(Iop_Shr64,
-                       binop(Iop_And64,mkexpr(s2),mkexpr(m4)),
-                       mkU8(4)),
-                 binop(Iop_And64,
-                       binop(Iop_Shl64,mkexpr(s2),mkU8(4)),
-                       mkexpr(m4))
-                 ) 
-           );
-   return math_BYTESWAP64(s4);
+   IRTemp res;
+   res = math_SWAPHELPER(src, 0xAAAAAAAAAAAAAAAAULL, 1);
+   res = math_SWAPHELPER(res, 0xCCCCCCCCCCCCCCCCULL, 2);
+   res = math_SWAPHELPER(res, 0xF0F0F0F0F0F0F0F0ULL, 4);
+   return math_BYTESWAP64(res);
 }
-
 
 /* Duplicates the bits at the bottom of the given word to fill the
    whole word.  src :: Ity_I64 is assumed to have zeroes everywhere
@@ -2708,19 +2670,17 @@ Bool dis_ARM64_data_processing_register(/*MB_OUT*/DisResult* dres,
    /* -------------- REV/REV16/REV32/RBIT -------------- */   
    /* 31 30 28       20    15   11 9 4
 
-      1  10 11010110 00000 0000 11 n d    (1)  REV   Xd, Xn
-      0  10 11010110 00000 0000 10 n d    (2)  REV   Wd, Wn
+      1  10 11010110 00000 0000 11 n d    (1) REV   Xd, Xn
+      0  10 11010110 00000 0000 10 n d    (2) REV   Wd, Wn
 
-      1  10 11010110 00000 0000 00 n d    (3)  RBIT  Xd, Xn
-      0  10 11010110 00000 0000 00 n d    (4)  RBIT  Wd, Wn
+      1  10 11010110 00000 0000 00 n d    (3) RBIT  Xd, Xn
+      0  10 11010110 00000 0000 00 n d    (4) RBIT  Wd, Wn
 
       1  10 11010110 00000 0000 01 n d    (5) REV16 Xd, Xn
       0  10 11010110 00000 0000 01 n d    (6) REV16 Wd, Wn
 
       1  10 11010110 00000 0000 10 n d    (7) REV32 Xd, Xn
-
    */
-   /* Only REV and RBIT are currently implemented. */
    if (INSN(30,21) == BITS10(1,0,1,1,0,1,0,1,1,0)
        && INSN(20,12) == BITS9(0,0,0,0,0,0,0,0,0)) {
       UInt b31 = INSN(31,31);
@@ -2734,23 +2694,41 @@ Bool dis_ARM64_data_processing_register(/*MB_OUT*/DisResult* dres,
       else if (b31 == 1 && opc == BITS2(0,1)) ix = 5; 
       else if (b31 == 0 && opc == BITS2(0,1)) ix = 6; 
       else if (b31 == 1 && opc == BITS2(1,0)) ix = 7; 
-      if (ix >= 1 && ix <= 4) {
-         Bool   is64  = ix == 1 || ix == 3;
-         Bool   isBIT = ix == 3 || ix == 4;
+      if (ix >= 1 && ix <= 7) {
+         Bool   is64  = ix == 1 || ix == 3 || ix == 5 || ix == 7;
          UInt   nn    = INSN(9,5);
          UInt   dd    = INSN(4,0);
          IRTemp src   = newTemp(Ity_I64);
          IRTemp dst   = IRTemp_INVALID;
-         if (is64) {
+         IRTemp (*math)(IRTemp) = NULL;
+         switch (ix) {
+            case 1: case 2: math = math_BYTESWAP64;   break;
+            case 3: case 4: math = math_BITSWAP64;    break;
+            case 5: case 6: math = math_USHORTSWAP64; break;
+            case 7:         math = math_UINTSWAP64;   break;
+            default: vassert(0);
+         }
+         const HChar* names[7]
+           = { "rev", "rev", "rbit", "rbit", "rev16", "rev16", "rev32" };
+         const HChar* nm = names[ix-1];
+         vassert(math);
+         if (ix == 6) {
+            /* This has to be special cased, since the logic below doesn't
+               handle it correctly. */
             assign(src, getIReg64orZR(nn));
-            dst = isBIT ? math_BITSWAP64(src) : math_BYTESWAP64(src);
+            dst = math(src);
+            putIReg64orZR(dd,
+                          unop(Iop_32Uto64, unop(Iop_64to32, mkexpr(dst))));
+         } else if (is64) {
+            assign(src, getIReg64orZR(nn));
+            dst = math(src);
             putIReg64orZR(dd, mkexpr(dst));
          } else {
             assign(src, binop(Iop_Shl64, getIReg64orZR(nn), mkU8(32)));
-            dst = isBIT ? math_BITSWAP64(src) : math_BYTESWAP64(src);
+            dst = math(src);
             putIReg32orZR(dd, unop(Iop_64to32, mkexpr(dst)));
          }
-         DIP("%s %s, %s\n", isBIT ? "rbit" : "rev",
+         DIP("%s %s, %s\n", nm,
              nameIRegOrZR(is64,dd), nameIRegOrZR(is64,nn));
          return True;
       }
@@ -5257,7 +5235,7 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
       Bool   ok     = getLaneInfo_Q_SZ(NULL, &tyF, NULL, &zeroHI, &ar,
                                        (Bool)bitQ, (Bool)bitSZ);
       if (ok) {
-         vassert(tyF == Ity_F64 || tyF == Ity_I32);
+         vassert(tyF == Ity_F64 || tyF == Ity_F32);
          IROp op = (tyF == Ity_F64) ? (isFNEG ? Iop_Neg64Fx2 : Iop_Abs64Fx2)
                                     : (isFNEG ? Iop_Neg32Fx4 : Iop_Abs32Fx4);
          IRTemp res = newTemp(Ity_V128);
@@ -5690,6 +5668,37 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
       }
    }
 
+   /* -------------------- FCVTN -------------------- */
+   /* 31  28    23  20    15     9 4
+      0q0 01110 0s1 00001 011010 n d  FCVTN Vd, Vn
+      where case q:s of 00: 16Fx4(lo) <- 32Fx4
+                        01: 32Fx2(lo) <- 64Fx2
+                        10: 16Fx4(hi) <- 32Fx4
+                        11: 32Fx2(hi) <- 64Fx2
+      Only deals with the 32Fx2 <- 64Fx2 version (s==1)
+   */
+   if (INSN(31,31) == 0 && INSN(29,23) == BITS7(0,0,1,1,1,0,0)
+       && INSN(21,10) == BITS12(1,0,0,0,0,1,0,1,1,0,1,0)) {
+      UInt bQ = INSN(30,30);
+      UInt bS = INSN(22,22);
+      UInt nn = INSN(9,5);
+      UInt dd = INSN(4,0);
+      if (bS == 1) {
+         IRTemp  rm    = mk_get_IR_rounding_mode();
+         IRExpr* srcLo = getQRegLane(nn, 0, Ity_F64);
+         IRExpr* srcHi = getQRegLane(nn, 1, Ity_F64);
+         putQRegLane(dd, 2 * bQ + 0, binop(Iop_F64toF32, mkexpr(rm), srcLo));
+         putQRegLane(dd, 2 * bQ + 1, binop(Iop_F64toF32, mkexpr(rm), srcHi));
+         if (bQ == 0) {
+            putQRegLane(dd, 1, mkU64(0));
+         }
+         DIP("fcvtn%s %s.%s, %s.2d\n", bQ ? "2" : "",
+             nameQReg128(dd), bQ ? "4s" : "2s", nameQReg128(nn));
+         return True;
+      }
+      /* else fall through */
+   }
+
    /* ---------------- ADD/SUB (vector) ---------------- */
    /* 31  28    23   21 20 15     9 4
       0q0 01110 size 1  m  100001 n d  ADD Vd.T, Vn.T, Vm.T
@@ -6104,47 +6113,67 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
-   /* ------------ {USHR,SSHR} (vector, immediate) ------------ */
+   /* ------------ {USHR,SSHR,SHL} (vector, immediate) ------------ */
    /* 31  28     22   18   15     9 4
-      0q1 011110 immh immb 000001 n d  USHR Vd.T, Vn.T, #shift
-      0q0 011110 immh immb 000001 n d  SSHR Vd.T, Vn.T, #shift
+      0q1 011110 immh immb 000001 n d  USHR Vd.T, Vn.T, #shift (1)
+      0q0 011110 immh immb 000001 n d  SSHR Vd.T, Vn.T, #shift (2)
+      0q0 011110 immh immb 010101 n d  SHL  Vd.T, Vn.T, #shift (3)
       laneTy, shift = case immh:immb of
-                         0001:xxx -> B, 8-xxx
-                         001x:xxx -> H, 16-xxxx
-                         01xx:xxx -> S, 32-xxxxx
-                         1xxx:xxx -> D, 64-xxxxxx
+                         0001:xxx -> B, SHR:8-xxx,    SHL:xxx
+                         001x:xxx -> H, SHR:16-xxxx   SHL:xxxx
+                         01xx:xxx -> S, SHR:32-xxxxx  SHL:xxxxx
+                         1xxx:xxx -> D, SHR:64-xxxxxx SHL:xxxxxx
                          other    -> invalid
       As usual the case laneTy==D && q==0 is not allowed.
    */
    if (INSN(31,31) == 0 && INSN(28,23) == BITS6(0,1,1,1,1,0)
-       && INSN(15,10) == BITS6(0,0,0,0,0,1)) {
-      Bool isQ  = INSN(30,30) == 1;
-      Bool isU  = INSN(29,29) == 1;
-      UInt immh = INSN(22,19);
-      UInt immb = INSN(18,16);
-      UInt nn   = INSN(9,5);
-      UInt dd   = INSN(4,0);
-      const IROp opsSHRN[4]
-         = { Iop_ShrN8x16, Iop_ShrN16x8, Iop_ShrN32x4, Iop_ShrN64x2 };
-      const IROp opsSARN[4]
-         = { Iop_SarN8x16, Iop_SarN16x8, Iop_SarN32x4, Iop_SarN64x2 };
-      UInt   szBlg2 = 0;
-      UInt   shift  = 0;
-      Bool   ok     = getLaneInfo_IMMH_IMMB(&shift, &szBlg2, immh, immb);
-      if (ok && szBlg2 < 4 && shift > 0 && shift < (8 << szBlg2)
-          && !(szBlg2 == 3/*64bit*/ && !isQ)) {
-         IROp    op  = isU ? opsSHRN[szBlg2] : opsSARN[szBlg2];
-         IRExpr* src = getQReg128(nn);
-         IRExpr* res = binop(op, src, mkU8(shift));
-         putQReg128(dd, isQ ? res : unop(Iop_ZeroHI64ofV128, res));
-         HChar laneCh = "bhsd"[szBlg2];
-         UInt  nLanes = (isQ ? 128 : 64) / (8 << szBlg2);
-         DIP("%s %s.%u%c, %s.%u%c, #%u\n", isU ? "ushr" : "sshr",
-             nameQReg128(dd), nLanes, laneCh,
-             nameQReg128(nn), nLanes, laneCh, shift);
-         return True;
+       && INSN(10,10) == 1) {
+      UInt ix = 0;
+      /**/ if (INSN(29,29) == 1 && INSN(15,11) == BITS5(0,0,0,0,0)) ix = 1;
+      else if (INSN(29,29) == 0 && INSN(15,11) == BITS5(0,0,0,0,0)) ix = 2;
+      else if (INSN(29,29) == 0 && INSN(15,11) == BITS5(0,1,0,1,0)) ix = 3;
+      if (ix > 0) {
+         Bool isQ  = INSN(30,30) == 1;
+         UInt immh = INSN(22,19);
+         UInt immb = INSN(18,16);
+         UInt nn   = INSN(9,5);
+         UInt dd   = INSN(4,0);
+         const IROp opsSHRN[4]
+            = { Iop_ShrN8x16, Iop_ShrN16x8, Iop_ShrN32x4, Iop_ShrN64x2 };
+         const IROp opsSARN[4]
+            = { Iop_SarN8x16, Iop_SarN16x8, Iop_SarN32x4, Iop_SarN64x2 };
+         const IROp opsSHLN[4]
+            = { Iop_ShlN8x16, Iop_ShlN16x8, Iop_ShlN32x4, Iop_ShlN64x2 };
+         UInt szBlg2 = 0;
+         UInt shift  = 0;
+         Bool ok     = getLaneInfo_IMMH_IMMB(&shift, &szBlg2, immh, immb);
+         if (ix == 3) {
+            /* The shift encoding has opposite sign for the leftwards
+               case.  Adjust shift to compensate. */
+            shift = (8 << szBlg2) - shift;
+         }
+         if (ok && szBlg2 < 4 && shift > 0 && shift < (8 << szBlg2)
+             && !(szBlg2 == 3/*64bit*/ && !isQ)) {
+            IROp op = Iop_INVALID;
+            const HChar* nm = NULL;
+            switch (ix) {
+               case 1: op = opsSHRN[szBlg2]; nm = "ushr"; break;
+               case 2: op = opsSARN[szBlg2]; nm = "sshr"; break;
+               case 3: op = opsSHLN[szBlg2]; nm = "shl";  break;
+               default: vassert(0);
+            }
+            IRExpr* src = getQReg128(nn);
+            IRExpr* res = binop(op, src, mkU8(shift));
+            putQReg128(dd, isQ ? res : unop(Iop_ZeroHI64ofV128, res));
+            HChar laneCh = "bhsd"[szBlg2];
+            UInt  nLanes = (isQ ? 128 : 64) / (8 << szBlg2);
+            DIP("%s %s.%u%c, %s.%u%c, #%u\n", nm,
+                nameQReg128(dd), nLanes, laneCh,
+                nameQReg128(nn), nLanes, laneCh, shift);
+            return True;
+         }
+         /* else fall through */
       }
-      /* else fall through */
    }
 
    /* -------------------- {U,S}SHLL{,2} -------------------- */
@@ -6512,6 +6541,35 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
          return True;
       }
       /* else invalid; fall through */
+   }
+
+   /* -------------------- NEG (vector) -------------------- */
+   /* 31  28    23 21    16      9 4
+      0q1 01110 sz 10000 0101110 n d  NEG Vd, Vn
+      sz is laneSz, q:sz == 011 is disallowed, as usual
+   */
+   if (INSN(31,31) == 0 && INSN(29,24) == BITS6(1,0,1,1,1,0)
+       && INSN(21,10) == BITS12(1,0,0,0,0,0,1,0,1,1,1,0)) {
+      Bool isQ    = INSN(30,30) == 1;
+      UInt szBlg2 = INSN(23,22);
+      UInt nn     = INSN(9,5);
+      UInt dd     = INSN(4,0);
+      Bool zeroHI = False;
+      const HChar* arrSpec = "";
+      Bool ok = getLaneInfo_SIMPLE(&zeroHI, &arrSpec, isQ, szBlg2 );
+      if (ok) {
+         const IROp opSUB[4]
+            = { Iop_Sub8x16, Iop_Sub16x8, Iop_Sub32x4, Iop_Sub64x2 };
+         IRTemp res = newTemp(Ity_V128);
+         vassert(szBlg2 < 4);
+         assign(res, binop(opSUB[szBlg2], mkV128(0x0000), getQReg128(nn)));
+         putQReg128(dd, zeroHI ? unop(Iop_ZeroHI64ofV128, mkexpr(res))
+                               : mkexpr(res));
+         DIP("neg %s.%s, %s.%s\n",
+             nameQReg128(dd), arrSpec, nameQReg128(nn), arrSpec);
+         return True;
+      }
+      /* else fall through */
    }
 
    /* FIXME Temporary hacks to get through ld.so FIXME */

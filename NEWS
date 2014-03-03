@@ -52,6 +52,7 @@ where XXXXXX is the bug number as listed below.
 328455  s390x: SIGILL after emitting wrong register pair for ldxbr
 328711  valgrind.1 manpage "memcheck options" section is badly generated
 329612  Incorrect handling of AT_BASE for image execution 
+329956  valgrind crashes when lmw/stmw instructions are used on ppc64
 330459  --track-fds=yes doesn't track eventfds
 330469  Add clock_adjtime syscall support
 330939  Support for AMD's syscall instruction on x86

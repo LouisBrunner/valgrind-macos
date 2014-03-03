@@ -3276,7 +3276,6 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn)
                     getIReg64orZR(rT2));
          } else {
             vassert(bL == 0 && bX == 0);
-            vassert(0); //ATC
             // 32 bit store
             storeLE(binop(Iop_Add64,mkexpr(tTA),mkU64(0)),
                     getIReg32orZR(rT1));
@@ -3685,8 +3684,14 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn)
          }
 
          if (isLD) {
+            if (szB < 16) {
+               putQReg128(tt1, mkV128(0x0000));
+            }
             putQRegLO(tt1,
                       loadLE(ty, binop(Iop_Add64, mkexpr(tTA), mkU64(0))));
+            if (szB < 16) {
+               putQReg128(tt2, mkV128(0x0000));
+            }
             putQRegLO(tt2,
                       loadLE(ty, binop(Iop_Add64, mkexpr(tTA), mkU64(szB))));
          } else {

@@ -1140,7 +1140,10 @@ static void calculateFCSR(UInt fs, UInt ft, UInt inst, Bool sz32, UInt opN)
       vex_bzero(&d->fxState, sizeof(d->fxState));
 
       d->fxState[0].fx     = Ifx_Read;  /* read */
-      d->fxState[0].offset = offsetof(VexGuestMIPS64State, guest_FCSR);
+      if (mode64)
+         d->fxState[0].offset = offsetof(VexGuestMIPS64State, guest_FCSR);
+      else
+         d->fxState[0].offset = offsetof(VexGuestMIPS32State, guest_FCSR);
       d->fxState[0].size   = sizeof(UInt);
       d->fxState[1].fx     = Ifx_Read;  /* read */
       d->fxState[1].offset = floatGuestRegOffset(fs);
@@ -1160,7 +1163,10 @@ static void calculateFCSR(UInt fs, UInt ft, UInt inst, Bool sz32, UInt opN)
       vex_bzero(&d->fxState, sizeof(d->fxState));
 
       d->fxState[0].fx     = Ifx_Read;  /* read */
-      d->fxState[0].offset = offsetof(VexGuestMIPS64State, guest_FCSR);
+      if (mode64)
+         d->fxState[0].offset = offsetof(VexGuestMIPS64State, guest_FCSR);
+      else
+         d->fxState[0].offset = offsetof(VexGuestMIPS32State, guest_FCSR);
       d->fxState[0].size   = sizeof(UInt);
       d->fxState[1].fx     = Ifx_Read;  /* read */
       d->fxState[1].offset = floatGuestRegOffset(fs);

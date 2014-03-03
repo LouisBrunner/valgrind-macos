@@ -10,8 +10,50 @@
 #endif
 
 #include <stdio.h>
+#include <malloc.h>  // memalign
+#include <string.h>  // memset
+#include <assert.h>
 
+typedef  unsigned char           UChar;
+typedef  unsigned short int      UShort;
+typedef  unsigned int            UInt;
+typedef  signed int              Int;
+typedef  unsigned char           UChar;
+typedef  signed long long int    Long;
 typedef  unsigned long long int  ULong;
+
+typedef  unsigned char           Bool;
+#define False ((Bool)0)
+#define True  ((Bool)1)
+
+__attribute__((noinline))
+static void* memalign16(size_t szB)
+{
+   void* x;
+   x = memalign(16, szB);
+   assert(x);
+   assert(0 == ((16-1) & (unsigned long)x));
+   return x;
+}
+
+static inline UChar randUChar ( void )
+{
+   static UInt seed = 80021;
+   seed = 1103515245 * seed + 12345;
+   return (seed >> 17) & 0xFF;
+}
+
+static ULong randULong ( void )
+{
+   Int i;
+   ULong r = 0;
+   for (i = 0; i < 8; i++) {
+      r = (r << 8) | (ULong)(0xFF & randUChar());
+   }
+   return r;
+}
+
+
 
 #define TESTINST1(instruction, RD, carryin) \
 { \
@@ -186,9 +228,16 @@ typedef  unsigned long long int  ULong;
 #define ALLas 0xAAAAAAAAAAAAAAAAULL
 #define ALLfs 0xFFFFFFFFFFFFFFFFULL
 
-int main ( void )
-{
+
 ////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+
+static __attribute__((noinline)) void test_arith ( void )
+{
 printf("misc ad-hoc tests\n");
 
 TESTINST3("add x3, x4, x5", 12345, 6789, x3, x4, x5, 0);
@@ -10528,8 +10577,18 @@ TESTINST4("smsubl x14,w15,w16,x17",
 TESTINST4("smsubl x14,w15,w16,x17",
           0x389ce2f3140cec0c, 0x7a3ab866f2dcd171, 0xa5d72d6243684403, x14,x15,x16,x17, 0);
 
+} /* end of test_arith() */
+
+
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
 
+static __attribute((noinline)) void test_memory ( void )
+{
 printf("Integer loads\n");
 
 unsigned char area[512];
@@ -10542,7 +10601,6 @@ unsigned char area[512];
 #define AREA_MID (((ULong)(&area[(sizeof(area)/2)-1])) & (~(ULong)0xF))
 
 RESET;
-
 
 ////////////////////////////////////////////////////////////////
 printf("LDR,STR (immediate, uimm12) (STR cases are MISSING)");
@@ -10702,7 +10760,471 @@ TESTINST2_hide2("ldarb w21, [x22]", AREA_MID, x21,x22,0);
 ////////////////////////////////////////////////////////////////
 printf("STL{R,RH,RB} (entirely MISSING)\n");
 
+} /* end of test_memory() */
+
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+
+static void show_block_xor ( UChar* block1, UChar* block2, Int n )
+{
+   Int i;
+   printf("  ");
+   for (i = 0; i < n; i++) {
+      if (i > 0 && 0 == (i & 15)) printf("\n  ");
+      if (0 == (i & 15)) printf("[%3d]  ", i);
+      UInt diff = 0xFF & (UInt)(block1[i] - block2[i]);
+      if (diff == 0)
+         printf(".. ");
+      else
+         printf("%02x ", diff);
+   }
+   printf("\n");
+}
 
 
-return 0;
+// In: rand:
+//       memory area, xferred vec regs, xferred int regs, 
+//     caller spec:
+//       addr reg1, addr reg2
+//
+// Out: memory area, xferred vec regs, xferred int regs, addr reg1, addr reg2
+//
+// INSN may mention the following regs as containing load/store data:
+//     x13 x23 v17 v31
+// and
+//     x5 as containing the base address
+//     x6 as containing an offset, if required
+// A memory area is filled with random data, and x13, x23, v17 and v31
+// are loaded with random data too.  INSN is then executed, with
+// x5 set to the middle of the memory area + AREG1OFF, and x6 set to AREG2VAL.
+//
+// What is printed out: the XOR of the old and new versions of the
+// following:
+//    the memory area
+//    x13 x23 v17 v31
+// and the new-old values of these
+//    x5 x6
+// If the insn modifies its base register then the x5 version will
+// be different.
+
+#define MEM_TEST(INSN, AREG1OFF, AREG2VAL) { \
+  int i; \
+  const int N = 256; \
+  UChar* area = memalign16(N); \
+  UChar area2[N]; \
+  for (i = 0; i < N; i++) area[i] = area2[i] = randUChar(); \
+  ULong block[8]; /* x13 x23 v17.d[0] v17.d[1] v31.d[0] v31.d[1] x5 x6 */ \
+  for (i = 0; i < 6; i++) block[i] = randULong(); \
+  block[6] = (ULong)(&area[128]) + (Long)(Int)AREG1OFF; \
+  block[7] = (Long)AREG2VAL; \
+  ULong block2[8]; \
+  for (i = 0; i < 8; i++) block2[i] = block[i]; \
+  __asm__ __volatile__( \
+  "ldr x13, [%0, #0]  ; " \
+  "ldr x23, [%0, #8]  ; " \
+  "ldr q17, [%0, #16] ; " \
+  "ldr q31, [%0, #32] ; " \
+  "ldr x5,  [%0, #48] ; " \
+  "ldr x6,  [%0, #56] ; " \
+  INSN " ; " \
+  "str x13, [%0, #0]  ; " \
+  "str x23, [%0, #8]  ; " \
+  "str q17, [%0, #16] ; " \
+  "str q31, [%0, #32] ; " \
+  "str x5,  [%0, #48] ; " \
+  "str x6,  [%0, #56] ; " \
+  : : "r"(&block[0]) : "x5", "x6", "x13","x23","v17","v31","memory","cc" \
+  ); \
+  printf("%s  with  x5 = middle_of_block+%lld,  x6=%lld\n", \
+         INSN, (Long)AREG1OFF, (Long)AREG2VAL); \
+  show_block_xor(&area2[0], area, 256); \
+  printf("  %016llx  x13      (xfer intreg #1)\n", block[0] ^ block2[0]); \
+  printf("  %016llx  x23      (xfer intreg #2)\n", block[1] ^ block2[1]); \
+  printf("  %016llx  v17.d[0] (xfer vecreg #1)\n", block[2] ^ block2[2]); \
+  printf("  %016llx  v17.d[1] (xfer vecreg #1)\n", block[3] ^ block2[3]); \
+  printf("  %016llx  v31.d[0] (xfer vecreg #2)\n", block[4] ^ block2[4]); \
+  printf("  %016llx  v31.d[1] (xfer vecreg #2)\n", block[5] ^ block2[5]); \
+  printf("  %16lld  x5       (base reg)\n",       block[6] - block2[6]); \
+  printf("  %16lld  x6       (index reg)\n",      block[7] - block2[7]); \
+  printf("\n"); \
+  free(area); \
+  }
+
+static __attribute__((noinline)) void test_memory2 ( void )
+{
+////////////////////////////////////////////////////////////////
+printf("LDR,STR (immediate, uimm12)");
+MEM_TEST("ldr  x13, [x5, #24]", -1, 0);
+MEM_TEST("ldr  w13, [x5, #20]", 1, 0);
+MEM_TEST("ldrh w13, [x5, #44]", 2, 0);
+MEM_TEST("ldrb w13, [x5, #56]", 3, 0);
+MEM_TEST("str  x13, [x5, #24]", -3, 0);
+MEM_TEST("str  w13, [x5, #20]", 5, 0);
+MEM_TEST("strh w13, [x5, #44]", 6, 0);
+MEM_TEST("strb w13, [x5, #56]", 7, 0);
+
+////////////////////////////////////////////////////////////////
+printf("LDUR,STUR (immediate, simm9)\n");
+MEM_TEST("ldr x13, [x5], #-24",  0, 0);
+MEM_TEST("ldr x13, [x5, #-40]!", 0, 0);
+MEM_TEST("ldr x13, [x5, #-48]",  0, 0);
+MEM_TEST("str x13, [x5], #-24",  0, 0);
+MEM_TEST("str x13, [x5, #-40]!", 0, 0);
+MEM_TEST("str x13, [x5, #-48]",  0, 0);
+
+////////////////////////////////////////////////////////////////
+printf("LDP,STP (immediate, simm7)\n");
+MEM_TEST("ldp x13, x23, [x5], #-24",   0, 0);
+MEM_TEST("ldp x13, x23, [x5, #-40]!",  0, 0);
+MEM_TEST("ldp x13, x23, [x5, #-40]",   0, 0);
+MEM_TEST("stp x13, x23, [x5], #-24",   0, 0);
+MEM_TEST("stp x13, x23, [x5, #-40]!",  0, 0);
+MEM_TEST("stp x13, x23, [x5, #-40]",   0, 0);
+
+MEM_TEST("ldp w13, w23, [x5], #-24",   0, 0);
+MEM_TEST("ldp w13, w23, [x5, #-40]!",  0, 0);
+MEM_TEST("ldp w13, w23, [x5, #-40]",   0, 0);
+MEM_TEST("stp w13, w23, [x5], #-24",   0, 0);
+MEM_TEST("stp w13, w23, [x5, #-40]!",  0, 0);
+MEM_TEST("stp w13, w23, [x5, #-40]",   0, 0);
+
+////////////////////////////////////////////////////////////////
+printf("LDR (literal, int reg) (DONE ABOVE)\n");
+
+////////////////////////////////////////////////////////////////
+printf("{LD,ST}R (integer register) (entirely MISSING)\n");
+MEM_TEST("str x13, [x5, x6]",          12, -4);
+MEM_TEST("str x13, [x5, x6, lsl #3]",  12, -4);
+MEM_TEST("str x13, [x5, w6, uxtw]",    12,  4);
+MEM_TEST("str x13, [x5, w6, uxtw #3]", 12,  4);
+MEM_TEST("str x13, [x5, w6, sxtw]",    12,  4);
+MEM_TEST("str x13, [x5, w6, sxtw #3]", 12,  -4);
+MEM_TEST("ldr x13, [x5, x6]",          12, -4);
+MEM_TEST("ldr x13, [x5, x6, lsl #3]",  12, -4);
+MEM_TEST("ldr x13, [x5, w6, uxtw]",    12,  4);
+MEM_TEST("ldr x13, [x5, w6, uxtw #3]", 12,  4);
+MEM_TEST("ldr x13, [x5, w6, sxtw]",    12,  4);
+MEM_TEST("ldr x13, [x5, w6, sxtw #3]", 12,  -4);
+
+MEM_TEST("str w13, [x5, x6]",          12, -4);
+MEM_TEST("str w13, [x5, x6, lsl #2]",  12, -4);
+MEM_TEST("str w13, [x5, w6, uxtw]",    12,  4);
+MEM_TEST("str w13, [x5, w6, uxtw #2]", 12,  4);
+MEM_TEST("str w13, [x5, w6, sxtw]",    12,  4);
+MEM_TEST("str w13, [x5, w6, sxtw #2]", 12,  -4);
+MEM_TEST("ldr w13, [x5, x6]",          12, -4);
+MEM_TEST("ldr w13, [x5, x6, lsl #2]",  12, -4);
+MEM_TEST("ldr w13, [x5, w6, uxtw]",    12,  4);
+MEM_TEST("ldr w13, [x5, w6, uxtw #2]", 12,  4);
+MEM_TEST("ldr w13, [x5, w6, sxtw]",    12,  4);
+MEM_TEST("ldr w13, [x5, w6, sxtw #2]", 12,  -4);
+
+MEM_TEST("strh w13, [x5, x6]",          12, -4);
+MEM_TEST("strh w13, [x5, x6, lsl #1]",  12, -4);
+MEM_TEST("strh w13, [x5, w6, uxtw]",    12,  4);
+MEM_TEST("strh w13, [x5, w6, uxtw #1]", 12,  4);
+MEM_TEST("strh w13, [x5, w6, sxtw]",    12,  4);
+MEM_TEST("strh w13, [x5, w6, sxtw #1]", 12,  -4);
+MEM_TEST("ldrh w13, [x5, x6]",          12, -4);
+MEM_TEST("ldrh w13, [x5, x6, lsl #1]",  12, -4);
+MEM_TEST("ldrh w13, [x5, w6, uxtw]",    12,  4);
+MEM_TEST("ldrh w13, [x5, w6, uxtw #1]", 12,  4);
+MEM_TEST("ldrh w13, [x5, w6, sxtw]",    12,  4);
+MEM_TEST("ldrh w13, [x5, w6, sxtw #1]", 12,  -4);
+
+MEM_TEST("strb w13, [x5, x6]",          12, -4);
+MEM_TEST("strb w13, [x5, x6, lsl #0]",  12, -4);
+MEM_TEST("strb w13, [x5, w6, uxtw]",    12,  4);
+MEM_TEST("strb w13, [x5, w6, uxtw #0]", 12,  4);
+MEM_TEST("strb w13, [x5, w6, sxtw]",    12,  4);
+MEM_TEST("strb w13, [x5, w6, sxtw #0]", 12,  -4);
+MEM_TEST("ldrb w13, [x5, x6]",          12, -4);
+MEM_TEST("ldrb w13, [x5, x6, lsl #0]",  12, -4);
+MEM_TEST("ldrb w13, [x5, w6, uxtw]",    12,  4);
+MEM_TEST("ldrb w13, [x5, w6, uxtw #0]", 12,  4);
+MEM_TEST("ldrb w13, [x5, w6, sxtw]",    12,  4);
+MEM_TEST("ldrb w13, [x5, w6, sxtw #0]", 12,  -4);
+
+////////////////////////////////////////////////////////////////
+printf("LDRS{B,H,W} (uimm12)\n");
+MEM_TEST("ldrsw x13, [x5, #24]", -16, 4);
+MEM_TEST("ldrsh x13, [x5, #20]", -16, 4);
+MEM_TEST("ldrsh w13, [x5, #44]", -16, 4);
+MEM_TEST("ldrsb x13, [x5, #72]", -16, 4);
+MEM_TEST("ldrsb w13, [x5, #56]", -16, 4);
+
+////////////////////////////////////////////////////////////////
+printf("LDRS{B,H,W} (simm9, upd) (upd check is MISSING)\n");
+MEM_TEST("ldrsw x13, [x5, #-24]!", -16, 4);
+MEM_TEST("ldrsh x13, [x5, #-20]!", -16, 4);
+MEM_TEST("ldrsh w13, [x5, #-44]!", -16, 4);
+MEM_TEST("ldrsb x13, [x5, #-72]!", -16, 4);
+MEM_TEST("ldrsb w13, [x5, #-56]!", -16, 4);
+
+MEM_TEST("ldrsw x13, [x5], #-24", -16, 4);
+MEM_TEST("ldrsh x13, [x5], #-20", -16, 4);
+MEM_TEST("ldrsh w13, [x5], #-44", -16, 4);
+MEM_TEST("ldrsb x13, [x5], #-72", -16, 4);
+MEM_TEST("ldrsb w13, [x5], #-56", -16, 4);
+
+////////////////////////////////////////////////////////////////
+printf("LDRS{B,H,W} (simm9, noUpd)\n");
+MEM_TEST("ldrsw x13, [x5, #-24]", -16, 4);
+MEM_TEST("ldrsh x13, [x5, #-20]", -16, 4);
+MEM_TEST("ldrsh w13, [x5, #-44]", -16, 4);
+MEM_TEST("ldrsb x13, [x5, #-72]", -16, 4);
+MEM_TEST("ldrsb w13, [x5, #-56]", -16, 4);
+
+////////////////////////////////////////////////////////////////
+printf("LDP,STP (immediate, simm7) (FP&VEC)\n");
+
+MEM_TEST("stp q17, q31, [x5, 32]",  -16, 4);
+MEM_TEST("stp q17, q31, [x5, 32]!", -16, 4);
+MEM_TEST("stp q17, q31, [x5], 32",  -16, 4);
+
+MEM_TEST("stp d17, d31, [x5, 32]",  -16, 4);
+MEM_TEST("stp d17, d31, [x5, 32]!", -16, 4);
+MEM_TEST("stp d17, d31, [x5], 32",  -16, 4);
+
+//MEM_TEST("stp s17, s31, [x5, 32]",  -16, 4);
+//MEM_TEST("stp s17, s31, [x5, 32]!", -16, 4);
+//MEM_TEST("stp s17, s31, [x5], 32",  -16, 4);
+
+MEM_TEST("ldp q17, q31, [x5, 32]",  -16, 4);
+MEM_TEST("ldp q17, q31, [x5, 32]!", -16, 4);
+MEM_TEST("ldp q17, q31, [x5], 32",  -16, 4);
+
+MEM_TEST("ldp d17, d31, [x5, 32]",  -16, 4);
+MEM_TEST("ldp d17, d31, [x5, 32]!", -16, 4);
+MEM_TEST("ldp d17, d31, [x5], 32",  -16, 4);
+
+//MEM_TEST("ldp s17, s31, [x5, 32]",  -16, 4);
+//MEM_TEST("ldp s17, s31, [x5, 32]!", -16, 4);
+//MEM_TEST("ldp s17, s31, [x5], 32",  -16, 4);
+
+////////////////////////////////////////////////////////////////
+printf("{LD,ST}R (vector register)\n");
+
+#if 0
+MEM_TEST("str q17, [x5, x6]",          12, -4);
+MEM_TEST("str q17, [x5, x6, lsl #4]",  12, -4);
+MEM_TEST("str q17, [x5, w6, uxtw]",    12,  4);
+MEM_TEST("str q17, [x5, w6, uxtw #4]", 12,  4);
+MEM_TEST("str q17, [x5, w6, sxtw]",    12,  4);
+MEM_TEST("str q17, [x5, w6, sxtw #4]", 12,  -4);
+MEM_TEST("ldr q17, [x5, x6]",          12, -4);
+MEM_TEST("ldr q17, [x5, x6, lsl #4]",  12, -4);
+MEM_TEST("ldr q17, [x5, w6, uxtw]",    12,  4);
+MEM_TEST("ldr q17, [x5, w6, uxtw #4]", 12,  4);
+MEM_TEST("ldr q17, [x5, w6, sxtw]",    12,  4);
+MEM_TEST("ldr q17, [x5, w6, sxtw #4]", 12,  -4);
+#endif
+
+MEM_TEST("str d17, [x5, x6]",          12, -4);
+MEM_TEST("str d17, [x5, x6, lsl #3]",  12, -4);
+MEM_TEST("str d17, [x5, w6, uxtw]",    12,  4);
+MEM_TEST("str d17, [x5, w6, uxtw #3]", 12,  4);
+MEM_TEST("str d17, [x5, w6, sxtw]",    12,  4);
+MEM_TEST("str d17, [x5, w6, sxtw #3]", 12,  -4);
+MEM_TEST("ldr d17, [x5, x6]",          12, -4);
+MEM_TEST("ldr d17, [x5, x6, lsl #3]",  12, -4);
+MEM_TEST("ldr d17, [x5, w6, uxtw]",    12,  4);
+MEM_TEST("ldr d17, [x5, w6, uxtw #3]", 12,  4);
+MEM_TEST("ldr d17, [x5, w6, sxtw]",    12,  4);
+MEM_TEST("ldr d17, [x5, w6, sxtw #3]", 12,  -4);
+
+MEM_TEST("str s17, [x5, x6]",          12, -4);
+MEM_TEST("str s17, [x5, x6, lsl #2]",  12, -4);
+MEM_TEST("str s17, [x5, w6, uxtw]",    12,  4);
+MEM_TEST("str s17, [x5, w6, uxtw #2]", 12,  4);
+MEM_TEST("str s17, [x5, w6, sxtw]",    12,  4);
+MEM_TEST("str s17, [x5, w6, sxtw #2]", 12,  -4);
+MEM_TEST("ldr s17, [x5, x6]",          12, -4);
+MEM_TEST("ldr s17, [x5, x6, lsl #2]",  12, -4);
+MEM_TEST("ldr s17, [x5, w6, uxtw]",    12,  4);
+MEM_TEST("ldr s17, [x5, w6, uxtw #2]", 12,  4);
+MEM_TEST("ldr s17, [x5, w6, sxtw]",    12,  4);
+MEM_TEST("ldr s17, [x5, w6, sxtw #2]", 12,  -4);
+
+#if 0
+MEM_TEST("str h17, [x5, x6]",          12, -4);
+MEM_TEST("str h17, [x5, x6, lsl #1]",  12, -4);
+MEM_TEST("str h17, [x5, w6, uxtw]",    12,  4);
+MEM_TEST("str h17, [x5, w6, uxtw #1]", 12,  4);
+MEM_TEST("str h17, [x5, w6, sxtw]",    12,  4);
+MEM_TEST("str h17, [x5, w6, sxtw #1]", 12,  -4);
+MEM_TEST("ldr h17, [x5, x6]",          12, -4);
+MEM_TEST("ldr h17, [x5, x6, lsl #1]",  12, -4);
+MEM_TEST("ldr h17, [x5, w6, uxtw]",    12,  4);
+MEM_TEST("ldr h17, [x5, w6, uxtw #1]", 12,  4);
+MEM_TEST("ldr h17, [x5, w6, sxtw]",    12,  4);
+MEM_TEST("ldr h17, [x5, w6, sxtw #1]", 12,  -4);
+
+MEM_TEST("str b17, [x5, x6]",          12, -4);
+MEM_TEST("str b17, [x5, x6, lsl #0]",  12, -4);
+MEM_TEST("str b17, [x5, w6, uxtw]",    12,  4);
+MEM_TEST("str b17, [x5, w6, uxtw #0]", 12,  4);
+MEM_TEST("str b17, [x5, w6, sxtw]",    12,  4);
+MEM_TEST("str b17, [x5, w6, sxtw #0]", 12,  -4);
+MEM_TEST("ldr b17, [x5, x6]",          12, -4);
+MEM_TEST("ldr b17, [x5, x6, lsl #0]",  12, -4);
+MEM_TEST("ldr b17, [x5, w6, uxtw]",    12,  4);
+MEM_TEST("ldr b17, [x5, w6, uxtw #0]", 12,  4);
+MEM_TEST("ldr b17, [x5, w6, sxtw]",    12,  4);
+MEM_TEST("ldr b17, [x5, w6, sxtw #0]", 12,  -4);
+#endif
+
+////////////////////////////////////////////////////////////////
+printf("LDRS{B,H,W} (integer register, SX)\n");
+
+MEM_TEST("ldrsw x13, [x5,x6]", 12, -4);
+MEM_TEST("ldrsw x13, [x5,x6, lsl #2]", 12, -4);
+MEM_TEST("ldrsw x13, [x5,w6,uxtw #0]", 12, 4);
+MEM_TEST("ldrsw x13, [x5,w6,uxtw #2]", 12, 4);
+MEM_TEST("ldrsw x13, [x5,w6,sxtw #0]", 12, 4);
+MEM_TEST("ldrsw x13, [x5,w6,sxtw #2]", 12, -4);
+
+MEM_TEST("ldrsh x13, [x5,x6]",  12, -4);
+MEM_TEST("ldrsh x13, [x5,x6, lsl #1]",  12, -4);
+MEM_TEST("ldrsh x13, [x5,w6,uxtw #0]", 12, 4);
+MEM_TEST("ldrsh x13, [x5,w6,uxtw #1]", 12, 4);
+MEM_TEST("ldrsh x13, [x5,w6,sxtw #0]", 12, 4);
+MEM_TEST("ldrsh x13, [x5,w6,sxtw #1]",  12, -4);
+
+MEM_TEST("ldrsh w13, [x5,x6]",  12, -4);
+MEM_TEST("ldrsh w13, [x5,x6, lsl #1]",  12, -4);
+MEM_TEST("ldrsh w13, [x5,w6,uxtw #0]", 12, 4);
+MEM_TEST("ldrsh w13, [x5,w6,uxtw #1]", 12, 4);
+MEM_TEST("ldrsh w13, [x5,w6,sxtw #0]", 12, 4);
+MEM_TEST("ldrsh w13, [x5,w6,sxtw #1]",  12, -4);
+
+MEM_TEST("ldrsb x13, [x5,x6]",  12, -4);
+MEM_TEST("ldrsb x13, [x5,x6, lsl #0]",  12, -4);
+MEM_TEST("ldrsb x13, [x5,w6,uxtw #0]", 12, 4);
+MEM_TEST("ldrsb x13, [x5,w6,uxtw #0]", 12, 4);
+MEM_TEST("ldrsb x13, [x5,w6,sxtw #0]", 12, 4);
+MEM_TEST("ldrsb x13, [x5,w6,sxtw #0]",  12, -4);
+
+MEM_TEST("ldrsb w13, [x5,x6]",  12, -4);
+MEM_TEST("ldrsb w13, [x5,x6, lsl #0]",  12, -4);
+MEM_TEST("ldrsb w13, [x5,w6,uxtw #0]", 12, 4);
+MEM_TEST("ldrsb w13, [x5,w6,uxtw #0]", 12, 4);
+MEM_TEST("ldrsb w13, [x5,w6,sxtw #0]", 12, 4);
+MEM_TEST("ldrsb w13, [x5,w6,sxtw #0]",  12, -4);
+
+
+////////////////////////////////////////////////////////////////
+printf("LDR/STR (immediate, SIMD&FP, unsigned offset)\n");
+MEM_TEST("str q17, [x5, #-32]", 16, 0);
+MEM_TEST("str d17, [x5, #-32]", 16, 0);
+MEM_TEST("str s17, [x5, #-32]", 16, 0);
+//MEM_TEST("str h17, [x5, #-32]", 16, 0);
+//MEM_TEST("str b17, [x5, #-32]", 16, 0);
+MEM_TEST("ldr q17, [x5, #-32]", 16, 0);
+MEM_TEST("ldr d17, [x5, #-32]", 16, 0);
+MEM_TEST("ldr s17, [x5, #-32]", 16, 0);
+//MEM_TEST("ldr h17, [x5, #-32]", 16, 0);
+//MEM_TEST("ldr b17, [x5, #-32]", 16, 0);
+
+////////////////////////////////////////////////////////////////
+printf("LDR/STR (immediate, SIMD&FP, pre/post index)\n");
+MEM_TEST("str q17, [x5], #-32", 16, 0);
+MEM_TEST("str d17, [x5], #-32", 16, 0);
+MEM_TEST("str s17, [x5], #-32", 16, 0);
+//MEM_TEST("str h17, [x5], #-32", 16, 0);
+//MEM_TEST("str b17, [x5], #-32", 16, 0);
+MEM_TEST("ldr q17, [x5], #-32", 16, 0);
+MEM_TEST("ldr d17, [x5], #-32", 16, 0);
+MEM_TEST("ldr s17, [x5], #-32", 16, 0);
+//MEM_TEST("ldr h17, [x5], #-32", 16, 0);
+//MEM_TEST("ldr b17, [x5], #-32", 16, 0);
+
+MEM_TEST("str q17, [x5, #-32]!", 16, 0);
+MEM_TEST("str d17, [x5, #-32]!", 16, 0);
+MEM_TEST("str s17, [x5, #-32]!", 16, 0);
+//MEM_TEST("str h17, [x5, #-32]!", 16, 0);
+//MEM_TEST("str b17, [x5, #-32]!", 16, 0);
+MEM_TEST("ldr q17, [x5, #-32]!", 16, 0);
+MEM_TEST("ldr d17, [x5, #-32]!", 16, 0);
+MEM_TEST("ldr s17, [x5, #-32]!", 16, 0);
+//MEM_TEST("ldr h17, [x5, #-32]!", 16, 0);
+//MEM_TEST("ldr b17, [x5, #-32]!", 16, 0);
+
+
+////////////////////////////////////////////////////////////////
+printf("LDUR/STUR (unscaled offset, SIMD&FP)\n");
+MEM_TEST("str q17, [x5, #-13]", 16, 0);
+MEM_TEST("str d17, [x5, #-13]", 16, 0);
+MEM_TEST("str s17, [x5, #-13]", 16, 0);
+//MEM_TEST("str h17, [x5, #-13]", 16, 0);
+//MEM_TEST("str b17, [x5, #-13]", 16, 0);
+MEM_TEST("ldr q17, [x5, #-13]", 16, 0);
+MEM_TEST("ldr d17, [x5, #-13]", 16, 0);
+MEM_TEST("ldr s17, [x5, #-13]", 16, 0);
+//MEM_TEST("ldr h17, [x5, #-13]", 16, 0);
+//MEM_TEST("ldr b17, [x5, #-13]", 16, 0);
+
+////////////////////////////////////////////////////////////////
+printf("LDR (literal, SIMD&FP) (entirely MISSING)\n");
+
+////////////////////////////////////////////////////////////////
+printf("LD1/ST1 (single structure, no offset)\n");
+MEM_TEST("st1 {v17.2d},  [x5]", 3, 0)
+MEM_TEST("st1 {v17.4s},  [x5]", 5, 0)
+MEM_TEST("st1 {v17.8h},  [x5]", 7, 0)
+MEM_TEST("st1 {v17.16b}, [x5]", 13, 0)
+MEM_TEST("st1 {v17.1d},  [x5]", 3, 0)
+MEM_TEST("st1 {v17.2s},  [x5]", 5, 0)
+MEM_TEST("st1 {v17.4h},  [x5]", 7, 0)
+MEM_TEST("st1 {v17.8b},  [x5]", 13, 0)
+
+MEM_TEST("ld1 {v17.2d},  [x5]", 3, 0)
+MEM_TEST("ld1 {v17.4s},  [x5]", 5, 0)
+MEM_TEST("ld1 {v17.8h},  [x5]", 7, 0)
+MEM_TEST("ld1 {v17.16b}, [x5]", 13, 0)
+MEM_TEST("ld1 {v17.1d},  [x5]", 3, 0)
+MEM_TEST("ld1 {v17.2s},  [x5]", 5, 0)
+MEM_TEST("ld1 {v17.4h},  [x5]", 7, 0)
+MEM_TEST("ld1 {v17.8b},  [x5]", 13, 0)
+
+
+////////////////////////////////////////////////////////////////
+printf("LD1/ST1 (single structure, post index)\n");
+MEM_TEST("st1 {v17.2d},  [x5], #16", 3, 0)
+MEM_TEST("st1 {v17.4s},  [x5], #16", 5, 0)
+MEM_TEST("st1 {v17.8h},  [x5], #16", 7, 0)
+MEM_TEST("st1 {v17.16b}, [x5], #16", 13, 0)
+//MEM_TEST("st1 {v17.1d},  [x5], #8", 3, 0)
+MEM_TEST("st1 {v17.2s},  [x5], #8", 5, 0)
+MEM_TEST("st1 {v17.4h},  [x5], #8", 7, 0)
+//MEM_TEST("st1 {v17.8b},  [x5], #8", 13, 0)
+
+MEM_TEST("ld1 {v17.2d},  [x5], #16", 3, 0)
+MEM_TEST("ld1 {v17.4s},  [x5], #16", 5, 0)
+MEM_TEST("ld1 {v17.8h},  [x5], #16", 7, 0)
+MEM_TEST("ld1 {v17.16b}, [x5], #16", 13, 0)
+//MEM_TEST("ld1 {v17.1d},  [x5], #8", 3, 0)
+//MEM_TEST("ld1 {v17.2s},  [x5], #8", 5, 0)
+//MEM_TEST("ld1 {v17.4h},  [x5], #8", 7, 0)
+//MEM_TEST("ld1 {v17.8b},  [x5], #8", 13, 0)
+
+} /* end of test_memory2() */
+
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+
+int main ( void )
+{
+  if (1) test_arith();
+  if (1) test_memory();
+  test_memory2();
+  return 0;
 }

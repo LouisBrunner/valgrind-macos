@@ -957,6 +957,13 @@ struct vki_shminfo64 {
    an error condition. I.e. the system call failed. */
 #define VKI_MAX_ERRNO       -125
 
+//----------------------------------------------------------------------
+// From linux-2.6.8.1/include/asm-generic/errno.h
+//----------------------------------------------------------------------
+
+#define	VKI_ENOSYS       38  /* Function not implemented */
+#define	VKI_EOVERFLOW    75  /* Value too large for defined data type */
+
 #endif // __VKI_S390X_LINUX_H
 
 /*--------------------------------------------------------------------*/

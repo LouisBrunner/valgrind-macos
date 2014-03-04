@@ -671,6 +671,13 @@ struct vki_shminfo64 {
 //#define VKI_PTRACE_SETFPREGS          15
 
 //----------------------------------------------------------------------
+// From linux-2.6.8.1/include/asm-generic/errno.h
+//----------------------------------------------------------------------
+
+#define	VKI_ENOSYS       38  /* Function not implemented */
+#define	VKI_EOVERFLOW    75  /* Value too large for defined data type */
+
+//----------------------------------------------------------------------
 // And that's it!
 //----------------------------------------------------------------------
  

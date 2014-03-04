@@ -976,6 +976,13 @@ enum vki_sock_type {
 };
 #define ARCH_HAS_SOCKET_TYPES 1
 
+//----------------------------------------------------------------------
+// From linux-3.13.0/include/asm/errno.h
+//----------------------------------------------------------------------
+
+#define	VKI_ENOSYS       89  /* Function not implemented */
+#define	VKI_EOVERFLOW    79  /* Value too large for defined data type */
+
 #endif // __VKI_MIPS32_LINUX_H
 
 /*--------------------------------------------------------------------*/

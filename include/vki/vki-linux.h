@@ -1244,9 +1244,6 @@ struct  vki_seminfo {
 
 #define VKI_EWOULDBLOCK		VKI_EAGAIN
 
-#define	VKI_ENOSYS		38	/* Function not implemented */
-#define	VKI_EOVERFLOW		75	/* Value too large for defined data type */
-
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/wait.h
 //----------------------------------------------------------------------

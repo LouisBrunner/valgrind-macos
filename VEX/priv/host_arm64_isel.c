@@ -1812,6 +1812,10 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
               cvt_op = ARM64cvt_F64_I32U; srcIsD = True; break;
            case Iop_F32toI32S:
               cvt_op = ARM64cvt_F32_I32S; srcIsD = False; break;
+           case Iop_F32toI32U:
+              cvt_op = ARM64cvt_F32_I32U; srcIsD = False; break;
+           case Iop_F32toI64S:
+              cvt_op = ARM64cvt_F32_I64S; srcIsD = False; break;
            case Iop_F32toI64U:
               cvt_op = ARM64cvt_F32_I64U; srcIsD = False; break;
            default:
@@ -2118,6 +2122,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
                                            ARM64sh_SAR));
             return dst;
          }
+         case Iop_NarrowUn16to8x8:
          case Iop_NarrowUn32to16x4:
          case Iop_NarrowUn64to32x2: {
             HReg src = iselV128Expr(env, e->Iex.Unop.arg);
@@ -2125,6 +2130,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             HReg dst = newVRegI(env);
             UInt dszBlg2 = 3; /* illegal */
             switch (e->Iex.Unop.op) {
+               case Iop_NarrowUn16to8x8:  dszBlg2 = 0; break; // 16to8_x8
                case Iop_NarrowUn32to16x4: dszBlg2 = 1; break; // 32to16_x4
                case Iop_NarrowUn64to32x2: dszBlg2 = 2; break; // 64to32_x2
                default: vassert(0);
@@ -5425,8 +5431,10 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
 //ZZ          case Iop_ShrN16x8:
 //ZZ          case Iop_ShrN32x4:
          case Iop_ShrN64x2:
+         case Iop_ShrN16x8:
          case Iop_SarN64x2:
-         case Iop_ShlN32x4: {
+         case Iop_ShlN32x4:
+         {
             IRExpr* argL = e->Iex.Binop.arg1;
             IRExpr* argR = e->Iex.Binop.arg2;
             if (argR->tag == Iex_Const && argR->Iex.Const.con->tag == Ico_U8) {
@@ -5436,6 +5444,8 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
                switch (e->Iex.Binop.op) {
                   case Iop_ShrN64x2:
                      op = ARM64vecsh_USHR64x2; limit = 63; break;
+                  case Iop_ShrN16x8:
+                     op = ARM64vecsh_USHR16x8; limit = 15; break;
                   case Iop_SarN64x2:
                      op = ARM64vecsh_SSHR64x2; limit = 63; break;
                   case Iop_ShlN32x4:
@@ -6167,11 +6177,13 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
             addInstr(env, ARM64Instr_VCvtSD(False/*dToS*/, dstS, srcD));
             return dstS;
          }
+         case Iop_I32UtoF32:
          case Iop_I32StoF32:
          case Iop_I64UtoF32:
          case Iop_I64StoF32: {
             ARM64CvtOp cvt_op = ARM64cvt_INVALID;
             switch (e->Iex.Binop.op) {
+               case Iop_I32UtoF32: cvt_op = ARM64cvt_F32_I32U; break;
                case Iop_I32StoF32: cvt_op = ARM64cvt_F32_I32S; break;
                case Iop_I64UtoF32: cvt_op = ARM64cvt_F32_I64U; break;
                case Iop_I64StoF32: cvt_op = ARM64cvt_F32_I64S; break;

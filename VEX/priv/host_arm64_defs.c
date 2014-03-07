@@ -905,6 +905,7 @@ static void showARM64VecShiftOp(/*OUT*/const HChar** nm,
 {
    switch (op) {
       case ARM64vecsh_USHR64x2: *nm = "ushr  "; *ar = "2d";  return;
+      case ARM64vecsh_USHR16x8: *nm = "ushr  "; *ar = "8h";  return;
       case ARM64vecsh_SSHR64x2: *nm = "sshr  "; *ar = "2d";  return;
       case ARM64vecsh_SHL32x4:  *nm = "shl   "; *ar = "4s";  return;
       default: vpanic("showARM64VecShiftImmOp");
@@ -1620,6 +1621,8 @@ ARM64Instr* ARM64Instr_VShiftImmV ( ARM64VecShiftOp op,
          maxSh = 63; break;
       case ARM64vecsh_SHL32x4:
          maxSh = 31; break;
+      case ARM64vecsh_USHR16x8:
+         maxSh = 15; break;
       default:
          vassert(0);
    }
@@ -3351,6 +3354,7 @@ static inline UChar qregNo ( HReg r )
 #define X111110  BITS8(0,0, 1,1,1,1,1,0)
 #define X111111  BITS8(0,0, 1,1,1,1,1,1)
 
+#define X0010000  BITS8(0, 0,0,1,0,0,0,0)
 #define X0100000  BITS8(0, 0,1,0,0,0,0,0)
 #define X1000000  BITS8(0, 1,0,0,0,0,0,0)
 
@@ -4679,7 +4683,9 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
             case ARM64cvt_F64_I64S: /* SCVTF Dd, Xn */
                *p++ = X_3_5_8_6_5_5(X100, X11110, X01100010, X000000, rN, rD);
                break;
-            /* UCVTF Sd, Wn  ATC */
+            case ARM64cvt_F32_I32U: /* UCVTF Sd, Wn */
+               *p++ = X_3_5_8_6_5_5(X000, X11110, X00100011, X000000, rN, rD);
+               break;
             case ARM64cvt_F64_I32U: /* UCVTF Dd, Wn */
                *p++ = X_3_5_8_6_5_5(X000, X11110, X01100011, X000000, rN, rD);
                break;
@@ -4728,12 +4734,18 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
                *p++ = X_3_5_8_6_5_5(X100, X11110, X01100001 | (armRM << 3),
                                     X000000, rN, rD);
                break;
-            /* */
             case ARM64cvt_F32_I32S: /* FCVTxS Wd, Sn */
                *p++ = X_3_5_8_6_5_5(X000, X11110, X00100000 | (armRM << 3),
                                     X000000, rN, rD);
                break;
-            /* */
+            case ARM64cvt_F32_I32U: /* FCVTxU Wd, Sn */
+               *p++ = X_3_5_8_6_5_5(X000, X11110, X00100001 | (armRM << 3),
+                                    X000000, rN, rD);
+               break;
+            case ARM64cvt_F32_I64S: /* FCVTxS Xd, Sn */
+               *p++ = X_3_5_8_6_5_5(X100, X11110, X00100000 | (armRM << 3),
+                                    X000000, rN, rD);
+               break;
             case ARM64cvt_F32_I64U: /* FCVTxU Xd, Sn */
                *p++ = X_3_5_8_6_5_5(X100, X11110, X00100001 | (armRM << 3),
                                     X000000, rN, rD);
@@ -5127,6 +5139,15 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
                   UInt xxxxx = sh;
                   *p++ = X_3_6_7_6_5_5(X010, X011110,
                                        X0100000 | xxxxx, X010101, vN, vD);
+                  goto done;
+               }
+               break;
+            //case ARM64vecsh_SSHR16x8: syned = True; ATC
+            case ARM64vecsh_USHR16x8: /* fallthrough */
+               if (sh >= 1 && sh <= 15) {
+                  UInt xxxx = 16-sh;
+                  *p++ = X_3_6_7_6_5_5(syned ? X010 : X011, X011110,
+                                       X0010000 | xxxx, X000001, vN, vD);
                   goto done;
                }
                break;

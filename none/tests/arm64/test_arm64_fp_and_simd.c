@@ -17,7 +17,7 @@ typedef  unsigned char           Bool;
 #define True  ((Bool)1)
 
 
-#define ITERS 1
+#define ITERS 10
 
 
 union _V128 {
@@ -972,6 +972,8 @@ GEN_UNARY_TEST(xtn,  2s, 2d)
 GEN_UNARY_TEST(xtn2, 4s, 2d)
 GEN_UNARY_TEST(xtn,  4h, 4s)
 GEN_UNARY_TEST(xtn2, 8h, 4s)
+GEN_UNARY_TEST(xtn,  8b, 8h)
+GEN_UNARY_TEST(xtn2, 16b, 8h)
 
 
 /* Generate a test that involves one integer reg and one vector reg,
@@ -1483,10 +1485,11 @@ int main ( void )
    test_shl_2s_2s_1();
    test_shl_2s_2s_13();
    test_shl_2s_2s_31();
-
+#endif
    test_ushr_8h_8h_1();
    test_ushr_8h_8h_13();
    test_ushr_8h_8h_15();
+#if 0
    test_sshr_8h_8h_1();
    test_sshr_8h_8h_13();
    test_sshr_8h_8h_15();
@@ -1540,7 +1543,9 @@ int main ( void )
    test_xtn2_4s_2d();
    test_xtn_4h_4s();
    test_xtn2_8h_4s();
-   printf("END:   XTN{,2} (MISSING b_h versions)\n\n");
+   test_xtn_8b_8h();
+   test_xtn2_16b_8h();
+   printf("END:   XTN{,2}\n\n");
 
    printf("DUP (element, vector) COMPLETELY MISSING\n\n");
 

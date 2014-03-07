@@ -58,7 +58,7 @@ int main(int argc, char** argv)
    * Use the ipcs and ipcrm commands to clean up named semaphores left by
    * aborted instances of this process.
    */
-  snprintf(semaphore_name, sizeof(semaphore_name), "drd-sem-open-test-%d",
+  snprintf(semaphore_name, sizeof(semaphore_name), "/drd-sem-open-test-%d",
 	   getpid());
   s_sem = sem_open(semaphore_name, O_CREAT | O_EXCL, 0600, 1);
   if (s_sem == SEM_FAILED)

@@ -902,8 +902,14 @@ ARM64AMode* iselIntExpr_AMode_wrk ( ISelEnv* env, IRExpr* e, IRType dty )
        && e->Iex.Binop.arg2->tag == Iex_Const
        && e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U64) {
       Long simm = (Long)e->Iex.Binop.arg2->Iex.Const.con->Ico.U64;
-      if (simm >= -256 && simm <= 255) {
+      if (simm >= -255 && simm <= 255) {
+         /* Although the gating condition might seem to be 
+               simm >= -256 && simm <= 255
+            we will need to negate simm in the case where the op is Sub64.
+            Hence limit the lower value to -255 in order that its negation
+            is representable. */
          HReg reg = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         if (e->Iex.Binop.op == Iop_Sub64) simm = -simm;
          return ARM64AMode_RI9(reg, (Int)simm);
       }
    }
@@ -2164,18 +2170,25 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 //ZZ             return rLo;
 //ZZ          }
 
-         case Iop_1Uto64:
+         case Iop_1Uto64: {
             /* 1Uto64(tmp). */
+            HReg dst = newVRegI(env);
             if (e->Iex.Unop.arg->tag == Iex_RdTmp) {
                ARM64RIL* one = mb_mkARM64RIL_I(1);
                HReg src = lookupIRTemp(env, e->Iex.Unop.arg->Iex.RdTmp.tmp);
-               HReg dst = newVRegI(env);
                vassert(one);
                addInstr(env, ARM64Instr_Logic(dst, src, one, ARM64lo_AND));
-               return dst;
+            } else {
+               /* CLONE-01 */
+               HReg zero = newVRegI(env);
+               HReg one  = newVRegI(env);
+               addInstr(env, ARM64Instr_Imm64(zero, 0));
+               addInstr(env, ARM64Instr_Imm64(one,  1));
+               ARM64CondCode cc = iselCondCode(env, e->Iex.Unop.arg);
+               addInstr(env, ARM64Instr_CSel(dst, one, zero, cc));
             }
-            /* else fall through */
-            break; // RM when 1Uto8 is implemented
+            return dst;
+         }
 //ZZ          case Iop_1Uto8: {
 //ZZ             HReg        dst  = newVRegI(env);
 //ZZ             ARMCondCode cond = iselCondCode(env, e->Iex.Unop.arg);
@@ -6545,6 +6558,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
             here.  LATER: that seems dangerous; safer to do 'tmp & 1'
             in that case.  Also, could do this just with a single CINC
             insn. */
+         /* CLONE-01 */
          HReg zero = newVRegI(env);
          HReg one  = newVRegI(env);
          HReg dst  = lookupIRTemp(env, tmp);

@@ -4425,7 +4425,7 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
             //case Ijk_MapFail:     trcval = VEX_TRC_JMP_MAPFAIL;     break;
             case Ijk_NoDecode:    trcval = VEX_TRC_JMP_NODECODE;    break;
             //case Ijk_TInval:      trcval = VEX_TRC_JMP_TINVAL;      break;
-            //case Ijk_NoRedir:     trcval = VEX_TRC_JMP_NOREDIR;     break;
+            case Ijk_NoRedir:     trcval = VEX_TRC_JMP_NOREDIR;     break;
             //case Ijk_SigTRAP:     trcval = VEX_TRC_JMP_SIGTRAP;     break;
             //case Ijk_SigSEGV:     trcval = VEX_TRC_JMP_SIGSEGV;     break;
             case Ijk_Boring:      trcval = VEX_TRC_JMP_BORING;      break;

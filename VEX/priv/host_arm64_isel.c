@@ -4414,6 +4414,26 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
             addInstr(env, ARM64Instr_VUnaryV(op, res, arg));
             return res;
          }
+         //ATC case Iop_CmpNEZ8x16:
+         //ATC case Iop_CmpNEZ16x8:
+         //ATC case Iop_CmpNEZ32x4:
+         case Iop_CmpNEZ64x2: {
+            HReg arg  = iselV128Expr(env, e->Iex.Unop.arg);
+            HReg zero = newVRegV(env);
+            HReg res  = newVRegV(env);
+            ARM64VecBinOp cmp = ARM64vecb_INVALID;
+            switch (e->Iex.Unop.op) {
+               case Iop_CmpNEZ64x2: cmp = ARM64vecb_CMEQ64x2; break;
+               default: vassert(0);
+            }
+            // This is pretty feeble.  Better: use CMP against zero
+            // and avoid the extra instruction and extra register.
+            addInstr(env, ARM64Instr_VImmQ(zero, 0x0000));
+            addInstr(env, ARM64Instr_VBinV(cmp, res, arg, zero));
+            addInstr(env, ARM64Instr_VUnaryV(ARM64vecu_NOT, res, res));
+            return res;
+         }
+
 //ZZ          case Iop_NotV128: {
 //ZZ             DECLARE_PATTERN(p_veqz_8x16);
 //ZZ             DECLARE_PATTERN(p_veqz_16x8);
@@ -4667,23 +4687,6 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
 //ZZ                                            tmp, x_lsh, x_rsh, 0, True));
 //ZZ             addInstr(env, ARMInstr_NBinary(ARMneon_VORR,
 //ZZ                                            res, tmp, x, 0, True));
-//ZZ             return res;
-//ZZ          }
-//ZZ          case Iop_CmpNEZ8x16:
-//ZZ          case Iop_CmpNEZ16x8:
-//ZZ          case Iop_CmpNEZ32x4: {
-//ZZ             HReg res = newVRegV(env);
-//ZZ             HReg tmp = newVRegV(env);
-//ZZ             HReg arg = iselNeonExpr(env, e->Iex.Unop.arg);
-//ZZ             UInt size;
-//ZZ             switch (e->Iex.Unop.op) {
-//ZZ                case Iop_CmpNEZ8x16: size = 0; break;
-//ZZ                case Iop_CmpNEZ16x8: size = 1; break;
-//ZZ                case Iop_CmpNEZ32x4: size = 2; break;
-//ZZ                default: vassert(0);
-//ZZ             }
-//ZZ             addInstr(env, ARMInstr_NUnary(ARMneon_EQZ, tmp, arg, size, True));
-//ZZ             addInstr(env, ARMInstr_NUnary(ARMneon_NOT, res, tmp, 4, True));
 //ZZ             return res;
 //ZZ          }
 //ZZ          case Iop_Widen8Uto16x8:
@@ -6760,7 +6763,6 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       ARM64AMode* amPC
          = mk_baseblock_64bit_access_amode(stmt->Ist.Exit.offsIP);
 
-
       /* Case: boring transfer to known address */
       if (stmt->Ist.Exit.jk == Ijk_Boring
           /*ATC || stmt->Ist.Exit.jk == Ijk_Call */
@@ -6881,7 +6883,7 @@ static void iselNext ( ISelEnv* env,
       /* Keep this list in sync with that for Ist_Exit above */
       case Ijk_ClientReq:
       case Ijk_NoDecode:
-//ZZ       case Ijk_NoRedir:
+      case Ijk_NoRedir:
       case Ijk_Sys_syscall:
 //ZZ       case Ijk_TInval:
 //ZZ       case Ijk_Yield:

@@ -3547,14 +3547,19 @@ typedef
 #define __CALLER_SAVED_REGS \
      "x0", "x1", "x2", "x3","x4", "x5", "x6", "x7", "x8", "x9",   \
      "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17",      \
-     "x18", "x19", "x20",                                         \
+     "x18", "x19", "x20", "x30",                                  \
      "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9",  \
      "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17",      \
      "v18", "v19", "v20", "v21", "v22", "v23", "v24", "v25",      \
      "v26", "v27", "v28", "v29", "v30", "v31"
 
-#define VALGRIND_ALIGN_STACK   /* FIXME! */
-#define VALGRIND_RESTORE_STACK /* FIXME! */
+/* x21 is callee-saved, so we can use it to save and restore SP around
+   the hidden call. */
+#define VALGRIND_ALIGN_STACK               \
+      "mov x21, sp\n\t"                    \
+      "bic sp, x21, #15\n\t"
+#define VALGRIND_RESTORE_STACK             \
+      "mov sp,  x21\n\t"
 
 /* These CALL_FN_ macros assume that on arm64-linux,
    sizeof(unsigned long) == 8. */
@@ -3573,7 +3578,7 @@ typedef
          "mov %0, x0\n"                                           \
          : /*out*/   "=r" (_res)                                  \
          : /*in*/    "0" (&_argvec[0])                            \
-         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "r10"   \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "x21"   \
       );                                                          \
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
@@ -3594,7 +3599,7 @@ typedef
          "mov %0, x0\n"                                           \
          : /*out*/   "=r" (_res)                                  \
          : /*in*/    "0" (&_argvec[0])                            \
-         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS/*, "r10"*/     \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "x21"   \
       );                                                          \
       lval = (__typeof__(lval)) _res;                             \
    } while (0)

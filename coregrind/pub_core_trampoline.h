@@ -105,6 +105,9 @@ extern void* VG_(arm_linux_REDIR_FOR_memcpy)( void*, void*, Int );
 
 #if defined(VGP_arm64_linux)
 extern Addr  VG_(arm64_linux_SUBST_FOR_rt_sigreturn);
+extern ULong VG_(arm64_linux_REDIR_FOR_strlen)( void* );
+extern void* VG_(arm64_linux_REDIR_FOR_index) ( void*, Long );
+extern Long  VG_(arm64_linux_REDIR_FOR_strcmp)( void*, void* );
 #endif
 
 #if defined(VGP_x86_darwin)

@@ -1323,21 +1323,26 @@ void VG_(redir_initialise) ( void )
    /* If we're using memcheck, use these intercepts right from
       the start, otherwise ld.so makes a lot of noise. */
    if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
-   //   add_hardwired_spec(
-   //      "ld-linux.so.3", "strlen",
-   //      (Addr)&VG_(arm_linux_REDIR_FOR_strlen),
-   //      complain_about_stripped_glibc_ldso
-   //   );
-   //   //add_hardwired_spec(
-   //   //   "ld-linux.so.3", "index",
-   //   //   (Addr)&VG_(arm_linux_REDIR_FOR_index),
-   //   //   NULL 
-   //   //);
-   //   add_hardwired_spec(
-   //      "ld-linux.so.3", "memcpy",
-   //      (Addr)&VG_(arm_linux_REDIR_FOR_memcpy),
-   //      complain_about_stripped_glibc_ldso
-   //   );
+      add_hardwired_spec(
+         "ld-linux-aarch64.so.1", "strlen",
+         (Addr)&VG_(arm64_linux_REDIR_FOR_strlen),
+         complain_about_stripped_glibc_ldso
+      );
+      add_hardwired_spec(
+         "ld-linux-aarch64.so.1", "index",
+         (Addr)&VG_(arm64_linux_REDIR_FOR_index),
+         NULL 
+      );
+      add_hardwired_spec(
+         "ld-linux-aarch64.so.1", "strcmp",
+         (Addr)&VG_(arm64_linux_REDIR_FOR_strcmp),
+         NULL 
+      );
+      //add_hardwired_spec(
+      //   "ld-linux.so.3", "memcpy",
+      //   (Addr)&VG_(arm_linux_REDIR_FOR_memcpy),
+      //   complain_about_stripped_glibc_ldso
+      //);
    }
 
 #  elif defined(VGP_x86_darwin)

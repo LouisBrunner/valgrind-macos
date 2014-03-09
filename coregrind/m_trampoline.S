@@ -706,6 +706,67 @@ VG_(arm64_linux_SUBST_FOR_rt_sigreturn):
 .size VG_(arm64_linux_SUBST_FOR_rt_sigreturn), \
         .-VG_(arm64_linux_SUBST_FOR_rt_sigreturn)
 
+.global VG_(arm64_linux_REDIR_FOR_strlen)
+.type   VG_(arm64_linux_REDIR_FOR_strlen),#function
+VG_(arm64_linux_REDIR_FOR_strlen):
+	mov	x2, x0
+	ldrb	w0, [x0]
+	cbz	w0, .L5
+	mov	x0, 0
+.L4:
+	add	x0, x0, 1
+	ldrb	w1, [x2,x0]
+	cbnz	w1, .L4
+	ret
+.L5:
+	mov	x0, 0
+	ret
+.size VG_(arm64_linux_REDIR_FOR_strlen), .-VG_(arm64_linux_REDIR_FOR_strlen)
+
+.global VG_(arm64_linux_REDIR_FOR_index)
+.type   VG_(arm64_linux_REDIR_FOR_index),#function
+VG_(arm64_linux_REDIR_FOR_index):
+        ldrb    w2, [x0]
+        uxtb    w1, w1
+        cmp     w2, w1
+        beq     .L11
+.L13:
+        cbz     w2, .L16
+        ldrb    w2, [x0,1]!
+        cmp     w2, w1
+        bne     .L13
+.L11:
+        ret
+.L16:
+        mov     x0, 0
+        ret
+.size VG_(arm64_linux_REDIR_FOR_index), .-VG_(arm64_linux_REDIR_FOR_index)
+
+.global VG_(arm64_linux_REDIR_FOR_strcmp)
+.type   VG_(arm64_linux_REDIR_FOR_strcmp),#function
+VG_(arm64_linux_REDIR_FOR_strcmp):
+        ldrb    w2, [x0]
+        ldrb    w3, [x1]
+        cmp     w2, w3
+        bcc     .L22
+.L21:
+        bhi     .L25
+        cbz     w2, .L26
+        ldrb    w2, [x0,1]!
+        ldrb    w3, [x1,1]!
+        cmp     w2, w3
+        bcs     .L21
+.L22:
+        mov     x0, -1
+        ret
+.L25:
+        mov     x0, 1
+        ret
+.L26:
+        mov     x0, 0
+        ret
+.size VG_(arm64_linux_REDIR_FOR_strcmp), .-VG_(arm64_linux_REDIR_FOR_strcmp)
+
 .global VG_(trampoline_stuff_end)
 VG_(trampoline_stuff_end):
 

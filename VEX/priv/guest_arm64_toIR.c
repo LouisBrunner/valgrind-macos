@@ -3152,13 +3152,31 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn)
                vassert(0); /* NOTREACHED */
          }
 
+         /* Normally rN would be updated after the transfer.  However, in
+            the special case typifed by
+               str x30, [sp,#-16]!
+            it is necessary to update SP before the transfer, (1)
+            because Memcheck will otherwise complain about a write
+            below the stack pointer, and (2) because the segfault
+            stack extension mechanism will otherwise extend the stack
+            only down to SP before the instruction, which might not be
+            far enough, if the -16 bit takes the actual access
+            address to the next page.
+         */
+         Bool earlyWBack
+           = wBack && simm9 < 0 && szB == 8
+             && how == BITS2(1,1) && nn == 31 && !isLoad && tt != nn;
+
+         if (wBack && earlyWBack)
+            putIReg64orSP(nn, mkexpr(tEA));
+
          if (isLoad) {
             putIReg64orZR(tt, mkexpr(gen_zwidening_load(szB, tTA)));
          } else {
             gen_narrowing_store(szB, tTA, getIReg64orZR(tt));
          }
 
-         if (wBack)
+         if (wBack && !earlyWBack)
             putIReg64orSP(nn, mkexpr(tEA));
 
          const HChar* ld_name[4] = { "ldurb", "ldurh", "ldur", "ldur" };
@@ -3683,6 +3701,24 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn)
             default: vassert(0);
          }
 
+         /* Normally rN would be updated after the transfer.  However, in
+            the special case typifed by
+               stp q0, q1, [sp,#-512]!
+            it is necessary to update SP before the transfer, (1)
+            because Memcheck will otherwise complain about a write
+            below the stack pointer, and (2) because the segfault
+            stack extension mechanism will otherwise extend the stack
+            only down to SP before the instruction, which might not be
+            far enough, if the -512 bit takes the actual access
+            address to the next page.
+         */
+         Bool earlyWBack
+           = wBack && simm7 < 0 && szB == 16
+             && INSN(24,23) == BITS2(1,1) && nn == 31 && !isLD;
+
+         if (wBack && earlyWBack)
+            putIReg64orSP(nn, mkexpr(tEA));
+
          if (isLD) {
             if (szB < 16) {
                putQReg128(tt1, mkV128(0x0000));
@@ -3701,7 +3737,7 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn)
                     getQRegLO(tt2, ty));
          }
 
-         if (wBack)
+         if (wBack && !earlyWBack)
             putIReg64orSP(nn, mkexpr(tEA));
 
          const HChar* fmt_str = NULL;

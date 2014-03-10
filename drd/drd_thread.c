@@ -255,16 +255,16 @@ static Bool DRD_(sane_ThreadInfo)(const ThreadInfo* const ti)
 {
    Segment* p;
 
-   for (p = ti->first; p; p = p->next) {
-      if (p->next && p->next->prev != p)
+   for (p = ti->sg_first; p; p = p->thr_next) {
+      if (p->thr_next && p->thr_next->thr_prev != p)
          return False;
-      if (p->next == 0 && p != ti->last)
+      if (p->thr_next == 0 && p != ti->sg_last)
          return False;
    }
-   for (p = ti->last; p; p = p->prev) {
-      if (p->prev && p->prev->next != p)
+   for (p = ti->sg_last; p; p = p->thr_prev) {
+      if (p->thr_prev && p->thr_prev->thr_next != p)
          return False;
-      if (p->prev == 0 && p != ti->first)
+      if (p->thr_prev == 0 && p != ti->sg_first)
          return False;
    }
    return True;

@@ -792,8 +792,8 @@ static SyscallTableEntry syscall_table[] = {
    GENX_(__NR_fchmod,            sys_fchmod),             //  94
    
    GENX_(__NR_fchown,            sys_fchown),             //  95
-// _____(__NR_getpriority,       sys_getpriority),        //  96
-// _____(__NR_setpriority,       sys_setpriority),        //  97
+   GENX_(__NR_getpriority,       sys_getpriority),        //  96
+   GENX_(__NR_setpriority,       sys_setpriority),        //  97
 // _____(__NR_profil,            sys_profil),             //  98
    GENXY(__NR_statfs,            sys_statfs),             //  99
 

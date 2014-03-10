@@ -276,6 +276,7 @@ static void drd_pre_mem_read(const CorePart part,
                              const Addr a,
                              const SizeT size)
 {
+   DRD_(thread_set_vg_running_tid)(VG_(get_running_tid)());
    if (size > 0)
    {
       DRD_(trace_load)(a, size);

@@ -3997,6 +3997,8 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
    switch (op) {
 
       case Iop_Sqrt64Fx2:
+      case Iop_Abs64Fx2:
+      case Iop_Neg64Fx2:
          return unary64Fx2(mce, vatom);
 
       case Iop_Sqrt64F0x2:
@@ -4053,6 +4055,10 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_Reverse64_16x8:
       case Iop_Reverse64_32x4:
       case Iop_V256toV128_1: case Iop_V256toV128_0:
+      case Iop_ZeroHI64ofV128:
+      case Iop_ZeroHI96ofV128:
+      case Iop_ZeroHI112ofV128:
+      case Iop_ZeroHI120ofV128:
          return assignNew('V', mce, Ity_V128, unop(op, vatom));
 
       case Iop_F128HItoF64:  /* F128 -> high half of F128 */

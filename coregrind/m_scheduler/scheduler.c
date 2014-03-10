@@ -1011,6 +1011,7 @@ static void handle_tt_miss ( ThreadId tid )
                                  ip, True/*upd_fast_cache*/ );
    if (UNLIKELY(!found)) {
       /* Not found; we need to request a translation. */
+      VG_TRACK( start_client_code, tid, bbs_done );
       if (VG_(translate)( tid, ip, /*debug*/False, 0/*not verbose*/, 
                           bbs_done, True/*allow redirection*/ )) {
          found = VG_(search_transtab)( NULL, NULL, NULL,
@@ -1024,6 +1025,7 @@ static void handle_tt_miss ( ThreadId tid )
 	 // or the thread has been marked for termination.  Either
 	 // way, we just need to go back into the scheduler loop.
       }
+      VG_TRACK( stop_client_code, tid, bbs_done );
    }
 }
 

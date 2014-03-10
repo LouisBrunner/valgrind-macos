@@ -339,6 +339,9 @@ typedef
       ARM64vecb_ORR,
       ARM64vecb_XOR,
       ARM64vecb_CMEQ64x2,
+      ARM64vecb_CMEQ32x4,
+      ARM64vecb_CMEQ16x8,
+      ARM64vecb_CMEQ8x16,
       ARM64vecb_INVALID
    }
    ARM64VecBinOp;

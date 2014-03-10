@@ -4414,9 +4414,9 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
             addInstr(env, ARM64Instr_VUnaryV(op, res, arg));
             return res;
          }
-         //ATC case Iop_CmpNEZ8x16:
-         //ATC case Iop_CmpNEZ16x8:
-         //ATC case Iop_CmpNEZ32x4:
+         case Iop_CmpNEZ8x16:
+         case Iop_CmpNEZ16x8:
+         case Iop_CmpNEZ32x4:
          case Iop_CmpNEZ64x2: {
             HReg arg  = iselV128Expr(env, e->Iex.Unop.arg);
             HReg zero = newVRegV(env);
@@ -4424,6 +4424,9 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
             ARM64VecBinOp cmp = ARM64vecb_INVALID;
             switch (e->Iex.Unop.op) {
                case Iop_CmpNEZ64x2: cmp = ARM64vecb_CMEQ64x2; break;
+               case Iop_CmpNEZ32x4: cmp = ARM64vecb_CMEQ32x4; break;
+               case Iop_CmpNEZ16x8: cmp = ARM64vecb_CMEQ16x8; break;
+               case Iop_CmpNEZ8x16: cmp = ARM64vecb_CMEQ8x16; break;
                default: vassert(0);
             }
             // This is pretty feeble.  Better: use CMP against zero

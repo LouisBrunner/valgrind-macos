@@ -25,6 +25,7 @@ SUBDIRS = \
 	. \
 	$(TOOLS) \
 	$(EXP_TOOLS) \
+	shared \
 	tests \
 	perf \
 	gdbserver_tests \

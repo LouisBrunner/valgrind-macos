@@ -253,8 +253,9 @@ noinst_HEADERS = \
 	m_syswrap/priv_syswrap-linux-variants.h \
 	m_syswrap/priv_syswrap-darwin.h \
 	m_syswrap/priv_syswrap-main.h \
-       m_syswrap/priv_syswrap-xen.h \
-	m_ume/priv_ume.h
+	m_syswrap/priv_syswrap-xen.h \
+	m_ume/priv_ume.h \
+	vgdb.h
 
 #----------------------------------------------------------------------------
 # libcoregrind-<platform>.a

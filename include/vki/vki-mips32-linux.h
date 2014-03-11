@@ -524,8 +524,8 @@ struct vki_termios {
 
 #define _VKI_IOC_NRBITS		8
 #define _VKI_IOC_TYPEBITS	8
-#define _VKI_IOC_SIZEBITS	14
-#define _VKI_IOC_DIRBITS	2
+#define _VKI_IOC_SIZEBITS	13
+#define _VKI_IOC_DIRBITS	3
 
 #define _VKI_IOC_NRMASK		((1 << _VKI_IOC_NRBITS)-1)
 #define _VKI_IOC_TYPEMASK	((1 << _VKI_IOC_TYPEBITS)-1)
@@ -538,8 +538,8 @@ struct vki_termios {
 #define _VKI_IOC_DIRSHIFT	(_VKI_IOC_SIZESHIFT+_VKI_IOC_SIZEBITS)
 
 #define _VKI_IOC_NONE	1U
-#define _VKI_IOC_WRITE	2U
-#define _VKI_IOC_READ	4U
+#define _VKI_IOC_READ	2U
+#define _VKI_IOC_WRITE	4U
 
 #define _VKI_IOC(dir,type,nr,size) \
 	(((dir)  << _VKI_IOC_DIRSHIFT) | \

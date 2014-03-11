@@ -42,6 +42,7 @@ nobase_pkginclude_HEADERS = \
 	vki/vki-linux.h			\
 	vki/vki-darwin.h		\
 	vki/vki-posixtypes-amd64-linux.h \
+	vki/vki-posixtypes-arm64-linux.h \
 	vki/vki-posixtypes-ppc32-linux.h \
 	vki/vki-posixtypes-ppc64-linux.h \
 	vki/vki-posixtypes-x86-linux.h	 \
@@ -50,6 +51,7 @@ nobase_pkginclude_HEADERS = \
 	vki/vki-posixtypes-mips32-linux.h \
 	vki/vki-posixtypes-mips64-linux.h \
 	vki/vki-amd64-linux.h		\
+	vki/vki-arm64-linux.h		\
 	vki/vki-ppc32-linux.h		\
 	vki/vki-ppc64-linux.h		\
 	vki/vki-x86-linux.h		\
@@ -58,6 +60,7 @@ nobase_pkginclude_HEADERS = \
 	vki/vki-mips32-linux.h		\
 	vki/vki-mips64-linux.h		\
 	vki/vki-scnums-amd64-linux.h	\
+	vki/vki-scnums-arm64-linux.h	\
 	vki/vki-scnums-ppc32-linux.h	\
 	vki/vki-scnums-ppc64-linux.h	\
 	vki/vki-scnums-x86-linux.h	\

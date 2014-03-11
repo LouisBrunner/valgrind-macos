@@ -74,6 +74,7 @@ nobase_pkginclude_HEADERS = \
 	vki/vki-xen-memory.h		\
 	vki/vki-xen-mmuext.h		\
 	vki/vki-xen-sysctl.h		\
+	vki/vki-xen-tmem.h		\
 	vki/vki-xen-version.h		\
 	vki/vki-xen-x86.h		\
 	vki/vki-linux-drm.h

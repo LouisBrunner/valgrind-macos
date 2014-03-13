@@ -64,6 +64,7 @@ where XXXXXX is the bug number as listed below.
 331337  s390x WARNING: unhandled syscall: 326 (dup3)
 331380  Syscall param timer_create(evp) points to uninitialised byte(s)
 331830  ppc64: WARNING: unhandled syscall: 96/97
+331839  drd/tests/sem_open specifies invalid semaphore name 
 331847  outcome of drd/tests/thread_name is nondeterministic
 332055  drd asserts on platforms with VG_STACK_REDZONE_SZB == 0 and
         consistency checks enabled

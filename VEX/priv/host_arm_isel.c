@@ -4254,26 +4254,11 @@ static HReg iselNeonExpr_wrk ( ISelEnv* env, IRExpr* e )
             return res;
          }
          case Iop_Abs32Fx4: {
-            DECLARE_PATTERN(p_vabd_32fx4);
-            DEFINE_PATTERN(p_vabd_32fx4,
-                           unop(Iop_Abs32Fx4,
-                                binop(Iop_Sub32Fx4,
-                                      bind(0),
-                                      bind(1))));
-            if (matchIRExpr(&mi, p_vabd_32fx4, e)) {
-               HReg res = newVRegV(env);
-               HReg argL = iselNeonExpr(env, mi.bindee[0]);
-               HReg argR = iselNeonExpr(env, mi.bindee[1]);
-               addInstr(env, ARMInstr_NBinary(ARMneon_VABDFP,
-                                              res, argL, argR, 0, True));
-               return res;
-            } else {
-               HReg res = newVRegV(env);
-               HReg argL = iselNeonExpr(env, e->Iex.Unop.arg);
-               addInstr(env, ARMInstr_NUnary(ARMneon_VABSFP,
-                                             res, argL, 0, True));
-               return res;
-            }
+            HReg res = newVRegV(env);
+            HReg argL = iselNeonExpr(env, e->Iex.Unop.arg);
+            addInstr(env, ARMInstr_NUnary(ARMneon_VABSFP,
+                                          res, argL, 0, True));
+            return res;
          }
          case Iop_Rsqrte32Fx4: {
             HReg res = newVRegV(env);
@@ -4457,15 +4442,6 @@ static HReg iselNeonExpr_wrk ( ISelEnv* env, IRExpr* e )
                                            res, argL, argR, size, True));
             return res;
          }
-         case Iop_Add32Fx4: {
-            HReg res = newVRegV(env);
-            HReg argL = iselNeonExpr(env, e->Iex.Binop.arg1);
-            HReg argR = iselNeonExpr(env, e->Iex.Binop.arg2);
-            UInt size = 0;
-            addInstr(env, ARMInstr_NBinary(ARMneon_VADDFP,
-                                           res, argL, argR, size, True));
-            return res;
-         }
          case Iop_Recps32Fx4: {
             HReg res = newVRegV(env);
             HReg argL = iselNeonExpr(env, e->Iex.Binop.arg1);
@@ -4629,15 +4605,6 @@ static HReg iselNeonExpr_wrk ( ISelEnv* env, IRExpr* e )
                   vpanic("Illegal element size in VSUB");
             }
             addInstr(env, ARMInstr_NBinary(ARMneon_VSUB,
-                                           res, argL, argR, size, True));
-            return res;
-         }
-         case Iop_Sub32Fx4: {
-            HReg res = newVRegV(env);
-            HReg argL = iselNeonExpr(env, e->Iex.Binop.arg1);
-            HReg argR = iselNeonExpr(env, e->Iex.Binop.arg2);
-            UInt size = 0;
-            addInstr(env, ARMInstr_NBinary(ARMneon_VSUBFP,
                                            res, argL, argR, size, True));
             return res;
          }
@@ -5083,15 +5050,6 @@ static HReg iselNeonExpr_wrk ( ISelEnv* env, IRExpr* e )
                                            res, argL, argR, size, True));
             return res;
          }
-         case Iop_Mul32Fx4: {
-            HReg res = newVRegV(env);
-            HReg argL = iselNeonExpr(env, e->Iex.Binop.arg1);
-            HReg argR = iselNeonExpr(env, e->Iex.Binop.arg2);
-            UInt size = 0;
-            addInstr(env, ARMInstr_NBinary(ARMneon_VMULFP,
-                                           res, argL, argR, size, True));
-            return res;
-         }
          case Iop_Mull8Ux8:
          case Iop_Mull16Ux4:
          case Iop_Mull32Ux2: {
@@ -5350,6 +5308,23 @@ static HReg iselNeonExpr_wrk ( ISelEnv* env, IRExpr* e )
             }
             addInstr(env, ARMInstr_NBinary(ARMneon_VEXT,
                                            res, argL, argR, imm4, True));
+            return res;
+         }
+         case Iop_Mul32Fx4:
+         case Iop_Sub32Fx4:
+         case Iop_Add32Fx4: {
+            HReg res = newVRegV(env);
+            HReg argL = iselNeonExpr(env, triop->arg2);
+            HReg argR = iselNeonExpr(env, triop->arg3);
+            UInt size = 0;
+            ARMNeonBinOp op = ARMneon_INVALID;
+            switch (triop->op) {
+               case Iop_Mul32Fx4: op = ARMneon_VMULFP; break;
+               case Iop_Sub32Fx4: op = ARMneon_VSUBFP; break;
+               case Iop_Add32Fx4: op = ARMneon_VADDFP; break;
+               default: vassert(0);
+            }
+            addInstr(env, ARMInstr_NBinary(op, res, argL, argR, size, True));
             return res;
          }
          default:

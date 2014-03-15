@@ -790,6 +790,7 @@ const HChar* showARMNeonBinOp ( ARMNeonBinOp op ) {
       case ARMneon_VTBL: return "vtbl";
       case ARMneon_VRECPS: return "vrecps";
       case ARMneon_VRSQRTS: return "vrecps";
+      case ARMneon_INVALID: return "??invalid??";
       /* ... */
       default: vpanic("showARMNeonBinOp");
    }

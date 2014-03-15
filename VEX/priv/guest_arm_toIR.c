@@ -2875,6 +2875,31 @@ Bool dis_neon_vext ( UInt theInstr, IRTemp condT )
    return True;
 }
 
+/* Generate specific vector FP binary ops, possibly with a fake
+   rounding mode as required by the primop. */
+static
+IRExpr* binop_w_fake_RM ( IROp op, IRExpr* argL, IRExpr* argR )
+{
+   switch (op) {
+      case Iop_Add32Fx4:
+      case Iop_Sub32Fx4:
+      case Iop_Mul32Fx4:
+         return triop(op, get_FAKE_roundingmode(), argL, argR );
+      case Iop_Add32x4: case Iop_Add16x8:
+      case Iop_Sub32x4: case Iop_Sub16x8:
+      case Iop_Mul32x4: case Iop_Mul16x8:
+      case Iop_Mul32x2: case Iop_Mul16x4:
+      case Iop_Add32Fx2:
+      case Iop_Sub32Fx2:
+      case Iop_Mul32Fx2:
+      case Iop_PwAdd32Fx2:
+         return binop(op, argL, argR);
+      default:
+        ppIROp(op);
+        vassert(0);
+   }
+}
+
 /* VTBL, VTBX */
 static
 Bool dis_neon_vtb ( UInt theInstr, IRTemp condT )
@@ -4601,7 +4626,8 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                   /* VABD  */
                   if (Q) {
                      assign(res, unop(Iop_Abs32Fx4,
-                                      binop(Iop_Sub32Fx4,
+                                      triop(Iop_Sub32Fx4,
+                                            get_FAKE_roundingmode(),
                                             mkexpr(arg_n),
                                             mkexpr(arg_m))));
                   } else {
@@ -4616,7 +4642,7 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                   break;
                }
             }
-            assign(res, binop(op, mkexpr(arg_n), mkexpr(arg_m)));
+            assign(res, binop_w_fake_RM(op, mkexpr(arg_n), mkexpr(arg_m)));
          } else {
             if (U == 0) {
                /* VMLA, VMLS  */
@@ -4641,9 +4667,11 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                      default: vassert(0);
                   }
                }
-               assign(res, binop(op2,
-                                 Q ? getQReg(dreg) : getDRegI64(dreg),
-                                 binop(op, mkexpr(arg_n), mkexpr(arg_m))));
+               assign(res, binop_w_fake_RM(
+                              op2,
+                              Q ? getQReg(dreg) : getDRegI64(dreg),
+                              binop_w_fake_RM(op, mkexpr(arg_n),
+                                                  mkexpr(arg_m))));
 
                DIP("vml%c.f32 %c%u, %c%u, %c%u\n",
                    P ? 's' : 'a', Q ? 'q' : 'd',
@@ -4654,7 +4682,7 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                if ((C >> 1) != 0)
                   return False;
                op = Q ? Iop_Mul32Fx4 : Iop_Mul32Fx2 ;
-               assign(res, binop(op, mkexpr(arg_n), mkexpr(arg_m)));
+               assign(res, binop_w_fake_RM(op, mkexpr(arg_n), mkexpr(arg_m)));
                DIP("vmul.f32 %c%u, %c%u, %c%u\n",
                    Q ? 'q' : 'd', dreg,
                    Q ? 'q' : 'd', nreg, Q ? 'q' : 'd', mreg);
@@ -5318,10 +5346,10 @@ Bool dis_neon_data_2reg_and_scalar ( UInt theInstr, IRTemp condT )
          }
       }
       op2 = INSN(10,10) ? sub : add;
-      assign(res, binop(op, mkexpr(arg_n), mkexpr(arg_m)));
+      assign(res, binop_w_fake_RM(op, mkexpr(arg_n), mkexpr(arg_m)));
       if (Q)
-         putQReg(dreg, binop(op2, getQReg(dreg), mkexpr(res)),
-               condT);
+         putQReg(dreg, binop_w_fake_RM(op2, getQReg(dreg), mkexpr(res)),
+                 condT);
       else
          putDRegI64(dreg, binop(op2, getDRegI64(dreg), mkexpr(res)),
                     condT);
@@ -5548,7 +5576,7 @@ Bool dis_neon_data_2reg_and_scalar ( UInt theInstr, IRTemp condT )
                vassert(0);
          }
       }
-      assign(res, binop(op, mkexpr(arg_n), mkexpr(arg_m)));
+      assign(res, binop_w_fake_RM(op, mkexpr(arg_n), mkexpr(arg_m)));
       if (Q)
          putQReg(dreg, mkexpr(res), condT);
       else

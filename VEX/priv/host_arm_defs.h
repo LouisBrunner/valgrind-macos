@@ -468,6 +468,7 @@ typedef
       ARMneon_VQDMULL,
       ARMneon_VRECPS,
       ARMneon_VRSQRTS,
+      ARMneon_INVALID
       /* ... */
    }
    ARMNeonBinOp;

@@ -18203,9 +18203,9 @@ DisResult disInstr_THUMB_WRK (
             condT = IRTemp_INVALID;
             // now uncond
             /* non-interworking branch */
-            irsb->next = binop(Iop_Or32, mkexpr(res), mkU32(1));
-            irsb->jumpkind = Ijk_Boring;
-            dres.whatNext = Dis_StopHere;
+            llPutIReg(15, binop(Iop_Or32, mkexpr(res), mkU32(1)));
+            dres.jk_StopHere = Ijk_Boring;
+            dres.whatNext    = Dis_StopHere;
          }
          DIP("add(hi) r%u, r%u\n", rD, rM);
          goto decode_success;

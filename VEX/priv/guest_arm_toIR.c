@@ -20401,7 +20401,7 @@ DisResult disInstr_THUMB_WRK (
 
    /* -------------- LDRD/STRD reg+/-#imm8 -------------- */
    /* Doubleword loads and stores of the form:
-         ldrd/strd  Rt, Rt2, [Rn, #-imm8]      or
+         ldrd/strd  Rt, Rt2, [Rn, #+/-imm8]    or
          ldrd/strd  Rt, Rt2, [Rn], #+/-imm8    or
          ldrd/strd  Rt, Rt2, [Rn, #+/-imm8]!  
    */
@@ -20419,8 +20419,11 @@ DisResult disInstr_THUMB_WRK (
       if (bP == 0 && bW == 0)                 valid = False;
       if (bW == 1 && (rN == rT || rN == rT2)) valid = False;
       if (isBadRegT(rT) || isBadRegT(rT2))    valid = False;
-      if (rN == 15)                           valid = False;
       if (bL == 1 && rT == rT2)               valid = False;
+      /* It's OK to use PC as the base register only in the
+         following case: ldrd Rt, Rt2, [PC, #+/-imm8] */
+      if (rN == 15 && (bL == 0/*store*/
+                       || bW == 1/*wb*/))     valid = False;
 
       if (valid) {
          IRTemp preAddr = newTemp(Ity_I32);

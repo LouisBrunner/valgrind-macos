@@ -167,6 +167,39 @@ UWord do_acasW ( UWord* addr, UWord expected, UWord nyu )
    return success;
 }
 
+#elif defined(VGA_arm64)
+
+// arm64
+/* return 1 if success, 0 if failure */
+UWord do_acasW ( UWord* addr, UWord expected, UWord nyu )
+{
+  UWord old, success;
+  UWord block[2] = { (UWord)addr, nyu };
+
+  /* Fetch the old value, and set the reservation */
+  __asm__ __volatile__ (
+     "ldxr  %0, [%1]"    "\n"
+      : /*out*/   "=r"(old)
+      : /*in*/    "r"(addr)
+   );
+
+   /* If the old value isn't as expected, we've had it */
+   if (old != expected) return 0;
+
+   /* otherwise try to stuff the new value in */
+   __asm__ __volatile__(
+      "ldr    x4, [%1, #0]"      "\n\t"
+      "ldr    x5, [%1, #8]"      "\n\t"
+      "stxr   w6, x5, [x4, #0]"  "\n\t"
+      "eor    %0, x6, #1"        "\n\t"
+      : /*out*/ "=r"(success)
+      : /*in*/ "r"(&block[0])
+      : /*trash*/ "x4","x5","x6","memory"
+   );
+   assert(success == 0 || success == 1);
+   return success;
+}
+
 #elif defined(VGA_s390x)
 
 // s390x

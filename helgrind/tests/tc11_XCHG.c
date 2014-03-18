@@ -31,8 +31,10 @@
 #  define PLAT_ppc32_linux 1
 #elif defined(__linux__) && defined(__powerpc__) && defined(__powerpc64__)
 #  define PLAT_ppc64_linux 1
-#elif defined(__linux__) && defined(__arm__)
+#elif defined(__linux__) && defined(__arm__) && !defined(__aarch64__)
 #  define PLAT_arm_linux 1
+#elif defined(__linux__) && defined(__aarch64__) && !defined(__arm__)
+#  define PLAT_arm64_linux 1
 #elif defined(__linux__) && defined(__s390x__)
 #  define PLAT_s390x_linux 1
 #elif defined(__linux__) && defined(__mips__)
@@ -91,7 +93,7 @@
       XCHG_M_R(_addr,_lval)
 
 #elif defined(PLAT_ppc32_linux) || defined(PLAT_ppc64_linux) \
-      || defined(PLAT_arm_linux)
+      || defined(PLAT_arm_linux) || defined(PLAT_arm64_linux)
 #  if defined(HAVE_BUILTIN_ATOMIC)
 #    define XCHG_M_R(_addr,_lval)                                           \
         do {                                                                \

@@ -1162,14 +1162,15 @@ PTH_FUNCS(int,
           (pthread_rwlock_t* rwlock), (rwlock));
 
 static __always_inline
-int pthread_rwlock_timedrdlock_intercept(pthread_rwlock_t* rwlock)
+int pthread_rwlock_timedrdlock_intercept(pthread_rwlock_t* rwlock,
+                                         const struct timespec *timeout)
 {
    int   ret;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PRE_RWLOCK_RDLOCK,
                                    rwlock, 0, 0, 0, 0);
-   CALL_FN_W_W(ret, fn, rwlock);
+   CALL_FN_W_WW(ret, fn, rwlock, timeout);
    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__POST_RWLOCK_RDLOCK,
                                    rwlock, ret == 0, 0, 0, 0);
    return ret;
@@ -1177,17 +1178,19 @@ int pthread_rwlock_timedrdlock_intercept(pthread_rwlock_t* rwlock)
 
 PTH_FUNCS(int,
           pthreadZurwlockZutimedrdlock, pthread_rwlock_timedrdlock_intercept,
-          (pthread_rwlock_t* rwlock), (rwlock));
+          (pthread_rwlock_t* rwlock, const struct timespec *timeout),
+          (rwlock, timeout));
 
 static __always_inline
-int pthread_rwlock_timedwrlock_intercept(pthread_rwlock_t* rwlock)
+int pthread_rwlock_timedwrlock_intercept(pthread_rwlock_t* rwlock,
+                                         const struct timespec *timeout)
 {
    int   ret;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PRE_RWLOCK_WRLOCK,
                                    rwlock, 0, 0, 0, 0);
-   CALL_FN_W_W(ret, fn, rwlock);
+   CALL_FN_W_WW(ret, fn, rwlock, timeout);
    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__POST_RWLOCK_WRLOCK,
                                    rwlock, ret == 0, 0, 0, 0);
    return ret;
@@ -1195,7 +1198,8 @@ int pthread_rwlock_timedwrlock_intercept(pthread_rwlock_t* rwlock)
 
 PTH_FUNCS(int,
           pthreadZurwlockZutimedwrlock, pthread_rwlock_timedwrlock_intercept,
-          (pthread_rwlock_t* rwlock), (rwlock));
+          (pthread_rwlock_t* rwlock, const struct timespec *timeout),
+          (rwlock, timeout));
 
 static __always_inline
 int pthread_rwlock_tryrdlock_intercept(pthread_rwlock_t* rwlock)

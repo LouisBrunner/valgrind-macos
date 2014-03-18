@@ -23,6 +23,8 @@
 has built-in functions for atomic memory access.
 #endif
 
+static pthread_barrier_t s_barrier;
+
 static __inline__
 int sync_add_and_fetch(int* p, int i)
 {
@@ -36,6 +38,7 @@ static int s_y = 0;
 
 static void* thread_func_1(void* arg)
 {
+  pthread_barrier_wait(&s_barrier);
   s_y = 1;
   (void) sync_add_and_fetch(&s_x, 1);
   return 0;
@@ -43,6 +46,7 @@ static void* thread_func_1(void* arg)
 
 static void* thread_func_2(void* arg)
 {
+  pthread_barrier_wait(&s_barrier);
   while (sync_add_and_fetch(&s_x, 0) == 0)
     ;
   fprintf(stderr, "y = %d\n", s_y);
@@ -56,10 +60,12 @@ int main(int argc, char** argv)
   pthread_t tid[n_threads];
 
   fprintf(stderr, "Start of test.\n");
+  pthread_barrier_init(&s_barrier, 0, 2);
   pthread_create(&tid[0], 0, thread_func_1, 0);
   pthread_create(&tid[1], 0, thread_func_2, 0);
   for (i = 0; i < n_threads; i++)
     pthread_join(tid[i], 0);
+  pthread_barrier_destroy(&s_barrier);
   fprintf(stderr, "Test finished.\n");
 
   return 0;

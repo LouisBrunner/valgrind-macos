@@ -79,6 +79,12 @@ static int go(char *feature)
       } else{
          return FEATURE_NOT_PRESENT;
       }
+   } else if (strcmp(feature, "mips-be") == 0) {
+#if defined (_MIPSEB)
+     return FEATURE_PRESENT;
+#else
+     return FEATURE_NOT_PRESENT;
+#endif
    } else {
       return UNRECOGNISED_FEATURE;
    }

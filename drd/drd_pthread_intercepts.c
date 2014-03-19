@@ -1101,6 +1101,8 @@ int pthread_rwlock_init_intercept(pthread_rwlock_t* rwlock,
    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PRE_RWLOCK_INIT,
                                    rwlock, 0, 0, 0, 0);
    CALL_FN_W_WW(ret, fn, rwlock, attr);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__POST_RWLOCK_INIT,
+                                   rwlock, 0, 0, 0, 0);
    return ret;
 }
 
@@ -1115,6 +1117,8 @@ int pthread_rwlock_destroy_intercept(pthread_rwlock_t* rwlock)
    int   ret;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PRE_RWLOCK_DESTROY,
+                                   rwlock, 0, 0, 0, 0);
    CALL_FN_W_W(ret, fn, rwlock);
    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__POST_RWLOCK_DESTROY,
                                    rwlock, 0, 0, 0, 0);

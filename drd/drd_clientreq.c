@@ -510,11 +510,21 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
       break;
 
    case VG_USERREQ__PRE_RWLOCK_INIT:
-      DRD_(rwlock_pre_init)(arg[1], pthread_rwlock);
+      if (DRD_(thread_enter_synchr)(drd_tid) == 0)
+         DRD_(rwlock_pre_init)(arg[1], pthread_rwlock);
+      break;
+
+   case VG_USERREQ__POST_RWLOCK_INIT:
+      DRD_(thread_leave_synchr)(drd_tid);
+      break;
+
+   case VG_USERREQ__PRE_RWLOCK_DESTROY:
+      DRD_(thread_enter_synchr)(drd_tid);
       break;
 
    case VG_USERREQ__POST_RWLOCK_DESTROY:
-      DRD_(rwlock_post_destroy)(arg[1], pthread_rwlock);
+      if (DRD_(thread_leave_synchr)(drd_tid) == 0)
+         DRD_(rwlock_post_destroy)(arg[1], pthread_rwlock);
       break;
 
    case VG_USERREQ__PRE_RWLOCK_RDLOCK:

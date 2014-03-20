@@ -42,6 +42,7 @@
 #include "pub_tool_mallocfree.h"
 #include "pub_tool_options.h"
 #include "pub_tool_oset.h"
+#include "pub_tool_rangemap.h"
 #include "pub_tool_replacemalloc.h"
 #include "pub_tool_tooliface.h"
 #include "pub_tool_threadstate.h"
@@ -1056,28 +1057,58 @@ static INLINE UWord byte_offset_w ( UWord wordszB, Bool bigendian,
 
 /* --------------- Ignored address ranges --------------- */
 
-#define M_IGNORE_RANGES 4
-
+/* Denotes the address-error-reportability status for address ranges:
+   IAR_NotIgnored:  the usual case -- report errors in this range
+   IAR_CommandLine: don't report errors -- from command line setting
+   IAR_ClientReq:   don't report errors -- from client request
+*/
 typedef
-   struct {
-      Int  used;
-      Addr start[M_IGNORE_RANGES];
-      Addr end[M_IGNORE_RANGES];
-   }
-   IgnoreRanges;
+   enum { IAR_INVALID=99,
+          IAR_NotIgnored,
+          IAR_CommandLine,
+          IAR_ClientReq }
+   IARKind;
 
-static IgnoreRanges ignoreRanges;
+static const HChar* showIARKind ( IARKind iark )
+{
+   switch (iark) {
+      case IAR_INVALID:     return "INVALID";
+      case IAR_NotIgnored:  return "NotIgnored";
+      case IAR_CommandLine: return "CommandLine";
+      case IAR_ClientReq:   return "ClientReq";
+      default:              return "???";
+   }
+}
+
+// RangeMap<IARKind>
+static RangeMap* gIgnoredAddressRanges = NULL;
+
+static void init_gIgnoredAddressRanges ( void )
+{
+   if (LIKELY(gIgnoredAddressRanges != NULL))
+      return;
+   gIgnoredAddressRanges = VG_(newRangeMap)( VG_(malloc), "mc.igIAR.1",
+                                             VG_(free), IAR_NotIgnored );
+   tl_assert(gIgnoredAddressRanges != NULL);
+}
 
 INLINE Bool MC_(in_ignored_range) ( Addr a )
 {
-   Int i;
-   if (LIKELY(ignoreRanges.used == 0))
+   if (LIKELY(gIgnoredAddressRanges == NULL))
       return False;
-   for (i = 0; i < ignoreRanges.used; i++) {
-      if (a >= ignoreRanges.start[i] && a < ignoreRanges.end[i])
-         return True;
+   UWord how     = IAR_INVALID;
+   UWord key_min = ~(UWord)0;
+   UWord key_max =  (UWord)0;
+   VG_(lookupRangeMap)(&key_min, &key_max, &how, gIgnoredAddressRanges, a);
+   tl_assert(key_min <= a && a <= key_max);
+   switch (how) {
+      case IAR_NotIgnored:  return False;
+      case IAR_CommandLine: return True;
+      case IAR_ClientReq:   return True;
+      default: break; /* invalid */
    }
-   return False;
+   VG_(tool_panic)("MC_(in_ignore_range)");
+   /*NOTREACHED*/
 }
 
 /* Parse two Addr separated by a dash, or fail. */
@@ -1097,24 +1128,22 @@ static Bool parse_range ( const HChar** ppc, Addr* result1, Addr* result2 )
 }
 
 /* Parse a set of ranges separated by commas into 'ignoreRanges', or
-   fail. */
-
+   fail.  If they are valid, add them to the global set of ignored
+   ranges. */
 static Bool parse_ignore_ranges ( const HChar* str0 )
 {
-   Addr start, end;
-   Bool ok;
+   init_gIgnoredAddressRanges();
    const HChar*  str = str0;
    const HChar** ppc = &str;
-   ignoreRanges.used = 0;
    while (1) {
-      ok = parse_range(ppc, &start, &end);
+      Addr start = ~(Addr)0;
+      Addr end   = (Addr)0;
+      Bool ok    = parse_range(ppc, &start, &end);
       if (!ok)
          return False;
-      if (ignoreRanges.used >= M_IGNORE_RANGES)
+      if (start > end)
          return False;
-      ignoreRanges.start[ignoreRanges.used] = start;
-      ignoreRanges.end[ignoreRanges.used] = end;
-      ignoreRanges.used++;
+      VG_(bindRangeMap)( gIgnoredAddressRanges, start, end, IAR_CommandLine );
       if (**ppc == 0)
          return True;
       if (**ppc != ',')
@@ -1123,6 +1152,44 @@ static Bool parse_ignore_ranges ( const HChar* str0 )
    }
    /*NOTREACHED*/
    return False;
+}
+
+/* Add or remove [start, +len) from the set of ignored ranges. */
+static Bool modify_ignore_ranges ( Bool addRange, Addr start, Addr len )
+{
+   init_gIgnoredAddressRanges();
+   const Bool verbose = (VG_(clo_verbosity) > 1);
+   if (len == 0) {
+      return False;
+   }
+   if (addRange) {
+      VG_(bindRangeMap)(gIgnoredAddressRanges,
+                        start, start+len-1, IAR_ClientReq);
+      if (verbose)
+         VG_(dmsg)("memcheck: modify_ignore_ranges: add %p %p\n",
+                   (void*)start, (void*)(start+len-1));
+   } else {
+      VG_(bindRangeMap)(gIgnoredAddressRanges,
+                        start, start+len-1, IAR_NotIgnored);
+      if (verbose)
+         VG_(dmsg)("memcheck: modify_ignore_ranges: del %p %p\n",
+                   (void*)start, (void*)(start+len-1));
+   }
+   if (verbose) {
+      VG_(dmsg)("memcheck:   now have %ld ranges:\n",
+                VG_(sizeRangeMap)(gIgnoredAddressRanges));
+      Word i;
+      for (i = 0; i < VG_(sizeRangeMap)(gIgnoredAddressRanges); i++) {
+         UWord val     = IAR_INVALID;
+         UWord key_min = ~(UWord)0;
+         UWord key_max = (UWord)0;
+         VG_(indexRangeMap)( &key_min, &key_max, &val,
+                             gIgnoredAddressRanges, i );
+         VG_(dmsg)("memcheck:      [%ld]  %016llx-%016llx  %s\n",
+                   i, (ULong)key_min, (ULong)key_max, showIARKind(val));
+      }
+   }
+   return True;
 }
 
 
@@ -5191,30 +5258,32 @@ static Bool mc_process_cmd_line_options(const HChar* arg)
                             MC_(clo_leak_resolution), Vg_HighRes) {}
 
    else if VG_STR_CLO(arg, "--ignore-ranges", tmp_str) {
-      Int  i;
-      Bool ok  = parse_ignore_ranges(tmp_str);
-      if (!ok)
-        return False;
-      tl_assert(ignoreRanges.used >= 0);
-      tl_assert(ignoreRanges.used < M_IGNORE_RANGES);
-      for (i = 0; i < ignoreRanges.used; i++) {
-         Addr s = ignoreRanges.start[i];
-         Addr e = ignoreRanges.end[i];
-         Addr limit = 0x4000000; /* 64M - entirely arbitrary limit */
-         if (e <= s) {
-            VG_(message)(Vg_DebugMsg, 
-               "ERROR: --ignore-ranges: end <= start in range:\n");
-            VG_(message)(Vg_DebugMsg, 
-               "       0x%lx-0x%lx\n", s, e);
-            return False;
+      Bool ok = parse_ignore_ranges(tmp_str);
+      if (!ok) {
+         VG_(message)(Vg_DebugMsg, 
+            "ERROR: --ignore-ranges: "
+            "invalid syntax, or end <= start in range\n");
+         return False;
+      }
+      if (gIgnoredAddressRanges) {
+         Word i;
+         for (i = 0; i < VG_(sizeRangeMap)(gIgnoredAddressRanges); i++) {
+            UWord val     = IAR_INVALID;
+            UWord key_min = ~(UWord)0;
+            UWord key_max = (UWord)0;
+            VG_(indexRangeMap)( &key_min, &key_max, &val,
+                                gIgnoredAddressRanges, i );
+            tl_assert(key_min <= key_max);
+            UWord limit = 0x4000000; /* 64M - entirely arbitrary limit */
+            if (key_max - key_min > limit) {
+               VG_(message)(Vg_DebugMsg, 
+                  "ERROR: --ignore-ranges: suspiciously large range:\n");
+               VG_(message)(Vg_DebugMsg, 
+                   "       0x%lx-0x%lx (size %ld)\n", key_min, key_max,
+                   key_max - key_min + 1);
+               return False;
+            }
          }
-         if (e - s > limit) {
-            VG_(message)(Vg_DebugMsg, 
-               "ERROR: --ignore-ranges: suspiciously large range:\n");
-            VG_(message)(Vg_DebugMsg, 
-               "       0x%lx-0x%lx (size %ld)\n", s, e, (UWord)(e-s));
-            return False;
-	 }
       }
    }
 
@@ -5694,7 +5763,6 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
 static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
 {
    Int   i;
-   Bool  ok;
    Addr  bad_addr;
 
    if (!VG_IS_TOOL_USERREQ('M','C',arg[0])
@@ -5709,16 +5777,19 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
        && VG_USERREQ__MOVE_MEMPOOL     != arg[0]
        && VG_USERREQ__MEMPOOL_CHANGE   != arg[0]
        && VG_USERREQ__MEMPOOL_EXISTS   != arg[0]
-       && VG_USERREQ__GDB_MONITOR_COMMAND   != arg[0])
+       && VG_USERREQ__GDB_MONITOR_COMMAND   != arg[0]
+       && VG_USERREQ__ENABLE_ADDR_ERROR_REPORTING_IN_RANGE != arg[0]
+       && VG_USERREQ__DISABLE_ADDR_ERROR_REPORTING_IN_RANGE != arg[0])
       return False;
 
    switch (arg[0]) {
-      case VG_USERREQ__CHECK_MEM_IS_ADDRESSABLE:
-         ok = is_mem_addressable ( arg[1], arg[2], &bad_addr );
+      case VG_USERREQ__CHECK_MEM_IS_ADDRESSABLE: {
+         Bool ok = is_mem_addressable ( arg[1], arg[2], &bad_addr );
          if (!ok)
             MC_(record_user_error) ( tid, bad_addr, /*isAddrErr*/True, 0 );
          *ret = ok ? (UWord)NULL : bad_addr;
          break;
+      }
 
       case VG_USERREQ__CHECK_MEM_IS_DEFINED: {
          Bool errorV    = False;
@@ -5995,6 +6066,16 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
          else
             *ret = 0;
          return handled;
+      }
+
+      case VG_USERREQ__DISABLE_ADDR_ERROR_REPORTING_IN_RANGE:
+      case VG_USERREQ__ENABLE_ADDR_ERROR_REPORTING_IN_RANGE: {
+         Bool addRange
+            = arg[0] == VG_USERREQ__DISABLE_ADDR_ERROR_REPORTING_IN_RANGE;
+         Bool ok
+            = modify_ignore_ranges(addRange, arg[1], arg[2]);
+         *ret = ok ? 1 : 0;
+         return True;
       }
 
       default:
@@ -6664,6 +6745,41 @@ static void mc_fini ( Int exitcode )
       VG_(message)(Vg_UserMsg,
                    "Use --track-origins=yes to see where "
                    "uninitialised values come from\n");
+   }
+
+   /* Print a warning if any client-request generated ignore-ranges
+      still exist.  It would be reasonable to expect that a properly
+      written program would remove any such ranges before exiting, and
+      since they are a bit on the dangerous side, let's comment.  By
+      contrast ranges which are specified on the command line normally
+      pertain to hardware mapped into the address space, and so we
+      can't expect the client to have got rid of them. */
+   if (gIgnoredAddressRanges) {
+      Word i, nBad = 0;
+      for (i = 0; i < VG_(sizeRangeMap)(gIgnoredAddressRanges); i++) {
+         UWord val     = IAR_INVALID;
+         UWord key_min = ~(UWord)0;
+         UWord key_max = (UWord)0;
+         VG_(indexRangeMap)( &key_min, &key_max, &val,
+                             gIgnoredAddressRanges, i );
+         if (val != IAR_ClientReq)
+           continue;
+         /* Print the offending range.  Also, if it is the first,
+            print a banner before it. */
+         nBad++;
+         if (nBad == 1) {
+            VG_(umsg)(
+              "WARNING: exiting program has the following client-requested\n"
+              "WARNING: address error disablement range(s) still in force,\n"
+              "WARNING: "
+                 "possibly as a result of some mistake in the use of the\n"
+              "WARNING: "
+                 "VALGRIND_{DISABLE,ENABLE}_ERROR_REPORTING_IN_RANGE macros.\n"
+            );
+         }
+         VG_(umsg)("   [%ld]  0x%016llx-0x%016llx  %s\n",
+                   i, (ULong)key_min, (ULong)key_max, showIARKind(val));
+      }
    }
 
    done_prof_mem();

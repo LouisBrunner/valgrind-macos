@@ -102,6 +102,7 @@ EXTRA_DIST = \
 	err_disable2.vgtest err_disable2.stderr.exp \
 	err_disable3.vgtest err_disable3.stderr.exp \
 	err_disable4.vgtest err_disable4.stderr.exp \
+	err_disable_arange1.vgtest err_disable_arange1.stderr.exp \
 	erringfds.stderr.exp erringfds.stdout.exp erringfds.vgtest \
 	error_counts.stderr.exp error_counts.vgtest \
 	errs1.stderr.exp errs1.vgtest \
@@ -294,6 +295,7 @@ check_PROGRAMS = \
 	describe-block \
 	doublefree error_counts errs1 exitprog execve1 execve2 erringfds \
 	err_disable1 err_disable2 err_disable3 err_disable4 \
+	err_disable_arange1 \
 	file_locking \
 	fprw fwrite inits inline \
 	holey_buffer_too_small \

@@ -325,6 +325,27 @@ void VG_(removeIndexXA)( XArray* xao, Word n )
    xa->usedsizeE--;
 }
 
+void VG_(insertIndexXA)( XArray* xao, Word n, const void* elem )
+{
+   struct _XArray* xa = (struct _XArray*)xao;
+   vg_assert(xa);
+   vg_assert(n >= 0);
+   vg_assert(n <= xa->usedsizeE);
+   vg_assert(xa->usedsizeE >= 0 && xa->usedsizeE <= xa->totsizeE);
+   ensureSpaceXA( xa );
+   vg_assert(xa->usedsizeE < xa->totsizeE);
+   vg_assert(xa->arr);
+   if (n < xa->usedsizeE) {
+      VG_(memmove) ( ((char*)xa->arr) + (n+1) * xa->elemSzB,
+                     ((char*)xa->arr) + (n+0) * xa->elemSzB,
+                     (xa->usedsizeE - n) * xa->elemSzB );
+   }
+   VG_(memcpy)( ((UChar*)xa->arr) + n * xa->elemSzB,
+                elem, xa->elemSzB );
+   xa->usedsizeE++;
+   xa->sorted = False;
+}
+
 void VG_(getContentsXA_UNSAFE)( XArray* xao,
                                 /*OUT*/void** ctsP,
                                 /*OUT*/Word* usedP )

@@ -25,6 +25,7 @@ nobase_pkginclude_HEADERS = \
 	pub_tool_mallocfree.h 		\
 	pub_tool_options.h 		\
 	pub_tool_oset.h 		\
+	pub_tool_rangemap.h		\
 	pub_tool_redir.h		\
 	pub_tool_replacemalloc.h	\
 	pub_tool_seqmatch.h		\

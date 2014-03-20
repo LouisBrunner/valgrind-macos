@@ -106,10 +106,10 @@ extern Word VG_(sizeXA) ( XArray* );
 /* Index into the XArray.  Checks bounds and bombs if the index is
    invalid.  What this returns is the address of the specified element
    in the array, not (of course) the element itself.  Note that the
-   element may get moved by subsequent addToXAs/sortXAs, so you should
-   copy it out immediately and not regard its address as unchanging.
-   Note also that indexXA will of course not return NULL if it
-   succeeds. */
+   element may get moved by subsequent calls to addToXA / sortXA /
+   insertIndexXA, so you should copy it out immediately and not regard
+   its address as unchanging.  Note also that indexXA will of course
+   not return NULL if it succeeds. */
 extern void* VG_(indexXA) ( XArray*, Word );
 
 /* Drop the last n elements of an XArray.  Bombs if there are less
@@ -126,6 +126,13 @@ extern void VG_(dropHeadXA) ( XArray*, Word );
    the number of elements after the specified element, in the
    array. */
 extern void VG_(removeIndexXA)( XArray*, Word );
+
+/* Insert an element into an XArray at the given index.  The existing
+   element at the index and all above it are slid upwards one slot so
+   as to make space.  Element is copied into the XArray.  This is an
+   O(N) operation, when N is the number of elements after the
+   specified element, in the array. */
+extern void VG_(insertIndexXA)( XArray*, Word, const void* elem );
 
 /* Make a new, completely independent copy of the given XArray, using
    the existing allocation function to allocate the new space.

@@ -1,0 +1,36 @@
+
+Doing invalid access.  Expect complaint.
+
+Invalid write of size 4
+   at 0x........: main (err_disable_arange1.c:19)
+ Address 0x........ is 492 bytes inside a block of size 4,000 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable_arange1.c:15)
+
+
+Disabling address error reporting for the range.
+
+
+Doing invalid another access.  Expect no complaint.
+
+
+Partially reenabling address error reporting.
+
+
+Doing a third access.  Expect complaint.
+
+Invalid write of size 4
+   at 0x........: main (err_disable_arange1.c:35)
+ Address 0x........ is 3,156 bytes inside a block of size 4,000 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable_arange1.c:15)
+
+
+Exiting.  Expect warnings of 2 remaining ranges.
+
+WARNING: exiting program has the following client-requested
+WARNING: address error disablement range(s) still in force,
+WARNING: possibly as a result of some mistake in the use of the
+WARNING: VALGRIND_{DISABLE,ENABLE}_ERROR_REPORTING_IN_RANGE macros.
+   [1]  0x........-0x........  ClientReq
+   [3]  0x........-0x........  ClientReq

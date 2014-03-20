@@ -91,10 +91,14 @@ EXTRA_DIST =                                        \
 	custom_alloc_fiw.stderr.exp		    \
 	custom_alloc_fiw.vgtest			    \
 	fp_race.stderr.exp                          \
+	fp_race.stderr.exp-mips32-be                \
+	fp_race.stderr.exp-mips32-le                \
 	fp_race.vgtest                              \
 	fp_race2.stderr.exp                         \
 	fp_race2.vgtest                             \
 	fp_race_xml.stderr.exp                      \
+	fp_race_xml.stderr.exp-mips32-be            \
+	fp_race.xml.stderr.exp-mips32-le            \
 	fp_race_xml.vgtest                          \
 	free_is_write.stderr.exp		    \
 	free_is_write.vgtest			    \
@@ -211,16 +215,24 @@ EXTRA_DIST =                                        \
 	rwlock_type_checking.stderr.exp	            \
 	rwlock_type_checking.vgtest                 \
 	sem_as_mutex.stderr.exp                     \
+	sem_as_mutex.stderr.exp-mips32-be           \
+	sem_as_mutex.stderr.exp-mips32-le           \
 	sem_as_mutex.vgtest                         \
 	sem_as_mutex2.stderr.exp                    \
 	sem_as_mutex2.vgtest                        \
 	sem_as_mutex3.stderr.exp                    \
+	sem_as_mutex3.stderr.exp-mips32-be          \
+	sem_as_mutex3.stderr.exp-mips32-le          \
 	sem_as_mutex3.vgtest                        \
 	sem_open.stderr.exp                         \
+	sem_open.stderr.exp-mips32-be               \
+	sem_open.stderr.exp-mips32-le               \
 	sem_open.vgtest                             \
 	sem_open2.stderr.exp                        \
 	sem_open2.vgtest                            \
 	sem_open3.stderr.exp                        \
+	sem_open3.stderr.exp-mips32-be              \
+	sem_open3.stderr.exp-mips32-le              \
 	sem_open3.vgtest                            \
 	sem_open_traced.stderr.exp                  \
 	sem_open_traced.vgtest                      \

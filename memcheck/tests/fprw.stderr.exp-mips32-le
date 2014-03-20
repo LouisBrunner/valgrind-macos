@@ -1,0 +1,53 @@
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (fprw.c:16)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (fprw.c:17)
+
+Invalid read of size 4
+   at 0x........: main (fprw.c:20)
+ Address 0x........ is 0 bytes inside a block of size 8 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (fprw.c:18)
+
+Invalid read of size 4
+   at 0x........: main (fprw.c:20)
+ Address 0x........ is 4 bytes inside a block of size 8 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (fprw.c:18)
+
+Invalid write of size 4
+   at 0x........: main (fprw.c:20)
+ Address 0x........ is 0 bytes inside a block of size 8 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (fprw.c:18)
+
+Invalid write of size 4
+   at 0x........: main (fprw.c:20)
+ Address 0x........ is 4 bytes inside a block of size 8 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (fprw.c:18)
+
+Invalid read of size 4
+   at 0x........: main (fprw.c:21)
+ Address 0x........ is 0 bytes inside a block of size 4 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (fprw.c:19)
+
+Invalid write of size 4
+   at 0x........: main (fprw.c:21)
+ Address 0x........ is 0 bytes inside a block of size 4 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (fprw.c:19)
+
+Invalid free() / delete / delete[] / realloc()
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (fprw.c:22)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Invalid write of size 4
+   at 0x........: main (fprw.c:24)
+ Address 0x........ is 0 bytes after a block of size 4 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (fprw.c:23)
+

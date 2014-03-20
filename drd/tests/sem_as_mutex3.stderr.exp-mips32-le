@@ -1,0 +1,21 @@
+
+Conflicting load by thread 1 at 0x........ size 4
+   at 0x........: main (sem_as_mutex.c:?)
+Location 0x........ is 0 bytes inside global var "s_d3"
+declared at sem_as_mutex.c:25
+Other segment start (thread 2)
+   (thread finished, call stack no longer available)
+Other segment end (thread 2)
+   (thread finished, call stack no longer available)
+
+Conflicting load by thread 1 at 0x........ size 4
+   at 0x........: main (sem_as_mutex.c:?)
+Location 0x........ is 4 bytes inside global var "s_d3"
+declared at sem_as_mutex.c:25
+Other segment start (thread 2)
+   (thread finished, call stack no longer available)
+Other segment end (thread 2)
+   (thread finished, call stack no longer available)
+
+
+ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

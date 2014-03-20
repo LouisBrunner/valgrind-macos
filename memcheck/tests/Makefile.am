@@ -109,7 +109,8 @@ EXTRA_DIST = \
 	execve1.stderr.exp execve1.vgtest execve1.stderr.exp-kfail \
 	execve2.stderr.exp execve2.vgtest execve2.stderr.exp-kfail \
 	file_locking.stderr.exp file_locking.vgtest \
-	fprw.stderr.exp fprw.vgtest \
+	fprw.stderr.exp fprw.stderr.exp-mips32-be fprw.stderr.exp-mips32-le \
+		fprw.vgtest \
 	fwrite.stderr.exp fwrite.vgtest fwrite.stderr.exp-kfail \
 	holey_buffer_too_small.vgtest holey_buffer_too_small.stdout.exp \
 	holey_buffer_too_small.stderr.exp \

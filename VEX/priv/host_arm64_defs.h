@@ -342,6 +342,12 @@ typedef
       ARM64vecb_CMEQ32x4,
       ARM64vecb_CMEQ16x8,
       ARM64vecb_CMEQ8x16,
+      ARM64vecb_FCMEQ64x2,
+      ARM64vecb_FCMEQ32x4,
+      ARM64vecb_FCMGE64x2,
+      ARM64vecb_FCMGE32x4,
+      ARM64vecb_FCMGT64x2,
+      ARM64vecb_FCMGT32x4,
       ARM64vecb_INVALID
    }
    ARM64VecBinOp;

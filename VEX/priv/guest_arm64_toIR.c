@@ -5751,6 +5751,85 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
       }
    }
 
+   /* ------------ FCM{EQ,GE,GT}, FAC{GE,GT} (vector) ------------ */
+   /* 31  28      22   20 15     9 4                  case
+      0q1 01110 0 sz 1 m  111011 n d  FACGE Vd, Vn, Vm
+      0q1 01110 1 sz 1 m  111011 n d  FACGT Vd, Vn, Vm
+      0q0 01110 0 sz 1 m  111001 n d  FCMEQ Vd, Vn, Vm
+      0q1 01110 0 sz 1 m  111001 n d  FCMGE Vd, Vn, Vm
+      0q1 01110 1 sz 1 m  111001 n d  FCMGT Vd, Vn, Vm
+   */
+   if (INSN(31,31) == 0 && INSN(28,24) == BITS5(0,1,1,1,0) && INSN(21,21) == 1
+       && INSN(15,12) == BITS4(1,1,1,0) && INSN(10,10) == 1) {
+      Bool isQ   = INSN(30,30) == 1;
+      UInt U     = INSN(29,29);
+      UInt E     = INSN(23,23);
+      Bool isF64 = INSN(22,22) == 1;
+      UInt ac    = INSN(11,11);
+      UInt mm    = INSN(20,16);
+      UInt nn    = INSN(9,5);
+      UInt dd    = INSN(4,0);
+      /* */
+      UInt   EUac   = (E << 2) | (U << 1) | ac;
+      IROp   opABS  = Iop_INVALID;
+      IROp   opCMP  = Iop_INVALID;
+      IRType laneTy = Ity_INVALID;
+      Bool   zeroHI = False;
+      Bool   swap   = True;
+      const HChar* arr = "??";
+      const HChar* nm  = "??";
+      Bool ok
+         = getLaneInfo_Q_SZ(NULL, &laneTy, NULL, &zeroHI, &arr, isQ, isF64);
+      if (ok) {
+         vassert((isF64 && laneTy == Ity_F64) || (!isF64 && laneTy == Ity_F32));
+         switch (EUac) {
+            case BITS3(0,0,0):
+               nm    = "fcmeq";
+               opCMP = isF64 ? Iop_CmpEQ64Fx2 : Iop_CmpEQ32Fx4;
+               swap  = False;
+               break;
+            case BITS3(0,1,0):
+               nm    = "fcmge";
+               opCMP = isF64 ? Iop_CmpLE64Fx2 : Iop_CmpLE32Fx4;
+               break;
+            case BITS3(0,1,1):
+               nm    = "facge";
+               opCMP = isF64 ? Iop_CmpLE64Fx2 : Iop_CmpLE32Fx4;
+               opABS = isF64 ? Iop_Abs64Fx2 : Iop_Abs32Fx4;
+               break;
+            case BITS3(1,1,0):
+               nm    = "fcmgt";
+               opCMP = isF64 ? Iop_CmpLT64Fx2 : Iop_CmpLT32Fx4;
+               break;
+            case BITS3(1,1,1):
+               nm    = "fcagt";
+               opCMP = isF64 ? Iop_CmpLE64Fx2 : Iop_CmpLE32Fx4;
+               opABS = isF64 ? Iop_Abs64Fx2 : Iop_Abs32Fx4;
+               break;
+            default:
+               break;
+         }
+      }
+      if (opCMP != Iop_INVALID) {
+         IRExpr* argN = getQReg128(nn);
+         IRExpr* argM = getQReg128(mm);
+         if (opABS != Iop_INVALID) {
+            argN = unop(opABS, argN);
+            argM = unop(opABS, argM);
+         }
+         IRExpr* res = swap ? binop(opCMP, argM, argN)
+                            : binop(opCMP, argN, argM);
+         if (zeroHI) {
+            res = unop(Iop_ZeroHI64ofV128, res);
+         }
+         putQReg128(dd, res);
+         DIP("%s %s.%s, %s.%s, %s.%s\n", nm,
+             nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(mm), arr);
+         return True;
+      }
+      /* else fall through */
+   }
+
    /* -------------------- FCVTN -------------------- */
    /* 31  28    23  20    15     9 4
       0q0 01110 0s1 00001 011010 n d  FCVTN Vd, Vn

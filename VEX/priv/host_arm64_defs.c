@@ -885,6 +885,12 @@ static void showARM64VecBinOp(/*OUT*/const HChar** nm,
       case ARM64vecb_CMEQ32x4: *nm = "cmeq"; *ar = "4s";  return;
       case ARM64vecb_CMEQ16x8: *nm = "cmeq"; *ar = "8h";  return;
       case ARM64vecb_CMEQ8x16: *nm = "cmeq"; *ar = "16b"; return;
+      case ARM64vecb_FCMEQ64x2: *nm = "fcmeq"; *ar = "2d"; return;
+      case ARM64vecb_FCMEQ32x4: *nm = "fcmeq"; *ar = "4s"; return;
+      case ARM64vecb_FCMGE64x2: *nm = "fcmge"; *ar = "2d"; return;
+      case ARM64vecb_FCMGE32x4: *nm = "fcmge"; *ar = "4s"; return;
+      case ARM64vecb_FCMGT64x2: *nm = "fcmgt"; *ar = "2d"; return;
+      case ARM64vecb_FCMGT32x4: *nm = "fcmgt"; *ar = "4s"; return;
       default: vpanic("showARM64VecBinOp");
    }
 }
@@ -4955,6 +4961,15 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
 
             011 01110 11 1 m  001101 n d   CMHI Vd.2d, Vn.2d, Vm.2d  >u, ATC
             010 01110 11 1 m  001101 n d   CMGT Vd.2d, Vn.2d, Vm.2d  >s, ATC
+
+            010 01110 01 1 m  111001 n d   FCMEQ Vd.2d, Vn.2d, Vm.2d
+            010 01110 00 1 m  111001 n d   FCMEQ Vd.4s, Vn.4s, Vm.4s
+
+            011 01110 01 1 m  111001 n d   FCMGE Vd.2d, Vn.2d, Vm.2d
+            011 01110 00 1 m  111001 n d   FCMGE Vd.4s, Vn.4s, Vm.4s
+
+            011 01110 11 1 m  111001 n d   FCMGT Vd.2d, Vn.2d, Vm.2d
+            011 01110 10 1 m  111001 n d   FCMGT Vd.4s, Vn.4s, Vm.4s
          */
          UInt vD = qregNo(i->ARM64in.VBinV.dst);
          UInt vN = qregNo(i->ARM64in.VBinV.argL);
@@ -5072,6 +5087,26 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
                *p++ = X_3_8_5_6_5_5(X011, X01110001, vM, X100011, vN, vD);
                break;
 
+            case ARM64vecb_FCMEQ64x2:
+               *p++ = X_3_8_5_6_5_5(X010, X01110011, vM, X111001, vN, vD);
+               break;
+            case ARM64vecb_FCMEQ32x4:
+               *p++ = X_3_8_5_6_5_5(X010, X01110001, vM, X111001, vN, vD);
+               break;
+
+            case ARM64vecb_FCMGE64x2:
+               *p++ = X_3_8_5_6_5_5(X011, X01110011, vM, X111001, vN, vD);
+               break;
+            case ARM64vecb_FCMGE32x4:
+               *p++ = X_3_8_5_6_5_5(X011, X01110001, vM, X111001, vN, vD);
+               break;
+
+            case ARM64vecb_FCMGT64x2:
+               *p++ = X_3_8_5_6_5_5(X011, X01110111, vM, X111001, vN, vD);
+               break;
+            case ARM64vecb_FCMGT32x4:
+               *p++ = X_3_8_5_6_5_5(X011, X01110101, vM, X111001, vN, vD);
+               break;
             default:
                goto bad;
          }
@@ -5090,6 +5125,9 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
          switch (i->ARM64in.VUnaryV.op) {
             case ARM64vecu_FABS64x2:
                *p++ = X_3_8_5_6_5_5(X010, X01110111, X00000, X111110, vN, vD);
+               break;
+            case ARM64vecu_FABS32x4:
+               *p++ = X_3_8_5_6_5_5(X010, X01110101, X00000, X111110, vN, vD);
                break;
             case ARM64vecu_FNEG64x2:
                *p++ = X_3_8_5_6_5_5(X011, X01110111, X00000, X111110, vN, vD);

@@ -83,10 +83,12 @@ EXTRA_DIST = \
 	tc18_semabuse.vgtest tc18_semabuse.stdout.exp \
 		tc18_semabuse.stderr.exp \
 		tc18_semabuse.stderr.exp-linux-mips32 \
+		tc18_semabuse.stderr.exp-linux-mips32-b \
 	tc19_shadowmem.vgtest tc19_shadowmem.stdout.exp \
 		tc19_shadowmem.stderr.exp tc19_shadowmem.stderr.exp-mips32 \
 	tc20_verifywrap.vgtest tc20_verifywrap.stdout.exp \
 		tc20_verifywrap.stderr.exp tc20_verifywrap.stderr.exp-mips32 \
+		tc20_verifywrap.stderr.exp-mips32-b \
 		tc20_verifywrap.stderr.exp-s390x \
 	tc21_pthonce.vgtest tc21_pthonce.stdout.exp tc21_pthonce.stderr.exp \
 	tc22_exit_w_lock.vgtest tc22_exit_w_lock.stdout.exp \

@@ -98,7 +98,7 @@ EXTRA_DIST =                                        \
 	fp_race2.vgtest                             \
 	fp_race_xml.stderr.exp                      \
 	fp_race_xml.stderr.exp-mips32-be            \
-	fp_race.xml.stderr.exp-mips32-le            \
+	fp_race_xml.stderr.exp-mips32-le            \
 	fp_race_xml.vgtest                          \
 	free_is_write.stderr.exp		    \
 	free_is_write.vgtest			    \

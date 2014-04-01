@@ -20455,7 +20455,9 @@ DisResult disInstr_THUMB_WRK (
 
       if (valid) {
          IRTemp preAddr = newTemp(Ity_I32);
-         assign(preAddr, getIRegT(rN));
+         assign(preAddr, 15 == rN
+                           ? binop(Iop_And32, getIRegT(15), mkU32(~3U))
+                           : getIRegT(rN));
 
          IRTemp postAddr = newTemp(Ity_I32);
          assign(postAddr, binop(bU == 1 ? Iop_Add32 : Iop_Sub32,

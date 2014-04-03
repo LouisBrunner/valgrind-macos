@@ -4139,15 +4139,22 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
-   /* 
+   /* 31        23
+      0000 1100 1001 1111 0111 11 N T  ST1 {vT.1d}, [xN|SP], #8
+      0000 1100 1101 1111 0111 11 N T  LD1 {vT.1d}, [xN|SP], #8
       0000 1100 1001 1111 0111 10 N T  ST1 {vT.2s}, [xN|SP], #8
+      0000 1100 1101 1111 0111 10 N T  LD1 {vT.2s}, [xN|SP], #8
       0000 1100 1001 1111 0111 01 N T  ST1 {vT.4h}, [xN|SP], #8
+      0000 1100 1101 1111 0111 01 N T  LD1 {vT.4h}, [xN|SP], #8
+      0000 1100 1001 1111 0111 00 N T  ST1 {vT.8b}, [xN|SP], #8
+      0000 1100 1101 1111 0111 00 N T  LD1 {vT.8b}, [xN|SP], #8
       Note that #8 is implied and cannot be any other value.
       FIXME does this assume that the host is little endian?
    */
-   if (   (insn & 0xFFFFFC00) == 0x0C9F7800 // st1 {vT.2s}, [xN|SP], #8
-       || (insn & 0xFFFFFC00) == 0x0C9F7400 // st1 {vT.4h}, [xN|SP], #8
+   if (   (insn & 0xFFFFF000) == 0x0CDF7000 // LD1 cases
+       || (insn & 0xFFFFF000) == 0x0C9F7000 // ST1 cases
       ) {
+      Bool   isLD = INSN(22,22) == 1;
       UInt   rN  = INSN(9,5);
       UInt   vT  = INSN(4,0);
       IRTemp tEA = newTemp(Ity_I64);
@@ -4155,9 +4162,120 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn)
       const HChar* name = names[INSN(11,10)];
       assign(tEA, getIReg64orSP(rN));
       if (rN == 31) { /* FIXME generate stack alignment check */ }
-      storeLE(mkexpr(tEA), getQRegLane(vT, 0, Ity_I64));
+      if (isLD) {
+         putQRegLane(vT, 0, loadLE(Ity_I64, mkexpr(tEA)));
+         putQRegLane(vT, 1, mkU64(0));
+      } else {
+         storeLE(mkexpr(tEA), getQRegLane(vT, 0, Ity_I64));
+      }
       putIReg64orSP(rN, binop(Iop_Add64, mkexpr(tEA), mkU64(8)));
-      DIP("st1 {v%u.%s}, [%s], #8\n", vT, name, nameIReg64orSP(rN));
+      DIP("%s {v%u.%s}, [%s], #8\n",  isLD ? "ld1" : "st1",
+          vT, name, nameIReg64orSP(rN));
+      return True;
+   }
+
+   /* ---------- LD2/ST2 (multiple structures, post index) ---------- */
+   /* Only a very few cases. */
+   /* 31        23             11 9 4
+      0100 1100 1101 1111 1000 11 n t  LD2 {Vt.2d, V(t+1)%32.2d}, [Xn|SP], #32
+      0100 1100 1001 1111 1000 11 n t  ST2 {Vt.2d, V(t+1)%32.2d}, [Xn|SP], #32
+      0100 1100 1101 1111 1000 10 n t  LD2 {Vt.4s, V(t+1)%32.4s}, [Xn|SP], #32
+      0100 1100 1001 1111 1000 10 n t  ST2 {Vt.4s, V(t+1)%32.4s}, [Xn|SP], #32
+   */
+   if (   (insn & 0xFFFFFC00) == 0x4CDF8C00 // LD2 .2d
+       || (insn & 0xFFFFFC00) == 0x4C9F8C00 // ST2 .2d
+       || (insn & 0xFFFFFC00) == 0x4CDF8800 // LD2 .4s
+       || (insn & 0xFFFFFC00) == 0x4C9F8800 // ST2 .4s
+      ) {
+      Bool   isLD = INSN(22,22) == 1;
+      UInt   rN   = INSN(9,5);
+      UInt   vT   = INSN(4,0);
+      IRTemp tEA  = newTemp(Ity_I64);
+      UInt   sz   = INSN(11,10);
+      const HChar* name = "??";
+      assign(tEA, getIReg64orSP(rN));
+      if (rN == 31) { /* FIXME generate stack alignment check */ }
+      IRExpr* tEA_0  = binop(Iop_Add64, mkexpr(tEA), mkU64(0));
+      IRExpr* tEA_8  = binop(Iop_Add64, mkexpr(tEA), mkU64(8));
+      IRExpr* tEA_16 = binop(Iop_Add64, mkexpr(tEA), mkU64(16));
+      IRExpr* tEA_24 = binop(Iop_Add64, mkexpr(tEA), mkU64(24));
+      if (sz == BITS2(1,1)) {
+         name = "2d";
+         if (isLD) {
+            putQRegLane((vT+0) % 32, 0, loadLE(Ity_I64, tEA_0));
+            putQRegLane((vT+0) % 32, 1, loadLE(Ity_I64, tEA_16));
+            putQRegLane((vT+1) % 32, 0, loadLE(Ity_I64, tEA_8));
+            putQRegLane((vT+1) % 32, 1, loadLE(Ity_I64, tEA_24));
+         } else {
+            storeLE(tEA_0,  getQRegLane((vT+0) % 32, 0, Ity_I64));
+            storeLE(tEA_16, getQRegLane((vT+0) % 32, 1, Ity_I64));
+            storeLE(tEA_8,  getQRegLane((vT+1) % 32, 0, Ity_I64));
+            storeLE(tEA_24, getQRegLane((vT+1) % 32, 1, Ity_I64));
+         }
+      }
+      else if (sz == BITS2(1,0)) {
+         /* Uh, this is ugly.  TODO: better. */
+         name = "4s";
+         IRExpr* tEA_4  = binop(Iop_Add64, mkexpr(tEA), mkU64(4));
+         IRExpr* tEA_12 = binop(Iop_Add64, mkexpr(tEA), mkU64(12));
+         IRExpr* tEA_20 = binop(Iop_Add64, mkexpr(tEA), mkU64(20));
+         IRExpr* tEA_28 = binop(Iop_Add64, mkexpr(tEA), mkU64(28));
+         if (isLD) {
+            putQRegLane((vT+0) % 32, 0, loadLE(Ity_I32, tEA_0));
+            putQRegLane((vT+0) % 32, 1, loadLE(Ity_I32, tEA_8));
+            putQRegLane((vT+0) % 32, 2, loadLE(Ity_I32, tEA_16));
+            putQRegLane((vT+0) % 32, 3, loadLE(Ity_I32, tEA_24));
+            putQRegLane((vT+1) % 32, 0, loadLE(Ity_I32, tEA_4));
+            putQRegLane((vT+1) % 32, 1, loadLE(Ity_I32, tEA_12));
+            putQRegLane((vT+1) % 32, 2, loadLE(Ity_I32, tEA_20));
+            putQRegLane((vT+1) % 32, 3, loadLE(Ity_I32, tEA_28));
+         } else {
+            storeLE(tEA_0,  getQRegLane((vT+0) % 32, 0, Ity_I32));
+            storeLE(tEA_8,  getQRegLane((vT+0) % 32, 1, Ity_I32));
+            storeLE(tEA_16, getQRegLane((vT+0) % 32, 2, Ity_I32));
+            storeLE(tEA_24, getQRegLane((vT+0) % 32, 3, Ity_I32));
+            storeLE(tEA_4,  getQRegLane((vT+1) % 32, 0, Ity_I32));
+            storeLE(tEA_12, getQRegLane((vT+1) % 32, 1, Ity_I32));
+            storeLE(tEA_20, getQRegLane((vT+1) % 32, 2, Ity_I32));
+            storeLE(tEA_28, getQRegLane((vT+1) % 32, 3, Ity_I32));
+         }
+      }
+      else {
+         vassert(0); // Can't happen.
+      }
+      putIReg64orSP(rN, binop(Iop_Add64, mkexpr(tEA), mkU64(32)));
+      DIP("%s {v%u.%s, v%u.%s}, [%s], #32\n", isLD ? "ld2" : "st2",
+          (vT+0) % 32, name, (vT+1) % 32, name, nameIReg64orSP(rN));
+      return True;
+   }
+
+   /* ---------- LD1/ST1 (multiple structures, no offset) ---------- */
+   /* Only a very few cases. */
+   /* 31        23
+      0100 1100 0100 0000 1010 00 n t  LD1 {Vt.16b, V(t+1)%32.16b}, [Xn|SP]
+      0100 1100 0000 0000 1010 00 n t  ST1 {Vt.16b, V(t+1)%32.16b}, [Xn|SP]
+   */
+   if (   (insn & 0xFFFFFC00) == 0x4C40A000 // LD1
+       || (insn & 0xFFFFFC00) == 0x4C00A000 // ST1
+      ) {
+      Bool   isLD = INSN(22,22) == 1;
+      UInt   rN   = INSN(9,5);
+      UInt   vT   = INSN(4,0);
+      IRTemp tEA  = newTemp(Ity_I64);
+      const HChar* name = "16b";
+      assign(tEA, getIReg64orSP(rN));
+      if (rN == 31) { /* FIXME generate stack alignment check */ }
+      IRExpr* tEA_0  = binop(Iop_Add64, mkexpr(tEA), mkU64(0));
+      IRExpr* tEA_16 = binop(Iop_Add64, mkexpr(tEA), mkU64(16));
+      if (isLD) {
+         putQReg128((vT+0) % 32, loadLE(Ity_V128, tEA_0));
+         putQReg128((vT+1) % 32, loadLE(Ity_V128, tEA_16));
+      } else {
+         storeLE(tEA_0,  getQReg128((vT+0) % 32));
+         storeLE(tEA_16, getQReg128((vT+1) % 32));
+      }
+      DIP("%s {v%u.%s, v%u.%s}, [%s], #32\n", isLD ? "ld1" : "st1",
+          (vT+0) % 32, name, (vT+1) % 32, name, nameIReg64orSP(rN));
       return True;
    }
 

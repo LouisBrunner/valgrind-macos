@@ -4402,7 +4402,8 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_NotV128:
          case Iop_Abs64Fx2:
          case Iop_Abs32Fx4:
-         case Iop_Neg64Fx2: {
+         case Iop_Neg64Fx2:
+         case Iop_Neg32Fx4: {
             HReg res = newVRegV(env);
             HReg arg = iselV128Expr(env, e->Iex.Unop.arg);
             ARM64VecUnaryOp op = ARM64vecu_INVALID;
@@ -4411,6 +4412,7 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
                case Iop_Abs64Fx2: op = ARM64vecu_FABS64x2; break;
                case Iop_Abs32Fx4: op = ARM64vecu_FABS32x4; break;
                case Iop_Neg64Fx2: op = ARM64vecu_FNEG64x2; break;
+               case Iop_Neg32Fx4: op = ARM64vecu_FNEG32x4; break;
                default: vassert(0);
             }
             addInstr(env, ARM64Instr_VUnaryV(op, res, arg));

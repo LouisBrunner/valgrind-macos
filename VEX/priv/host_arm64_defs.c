@@ -5157,6 +5157,9 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
             case ARM64vecu_FNEG64x2:
                *p++ = X_3_8_5_6_5_5(X011, X01110111, X00000, X111110, vN, vD);
                break;
+            case ARM64vecu_FNEG32x4:
+               *p++ = X_3_8_5_6_5_5(X011, X01110101, X00000, X111110, vN, vD);
+               break;
             case ARM64vecu_NOT:
                *p++ = X_3_8_5_6_5_5(X011, X01110001, X00000, X010110, vN, vD);
                break;

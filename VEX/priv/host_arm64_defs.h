@@ -310,9 +310,11 @@ typedef
       ARM64vecb_ADD64x2=120,
       ARM64vecb_ADD32x4,
       ARM64vecb_ADD16x8,
+      ARM64vecb_ADD8x16,
       ARM64vecb_SUB64x2,
       ARM64vecb_SUB32x4,
       ARM64vecb_SUB16x8,
+      ARM64vecb_SUB8x16,
       ARM64vecb_MUL32x4,
       ARM64vecb_MUL16x8,
       ARM64vecb_FADD64x2,
@@ -348,6 +350,8 @@ typedef
       ARM64vecb_FCMGE32x4,
       ARM64vecb_FCMGT64x2,
       ARM64vecb_FCMGT32x4,
+      ARM64vecb_TBL1,
+      ARM64vecb_CMHI8x16,
       ARM64vecb_INVALID
    }
    ARM64VecBinOp;

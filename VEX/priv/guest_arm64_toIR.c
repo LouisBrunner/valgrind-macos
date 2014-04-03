@@ -4987,6 +4987,96 @@ static IRTemp math_MINMAXV ( IRTemp src, IROp op )
 }
 
 
+/* Generate IR for TBL and TBX.  This deals with the 128 bit case
+   only. */
+static IRTemp math_TBL_TBX ( IRTemp tab[4], UInt len, IRTemp src,
+                             IRTemp oor_values )
+{
+   vassert(len >= 0 && len <= 3);
+
+   /* Generate some useful constants as concisely as possible. */
+   IRTemp half15 = newTemp(Ity_I64);
+   assign(half15, mkU64(0x0F0F0F0F0F0F0F0FULL));
+   IRTemp half16 = newTemp(Ity_I64);
+   assign(half16, mkU64(0x1010101010101010ULL));
+
+   /* A zero vector */
+   IRTemp allZero = newTemp(Ity_V128);
+   assign(allZero, mkV128(0x0000));
+   /* A vector containing 15 in each 8-bit lane */
+   IRTemp all15 = newTemp(Ity_V128);
+   assign(all15, binop(Iop_64HLtoV128, mkexpr(half15), mkexpr(half15)));
+   /* A vector containing 16 in each 8-bit lane */
+   IRTemp all16 = newTemp(Ity_V128);
+   assign(all16, binop(Iop_64HLtoV128, mkexpr(half16), mkexpr(half16)));
+   /* A vector containing 32 in each 8-bit lane */
+   IRTemp all32 = newTemp(Ity_V128);
+   assign(all32, binop(Iop_Add8x16, mkexpr(all16), mkexpr(all16)));
+   /* A vector containing 48 in each 8-bit lane */
+   IRTemp all48 = newTemp(Ity_V128);
+   assign(all48, binop(Iop_Add8x16, mkexpr(all16), mkexpr(all32)));
+   /* A vector containing 64 in each 8-bit lane */
+   IRTemp all64 = newTemp(Ity_V128);
+   assign(all64, binop(Iop_Add8x16, mkexpr(all32), mkexpr(all32)));
+
+   /* Group the 16/32/48/64 vectors so as to be indexable. */
+   IRTemp allXX[4] = { all16, all32, all48, all64 };
+
+   /* Compute the result for each table vector, with zeroes in places
+      where the index values are out of range, and OR them into the
+      running vector. */
+   IRTemp running_result = newTemp(Ity_V128);
+   assign(running_result, mkV128(0));
+
+   UInt tabent;
+   for (tabent = 0; tabent <= len; tabent++) {
+      vassert(tabent >= 0 && tabent < 4);
+      IRTemp bias = newTemp(Ity_V128);
+      assign(bias,
+             mkexpr(tabent == 0 ? allZero : allXX[tabent-1]));
+      IRTemp biased_indices = newTemp(Ity_V128);
+      assign(biased_indices,
+             binop(Iop_Sub8x16, mkexpr(src), mkexpr(bias)));
+      IRTemp valid_mask = newTemp(Ity_V128);
+      assign(valid_mask,
+             binop(Iop_CmpGT8Ux16, mkexpr(all16), mkexpr(biased_indices)));
+      IRTemp safe_biased_indices = newTemp(Ity_V128);
+      assign(safe_biased_indices,
+             binop(Iop_AndV128, mkexpr(biased_indices), mkexpr(all15)));
+      IRTemp results_or_junk = newTemp(Ity_V128);
+      assign(results_or_junk,
+             binop(Iop_Perm8x16, mkexpr(tab[tabent]),
+                                 mkexpr(safe_biased_indices)));
+      IRTemp results_or_zero = newTemp(Ity_V128);
+      assign(results_or_zero,
+             binop(Iop_AndV128, mkexpr(results_or_junk), mkexpr(valid_mask)));
+      /* And OR that into the running result. */
+      IRTemp tmp = newTemp(Ity_V128);
+      assign(tmp, binop(Iop_OrV128, mkexpr(results_or_zero),
+                        mkexpr(running_result)));
+      running_result = tmp;
+   }
+
+   /* So now running_result holds the overall result where the indices
+      are in range, and zero in out-of-range lanes.  Now we need to
+      compute an overall validity mask and use this to copy in the
+      lanes in the oor_values for out of range indices.  This is
+      unnecessary for TBL but will get folded out by iropt, so we lean
+      on that and generate the same code for TBL and TBX here. */
+   IRTemp overall_valid_mask = newTemp(Ity_V128);
+   assign(overall_valid_mask,
+          binop(Iop_CmpGT8Ux16, mkexpr(allXX[len]), mkexpr(src)));
+   IRTemp result = newTemp(Ity_V128);
+   assign(result,
+          binop(Iop_OrV128,
+                mkexpr(running_result),
+                binop(Iop_AndV128,
+                      mkexpr(oor_values),
+                      unop(Iop_NotV128, mkexpr(overall_valid_mask)))));
+   return result;      
+}
+
+
 static
 Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
 {
@@ -6734,6 +6824,43 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
       /* else fall through */
    }
 
+   /* -------------------- TBL, TBX -------------------- */
+   /* 31  28        20 15 14  12  9 4
+      0q0 01110 000 m  0  len 000 n d  TBL Vd.Ta, {Vn .. V(n+len)%32}, Vm.Ta
+      0q0 01110 000 m  0  len 100 n d  TBX Vd.Ta, {Vn .. V(n+len)%32}, Vm.Ta
+      where Ta = 16b(q=1) or 8b(q=0)
+   */
+   if (INSN(31,31) == 0 && INSN(29,21) == BITS9(0,0,1,1,1,0,0,0,0)
+       && INSN(15,15) == 0 && INSN(11,10) == BITS2(0,0)) {
+      Bool isQ   = INSN(30,30) == 1;
+      Bool isTBX = INSN(12,12) == 1;
+      UInt mm    = INSN(20,16);
+      UInt len   = INSN(14,13);
+      UInt nn    = INSN(9,5);
+      UInt dd    = INSN(4,0);
+      /* The out-of-range values to use. */
+      IRTemp oor_values = newTemp(Ity_V128);
+      assign(oor_values, isTBX ? getQReg128(dd) : mkV128(0));
+      /* src value */
+      IRTemp src = newTemp(Ity_V128);
+      assign(src, getQReg128(mm));
+      /* The table values */
+      IRTemp tab[4];
+      UInt   i;
+      for (i = 0; i <= len; i++) {
+         vassert(i < 4);
+         tab[i] = newTemp(Ity_V128);
+         assign(tab[i], getQReg128((nn + i) % 32));
+      }
+      IRTemp res = math_TBL_TBX(tab, len, src, oor_values);
+      putQReg128(dd, isQ ? mkexpr(res)
+                         : unop(Iop_ZeroHI64ofV128, mkexpr(res)) );
+      const HChar* Ta = isQ ? "16b" : "8b";
+      const HChar* nm = isTBX ? "tbx" : "tbl";
+      DIP("%s %s.%s, {v%d.16b .. v%d.16b}, %s.%s\n",
+          nm, nameQReg128(dd), Ta, nn, (nn + len) % 32, nameQReg128(mm), Ta);
+      return True;
+   }
    /* FIXME Temporary hacks to get through ld.so FIXME */
 
    /* ------------------ movi vD.4s, #0x0 ------------------ */

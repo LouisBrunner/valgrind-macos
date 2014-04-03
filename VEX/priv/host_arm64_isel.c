@@ -4918,9 +4918,11 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_Add64x2:
          case Iop_Add32x4:
          case Iop_Add16x8:
+         case Iop_Add8x16:
          case Iop_Sub64x2:
          case Iop_Sub32x4:
          case Iop_Sub16x8:
+         case Iop_Sub8x16:
          case Iop_Mul32x4:
          case Iop_Mul16x8:
          case Iop_CmpEQ64x2:
@@ -4930,6 +4932,8 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_CmpLE32Fx4:
          case Iop_CmpLT64Fx2:
          case Iop_CmpLT32Fx4:
+         case Iop_Perm8x16:
+         case Iop_CmpGT8Ux16:
          {
             HReg res  = newVRegV(env);
             HReg argL = iselV128Expr(env, e->Iex.Binop.arg1);
@@ -4955,9 +4959,11 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
                case Iop_Add64x2:    op = ARM64vecb_ADD64x2; break;
                case Iop_Add32x4:    op = ARM64vecb_ADD32x4; break;
                case Iop_Add16x8:    op = ARM64vecb_ADD16x8; break;
+               case Iop_Add8x16:    op = ARM64vecb_ADD8x16; break;
                case Iop_Sub64x2:    op = ARM64vecb_SUB64x2; break;
                case Iop_Sub32x4:    op = ARM64vecb_SUB32x4; break;
                case Iop_Sub16x8:    op = ARM64vecb_SUB16x8; break;
+               case Iop_Sub8x16:    op = ARM64vecb_SUB8x16; break;
                case Iop_Mul32x4:    op = ARM64vecb_MUL32x4; break;
                case Iop_Mul16x8:    op = ARM64vecb_MUL16x8; break;
                case Iop_CmpEQ64x2:  op = ARM64vecb_CMEQ64x2; break;
@@ -4967,6 +4973,8 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
                case Iop_CmpLE32Fx4: op = ARM64vecb_FCMGE32x4; sw = True; break;
                case Iop_CmpLT64Fx2: op = ARM64vecb_FCMGT64x2; sw = True; break;
                case Iop_CmpLT32Fx4: op = ARM64vecb_FCMGT32x4; sw = True; break;
+               case Iop_Perm8x16:   op = ARM64vecb_TBL1; break;
+               case Iop_CmpGT8Ux16: op = ARM64vecb_CMHI8x16; break;
                default: vassert(0);
             }
             if (sw) {

@@ -1089,7 +1089,8 @@ GEN_BINARY_TEST(fabd, 4s)
 GEN_BINARY_TEST(fabd, 2s)
 
 /* Generate a test that involves three vector regs,
-   with no bias as towards which is input or output. */
+   with no bias as towards which is input or output.  It's also OK
+   to use v16, v17, v18 as scratch. */
 #define GEN_THREEVEC_TEST(TESTNAME,INSN,VECREG1NO,VECREG2NO,VECREG3NO)  \
   __attribute__((noinline)) \
   static void test_##TESTNAME ( void ) { \
@@ -1111,7 +1112,9 @@ GEN_BINARY_TEST(fabd, 2s)
            "str   q"#VECREG1NO", [%0, #48] ; " \
            "str   q"#VECREG2NO", [%0, #64] ; " \
            "str   q"#VECREG3NO", [%0, #80] ; " \
-           : : "r"(&block[0]) : "memory", "v"#VECREG1NO, "v"#VECREG2NO, "v"#VECREG3NO \
+           : : "r"(&block[0]) \
+           : "memory", "v"#VECREG1NO, "v"#VECREG2NO, "v"#VECREG3NO, \
+             "v16", "v17", "v18" \
         ); \
         printf(INSN   "   "); \
         showV128(&block[0]); printf("  "); \
@@ -1186,6 +1189,98 @@ GEN_UNARY_TEST(fneg, 2s, 2s)
 GEN_UNARY_TEST(fabs, 2d, 2d)
 GEN_UNARY_TEST(fabs, 4s, 4s)
 GEN_UNARY_TEST(fabs, 2s, 2s)
+
+GEN_BINARY_TEST(fcmeq,  2d)
+GEN_BINARY_TEST(fcmeq,  4s)
+GEN_BINARY_TEST(fcmeq,  2s)
+GEN_BINARY_TEST(fcmge,  2d)
+GEN_BINARY_TEST(fcmge,  4s)
+GEN_BINARY_TEST(fcmge,  2s)
+GEN_BINARY_TEST(fcmgt,  2d)
+GEN_BINARY_TEST(fcmgt,  4s)
+GEN_BINARY_TEST(fcmgt,  2s)
+GEN_BINARY_TEST(facge,  2d)
+GEN_BINARY_TEST(facge,  4s)
+GEN_BINARY_TEST(facge,  2s)
+GEN_BINARY_TEST(facgt,  2d)
+GEN_BINARY_TEST(facgt,  4s)
+GEN_BINARY_TEST(facgt,  2s)
+
+// Uses v15 as the first table entry
+GEN_THREEVEC_TEST(
+   tbl_16b_1reg, "tbl v21.16b, {v15.16b}, v23.16b", 21, 15, 23)
+// and v15 ^ v21 as the second table entry
+GEN_THREEVEC_TEST(
+   tbl_16b_2reg, "eor v16.16b, v15.16b, v21.16b ; "
+                 "tbl v21.16b, {v15.16b, v16.16b}, v23.16b", 21, 15, 23)
+// and v15 ^ v23 as the third table entry
+GEN_THREEVEC_TEST(
+   tbl_16b_3reg, "eor v16.16b, v15.16b, v21.16b ; "
+                 "eor v17.16b, v15.16b, v23.16b ; "
+                 "tbl v21.16b, {v15.16b, v16.16b, v17.16b}, v23.16b",
+                 21, 15, 23)
+// and v21 ^ v23 as the fourth table entry
+GEN_THREEVEC_TEST(
+   tbl_16b_4reg, "eor v16.16b, v15.16b, v21.16b ; "
+                 "eor v17.16b, v15.16b, v23.16b ; "
+                 "eor v18.16b, v21.16b, v23.16b ; "
+                 "tbl v21.16b, {v15.16b, v16.16b, v17.16b, v18.16b}, v23.16b",
+                 21, 15, 23)
+
+// Same register scheme for tbl .8b, tbx .16b, tbx.8b
+GEN_THREEVEC_TEST(
+   tbl_8b_1reg, "tbl v21.8b, {v15.16b}, v23.8b", 21, 15, 23)
+GEN_THREEVEC_TEST(
+   tbl_8b_2reg, "eor v16.16b, v15.16b, v21.16b ; "
+                "tbl v21.8b, {v15.16b, v16.16b}, v23.8b", 21, 15, 23)
+GEN_THREEVEC_TEST(
+   tbl_8b_3reg, "eor v16.16b, v15.16b, v21.16b ; "
+                "eor v17.16b, v15.16b, v23.16b ; "
+                "tbl v21.8b, {v15.16b, v16.16b, v17.16b}, v23.8b",
+                21, 15, 23)
+GEN_THREEVEC_TEST(
+   tbl_8b_4reg, "eor v16.16b, v15.16b, v21.16b ; "
+                "eor v17.16b, v15.16b, v23.16b ; "
+                "eor v18.16b, v21.16b, v23.16b ; "
+                "tbl v21.8b, {v15.16b, v16.16b, v17.16b, v18.16b}, v23.8b",
+                21, 15, 23)
+
+GEN_THREEVEC_TEST(
+   tbx_16b_1reg, "tbx v21.16b, {v15.16b}, v23.16b", 21, 15, 23)
+GEN_THREEVEC_TEST(
+   tbx_16b_2reg, "eor v16.16b, v15.16b, v21.16b ; "
+                 "tbx v21.16b, {v15.16b, v16.16b}, v23.16b", 21, 15, 23)
+GEN_THREEVEC_TEST(
+   tbx_16b_3reg, "eor v16.16b, v15.16b, v21.16b ; "
+                 "eor v17.16b, v15.16b, v23.16b ; "
+                 "tbx v21.16b, {v15.16b, v16.16b, v17.16b}, v23.16b",
+                 21, 15, 23)
+GEN_THREEVEC_TEST(
+   tbx_16b_4reg, "eor v16.16b, v15.16b, v21.16b ; "
+                 "eor v17.16b, v15.16b, v23.16b ; "
+                 "eor v18.16b, v21.16b, v23.16b ; "
+                 "tbx v21.16b, {v15.16b, v16.16b, v17.16b, v18.16b}, v23.16b",
+                 21, 15, 23)
+
+// Same register scheme for tbx .8b, tbx .16b, tbx.8b
+GEN_THREEVEC_TEST(
+   tbx_8b_1reg, "tbx v21.8b, {v15.16b}, v23.8b", 21, 15, 23)
+GEN_THREEVEC_TEST(
+   tbx_8b_2reg, "eor v16.16b, v15.16b, v21.16b ; "
+                "tbx v21.8b, {v15.16b, v16.16b}, v23.8b", 21, 15, 23)
+GEN_THREEVEC_TEST(
+   tbx_8b_3reg, "eor v16.16b, v15.16b, v21.16b ; "
+                "eor v17.16b, v15.16b, v23.16b ; "
+                "tbx v21.8b, {v15.16b, v16.16b, v17.16b}, v23.8b",
+                21, 15, 23)
+GEN_THREEVEC_TEST(
+   tbx_8b_4reg, "eor v16.16b, v15.16b, v21.16b ; "
+                "eor v17.16b, v15.16b, v23.16b ; "
+                "eor v18.16b, v21.16b, v23.16b ; "
+                "tbx v21.8b, {v15.16b, v16.16b, v17.16b, v18.16b}, v23.8b",
+                21, 15, 23)
+
+
 
 /* IMPORTANT: keep the tests in here in the same order as the
    implementations are in guest_arm64_toIR.c. */
@@ -1305,6 +1400,24 @@ int main ( void )
    //test_fabd_2s();
    printf("END:   F{ADD,SUB,MUL,DIV,MLA,MLS,ABD} (vector) (MISSING fabd 2s/4s)\n\n");
 
+   printf("BEGIN: FCM{EQ,GE,GT}, FAC{GE,GT} (vector)\n");
+   test_fcmeq_2d();
+   test_fcmeq_4s();
+   test_fcmeq_2s();
+   test_fcmge_2d();
+   test_fcmge_4s();
+   test_fcmge_2s();
+   test_fcmgt_2d();
+   test_fcmgt_4s();
+   test_fcmgt_2s();
+   test_facge_2d();
+   test_facge_4s();
+   test_facge_2s();
+   test_facgt_2d();
+   test_facgt_4s();
+   test_facgt_2s();
+   printf("END:   FCM{EQ,GE,GT}, FAC{GE,GT} (vector)\n");
+
    printf("BEGIN: FCVTN (MISSING 16F <- 32F cases)\n");
    test_fcvtn_01();
    test_fcvtn_02();
@@ -1316,16 +1429,16 @@ int main ( void )
    test_add_2s();
    test_add_8h();
    test_add_4h();
-   //test_add_16b();
-   //test_add_8b();
+   test_add_16b();
+   test_add_8b();
    test_sub_2d();
    test_sub_4s();
    test_sub_2s();
    test_sub_8h();
    test_sub_4h();
-   //test_sub_16b();
-   //test_sub_8b();
-   printf("END:   ADD/SUB (vector) (MISSING b16/b8 cases)\n\n");
+   test_sub_16b();
+   test_sub_8b();
+   printf("END:   ADD/SUB (vector)\n\n");
 
    printf("BEGIN: ADD/SUB (scalar)\n");
    test_add_d_d_d();
@@ -1585,6 +1698,25 @@ int main ( void )
    //test_neg_16b_16b();
    //test_neg_8b_8b();
    printf("END:   NEG (vector) (MISSING 8b/16b)\n\n");
+
+   printf("BEGIN: TBL, TBX\n");
+   test_tbl_16b_1reg();
+   test_tbl_16b_2reg();
+   test_tbl_16b_3reg();
+   test_tbl_16b_4reg();
+   test_tbl_8b_1reg();
+   test_tbl_8b_2reg();
+   test_tbl_8b_3reg();
+   test_tbl_8b_4reg();
+   test_tbx_16b_1reg();
+   test_tbx_16b_2reg();
+   test_tbx_16b_3reg();
+   test_tbx_16b_4reg();
+   test_tbx_8b_1reg();
+   test_tbx_8b_2reg();
+   test_tbx_8b_3reg();
+   test_tbx_8b_4reg();
+   printf("END:   TBL, TBX\n");
 
    return 0;
 }

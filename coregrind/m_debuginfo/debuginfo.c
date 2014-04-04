@@ -2426,6 +2426,14 @@ Addr ML_(get_CFA) ( Addr ip, Addr sp, Addr fp,
      return compute_cfa(&uregs,
                         min_accessible,  max_accessible, di, cfsi);
    }
+#elif defined(VGA_mips32)
+   { D3UnwindRegs uregs;
+     uregs.pc = ip;
+     uregs.sp = sp;
+     uregs.fp = fp;
+     return compute_cfa(&uregs,
+                        min_accessible,  max_accessible, di, cfsi);
+   }
 
 #  else
    return 0; /* indicates failure */

@@ -2632,6 +2632,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       typeE.cuOff = posn;
       typeE.tag   = Te_TyStOrUn;
       typeE.Te.TyStOrUn.name = NULL;
+      typeE.Te.TyStOrUn.typeR = D3_INVALID_CUOFF;
       typeE.Te.TyStOrUn.fieldRs
          = VG_(newXA)( ML_(dinfo_zalloc), "di.readdwarf3.pTD.struct_type.1", 
                        ML_(dinfo_free),
@@ -2658,6 +2659,13 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
          }
          if (attr == DW_AT_specification && cts.szB > 0 && cts.u.val > 0) {
             is_spec = True;
+         }
+         if (attr == DW_AT_signature && form == DW_FORM_ref_sig8
+             && cts.szB > 0) {
+            have_szB = True;
+            typeE.Te.TyStOrUn.szB = 8;
+            typeE.Te.TyStOrUn.typeR
+               = cook_die_using_form( cc, (UWord)cts.u.val, form );
          }
       }
       /* Do we have something that looks sane? */

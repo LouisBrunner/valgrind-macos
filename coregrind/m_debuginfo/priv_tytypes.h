@@ -116,6 +116,7 @@ typedef
          struct {
             HChar*  name; /* in mallocville */
             UWord   szB;
+            UWord   typeR;
             XArray* /* of UWord */ fieldRs;
             Bool    complete;
             Bool    isStruct;

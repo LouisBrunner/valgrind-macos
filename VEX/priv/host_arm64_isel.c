@@ -1760,16 +1760,14 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 
       /* Handle misc other ops. */
 
-//ZZ       if (e->Iex.Binop.op == Iop_Max32U) {
-//ZZ          HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
-//ZZ          HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
-//ZZ          HReg dst  = newVRegI(env);
-//ZZ          addInstr(env, ARMInstr_CmpOrTst(True/*isCmp*/, argL,
-//ZZ                                          ARMRI84_R(argR)));
-//ZZ          addInstr(env, mk_iMOVds_RR(dst, argL));
-//ZZ          addInstr(env, ARMInstr_CMov(ARMcc_LO, dst, ARMRI84_R(argR)));
-//ZZ          return dst;
-//ZZ       }
+      if (e->Iex.Binop.op == Iop_Max32U) {
+         HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         HReg dst  = newVRegI(env);
+         addInstr(env, ARM64Instr_Cmp(argL, ARM64RIA_R(argR), False/*!is64*/));
+         addInstr(env, ARM64Instr_CSel(dst, argL, argR, ARM64cc_CS));
+         return dst;
+      }
 
       if (e->Iex.Binop.op == Iop_32HLto64) {
          HReg hi32s = iselIntExpr_R(env, e->Iex.Binop.arg1);

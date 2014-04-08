@@ -5333,7 +5333,7 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
       if (ok) {
          ULong imm64hi = (bitQ == 0 && bitOP == 0)  ? 0  : imm64lo;
          putQReg128(dd, binop(Iop_64HLtoV128, mkU64(imm64hi), mkU64(imm64lo)));
-         DIP("mov %s, #0x016%llx'%016llx\n", nameQReg128(dd), imm64hi, imm64lo);
+         DIP("mov %s, #0x%016llx'%016llx\n", nameQReg128(dd), imm64hi, imm64lo);
          return True;
       }
       /* else fall through */

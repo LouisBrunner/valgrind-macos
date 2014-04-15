@@ -60,8 +60,18 @@ typedef void* PTRACE_ARG3_TYPE;
 # error "unexpected wordsize"
 #endif
 
+// if > 0, pid for which registers have to be restored.
+// if == 0, means we have not yet called setregs (or have already
+// restored the registers).
+static int pid_of_save_regs = 0;
 /* True if we have continued pid_of_save_regs after PTRACE_ATTACH. */
 static Bool pid_of_save_regs_continued = False;
+// When setregs has been called to change the registers of pid_of_save_regs,
+// vgdb cannot transmit the signals intercepted during ptrace.
+// So, we queue them, and will deliver them when detaching.
+// See function waitstopped for more info.
+static int signal_queue_sz = 0;
+static siginfo_t *signal_queue;
 
 /* True when loss of connection indicating that the Valgrind
    process is dying. */
@@ -252,9 +262,44 @@ Bool waitstopped (pid_t pid, int signal_expected, const char *msg)
          break;
 
       /* pid received a signal which is not the signal we are waiting for.
-         We continue pid, transmitting this signal. */
-      DEBUG(1, "waitstopped PTRACE_CONT with signal %d\n", signal_received);
-      res = ptrace (PTRACE_CONT, pid, NULL, signal_received);
+         If we have not (yet) changed the registers of the inferior
+         or we have (already) reset them, we can transmit the signal.
+
+         If we have already set the registers of the inferior, we cannot
+         transmit the signal, as this signal would arrive when the
+         gdbserver code runs. And valgrind only expects signals to
+         arrive in a small code portion around
+         client syscall logic, where signal are unmasked (see e.g.
+         m_syswrap/syscall-x86-linux.S ML_(do_syscall_for_client_WRK).
+
+         As ptrace is forcing a call to gdbserver by jumping
+         'out of this region', signals are not masked, but
+         will arrive outside of the allowed/expected code region.
+         So, if we have changed the registers of the inferior, we
+         rather queue the signal to transmit them when detaching,
+         after having restored the registers to the initial values. */
+      if (pid_of_save_regs) {
+         siginfo_t *newsiginfo;
+
+         // realloc a bigger queue, and store new signal at the end.
+         // This is not very efficient but we assume not many sigs are queued.
+         signal_queue_sz++;
+         signal_queue = vrealloc(signal_queue, sizeof(siginfo_t) * signal_queue_sz);
+         newsiginfo = signal_queue + (signal_queue_sz - 1);
+
+         res = ptrace (PTRACE_GETSIGINFO, pid, NULL, newsiginfo);
+         if (res != 0) {
+            ERROR(errno, "PTRACE_GETSIGINFO failed: signal lost !!!!\n");
+            signal_queue_sz--;
+         } else
+            DEBUG(1, "waitstopped PTRACE_CONT, queuing signal %d"
+                  " si_signo %d si_pid %d\n",
+                  signal_received, newsiginfo->si_signo, newsiginfo->si_pid);
+         res = ptrace (PTRACE_CONT, pid, NULL, 0);
+      } else {
+         DEBUG(1, "waitstopped PTRACE_CONT with signal %d\n", signal_received);
+         res = ptrace (PTRACE_CONT, pid, NULL, signal_received);
+      }
       if (res != 0) {
          ERROR(errno, "waitstopped PTRACE_CONT\n");
          return False;
@@ -447,8 +492,6 @@ void detach_from_all_threads (pid_t pid)
    }
 }
 
-// if > 0, pid for which registers have to be restored.
-static int pid_of_save_regs = 0;
 static struct user user_save;
 
 // The below indicates if ptrace_getregs (and ptrace_setregs) can be used.
@@ -588,6 +631,11 @@ Bool setregs (pid_t pid, void *regs, long regs_bsz)
 static
 void restore_and_detach (pid_t pid)
 {
+   int res;
+
+   DEBUG(1, "restore_and_detach pid %d pid_of_save_regs %d\n",
+         pid, pid_of_save_regs);
+
    if (pid_of_save_regs) {
       /* In case the 'main pid' has been continued, we need to stop it
          before resetting the registers. */
@@ -602,10 +650,32 @@ void restore_and_detach (pid_t pid)
          ERROR(errno, "setregs restore registers pid %d after cont\n",
                pid_of_save_regs);
       }
+
+      /* Now, we transmit all the signals we have queued. */
+      if (signal_queue_sz > 0) {
+         int i;
+         for (i = 0; i < signal_queue_sz; i++) {
+            DEBUG(1, "PTRACE_CONT to transmit queued signal %d\n",
+                  signal_queue[i].si_signo);
+            res = ptrace (PTRACE_CONT, pid_of_save_regs, NULL,
+                          signal_queue[i].si_signo);
+            if (res != 0)
+               ERROR(errno, "PTRACE_CONT with signal %d\n",
+                     signal_queue[i].si_signo);
+            if (!stop(pid_of_save_regs, "sigstop after transmit sig"))
+               DEBUG(0, "Could not sigstop after transmit sig");
+         }
+         free (signal_queue);
+         signal_queue = NULL;
+         signal_queue_sz = 0;
+      }
       pid_of_save_regs = 0;
    } else {
       DEBUG(1, "PTRACE_SETREGS restore registers: no pid\n");
    }
+   if (signal_queue)
+      ERROR (0, "One or more signals queued were not delivered. "
+             "First signal: %d\n", signal_queue);
    detach_from_all_threads(pid);
 }
 

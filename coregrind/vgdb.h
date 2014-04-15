@@ -64,6 +64,11 @@ extern struct timeval dbgtv;
                             fflush(stderr),                              \
                             exit(1))
 
+/* Calls malloc (size). Exits if memory can't be allocated. */
+extern void *vmalloc(size_t size);
+/* Calls realloc (size). Exits if memory can't be allocated. */
+extern void *vrealloc(void *ptr,size_t size);
+
 /* Will be set to True when any condition indicating we have to shutdown
    is encountered. */
 extern Bool shutting_down;

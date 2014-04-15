@@ -119,7 +119,12 @@ EXTRA_DIST = \
 	nlsigvgdb.vgtest \
 	nlsigvgdb.stderr.exp \
 	nlsigvgdb.stderrB.exp \
-	nlsigvgdb.stdinB.gdb
+	nlsigvgdb.stdinB.gdb \
+	nlvgdbsigqueue.vgtest \
+	nlvgdbsigqueue.stderrB.exp \
+	nlvgdbsigqueue.stderr.exp \
+	nlvgdbsigqueue.stdinB.gdb \
+	nlvgdbsigqueue.stdoutB.exp
 
 check_PROGRAMS = \
 	clean_after_fork \

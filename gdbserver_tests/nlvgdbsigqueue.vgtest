@@ -1,0 +1,14 @@
+# test :
+#   sending signal when all threads are in WaitSys
+# vgdb must queue these signals and deliver them before PTRACE_DETACHing.
+# sleepers is started with argument so that it will mostly sleep.
+prog: sleepers
+args: 1000000000 1000000000 1 BSBSBSBS
+vgopts: --tool=none --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-nlvgdbsigqueue
+stderr_filter: filter_stderr
+prereq: test -e gdb -a -f vgdb.invoker
+progB: gdb
+argsB: --quiet -l 60 --nx ./sleepers
+stdinB: nlvgdbsigqueue.stdinB.gdb
+stdoutB_filter: filter_gdb
+stderrB_filter: filter_make_empty

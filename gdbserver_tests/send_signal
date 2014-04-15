@@ -1,0 +1,17 @@
+#! /bin/sh
+
+# send_signal sends signal $1 to the Valgrind process using prefix $2 in $3 seconds
+SIG=$1
+shift
+PREFIX=$1
+shift
+SLEEP=$1
+shift
+VPID=`./vgdb -l $PREFIX 2>&1 | awk '{print $2}' | sed -e 's/--pid=//'`
+if [ "$VPID" = "" ]
+then
+  echo "send_signal could not determine the valgrind pid with " $PREFIX
+  exit 1
+fi
+(sleep $SLEEP
+ kill -s $SIG $VPID) &

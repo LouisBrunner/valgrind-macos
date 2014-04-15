@@ -87,8 +87,6 @@ VgdbShared64 *shared64;
 
 #define VS_vgdb_pid (shared32 != NULL ? shared32->vgdb_pid : shared64->vgdb_pid)
 
-/* Calls malloc (size). Exits if memory can't be allocated. */
-static
 void *vmalloc(size_t size)
 {
    void * mem = malloc(size);
@@ -97,8 +95,6 @@ void *vmalloc(size_t size)
    return mem;
 }
 
-/* Calls realloc (size). Exits if memory can't be allocated. */
-static
 void *vrealloc(void *ptr,size_t size)
 {
    void * mem = realloc(ptr, size);

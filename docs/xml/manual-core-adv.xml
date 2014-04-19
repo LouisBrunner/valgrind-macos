@@ -1418,18 +1418,24 @@ problems or bugs.</para>
   </listitem>
 
   <listitem>
-    <para><varname>v.info scheduler</varname> shows the state and
-    stack trace for all threads, as known by Valgrind.  This allows to
-    compare the stack traces produced by the Valgrind unwinder with
-    the stack traces produced by GDB+Valgrind gdbserver. Pay attention
-    that GDB and Valgrind scheduler status have their own thread
-    numbering scheme. To make the link between the GDB thread
-    number and the corresponding Valgrind scheduler thread number,
-    use the GDB command <computeroutput>info
-    threads</computeroutput>.  The output of this command shows the
-    GDB thread number and the valgrind 'tid'. The 'tid' is the thread number
-    output by <computeroutput>v.info scheduler</computeroutput>.
-    When using the callgrind tool, the callgrind monitor command
+    <para><varname>v.info scheduler</varname> shows various
+    information about threads. First, it outputs the host stack trace,
+    i.e. the Valgrind code being executed. Then, for each thread, it
+    outputs the thread state. For non terminated threads, the state is
+    followed by the guest (client) stack trace. Finally, for each
+    active thread or for each terminated thread slot not yet re-used,
+    it shows the max usage of the valgrind stack.</para>
+    <para>Showing the client stack traces allows to compare the stack
+    traces produced by the Valgrind unwinder with the stack traces
+    produced by GDB+Valgrind gdbserver. Pay attention that GDB and
+    Valgrind scheduler status have their own thread numbering
+    scheme. To make the link between the GDB thread number and the
+    corresponding Valgrind scheduler thread number, use the GDB
+    command <computeroutput>info threads</computeroutput>.  The output
+    of this command shows the GDB thread number and the valgrind
+    'tid'. The 'tid' is the thread number output
+    by <computeroutput>v.info scheduler</computeroutput>.  When using
+    the callgrind tool, the callgrind monitor command
     <computeroutput>status</computeroutput> outputs internal callgrind
     information about the stack/call graph it maintains.
     </para>

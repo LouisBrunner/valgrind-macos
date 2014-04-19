@@ -186,6 +186,10 @@ extern void VG_(strtok_get_address_and_size) (Addr* address,
                                               SizeT* szB, 
                                               HChar **ssaveptr);
 
+/* Print various statistics about Valgrind core,
+   and optionally tool and memory statistics. */
+extern void VG_(print_all_stats) (Bool memory_stats, Bool tool_stats);
+
 #endif   // __PUB_TOOL_GDBSERVER_H
 
 /*--------------------------------------------------------------------*/

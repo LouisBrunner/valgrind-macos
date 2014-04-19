@@ -40,6 +40,7 @@
 #include "pub_core_options.h"
 #include "pub_core_libcsetjmp.h"    // to keep _threadstate.h happy
 #include "pub_core_threadstate.h"   // For VG_INVALID_THREADID
+#include "pub_core_gdbserver.h"
 #include "pub_core_transtab.h"
 #include "pub_core_tooliface.h"
 
@@ -742,11 +743,18 @@ void VG_(out_of_memory_NORETURN) ( const HChar* who, SizeT szB )
    if (outputTrial <= 1) {
       if (outputTrial == 0) {
          outputTrial++;
+         // First print the memory stats with the aspacemgr data.
          VG_(am_show_nsegments) (0, "out_of_memory");
          VG_(print_all_arena_stats) ();
          if (VG_(clo_profile_heap))
             VG_(print_arena_cc_analysis) ();
-         /* In case we are an inner valgrind, asks the outer to report
+         // And then print some other information that might help.
+         VG_(print_all_stats) (False, /* Memory stats */
+                               True /* Tool stats */);
+         VG_(show_sched_status) (True,  // host_stacktrace
+                                 True,  // valgrind_stack_usage
+                                 True); // exited_threads
+        /* In case we are an inner valgrind, asks the outer to report
             its memory state in its log output. */
          INNER_REQUEST(VALGRIND_MONITOR_COMMAND("v.set log_output"));
          INNER_REQUEST(VALGRIND_MONITOR_COMMAND("v.info memory aspacemgr"));
@@ -1289,11 +1297,13 @@ typedef struct {
 
 static AnCC anCCs[N_AN_CCS];
 
+/* Sorting by decreasing cost center nBytes, to have the biggest
+   cost centres at the top. */
 static Int cmp_AnCC_by_vol ( const void* v1, const void* v2 ) {
    const AnCC* ancc1 = v1;
    const AnCC* ancc2 = v2;
-   if (ancc1->nBytes < ancc2->nBytes) return -1;
-   if (ancc1->nBytes > ancc2->nBytes) return 1;
+   if (ancc1->nBytes < ancc2->nBytes) return 1;
+   if (ancc1->nBytes > ancc2->nBytes) return -1;
    return 0;
 }
 

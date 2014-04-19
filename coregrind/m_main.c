@@ -73,31 +73,6 @@
 
 
 /*====================================================================*/
-/*=== Counters, for profiling purposes only                        ===*/
-/*====================================================================*/
-
-static void print_all_stats ( void )
-{
-   VG_(print_translation_stats)();
-   VG_(print_tt_tc_stats)();
-   VG_(print_scheduler_stats)();
-   VG_(print_ExeContext_stats)( False /* with_stacktraces */ );
-   VG_(print_errormgr_stats)();
-
-   // Memory stats
-   if (VG_(clo_verbosity) > 2) {
-      VG_(message)(Vg_DebugMsg, "\n");
-      VG_(message)(Vg_DebugMsg, 
-         "------ Valgrind's internal memory use stats follow ------\n" );
-      VG_(sanity_check_malloc_all)();
-      VG_(message)(Vg_DebugMsg, "------\n" );
-      VG_(print_all_arena_stats)();
-      VG_(message)(Vg_DebugMsg, "\n");
-   }
-}
-
-
-/*====================================================================*/
 /*=== Command-line: variables, processing, etc                     ===*/
 /*====================================================================*/
 
@@ -2489,7 +2464,8 @@ void shutdown_actions_NORETURN( ThreadId tid,
    VG_(sanity_check_general)( True /*include expensive checks*/ );
 
    if (VG_(clo_stats))
-      print_all_stats();
+      VG_(print_all_stats)(VG_(clo_verbosity) > 2, /* Memory stats */
+                           False /* tool prints stats in the tool fini */);
 
    /* Show a profile of the heap(s) at shutdown.  Optionally, first
       throw away all the debug info, as that makes it easy to spot

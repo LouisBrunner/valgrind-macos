@@ -148,6 +148,30 @@ const char *wordn (const char *s, int n)
    return s;
 }
 
+void VG_(print_all_stats) (Bool memory_stats, Bool tool_stats)
+{
+   if (memory_stats) {
+      VG_(message)(Vg_DebugMsg, "\n");
+      VG_(message)(Vg_DebugMsg, 
+         "------ Valgrind's internal memory use stats follow ------\n" );
+      VG_(sanity_check_malloc_all)();
+      VG_(message)(Vg_DebugMsg, "------\n" );
+      VG_(print_all_arena_stats)();
+      if (VG_(clo_profile_heap))
+         VG_(print_arena_cc_analysis) ();
+      VG_(message)(Vg_DebugMsg, "\n");
+   }
+
+   VG_(print_translation_stats)();
+   VG_(print_tt_tc_stats)();
+   VG_(print_scheduler_stats)();
+   VG_(print_ExeContext_stats)( False /* with_stacktraces */ );
+   VG_(print_errormgr_stats)();
+   if (tool_stats && VG_(needs).print_stats) {
+      VG_TDICT_CALL(tool_print_stats);
+   }
+}
+
 /* handle_gdb_valgrind_command handles the provided mon string command.
    If command is recognised, return 1 else return 0.
    Note that in case of ambiguous command, 1 is returned.
@@ -333,18 +357,14 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
          ret = 1;
          break;
       case  5: /* scheduler */
-         VG_(show_sched_status) ();
+         VG_(show_sched_status) (True,  // host_stacktrace
+                                 True,  // valgrind_stack_usage
+                                 True); // exited_threads
          ret = 1;
          break;
       case  6: /* stats */
-         VG_(print_translation_stats)();
-         VG_(print_tt_tc_stats)();
-         VG_(print_scheduler_stats)();
-         VG_(print_ExeContext_stats)( False /* with_stacktraces */ );
-         VG_(print_errormgr_stats)();
-         if (VG_(needs).print_stats) {
-            VG_TDICT_CALL(tool_print_stats);
-         }
+         VG_(print_all_stats)(False, /* Memory stats */
+                              True   /* Tool stats */);
          ret = 1;
          break;
       case  7: /* open_fds */

@@ -71,8 +71,17 @@ extern void  VG_(core_panic_at)   ( const HChar* str, UnwindStartRegs* );
 extern void VG_(unimplemented) ( const HChar* msg )
             __attribute__((__noreturn__));
 
-/* Show the state of all threads.  Mostly for debugging V. */
-extern void VG_(show_sched_status) ( void );
+/* Show the state of various threads related information, such
+   as the guest stacktrace for each thread.
+   Mostly for debugging V.
+   The following activates optional output:
+     host_stacktrace : shows the host stacktrace.
+     valgrind_stack_usage : shows how much of the valgrind stack was used.
+     exited_thread_slots : show information for thread slots that were used
+        but the thread has now exited. */
+extern void VG_(show_sched_status) ( Bool host_stacktrace,
+                                     Bool valgrind_stack_usage,
+                                     Bool exited_threads);
 
 #endif   // __PUB_CORE_LIBCASSERT_H
 

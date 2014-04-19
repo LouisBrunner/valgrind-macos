@@ -2101,7 +2101,9 @@ void scheduler_sanity ( ThreadId tid )
          lasttime = now;
          VG_(printf)("\n------------ Sched State at %d ms ------------\n",
                      (Int)now);
-         VG_(show_sched_status)();
+         VG_(show_sched_status)(True,  // host_stacktrace
+                                True,  // valgrind_stack_usage
+                                True); // exited_threads);
       }
    }
 

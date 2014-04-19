@@ -112,17 +112,17 @@ extern HChar* VG_(strtok)         (HChar* s, const HChar* delim);
 extern Bool VG_(parse_Addr) ( const HChar** ppc, Addr* result );
 
 /* Parse an "enum set" made of one or more words comma separated.
-   The allowed word values are given in tokens, separated
-   by comma.
-   If a word in tokens is found in input,
-   the corresponding bit will be set in *enum_set
-   (words in tokens are numbered starting from 0).
-   The special token - in tokens can be used to indicate
-   that the corresponding bit position cannot be set.
-   The words none and all can be used to indicate an empty
-   enum_set (0) or an enum_set with all bits corresponding
-   to tokens set. If none or all is given, no other word
-   can be given in input.
+   The allowed word values are given in 'tokens', separated by comma.
+   If a word in 'tokens' is found in 'input', the corresponding bit
+   will be set in *enum_set (words in 'tokens' are numbered starting from 0).
+   Using in 'tokens' the special token "-" (a minus character) indicates that
+   the corresponding bit position cannot be set.
+   In addition to the words specified in 'tokens', VG_(parse_enum_set)
+   automatically accept the words "none" and "all" to indicate respectively
+   an empty enum_set (0) or an enum_set with all bits corresponding
+   to the words in tokens set.
+   If "none" or "all" is present in 'input', no other word can be given
+   in 'input'.
    If parsing is successful, returns True and sets *enum_set.
    If parsing fails, returns False. */
 extern Bool VG_(parse_enum_set) ( const HChar *tokens,

@@ -5114,50 +5114,8 @@ Int           MC_(clo_mc_level)               = 2;
 
 static Bool MC_(parse_leak_heuristics) ( const HChar *str0, UInt *lhs )
 {
-   SizeT str0len = VG_(strlen)(str0);
-   if (str0len > 1000) return False; /* "obviously invalid" */
-   HChar  tok_str0[str0len+1];
-   HChar *saveptr;
-   HChar *token;
-
-   Bool seen_all_kw = False;
-   Bool seen_none_kw = False;
-
-   VG_(strcpy) (tok_str0, str0);
-   *lhs = 0;
-
-   for (token = VG_(strtok_r)(tok_str0, ",", &saveptr);
-        token;
-        token = VG_(strtok_r)(NULL, ",", &saveptr)) {
-      if      (0 == VG_(strcmp)(token, "stdstring"))
-         *lhs |= H2S(LchStdString);
-      else if (0 == VG_(strcmp)(token, "newarray"))
-         *lhs |= H2S(LchNewArray);
-      else if (0 == VG_(strcmp)(token, "multipleinheritance"))
-         *lhs |= H2S(LchMultipleInheritance);
-      else if (0 == VG_(strcmp)(token, "all"))
-         seen_all_kw = True;
-      else if (0 == VG_(strcmp)(token, "none"))
-         seen_none_kw = True;
-      else
-         return False;
-   }
-
-   if (seen_all_kw) {
-      if (seen_none_kw || *lhs)
-         return False; // mixing all with either none or a specific value.
-      *lhs = HallS;
-   } else if (seen_none_kw) {
-      if (seen_all_kw || *lhs)
-         return False; // mixing none with either all or a specific value.
-      *lhs = 0;
-   } else {
-      // seen neither all or none, we must see at least one value
-      if (*lhs == 0)
-         return False;
-   }
-
-   return True;
+   return  VG_(parse_enum_set) ("-,stdstring,newarray,multipleinheritance",
+                                str0, lhs);
 }
 
 
@@ -6624,6 +6582,8 @@ static void mc_print_stats (void)
 {
    SizeT max_secVBit_szB, max_SMs_szB, max_shmem_szB;
 
+   VG_(message)(Vg_DebugMsg, " memcheck: freelist: vol %lld length %lld\n",
+                VG_(free_queue_volume), VG_(free_queue_length));
    VG_(message)(Vg_DebugMsg,
       " memcheck: sanity checks: %d cheap, %d expensive\n",
       n_sanity_cheap, n_sanity_expensive );

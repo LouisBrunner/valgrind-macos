@@ -492,6 +492,82 @@ Bool VG_(parse_Addr) ( const HChar** ppc, Addr* result )
    return True;
 }
 
+Bool VG_(parse_enum_set) ( const HChar *tokens,
+                           const HChar *input,
+                           UInt *enum_set)
+{
+   const SizeT tokens_len = VG_(strlen)(tokens);
+   if (tokens_len > 1000) return False; /* "obviously invalid" */
+   HChar  tok_tokens[tokens_len+1];
+   HChar *tokens_saveptr;
+   HChar *token;
+   UInt token_nr = 0;
+   UInt all_set = 0;
+
+   const SizeT input_len = VG_(strlen)(input);
+   if (input_len > 1000) return False; /* "obviously invalid" */
+   HChar  tok_input[input_len+1];
+   HChar *input_saveptr;
+   HChar *input_word;
+   UInt word_nr = 0;
+   UInt known_words = 0;
+   Bool seen_all_kw = False;
+   Bool seen_none_kw = False;
+
+   *enum_set = 0;
+
+   VG_(strcpy) (tok_input, input);
+   for (input_word = VG_(strtok_r)(tok_input, ",", &input_saveptr);
+        input_word;
+        input_word = VG_(strtok_r)(NULL, ",", &input_saveptr)) {
+      word_nr++;
+      if (0 == VG_(strcmp)(input_word, "all")) {
+         seen_all_kw = True;
+         known_words++;
+      } else if (0 == VG_(strcmp)(input_word, "none")) {
+         seen_none_kw = True;
+         known_words++;
+      }
+
+      // Scan tokens + compute all_set. Do that even if all or none was
+      // recognised to have a correct value for all_set when exiting
+      // of the 'input' loop.
+      all_set = 0;
+      token_nr = 0;
+      VG_(strcpy) (tok_tokens, tokens);
+      for (token = VG_(strtok_r)(tok_tokens, ",", &tokens_saveptr);
+           token;
+           token = VG_(strtok_r)(NULL, ",", &tokens_saveptr)) {
+         if (0 != VG_(strcmp)(token, "-")) {
+            if (0 == VG_(strcmp)(input_word, token)) {
+               *enum_set |= 1 << token_nr;
+               known_words++;
+            }
+            all_set |= 1 << token_nr;
+         }
+         token_nr++;
+      }
+   }
+
+   if (known_words != word_nr)
+      return False; // One or more input_words not recognised.
+   if (seen_all_kw) {
+      if (seen_none_kw || *enum_set)
+         return False; // mixing all with either none or a specific value.
+      *enum_set = all_set;
+   } else if (seen_none_kw) {
+      if (seen_all_kw || *enum_set)
+         return False; // mixing none with either all or a specific value.
+      *enum_set = 0;
+   } else {
+      // seen neither all or none, we must see at least one value
+      if (*enum_set == 0)
+         return False;
+   }
+
+   return True;
+}
+
 SizeT VG_(strspn) ( const HChar* s, const HChar* accpt )
 {
    const HChar *p, *a;

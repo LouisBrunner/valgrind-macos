@@ -434,50 +434,8 @@ static const HChar* xml_leak_kind ( Reachedness lossmode )
 
 Bool MC_(parse_leak_kinds) ( const HChar* str0, UInt* lks )
 {
-   HChar  tok_str0[VG_(strlen)(str0)+1];
-   HChar* saveptr;
-   HChar* token;
-
-   Bool seen_all_kw = False;
-   Bool seen_none_kw = False;
-
-   VG_(strcpy) (tok_str0, str0);
-   *lks = 0;
-
-   for (token = VG_(strtok_r)(tok_str0, ",", &saveptr);
-        token;
-        token = VG_(strtok_r)(NULL, ",", &saveptr)) {
-      if      (0 == VG_(strcmp)(token, "reachable"))
-         *lks |= R2S(Reachable);
-      else if (0 == VG_(strcmp)(token, "possible"))
-         *lks |= R2S(Possible);
-      else if (0 == VG_(strcmp)(token, "indirect"))
-         *lks |= R2S(IndirectLeak);
-      else if (0 == VG_(strcmp)(token, "definite"))
-         *lks |= R2S(Unreached);
-      else if (0 == VG_(strcmp)(token, "all"))
-         seen_all_kw = True;
-      else if (0 == VG_(strcmp)(token, "none"))
-         seen_none_kw = True;
-      else
-         return False;
-   }
-
-   if (seen_all_kw) {
-      if (seen_none_kw || *lks)
-         return False; // mixing all with either none or a specific value.
-      *lks = RallS;
-   } else if (seen_none_kw) {
-      if (seen_all_kw || *lks)
-         return False; // mixing none with either all or a specific value.
-      *lks = 0;
-   } else {
-      // seen neither all or none, we must see at least one value
-      if (*lks == 0)
-         return False;
-   }
-
-   return True;
+   return VG_(parse_enum_set)("reachable,possible,indirect,definite",
+                              str0, lks);
 }
 
 static const HChar* pp_Reachedness_for_leak_kinds(Reachedness r)

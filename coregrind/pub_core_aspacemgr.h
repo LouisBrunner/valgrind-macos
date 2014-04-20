@@ -86,6 +86,12 @@ extern NSegment const* VG_(am_next_nsegment) ( const NSegment* here,
 // extern Bool VG_(am_is_valid_for_client)
 //   ( Addr start, SizeT len, UInt prot );
 
+/* Same as VG_(am_is_valid_for_client) but for valgrind :
+   test if memory is addressable by valgrind with at least
+   the protection 'prot'. */
+extern Bool VG_(am_is_valid_for_valgrind)
+   ( Addr start, SizeT len, UInt prot );
+
 /* Variant of VG_(am_is_valid_for_client) which allows free areas to
    be consider part of the client's addressable space.  It also
    considers reservations to be allowable, since from the client's

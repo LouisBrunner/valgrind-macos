@@ -1294,12 +1294,12 @@ ULong VG_(am_get_anonsize_total)( void )
 }
 
 
-/* Test if a piece of memory is addressable by the client with at
+/* Test if a piece of memory is addressable by client or by valgrind with at
    least the "prot" protection permissions by examining the underlying
-   segments.  If freeOk is True then SkFree areas are also allowed.
+   segments.  If client && freeOk is True then SkFree areas are also allowed.
 */
 static
-Bool is_valid_for_client( Addr start, SizeT len, UInt prot, Bool freeOk )
+Bool is_valid_for( Bool client, Addr start, SizeT len, UInt prot, Bool freeOk )
 {
    Int  i, iLo, iHi;
    Bool needR, needW, needX;
@@ -1327,18 +1327,32 @@ Bool is_valid_for_client( Addr start, SizeT len, UInt prot, Bool freeOk )
       iHi = find_nsegment_idx(start + len - 1);
    }
 
-   for (i = iLo; i <= iHi; i++) {
-      if ( (nsegments[i].kind == SkFileC 
-            || nsegments[i].kind == SkAnonC
-            || nsegments[i].kind == SkShmC
-            || (nsegments[i].kind == SkFree  && freeOk)
-            || (nsegments[i].kind == SkResvn && freeOk))
-           && (needR ? nsegments[i].hasR : True)
-           && (needW ? nsegments[i].hasW : True)
-           && (needX ? nsegments[i].hasX : True) ) {
-         /* ok */
-      } else {
-         return False;
+   if (client) {
+      for (i = iLo; i <= iHi; i++) {
+         if ( (nsegments[i].kind == SkFileC 
+               || nsegments[i].kind == SkAnonC
+               || nsegments[i].kind == SkShmC
+               || (nsegments[i].kind == SkFree  && freeOk)
+               || (nsegments[i].kind == SkResvn && freeOk))
+              && (needR ? nsegments[i].hasR : True)
+              && (needW ? nsegments[i].hasW : True)
+              && (needX ? nsegments[i].hasX : True) ) {
+            /* ok */
+         } else {
+            return False;
+         }
+      }
+   } else {
+      for (i = iLo; i <= iHi; i++) {
+         if ( (nsegments[i].kind == SkFileV 
+               || nsegments[i].kind == SkAnonV)
+              && (needR ? nsegments[i].hasR : True)
+              && (needW ? nsegments[i].hasW : True)
+              && (needX ? nsegments[i].hasX : True) ) {
+            /* ok */
+         } else {
+            return False;
+         }
       }
    }
    return True;
@@ -1350,7 +1364,8 @@ Bool is_valid_for_client( Addr start, SizeT len, UInt prot, Bool freeOk )
 Bool VG_(am_is_valid_for_client)( Addr start, SizeT len, 
                                   UInt prot )
 {
-   return is_valid_for_client( start, len, prot, False/*free not OK*/ );
+   return is_valid_for(/* client */ True,
+                       start, len, prot, False/*free not OK*/ );
 }
 
 /* Variant of VG_(am_is_valid_for_client) which allows free areas to
@@ -1360,32 +1375,15 @@ Bool VG_(am_is_valid_for_client)( Addr start, SizeT len,
 Bool VG_(am_is_valid_for_client_or_free_or_resvn)
    ( Addr start, SizeT len, UInt prot )
 {
-   return is_valid_for_client( start, len, prot, True/*free is OK*/ );
+   return is_valid_for(/* client */ True,
+                        start, len, prot, True/*free is OK*/ );
 }
 
 
-/* Test if a piece of memory is addressable by valgrind with at least
-   PROT_NONE protection permissions by examining the underlying
-   segments. */
-static Bool is_valid_for_valgrind( Addr start, SizeT len )
+Bool VG_(am_is_valid_for_valgrind) ( Addr start, SizeT len, UInt prot )
 {
-   Int  i, iLo, iHi;
-
-   if (len == 0)
-      return True; /* somewhat dubious case */
-   if (start + len < start)
-      return False; /* reject wraparounds */
-
-   iLo = find_nsegment_idx(start);
-   iHi = find_nsegment_idx(start + len - 1);
-   for (i = iLo; i <= iHi; i++) {
-      if (nsegments[i].kind == SkFileV || nsegments[i].kind == SkAnonV) {
-         /* ok */
-      } else {
-         return False;
-      }
-   }
-   return True;
+   return is_valid_for(/* client */ False,
+                        start, len, prot, False/*irrelevant*/ );
 }
 
 
@@ -2657,7 +2655,8 @@ SysRes am_munmap_both_wrk ( /*OUT*/Bool* need_discard,
             ( start, len, VKI_PROT_NONE ))
          goto eINVAL;
    } else {
-      if (!is_valid_for_valgrind( start, len ))
+      if (!VG_(am_is_valid_for_valgrind)
+            ( start, len, VKI_PROT_NONE ))
          goto eINVAL;
    }
 

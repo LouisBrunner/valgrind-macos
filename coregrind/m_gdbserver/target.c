@@ -452,9 +452,11 @@ int valgrind_read_memory (CORE_ADDR memaddr, unsigned char *myaddr, int len)
 {
    const void *sourceaddr = C2v (memaddr);
    dlog(2, "reading memory %p size %d\n", sourceaddr, len);
-   if (VG_(am_is_valid_for_client_or_free_or_resvn) ((Addr) sourceaddr, 
-                                                      len, VKI_PROT_READ)
-       || (hostvisibility /* TBD: && check valgrind read accessibility */)) {
+   if (VG_(am_is_valid_for_client) ((Addr) sourceaddr, 
+                                    len, VKI_PROT_READ)
+       || (hostvisibility 
+           && VG_(am_is_valid_for_valgrind) ((Addr) sourceaddr, 
+                                             len, VKI_PROT_READ))) {
       VG_(memcpy) (myaddr, sourceaddr, len);
       return 0;
    } else {
@@ -469,10 +471,11 @@ int valgrind_write_memory (CORE_ADDR memaddr, const unsigned char *myaddr, int l
    void *targetaddr = C2v (memaddr);
    dlog(2, "writing memory %p size %d\n", targetaddr, len);
    is_valid_client_memory 
-      = VG_(am_is_valid_for_client_or_free_or_resvn) ((Addr)targetaddr, 
-                                                      len, VKI_PROT_WRITE);
+      = VG_(am_is_valid_for_client) ((Addr)targetaddr, len, VKI_PROT_WRITE);
    if (is_valid_client_memory
-       || (hostvisibility /* TBD: && check valgrind write accessibility */)) {
+       || (hostvisibility 
+           && VG_(am_is_valid_for_valgrind) ((Addr) targetaddr, 
+                                             len, VKI_PROT_READ))) {
       if (len > 0) {
          VG_(memcpy) (targetaddr, myaddr, len);
          if (is_valid_client_memory && VG_(tdict).track_post_mem_write) {

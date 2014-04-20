@@ -69,6 +69,26 @@ extern VgVgdb VG_(clo_vgdb);
 /* if > 0, checks every VG_(clo_vgdb_poll) BBS if vgdb wants to be served. */
 extern Int VG_(clo_vgdb_poll);
 
+/* Specify when Valgrind gdbserver stops the execution and wait
+   for a GDB to connect. */
+typedef
+   enum {                       // Stop :
+      VgdbStopAt_Startup,       // just before the client starts to execute.
+      VgdbStopAt_Exit,          // just before the client exits.
+      VgdbStopAt_ValgrindAbExit // on abnormal valgrind exit.
+   }
+   VgdbStopAt;
+// Build mask to check or set VgdbStop_At a membership
+#define VgdbStopAt2S(a) (1 << (a))
+// VgdbStopAt a is member of the Set s ?
+#define VgdbStopAtiS(a,s) ((s) & VgdbStopAt2S(a))
+// A set with all VgdbStopAt:
+#define VgdbStopAtallS \
+     (VgdbStopAt2S(VgdbStopAt_Startup) \
+    | VgdbStopAt2S(VgdbStopAt_Exit)    \
+    | VgdbStopAt2S(VgdbStopAt_ValgrindAbExit)
+extern UInt VG_(clo_vgdb_stop_at); // A set of VgdbStopAt reasons.
+
 /* prefix for the named pipes (FIFOs) used by vgdb/gdb to communicate with valgrind */
 extern const HChar *VG_(clo_vgdb_prefix);
 

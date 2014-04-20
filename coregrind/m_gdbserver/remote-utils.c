@@ -407,21 +407,23 @@ void remote_close (void)
 {
    const int pid = VG_(getpid)();
    remote_finish(orderly_finish);
-   if (pid == pid_from_to_creator) {
-      dlog(1, "unlinking\n    %s\n    %s\n    %s\n", 
-           from_gdb, to_gdb, shared_mem);
-      if (VG_(unlink) (from_gdb) == -1)
-         warning ("could not unlink %s\n", from_gdb);
-      if (VG_(unlink) (to_gdb) == -1)
-         warning ("could not unlink %s\n", to_gdb);
-      if (VG_(unlink) (shared_mem) == -1)
-         warning ("could not unlink %s\n", shared_mem);
-   }
-   else {
-      dlog(1, "not creator => not unlinking %s and %s\n", from_gdb, to_gdb);
-   }
+   dlog(1, "%d (creator %d) maybe unlinking \n    %s\n    %s\n    %s\n", 
+        pid, pid_from_to_creator,
+        from_gdb ? from_gdb : "NULL",
+        to_gdb ? to_gdb : "NULL",
+        shared_mem ? shared_mem : "NULL");
+   if (pid == pid_from_to_creator && from_gdb && VG_(unlink) (from_gdb) == -1)
+      warning ("could not unlink %s\n", from_gdb);
+   if (pid == pid_from_to_creator && to_gdb && VG_(unlink) (to_gdb) == -1)
+      warning ("could not unlink %s\n", to_gdb);
+   if (pid == pid_from_to_creator && shared_mem && VG_(unlink) (shared_mem) == -1)
+      warning ("could not unlink %s\n", shared_mem);
    free (from_gdb);
+   from_gdb = NULL;
    free (to_gdb);
+   to_gdb = NULL;
+   free (shared_mem);
+   shared_mem = NULL;
 }
 
 Bool remote_connected(void)

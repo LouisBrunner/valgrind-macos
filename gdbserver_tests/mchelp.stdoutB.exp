@@ -64,6 +64,8 @@ debugging valgrind internals monitor commands:
   v.info scheduler        : show valgrind thread state and stacktrace
   v.info stats            : show various valgrind and tool stats
   v.set debuglog <level>  : set valgrind debug log level to <level>
+  v.set hostvisibility [yes*|no] : (en/dis)ables access by gdb/gdbserver to
+    Valgrind internal host status/memory
   v.translate <addr> [<traceflags>]  : debug translation of <addr> with <traceflags>
     (default traceflags 0b00100000 : show after instrumentation)
    An additional flag  0b100000000 allows to show gdbserver instrumentation

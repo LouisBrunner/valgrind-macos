@@ -119,7 +119,6 @@ static
 void kill_request (const char *msg)
 {
    VG_(umsg) ("%s", msg);
-   remote_close();
    VG_(exit) (0);
 }
 
@@ -243,6 +242,8 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
 "  v.info scheduler        : show valgrind thread state and stacktrace\n"
 "  v.info stats            : show various valgrind and tool stats\n"
 "  v.set debuglog <level>  : set valgrind debug log level to <level>\n"
+"  v.set hostvisibility [yes*|no] : (en/dis)ables access by gdb/gdbserver to\n"
+"    Valgrind internal host status/memory\n"
 "  v.translate <addr> [<traceflags>]  : debug translation of <addr> with <traceflags>\n"
 "    (default traceflags 0b00100000 : show after instrumentation)\n"
 "   An additional flag  0b100000000 allows to show gdbserver instrumentation\n");
@@ -253,7 +254,7 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
       wcmd = strtok_r (NULL, " ", &ssaveptr);
       switch (kwdid = VG_(keyword_id) 
               ("vgdb-error debuglog merge-recursive-frames"
-               " gdb_output log_output mixed_output",
+               " gdb_output log_output mixed_output hostvisibility ",
                wcmd, kwd_report_all)) {
       case -2:
       case -1: 
@@ -304,6 +305,32 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
          command_output_to_log = False;
          VG_(gdb_printf)
             ("valgrind output will go to log, interactive output will go to gdb\n");
+         break;
+      case 6: /* hostvisibility */
+         wcmd = strtok_r (NULL, " ", &ssaveptr);
+         if (wcmd != NULL) {
+            switch (VG_(keyword_id) ("yes no", wcmd, kwd_report_all)) {
+            case -2:
+            case -1: break;
+            case  0: 
+               hostvisibility = True;
+               break;
+            case 1:
+               hostvisibility = False;
+               break;
+            default: tl_assert (0);
+            }
+         } else {
+            hostvisibility = True;
+         }
+         if (hostvisibility)
+            VG_(gdb_printf) 
+               ("Enabled access to Valgrind memory/status by GDB\n"
+                "If not yet done, tell GDB which valgrind file(s) to use:\n"
+                "add-symbol-file <tool or preloaded file> <loadaddr>\n");
+         else
+            VG_(gdb_printf)
+               ("Disabled access to Valgrind memory/status by GDB\n");
          break;
       default:
          vg_assert (0);

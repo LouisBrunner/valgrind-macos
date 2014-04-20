@@ -66,6 +66,9 @@ extern void  VG_(core_panic)      ( const HChar* str );
 __attribute__ ((__noreturn__))
 extern void  VG_(core_panic_at)   ( const HChar* str, UnwindStartRegs* );
 
+/* Exits with status as client exit code. */
+extern void VG_(client_exit)( Int status );
+
 /* Called when some unhandleable client behaviour is detected.
    Prints a msg and aborts. */
 extern void VG_(unimplemented) ( const HChar* msg )

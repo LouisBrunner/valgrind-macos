@@ -588,11 +588,22 @@ static void invalidate_current_ip (ThreadId tid, const HChar *who)
    invalidate_if_jump_not_yet_gdbserved (VG_(get_IP) (tid), who);
 }
 
+Bool VG_(gdbserver_init_done) (void)
+{
+   return gdbserver_called > 0;
+}
+
+Bool VG_(gdbserver_stop_at) (VgdbStopAt stopat)
+{
+   return gdbserver_called > 0 && VgdbStopAtiS(stopat, VG_(clo_vgdb_stop_at));
+}
+
 void VG_(gdbserver_prerun_action) (ThreadId tid)
 {
    // Using VG_(dyn_vgdb_error) allows the user to control if gdbserver
    // stops after a fork.
-   if (VG_(dyn_vgdb_error) == 0) {
+   if (VG_(dyn_vgdb_error) == 0 
+       || VgdbStopAtiS(VgdbStopAt_Startup, VG_(clo_vgdb_stop_at))) {
       /* The below call allows gdb to attach at startup
          before the first guest instruction is executed. */
       VG_(umsg)("(action at startup) vgdb me ... \n");
@@ -1457,7 +1468,8 @@ void VG_(gdbserver_status_output)(void)
        "interrupts intr_tid %d gs_non_busy %d gs_busy %d tid_non_intr %d\n"
        "gdbserved addresses %d (-1 = not initialized)\n"
        "watchpoints %d (-1 = not initialized)\n"
-       "vgdb-error %d\n",
+       "vgdb-error %d\n"
+       "hostvisibility %s\n",
        gdbserver_called,
        valgrind_single_stepping(),
        
@@ -1468,5 +1480,6 @@ void VG_(gdbserver_status_output)(void)
        
        nr_gdbserved_addresses,
        nr_watchpoints,
-       VG_(dyn_vgdb_error));
+       VG_(dyn_vgdb_error),
+       hostvisibility ? "yes" : "no");
 }

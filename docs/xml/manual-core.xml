@@ -777,6 +777,46 @@ in most cases.  We group the available options by rough categories.</para>
     </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.vgdb-stop-at" xreflabel="--vgdb-stop-at">
+    <term>
+      <option><![CDATA[--vgdb-stop-at=<set> [default: none] ]]></option>
+    </term>
+    <listitem>
+      <para> Use this option when the Valgrind gdbserver is enabled with
+      <option>--vgdb=yes</option> or <option>--vgdb=full</option>.
+      The Valgrind gdbserver will be invoked for each error after
+      <option>--vgdb-error</option> have been reported.
+      You can additionally ask the Valgrind gdbserver to be invoked
+      for other events, specified in one of the following ways:  </para>
+      <itemizedlist>
+        <listitem><para>a comma separated list of one or more of
+            <option>startup exit valgrindabexit</option>.</para>
+
+          <para>The values <option>startup</option> <option>exit</option>
+          <option>valgrindabexit</option> respectively indicate to
+          invoke gdbserver before your program is executed, after the
+          last instruction of your program, on Valgrind abnormal exit
+          (e.g. internal error, out of memory, ...).</para>
+
+          <para>Note: <option>startup</option> and
+          <option>--vgdb-error=0</option> will both cause Valgrind
+          gdbserver to be invoked before your program is executed. The
+          <option>--vgdb-error=0</option> will in addition cause your 
+          program to stop on all subsequent errors.</para>
+
+        </listitem>
+        
+        <listitem><para><option>all</option> to specify the complete set.
+            It is equivalent to
+            <option>--vgdb-stop-at=startup,exit,valgrindabexit</option>.</para>
+        </listitem>
+        
+        <listitem><para><option>none</option> for the empty set.</para>
+        </listitem>
+      </itemizedlist>
+    </listitem>
+  </varlistentry>
+
   <varlistentry id="opt.track-fds" xreflabel="--track-fds">
     <term>
       <option><![CDATA[--track-fds=<yes|no> [default: no] ]]></option>

@@ -446,46 +446,55 @@ void valgrind_store_registers (int regno)
    usr_store_inferior_registers (regno);
 }
 
+Bool hostvisibility = False;
+
 int valgrind_read_memory (CORE_ADDR memaddr, unsigned char *myaddr, int len)
 {
    const void *sourceaddr = C2v (memaddr);
    dlog(2, "reading memory %p size %d\n", sourceaddr, len);
-   if (!VG_(am_is_valid_for_client_or_free_or_resvn) ((Addr) sourceaddr, 
-                                                      len, VKI_PROT_READ)) {
+   if (VG_(am_is_valid_for_client_or_free_or_resvn) ((Addr) sourceaddr, 
+                                                      len, VKI_PROT_READ)
+       || (hostvisibility /* TBD: && check valgrind read accessibility */)) {
+      VG_(memcpy) (myaddr, sourceaddr, len);
+      return 0;
+   } else {
       dlog(1, "error reading memory %p size %d\n", sourceaddr, len);
       return -1;
    }
-   VG_(memcpy) (myaddr, sourceaddr, len);
-   return 0;
 }
 
 int valgrind_write_memory (CORE_ADDR memaddr, const unsigned char *myaddr, int len)
 {
+   Bool is_valid_client_memory;
    void *targetaddr = C2v (memaddr);
    dlog(2, "writing memory %p size %d\n", targetaddr, len);
-   if (!VG_(am_is_valid_for_client_or_free_or_resvn) ((Addr)targetaddr, 
-                                                      len, VKI_PROT_WRITE)) {
+   is_valid_client_memory 
+      = VG_(am_is_valid_for_client_or_free_or_resvn) ((Addr)targetaddr, 
+                                                      len, VKI_PROT_WRITE);
+   if (is_valid_client_memory
+       || (hostvisibility /* TBD: && check valgrind write accessibility */)) {
+      if (len > 0) {
+         VG_(memcpy) (targetaddr, myaddr, len);
+         if (is_valid_client_memory && VG_(tdict).track_post_mem_write) {
+            /* Inform the tool of the post memwrite.  Note that we do the
+               minimum necessary to avoid complains from e.g.
+               memcheck. The idea is that the debugger is as least
+               intrusive as possible.  So, we do not inform of the pre
+               mem write (and in any case, this would cause problems with
+               memcheck that does not like our CorePart in
+               pre_mem_write. */
+            ThreadState *tst = 
+               (ThreadState *) inferior_target_data (current_inferior);
+            ThreadId tid = tst->tid;
+            VG_(tdict).track_post_mem_write( Vg_CoreClientReq, tid,
+                                             (Addr) targetaddr, len );
+         }
+      }
+      return 0;
+   } else {
       dlog(1, "error writing memory %p size %d\n", targetaddr, len);
       return -1;
    }
-   if (len > 0) {
-      VG_(memcpy) (targetaddr, myaddr, len);
-      if (VG_(tdict).track_post_mem_write) {
-         /* Inform the tool of the post memwrite.  Note that we do the
-            minimum necessary to avoid complains from e.g.
-            memcheck. The idea is that the debugger is as least
-            intrusive as possible.  So, we do not inform of the pre
-            mem write (and in any case, this would cause problems with
-            memcheck that does not like our CorePart in
-            pre_mem_write. */
-         ThreadState *tst = 
-            (ThreadState *) inferior_target_data (current_inferior);
-         ThreadId tid = tst->tid;
-         VG_(tdict).track_post_mem_write( Vg_CoreClientReq, tid,
-                                          (Addr) targetaddr, len );
-      }
-   }
-   return 0;
 }
 
 /* insert or remove a breakpoint */

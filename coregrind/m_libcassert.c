@@ -33,6 +33,7 @@
 #include "pub_core_vkiscnums.h"
 #include "pub_core_libcsetjmp.h"    // to keep threadstate.h happy
 #include "pub_core_threadstate.h"
+#include "pub_core_gdbserver.h"
 #include "pub_core_aspacemgr.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
@@ -228,9 +229,33 @@
 
 #define BACKTRACE_DEPTH    100         // nice and deep!
 
-/* Pull down the entire world */
-void VG_(exit)( Int status )
+__attribute__ ((__noreturn__))
+static void exit_wrk( Int status, Bool gdbserver_call_allowed)
 {
+   static Bool exit_called = False;
+   // avoid recursive exit during gdbserver call.
+
+   if (gdbserver_call_allowed && !exit_called) {
+      const ThreadId atid = 1; // Arbitrary tid used to call/terminate gdbsrv.
+      exit_called = True;
+      if (status != 0 && VG_(gdbserver_stop_at) (VgdbStopAt_ValgrindAbExit)) {
+         if (VG_(gdbserver_init_done)()) {
+            VG_(umsg)("(action at valgrind abnormal exit) vgdb me ... \n");
+            VG_(gdbserver) (atid);
+         } else {
+            VG_(umsg)("(action at valgrind abnormal exit) "
+                      "Early valgrind exit : vgdb not yet usable\n");
+         }
+      }
+      if (VG_(gdbserver_init_done)()) {
+         // Always terminate the gdbserver when Valgrind exits, so as
+         // to e.g. cleanup the FIFOs.
+         VG_(gdbserver_exit) (atid,
+                              status == 0 ? VgSrc_ExitProcess : VgSrc_FatalSig);
+      }
+   }
+   exit_called = True;
+
 #if defined(VGO_linux)
    (void)VG_(do_syscall1)(__NR_exit_group, status );
 #elif defined(VGO_darwin)
@@ -244,6 +269,19 @@ void VG_(exit)( Int status )
    __builtin_trap();
    *(volatile Int*)0 = 'x';
 }
+
+/* Pull down the entire world */
+void VG_(exit)( Int status )
+{
+   exit_wrk (status, True);
+}
+
+/* Pull down the entire world */
+void VG_(client_exit)( Int status )
+{
+   exit_wrk (status, False);
+}
+
 
 // Print the scheduler status.
 static void show_sched_status_wrk ( Bool host_stacktrace,
@@ -305,7 +343,8 @@ static void show_sched_status_wrk ( Bool host_stacktrace,
       if (valgrind_stack_usage && stack != 0)
           VG_(printf)("valgrind stack top usage: %ld of %ld\n",
                       VG_STACK_ACTIVE_SZB 
-                      - VG_(am_get_VgStack_unused_szB)(stack, VG_STACK_ACTIVE_SZB),
+                      - VG_(am_get_VgStack_unused_szB)(stack,
+                                                       VG_STACK_ACTIVE_SZB),
                       (SizeT) VG_STACK_ACTIVE_SZB);
    }
    VG_(printf)("\n");

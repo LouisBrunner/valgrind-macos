@@ -108,6 +108,8 @@ static void usage_NORETURN ( Bool debug_help )
 "    --vgdb-error=<number>     invoke gdbserver after <number> errors [%d]\n"
 "                              to get started quickly, use --vgdb-error=0\n"
 "                              and follow the on-screen directions\n"
+"    --vgdb-stop-at=event1,event2,... invoke gdbserver for given events [none]\n"
+"         where event is one of startup exit valgrindabexit all none\n"
 "    --track-fds=no|yes        track open file descriptors? [no]\n"
 "    --time-stamp=no|yes       add timestamps to log messages? [no]\n"
 "    --log-fd=<number>         log messages to file descriptor [2=stderr]\n"
@@ -537,6 +539,11 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
       }
       else if VG_INT_CLO (arg, "--vgdb-poll",      VG_(clo_vgdb_poll)) {}
       else if VG_INT_CLO (arg, "--vgdb-error",     VG_(clo_vgdb_error)) {}
+      else if VG_STR_CLO (arg, "--vgdb-stop-at", tmp_str) {
+         if (!VG_(parse_enum_set)("startup,exit,valgrindabexit", tmp_str,
+                                  &VG_(clo_vgdb_stop_at)))
+            VG_(fmsg_bad_option)(arg, "");
+      }
       else if VG_STR_CLO (arg, "--vgdb-prefix",    VG_(clo_vgdb_prefix)) {
          VG_(arg_vgdb_prefix) = arg;
       }
@@ -2414,7 +2421,13 @@ void shutdown_actions_NORETURN( ThreadId tid,
       vg_assert(VG_(count_living_threads)() >= 1);
    }
 
+   /* Final call to gdbserver, if requested. */
+   if (VG_(gdbserver_stop_at) (VgdbStopAt_Exit)) {
+      VG_(umsg)("(action at exit) vgdb me ... \n");
+      VG_(gdbserver) (tid);
+   }
    VG_(threads)[tid].status = VgTs_Empty;
+
    //--------------------------------------------------------------
    // Finalisation: cleanup, messages, etc.  Order not so important, only
    // affects what order the messages come.
@@ -2489,7 +2502,7 @@ void shutdown_actions_NORETURN( ThreadId tid,
    /* Flush any output cached by previous calls to VG_(message). */
    VG_(message_flush)();
 
-   /* terminate gdbserver if ever it was started. We terminate it here
+   /* Terminate gdbserver if ever it was started. We terminate it here
       so that it get the output above if output was redirected to
       gdb */
    VG_(gdbserver_exit) (tid, tids_schedretcode);
@@ -2508,11 +2521,11 @@ void shutdown_actions_NORETURN( ThreadId tid,
          if an error was found */
       if (VG_(clo_error_exitcode) > 0 
           && VG_(get_n_errs_found)() > 0) {
-         VG_(exit)( VG_(clo_error_exitcode) );
+         VG_(client_exit)( VG_(clo_error_exitcode) );
       } else {
          /* otherwise, return the client's exit code, in the normal
             way. */
-         VG_(exit)( VG_(threads)[tid].os_state.exitcode );
+         VG_(client_exit)( VG_(threads)[tid].os_state.exitcode );
       }
       /* NOT ALIVE HERE! */
       VG_(core_panic)("entered the afterlife in main() -- ExitT/P");

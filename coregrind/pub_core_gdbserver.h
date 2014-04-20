@@ -31,6 +31,7 @@
 #define __PUB_CORE_GDBSERVER_H
 
 #include "pub_tool_gdbserver.h"
+#include "pub_core_options.h"
 #include "pub_core_threadstate.h"   // VgSchedReturnCode
 
 /* Return the default path prefix for the named pipes (FIFOs) used by vgdb/gdb
@@ -43,6 +44,13 @@ HChar* VG_(vgdb_prefix_default)(void);
 // breakpoints before execution.
 // If VG_(clo_vgdb) == No, the below has no effect.
 void VG_(gdbserver_prerun_action) (ThreadId tid);
+
+// True if the initialisation of gdbserver was done,
+// i.e. VG_(gdbserver_prerun_action) was called.
+Bool VG_(gdbserver_init_done) (void);
+
+// True if gdbserver should stop execution for the specified stop at reason
+Bool VG_(gdbserver_stop_at) (VgdbStopAt stopat);
 
 // True if there is some activity from vgdb
 // If it returns True, then extern void VG_(gdbserver) can be called

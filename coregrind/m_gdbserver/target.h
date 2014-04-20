@@ -233,5 +233,8 @@ extern void  VG_(transfer) (void *valgrind,
                             Bool *mod);
 
 
+// True means gdbserver can access (internal) Valgrind memory.
+// Otherwise, only the client memory can be accessed.
+extern Bool hostvisibility;
 
 #endif /* TARGET_H */

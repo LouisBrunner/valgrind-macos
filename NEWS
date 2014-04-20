@@ -24,8 +24,15 @@ Release 3.10.0 (?? ?????? 201?)
 
 * New and modified GDB server monitor features:
 
+  - The option "--vgdb-stop-at=event1,event2,..." allows the user
+    to ask GDB server to stop before program execution, at the end
+    of the program execution and on Valgrind internal errors.
+
   - A new monitor command "v.info stats" that shows various valgrind core and
     tool statistics.
+
+  - A new monitor command "v.set hostvisibility" that allows GDB server
+    to provide access to Valgrind internal host status/memory.
 
 * ==================== FIXED BUGS ====================
 

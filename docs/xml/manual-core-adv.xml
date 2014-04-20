@@ -1456,6 +1456,40 @@ problems or bugs.</para>
   </listitem>
 
   <listitem>
+    <para><varname>v.set hostvisibility [yes*|no]</varname> The value
+    "yes" indicates to gdbserver that GDB can look at the Valgrind
+    'host' (internal) status/memory. "no" disables this access.
+    When hostvisibility is activated, GDB can e.g. look at Valgrind
+    global variables. As an example, to examine a Valgrind global
+    variable of the memcheck tool on an x86, do the following setup:</para>
+
+<screen><![CDATA[
+(gdb) monitor v.set hostvisibility yes
+(gdb) add-symbol-file /path/to/tool/executable/file/memcheck-x86-linux 0x38000000
+add symbol table from file "/path/to/tool/executable/file/memcheck-x86-linux" at
+	.text_addr = 0x38000000
+(y or n) y
+Reading symbols from /path/to/tool/executable/file/memcheck-x86-linux...done.
+(gdb) 
+]]></screen>
+
+  <para>After that, variables defined in memcheck-x86-linux can be accessed, e.g.</para>
+
+<screen><![CDATA[
+(gdb) p /x vgPlain_threads[1].os_state
+$3 = {lwpid = 0x4688, threadgroup = 0x4688, parent = 0x0, 
+  valgrind_stack_base = 0x62e78000, valgrind_stack_init_SP = 0x62f79fe0, 
+  exitcode = 0x0, fatalsig = 0x0}
+(gdb) p vex_control
+$5 = {iropt_verbosity = 0, iropt_level = 2, 
+  iropt_register_updates = VexRegUpdUnwindregsAtMemAccess, 
+  iropt_unroll_thresh = 120, guest_max_insns = 60, guest_chase_thresh = 10, 
+  guest_chase_cond = 0 '\000'}
+(gdb) 
+]]></screen>
+  </listitem>
+
+  <listitem>
     <para><varname>v.translate &lt;address&gt;
     [&lt;traceflags&gt;]</varname> shows the translation of the block
     containing <computeroutput>address</computeroutput> with the given

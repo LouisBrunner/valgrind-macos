@@ -21,6 +21,8 @@ usage: valgrind [options] prog-and-args
     --vgdb-error=<number>     invoke gdbserver after <number> errors [999999999]
                               to get started quickly, use --vgdb-error=0
                               and follow the on-screen directions
+    --vgdb-stop-at=event1,event2,... invoke gdbserver for given events [none]
+         where event is one of startup exit valgrindabexit all none
     --track-fds=no|yes        track open file descriptors? [no]
     --time-stamp=no|yes       add timestamps to log messages? [no]
     --log-fd=<number>         log messages to file descriptor [2=stderr]

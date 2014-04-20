@@ -105,6 +105,9 @@
      to some low-ish value at startup (64M) and aspacem_maxAddr is
      derived from the stack pointer at system startup.  This seems a
      reliable way to establish the initial boundaries.
+     A command line option allows to change the value of aspacem_minAddr,
+     so as to allow memory hungry applications to use the lowest
+     part of the memory.
 
      64-bit Linux is similar except for the important detail that the
      upper boundary is set to 64G.  The reason is so that all
@@ -315,6 +318,19 @@ static Int      nsegments_used = 0;
 #define Addr_MAX ((Addr)(-1ULL))
 
 /* Limits etc */
+
+
+Addr VG_(clo_aspacem_minAddr)
+#if defined(VGO_darwin)
+# if VG_WORDSIZE == 4
+   = (Addr) 0x00001000;
+# else
+   = (Addr) 0x100000000;  // 4GB page zero
+# endif
+#else
+   = (Addr) 0x04000000; // 64M
+#endif
+
 
 // The smallest address that aspacem will try to allocate
 static Addr aspacem_minAddr = 0;
@@ -1629,16 +1645,16 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
    nsegments[0]    = seg;
    nsegments_used  = 1;
 
+   aspacem_minAddr = VG_(clo_aspacem_minAddr);
+
 #if defined(VGO_darwin)
 
 # if VG_WORDSIZE == 4
-   aspacem_minAddr = (Addr) 0x00001000;
    aspacem_maxAddr = (Addr) 0xffffffff;
 
    aspacem_cStart = aspacem_minAddr;
    aspacem_vStart = 0xf0000000;  // 0xc0000000..0xf0000000 available
 # else
-   aspacem_minAddr = (Addr) 0x100000000;  // 4GB page zero
    aspacem_maxAddr = (Addr) 0x7fffffffffff;
 
    aspacem_cStart = aspacem_minAddr;
@@ -1657,8 +1673,6 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
                     "        sp_at_startup = 0x%010llx (supplied)\n", 
                     (ULong)sp_at_startup );
 
-   aspacem_minAddr = (Addr) 0x04000000; // 64M
-
 #  if VG_WORDSIZE == 8
      aspacem_maxAddr = (Addr)0x1000000000ULL - 1; // 64G
 #    ifdef ENABLE_INNER
@@ -1671,7 +1685,7 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
      aspacem_maxAddr = VG_PGROUNDDN( sp_at_startup ) - 1;
 #  endif
 
-   aspacem_cStart = aspacem_minAddr; // 64M
+   aspacem_cStart = aspacem_minAddr;
    aspacem_vStart = VG_PGROUNDUP(aspacem_minAddr 
                                  + (aspacem_maxAddr - aspacem_minAddr + 1) / 2);
 #  ifdef ENABLE_INNER

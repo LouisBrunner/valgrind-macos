@@ -34,6 +34,12 @@ Release 3.10.0 (?? ?????? 201?)
   - A new monitor command "v.set hostvisibility" that allows GDB server
     to provide access to Valgrind internal host status/memory.
 
+* New option --aspace-minaddr=<address> allows to (possibly) make
+  use of some more memory by decreasing the default value above which
+  Valgrind maps memory or solve some conflicts with system libraries
+  by increasing the value.
+  See user manual for details.
+ 
 * ==================== FIXED BUGS ====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"

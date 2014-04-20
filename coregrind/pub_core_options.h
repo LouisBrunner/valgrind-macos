@@ -297,6 +297,10 @@ extern Int VG_(clo_merge_recursive_frames);
 /* Max number of sectors that will be used by the translation code cache. */
 extern UInt VG_(clo_num_transtab_sectors);
 
+/* Only client requested fixed mapping can be done below 
+   VG_(clo_aspacem_minAddr). */
+extern Addr VG_(clo_aspacem_minAddr);
+
 /* Delay startup to allow GDB to be attached?  Default: NO */
 extern Bool VG_(clo_wait_for_gdb);
 

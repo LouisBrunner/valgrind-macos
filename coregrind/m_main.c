@@ -179,6 +179,7 @@ static void usage_NORETURN ( Bool debug_help )
 "           program counters in max <number> frames) [0]\n"
 "    --num-transtab-sectors=<number> size of translated code cache [%d]\n"
 "           more sectors may increase performance, but use more memory.\n"
+"    --aspace-minaddr=0xPP     avoid mapping memory below 0xPP [guessed]\n"
 "    --show-emwarns=no|yes     show warnings about emulation limits? [no]\n"
 "    --require-text-symbol=:sonamepattern:symbolpattern    abort run if the\n"
 "                              stated shared object doesn't have the stated\n"
@@ -493,10 +494,11 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
       else if VG_STREQ(     arg, "-d")                   {}
       else if VG_STREQN(17, arg, "--max-stackframe=")    {}
       else if VG_STREQN(17, arg, "--main-stacksize=")    {}
-      else if VG_STREQN(12, arg,  "--sim-hints=")        {}
+      else if VG_STREQN(12, arg, "--sim-hints=")         {}
       else if VG_STREQN(15, arg, "--profile-heap=")      {}
       else if VG_STREQN(20, arg, "--core-redzone-size=") {}
       else if VG_STREQN(15, arg, "--redzone-size=")      {}
+      else if VG_STREQN(17, arg, "--aspace-minaddr=")    {}
 
       /* Obsolete options. Report an error and exit */
       else if VG_STREQN(34, arg, "--vex-iropt-precise-memory-exns=no") {
@@ -1542,10 +1544,12 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    //--------------------------------------------------------------
    /* Start the debugging-log system ASAP.  First find out how many 
       "-d"s were specified.  This is a pre-scan of the command line.  Also
-      get --profile-heap=yes, --core-redzone-size, --redzone-size which are
-      needed by the time we start up dynamic memory management.  */
+      get --profile-heap=yes, --core-redzone-size, --redzone-size
+      --aspace-minaddr which are needed by the time we start up dynamic
+      memory management.  */
    loglevel = 0;
    for (i = 1; i < argc; i++) {
+      const HChar* tmp_str;
       if (argv[i][0] != '-') break;
       if VG_STREQ(argv[i], "--") break;
       if VG_STREQ(argv[i], "-d") loglevel++;
@@ -1554,6 +1558,23 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
                      0, MAX_CLO_REDZONE_SZB) {}
       if VG_BINT_CLO(argv[i], "--redzone-size", VG_(clo_redzone_size),
                      0, MAX_CLO_REDZONE_SZB) {}
+      if VG_STR_CLO(argv[i], "--aspace-minaddr", tmp_str) {
+#        if VG_WORDSIZE == 4
+         const Addr max = (Addr) 0x40000000; // 1Gb
+#        else
+         const Addr max = (Addr) 0x200000000; // 8Gb
+#        endif
+         Bool ok = VG_(parse_Addr) (&tmp_str, &VG_(clo_aspacem_minAddr));
+         if (!ok)
+            VG_(fmsg_bad_option)(argv[i], "Invalid address\n");
+
+         if (!VG_IS_PAGE_ALIGNED(VG_(clo_aspacem_minAddr))
+             || VG_(clo_aspacem_minAddr) < (Addr) 0x1000
+             || VG_(clo_aspacem_minAddr) > max) // 1Gb
+            VG_(fmsg_bad_option)(argv[i], 
+                                 "Must be a page aligned address between "
+                                 "0x1000 and 0x%lx\n", max);
+      }
    }
 
    /* ... and start the debug logger.  Now we can safely emit logging

@@ -2062,6 +2062,35 @@ need to use them.</para>
    </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.aspace-minaddr" xreflabel="----aspace-minaddr">
+    <term>
+      <option><![CDATA[--aspace-minaddr=<address> [default: depends
+      on the platform] ]]></option>
+    </term>
+    <listitem>
+      <para>To avoid potential conflicts with some system libraries,
+      Valgrind does not use the address space
+      below <option>--aspace-minaddr</option> value, keeping it
+      reserved in case a library specifically requests memory in this
+      region.  So, some "pessimistic" value is guessed by Valgrind
+      depending on the platform. On linux, by default, Valgrind avoids
+      using the first 64MB even if typically there is no conflict in
+      this complete zone.  You can use the
+      option <option>--aspace-minaddr</option> to have your memory
+      hungry application benefitting from more of this lower memory.
+      On the other hand, if you encounter a conflict, increasing
+      aspace-minaddr value might solve it. Conflicts will typically
+      manifest themselves with mmap failures in the low range of the
+      address space. The
+      provided <computeroutput>address</computeroutput> must be page
+      aligned and must be equal or bigger to 0x1000 (4KB). To find the
+      default value on your platform, do something such as
+      <computeroutput>valgrind -d -d date 2&gt;&amp;1 | grep -i minaddr</computeroutput>. Values lower than 0x10000 (64KB) are known to create problems
+      on some distributions.
+      </para>
+   </listitem>
+  </varlistentry>
+
   <varlistentry id="opt.show-emwarns" xreflabel="--show-emwarns">
     <term>
       <option><![CDATA[--show-emwarns=<yes|no> [default: no] ]]></option>

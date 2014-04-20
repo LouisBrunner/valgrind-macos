@@ -229,26 +229,10 @@ extern SysRes VG_(am_mmap_anon_fixed_client)
    update the segment array accordingly.  */
 extern SysRes VG_(am_mmap_anon_float_client) ( SizeT length, Int prot );
 
-/* Similarly, acquire new address space for the client but with
-   considerable restrictions on what can be done with it: (1) the
-   actual protections may exceed those stated in 'prot', (2) the
-   area's protections cannot be later changed using any form of
-   mprotect, and (3) the area cannot be freed using any form of
-   munmap.  On Linux this behaves the same as
-   VG_(am_mmap_anon_float_client).  On AIX5 this *may* allocate memory
-   by using sbrk, so as to make use of large pages on AIX. */
-extern SysRes VG_(am_sbrk_anon_float_client) ( SizeT length, Int prot );
-
-
 /* Map anonymously at an unconstrained address for V, and update the
    segment array accordingly.  This is fundamentally how V allocates
    itself more address space when needed. */
 extern SysRes VG_(am_mmap_anon_float_valgrind)( SizeT cszB );
-
-/* Same comments apply as per VG_(am_sbrk_anon_float_client).  On
-   Linux this behaves the same as VG_(am_mmap_anon_float_valgrind). */
-extern SysRes VG_(am_sbrk_anon_float_valgrind)( SizeT cszB );
-
 
 /* Map privately a file at an unconstrained address for V, and update the
    segment array accordingly.  This is used by V for transiently
@@ -363,7 +347,7 @@ typedef
    VgStack;
 
 
-/* Allocate and initialise a VgStack (anonymous client space).
+/* Allocate and initialise a VgStack (anonymous valgrind space).
    Protect the stack active area and the guard areas appropriately.
    Returns NULL on failure, else the address of the bottom of the
    stack.  On success, also sets *initial_sp to what the stack pointer

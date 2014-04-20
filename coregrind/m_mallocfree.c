@@ -815,12 +815,8 @@ Superblock* newSuperblock ( Arena* a, SizeT cszB )
 
    if (a->clientmem) {
       // client allocation -- return 0 to client if it fails
-      if (unsplittable)
-         sres = VG_(am_mmap_anon_float_client)
-                   ( cszB, VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC );
-      else
-         sres = VG_(am_sbrk_anon_float_client)
-                   ( cszB, VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC );
+      sres = VG_(am_mmap_anon_float_client)
+         ( cszB, VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC );
       if (sr_isError(sres))
          return 0;
       sb = (Superblock*)(AddrH)sr_Res(sres);
@@ -830,10 +826,7 @@ Superblock* newSuperblock ( Arena* a, SizeT cszB )
       VG_(am_set_segment_isCH_if_SkAnonC)( VG_(am_find_nsegment)( (Addr)sb ) );
    } else {
       // non-client allocation -- abort if it fails
-      if (unsplittable)
-         sres = VG_(am_mmap_anon_float_valgrind)( cszB );
-      else
-         sres = VG_(am_sbrk_anon_float_valgrind)( cszB );
+      sres = VG_(am_mmap_anon_float_valgrind)( cszB );
       if (sr_isError(sres)) {
          VG_(out_of_memory_NORETURN)("newSuperblock", cszB);
          /* NOTREACHED */
@@ -1610,7 +1603,7 @@ void* VG_(arena_malloc) ( ArenaId aid, const HChar* cc, SizeT req_pszB )
    vg_assert(a->sblocks_used <= a->sblocks_size);
    if (a->sblocks_used == a->sblocks_size) {
       Superblock ** array;
-      SysRes sres = VG_(am_sbrk_anon_float_valgrind)(sizeof(Superblock *) *
+      SysRes sres = VG_(am_mmap_anon_float_valgrind)(sizeof(Superblock *) *
                                                      a->sblocks_size * 2);
       if (sr_isError(sres)) {
          VG_(out_of_memory_NORETURN)("arena_init", sizeof(Superblock *) * 

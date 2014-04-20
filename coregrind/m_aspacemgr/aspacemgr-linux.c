@@ -2421,21 +2421,6 @@ SysRes VG_(am_mmap_anon_float_client) ( SizeT length, Int prot )
 }
 
 
-/* Similarly, acquire new address space for the client but with
-   considerable restrictions on what can be done with it: (1) the
-   actual protections may exceed those stated in 'prot', (2) the
-   area's protections cannot be later changed using any form of
-   mprotect, and (3) the area cannot be freed using any form of
-   munmap.  On Linux this behaves the same as
-   VG_(am_mmap_anon_float_client).  On AIX5 this *may* allocate memory
-   by using sbrk, so as to make use of large pages on AIX. */
-
-SysRes VG_(am_sbrk_anon_float_client) ( SizeT length, Int prot )
-{
-   return VG_(am_mmap_anon_float_client) ( length, prot );
-}
-
-
 /* Map anonymously at an unconstrained address for V, and update the
    segment array accordingly.  This is fundamentally how V allocates
    itself more address space when needed. */
@@ -2540,15 +2525,6 @@ void* VG_(am_shadow_alloc)(SizeT size)
    SysRes sres = VG_(am_mmap_anon_float_valgrind)( size );
    return sr_isError(sres) ? NULL : (void*)sr_Res(sres);
 }
-
-/* Same comments apply as per VG_(am_sbrk_anon_float_client).  On
-   Linux this behaves the same as VG_(am_mmap_anon_float_valgrind). */
-
-SysRes VG_(am_sbrk_anon_float_valgrind)( SizeT cszB )
-{
-   return VG_(am_mmap_anon_float_valgrind)( cszB );
-}
-
 
 /* Map a file at an unconstrained address for V, and update the
    segment array accordingly. Use the provided flags */

@@ -607,7 +607,7 @@ static INLINE SecMap** get_secmap_high_ptr ( Addr a )
    return &am->sm;
 }
 
-static SecMap** get_secmap_ptr ( Addr a )
+static INLINE SecMap** get_secmap_ptr ( Addr a )
 {
    return ( a <= MAX_PRIMARY_ADDRESS 
           ? get_secmap_low_ptr(a) 
@@ -659,7 +659,7 @@ static INLINE SecMap* get_secmap_for_reading ( Addr a )
    writable copy of it, install it, and return the copy instead.  (COW
    semantics).
 */
-static SecMap* get_secmap_for_writing ( Addr a )
+static INLINE SecMap* get_secmap_for_writing ( Addr a )
 {
    return ( a <= MAX_PRIMARY_ADDRESS
           ? get_secmap_for_writing_low (a)
@@ -1235,7 +1235,7 @@ void mc_LOADV_128_or_256_slow ( /*OUT*/ULong* res,
       ULong pessim64   = V_BITS64_DEFINED;
       UWord long_index = byte_offset_w(szL, bigendian, j);
       for (i = 8-1; i >= 0; i--) {
-         PROF_EVENT(31, "mc_LOADV_128_or_256_slow(loop)");
+         PROF_EVENT(29, "mc_LOADV_128_or_256_slow(loop)");
          ai = a + 8*long_index + byte_offset_w(8, bigendian, i);
          ok = get_vbits8(ai, &vbits8);
          vbits64 <<= 8;
@@ -1472,8 +1472,9 @@ void mc_STOREVn_slow ( Addr a, SizeT nBits, ULong vbytes, Bool bigendian )
       cases on 64-bit platforms.  Are merely a speedup hack; can be
       omitted without loss of correctness/functionality.  Note that in
       both cases the "sizeof(void*) == 8" causes these cases to be
-      folded out by compilers on 32-bit platforms.  These are derived
-      from STOREV64 and STOREV32.
+      folded out by compilers on 32-bit platforms.  The logic below
+      is somewhat similar to some cases extensively commented in
+      MC_(helperc_STOREV8).
    */
    if (LIKELY(sizeof(void*) == 8 
                       && nBits == 64 && VG_IS_8_ALIGNED(a))) {
@@ -1796,7 +1797,7 @@ static void make_mem_undefined ( Addr a, SizeT len )
 
 void MC_(make_mem_undefined_w_otag) ( Addr a, SizeT len, UInt otag )
 {
-   PROF_EVENT(41, "MC_(make_mem_undefined)");
+   PROF_EVENT(43, "MC_(make_mem_undefined)");
    DEBUG("MC_(make_mem_undefined)(%p, %lu)\n", a, len);
    set_address_range_perms ( a, len, VA_BITS16_UNDEFINED, SM_DIST_UNDEFINED );
    if (UNLIKELY( MC_(clo_mc_level) == 3 ))
@@ -4428,27 +4429,35 @@ void mc_STOREV64 ( Addr a, ULong vbits64, Bool isBigEndian )
       sm_off16 = SM_OFF_16(a);
       vabits16 = ((UShort*)(sm->vabits8))[sm_off16];
 
-      if (LIKELY( !is_distinguished_sm(sm) && 
-                          (VA_BITS16_DEFINED   == vabits16 ||
-                           VA_BITS16_UNDEFINED == vabits16) ))
-      {
-         /* Handle common case quickly: a is suitably aligned, */
-         /* is mapped, and is addressible. */
-         // Convert full V-bits in register to compact 2-bit form.
-         if (V_BITS64_DEFINED == vbits64) {
-            ((UShort*)(sm->vabits8))[sm_off16] = (UShort)VA_BITS16_DEFINED;
-         } else if (V_BITS64_UNDEFINED == vbits64) {
-            ((UShort*)(sm->vabits8))[sm_off16] = (UShort)VA_BITS16_UNDEFINED;
-         } else {
-            /* Slow but general case -- writing partially defined bytes. */
-            PROF_EVENT(212, "mc_STOREV64-slow2");
-            mc_STOREVn_slow( a, 64, vbits64, isBigEndian );
+      // To understand the below cleverness, see the extensive comments
+      // in MC_(helperc_STOREV8).
+      if (LIKELY(V_BITS64_DEFINED == vbits64)) {
+         if (LIKELY(vabits16 == (UShort)VA_BITS16_DEFINED)) {
+            return;
          }
-      } else {
-         /* Slow but general case. */
-         PROF_EVENT(213, "mc_STOREV64-slow3");
+         if (!is_distinguished_sm(sm) && VA_BITS16_UNDEFINED == vabits16) {
+            ((UShort*)(sm->vabits8))[sm_off16] = (UShort)VA_BITS16_DEFINED;
+            return;
+         }
+         PROF_EVENT(232, "mc_STOREV64-slow2");
          mc_STOREVn_slow( a, 64, vbits64, isBigEndian );
+         return;
       }
+      if (V_BITS64_UNDEFINED == vbits64) {
+         if (vabits16 == (UShort)VA_BITS16_UNDEFINED) {
+            return;
+         }
+         if (!is_distinguished_sm(sm) && VA_BITS16_DEFINED == vabits16) {
+            ((UShort*)(sm->vabits8))[sm_off16] = (UShort)VA_BITS16_UNDEFINED;
+            return;
+         } 
+         PROF_EVENT(232, "mc_STOREV64-slow3");
+         mc_STOREVn_slow( a, 64, vbits64, isBigEndian );
+         return;
+      }
+
+      PROF_EVENT(212, "mc_STOREV64-slow4");
+      mc_STOREVn_slow( a, 64, vbits64, isBigEndian );
    }
 #endif
 }
@@ -4536,35 +4545,35 @@ void mc_STOREV32 ( Addr a, UWord vbits32, Bool isBigEndian )
       sm_off  = SM_OFF(a);
       vabits8 = sm->vabits8[sm_off];
 
-      // Cleverness:  sometimes we don't have to write the shadow memory at
-      // all, if we can tell that what we want to write is the same as what is
-      // already there.  The 64/16/8 bit cases also have cleverness at this
-      // point, but it works a little differently to the code below.
-      if (V_BITS32_DEFINED == vbits32) {
-         if (vabits8 == (UInt)VA_BITS8_DEFINED) {
+      // To understand the below cleverness, see the extensive comments
+      // in MC_(helperc_STOREV8).
+      if (LIKELY(V_BITS32_DEFINED == vbits32)) {
+         if (LIKELY(vabits8 == (UInt)VA_BITS8_DEFINED)) {
             return;
-         } else if (!is_distinguished_sm(sm) && VA_BITS8_UNDEFINED == vabits8) {
-            sm->vabits8[sm_off] = (UInt)VA_BITS8_DEFINED;
-         } else {
-            // not defined/undefined, or distinguished and changing state
-            PROF_EVENT(232, "mc_STOREV32-slow2");
-            mc_STOREVn_slow( a, 32, (ULong)vbits32, isBigEndian );
          }
-      } else if (V_BITS32_UNDEFINED == vbits32) {
+         if (!is_distinguished_sm(sm)  && VA_BITS8_UNDEFINED == vabits8) {
+            sm->vabits8[sm_off] = (UInt)VA_BITS8_DEFINED;
+            return;
+         }
+         PROF_EVENT(232, "mc_STOREV32-slow2");
+         mc_STOREVn_slow( a, 32, (ULong)vbits32, isBigEndian );
+         return;
+      }
+      if (V_BITS32_UNDEFINED == vbits32) {
          if (vabits8 == (UInt)VA_BITS8_UNDEFINED) {
             return;
-         } else if (!is_distinguished_sm(sm) && VA_BITS8_DEFINED == vabits8) {
-            sm->vabits8[sm_off] = (UInt)VA_BITS8_UNDEFINED;
-         } else {
-            // not defined/undefined, or distinguished and changing state
-            PROF_EVENT(233, "mc_STOREV32-slow3");
-            mc_STOREVn_slow( a, 32, (ULong)vbits32, isBigEndian );
          }
-      } else {
-         // Partially defined word
-         PROF_EVENT(234, "mc_STOREV32-slow4");
+         if (!is_distinguished_sm(sm) && VA_BITS8_DEFINED == vabits8) {
+            sm->vabits8[sm_off] = (UInt)VA_BITS8_UNDEFINED;
+            return;
+         }
+         PROF_EVENT(233, "mc_STOREV32-slow3");
          mc_STOREVn_slow( a, 32, (ULong)vbits32, isBigEndian );
+         return;
       }
+
+      PROF_EVENT(234, "mc_STOREV32-slow4");
+      mc_STOREVn_slow( a, 32, (ULong)vbits32, isBigEndian );
    }
 #endif
 }
@@ -4631,6 +4640,18 @@ VG_REGPARM(1) UWord MC_(helperc_LOADV16le) ( Addr a )
    return mc_LOADV16(a, False);
 }
 
+/* True if the vabits4 in vabits8 indicate a and a+1 are accessible. */
+static INLINE
+Bool accessible_vabits4_in_vabits8 ( Addr a, UChar vabits8 )
+{
+   UInt shift;
+   tl_assert(VG_IS_2_ALIGNED(a));      // Must be 2-aligned
+   shift = (a & 2) << 1;               // shift by 0 or 4
+   vabits8 >>= shift;                  // shift the four bits to the bottom
+    // check 2 x vabits2 != VA_BITS2_NOACCESS
+   return ((0x3 & vabits8) != VA_BITS2_NOACCESS)
+      &&  ((0xc & vabits8) != VA_BITS2_NOACCESS << 2);
+}
 
 static INLINE
 void mc_STOREV16 ( Addr a, UWord vbits16, Bool isBigEndian )
@@ -4653,29 +4674,39 @@ void mc_STOREV16 ( Addr a, UWord vbits16, Bool isBigEndian )
       sm      = get_secmap_for_reading_low(a);
       sm_off  = SM_OFF(a);
       vabits8 = sm->vabits8[sm_off];
-      if (LIKELY( !is_distinguished_sm(sm) && 
-                          (VA_BITS8_DEFINED   == vabits8 ||
-                           VA_BITS8_UNDEFINED == vabits8) ))
-      {
-         /* Handle common case quickly: a is suitably aligned, */
-         /* is mapped, and is addressible. */
-         // Convert full V-bits in register to compact 2-bit form.
-         if (V_BITS16_DEFINED == vbits16) {
-            insert_vabits4_into_vabits8( a, VA_BITS4_DEFINED ,
-                                         &(sm->vabits8[sm_off]) );
-         } else if (V_BITS16_UNDEFINED == vbits16) {
-            insert_vabits4_into_vabits8( a, VA_BITS4_UNDEFINED,
-                                         &(sm->vabits8[sm_off]) );
-         } else {
-            /* Slow but general case -- writing partially defined bytes. */
-            PROF_EVENT(252, "mc_STOREV16-slow2");
-            mc_STOREVn_slow( a, 16, (ULong)vbits16, isBigEndian );
+
+      // To understand the below cleverness, see the extensive comments
+      // in MC_(helperc_STOREV8).
+      if (LIKELY(V_BITS16_DEFINED == vbits16)) {
+         if (LIKELY(vabits8 == VA_BITS8_DEFINED)) {
+            return;
          }
-      } else {
-         /* Slow but general case. */
-         PROF_EVENT(253, "mc_STOREV16-slow3");
+         if (!is_distinguished_sm(sm) 
+             && accessible_vabits4_in_vabits8(a, vabits8)) {
+            insert_vabits4_into_vabits8( a, VA_BITS4_DEFINED,
+                                         &(sm->vabits8[sm_off]) );
+            return;
+         }
+         PROF_EVENT(232, "mc_STOREV16-slow2");
          mc_STOREVn_slow( a, 16, (ULong)vbits16, isBigEndian );
       }
+      if (V_BITS16_UNDEFINED == vbits16) {
+         if (vabits8 == VA_BITS8_UNDEFINED) {
+            return;
+         }
+         if (!is_distinguished_sm(sm)  
+             && accessible_vabits4_in_vabits8(a, vabits8)) {
+            insert_vabits4_into_vabits8( a, VA_BITS4_UNDEFINED,
+                                         &(sm->vabits8[sm_off]) );
+            return;
+         }
+         PROF_EVENT(233, "mc_STOREV16-slow3");
+         mc_STOREVn_slow( a, 16, (ULong)vbits16, isBigEndian );
+         return;
+      }
+
+      PROF_EVENT(234, "mc_STOREV16-slow4");
+      mc_STOREVn_slow( a, 16, (ULong)vbits16, isBigEndian );
    }
 #endif
 }
@@ -4756,33 +4787,78 @@ void MC_(helperc_STOREV8) ( Addr a, UWord vbits8 )
       sm      = get_secmap_for_reading_low(a);
       sm_off  = SM_OFF(a);
       vabits8 = sm->vabits8[sm_off];
-      if (LIKELY
-            ( !is_distinguished_sm(sm) &&
-              ( (VA_BITS8_DEFINED == vabits8 || VA_BITS8_UNDEFINED == vabits8)
-             || (VA_BITS2_NOACCESS != extract_vabits2_from_vabits8(a, vabits8))
-              )
-            )
-         )
-      {
-         /* Handle common case quickly: a is mapped, the entire word32 it
-            lives in is addressible. */
-         // Convert full V-bits in register to compact 2-bit form.
-         if (V_BITS8_DEFINED == vbits8) {
-            insert_vabits2_into_vabits8( a, VA_BITS2_DEFINED,
-                                          &(sm->vabits8[sm_off]) );
-         } else if (V_BITS8_UNDEFINED == vbits8) {
-            insert_vabits2_into_vabits8( a, VA_BITS2_UNDEFINED,
-                                          &(sm->vabits8[sm_off]) );
-         } else {
-            /* Slow but general case -- writing partially defined bytes. */
-            PROF_EVENT(272, "mc_STOREV8-slow2");
-            mc_STOREVn_slow( a, 8, (ULong)vbits8, False/*irrelevant*/ );
+
+      // Clevernesses to speed up storing V bits.
+      // The 64/32/16 bit cases also have similar clevernesses, but it
+      // works a little differently to the code below.
+      //
+      // Cleverness 1:  sometimes we don't have to write the shadow memory at
+      // all, if we can tell that what we want to write is the same as what is
+      // already there. These cases are marked below as "defined on defined" and
+      // "undefined on undefined".
+      //
+      // Cleverness 2:
+      // We also avoid to call mc_STOREVn_slow if the V bits can directly
+      // be written in the secondary map. V bits can be directly written
+      // if 4 conditions are respected:
+      //   * The address for which V bits are written is naturally aligned
+      //        on 1 byte  for STOREV8 (this is always true)
+      //        on 2 bytes for STOREV16
+      //        on 4 bytes for STOREV32
+      //        on 8 bytes for STOREV64.
+      //   * V bits being written are either fully defined or fully undefined.
+      //     (for partially defined V bits, V bits cannot be directly written,
+      //      as the secondary vbits table must be maintained).
+      //   * the secmap is not distinguished (distinguished maps cannot be
+      //     modified).
+      //   * the memory corresponding to the V bits being written is
+      //     accessible (if one or more bytes are not accessible,
+      //     we must call mc_STOREVn_slow in order to report accessibility
+      //     errors).
+      //     Note that for STOREV32 and STOREV64, it is too expensive
+      //     to verify the accessibility of each byte for the benefit it
+      //     brings. Instead, a quicker check is done by comparing to
+      //     VA_BITS(8|16)_(UN)DEFINED. This guarantees accessibility,
+      //     but misses some opportunity of direct modifications.
+      //     Checking each byte accessibility was measured for
+      //     STOREV32+perf tests and was slowing down all perf tests.
+      // The cases corresponding to cleverness 2 are marked below as
+      // "direct mod".
+      if (LIKELY(V_BITS8_DEFINED == vbits8)) {
+         if (LIKELY(vabits8 == VA_BITS8_DEFINED)) {
+            return; // defined on defined
          }
-      } else {
-         /* Slow but general case. */
-         PROF_EVENT(273, "mc_STOREV8-slow3");
+         if (!is_distinguished_sm(sm) 
+             && VA_BITS2_NOACCESS != extract_vabits2_from_vabits8(a, vabits8)) {
+            // direct mod
+            insert_vabits2_into_vabits8( a, VA_BITS2_DEFINED,
+                                         &(sm->vabits8[sm_off]) );
+            return;
+         }
+         PROF_EVENT(232, "mc_STOREV8-slow2");
          mc_STOREVn_slow( a, 8, (ULong)vbits8, False/*irrelevant*/ );
+         return;
       }
+      if (V_BITS8_UNDEFINED == vbits8) {
+         if (vabits8 == VA_BITS8_UNDEFINED) {
+            return; // undefined on undefined
+         }
+         if (!is_distinguished_sm(sm) 
+             && (VA_BITS2_NOACCESS 
+                 != extract_vabits2_from_vabits8(a, vabits8))) {
+            // direct mod
+            insert_vabits2_into_vabits8( a, VA_BITS2_UNDEFINED,
+                                         &(sm->vabits8[sm_off]) );
+            return;
+         }
+         PROF_EVENT(233, "mc_STOREV8-slow3");
+         mc_STOREVn_slow( a, 8, (ULong)vbits8, False/*irrelevant*/ );
+         return;
+      }
+
+      // Partially defined word
+      PROF_EVENT(234, "mc_STOREV8-slow4");
+      mc_STOREVn_slow( a, 8, (ULong)vbits8, False/*irrelevant*/ );
    }
 #endif
 }

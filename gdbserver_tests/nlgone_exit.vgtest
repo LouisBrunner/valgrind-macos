@@ -1,8 +1,9 @@
 # test that an exit (with return value) is properly passed on to gdb.
-
+# also test the --vgdb-stop-at startup and exit args (so we do not use
+# --vgdb-error=0 here)
 prog: gone
 args: exit
-vgopts: --tool=none --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-nlgone-exit
+vgopts: --tool=none --vgdb=yes --vgdb-stop-at=startup,exit --vgdb-prefix=./vgdb-prefix-nlgone-exit
 stderr_filter: filter_stderr
 prereq: test -e gdb
 progB: gdb

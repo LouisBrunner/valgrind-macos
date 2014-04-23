@@ -1,4 +1,3 @@
-vgdb launched process attached
 Continuing.
 Program received signal SIGABRT, Aborted.
 0x........ in syscall ...

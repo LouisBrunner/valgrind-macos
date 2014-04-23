@@ -76,6 +76,8 @@ sed -e '/Remote debugging using/,/vgdb launched process attached/d'             
     -e 's/in _dl_sysinfo_int80 () from \/lib\/ld-linux.so.*/in syscall .../'                          \
     -e 's/in kill ().*$/in syscall .../'                                                              \
     -e 's/in .*kill ().*$/in syscall .../'                                                            \
+    -e 's/in _exit () from \/lib\/libc.so.*$/in syscall .../'                                            \
+    -e 's/in \._exit () from \/lib64\/libc.so.*$/in syscall .../'                                        \
     -e 's/in _dl_sysinfo_int80 ()/in syscall .../'                                                    \
     -e '/^   from \/lib\/ld-linux.so.*$/d'                                                            \
     -e 's/\(0x........\) in ?? () from \/lib.*$/\1 in syscall .../'                                   \
@@ -83,7 +85,7 @@ sed -e '/Remote debugging using/,/vgdb launched process attached/d'             
     -e 's/in \(.__\)\{0,1\}select () from \/.*$/in syscall .../'                                      \
     -e '/^   from \/lib\/libc.so.*$/d'                                                                \
     -e '/^   from \/lib64\/libc.so.*$/d'                                                              \
-    -e '/^   from \/lib64\/.*\/libc.so.*$/d'                                                         \
+    -e '/^   from \/lib64\/.*\/libc.so.*$/d'                                                          \
     -e 's/in select ()$/in syscall .../'                                                              \
     -e 's/in \.__select ()$/in syscall .../'                                                          \
     -e 's/in select () at \.\.\/sysdeps\/unix\/syscall-template\.S.*$/in syscall .../'                \

@@ -1299,21 +1299,30 @@ void VG_(redir_initialise) ( void )
    }
 
 #  elif defined(VGP_arm_linux)
-   /* If we're using memcheck, use these intercepts right from
-      the start, otherwise ld.so makes a lot of noise. */
+   /* If we're using memcheck, use these intercepts right from the
+      start, otherwise ld.so makes a lot of noise.  In most ARM-linux
+      distros, ld.so's soname is ld-linux.so.3, but Ubuntu 14.04 on
+      Odroid uses ld-linux-armhf.so.3 for some reason. */
    if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
+      /* strlen */
       add_hardwired_spec(
          "ld-linux.so.3", "strlen",
          (Addr)&VG_(arm_linux_REDIR_FOR_strlen),
          complain_about_stripped_glibc_ldso
       );
-      //add_hardwired_spec(
-      //   "ld-linux.so.3", "index",
-      //   (Addr)&VG_(arm_linux_REDIR_FOR_index),
-      //   NULL 
-      //);
+      add_hardwired_spec(
+         "ld-linux-armhf.so.3", "strlen",
+         (Addr)&VG_(arm_linux_REDIR_FOR_strlen),
+         complain_about_stripped_glibc_ldso
+      );
+      /* memcpy */
       add_hardwired_spec(
          "ld-linux.so.3", "memcpy",
+         (Addr)&VG_(arm_linux_REDIR_FOR_memcpy),
+         complain_about_stripped_glibc_ldso
+      );
+      add_hardwired_spec(
+         "ld-linux-armhf.so.3", "memcpy",
          (Addr)&VG_(arm_linux_REDIR_FOR_memcpy),
          complain_about_stripped_glibc_ldso
       );

@@ -20,6 +20,8 @@ sed -e '/^\ \ \ \ \.\.\.$/d'                                        |
 #         output of the echo command telling it is launched.
 #         This removes a whole lot of uninteresting lines varying
 #         with OS/glibc/gdb dep
+#       then have a general way to delete uninteresting and vayring
+#         lines.
 #       initial tty control character sent by gdb 7.0
 #       remove missing debuginfos
 #       vgdb message
@@ -54,6 +56,7 @@ sed -e '/^\ \ \ \ \.\.\.$/d'                                        |
 #       'exited with code' and 'exited normally' are printed slightly
 #       differently between gdb versions, normalize to "Program exited...".
 sed -e '/Remote debugging using/,/vgdb launched process attached/d'                                   \
+    -e '/filter_gdb BEGIN drop/,/filter_gdb END drop/d'                                               \
     -e 's/^\[?1034hReading symbols/Reading symbols/'                                                \
     -e '/^Missing separate debuginfo/d'                                                               \
     -e '/^Try: zypper install -C/d'                                                                   \

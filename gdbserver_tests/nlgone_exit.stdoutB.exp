@@ -1,5 +1,2 @@
 Continuing.
-Program received signal SIGTRAP, Trace/breakpoint trap.
-0x........ in syscall ...
-Continuing.
 Program exited with code 01.

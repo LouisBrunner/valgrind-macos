@@ -79,8 +79,6 @@ sed -e '/Remote debugging using/,/vgdb launched process attached/d'             
     -e 's/in _dl_sysinfo_int80 () from \/lib\/ld-linux.so.*/in syscall .../'                          \
     -e 's/in kill ().*$/in syscall .../'                                                              \
     -e 's/in .*kill ().*$/in syscall .../'                                                            \
-    -e 's/in _exit () from \/lib\/libc.so.*$/in syscall .../'                                            \
-    -e 's/in \._exit () from \/lib64\/libc.so.*$/in syscall .../'                                        \
     -e 's/in _dl_sysinfo_int80 ()/in syscall .../'                                                    \
     -e '/^   from \/lib\/ld-linux.so.*$/d'                                                            \
     -e 's/\(0x........\) in ?? () from \/lib.*$/\1 in syscall .../'                                   \

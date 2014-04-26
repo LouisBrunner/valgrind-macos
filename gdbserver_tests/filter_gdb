@@ -22,6 +22,7 @@ sed -e '/^\ \ \ \ \.\.\.$/d'                                        |
 #         with OS/glibc/gdb dep
 #       then have a general way to delete uninteresting and vayring
 #         lines.
+#       suppress lines telling file _exit.c does not exist
 #       initial tty control character sent by gdb 7.0
 #       remove missing debuginfos
 #       vgdb message
@@ -59,6 +60,7 @@ sed -e '/Remote debugging using/,/vgdb launched process attached/d'             
     -e '/filter_gdb BEGIN drop/,/filter_gdb END drop/d'                                               \
     -e 's/^\[?1034hReading symbols/Reading symbols/'                                                \
     -e '/^Missing separate debuginfo/d'                                                               \
+    -e '/\/_exit.c: No such file or directory/d'                                                      \
     -e '/^Try: zypper install -C/d'                                                                   \
     -e 's/\(relaying data between gdb and process \)[0-9][0-9]*/\1..../'                              \
     -e 's/pid [0-9][0-9]*/pid ..../g'                                                                 \
@@ -71,8 +73,8 @@ sed -e '/Remote debugging using/,/vgdb launched process attached/d'             
     -e '/^Loaded symbols for .*$/d'                                                                   \
     -e '/^Current language.*/d'                                                                       \
     -e '/^The current source language is.*/d'                                                         \
-    -e 's/^.*\( exited with code [0-9]\+\).$/Program\1\./g'                              \
-    -e 's/^.*\( exited normally\).$/Program\1\./g'                              \
+    -e 's/^.*\( exited with code [0-9]\+\).$/Program\1\./g'                                           \
+    -e 's/^.*\( exited normally\).$/Program\1\./g'                                                    \
     -e 's/(gdb) //g'                                                                                  \
     -e 's/^>[> ]*//'                                                                                  \
     -e '/^done\.$/d'                                                                                  \
@@ -104,10 +106,10 @@ sed -e '/Remote debugging using/,/vgdb launched process attached/d'             
     -e 's/^\([ \*] [1234] \) *Thread /\1Thread /'                                                     \
     -e 's/VgTs_WaitSys) 0x/VgTs_WaitSys)  0x/'                                                        \
     -e '/Cannot access memory at address 0x......../d'                                                \
-    -e '/^$/d'                                                                                        |
+    -e '/^$/d'                                                                                     |
 
 # remove all the lines telling where the SIGFPE was trapped.
-sed -e '/after trap SIGFPE/,/after continue SIGFPE/d'                                                 |
+sed -e '/after trap SIGFPE/,/after continue SIGFPE/d'                                              |
 
 # join together two lines that gdb 7.1 splits in two (???)
 # (in a separate sed, as the below influences the behaviour of the other expressions)

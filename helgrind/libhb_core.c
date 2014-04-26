@@ -3668,14 +3668,11 @@ static Thr* Thr__new ( void )
    thr->llexit_done = False;
    thr->joinedwith_done = False;
    thr->filter = HG_(zalloc)( "libhb.Thr__new.2", sizeof(Filter) );
-   /* We only really need this at history level 1, but unfortunately
-      this routine is called before the command line processing is
-      done (sigh), so we can't rely on HG_(clo_history_level) at this
-      point.  Hence always allocate it.  Bah. */
-   thr->local_Kws_n_stacks
-      = VG_(newXA)( HG_(zalloc),
-                    "libhb.Thr__new.3 (local_Kws_and_stacks)",
-                    HG_(free), sizeof(ULong_n_EC) );
+   if (HG_(clo_history_level) == 1)
+      thr->local_Kws_n_stacks
+         = VG_(newXA)( HG_(zalloc),
+                       "libhb.Thr__new.3 (local_Kws_and_stacks)",
+                       HG_(free), sizeof(ULong_n_EC) );
 
    /* Add this Thr* <-> ThrID binding to the mapping, and
       cross-check */

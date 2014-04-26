@@ -8,8 +8,8 @@ monitor v.set vgdb-error 999999
 shell ./simulate_control_c --vgdb-prefix=./vgdb-prefix-nlvgdbsigqueue 1 grep main nlvgdbsigqueue.stderr.out
 #
 # send SIGUSR1/SIGUSR1 in a few seconds, when vgdb is attached
-shell ./send_signal USR1 --vgdb-prefix=./vgdb-prefix-nlvgdbsigqueue 2
-shell ./send_signal USR1 --vgdb-prefix=./vgdb-prefix-nlvgdbsigqueue 3
+shell ./send_signal USR1 --vgdb-prefix=./vgdb-prefix-nlvgdbsigqueue 4
+shell ./send_signal USR1 --vgdb-prefix=./vgdb-prefix-nlvgdbsigqueue 4
 #
 echo continuing to have vgdb interrupted by simulate_control_c\n
 continue
@@ -17,7 +17,7 @@ continue
 # Now vgdb should have received the interrupt, and so has
 # attached to the sleeping process.
 # wait for the USR sig to be sent, that will be queued by vgdb.
-shell sleep 4
+shell sleep 8
 # continue, so as to have vgdb sending queued signals when PTRACE_DETACHing
 echo continuing to receive first SIGUSR1\n
 continue

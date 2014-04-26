@@ -2,6 +2,7 @@ continuing to have vgdb interrupted by simulate_control_c
 Continuing.
 Program received signal SIGTRAP, Trace/breakpoint trap.
 0x........ in syscall ...
+attachedwaitingforsigusr1
 sending signal
 sending signal
 continuing to receive first SIGUSR1

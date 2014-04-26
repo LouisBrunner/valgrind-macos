@@ -1,18 +1,30 @@
 #! /bin/sh
 
 # send_signal sends signal $1 to the Valgrind process using prefix $2 in $3 seconds
+# If there are some args after $3, the rest of these args is a command and its arg
+# which is run every second. When this command is succesful, then the sleep and
+# the signal sending is done
 SIG=$1
 shift
 PREFIX=$1
 shift
 SLEEP=$1
 shift
+GUARDCMD="$@"
+if [ "$GUARDCMD" = "" ]
+then
+  GUARDCMD="true"
+fi
 VPID=`./vgdb -l $PREFIX 2>&1 | awk '{print $2}' | sed -e 's/--pid=//'`
 if [ "$VPID" = "" ]
 then
   echo "send_signal could not determine the valgrind pid with " $PREFIX
   exit 1
 fi
-(sleep $SLEEP
+(while ! $GUARDCMD >> garbage.filtered.out 2>&1
+ do
+   sleep 1
+ done
+ sleep $SLEEP
  echo sending signal
  kill -s $SIG $VPID) &

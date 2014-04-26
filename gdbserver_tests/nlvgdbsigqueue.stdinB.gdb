@@ -4,10 +4,11 @@ echo vgdb launched process attached\n
 monitor v.set vgdb-error 999999
 #
 #
-# simulate control-c in a 1 second
+# simulate control-c 1 second after having seen sleepers program outputting 'main'
 shell ./simulate_control_c --vgdb-prefix=./vgdb-prefix-nlvgdbsigqueue 1 grep main nlvgdbsigqueue.stderr.out
 #
-# send SIGUSR1/SIGUSR1 in a few seconds, when vgdb is attached
+# send SIGUSR1/SIGUSR1 in a few seconds, after vgdb has attached
+# vgdb will attach when it will receive the control-c
 shell ./send_signal USR1 --vgdb-prefix=./vgdb-prefix-nlvgdbsigqueue 4
 shell ./send_signal USR1 --vgdb-prefix=./vgdb-prefix-nlvgdbsigqueue 4
 #

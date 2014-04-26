@@ -1,0 +1,11 @@
+{
+   suppressnondangerouserror
+   Memcheck:Free
+   fun:free
+   fun:ddd
+   fun:ccc
+   fun:bbb
+   fun:aaa
+   fun:ok_to_suppress_double_free_from_this_fun
+   fun:main
+}

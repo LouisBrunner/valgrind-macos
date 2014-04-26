@@ -1,0 +1,13 @@
+# this test the case of two errors, one considered not dangerous and
+# suppressed, the other considered dangerous, and the user does
+# not want to supress it.
+# The suppression entry only match the non dangerous error.
+# However, when a medium resolution is used to compare 2 errors,
+# only the last 4 calls are used to determine that two errors are similar
+# So, the nondangerous suppressed error "absorbs and hides" the dangerous
+# error.
+# This side effect of a medium (or low) resolution for error matching
+# is I guess unexpected by most users.
+prog: suppfree
+args: activatenondangerouserror
+vgopts: --suppressions=suppfreecollision.supp -q

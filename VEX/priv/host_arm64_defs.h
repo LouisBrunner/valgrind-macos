@@ -317,6 +317,7 @@ typedef
       ARM64vecb_SUB8x16,
       ARM64vecb_MUL32x4,
       ARM64vecb_MUL16x8,
+      ARM64vecb_MUL8x16,
       ARM64vecb_FADD64x2,
       ARM64vecb_FSUB64x2,
       ARM64vecb_FMUL64x2,
@@ -344,6 +345,14 @@ typedef
       ARM64vecb_CMEQ32x4,
       ARM64vecb_CMEQ16x8,
       ARM64vecb_CMEQ8x16,
+      ARM64vecb_CMHI64x2, /* >u */
+      ARM64vecb_CMHI32x4,
+      ARM64vecb_CMHI16x8,
+      ARM64vecb_CMHI8x16,
+      ARM64vecb_CMGT64x2, /* >s */
+      ARM64vecb_CMGT32x4,
+      ARM64vecb_CMGT16x8,
+      ARM64vecb_CMGT8x16,
       ARM64vecb_FCMEQ64x2,
       ARM64vecb_FCMEQ32x4,
       ARM64vecb_FCMGE64x2,
@@ -351,7 +360,6 @@ typedef
       ARM64vecb_FCMGT64x2,
       ARM64vecb_FCMGT32x4,
       ARM64vecb_TBL1,
-      ARM64vecb_CMHI8x16,
       ARM64vecb_INVALID
    }
    ARM64VecBinOp;
@@ -370,9 +378,17 @@ typedef
 typedef
    enum {
       ARM64vecsh_USHR64x2=350,
+      ARM64vecsh_USHR32x4,
       ARM64vecsh_USHR16x8,
+      ARM64vecsh_USHR8x16,
       ARM64vecsh_SSHR64x2,
+      ARM64vecsh_SSHR32x4,
+      ARM64vecsh_SSHR16x8,
+      ARM64vecsh_SSHR8x16,
+      ARM64vecsh_SHL64x2,
       ARM64vecsh_SHL32x4,
+      ARM64vecsh_SHL16x8,
+      ARM64vecsh_SHL8x16,
       ARM64vecsh_INVALID
    }
    ARM64VecShiftOp;

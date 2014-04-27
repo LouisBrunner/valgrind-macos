@@ -6325,7 +6325,7 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
    /* ---------- CM{EQ,HI,HS,GE,GT,TST,LE,LT} (vector) ---------- */
    /* 31  28    23   21     15     9 4                          ix 
       0q1 01110 size 1  m   100011 n d  CMEQ  Vd.T, Vn.T, Vm.T  (1) ==
-      0q0 01110 size 1  m   100011 n d  CMTST Vd.T, Vn.T, Vm.T  (2) &, == 0
+      0q0 01110 size 1  m   100011 n d  CMTST Vd.T, Vn.T, Vm.T  (2) &, != 0
 
       0q1 01110 size 1  m   001101 n d  CMHI Vd.T, Vn.T, Vm.T   (3) >u
       0q0 01110 size 1  m   001101 n d  CMGT Vd.T, Vn.T, Vm.T   (4) >s
@@ -6387,9 +6387,9 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
          */
          switch (ix) {
             case 1: res = binop(opsEQ[szBlg2], argL, argR); break;
-            case 2: binop(opsEQ[szBlg2],
-                          binop(Iop_AndV128, argL, argR), 
-                          mkV128(0x0000));
+            case 2: res = unop(Iop_NotV128, binop(opsEQ[szBlg2],
+                                            binop(Iop_AndV128, argL, argR), 
+                                                  mkV128(0x0000)));
                     break;
             case 3: res = binop(opsGTU[szBlg2], argL, argR); break;
             case 4: res = binop(opsGTS[szBlg2], argL, argR); break;

@@ -10,7 +10,7 @@ shell ./simulate_control_c --vgdb-prefix=./vgdb-prefix-nlvgdbsigqueue 1 grep mai
 # send SIGUSR1/SIGUSR1 in a few seconds, after vgdb has attached
 # vgdb will attach when it will receive the control-c
 shell ./send_signal USR1 --vgdb-prefix=./vgdb-prefix-nlvgdbsigqueue 0 grep attachedwaitingforsigusr1 nlvgdbsigqueue.stdoutB.out
-shell ./send_signal USR1 --vgdb-prefix=./vgdb-prefix-nlvgdbsigqueue 0 grep attachedwaitingforsigusr1 nlvgdbsigqueue.stdoutB.out
+shell ./send_signal USR1 --vgdb-prefix=./vgdb-prefix-nlvgdbsigqueue 1 grep attachedwaitingforsigusr1 nlvgdbsigqueue.stdoutB.out
 #
 echo continuing to have vgdb interrupted by simulate_control_c\n
 continue
@@ -21,7 +21,7 @@ continue
 echo attachedwaitingforsigusr1\n
 # send_signal tries every second the guardcmd
 # so we must now wait to be (somewhat) sure the 2 SIGUSR1 are emitted
-shell sleep 3
+shell sleep 4
 # continue, so as to have vgdb sending queued signals when PTRACE_DETACHing
 echo continuing to receive first SIGUSR1\n
 continue

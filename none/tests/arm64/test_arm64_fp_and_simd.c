@@ -1280,6 +1280,46 @@ GEN_THREEVEC_TEST(
                 "tbx v21.8b, {v15.16b, v16.16b, v17.16b, v18.16b}, v23.8b",
                 21, 15, 23)
 
+GEN_TWOVEC_TEST(cmge_zero_2d,  "cmge v5.2d,  v22.2d,  #0", 5, 22)
+GEN_TWOVEC_TEST(cmge_zero_4s,  "cmge v5.4s,  v22.4s,  #0", 5, 22)
+GEN_TWOVEC_TEST(cmge_zero_2s,  "cmge v5.2s,  v22.2s,  #0", 5, 22)
+GEN_TWOVEC_TEST(cmge_zero_8h,  "cmge v5.8h,  v22.8h,  #0", 5, 22)
+GEN_TWOVEC_TEST(cmge_zero_4h,  "cmge v5.4h,  v22.4h,  #0", 5, 22)
+GEN_TWOVEC_TEST(cmge_zero_16b, "cmge v5.16b, v22.16b, #0", 5, 22)
+GEN_TWOVEC_TEST(cmge_zero_8b,  "cmge v5.8b,  v22.8b,  #0", 5, 22)
+
+GEN_TWOVEC_TEST(cmgt_zero_2d,  "cmgt v5.2d,  v22.2d,  #0", 5, 22)
+GEN_TWOVEC_TEST(cmgt_zero_4s,  "cmgt v5.4s,  v22.4s,  #0", 5, 22)
+GEN_TWOVEC_TEST(cmgt_zero_2s,  "cmgt v5.2s,  v22.2s,  #0", 5, 22)
+GEN_TWOVEC_TEST(cmgt_zero_8h,  "cmgt v5.8h,  v22.8h,  #0", 5, 22)
+GEN_TWOVEC_TEST(cmgt_zero_4h,  "cmgt v5.4h,  v22.4h,  #0", 5, 22)
+GEN_TWOVEC_TEST(cmgt_zero_16b, "cmgt v5.16b, v22.16b, #0", 5, 22)
+GEN_TWOVEC_TEST(cmgt_zero_8b,  "cmgt v5.8b,  v22.8b,  #0", 5, 22)
+
+GEN_TWOVEC_TEST(cmle_zero_2d,  "cmle v5.2d,  v22.2d,  #0", 5, 22)
+GEN_TWOVEC_TEST(cmle_zero_4s,  "cmle v5.4s,  v22.4s,  #0", 5, 22)
+GEN_TWOVEC_TEST(cmle_zero_2s,  "cmle v5.2s,  v22.2s,  #0", 5, 22)
+GEN_TWOVEC_TEST(cmle_zero_8h,  "cmle v5.8h,  v22.8h,  #0", 5, 22)
+GEN_TWOVEC_TEST(cmle_zero_4h,  "cmle v5.4h,  v22.4h,  #0", 5, 22)
+GEN_TWOVEC_TEST(cmle_zero_16b, "cmle v5.16b, v22.16b, #0", 5, 22)
+GEN_TWOVEC_TEST(cmle_zero_8b,  "cmle v5.8b,  v22.8b,  #0", 5, 22)
+
+GEN_TWOVEC_TEST(cmeq_zero_2d,  "cmeq v5.2d,  v22.2d,  #0", 5, 22)
+GEN_TWOVEC_TEST(cmeq_zero_4s,  "cmeq v5.4s,  v22.4s,  #0", 5, 22)
+GEN_TWOVEC_TEST(cmeq_zero_2s,  "cmeq v5.2s,  v22.2s,  #0", 5, 22)
+GEN_TWOVEC_TEST(cmeq_zero_8h,  "cmeq v5.8h,  v22.8h,  #0", 5, 22)
+GEN_TWOVEC_TEST(cmeq_zero_4h,  "cmeq v5.4h,  v22.4h,  #0", 5, 22)
+GEN_TWOVEC_TEST(cmeq_zero_16b, "cmeq v5.16b, v22.16b, #0", 5, 22)
+GEN_TWOVEC_TEST(cmeq_zero_8b,  "cmeq v5.8b,  v22.8b,  #0", 5, 22)
+
+GEN_TWOVEC_TEST(cmlt_zero_2d,  "cmlt v5.2d,  v22.2d,  #0", 5, 22)
+GEN_TWOVEC_TEST(cmlt_zero_4s,  "cmlt v5.4s,  v22.4s,  #0", 5, 22)
+GEN_TWOVEC_TEST(cmlt_zero_2s,  "cmlt v5.2s,  v22.2s,  #0", 5, 22)
+GEN_TWOVEC_TEST(cmlt_zero_8h,  "cmlt v5.8h,  v22.8h,  #0", 5, 22)
+GEN_TWOVEC_TEST(cmlt_zero_4h,  "cmlt v5.4h,  v22.4h,  #0", 5, 22)
+GEN_TWOVEC_TEST(cmlt_zero_16b, "cmlt v5.16b, v22.16b, #0", 5, 22)
+GEN_TWOVEC_TEST(cmlt_zero_8b,  "cmlt v5.8b,  v22.8b,  #0", 5, 22)
+
 
 
 /* IMPORTANT: keep the tests in here in the same order as the
@@ -1320,11 +1360,11 @@ int main ( void )
    test_sucvtf_02();
    test_sucvtf_03();
    test_sucvtf_04();
-   //test_sucvtf_05();
+   test_sucvtf_05();
    test_sucvtf_06();
    test_sucvtf_07();
    test_sucvtf_08();
-   printf("END:   {S,U}CVTF (scalar, integer) (MISSING 1 case of 8)\n\n");
+   printf("END:   {S,U}CVTF (scalar, integer)\n\n");
 
    printf("BEGIN: F{ADD,SUB,MUL,DIV,NMUL} (scalar)\n");
    test_fadd_d();
@@ -1352,12 +1392,12 @@ int main ( void )
 
    printf("BEGIN: F{ABS,NEG} (vector)\n");
    test_fabs_2d_2d();
-   //test_fabs_4s_4s();
-   //test_fabs_2s_2s();
+   test_fabs_4s_4s();
+   test_fabs_2s_2s();
    test_fneg_2d_2d();
-   //test_fneg_4s_4s();
-   //test_fneg_2s_2s();
-   printf("END:   F{ABS,NEG} (vector) (MISSING 4s/2s cases)\n\n");
+   test_fneg_4s_4s();
+   test_fneg_2s_2s();
+   printf("END:   F{ABS,NEG} (vector)\n\n");
 
    printf("FCMP,FCMPE MISSING\n\n");
 
@@ -1396,9 +1436,9 @@ int main ( void )
    test_fmls_4s();
    test_fmls_2s();
    test_fabd_2d();
-   //test_fabd_4s();
-   //test_fabd_2s();
-   printf("END:   F{ADD,SUB,MUL,DIV,MLA,MLS,ABD} (vector) (MISSING fabd 2s/4s)\n\n");
+   test_fabd_4s();
+   test_fabd_2s();
+   printf("END:   F{ADD,SUB,MUL,DIV,MLA,MLS,ABD} (vector)\n\n");
 
    printf("BEGIN: FCM{EQ,GE,GT}, FAC{GE,GT} (vector)\n");
    test_fcmeq_2d();
@@ -1450,21 +1490,21 @@ int main ( void )
    test_mul_2s();
    test_mul_8h();
    test_mul_4h();
-   //test_mul_16b();
-   //test_mul_8b();
+   test_mul_16b();
+   test_mul_8b();
    test_mla_4s();
    test_mla_2s();
    test_mla_8h();
    test_mla_4h();
-   //test_mla_16b();
-   //test_mla_8b();
+   test_mla_16b();
+   test_mla_8b();
    test_mls_4s();
    test_mls_2s();
    test_mls_8h();
    test_mls_4h();
-   //test_mls_16b();
-   //test_mls_8b();
-   printf("END:   MUL/PMUL/MLA/MLS (vector) (partly MISSING)\n\n");
+   test_mls_16b();
+   test_mls_8b();
+   printf("END:   MUL/PMUL/MLA/MLS (vector) (MISSING PMUL)\n\n");
 
    printf("BEGIN: {S,U}{MIN,MAX} (vector)\n");
    test_umax_4s();
@@ -1509,7 +1549,6 @@ int main ( void )
 
    printf("BEGIN: CM{EQ,HI,HS,GE,GT,TST,LE,LT} (vector)\n\n");
    test_cmeq_2d();
-#if 0
    test_cmeq_4s();
    test_cmeq_2s();
    test_cmeq_8h();
@@ -1551,9 +1590,42 @@ int main ( void )
    test_cmge_4h();
    test_cmge_16b();
    test_cmge_8b();
-#endif
-   printf("END:   CM{EQ,HI,HS,GE,GT,TST,LE,LT} (vector) "
-          "(w/zero and many other cases MISSING)\n\n");
+   test_cmge_zero_2d();
+   test_cmge_zero_4s();
+   test_cmge_zero_2s();
+   test_cmge_zero_8h();
+   test_cmge_zero_4h();
+   test_cmge_zero_16b();
+   test_cmge_zero_8b();
+   test_cmgt_zero_2d();
+   test_cmgt_zero_4s();
+   test_cmgt_zero_2s();
+   test_cmgt_zero_8h();
+   test_cmgt_zero_4h();
+   test_cmgt_zero_16b();
+   test_cmgt_zero_8b();
+   test_cmle_zero_2d();
+   test_cmle_zero_4s();
+   test_cmle_zero_2s();
+   test_cmle_zero_8h();
+   test_cmle_zero_4h();
+   test_cmle_zero_16b();
+   test_cmle_zero_8b();
+   test_cmeq_zero_2d();
+   test_cmeq_zero_4s();
+   test_cmeq_zero_2s();
+   test_cmeq_zero_8h();
+   test_cmeq_zero_4h();
+   test_cmeq_zero_16b();
+   test_cmeq_zero_8b();
+   test_cmlt_zero_2d();
+   test_cmlt_zero_4s();
+   test_cmlt_zero_2s();
+   test_cmlt_zero_8h();
+   test_cmlt_zero_4h();
+   test_cmlt_zero_16b();
+   test_cmlt_zero_8b();
+   printf("END:   CM{EQ,HI,HS,GE,GT,TST,LE,LT} (vector)\n\n");
 
    printf("BEGIN: {EOR,BSL,BIT,BIF} (vector)\n");
    test_eor_16b();
@@ -1573,7 +1645,6 @@ int main ( void )
    test_sshr_2d_2d_1();
    test_sshr_2d_2d_13();
    test_sshr_2d_2d_63();
-#if 0
    test_shl_2d_2d_1();
    test_shl_2d_2d_13();
    test_shl_2d_2d_63();
@@ -1584,11 +1655,10 @@ int main ( void )
    test_sshr_4s_4s_1();
    test_sshr_4s_4s_13();
    test_sshr_4s_4s_31();
-#endif
    test_shl_4s_4s_1();
    test_shl_4s_4s_13();
    test_shl_4s_4s_31();
-#if 0
+
    test_ushr_2s_2s_1();
    test_ushr_2s_2s_13();
    test_ushr_2s_2s_31();
@@ -1598,11 +1668,10 @@ int main ( void )
    test_shl_2s_2s_1();
    test_shl_2s_2s_13();
    test_shl_2s_2s_31();
-#endif
+
    test_ushr_8h_8h_1();
    test_ushr_8h_8h_13();
    test_ushr_8h_8h_15();
-#if 0
    test_sshr_8h_8h_1();
    test_sshr_8h_8h_13();
    test_sshr_8h_8h_15();
@@ -1633,8 +1702,7 @@ int main ( void )
    test_sshr_8b_8b_7();
    test_shl_8b_8b_1();
    test_shl_8b_8b_7();
-#endif
-   printf("END:   {USHR,SSHR,SHL} (vector, immediate) (many cases MISSING)\n\n");
+   printf("END:   {USHR,SSHR,SHL} (vector, immediate)\n\n");
 
    printf("BEGIN: {U,S}SHLL{,2}\n");
    test_ushll_2d_2s_0();
@@ -1695,8 +1763,8 @@ int main ( void )
    test_neg_2s_2s();
    test_neg_8h_8h();
    test_neg_4h_4h();
-   //test_neg_16b_16b();
-   //test_neg_8b_8b();
+   test_neg_16b_16b();
+   test_neg_8b_8b();
    printf("END:   NEG (vector) (MISSING 8b/16b)\n\n");
 
    printf("BEGIN: TBL, TBX\n");

@@ -1765,7 +1765,7 @@ int main ( void )
    test_neg_4h_4h();
    test_neg_16b_16b();
    test_neg_8b_8b();
-   printf("END:   NEG (vector) (MISSING 8b/16b)\n\n");
+   printf("END:   NEG (vector)\n\n");
 
    printf("BEGIN: TBL, TBX\n");
    test_tbl_16b_1reg();
@@ -1788,3 +1788,716 @@ int main ( void )
 
    return 0;
 }
+
+/*
+   abs      d
+   abs      2d,4s,2s,8h,4h,16b,8b
+   add      d
+   add      2d,4s,2s,8h,4h,16b,8b
+   addhn    2s.2d.2d, 4s.2d.2d, h_from_s and b_from_h (add and get high half)
+   addp     d (add pairs, across)
+   addp     2d,4s,2s,8h,4h,16b,8b
+   addv     4s,8h,4h,16b,18b (reduce across vector)
+   aesd     16b (aes single round decryption)
+   aese     16b (aes single round encryption)
+   aesimc   16b (aes inverse mix columns)
+   aesmc    16b (aes mix columns)
+   and      16b,8b
+
+   bic      4s,2s,8h,4h (vector, imm)
+   also movi, mvni, orr
+
+   bic      16b,8b (vector,reg) (bit clear)
+   bif      16b,8b (vector) (bit insert if false)
+   bit      16b,8b (vector) (bit insert if true)
+   bsl      16b,8b (vector) (bit select)
+
+   cls      4s,2s,8h,4h,16b,8b (count leading sign bits)
+   clz      4s,2s,8h,4h,16b,8b (count leading zero bits)
+
+   cmeq     d
+   cmeq     2d,4s,2s,8h,4h,16b,8b
+   cmeq_z   d
+   cmeq_z   2d,4s,2s,8h,4h,16b,8b
+
+   cmge     d
+   cmge     2d,4s,2s,8h,4h,16b,8b
+   cmge_z   d
+   cmge_z   2d,4s,2s,8h,4h,16b,8b
+
+   cmgt     d
+   cmgt     2d,4s,2s,8h,4h,16b,8b
+   cmgt_z   d
+   cmgt_z   2d,4s,2s,8h,4h,16b,8b
+
+   cmhi     d
+   cmhi     2d,4s,2s,8h,4h,16b,8b
+
+   cmhs     d
+   cmhs     2d,4s,2s,8h,4h,16b,8b
+
+   cmle_z   d
+   cmle_z   2d,4s,2s,8h,4h,16b,8b
+
+   cmlt_z   d
+   cmlt_z   2d,4s,2s,8h,4h,16b,8b
+
+   cmtst    d
+   cmtst    2d,4s,2s,8h,4h,16b,8b
+
+   cnt      16b,8b (population count per byte)
+
+   dup      d,s,h,b (vec elem to scalar)
+   dup      2d,4s,2s,8h,4h,16b,8b (vec elem to vector)
+   dup      2d,4s,2s,8h,4h,16b,8b (general reg to vector)
+
+   eor      16b,8b (vector)
+   ext      16b,8b,#imm4 (concat 2 vectors, then slice)
+
+   fabd     d,s
+   fabd     2d,4s,2s
+
+   fabs     d,s
+   fabs     2d,4s,2s
+
+   facge    s,d  (floating abs compare GE)
+   facge    2d,4s,2s
+
+   facgt    s,d  (floating abs compare GE)
+   facgt    2d,4s,2s
+
+   fadd     d,s
+   fadd     2d,4s,2s
+
+   faddp    d,s (floating add pair)
+   faddp    2d,4s,2s
+
+   fccmp    d,s (floating point conditional quiet compare)
+   fccmpe   d,s (floating point conditional signaling compare)
+
+   fcmeq    d,s
+   fcmeq    2d,4s,2s
+   fcmeq_z  d,s
+   fcmeq_z  2d,4s,2s
+
+   fcmge    d,s
+   fcmge    2d,4s,2s
+   fcmge_z  d,s
+   fcmge_z  2d,4s,2s
+
+   fcmgt    d,s
+   fcmgt    2d,4s,2s
+   fcmgt_z  d,s
+   fcmgt_z  2d,4s,2s
+
+   fcmle_z  d,s
+   fcmle_z  2d,4s,2s
+
+   fcmlt_z  d,s
+   fcmlt_z  2d,4s,2s
+
+   fcmp     d,s (floating point quiet, set flags)
+   fcmp_z   d,s
+   fcmpe    d,s (floating point signaling, set flags)
+   fcmpe_z  d,s
+
+   fcsel    d,s (fp cond select)
+
+   fcvt     s_h,d_h,h_s,d_s,h_d,s_d (fp convert, scalar)
+
+   fcvtas   d,s  (fcvt to signed int, nearest, ties away)
+   fcvtas   2d,4s,2s
+   fcvtas   w_s,x_s,w_d,x_d
+
+   fcvtau   d,s  (fcvt to unsigned int, nearest, ties away)
+   fcvtau   2d,4s,2s
+   fcvtau   w_s,x_s,w_d,x_d
+
+   fcvtl{2} 4s/4h, 4s/8h, 2d/2s, 2d/4s (float convert to longer form)
+
+   fcvtms   d,s  (fcvt to signed int, minus inf)
+   fcvtms   2d,4s,2s
+   fcvtms   w_s,x_s,w_d,x_d
+
+   fcvtmu   d,s  (fcvt to unsigned int, minus inf)
+   fcvtmu   2d,4s,2s
+   fcvtmu   w_s,x_s,w_d,x_d
+
+   fcvtn{2} 4h/4s, 8h/4s, 2s/2d, 4s/2d (float convert to narrower form)
+
+   fcvtns   d,s  (fcvt to signed int, nearest)
+   fcvtns   2d,4s,2s
+   fcvtns   w_s,x_s,w_d,x_d
+
+   fcvtnu   d,s  (fcvt to unsigned int, nearest)
+   fcvtnu   2d,4s,2s
+   fcvtnu   w_s,x_s,w_d,x_d
+
+   fcvtps   d,s  (fcvt to signed int, plus inf)
+   fcvtps   2d,4s,2s
+   fcvtps   w_s,x_s,w_d,x_d
+
+   fcvtpu   d,s  (fcvt to unsigned int, plus inf)
+   fcvtpu   2d,4s,2s
+   fcvtpu   w_s,x_s,w_d,x_d
+
+   fcvtxn   s_d (fcvt to lower prec narrow, rounding to odd)
+   fcvtxn   2s_2d,4s_2d
+
+   fcvtzs   s,d (fcvt to signed fixedpt, to zero) (w/ #fbits)
+   fcvtzs   2d,4s,2s
+
+   fcvtzs   s,d (fcvt to signed integer, to zero)
+   fcvtzs   2d,4s,2s
+
+   fcvtzs   w_s,x_s,w_d,x_d (fcvt to signed fixedpt, to zero) (w/ #fbits)
+
+   fcvtzs   w_s,x_s,w_d,x_d (fcvt to signed integer, to zero)
+
+   fcvtzu   s,d (fcvt to unsigned fixedpt, to zero) (w/ #fbits)
+   fcvtzu   2d,4s,2s
+
+   fcvtzu   s,d (fcvt to unsigned integer, to zero)
+   fcvtzu   2d,4s,2s
+
+   fcvtzu   w_s,x_s,w_d,x_d (fcvt to unsigned fixedpt, to zero) (w/ #fbits)
+
+   fcvtzu   w_s,x_s,w_d,x_d (fcvt to unsigned integer, to zero)
+
+   fdiv     d,s
+   fdiv     2d,4s,2s
+
+   fmadd    d,s
+   fnmadd   d,s
+   fnmsub   d,s
+   fnmul    d,s
+
+   fmax     d,s
+   fmin     d,s
+
+   fmax     2d,4s,2s
+   fmin     2d,4s,2s
+
+   fmaxnm   d,s ("max number")
+   fminnm   d,s
+
+   fmaxnm   2d,4s,2s
+   fminnm   2d,4s,2s
+
+   fmaxnmp  d_2d,s_2s ("max number pairwise")
+   fminnmp  d_2d,s_2s
+
+   fmaxnmp  2d,4s,2s
+   fminnmp  2d,4s,2s
+
+   fmaxnmv  s_4s (maxnum across vector)
+   fminnmv  s_4s
+
+   fmaxp    d_2d,s_2s (max of a pair)
+   fminp    d_2d,s_2s (max of a pair)
+
+   fmaxp    2d,4s,2s  (max pairwise)
+   fminp    2d,4s,2s
+
+   fmaxv    s_4s (max across vector)
+   fminv    s_4s
+
+   fmla     d_d_d[],s_s_s[] (by element)
+   fmla     2d_2d_d[],4s_4s_s[],2s_2s_s[]
+
+   fmla     2d,4s,2s
+
+   fmls     d_d_d[],s_s_s[] (by element)
+   fmls     2d_2d_d[],4s_4s_s[],2s_2s_s[]
+
+   fmls     2d,4s,2s
+
+   fmov     2d,4s,2s #imm (part of the MOVI/MVNI/ORR/BIC imm group)
+
+   fmov     d_d,s_s
+
+   fmov     s_w,w_s,d_x,d[1]_x,x_d,x_d[1]
+
+   fmov     d,s #imm
+
+   fmsub    d,s
+
+   fmul     d_d_d[],s_s_s[]
+   fmul     2d_2d_d[],4s_4s_s[],2s_2s_s[]
+
+   fmul     2d,4s,2s
+   fmul     d,s
+
+   fmulx    d_d_d[],s_s_s[]
+   fmulx    2d_2d_d[],4s_4s_s[],2s_2s_s[]
+
+   fmulx    d,s
+   fmulx    2d,4s,2s
+
+   fneg     d,s
+   fneg     2d,4s,2s
+
+   frecpe   d,s (recip estimate)
+   frecpe   2d,4s,2s
+
+   frecps   d,s (recip step)
+   frecps   2d,4s,2s
+
+   frecpx   d,s (recip exponent)
+
+   frinta   2d,4s,2s (round to integral, nearest away)
+   frinta   d,s
+
+   frinti   2d,4s,2s (round to integral, per FPCR)
+   frinti   d,s
+
+   frintm   2d,4s,2s (round to integral, minus inf)
+   frintm   d,s
+
+   frintn   2d,4s,2s (round to integral, nearest, to even)
+   frintn   d,s
+
+   frintp   2d,4s,2s (round to integral, plus inf)
+   frintp   d,s
+
+   frintx   2d,4s,2s (round to integral exact, per FPCR)
+   frintx   d,s
+
+   frintz   2d,4s,2s (round to integral, zero)
+   frintz   d,s
+
+   frsqrte  d,s (est)
+   frsqrte  2d,4s,2s
+
+   frsqrts  d,s (step)
+   frsqrts  2d,4s,2s
+
+   fsqrt    d,s
+   fsqrt    2d,4s,2s
+
+   fsub     d,s
+   fsub     2d,4s,2s
+
+   ins      d[]_d[],s[]_s[],h[]_h[],b[]_b[]
+
+   ins      d[]_x, s[]_w, h[]_w, b[]_w
+
+   ld1  (multiple 1-element structures to 1/2/3/4 regs)
+   ld1  (single 1-element structure to one lane of 1 reg)
+   ld1r (single 1-element structure and rep to all lanes of 1 reg)
+
+   ld2  (multiple 2-element structures to 2 regs)
+   ld2  (single 2-element structure to one lane of 2 regs)
+   ld2r (single 2-element structure and rep to all lanes of 2 regs)
+
+   ld3  (multiple 3-element structures to 3 regs)
+   ld3  (single 3-element structure to one lane of 3 regs)
+   ld3r (single 3-element structure and rep to all lanes of 3 regs)
+
+   ld4  (multiple 4-element structures to 4 regs)
+   ld4  (single 4-element structure to one lane of 4 regs)
+   ld4r (single 4-element structure and rep to all lanes of 4 regs)
+
+   ldnp  q_q_addr,d_d_addr,s_s_addr  (load pair w/ non-temporal hint)
+         addr = reg + uimm7 * reg_size
+
+   ldp   q_q_addr,d_d_addr,s_s_addr  (load pair)
+         addr = [Xn|SP],#imm   or [Xn|SP,#imm]!  or [Xn|SP,#imm]
+
+   ldr   q,d,s,h,b from addr
+         addr = [Xn|SP],#imm   or [Xn|SP,#imm]!  or [Xn|SP,#imm]
+
+   ldr   q,d,s from  pc+#imm19
+
+   ldr   q,d,s,h,b from addr
+         addr = [Xn|SP, R <extend> <shift]
+
+   ldur  q,d,s,h,b from addr
+         addr = [Xn|SP,#imm] (unscaled offset)
+
+   mla   4s_4s_s[],2s_2s_s[],8h_8h_h[],4h_4h_h[]
+   mla   4s,2s,8h,4h,16b,8b
+
+   mls   4s_4s_s[],2s_2s_s[],8h_8h_h[],4h_4h_h[]
+   mls   4s,2s,8h,4h,16b,8b
+
+   movi  16b,8b   #imm8, LSL #0
+   movi  8h,4h    #imm8, LSL #0 or 8
+   movi  4s,2s    #imm8, LSL #0, 8, 16, 24
+   movi  4s,2s    #imm8, MSL #8 or 16
+   movi  d,       #imm64
+   movi  2d,      #imm64
+
+   mul   4s_4s_s[],2s_2s_s[],8h_8h_h[],4h_4h_h[]
+   mul   4s,2s,8h,4h,16b,8b
+
+   mvni  8h,4h    #imm8, LSL #0 or 8
+   mvni  4s,2s    #imm8, LSL #0, 8, 16, 24
+   mvni  4s,2s    #imm8, MSL #8 or 16
+
+   neg   d
+   neg   2d,4s,2s,8h,4h,16b,8b
+
+   not   16b,8b
+
+   orn   16b,8b
+
+   orr   8h,4h   #imm8, LSL #0 or 8
+   orr   4s,2s   #imm8, LSL #0, 8, 16 or 24
+
+   orr   16b,8b
+
+   pmul  16b,8b
+
+   pmull{2}  8h_8b_8b,8h_16b_16b,1q_1d_1d,1d_2d_2d
+
+   raddhn{2}  2s/4s_2d_2d, 4h/8h_4s_4s, 8b/16b_8h_8h
+
+   rbit    16b,8b
+   rev16   16b,8b
+   rev32   16b,8b,8h,4h
+   rev64   16b,8b,8h,4h,4s,2s
+
+   rshrn{2}  2s/4s_2d, 8h/4h_4s, 2s/4s_2d,   #imm in 1 .. elem_bits
+
+   rsubhn{2}  2s/4s_2d_2d, 4h/8h_4s_4s, 8b/16b_8h_8h
+
+   saba      16b,8b,8h,4h,4s,2s
+   sabal{2}  2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h), 8h_(8b_8b)/(16b_16b)
+
+   sabd      16b,8b,8h,4h,4s,2s
+   sabdl{2}  2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h), 8h_(8b_8b)/(16b_16b)
+
+   sadalp    4h_8b,8h_16b,2s_4h,4s_8h,1d_2s,2d_4s
+
+   saddl{2}  2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h), 8h_(8b_8b)/(16b_16b)
+
+   saddlp    4h_8b,8h_16b,2s_4h,4s_8h,1d_2s,2d_4s
+
+   saddlv    h_16b/8b, s_8h/4h, d_4s
+
+   saddw{2}  8h_8h_16b/8b, 4s_4s_8h/4h, 2d_2d_2s/4s
+
+   scvtf     d,s        _#fbits
+   scvtf     2d,4s,2s   _#fbits
+
+   scvtf     d,s
+   scvtf     2d,4s,2s
+
+   scvtf     s_w, d_w, s_x, d_x,   _#fbits
+   scvtf     s_w, d_w, s_x, d_x
+
+   sha1c       q_s_4s
+   sha1h       s_s
+   sha1m       q_s_4s
+   sha1p       q_s_4s
+   sha1su0     4s_4s_4s
+   sha1su1     4s_4s
+   sha256h2    q_q_4s
+   sha256h     q_q_4s
+   sha256su0   4s_4s
+   sha256su1   4s_4s_4s
+
+   shadd       16b,8b,8h,4h,4s,2s
+
+   shl         d_#imm
+   shl         16b,8b,8h,4h,4s,2s,2d  _#imm
+
+   shll{2}   8h_8b/16b_#8, 4s_4h/8h_#16, 2d_2s/4s_#32
+
+   shrn{2}  2s/4s_2d, 8h/4h_4s, 2s/4s_2d,   #imm in 1 .. elem_bits
+
+   shsub       16b,8b,8h,4h,4s,2s
+
+   sli         d_#imm
+   sli         2d,4s,2s,8h,4h,16b,8b  _#imm
+
+   smax        4s,2s,8h,4h,16b,8b
+
+   smaxp       4s,2s,8h,4h,16b,8b
+
+   smaxv       s_4s,h_8h,h_4h,b_16b,b_8b
+
+   smin        4s,2s,8h,4h,16b,8b
+
+   sminp       4s,2s,8h,4h,16b,8b
+
+   sminv       s_4s,h_8h,h_4h,b_16b,b_8b
+
+   smlal{2}    2d_2s/4s_s[], 4s_4h/8h_h[]
+   smlal{2}    2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h), 8h_(8b_8b)/(16b_16b)
+
+   smlsl{2}    2d_2s/4s_s[], 4s_4h/8h_h[]
+   smlsl{2}    2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h), 8h_(8b_8b)/(16b_16b)
+
+   smov        w_b[], w_h[], x_b[], x_h[], x_s[]
+
+   smull{2}    2d_2s/4s_s[]. 4s_4h/8h_h[]
+   smull{2}    2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h), 8h_(8b_8b)/(16b_16b)
+
+   sqabs       d,s,h,b
+   sqabs       2d,4s,2s,8h,4h,16b,8b
+
+   sqadd       d,s,h,b
+   sqadd       2d,4s,2s,8h,4h,16b,8b
+
+   sqdmlal     d_s_s[], s_h_h[]
+   sqdmlal{2}  2d_2s/4s_s[], 4s_4h/8h_h[]
+
+   sqdmlal     d_s_s, s_h_h
+   sqdmlal{2}  2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h)
+
+   sqdmlsl     d_s_s[], s_h_h[]
+   sqdmlsl{2}  2d_2s/4s_s[], 4s_4h/8h_h[]
+
+   sqdmlsl     d_s_s, s_h_h
+   sqdmlsl{2}  2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h)
+
+   sqdmulh     s_s_s[], h_h_h[]
+   sqdmulh     4s_4s_s[], 2s_2s_s[], 8h_8h_h[], 4h_4h_h[]
+
+   sqdmulh     h,s
+   sqdmulh     4s,2s,8h,4h
+
+   sqdmull     d_s_s[], s_h_h[]
+   sqdmull{2}  2d_2s/4s_s[], 4s_4h/2h_h[]
+
+   sqdmull     d_s_s,s_h_h
+   sqdmull{2}  2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h)
+
+   sqneg       d,s,h,b
+   sqneg       2d,4s,2s,8h,4h,16b,8b
+
+   sqrdmulh    s_s_s[], h_h_h[]
+   sqrdmulh    4s_4s_s[], 2s_2s_s[], 8h_8h_h[], 4h_4h_h[]
+
+   sqrdmulh    h,s
+   sqrdmulh    4s,2s,8h,4h
+
+   sqrshl      d,s,h,b
+   sqrshl      2d,4s,2s,8h,4h,16b,8b
+
+   sqrshrn     s_d, h_s, b_h   #imm
+   sqrshrn{2}  2s/4s_2d, 4h/8h_4s, 8b/16b_8h,  #imm
+
+   sqrshrun     s_d, h_s, b_h   #imm
+   sqrshrun{2}  2s/4s_2d, 4h/8h_4s, 8b/16b_8h,  #imm
+
+   sqshl        d,s,h,b   _#imm
+   sqshl        2d,4s,2s,8h,4h,16b,8b   _#imm
+
+   sqshl        d,s,h,b
+   sqshl        2d,4s,2s,8h,4h,16b,8b
+
+   sqshlu       d,s,h,b  _#imm
+   sqshlu       2d,4s,2s,8h,4h,16b,8b  _#imm
+
+   sqshrn       s_d, h_s, b_h   #imm
+   sqshrn{2}    2s/4s_2d, 4h/8h_4s, 8b/16b_8h,  #imm
+
+   sqshrun      s_d, h_s, b_h   #imm
+   sqshrun{2}   2s/4s_2d, 4h/8h_4s, 8b/16b_8h,  #imm
+
+   sqsub       d,s,h,b
+   sqsub       2d,4s,2s,8h,4h,16b,8b
+
+   sqxtn       s_d,h_s,b_h
+   sqxtn{2}    2s/4s_2d, 4h/8h_4s, 8b/16b_8h
+
+   sqxtun      s_d,h_s,b_h
+   sqxtun{2}   2s/4s_2d, 4h/8h_4s, 8b/16b_8h
+
+   srhadd      4s,2s,8h,4h,16b,8b
+
+   sri         d_#imm
+   sri         2d,4s,2s,8h,4h,16b,8b  _#imm
+
+   srshl (reg) d
+   srshl       2d,4s,2s,8h,4h,16b,8b
+
+   srshr (imm) d
+   srshr       2d,4s,2s,8h,4h,16b,8b
+
+   srsra (imm) d
+   srsra       2d,4s,2s,8h,4h,16b,8b
+
+   sshl (reg)  d
+   sshl        2d,4s,2s,8h,4h,16b,8b
+
+   sshll{2} (imm)  2d_2s/4s  4s_4h/8h, 8h_8b/16b
+
+   sshr (imm)  d
+   sshr        2d,4s,2s,8h,4h,16b,8b
+
+   ssra (imm)  d
+   ssra        2d,4s,2s,8h,4h,16b,8b
+
+   ssubl{2}  2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h), 8h_(8b_8b)/(16b_16b)
+
+   ssubw{2}  8h_8h_16b/8b, 4s_4s_8h/4h, 2d_2d_2s/4s
+
+   st1 (multiple 1-element structures from 1/2/3/4 regs)
+   st1 (single 1-element structure for 1 lane of 1 reg)
+
+   st2 (multiple 2-element structures from 2 regs)
+   st2 (single 2-element structure from 1 lane of 2 regs)
+
+   st3 (multiple 3-element structures from 3 regs)
+   st3 (single 3-element structure from 1 lane of 3 regs)
+
+   st4 (multiple 4-element structures from 4 regs)
+   st4 (single 4-element structure from one lane of 4 regs)
+
+   stnp q_q_addr, d_d_addr, s_s_addr
+        addr = [Xn|SP, #imm]
+
+   stp  q_q_addr, d_d_addr, s_s_addr
+        addr = [Xn|SP], #imm  or [Xn|SP, #imm]!  or [Xn|SP, #imm]
+
+   str  q,d,s,h,b_addr
+        addr = [Xn|SP], #simm  or [Xn|SP, #simm]!  or [Xn|SP, #pimm]
+
+   str   q,d,s,h,b_addr
+         addr = [Xn|SP, R <extend> <shift]
+
+   stur  q,d,s,h,b_addr
+         addr = [Xn|SP,#imm] (unscaled offset)
+
+   sub   d
+   sub   2d,4s,2s,8h,4h,16b,8b
+
+   subhn{2}  2s/4s_2d_2d, 4h/8h_4s_4s, 8b/16b_8h_8h
+
+   suqadd  d,s,h,b
+   suqadd  2d,4s,2s,8h,4h,16b,8b
+
+   tbl     8b_{16b}_8b, 16b_{16b}_16b
+   tbl     8b_{16b,16b}_8b, 16b_{16b,16b}_16b
+   tbl     8b_{16b,16b,16b}_8b, 16b_{16b,16b,16b}_16b
+   tbl     8b_{16b,16b,16b,16b}_8b, 16b_{16b,16b,16b,16b}_16b
+
+   tbx     8b_{16b}_8b, 16b_{16b}_16b
+   tbx     8b_{16b,16b}_8b, 16b_{16b,16b}_16b
+   tbx     8b_{16b,16b,16b}_8b, 16b_{16b,16b,16b}_16b
+   tbx     8b_{16b,16b,16b,16b}_8b, 16b_{16b,16b,16b,16b}_16b
+
+   trn1    2d,4s,2s,8h,4h,16b,8b
+   trn2    2d,4s,2s,8h,4h,16b,8b
+
+   uaba      16b,8b,8h,4h,4s,2s
+   uabal{2}  2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h), 8h_(8b_8b)/(16b_16b)
+
+   uabd      16b,8b,8h,4h,4s,2s
+   uabdl{2}  2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h), 8h_(8b_8b)/(16b_16b)
+
+   uadalp    4h_8b,8h_16b,2s_4h,4s_8h,1d_2s,2d_4s
+
+   uaddl{2}  2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h), 8h_(8b_8b)/(16b_16b)
+
+   uaddlp    4h_8b,8h_16b,2s_4h,4s_8h,1d_2s,2d_4s
+
+   uaddlv    h_16b/8b, s_8h/4h, d_4s
+
+   uaddw{2}  8h_8h_16b/8b, 4s_4s_8h/4h, 2d_2d_2s/4s
+
+   ucvtf     d,s        _#fbits
+   ucvtf     2d,4s,2s   _#fbits
+
+   ucvtf     d,s
+   ucvtf     2d,4s,2s
+
+   ucvtf     s_w, d_w, s_x, d_x,   _#fbits
+   ucvtf     s_w, d_w, s_x, d_x
+
+   uhadd       16b,8b,8h,4h,4s,2s
+
+   uhsub       16b,8b,8h,4h,4s,2s
+
+   umax        4s,2s,8h,4h,16b,8b
+
+   umaxp       4s,2s,8h,4h,16b,8b
+
+   umaxv       s_4s,h_8h,h_4h,b_16b,b_8b
+
+   umin        4s,2s,8h,4h,16b,8b
+
+   uminp       4s,2s,8h,4h,16b,8b
+
+   uminv       s_4s,h_8h,h_4h,b_16b,b_8b
+
+   umlal{2}    2d_2s/4s_s[], 4s_4h/8h_h[]
+   umlal{2}    2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h), 8h_(8b_8b)/(16b_16b)
+
+   umlsl{2}    2d_2s/4s_s[], 4s_4h/8h_h[]
+   umlsl{2}    2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h), 8h_(8b_8b)/(16b_16b)
+
+   umov        w_b[], w_h[], x_b[], x_h[], x_s[]
+
+   umull{2}    2d_2s/4s_s[]. 4s_4h/8h_h[]
+   umull{2}    2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h), 8h_(8b_8b)/(16b_16b)
+
+   uqadd       d,s,h,b
+   uqadd       2d,4s,2s,8h,4h,16b,8b
+
+   uqrshl      d,s,h,b
+   uqrshl      2d,4s,2s,8h,4h,16b,8b
+
+   uqrshrn     s_d, h_s, b_h   #imm
+   uqrshrn{2}  2s/4s_2d, 4h/8h_4s, 8b/16b_8h,  #imm
+
+   uqshl        d,s,h,b   _#imm
+   uqshl        2d,4s,2s,8h,4h,16b,8b   _#imm
+
+   uqshl        d,s,h,b
+   uqshl        2d,4s,2s,8h,4h,16b,8b
+
+   uqshrn       s_d, h_s, b_h   #imm
+   uqshrn{2}    2s/4s_2d, 4h/8h_4s, 8b/16b_8h,  #imm
+
+   uqsub       d,s,h,b
+   uqsub       2d,4s,2s,8h,4h,16b,8b
+
+   uqxtn       s_d,h_s,b_h
+   uqxtn{2}    2s/4s_2d, 4h/8h_4s, 8b/16b_8h
+
+   urecpe      4s,2s
+
+   urhadd      4s,2s,8h,4h,16b,8b
+
+   urshl (reg) d
+   urshl       2d,4s,2s,8h,4h,16b,8b
+
+   urshr (imm) d
+   urshr       2d,4s,2s,8h,4h,16b,8b
+
+   ursqrte     4s,2s
+
+   ursra (imm) d
+   ursra       2d,4s,2s,8h,4h,16b,8b
+
+   ushl (reg)  d
+   ushl        2d,4s,2s,8h,4h,16b,8b
+
+   ushll{2} (imm)  2d_2s/4s  4s_4h/8h, 8h_8b/16b
+
+   ushr (imm)  d
+   ushr        2d,4s,2s,8h,4h,16b,8b
+
+   usqadd      d,s,h,b
+   usqadd      2d,4s,2s,8h,4h,16b,8b
+
+   usra (imm)  d
+   usra        2d,4s,2s,8h,4h,16b,8b
+
+   usubl{2}  2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h), 8h_(8b_8b)/(16b_16b)
+
+   usubw{2}  8h_8h_16b/8b, 4s_4s_8h/4h, 2d_2d_2s/4s
+
+   uzp1      2d,4s,2s,8h,4h,16b,8b
+   uzp2      2d,4s,2s,8h,4h,16b,8b
+
+   xtn{2}    2s/4s_2d, 4h/8h_4s, 8b/16b_8h
+
+   zip1      2d,4s,2s,8h,4h,16b,8b
+   zip2      2d,4s,2s,8h,4h,16b,8b
+*/

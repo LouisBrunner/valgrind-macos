@@ -279,7 +279,8 @@ void remote_open (const HChar *name)
                 pid);
    }
    if (VG_(clo_verbosity) > 1 
-       || VG_(clo_vgdb_error) < 999999999) {
+       || VG_(clo_vgdb_error) < 999999999
+       || VG_(clo_vgdb_stop_at) != 0) {
       VG_(umsg)("\n");
       VG_(umsg)(
          "TO DEBUG THIS PROCESS USING GDB: start GDB like this\n"

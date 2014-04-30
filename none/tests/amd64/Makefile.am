@@ -80,6 +80,7 @@ EXTRA_DIST = \
 	slahf-amd64.stderr.exp slahf-amd64.stdout.exp \
 	slahf-amd64.vgtest \
 	tm1.vgtest tm1.stderr.exp tm1.stdout.exp \
+	x87trigOOR.vgtest x87trigOOR.stderr.exp x87trigOOR.stdout.exp \
 	xacq_xrel.stderr.exp xacq_xrel.stdout.exp xacq_xrel.vgtest \
 	xadd.stderr.exp xadd.stdout.exp xadd.vgtest
 
@@ -96,6 +97,7 @@ check_PROGRAMS = \
 	smc1 \
 	sbbmisc \
 	nibz_bennee_mmap \
+	x87trigOOR \
 	xadd
 if BUILD_ADDR32_TESTS
  check_PROGRAMS += asorep

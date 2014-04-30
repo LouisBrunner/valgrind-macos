@@ -584,7 +584,8 @@ in most cases.  We group the available options by rough categories.</para>
     </term>
     <listitem>
       <para>Run the Valgrind tool called <varname>toolname</varname>,
-      e.g. Memcheck, Cachegrind, etc.</para>
+      e.g. memcheck, cachegrind, callgrind, helgrind, drd, massif,
+      lackey, none, exp-sgcheck, exp-bbv, exp-dhat, etc.</para>
     </listitem>
   </varlistentry>
 

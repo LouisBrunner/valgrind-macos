@@ -3069,7 +3069,6 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
          case Afp_SQRT:   *p++ = 0xD9; *p++ = 0xFA; break;
          case Afp_SIN:    *p++ = 0xD9; *p++ = 0xFE; break;
          case Afp_COS:    *p++ = 0xD9; *p++ = 0xFF; break;
-         case Afp_TAN:    *p++ = 0xD9; *p++ = 0xF2; break;
          case Afp_ROUND:  *p++ = 0xD9; *p++ = 0xFC; break;
          case Afp_2XM1:   *p++ = 0xD9; *p++ = 0xF0; break;
          case Afp_SCALE:  *p++ = 0xD9; *p++ = 0xFD; break;
@@ -3078,7 +3077,24 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
          case Afp_YL2XP1: *p++ = 0xD9; *p++ = 0xF9; break;
          case Afp_PREM:   *p++ = 0xD9; *p++ = 0xF8; break;
          case Afp_PREM1:  *p++ = 0xD9; *p++ = 0xF5; break;
-         default: goto bad;
+         case Afp_TAN:
+            /* fptan pushes 1.0 on the FP stack, except when the
+               argument is out of range.  Hence we have to do the
+               instruction, then inspect C2 to see if there is an out
+               of range condition.  If there is, we skip the fincstp
+               that is used by the in-range case to get rid of this
+               extra 1.0 value. */
+            *p++ = 0xD9; *p++ = 0xF2; // fptan
+            *p++ = 0x50;              // pushq %rax
+            *p++ = 0xDF; *p++ = 0xE0; // fnstsw %ax
+            *p++ = 0x66; *p++ = 0xA9; 
+            *p++ = 0x00; *p++ = 0x04; // testw $0x400,%ax
+            *p++ = 0x75; *p++ = 0x02; // jnz after_fincstp
+            *p++ = 0xD9; *p++ = 0xF7; // fincstp
+            *p++ = 0x58;              // after_fincstp: popq %rax
+            break;
+         default:
+            goto bad;
       }
       goto done;
 

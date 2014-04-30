@@ -3147,6 +3147,11 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
          HReg src = iselDblExpr(env, e->Iex.Binop.arg2);
          /* XXXROUNDINGFIXME */
          /* set roundingmode here */
+         /* Note that X86Instr_FpUnary(Xfp_TAN,..) sets the condition
+            codes.  I don't think that matters, since this insn
+            selector never generates such an instruction intervening
+            between an flag-setting instruction and a flag-using
+            instruction. */
          addInstr(env, X86Instr_FpUnary(fpop,src,res));
 	 if (fpop != Xfp_SQRT
              && fpop != Xfp_NEG && fpop != Xfp_ABS)

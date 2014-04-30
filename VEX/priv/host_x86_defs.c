@@ -2023,11 +2023,25 @@ static UChar* do_fop1_st ( UChar* p, X86FpOp op )
       case Xfp_COS:    *p++ = 0xD9; *p++ = 0xFF; break;
       case Xfp_2XM1:   *p++ = 0xD9; *p++ = 0xF0; break;
       case Xfp_MOV:    break;
-      case Xfp_TAN:    p = do_ffree_st7(p); /* since fptan pushes 1.0 */
-                       *p++ = 0xD9; *p++ = 0xF2; /* fptan */
-                       *p++ = 0xD9; *p++ = 0xF7; /* fincstp */
-                       break;
-      default: vpanic("do_fop1_st: unknown op");
+      case Xfp_TAN:
+         /* fptan pushes 1.0 on the FP stack, except when the argument
+            is out of range.  Hence we have to do the instruction,
+            then inspect C2 to see if there is an out of range
+            condition.  If there is, we skip the fincstp that is used
+            by the in-range case to get rid of this extra 1.0
+            value. */
+         p = do_ffree_st7(p); /* since fptan sometimes pushes 1.0 */
+         *p++ = 0xD9; *p++ = 0xF2; // fptan
+         *p++ = 0x50;              // pushl %eax
+         *p++ = 0xDF; *p++ = 0xE0; // fnstsw %ax
+         *p++ = 0x66; *p++ = 0xA9; 
+         *p++ = 0x00; *p++ = 0x04; // testw $0x400,%ax
+         *p++ = 0x75; *p++ = 0x02; // jnz after_fincstp
+         *p++ = 0xD9; *p++ = 0xF7; // fincstp
+         *p++ = 0x58;              // after_fincstp: popl %eax
+         break;
+      default:
+         vpanic("do_fop1_st: unknown op");
    }
    return p;
 }

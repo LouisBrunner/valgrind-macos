@@ -592,6 +592,7 @@ PRE(domctl)
    case VKI_XEN_DOMCTL_gettscinfo:
    case VKI_XEN_DOMCTL_getdomaininfo:
    case VKI_XEN_DOMCTL_unpausedomain:
+   case VKI_XEN_DOMCTL_resumedomain:
       /* No input fields. */
       break;
 
@@ -1183,6 +1184,7 @@ POST(domctl){
    case VKI_XEN_DOMCTL_sethvmcontext:
    case VKI_XEN_DOMCTL_set_max_evtchn:
    case VKI_XEN_DOMCTL_cacheflush:
+   case VKI_XEN_DOMCTL_resumedomain:
       /* No output fields */
       break;
 

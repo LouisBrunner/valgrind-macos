@@ -18,6 +18,14 @@ struct vki_xen_hvm_set_isa_irq_level {
 };
 typedef struct vki_xen_hvm_set_isa_irq_level vki_xen_hvm_set_isa_irq_level_t;
 
+#define VKI_XEN_HVMOP_set_pci_link_route 4
+struct vki_xen_hvm_set_pci_link_route {
+    vki_xen_domid_t  domid;
+    vki_uint8_t  link;
+    vki_uint8_t  isa_irq;
+};
+typedef struct vki_xen_hvm_set_pci_link_route vki_xen_hvm_set_pci_link_route_t;
+
 #endif // __VKI_XEN_HVM_H
 
 /*--------------------------------------------------------------------*/

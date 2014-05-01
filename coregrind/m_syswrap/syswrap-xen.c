@@ -813,6 +813,12 @@ PRE(hvm_op)
        PRE_XEN_HVMOP_READ(set_isa_irq_level, level);
        break;
 
+   case VKI_XEN_HVMOP_set_pci_link_route:
+       PRE_XEN_HVMOP_READ(set_pci_link_route, domid);
+       PRE_XEN_HVMOP_READ(set_pci_link_route, link);
+       PRE_XEN_HVMOP_READ(set_pci_link_route, isa_irq);
+       break;
+
    default:
       bad_subop(tid, layout, arrghs, status, flags,
                 "__HYPERVISOR_hvm_op", op);
@@ -1345,6 +1351,7 @@ POST(hvm_op)
    switch (op) {
    case VKI_XEN_HVMOP_set_param:
    case VKI_XEN_HVMOP_set_isa_irq_level:
+   case VKI_XEN_HVMOP_set_pci_link_route:
       /* No output paramters */
       break;
 

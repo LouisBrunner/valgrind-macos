@@ -784,7 +784,7 @@ PRE(hvm_op)
                 (Addr)&((_type*)arg)->_field,           \
                 sizeof(((_type*)arg)->_field))
 #define PRE_XEN_HVMOP_READ(_hvm_op, _field)                             \
-   __PRE_XEN_HVMOP_READ(_hvm_op, "xen_hvm_" # _hvm_op "_t", _field)
+   __PRE_XEN_HVMOP_READ(_hvm_op, vki_xen_hvm_ ## _hvm_op ## _t, _field)
 
    switch (op) {
    case VKI_XEN_HVMOP_set_param:
@@ -1324,7 +1324,7 @@ POST(hvm_op)
       POST_MEM_WRITE((Addr)&((_type*)arg)->_field,      \
                      sizeof(((_type*)arg)->_field))
 #define POST_XEN_HVMOP_WRITE(_hvm_op, _field) \
-      __PRE_XEN_HVMOP_READ(_hvm_op, "xen_hvm_" # _hvm_op "_t", _field)
+      __PRE_XEN_HVMOP_READ(_hvm_op, vki_xen_hvm_ ## _hvm_op ## _t, _field)
 
    switch (op) {
    case VKI_XEN_HVMOP_set_param:

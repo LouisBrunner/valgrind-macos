@@ -85,6 +85,7 @@
 #define VKI_XEN_DOMCTL_setnodeaffinity               68
 #define VKI_XEN_DOMCTL_getnodeaffinity               69
 #define VKI_XEN_DOMCTL_set_max_evtchn                70
+#define VKI_XEN_DOMCTL_cacheflush                    71
 #define VKI_XEN_DOMCTL_gdbsx_guestmemio            1000
 #define VKI_XEN_DOMCTL_gdbsx_pausevcpu             1001
 #define VKI_XEN_DOMCTL_gdbsx_unpausevcpu           1002
@@ -313,6 +314,11 @@ struct vki_xen_domctl_set_max_evtchn {
     vki_uint32_t max_port;
 };
 
+struct vki_xen_domctl_cacheflush {
+    /* IN: page range to flush. */
+    vki_xen_pfn_t start_pfn, nr_pfns;
+};
+
 struct vki_xen_domctl {
     vki_uint32_t cmd;
     vki_uint32_t interface_version; /* XEN_DOMCTL_INTERFACE_VERSION */
@@ -371,6 +377,7 @@ struct vki_xen_domctl {
         struct vki_xen_domctl_set_max_evtchn    set_max_evtchn;
         //struct vki_xen_domctl_gdbsx_memio       gdbsx_guest_memio;
         //struct vki_xen_domctl_set_broken_page_p2m set_broken_page_p2m;
+        struct vki_xen_domctl_cacheflush        cacheflush;
         //struct vki_xen_domctl_gdbsx_pauseunp_vcpu gdbsx_pauseunp_vcpu;
         //struct vki_xen_domctl_gdbsx_domstatus   gdbsx_domstatus;
         vki_uint8_t                         pad[128];

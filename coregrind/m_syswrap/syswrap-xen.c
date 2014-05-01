@@ -807,6 +807,12 @@ PRE(hvm_op)
       __PRE_XEN_HVMOP_READ(get_param, struct vki_xen_hvm_param, index);
       break;
 
+   case VKI_XEN_HVMOP_set_isa_irq_level:
+       PRE_XEN_HVMOP_READ(set_isa_irq_level, domid);
+       PRE_XEN_HVMOP_READ(set_isa_irq_level, isa_irq);
+       PRE_XEN_HVMOP_READ(set_isa_irq_level, level);
+       break;
+
    default:
       bad_subop(tid, layout, arrghs, status, flags,
                 "__HYPERVISOR_hvm_op", op);
@@ -1338,6 +1344,7 @@ POST(hvm_op)
 
    switch (op) {
    case VKI_XEN_HVMOP_set_param:
+   case VKI_XEN_HVMOP_set_isa_irq_level:
       /* No output paramters */
       break;
 

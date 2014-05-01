@@ -10,6 +10,14 @@ struct vki_xen_hvm_param {
     vki_uint64_t value;    /* IN/OUT */
 };
 
+#define VKI_XEN_HVMOP_set_isa_irq_level 3
+struct vki_xen_hvm_set_isa_irq_level {
+    vki_xen_domid_t  domid;
+    vki_uint8_t  isa_irq;
+    vki_uint8_t  level;
+};
+typedef struct vki_xen_hvm_set_isa_irq_level vki_xen_hvm_set_isa_irq_level_t;
+
 #endif // __VKI_XEN_HVM_H
 
 /*--------------------------------------------------------------------*/

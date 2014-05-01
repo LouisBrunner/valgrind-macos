@@ -637,6 +637,10 @@ PRE(domctl)
       PRE_XEN_DOMCTL_READ(hypercall_init, gmfn);
       break;
 
+   case VKI_XEN_DOMCTL_settimeoffset:
+       PRE_XEN_DOMCTL_READ(settimeoffset, time_offset_seconds);
+       break;
+
    case VKI_XEN_DOMCTL_getvcpuinfo:
       PRE_XEN_DOMCTL_READ(getvcpuinfo, vcpu);
       break;

@@ -26,6 +26,15 @@ struct vki_xen_hvm_set_pci_link_route {
 };
 typedef struct vki_xen_hvm_set_pci_link_route vki_xen_hvm_set_pci_link_route_t;
 
+#define VKI_XEN_HVMOP_set_mem_type 8
+struct vki_xen_hvm_set_mem_type {
+    vki_xen_domid_t  domid;
+    vki_uint16_t hvmmem_type;
+    vki_uint32_t nr;
+    vki_xen_uint64_aligned_t first_pfn;
+};
+typedef struct vki_xen_hvm_set_mem_type vki_xen_hvm_set_mem_type_t;
+
 #endif // __VKI_XEN_HVM_H
 
 /*--------------------------------------------------------------------*/

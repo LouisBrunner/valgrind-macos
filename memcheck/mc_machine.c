@@ -1055,6 +1055,9 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(FPCR) && sz == 4) return -1; // untracked
    if (o == GOF(FPSR) && sz == 4) return -1; // untracked
 
+   if (o == GOF(TISTART) && sz == 8) return -1; // untracked
+   if (o == GOF(TILEN)   && sz == 8) return -1; // untracked
+
    VG_(printf)("MC_(get_otrack_shadow_offset)(arm64)(off=%d,sz=%d)\n",
                offset,szB);
    tl_assert(0);

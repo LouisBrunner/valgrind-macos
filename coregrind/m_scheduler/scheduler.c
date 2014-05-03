@@ -1466,21 +1466,20 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
             VG_(umsg)(
                "valgrind: Unrecognised instruction at address %#lx.\n", addr);
             VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
-#define M(a) VG_(umsg)(a "\n");
-   M("Your program just tried to execute an instruction that Valgrind" );
-   M("did not recognise.  There are two possible reasons for this."    );
-   M("1. Your program has a bug and erroneously jumped to a non-code"  );
-   M("   location.  If you are running Memcheck and you just saw a"    );
-   M("   warning about a bad jump, it's probably your program's fault.");
-   M("2. The instruction is legitimate but Valgrind doesn't handle it,");
-   M("   i.e. it's Valgrind's fault.  If you think this is the case or");
-   M("   you are not sure, please let us know and we'll try to fix it.");
-   M("Either way, Valgrind will now raise a SIGILL signal which will"  );
-   M("probably kill your program."                                     );
-#undef M
+#        define M(a) VG_(umsg)(a "\n");
+         M("Your program just tried to execute an instruction that Valgrind" );
+         M("did not recognise.  There are two possible reasons for this."    );
+         M("1. Your program has a bug and erroneously jumped to a non-code"  );
+         M("   location.  If you are running Memcheck and you just saw a"    );
+         M("   warning about a bad jump, it's probably your program's fault.");
+         M("2. The instruction is legitimate but Valgrind doesn't handle it,");
+         M("   i.e. it's Valgrind's fault.  If you think this is the case or");
+         M("   you are not sure, please let us know and we'll try to fix it.");
+         M("Either way, Valgrind will now raise a SIGILL signal which will"  );
+         M("probably kill your program."                                     );
+#        undef M
          }
-
-#if defined(VGA_s390x)
+#        if defined(VGA_s390x)
          /* Now that the complaint is out we need to adjust the guest_IA. The
             reason is that -- after raising the exception -- execution will
             continue with the insn that follows the invalid insn. As the first
@@ -1492,12 +1491,12 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
          UChar byte = ((UChar *)addr)[0];
          UInt  insn_length = ((((byte >> 6) + 1) >> 1) + 1) << 1;
          Addr  next_insn_addr = addr + insn_length;
-
          VG_(set_IP)(tid, next_insn_addr);
-#endif
+#        endif
          VG_(synth_sigill)(tid, addr);
          break;
       }
+
       case VEX_TRC_JMP_TINVAL:
          VG_(discard_translations)(
             (Addr64)VG_(threads)[tid].arch.vex.guest_TISTART,
@@ -1507,6 +1506,14 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
          if (0)
             VG_(printf)("dump translations done.\n");
          break;
+
+      case VEX_TRC_JMP_FLUSHDCACHE: {
+         void* start = (void*)VG_(threads)[tid].arch.vex.guest_TISTART;
+         SizeT len   = VG_(threads)[tid].arch.vex.guest_TILEN;
+         VG_(debugLog)(2, "sched", "flush_dcache(%p, %lu)\n", start, len);
+         VG_(flush_dcache)(start, len);
+         break;
+      }
 
       case VG_TRC_INVARIANT_FAILED:
          /* This typically happens if, after running generated code,

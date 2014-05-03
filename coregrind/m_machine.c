@@ -1454,6 +1454,19 @@ Bool VG_(machine_get_hwcaps)( void )
 
      VG_(machine_get_cache_info)(&vai);
 
+     /* 0 denotes 'not set'.  The range of legitimate values here,
+        after being set that is, is 2 though 17 inclusive. */
+     vg_assert(vai.arm64_dMinLine_lg2_szB == 0);
+     vg_assert(vai.arm64_iMinLine_lg2_szB == 0);
+     ULong ctr_el0;
+     __asm__ __volatile__("mrs %0, ctr_el0" : "=r"(ctr_el0));
+     vai.arm64_dMinLine_lg2_szB = ((ctr_el0 >> 16) & 0xF) + 2;
+     vai.arm64_iMinLine_lg2_szB = ((ctr_el0 >>  0) & 0xF) + 2;
+     VG_(debugLog)(1, "machine", "ARM64: ctr_el0.dMinLine_szB = %d, "
+                      "ctr_el0.iMinLine_szB = %d\n",
+                   1 << vai.arm64_dMinLine_lg2_szB,
+                   1 << vai.arm64_iMinLine_lg2_szB);
+
      return True;
    }
 

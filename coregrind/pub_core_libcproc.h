@@ -87,6 +87,8 @@ extern void VG_(do_atfork_child)  ( ThreadId tid );
 // icache invalidation
 extern void VG_(invalidate_icache) ( void *ptr, SizeT nbytes );
 
+// dcache flushing
+extern void VG_(flush_dcache) ( void *ptr, SizeT nbytes );
 
 #endif   // __PUB_CORE_LIBCPROC_H
 

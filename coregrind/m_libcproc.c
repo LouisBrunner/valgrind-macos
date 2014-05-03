@@ -820,8 +820,8 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
    const UInt icache_line_size_power_of_two =
        (cache_type_register & kICacheLineSizeMask) >> kICacheLineSizeShift;
 
-   const UInt dcache_line_size_ = 1 << dcache_line_size_power_of_two;
-   const UInt icache_line_size_ = 1 << icache_line_size_power_of_two;
+   const UInt dcache_line_size_ = 4 * (1 << dcache_line_size_power_of_two);
+   const UInt icache_line_size_ = 4 * (1 << icache_line_size_power_of_two);
 
    Addr start = (Addr)ptr;
    // Sizes will be used to generate a mask big enough to cover a pointer.

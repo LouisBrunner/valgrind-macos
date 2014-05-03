@@ -6915,7 +6915,8 @@ static void iselNext ( ISelEnv* env,
       case Ijk_NoDecode:
       case Ijk_NoRedir:
       case Ijk_Sys_syscall:
-//ZZ       case Ijk_TInval:
+      case Ijk_TInval:
+      case Ijk_FlushDCache:
 //ZZ       case Ijk_Yield:
       {
          HReg        r    = iselIntExpr_R(env, next);

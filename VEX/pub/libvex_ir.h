@@ -2082,6 +2082,10 @@ extern Bool eqIRAtom ( IRExpr*, IRExpr* );
    ensure that these are filled in with suitable values before issuing
    a jump of kind Ijk_TInval.
 
+   Ijk_TInval requests invalidation of translations taken from the
+   requested range.  Ijk_FlushDCache requests flushing of the D cache
+   for the specified range.
+
    Re Ijk_EmWarn and Ijk_EmFail: the guest state must have a
    pseudo-register guest_EMNOTE, which is 32-bits regardless of the
    host or guest word size.  That register should be made to hold a
@@ -2109,7 +2113,8 @@ typedef
       Ijk_EmFail,         /* emulation critical (FATAL) error; give up */
       Ijk_NoDecode,       /* current instruction cannot be decoded */
       Ijk_MapFail,        /* Vex-provided address translation failed */
-      Ijk_TInval,         /* Invalidate translations before continuing. */
+      Ijk_TInval,         /* Inval icache to PoU in [TISTART, +TILEN) */
+      Ijk_FlushDCache,    /* Clean dcache to PoU in [TISTART, +TILEN) */
       Ijk_NoRedir,        /* Jump to un-redirected guest addr */
       Ijk_SigILL,         /* current instruction synths SIGILL */
       Ijk_SigTRAP,        /* current instruction synths SIGTRAP */

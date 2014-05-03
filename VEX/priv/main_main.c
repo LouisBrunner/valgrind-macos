@@ -92,6 +92,7 @@ static  Int sdiv32 (  Int x,  Int y ) { return x/y; }
 
 void LibVEX_default_VexControl ( /*OUT*/ VexControl* vcon )
 {
+   vex_bzero(vcon, sizeof(*vcon));
    vcon->iropt_verbosity            = 0;
    vcon->iropt_level                = 2;
    vcon->iropt_register_updates     = VexRegUpdUnwindregsAtMemAccess;
@@ -1225,20 +1226,23 @@ const HChar* LibVEX_ppVexHwCaps ( VexArch arch, UInt hwcaps )
 /* Write default settings info *vai. */
 void LibVEX_default_VexArchInfo ( /*OUT*/VexArchInfo* vai )
 {
+   vex_bzero(vai, sizeof(*vai));
    vai->hwcaps              = 0;
    vai->ppc_icache_line_szB = 0;
    vai->ppc_dcbz_szB        = 0;
    vai->ppc_dcbzl_szB       = 0;
-
+   vai->arm64_dMinLine_lg2_szB  = 0;
+   vai->arm64_iMinLine_lg2_szB  = 0;
    vai->hwcache_info.num_levels = 0;
    vai->hwcache_info.num_caches = 0;
-   vai->hwcache_info.caches = NULL;
+   vai->hwcache_info.caches     = NULL;
    vai->hwcache_info.icaches_maintain_coherence = True;  // whatever
 }
 
 /* Write default settings info *vbi. */
 void LibVEX_default_VexAbiInfo ( /*OUT*/VexAbiInfo* vbi )
 {
+   vex_bzero(vbi, sizeof(*vbi));
    vbi->guest_stack_redzone_size       = 0;
    vbi->guest_amd64_assume_fs_is_zero  = False;
    vbi->guest_amd64_assume_gs_is_0x60  = False;

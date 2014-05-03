@@ -276,9 +276,14 @@ typedef
       /* PPC32/PPC64 only: size of instruction cache line */
       Int ppc_icache_line_szB;
       /* PPC32/PPC64 only: sizes zeroed by the dcbz/dcbzl instructions
-       * (bug#135264) */
+         (bug#135264) */
       UInt ppc_dcbz_szB;
       UInt ppc_dcbzl_szB; /* 0 means unsupported (SIGILL) */
+      /* ARM64: I- and D- minimum line sizes in log2(bytes), as
+         obtained from ctr_el0.DminLine and .IminLine.  For example, a
+         line size of 64 bytes would be encoded here as 6. */
+      UInt arm64_dMinLine_lg2_szB;
+      UInt arm64_iMinLine_lg2_szB;
    }
    VexArchInfo;
 

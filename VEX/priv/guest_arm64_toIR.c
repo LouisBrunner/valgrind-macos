@@ -4386,7 +4386,8 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn)
 /*------------------------------------------------------------*/
 
 static
-Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn)
+Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
+                          VexArchInfo* archinfo)
 {
 #  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
 
@@ -4628,8 +4629,93 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn)
       DIP("mrs %s, dczid_el0 (FAKED)\n", nameIReg64orZR(tt));
       return True;
    }
+   /* Cases for CTR_EL0
+      We just handle reads, and make up a value from the D and I line
+      sizes in the VexArchInfo we are given, and patch in the following
+      fields that the Foundation model gives ("natively"):
+      CWG = 0b0100, ERG = 0b0100, L1Ip = 0b11
+      D5 3B 00 001 Rt  MRS rT, dczid_el0
+   */
+   if ((INSN(31,0) & 0xFFFFFFE0) == 0xD53B0020) {
+      UInt tt = INSN(4,0);
+      /* Need to generate a value from dMinLine_lg2_szB and
+         dMinLine_lg2_szB.  The value in the register is in 32-bit
+         units, so need to subtract 2 from the values in the
+         VexArchInfo.  We can assume that the values here are valid --
+         disInstr_ARM64 checks them -- so there's no need to deal with
+         out-of-range cases. */
+      vassert(archinfo->arm64_dMinLine_lg2_szB >= 2
+              && archinfo->arm64_dMinLine_lg2_szB <= 17
+              && archinfo->arm64_iMinLine_lg2_szB >= 2
+              && archinfo->arm64_iMinLine_lg2_szB <= 17);
+      UInt val
+         = 0x8440c000 | ((0xF & (archinfo->arm64_dMinLine_lg2_szB - 2)) << 16)
+                      | ((0xF & (archinfo->arm64_iMinLine_lg2_szB - 2)) << 0);
+      putIReg64orZR(tt, mkU64(val));
+      DIP("mrs %s, ctr_el0\n", nameIReg64orZR(tt));
+      return True;
+   }
 
-   /* ------------------ ISB, DSB ------------------ */
+   /* ------------------ IC_IVAU ------------------ */
+   /* D5 0B 75 001 Rt  ic ivau, rT
+   */
+   if ((INSN(31,0) & 0xFFFFFFE0) == 0xD50B7520) {
+      /* We will always be provided with a valid iMinLine value. */
+      vassert(archinfo->arm64_iMinLine_lg2_szB >= 2
+              && archinfo->arm64_iMinLine_lg2_szB <= 17);
+      /* Round the requested address, in rT, down to the start of the
+         containing block. */
+      UInt   tt      = INSN(4,0);
+      ULong  lineszB = 1ULL << archinfo->arm64_iMinLine_lg2_szB;
+      IRTemp addr    = newTemp(Ity_I64);
+      assign( addr, binop( Iop_And64,
+                           getIReg64orZR(tt),
+                           mkU64(~(lineszB - 1))) );
+      /* Set the invalidation range, request exit-and-invalidate, with
+         continuation at the next instruction. */
+      stmt(IRStmt_Put(OFFB_TISTART, mkexpr(addr)));
+      stmt(IRStmt_Put(OFFB_TILEN,   mkU64(lineszB)));
+      /* be paranoid ... */
+      stmt( IRStmt_MBE(Imbe_Fence) );
+      putPC(mkU64( guest_PC_curr_instr + 4 ));
+      dres->whatNext    = Dis_StopHere;
+      dres->jk_StopHere = Ijk_TInval;
+      DIP("ic ivau, %s\n", nameIReg64orZR(tt));
+      return True;
+   }
+
+   /* ------------------ DC_CVAU ------------------ */
+   /* D5 0B 7B 001 Rt  dc cvau, rT
+   */
+   if ((INSN(31,0) & 0xFFFFFFE0) == 0xD50B7B20) {
+      /* Exactly the same scheme as for IC IVAU, except we observe the
+         dMinLine size, and request an Ijk_InvalData instead of
+         Ijk_TInval. */
+      /* We will always be provided with a valid dMinLine value. */
+      vassert(archinfo->arm64_dMinLine_lg2_szB >= 2
+              && archinfo->arm64_dMinLine_lg2_szB <= 17);
+      /* Round the requested address, in rT, down to the start of the
+         containing block. */
+      UInt   tt      = INSN(4,0);
+      ULong  lineszB = 1ULL << archinfo->arm64_dMinLine_lg2_szB;
+      IRTemp addr    = newTemp(Ity_I64);
+      assign( addr, binop( Iop_And64,
+                           getIReg64orZR(tt),
+                           mkU64(~(lineszB - 1))) );
+      /* Set the flush range, request exit-and-flush, with
+         continuation at the next instruction. */
+      stmt(IRStmt_Put(OFFB_TISTART, mkexpr(addr)));
+      stmt(IRStmt_Put(OFFB_TILEN,   mkU64(lineszB)));
+      /* be paranoid ... */
+      stmt( IRStmt_MBE(Imbe_Fence) );
+      putPC(mkU64( guest_PC_curr_instr + 4 ));
+      dres->whatNext    = Dis_StopHere;
+      dres->jk_StopHere = Ijk_FlushDCache;
+      DIP("dc cvau, %s\n", nameIReg64orZR(tt));
+      return True;
+   }
+
+   /* ------------------ ISB, DMB, DSB ------------------ */
    if (INSN(31,0) == 0xD5033FDF) {
       stmt(IRStmt_MBE(Imbe_Fence));
       DIP("isb\n");
@@ -4638,6 +4724,11 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn)
    if (INSN(31,0) == 0xD5033BBF) {
       stmt(IRStmt_MBE(Imbe_Fence));
       DIP("dmb ish\n");
+      return True;
+   }
+   if (INSN(31,0) == 0xD5033B9F) {
+      stmt(IRStmt_MBE(Imbe_Fence));
+      DIP("dsb ish\n");
       return True;
    }
 
@@ -7161,7 +7252,7 @@ Bool disInstr_ARM64_WRK (
          break;
       case BITS4(1,0,1,0): case BITS4(1,0,1,1):
          // Branch, exception generation and system instructions
-         ok = dis_ARM64_branch_etc(dres, insn);
+         ok = dis_ARM64_branch_etc(dres, insn, archinfo);
          break;
       case BITS4(0,1,0,0): case BITS4(0,1,1,0):
       case BITS4(1,1,0,0): case BITS4(1,1,1,0):
@@ -7228,6 +7319,11 @@ DisResult disInstr_ARM64 ( IRSB*        irsb_IN,
    irsb                = irsb_IN;
    host_is_bigendian   = host_bigendian_IN;
    guest_PC_curr_instr = (Addr64)guest_IP;
+
+   /* Sanity checks */
+   /* (x::UInt - 2) <= 15   ===   x >= 2 && x <= 17 (I hope) */
+   vassert((archinfo->arm64_dMinLine_lg2_szB - 2) <= 15);
+   vassert((archinfo->arm64_iMinLine_lg2_szB - 2) <= 15);
 
    /* Try to decode */
    Bool ok = disInstr_ARM64_WRK( &dres,

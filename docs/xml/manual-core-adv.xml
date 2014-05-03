@@ -603,6 +603,9 @@ Valgrind tool selected.
     <listitem>
       <para><xref linkend="ms-manual.monitor-commands"/></para>
     </listitem>
+    <listitem>
+      <para><xref linkend="hg-manual.monitor-commands"/></para>
+    </listitem>
   </itemizedlist>
 </para>
 

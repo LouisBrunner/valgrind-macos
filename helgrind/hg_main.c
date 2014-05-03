@@ -37,6 +37,7 @@
 */
 
 #include "pub_tool_basics.h"
+#include "pub_tool_gdbserver.h"
 #include "pub_tool_libcassert.h"
 #include "pub_tool_libcbase.h"
 #include "pub_tool_libcprint.h"
@@ -58,6 +59,7 @@
 
 #include "hg_basics.h"
 #include "hg_wordset.h"
+#include "hg_addrdescr.h"
 #include "hg_lock_n_thread.h"
 #include "hg_errors.h"
 
@@ -457,29 +459,61 @@ static const HChar* show_LockKind ( LockKind lkk ) {
    }
 }
 
-static void pp_Lock ( Int d, Lock* lk )
+/* Pretty Print lock lk.
+   if show_lock_addrdescr, describes the (guest) lock address.
+     (this description will be more complete with --read-var-info=yes).
+   if show_internal_data, shows also helgrind internal information. 
+   d is the level at which output is indented. */
+static void pp_Lock ( Int d, Lock* lk,
+                      Bool show_lock_addrdescr,
+                      Bool show_internal_data)
 {
-   space(d+0); VG_(printf)("Lock %p (ga %#lx) {\n", lk, lk->guestaddr);
+   space(d+0); 
+   if (show_internal_data)
+      VG_(printf)("Lock %p (ga %#lx) {", lk, lk->guestaddr);
+   else
+      VG_(printf)("Lock ga %#lx {", lk->guestaddr);
+   if (!show_lock_addrdescr 
+       || !HG_(get_and_pp_addrdescr) ("lock", (Addr) lk->guestaddr))
+      VG_(printf)("\n");
+      
    if (sHOW_ADMIN) {
       space(d+3); VG_(printf)("admin_n  %p\n",   lk->admin_next);
       space(d+3); VG_(printf)("admin_p  %p\n",   lk->admin_prev);
       space(d+3); VG_(printf)("magic    0x%x\n", (UInt)lk->magic);
    }
-   space(d+3); VG_(printf)("unique %llu\n", lk->unique);
+   if (show_internal_data) {
+      space(d+3); VG_(printf)("unique %llu\n", lk->unique);
+   }
    space(d+3); VG_(printf)("kind   %s\n", show_LockKind(lk->kind));
-   space(d+3); VG_(printf)("heldW  %s\n", lk->heldW ? "yes" : "no");
-   space(d+3); VG_(printf)("heldBy %p", lk->heldBy);
+   if (show_internal_data) {
+      space(d+3); VG_(printf)("heldW  %s\n", lk->heldW ? "yes" : "no");
+   }
+   if (show_internal_data) {
+      space(d+3); VG_(printf)("heldBy %p", lk->heldBy);
+   }
    if (lk->heldBy) {
       Thread* thr;
       UWord   count;
       VG_(printf)(" { ");
       VG_(initIterBag)( lk->heldBy );
-      while (VG_(nextIterBag)( lk->heldBy, (UWord*)&thr, &count ))
-         VG_(printf)("%lu:%p ", count, thr);
+      while (VG_(nextIterBag)( lk->heldBy, (UWord*)&thr, &count )) {
+         if (show_internal_data)
+            VG_(printf)("%lu:%p ", count, thr);
+         else {
+            VG_(printf)("%c%lu:thread #%d ",
+                        lk->heldW ? 'W' : 'R',
+                        count, thr->errmsg_index);
+            if (thr->coretid == VG_INVALID_THREADID) 
+               VG_(printf)("tid (exited) ");
+            else
+               VG_(printf)("tid %d ", thr->coretid);
+
+         }
+      }
       VG_(doneIterBag)( lk->heldBy );
-      VG_(printf)("}");
+      VG_(printf)("}\n");
    }
-   VG_(printf)("\n");
    space(d+0); VG_(printf)("}\n");
 }
 
@@ -496,12 +530,14 @@ static void pp_admin_locks ( Int d )
          space(n); 
          VG_(printf)("admin_locks record %d of %d:\n", i, n);
       }
-      pp_Lock(d+3, lk);
+      pp_Lock(d+3, lk,
+              False /* show_lock_addrdescr */,
+              True /* show_internal_data */);
    }
    space(d); VG_(printf)("}\n");
 }
 
-static void pp_map_locks ( Int d )
+static void pp_map_locks ( Int d)
 {
    void* gla;
    Lock* lk;
@@ -4703,11 +4739,89 @@ static void map_pthread_t_to_Thread_INIT ( void ) {
    }
 }
 
+static void print_monitor_help ( void )
+{
+   VG_(gdb_printf) 
+      (
+"\n"
+"helgrind monitor commands:\n"
+"  describe <addr>         : outputs a description of <addr>\n"
+"  info locks              : show list of locks and their status\n"
+"\n");
+}
+
+/* return True if request recognised, False otherwise */
+static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
+{
+   UWord ret = 0;
+   HChar* wcmd;
+   HChar s[VG_(strlen(req))]; /* copy for strtok_r */
+   HChar *ssaveptr;
+   Int   kwdid;
+
+   VG_(strcpy) (s, req);
+
+   wcmd = VG_(strtok_r) (s, " ", &ssaveptr);
+   /* NB: if possible, avoid introducing a new command below which
+      starts with the same first letter(s) as an already existing
+      command. This ensures a shorter abbreviation for the user. */
+   switch (VG_(keyword_id) 
+           ("help info describe", 
+            wcmd, kwd_report_duplicated_matches)) {
+   case -2: /* multiple matches */
+      return True;
+   case -1: /* not found */
+      return False;
+   case  0: /* help */
+      print_monitor_help();
+      return True;
+   case  1: /* info */
+      ret = 1;
+      wcmd = VG_(strtok_r) (NULL, " ", &ssaveptr);
+      switch (kwdid = VG_(keyword_id) 
+              ("locks",
+               wcmd, kwd_report_all)) {
+      case -2:
+      case -1: 
+         break;
+      case 0: // locks
+         {
+            Int i;
+            Lock* lk;
+            for (i = 0, lk = admin_locks;  lk;  i++, lk = lk->admin_next) {
+               pp_Lock(0, lk,
+                       True /* show_lock_addrdescr */,
+                       False /* show_internal_data */);
+            }
+            if (i == 0)
+               VG_(gdb_printf) ("no locks\n");
+         }
+         break;
+      default:
+         tl_assert(0);
+      }
+      return True;
+   case  2: { /* describe */
+      Addr address;
+      SizeT szB = 1;
+      VG_(strtok_get_address_and_size) (&address, &szB, &ssaveptr);
+      if (address == (Addr) 0 && szB == 0) return True;
+      if (!HG_(get_and_pp_addrdescr) ("address", address))
+         VG_(gdb_printf) ("No description found for address %p\n", 
+                          (void*)address);
+      return True;
+   }
+   default: 
+      tl_assert(0);
+      return False;
+   }
+}
 
 static 
 Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
 {
-   if (!VG_IS_TOOL_USERREQ('H','G',args[0]))
+   if (!VG_IS_TOOL_USERREQ('H','G',args[0])
+       && VG_USERREQ__GDB_MONITOR_COMMAND   != args[0])
       return False;
 
    /* Anything that gets past the above check is one of ours, so we
@@ -5020,6 +5134,15 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
          /* UWord arbitrary-SO-tag */
          evh__HG_USERSO_FORGET_ALL( tid, args[1] );
          break;
+
+      case VG_USERREQ__GDB_MONITOR_COMMAND: {
+         Bool handled = handle_gdb_monitor_command (tid, (HChar*)args[1]);
+         if (handled)
+            *ret = 1;
+         else
+            *ret = 0;
+         return handled;
+      }
 
       default:
          /* Unhandled Helgrind client request! */

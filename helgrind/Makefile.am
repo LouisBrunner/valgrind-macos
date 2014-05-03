@@ -12,6 +12,7 @@ EXTRA_DIST = \
 pkginclude_HEADERS = helgrind.h
 
 noinst_HEADERS = \
+	hg_addrdescr.h \
 	hg_basics.h \
 	hg_errors.h \
 	hg_lock_n_thread.h \
@@ -28,6 +29,7 @@ noinst_PROGRAMS += helgrind-@VGCONF_ARCH_SEC@-@VGCONF_OS@
 endif
 
 HELGRIND_SOURCES_COMMON = \
+	hg_addrdescr.c \
 	hg_basics.c \
 	hg_errors.c \
 	hg_lock_n_thread.c \

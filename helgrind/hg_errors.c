@@ -42,6 +42,7 @@
 #include "pub_tool_options.h"     // VG_(clo_xml)
 
 #include "hg_basics.h"
+#include "hg_addrdescr.h"
 #include "hg_wordset.h"
 #include "hg_lock_n_thread.h"
 #include "libhb.h"
@@ -291,16 +292,10 @@ typedef
          struct {
             Addr        data_addr;
             Int         szB;
+            AddrDescr   data_addrdescr;
             Bool        isWrite;
             Thread*     thr;
             Lock**      locksHeldW;
-            /* descr1/2 provide a description of stack/global locs */
-            XArray*     descr1; /* XArray* of HChar */
-            XArray*     descr2; /* XArray* of HChar */
-            /* halloc/haddr/hszB describe the addr if it is a heap block. */
-            ExeContext* hctxt;
-            Addr        haddr;
-            SizeT       hszB;
             /* h1_* and h2_* provide some description of a previously
                observed access with which we are conflicting. */
             Thread*     h1_ct; /* non-NULL means h1 info present */
@@ -411,52 +406,7 @@ UInt HG_(update_extra) ( Error* err )
          VG_(printf)("HG_(update_extra): "
                      "%d conflicting-event queries\n", xxx);
 
-      tl_assert(!xe->XE.Race.hctxt);
-      tl_assert(!xe->XE.Race.descr1);
-      tl_assert(!xe->XE.Race.descr2);
-
-      /* First, see if it's in any heap block.  Unfortunately this
-         means a linear search through all allocated heap blocks.  The
-         assertion says that if it's detected as a heap block, then we
-         must have an allocation context for it, since all heap blocks
-         should have an allocation context. */
-      Bool is_heapblock
-         = HG_(mm_find_containing_block)( 
-              &xe->XE.Race.hctxt, &xe->XE.Race.haddr, &xe->XE.Race.hszB,
-              xe->XE.Race.data_addr
-           );
-      tl_assert(is_heapblock == (xe->XE.Race.hctxt != NULL));
-
-      if (!xe->XE.Race.hctxt) {
-         /* It's not in any heap block.  See if we can map it to a
-            stack or global symbol. */
-
-         xe->XE.Race.descr1
-            = VG_(newXA)( HG_(zalloc), "hg.update_extra.Race.descr1",
-                          HG_(free), sizeof(HChar) );
-         xe->XE.Race.descr2
-            = VG_(newXA)( HG_(zalloc), "hg.update_extra.Race.descr2",
-                          HG_(free), sizeof(HChar) );
-
-         (void) VG_(get_data_description)( xe->XE.Race.descr1,
-                                           xe->XE.Race.descr2,
-                                           xe->XE.Race.data_addr );
-
-         /* If there's nothing in descr1/2, free it.  Why is it safe to
-            to VG_(indexXA) at zero here?  Because
-            VG_(get_data_description) guarantees to zero terminate
-            descr1/2 regardless of the outcome of the call.  So there's
-            always at least one element in each XA after the call.
-         */
-         if (0 == VG_(strlen)( VG_(indexXA)( xe->XE.Race.descr1, 0 ))) {
-            VG_(deleteXA)( xe->XE.Race.descr1 );
-            xe->XE.Race.descr1 = NULL;
-         }
-         if (0 == VG_(strlen)( VG_(indexXA)( xe->XE.Race.descr2, 0 ))) {
-            VG_(deleteXA)( xe->XE.Race.descr2 );
-            xe->XE.Race.descr2 = NULL;
-         }
-      }
+      HG_(describe_addr) (xe->XE.Race.data_addr, &xe->XE.Race.data_addrdescr);
 
       /* And poke around in the conflicting-event map, to see if we
          can rustle up a plausible-looking conflicting memory access
@@ -538,8 +488,7 @@ void HG_(record_error_Race) ( Thread* thr,
    /* Skip on the detailed description of the raced-on address at this
       point; it's expensive.  Leave it for the update_extra function
       if we ever make it that far. */
-   tl_assert(xe.XE.Race.descr1 == NULL);
-   tl_assert(xe.XE.Race.descr2 == NULL);
+   HG_(init_AddrDescr) (&xe.XE.Race.data_addrdescr);
    // FIXME: tid vs thr
    // Skip on any of the conflicting-access info at this point.
    // It's expensive to obtain, and this error is more likely than
@@ -806,7 +755,6 @@ static Bool announce_one_thread ( Thread* thr )
    thr->announced = True;
    return True;
 }
-
 
 /* Announce 'lk'. */
 static void announce_LockP ( Lock* lk )
@@ -1285,46 +1233,9 @@ void HG_(pp_Error) ( Error* err )
 
       }
 
-      /* If we have a description of the address in terms of a heap
-         block, show it. */
-      if (xe->XE.Race.hctxt) {
-         SizeT delta = err_ga - xe->XE.Race.haddr;
-         if (xml) {
-            emit("  <auxwhat>Address %p is %ld bytes inside a block "
-                 "of size %ld alloc'd</auxwhat>\n", (void*)err_ga, delta, 
-                 xe->XE.Race.hszB);
-            VG_(pp_ExeContext)( xe->XE.Race.hctxt );
-         } else {
-            emit("\n");
-            emit("Address %p is %ld bytes inside a block "
-                 "of size %ld alloc'd\n", (void*)err_ga, delta, 
-                 xe->XE.Race.hszB);
-            VG_(pp_ExeContext)( xe->XE.Race.hctxt );
-         }
-      }
-
-      /* If we have a better description of the address, show it.
-         Note that in XML mode, it will already by nicely wrapped up
-         in tags, either <auxwhat> or <xauxwhat>, so we can just emit
-         it verbatim. */
-      if (xml) {
-         if (xe->XE.Race.descr1)
-            emit( "  %s\n",
-                  (HChar*)VG_(indexXA)( xe->XE.Race.descr1, 0 ) );
-         if (xe->XE.Race.descr2)
-            emit( "  %s\n",
-                  (HChar*)VG_(indexXA)( xe->XE.Race.descr2, 0 ) );
-      } else {
-         if (xe->XE.Race.descr1 || xe->XE.Race.descr2)
-            emit("\n");
-         if (xe->XE.Race.descr1)
-            emit( "%s\n",
-                  (HChar*)VG_(indexXA)( xe->XE.Race.descr1, 0 ) );
-         if (xe->XE.Race.descr2)
-            emit( "%s\n",
-                  (HChar*)VG_(indexXA)( xe->XE.Race.descr2, 0 ) );
-      }
-
+     HG_(pp_addrdescr) (xml, "Address", err_ga,
+                        &xe->XE.Race.data_addrdescr,
+                        emit);
       break; /* case XE_Race */
    } /* case XE_Race */
 

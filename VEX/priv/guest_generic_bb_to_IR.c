@@ -131,8 +131,8 @@ static Bool const_False ( void* callback_opaque, Addr64 a ) {
    not to disassemble any instructions into it; this is indicated
    by the callback returning True.
 
-   offB_TIADDR and offB_TILEN are the offsets of guest_TIADDR and
-   guest_TILEN.  Since this routine has to work for any guest state,
+   offB_CMADDR and offB_CMLEN are the offsets of guest_CMADDR and
+   guest_CMLEN.  Since this routine has to work for any guest state,
    without knowing what it is, those offsets have to passed in.
 
    callback_opaque is a caller-supplied pointer to data which the
@@ -194,8 +194,8 @@ IRSB* bb_to_IR (
          /*IN*/ IRType           guest_word_type,
          /*IN*/ UInt             (*needs_self_check)(void*,VexGuestExtents*),
          /*IN*/ Bool             (*preamble_function)(void*,IRSB*),
-         /*IN*/ Int              offB_GUEST_TISTART,
-         /*IN*/ Int              offB_GUEST_TILEN,
+         /*IN*/ Int              offB_GUEST_CMSTART,
+         /*IN*/ Int              offB_GUEST_CMLEN,
          /*IN*/ Int              offB_GUEST_IP,
          /*IN*/ Int              szB_GUEST_IP
       )
@@ -663,7 +663,7 @@ IRSB* bb_to_IR (
             vassert(!nm_spec);
          }
 
-         /* Set TISTART and TILEN.  These will describe to the despatcher
+         /* Set CMSTART and CMLEN.  These will describe to the despatcher
             the area of guest code to invalidate should we exit with a
             self-check failure. */
 
@@ -684,10 +684,10 @@ IRSB* bb_to_IR (
             = IRStmt_WrTmp(tilen_tmp, IRExpr_Const(len2check_IRConst) );
 
          irsb->stmts[selfcheck_idx + i * 5 + 2]
-            = IRStmt_Put( offB_GUEST_TISTART, IRExpr_RdTmp(tistart_tmp) );
+            = IRStmt_Put( offB_GUEST_CMSTART, IRExpr_RdTmp(tistart_tmp) );
 
          irsb->stmts[selfcheck_idx + i * 5 + 3]
-            = IRStmt_Put( offB_GUEST_TILEN, IRExpr_RdTmp(tilen_tmp) );
+            = IRStmt_Put( offB_GUEST_CMLEN, IRExpr_RdTmp(tilen_tmp) );
 
          /* Generate the entry point descriptors */
          if (abiinfo_both->host_ppc_calls_use_fndescrs) {
@@ -737,7 +737,7 @@ IRSB* bb_to_IR (
                           ? IRExpr_Const(IRConst_U64(expectedhW))
                           : IRExpr_Const(IRConst_U32(expectedhW))
                  ),
-                 Ijk_TInval,
+                 Ijk_InvalICache,
                  /* Where we must restart if there's a failure: at the
                     first extent, regardless of which extent the
                     failure actually happened in. */

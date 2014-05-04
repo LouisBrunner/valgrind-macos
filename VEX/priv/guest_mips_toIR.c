@@ -11801,22 +11801,22 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             vex_inject_ir(irsb, Iend_BE);
 #endif
             if (mode64) {
-               stmt(IRStmt_Put(offsetof(VexGuestMIPS64State, guest_TISTART),
+               stmt(IRStmt_Put(offsetof(VexGuestMIPS64State, guest_CMSTART),
                                mkU64(guest_PC_curr_instr)));
-               stmt(IRStmt_Put(offsetof(VexGuestMIPS64State, guest_TILEN),
+               stmt(IRStmt_Put(offsetof(VexGuestMIPS64State, guest_CMLEN),
                                mkU64(20)));
 
                putPC(mkU64(guest_PC_curr_instr + 20));
             } else {
-               stmt(IRStmt_Put(offsetof(VexGuestMIPS32State, guest_TISTART),
+               stmt(IRStmt_Put(offsetof(VexGuestMIPS32State, guest_CMSTART),
                                mkU32(guest_PC_curr_instr)));
-               stmt(IRStmt_Put(offsetof(VexGuestMIPS32State, guest_TILEN),
+               stmt(IRStmt_Put(offsetof(VexGuestMIPS32State, guest_CMLEN),
                                mkU32(20)));
 
                putPC(mkU32(guest_PC_curr_instr + 20));
             }
             dres.whatNext    = Dis_StopHere;
-            dres.jk_StopHere = Ijk_TInval;
+            dres.jk_StopHere = Ijk_InvalICache;
             dres.len = 20;
             delta += 20;
             goto decode_success;

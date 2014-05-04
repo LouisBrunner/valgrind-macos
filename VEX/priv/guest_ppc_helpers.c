@@ -498,8 +498,8 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
 
    vex_state->guest_EMNOTE = EmNote_NONE;
 
-   vex_state->guest_TISTART = 0;
-   vex_state->guest_TILEN   = 0;
+   vex_state->guest_CMSTART = 0;
+   vex_state->guest_CMLEN   = 0;
 
    vex_state->guest_NRADDR = 0;
    vex_state->guest_NRADDR_GPR2 = 0;
@@ -665,8 +665,8 @@ void LibVEX_GuestPPC64_initialise ( /*OUT*/VexGuestPPC64State* vex_state )
 
    vex_state->padding = 0;
 
-   vex_state->guest_TISTART = 0;
-   vex_state->guest_TILEN   = 0;
+   vex_state->guest_CMSTART = 0;
+   vex_state->guest_CMLEN   = 0;
 
    vex_state->guest_NRADDR = 0;
    vex_state->guest_NRADDR_GPR2 = 0;
@@ -808,8 +808,8 @@ VexGuestLayout
           .alwaysDefd 
 	  = { /*  0 */ ALWAYSDEFD32(guest_CIA),
 	      /*  1 */ ALWAYSDEFD32(guest_EMNOTE),
-	      /*  2 */ ALWAYSDEFD32(guest_TISTART),
-	      /*  3 */ ALWAYSDEFD32(guest_TILEN),
+	      /*  2 */ ALWAYSDEFD32(guest_CMSTART),
+	      /*  3 */ ALWAYSDEFD32(guest_CMLEN),
 	      /*  4 */ ALWAYSDEFD32(guest_VSCR),
 	      /*  5 */ ALWAYSDEFD32(guest_FPROUND),
               /*  6 */ ALWAYSDEFD32(guest_NRADDR),
@@ -849,8 +849,8 @@ VexGuestLayout
           .alwaysDefd 
 	  = { /*  0 */ ALWAYSDEFD64(guest_CIA),
 	      /*  1 */ ALWAYSDEFD64(guest_EMNOTE),
-	      /*  2 */ ALWAYSDEFD64(guest_TISTART),
-	      /*  3 */ ALWAYSDEFD64(guest_TILEN),
+	      /*  2 */ ALWAYSDEFD64(guest_CMSTART),
+	      /*  3 */ ALWAYSDEFD64(guest_CMLEN),
 	      /*  4 */ ALWAYSDEFD64(guest_VSCR),
 	      /*  5 */ ALWAYSDEFD64(guest_FPROUND),
 	      /*  6 */ ALWAYSDEFD64(guest_NRADDR),

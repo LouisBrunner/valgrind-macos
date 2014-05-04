@@ -184,8 +184,8 @@ IRSB* bb_to_IR (
          /*IN*/ IRType           guest_word_type,
          /*IN*/ UInt             (*needs_self_check)(void*,VexGuestExtents*),
          /*IN*/ Bool             (*preamble_function)(void*,IRSB*),
-         /*IN*/ Int              offB_GUEST_TISTART,
-         /*IN*/ Int              offB_GUEST_TILEN,
+         /*IN*/ Int              offB_GUEST_CMSTART,
+         /*IN*/ Int              offB_GUEST_CMLEN,
          /*IN*/ Int              offB_GUEST_IP,
          /*IN*/ Int              szB_GUEST_IP
       );

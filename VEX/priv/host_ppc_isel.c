@@ -5746,7 +5746,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          case Ijk_SigBUS:
          case Ijk_SigTRAP:
          case Ijk_Sys_syscall:
-         case Ijk_TInval:
+         case Ijk_InvalICache:
          {
             HReg r = iselWordExpr_R(env, IRExpr_Const(stmt->Ist.Exit.dst));
             addInstr(env, PPCInstr_XAssisted(r, amCIA, cc,
@@ -5846,7 +5846,7 @@ static void iselNext ( ISelEnv* env,
       case Ijk_SigBUS:
       case Ijk_SigTRAP:
       case Ijk_Sys_syscall:
-      case Ijk_TInval:
+      case Ijk_InvalICache:
       {
          HReg      r     = iselWordExpr_R(env, next);
          PPCAMode* amCIA = PPCAMode_IR(offsIP, hregPPC_GPR31(env->mode64));

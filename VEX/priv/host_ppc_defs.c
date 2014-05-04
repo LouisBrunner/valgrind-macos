@@ -4270,7 +4270,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
          case Ijk_EmFail:      trcval = VEX_TRC_JMP_EMFAIL;      break;
          //case Ijk_MapFail:     trcval = VEX_TRC_JMP_MAPFAIL;     break;
          case Ijk_NoDecode:    trcval = VEX_TRC_JMP_NODECODE;    break;
-         case Ijk_TInval:      trcval = VEX_TRC_JMP_TINVAL;      break;
+         case Ijk_InvalICache: trcval = VEX_TRC_JMP_INVALICACHE; break;
          case Ijk_NoRedir:     trcval = VEX_TRC_JMP_NOREDIR;     break;
          case Ijk_SigTRAP:     trcval = VEX_TRC_JMP_SIGTRAP;     break;
          //case Ijk_SigSEGV:     trcval = VEX_TRC_JMP_SIGSEGV;     break;

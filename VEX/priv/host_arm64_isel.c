@@ -6823,7 +6823,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 //ZZ          case Ijk_NoDecode:
 //ZZ          case Ijk_NoRedir:
 //ZZ          case Ijk_Sys_syscall:
-//ZZ          case Ijk_TInval:
+//ZZ          case Ijk_InvalICache:
 //ZZ          case Ijk_Yield:
 //ZZ          {
 //ZZ             HReg r = iselIntExpr_R(env, IRExpr_Const(stmt->Ist.Exit.dst));
@@ -6915,7 +6915,7 @@ static void iselNext ( ISelEnv* env,
       case Ijk_NoDecode:
       case Ijk_NoRedir:
       case Ijk_Sys_syscall:
-      case Ijk_TInval:
+      case Ijk_InvalICache:
       case Ijk_FlushDCache:
 //ZZ       case Ijk_Yield:
       {

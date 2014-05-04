@@ -252,8 +252,8 @@ typedef
       /* 1340 */ UInt  padding;
 
       /* For icbi: record start and length of area to invalidate */
-      /* 1344 */ ULong guest_TISTART;
-      /* 1352 */ ULong guest_TILEN;
+      /* 1344 */ ULong guest_CMSTART;
+      /* 1352 */ ULong guest_CMLEN;
 
       /* Used to record the unredirected guest address at the start of
          a translation whose start has been redirected.  By reading

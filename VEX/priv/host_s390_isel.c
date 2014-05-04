@@ -3936,7 +3936,7 @@ no_memcpy_put:
       case Ijk_EmFail:
       case Ijk_EmWarn:
       case Ijk_NoDecode:
-      case Ijk_TInval:
+      case Ijk_InvalICache:
       case Ijk_Sys_syscall:
       case Ijk_ClientReq:
       case Ijk_NoRedir:
@@ -4051,7 +4051,7 @@ iselNext(ISelEnv *env, IRExpr *next, IRJumpKind jk, Int offsIP)
    case Ijk_EmFail:
    case Ijk_EmWarn:
    case Ijk_NoDecode:
-   case Ijk_TInval:
+   case Ijk_InvalICache:
    case Ijk_Sys_syscall:
    case Ijk_ClientReq:
    case Ijk_NoRedir:

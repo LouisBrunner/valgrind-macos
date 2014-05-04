@@ -4287,7 +4287,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          case Ijk_Sys_int130:
          case Ijk_Sys_syscall:
          case Ijk_Sys_sysenter:
-         case Ijk_TInval:
+         case Ijk_InvalICache:
          case Ijk_Yield:
          {
             HReg r = iselIntExpr_R(env, IRExpr_Const(stmt->Ist.Exit.dst));
@@ -4386,7 +4386,7 @@ static void iselNext ( ISelEnv* env,
       case Ijk_Sys_int130:
       case Ijk_Sys_syscall:
       case Ijk_Sys_sysenter:
-      case Ijk_TInval:
+      case Ijk_InvalICache:
       case Ijk_Yield:
       {
          HReg      r     = iselIntExpr_R(env, next);

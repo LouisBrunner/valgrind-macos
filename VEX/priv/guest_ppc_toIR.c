@@ -228,8 +228,8 @@ static void* fnptr_to_fnentry( VexAbiInfo* vbi, void* f )
 #define OFFB_VRSAVE      offsetofPPCGuestState(guest_VRSAVE)
 #define OFFB_VSCR        offsetofPPCGuestState(guest_VSCR)
 #define OFFB_EMNOTE      offsetofPPCGuestState(guest_EMNOTE)
-#define OFFB_TISTART     offsetofPPCGuestState(guest_TISTART)
-#define OFFB_TILEN       offsetofPPCGuestState(guest_TILEN)
+#define OFFB_CMSTART     offsetofPPCGuestState(guest_CMSTART)
+#define OFFB_CMLEN       offsetofPPCGuestState(guest_CMLEN)
 #define OFFB_NRADDR      offsetofPPCGuestState(guest_NRADDR)
 #define OFFB_NRADDR_GPR2 offsetofPPCGuestState(guest_NRADDR_GPR2)
 #define OFFB_TFHAR       offsetofPPCGuestState(guest_TFHAR)
@@ -377,8 +377,8 @@ typedef enum {
     PPC_GST_VRSAVE, // Vector Save/Restore Register
     PPC_GST_VSCR,   // Vector Status and Control Register
     PPC_GST_EMWARN, // Emulation warnings
-    PPC_GST_TISTART,// For icbi: start of area to invalidate
-    PPC_GST_TILEN,  // For icbi: length of area to invalidate
+    PPC_GST_CMSTART,// For icbi: start of area to invalidate
+    PPC_GST_CMLEN,  // For icbi: length of area to invalidate
     PPC_GST_IP_AT_SYSCALL, // the CIA of the most recently executed SC insn
     PPC_GST_SPRG3_RO, // SPRG3
     PPC_GST_TFHAR,  // Transactional Failure Handler Address Register
@@ -2781,14 +2781,14 @@ static void putGST ( PPC_GST reg, IRExpr* src )
       stmt( IRStmt_Put( OFFB_EMNOTE,src) );
       break;
       
-   case PPC_GST_TISTART: 
+   case PPC_GST_CMSTART: 
       vassert( ty_src == ty );
-      stmt( IRStmt_Put( OFFB_TISTART, src) );
+      stmt( IRStmt_Put( OFFB_CMSTART, src) );
       break;
       
-   case PPC_GST_TILEN: 
+   case PPC_GST_CMLEN: 
       vassert( ty_src == ty );
-      stmt( IRStmt_Put( OFFB_TILEN, src) );
+      stmt( IRStmt_Put( OFFB_CMLEN, src) );
       break;
       
    case PPC_GST_TEXASR:
@@ -7257,14 +7257,14 @@ static Bool dis_cache_manage ( UInt         theInstr,
       assign( addr, binop( mkSzOp(ty, Iop_And8),
                            mkexpr(EA),
                            mkSzImm(ty, ~(((ULong)lineszB)-1) )) );
-      putGST( PPC_GST_TISTART, mkexpr(addr) );
-      putGST( PPC_GST_TILEN, mkSzImm(ty, lineszB) );
+      putGST( PPC_GST_CMSTART, mkexpr(addr) );
+      putGST( PPC_GST_CMLEN, mkSzImm(ty, lineszB) );
 
       /* be paranoid ... */
       stmt( IRStmt_MBE(Imbe_Fence) );
 
       putGST( PPC_GST_CIA, mkSzImm(ty, nextInsnAddr()));
-      dres->jk_StopHere = Ijk_TInval;
+      dres->jk_StopHere = Ijk_InvalICache;
       dres->whatNext    = Dis_StopHere;
       break;
    }
@@ -18594,12 +18594,12 @@ DisResult disInstr_PPC_WRK (
             // be redone. For ease of handling, we simply invalidate all the
             // time.
 
-            stmt(IRStmt_Put(OFFB_TISTART, mkSzImm(ty, guest_CIA_curr_instr)));
-            stmt(IRStmt_Put(OFFB_TILEN,   mkSzImm(ty, 20)));
+            stmt(IRStmt_Put(OFFB_CMSTART, mkSzImm(ty, guest_CIA_curr_instr)));
+            stmt(IRStmt_Put(OFFB_CMLEN,   mkSzImm(ty, 20)));
    
             putGST( PPC_GST_CIA, mkSzImm( ty, guest_CIA_bbstart + delta ));
             dres.whatNext    = Dis_StopHere;
-            dres.jk_StopHere = Ijk_TInval;
+            dres.jk_StopHere = Ijk_InvalICache;
             goto decode_success;
          }
          /* We don't know what it is.  Set opc1/opc2 so decode_failure

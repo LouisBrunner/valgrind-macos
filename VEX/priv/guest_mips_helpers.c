@@ -150,8 +150,8 @@ void LibVEX_GuestMIPS32_initialise( /*OUT*/ VexGuestMIPS32State * vex_state)
    vex_state->guest_EMNOTE = 0;
 
    /* For clflush: record start and length of area to invalidate */
-   vex_state->guest_TISTART = 0;
-   vex_state->guest_TILEN = 0;
+   vex_state->guest_CMSTART = 0;
+   vex_state->guest_CMLEN = 0;
    vex_state->host_EvC_COUNTER = 0;
    vex_state->host_EvC_FAILADDR = 0;
 
@@ -258,8 +258,8 @@ void LibVEX_GuestMIPS64_initialise ( /*OUT*/ VexGuestMIPS64State * vex_state )
    vex_state->guest_EMNOTE = 0;
 
    /* For clflush: record start and length of area to invalidate */
-   vex_state->guest_TISTART = 0;
-   vex_state->guest_TILEN = 0;
+   vex_state->guest_CMSTART = 0;
+   vex_state->guest_CMLEN = 0;
    vex_state->host_EvC_COUNTER = 0;
    vex_state->host_EvC_FAILADDR = 0;
 
@@ -375,8 +375,8 @@ VexGuestLayout mips32Guest_layout = {
              /* 0 */ ALWAYSDEFD32(guest_r0),
              /* 1 */ ALWAYSDEFD32(guest_r1),
              /* 2 */ ALWAYSDEFD32(guest_EMNOTE),
-             /* 3 */ ALWAYSDEFD32(guest_TISTART),
-             /* 4 */ ALWAYSDEFD32(guest_TILEN),
+             /* 3 */ ALWAYSDEFD32(guest_CMSTART),
+             /* 4 */ ALWAYSDEFD32(guest_CMLEN),
              /* 5 */ ALWAYSDEFD32(guest_r29),
              /* 6 */ ALWAYSDEFD32(guest_r31),
              /* 7 */ ALWAYSDEFD32(guest_ULR)
@@ -402,8 +402,8 @@ VexGuestLayout mips64Guest_layout = {
    .alwaysDefd = {
                   /* 0 */ ALWAYSDEFD64 (guest_r0),
                   /* 1 */ ALWAYSDEFD64 (guest_EMNOTE),
-                  /* 2 */ ALWAYSDEFD64 (guest_TISTART),
-                  /* 3 */ ALWAYSDEFD64 (guest_TILEN),
+                  /* 2 */ ALWAYSDEFD64 (guest_CMSTART),
+                  /* 3 */ ALWAYSDEFD64 (guest_CMLEN),
                   /* 4 */ ALWAYSDEFD64 (guest_r29),
                   /* 5 */ ALWAYSDEFD64 (guest_r31),
                   /* 6 */ ALWAYSDEFD64 (guest_ULR)

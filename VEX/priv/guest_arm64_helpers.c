@@ -1134,8 +1134,8 @@ void LibVEX_GuestARM64_initialise ( /*OUT*/VexGuestARM64State* vex_state )
 //ZZ    vex_state->guest_GEFLAG3 = 0;
 //ZZ 
 //ZZ    vex_state->guest_EMNOTE  = EmNote_NONE;
-//ZZ    vex_state->guest_TISTART = 0;
-//ZZ    vex_state->guest_TILEN   = 0;
+//ZZ    vex_state->guest_CMSTART = 0;
+//ZZ    vex_state->guest_CMLEN   = 0;
 //ZZ    vex_state->guest_NRADDR  = 0;
 //ZZ    vex_state->guest_IP_AT_SYSCALL = 0;
 //ZZ 
@@ -1277,8 +1277,8 @@ VexGuestLayout
                  /* 1 */ ALWAYSDEFD(guest_CC_OP),
                  /* 2 */ ALWAYSDEFD(guest_CC_NDEP),
                  /* 3 */ ALWAYSDEFD(guest_EMNOTE),
-                 /* 4 */ ALWAYSDEFD(guest_TISTART),
-                 /* 5 */ ALWAYSDEFD(guest_TILEN),
+                 /* 4 */ ALWAYSDEFD(guest_CMSTART),
+                 /* 5 */ ALWAYSDEFD(guest_CMLEN),
                  /* 6 */ ALWAYSDEFD(guest_NRADDR),
                  /* 7 */ ALWAYSDEFD(guest_IP_AT_SYSCALL),
                  /* 8 */ ALWAYSDEFD(guest_FPCR),

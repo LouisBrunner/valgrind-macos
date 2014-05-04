@@ -137,8 +137,8 @@ typedef
         UInt guest_EMNOTE;       /* 568 */
 
       /* For clflush: record start and length of area to invalidate */
-        ULong guest_TISTART;     /* 576 */
-        ULong guest_TILEN;       /* 584 */
+        ULong guest_CMSTART;     /* 576 */
+        ULong guest_CMLEN;       /* 584 */
 
         ULong guest_NRADDR;      /* 592 */
 

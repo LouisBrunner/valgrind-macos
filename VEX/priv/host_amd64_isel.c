@@ -4729,7 +4729,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          case Ijk_SigSEGV:
          case Ijk_SigTRAP:
          case Ijk_Sys_syscall:
-         case Ijk_TInval:
+         case Ijk_InvalICache:
          case Ijk_Yield:
          {
             HReg r = iselIntExpr_R(env, IRExpr_Const(stmt->Ist.Exit.dst));
@@ -4824,7 +4824,7 @@ static void iselNext ( ISelEnv* env,
       case Ijk_SigSEGV:
       case Ijk_SigTRAP:
       case Ijk_Sys_syscall:
-      case Ijk_TInval:
+      case Ijk_InvalICache:
       case Ijk_Yield: {
          HReg        r     = iselIntExpr_R(env, next);
          AMD64AMode* amRIP = AMD64AMode_IR(offsIP, hregAMD64_RBP());

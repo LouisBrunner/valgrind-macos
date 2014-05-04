@@ -138,8 +138,8 @@ typedef
          compilation breakage.  On amd64, these two fields are set to
          zero by LibVEX_GuestAMD64_initialise and then should be
          ignored forever thereafter. */
-      ULong guest_TISTART;
-      ULong guest_TILEN;
+      ULong guest_CMSTART;
+      ULong guest_CMLEN;
 
       /* Used to record the unredirected guest address at the start of
          a translation whose start has been redirected.  By reading

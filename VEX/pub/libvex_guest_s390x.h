@@ -132,8 +132,8 @@ typedef struct {
 
    /* See comments at bottom of libvex.h */
    /*  384 */  ULong guest_NRADDR;
-   /*  392 */  ULong guest_TISTART;
-   /*  400 */  ULong guest_TILEN;
+   /*  392 */  ULong guest_CMSTART;
+   /*  400 */  ULong guest_CMLEN;
 
    /* Used when backing up to restart a syscall that has
       been interrupted by a signal. See also comment in

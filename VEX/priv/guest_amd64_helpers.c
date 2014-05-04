@@ -3818,8 +3818,8 @@ void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state )
 
    /* These should not ever be either read or written, but we
       initialise them anyway. */
-   vex_state->guest_TISTART = 0;
-   vex_state->guest_TILEN   = 0;
+   vex_state->guest_CMSTART = 0;
+   vex_state->guest_CMLEN   = 0;
 
    vex_state->guest_NRADDR   = 0;
    vex_state->guest_SC_CLASS = 0;
@@ -3924,8 +3924,8 @@ VexGuestLayout
                  // /* */ ALWAYSDEFD(guest_GDT),
                  /* 10 */ ALWAYSDEFD(guest_EMNOTE),
                  /* 11 */ ALWAYSDEFD(guest_SSEROUND),
-                 /* 12 */ ALWAYSDEFD(guest_TISTART),
-                 /* 13 */ ALWAYSDEFD(guest_TILEN),
+                 /* 12 */ ALWAYSDEFD(guest_CMSTART),
+                 /* 13 */ ALWAYSDEFD(guest_CMLEN),
                  /* 14 */ ALWAYSDEFD(guest_SC_CLASS),
                  /* 15 */ ALWAYSDEFD(guest_IP_AT_SYSCALL)
                }

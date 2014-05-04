@@ -932,11 +932,15 @@ extern void LibVEX_InitIRI ( const IRICB * );
 
    ALL GUEST ARCHITECTURES
    ~~~~~~~~~~~~~~~~~~~~~~~
-   The guest state must contain two pseudo-registers, guest_TISTART
-   and guest_TILEN.  These are used to pass the address of areas of
-   guest code, translations of which are to be invalidated, back to
-   the despatcher.  Both pseudo-regs must have size equal to the guest
-   word size.
+   The guest state must contain two pseudo-registers, guest_CMSTART
+   and guest_CMLEN.  These are used to specify guest address ranges,
+   either of code to be invalidated, when used in conjunction with
+   Ijk_InvalICache, or of d-cache ranges to be flushed, when used in
+   conjunction with Ijk_FlushDCache.  In such cases, the two _CM
+   pseudo-regs should be filled in by the IR, and then an exit with
+   one of the two abovementioned Ijk_ kinds should happen, so that the
+   dispatcher can action them.  Both pseudo-regs must have size equal
+   to the guest word size.
 
    The architecture must a third pseudo-register, guest_NRADDR, also
    guest-word-sized.  This is used to record the unredirected guest

@@ -2075,16 +2075,17 @@ extern Bool eqIRAtom ( IRExpr*, IRExpr* );
 /* This describes hints which can be passed to the dispatcher at guest
    control-flow transfer points.
 
-   Re Ijk_TInval: the guest state _must_ have two pseudo-registers,
-   guest_TISTART and guest_TILEN, which specify the start and length
-   of the region to be invalidated.  These are both the size of a
-   guest word.  It is the responsibility of the relevant toIR.c to
-   ensure that these are filled in with suitable values before issuing
-   a jump of kind Ijk_TInval.
+   Re Ijk_InvalICache and Ijk_FlushDCache: the guest state _must_ have
+   two pseudo-registers, guest_CMSTART and guest_CMLEN, which specify
+   the start and length of the region to be invalidated.  CM stands
+   for "Cache Management".  These are both the size of a guest word.
+   It is the responsibility of the relevant toIR.c to ensure that
+   these are filled in with suitable values before issuing a jump of
+   kind Ijk_InvalICache or Ijk_FlushDCache.
 
-   Ijk_TInval requests invalidation of translations taken from the
-   requested range.  Ijk_FlushDCache requests flushing of the D cache
-   for the specified range.
+   Ijk_InvalICache requests invalidation of translations taken from
+   the requested range.  Ijk_FlushDCache requests flushing of the D
+   cache for the specified range.
 
    Re Ijk_EmWarn and Ijk_EmFail: the guest state must have a
    pseudo-register guest_EMNOTE, which is 32-bits regardless of the
@@ -2113,8 +2114,8 @@ typedef
       Ijk_EmFail,         /* emulation critical (FATAL) error; give up */
       Ijk_NoDecode,       /* current instruction cannot be decoded */
       Ijk_MapFail,        /* Vex-provided address translation failed */
-      Ijk_TInval,         /* Inval icache to PoU in [TISTART, +TILEN) */
-      Ijk_FlushDCache,    /* Clean dcache to PoU in [TISTART, +TILEN) */
+      Ijk_InvalICache,    /* Inval icache for range [CMSTART, +CMLEN) */
+      Ijk_FlushDCache,    /* Flush dcache for range [CMSTART, +CMLEN) */
       Ijk_NoRedir,        /* Jump to un-redirected guest addr */
       Ijk_SigILL,         /* current instruction synths SIGILL */
       Ijk_SigTRAP,        /* current instruction synths SIGTRAP */

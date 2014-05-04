@@ -132,8 +132,8 @@ typedef
       /* 424 */ UInt guest_EMNOTE;
 
       /* For clflush: record start and length of area to invalidate */
-      /* 428 */ UInt guest_TISTART;
-      /* 432 */ UInt guest_TILEN;
+      /* 428 */ UInt guest_CMSTART;
+      /* 432 */ UInt guest_CMLEN;
       /* 436 */ UInt guest_NRADDR;
 
       /* 440 */ UInt host_EvC_FAILADDR;

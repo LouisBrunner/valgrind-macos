@@ -432,8 +432,8 @@ static void unimplemented ( const HChar* str )
 #define OFFB_YMM16     offsetof(VexGuestAMD64State,guest_YMM16)
 
 #define OFFB_EMNOTE    offsetof(VexGuestAMD64State,guest_EMNOTE)
-#define OFFB_TISTART   offsetof(VexGuestAMD64State,guest_TISTART)
-#define OFFB_TILEN     offsetof(VexGuestAMD64State,guest_TILEN)
+#define OFFB_CMSTART   offsetof(VexGuestAMD64State,guest_CMSTART)
+#define OFFB_CMLEN     offsetof(VexGuestAMD64State,guest_CMLEN)
 
 #define OFFB_NRADDR    offsetof(VexGuestAMD64State,guest_NRADDR)
 
@@ -13516,14 +13516,14 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
 
          /* Round addr down to the start of the containing block. */
          stmt( IRStmt_Put(
-                  OFFB_TISTART,
+                  OFFB_CMSTART,
                   binop( Iop_And64, 
                          mkexpr(addr), 
                          mkU64( ~(lineszB-1) ))) );
 
-         stmt( IRStmt_Put(OFFB_TILEN, mkU64(lineszB) ) );
+         stmt( IRStmt_Put(OFFB_CMLEN, mkU64(lineszB) ) );
 
-         jmp_lit(dres, Ijk_TInval, (Addr64)(guest_RIP_bbstart+delta));
+         jmp_lit(dres, Ijk_InvalICache, (Addr64)(guest_RIP_bbstart+delta));
 
          DIP("clflush %s\n", dis_buf);
          goto decode_success;
@@ -31130,14 +31130,14 @@ DisResult disInstr_AMD64_WRK (
             // injecting here can change. In which case the translation has to
             // be redone. For ease of handling, we simply invalidate all the
             // time.
-            stmt(IRStmt_Put(OFFB_TISTART, mkU64(guest_RIP_curr_instr)));
-            stmt(IRStmt_Put(OFFB_TILEN,   mkU64(19)));
+            stmt(IRStmt_Put(OFFB_CMSTART, mkU64(guest_RIP_curr_instr)));
+            stmt(IRStmt_Put(OFFB_CMLEN,   mkU64(19)));
    
             delta += 19;
 
             stmt( IRStmt_Put( OFFB_RIP, mkU64(guest_RIP_bbstart + delta) ) );
             dres.whatNext    = Dis_StopHere;
-            dres.jk_StopHere = Ijk_TInval;
+            dres.jk_StopHere = Ijk_InvalICache;
             goto decode_success;
          }
          /* We don't know what it is. */

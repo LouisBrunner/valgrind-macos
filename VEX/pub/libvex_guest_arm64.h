@@ -127,9 +127,9 @@ typedef
       /* Emulation notes */
       UInt guest_EMNOTE;
 
-      /* For clflush: record start and length of area to invalidate */
-      ULong guest_TISTART;
-      ULong guest_TILEN;
+      /* For clflush/clinval: record start and length of area */
+      ULong guest_CMSTART;
+      ULong guest_CMLEN;
 
       /* Used to record the unredirected guest address at the start of
          a translation whose start has been redirected.  By reading

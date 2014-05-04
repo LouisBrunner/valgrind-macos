@@ -485,8 +485,8 @@ static IRExpr* align4if ( IRExpr* e, Bool b )
 #define OFFB_GEFLAG2  offsetof(VexGuestARMState,guest_GEFLAG2)
 #define OFFB_GEFLAG3  offsetof(VexGuestARMState,guest_GEFLAG3)
 
-#define OFFB_TISTART  offsetof(VexGuestARMState,guest_TISTART)
-#define OFFB_TILEN    offsetof(VexGuestARMState,guest_TILEN)
+#define OFFB_CMSTART  offsetof(VexGuestARMState,guest_CMSTART)
+#define OFFB_CMLEN    offsetof(VexGuestARMState,guest_CMLEN)
 
 
 /* ---------------- Integer registers ---------------- */
@@ -14605,11 +14605,11 @@ DisResult disInstr_ARM_WRK (
             // injecting here can change. In which case the translation has to
             // be redone. For ease of handling, we simply invalidate all the
             // time.
-            stmt(IRStmt_Put(OFFB_TISTART, mkU32(guest_R15_curr_instr_notENC)));
-            stmt(IRStmt_Put(OFFB_TILEN,   mkU32(20)));
+            stmt(IRStmt_Put(OFFB_CMSTART, mkU32(guest_R15_curr_instr_notENC)));
+            stmt(IRStmt_Put(OFFB_CMLEN,   mkU32(20)));
             llPutIReg(15, mkU32( guest_R15_curr_instr_notENC + 20 ));
             dres.whatNext    = Dis_StopHere;
-            dres.jk_StopHere = Ijk_TInval;
+            dres.jk_StopHere = Ijk_InvalICache;
             goto decode_success;
          }
          /* We don't know what it is.  Set opc1/opc2 so decode_failure
@@ -17450,11 +17450,11 @@ DisResult disInstr_THUMB_WRK (
             // injecting here can change. In which case the translation has to
             // be redone. For ease of handling, we simply invalidate all the
             // time.
-            stmt(IRStmt_Put(OFFB_TISTART, mkU32(guest_R15_curr_instr_notENC)));
-            stmt(IRStmt_Put(OFFB_TILEN,   mkU32(20)));
+            stmt(IRStmt_Put(OFFB_CMSTART, mkU32(guest_R15_curr_instr_notENC)));
+            stmt(IRStmt_Put(OFFB_CMLEN,   mkU32(20)));
             llPutIReg(15, mkU32( (guest_R15_curr_instr_notENC + 20) | 1 ));
             dres.whatNext    = Dis_StopHere;
-            dres.jk_StopHere = Ijk_TInval;
+            dres.jk_StopHere = Ijk_InvalICache;
             goto decode_success;
          }
          /* We don't know what it is.  Set insn0 so decode_failure

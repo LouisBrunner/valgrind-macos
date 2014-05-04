@@ -417,7 +417,8 @@ restart_if(IRExpr *condition)
 {
    vassert(typeOfIRExpr(irsb->tyenv, condition) == Ity_I1);
 
-   stmt(IRStmt_Exit(condition, Ijk_TInval, IRConst_U64(guest_IA_curr_instr),
+   stmt(IRStmt_Exit(condition, Ijk_InvalICache,
+                    IRConst_U64(guest_IA_curr_instr),
                     S390X_GUEST_OFFSET(guest_IA)));
 }
 
@@ -10862,9 +10863,9 @@ s390_irgen_EX_SS(UChar r, IRTemp addr2,
    stmt(IRStmt_Dirty(d));
 
    /* and restart */
-   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TISTART),
+   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_CMSTART),
                    mkU64(guest_IA_curr_instr)));
-   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TILEN), mkU64(4)));
+   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_CMLEN), mkU64(4)));
    restart_if(mkexpr(cond));
 
    ss.bytes = last_execute_target;
@@ -10893,15 +10894,15 @@ s390_irgen_EX(UChar r1, IRTemp addr2)
                              mkIRExprVec_1(load(Ity_I64, mkexpr(addr2))));
       stmt(IRStmt_Dirty(d));
       /* and restart */
-      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TISTART),
+      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_CMSTART),
                       mkU64(guest_IA_curr_instr)));
-      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TILEN), mkU64(4)));
+      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_CMLEN), mkU64(4)));
       restart_if(IRExpr_Const(IRConst_U1(True)));
 
       /* we know that this will be invalidated */
       put_IA(mkaddr_expr(guest_IA_next_instr));
       dis_res->whatNext = Dis_StopHere;
-      dis_res->jk_StopHere = Ijk_TInval;
+      dis_res->jk_StopHere = Ijk_InvalICache;
       break;
    }
 
@@ -10967,8 +10968,8 @@ s390_irgen_EX(UChar r1, IRTemp addr2)
       stmt(IRStmt_Dirty(d));
 
       /* and restart */
-      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TISTART), mkU64(guest_IA_curr_instr)));
-      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TILEN), mkU64(4)));
+      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_CMSTART), mkU64(guest_IA_curr_instr)));
+      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_CMLEN), mkU64(4)));
       restart_if(mkexpr(cond));
 
       /* Now comes the actual translation */
@@ -16362,16 +16363,16 @@ s390_decode_special_and_irgen(UChar *bytes)
          injecting here can change. In which case the translation has to
          be redone. For ease of handling, we simply invalidate all the
          time. */
-      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TISTART),
+      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_CMSTART),
                       mkU64(guest_IA_curr_instr)));
-      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TILEN),
+      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_CMLEN),
                       mkU64(guest_IA_next_instr - guest_IA_curr_instr)));
       vassert(guest_IA_next_instr - guest_IA_curr_instr ==
               S390_SPECIAL_OP_PREAMBLE_SIZE + S390_SPECIAL_OP_SIZE);
 
       put_IA(mkaddr_expr(guest_IA_next_instr));
       dis_res->whatNext    = Dis_StopHere;
-      dis_res->jk_StopHere = Ijk_TInval;
+      dis_res->jk_StopHere = Ijk_InvalICache;
    } else {
       /* We don't know what it is. */
       return S390_DECODE_UNKNOWN_SPECIAL_INSN;

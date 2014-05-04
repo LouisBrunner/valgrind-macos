@@ -695,8 +695,8 @@ static IRExpr* narrowFrom64 ( IRType dstTy, IRExpr* e )
 //ZZ #define OFFB_GEFLAG2  offsetof(VexGuestARMState,guest_GEFLAG2)
 //ZZ #define OFFB_GEFLAG3  offsetof(VexGuestARMState,guest_GEFLAG3)
 
-#define OFFB_TISTART  offsetof(VexGuestARM64State,guest_TISTART)
-#define OFFB_TILEN    offsetof(VexGuestARM64State,guest_TILEN)
+#define OFFB_CMSTART  offsetof(VexGuestARM64State,guest_CMSTART)
+#define OFFB_CMLEN    offsetof(VexGuestARM64State,guest_CMLEN)
 
 
 /* ---------------- Integer registers ---------------- */
@@ -4673,13 +4673,13 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
                            mkU64(~(lineszB - 1))) );
       /* Set the invalidation range, request exit-and-invalidate, with
          continuation at the next instruction. */
-      stmt(IRStmt_Put(OFFB_TISTART, mkexpr(addr)));
-      stmt(IRStmt_Put(OFFB_TILEN,   mkU64(lineszB)));
+      stmt(IRStmt_Put(OFFB_CMSTART, mkexpr(addr)));
+      stmt(IRStmt_Put(OFFB_CMLEN,   mkU64(lineszB)));
       /* be paranoid ... */
       stmt( IRStmt_MBE(Imbe_Fence) );
       putPC(mkU64( guest_PC_curr_instr + 4 ));
       dres->whatNext    = Dis_StopHere;
-      dres->jk_StopHere = Ijk_TInval;
+      dres->jk_StopHere = Ijk_InvalICache;
       DIP("ic ivau, %s\n", nameIReg64orZR(tt));
       return True;
    }
@@ -4689,8 +4689,8 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
    */
    if ((INSN(31,0) & 0xFFFFFFE0) == 0xD50B7B20) {
       /* Exactly the same scheme as for IC IVAU, except we observe the
-         dMinLine size, and request an Ijk_InvalData instead of
-         Ijk_TInval. */
+         dMinLine size, and request an Ijk_FlushDCache instead of
+         Ijk_InvalICache. */
       /* We will always be provided with a valid dMinLine value. */
       vassert(archinfo->arm64_dMinLine_lg2_szB >= 2
               && archinfo->arm64_dMinLine_lg2_szB <= 17);
@@ -4704,8 +4704,8 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
                            mkU64(~(lineszB - 1))) );
       /* Set the flush range, request exit-and-flush, with
          continuation at the next instruction. */
-      stmt(IRStmt_Put(OFFB_TISTART, mkexpr(addr)));
-      stmt(IRStmt_Put(OFFB_TILEN,   mkU64(lineszB)));
+      stmt(IRStmt_Put(OFFB_CMSTART, mkexpr(addr)));
+      stmt(IRStmt_Put(OFFB_CMLEN,   mkU64(lineszB)));
       /* be paranoid ... */
       stmt( IRStmt_MBE(Imbe_Fence) );
       putPC(mkU64( guest_PC_curr_instr + 4 ));
@@ -7218,11 +7218,11 @@ Bool disInstr_ARM64_WRK (
             // injecting here can change. In which case the translation has to
             // be redone. For ease of handling, we simply invalidate all the
             // time.
-            stmt(IRStmt_Put(OFFB_TISTART, mkU64(guest_PC_curr_instr)));
-            stmt(IRStmt_Put(OFFB_TILEN,   mkU64(20)));
+            stmt(IRStmt_Put(OFFB_CMSTART, mkU64(guest_PC_curr_instr)));
+            stmt(IRStmt_Put(OFFB_CMLEN,   mkU64(20)));
             putPC(mkU64( guest_PC_curr_instr + 20 ));
             dres->whatNext    = Dis_StopHere;
-            dres->jk_StopHere = Ijk_TInval;
+            dres->jk_StopHere = Ijk_InvalICache;
             return True;
          }
          /* We don't know what it is. */

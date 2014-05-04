@@ -275,8 +275,8 @@ static IRSB* irsb;
 
 #define OFFB_EMNOTE    offsetof(VexGuestX86State,guest_EMNOTE)
 
-#define OFFB_TISTART   offsetof(VexGuestX86State,guest_TISTART)
-#define OFFB_TILEN     offsetof(VexGuestX86State,guest_TILEN)
+#define OFFB_CMSTART   offsetof(VexGuestX86State,guest_CMSTART)
+#define OFFB_CMLEN     offsetof(VexGuestX86State,guest_CMLEN)
 #define OFFB_NRADDR    offsetof(VexGuestX86State,guest_NRADDR)
 
 #define OFFB_IP_AT_SYSCALL offsetof(VexGuestX86State,guest_IP_AT_SYSCALL)
@@ -8167,14 +8167,14 @@ DisResult disInstr_X86_WRK (
             // injecting here can change. In which case the translation has to
             // be redone. For ease of handling, we simply invalidate all the
             // time.
-            stmt(IRStmt_Put(OFFB_TISTART, mkU32(guest_EIP_curr_instr)));
-            stmt(IRStmt_Put(OFFB_TILEN,   mkU32(14)));
+            stmt(IRStmt_Put(OFFB_CMSTART, mkU32(guest_EIP_curr_instr)));
+            stmt(IRStmt_Put(OFFB_CMLEN,   mkU32(14)));
    
             delta += 14;
 
             stmt( IRStmt_Put( OFFB_EIP, mkU32(guest_EIP_bbstart + delta) ) );
             dres.whatNext    = Dis_StopHere;
-            dres.jk_StopHere = Ijk_TInval;
+            dres.jk_StopHere = Ijk_InvalICache;
             goto decode_success;
          }
          /* We don't know what it is. */
@@ -11754,14 +11754,14 @@ DisResult disInstr_X86_WRK (
 
       /* Round addr down to the start of the containing block. */
       stmt( IRStmt_Put(
-               OFFB_TISTART,
+               OFFB_CMSTART,
                binop( Iop_And32, 
                       mkexpr(addr), 
                       mkU32( ~(lineszB-1) ))) );
 
-      stmt( IRStmt_Put(OFFB_TILEN, mkU32(lineszB) ) );
+      stmt( IRStmt_Put(OFFB_CMLEN, mkU32(lineszB) ) );
 
-      jmp_lit(&dres, Ijk_TInval, (Addr32)(guest_EIP_bbstart+delta));
+      jmp_lit(&dres, Ijk_InvalICache, (Addr32)(guest_EIP_bbstart+delta));
 
       DIP("clflush %s\n", dis_buf);
       goto decode_success;

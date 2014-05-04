@@ -48,8 +48,8 @@
    with Valgrind's VG_TRC_ values, which are 60 or below.
 */
 
-#define VEX_TRC_JMP_TINVAL     61  /* invalidate translations before
-                                      continuing */
+#define VEX_TRC_JMP_INVALICACHE 61  /* invalidate icache (translations)
+                                       before continuing */
 #define VEX_TRC_JMP_FLUSHDCACHE 103 /* flush dcache before continuing */
 
 #define VEX_TRC_JMP_NOREDIR    81  /* jump to undirected guest addr */

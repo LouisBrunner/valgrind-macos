@@ -4001,7 +4001,7 @@ static void iselStmt(ISelEnv * env, IRStmt * stmt)
          case Ijk_SigFPE_IntDiv:
          case Ijk_SigFPE_IntOvf:
          case Ijk_Sys_syscall:
-         case Ijk_TInval:
+         case Ijk_InvalICache:
          {
             HReg r = iselWordExpr_R(env, IRExpr_Const(stmt->Ist.Exit.dst));
             addInstr(env, MIPSInstr_XAssisted(r, amPC, cc,
@@ -4105,7 +4105,7 @@ static void iselNext ( ISelEnv* env,
       case Ijk_SigFPE_IntDiv:
       case Ijk_SigFPE_IntOvf:
       case Ijk_Sys_syscall:
-      case Ijk_TInval: {
+      case Ijk_InvalICache: {
          HReg      r     = iselWordExpr_R(env, next);
          MIPSAMode* amPC = MIPSAMode_IR(offsIP, GuestStatePointer(env->mode64));
          addInstr(env, MIPSInstr_XAssisted(r, amPC, MIPScc_AL, jk));

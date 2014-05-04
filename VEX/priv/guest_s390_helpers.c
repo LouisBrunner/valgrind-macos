@@ -128,8 +128,8 @@ LibVEX_GuestS390X_initialise(VexGuestS390XState *state)
 /*------------------------------------------------------------*/
 
    state->guest_NRADDR = 0;
-   state->guest_TISTART = 0;
-   state->guest_TILEN = 0;
+   state->guest_CMSTART = 0;
+   state->guest_CMLEN = 0;
    state->guest_IP_AT_SYSCALL = 0;
    state->guest_EMNOTE = EmNote_NONE;
    state->host_EvC_COUNTER = 0;
@@ -225,8 +225,8 @@ VexGuestLayout s390xGuest_layout = {
       /*  0 */ ALWAYSDEFD(guest_CC_OP),     /* generic */
       /*  1 */ ALWAYSDEFD(guest_CC_NDEP),   /* generic */
       /*  2 */ ALWAYSDEFD(guest_EMNOTE),    /* generic */
-      /*  3 */ ALWAYSDEFD(guest_TISTART),   /* generic */
-      /*  4 */ ALWAYSDEFD(guest_TILEN),     /* generic */
+      /*  3 */ ALWAYSDEFD(guest_CMSTART),   /* generic */
+      /*  4 */ ALWAYSDEFD(guest_CMLEN),     /* generic */
       /*  5 */ ALWAYSDEFD(guest_IP_AT_SYSCALL), /* generic */
       /*  6 */ ALWAYSDEFD(guest_IA),        /* control reg */
       /*  7 */ ALWAYSDEFD(guest_fpc),       /* control reg */

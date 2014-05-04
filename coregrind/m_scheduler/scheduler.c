@@ -198,7 +198,8 @@ static
 const HChar* name_of_sched_event ( UInt event )
 {
    switch (event) {
-      case VEX_TRC_JMP_TINVAL:         return "TINVAL";
+      case VEX_TRC_JMP_INVALICACHE:    return "INVALICACHE";
+      case VEX_TRC_JMP_FLUSHDCACHE:    return "FLUSHDCACHE";
       case VEX_TRC_JMP_NOREDIR:        return "NOREDIR";
       case VEX_TRC_JMP_SIGILL:         return "SIGILL";
       case VEX_TRC_JMP_SIGTRAP:        return "SIGTRAP";
@@ -1497,19 +1498,19 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
          break;
       }
 
-      case VEX_TRC_JMP_TINVAL:
+      case VEX_TRC_JMP_INVALICACHE:
          VG_(discard_translations)(
-            (Addr64)VG_(threads)[tid].arch.vex.guest_TISTART,
-            VG_(threads)[tid].arch.vex.guest_TILEN,
-            "scheduler(VEX_TRC_JMP_TINVAL)"
+            (Addr64)VG_(threads)[tid].arch.vex.guest_CMSTART,
+            VG_(threads)[tid].arch.vex.guest_CMLEN,
+            "scheduler(VEX_TRC_JMP_INVALICACHE)"
          );
          if (0)
             VG_(printf)("dump translations done.\n");
          break;
 
       case VEX_TRC_JMP_FLUSHDCACHE: {
-         void* start = (void*)VG_(threads)[tid].arch.vex.guest_TISTART;
-         SizeT len   = VG_(threads)[tid].arch.vex.guest_TILEN;
+         void* start = (void*)VG_(threads)[tid].arch.vex.guest_CMSTART;
+         SizeT len   = VG_(threads)[tid].arch.vex.guest_CMLEN;
          VG_(debugLog)(2, "sched", "flush_dcache(%p, %lu)\n", start, len);
          VG_(flush_dcache)(start, len);
          break;

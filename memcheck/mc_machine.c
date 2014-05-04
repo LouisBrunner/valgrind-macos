@@ -211,8 +211,8 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(FPROUND)   && sz == 1) return -1;
    if (o == GOF(DFPROUND)  && sz == 1) return -1;
    if (o == GOF(EMNOTE)    && sz == 4) return -1;
-   if (o == GOF(TISTART)   && sz == 8) return -1;
-   if (o == GOF(TILEN)     && sz == 8) return -1;
+   if (o == GOF(CMSTART)   && sz == 8) return -1;
+   if (o == GOF(CMLEN)     && sz == 8) return -1;
    if (o == GOF(VSCR)      && sz == 4) return -1;
    if (o == GOF(VRSAVE)    && sz == 4) return -1;
    if (o == GOF(REDIR_SP)  && sz == 8) return -1;
@@ -412,8 +412,8 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(DFPROUND)  && sz == 1) return -1;
    if (o == GOF(VRSAVE)    && sz == 4) return -1;
    if (o == GOF(EMNOTE)    && sz == 4) return -1;
-   if (o == GOF(TISTART)   && sz == 4) return -1;
-   if (o == GOF(TILEN)     && sz == 4) return -1;
+   if (o == GOF(CMSTART)   && sz == 4) return -1;
+   if (o == GOF(CMLEN)     && sz == 4) return -1;
    if (o == GOF(VSCR)      && sz == 4) return -1;
    if (o == GOF(REDIR_SP)  && sz == 4) return -1;
    if (o == GOF(SPRG3_RO)  && sz == 4) return -1;
@@ -601,8 +601,8 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(ACFLAG)  && sz == 8) return -1; /* slot unused */
    if (o == GOF(FS_ZERO) && sz == 8) return -1; /* slot unused */
    if (o == GOF(GS_0x60) && sz == 8) return -1; /* slot unused */
-   if (o == GOF(TISTART) && sz == 8) return -1; /* slot unused */
-   if (o == GOF(TILEN)   && sz == 8) return -1; /* slot unused */
+   if (o == GOF(CMSTART) && sz == 8) return -1; /* slot unused */
+   if (o == GOF(CMLEN)   && sz == 8) return -1; /* slot unused */
    if (o == GOF(NRADDR)  && sz == 8) return -1; /* slot unused */
 
    /* Treat %AH, %BH, %CH, %DH as independent registers.  To do this
@@ -714,8 +714,8 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(IP_AT_SYSCALL) && sz == 4) return -1; /* slot unused */
    if (o == GOF(IDFLAG)  && sz == 4) return -1; /* slot used for %DH */
    if (o == GOF(ACFLAG)  && sz == 4) return -1; /* slot unused */
-   if (o == GOF(TISTART) && sz == 4) return -1; /* slot unused */
-   if (o == GOF(TILEN)   && sz == 4) return -1; /* slot unused */
+   if (o == GOF(CMSTART) && sz == 4) return -1; /* slot unused */
+   if (o == GOF(CMLEN)   && sz == 4) return -1; /* slot unused */
    if (o == GOF(NRADDR)  && sz == 4) return -1; /* slot unused */
 
    /* Treat %AH, %BH, %CH, %DH as independent registers.  To do this
@@ -827,8 +827,8 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
       return o;
    if (o == GOF(CC_DEP2)  && sz == 8) return o;
    if (o == GOF(CC_NDEP)  && sz == 8) return -1;
-   if (o == GOF(TISTART)  && sz == 8) return -1;
-   if (o == GOF(TILEN)    && sz == 8) return -1;
+   if (o == GOF(CMSTART)  && sz == 8) return -1;
+   if (o == GOF(CMLEN)    && sz == 8) return -1;
    if (o == GOF(NRADDR)   && sz == 8) return -1;
    if (o == GOF(IP_AT_SYSCALL) && sz == 8) return -1;
    if (o == GOF(fpc)      && sz == 4) return -1;
@@ -890,7 +890,7 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    //if (o == GOF(SYSCALLNO)     && sz == 4) return -1; /* slot unused */
    //if (o == GOF(CC)     && sz == 4) return -1; /* slot unused */
    //if (o == GOF(EMNOTE)     && sz == 4) return -1; /* slot unused */
-   //if (o == GOF(TISTART)     && sz == 4) return -1; /* slot unused */
+   //if (o == GOF(CMSTART)     && sz == 4) return -1; /* slot unused */
    //if (o == GOF(NRADDR)     && sz == 4) return -1; /* slot unused */
 
    if (o == GOF(FPSCR)    && sz == 4) return -1;
@@ -953,8 +953,8 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
       if (o >= GOF(D30) && o+sz <= GOF(D30)+2*SZB(D30)) return GOF(D30); // Q15
    }
 
-   if (o == GOF(TISTART) && sz == 4) return -1;
-   if (o == GOF(TILEN)   && sz == 4) return -1;
+   if (o == GOF(CMSTART) && sz == 4) return -1;
+   if (o == GOF(CMLEN)   && sz == 4) return -1;
 
    VG_(printf)("MC_(get_otrack_shadow_offset)(arm)(off=%d,sz=%d)\n",
                offset,szB);
@@ -1055,8 +1055,8 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(FPCR) && sz == 4) return -1; // untracked
    if (o == GOF(FPSR) && sz == 4) return -1; // untracked
 
-   if (o == GOF(TISTART) && sz == 8) return -1; // untracked
-   if (o == GOF(TILEN)   && sz == 8) return -1; // untracked
+   if (o == GOF(CMSTART) && sz == 8) return -1; // untracked
+   if (o == GOF(CMLEN)   && sz == 8) return -1; // untracked
 
    VG_(printf)("MC_(get_otrack_shadow_offset)(arm64)(off=%d,sz=%d)\n",
                offset,szB);
@@ -1129,8 +1129,8 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(ULR) && sz == 4) return -1;
 
    if (o == GOF(EMNOTE)     && sz == 4) return -1; /* slot unused */
-   if (o == GOF(TISTART)     && sz == 4) return -1; /* slot unused */
-   if (o == GOF(TILEN)     && sz == 4) return -1; /* slot unused */
+   if (o == GOF(CMSTART)     && sz == 4) return -1; /* slot unused */
+   if (o == GOF(CMLEN)     && sz == 4) return -1; /* slot unused */
    if (o == GOF(NRADDR)     && sz == 4) return -1; /* slot unused */
 
    if (o >= GOF(f0)  && o+sz <= GOF(f0) +SZB(f0))  return GOF(f0);
@@ -1217,8 +1217,8 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(ULR)  && sz == 8) return o;
 
    if (o == GOF(EMNOTE)  && sz == 4) return -1;  /* slot unused */
-   if (o == GOF(TISTART) && sz == 4) return -1;  /* slot unused */
-   if (o == GOF(TILEN)   && sz == 4) return -1;  /* slot unused */
+   if (o == GOF(CMSTART) && sz == 4) return -1;  /* slot unused */
+   if (o == GOF(CMLEN)   && sz == 4) return -1;  /* slot unused */
    if (o == GOF(NRADDR)  && sz == 4) return -1;  /* slot unused */
 
    if (o >= GOF(f0)  && o+sz <= GOF(f0) +SZB(f0))  return GOF(f0);

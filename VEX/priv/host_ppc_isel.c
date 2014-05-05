@@ -4929,11 +4929,8 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          }
       }
 
-      case Iop_Add32Fx4:   fpop = Pavfp_ADDF;   goto do_32Fx4;
-      case Iop_Sub32Fx4:   fpop = Pavfp_SUBF;   goto do_32Fx4;
       case Iop_Max32Fx4:   fpop = Pavfp_MAXF;   goto do_32Fx4;
       case Iop_Min32Fx4:   fpop = Pavfp_MINF;   goto do_32Fx4;
-      case Iop_Mul32Fx4:   fpop = Pavfp_MULF;   goto do_32Fx4;
       case Iop_CmpEQ32Fx4: fpop = Pavfp_CMPEQF; goto do_32Fx4;
       case Iop_CmpGT32Fx4: fpop = Pavfp_CMPGTF; goto do_32Fx4;
       case Iop_CmpGE32Fx4: fpop = Pavfp_CMPGEF; goto do_32Fx4;
@@ -5210,6 +5207,25 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          HReg dst  = newVRegV(env);
          PPCRI* ps = iselWordExpr_RI(env, triop->arg3);
          addInstr(env, PPCInstr_AvBCDV128Trinary(op, dst, arg1, arg2, ps));
+         return dst;
+      }
+
+      case Iop_Add32Fx4: fpop = Pavfp_ADDF; goto do_32Fx4_with_rm;
+      case Iop_Sub32Fx4: fpop = Pavfp_SUBF; goto do_32Fx4_with_rm;
+      case Iop_Mul32Fx4: fpop = Pavfp_MULF; goto do_32Fx4_with_rm;
+      do_32Fx4_with_rm:
+      {
+         HReg argL = iselVecExpr(env, triop->arg2);
+         HReg argR = iselVecExpr(env, triop->arg3);
+         HReg dst  = newVRegV(env);
+         /* FIXME: this is bogus, in the sense that Altivec ignores
+            FPSCR.RM, at least for some FP operations.  So setting the
+            RM is pointless.  This is only really correct in the case
+            where the RM is known, at JIT time, to be Irrm_NEAREST,
+            since -- at least for Altivec FP add/sub/mul -- the
+            emitted insn is hardwired to round to nearest. */
+         set_FPU_rounding_mode(env, triop->arg1);
+         addInstr(env, PPCInstr_AvBin32Fx4(fpop, dst, argL, argR));
          return dst;
       }
 

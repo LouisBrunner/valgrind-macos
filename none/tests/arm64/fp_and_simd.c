@@ -203,7 +203,8 @@ static void* memalign16(size_t szB)
 
 
 /* Generate a test that involves two vector regs,
-   with no bias as towards which is input or output. */
+   with no bias as towards which is input or output. 
+   It's OK to use x10 as scratch.*/
 #define GEN_TWOVEC_TEST(TESTNAME,INSN,VECREG1NO,VECREG2NO) \
   __attribute__((noinline)) \
   static void test_##TESTNAME ( LaneTy ty ) { \
@@ -221,7 +222,8 @@ static void* memalign16(size_t szB)
            INSN " ; " \
            "str   q"#VECREG1NO", [%0, #32] ; " \
            "str   q"#VECREG2NO", [%0, #48] ; " \
-           : : "r"(&block[0]) : "memory", "v"#VECREG1NO, "v"#VECREG2NO \
+           : : "r"(&block[0]) \
+             : "memory", "v"#VECREG1NO, "v"#VECREG2NO, "x10" \
         ); \
         printf(INSN   "   "); \
         showV128(&block[0]); printf("  "); \
@@ -1338,6 +1340,146 @@ GEN_TWOVEC_TEST(cmlt_zero_4h_4h,   "cmlt v5.4h,  v22.4h,  #0", 5, 22)
 GEN_TWOVEC_TEST(cmlt_zero_16b_16b, "cmlt v5.16b, v22.16b, #0", 5, 22)
 GEN_TWOVEC_TEST(cmlt_zero_8b_8b,   "cmlt v5.8b,  v22.8b,  #0", 5, 22)
 
+GEN_TWOVEC_TEST(abs_d_d,  "abs d22, d23",   22, 23)
+GEN_TWOVEC_TEST(neg_d_d,  "neg d22, d23",   22, 23)
+
+GEN_UNARY_TEST(abs, 2d, 2d)
+GEN_UNARY_TEST(abs, 4s, 4s)
+GEN_UNARY_TEST(abs, 2s, 2s)
+GEN_UNARY_TEST(abs, 8h, 8h)
+GEN_UNARY_TEST(abs, 4h, 4h)
+GEN_UNARY_TEST(abs, 16b, 16b)
+GEN_UNARY_TEST(abs, 8b, 8b)
+
+GEN_BINARY_TEST(addhn,   2s, 2d, 2d)
+GEN_BINARY_TEST(addhn2,  4s, 2d, 2d)
+GEN_BINARY_TEST(addhn,   4h, 4s, 4s)
+GEN_BINARY_TEST(addhn2,  8h, 4s, 4s)
+GEN_BINARY_TEST(addhn,   8b, 8h, 8h)
+GEN_BINARY_TEST(addhn2,  16b, 8h, 8h)
+GEN_BINARY_TEST(subhn,   2s, 2d, 2d)
+GEN_BINARY_TEST(subhn2,  4s, 2d, 2d)
+GEN_BINARY_TEST(subhn,   4h, 4s, 4s)
+GEN_BINARY_TEST(subhn2,  8h, 4s, 4s)
+GEN_BINARY_TEST(subhn,   8b, 8h, 8h)
+GEN_BINARY_TEST(subhn2,  16b, 8h, 8h)
+GEN_BINARY_TEST(raddhn,  2s, 2d, 2d)
+GEN_BINARY_TEST(raddhn2, 4s, 2d, 2d)
+GEN_BINARY_TEST(raddhn,  4h, 4s, 4s)
+GEN_BINARY_TEST(raddhn2, 8h, 4s, 4s)
+GEN_BINARY_TEST(raddhn,  8b, 8h, 8h)
+GEN_BINARY_TEST(raddhn2, 16b, 8h, 8h)
+GEN_BINARY_TEST(rsubhn,  2s, 2d, 2d)
+GEN_BINARY_TEST(rsubhn2, 4s, 2d, 2d)
+GEN_BINARY_TEST(rsubhn,  4h, 4s, 4s)
+GEN_BINARY_TEST(rsubhn2, 8h, 4s, 4s)
+GEN_BINARY_TEST(rsubhn,  8b, 8h, 8h)
+GEN_BINARY_TEST(rsubhn2, 16b, 8h, 8h)
+
+GEN_TWOVEC_TEST(addp_d_2d,  "addp d22, v23.2d",   22, 23)
+
+GEN_BINARY_TEST(addp, 2d, 2d, 2d)
+GEN_BINARY_TEST(addp, 4s, 4s, 4s)
+GEN_BINARY_TEST(addp, 2s, 2s, 2s)
+GEN_BINARY_TEST(addp, 8h, 8h, 8h)
+GEN_BINARY_TEST(addp, 4h, 4h, 4h)
+GEN_BINARY_TEST(addp, 16b, 16b, 16b)
+GEN_BINARY_TEST(addp, 8b, 8b, 8b)
+
+GEN_TWOVEC_TEST(addv_s_4s,  "addv s22, v23.4s",  22, 23)
+GEN_TWOVEC_TEST(addv_h_8h,  "addv h22, v23.8h",  22, 23)
+GEN_TWOVEC_TEST(addv_h_4h,  "addv h22, v23.4h",  22, 23)
+GEN_TWOVEC_TEST(addv_b_16b, "addv b22, v23.16b", 22, 23)
+GEN_TWOVEC_TEST(addv_b_8b,  "addv b22, v23.8b",  22, 23)
+
+/* overkill -- don't need two vecs, only one */
+GEN_TWOVEC_TEST(orr_8h_0x5A_lsl0, "orr v22.8h, #0x5A, LSL #0", 22, 23)
+GEN_TWOVEC_TEST(orr_8h_0xA5_lsl8, "orr v22.8h, #0xA5, LSL #8", 22, 23)
+GEN_TWOVEC_TEST(orr_4h_0x5A_lsl0, "orr v22.4h, #0x5A, LSL #0", 22, 23)
+GEN_TWOVEC_TEST(orr_4h_0xA5_lsl8, "orr v22.4h, #0xA5, LSL #8", 22, 23)
+GEN_TWOVEC_TEST(orr_4s_0x5A_lsl0,  "orr v22.4s, #0x5A, LSL #0",  22, 23)
+GEN_TWOVEC_TEST(orr_4s_0x6B_lsl8,  "orr v22.4s, #0x6B, LSL #8",  22, 23)
+GEN_TWOVEC_TEST(orr_4s_0x49_lsl16, "orr v22.4s, #0x49, LSL #16", 22, 23)
+GEN_TWOVEC_TEST(orr_4s_0x3D_lsl24, "orr v22.4s, #0x3D, LSL #24", 22, 23)
+GEN_TWOVEC_TEST(orr_2s_0x5A_lsl0,  "orr v22.2s, #0x5A, LSL #0",  22, 23)
+GEN_TWOVEC_TEST(orr_2s_0x6B_lsl8,  "orr v22.2s, #0x6B, LSL #8",  22, 23)
+GEN_TWOVEC_TEST(orr_2s_0x49_lsl16, "orr v22.2s, #0x49, LSL #16", 22, 23)
+GEN_TWOVEC_TEST(orr_2s_0x3D_lsl24, "orr v22.2s, #0x3D, LSL #24", 22, 23)
+GEN_TWOVEC_TEST(bic_8h_0x5A_lsl0, "bic v22.8h, #0x5A, LSL #0", 22, 23)
+GEN_TWOVEC_TEST(bic_8h_0xA5_lsl8, "bic v22.8h, #0xA5, LSL #8", 22, 23)
+GEN_TWOVEC_TEST(bic_4h_0x5A_lsl0, "bic v22.4h, #0x5A, LSL #0", 22, 23)
+GEN_TWOVEC_TEST(bic_4h_0xA5_lsl8, "bic v22.4h, #0xA5, LSL #8", 22, 23)
+GEN_TWOVEC_TEST(bic_4s_0x5A_lsl0,  "bic v22.4s, #0x5A, LSL #0",  22, 23)
+GEN_TWOVEC_TEST(bic_4s_0x6B_lsl8,  "bic v22.4s, #0x6B, LSL #8",  22, 23)
+GEN_TWOVEC_TEST(bic_4s_0x49_lsl16, "bic v22.4s, #0x49, LSL #16", 22, 23)
+GEN_TWOVEC_TEST(bic_4s_0x3D_lsl24, "bic v22.4s, #0x3D, LSL #24", 22, 23)
+GEN_TWOVEC_TEST(bic_2s_0x5A_lsl0,  "bic v22.2s, #0x5A, LSL #0",  22, 23)
+GEN_TWOVEC_TEST(bic_2s_0x6B_lsl8,  "bic v22.2s, #0x6B, LSL #8",  22, 23)
+GEN_TWOVEC_TEST(bic_2s_0x49_lsl16, "bic v22.2s, #0x49, LSL #16", 22, 23)
+GEN_TWOVEC_TEST(bic_2s_0x3D_lsl24, "bic v22.2s, #0x3D, LSL #24", 22, 23)
+
+GEN_UNARY_TEST(cls, 4s, 4s)
+GEN_UNARY_TEST(cls, 2s, 2s)
+GEN_UNARY_TEST(cls, 8h, 8h)
+GEN_UNARY_TEST(cls, 4h, 4h)
+GEN_UNARY_TEST(cls, 16b, 16b)
+GEN_UNARY_TEST(cls, 8b, 8b)
+
+GEN_UNARY_TEST(clz, 4s, 4s)
+GEN_UNARY_TEST(clz, 2s, 2s)
+GEN_UNARY_TEST(clz, 8h, 8h)
+GEN_UNARY_TEST(clz, 4h, 4h)
+GEN_UNARY_TEST(clz, 16b, 16b)
+GEN_UNARY_TEST(clz, 8b, 8b)
+
+GEN_THREEVEC_TEST(cmeq_d_d_d,  "cmeq  d2, d11, d29", 2, 11, 29)
+GEN_THREEVEC_TEST(cmge_d_d_d,  "cmge  d2, d11, d29", 2, 11, 29)
+GEN_THREEVEC_TEST(cmgt_d_d_d,  "cmgt  d2, d11, d29", 2, 11, 29)
+GEN_THREEVEC_TEST(cmhi_d_d_d,  "cmhi  d2, d11, d29", 2, 11, 29)
+GEN_THREEVEC_TEST(cmhs_d_d_d,  "cmhs  d2, d11, d29", 2, 11, 29)
+GEN_THREEVEC_TEST(cmtst_d_d_d, "cmtst d2, d11, d29", 2, 11, 29)
+
+GEN_TWOVEC_TEST(cmeq_zero_d_d,  "cmeq  d2, d11, #0", 2, 11)
+GEN_TWOVEC_TEST(cmge_zero_d_d,  "cmge  d2, d11, #0", 2, 11)
+GEN_TWOVEC_TEST(cmgt_zero_d_d,  "cmgt  d2, d11, #0", 2, 11)
+GEN_TWOVEC_TEST(cmle_zero_d_d,  "cmle  d2, d11, #0", 2, 11)
+GEN_TWOVEC_TEST(cmlt_zero_d_d,  "cmlt  d2, d11, #0", 2, 11)
+
+GEN_UNARY_TEST(cnt, 16b, 16b)
+GEN_UNARY_TEST(cnt, 8b, 8b)
+
+GEN_TWOVEC_TEST(dup_d_d0,  "dup d22, v23.d[0]", 22, 23)
+GEN_TWOVEC_TEST(dup_d_d1,  "dup d22, v23.d[1]", 22, 23)
+GEN_TWOVEC_TEST(dup_s_s0,  "dup s22, v23.s[0]", 22, 23)
+GEN_TWOVEC_TEST(dup_s_s3,  "dup s22, v23.s[3]", 22, 23)
+GEN_TWOVEC_TEST(dup_h_h0,  "dup h22, v23.h[0]", 22, 23)
+GEN_TWOVEC_TEST(dup_h_h6,  "dup h22, v23.h[6]", 22, 23)
+GEN_TWOVEC_TEST(dup_b_b0,  "dup b0,  v23.b[0]",  22, 23)
+GEN_TWOVEC_TEST(dup_b_b13, "dup b13, v23.b[13]", 22, 23)
+
+GEN_TWOVEC_TEST(dup_2d_d0,  "dup v9.2d, v17.d[0]", 9, 17)
+GEN_TWOVEC_TEST(dup_2d_d1,  "dup v9.2d, v17.d[1]", 9, 17)
+GEN_TWOVEC_TEST(dup_4s_s0,  "dup v9.4s, v17.s[0]", 9, 17)
+GEN_TWOVEC_TEST(dup_4s_s3,  "dup v9.4s, v17.s[3]", 9, 17)
+GEN_TWOVEC_TEST(dup_2s_s0,  "dup v9.2s, v17.s[0]", 9, 17)
+GEN_TWOVEC_TEST(dup_2s_s2,  "dup v9.2s, v17.s[2]", 9, 17)
+GEN_TWOVEC_TEST(dup_8h_h0,  "dup v9.8h, v17.h[0]", 9, 17)
+GEN_TWOVEC_TEST(dup_8h_h6,  "dup v9.8h, v17.h[6]", 9, 17)
+GEN_TWOVEC_TEST(dup_4h_h1,  "dup v9.4h, v17.h[1]", 9, 17)
+GEN_TWOVEC_TEST(dup_4h_h5,  "dup v9.4h, v17.h[5]", 9, 17)
+GEN_TWOVEC_TEST(dup_16b_b2,  "dup v9.16b, v17.b[2]", 9, 17)
+GEN_TWOVEC_TEST(dup_16b_b12, "dup v9.16b, v17.b[12]", 9, 17)
+GEN_TWOVEC_TEST(dup_8b_b3,  "dup v9.8b, v17.b[3]", 9, 17)
+GEN_TWOVEC_TEST(dup_8b_b13, "dup v9.8b, v17.b[13]", 9, 17)
+
+GEN_TWOVEC_TEST(dup_2d_x,  "mov x10, v17.d[0];  dup v9.2d,  x10", 9, 17)
+GEN_TWOVEC_TEST(dup_4s_w,  "mov x10, v17.d[0];  dup v9.4s,  w10", 9, 17)
+GEN_TWOVEC_TEST(dup_2s_w,  "mov x10, v17.d[0];  dup v9.2s,  w10", 9, 17)
+GEN_TWOVEC_TEST(dup_8h_w,  "mov x10, v17.d[0];  dup v9.8h,  w10",  9, 17)
+GEN_TWOVEC_TEST(dup_4h_w,  "mov x10, v17.d[0];  dup v9.4h,  w10",  9, 17)
+GEN_TWOVEC_TEST(dup_16b_w, "mov x10, v17.d[0];  dup v9.16b, w10", 9, 17)
+GEN_TWOVEC_TEST(dup_8b_w,  "mov x10, v17.d[0];  dup v9.8b,  w10",  9, 17)
+
 
 /* ---------------------------------------------------------------- */
 /* -- main()                                                     -- */
@@ -1671,9 +1813,18 @@ int main ( void )
 
    // abs       d
    // neg       d
+   test_abs_d_d(TyD);
+   test_neg_d_d(TyD);
 
    // abs       2d,4s,2s,8h,4h,16b,8b
    // neg       2d,4s,2s,8h,4h,16b,8b
+   test_abs_2d_2d(TyD);
+   test_abs_4s_4s(TyS);
+   test_abs_2s_2s(TyS);
+   test_abs_8h_8h(TyH);
+   test_abs_4h_4h(TyH);
+   test_abs_16b_16b(TyB);
+   test_abs_8b_8b(TyB);
    test_neg_2d_2d(TyD);
    test_neg_4s_4s(TyS);
    test_neg_2s_2s(TyS);
@@ -1708,13 +1859,52 @@ int main ( void )
    // subhn{2}   2s/4s_2d_2d, 4h/8h_4s_4s, 8b/16b_8h_8h
    // raddhn{2}  2s/4s_2d_2d, 4h/8h_4s_4s, 8b/16b_8h_8h
    // rsubhn{2}  2s/4s_2d_2d, 4h/8h_4s_4s, 8b/16b_8h_8h
+   test_addhn_2s_2d_2d(TyD);
+   test_addhn2_4s_2d_2d(TyD);
+   test_addhn_4h_4s_4s(TyS);
+   test_addhn2_8h_4s_4s(TyS);
+   test_addhn_8b_8h_8h(TyH);
+   test_addhn2_16b_8h_8h(TyH);
+   test_subhn_2s_2d_2d(TyD);
+   test_subhn2_4s_2d_2d(TyD);
+   test_subhn_4h_4s_4s(TyS);
+   test_subhn2_8h_4s_4s(TyS);
+   test_subhn_8b_8h_8h(TyH);
+   test_subhn2_16b_8h_8h(TyH);
+   test_raddhn_2s_2d_2d(TyD);
+   test_raddhn2_4s_2d_2d(TyD);
+   test_raddhn_4h_4s_4s(TyS);
+   test_raddhn2_8h_4s_4s(TyS);
+   test_raddhn_8b_8h_8h(TyH);
+   test_raddhn2_16b_8h_8h(TyH);
+   test_rsubhn_2s_2d_2d(TyD);
+   test_rsubhn2_4s_2d_2d(TyD);
+   test_rsubhn_4h_4s_4s(TyS);
+   test_rsubhn2_8h_4s_4s(TyS);
+   test_rsubhn_8b_8h_8h(TyH);
+   test_rsubhn2_16b_8h_8h(TyH);
 
    // addp     d (add pairs, across)
+   test_addp_d_2d(TyD);
+
    // addp     2d,4s,2s,8h,4h,16b,8b
+   test_addp_2d_2d_2d(TyD);
+   test_addp_4s_4s_4s(TyS);
+   test_addp_2s_2s_2s(TyS);
+   test_addp_8h_8h_8h(TyH);
+   test_addp_4h_4h_4h(TyH);
+   test_addp_16b_16b_16b(TyB);
+   test_addp_8b_8b_8b(TyB);
+
    // addv     4s,8h,4h,16b,18b (reduce across vector)
+   test_addv_s_4s(TyS);
+   test_addv_h_8h(TyH);
+   test_addv_h_4h(TyH);
+   test_addv_b_16b(TyB);
+   test_addv_b_8b(TyB);
 
    // and      16b,8b
-   // bic      16b,8b (vector,reg) (bit clear)
+   // bic      16b,8b
    // orn      16b,8b
    // orr      16b,8b
    test_and_16b_16b_16b(TyB);
@@ -1730,7 +1920,31 @@ int main ( void )
    // orr      4s,2s   #imm8, LSL #0, 8, 16 or 24
    // bic      8h,4h   #imm8, LSL #0 or 8
    // bic      4s,2s   #imm8, LSL #0, 8, 16 or 24
-   // also movi, mvni
+   // also movi, mvni (INCOMPLETE?)
+   test_orr_8h_0x5A_lsl0(TyH);
+   test_orr_8h_0xA5_lsl8(TyH);
+   test_orr_4h_0x5A_lsl0(TyH);
+   test_orr_4h_0xA5_lsl8(TyH);
+   test_orr_4s_0x5A_lsl0(TyH);
+   test_orr_4s_0x6B_lsl8(TyH);
+   test_orr_4s_0x49_lsl16(TyH);
+   test_orr_4s_0x3D_lsl24(TyH);
+   test_orr_2s_0x5A_lsl0(TyH);
+   test_orr_2s_0x6B_lsl8(TyH);
+   test_orr_2s_0x49_lsl16(TyH);
+   test_orr_2s_0x3D_lsl24(TyH);
+   test_bic_8h_0x5A_lsl0(TyH);
+   test_bic_8h_0xA5_lsl8(TyH);
+   test_bic_4h_0x5A_lsl0(TyH);
+   test_bic_4h_0xA5_lsl8(TyH);
+   test_bic_4s_0x5A_lsl0(TyH);
+   test_bic_4s_0x6B_lsl8(TyH);
+   test_bic_4s_0x49_lsl16(TyH);
+   test_bic_4s_0x3D_lsl24(TyH);
+   test_bic_2s_0x5A_lsl0(TyH);
+   test_bic_2s_0x6B_lsl8(TyH);
+   test_bic_2s_0x49_lsl16(TyH);
+   test_bic_2s_0x3D_lsl24(TyH);
 
    // bif      16b,8b (vector) (bit insert if false)
    // bit      16b,8b (vector) (bit insert if true)
@@ -1747,6 +1961,18 @@ int main ( void )
 
    // cls      4s,2s,8h,4h,16b,8b (count leading sign bits)
    // clz      4s,2s,8h,4h,16b,8b (count leading zero bits)
+   test_cls_4s_4s(TyS);
+   test_cls_2s_2s(TyS);
+   test_cls_8h_8h(TyH);
+   test_cls_4h_4h(TyH);
+   test_cls_16b_16b(TyB);
+   test_cls_8b_8b(TyB);
+   test_clz_4s_4s(TyS);
+   test_clz_2s_2s(TyS);
+   test_clz_8h_8h(TyH);
+   test_clz_4h_4h(TyH);
+   test_clz_16b_16b(TyB);
+   test_clz_8b_8b(TyB);
 
    // cmeq     d
    // cmge     d
@@ -1754,6 +1980,12 @@ int main ( void )
    // cmhi     d
    // cmhs     d
    // cmtst    d
+   test_cmeq_d_d_d(TyD);
+   test_cmge_d_d_d(TyD);
+   test_cmgt_d_d_d(TyD);
+   test_cmhi_d_d_d(TyD);
+   test_cmhs_d_d_d(TyD);
+   test_cmtst_d_d_d(TyD);
 
    // cmeq     2d,4s,2s,8h,4h,16b,8b
    // cmge     2d,4s,2s,8h,4h,16b,8b
@@ -1809,6 +2041,11 @@ int main ( void )
    // cmgt_z   d
    // cmle_z   d
    // cmlt_z   d
+   test_cmeq_zero_d_d(TyD);
+   test_cmge_zero_d_d(TyD);
+   test_cmgt_zero_d_d(TyD);
+   test_cmle_zero_d_d(TyD);
+   test_cmlt_zero_d_d(TyD);
 
    // cmeq_z   2d,4s,2s,8h,4h,16b,8b
    // cmge_z   2d,4s,2s,8h,4h,16b,8b
@@ -1852,10 +2089,43 @@ int main ( void )
    test_cmlt_zero_8b_8b(TyB);
 
    // cnt      16b,8b (population count per byte)
+   test_cnt_16b_16b(TyB);
+   test_cnt_8b_8b(TyB);
 
    // dup      d,s,h,b (vec elem to scalar)
+   test_dup_d_d0(TyD);
+   test_dup_d_d1(TyD);
+   test_dup_s_s0(TyS);
+   test_dup_s_s3(TyS);
+   test_dup_h_h0(TyH);
+   test_dup_h_h6(TyH);
+   test_dup_b_b0(TyB);
+   test_dup_b_b13(TyB);
+
    // dup      2d,4s,2s,8h,4h,16b,8b (vec elem to vector)
+   test_dup_2d_d0(TyD);
+   test_dup_2d_d1(TyD);
+   test_dup_4s_s0(TyS);
+   test_dup_4s_s3(TyS);
+   test_dup_2s_s0(TyS);
+   test_dup_2s_s2(TyS);
+   test_dup_8h_h0(TyH);
+   test_dup_8h_h6(TyH);
+   test_dup_4h_h1(TyH);
+   test_dup_4h_h5(TyH);
+   test_dup_16b_b2(TyB);
+   test_dup_16b_b12(TyB);
+   test_dup_8b_b3(TyB);
+   test_dup_8b_b13(TyB);
+
    // dup      2d,4s,2s,8h,4h,16b,8b (general reg to vector)
+   test_dup_2d_x(TyD);
+   test_dup_4s_w(TyS);
+   test_dup_2s_w(TyS);
+   test_dup_8h_w(TyH);
+   test_dup_4h_w(TyH);
+   test_dup_16b_w(TyB);
+   test_dup_8b_w(TyB);
 
    // ext      16b,8b,#imm4 (concat 2 vectors, then slice)
 

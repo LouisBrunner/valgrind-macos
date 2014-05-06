@@ -4753,7 +4753,6 @@ static void print_monitor_help ( void )
 /* return True if request recognised, False otherwise */
 static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
 {
-   UWord ret = 0;
    HChar* wcmd;
    HChar s[VG_(strlen(req))]; /* copy for strtok_r */
    HChar *ssaveptr;
@@ -4776,7 +4775,6 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
       print_monitor_help();
       return True;
    case  1: /* info */
-      ret = 1;
       wcmd = VG_(strtok_r) (NULL, " ", &ssaveptr);
       switch (kwdid = VG_(keyword_id) 
               ("locks",

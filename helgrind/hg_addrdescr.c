@@ -145,10 +145,9 @@ void HG_(pp_addrdescr) (Bool xml, const HChar* what, Addr addr,
 
 static void void_printf(const HChar *format, ...)
 {
-   UInt ret;
    va_list vargs;
    va_start(vargs, format);
-   ret = VG_(vprintf)(format, vargs);
+   VG_(vprintf)(format, vargs);
    va_end(vargs);
 }
 

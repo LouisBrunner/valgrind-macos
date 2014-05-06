@@ -44,6 +44,9 @@ Release 3.10.0 (?? ?????? 201?)
   by increasing the value.
   See user manual for details.
  
+* Support for --read-var-info=yes has been improved
+  to handle Ada and C struct containing VLA.
+
 * ==================== FIXED BUGS ====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"

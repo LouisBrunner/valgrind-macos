@@ -1638,6 +1638,12 @@ void read_filename_table( /*MOD*/D3VarParser* parser,
    /* We're done!  The rest of it is not interesting. */
 }
 
+__attribute__((noinline))
+static void bad_DIE_confusion(int linenr)
+{
+   VG_(printf)("\nparse_var_DIE(%d): confused by:\n", linenr);
+}
+#define goto_bad_DIE do {bad_DIE_confusion(__LINE__); goto bad_DIE;} while (0)
 
 __attribute__((noinline))
 static void parse_var_DIE (
@@ -1770,7 +1776,7 @@ static void parse_var_DIE (
       } else {
          if (0) VG_(printf)("I got hlo %d hhi1 %d hrange %d\n",
                             (Int)have_lo, (Int)have_hi1, (Int)have_range);
-         goto bad_DIE;
+         goto_bad_DIE;
       }
    }
 
@@ -1856,7 +1862,7 @@ static void parse_var_DIE (
          */
          /* Ignore (seems safe than pushing a single byte range) */
       } else
-         goto bad_DIE;
+         goto_bad_DIE;
    }
 
    if (dtag == DW_TAG_variable || dtag == DW_TAG_formal_parameter) {
@@ -1969,7 +1975,7 @@ static void parse_var_DIE (
                      "warning: parse_var_DIE: non-global variable "
                      "outside DW_TAG_subprogram\n");
                }
-               /* goto bad_DIE; */
+               /* goto_bad_DIE; */
                /* This seems to happen a lot.  Just ignore it -- if,
                   when we come to evaluation of the location (guarded)
                   expression, it requires a frame base value, and
@@ -2123,7 +2129,6 @@ static void parse_var_DIE (
   bad_DIE:
    set_position_of_Cursor( c_die,  saved_die_c_offset );
    set_position_of_Cursor( c_abbv, saved_abbv_c_offset );
-   VG_(printf)("\nparse_var_DIE: confused by:\n");
    posn = uncook_die( cc, posn, &debug_types_flag, &alt_flag );
    VG_(printf)(" <%d><%lx>: %s", level, posn, ML_(pp_DW_TAG)( dtag ) );
    if (debug_types_flag) {
@@ -2339,7 +2344,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
          if (attr != DW_AT_language)
             continue;
          if (cts.szB <= 0)
-           goto bad_DIE;
+           goto_bad_DIE;
          switch (cts.u.val) {
             case DW_LANG_C89: case DW_LANG_C:
             case DW_LANG_C_plus_plus: case DW_LANG_ObjC:
@@ -2359,7 +2364,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
             case DW_LANG_Mips_Assembler:
                parser->language = '?'; break;
             default:
-               goto bad_DIE;
+               goto_bad_DIE;
          }
       }
    }
@@ -2397,7 +2402,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
                case DW_ATE_complex_float:
                   typeE.Te.TyBase.enc = 'C'; break;
                default:
-                  goto bad_DIE;
+                  goto_bad_DIE;
             }
          }
       }
@@ -2420,7 +2425,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
               && typeE.Te.TyBase.enc != 'S' 
               && typeE.Te.TyBase.enc != 'F'
               && typeE.Te.TyBase.enc != 'C'))
-         goto bad_DIE;
+         goto_bad_DIE;
       /* Last minute hack: if we see this
          <1><515>: DW_TAG_base_type
              DW_AT_byte_size   : 0
@@ -2493,7 +2498,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       }
       /* Do we have something that looks sane? */
       if (typeE.Te.TyPorR.szB != sizeof(UWord))
-         goto bad_DIE;
+         goto_bad_DIE;
       else
          goto acquire_Type;
    }
@@ -2545,7 +2550,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
              that will put such an enumeration_type into a .debug_types
              unit which should only contain complete types.) */
           && (parser->language != 'A' && !is_decl)) {
-         goto bad_DIE;
+         goto_bad_DIE;
       }
 
       /* On't stack! */
@@ -2604,13 +2609,13 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       }
       /* Do we have something that looks sane? */
       if (atomE.Te.Atom.name == NULL)
-         goto bad_DIE;
+         goto_bad_DIE;
       /* Do we have a plausible parent? */
-      if (typestack_is_empty(parser)) goto bad_DIE;
+      if (typestack_is_empty(parser)) goto_bad_DIE;
       vg_assert(ML_(TyEnt__is_type)(&parser->qparentE[parser->sp]));
       vg_assert(parser->qparentE[parser->sp].cuOff != D3_INVALID_CUOFF);
-      if (level != parser->qlevel[parser->sp]+1) goto bad_DIE;
-      if (parser->qparentE[parser->sp].tag != Te_TyEnum) goto bad_DIE;
+      if (level != parser->qlevel[parser->sp]+1) goto_bad_DIE;
+      if (parser->qparentE[parser->sp].tag != Te_TyEnum) goto_bad_DIE;
       /* Record this child in the parent */
       vg_assert(parser->qparentE[parser->sp].Te.TyEnum.atomRs);
       VG_(addToXA)( parser->qparentE[parser->sp].Te.TyEnum.atomRs,
@@ -2693,16 +2698,25 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       }
       if ((!is_decl) /* && (!is_spec) */) {
          /* this is the common, ordinary case */
-         if ((!have_szB) /* we must know the size */
-             /* But the name can be present, or not */)
-            goto bad_DIE;
+         /* The name can be present, or not */
+         if (!have_szB) { 
+            /* We must know the size.
+               But in Ada, record with discriminants might have no size.
+               But in C, VLA in the middle of a struct (gcc extension)
+               might have no size.
+               Instead, some GNAT dwarf extensions and/or dwarf entries
+               allow to calculate the struct size at runtime.
+               We cannot do that (yet?) so, the temporary kludge is to use
+               a small size. */
+            typeE.Te.TyStOrUn.szB = 1;
+         }
          /* On't stack! */
          typestack_push( cc, parser, td3, &typeE, level );
          goto acquire_Type;
       }
       else {
          /* don't know how to handle any other variants just now */
-         goto bad_DIE;
+         goto_bad_DIE;
       }
    }
 
@@ -2747,11 +2761,11 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
          }
       }
       /* Do we have a plausible parent? */
-      if (typestack_is_empty(parser)) goto bad_DIE;
+      if (typestack_is_empty(parser)) goto_bad_DIE;
       vg_assert(ML_(TyEnt__is_type)(&parser->qparentE[parser->sp]));
       vg_assert(parser->qparentE[parser->sp].cuOff != D3_INVALID_CUOFF);
-      if (level != parser->qlevel[parser->sp]+1) goto bad_DIE;
-      if (parser->qparentE[parser->sp].tag != Te_TyStOrUn) goto bad_DIE;
+      if (level != parser->qlevel[parser->sp]+1) goto_bad_DIE;
+      if (parser->qparentE[parser->sp].tag != Te_TyStOrUn) goto_bad_DIE;
       /* Do we have something that looks sane?  If this a member of a
          struct, we must have a location expression; but if a member
          of a union that is irrelevant (D3 spec sec 5.6.6).  We ought
@@ -2766,7 +2780,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
                                  "<anon_field>" );
       vg_assert(fieldE.Te.Field.name);
       if (fieldE.Te.Field.typeR == D3_INVALID_CUOFF)
-         goto bad_DIE;
+         goto_bad_DIE;
       if (fieldE.Te.Field.nLoc) {
          if (!parent_is_struct) {
             /* If this is a union type, pretend we haven't seen the data
@@ -2813,7 +2827,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
          }
       }
       if (typeE.Te.TyArray.typeR == D3_INVALID_CUOFF)
-         goto bad_DIE;
+         goto_bad_DIE;
       /* On't stack! */
       typestack_push( cc, parser, td3, &typeE, level );
       goto acquire_Type;
@@ -2863,11 +2877,11 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
          (not being used to describe the bounds of a containing array
          type) */
       /* Do we have a plausible parent? */
-      if (typestack_is_empty(parser)) goto bad_DIE;
+      if (typestack_is_empty(parser)) goto_bad_DIE;
       vg_assert(ML_(TyEnt__is_type)(&parser->qparentE[parser->sp]));
       vg_assert(parser->qparentE[parser->sp].cuOff != D3_INVALID_CUOFF);
-      if (level != parser->qlevel[parser->sp]+1) goto bad_DIE;
-      if (parser->qparentE[parser->sp].tag != Te_TyArray) goto bad_DIE;
+      if (level != parser->qlevel[parser->sp]+1) goto_bad_DIE;
+      if (parser->qparentE[parser->sp].tag != Te_TyArray) goto_bad_DIE;
 
       /* Figure out if we have a definite range or not */
       if (have_lower && have_upper && (!have_count)) {
@@ -2895,7 +2909,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
          boundE.Te.Bound.boundU = 0;
       } else {
          /* FIXME: handle more cases */
-         goto bad_DIE;
+         goto_bad_DIE;
       }
 
       /* Record this bound in the parent */
@@ -2982,7 +2996,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       if (have_ty == 1 || have_ty == 0)
          goto acquire_Type;
       else
-         goto bad_DIE;
+         goto_bad_DIE;
    }
 
    /*
@@ -3051,7 +3065,6 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
   bad_DIE:
    set_position_of_Cursor( c_die,  saved_die_c_offset );
    set_position_of_Cursor( c_abbv, saved_abbv_c_offset );
-   VG_(printf)("\nparse_type_DIE: confused by:\n");
    posn = uncook_die( cc, posn, &debug_types_flag, &alt_flag );
    VG_(printf)(" <%d><%lx>: %s", level, posn, ML_(pp_DW_TAG)( dtag ) );
    if (debug_types_flag) {

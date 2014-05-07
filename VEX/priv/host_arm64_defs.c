@@ -4591,9 +4591,9 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
             case ARM64mul_ZX:
                *p++ = X_3_8_5_6_5_5(X100, X11011110, mm, X011111, nn, dd);
                goto done;
-            //case ARM64mul_SX:
-            //   *p++ = X_3_8_5_6_5_5(X100, X11011010, mm, X011111, nn, dd);
-            //   goto done;
+            case ARM64mul_SX:
+               *p++ = X_3_8_5_6_5_5(X100, X11011010, mm, X011111, nn, dd);
+               goto done;
             case ARM64mul_PLAIN:
                *p++ = X_3_8_5_6_5_5(X100, X11011000, mm, X011111, nn, dd);
                goto done;

@@ -2408,7 +2408,7 @@ static void iselInt128Expr_wrk ( HReg* rHi, HReg* rLo,
       switch (e->Iex.Binop.op) {
          /* 64 x 64 -> 128 multiply */
          case Iop_MullU64:
-         /*case Iop_MullS64:*/ {
+         case Iop_MullS64: {
             Bool syned = toBool(e->Iex.Binop.op == Iop_MullS64);
             HReg argL  = iselIntExpr_R(env, e->Iex.Binop.arg1);
             HReg argR  = iselIntExpr_R(env, e->Iex.Binop.arg2);

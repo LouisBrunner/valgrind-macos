@@ -2373,8 +2373,7 @@ Bool dis_ARM64_data_processing_register(/*MB_OUT*/DisResult* dres,
       10011011 0  10 Rm 011111 Rn Rd   SMULH Xd,Xn,Xm
    */
    if (INSN(31,24) == BITS8(1,0,0,1,1,0,1,1)
-       && INSN(22,21) == BITS2(1,0) && INSN(15,10) == BITS6(0,1,1,1,1,1)
-       && INSN(23,23) == 1/*ATC*/) {
+       && INSN(22,21) == BITS2(1,0) && INSN(15,10) == BITS6(0,1,1,1,1,1)) {
       Bool isU = INSN(23,23) == 1;
       UInt mm  = INSN(20,16);
       UInt nn  = INSN(9,5);

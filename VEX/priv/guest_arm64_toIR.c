@@ -4453,8 +4453,10 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
          return True;
       }
       if (branch_type == BITS2(0,1) /* CALL */) {
+         IRTemp dst = newTemp(Ity_I64);
+         assign(dst, getIReg64orZR(nn));
          putIReg64orSP(30, mkU64(guest_PC_curr_instr + 4));
-         putPC(getIReg64orZR(nn));
+         putPC(mkexpr(dst));
          dres->whatNext = Dis_StopHere;
          dres->jk_StopHere = Ijk_Call;
          DIP("blr %s\n", nameIReg64orZR(nn));

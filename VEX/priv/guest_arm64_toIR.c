@@ -3702,8 +3702,10 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn)
          }
 
          /* Normally rN would be updated after the transfer.  However, in
-            the special case typifed by
+            the special cases typifed by
                stp q0, q1, [sp,#-512]!
+               stp d0, d1, [sp,#-512]!
+               stp s0, s1, [sp,#-512]!
             it is necessary to update SP before the transfer, (1)
             because Memcheck will otherwise complain about a write
             below the stack pointer, and (2) because the segfault
@@ -3713,7 +3715,7 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn)
             address to the next page.
          */
          Bool earlyWBack
-           = wBack && simm7 < 0 && szB == 16
+           = wBack && simm7 < 0
              && INSN(24,23) == BITS2(1,1) && nn == 31 && !isLD;
 
          if (wBack && earlyWBack)

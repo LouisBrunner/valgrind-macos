@@ -9066,10 +9066,9 @@ TESTINST3("umulh x9,x8,x7", 0xefdd33d64e6d6a8b, 0x44e875422d202c19, x9,x8,x7,0);
 TESTINST3("umulh x9,x8,x7", 0x2b7c5939d7c0f528, 0xb73870a5a6630162, x9,x8,x7,0);
 TESTINST3("umulh x9,x8,x7", 0xe57b3a514f5207f4, 0x8ef7bac0f0ac903a, x9,x8,x7,0);
 
-//SMULH awaiting real use case
-//TESTINST3("smulh x9,x8,x7", 0xefdd33d64e6d6a8b, 0x44e875422d202c19, x9,x8,x7,0);
-//TESTINST3("smulh x9,x8,x7", 0x2b7c5939d7c0f528, 0xb73870a5a6630162, x9,x8,x7,0);
-//TESTINST3("smulh x9,x8,x7", 0xe57b3a514f5207f4, 0x8ef7bac0f0ac903a, x9,x8,x7,0);
+TESTINST3("smulh x9,x8,x7", 0xefdd33d64e6d6a8b, 0x44e875422d202c19, x9,x8,x7,0);
+TESTINST3("smulh x9,x8,x7", 0x2b7c5939d7c0f528, 0xb73870a5a6630162, x9,x8,x7,0);
+TESTINST3("smulh x9,x8,x7", 0xe57b3a514f5207f4, 0x8ef7bac0f0ac903a, x9,x8,x7,0);
 
 
 ////////////////////////////////////////////////////////////////

@@ -1749,6 +1749,18 @@ static void parse_var_DIE (
                            unitary_range_list(ip_lo, ip_hi1 - 1),
                            level,
                            False/*isFunc*/, NULL/*fbGX*/ );
+         else if (ip_lo == 0 && ip_hi1 == 0)
+            /* CU has no code, presumably?
+               Such situations have been encountered for code
+               compiled with -ffunction-sections -fdata-sections
+               and linked with --gc-sections. Completely
+               eliminated CU gives such 0 lo/hi pc. Similarly
+               to a CU which has no lo/hi/range pc, we push
+               an empty range list. */
+            varstack_push( cc, parser, td3,
+                           empty_range_list(),
+                           level,
+                           False/*isFunc*/, NULL/*fbGX*/ );
       } else
       if ((!have_lo) && (!have_hi1) && have_range) {
          varstack_push( cc, parser, td3, 

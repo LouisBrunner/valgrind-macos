@@ -44,8 +44,10 @@ Release 3.10.0 (?? ?????? 201?)
   by increasing the value.
   See user manual for details.
  
-* Support for --read-var-info=yes has been improved
-  to handle Ada and C struct containing VLA.
+* Minor improvements in dwarf handling with --read-var-info=yes
+  - Ada and C struct containing VLA do not cause a bad DIE error anymore
+  - Code compiled with -ffunction-sections -fdata-sections -Wl,--gc-sections
+    does not cause assert errors anymore.
 
 * ==================== FIXED BUGS ====================
 

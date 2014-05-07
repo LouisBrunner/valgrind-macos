@@ -6345,6 +6345,12 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          addInstr(env, ARM64Instr_VLdStD(False/*!isLoad*/, dD, addr, 0));
          return;
       }
+      if (tyd == Ity_F32) {
+         HReg sD   = iselFltExpr(env, stmt->Ist.Store.data);
+         HReg addr = iselIntExpr_R(env, stmt->Ist.Store.addr);
+         addInstr(env, ARM64Instr_VLdStS(False/*!isLoad*/, sD, addr, 0));
+         return;
+      }
 
 //ZZ       if (tyd == Ity_I16) {
 //ZZ          HReg       rD = iselIntExpr_R(env, stmt->Ist.Store.data);

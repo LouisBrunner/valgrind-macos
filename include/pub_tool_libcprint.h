@@ -37,6 +37,18 @@
    Formatting functions
    ------------------------------------------------------------------ */
 
+/* The formatting functions supports a subset (and 2 extensions) of
+   the 'printf' format.
+   The extensions are:
+     %pS : print a string (like %s) but escaping chars for XML safety.
+     %ps : with --xml=no, synonym for %s, with --xml=yes, synonym of %pS.
+
+   Note: these extensions do not cause the compiler to barf with PRINTF_CHECK
+   as for the classical printf, %p requires a pointer, which must also
+   be provided for the %ps and %pS extensions. The s/S following %p
+   are understood by PRINTF_CHECK as characters to output.
+*/
+
 extern UInt VG_(sprintf)  ( HChar* buf, const HChar* format, ... )
                           PRINTF_CHECK(2, 3);
 

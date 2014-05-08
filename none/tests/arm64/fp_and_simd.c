@@ -1480,6 +1480,90 @@ GEN_TWOVEC_TEST(dup_4h_w,  "mov x10, v17.d[0];  dup v9.4h,  w10",  9, 17)
 GEN_TWOVEC_TEST(dup_16b_w, "mov x10, v17.d[0];  dup v9.16b, w10", 9, 17)
 GEN_TWOVEC_TEST(dup_8b_w,  "mov x10, v17.d[0];  dup v9.8b,  w10",  9, 17)
 
+GEN_THREEVEC_TEST(ext_16b_16b_16b_0x0,
+                  "ext  v2.16b, v11.16b, v29.16b, #0", 2, 11, 29)
+GEN_THREEVEC_TEST(ext_16b_16b_16b_0x7,
+                  "ext  v2.16b, v11.16b, v29.16b, #7", 2, 11, 29)
+GEN_THREEVEC_TEST(ext_16b_16b_16b_0x8,
+                  "ext  v2.16b, v11.16b, v29.16b, #8", 2, 11, 29)
+GEN_THREEVEC_TEST(ext_16b_16b_16b_0x9,
+                  "ext  v2.16b, v11.16b, v29.16b, #9", 2, 11, 29)
+GEN_THREEVEC_TEST(ext_16b_16b_16b_0xF,
+                  "ext  v2.16b, v11.16b, v29.16b, #15", 2, 11, 29)
+
+GEN_THREEVEC_TEST(ext_8b_8b_8b_0x0,
+                  "ext  v2.8b, v11.8b, v29.8b, #0", 2, 11, 29)
+GEN_THREEVEC_TEST(ext_8b_8b_8b_0x1,
+                  "ext  v2.8b, v11.8b, v29.8b, #1", 2, 11, 29)
+GEN_THREEVEC_TEST(ext_8b_8b_8b_0x6,
+                  "ext  v2.8b, v11.8b, v29.8b, #6", 2, 11, 29)
+GEN_THREEVEC_TEST(ext_8b_8b_8b_0x7,
+                  "ext  v2.8b, v11.8b, v29.8b, #7", 2, 11, 29)
+
+
+GEN_TWOVEC_TEST(ins_d0_d0, "ins v3.d[0], v24.d[0]", 3, 24)
+GEN_TWOVEC_TEST(ins_d0_d1, "ins v3.d[0], v24.d[1]", 3, 24)
+GEN_TWOVEC_TEST(ins_d1_d0, "ins v3.d[1], v24.d[0]", 3, 24)
+GEN_TWOVEC_TEST(ins_d1_d1, "ins v3.d[1], v24.d[1]", 3, 24)
+
+GEN_TWOVEC_TEST(ins_s0_s2, "ins v3.s[0], v24.s[2]", 3, 24)
+GEN_TWOVEC_TEST(ins_s3_s0, "ins v3.s[3], v24.s[0]", 3, 24)
+GEN_TWOVEC_TEST(ins_s2_s1, "ins v3.s[2], v24.s[1]", 3, 24)
+GEN_TWOVEC_TEST(ins_s1_s3, "ins v3.s[1], v24.s[3]", 3, 24)
+
+GEN_TWOVEC_TEST(ins_h0_h6, "ins v3.h[0], v24.h[6]", 3, 24)
+GEN_TWOVEC_TEST(ins_h7_h0, "ins v3.h[7], v24.h[0]", 3, 24)
+GEN_TWOVEC_TEST(ins_h6_h1, "ins v3.h[6], v24.h[1]", 3, 24)
+GEN_TWOVEC_TEST(ins_h1_h7, "ins v3.h[1], v24.h[7]", 3, 24)
+
+GEN_TWOVEC_TEST(ins_b0_b14, "ins v3.b[0],  v24.b[14]", 3, 24)
+GEN_TWOVEC_TEST(ins_b15_b8, "ins v3.b[15], v24.b[8]",  3, 24)
+GEN_TWOVEC_TEST(ins_b13_b9, "ins v3.b[13], v24.b[9]",  3, 24)
+GEN_TWOVEC_TEST(ins_b5_b12, "ins v3.b[5],  v24.b[12]", 3, 24)
+
+GEN_THREEVEC_TEST(mla_4s_4s_s0, "mla v2.4s, v11.4s, v29.s[0]", 2, 11, 29)
+GEN_THREEVEC_TEST(mla_4s_4s_s3, "mla v2.4s, v11.4s, v29.s[3]", 2, 11, 29)
+GEN_THREEVEC_TEST(mla_2s_2s_s0, "mla v2.2s, v11.2s, v29.s[0]", 2, 11, 29)
+GEN_THREEVEC_TEST(mla_2s_2s_s3, "mla v2.2s, v11.2s, v29.s[3]", 2, 11, 29)
+// For the 'h' version of these, Rm can only be <= 15 (!)
+GEN_THREEVEC_TEST(mla_8h_8h_h1, "mla v2.8h, v11.8h, v2.h[1]", 2, 11, 9)
+GEN_THREEVEC_TEST(mla_8h_8h_h5, "mla v2.8h, v11.8h, v2.h[5]", 2, 11, 9)
+GEN_THREEVEC_TEST(mla_4h_4h_h2, "mla v2.4h, v11.4h, v2.h[2]", 2, 11, 9)
+GEN_THREEVEC_TEST(mla_4h_4h_h7, "mla v2.4h, v11.4h, v2.h[7]", 2, 11, 9)
+
+GEN_THREEVEC_TEST(mls_4s_4s_s0, "mls v2.4s, v11.4s, v29.s[0]", 2, 11, 29)
+GEN_THREEVEC_TEST(mls_4s_4s_s3, "mls v2.4s, v11.4s, v29.s[3]", 2, 11, 29)
+GEN_THREEVEC_TEST(mls_2s_2s_s0, "mls v2.2s, v11.2s, v29.s[0]", 2, 11, 29)
+GEN_THREEVEC_TEST(mls_2s_2s_s3, "mls v2.2s, v11.2s, v29.s[3]", 2, 11, 29)
+// For the 'h' version of these, Rm can only be <= 15 (!)
+GEN_THREEVEC_TEST(mls_8h_8h_h1, "mls v2.8h, v11.8h, v2.h[1]", 2, 11, 9)
+GEN_THREEVEC_TEST(mls_8h_8h_h5, "mls v2.8h, v11.8h, v2.h[5]", 2, 11, 9)
+GEN_THREEVEC_TEST(mls_4h_4h_h2, "mls v2.4h, v11.4h, v2.h[2]", 2, 11, 9)
+GEN_THREEVEC_TEST(mls_4h_4h_h7, "mls v2.4h, v11.4h, v2.h[7]", 2, 11, 9)
+
+/* overkill -- don't need two vecs, only one */
+GEN_TWOVEC_TEST(movi_16b_0x9C_lsl0, "movi v22.16b, #0x9C, LSL #0", 22, 23)
+GEN_TWOVEC_TEST(movi_8b_0x8B_lsl0,  "movi v22.8b,  #0x8B, LSL #0", 22, 23)
+GEN_TWOVEC_TEST(movi_8h_0x5A_lsl0,  "movi v22.8h,  #0x5A, LSL #0", 22, 23)
+GEN_TWOVEC_TEST(movi_8h_0xA5_lsl8,  "movi v22.8h,  #0xA5, LSL #8", 22, 23)
+GEN_TWOVEC_TEST(movi_4h_0x5A_lsl0,  "movi v22.4h,  #0x5A, LSL #0", 22, 23)
+GEN_TWOVEC_TEST(movi_4h_0xA5_lsl8,  "movi v22.4h,  #0xA5, LSL #8", 22, 23)
+GEN_TWOVEC_TEST(movi_4s_0x5A_lsl0,  "movi v22.4s,  #0x5A, LSL #0",  22, 23)
+GEN_TWOVEC_TEST(movi_4s_0x6B_lsl8,  "movi v22.4s,  #0x6B, LSL #8",  22, 23)
+GEN_TWOVEC_TEST(movi_4s_0x49_lsl16, "movi v22.4s,  #0x49, LSL #16", 22, 23)
+GEN_TWOVEC_TEST(movi_4s_0x3D_lsl24, "movi v22.4s,  #0x3D, LSL #24", 22, 23)
+GEN_TWOVEC_TEST(movi_2s_0x5A_lsl0,  "movi v22.2s,  #0x5A, LSL #0",  22, 23)
+GEN_TWOVEC_TEST(movi_2s_0x6B_lsl8,  "movi v22.2s,  #0x6B, LSL #8",  22, 23)
+GEN_TWOVEC_TEST(movi_2s_0x49_lsl16, "movi v22.2s,  #0x49, LSL #16", 22, 23)
+GEN_TWOVEC_TEST(movi_2s_0x3D_lsl24, "movi v22.2s,  #0x3D, LSL #24", 22, 23)
+GEN_TWOVEC_TEST(movi_4s_0x6B_msl8,  "movi v22.4s,  #0x6B, MSL #8", 22, 23)
+GEN_TWOVEC_TEST(movi_4s_0x94_msl16, "movi v22.4s,  #0x94, MSL #16", 22, 23)
+GEN_TWOVEC_TEST(movi_2s_0x7A_msl8,  "movi v22.2s,  #0x7A, MSL #8", 22, 23)
+GEN_TWOVEC_TEST(movi_2s_0xA5_msl16, "movi v22.2s,  #0xA5, MSL #16", 22, 23)
+
+GEN_TWOVEC_TEST(movi_d_0xA5,  "movi d22,    #0xFF00FF0000FF00FF", 22, 23)
+GEN_TWOVEC_TEST(movi_2d_0xB4, "movi v22.2d, #0xFF00FFFF00FF0000", 22, 23)
+
 
 /* ---------------------------------------------------------------- */
 /* -- main()                                                     -- */
@@ -1920,31 +2004,30 @@ int main ( void )
    // orr      4s,2s   #imm8, LSL #0, 8, 16 or 24
    // bic      8h,4h   #imm8, LSL #0 or 8
    // bic      4s,2s   #imm8, LSL #0, 8, 16 or 24
-   // also movi, mvni (INCOMPLETE?)
    test_orr_8h_0x5A_lsl0(TyH);
    test_orr_8h_0xA5_lsl8(TyH);
    test_orr_4h_0x5A_lsl0(TyH);
    test_orr_4h_0xA5_lsl8(TyH);
-   test_orr_4s_0x5A_lsl0(TyH);
-   test_orr_4s_0x6B_lsl8(TyH);
-   test_orr_4s_0x49_lsl16(TyH);
-   test_orr_4s_0x3D_lsl24(TyH);
-   test_orr_2s_0x5A_lsl0(TyH);
-   test_orr_2s_0x6B_lsl8(TyH);
-   test_orr_2s_0x49_lsl16(TyH);
-   test_orr_2s_0x3D_lsl24(TyH);
+   test_orr_4s_0x5A_lsl0(TyS);
+   test_orr_4s_0x6B_lsl8(TyS);
+   test_orr_4s_0x49_lsl16(TyS);
+   test_orr_4s_0x3D_lsl24(TyS);
+   test_orr_2s_0x5A_lsl0(TyS);
+   test_orr_2s_0x6B_lsl8(TyS);
+   test_orr_2s_0x49_lsl16(TyS);
+   test_orr_2s_0x3D_lsl24(TyS);
    test_bic_8h_0x5A_lsl0(TyH);
    test_bic_8h_0xA5_lsl8(TyH);
    test_bic_4h_0x5A_lsl0(TyH);
    test_bic_4h_0xA5_lsl8(TyH);
-   test_bic_4s_0x5A_lsl0(TyH);
-   test_bic_4s_0x6B_lsl8(TyH);
-   test_bic_4s_0x49_lsl16(TyH);
-   test_bic_4s_0x3D_lsl24(TyH);
-   test_bic_2s_0x5A_lsl0(TyH);
-   test_bic_2s_0x6B_lsl8(TyH);
-   test_bic_2s_0x49_lsl16(TyH);
-   test_bic_2s_0x3D_lsl24(TyH);
+   test_bic_4s_0x5A_lsl0(TyS);
+   test_bic_4s_0x6B_lsl8(TyS);
+   test_bic_4s_0x49_lsl16(TyS);
+   test_bic_4s_0x3D_lsl24(TyS);
+   test_bic_2s_0x5A_lsl0(TyS);
+   test_bic_2s_0x6B_lsl8(TyS);
+   test_bic_2s_0x49_lsl16(TyS);
+   test_bic_2s_0x3D_lsl24(TyS);
 
    // bif      16b,8b (vector) (bit insert if false)
    // bit      16b,8b (vector) (bit insert if true)
@@ -2128,14 +2211,55 @@ int main ( void )
    test_dup_8b_w(TyB);
 
    // ext      16b,8b,#imm4 (concat 2 vectors, then slice)
+   test_ext_16b_16b_16b_0x0(TyB);
+   test_ext_16b_16b_16b_0x7(TyB);
+   test_ext_16b_16b_16b_0x8(TyB);
+   test_ext_16b_16b_16b_0x9(TyB);
+   test_ext_16b_16b_16b_0xF(TyB);
+   test_ext_8b_8b_8b_0x0(TyB);
+   test_ext_8b_8b_8b_0x1(TyB);
+   test_ext_8b_8b_8b_0x6(TyB);
+   test_ext_8b_8b_8b_0x7(TyB);
 
    // ins      d[]_d[],s[]_s[],h[]_h[],b[]_b[]
+   test_ins_d0_d0(TyD);
+   test_ins_d0_d1(TyD);
+   test_ins_d1_d0(TyD);
+   test_ins_d1_d1(TyD);
+   test_ins_s0_s2(TyS);
+   test_ins_s3_s0(TyS);
+   test_ins_s2_s1(TyS);
+   test_ins_s1_s3(TyS);
+   test_ins_h0_h6(TyH);
+   test_ins_h7_h0(TyH);
+   test_ins_h6_h1(TyH);
+   test_ins_h1_h7(TyH);
+   test_ins_b0_b14(TyB);
+   test_ins_b15_b8(TyB);
+   test_ins_b13_b9(TyB);
+   test_ins_b5_b12(TyB);
 
    // ins      d[]_x, s[]_w, h[]_w, b[]_w
    test_INS_general();
 
    // mla   4s_4s_s[],2s_2s_s[],8h_8h_h[],4h_4h_h[]
    // mls   4s_4s_s[],2s_2s_s[],8h_8h_h[],4h_4h_h[]
+   test_mla_4s_4s_s0(TyS);
+   test_mla_4s_4s_s3(TyS);
+   test_mla_2s_2s_s0(TyS);
+   test_mla_2s_2s_s3(TyS);
+   test_mla_8h_8h_h1(TyH);
+   test_mla_8h_8h_h5(TyH);
+   test_mla_4h_4h_h2(TyH);
+   test_mla_4h_4h_h7(TyH);
+   test_mls_4s_4s_s0(TyS);
+   test_mls_4s_4s_s3(TyS);
+   test_mls_2s_2s_s0(TyS);
+   test_mls_2s_2s_s3(TyS);
+   test_mls_8h_8h_h1(TyH);
+   test_mls_8h_8h_h5(TyH);
+   test_mls_4h_4h_h2(TyH);
+   test_mls_4h_4h_h7(TyH);
 
    // mla   4s,2s,8h,4h,16b,8b
    // mls   4s,2s,8h,4h,16b,8b
@@ -2153,11 +2277,35 @@ int main ( void )
    test_mls_8b_8b_8b(TyB);
 
    // movi  16b,8b   #imm8, LSL #0
+   test_movi_16b_0x9C_lsl0(TyB);
+   test_movi_8b_0x8B_lsl0(TyB);
+
    // movi  8h,4h    #imm8, LSL #0 or 8
+   test_movi_8h_0x5A_lsl0(TyH);
+   test_movi_8h_0xA5_lsl8(TyH);
+   test_movi_4h_0x5A_lsl0(TyH);
+   test_movi_4h_0xA5_lsl8(TyH);
+
    // movi  4s,2s    #imm8, LSL #0, 8, 16, 24
+   test_movi_4s_0x5A_lsl0(TyS);
+   test_movi_4s_0x6B_lsl8(TyS);
+   test_movi_4s_0x49_lsl16(TyS);
+   test_movi_4s_0x3D_lsl24(TyS);
+   test_movi_2s_0x5A_lsl0(TyS);
+   test_movi_2s_0x6B_lsl8(TyS);
+   test_movi_2s_0x49_lsl16(TyS);
+   test_movi_2s_0x3D_lsl24(TyS);
+
    // movi  4s,2s    #imm8, MSL #8 or 16
+   test_movi_4s_0x6B_msl8(TyS);
+   test_movi_4s_0x94_msl16(TyS);
+   test_movi_2s_0x7A_msl8(TyS);
+   test_movi_2s_0xA5_msl16(TyS);
+
    // movi  d,       #imm64
    // movi  2d,      #imm64
+   test_movi_d_0xA5(TyD);
+   test_movi_2d_0xB4(TyD);
 
    // mul   4s_4s_s[],2s_2s_s[],8h_8h_h[],4h_4h_h[]
 

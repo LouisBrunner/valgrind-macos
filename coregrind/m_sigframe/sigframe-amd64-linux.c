@@ -521,6 +521,16 @@ void VG_(sigframe_create)( ThreadId tid,
    tst->arch.vex.guest_RDI = (ULong) siginfo->si_signo;
    tst->arch.vex.guest_RSI = (Addr) &frame->sigInfo;
    tst->arch.vex.guest_RDX = (Addr) &frame->uContext;
+   /* And tell the tool that these registers have been written. */
+   VG_TRACK( post_reg_write, Vg_CoreSignal, tst->tid,
+             offsetof(VexGuestAMD64State,guest_RIP), sizeof(UWord) );
+   VG_TRACK( post_reg_write, Vg_CoreSignal, tst->tid,
+             offsetof(VexGuestAMD64State,guest_RDI), sizeof(UWord) );
+   VG_TRACK( post_reg_write, Vg_CoreSignal, tst->tid,
+             offsetof(VexGuestAMD64State,guest_RSI), sizeof(UWord) );
+   VG_TRACK( post_reg_write, Vg_CoreSignal, tst->tid,
+             offsetof(VexGuestAMD64State,guest_RDX), sizeof(UWord) );
+
    /* This thread needs to be marked runnable, but we leave that the
       caller to do. */
 

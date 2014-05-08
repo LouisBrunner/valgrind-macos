@@ -39,12 +39,12 @@ static int readchar (int single);
 
 void remote_utils_output_status(void);
 
-static int remote_desc;
+#define INVALID_DESCRIPTOR -1
+static int remote_desc = INVALID_DESCRIPTOR;
 
 static VgdbShared *shared;
 static int  last_looked_cntr = -1;
 static struct vki_pollfd remote_desc_pollfdread_activity;
-#define INVALID_DESCRIPTOR -1
 
 /* for a gdbserver embedded in valgrind, we read from a FIFO and write
    to another FIFO So, we need two descriptors */
@@ -341,15 +341,17 @@ void remote_open (const HChar *name)
       VG_(close) (shared_mem_fd);
    }
    
-   /* we open the read side FIFO in non blocking mode
-      We then set the fd in blocking mode.
-      Opening in non-blocking read mode always succeeds while opening
-      in non-blocking write mode succeeds only if the fifo is already
-      opened in read mode. So, we wait till we have read the first
-      character from the read side before opening the write side. */
-   remote_desc = open_fifo ("read", from_gdb, VKI_O_RDONLY|VKI_O_NONBLOCK);
-   save_fcntl_flags = VG_(fcntl) (remote_desc, VKI_F_GETFL, 0);
-   VG_(fcntl) (remote_desc, VKI_F_SETFL, save_fcntl_flags & ~VKI_O_NONBLOCK);
+   if (remote_desc == INVALID_DESCRIPTOR) {
+      /* we open the read side FIFO in non blocking mode
+         We then set the fd in blocking mode.
+         Opening in non-blocking read mode always succeeds while opening
+         in non-blocking write mode succeeds only if the fifo is already
+         opened in read mode. So, we wait till we have read the first
+         character from the read side before opening the write side. */
+      remote_desc = open_fifo ("read", from_gdb, VKI_O_RDONLY|VKI_O_NONBLOCK);
+      save_fcntl_flags = VG_(fcntl) (remote_desc, VKI_F_GETFL, 0);
+      VG_(fcntl) (remote_desc, VKI_F_SETFL, save_fcntl_flags & ~VKI_O_NONBLOCK);
+   }
    remote_desc_pollfdread_activity.fd = remote_desc;
    remote_desc_pollfdread_activity.events = VKI_POLLIN;
    remote_desc_pollfdread_activity.revents = 0;
@@ -386,13 +388,19 @@ void remote_finish (FinishReason reason)
    if (write_remote_desc != INVALID_DESCRIPTOR)
       VG_(close) (write_remote_desc);
    write_remote_desc = INVALID_DESCRIPTOR;
-   if (remote_desc != INVALID_DESCRIPTOR) {
+   
+   if (remote_desc != INVALID_DESCRIPTOR && reason != reset_after_error) {
+      /* Fully close the connection, either due to orderly_finish or
+         to reset_after_fork.
+         For reset_after_error, keep the reading side opened, to always be
+         ready to accept new vgdb connection. */
+      vg_assert (reason == reset_after_fork || reason == orderly_finish);
       remote_desc_pollfdread_activity.fd = INVALID_DESCRIPTOR;
       remote_desc_pollfdread_activity.events = 0;
       remote_desc_pollfdread_activity.revents = 0;
       VG_(close) (remote_desc);
+      remote_desc = INVALID_DESCRIPTOR;
    }
-   remote_desc = INVALID_DESCRIPTOR;
    noack_mode = False;
    
    /* ensure the child will create its own FIFOs */

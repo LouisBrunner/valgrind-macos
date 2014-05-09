@@ -640,7 +640,7 @@ if VGCONF_OS_IS_DARWIN
 
 BUILT_SOURCES += fixup_macho_loadcmds
 fixup_macho_loadcmds: fixup_macho_loadcmds.c
-	$(CC) -g -Wall -o fixup_macho_loadcmds fixup_macho_loadcmds.c
+	$(CC) -g -Wall -o $@ $<
 
 CLEANFILES += fixup_macho_loadcmds
 

@@ -65,12 +65,12 @@ CLEANFILES     = default.supp
 default.supp: $(DEFAULT_SUPP_FILES)
 	echo "# This is a generated file, composed of the following suppression rules:" > default.supp
 	echo "# " $(DEFAULT_SUPP_FILES) >> default.supp
-	cat $(DEFAULT_SUPP_FILES) >> default.supp
+	cat $^ >> default.supp
 
 ## Preprend @PERL@ because tests/vg_regtest isn't executable
 ## Ensure make exits with error if PERL fails or post_regtest_checks fails.
 regtest: check
-	gdbserver_tests/make_local_links $(GDB)
+	$(top_srcdir)/gdbserver_tests/make_local_links $(GDB)
 	if @PERL@ tests/vg_regtest gdbserver_tests $(TOOLS) $(EXP_TOOLS) ; then \
 	   tests/post_regtest_checks $(abs_top_srcdir) gdbserver_tests $(TOOLS) $(EXP_TOOLS); \
 	else \

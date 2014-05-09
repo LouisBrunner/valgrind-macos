@@ -64,10 +64,20 @@ where XXXXXX is the bug number as listed below.
 
 175819  Support for ipv6 socket reporting with --track-fds
 308729  vex x86->IR: unhandled instruction bytes 0xf 0x5 (syscall) 
+325110  Add test-cases for Power ISA 2.06 insns: divdo/divdo. and divduo/divduo.
+325124  [MIPSEL] Compilation error
+325477  Phase 4 support for IBM Power ISA 2.07
+325628  Phase 5 support for IBM Power ISA 2.07
 325714  Empty vgcore but RLIMIT_CORE is big enough (too big) 
+325751  Missing the two privileged Power PC Transactional Memory Instructions
+325816  Phase 6 support for IBM Power ISA 2.07
 325856  Make SGCheck fail gracefully on unsupported platforms
+326436  DRD: False positive in libstdc++ std::list::push_back
 326444  Cavium MIPS Octeon Specific Load Indexed Instructions
 326462  Refactor vgdb to isolate invoker stuff into separate module
+326623  DRD: false positive conflict report in a field assignment
+326816  Intercept for __strncpy_sse2_unaligned missing?
+326921  coregrind fails to compile m_trampoline.S with MIPS/Linux port of V
 326983  Clear direction flag after tests on amd64.
 327212  Do not prepend the current directory to absolute path names.
 327238  Callgrind Assertion 'passed <= last_bb->cjmp_count' failed
@@ -80,9 +90,12 @@ where XXXXXX is the bug number as listed below.
 328711  valgrind.1 manpage "memcheck options" section is badly generated
 329612  Incorrect handling of AT_BASE for image execution 
 329956  valgrind crashes when lmw/stmw instructions are used on ppc64
+330228  mmap must align to VKI_SHMLBA on mips32
 330459  --track-fds=yes doesn't track eventfds
 330469  Add clock_adjtime syscall support
+330622  Add test to regression suite for POWER instruction: dcbzl
 330939  Support for AMD's syscall instruction on x86
+        == 308729
 330941  Typo in PRE(poll) syscall wrapper
 331254  Fix expected output for memcheck/tests/dw4
 331255  Fix race condition in test none/tests/coolo_sigaction
@@ -96,8 +109,14 @@ where XXXXXX is the bug number as listed below.
 332037  Valgrind cannot handle Thumb "add pc, reg"
 332055  drd asserts on platforms with VG_STACK_REDZONE_SZB == 0 and
         consistency checks enabled
-333230  AAarch64 missing instruction encodings: dc, ic, dsb.
+332263  intercepts for pthread_rwlock_timedrdlock and
+        pthread_rwlock_timedwrlock are incorrect
+332265  drd could do with post-rwlock_init and pre-rwlock_destroy
+        client requests
+332276  Implement additional Xen hypercalls
+332658  ldrd.w r1, r2, [PC, #imm] does not adjust for 32bit alignment
 333228  AAarch64 Missing instruction encoding: mrs %[reg], ctr_el0
+333230  AAarch64 missing instruction encodings: dc, ic, dsb.
 333666  Recognize MPX instructions and bnd prefix.
 n-i-bz  Fix KVM_CREATE_IRQCHIP ioctl handling
 n-i-bz  s390x: Fix memory corruption for multithreaded applications

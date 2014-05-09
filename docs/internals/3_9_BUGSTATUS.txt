@@ -1,170 +1,179 @@
 
 Bugs reported after Thu Sep 19 10:34:49 CEST 2013
-
 For bugs reported before this time, see 3_8_BUGSTATUS.txt
 
-325110  Add test-cases for Power ISA 2.06 insns: divdo/divdo. and divduo/divduo.
-325124  [MIPSEL] Compilation error
-325222  eight bad if statements ?
-325266  unhandled instruction bytes: 0xC4 0xC2 0x79 0xF7 0xC9 0x89 0x45 0x80
+=== VEX/amd64 ==========================================================
+
 325328  __float128 loses precision under memcheck
-325333  VALGRIND_HG_DISABLE_CHECKING does not seem to work locally
-325477  Phase 4 support for IBM Power ISA 2.07
-325538  cavim octeon mips64 ，valgrind reported "dumping core" and "Assertion 'sizeof(*regs) == sizeof(prs->pr_reg)' failed.
-325628  Phase 5 support for IBM Power ISA 2.07
-325751  Missing the  two privileged Power PC Transactional Memory Instructions
-325816  Phase 6 support for IBM Power ISA 2.07
-325874  Crash KCachegrind while load big file
-326026  Iop names for count leading zeros/sign bits incorrectly imply a "signedness" in incoming lanes
-326436  False positive in libstdc++ std::list::push_back
-326469  unhandled instruction bytes: 0x66 0xF 0x3A 0x63 0xC1 0xE 0x89 0xC8
-326487  child of debugged process exits without becoming zombie
-326623  A false positive conflict report in a field assignment in a constructor
-326724  Valgrind does not compile on OSX 1.9 Mavericks
-326797  Assertion 'sizeof(UWord) == sizeof(UInt)' failed.
-326816  Intercept for __strncpy_sse2_unaligned missing?
+        == 197915
+326469  amd64->IR: 0x66 0xF 0x3A 0x63 0xC1 0xE 0x89 0xC8 (pcmpistri)
 326821  Double overflow/underflow handling broken (after exp())
-326839  Don't see a writing into a none allocated memory
-326921  coregrind fails to compile m_trampoline.S with MIPS/Linux port of Valgrind
-326955  64 bit false positive  move depends on uninitialised value wcscpy
-327138  valgrind.h __VALGRIND_MINOR__  says 8, in 3.9.0 tarball
-327151  valgrind appears to stop compiling when it enters the drd directory
-327155  Valgrind compilation hang on MIPS
-327223  Support for Cavium MIPS Octeon Atomic and Count Instructions
-327285  vex amd64->IR: unhandled instruction bytes: 0x8F 0xEA 0xF8 0x10 0xCE 0x3 0x1D 0x0
-327427  ifunc wrapper crashes when symbols are discarded because of false mmap overlaps
-327548  false positive while destroying mutex
-327583  libpixman error on ARM system
+327285  amd64->IR: 0x8F 0xEA 0xF8 0x10 0xCE 0x3 0x1D 0x0
+        == 323431
 327639  vex amd64->IR pcmpestri SSE4.2 instruction is unsupported 0x34
-327665  out of memory error
-327745  valgrind 3.9.0 build fails on Mac OS X 10.6.8
-327859  Support for android devices
-327881  False Positive Warning on std::atomic_bool
-327943  s390x missing index/strchr suppression for ld.so (bad backtrace?)
-327945  valgrind_3.9.0 failed to compile in ppc 32
-328011  3.9.0 segfaults running any program, on any valgrind tool
-328081  embedded gdbserver and non-stop mode
-328089  unhandled instruction bytes: 0xF0 0xF 0xC0 0x10
-328147  vex mips->IR: unhandled instruction bytes: 0x0 0x0 0x0 0xE
-328357  vex amd64->IR: unhandled instruction bytes: 0x8F 0xEA 0xF8 0x10 0xEF 0x3 0x5 0x0
-328423  Unrecognised instructions: _fips_armv7_tick and _armv7_tick
-328441  valgrind_3.9.0 failed to compile in mips32 “Error: illegal operands `cfc1 $t0,$31'”
-328454  add support Backtraces with ARM unwind tables (EXIDX)
-328468  unwind x86/amd64 gcc <= 4.4 compiled code does not unwind properly at "ret" instruction
-328490  drd reports false positive for concurrent __atomic_base access
-328549  Valgrind crashes on Android 4.4 / x86 on most programs
-328559  Some back trace generation (from mmap function) problem on ARM
-328563  make track-fds support xml output
-328721  MSVC 2008 compiler warns about while(0) in warning level 4
-328730  Unimplemented system call #531 in FreeBSD: SYS_posix_fadvise
-328747  Valgrind memcheck exits with SIGTRAP on PPC
 328878  vex amd64->IR pcmpestri SSE4.2 instruction is unsupported 0x14
-329104  kcachegrind crashs when on loading some of my cachegrind traces (SIGFPE).
-329245  unhandled instruction bytes: 0x48 0xF 0x5A 0x7 0x48 0xF 0x5A 0x4F
-329619  leak-check gets assertion failure when nesting VALGRIND_MALLOCLIKE_BLOCK
-329694  clang warns about using uninitialized variable
-329726  Mozilla
-329737  KCachegrind stores translated messages to config file
-329956  valgrind crashes when lmw/stmw instructions are used on ppc64
-329963  Half precision floating point conversion on ARM is not supported
-330147  libmpiwrap: byte count from PMPI_Get_count should be made defined
-330152  vex amd64->IR: unhandled instruction bytes: 0xC5 0xFB 0x10 0x4 0x25 0xB0 0xCA 0x41
-330180  False positive in v4l2?
-330228  mmap must align to VKI_SHMLBA on mips32
-330254  Exit code of original app should be accessible
-330257  LLVM does not support `-mno-dynamic-no-pic` option
-330293  Please add a AppData application description
-330319  unhandled instruction bytes: 0xF 0x1 0xD5 0x31 0xC0 0xC3 0x48 0x8D
-330321  Serious error when reading debug info - DW_AT_signature 9b d0 55 13 bb 1e e9 37
-330349  Endless loop happen when using lackey with --trace-mem=yes on ARM
+328089  amd64->IR: 0xF0 0xF 0xC0 0x10
+328357  amd64->IR: 0x8F 0xEA 0xF8 0x10 0xEF 0x3 0x5 0x0
+329245  amd64->IR: 0x48 0xF 0x5A 0x7 0x48 0xF 0x5A 0x4F
+330319  amd64->IR: 0xF 0x1 0xD5 0x31 0xC0 0xC3 0x48 0x8D (xend)
 330590  Missing support for multiple VEX CMP instruction Opcodes (Causes SIGILL)
-330594  Missing sysalls on PowerPC / uClibc
-330617  ppc false positive conditional jump depends on uninitialised value
-330622  Add test to regression suite for POWER instruction: dcbzl
+330808  Crash with Intel IPP samples (MMX related assertion)
 
-Wed Feb  5 14:58:25 CET 2014
+=== VEX/arm ============================================================
 
-330808  Crash with Intel IPP samples.
-330887  doRegisterAllocation performance improvements
-330939  Support for AMD's syscall instruction on x86
-330940  valgrind's gdbserver should send a target XML on x86 even
-        when shadow registers are not exposed
-330941  typo in PRE(poll) syscall wrapper
-331027  PPC blr instruction also inserts a conditional exit
-331033  valgrind crashes on arm -linux while running an executable
-331057  unhandled instruction: 0xEEE01B20 (vfma.f64)
-331126  Compiling with mipsbe toolchain
+328423  Unrecognised instructions: _fips_armv7_tick and _armv7_tick
+329963  Half precision floating point conversion on ARM is not supported
+330349  Endless loop happen when using lackey with --trace-mem=yes on ARM
+331057  unhandled instruction: 0xEEE01B20 (vfma.f64) (has patch)
 331178  disInstr(arm): unhandled instruction: 0xEE190F1D
-331254  fix expected output for memcheck/tests/dw4 on 32-bit and
-        64-bit platforms
-331255  Fix race condition in test none/tests/coolo_sigaction
-331257  Fix type of jump buffer in test none/tests/faultstatus
-331279  Hardcoding MIPS arch CFLAGS causes compilation error
-331282  Compilation failure on MIPS64 o32 ABI
-331305  support shells other than Bash
-331311  Valgrind shows open files in /proc/self/fd that don't
-        work for the process
-331314  [MIPS]Valgrind crash just after startup
-331337  s390x WARNING: unhandled syscall: 326 (dup3)
-331380  Syscall param timer_create(evp) points to uninitialised byte(s)
-331476  Patch to handle ioctl 0x5422 on Linux (x86 and amd64)
-331550  Detect the potential of mis-malloc/free in different libraries
-331744  cannot open camera with OpenCV/v4l under valgrind
-331751  unhandled instruction bytes: 0xC5 0xFB 0x10 0xD 0x0 0x1B 0x1 0x0
-331829  Unexpected ioctl opcode sign extension
-331830  ppc64: WARNING: unhandled syscall:  96/97
-331833  the memory initialized by semget(key, 0, GETALL, semun)
-        is treated as uninitialized on some platforms
-331839  test drd/tests/sem_open specifies invalid semaphore name
-331847  drd/tests/thread_name is racy and its outcome is nondeterministic
-331903  test drd/tests/annotate_hb_race is racy and its outcome
-        is nondeterministic
-331904  test drd/tests/atomic_var is racy and its outcome is nondeterministic
-331906  test drd/tests/rwlock_race is racy and its outcome is nondeterministic
-332037  Valgrind cannot handle Thumb "add pc, r0"
-332055  drd asserts on platforms with VG_STACK_REDZONE_SZB == 0
-        and consistency checks enabled
-332060  Please document how best to use massif with libgc
-332263  intercepts for pthread_rwlock_timedrdlock and
-        pthread_rwlock_timedwrlock are incorrect
-332265  drd could do with post-rwlock_init and pre-rwlock_destroy
-        client requests
-332276  Implement additional Xen hypercalls
-332577  exp-sgcheck: sg_main.c:560 (add_blocks_to_StackTree):
-        Assertion '!already_present' failed.
-332591  False positive: invalid read in vfprintf
-332658  ldrd.w r1, r2, [PC, #imm] does not adjust for 32bit alignment
-332765  ms_print reports bad error if temp file can't be created
-        in current directory
-332876  valgrind (memcheck) hangs intermittently
-332917  Valgrind should warn the user that SSE4 is not supported 
-        in the 32-bit mode
-333024  Reports memory leak only if I run part of a code in a
-        loop(>=2). It must report memory leak in the very first loop.
-333051  handling hugepages
-333072  DRD: semaphore annotations
+        Probably WONTFIX or CANTFIX
 333145  Tests for missaligned PC+#imm access for arm
-333175  dwarf3 reader problems with Fortran
-333228  AAarch64 Missing instruction encoding: mrs %[reg], ctr_el0
-333230  AAarch64 missing instruction encodings: dc, ic, dsb.
-333248  WARNING: unhandled syscall: unix:443
 333428  ldr.w pc [rD, #imm] instruction leads to assertion
-333434  In some weird corner case Valgrind cannot execute
-        executable files symlinked by /proc/self/fd
-333501  [cachegrind - 3.9] LL cache configuration not supported:
-        Cache set count is not a power of two.
+
+=== VEX/x86 ============================================================
+
 333625  Program under valgrind calculates complex exp() wrogly
-333628  Out of tree build
-333666  No MPX (bndmov) instruction support in VEX
-333775  Wishlist: Have valgrind (memcheck) only check memory
-        alloc/free traces
-333788  Valgrind does not support the CDROM_DISC_STATUS ioctl
-333817  Valgrind reports the memory areas written to by the SG_IO
-        ioctl as untouched
 334049  lzcnt fails silently (x86_32)
-334110  Why install internal headers/libraries/.pc file?
-334157  amd64->IR: 0xF3 0x48 0xF 0xBC 0x16 0x83 0x7D 0xB8
+
+=== VEX/mips ===========================================================
+
+327223  Support for Cavium MIPS Octeon Atomic and Count Instructions
+328147  vex mips->IR: unhandled instruction bytes: 0x0 0x0 0x0 0xE
+
+=== VEX/ppc ============================================================
+
 334384  Valgrind does not have support Little Endian support for
         IBM POWER PPC 64
+
+=== VEX general ========================================================
+
+326026  Iop names for count leading zeros/sign bits incorrectly imply a
+        "signedness" in incoming lanes
+330887  doRegisterAllocation performance improvements
+
+=== Syscalls/ioctls ====================================================
+
+330594  Missing sysalls on PowerPC / uClibc
+331311  Valgrind shows open files in /proc/self/fd that don't
+        work for the process
+        Probable wontfix
+333434  In some weird corner case Valgrind cannot execute
+        executable files symlinked by /proc/self/fd (related to 331311?)
+331476  Patch to handle ioctl 0x5422 on Linux (x86 and amd64) (landable?)
+331829  Unexpected ioctl opcode sign extension
+333051  handling hugepages (is largely broken)
+333788  Valgrind does not support the CDROM_DISC_STATUS ioctl (has patch)
+333817  Valgrind reports the memory areas written to by the SG_IO
+        ioctl as untouched
+
+=== Debuginfo reader ===================================================
+
+327427  ifunc wrapper crashes when symbols are discarded because of false mmap
+        overlaps
+328454  add support Backtraces with ARM unwind tables (EXIDX) (wishlist)
+328468  unwind x86/amd64 gcc <= 4.4 compiled code does not unwind properly
+        at "ret" instruction
+328559  Some back trace generation (from mmap function) problem on ARM
+330321  Serious error when reading debug info:
+        DW_AT_signature 9b d0 55 13 bb 1e e9 37
+333175  dwarf3 reader problems with Fortran
+
+=== Tools/Memcheck =====================================================
+
+329619  leak-check gets assertion failure when nesting VALGRIND_MALLOCLIKE_BLOCK
+329694  clang warns about using uninitialized variable
+330617  ppc false positive conditional jump depends on uninitialised value
+331833  the memory initialized by semget(key, 0, GETALL, semun)
+        is treated as uninitialized on some platforms
+
+331550  Detect the potential of mis-malloc/free in different libraries
+        (wishlist)
+333775  Wishlist: Have valgrind (memcheck) only check memory
+        alloc/free traces
+
+=== Tools/DRD ==========================================================
+
+333072  DRD: semaphore annotations
+
+=== Tools/Helgrind =====================================================
+
+325333  VALGRIND_HG_DISABLE_CHECKING does not seem to work locally
+        probably invalid
+327548  Helgrind: false positive while destroying mutex
+327881  Helgrind: False Positive Warning on std::atomic_bool
+
+=== Tools/SGCheck ======================================================
+
+332577  exp-sgcheck: sg_main.c:560 (add_blocks_to_StackTree):
+        Assertion '!already_present' failed.
+332591  False positive: invalid read in vfprintf (KNOWN BUG)
+
+
+=== Tools/Massif =======================================================
+
+332765  ms_print reports bad error if temp file can't be created
+        in current directory
+
+=== Tools/Cachegrind ===================================================
+
+333501  [cachegrind - 3.9] LL cache configuration not supported:
+        Cache set count is not a power of two.
+
+=== other/mips =========================================================
+
+325538  cavim octeon mips64, valgrind reported "dumping core" and 
+        "Assertion 'sizeof(*regs) == sizeof(prs->pr_reg)' failed.
+        QUERIED, maybe closable
+328441  valgrind_3.9.0 failed to compile in mips32
+        Error: illegal operands `cfc1 $t0,$31'
+331126  Compiling with mipsbe toolchain
+331314  [MIPS]Valgrind crash just after startup
+
+=== other/arm ==========================================================
+
+327583  libpixman error on ARM system (memcheck false +)
+331033  valgrind crashes on arm-linux while running an executable (ARM TLS?)
+
+=== other/s390 =========================================================
+
+327943  s390x missing index/strchr suppression for ld.so (bad backtrace?)
+
+=== other/MacOS ========================================================
+
+326724  Valgrind does not compile on OSX 1.9 Mavericks
+326797  Assertion 'sizeof(UWord) == sizeof(UInt)' failed.
+327745  valgrind 3.9.0 build fails on Mac OS X 10.6.8
+330257  LLVM does not support `-mno-dynamic-no-pic` option
+333248  WARNING: unhandled syscall: unix:443
+
+=== GDB server =========================================================
+
+328081  embedded gdbserver and non-stop mode (wishlist)
+
+=== Output =============================================================
+
+328563  make track-fds support xml output
+
+=== MPI ================================================================
+
+330147  libmpiwrap: byte count from PMPI_Get_count should be made defined
+
+=== Documentation ======================================================
+
+332060  Please document how best to use massif with libgc
+332917  Valgrind should warn the user that SSE4 is not supported 
+        in the 32-bit mode
+
+=== Uncategorised ======================================================
+
+326487  child of debugged process exits without becoming zombie
+327665  out of memory error
+328721  MSVC 2008 compiler warns about while(0) in warning level 4
+330293  Please add a AppData application description (Valkyrie)
+333628  Out of tree build
+334110  Why install internal headers/libraries/.pc file?
+
+========================================================================
+========================================================================
 
 Fri May  9 13:17:50 CEST 2014

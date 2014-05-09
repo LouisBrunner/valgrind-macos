@@ -767,10 +767,10 @@ static Bool have66orF2orF3 ( Prefix pfx )
   return toBool( ! haveNo66noF2noF3(pfx) );
 }
 
-/* Return True iff pfx has 66 or F2 set */
-static Bool have66orF2 ( Prefix pfx )
+/* Return True iff pfx has 66 or F3 set */
+static Bool have66orF3 ( Prefix pfx )
 {
-   return toBool((pfx & (PFX_66|PFX_F2)) > 0);
+   return toBool((pfx & (PFX_66|PFX_F3)) > 0);
 }
 
 /* Clear all the segment-override bits in a prefix. */
@@ -4266,8 +4266,12 @@ ULong dis_Grp5 ( VexAbiInfo* vbi,
 
    modrm = getUChar(delta);
    if (epartIsReg(modrm)) {
-      /* F2/XACQ and F3/XREL are always invalid in the non-mem case. */
-      if (haveF2orF3(pfx)) goto unhandledR;
+      /* F2/XACQ and F3/XREL are always invalid in the non-mem case.
+         F2/CALL and F2/JMP may have bnd prefix. */
+     if (haveF2orF3(pfx)
+         && ! (haveF2(pfx)
+               && (gregLO3ofRM(modrm) == 2 || gregLO3ofRM(modrm) == 4)))
+        goto unhandledR;
       assign(t1, getIRegE(sz,pfx,modrm));
       switch (gregLO3ofRM(modrm)) {
          case 0: /* INC */
@@ -4287,6 +4291,7 @@ ULong dis_Grp5 ( VexAbiInfo* vbi,
          case 2: /* call Ev */
             /* Ignore any sz value and operate as if sz==8. */
             if (!(sz == 4 || sz == 8)) goto unhandledR;
+            if (haveF2(pfx)) DIP("bnd ; "); /* MPX bnd prefix. */
             sz = 8;
             t3 = newTemp(Ity_I64);
             assign(t3, getIRegE(sz,pfx,modrm));
@@ -4302,6 +4307,7 @@ ULong dis_Grp5 ( VexAbiInfo* vbi,
          case 4: /* jmp Ev */
             /* Ignore any sz value and operate as if sz==8. */
             if (!(sz == 4 || sz == 8)) goto unhandledR;
+            if (haveF2(pfx)) DIP("bnd ; "); /* MPX bnd prefix. */
             sz = 8;
             t3 = newTemp(Ity_I64);
             assign(t3, getIRegE(sz,pfx,modrm));
@@ -4334,10 +4340,13 @@ ULong dis_Grp5 ( VexAbiInfo* vbi,
                        showSz ? nameISize(sz) : ' ', 
                        nameIRegE(sz, pfx, modrm));
    } else {
-      /* Decide if F2/XACQ or F3/XREL might be valid. */
+      /* Decide if F2/XACQ, F3/XREL, F2/CALL or F2/JMP might be valid. */
       Bool validF2orF3 = haveF2orF3(pfx) ? False : True;
       if ((gregLO3ofRM(modrm) == 0/*INC*/ || gregLO3ofRM(modrm) == 1/*DEC*/)
           && haveF2orF3(pfx) && !haveF2andF3(pfx) && haveLOCK(pfx)) {
+         validF2orF3 = True;
+      } else if ((gregLO3ofRM(modrm) == 2 || gregLO3ofRM(modrm) == 4)
+                 && (haveF2(pfx) && !haveF3(pfx))) {
          validF2orF3 = True;
       }
       if (!validF2orF3) goto unhandledM;
@@ -4375,6 +4384,7 @@ ULong dis_Grp5 ( VexAbiInfo* vbi,
          case 2: /* call Ev */
             /* Ignore any sz value and operate as if sz==8. */
             if (!(sz == 4 || sz == 8)) goto unhandledM;
+            if (haveF2(pfx)) DIP("bnd ; "); /* MPX bnd prefix. */
             sz = 8;
             t3 = newTemp(Ity_I64);
             assign(t3, loadLE(Ity_I64,mkexpr(addr)));
@@ -4390,6 +4400,7 @@ ULong dis_Grp5 ( VexAbiInfo* vbi,
          case 4: /* JMP Ev */
             /* Ignore any sz value and operate as if sz==8. */
             if (!(sz == 4 || sz == 8)) goto unhandledM;
+            if (haveF2(pfx)) DIP("bnd ; "); /* MPX bnd prefix. */
             sz = 8;
             t3 = newTemp(Ity_I64);
             assign(t3, loadLE(Ity_I64,mkexpr(addr)));
@@ -19716,7 +19727,8 @@ Long dis_ESC_NONE (
    case 0x7F: { /* JGb/JNLEb (jump greater) */
       Long   jmpDelta;
       const HChar* comment  = "";
-      if (haveF2orF3(pfx)) goto decode_failure;
+      if (haveF3(pfx)) goto decode_failure;
+      if (haveF2(pfx)) DIP("bnd ; "); /* MPX bnd prefix. */
       jmpDelta = getSDisp8(delta);
       vassert(-128 <= jmpDelta && jmpDelta < 128);
       d64 = (guest_RIP_bbstart+delta+1) + jmpDelta;
@@ -20369,7 +20381,8 @@ Long dis_ESC_NONE (
    }
 
    case 0xC2: /* RET imm16 */
-      if (have66orF2orF3(pfx)) goto decode_failure;
+      if (have66orF3(pfx)) goto decode_failure;
+      if (haveF2(pfx)) DIP("bnd ; "); /* MPX bnd prefix. */
       d64 = getUDisp16(delta); 
       delta += 2;
       dis_ret(dres, vbi, d64);
@@ -20377,8 +20390,9 @@ Long dis_ESC_NONE (
       return delta;
 
    case 0xC3: /* RET */
-      if (have66orF2(pfx)) goto decode_failure;
+      if (have66(pfx)) goto decode_failure;
       /* F3 is acceptable on AMD. */
+      if (haveF2(pfx)) DIP("bnd ; "); /* MPX bnd prefix. */
       dis_ret(dres, vbi, 0);
       DIP(haveF3(pfx) ? "rep ; ret\n" : "ret\n");
       return delta;
@@ -20782,7 +20796,8 @@ Long dis_ESC_NONE (
    }
 
    case 0xE8: /* CALL J4 */
-      if (haveF2orF3(pfx)) goto decode_failure;
+      if (haveF3(pfx)) goto decode_failure;
+      if (haveF2(pfx)) DIP("bnd ; "); /* MPX bnd prefix. */
       d64 = getSDisp32(delta); delta += 4;
       d64 += (guest_RIP_bbstart+delta); 
       /* (guest_RIP_bbstart+delta) == return-to addr, d64 == call-to addr */
@@ -20805,9 +20820,10 @@ Long dis_ESC_NONE (
       return delta;
 
    case 0xE9: /* Jv (jump, 16/32 offset) */
-      if (haveF2orF3(pfx)) goto decode_failure;
+      if (haveF3(pfx)) goto decode_failure;
       if (sz != 4) 
          goto decode_failure; /* JRS added 2004 July 11 */
+      if (haveF2(pfx)) DIP("bnd ; "); /* MPX bnd prefix. */
       d64 = (guest_RIP_bbstart+delta+sz) + getSDisp(sz,delta); 
       delta += sz;
       if (resteerOkFn(callback_opaque,d64)) {
@@ -20821,9 +20837,10 @@ Long dis_ESC_NONE (
       return delta;
 
    case 0xEB: /* Jb (jump, byte offset) */
-      if (haveF2orF3(pfx)) goto decode_failure;
+      if (haveF3(pfx)) goto decode_failure;
       if (sz != 4) 
          goto decode_failure; /* JRS added 2004 July 11 */
+      if (haveF2(pfx)) DIP("bnd ; "); /* MPX bnd prefix. */
       d64 = (guest_RIP_bbstart+delta+1) + getSDisp8(delta); 
       delta++;
       if (resteerOkFn(callback_opaque,d64)) {
@@ -21241,7 +21258,8 @@ Long dis_ESC_0F (
    case 0x8F: { /* JGb/JNLEb (jump greater) */
       Long   jmpDelta;
       const HChar* comment  = "";
-      if (haveF2orF3(pfx)) goto decode_failure;
+      if (haveF3(pfx)) goto decode_failure;
+      if (haveF2(pfx)) DIP("bnd ; "); /* MPX bnd prefix. */
       jmpDelta = getSDisp32(delta);
       d64 = (guest_RIP_bbstart+delta+4) + jmpDelta;
       delta += 4;
@@ -21331,6 +21349,66 @@ Long dis_ESC_0F (
          DIP("set%s %s\n", name_AMD64Condcode(opc-0x90), dis_buf);
       }
       return delta;
+
+   case 0x1A:
+   case 0x1B: { /* Future MPX instructions, currently NOPs.
+                   BNDMK b, m     F3 0F 1B
+                   BNDCL b, r/m   F3 0F 1A
+                   BNDCU b, r/m   F2 0F 1A
+                   BNDCN b, r/m   F2 0F 1B
+                   BNDMOV b, b/m  66 0F 1A
+                   BNDMOV b/m, b  66 0F 1B
+                   BNDLDX b, mib     0F 1A
+                   BNDSTX mib, b     0F 1B */
+
+      /* All instructions have two operands. One operand is always the
+         bnd register number (bnd0-bnd3, other register numbers are
+         ignored when MPX isn't enabled, but should generate an
+         exception if MPX is enabled) given by gregOfRexRM. The other
+         operand is either a ModRM:reg, ModRM:r/m or a SIB encoded
+         address, all of which can be decoded by using either
+         eregOfRexRM or disAMode. */
+
+      modrm = getUChar(delta);
+      int bnd = gregOfRexRM(pfx,modrm);
+      const HChar *oper;
+      if (epartIsReg(modrm)) {
+         oper = nameIReg64 (eregOfRexRM(pfx,modrm));
+         delta += 1;
+      } else {
+         addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
+         delta += alen;
+         oper = dis_buf;
+      }
+
+      if (haveF3no66noF2 (pfx)) {
+         if (opc == 0x1B) {
+            DIP ("bndmk %s, %%bnd%d\n", oper, bnd);
+         } else /* opc == 0x1A */ {
+            DIP ("bndcl %s, %%bnd%d\n", oper, bnd);
+         }
+      } else if (haveF2no66noF3 (pfx)) {
+         if (opc == 0x1A) {
+            DIP ("bndcu %s, %%bnd%d\n", oper, bnd);
+         } else /* opc == 0x1B */ {
+            DIP ("bndcn %s, %%bnd%d\n", oper, bnd);
+         }
+      } else if (have66noF2noF3 (pfx)) {
+         if (opc == 0x1A) {
+            DIP ("bndmov %s, %%bnd%d\n", oper, bnd);
+         } else /* opc == 0x1B */ {
+            DIP ("bndmov %%bnd%d, %s\n", bnd, oper);
+         }
+      } else if (haveNo66noF2noF3 (pfx)) {
+         if (opc == 0x1A) {
+            DIP ("bndldx %s, %%bnd%d\n", oper, bnd);
+         } else /* opc == 0x1B */ {
+            DIP ("bndstx %%bnd%d, %s\n", bnd, oper);
+         }
+      } else goto decode_failure;
+
+      return delta;
+   }
 
    case 0xA2: { /* CPUID */
       /* Uses dirty helper: 

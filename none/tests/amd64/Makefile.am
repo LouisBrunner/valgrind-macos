@@ -56,6 +56,7 @@ EXTRA_DIST = \
 	loopnel.stderr.exp loopnel.stdout.exp loopnel.vgtest \
 	lzcnt64.stderr.exp lzcnt64.stdout.exp lzcnt64.vgtest \
 	movbe.stderr.exp movbe.stdout.exp movbe.vgtest \
+	mpx.stderr.exp mpx.stdout.exp mpx.vgtest \
 	nan80and64.stderr.exp nan80and64.stdout.exp nan80and64.vgtest \
 	nibz_bennee_mmap.stderr.exp nibz_bennee_mmap.stdout.exp \
 	nibz_bennee_mmap.vgtest \
@@ -133,6 +134,10 @@ endif
 if BUILD_MOVBE_TESTS
  check_PROGRAMS += movbe
 endif
+if BUILD_MPX_TESTS
+ check_PROGRAMS += mpx
+endif
+
 
 # DDD: these need to be made to work on Darwin like the x86/ ones were.
 if ! VGCONF_OS_IS_DARWIN

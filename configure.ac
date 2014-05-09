@@ -2322,6 +2322,27 @@ AC_MSG_RESULT([no])
 AM_CONDITIONAL(BUILD_FMA_TESTS, test x$ac_have_as_fma = xyes)
 
 
+# does the amd64 assembler understand MPX instructions?
+# Note, this doesn't generate a C-level symbol.  It generates a
+# automake-level symbol (BUILD_MPX_TESTS), used in test Makefile.am's
+AC_MSG_CHECKING([if amd64 assembler knows the MPX instructions])
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  asm ("bndmov %bnd0,(%rsp)")
+]])], [
+ac_have_as_mpx=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_as_mpx=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(BUILD_MPX_TESTS, test x$ac_have_as_mpx = xyes)
+
+
+# Does the C compiler support the "ifunc" attribute
+# Note, this doesn't generate a C-level symbol.  It generates a
+# automake-level symbol (BUILD_IFUNC_TESTS), used in test Makefile.am's
 # does the x86/amd64 assembler understand MOVBE?
 # Note, this doesn't generate a C-level symbol.  It generates a
 # automake-level symbol (BUILD_MOVBE_TESTS), used in test Makefile.am's

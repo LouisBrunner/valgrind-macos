@@ -230,6 +230,7 @@ dist-hook: FAQ.txt html-docs man-pages
 
 distclean-local:
 	rm -rf html print
+	rm -f FAQ.txt
 	rm -f $(top_builddir)/FAQ.txt $(top_builddir)/docs/*.1
 
 

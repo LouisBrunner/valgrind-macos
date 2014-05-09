@@ -632,6 +632,8 @@ clean-local: clean-noinst_DSYMS
 
 install-exec-local: install-noinst_PROGRAMS install-noinst_DSYMS
 
+uninstall-local: uninstall-noinst_PROGRAMS uninstall-noinst_DSYMS
+
 #----------------------------------------------------------------------------
 # Darwin linker kludges
 #----------------------------------------------------------------------------

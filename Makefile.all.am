@@ -58,6 +58,14 @@ install-noinst_PROGRAMS: $(noinst_PROGRAMS)
 	  $(INSTALL_PROGRAM) $$f $(DESTDIR)$(pkglibdir); \
 	done
 
+# This is used by coregrind/Makefile.am and by <tool>/Makefile.am for doing
+# "make uninstall".  It removes $(noinst_PROGRAMS) from $prefix/lib/valgrind/.
+# It needs to be depended on by an 'uninstall-local' rule.
+uninstall-noinst_PROGRAMS:
+	for f in $(noinst_PROGRAMS); do \
+	  rm -f $(DESTDIR)$(pkglibdir)/$$f; \
+	done
+
 # Similar to install-noinst_PROGRAMS.
 # Nb: we don't use $(INSTALL_PROGRAM) here because it doesn't work with
 # directories.  XXX: not sure whether the resulting permissions will be
@@ -66,6 +74,12 @@ install-noinst_DSYMS: build-noinst_DSYMS
 	$(mkinstalldirs) $(DESTDIR)$(pkglibdir); \
 	for f in $(noinst_DSYMS); do \
 	  cp -R $$f.dSYM $(DESTDIR)$(pkglibdir); \
+	done
+
+# Similar to uninstall-noinst_PROGRAMS.
+uninstall-noinst_DSYMS:
+	for f in $(noinst_DSYMS); do \
+	  rm -f $(DESTDIR)$(pkglibdir)/$$f.dSYM; \
 	done
 
 # This needs to be depended on by a 'clean-local' rule.

@@ -33,6 +33,31 @@
 #include <sys/prctl.h>
 #  endif
 
+/* Calls sr_perror with msg.
+   Outputs more information about Valgrind state if verbosity > 0
+   or debuglog_getlevel > 0. */
+static
+void sr_extended_perror (SysRes sr, const HChar *msg)
+{
+   sr_perror (sr, msg);
+   if (VG_(clo_verbosity) > 0 || VG_(debugLog_getLevel)() >= 1) {
+      Int i;
+      vki_sigset_t cursigset;
+      VG_(show_sched_status) (True,  // host_stacktrace
+                              True,  // valgrind_stack_usage
+                              True); // exited_threads
+      VG_(sigprocmask) (0,           // dummy how.
+                        NULL,        // do not change the sigmask
+                        &cursigset); //
+      VG_(dmsg)("current sigmask value { ");
+      for (i = 1; i <= _VKI_NSIG; i++) {
+         if (VG_(sigismember)(&cursigset, i))
+            VG_(dmsg)("%u ", i);
+      }
+      VG_(dmsg)("}\n");
+   }
+}
+
 Bool noack_mode;
 
 static int readchar (int single);
@@ -171,7 +196,7 @@ int ensure_write_remote_desc(void)
       if (sr_isError(ret) 
           || (sr_Res(ret) > 0 && poll_cond(write_remote_desc_ok.revents))) {
         if (sr_isError(ret)) {
-          sr_perror(ret, "ensure_write_remote_desc: poll error\n");
+          sr_extended_perror(ret, "ensure_write_remote_desc: poll error\n");
         } else {
           dlog(0, "POLLcond %d closing write_remote_desc %d\n", 
                write_remote_desc_ok.revents, write_remote_desc);
@@ -366,7 +391,10 @@ void remote_open (const HChar *name)
    time to let a proper cleanup to be donex */
 void sync_gdb_connection(void)
 {
-   VG_(poll)(0, 0, 100);
+   SysRes ret;
+   ret = VG_(poll)(0, 0, 100);
+   if (sr_isError(ret))
+      sr_extended_perror(ret, "sync_gdb_connection: poll error\n");
 }
 
 static
@@ -470,7 +498,7 @@ int remote_desc_activity(const char *msg)
    if (sr_isError(ret)
        || (sr_Res(ret) && poll_cond(remote_desc_pollfdread_activity.revents))) {
      if (sr_isError(ret)) {
-       sr_perror(ret, "remote_desc_activity: poll error\n");
+       sr_extended_perror(ret, "remote_desc_activity: poll error\n");
      } else {
        dlog(0, "POLLcond %d remote_desc_pollfdread %d\n", 
             remote_desc_pollfdread_activity.revents, remote_desc);
@@ -841,7 +869,7 @@ int readchar (int single)
    ret = VG_(poll)(&remote_desc_pollfdread_activity, 1, -1);
    if (sr_isError(ret) || sr_Res(ret) != 1) {
      if (sr_isError(ret)) {
-        sr_perror(ret, "readchar: poll error\n");
+        sr_extended_perror(ret, "readchar: poll error\n");
      } else {
         dlog(0, "readchar: poll got %d, expecting 1\n", (int)sr_Res(ret));
      }

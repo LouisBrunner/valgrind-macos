@@ -32,6 +32,8 @@ http://code.google.com/p/android/issues/detail?id=23203
 For the android emulator, the versions needed and how to
 install them are described in README.android_emulator.
 
+You can get android-ndk-r6 from
+http://dl.google.com/android/ndk/android-ndk-r6-linux-x86.tar.bz2
 Install it somewhere.  Doesn't matter where.  Then do this:
 
 

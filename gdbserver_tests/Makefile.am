@@ -4,7 +4,8 @@ include $(top_srcdir)/Makefile.tool-tests.am
 dist_noinst_SCRIPTS = \
 	invoker simulate_control_c make_local_links \
 	filter_gdb filter_make_empty \
-	filter_memcheck_monitor filter_stderr filter_vgdb
+	filter_memcheck_monitor filter_stderr filter_vgdb \
+	send_signal
 
 EXTRA_DIST = \
 	README_DEVELOPERS \

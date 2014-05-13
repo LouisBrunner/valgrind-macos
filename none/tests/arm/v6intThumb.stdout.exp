@@ -17316,6 +17316,8 @@ ldrh r1, label_magic_ldrh :: rd 0x0000881b, cpsr 0xc0000000 NZ
 ldrsb r1, label_magic_ldrsb :: rd 0x0000001b, cpsr 0xc0000000 NZ  
 ldrsh r1, label_magic_ldrsh :: rd 0xffff881b, cpsr 0xc0000000 NZ  
 vldr d0, label_magic_vldr :: s0 0x8191881b s1 0x18fe9c93, cpsr 0xc0000000 NZ  
+tests for instructions modifying pc (ldr pc, add pc)
+ldr.w pc, [r9, +#432] :: r1 0x0000002a c:v-in 0, cpsr 0xc0000000 NZ  
 MUL
 mul  r0, r1, r2 :: rd 0x00000000 rm 0x00000000, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
 mul  r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  

@@ -20416,9 +20416,8 @@ DisResult disInstr_THUMB_WRK (
                vassert(rT == 15);
                vassert(condT == IRTemp_INVALID); /* due to check above */
                llPutIReg(15, mkexpr(newRt));
-               irsb->next = mkexpr(newRt);
-               irsb->jumpkind = Ijk_Boring;  /* or _Ret ? */
-               dres.whatNext  = Dis_StopHere;
+               dres.jk_StopHere = Ijk_Boring;
+               dres.whatNext    = Dis_StopHere;
             }
          }
 

@@ -6,15 +6,14 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
 
 325328  __float128 loses precision under memcheck
         == 197915
-326469  amd64->IR: 0x66 0xF 0x3A 0x63 0xC1 0xE 0x89 0xC8 (pcmpistri)
+326469  amd64->IR: 0x66 0xF 0x3A 0x63 0xC1 0xE (pcmpistri 0x0E)
 326821  Double overflow/underflow handling broken (after exp())
 327285  amd64->IR: 0x8F 0xEA 0xF8 0x10 0xCE 0x3 0x1D 0x0
-        == 323431
+        == 323431 (probably amd specific, vpcmov)
 327639  vex amd64->IR pcmpestri SSE4.2 instruction is unsupported 0x34
 328878  vex amd64->IR pcmpestri SSE4.2 instruction is unsupported 0x14
-328089  amd64->IR: 0xF0 0xF 0xC0 0x10
 328357  amd64->IR: 0x8F 0xEA 0xF8 0x10 0xEF 0x3 0x5 0x0
-329245  amd64->IR: 0x48 0xF 0x5A 0x7 0x48 0xF 0x5A 0x4F
+329245  amd64->IR: 0x48 0xF 0x5A 0x7 (rex.W cvtps2pd (%rdi),%xmm0)
 330319  amd64->IR: 0xF 0x1 0xD5 0x31 0xC0 0xC3 0x48 0x8D (xend)
 330590  Missing support for multiple VEX CMP instruction Opcodes (Causes SIGILL)
 330808  Crash with Intel IPP samples (MMX related assertion)
@@ -65,6 +64,7 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
 333788  Valgrind does not support the CDROM_DISC_STATUS ioctl (has patch)
 333817  Valgrind reports the memory areas written to by the SG_IO
         ioctl as untouched
+334585  recvmmsg unhandled (+patch) (arm)
 
 === Debuginfo reader ===================================================
 
@@ -108,7 +108,6 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
         Assertion '!already_present' failed.
 332591  False positive: invalid read in vfprintf (KNOWN BUG)
 
-
 === Tools/Massif =======================================================
 
 332765  ms_print reports bad error if temp file can't be created
@@ -128,6 +127,9 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
         Error: illegal operands `cfc1 $t0,$31'
 331126  Compiling with mipsbe toolchain
 331314  [MIPS]Valgrind crash just after startup
+334649  Cavium Octeon 2 MIPS64: valgrind is up but ld.so assert
+        "rtld.c: 1257: dl_main: Assertion
+        '_rtld_local._dl_rtld_map.l_relocated' failed" and exits
 
 === other/arm ==========================================================
 
@@ -171,9 +173,11 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
 328721  MSVC 2008 compiler warns about while(0) in warning level 4
 330293  Please add a AppData application description (Valkyrie)
 333628  Out of tree build
+        == 256174
 334110  Why install internal headers/libraries/.pc file?
+n-i-bz  Fix mingw64 support in valgrind.h (dev@, 9 May 2014)
 
 ========================================================================
 ========================================================================
 
-Fri May  9 13:17:50 CEST 2014
+Mon May 12 16:19:52 CEST 2014

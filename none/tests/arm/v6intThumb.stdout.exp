@@ -17307,6 +17307,15 @@ asrs r0, r1, #32 :: rd 0x00000000 rm 0x7fffffff, c:v-in 3, cpsr 0x50000000  Z V
 asrs r0, r1, #16 :: rd 0x00000001 rm 0x00010000, c:v-in 3, cpsr 0x10000000    V
 asrs r0, r1, #17 :: rd 0x00000000 rm 0x00010000, c:v-in 3, cpsr 0x70000000  ZCV
 asrs r0, r1, #18 :: rd 0x00000000 rm 0x00010000, c:v-in 3, cpsr 0x50000000  Z V
+literal access [PC+#imm]
+adr.w r1, label_magic_adrw; and r1, r1, #0x3 :: rd 0x00000000, cpsr 0xc0000000 NZ  
+ldr r1, label_magic_ldr :: rd 0x8191881b, cpsr 0xc0000000 NZ  
+ldrb r1, label_magic_ldrb :: rd 0x0000001b, cpsr 0xc0000000 NZ  
+ldrd r0, r1, label_magic_ldrd :: rd 0x8191881b rd2 0x18fe9c93, cpsr 0xc0000000 NZ  
+ldrh r1, label_magic_ldrh :: rd 0x0000881b, cpsr 0xc0000000 NZ  
+ldrsb r1, label_magic_ldrsb :: rd 0x0000001b, cpsr 0xc0000000 NZ  
+ldrsh r1, label_magic_ldrsh :: rd 0xffff881b, cpsr 0xc0000000 NZ  
+vldr d0, label_magic_vldr :: s0 0x8191881b s1 0x18fe9c93, cpsr 0xc0000000 NZ  
 MUL
 mul  r0, r1, r2 :: rd 0x00000000 rm 0x00000000, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
 mul  r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  

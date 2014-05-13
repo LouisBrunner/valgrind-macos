@@ -224,29 +224,30 @@ static int gen_cvin(int cvin)
     unsigned int out; \
     unsigned int cpsr; \
     __asm__ volatile(\
-    ".align 4;" \
-    "msr cpsr_f, %2;" \
-    "mov " #RD ", #0;" \
-    ".align 2;" \
-    ".thumb;" \
-    ".syntax unified;" \
-    "nop;" \
-    instruction ";" \
-    "b .Lend" #label ";" \
-    ".align 4;" \
-    #label ": " \
-    ".word 0x8191881b;" \
-    ".word 0x18fe9c93;" \
-    ".word 0x00000000;" \
-    ".word 0x00000000;" \
-    ".Lend" #label ":" \
-    "mov %0, " #RD ";" \
-	"mrs %1,cpsr;" \
-  : "=&r" (out), "=&r" (cpsr) \
-  : "r" (gen_cvin(cvin)) \
-  ); \
-  printf("%s :: rd 0x%08x, cpsr 0x%08x %c%c%c%c\n", \
-        instruction, out, \
+      ".align 4;" \
+      "msr cpsr_f, %2;" \
+      "mov " #RD ", #0;" \
+      ".align 2;" \
+      ".thumb;" \
+      ".syntax unified;" \
+      "nop;" \
+      instruction ";" \
+      "b .Lend" #label ";" \
+      ".align 4;" \
+      #label ": " \
+      ".word 0x8191881b;" \
+      ".word 0x18fe9c93;" \
+      ".word 0x00000000;" \
+      ".word 0x00000000;" \
+      ".Lend" #label ":" \
+      "mov %0, " #RD ";" \
+      "mrs %1, cpsr;" \
+      : "=&r" (out), "=&r" (cpsr) \
+      : "r" (gen_cvin(cvin)) \
+      : #RD, "cc", "memory" \
+    ); \
+    printf("%s :: rd 0x%08x, cpsr 0x%08x %c%c%c%c\n", \
+          instruction, out, \
 		cpsr & 0xffff0000, \
 		((1<<31) & cpsr) ? 'N' : ' ', \
 		((1<<30) & cpsr) ? 'Z' : ' ', \
@@ -256,34 +257,35 @@ static int gen_cvin(int cvin)
 }
 
 // this one uses d0, s0 and s2 (hardcoded)
-#define TESTINSTPCMISALIGNED_DWORDOUT(instruction, label, cvin) \
+#define TESTINSTPCMISALIGNED_DWORDOUT(instruction, label, cvin, extratrash) \
 { \
     unsigned int out; \
     unsigned int out2; \
     unsigned int cpsr; \
     __asm__ volatile(\
-    ".align 4;" \
-    "msr cpsr_f, %3;" \
-    ".align 2;" \
-    ".thumb;" \
-    ".syntax unified;" \
-    "nop;" \
-    instruction ";" \
-    "b .Lend" #label ";" \
-    ".align 4;" \
-    #label ": " \
-    ".word 0x8191881b;" \
-    ".word 0x18fe9c93;" \
-    ".word 0x00000000;" \
-    ".word 0x00000000;" \
-    ".Lend" #label ":" \
-    "vmov %0, s0;" \
-    "vmov %1, s1;" \
-	"mrs %2,cpsr;" \
-  : "=&r" (out), "=&r" (out2), "=&r" (cpsr) \
-  : "r" (gen_cvin(cvin)) \
-  ); \
-  printf("%s :: s0 0x%08x s1 0x%08x, cpsr 0x%08x %c%c%c%c\n", \
+      ".align 4;" \
+      "msr cpsr_f, %3;" \
+      ".align 2;" \
+      ".thumb;" \
+      ".syntax unified;" \
+      "nop;" \
+      instruction ";" \
+      "b .Lend" #label ";" \
+      ".align 4;" \
+      #label ": " \
+      ".word 0x8191881b;" \
+      ".word 0x18fe9c93;" \
+      ".word 0x00000000;" \
+      ".word 0x00000000;" \
+      ".Lend" #label ":" \
+      "vmov %0, s0;" \
+      "vmov %1, s1;" \
+      "mrs %2, cpsr;" \
+      : "=&r" (out), "=&r" (out2), "=&r" (cpsr) \
+      : "r" (gen_cvin(cvin)) \
+      : "cc", "memory", "s0", "s1", extratrash \
+    ); \
+    printf("%s :: s0 0x%08x s1 0x%08x, cpsr 0x%08x %c%c%c%c\n", \
         instruction, out, out2, \
 		cpsr & 0xffff0000, \
 		((1<<31) & cpsr) ? 'N' : ' ', \
@@ -299,30 +301,31 @@ static int gen_cvin(int cvin)
     unsigned int out2; \
     unsigned int cpsr; \
     __asm__ volatile(\
-    ".align 4;" \
-    "msr cpsr_f, %3;" \
-    "mov " #RD ", #0;" \
-    "mov " #RD2 ", #0;" \
-    ".align 2;" \
-    ".thumb;" \
-    ".syntax unified;" \
-    "nop;" \
-    instruction ";" \
-    "b .Lend" #label ";" \
-    ".align 4;" \
-    #label ": " \
-    ".word 0x8191881b;" \
-    ".word 0x18fe9c93;" \
-    ".word 0x00000000;" \
-    ".word 0x00000000;" \
-    ".Lend" #label ":" \
-    "mov %0, " #RD ";" \
-    "mov %1, " #RD2 ";" \
-	"mrs %2,cpsr;" \
-  : "=&r" (out), "=&r" (out2), "=&r" (cpsr) \
-  : "r" (gen_cvin(cvin)) \
-  ); \
-  printf("%s :: rd 0x%08x rd2 0x%08x, cpsr 0x%08x %c%c%c%c\n", \
+      ".align 4;" \
+      "msr cpsr_f, %3;" \
+      "mov " #RD ", #0;" \
+      "mov " #RD2 ", #0;" \
+      ".align 2;" \
+      ".thumb;" \
+      ".syntax unified;" \
+      "nop;" \
+      instruction ";" \
+      "b .Lend" #label ";" \
+      ".align 4;" \
+      #label ": " \
+      ".word 0x8191881b;" \
+      ".word 0x18fe9c93;" \
+      ".word 0x00000000;" \
+      ".word 0x00000000;" \
+      ".Lend" #label ":" \
+      "mov %0, " #RD ";" \
+      "mov %1, " #RD2 ";" \
+      "mrs %2, cpsr;" \
+      : "=&r" (out), "=&r" (out2), "=&r" (cpsr) \
+      : "r" (gen_cvin(cvin)) \
+      : #RD, #RD2, "cc", "memory" \
+    ); \
+    printf("%s :: rd 0x%08x rd2 0x%08x, cpsr 0x%08x %c%c%c%c\n", \
         instruction, out, out2, \
 		cpsr & 0xffff0000, \
 		((1<<31) & cpsr) ? 'N' : ' ', \
@@ -642,7 +645,7 @@ static int old_main(void)
                          r1, label_magic_ldrsh, cv);
     // omitting PLD/PLI
     TESTINSTPCMISALIGNED_DWORDOUT("vldr d0, label_magic_vldr",
-                                  label_magic_vldr, cv);
+                                  label_magic_vldr, cv, "d0");
 
     TESTCARRYEND
 

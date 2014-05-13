@@ -20278,34 +20278,32 @@ DisResult disInstr_THUMB_WRK (
 
    /* --------------- LD/ST reg+imm12 --------------- */
    /* Loads and stores of the form:
-         op  Rt, [Rn, +#imm12]
+         op  Rt, [Rn, #+-imm12]
       where op is one of
          ldrb ldrh ldr  ldrsb ldrsh
          strb strh str
    */
    if (INSN0(15,9) == BITS7(1,1,1,1,1,0,0)) {
       Bool   valid  = True;
-      Bool   syned  = False;
+      Bool   syned  = INSN0(8,8) == 1;
       Bool   isST   = False;
       IRType ty     = Ity_I8;
+      UInt   bU     = INSN0(7,7); // 1: +imm   0: -imm
+                                  // -imm is only supported by literal versions
       const HChar* nm = "???";
 
-      switch (INSN0(8,4)) {
-         case BITS5(0,1,0,0,0):   // strb
+      switch (INSN0(6,4)) {
+         case BITS3(0,0,0):   // strb
             nm = "strb"; isST = True; break;
-         case BITS5(0,1,0,0,1):   // ldrb
-            nm = "ldrb"; break;
-         case BITS5(1,1,0,0,1):   // ldrsb
-            nm = "ldrsb"; syned = True; break;
-         case BITS5(0,1,0,1,0):   // strh
+         case BITS3(0,0,1):   // ldrb
+            nm = syned ? "ldrsb" : "ldrb"; break;
+         case BITS3(0,1,0):   // strh
             nm = "strh"; ty = Ity_I16; isST = True; break;
-         case BITS5(0,1,0,1,1):   // ldrh
-            nm = "ldrh"; ty = Ity_I16; break;
-         case BITS5(1,1,0,1,1):   // ldrsh
-            nm = "ldrsh"; ty = Ity_I16; syned = True; break;
-         case BITS5(0,1,1,0,0):   // str
+         case BITS3(0,1,1):   // ldrh
+            nm = syned ? "ldrsh" : "ldrh"; ty = Ity_I16; break;
+         case BITS3(1,0,0):   // str
             nm = "str"; ty = Ity_I32; isST = True; break;
-         case BITS5(0,1,1,0,1):
+         case BITS3(1,0,1):
             nm = "ldr"; ty = Ity_I32; break;  // ldr
          default:
             valid = False; break;
@@ -20316,25 +20314,27 @@ DisResult disInstr_THUMB_WRK (
       UInt imm12   = INSN1(11,0);
       Bool loadsPC = False;
 
-      if (ty == Ity_I8 || ty == Ity_I16) {
-         /* all 8- and 16-bit load and store cases have the
-            same exclusion set. */
-         if (rN == 15 || isBadRegT(rT))
+      if (rN != 15 && bU == 0) {
+         // only pc supports #-imm12
+         valid = False;
+      }
+
+      if (isST) {
+         if (syned) valid = False;
+         if (rN == 15 || rT == 15)
             valid = False;
       } else {
-         vassert(ty == Ity_I32);
-         if (isST) {
-            if (rN == 15 || rT == 15)
-               valid = False;
-         } else {
-            /* For a 32-bit load, rT == 15 is only allowable if we not
-               in an IT block, or are the last in it.  Need to insert
-               a dynamic check for that.  Also, in this particular
-               case, rN == 15 is allowable.  In this case however, the
-               value obtained for rN is (apparently)
-               "word-align(address of current insn + 4)". */
-            if (rT == 15)
+         /* For a 32-bit load, rT == 15 is only allowable if we are not
+            in an IT block, or are the last in it.  Need to insert
+            a dynamic check for that.  Also, in this particular
+            case, rN == 15 is allowable.  In this case however, the
+            value obtained for rN is (apparently)
+            "word-align(address of current insn + 4)". */
+         if (rT == 15) {
+            if (ty == Ity_I32)
                loadsPC = True;
+            else // Can't do it for B/H loads
+               valid = False;
          }
       }
 
@@ -20352,15 +20352,16 @@ DisResult disInstr_THUMB_WRK (
 
          IRTemp rNt = newTemp(Ity_I32);
          if (rN == 15) {
-            vassert(ty == Ity_I32 && !isST);
-            assign(rNt, binop(Iop_And32, getIRegT(rN), mkU32(~3)));
+            vassert(!isST);
+            assign(rNt, binop(Iop_And32, getIRegT(15), mkU32(~3)));
          } else {
             assign(rNt, getIRegT(rN));
          }
 
          IRTemp transAddr = newTemp(Ity_I32);
          assign(transAddr,
-                binop( Iop_Add32, mkexpr(rNt), mkU32(imm12) ));
+                binop(bU == 1 ? Iop_Add32 : Iop_Sub32,
+                      mkexpr(rNt), mkU32(imm12)));
 
          IRTemp oldRt = newTemp(Ity_I32);
          assign(oldRt, getIRegT(rT));

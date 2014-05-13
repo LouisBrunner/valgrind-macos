@@ -750,16 +750,22 @@ Bool VG_(machine_get_hwcaps)( void )
      if (!have_cx8)
         return False;
 
-     /* Figure out if this is an AMD that can do mmxext and/or LZCNT. */
+     /* Figure out if this is an AMD that can do MMXEXT. */
      have_mmxext = False;
-     have_lzcnt = False;
      if (0 == VG_(strcmp)(vstr, "AuthenticAMD")
          && max_extended >= 0x80000001) {
         VG_(cpuid)(0x80000001, 0, &eax, &ebx, &ecx, &edx);
-        have_lzcnt = (ecx & (1<<5)) != 0; /* True => have LZCNT */
-
         /* Some older AMD processors support a sse1 subset (Integer SSE). */
         have_mmxext = !have_sse1 && ((edx & (1<<22)) != 0);
+     }
+
+     /* Figure out if this is an AMD or Intel that can do LZCNT. */
+     have_lzcnt = False;
+     if ((0 == VG_(strcmp)(vstr, "AuthenticAMD")
+          || 0 == VG_(strcmp)(vstr, "GenuineIntel"))
+         && max_extended >= 0x80000001) {
+        VG_(cpuid)(0x80000001, 0, &eax, &ebx, &ecx, &edx);
+        have_lzcnt = (ecx & (1<<5)) != 0; /* True => have LZCNT */
      }
 
      /* Intel processors don't define the mmxext extension, but since it
@@ -851,7 +857,6 @@ Bool VG_(machine_get_hwcaps)( void )
               unusedness. &*/
         }
      }
-
 
      /* cmpxchg8b is a minimum requirement now; if we don't have it we
         must simply give up.  But all CPUs since Pentium-I have it, so

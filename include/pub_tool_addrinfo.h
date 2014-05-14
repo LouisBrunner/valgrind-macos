@@ -47,8 +47,8 @@
 // Block_ClientArenaMallocd and Block_ClientArenaFree are used when the tool
 //   replaces the malloc/free/... functions but does not maintain detailed
 //   information about Client allocated heap blocks.
-// Block_ValgrindArenaMallocd and Block_ValgrindArenaFree are used for heap blocks
-//   of Valgrind internal heap.
+// Block_ValgrindArenaMallocd and Block_ValgrindArenaFree are used for heap
+//   blocks of Valgrind internal heap.
 typedef enum {
    Block_Mallocd = 111,
    Block_Freed,
@@ -90,11 +90,11 @@ struct _AddrInfo {
          ThreadId tid;        // Which thread's stack?
       } Stack;
 
-      // This covers heap blocks (normal and from mempools), user-defined blocks,
-      // and Arena blocks.
+      // This covers heap blocks (normal and from mempools), user-defined
+      // blocks and Arena blocks.
       struct {
          BlockKind   block_kind;
-         const HChar* block_desc;    // "block", "mempool" or user-defined or arena
+         const HChar* block_desc;   // "block","mempool","user-defined",arena
          SizeT       block_szB;
          PtrdiffT    rwoffset;
          ExeContext* allocated_at;  // might be null_ExeContext.

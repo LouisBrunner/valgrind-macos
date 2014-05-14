@@ -13527,6 +13527,27 @@ static Bool decode_CP10_CP11_instruction (
                         condT);
             DIP("fdivd%s d%u, d%u, d%u\n", nCC(conq), dD, dN, dM);
             goto decode_success_vfp;
+         case BITS4(1,1,0,0): /* VFMA: d + n * m (fused) */
+            /* XXXROUNDINGFIXME look up ARM reference for fused
+               multiply-add rounding */
+            putDReg(dD, triop(Iop_AddF64, rm,
+                              getDReg(dD),
+                              triop(Iop_MulF64, rm, getDReg(dN),
+                                                    getDReg(dM))),
+                        condT);
+            DIP("vfmad%s d%u, d%u, d%u\n", nCC(conq), dD, dN, dM);
+            goto decode_success_vfp;
+         case BITS4(1,1,0,1): /* VFMS: d + (-n * m) (fused) */
+            /* XXXROUNDINGFIXME look up ARM reference for fused
+               multiply-add rounding */
+            putDReg(dD, triop(Iop_AddF64, rm,
+                              getDReg(dD),
+                              triop(Iop_MulF64, rm,
+                                    unop(Iop_NegF64, getDReg(dN)),
+                                    getDReg(dM))),
+                        condT);
+            DIP("vfmsd%s d%u, d%u, d%u\n", nCC(conq), dD, dN, dM);
+            goto decode_success_vfp;
          default:
             break;
       }
@@ -13990,6 +14011,27 @@ static Bool decode_CP10_CP11_instruction (
             putFReg(fD, triop(Iop_DivF32, rm, getFReg(fN), getFReg(fM)),
                         condT);
             DIP("fdivs%s s%u, s%u, s%u\n", nCC(conq), fD, fN, fM);
+            goto decode_success_vfp;
+         case BITS4(1,1,0,0): /* VFMA: d + n * m (fused) */
+            /* XXXROUNDINGFIXME look up ARM reference for fused
+               multiply-add rounding */
+            putFReg(fD, triop(Iop_AddF32, rm,
+                              getFReg(fD),
+                              triop(Iop_MulF32, rm, getFReg(fN),
+                                                    getFReg(fM))),
+                        condT);
+            DIP("vfmas%s s%u, s%u, s%u\n", nCC(conq), fD, fN, fM);
+            goto decode_success_vfp;
+         case BITS4(1,1,0,1): /* VFMS: d + (-n * m) (fused) */
+            /* XXXROUNDINGFIXME look up ARM reference for fused
+               multiply-add rounding */
+            putFReg(fD, triop(Iop_AddF32, rm,
+                              getFReg(fD),
+                              triop(Iop_MulF32, rm,
+                                    unop(Iop_NegF32, getFReg(fN)),
+                                    getFReg(fM))),
+                        condT);
+            DIP("vfmss%s s%u, s%u, s%u\n", nCC(conq), fD, fN, fM);
             goto decode_success_vfp;
          default:
             break;

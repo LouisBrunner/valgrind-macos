@@ -26,13 +26,10 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
 331057  unhandled instruction: 0xEEE01B20 (vfma.f64) (has patch)
 331178  disInstr(arm): unhandled instruction: 0xEE190F1D
         Probably WONTFIX or CANTFIX
-333145  Tests for missaligned PC+#imm access for arm
-333428  ldr.w pc [rD, #imm] instruction leads to assertion
 
 === VEX/x86 ============================================================
 
 333625  Program under valgrind calculates complex exp() wrogly
-334049  lzcnt fails silently (x86_32)
 
 === VEX/mips ===========================================================
 

@@ -116,9 +116,12 @@ where XXXXXX is the bug number as listed below.
         client requests
 332276  Implement additional Xen hypercalls
 332658  ldrd.w r1, r2, [PC, #imm] does not adjust for 32bit alignment
+333145  Tests for missaligned PC+#imm access for arm
 333228  AAarch64 Missing instruction encoding: mrs %[reg], ctr_el0
 333230  AAarch64 missing instruction encodings: dc, ic, dsb.
+333428  ldr.w pc [rD, #imm] instruction leads to assertion
 333666  Recognize MPX instructions and bnd prefix.
+334049  lzcnt fails silently (x86_32)
 334705  sendmsg and recvmsg should guard against bogus msghdr fields.
 334727  Build fails with -Werror=format-security
 n-i-bz  Fix KVM_CREATE_IRQCHIP ioctl handling

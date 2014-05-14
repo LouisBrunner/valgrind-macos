@@ -951,13 +951,15 @@ void msghdr_foreachfield (
    if ( recv )
       foreach_func ( tid, False, fieldName, (Addr)&msg->msg_flags, sizeof( msg->msg_flags ) );
 
-   if ( msg->msg_name ) {
+   if ( ML_(safe_to_deref)(&msg->msg_name, sizeof (void *))
+        && msg->msg_name ) {
       VG_(sprintf) ( fieldName, "(%s.msg_name)", name );
       foreach_func ( tid, False, fieldName, 
                      (Addr)msg->msg_name, msg->msg_namelen );
    }
 
-   if ( msg->msg_iov ) {
+   if ( ML_(safe_to_deref)(&msg->msg_iov, sizeof (void *))
+        && msg->msg_iov ) {
       struct vki_iovec *iov = msg->msg_iov;
       UInt i;
 
@@ -975,7 +977,8 @@ void msghdr_foreachfield (
       }
    }
 
-   if ( msg->msg_control ) 
+   if ( ML_(safe_to_deref) (&msg->msg_control, sizeof (void *))
+        && msg->msg_control )
    {
       VG_(sprintf) ( fieldName, "(%s.msg_control)", name );
       foreach_func ( tid, False, fieldName, 

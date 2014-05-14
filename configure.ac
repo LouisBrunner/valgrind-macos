@@ -1681,6 +1681,31 @@ fi
 
 AM_CONDITIONAL(HAS_WRITE_STRINGS_WARNING, test x$no_write_strings = xyes)
 
+
+# does this compiler support -Wformat -Werror=format-security ?
+AC_MSG_CHECKING([if gcc accepts -Wformat -Werror=format-security])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-Wformat -Werror=format-security"
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  return 0;
+]])], [
+error_format_security=yes
+AC_MSG_RESULT([yes])
+], [
+error_format_security=no
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
+if test x$no_write_strings = xyes; then
+  CFLAGS="$CFLAGS -Wformat -Werror=format-security"
+  CXXFLAGS="$CXXFLAGS -Wformat -Werror=format-security"
+fi
+
+AM_CONDITIONAL(HAS_ERROR_FORMAT_SECURITY, test x$error_format_security = xyes)
+
 # does this compiler support -Wno-empty-body ?
 
 AC_MSG_CHECKING([if gcc accepts -Wno-empty-body])

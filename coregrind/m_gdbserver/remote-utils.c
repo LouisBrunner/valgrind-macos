@@ -39,7 +39,7 @@
 static
 void sr_extended_perror (SysRes sr, const HChar *msg)
 {
-   sr_perror (sr, msg);
+   sr_perror (sr, "%s", msg);
    if (VG_(clo_verbosity) > 0 || VG_(debugLog_getLevel)() >= 1) {
       Int i;
       vki_sigset_t cursigset;

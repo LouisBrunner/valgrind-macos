@@ -1,0 +1,10 @@
+#! /bin/sh
+
+# used to filter helgrind output shown by gdb/vgdb.
+
+dir=`dirname $0`
+
+$dir/../helgrind/tests/filter_stderr "$@"              |
+
+# filter vgdb messages
+$dir/filter_vgdb 

@@ -1267,6 +1267,7 @@ vgdb v.set log_output -c leak_check any
 <para>This section describes the Valgrind monitor commands, available
 regardless of the Valgrind tool selected. For the tool specific
 commands, refer to <xref linkend="mc-manual.monitor-commands"/>,
+<xref linkend="hg-manual.monitor-commands"/>,
 <xref linkend="cl-manual.monitor-commands"/> and
 <xref linkend="ms-manual.monitor-commands"/>. </para>
 
@@ -1293,6 +1294,32 @@ client request.
   <listitem>
     <para><varname>v.info last_error</varname> shows the last error
     found.</para>
+  </listitem>
+
+  <listitem>
+    <para><varname>v.info location &lt;addr&gt;</varname> outputs
+    information about the location &lt;addr&gt;. Possibly, the
+    following are described: global variables, local (stack)
+    variables, allocated or freed blocks, ...  The information
+    produced depends on the tool and on the options given to valgrind.
+    Some tools (e.g. memcheck and helgrind) produce more detailed
+    information for client heap blocks. For example, these tools show
+    the stacktrace where the heap block was allocated. If a tool does
+    not replace the malloc/free/... functions, then client heap blocks
+    will not be described.  Use the
+    option <varname>--read-var-info=yes</varname> to obtain more
+    detailed information about global or local (stack) variables.
+    </para>
+<programlisting><![CDATA[
+(gdb) monitor v.info location 0x8050b20
+ Location 0x8050b20 is 0 bytes inside global var "mx"
+ declared at tc19_shadowmem.c:19
+
+(gdb) mo v.in loc 0x582f33c
+ Location 0x582f33c is 0 bytes inside local var "info"
+ declared at tc19_shadowmem.c:282, in frame #1 of thread 3
+(gdb) 
+]]></programlisting>
   </listitem>
 
   <listitem>

@@ -1291,34 +1291,13 @@ Lock ga 0x8049a20 {
     </para>
 <programlisting><![CDATA[
 Lock ga 0x8049a20 {
-Location 0x8049a20 is 0 bytes inside global var "s_rwlock"
-declared at rwlock_race.c:17
+ Location 0x8049a20 is 0 bytes inside global var "s_rwlock"
+ declared at rwlock_race.c:17
    kind   rdwr
  { R1:thread #3 tid 3 }
 }
 ]]></programlisting>
 
-  </listitem>
-
-  <listitem>
-    <para><varname>describe &lt;addr&gt;</varname> describes the address
-    &lt;addr&gt;. For example, an heap address will be described by the
-    length of the heap block and the stacktrace where this block was allocated.
-    The option <varname>--read-var-info=yes</varname> allows to give information
-    about global or local variables.
-    </para>
-<programlisting><![CDATA[
-(gdb) monitor describe 0x404e028
-
-address 0x404E028 is 0 bytes inside a block of size 100 alloc'd
-==16448==    at 0x4028AA5: malloc (vg_replace_malloc.c:292)
-==16448==    by 0x8048BD7: main (tc19_shadowmem.c:144)
-(gdb) mo d 0xbec6f040
-
-Location 0xbec6f040 is 0 bytes inside info.child,
-declared at tc19_shadowmem.c:139, in frame #0 of thread 1
-(gdb) 
-]]></programlisting>
   </listitem>
 
 </itemizedlist>

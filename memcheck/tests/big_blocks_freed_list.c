@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
    /* Verify that access via a dangling pointer to a big block bigger than
       the free list is found by memcheck (still on the free list). */
    semi_big = malloc (900000);
-   big = malloc (1000001);
+   big = malloc (1000015);
    free(semi_big);
    free(big);
    if (big[1000] > 0x0) jumped();
@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
    big = NULL;
 
    {
-      big = malloc (1000001);
+      big = malloc (1000015);
       free(big);
       if (small[10] > 0x0) jumped();
       

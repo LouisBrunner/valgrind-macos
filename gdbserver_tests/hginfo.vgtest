@@ -1,0 +1,13 @@
+# test helgrind monitor command
+# test 'v.info location' monitor command
+prog: ../helgrind/tests/hg01_all_ok
+vgopts: --tool=helgrind --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-hginfo -q 
+prereq: test -e gdb.eval
+stdout_filter: filter_make_empty
+stderr_filter: filter_stderr
+progB: gdb
+argsB: --quiet -l 60 --nx ../helgrind/tests/hg01_all_ok
+stdinB: hginfo.stdinB.gdb
+stdoutB_filter: filter_gdb
+stderrB_filter: filter_helgrind_monitor
+stderrB_filter_args: hg01_all_ok.c

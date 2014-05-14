@@ -22,9 +22,8 @@ Locks held: none
 This conflicts with a previous read of size 4 by thread #x
 Locks held: none
    at 0x........: main (hg03_inherit.c:60)
-
-Location 0x........ is 0 bytes inside shared[1],
-a global variable declared at hg03_inherit.c:11
+ Location 0x........ is 0 bytes inside shared[1],
+ a global variable declared at hg03_inherit.c:11
 
 
 ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

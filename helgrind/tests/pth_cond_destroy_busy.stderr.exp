@@ -28,6 +28,7 @@ Locks held: none
    by 0x........: thread_func (pth_cond_destroy_busy.c:31)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 4 bytes inside data symbol "s_cond"
 
 ----------------------------------------------------------------
 

@@ -56,6 +56,7 @@
 #include "pub_tool_libcproc.h"  // VG_(atfork)
 #include "pub_tool_aspacemgr.h" // VG_(am_is_valid_for_client)
 #include "pub_tool_poolalloc.h"
+#include "pub_tool_addrinfo.h"
 
 #include "hg_basics.h"
 #include "hg_wordset.h"
@@ -470,11 +471,11 @@ static void pp_Lock ( Int d, Lock* lk,
 {
    space(d+0); 
    if (show_internal_data)
-      VG_(printf)("Lock %p (ga %#lx) {", lk, lk->guestaddr);
+      VG_(printf)("Lock %p (ga %#lx) {\n", lk, lk->guestaddr);
    else
-      VG_(printf)("Lock ga %#lx {", lk->guestaddr);
+      VG_(printf)("Lock ga %#lx {\n", lk->guestaddr);
    if (!show_lock_addrdescr 
-       || !HG_(get_and_pp_addrdescr) ("lock", (Addr) lk->guestaddr))
+       || !HG_(get_and_pp_addrdescr) ((Addr) lk->guestaddr))
       VG_(printf)("\n");
       
    if (sHOW_ADMIN) {
@@ -4745,7 +4746,6 @@ static void print_monitor_help ( void )
       (
 "\n"
 "helgrind monitor commands:\n"
-"  describe <addr>         : outputs a description of <addr>\n"
 "  info locks              : show list of locks and their status\n"
 "\n");
 }
@@ -4765,7 +4765,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
       starts with the same first letter(s) as an already existing
       command. This ensures a shorter abbreviation for the user. */
    switch (VG_(keyword_id) 
-           ("help info describe", 
+           ("help info", 
             wcmd, kwd_report_duplicated_matches)) {
    case -2: /* multiple matches */
       return True;
@@ -4799,16 +4799,6 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
          tl_assert(0);
       }
       return True;
-   case  2: { /* describe */
-      Addr address;
-      SizeT szB = 1;
-      VG_(strtok_get_address_and_size) (&address, &szB, &ssaveptr);
-      if (address == (Addr) 0 && szB == 0) return True;
-      if (!HG_(get_and_pp_addrdescr) ("address", address))
-         VG_(gdb_printf) ("No description found for address %p\n", 
-                          (void*)address);
-      return True;
-   }
    default: 
       tl_assert(0);
       return False;
@@ -5391,6 +5381,11 @@ static void hg_post_clo_init ( void )
    initialise_data_structures(hbthr_root);
 }
 
+static void hg_info_location (Addr a)
+{
+   (void) HG_(get_and_pp_addrdescr) (a);
+}
+
 static void hg_pre_clo_init ( void )
 {
    VG_(details_name)            ("Helgrind");
@@ -5431,6 +5426,7 @@ static void hg_pre_clo_init ( void )
    //                                hg_expensive_sanity_check);
 
    VG_(needs_print_stats) (hg_print_stats);
+   VG_(needs_info_location) (hg_info_location);
 
    VG_(needs_malloc_replacement)  (hg_cli__malloc,
                                    hg_cli____builtin_new,

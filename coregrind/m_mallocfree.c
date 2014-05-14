@@ -943,6 +943,33 @@ Superblock* findSb ( Arena* a, Block* b )
 }
 
 
+// Find the superblock containing the given address.
+// If superblock not found, return NULL.
+static
+Superblock* maybe_findSb ( Arena* a, Addr ad )
+{
+   SizeT min = 0;
+   SizeT max = a->sblocks_used;
+
+   while (min <= max) {
+      Superblock * sb; 
+      SizeT pos = min + (max - min)/2;
+      if (pos < 0 || pos >= a->sblocks_used)
+         return NULL;
+      sb = a->sblocks[pos];
+      if ((Addr)&sb->payload_bytes[0] <= ad
+          && ad < (Addr)&sb->payload_bytes[sb->n_payload_bytes]) {
+         return sb;
+      } else if ((Addr)&sb->payload_bytes[0] <= ad) {
+         min = pos + 1;
+      } else {
+         max = pos - 1;
+      }
+   }
+   return NULL;
+}
+
+
 /*------------------------------------------------------------*/
 /*--- Functions for working with freelists.                ---*/
 /*------------------------------------------------------------*/
@@ -1413,6 +1440,43 @@ void VG_(sanity_check_malloc_all) ( void )
    }
 }
 
+void VG_(describe_arena_addr) ( Addr a, AddrArenaInfo* aai )
+{
+   UInt i;
+   Superblock *sb;
+   Arena      *arena;
+
+   for (i = 0; i < VG_N_ARENAS; i++) {
+      if (i == VG_AR_CLIENT && !client_inited)
+         continue;
+      arena = arenaId_to_ArenaP(i);
+      sb = maybe_findSb( arena, a );
+      if (sb != NULL) {
+         Word   j;
+         SizeT  b_bszB;
+         Block *b = NULL;
+
+         aai->aid = i;
+         aai->name = arena->name;
+         for (j = 0; j < sb->n_payload_bytes; j += mk_plain_bszB(b_bszB)) {
+            b     = (Block*)&sb->payload_bytes[j];
+            b_bszB = get_bszB_as_is(b);
+            if (a < (Addr)b + mk_plain_bszB(b_bszB))
+               break;
+         }
+         vg_assert (b);
+         aai->block_szB = get_pszB(arena, b);
+         aai->rwoffset = a - (Addr)get_block_payload(arena, b);
+         aai->free = !is_inuse_block(b);
+         return;
+      }
+   }
+   aai->aid = 0;
+   aai->name = NULL;
+   aai->block_szB = 0;
+   aai->rwoffset = 0;
+   aai->free = False;
+}
 
 /*------------------------------------------------------------*/
 /*--- Creating and deleting blocks.                        ---*/

@@ -1404,7 +1404,7 @@ static Bool is_zero_b (const HChar *s)
       return False;
 }
 
-void VG_(strtok_get_address_and_size) (Addr* address, 
+Bool VG_(strtok_get_address_and_size) (Addr* address, 
                                        SizeT* szB, 
                                        HChar **ssaveptr)
 {
@@ -1419,7 +1419,7 @@ void VG_(strtok_get_address_and_size) (Addr* address,
       VG_(gdb_printf) ("missing or malformed address\n");
       *address = (Addr) 0;
       *szB = 0;
-      return;
+      return False;
    }
    ws = VG_(strtok_r) (NULL, " ", ssaveptr);
    if (ws == NULL) {
@@ -1451,8 +1451,9 @@ void VG_(strtok_get_address_and_size) (Addr* address,
                        "hex 0x..... or dec ...... or binary .....b\n");
       *address = (Addr) 0;
       *szB = 0;
-      return;
+      return False;
    }
+   return True;
 }
 
 void VG_(gdbserver_status_output)(void)

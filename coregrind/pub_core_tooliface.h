@@ -89,6 +89,7 @@ typedef
       Bool syscall_wrapper;
       Bool sanity_checks;
       Bool print_stats;
+      Bool info_location;
       Bool var_info;
       Bool malloc_replacement;
       Bool xml_output;
@@ -152,6 +153,9 @@ typedef struct {
 
    // VG_(needs).print_stats
    void (*tool_print_stats)(void);
+
+   // VG_(needs).info_location
+   void (*tool_info_location)(Addr a);
 
    // VG_(needs).malloc_replacement
    void* (*tool_malloc)              (ThreadId, SizeT);

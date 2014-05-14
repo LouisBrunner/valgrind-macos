@@ -33,45 +33,22 @@
 #ifndef __HG_ADDRDESCR_H
 #define __HG_ADDRDESCR_H
 
-/*----------------------------------------------------------------*/
-/*--- Address Description                                      ---*/
-/*--- Used e.g. to describe an address in a Race cond. error   ---*/
-/*--- or a lock.                                               ---*/
-/*----------------------------------------------------------------*/
-typedef
-   struct  {
-      /* descr1/2 provide a description of stack/global locs */
-      XArray*     descr1; /* XArray* of HChar */
-      XArray*     descr2; /* XArray* of HChar */
-      /* hctxt/haddr/hszB describe the addr if it is a heap block. */
-      ExeContext* hctxt;
-      Addr        haddr;
-      SizeT       hszB;
-   }
-   AddrDescr;
-
-/* Initialises an empty AddrDescr. */
-void HG_(init_AddrDescr) ( AddrDescr* ad );
-
 /* Describe an address as best you can, for error messages or
-   lock description, putting the result in ad.
-   This allocates some memory in ad, to be cleared with VG_(clear_addrdesc). */
-extern void HG_(describe_addr) ( Addr a, /*OUT*/AddrDescr* ad );
+   lock description, putting the result in ai.
+   This might allocate some memory in ai, to be cleared with
+   VG_(clear_addrinfo). */
+extern void HG_(describe_addr) ( Addr a, /*OUT*/AddrInfo* ai );
 
-/* Prints (using *print) the readable description of addr given in ad.
+/* Prints (using *print) the readable description of addr given in ai.
    "what" identifies the type pointed to by addr (e.g. a lock). */
 extern void HG_(pp_addrdescr) (Bool xml, const HChar* what, Addr addr,
-                               AddrDescr* ad,
+                               AddrInfo* ai,
                                void(*print)(const HChar *format, ...));
 
 /* Get a readable description of addr, then print it using HG_(pp_addrdescr)
    using xml False and VG_(printf) to emit the characters.
    Returns True if a description was found/printed, False otherwise. */
-extern Bool HG_(get_and_pp_addrdescr) (const HChar* what, Addr a);
-
-/* Free all memory allocated by HG_(describe_addr)
-   Sets all elements of ad to 0/NULL. */
-extern void HG_(clear_addrdesc) ( AddrDescr* ad);
+extern Bool HG_(get_and_pp_addrdescr) (Addr a);
 
 /* For error creation/address description:
    map 'data_addr' to a malloc'd chunk, if any.

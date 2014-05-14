@@ -1,7 +1,7 @@
 
 Invalid read of size 1
    at 0x........: main (big_blocks_freed_list.c:22)
- Address 0x........ is 1,000 bytes inside a block of size 1,000,001 free'd
+ Address 0x........ is 1,000 bytes inside a block of size 1,000,015 free'd
    at 0x........: free (vg_replace_malloc.c:...)
    by 0x........: main (big_blocks_freed_list.c:21)
 
@@ -13,7 +13,7 @@ Invalid read of size 1
 
 Invalid read of size 1
    at 0x........: main (big_blocks_freed_list.c:33)
- Address 0x........ is not stack'd, malloc'd or (recently) free'd
+ Address 0x........ is 2,000 bytes inside an unallocated block of size 1,000,016 in arena "client"
 
 Invalid read of size 1
    at 0x........: main (big_blocks_freed_list.c:34)
@@ -29,7 +29,7 @@ Invalid read of size 1
 
 Invalid read of size 1
    at 0x........: main (big_blocks_freed_list.c:46)
- Address 0x........ is 10 bytes inside a block of size 1,000,001 free'd
+ Address 0x........ is 10 bytes inside a block of size 1,000,015 free'd
    at 0x........: free (vg_replace_malloc.c:...)
    by 0x........: main (big_blocks_freed_list.c:40)
 
@@ -42,7 +42,7 @@ Invalid read of size 1
 
 HEAP SUMMARY:
     in use at exit: 1,000,000 bytes in 100 blocks
-  total heap usage: 104 allocs, 4 frees, 3,910,002 bytes allocated
+  total heap usage: 104 allocs, 4 frees, 3,910,030 bytes allocated
 
 For a detailed leak analysis, rerun with: --leak-check=full
 

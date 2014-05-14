@@ -40,6 +40,7 @@
 #include "pub_tool_debuginfo.h"
 #include "pub_tool_threadstate.h"
 #include "pub_tool_options.h"     // VG_(clo_xml)
+#include "pub_tool_addrinfo.h"
 
 #include "hg_basics.h"
 #include "hg_addrdescr.h"
@@ -292,7 +293,7 @@ typedef
          struct {
             Addr        data_addr;
             Int         szB;
-            AddrDescr   data_addrdescr;
+            AddrInfo    data_addrinfo;
             Bool        isWrite;
             Thread*     thr;
             Lock**      locksHeldW;
@@ -406,7 +407,7 @@ UInt HG_(update_extra) ( Error* err )
          VG_(printf)("HG_(update_extra): "
                      "%d conflicting-event queries\n", xxx);
 
-      HG_(describe_addr) (xe->XE.Race.data_addr, &xe->XE.Race.data_addrdescr);
+      HG_(describe_addr) (xe->XE.Race.data_addr, &xe->XE.Race.data_addrinfo);
 
       /* And poke around in the conflicting-event map, to see if we
          can rustle up a plausible-looking conflicting memory access
@@ -488,7 +489,7 @@ void HG_(record_error_Race) ( Thread* thr,
    /* Skip on the detailed description of the raced-on address at this
       point; it's expensive.  Leave it for the update_extra function
       if we ever make it that far. */
-   HG_(init_AddrDescr) (&xe.XE.Race.data_addrdescr);
+   xe.XE.Race.data_addrinfo.tag = Addr_Undescribed;
    // FIXME: tid vs thr
    // Skip on any of the conflicting-access info at this point.
    // It's expensive to obtain, and this error is more likely than
@@ -1232,10 +1233,7 @@ void HG_(pp_Error) ( Error* err )
          }
 
       }
-
-     HG_(pp_addrdescr) (xml, "Address", err_ga,
-                        &xe->XE.Race.data_addrdescr,
-                        emit);
+      VG_(pp_addrinfo) (err_ga, &xe->XE.Race.data_addrinfo);
       break; /* case XE_Race */
    } /* case XE_Race */
 

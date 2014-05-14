@@ -1,0 +1,11 @@
+Breakpoint 1 at 0x........: file hg01_all_ok.c, line 13.
+Continuing.
+[New Thread ....]
+Breakpoint 1, breakme () at hg01_all_ok.c:13
+13	   if (shared == 1)
+Continuing.
+[New Thread ....]
+Breakpoint 1, breakme () at hg01_all_ok.c:13
+13	   if (shared == 1)
+Continuing.
+Program exited normally.

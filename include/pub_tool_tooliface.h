@@ -458,6 +458,13 @@ extern void VG_(needs_print_stats) (
    void (*print_stats)(void)
 );
 
+/* Has the tool a tool specific function to retrieve and print location info
+   of an address ? */
+extern void VG_(needs_info_location) (
+   // Get and pp information about Addr
+   void (*info_location)(Addr)
+);
+
 /* Do we need to see variable type and location information? */
 extern void VG_(needs_var_info) ( void );
 

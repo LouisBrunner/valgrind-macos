@@ -93,6 +93,7 @@ VgNeeds VG_(needs) = {
    .syscall_wrapper      = False,
    .sanity_checks        = False,
    .print_stats          = False,
+   .info_location        = False,
    .var_info	         = False,
    .malloc_replacement   = False,
    .xml_output           = False,
@@ -301,6 +302,14 @@ void VG_(needs_print_stats) (
 {
    VG_(needs).print_stats = True;
    VG_(tdict).tool_print_stats = print_stats;
+}
+
+void VG_(needs_info_location) (
+   void (*info_location)(Addr)
+)
+{
+   VG_(needs).info_location = True;
+   VG_(tdict).tool_info_location = info_location;
 }
 
 void VG_(needs_malloc_replacement)(

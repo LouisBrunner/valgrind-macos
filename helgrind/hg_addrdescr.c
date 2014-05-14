@@ -36,19 +36,19 @@
 #include "pub_tool_execontext.h"
 #include "pub_tool_debuginfo.h"
 #include "pub_tool_threadstate.h"
+#include "pub_tool_addrinfo.h"
 
 #include "hg_basics.h"
 #include "hg_addrdescr.h"            /* self */
 
-void HG_(init_AddrDescr) ( AddrDescr* ad ) {
-   VG_(memset)(ad, 0, sizeof(*ad) );
-}
-
-void HG_(describe_addr) ( Addr a, /*OUT*/AddrDescr* ad )
+void HG_(describe_addr) ( Addr a, /*OUT*/AddrInfo* ai )
 {
-   tl_assert(!ad->hctxt);
-   tl_assert(!ad->descr1);
-   tl_assert(!ad->descr2);
+   tl_assert(ai->tag == Addr_Undescribed);
+
+   /* hctxt/haddr/hszB describe the addr if it is a heap block. */
+   ExeContext* hctxt;
+   Addr        haddr;
+   SizeT       hszB;
 
    /* First, see if it's in any heap block.  Unfortunately this
       means a linear search through all allocated heap blocks.  The
@@ -57,133 +57,40 @@ void HG_(describe_addr) ( Addr a, /*OUT*/AddrDescr* ad )
       should have an allocation context. */
    Bool is_heapblock
       = HG_(mm_find_containing_block)( 
-           &ad->hctxt,
-           &ad->haddr,
-           &ad->hszB,
+           &hctxt,
+           &haddr,
+           &hszB,
            a
         );
-   tl_assert(is_heapblock == (ad->hctxt != NULL));
-
-   if (!ad->hctxt) {
-      /* It's not in any heap block.  See if we can map it to a
-         stack or global symbol. */
-
-      ad->descr1
-         = VG_(newXA)( HG_(zalloc), "hg.addrdescr.descr1",
-                       HG_(free), sizeof(HChar) );
-      ad->descr2
-         = VG_(newXA)( HG_(zalloc), "hg.addrdescr.descr2",
-                       HG_(free), sizeof(HChar) );
-
-      (void) VG_(get_data_description)( ad->descr1,
-                                        ad->descr2,
-                                        a );
-
-      /* If there's nothing in descr1/2, free it.  Why is it safe to
-         to VG_(indexXA) at zero here?  Because
-         VG_(get_data_description) guarantees to zero terminate
-         descr1/2 regardless of the outcome of the call.  So there's
-         always at least one element in each XA after the call.
-      */
-      if (0 == VG_(strlen)( VG_(indexXA)(ad->descr1, 0 ))) {
-         VG_(deleteXA)( ad->descr1 );
-         ad->descr1 = NULL;
-      }
-      if (0 == VG_(strlen)( VG_(indexXA)( ad->descr2, 0 ))) {
-         VG_(deleteXA)( ad->descr2 );
-         ad->descr2 = NULL;
-      }
-   }
-}
-
-void HG_(pp_addrdescr) (Bool xml, const HChar* what, Addr addr,
-                        AddrDescr* ad,
-                        void(*print)(const HChar *format, ...))
-{
-   /* If we have a description of the address in terms of a heap
-      block, show it. */
-   if (ad->hctxt) {
-      SizeT delta = addr - ad->haddr;
-      if (xml) {
-         (*print)("  <auxwhat>%s %p is %ld bytes inside a block "
-                  "of size %ld alloc'd</auxwhat>\n", what,
-                  (void*)addr, delta, 
-                  ad->hszB);
-         VG_(pp_ExeContext)( ad->hctxt );
-      } else {
-         (*print)("\n");
-         (*print)("%s %p is %ld bytes inside a block "
-                  "of size %ld alloc'd\n", what,
-                  (void*)addr, delta, 
-                  ad->hszB);
-         VG_(pp_ExeContext)( ad->hctxt );
-      }
-   }
-
-   /* If we have a better description of the address, show it.
-      Note that in XML mode, it will already by nicely wrapped up
-      in tags, either <auxwhat> or <xauxwhat>, so we can just emit
-      it verbatim. */
-   if (xml) {
-      if (ad->descr1)
-         (*print)( "  %s\n",
-                   (HChar*)VG_(indexXA)( ad->descr1, 0 ) );
-      if (ad->descr2)
-         (*print)( "  %s\n",
-                   (HChar*)VG_(indexXA)( ad->descr2, 0 ) );
+   if (is_heapblock) {
+      tl_assert(is_heapblock == (hctxt != NULL));
+      ai->tag = Addr_Block;
+      ai->Addr.Block.block_kind = Block_Mallocd;
+      ai->Addr.Block.block_desc = "block";
+      ai->Addr.Block.block_szB  = hszB;
+      ai->Addr.Block.rwoffset   = (Word)(a) - (Word)(haddr);
+      ai->Addr.Block.allocated_at = hctxt;
+      ai->Addr.Block.freed_at = VG_(null_ExeContext)();;
    } else {
-      if (ad->descr1 || ad->descr2)
-         (*print)("\n");
-      if (ad->descr1)
-         (*print)( "%s\n",
-                   (HChar*)VG_(indexXA)( ad->descr1, 0 ) );
-      if (ad->descr2)
-         (*print)( "%s\n",
-                   (HChar*)VG_(indexXA)( ad->descr2, 0 ) );
+      /* No block found. Search a non-heap block description. */
+      VG_(describe_addr) (a, ai);
    }
 }
 
-static void void_printf(const HChar *format, ...)
-{
-   va_list vargs;
-   va_start(vargs, format);
-   VG_(vprintf)(format, vargs);
-   va_end(vargs);
-}
-
-Bool HG_(get_and_pp_addrdescr) (const HChar* what, Addr addr)
+Bool HG_(get_and_pp_addrdescr) (Addr addr)
 {
 
    Bool ret;
-   AddrDescr glad;
+   AddrInfo glai;
 
-   HG_(init_AddrDescr) (&glad);
+   glai.tag = Addr_Undescribed;
+   HG_(describe_addr) (addr, &glai);
+   VG_(pp_addrinfo) (addr, &glai);
+   ret = glai.tag != Addr_Unknown;
 
-   HG_(describe_addr) (addr, &glad);
-
-   HG_(pp_addrdescr) (False /* xml */, what, addr,
-                      &glad,
-                      void_printf);
-   ret = glad.hctxt || glad.descr1 || glad.descr2;
-
-   HG_(clear_addrdesc) (&glad);
+   VG_(clear_addrinfo) (&glai);
 
    return ret;
-}
-
-void HG_(clear_addrdesc) ( AddrDescr* ad)
-{
-   ad->hctxt = NULL;
-   ad->haddr = 0;
-   ad->hszB = 0;
-   if (ad->descr1 != NULL) {
-      VG_(deleteXA)( ad->descr1 );
-      ad->descr1 = NULL;
-   }
-   if (ad->descr2 != NULL) {
-      VG_(deleteXA)( ad->descr2 );
-      ad->descr2 = NULL;
-   }
 }
 
 /*--------------------------------------------------------------------*/

@@ -106,6 +106,12 @@ extern UInt VG_(printf_xml)  ( const HChar *format, ... )
 extern UInt VG_(vprintf_xml) ( const HChar *format, va_list vargs )
                              PRINTF_CHECK(1, 0);
 
+/* Do a printf-style operation on either the XML 
+   or normal output channel
+   or gdb output channel, depending on the setting of VG_(clo_xml)
+   and the state of VG_(log_output_sink). */
+extern UInt VG_(emit) ( const HChar* format, ... ) PRINTF_CHECK(1, 2);
+
 /* Yet another, totally general, version of vprintf, which hands all
    output bytes to CHAR_SINK, passing it OPAQUE as the second arg. */
 extern void VG_(vcbprintf)( void(*char_sink)(HChar, void* opaque),

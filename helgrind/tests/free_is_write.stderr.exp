@@ -24,6 +24,7 @@ Locks held: none
 This conflicts with a previous read of size 1 by thread #x
 Locks held: none
    at 0x........: main (free_is_write.c:36)
+ Address 0x........ is 5 bytes inside an unallocated block of size 16 in arena "client"
 
 Done.
 

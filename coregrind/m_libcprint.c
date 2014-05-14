@@ -168,6 +168,25 @@ UInt VG_(printf_xml) ( const HChar *format, ... )
    return ret;
 }
 
+static UInt emit_WRK ( const HChar* format, va_list vargs )
+{
+   if (VG_(clo_xml)) {
+      return VG_(vprintf_xml)(format, vargs);
+   } else if (VG_(log_output_sink).fd == -2) {
+      return VG_(vprintf) (format, vargs);
+   } else {
+      return VG_(vmessage)(Vg_UserMsg, format, vargs);
+   }
+}
+UInt VG_(emit) ( const HChar* format, ... )
+{
+   UInt ret;
+   va_list vargs;
+   va_start(vargs, format);
+   ret = emit_WRK(format, vargs);
+   va_end(vargs);
+   return ret;
+}
 
 /* --------- sprintf --------- */
 

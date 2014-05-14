@@ -180,9 +180,13 @@ extern Int VG_(keyword_id) (const HChar* keywords, const HChar* input_word,
 /* Extract an address and (optionally) a size from the string
    currently being parsed by strtok_r (see pub_tool_libcbase.h).
    If no size in the string, keeps the current value of szB.
-   Returns address 0 and szB 0 if there is an error.  Reports to the
-   user problems via VG_(gdb_printf).  */
-extern void VG_(strtok_get_address_and_size) (Addr* address, 
+   If parsing is ok,
+     returns True.
+   If parsing is not ok;
+     set *address and *szB to 0,
+     reports problem to the user using VG_(gdb_printf)
+     returns False. */
+extern Bool VG_(strtok_get_address_and_size) (Addr* address, 
                                               SizeT* szB, 
                                               HChar **ssaveptr);
 

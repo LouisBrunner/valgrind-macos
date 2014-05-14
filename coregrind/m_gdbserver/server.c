@@ -31,6 +31,8 @@
 #include "pub_core_syswrap.h"      // VG_(show_open_fds)
 #include "pub_core_scheduler.h"
 #include "pub_core_transtab.h"
+#include "pub_core_debuginfo.h"
+#include "pub_core_addrinfo.h"
 
 unsigned long cont_thread;
 unsigned long general_thread;
@@ -224,6 +226,7 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
 "  v.wait [<ms>]           : sleep <ms> (default 0) then continue\n"
 "  v.info all_errors       : show all errors found so far\n"
 "  v.info last_error       : show last error found\n"
+"  v.info location <addr>  : show information about location <addr>\n"
 "  v.info n_errs_found [msg] : show the nr of errors found so far and the given msg\n"
 "  v.info open_fds         : show open file descriptors (only if --track-fds=yes)\n"
 "  v.kill                  : kill the Valgrind process\n"
@@ -341,7 +344,7 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
       wcmd = strtok_r (NULL, " ", &ssaveptr);
       switch (kwdid = VG_(keyword_id) 
               ("all_errors n_errs_found last_error gdbserver_status memory"
-               " scheduler stats open_fds exectxt",
+               " scheduler stats open_fds exectxt location",
                wcmd, kwd_report_all)) {
       case -2:
       case -1: 
@@ -407,6 +410,31 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
          VG_(print_ExeContext_stats) (True /* with_stacktraces */);
          ret = 1;
          break;
+      case  9: { /* location */
+         /* Note: we prefer 'v.info location' and not 'v.info address' as
+            v.info address is inconsistent with the GDB (native) 
+            command 'info address' which gives the address for a symbol.
+            GDB equivalent command of 'v.info location' is 'info symbol'. */
+         Addr address;
+         SizeT dummy_sz = 0x1234;
+         if (VG_(strtok_get_address_and_size) (&address, &dummy_sz, &ssaveptr)) {
+            // If tool provides location information, use that.
+            if (VG_(needs).info_location) {
+               VG_TDICT_CALL(tool_info_location, address);
+            } 
+            // If tool does not provide location information, use the common one.
+            // Also use the common to compare with tool when debug log is set.
+            if (!VG_(needs).info_location || VG_(debugLog_getLevel)() > 0 ) {
+               AddrInfo ai;
+               ai.tag = Addr_Undescribed;
+               VG_(describe_addr) (address, &ai);
+               VG_(pp_addrinfo) (address, &ai);
+               VG_(clear_addrinfo) (&ai);
+            }
+         }
+         ret = 1;
+         break;
+      }
       default:
          vg_assert(0);
       }
@@ -431,8 +459,7 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
       
       ret = 1;
 
-      VG_(strtok_get_address_and_size) (&address, &verbosity, &ssaveptr);
-      if (address != (Addr) 0 || verbosity != 0) {
+      if (VG_(strtok_get_address_and_size) (&address, &verbosity, &ssaveptr)) {
          /* we need to force the output to log for the translation trace,
             as low level VEX tracing cannot be redirected to gdb. */
          int saved_command_output_to_log = command_output_to_log;

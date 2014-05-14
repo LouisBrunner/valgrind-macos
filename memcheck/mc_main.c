@@ -5536,8 +5536,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
    case  1: { /* get_vbits */
       Addr address;
       SizeT szB = 1;
-      VG_(strtok_get_address_and_size) (&address, &szB, &ssaveptr);
-      if (szB != 0) {
+      if (VG_(strtok_get_address_and_size) (&address, &szB, &ssaveptr)) {
          UChar vbits;
          Int i;
          Int unaddressable = 0;
@@ -5671,8 +5670,8 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
       Int kwdid = VG_(keyword_id) 
          ("noaccess undefined defined Definedifaddressable",
           VG_(strtok_r) (NULL, " ", &ssaveptr), kwd_report_all);
-      VG_(strtok_get_address_and_size) (&address, &szB, &ssaveptr);
-      if (address == (Addr) 0 && szB == 0) return True;
+      if (!VG_(strtok_get_address_and_size) (&address, &szB, &ssaveptr))
+         return True;
       switch (kwdid) {
       case -2: break;
       case -1: break;
@@ -5700,8 +5699,8 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
       Int kwdid = VG_(keyword_id) 
          ("addressable defined",
           VG_(strtok_r) (NULL, " ", &ssaveptr), kwd_report_all);
-      VG_(strtok_get_address_and_size) (&address, &szB, &ssaveptr);
-      if (address == (Addr) 0 && szB == 0) return True;
+      if (!VG_(strtok_get_address_and_size) (&address, &szB, &ssaveptr))
+         return True;
       switch (kwdid) {
       case -2: break;
       case -1: break;
@@ -5775,7 +5774,8 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
       Addr address;
       SizeT szB = 1;
 
-      VG_(strtok_get_address_and_size) (&address, &szB, &ssaveptr);
+      if (!VG_(strtok_get_address_and_size) (&address, &szB, &ssaveptr))
+         return True;
       if (address == (Addr) 0) {
          VG_(gdb_printf) ("Cannot search who points at 0x0\n");
          return True;
@@ -6884,6 +6884,7 @@ static void mc_pre_clo_init(void)
    VG_(needs_sanity_checks)       (mc_cheap_sanity_check,
                                    mc_expensive_sanity_check);
    VG_(needs_print_stats)         (mc_print_stats);
+   VG_(needs_info_location)       (MC_(pp_describe_addr));
    VG_(needs_malloc_replacement)  (MC_(malloc),
                                    MC_(__builtin_new),
                                    MC_(__builtin_vec_new),

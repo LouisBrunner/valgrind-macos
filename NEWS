@@ -15,8 +15,6 @@ Release 3.10.0 (?? ?????? 201?)
     VALGRIND_ENABLE_ADDR_ERROR_REPORTING_IN_RANGE
 
 * Helgrind:
-  - Helgrind GDB server monitor command 'describe <address>'
-    allowing to describe an address (e.g. where it was allocated).
   - Helgrind GDB server monitor command 'info locks' giving
     the list of locks, their location, and their status.
 
@@ -27,6 +25,12 @@ Release 3.10.0 (?? ?????? 201?)
 * ==================== OTHER CHANGES ====================
 
 * New and modified GDB server monitor features:
+
+  - The GDB server monitor command 'v.info location <address>'
+    outputs information about an address. The information produced depends
+    on the tool and on the options given to valgrind.
+    Possibly, the following are described: global variables, local (stack)
+    variables, allocated or freed blocks, ...
 
   - The option "--vgdb-stop-at=event1,event2,..." allows the user
     to ask GDB server to stop before program execution, at the end

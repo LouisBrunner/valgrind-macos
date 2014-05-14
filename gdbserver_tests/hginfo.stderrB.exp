@@ -1,0 +1,18 @@
+relaying data between gdb and process ....
+vgdb-error value changed from 0 to 999999
+Lock ga 0x........ {
+ Address 0x........ is 0 bytes inside data symbol "mx"
+   kind   mbRec
+ { W1:thread #x tid 2 }
+}
+ Address 0x........ is 0 bytes inside a block of size 1,008 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: th (hg01_all_ok.c:22)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   ...
+Lock ga 0x........ {
+ Address 0x........ is 0 bytes inside data symbol "mx"
+   kind   mbRec
+ { W1:thread #x tid 3 }
+}
+ Address 0x........ is 0 bytes inside an unallocated block of size 1,008 in arena "client"

@@ -158,6 +158,7 @@ $(mach_hdrs): $(mach_defs) $(mach_user_srcs) $(abs_builddir)/m_mach
 #----------------------------------------------------------------------------
 
 noinst_HEADERS = \
+	pub_core_addrinfo.h	\
 	pub_core_aspacehl.h	\
 	pub_core_aspacemgr.h	\
 	pub_core_basics.h	\
@@ -271,6 +272,7 @@ pkglib_LIBRARIES += libcoregrind-@VGCONF_ARCH_SEC@-@VGCONF_OS@.a
 endif
 
 COREGRIND_SOURCES_COMMON = \
+	m_addrinfo.c \
 	m_cache.c \
 	m_commandline.c \
 	m_clientstate.c \

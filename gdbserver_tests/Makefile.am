@@ -5,10 +5,15 @@ dist_noinst_SCRIPTS = \
 	invoker simulate_control_c make_local_links \
 	filter_gdb filter_make_empty \
 	filter_memcheck_monitor filter_stderr filter_vgdb \
-	send_signal
+	filter_helgrind_monitor send_signal
 
 EXTRA_DIST = \
 	README_DEVELOPERS \
+	hginfo.stderrB.exp \
+	hginfo.stderr.exp \
+	hginfo.stdinB.gdb \
+	hginfo.stdoutB.exp \
+	hginfo.vgtest \
 	mcblocklistsearch.stderr.exp \
 	mcblocklistsearch.stdinB.gdb \
 	mcblocklistsearch.vgtest \

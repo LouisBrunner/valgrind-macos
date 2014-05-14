@@ -28,9 +28,8 @@ Locks held: none
    at 0x........: racy_child (tc20_verifywrap.c:34)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
-
-Location 0x........ is 0 bytes inside global var "unprotected"
-declared at tc20_verifywrap.c:27
+ Location 0x........ is 0 bytes inside global var "unprotected"
+ declared at tc20_verifywrap.c:27
 
 ----------------------------------------------------------------
 

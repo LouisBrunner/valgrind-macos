@@ -127,6 +127,23 @@ extern void  VG_(print_all_arena_stats) ( void );
 
 extern void  VG_(print_arena_cc_analysis) ( void );
 
+typedef 
+   struct _AddrArenaInfo
+   AddrArenaInfo;
+
+struct _AddrArenaInfo {
+   ArenaId aid;
+   const HChar* name; // arena name, !NULL if Addr a points in an arena.
+   SizeT       block_szB;
+   PtrdiffT    rwoffset;
+   Bool        free;  // True if this is in the arena free zone.
+};
+/* If Addr a points in one of the allocation arenas, describes Addr a in *aai
+   otherwise sets *aai to 0/NULL/...
+   Note that no information is produced for addresses allocated with
+   VG_(arena_perm_malloc). */
+extern void VG_(describe_arena_addr) ( Addr a, /*OUT*/AddrArenaInfo* aai );
+
 #endif   // __PUB_CORE_MALLOCFREE_H
 
 /*--------------------------------------------------------------------*/

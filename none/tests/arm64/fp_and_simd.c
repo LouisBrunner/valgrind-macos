@@ -2859,6 +2859,60 @@ GEN_TWOVEC_TEST(usqadd_4h_4h,   "usqadd v6.4h,  v27.4h",  6, 27)
 GEN_TWOVEC_TEST(usqadd_16b_16b, "usqadd v6.16b, v27.16b", 6, 27)
 GEN_TWOVEC_TEST(usqadd_8b_8b,   "usqadd v6.8b,  v27.8b",  6, 27)
 
+GEN_THREEVEC_TEST(trn1_2d_2d_2d,    "trn1 v1.2d,  v2.2d,  v4.2d",  1, 2, 4)
+GEN_THREEVEC_TEST(trn1_4s_4s_4s,    "trn1 v1.4s,  v2.4s,  v4.4s",  1, 2, 4)
+GEN_THREEVEC_TEST(trn1_2s_2s_2s,    "trn1 v1.2s,  v2.2s,  v4.2s",  1, 2, 4)
+GEN_THREEVEC_TEST(trn1_8h_8h_8h,    "trn1 v1.8h,  v2.8h,  v4.8h",  1, 2, 4)
+GEN_THREEVEC_TEST(trn1_4h_4h_4h,    "trn1 v1.4h,  v2.4h,  v4.4h",  1, 2, 4)
+GEN_THREEVEC_TEST(trn1_16b_16b_16b, "trn1 v1.16b, v2.16b, v4.16b", 1, 2, 4)
+GEN_THREEVEC_TEST(trn1_8b_8b_8b,    "trn1 v1.8b,  v2.8b,  v4.8b",  1, 2, 4)
+
+GEN_THREEVEC_TEST(trn2_2d_2d_2d,    "trn2 v1.2d,  v2.2d,  v4.2d",  1, 2, 4)
+GEN_THREEVEC_TEST(trn2_4s_4s_4s,    "trn2 v1.4s,  v2.4s,  v4.4s",  1, 2, 4)
+GEN_THREEVEC_TEST(trn2_2s_2s_2s,    "trn2 v1.2s,  v2.2s,  v4.2s",  1, 2, 4)
+GEN_THREEVEC_TEST(trn2_8h_8h_8h,    "trn2 v1.8h,  v2.8h,  v4.8h",  1, 2, 4)
+GEN_THREEVEC_TEST(trn2_4h_4h_4h,    "trn2 v1.4h,  v2.4h,  v4.4h",  1, 2, 4)
+GEN_THREEVEC_TEST(trn2_16b_16b_16b, "trn2 v1.16b, v2.16b, v4.16b", 1, 2, 4)
+GEN_THREEVEC_TEST(trn2_8b_8b_8b,    "trn2 v1.8b,  v2.8b,  v4.8b",  1, 2, 4)
+
+GEN_THREEVEC_TEST(uzp1_2d_2d_2d,    "uzp1 v1.2d,  v2.2d,  v4.2d",  1, 2, 4)
+GEN_THREEVEC_TEST(uzp1_4s_4s_4s,    "uzp1 v1.4s,  v2.4s,  v4.4s",  1, 2, 4)
+GEN_THREEVEC_TEST(uzp1_2s_2s_2s,    "uzp1 v1.2s,  v2.2s,  v4.2s",  1, 2, 4)
+GEN_THREEVEC_TEST(uzp1_8h_8h_8h,    "uzp1 v1.8h,  v2.8h,  v4.8h",  1, 2, 4)
+GEN_THREEVEC_TEST(uzp1_4h_4h_4h,    "uzp1 v1.4h,  v2.4h,  v4.4h",  1, 2, 4)
+GEN_THREEVEC_TEST(uzp1_16b_16b_16b, "uzp1 v1.16b, v2.16b, v4.16b", 1, 2, 4)
+GEN_THREEVEC_TEST(uzp1_8b_8b_8b,    "uzp1 v1.8b,  v2.8b,  v4.8b",  1, 2, 4)
+
+GEN_THREEVEC_TEST(uzp2_2d_2d_2d,    "uzp2 v1.2d,  v2.2d,  v4.2d",  1, 2, 4)
+GEN_THREEVEC_TEST(uzp2_4s_4s_4s,    "uzp2 v1.4s,  v2.4s,  v4.4s",  1, 2, 4)
+GEN_THREEVEC_TEST(uzp2_2s_2s_2s,    "uzp2 v1.2s,  v2.2s,  v4.2s",  1, 2, 4)
+GEN_THREEVEC_TEST(uzp2_8h_8h_8h,    "uzp2 v1.8h,  v2.8h,  v4.8h",  1, 2, 4)
+GEN_THREEVEC_TEST(uzp2_4h_4h_4h,    "uzp2 v1.4h,  v2.4h,  v4.4h",  1, 2, 4)
+GEN_THREEVEC_TEST(uzp2_16b_16b_16b, "uzp2 v1.16b, v2.16b, v4.16b", 1, 2, 4)
+GEN_THREEVEC_TEST(uzp2_8b_8b_8b,    "uzp2 v1.8b,  v2.8b,  v4.8b",  1, 2, 4)
+
+GEN_THREEVEC_TEST(zip1_2d_2d_2d,    "zip1 v1.2d,  v2.2d,  v4.2d",  1, 2, 4)
+GEN_THREEVEC_TEST(zip1_4s_4s_4s,    "zip1 v1.4s,  v2.4s,  v4.4s",  1, 2, 4)
+GEN_THREEVEC_TEST(zip1_2s_2s_2s,    "zip1 v1.2s,  v2.2s,  v4.2s",  1, 2, 4)
+GEN_THREEVEC_TEST(zip1_8h_8h_8h,    "zip1 v1.8h,  v2.8h,  v4.8h",  1, 2, 4)
+GEN_THREEVEC_TEST(zip1_4h_4h_4h,    "zip1 v1.4h,  v2.4h,  v4.4h",  1, 2, 4)
+GEN_THREEVEC_TEST(zip1_16b_16b_16b, "zip1 v1.16b, v2.16b, v4.16b", 1, 2, 4)
+GEN_THREEVEC_TEST(zip1_8b_8b_8b,    "zip1 v1.8b,  v2.8b,  v4.8b",  1, 2, 4)
+
+GEN_THREEVEC_TEST(zip2_2d_2d_2d,    "zip2 v1.2d,  v2.2d,  v4.2d",  1, 2, 4)
+GEN_THREEVEC_TEST(zip2_4s_4s_4s,    "zip2 v1.4s,  v2.4s,  v4.4s",  1, 2, 4)
+GEN_THREEVEC_TEST(zip2_2s_2s_2s,    "zip2 v1.2s,  v2.2s,  v4.2s",  1, 2, 4)
+GEN_THREEVEC_TEST(zip2_8h_8h_8h,    "zip2 v1.8h,  v2.8h,  v4.8h",  1, 2, 4)
+GEN_THREEVEC_TEST(zip2_4h_4h_4h,    "zip2 v1.4h,  v2.4h,  v4.4h",  1, 2, 4)
+GEN_THREEVEC_TEST(zip2_16b_16b_16b, "zip2 v1.16b, v2.16b, v4.16b", 1, 2, 4)
+GEN_THREEVEC_TEST(zip2_8b_8b_8b,    "zip2 v1.8b,  v2.8b,  v4.8b",  1, 2, 4)
+
+GEN_TWOVEC_TEST(urecpe_4s_4s,   "urecpe v6.4s,  v27.4s",  6, 27)
+GEN_TWOVEC_TEST(urecpe_2s_2s,   "urecpe v6.2s,  v27.2s",  6, 27)
+
+GEN_TWOVEC_TEST(ursqrte_4s_4s,   "ursqrte v6.4s,  v27.4s",  6, 27)
+GEN_TWOVEC_TEST(ursqrte_2s_2s,   "ursqrte v6.2s,  v27.2s",  6, 27)
+
 
 /* ---------------------------------------------------------------- */
 /* -- main()                                                     -- */
@@ -5101,13 +5155,60 @@ int main ( void )
 
    // trn1    2d,4s,2s,8h,4h,16b,8b
    // trn2    2d,4s,2s,8h,4h,16b,8b
+   test_trn1_2d_2d_2d(TyD);
+   test_trn1_4s_4s_4s(TyS);
+   test_trn1_2s_2s_2s(TyS);
+   test_trn1_8h_8h_8h(TyH);
+   test_trn1_4h_4h_4h(TyH);
+   test_trn1_16b_16b_16b(TyB);
+   test_trn1_8b_8b_8b(TyB);
+   test_trn2_2d_2d_2d(TyD);
+   test_trn2_4s_4s_4s(TyS);
+   test_trn2_2s_2s_2s(TyS);
+   test_trn2_8h_8h_8h(TyH);
+   test_trn2_4h_4h_4h(TyH);
+   test_trn2_16b_16b_16b(TyB);
+   test_trn2_8b_8b_8b(TyB);
 
    // urecpe      4s,2s
-
    // ursqrte     4s,2s
+   test_urecpe_4s_4s(TyS);
+   test_urecpe_2s_2s(TyS);
+   test_ursqrte_4s_4s(TyS);
+   test_ursqrte_2s_2s(TyS);
 
    // uzp1      2d,4s,2s,8h,4h,16b,8b
    // uzp2      2d,4s,2s,8h,4h,16b,8b
+   // zip1      2d,4s,2s,8h,4h,16b,8b
+   // zip2      2d,4s,2s,8h,4h,16b,8b
+   test_uzp1_2d_2d_2d(TyD);
+   test_uzp1_4s_4s_4s(TyS);
+   test_uzp1_2s_2s_2s(TyS);
+   test_uzp1_8h_8h_8h(TyH);
+   test_uzp1_4h_4h_4h(TyH);
+   test_uzp1_16b_16b_16b(TyB);
+   test_uzp1_8b_8b_8b(TyB);
+   test_uzp2_2d_2d_2d(TyD);
+   test_uzp2_4s_4s_4s(TyS);
+   test_uzp2_2s_2s_2s(TyS);
+   test_uzp2_8h_8h_8h(TyH);
+   test_uzp2_4h_4h_4h(TyH);
+   test_uzp2_16b_16b_16b(TyB);
+   test_uzp2_8b_8b_8b(TyB);
+   test_zip1_2d_2d_2d(TyD);
+   test_zip1_4s_4s_4s(TyS);
+   test_zip1_2s_2s_2s(TyS);
+   test_zip1_8h_8h_8h(TyH);
+   test_zip1_4h_4h_4h(TyH);
+   test_zip1_16b_16b_16b(TyB);
+   test_zip1_8b_8b_8b(TyB);
+   test_zip2_2d_2d_2d(TyD);
+   test_zip2_4s_4s_4s(TyS);
+   test_zip2_2s_2s_2s(TyS);
+   test_zip2_8h_8h_8h(TyH);
+   test_zip2_4h_4h_4h(TyH);
+   test_zip2_16b_16b_16b(TyB);
+   test_zip2_8b_8b_8b(TyB);
 
    // xtn{2}    2s/4s_2d, 4h/8h_4s, 8b/16b_8h
    test_xtn_2s_2d(TyD);
@@ -5116,9 +5217,6 @@ int main ( void )
    test_xtn2_8h_4s(TyS);
    test_xtn_8b_8h(TyH);
    test_xtn2_16b_8h(TyH);
-
-   // zip1      2d,4s,2s,8h,4h,16b,8b
-   // zip2      2d,4s,2s,8h,4h,16b,8b
 
    // ======================== MEM ========================
 

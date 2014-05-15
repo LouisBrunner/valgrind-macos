@@ -14,7 +14,8 @@ EXTRA_DIST = \
 	v6media.stdout.exp v6media.stderr.exp v6media.vgtest \
 	vcvt_fixed_float_VFP.stdout.exp vcvt_fixed_float_VFP.stderr.exp \
 		vcvt_fixed_float_VFP.vgtest \
-	vfp.stdout.exp vfp.stderr.exp vfp.vgtest
+	vfp.stdout.exp vfp.stderr.exp vfp.vgtest \
+	vfpv4_fma.stdout.exp vfpv4_fma.stderr.exp vfpv4_fma.vgtest
 
 check_PROGRAMS = \
 	allexec \
@@ -27,7 +28,8 @@ check_PROGRAMS = \
 	v6intThumb \
 	v6media \
 	vcvt_fixed_float_VFP \
-	vfp
+	vfp \
+	vfpv4_fma
 
 AM_CFLAGS    += @FLAG_M32@
 AM_CXXFLAGS  += @FLAG_M32@
@@ -63,3 +65,5 @@ neon64_CFLAGS     = $(AM_CFLAGS) -g -O0 -mcpu=cortex-a8 \
 intdiv_CFLAGS	  = $(AM_CFLAGS) -g -mcpu=cortex-a15 -mthumb
 ldrt_CFLAGS	  = $(AM_CFLAGS) -g -mcpu=cortex-a8 -mthumb
 ldrt_arm_CFLAGS	  = $(AM_CFLAGS) -g -mcpu=cortex-a8 -marm
+
+vfpv4_fma_CFLAGS  = $(AM_CFLAGS) -g -O0 -mcpu=cortex-a15 -mfpu=vfpv4 -marm

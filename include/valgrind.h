@@ -127,10 +127,12 @@
 #  define PLAT_x86_darwin 1
 #elif defined(__APPLE__) && defined(__x86_64__)
 #  define PLAT_amd64_darwin 1
-#elif defined(__MINGW32__) || defined(__CYGWIN32__) \
+#elif (defined(__MINGW32__) && !defined(__MINGW64__)) \
+      || defined(__CYGWIN32__) \
       || (defined(_WIN32) && defined(_M_IX86))
 #  define PLAT_x86_win32 1
-#elif defined(__MINGW64__) || (defined(_WIN64) && defined(_M_X64))
+#elif defined(__MINGW64__) \
+      || (defined(_WIN64) && defined(_M_X64))
 #  define PLAT_amd64_win64 1
 #elif defined(__linux__) && defined(__i386__)
 #  define PLAT_x86_linux 1
@@ -377,7 +379,8 @@ valgrind_do_client_request_expr(uintptr_t _zzq_default, uintptr_t _zzq_request,
 
 /* ------------------------ amd64-{linux,darwin} --------------- */
 
-#if defined(PLAT_amd64_linux)  ||  defined(PLAT_amd64_darwin)
+#if defined(PLAT_amd64_linux)  ||  defined(PLAT_amd64_darwin) \
+    ||  (defined(PLAT_amd64_win64) && defined(__GNUC__))
 
 typedef
    struct { 
@@ -438,6 +441,14 @@ typedef
  } while (0)
 
 #endif /* PLAT_amd64_linux || PLAT_amd64_darwin */
+
+/* ------------------------- amd64-Win64 ------------------------- */
+
+#if defined(PLAT_amd64_win64) && !defined(__GNUC__)
+
+#error Unsupported compiler.
+
+#endif /* PLAT_amd64_win64 */
 
 /* ------------------------ ppc32-linux ------------------------ */
 

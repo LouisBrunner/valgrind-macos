@@ -1024,6 +1024,8 @@ static SyscallTableEntry syscall_main_table[] = {
    GENX_(__NR_brk,               sys_brk),               // 214
    GENXY(__NR_munmap,            sys_munmap),            // 215
    GENX_(__NR_mremap,            sys_mremap),            // 216
+   LINX_(__NR_add_key,           sys_add_key),           // 217
+   LINXY(__NR_keyctl,            sys_keyctl),            // 219
    PLAX_(__NR_clone,             sys_clone),             // 220
    GENX_(__NR_execve,            sys_execve),            // 221
 
@@ -1342,9 +1344,7 @@ static SyscallTableEntry syscall_main_table[] = {
 //ZZ    LINXY(__NR_msgrcv,            sys_msgrcv),         
 //ZZ    LINXY(__NR_msgctl,            sys_msgctl),         // 304
 //ZZ 
-//ZZ    LINX_(__NR_add_key,           sys_add_key),        // 286
 //ZZ    LINX_(__NR_request_key,       sys_request_key),    // 287
-//ZZ    LINXY(__NR_keyctl,            sys_keyctl),         // not 288...
 //ZZ //   LINX_(__NR_ioprio_set,        sys_ioprio_set),     // 289
 //ZZ 
 //ZZ //   LINX_(__NR_ioprio_get,        sys_ioprio_get),     // 290

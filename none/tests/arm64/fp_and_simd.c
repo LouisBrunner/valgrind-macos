@@ -1007,66 +1007,66 @@ GEN_BINARY_TEST(cmge, 8b, 8b, 8b)
 
 GEN_SHIFT_TEST(ushr, 2d, 2d, 1)
 GEN_SHIFT_TEST(ushr, 2d, 2d, 13)
-GEN_SHIFT_TEST(ushr, 2d, 2d, 63)
+GEN_SHIFT_TEST(ushr, 2d, 2d, 64)
 GEN_SHIFT_TEST(sshr, 2d, 2d, 1)
 GEN_SHIFT_TEST(sshr, 2d, 2d, 13)
-GEN_SHIFT_TEST(sshr, 2d, 2d, 63)
-GEN_SHIFT_TEST(shl,  2d, 2d, 1)
+GEN_SHIFT_TEST(sshr, 2d, 2d, 64)
+GEN_SHIFT_TEST(shl,  2d, 2d, 0)
 GEN_SHIFT_TEST(shl,  2d, 2d, 13)
 GEN_SHIFT_TEST(shl,  2d, 2d, 63)
 
 GEN_SHIFT_TEST(ushr, 4s, 4s, 1)
 GEN_SHIFT_TEST(ushr, 4s, 4s, 13)
-GEN_SHIFT_TEST(ushr, 4s, 4s, 31)
+GEN_SHIFT_TEST(ushr, 4s, 4s, 32)
 GEN_SHIFT_TEST(sshr, 4s, 4s, 1)
 GEN_SHIFT_TEST(sshr, 4s, 4s, 13)
-GEN_SHIFT_TEST(sshr, 4s, 4s, 31)
-GEN_SHIFT_TEST(shl,  4s, 4s, 1)
+GEN_SHIFT_TEST(sshr, 4s, 4s, 32)
+GEN_SHIFT_TEST(shl,  4s, 4s, 0)
 GEN_SHIFT_TEST(shl,  4s, 4s, 13)
 GEN_SHIFT_TEST(shl,  4s, 4s, 31)
 
 GEN_SHIFT_TEST(ushr, 2s, 2s, 1)
 GEN_SHIFT_TEST(ushr, 2s, 2s, 13)
-GEN_SHIFT_TEST(ushr, 2s, 2s, 31)
+GEN_SHIFT_TEST(ushr, 2s, 2s, 32)
 GEN_SHIFT_TEST(sshr, 2s, 2s, 1)
 GEN_SHIFT_TEST(sshr, 2s, 2s, 13)
-GEN_SHIFT_TEST(sshr, 2s, 2s, 31)
-GEN_SHIFT_TEST(shl,  2s, 2s, 1)
+GEN_SHIFT_TEST(sshr, 2s, 2s, 32)
+GEN_SHIFT_TEST(shl,  2s, 2s, 0)
 GEN_SHIFT_TEST(shl,  2s, 2s, 13)
 GEN_SHIFT_TEST(shl,  2s, 2s, 31)
 
 GEN_SHIFT_TEST(ushr, 8h, 8h, 1)
 GEN_SHIFT_TEST(ushr, 8h, 8h, 13)
-GEN_SHIFT_TEST(ushr, 8h, 8h, 15)
+GEN_SHIFT_TEST(ushr, 8h, 8h, 16)
 GEN_SHIFT_TEST(sshr, 8h, 8h, 1)
 GEN_SHIFT_TEST(sshr, 8h, 8h, 13)
-GEN_SHIFT_TEST(sshr, 8h, 8h, 15)
-GEN_SHIFT_TEST(shl,  8h, 8h, 1)
+GEN_SHIFT_TEST(sshr, 8h, 8h, 16)
+GEN_SHIFT_TEST(shl,  8h, 8h, 0)
 GEN_SHIFT_TEST(shl,  8h, 8h, 13)
 GEN_SHIFT_TEST(shl,  8h, 8h, 15)
 
 GEN_SHIFT_TEST(ushr, 4h, 4h, 1)
 GEN_SHIFT_TEST(ushr, 4h, 4h, 13)
-GEN_SHIFT_TEST(ushr, 4h, 4h, 15)
+GEN_SHIFT_TEST(ushr, 4h, 4h, 16)
 GEN_SHIFT_TEST(sshr, 4h, 4h, 1)
 GEN_SHIFT_TEST(sshr, 4h, 4h, 13)
-GEN_SHIFT_TEST(sshr, 4h, 4h, 15)
-GEN_SHIFT_TEST(shl,  4h, 4h, 1)
+GEN_SHIFT_TEST(sshr, 4h, 4h, 16)
+GEN_SHIFT_TEST(shl,  4h, 4h, 0)
 GEN_SHIFT_TEST(shl,  4h, 4h, 13)
 GEN_SHIFT_TEST(shl,  4h, 4h, 15)
 
 GEN_SHIFT_TEST(ushr, 16b, 16b, 1)
-GEN_SHIFT_TEST(ushr, 16b, 16b, 7)
+GEN_SHIFT_TEST(ushr, 16b, 16b, 8)
 GEN_SHIFT_TEST(sshr, 16b, 16b, 1)
-GEN_SHIFT_TEST(sshr, 16b, 16b, 7)
-GEN_SHIFT_TEST(shl,  16b, 16b, 1)
+GEN_SHIFT_TEST(sshr, 16b, 16b, 8)
+GEN_SHIFT_TEST(shl,  16b, 16b, 0)
 GEN_SHIFT_TEST(shl,  16b, 16b, 7)
 
 GEN_SHIFT_TEST(ushr, 8b, 8b, 1)
-GEN_SHIFT_TEST(ushr, 8b, 8b, 7)
+GEN_SHIFT_TEST(ushr, 8b, 8b, 8)
 GEN_SHIFT_TEST(sshr, 8b, 8b, 1)
-GEN_SHIFT_TEST(sshr, 8b, 8b, 7)
-GEN_SHIFT_TEST(shl,  8b, 8b, 1)
+GEN_SHIFT_TEST(sshr, 8b, 8b, 8)
+GEN_SHIFT_TEST(shl,  8b, 8b, 0)
 GEN_SHIFT_TEST(shl,  8b, 8b, 7)
 
 GEN_SHIFT_TEST(ushll,  2d, 2s, 0)
@@ -1075,13 +1075,38 @@ GEN_SHIFT_TEST(ushll,  2d, 2s, 31)
 GEN_SHIFT_TEST(ushll2, 2d, 4s, 0)
 GEN_SHIFT_TEST(ushll2, 2d, 4s, 15)
 GEN_SHIFT_TEST(ushll2, 2d, 4s, 31)
+GEN_SHIFT_TEST(ushll,  4s, 4h,  0)
+GEN_SHIFT_TEST(ushll,  4s, 4h,  7)
+GEN_SHIFT_TEST(ushll,  4s, 4h,  15)
+GEN_SHIFT_TEST(ushll2, 4s, 8h,  0)
+GEN_SHIFT_TEST(ushll2, 4s, 8h,  7)
+GEN_SHIFT_TEST(ushll2, 4s, 8h,  15)
+GEN_SHIFT_TEST(ushll,  8h, 8b,  0)
+GEN_SHIFT_TEST(ushll,  8h, 8b,  3)
+GEN_SHIFT_TEST(ushll,  8h, 8b,  7)
+GEN_SHIFT_TEST(ushll2, 8h, 16b, 0)
+GEN_SHIFT_TEST(ushll2, 8h, 16b, 3)
+GEN_SHIFT_TEST(ushll2, 8h, 16b, 7)
 
-GEN_SHIFT_TEST(sshll,  2d, 2s, 0)
-GEN_SHIFT_TEST(sshll,  2d, 2s, 15)
-GEN_SHIFT_TEST(sshll,  2d, 2s, 31)
-GEN_SHIFT_TEST(sshll2, 2d, 4s, 0)
-GEN_SHIFT_TEST(sshll2, 2d, 4s, 15)
-GEN_SHIFT_TEST(sshll2, 2d, 4s, 31)
+GEN_SHIFT_TEST(sshll,  2d, 2s,  0)
+GEN_SHIFT_TEST(sshll,  2d, 2s,  15)
+GEN_SHIFT_TEST(sshll,  2d, 2s,  31)
+GEN_SHIFT_TEST(sshll2, 2d, 4s,  0)
+GEN_SHIFT_TEST(sshll2, 2d, 4s,  15)
+GEN_SHIFT_TEST(sshll2, 2d, 4s,  31)
+GEN_SHIFT_TEST(sshll,  4s, 4h,  0)
+GEN_SHIFT_TEST(sshll,  4s, 4h,  7)
+GEN_SHIFT_TEST(sshll,  4s, 4h,  15)
+GEN_SHIFT_TEST(sshll2, 4s, 8h,  0)
+GEN_SHIFT_TEST(sshll2, 4s, 8h,  7)
+GEN_SHIFT_TEST(sshll2, 4s, 8h,  15)
+GEN_SHIFT_TEST(sshll,  8h, 8b,  0)
+GEN_SHIFT_TEST(sshll,  8h, 8b,  3)
+GEN_SHIFT_TEST(sshll,  8h, 8b,  7)
+GEN_SHIFT_TEST(sshll2, 8h, 16b, 0)
+GEN_SHIFT_TEST(sshll2, 8h, 16b, 3)
+GEN_SHIFT_TEST(sshll2, 8h, 16b, 7)
+
 
 GEN_UNARY_TEST(xtn,  2s, 2d)
 GEN_UNARY_TEST(xtn2, 4s, 2d)
@@ -2335,6 +2360,504 @@ GEN_TWOVEC_TEST(sqshrun_h_s_16, "sqshrun h2, s5, #16", 2, 5)
 GEN_TWOVEC_TEST(sqshrun_b_h_1,  "sqshrun b2, h5, #1",  2, 5)
 GEN_TWOVEC_TEST(sqshrun_b_h_4,  "sqshrun b2, h5, #4",  2, 5)
 GEN_TWOVEC_TEST(sqshrun_b_h_8,  "sqshrun b2, h5, #8",  2, 5)
+
+GEN_TWOVEC_TEST(sqrshrn_2s_2d_1,   "sqrshrn  v4.2s,  v29.2d, #1",  4, 29)
+GEN_TWOVEC_TEST(sqrshrn_2s_2d_17,  "sqrshrn  v4.2s,  v29.2d, #17", 4, 29)
+GEN_TWOVEC_TEST(sqrshrn_2s_2d_32,  "sqrshrn  v4.2s,  v29.2d, #32", 4, 29)
+GEN_TWOVEC_TEST(sqrshrn2_4s_2d_1,  "sqrshrn2 v4.4s,  v29.2d, #1",  4, 29)
+GEN_TWOVEC_TEST(sqrshrn2_4s_2d_17, "sqrshrn2 v4.4s,  v29.2d, #17", 4, 29)
+GEN_TWOVEC_TEST(sqrshrn2_4s_2d_32, "sqrshrn2 v4.4s,  v29.2d, #32", 4, 29)
+GEN_TWOVEC_TEST(sqrshrn_4h_4s_1,   "sqrshrn  v4.4h,  v29.4s, #1",  4, 29)
+GEN_TWOVEC_TEST(sqrshrn_4h_4s_9,   "sqrshrn  v4.4h,  v29.4s, #9",  4, 29)
+GEN_TWOVEC_TEST(sqrshrn_4h_4s_16,  "sqrshrn  v4.4h,  v29.4s, #16", 4, 29)
+GEN_TWOVEC_TEST(sqrshrn2_8h_4s_1,  "sqrshrn2 v4.8h,  v29.4s, #1",  4, 29)
+GEN_TWOVEC_TEST(sqrshrn2_8h_4s_9,  "sqrshrn2 v4.8h,  v29.4s, #9",  4, 29)
+GEN_TWOVEC_TEST(sqrshrn2_8h_4s_16, "sqrshrn2 v4.8h,  v29.4s, #16", 4, 29)
+GEN_TWOVEC_TEST(sqrshrn_8b_8h_1,   "sqrshrn  v4.8b,  v29.8h, #1",  4, 29)
+GEN_TWOVEC_TEST(sqrshrn_8b_8h_4,   "sqrshrn  v4.8b,  v29.8h, #4",  4, 29)
+GEN_TWOVEC_TEST(sqrshrn_8b_8h_8,   "sqrshrn  v4.8b,  v29.8h, #8",  4, 29)
+GEN_TWOVEC_TEST(sqrshrn2_16b_8h_1, "sqrshrn2 v4.16b, v29.8h, #1",  4, 29)
+GEN_TWOVEC_TEST(sqrshrn2_16b_8h_4, "sqrshrn2 v4.16b, v29.8h, #4",  4, 29)
+GEN_TWOVEC_TEST(sqrshrn2_16b_8h_8, "sqrshrn2 v4.16b, v29.8h, #8",  4, 29)
+
+GEN_TWOVEC_TEST(uqrshrn_2s_2d_1,   "uqrshrn  v4.2s,  v29.2d, #1",  4, 29)
+GEN_TWOVEC_TEST(uqrshrn_2s_2d_17,  "uqrshrn  v4.2s,  v29.2d, #17", 4, 29)
+GEN_TWOVEC_TEST(uqrshrn_2s_2d_32,  "uqrshrn  v4.2s,  v29.2d, #32", 4, 29)
+GEN_TWOVEC_TEST(uqrshrn2_4s_2d_1,  "uqrshrn2 v4.4s,  v29.2d, #1",  4, 29)
+GEN_TWOVEC_TEST(uqrshrn2_4s_2d_17, "uqrshrn2 v4.4s,  v29.2d, #17", 4, 29)
+GEN_TWOVEC_TEST(uqrshrn2_4s_2d_32, "uqrshrn2 v4.4s,  v29.2d, #32", 4, 29)
+GEN_TWOVEC_TEST(uqrshrn_4h_4s_1,   "uqrshrn  v4.4h,  v29.4s, #1",  4, 29)
+GEN_TWOVEC_TEST(uqrshrn_4h_4s_9,   "uqrshrn  v4.4h,  v29.4s, #9",  4, 29)
+GEN_TWOVEC_TEST(uqrshrn_4h_4s_16,  "uqrshrn  v4.4h,  v29.4s, #16", 4, 29)
+GEN_TWOVEC_TEST(uqrshrn2_8h_4s_1,  "uqrshrn2 v4.8h,  v29.4s, #1",  4, 29)
+GEN_TWOVEC_TEST(uqrshrn2_8h_4s_9,  "uqrshrn2 v4.8h,  v29.4s, #9",  4, 29)
+GEN_TWOVEC_TEST(uqrshrn2_8h_4s_16, "uqrshrn2 v4.8h,  v29.4s, #16", 4, 29)
+GEN_TWOVEC_TEST(uqrshrn_8b_8h_1,   "uqrshrn  v4.8b,  v29.8h, #1",  4, 29)
+GEN_TWOVEC_TEST(uqrshrn_8b_8h_4,   "uqrshrn  v4.8b,  v29.8h, #4",  4, 29)
+GEN_TWOVEC_TEST(uqrshrn_8b_8h_8,   "uqrshrn  v4.8b,  v29.8h, #8",  4, 29)
+GEN_TWOVEC_TEST(uqrshrn2_16b_8h_1, "uqrshrn2 v4.16b, v29.8h, #1",  4, 29)
+GEN_TWOVEC_TEST(uqrshrn2_16b_8h_4, "uqrshrn2 v4.16b, v29.8h, #4",  4, 29)
+GEN_TWOVEC_TEST(uqrshrn2_16b_8h_8, "uqrshrn2 v4.16b, v29.8h, #8",  4, 29)
+
+GEN_TWOVEC_TEST(sqshrn_2s_2d_1,   "sqshrn  v4.2s,  v29.2d, #1",  4, 29)
+GEN_TWOVEC_TEST(sqshrn_2s_2d_17,  "sqshrn  v4.2s,  v29.2d, #17", 4, 29)
+GEN_TWOVEC_TEST(sqshrn_2s_2d_32,  "sqshrn  v4.2s,  v29.2d, #32", 4, 29)
+GEN_TWOVEC_TEST(sqshrn2_4s_2d_1,  "sqshrn2 v4.4s,  v29.2d, #1",  4, 29)
+GEN_TWOVEC_TEST(sqshrn2_4s_2d_17, "sqshrn2 v4.4s,  v29.2d, #17", 4, 29)
+GEN_TWOVEC_TEST(sqshrn2_4s_2d_32, "sqshrn2 v4.4s,  v29.2d, #32", 4, 29)
+GEN_TWOVEC_TEST(sqshrn_4h_4s_1,   "sqshrn  v4.4h,  v29.4s, #1",  4, 29)
+GEN_TWOVEC_TEST(sqshrn_4h_4s_9,   "sqshrn  v4.4h,  v29.4s, #9",  4, 29)
+GEN_TWOVEC_TEST(sqshrn_4h_4s_16,  "sqshrn  v4.4h,  v29.4s, #16", 4, 29)
+GEN_TWOVEC_TEST(sqshrn2_8h_4s_1,  "sqshrn2 v4.8h,  v29.4s, #1",  4, 29)
+GEN_TWOVEC_TEST(sqshrn2_8h_4s_9,  "sqshrn2 v4.8h,  v29.4s, #9",  4, 29)
+GEN_TWOVEC_TEST(sqshrn2_8h_4s_16, "sqshrn2 v4.8h,  v29.4s, #16", 4, 29)
+GEN_TWOVEC_TEST(sqshrn_8b_8h_1,   "sqshrn  v4.8b,  v29.8h, #1",  4, 29)
+GEN_TWOVEC_TEST(sqshrn_8b_8h_4,   "sqshrn  v4.8b,  v29.8h, #4",  4, 29)
+GEN_TWOVEC_TEST(sqshrn_8b_8h_8,   "sqshrn  v4.8b,  v29.8h, #8",  4, 29)
+GEN_TWOVEC_TEST(sqshrn2_16b_8h_1, "sqshrn2 v4.16b, v29.8h, #1",  4, 29)
+GEN_TWOVEC_TEST(sqshrn2_16b_8h_4, "sqshrn2 v4.16b, v29.8h, #4",  4, 29)
+GEN_TWOVEC_TEST(sqshrn2_16b_8h_8, "sqshrn2 v4.16b, v29.8h, #8",  4, 29)
+
+GEN_TWOVEC_TEST(uqshrn_2s_2d_1,   "uqshrn  v4.2s,  v29.2d, #1",  4, 29)
+GEN_TWOVEC_TEST(uqshrn_2s_2d_17,  "uqshrn  v4.2s,  v29.2d, #17", 4, 29)
+GEN_TWOVEC_TEST(uqshrn_2s_2d_32,  "uqshrn  v4.2s,  v29.2d, #32", 4, 29)
+GEN_TWOVEC_TEST(uqshrn2_4s_2d_1,  "uqshrn2 v4.4s,  v29.2d, #1",  4, 29)
+GEN_TWOVEC_TEST(uqshrn2_4s_2d_17, "uqshrn2 v4.4s,  v29.2d, #17", 4, 29)
+GEN_TWOVEC_TEST(uqshrn2_4s_2d_32, "uqshrn2 v4.4s,  v29.2d, #32", 4, 29)
+GEN_TWOVEC_TEST(uqshrn_4h_4s_1,   "uqshrn  v4.4h,  v29.4s, #1",  4, 29)
+GEN_TWOVEC_TEST(uqshrn_4h_4s_9,   "uqshrn  v4.4h,  v29.4s, #9",  4, 29)
+GEN_TWOVEC_TEST(uqshrn_4h_4s_16,  "uqshrn  v4.4h,  v29.4s, #16", 4, 29)
+GEN_TWOVEC_TEST(uqshrn2_8h_4s_1,  "uqshrn2 v4.8h,  v29.4s, #1",  4, 29)
+GEN_TWOVEC_TEST(uqshrn2_8h_4s_9,  "uqshrn2 v4.8h,  v29.4s, #9",  4, 29)
+GEN_TWOVEC_TEST(uqshrn2_8h_4s_16, "uqshrn2 v4.8h,  v29.4s, #16", 4, 29)
+GEN_TWOVEC_TEST(uqshrn_8b_8h_1,   "uqshrn  v4.8b,  v29.8h, #1",  4, 29)
+GEN_TWOVEC_TEST(uqshrn_8b_8h_4,   "uqshrn  v4.8b,  v29.8h, #4",  4, 29)
+GEN_TWOVEC_TEST(uqshrn_8b_8h_8,   "uqshrn  v4.8b,  v29.8h, #8",  4, 29)
+GEN_TWOVEC_TEST(uqshrn2_16b_8h_1, "uqshrn2 v4.16b, v29.8h, #1",  4, 29)
+GEN_TWOVEC_TEST(uqshrn2_16b_8h_4, "uqshrn2 v4.16b, v29.8h, #4",  4, 29)
+GEN_TWOVEC_TEST(uqshrn2_16b_8h_8, "uqshrn2 v4.16b, v29.8h, #8",  4, 29)
+
+GEN_TWOVEC_TEST(sqrshrun_2s_2d_1,   "sqrshrun  v4.2s,  v29.2d, #1",  4, 29)
+GEN_TWOVEC_TEST(sqrshrun_2s_2d_17,  "sqrshrun  v4.2s,  v29.2d, #17", 4, 29)
+GEN_TWOVEC_TEST(sqrshrun_2s_2d_32,  "sqrshrun  v4.2s,  v29.2d, #32", 4, 29)
+GEN_TWOVEC_TEST(sqrshrun2_4s_2d_1,  "sqrshrun2 v4.4s,  v29.2d, #1",  4, 29)
+GEN_TWOVEC_TEST(sqrshrun2_4s_2d_17, "sqrshrun2 v4.4s,  v29.2d, #17", 4, 29)
+GEN_TWOVEC_TEST(sqrshrun2_4s_2d_32, "sqrshrun2 v4.4s,  v29.2d, #32", 4, 29)
+GEN_TWOVEC_TEST(sqrshrun_4h_4s_1,   "sqrshrun  v4.4h,  v29.4s, #1",  4, 29)
+GEN_TWOVEC_TEST(sqrshrun_4h_4s_9,   "sqrshrun  v4.4h,  v29.4s, #9",  4, 29)
+GEN_TWOVEC_TEST(sqrshrun_4h_4s_16,  "sqrshrun  v4.4h,  v29.4s, #16", 4, 29)
+GEN_TWOVEC_TEST(sqrshrun2_8h_4s_1,  "sqrshrun2 v4.8h,  v29.4s, #1",  4, 29)
+GEN_TWOVEC_TEST(sqrshrun2_8h_4s_9,  "sqrshrun2 v4.8h,  v29.4s, #9",  4, 29)
+GEN_TWOVEC_TEST(sqrshrun2_8h_4s_16, "sqrshrun2 v4.8h,  v29.4s, #16", 4, 29)
+GEN_TWOVEC_TEST(sqrshrun_8b_8h_1,   "sqrshrun  v4.8b,  v29.8h, #1",  4, 29)
+GEN_TWOVEC_TEST(sqrshrun_8b_8h_4,   "sqrshrun  v4.8b,  v29.8h, #4",  4, 29)
+GEN_TWOVEC_TEST(sqrshrun_8b_8h_8,   "sqrshrun  v4.8b,  v29.8h, #8",  4, 29)
+GEN_TWOVEC_TEST(sqrshrun2_16b_8h_1, "sqrshrun2 v4.16b, v29.8h, #1",  4, 29)
+GEN_TWOVEC_TEST(sqrshrun2_16b_8h_4, "sqrshrun2 v4.16b, v29.8h, #4",  4, 29)
+GEN_TWOVEC_TEST(sqrshrun2_16b_8h_8, "sqrshrun2 v4.16b, v29.8h, #8",  4, 29)
+
+GEN_TWOVEC_TEST(sqshrun_2s_2d_1,   "sqshrun  v4.2s,  v29.2d, #1",  4, 29)
+GEN_TWOVEC_TEST(sqshrun_2s_2d_17,  "sqshrun  v4.2s,  v29.2d, #17", 4, 29)
+GEN_TWOVEC_TEST(sqshrun_2s_2d_32,  "sqshrun  v4.2s,  v29.2d, #32", 4, 29)
+GEN_TWOVEC_TEST(sqshrun2_4s_2d_1,  "sqshrun2 v4.4s,  v29.2d, #1",  4, 29)
+GEN_TWOVEC_TEST(sqshrun2_4s_2d_17, "sqshrun2 v4.4s,  v29.2d, #17", 4, 29)
+GEN_TWOVEC_TEST(sqshrun2_4s_2d_32, "sqshrun2 v4.4s,  v29.2d, #32", 4, 29)
+GEN_TWOVEC_TEST(sqshrun_4h_4s_1,   "sqshrun  v4.4h,  v29.4s, #1",  4, 29)
+GEN_TWOVEC_TEST(sqshrun_4h_4s_9,   "sqshrun  v4.4h,  v29.4s, #9",  4, 29)
+GEN_TWOVEC_TEST(sqshrun_4h_4s_16,  "sqshrun  v4.4h,  v29.4s, #16", 4, 29)
+GEN_TWOVEC_TEST(sqshrun2_8h_4s_1,  "sqshrun2 v4.8h,  v29.4s, #1",  4, 29)
+GEN_TWOVEC_TEST(sqshrun2_8h_4s_9,  "sqshrun2 v4.8h,  v29.4s, #9",  4, 29)
+GEN_TWOVEC_TEST(sqshrun2_8h_4s_16, "sqshrun2 v4.8h,  v29.4s, #16", 4, 29)
+GEN_TWOVEC_TEST(sqshrun_8b_8h_1,   "sqshrun  v4.8b,  v29.8h, #1",  4, 29)
+GEN_TWOVEC_TEST(sqshrun_8b_8h_4,   "sqshrun  v4.8b,  v29.8h, #4",  4, 29)
+GEN_TWOVEC_TEST(sqshrun_8b_8h_8,   "sqshrun  v4.8b,  v29.8h, #8",  4, 29)
+GEN_TWOVEC_TEST(sqshrun2_16b_8h_1, "sqshrun2 v4.16b, v29.8h, #1",  4, 29)
+GEN_TWOVEC_TEST(sqshrun2_16b_8h_4, "sqshrun2 v4.16b, v29.8h, #4",  4, 29)
+GEN_TWOVEC_TEST(sqshrun2_16b_8h_8, "sqshrun2 v4.16b, v29.8h, #8",  4, 29)
+
+GEN_TWOVEC_TEST(sqshl_d_d_0,  "sqshl d5, d28, #0",  5, 28)
+GEN_TWOVEC_TEST(sqshl_d_d_32, "sqshl d5, d28, #32", 5, 28)
+GEN_TWOVEC_TEST(sqshl_d_d_63, "sqshl d5, d28, #63", 5, 28)
+GEN_TWOVEC_TEST(sqshl_s_s_0,  "sqshl s5, s28, #0",  5, 28)
+GEN_TWOVEC_TEST(sqshl_s_s_16, "sqshl s5, s28, #16", 5, 28)
+GEN_TWOVEC_TEST(sqshl_s_s_31, "sqshl s5, s28, #31", 5, 28)
+GEN_TWOVEC_TEST(sqshl_h_h_0,  "sqshl h5, h28, #0",  5, 28)
+GEN_TWOVEC_TEST(sqshl_h_h_8,  "sqshl h5, h28, #8",  5, 28)
+GEN_TWOVEC_TEST(sqshl_h_h_15, "sqshl h5, h28, #15", 5, 28)
+GEN_TWOVEC_TEST(sqshl_b_b_0,  "sqshl b5, b28, #0",  5, 28)
+GEN_TWOVEC_TEST(sqshl_b_b_4,  "sqshl b5, b28, #4",  5, 28)
+GEN_TWOVEC_TEST(sqshl_b_b_7,  "sqshl b5, b28, #7",  5, 28)
+
+GEN_TWOVEC_TEST(uqshl_d_d_0,  "uqshl d5, d28, #0",  5, 28)
+GEN_TWOVEC_TEST(uqshl_d_d_32, "uqshl d5, d28, #32", 5, 28)
+GEN_TWOVEC_TEST(uqshl_d_d_63, "uqshl d5, d28, #63", 5, 28)
+GEN_TWOVEC_TEST(uqshl_s_s_0,  "uqshl s5, s28, #0",  5, 28)
+GEN_TWOVEC_TEST(uqshl_s_s_16, "uqshl s5, s28, #16", 5, 28)
+GEN_TWOVEC_TEST(uqshl_s_s_31, "uqshl s5, s28, #31", 5, 28)
+GEN_TWOVEC_TEST(uqshl_h_h_0,  "uqshl h5, h28, #0",  5, 28)
+GEN_TWOVEC_TEST(uqshl_h_h_8,  "uqshl h5, h28, #8",  5, 28)
+GEN_TWOVEC_TEST(uqshl_h_h_15, "uqshl h5, h28, #15", 5, 28)
+GEN_TWOVEC_TEST(uqshl_b_b_0,  "uqshl b5, b28, #0",  5, 28)
+GEN_TWOVEC_TEST(uqshl_b_b_4,  "uqshl b5, b28, #4",  5, 28)
+GEN_TWOVEC_TEST(uqshl_b_b_7,  "uqshl b5, b28, #7",  5, 28)
+
+GEN_TWOVEC_TEST(sqshlu_d_d_0,  "sqshlu d5, d28, #0",  5, 28)
+GEN_TWOVEC_TEST(sqshlu_d_d_32, "sqshlu d5, d28, #32", 5, 28)
+GEN_TWOVEC_TEST(sqshlu_d_d_63, "sqshlu d5, d28, #63", 5, 28)
+GEN_TWOVEC_TEST(sqshlu_s_s_0,  "sqshlu s5, s28, #0",  5, 28)
+GEN_TWOVEC_TEST(sqshlu_s_s_16, "sqshlu s5, s28, #16", 5, 28)
+GEN_TWOVEC_TEST(sqshlu_s_s_31, "sqshlu s5, s28, #31", 5, 28)
+GEN_TWOVEC_TEST(sqshlu_h_h_0,  "sqshlu h5, h28, #0",  5, 28)
+GEN_TWOVEC_TEST(sqshlu_h_h_8,  "sqshlu h5, h28, #8",  5, 28)
+GEN_TWOVEC_TEST(sqshlu_h_h_15, "sqshlu h5, h28, #15", 5, 28)
+GEN_TWOVEC_TEST(sqshlu_b_b_0,  "sqshlu b5, b28, #0",  5, 28)
+GEN_TWOVEC_TEST(sqshlu_b_b_4,  "sqshlu b5, b28, #4",  5, 28)
+GEN_TWOVEC_TEST(sqshlu_b_b_7,  "sqshlu b5, b28, #7",  5, 28)
+
+GEN_TWOVEC_TEST(sqshl_2d_2d_0,   "sqshl v6.2d,  v27.2d, #0",  6, 27)
+GEN_TWOVEC_TEST(sqshl_2d_2d_32,  "sqshl v6.2d,  v27.2d, #32", 6, 27)
+GEN_TWOVEC_TEST(sqshl_2d_2d_63,  "sqshl v6.2d,  v27.2d, #63", 6, 27)
+GEN_TWOVEC_TEST(sqshl_4s_4s_0,   "sqshl v6.4s,  v27.4s, #0",  6, 27)
+GEN_TWOVEC_TEST(sqshl_4s_4s_16,  "sqshl v6.4s,  v27.4s, #16", 6, 27)
+GEN_TWOVEC_TEST(sqshl_4s_4s_31,  "sqshl v6.4s,  v27.4s, #31", 6, 27)
+GEN_TWOVEC_TEST(sqshl_2s_2s_0,   "sqshl v6.2s,  v27.2s, #0",  6, 27)
+GEN_TWOVEC_TEST(sqshl_2s_2s_16,  "sqshl v6.2s,  v27.2s, #16", 6, 27)
+GEN_TWOVEC_TEST(sqshl_2s_2s_31,  "sqshl v6.2s,  v27.2s, #31", 6, 27)
+GEN_TWOVEC_TEST(sqshl_8h_8h_0,   "sqshl v6.8h,  v27.8h, #0",  6, 27)
+GEN_TWOVEC_TEST(sqshl_8h_8h_8,   "sqshl v6.8h,  v27.8h, #8",  6, 27)
+GEN_TWOVEC_TEST(sqshl_8h_8h_15,  "sqshl v6.8h,  v27.8h, #15", 6, 27)
+GEN_TWOVEC_TEST(sqshl_4h_4h_0,   "sqshl v6.4h,  v27.4h, #0",  6, 27)
+GEN_TWOVEC_TEST(sqshl_4h_4h_8,   "sqshl v6.4h,  v27.4h, #8",  6, 27)
+GEN_TWOVEC_TEST(sqshl_4h_4h_15,  "sqshl v6.4h,  v27.4h, #15", 6, 27)
+GEN_TWOVEC_TEST(sqshl_16b_16b_0, "sqshl v6.16b, v27.16b, #0", 6, 27)
+GEN_TWOVEC_TEST(sqshl_16b_16b_3, "sqshl v6.16b, v27.16b, #3", 6, 27)
+GEN_TWOVEC_TEST(sqshl_16b_16b_7, "sqshl v6.16b, v27.16b, #7", 6, 27)
+GEN_TWOVEC_TEST(sqshl_8b_8b_0,   "sqshl v6.8b,  v27.8b, #0",  6, 27)
+GEN_TWOVEC_TEST(sqshl_8b_8b_3,   "sqshl v6.8b,  v27.8b, #3",  6, 27)
+GEN_TWOVEC_TEST(sqshl_8b_8b_7,   "sqshl v6.8b,  v27.8b, #7",  6, 27)
+
+GEN_TWOVEC_TEST(uqshl_2d_2d_0,   "uqshl v6.2d,  v27.2d, #0",  6, 27)
+GEN_TWOVEC_TEST(uqshl_2d_2d_32,  "uqshl v6.2d,  v27.2d, #32", 6, 27)
+GEN_TWOVEC_TEST(uqshl_2d_2d_63,  "uqshl v6.2d,  v27.2d, #63", 6, 27)
+GEN_TWOVEC_TEST(uqshl_4s_4s_0,   "uqshl v6.4s,  v27.4s, #0",  6, 27)
+GEN_TWOVEC_TEST(uqshl_4s_4s_16,  "uqshl v6.4s,  v27.4s, #16", 6, 27)
+GEN_TWOVEC_TEST(uqshl_4s_4s_31,  "uqshl v6.4s,  v27.4s, #31", 6, 27)
+GEN_TWOVEC_TEST(uqshl_2s_2s_0,   "uqshl v6.2s,  v27.2s, #0",  6, 27)
+GEN_TWOVEC_TEST(uqshl_2s_2s_16,  "uqshl v6.2s,  v27.2s, #16", 6, 27)
+GEN_TWOVEC_TEST(uqshl_2s_2s_31,  "uqshl v6.2s,  v27.2s, #31", 6, 27)
+GEN_TWOVEC_TEST(uqshl_8h_8h_0,   "uqshl v6.8h,  v27.8h, #0",  6, 27)
+GEN_TWOVEC_TEST(uqshl_8h_8h_8,   "uqshl v6.8h,  v27.8h, #8",  6, 27)
+GEN_TWOVEC_TEST(uqshl_8h_8h_15,  "uqshl v6.8h,  v27.8h, #15", 6, 27)
+GEN_TWOVEC_TEST(uqshl_4h_4h_0,   "uqshl v6.4h,  v27.4h, #0",  6, 27)
+GEN_TWOVEC_TEST(uqshl_4h_4h_8,   "uqshl v6.4h,  v27.4h, #8",  6, 27)
+GEN_TWOVEC_TEST(uqshl_4h_4h_15,  "uqshl v6.4h,  v27.4h, #15", 6, 27)
+GEN_TWOVEC_TEST(uqshl_16b_16b_0, "uqshl v6.16b, v27.16b, #0", 6, 27)
+GEN_TWOVEC_TEST(uqshl_16b_16b_3, "uqshl v6.16b, v27.16b, #3", 6, 27)
+GEN_TWOVEC_TEST(uqshl_16b_16b_7, "uqshl v6.16b, v27.16b, #7", 6, 27)
+GEN_TWOVEC_TEST(uqshl_8b_8b_0,   "uqshl v6.8b,  v27.8b, #0",  6, 27)
+GEN_TWOVEC_TEST(uqshl_8b_8b_3,   "uqshl v6.8b,  v27.8b, #3",  6, 27)
+GEN_TWOVEC_TEST(uqshl_8b_8b_7,   "uqshl v6.8b,  v27.8b, #7",  6, 27)
+
+GEN_TWOVEC_TEST(sqshlu_2d_2d_0,   "sqshlu v6.2d,  v27.2d, #0",  6, 27)
+GEN_TWOVEC_TEST(sqshlu_2d_2d_32,  "sqshlu v6.2d,  v27.2d, #32", 6, 27)
+GEN_TWOVEC_TEST(sqshlu_2d_2d_63,  "sqshlu v6.2d,  v27.2d, #63", 6, 27)
+GEN_TWOVEC_TEST(sqshlu_4s_4s_0,   "sqshlu v6.4s,  v27.4s, #0",  6, 27)
+GEN_TWOVEC_TEST(sqshlu_4s_4s_16,  "sqshlu v6.4s,  v27.4s, #16", 6, 27)
+GEN_TWOVEC_TEST(sqshlu_4s_4s_31,  "sqshlu v6.4s,  v27.4s, #31", 6, 27)
+GEN_TWOVEC_TEST(sqshlu_2s_2s_0,   "sqshlu v6.2s,  v27.2s, #0",  6, 27)
+GEN_TWOVEC_TEST(sqshlu_2s_2s_16,  "sqshlu v6.2s,  v27.2s, #16", 6, 27)
+GEN_TWOVEC_TEST(sqshlu_2s_2s_31,  "sqshlu v6.2s,  v27.2s, #31", 6, 27)
+GEN_TWOVEC_TEST(sqshlu_8h_8h_0,   "sqshlu v6.8h,  v27.8h, #0",  6, 27)
+GEN_TWOVEC_TEST(sqshlu_8h_8h_8,   "sqshlu v6.8h,  v27.8h, #8",  6, 27)
+GEN_TWOVEC_TEST(sqshlu_8h_8h_15,  "sqshlu v6.8h,  v27.8h, #15", 6, 27)
+GEN_TWOVEC_TEST(sqshlu_4h_4h_0,   "sqshlu v6.4h,  v27.4h, #0",  6, 27)
+GEN_TWOVEC_TEST(sqshlu_4h_4h_8,   "sqshlu v6.4h,  v27.4h, #8",  6, 27)
+GEN_TWOVEC_TEST(sqshlu_4h_4h_15,  "sqshlu v6.4h,  v27.4h, #15", 6, 27)
+GEN_TWOVEC_TEST(sqshlu_16b_16b_0, "sqshlu v6.16b, v27.16b, #0", 6, 27)
+GEN_TWOVEC_TEST(sqshlu_16b_16b_3, "sqshlu v6.16b, v27.16b, #3", 6, 27)
+GEN_TWOVEC_TEST(sqshlu_16b_16b_7, "sqshlu v6.16b, v27.16b, #7", 6, 27)
+GEN_TWOVEC_TEST(sqshlu_8b_8b_0,   "sqshlu v6.8b,  v27.8b, #0",  6, 27)
+GEN_TWOVEC_TEST(sqshlu_8b_8b_3,   "sqshlu v6.8b,  v27.8b, #3",  6, 27)
+GEN_TWOVEC_TEST(sqshlu_8b_8b_7,   "sqshlu v6.8b,  v27.8b, #7",  6, 27)
+
+GEN_TWOVEC_TEST(sqxtn_s_d,  "sqxtn s31,  d0", 31, 0)
+GEN_TWOVEC_TEST(sqxtn_h_s,  "sqxtn h31,  s0", 31, 0)
+GEN_TWOVEC_TEST(sqxtn_b_h,  "sqxtn b31,  h0", 31, 0)
+GEN_TWOVEC_TEST(uqxtn_s_d,  "uqxtn s31,  d0", 31, 0)
+GEN_TWOVEC_TEST(uqxtn_h_s,  "uqxtn h31,  s0", 31, 0)
+GEN_TWOVEC_TEST(uqxtn_b_h,  "uqxtn b31,  h0", 31, 0)
+GEN_TWOVEC_TEST(sqxtun_s_d, "sqxtun s31, d0", 31, 0)
+GEN_TWOVEC_TEST(sqxtun_h_s, "sqxtun h31, s0", 31, 0)
+GEN_TWOVEC_TEST(sqxtun_b_h, "sqxtun b31, h0", 31, 0)
+
+GEN_UNARY_TEST(sqxtn,   2s, 2d)
+GEN_UNARY_TEST(sqxtn2,  4s, 2d)
+GEN_UNARY_TEST(sqxtn,   4h, 4s)
+GEN_UNARY_TEST(sqxtn2,  8h, 4s)
+GEN_UNARY_TEST(sqxtn,   8b, 8h)
+GEN_UNARY_TEST(sqxtn2, 16b, 8h)
+
+GEN_UNARY_TEST(uqxtn,   2s, 2d)
+GEN_UNARY_TEST(uqxtn2,  4s, 2d)
+GEN_UNARY_TEST(uqxtn,   4h, 4s)
+GEN_UNARY_TEST(uqxtn2,  8h, 4s)
+GEN_UNARY_TEST(uqxtn,   8b, 8h)
+GEN_UNARY_TEST(uqxtn2, 16b, 8h)
+
+GEN_UNARY_TEST(sqxtun,   2s, 2d)
+GEN_UNARY_TEST(sqxtun2,  4s, 2d)
+GEN_UNARY_TEST(sqxtun,   4h, 4s)
+GEN_UNARY_TEST(sqxtun2,  8h, 4s)
+GEN_UNARY_TEST(sqxtun,   8b, 8h)
+GEN_UNARY_TEST(sqxtun2, 16b, 8h)
+
+GEN_THREEVEC_TEST(srhadd_4s_4s_4s,"srhadd v2.4s,  v11.4s,  v29.4s", 2, 11, 29)
+GEN_THREEVEC_TEST(srhadd_2s_2s_2s,"srhadd v2.2s,  v11.2s,  v29.2s", 2, 11, 29)
+GEN_THREEVEC_TEST(srhadd_8h_8h_8h,"srhadd v2.8h,  v11.8h,  v29.8h", 2, 11, 29)
+GEN_THREEVEC_TEST(srhadd_4h_4h_4h,"srhadd v2.4h,  v11.4h,  v29.4h", 2, 11, 29)
+GEN_THREEVEC_TEST(srhadd_16b_16b_16b,
+                                  "srhadd v2.16b, v11.16b, v29.16b", 2, 11, 29)
+GEN_THREEVEC_TEST(srhadd_8b_8b_8b,"srhadd v2.8b,  v11.8b,  v29.8b", 2, 11, 29)
+
+GEN_THREEVEC_TEST(urhadd_4s_4s_4s,"urhadd v2.4s,  v11.4s,  v29.4s", 2, 11, 29)
+GEN_THREEVEC_TEST(urhadd_2s_2s_2s,"urhadd v2.2s,  v11.2s,  v29.2s", 2, 11, 29)
+GEN_THREEVEC_TEST(urhadd_8h_8h_8h,"urhadd v2.8h,  v11.8h,  v29.8h", 2, 11, 29)
+GEN_THREEVEC_TEST(urhadd_4h_4h_4h,"urhadd v2.4h,  v11.4h,  v29.4h", 2, 11, 29)
+GEN_THREEVEC_TEST(urhadd_16b_16b_16b,
+                                  "urhadd v2.16b, v11.16b, v29.16b", 2, 11, 29)
+GEN_THREEVEC_TEST(urhadd_8b_8b_8b,"urhadd v2.8b,  v11.8b,  v29.8b", 2, 11, 29)
+
+GEN_THREEVEC_TEST(sshl_d_d_d, "sshl d29, d28, d27", 29, 28, 27)
+GEN_THREEVEC_TEST(ushl_d_d_d, "ushl d29, d28, d27", 29, 28, 27)
+
+GEN_THREEVEC_TEST(sshl_2d_2d_2d,    "sshl v29.2d, v28.2d, v27.2d", 29,28,27)
+GEN_THREEVEC_TEST(sshl_4s_4s_4s,    "sshl v29.4s, v28.4s, v27.4s", 29,28,27)
+GEN_THREEVEC_TEST(sshl_2s_2s_2s,    "sshl v29.2s, v28.2s, v27.2s", 29,28,27)
+GEN_THREEVEC_TEST(sshl_8h_8h_8h,    "sshl v29.8h, v28.8h, v27.8h", 29,28,27)
+GEN_THREEVEC_TEST(sshl_4h_4h_4h,    "sshl v29.4h, v28.4h, v27.4h", 29,28,27)
+GEN_THREEVEC_TEST(sshl_16b_16b_16b, "sshl v29.16b, v28.16b, v27.16b", 29,28,27)
+GEN_THREEVEC_TEST(sshl_8b_8b_8b,    "sshl v29.8b, v28.8b, v27.8b", 29,28,27)
+
+GEN_THREEVEC_TEST(ushl_2d_2d_2d,    "ushl v29.2d, v28.2d, v27.2d", 29,28,27)
+GEN_THREEVEC_TEST(ushl_4s_4s_4s,    "ushl v29.4s, v28.4s, v27.4s", 29,28,27)
+GEN_THREEVEC_TEST(ushl_2s_2s_2s,    "ushl v29.2s, v28.2s, v27.2s", 29,28,27)
+GEN_THREEVEC_TEST(ushl_8h_8h_8h,    "ushl v29.8h, v28.8h, v27.8h", 29,28,27)
+GEN_THREEVEC_TEST(ushl_4h_4h_4h,    "ushl v29.4h, v28.4h, v27.4h", 29,28,27)
+GEN_THREEVEC_TEST(ushl_16b_16b_16b, "ushl v29.16b, v28.16b, v27.16b", 29,28,27)
+GEN_THREEVEC_TEST(ushl_8b_8b_8b,    "ushl v29.8b, v28.8b, v27.8b", 29,28,27)
+
+GEN_TWOVEC_TEST(shl_d_d_0,  "shl d5, d28, #0",  5, 28)
+GEN_TWOVEC_TEST(shl_d_d_32, "shl d5, d28, #32", 5, 28)
+GEN_TWOVEC_TEST(shl_d_d_63, "shl d5, d28, #63", 5, 28)
+
+GEN_TWOVEC_TEST(sshr_d_d_1,  "sshr d5, d28, #1",  5, 28)
+GEN_TWOVEC_TEST(sshr_d_d_32, "sshr d5, d28, #32", 5, 28)
+GEN_TWOVEC_TEST(sshr_d_d_64, "sshr d5, d28, #64", 5, 28)
+
+GEN_TWOVEC_TEST(ushr_d_d_1,  "ushr d5, d28, #1",  5, 28)
+GEN_TWOVEC_TEST(ushr_d_d_32, "ushr d5, d28, #32", 5, 28)
+GEN_TWOVEC_TEST(ushr_d_d_64, "ushr d5, d28, #64", 5, 28)
+
+GEN_TWOVEC_TEST(ssra_d_d_1,  "ssra d5, d28, #1",  5, 28)
+GEN_TWOVEC_TEST(ssra_d_d_32, "ssra d5, d28, #32", 5, 28)
+GEN_TWOVEC_TEST(ssra_d_d_64, "ssra d5, d28, #64", 5, 28)
+
+GEN_TWOVEC_TEST(usra_d_d_1,  "usra d5, d28, #1",  5, 28)
+GEN_TWOVEC_TEST(usra_d_d_32, "usra d5, d28, #32", 5, 28)
+GEN_TWOVEC_TEST(usra_d_d_64, "usra d5, d28, #64", 5, 28)
+
+GEN_TWOVEC_TEST(ssra_2d_2d_1,   "ssra v6.2d,  v27.2d, #1",  6, 27)
+GEN_TWOVEC_TEST(ssra_2d_2d_32,  "ssra v6.2d,  v27.2d, #32", 6, 27)
+GEN_TWOVEC_TEST(ssra_2d_2d_64,  "ssra v6.2d,  v27.2d, #64", 6, 27)
+GEN_TWOVEC_TEST(ssra_4s_4s_1,   "ssra v6.4s,  v27.4s, #1",  6, 27)
+GEN_TWOVEC_TEST(ssra_4s_4s_16,  "ssra v6.4s,  v27.4s, #16", 6, 27)
+GEN_TWOVEC_TEST(ssra_4s_4s_32,  "ssra v6.4s,  v27.4s, #32", 6, 27)
+GEN_TWOVEC_TEST(ssra_2s_2s_1,   "ssra v6.2s,  v27.2s, #1",  6, 27)
+GEN_TWOVEC_TEST(ssra_2s_2s_16,  "ssra v6.2s,  v27.2s, #16", 6, 27)
+GEN_TWOVEC_TEST(ssra_2s_2s_32,  "ssra v6.2s,  v27.2s, #32", 6, 27)
+GEN_TWOVEC_TEST(ssra_8h_8h_1,   "ssra v6.8h,  v27.8h, #1",  6, 27)
+GEN_TWOVEC_TEST(ssra_8h_8h_8,   "ssra v6.8h,  v27.8h, #8",  6, 27)
+GEN_TWOVEC_TEST(ssra_8h_8h_16,  "ssra v6.8h,  v27.8h, #16", 6, 27)
+GEN_TWOVEC_TEST(ssra_4h_4h_1,   "ssra v6.4h,  v27.4h, #1",  6, 27)
+GEN_TWOVEC_TEST(ssra_4h_4h_8,   "ssra v6.4h,  v27.4h, #8",  6, 27)
+GEN_TWOVEC_TEST(ssra_4h_4h_16,  "ssra v6.4h,  v27.4h, #16", 6, 27)
+GEN_TWOVEC_TEST(ssra_16b_16b_1, "ssra v6.16b, v27.16b, #1", 6, 27)
+GEN_TWOVEC_TEST(ssra_16b_16b_3, "ssra v6.16b, v27.16b, #3", 6, 27)
+GEN_TWOVEC_TEST(ssra_16b_16b_8, "ssra v6.16b, v27.16b, #8", 6, 27)
+GEN_TWOVEC_TEST(ssra_8b_8b_1,   "ssra v6.8b,  v27.8b, #1",  6, 27)
+GEN_TWOVEC_TEST(ssra_8b_8b_3,   "ssra v6.8b,  v27.8b, #3",  6, 27)
+GEN_TWOVEC_TEST(ssra_8b_8b_8,   "ssra v6.8b,  v27.8b, #8",  6, 27)
+
+GEN_TWOVEC_TEST(usra_2d_2d_1,   "usra v6.2d,  v27.2d, #1",  6, 27)
+GEN_TWOVEC_TEST(usra_2d_2d_32,  "usra v6.2d,  v27.2d, #32", 6, 27)
+GEN_TWOVEC_TEST(usra_2d_2d_64,  "usra v6.2d,  v27.2d, #64", 6, 27)
+GEN_TWOVEC_TEST(usra_4s_4s_1,   "usra v6.4s,  v27.4s, #1",  6, 27)
+GEN_TWOVEC_TEST(usra_4s_4s_16,  "usra v6.4s,  v27.4s, #16", 6, 27)
+GEN_TWOVEC_TEST(usra_4s_4s_32,  "usra v6.4s,  v27.4s, #32", 6, 27)
+GEN_TWOVEC_TEST(usra_2s_2s_1,   "usra v6.2s,  v27.2s, #1",  6, 27)
+GEN_TWOVEC_TEST(usra_2s_2s_16,  "usra v6.2s,  v27.2s, #16", 6, 27)
+GEN_TWOVEC_TEST(usra_2s_2s_32,  "usra v6.2s,  v27.2s, #32", 6, 27)
+GEN_TWOVEC_TEST(usra_8h_8h_1,   "usra v6.8h,  v27.8h, #1",  6, 27)
+GEN_TWOVEC_TEST(usra_8h_8h_8,   "usra v6.8h,  v27.8h, #8",  6, 27)
+GEN_TWOVEC_TEST(usra_8h_8h_16,  "usra v6.8h,  v27.8h, #16", 6, 27)
+GEN_TWOVEC_TEST(usra_4h_4h_1,   "usra v6.4h,  v27.4h, #1",  6, 27)
+GEN_TWOVEC_TEST(usra_4h_4h_8,   "usra v6.4h,  v27.4h, #8",  6, 27)
+GEN_TWOVEC_TEST(usra_4h_4h_16,  "usra v6.4h,  v27.4h, #16", 6, 27)
+GEN_TWOVEC_TEST(usra_16b_16b_1, "usra v6.16b, v27.16b, #1", 6, 27)
+GEN_TWOVEC_TEST(usra_16b_16b_3, "usra v6.16b, v27.16b, #3", 6, 27)
+GEN_TWOVEC_TEST(usra_16b_16b_8, "usra v6.16b, v27.16b, #8", 6, 27)
+GEN_TWOVEC_TEST(usra_8b_8b_1,   "usra v6.8b,  v27.8b, #1",  6, 27)
+GEN_TWOVEC_TEST(usra_8b_8b_3,   "usra v6.8b,  v27.8b, #3",  6, 27)
+GEN_TWOVEC_TEST(usra_8b_8b_8,   "usra v6.8b,  v27.8b, #8",  6, 27)
+
+GEN_THREEVEC_TEST(srshl_d_d_d, "srshl d29, d28, d27", 29, 28, 27)
+GEN_THREEVEC_TEST(urshl_d_d_d, "urshl d29, d28, d27", 29, 28, 27)
+
+GEN_THREEVEC_TEST(srshl_2d_2d_2d,   "srshl v29.2d, v28.2d, v27.2d", 29,28,27)
+GEN_THREEVEC_TEST(srshl_4s_4s_4s,   "srshl v29.4s, v28.4s, v27.4s", 29,28,27)
+GEN_THREEVEC_TEST(srshl_2s_2s_2s,   "srshl v29.2s, v28.2s, v27.2s", 29,28,27)
+GEN_THREEVEC_TEST(srshl_8h_8h_8h,   "srshl v29.8h, v28.8h, v27.8h", 29,28,27)
+GEN_THREEVEC_TEST(srshl_4h_4h_4h,   "srshl v29.4h, v28.4h, v27.4h", 29,28,27)
+GEN_THREEVEC_TEST(srshl_16b_16b_16b,"srshl v29.16b, v28.16b, v27.16b", 29,28,27)
+GEN_THREEVEC_TEST(srshl_8b_8b_8b,   "srshl v29.8b, v28.8b, v27.8b", 29,28,27)
+
+GEN_THREEVEC_TEST(urshl_2d_2d_2d,   "urshl v29.2d, v28.2d, v27.2d", 29,28,27)
+GEN_THREEVEC_TEST(urshl_4s_4s_4s,   "urshl v29.4s, v28.4s, v27.4s", 29,28,27)
+GEN_THREEVEC_TEST(urshl_2s_2s_2s,   "urshl v29.2s, v28.2s, v27.2s", 29,28,27)
+GEN_THREEVEC_TEST(urshl_8h_8h_8h,   "urshl v29.8h, v28.8h, v27.8h", 29,28,27)
+GEN_THREEVEC_TEST(urshl_4h_4h_4h,   "urshl v29.4h, v28.4h, v27.4h", 29,28,27)
+GEN_THREEVEC_TEST(urshl_16b_16b_16b,"urshl v29.16b, v28.16b, v27.16b", 29,28,27)
+GEN_THREEVEC_TEST(urshl_8b_8b_8b,   "urshl v29.8b, v28.8b, v27.8b", 29,28,27)
+
+GEN_TWOVEC_TEST(srshr_d_d_1,  "srshr d5, d28, #1",  5, 28)
+GEN_TWOVEC_TEST(srshr_d_d_32, "srshr d5, d28, #32", 5, 28)
+GEN_TWOVEC_TEST(srshr_d_d_64, "srshr d5, d28, #64", 5, 28)
+
+GEN_TWOVEC_TEST(urshr_d_d_1,  "urshr d5, d28, #1",  5, 28)
+GEN_TWOVEC_TEST(urshr_d_d_32, "urshr d5, d28, #32", 5, 28)
+GEN_TWOVEC_TEST(urshr_d_d_64, "urshr d5, d28, #64", 5, 28)
+
+GEN_TWOVEC_TEST(srshr_2d_2d_1,   "srshr v6.2d,  v27.2d, #1",  6, 27)
+GEN_TWOVEC_TEST(srshr_2d_2d_32,  "srshr v6.2d,  v27.2d, #32", 6, 27)
+GEN_TWOVEC_TEST(srshr_2d_2d_64,  "srshr v6.2d,  v27.2d, #64", 6, 27)
+GEN_TWOVEC_TEST(srshr_4s_4s_1,   "srshr v6.4s,  v27.4s, #1",  6, 27)
+GEN_TWOVEC_TEST(srshr_4s_4s_16,  "srshr v6.4s,  v27.4s, #16", 6, 27)
+GEN_TWOVEC_TEST(srshr_4s_4s_32,  "srshr v6.4s,  v27.4s, #32", 6, 27)
+GEN_TWOVEC_TEST(srshr_2s_2s_1,   "srshr v6.2s,  v27.2s, #1",  6, 27)
+GEN_TWOVEC_TEST(srshr_2s_2s_16,  "srshr v6.2s,  v27.2s, #16", 6, 27)
+GEN_TWOVEC_TEST(srshr_2s_2s_32,  "srshr v6.2s,  v27.2s, #32", 6, 27)
+GEN_TWOVEC_TEST(srshr_8h_8h_1,   "srshr v6.8h,  v27.8h, #1",  6, 27)
+GEN_TWOVEC_TEST(srshr_8h_8h_8,   "srshr v6.8h,  v27.8h, #8",  6, 27)
+GEN_TWOVEC_TEST(srshr_8h_8h_16,  "srshr v6.8h,  v27.8h, #16", 6, 27)
+GEN_TWOVEC_TEST(srshr_4h_4h_1,   "srshr v6.4h,  v27.4h, #1",  6, 27)
+GEN_TWOVEC_TEST(srshr_4h_4h_8,   "srshr v6.4h,  v27.4h, #8",  6, 27)
+GEN_TWOVEC_TEST(srshr_4h_4h_16,  "srshr v6.4h,  v27.4h, #16", 6, 27)
+GEN_TWOVEC_TEST(srshr_16b_16b_1, "srshr v6.16b, v27.16b, #1", 6, 27)
+GEN_TWOVEC_TEST(srshr_16b_16b_3, "srshr v6.16b, v27.16b, #3", 6, 27)
+GEN_TWOVEC_TEST(srshr_16b_16b_8, "srshr v6.16b, v27.16b, #8", 6, 27)
+GEN_TWOVEC_TEST(srshr_8b_8b_1,   "srshr v6.8b,  v27.8b, #1",  6, 27)
+GEN_TWOVEC_TEST(srshr_8b_8b_3,   "srshr v6.8b,  v27.8b, #3",  6, 27)
+GEN_TWOVEC_TEST(srshr_8b_8b_8,   "srshr v6.8b,  v27.8b, #8",  6, 27)
+
+GEN_TWOVEC_TEST(urshr_2d_2d_1,   "urshr v6.2d,  v27.2d, #1",  6, 27)
+GEN_TWOVEC_TEST(urshr_2d_2d_32,  "urshr v6.2d,  v27.2d, #32", 6, 27)
+GEN_TWOVEC_TEST(urshr_2d_2d_64,  "urshr v6.2d,  v27.2d, #64", 6, 27)
+GEN_TWOVEC_TEST(urshr_4s_4s_1,   "urshr v6.4s,  v27.4s, #1",  6, 27)
+GEN_TWOVEC_TEST(urshr_4s_4s_16,  "urshr v6.4s,  v27.4s, #16", 6, 27)
+GEN_TWOVEC_TEST(urshr_4s_4s_32,  "urshr v6.4s,  v27.4s, #32", 6, 27)
+GEN_TWOVEC_TEST(urshr_2s_2s_1,   "urshr v6.2s,  v27.2s, #1",  6, 27)
+GEN_TWOVEC_TEST(urshr_2s_2s_16,  "urshr v6.2s,  v27.2s, #16", 6, 27)
+GEN_TWOVEC_TEST(urshr_2s_2s_32,  "urshr v6.2s,  v27.2s, #32", 6, 27)
+GEN_TWOVEC_TEST(urshr_8h_8h_1,   "urshr v6.8h,  v27.8h, #1",  6, 27)
+GEN_TWOVEC_TEST(urshr_8h_8h_8,   "urshr v6.8h,  v27.8h, #8",  6, 27)
+GEN_TWOVEC_TEST(urshr_8h_8h_16,  "urshr v6.8h,  v27.8h, #16", 6, 27)
+GEN_TWOVEC_TEST(urshr_4h_4h_1,   "urshr v6.4h,  v27.4h, #1",  6, 27)
+GEN_TWOVEC_TEST(urshr_4h_4h_8,   "urshr v6.4h,  v27.4h, #8",  6, 27)
+GEN_TWOVEC_TEST(urshr_4h_4h_16,  "urshr v6.4h,  v27.4h, #16", 6, 27)
+GEN_TWOVEC_TEST(urshr_16b_16b_1, "urshr v6.16b, v27.16b, #1", 6, 27)
+GEN_TWOVEC_TEST(urshr_16b_16b_3, "urshr v6.16b, v27.16b, #3", 6, 27)
+GEN_TWOVEC_TEST(urshr_16b_16b_8, "urshr v6.16b, v27.16b, #8", 6, 27)
+GEN_TWOVEC_TEST(urshr_8b_8b_1,   "urshr v6.8b,  v27.8b, #1",  6, 27)
+GEN_TWOVEC_TEST(urshr_8b_8b_3,   "urshr v6.8b,  v27.8b, #3",  6, 27)
+GEN_TWOVEC_TEST(urshr_8b_8b_8,   "urshr v6.8b,  v27.8b, #8",  6, 27)
+
+GEN_TWOVEC_TEST(srsra_d_d_1,  "srsra d5, d28, #1",  5, 28)
+GEN_TWOVEC_TEST(srsra_d_d_32, "srsra d5, d28, #32", 5, 28)
+GEN_TWOVEC_TEST(srsra_d_d_64, "srsra d5, d28, #64", 5, 28)
+
+GEN_TWOVEC_TEST(ursra_d_d_1,  "ursra d5, d28, #1",  5, 28)
+GEN_TWOVEC_TEST(ursra_d_d_32, "ursra d5, d28, #32", 5, 28)
+GEN_TWOVEC_TEST(ursra_d_d_64, "ursra d5, d28, #64", 5, 28)
+
+GEN_TWOVEC_TEST(srsra_2d_2d_1,   "srsra v6.2d,  v27.2d, #1",  6, 27)
+GEN_TWOVEC_TEST(srsra_2d_2d_32,  "srsra v6.2d,  v27.2d, #32", 6, 27)
+GEN_TWOVEC_TEST(srsra_2d_2d_64,  "srsra v6.2d,  v27.2d, #64", 6, 27)
+GEN_TWOVEC_TEST(srsra_4s_4s_1,   "srsra v6.4s,  v27.4s, #1",  6, 27)
+GEN_TWOVEC_TEST(srsra_4s_4s_16,  "srsra v6.4s,  v27.4s, #16", 6, 27)
+GEN_TWOVEC_TEST(srsra_4s_4s_32,  "srsra v6.4s,  v27.4s, #32", 6, 27)
+GEN_TWOVEC_TEST(srsra_2s_2s_1,   "srsra v6.2s,  v27.2s, #1",  6, 27)
+GEN_TWOVEC_TEST(srsra_2s_2s_16,  "srsra v6.2s,  v27.2s, #16", 6, 27)
+GEN_TWOVEC_TEST(srsra_2s_2s_32,  "srsra v6.2s,  v27.2s, #32", 6, 27)
+GEN_TWOVEC_TEST(srsra_8h_8h_1,   "srsra v6.8h,  v27.8h, #1",  6, 27)
+GEN_TWOVEC_TEST(srsra_8h_8h_8,   "srsra v6.8h,  v27.8h, #8",  6, 27)
+GEN_TWOVEC_TEST(srsra_8h_8h_16,  "srsra v6.8h,  v27.8h, #16", 6, 27)
+GEN_TWOVEC_TEST(srsra_4h_4h_1,   "srsra v6.4h,  v27.4h, #1",  6, 27)
+GEN_TWOVEC_TEST(srsra_4h_4h_8,   "srsra v6.4h,  v27.4h, #8",  6, 27)
+GEN_TWOVEC_TEST(srsra_4h_4h_16,  "srsra v6.4h,  v27.4h, #16", 6, 27)
+GEN_TWOVEC_TEST(srsra_16b_16b_1, "srsra v6.16b, v27.16b, #1", 6, 27)
+GEN_TWOVEC_TEST(srsra_16b_16b_3, "srsra v6.16b, v27.16b, #3", 6, 27)
+GEN_TWOVEC_TEST(srsra_16b_16b_8, "srsra v6.16b, v27.16b, #8", 6, 27)
+GEN_TWOVEC_TEST(srsra_8b_8b_1,   "srsra v6.8b,  v27.8b, #1",  6, 27)
+GEN_TWOVEC_TEST(srsra_8b_8b_3,   "srsra v6.8b,  v27.8b, #3",  6, 27)
+GEN_TWOVEC_TEST(srsra_8b_8b_8,   "srsra v6.8b,  v27.8b, #8",  6, 27)
+
+GEN_TWOVEC_TEST(ursra_2d_2d_1,   "ursra v6.2d,  v27.2d, #1",  6, 27)
+GEN_TWOVEC_TEST(ursra_2d_2d_32,  "ursra v6.2d,  v27.2d, #32", 6, 27)
+GEN_TWOVEC_TEST(ursra_2d_2d_64,  "ursra v6.2d,  v27.2d, #64", 6, 27)
+GEN_TWOVEC_TEST(ursra_4s_4s_1,   "ursra v6.4s,  v27.4s, #1",  6, 27)
+GEN_TWOVEC_TEST(ursra_4s_4s_16,  "ursra v6.4s,  v27.4s, #16", 6, 27)
+GEN_TWOVEC_TEST(ursra_4s_4s_32,  "ursra v6.4s,  v27.4s, #32", 6, 27)
+GEN_TWOVEC_TEST(ursra_2s_2s_1,   "ursra v6.2s,  v27.2s, #1",  6, 27)
+GEN_TWOVEC_TEST(ursra_2s_2s_16,  "ursra v6.2s,  v27.2s, #16", 6, 27)
+GEN_TWOVEC_TEST(ursra_2s_2s_32,  "ursra v6.2s,  v27.2s, #32", 6, 27)
+GEN_TWOVEC_TEST(ursra_8h_8h_1,   "ursra v6.8h,  v27.8h, #1",  6, 27)
+GEN_TWOVEC_TEST(ursra_8h_8h_8,   "ursra v6.8h,  v27.8h, #8",  6, 27)
+GEN_TWOVEC_TEST(ursra_8h_8h_16,  "ursra v6.8h,  v27.8h, #16", 6, 27)
+GEN_TWOVEC_TEST(ursra_4h_4h_1,   "ursra v6.4h,  v27.4h, #1",  6, 27)
+GEN_TWOVEC_TEST(ursra_4h_4h_8,   "ursra v6.4h,  v27.4h, #8",  6, 27)
+GEN_TWOVEC_TEST(ursra_4h_4h_16,  "ursra v6.4h,  v27.4h, #16", 6, 27)
+GEN_TWOVEC_TEST(ursra_16b_16b_1, "ursra v6.16b, v27.16b, #1", 6, 27)
+GEN_TWOVEC_TEST(ursra_16b_16b_3, "ursra v6.16b, v27.16b, #3", 6, 27)
+GEN_TWOVEC_TEST(ursra_16b_16b_8, "ursra v6.16b, v27.16b, #8", 6, 27)
+GEN_TWOVEC_TEST(ursra_8b_8b_1,   "ursra v6.8b,  v27.8b, #1",  6, 27)
+GEN_TWOVEC_TEST(ursra_8b_8b_3,   "ursra v6.8b,  v27.8b, #3",  6, 27)
+GEN_TWOVEC_TEST(ursra_8b_8b_8,   "ursra v6.8b,  v27.8b, #8",  6, 27)
+
+GEN_TWOVEC_TEST(suqadd_d_d,  "suqadd d22, d23",   22, 23)
+GEN_TWOVEC_TEST(suqadd_s_s,  "suqadd s22, s23",   22, 23)
+GEN_TWOVEC_TEST(suqadd_h_h,  "suqadd h22, h23",   22, 23)
+GEN_TWOVEC_TEST(suqadd_b_b,  "suqadd b22, b23",   22, 23)
+
+GEN_TWOVEC_TEST(suqadd_2d_2d,   "suqadd v6.2d,  v27.2d",  6, 27)
+GEN_TWOVEC_TEST(suqadd_4s_4s,   "suqadd v6.4s,  v27.4s",  6, 27)
+GEN_TWOVEC_TEST(suqadd_2s_2s,   "suqadd v6.2s,  v27.2s",  6, 27)
+GEN_TWOVEC_TEST(suqadd_8h_8h,   "suqadd v6.8h,  v27.8h",  6, 27)
+GEN_TWOVEC_TEST(suqadd_4h_4h,   "suqadd v6.4h,  v27.4h",  6, 27)
+GEN_TWOVEC_TEST(suqadd_16b_16b, "suqadd v6.16b, v27.16b", 6, 27)
+GEN_TWOVEC_TEST(suqadd_8b_8b,   "suqadd v6.8b,  v27.8b",  6, 27)
+
+GEN_TWOVEC_TEST(usqadd_d_d,  "usqadd d22, d23",   22, 23)
+GEN_TWOVEC_TEST(usqadd_s_s,  "usqadd s22, s23",   22, 23)
+GEN_TWOVEC_TEST(usqadd_h_h,  "usqadd h22, h23",   22, 23)
+GEN_TWOVEC_TEST(usqadd_b_b,  "usqadd b22, b23",   22, 23)
+
+GEN_TWOVEC_TEST(usqadd_2d_2d,   "usqadd v6.2d,  v27.2d",  6, 27)
+GEN_TWOVEC_TEST(usqadd_4s_4s,   "usqadd v6.4s,  v27.4s",  6, 27)
+GEN_TWOVEC_TEST(usqadd_2s_2s,   "usqadd v6.2s,  v27.2s",  6, 27)
+GEN_TWOVEC_TEST(usqadd_8h_8h,   "usqadd v6.8h,  v27.8h",  6, 27)
+GEN_TWOVEC_TEST(usqadd_4h_4h,   "usqadd v6.4h,  v27.4h",  6, 27)
+GEN_TWOVEC_TEST(usqadd_16b_16b, "usqadd v6.16b, v27.16b", 6, 27)
+GEN_TWOVEC_TEST(usqadd_8b_8b,   "usqadd v6.8b,  v27.8b",  6, 27)
 
 
 /* ---------------------------------------------------------------- */
@@ -3937,134 +4460,618 @@ int main ( void )
    // uqshrn{2}    2s/4s_2d, 4h/8h_4s, 8b/16b_8h,  #imm
    // sqrshrun{2}  2s/4s_2d, 4h/8h_4s, 8b/16b_8h,  #imm
    // sqshrun{2}   2s/4s_2d, 4h/8h_4s, 8b/16b_8h,  #imm
+   test_sqrshrn_2s_2d_1(TyD);
+   test_sqrshrn_2s_2d_17(TyD);
+   test_sqrshrn_2s_2d_32(TyD);
+   test_sqrshrn2_4s_2d_1(TyD);
+   test_sqrshrn2_4s_2d_17(TyD);
+   test_sqrshrn2_4s_2d_32(TyD);
+   test_sqrshrn_4h_4s_1(TyS);
+   test_sqrshrn_4h_4s_9(TyS);
+   test_sqrshrn_4h_4s_16(TyS);
+   test_sqrshrn2_8h_4s_1(TyS);
+   test_sqrshrn2_8h_4s_9(TyS);
+   test_sqrshrn2_8h_4s_16(TyS);
+   test_sqrshrn_8b_8h_1(TyH);
+   test_sqrshrn_8b_8h_4(TyH);
+   test_sqrshrn_8b_8h_8(TyH);
+   test_sqrshrn2_16b_8h_1(TyH);
+   test_sqrshrn2_16b_8h_4(TyH);
+   test_sqrshrn2_16b_8h_8(TyH);
+   test_uqrshrn_2s_2d_1(TyD);
+   test_uqrshrn_2s_2d_17(TyD);
+   test_uqrshrn_2s_2d_32(TyD);
+   test_uqrshrn2_4s_2d_1(TyD);
+   test_uqrshrn2_4s_2d_17(TyD);
+   test_uqrshrn2_4s_2d_32(TyD);
+   test_uqrshrn_4h_4s_1(TyS);
+   test_uqrshrn_4h_4s_9(TyS);
+   test_uqrshrn_4h_4s_16(TyS);
+   test_uqrshrn2_8h_4s_1(TyS);
+   test_uqrshrn2_8h_4s_9(TyS);
+   test_uqrshrn2_8h_4s_16(TyS);
+   test_uqrshrn_8b_8h_1(TyH);
+   test_uqrshrn_8b_8h_4(TyH);
+   test_uqrshrn_8b_8h_8(TyH);
+   test_uqrshrn2_16b_8h_1(TyH);
+   test_uqrshrn2_16b_8h_4(TyH);
+   test_uqrshrn2_16b_8h_8(TyH);
+   test_sqshrn_2s_2d_1(TyD);
+   test_sqshrn_2s_2d_17(TyD);
+   test_sqshrn_2s_2d_32(TyD);
+   test_sqshrn2_4s_2d_1(TyD);
+   test_sqshrn2_4s_2d_17(TyD);
+   test_sqshrn2_4s_2d_32(TyD);
+   test_sqshrn_4h_4s_1(TyS);
+   test_sqshrn_4h_4s_9(TyS);
+   test_sqshrn_4h_4s_16(TyS);
+   test_sqshrn2_8h_4s_1(TyS);
+   test_sqshrn2_8h_4s_9(TyS);
+   test_sqshrn2_8h_4s_16(TyS);
+   test_sqshrn_8b_8h_1(TyH);
+   test_sqshrn_8b_8h_4(TyH);
+   test_sqshrn_8b_8h_8(TyH);
+   test_sqshrn2_16b_8h_1(TyH);
+   test_sqshrn2_16b_8h_4(TyH);
+   test_sqshrn2_16b_8h_8(TyH);
+   test_uqshrn_2s_2d_1(TyD);
+   test_uqshrn_2s_2d_17(TyD);
+   test_uqshrn_2s_2d_32(TyD);
+   test_uqshrn2_4s_2d_1(TyD);
+   test_uqshrn2_4s_2d_17(TyD);
+   test_uqshrn2_4s_2d_32(TyD);
+   test_uqshrn_4h_4s_1(TyS);
+   test_uqshrn_4h_4s_9(TyS);
+   test_uqshrn_4h_4s_16(TyS);
+   test_uqshrn2_8h_4s_1(TyS);
+   test_uqshrn2_8h_4s_9(TyS);
+   test_uqshrn2_8h_4s_16(TyS);
+   test_uqshrn_8b_8h_1(TyH);
+   test_uqshrn_8b_8h_4(TyH);
+   test_uqshrn_8b_8h_8(TyH);
+   test_uqshrn2_16b_8h_1(TyH);
+   test_uqshrn2_16b_8h_4(TyH);
+   test_uqshrn2_16b_8h_8(TyH);
+   test_sqrshrun_2s_2d_1(TyD);
+   test_sqrshrun_2s_2d_17(TyD);
+   test_sqrshrun_2s_2d_32(TyD);
+   test_sqrshrun2_4s_2d_1(TyD);
+   test_sqrshrun2_4s_2d_17(TyD);
+   test_sqrshrun2_4s_2d_32(TyD);
+   test_sqrshrun_4h_4s_1(TyS);
+   test_sqrshrun_4h_4s_9(TyS);
+   test_sqrshrun_4h_4s_16(TyS);
+   test_sqrshrun2_8h_4s_1(TyS);
+   test_sqrshrun2_8h_4s_9(TyS);
+   test_sqrshrun2_8h_4s_16(TyS);
+   test_sqrshrun_8b_8h_1(TyH);
+   test_sqrshrun_8b_8h_4(TyH);
+   test_sqrshrun_8b_8h_8(TyH);
+   test_sqrshrun2_16b_8h_1(TyH);
+   test_sqrshrun2_16b_8h_4(TyH);
+   test_sqrshrun2_16b_8h_8(TyH);
+   test_sqshrun_2s_2d_1(TyD);
+   test_sqshrun_2s_2d_17(TyD);
+   test_sqshrun_2s_2d_32(TyD);
+   test_sqshrun2_4s_2d_1(TyD);
+   test_sqshrun2_4s_2d_17(TyD);
+   test_sqshrun2_4s_2d_32(TyD);
+   test_sqshrun_4h_4s_1(TyS);
+   test_sqshrun_4h_4s_9(TyS);
+   test_sqshrun_4h_4s_16(TyS);
+   test_sqshrun2_8h_4s_1(TyS);
+   test_sqshrun2_8h_4s_9(TyS);
+   test_sqshrun2_8h_4s_16(TyS);
+   test_sqshrun_8b_8h_1(TyH);
+   test_sqshrun_8b_8h_4(TyH);
+   test_sqshrun_8b_8h_8(TyH);
+   test_sqshrun2_16b_8h_1(TyH);
+   test_sqshrun2_16b_8h_4(TyH);
+   test_sqshrun2_16b_8h_8(TyH);
 
    // sqshl (imm)  d,s,h,b   _#imm
    // uqshl (imm)  d,s,h,b   _#imm
    // sqshlu (imm) d,s,h,b   _#imm
+   test_sqshl_d_d_0(TyD);
+   test_sqshl_d_d_32(TyD);
+   test_sqshl_d_d_63(TyD);
+   test_sqshl_s_s_0(TyS);
+   test_sqshl_s_s_16(TyS);
+   test_sqshl_s_s_31(TyS);
+   test_sqshl_h_h_0(TyH);
+   test_sqshl_h_h_8(TyH);
+   test_sqshl_h_h_15(TyH);
+   test_sqshl_b_b_0(TyB);
+   test_sqshl_b_b_4(TyB);
+   test_sqshl_b_b_7(TyB);
+   test_uqshl_d_d_0(TyD);
+   test_uqshl_d_d_32(TyD);
+   test_uqshl_d_d_63(TyD);
+   test_uqshl_s_s_0(TyS);
+   test_uqshl_s_s_16(TyS);
+   test_uqshl_s_s_31(TyS);
+   test_uqshl_h_h_0(TyH);
+   test_uqshl_h_h_8(TyH);
+   test_uqshl_h_h_15(TyH);
+   test_uqshl_b_b_0(TyB);
+   test_uqshl_b_b_4(TyB);
+   test_uqshl_b_b_7(TyB);
+   test_sqshlu_d_d_0(TyD);
+   test_sqshlu_d_d_32(TyD);
+   test_sqshlu_d_d_63(TyD);
+   test_sqshlu_s_s_0(TyS);
+   test_sqshlu_s_s_16(TyS);
+   test_sqshlu_s_s_31(TyS);
+   test_sqshlu_h_h_0(TyH);
+   test_sqshlu_h_h_8(TyH);
+   test_sqshlu_h_h_15(TyH);
+   test_sqshlu_b_b_0(TyB);
+   test_sqshlu_b_b_4(TyB);
+   test_sqshlu_b_b_7(TyB);
 
    // sqshl (imm)  2d,4s,2s,8h,4h,16b,8b   _#imm
    // uqshl (imm)  2d,4s,2s,8h,4h,16b,8b   _#imm
    // sqshlu (imm) 2d,4s,2s,8h,4h,16b,8b   _#imm
+   test_sqshl_2d_2d_0(TyD);
+   test_sqshl_2d_2d_32(TyD);
+   test_sqshl_2d_2d_63(TyD);
+   test_sqshl_4s_4s_0(TyS);
+   test_sqshl_4s_4s_16(TyS);
+   test_sqshl_4s_4s_31(TyS);
+   test_sqshl_2s_2s_0(TyS);
+   test_sqshl_2s_2s_16(TyS);
+   test_sqshl_2s_2s_31(TyS);
+   test_sqshl_8h_8h_0(TyH);
+   test_sqshl_8h_8h_8(TyH);
+   test_sqshl_8h_8h_15(TyH);
+   test_sqshl_4h_4h_0(TyH);
+   test_sqshl_4h_4h_8(TyH);
+   test_sqshl_4h_4h_15(TyH);
+   test_sqshl_16b_16b_0(TyB);
+   test_sqshl_16b_16b_3(TyB);
+   test_sqshl_16b_16b_7(TyB);
+   test_sqshl_8b_8b_0(TyB);
+   test_sqshl_8b_8b_3(TyB);
+   test_sqshl_8b_8b_7(TyB);
+   test_uqshl_2d_2d_0(TyD);
+   test_uqshl_2d_2d_32(TyD);
+   test_uqshl_2d_2d_63(TyD);
+   test_uqshl_4s_4s_0(TyS);
+   test_uqshl_4s_4s_16(TyS);
+   test_uqshl_4s_4s_31(TyS);
+   test_uqshl_2s_2s_0(TyS);
+   test_uqshl_2s_2s_16(TyS);
+   test_uqshl_2s_2s_31(TyS);
+   test_uqshl_8h_8h_0(TyH);
+   test_uqshl_8h_8h_8(TyH);
+   test_uqshl_8h_8h_15(TyH);
+   test_uqshl_4h_4h_0(TyH);
+   test_uqshl_4h_4h_8(TyH);
+   test_uqshl_4h_4h_15(TyH);
+   test_uqshl_16b_16b_0(TyB);
+   test_uqshl_16b_16b_3(TyB);
+   test_uqshl_16b_16b_7(TyB);
+   test_uqshl_8b_8b_0(TyB);
+   test_uqshl_8b_8b_3(TyB);
+   test_uqshl_8b_8b_7(TyB);
+   test_sqshlu_2d_2d_0(TyD);
+   test_sqshlu_2d_2d_32(TyD);
+   test_sqshlu_2d_2d_63(TyD);
+   test_sqshlu_4s_4s_0(TyS);
+   test_sqshlu_4s_4s_16(TyS);
+   test_sqshlu_4s_4s_31(TyS);
+   test_sqshlu_2s_2s_0(TyS);
+   test_sqshlu_2s_2s_16(TyS);
+   test_sqshlu_2s_2s_31(TyS);
+   test_sqshlu_8h_8h_0(TyH);
+   test_sqshlu_8h_8h_8(TyH);
+   test_sqshlu_8h_8h_15(TyH);
+   test_sqshlu_4h_4h_0(TyH);
+   test_sqshlu_4h_4h_8(TyH);
+   test_sqshlu_4h_4h_15(TyH);
+   test_sqshlu_16b_16b_0(TyB);
+   test_sqshlu_16b_16b_3(TyB);
+   test_sqshlu_16b_16b_7(TyB);
+   test_sqshlu_8b_8b_0(TyB);
+   test_sqshlu_8b_8b_3(TyB);
+   test_sqshlu_8b_8b_7(TyB);
 
    // sqxtn        s_d,h_s,b_h
    // uqxtn        s_d,h_s,b_h
    // sqxtun       s_d,h_s,b_h
+   test_sqxtn_s_d(TyD);
+   test_sqxtn_h_s(TyS);
+   test_sqxtn_b_h(TyH);
+   test_uqxtn_s_d(TyD);
+   test_uqxtn_h_s(TyS);
+   test_uqxtn_b_h(TyH);
+   test_sqxtun_s_d(TyD);
+   test_sqxtun_h_s(TyS);
+   test_sqxtun_b_h(TyH);
 
    // sqxtn{2}     2s/4s_2d, 4h/8h_4s, 8b/16b_8h
    // uqxtn{2}     2s/4s_2d, 4h/8h_4s, 8b/16b_8h
    // sqxtun{2}    2s/4s_2d, 4h/8h_4s, 8b/16b_8h
+   test_sqxtn_2s_2d(TyD);
+   test_sqxtn2_4s_2d(TyD);
+   test_sqxtn_4h_4s(TyS);
+   test_sqxtn2_8h_4s(TyS);
+   test_sqxtn_8b_8h(TyH);
+   test_sqxtn2_16b_8h(TyH);
+   test_uqxtn_2s_2d(TyD);
+   test_uqxtn2_4s_2d(TyD);
+   test_uqxtn_4h_4s(TyS);
+   test_uqxtn2_8h_4s(TyS);
+   test_uqxtn_8b_8h(TyH);
+   test_uqxtn2_16b_8h(TyH);
+   test_sqxtun_2s_2d(TyD);
+   test_sqxtun2_4s_2d(TyD);
+   test_sqxtun_4h_4s(TyS);
+   test_sqxtun2_8h_4s(TyS);
+   test_sqxtun_8b_8h(TyH);
+   test_sqxtun2_16b_8h(TyH);
 
    // srhadd       4s,2s,8h,4h,16b,8b
    // urhadd       4s,2s,8h,4h,16b,8b
+   test_srhadd_4s_4s_4s(TyS);
+   test_srhadd_2s_2s_2s(TyS);
+   test_srhadd_8h_8h_8h(TyH);
+   test_srhadd_4h_4h_4h(TyH);
+   test_srhadd_16b_16b_16b(TyB);
+   test_srhadd_8b_8b_8b(TyB);
+   test_urhadd_4s_4s_4s(TyS);
+   test_urhadd_2s_2s_2s(TyS);
+   test_urhadd_8h_8h_8h(TyH);
+   test_urhadd_4h_4h_4h(TyH);
+   test_urhadd_16b_16b_16b(TyB);
+   test_urhadd_8b_8b_8b(TyB);
 
    // sshl (reg)   d
    // ushl (reg)   d
+   test_sshl_d_d_d(TyD);
+   test_ushl_d_d_d(TyD);
+
    // sshl (reg)   2d,4s,2s,8h,4h,16b,8b
    // ushl (reg)   2d,4s,2s,8h,4h,16b,8b
+   test_sshl_2d_2d_2d(TyD);
+   test_sshl_4s_4s_4s(TyS);
+   test_sshl_2s_2s_2s(TyS);
+   test_sshl_8h_8h_8h(TyH);
+   test_sshl_4h_4h_4h(TyH);
+   test_sshl_16b_16b_16b(TyB);
+   test_sshl_8b_8b_8b(TyB);
+   test_ushl_2d_2d_2d(TyD);
+   test_ushl_4s_4s_4s(TyS);
+   test_ushl_2s_2s_2s(TyS);
+   test_ushl_8h_8h_8h(TyH);
+   test_ushl_4h_4h_4h(TyH);
+   test_ushl_16b_16b_16b(TyB);
+   test_ushl_8b_8b_8b(TyB);
 
    // shl  (imm)   d
    // sshr (imm)   d
    // ushr (imm)   d
+   test_shl_d_d_0(TyD);
+   test_shl_d_d_32(TyD);
+   test_shl_d_d_63(TyD);
+   test_sshr_d_d_1(TyD);
+   test_sshr_d_d_32(TyD);
+   test_sshr_d_d_64(TyD);
+   test_ushr_d_d_1(TyD);
+   test_ushr_d_d_32(TyD);
+   test_ushr_d_d_64(TyD);
 
    // shl  (imm)   16b,8b,8h,4h,4s,2s,2d
    // sshr (imm)   2d,4s,2s,8h,4h,16b,8b
    // ushr (imm)   2d,4s,2s,8h,4h,16b,8b
-   test_shl_2d_2d_1(TyD);
+   test_shl_2d_2d_0(TyD);
    test_shl_2d_2d_13(TyD);
    test_shl_2d_2d_63(TyD);
-   test_shl_4s_4s_1(TyS);
+   test_shl_4s_4s_0(TyS);
    test_shl_4s_4s_13(TyS);
    test_shl_4s_4s_31(TyS);
-   test_shl_2s_2s_1(TyS);
+   test_shl_2s_2s_0(TyS);
    test_shl_2s_2s_13(TyS);
    test_shl_2s_2s_31(TyS);
-   test_shl_8h_8h_1(TyH);
+   test_shl_8h_8h_0(TyH);
    test_shl_8h_8h_13(TyH);
    test_shl_8h_8h_15(TyH);
-   test_shl_4h_4h_1(TyH);
+   test_shl_4h_4h_0(TyH);
    test_shl_4h_4h_13(TyH);
    test_shl_4h_4h_15(TyH);
-   test_shl_16b_16b_1(TyB);
+   test_shl_16b_16b_0(TyB);
    test_shl_16b_16b_7(TyB);
-   test_shl_8b_8b_1(TyB);
+   test_shl_8b_8b_0(TyB);
    test_shl_8b_8b_7(TyB);
    test_sshr_2d_2d_1(TyD);
    test_sshr_2d_2d_13(TyD);
-   test_sshr_2d_2d_63(TyD);
+   test_sshr_2d_2d_64(TyD);
    test_sshr_4s_4s_1(TyS);
    test_sshr_4s_4s_13(TyS);
-   test_sshr_4s_4s_31(TyS);
+   test_sshr_4s_4s_32(TyS);
    test_sshr_2s_2s_1(TyS);
    test_sshr_2s_2s_13(TyS);
-   test_sshr_2s_2s_31(TyS);
+   test_sshr_2s_2s_32(TyS);
    test_sshr_8h_8h_1(TyH);
    test_sshr_8h_8h_13(TyH);
-   test_sshr_8h_8h_15(TyH);
+   test_sshr_8h_8h_16(TyH);
    test_sshr_4h_4h_1(TyH);
    test_sshr_4h_4h_13(TyH);
-   test_sshr_4h_4h_15(TyH);
+   test_sshr_4h_4h_16(TyH);
    test_sshr_16b_16b_1(TyB);
-   test_sshr_16b_16b_7(TyB);
+   test_sshr_16b_16b_8(TyB);
    test_sshr_8b_8b_1(TyB);
-   test_sshr_8b_8b_7(TyB);
+   test_sshr_8b_8b_8(TyB);
    test_ushr_2d_2d_1(TyD);
    test_ushr_2d_2d_13(TyD);
-   test_ushr_2d_2d_63(TyD);
+   test_ushr_2d_2d_64(TyD);
    test_ushr_4s_4s_1(TyS);
    test_ushr_4s_4s_13(TyS);
-   test_ushr_4s_4s_31(TyS);
+   test_ushr_4s_4s_32(TyS);
    test_ushr_2s_2s_1(TyS);
    test_ushr_2s_2s_13(TyS);
-   test_ushr_2s_2s_31(TyS);
+   test_ushr_2s_2s_32(TyS);
    test_ushr_8h_8h_1(TyH);
    test_ushr_8h_8h_13(TyH);
-   test_ushr_8h_8h_15(TyH);
+   test_ushr_8h_8h_16(TyH);
    test_ushr_4h_4h_1(TyH);
    test_ushr_4h_4h_13(TyH);
-   test_ushr_4h_4h_15(TyH);
+   test_ushr_4h_4h_16(TyH);
    test_ushr_16b_16b_1(TyB);
-   test_ushr_16b_16b_7(TyB);
+   test_ushr_16b_16b_8(TyB);
    test_ushr_8b_8b_1(TyB);
-   test_ushr_8b_8b_7(TyB);
+   test_ushr_8b_8b_8(TyB);
 
    // ssra (imm)   d
    // usra (imm)   d
+   test_ssra_d_d_1(TyD);
+   test_ssra_d_d_32(TyD);
+   test_ssra_d_d_64(TyD);
+   test_usra_d_d_1(TyD);
+   test_usra_d_d_32(TyD);
+   test_usra_d_d_64(TyD);
+
    // ssra (imm)   2d,4s,2s,8h,4h,16b,8b
    // usra (imm)   2d,4s,2s,8h,4h,16b,8b
+   test_ssra_2d_2d_1(TyD);
+   test_ssra_2d_2d_32(TyD);
+   test_ssra_2d_2d_64(TyD);
+   test_ssra_4s_4s_1(TyS);
+   test_ssra_4s_4s_16(TyS);
+   test_ssra_4s_4s_32(TyS);
+   test_ssra_2s_2s_1(TyS);
+   test_ssra_2s_2s_16(TyS);
+   test_ssra_2s_2s_32(TyS);
+   test_ssra_8h_8h_1(TyH);
+   test_ssra_8h_8h_8(TyH);
+   test_ssra_8h_8h_16(TyH);
+   test_ssra_4h_4h_1(TyH);
+   test_ssra_4h_4h_8(TyH);
+   test_ssra_4h_4h_16(TyH);
+   test_ssra_16b_16b_1(TyB);
+   test_ssra_16b_16b_3(TyB);
+   test_ssra_16b_16b_8(TyB);
+   test_ssra_8b_8b_1(TyB);
+   test_ssra_8b_8b_3(TyB);
+   test_ssra_8b_8b_8(TyB);
+   test_usra_2d_2d_1(TyD);
+   test_usra_2d_2d_32(TyD);
+   test_usra_2d_2d_64(TyD);
+   test_usra_4s_4s_1(TyS);
+   test_usra_4s_4s_16(TyS);
+   test_usra_4s_4s_32(TyS);
+   test_usra_2s_2s_1(TyS);
+   test_usra_2s_2s_16(TyS);
+   test_usra_2s_2s_32(TyS);
+   test_usra_8h_8h_1(TyH);
+   test_usra_8h_8h_8(TyH);
+   test_usra_8h_8h_16(TyH);
+   test_usra_4h_4h_1(TyH);
+   test_usra_4h_4h_8(TyH);
+   test_usra_4h_4h_16(TyH);
+   test_usra_16b_16b_1(TyB);
+   test_usra_16b_16b_3(TyB);
+   test_usra_16b_16b_8(TyB);
+   test_usra_8b_8b_1(TyB);
+   test_usra_8b_8b_3(TyB);
+   test_usra_8b_8b_8(TyB);
 
    // srshl (reg)  d
    // urshl (reg)  d
+   test_srshl_d_d_d(TyD);
+   test_urshl_d_d_d(TyD);
+
    // srshl (reg)  2d,4s,2s,8h,4h,16b,8b
    // urshl (reg)  2d,4s,2s,8h,4h,16b,8b
+   test_srshl_2d_2d_2d(TyD);
+   test_srshl_4s_4s_4s(TyS);
+   test_srshl_2s_2s_2s(TyS);
+   test_srshl_8h_8h_8h(TyH);
+   test_srshl_4h_4h_4h(TyH);
+   test_srshl_16b_16b_16b(TyB);
+   test_srshl_8b_8b_8b(TyB);
+   test_urshl_2d_2d_2d(TyD);
+   test_urshl_4s_4s_4s(TyS);
+   test_urshl_2s_2s_2s(TyS);
+   test_urshl_8h_8h_8h(TyH);
+   test_urshl_4h_4h_4h(TyH);
+   test_urshl_16b_16b_16b(TyB);
+   test_urshl_8b_8b_8b(TyB);
 
    // srshr (imm)  d
    // urshr (imm)  d
+   test_srshr_d_d_1(TyD);
+   test_srshr_d_d_32(TyD);
+   test_srshr_d_d_64(TyD);
+   test_urshr_d_d_1(TyD);
+   test_urshr_d_d_32(TyD);
+   test_urshr_d_d_64(TyD);
+
    // srshr (imm)  2d,4s,2s,8h,4h,16b,8b
    // urshr (imm)  2d,4s,2s,8h,4h,16b,8b
+   test_srshr_2d_2d_1(TyD);
+   test_srshr_2d_2d_32(TyD);
+   test_srshr_2d_2d_64(TyD);
+   test_srshr_4s_4s_1(TyS);
+   test_srshr_4s_4s_16(TyS);
+   test_srshr_4s_4s_32(TyS);
+   test_srshr_2s_2s_1(TyS);
+   test_srshr_2s_2s_16(TyS);
+   test_srshr_2s_2s_32(TyS);
+   test_srshr_8h_8h_1(TyH);
+   test_srshr_8h_8h_8(TyH);
+   test_srshr_8h_8h_16(TyH);
+   test_srshr_4h_4h_1(TyH);
+   test_srshr_4h_4h_8(TyH);
+   test_srshr_4h_4h_16(TyH);
+   test_srshr_16b_16b_1(TyB);
+   test_srshr_16b_16b_3(TyB);
+   test_srshr_16b_16b_8(TyB);
+   test_srshr_8b_8b_1(TyB);
+   test_srshr_8b_8b_3(TyB);
+   test_srshr_8b_8b_8(TyB);
+   test_urshr_2d_2d_1(TyD);
+   test_urshr_2d_2d_32(TyD);
+   test_urshr_2d_2d_64(TyD);
+   test_urshr_4s_4s_1(TyS);
+   test_urshr_4s_4s_16(TyS);
+   test_urshr_4s_4s_32(TyS);
+   test_urshr_2s_2s_1(TyS);
+   test_urshr_2s_2s_16(TyS);
+   test_urshr_2s_2s_32(TyS);
+   test_urshr_8h_8h_1(TyH);
+   test_urshr_8h_8h_8(TyH);
+   test_urshr_8h_8h_16(TyH);
+   test_urshr_4h_4h_1(TyH);
+   test_urshr_4h_4h_8(TyH);
+   test_urshr_4h_4h_16(TyH);
+   test_urshr_16b_16b_1(TyB);
+   test_urshr_16b_16b_3(TyB);
+   test_urshr_16b_16b_8(TyB);
+   test_urshr_8b_8b_1(TyB);
+   test_urshr_8b_8b_3(TyB);
+   test_urshr_8b_8b_8(TyB);
 
    // srsra (imm)  d
    // ursra (imm)  d
+   test_srsra_d_d_1(TyD);
+   test_srsra_d_d_32(TyD);
+   test_srsra_d_d_64(TyD);
+   test_ursra_d_d_1(TyD);
+   test_ursra_d_d_32(TyD);
+   test_ursra_d_d_64(TyD);
+
    // srsra (imm)  2d,4s,2s,8h,4h,16b,8b
    // ursra (imm)  2d,4s,2s,8h,4h,16b,8b
+   test_srsra_2d_2d_1(TyD);
+   test_srsra_2d_2d_32(TyD);
+   test_srsra_2d_2d_64(TyD);
+   test_srsra_4s_4s_1(TyS);
+   test_srsra_4s_4s_16(TyS);
+   test_srsra_4s_4s_32(TyS);
+   test_srsra_2s_2s_1(TyS);
+   test_srsra_2s_2s_16(TyS);
+   test_srsra_2s_2s_32(TyS);
+   test_srsra_8h_8h_1(TyH);
+   test_srsra_8h_8h_8(TyH);
+   test_srsra_8h_8h_16(TyH);
+   test_srsra_4h_4h_1(TyH);
+   test_srsra_4h_4h_8(TyH);
+   test_srsra_4h_4h_16(TyH);
+   test_srsra_16b_16b_1(TyB);
+   test_srsra_16b_16b_3(TyB);
+   test_srsra_16b_16b_8(TyB);
+   test_srsra_8b_8b_1(TyB);
+   test_srsra_8b_8b_3(TyB);
+   test_srsra_8b_8b_8(TyB);
+   test_ursra_2d_2d_1(TyD);
+   test_ursra_2d_2d_32(TyD);
+   test_ursra_2d_2d_64(TyD);
+   test_ursra_4s_4s_1(TyS);
+   test_ursra_4s_4s_16(TyS);
+   test_ursra_4s_4s_32(TyS);
+   test_ursra_2s_2s_1(TyS);
+   test_ursra_2s_2s_16(TyS);
+   test_ursra_2s_2s_32(TyS);
+   test_ursra_8h_8h_1(TyH);
+   test_ursra_8h_8h_8(TyH);
+   test_ursra_8h_8h_16(TyH);
+   test_ursra_4h_4h_1(TyH);
+   test_ursra_4h_4h_8(TyH);
+   test_ursra_4h_4h_16(TyH);
+   test_ursra_16b_16b_1(TyB);
+   test_ursra_16b_16b_3(TyB);
+   test_ursra_16b_16b_8(TyB);
+   test_ursra_8b_8b_1(TyB);
+   test_ursra_8b_8b_3(TyB);
+   test_ursra_8b_8b_8(TyB);
 
    // sshll{2} (imm)  2d_2s/4s, 4s_4h/8h, 8h_8b/16b
    // ushll{2} (imm)  2d_2s/4s, 4s_4h/8h, 8h_8b/16b
-   // INCOMPLETE
    test_sshll_2d_2s_0(TyS);
    test_sshll_2d_2s_15(TyS);
    test_sshll_2d_2s_31(TyS);
    test_sshll2_2d_4s_0(TyS);
    test_sshll2_2d_4s_15(TyS);
    test_sshll2_2d_4s_31(TyS);
+   test_sshll_4s_4h_0(TyH);
+   test_sshll_4s_4h_7(TyH);
+   test_sshll_4s_4h_15(TyH);
+   test_sshll2_4s_8h_0(TyH);
+   test_sshll2_4s_8h_7(TyH);
+   test_sshll2_4s_8h_15(TyH);
+   test_sshll_8h_8b_0(TyB);
+   test_sshll_8h_8b_3(TyB);
+   test_sshll_8h_8b_7(TyB);
+   test_sshll2_8h_16b_0(TyB);
+   test_sshll2_8h_16b_3(TyB);
+   test_sshll2_8h_16b_7(TyB);
    test_ushll_2d_2s_0(TyS);
    test_ushll_2d_2s_15(TyS);
    test_ushll_2d_2s_31(TyS);
    test_ushll2_2d_4s_0(TyS);
    test_ushll2_2d_4s_15(TyS);
    test_ushll2_2d_4s_31(TyS);
+   test_ushll_4s_4h_0(TyH);
+   test_ushll_4s_4h_7(TyH);
+   test_ushll_4s_4h_15(TyH);
+   test_ushll2_4s_8h_0(TyH);
+   test_ushll2_4s_8h_7(TyH);
+   test_ushll2_4s_8h_15(TyH);
+   test_ushll_8h_8b_0(TyB);
+   test_ushll_8h_8b_3(TyB);
+   test_ushll_8h_8b_7(TyB);
+   test_ushll2_8h_16b_0(TyB);
+   test_ushll2_8h_16b_3(TyB);
+   test_ushll2_8h_16b_7(TyB);
 
    // suqadd  d,s,h,b
+   // usqadd  d,s,h,b
+   test_suqadd_d_d(TyD);
+   test_suqadd_s_s(TyS);
+   test_suqadd_h_h(TyH);
+   test_suqadd_b_b(TyB);
+   test_usqadd_d_d(TyD);
+   test_usqadd_s_s(TyS);
+   test_usqadd_h_h(TyH);
+   test_usqadd_b_b(TyB);
+
    // suqadd  2d,4s,2s,8h,4h,16b,8b
+   // usqadd  2d,4s,2s,8h,4h,16b,8b
+   test_suqadd_2d_2d(TyD);
+   test_suqadd_4s_4s(TyS);
+   test_suqadd_2s_2s(TyS);
+   test_suqadd_8h_8h(TyH);
+   test_suqadd_4h_4h(TyH);
+   test_suqadd_16b_16b(TyB);
+   test_suqadd_8b_8b(TyB);
+   test_usqadd_2d_2d(TyD);
+   test_usqadd_4s_4s(TyS);
+   test_usqadd_2s_2s(TyS);
+   test_usqadd_8h_8h(TyH);
+   test_usqadd_4h_4h(TyH);
+   test_usqadd_16b_16b(TyB);
+   test_usqadd_8b_8b(TyB);
 
    // tbl     8b_{16b}_8b, 16b_{16b}_16b
    // tbl     8b_{16b,16b}_8b, 16b_{16b,16b}_16b
@@ -4098,9 +5105,6 @@ int main ( void )
    // urecpe      4s,2s
 
    // ursqrte     4s,2s
-
-   // usqadd      d,s,h,b
-   // usqadd      2d,4s,2s,8h,4h,16b,8b
 
    // uzp1      2d,4s,2s,8h,4h,16b,8b
    // uzp2      2d,4s,2s,8h,4h,16b,8b

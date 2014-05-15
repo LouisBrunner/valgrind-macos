@@ -1004,6 +1004,8 @@ static IRExpr* getQRegLO ( UInt qregNo, IRType ty )
 {
    Int off = offsetQRegLane(qregNo, ty, 0);
    switch (ty) {
+      case Ity_I8:
+      case Ity_I16:
       case Ity_I32: case Ity_I64:
       case Ity_F32: case Ity_F64: case Ity_V128:
          break;
@@ -7100,6 +7102,20 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
          return True;
       }
       /* else it's really an ORR; fall through. */
+   }
+
+   /* ---------------- CMEQ_d_d_#0 ---------------- */
+   /* 
+      010 11110 11 10000 0100 110 n d
+   */
+   if ((INSN(31,0) & 0xFFFFFC00) == 0x5EE09800) {
+      UInt nn = INSN(9,5);
+      UInt dd = INSN(4,0);
+      putQReg128(dd, unop(Iop_ZeroHI64ofV128,
+                          binop(Iop_CmpEQ64x2, getQReg128(nn),
+                                mkV128(0x0000))));
+      DIP("cmeq d%u, d%u, #0\n", dd, nn);
+      return True;
    }
 
    vex_printf("ARM64 front end: simd_and_fp\n");

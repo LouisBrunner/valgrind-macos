@@ -58,6 +58,41 @@ void sr_extended_perror (SysRes sr, const HChar *msg)
    }
 }
 
+/* Calls VG_(poll) with given arguments. If VG_(poll) fails due to EINTR,
+   restarts the syscall.
+   Normally, VG_(poll) gdbsrv syscalls are not supposed to be interrupted :
+     either gdbsrv has been called by the scheduler (so all async signals
+     are masked)
+     or gdbsrv has been forced invoked by vgdb+ptrace, and vgdb is queuing
+     the signals.
+
+   However, on old kernels (such as on RHEL5.5 2.6.18), when vgdb+ptrace
+   intercepts and queues an async signal, the poll syscall is not properly
+   restarted. Instead, it returns EINTR even if no signal was effectively
+   received by the ptraced process.
+   See red-hat "Bug 679129 - Change in behaviour between RH5.5 and RH6
+   with ptrace and syscalls bugzilla"
+   e.g. "Why rhel5 differs? Because unlike in rhel6, sys_poll() returns
+         -EINTR if interrupted, that is all. This old implementation does
+         not support the restart-if-eintr-is-spurious."
+
+   So in case VG_(poll) fails with EINTR, we retry. */
+static SysRes VG_(poll_no_eintr) (struct vki_pollfd *fds, Int nfds, Int timeout)
+{
+  const HChar* msg = "VG_(poll) failed (old kernel ?) retrying ... \n";
+  SysRes sr;
+  do {
+     sr = VG_(poll) (fds, nfds, timeout);
+     if (!sr_isError(sr) || sr_Err(sr) != VKI_EINTR)
+        return sr;
+     sr_perror (sr, "%s", msg);
+     if (VG_(debugLog_getLevel)() >= 1) {
+        sr_extended_perror (sr, msg);
+     }
+  } while (1);
+  /*NOTREACHED*/
+}
+
 Bool noack_mode;
 
 static int readchar (int single);
@@ -192,7 +227,7 @@ int ensure_write_remote_desc(void)
       write_remote_desc_ok.fd = write_remote_desc;
       write_remote_desc_ok.events = VKI_POLLOUT;
       write_remote_desc_ok.revents = 0;
-      ret = VG_(poll)(&write_remote_desc_ok, 1, 0);
+      ret = VG_(poll_no_eintr)(&write_remote_desc_ok, 1, 0);
       if (sr_isError(ret) 
           || (sr_Res(ret) > 0 && poll_cond(write_remote_desc_ok.revents))) {
         if (sr_isError(ret)) {
@@ -392,7 +427,7 @@ void remote_open (const HChar *name)
 void sync_gdb_connection(void)
 {
    SysRes ret;
-   ret = VG_(poll)(0, 0, 100);
+   ret = VG_(poll_no_eintr)(0, 0, 100);
    if (sr_isError(ret))
       sr_extended_perror(ret, "sync_gdb_connection: poll error\n");
 }
@@ -494,7 +529,7 @@ int remote_desc_activity(const char *msg)
 
    /* poll the remote desc */
    remote_desc_pollfdread_activity.revents = 0;
-   ret = VG_(poll) (&remote_desc_pollfdread_activity, 1, 0);
+   ret = VG_(poll_no_eintr) (&remote_desc_pollfdread_activity, 1, 0);
    if (sr_isError(ret)
        || (sr_Res(ret) && poll_cond(remote_desc_pollfdread_activity.revents))) {
      if (sr_isError(ret)) {
@@ -866,7 +901,7 @@ int readchar (int single)
    /* No characters available in buf =>
       wait for some characters to arrive */
    remote_desc_pollfdread_activity.revents = 0;
-   ret = VG_(poll)(&remote_desc_pollfdread_activity, 1, -1);
+   ret = VG_(poll_no_eintr)(&remote_desc_pollfdread_activity, 1, -1);
    if (sr_isError(ret) || sr_Res(ret) != 1) {
      if (sr_isError(ret)) {
         sr_extended_perror(ret, "readchar: poll error\n");

@@ -20,12 +20,11 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
 
 === VEX/arm ============================================================
 
-328423  Unrecognised instructions: _fips_armv7_tick and _armv7_tick
 329963  Half precision floating point conversion on ARM is not supported
 330349  Endless loop happen when using lackey with --trace-mem=yes on ARM
-331057  unhandled instruction: 0xEEE01B20 (vfma.f64) (has patch)
-331178  disInstr(arm): unhandled instruction: 0xEE190F1D
+331178  disInstr(arm): unhandled instruction: 0xEE190F1D (read PMCCNTR)
         Probably WONTFIX or CANTFIX
+        == 328423
 
 === VEX/x86 ============================================================
 
@@ -172,9 +171,11 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
 333628  Out of tree build
         == 256174
 334110  Why install internal headers/libraries/.pc file?
-n-i-bz  Fix mingw64 support in valgrind.h (dev@, 9 May 2014)
 
 ========================================================================
 ========================================================================
 
 Mon May 12 16:19:52 CEST 2014
+
+334788  Changing the current directory confuses Valgrind when it tries
+        to write to log files for forked children

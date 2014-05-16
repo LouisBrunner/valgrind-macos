@@ -102,6 +102,7 @@ where XXXXXX is the bug number as listed below.
 330939  Support for AMD's syscall instruction on x86
         == 308729
 330941  Typo in PRE(poll) syscall wrapper
+331057  unhandled instruction: 0xEEE01B20 (vfma.f64) (has patch)
 331254  Fix expected output for memcheck/tests/dw4
 331255  Fix race condition in test none/tests/coolo_sigaction
 331257  Fix type of jump buffer in test none/tests/faultstatus
@@ -132,6 +133,7 @@ n-i-bz  Fix KVM_CREATE_IRQCHIP ioctl handling
 n-i-bz  s390x: Fix memory corruption for multithreaded applications
 n-i-bz  vex arm->IR: allow PC as basereg in some LDRD cases
 n-i-bz  internal error in Valgrind if vgdb transmit signals when ptrace invoked
+n-i-bz  Fix mingw64 support in valgrind.h (dev@, 9 May 2014)
 
 Release 3.9.0 (31 October 2013)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

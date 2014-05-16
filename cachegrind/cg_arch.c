@@ -105,7 +105,7 @@ static void parse_cache_opt ( cache_t* cache, const HChar* opt,
    return;
 
   bad:
-   VG_(fmsg_bad_option)(opt, "Bad argument '%s'\n", optval);
+   VG_(fmsg_bad_option)(opt, "");
 
   overflow:
    VG_(fmsg_bad_option)(opt,

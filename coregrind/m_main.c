@@ -542,12 +542,9 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
       else if VG_INT_CLO (arg, "--vgdb-poll",      VG_(clo_vgdb_poll)) {}
       else if VG_INT_CLO (arg, "--vgdb-error",     VG_(clo_vgdb_error)) {}
       else if VG_STR_CLO (arg, "--vgdb-stop-at", tmp_str) {
-         const HChar event_set[] = "startup,exit,valgrindabexit";
-         if (!VG_(parse_enum_set)(event_set, tmp_str,
+         if (!VG_(parse_enum_set)("startup,exit,valgrindabexit", tmp_str,
                                   &VG_(clo_vgdb_stop_at)))
-            VG_(fmsg_bad_option)(arg,
-               "Bad event set '%s', should be a list containing '%s'\n",
-               tmp_str, event_set);
+            VG_(fmsg_bad_option)(arg, "");
       }
       else if VG_STR_CLO (arg, "--vgdb-prefix",    VG_(clo_vgdb_prefix)) {
          VG_(arg_vgdb_prefix) = arg;
@@ -576,8 +573,8 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
          else if (VG_(strcmp)(tmp_str, "no") == 0)
             VG_(clo_fair_sched) = disable_fair_sched;
          else
-            VG_(fmsg_bad_option)(arg,
-               "Bad argument, should be 'yes', 'try' or 'no'\n");
+            VG_(fmsg_bad_option)(arg, "");
+
       }
       else if VG_BOOL_CLO(arg, "--trace-sched",      VG_(clo_trace_sched)) {}
       else if VG_BOOL_CLO(arg, "--trace-signals",    VG_(clo_trace_signals)) {}
@@ -901,8 +898,7 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
          chaos.  No big deal; dump_error is a flag for debugging V
          itself. */
       if (VG_(clo_dump_error) > 0) {
-         VG_(fmsg_bad_option)("--xml=yes",
-            "Cannot be used together with --dump-error");
+         VG_(fmsg_bad_option)("--xml=yes together with --dump-error", "");
       }
 
       /* Disable error limits (this might be a bad idea!) */

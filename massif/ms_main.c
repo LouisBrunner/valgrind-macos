@@ -2483,8 +2483,8 @@ static void ms_post_clo_init(void)
    // Check options.
    if (clo_pages_as_heap) {
       if (clo_stacks) {
-         VG_(fmsg_bad_option)(
-            "--pages-as-heap=yes together with --stacks=yes", "");
+         VG_(fmsg_bad_option)("--pages-as-heap=yes",
+            "Cannot be used together with --stacks=yes");
       }
    }
    if (!clo_heap) {

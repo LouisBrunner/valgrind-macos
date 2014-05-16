@@ -267,13 +267,7 @@ HChar* VG_(expand_file_name)(const HChar* option_name, const HChar* format)
    return out;
 
   bad: {
-   HChar* opt =    // 2:  1 for the '=', 1 for the NUL.
-      VG_(malloc)( "options.efn.3",
-                   VG_(strlen)(option_name) + VG_(strlen)(format) + 2 );
-   VG_(strcpy)(opt, option_name);
-   VG_(strcat)(opt, "=");
-   VG_(strcat)(opt, format);
-   VG_(fmsg_bad_option)(opt, "");
+   VG_(fmsg_bad_option)(option_name, "Bad format '%s'\n", format);
   }
 }
 

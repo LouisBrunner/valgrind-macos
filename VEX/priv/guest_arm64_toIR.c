@@ -7106,7 +7106,7 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
 
    /* ---------------- CMEQ_d_d_#0 ---------------- */
    /* 
-      010 11110 11 10000 0100 110 n d
+      010 11110 11 10000 0100 110 n d   CMEQ Dd, Dn, #0
    */
    if ((INSN(31,0) & 0xFFFFFC00) == 0x5EE09800) {
       UInt nn = INSN(9,5);
@@ -7115,6 +7115,22 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
                           binop(Iop_CmpEQ64x2, getQReg128(nn),
                                 mkV128(0x0000))));
       DIP("cmeq d%u, d%u, #0\n", dd, nn);
+      return True;
+   }
+
+   /* ---------------- SHL_d_d_#imm ---------------- */
+   /* 31         22 21  18 15     9 4
+      010 111110 1  ih3 ib 010101 n d  SHL Dd, Dn, #(ih3:ib)
+   */
+   if (INSN(31,22) == BITS10(0,1,0,1,1,1,1,1,0,1)
+       && INSN(15,10) == BITS6(0,1,0,1,0,1)) {
+      UInt nn = INSN(9,5);
+      UInt dd = INSN(4,0);
+      UInt sh = INSN(21,16);
+      vassert(sh < 64);
+      putQReg128(dd, unop(Iop_ZeroHI64ofV128,
+                          binop(Iop_ShlN64x2, getQReg128(nn), mkU8(sh))));
+      DIP("shl d%u, d%u, #%u\n", dd, nn, sh);
       return True;
    }
 

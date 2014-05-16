@@ -5543,10 +5543,14 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
                   default:
                      vassert(0);
                }
-               if (op != ARM64vecsh_INVALID && amt > 0 && amt <= limit) {
+               if (op != ARM64vecsh_INVALID && amt >= 0 && amt <= limit) {
                   HReg src = iselV128Expr(env, argL);
                   HReg dst = newVRegV(env);
-                  addInstr(env, ARM64Instr_VShiftImmV(op, dst, src, amt));
+                  if (amt > 0) {
+                     addInstr(env, ARM64Instr_VShiftImmV(op, dst, src, amt));
+                  } else {
+                     dst = src;
+                  }
                   return dst;
                }
             }

@@ -906,7 +906,8 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_ioctl,             sys_ioctl),             // 29
    LINX_(__NR_mkdirat,           sys_mkdirat),           // 34
    LINX_(__NR_unlinkat,          sys_unlinkat),          // 35
-   LINX_(__NR_symlinkat,	 sys_symlinkat),         // 36
+   LINX_(__NR_symlinkat,         sys_symlinkat),         // 36
+   LINX_(__NR_linkat,            sys_linkat),            // 37
    LINX_(__NR_renameat,		 sys_renameat),          // 38
 
    // FIXME IS THIS CORRECT?  it may well not be.
@@ -958,6 +959,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_clock_gettime,     sys_clock_gettime),     // 113
    LINXY(__NR_clock_getres,      sys_clock_getres),      // 114
    LINXY(__NR_syslog,            sys_syslog),            // 116
+   LINX_(__NR_sched_setaffinity, sys_sched_setaffinity), // 122
    LINXY(__NR_sched_getaffinity, sys_sched_getaffinity), // 123
    LINX_(__NR_sched_yield,       sys_sched_yield),       // 124
    GENX_(__NR_kill,              sys_kill),              // 129
@@ -1291,7 +1293,6 @@ static SyscallTableEntry syscall_main_table[] = {
 //ZZ    LINXY(__NR_sendfile64,        sys_sendfile64),     // 239
 //ZZ 
 //ZZ    LINXY(__NR_futex,             sys_futex),             // 240
-//ZZ    LINX_(__NR_sched_setaffinity, sys_sched_setaffinity), // 241
 //ZZ    LINXY(__NR_sched_getaffinity, sys_sched_getaffinity), // 242
 //ZZ //   PLAX_(__NR_set_thread_area,   sys_set_thread_area),   // 243
 //ZZ //   PLAX_(__NR_get_thread_area,   sys_get_thread_area),   // 244
@@ -1357,7 +1358,6 @@ static SyscallTableEntry syscall_main_table[] = {
 //ZZ 
 //ZZ    PLAXY(__NR_fstatat64,    sys_fstatat64),        // 300
 //ZZ    LINX_(__NR_renameat,       sys_renameat),         // 302
-//ZZ    LINX_(__NR_linkat,       sys_linkat),           // 303
 //ZZ    LINX_(__NR_symlinkat,    sys_symlinkat),        // 304
 //ZZ 
 //ZZ    LINX_(__NR_fchmodat,       sys_fchmodat),         //

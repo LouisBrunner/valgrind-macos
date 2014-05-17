@@ -61,18 +61,11 @@ endif
 
 
 vgdb_SOURCES = vgdb.c
-if VGCONF_PLATFORMS_INCLUDE_ARM64_LINUX
-# vgdb-invoker-ptrace.c isn't buildable on arm64-linux yet
-# so skip it.  Unfortunately this also causes it to be skipped
-# for 32-bit ARM builds which are part of a bi-arch ARM build.
-vgdb_SOURCES += vgdb-invoker-none.c
-else
 if VGCONF_OS_IS_LINUX
 if VGCONF_PLATVARIANT_IS_ANDROID
 vgdb_SOURCES += vgdb-invoker-none.c
 else
 vgdb_SOURCES += vgdb-invoker-ptrace.c
-endif
 endif
 endif
 if VGCONF_OS_IS_DARWIN

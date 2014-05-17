@@ -129,6 +129,7 @@ where XXXXXX is the bug number as listed below.
 334049  lzcnt fails silently (x86_32)
 334705  sendmsg and recvmsg should guard against bogus msghdr fields.
 334727  Build fails with -Werror=format-security
+334788  clarify doc about --log-file initial program directory
 n-i-bz  Fix KVM_CREATE_IRQCHIP ioctl handling
 n-i-bz  s390x: Fix memory corruption for multithreaded applications
 n-i-bz  vex arm->IR: allow PC as basereg in some LDRD cases

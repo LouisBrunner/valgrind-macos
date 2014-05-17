@@ -175,7 +175,3 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
 ========================================================================
 ========================================================================
 
-Mon May 12 16:19:52 CEST 2014
-
-334788  Changing the current directory confuses Valgrind when it tries
-        to write to log files for forked children

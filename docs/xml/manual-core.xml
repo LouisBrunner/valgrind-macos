@@ -892,6 +892,13 @@ in most cases.  We group the available options by rough categories.</para>
       
       <para>If an <option>%</option> is followed by any other character, it
       causes an abort.</para>
+
+      <para>If the file name specifies a relative file name, it is put
+      in the program's initial working directory : this is the current
+      directory when the program started its execution after the fork
+      or after the exec.  If it specifies an absolute file name (ie.
+      starts with '/') then it is put there.
+      </para>
     </listitem>
   </varlistentry>
 

@@ -121,6 +121,7 @@ where XXXXXX is the bug number as listed below.
         client requests
 332276  Implement additional Xen hypercalls
 332658  ldrd.w r1, r2, [PC, #imm] does not adjust for 32bit alignment
+333072  drd: Add semaphore annotations
 333145  Tests for missaligned PC+#imm access for arm
 333228  AAarch64 Missing instruction encoding: mrs %[reg], ctr_el0
 333230  AAarch64 missing instruction encodings: dc, ic, dsb.

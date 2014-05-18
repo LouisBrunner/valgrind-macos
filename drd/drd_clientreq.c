@@ -225,6 +225,26 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
       DRD_(rwlock_pre_unlock)(arg[1], user_rwlock);
       break;
 
+   case VG_USERREQ__DRD_ANNOTATE_SEM_INIT_PRE:
+      DRD_(semaphore_init)(arg[1], 0, arg[2]);
+      break;
+
+   case VG_USERREQ__DRD_ANNOTATE_SEM_DESTROY_POST:
+      DRD_(semaphore_destroy)(arg[1]);
+      break;
+
+   case VG_USERREQ__DRD_ANNOTATE_SEM_WAIT_PRE:
+      DRD_(semaphore_pre_wait)(arg[1]);
+      break;
+
+   case VG_USERREQ__DRD_ANNOTATE_SEM_WAIT_POST:
+      DRD_(semaphore_post_wait)(drd_tid, arg[1], True /* waited */);
+      break;
+
+   case VG_USERREQ__DRD_ANNOTATE_SEM_POST_PRE:
+      DRD_(semaphore_pre_post)(drd_tid, arg[1]);
+      break;
+
    case VG_USERREQ__SET_PTHREAD_COND_INITIALIZER:
       DRD_(pthread_cond_initializer) = (Addr)arg[1];
       DRD_(pthread_cond_initializer_size) = arg[2];

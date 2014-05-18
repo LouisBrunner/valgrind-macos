@@ -271,6 +271,31 @@
  */
 #define ANNOTATE_WRITERLOCK_RELEASED(rwlock) ANNOTATE_RWLOCK_RELEASED(rwlock, 1)
 
+/** Tell DRD that a semaphore object is going to be initialized. */
+#define ANNOTATE_SEM_INIT_PRE(sem, value)                                 \
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__DRD_ANNOTATE_SEM_INIT_PRE, \
+                                   sem, value, 0, 0, 0);
+
+/** Tell DRD that a semaphore object has been destroyed. */
+#define ANNOTATE_SEM_DESTROY_POST(sem)                                        \
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__DRD_ANNOTATE_SEM_DESTROY_POST, \
+                                   sem, 0, 0, 0, 0);
+
+/** Tell DRD that a semaphore is going to be acquired. */
+#define ANNOTATE_SEM_WAIT_PRE(sem)                                        \
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__DRD_ANNOTATE_SEM_WAIT_PRE, \
+                                   sem, 0, 0, 0, 0)
+
+/** Tell DRD that a semaphore has been acquired. */
+#define ANNOTATE_SEM_WAIT_POST(sem)                                        \
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__DRD_ANNOTATE_SEM_WAIT_POST, \
+                                   sem, 0, 0, 0, 0)
+
+/** Tell DRD that a semaphore is going to be released. */
+#define ANNOTATE_SEM_POST_PRE(sem)                                        \
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__DRD_ANNOTATE_SEM_POST_PRE, \
+                                   sem, 0, 0, 0, 0)
+
 /*
  * Report that a barrier has been initialized with a given barrier count.  The
  * third argument specifies whether or not reinitialization is allowed, that
@@ -441,6 +466,27 @@ enum {
    /* Tell DRD that a DRD annotation has not yet been implemented. */
    VG_USERREQ__DRD_ANNOTATION_UNIMP,
    /* args: char*. */
+
+   /* Tell DRD that a user-defined semaphore synchronization object
+    * is about to be created. */
+   VG_USERREQ__DRD_ANNOTATE_SEM_INIT_PRE,
+   /* args: Addr, UInt value. */
+   /* Tell DRD that a user-defined semaphore synchronization object
+    * has been destroyed. */
+   VG_USERREQ__DRD_ANNOTATE_SEM_DESTROY_POST,
+   /* args: Addr. */
+   /* Tell DRD that a user-defined semaphore synchronization
+    * object is going to be acquired (semaphore wait). */
+   VG_USERREQ__DRD_ANNOTATE_SEM_WAIT_PRE,
+   /* args: Addr. */
+   /* Tell DRD that a user-defined semaphore synchronization
+    * object has been acquired (semaphore wait). */
+   VG_USERREQ__DRD_ANNOTATE_SEM_WAIT_POST,
+   /* args: Addr. */
+   /* Tell DRD that a user-defined semaphore synchronization
+    * object is about to be released (semaphore post). */
+   VG_USERREQ__DRD_ANNOTATE_SEM_POST_PRE,
+   /* args: Addr. */
 
    /* Tell DRD that a user-defined reader-writer synchronization object
     * has been created. */

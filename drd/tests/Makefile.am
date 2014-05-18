@@ -67,6 +67,8 @@ EXTRA_DIST =                                        \
 	annotate_trace_memory_xml.stderr.exp-64bit  \
 	annotate_trace_memory_xml.stderr.exp-mips32 \
 	annotate_trace_memory_xml.vgtest	    \
+	annotate_sem.stderr.exp                     \
+	annotate_sem.vgtest                         \
 	annotate_static.stderr.exp	            \
 	annotate_static.vgtest		            \
 	atomic_var.stderr.exp			    \
@@ -375,6 +377,7 @@ if HAVE_BUILTIN_ATOMIC
 check_PROGRAMS +=        \
   annotate_barrier       \
   annotate_rwlock        \
+  annotate_sem           \
   atomic_var             \
   circular_buffer
 endif

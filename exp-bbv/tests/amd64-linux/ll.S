@@ -9,7 +9,7 @@
 #
 
 		
-.include "../logo.include"
+.include "logo.include"
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -563,7 +563,7 @@ two:	.ascii	"Two\0\0\0"
 three:	.ascii	"Three\0"
 four:	.ascii	"Four\0"
 
-.include	"../logo.lzss_new"
+.include	"logo.lzss_new"
 
 disk_buffer:
 .ascii "processor	: 0\n"

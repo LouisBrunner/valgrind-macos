@@ -23,7 +23,7 @@ EXTRA_DIST = \
 	   rep_prefix.stderr.exp \
 	   rep_prefix.vgtest 
 
-AM_CCASFLAGS += -ffreestanding
+AM_CCASFLAGS += -ffreestanding -Xassembler -I$(top_srcdir)/exp-bbv/tests
 
 LDFLAGS += -nostartfiles -nodefaultlibs
 

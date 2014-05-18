@@ -36,7 +36,7 @@
 .equ BSS_BEGIN,25
 .equ DATA_BEGIN,26
 
-.include "../logo.include"
+.include "logo.include"
 
 	.globl _start	
 _start:	
@@ -503,7 +503,7 @@ stdout_num:
 
 data_begin:
 
-.include "../logo.lzss_new"
+.include "logo.lzss_new"
 
 ver_string:	.ascii	" Version \0"
 compiled_string:	.ascii	", Compiled \0"

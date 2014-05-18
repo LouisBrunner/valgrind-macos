@@ -7,7 +7,7 @@
 # Modified to remove non-deterministic system calls
 # And to avoid reading from /proc
 
-.include "../logo.include"
+.include "logo.include"
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -480,7 +480,7 @@ disk_buffer:
 sysinfo_buff:
 .long 0,0,0,0,512*1024*1024,0,0,0
 
-.include	"../logo.lzss_new"
+.include	"logo.lzss_new"
 
 
 #============================================================================

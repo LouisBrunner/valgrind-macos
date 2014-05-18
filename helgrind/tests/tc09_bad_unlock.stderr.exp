@@ -18,7 +18,6 @@ Thread #x unlocked a not-locked lock at 0x........
 
 Thread #x was created
    ...
-   by 0x........: pthread_create_WRK (hg_intercepts.c:...)
    by 0x........: pthread_create@* (hg_intercepts.c:...)
    by 0x........: nearly_main (tc09_bad_unlock.c:35)
    by 0x........: main (tc09_bad_unlock.c:49)
@@ -84,7 +83,6 @@ Thread #x: Bug in libpthread: recursive write lock granted on mutex/wrlock which
 
 Thread #x was created
    ...
-   by 0x........: pthread_create_WRK (hg_intercepts.c:...)
    by 0x........: pthread_create@* (hg_intercepts.c:...)
    by 0x........: nearly_main (tc09_bad_unlock.c:35)
    by 0x........: main (tc09_bad_unlock.c:50)

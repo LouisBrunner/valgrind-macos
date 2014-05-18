@@ -3,7 +3,6 @@
 
 Thread #x was created
    ...
-   by 0x........: pthread_create_WRK (hg_intercepts.c:...)
    by 0x........: pthread_create@* (hg_intercepts.c:...)
    by 0x........: main (hg02_deadlock.c:36)
 

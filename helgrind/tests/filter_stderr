@@ -26,11 +26,14 @@ sed \
 
 # Remove "Helgrind, ..." line and the following copyright line;
 # also the standard postamble (does such a word exist?)
+# And also remove pthread_create_WRK lines, as ppc64 stacktraces
+# do not contain them (at least on gcc110/fedora18).
 sed \
  -e "/^Helgrind, a thread error detector/ , /./ d" \
  -e "/^For counts of detected and suppressed errors, rerun with: -v$/d" \
  -e "/^Use --history-level=approx or =none to gain increased speed, at$/d" \
- -e "/^the cost of reduced accuracy of conflicting-access information$/d" |
+ -e "/^the cost of reduced accuracy of conflicting-access information$/d" \
+ -e "/pthread_create_WRK (hg_intercepts.c:/d" |
 
 $dir/../../helgrind/tests/filter_helgrind "$@"
 

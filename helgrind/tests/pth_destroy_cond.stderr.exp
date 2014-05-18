@@ -2,7 +2,6 @@
 
 Thread #x was created
    ...
-   by 0x........: pthread_create_WRK (hg_intercepts.c:...)
    by 0x........: pthread_create@* (hg_intercepts.c:...)
    by 0x........: main (pth_destroy_cond.c:29)
 

@@ -208,9 +208,10 @@ Bool pcmpXstrX_WRK_wide ( /*OUT*/V128* resV,
       even if they would probably work.  Life is too short to have
       unvalidated cases in the code base. */
    switch (imm8) {
-      case 0x01:
-      case 0x03: case 0x09: case 0x0B: case 0x0D: case 0x13:
-      case 0x1B: case 0x39: case 0x3B: case 0x45: case 0x4B:
+      case 0x01: case 0x03: case 0x09: case 0x0B: case 0x0D:
+      case 0x13:            case 0x1B:
+                            case 0x39: case 0x3B:
+                 case 0x45:            case 0x4B:
          break;
       default:
          return False;

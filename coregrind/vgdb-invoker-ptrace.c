@@ -774,7 +774,7 @@ void restore_and_detach (pid_t pid)
    }
    if (signal_queue)
       ERROR (0, "One or more signals queued were not delivered. "
-             "First signal: %d\n", signal_queue);
+             "First signal: %d\n", signal_queue[0].si_signo);
    detach_from_all_threads(pid);
 }
 

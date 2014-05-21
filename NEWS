@@ -80,6 +80,7 @@ where XXXXXX is the bug number as listed below.
 326436  DRD: False positive in libstdc++ std::list::push_back
 326444  Cavium MIPS Octeon Specific Load Indexed Instructions
 326462  Refactor vgdb to isolate invoker stuff into separate module
+326469  amd64->IR: 0x66 0xF 0x3A 0x63 0xC1 0xE (pcmpistri 0x0E)
 326623  DRD: false positive conflict report in a field assignment
 326816  Intercept for __strncpy_sse2_unaligned missing?
 326921  coregrind fails to compile m_trampoline.S with MIPS/Linux port of V
@@ -87,12 +88,14 @@ where XXXXXX is the bug number as listed below.
 327212  Do not prepend the current directory to absolute path names.
 327238  Callgrind Assertion 'passed <= last_bb->cjmp_count' failed
 327284  s390x: Fix translation of the risbg instruction
+327639  vex amd64->IR pcmpestri SSE4.2 instruction is unsupported 0x34
 327837  dwz compressed alternate .debug_info and .debug_str not read correctly
 327916  DW_TAG_typedef may have no name
 328100  XABORT not implemented
 328205  Implement additional Xen hypercalls
 328455  s390x: SIGILL after emitting wrong register pair for ldxbr
 328711  valgrind.1 manpage "memcheck options" section is badly generated
+328878  vex amd64->IR pcmpestri SSE4.2 instruction is unsupported 0x14
 329612  Incorrect handling of AT_BASE for image execution 
 329956  valgrind crashes when lmw/stmw instructions are used on ppc64
 330228  mmap must align to VKI_SHMLBA on mips32
@@ -131,12 +134,13 @@ where XXXXXX is the bug number as listed below.
 334705  sendmsg and recvmsg should guard against bogus msghdr fields.
 334727  Build fails with -Werror=format-security
 334788  clarify doc about --log-file initial program directory
+335155  vgdb, fix error print statement.
 n-i-bz  Fix KVM_CREATE_IRQCHIP ioctl handling
 n-i-bz  s390x: Fix memory corruption for multithreaded applications
 n-i-bz  vex arm->IR: allow PC as basereg in some LDRD cases
 n-i-bz  internal error in Valgrind if vgdb transmit signals when ptrace invoked
 n-i-bz  Fix mingw64 support in valgrind.h (dev@, 9 May 2014)
-335155  vgdb, fix error print statement.
+
 
 Release 3.9.0 (31 October 2013)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -136,6 +136,7 @@ n-i-bz  s390x: Fix memory corruption for multithreaded applications
 n-i-bz  vex arm->IR: allow PC as basereg in some LDRD cases
 n-i-bz  internal error in Valgrind if vgdb transmit signals when ptrace invoked
 n-i-bz  Fix mingw64 support in valgrind.h (dev@, 9 May 2014)
+335155  vgdb, fix error print statement.
 
 Release 3.9.0 (31 October 2013)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

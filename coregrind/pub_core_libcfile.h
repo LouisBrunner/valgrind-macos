@@ -49,6 +49,9 @@ extern Bool VG_(resolve_filename) ( Int fd, HChar* buf, Int n_buf );
 /* Return the size of a file, or -1 in case of error */
 extern Long VG_(fsize) ( Int fd );
 
+/* Lookup an extended attribute for a file */
+extern SysRes VG_(getxattr) ( const HChar* file_name, const HChar* attr_name, Addr attr_value, SizeT attr_value_len );
+
 /* Is the file a directory? */
 extern Bool VG_(is_dir) ( const HChar* f );
 

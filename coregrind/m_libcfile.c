@@ -359,6 +359,18 @@ Long VG_(fsize) ( Int fd )
    return (res == -1) ? (-1LL) : buf.size;
 }
 
+SysRes VG_(getxattr) ( const HChar* file_name, const HChar* attr_name, Addr attr_value, SizeT attr_value_len )
+{
+   SysRes res;
+#if defined(VGO_linux)
+   res = VG_(do_syscall4)(__NR_getxattr, (UWord)file_name, (UWord)attr_name,
+                          attr_value, attr_value_len);
+#else
+   res = VG_(mk_SysRes_Error)(VKI_ENOSYS);
+#endif
+   return res;
+}
+
 Bool VG_(is_dir) ( const HChar* f )
 {
    struct vg_stat buf;
@@ -595,6 +607,13 @@ Int VG_(check_executable)(/*OUT*/Bool* is_setuid,
    }
 
    if ( (st.mode & (VKI_S_ISUID | VKI_S_ISGID)) && !allow_setuid ) {
+      if (is_setuid)
+         *is_setuid = True;
+      return VKI_EACCES;
+   }
+
+   res = VG_(getxattr)(f, "security.capability", (Addr)0, 0);
+   if (!sr_isError(res) && !allow_setuid) {
       if (is_setuid)
          *is_setuid = True;
       return VKI_EACCES;

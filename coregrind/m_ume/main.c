@@ -87,7 +87,7 @@ VG_(pre_exec_check)(const HChar* exe_name, Int* out_fd, Bool allow_setuid)
       if (is_setuid && !VG_(clo_xml)) {
          VG_(message)(Vg_UserMsg, "\n");
          VG_(message)(Vg_UserMsg,
-                      "Warning: Can't execute setuid/setgid executable: %s\n",
+                      "Warning: Can't execute setuid/setgid/setcap executable: %s\n",
                       exe_name);
          VG_(message)(Vg_UserMsg, "Possible workaround: remove "
                       "--trace-children=yes, if in effect\n");

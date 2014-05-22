@@ -7,4 +7,5 @@ Invalid free() / delete / delete[] / realloc()
    at 0x........: free (coregrind/vg_replace_malloc.c:...)
    by 0x........: main (memcheck/tests/badfree.c:15)
  Address 0x........ is on thread 1's stack
+ in frame #1, created by main (badfree.c:7)
 

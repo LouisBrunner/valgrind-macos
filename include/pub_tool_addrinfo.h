@@ -85,9 +85,15 @@ struct _AddrInfo {
       // As-yet unclassified.
       struct { } Undescribed;
 
-      // On a stack.
+      // On a stack. tid indicates which thread's stack?
+      // IP is the address of an instruction of the function where the
+      // stack address was. 0 if not found.
+      // frameNo is the frame nr of the call where the stack address was.
+      // -1 if not found.
       struct {
-         ThreadId tid;        // Which thread's stack?
+         ThreadId tid;
+         Addr     IP;
+         Int      frameNo;
       } Stack;
 
       // This covers heap blocks (normal and from mempools), user-defined

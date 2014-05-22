@@ -40,11 +40,11 @@
 #include "pub_core_mallocfree.h"
 #include "pub_core_machine.h"
 #include "pub_core_options.h"
+#include "pub_core_stacktrace.h"
 
 void VG_(describe_addr) ( Addr a, /*OUT*/AddrInfo* ai )
 {
    ThreadId   tid;
-   Addr       stack_min, stack_max;
    VgSectKind sect;
 
    /* -- Perhaps the variable type/location data describes it? -- */
@@ -94,12 +94,45 @@ void VG_(describe_addr) ( Addr a, /*OUT*/AddrInfo* ai )
       return;
    }
    /* -- Perhaps it's on a thread's stack? -- */
-   VG_(thread_stack_reset_iter)(&tid);
-   while ( VG_(thread_stack_next)(&tid, &stack_min, &stack_max) ) {
-      if (stack_min - VG_STACK_REDZONE_SZB <= a && a <= stack_max) {
-         ai->tag            = Addr_Stack;
-         ai->Addr.Stack.tid = tid;
-         return;
+   {
+      Addr       stack_min, stack_max;
+      VG_(thread_stack_reset_iter)(&tid);
+      while ( VG_(thread_stack_next)(&tid, &stack_min, &stack_max) ) {
+         if (stack_min - VG_STACK_REDZONE_SZB <= a && a <= stack_max) {
+            Addr ips[VG_(clo_backtrace_size)],
+                 sps[VG_(clo_backtrace_size)];
+            UInt n_frames;
+            UInt f;
+
+            ai->tag            = Addr_Stack;
+            ai->Addr.Stack.tid = tid;
+            ai->Addr.Stack.IP = 0;
+            ai->Addr.Stack.frameNo = -1;
+            /* It is on thread tid stack. Build a stacktrace, and
+               find the frame sp[f] .. sp[f+1] where the address is.
+               Store the found frameNo and the corresponding IP in
+               the description. 
+               When description is printed, IP will be translated to
+               the function name containing IP. 
+               Before accepting to describe addr with sp[f] .. sp[f+1],
+               we verify the sp looks sane: reasonably sized frame,
+               inside the stack.
+               We could check the ABI required alignment for sp (what is it?)
+               is respected, except for the innermost stack pointer ? */
+            n_frames = VG_(get_StackTrace)( tid, ips, VG_(clo_backtrace_size),
+                                            sps, NULL, 0/*first_ip_delta*/ );
+            for (f = 0; f < n_frames-1; f++) {
+               if (sps[f] <= a && a < sps[f+1]
+                   && sps[f+1] - sps[f] <= 0x4000000 // 64 MB, arbitrary
+                   && sps[f+1] <= stack_max
+                   && sps[f]   >= stack_min - VG_STACK_REDZONE_SZB) {
+                  ai->Addr.Stack.frameNo = f;
+                  ai->Addr.Stack.IP = ips[f];
+                  break;
+               }
+            }
+            return;
+         }
       }
    }
 
@@ -223,6 +256,41 @@ static void pp_addrinfo_WRK ( Addr a, AddrInfo* ai, Bool mc, Bool maybe_gcc )
       case Addr_Stack: 
          VG_(emit)( "%sAddress 0x%llx is on thread %d's stack%s\n", 
                     xpre, (ULong)a, ai->Addr.Stack.tid, xpost );
+         if (ai->Addr.Stack.frameNo != -1 && ai->Addr.Stack.IP != 0) {
+#define     FLEN                256
+            HChar fn[FLEN];
+            Bool  hasfn;
+            HChar file[FLEN];
+            Bool  hasfile;
+            UInt linenum;
+            Bool haslinenum;
+            PtrdiffT offset;
+
+            hasfn = VG_(get_fnname)(ai->Addr.Stack.IP, fn, FLEN);
+            if (VG_(get_inst_offset_in_function)( ai->Addr.Stack.IP,
+                                                  &offset))
+               haslinenum = VG_(get_linenum) (ai->Addr.Stack.IP - offset,
+                                              &linenum);
+            else
+               haslinenum = False;
+
+            hasfile = VG_(get_filename)(ai->Addr.Stack.IP, file, FLEN);
+            if (hasfile && haslinenum) {
+               HChar strlinenum[10];
+               VG_(snprintf) (strlinenum, 10, ":%d", linenum);
+               VG_(strncat) (file, strlinenum, 
+                             FLEN - VG_(strlen)(file) - 1);
+            }
+
+            if (hasfn || hasfile)
+               VG_(emit)( "%sin frame #%d, created by %s (%s)%s\n",
+                          xpre,
+                          ai->Addr.Stack.frameNo, 
+                          hasfn ? fn : "???", 
+                          hasfile ? file : "???", 
+                          xpost );
+#undef      FLEN
+         }
          break;
 
       case Addr_Block: {

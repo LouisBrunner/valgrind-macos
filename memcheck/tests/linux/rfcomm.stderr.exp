@@ -2,6 +2,7 @@ Syscall param socketcall.bind(my_addr.sa_family) points to uninitialised byte(s)
    ...
    by 0x........: main (rfcomm.c:40)
  Address 0x........ is on thread 1's stack
+ in frame #1, created by main (rfcomm.c:25)
  Uninitialised value was created by a stack allocation
    at 0x........: main (rfcomm.c:25)
 
@@ -9,6 +10,7 @@ Syscall param socketcall.bind(my_addr.rc_bdaddr) points to uninitialised byte(s)
    ...
    by 0x........: main (rfcomm.c:44)
  Address 0x........ is on thread 1's stack
+ in frame #1, created by main (rfcomm.c:25)
  Uninitialised value was created by a stack allocation
    at 0x........: main (rfcomm.c:25)
 
@@ -16,6 +18,7 @@ Syscall param socketcall.bind(my_addr.rc_channel) points to uninitialised byte(s
    ...
    by 0x........: main (rfcomm.c:48)
  Address 0x........ is on thread 1's stack
+ in frame #1, created by main (rfcomm.c:25)
  Uninitialised value was created by a stack allocation
    at 0x........: main (rfcomm.c:25)
 

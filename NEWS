@@ -24,6 +24,10 @@ Release 3.10.0 (?? ?????? 201?)
 
 * ==================== OTHER CHANGES ====================
 
+* Address description logic has been improved and is now common 
+  between memcheck and helgrind, resulting in better address
+  descriptions for some error messages.
+
 * New and modified GDB server monitor features:
 
   - The GDB server monitor command 'v.info location <address>'

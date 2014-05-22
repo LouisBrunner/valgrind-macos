@@ -891,6 +891,7 @@ Syscall param old_select(args) points to uninitialised byte(s)
    ...
    by 0x........: main (scalar.c:394)
  Address 0x........ is on thread 1's stack
+ in frame #1, created by main (scalar.c:28)
 
 Syscall param old_select(readfds) points to unaddressable byte(s)
    ...
@@ -984,6 +985,7 @@ Syscall param old_mmap(args) points to uninitialised byte(s)
    ...
    by 0x........: main (scalar.c:429)
  Address 0x........ is on thread 1's stack
+ in frame #1, created by main (scalar.c:28)
 
 -----------------------------------------------------
  91:         __NR_munmap 2s 0m
@@ -2385,11 +2387,13 @@ Syscall param sigaltstack(ss) points to unaddressable byte(s)
    ...
    by 0x........: main (scalar.c:834)
  Address 0x........ is on thread 1's stack
+ in frame #1, created by main (scalar.c:28)
 
 Syscall param sigaltstack(oss) points to unaddressable byte(s)
    ...
    by 0x........: main (scalar.c:834)
  Address 0x........ is on thread 1's stack
+ in frame #1, created by main (scalar.c:28)
 
 -----------------------------------------------------
 187:       __NR_sendfile 4s 1m

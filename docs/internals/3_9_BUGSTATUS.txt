@@ -23,6 +23,15 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
         Probably WONTFIX or CANTFIX
         == 328423
 
+=== VEX/arm64 ==========================================================
+
+335262  arm64: movi 8bit version is not supported
+335263  arm64: dmb instruction is not implemented
+335440  arm64: ld1 (single structure) is not implemented
+335496  arm64: sbc/abc instructions are not implemented
+335554  arm64: unhanded instruction: abs
+335564  arm64: unhandled instruction fcvtpu  Xn, Sn
+
 === VEX/x86 ============================================================
 
 333625  Program under valgrind calculates complex exp() wrongly
@@ -177,3 +186,20 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
 333628  Out of tree build  (is fixed, but needs to land)
 335143  Capabilities not supported
 197259  (wine) Unsupported arch_prtctl option
+
+---
+
+334665  vex x86->IR: unhandled instruction bytes: 0xC4 0xE2 0x73 0xF7
+334802  valgrind does not always explain why a given option is bad
+334834  PPC64 Little Endian support, patch 2
+334836  PPC64 Little Endian support, patch 3 testcase fixes
+335034  Unhandled ioctl: HCIGETDEVLIST
+335353  expected output of exp-sgcheck/tests/hackedbz2 mismatch with gcc 4.8.1
+335441  unhandled ioctl 0x8905 (SIOCATMARK) when running wine under valgrind (patch)
+249435  Analyzing wine programs with callgrind triggers a crash (NEEDS CLOSE)
+335563  wine's kernel32/thread test fails under valgrind
+335618  arm(thumb): unhanded instruction: mov.w rN, pc/sp
+335629  Compile error
+
+31 May 2014
+

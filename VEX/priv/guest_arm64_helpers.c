@@ -153,26 +153,46 @@ ULong arm64g_calculate_flag_n ( ULong cc_op, ULong cc_dep1,
          ULong nf   = res >> 63;
          return nf;
       }
-//ZZ       case ARMG_CC_OP_ADC: {
-//ZZ          /* (argL, argR, oldC) */
-//ZZ          UInt argL = cc_dep1;
-//ZZ          UInt argR = cc_dep2;
-//ZZ          UInt oldC = cc_dep3;
-//ZZ          vassert((oldC & ~1) == 0);
-//ZZ          UInt res  = argL + argR + oldC;
-//ZZ          UInt nf   = res >> 31;
-//ZZ          return nf;
-//ZZ       }
-//ZZ       case ARMG_CC_OP_SBB: {
-//ZZ          /* (argL, argR, oldC) */
-//ZZ          UInt argL = cc_dep1;
-//ZZ          UInt argR = cc_dep2;
-//ZZ          UInt oldC = cc_dep3;
-//ZZ          vassert((oldC & ~1) == 0);
-//ZZ          UInt res  = argL - argR - (oldC ^ 1);
-//ZZ          UInt nf   = res >> 31;
-//ZZ          return nf;
-//ZZ       }
+      case ARM64G_CC_OP_ADC32: {
+         /* (argL, argR, oldC) */
+         UInt  argL = cc_dep1;
+         UInt  argR = cc_dep2;
+         UInt  oldC = cc_dep3;
+         vassert((oldC & ~1) == 0);
+         UInt  res  = argL + argR + oldC;
+         ULong nf   = (ULong)(res >> 31);
+         return nf;
+      }
+      case ARM64G_CC_OP_ADC64: {
+         /* (argL, argR, oldC) */
+         ULong argL = cc_dep1;
+         ULong argR = cc_dep2;
+         ULong oldC = cc_dep3;
+         vassert((oldC & ~1) == 0);
+         ULong res  = argL + argR + oldC;
+         ULong nf   = res >> 63;
+         return nf;
+      }
+      case ARM64G_CC_OP_SBC32: {
+         /* (argL, argR, oldC) */
+         UInt  argL = cc_dep1;
+         UInt  argR = cc_dep2;
+         UInt  oldC = cc_dep3;
+         vassert((oldC & ~1) == 0);
+         UInt  res  = argL - argR - (oldC ^ 1);
+         ULong nf   = (ULong)(res >> 31);
+         return nf;
+      }
+      case ARM64G_CC_OP_SBC64: {
+         /* (argL, argR, oldC) */
+         ULong argL = cc_dep1;
+         ULong argR = cc_dep2;
+         ULong oldC = cc_dep3;
+         vassert((oldC & ~1) == 0);
+         ULong res  = argL - argR - (oldC ^ 1);
+         ULong nf   = res >> 63;
+         return nf;
+      }
       case ARM64G_CC_OP_LOGIC32: {
          /* (res, unused, unused) */
          UInt  res = (UInt)cc_dep1;
@@ -251,26 +271,46 @@ ULong arm64g_calculate_flag_z ( ULong cc_op, ULong cc_dep1,
          ULong zf   = res == 0;
          return zf;
       }
-//ZZ       case ARMG_CC_OP_ADC: {
-//ZZ          /* (argL, argR, oldC) */
-//ZZ          UInt argL = cc_dep1;
-//ZZ          UInt argR = cc_dep2;
-//ZZ          UInt oldC = cc_dep3;
-//ZZ          vassert((oldC & ~1) == 0);
-//ZZ          UInt res  = argL + argR + oldC;
-//ZZ          UInt zf   = res == 0;
-//ZZ          return zf;
-//ZZ       }
-//ZZ       case ARMG_CC_OP_SBB: {
-//ZZ          /* (argL, argR, oldC) */
-//ZZ          UInt argL = cc_dep1;
-//ZZ          UInt argR = cc_dep2;
-//ZZ          UInt oldC = cc_dep3;
-//ZZ          vassert((oldC & ~1) == 0);
-//ZZ          UInt res  = argL - argR - (oldC ^ 1);
-//ZZ          UInt zf   = res == 0;
-//ZZ          return zf;
-//ZZ       }
+      case ARM64G_CC_OP_ADC32: {
+         /* (argL, argR, oldC) */
+         UInt  argL = cc_dep1;
+         UInt  argR = cc_dep2;
+         UInt  oldC = cc_dep3;
+         vassert((oldC & ~1) == 0);
+         UInt  res  = argL + argR + oldC;
+         ULong zf   = res == 0;
+         return zf;
+      }
+      case ARM64G_CC_OP_ADC64: {
+         /* (argL, argR, oldC) */
+         ULong argL = cc_dep1;
+         ULong argR = cc_dep2;
+         ULong oldC = cc_dep3;
+         vassert((oldC & ~1) == 0);
+         ULong res  = argL + argR + oldC;
+         ULong zf   = res == 0;
+         return zf;
+      }
+      case ARM64G_CC_OP_SBC32: {
+         /* (argL, argR, oldC) */
+         UInt  argL = cc_dep1;
+         UInt  argR = cc_dep2;
+         UInt  oldC = cc_dep3;
+         vassert((oldC & ~1) == 0);
+         UInt  res  = argL - argR - (oldC ^ 1);
+         ULong zf   = res == 0;
+         return zf;
+      }
+      case ARM64G_CC_OP_SBC64: {
+         /* (argL, argR, oldC) */
+         ULong argL = cc_dep1;
+         ULong argR = cc_dep2;
+         ULong oldC = cc_dep3;
+         vassert((oldC & ~1) == 0);
+         ULong res  = argL - argR - (oldC ^ 1);
+         ULong zf   = res == 0;
+         return zf;
+      }
       case ARM64G_CC_OP_LOGIC32: {
          /* (res, unused, unused) */
          UInt  res  = (UInt)cc_dep1;
@@ -309,7 +349,6 @@ ULong arm64g_calculate_flag_z ( ULong cc_op, ULong cc_dep1,
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
 /* Calculate the C flag from the supplied thunk components, in the
    least significant bit of the word.  Returned bits 63:1 are zero. */
-static
 ULong arm64g_calculate_flag_c ( ULong cc_op, ULong cc_dep1,
                                 ULong cc_dep2, ULong cc_dep3 )
 {
@@ -349,25 +388,44 @@ ULong arm64g_calculate_flag_c ( ULong cc_op, ULong cc_dep1,
          ULong cf   = argL >= argR;
          return cf;
       }
-//ZZ       case ARMG_CC_OP_ADC: {
-//ZZ          /* (argL, argR, oldC) */
-//ZZ          UInt argL = cc_dep1;
-//ZZ          UInt argR = cc_dep2;
-//ZZ          UInt oldC = cc_dep3;
-//ZZ          vassert((oldC & ~1) == 0);
-//ZZ          UInt res  = argL + argR + oldC;
-//ZZ          UInt cf   = oldC ? (res <= argL) : (res < argL);
-//ZZ          return cf;
-//ZZ       }
-//ZZ       case ARMG_CC_OP_SBB: {
-//ZZ          /* (argL, argR, oldC) */
-//ZZ          UInt argL = cc_dep1;
-//ZZ          UInt argR = cc_dep2;
-//ZZ          UInt oldC = cc_dep3;
-//ZZ          vassert((oldC & ~1) == 0);
-//ZZ          UInt cf   = oldC ? (argL >= argR) : (argL > argR);
-//ZZ          return cf;
-//ZZ       }
+      case ARM64G_CC_OP_ADC32: {
+         /* (argL, argR, oldC) */
+         UInt  argL = cc_dep1;
+         UInt  argR = cc_dep2;
+         UInt  oldC = cc_dep3;
+         vassert((oldC & ~1) == 0);
+         UInt  res  = argL + argR + oldC;
+         ULong cf   = oldC ? (res <= argL) : (res < argL);
+         return cf;
+      }
+      case ARM64G_CC_OP_ADC64: {
+         /* (argL, argR, oldC) */
+         ULong argL = cc_dep1;
+         ULong argR = cc_dep2;
+         ULong oldC = cc_dep3;
+         vassert((oldC & ~1) == 0);
+         ULong res  = argL + argR + oldC;
+         ULong cf   = oldC ? (res <= argL) : (res < argL);
+         return cf;
+      }
+      case ARM64G_CC_OP_SBC32: {
+         /* (argL, argR, oldC) */
+         UInt  argL = cc_dep1;
+         UInt  argR = cc_dep2;
+         UInt  oldC = cc_dep3;
+         vassert((oldC & ~1) == 0);
+         ULong cf   = oldC ? (argL >= argR) : (argL > argR);
+         return cf;
+      }
+      case ARM64G_CC_OP_SBC64: {
+         /* (argL, argR, oldC) */
+         ULong argL = cc_dep1;
+         ULong argR = cc_dep2;
+         ULong oldC = cc_dep3;
+         vassert((oldC & ~1) == 0);
+         ULong cf   = oldC ? (argL >= argR) : (argL > argR);
+         return cf;
+      }
       case ARM64G_CC_OP_LOGIC32:
       case ARM64G_CC_OP_LOGIC64: {
          /* (res, unused, unused) */
@@ -442,26 +500,46 @@ ULong arm64g_calculate_flag_v ( ULong cc_op, ULong cc_dep1,
          ULong vf   = (((argL ^ argR) & (argL ^ res))) >> 63;
          return vf;
       }
-//ZZ       case ARMG_CC_OP_ADC: {
-//ZZ          /* (argL, argR, oldC) */
-//ZZ          UInt argL = cc_dep1;
-//ZZ          UInt argR = cc_dep2;
-//ZZ          UInt oldC = cc_dep3;
-//ZZ          vassert((oldC & ~1) == 0);
-//ZZ          UInt res  = argL + argR + oldC;
-//ZZ          UInt vf   = ((res ^ argL) & (res ^ argR)) >> 31;
-//ZZ          return vf;
-//ZZ       }
-//ZZ       case ARMG_CC_OP_SBB: {
-//ZZ          /* (argL, argR, oldC) */
-//ZZ          UInt argL = cc_dep1;
-//ZZ          UInt argR = cc_dep2;
-//ZZ          UInt oldC = cc_dep3;
-//ZZ          vassert((oldC & ~1) == 0);
-//ZZ          UInt res  = argL - argR - (oldC ^ 1);
-//ZZ          UInt vf   = ((argL ^ argR) & (argL ^ res)) >> 31;
-//ZZ          return vf;
-//ZZ       }
+      case ARM64G_CC_OP_ADC32: {
+         /* (argL, argR, oldC) */
+         UInt  argL = cc_dep1;
+         UInt  argR = cc_dep2;
+         UInt  oldC = cc_dep3;
+         vassert((oldC & ~1) == 0);
+         UInt  res  = argL + argR + oldC;
+         ULong vf   = (ULong)(((res ^ argL) & (res ^ argR)) >> 31);
+         return vf;
+      }
+      case ARM64G_CC_OP_ADC64: {
+         /* (argL, argR, oldC) */
+         ULong argL = cc_dep1;
+         ULong argR = cc_dep2;
+         ULong oldC = cc_dep3;
+         vassert((oldC & ~1) == 0);
+         ULong res  = argL + argR + oldC;
+         ULong vf   = ((res ^ argL) & (res ^ argR)) >> 63;
+         return vf;
+      }
+      case ARM64G_CC_OP_SBC32: {
+         /* (argL, argR, oldC) */
+         UInt  argL = cc_dep1;
+         UInt  argR = cc_dep2;
+         UInt  oldC = cc_dep3;
+         vassert((oldC & ~1) == 0);
+         UInt  res  = argL - argR - (oldC ^ 1);
+         ULong vf   = (ULong)(((argL ^ argR) & (argL ^ res)) >> 31);
+         return vf;
+      }
+      case ARM64G_CC_OP_SBC64: {
+         /* (argL, argR, oldC) */
+         ULong argL = cc_dep1;
+         ULong argR = cc_dep2;
+         ULong oldC = cc_dep3;
+         vassert((oldC & ~1) == 0);
+         ULong res  = argL - argR - (oldC ^ 1);
+         ULong vf   = ((argL ^ argR) & (argL ^ res)) >> 63;
+         return vf;
+      }
       case ARM64G_CC_OP_LOGIC32:
       case ARM64G_CC_OP_LOGIC64: {
          /* (res, unused, unused) */

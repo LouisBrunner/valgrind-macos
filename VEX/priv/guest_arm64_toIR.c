@@ -1316,30 +1316,30 @@ static IRExpr* mk_arm64g_calculate_condition ( ARM64Condcode cond )
 }
 
 
-//ZZ /* Build IR to calculate just the carry flag from stored
-//ZZ    CC_OP/CC_DEP1/CC_DEP2/CC_NDEP.  Returns an expression ::
-//ZZ    Ity_I32. */
-//ZZ static IRExpr* mk_armg_calculate_flag_c ( void )
-//ZZ {
-//ZZ    IRExpr** args
-//ZZ       = mkIRExprVec_4( IRExpr_Get(OFFB_CC_OP,   Ity_I32),
-//ZZ                        IRExpr_Get(OFFB_CC_DEP1, Ity_I32),
-//ZZ                        IRExpr_Get(OFFB_CC_DEP2, Ity_I32),
-//ZZ                        IRExpr_Get(OFFB_CC_NDEP, Ity_I32) );
-//ZZ    IRExpr* call
-//ZZ       = mkIRExprCCall(
-//ZZ            Ity_I32,
-//ZZ            0/*regparm*/, 
-//ZZ            "armg_calculate_flag_c", &armg_calculate_flag_c,
-//ZZ            args
-//ZZ         );
-//ZZ    /* Exclude OP and NDEP from definedness checking.  We're only
-//ZZ       interested in DEP1 and DEP2. */
-//ZZ    call->Iex.CCall.cee->mcx_mask = (1<<0) | (1<<3);
-//ZZ    return call;
-//ZZ }
-//ZZ 
-//ZZ 
+/* Build IR to calculate just the carry flag from stored
+   CC_OP/CC_DEP1/CC_DEP2/CC_NDEP.  Returns an expression ::
+   Ity_I64. */
+static IRExpr* mk_arm64g_calculate_flag_c ( void )
+{
+   IRExpr** args
+      = mkIRExprVec_4( IRExpr_Get(OFFB_CC_OP,   Ity_I64),
+                       IRExpr_Get(OFFB_CC_DEP1, Ity_I64),
+                       IRExpr_Get(OFFB_CC_DEP2, Ity_I64),
+                       IRExpr_Get(OFFB_CC_NDEP, Ity_I64) );
+   IRExpr* call
+      = mkIRExprCCall(
+           Ity_I64,
+           0/*regparm*/,
+           "arm64g_calculate_flag_c", &arm64g_calculate_flag_c,
+           args
+        );
+   /* Exclude OP and NDEP from definedness checking.  We're only
+      interested in DEP1 and DEP2. */
+   call->Iex.CCall.cee->mcx_mask = (1<<0) | (1<<3);
+   return call;
+}
+
+
 //ZZ /* Build IR to calculate just the overflow flag from stored
 //ZZ    CC_OP/CC_DEP1/CC_DEP2/CC_NDEP.  Returns an expression ::
 //ZZ    Ity_I32. */
@@ -1426,6 +1426,35 @@ void setFlags_ADD_SUB ( Bool is64, Bool isSUB, IRTemp argL, IRTemp argR )
    else if (!isSUB && !is64) { cc_op = ARM64G_CC_OP_ADD32; }
    else                      { vassert(0); }
    setFlags_D1_D2_ND(cc_op, argL64, argR64, z64);
+}
+
+/* Build IR to set the flags thunk after ADC or SBC. */
+static
+void setFlags_ADC_SBC ( Bool is64, Bool isSBC,
+                        IRTemp argL, IRTemp argR, IRTemp oldC )
+{
+   IRTemp argL64 = IRTemp_INVALID;
+   IRTemp argR64 = IRTemp_INVALID;
+   IRTemp oldC64 = IRTemp_INVALID;
+   if (is64) {
+      argL64 = argL;
+      argR64 = argR;
+      oldC64 = oldC;
+   } else {
+      argL64 = newTemp(Ity_I64);
+      argR64 = newTemp(Ity_I64);
+      oldC64 = newTemp(Ity_I64);
+      assign(argL64, unop(Iop_32Uto64, mkexpr(argL)));
+      assign(argR64, unop(Iop_32Uto64, mkexpr(argR)));
+      assign(oldC64, unop(Iop_32Uto64, mkexpr(oldC)));
+   }
+   UInt cc_op = ARM64G_CC_OP_NUMBER;
+   /**/ if ( isSBC &&  is64) { cc_op = ARM64G_CC_OP_SBC64; }
+   else if ( isSBC && !is64) { cc_op = ARM64G_CC_OP_SBC32; }
+   else if (!isSBC &&  is64) { cc_op = ARM64G_CC_OP_ADC64; }
+   else if (!isSBC && !is64) { cc_op = ARM64G_CC_OP_ADC32; }
+   else                      { vassert(0); }
+   setFlags_D1_D2_ND(cc_op, argL64, argR64, oldC64);
 }
 
 /* Build IR to set the flags thunk after ADD or SUB, if the given
@@ -2306,6 +2335,68 @@ Bool dis_ARM64_data_processing_register(/*MB_OUT*/DisResult* dres,
              nameIRegOrZR(is64, rM), nameSH(sh), imm6);
          return True;
       }
+   }
+
+   /* ------------------- ADC/SBC(reg) ------------------- */
+   /* x==0 => 32 bit op      x==1 => 64 bit op
+
+      31 30 29 28    23 21 20 15     9  4
+      |  |  |  |     |  |  |  |      |  |
+      x  0  0  11010 00 0  Rm 000000 Rn Rd   ADC  Rd,Rn,Rm
+      x  0  1  11010 00 0  Rm 000000 Rn Rd   ADCS Rd,Rn,Rm
+      x  1  0  11010 00 0  Rm 000000 Rn Rd   SBC  Rd,Rn,Rm
+      x  1  1  11010 00 0  Rm 000000 Rn Rd   SBCS Rd,Rn,Rm
+   */
+
+   if (INSN(28,21) == BITS8(1,1,0,1,0,0,0,0) && INSN(15,10) == 0 ) {
+      UInt   bX    = INSN(31,31);
+      UInt   bOP   = INSN(30,30); /* 0: ADC, 1: SBC */
+      UInt   bS    = INSN(29,29); /* set flags */
+      UInt   rM    = INSN(20,16);
+      UInt   rN    = INSN(9,5);
+      UInt   rD    = INSN(4,0);
+
+      Bool   isSUB = bOP == 1;
+      Bool   is64  = bX == 1;
+      IRType ty    = is64 ? Ity_I64 : Ity_I32;
+
+      IRTemp oldC = newTemp(ty);
+      assign(oldC,
+             is64 ? mk_arm64g_calculate_flag_c()
+                  : unop(Iop_64to32, mk_arm64g_calculate_flag_c()) );
+
+      IRTemp argL = newTemp(ty);
+      assign(argL, getIRegOrZR(is64, rN));
+      IRTemp argR = newTemp(ty);
+      assign(argR, getIRegOrZR(is64, rM));
+
+      IROp   op   = isSUB ? mkSUB(ty) : mkADD(ty);
+      IRTemp res  = newTemp(ty);
+      if (isSUB) {
+         IRExpr* one = is64 ? mkU64(1) : mkU32(1);
+         IROp xorOp = is64 ? Iop_Xor64 : Iop_Xor32;
+         assign(res,
+                binop(op,
+                      binop(op, mkexpr(argL), mkexpr(argR)),
+                      binop(xorOp, mkexpr(oldC), one)));
+      } else {
+         assign(res,
+                binop(op,
+                      binop(op, mkexpr(argL), mkexpr(argR)),
+                      mkexpr(oldC)));
+      }
+
+      if (rD != 31) putIRegOrZR(is64, rD, mkexpr(res));
+
+      if (bS) {
+         setFlags_ADC_SBC(is64, isSUB, argL, argR, oldC);
+      }
+
+      DIP("%s%s %s, %s, %s\n",
+          bOP ? "sbc" : "adc", bS ? "s" : "",
+          nameIRegOrZR(is64, rD), nameIRegOrZR(is64, rN),
+          nameIRegOrZR(is64, rM));
+      return True;
    }
 
    /* -------------------- LOGIC(reg) -------------------- */   

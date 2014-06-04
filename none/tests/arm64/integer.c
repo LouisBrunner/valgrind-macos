@@ -1,6 +1,6 @@
 
 /* To compile:
-   aarch64-linux-gnu-gcc -Wall -g -O0 -o test_arm64_int test_arm64_int.c \
+   aarch64-linux-gnu-gcc -Wall -g -O0 -o integer none/tests/arm64/integer.c \
       -DTEST_BFM=1  # (or 0)
    The ubfm/sbfm/bfm tests are huge and take ages to compile and run.
    Set TEST_BFM to 0 to skip them.
@@ -242,6 +242,163 @@ printf("misc ad-hoc tests\n");
 
 TESTINST3("add x3, x4, x5", 12345, 6789, x3, x4, x5, 0);
 TESTINST3("add w3, w4, w5", 12345, 6789, x3, x4, x5, 0);
+
+
+TESTINST3("adc x3, x4, x5", 12345, 6789,                          x3,x4,x5,0);
+TESTINST3("adc x3, x4, x5", 12345, 6789,                          x3,x4,x5,1);
+TESTINST3("adc x3, x4, x5", 0, 0xffffffffffffffffULL,             x3,x4,x5,0);
+TESTINST3("adc x3, x4, x5", 0, 0xffffffffffffffffULL,             x3,x4,x5,1);
+TESTINST3("adc x3, x4, x5", 0x31415927ULL<<32, 0x27181728ULL<<32, x3,x4,x5,0);
+TESTINST3("adc x3, x4, x5", 0x31415927ULL<<32, 0x27181728ULL<<32, x3,x4,x5,1);
+TESTINST3("adc x3, x4, x5", 0x00000000ULL<<32, 0x00000000ULL<<32, x3,x4,x5,0);
+TESTINST3("adc x3, x4, x5", 0x00000000ULL<<32, 0x00000000ULL<<32, x3,x4,x5,1);
+TESTINST3("adc x3, x4, x5", 0x00000001ULL<<32, 0x00000000ULL<<32, x3,x4,x5,0);
+TESTINST3("adc x3, x4, x5", 0x00000001ULL<<32, 0x00000000ULL<<32, x3,x4,x5,1);
+TESTINST3("adc x3, x4, x5", 0x00000000ULL<<32, 0x00000001ULL<<32, x3,x4,x5,0);
+TESTINST3("adc x3, x4, x5", 0x00000000ULL<<32, 0x00000001ULL<<32, x3,x4,x5,1);
+TESTINST3("adc x3, x4, x5", 0x80000000ULL<<32, 0x00000000ULL<<32, x3,x4,x5,0);
+TESTINST3("adc x3, x4, x5", 0x80000000ULL<<32, 0x00000000ULL<<32, x3,x4,x5,1);
+TESTINST3("adc x3, x4, x5", 0x00000000ULL<<32, 0x80000000ULL<<32, x3,x4,x5,0);
+TESTINST3("adc x3, x4, x5", 0x00000000ULL<<32, 0x80000000ULL<<32, x3,x4,x5,1);
+TESTINST3("adc x3, x4, x5", 0x80000000ULL<<32, 0x80000000ULL<<32, x3,x4,x5,0);
+TESTINST3("adc x3, x4, x5", 0x80000000ULL<<32, 0x80000000ULL<<32, x3,x4,x5,1);
+
+TESTINST3("adc w3, w4, w5", 12345, 6789,            x3,x4,x5, 0);
+TESTINST3("adc w3, w4, w5", 12345, 6789,            x3,x4,x5, 1);
+TESTINST3("adc w3, w4, w5", 0, 0xffffffffULL,       x3,x4,x5, 0);
+TESTINST3("adc w3, w4, w5", 0, 0xffffffffULL,       x3,x4,x5, 1);
+TESTINST3("adc w3, w4, w5", 0x31415927, 0x27181728, x3,x4,x5, 0);
+TESTINST3("adc w3, w4, w5", 0x31415927, 0x27181728, x3,x4,x5, 1);
+TESTINST3("adc w3, w4, w5", 0x00000000, 0x00000000, x3,x4,x5, 0);
+TESTINST3("adc w3, w4, w5", 0x00000000, 0x00000000, x3,x4,x5, 1);
+TESTINST3("adc w3, w4, w5", 0x00000001, 0x00000000, x3,x4,x5, 0);
+TESTINST3("adc w3, w4, w5", 0x00000001, 0x00000000, x3,x4,x5, 1);
+TESTINST3("adc w3, w4, w5", 0x00000000, 0x00000001, x3,x4,x5, 0);
+TESTINST3("adc w3, w4, w5", 0x00000000, 0x00000001, x3,x4,x5, 1);
+TESTINST3("adc w3, w4, w5", 0x80000000, 0x00000000, x3,x4,x5, 0);
+TESTINST3("adc w3, w4, w5", 0x80000000, 0x00000000, x3,x4,x5, 1);
+TESTINST3("adc w3, w4, w5", 0x00000000, 0x80000000, x3,x4,x5, 0);
+TESTINST3("adc w3, w4, w5", 0x00000000, 0x80000000, x3,x4,x5, 1);
+TESTINST3("adc w3, w4, w5", 0x80000000, 0x80000000, x3,x4,x5, 0);
+TESTINST3("adc w3, w4, w5", 0x80000000, 0x80000000, x3,x4,x5, 1);
+
+
+TESTINST3("adcs x3, x4, x5", 12345, 6789,                          x3,x4,x5,0);
+TESTINST3("adcs x3, x4, x5", 12345, 6789,                          x3,x4,x5,1);
+TESTINST3("adcs x3, x4, x5", 0, 0xffffffffffffffffULL,             x3,x4,x5,0);
+TESTINST3("adcs x3, x4, x5", 0, 0xffffffffffffffffULL,             x3,x4,x5,1);
+TESTINST3("adcs x3, x4, x5", 0x31415927ULL<<32, 0x27181728ULL<<32, x3,x4,x5,0);
+TESTINST3("adcs x3, x4, x5", 0x31415927ULL<<32, 0x27181728ULL<<32, x3,x4,x5,1);
+TESTINST3("adcs x3, x4, x5", 0x00000000ULL<<32, 0x00000000ULL<<32, x3,x4,x5,0);
+TESTINST3("adcs x3, x4, x5", 0x00000000ULL<<32, 0x00000000ULL<<32, x3,x4,x5,1);
+TESTINST3("adcs x3, x4, x5", 0x00000001ULL<<32, 0x00000000ULL<<32, x3,x4,x5,0);
+TESTINST3("adcs x3, x4, x5", 0x00000001ULL<<32, 0x00000000ULL<<32, x3,x4,x5,1);
+TESTINST3("adcs x3, x4, x5", 0x00000000ULL<<32, 0x00000001ULL<<32, x3,x4,x5,0);
+TESTINST3("adcs x3, x4, x5", 0x00000000ULL<<32, 0x00000001ULL<<32, x3,x4,x5,1);
+TESTINST3("adcs x3, x4, x5", 0x80000000ULL<<32, 0x00000000ULL<<32, x3,x4,x5,0);
+TESTINST3("adcs x3, x4, x5", 0x80000000ULL<<32, 0x00000000ULL<<32, x3,x4,x5,1);
+TESTINST3("adcs x3, x4, x5", 0x00000000ULL<<32, 0x80000000ULL<<32, x3,x4,x5,0);
+TESTINST3("adcs x3, x4, x5", 0x00000000ULL<<32, 0x80000000ULL<<32, x3,x4,x5,1);
+TESTINST3("adcs x3, x4, x5", 0x80000000ULL<<32, 0x80000000ULL<<32, x3,x4,x5,0);
+TESTINST3("adcs x3, x4, x5", 0x80000000ULL<<32, 0x80000000ULL<<32, x3,x4,x5,1);
+
+TESTINST3("adcs w3, w4, w5", 12345, 6789,            x3,x4,x5, 0);
+TESTINST3("adcs w3, w4, w5", 12345, 6789,            x3,x4,x5, 1);
+TESTINST3("adcs w3, w4, w5", 0, 0xffffffffULL,       x3,x4,x5, 0);
+TESTINST3("adcs w3, w4, w5", 0, 0xffffffffULL,       x3,x4,x5, 1);
+TESTINST3("adcs w3, w4, w5", 0x31415927, 0x27181728, x3,x4,x5, 0);
+TESTINST3("adcs w3, w4, w5", 0x31415927, 0x27181728, x3,x4,x5, 1);
+TESTINST3("adcs w3, w4, w5", 0x00000000, 0x00000000, x3,x4,x5, 0);
+TESTINST3("adcs w3, w4, w5", 0x00000000, 0x00000000, x3,x4,x5, 1);
+TESTINST3("adcs w3, w4, w5", 0x00000001, 0x00000000, x3,x4,x5, 0);
+TESTINST3("adcs w3, w4, w5", 0x00000001, 0x00000000, x3,x4,x5, 1);
+TESTINST3("adcs w3, w4, w5", 0x00000000, 0x00000001, x3,x4,x5, 0);
+TESTINST3("adcs w3, w4, w5", 0x00000000, 0x00000001, x3,x4,x5, 1);
+TESTINST3("adcs w3, w4, w5", 0x80000000, 0x00000000, x3,x4,x5, 0);
+TESTINST3("adcs w3, w4, w5", 0x80000000, 0x00000000, x3,x4,x5, 1);
+TESTINST3("adcs w3, w4, w5", 0x00000000, 0x80000000, x3,x4,x5, 0);
+TESTINST3("adcs w3, w4, w5", 0x00000000, 0x80000000, x3,x4,x5, 1);
+TESTINST3("adcs w3, w4, w5", 0x80000000, 0x80000000, x3,x4,x5, 0);
+TESTINST3("adcs w3, w4, w5", 0x80000000, 0x80000000, x3,x4,x5, 1);
+
+
+TESTINST3("sbc x3, x4, x5", 12345, 6789,                          x3,x4,x5,0);
+TESTINST3("sbc x3, x4, x5", 12345, 6789,                          x3,x4,x5,1);
+TESTINST3("sbc x3, x4, x5", 0, 0xffffffffffffffffULL,             x3,x4,x5,0);
+TESTINST3("sbc x3, x4, x5", 0, 0xffffffffffffffffULL,             x3,x4,x5,1);
+TESTINST3("sbc x3, x4, x5", 0x31415927ULL<<32, 0x27181728ULL<<32, x3,x4,x5,0);
+TESTINST3("sbc x3, x4, x5", 0x31415927ULL<<32, 0x27181728ULL<<32, x3,x4,x5,1);
+TESTINST3("sbc x3, x4, x5", 0x00000000ULL<<32, 0x00000000ULL<<32, x3,x4,x5,0);
+TESTINST3("sbc x3, x4, x5", 0x00000000ULL<<32, 0x00000000ULL<<32, x3,x4,x5,1);
+TESTINST3("sbc x3, x4, x5", 0x00000001ULL<<32, 0x00000000ULL<<32, x3,x4,x5,0);
+TESTINST3("sbc x3, x4, x5", 0x00000001ULL<<32, 0x00000000ULL<<32, x3,x4,x5,1);
+TESTINST3("sbc x3, x4, x5", 0x00000000ULL<<32, 0x00000001ULL<<32, x3,x4,x5,0);
+TESTINST3("sbc x3, x4, x5", 0x00000000ULL<<32, 0x00000001ULL<<32, x3,x4,x5,1);
+TESTINST3("sbc x3, x4, x5", 0x80000000ULL<<32, 0x00000000ULL<<32, x3,x4,x5,0);
+TESTINST3("sbc x3, x4, x5", 0x80000000ULL<<32, 0x00000000ULL<<32, x3,x4,x5,1);
+TESTINST3("sbc x3, x4, x5", 0x00000000ULL<<32, 0x80000000ULL<<32, x3,x4,x5,0);
+TESTINST3("sbc x3, x4, x5", 0x00000000ULL<<32, 0x80000000ULL<<32, x3,x4,x5,1);
+TESTINST3("sbc x3, x4, x5", 0x80000000ULL<<32, 0x80000000ULL<<32, x3,x4,x5,0);
+TESTINST3("sbc x3, x4, x5", 0x80000000ULL<<32, 0x80000000ULL<<32, x3,x4,x5,1);
+
+TESTINST3("sbc w3, w4, w5", 12345, 6789,            x3,x4,x5, 0);
+TESTINST3("sbc w3, w4, w5", 12345, 6789,            x3,x4,x5, 1);
+TESTINST3("sbc w3, w4, w5", 0, 0xffffffffULL,       x3,x4,x5, 0);
+TESTINST3("sbc w3, w4, w5", 0, 0xffffffffULL,       x3,x4,x5, 1);
+TESTINST3("sbc w3, w4, w5", 0x31415927, 0x27181728, x3,x4,x5, 0);
+TESTINST3("sbc w3, w4, w5", 0x31415927, 0x27181728, x3,x4,x5, 1);
+TESTINST3("sbc w3, w4, w5", 0x00000000, 0x00000000, x3,x4,x5, 0);
+TESTINST3("sbc w3, w4, w5", 0x00000000, 0x00000000, x3,x4,x5, 1);
+TESTINST3("sbc w3, w4, w5", 0x00000001, 0x00000000, x3,x4,x5, 0);
+TESTINST3("sbc w3, w4, w5", 0x00000001, 0x00000000, x3,x4,x5, 1);
+TESTINST3("sbc w3, w4, w5", 0x00000000, 0x00000001, x3,x4,x5, 0);
+TESTINST3("sbc w3, w4, w5", 0x00000000, 0x00000001, x3,x4,x5, 1);
+TESTINST3("sbc w3, w4, w5", 0x80000000, 0x00000000, x3,x4,x5, 0);
+TESTINST3("sbc w3, w4, w5", 0x80000000, 0x00000000, x3,x4,x5, 1);
+TESTINST3("sbc w3, w4, w5", 0x00000000, 0x80000000, x3,x4,x5, 0);
+TESTINST3("sbc w3, w4, w5", 0x00000000, 0x80000000, x3,x4,x5, 1);
+TESTINST3("sbc w3, w4, w5", 0x80000000, 0x80000000, x3,x4,x5, 0);
+TESTINST3("sbc w3, w4, w5", 0x80000000, 0x80000000, x3,x4,x5, 1);
+
+
+TESTINST3("sbcs x3, x4, x5", 12345, 6789,                          x3,x4,x5,0);
+TESTINST3("sbcs x3, x4, x5", 12345, 6789,                          x3,x4,x5,1);
+TESTINST3("sbcs x3, x4, x5", 0, 0xffffffffffffffffULL,             x3,x4,x5,0);
+TESTINST3("sbcs x3, x4, x5", 0, 0xffffffffffffffffULL,             x3,x4,x5,1);
+TESTINST3("sbcs x3, x4, x5", 0x31415927ULL<<32, 0x27181728ULL<<32, x3,x4,x5,0);
+TESTINST3("sbcs x3, x4, x5", 0x31415927ULL<<32, 0x27181728ULL<<32, x3,x4,x5,1);
+TESTINST3("sbcs x3, x4, x5", 0x00000000ULL<<32, 0x00000000ULL<<32, x3,x4,x5,0);
+TESTINST3("sbcs x3, x4, x5", 0x00000000ULL<<32, 0x00000000ULL<<32, x3,x4,x5,1);
+TESTINST3("sbcs x3, x4, x5", 0x00000001ULL<<32, 0x00000000ULL<<32, x3,x4,x5,0);
+TESTINST3("sbcs x3, x4, x5", 0x00000001ULL<<32, 0x00000000ULL<<32, x3,x4,x5,1);
+TESTINST3("sbcs x3, x4, x5", 0x00000000ULL<<32, 0x00000001ULL<<32, x3,x4,x5,0);
+TESTINST3("sbcs x3, x4, x5", 0x00000000ULL<<32, 0x00000001ULL<<32, x3,x4,x5,1);
+TESTINST3("sbcs x3, x4, x5", 0x80000000ULL<<32, 0x00000000ULL<<32, x3,x4,x5,0);
+TESTINST3("sbcs x3, x4, x5", 0x80000000ULL<<32, 0x00000000ULL<<32, x3,x4,x5,1);
+TESTINST3("sbcs x3, x4, x5", 0x00000000ULL<<32, 0x80000000ULL<<32, x3,x4,x5,0);
+TESTINST3("sbcs x3, x4, x5", 0x00000000ULL<<32, 0x80000000ULL<<32, x3,x4,x5,1);
+TESTINST3("sbcs x3, x4, x5", 0x80000000ULL<<32, 0x80000000ULL<<32, x3,x4,x5,0);
+TESTINST3("sbcs x3, x4, x5", 0x80000000ULL<<32, 0x80000000ULL<<32, x3,x4,x5,1);
+
+TESTINST3("sbcs w3, w4, w5", 12345, 6789,            x3,x4,x5, 0);
+TESTINST3("sbcs w3, w4, w5", 12345, 6789,            x3,x4,x5, 1);
+TESTINST3("sbcs w3, w4, w5", 0, 0xffffffffULL,       x3,x4,x5, 0);
+TESTINST3("sbcs w3, w4, w5", 0, 0xffffffffULL,       x3,x4,x5, 1);
+TESTINST3("sbcs w3, w4, w5", 0x31415927, 0x27181728, x3,x4,x5, 0);
+TESTINST3("sbcs w3, w4, w5", 0x31415927, 0x27181728, x3,x4,x5, 1);
+TESTINST3("sbcs w3, w4, w5", 0x00000000, 0x00000000, x3,x4,x5, 0);
+TESTINST3("sbcs w3, w4, w5", 0x00000000, 0x00000000, x3,x4,x5, 1);
+TESTINST3("sbcs w3, w4, w5", 0x00000001, 0x00000000, x3,x4,x5, 0);
+TESTINST3("sbcs w3, w4, w5", 0x00000001, 0x00000000, x3,x4,x5, 1);
+TESTINST3("sbcs w3, w4, w5", 0x00000000, 0x00000001, x3,x4,x5, 0);
+TESTINST3("sbcs w3, w4, w5", 0x00000000, 0x00000001, x3,x4,x5, 1);
+TESTINST3("sbcs w3, w4, w5", 0x80000000, 0x00000000, x3,x4,x5, 0);
+TESTINST3("sbcs w3, w4, w5", 0x80000000, 0x00000000, x3,x4,x5, 1);
+TESTINST3("sbcs w3, w4, w5", 0x00000000, 0x80000000, x3,x4,x5, 0);
+TESTINST3("sbcs w3, w4, w5", 0x00000000, 0x80000000, x3,x4,x5, 1);
+TESTINST3("sbcs w3, w4, w5", 0x80000000, 0x80000000, x3,x4,x5, 0);
+TESTINST3("sbcs w3, w4, w5", 0x80000000, 0x80000000, x3,x4,x5, 1);
+
 
 TESTINST2("bfm x2, x4, #0, #63", 0x5555555555555555, x2, x4, 0);
 TESTINST2("bfm x2, x4, #0, #63", 0xaaaaaaaaaaaaaaaa, x2, x4, 0);

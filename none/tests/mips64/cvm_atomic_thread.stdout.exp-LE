@@ -1,0 +1,43 @@
+parent, pre-fork
+child
+parent, pre-fork
+parent
+Store Atomic Add: 32 bit 2156643710, 64 bit 12633614303292
+Load Atomic Add: 32 bit 2156643710, 64 bit 12633614303292
+Load Atomic Swap: 32 bit 3456986, 64 bit 3555751
+Load Atomic Increment: 32 bit 6913974, 64 bit 6913974
+Load Atomic Decrement: 32 bit 4288053322, 64 bit -6913974
+Load Atomic Clear: 32 bit 0, 64 bit 0
+Load Atomic Set: 32 bit 4294967295, 64 bit -1
+laa and saa: base1: 6913974, base2: 21777111
+laad and saad: base1: 6913974, base2: 23901514779351
+law and saa: base1: 3456986, base2: 2153186724
+lawd and saad: base1: 3456986, base2: 11950752204196
+lai and saa: base1: 6913974, base2: 21777111
+laid and saad: base1: 6913974, base2: 23901514779351
+las and saa: base1: 4294967295, base2: 4288053323
+lasd and saad: base1: -1, base2: -6913973
+lad and saa: base1: 4288053322, base2: 4273190185
+ladd and saad: base1: -6913974, base2: -23901514779351
+lac and saa: base1: 0, base2: 0
+lacd and saad: base1: 0, base2: 0
+PASS 1
+PASS 2
+PASS 3
+PASS 4
+PASS 5
+PASS 6
+PASS 7
+PASS 8
+PASS 9
+PASS 10
+PASS 11
+PASS 12
+PASS 13
+PASS 14
+PASS 15
+PASS 16
+PASS 17
+PASS 18
+PASS 19
+parent exits

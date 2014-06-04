@@ -1,0 +1,3 @@
+prog: cvm_atomic_thread
+prereq: ../../../tests/mips_features cavium-octeon2
+vgopts: -q

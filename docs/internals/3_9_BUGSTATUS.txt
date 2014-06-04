@@ -38,7 +38,6 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
 
 === VEX/mips ===========================================================
 
-327223  Support for Cavium MIPS Octeon Atomic and Count Instructions
 328147  vex mips->IR: unhandled instruction bytes: 0x0 0x0 0x0 0xE
 
 === VEX/ppc ============================================================

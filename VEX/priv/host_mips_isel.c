@@ -971,7 +971,9 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
              || e->Iex.Binop.op == Iop_CmpLE32S
              || e->Iex.Binop.op == Iop_CmpLE64S
              || e->Iex.Binop.op == Iop_CmpLT64S
-             || e->Iex.Binop.op == Iop_CmpEQ64) {
+             || e->Iex.Binop.op == Iop_CmpEQ64
+             || e->Iex.Binop.op == Iop_CasCmpEQ32
+             || e->Iex.Binop.op == Iop_CasCmpEQ64) {
 
             Bool syned = (e->Iex.Binop.op == Iop_CmpLT32S
                          || e->Iex.Binop.op == Iop_CmpLE32S
@@ -986,6 +988,7 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
 
             switch (e->Iex.Binop.op) {
                case Iop_CmpEQ32:
+               case Iop_CasCmpEQ32:
                   cc = MIPScc_EQ;
                   size32 = True;
                   break;
@@ -1030,6 +1033,7 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
                   size32 = False;
                   break;
                case Iop_CmpEQ64:
+               case Iop_CasCmpEQ64:
                   cc = MIPScc_EQ;
                   size32 = False;
                   break;
@@ -2051,7 +2055,9 @@ static MIPSCondCode iselCondCode_wrk(ISelEnv * env, IRExpr * e)
        || e->Iex.Binop.op == Iop_CmpLE32S
        || e->Iex.Binop.op == Iop_CmpLE64S
        || e->Iex.Binop.op == Iop_CmpLT64S
-       || e->Iex.Binop.op == Iop_CmpEQ64) {
+       || e->Iex.Binop.op == Iop_CmpEQ64
+       || e->Iex.Binop.op == Iop_CasCmpEQ32
+       || e->Iex.Binop.op == Iop_CasCmpEQ64) {
 
       Bool syned = (e->Iex.Binop.op == Iop_CmpLT32S
                    || e->Iex.Binop.op == Iop_CmpLE32S
@@ -2066,6 +2072,7 @@ static MIPSCondCode iselCondCode_wrk(ISelEnv * env, IRExpr * e)
 
       switch (e->Iex.Binop.op) {
          case Iop_CmpEQ32:
+         case Iop_CasCmpEQ32:
             cc = MIPScc_EQ;
             size32 = True;
             break;
@@ -2102,6 +2109,7 @@ static MIPSCondCode iselCondCode_wrk(ISelEnv * env, IRExpr * e)
             size32 = False;
             break;
          case Iop_CmpEQ64:
+         case Iop_CasCmpEQ64:
             cc = MIPScc_EQ;
             size32 = False;
             break;
@@ -3933,6 +3941,20 @@ static void iselStmt(ISelEnv * env, IRStmt * stmt)
          goto stmt_fail;
        /* NOTREACHED */}
 
+   case Ist_CAS:
+      if (stmt->Ist.CAS.details->oldHi == IRTemp_INVALID) {
+         IRCAS *cas = stmt->Ist.CAS.details;
+         HReg old   = lookupIRTemp(env, cas->oldLo);
+         HReg addr  = iselWordExpr_R(env, cas->addr);
+         HReg expd  = iselWordExpr_R(env, cas->expdLo);
+         HReg data  = iselWordExpr_R(env, cas->dataLo);
+         if (typeOfIRTemp(env->type_env, cas->oldLo) == Ity_I64) {
+            addInstr(env, MIPSInstr_Cas(8, old, addr, expd, data, mode64));
+         } else if (typeOfIRTemp(env->type_env, cas->oldLo) == Ity_I32) {
+            addInstr(env, MIPSInstr_Cas(4, old, addr, expd, data, mode64));
+         }
+      }
+
    /* --------- INSTR MARK --------- */
    /* Doesn't generate any executable code ... */
    case Ist_IMark:
@@ -3997,6 +4019,7 @@ static void iselStmt(ISelEnv * env, IRStmt * stmt)
          case Ijk_NoDecode:
          case Ijk_NoRedir:
          case Ijk_SigBUS:
+         case Ijk_Yield:
          case Ijk_SigTRAP:
          case Ijk_SigFPE_IntDiv:
          case Ijk_SigFPE_IntOvf:

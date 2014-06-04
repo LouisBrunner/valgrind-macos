@@ -1399,6 +1399,23 @@ MIPSInstr *MIPSInstr_LoadL(UChar sz, HReg dst, MIPSAMode * src, Bool mode64)
    return i;
 }
 
+MIPSInstr *MIPSInstr_Cas(UChar sz, HReg old, HReg addr,
+                         HReg expd, HReg data, Bool mode64)
+{
+   MIPSInstr *i    = LibVEX_Alloc(sizeof(MIPSInstr));
+   i->tag          = Min_Cas;
+   i->Min.Cas.sz   = sz;
+   i->Min.Cas.old  = old;
+   i->Min.Cas.addr = addr;
+   i->Min.Cas.expd = expd;
+   i->Min.Cas.data = data;
+   vassert(sz == 1 || sz == 2 || sz == 4 || sz == 8);
+
+   if (sz == 8)
+      vassert(mode64);
+   return i;
+}
+
 MIPSInstr *MIPSInstr_StoreC(UChar sz, MIPSAMode * dst, HReg src, Bool mode64)
 {
    MIPSInstr *i = LibVEX_Alloc(sizeof(MIPSInstr));
@@ -1777,6 +1794,55 @@ void ppMIPSInstr(MIPSInstr * i, Bool mode64)
          ppMIPSAMode(i->Min.LoadL.src, mode64);
          return;
       }
+      case Min_Cas: {
+          Bool sz8  = toBool(i->Min.Cas.sz == 8);
+          /*
+           * ll(d)    old,  0(addr)
+           * bne      old,  expd, end
+           * nop
+           * (d)addiu old,  old,  1
+           * sc(d)    data, 0(addr)
+           * movn     old,  expd, data
+           * end:
+           */
+          // ll(d) old, 0(addr)
+         vex_printf("cas: ");
+
+         vex_printf("%s ", sz8 ? "lld" : "ll");
+         ppHRegMIPS(i->Min.Cas.old , mode64);
+         vex_printf(", 0(");
+         ppHRegMIPS(i->Min.Cas.addr , mode64);
+         vex_printf(")\n");
+
+         vex_printf("bne ");
+         ppHRegMIPS(i->Min.Cas.old , mode64);
+         vex_printf(", ");
+         ppHRegMIPS(i->Min.Cas.expd , mode64);
+         vex_printf(", end\n");
+
+         vex_printf("nop\n");
+
+         vex_printf("%s ", sz8 ? "daddiu" : "addiu");
+         ppHRegMIPS(i->Min.Cas.old , mode64);
+         vex_printf(", ");
+         ppHRegMIPS(i->Min.Cas.old , mode64);
+         vex_printf(", 1\n");
+
+         vex_printf("%s ", sz8 ? "scd" : "sc");
+         ppHRegMIPS(i->Min.Cas.data , mode64);
+         vex_printf(", 0(");
+         ppHRegMIPS(i->Min.Cas.addr , mode64);
+         vex_printf(")\n");
+
+         vex_printf("movn ");
+         ppHRegMIPS(i->Min.Cas.old , mode64);
+         vex_printf(", ");
+         ppHRegMIPS(i->Min.Cas.expd , mode64);
+         vex_printf(", ");
+         ppHRegMIPS(i->Min.Cas.data , mode64);
+         vex_printf("\nend:");
+         return;
+      }
       case Min_StoreC: {
          vex_printf("sc ");
          ppHRegMIPS(i->Min.StoreC.src, mode64);
@@ -2062,6 +2128,12 @@ void getRegUsage_MIPSInstr(HRegUsage * u, MIPSInstr * i, Bool mode64)
          addRegUsage_MIPSAMode(u, i->Min.LoadL.src);
          addHRegUse(u, HRmWrite, i->Min.LoadL.dst);
          return;
+      case Min_Cas:
+         addHRegUse(u, HRmWrite, i->Min.Cas.old);
+         addHRegUse(u, HRmRead, i->Min.Cas.addr);
+         addHRegUse(u, HRmRead, i->Min.Cas.expd);
+         addHRegUse(u, HRmModify, i->Min.Cas.data);
+         return;
       case Min_StoreC:
          addHRegUse(u, HRmWrite, i->Min.StoreC.src);
          addHRegUse(u, HRmRead, i->Min.StoreC.src);
@@ -2213,6 +2285,12 @@ void mapRegs_MIPSInstr(HRegRemap * m, MIPSInstr * i, Bool mode64)
       case Min_LoadL:
          mapRegs_MIPSAMode(m, i->Min.LoadL.src);
          mapReg(m, &i->Min.LoadL.dst);
+         return;
+      case Min_Cas:
+         mapReg(m, &i->Min.Cas.old);
+         mapReg(m, &i->Min.Cas.addr);
+         mapReg(m, &i->Min.Cas.expd);
+         mapReg(m, &i->Min.Cas.data);
          return;
       case Min_StoreC:
          mapReg(m, &i->Min.StoreC.src);
@@ -3459,8 +3537,8 @@ Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
          switch (i->Min.XAssisted.jk) {
             case Ijk_ClientReq:     trcval = VEX_TRC_JMP_CLIENTREQ;     break;
             case Ijk_Sys_syscall:   trcval = VEX_TRC_JMP_SYS_SYSCALL;   break;
-            /* case Ijk_Sys_int128: trcval = VEX_TRC_JMP_SYS_INT128;    break;
-               case Ijk_Yield:     trcval = VEX_TRC_JMP_YIELD;         break; */
+            /* case Ijk_Sys_int128: trcval = VEX_TRC_JMP_SYS_INT128;   break; */
+            case Ijk_Yield:         trcval = VEX_TRC_JMP_YIELD;       break;
             case Ijk_EmWarn:        trcval = VEX_TRC_JMP_EMWARN;        break;
             case Ijk_EmFail:        trcval = VEX_TRC_JMP_EMFAIL;        break;
             /* case Ijk_MapFail:   trcval = VEX_TRC_JMP_MAPFAIL;       break; */
@@ -3644,6 +3722,39 @@ Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
             p = mkFormI(p, 0x38, r_dst, r_src, idx);
          else
             p = mkFormI(p, 0x3C, r_dst, r_src, idx);
+         goto done;
+      }
+      case Min_Cas: {
+         if (i->Min.Cas.sz != 8 && i->Min.Cas.sz != 4)
+            goto bad;
+         UInt old  = iregNo(i->Min.Cas.old, mode64);
+         UInt addr = iregNo(i->Min.Cas.addr, mode64);
+         UInt expd = iregNo(i->Min.Cas.expd, mode64);
+         UInt data = iregNo(i->Min.Cas.data, mode64);
+         Bool sz8  = toBool(i->Min.Cas.sz == 8);
+
+         /*
+          * ll(d)    old,  0(addr)
+          * bne      old,  expd, end
+          * nop
+          * (d)addiu old,  old,  1
+          * sc(d)    data, 0(addr)
+          * movn     old,  expd, data
+          * end:
+          */
+         // ll(d) old, 0(addr)
+         p = mkFormI(p, sz8 ? 0x34 : 0x30, addr, old, 0);
+         // bne  old,  expd, end
+         p = mkFormI(p, 5, old, expd, 4);
+         // nop
+         p = mkFormR(p, 0, 0, 0, 0, 0, 0);
+         // (d)addiu old,  old,  1
+         p = mkFormI(p, sz8 ? 25 : 9, old, old, 1);
+         // sc(d)  data, 0(addr)
+         p = mkFormI(p, sz8 ? 0x3C : 0x38, addr, data, 0);
+         // movn old,  expd, data
+         p = mkFormR(p, 0, expd, data, old, 0, 0xb);
+
          goto done;
       }
       case Min_RdWrLR: {

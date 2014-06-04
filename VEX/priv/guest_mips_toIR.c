@@ -2170,6 +2170,62 @@ static Bool dis_instr_branch ( UInt theInstr, DisResult * dres,
 /*********************************************************/
 /*---         Cavium Specific Instructions            ---*/
 /*********************************************************/
+
+/* Convenience function to yield to thread scheduler */
+static void jump_back(IRExpr *condition)
+{
+   stmt( IRStmt_Exit(condition,
+                     Ijk_Yield,
+                     IRConst_U64( guest_PC_curr_instr ),
+                     OFFB_PC) );
+}
+
+/* Based on s390_irgen_load_and_add32. */
+static void mips_irgen_load_and_add32(IRTemp op1addr, IRTemp new_val,
+                                      UChar rd, Bool putIntoRd)
+{
+   IRCAS *cas;
+   IRTemp old_mem = newTemp(Ity_I32);
+   IRTemp expd    = newTemp(Ity_I32);
+
+   assign(expd, load(Ity_I32, mkexpr(op1addr)));
+
+   cas = mkIRCAS(IRTemp_INVALID, old_mem,
+                 Iend_LE, mkexpr(op1addr),
+                 NULL, mkexpr(expd), /* expected value */
+                 NULL, mkexpr(new_val)  /* new value */);
+   stmt(IRStmt_CAS(cas));
+
+   /* If old_mem contains the expected value, then the CAS succeeded.
+      Otherwise, it did not */
+   jump_back(binop(Iop_CmpNE32, mkexpr(old_mem), mkexpr(expd)));
+   if (putIntoRd)
+      putIReg(rd, mkWidenFrom32(Ity_I64, mkexpr(old_mem), True));
+}
+
+/* Based on s390_irgen_load_and_add64. */
+static void mips_irgen_load_and_add64(IRTemp op1addr, IRTemp new_val,
+                                      UChar rd, Bool putIntoRd)
+{
+   IRCAS *cas;
+   IRTemp old_mem = newTemp(Ity_I64);
+   IRTemp expd    = newTemp(Ity_I64);
+
+   assign(expd, load(Ity_I64, mkexpr(op1addr)));
+
+   cas = mkIRCAS(IRTemp_INVALID, old_mem,
+                 Iend_LE, mkexpr(op1addr),
+                 NULL, mkexpr(expd), /* expected value */
+                 NULL, mkexpr(new_val)  /* new value */);
+   stmt(IRStmt_CAS(cas));
+
+   /* If old_mem contains the expected value, then the CAS succeeded.
+      Otherwise, it did not */
+   jump_back(binop(Iop_CmpNE64, mkexpr(old_mem), mkexpr(expd)));
+   if (putIntoRd)
+      putIReg(rd, mkexpr(old_mem));
+}
+
 static Bool dis_instr_CVM ( UInt theInstr )
 {
    UChar  opc2     = get_function(theInstr);
@@ -2177,7 +2233,7 @@ static Bool dis_instr_CVM ( UInt theInstr )
    UChar  regRs    = get_rs(theInstr);
    UChar  regRt    = get_rt(theInstr);
    UChar  regRd    = get_rd(theInstr);
-   UInt   imm 	   = get_imm(theInstr);
+   UInt   imm      = get_imm(theInstr);
    UChar  lenM1    = get_msb(theInstr);
    UChar  p        = get_lsb(theInstr);
    IRType ty       = mode64? Ity_I64 : Ity_I32;
@@ -2188,14 +2244,285 @@ static Bool dis_instr_CVM ( UInt theInstr )
    UInt size;
    assign(tmpRs, getIReg(regRs));
 
-   switch(opc1){
-      case 0x1C:  {
+   switch(opc1) {
+      case 0x1C: {
          switch(opc2) { 
             case 0x03: {  /* DMUL rd, rs, rt */
                DIP("dmul r%d, r%d, r%d", regRd, regRs, regRt);
                IRType t0 = newTemp(Ity_I128);
                assign(t0, binop(Iop_MullU64, getIReg(regRs), getIReg(regRt)));
                putIReg(regRd, unop(Iop_128to64, mkexpr(t0)));
+               break;
+            }
+
+            case 0x18: {  /* Store Atomic Add Word - SAA; Cavium OCTEON */
+               DIP("saa r%u, (r%u)", regRt, regRs);
+               IRTemp addr = newTemp(Ity_I64);
+               IRTemp new  = newTemp(Ity_I32);
+               assign (addr, getIReg(regRs));
+               assign(new, binop(Iop_Add32,
+                                 load(Ity_I32, mkexpr(addr)),
+                                 mkNarrowTo32(ty, getIReg(regRt))));
+               mips_irgen_load_and_add32(addr, new, 0, False);
+               break;
+            }
+
+            /* Store Atomic Add Doubleword - SAAD; Cavium OCTEON */
+            case 0x19: {
+               DIP( "saad r%u, (r%u)", regRt, regRs);
+               IRTemp addr = newTemp(Ity_I64);
+               IRTemp new  = newTemp(Ity_I64);
+               assign (addr, getIReg(regRs));
+               assign(new, binop(Iop_Add64,
+                                 load(Ity_I64, mkexpr(addr)),
+                                 getIReg(regRt)));
+               mips_irgen_load_and_add64(addr, new, 0, False);
+               break;
+            }
+
+            /* LAI, LAID, LAD, LADD, LAS, LASD,
+               LAC, LACD, LAA, LAAD, LAW, LAWD */
+            case 0x1f: {
+               UInt opc3 = get_sa(theInstr);
+               IRTemp addr = newTemp(Ity_I64);
+               switch (opc3) {
+                  /* Load Atomic Increment Word - LAI; Cavium OCTEON2 */
+                  case 0x02: {
+                     DIP("lai r%u,(r%u)\n", regRd, regRs);
+                     IRTemp new  = newTemp(Ity_I32);
+                     assign(addr, getIReg(regRs));
+                     assign(new, binop(Iop_Add32,
+                                       load(Ity_I32, mkexpr(addr)),
+                                       mkU32(1)));
+                     mips_irgen_load_and_add32(addr, new, regRd, True);
+                     break;
+                  }
+                  /* Load Atomic Increment Doubleword - LAID; Cavium OCTEON2 */
+                  case 0x03: {
+                     DIP("laid r%u,(r%u)\n", regRd, regRs);
+                     IRTemp new  = newTemp(Ity_I64);
+                     assign(addr, getIReg(regRs));
+                     assign(new, binop(Iop_Add64,
+                                       load(Ity_I64, mkexpr(addr)),
+                                       mkU64(1)));
+                     mips_irgen_load_and_add64(addr, new, regRd, True);
+                     break;
+                  }
+                  /* Load Atomic Decrement Word - LAD; Cavium OCTEON2 */
+                  case 0x06: {
+                     DIP("lad r%u,(r%u)\n", regRd, regRs);
+                     IRTemp new  = newTemp(Ity_I32);
+                     assign(addr, getIReg(regRs));
+                     assign(new, binop(Iop_Sub32,
+                                       load(Ity_I32, mkexpr(addr)),
+                                       mkU32(1)));
+                     mips_irgen_load_and_add32(addr, new, regRd, True);
+                     break;
+                  }
+                  /* Load Atomic Decrement Doubleword - LADD; Cavium OCTEON2 */
+                  case 0x07: {
+                     DIP("ladd r%u,(r%u)\n", regRd, regRs);
+                     IRTemp new  = newTemp(Ity_I64);
+                     assign (addr, getIReg(regRs));
+                     assign(new, binop(Iop_Sub64,
+                                       load(Ity_I64, mkexpr(addr)),
+                                       mkU64(1)));
+                     mips_irgen_load_and_add64(addr, new, regRd, True);
+                     break;
+                  }
+                  /* Load Atomic Set Word - LAS; Cavium OCTEON2 */
+                  case 0x0a: {
+                     DIP("las r%u,(r%u)\n", regRd, regRs);
+                     IRTemp new  = newTemp(Ity_I32);
+                     assign(addr, getIReg(regRs));
+                     assign(new, mkU32(0xffffffff));
+                     mips_irgen_load_and_add32(addr, new, regRd, True);
+                     break;
+                  }
+                  /* Load Atomic Set Doubleword - LASD; Cavium OCTEON2 */
+                  case 0x0b: {
+                     DIP("lasd r%u,(r%u)\n", regRd, regRs);
+                     IRTemp new  = newTemp(Ity_I64);
+                     assign (addr, getIReg(regRs));
+                     assign(new, mkU64(0xffffffffffffffff));
+                     mips_irgen_load_and_add64(addr, new, regRd, True);
+                     break;
+                  }
+                  /* Load Atomic Clear Word - LAC; Cavium OCTEON2 */
+                  case 0x0e: {
+                     DIP("lac r%u,(r%u)\n", regRd, regRs);
+                     IRTemp new  = newTemp(Ity_I32);
+                     assign (addr, getIReg(regRs));
+                     assign(new, mkU32(0));
+                     mips_irgen_load_and_add32(addr, new, regRd, True);
+                     break;
+                  }
+                  /* Load Atomic Clear Doubleword - LACD; Cavium OCTEON2 */
+                  case 0x0f: {
+                     DIP("lacd r%u,(r%u)\n", regRd, regRs);
+                     IRTemp new  = newTemp(Ity_I64);
+                     assign(addr, getIReg(regRs));
+                     assign(new, mkU64(0));
+                     mips_irgen_load_and_add64(addr, new, regRd, True);
+                     break;
+                  }
+                  /* Load Atomic Add Word - LAA; Cavium OCTEON2 */
+                  case 0x12: {
+                     DIP("laa r%u,(r%u),r%u\n", regRd, regRs, regRt);
+                     IRTemp new  = newTemp(Ity_I32);
+                     assign(addr, getIReg(regRs));
+                     assign(new, binop(Iop_Add32,
+                                       load(Ity_I32, mkexpr(addr)),
+                                       mkNarrowTo32(ty, getIReg(regRt))));
+                     mips_irgen_load_and_add32(addr, new, regRd, True);
+                     break;
+                  }
+                  /* Load Atomic Add Doubleword - LAAD; Cavium OCTEON2 */
+                  case 0x13: {
+                     DIP("laad r%u,(r%u),r%u\n", regRd, regRs, regRt);
+                     IRTemp new  = newTemp(Ity_I64);
+                     assign (addr, getIReg(regRs));
+                     assign(new, binop(Iop_Add64,
+                                       load(Ity_I64, mkexpr(addr)),
+                                       getIReg(regRt)));
+                     mips_irgen_load_and_add64(addr, new, regRd, True);
+                     break;
+                  }
+                  /* Load Atomic Swap Word - LAW; Cavium OCTEON2 */
+                  case 0x16: {
+                     DIP("law r%u,(r%u)\n", regRd, regRs);
+                     IRTemp new  = newTemp(Ity_I32);
+                     assign(addr, getIReg(regRs));
+                     assign(new, mkNarrowTo32(ty, getIReg(regRt)));
+                     mips_irgen_load_and_add32(addr, new, regRd, True);
+                     break;
+                  }
+                  /* Load Atomic Swap Doubleword - LAWD; Cavium OCTEON2 */
+                  case 0x17: {
+                     DIP("lawd r%u,(r%u)\n", regRd, regRs);
+                     IRTemp new  = newTemp(Ity_I64);
+                     assign(addr, getIReg(regRs));
+                     assign(new, getIReg(regRt));
+                     mips_irgen_load_and_add64(addr, new, regRd, True);
+                     break;
+                  }
+                  default:
+                     vex_printf("Unknown laxx instruction, opc3=0x%x\n", opc3);
+                     vex_printf("Instruction=0x%08x\n", theInstr);
+                     return False;
+               }
+               break;
+            }
+
+            /* Unsigned Byte Add - BADDU rd, rs, rt; Cavium OCTEON */
+            case 0x28: {
+               DIP("BADDU r%d, r%d, r%d", regRs, regRt, regRd);
+               IRTemp t0 = newTemp(Ity_I8);
+ 
+               assign(t0, binop(Iop_Add8,
+                                mkNarrowTo8(ty, getIReg(regRs)),
+                                mkNarrowTo8(ty, getIReg(regRt))));
+ 
+               if (mode64)
+                  putIReg(regRd, binop(mkSzOp(ty, Iop_And8),
+                                       unop(Iop_8Uto64, mkexpr(t0)),
+                                       mkSzImm(ty, 0xFF)));
+               else
+                  putIReg(regRd, binop(mkSzOp(ty, Iop_And8),
+                                       unop(Iop_8Uto32, mkexpr(t0)),
+                                       mkSzImm(ty, 0xFF)));
+               break;
+            }
+ 
+            case 0x2c: {  /* Count Ones in a Word - POP; Cavium OCTEON */
+               int i, shift[5];
+               IRTemp mask[5];
+               IRTemp old = newTemp(ty);
+               IRTemp nyu = IRTemp_INVALID;
+               assign(old, getIReg(regRs));
+               DIP("pop r%d, r%d", regRd, regRs);
+ 
+               for (i = 0; i < 5; i++) {
+                  mask[i] = newTemp(ty);
+                  shift[i] = 1 << i;
+               }
+               if(mode64) {
+                  assign(mask[0], mkU64(0x0000000055555555));
+                  assign(mask[1], mkU64(0x0000000033333333));
+                  assign(mask[2], mkU64(0x000000000F0F0F0F));
+                  assign(mask[3], mkU64(0x0000000000FF00FF));
+                  assign(mask[4], mkU64(0x000000000000FFFF));
+  
+                  for (i = 0; i < 5; i++) {
+                     nyu = newTemp(ty);
+                     assign(nyu,
+                            binop(Iop_Add64,
+                                  binop(Iop_And64,
+                                        mkexpr(old), mkexpr(mask[i])),
+                                  binop(Iop_And64,
+                                        binop(Iop_Shr64,
+                                              mkexpr(old), mkU8(shift[i])),
+                                        mkexpr(mask[i]))));
+                     old = nyu;
+                  }
+               } else {
+                  assign(mask[0], mkU32(0x55555555));
+                  assign(mask[1], mkU32(0x33333333));
+                  assign(mask[2], mkU32(0x0F0F0F0F));
+                  assign(mask[3], mkU32(0x00FF00FF));
+                  assign(mask[4], mkU32(0x0000FFFF));
+                  assign(old, getIReg(regRs));
+ 
+                  for (i = 0; i < 5; i++) {
+                     nyu = newTemp(ty);
+                     assign(nyu,
+                            binop(Iop_Add32,
+                                  binop(Iop_And32,
+                                        mkexpr(old), mkexpr(mask[i])),
+                                  binop(Iop_And32,
+                                        binop(Iop_Shr32,
+                                              mkexpr(old), mkU8(shift[i])),
+                                        mkexpr(mask[i]))));
+                     old = nyu;
+                  }
+               }
+               putIReg(regRd, mkexpr(nyu));
+               break;
+            }
+ 
+            /* Count Ones in a Doubleword - DPOP; Cavium OCTEON */
+            case 0x2d: {
+               int i, shift[6];
+               IRTemp mask[6];
+               IRTemp old = newTemp(ty);
+               IRTemp nyu = IRTemp_INVALID;
+               DIP("dpop r%d, r%d", regRd, regRs);
+ 
+               for (i = 0; i < 6; i++) {
+                  mask[i] = newTemp(ty);
+                  shift[i] = 1 << i;
+               }
+               vassert(mode64); /*Caution! Only for Mode 64*/
+               assign(mask[0], mkU64(0x5555555555555555ULL));
+               assign(mask[1], mkU64(0x3333333333333333ULL));
+               assign(mask[2], mkU64(0x0F0F0F0F0F0F0F0FULL));
+               assign(mask[3], mkU64(0x00FF00FF00FF00FFULL));
+               assign(mask[4], mkU64(0x0000FFFF0000FFFFULL));
+               assign(mask[5], mkU64(0x00000000FFFFFFFFULL));
+               assign(old, getIReg(regRs));
+               for (i = 0; i < 6; i++) {
+                  nyu = newTemp(Ity_I64);
+                  assign(nyu,
+                         binop(Iop_Add64,
+                               binop(Iop_And64,
+                                     mkexpr(old), mkexpr(mask[i])),
+                               binop(Iop_And64,
+                                     binop(Iop_Shr64,
+                                           mkexpr(old), mkU8(shift[i])),
+                                     mkexpr(mask[i]))));
+                  old = nyu;
+               }
+               putIReg(regRd, mkexpr(nyu));
                break;
             }
 
@@ -2291,7 +2618,7 @@ static Bool dis_instr_CVM ( UInt theInstr )
          }
          break;
       } /* opc1 0x1C ends here*/
-      case 0x1F:{
+      case 0x1F: {
          switch(opc2) {
             case 0x0A: {  // lx - Load indexed instructions
                switch (get_sa(theInstr)) {
@@ -14120,34 +14447,40 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
    case 0x1C:  /* Special2 */
       switch (function) {
-      /* Cavium Specific instructions */
-      case 0x03: case 0x32: case 0x33:  /* DMUL, CINS , CINS32 */
-      case 0x3A: case 0x3B: case 0x2B:  /* EXT,  EXT32, SNE    */
-      /* CVM Compare Instructions */
-      case 0x2A: case 0x2E: case 0x2F:  /* SEQ,  SEQI,  SNEI   */
-         if (VEX_MIPS_COMP_ID(archinfo->hwcaps) == VEX_PRID_COMP_CAVIUM) {
-            if (dis_instr_CVM(cins))
-               break;
-            goto decode_failure;
-         } else {
-            goto decode_failure;
-         }
+         /* Cavium Specific instructions */
+         case 0x03: case 0x32: case 0x33:  /* DMUL, CINS , CINS32 */
+         case 0x3A: case 0x3B: case 0x2B:  /* EXT,  EXT32, SNE    */
+         /* CVM Compare Instructions */
+         case 0x2A: case 0x2E: case 0x2F:  /* SEQ,  SEQI,  SNEI   */
+         /* CPU Load, Store, Memory, and Control Instructions */
+         case 0x18: case 0x19:             /* SAA, SAAD */
+         case 0x1F:                        /* LAA, LAAD, LAI, LAID */
+         case 0x28: case 0x2C: case 0x2D:  /* BADDU, POP, DPOP */
+            if (VEX_MIPS_COMP_ID(archinfo->hwcaps) == VEX_PRID_COMP_CAVIUM) {
+               if (dis_instr_CVM(cins))
+                  break;
+               goto decode_failure;
+            } else {
+               goto decode_failure;
+            }
          break;
-      case 0x02: {  /* MUL */
-         DIP("mul r%d, r%d, r%d", rd, rs, rt);
-         if (mode64) {
-            IRTemp tmpRs32 = newTemp(Ity_I32);
-            IRTemp tmpRt32 = newTemp(Ity_I32);
-            IRTemp tmpRes = newTemp(Ity_I32);
 
-            assign(tmpRs32, mkNarrowTo32(ty, getIReg(rs)));
-            assign(tmpRt32, mkNarrowTo32(ty, getIReg(rt)));
-            assign(tmpRes, binop(Iop_Mul32, mkexpr(tmpRs32), mkexpr(tmpRt32)));
-            putIReg(rd, mkWidenFrom32(ty, mkexpr(tmpRes), True));
-         } else
-            putIReg(rd, binop(Iop_Mul32, getIReg(rs), getIReg(rt)));
-         break;
-      }
+         case 0x02: {  /* MUL */
+            DIP("mul r%d, r%d, r%d", rd, rs, rt);
+            if (mode64) {
+               IRTemp tmpRs32 = newTemp(Ity_I32);
+               IRTemp tmpRt32 = newTemp(Ity_I32);
+               IRTemp tmpRes = newTemp(Ity_I32);
+
+               assign(tmpRs32, mkNarrowTo32(ty, getIReg(rs)));
+               assign(tmpRt32, mkNarrowTo32(ty, getIReg(rt)));
+               assign(tmpRes, binop(Iop_Mul32,
+                                    mkexpr(tmpRs32), mkexpr(tmpRt32)));
+               putIReg(rd, mkWidenFrom32(ty, mkexpr(tmpRes), True));
+            } else
+               putIReg(rd, binop(Iop_Mul32, getIReg(rs), getIReg(rt)));
+            break;
+         }
 
          case 0x00: {  /* MADD */
             if (mode64) {

@@ -325,6 +325,7 @@ typedef enum {
 
    Min_Load,       /* zero-extending load a 8|16|32 bit value from mem */
    Min_Store,      /* store a 8|16|32 bit value to mem */
+   Min_Cas,        /* compare and swap */
    Min_LoadL,      /* mips Load Linked Word - LL */
    Min_StoreC,     /* mips Store Conditional Word - SC */
 
@@ -521,6 +522,13 @@ typedef struct {
       } LoadL;
       struct {
          UChar sz;   /* 4|8 */
+         HReg  old;
+         HReg  addr;
+         HReg  expd;
+         HReg  data;
+      } Cas;
+      struct {
+         UChar sz;   /* 4|8 */
          MIPSAMode *dst;
          HReg src;
       } StoreC;
@@ -649,6 +657,8 @@ extern MIPSInstr *MIPSInstr_LoadL(UChar sz, HReg dst, MIPSAMode * src,
                                   Bool mode64);
 extern MIPSInstr *MIPSInstr_StoreC(UChar sz, MIPSAMode * dst, HReg src,
                                    Bool mode64);
+extern MIPSInstr *MIPSInstr_Cas(UChar sz, HReg old, HReg addr,
+                                HReg expd, HReg data, Bool mode64);
 
 extern MIPSInstr *MIPSInstr_Call ( MIPSCondCode, Addr64, UInt, HReg, RetLoc );
 extern MIPSInstr *MIPSInstr_CallAlways ( MIPSCondCode, Addr64, UInt, RetLoc );

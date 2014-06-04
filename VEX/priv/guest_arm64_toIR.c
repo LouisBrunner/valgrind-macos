@@ -5398,7 +5398,7 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
                                               MOV Vd.2d #imm (q=1)
       Allowable op:cmode
          FMOV = 1:1111
-         MOVI = 0:xx00, 1:0x00, 1:10x0, 1:110x, 11110
+         MOVI = 0:xx00, 1:0x00, 1:10x0, 1:110x, x:1110
    */
    if (INSN(31,31) == 0
        && INSN(28,19) == BITS10(0,1,1,1,1,0,0,0,0,0)
@@ -5418,7 +5418,7 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
          case BITS5(1,0,0,0,0): case BITS5(1,0,1,0,0): // 1:0x00
          case BITS5(1,1,0,0,0): case BITS5(1,1,0,1,0): // 1:10x0
          case BITS5(1,1,1,0,0): case BITS5(1,1,1,0,1): // 1:110x
-         case BITS5(1,1,1,1,0): // 1:1110
+         case BITS5(1,1,1,1,0): case BITS5(0,1,1,1,0): // x:1110
             ok = True; break;
          default:
            break;

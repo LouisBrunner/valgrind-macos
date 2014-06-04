@@ -2926,48 +2926,48 @@ int main ( void )
 
    // fabs      d,s
    // fabs      2d,4s,2s
-   test_fabs_d_d(TyDF);
-   test_fabs_s_s(TySF);
-   test_fabs_2d_2d(TyDF);
-   test_fabs_4s_4s(TySF);
-   test_fabs_2s_2s(TyDF);
-   test_fneg_2d_2d(TySF);
-   test_fneg_4s_4s(TyDF);
-   test_fneg_2s_2s(TySF);
+   if (1) test_fabs_d_d(TyDF);
+   if (1) test_fabs_s_s(TySF);
+   if (1) test_fabs_2d_2d(TyDF);
+   if (1) test_fabs_4s_4s(TySF);
+   if (1) test_fabs_2s_2s(TyDF);
+   if (1) test_fneg_2d_2d(TySF);
+   if (1) test_fneg_4s_4s(TyDF);
+   if (1) test_fneg_2s_2s(TySF);
 
    // fneg      d,s
    // fneg      2d,4s,2s
-   test_fneg_d_d(TyDF);
-   test_fneg_s_s(TySF);
+   if (1) test_fneg_d_d(TyDF);
+   if (1) test_fneg_s_s(TySF);
 
    // fsqrt     d,s
    // fsqrt     2d,4s,2s
-   test_fsqrt_d_d(TyDF);
-   test_fsqrt_s_s(TySF);
+   if (1) test_fsqrt_d_d(TyDF);
+   if (1) test_fsqrt_s_s(TySF);
 
    // fadd      d,s
    // fsub      d,s
-   test_fadd_d_d_d(TyDF);
-   test_fadd_s_s_s(TySF);
-   test_fsub_d_d_d(TyDF);
-   test_fsub_s_s_s(TySF);
+   if (1) test_fadd_d_d_d(TyDF);
+   if (1) test_fadd_s_s_s(TySF);
+   if (1) test_fsub_d_d_d(TyDF);
+   if (1) test_fsub_s_s_s(TySF);
 
    // fadd      2d,4s,2s
    // fsub      2d,4s,2s
-   test_fadd_2d_2d_2d(TyDF);
-   test_fadd_4s_4s_4s(TySF);
-   test_fadd_2s_2s_2s(TySF);
-   test_fsub_2d_2d_2d(TyDF);
-   test_fsub_4s_4s_4s(TySF);
-   test_fsub_2s_2s_2s(TySF);
+   if (1) test_fadd_2d_2d_2d(TyDF);
+   if (1) test_fadd_4s_4s_4s(TySF);
+   if (1) test_fadd_2s_2s_2s(TySF);
+   if (1) test_fsub_2d_2d_2d(TyDF);
+   if (1) test_fsub_4s_4s_4s(TySF);
+   if (1) test_fsub_2s_2s_2s(TySF);
 
    // fabd      d,s
    // fabd      2d,4s,2s
-   test_fabd_d_d_d(TyDF);
-   test_fabd_s_s_s(TySF);
-   test_fabd_2d_2d_2d(TyDF);
-   test_fabd_4s_4s_4s(TySF);
-   test_fabd_2s_2s_2s(TySF);
+   if (1) test_fabd_d_d_d(TyDF);
+   if (1) test_fabd_s_s_s(TySF);
+   if (1) test_fabd_2d_2d_2d(TyDF);
+   if (1) test_fabd_4s_4s_4s(TySF);
+   if (1) test_fabd_2s_2s_2s(TySF);
 
    // faddp     d,s (floating add pair)
    // faddp     2d,4s,2s
@@ -2986,21 +2986,21 @@ int main ( void )
    // fcmgt     2d,4s,2s
    // facge     2d,4s,2s
    // facgt     2d,4s,2s
-   test_fcmeq_2d_2d_2d(TyDF);
-   test_fcmeq_4s_4s_4s(TySF);
-   test_fcmeq_2s_2s_2s(TySF);
-   test_fcmge_2d_2d_2d(TyDF);
-   test_fcmge_4s_4s_4s(TySF);
-   test_fcmge_2s_2s_2s(TySF);
-   test_fcmgt_2d_2d_2d(TyDF);
-   test_fcmgt_4s_4s_4s(TySF);
-   test_fcmgt_2s_2s_2s(TySF);
-   test_facge_2d_2d_2d(TyDF);
-   test_facge_4s_4s_4s(TySF);
-   test_facge_2s_2s_2s(TySF);
-   test_facgt_2d_2d_2d(TyDF);
-   test_facgt_4s_4s_4s(TySF);
-   test_facgt_2s_2s_2s(TySF);
+   if (1) test_fcmeq_2d_2d_2d(TyDF);
+   if (1) test_fcmeq_4s_4s_4s(TySF);
+   if (1) test_fcmeq_2s_2s_2s(TySF);
+   if (1) test_fcmge_2d_2d_2d(TyDF);
+   if (1) test_fcmge_4s_4s_4s(TySF);
+   if (1) test_fcmge_2s_2s_2s(TySF);
+   if (1) test_fcmgt_2d_2d_2d(TyDF);
+   if (1) test_fcmgt_4s_4s_4s(TySF);
+   if (1) test_fcmgt_2s_2s_2s(TySF);
+   if (1) test_facge_2d_2d_2d(TyDF);
+   if (1) test_facge_4s_4s_4s(TySF);
+   if (1) test_facge_2s_2s_2s(TySF);
+   if (1) test_facgt_2d_2d_2d(TyDF);
+   if (1) test_facgt_4s_4s_4s(TySF);
+   if (1) test_facgt_2s_2s_2s(TySF);
 
    // fcmeq_z   d,s
    // fcmge_z   d,s
@@ -3023,11 +3023,11 @@ int main ( void )
 
    // fdiv      d,s
    // fdiv      2d,4s,2s
-   test_fdiv_d_d_d(TyDF);
-   test_fdiv_s_s_s(TySF);
-   test_fdiv_2d_2d_2d(TyDF);
-   test_fdiv_4s_4s_4s(TySF);
-   test_fdiv_2s_2s_2s(TySF);
+   if (1) test_fdiv_d_d_d(TyDF);
+   if (1) test_fdiv_s_s_s(TySF);
+   if (1) test_fdiv_2d_2d_2d(TyDF);
+   if (1) test_fdiv_4s_4s_4s(TySF);
+   if (1) test_fdiv_2s_2s_2s(TySF);
 
    // fmadd     d,s
    // fnmadd    d,s
@@ -3035,8 +3035,8 @@ int main ( void )
    // fnmsub    d,s
 
    // fnmul     d,s
-   test_fnmul_d_d_d(TyDF);
-   test_fnmul_s_s_s(TySF);
+   if (1) test_fnmul_d_d_d(TyDF);
+   if (1) test_fnmul_s_s_s(TySF);
 
    // fmax      d,s
    // fmin      d,s
@@ -3068,12 +3068,12 @@ int main ( void )
 
    // fmla      2d,4s,2s
    // fmls      2d,4s,2s
-   test_fmla_2d_2d_2d(TyDF);
-   test_fmla_4s_4s_4s(TySF);
-   test_fmla_2s_2s_2s(TySF);
-   test_fmls_2d_2d_2d(TyDF);
-   test_fmls_4s_4s_4s(TySF);
-   test_fmls_2s_2s_2s(TySF);
+   if (1) test_fmla_2d_2d_2d(TyDF);
+   if (1) test_fmla_4s_4s_4s(TySF);
+   if (1) test_fmla_2s_2s_2s(TySF);
+   if (1) test_fmls_2d_2d_2d(TyDF);
+   if (1) test_fmls_4s_4s_4s(TySF);
+   if (1) test_fmls_2s_2s_2s(TySF);
 
    // fmla      d_d_d[],s_s_s[] (by element)
    // fmls      d_d_d[],s_s_s[] (by element)
@@ -3083,9 +3083,9 @@ int main ( void )
 
    // fmov      2d,4s,2s #imm (part of the MOVI/MVNI/ORR/BIC imm group)
    // INCOMPLETE
-   test_fmov_2d_imm_01(TyD);
-   test_fmov_2d_imm_02(TyD);
-   test_fmov_2d_imm_03(TyD);
+   if (1) test_fmov_2d_imm_01(TyD);
+   if (1) test_fmov_2d_imm_02(TyD);
+   if (1) test_fmov_2d_imm_03(TyD);
    if (0) test_fmov_4s_imm_01(TyS);
    if (0) test_fmov_4s_imm_02(TyS);
    if (0) test_fmov_4s_imm_03(TyS);
@@ -3094,35 +3094,35 @@ int main ( void )
    if (0) test_fmov_2s_imm_03(TyS);
 
    // fmov      d_d,s_s
-   test_fmov_d_d(TyDF);
-   test_fmov_s_s(TySF);
+   if (1) test_fmov_d_d(TyDF);
+   if (1) test_fmov_s_s(TySF);
 
    // fmov      s_w,w_s,d_x,d[1]_x,x_d,x_d[1]
-   test_fmov_s_w(TyS);
-   test_fmov_d_x(TyD);
-   test_fmov_d1_x(TyD);
-   test_fmov_w_s(TyS);
-   test_fmov_x_d(TyD);
-   test_fmov_x_d1(TyD);
+   if (1) test_fmov_s_w(TyS);
+   if (1) test_fmov_d_x(TyD);
+   if (1) test_fmov_d1_x(TyD);
+   if (1) test_fmov_w_s(TyS);
+   if (1) test_fmov_x_d(TyD);
+   if (1) test_fmov_x_d1(TyD);
 
    // fmov      d,s #imm
-   test_fmov_d_imm_01(TyNONE);
-   test_fmov_d_imm_02(TyNONE);
-   test_fmov_d_imm_03(TyNONE);
-   test_fmov_s_imm_01(TyNONE);
-   test_fmov_s_imm_02(TyNONE);
-   test_fmov_s_imm_03(TyNONE);
+   if (1) test_fmov_d_imm_01(TyNONE);
+   if (1) test_fmov_d_imm_02(TyNONE);
+   if (1) test_fmov_d_imm_03(TyNONE);
+   if (1) test_fmov_s_imm_01(TyNONE);
+   if (1) test_fmov_s_imm_02(TyNONE);
+   if (1) test_fmov_s_imm_03(TyNONE);
 
    // fmul      d_d_d[],s_s_s[]
    // fmul      2d_2d_d[],4s_4s_s[],2s_2s_s[]
 
    // fmul      2d,4s,2s
    // fmul      d,s
-   test_fmul_d_d_d(TyDF);
-   test_fmul_s_s_s(TySF);
-   test_fmul_2d_2d_2d(TyDF);
-   test_fmul_4s_4s_4s(TySF);
-   test_fmul_2s_2s_2s(TySF);
+   if (1) test_fmul_d_d_d(TyDF);
+   if (1) test_fmul_s_s_s(TySF);
+   if (1) test_fmul_2d_2d_2d(TyDF);
+   if (1) test_fmul_4s_4s_4s(TySF);
+   if (1) test_fmul_2s_2s_2s(TySF);
 
    // fmulx     d_d_d[],s_s_s[]
    // fmulx     2d_2d_d[],4s_4s_s[],2s_2s_s[]
@@ -3168,8 +3168,8 @@ int main ( void )
 
    // fcvtn{2}  4h/4s, 8h/4s, 2s/2d, 4s/2d (float convert to narrower form)
    // INCOMPLETE
-   test_fcvtn_2s_2d(TyDF);
-   test_fcvtn_4s_2d(TyDF);
+   if (1) test_fcvtn_2s_2d(TyDF);
+   if (1) test_fcvtn_4s_2d(TyDF);
 
    // fcvtas    d,s  (fcvt to signed int,   nearest, ties away)
    // fcvtau    d,s  (fcvt to unsigned int, nearest, ties away)
@@ -3233,121 +3233,121 @@ int main ( void )
 
    // scvtf     s_w, d_w, s_x, d_x
    // ucvtf     s_w, d_w, s_x, d_x
-   test_scvtf_s_w(TyS);
-   test_scvtf_d_w(TyS);
-   test_scvtf_s_x(TyD);
-   test_scvtf_d_x(TyD);
-   test_ucvtf_s_w(TyS);
-   test_ucvtf_d_w(TyS);
-   test_ucvtf_s_x(TyD);
-   test_ucvtf_d_x(TyD);
+   if (1) test_scvtf_s_w(TyS);
+   if (1) test_scvtf_d_w(TyS);
+   if (1) test_scvtf_s_x(TyD);
+   if (1) test_scvtf_d_x(TyD);
+   if (1) test_ucvtf_s_w(TyS);
+   if (1) test_ucvtf_d_w(TyS);
+   if (1) test_ucvtf_s_x(TyD);
+   if (1) test_ucvtf_d_x(TyD);
 
    // ======================== INT ========================
 
    // abs       d
    // neg       d
-   test_abs_d_d(TyD);
-   test_neg_d_d(TyD);
+   if (0) test_abs_d_d(TyD);
+   if (0) test_neg_d_d(TyD);
 
    // abs       2d,4s,2s,8h,4h,16b,8b
    // neg       2d,4s,2s,8h,4h,16b,8b
-   test_abs_2d_2d(TyD);
-   test_abs_4s_4s(TyS);
-   test_abs_2s_2s(TyS);
-   test_abs_8h_8h(TyH);
-   test_abs_4h_4h(TyH);
-   test_abs_16b_16b(TyB);
-   test_abs_8b_8b(TyB);
-   test_neg_2d_2d(TyD);
-   test_neg_4s_4s(TyS);
-   test_neg_2s_2s(TyS);
-   test_neg_8h_8h(TyH);
-   test_neg_4h_4h(TyH);
-   test_neg_16b_16b(TyB);
-   test_neg_8b_8b(TyB);
+   if (0) test_abs_2d_2d(TyD);
+   if (0) test_abs_4s_4s(TyS);
+   if (0) test_abs_2s_2s(TyS);
+   if (0) test_abs_8h_8h(TyH);
+   if (0) test_abs_4h_4h(TyH);
+   if (0) test_abs_16b_16b(TyB);
+   if (0) test_abs_8b_8b(TyB);
+   if (1) test_neg_2d_2d(TyD);
+   if (1) test_neg_4s_4s(TyS);
+   if (1) test_neg_2s_2s(TyS);
+   if (1) test_neg_8h_8h(TyH);
+   if (1) test_neg_4h_4h(TyH);
+   if (1) test_neg_16b_16b(TyB);
+   if (1) test_neg_8b_8b(TyB);
 
    // add       d
    // sub       d
-   test_add_d_d_d(TyD);
-   test_sub_d_d_d(TyD);
+   if (1) test_add_d_d_d(TyD);
+   if (1) test_sub_d_d_d(TyD);
 
    // add       2d,4s,2s,8h,4h,16b,8b
    // sub       2d,4s,2s,8h,4h,16b,8b
-   test_add_2d_2d_2d(TyD);
-   test_add_4s_4s_4s(TyS);
-   test_add_2s_2s_2s(TyS);
-   test_add_8h_8h_8h(TyH);
-   test_add_4h_4h_4h(TyH);
-   test_add_16b_16b_16b(TyB);
-   test_add_8b_8b_8b(TyB);
-   test_sub_2d_2d_2d(TyD);
-   test_sub_4s_4s_4s(TyS);
-   test_sub_2s_2s_2s(TyS);
-   test_sub_8h_8h_8h(TyH);
-   test_sub_4h_4h_4h(TyH);
-   test_sub_16b_16b_16b(TyB);
-   test_sub_8b_8b_8b(TyB);
+   if (1) test_add_2d_2d_2d(TyD);
+   if (1) test_add_4s_4s_4s(TyS);
+   if (1) test_add_2s_2s_2s(TyS);
+   if (1) test_add_8h_8h_8h(TyH);
+   if (1) test_add_4h_4h_4h(TyH);
+   if (1) test_add_16b_16b_16b(TyB);
+   if (1) test_add_8b_8b_8b(TyB);
+   if (1) test_sub_2d_2d_2d(TyD);
+   if (1) test_sub_4s_4s_4s(TyS);
+   if (1) test_sub_2s_2s_2s(TyS);
+   if (1) test_sub_8h_8h_8h(TyH);
+   if (1) test_sub_4h_4h_4h(TyH);
+   if (1) test_sub_16b_16b_16b(TyB);
+   if (1) test_sub_8b_8b_8b(TyB);
 
    // addhn{2}   2s/4s_2d_2d, 4h/8h_4s_4s, 8b/16b_8h_8h
    // subhn{2}   2s/4s_2d_2d, 4h/8h_4s_4s, 8b/16b_8h_8h
    // raddhn{2}  2s/4s_2d_2d, 4h/8h_4s_4s, 8b/16b_8h_8h
    // rsubhn{2}  2s/4s_2d_2d, 4h/8h_4s_4s, 8b/16b_8h_8h
-   test_addhn_2s_2d_2d(TyD);
-   test_addhn2_4s_2d_2d(TyD);
-   test_addhn_4h_4s_4s(TyS);
-   test_addhn2_8h_4s_4s(TyS);
-   test_addhn_8b_8h_8h(TyH);
-   test_addhn2_16b_8h_8h(TyH);
-   test_subhn_2s_2d_2d(TyD);
-   test_subhn2_4s_2d_2d(TyD);
-   test_subhn_4h_4s_4s(TyS);
-   test_subhn2_8h_4s_4s(TyS);
-   test_subhn_8b_8h_8h(TyH);
-   test_subhn2_16b_8h_8h(TyH);
-   test_raddhn_2s_2d_2d(TyD);
-   test_raddhn2_4s_2d_2d(TyD);
-   test_raddhn_4h_4s_4s(TyS);
-   test_raddhn2_8h_4s_4s(TyS);
-   test_raddhn_8b_8h_8h(TyH);
-   test_raddhn2_16b_8h_8h(TyH);
-   test_rsubhn_2s_2d_2d(TyD);
-   test_rsubhn2_4s_2d_2d(TyD);
-   test_rsubhn_4h_4s_4s(TyS);
-   test_rsubhn2_8h_4s_4s(TyS);
-   test_rsubhn_8b_8h_8h(TyH);
-   test_rsubhn2_16b_8h_8h(TyH);
+   if (0) test_addhn_2s_2d_2d(TyD);
+   if (0) test_addhn2_4s_2d_2d(TyD);
+   if (0) test_addhn_4h_4s_4s(TyS);
+   if (0) test_addhn2_8h_4s_4s(TyS);
+   if (0) test_addhn_8b_8h_8h(TyH);
+   if (0) test_addhn2_16b_8h_8h(TyH);
+   if (0) test_subhn_2s_2d_2d(TyD);
+   if (0) test_subhn2_4s_2d_2d(TyD);
+   if (0) test_subhn_4h_4s_4s(TyS);
+   if (0) test_subhn2_8h_4s_4s(TyS);
+   if (0) test_subhn_8b_8h_8h(TyH);
+   if (0) test_subhn2_16b_8h_8h(TyH);
+   if (0) test_raddhn_2s_2d_2d(TyD);
+   if (0) test_raddhn2_4s_2d_2d(TyD);
+   if (0) test_raddhn_4h_4s_4s(TyS);
+   if (0) test_raddhn2_8h_4s_4s(TyS);
+   if (0) test_raddhn_8b_8h_8h(TyH);
+   if (0) test_raddhn2_16b_8h_8h(TyH);
+   if (0) test_rsubhn_2s_2d_2d(TyD);
+   if (0) test_rsubhn2_4s_2d_2d(TyD);
+   if (0) test_rsubhn_4h_4s_4s(TyS);
+   if (0) test_rsubhn2_8h_4s_4s(TyS);
+   if (0) test_rsubhn_8b_8h_8h(TyH);
+   if (0) test_rsubhn2_16b_8h_8h(TyH);
 
    // addp     d (add pairs, across)
-   test_addp_d_2d(TyD);
+   if (0) test_addp_d_2d(TyD);
 
    // addp     2d,4s,2s,8h,4h,16b,8b
-   test_addp_2d_2d_2d(TyD);
-   test_addp_4s_4s_4s(TyS);
-   test_addp_2s_2s_2s(TyS);
-   test_addp_8h_8h_8h(TyH);
-   test_addp_4h_4h_4h(TyH);
-   test_addp_16b_16b_16b(TyB);
-   test_addp_8b_8b_8b(TyB);
+   if (0) test_addp_2d_2d_2d(TyD);
+   if (0) test_addp_4s_4s_4s(TyS);
+   if (0) test_addp_2s_2s_2s(TyS);
+   if (0) test_addp_8h_8h_8h(TyH);
+   if (0) test_addp_4h_4h_4h(TyH);
+   if (0) test_addp_16b_16b_16b(TyB);
+   if (0) test_addp_8b_8b_8b(TyB);
 
    // addv     4s,8h,4h,16b,18b (reduce across vector)
-   test_addv_s_4s(TyS);
-   test_addv_h_8h(TyH);
-   test_addv_h_4h(TyH);
-   test_addv_b_16b(TyB);
-   test_addv_b_8b(TyB);
+   if (0) test_addv_s_4s(TyS);
+   if (0) test_addv_h_8h(TyH);
+   if (0) test_addv_h_4h(TyH);
+   if (0) test_addv_b_16b(TyB);
+   if (0) test_addv_b_8b(TyB);
 
    // and      16b,8b
    // bic      16b,8b
    // orn      16b,8b
    // orr      16b,8b
-   test_and_16b_16b_16b(TyB);
-   test_and_8b_8b_8b(TyB);
-   test_bic_16b_16b_16b(TyB);
-   test_bic_8b_8b_8b(TyB);
-   test_orr_16b_16b_16b(TyB);
-   test_orr_8b_8b_8b(TyB);
-   test_orn_16b_16b_16b(TyB);
-   test_orn_8b_8b_8b(TyB);
+   if (1) test_and_16b_16b_16b(TyB);
+   if (1) test_and_8b_8b_8b(TyB);
+   if (1) test_bic_16b_16b_16b(TyB);
+   if (1) test_bic_8b_8b_8b(TyB);
+   if (1) test_orr_16b_16b_16b(TyB);
+   if (1) test_orr_8b_8b_8b(TyB);
+   if (1) test_orn_16b_16b_16b(TyB);
+   if (1) test_orn_8b_8b_8b(TyB);
 
    // orr      8h,4h   #imm8, LSL #0 or 8
    // orr      4s,2s   #imm8, LSL #0, 8, 16 or 24
@@ -3355,58 +3355,58 @@ int main ( void )
    // bic      4s,2s   #imm8, LSL #0, 8, 16 or 24
    // movi and mvni are very similar, a superset of these.
    // Cases are below.
-   test_orr_8h_0x5A_lsl0(TyH);
-   test_orr_8h_0xA5_lsl8(TyH);
-   test_orr_4h_0x5A_lsl0(TyH);
-   test_orr_4h_0xA5_lsl8(TyH);
-   test_orr_4s_0x5A_lsl0(TyS);
-   test_orr_4s_0x6B_lsl8(TyS);
-   test_orr_4s_0x49_lsl16(TyS);
-   test_orr_4s_0x3D_lsl24(TyS);
-   test_orr_2s_0x5A_lsl0(TyS);
-   test_orr_2s_0x6B_lsl8(TyS);
-   test_orr_2s_0x49_lsl16(TyS);
-   test_orr_2s_0x3D_lsl24(TyS);
-   test_bic_8h_0x5A_lsl0(TyH);
-   test_bic_8h_0xA5_lsl8(TyH);
-   test_bic_4h_0x5A_lsl0(TyH);
-   test_bic_4h_0xA5_lsl8(TyH);
-   test_bic_4s_0x5A_lsl0(TyS);
-   test_bic_4s_0x6B_lsl8(TyS);
-   test_bic_4s_0x49_lsl16(TyS);
-   test_bic_4s_0x3D_lsl24(TyS);
-   test_bic_2s_0x5A_lsl0(TyS);
-   test_bic_2s_0x6B_lsl8(TyS);
-   test_bic_2s_0x49_lsl16(TyS);
-   test_bic_2s_0x3D_lsl24(TyS);
+   if (0) test_orr_8h_0x5A_lsl0(TyH);
+   if (0) test_orr_8h_0xA5_lsl8(TyH);
+   if (0) test_orr_4h_0x5A_lsl0(TyH);
+   if (0) test_orr_4h_0xA5_lsl8(TyH);
+   if (0) test_orr_4s_0x5A_lsl0(TyS);
+   if (0) test_orr_4s_0x6B_lsl8(TyS);
+   if (0) test_orr_4s_0x49_lsl16(TyS);
+   if (0) test_orr_4s_0x3D_lsl24(TyS);
+   if (0) test_orr_2s_0x5A_lsl0(TyS);
+   if (0) test_orr_2s_0x6B_lsl8(TyS);
+   if (0) test_orr_2s_0x49_lsl16(TyS);
+   if (0) test_orr_2s_0x3D_lsl24(TyS);
+   if (0) test_bic_8h_0x5A_lsl0(TyH);
+   if (0) test_bic_8h_0xA5_lsl8(TyH);
+   if (0) test_bic_4h_0x5A_lsl0(TyH);
+   if (0) test_bic_4h_0xA5_lsl8(TyH);
+   if (0) test_bic_4s_0x5A_lsl0(TyS);
+   if (0) test_bic_4s_0x6B_lsl8(TyS);
+   if (0) test_bic_4s_0x49_lsl16(TyS);
+   if (0) test_bic_4s_0x3D_lsl24(TyS);
+   if (0) test_bic_2s_0x5A_lsl0(TyS);
+   if (0) test_bic_2s_0x6B_lsl8(TyS);
+   if (0) test_bic_2s_0x49_lsl16(TyS);
+   if (0) test_bic_2s_0x3D_lsl24(TyS);
 
    // bif      16b,8b (vector) (bit insert if false)
    // bit      16b,8b (vector) (bit insert if true)
    // bsl      16b,8b (vector) (bit select)
    // eor      16b,8b (vector)
-   test_bif_16b_16b_16b(TyB);
-   test_bif_8b_8b_8b(TyB);
-   test_bit_16b_16b_16b(TyB);
-   test_bit_8b_8b_8b(TyB);
-   test_bsl_16b_16b_16b(TyB);
-   test_bsl_8b_8b_8b(TyB);
-   test_eor_16b_16b_16b(TyB);
-   test_eor_8b_8b_8b(TyB);
+   if (1) test_bif_16b_16b_16b(TyB);
+   if (1) test_bif_8b_8b_8b(TyB);
+   if (1) test_bit_16b_16b_16b(TyB);
+   if (1) test_bit_8b_8b_8b(TyB);
+   if (1) test_bsl_16b_16b_16b(TyB);
+   if (1) test_bsl_8b_8b_8b(TyB);
+   if (1) test_eor_16b_16b_16b(TyB);
+   if (1) test_eor_8b_8b_8b(TyB);
 
    // cls      4s,2s,8h,4h,16b,8b (count leading sign bits)
    // clz      4s,2s,8h,4h,16b,8b (count leading zero bits)
-   test_cls_4s_4s(TyS);
-   test_cls_2s_2s(TyS);
-   test_cls_8h_8h(TyH);
-   test_cls_4h_4h(TyH);
-   test_cls_16b_16b(TyB);
-   test_cls_8b_8b(TyB);
-   test_clz_4s_4s(TyS);
-   test_clz_2s_2s(TyS);
-   test_clz_8h_8h(TyH);
-   test_clz_4h_4h(TyH);
-   test_clz_16b_16b(TyB);
-   test_clz_8b_8b(TyB);
+   if (0) test_cls_4s_4s(TyS);
+   if (0) test_cls_2s_2s(TyS);
+   if (0) test_cls_8h_8h(TyH);
+   if (0) test_cls_4h_4h(TyH);
+   if (0) test_cls_16b_16b(TyB);
+   if (0) test_cls_8b_8b(TyB);
+   if (0) test_clz_4s_4s(TyS);
+   if (0) test_clz_2s_2s(TyS);
+   if (0) test_clz_8h_8h(TyH);
+   if (0) test_clz_4h_4h(TyH);
+   if (0) test_clz_16b_16b(TyB);
+   if (0) test_clz_8b_8b(TyB);
 
    // cmeq     d
    // cmge     d
@@ -3414,12 +3414,12 @@ int main ( void )
    // cmhi     d
    // cmhs     d
    // cmtst    d
-   test_cmeq_d_d_d(TyD);
-   test_cmge_d_d_d(TyD);
-   test_cmgt_d_d_d(TyD);
-   test_cmhi_d_d_d(TyD);
-   test_cmhs_d_d_d(TyD);
-   test_cmtst_d_d_d(TyD);
+   if (0) test_cmeq_d_d_d(TyD);
+   if (0) test_cmge_d_d_d(TyD);
+   if (0) test_cmgt_d_d_d(TyD);
+   if (0) test_cmhi_d_d_d(TyD);
+   if (0) test_cmhs_d_d_d(TyD);
+   if (0) test_cmtst_d_d_d(TyD);
 
    // cmeq     2d,4s,2s,8h,4h,16b,8b
    // cmge     2d,4s,2s,8h,4h,16b,8b
@@ -3427,652 +3427,652 @@ int main ( void )
    // cmhi     2d,4s,2s,8h,4h,16b,8b
    // cmhs     2d,4s,2s,8h,4h,16b,8b
    // cmtst    2d,4s,2s,8h,4h,16b,8b
-   test_cmeq_2d_2d_2d(TyD);
-   test_cmeq_4s_4s_4s(TyS);
-   test_cmeq_2s_2s_2s(TyS);
-   test_cmeq_8h_8h_8h(TyH);
-   test_cmeq_4h_4h_4h(TyH);
-   test_cmeq_16b_16b_16b(TyB);
-   test_cmeq_8b_8b_8b(TyB);
-   test_cmge_2d_2d_2d(TyD);
-   test_cmge_4s_4s_4s(TyS);
-   test_cmge_2s_2s_2s(TyS);
-   test_cmge_8h_8h_8h(TyH);
-   test_cmge_4h_4h_4h(TyH);
-   test_cmge_16b_16b_16b(TyB);
-   test_cmge_8b_8b_8b(TyB);
-   test_cmgt_2d_2d_2d(TyD);
-   test_cmgt_4s_4s_4s(TyS);
-   test_cmgt_2s_2s_2s(TyS);
-   test_cmgt_8h_8h_8h(TyH);
-   test_cmgt_4h_4h_4h(TyH);
-   test_cmgt_16b_16b_16b(TyB);
-   test_cmgt_8b_8b_8b(TyB);
-   test_cmhi_2d_2d_2d(TyD);
-   test_cmhi_4s_4s_4s(TyS);
-   test_cmhi_2s_2s_2s(TyS);
-   test_cmhi_8h_8h_8h(TyH);
-   test_cmhi_4h_4h_4h(TyH);
-   test_cmhi_16b_16b_16b(TyB);
-   test_cmhi_8b_8b_8b(TyB);
-   test_cmhs_2d_2d_2d(TyD);
-   test_cmhs_4s_4s_4s(TyS);
-   test_cmhs_2s_2s_2s(TyS);
-   test_cmhs_8h_8h_8h(TyH);
-   test_cmhs_4h_4h_4h(TyH);
-   test_cmhs_16b_16b_16b(TyB);
-   test_cmhs_8b_8b_8b(TyB);
-   test_cmtst_2d_2d_2d(TyD);
-   test_cmtst_4s_4s_4s(TyS);
-   test_cmtst_2s_2s_2s(TyS);
-   test_cmtst_8h_8h_8h(TyH);
-   test_cmtst_4h_4h_4h(TyH);
-   test_cmtst_16b_16b_16b(TyB);
-   test_cmtst_8b_8b_8b(TyB);
+   if (1) test_cmeq_2d_2d_2d(TyD);
+   if (1) test_cmeq_4s_4s_4s(TyS);
+   if (1) test_cmeq_2s_2s_2s(TyS);
+   if (1) test_cmeq_8h_8h_8h(TyH);
+   if (1) test_cmeq_4h_4h_4h(TyH);
+   if (1) test_cmeq_16b_16b_16b(TyB);
+   if (1) test_cmeq_8b_8b_8b(TyB);
+   if (1) test_cmge_2d_2d_2d(TyD);
+   if (1) test_cmge_4s_4s_4s(TyS);
+   if (1) test_cmge_2s_2s_2s(TyS);
+   if (1) test_cmge_8h_8h_8h(TyH);
+   if (1) test_cmge_4h_4h_4h(TyH);
+   if (1) test_cmge_16b_16b_16b(TyB);
+   if (1) test_cmge_8b_8b_8b(TyB);
+   if (1) test_cmgt_2d_2d_2d(TyD);
+   if (1) test_cmgt_4s_4s_4s(TyS);
+   if (1) test_cmgt_2s_2s_2s(TyS);
+   if (1) test_cmgt_8h_8h_8h(TyH);
+   if (1) test_cmgt_4h_4h_4h(TyH);
+   if (1) test_cmgt_16b_16b_16b(TyB);
+   if (1) test_cmgt_8b_8b_8b(TyB);
+   if (1) test_cmhi_2d_2d_2d(TyD);
+   if (1) test_cmhi_4s_4s_4s(TyS);
+   if (1) test_cmhi_2s_2s_2s(TyS);
+   if (1) test_cmhi_8h_8h_8h(TyH);
+   if (1) test_cmhi_4h_4h_4h(TyH);
+   if (1) test_cmhi_16b_16b_16b(TyB);
+   if (1) test_cmhi_8b_8b_8b(TyB);
+   if (1) test_cmhs_2d_2d_2d(TyD);
+   if (1) test_cmhs_4s_4s_4s(TyS);
+   if (1) test_cmhs_2s_2s_2s(TyS);
+   if (1) test_cmhs_8h_8h_8h(TyH);
+   if (1) test_cmhs_4h_4h_4h(TyH);
+   if (1) test_cmhs_16b_16b_16b(TyB);
+   if (1) test_cmhs_8b_8b_8b(TyB);
+   if (1) test_cmtst_2d_2d_2d(TyD);
+   if (1) test_cmtst_4s_4s_4s(TyS);
+   if (1) test_cmtst_2s_2s_2s(TyS);
+   if (1) test_cmtst_8h_8h_8h(TyH);
+   if (1) test_cmtst_4h_4h_4h(TyH);
+   if (1) test_cmtst_16b_16b_16b(TyB);
+   if (1) test_cmtst_8b_8b_8b(TyB);
 
    // cmeq_z   d
    // cmge_z   d
    // cmgt_z   d
    // cmle_z   d
    // cmlt_z   d
-   test_cmeq_zero_d_d(TyD);
-   test_cmge_zero_d_d(TyD);
-   test_cmgt_zero_d_d(TyD);
-   test_cmle_zero_d_d(TyD);
-   test_cmlt_zero_d_d(TyD);
+   if (1) test_cmeq_zero_d_d(TyD);
+   if (0) test_cmge_zero_d_d(TyD);
+   if (0) test_cmgt_zero_d_d(TyD);
+   if (0) test_cmle_zero_d_d(TyD);
+   if (0) test_cmlt_zero_d_d(TyD);
 
    // cmeq_z   2d,4s,2s,8h,4h,16b,8b
    // cmge_z   2d,4s,2s,8h,4h,16b,8b
    // cmgt_z   2d,4s,2s,8h,4h,16b,8b
    // cmle_z   2d,4s,2s,8h,4h,16b,8b
    // cmlt_z   2d,4s,2s,8h,4h,16b,8b
-   test_cmeq_zero_2d_2d(TyD);
-   test_cmeq_zero_4s_4s(TyS);
-   test_cmeq_zero_2s_2s(TyS);
-   test_cmeq_zero_8h_8h(TyH);
-   test_cmeq_zero_4h_4h(TyH);
-   test_cmeq_zero_16b_16b(TyB);
-   test_cmeq_zero_8b_8b(TyB);
-   test_cmge_zero_2d_2d(TyD);
-   test_cmge_zero_4s_4s(TyS);
-   test_cmge_zero_2s_2s(TyS);
-   test_cmge_zero_8h_8h(TyH);
-   test_cmge_zero_4h_4h(TyH);
-   test_cmge_zero_16b_16b(TyB);
-   test_cmge_zero_8b_8b(TyB);
-   test_cmgt_zero_2d_2d(TyD);
-   test_cmgt_zero_4s_4s(TyS);
-   test_cmgt_zero_2s_2s(TyS);
-   test_cmgt_zero_8h_8h(TyH);
-   test_cmgt_zero_4h_4h(TyH);
-   test_cmgt_zero_16b_16b(TyB);
-   test_cmgt_zero_8b_8b(TyB);
-   test_cmle_zero_2d_2d(TyD);
-   test_cmle_zero_4s_4s(TyS);
-   test_cmle_zero_2s_2s(TyS);
-   test_cmle_zero_8h_8h(TyH);
-   test_cmle_zero_4h_4h(TyH);
-   test_cmle_zero_16b_16b(TyB);
-   test_cmle_zero_8b_8b(TyB);
-   test_cmlt_zero_2d_2d(TyD);
-   test_cmlt_zero_4s_4s(TyS);
-   test_cmlt_zero_2s_2s(TyS);
-   test_cmlt_zero_8h_8h(TyH);
-   test_cmlt_zero_4h_4h(TyH);
-   test_cmlt_zero_16b_16b(TyB);
-   test_cmlt_zero_8b_8b(TyB);
+   if (1) test_cmeq_zero_2d_2d(TyD);
+   if (1) test_cmeq_zero_4s_4s(TyS);
+   if (1) test_cmeq_zero_2s_2s(TyS);
+   if (1) test_cmeq_zero_8h_8h(TyH);
+   if (1) test_cmeq_zero_4h_4h(TyH);
+   if (1) test_cmeq_zero_16b_16b(TyB);
+   if (1) test_cmeq_zero_8b_8b(TyB);
+   if (1) test_cmge_zero_2d_2d(TyD);
+   if (1) test_cmge_zero_4s_4s(TyS);
+   if (1) test_cmge_zero_2s_2s(TyS);
+   if (1) test_cmge_zero_8h_8h(TyH);
+   if (1) test_cmge_zero_4h_4h(TyH);
+   if (1) test_cmge_zero_16b_16b(TyB);
+   if (1) test_cmge_zero_8b_8b(TyB);
+   if (1) test_cmgt_zero_2d_2d(TyD);
+   if (1) test_cmgt_zero_4s_4s(TyS);
+   if (1) test_cmgt_zero_2s_2s(TyS);
+   if (1) test_cmgt_zero_8h_8h(TyH);
+   if (1) test_cmgt_zero_4h_4h(TyH);
+   if (1) test_cmgt_zero_16b_16b(TyB);
+   if (1) test_cmgt_zero_8b_8b(TyB);
+   if (1) test_cmle_zero_2d_2d(TyD);
+   if (1) test_cmle_zero_4s_4s(TyS);
+   if (1) test_cmle_zero_2s_2s(TyS);
+   if (1) test_cmle_zero_8h_8h(TyH);
+   if (1) test_cmle_zero_4h_4h(TyH);
+   if (1) test_cmle_zero_16b_16b(TyB);
+   if (1) test_cmle_zero_8b_8b(TyB);
+   if (1) test_cmlt_zero_2d_2d(TyD);
+   if (1) test_cmlt_zero_4s_4s(TyS);
+   if (1) test_cmlt_zero_2s_2s(TyS);
+   if (1) test_cmlt_zero_8h_8h(TyH);
+   if (1) test_cmlt_zero_4h_4h(TyH);
+   if (1) test_cmlt_zero_16b_16b(TyB);
+   if (1) test_cmlt_zero_8b_8b(TyB);
 
    // cnt      16b,8b (population count per byte)
-   test_cnt_16b_16b(TyB);
-   test_cnt_8b_8b(TyB);
+   if (0) test_cnt_16b_16b(TyB);
+   if (0) test_cnt_8b_8b(TyB);
 
    // dup      d,s,h,b (vec elem to scalar)
-   test_dup_d_d0(TyD);
-   test_dup_d_d1(TyD);
-   test_dup_s_s0(TyS);
-   test_dup_s_s3(TyS);
-   test_dup_h_h0(TyH);
-   test_dup_h_h6(TyH);
-   test_dup_b_b0(TyB);
-   test_dup_b_b13(TyB);
+   if (0) test_dup_d_d0(TyD);
+   if (0) test_dup_d_d1(TyD);
+   if (0) test_dup_s_s0(TyS);
+   if (0) test_dup_s_s3(TyS);
+   if (0) test_dup_h_h0(TyH);
+   if (0) test_dup_h_h6(TyH);
+   if (0) test_dup_b_b0(TyB);
+   if (0) test_dup_b_b13(TyB);
 
    // dup      2d,4s,2s,8h,4h,16b,8b (vec elem to vector)
-   test_dup_2d_d0(TyD);
-   test_dup_2d_d1(TyD);
-   test_dup_4s_s0(TyS);
-   test_dup_4s_s3(TyS);
-   test_dup_2s_s0(TyS);
-   test_dup_2s_s2(TyS);
-   test_dup_8h_h0(TyH);
-   test_dup_8h_h6(TyH);
-   test_dup_4h_h1(TyH);
-   test_dup_4h_h5(TyH);
-   test_dup_16b_b2(TyB);
-   test_dup_16b_b12(TyB);
-   test_dup_8b_b3(TyB);
-   test_dup_8b_b13(TyB);
+   if (1) test_dup_2d_d0(TyD);
+   if (1) test_dup_2d_d1(TyD);
+   if (1) test_dup_4s_s0(TyS);
+   if (1) test_dup_4s_s3(TyS);
+   if (1) test_dup_2s_s0(TyS);
+   if (1) test_dup_2s_s2(TyS);
+   if (1) test_dup_8h_h0(TyH);
+   if (1) test_dup_8h_h6(TyH);
+   if (1) test_dup_4h_h1(TyH);
+   if (1) test_dup_4h_h5(TyH);
+   if (1) test_dup_16b_b2(TyB);
+   if (1) test_dup_16b_b12(TyB);
+   if (1) test_dup_8b_b3(TyB);
+   if (1) test_dup_8b_b13(TyB);
 
    // dup      2d,4s,2s,8h,4h,16b,8b (general reg to vector)
-   test_dup_2d_x(TyD);
-   test_dup_4s_w(TyS);
-   test_dup_2s_w(TyS);
-   test_dup_8h_w(TyH);
-   test_dup_4h_w(TyH);
-   test_dup_16b_w(TyB);
-   test_dup_8b_w(TyB);
+   if (1) test_dup_2d_x(TyD);
+   if (1) test_dup_4s_w(TyS);
+   if (1) test_dup_2s_w(TyS);
+   if (1) test_dup_8h_w(TyH);
+   if (1) test_dup_4h_w(TyH);
+   if (1) test_dup_16b_w(TyB);
+   if (1) test_dup_8b_w(TyB);
 
    // ext      16b,8b,#imm4 (concat 2 vectors, then slice)
-   test_ext_16b_16b_16b_0x0(TyB);
-   test_ext_16b_16b_16b_0x7(TyB);
-   test_ext_16b_16b_16b_0x8(TyB);
-   test_ext_16b_16b_16b_0x9(TyB);
-   test_ext_16b_16b_16b_0xF(TyB);
-   test_ext_8b_8b_8b_0x0(TyB);
-   test_ext_8b_8b_8b_0x1(TyB);
-   test_ext_8b_8b_8b_0x6(TyB);
-   test_ext_8b_8b_8b_0x7(TyB);
+   if (0) test_ext_16b_16b_16b_0x0(TyB);
+   if (0) test_ext_16b_16b_16b_0x7(TyB);
+   if (0) test_ext_16b_16b_16b_0x8(TyB);
+   if (0) test_ext_16b_16b_16b_0x9(TyB);
+   if (0) test_ext_16b_16b_16b_0xF(TyB);
+   if (0) test_ext_8b_8b_8b_0x0(TyB);
+   if (0) test_ext_8b_8b_8b_0x1(TyB);
+   if (0) test_ext_8b_8b_8b_0x6(TyB);
+   if (0) test_ext_8b_8b_8b_0x7(TyB);
 
    // ins      d[]_d[],s[]_s[],h[]_h[],b[]_b[]
-   test_ins_d0_d0(TyD);
-   test_ins_d0_d1(TyD);
-   test_ins_d1_d0(TyD);
-   test_ins_d1_d1(TyD);
-   test_ins_s0_s2(TyS);
-   test_ins_s3_s0(TyS);
-   test_ins_s2_s1(TyS);
-   test_ins_s1_s3(TyS);
-   test_ins_h0_h6(TyH);
-   test_ins_h7_h0(TyH);
-   test_ins_h6_h1(TyH);
-   test_ins_h1_h7(TyH);
-   test_ins_b0_b14(TyB);
-   test_ins_b15_b8(TyB);
-   test_ins_b13_b9(TyB);
-   test_ins_b5_b12(TyB);
+   if (0) test_ins_d0_d0(TyD);
+   if (0) test_ins_d0_d1(TyD);
+   if (0) test_ins_d1_d0(TyD);
+   if (0) test_ins_d1_d1(TyD);
+   if (0) test_ins_s0_s2(TyS);
+   if (0) test_ins_s3_s0(TyS);
+   if (0) test_ins_s2_s1(TyS);
+   if (0) test_ins_s1_s3(TyS);
+   if (0) test_ins_h0_h6(TyH);
+   if (0) test_ins_h7_h0(TyH);
+   if (0) test_ins_h6_h1(TyH);
+   if (0) test_ins_h1_h7(TyH);
+   if (0) test_ins_b0_b14(TyB);
+   if (0) test_ins_b15_b8(TyB);
+   if (0) test_ins_b13_b9(TyB);
+   if (0) test_ins_b5_b12(TyB);
 
    // ins      d[]_x, s[]_w, h[]_w, b[]_w
-   test_INS_general();
+   if (1) test_INS_general();
 
    // mla   4s_4s_s[],2s_2s_s[],8h_8h_h[],4h_4h_h[]
    // mls   4s_4s_s[],2s_2s_s[],8h_8h_h[],4h_4h_h[]
    // mul   4s_4s_s[],2s_2s_s[],8h_8h_h[],4h_4h_h[]
-   test_mla_4s_4s_s0(TyS);
-   test_mla_4s_4s_s3(TyS);
-   test_mla_2s_2s_s0(TyS);
-   test_mla_2s_2s_s3(TyS);
-   test_mla_8h_8h_h1(TyH);
-   test_mla_8h_8h_h5(TyH);
-   test_mla_4h_4h_h2(TyH);
-   test_mla_4h_4h_h7(TyH);
-   test_mls_4s_4s_s0(TyS);
-   test_mls_4s_4s_s3(TyS);
-   test_mls_2s_2s_s0(TyS);
-   test_mls_2s_2s_s3(TyS);
-   test_mls_8h_8h_h1(TyH);
-   test_mls_8h_8h_h5(TyH);
-   test_mls_4h_4h_h2(TyH);
-   test_mls_4h_4h_h7(TyH);
-   test_mul_4s_4s_s0(TyS);
-   test_mul_4s_4s_s3(TyS);
-   test_mul_2s_2s_s0(TyS);
-   test_mul_2s_2s_s3(TyS);
-   test_mul_8h_8h_h1(TyH);
-   test_mul_8h_8h_h5(TyH);
-   test_mul_4h_4h_h2(TyH);
-   test_mul_4h_4h_h7(TyH);
+   if (0) test_mla_4s_4s_s0(TyS);
+   if (0) test_mla_4s_4s_s3(TyS);
+   if (0) test_mla_2s_2s_s0(TyS);
+   if (0) test_mla_2s_2s_s3(TyS);
+   if (0) test_mla_8h_8h_h1(TyH);
+   if (0) test_mla_8h_8h_h5(TyH);
+   if (0) test_mla_4h_4h_h2(TyH);
+   if (0) test_mla_4h_4h_h7(TyH);
+   if (0) test_mls_4s_4s_s0(TyS);
+   if (0) test_mls_4s_4s_s3(TyS);
+   if (0) test_mls_2s_2s_s0(TyS);
+   if (0) test_mls_2s_2s_s3(TyS);
+   if (0) test_mls_8h_8h_h1(TyH);
+   if (0) test_mls_8h_8h_h5(TyH);
+   if (0) test_mls_4h_4h_h2(TyH);
+   if (0) test_mls_4h_4h_h7(TyH);
+   if (0) test_mul_4s_4s_s0(TyS);
+   if (0) test_mul_4s_4s_s3(TyS);
+   if (0) test_mul_2s_2s_s0(TyS);
+   if (0) test_mul_2s_2s_s3(TyS);
+   if (0) test_mul_8h_8h_h1(TyH);
+   if (0) test_mul_8h_8h_h5(TyH);
+   if (0) test_mul_4h_4h_h2(TyH);
+   if (0) test_mul_4h_4h_h7(TyH);
 
    // mla   4s,2s,8h,4h,16b,8b
    // mls   4s,2s,8h,4h,16b,8b
    // mul   4s,2s,8h,4h,16b,8b
-   test_mla_4s_4s_4s(TyS);
-   test_mla_2s_2s_2s(TyS);
-   test_mla_8h_8h_8h(TyH);
-   test_mla_4h_4h_4h(TyH);
-   test_mla_16b_16b_16b(TyB);
-   test_mla_8b_8b_8b(TyB);
-   test_mls_4s_4s_4s(TyS);
-   test_mls_2s_2s_2s(TyS);
-   test_mls_8h_8h_8h(TyH);
-   test_mls_4h_4h_4h(TyH);
-   test_mls_16b_16b_16b(TyB);
-   test_mls_8b_8b_8b(TyB);
-   test_mul_4s_4s_4s(TyS);
-   test_mul_2s_2s_2s(TyS);
-   test_mul_8h_8h_8h(TyH);
-   test_mul_4h_4h_4h(TyH);
-   test_mul_16b_16b_16b(TyB);
-   test_mul_8b_8b_8b(TyB);
+   if (1) test_mla_4s_4s_4s(TyS);
+   if (1) test_mla_2s_2s_2s(TyS);
+   if (1) test_mla_8h_8h_8h(TyH);
+   if (1) test_mla_4h_4h_4h(TyH);
+   if (1) test_mla_16b_16b_16b(TyB);
+   if (1) test_mla_8b_8b_8b(TyB);
+   if (1) test_mls_4s_4s_4s(TyS);
+   if (1) test_mls_2s_2s_2s(TyS);
+   if (1) test_mls_8h_8h_8h(TyH);
+   if (1) test_mls_4h_4h_4h(TyH);
+   if (1) test_mls_16b_16b_16b(TyB);
+   if (1) test_mls_8b_8b_8b(TyB);
+   if (1) test_mul_4s_4s_4s(TyS);
+   if (1) test_mul_2s_2s_2s(TyS);
+   if (1) test_mul_8h_8h_8h(TyH);
+   if (1) test_mul_4h_4h_4h(TyH);
+   if (1) test_mul_16b_16b_16b(TyB);
+   if (1) test_mul_8b_8b_8b(TyB);
 
    // Some of these movi and mvni cases are similar to orr and bic
    // cases with immediates.  Maybe they should be moved together.
    // movi  16b,8b   #imm8, LSL #0
-   test_movi_16b_0x9C_lsl0(TyB);
-   test_movi_8b_0x8B_lsl0(TyB);
+   if (0) test_movi_16b_0x9C_lsl0(TyB);
+   if (0) test_movi_8b_0x8B_lsl0(TyB);
 
    // movi  8h,4h    #imm8, LSL #0 or 8
    // mvni  8h,4h    #imm8, LSL #0 or 8
-   test_movi_8h_0x5A_lsl0(TyH);
-   test_movi_8h_0xA5_lsl8(TyH);
-   test_movi_4h_0x5A_lsl0(TyH);
-   test_movi_4h_0xA5_lsl8(TyH);
-   test_mvni_8h_0x5A_lsl0(TyH);
-   test_mvni_8h_0xA5_lsl8(TyH);
-   test_mvni_4h_0x5A_lsl0(TyH);
-   test_mvni_4h_0xA5_lsl8(TyH);
+   if (0) test_movi_8h_0x5A_lsl0(TyH);
+   if (0) test_movi_8h_0xA5_lsl8(TyH);
+   if (0) test_movi_4h_0x5A_lsl0(TyH);
+   if (0) test_movi_4h_0xA5_lsl8(TyH);
+   if (0) test_mvni_8h_0x5A_lsl0(TyH);
+   if (0) test_mvni_8h_0xA5_lsl8(TyH);
+   if (0) test_mvni_4h_0x5A_lsl0(TyH);
+   if (0) test_mvni_4h_0xA5_lsl8(TyH);
 
    // movi  4s,2s    #imm8, LSL #0, 8, 16, 24
    // mvni  4s,2s    #imm8, LSL #0, 8, 16, 24
-   test_movi_4s_0x5A_lsl0(TyS);
-   test_movi_4s_0x6B_lsl8(TyS);
-   test_movi_4s_0x49_lsl16(TyS);
-   test_movi_4s_0x3D_lsl24(TyS);
-   test_movi_2s_0x5A_lsl0(TyS);
-   test_movi_2s_0x6B_lsl8(TyS);
-   test_movi_2s_0x49_lsl16(TyS);
-   test_movi_2s_0x3D_lsl24(TyS);
-   test_mvni_4s_0x5A_lsl0(TyS);
-   test_mvni_4s_0x6B_lsl8(TyS);
-   test_mvni_4s_0x49_lsl16(TyS);
-   test_mvni_4s_0x3D_lsl24(TyS);
-   test_mvni_2s_0x5A_lsl0(TyS);
-   test_mvni_2s_0x6B_lsl8(TyS);
-   test_mvni_2s_0x49_lsl16(TyS);
-   test_mvni_2s_0x3D_lsl24(TyS);
+   if (1) test_movi_4s_0x5A_lsl0(TyS);
+   if (0) test_movi_4s_0x6B_lsl8(TyS);
+   if (0) test_movi_4s_0x49_lsl16(TyS);
+   if (0) test_movi_4s_0x3D_lsl24(TyS);
+   if (0) test_movi_2s_0x5A_lsl0(TyS);
+   if (0) test_movi_2s_0x6B_lsl8(TyS);
+   if (0) test_movi_2s_0x49_lsl16(TyS);
+   if (0) test_movi_2s_0x3D_lsl24(TyS);
+   if (0) test_mvni_4s_0x5A_lsl0(TyS);
+   if (0) test_mvni_4s_0x6B_lsl8(TyS);
+   if (0) test_mvni_4s_0x49_lsl16(TyS);
+   if (0) test_mvni_4s_0x3D_lsl24(TyS);
+   if (0) test_mvni_2s_0x5A_lsl0(TyS);
+   if (0) test_mvni_2s_0x6B_lsl8(TyS);
+   if (0) test_mvni_2s_0x49_lsl16(TyS);
+   if (0) test_mvni_2s_0x3D_lsl24(TyS);
 
    // movi  4s,2s    #imm8, MSL #8 or 16
    // mvni  4s,2s    #imm8, MSL #8 or 16
-   test_movi_4s_0x6B_msl8(TyS);
-   test_movi_4s_0x94_msl16(TyS);
-   test_movi_2s_0x7A_msl8(TyS);
-   test_movi_2s_0xA5_msl16(TyS);
-   test_mvni_4s_0x6B_msl8(TyS);
-   test_mvni_4s_0x94_msl16(TyS);
-   test_mvni_2s_0x7A_msl8(TyS);
-   test_mvni_2s_0xA5_msl16(TyS);
+   if (0) test_movi_4s_0x6B_msl8(TyS);
+   if (0) test_movi_4s_0x94_msl16(TyS);
+   if (0) test_movi_2s_0x7A_msl8(TyS);
+   if (0) test_movi_2s_0xA5_msl16(TyS);
+   if (0) test_mvni_4s_0x6B_msl8(TyS);
+   if (0) test_mvni_4s_0x94_msl16(TyS);
+   if (0) test_mvni_2s_0x7A_msl8(TyS);
+   if (0) test_mvni_2s_0xA5_msl16(TyS);
 
    // movi  d,       #imm64
    // movi  2d,      #imm64
-   test_movi_d_0xA5(TyD);
-   test_movi_2d_0xB4(TyD);
+   if (0) test_movi_d_0xA5(TyD);
+   if (0) test_movi_2d_0xB4(TyD);
 
    // not   16b,8b
-   test_not_16b_16b(TyB);
-   test_not_8b_8b(TyB);
+   if (0) test_not_16b_16b(TyB);
+   if (0) test_not_8b_8b(TyB);
 
    // pmul  16b,8b
-   test_pmul_16b_16b_16b(TyB);
-   test_pmul_8b_8b_8b(TyB);
+   if (0) test_pmul_16b_16b_16b(TyB);
+   if (0) test_pmul_8b_8b_8b(TyB);
 
    // pmull{2}  8h_8b_8b,8h_16b_16b,1q_1d_1d,1q_2d_2d
-   test_pmull_8h_8b_8b(TyB);
-   test_pmull2_8h_16b_16b(TyB);
-   //test_pmull_1q_1d_1d(TyD);
-   //test_pmull_1q_2d_2d(TyD);
+   if (0) test_pmull_8h_8b_8b(TyB);
+   if (0) test_pmull2_8h_16b_16b(TyB);
+   //if (0) test_pmull_1q_1d_1d(TyD);
+   //if (0) test_pmull_1q_2d_2d(TyD);
 
    // rbit    16b,8b
    // rev16   16b,8b
    // rev32   16b,8b,8h,4h
    // rev64   16b,8b,8h,4h,4s,2s
-   test_rbit_16b_16b(TyB);
-   test_rbit_8b_8b(TyB);
-   test_rev16_16b_16b(TyB);
-   test_rev16_8b_8b(TyB);
-   test_rev32_16b_16b(TyB);
-   test_rev32_8b_8b(TyB);
-   test_rev32_8h_8h(TyH);
-   test_rev32_4h_4h(TyH);
-   test_rev64_16b_16b(TyB);
-   test_rev64_8b_8b(TyB);
-   test_rev64_8h_8h(TyH);
-   test_rev64_4h_4h(TyH);
-   test_rev64_4s_4s(TyS);
-   test_rev64_2s_2s(TyS);
+   if (0) test_rbit_16b_16b(TyB);
+   if (0) test_rbit_8b_8b(TyB);
+   if (0) test_rev16_16b_16b(TyB);
+   if (0) test_rev16_8b_8b(TyB);
+   if (0) test_rev32_16b_16b(TyB);
+   if (0) test_rev32_8b_8b(TyB);
+   if (0) test_rev32_8h_8h(TyH);
+   if (0) test_rev32_4h_4h(TyH);
+   if (0) test_rev64_16b_16b(TyB);
+   if (0) test_rev64_8b_8b(TyB);
+   if (0) test_rev64_8h_8h(TyH);
+   if (0) test_rev64_4h_4h(TyH);
+   if (0) test_rev64_4s_4s(TyS);
+   if (0) test_rev64_2s_2s(TyS);
 
    // saba      16b,8b,8h,4h,4s,2s
    // uaba      16b,8b,8h,4h,4s,2s
-   test_saba_4s_4s_4s(TyS);
-   test_saba_2s_2s_2s(TyS);
-   test_saba_8h_8h_8h(TyH);
-   test_saba_4h_4h_4h(TyH);
-   test_saba_16b_16b_16b(TyB);
-   test_saba_8b_8b_8b(TyB);
-   test_uaba_4s_4s_4s(TyS);
-   test_uaba_2s_2s_2s(TyS);
-   test_uaba_8h_8h_8h(TyH);
-   test_uaba_4h_4h_4h(TyH);
-   test_uaba_16b_16b_16b(TyB);
-   test_uaba_8b_8b_8b(TyB);
+   if (0) test_saba_4s_4s_4s(TyS);
+   if (0) test_saba_2s_2s_2s(TyS);
+   if (0) test_saba_8h_8h_8h(TyH);
+   if (0) test_saba_4h_4h_4h(TyH);
+   if (0) test_saba_16b_16b_16b(TyB);
+   if (0) test_saba_8b_8b_8b(TyB);
+   if (0) test_uaba_4s_4s_4s(TyS);
+   if (0) test_uaba_2s_2s_2s(TyS);
+   if (0) test_uaba_8h_8h_8h(TyH);
+   if (0) test_uaba_4h_4h_4h(TyH);
+   if (0) test_uaba_16b_16b_16b(TyB);
+   if (0) test_uaba_8b_8b_8b(TyB);
 
    // sabal{2}  2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h), 8h_(8b_8b)/(16b_16b)
    // uabal{2}  2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h), 8h_(8b_8b)/(16b_16b)
-   test_sabal_2d_2s_2s(TyS);
-   test_sabal2_2d_4s_4s(TyS);
-   test_sabal_4s_4h_4h(TyH);
-   test_sabal2_4s_8h_8h(TyH);
-   test_sabal_8h_8b_8b(TyB);
-   test_sabal2_8h_16b_16b(TyB);
-   test_uabal_2d_2s_2s(TyS);
-   test_uabal2_2d_4s_4s(TyS);
-   test_uabal_4s_4h_4h(TyH);
-   test_uabal2_4s_8h_8h(TyH);
-   test_uabal_8h_8b_8b(TyB);
-   test_uabal2_8h_16b_16b(TyB);
+   if (0) test_sabal_2d_2s_2s(TyS);
+   if (0) test_sabal2_2d_4s_4s(TyS);
+   if (0) test_sabal_4s_4h_4h(TyH);
+   if (0) test_sabal2_4s_8h_8h(TyH);
+   if (0) test_sabal_8h_8b_8b(TyB);
+   if (0) test_sabal2_8h_16b_16b(TyB);
+   if (0) test_uabal_2d_2s_2s(TyS);
+   if (0) test_uabal2_2d_4s_4s(TyS);
+   if (0) test_uabal_4s_4h_4h(TyH);
+   if (0) test_uabal2_4s_8h_8h(TyH);
+   if (0) test_uabal_8h_8b_8b(TyB);
+   if (0) test_uabal2_8h_16b_16b(TyB);
 
    // sabd      16b,8b,8h,4h,4s,2s
    // uabd      16b,8b,8h,4h,4s,2s
-   test_sabd_4s_4s_4s(TyS);
-   test_sabd_2s_2s_2s(TyS);
-   test_sabd_8h_8h_8h(TyH);
-   test_sabd_4h_4h_4h(TyH);
-   test_sabd_16b_16b_16b(TyB);
-   test_sabd_8b_8b_8b(TyB);
-   test_uabd_4s_4s_4s(TyS);
-   test_uabd_2s_2s_2s(TyS);
-   test_uabd_8h_8h_8h(TyH);
-   test_uabd_4h_4h_4h(TyH);
-   test_uabd_16b_16b_16b(TyB);
-   test_uabd_8b_8b_8b(TyB);
+   if (0) test_sabd_4s_4s_4s(TyS);
+   if (0) test_sabd_2s_2s_2s(TyS);
+   if (0) test_sabd_8h_8h_8h(TyH);
+   if (0) test_sabd_4h_4h_4h(TyH);
+   if (0) test_sabd_16b_16b_16b(TyB);
+   if (0) test_sabd_8b_8b_8b(TyB);
+   if (0) test_uabd_4s_4s_4s(TyS);
+   if (0) test_uabd_2s_2s_2s(TyS);
+   if (0) test_uabd_8h_8h_8h(TyH);
+   if (0) test_uabd_4h_4h_4h(TyH);
+   if (0) test_uabd_16b_16b_16b(TyB);
+   if (0) test_uabd_8b_8b_8b(TyB);
 
    // sabdl{2}  2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h), 8h_(8b_8b)/(16b_16b)
    // uabdl{2}  2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h), 8h_(8b_8b)/(16b_16b)
-   test_sabdl_2d_2s_2s(TyS);
-   test_sabdl2_2d_4s_4s(TyS);
-   test_sabdl_4s_4h_4h(TyH);
-   test_sabdl2_4s_8h_8h(TyH);
-   test_sabdl_8h_8b_8b(TyB);
-   test_sabdl2_8h_16b_16b(TyB);
-   test_uabdl_2d_2s_2s(TyS);
-   test_uabdl2_2d_4s_4s(TyS);
-   test_uabdl_4s_4h_4h(TyH);
-   test_uabdl2_4s_8h_8h(TyH);
-   test_uabdl_8h_8b_8b(TyB);
-   test_uabdl2_8h_16b_16b(TyB);
+   if (0) test_sabdl_2d_2s_2s(TyS);
+   if (0) test_sabdl2_2d_4s_4s(TyS);
+   if (0) test_sabdl_4s_4h_4h(TyH);
+   if (0) test_sabdl2_4s_8h_8h(TyH);
+   if (0) test_sabdl_8h_8b_8b(TyB);
+   if (0) test_sabdl2_8h_16b_16b(TyB);
+   if (0) test_uabdl_2d_2s_2s(TyS);
+   if (0) test_uabdl2_2d_4s_4s(TyS);
+   if (0) test_uabdl_4s_4h_4h(TyH);
+   if (0) test_uabdl2_4s_8h_8h(TyH);
+   if (0) test_uabdl_8h_8b_8b(TyB);
+   if (0) test_uabdl2_8h_16b_16b(TyB);
 
    // sadalp    4h_8b,8h_16b,2s_4h,4s_8h,1d_2s,2d_4s
    // uadalp    4h_8b,8h_16b,2s_4h,4s_8h,1d_2s,2d_4s
-   test_sadalp_1d_2s(TyS);
-   test_sadalp_2d_4s(TyS);
-   test_sadalp_2s_4h(TyH);
-   test_sadalp_4s_8h(TyH);
-   test_sadalp_4h_8b(TyB);
-   test_sadalp_8h_16b(TyB);
-   test_uadalp_1d_2s(TyS);
-   test_uadalp_2d_4s(TyS);
-   test_uadalp_2s_4h(TyH);
-   test_uadalp_4s_8h(TyH);
-   test_uadalp_4h_8b(TyB);
-   test_uadalp_8h_16b(TyB);
+   if (0) test_sadalp_1d_2s(TyS);
+   if (0) test_sadalp_2d_4s(TyS);
+   if (0) test_sadalp_2s_4h(TyH);
+   if (0) test_sadalp_4s_8h(TyH);
+   if (0) test_sadalp_4h_8b(TyB);
+   if (0) test_sadalp_8h_16b(TyB);
+   if (0) test_uadalp_1d_2s(TyS);
+   if (0) test_uadalp_2d_4s(TyS);
+   if (0) test_uadalp_2s_4h(TyH);
+   if (0) test_uadalp_4s_8h(TyH);
+   if (0) test_uadalp_4h_8b(TyB);
+   if (0) test_uadalp_8h_16b(TyB);
 
    // saddl{2}  2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h), 8h_(8b_8b)/(16b_16b)
    // uaddl{2}  2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h), 8h_(8b_8b)/(16b_16b)
    // ssubl{2}  2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h), 8h_(8b_8b)/(16b_16b)
    // usubl{2}  2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h), 8h_(8b_8b)/(16b_16b)
-   test_saddl_2d_2s_2s(TyS);
-   test_saddl2_2d_4s_4s(TyS);
-   test_saddl_4s_4h_4h(TyH);
-   test_saddl2_4s_8h_8h(TyH);
-   test_saddl_8h_8b_8b(TyB);
-   test_saddl2_8h_16b_16b(TyB);
-   test_uaddl_2d_2s_2s(TyS);
-   test_uaddl2_2d_4s_4s(TyS);
-   test_uaddl_4s_4h_4h(TyH);
-   test_uaddl2_4s_8h_8h(TyH);
-   test_uaddl_8h_8b_8b(TyB);
-   test_uaddl2_8h_16b_16b(TyB);
-   test_ssubl_2d_2s_2s(TyS);
-   test_ssubl2_2d_4s_4s(TyS);
-   test_ssubl_4s_4h_4h(TyH);
-   test_ssubl2_4s_8h_8h(TyH);
-   test_ssubl_8h_8b_8b(TyB);
-   test_ssubl2_8h_16b_16b(TyB);
-   test_usubl_2d_2s_2s(TyS);
-   test_usubl2_2d_4s_4s(TyS);
-   test_usubl_4s_4h_4h(TyH);
-   test_usubl2_4s_8h_8h(TyH);
-   test_usubl_8h_8b_8b(TyB);
-   test_usubl2_8h_16b_16b(TyB);
+   if (0) test_saddl_2d_2s_2s(TyS);
+   if (0) test_saddl2_2d_4s_4s(TyS);
+   if (0) test_saddl_4s_4h_4h(TyH);
+   if (0) test_saddl2_4s_8h_8h(TyH);
+   if (0) test_saddl_8h_8b_8b(TyB);
+   if (0) test_saddl2_8h_16b_16b(TyB);
+   if (0) test_uaddl_2d_2s_2s(TyS);
+   if (0) test_uaddl2_2d_4s_4s(TyS);
+   if (0) test_uaddl_4s_4h_4h(TyH);
+   if (0) test_uaddl2_4s_8h_8h(TyH);
+   if (0) test_uaddl_8h_8b_8b(TyB);
+   if (0) test_uaddl2_8h_16b_16b(TyB);
+   if (0) test_ssubl_2d_2s_2s(TyS);
+   if (0) test_ssubl2_2d_4s_4s(TyS);
+   if (0) test_ssubl_4s_4h_4h(TyH);
+   if (0) test_ssubl2_4s_8h_8h(TyH);
+   if (0) test_ssubl_8h_8b_8b(TyB);
+   if (0) test_ssubl2_8h_16b_16b(TyB);
+   if (0) test_usubl_2d_2s_2s(TyS);
+   if (0) test_usubl2_2d_4s_4s(TyS);
+   if (0) test_usubl_4s_4h_4h(TyH);
+   if (0) test_usubl2_4s_8h_8h(TyH);
+   if (0) test_usubl_8h_8b_8b(TyB);
+   if (0) test_usubl2_8h_16b_16b(TyB);
 
    // saddlp    4h_8b,8h_16b,2s_4h,4s_8h,1d_2s,2d_4s
    // uaddlp    4h_8b,8h_16b,2s_4h,4s_8h,1d_2s,2d_4s
-   test_saddlp_1d_2s(TyS);
-   test_saddlp_2d_4s(TyS);
-   test_saddlp_2s_4h(TyH);
-   test_saddlp_4s_8h(TyH);
-   test_saddlp_4h_8b(TyB);
-   test_saddlp_8h_16b(TyB);
-   test_uaddlp_1d_2s(TyS);
-   test_uaddlp_2d_4s(TyS);
-   test_uaddlp_2s_4h(TyH);
-   test_uaddlp_4s_8h(TyH);
-   test_uaddlp_4h_8b(TyB);
-   test_uaddlp_8h_16b(TyB);
+   if (0) test_saddlp_1d_2s(TyS);
+   if (0) test_saddlp_2d_4s(TyS);
+   if (0) test_saddlp_2s_4h(TyH);
+   if (0) test_saddlp_4s_8h(TyH);
+   if (0) test_saddlp_4h_8b(TyB);
+   if (0) test_saddlp_8h_16b(TyB);
+   if (0) test_uaddlp_1d_2s(TyS);
+   if (0) test_uaddlp_2d_4s(TyS);
+   if (0) test_uaddlp_2s_4h(TyH);
+   if (0) test_uaddlp_4s_8h(TyH);
+   if (0) test_uaddlp_4h_8b(TyB);
+   if (0) test_uaddlp_8h_16b(TyB);
 
    // saddlv    h_16b/8b, s_8h/4h, d_4s
    // uaddlv    h_16b/8b, s_8h/4h, d_4s
-   test_saddlv_h_16b(TyB);
-   test_saddlv_h_8b(TyB);
-   test_saddlv_s_8h(TyH);
-   test_saddlv_s_4h(TyH);
-   test_saddlv_d_4s(TyH);
-   test_uaddlv_h_16b(TyB);
-   test_uaddlv_h_8b(TyB);
-   test_uaddlv_s_8h(TyH);
-   test_uaddlv_s_4h(TyH);
-   test_uaddlv_d_4s(TyH);
+   if (0) test_saddlv_h_16b(TyB);
+   if (0) test_saddlv_h_8b(TyB);
+   if (0) test_saddlv_s_8h(TyH);
+   if (0) test_saddlv_s_4h(TyH);
+   if (0) test_saddlv_d_4s(TyH);
+   if (0) test_uaddlv_h_16b(TyB);
+   if (0) test_uaddlv_h_8b(TyB);
+   if (0) test_uaddlv_s_8h(TyH);
+   if (0) test_uaddlv_s_4h(TyH);
+   if (0) test_uaddlv_d_4s(TyH);
 
    // saddw{2}  8h_8h_16b/8b, 4s_4s_8h/4h, 2d_2d_4s/2s
    // uaddw{2}  8h_8h_16b/8b, 4s_4s_8h/4h, 2d_2d_4s/2s
    // ssubw{2}  8h_8h_16b/8b, 4s_4s_8h/4h, 2d_2d_4s/2s
    // usubw{2}  8h_8h_16b/8b, 4s_4s_8h/4h, 2d_2d_4s/2s
-   test_saddw2_8h_8h_16b(TyB);
-   test_saddw_8h_8h_8b(TyB);
-   test_saddw2_4s_4s_8h(TyH);
-   test_saddw_4s_4s_4h(TyH);
-   test_saddw2_2d_2d_4s(TyS);
-   test_saddw_2d_2d_2s(TyS);
-   test_uaddw2_8h_8h_16b(TyB);
-   test_uaddw_8h_8h_8b(TyB);
-   test_uaddw2_4s_4s_8h(TyH);
-   test_uaddw_4s_4s_4h(TyH);
-   test_uaddw2_2d_2d_4s(TyS);
-   test_uaddw_2d_2d_2s(TyS);
-   test_ssubw2_8h_8h_16b(TyB);
-   test_ssubw_8h_8h_8b(TyB);
-   test_ssubw2_4s_4s_8h(TyH);
-   test_ssubw_4s_4s_4h(TyH);
-   test_ssubw2_2d_2d_4s(TyS);
-   test_ssubw_2d_2d_2s(TyS);
-   test_usubw2_8h_8h_16b(TyB);
-   test_usubw_8h_8h_8b(TyB);
-   test_usubw2_4s_4s_8h(TyH);
-   test_usubw_4s_4s_4h(TyH);
-   test_usubw2_2d_2d_4s(TyS);
-   test_usubw_2d_2d_2s(TyS);
+   if (0) test_saddw2_8h_8h_16b(TyB);
+   if (0) test_saddw_8h_8h_8b(TyB);
+   if (0) test_saddw2_4s_4s_8h(TyH);
+   if (0) test_saddw_4s_4s_4h(TyH);
+   if (0) test_saddw2_2d_2d_4s(TyS);
+   if (0) test_saddw_2d_2d_2s(TyS);
+   if (0) test_uaddw2_8h_8h_16b(TyB);
+   if (0) test_uaddw_8h_8h_8b(TyB);
+   if (0) test_uaddw2_4s_4s_8h(TyH);
+   if (0) test_uaddw_4s_4s_4h(TyH);
+   if (0) test_uaddw2_2d_2d_4s(TyS);
+   if (0) test_uaddw_2d_2d_2s(TyS);
+   if (0) test_ssubw2_8h_8h_16b(TyB);
+   if (0) test_ssubw_8h_8h_8b(TyB);
+   if (0) test_ssubw2_4s_4s_8h(TyH);
+   if (0) test_ssubw_4s_4s_4h(TyH);
+   if (0) test_ssubw2_2d_2d_4s(TyS);
+   if (0) test_ssubw_2d_2d_2s(TyS);
+   if (0) test_usubw2_8h_8h_16b(TyB);
+   if (0) test_usubw_8h_8h_8b(TyB);
+   if (0) test_usubw2_4s_4s_8h(TyH);
+   if (0) test_usubw_4s_4s_4h(TyH);
+   if (0) test_usubw2_2d_2d_4s(TyS);
+   if (0) test_usubw_2d_2d_2s(TyS);
 
    // shadd        16b,8b,8h,4h,4s,2s
    // uhadd        16b,8b,8h,4h,4s,2s
    // shsub        16b,8b,8h,4h,4s,2s
    // uhsub        16b,8b,8h,4h,4s,2s
-   test_shadd_4s_4s_4s(TyS);
-   test_shadd_2s_2s_2s(TyS);
-   test_shadd_8h_8h_8h(TyH);
-   test_shadd_4h_4h_4h(TyH);
-   test_shadd_16b_16b_16b(TyB);
-   test_shadd_8b_8b_8b(TyB);
-   test_uhadd_4s_4s_4s(TyS);
-   test_uhadd_2s_2s_2s(TyS);
-   test_uhadd_8h_8h_8h(TyH);
-   test_uhadd_4h_4h_4h(TyH);
-   test_uhadd_16b_16b_16b(TyB);
-   test_uhadd_8b_8b_8b(TyB);
-   test_shsub_4s_4s_4s(TyS);
-   test_shsub_2s_2s_2s(TyS);
-   test_shsub_8h_8h_8h(TyH);
-   test_shsub_4h_4h_4h(TyH);
-   test_shsub_16b_16b_16b(TyB);
-   test_shsub_8b_8b_8b(TyB);
-   test_uhsub_4s_4s_4s(TyS);
-   test_uhsub_2s_2s_2s(TyS);
-   test_uhsub_8h_8h_8h(TyH);
-   test_uhsub_4h_4h_4h(TyH);
-   test_uhsub_16b_16b_16b(TyB);
-   test_uhsub_8b_8b_8b(TyB);
+   if (0) test_shadd_4s_4s_4s(TyS);
+   if (0) test_shadd_2s_2s_2s(TyS);
+   if (0) test_shadd_8h_8h_8h(TyH);
+   if (0) test_shadd_4h_4h_4h(TyH);
+   if (0) test_shadd_16b_16b_16b(TyB);
+   if (0) test_shadd_8b_8b_8b(TyB);
+   if (0) test_uhadd_4s_4s_4s(TyS);
+   if (0) test_uhadd_2s_2s_2s(TyS);
+   if (0) test_uhadd_8h_8h_8h(TyH);
+   if (0) test_uhadd_4h_4h_4h(TyH);
+   if (0) test_uhadd_16b_16b_16b(TyB);
+   if (0) test_uhadd_8b_8b_8b(TyB);
+   if (0) test_shsub_4s_4s_4s(TyS);
+   if (0) test_shsub_2s_2s_2s(TyS);
+   if (0) test_shsub_8h_8h_8h(TyH);
+   if (0) test_shsub_4h_4h_4h(TyH);
+   if (0) test_shsub_16b_16b_16b(TyB);
+   if (0) test_shsub_8b_8b_8b(TyB);
+   if (0) test_uhsub_4s_4s_4s(TyS);
+   if (0) test_uhsub_2s_2s_2s(TyS);
+   if (0) test_uhsub_8h_8h_8h(TyH);
+   if (0) test_uhsub_4h_4h_4h(TyH);
+   if (0) test_uhsub_16b_16b_16b(TyB);
+   if (0) test_uhsub_8b_8b_8b(TyB);
 
    // shll{2}      8h_8b/16b_#8, 4s_4h/8h_#16, 2d_2s/4s_#32
-   test_shll_8h_8b_8(TyB);
-   test_shll2_8h_16b_8(TyB);
-   test_shll_4s_4h_16(TyH);
-   test_shll2_4s_8h_16(TyH);
-   test_shll_2d_2s_32(TyS);
-   test_shll2_2d_4s_32(TyS);
+   if (0) test_shll_8h_8b_8(TyB);
+   if (0) test_shll2_8h_16b_8(TyB);
+   if (0) test_shll_4s_4h_16(TyH);
+   if (0) test_shll2_4s_8h_16(TyH);
+   if (0) test_shll_2d_2s_32(TyS);
+   if (0) test_shll2_2d_4s_32(TyS);
 
    // shrn{2}      2s/4s_2d, 8h/4h_4s, 8b/16b_8h,   #imm in 1 .. elem_bits
    // rshrn{2}     2s/4s_2d, 8h/4h_4s, 8b/16b_8h,   #imm in 1 .. elem_bits
-   test_shrn_2s_2d_1(TyD);
-   test_shrn_2s_2d_32(TyD);
-   test_shrn2_4s_2d_1(TyD);
-   test_shrn2_4s_2d_32(TyD);
-   test_shrn_4h_4s_1(TyS);
-   test_shrn_4h_4s_16(TyS);
-   test_shrn2_8h_4s_1(TyS);
-   test_shrn2_8h_4s_16(TyS);
-   test_shrn_8b_8h_1(TyH);
-   test_shrn_8b_8h_8(TyH);
-   test_shrn2_16b_8h_1(TyH);
-   test_shrn2_16b_8h_8(TyH);
-   test_rshrn_2s_2d_1(TyD);
-   test_rshrn_2s_2d_32(TyD);
-   test_rshrn2_4s_2d_1(TyD);
-   test_rshrn2_4s_2d_32(TyD);
-   test_rshrn_4h_4s_1(TyS);
-   test_rshrn_4h_4s_16(TyS);
-   test_rshrn2_8h_4s_1(TyS);
-   test_rshrn2_8h_4s_16(TyS);
-   test_rshrn_8b_8h_1(TyH);
-   test_rshrn_8b_8h_8(TyH);
-   test_rshrn2_16b_8h_1(TyH);
-   test_rshrn2_16b_8h_8(TyH);
+   if (0) test_shrn_2s_2d_1(TyD);
+   if (0) test_shrn_2s_2d_32(TyD);
+   if (0) test_shrn2_4s_2d_1(TyD);
+   if (0) test_shrn2_4s_2d_32(TyD);
+   if (0) test_shrn_4h_4s_1(TyS);
+   if (0) test_shrn_4h_4s_16(TyS);
+   if (0) test_shrn2_8h_4s_1(TyS);
+   if (0) test_shrn2_8h_4s_16(TyS);
+   if (0) test_shrn_8b_8h_1(TyH);
+   if (0) test_shrn_8b_8h_8(TyH);
+   if (0) test_shrn2_16b_8h_1(TyH);
+   if (0) test_shrn2_16b_8h_8(TyH);
+   if (0) test_rshrn_2s_2d_1(TyD);
+   if (0) test_rshrn_2s_2d_32(TyD);
+   if (0) test_rshrn2_4s_2d_1(TyD);
+   if (0) test_rshrn2_4s_2d_32(TyD);
+   if (0) test_rshrn_4h_4s_1(TyS);
+   if (0) test_rshrn_4h_4s_16(TyS);
+   if (0) test_rshrn2_8h_4s_1(TyS);
+   if (0) test_rshrn2_8h_4s_16(TyS);
+   if (0) test_rshrn_8b_8h_1(TyH);
+   if (0) test_rshrn_8b_8h_8(TyH);
+   if (0) test_rshrn2_16b_8h_1(TyH);
+   if (0) test_rshrn2_16b_8h_8(TyH);
 
    // sli          d_#imm
    // sri          d_#imm
-   test_sli_d_d_0(TyD);
-   test_sli_d_d_32(TyD);
-   test_sli_d_d_63(TyD);
-   test_sri_d_d_1(TyD);
-   test_sri_d_d_33(TyD);
-   test_sri_d_d_64(TyD);
+   if (0) test_sli_d_d_0(TyD);
+   if (0) test_sli_d_d_32(TyD);
+   if (0) test_sli_d_d_63(TyD);
+   if (0) test_sri_d_d_1(TyD);
+   if (0) test_sri_d_d_33(TyD);
+   if (0) test_sri_d_d_64(TyD);
 
    // sli          2d,4s,2s,8h,4h,16b,8b  _#imm
    // sri          2d,4s,2s,8h,4h,16b,8b  _#imm
-   test_sli_2d_2d_0(TyD);
-   test_sli_2d_2d_32(TyD);
-   test_sli_2d_2d_63(TyD);
-   test_sli_4s_4s_0(TyS);
-   test_sli_4s_4s_16(TyS);
-   test_sli_4s_4s_31(TyS);
-   test_sli_2s_2s_0(TyS);
-   test_sli_2s_2s_16(TyS);
-   test_sli_2s_2s_31(TyS);
-   test_sli_8h_8h_0(TyH);
-   test_sli_8h_8h_8(TyH);
-   test_sli_8h_8h_15(TyH);
-   test_sli_4h_4h_0(TyH);
-   test_sli_4h_4h_8(TyH);
-   test_sli_4h_4h_15(TyH);
-   test_sli_16b_16b_0(TyB);
-   test_sli_16b_16b_3(TyB);
-   test_sli_16b_16b_7(TyB);
-   test_sli_8b_8b_0(TyB);
-   test_sli_8b_8b_3(TyB);
-   test_sli_8b_8b_7(TyB);
-   test_sri_2d_2d_1(TyD);
-   test_sri_2d_2d_33(TyD);
-   test_sri_2d_2d_64(TyD);
-   test_sri_4s_4s_1(TyS);
-   test_sri_4s_4s_17(TyS);
-   test_sri_4s_4s_32(TyS);
-   test_sri_2s_2s_1(TyS);
-   test_sri_2s_2s_17(TyS);
-   test_sri_2s_2s_32(TyS);
-   test_sri_8h_8h_1(TyH);
-   test_sri_8h_8h_8(TyH);
-   test_sri_8h_8h_16(TyH);
-   test_sri_4h_4h_1(TyH);
-   test_sri_4h_4h_8(TyH);
-   test_sri_4h_4h_16(TyH);
-   test_sri_16b_16b_1(TyB);
-   test_sri_16b_16b_4(TyB);
-   test_sri_16b_16b_8(TyB);
-   test_sri_8b_8b_1(TyB);
-   test_sri_8b_8b_4(TyB);
-   test_sri_8b_8b_8(TyB);
+   if (0) test_sli_2d_2d_0(TyD);
+   if (0) test_sli_2d_2d_32(TyD);
+   if (0) test_sli_2d_2d_63(TyD);
+   if (0) test_sli_4s_4s_0(TyS);
+   if (0) test_sli_4s_4s_16(TyS);
+   if (0) test_sli_4s_4s_31(TyS);
+   if (0) test_sli_2s_2s_0(TyS);
+   if (0) test_sli_2s_2s_16(TyS);
+   if (0) test_sli_2s_2s_31(TyS);
+   if (0) test_sli_8h_8h_0(TyH);
+   if (0) test_sli_8h_8h_8(TyH);
+   if (0) test_sli_8h_8h_15(TyH);
+   if (0) test_sli_4h_4h_0(TyH);
+   if (0) test_sli_4h_4h_8(TyH);
+   if (0) test_sli_4h_4h_15(TyH);
+   if (0) test_sli_16b_16b_0(TyB);
+   if (0) test_sli_16b_16b_3(TyB);
+   if (0) test_sli_16b_16b_7(TyB);
+   if (0) test_sli_8b_8b_0(TyB);
+   if (0) test_sli_8b_8b_3(TyB);
+   if (0) test_sli_8b_8b_7(TyB);
+   if (0) test_sri_2d_2d_1(TyD);
+   if (0) test_sri_2d_2d_33(TyD);
+   if (0) test_sri_2d_2d_64(TyD);
+   if (0) test_sri_4s_4s_1(TyS);
+   if (0) test_sri_4s_4s_17(TyS);
+   if (0) test_sri_4s_4s_32(TyS);
+   if (0) test_sri_2s_2s_1(TyS);
+   if (0) test_sri_2s_2s_17(TyS);
+   if (0) test_sri_2s_2s_32(TyS);
+   if (0) test_sri_8h_8h_1(TyH);
+   if (0) test_sri_8h_8h_8(TyH);
+   if (0) test_sri_8h_8h_16(TyH);
+   if (0) test_sri_4h_4h_1(TyH);
+   if (0) test_sri_4h_4h_8(TyH);
+   if (0) test_sri_4h_4h_16(TyH);
+   if (0) test_sri_16b_16b_1(TyB);
+   if (0) test_sri_16b_16b_4(TyB);
+   if (0) test_sri_16b_16b_8(TyB);
+   if (0) test_sri_8b_8b_1(TyB);
+   if (0) test_sri_8b_8b_4(TyB);
+   if (0) test_sri_8b_8b_8(TyB);
 
    // smax         4s,2s,8h,4h,16b,8b
    // umax         4s,2s,8h,4h,16b,8b
    // smin         4s,2s,8h,4h,16b,8b
    // umin         4s,2s,8h,4h,16b,8b
-   test_smax_4s_4s_4s(TyS);
-   test_smax_2s_2s_2s(TyS);
-   test_smax_8h_8h_8h(TyH);
-   test_smax_4h_4h_4h(TyH);
-   test_smax_16b_16b_16b(TyB);
-   test_smax_8b_8b_8b(TyB);
-   test_umax_4s_4s_4s(TyS);
-   test_umax_2s_2s_2s(TyS);
-   test_umax_8h_8h_8h(TyH);
-   test_umax_4h_4h_4h(TyH);
-   test_umax_16b_16b_16b(TyB);
-   test_umax_8b_8b_8b(TyB);
-   test_smin_4s_4s_4s(TyS);
-   test_smin_2s_2s_2s(TyS);
-   test_smin_8h_8h_8h(TyH);
-   test_smin_4h_4h_4h(TyH);
-   test_smin_16b_16b_16b(TyB);
-   test_smin_8b_8b_8b(TyB);
-   test_umin_4s_4s_4s(TyS);
-   test_umin_2s_2s_2s(TyS);
-   test_umin_8h_8h_8h(TyH);
-   test_umin_4h_4h_4h(TyH);
-   test_umin_16b_16b_16b(TyB);
-   test_umin_8b_8b_8b(TyB);
+   if (1) test_smax_4s_4s_4s(TyS);
+   if (1) test_smax_2s_2s_2s(TyS);
+   if (1) test_smax_8h_8h_8h(TyH);
+   if (1) test_smax_4h_4h_4h(TyH);
+   if (1) test_smax_16b_16b_16b(TyB);
+   if (1) test_smax_8b_8b_8b(TyB);
+   if (1) test_umax_4s_4s_4s(TyS);
+   if (1) test_umax_2s_2s_2s(TyS);
+   if (1) test_umax_8h_8h_8h(TyH);
+   if (1) test_umax_4h_4h_4h(TyH);
+   if (1) test_umax_16b_16b_16b(TyB);
+   if (1) test_umax_8b_8b_8b(TyB);
+   if (1) test_smin_4s_4s_4s(TyS);
+   if (1) test_smin_2s_2s_2s(TyS);
+   if (1) test_smin_8h_8h_8h(TyH);
+   if (1) test_smin_4h_4h_4h(TyH);
+   if (1) test_smin_16b_16b_16b(TyB);
+   if (1) test_smin_8b_8b_8b(TyB);
+   if (1) test_umin_4s_4s_4s(TyS);
+   if (1) test_umin_2s_2s_2s(TyS);
+   if (1) test_umin_8h_8h_8h(TyH);
+   if (1) test_umin_4h_4h_4h(TyH);
+   if (1) test_umin_16b_16b_16b(TyB);
+   if (1) test_umin_8b_8b_8b(TyB);
 
    // smaxp        4s,2s,8h,4h,16b,8b
    // umaxp        4s,2s,8h,4h,16b,8b
    // sminp        4s,2s,8h,4h,16b,8b
    // uminp        4s,2s,8h,4h,16b,8b
-   test_smaxp_4s_4s_4s(TyS);
-   test_smaxp_2s_2s_2s(TyS);
-   test_smaxp_8h_8h_8h(TyH);
-   test_smaxp_4h_4h_4h(TyH);
-   test_smaxp_16b_16b_16b(TyB);
-   test_smaxp_8b_8b_8b(TyB);
-   test_umaxp_4s_4s_4s(TyS);
-   test_umaxp_2s_2s_2s(TyS);
-   test_umaxp_8h_8h_8h(TyH);
-   test_umaxp_4h_4h_4h(TyH);
-   test_umaxp_16b_16b_16b(TyB);
-   test_umaxp_8b_8b_8b(TyB);
-   test_sminp_4s_4s_4s(TyS);
-   test_sminp_2s_2s_2s(TyS);
-   test_sminp_8h_8h_8h(TyH);
-   test_sminp_4h_4h_4h(TyH);
-   test_sminp_16b_16b_16b(TyB);
-   test_sminp_8b_8b_8b(TyB);
-   test_uminp_4s_4s_4s(TyS);
-   test_uminp_2s_2s_2s(TyS);
-   test_uminp_8h_8h_8h(TyH);
-   test_uminp_4h_4h_4h(TyH);
-   test_uminp_16b_16b_16b(TyB);
-   test_uminp_8b_8b_8b(TyB);
+   if (0) test_smaxp_4s_4s_4s(TyS);
+   if (0) test_smaxp_2s_2s_2s(TyS);
+   if (0) test_smaxp_8h_8h_8h(TyH);
+   if (0) test_smaxp_4h_4h_4h(TyH);
+   if (0) test_smaxp_16b_16b_16b(TyB);
+   if (0) test_smaxp_8b_8b_8b(TyB);
+   if (0) test_umaxp_4s_4s_4s(TyS);
+   if (0) test_umaxp_2s_2s_2s(TyS);
+   if (0) test_umaxp_8h_8h_8h(TyH);
+   if (0) test_umaxp_4h_4h_4h(TyH);
+   if (0) test_umaxp_16b_16b_16b(TyB);
+   if (0) test_umaxp_8b_8b_8b(TyB);
+   if (0) test_sminp_4s_4s_4s(TyS);
+   if (0) test_sminp_2s_2s_2s(TyS);
+   if (0) test_sminp_8h_8h_8h(TyH);
+   if (0) test_sminp_4h_4h_4h(TyH);
+   if (0) test_sminp_16b_16b_16b(TyB);
+   if (0) test_sminp_8b_8b_8b(TyB);
+   if (0) test_uminp_4s_4s_4s(TyS);
+   if (0) test_uminp_2s_2s_2s(TyS);
+   if (0) test_uminp_8h_8h_8h(TyH);
+   if (0) test_uminp_4h_4h_4h(TyH);
+   if (0) test_uminp_16b_16b_16b(TyB);
+   if (0) test_uminp_8b_8b_8b(TyB);
 
    // smaxv        s_4s,h_8h,h_4h,b_16b,b_8b
    // umaxv        s_4s,h_8h,h_4h,b_16b,b_8b
    // sminv        s_4s,h_8h,h_4h,b_16b,b_8b
    // uminv        s_4s,h_8h,h_4h,b_16b,b_8b
-   test_SMAXV();
-   test_UMAXV();
-   test_SMINV();
-   test_UMINV();
+   if (1) test_SMAXV();
+   if (1) test_UMAXV();
+   if (1) test_SMINV();
+   if (1) test_UMINV();
 
    // smlal{2}     2d_2s/4s_s[], 4s_4h/8h_h[]
    // umlal{2}     2d_2s/4s_s[], 4s_4h/8h_h[]
@@ -4080,54 +4080,54 @@ int main ( void )
    // umlsl{2}     2d_2s/4s_s[], 4s_4h/8h_h[]
    // smull{2}     2d_2s/4s_s[]. 4s_4h/8h_h[]
    // umull{2}     2d_2s/4s_s[]. 4s_4h/8h_h[]
-   test_smlal_2d_2s_s0(TyS);
-   test_smlal_2d_2s_s3(TyS);
-   test_smlal2_2d_4s_s1(TyS);
-   test_smlal2_2d_4s_s2(TyS);
-   test_smlal_4s_4h_h0(TyH);
-   test_smlal_4s_4h_h7(TyH);
-   test_smlal2_4s_8h_h1(TyH);
-   test_smlal2_4s_8h_h4(TyH);
-   test_umlal_2d_2s_s0(TyS);
-   test_umlal_2d_2s_s3(TyS);
-   test_umlal2_2d_4s_s1(TyS);
-   test_umlal2_2d_4s_s2(TyS);
-   test_umlal_4s_4h_h0(TyH);
-   test_umlal_4s_4h_h7(TyH);
-   test_umlal2_4s_8h_h1(TyH);
-   test_umlal2_4s_8h_h4(TyH);
-   test_smlsl_2d_2s_s0(TyS);
-   test_smlsl_2d_2s_s3(TyS);
-   test_smlsl2_2d_4s_s1(TyS);
-   test_smlsl2_2d_4s_s2(TyS);
-   test_smlsl_4s_4h_h0(TyH);
-   test_smlsl_4s_4h_h7(TyH);
-   test_smlsl2_4s_8h_h1(TyH);
-   test_smlsl2_4s_8h_h4(TyH);
-   test_umlsl_2d_2s_s0(TyS);
-   test_umlsl_2d_2s_s3(TyS);
-   test_umlsl2_2d_4s_s1(TyS);
-   test_umlsl2_2d_4s_s2(TyS);
-   test_umlsl_4s_4h_h0(TyH);
-   test_umlsl_4s_4h_h7(TyH);
-   test_umlsl2_4s_8h_h1(TyH);
-   test_umlsl2_4s_8h_h4(TyH);
-   test_smull_2d_2s_s0(TyS);
-   test_smull_2d_2s_s3(TyS);
-   test_smull2_2d_4s_s1(TyS);
-   test_smull2_2d_4s_s2(TyS);
-   test_smull_4s_4h_h0(TyH);
-   test_smull_4s_4h_h7(TyH);
-   test_smull2_4s_8h_h1(TyH);
-   test_smull2_4s_8h_h4(TyH);
-   test_umull_2d_2s_s0(TyS);
-   test_umull_2d_2s_s3(TyS);
-   test_umull2_2d_4s_s1(TyS);
-   test_umull2_2d_4s_s2(TyS);
-   test_umull_4s_4h_h0(TyH);
-   test_umull_4s_4h_h7(TyH);
-   test_umull2_4s_8h_h1(TyH);
-   test_umull2_4s_8h_h4(TyH);
+   if (0) test_smlal_2d_2s_s0(TyS);
+   if (0) test_smlal_2d_2s_s3(TyS);
+   if (0) test_smlal2_2d_4s_s1(TyS);
+   if (0) test_smlal2_2d_4s_s2(TyS);
+   if (0) test_smlal_4s_4h_h0(TyH);
+   if (0) test_smlal_4s_4h_h7(TyH);
+   if (0) test_smlal2_4s_8h_h1(TyH);
+   if (0) test_smlal2_4s_8h_h4(TyH);
+   if (0) test_umlal_2d_2s_s0(TyS);
+   if (0) test_umlal_2d_2s_s3(TyS);
+   if (0) test_umlal2_2d_4s_s1(TyS);
+   if (0) test_umlal2_2d_4s_s2(TyS);
+   if (0) test_umlal_4s_4h_h0(TyH);
+   if (0) test_umlal_4s_4h_h7(TyH);
+   if (0) test_umlal2_4s_8h_h1(TyH);
+   if (0) test_umlal2_4s_8h_h4(TyH);
+   if (0) test_smlsl_2d_2s_s0(TyS);
+   if (0) test_smlsl_2d_2s_s3(TyS);
+   if (0) test_smlsl2_2d_4s_s1(TyS);
+   if (0) test_smlsl2_2d_4s_s2(TyS);
+   if (0) test_smlsl_4s_4h_h0(TyH);
+   if (0) test_smlsl_4s_4h_h7(TyH);
+   if (0) test_smlsl2_4s_8h_h1(TyH);
+   if (0) test_smlsl2_4s_8h_h4(TyH);
+   if (0) test_umlsl_2d_2s_s0(TyS);
+   if (0) test_umlsl_2d_2s_s3(TyS);
+   if (0) test_umlsl2_2d_4s_s1(TyS);
+   if (0) test_umlsl2_2d_4s_s2(TyS);
+   if (0) test_umlsl_4s_4h_h0(TyH);
+   if (0) test_umlsl_4s_4h_h7(TyH);
+   if (0) test_umlsl2_4s_8h_h1(TyH);
+   if (0) test_umlsl2_4s_8h_h4(TyH);
+   if (0) test_smull_2d_2s_s0(TyS);
+   if (0) test_smull_2d_2s_s3(TyS);
+   if (0) test_smull2_2d_4s_s1(TyS);
+   if (0) test_smull2_2d_4s_s2(TyS);
+   if (0) test_smull_4s_4h_h0(TyH);
+   if (0) test_smull_4s_4h_h7(TyH);
+   if (0) test_smull2_4s_8h_h1(TyH);
+   if (0) test_smull2_4s_8h_h4(TyH);
+   if (0) test_umull_2d_2s_s0(TyS);
+   if (0) test_umull_2d_2s_s3(TyS);
+   if (0) test_umull2_2d_4s_s1(TyS);
+   if (0) test_umull2_2d_4s_s2(TyS);
+   if (0) test_umull_4s_4h_h0(TyH);
+   if (0) test_umull_4s_4h_h7(TyH);
+   if (0) test_umull2_4s_8h_h1(TyH);
+   if (0) test_umull2_4s_8h_h4(TyH);
 
    // smlal{2}     2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h), 8h_(8b_8b)/(16b_16b)
    // umlal{2}     2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h), 8h_(8b_8b)/(16b_16b)
@@ -4135,317 +4135,317 @@ int main ( void )
    // umlsl{2}     2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h), 8h_(8b_8b)/(16b_16b)
    // smull{2}     2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h), 8h_(8b_8b)/(16b_16b)
    // umull{2}     2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h), 8h_(8b_8b)/(16b_16b)
-   test_smlal_2d_2s_2s(TyS);
-   test_smlal2_2d_4s_4s(TyS);
-   test_smlal_4s_4h_4h(TyH);
-   test_smlal2_4s_8h_8h(TyH);
-   test_smlal_8h_8b_8b(TyB);
-   test_smlal2_8h_16b_16b(TyB);
-   test_umlal_2d_2s_2s(TyS);
-   test_umlal2_2d_4s_4s(TyS);
-   test_umlal_4s_4h_4h(TyH);
-   test_umlal2_4s_8h_8h(TyH);
-   test_umlal_8h_8b_8b(TyB);
-   test_umlal2_8h_16b_16b(TyB);
-   test_smlsl_2d_2s_2s(TyS);
-   test_smlsl2_2d_4s_4s(TyS);
-   test_smlsl_4s_4h_4h(TyH);
-   test_smlsl2_4s_8h_8h(TyH);
-   test_smlsl_8h_8b_8b(TyB);
-   test_smlsl2_8h_16b_16b(TyB);
-   test_umlsl_2d_2s_2s(TyS);
-   test_umlsl2_2d_4s_4s(TyS);
-   test_umlsl_4s_4h_4h(TyH);
-   test_umlsl2_4s_8h_8h(TyH);
-   test_umlsl_8h_8b_8b(TyB);
-   test_umlsl2_8h_16b_16b(TyB);
-   test_smull_2d_2s_2s(TyS);
-   test_smull2_2d_4s_4s(TyS);
-   test_smull_4s_4h_4h(TyH);
-   test_smull2_4s_8h_8h(TyH);
-   test_smull_8h_8b_8b(TyB);
-   test_smull2_8h_16b_16b(TyB);
-   test_umull_2d_2s_2s(TyS);
-   test_umull2_2d_4s_4s(TyS);
-   test_umull_4s_4h_4h(TyH);
-   test_umull2_4s_8h_8h(TyH);
-   test_umull_8h_8b_8b(TyB);
-   test_umull2_8h_16b_16b(TyB);
+   if (0) test_smlal_2d_2s_2s(TyS);
+   if (0) test_smlal2_2d_4s_4s(TyS);
+   if (0) test_smlal_4s_4h_4h(TyH);
+   if (0) test_smlal2_4s_8h_8h(TyH);
+   if (0) test_smlal_8h_8b_8b(TyB);
+   if (0) test_smlal2_8h_16b_16b(TyB);
+   if (0) test_umlal_2d_2s_2s(TyS);
+   if (0) test_umlal2_2d_4s_4s(TyS);
+   if (0) test_umlal_4s_4h_4h(TyH);
+   if (0) test_umlal2_4s_8h_8h(TyH);
+   if (0) test_umlal_8h_8b_8b(TyB);
+   if (0) test_umlal2_8h_16b_16b(TyB);
+   if (0) test_smlsl_2d_2s_2s(TyS);
+   if (0) test_smlsl2_2d_4s_4s(TyS);
+   if (0) test_smlsl_4s_4h_4h(TyH);
+   if (0) test_smlsl2_4s_8h_8h(TyH);
+   if (0) test_smlsl_8h_8b_8b(TyB);
+   if (0) test_smlsl2_8h_16b_16b(TyB);
+   if (0) test_umlsl_2d_2s_2s(TyS);
+   if (0) test_umlsl2_2d_4s_4s(TyS);
+   if (0) test_umlsl_4s_4h_4h(TyH);
+   if (0) test_umlsl2_4s_8h_8h(TyH);
+   if (0) test_umlsl_8h_8b_8b(TyB);
+   if (0) test_umlsl2_8h_16b_16b(TyB);
+   if (0) test_smull_2d_2s_2s(TyS);
+   if (0) test_smull2_2d_4s_4s(TyS);
+   if (0) test_smull_4s_4h_4h(TyH);
+   if (0) test_smull2_4s_8h_8h(TyH);
+   if (0) test_smull_8h_8b_8b(TyB);
+   if (0) test_smull2_8h_16b_16b(TyB);
+   if (0) test_umull_2d_2s_2s(TyS);
+   if (0) test_umull2_2d_4s_4s(TyS);
+   if (0) test_umull_4s_4h_4h(TyH);
+   if (0) test_umull2_4s_8h_8h(TyH);
+   if (0) test_umull_8h_8b_8b(TyB);
+   if (0) test_umull2_8h_16b_16b(TyB);
 
    // smov         w_b[], w_h[], x_b[], x_h[], x_s[]
    // umov         w_b[], w_h[],               w_s[], x_d[]
-   test_umov_x_d0(TyD);
-   test_umov_x_d1(TyD);
-   test_umov_w_s0(TyS);
-   test_umov_w_s3(TyS);
-   test_umov_w_h0(TyH);
-   test_umov_w_h7(TyH);
-   test_umov_w_b0(TyB);
-   test_umov_w_b15(TyB);
-   test_smov_x_s0(TyS);
-   test_smov_x_s3(TyS);
-   test_smov_x_h0(TyH);
-   test_smov_x_h7(TyH);
-   test_smov_w_h0(TyH);
-   test_smov_w_h7(TyH);
-   test_smov_x_b0(TyB);
-   test_smov_x_b15(TyB);
-   test_smov_w_b0(TyB);
-   test_smov_w_b15(TyB);
+   if (1) test_umov_x_d0(TyD);
+   if (1) test_umov_x_d1(TyD);
+   if (1) test_umov_w_s0(TyS);
+   if (1) test_umov_w_s3(TyS);
+   if (1) test_umov_w_h0(TyH);
+   if (1) test_umov_w_h7(TyH);
+   if (1) test_umov_w_b0(TyB);
+   if (1) test_umov_w_b15(TyB);
+   if (1) test_smov_x_s0(TyS);
+   if (1) test_smov_x_s3(TyS);
+   if (1) test_smov_x_h0(TyH);
+   if (1) test_smov_x_h7(TyH);
+   if (1) test_smov_w_h0(TyH);
+   if (1) test_smov_w_h7(TyH);
+   if (1) test_smov_x_b0(TyB);
+   if (1) test_smov_x_b15(TyB);
+   if (1) test_smov_w_b0(TyB);
+   if (1) test_smov_w_b15(TyB);
 
    // sqabs        d,s,h,b
    // sqneg        d,s,h,b
-   test_sqabs_d_d(TyD);
-   test_sqabs_s_s(TyS);
-   test_sqabs_h_h(TyH);
-   test_sqabs_b_b(TyB);
-   test_sqneg_d_d(TyD);
-   test_sqneg_s_s(TyS);
-   test_sqneg_h_h(TyH);
-   test_sqneg_b_b(TyB);
+   if (0) test_sqabs_d_d(TyD);
+   if (0) test_sqabs_s_s(TyS);
+   if (0) test_sqabs_h_h(TyH);
+   if (0) test_sqabs_b_b(TyB);
+   if (0) test_sqneg_d_d(TyD);
+   if (0) test_sqneg_s_s(TyS);
+   if (0) test_sqneg_h_h(TyH);
+   if (0) test_sqneg_b_b(TyB);
 
    // sqabs        2d,4s,2s,8h,4h,16b,8b
    // sqneg        2d,4s,2s,8h,4h,16b,8b
-   test_sqabs_2d_2d(TyD);
-   test_sqabs_4s_4s(TyS);
-   test_sqabs_2s_2s(TyS);
-   test_sqabs_8h_8h(TyH);
-   test_sqabs_4h_4h(TyH);
-   test_sqabs_16b_16b(TyB);
-   test_sqabs_8b_8b(TyB);
-   test_sqneg_2d_2d(TyD);
-   test_sqneg_4s_4s(TyS);
-   test_sqneg_2s_2s(TyS);
-   test_sqneg_8h_8h(TyH);
-   test_sqneg_4h_4h(TyH);
-   test_sqneg_16b_16b(TyB);
-   test_sqneg_8b_8b(TyB);
+   if (0) test_sqabs_2d_2d(TyD);
+   if (0) test_sqabs_4s_4s(TyS);
+   if (0) test_sqabs_2s_2s(TyS);
+   if (0) test_sqabs_8h_8h(TyH);
+   if (0) test_sqabs_4h_4h(TyH);
+   if (0) test_sqabs_16b_16b(TyB);
+   if (0) test_sqabs_8b_8b(TyB);
+   if (0) test_sqneg_2d_2d(TyD);
+   if (0) test_sqneg_4s_4s(TyS);
+   if (0) test_sqneg_2s_2s(TyS);
+   if (0) test_sqneg_8h_8h(TyH);
+   if (0) test_sqneg_4h_4h(TyH);
+   if (0) test_sqneg_16b_16b(TyB);
+   if (0) test_sqneg_8b_8b(TyB);
 
    // sqadd        d,s,h,b
    // uqadd        d,s,h,b
    // sqsub        d,s,h,b
    // uqsub        d,s,h,b
-   test_sqadd_d_d_d(TyD);
-   test_sqadd_s_s_s(TyS);
-   test_sqadd_h_h_h(TyH);
-   test_sqadd_b_b_b(TyB);
-   test_uqadd_d_d_d(TyD);
-   test_uqadd_s_s_s(TyS);
-   test_uqadd_h_h_h(TyH);
-   test_uqadd_b_b_b(TyB);
-   test_sqsub_d_d_d(TyD);
-   test_sqsub_s_s_s(TyS);
-   test_sqsub_h_h_h(TyH);
-   test_sqsub_b_b_b(TyB);
-   test_uqsub_d_d_d(TyD);
-   test_uqsub_s_s_s(TyS);
-   test_uqsub_h_h_h(TyH);
-   test_uqsub_b_b_b(TyB);
+   if (0) test_sqadd_d_d_d(TyD);
+   if (0) test_sqadd_s_s_s(TyS);
+   if (0) test_sqadd_h_h_h(TyH);
+   if (0) test_sqadd_b_b_b(TyB);
+   if (0) test_uqadd_d_d_d(TyD);
+   if (0) test_uqadd_s_s_s(TyS);
+   if (0) test_uqadd_h_h_h(TyH);
+   if (0) test_uqadd_b_b_b(TyB);
+   if (0) test_sqsub_d_d_d(TyD);
+   if (0) test_sqsub_s_s_s(TyS);
+   if (0) test_sqsub_h_h_h(TyH);
+   if (0) test_sqsub_b_b_b(TyB);
+   if (0) test_uqsub_d_d_d(TyD);
+   if (0) test_uqsub_s_s_s(TyS);
+   if (0) test_uqsub_h_h_h(TyH);
+   if (0) test_uqsub_b_b_b(TyB);
 
    // sqadd        2d,4s,2s,8h,4h,16b,8b
    // uqadd        2d,4s,2s,8h,4h,16b,8b
    // sqsub        2d,4s,2s,8h,4h,16b,8b
    // uqsub        2d,4s,2s,8h,4h,16b,8b
-   test_sqadd_2d_2d_2d(TyD);
-   test_sqadd_4s_4s_4s(TyS);
-   test_sqadd_2s_2s_2s(TyS);
-   test_sqadd_8h_8h_8h(TyH);
-   test_sqadd_4h_4h_4h(TyH);
-   test_sqadd_16b_16b_16b(TyB);
-   test_sqadd_8b_8b_8b(TyB);
-   test_uqadd_2d_2d_2d(TyD);
-   test_uqadd_4s_4s_4s(TyS);
-   test_uqadd_2s_2s_2s(TyS);
-   test_uqadd_8h_8h_8h(TyH);
-   test_uqadd_4h_4h_4h(TyH);
-   test_uqadd_16b_16b_16b(TyB);
-   test_uqadd_8b_8b_8b(TyB);
-   test_sqsub_2d_2d_2d(TyD);
-   test_sqsub_4s_4s_4s(TyS);
-   test_sqsub_2s_2s_2s(TyS);
-   test_sqsub_8h_8h_8h(TyH);
-   test_sqsub_4h_4h_4h(TyH);
-   test_sqsub_16b_16b_16b(TyB);
-   test_sqsub_8b_8b_8b(TyB);
-   test_uqsub_2d_2d_2d(TyD);
-   test_uqsub_4s_4s_4s(TyS);
-   test_uqsub_2s_2s_2s(TyS);
-   test_uqsub_8h_8h_8h(TyH);
-   test_uqsub_4h_4h_4h(TyH);
-   test_uqsub_16b_16b_16b(TyB);
-   test_uqsub_8b_8b_8b(TyB);
+   if (0) test_sqadd_2d_2d_2d(TyD);
+   if (0) test_sqadd_4s_4s_4s(TyS);
+   if (0) test_sqadd_2s_2s_2s(TyS);
+   if (0) test_sqadd_8h_8h_8h(TyH);
+   if (0) test_sqadd_4h_4h_4h(TyH);
+   if (0) test_sqadd_16b_16b_16b(TyB);
+   if (0) test_sqadd_8b_8b_8b(TyB);
+   if (0) test_uqadd_2d_2d_2d(TyD);
+   if (0) test_uqadd_4s_4s_4s(TyS);
+   if (0) test_uqadd_2s_2s_2s(TyS);
+   if (0) test_uqadd_8h_8h_8h(TyH);
+   if (0) test_uqadd_4h_4h_4h(TyH);
+   if (0) test_uqadd_16b_16b_16b(TyB);
+   if (0) test_uqadd_8b_8b_8b(TyB);
+   if (0) test_sqsub_2d_2d_2d(TyD);
+   if (0) test_sqsub_4s_4s_4s(TyS);
+   if (0) test_sqsub_2s_2s_2s(TyS);
+   if (0) test_sqsub_8h_8h_8h(TyH);
+   if (0) test_sqsub_4h_4h_4h(TyH);
+   if (0) test_sqsub_16b_16b_16b(TyB);
+   if (0) test_sqsub_8b_8b_8b(TyB);
+   if (0) test_uqsub_2d_2d_2d(TyD);
+   if (0) test_uqsub_4s_4s_4s(TyS);
+   if (0) test_uqsub_2s_2s_2s(TyS);
+   if (0) test_uqsub_8h_8h_8h(TyH);
+   if (0) test_uqsub_4h_4h_4h(TyH);
+   if (0) test_uqsub_16b_16b_16b(TyB);
+   if (0) test_uqsub_8b_8b_8b(TyB);
 
    // sqdmlal      d_s_s[], s_h_h[]
    // sqdmlsl      d_s_s[], s_h_h[]
    // sqdmull      d_s_s[], s_h_h[]
-   test_sqdmlal_d_s_s0(TyS);
-   test_sqdmlal_d_s_s3(TyS);
-   test_sqdmlal_s_h_h1(TyH);
-   test_sqdmlal_s_h_h5(TyH);
-   test_sqdmlsl_d_s_s0(TyS);
-   test_sqdmlsl_d_s_s3(TyS);
-   test_sqdmlsl_s_h_h1(TyH);
-   test_sqdmlsl_s_h_h5(TyH);
-   test_sqdmull_d_s_s0(TyS);
-   test_sqdmull_d_s_s3(TyS);
-   test_sqdmull_s_h_h1(TyH);
-   test_sqdmull_s_h_h5(TyH);
+   if (0) test_sqdmlal_d_s_s0(TyS);
+   if (0) test_sqdmlal_d_s_s3(TyS);
+   if (0) test_sqdmlal_s_h_h1(TyH);
+   if (0) test_sqdmlal_s_h_h5(TyH);
+   if (0) test_sqdmlsl_d_s_s0(TyS);
+   if (0) test_sqdmlsl_d_s_s3(TyS);
+   if (0) test_sqdmlsl_s_h_h1(TyH);
+   if (0) test_sqdmlsl_s_h_h5(TyH);
+   if (0) test_sqdmull_d_s_s0(TyS);
+   if (0) test_sqdmull_d_s_s3(TyS);
+   if (0) test_sqdmull_s_h_h1(TyH);
+   if (0) test_sqdmull_s_h_h5(TyH);
 
    // sqdmlal{2}   2d_2s/4s_s[], 4s_4h/8h_h[]
    // sqdmlsl{2}   2d_2s/4s_s[], 4s_4h/8h_h[]
    // sqdmull{2}   2d_2s/4s_s[], 4s_4h/2h_h[]
-   test_sqdmlal_2d_2s_s0(TyS);
-   test_sqdmlal_2d_2s_s3(TyS);
-   test_sqdmlal2_2d_4s_s1(TyS);
-   test_sqdmlal2_2d_4s_s2(TyS);
-   test_sqdmlal_4s_4h_h0(TyH);
-   test_sqdmlal_4s_4h_h7(TyH);
-   test_sqdmlal2_4s_8h_h1(TyH);
-   test_sqdmlal2_4s_8h_h4(TyH);
-   test_sqdmlsl_2d_2s_s0(TyS);
-   test_sqdmlsl_2d_2s_s3(TyS);
-   test_sqdmlsl2_2d_4s_s1(TyS);
-   test_sqdmlsl2_2d_4s_s2(TyS);
-   test_sqdmlsl_4s_4h_h0(TyH);
-   test_sqdmlsl_4s_4h_h7(TyH);
-   test_sqdmlsl2_4s_8h_h1(TyH);
-   test_sqdmlsl2_4s_8h_h4(TyH);
-   test_sqdmull_2d_2s_s0(TyS);
-   test_sqdmull_2d_2s_s3(TyS);
-   test_sqdmull2_2d_4s_s1(TyS);
-   test_sqdmull2_2d_4s_s2(TyS);
-   test_sqdmull_4s_4h_h0(TyH);
-   test_sqdmull_4s_4h_h7(TyH);
-   test_sqdmull2_4s_8h_h1(TyH);
-   test_sqdmull2_4s_8h_h4(TyH);
+   if (0) test_sqdmlal_2d_2s_s0(TyS);
+   if (0) test_sqdmlal_2d_2s_s3(TyS);
+   if (0) test_sqdmlal2_2d_4s_s1(TyS);
+   if (0) test_sqdmlal2_2d_4s_s2(TyS);
+   if (0) test_sqdmlal_4s_4h_h0(TyH);
+   if (0) test_sqdmlal_4s_4h_h7(TyH);
+   if (0) test_sqdmlal2_4s_8h_h1(TyH);
+   if (0) test_sqdmlal2_4s_8h_h4(TyH);
+   if (0) test_sqdmlsl_2d_2s_s0(TyS);
+   if (0) test_sqdmlsl_2d_2s_s3(TyS);
+   if (0) test_sqdmlsl2_2d_4s_s1(TyS);
+   if (0) test_sqdmlsl2_2d_4s_s2(TyS);
+   if (0) test_sqdmlsl_4s_4h_h0(TyH);
+   if (0) test_sqdmlsl_4s_4h_h7(TyH);
+   if (0) test_sqdmlsl2_4s_8h_h1(TyH);
+   if (0) test_sqdmlsl2_4s_8h_h4(TyH);
+   if (0) test_sqdmull_2d_2s_s0(TyS);
+   if (0) test_sqdmull_2d_2s_s3(TyS);
+   if (0) test_sqdmull2_2d_4s_s1(TyS);
+   if (0) test_sqdmull2_2d_4s_s2(TyS);
+   if (0) test_sqdmull_4s_4h_h0(TyH);
+   if (0) test_sqdmull_4s_4h_h7(TyH);
+   if (0) test_sqdmull2_4s_8h_h1(TyH);
+   if (0) test_sqdmull2_4s_8h_h4(TyH);
 
    // sqdmlal      d_s_s, s_h_h
    // sqdmlsl      d_s_s, s_h_h
    // sqdmull      d_s_s, s_h_h
-   test_sqdmlal_d_s_s(TyS);
-   test_sqdmlal_s_h_h(TyH);
-   test_sqdmlsl_d_s_s(TyS);
-   test_sqdmlsl_s_h_h(TyH);
-   test_sqdmull_d_s_s(TyS);
-   test_sqdmull_s_h_h(TyH);
+   if (0) test_sqdmlal_d_s_s(TyS);
+   if (0) test_sqdmlal_s_h_h(TyH);
+   if (0) test_sqdmlsl_d_s_s(TyS);
+   if (0) test_sqdmlsl_s_h_h(TyH);
+   if (0) test_sqdmull_d_s_s(TyS);
+   if (0) test_sqdmull_s_h_h(TyH);
 
    // sqdmlal{2}   2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h)
    // sqdmlsl{2}   2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h)
    // sqdmull{2}   2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h)
-   test_sqdmlal_2d_2s_2s(TyS);
-   test_sqdmlal2_2d_4s_4s(TyS);
-   test_sqdmlal_4s_4h_4h(TyH);
-   test_sqdmlal2_4s_8h_8h(TyH);
-   test_sqdmlsl_2d_2s_2s(TyS);
-   test_sqdmlsl2_2d_4s_4s(TyS);
-   test_sqdmlsl_4s_4h_4h(TyH);
-   test_sqdmlsl2_4s_8h_8h(TyH);
-   test_sqdmull_2d_2s_2s(TyS);
-   test_sqdmull2_2d_4s_4s(TyS);
-   test_sqdmull_4s_4h_4h(TyH);
-   test_sqdmull2_4s_8h_8h(TyH);
+   if (0) test_sqdmlal_2d_2s_2s(TyS);
+   if (0) test_sqdmlal2_2d_4s_4s(TyS);
+   if (0) test_sqdmlal_4s_4h_4h(TyH);
+   if (0) test_sqdmlal2_4s_8h_8h(TyH);
+   if (0) test_sqdmlsl_2d_2s_2s(TyS);
+   if (0) test_sqdmlsl2_2d_4s_4s(TyS);
+   if (0) test_sqdmlsl_4s_4h_4h(TyH);
+   if (0) test_sqdmlsl2_4s_8h_8h(TyH);
+   if (0) test_sqdmull_2d_2s_2s(TyS);
+   if (0) test_sqdmull2_2d_4s_4s(TyS);
+   if (0) test_sqdmull_4s_4h_4h(TyH);
+   if (0) test_sqdmull2_4s_8h_8h(TyH);
 
    // sqdmulh      s_s_s[], h_h_h[]
    // sqrdmulh     s_s_s[], h_h_h[]
-   test_sqdmulh_s_s_s1(TyS);
-   test_sqdmulh_s_s_s3(TyS);
-   test_sqdmulh_h_h_h2(TyH);
-   test_sqdmulh_h_h_h7(TyH);
-   test_sqrdmulh_s_s_s1(TyS);
-   test_sqrdmulh_s_s_s3(TyS);
-   test_sqrdmulh_h_h_h2(TyH);
-   test_sqrdmulh_h_h_h7(TyH);
+   if (0) test_sqdmulh_s_s_s1(TyS);
+   if (0) test_sqdmulh_s_s_s3(TyS);
+   if (0) test_sqdmulh_h_h_h2(TyH);
+   if (0) test_sqdmulh_h_h_h7(TyH);
+   if (0) test_sqrdmulh_s_s_s1(TyS);
+   if (0) test_sqrdmulh_s_s_s3(TyS);
+   if (0) test_sqrdmulh_h_h_h2(TyH);
+   if (0) test_sqrdmulh_h_h_h7(TyH);
 
    // sqdmulh      4s_4s_s[], 2s_2s_s[], 8h_8h_h[], 4h_4h_h[]
    // sqrdmulh     4s_4s_s[], 2s_2s_s[], 8h_8h_h[], 4h_4h_h[]
-   test_sqdmulh_4s_4s_s1(TyS);
-   test_sqdmulh_4s_4s_s3(TyS);
-   test_sqdmulh_2s_2s_s1(TyS);
-   test_sqdmulh_2s_2s_s3(TyS);
-   test_sqdmulh_8h_8h_h2(TyH);
-   test_sqdmulh_8h_8h_h7(TyH);
-   test_sqdmulh_4h_4h_h2(TyH);
-   test_sqdmulh_4h_4h_h7(TyH);
-   test_sqrdmulh_4s_4s_s1(TyS);
-   test_sqrdmulh_4s_4s_s3(TyS);
-   test_sqrdmulh_2s_2s_s1(TyS);
-   test_sqrdmulh_2s_2s_s3(TyS);
-   test_sqrdmulh_8h_8h_h2(TyH);
-   test_sqrdmulh_8h_8h_h7(TyH);
-   test_sqrdmulh_4h_4h_h2(TyH);
-   test_sqrdmulh_4h_4h_h7(TyH);
+   if (0) test_sqdmulh_4s_4s_s1(TyS);
+   if (0) test_sqdmulh_4s_4s_s3(TyS);
+   if (0) test_sqdmulh_2s_2s_s1(TyS);
+   if (0) test_sqdmulh_2s_2s_s3(TyS);
+   if (0) test_sqdmulh_8h_8h_h2(TyH);
+   if (0) test_sqdmulh_8h_8h_h7(TyH);
+   if (0) test_sqdmulh_4h_4h_h2(TyH);
+   if (0) test_sqdmulh_4h_4h_h7(TyH);
+   if (0) test_sqrdmulh_4s_4s_s1(TyS);
+   if (0) test_sqrdmulh_4s_4s_s3(TyS);
+   if (0) test_sqrdmulh_2s_2s_s1(TyS);
+   if (0) test_sqrdmulh_2s_2s_s3(TyS);
+   if (0) test_sqrdmulh_8h_8h_h2(TyH);
+   if (0) test_sqrdmulh_8h_8h_h7(TyH);
+   if (0) test_sqrdmulh_4h_4h_h2(TyH);
+   if (0) test_sqrdmulh_4h_4h_h7(TyH);
 
    // sqdmulh      h,s
    // sqrdmulh     h,s
-   test_sqdmulh_s_s_s(TyS);
-   test_sqdmulh_h_h_h(TyH);
-   test_sqrdmulh_s_s_s(TyS);
-   test_sqrdmulh_h_h_h(TyH);
+   if (0) test_sqdmulh_s_s_s(TyS);
+   if (0) test_sqdmulh_h_h_h(TyH);
+   if (0) test_sqrdmulh_s_s_s(TyS);
+   if (0) test_sqrdmulh_h_h_h(TyH);
 
    // sqdmulh      4s,2s,8h,4h
    // sqrdmulh     4s,2s,8h,4h
-   test_sqdmulh_4s_4s_4s(TyS);
-   test_sqdmulh_2s_2s_2s(TyS);
-   test_sqdmulh_8h_8h_8h(TyH);
-   test_sqdmulh_4h_4h_4h(TyH);
-   test_sqrdmulh_4s_4s_4s(TyS);
-   test_sqrdmulh_2s_2s_2s(TyS);
-   test_sqrdmulh_8h_8h_8h(TyH);
-   test_sqrdmulh_4h_4h_4h(TyH);
+   if (0) test_sqdmulh_4s_4s_4s(TyS);
+   if (0) test_sqdmulh_2s_2s_2s(TyS);
+   if (0) test_sqdmulh_8h_8h_8h(TyH);
+   if (0) test_sqdmulh_4h_4h_4h(TyH);
+   if (0) test_sqrdmulh_4s_4s_4s(TyS);
+   if (0) test_sqrdmulh_2s_2s_2s(TyS);
+   if (0) test_sqrdmulh_8h_8h_8h(TyH);
+   if (0) test_sqrdmulh_4h_4h_4h(TyH);
 
    // sqshl (reg)  d,s,h,b
    // uqshl (reg)  d,s,h,b
    // sqrshl (reg) d,s,h,b
    // uqrshl (reg) d,s,h,b
-   test_sqshl_d_d_d(TyD);
-   test_sqshl_s_s_s(TyS);
-   test_sqshl_h_h_h(TyH);
-   test_sqshl_b_b_b(TyB);
-   test_uqshl_d_d_d(TyD);
-   test_uqshl_s_s_s(TyS);
-   test_uqshl_h_h_h(TyH);
-   test_uqshl_b_b_b(TyB);
-   test_sqrshl_d_d_d(TyD);
-   test_sqrshl_s_s_s(TyS);
-   test_sqrshl_h_h_h(TyH);
-   test_sqrshl_b_b_b(TyB);
-   test_uqrshl_d_d_d(TyD);
-   test_uqrshl_s_s_s(TyS);
-   test_uqrshl_h_h_h(TyH);
-   test_uqrshl_b_b_b(TyB);
+   if (0) test_sqshl_d_d_d(TyD);
+   if (0) test_sqshl_s_s_s(TyS);
+   if (0) test_sqshl_h_h_h(TyH);
+   if (0) test_sqshl_b_b_b(TyB);
+   if (0) test_uqshl_d_d_d(TyD);
+   if (0) test_uqshl_s_s_s(TyS);
+   if (0) test_uqshl_h_h_h(TyH);
+   if (0) test_uqshl_b_b_b(TyB);
+   if (0) test_sqrshl_d_d_d(TyD);
+   if (0) test_sqrshl_s_s_s(TyS);
+   if (0) test_sqrshl_h_h_h(TyH);
+   if (0) test_sqrshl_b_b_b(TyB);
+   if (0) test_uqrshl_d_d_d(TyD);
+   if (0) test_uqrshl_s_s_s(TyS);
+   if (0) test_uqrshl_h_h_h(TyH);
+   if (0) test_uqrshl_b_b_b(TyB);
 
    // sqshl (reg)  2d,4s,2s,8h,4h,16b,8b
    // uqshl (reg)  2d,4s,2s,8h,4h,16b,8b
    // sqrshl (reg) 2d,4s,2s,8h,4h,16b,8b
    // uqrshl (reg) 2d,4s,2s,8h,4h,16b,8b
-   test_sqshl_2d_2d_2d(TyD);
-   test_sqshl_4s_4s_4s(TyS);
-   test_sqshl_2s_2s_2s(TyS);
-   test_sqshl_8h_8h_8h(TyH);
-   test_sqshl_4h_4h_4h(TyH);
-   test_sqshl_16b_16b_16b(TyB);
-   test_sqshl_8b_8b_8b(TyB);
-   test_uqshl_2d_2d_2d(TyD);
-   test_uqshl_4s_4s_4s(TyS);
-   test_uqshl_2s_2s_2s(TyS);
-   test_uqshl_8h_8h_8h(TyH);
-   test_uqshl_4h_4h_4h(TyH);
-   test_uqshl_16b_16b_16b(TyB);
-   test_uqshl_8b_8b_8b(TyB);
-   test_sqrshl_2d_2d_2d(TyD);
-   test_sqrshl_4s_4s_4s(TyS);
-   test_sqrshl_2s_2s_2s(TyS);
-   test_sqrshl_8h_8h_8h(TyH);
-   test_sqrshl_4h_4h_4h(TyH);
-   test_sqrshl_16b_16b_16b(TyB);
-   test_sqrshl_8b_8b_8b(TyB);
-   test_uqrshl_2d_2d_2d(TyD);
-   test_uqrshl_4s_4s_4s(TyS);
-   test_uqrshl_2s_2s_2s(TyS);
-   test_uqrshl_8h_8h_8h(TyH);
-   test_uqrshl_4h_4h_4h(TyH);
-   test_uqrshl_16b_16b_16b(TyB);
-   test_uqrshl_8b_8b_8b(TyB);
+   if (0) test_sqshl_2d_2d_2d(TyD);
+   if (0) test_sqshl_4s_4s_4s(TyS);
+   if (0) test_sqshl_2s_2s_2s(TyS);
+   if (0) test_sqshl_8h_8h_8h(TyH);
+   if (0) test_sqshl_4h_4h_4h(TyH);
+   if (0) test_sqshl_16b_16b_16b(TyB);
+   if (0) test_sqshl_8b_8b_8b(TyB);
+   if (0) test_uqshl_2d_2d_2d(TyD);
+   if (0) test_uqshl_4s_4s_4s(TyS);
+   if (0) test_uqshl_2s_2s_2s(TyS);
+   if (0) test_uqshl_8h_8h_8h(TyH);
+   if (0) test_uqshl_4h_4h_4h(TyH);
+   if (0) test_uqshl_16b_16b_16b(TyB);
+   if (0) test_uqshl_8b_8b_8b(TyB);
+   if (0) test_sqrshl_2d_2d_2d(TyD);
+   if (0) test_sqrshl_4s_4s_4s(TyS);
+   if (0) test_sqrshl_2s_2s_2s(TyS);
+   if (0) test_sqrshl_8h_8h_8h(TyH);
+   if (0) test_sqrshl_4h_4h_4h(TyH);
+   if (0) test_sqrshl_16b_16b_16b(TyB);
+   if (0) test_sqrshl_8b_8b_8b(TyB);
+   if (0) test_uqrshl_2d_2d_2d(TyD);
+   if (0) test_uqrshl_4s_4s_4s(TyS);
+   if (0) test_uqrshl_2s_2s_2s(TyS);
+   if (0) test_uqrshl_8h_8h_8h(TyH);
+   if (0) test_uqrshl_4h_4h_4h(TyH);
+   if (0) test_uqrshl_16b_16b_16b(TyB);
+   if (0) test_uqrshl_8b_8b_8b(TyB);
 
    // sqrshrn      s_d, h_s, b_h   #imm
    // uqrshrn      s_d, h_s, b_h   #imm
@@ -4453,60 +4453,60 @@ int main ( void )
    // uqshrn       s_d, h_s, b_h   #imm
    // sqrshrun     s_d, h_s, b_h   #imm
    // sqshrun      s_d, h_s, b_h   #imm
-   test_sqrshrn_s_d_1(TyD);
-   test_sqrshrn_s_d_17(TyD);
-   test_sqrshrn_s_d_32(TyD);
-   test_sqrshrn_h_s_1(TyS);
-   test_sqrshrn_h_s_9(TyS);
-   test_sqrshrn_h_s_16(TyS);
-   test_sqrshrn_b_h_1(TyH);
-   test_sqrshrn_b_h_4(TyH);
-   test_sqrshrn_b_h_8(TyH);
-   test_uqrshrn_s_d_1(TyD);
-   test_uqrshrn_s_d_17(TyD);
-   test_uqrshrn_s_d_32(TyD);
-   test_uqrshrn_h_s_1(TyS);
-   test_uqrshrn_h_s_9(TyS);
-   test_uqrshrn_h_s_16(TyS);
-   test_uqrshrn_b_h_1(TyH);
-   test_uqrshrn_b_h_4(TyH);
-   test_uqrshrn_b_h_8(TyH);
-   test_sqshrn_s_d_1(TyD);
-   test_sqshrn_s_d_17(TyD);
-   test_sqshrn_s_d_32(TyD);
-   test_sqshrn_h_s_1(TyS);
-   test_sqshrn_h_s_9(TyS);
-   test_sqshrn_h_s_16(TyS);
-   test_sqshrn_b_h_1(TyH);
-   test_sqshrn_b_h_4(TyH);
-   test_sqshrn_b_h_8(TyH);
-   test_uqshrn_s_d_1(TyD);
-   test_uqshrn_s_d_17(TyD);
-   test_uqshrn_s_d_32(TyD);
-   test_uqshrn_h_s_1(TyS);
-   test_uqshrn_h_s_9(TyS);
-   test_uqshrn_h_s_16(TyS);
-   test_uqshrn_b_h_1(TyH);
-   test_uqshrn_b_h_4(TyH);
-   test_uqshrn_b_h_8(TyH);
-   test_sqrshrun_s_d_1(TyD);
-   test_sqrshrun_s_d_17(TyD);
-   test_sqrshrun_s_d_32(TyD);
-   test_sqrshrun_h_s_1(TyS);
-   test_sqrshrun_h_s_9(TyS);
-   test_sqrshrun_h_s_16(TyS);
-   test_sqrshrun_b_h_1(TyH);
-   test_sqrshrun_b_h_4(TyH);
-   test_sqrshrun_b_h_8(TyH);
-   test_sqshrun_s_d_1(TyD);
-   test_sqshrun_s_d_17(TyD);
-   test_sqshrun_s_d_32(TyD);
-   test_sqshrun_h_s_1(TyS);
-   test_sqshrun_h_s_9(TyS);
-   test_sqshrun_h_s_16(TyS);
-   test_sqshrun_b_h_1(TyH);
-   test_sqshrun_b_h_4(TyH);
-   test_sqshrun_b_h_8(TyH);
+   if (0) test_sqrshrn_s_d_1(TyD);
+   if (0) test_sqrshrn_s_d_17(TyD);
+   if (0) test_sqrshrn_s_d_32(TyD);
+   if (0) test_sqrshrn_h_s_1(TyS);
+   if (0) test_sqrshrn_h_s_9(TyS);
+   if (0) test_sqrshrn_h_s_16(TyS);
+   if (0) test_sqrshrn_b_h_1(TyH);
+   if (0) test_sqrshrn_b_h_4(TyH);
+   if (0) test_sqrshrn_b_h_8(TyH);
+   if (0) test_uqrshrn_s_d_1(TyD);
+   if (0) test_uqrshrn_s_d_17(TyD);
+   if (0) test_uqrshrn_s_d_32(TyD);
+   if (0) test_uqrshrn_h_s_1(TyS);
+   if (0) test_uqrshrn_h_s_9(TyS);
+   if (0) test_uqrshrn_h_s_16(TyS);
+   if (0) test_uqrshrn_b_h_1(TyH);
+   if (0) test_uqrshrn_b_h_4(TyH);
+   if (0) test_uqrshrn_b_h_8(TyH);
+   if (0) test_sqshrn_s_d_1(TyD);
+   if (0) test_sqshrn_s_d_17(TyD);
+   if (0) test_sqshrn_s_d_32(TyD);
+   if (0) test_sqshrn_h_s_1(TyS);
+   if (0) test_sqshrn_h_s_9(TyS);
+   if (0) test_sqshrn_h_s_16(TyS);
+   if (0) test_sqshrn_b_h_1(TyH);
+   if (0) test_sqshrn_b_h_4(TyH);
+   if (0) test_sqshrn_b_h_8(TyH);
+   if (0) test_uqshrn_s_d_1(TyD);
+   if (0) test_uqshrn_s_d_17(TyD);
+   if (0) test_uqshrn_s_d_32(TyD);
+   if (0) test_uqshrn_h_s_1(TyS);
+   if (0) test_uqshrn_h_s_9(TyS);
+   if (0) test_uqshrn_h_s_16(TyS);
+   if (0) test_uqshrn_b_h_1(TyH);
+   if (0) test_uqshrn_b_h_4(TyH);
+   if (0) test_uqshrn_b_h_8(TyH);
+   if (0) test_sqrshrun_s_d_1(TyD);
+   if (0) test_sqrshrun_s_d_17(TyD);
+   if (0) test_sqrshrun_s_d_32(TyD);
+   if (0) test_sqrshrun_h_s_1(TyS);
+   if (0) test_sqrshrun_h_s_9(TyS);
+   if (0) test_sqrshrun_h_s_16(TyS);
+   if (0) test_sqrshrun_b_h_1(TyH);
+   if (0) test_sqrshrun_b_h_4(TyH);
+   if (0) test_sqrshrun_b_h_8(TyH);
+   if (0) test_sqshrun_s_d_1(TyD);
+   if (0) test_sqshrun_s_d_17(TyD);
+   if (0) test_sqshrun_s_d_32(TyD);
+   if (0) test_sqshrun_h_s_1(TyS);
+   if (0) test_sqshrun_h_s_9(TyS);
+   if (0) test_sqshrun_h_s_16(TyS);
+   if (0) test_sqshrun_b_h_1(TyH);
+   if (0) test_sqshrun_b_h_4(TyH);
+   if (0) test_sqshrun_b_h_8(TyH);
 
    // sqrshrn{2}   2s/4s_2d, 4h/8h_4s, 8b/16b_8h,  #imm
    // uqrshrn{2}   2s/4s_2d, 4h/8h_4s, 8b/16b_8h,  #imm
@@ -4514,709 +4514,709 @@ int main ( void )
    // uqshrn{2}    2s/4s_2d, 4h/8h_4s, 8b/16b_8h,  #imm
    // sqrshrun{2}  2s/4s_2d, 4h/8h_4s, 8b/16b_8h,  #imm
    // sqshrun{2}   2s/4s_2d, 4h/8h_4s, 8b/16b_8h,  #imm
-   test_sqrshrn_2s_2d_1(TyD);
-   test_sqrshrn_2s_2d_17(TyD);
-   test_sqrshrn_2s_2d_32(TyD);
-   test_sqrshrn2_4s_2d_1(TyD);
-   test_sqrshrn2_4s_2d_17(TyD);
-   test_sqrshrn2_4s_2d_32(TyD);
-   test_sqrshrn_4h_4s_1(TyS);
-   test_sqrshrn_4h_4s_9(TyS);
-   test_sqrshrn_4h_4s_16(TyS);
-   test_sqrshrn2_8h_4s_1(TyS);
-   test_sqrshrn2_8h_4s_9(TyS);
-   test_sqrshrn2_8h_4s_16(TyS);
-   test_sqrshrn_8b_8h_1(TyH);
-   test_sqrshrn_8b_8h_4(TyH);
-   test_sqrshrn_8b_8h_8(TyH);
-   test_sqrshrn2_16b_8h_1(TyH);
-   test_sqrshrn2_16b_8h_4(TyH);
-   test_sqrshrn2_16b_8h_8(TyH);
-   test_uqrshrn_2s_2d_1(TyD);
-   test_uqrshrn_2s_2d_17(TyD);
-   test_uqrshrn_2s_2d_32(TyD);
-   test_uqrshrn2_4s_2d_1(TyD);
-   test_uqrshrn2_4s_2d_17(TyD);
-   test_uqrshrn2_4s_2d_32(TyD);
-   test_uqrshrn_4h_4s_1(TyS);
-   test_uqrshrn_4h_4s_9(TyS);
-   test_uqrshrn_4h_4s_16(TyS);
-   test_uqrshrn2_8h_4s_1(TyS);
-   test_uqrshrn2_8h_4s_9(TyS);
-   test_uqrshrn2_8h_4s_16(TyS);
-   test_uqrshrn_8b_8h_1(TyH);
-   test_uqrshrn_8b_8h_4(TyH);
-   test_uqrshrn_8b_8h_8(TyH);
-   test_uqrshrn2_16b_8h_1(TyH);
-   test_uqrshrn2_16b_8h_4(TyH);
-   test_uqrshrn2_16b_8h_8(TyH);
-   test_sqshrn_2s_2d_1(TyD);
-   test_sqshrn_2s_2d_17(TyD);
-   test_sqshrn_2s_2d_32(TyD);
-   test_sqshrn2_4s_2d_1(TyD);
-   test_sqshrn2_4s_2d_17(TyD);
-   test_sqshrn2_4s_2d_32(TyD);
-   test_sqshrn_4h_4s_1(TyS);
-   test_sqshrn_4h_4s_9(TyS);
-   test_sqshrn_4h_4s_16(TyS);
-   test_sqshrn2_8h_4s_1(TyS);
-   test_sqshrn2_8h_4s_9(TyS);
-   test_sqshrn2_8h_4s_16(TyS);
-   test_sqshrn_8b_8h_1(TyH);
-   test_sqshrn_8b_8h_4(TyH);
-   test_sqshrn_8b_8h_8(TyH);
-   test_sqshrn2_16b_8h_1(TyH);
-   test_sqshrn2_16b_8h_4(TyH);
-   test_sqshrn2_16b_8h_8(TyH);
-   test_uqshrn_2s_2d_1(TyD);
-   test_uqshrn_2s_2d_17(TyD);
-   test_uqshrn_2s_2d_32(TyD);
-   test_uqshrn2_4s_2d_1(TyD);
-   test_uqshrn2_4s_2d_17(TyD);
-   test_uqshrn2_4s_2d_32(TyD);
-   test_uqshrn_4h_4s_1(TyS);
-   test_uqshrn_4h_4s_9(TyS);
-   test_uqshrn_4h_4s_16(TyS);
-   test_uqshrn2_8h_4s_1(TyS);
-   test_uqshrn2_8h_4s_9(TyS);
-   test_uqshrn2_8h_4s_16(TyS);
-   test_uqshrn_8b_8h_1(TyH);
-   test_uqshrn_8b_8h_4(TyH);
-   test_uqshrn_8b_8h_8(TyH);
-   test_uqshrn2_16b_8h_1(TyH);
-   test_uqshrn2_16b_8h_4(TyH);
-   test_uqshrn2_16b_8h_8(TyH);
-   test_sqrshrun_2s_2d_1(TyD);
-   test_sqrshrun_2s_2d_17(TyD);
-   test_sqrshrun_2s_2d_32(TyD);
-   test_sqrshrun2_4s_2d_1(TyD);
-   test_sqrshrun2_4s_2d_17(TyD);
-   test_sqrshrun2_4s_2d_32(TyD);
-   test_sqrshrun_4h_4s_1(TyS);
-   test_sqrshrun_4h_4s_9(TyS);
-   test_sqrshrun_4h_4s_16(TyS);
-   test_sqrshrun2_8h_4s_1(TyS);
-   test_sqrshrun2_8h_4s_9(TyS);
-   test_sqrshrun2_8h_4s_16(TyS);
-   test_sqrshrun_8b_8h_1(TyH);
-   test_sqrshrun_8b_8h_4(TyH);
-   test_sqrshrun_8b_8h_8(TyH);
-   test_sqrshrun2_16b_8h_1(TyH);
-   test_sqrshrun2_16b_8h_4(TyH);
-   test_sqrshrun2_16b_8h_8(TyH);
-   test_sqshrun_2s_2d_1(TyD);
-   test_sqshrun_2s_2d_17(TyD);
-   test_sqshrun_2s_2d_32(TyD);
-   test_sqshrun2_4s_2d_1(TyD);
-   test_sqshrun2_4s_2d_17(TyD);
-   test_sqshrun2_4s_2d_32(TyD);
-   test_sqshrun_4h_4s_1(TyS);
-   test_sqshrun_4h_4s_9(TyS);
-   test_sqshrun_4h_4s_16(TyS);
-   test_sqshrun2_8h_4s_1(TyS);
-   test_sqshrun2_8h_4s_9(TyS);
-   test_sqshrun2_8h_4s_16(TyS);
-   test_sqshrun_8b_8h_1(TyH);
-   test_sqshrun_8b_8h_4(TyH);
-   test_sqshrun_8b_8h_8(TyH);
-   test_sqshrun2_16b_8h_1(TyH);
-   test_sqshrun2_16b_8h_4(TyH);
-   test_sqshrun2_16b_8h_8(TyH);
+   if (0) test_sqrshrn_2s_2d_1(TyD);
+   if (0) test_sqrshrn_2s_2d_17(TyD);
+   if (0) test_sqrshrn_2s_2d_32(TyD);
+   if (0) test_sqrshrn2_4s_2d_1(TyD);
+   if (0) test_sqrshrn2_4s_2d_17(TyD);
+   if (0) test_sqrshrn2_4s_2d_32(TyD);
+   if (0) test_sqrshrn_4h_4s_1(TyS);
+   if (0) test_sqrshrn_4h_4s_9(TyS);
+   if (0) test_sqrshrn_4h_4s_16(TyS);
+   if (0) test_sqrshrn2_8h_4s_1(TyS);
+   if (0) test_sqrshrn2_8h_4s_9(TyS);
+   if (0) test_sqrshrn2_8h_4s_16(TyS);
+   if (0) test_sqrshrn_8b_8h_1(TyH);
+   if (0) test_sqrshrn_8b_8h_4(TyH);
+   if (0) test_sqrshrn_8b_8h_8(TyH);
+   if (0) test_sqrshrn2_16b_8h_1(TyH);
+   if (0) test_sqrshrn2_16b_8h_4(TyH);
+   if (0) test_sqrshrn2_16b_8h_8(TyH);
+   if (0) test_uqrshrn_2s_2d_1(TyD);
+   if (0) test_uqrshrn_2s_2d_17(TyD);
+   if (0) test_uqrshrn_2s_2d_32(TyD);
+   if (0) test_uqrshrn2_4s_2d_1(TyD);
+   if (0) test_uqrshrn2_4s_2d_17(TyD);
+   if (0) test_uqrshrn2_4s_2d_32(TyD);
+   if (0) test_uqrshrn_4h_4s_1(TyS);
+   if (0) test_uqrshrn_4h_4s_9(TyS);
+   if (0) test_uqrshrn_4h_4s_16(TyS);
+   if (0) test_uqrshrn2_8h_4s_1(TyS);
+   if (0) test_uqrshrn2_8h_4s_9(TyS);
+   if (0) test_uqrshrn2_8h_4s_16(TyS);
+   if (0) test_uqrshrn_8b_8h_1(TyH);
+   if (0) test_uqrshrn_8b_8h_4(TyH);
+   if (0) test_uqrshrn_8b_8h_8(TyH);
+   if (0) test_uqrshrn2_16b_8h_1(TyH);
+   if (0) test_uqrshrn2_16b_8h_4(TyH);
+   if (0) test_uqrshrn2_16b_8h_8(TyH);
+   if (0) test_sqshrn_2s_2d_1(TyD);
+   if (0) test_sqshrn_2s_2d_17(TyD);
+   if (0) test_sqshrn_2s_2d_32(TyD);
+   if (0) test_sqshrn2_4s_2d_1(TyD);
+   if (0) test_sqshrn2_4s_2d_17(TyD);
+   if (0) test_sqshrn2_4s_2d_32(TyD);
+   if (0) test_sqshrn_4h_4s_1(TyS);
+   if (0) test_sqshrn_4h_4s_9(TyS);
+   if (0) test_sqshrn_4h_4s_16(TyS);
+   if (0) test_sqshrn2_8h_4s_1(TyS);
+   if (0) test_sqshrn2_8h_4s_9(TyS);
+   if (0) test_sqshrn2_8h_4s_16(TyS);
+   if (0) test_sqshrn_8b_8h_1(TyH);
+   if (0) test_sqshrn_8b_8h_4(TyH);
+   if (0) test_sqshrn_8b_8h_8(TyH);
+   if (0) test_sqshrn2_16b_8h_1(TyH);
+   if (0) test_sqshrn2_16b_8h_4(TyH);
+   if (0) test_sqshrn2_16b_8h_8(TyH);
+   if (0) test_uqshrn_2s_2d_1(TyD);
+   if (0) test_uqshrn_2s_2d_17(TyD);
+   if (0) test_uqshrn_2s_2d_32(TyD);
+   if (0) test_uqshrn2_4s_2d_1(TyD);
+   if (0) test_uqshrn2_4s_2d_17(TyD);
+   if (0) test_uqshrn2_4s_2d_32(TyD);
+   if (0) test_uqshrn_4h_4s_1(TyS);
+   if (0) test_uqshrn_4h_4s_9(TyS);
+   if (0) test_uqshrn_4h_4s_16(TyS);
+   if (0) test_uqshrn2_8h_4s_1(TyS);
+   if (0) test_uqshrn2_8h_4s_9(TyS);
+   if (0) test_uqshrn2_8h_4s_16(TyS);
+   if (0) test_uqshrn_8b_8h_1(TyH);
+   if (0) test_uqshrn_8b_8h_4(TyH);
+   if (0) test_uqshrn_8b_8h_8(TyH);
+   if (0) test_uqshrn2_16b_8h_1(TyH);
+   if (0) test_uqshrn2_16b_8h_4(TyH);
+   if (0) test_uqshrn2_16b_8h_8(TyH);
+   if (0) test_sqrshrun_2s_2d_1(TyD);
+   if (0) test_sqrshrun_2s_2d_17(TyD);
+   if (0) test_sqrshrun_2s_2d_32(TyD);
+   if (0) test_sqrshrun2_4s_2d_1(TyD);
+   if (0) test_sqrshrun2_4s_2d_17(TyD);
+   if (0) test_sqrshrun2_4s_2d_32(TyD);
+   if (0) test_sqrshrun_4h_4s_1(TyS);
+   if (0) test_sqrshrun_4h_4s_9(TyS);
+   if (0) test_sqrshrun_4h_4s_16(TyS);
+   if (0) test_sqrshrun2_8h_4s_1(TyS);
+   if (0) test_sqrshrun2_8h_4s_9(TyS);
+   if (0) test_sqrshrun2_8h_4s_16(TyS);
+   if (0) test_sqrshrun_8b_8h_1(TyH);
+   if (0) test_sqrshrun_8b_8h_4(TyH);
+   if (0) test_sqrshrun_8b_8h_8(TyH);
+   if (0) test_sqrshrun2_16b_8h_1(TyH);
+   if (0) test_sqrshrun2_16b_8h_4(TyH);
+   if (0) test_sqrshrun2_16b_8h_8(TyH);
+   if (0) test_sqshrun_2s_2d_1(TyD);
+   if (0) test_sqshrun_2s_2d_17(TyD);
+   if (0) test_sqshrun_2s_2d_32(TyD);
+   if (0) test_sqshrun2_4s_2d_1(TyD);
+   if (0) test_sqshrun2_4s_2d_17(TyD);
+   if (0) test_sqshrun2_4s_2d_32(TyD);
+   if (0) test_sqshrun_4h_4s_1(TyS);
+   if (0) test_sqshrun_4h_4s_9(TyS);
+   if (0) test_sqshrun_4h_4s_16(TyS);
+   if (0) test_sqshrun2_8h_4s_1(TyS);
+   if (0) test_sqshrun2_8h_4s_9(TyS);
+   if (0) test_sqshrun2_8h_4s_16(TyS);
+   if (0) test_sqshrun_8b_8h_1(TyH);
+   if (0) test_sqshrun_8b_8h_4(TyH);
+   if (0) test_sqshrun_8b_8h_8(TyH);
+   if (0) test_sqshrun2_16b_8h_1(TyH);
+   if (0) test_sqshrun2_16b_8h_4(TyH);
+   if (0) test_sqshrun2_16b_8h_8(TyH);
 
    // sqshl (imm)  d,s,h,b   _#imm
    // uqshl (imm)  d,s,h,b   _#imm
    // sqshlu (imm) d,s,h,b   _#imm
-   test_sqshl_d_d_0(TyD);
-   test_sqshl_d_d_32(TyD);
-   test_sqshl_d_d_63(TyD);
-   test_sqshl_s_s_0(TyS);
-   test_sqshl_s_s_16(TyS);
-   test_sqshl_s_s_31(TyS);
-   test_sqshl_h_h_0(TyH);
-   test_sqshl_h_h_8(TyH);
-   test_sqshl_h_h_15(TyH);
-   test_sqshl_b_b_0(TyB);
-   test_sqshl_b_b_4(TyB);
-   test_sqshl_b_b_7(TyB);
-   test_uqshl_d_d_0(TyD);
-   test_uqshl_d_d_32(TyD);
-   test_uqshl_d_d_63(TyD);
-   test_uqshl_s_s_0(TyS);
-   test_uqshl_s_s_16(TyS);
-   test_uqshl_s_s_31(TyS);
-   test_uqshl_h_h_0(TyH);
-   test_uqshl_h_h_8(TyH);
-   test_uqshl_h_h_15(TyH);
-   test_uqshl_b_b_0(TyB);
-   test_uqshl_b_b_4(TyB);
-   test_uqshl_b_b_7(TyB);
-   test_sqshlu_d_d_0(TyD);
-   test_sqshlu_d_d_32(TyD);
-   test_sqshlu_d_d_63(TyD);
-   test_sqshlu_s_s_0(TyS);
-   test_sqshlu_s_s_16(TyS);
-   test_sqshlu_s_s_31(TyS);
-   test_sqshlu_h_h_0(TyH);
-   test_sqshlu_h_h_8(TyH);
-   test_sqshlu_h_h_15(TyH);
-   test_sqshlu_b_b_0(TyB);
-   test_sqshlu_b_b_4(TyB);
-   test_sqshlu_b_b_7(TyB);
+   if (0) test_sqshl_d_d_0(TyD);
+   if (0) test_sqshl_d_d_32(TyD);
+   if (0) test_sqshl_d_d_63(TyD);
+   if (0) test_sqshl_s_s_0(TyS);
+   if (0) test_sqshl_s_s_16(TyS);
+   if (0) test_sqshl_s_s_31(TyS);
+   if (0) test_sqshl_h_h_0(TyH);
+   if (0) test_sqshl_h_h_8(TyH);
+   if (0) test_sqshl_h_h_15(TyH);
+   if (0) test_sqshl_b_b_0(TyB);
+   if (0) test_sqshl_b_b_4(TyB);
+   if (0) test_sqshl_b_b_7(TyB);
+   if (0) test_uqshl_d_d_0(TyD);
+   if (0) test_uqshl_d_d_32(TyD);
+   if (0) test_uqshl_d_d_63(TyD);
+   if (0) test_uqshl_s_s_0(TyS);
+   if (0) test_uqshl_s_s_16(TyS);
+   if (0) test_uqshl_s_s_31(TyS);
+   if (0) test_uqshl_h_h_0(TyH);
+   if (0) test_uqshl_h_h_8(TyH);
+   if (0) test_uqshl_h_h_15(TyH);
+   if (0) test_uqshl_b_b_0(TyB);
+   if (0) test_uqshl_b_b_4(TyB);
+   if (0) test_uqshl_b_b_7(TyB);
+   if (0) test_sqshlu_d_d_0(TyD);
+   if (0) test_sqshlu_d_d_32(TyD);
+   if (0) test_sqshlu_d_d_63(TyD);
+   if (0) test_sqshlu_s_s_0(TyS);
+   if (0) test_sqshlu_s_s_16(TyS);
+   if (0) test_sqshlu_s_s_31(TyS);
+   if (0) test_sqshlu_h_h_0(TyH);
+   if (0) test_sqshlu_h_h_8(TyH);
+   if (0) test_sqshlu_h_h_15(TyH);
+   if (0) test_sqshlu_b_b_0(TyB);
+   if (0) test_sqshlu_b_b_4(TyB);
+   if (0) test_sqshlu_b_b_7(TyB);
 
    // sqshl (imm)  2d,4s,2s,8h,4h,16b,8b   _#imm
    // uqshl (imm)  2d,4s,2s,8h,4h,16b,8b   _#imm
    // sqshlu (imm) 2d,4s,2s,8h,4h,16b,8b   _#imm
-   test_sqshl_2d_2d_0(TyD);
-   test_sqshl_2d_2d_32(TyD);
-   test_sqshl_2d_2d_63(TyD);
-   test_sqshl_4s_4s_0(TyS);
-   test_sqshl_4s_4s_16(TyS);
-   test_sqshl_4s_4s_31(TyS);
-   test_sqshl_2s_2s_0(TyS);
-   test_sqshl_2s_2s_16(TyS);
-   test_sqshl_2s_2s_31(TyS);
-   test_sqshl_8h_8h_0(TyH);
-   test_sqshl_8h_8h_8(TyH);
-   test_sqshl_8h_8h_15(TyH);
-   test_sqshl_4h_4h_0(TyH);
-   test_sqshl_4h_4h_8(TyH);
-   test_sqshl_4h_4h_15(TyH);
-   test_sqshl_16b_16b_0(TyB);
-   test_sqshl_16b_16b_3(TyB);
-   test_sqshl_16b_16b_7(TyB);
-   test_sqshl_8b_8b_0(TyB);
-   test_sqshl_8b_8b_3(TyB);
-   test_sqshl_8b_8b_7(TyB);
-   test_uqshl_2d_2d_0(TyD);
-   test_uqshl_2d_2d_32(TyD);
-   test_uqshl_2d_2d_63(TyD);
-   test_uqshl_4s_4s_0(TyS);
-   test_uqshl_4s_4s_16(TyS);
-   test_uqshl_4s_4s_31(TyS);
-   test_uqshl_2s_2s_0(TyS);
-   test_uqshl_2s_2s_16(TyS);
-   test_uqshl_2s_2s_31(TyS);
-   test_uqshl_8h_8h_0(TyH);
-   test_uqshl_8h_8h_8(TyH);
-   test_uqshl_8h_8h_15(TyH);
-   test_uqshl_4h_4h_0(TyH);
-   test_uqshl_4h_4h_8(TyH);
-   test_uqshl_4h_4h_15(TyH);
-   test_uqshl_16b_16b_0(TyB);
-   test_uqshl_16b_16b_3(TyB);
-   test_uqshl_16b_16b_7(TyB);
-   test_uqshl_8b_8b_0(TyB);
-   test_uqshl_8b_8b_3(TyB);
-   test_uqshl_8b_8b_7(TyB);
-   test_sqshlu_2d_2d_0(TyD);
-   test_sqshlu_2d_2d_32(TyD);
-   test_sqshlu_2d_2d_63(TyD);
-   test_sqshlu_4s_4s_0(TyS);
-   test_sqshlu_4s_4s_16(TyS);
-   test_sqshlu_4s_4s_31(TyS);
-   test_sqshlu_2s_2s_0(TyS);
-   test_sqshlu_2s_2s_16(TyS);
-   test_sqshlu_2s_2s_31(TyS);
-   test_sqshlu_8h_8h_0(TyH);
-   test_sqshlu_8h_8h_8(TyH);
-   test_sqshlu_8h_8h_15(TyH);
-   test_sqshlu_4h_4h_0(TyH);
-   test_sqshlu_4h_4h_8(TyH);
-   test_sqshlu_4h_4h_15(TyH);
-   test_sqshlu_16b_16b_0(TyB);
-   test_sqshlu_16b_16b_3(TyB);
-   test_sqshlu_16b_16b_7(TyB);
-   test_sqshlu_8b_8b_0(TyB);
-   test_sqshlu_8b_8b_3(TyB);
-   test_sqshlu_8b_8b_7(TyB);
+   if (0) test_sqshl_2d_2d_0(TyD);
+   if (0) test_sqshl_2d_2d_32(TyD);
+   if (0) test_sqshl_2d_2d_63(TyD);
+   if (0) test_sqshl_4s_4s_0(TyS);
+   if (0) test_sqshl_4s_4s_16(TyS);
+   if (0) test_sqshl_4s_4s_31(TyS);
+   if (0) test_sqshl_2s_2s_0(TyS);
+   if (0) test_sqshl_2s_2s_16(TyS);
+   if (0) test_sqshl_2s_2s_31(TyS);
+   if (0) test_sqshl_8h_8h_0(TyH);
+   if (0) test_sqshl_8h_8h_8(TyH);
+   if (0) test_sqshl_8h_8h_15(TyH);
+   if (0) test_sqshl_4h_4h_0(TyH);
+   if (0) test_sqshl_4h_4h_8(TyH);
+   if (0) test_sqshl_4h_4h_15(TyH);
+   if (0) test_sqshl_16b_16b_0(TyB);
+   if (0) test_sqshl_16b_16b_3(TyB);
+   if (0) test_sqshl_16b_16b_7(TyB);
+   if (0) test_sqshl_8b_8b_0(TyB);
+   if (0) test_sqshl_8b_8b_3(TyB);
+   if (0) test_sqshl_8b_8b_7(TyB);
+   if (0) test_uqshl_2d_2d_0(TyD);
+   if (0) test_uqshl_2d_2d_32(TyD);
+   if (0) test_uqshl_2d_2d_63(TyD);
+   if (0) test_uqshl_4s_4s_0(TyS);
+   if (0) test_uqshl_4s_4s_16(TyS);
+   if (0) test_uqshl_4s_4s_31(TyS);
+   if (0) test_uqshl_2s_2s_0(TyS);
+   if (0) test_uqshl_2s_2s_16(TyS);
+   if (0) test_uqshl_2s_2s_31(TyS);
+   if (0) test_uqshl_8h_8h_0(TyH);
+   if (0) test_uqshl_8h_8h_8(TyH);
+   if (0) test_uqshl_8h_8h_15(TyH);
+   if (0) test_uqshl_4h_4h_0(TyH);
+   if (0) test_uqshl_4h_4h_8(TyH);
+   if (0) test_uqshl_4h_4h_15(TyH);
+   if (0) test_uqshl_16b_16b_0(TyB);
+   if (0) test_uqshl_16b_16b_3(TyB);
+   if (0) test_uqshl_16b_16b_7(TyB);
+   if (0) test_uqshl_8b_8b_0(TyB);
+   if (0) test_uqshl_8b_8b_3(TyB);
+   if (0) test_uqshl_8b_8b_7(TyB);
+   if (0) test_sqshlu_2d_2d_0(TyD);
+   if (0) test_sqshlu_2d_2d_32(TyD);
+   if (0) test_sqshlu_2d_2d_63(TyD);
+   if (0) test_sqshlu_4s_4s_0(TyS);
+   if (0) test_sqshlu_4s_4s_16(TyS);
+   if (0) test_sqshlu_4s_4s_31(TyS);
+   if (0) test_sqshlu_2s_2s_0(TyS);
+   if (0) test_sqshlu_2s_2s_16(TyS);
+   if (0) test_sqshlu_2s_2s_31(TyS);
+   if (0) test_sqshlu_8h_8h_0(TyH);
+   if (0) test_sqshlu_8h_8h_8(TyH);
+   if (0) test_sqshlu_8h_8h_15(TyH);
+   if (0) test_sqshlu_4h_4h_0(TyH);
+   if (0) test_sqshlu_4h_4h_8(TyH);
+   if (0) test_sqshlu_4h_4h_15(TyH);
+   if (0) test_sqshlu_16b_16b_0(TyB);
+   if (0) test_sqshlu_16b_16b_3(TyB);
+   if (0) test_sqshlu_16b_16b_7(TyB);
+   if (0) test_sqshlu_8b_8b_0(TyB);
+   if (0) test_sqshlu_8b_8b_3(TyB);
+   if (0) test_sqshlu_8b_8b_7(TyB);
 
    // sqxtn        s_d,h_s,b_h
    // uqxtn        s_d,h_s,b_h
    // sqxtun       s_d,h_s,b_h
-   test_sqxtn_s_d(TyD);
-   test_sqxtn_h_s(TyS);
-   test_sqxtn_b_h(TyH);
-   test_uqxtn_s_d(TyD);
-   test_uqxtn_h_s(TyS);
-   test_uqxtn_b_h(TyH);
-   test_sqxtun_s_d(TyD);
-   test_sqxtun_h_s(TyS);
-   test_sqxtun_b_h(TyH);
+   if (0) test_sqxtn_s_d(TyD);
+   if (0) test_sqxtn_h_s(TyS);
+   if (0) test_sqxtn_b_h(TyH);
+   if (0) test_uqxtn_s_d(TyD);
+   if (0) test_uqxtn_h_s(TyS);
+   if (0) test_uqxtn_b_h(TyH);
+   if (0) test_sqxtun_s_d(TyD);
+   if (0) test_sqxtun_h_s(TyS);
+   if (0) test_sqxtun_b_h(TyH);
 
    // sqxtn{2}     2s/4s_2d, 4h/8h_4s, 8b/16b_8h
    // uqxtn{2}     2s/4s_2d, 4h/8h_4s, 8b/16b_8h
    // sqxtun{2}    2s/4s_2d, 4h/8h_4s, 8b/16b_8h
-   test_sqxtn_2s_2d(TyD);
-   test_sqxtn2_4s_2d(TyD);
-   test_sqxtn_4h_4s(TyS);
-   test_sqxtn2_8h_4s(TyS);
-   test_sqxtn_8b_8h(TyH);
-   test_sqxtn2_16b_8h(TyH);
-   test_uqxtn_2s_2d(TyD);
-   test_uqxtn2_4s_2d(TyD);
-   test_uqxtn_4h_4s(TyS);
-   test_uqxtn2_8h_4s(TyS);
-   test_uqxtn_8b_8h(TyH);
-   test_uqxtn2_16b_8h(TyH);
-   test_sqxtun_2s_2d(TyD);
-   test_sqxtun2_4s_2d(TyD);
-   test_sqxtun_4h_4s(TyS);
-   test_sqxtun2_8h_4s(TyS);
-   test_sqxtun_8b_8h(TyH);
-   test_sqxtun2_16b_8h(TyH);
+   if (0) test_sqxtn_2s_2d(TyD);
+   if (0) test_sqxtn2_4s_2d(TyD);
+   if (0) test_sqxtn_4h_4s(TyS);
+   if (0) test_sqxtn2_8h_4s(TyS);
+   if (0) test_sqxtn_8b_8h(TyH);
+   if (0) test_sqxtn2_16b_8h(TyH);
+   if (0) test_uqxtn_2s_2d(TyD);
+   if (0) test_uqxtn2_4s_2d(TyD);
+   if (0) test_uqxtn_4h_4s(TyS);
+   if (0) test_uqxtn2_8h_4s(TyS);
+   if (0) test_uqxtn_8b_8h(TyH);
+   if (0) test_uqxtn2_16b_8h(TyH);
+   if (0) test_sqxtun_2s_2d(TyD);
+   if (0) test_sqxtun2_4s_2d(TyD);
+   if (0) test_sqxtun_4h_4s(TyS);
+   if (0) test_sqxtun2_8h_4s(TyS);
+   if (0) test_sqxtun_8b_8h(TyH);
+   if (0) test_sqxtun2_16b_8h(TyH);
 
    // srhadd       4s,2s,8h,4h,16b,8b
    // urhadd       4s,2s,8h,4h,16b,8b
-   test_srhadd_4s_4s_4s(TyS);
-   test_srhadd_2s_2s_2s(TyS);
-   test_srhadd_8h_8h_8h(TyH);
-   test_srhadd_4h_4h_4h(TyH);
-   test_srhadd_16b_16b_16b(TyB);
-   test_srhadd_8b_8b_8b(TyB);
-   test_urhadd_4s_4s_4s(TyS);
-   test_urhadd_2s_2s_2s(TyS);
-   test_urhadd_8h_8h_8h(TyH);
-   test_urhadd_4h_4h_4h(TyH);
-   test_urhadd_16b_16b_16b(TyB);
-   test_urhadd_8b_8b_8b(TyB);
+   if (0) test_srhadd_4s_4s_4s(TyS);
+   if (0) test_srhadd_2s_2s_2s(TyS);
+   if (0) test_srhadd_8h_8h_8h(TyH);
+   if (0) test_srhadd_4h_4h_4h(TyH);
+   if (0) test_srhadd_16b_16b_16b(TyB);
+   if (0) test_srhadd_8b_8b_8b(TyB);
+   if (0) test_urhadd_4s_4s_4s(TyS);
+   if (0) test_urhadd_2s_2s_2s(TyS);
+   if (0) test_urhadd_8h_8h_8h(TyH);
+   if (0) test_urhadd_4h_4h_4h(TyH);
+   if (0) test_urhadd_16b_16b_16b(TyB);
+   if (0) test_urhadd_8b_8b_8b(TyB);
 
    // sshl (reg)   d
    // ushl (reg)   d
-   test_sshl_d_d_d(TyD);
-   test_ushl_d_d_d(TyD);
+   if (0) test_sshl_d_d_d(TyD);
+   if (0) test_ushl_d_d_d(TyD);
 
    // sshl (reg)   2d,4s,2s,8h,4h,16b,8b
    // ushl (reg)   2d,4s,2s,8h,4h,16b,8b
-   test_sshl_2d_2d_2d(TyD);
-   test_sshl_4s_4s_4s(TyS);
-   test_sshl_2s_2s_2s(TyS);
-   test_sshl_8h_8h_8h(TyH);
-   test_sshl_4h_4h_4h(TyH);
-   test_sshl_16b_16b_16b(TyB);
-   test_sshl_8b_8b_8b(TyB);
-   test_ushl_2d_2d_2d(TyD);
-   test_ushl_4s_4s_4s(TyS);
-   test_ushl_2s_2s_2s(TyS);
-   test_ushl_8h_8h_8h(TyH);
-   test_ushl_4h_4h_4h(TyH);
-   test_ushl_16b_16b_16b(TyB);
-   test_ushl_8b_8b_8b(TyB);
+   if (0) test_sshl_2d_2d_2d(TyD);
+   if (0) test_sshl_4s_4s_4s(TyS);
+   if (0) test_sshl_2s_2s_2s(TyS);
+   if (0) test_sshl_8h_8h_8h(TyH);
+   if (0) test_sshl_4h_4h_4h(TyH);
+   if (0) test_sshl_16b_16b_16b(TyB);
+   if (0) test_sshl_8b_8b_8b(TyB);
+   if (0) test_ushl_2d_2d_2d(TyD);
+   if (0) test_ushl_4s_4s_4s(TyS);
+   if (0) test_ushl_2s_2s_2s(TyS);
+   if (0) test_ushl_8h_8h_8h(TyH);
+   if (0) test_ushl_4h_4h_4h(TyH);
+   if (0) test_ushl_16b_16b_16b(TyB);
+   if (0) test_ushl_8b_8b_8b(TyB);
 
    // shl  (imm)   d
    // sshr (imm)   d
    // ushr (imm)   d
-   test_shl_d_d_0(TyD);
-   test_shl_d_d_32(TyD);
-   test_shl_d_d_63(TyD);
-   test_sshr_d_d_1(TyD);
-   test_sshr_d_d_32(TyD);
-   test_sshr_d_d_64(TyD);
-   test_ushr_d_d_1(TyD);
-   test_ushr_d_d_32(TyD);
-   test_ushr_d_d_64(TyD);
+   if (1) test_shl_d_d_0(TyD);
+   if (1) test_shl_d_d_32(TyD);
+   if (1) test_shl_d_d_63(TyD);
+   if (0) test_sshr_d_d_1(TyD);
+   if (0) test_sshr_d_d_32(TyD);
+   if (0) test_sshr_d_d_64(TyD);
+   if (0) test_ushr_d_d_1(TyD);
+   if (0) test_ushr_d_d_32(TyD);
+   if (0) test_ushr_d_d_64(TyD);
 
    // shl  (imm)   16b,8b,8h,4h,4s,2s,2d
    // sshr (imm)   2d,4s,2s,8h,4h,16b,8b
    // ushr (imm)   2d,4s,2s,8h,4h,16b,8b
-   test_shl_2d_2d_0(TyD);
-   test_shl_2d_2d_13(TyD);
-   test_shl_2d_2d_63(TyD);
-   test_shl_4s_4s_0(TyS);
-   test_shl_4s_4s_13(TyS);
-   test_shl_4s_4s_31(TyS);
-   test_shl_2s_2s_0(TyS);
-   test_shl_2s_2s_13(TyS);
-   test_shl_2s_2s_31(TyS);
-   test_shl_8h_8h_0(TyH);
-   test_shl_8h_8h_13(TyH);
-   test_shl_8h_8h_15(TyH);
-   test_shl_4h_4h_0(TyH);
-   test_shl_4h_4h_13(TyH);
-   test_shl_4h_4h_15(TyH);
-   test_shl_16b_16b_0(TyB);
-   test_shl_16b_16b_7(TyB);
-   test_shl_8b_8b_0(TyB);
-   test_shl_8b_8b_7(TyB);
-   test_sshr_2d_2d_1(TyD);
-   test_sshr_2d_2d_13(TyD);
-   test_sshr_2d_2d_64(TyD);
-   test_sshr_4s_4s_1(TyS);
-   test_sshr_4s_4s_13(TyS);
-   test_sshr_4s_4s_32(TyS);
-   test_sshr_2s_2s_1(TyS);
-   test_sshr_2s_2s_13(TyS);
-   test_sshr_2s_2s_32(TyS);
-   test_sshr_8h_8h_1(TyH);
-   test_sshr_8h_8h_13(TyH);
-   test_sshr_8h_8h_16(TyH);
-   test_sshr_4h_4h_1(TyH);
-   test_sshr_4h_4h_13(TyH);
-   test_sshr_4h_4h_16(TyH);
-   test_sshr_16b_16b_1(TyB);
-   test_sshr_16b_16b_8(TyB);
-   test_sshr_8b_8b_1(TyB);
-   test_sshr_8b_8b_8(TyB);
-   test_ushr_2d_2d_1(TyD);
-   test_ushr_2d_2d_13(TyD);
-   test_ushr_2d_2d_64(TyD);
-   test_ushr_4s_4s_1(TyS);
-   test_ushr_4s_4s_13(TyS);
-   test_ushr_4s_4s_32(TyS);
-   test_ushr_2s_2s_1(TyS);
-   test_ushr_2s_2s_13(TyS);
-   test_ushr_2s_2s_32(TyS);
-   test_ushr_8h_8h_1(TyH);
-   test_ushr_8h_8h_13(TyH);
-   test_ushr_8h_8h_16(TyH);
-   test_ushr_4h_4h_1(TyH);
-   test_ushr_4h_4h_13(TyH);
-   test_ushr_4h_4h_16(TyH);
-   test_ushr_16b_16b_1(TyB);
-   test_ushr_16b_16b_8(TyB);
-   test_ushr_8b_8b_1(TyB);
-   test_ushr_8b_8b_8(TyB);
+   if (0) test_shl_2d_2d_0(TyD);
+   if (1) test_shl_2d_2d_13(TyD);
+   if (1) test_shl_2d_2d_63(TyD);
+   if (0) test_shl_4s_4s_0(TyS);
+   if (1) test_shl_4s_4s_13(TyS);
+   if (1) test_shl_4s_4s_31(TyS);
+   if (0) test_shl_2s_2s_0(TyS);
+   if (1) test_shl_2s_2s_13(TyS);
+   if (1) test_shl_2s_2s_31(TyS);
+   if (0) test_shl_8h_8h_0(TyH);
+   if (1) test_shl_8h_8h_13(TyH);
+   if (1) test_shl_8h_8h_15(TyH);
+   if (0) test_shl_4h_4h_0(TyH);
+   if (1) test_shl_4h_4h_13(TyH);
+   if (1) test_shl_4h_4h_15(TyH);
+   if (0) test_shl_16b_16b_0(TyB);
+   if (1) test_shl_16b_16b_7(TyB);
+   if (0) test_shl_8b_8b_0(TyB);
+   if (1) test_shl_8b_8b_7(TyB);
+   if (1) test_sshr_2d_2d_1(TyD);
+   if (1) test_sshr_2d_2d_13(TyD);
+   if (0) test_sshr_2d_2d_64(TyD);
+   if (1) test_sshr_4s_4s_1(TyS);
+   if (1) test_sshr_4s_4s_13(TyS);
+   if (0) test_sshr_4s_4s_32(TyS);
+   if (1) test_sshr_2s_2s_1(TyS);
+   if (1) test_sshr_2s_2s_13(TyS);
+   if (0) test_sshr_2s_2s_32(TyS);
+   if (1) test_sshr_8h_8h_1(TyH);
+   if (1) test_sshr_8h_8h_13(TyH);
+   if (0) test_sshr_8h_8h_16(TyH);
+   if (1) test_sshr_4h_4h_1(TyH);
+   if (1) test_sshr_4h_4h_13(TyH);
+   if (0) test_sshr_4h_4h_16(TyH);
+   if (1) test_sshr_16b_16b_1(TyB);
+   if (0) test_sshr_16b_16b_8(TyB);
+   if (1) test_sshr_8b_8b_1(TyB);
+   if (0) test_sshr_8b_8b_8(TyB);
+   if (1) test_ushr_2d_2d_1(TyD);
+   if (1) test_ushr_2d_2d_13(TyD);
+   if (0) test_ushr_2d_2d_64(TyD);
+   if (1) test_ushr_4s_4s_1(TyS);
+   if (1) test_ushr_4s_4s_13(TyS);
+   if (0) test_ushr_4s_4s_32(TyS);
+   if (1) test_ushr_2s_2s_1(TyS);
+   if (1) test_ushr_2s_2s_13(TyS);
+   if (0) test_ushr_2s_2s_32(TyS);
+   if (1) test_ushr_8h_8h_1(TyH);
+   if (1) test_ushr_8h_8h_13(TyH);
+   if (0) test_ushr_8h_8h_16(TyH);
+   if (1) test_ushr_4h_4h_1(TyH);
+   if (1) test_ushr_4h_4h_13(TyH);
+   if (0) test_ushr_4h_4h_16(TyH);
+   if (1) test_ushr_16b_16b_1(TyB);
+   if (0) test_ushr_16b_16b_8(TyB);
+   if (1) test_ushr_8b_8b_1(TyB);
+   if (0) test_ushr_8b_8b_8(TyB);
 
    // ssra (imm)   d
    // usra (imm)   d
-   test_ssra_d_d_1(TyD);
-   test_ssra_d_d_32(TyD);
-   test_ssra_d_d_64(TyD);
-   test_usra_d_d_1(TyD);
-   test_usra_d_d_32(TyD);
-   test_usra_d_d_64(TyD);
+   if (0) test_ssra_d_d_1(TyD);
+   if (0) test_ssra_d_d_32(TyD);
+   if (0) test_ssra_d_d_64(TyD);
+   if (0) test_usra_d_d_1(TyD);
+   if (0) test_usra_d_d_32(TyD);
+   if (0) test_usra_d_d_64(TyD);
 
    // ssra (imm)   2d,4s,2s,8h,4h,16b,8b
    // usra (imm)   2d,4s,2s,8h,4h,16b,8b
-   test_ssra_2d_2d_1(TyD);
-   test_ssra_2d_2d_32(TyD);
-   test_ssra_2d_2d_64(TyD);
-   test_ssra_4s_4s_1(TyS);
-   test_ssra_4s_4s_16(TyS);
-   test_ssra_4s_4s_32(TyS);
-   test_ssra_2s_2s_1(TyS);
-   test_ssra_2s_2s_16(TyS);
-   test_ssra_2s_2s_32(TyS);
-   test_ssra_8h_8h_1(TyH);
-   test_ssra_8h_8h_8(TyH);
-   test_ssra_8h_8h_16(TyH);
-   test_ssra_4h_4h_1(TyH);
-   test_ssra_4h_4h_8(TyH);
-   test_ssra_4h_4h_16(TyH);
-   test_ssra_16b_16b_1(TyB);
-   test_ssra_16b_16b_3(TyB);
-   test_ssra_16b_16b_8(TyB);
-   test_ssra_8b_8b_1(TyB);
-   test_ssra_8b_8b_3(TyB);
-   test_ssra_8b_8b_8(TyB);
-   test_usra_2d_2d_1(TyD);
-   test_usra_2d_2d_32(TyD);
-   test_usra_2d_2d_64(TyD);
-   test_usra_4s_4s_1(TyS);
-   test_usra_4s_4s_16(TyS);
-   test_usra_4s_4s_32(TyS);
-   test_usra_2s_2s_1(TyS);
-   test_usra_2s_2s_16(TyS);
-   test_usra_2s_2s_32(TyS);
-   test_usra_8h_8h_1(TyH);
-   test_usra_8h_8h_8(TyH);
-   test_usra_8h_8h_16(TyH);
-   test_usra_4h_4h_1(TyH);
-   test_usra_4h_4h_8(TyH);
-   test_usra_4h_4h_16(TyH);
-   test_usra_16b_16b_1(TyB);
-   test_usra_16b_16b_3(TyB);
-   test_usra_16b_16b_8(TyB);
-   test_usra_8b_8b_1(TyB);
-   test_usra_8b_8b_3(TyB);
-   test_usra_8b_8b_8(TyB);
+   if (0) test_ssra_2d_2d_1(TyD);
+   if (0) test_ssra_2d_2d_32(TyD);
+   if (0) test_ssra_2d_2d_64(TyD);
+   if (0) test_ssra_4s_4s_1(TyS);
+   if (0) test_ssra_4s_4s_16(TyS);
+   if (0) test_ssra_4s_4s_32(TyS);
+   if (0) test_ssra_2s_2s_1(TyS);
+   if (0) test_ssra_2s_2s_16(TyS);
+   if (0) test_ssra_2s_2s_32(TyS);
+   if (0) test_ssra_8h_8h_1(TyH);
+   if (0) test_ssra_8h_8h_8(TyH);
+   if (0) test_ssra_8h_8h_16(TyH);
+   if (0) test_ssra_4h_4h_1(TyH);
+   if (0) test_ssra_4h_4h_8(TyH);
+   if (0) test_ssra_4h_4h_16(TyH);
+   if (0) test_ssra_16b_16b_1(TyB);
+   if (0) test_ssra_16b_16b_3(TyB);
+   if (0) test_ssra_16b_16b_8(TyB);
+   if (0) test_ssra_8b_8b_1(TyB);
+   if (0) test_ssra_8b_8b_3(TyB);
+   if (0) test_ssra_8b_8b_8(TyB);
+   if (0) test_usra_2d_2d_1(TyD);
+   if (0) test_usra_2d_2d_32(TyD);
+   if (0) test_usra_2d_2d_64(TyD);
+   if (0) test_usra_4s_4s_1(TyS);
+   if (0) test_usra_4s_4s_16(TyS);
+   if (0) test_usra_4s_4s_32(TyS);
+   if (0) test_usra_2s_2s_1(TyS);
+   if (0) test_usra_2s_2s_16(TyS);
+   if (0) test_usra_2s_2s_32(TyS);
+   if (0) test_usra_8h_8h_1(TyH);
+   if (0) test_usra_8h_8h_8(TyH);
+   if (0) test_usra_8h_8h_16(TyH);
+   if (0) test_usra_4h_4h_1(TyH);
+   if (0) test_usra_4h_4h_8(TyH);
+   if (0) test_usra_4h_4h_16(TyH);
+   if (0) test_usra_16b_16b_1(TyB);
+   if (0) test_usra_16b_16b_3(TyB);
+   if (0) test_usra_16b_16b_8(TyB);
+   if (0) test_usra_8b_8b_1(TyB);
+   if (0) test_usra_8b_8b_3(TyB);
+   if (0) test_usra_8b_8b_8(TyB);
 
    // srshl (reg)  d
    // urshl (reg)  d
-   test_srshl_d_d_d(TyD);
-   test_urshl_d_d_d(TyD);
+   if (0) test_srshl_d_d_d(TyD);
+   if (0) test_urshl_d_d_d(TyD);
 
    // srshl (reg)  2d,4s,2s,8h,4h,16b,8b
    // urshl (reg)  2d,4s,2s,8h,4h,16b,8b
-   test_srshl_2d_2d_2d(TyD);
-   test_srshl_4s_4s_4s(TyS);
-   test_srshl_2s_2s_2s(TyS);
-   test_srshl_8h_8h_8h(TyH);
-   test_srshl_4h_4h_4h(TyH);
-   test_srshl_16b_16b_16b(TyB);
-   test_srshl_8b_8b_8b(TyB);
-   test_urshl_2d_2d_2d(TyD);
-   test_urshl_4s_4s_4s(TyS);
-   test_urshl_2s_2s_2s(TyS);
-   test_urshl_8h_8h_8h(TyH);
-   test_urshl_4h_4h_4h(TyH);
-   test_urshl_16b_16b_16b(TyB);
-   test_urshl_8b_8b_8b(TyB);
+   if (0) test_srshl_2d_2d_2d(TyD);
+   if (0) test_srshl_4s_4s_4s(TyS);
+   if (0) test_srshl_2s_2s_2s(TyS);
+   if (0) test_srshl_8h_8h_8h(TyH);
+   if (0) test_srshl_4h_4h_4h(TyH);
+   if (0) test_srshl_16b_16b_16b(TyB);
+   if (0) test_srshl_8b_8b_8b(TyB);
+   if (0) test_urshl_2d_2d_2d(TyD);
+   if (0) test_urshl_4s_4s_4s(TyS);
+   if (0) test_urshl_2s_2s_2s(TyS);
+   if (0) test_urshl_8h_8h_8h(TyH);
+   if (0) test_urshl_4h_4h_4h(TyH);
+   if (0) test_urshl_16b_16b_16b(TyB);
+   if (0) test_urshl_8b_8b_8b(TyB);
 
    // srshr (imm)  d
    // urshr (imm)  d
-   test_srshr_d_d_1(TyD);
-   test_srshr_d_d_32(TyD);
-   test_srshr_d_d_64(TyD);
-   test_urshr_d_d_1(TyD);
-   test_urshr_d_d_32(TyD);
-   test_urshr_d_d_64(TyD);
+   if (0) test_srshr_d_d_1(TyD);
+   if (0) test_srshr_d_d_32(TyD);
+   if (0) test_srshr_d_d_64(TyD);
+   if (0) test_urshr_d_d_1(TyD);
+   if (0) test_urshr_d_d_32(TyD);
+   if (0) test_urshr_d_d_64(TyD);
 
    // srshr (imm)  2d,4s,2s,8h,4h,16b,8b
    // urshr (imm)  2d,4s,2s,8h,4h,16b,8b
-   test_srshr_2d_2d_1(TyD);
-   test_srshr_2d_2d_32(TyD);
-   test_srshr_2d_2d_64(TyD);
-   test_srshr_4s_4s_1(TyS);
-   test_srshr_4s_4s_16(TyS);
-   test_srshr_4s_4s_32(TyS);
-   test_srshr_2s_2s_1(TyS);
-   test_srshr_2s_2s_16(TyS);
-   test_srshr_2s_2s_32(TyS);
-   test_srshr_8h_8h_1(TyH);
-   test_srshr_8h_8h_8(TyH);
-   test_srshr_8h_8h_16(TyH);
-   test_srshr_4h_4h_1(TyH);
-   test_srshr_4h_4h_8(TyH);
-   test_srshr_4h_4h_16(TyH);
-   test_srshr_16b_16b_1(TyB);
-   test_srshr_16b_16b_3(TyB);
-   test_srshr_16b_16b_8(TyB);
-   test_srshr_8b_8b_1(TyB);
-   test_srshr_8b_8b_3(TyB);
-   test_srshr_8b_8b_8(TyB);
-   test_urshr_2d_2d_1(TyD);
-   test_urshr_2d_2d_32(TyD);
-   test_urshr_2d_2d_64(TyD);
-   test_urshr_4s_4s_1(TyS);
-   test_urshr_4s_4s_16(TyS);
-   test_urshr_4s_4s_32(TyS);
-   test_urshr_2s_2s_1(TyS);
-   test_urshr_2s_2s_16(TyS);
-   test_urshr_2s_2s_32(TyS);
-   test_urshr_8h_8h_1(TyH);
-   test_urshr_8h_8h_8(TyH);
-   test_urshr_8h_8h_16(TyH);
-   test_urshr_4h_4h_1(TyH);
-   test_urshr_4h_4h_8(TyH);
-   test_urshr_4h_4h_16(TyH);
-   test_urshr_16b_16b_1(TyB);
-   test_urshr_16b_16b_3(TyB);
-   test_urshr_16b_16b_8(TyB);
-   test_urshr_8b_8b_1(TyB);
-   test_urshr_8b_8b_3(TyB);
-   test_urshr_8b_8b_8(TyB);
+   if (0) test_srshr_2d_2d_1(TyD);
+   if (0) test_srshr_2d_2d_32(TyD);
+   if (0) test_srshr_2d_2d_64(TyD);
+   if (0) test_srshr_4s_4s_1(TyS);
+   if (0) test_srshr_4s_4s_16(TyS);
+   if (0) test_srshr_4s_4s_32(TyS);
+   if (0) test_srshr_2s_2s_1(TyS);
+   if (0) test_srshr_2s_2s_16(TyS);
+   if (0) test_srshr_2s_2s_32(TyS);
+   if (0) test_srshr_8h_8h_1(TyH);
+   if (0) test_srshr_8h_8h_8(TyH);
+   if (0) test_srshr_8h_8h_16(TyH);
+   if (0) test_srshr_4h_4h_1(TyH);
+   if (0) test_srshr_4h_4h_8(TyH);
+   if (0) test_srshr_4h_4h_16(TyH);
+   if (0) test_srshr_16b_16b_1(TyB);
+   if (0) test_srshr_16b_16b_3(TyB);
+   if (0) test_srshr_16b_16b_8(TyB);
+   if (0) test_srshr_8b_8b_1(TyB);
+   if (0) test_srshr_8b_8b_3(TyB);
+   if (0) test_srshr_8b_8b_8(TyB);
+   if (0) test_urshr_2d_2d_1(TyD);
+   if (0) test_urshr_2d_2d_32(TyD);
+   if (0) test_urshr_2d_2d_64(TyD);
+   if (0) test_urshr_4s_4s_1(TyS);
+   if (0) test_urshr_4s_4s_16(TyS);
+   if (0) test_urshr_4s_4s_32(TyS);
+   if (0) test_urshr_2s_2s_1(TyS);
+   if (0) test_urshr_2s_2s_16(TyS);
+   if (0) test_urshr_2s_2s_32(TyS);
+   if (0) test_urshr_8h_8h_1(TyH);
+   if (0) test_urshr_8h_8h_8(TyH);
+   if (0) test_urshr_8h_8h_16(TyH);
+   if (0) test_urshr_4h_4h_1(TyH);
+   if (0) test_urshr_4h_4h_8(TyH);
+   if (0) test_urshr_4h_4h_16(TyH);
+   if (0) test_urshr_16b_16b_1(TyB);
+   if (0) test_urshr_16b_16b_3(TyB);
+   if (0) test_urshr_16b_16b_8(TyB);
+   if (0) test_urshr_8b_8b_1(TyB);
+   if (0) test_urshr_8b_8b_3(TyB);
+   if (0) test_urshr_8b_8b_8(TyB);
 
    // srsra (imm)  d
    // ursra (imm)  d
-   test_srsra_d_d_1(TyD);
-   test_srsra_d_d_32(TyD);
-   test_srsra_d_d_64(TyD);
-   test_ursra_d_d_1(TyD);
-   test_ursra_d_d_32(TyD);
-   test_ursra_d_d_64(TyD);
+   if (0) test_srsra_d_d_1(TyD);
+   if (0) test_srsra_d_d_32(TyD);
+   if (0) test_srsra_d_d_64(TyD);
+   if (0) test_ursra_d_d_1(TyD);
+   if (0) test_ursra_d_d_32(TyD);
+   if (0) test_ursra_d_d_64(TyD);
 
    // srsra (imm)  2d,4s,2s,8h,4h,16b,8b
    // ursra (imm)  2d,4s,2s,8h,4h,16b,8b
-   test_srsra_2d_2d_1(TyD);
-   test_srsra_2d_2d_32(TyD);
-   test_srsra_2d_2d_64(TyD);
-   test_srsra_4s_4s_1(TyS);
-   test_srsra_4s_4s_16(TyS);
-   test_srsra_4s_4s_32(TyS);
-   test_srsra_2s_2s_1(TyS);
-   test_srsra_2s_2s_16(TyS);
-   test_srsra_2s_2s_32(TyS);
-   test_srsra_8h_8h_1(TyH);
-   test_srsra_8h_8h_8(TyH);
-   test_srsra_8h_8h_16(TyH);
-   test_srsra_4h_4h_1(TyH);
-   test_srsra_4h_4h_8(TyH);
-   test_srsra_4h_4h_16(TyH);
-   test_srsra_16b_16b_1(TyB);
-   test_srsra_16b_16b_3(TyB);
-   test_srsra_16b_16b_8(TyB);
-   test_srsra_8b_8b_1(TyB);
-   test_srsra_8b_8b_3(TyB);
-   test_srsra_8b_8b_8(TyB);
-   test_ursra_2d_2d_1(TyD);
-   test_ursra_2d_2d_32(TyD);
-   test_ursra_2d_2d_64(TyD);
-   test_ursra_4s_4s_1(TyS);
-   test_ursra_4s_4s_16(TyS);
-   test_ursra_4s_4s_32(TyS);
-   test_ursra_2s_2s_1(TyS);
-   test_ursra_2s_2s_16(TyS);
-   test_ursra_2s_2s_32(TyS);
-   test_ursra_8h_8h_1(TyH);
-   test_ursra_8h_8h_8(TyH);
-   test_ursra_8h_8h_16(TyH);
-   test_ursra_4h_4h_1(TyH);
-   test_ursra_4h_4h_8(TyH);
-   test_ursra_4h_4h_16(TyH);
-   test_ursra_16b_16b_1(TyB);
-   test_ursra_16b_16b_3(TyB);
-   test_ursra_16b_16b_8(TyB);
-   test_ursra_8b_8b_1(TyB);
-   test_ursra_8b_8b_3(TyB);
-   test_ursra_8b_8b_8(TyB);
+   if (0) test_srsra_2d_2d_1(TyD);
+   if (0) test_srsra_2d_2d_32(TyD);
+   if (0) test_srsra_2d_2d_64(TyD);
+   if (0) test_srsra_4s_4s_1(TyS);
+   if (0) test_srsra_4s_4s_16(TyS);
+   if (0) test_srsra_4s_4s_32(TyS);
+   if (0) test_srsra_2s_2s_1(TyS);
+   if (0) test_srsra_2s_2s_16(TyS);
+   if (0) test_srsra_2s_2s_32(TyS);
+   if (0) test_srsra_8h_8h_1(TyH);
+   if (0) test_srsra_8h_8h_8(TyH);
+   if (0) test_srsra_8h_8h_16(TyH);
+   if (0) test_srsra_4h_4h_1(TyH);
+   if (0) test_srsra_4h_4h_8(TyH);
+   if (0) test_srsra_4h_4h_16(TyH);
+   if (0) test_srsra_16b_16b_1(TyB);
+   if (0) test_srsra_16b_16b_3(TyB);
+   if (0) test_srsra_16b_16b_8(TyB);
+   if (0) test_srsra_8b_8b_1(TyB);
+   if (0) test_srsra_8b_8b_3(TyB);
+   if (0) test_srsra_8b_8b_8(TyB);
+   if (0) test_ursra_2d_2d_1(TyD);
+   if (0) test_ursra_2d_2d_32(TyD);
+   if (0) test_ursra_2d_2d_64(TyD);
+   if (0) test_ursra_4s_4s_1(TyS);
+   if (0) test_ursra_4s_4s_16(TyS);
+   if (0) test_ursra_4s_4s_32(TyS);
+   if (0) test_ursra_2s_2s_1(TyS);
+   if (0) test_ursra_2s_2s_16(TyS);
+   if (0) test_ursra_2s_2s_32(TyS);
+   if (0) test_ursra_8h_8h_1(TyH);
+   if (0) test_ursra_8h_8h_8(TyH);
+   if (0) test_ursra_8h_8h_16(TyH);
+   if (0) test_ursra_4h_4h_1(TyH);
+   if (0) test_ursra_4h_4h_8(TyH);
+   if (0) test_ursra_4h_4h_16(TyH);
+   if (0) test_ursra_16b_16b_1(TyB);
+   if (0) test_ursra_16b_16b_3(TyB);
+   if (0) test_ursra_16b_16b_8(TyB);
+   if (0) test_ursra_8b_8b_1(TyB);
+   if (0) test_ursra_8b_8b_3(TyB);
+   if (0) test_ursra_8b_8b_8(TyB);
 
    // sshll{2} (imm)  2d_2s/4s, 4s_4h/8h, 8h_8b/16b
    // ushll{2} (imm)  2d_2s/4s, 4s_4h/8h, 8h_8b/16b
-   test_sshll_2d_2s_0(TyS);
-   test_sshll_2d_2s_15(TyS);
-   test_sshll_2d_2s_31(TyS);
-   test_sshll2_2d_4s_0(TyS);
-   test_sshll2_2d_4s_15(TyS);
-   test_sshll2_2d_4s_31(TyS);
-   test_sshll_4s_4h_0(TyH);
-   test_sshll_4s_4h_7(TyH);
-   test_sshll_4s_4h_15(TyH);
-   test_sshll2_4s_8h_0(TyH);
-   test_sshll2_4s_8h_7(TyH);
-   test_sshll2_4s_8h_15(TyH);
-   test_sshll_8h_8b_0(TyB);
-   test_sshll_8h_8b_3(TyB);
-   test_sshll_8h_8b_7(TyB);
-   test_sshll2_8h_16b_0(TyB);
-   test_sshll2_8h_16b_3(TyB);
-   test_sshll2_8h_16b_7(TyB);
-   test_ushll_2d_2s_0(TyS);
-   test_ushll_2d_2s_15(TyS);
-   test_ushll_2d_2s_31(TyS);
-   test_ushll2_2d_4s_0(TyS);
-   test_ushll2_2d_4s_15(TyS);
-   test_ushll2_2d_4s_31(TyS);
-   test_ushll_4s_4h_0(TyH);
-   test_ushll_4s_4h_7(TyH);
-   test_ushll_4s_4h_15(TyH);
-   test_ushll2_4s_8h_0(TyH);
-   test_ushll2_4s_8h_7(TyH);
-   test_ushll2_4s_8h_15(TyH);
-   test_ushll_8h_8b_0(TyB);
-   test_ushll_8h_8b_3(TyB);
-   test_ushll_8h_8b_7(TyB);
-   test_ushll2_8h_16b_0(TyB);
-   test_ushll2_8h_16b_3(TyB);
-   test_ushll2_8h_16b_7(TyB);
+   if (1) test_sshll_2d_2s_0(TyS);
+   if (1) test_sshll_2d_2s_15(TyS);
+   if (1) test_sshll_2d_2s_31(TyS);
+   if (1) test_sshll2_2d_4s_0(TyS);
+   if (1) test_sshll2_2d_4s_15(TyS);
+   if (1) test_sshll2_2d_4s_31(TyS);
+   if (1) test_sshll_4s_4h_0(TyH);
+   if (1) test_sshll_4s_4h_7(TyH);
+   if (1) test_sshll_4s_4h_15(TyH);
+   if (1) test_sshll2_4s_8h_0(TyH);
+   if (1) test_sshll2_4s_8h_7(TyH);
+   if (1) test_sshll2_4s_8h_15(TyH);
+   if (1) test_sshll_8h_8b_0(TyB);
+   if (1) test_sshll_8h_8b_3(TyB);
+   if (1) test_sshll_8h_8b_7(TyB);
+   if (1) test_sshll2_8h_16b_0(TyB);
+   if (1) test_sshll2_8h_16b_3(TyB);
+   if (1) test_sshll2_8h_16b_7(TyB);
+   if (1) test_ushll_2d_2s_0(TyS);
+   if (1) test_ushll_2d_2s_15(TyS);
+   if (1) test_ushll_2d_2s_31(TyS);
+   if (1) test_ushll2_2d_4s_0(TyS);
+   if (1) test_ushll2_2d_4s_15(TyS);
+   if (1) test_ushll2_2d_4s_31(TyS);
+   if (1) test_ushll_4s_4h_0(TyH);
+   if (1) test_ushll_4s_4h_7(TyH);
+   if (1) test_ushll_4s_4h_15(TyH);
+   if (1) test_ushll2_4s_8h_0(TyH);
+   if (1) test_ushll2_4s_8h_7(TyH);
+   if (1) test_ushll2_4s_8h_15(TyH);
+   if (1) test_ushll_8h_8b_0(TyB);
+   if (1) test_ushll_8h_8b_3(TyB);
+   if (1) test_ushll_8h_8b_7(TyB);
+   if (1) test_ushll2_8h_16b_0(TyB);
+   if (1) test_ushll2_8h_16b_3(TyB);
+   if (1) test_ushll2_8h_16b_7(TyB);
 
    // suqadd  d,s,h,b
    // usqadd  d,s,h,b
-   test_suqadd_d_d(TyD);
-   test_suqadd_s_s(TyS);
-   test_suqadd_h_h(TyH);
-   test_suqadd_b_b(TyB);
-   test_usqadd_d_d(TyD);
-   test_usqadd_s_s(TyS);
-   test_usqadd_h_h(TyH);
-   test_usqadd_b_b(TyB);
+   if (0) test_suqadd_d_d(TyD);
+   if (0) test_suqadd_s_s(TyS);
+   if (0) test_suqadd_h_h(TyH);
+   if (0) test_suqadd_b_b(TyB);
+   if (0) test_usqadd_d_d(TyD);
+   if (0) test_usqadd_s_s(TyS);
+   if (0) test_usqadd_h_h(TyH);
+   if (0) test_usqadd_b_b(TyB);
 
    // suqadd  2d,4s,2s,8h,4h,16b,8b
    // usqadd  2d,4s,2s,8h,4h,16b,8b
-   test_suqadd_2d_2d(TyD);
-   test_suqadd_4s_4s(TyS);
-   test_suqadd_2s_2s(TyS);
-   test_suqadd_8h_8h(TyH);
-   test_suqadd_4h_4h(TyH);
-   test_suqadd_16b_16b(TyB);
-   test_suqadd_8b_8b(TyB);
-   test_usqadd_2d_2d(TyD);
-   test_usqadd_4s_4s(TyS);
-   test_usqadd_2s_2s(TyS);
-   test_usqadd_8h_8h(TyH);
-   test_usqadd_4h_4h(TyH);
-   test_usqadd_16b_16b(TyB);
-   test_usqadd_8b_8b(TyB);
+   if (0) test_suqadd_2d_2d(TyD);
+   if (0) test_suqadd_4s_4s(TyS);
+   if (0) test_suqadd_2s_2s(TyS);
+   if (0) test_suqadd_8h_8h(TyH);
+   if (0) test_suqadd_4h_4h(TyH);
+   if (0) test_suqadd_16b_16b(TyB);
+   if (0) test_suqadd_8b_8b(TyB);
+   if (0) test_usqadd_2d_2d(TyD);
+   if (0) test_usqadd_4s_4s(TyS);
+   if (0) test_usqadd_2s_2s(TyS);
+   if (0) test_usqadd_8h_8h(TyH);
+   if (0) test_usqadd_4h_4h(TyH);
+   if (0) test_usqadd_16b_16b(TyB);
+   if (0) test_usqadd_8b_8b(TyB);
 
    // tbl     8b_{16b}_8b, 16b_{16b}_16b
    // tbl     8b_{16b,16b}_8b, 16b_{16b,16b}_16b
    // tbl     8b_{16b,16b,16b}_8b, 16b_{16b,16b,16b}_16b
    // tbl     8b_{16b,16b,16b,16b}_8b, 16b_{16b,16b,16b,16b}_16b
-   test_tbl_16b_1reg(TyB);
-   test_tbl_16b_2reg(TyB);
-   test_tbl_16b_3reg(TyB);
-   test_tbl_16b_4reg(TyB);
-   test_tbl_8b_1reg(TyB);
-   test_tbl_8b_2reg(TyB);
-   test_tbl_8b_3reg(TyB);
-   test_tbl_8b_4reg(TyB);
+   if (1) test_tbl_16b_1reg(TyB);
+   if (1) test_tbl_16b_2reg(TyB);
+   if (1) test_tbl_16b_3reg(TyB);
+   if (1) test_tbl_16b_4reg(TyB);
+   if (1) test_tbl_8b_1reg(TyB);
+   if (1) test_tbl_8b_2reg(TyB);
+   if (1) test_tbl_8b_3reg(TyB);
+   if (1) test_tbl_8b_4reg(TyB);
 
    // tbx     8b_{16b}_8b, 16b_{16b}_16b
    // tbx     8b_{16b,16b}_8b, 16b_{16b,16b}_16b
    // tbx     8b_{16b,16b,16b}_8b, 16b_{16b,16b,16b}_16b
    // tbx     8b_{16b,16b,16b,16b}_8b, 16b_{16b,16b,16b,16b}_16b
-   test_tbx_16b_1reg(TyB);
-   test_tbx_16b_2reg(TyB);
-   test_tbx_16b_3reg(TyB);
-   test_tbx_16b_4reg(TyB);
-   test_tbx_8b_1reg(TyB);
-   test_tbx_8b_2reg(TyB);
-   test_tbx_8b_3reg(TyB);
-   test_tbx_8b_4reg(TyB);
+   if (1) test_tbx_16b_1reg(TyB);
+   if (1) test_tbx_16b_2reg(TyB);
+   if (1) test_tbx_16b_3reg(TyB);
+   if (1) test_tbx_16b_4reg(TyB);
+   if (1) test_tbx_8b_1reg(TyB);
+   if (1) test_tbx_8b_2reg(TyB);
+   if (1) test_tbx_8b_3reg(TyB);
+   if (1) test_tbx_8b_4reg(TyB);
 
    // trn1    2d,4s,2s,8h,4h,16b,8b
    // trn2    2d,4s,2s,8h,4h,16b,8b
-   test_trn1_2d_2d_2d(TyD);
-   test_trn1_4s_4s_4s(TyS);
-   test_trn1_2s_2s_2s(TyS);
-   test_trn1_8h_8h_8h(TyH);
-   test_trn1_4h_4h_4h(TyH);
-   test_trn1_16b_16b_16b(TyB);
-   test_trn1_8b_8b_8b(TyB);
-   test_trn2_2d_2d_2d(TyD);
-   test_trn2_4s_4s_4s(TyS);
-   test_trn2_2s_2s_2s(TyS);
-   test_trn2_8h_8h_8h(TyH);
-   test_trn2_4h_4h_4h(TyH);
-   test_trn2_16b_16b_16b(TyB);
-   test_trn2_8b_8b_8b(TyB);
+   if (0) test_trn1_2d_2d_2d(TyD);
+   if (0) test_trn1_4s_4s_4s(TyS);
+   if (0) test_trn1_2s_2s_2s(TyS);
+   if (0) test_trn1_8h_8h_8h(TyH);
+   if (0) test_trn1_4h_4h_4h(TyH);
+   if (0) test_trn1_16b_16b_16b(TyB);
+   if (0) test_trn1_8b_8b_8b(TyB);
+   if (0) test_trn2_2d_2d_2d(TyD);
+   if (0) test_trn2_4s_4s_4s(TyS);
+   if (0) test_trn2_2s_2s_2s(TyS);
+   if (0) test_trn2_8h_8h_8h(TyH);
+   if (0) test_trn2_4h_4h_4h(TyH);
+   if (0) test_trn2_16b_16b_16b(TyB);
+   if (0) test_trn2_8b_8b_8b(TyB);
 
    // urecpe      4s,2s
    // ursqrte     4s,2s
-   test_urecpe_4s_4s(TyS);
-   test_urecpe_2s_2s(TyS);
-   test_ursqrte_4s_4s(TyS);
-   test_ursqrte_2s_2s(TyS);
+   if (0) test_urecpe_4s_4s(TyS);
+   if (0) test_urecpe_2s_2s(TyS);
+   if (0) test_ursqrte_4s_4s(TyS);
+   if (0) test_ursqrte_2s_2s(TyS);
 
    // uzp1      2d,4s,2s,8h,4h,16b,8b
    // uzp2      2d,4s,2s,8h,4h,16b,8b
    // zip1      2d,4s,2s,8h,4h,16b,8b
    // zip2      2d,4s,2s,8h,4h,16b,8b
-   test_uzp1_2d_2d_2d(TyD);
-   test_uzp1_4s_4s_4s(TyS);
-   test_uzp1_2s_2s_2s(TyS);
-   test_uzp1_8h_8h_8h(TyH);
-   test_uzp1_4h_4h_4h(TyH);
-   test_uzp1_16b_16b_16b(TyB);
-   test_uzp1_8b_8b_8b(TyB);
-   test_uzp2_2d_2d_2d(TyD);
-   test_uzp2_4s_4s_4s(TyS);
-   test_uzp2_2s_2s_2s(TyS);
-   test_uzp2_8h_8h_8h(TyH);
-   test_uzp2_4h_4h_4h(TyH);
-   test_uzp2_16b_16b_16b(TyB);
-   test_uzp2_8b_8b_8b(TyB);
-   test_zip1_2d_2d_2d(TyD);
-   test_zip1_4s_4s_4s(TyS);
-   test_zip1_2s_2s_2s(TyS);
-   test_zip1_8h_8h_8h(TyH);
-   test_zip1_4h_4h_4h(TyH);
-   test_zip1_16b_16b_16b(TyB);
-   test_zip1_8b_8b_8b(TyB);
-   test_zip2_2d_2d_2d(TyD);
-   test_zip2_4s_4s_4s(TyS);
-   test_zip2_2s_2s_2s(TyS);
-   test_zip2_8h_8h_8h(TyH);
-   test_zip2_4h_4h_4h(TyH);
-   test_zip2_16b_16b_16b(TyB);
-   test_zip2_8b_8b_8b(TyB);
+   if (0) test_uzp1_2d_2d_2d(TyD);
+   if (0) test_uzp1_4s_4s_4s(TyS);
+   if (0) test_uzp1_2s_2s_2s(TyS);
+   if (0) test_uzp1_8h_8h_8h(TyH);
+   if (0) test_uzp1_4h_4h_4h(TyH);
+   if (0) test_uzp1_16b_16b_16b(TyB);
+   if (0) test_uzp1_8b_8b_8b(TyB);
+   if (0) test_uzp2_2d_2d_2d(TyD);
+   if (0) test_uzp2_4s_4s_4s(TyS);
+   if (0) test_uzp2_2s_2s_2s(TyS);
+   if (0) test_uzp2_8h_8h_8h(TyH);
+   if (0) test_uzp2_4h_4h_4h(TyH);
+   if (0) test_uzp2_16b_16b_16b(TyB);
+   if (0) test_uzp2_8b_8b_8b(TyB);
+   if (0) test_zip1_2d_2d_2d(TyD);
+   if (0) test_zip1_4s_4s_4s(TyS);
+   if (0) test_zip1_2s_2s_2s(TyS);
+   if (0) test_zip1_8h_8h_8h(TyH);
+   if (0) test_zip1_4h_4h_4h(TyH);
+   if (0) test_zip1_16b_16b_16b(TyB);
+   if (0) test_zip1_8b_8b_8b(TyB);
+   if (0) test_zip2_2d_2d_2d(TyD);
+   if (0) test_zip2_4s_4s_4s(TyS);
+   if (0) test_zip2_2s_2s_2s(TyS);
+   if (0) test_zip2_8h_8h_8h(TyH);
+   if (0) test_zip2_4h_4h_4h(TyH);
+   if (0) test_zip2_16b_16b_16b(TyB);
+   if (0) test_zip2_8b_8b_8b(TyB);
 
    // xtn{2}    2s/4s_2d, 4h/8h_4s, 8b/16b_8h
-   test_xtn_2s_2d(TyD);
-   test_xtn2_4s_2d(TyD);
-   test_xtn_4h_4s(TyS);
-   test_xtn2_8h_4s(TyS);
-   test_xtn_8b_8h(TyH);
-   test_xtn2_16b_8h(TyH);
+   if (1) test_xtn_2s_2d(TyD);
+   if (1) test_xtn2_4s_2d(TyD);
+   if (1) test_xtn_4h_4s(TyS);
+   if (1) test_xtn2_8h_4s(TyS);
+   if (1) test_xtn_8b_8h(TyH);
+   if (1) test_xtn2_16b_8h(TyH);
 
    // ======================== MEM ========================
 

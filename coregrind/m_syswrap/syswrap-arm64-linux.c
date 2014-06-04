@@ -920,6 +920,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_fallocate,         sys_fallocate),         // 47
    LINX_(__NR_faccessat,         sys_faccessat),         // 48
    GENX_(__NR_chdir,             sys_chdir),             // 49
+   LINX_(__NR_fchmodat,          sys_fchmodat),          // 53
    LINXY(__NR_openat,            sys_openat),            // 56
    GENXY(__NR_close,             sys_close),             // 57
    LINXY(__NR_pipe2,             sys_pipe2),             // 59
@@ -1360,7 +1361,6 @@ static SyscallTableEntry syscall_main_table[] = {
 //ZZ    LINX_(__NR_renameat,       sys_renameat),         // 302
 //ZZ    LINX_(__NR_symlinkat,    sys_symlinkat),        // 304
 //ZZ 
-//ZZ    LINX_(__NR_fchmodat,       sys_fchmodat),         //
 //ZZ    LINX_(__NR_shmget,            sys_shmget),         //307 
 //ZZ //   LINX_(__NR_pselect6,       sys_pselect6),         //
 //ZZ 

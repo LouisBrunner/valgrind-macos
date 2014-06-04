@@ -576,8 +576,8 @@ TESTINST2("ands x3,x4, #0x8080808080808080", 0x7070707070707070, x3, x4, 0);
 TESTINST2("ands x3,x4, #0x8080808080808080", 0xF070707070707070, x3, x4, 0);
 
 TESTINST2("and  w3,w4, #0xF", ALL5s, x3, x4, 0);
-TESTINST2("and  w3,w4, #0x8080808080808080", 0x843fdf810277796e, x3, x4, 0);
-TESTINST2("and  w3,w4, #0xC0C0C0C0C0C0C0C0", 0xc5446fe48c610b28, x3, x4, 0);
+TESTINST2("and  w3,w4, #0x80808080", 0x843fdf810277796e, x3, x4, 0);
+TESTINST2("and  w3,w4, #0xC0C0C0C0", 0xc5446fe48c610b28, x3, x4, 0);
 TESTINST2("ands w3,w4, #0x80808080", 0x843fdf810277796e, x3, x4, 0);
 TESTINST2("ands w3,w4, #0xC0C0C0C0", 0xc5446fe48c610b28, x3, x4, 0);
 TESTINST2("ands w3,w4, #0x80808080", 0x143fdf810277796e, x3, x4, 0);
@@ -592,8 +592,8 @@ TESTINST2("orr  x3,x4, #0x8080808080808080", 0x843fdf810277796e, x3, x4, 0);
 TESTINST2("orr  x3,x4, #0xC0C0C0C0C0C0C0C0", 0xc5446fe48c610b28, x3, x4, 0);
 
 TESTINST2("orr  w3,w4, #0xF", ALL5s, x3, x4, 0);
-TESTINST2("orr  w3,w4, #0x8080808080808080", 0x843fdf810277796e, x3, x4, 0);
-TESTINST2("orr  w3,w4, #0xC0C0C0C0C0C0C0C0", 0xc5446fe48c610b28, x3, x4, 0);
+TESTINST2("orr  w3,w4, #0x80808080", 0x843fdf810277796e, x3, x4, 0);
+TESTINST2("orr  w3,w4, #0xC0C0C0C0", 0xc5446fe48c610b28, x3, x4, 0);
 
 ////////////////////////////////////////////////////////////////
 printf("EOR(imm)\n");
@@ -602,8 +602,8 @@ TESTINST2("eor  x3,x4, #0x8080808080808080", 0x843fdf810277796e, x3, x4, 0);
 TESTINST2("eor  x3,x4, #0xC0C0C0C0C0C0C0C0", 0xc5446fe48c610b28, x3, x4, 0);
 
 TESTINST2("eor  w3,w4, #0xF", ALL5s, x3, x4, 0);
-TESTINST2("eor  w3,w4, #0x8080808080808080", 0x843fdf810277796e, x3, x4, 0);
-TESTINST2("eor  w3,w4, #0xC0C0C0C0C0C0C0C0", 0xc5446fe48c610b28, x3, x4, 0);
+TESTINST2("eor  w3,w4, #0x80808080", 0x843fdf810277796e, x3, x4, 0);
+TESTINST2("eor  w3,w4, #0xC0C0C0C0", 0xc5446fe48c610b28, x3, x4, 0);
 
 ////////////////////////////////////////////////////////////////
 printf("MOVZ\n");

@@ -8,10 +8,11 @@ $dir/../../tests/filter_stderr_basic                    |
 $dir/../../tests/filter_addresses                       |
 
 # get rid of the numbers in bits of text "Thread #n", "thread #n",
-# "Thread n" and "thread n",
+# "Thread n" and "thread n", "tid n"
 # as these make some tests more scheduling sensitive -- those where
 # there are multiple threads which play interchangeable roles.
 sed \
+ -e "s/tid [0-9][0-9]*/tid #x/g" \
  -e "s/hread #[0-9][0-9]*/hread #x/g" \
  -e "s/hread [0-9][0-9]*/hread x/g" |
 

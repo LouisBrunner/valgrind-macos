@@ -1249,6 +1249,32 @@ before Valgrind's header files are available.
 </sect2>
 
 
+<sect2 id="drd-manual.C++11" xreflabel="C++11">
+<title>Debugging C++11 Programs</title>
+
+<para>If you want to use the C++11 class std::thread you will need to add the
+following code at the start of a common header or at the start of each source
+file to avoid that false positives are reported on the std::thread
+implementation:</para>
+
+<programlisting>
+#include &lt;valgrind/drd.h&gt;
+#define _GLIBCXX_SYNCHRONIZATION_HAPPENS_BEFORE(addr) ANNOTATE_HAPPENS_BEFORE(addr)
+#define _GLIBCXX_SYNCHRONIZATION_HAPPENS_AFTER(addr)  ANNOTATE_HAPPENS_AFTER(addr)
+#define _GLIBCXX_EXTERN_TEMPLATE -1
+</programlisting>
+
+<para>This code must occur before any C++ header files are included. Since the
+implementation of std::thread uses the C++ shared pointer implementation, that
+shared pointer implementation has to be annotated in order to avoid false
+positives. The above code implements such annotation.  See also <emphasis>The
+GNU C++ Library Manual, Debugging Support</emphasis>
+(<ulink url="http://gcc.gnu.org/onlinedocs/libstdc++/manual/debug.html">http://gcc.gnu.org/onlinedocs/libstdc++/manual/debug.html</ulink>)
+for more information.</para>
+
+</sect2>
+
+
 <sect2 id="drd-manual.gnome" xreflabel="GNOME">
 <title>Debugging GNOME Programs</title>
 

@@ -1,4 +1,4 @@
-prereq: false && test -e std_thread && ./supported_libpthread
+prereq: test -e std_thread && ./supported_libpthread
 vgopts: --check-stack-var=yes --show-confl-seg=no
 prog: std_thread
 stderr_filter: filter_stderr

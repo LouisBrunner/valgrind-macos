@@ -9,8 +9,6 @@
   ANNOTATE_HAPPENS_BEFORE(addr)
 #define _GLIBCXX_SYNCHRONIZATION_HAPPENS_AFTER(addr) \
   ANNOTATE_HAPPENS_AFTER(addr)
-#define _GLIBCXX_EXTERN_TEMPLATE -1
-#define _GLIBCXX_DEBUG 1
 
 #include <iostream>
 #include <thread>

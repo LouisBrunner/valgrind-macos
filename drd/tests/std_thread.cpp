@@ -27,8 +27,6 @@ int main(int argc, char** argv)
 // From libstdc++-v3/src/c++11/thread.cc
 //
 
-#include <system_error>
-
 extern "C" void* execute_native_thread_routine(void* __p)
 {
   std::thread::_Impl_base* __t = static_cast<std::thread::_Impl_base*>(__p);
@@ -46,6 +44,8 @@ extern "C" void* execute_native_thread_routine(void* __p)
   return 0;
 }
 
+#include <system_error>
+
 namespace std
 {
   void thread::_M_start_thread(__shared_base_type __b)
@@ -59,8 +59,8 @@ namespace std
 #endif
 
     __b->_M_this_ptr = __b;
-    int __e = pthread_create(&_M_id._M_thread, NULL,
-                             &execute_native_thread_routine, __b.get());
+    int __e = __gthread_create(&_M_id._M_thread, execute_native_thread_routine,
+                               __b.get());
     if (__e) {
       __b->_M_this_ptr.reset();
       __throw_system_error(__e);

@@ -1,0 +1,4 @@
+prereq: test -e std_thread2 && ./supported_libpthread
+vgopts: --check-stack-var=yes --show-confl-seg=no --num-callers=5
+prog: std_thread2
+stderr_filter: filter_stderr

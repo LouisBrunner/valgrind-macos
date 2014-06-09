@@ -254,6 +254,8 @@ EXTRA_DIST =                                        \
 	std_string.vgtest			    \
 	std_thread.stderr.exp		  	    \
 	std_thread.vgtest			    \
+	std_thread2.stderr.exp		  	    \
+	std_thread2.vgtest			    \
 	str_tester.stderr.exp		  	    \
 	str_tester.vgtest			    \
 	tc01_simple_race.stderr.exp                 \
@@ -399,7 +401,8 @@ check_PROGRAMS += \
   std_atomic      \
   std_list        \
   std_string      \
-  std_thread
+  std_thread      \
+  std_thread2
 endif
 endif
 
@@ -492,5 +495,8 @@ std_string_CXXFLAGS         = $(AM_CXXFLAGS) -std=c++0x -Wno-sign-compare
 
 std_thread_SOURCES          = std_thread.cpp
 std_thread_CXXFLAGS         = $(AM_CXXFLAGS) -std=c++0x
+
+std_thread2_SOURCES          = std_thread2.cpp
+std_thread2_CXXFLAGS         = $(AM_CXXFLAGS) -std=c++0x
 
 sem_wait_SOURCES            = sem_wait.cpp

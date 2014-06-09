@@ -240,6 +240,7 @@ typedef enum {
    mutex_type_errorcheck_mutex = 2,
    mutex_type_default_mutex    = 3,
    mutex_type_spinlock         = 4,
+   mutex_type_cxa_guard        = 5,
 } MutexT;
 
 /**

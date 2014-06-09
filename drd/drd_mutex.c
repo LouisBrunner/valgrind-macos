@@ -468,6 +468,8 @@ const HChar* DRD_(mutex_type_name)(const MutexT mt)
       return "mutex";
    case mutex_type_spinlock:
       return "spinlock";
+   case mutex_type_cxa_guard:
+      return "cxa_guard";
    }
    tl_assert(0);
    return "?";

@@ -1,4 +1,4 @@
-prereq: test -e local_static && ./supported_libpthread
+prereq: false && test -e local_static && ./supported_libpthread
 vgopts: --check-stack-var=yes --show-confl-seg=no
 prog: local_static
 stderr_filter: filter_stderr

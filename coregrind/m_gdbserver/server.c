@@ -327,7 +327,7 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
             hostvisibility = True;
          }
          if (hostvisibility) {
-            const DebugInfo *tooldi = VG_(find_DebugInfo) (handle_gdb_valgrind_command);
+            const DebugInfo *tooldi = VG_(find_DebugInfo) ((Addr)handle_gdb_valgrind_command);
             vg_assert(tooldi);
             const NSegment *toolseg = VG_(am_find_nsegment)
                (VG_(DebugInfo_get_text_avma) (tooldi));
@@ -336,7 +336,7 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
                ("Enabled access to Valgrind memory/status by GDB\n"
                 "If not yet done, tell GDB which valgrind file(s) to use, "
                 "typically:\n"
-                "add-symbol-file %s %p\n", VG_(am_get_filename)(toolseg), toolseg->start);
+                "add-symbol-file %s %p\n", VG_(am_get_filename)(toolseg), (void*) toolseg->start);
          } else
             VG_(gdb_printf)
                ("Disabled access to Valgrind memory/status by GDB\n");

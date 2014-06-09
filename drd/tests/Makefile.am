@@ -128,6 +128,8 @@ EXTRA_DIST =                                        \
 	linuxthreads_det.stdout.exp                 \
 	linuxthreads_det.stdout.exp-linuxthreads    \
 	linuxthreads_det.vgtest                     \
+	local_static.stderr.exp                     \
+	local_static.vgtest                         \
 	matinv.stderr.exp                           \
 	matinv.stdout.exp                           \
 	matinv.vgtest                               \
@@ -340,6 +342,7 @@ check_PROGRAMS =      \
   free_is_write	      \
   hold_lock           \
   linuxthreads_det    \
+  local_static        \
   memory_allocation   \
   monitor_example     \
   new_delete          \
@@ -457,6 +460,8 @@ annotate_smart_pointer_SOURCES = annotate_smart_pointer.cpp
 endif
 
 annotate_static_SOURCES     = annotate_static.cpp
+
+local_static_SOURCES        = local_static.cpp
 
 if HAVE_OPENMP
 omp_matinv_CFLAGS           = $(AM_CFLAGS) -fopenmp

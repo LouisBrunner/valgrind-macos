@@ -2344,7 +2344,7 @@ static Bool dis_instr_CVM ( UInt theInstr )
                      DIP("lasd r%u,(r%u)\n", regRd, regRs);
                      IRTemp new  = newTemp(Ity_I64);
                      assign (addr, getIReg(regRs));
-                     assign(new, mkU64(0xffffffffffffffff));
+                     assign(new, mkU64(0xffffffffffffffffULL));
                      mips_irgen_load_and_add64(addr, new, regRd, True);
                      break;
                   }

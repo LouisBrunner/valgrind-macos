@@ -37,6 +37,7 @@ struct mutex_info;
 void DRD_(mutex_set_trace)(const Bool trace_mutex);
 void DRD_(mutex_set_lock_threshold)(const UInt lock_threshold_ms);
 struct mutex_info* DRD_(mutex_init)(const Addr mutex, const MutexT mutex_type);
+void DRD_(mutex_ignore_ordering)(const Addr mutex);
 void DRD_(mutex_post_destroy)(const Addr mutex);
 void DRD_(not_a_mutex)(const Addr mutex);
 struct mutex_info* DRD_(mutex_get)(const Addr mutex);

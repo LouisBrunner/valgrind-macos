@@ -179,10 +179,17 @@ static void DRD_(init)(void)
    DRD_(set_main_thread_state)();
 }
 
+static __always_inline void DRD_(ignore_mutex_ordering)(pthread_mutex_t *mutex)
+{
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__DRD_IGNORE_MUTEX_ORDERING,
+                                   mutex, 0, 0, 0, 0);
+}
+
 static void DRD_(sema_init)(DrdSema* sema)
 {
-   DRD_IGNORE_VAR(sema->counter);
+   DRD_IGNORE_VAR(*sema);
    pthread_mutex_init(&sema->mutex, NULL);
+   DRD_(ignore_mutex_ordering)(&sema->mutex);
    sema->counter = 0;
    sema->waiters = 0;
 }

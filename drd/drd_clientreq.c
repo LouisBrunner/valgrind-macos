@@ -378,6 +378,10 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
       DRD_(thread_leave_synchr)(drd_tid);
       break;
 
+   case VG_USERREQ__DRD_IGNORE_MUTEX_ORDERING:
+      DRD_(mutex_ignore_ordering)(arg[1]);
+      break;
+
    case VG_USERREQ__PRE_SPIN_INIT_OR_UNLOCK:
       if (DRD_(thread_enter_synchr)(drd_tid) == 0)
          DRD_(spinlock_init_or_unlock)(arg[1]);

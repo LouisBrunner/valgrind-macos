@@ -68,6 +68,7 @@ struct mutex_info
    ExeContext*     first_observed_at;
    MutexT          mutex_type;      // pthread_mutex_t or pthread_spinlock_t.
    int             recursion_count; // 0 if free, >= 1 if locked.
+   Bool            ignore_ordering;
    DrdThreadId     owner;           // owner if locked, last owner if free.
    struct segment* last_locked_segment;
    ULong           acquiry_time_ms;

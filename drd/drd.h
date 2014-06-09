@@ -488,6 +488,10 @@ enum {
    VG_USERREQ__DRD_ANNOTATE_SEM_POST_PRE,
    /* args: Addr. */
 
+   /* Tell DRD to ignore the inter-thread ordering introduced by a mutex. */
+   VG_USERREQ__DRD_IGNORE_MUTEX_ORDERING,
+   /* args: Addr. */
+
    /* Tell DRD that a user-defined reader-writer synchronization object
     * has been created. */
    VG_USERREQ__DRD_ANNOTATE_RWLOCK_CREATE

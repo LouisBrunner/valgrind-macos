@@ -25,10 +25,7 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
 
 === VEX/arm64 ==========================================================
 
-335262  arm64: movi 8bit version is not supported
-335263  arm64: dmb instruction is not implemented
 335440  arm64: ld1 (single structure) is not implemented
-335496  arm64: sbc/abc instructions are not implemented
 335554  arm64: unhanded instruction: abs
 335564  arm64: unhandled instruction fcvtpu  Xn, Sn
 
@@ -202,3 +199,13 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
 
 31 May 2014
 
+335713  arm64: unhanded instruction: prfm (immediate)
+335735  arm64: unhanded instruction: cnt
+335736  arm64: unhanded instruction: uaddlv
+335785  vex amd64->IR: 0xC4 0xE2 0x75 0x2F 0xAC 0x18 0x40 0x7 (vmovupd)
+335848  arm64: unhanded instruction: {s,u}cvtf
+335902  arm64: unhanded instruction: sli
+335903  arm64: unhanded instruction: umull (vector)
+335907  segfault when running wine's ddrawex/tests/surface.c under valgrind
+
+Tues 10 June

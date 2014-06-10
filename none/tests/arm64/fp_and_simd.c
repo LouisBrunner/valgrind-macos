@@ -3646,8 +3646,8 @@ int main ( void )
    // Some of these movi and mvni cases are similar to orr and bic
    // cases with immediates.  Maybe they should be moved together.
    // movi  16b,8b   #imm8, LSL #0
-   if (0) test_movi_16b_0x9C_lsl0(TyB);
-   if (0) test_movi_8b_0x8B_lsl0(TyB);
+   if (1) test_movi_16b_0x9C_lsl0(TyB);
+   if (1) test_movi_8b_0x8B_lsl0(TyB);
 
    // movi  8h,4h    #imm8, LSL #0 or 8
    // mvni  8h,4h    #imm8, LSL #0 or 8

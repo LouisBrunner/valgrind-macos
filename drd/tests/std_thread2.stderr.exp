@@ -2,9 +2,9 @@
 Thread 2:
 Conflicting store by thread 2 at 0x........ size 4
    at 0x........: main::{lambda()#1}::operator()() const (std_thread2.cpp:21)
-   by 0x........: void std::_Bind_simple<main::{lambda()#1} ()>::_M_invoke<>(std::_Index_tuple<>) (functional:1732)
-   by 0x........: std::_Bind_simple<main::{lambda()#1} ()>::operator()() (functional:1720)
-   by 0x........: std::thread::_Impl<std::_Bind_simple<main::{lambda()#1} ()> >::_M_run() (thread:115)
+   by 0x........: void std::_Bind_simple<main::{lambda()#1} ()>::_M_invoke<>(std::_Index_tuple<>) (functional:...)
+   by 0x........: std::_Bind_simple<main::{lambda()#1} ()>::operator()() (functional:...)
+   by 0x........: std::thread::_Impl<std::_Bind_simple<main::{lambda()#1} ()> >::_M_run() (thread:...)
    by 0x........: execute_native_thread_routine (std_thread2.cpp:40)
 Allocation context: BSS section of std_thread2
 

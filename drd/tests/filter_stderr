@@ -18,6 +18,7 @@ sed \
 -e 's/^Allocation context: Data section of .\//Allocation context: BSS section of /' \
 -e '/^run: \/usr\/bin\/dsymutil.*/d' \
 -e "s/, in frame #[0-9]* of thread /, in frame #? of thread /" \
+-e "s/(\(functional\|thread\):[0-9]*)/(\1:...)/" \
 -e "s/(tc20_verifywrap.c:261)/(tc20_verifywrap.c:262)/" \
 -e "/^Copyright (C) 2006-201., and GNU GPL'd, by Bart Van Assche.$/d" \
 -e "s/\([A-Za-z_]*\) (clone.S:[0-9]*)/\1 (in \/...libc...)/" \

@@ -6806,6 +6806,44 @@ Bool dis_AdvSIMD_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
+   if (size <= X01 && opcode == BITS5(1,1,1,0,1)) {
+      /* -------- 0,0x,11101: SCVTF -------- */
+      /* -------- 1,0x,11101: UCVTF -------- */
+      /* 31  28      22 21       15     9 4
+         0q0 01110 0 sz 1  00001 110110 n d  SCVTF Vd, Vn
+         0q1 01110 0 sz 1  00001 110110 n d  UCVTF Vd, Vn
+         with laneage:
+         case sz:Q of 00 -> 2S, zero upper, 01 -> 4S, 10 -> illegal, 11 -> 2D
+      */
+      Bool isQ   = bitQ == 1;
+      Bool isU   = bitU == 1;
+      Bool isF64 = (size & 1) == 1;
+      if (isQ || !isF64) {
+         IRType tyF = Ity_INVALID, tyI = Ity_INVALID;
+         UInt   nLanes = 0;
+         Bool   zeroHI = False;
+         const HChar* arrSpec = NULL;
+         Bool   ok  = getLaneInfo_Q_SZ(&tyI, &tyF, &nLanes, &zeroHI, &arrSpec,
+                                       isQ, isF64 );
+         IROp   iop = isU ? (isF64 ? Iop_I64UtoF64 : Iop_I32UtoF32)
+                          : (isF64 ? Iop_I64StoF64 : Iop_I32StoF32);
+         IRTemp rm  = mk_get_IR_rounding_mode();
+         UInt   i;
+         vassert(ok); /* the 'if' above should ensure this */
+         for (i = 0; i < nLanes; i++) {
+            putQRegLane(dd, i,
+                        binop(iop, mkexpr(rm), getQRegLane(nn, i, tyI)));
+         }
+         if (zeroHI) {
+            putQRegLane(dd, 1, mkU64(0));
+         }
+         DIP("%ccvtf %s.%s, %s.%s\n", isU ? 'u' : 's',
+             nameQReg128(dd), arrSpec, nameQReg128(nn), arrSpec);
+         return True;
+      }
+      /* else fall through */
+   }
+
    return False;
 #  undef INSN
 }
@@ -6842,13 +6880,81 @@ Bool dis_AdvSIMD_crypto_two_reg_sha(/*MB_OUT*/DisResult* dres, UInt insn)
 #  undef INSN
 }
 
+
 static
 Bool dis_AdvSIMD_fp_compare(/*MB_OUT*/DisResult* dres, UInt insn)
 {
+   /* 31  28    23 21 20 15 13   9 4
+      000 11110 ty 1  m  op 1000 n opcode2
+      The first 3 bits are really "M 0 S", but M and S are always zero.
+      Decode fields are: ty,op,opcode2
+   */
 #  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
+   if (INSN(31,24) != BITS8(0,0,0,1,1,1,1,0)
+       || INSN(21,21) != 1 || INSN(13,10) != BITS4(1,0,0,0)) {
+      return False;
+   }
+   UInt ty      = INSN(23,22);
+   UInt mm      = INSN(20,16);
+   UInt op      = INSN(15,14);
+   UInt nn      = INSN(9,5);
+   UInt opcode2 = INSN(4,0);
+   vassert(ty < 4);
+
+   if (ty <= X01 && op == X00
+       && (opcode2 & BITS5(0,0,1,1,1)) == BITS5(0,0,0,0,0)) {
+      /* -------- 0x,00,00000 FCMP  d_d,   s_s -------- */
+      /* -------- 0x,00,01000 FCMP  d_#0, s_#0 -------- */
+      /* -------- 0x,00,10000 FCMPE d_d,   s_s -------- */
+      /* -------- 0x,00,11000 FCMPE d_#0, s_#0 -------- */
+      /* 31        23   20    15      9 4
+         000 11110 01 1     m 00 1000 n 10 000  FCMPE Dn, Dm
+         000 11110 01 1 00000 00 1000 n 11 000  FCMPE Dn, #0.0
+         000 11110 01 1     m 00 1000 n 00 000  FCMP  Dn, Dm
+         000 11110 01 1 00000 00 1000 n 01 000  FCMP  Dn, #0.0
+
+         000 11110 00 1     m 00 1000 n 10 000  FCMPE Sn, Sm
+         000 11110 00 1 00000 00 1000 n 11 000  FCMPE Sn, #0.0
+         000 11110 00 1     m 00 1000 n 00 000  FCMP  Sn, Sm
+         000 11110 00 1 00000 00 1000 n 01 000  FCMP  Sn, #0.0
+
+         FCMPE generates Invalid Operation exn if either arg is any kind
+         of NaN.  FCMP generates Invalid Operation exn if either arg is a
+         signalling NaN.  We ignore this detail here and produce the same
+         IR for both.
+      */
+      Bool   isD     = (ty & 1) == 1;
+      Bool   isCMPE  = (opcode2 & 16) == 16;
+      Bool   cmpZero = (opcode2 & 8) == 8;
+      IRType ity     = isD ? Ity_F64 : Ity_F32;
+      Bool   valid   = True;
+      if (cmpZero && mm != 0) valid = False;
+      if (valid) {
+         IRTemp argL  = newTemp(ity);
+         IRTemp argR  = newTemp(ity);
+         IRTemp irRes = newTemp(Ity_I32);
+         assign(argL, getQRegLO(nn, ity));
+         assign(argR,
+                cmpZero 
+                   ? (IRExpr_Const(isD ? IRConst_F64i(0) : IRConst_F32i(0)))
+                   : getQRegLO(mm, ity));
+         assign(irRes, binop(isD ? Iop_CmpF64 : Iop_CmpF32,
+                             mkexpr(argL), mkexpr(argR)));
+         IRTemp nzcv = mk_convert_IRCmpF64Result_to_NZCV(irRes);
+         IRTemp nzcv_28x0 = newTemp(Ity_I64);
+         assign(nzcv_28x0, binop(Iop_Shl64, mkexpr(nzcv), mkU8(28)));
+         setFlags_COPY(nzcv_28x0);
+         DIP("fcmp%s %s, %s\n", isCMPE ? "e" : "", nameQRegLO(nn, ity),
+             cmpZero ? "#0.0" : nameQRegLO(mm, ity));
+         return True;
+      }
+      return False;
+   }
+
    return False;
 #  undef INSN
 }
+
 
 static
 Bool dis_AdvSIMD_fp_conditional_compare(/*MB_OUT*/DisResult* dres, UInt insn)
@@ -6866,12 +6972,14 @@ Bool dis_AdvSIMD_fp_conditional_select(/*MB_OUT*/DisResult* dres, UInt insn)
 #  undef INSN
 }
 
+
 static
 Bool dis_AdvSIMD_fp_data_proc_1_source(/*MB_OUT*/DisResult* dres, UInt insn)
 {
    /* 31  28    23 21 20     14    9 4
       000 11110 ty 1  opcode 10000 n d
       The first 3 bits are really "M 0 S", but M and S are always zero.
+      Decode fields: ty,opcode
    */
 #  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
    if (INSN(31,24) != BITS8(0,0,0,1,1,1,1,0)
@@ -6912,6 +7020,106 @@ Bool dis_AdvSIMD_fp_data_proc_1_source(/*MB_OUT*/DisResult* dres, UInt insn)
       putQRegLO(dd, mkexpr(res));
       DIP("%s %s, %s\n", nm, nameQRegLO(dd, ity), nameQRegLO(nn, ity));
       return True;
+   }
+
+   if (   (ty == X11 && (opcode == BITS6(0,0,0,1,0,0) 
+                         || opcode == BITS6(0,0,0,1,0,1)))
+       || (ty == X00 && (opcode == BITS6(0,0,0,1,1,1) 
+                         || opcode == BITS6(0,0,0,1,0,1)))
+       || (ty == X01 && (opcode == BITS6(0,0,0,1,1,1) 
+                         || opcode == BITS6(0,0,0,1,0,0)))) {
+      /* -------- 11,000100: FCVT s_h -------- */
+      /* -------- 11,000101: FCVT d_h -------- */
+      /* -------- 00,000111: FCVT h_s -------- */
+      /* -------- 00,000101: FCVT d_s -------- */
+      /* -------- 01,000111: FCVT h_d -------- */
+      /* -------- 01,000100: FCVT s_d -------- */
+      /* 31        23 21    16 14    9 4
+         000 11110 11 10001 00 10000 n d   FCVT Sd, Hn (unimp)
+         --------- 11 ----- 01 ---------   FCVT Dd, Hn (unimp)
+         --------- 00 ----- 11 ---------   FCVT Hd, Sn (unimp)
+         --------- 00 ----- 01 ---------   FCVT Dd, Sn
+         --------- 01 ----- 11 ---------   FCVT Hd, Dn (unimp)
+         --------- 01 ----- 00 ---------   FCVT Sd, Dn
+         Rounding, when dst is smaller than src, is per the FPCR.
+      */
+      UInt b2322 = ty;
+      UInt b1615 = opcode & BITS2(1,1);
+      if (b2322 == BITS2(0,0) && b1615 == BITS2(0,1)) {
+         /* Convert S to D */
+         IRTemp res = newTemp(Ity_F64);
+         assign(res, unop(Iop_F32toF64, getQRegLO(nn, Ity_F32)));
+         putQReg128(dd, mkV128(0x0000));
+         putQRegLO(dd, mkexpr(res));
+         DIP("fcvt %s, %s\n",
+             nameQRegLO(dd, Ity_F64), nameQRegLO(nn, Ity_F32));
+         return True;
+      }
+      if (b2322 == BITS2(0,1) && b1615 == BITS2(0,0)) {
+         /* Convert D to S */
+         IRTemp res = newTemp(Ity_F32);
+         assign(res, binop(Iop_F64toF32, mkexpr(mk_get_IR_rounding_mode()),
+                                         getQRegLO(nn, Ity_F64)));
+         putQReg128(dd, mkV128(0x0000));
+         putQRegLO(dd, mkexpr(res));
+         DIP("fcvt %s, %s\n",
+             nameQRegLO(dd, Ity_F32), nameQRegLO(nn, Ity_F64));
+         return True;
+      }
+      /* else unhandled */
+      return False;
+   }
+
+   if (ty <= X01
+       && opcode >= BITS6(0,0,1,0,0,0) && opcode <= BITS6(0,0,1,1,1,1)
+       && opcode != BITS6(0,0,1,1,0,1)) {
+      /* -------- 0x,001000 FRINTN d_d, s_s -------- */
+      /* -------- 0x,001001 FRINTP d_d, s_s -------- */
+      /* -------- 0x,001010 FRINTM d_d, s_s -------- */
+      /* -------- 0x,001011 FRINTZ d_d, s_s -------- */
+      /* -------- 0x,001100 FRINTA d_d, s_s -------- */
+      /* -------- 0x,001110 FRINTX d_d, s_s -------- */
+      /* -------- 0x,001111 FRINTI d_d, s_s -------- */
+      /* 31        23 21   17  14    9 4
+         000 11110 0x 1001 111 10000 n d  FRINTI Fd, Fm (round per FPCR)
+                           rm
+         x==0 => S-registers, x==1 => D-registers
+         rm (17:15) encodings:
+            111 per FPCR  (FRINTI)
+            001 +inf      (FRINTP)
+            010 -inf      (FRINTM)
+            011 zero      (FRINTZ)
+            000 tieeven
+            100 tieaway   (FRINTA) -- !! FIXME KLUDGED !!
+            110 per FPCR + "exact = TRUE"
+            101 unallocated
+      */
+      Bool    isD   = (ty & 1) == 1;
+      UInt    rm    = opcode & BITS6(0,0,0,1,1,1);
+      IRType  ity   = isD ? Ity_F64 : Ity_F32;
+      IRExpr* irrmE = NULL;
+      UChar   ch    = '?';
+      switch (rm) {
+         case BITS3(0,1,1): ch = 'z'; irrmE = mkU32(Irrm_ZERO); break;
+         case BITS3(0,1,0): ch = 'm'; irrmE = mkU32(Irrm_NegINF); break;
+         case BITS3(0,0,1): ch = 'p'; irrmE = mkU32(Irrm_PosINF); break;
+         // The following is a kludge.  Should be: Irrm_NEAREST_TIE_AWAY_0
+         case BITS3(1,0,0): ch = 'a'; irrmE = mkU32(Irrm_NEAREST); break;
+         default: break;
+      }
+      if (irrmE) {
+         IRTemp src = newTemp(ity);
+         IRTemp dst = newTemp(ity);
+         assign(src, getQRegLO(nn, ity));
+         assign(dst, binop(isD ? Iop_RoundF64toInt : Iop_RoundF32toInt,
+                           irrmE, mkexpr(src)));
+         putQReg128(dd, mkV128(0x0000));
+         putQRegLO(dd, mkexpr(dst));
+         DIP("frint%c %s, %s\n",
+             ch, nameQRegLO(dd, ity), nameQRegLO(nn, ity));
+         return True;
+      }
+      return False;
    }
 
    return False;
@@ -6990,7 +7198,72 @@ Bool dis_AdvSIMD_fp_data_proc_2_source(/*MB_OUT*/DisResult* dres, UInt insn)
 static
 Bool dis_AdvSIMD_fp_data_proc_3_source(/*MB_OUT*/DisResult* dres, UInt insn)
 {
+   /* 31  28    23 21 20 15 14 9 4
+      000 11111 ty o1 m  o0 a  n d
+      The first 3 bits are really "M 0 S", but M and S are always zero.
+      Decode fields: ty,o1,o0
+   */
 #  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
+   if (INSN(31,24) != BITS8(0,0,0,1,1,1,1,1)) {
+      return False;
+   }
+   UInt ty    = INSN(23,22);
+   UInt bitO1 = INSN(21,21);
+   UInt mm    = INSN(20,16);
+   UInt bitO0 = INSN(15,15);
+   UInt aa    = INSN(14,10);
+   UInt nn    = INSN(9,5);
+   UInt dd    = INSN(4,0);
+   vassert(ty < 4);
+
+   if (ty <= X01) {
+      /* -------- 0x,0,0 FMADD  d_d_d_d, s_s_s_s -------- */
+      /* -------- 0x,0,1 FMSUB  d_d_d_d, s_s_s_s -------- */
+      /* -------- 0x,1,0 FNMADD d_d_d_d, s_s_s_s -------- */
+      /* -------- 0x,1,1 FNMSUB d_d_d_d, s_s_s_s -------- */
+      /* -------------------- F{N}M{ADD,SUB} -------------------- */
+      /* 31          22   20 15 14 9 4   ix
+         000 11111 0 sz 0 m  0  a  n d   0   FMADD  Fd,Fn,Fm,Fa
+         000 11111 0 sz 0 m  1  a  n d   1   FMSUB  Fd,Fn,Fm,Fa
+         000 11111 0 sz 1 m  0  a  n d   2   FNMADD Fd,Fn,Fm,Fa
+         000 11111 0 sz 1 m  1  a  n d   3   FNMSUB Fd,Fn,Fm,Fa
+         where Fx=Dx when sz=1, Fx=Sx when sz=0
+
+                  -----SPEC------    ----IMPL----
+         fmadd       a +    n * m    a + n * m
+         fmsub       a + (-n) * m    a - n * m
+         fnmadd   (-a) + (-n) * m    -(a + n * m)
+         fnmsub   (-a) +    n * m    -(a - n * m)
+      */
+      Bool    isD   = (ty & 1) == 1;
+      UInt    ix    = (bitO1 << 1) | bitO0;
+      IRType  ity   = isD ? Ity_F64 : Ity_F32;
+      IROp    opADD = mkADDF(ity);
+      IROp    opSUB = mkSUBF(ity);
+      IROp    opMUL = mkMULF(ity);
+      IROp    opNEG = mkNEGF(ity);
+      IRTemp  res   = newTemp(ity);
+      IRExpr* eA    = getQRegLO(aa, ity);
+      IRExpr* eN    = getQRegLO(nn, ity);
+      IRExpr* eM    = getQRegLO(mm, ity);
+      IRExpr* rm    = mkexpr(mk_get_IR_rounding_mode());
+      IRExpr* eNxM  = triop(opMUL, rm, eN, eM);
+      switch (ix) {
+         case 0:  assign(res, triop(opADD, rm, eA, eNxM)); break;
+         case 1:  assign(res, triop(opSUB, rm, eA, eNxM)); break;
+         case 2:  assign(res, unop(opNEG, triop(opADD, rm, eA, eNxM))); break;
+         case 3:  assign(res, unop(opNEG, triop(opSUB, rm, eA, eNxM))); break;
+         default: vassert(0);
+      }
+      putQReg128(dd, mkV128(0x0000));
+      putQRegLO(dd, mkexpr(res));
+      const HChar* names[4] = { "fmadd", "fmsub", "fnmadd", "fnmsub" };
+      DIP("%s %s, %s, %s, %s\n",
+          names[ix], nameQRegLO(dd, ity), nameQRegLO(nn, ity),
+                     nameQRegLO(mm, ity), nameQRegLO(aa, ity));
+      return True;
+   }
+
    return False;
 #  undef INSN
 }
@@ -7043,26 +7316,116 @@ Bool dis_AdvSIMD_fp_to_fixedp_conv(/*MB_OUT*/DisResult* dres, UInt insn)
 
 
 static
-Bool dis_AdvSIMD_fp_to_int_conv(/*MB_OUT*/DisResult* dres, UInt insn)
+Bool dis_AdvSIMD_fp_to_from_int_conv(/*MB_OUT*/DisResult* dres, UInt insn)
 {
    /* 31 30 29 28    23   21 20    18     15     9 4
-      sf  0  S 11110 type 1  rmode opcode 000000 n d
+      sf  0  0 11110 type 1  rmode opcode 000000 n d
+      The first 3 bits are really "sf 0 S", but S is always zero.
    */
 #  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
-   if (INSN(30,30) != 0
+   if (INSN(30,29) != BITS2(0,0)
        || INSN(28,24) != BITS5(1,1,1,1,0)
        || INSN(21,21) != 1
        || INSN(15,10) != BITS6(0,0,0,0,0,0)) {
       return False;
    }
    UInt bitSF = INSN(31,31);
-   UInt bitS  = INSN(29,29);
    UInt ty    = INSN(23,22); // type
    UInt rm    = INSN(20,19); // rmode
    UInt op    = INSN(18,16); // opcode
    UInt nn    = INSN(9,5);
    UInt dd    = INSN(4,0);
 
+   // op = 000, 001
+   /* -------- FCVT{N,P,M,Z}{S,U} (scalar, integer) -------- */
+   /*    30       23   20 18  15     9 4
+      sf 00 11110 0x 1 00 000 000000 n d  FCVTNS Rd, Fn (round to
+      sf 00 11110 0x 1 00 001 000000 n d  FCVTNU Rd, Fn  nearest)
+      ---------------- 01 --------------  FCVTP-------- (round to +inf)
+      ---------------- 10 --------------  FCVTM-------- (round to -inf)
+      ---------------- 11 --------------  FCVTZ-------- (round to zero)
+
+      Rd is Xd when sf==1, Wd when sf==0
+      Fn is Dn when x==1, Sn when x==0
+      20:19 carry the rounding mode, using the same encoding as FPCR
+   */
+   if (ty <= X01 && (op == BITS3(0,0,0) || op == BITS3(0,0,1))) {
+      Bool isI64 = bitSF == 1;
+      Bool isF64 = (ty & 1) == 1;
+      Bool isU   = (op & 1) == 1;
+      /* Decide on the IR rounding mode to use. */
+      IRRoundingMode irrm = 8; /*impossible*/
+      HChar ch = '?';
+      switch (rm) {
+         case BITS2(0,0): ch = 'n'; irrm = Irrm_NEAREST; break;
+         case BITS2(0,1): ch = 'p'; irrm = Irrm_PosINF; break;
+         case BITS2(1,0): ch = 'm'; irrm = Irrm_NegINF; break;
+         case BITS2(1,1): ch = 'z'; irrm = Irrm_ZERO; break;
+         default: vassert(0);
+      }
+      vassert(irrm != 8);
+      /* Decide on the conversion primop, based on the source size,
+         dest size and signedness (8 possibilities).  Case coding:
+            F32 ->s I32   0
+            F32 ->u I32   1
+            F32 ->s I64   2
+            F32 ->u I64   3
+            F64 ->s I32   4
+            F64 ->u I32   5
+            F64 ->s I64   6
+            F64 ->u I64   7
+      */
+      UInt ix = (isF64 ? 4 : 0) | (isI64 ? 2 : 0) | (isU ? 1 : 0);
+      vassert(ix < 8);
+      const IROp iops[8] 
+         = { Iop_F32toI32S, Iop_F32toI32U, Iop_F32toI64S, Iop_F32toI64U,
+             Iop_F64toI32S, Iop_F64toI32U, Iop_F64toI64S, Iop_F64toI64U };
+      IROp iop = iops[ix];
+      // A bit of ATCery: bounce all cases we haven't seen an example of.
+      if (/* F32toI32S */
+             (iop == Iop_F32toI32S && irrm == Irrm_ZERO)   /* FCVTZS Wd,Sn */
+          || (iop == Iop_F32toI32S && irrm == Irrm_NegINF) /* FCVTMS Wd,Sn */
+          || (iop == Iop_F32toI32S && irrm == Irrm_PosINF) /* FCVTPS Wd,Sn */
+          /* F32toI32U */
+          || (iop == Iop_F32toI32U && irrm == Irrm_ZERO)   /* FCVTZU Wd,Sn */
+          || (iop == Iop_F32toI32U && irrm == Irrm_NegINF) /* FCVTMU Wd,Sn */
+          /* F32toI64S */
+          || (iop == Iop_F32toI64S && irrm == Irrm_ZERO)   /* FCVTZS Xd,Sn */
+          /* F32toI64U */
+          || (iop == Iop_F32toI64U && irrm == Irrm_ZERO)   /* FCVTZU Xd,Sn */
+          /* F64toI32S */
+          || (iop == Iop_F64toI32S && irrm == Irrm_ZERO)   /* FCVTZS Wd,Dn */
+          || (iop == Iop_F64toI32S && irrm == Irrm_NegINF) /* FCVTMS Wd,Dn */
+          || (iop == Iop_F64toI32S && irrm == Irrm_PosINF) /* FCVTPS Wd,Dn */
+          /* F64toI32U */
+          || (iop == Iop_F64toI32U && irrm == Irrm_ZERO)   /* FCVTZU Wd,Dn */
+          || (iop == Iop_F64toI32U && irrm == Irrm_NegINF) /* FCVTMU Wd,Dn */
+          || (iop == Iop_F64toI32U && irrm == Irrm_PosINF) /* FCVTPU Wd,Dn */
+          /* F64toI64S */
+          || (iop == Iop_F64toI64S && irrm == Irrm_ZERO)   /* FCVTZS Xd,Dn */
+          || (iop == Iop_F64toI64S && irrm == Irrm_NegINF) /* FCVTMS Xd,Dn */
+          || (iop == Iop_F64toI64S && irrm == Irrm_PosINF) /* FCVTPS Xd,Dn */
+          /* F64toI64U */
+          || (iop == Iop_F64toI64U && irrm == Irrm_ZERO)   /* FCVTZU Xd,Dn */
+          || (iop == Iop_F64toI64U && irrm == Irrm_PosINF) /* FCVTPU Xd,Dn */
+         ) {
+        /* validated */
+      } else {
+        return False;
+      }
+      IRType srcTy  = isF64 ? Ity_F64 : Ity_F32;
+      IRType dstTy  = isI64 ? Ity_I64 : Ity_I32;
+      IRTemp src    = newTemp(srcTy);
+      IRTemp dst    = newTemp(dstTy);
+      assign(src, getQRegLO(nn, srcTy));
+      assign(dst, binop(iop, mkU32(irrm), mkexpr(src)));
+      putIRegOrZR(isI64, dd, mkexpr(dst));
+      DIP("fcvt%c%c %s, %s\n", ch, isU ? 'u' : 's',
+          nameIRegOrZR(isI64, dd), nameQRegLO(nn, srcTy));
+      return True;
+   }
+
+   // op = 010, 011
    /* -------------- {S,U}CVTF (scalar, integer) -------------- */
    /* (ix) sf  S 28    ty   rm op  15     9 4
       0    0 0 0 11110 00 1 00 010 000000 n d  SCVTF Sd, Wn
@@ -7078,8 +7441,7 @@ Bool dis_AdvSIMD_fp_to_int_conv(/*MB_OUT*/DisResult* dres, UInt insn)
       These are signed/unsigned conversion from integer registers to
       FP registers, all 4 32/64-bit combinations, rounded per FPCR.
    */
-   if (bitS == 0 && ty <= X01 && rm == X00
-       && (op == BITS3(0,1,0) || op == BITS3(0,1,1))) {
+   if (ty <= X01 && rm == X00 && (op == BITS3(0,1,0) || op == BITS3(0,1,1))) {
       Bool isI64 = bitSF == 1;
       Bool isF64 = (ty & 1) == 1;
       Bool isU   = (op & 1) == 1;
@@ -7099,6 +7461,7 @@ Bool dis_AdvSIMD_fp_to_int_conv(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
+   // op = 110, 111
    /* -------- FMOV (general) -------- */
    /* case sf  S       ty   rm op  15     9 4
        (1) 0 0 0 11110 00 1 00 111 000000 n d     FMOV Sd,      Wn
@@ -7109,7 +7472,7 @@ Bool dis_AdvSIMD_fp_to_int_conv(/*MB_OUT*/DisResult* dres, UInt insn)
        (5) 1 0 0 11110 01 1 00 110 000000 n d     FMOV Xd, Dn
        (6) 1 0 0 11110 10 1 01 110 000000 n d     FMOV Xd, Vn.D[1]
    */
-   if (bitS == 0) {
+   if (1) {
       UInt ix = 0; // case
       if (bitSF == 0) {
          if (ty == BITS2(0,0) && rm == BITS2(0,0) && op == BITS3(1,1,1))
@@ -7234,7 +7597,7 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_fp_to_fixedp_conv(dres, insn);
    if (UNLIKELY(ok)) return True;
-   ok = dis_AdvSIMD_fp_to_int_conv(dres, insn);
+   ok = dis_AdvSIMD_fp_to_from_int_conv(dres, insn);
    if (UNLIKELY(ok)) return True;
    return False;
 }

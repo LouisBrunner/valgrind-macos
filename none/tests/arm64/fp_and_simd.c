@@ -1205,6 +1205,13 @@ GEN_ONEINT_ONEVEC_TEST(ucvtf_d_w, "ucvtf d7, w15", 15, 7)
 GEN_ONEINT_ONEVEC_TEST(ucvtf_s_x, "ucvtf s7, x15", 15, 7)
 GEN_ONEINT_ONEVEC_TEST(ucvtf_d_x, "ucvtf d7, x15", 15, 7)
 
+GEN_THREEVEC_TEST(fmul_2d_2d_d0, "fmul v2.2d, v11.2d, v29.d[0]", 2, 11, 29)
+GEN_THREEVEC_TEST(fmul_2d_2d_d1, "fmul v2.2d, v11.2d, v29.d[1]", 2, 11, 29)
+GEN_THREEVEC_TEST(fmul_4s_4s_s0, "fmul v2.4s, v11.4s, v29.s[0]", 2, 11, 29)
+GEN_THREEVEC_TEST(fmul_4s_4s_s3, "fmul v2.4s, v11.4s, v29.s[3]", 2, 11, 29)
+GEN_THREEVEC_TEST(fmul_2s_2s_s0, "fmul v2.2s, v11.2s, v29.s[0]", 2, 11, 29)
+GEN_THREEVEC_TEST(fmul_2s_2s_s3, "fmul v2.2s, v11.2s, v29.s[3]", 2, 11, 29)
+
 GEN_THREEVEC_TEST(fadd_d_d_d,  "fadd d2, d11, d29", 2, 11, 29)
 GEN_THREEVEC_TEST(fadd_s_s_s,  "fadd s2, s11, s29", 2, 11, 29)
 GEN_THREEVEC_TEST(fsub_d_d_d,  "fsub d2, d11, d29", 2, 11, 29)
@@ -3115,6 +3122,12 @@ int main ( void )
 
    // fmul      d_d_d[],s_s_s[]
    // fmul      2d_2d_d[],4s_4s_s[],2s_2s_s[]
+   if (1) test_fmul_2d_2d_d0(TyDF);
+   if (1) test_fmul_2d_2d_d1(TyDF);
+   if (1) test_fmul_4s_4s_s0(TySF);
+   if (1) test_fmul_4s_4s_s3(TySF);
+   if (1) test_fmul_2s_2s_s0(TySF);
+   if (1) test_fmul_2s_2s_s3(TySF);
 
    // fmul      2d,4s,2s
    // fmul      d,s

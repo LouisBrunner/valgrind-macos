@@ -1809,6 +1809,14 @@ ARM64Instr* ARM64Instr_VXfromQ ( HReg rX, HReg rQ, UInt laneNo ) {
    vassert(laneNo <= 1);
    return i;
 }
+ARM64Instr* ARM64Instr_VXfromDorS ( HReg rX, HReg rDorS, Bool fromD ) {
+   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   i->tag                      = ARM64in_VXfromDorS;
+   i->ARM64in.VXfromDorS.rX    = rX;
+   i->ARM64in.VXfromDorS.rDorS = rDorS;
+   i->ARM64in.VXfromDorS.fromD = fromD;
+   return i;
+}
 ARM64Instr* ARM64Instr_VMov ( UInt szB, HReg dst, HReg src ) {
    ARM64Instr* i       = LibVEX_Alloc(sizeof(ARM64Instr));
    i->tag              = ARM64in_VMov;
@@ -2472,11 +2480,18 @@ void ppARM64Instr ( ARM64Instr* i ) {
          ppHRegARM64(i->ARM64in.VQfromXX.rXlo);
          return;
       case ARM64in_VXfromQ:
-         vex_printf("mov    ");
+         vex_printf("fmov   ");
          ppHRegARM64(i->ARM64in.VXfromQ.rX);
          vex_printf(", ");
          ppHRegARM64(i->ARM64in.VXfromQ.rQ);
          vex_printf(".d[%u]", i->ARM64in.VXfromQ.laneNo);
+         return;
+      case ARM64in_VXfromDorS:
+         vex_printf("fmov   ");
+         ppHRegARM64(i->ARM64in.VXfromDorS.rX);
+         vex_printf("(%c-reg), ", i->ARM64in.VXfromDorS.fromD ? 'X':'W');
+         ppHRegARM64(i->ARM64in.VXfromDorS.rDorS);
+         vex_printf("(%c-reg)", i->ARM64in.VXfromDorS.fromD ? 'D' : 'S');
          return;
       case ARM64in_VMov: {
          UChar aux = '?';
@@ -2865,6 +2880,10 @@ void getRegUsage_ARM64Instr ( HRegUsage* u, ARM64Instr* i, Bool mode64 )
          addHRegUse(u, HRmWrite, i->ARM64in.VXfromQ.rX);
          addHRegUse(u, HRmRead,  i->ARM64in.VXfromQ.rQ);
          return;
+      case ARM64in_VXfromDorS:
+         addHRegUse(u, HRmWrite, i->ARM64in.VXfromDorS.rX);
+         addHRegUse(u, HRmRead,  i->ARM64in.VXfromDorS.rDorS);
+         return;
       case ARM64in_VMov:
          addHRegUse(u, HRmWrite, i->ARM64in.VMov.dst);
          addHRegUse(u, HRmRead,  i->ARM64in.VMov.src);
@@ -3144,6 +3163,12 @@ void mapRegs_ARM64Instr ( HRegRemap* m, ARM64Instr* i, Bool mode64 )
          i->ARM64in.VXfromQ.rQ
             = lookupHRegRemap(m, i->ARM64in.VXfromQ.rQ);
          return;
+      case ARM64in_VXfromDorS:
+         i->ARM64in.VXfromDorS.rX
+            = lookupHRegRemap(m, i->ARM64in.VXfromDorS.rX);
+         i->ARM64in.VXfromDorS.rDorS
+            = lookupHRegRemap(m, i->ARM64in.VXfromDorS.rDorS);
+         return;
       case ARM64in_VMov:
          i->ARM64in.VMov.dst = lookupHRegRemap(m, i->ARM64in.VMov.dst);
          i->ARM64in.VMov.src = lookupHRegRemap(m, i->ARM64in.VMov.src);
@@ -3349,6 +3374,7 @@ static inline UChar qregNo ( HReg r )
 
 #define X00000   BITS8(0,0,0, 0,0,0,0,0)
 #define X00001   BITS8(0,0,0, 0,0,0,0,1)
+#define X00110   BITS8(0,0,0, 0,0,1,1,0)
 #define X00111   BITS8(0,0,0, 0,0,1,1,1)
 #define X01000   BITS8(0,0,0, 0,1,0,0,0)
 #define X10000   BITS8(0,0,0, 1,0,0,0,0)
@@ -6291,6 +6317,20 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
          vassert(laneNo < 2);
          *p++ = X_3_8_5_6_5_5(X010, X01110000,
                               laneNo == 1 ? X11000 : X01000, X001111, nn, dd);
+         goto done;
+      }
+
+      case ARM64in_VXfromDorS: {
+         /* 000 11110001 00110 000000 n d     FMOV Wd, Sn
+            100 11110011 00110 000000 n d     FMOV Xd, Dn
+         */
+         UInt dd    = iregNo(i->ARM64in.VXfromDorS.rX);
+         UInt nn    = dregNo(i->ARM64in.VXfromDorS.rDorS);
+         Bool fromD = i->ARM64in.VXfromDorS.fromD;
+         vassert(dd < 31);
+         *p++ = X_3_8_5_6_5_5(fromD ? X100 : X000,
+                              fromD ? X11110011 : X11110001,
+                              X00110, X000000, nn, dd);
          goto done;
       }
 

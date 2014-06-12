@@ -598,6 +598,7 @@ typedef
       ARM64in_VDfromX,    /* Move an Xreg to a Dreg */
       ARM64in_VQfromXX,   /* Move 2 Xregs to a Qreg */
       ARM64in_VXfromQ,    /* Move half a Qreg to an Xreg */
+      ARM64in_VXfromDorS, /* Move Dreg or Sreg(ZX) to an Xreg */
       ARM64in_VMov,       /* vector reg-reg move, 16, 8 or 4 bytes */
       /* infrastructure */
       ARM64in_EvCheck,     /* Event check */
@@ -990,6 +991,11 @@ typedef
             HReg rQ;
             UInt laneNo; /* either 0 or 1 */
          } VXfromQ;
+         struct {
+            HReg rX;
+            HReg rDorS;
+            Bool fromD;
+         } VXfromDorS;
          /* MOV dst, src -- reg-reg move for vector registers */
          struct {
             UInt szB; // 16=mov qD,qS;  8=mov dD,dS;  4=mov sD,sS
@@ -1084,6 +1090,7 @@ extern ARM64Instr* ARM64Instr_VImmQ   ( HReg, UShort );
 extern ARM64Instr* ARM64Instr_VDfromX ( HReg rD, HReg rX );
 extern ARM64Instr* ARM64Instr_VQfromXX( HReg rQ, HReg rXhi, HReg rXlo );
 extern ARM64Instr* ARM64Instr_VXfromQ ( HReg rX, HReg rQ, UInt laneNo );
+extern ARM64Instr* ARM64Instr_VXfromDorS ( HReg rX, HReg rDorS, Bool fromD );
 extern ARM64Instr* ARM64Instr_VMov    ( UInt szB, HReg dst, HReg src );
 
 extern ARM64Instr* ARM64Instr_EvCheck ( ARM64AMode* amCounter,

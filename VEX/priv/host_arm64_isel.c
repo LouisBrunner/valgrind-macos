@@ -2109,6 +2109,18 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             addInstr(env, ARM64Instr_VXfromQ(dst, src, laneNo));
             return dst;
          }
+         case Iop_ReinterpF64asI64: {
+            HReg dst = newVRegI(env);
+            HReg src = iselDblExpr(env, e->Iex.Unop.arg);
+            addInstr(env, ARM64Instr_VXfromDorS(dst, src, True/*fromD*/));
+            return dst;
+         }
+         case Iop_ReinterpF32asI32: {
+            HReg dst = newVRegI(env);
+            HReg src = iselFltExpr(env, e->Iex.Unop.arg);
+            addInstr(env, ARM64Instr_VXfromDorS(dst, src, False/*!fromD*/));
+            return dst;
+         }
          case Iop_1Sto32:
          case Iop_1Sto64: {
             /* As with the iselStmt case for 'tmp:I1 = expr', we could

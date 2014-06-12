@@ -3663,7 +3663,7 @@ int main ( void )
    // movi  4s,2s    #imm8, LSL #0, 8, 16, 24
    // mvni  4s,2s    #imm8, LSL #0, 8, 16, 24
    if (1) test_movi_4s_0x5A_lsl0(TyS);
-   if (0) test_movi_4s_0x6B_lsl8(TyS);
+   if (1) test_movi_4s_0x6B_lsl8(TyS);
    if (0) test_movi_4s_0x49_lsl16(TyS);
    if (0) test_movi_4s_0x3D_lsl24(TyS);
    if (0) test_movi_2s_0x5A_lsl0(TyS);
@@ -4811,9 +4811,9 @@ int main ( void )
    if (0) test_sshr_d_d_1(TyD);
    if (0) test_sshr_d_d_32(TyD);
    if (0) test_sshr_d_d_64(TyD);
-   if (0) test_ushr_d_d_1(TyD);
-   if (0) test_ushr_d_d_32(TyD);
-   if (0) test_ushr_d_d_64(TyD);
+   if (1) test_ushr_d_d_1(TyD);
+   if (1) test_ushr_d_d_32(TyD);
+   if (1) test_ushr_d_d_64(TyD);
 
    // shl  (imm)   16b,8b,8h,4h,4s,2s,2d
    // sshr (imm)   2d,4s,2s,8h,4h,16b,8b

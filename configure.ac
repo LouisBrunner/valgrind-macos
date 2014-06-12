@@ -2690,7 +2690,7 @@ AC_LANG(C++)
 safe_CXXFLAGS=$CXXFLAGS
 CXXFLAGS="$mflag_primary"
 safe_LIBS="$LIBS"
-LIBS="-lboost_thread-mt $LIBS"
+LIBS="-lboost_thread-mt -lboost_system-mt $LIBS"
 
 AC_LINK_IFELSE([AC_LANG_SOURCE([
 #include <boost/thread.hpp>
@@ -2705,7 +2705,7 @@ int main(int argc, char** argv)
 [
 ac_have_boost_1_35=yes
 AC_SUBST([BOOST_CFLAGS], [])
-AC_SUBST([BOOST_LIBS], [-lboost_thread-mt])
+AC_SUBST([BOOST_LIBS], ["-lboost_thread-mt -lboost_system-mt"])
 AC_MSG_RESULT([yes])
 ], [
 ac_have_boost_1_35=no

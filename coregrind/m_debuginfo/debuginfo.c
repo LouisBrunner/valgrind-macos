@@ -229,7 +229,8 @@ static void free_DebugInfo ( DebugInfo* di )
       ML_(dinfo_free)(di->symtab);
    }
 
-   VG_(deleteDedupPA) (di->strpool);
+   if (di->strpool)
+      VG_(deleteDedupPA) (di->strpool);
 
    /* Delete the two admin arrays.  These lists exist primarily so
       that we can visit each object exactly once when we need to

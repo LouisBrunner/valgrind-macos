@@ -262,8 +262,10 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
       UWord hash = uregs.xip % N_FP_CF_VERIF;
       Addr xip_verif = uregs.xip ^ fp_CF_verif_cache [hash];
       if (debug)
-         VG_(printf)("     uregs.xip 0x%08lx xip_verif[0x%08lx]\n",
-                     uregs.xip, xip_verif);
+         VG_(printf)("     uregs.xip 0x%08lx xip_verif[0x%08lx]"
+                     " xbp 0x%08lx xsp 0x%08lx\n",
+                     uregs.xip, xip_verif,
+                     uregs.xbp, uregs.xsp);
       // If xip is in cache, then xip_verif will be <= CFUNWIND.
       // Otherwise, if not in cache, xip_verif will be > CFUNWIND.
 

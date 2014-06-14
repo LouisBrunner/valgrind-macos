@@ -11347,7 +11347,6 @@ MEM_TEST("ld1 {v17.2s},  [x5]", 5, 0)
 MEM_TEST("ld1 {v17.4h},  [x5]", 7, 0)
 MEM_TEST("ld1 {v17.8b},  [x5]", 13, 0)
 
-
 ////////////////////////////////////////////////////////////////
 printf("LD1/ST1 (single structure, post index)\n");
 MEM_TEST("st1 {v17.2d},  [x5], #16", 3, 0)
@@ -11367,6 +11366,35 @@ MEM_TEST("ld1 {v17.1d},  [x5], #8", 3, 0)
 MEM_TEST("ld1 {v17.2s},  [x5], #8", 5, 0)
 MEM_TEST("ld1 {v17.4h},  [x5], #8", 7, 0)
 MEM_TEST("ld1 {v17.8b},  [x5], #8", 13, 0)
+
+////////////////////////////////////////////////////////////////
+printf("LD1R (single structure, replicate)\n");
+MEM_TEST("ld1r {v17.2d},  [x5]", 3, -5)
+MEM_TEST("ld1r {v17.1d},  [x5]", 3, -4)
+MEM_TEST("ld1r {v17.4s},  [x5]", 3, -3)
+MEM_TEST("ld1r {v17.2s},  [x5]", 3, -2)
+MEM_TEST("ld1r {v17.8h},  [x5]", 3, -1)
+MEM_TEST("ld1r {v17.4h},  [x5]", 3, 1)
+MEM_TEST("ld1r {v17.16b}, [x5]", 3, 2)
+MEM_TEST("ld1r {v17.8b},  [x5]", 3, 3)
+
+MEM_TEST("ld1r {v17.2d},  [x5], #8", 3, -5)
+MEM_TEST("ld1r {v17.1d},  [x5], #8", 3, -4)
+MEM_TEST("ld1r {v17.4s},  [x5], #4", 3, -3)
+MEM_TEST("ld1r {v17.2s},  [x5], #4", 3, -2)
+MEM_TEST("ld1r {v17.8h},  [x5], #2", 3, -1)
+MEM_TEST("ld1r {v17.4h},  [x5], #2", 3, 1)
+MEM_TEST("ld1r {v17.16b}, [x5], #1", 3, 2)
+MEM_TEST("ld1r {v17.8b},  [x5], #1", 3, 3)
+
+MEM_TEST("ld1r {v17.2d},  [x5], x6", 3, -5)
+MEM_TEST("ld1r {v17.1d},  [x5], x6", 3, -4)
+MEM_TEST("ld1r {v17.4s},  [x5], x6", 3, -3)
+MEM_TEST("ld1r {v17.2s},  [x5], x6", 3, -2)
+MEM_TEST("ld1r {v17.8h},  [x5], x6", 3, -1)
+MEM_TEST("ld1r {v17.4h},  [x5], x6", 3, 1)
+MEM_TEST("ld1r {v17.16b}, [x5], x6", 3, 2)
+MEM_TEST("ld1r {v17.8b},  [x5], x6", 3, 3)
 
 ////////////////////////////////////////////////////////////////
 printf("LD2/ST2 (multiple structures, post index) (VERY INCOMPLETE)\n");

@@ -1688,8 +1688,7 @@ static IRTemp math_DUP_TO_64 ( IRTemp src, IRType srcTy )
 }
 
 
-/* Duplicates the src element exactly so as to fill a V128 value.  Only
-   handles src types of F64 and F32. */
+/* Duplicates the src element exactly so as to fill a V128 value. */
 static IRTemp math_DUP_TO_V128 ( IRTemp src, IRType srcTy )
 {
    IRTemp res = newTemp(Ity_V128);
@@ -1706,6 +1705,17 @@ static IRTemp math_DUP_TO_V128 ( IRTemp src, IRType srcTy )
       assign(i64b, binop(Iop_Or64, binop(Iop_Shl64, mkexpr(i64a), mkU8(32)),
                                    mkexpr(i64a)));
       assign(res, binop(Iop_64HLtoV128, mkexpr(i64b), mkexpr(i64b)));
+      return res;
+   }
+   if (srcTy == Ity_I64) {
+      assign(res, binop(Iop_64HLtoV128, mkexpr(src), mkexpr(src)));
+      return res;
+   }
+   if (srcTy == Ity_I32 || srcTy == Ity_I16 || srcTy == Ity_I8) {
+      IRTemp t1 = newTemp(Ity_I64);
+      assign(t1, widenUto64(srcTy, mkexpr(src)));
+      IRTemp t2 = math_DUP_TO_64(t1, srcTy);
+      assign(res, binop(Iop_64HLtoV128, mkexpr(t2), mkexpr(t2)));
       return res;
    }
    vassert(0);
@@ -3166,6 +3176,20 @@ static IRTemp gen_zwidening_load ( UInt szB, IRTemp addr )
 }
 
 
+/* Generate a "standard 7" name, from bitQ and size.  But also
+   allow ".1d" since that's occasionally useful. */
+static
+const HChar* nameArr_Q_SZ ( UInt bitQ, UInt size )
+{
+   vassert(bitQ <= 1 && size <= 3);
+   const HChar* nms[8]
+      = { "2d", "4s", "8h", "16b", "1d", "2s", "4h", "8b" };
+   UInt ix = (bitQ << 2) | size;
+   vassert(ix < 8);
+   return nms[ix];
+}
+
+
 static
 Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn)
 {
@@ -4297,6 +4321,52 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
+   /* ---------- LD1R (single structure, replicate) ---------- */
+   /* 31 29       22 20    15    11 9 4    
+      0q 001 1010 10 00000 110 0 sz n t  LD1R Vt.T, [Xn|SP]
+      0q 001 1011 10 m     110 0 sz n t  LD1R Vt.T, [Xn|SP], #sz (m=11111)
+                                                           , Xm  (m!=11111)
+   */
+   if (INSN(31,31) == 0 && INSN(29,24) == BITS6(0,0,1,1,0,1)
+       && INSN(22,21) == BITS2(1,0) && INSN(15,12) == BITS4(1,1,0,0)) {
+      Bool   isQ  = INSN(30,30) == 1;
+      Bool   isPX = INSN(23,23) == 1;
+      UInt   mm   = INSN(20,16);
+      UInt   sz   = INSN(11,10);
+      UInt   nn   = INSN(9,5);
+      UInt   tt   = INSN(4,0);
+      IRType ty   = integerIRTypeOfSize(1 << sz);
+      IRTemp tEA  = newTemp(Ity_I64);
+      assign(tEA, getIReg64orSP(nn));
+      if (nn == 31) { /* FIXME generate stack alignment check */ }
+      IRTemp loaded = newTemp(ty);
+      assign(loaded, loadLE(ty, mkexpr(tEA)));
+      IRTemp dupd = math_DUP_TO_V128(loaded, ty);
+      putQReg128(tt, isQ ? mkexpr(dupd)
+                         : unop(Iop_ZeroHI64ofV128, mkexpr(dupd)));
+      const HChar* arr = nameArr_Q_SZ(isQ ? 1 : 0, sz);
+      /* Deal with the writeback, if any. */
+      if (!isPX && mm == BITS5(0,0,0,0,0)) {
+         /* No writeback. */
+         DIP("ld1r v%u.%s, [%s]\n", tt, arr, nameIReg64orSP(nn));
+         return True;
+      }
+      if (isPX) {
+         putIReg64orSP(nn, binop(Iop_Add64, mkexpr(tEA), 
+                                 mm == BITS5(1,1,1,1,1) ? mkU64(1 << sz)
+                                                        : getIReg64orZR(mm)));
+         if (mm == BITS5(1,1,1,1,1)) {
+            DIP("ld1r v%u.%s, [%s], %s\n", tt, arr,
+                nameIReg64orSP(nn), nameIReg64orZR(mm));
+         } else {
+            DIP("ld1r v%u.%s, [%s], #%u\n", tt, arr,
+                nameIReg64orSP(nn), 1 << sz);
+         }
+         return True;
+      }
+      return False;
+   }
+
    /* ---------- LD2/ST2 (multiple structures, post index) ---------- */
    /* Only a very few cases. */
    /* 31        23             11 9 4
@@ -5383,20 +5453,6 @@ static IRTemp math_TBL_TBX ( IRTemp tab[4], UInt len, IRTemp src,
                       mkexpr(oor_values),
                       unop(Iop_NotV128, mkexpr(overall_valid_mask)))));
    return result;      
-}
-
-
-/* Generate a "standard 7" name, from bitQ and size. */
-static
-const HChar* nameArr_Q_SZ ( UInt bitQ, UInt size )
-{
-   vassert(bitQ <= 1 && size <= 3);
-   vassert(!(bitQ == 0 && size == 3)); // Implied 1d case
-   const HChar* nms[8]
-      = { "2d", "4s", "8h", "16b", "1d", "2s", "4h", "8b" };
-   UInt ix = (bitQ << 2) | size;
-   vassert(ix < 8);
-   return nms[ix];
 }
 
 

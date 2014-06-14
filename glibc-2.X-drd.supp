@@ -67,12 +67,8 @@
 {
    drd-libpthread-pthread_create
    drd:ConflictingAccess
-   fun:pthread_create
-}
-{
-   drd-libpthread-pthread_create
-   drd:ConflictingAccess
-   fun:pthread_create@@*
+   ...
+   fun:pthread_create*
 }
 {
    drd-libpthread-pthread_join
@@ -83,6 +79,7 @@
 {
    drd-libpthread-__deallocate_stack
    drd:ConflictingAccess
+   ...
    fun:__deallocate_stack
 }
 {
@@ -93,6 +90,7 @@
 {
    drd-libpthread-__free_tcb
    drd:ConflictingAccess
+   ...
    fun:__free_tcb
 }
 {
@@ -119,13 +117,8 @@
 {
    drd-libpthread-_Unwind_ForcedUnwind
    drd:ConflictingAccess
+   ...
    fun:_Unwind_ForcedUnwind
-}
-{
-   drd-libpthread-_Unwind_ForcedUnwind
-   drd:ConflictingAccess
-   fun:pthread_mutex_lock
-   fun:_Unwind_Find_FDE
 }
 {
    drd-libpthread-_Unwind_GetCFA
@@ -135,6 +128,7 @@
 {
    drd-libpthread-_Unwind_Resume
    drd:ConflictingAccess
+   ...
    fun:_Unwind_Resume
 }
 {
@@ -183,6 +177,7 @@
 {
    drd-libxcb-xcb_wait_for_reply
    drd:CondErr
+   ...
    fun:pthread_cond_destroy*
    fun:xcb_wait_for_reply
 }
@@ -194,12 +189,14 @@
 {
    drd-libglib-access-g_threads_got_initialized
    drd:ConflictingAccess
+   ...
    fun:g_slice_alloc
    fun:g_ptr_array_sized_new
 }
 {
    drd-libglib-access-g_threads_got_initialized
    drd:ConflictingAccess
+   ...
    fun:_ZN27QEventDispatcherGlibPrivateC1EP13_GMainContext
    fun:_ZN20QEventDispatcherGlibC1EP7QObject
    obj:/usr/lib*/libQtCore.so.4.*
@@ -290,6 +287,7 @@
 {
    drd-libboost-boost::call_once<void (*)()>(boost::once_flag&, void (*)())
    drd:ConflictingAccess
+   ...
    fun:_ZN5boost9call_onceIPFvvEEEvRNS_9once_flagET_
 }
 {
@@ -303,10 +301,12 @@
 {
    drd-libboost-boost::detail::get_current_thread_data()
    drd:ConflictingAccess
+   ...
    fun:_ZN5boost6detail23get_current_thread_dataEv
 }
 {
    drd-libboost-boost::detail::set_current_thread_data(boost::detail::thread_data_base*)
    drd:ConflictingAccess
+   ...
    fun:_ZN5boost6detail23set_current_thread_dataEPNS0_16thread_data_baseE
 }

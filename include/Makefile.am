@@ -9,6 +9,7 @@ nobase_pkginclude_HEADERS = \
 	pub_tool_aspacemgr.h 		\
 	pub_tool_clientstate.h		\
 	pub_tool_clreq.h		\
+	pub_tool_deduppoolalloc.h	\
 	pub_tool_debuginfo.h 		\
 	pub_tool_errormgr.h 		\
 	pub_tool_execontext.h 		\

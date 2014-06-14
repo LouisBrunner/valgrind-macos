@@ -32,6 +32,7 @@
 #include "pub_core_debuglog.h"
 #include "pub_core_hashtable.h"
 #include "pub_core_libcassert.h"
+#include "pub_core_libcprint.h"
 #include "pub_core_mallocfree.h"
 
 /*--------------------------------------------------------------------*/
@@ -154,13 +155,29 @@ void VG_(HT_add_node) ( VgHashTable table, void* vnode )
    table->iterOK = False;
 }
 
-/* Looks up a VgHashNode in the table.  Returns NULL if not found. */
+/* Looks up a VgHashNode by key in the table.  Returns NULL if not found. */
 void* VG_(HT_lookup) ( VgHashTable table, UWord key )
 {
    VgHashNode* curr = table->chains[ CHAIN_NO(key, table) ];
 
    while (curr) {
       if (key == curr->key) {
+         return curr;
+      }
+      curr = curr->next;
+   }
+   return NULL;
+}
+
+/* Looks up a VgHashNode by node in the table.  Returns NULL if not found.
+   GEN!!! marks the lines that differs from VG_(HT_lookup). */
+void* VG_(HT_gen_lookup) ( VgHashTable table, void* node, HT_Cmp_t cmp )
+{
+   VgHashNode* hnode = (VgHashNode*) node; // GEN!!!
+   VgHashNode* curr = table->chains[ CHAIN_NO(hnode->key, table) ]; // GEN!!!
+
+   while (curr) {
+      if (cmp (hnode, curr) == 0) { // GEN!!!
          return curr;
       }
       curr = curr->next;
@@ -189,6 +206,120 @@ void* VG_(HT_remove) ( VgHashTable table, UWord key )
    }
    return NULL;
 }
+
+/* Removes a VgHashNode by node from the table.  Returns NULL if not found.
+   GEN!!! marks the lines that differs from VG_(HT_remove). */
+void* VG_(HT_gen_remove) ( VgHashTable table, void* node, HT_Cmp_t cmp  )
+{
+   VgHashNode* hnode = (VgHashNode*) node; // GEN!!!
+   UWord        chain         = CHAIN_NO(hnode->key, table); // GEN!!!
+   VgHashNode*  curr          =   table->chains[chain];
+   VgHashNode** prev_next_ptr = &(table->chains[chain]);
+
+   /* Table has been modified; hence HT_Next should assert. */
+   table->iterOK = False;
+
+   while (curr) {
+      if (cmp(hnode, curr) == 0) { // GEN!!!
+         *prev_next_ptr = curr->next;
+         table->n_elements--;
+         return curr;
+      }
+      prev_next_ptr = &(curr->next);
+      curr = curr->next;
+   }
+   return NULL;
+}
+
+void VG_(HT_print_stats) ( VgHashTable table, HT_Cmp_t cmp )
+{
+   #define MAXOCCUR 20
+   UInt elt_occurences[MAXOCCUR];
+   UInt key_occurences[MAXOCCUR];
+   UInt cno_occurences[MAXOCCUR];
+   /* Key occurence  : how many ht elements have the same key.
+      elt_occurences : how many elements are inserted multiple time.
+      cno_occurences : how many chains have that length.
+      The last entry in these arrays collects all occurences >= MAXOCCUR-1. */
+   #define INCOCCUR(occur,n) (n >= MAXOCCUR ? occur[n-1]++ : occur[n]++)
+   UInt i;
+   UInt nkey, nelt, ncno;
+   VgHashNode *cnode, *node;
+
+   for (i = 0; i < 20; i++) {
+      key_occurences[i] = 0;
+      elt_occurences[i] = 0;
+      cno_occurences[i] = 0;
+   }
+
+   // Note that the below algorithm is quadractic in nr of elements in a chain
+   // but if that happens, the hash table/function is really bad and that
+   // should be fixed.
+   for (i = 0; i < table->n_chains; i++) {
+      ncno = 0;
+      for (cnode = table->chains[i]; cnode != NULL; cnode = cnode->next) {
+         ncno++;
+
+         nkey = 0;
+         // Is the same cnode->key existing before cnode ?
+         for (node = table->chains[i]; node != cnode; node = node->next) {
+            if (node->key == cnode->key)
+               nkey++;
+         }
+         // If cnode->key not in a previous node, count occurences of key.
+         if (nkey == 0) {
+            for (node = cnode; node != NULL; node = node->next) {
+               if (node->key == cnode->key)
+                  nkey++;
+            }
+            INCOCCUR(key_occurences, nkey);
+         }
+
+         nelt = 0;
+         // Is the same cnode element existing before cnode ?
+         for (node = table->chains[i]; node != cnode; node = node->next) {
+            if (cmp) {
+               if ((*cmp)(node, cnode) == 0)
+                  nelt++;
+            } else 
+               if (node->key == cnode->key)
+                  nelt++;
+         }
+         // If cnode element not in a previous node, count occurences of elt.
+         if (nelt == 0) {
+            for (node = cnode; node != NULL; node = node->next) {
+               if (cmp) {
+                  if ((*cmp)(node, cnode) == 0)
+                     nelt++;
+               } else 
+                  if (node->key == cnode->key)
+                     nelt++;
+            }
+            INCOCCUR(elt_occurences, nelt);
+         }
+      }
+      INCOCCUR(cno_occurences, ncno);
+   }
+
+   VG_(message)(Vg_DebugMsg, 
+                "nr occurences of"
+                " chains of len N,"
+                " N-plicated keys,"
+                " N-plicated elts\n");
+   nkey = nelt = ncno = 0;
+   for (i = 0; i < MAXOCCUR; i++) {
+      if (elt_occurences[i] > 0 || key_occurences[i] > 0 || cno_occurences[i] > 0)
+          VG_(message)(Vg_DebugMsg,
+                       "N:%2d : nr chain %6d, nr keys %6d, nr elts %6d\n",
+                       i, cno_occurences[i], key_occurences[i], elt_occurences[i]);
+      nkey += key_occurences[i];
+      nelt += elt_occurences[i];
+      ncno += cno_occurences[i];
+   }
+   VG_(message)(Vg_DebugMsg, "total nr of unique   chains: %6d, keys %6d, elts %6d\n",
+                ncno, nkey, nelt);
+}
+
 
 /* Allocates a suitably-sized array, copies pointers to all the hashtable
    elements into it, then returns both the array and the size of it.  The

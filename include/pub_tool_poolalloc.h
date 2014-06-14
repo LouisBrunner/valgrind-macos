@@ -53,11 +53,11 @@ typedef  struct _PoolAlloc  PoolAlloc;
 /* Create new PoolAlloc, using given allocation and free function, and
    for elements of the specified size.  Alloc fn must not fail (that
    is, if it returns it must have succeeded.) */
-PoolAlloc* VG_(newPA) ( UWord  elemSzB,
-                        UWord  nPerPool,
-                        void*  (*alloc)(const HChar*, SizeT),
-                        const  HChar* cc,
-                        void   (*free_fn)(void*) );
+extern PoolAlloc* VG_(newPA) ( UWord  elemSzB,
+                               UWord  nPerPool,
+                               void*  (*alloc)(const HChar*, SizeT),
+                               const  HChar* cc,
+                               void   (*free_fn)(void*) );
 
 
 /* Free all memory associated with a PoolAlloc. */

@@ -63,13 +63,35 @@ extern Int VG_(HT_count_nodes) ( VgHashTable table );
 /* Add a node to the table.  Duplicate keys are permitted. */
 extern void VG_(HT_add_node) ( VgHashTable t, void* node );
 
-/* Looks up a VgHashNode in the table.  Returns NULL if not found.  If entries
+/* Looks up a VgHashNode by key in the table.  
+ * Returns NULL if not found.  If entries
  * with duplicate keys are present, the most recently-added of the dups will
  * be returned, but it's probably better to avoid dups altogether. */
 extern void* VG_(HT_lookup) ( VgHashTable table, UWord key );
 
-/* Removes a VgHashNode from the table.  Returns NULL if not found. */
+/* Removes a VgHashNode by key from the table.  Returns NULL if not found. */
 extern void* VG_(HT_remove) ( VgHashTable table, UWord key );
+
+typedef Word  (*HT_Cmp_t) ( const void* node1, const void* node2 );
+
+/* Same as VG_(HT_lookup) and VG_(HT_remove), but allowing a part of or
+   the full element to be compared for equality, not only the key.
+   The typical use for the below function is to store a hash value of the
+   element in the key, and have the comparison function checking for equality
+   of the full element data.
+   Attention about the comparison function:
+    * It must *not* compare the 'next' pointer.
+    * when comparing the rest of the node, if the node data contains holes
+      between components, either the node memory should be fully initialised
+      (e.g. allocated using VG_(calloc)) or each component should be compared
+       individually. */
+extern void* VG_(HT_gen_lookup) ( VgHashTable table, void* node, HT_Cmp_t cmp );
+extern void* VG_(HT_gen_remove) ( VgHashTable table, void* node, HT_Cmp_t cmp );
+
+/* Output detailed usage/collision statistics.
+   cmp will be used to verify if 2 elements with the same key are equal.
+   Use NULL cmp if the hash table elements are only to be compared by key. */
+extern void VG_(HT_print_stats) ( VgHashTable table, HT_Cmp_t cmp );
 
 /* Allocates a suitably-sized array, copies pointers to all the hashtable
    elements into it, then returns both the array and the size of it.  The

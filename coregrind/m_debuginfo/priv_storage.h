@@ -45,6 +45,7 @@
 
 #include "pub_core_basics.h"   // Addr
 #include "pub_core_xarray.h"   // XArray
+#include "pub_core_deduppoolalloc.h" // DedupPoolAlloc
 #include "priv_d3basics.h"     // GExpr et al.
 #include "priv_image.h"        // DiCursor
 
@@ -55,7 +56,7 @@
    ::sec_names is NULL.  If there are other names, these are stored in
    ::sec_names, which is a NULL terminated vector holding the names.
    The vector is allocated in VG_AR_DINFO, the names themselves live
-   in DebugInfo::strchunks.
+   in DebugInfo::strpool.
 
    From the point of view of ELF, the primary vs secondary distinction
    is artificial: they are all just names associated with the address,
@@ -444,12 +445,12 @@ typedef
 
 typedef
    struct {
-      HChar* name;  /* in DebugInfo.strchunks */
+      HChar* name;  /* in DebugInfo.strpool */
       UWord  typeR; /* a cuOff */
       GExpr* gexpr; /* on DebugInfo.gexprs list */
       GExpr* fbGX;  /* SHARED. */
       HChar* fileName; /* where declared; may be NULL. in
-                          DebugInfo.strchunks */
+                          DebugInfo.strpool */
       Int    lineNo;   /* where declared; may be zero. */
    }
    DiVariable;
@@ -512,8 +513,8 @@ struct _DebugInfoFSM
 };
 
 
-/* To do with the string table in struct _DebugInfo (::strchunks) */
-#define SEGINFO_STRCHUNKSIZE (64*1024)
+/* To do with the string table in struct _DebugInfo (::strpool) */
+#define SEGINFO_STRPOOLSIZE (16*1024)
 
 
 /* We may encounter more than one .eh_frame section in an object --
@@ -809,13 +810,9 @@ struct _DebugInfo {
    Addr      fpo_maxavma;
    Addr      fpo_base_avma;
 
-   /* Expandable arrays of characters -- the string table.  Pointers
-      into this are stable (the arrays are not reallocated). */
-   struct strchunk {
-      UInt   strtab_used;
-      struct strchunk* next;
-      HChar  strtab[SEGINFO_STRCHUNKSIZE];
-   } *strchunks;
+   /* Pool of strings -- the string table.  Pointers
+      into this are stable (the memory is not reallocated). */
+   DedupPoolAlloc *strpool;
 
    /* Variable scope information, as harvested from Dwarf3 files.
 

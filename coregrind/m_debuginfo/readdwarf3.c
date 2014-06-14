@@ -1389,7 +1389,7 @@ void get_Form_contents ( /*OUT*/FormContents* cts,
 
 typedef
    struct _TempVar {
-      HChar*  name; /* in DebugInfo's .strchunks */
+      HChar*  name; /* in DebugInfo's .strpool */
       /* Represent ranges economically.  nRanges is the number of
          ranges.  Cases:
          0: .rngOneMin .rngOneMax .manyRanges are all zero
@@ -1449,7 +1449,7 @@ typedef
       GExpr*  fbGX[N_D3_VAR_STACK];   /* if isFunc, contains the FB
                                          expr, else NULL */
       /* The file name table.  Is a mapping from integer index to the
-         (permanent) copy of the string in in DebugInfo's .strchunks. */
+         (permanent) copy of the string in in DebugInfo's .strpool. */
       XArray* /* of UChar* */ filenameTable;
    }
    D3VarParser;

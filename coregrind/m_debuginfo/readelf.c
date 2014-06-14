@@ -1449,7 +1449,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    vg_assert(!di->loctab);
    vg_assert(!di->cfsi);
    vg_assert(!di->cfsi_exprs);
-   vg_assert(!di->strchunks);
+   vg_assert(!di->strpool);
    vg_assert(!di->soname);
 
    {

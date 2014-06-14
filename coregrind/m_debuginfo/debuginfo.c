@@ -204,7 +204,6 @@ DebugInfo* alloc_DebugInfo( const HChar* filename )
 static void free_DebugInfo ( DebugInfo* di )
 {
    Word i, j, n;
-   struct strchunk *chunk, *next;
    TyEnt* ent;
    GExpr* gexpr;
 
@@ -230,10 +229,7 @@ static void free_DebugInfo ( DebugInfo* di )
       ML_(dinfo_free)(di->symtab);
    }
 
-   for (chunk = di->strchunks; chunk != NULL; chunk = next) {
-      next = chunk->next;
-      ML_(dinfo_free)(chunk);
-   }
+   VG_(deleteDedupPA) (di->strpool);
 
    /* Delete the two admin arrays.  These lists exist primarily so
       that we can visit each object exactly once when we need to
@@ -279,7 +275,7 @@ static void free_DebugInfo ( DebugInfo* di )
                vg_assert(var);
                /* Nothing to free in var: all the pointer fields refer
                   to stuff either on an admin list, or in
-                  .strchunks */
+                  .strpool */
             }
             VG_(deleteXA)(arange->vars);
             /* Don't free arange itself, as OSetGen_Destroy does

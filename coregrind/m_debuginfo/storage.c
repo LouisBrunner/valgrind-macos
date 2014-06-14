@@ -45,6 +45,7 @@
 #include "pub_core_libcprint.h"
 #include "pub_core_xarray.h"
 #include "pub_core_oset.h"
+#include "pub_core_deduppoolalloc.h"
 
 #include "priv_misc.h"         /* dinfo_zalloc/free/strdup */
 #include "priv_image.h"
@@ -231,8 +232,6 @@ void ML_(ppDiCfSI) ( XArray* /* of CfiExpr */ exprs, DiCfSI* si )
 */
 HChar* ML_(addStr) ( struct _DebugInfo* di, const HChar* str, Int len )
 {
-   struct strchunk *chunk;
-   Int    space_needed;
    HChar* p;
 
    if (len == -1) {
@@ -240,25 +239,13 @@ HChar* ML_(addStr) ( struct _DebugInfo* di, const HChar* str, Int len )
    } else {
       vg_assert(len >= 0);
    }
-
-   space_needed = 1 + len;
-
-   // Allocate a new strtab chunk if necessary
-   if (di->strchunks == NULL || 
-       (di->strchunks->strtab_used 
-        + space_needed) > SEGINFO_STRCHUNKSIZE) {
-      chunk = ML_(dinfo_zalloc)("di.storage.addStr.1", sizeof(*chunk));
-      chunk->strtab_used = 0;
-      chunk->next = di->strchunks;
-      di->strchunks = chunk;
-   }
-   chunk = di->strchunks;
-
-   p = &chunk->strtab[chunk->strtab_used];
-   VG_(memcpy)(p, str, len);
-   chunk->strtab[chunk->strtab_used+len] = '\0';
-   chunk->strtab_used += space_needed;
-
+   if (UNLIKELY(di->strpool == NULL))
+      di->strpool = VG_(newDedupPA)(SEGINFO_STRPOOLSIZE,
+                                    1,
+                                    ML_(dinfo_zalloc),
+                                    "di.storage.addStr.1",
+                                    ML_(dinfo_free));
+   p = VG_(allocEltDedupPA) (di->strpool, len+1, str);
    return p;
 }
 
@@ -926,12 +913,12 @@ void ML_(addVar)( struct _DebugInfo* di,
                   Int    level,
                   Addr   aMin,
                   Addr   aMax,
-                  HChar* name, /* in di's .strchunks */
+                  HChar* name, /* in di's .strpool */
                   UWord  typeR, /* a cuOff */
                   GExpr* gexpr,
                   GExpr* fbGX,
                   HChar* fileName, /* where decl'd - may be NULL.
-                                      in di's .strchunks */
+                                      in di's .strpool */
                   Int    lineNo, /* where decl'd - may be zero */
                   Bool   show )
 {
@@ -1216,7 +1203,9 @@ Bool preferName ( struct _DebugInfo* di,
 
    vg_assert(a_name);
    vg_assert(b_name);
-   vg_assert(a_name != b_name);
+   // vg_assert(a_name != b_name);
+   // ???? now the pointers can be equal but is that
+   // ???? not the indication of a latent bug ????
 
    vlena = VG_(strlen)(a_name);
    vlenb = VG_(strlen)(b_name);
@@ -1828,6 +1817,8 @@ void ML_(canonicaliseTables) ( struct _DebugInfo* di )
    canonicaliseLoctab ( di );
    ML_(canonicaliseCFI) ( di );
    canonicaliseVarInfo ( di );
+   if (di->strpool)
+      VG_(freezeDedupPA) (di->strpool);
 }
 
 

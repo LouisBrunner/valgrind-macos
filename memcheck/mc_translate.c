@@ -4244,6 +4244,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_CmpNEZ64x2:
       case Iop_CipherSV128:
       case Iop_Clz64x2:
+      case Iop_Abs64x2:
          return mkPCast64x2(mce, vatom);
 
       case Iop_PwBitMtxXpose64x2:

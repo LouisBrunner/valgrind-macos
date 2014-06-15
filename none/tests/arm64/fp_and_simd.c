@@ -3259,18 +3259,18 @@ int main ( void )
 
    // abs       d
    // neg       d
-   if (0) test_abs_d_d(TyD);
-   if (0) test_neg_d_d(TyD);
+   if (1) test_abs_d_d(TyD);
+   if (1) test_neg_d_d(TyD);
 
    // abs       2d,4s,2s,8h,4h,16b,8b
    // neg       2d,4s,2s,8h,4h,16b,8b
-   if (0) test_abs_2d_2d(TyD);
-   if (0) test_abs_4s_4s(TyS);
-   if (0) test_abs_2s_2s(TyS);
-   if (0) test_abs_8h_8h(TyH);
-   if (0) test_abs_4h_4h(TyH);
-   if (0) test_abs_16b_16b(TyB);
-   if (0) test_abs_8b_8b(TyB);
+   if (1) test_abs_2d_2d(TyD);
+   if (1) test_abs_4s_4s(TyS);
+   if (1) test_abs_2s_2s(TyS);
+   if (1) test_abs_8h_8h(TyH);
+   if (1) test_abs_4h_4h(TyH);
+   if (1) test_abs_16b_16b(TyB);
+   if (1) test_abs_8b_8b(TyB);
    if (1) test_neg_2d_2d(TyD);
    if (1) test_neg_4s_4s(TyS);
    if (1) test_neg_2s_2s(TyS);
@@ -3305,49 +3305,49 @@ int main ( void )
    // subhn{2}   2s/4s_2d_2d, 4h/8h_4s_4s, 8b/16b_8h_8h
    // raddhn{2}  2s/4s_2d_2d, 4h/8h_4s_4s, 8b/16b_8h_8h
    // rsubhn{2}  2s/4s_2d_2d, 4h/8h_4s_4s, 8b/16b_8h_8h
-   if (0) test_addhn_2s_2d_2d(TyD);
-   if (0) test_addhn2_4s_2d_2d(TyD);
-   if (0) test_addhn_4h_4s_4s(TyS);
-   if (0) test_addhn2_8h_4s_4s(TyS);
-   if (0) test_addhn_8b_8h_8h(TyH);
-   if (0) test_addhn2_16b_8h_8h(TyH);
-   if (0) test_subhn_2s_2d_2d(TyD);
-   if (0) test_subhn2_4s_2d_2d(TyD);
-   if (0) test_subhn_4h_4s_4s(TyS);
-   if (0) test_subhn2_8h_4s_4s(TyS);
-   if (0) test_subhn_8b_8h_8h(TyH);
-   if (0) test_subhn2_16b_8h_8h(TyH);
-   if (0) test_raddhn_2s_2d_2d(TyD);
-   if (0) test_raddhn2_4s_2d_2d(TyD);
-   if (0) test_raddhn_4h_4s_4s(TyS);
-   if (0) test_raddhn2_8h_4s_4s(TyS);
-   if (0) test_raddhn_8b_8h_8h(TyH);
-   if (0) test_raddhn2_16b_8h_8h(TyH);
-   if (0) test_rsubhn_2s_2d_2d(TyD);
-   if (0) test_rsubhn2_4s_2d_2d(TyD);
-   if (0) test_rsubhn_4h_4s_4s(TyS);
-   if (0) test_rsubhn2_8h_4s_4s(TyS);
-   if (0) test_rsubhn_8b_8h_8h(TyH);
-   if (0) test_rsubhn2_16b_8h_8h(TyH);
+   if (1) test_addhn_2s_2d_2d(TyD);
+   if (1) test_addhn2_4s_2d_2d(TyD);
+   if (1) test_addhn_4h_4s_4s(TyS);
+   if (1) test_addhn2_8h_4s_4s(TyS);
+   if (1) test_addhn_8b_8h_8h(TyH);
+   if (1) test_addhn2_16b_8h_8h(TyH);
+   if (1) test_subhn_2s_2d_2d(TyD);
+   if (1) test_subhn2_4s_2d_2d(TyD);
+   if (1) test_subhn_4h_4s_4s(TyS);
+   if (1) test_subhn2_8h_4s_4s(TyS);
+   if (1) test_subhn_8b_8h_8h(TyH);
+   if (1) test_subhn2_16b_8h_8h(TyH);
+   if (1) test_raddhn_2s_2d_2d(TyD);
+   if (1) test_raddhn2_4s_2d_2d(TyD);
+   if (1) test_raddhn_4h_4s_4s(TyS);
+   if (1) test_raddhn2_8h_4s_4s(TyS);
+   if (1) test_raddhn_8b_8h_8h(TyH);
+   if (1) test_raddhn2_16b_8h_8h(TyH);
+   if (1) test_rsubhn_2s_2d_2d(TyD);
+   if (1) test_rsubhn2_4s_2d_2d(TyD);
+   if (1) test_rsubhn_4h_4s_4s(TyS);
+   if (1) test_rsubhn2_8h_4s_4s(TyS);
+   if (1) test_rsubhn_8b_8h_8h(TyH);
+   if (1) test_rsubhn2_16b_8h_8h(TyH);
 
    // addp     d (add pairs, across)
-   if (0) test_addp_d_2d(TyD);
+   if (1) test_addp_d_2d(TyD);
 
    // addp     2d,4s,2s,8h,4h,16b,8b
-   if (0) test_addp_2d_2d_2d(TyD);
-   if (0) test_addp_4s_4s_4s(TyS);
-   if (0) test_addp_2s_2s_2s(TyS);
-   if (0) test_addp_8h_8h_8h(TyH);
-   if (0) test_addp_4h_4h_4h(TyH);
-   if (0) test_addp_16b_16b_16b(TyB);
-   if (0) test_addp_8b_8b_8b(TyB);
+   if (1) test_addp_2d_2d_2d(TyD);
+   if (1) test_addp_4s_4s_4s(TyS);
+   if (1) test_addp_2s_2s_2s(TyS);
+   if (1) test_addp_8h_8h_8h(TyH);
+   if (1) test_addp_4h_4h_4h(TyH);
+   if (1) test_addp_16b_16b_16b(TyB);
+   if (1) test_addp_8b_8b_8b(TyB);
 
    // addv     4s,8h,4h,16b,18b (reduce across vector)
-   if (0) test_addv_s_4s(TyS);
-   if (0) test_addv_h_8h(TyH);
-   if (0) test_addv_h_4h(TyH);
-   if (0) test_addv_b_16b(TyB);
-   if (0) test_addv_b_8b(TyB);
+   if (1) test_addv_s_4s(TyS);
+   if (1) test_addv_h_8h(TyH);
+   if (1) test_addv_h_4h(TyH);
+   if (1) test_addv_b_16b(TyB);
+   if (1) test_addv_b_8b(TyB);
 
    // and      16b,8b
    // bic      16b,8b

@@ -377,7 +377,22 @@ static ULong get_Initial_Length ( /*OUT*/Bool* is64,
 /*---                                                      ---*/
 /*------------------------------------------------------------*/
 
-#define N_ABBV_CACHE 32
+typedef
+   struct _name_form {
+      ULong at_name;
+      ULong at_form;
+   } name_form;
+
+typedef
+   struct _g_abbv {
+      struct _g_abbv *next; // read/write by hash table.
+      UWord  abbv_code;     // key, read by hash table
+      ULong  atag;
+      ULong  has_children;
+      name_form nf[0];
+      /* Variable-length array of name/form pairs, terminated
+         by a 0/0 pair. */
+    } g_abbv;
 
 /* Holds information that is constant through the parsing of a
    Compilation Unit.  This is basically plumbed through to
@@ -429,11 +444,8 @@ typedef
       UWord  alt_cuOff_bias;
       /* --- Needed so we can add stuff to the string table. --- */
       struct _DebugInfo* di;
-      /* --- a cache for set_abbv_Cursor --- */
-      /* abbv_code == (ULong)-1 for an unused entry. */
-      struct { ULong abbv_code; UWord posn; } saC_cache[N_ABBV_CACHE];
-      UWord saC_cache_queries;
-      UWord saC_cache_misses;
+      /* --- a hash table of g_abbv (i.e. parsed abbreviations) --- */
+      VgHashTable ht_abbvs;
 
       /* True if this came from .debug_types; otherwise it came from
          .debug_info.  */
@@ -852,6 +864,84 @@ static XArray* /* of AddrRange */
    return xa;
 }
 
+/* Initialises the hash table of abbreviations.
+   We do a single scan of the abbv slice to parse and
+   build all abbreviations, for the following reasons:
+     * all or most abbreviations will be needed in any case
+       (at least for var-info reading).
+     * re-reading each time an abbreviation causes a lot of calls
+       to get_ULEB128.
+     * a CU should not have many abbreviations. */
+static void init_ht_abbvs (CUConst* cc,
+                           Bool td3)
+{
+   Cursor c;
+   g_abbv *ta; // temporary abbreviation, reallocated if needed.
+   UInt ta_nf_maxE; // max nr of pairs in ta.nf[], doubled when reallocated.
+   UInt ta_nf_n;    // nr of pairs in ta->nf that are initialised.
+   g_abbv *ht_ta; // abbv to insert in hash table. 
+
+   #define SZ_G_ABBV(_nf_szE) (sizeof(g_abbv) + _nf_szE * sizeof(name_form))
+
+   ta_nf_maxE = 10; // starting with enough for 9 pairs+terminating pair.
+   ta = ML_(dinfo_zalloc) ("di.readdwarf3.ht_ta_nf", SZ_G_ABBV(ta_nf_maxE));
+   cc->ht_abbvs = VG_(HT_construct) ("di.readdwarf3.ht_abbvs");
+
+   init_Cursor( &c, cc->debug_abbv, 0, cc->barf,
+               "Overrun whilst parsing .debug_abbrev section(2)" );
+   while (True) {
+      ta->abbv_code = get_ULEB128( &c );
+      if (ta->abbv_code == 0) break; /* end of the table */
+
+      ta->atag = get_ULEB128( &c );
+      ta->has_children = get_UChar( &c );
+      ta_nf_n = 0;
+      while (True) {
+         if (ta_nf_n >= ta_nf_maxE) {
+            g_abbv *old_ta = ta;
+            ta = ML_(dinfo_zalloc) ("di.readdwarf3.ht_ta_nf",
+                                    SZ_G_ABBV(2 * ta_nf_maxE));
+            ta_nf_maxE = 2 * ta_nf_maxE;
+            VG_(memcpy) (ta, old_ta, SZ_G_ABBV(ta_nf_n));
+            ML_(dinfo_free) (old_ta);
+         }
+         ta->nf[ta_nf_n].at_name = get_ULEB128( &c );
+         ta->nf[ta_nf_n].at_form = get_ULEB128( &c );
+         if (ta->nf[ta_nf_n].at_name == 0 && ta->nf[ta_nf_n].at_form == 0) {
+            ta_nf_n++;
+            break; 
+         }
+        ta_nf_n++;
+      }
+      ht_ta = ML_(dinfo_zalloc) ("di.readdwarf3.ht_ta", SZ_G_ABBV(ta_nf_n));
+      VG_(memcpy) (ht_ta, ta, SZ_G_ABBV(ta_nf_n));
+      VG_(HT_add_node) ( cc->ht_abbvs, ht_ta );
+      TRACE_D3("  Adding abbv_code %llu TAG  %s [%s] nf %d\n",
+               (ULong) ht_ta->abbv_code, ML_(pp_DW_TAG)(ht_ta->atag),
+               ML_(pp_DW_children)(ht_ta->has_children),
+               ta_nf_n);
+   }
+
+   ML_(dinfo_free) (ta);
+   #undef SZ_G_ABBV
+}
+
+static g_abbv* get_abbv (CUConst* cc, ULong abbv_code)
+{
+   g_abbv *abbv;
+
+   abbv = VG_(HT_lookup) (cc->ht_abbvs, abbv_code);
+   if (!abbv)
+      cc->barf ("abbv_code not found in ht_abbvs table");
+   return abbv;
+}
+
+/* Free the memory allocated in CUConst. */
+static void clear_CUConst (CUConst* cc)
+{
+   VG_(HT_destruct) ( cc->ht_abbvs, ML_(dinfo_free));
+   cc->ht_abbvs = NULL;
+}
 
 /* Parse the Compilation Unit header indicated at 'c' and 
    initialise 'cc' accordingly. */
@@ -865,7 +955,6 @@ void parse_CU_Header ( /*OUT*/CUConst* cc,
 {
    UChar  address_size;
    ULong  debug_abbrev_offset;
-   Int    i;
 
    VG_(memset)(cc, 0, sizeof(*cc));
    vg_assert(c && c->barf);
@@ -923,105 +1012,7 @@ void parse_CU_Header ( /*OUT*/CUConst* cc,
    cc->debug_abbv.ioff += debug_abbrev_offset;
    cc->debug_abbv.szB  -= debug_abbrev_offset;
 
-   /* and empty out the set_abbv_Cursor cache */
-   if (0) VG_(printf)("XXXXXX initialise set_abbv_Cursor cache\n");
-   for (i = 0; i < N_ABBV_CACHE; i++) {
-      cc->saC_cache[i].abbv_code = (ULong)-1; /* unused */
-      cc->saC_cache[i].posn = 0;
-   }
-   cc->saC_cache_queries = 0;
-   cc->saC_cache_misses = 0;
-}
-
-
-/* Set up 'c' so it is ready to parse the abbv table entry code
-   'abbv_code' for this compilation unit.  */
-static __attribute__((noinline))
-void set_abbv_Cursor ( /*OUT*/Cursor* c, Bool td3,
-                       CUConst* cc, ULong abbv_code )
-{
-   Int   i;
-   ULong acode;
-
-   if (abbv_code == 0)
-      cc->barf("set_abbv_Cursor: abbv_code == 0" );
-
-   /* (ULong)-1 is used to represent an empty cache slot.  So we can't
-      allow it.  In any case no valid DWARF3 should make a reference
-      to a negative abbreviation code.  [at least, they always seem to
-      be numbered upwards from zero as far as I have seen] */
-   vg_assert(abbv_code != (ULong)-1);
-
-   /* First search the cache. */
-   if (0) VG_(printf)("XXXXXX search set_abbv_Cursor cache\n");
-   cc->saC_cache_queries++;
-   for (i = 0; i < N_ABBV_CACHE; i++) {
-      /* No need to test the cached abbv_codes for -1 (empty), since
-         we just asserted that abbv_code is not -1. */
-      if (LIKELY(cc->saC_cache[i].abbv_code == abbv_code)) {
-         /* Found it.  Set up the parser using the cached position,
-            and move this cache entry to the front. */
-         if (0) VG_(printf)("XXXXXX found in set_abbv_Cursor cache\n");
-         init_Cursor( c, cc->debug_abbv, cc->saC_cache[i].posn, 
-                      cc->barf,
-                      "Overrun whilst parsing .debug_abbrev section(1)" );
-         if (i > 0) {
-            ULong t_abbv_code = cc->saC_cache[i].abbv_code;
-            UWord t_posn      = cc->saC_cache[i].posn;
-            while (i > 0) {
-               cc->saC_cache[i] = cc->saC_cache[i-1];
-               i--;
-            }
-            cc->saC_cache[0].abbv_code = t_abbv_code;
-            cc->saC_cache[0].posn      = t_posn;
-         }
-         return;
-      }
-   }
-
-   /* No.  It's not in the cache.  We have to search through
-      .debug_abbrev, of course taking care to update the cache
-      when done. */
-
-   cc->saC_cache_misses++;
-   init_Cursor( c, cc->debug_abbv, 0, cc->barf,
-               "Overrun whilst parsing .debug_abbrev section(2)" );
-
-   /* Now iterate though the table until we find the requested
-      entry. */
-   while (True) {
-      //ULong atag;
-      //UInt  has_children;
-      acode = get_ULEB128( c );
-      if (acode == 0) break; /* end of the table */
-      if (acode == abbv_code) break; /* found it */
-      /*atag         = */ get_ULEB128( c );
-      /*has_children = */ get_UChar( c );
-      //TRACE_D3("   %llu      %s    [%s]\n", 
-      //         acode, pp_DW_TAG(atag), pp_DW_children(has_children));
-      while (True) {
-         ULong at_name = get_ULEB128( c );
-         ULong at_form = get_ULEB128( c );
-         if (at_name == 0 && at_form == 0) break;
-         //TRACE_D3("    %18s %s\n", 
-         //         pp_DW_AT(at_name), pp_DW_FORM(at_form));
-      }
-   }
-
-   if (acode == 0) {
-      /* Not found.  This is fatal. */
-      cc->barf("set_abbv_Cursor: abbv_code not found");
-   }
-
-   /* Otherwise, 'c' is now set correctly to parse the relevant entry,
-      starting from the abbreviation entry's tag.  So just cache
-      the result, and return. */
-   for (i = N_ABBV_CACHE-1; i > N_ABBV_CACHE/2; i--) {
-      cc->saC_cache[i] = cc->saC_cache[i-1];
-   }
-   if (0) VG_(printf)("XXXXXX update set_abbv_Cursor cache\n");
-   cc->saC_cache[N_ABBV_CACHE/2].abbv_code = abbv_code;
-   cc->saC_cache[N_ABBV_CACHE/2].posn = get_position_of_Cursor(c);
+   init_ht_abbvs(cc, td3);
 }
 
 /* This represents a single signatured type.  It maps a type signature
@@ -1655,15 +1646,15 @@ static void parse_var_DIE (
    UWord posn,
    Int level,
    Cursor* c_die,
-   Cursor* c_abbv,
+   g_abbv *abbv,
    CUConst* cc,
    Bool td3
 )
 {
    FormContents cts;
+   UInt nf_i;
 
    UWord saved_die_c_offset  = get_position_of_Cursor( c_die );
-   UWord saved_abbv_c_offset = get_position_of_Cursor( c_abbv );
    Bool  debug_types_flag;
    Bool  alt_flag;
 
@@ -1679,9 +1670,11 @@ static void parse_var_DIE (
       Addr ip_lo    = 0;
       Addr ip_hi1   = 0;
       Addr rangeoff = 0;
+      nf_i = 0;
       while (True) {
-         DW_AT   attr = (DW_AT)  get_ULEB128( c_abbv );
-         DW_FORM form = (DW_FORM)get_ULEB128( c_abbv );
+         DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
+         DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+         nf_i++;
          if (attr == 0 && form == 0) break;
          get_Form_contents( &cts, cc, c_die, False/*td3*/, form );
          if (attr == DW_AT_low_pc && cts.szB > 0) {
@@ -1802,9 +1795,11 @@ static void parse_var_DIE (
       Addr   rangeoff   = 0;
       Bool   isFunc     = dtag == DW_TAG_subprogram;
       GExpr* fbGX       = NULL;
+      nf_i = 0;
       while (True) {
-         DW_AT   attr = (DW_AT)  get_ULEB128( c_abbv );
-         DW_FORM form = (DW_FORM)get_ULEB128( c_abbv );
+         DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
+         DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+         nf_i++;
          if (attr == 0 && form == 0) break;
          get_Form_contents( &cts, cc, c_die, False/*td3*/, form );
          if (attr == DW_AT_low_pc && cts.szB > 0) {
@@ -1886,9 +1881,11 @@ static void parse_var_DIE (
       UWord  abs_ori     = (UWord)D3_INVALID_CUOFF;
       Int    lineNo      = 0;
       HChar* fileName    = NULL;
+      nf_i = 0;
       while (True) {
-         DW_AT   attr = (DW_AT)  get_ULEB128( c_abbv );
-         DW_FORM form = (DW_FORM)get_ULEB128( c_abbv );
+         DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
+         DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+         nf_i++;
          if (attr == 0 && form == 0) break;
          get_Form_contents( &cts, cc, c_die, False/*td3*/, form );
          n_attrs++;
@@ -2140,7 +2137,6 @@ static void parse_var_DIE (
 
   bad_DIE:
    set_position_of_Cursor( c_die,  saved_die_c_offset );
-   set_position_of_Cursor( c_abbv, saved_abbv_c_offset );
    posn = uncook_die( cc, posn, &debug_types_flag, &alt_flag );
    VG_(printf)(" <%d><%lx>: %s", level, posn, ML_(pp_DW_TAG)( dtag ) );
    if (debug_types_flag) {
@@ -2150,9 +2146,11 @@ static void parse_var_DIE (
       VG_(printf)(" (in alternate .debug_info)");
    }
    VG_(printf)("\n");
+   nf_i = 0;
    while (True) {
-      DW_AT   attr = (DW_AT)  get_ULEB128( c_abbv );
-      DW_FORM form = (DW_FORM)get_ULEB128( c_abbv );
+      DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
+      DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+      nf_i++;
       if (attr == 0 && form == 0) break;
       VG_(printf)("     %18s: ", ML_(pp_DW_AT)(attr));
       /* Get the form contents, so as to print them */
@@ -2286,8 +2284,8 @@ static Bool subrange_type_denotes_array_bounds ( D3TypeParser* parser,
 /* Parse a type-related DIE.  'parser' holds the current parser state.
    'admin' is where the completed types are dumped.  'dtag' is the tag
    for this DIE.  'c_die' points to the start of the data fields (FORM
-   stuff) for the DIE.  c_abbv points to the start of the (name,form)
-   pairs which describe the DIE.
+   stuff) for the DIE.  abbv is the parsed abbreviation which describe
+   the DIE.
 
    We may find the DIE uninteresting, in which case we should ignore
    it.
@@ -2317,7 +2315,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
                              UWord posn,
                              Int level,
                              Cursor* c_die,
-                             Cursor* c_abbv,
+                             g_abbv *abbv,
                              CUConst* cc,
                              Bool td3 )
 {
@@ -2328,9 +2326,9 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
    TyEnt boundE;
    Bool  debug_types_flag;
    Bool  alt_flag;
+   UInt nf_i;
 
    UWord saved_die_c_offset  = get_position_of_Cursor( c_die );
-   UWord saved_abbv_c_offset = get_position_of_Cursor( c_abbv );
 
    VG_(memset)( &typeE,  0xAA, sizeof(typeE) );
    VG_(memset)( &atomE,  0xAA, sizeof(atomE) );
@@ -2348,9 +2346,11 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       /* See if we can find DW_AT_language, since it is important for
          establishing array bounds (see DW_TAG_subrange_type below in
          this fn) */
+      nf_i = 0;
       while (True) {
-         DW_AT   attr = (DW_AT)  get_ULEB128( c_abbv );
-         DW_FORM form = (DW_FORM)get_ULEB128( c_abbv );
+         DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
+         DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+         nf_i++;
          if (attr == 0 && form == 0) break;
          get_Form_contents( &cts, cc, c_die, False/*td3*/, form );
          if (attr != DW_AT_language)
@@ -2386,9 +2386,11 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       VG_(memset)(&typeE, 0, sizeof(typeE));
       typeE.cuOff = D3_INVALID_CUOFF;
       typeE.tag   = Te_TyBase;
+      nf_i = 0;
       while (True) {
-         DW_AT   attr = (DW_AT)  get_ULEB128( c_abbv );
-         DW_FORM form = (DW_FORM)get_ULEB128( c_abbv );
+         DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
+         DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+         nf_i++;
          if (attr == 0 && form == 0) break;
          get_Form_contents( &cts, cc, c_die, False/*td3*/, form );
          if (attr == DW_AT_name && cts.szB < 0) {
@@ -2495,9 +2497,11 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
          same size as that on the machine.  gcc appears to give a size
          whereas icc9 doesn't. */
       typeE.Te.TyPorR.szB = sizeof(UWord);
+      nf_i = 0;
       while (True) {
-         DW_AT   attr = (DW_AT)  get_ULEB128( c_abbv );
-         DW_FORM form = (DW_FORM)get_ULEB128( c_abbv );
+         DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
+         DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+         nf_i++;
          if (attr == 0 && form == 0) break;
          get_Form_contents( &cts, cc, c_die, False/*td3*/, form );
          if (attr == DW_AT_byte_size && cts.szB > 0) {
@@ -2525,9 +2529,11 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
          = VG_(newXA)( ML_(dinfo_zalloc), "di.readdwarf3.ptD.enum_type.1", 
                        ML_(dinfo_free),
                        sizeof(UWord) );
+      nf_i=0;
       while (True) {
-         DW_AT   attr = (DW_AT)  get_ULEB128( c_abbv );
-         DW_FORM form = (DW_FORM)get_ULEB128( c_abbv );
+         DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
+         DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+         nf_i++;
          if (attr == 0 && form == 0) break;
          get_Form_contents( &cts, cc, c_die, False/*td3*/, form );
          if (attr == DW_AT_name && cts.szB < 0) {
@@ -2604,9 +2610,11 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       VG_(memset)( &atomE, 0, sizeof(atomE) );
       atomE.cuOff = posn;
       atomE.tag   = Te_Atom;
+      nf_i = 0;
       while (True) {
-         DW_AT   attr = (DW_AT)  get_ULEB128( c_abbv );
-         DW_FORM form = (DW_FORM)get_ULEB128( c_abbv );
+         DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
+         DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+         nf_i++;
          if (attr == 0 && form == 0) break;
          get_Form_contents( &cts, cc, c_die, False/*td3*/, form );
          if (attr == DW_AT_name && cts.szB < 0) {
@@ -2657,9 +2665,11 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       typeE.Te.TyStOrUn.complete = True;
       typeE.Te.TyStOrUn.isStruct = dtag == DW_TAG_structure_type 
                                    || dtag == DW_TAG_class_type;
+      nf_i = 0;
       while (True) {
-         DW_AT   attr = (DW_AT)  get_ULEB128( c_abbv );
-         DW_FORM form = (DW_FORM)get_ULEB128( c_abbv );
+         DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
+         DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+         nf_i++;
          if (attr == 0 && form == 0) break;
          get_Form_contents( &cts, cc, c_die, False/*td3*/, form );
          if (attr == DW_AT_name && cts.szB < 0) {
@@ -2742,9 +2752,11 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       fieldE.cuOff = posn;
       fieldE.tag   = Te_Field;
       fieldE.Te.Field.typeR = D3_INVALID_CUOFF;
+      nf_i = 0;
       while (True) {
-         DW_AT   attr = (DW_AT)  get_ULEB128( c_abbv );
-         DW_FORM form = (DW_FORM)get_ULEB128( c_abbv );
+         DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
+         DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+         nf_i++;
          if (attr == 0 && form == 0) break;
          get_Form_contents( &cts, cc, c_die, False/*td3*/, form );
          if (attr == DW_AT_name && cts.szB < 0) {
@@ -2828,9 +2840,11 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
          = VG_(newXA)( ML_(dinfo_zalloc), "di.readdwarf3.ptD.array_type.1",
                        ML_(dinfo_free),
                        sizeof(UWord) );
+      nf_i = 0;
       while (True) {
-         DW_AT   attr = (DW_AT)  get_ULEB128( c_abbv );
-         DW_FORM form = (DW_FORM)get_ULEB128( c_abbv );
+         DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
+         DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+         nf_i++;
          if (attr == 0 && form == 0) break;
          get_Form_contents( &cts, cc, c_die, False/*td3*/, form );
          if (attr == DW_AT_type && cts.szB > 0) {
@@ -2866,9 +2880,11 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       VG_(memset)( &boundE, 0, sizeof(boundE) );
       boundE.cuOff = D3_INVALID_CUOFF;
       boundE.tag   = Te_Bound;
+      nf_i = 0;
       while (True) {
-         DW_AT   attr = (DW_AT)  get_ULEB128( c_abbv );
-         DW_FORM form = (DW_FORM)get_ULEB128( c_abbv );
+         DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
+         DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+         nf_i++;
          if (attr == 0 && form == 0) break;
          get_Form_contents( &cts, cc, c_die, False/*td3*/, form );
          if (attr == DW_AT_lower_bound && cts.szB > 0) {
@@ -2945,9 +2961,11 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       typeE.tag   = Te_TyTyDef;
       typeE.Te.TyTyDef.name = NULL;
       typeE.Te.TyTyDef.typeR = D3_INVALID_CUOFF;
+      nf_i = 0;
       while (True) {
-         DW_AT   attr = (DW_AT)  get_ULEB128( c_abbv );
-         DW_FORM form = (DW_FORM)get_ULEB128( c_abbv );
+         DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
+         DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+         nf_i++;
          if (attr == 0 && form == 0) break;
          get_Form_contents( &cts, cc, c_die, False/*td3*/, form );
          if (attr == DW_AT_name && cts.szB < 0) {
@@ -2991,9 +3009,11 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
          = dtag == DW_TAG_volatile_type ? 'V' : 'C';
       /* target type defaults to 'void' */
       typeE.Te.TyQual.typeR = D3_FAKEVOID_CUOFF;
+      nf_i = 0;
       while (True) {
-         DW_AT   attr = (DW_AT)  get_ULEB128( c_abbv );
-         DW_FORM form = (DW_FORM)get_ULEB128( c_abbv );
+         DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
+         DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+         nf_i++;
          if (attr == 0 && form == 0) break;
          get_Form_contents( &cts, cc, c_die, False/*td3*/, form );
          if (attr == DW_AT_type && cts.szB > 0) {
@@ -3076,7 +3096,6 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
 
   bad_DIE:
    set_position_of_Cursor( c_die,  saved_die_c_offset );
-   set_position_of_Cursor( c_abbv, saved_abbv_c_offset );
    posn = uncook_die( cc, posn, &debug_types_flag, &alt_flag );
    VG_(printf)(" <%d><%lx>: %s", level, posn, ML_(pp_DW_TAG)( dtag ) );
    if (debug_types_flag) {
@@ -3085,9 +3104,11 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       VG_(printf)(" (in alternate .debug_info)");
    }
    VG_(printf)("\n");
+   nf_i = 0;
    while (True) {
-      DW_AT   attr = (DW_AT)  get_ULEB128( c_abbv );
-      DW_FORM form = (DW_FORM)get_ULEB128( c_abbv );
+      DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
+      DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+      nf_i++;
       if (attr == 0 && form == 0) break;
       VG_(printf)("     %18s: ", ML_(pp_DW_AT)(attr));
       /* Get the form contents, so as to print them */
@@ -3445,18 +3466,19 @@ static void read_DIE (
    Cursor* c, Bool td3, CUConst* cc, Int level
 )
 {
-   Cursor abbv;
+   g_abbv *abbv;
    ULong  atag, abbv_code;
+   UInt   nf_i;
    UWord  posn;
    UInt   has_children;
-   UWord  start_die_c_offset, start_abbv_c_offset;
-   UWord  after_die_c_offset, after_abbv_c_offset;
+   UWord  start_die_c_offset;
+   UWord  after_die_c_offset;
 
    /* --- Deal with this DIE --- */
    posn      = cook_die( cc, get_position_of_Cursor( c ) );
    abbv_code = get_ULEB128( c );
-   set_abbv_Cursor( &abbv, td3, cc, abbv_code );
-   atag      = get_ULEB128( &abbv );
+   abbv = get_abbv(cc, abbv_code);
+   atag      = abbv->atag;
    TRACE_D3("\n");
    TRACE_D3(" <%d><%lx>: Abbrev Number: %llu (%s)\n",
             level, posn, abbv_code, ML_(pp_DW_TAG)( atag ) );
@@ -3464,7 +3486,7 @@ static void read_DIE (
    if (atag == 0)
       cc->barf("read_DIE: invalid zero tag on DIE");
 
-   has_children = get_UChar( &abbv );
+   has_children = abbv->has_children;
    if (has_children != DW_children_no && has_children != DW_children_yes)
       cc->barf("read_DIE: invalid has_children value");
 
@@ -3475,12 +3497,13 @@ static void read_DIE (
       the DIE, to print out its contents. */
 
    start_die_c_offset  = get_position_of_Cursor( c );
-   start_abbv_c_offset = get_position_of_Cursor( &abbv );
 
+   nf_i = 0;
    while (True) {
       FormContents cts;
-      ULong at_name = get_ULEB128( &abbv );
-      ULong at_form = get_ULEB128( &abbv );
+      ULong at_name = abbv->nf[nf_i].at_name;
+      ULong at_form = abbv->nf[nf_i].at_form;
+      nf_i++;
       if (at_name == 0 && at_form == 0) break;
       TRACE_D3("     %18s: ", ML_(pp_DW_AT)(at_name));
       /* Get the form contents, but ignore them; the only purpose is
@@ -3491,10 +3514,8 @@ static void read_DIE (
    }
 
    after_die_c_offset  = get_position_of_Cursor( c );
-   after_abbv_c_offset = get_position_of_Cursor( &abbv );
 
    set_position_of_Cursor( c,     start_die_c_offset );
-   set_position_of_Cursor( &abbv, start_abbv_c_offset );
 
    parse_type_DIE( tyents,
                    typarser,
@@ -3502,12 +3523,11 @@ static void read_DIE (
                    posn,
                    level,
                    c,     /* DIE cursor */
-                   &abbv, /* abbrev cursor */
+                   abbv,  /* abbrev */
                    cc,
                    td3 );
 
    set_position_of_Cursor( c,     start_die_c_offset );
-   set_position_of_Cursor( &abbv, start_abbv_c_offset );
 
    parse_var_DIE( rangestree,
                   tempvars,
@@ -3517,12 +3537,11 @@ static void read_DIE (
                   posn,
                   level,
                   c,     /* DIE cursor */
-                  &abbv, /* abbrev cursor */
+                  abbv,  /* abbrev */
                   cc,
                   td3 );
 
    set_position_of_Cursor( c,     after_die_c_offset );
-   set_position_of_Cursor( &abbv, after_abbv_c_offset );
 
    /* --- Now recurse into its children, if any --- */
    if (has_children == DW_children_yes) {
@@ -3792,8 +3811,7 @@ void new_dwarf3_reader_wrk (
          cu_start_offset = get_position_of_Cursor( &info );
          TRACE_D3("\n");
          TRACE_D3("  Compilation Unit @ offset 0x%lx:\n", cu_start_offset);
-         /* parse_CU_header initialises the CU's set_abbv_Cursor cache
-            (saC_cache) */
+         /* parse_CU_header initialises the CU's abbv hash table.  */
          parse_CU_Header( &cc, td3, &info, escn_debug_abbv, True, False );
 
          /* Needed by cook_die.  */
@@ -3808,8 +3826,10 @@ void new_dwarf3_reader_wrk (
          cu_offset_now = (cu_start_offset + cc.unit_length
                           + (cc.is_dw64 ? 12 : 4));
 
-         if (cu_offset_now >= escn_debug_types.szB)
+         if (cu_offset_now >= escn_debug_types.szB) {
+            clear_CUConst ( &cc);
             break;
+         }
 
          set_position_of_Cursor ( &info, cu_offset_now );
       }
@@ -4008,12 +4028,10 @@ void new_dwarf3_reader_wrk (
          /* Similarly, empty the type stack out. */
          typestack_preen( &typarser, td3, -2 );
 
-         TRACE_D3("set_abbv_Cursor cache: %lu queries, %lu misses\n",
-                  cc.saC_cache_queries, cc.saC_cache_misses);
-
          vg_assert(varparser.filenameTable );
          VG_(deleteXA)( varparser.filenameTable );
          varparser.filenameTable = NULL;
+         clear_CUConst(&cc);
 
          if (cu_offset_now == section_size)
             break;

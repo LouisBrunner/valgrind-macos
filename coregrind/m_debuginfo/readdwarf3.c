@@ -1676,6 +1676,7 @@ static void setup_cu_svma(CUConst* cc, Bool have_lo, Addr ip_lo, Bool td3)
 
 __attribute__((noreturn))
 static void dump_bad_die_and_barf(
+   const HChar *whichparser,
    DW_TAG dtag,
    UWord posn,
    Int level,
@@ -1709,14 +1710,14 @@ static void dump_bad_die_and_barf(
       get_Form_contents( &cts, cc, c_die, True, form );
       VG_(printf)("\t\n");
    }
-   VG_(printf)("\n");
-   cc->barf("parse_var_DIE: confused by the above DIE");
+   VG_(printf)("\n%s:\n", whichparser);
+   cc->barf("confused by the above DIE");
 }
 
 __attribute__((noinline))
 static void bad_DIE_confusion(int linenr)
 {
-   VG_(printf)("\nparse_var_DIE(%d): confused by:\n", linenr);
+   VG_(printf)("\nparse DIE(readdwarf3.c:%d): confused by:\n", linenr);
 }
 #define goto_bad_DIE do {bad_DIE_confusion(__LINE__); goto bad_DIE;} while (0)
 
@@ -2186,7 +2187,7 @@ static void parse_var_DIE (
    return;
 
   bad_DIE:
-   dump_bad_die_and_barf(dtag, posn, level,
+   dump_bad_die_and_barf("parse_var_DIE", dtag, posn, level,
                          c_die, saved_die_c_offset,
                          abbv,
                          cc);
@@ -2409,7 +2410,7 @@ static Bool parse_inl_DIE (
       || dtag == DW_TAG_compile_unit || dtag == DW_TAG_partial_unit;
 
   bad_DIE:
-   dump_bad_die_and_barf(dtag, posn, level,
+   dump_bad_die_and_barf("parse_inl_DIE", dtag, posn, level,
                          c_die, saved_die_c_offset,
                          abbv,
                          cc);
@@ -3347,7 +3348,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
    /*NOTREACHED*/
 
   bad_DIE:
-   dump_bad_die_and_barf(dtag, posn, level,
+   dump_bad_die_and_barf("parse_type_DIE", dtag, posn, level,
                          c_die, saved_die_c_offset,
                          abbv,
                          cc);
@@ -3738,6 +3739,19 @@ static void read_DIE (
       its contents. */
    start_die_c_offset  = get_position_of_Cursor( c );
 
+   /* "pre-read" the DIE (while doing nothing with the data)
+      for 3 reasons:
+        1. it td3, trace the DIE data.
+        2. determine if this DIE has a sibling (used for
+           optimising when only reading the inline info).
+        3. determine the end of the DIE (after_die_c_offset).
+      
+      The parsers below will re-read the DIEs if they are interested
+      in the atag.  The var/type parsers re-read many DIEs.  The
+      inline parser re-reads a smaller subset.
+      We could possibly avoid this double reading by having each
+      parser optionally parse the DIE and (if needed) skip
+      the DIE data if it was not read by any parser. */
    nf_i = 0;
    while (True) {
       FormContents cts;
@@ -3756,7 +3770,6 @@ static void read_DIE (
       TRACE_D3("\t");
       TRACE_D3("\n");
    }
-
    after_die_c_offset  = get_position_of_Cursor( c );
 
    if (VG_(clo_read_var_info)) {

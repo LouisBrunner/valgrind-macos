@@ -5251,7 +5251,7 @@ static IRTemp math_MINMAXV ( IRTemp src, IROp op )
       zero out all but the least significant lane. */
    switch (op) {
       case Iop_Min8Sx16: case Iop_Min8Ux16:
-      case Iop_Max8Sx16: case Iop_Max8Ux16: {
+      case Iop_Max8Sx16: case Iop_Max8Ux16: case Iop_Add8x16: {
          /* NB: temp naming here is misleading -- the naming is for 8
             lanes of 16 bit, whereas what is being operated on is 16
             lanes of 8 bits. */
@@ -5353,7 +5353,7 @@ static IRTemp math_MINMAXV ( IRTemp src, IROp op )
          return res;
       }
       case Iop_Min16Sx8: case Iop_Min16Ux8:
-      case Iop_Max16Sx8: case Iop_Max16Ux8: {
+      case Iop_Max16Sx8: case Iop_Max16Ux8: case Iop_Add16x8: {
          IRTemp x76543210 = src;
          IRTemp x76547654 = newTemp(Ity_V128);
          IRTemp x32103210 = newTemp(Ity_V128);
@@ -5402,7 +5402,7 @@ static IRTemp math_MINMAXV ( IRTemp src, IROp op )
          return res;
       }
       case Iop_Min32Sx4: case Iop_Min32Ux4:
-      case Iop_Max32Sx4: case Iop_Max32Ux4: {
+      case Iop_Max32Sx4: case Iop_Max32Ux4: case Iop_Add32x4: {
          IRTemp x3210 = src;
          IRTemp x3232 = newTemp(Ity_V128);
          IRTemp x1010 = newTemp(Ity_V128);
@@ -5653,41 +5653,59 @@ Bool dis_AdvSIMD_across_lanes(/*MB_OUT*/DisResult* dres, UInt insn)
    UInt nn     = INSN(9,5);
    UInt dd     = INSN(4,0);
 
-   if (opcode == BITS5(0,1,0,1,0) || opcode == BITS5(1,1,0,1,0)) {
-      /* -------- 0,xx,01010: SMAXV -------- */
-      /* -------- 1,xx,01010: UMAXV -------- */
-      /* -------- 0,xx,11010: SMINV -------- */
-      /* -------- 1,xx,11010: UMINV -------- */
-      Bool isU   = bitU == 1;
-      Bool isMAX = (opcode & 16) == 0;
+   UInt ix = 0;
+   /**/ if (opcode == BITS5(0,1,0,1,0)) { ix = bitU == 0 ? 1 : 2; }
+   else if (opcode == BITS5(1,1,0,1,0)) { ix = bitU == 0 ? 3 : 4; }
+   else if (opcode == BITS5(1,1,0,1,1) && bitU == 0) { ix = 5; }
+   /**/   
+   if (ix != 0) {
+      /* -------- 0,xx,01010: SMAXV -------- (1) */
+      /* -------- 1,xx,01010: UMAXV -------- (2) */
+      /* -------- 0,xx,11010: SMINV -------- (3) */
+      /* -------- 1,xx,11010: UMINV -------- (4) */
+      /* -------- 0,xx,11011: ADDV  -------- (5) */
+      vassert(ix >= 1 && ix <= 5);
       if (size == X11) return False; // 1d,2d cases not allowed
       if (size == X10 && bitQ == 0) return False; // 2s case not allowed
-      const IROp opMINS[3]
-         = { Iop_Min8Sx16, Iop_Min16Sx8, Iop_Min32Sx4 };
-      const IROp opMINU[3]
-         = { Iop_Min8Ux16, Iop_Min16Ux8, Iop_Min32Ux4 };
       const IROp opMAXS[3]
          = { Iop_Max8Sx16, Iop_Max16Sx8, Iop_Max32Sx4 };
       const IROp opMAXU[3]
          = { Iop_Max8Ux16, Iop_Max16Ux8, Iop_Max32Ux4 };
+      const IROp opMINS[3]
+         = { Iop_Min8Sx16, Iop_Min16Sx8, Iop_Min32Sx4 };
+      const IROp opMINU[3]
+         = { Iop_Min8Ux16, Iop_Min16Ux8, Iop_Min32Ux4 };
+      const IROp opADD[3]
+         = { Iop_Add8x16,  Iop_Add16x8,  Iop_Add32x4 };
       vassert(size < 3);
-      IROp op = isMAX ? (isU ? opMAXU[size] : opMAXS[size])
-                      : (isU ? opMINU[size] : opMINS[size]);
+      IROp op = Iop_INVALID;
+      const HChar* nm = NULL;
+      switch (ix) {
+         case 1: op = opMAXS[size]; nm = "smaxv"; break;
+         case 2: op = opMAXU[size]; nm = "umaxv"; break;
+         case 3: op = opMINS[size]; nm = "sminv"; break;
+         case 4: op = opMINU[size]; nm = "uminv"; break;
+         case 5: op = opADD[size];  nm = "addv";  break;
+         default: vassert(0);
+      }
+      vassert(op != Iop_INVALID && nm != NULL);
       IRTemp tN1 = newTemp(Ity_V128);
       assign(tN1, getQReg128(nn));
       /* If Q == 0, we're just folding lanes in the lower half of
          the value.  In which case, copy the lower half of the
          source into the upper half, so we can then treat it the
-         same as the full width case. */
+         same as the full width case.  Except for the addition case,
+         in which we have to zero out the upper half. */
       IRTemp tN2 = newTemp(Ity_V128);
-      assign(tN2, bitQ == 0 ? mk_CatEvenLanes64x2(tN1,tN1) : mkexpr(tN1));
+      assign(tN2, bitQ == 0 
+                     ? (ix == 5 ? unop(Iop_ZeroHI64ofV128, mkexpr(tN1))
+                                : mk_CatEvenLanes64x2(tN1,tN1))
+                     : mkexpr(tN1));
       IRTemp res = math_MINMAXV(tN2, op);
       if (res == IRTemp_INVALID)
          return False; /* means math_MINMAXV
                           doesn't handle this case yet */
       putQReg128(dd, mkexpr(res));
-      const HChar* nm = isMAX ? (isU ? "umaxv" : "smaxv")
-                              : (isU ? "uminv" : "sminv");
       const IRType tys[3] = { Ity_I8, Ity_I16, Ity_I32 };
       IRType laneTy = tys[size];
       const HChar* arr = nameArr_Q_SZ(bitQ, size);
@@ -6037,7 +6055,35 @@ Bool dis_AdvSIMD_scalar_copy(/*MB_OUT*/DisResult* dres, UInt insn)
 static
 Bool dis_AdvSIMD_scalar_pairwise(/*MB_OUT*/DisResult* dres, UInt insn)
 {
+   /* 31   28    23 21    16     11 9 4
+      01 u 11110 sz 11000 opcode 10 n d
+      Decode fields: u,sz,opcode
+   */
 #  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
+   if (INSN(31,30) != BITS2(0,1)
+       || INSN(28,24) != BITS5(1,1,1,1,0)
+       || INSN(21,17) != BITS5(1,1,0,0,0)
+       || INSN(11,10) != BITS2(1,0)) {
+      return False;
+   }
+   UInt bitU   = INSN(29,29);
+   UInt sz     = INSN(23,22);
+   UInt opcode = INSN(16,12);
+   UInt nn     = INSN(9,5);
+   UInt dd     = INSN(4,0);
+
+   if (bitU == 0 && sz == X11 && opcode == BITS5(1,1,0,1,1)) {
+      /* -------- 0,11,11011 ADDP d_2d -------- */
+      IRTemp xy = newTemp(Ity_V128);
+      IRTemp xx = newTemp(Ity_V128);
+      assign(xy, getQReg128(nn));
+      assign(xx, binop(Iop_InterleaveHI64x2, mkexpr(xy), mkexpr(xy)));
+      putQReg128(dd, unop(Iop_ZeroHI64ofV128,
+                          binop(Iop_Add64x2, mkexpr(xy), mkexpr(xx))));
+      DIP("addp d%u, %s.2d\n", dd, nameQReg128(nn));
+      return True;
+   }
+
    return False;
 #  undef INSN
 }
@@ -6713,6 +6759,39 @@ Bool dis_AdvSIMD_three_same(/*MB_OUT*/DisResult* dres, UInt insn)
          return True;
       }
       return False;
+   }
+
+   if (bitU == 0 && opcode == BITS5(1,0,1,1,1)) {
+      if (bitQ == 0 && size == X11) return False; // implied 1d case
+      /* -------- 0,xx,10111 ADDP std7_std7_std7 -------- */
+      const IROp opsADD[4]
+         = { Iop_Add8x16, Iop_Add16x8, Iop_Add32x4, Iop_Add64x2 };
+      const IROp opsCEV[4]
+         = { Iop_CatEvenLanes8x16, Iop_CatEvenLanes16x8, Iop_CatEvenLanes32x4,
+             Iop_InterleaveLO64x2 };
+      const IROp opsCOD[4]
+         = { Iop_CatOddLanes8x16, Iop_CatOddLanes16x8, Iop_CatOddLanes32x4,
+             Iop_InterleaveHI64x2 };
+      IRTemp vN = newTemp(Ity_V128);
+      IRTemp vM = newTemp(Ity_V128);
+      assign(vN, getQReg128(nn));
+      assign(vM, getQReg128(mm));
+      IRTemp res128 = newTemp(Ity_V128);
+      assign(res128, binop(opsADD[size],
+                           binop(opsCEV[size], mkexpr(vM), mkexpr(vN)),
+                           binop(opsCOD[size], mkexpr(vM), mkexpr(vN))));
+      /* In the half-width case, use CatEL32x4 to extract the half-width
+         result from the full-width result. */
+      IRExpr* res
+         = bitQ == 0 ? unop(Iop_ZeroHI64ofV128,
+                            binop(Iop_CatEvenLanes32x4, mkexpr(res128),
+                                                        mkexpr(res128)))
+                     : mkexpr(res128);
+      putQReg128(dd, res);
+      const HChar* arr = nameArr_Q_SZ(bitQ, size);
+      DIP("addp %s.%s, %s.%s, %s.%s\n",
+      nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(mm), arr);
+      return True;
    }
 
    if (opcode == BITS5(1,0,0,1,1)) {

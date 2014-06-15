@@ -360,6 +360,20 @@ typedef
       ARM64vecb_FCMGT64x2,
       ARM64vecb_FCMGT32x4,
       ARM64vecb_TBL1,
+      ARM64vecb_UZP164x2,
+      ARM64vecb_UZP132x4,
+      ARM64vecb_UZP116x8,
+      ARM64vecb_UZP18x16,
+      ARM64vecb_UZP264x2,
+      ARM64vecb_UZP232x4,
+      ARM64vecb_UZP216x8,
+      ARM64vecb_UZP28x16,
+      ARM64vecb_ZIP132x4,
+      ARM64vecb_ZIP116x8,
+      ARM64vecb_ZIP18x16,
+      ARM64vecb_ZIP232x4,
+      ARM64vecb_ZIP216x8,
+      ARM64vecb_ZIP28x16,
       ARM64vecb_INVALID
    }
    ARM64VecBinOp;

@@ -896,13 +896,27 @@ static void showARM64VecBinOp(/*OUT*/const HChar** nm,
       case ARM64vecb_CMGT32x4:  *nm = "cmgt";  *ar = "4s";  return;
       case ARM64vecb_CMGT16x8:  *nm = "cmgt";  *ar = "8h";  return;
       case ARM64vecb_CMGT8x16:  *nm = "cmgt";  *ar = "16b"; return;
-      case ARM64vecb_FCMEQ64x2: *nm = "fcmeq"; *ar = "2d"; return;
-      case ARM64vecb_FCMEQ32x4: *nm = "fcmeq"; *ar = "4s"; return;
-      case ARM64vecb_FCMGE64x2: *nm = "fcmge"; *ar = "2d"; return;
-      case ARM64vecb_FCMGE32x4: *nm = "fcmge"; *ar = "4s"; return;
-      case ARM64vecb_FCMGT64x2: *nm = "fcmgt"; *ar = "2d"; return;
-      case ARM64vecb_FCMGT32x4: *nm = "fcmgt"; *ar = "4s"; return;
+      case ARM64vecb_FCMEQ64x2: *nm = "fcmeq"; *ar = "2d";  return;
+      case ARM64vecb_FCMEQ32x4: *nm = "fcmeq"; *ar = "4s";  return;
+      case ARM64vecb_FCMGE64x2: *nm = "fcmge"; *ar = "2d";  return;
+      case ARM64vecb_FCMGE32x4: *nm = "fcmge"; *ar = "4s";  return;
+      case ARM64vecb_FCMGT64x2: *nm = "fcmgt"; *ar = "2d";  return;
+      case ARM64vecb_FCMGT32x4: *nm = "fcmgt"; *ar = "4s";  return;
       case ARM64vecb_TBL1:      *nm = "tbl ";  *ar = "16b"; return;
+      case ARM64vecb_UZP164x2:  *nm = "uzp1";  *ar = "2d";  return;
+      case ARM64vecb_UZP132x4:  *nm = "uzp1";  *ar = "4s";  return;
+      case ARM64vecb_UZP116x8:  *nm = "uzp1";  *ar = "8h";  return;
+      case ARM64vecb_UZP18x16:  *nm = "uzp1";  *ar = "16b"; return;
+      case ARM64vecb_UZP264x2:  *nm = "uzp2";  *ar = "2d";  return;
+      case ARM64vecb_UZP232x4:  *nm = "uzp2";  *ar = "4s";  return;
+      case ARM64vecb_UZP216x8:  *nm = "uzp2";  *ar = "8h";  return;
+      case ARM64vecb_UZP28x16:  *nm = "uzp2";  *ar = "16b"; return;
+      case ARM64vecb_ZIP132x4:  *nm = "zip1";  *ar = "4s";  return;
+      case ARM64vecb_ZIP116x8:  *nm = "zip1";  *ar = "8h";  return;
+      case ARM64vecb_ZIP18x16:  *nm = "zip1";  *ar = "16b"; return;
+      case ARM64vecb_ZIP232x4:  *nm = "zip2";  *ar = "4s";  return;
+      case ARM64vecb_ZIP216x8:  *nm = "zip2";  *ar = "8h";  return;
+      case ARM64vecb_ZIP28x16:  *nm = "zip2";  *ar = "16b"; return;
       default: vpanic("showARM64VecBinOp");
    }
 }
@@ -3385,11 +3399,13 @@ static inline UChar qregNo ( HReg r )
 #define X000000  BITS8(0,0, 0,0,0,0,0,0)
 #define X000001  BITS8(0,0, 0,0,0,0,0,1)
 #define X000100  BITS8(0,0, 0,0,0,1,0,0)
+#define X000110  BITS8(0,0, 0,0,0,1,1,0)
 #define X000111  BITS8(0,0, 0,0,0,1,1,1)
 #define X001000  BITS8(0,0, 0,0,1,0,0,0)
 #define X001001  BITS8(0,0, 0,0,1,0,0,1)
 #define X001010  BITS8(0,0, 0,0,1,0,1,0)
 #define X001101  BITS8(0,0, 0,0,1,1,0,1)
+#define X001110  BITS8(0,0, 0,0,1,1,1,0)
 #define X001111  BITS8(0,0, 0,0,1,1,1,1)
 #define X010000  BITS8(0,0, 0,1,0,0,0,0)
 #define X010001  BITS8(0,0, 0,1,0,0,0,1)
@@ -3435,8 +3451,11 @@ static inline UChar qregNo ( HReg r )
 #define X01100011  BITS8(0,1,1,0,0,0,1,1)
 #define X01110000  BITS8(0,1,1,1,0,0,0,0)
 #define X01110001  BITS8(0,1,1,1,0,0,0,1)
+#define X01110010  BITS8(0,1,1,1,0,0,1,0)
 #define X01110011  BITS8(0,1,1,1,0,0,1,1)
+#define X01110100  BITS8(0,1,1,1,0,1,0,0)
 #define X01110101  BITS8(0,1,1,1,0,1,0,1)
+#define X01110110  BITS8(0,1,1,1,0,1,1,0)
 #define X01110111  BITS8(0,1,1,1,0,1,1,1)
 #define X11000001  BITS8(1,1,0,0,0,0,0,1)
 #define X11000011  BITS8(1,1,0,0,0,0,1,1)
@@ -5038,6 +5057,23 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
 
             010 01110 00 0 m  000000 n d   TBL Vd.16b, {Vn.16b}, Vm.16b
 
+            010 01110 11 0 m  000110 n d   UZP1 Vd.2d,  Vn.2d,  Vm.2d
+            010 01110 10 0 m  000110 n d   UZP1 Vd.4s,  Vn.4s,  Vm.4s
+            010 01110 01 0 m  000110 n d   UZP1 Vd.8h,  Vn.8h,  Vm.8h
+            010 01110 00 0 m  000110 n d   UZP1 Vd.16b, Vn.16b, Vm.16b
+
+            010 01110 11 0 m  010110 n d   UZP2 Vd.2d,  Vn.2d,  Vm.2d
+            010 01110 10 0 m  010110 n d   UZP2 Vd.4s,  Vn.4s,  Vm.4s
+            010 01110 01 0 m  010110 n d   UZP2 Vd.8h,  Vn.8h,  Vm.8h
+            010 01110 00 0 m  010110 n d   UZP2 Vd.16b, Vn.16b, Vm.16b
+
+            010 01110 10 0 m  001110 n d   ZIP1 Vd.4s,  Vn.4s,  Vm.4s
+            010 01110 01 0 m  001110 n d   ZIP1 Vd.8h,  Vn.8h,  Vm.8h
+            010 01110 10 0 m  001110 n d   ZIP1 Vd.16b, Vn.16b, Vm.16b
+
+            010 01110 10 0 m  011110 n d   ZIP2 Vd.4s,  Vn.4s,  Vm.4s
+            010 01110 01 0 m  011110 n d   ZIP2 Vd.8h,  Vn.8h,  Vm.8h
+            010 01110 10 0 m  011110 n d   ZIP2 Vd.16b, Vn.16b, Vm.16b
          */
          UInt vD = qregNo(i->ARM64in.VBinV.dst);
          UInt vN = qregNo(i->ARM64in.VBinV.argL);
@@ -5212,7 +5248,53 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
                break;
 
             case ARM64vecb_TBL1:
-               *p++ = X_3_8_5_6_5_5(X010, X01110000, vM,  X000000, vN, vD);
+               *p++ = X_3_8_5_6_5_5(X010, X01110000, vM, X000000, vN, vD);
+               break;
+
+            case ARM64vecb_UZP164x2:
+               *p++ = X_3_8_5_6_5_5(X010, X01110110, vM, X000110, vN, vD);
+               break;
+            case ARM64vecb_UZP132x4:
+               *p++ = X_3_8_5_6_5_5(X010, X01110100, vM, X000110, vN, vD);
+               break;
+            case ARM64vecb_UZP116x8:
+               *p++ = X_3_8_5_6_5_5(X010, X01110010, vM, X000110, vN, vD);
+               break;
+            case ARM64vecb_UZP18x16:
+               *p++ = X_3_8_5_6_5_5(X010, X01110000, vM, X000110, vN, vD);
+               break;
+
+            case ARM64vecb_UZP264x2:
+               *p++ = X_3_8_5_6_5_5(X010, X01110110, vM, X010110, vN, vD);
+               break;
+            case ARM64vecb_UZP232x4:
+               *p++ = X_3_8_5_6_5_5(X010, X01110100, vM, X010110, vN, vD);
+               break;
+            case ARM64vecb_UZP216x8:
+               *p++ = X_3_8_5_6_5_5(X010, X01110010, vM, X010110, vN, vD);
+               break;
+            case ARM64vecb_UZP28x16:
+               *p++ = X_3_8_5_6_5_5(X010, X01110000, vM, X010110, vN, vD);
+               break;
+
+            case ARM64vecb_ZIP132x4:
+               *p++ = X_3_8_5_6_5_5(X010, X01110100, vM, X001110, vN, vD);
+               break;
+            case ARM64vecb_ZIP116x8:
+               *p++ = X_3_8_5_6_5_5(X010, X01110010, vM, X001110, vN, vD);
+               break;
+            case ARM64vecb_ZIP18x16:
+               *p++ = X_3_8_5_6_5_5(X010, X01110000, vM, X001110, vN, vD);
+               break;
+
+            case ARM64vecb_ZIP232x4:
+               *p++ = X_3_8_5_6_5_5(X010, X01110100, vM, X011110, vN, vD);
+               break;
+            case ARM64vecb_ZIP216x8:
+               *p++ = X_3_8_5_6_5_5(X010, X01110010, vM, X011110, vN, vD);
+               break;
+            case ARM64vecb_ZIP28x16:
+               *p++ = X_3_8_5_6_5_5(X010, X01110000, vM, X011110, vN, vD);
                break;
 
             default:

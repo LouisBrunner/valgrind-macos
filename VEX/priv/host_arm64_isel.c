@@ -4957,6 +4957,20 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_CmpLT64Fx2:
          case Iop_CmpLT32Fx4:
          case Iop_Perm8x16:
+         case Iop_InterleaveLO64x2:
+         case Iop_CatEvenLanes32x4:
+         case Iop_CatEvenLanes16x8:
+         case Iop_CatEvenLanes8x16:
+         case Iop_InterleaveHI64x2:
+         case Iop_CatOddLanes32x4:
+         case Iop_CatOddLanes16x8:
+         case Iop_CatOddLanes8x16:
+         case Iop_InterleaveHI32x4:
+         case Iop_InterleaveHI16x8:
+         case Iop_InterleaveHI8x16:
+         case Iop_InterleaveLO32x4:
+         case Iop_InterleaveLO16x8:
+         case Iop_InterleaveLO8x16:
          {
             HReg res  = newVRegV(env);
             HReg argL = iselV128Expr(env, e->Iex.Binop.arg1);
@@ -5009,6 +5023,34 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
                case Iop_CmpLT64Fx2: op = ARM64vecb_FCMGT64x2; sw = True; break;
                case Iop_CmpLT32Fx4: op = ARM64vecb_FCMGT32x4; sw = True; break;
                case Iop_Perm8x16:   op = ARM64vecb_TBL1; break;
+               case Iop_InterleaveLO64x2: op = ARM64vecb_UZP164x2; sw = True;
+                                          break;
+               case Iop_CatEvenLanes32x4: op = ARM64vecb_UZP132x4; sw = True;
+                                          break;
+               case Iop_CatEvenLanes16x8: op = ARM64vecb_UZP116x8; sw = True;
+                                          break;
+               case Iop_CatEvenLanes8x16: op = ARM64vecb_UZP18x16; sw = True;
+                                          break;
+               case Iop_InterleaveHI64x2: op = ARM64vecb_UZP264x2; sw = True;
+                                          break;
+               case Iop_CatOddLanes32x4:  op = ARM64vecb_UZP232x4; sw = True;
+                                          break;
+               case Iop_CatOddLanes16x8:  op = ARM64vecb_UZP216x8; sw = True;
+                                          break;
+               case Iop_CatOddLanes8x16:  op = ARM64vecb_UZP28x16; sw = True;
+                                          break;
+               case Iop_InterleaveHI32x4: op = ARM64vecb_ZIP232x4; sw = True;
+                                          break;
+               case Iop_InterleaveHI16x8: op = ARM64vecb_ZIP216x8; sw = True;
+                                          break;
+               case Iop_InterleaveHI8x16: op = ARM64vecb_ZIP28x16; sw = True;
+                                          break;
+               case Iop_InterleaveLO32x4: op = ARM64vecb_ZIP132x4; sw = True;
+                                          break;
+               case Iop_InterleaveLO16x8: op = ARM64vecb_ZIP116x8; sw = True;
+                                          break;
+               case Iop_InterleaveLO8x16: op = ARM64vecb_ZIP18x16; sw = True;
+                                          break;
                default: vassert(0);
             }
             if (sw) {

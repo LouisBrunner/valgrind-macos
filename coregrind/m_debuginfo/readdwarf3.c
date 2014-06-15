@@ -3835,41 +3835,10 @@ static void read_DIE (
 
 }
 
-
-static
-void new_dwarf3_reader_wrk ( 
-   struct _DebugInfo* di,
-   __attribute__((noreturn)) void (*barf)( const HChar* ),
-   DiSlice escn_debug_info,      DiSlice escn_debug_types,
-   DiSlice escn_debug_abbv,      DiSlice escn_debug_line,
-   DiSlice escn_debug_str,       DiSlice escn_debug_ranges,
-   DiSlice escn_debug_loc,       DiSlice escn_debug_info_alt,
-   DiSlice escn_debug_abbv_alt,  DiSlice escn_debug_line_alt,
-   DiSlice escn_debug_str_alt
-)
+static void trace_debug_loc (struct _DebugInfo* di,
+                             __attribute__((noreturn)) void (*barf)( const HChar* ),
+                             DiSlice escn_debug_loc)
 {
-   XArray* /* of TyEnt */     tyents = NULL;
-   XArray* /* of TyEnt */     tyents_to_keep = NULL;
-   XArray* /* of GExpr* */    gexprs = NULL;
-   XArray* /* of TempVar* */  tempvars = NULL;
-   WordFM* /* of (XArray* of AddrRange, void) */ rangestree = NULL;
-   TyEntIndexCache* tyents_cache = NULL;
-   TyEntIndexCache* tyents_to_keep_cache = NULL;
-   TempVar *varp, *varp2;
-   GExpr* gexpr;
-   Cursor abbv; /* for showing .debug_abbrev */
-   Cursor info; /* primary cursor for parsing .debug_info */
-   Cursor ranges; /* for showing .debug_ranges */
-   D3TypeParser typarser;
-   D3VarParser varparser;
-   D3InlParser inlparser;
-   Addr  dr_base;
-   UWord dr_offset;
-   Word  i, j, n;
-   Bool td3 = di->trace_symtab;
-   XArray* /* of TempVar* */ dioff_lookup_tab;
-   Int pass;
-   VgHashTable signature_types = NULL;
 #if 0
    /* This doesn't work properly because it assumes all entries are
       packed end to end, with no holes.  But that doesn't always
@@ -3879,55 +3848,68 @@ void new_dwarf3_reader_wrk (
    Addr  dl_base;
    UWord dl_offset;
    Cursor loc; /* for showing .debug_loc */
+   Bool td3 = di->trace_symtab;
+
    TRACE_SYMTAB("\n");
    TRACE_SYMTAB("\n------ The contents of .debug_loc ------\n");
    TRACE_SYMTAB("    Offset   Begin    End      Expression\n");
-   init_Cursor( &loc, debug_loc_img, 
-                debug_loc_sz, 0, barf, 
-                "Overrun whilst reading .debug_loc section(1)" );
-   dl_base = 0;
-   dl_offset = 0;
-   while (True) {
-      UWord  w1, w2;
-      UWord  len;
-      if (is_at_end_Cursor( &loc ))
-         break;
+   if (ML_(sli_is_valid)(escn_debug_loc)) {
+      init_Cursor( &loc, escn_debug_loc, 0, barf, 
+                   "Overrun whilst reading .debug_loc section(1)" );
+      dl_base = 0;
+      dl_offset = 0;
+      while (True) {
+         UWord  w1, w2;
+         UWord  len;
+         if (is_at_end_Cursor( &loc ))
+            break;
 
-      /* Read a (host-)word pair.  This is something of a hack since
-         the word size to read is really dictated by the ELF file;
-         however, we assume we're reading a file with the same
-         word-sizeness as the host.  Reasonably enough. */
-      w1 = get_UWord( &loc );
-      w2 = get_UWord( &loc );
+         /* Read a (host-)word pair.  This is something of a hack since
+            the word size to read is really dictated by the ELF file;
+            however, we assume we're reading a file with the same
+            word-sizeness as the host.  Reasonably enough. */
+         w1 = get_UWord( &loc );
+         w2 = get_UWord( &loc );
 
-      if (w1 == 0 && w2 == 0) {
-         /* end of list.  reset 'base' */
-         TRACE_D3("    %08lx <End of list>\n", dl_offset);
-         dl_base = 0;
-         dl_offset = get_position_of_Cursor( &loc );
-         continue;
+         if (w1 == 0 && w2 == 0) {
+            /* end of list.  reset 'base' */
+            TRACE_D3("    %08lx <End of list>\n", dl_offset);
+            dl_base = 0;
+            dl_offset = get_position_of_Cursor( &loc );
+            continue;
+         }
+
+         if (w1 == -1UL) {
+            /* new value for 'base' */
+            TRACE_D3("    %08lx %16lx %08lx (base address)\n",
+                     dl_offset, w1, w2);
+            dl_base = w2;
+            continue;
+         }
+
+         /* else a location expression follows */
+         TRACE_D3("    %08lx %08lx %08lx ",
+                  dl_offset, w1 + dl_base, w2 + dl_base);
+         len = (UWord)get_UShort( &loc );
+         while (len > 0) {
+            UChar byte = get_UChar( &loc );
+            TRACE_D3("%02x", (UInt)byte);
+            len--;
+         }
+         TRACE_SYMTAB("\n");
       }
-
-      if (w1 == -1UL) {
-         /* new value for 'base' */
-         TRACE_D3("    %08lx %16lx %08lx (base address)\n",
-                  dl_offset, w1, w2);
-         dl_base = w2;
-         continue;
-      }
-
-      /* else a location expression follows */
-      TRACE_D3("    %08lx %08lx %08lx ",
-               dl_offset, w1 + dl_base, w2 + dl_base);
-      len = (UWord)get_UShort( &loc );
-      while (len > 0) {
-         UChar byte = get_UChar( &loc );
-         TRACE_D3("%02x", (UInt)byte);
-         len--;
-      }
-      TRACE_SYMTAB("\n");
    }
 #endif
+}
+
+static void trace_debug_ranges (struct _DebugInfo* di,
+                                __attribute__((noreturn)) void (*barf)( const HChar* ),
+                                DiSlice escn_debug_ranges)
+{
+   Cursor ranges; /* for showing .debug_ranges */
+   Addr  dr_base;
+   UWord dr_offset;
+   Bool td3 = di->trace_symtab;
 
    /* Display .debug_ranges */
    TRACE_SYMTAB("\n");
@@ -3972,6 +3954,14 @@ void new_dwarf3_reader_wrk (
                   dr_offset, w1 + dr_base, w2 + dr_base);
       }
    }
+}
+
+static void trace_debug_abbrev (struct _DebugInfo* di,
+                                __attribute__((noreturn)) void (*barf)( const HChar* ),
+                                DiSlice escn_debug_abbv)
+{
+   Cursor abbv; /* for showing .debug_abbrev */
+   Bool td3 = di->trace_symtab;
 
    /* Display .debug_abbrev */
    TRACE_SYMTAB("\n");
@@ -4004,7 +3994,47 @@ void new_dwarf3_reader_wrk (
          }
       }
    }
-   TRACE_SYMTAB("\n");
+}
+
+static
+void new_dwarf3_reader_wrk ( 
+   struct _DebugInfo* di,
+   __attribute__((noreturn)) void (*barf)( const HChar* ),
+   DiSlice escn_debug_info,      DiSlice escn_debug_types,
+   DiSlice escn_debug_abbv,      DiSlice escn_debug_line,
+   DiSlice escn_debug_str,       DiSlice escn_debug_ranges,
+   DiSlice escn_debug_loc,       DiSlice escn_debug_info_alt,
+   DiSlice escn_debug_abbv_alt,  DiSlice escn_debug_line_alt,
+   DiSlice escn_debug_str_alt
+)
+{
+   XArray* /* of TyEnt */     tyents = NULL;
+   XArray* /* of TyEnt */     tyents_to_keep = NULL;
+   XArray* /* of GExpr* */    gexprs = NULL;
+   XArray* /* of TempVar* */  tempvars = NULL;
+   WordFM* /* of (XArray* of AddrRange, void) */ rangestree = NULL;
+   TyEntIndexCache* tyents_cache = NULL;
+   TyEntIndexCache* tyents_to_keep_cache = NULL;
+   TempVar *varp, *varp2;
+   GExpr* gexpr;
+   Cursor info; /* primary cursor for parsing .debug_info */
+   D3TypeParser typarser;
+   D3VarParser varparser;
+   D3InlParser inlparser;
+   Word  i, j, n;
+   Bool td3 = di->trace_symtab;
+   XArray* /* of TempVar* */ dioff_lookup_tab;
+   Int pass;
+   VgHashTable signature_types = NULL;
+
+   /* Display/trace various information, if requested. */
+   if (td3) {
+      trace_debug_loc    (di, barf, escn_debug_loc);
+      trace_debug_ranges (di, barf, escn_debug_ranges);
+      trace_debug_abbrev (di, barf, escn_debug_abbv);
+      TRACE_SYMTAB("\n");
+   }
+
 
    if (VG_(clo_read_var_info)) {
       /* We'll park the harvested type information in here.  Also create

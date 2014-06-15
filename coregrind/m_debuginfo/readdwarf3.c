@@ -4179,6 +4179,8 @@ void new_dwarf3_reader_wrk (
       } else {
          if (!ML_(sli_is_valid)(escn_debug_types))
             continue;
+         if (!VG_(clo_read_var_info))
+            continue; // Types not needed when only reading inline info.
          init_Cursor( &info, escn_debug_types, 0, barf,
                       "Overrun whilst reading .debug_types section" );
          section_size = escn_debug_types.szB;

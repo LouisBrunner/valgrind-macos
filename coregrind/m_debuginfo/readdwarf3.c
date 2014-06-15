@@ -3733,10 +3733,9 @@ static void read_DIE (
 
    /* We're set up to look at the fields of this DIE.  Hand it off to
       any parser(s) that want to see it.  Since they will in general
-      advance both the DIE and abbrev cursors, remember their current
-      settings so that we can then back up and do one final pass over
-      the DIE, to print out its contents. */
-
+      advance the DIE cursor, remember the current settings so that we
+      can then back up and do one final pass over the DIE, to print out
+      its contents. */
    start_die_c_offset  = get_position_of_Cursor( c );
 
    nf_i = 0;
@@ -4239,8 +4238,7 @@ void new_dwarf3_reader_wrk (
          cu_start_offset = get_position_of_Cursor( &info );
          TRACE_D3("\n");
          TRACE_D3("  Compilation Unit @ offset 0x%llx:\n", cu_start_offset);
-         /* parse_CU_header initialises the CU's set_abbv_Cursor cache
-            (saC_cache) */
+         /* parse_CU_header initialises the CU's hashtable of abbvs ht_abbvs */
          if (pass == 0) {
             parse_CU_Header( &cc, td3, &info, escn_debug_abbv_alt,
                              False, True );

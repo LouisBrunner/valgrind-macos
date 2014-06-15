@@ -1483,7 +1483,7 @@ typedef
       Iop_PwBitMtxXpose64x2,
 
       /* ABSOLUTE VALUE */
-      Iop_Abs8x16, Iop_Abs16x8, Iop_Abs32x4,
+      Iop_Abs8x16, Iop_Abs16x8, Iop_Abs32x4, Iop_Abs64x2,
 
       /* AVERAGING: note: (arg1 + arg2 + 1) >>u 1 */
       Iop_Avg8Ux16, Iop_Avg16Ux8, Iop_Avg32Ux4,

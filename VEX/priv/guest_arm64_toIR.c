@@ -273,6 +273,12 @@ static IRExpr* mkU32 ( UInt i )
    return IRExpr_Const(IRConst_U32(i));
 }
 
+static IRExpr* mkU16 ( UInt i )
+{
+   vassert(i < 65536);
+   return IRExpr_Const(IRConst_U16(i));
+}
+
 static IRExpr* mkU8 ( UInt i )
 {
    vassert(i < 256);
@@ -3183,7 +3189,7 @@ const HChar* nameArr_Q_SZ ( UInt bitQ, UInt size )
 {
    vassert(bitQ <= 1 && size <= 3);
    const HChar* nms[8]
-      = { "2d", "4s", "8h", "16b", "1d", "2s", "4h", "8b" };
+      = { "8b", "4h", "2s", "1d", "16b", "8h", "4s", "2d" };
    UInt ix = (bitQ << 2) | size;
    vassert(ix < 8);
    return nms[ix];
@@ -5516,6 +5522,36 @@ static IRTemp math_TBL_TBX ( IRTemp tab[4], UInt len, IRTemp src,
 }
 
 
+/* Let |new64| be a V128 in which only the lower 64 bits are interesting,
+   and the upper can contain any value -- it is ignored.  If |is2| is False,
+   generate IR to put |new64| in the lower half of vector reg |dd| and zero
+   the upper half.  If |is2| is True, generate IR to put |new64| in the upper
+   half of vector reg |dd| and leave the lower half unchanged.  This
+   simulates the behaviour of the "foo/foo2" instructions in which the 
+   destination is half the width of sources, for example addhn/addhn2.
+*/
+static
+void putLO64andZUorPutHI64 ( Bool is2, UInt dd, IRTemp new64 )
+{
+   if (is2) {
+      /* Get the old contents of Vdd, zero the upper half, and replace
+         it with 'x'. */
+      IRTemp t_zero_oldLO = newTemp(Ity_V128);
+      assign(t_zero_oldLO, unop(Iop_ZeroHI64ofV128, getQReg128(dd)));
+      IRTemp t_newHI_zero = newTemp(Ity_V128);
+      assign(t_newHI_zero, binop(Iop_InterleaveLO64x2, mkexpr(new64),
+                                                       mkV128(0x0000)));
+      IRTemp res = newTemp(Ity_V128);
+      assign(res, binop(Iop_OrV128, mkexpr(t_zero_oldLO),
+                                    mkexpr(t_newHI_zero)));
+      putQReg128(dd, mkexpr(res));
+   } else {
+      /* This is simple. */
+      putQReg128(dd, unop(Iop_ZeroHI64ofV128, mkexpr(new64)));
+   }
+}
+
+
 static
 Bool dis_AdvSIMD_EXT(/*MB_OUT*/DisResult* dres, UInt insn)
 {
@@ -6153,6 +6189,22 @@ Bool dis_AdvSIMD_scalar_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
+   if (bitU == 0 && size == X11 && opcode == BITS5(0,1,0,1,1)) {
+      /* -------- 0,11,01011 ABS d_d -------- */
+      putQReg128(dd, unop(Iop_ZeroHI64ofV128,
+                          unop(Iop_Abs64x2, getQReg128(nn))));
+      DIP("abs d%u, d%u\n", dd, nn);
+      return True;
+   }
+
+   if (bitU == 1 && size == X11 && opcode == BITS5(0,1,0,1,1)) {
+      /* -------- 1,11,01011 NEG d_d -------- */
+      putQReg128(dd, unop(Iop_ZeroHI64ofV128,
+                          binop(Iop_Sub64x2, mkV128(0x0000), getQReg128(nn))));
+      DIP("neg d%u, d%u\n", dd, nn);
+      return True;
+   }
+
 #  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
    return False;
 #  undef INSN
@@ -6338,7 +6390,80 @@ Bool dis_AdvSIMD_shift_by_immediate(/*MB_OUT*/DisResult* dres, UInt insn)
 static
 Bool dis_AdvSIMD_three_different(/*MB_OUT*/DisResult* dres, UInt insn)
 {
+   /* 31 30 29 28    23   21 20 15     11 9 4
+      0  Q  U  01110 size 1  m  opcode 00 n d
+      Decode fields: u,opcode
+   */
 #  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
+   if (INSN(31,31) != 0
+       || INSN(28,24) != BITS5(0,1,1,1,0)
+       || INSN(21,21) != 1
+       || INSN(11,10) != BITS2(0,0)) {
+      return False;
+   }
+   UInt bitQ   = INSN(30,30);
+   UInt bitU   = INSN(29,29);
+   UInt size   = INSN(23,22);
+   UInt mm     = INSN(20,16);
+   UInt opcode = INSN(15,12);
+   UInt nn     = INSN(9,5);
+   UInt dd     = INSN(4,0);
+   vassert(size < 4);
+   Bool is2    = bitQ == 1;
+
+   if (opcode == BITS4(0,1,0,0) || opcode == BITS4(0,1,1,0)) {
+      /* -------- 0,0100  ADDHN{2} -------- */
+      /* -------- 1,0100 RADDHN{2} -------- */
+      /* -------- 0,0110  SUBHN{2} -------- */
+      /* -------- 1,0110 RSUBHN{2} -------- */
+      /* Narrows, and size refers to the narrowed lanes. */
+      if (size == X11) return False;
+      vassert(size <= 2);
+      const IROp opADD[3] = { Iop_Add16x8,  Iop_Add32x4,  Iop_Add64x2  };
+      const IROp opSUB[3] = { Iop_Sub16x8,  Iop_Sub32x4,  Iop_Sub64x2  };
+      const IROp opSHR[3] = { Iop_ShrN16x8, Iop_ShrN32x4, Iop_ShrN64x2 };
+      const UInt shift[3] = { 8,            16,           32           };
+      const IROp opCAT[3] = { Iop_CatEvenLanes8x16, Iop_CatEvenLanes16x8,
+                              Iop_CatEvenLanes32x4 };
+      Bool isADD = opcode == BITS4(0,1,0,0);
+      Bool isR   = bitU == 1;
+      /* Combined elements in wide lanes */
+      IRTemp  wide  = newTemp(Ity_V128);
+      IRExpr* wideE = binop(isADD ? opADD[size] : opSUB[size],
+                            getQReg128(nn), getQReg128(mm));
+      if (isR) {
+         IRType ty  = Ity_INVALID;
+         IRTemp rcS = IRTemp_INVALID;
+         switch (size) {
+            case X00: ty  = Ity_I16;
+                      rcS = newTemp(ty); assign(rcS, mkU16(0x80)); break;
+            case X01: ty  = Ity_I32;
+                      rcS = newTemp(ty); assign(rcS, mkU32(0x8000)); break;
+            case X10: ty  = Ity_I64;
+                      rcS = newTemp(ty); assign(rcS, mkU64(0x80000000)); break;
+            default:  vassert(0);
+         }
+         IRTemp rcV = math_DUP_TO_V128(rcS, ty);
+         wideE = binop(opADD[size], wideE, mkexpr(rcV));
+      }
+      assign(wide, wideE);
+      /* Top halves of elements, still in wide lanes */
+      IRTemp shrd = newTemp(Ity_V128);
+      assign(shrd, binop(opSHR[size], mkexpr(wide), mkU8(shift[size])));
+      /* Elements now compacted into lower 64 bits */
+      IRTemp new64 = newTemp(Ity_V128);
+      assign(new64, binop(opCAT[size], mkexpr(shrd), mkexpr(shrd)));
+      putLO64andZUorPutHI64(is2, dd, new64);
+      const HChar* arrNarrow = nameArr_Q_SZ(bitQ, size);
+      const HChar* arrWide   = nameArr_Q_SZ(1,    size+1);
+      const HChar* nm = isADD ? (isR ? "raddhn" : "addhn")
+                              : (isR ? "rsubhn" : "subhn");
+      DIP("%s%s %s.%s, %s.%s, %s.%s\n", nm, is2 ? "2" : "",
+          nameQReg128(dd), arrNarrow,
+          nameQReg128(nn), arrWide, nameQReg128(mm), arrWide);
+      return True;
+   }
+
    return False;
 #  undef INSN
 }
@@ -6855,6 +6980,20 @@ Bool dis_AdvSIMD_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
       const HChar* arr = nameArr_Q_SZ(bitQ, size);
       DIP("cm%s %s.%s, %s.%s, #0\n", "lt",
           nameQReg128(dd), arr, nameQReg128(nn), arr);
+      return True;
+   }
+
+   if (bitU == 0 && opcode == BITS5(0,1,0,1,1)) {
+      /* -------- 0,xx,01011: ABS std7_std7 -------- */
+      if (bitQ == 0 && size == X11) return False; // implied 1d case
+      const IROp opABS[4]
+         = { Iop_Abs8x16, Iop_Abs16x8, Iop_Abs32x4, Iop_Abs64x2 };
+      IRTemp res = newTemp(Ity_V128);
+      assign(res, unop(opABS[size], getQReg128(nn)));
+      putQReg128(dd, bitQ == 0 ? unop(Iop_ZeroHI64ofV128, mkexpr(res))
+                               : mkexpr(res));
+      const HChar* arr = nameArr_Q_SZ(bitQ, size);
+      DIP("abs %s.%s, %s.%s\n", nameQReg128(dd), arr, nameQReg128(nn), arr);
       return True;
    }
 

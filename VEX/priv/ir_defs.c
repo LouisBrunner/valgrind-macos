@@ -726,6 +726,7 @@ void ppIROp ( IROp op )
       case Iop_Abs8x16: vex_printf("Abs8x16"); return;
       case Iop_Abs16x8: vex_printf("Abs16x8"); return;
       case Iop_Abs32x4: vex_printf("Abs32x4"); return;
+      case Iop_Abs64x2: vex_printf("Abs64x2"); return;
 
       case Iop_Add8x16:   vex_printf("Add8x16"); return;
       case Iop_Add16x8:   vex_printf("Add16x8"); return;
@@ -2910,7 +2911,7 @@ void typeOfPrimop ( IROp op,
       case Iop_Reverse32_8x16: case Iop_Reverse32_16x8:
       case Iop_Reverse16_8x16:
       case Iop_Neg64Fx2: case Iop_Neg32Fx4:
-      case Iop_Abs8x16: case Iop_Abs16x8: case Iop_Abs32x4:
+      case Iop_Abs8x16: case Iop_Abs16x8: case Iop_Abs32x4: case Iop_Abs64x2:
       case Iop_CipherSV128:
       case Iop_PwBitMtxXpose64x2:
       case Iop_ZeroHI64ofV128:  case Iop_ZeroHI96ofV128:

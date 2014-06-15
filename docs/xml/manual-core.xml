@@ -1780,6 +1780,50 @@ need to use them.</para>
     </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.read-inline-info" xreflabel="--read-inline-info">
+    <term>
+      <option><![CDATA[--read-inline-info=<yes|no> [default: no] ]]></option>
+    </term>
+    <listitem>
+      <para>When enabled, Valgrind will read information about
+      inlined function calls from DWARF3 debug info.
+      This slows Valgrind startup and makes it use more memory (typically
+      for each inlined piece of code, 6 words + the function name), but
+      it results in more descriptive stacktraces:</para>
+<programlisting><![CDATA[
+==15380== Conditional jump or move depends on uninitialised value(s)
+==15380==    at 0x80484EA: main (inlinfo.c:6)
+==15380== 
+==15380== Conditional jump or move depends on uninitialised value(s)
+==15380==    at 0x8048550: fun_noninline (inlinfo.c:6)
+==15380==    by 0x804850E: main (inlinfo.c:34)
+==15380== 
+==15380== Conditional jump or move depends on uninitialised value(s)
+==15380==    at 0x8048520: main (inlinfo.c:6)]]></programlisting>
+
+      <para>And here are the same errors with
+      <option>--read-inline-info=yes</option>:</para>
+
+<programlisting><![CDATA[
+==15377== Conditional jump or move depends on uninitialised value(s)
+==15377==    at 0x80484EA: fun_d (inlinfo.c:6)
+==15377==    by 0x80484EA: fun_c (inlinfo.c:14)
+==15377==    by 0x80484EA: fun_b (inlinfo.c:20)
+==15377==    by 0x80484EA: fun_a (inlinfo.c:26)
+==15377==    by 0x80484EA: main (inlinfo.c:33)
+==15377== 
+==15377== Conditional jump or move depends on uninitialised value(s)
+==15377==    at 0x8048550: fun_d (inlinfo.c:6)
+==15377==    by 0x8048550: fun_noninline (inlinfo.c:41)
+==15377==    by 0x804850E: main (inlinfo.c:34)
+==15377== 
+==15377== Conditional jump or move depends on uninitialised value(s)
+==15377==    at 0x8048520: fun_d (inlinfo.c:6)
+==15377==    by 0x8048520: main (inlinfo.c:35)
+]]></programlisting>
+    </listitem>
+  </varlistentry>
+
   <varlistentry id="opt.read-var-info" xreflabel="--read-var-info">
     <term>
       <option><![CDATA[--read-var-info=<yes|no> [default: no] ]]></option>
@@ -1787,36 +1831,39 @@ need to use them.</para>
     <listitem>
       <para>When enabled, Valgrind will read information about
       variable types and locations from DWARF3 debug info.
-      This slows Valgrind down and makes it use more memory, but for
-      the tools that can take advantage of it (Memcheck, Helgrind,
-      DRD) it can result in more precise error messages.  For example,
+      This slows Valgrind startup significantly and makes it use significantly
+      more memory, but for the tools that can take advantage of it (Memcheck,
+      Helgrind, DRD) it can result in more precise error messages.  For example,
       here are some standard errors issued by Memcheck:</para>
 <programlisting><![CDATA[
-==15516== Uninitialised byte(s) found during client check request
-==15516==    at 0x400633: croak (varinfo1.c:28)
-==15516==    by 0x4006B2: main (varinfo1.c:55)
-==15516==  Address 0x60103b is 7 bytes inside data symbol "global_i2"
-==15516== 
-==15516== Uninitialised byte(s) found during client check request
-==15516==    at 0x400633: croak (varinfo1.c:28)
-==15516==    by 0x4006BC: main (varinfo1.c:56)
-==15516==  Address 0x7fefffefc is on thread 1's stack]]></programlisting>
+==15363== Uninitialised byte(s) found during client check request
+==15363==    at 0x80484A9: croak (varinfo1.c:28)
+==15363==    by 0x8048544: main (varinfo1.c:55)
+==15363==  Address 0x80497f7 is 7 bytes inside data symbol "global_i2"
+==15363== 
+==15363== Uninitialised byte(s) found during client check request
+==15363==    at 0x80484A9: croak (varinfo1.c:28)
+==15363==    by 0x8048550: main (varinfo1.c:56)
+==15363==  Address 0xbea0d0cc is on thread 1's stack
+==15363==  in frame #1, created by main (varinfo1.c:45)
+></programlisting>
 
       <para>And here are the same errors with
       <option>--read-var-info=yes</option>:</para>
 
 <programlisting><![CDATA[
-==15522== Uninitialised byte(s) found during client check request
-==15522==    at 0x400633: croak (varinfo1.c:28)
-==15522==    by 0x4006B2: main (varinfo1.c:55)
-==15522==  Location 0x60103b is 0 bytes inside global_i2[7],
-==15522==  a global variable declared at varinfo1.c:41
-==15522== 
-==15522== Uninitialised byte(s) found during client check request
-==15522==    at 0x400633: croak (varinfo1.c:28)
-==15522==    by 0x4006BC: main (varinfo1.c:56)
-==15522==  Location 0x7fefffefc is 0 bytes inside local var "local"
-==15522==  declared at varinfo1.c:46, in frame #1 of thread 1]]></programlisting>
+==15370== Uninitialised byte(s) found during client check request
+==15370==    at 0x80484A9: croak (varinfo1.c:28)
+==15370==    by 0x8048544: main (varinfo1.c:55)
+==15370==  Location 0x80497f7 is 0 bytes inside global_i2[7],
+==15370==  a global variable declared at varinfo1.c:41
+==15370== 
+==15370== Uninitialised byte(s) found during client check request
+==15370==    at 0x80484A9: croak (varinfo1.c:28)
+==15370==    by 0x8048550: main (varinfo1.c:56)
+==15370==  Location 0xbeb4a0cc is 0 bytes inside local var "local"
+==15370==  declared at varinfo1.c:46, in frame #1 of thread 1
+]]></programlisting>
     </listitem>
   </varlistentry>
 

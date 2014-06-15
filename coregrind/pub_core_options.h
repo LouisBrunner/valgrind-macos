@@ -227,6 +227,8 @@ extern Int   VG_(clo_dump_error);
 extern const HChar* VG_(clo_sim_hints);
 /* Show symbols in the form 'name+offset' ?  Default: NO */
 extern Bool VG_(clo_sym_offsets);
+/* Read DWARF3 inline info ? */
+extern Bool VG_(clo_read_inline_info);
 /* Read DWARF3 variable info even if tool doesn't ask for it? */
 extern Bool VG_(clo_read_var_info);
 /* Which prefix to strip from full source file paths, if any. */

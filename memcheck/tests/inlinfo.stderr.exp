@@ -1,0 +1,54 @@
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: fun_d (inlinfo.c:7)
+   by 0x........: fun_c (inlinfo.c:15)
+   by 0x........: fun_b (inlinfo.c:21)
+   by 0x........: fun_a (inlinfo.c:27)
+   by 0x........: main (inlinfo.c:66)
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Cond
+   fun:fun_d
+   fun:fun_c
+   fun:fun_b
+   fun:fun_a
+   fun:main
+}
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: fun_d (inlinfo.c:7)
+   by 0x........: fun_noninline_m (inlinfo.c:33)
+   by 0x........: main (inlinfo.c:68)
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Cond
+   fun:fun_d
+   fun:fun_noninline_m
+   fun:main
+}
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: fun_d (inlinfo.c:7)
+   by 0x........: main (inlinfo.c:70)
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Cond
+   fun:fun_d
+   fun:main
+}
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: fun_noninline_o (inlinfo.c:40)
+   by 0x........: fun_f (inlinfo.c:48)
+   by 0x........: fun_e (inlinfo.c:54)
+   by 0x........: fun_noninline_n (inlinfo.c:60)
+   by 0x........: main (inlinfo.c:72)
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Cond
+   fun:fun_noninline_o
+   fun:fun_f
+   fun:fun_e
+   fun:fun_noninline_n
+   fun:main
+}

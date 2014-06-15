@@ -119,6 +119,29 @@ typedef
    }
    DiLoc;
 
+#define LEVEL_BITS  (32 - LINENO_BITS)
+#define MAX_LEVEL     ((1 << LEVEL_BITS) - 1)
+
+/* A structure to hold addr-to-inlined fn info.  There
+  can be a lot of these, hence the dense packing. */
+typedef
+   struct {
+      /* Word 1 */
+      Addr   addr_lo;            /* lowest address for inlined fn */
+      /* Word 2 */
+      Addr   addr_hi;            /* highest address following the inlined fn */
+      /* Word 3 */
+      const HChar* inlinedfn;    /* inlined function name */
+      /* Word 4 */
+      const HChar* filename;     /* caller source filename */
+      /* Word 5 */
+      const HChar* dirname;      /* caller source directory name */
+      /* Word 6 */
+      UInt   lineno:LINENO_BITS; /* caller line number */
+      UShort level:LEVEL_BITS;   /* level of inlining */
+   }
+   DiInlLoc;
+
 /* --------------------- CF INFO --------------------- */
 
 /* DiCfSI: a structure to summarise DWARF2/3 CFA info for the code
@@ -790,6 +813,13 @@ struct _DebugInfo {
    DiLoc*  loctab;
    UWord   loctab_used;
    UWord   loctab_size;
+   /* An expandable array of inlined fn info.
+      maxinl_codesz is the biggest inlined piece of code
+      in inltab (i.e. the max of 'addr_hi - addr_lo'. */
+   DiInlLoc* inltab;
+   UWord   inltab_used;
+   UWord   inltab_size;
+   SizeT   maxinl_codesz;
    /* An expandable array of CFI summary info records.  Also includes
       summary address bounds, showing the min and max address covered
       by any of the records, as an aid to fast searching.  And, if the
@@ -873,6 +903,21 @@ void ML_(addLineInfo) ( struct _DebugInfo* di,
                         const HChar* filename, 
                         const HChar* dirname,  /* NULL is allowable */
                         Addr this, Addr next, Int lineno, Int entry);
+
+/* Add a call inlined record to a DebugInfo.
+   A call to the below means that inlinedfn code has been
+   inlined, resulting in code from [addr_lo, addr_hi[.
+   Note that addr_hi is excluded, i.e. is not part of the inlined code.
+   The call that caused this inlining is in filename/dirname/lineno
+   In case of nested inlining, a small level indicates the call
+   is closer to main that a call with a higher level. */
+extern
+void ML_(addInlInfo) ( struct _DebugInfo* di, 
+                       Addr addr_lo, Addr addr_hi,
+                       const HChar* inlinedfn,
+                       const HChar* filename, 
+                       const HChar* dirname,  /* NULL is allowable */
+                       Int lineno, UShort level);
 
 /* Add a CFI summary record.  The supplied DiCfSI is copied. */
 extern void ML_(addDiCfSI) ( struct _DebugInfo* di, DiCfSI* cfsi );

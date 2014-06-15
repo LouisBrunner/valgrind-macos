@@ -1450,13 +1450,20 @@ static void printIpDesc(UInt n, Addr ip, void* uu_opaque)
    
    static HChar buf[BUF_LEN];
 
-   VG_(describe_IP)(ip, buf, BUF_LEN);
+   InlIPCursor *iipc = VG_(new_IIPC)(ip);
 
-   if (VG_(clo_xml)) {
-      VG_(printf_xml)("    %s\n", buf);
-   } else {
-      VG_(message)(Vg_UserMsg, "   %s %s\n", ( n == 0 ? "at" : "by" ), buf);
-   }
+   do {
+      VG_(describe_IP)(ip, buf, BUF_LEN, iipc);
+      if (VG_(clo_xml)) {
+         VG_(printf_xml)("    %s\n", buf);
+      } else {
+         VG_(message)(Vg_UserMsg, "   %s %s\n", 
+                      ( n == 0 ? "at" : "by" ), buf);
+      }
+      n++; 
+      // Increase n to show "at" for only one level.
+   } while (VG_(next_IIPC)(iipc));
+   VG_(delete_IIPC)(iipc);
 }
 
 /* Print a StackTrace. */

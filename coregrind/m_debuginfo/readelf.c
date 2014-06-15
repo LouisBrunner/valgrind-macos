@@ -1447,6 +1447,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    vg_assert(di->fsm.filename);
    vg_assert(!di->symtab);
    vg_assert(!di->loctab);
+   vg_assert(!di->inltab);
    vg_assert(!di->cfsi);
    vg_assert(!di->cfsi_exprs);
    vg_assert(!di->strpool);
@@ -2801,11 +2802,11 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                                       debug_str_escn,
                                       debug_str_alt_escn );
          /* The new reader: read the DIEs in .debug_info to acquire
-            information on variable types and locations.  But only if
-            the tool asks for it, or the user requests it on the
-            command line. */
-         if (VG_(needs).var_info /* the tool requires it */
-             || VG_(clo_read_var_info) /* the user asked for it */) {
+            information on variable types and locations or inline info.
+            But only if the tool asks for it, or the user requests it on
+            the command line. */
+         if (VG_(clo_read_var_info) /* the user or tool asked for it */
+             || VG_(clo_read_inline_info)) {
             ML_(new_dwarf3_reader)(
                di, debug_info_escn,     debug_types_escn,
                    debug_abbv_escn,     debug_line_escn,
@@ -2834,7 +2835,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       showing the number of variables read for each object.
       (Currently disabled -- is a sanity-check mechanism for
       exp-sgcheck.) */
-   if (0 && (VG_(needs).var_info || VG_(clo_read_var_info))) {
+   if (0 &&  VG_(clo_read_var_info)) {
       UWord nVars = 0;
       if (di->varinfo) {
          for (j = 0; j < VG_(sizeXA)(di->varinfo); j++) {

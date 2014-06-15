@@ -1128,11 +1128,11 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
                                       DiSlice_INVALID /* ALT .debug_str */ );
 
          /* The new reader: read the DIEs in .debug_info to acquire
-            information on variable types and locations.  But only if
-            the tool asks for it, or the user requests it on the
-            command line. */
-         if (VG_(needs).var_info /* the tool requires it */
-             || VG_(clo_read_var_info) /* the user asked for it */) {
+            information on variable types and locations or inline info.
+            But only if the tool asks for it, or the user requests it on
+            the command line. */
+         if (VG_(clo_read_var_info) /* the user or tool asked for it */
+             || VG_(clo_read_inline_info)) {
             ML_(new_dwarf3_reader)(
                di, debug_info_mscn,
                    DiSlice_INVALID, /* .debug_types */

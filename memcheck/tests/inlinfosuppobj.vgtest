@@ -1,0 +1,4 @@
+# test suppressions with inlined fn calls, with some obj patterns
+prog: inlinfo
+vgopts: -q --read-inline-info=yes --suppressions=inlinfosuppobj.supp
+stderr_filter_args: inlinfo.c

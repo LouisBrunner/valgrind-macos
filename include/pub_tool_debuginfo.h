@@ -120,14 +120,44 @@ Bool VG_(get_data_description)(
    It doesn't matter if debug info is present or not. */
 extern Bool VG_(get_objname)  ( Addr a, HChar* objname, Int n_objname );
 
+
+/* Cursor allowing to describe inlined function calls at an IP,
+   by doing successive calls to VG_(describe_IP). */
+typedef  struct _InlIPCursor InlIPCursor;
+
 /* Puts into 'buf' info about the code address %eip:  the address, function
    name (if known) and filename/line number (if known), like this:
 
       0x4001BF05: realloc (vg_replace_malloc.c:339)
 
    'n_buf' gives length of 'buf'.  Returns 'buf'.
+
+   eip can possibly corresponds to inlined function call(s).
+   To describe eip and the inlined function calls, the following must
+   be done:
+       InlIPCursor *iipc = VG_(new_IIPC)(eip);
+       do {
+          VG_(describe_IP)(eip, buf, n_buf, iipc);
+          ... use buf ...
+       } while (VG_(next_IIPC)(iipc));
+       VG_(delete_IIPC)(iipc);
+
+   To only describe eip, without the inlined calls at eip, give a NULL iipc:
+       VG_(describe_IP)(eip, buf, n_buf, NULL);   
 */
-extern HChar* VG_(describe_IP)(Addr eip, HChar* buf, Int n_buf);
+extern HChar* VG_(describe_IP)(Addr eip, HChar* buf, Int n_buf,
+                               InlIPCursor* iipc);
+
+/* Builds a IIPC (Inlined IP Cursor) to describe eip and all the inlined calls
+   at eip. Such a cursor must be deleted after use using VG_(delete_IIPC). */
+extern InlIPCursor* VG_(new_IIPC)(Addr eip);
+/* Move the cursor to the next call to describe.
+   Returns True if there are still calls to describe.
+   False if nothing to describe anymore. */
+extern Bool VG_(next_IIPC)(InlIPCursor *iipc);
+/* Free all memory associated with iipc. */
+extern void VG_(delete_IIPC)(InlIPCursor *iipc);
+
 
 
 /* Get an XArray of StackBlock which describe the stack (auto) blocks

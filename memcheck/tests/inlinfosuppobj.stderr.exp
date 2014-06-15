@@ -1,0 +1,7 @@
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: fun_d (inlinfo.c:7)
+   by 0x........: fun_c (inlinfo.c:15)
+   by 0x........: fun_b (inlinfo.c:21)
+   by 0x........: fun_a (inlinfo.c:27)
+   by 0x........: main (inlinfo.c:66)
+

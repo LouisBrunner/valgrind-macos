@@ -146,7 +146,7 @@ static HChar* sym (Addr addr, Bool is_code)
    if (w == 2) w = 0;
    buf[w][0] = '\0';
    if (is_code) {
-      VG_(describe_IP) (addr, buf[w], 200);
+      VG_(describe_IP) (addr, buf[w], 200, NULL);
    } else {
       VG_(get_datasym_and_offset) (addr, buf[w], 200, &offset);
    }

@@ -46,7 +46,7 @@ Bool VG_(generic_match) (
         Bool (*pIsStar)(const void*),
         Bool (*pIsQuery)(const void*),
         Bool (*pattEQinp)(const void*,const void*,void*,UWord),
-        void* inputCompleter
+        void* inputCompleter, Bool (*haveInputInpC)(void*,UWord)
      )
 {
    /* This is the spec, written in my favourite formal specification
@@ -67,19 +67,23 @@ Bool VG_(generic_match) (
    Bool  havePatt, haveInput;
    const HChar *currPatt, *currInput;
   tailcall:
-   vg_assert(nPatt >= 0   && nPatt  < 1000000); /* arbitrary */
-   vg_assert(nInput >= 0  && nInput < 1000000); /* arbitrary */
+   vg_assert(nPatt >= 0 && nPatt  < 1000000); /* arbitrary */
+   vg_assert(inputCompleter
+             || (nInput >= 0  && nInput < 1000000)); /* arbitrary */
    vg_assert(ixPatt >= 0  && ixPatt <= nPatt);
-   vg_assert(ixInput >= 0 && ixInput <= nInput);
+   vg_assert(ixInput >= 0 && (inputCompleter || ixInput <= nInput));
 
    havePatt  = ixPatt < nPatt;
-   haveInput = ixInput < nInput;
+   haveInput = inputCompleter ? 
+      (*haveInputInpC)(inputCompleter, ixInput)
+      : ixInput < nInput;
 
    /* No specific need to set NULL when !have{Patt,Input}, but guards
       against inadvertantly dereferencing an out of range pointer to
       the pattern or input arrays. */
    currPatt  = havePatt  ? ((const HChar*)patt) + szbPatt * ixPatt    : NULL;
-   currInput = haveInput ? ((const HChar*)input) + szbInput * ixInput : NULL;
+   currInput = haveInput && !inputCompleter ? 
+      ((const HChar*)input) + szbInput * ixInput : NULL;
 
    // Deal with the complex case first: wildcards.  Do frugal
    // matching.  When encountering a '*', first skip no characters
@@ -104,7 +108,7 @@ Bool VG_(generic_match) (
                                  patt, szbPatt, nPatt,  ixPatt+1,
                                  input,szbInput,nInput, ixInput+0,
                                  pIsStar,pIsQuery,pattEQinp,
-                                 inputCompleter) ) {
+                                 inputCompleter,haveInputInpC) ) {
             return True;
          }
          // but we can tail-recurse for the second call
@@ -179,7 +183,7 @@ Bool VG_(string_match) ( const HChar* patt, const HChar* input )
              patt,  sizeof(HChar), VG_(strlen)(patt), 0,
              input, sizeof(HChar), VG_(strlen)(input), 0,
              charIsStar, charIsQuery, char_p_EQ_i,
-             NULL
+             NULL, NULL
           );
 }
 

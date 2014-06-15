@@ -162,6 +162,8 @@ static void usage_NORETURN ( Bool debug_help )
 "                              checks for self-modifying code: none, only for\n"
 "                              code found in stacks, for all code, or for all\n"
 "                              code except that from file-backed mappings\n"
+"    --read-inline-info=yes|no read debug info about inlined function calls\n"
+"                              and use it to do better stack traces [no]\n"
 "    --read-var-info=yes|no    read debug info on stack and global variables\n"
 "                              and use it to print better error messages in\n"
 "                              tools that make use of it (Memcheck, Helgrind,\n"
@@ -593,6 +595,7 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
       else if VG_BOOL_CLO(arg, "--wait-for-gdb",     VG_(clo_wait_for_gdb)) {}
       else if VG_STR_CLO (arg, "--db-command",       VG_(clo_db_command)) {}
       else if VG_BOOL_CLO(arg, "--sym-offsets",      VG_(clo_sym_offsets)) {}
+      else if VG_BOOL_CLO(arg, "--read-inline-info", VG_(clo_read_inline_info)) {}
       else if VG_BOOL_CLO(arg, "--read-var-info",    VG_(clo_read_var_info)) {}
 
       else if VG_INT_CLO (arg, "--dump-error",       VG_(clo_dump_error))   {}
@@ -1930,6 +1933,9 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    //--------------------------------------------------------------
    VG_(debugLog)(1, "main", "Initialise the tool part 1 (pre_clo_init)\n");
    VG_(tl_pre_clo_init)();
+   // Activate var info readers, if the tool asked for it:
+   if (VG_(needs).var_info)
+      VG_(clo_read_var_info) = True;
 
    //--------------------------------------------------------------
    // If --tool and --help/--help-debug was given, now give the core+tool

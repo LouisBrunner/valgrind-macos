@@ -58,7 +58,11 @@
    elements each of size 'szbPatt'.  For the initial call, pass a
    value of zero to 'ixPatt'.
 
-   Ditto for input/nInput/szbInput/ixInput.
+   The input sequence can be similarly described using
+   input/nInput/szbInput/ixInput.
+   Alternatively, the input can be lazily constructed using an
+   inputCompleter. When using an inputCompleter, input/nInput/szbInput
+   are unused.
 
    pIsStar should return True iff the pointed-to pattern element is
    conceptually a '*'.
@@ -72,11 +76,13 @@
    (conceptually) '*' nor '?', so it must be a literal (in the sense
    that all the input sequence elements are literal).
 
-   input might be lazily constructed when pattEQinp is called.
+   If inputCompleter is not NULL, the input will be lazily constructed
+   when pattEQinp is called.
    For lazily constructing the input element, the two last arguments
    of pattEQinp are the inputCompleter and the index of the input
    element to complete.
-   inputCompleter can be NULL.
+   VG_(generic_match) calls (*haveInputInpC)(inputCompleter,ixInput) to
+   check if there is an element ixInput in the input sequence.
 */
 Bool VG_(generic_match) ( 
         Bool matchAll,
@@ -85,7 +91,8 @@ Bool VG_(generic_match) (
         Bool (*pIsStar)(const void*),
         Bool (*pIsQuery)(const void*),
         Bool (*pattEQinp)(const void*,const void*,void*,UWord),
-        void* inputCompleter
+        void* inputCompleter,
+        Bool (*haveInputInpC)(void*,UWord)
      );
 
 /* Mini-regexp function.  Searches for 'pat' in 'str'.  Supports

@@ -323,28 +323,36 @@ static Bool eq_Error ( VgRes res, Error* e1, Error* e2 )
 static void printSuppForIp_XML(UInt n, Addr ip, void* uu_opaque)
 {
    static HChar buf[ERRTXT_LEN];
-   if ( VG_(get_fnname_no_cxx_demangle) (ip, buf,  ERRTXT_LEN) ) {
-      VG_(printf_xml)("    <sframe> <fun>%pS</fun> </sframe>\n", buf);
-   } else
-   if ( VG_(get_objname)(ip, buf, ERRTXT_LEN) ) {
-      VG_(printf_xml)("    <sframe> <obj>%pS</obj> </sframe>\n", buf);
-   } else {
-      VG_(printf_xml)("    <sframe> <obj>*</obj> </sframe>\n");
-   }
+   InlIPCursor* iipc = VG_(new_IIPC)(ip);
+   do {
+      if ( VG_(get_fnname_no_cxx_demangle) (ip, buf,  ERRTXT_LEN, iipc) ) {
+         VG_(printf_xml)("    <sframe> <fun>%pS</fun> </sframe>\n", buf);
+      } else
+      if ( VG_(get_objname)(ip, buf, ERRTXT_LEN) ) {
+         VG_(printf_xml)("    <sframe> <obj>%pS</obj> </sframe>\n", buf);
+      } else {
+         VG_(printf_xml)("    <sframe> <obj>*</obj> </sframe>\n");
+      }
+   } while (VG_(next_IIPC)(iipc));
+   VG_(delete_IIPC)(iipc);
 }
 
 static void printSuppForIp_nonXML(UInt n, Addr ip, void* textV)
 {
    static HChar buf[ERRTXT_LEN];
    XArray* /* of HChar */ text = (XArray*)textV;
-   if ( VG_(get_fnname_no_cxx_demangle) (ip, buf,  ERRTXT_LEN) ) {
-      VG_(xaprintf)(text, "   fun:%s\n", buf);
-   } else
-   if ( VG_(get_objname)(ip, buf, ERRTXT_LEN) ) {
-      VG_(xaprintf)(text, "   obj:%s\n", buf);
-   } else {
-      VG_(xaprintf)(text, "   obj:*\n");
-   }
+   InlIPCursor* iipc = VG_(new_IIPC)(ip);
+   do {
+      if ( VG_(get_fnname_no_cxx_demangle) (ip, buf, ERRTXT_LEN, iipc) ) {
+         VG_(xaprintf)(text, "   fun:%s\n", buf);
+      } else
+      if ( VG_(get_objname)(ip, buf, ERRTXT_LEN) ) {
+         VG_(xaprintf)(text, "   obj:%s\n", buf);
+      } else {
+         VG_(xaprintf)(text, "   obj:*\n");
+      }
+   } while (VG_(next_IIPC)(iipc));
+   VG_(delete_IIPC)(iipc);
 }
 
 /* Generate a suppression for an error, either in text or XML mode.
@@ -1472,6 +1480,8 @@ static Bool supploc_IsQuery ( const void* supplocV )
    with the IP function name or with the IP object name.
    First time the fun or obj name is needed for an IP member
    of a stack trace, it will be computed and stored in names.
+   Also, if the IP corresponds to one or more inlined function calls,
+   the inlined function names are expanded.
    The IPtoFunOrObjCompleter type is designed to minimise the nr of
    allocations and the nr of debuginfo search. */
 typedef
@@ -1479,13 +1489,49 @@ typedef
       StackTrace ips; // stack trace we are lazily completing.
       UWord n_ips; // nr of elements in ips.
 
+      // VG_(generic_match) calls haveInputInpC to check
+      // for the presence of an input element identified by ixInput
+      // (i.e. a number that identifies the ixInput element of the
+      // input sequence). It calls supp_pattEQinp to match this input
+      // element with a pattern.
+      // When inlining info is used to provide inlined function calls
+      // in stacktraces, one IP in ips can be expanded in several
+      // function names. So, each time input (or presence of input)
+      // is requested by VG_(generic_match), we will expand
+      // more IP of ips till we have expanded enough to reach the
+      // input element requested (or we cannot expand anymore).
+
+      UWord n_ips_expanded;
+      // n_ips_expanded maintains the nr of elements in ips that we have
+      // already expanded.
+      UWord n_expanded;
+      // n_expanded maintains the nr of elements resulting from the expansion
+      // of the n_ips_expanded IPs. Without inlined function calls,
+      // n_expanded == n_ips_expanded. With inlining info,
+      // n_expanded >= n_ips_expanded.
+
+      Int* n_offsets_per_ip;
+      // n_offsets_per_ip[i] gives the nr of offsets in fun_offsets and obj_offsets
+      // resulting of the expansion of ips[i].
+      // The sum of all n_expanded_per_ip must be equal to n_expanded.
+      // This array allows to retrieve the position in ips corresponding to an ixInput.
+
+      // size (in elements) of fun_offsets and obj_offsets.
+      // (fun|obj)_offsets are reallocated if more space is needed
+      // to expand an IP.
+      UWord sz_offsets;
+
       Int* fun_offsets;
-      // fun_offsets[i] is the offset in names where the
-      // function name for ips[i] is located.
-      // An offset -1 means the function name is not yet completed.
+      // fun_offsets[ixInput] is the offset in names where the
+      // function name for the ixInput element of the input sequence
+      // can be found. As one IP of ips can be expanded in several
+      // function calls due to inlined function calls, we can have more
+      // elements in fun_offsets than in ips.
+      // An offset -1 means the function name has not yet been computed.
       Int* obj_offsets;
-      // Similarly, obj_offsets[i] gives the offset for the
-      // object name for ips[i] (-1 meaning object name not yet completed).
+      // Similarly, obj_offsets[ixInput] gives the offset for the
+      // object name for ips[ixInput]
+      // (-1 meaning object name not yet been computed).
 
       // All function names and object names will be concatenated
       // in names. names is reallocated on demand.
@@ -1499,22 +1545,37 @@ typedef
 static void clearIPtoFunOrObjCompleter
   (IPtoFunOrObjCompleter* ip2fo)
 {
-   if (ip2fo->fun_offsets) VG_(free)(ip2fo->fun_offsets);
-   if (ip2fo->obj_offsets) VG_(free)(ip2fo->obj_offsets);
-   if (ip2fo->names)       VG_(free)(ip2fo->names);
+   if (ip2fo->n_offsets_per_ip) VG_(free)(ip2fo->n_offsets_per_ip);
+   if (ip2fo->fun_offsets)      VG_(free)(ip2fo->fun_offsets);
+   if (ip2fo->obj_offsets)      VG_(free)(ip2fo->obj_offsets);
+   if (ip2fo->names)            VG_(free)(ip2fo->names);
 }
 
-/* foComplete returns the function name or object name for IP.
-   If needFun, returns the function name for IP
-   else returns the object name for IP.
-   The function name or object name will be computed and added in
-   names if not yet done.
-   IP must be equal to focompl->ipc[ixIP]. */
-static HChar* foComplete(IPtoFunOrObjCompleter* ip2fo,
-                         Addr IP, Int ixIP, Bool needFun)
+/* Grow ip2fo->names to ensure we have ERRTXT_LEN characters available
+   in ip2fo->names and returns a pointer to the first free char. */
+static HChar* grow_names(IPtoFunOrObjCompleter* ip2fo)
 {
-   vg_assert (ixIP < ip2fo->n_ips);
-   vg_assert (IP == ip2fo->ips[ixIP]);
+   if (ip2fo->names_szB 
+       < ip2fo->names_free + ERRTXT_LEN) {
+      ip2fo->names 
+         = VG_(realloc)("foc_names",
+                        ip2fo->names,
+                        ip2fo->names_szB + ERRTXT_LEN);
+      ip2fo->names_szB += ERRTXT_LEN;
+   }
+   return ip2fo->names + ip2fo->names_free;
+}
+
+/* foComplete returns the function name or object name for ixInput.
+   If needFun, returns the function name for this input
+   else returns the object name for this input.
+   The function name or object name will be computed and added in
+   names if not yet done. */
+static HChar* foComplete(IPtoFunOrObjCompleter* ip2fo,
+                         Int ixInput, Bool needFun)
+{
+   vg_assert (ixInput < ip2fo->n_expanded);
+   vg_assert (VG_(clo_read_inline_info) || ixInput < ip2fo->n_ips);
 
    // ptr to the offset array for function offsets (if needFun)
    // or object offsets (if !needFun).
@@ -1524,30 +1585,13 @@ static HChar* foComplete(IPtoFunOrObjCompleter* ip2fo,
    else
       offsets = &ip2fo->obj_offsets;
 
-   // Allocate offsets if not yet done.
-   if (!*offsets) {
-      Int i;
-      *offsets =
-         VG_(malloc)("foComplete",
-                     ip2fo->n_ips * sizeof(Int));
-      for (i = 0; i < ip2fo->n_ips; i++)
-         (*offsets)[i] = -1;
-   }
-
    // Complete Fun name or Obj name for IP if not yet done.
-   if ((*offsets)[ixIP] == -1) {
-      /* Ensure we have ERRTXT_LEN characters available in names */
-      if (ip2fo->names_szB 
-            < ip2fo->names_free + ERRTXT_LEN) {
-         ip2fo->names 
-            = VG_(realloc)("foc_names",
-                           ip2fo->names,
-                           ip2fo->names_szB + ERRTXT_LEN);
-         ip2fo->names_szB += ERRTXT_LEN;
-      }
-      HChar* caller_name = ip2fo->names + ip2fo->names_free;
-      (*offsets)[ixIP] = ip2fo->names_free;
+   if ((*offsets)[ixInput] == -1) {
+      HChar* caller_name = grow_names(ip2fo);
+      (*offsets)[ixInput] = ip2fo->names_free;
       if (needFun) {
+         // With inline info, fn names must have been completed already.
+         vg_assert (!VG_(clo_read_inline_info));
          /* Get the function name into 'caller_name', or "???"
             if unknown. */
          // Nb: C++-mangled names are used in suppressions.  Do, though,
@@ -1555,27 +1599,139 @@ static HChar* foComplete(IPtoFunOrObjCompleter* ip2fo,
          // up comparing "malloc" in the suppression against
          // "_vgrZU_libcZdsoZa_malloc" in the backtrace, and the
          // two of them need to be made to match.
-         if (!VG_(get_fnname_no_cxx_demangle)(IP, caller_name, ERRTXT_LEN))
+         if (!VG_(get_fnname_no_cxx_demangle)(ip2fo->ips[ixInput],
+                                              caller_name, ERRTXT_LEN,
+                                              NULL))
             VG_(strcpy)(caller_name, "???");
       } else {
          /* Get the object name into 'caller_name', or "???"
             if unknown. */
-         if (!VG_(get_objname)(IP, caller_name, ERRTXT_LEN))
+         UWord i;
+         UWord last_expand_pos_ips = 0;
+         UWord pos_ips;
+
+         /* First get the pos in ips corresponding to ixInput */
+         for (pos_ips = 0; pos_ips < ip2fo->n_expanded; pos_ips++) {
+            last_expand_pos_ips += ip2fo->n_offsets_per_ip[pos_ips];
+            if (ixInput <= last_expand_pos_ips)
+               break;
+         }
+         /* pos_ips is the position in ips corresponding to ixInput.
+            last_expand_pos_ips is the last offset in fun/obj where
+            ips[pos_ips] has been expanded. */
+
+         if (!VG_(get_objname)(ip2fo->ips[pos_ips], caller_name, ERRTXT_LEN))
             VG_(strcpy)(caller_name, "???");
+
+         // Have all inlined calls pointing at this object name
+         for (i = last_expand_pos_ips - ip2fo->n_offsets_per_ip[pos_ips] - 1;
+              i <= last_expand_pos_ips;
+              i++)
+            ip2fo->obj_offsets[i] = ip2fo->names_free;
       }
       ip2fo->names_free += VG_(strlen)(caller_name) + 1;
    }
 
-   return ip2fo->names + (*offsets)[ixIP];
+   return ip2fo->names + (*offsets)[ixInput];
+}
+
+// Grow fun and obj _offsets arrays to have at least n_req elements.
+// Ensure n_offsets_per_ip is allocated.
+static void grow_offsets(IPtoFunOrObjCompleter* ip2fo, Int n_req)
+{
+   Int i;
+
+   // n_offsets_per_ip must always have the size of the ips array
+   if (ip2fo->n_offsets_per_ip == NULL) {
+      ip2fo->n_offsets_per_ip = VG_(malloc)("grow_offsets",
+                                            ip2fo->n_ips * sizeof(Int));
+      for (i = 0; i < ip2fo->n_ips; i++)
+         ip2fo->n_offsets_per_ip[i] = 0;
+   }
+
+   if (ip2fo->sz_offsets >= n_req)
+      return;
+
+   // Avoid too much re-allocation by allocating at least ip2fo->n_ips
+   // elements and at least a few more elements than the current size.
+   if (n_req < ip2fo->n_ips)
+      n_req = ip2fo->n_ips;
+   if (n_req < ip2fo->sz_offsets + 5)
+      n_req = ip2fo->sz_offsets + 5;
+
+   ip2fo->fun_offsets = VG_(realloc)("grow_offsets", ip2fo->fun_offsets,
+                                     n_req * sizeof(Int));
+   for (i = ip2fo->sz_offsets; i < n_req; i++)
+      ip2fo->fun_offsets[i] = -1;
+
+   ip2fo->obj_offsets = VG_(realloc)("grow_offsets", ip2fo->obj_offsets,
+                                     n_req * sizeof(Int));
+   for (i = ip2fo->sz_offsets; i < n_req; i++)
+      ip2fo->obj_offsets[i] = -1;
+
+   ip2fo->sz_offsets = n_req;   
+}
+
+// Expands more IPs from ip2fo->ips.
+static void expandInput (IPtoFunOrObjCompleter* ip2fo, UWord ixInput )
+{
+   while (ip2fo->n_ips_expanded < ip2fo->n_ips
+          && ip2fo->n_expanded <= ixInput) {
+      if (VG_(clo_read_inline_info)) {
+         // Expand one more IP in one or more calls.
+         const Addr IP = ip2fo->ips[ip2fo->n_ips_expanded];
+         InlIPCursor *iipc;
+
+         iipc = VG_(new_IIPC)(IP);
+         // The only thing we really need is the nr of inlined fn calls
+         // corresponding to the IP we will expand.
+         // However, computing this is mostly the same as finding
+         // the function name. So, let's directly complete the function name.
+         do {
+            HChar* caller_name = grow_names(ip2fo);
+            grow_offsets(ip2fo, ip2fo->n_expanded+1);
+            ip2fo->fun_offsets[ip2fo->n_expanded] = ip2fo->names_free;
+            if (!VG_(get_fnname_no_cxx_demangle)(IP, 
+                                                 caller_name, ERRTXT_LEN,
+                                                 iipc))
+               VG_(strcpy)(caller_name, "???");
+            ip2fo->names_free += VG_(strlen)(caller_name) + 1;
+            ip2fo->n_expanded++;
+            ip2fo->n_offsets_per_ip[ip2fo->n_ips_expanded]++;
+         } while (VG_(next_IIPC)(iipc));
+         ip2fo->n_ips_expanded++;
+         VG_(delete_IIPC) (iipc);
+      } else {
+         // Without inlined fn call info, expansion simply
+         // consists in allocating enough elements in (fun|obj)_offsets.
+         // The function or object names themselves will be completed
+         // when requested.
+         Int i;
+         grow_offsets(ip2fo, ip2fo->n_ips);
+         ip2fo->n_ips_expanded = ip2fo->n_ips;
+         ip2fo->n_expanded = ip2fo->n_ips;
+         for (i = 0; i < ip2fo->n_ips; i++)
+            ip2fo->n_offsets_per_ip[i] = 1;
+      }
+   }
+}
+
+static Bool haveInputInpC (void* inputCompleter, UWord ixInput )
+{
+   IPtoFunOrObjCompleter* ip2fo = inputCompleter;
+   expandInput(ip2fo, ixInput);
+   return ixInput < ip2fo->n_expanded;
 }
 
 static Bool supp_pattEQinp ( const void* supplocV, const void* addrV,
-                             void* inputCompleter, UWord ixAddrV )
+                             void* inputCompleter, UWord ixInput )
 {
    const SuppLoc* supploc = supplocV; /* PATTERN */
-   Addr     ip      = *(const Addr*)addrV; /* INPUT */
    IPtoFunOrObjCompleter* ip2fo = inputCompleter;
    HChar* funobj_name; // Fun or Obj name.
+
+   expandInput(ip2fo, ixInput);
+   vg_assert(ixInput < ip2fo->n_expanded);
 
    /* So, does this IP address match this suppression-line? */
    switch (supploc->ty) {
@@ -1587,10 +1743,10 @@ static Bool supp_pattEQinp ( const void* supplocV, const void* addrV,
             this can't happen. */
          vg_assert(0);
       case ObjName:
-         funobj_name = foComplete(ip2fo, ip, ixAddrV, False /*needFun*/);
+         funobj_name = foComplete(ip2fo, ixInput, False /*needFun*/);
          break; 
       case FunName:
-         funobj_name = foComplete(ip2fo, ip, ixAddrV, True /*needFun*/);
+         funobj_name = foComplete(ip2fo, ixInput, True /*needFun*/);
          break;
       default:
         vg_assert(0);
@@ -1617,15 +1773,16 @@ static Bool supp_matches_callers(IPtoFunOrObjCompleter* ip2fo, Supp* su)
    SuppLoc*   supps    = su->callers;
    UWord      n_supps  = su->n_callers;
    UWord      szbPatt  = sizeof(SuppLoc);
-   UWord      szbInput = sizeof(Addr);
    Bool       matchAll = False; /* we just want to match a prefix */
    return
       VG_(generic_match)(
          matchAll,
-         /*PATT*/supps, szbPatt, n_supps, 0/*initial Ix*/,
-         /*INPUT*/ip2fo->ips, szbInput, ip2fo->n_ips,  0/*initial Ix*/,
+         /*PATT*/supps, szbPatt, n_supps, 0/*initial ixPatt*/,
+         /*INPUT*/
+         NULL, 0, 0, /* input/szbInput/nInput 0, as using an inputCompleter */  
+         0/*initial ixInput*/,
          supploc_IsStar, supploc_IsQuery, supp_pattEQinp,
-         ip2fo
+         ip2fo, haveInputInpC
       );
 }
 
@@ -1683,6 +1840,10 @@ static Supp* is_suppressible_error ( Error* err )
    /* Prepare the lazy input completer. */
    ip2fo.ips = VG_(get_ExeContext_StackTrace)(err->where);
    ip2fo.n_ips = VG_(get_ExeContext_n_ips)(err->where);
+   ip2fo.n_ips_expanded = 0;
+   ip2fo.n_expanded = 0;
+   ip2fo.sz_offsets = 0;
+   ip2fo.n_offsets_per_ip = NULL;
    ip2fo.fun_offsets = NULL;
    ip2fo.obj_offsets = NULL;
    ip2fo.names = NULL;

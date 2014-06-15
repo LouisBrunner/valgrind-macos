@@ -1,0 +1,4 @@
+# test that the inlined function calls are properly shown in errors.
+# Also test the generation of suppression entries with inlined calls.
+prog: inlinfo
+vgopts: -q --read-inline-info=yes --gen-suppressions=all

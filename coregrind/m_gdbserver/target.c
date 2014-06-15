@@ -179,7 +179,7 @@ static
 char* sym (Addr addr)
 {
    static char buf[200];
-   VG_(describe_IP) (addr, buf, 200);
+   VG_(describe_IP) (addr, buf, 200, NULL);
    return buf;
 }
 

@@ -75,6 +75,8 @@ usage: valgrind [options] prog-and-args
                               checks for self-modifying code: none, only for
                               code found in stacks, for all code, or for all
                               code except that from file-backed mappings
+    --read-inline-info=yes|no read debug info about inlined function calls
+                              and use it to do better stack traces [no]
     --read-var-info=yes|no    read debug info on stack and global variables
                               and use it to print better error messages in
                               tools that make use of it (Memcheck, Helgrind,

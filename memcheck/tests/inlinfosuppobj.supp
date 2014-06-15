@@ -1,0 +1,31 @@
+{
+   main_a_b_c_d_non_matching_obj_is_not_trucmuch
+   Memcheck:Cond
+   fun:fun_d
+   fun:fun_c
+   obj:trucmuch
+   fun:fun_a
+   fun:main
+}
+{
+   main_m_d
+   Memcheck:Cond
+   obj:*inlinfo
+   obj:*inlinfo
+   fun:main
+}
+{
+   main_d
+   Memcheck:Cond
+   obj:*inlinfo
+   fun:main
+}
+{
+   main_n_e_f_o
+   Memcheck:Cond
+   fun:fun_noninline_o
+   fun:fun_f
+   obj:*inlinfo
+   obj:*inlinfo
+   fun:main
+}

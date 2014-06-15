@@ -450,6 +450,115 @@ void ML_(addLineInfo) ( struct _DebugInfo* di,
    addLoc ( di, &loc );
 }
 
+/* Add an inlined call info to the inlined call table. 
+*/
+static void addInl ( struct _DebugInfo* di, DiInlLoc* inl )
+{
+   UInt   new_sz, i;
+   DiInlLoc* new_tab;
+
+   /* empty inl should have been ignored earlier */
+   vg_assert(inl->addr_lo < inl->addr_hi);
+
+   if (di->inltab_used == di->inltab_size) {
+      new_sz = 2 * di->inltab_size;
+      if (new_sz == 0) new_sz = 500;
+      new_tab = ML_(dinfo_zalloc)( "di.storage.addInl.1",
+                                   new_sz * sizeof(DiInlLoc) );
+      if (di->inltab != NULL) {
+         for (i = 0; i < di->inltab_used; i++)
+            new_tab[i] = di->inltab[i];
+         ML_(dinfo_free)(di->inltab);
+      }
+      di->inltab = new_tab;
+      di->inltab_size = new_sz;
+   }
+
+   di->inltab[di->inltab_used] = *inl;
+   if (inl->addr_hi - inl->addr_lo > di->maxinl_codesz)
+      di->maxinl_codesz = inl->addr_hi - inl->addr_lo;
+   di->inltab_used++;
+   vg_assert(di->inltab_used <= di->inltab_size);
+}
+
+
+/* Resize the InlTab (inlined call table) to save memory, by removing
+   (and, potentially, allowing m_mallocfree to unmap) any unused space
+   at the end of the table.
+*/
+static void shrinkInlTab ( struct _DebugInfo* di )
+{
+   DiInlLoc* new_tab;
+   UWord new_sz = di->inltab_used;
+   if (new_sz == di->inltab_size) return;
+   vg_assert(new_sz < di->inltab_size);
+
+   new_tab = ML_(dinfo_zalloc)( "di.storage.shrinkInlTab", 
+                                new_sz * sizeof(DiInlLoc) );
+   VG_(memcpy)(new_tab, di->inltab, new_sz * sizeof(DiInlLoc));
+
+   ML_(dinfo_free)(di->inltab);
+   di->inltab = new_tab;
+   di->inltab_size = new_sz;
+}
+
+/* Top-level place to call to add a addr-to-inlined fn info. */
+void ML_(addInlInfo) ( struct _DebugInfo* di, 
+                       Addr addr_lo, Addr addr_hi,
+                       const HChar* inlinedfn,
+                       const HChar* filename, 
+                       const HChar* dirname,  /* NULL is allowable */
+                       Int lineno, UShort level)
+{
+   DiInlLoc inl;
+
+   /* Similar paranoia as in ML_(addLineInfo). Unclear if needed. */
+   if (addr_lo >= addr_hi) {
+       if (VG_(clo_verbosity) > 2) {
+           VG_(message)(Vg_DebugMsg, 
+                        "warning: inlined info addresses out of order "
+                        "at: 0x%lx 0x%lx\n", addr_lo, addr_hi);
+       }
+       addr_hi = addr_lo + 1;
+   }
+
+   vg_assert(lineno >= 0);
+   if (lineno > MAX_LINENO) {
+      static Bool complained = False;
+      if (!complained) {
+         complained = True;
+         VG_(message)(Vg_UserMsg, 
+                      "warning: ignoring inlined call info entry with "
+                      "huge line number (%d)\n", lineno);
+         VG_(message)(Vg_UserMsg, 
+                      "         Can't handle line numbers "
+                      "greater than %d, sorry\n", MAX_LINENO);
+         VG_(message)(Vg_UserMsg, 
+                      "(Nb: this message is only shown once)\n");
+      }
+      return;
+   }
+
+   // code resulting from inlining of inlinedfn:
+   inl.addr_lo   = addr_lo;
+   inl.addr_hi   = addr_hi;
+   inl.inlinedfn = inlinedfn;
+   // caller:
+   inl.filename  = filename;
+   inl.dirname   = dirname;
+   inl.lineno    = lineno;
+   inl.level     = level;
+
+   if (0) VG_(message)
+             (Vg_DebugMsg, 
+              "addInlInfo: fn %s inlined as addr_lo %#lx,addr_hi %#lx,"
+              "caller %s:%d (dir %s)\n",
+              inlinedfn, addr_lo, addr_hi, filename, lineno, 
+              dirname ? dirname : "???");
+
+   addInl ( di, &inl );
+}
+
 
 /* Top-level place to call to add a CFI summary record.  The supplied
    DiCfSI is copied. */
@@ -1701,6 +1810,45 @@ static void canonicaliseLoctab ( struct _DebugInfo* di )
    shrinkLocTab(di);
 }
 
+/* Sort the inlined call table by starting address.  Mash the table around
+   so as to establish the property that addresses are in order.
+   This facilitates using binary search to map addresses to locations when
+   we come to query the table.
+   Note : ranges can overlap, multiple ranges can start at an address,
+   multiple ranges can end at an address.
+*/
+static Int compare_DiInlLoc ( const void* va, const void* vb ) 
+{
+   const DiInlLoc* a = va;
+   const DiInlLoc* b = vb;
+   if (a->addr_lo < b->addr_lo) return -1;
+   if (a->addr_lo > b->addr_lo) return  1;
+   return 0;
+}
+
+static void canonicaliseInltab ( struct _DebugInfo* di )
+{
+   Word i;
+
+   if (di->inltab_used == 0)
+      return;
+
+   /* Sort by start address. */
+   VG_(ssort)(di->inltab, di->inltab_used, 
+                          sizeof(*di->inltab), compare_DiInlLoc);
+
+   /* Ensure relevant postconditions hold. */
+   for (i = 0; i < ((Word)di->inltab_used)-1; i++) {
+      /* No zero-sized inlined call. */
+      vg_assert(di->inltab[i].addr_lo < di->inltab[i].addr_hi);
+      /* In order, but we can have duplicates and overlapping ranges. */
+      vg_assert(di->inltab[i].addr_lo <= di->inltab[i+1].addr_lo);
+   }
+
+   /* Free up unused space at the end of the table. */
+   shrinkInlTab(di);
+}
+
 
 /* Sort the call-frame-info table by starting address.  Mash the table
    around so as to establish the property that addresses are in order
@@ -1815,6 +1963,7 @@ void ML_(canonicaliseTables) ( struct _DebugInfo* di )
 {
    canonicaliseSymtab ( di );
    canonicaliseLoctab ( di );
+   canonicaliseInltab ( di );
    ML_(canonicaliseCFI) ( di );
    canonicaliseVarInfo ( di );
    if (di->strpool)

@@ -212,6 +212,7 @@ static void free_DebugInfo ( DebugInfo* di )
    if (di->fsm.filename) ML_(dinfo_free)(di->fsm.filename);
    if (di->soname)       ML_(dinfo_free)(di->soname);
    if (di->loctab)       ML_(dinfo_free)(di->loctab);
+   if (di->inltab)       ML_(dinfo_free)(di->inltab);
    if (di->cfsi)         ML_(dinfo_free)(di->cfsi);
    if (di->cfsi_exprs)   VG_(deleteXA)(di->cfsi_exprs);
    if (di->fpo)          ML_(dinfo_free)(di->fpo);
@@ -1258,8 +1259,10 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
 
      if (VG_(clo_verbosity) > 0) {
         VG_(message)(Vg_UserMsg, "LOAD_PDB_DEBUGINFO: done:    "
-                                 "%lu syms, %lu src locs, %lu fpo recs\n",
-                     di->symtab_used, di->loctab_used, di->fpo_size);
+                                 "%lu syms, %lu src locs, "
+                                 "%lu src locs, %lu fpo recs\n",
+                     di->symtab_used, di->loctab_used, 
+                     di->inltab_used, di->fpo_size);
      }
    }
 
@@ -1311,6 +1314,167 @@ struct _DebugInfoMapping* ML_(find_rx_mapping) ( struct _DebugInfo* di,
    }
 
    return NULL;
+}
+
+/*------------------------------------------------------------*/
+/*--- Types and functions for inlined IP cursor            ---*/
+/*------------------------------------------------------------*/
+struct _InlIPCursor {
+   Addr eip;             // Cursor used to describe calls at eip.
+   DebugInfo* di;        // DebugInfo describing inlined calls at eip
+
+   Word    inltab_lopos; // The inlined fn calls covering eip are in
+   Word    inltab_hipos; // di->inltab[inltab_lopos..inltab_hipos].
+                         // Note that not all inlined fn calls in this range
+                         // are necessarily covering eip.
+
+   Int   curlevel;       // Current level to describe.
+                         // 0 means to describe eip itself.
+   Word  cur_inltab;     // inltab pos for call inlined at current level.
+   Word  next_inltab;    // inltab pos for call inlined at next (towards main)
+                         // level.
+};
+
+static Bool is_top(InlIPCursor *iipc)
+{
+   return !iipc || iipc->cur_inltab == -1;
+}
+
+static Bool is_bottom(InlIPCursor *iipc)
+{
+   return !iipc || iipc->next_inltab == -1;
+}
+
+Bool VG_(next_IIPC)(InlIPCursor *iipc)
+{
+   Word i;
+   DiInlLoc *hinl = NULL;
+   Word hinl_pos = -1;
+   DebugInfo *di;
+
+   if (iipc == NULL)
+      return False;
+
+   if (iipc->curlevel <= 0) {
+      iipc->curlevel--;
+      return False;
+   }
+
+   di = iipc->di;
+   for (i = iipc->inltab_lopos; i <= iipc->inltab_hipos; i++) {
+      if (di->inltab[i].addr_lo <= iipc->eip 
+          && iipc->eip < di->inltab[i].addr_hi
+          && di->inltab[i].level < iipc->curlevel
+          && (!hinl || hinl->level < di->inltab[i].level)) {
+         hinl = &di->inltab[i];
+         hinl_pos = i;
+      }
+   }
+   
+   iipc->cur_inltab = iipc->next_inltab;
+   iipc->next_inltab = hinl_pos;
+   if (iipc->next_inltab < 0)
+      iipc->curlevel = 0; // no inlined call anymore, describe eip itself
+   else
+      iipc->curlevel = di->inltab[iipc->next_inltab].level;
+
+   return True;
+}
+
+/* Forward */
+static void search_all_loctabs ( Addr ptr, /*OUT*/DebugInfo** pdi,
+                                           /*OUT*/Word* locno );
+
+/* Returns the position after which eip would be inserted in inltab.
+   (-1 if eip should be inserted before position 0).
+   This is the highest position with an addr_lo <= eip.
+   As inltab is sorted on addr_lo, dichotomic search can be done
+   (note that inltab might have duplicates addr_lo). */
+static Word inltab_insert_pos (DebugInfo *di, Addr eip)
+{
+   Word mid, 
+        lo = 0, 
+        hi = di->inltab_used-1;
+   while (lo <= hi) {
+      mid      = (lo + hi) / 2;
+      if (eip < di->inltab[mid].addr_lo) { hi = mid-1; continue; } 
+      if (eip > di->inltab[mid].addr_lo) { lo = mid+1; continue; }
+      lo = mid; break;
+   }
+
+   while (lo <= di->inltab_used-1 && di->inltab[lo].addr_lo <= eip)
+      lo++;
+#if 0
+   for (mid = 0; mid <= di->inltab_used-1; mid++)
+      if (eip < di->inltab[mid].addr_lo)
+         break;
+   vg_assert (lo - 1 == mid - 1);
+#endif
+   return lo - 1;
+}
+
+InlIPCursor* VG_(new_IIPC)(Addr eip)
+{
+   DebugInfo*  di;
+   Word        locno;
+   Word        i;
+   InlIPCursor *ret;
+   Bool        avail;
+
+   if (!VG_(clo_read_inline_info))
+      return NULL; // No way we can find inlined calls.
+
+   /* Search the DebugInfo for eip */
+   search_all_loctabs ( eip, &di, &locno );
+   if (di == NULL || di->inltab_used == 0)
+      return NULL; // No di (with inltab) containing eip.
+
+   /* Search the entry in di->inltab with the highest addr_lo that
+      contains eip. */
+   /* We start from the highest pos in inltab after which eip would
+      be inserted. */
+   for (i = inltab_insert_pos (di, eip); i >= 0; i--) {
+      if (di->inltab[i].addr_lo <= eip && eip < di->inltab[i].addr_hi) {
+         break;
+      }
+      /* Stop the backward scan when reaching an addr_lo which
+         cannot anymore contain eip : we know that all ranges before
+         i also cannot contain eip. */
+      if (di->inltab[i].addr_lo < eip - di->maxinl_codesz)
+         return NULL;
+   }
+   
+   if (i < 0)
+      return NULL; // No entry containing eip.
+
+   /* We have found the highest entry containing eip.
+      Build a cursor. */
+   ret = ML_(dinfo_zalloc) ("dinfo.new_IIPC", sizeof(*ret));
+   ret->eip = eip;
+   ret->di = di;
+   ret->inltab_hipos = i;
+   for (i = ret->inltab_hipos - 1; i >= 0; i--) {
+     
+      if (di->inltab[i].addr_lo < eip - di->maxinl_codesz)
+         break; /* Similar stop backward scan logic as above. */
+   }
+   ret->inltab_lopos = i + 1;
+   ret->curlevel = MAX_LEVEL;
+   ret->cur_inltab = -1;
+   ret->next_inltab = -1;
+
+   /* MAX_LEVEL is higher than any stored level. We can use
+      VG_(next_IIPC) to get to the 'real' first highest call level. */
+   avail = VG_(next_IIPC) (ret);
+   vg_assert (avail);
+
+   return ret;
+}
+
+void VG_(delete_IIPC)(InlIPCursor *iipc)
+{
+   if (iipc)
+      ML_(dinfo_free)( iipc );
 }
 
 
@@ -1544,15 +1708,27 @@ Bool VG_(get_fnname_raw) ( Addr a, HChar* buf, Int nbuf )
 /* This is only available to core... don't demangle C++ names, but do
    do Z-demangling and below-main-renaming, match anywhere in function, and
    don't show offsets. */
-Bool VG_(get_fnname_no_cxx_demangle) ( Addr a, HChar* buf, Int nbuf )
+Bool VG_(get_fnname_no_cxx_demangle) ( Addr a, HChar* buf, Int nbuf,
+                                       InlIPCursor* iipc )
 {
-   return get_sym_name ( /*C++-demangle*/False, /*Z-demangle*/True,
-                         /*below-main-renaming*/True,
-                         a, buf, nbuf,
-                         /*match_anywhere_in_fun*/True, 
-                         /*show offset?*/False,
-                         /*text syms only*/True,
-                         /*offsetP*/NULL );
+   if (is_bottom(iipc)) {
+      // At the bottom (towards main), we describe the fn at eip.
+      return get_sym_name ( /*C++-demangle*/False, /*Z-demangle*/True,
+                            /*below-main-renaming*/True,
+                            a, buf, nbuf,
+                            /*match_anywhere_in_fun*/True, 
+                            /*show offset?*/False,
+                            /*text syms only*/True,
+                            /*offsetP*/NULL );
+   } else {
+      const DiInlLoc *next_inl = iipc && iipc->next_inltab >= 0
+         ? & iipc->di->inltab[iipc->next_inltab]
+         : NULL;
+      vg_assert (next_inl);
+      // The function we are in is called by next_inl.
+      VG_(snprintf)(buf, nbuf, "%s", next_inl->inlinedfn);
+      return True;
+   }
 }
 
 /* mips-linux only: find the offset of current address. This is needed for 
@@ -1873,7 +2049,7 @@ static Int putStrEsc ( Int n, Int n_buf, Int count, HChar* buf, HChar* str )
    return n;
 }
 
-HChar* VG_(describe_IP)(Addr eip, HChar* buf, Int n_buf)
+HChar* VG_(describe_IP)(Addr eip, HChar* buf, Int n_buf, InlIPCursor *iipc)
 {
 #  define APPEND(_str) \
       n = putStr(n, n_buf, buf, _str)
@@ -1885,6 +2061,8 @@ HChar* VG_(describe_IP)(Addr eip, HChar* buf, Int n_buf)
    HChar ibuf[50];
    Int   n = 0;
 
+   vg_assert (!iipc || iipc->eip == eip);
+
    static HChar buf_fn[BUF_LEN];
    static HChar buf_obj[BUF_LEN];
    static HChar buf_srcloc[BUF_LEN];
@@ -1892,16 +2070,57 @@ HChar* VG_(describe_IP)(Addr eip, HChar* buf, Int n_buf)
    buf_fn[0] = buf_obj[0] = buf_srcloc[0] = buf_dirname[0] = 0;
 
    Bool  know_dirinfo = False;
-   Bool  know_fnname  = VG_(clo_sym_offsets)
-                        ? VG_(get_fnname_w_offset) (eip, buf_fn, BUF_LEN)
-                        : VG_(get_fnname) (eip, buf_fn, BUF_LEN);
-   Bool  know_objname = VG_(get_objname)(eip, buf_obj, BUF_LEN);
-   Bool  know_srcloc  = VG_(get_filename_linenum)(
-                           eip, 
-                           buf_srcloc,  BUF_LEN, 
-                           buf_dirname, BUF_LEN, &know_dirinfo,
-                           &lineno 
-                        );
+   Bool  know_fnname;
+   Bool  know_objname;
+   Bool  know_srcloc;
+
+   if (is_bottom(iipc)) {
+      // At the bottom (towards main), we describe the fn at eip.
+      know_fnname = VG_(clo_sym_offsets)
+                    ? VG_(get_fnname_w_offset) (eip, buf_fn, BUF_LEN)
+                    : VG_(get_fnname) (eip, buf_fn, BUF_LEN);
+   } else {
+      const DiInlLoc *next_inl = iipc && iipc->next_inltab >= 0
+         ? & iipc->di->inltab[iipc->next_inltab]
+         : NULL;
+      vg_assert (next_inl);
+      // The function we are in is called by next_inl.
+      VG_(snprintf)(buf_fn, BUF_LEN, "%s", next_inl->inlinedfn);
+      know_fnname = True;
+
+      // INLINED????
+      // ??? Can we compute an offset for an inlined fn call ?
+      // ??? Offset from what ? The beginning of the inl info ?
+      // ??? But that is not necessarily the beginning of the fn
+      // ??? as e.g. an inlined fn call can be in several ranges.
+      // ??? Currently never showing an offset.
+   }
+
+   know_objname = VG_(get_objname)(eip, buf_obj, BUF_LEN);
+
+   if (is_top(iipc)) {
+      // The source for the highest level is in the loctab entry.
+      know_srcloc  = VG_(get_filename_linenum)(
+                        eip, 
+                        buf_srcloc,  BUF_LEN, 
+                        buf_dirname, BUF_LEN, &know_dirinfo,
+                        &lineno 
+                     );
+   } else {
+      const DiInlLoc *cur_inl = iipc && iipc->cur_inltab >= 0
+         ? & iipc->di->inltab[iipc->cur_inltab]
+         : NULL;
+      vg_assert (cur_inl);
+      // The filename and lineno for the inlined fn caller is in cur_inl.
+      VG_(snprintf) (buf_srcloc, BUF_LEN, cur_inl->filename);
+      lineno = cur_inl->lineno;
+
+      know_dirinfo = False; //INLINED TBD
+
+      know_srcloc = True;
+   }
+         
+
    buf_fn     [ sizeof(buf_fn)-1      ]  = 0;
    buf_obj    [ sizeof(buf_obj)-1     ]  = 0;
    buf_srcloc [ sizeof(buf_srcloc)-1  ]  = 0;

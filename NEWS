@@ -77,8 +77,9 @@ To see details of a given bug, visit
 where XXXXXX is the bug number as listed below.
 
 175819  Support for ipv6 socket reporting with --track-fds
+199144  == 278972
 232510  make distcheck fails
-278972  valgrind stacktraces and suppression do not handle inlined function call debuginfo
+278972  support for inlined function calls in stacktraces and suppression
 308729  vex x86->IR: unhandled instruction bytes 0xf 0x5 (syscall) 
 325110  Add test-cases for Power ISA 2.06 insns: divdo/divdo. and divduo/divduo.
 325124  [MIPSEL] Compilation error

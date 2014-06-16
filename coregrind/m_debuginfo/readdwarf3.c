@@ -2199,6 +2199,7 @@ typedef
       /* The file name table.  Is a mapping from integer index to the
          (permanent) copy of the string in DebugInfo's .strchunks. */
       XArray* /* of UChar* */ filenameTable;
+      UWord sibling; // sibling of the last read DIE (if it has a sibling).
    }
    D3InlParser;
 
@@ -2302,6 +2303,9 @@ static Bool parse_inl_DIE (
          if (attr == DW_AT_stmt_list && cts.szB > 0) {
             read_filename_table( parser->filenameTable, cc, cts.u.val, td3 );
          }
+         if (attr == DW_AT_sibling && cts.szB > 0) {
+            parser->sibling = cts.u.val;
+         }
       }
       if (level == 0)
          setup_cu_svma (cc, have_lo, ip_lo, td3);
@@ -2357,6 +2361,9 @@ static Bool parse_inl_DIE (
          if (attr == DW_AT_ranges && cts.szB > 0) {
             rangeoff   = cts.u.val;
             have_range = True;
+         }
+         if (attr == DW_AT_sibling && cts.szB > 0) {
+            parser->sibling = cts.u.val;
          }
       }
       if (have_lo && have_hi1 && hiIsRelative)
@@ -3704,7 +3711,6 @@ static void read_DIE (
 {
    g_abbv *abbv;
    ULong  atag, abbv_code;
-   UInt   nf_i;
    UWord  posn;
    UInt   has_children;
    UWord  start_die_c_offset;
@@ -3735,46 +3741,11 @@ static void read_DIE (
    /* We're set up to look at the fields of this DIE.  Hand it off to
       any parser(s) that want to see it.  Since they will in general
       advance the DIE cursor, remember the current settings so that we
-      can then back up and do one final pass over the DIE, to print out
-      its contents. */
+      can then back up. . */
    start_die_c_offset  = get_position_of_Cursor( c );
-
-   /* "pre-read" the DIE (while doing nothing with the data)
-      for 3 reasons:
-        1. it td3, trace the DIE data.
-        2. determine if this DIE has a sibling (used for
-           optimising when only reading the inline info).
-        3. determine the end of the DIE (after_die_c_offset).
-      
-      The parsers below will re-read the DIEs if they are interested
-      in the atag.  The var/type parsers re-read many DIEs.  The
-      inline parser re-reads a smaller subset.
-      We could possibly avoid this double reading by having each
-      parser optionally parse the DIE and (if needed) skip
-      the DIE data if it was not read by any parser. */
-   nf_i = 0;
-   while (True) {
-      FormContents cts;
-      ULong at_name = abbv->nf[nf_i].at_name;
-      ULong at_form = abbv->nf[nf_i].at_form;
-      nf_i++;
-      if (at_name == 0 && at_form == 0) break;
-      TRACE_D3("     %18s: ", ML_(pp_DW_AT)(at_name));
-      /* Get the form contents, but ignore them; the only purpose is
-         to print them, if td3 is True */
-      get_Form_contents( &cts, cc, c, td3, (DW_FORM)at_form );
-      /* Except that we remember if this DIE has a sibling. */
-      if (UNLIKELY(at_name == DW_AT_sibling && cts.szB > 0)) {
-         sibling = cts.u.val;
-      }
-      TRACE_D3("\t");
-      TRACE_D3("\n");
-   }
-   after_die_c_offset  = get_position_of_Cursor( c );
+   after_die_c_offset  = 0; // set to c position if a parser has read the DIE.
 
    if (VG_(clo_read_var_info)) {
-      set_position_of_Cursor( c,     start_die_c_offset );
-
       parse_type_DIE( tyents,
                       typarser,
                       (DW_TAG)atag,
@@ -3784,8 +3755,10 @@ static void read_DIE (
                       abbv,  /* abbrev */
                       cc,
                       td3 );
-
-      set_position_of_Cursor( c,     start_die_c_offset );
+      if (get_position_of_Cursor( c ) != start_die_c_offset) {
+         after_die_c_offset = get_position_of_Cursor( c );
+         set_position_of_Cursor( c, start_die_c_offset );
+      }
 
       parse_var_DIE( rangestree,
                      tempvars,
@@ -3798,14 +3771,18 @@ static void read_DIE (
                      abbv,  /* abbrev */
                      cc,
                      td3 );
+      if (get_position_of_Cursor( c ) != start_die_c_offset) {
+         after_die_c_offset = get_position_of_Cursor( c );
+         set_position_of_Cursor( c, start_die_c_offset );
+      }
 
       parse_children = True;
-      // type and var parsers do not have logic to skip childrens.
+      // type and var parsers do not have logic to skip childrens and establish
+      // the value of sibling.
    }
 
    if (VG_(clo_read_inline_info)) {
-      set_position_of_Cursor( c,     start_die_c_offset );
-
+      inlparser->sibling = 0;
       parse_children = 
          parse_inl_DIE( inlparser,
                         (DW_TAG)atag,
@@ -3816,9 +3793,43 @@ static void read_DIE (
                         cc,
                         td3 )
          || parse_children;
+      if (get_position_of_Cursor( c ) != start_die_c_offset) {
+         after_die_c_offset = get_position_of_Cursor( c );
+         // Last parser, no need to reset the cursor to start_die_c_offset.
+      }
+      if (sibling == 0)
+         sibling = inlparser->sibling;
+      vg_assert (inlparser->sibling == 0 || inlparser->sibling == sibling);
    }
 
-   set_position_of_Cursor( c,     after_die_c_offset );
+   if (after_die_c_offset > 0) {
+      // DIE was read by a parser above, so we know where the DIE ends.
+      set_position_of_Cursor( c, after_die_c_offset );
+   } else {
+      /* No parser has parsed this DIE. So, we need to read the DIE
+         to skip its data, in order to read the next DIE.
+         At the same time, establish sibling value if the DIE has one. */
+      UInt nf_i;
+
+      nf_i = 0;
+      while (True) {
+         FormContents cts;
+         ULong at_name = abbv->nf[nf_i].at_name;
+         ULong at_form = abbv->nf[nf_i].at_form;
+         nf_i++;
+         if (at_name == 0 && at_form == 0) break;
+         TRACE_D3("     %18s: ", ML_(pp_DW_AT)(at_name));
+         /* Get the form contents, but ignore them; the only purpose is
+            to print them, if td3 is True, and skip the data. */
+         get_Form_contents( &cts, cc, c, td3, (DW_FORM)at_form );
+         /* Except that we remember if this DIE has a sibling. */
+         if (UNLIKELY(at_name == DW_AT_sibling && cts.szB > 0)) {
+            sibling = cts.u.val;
+         }
+         TRACE_D3("\t");
+         TRACE_D3("\n");
+      }
+   }
 
    /* --- Now recurse into its children, if any 
       and the parsing of the children is requested by a parser --- */

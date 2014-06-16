@@ -2112,7 +2112,7 @@ HChar* VG_(describe_IP)(Addr eip, HChar* buf, Int n_buf, InlIPCursor *iipc)
          : NULL;
       vg_assert (cur_inl);
       // The filename and lineno for the inlined fn caller is in cur_inl.
-      VG_(snprintf) (buf_srcloc, BUF_LEN, cur_inl->filename);
+      VG_(snprintf) (buf_srcloc, BUF_LEN, "%s", cur_inl->filename);
       lineno = cur_inl->lineno;
 
       know_dirinfo = False; //INLINED TBD

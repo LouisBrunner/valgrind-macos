@@ -60,6 +60,7 @@
 
 #define TRACE_PTH_FNS 0
 #define TRACE_QT4_FNS 0
+#define TRACE_GNAT_FNS 0
 
 
 /*----------------------------------------------------------------*/
@@ -403,6 +404,80 @@ That's the key.  The kernel resets the TID field after the thread is
 done.  No way the joiner can return before the thread is gone.
 */
 
+//-----------------------------------------------------------
+// Ada gcc gnat runtime:
+// The gnat gcc Ada runtime does not use pthread_join. Instead, it uses
+// a combination of other pthread primitives to ensure a child thread
+// is gone. This combination is somewhat functionally equivalent to a
+// pthread_join.
+// We wrap two hook procedures called by the gnat gcc Ada runtime
+// that allows helgrind to understand the semantic of Ada task dependencies
+// and termination.
+
+// System.Tasking.Debug.Master_Hook is called by a task Dependent to
+// indicate that its master is identified by master+master_level.
+void I_WRAP_SONAME_FNNAME_ZU
+   (Za,
+    system__tasking__debug__master_hook)
+     (void *dependent, void *master, int master_level);
+void I_WRAP_SONAME_FNNAME_ZU
+   (Za,
+    system__tasking__debug__master_hook)
+     (void *dependent, void *master, int master_level)
+{
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   if (TRACE_GNAT_FNS) {
+     fprintf(stderr, "<< GNAT master_hook wrapper "
+             "dependent %p master %p master_level %d\n",
+             dependent, master, master_level); fflush(stderr);
+   }
+
+   // We call the wrapped function, even if it is a null body.
+   CALL_FN_v_WWW(fn, dependent, master, master_level);
+
+   DO_CREQ_v_WWW(_VG_USERREQ__HG_GNAT_MASTER_HOOK,
+                 void*,dependent, void*,master, 
+                 Word, (Word)master_level);
+
+   if (TRACE_GNAT_FNS) {
+      fprintf(stderr, " :: GNAT master_hook >>\n");
+   }
+}
+
+// System.Tasking.Debug.Master_Completed_Hook is called by a task to
+// indicate that it has completed a master.
+// This indicates that all its Dependent tasks (that identified themselves
+// with the Master_Hook call) are terminated. Helgrind can consider
+// at this point that the equivalent of a 'pthread_join' has been done
+// between self_id and all dependent tasks at master_level.
+void I_WRAP_SONAME_FNNAME_ZU
+   (Za,
+    system__tasking__debug__master_completed_hook)
+     (void *self_id, int master_level);
+void I_WRAP_SONAME_FNNAME_ZU
+   (Za,
+    system__tasking__debug__master_completed_hook)
+     (void *self_id, int master_level)
+{
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   if (TRACE_GNAT_FNS) {
+     fprintf(stderr, "<< GNAT master_completed_hook wrapper "
+             "self_id %p master_level %d\n",
+             self_id, master_level); fflush(stderr);
+   }
+
+   // We call the wrapped function, even if it is a null body.
+   CALL_FN_v_WW(fn, self_id, master_level);
+
+   DO_CREQ_v_WW(_VG_USERREQ__HG_GNAT_MASTER_COMPLETED_HOOK,
+                 void*,self_id, Word,(Word)master_level);
+
+   if (TRACE_GNAT_FNS) {
+      fprintf(stderr, " :: GNAT master_completed_hook >>\n");
+   }
+}
 
 /*----------------------------------------------------------------*/
 /*--- pthread_mutex_t functions                                ---*/

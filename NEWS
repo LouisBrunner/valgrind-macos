@@ -17,6 +17,10 @@ Release 3.10.0 (?? ?????? 201?)
 * Helgrind:
   - Helgrind GDB server monitor command 'info locks' giving
     the list of locks, their location, and their status.
+  - Helgrind now understands the Ada task termination rules
+    and creates a 'H-B relationship' between a terminated task and
+    its master. This only works with gnatpro >= 7.3.0w-20140611
+    or gcc >= ????? (TBD: check when changes pushed to FSF gcc).
 
 * Callgrind:
   - callgrind_control now supports the --vgdb-prefix argument,

@@ -116,8 +116,10 @@ typedef
       _VG_USERREQ__HG_ARANGE_MAKE_TRACKED,   /* Addr a, ulong len */
       _VG_USERREQ__HG_PTHREAD_BARRIER_RESIZE_PRE, /* pth_bar_t*, ulong */
       _VG_USERREQ__HG_CLEAN_MEMORY_HEAPBLOCK, /* Addr start_of_block */
-      _VG_USERREQ__HG_PTHREAD_COND_INIT_POST  /* pth_cond_t*, pth_cond_attr_t*/
-
+      _VG_USERREQ__HG_PTHREAD_COND_INIT_POST,  /* pth_cond_t*, pth_cond_attr_t*/
+      _VG_USERREQ__HG_GNAT_MASTER_HOOK,       /* void*d,void*m,Word ml */
+      _VG_USERREQ__HG_GNAT_MASTER_COMPLETED_HOOK /* void*s,Word ml */
+      
    } Vg_TCheckClientRequest;
 
 

@@ -4047,6 +4047,11 @@ void new_dwarf3_reader_wrk (
       TRACE_SYMTAB("\n");
    }
 
+   /* Zero out all parsers. Parsers will really be initialised
+      according to VG_(clo_read_*_info). */
+   VG_(memset)( &varparser, 0, sizeof(varparser) );
+   VG_(memset)( &inlparser, 0, sizeof(inlparser) );
+   VG_(memset)( &typarser, 0, sizeof(typarser) );
 
    if (VG_(clo_read_var_info)) {
       /* We'll park the harvested type information in here.  Also create
@@ -4099,7 +4104,6 @@ void new_dwarf3_reader_wrk (
          types.  It'll be discarded as soon as we've completed the CU,
          since the resulting information is tipped in to 'tyents' as it
          is generated. */
-      VG_(memset)( &typarser, 0, sizeof(typarser) );
       typarser.sp = -1;
       typarser.language = '?';
       for (i = 0; i < N_D3_TYPE_STACK; i++) {
@@ -4107,14 +4111,10 @@ void new_dwarf3_reader_wrk (
          typarser.qparentE[i].cuOff = D3_INVALID_CUOFF;
       }
 
-      VG_(memset)( &varparser, 0, sizeof(varparser) );
       varparser.sp = -1;
 
       signature_types = VG_(HT_construct) ("signature_types");
    }
-
-   if (VG_(clo_read_inline_info))
-       VG_(memset)( &inlparser, 0, sizeof(inlparser) );
 
    /* Do an initial pass to scan the .debug_types section, if any, and
       fill in the signatured types hash table.  This lets us handle
@@ -4371,9 +4371,9 @@ void new_dwarf3_reader_wrk (
             vg_assert(varparser.filenameTable );
             VG_(deleteXA)( varparser.filenameTable );
             varparser.filenameTable = NULL;
-            vg_assert(inlparser.filenameTable );
          }
          if (VG_(clo_read_inline_info)) {
+            vg_assert(inlparser.filenameTable );
             VG_(deleteXA)( inlparser.filenameTable );
             inlparser.filenameTable = NULL;
          }

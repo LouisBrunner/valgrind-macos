@@ -1674,31 +1674,30 @@ static void setup_cu_svma(CUConst* cc, Bool have_lo, Addr ip_lo, Bool td3)
    }
 }
 
-__attribute__((noreturn))
-static void dump_bad_die_and_barf(
-   const HChar *whichparser,
+static void trace_DIE(
    DW_TAG dtag,
    UWord posn,
    Int level,
-   Cursor* c_die,  UWord saved_die_c_offset,
+   UWord saved_die_c_offset,
    g_abbv *abbv,
    CUConst* cc)
 {
+   Cursor c;
    FormContents cts;
    UInt nf_i;
    Bool  debug_types_flag;
    Bool  alt_flag;
 
-   set_position_of_Cursor( c_die,  saved_die_c_offset );
    posn = uncook_die( cc, posn, &debug_types_flag, &alt_flag );
-   VG_(printf)(" <%d><%lx>: %s", level, posn, ML_(pp_DW_TAG)( dtag ) );
-   if (debug_types_flag) {
-      VG_(printf)(" (in .debug_types)");
-   }
-   else if (alt_flag) {
-      VG_(printf)(" (in alternate .debug_info)");
-   }
-   VG_(printf)("\n");
+   init_Cursor (&c, 
+                debug_types_flag ? cc->escn_debug_types :
+                alt_flag ? cc->escn_debug_info_alt : cc->escn_debug_info,
+                saved_die_c_offset, cc->barf, 
+                "Overrun trace_DIE");
+   VG_(printf)(" <%d><%lx>: Abbrev Number: %llu (%s)%s%s\n",
+               level, posn, (ULong) abbv->abbv_code, ML_(pp_DW_TAG)( dtag ),
+               debug_types_flag ? " (in .debug_types)" : "",
+               alt_flag ? " (in alternate .debug_info)" : "");
    nf_i = 0;
    while (True) {
       DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
@@ -1707,10 +1706,24 @@ static void dump_bad_die_and_barf(
       if (attr == 0 && form == 0) break;
       VG_(printf)("     %18s: ", ML_(pp_DW_AT)(attr));
       /* Get the form contents, so as to print them */
-      get_Form_contents( &cts, cc, c_die, True, form );
+      get_Form_contents( &cts, cc, &c, True, form );
       VG_(printf)("\t\n");
    }
-   VG_(printf)("\n%s:\n", whichparser);
+}
+
+__attribute__((noreturn))
+static void dump_bad_die_and_barf(
+   const HChar *whichparser,
+   DW_TAG dtag,
+   UWord posn,
+   Int level,
+   Cursor* c_die,
+   UWord saved_die_c_offset,
+   g_abbv *abbv,
+   CUConst* cc)
+{
+   trace_DIE (dtag, posn, level, saved_die_c_offset, abbv, cc);
+   VG_(printf)("%s:\n", whichparser);
    cc->barf("confused by the above DIE");
 }
 
@@ -3727,9 +3740,12 @@ static void read_DIE (
    abbv_code = get_ULEB128( c );
    abbv = get_abbv(cc, abbv_code);
    atag      = abbv->atag;
-   TRACE_D3("\n");
-   TRACE_D3(" <%d><%lx>: Abbrev Number: %llu (%s)\n",
-            level, posn, abbv_code, ML_(pp_DW_TAG)( atag ) );
+
+   if (td3) {
+      TRACE_D3("\n");
+      trace_DIE ((DW_TAG)atag, posn, level,
+                 get_position_of_Cursor( c ), abbv, cc);
+   }
 
    if (atag == 0)
       cc->barf("read_DIE: invalid zero tag on DIE");
@@ -3811,6 +3827,7 @@ static void read_DIE (
          At the same time, establish sibling value if the DIE has one. */
       UInt nf_i;
 
+      TRACE_D3("    (skipped DIE)\n");
       nf_i = 0;
       while (True) {
          FormContents cts;
@@ -3818,16 +3835,12 @@ static void read_DIE (
          ULong at_form = abbv->nf[nf_i].at_form;
          nf_i++;
          if (at_name == 0 && at_form == 0) break;
-         TRACE_D3("     %18s: ", ML_(pp_DW_AT)(at_name));
          /* Get the form contents, but ignore them; the only purpose is
-            to print them, if td3 is True, and skip the data. */
-         get_Form_contents( &cts, cc, c, td3, (DW_FORM)at_form );
-         /* Except that we remember if this DIE has a sibling. */
+            to skip the data or get the DIE sibling, if it has one. */
+         get_Form_contents( &cts, cc, c, False /*td3*/, (DW_FORM)at_form );
          if (UNLIKELY(at_name == DW_AT_sibling && cts.szB > 0)) {
             sibling = cts.u.val;
          }
-         TRACE_D3("\t");
-         TRACE_D3("\n");
       }
    }
 
@@ -3849,7 +3862,7 @@ static void read_DIE (
          if (0) TRACE_D3("END children of level %d\n", level);
       } else {
          // We can skip the childrens, by jumping to the sibling
-         TRACE_D3("SKIPPING DIE's children,"
+         TRACE_D3("    SKIPPING DIE's children,"
                   "jumping to sibling <%d><%lx>\n",
                   level, sibling);
          set_position_of_Cursor( c, sibling );

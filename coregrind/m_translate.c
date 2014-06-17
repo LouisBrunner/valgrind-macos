@@ -1389,13 +1389,23 @@ Bool VG_(translate) ( ThreadId tid,
       HChar name1[512] = "";
       HChar name2[512] = "";
       name1[0] = name2[0] = 0;
-      ok = VG_(get_fnname_w_offset)(nraddr, name1, 512);
+      ok = VG_(get_fnname_w_offset)(nraddr, name1, sizeof(name1));
       if (!ok) VG_(strcpy)(name1, "???");
-      ok = VG_(get_fnname_w_offset)(addr, name2, 512);
+      ok = VG_(get_fnname_w_offset)(addr, name2, sizeof(name2));
       if (!ok) VG_(strcpy)(name2, "???");
+      /* Try also to get the soname (not the filename) of the "from"
+         object.  This makes it much easier to debug redirection
+         problems. */
+      const HChar* nraddr_soname = "???";
+      DebugInfo*   nraddr_di     = VG_(find_DebugInfo)(nraddr);
+      if (nraddr_di) {
+         const HChar* t = VG_(DebugInfo_get_soname)(nraddr_di);
+         if (t)
+            nraddr_soname = t;
+      }
       VG_(message)(Vg_DebugMsg, 
-                   "REDIR: 0x%llx (%s) redirected to 0x%llx (%s)\n",
-                   nraddr, name1,
+                   "REDIR: 0x%llx (%s:%s) redirected to 0x%llx (%s)\n",
+                   nraddr, nraddr_soname, name1,
                    addr, name2 );
    }
 

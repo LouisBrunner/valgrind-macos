@@ -561,6 +561,7 @@ typedef
       ARM64in_VUnaryV,
       ARM64in_VNarrowV,
       ARM64in_VShiftImmV,
+      ARM64in_VExtV,
 //ZZ       ARMin_VAluS,
 //ZZ       ARMin_VCMovD,
 //ZZ       ARMin_VCMovS,
@@ -855,6 +856,12 @@ typedef
            HReg            src;
            UInt            amt;
         } VShiftImmV;
+        struct {
+           HReg dst;
+           HReg srcLo;
+           HReg srcHi;
+           UInt amtB;
+        } VExtV;
 //ZZ          /* 32-bit FP binary arithmetic */
 //ZZ          struct {
 //ZZ             ARMVfpOp op;
@@ -1051,6 +1058,8 @@ extern ARM64Instr* ARM64Instr_VUnaryV ( ARM64VecUnaryOp op, HReg, HReg );
 extern ARM64Instr* ARM64Instr_VNarrowV ( UInt dszBlg2, HReg dst, HReg src );
 extern ARM64Instr* ARM64Instr_VShiftImmV ( ARM64VecShiftOp op,
                                            HReg dst, HReg src, UInt amt );
+extern ARM64Instr* ARM64Instr_VExtV   ( HReg dst,
+                                        HReg srcLo, HReg srcHi, UInt amtB );
 //ZZ extern ARMInstr* ARMInstr_VAluS    ( ARMVfpOp op, HReg, HReg, HReg );
 //ZZ extern ARMInstr* ARMInstr_VCMovD   ( ARMCondCode, HReg dst, HReg src );
 //ZZ extern ARMInstr* ARMInstr_VCMovS   ( ARMCondCode, HReg dst, HReg src );

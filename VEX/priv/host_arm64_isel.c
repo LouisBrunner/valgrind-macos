@@ -5626,6 +5626,49 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
             /* else fall out; this is unhandled */
             break;
          }
+
+         case Iop_ShlV128:
+         case Iop_ShrV128: {
+            Bool isSHR = e->Iex.Binop.op == Iop_ShrV128;
+            /* This is tricky.  Generate an EXT instruction with zeroes in
+               the high operand (shift right) or low operand (shift left).
+               Note that we can only slice in the EXT instruction at a byte
+               level of granularity, so the shift amount needs careful
+               checking. */
+            IRExpr* argL = e->Iex.Binop.arg1;
+            IRExpr* argR = e->Iex.Binop.arg2;
+            if (argR->tag == Iex_Const && argR->Iex.Const.con->tag == Ico_U8) {
+               UInt amt   = argR->Iex.Const.con->Ico.U8;
+               Bool amtOK = False;
+               switch (amt) {
+                  case 0x08: case 0x10: case 0x18: case 0x20: case 0x28:
+                  case 0x30: case 0x38: case 0x40: case 0x48: case 0x50:
+                  case 0x58: case 0x60: case 0x68: case 0x70: case 0x78:
+                     amtOK = True; break;
+               }
+               /* We could also deal with amt==0 by copying the source to
+                  the destination, but there's no need for that so far. */
+               if (amtOK) {
+                  HReg src  = iselV128Expr(env, argL);
+                  HReg srcZ = newVRegV(env);
+                  addInstr(env, ARM64Instr_VImmQ(srcZ, 0x0000));
+                  UInt immB = amt / 8;
+                  vassert(immB >= 1 && immB <= 15);
+                  HReg dst = newVRegV(env);
+                  if (isSHR) {
+                     addInstr(env, ARM64Instr_VExtV(dst, src/*lo*/, srcZ/*hi*/,
+                                                         immB));
+                  } else {
+                     addInstr(env, ARM64Instr_VExtV(dst, srcZ/*lo*/, src/*hi*/,
+                                                         16 - immB));
+                  }
+                  return dst;
+               }
+            }
+            /* else fall out; this is unhandled */
+            break;
+         }
+
 //ZZ          case Iop_CmpGT8Ux16:
 //ZZ          case Iop_CmpGT16Ux8:
 //ZZ          case Iop_CmpGT32Ux4: {

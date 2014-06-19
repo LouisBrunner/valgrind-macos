@@ -1690,6 +1690,16 @@ ARM64Instr* ARM64Instr_VShiftImmV ( ARM64VecShiftOp op,
    vassert(amt > 0 && amt <= maxSh);
    return i;
 }
+ARM64Instr* ARM64Instr_VExtV ( HReg dst, HReg srcLo, HReg srcHi, UInt amtB ) {
+   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   i->tag                 = ARM64in_VExtV;
+   i->ARM64in.VExtV.dst   = dst;
+   i->ARM64in.VExtV.srcLo = srcLo;
+   i->ARM64in.VExtV.srcHi = srcHi;
+   i->ARM64in.VExtV.amtB  = amtB;
+   vassert(amtB >= 1 && amtB <= 15);
+   return i;
+}
 //ZZ ARMInstr* ARMInstr_VAluS ( ARMVfpOp op, HReg dst, HReg argL, HReg argR ) {
 //ZZ    ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
 //ZZ    i->tag              = ARMin_VAluS;
@@ -2335,6 +2345,16 @@ void ppARM64Instr ( ARM64Instr* i ) {
          vex_printf(".%s, #%u", ar, i->ARM64in.VShiftImmV.amt);
          return;
       }
+      case ARM64in_VExtV: {
+         vex_printf("ext    ");
+         ppHRegARM64(i->ARM64in.VExtV.dst);
+         vex_printf(".16b, ");
+         ppHRegARM64(i->ARM64in.VExtV.srcLo);
+         vex_printf(".16b, ");
+         ppHRegARM64(i->ARM64in.VExtV.srcHi);
+         vex_printf(".16b, #%u", i->ARM64in.VExtV.amtB);
+         return;
+      }
 //ZZ       case ARMin_VAluS:
 //ZZ          vex_printf("f%-3ss ", showARMVfpOp(i->ARMin.VAluS.op));
 //ZZ          ppHRegARM(i->ARMin.VAluS.dst);
@@ -2816,6 +2836,10 @@ void getRegUsage_ARM64Instr ( HRegUsage* u, ARM64Instr* i, Bool mode64 )
          addHRegUse(u, HRmWrite, i->ARM64in.VShiftImmV.dst);
          addHRegUse(u, HRmRead, i->ARM64in.VShiftImmV.src);
          return;
+      case ARM64in_VExtV:
+         addHRegUse(u, HRmWrite, i->ARM64in.VExtV.dst);
+         addHRegUse(u, HRmRead, i->ARM64in.VExtV.srcLo);
+         addHRegUse(u, HRmRead, i->ARM64in.VExtV.srcHi);
 //ZZ       case ARMin_VAluS:
 //ZZ          addHRegUse(u, HRmWrite, i->ARMin.VAluS.dst);
 //ZZ          addHRegUse(u, HRmRead, i->ARMin.VAluS.argL);
@@ -3112,6 +3136,12 @@ void mapRegs_ARM64Instr ( HRegRemap* m, ARM64Instr* i, Bool mode64 )
          i->ARM64in.VShiftImmV.src
             = lookupHRegRemap(m, i->ARM64in.VShiftImmV.src);
          return;
+      case ARM64in_VExtV:
+         i->ARM64in.VExtV.dst = lookupHRegRemap(m, i->ARM64in.VExtV.dst);
+         i->ARM64in.VExtV.srcLo = lookupHRegRemap(m, i->ARM64in.VExtV.srcLo);
+         i->ARM64in.VExtV.srcHi = lookupHRegRemap(m, i->ARM64in.VExtV.srcHi);
+         return;
+
 //ZZ       case ARMin_VAluS:
 //ZZ          i->ARMin.VAluS.dst  = lookupHRegRemap(m, i->ARMin.VAluS.dst);
 //ZZ          i->ARMin.VAluS.argL = lookupHRegRemap(m, i->ARMin.VAluS.argL);
@@ -5410,8 +5440,8 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
       }
       case ARM64in_VShiftImmV: {
          /*
-            0q1 011110 immh immb 000001 n d  USHR Vd.T, Vn.T, #sh
-            0q0 011110 immh immb 000001 n d  SSHR Vd.T, Vn.T, #sh
+            011 011110 immh immb 000001 n d  USHR Vd.T, Vn.T, #sh
+            010 011110 immh immb 000001 n d  SSHR Vd.T, Vn.T, #sh
             where immh:immb
                = case T of 
                     2d  | sh in 1..63 -> let xxxxxx = 64-sh in 1xxx:xxx
@@ -5419,7 +5449,7 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
                     8h  | sh in 1..15 -> let   xxxx = 16-sh in 001x:xxx
                     16b | sh in 1..7  -> let    xxx =  8-sh in 0001:xxx
 
-            0q0 011110 immh immb 010101 n d  SHL Vd.T, Vn.T, #sh
+            010 011110 immh immb 010101 n d  SHL Vd.T, Vn.T, #sh
             where immh:immb
                = case T of 
                     2d  | sh in 1..63 -> let xxxxxx = sh in 1xxx:xxx
@@ -5487,8 +5517,6 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
                   goto done;
                }
                break;
-
-
             /* 8x16 cases */
             case ARM64vecsh_SSHR8x16: syned = True;
             case ARM64vecsh_USHR8x16: /* fallthrough */
@@ -5507,11 +5535,25 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
                   goto done;
                }
                break;
-
             default:
                break;
          }
          goto bad;
+      }
+      case ARM64in_VExtV: {
+         /*
+            011 01110 000 m 0 imm4 0 n d  EXT Vd.16b, Vn.16b, Vm.16b, #imm4
+            where imm4 = the shift amount, in bytes,
+                  Vn is low operand, Vm is high operand
+         */
+         UInt vD   = qregNo(i->ARM64in.VExtV.dst);
+         UInt vN   = qregNo(i->ARM64in.VExtV.srcLo);
+         UInt vM   = qregNo(i->ARM64in.VExtV.srcHi);
+         UInt imm4 = i->ARM64in.VExtV.amtB;
+         vassert(imm4 >= 1 && imm4 <= 15);
+         *p++ = X_3_8_5_6_5_5(X011, X01110000, vM,
+                              X000000 | (imm4 << 1), vN, vD);
+         goto done;
       }
 //ZZ       case ARMin_VAluS: {
 //ZZ          UInt dN = fregNo(i->ARMin.VAluS.argL);

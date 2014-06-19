@@ -5555,7 +5555,58 @@ void putLO64andZUorPutHI64 ( Bool is2, UInt dd, IRTemp new64 )
 static
 Bool dis_AdvSIMD_EXT(/*MB_OUT*/DisResult* dres, UInt insn)
 {
+   /* 31  29     23  21 20 15 14   10 9 4
+      0 q 101110 op2 0  m  0  imm4 0  n d
+      Decode fields: op2
+   */
 #  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
+   if (INSN(31,31) != 0
+       || INSN(29,24) != BITS6(1,0,1,1,1,0)
+       || INSN(21,21) != 0 || INSN(15,15) != 0 || INSN(10,10) != 0) {
+      return False;
+   }
+   UInt bitQ = INSN(30,30);
+   UInt op2  = INSN(23,22);
+   UInt mm   = INSN(20,16);
+   UInt imm4 = INSN(14,11);
+   UInt nn   = INSN(9,5);
+   UInt dd   = INSN(4,0);
+
+   if (op2 == BITS2(0,0)) {
+      /* -------- 00: EXT 16b_16b_16b, 8b_8b_8b -------- */
+      IRTemp sHi = newTemp(Ity_V128);
+      IRTemp sLo = newTemp(Ity_V128);
+      IRTemp res = newTemp(Ity_V128);
+      assign(sHi, getQReg128(mm));
+      assign(sLo, getQReg128(nn));
+      if (bitQ == 1) {
+         if (imm4 == 0) {
+            assign(res, mkexpr(sLo));
+         } else {
+            vassert(imm4 <= 15);
+            assign(res,
+                   binop(Iop_OrV128,
+                         binop(Iop_ShlV128, mkexpr(sHi), mkU8(8 * (16-imm4))),
+                         binop(Iop_ShrV128, mkexpr(sLo), mkU8(8 * imm4))));
+         }
+         putQReg128(dd, mkexpr(res));
+         DIP("ext v%u.16b, v%u.16b, v%u.16b, #%u\n", dd, nn, mm, imm4);
+      } else {
+         if (imm4 >= 8) return False;
+         if (imm4 == 0) {
+            assign(res, mkexpr(sLo));
+         } else {
+           assign(res,
+                  binop(Iop_ShrV128,
+                        binop(Iop_InterleaveLO64x2, mkexpr(sHi), mkexpr(sLo)),
+                        mkU8(8 * imm4)));
+         }
+         putQReg128(dd, unop(Iop_ZeroHI64ofV128, mkexpr(res)));
+         DIP("ext v%u.8b, v%u.8b, v%u.8b, #%u\n", dd, nn, mm, imm4);
+      }
+      return True;
+   }
+
    return False;
 #  undef INSN
 }
@@ -6115,7 +6166,66 @@ Bool dis_AdvSIMD_modified_immediate(/*MB_OUT*/DisResult* dres, UInt insn)
 static
 Bool dis_AdvSIMD_scalar_copy(/*MB_OUT*/DisResult* dres, UInt insn)
 {
+   /* 31    28       20   15 14   10 9 4
+      01 op 11110000 imm5 0  imm4 1  n d
+      Decode fields: op,imm4
+   */
 #  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
+   if (INSN(31,30) != BITS2(0,1)
+       || INSN(28,21) != BITS8(1,1,1,1,0,0,0,0)
+       || INSN(15,15) != 0 || INSN(10,10) != 1) {
+      return False;
+   }
+   UInt bitOP = INSN(29,29);
+   UInt imm5  = INSN(20,16);
+   UInt imm4  = INSN(14,11);
+   UInt nn    = INSN(9,5);
+   UInt dd    = INSN(4,0);
+
+   if (bitOP == 0 && imm4 == BITS4(0,0,0,0)) {
+      /* -------- 0,0000 DUP (element, scalar) -------- */
+      IRTemp w0     = newTemp(Ity_I64);
+      const HChar* arTs = "??";
+      IRType laneTy = Ity_INVALID;
+      UInt   laneNo = 16; /* invalid */
+      if (imm5 & 1) {
+         arTs   = "b";
+         laneNo = (imm5 >> 1) & 15;
+         laneTy = Ity_I8;
+         assign(w0, unop(Iop_8Uto64, getQRegLane(nn, laneNo, laneTy)));
+      }
+      else if (imm5 & 2) {
+         arTs   = "h";
+         laneNo = (imm5 >> 2) & 7;
+         laneTy = Ity_I16;
+         assign(w0, unop(Iop_16Uto64, getQRegLane(nn, laneNo, laneTy)));
+      }
+      else if (imm5 & 4) {
+         arTs   = "s";
+         laneNo = (imm5 >> 3) & 3;
+         laneTy = Ity_I32;
+         assign(w0, unop(Iop_32Uto64, getQRegLane(nn, laneNo, laneTy)));
+      }
+      else if (imm5 & 8) {
+         arTs   = "d";
+         laneNo = (imm5 >> 4) & 1;
+         laneTy = Ity_I64;
+         assign(w0, getQRegLane(nn, laneNo, laneTy));
+      }
+      else {
+         /* invalid; leave laneTy unchanged. */
+      }
+      /* */
+      if (laneTy != Ity_INVALID) {
+         vassert(laneNo < 16);
+         putQReg128(dd, binop(Iop_64HLtoV128, mkU64(0), mkexpr(w0)));
+         DIP("dup %s, %s.%s[%u]\n",
+             nameQRegLO(dd, laneTy), nameQReg128(nn), arTs, laneNo);
+         return True;
+      }
+      /* else fall through */
+   }
+
    return False;
 #  undef INSN
 }

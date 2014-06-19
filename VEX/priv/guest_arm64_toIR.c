@@ -5993,6 +5993,8 @@ Bool dis_AdvSIMD_modified_immediate(/*MB_OUT*/DisResult* dres, UInt insn)
 {
    /* 31    28          18  15    11 9     4
       0q op 01111 00000 abc cmode 01 defgh d
+      Decode fields: q,op,cmode
+      Bit 11 is really "o2", but it is always zero.
    */
 #  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
    if (INSN(31,31) != 0
@@ -6006,24 +6008,71 @@ Bool dis_AdvSIMD_modified_immediate(/*MB_OUT*/DisResult* dres, UInt insn)
    UInt abcdefgh = (INSN(18,16) << 5) | INSN(9,5);
    UInt dd       = INSN(4,0);
 
-   /* -------- {FMOV,MOVI} (vector, immediate) -------- */
-   /* Allowable op:cmode
-        FMOV = 1:1111
-        MOVI = 0:xx00, 0:0010, 1:0x00, 1:10x0, 1:110x, x:1110,
-   */
    ULong imm64lo  = 0;
    UInt  op_cmode = (bitOP << 4) | cmode;
    Bool  ok       = False;
+   Bool  isORR    = False;
+   Bool  isBIC    = False;
    switch (op_cmode) {
+      /* -------- 1,1,1111 FMOV (vector, immediate) -------- */
       case BITS5(1,1,1,1,1): // 1:1111
+         ok = bitQ == 1; break;
+
+      /* -------- x,0,0000 MOVI 32-bit shifted imm -------- */
+      /* -------- x,0,0100 MOVI 32-bit shifted imm -------- */
       case BITS5(0,0,0,0,0): case BITS5(0,0,1,0,0): // 0:0x00
+
+      /* -------- x,0,0010 MOVI 32-bit shifted imm -------- */
       case BITS5(0,0,0,1,0):                        // 1:0010
-      case BITS5(0,1,0,0,0): case BITS5(0,1,1,0,0): // 0:xx00
+
+      /* -------- x,0,1000 MOVI 16-bit shifted imm -------- */
+      /* -------- x,0,1100 MOVI 32-bit shifting ones -------- */
+      case BITS5(0,1,0,0,0): case BITS5(0,1,1,0,0): // 0:1x00
+
+      /* -------- x,1,0000 MVNI 32-bit shifted imm -------- */
+      /* -------- x,1,0100 MVNI 32-bit shifted imm  -------- */
       case BITS5(1,0,0,0,0): case BITS5(1,0,1,0,0): // 1:0x00
+
+      /* -------- x,1,1000 MVNI 16-bit shifted imm -------- */
+      /* -------- x,1,1010 MVNI 16-bit shifted imm -------- */
       case BITS5(1,1,0,0,0): case BITS5(1,1,0,1,0): // 1:10x0
+
+      /* -------- x,1,1100 MVNI 32-bit shifting ones -------- */
+      /* -------- x,1,1101 MVNI 32-bit shifting ones -------- */
       case BITS5(1,1,1,0,0): case BITS5(1,1,1,0,1): // 1:110x
+
+      /* -------- 0,1,1110 MOVI 64-bit scalar -------- */
+      /* -------- 1,1,1110 MOVI 64-bit vector -------- */
+      /* -------- x,0,1110 MOVI 8-bit -------- */
       case BITS5(1,1,1,1,0): case BITS5(0,1,1,1,0): // x:1110
          ok = True; break;
+
+      /* -------- x,0,1001 ORR (vector, immediate) 16-bit -------- */
+      /* -------- x,0,1011 ORR (vector, immediate) 16-bit -------- */
+      case BITS5(0,1,0,0,1): case BITS5(0,1,0,1,1): // 0:10x1
+         ok = True; isORR = True; break;
+
+      /* -------- x,1,1001 BIC (vector, immediate) 16-bit -------- */
+      /* -------- x,1,1011 BIC (vector, immediate) 16-bit -------- */
+      case BITS5(1,1,0,0,1): case BITS5(1,1,0,1,1): // 1:10x1
+         ok = True; isBIC = True; break;
+
+      /* -------- x,0,0001 ORR (vector, immediate) 32-bit -------- */
+      /* -------- x,0,0011 ORR (vector, immediate) 32-bit -------- */
+      /* -------- x,0,0101 ORR (vector, immediate) 32-bit -------- */
+      /* -------- x,0,0111 ORR (vector, immediate) 32-bit -------- */
+      case BITS5(0,0,0,0,1): case BITS5(0,0,0,1,1):
+      case BITS5(0,0,1,0,1): case BITS5(0,0,1,1,1): // 0:0xx1
+         ok = True; isORR = True; break;
+
+      /* -------- x,1,0001 BIC (vector, immediate) 32-bit -------- */
+      /* -------- x,1,0011 BIC (vector, immediate) 32-bit -------- */
+      /* -------- x,1,0101 BIC (vector, immediate) 32-bit -------- */
+      /* -------- x,1,0111 BIC (vector, immediate) 32-bit -------- */
+      case BITS5(1,0,0,0,1): case BITS5(1,0,0,1,1):
+      case BITS5(1,0,1,0,1): case BITS5(1,0,1,1,1): // 1:0xx1
+         ok = True; isBIC = True; break;
+
       default:
         break;
    }
@@ -6031,9 +6080,29 @@ Bool dis_AdvSIMD_modified_immediate(/*MB_OUT*/DisResult* dres, UInt insn)
       ok = AdvSIMDExpandImm(&imm64lo, bitOP, cmode, abcdefgh);
    }
    if (ok) {
-      ULong imm64hi = (bitQ == 0 && bitOP == 0)  ? 0  : imm64lo;
-      putQReg128(dd, binop(Iop_64HLtoV128, mkU64(imm64hi), mkU64(imm64lo)));
-      DIP("mov %s, #0x%016llx'%016llx\n", nameQReg128(dd), imm64hi, imm64lo);
+      if (isORR || isBIC) {
+         ULong inv
+            = isORR ? 0ULL : ~0ULL;
+         IRExpr* immV128
+            = binop(Iop_64HLtoV128, mkU64(inv ^ imm64lo), mkU64(inv ^ imm64lo));
+         IRExpr* res
+            = binop(isORR ? Iop_OrV128 : Iop_AndV128, getQReg128(dd), immV128);
+         putQReg128(dd, bitQ == 0 ? unop(Iop_ZeroHI64ofV128, res) : res);
+         const HChar* nm = isORR ? "orr" : "bic";
+         if (bitQ == 0) {
+            putQReg128(dd, unop(Iop_ZeroHI64ofV128, res));
+            DIP("%s %s.1d, %016llx\n", nm, nameQReg128(dd), imm64lo);
+         } else {
+            putQReg128(dd, res);
+            DIP("%s %s.2d, #0x%016llx'%016llx\n", nm,
+                nameQReg128(dd), imm64lo, imm64lo);
+         }
+      } else {
+         ULong   imm64hi = (bitQ == 0 && bitOP == 0)  ? 0  : imm64lo;
+         IRExpr* immV128 = binop(Iop_64HLtoV128, mkU64(imm64hi), mkU64(imm64lo));
+         putQReg128(dd, immV128);
+         DIP("mov %s, #0x%016llx'%016llx\n", nameQReg128(dd), imm64hi, imm64lo);
+      }
       return True;
    }
    /* else fall through */
@@ -6168,6 +6237,40 @@ Bool dis_AdvSIMD_scalar_three_same(/*MB_OUT*/DisResult* dres, UInt insn)
    UInt dd     = INSN(4,0);
    vassert(size < 4);
 
+   if (size == X11 && opcode == BITS5(0,0,1,1,0)) {
+      /* -------- 0,11,00110 CMGT d_d_d -------- */ // >s
+      /* -------- 1,11,00110 CMHI d_d_d -------- */ // >u
+      Bool    isGT = bitU == 0;
+      IRExpr* argL = getQReg128(nn);
+      IRExpr* argR = getQReg128(mm);
+      IRTemp  res  = newTemp(Ity_V128);
+      assign(res,
+             isGT ? binop(Iop_CmpGT64Sx2, argL, argR)
+                  : binop(Iop_CmpGT64Ux2, argL, argR));
+      putQReg128(dd, unop(Iop_ZeroHI64ofV128, mkexpr(res)));
+      DIP("%s %s, %s, %s\n",isGT ? "cmgt" : "cmhi",
+          nameQRegLO(dd, Ity_I64),
+          nameQRegLO(nn, Ity_I64), nameQRegLO(mm, Ity_I64));
+      return True;
+   }
+
+   if (size == X11 && opcode == BITS5(0,0,1,1,1)) {
+      /* -------- 0,11,00111 CMGE d_d_d -------- */ // >=s
+      /* -------- 1,11,00111 CMHS d_d_d -------- */ // >=u
+      Bool    isGE = bitU == 0;
+      IRExpr* argL = getQReg128(nn);
+      IRExpr* argR = getQReg128(mm);
+      IRTemp  res  = newTemp(Ity_V128);
+      assign(res,
+             isGE ? unop(Iop_NotV128, binop(Iop_CmpGT64Sx2, argR, argL))
+                  : unop(Iop_NotV128, binop(Iop_CmpGT64Ux2, argR, argL)));
+      putQReg128(dd, unop(Iop_ZeroHI64ofV128, mkexpr(res)));
+      DIP("%s %s, %s, %s\n", isGE ? "cmge" : "cmhs",
+          nameQRegLO(dd, Ity_I64),
+          nameQRegLO(nn, Ity_I64), nameQRegLO(mm, Ity_I64));
+      return True;
+   }
+
    if (size == X11 && opcode == BITS5(1,0,0,0,0)) {
       /* -------- 0,11,10000 ADD d_d_d -------- */
       /* -------- 1,11,10000 SUB d_d_d -------- */
@@ -6179,6 +6282,25 @@ Bool dis_AdvSIMD_scalar_three_same(/*MB_OUT*/DisResult* dres, UInt insn)
       putQRegLane(dd, 0, mkexpr(res));
       putQRegLane(dd, 1, mkU64(0));
       DIP("%s %s, %s, %s\n", isSUB ? "sub" : "add",
+          nameQRegLO(dd, Ity_I64),
+          nameQRegLO(nn, Ity_I64), nameQRegLO(mm, Ity_I64));
+      return True;
+   }
+
+   if (size == X11 && opcode == BITS5(1,0,0,0,1)) {
+      /* -------- 0,11,10001 CMTST d_d_d -------- */ // &, != 0
+      /* -------- 1,11,10001 CMEQ  d_d_d -------- */ // ==
+      Bool    isEQ = bitU == 1;
+      IRExpr* argL = getQReg128(nn);
+      IRExpr* argR = getQReg128(mm);
+      IRTemp  res  = newTemp(Ity_V128);
+      assign(res,
+             isEQ ? binop(Iop_CmpEQ64x2, argL, argR)
+                  : unop(Iop_NotV128, binop(Iop_CmpEQ64x2,
+                                            binop(Iop_AndV128, argL, argR), 
+                                            mkV128(0x0000))));
+      putQReg128(dd, unop(Iop_ZeroHI64ofV128, mkexpr(res)));
+      DIP("%s %s, %s, %s\n", isEQ ? "cmeq" : "cmtst",
           nameQRegLO(dd, Ity_I64),
           nameQRegLO(nn, Ity_I64), nameQRegLO(mm, Ity_I64));
       return True;
@@ -6226,12 +6348,41 @@ Bool dis_AdvSIMD_scalar_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
    UInt dd     = INSN(4,0);
    vassert(size < 4);
 
-   if (bitU == 0 && size == X11 && opcode == BITS5(0,1,0,0,1)) {
-      /* -------- 0,11,01001 CMEQ d_d_#0 -------- */
+   if (size == X11 && opcode == BITS5(0,1,0,0,0)) {
+      /* -------- 0,11,01000: CMGT d_d_#0 -------- */ // >s 0
+      /* -------- 1,11,01000: CMGE d_d_#0 -------- */ // >=s 0
+      Bool    isGT = bitU == 0;
+      IRExpr* argL = getQReg128(nn);
+      IRExpr* argR = mkV128(0x0000);
+      IRTemp  res  = newTemp(Ity_V128);
+      assign(res, isGT ? binop(Iop_CmpGT64Sx2, argL, argR)
+                       : unop(Iop_NotV128, binop(Iop_CmpGT64Sx2, argR, argL)));
+      putQReg128(dd, unop(Iop_ZeroHI64ofV128, mkexpr(res)));
+      DIP("cm%s d%u, d%u, #0\n", isGT ? "gt" : "ge", dd, nn);
+      return True;
+   }
+
+   if (size == X11 && opcode == BITS5(0,1,0,0,1)) {
+      /* -------- 0,11,01001: CMEQ d_d_#0 -------- */ // == 0
+      /* -------- 1,11,01001: CMLE d_d_#0 -------- */ // <=s 0
+      Bool    isEQ = bitU == 0;
+      IRExpr* argL = getQReg128(nn);
+      IRExpr* argR = mkV128(0x0000);
+      IRTemp  res  = newTemp(Ity_V128);
+      assign(res, isEQ ? binop(Iop_CmpEQ64x2, argL, argR)
+                       : unop(Iop_NotV128,
+                              binop(Iop_CmpGT64Sx2, argL, argR)));
+      putQReg128(dd, unop(Iop_ZeroHI64ofV128, mkexpr(res)));
+      DIP("cm%s d%u, d%u, #0\n", isEQ ? "eq" : "le", dd, nn);
+      return True;
+   }
+
+   if (bitU == 0 && size == X11 && opcode == BITS5(0,1,0,1,0)) {
+      /* -------- 0,11,01010: CMLT d_d_#0 -------- */ // <s 0
       putQReg128(dd, unop(Iop_ZeroHI64ofV128,
-                          binop(Iop_CmpEQ64x2, getQReg128(nn),
-                                mkV128(0x0000))));
-      DIP("cmeq d%u, d%u, #0\n", dd, nn);
+                          binop(Iop_CmpGT64Sx2, mkV128(0x0000),
+                                                getQReg128(nn))));
+      DIP("cm%s d%u, d%u, #0\n", "lt", dd, nn);
       return True;
    }
 
@@ -7001,6 +7152,36 @@ Bool dis_AdvSIMD_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
    UInt nn     = INSN(9,5);
    UInt dd     = INSN(4,0);
    vassert(size < 4);
+
+   if (opcode == BITS5(0,0,1,0,0)) {
+      /* -------- 0,xx,00100: CLS std6_std6 -------- */
+      /* -------- 1,xx,00100: CLZ std6_std6 -------- */
+      if (size == X11) return False; // no 1d or 2d cases
+      const IROp opsCLS[3] = { Iop_Cls8Sx16, Iop_Cls16Sx8, Iop_Cls32Sx4 };
+      const IROp opsCLZ[3] = { Iop_Clz8Sx16, Iop_Clz16Sx8, Iop_Clz32Sx4 };
+      Bool   isCLZ = bitU == 1;
+      IRTemp res   = newTemp(Ity_V128);
+      vassert(size <= 2);
+      assign(res, unop(isCLZ ? opsCLZ[size] : opsCLS[size], getQReg128(nn)));
+      putQReg128(dd, bitQ == 0 ? unop(Iop_ZeroHI64ofV128, mkexpr(res))
+                               : mkexpr(res));
+      const HChar* arr = nameArr_Q_SZ(bitQ, size);
+      DIP("%s %s.%s, %s.%s\n", isCLZ ? "clz" : "cls",
+          nameQReg128(dd), arr, nameQReg128(nn), arr);
+      return True;
+   }
+
+   if (bitU == 0 && size == X00 && opcode == BITS5(0,0,1,0,1)) {
+      /* -------- 0,00,00101: CNT 16b_16b, 8b_8b -------- */
+      IRTemp res = newTemp(Ity_V128);
+      assign(res, unop(Iop_Cnt8x16, getQReg128(nn)));
+      putQReg128(dd, bitQ == 0 ? unop(Iop_ZeroHI64ofV128, mkexpr(res))
+                               : mkexpr(res));
+      const HChar* arr = nameArr_Q_SZ(bitQ, size);
+      DIP("%s %s.%s, %s.%s\n", "cnt",
+          nameQReg128(dd), arr, nameQReg128(nn), arr);
+      return True;
+   }
 
    if (opcode == BITS5(0,1,0,0,0)) {
       /* -------- 0,xx,01000: CMGT std7_std7_#0 -------- */ // >s 0

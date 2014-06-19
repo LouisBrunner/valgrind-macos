@@ -929,11 +929,18 @@ static void showARM64VecUnaryOp(/*OUT*/const HChar** nm,
       case ARM64vecu_FNEG32x4: *nm = "fneg "; *ar = "4s";  return;
       case ARM64vecu_FABS64x2: *nm = "fabs "; *ar = "2d";  return;
       case ARM64vecu_FABS32x4: *nm = "fabs "; *ar = "4s";  return;
-      case ARM64vecu_ABS64x2:  *nm = "abs";   *ar = "2d";  return;
-      case ARM64vecu_ABS32x4:  *nm = "abs";   *ar = "4s";  return;
-      case ARM64vecu_ABS16x8:  *nm = "abs";   *ar = "8h";  return;
-      case ARM64vecu_ABS8x16:  *nm = "abs";   *ar = "16b"; return;
       case ARM64vecu_NOT:      *nm = "not  "; *ar = "all"; return;
+      case ARM64vecu_ABS64x2:  *nm = "abs  "; *ar = "2d";  return;
+      case ARM64vecu_ABS32x4:  *nm = "abs  "; *ar = "4s";  return;
+      case ARM64vecu_ABS16x8:  *nm = "abs  "; *ar = "8h";  return;
+      case ARM64vecu_ABS8x16:  *nm = "abs  "; *ar = "16b"; return;
+      case ARM64vecu_CLS32x4:  *nm = "cls  "; *ar = "4s";  return;
+      case ARM64vecu_CLS16x8:  *nm = "cls  "; *ar = "8h";  return;
+      case ARM64vecu_CLS8x16:  *nm = "cls  "; *ar = "16b"; return;
+      case ARM64vecu_CLZ32x4:  *nm = "clz  "; *ar = "4s";  return;
+      case ARM64vecu_CLZ16x8:  *nm = "clz  "; *ar = "8h";  return;
+      case ARM64vecu_CLZ8x16:  *nm = "clz  "; *ar = "16b"; return;
+      case ARM64vecu_CNT8x16:  *nm = "cnt  "; *ar = "16b"; return;
       default: vpanic("showARM64VecUnaryOp");
    }
 }
@@ -3413,6 +3420,7 @@ static inline UChar qregNo ( HReg r )
 #define X001111  BITS8(0,0, 0,0,1,1,1,1)
 #define X010000  BITS8(0,0, 0,1,0,0,0,0)
 #define X010001  BITS8(0,0, 0,1,0,0,0,1)
+#define X010010  BITS8(0,0, 0,1,0,0,1,0)
 #define X010101  BITS8(0,0, 0,1,0,1,0,1)
 #define X010110  BITS8(0,0, 0,1,0,1,1,0)
 #define X011001  BITS8(0,0, 0,1,1,0,0,1)
@@ -5319,6 +5327,16 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
             010 01110 10 1 00000 101110 n d  ABS  Vd.4s,  Vn.4s
             010 01110 01 1 00000 101110 n d  ABS  Vd.8h,  Vn.8h
             010 01110 00 1 00000 101110 n d  ABS  Vd.16b, Vn.16b
+
+            010 01110 10 1 00000 010010 n d  CLS  Vd.4s,  Vn.4s
+            010 01110 01 1 00000 010010 n d  CLS  Vd.8h,  Vn.8h
+            010 01110 00 1 00000 010010 n d  CLS  Vd.16b, Vn.16b
+
+            011 01110 10 1 00000 010010 n d  CLZ  Vd.4s,  Vn.4s
+            011 01110 01 1 00000 010010 n d  CLZ  Vd.8h,  Vn.8h
+            011 01110 00 1 00000 010010 n d  CLZ  Vd.16b, Vn.16b
+
+            010 01110 00 1 00000 010110 n d  CNT  Vd.16b, Vn.16b
          */
          UInt vD = qregNo(i->ARM64in.VUnaryV.dst);
          UInt vN = qregNo(i->ARM64in.VUnaryV.arg);
@@ -5349,6 +5367,27 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
                break;
             case ARM64vecu_ABS8x16:
                *p++ = X_3_8_5_6_5_5(X010, X01110001, X00000, X101110, vN, vD);
+               break;
+            case ARM64vecu_CLS32x4:
+               *p++ = X_3_8_5_6_5_5(X010, X01110101, X00000, X010010, vN, vD);
+               break;
+            case ARM64vecu_CLS16x8:
+               *p++ = X_3_8_5_6_5_5(X010, X01110011, X00000, X010010, vN, vD);
+               break;
+            case ARM64vecu_CLS8x16:
+               *p++ = X_3_8_5_6_5_5(X010, X01110001, X00000, X010010, vN, vD);
+               break;
+            case ARM64vecu_CLZ32x4:
+               *p++ = X_3_8_5_6_5_5(X011, X01110101, X00000, X010010, vN, vD);
+               break;
+            case ARM64vecu_CLZ16x8:
+               *p++ = X_3_8_5_6_5_5(X011, X01110011, X00000, X010010, vN, vD);
+               break;
+            case ARM64vecu_CLZ8x16:
+               *p++ = X_3_8_5_6_5_5(X011, X01110001, X00000, X010010, vN, vD);
+               break;
+            case ARM64vecu_CNT8x16:
+               *p++ = X_3_8_5_6_5_5(X010, X01110001, X00000, X010110, vN, vD);
                break;
             default:
                goto bad;

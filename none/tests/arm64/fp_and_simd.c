@@ -1514,19 +1514,48 @@ GEN_TWOVEC_TEST(dup_8b_w,  "mov x10, v17.d[0];  dup v9.8b,  w10",  9, 17)
 
 GEN_THREEVEC_TEST(ext_16b_16b_16b_0x0,
                   "ext  v2.16b, v11.16b, v29.16b, #0", 2, 11, 29)
+GEN_THREEVEC_TEST(ext_16b_16b_16b_0x1,
+                  "ext  v2.16b, v11.16b, v29.16b, #1", 2, 11, 29)
+GEN_THREEVEC_TEST(ext_16b_16b_16b_0x2,
+                  "ext  v2.16b, v11.16b, v29.16b, #2", 2, 11, 29)
+GEN_THREEVEC_TEST(ext_16b_16b_16b_0x3,
+                  "ext  v2.16b, v11.16b, v29.16b, #3", 2, 11, 29)
+GEN_THREEVEC_TEST(ext_16b_16b_16b_0x4,
+                  "ext  v2.16b, v11.16b, v29.16b, #4", 2, 11, 29)
+GEN_THREEVEC_TEST(ext_16b_16b_16b_0x5,
+                  "ext  v2.16b, v11.16b, v29.16b, #5", 2, 11, 29)
+GEN_THREEVEC_TEST(ext_16b_16b_16b_0x6,
+                  "ext  v2.16b, v11.16b, v29.16b, #6", 2, 11, 29)
 GEN_THREEVEC_TEST(ext_16b_16b_16b_0x7,
                   "ext  v2.16b, v11.16b, v29.16b, #7", 2, 11, 29)
 GEN_THREEVEC_TEST(ext_16b_16b_16b_0x8,
                   "ext  v2.16b, v11.16b, v29.16b, #8", 2, 11, 29)
 GEN_THREEVEC_TEST(ext_16b_16b_16b_0x9,
                   "ext  v2.16b, v11.16b, v29.16b, #9", 2, 11, 29)
+GEN_THREEVEC_TEST(ext_16b_16b_16b_0xA,
+                  "ext  v2.16b, v11.16b, v29.16b, #10", 2, 11, 29)
+GEN_THREEVEC_TEST(ext_16b_16b_16b_0xB,
+                  "ext  v2.16b, v11.16b, v29.16b, #11", 2, 11, 29)
+GEN_THREEVEC_TEST(ext_16b_16b_16b_0xC,
+                  "ext  v2.16b, v11.16b, v29.16b, #12", 2, 11, 29)
+GEN_THREEVEC_TEST(ext_16b_16b_16b_0xD,
+                  "ext  v2.16b, v11.16b, v29.16b, #13", 2, 11, 29)
+GEN_THREEVEC_TEST(ext_16b_16b_16b_0xE,
+                  "ext  v2.16b, v11.16b, v29.16b, #14", 2, 11, 29)
 GEN_THREEVEC_TEST(ext_16b_16b_16b_0xF,
                   "ext  v2.16b, v11.16b, v29.16b, #15", 2, 11, 29)
-
 GEN_THREEVEC_TEST(ext_8b_8b_8b_0x0,
                   "ext  v2.8b, v11.8b, v29.8b, #0", 2, 11, 29)
 GEN_THREEVEC_TEST(ext_8b_8b_8b_0x1,
                   "ext  v2.8b, v11.8b, v29.8b, #1", 2, 11, 29)
+GEN_THREEVEC_TEST(ext_8b_8b_8b_0x2,
+                  "ext  v2.8b, v11.8b, v29.8b, #2", 2, 11, 29)
+GEN_THREEVEC_TEST(ext_8b_8b_8b_0x3,
+                  "ext  v2.8b, v11.8b, v29.8b, #3", 2, 11, 29)
+GEN_THREEVEC_TEST(ext_8b_8b_8b_0x4,
+                  "ext  v2.8b, v11.8b, v29.8b, #4", 2, 11, 29)
+GEN_THREEVEC_TEST(ext_8b_8b_8b_0x5,
+                  "ext  v2.8b, v11.8b, v29.8b, #5", 2, 11, 29)
 GEN_THREEVEC_TEST(ext_8b_8b_8b_0x6,
                   "ext  v2.8b, v11.8b, v29.8b, #6", 2, 11, 29)
 GEN_THREEVEC_TEST(ext_8b_8b_8b_0x7,
@@ -3540,14 +3569,14 @@ int main ( void )
    if (1) test_cnt_8b_8b(TyB);
 
    // dup      d,s,h,b (vec elem to scalar)
-   if (0) test_dup_d_d0(TyD);
-   if (0) test_dup_d_d1(TyD);
-   if (0) test_dup_s_s0(TyS);
-   if (0) test_dup_s_s3(TyS);
-   if (0) test_dup_h_h0(TyH);
-   if (0) test_dup_h_h6(TyH);
-   if (0) test_dup_b_b0(TyB);
-   if (0) test_dup_b_b13(TyB);
+   if (1) test_dup_d_d0(TyD);
+   if (1) test_dup_d_d1(TyD);
+   if (1) test_dup_s_s0(TyS);
+   if (1) test_dup_s_s3(TyS);
+   if (1) test_dup_h_h0(TyH);
+   if (1) test_dup_h_h6(TyH);
+   if (1) test_dup_b_b0(TyB);
+   if (1) test_dup_b_b13(TyB);
 
    // dup      2d,4s,2s,8h,4h,16b,8b (vec elem to vector)
    if (1) test_dup_2d_d0(TyD);
@@ -3575,15 +3604,30 @@ int main ( void )
    if (1) test_dup_8b_w(TyB);
 
    // ext      16b,8b,#imm4 (concat 2 vectors, then slice)
-   if (0) test_ext_16b_16b_16b_0x0(TyB);
-   if (0) test_ext_16b_16b_16b_0x7(TyB);
-   if (0) test_ext_16b_16b_16b_0x8(TyB);
-   if (0) test_ext_16b_16b_16b_0x9(TyB);
-   if (0) test_ext_16b_16b_16b_0xF(TyB);
-   if (0) test_ext_8b_8b_8b_0x0(TyB);
-   if (0) test_ext_8b_8b_8b_0x1(TyB);
-   if (0) test_ext_8b_8b_8b_0x6(TyB);
-   if (0) test_ext_8b_8b_8b_0x7(TyB);
+   if (1) test_ext_16b_16b_16b_0x0(TyB);
+   if (1) test_ext_16b_16b_16b_0x1(TyB);
+   if (1) test_ext_16b_16b_16b_0x2(TyB);
+   if (1) test_ext_16b_16b_16b_0x3(TyB);
+   if (1) test_ext_16b_16b_16b_0x4(TyB);
+   if (1) test_ext_16b_16b_16b_0x5(TyB);
+   if (1) test_ext_16b_16b_16b_0x6(TyB);
+   if (1) test_ext_16b_16b_16b_0x7(TyB);
+   if (1) test_ext_16b_16b_16b_0x8(TyB);
+   if (1) test_ext_16b_16b_16b_0x9(TyB);
+   if (1) test_ext_16b_16b_16b_0xA(TyB);
+   if (1) test_ext_16b_16b_16b_0xB(TyB);
+   if (1) test_ext_16b_16b_16b_0xC(TyB);
+   if (1) test_ext_16b_16b_16b_0xD(TyB);
+   if (1) test_ext_16b_16b_16b_0xE(TyB);
+   if (1) test_ext_16b_16b_16b_0xF(TyB);
+   if (1) test_ext_8b_8b_8b_0x0(TyB);
+   if (1) test_ext_8b_8b_8b_0x1(TyB);
+   if (1) test_ext_8b_8b_8b_0x2(TyB);
+   if (1) test_ext_8b_8b_8b_0x3(TyB);
+   if (1) test_ext_8b_8b_8b_0x4(TyB);
+   if (1) test_ext_8b_8b_8b_0x5(TyB);
+   if (1) test_ext_8b_8b_8b_0x6(TyB);
+   if (1) test_ext_8b_8b_8b_0x7(TyB);
 
    // ins      d[]_d[],s[]_s[],h[]_h[],b[]_b[]
    if (0) test_ins_d0_d0(TyD);

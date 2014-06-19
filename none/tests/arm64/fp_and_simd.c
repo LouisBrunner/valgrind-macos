@@ -3368,30 +3368,30 @@ int main ( void )
    // bic      4s,2s   #imm8, LSL #0, 8, 16 or 24
    // movi and mvni are very similar, a superset of these.
    // Cases are below.
-   if (0) test_orr_8h_0x5A_lsl0(TyH);
-   if (0) test_orr_8h_0xA5_lsl8(TyH);
-   if (0) test_orr_4h_0x5A_lsl0(TyH);
-   if (0) test_orr_4h_0xA5_lsl8(TyH);
-   if (0) test_orr_4s_0x5A_lsl0(TyS);
-   if (0) test_orr_4s_0x6B_lsl8(TyS);
-   if (0) test_orr_4s_0x49_lsl16(TyS);
-   if (0) test_orr_4s_0x3D_lsl24(TyS);
-   if (0) test_orr_2s_0x5A_lsl0(TyS);
-   if (0) test_orr_2s_0x6B_lsl8(TyS);
-   if (0) test_orr_2s_0x49_lsl16(TyS);
-   if (0) test_orr_2s_0x3D_lsl24(TyS);
-   if (0) test_bic_8h_0x5A_lsl0(TyH);
-   if (0) test_bic_8h_0xA5_lsl8(TyH);
-   if (0) test_bic_4h_0x5A_lsl0(TyH);
-   if (0) test_bic_4h_0xA5_lsl8(TyH);
-   if (0) test_bic_4s_0x5A_lsl0(TyS);
-   if (0) test_bic_4s_0x6B_lsl8(TyS);
-   if (0) test_bic_4s_0x49_lsl16(TyS);
-   if (0) test_bic_4s_0x3D_lsl24(TyS);
-   if (0) test_bic_2s_0x5A_lsl0(TyS);
-   if (0) test_bic_2s_0x6B_lsl8(TyS);
-   if (0) test_bic_2s_0x49_lsl16(TyS);
-   if (0) test_bic_2s_0x3D_lsl24(TyS);
+   if (1) test_orr_8h_0x5A_lsl0(TyH);
+   if (1) test_orr_8h_0xA5_lsl8(TyH);
+   if (1) test_orr_4h_0x5A_lsl0(TyH);
+   if (1) test_orr_4h_0xA5_lsl8(TyH);
+   if (1) test_orr_4s_0x5A_lsl0(TyS);
+   if (1) test_orr_4s_0x6B_lsl8(TyS);
+   if (1) test_orr_4s_0x49_lsl16(TyS);
+   if (1) test_orr_4s_0x3D_lsl24(TyS);
+   if (1) test_orr_2s_0x5A_lsl0(TyS);
+   if (1) test_orr_2s_0x6B_lsl8(TyS);
+   if (1) test_orr_2s_0x49_lsl16(TyS);
+   if (1) test_orr_2s_0x3D_lsl24(TyS);
+   if (1) test_bic_8h_0x5A_lsl0(TyH);
+   if (1) test_bic_8h_0xA5_lsl8(TyH);
+   if (1) test_bic_4h_0x5A_lsl0(TyH);
+   if (1) test_bic_4h_0xA5_lsl8(TyH);
+   if (1) test_bic_4s_0x5A_lsl0(TyS);
+   if (1) test_bic_4s_0x6B_lsl8(TyS);
+   if (1) test_bic_4s_0x49_lsl16(TyS);
+   if (1) test_bic_4s_0x3D_lsl24(TyS);
+   if (1) test_bic_2s_0x5A_lsl0(TyS);
+   if (1) test_bic_2s_0x6B_lsl8(TyS);
+   if (1) test_bic_2s_0x49_lsl16(TyS);
+   if (1) test_bic_2s_0x3D_lsl24(TyS);
 
    // bif      16b,8b (vector) (bit insert if false)
    // bit      16b,8b (vector) (bit insert if true)
@@ -3408,18 +3408,18 @@ int main ( void )
 
    // cls      4s,2s,8h,4h,16b,8b (count leading sign bits)
    // clz      4s,2s,8h,4h,16b,8b (count leading zero bits)
-   if (0) test_cls_4s_4s(TyS);
-   if (0) test_cls_2s_2s(TyS);
-   if (0) test_cls_8h_8h(TyH);
-   if (0) test_cls_4h_4h(TyH);
-   if (0) test_cls_16b_16b(TyB);
-   if (0) test_cls_8b_8b(TyB);
-   if (0) test_clz_4s_4s(TyS);
-   if (0) test_clz_2s_2s(TyS);
-   if (0) test_clz_8h_8h(TyH);
-   if (0) test_clz_4h_4h(TyH);
-   if (0) test_clz_16b_16b(TyB);
-   if (0) test_clz_8b_8b(TyB);
+   if (1) test_cls_4s_4s(TyS);
+   if (1) test_cls_2s_2s(TyS);
+   if (1) test_cls_8h_8h(TyH);
+   if (1) test_cls_4h_4h(TyH);
+   if (1) test_cls_16b_16b(TyB);
+   if (1) test_cls_8b_8b(TyB);
+   if (1) test_clz_4s_4s(TyS);
+   if (1) test_clz_2s_2s(TyS);
+   if (1) test_clz_8h_8h(TyH);
+   if (1) test_clz_4h_4h(TyH);
+   if (1) test_clz_16b_16b(TyB);
+   if (1) test_clz_8b_8b(TyB);
 
    // cmeq     d
    // cmge     d
@@ -3427,12 +3427,12 @@ int main ( void )
    // cmhi     d
    // cmhs     d
    // cmtst    d
-   if (0) test_cmeq_d_d_d(TyD);
-   if (0) test_cmge_d_d_d(TyD);
-   if (0) test_cmgt_d_d_d(TyD);
-   if (0) test_cmhi_d_d_d(TyD);
-   if (0) test_cmhs_d_d_d(TyD);
-   if (0) test_cmtst_d_d_d(TyD);
+   if (1) test_cmeq_d_d_d(TyD);
+   if (1) test_cmge_d_d_d(TyD);
+   if (1) test_cmgt_d_d_d(TyD);
+   if (1) test_cmhi_d_d_d(TyD);
+   if (1) test_cmhs_d_d_d(TyD);
+   if (1) test_cmtst_d_d_d(TyD);
 
    // cmeq     2d,4s,2s,8h,4h,16b,8b
    // cmge     2d,4s,2s,8h,4h,16b,8b
@@ -3489,10 +3489,10 @@ int main ( void )
    // cmle_z   d
    // cmlt_z   d
    if (1) test_cmeq_zero_d_d(TyD);
-   if (0) test_cmge_zero_d_d(TyD);
-   if (0) test_cmgt_zero_d_d(TyD);
-   if (0) test_cmle_zero_d_d(TyD);
-   if (0) test_cmlt_zero_d_d(TyD);
+   if (1) test_cmge_zero_d_d(TyD);
+   if (1) test_cmgt_zero_d_d(TyD);
+   if (1) test_cmle_zero_d_d(TyD);
+   if (1) test_cmlt_zero_d_d(TyD);
 
    // cmeq_z   2d,4s,2s,8h,4h,16b,8b
    // cmge_z   2d,4s,2s,8h,4h,16b,8b
@@ -3536,8 +3536,8 @@ int main ( void )
    if (1) test_cmlt_zero_8b_8b(TyB);
 
    // cnt      16b,8b (population count per byte)
-   if (0) test_cnt_16b_16b(TyB);
-   if (0) test_cnt_8b_8b(TyB);
+   if (1) test_cnt_16b_16b(TyB);
+   if (1) test_cnt_8b_8b(TyB);
 
    // dup      d,s,h,b (vec elem to scalar)
    if (0) test_dup_d_d0(TyD);

@@ -257,7 +257,7 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
       wcmd = strtok_r (NULL, " ", &ssaveptr);
       switch (kwdid = VG_(keyword_id) 
               ("vgdb-error debuglog merge-recursive-frames"
-               " gdb_output log_output mixed_output hostvisibility ",
+               " gdb_output log_output mixed_output hostvisibility",
                wcmd, kwd_report_all)) {
       case -2:
       case -1: 

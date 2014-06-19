@@ -32,6 +32,7 @@
 #include "pub_core_debuglog.h"
 #include "pub_core_hashtable.h"
 #include "pub_core_libcassert.h"
+#include "pub_core_libcbase.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_mallocfree.h"
 
@@ -234,23 +235,21 @@ void* VG_(HT_gen_remove) ( VgHashTable table, void* node, HT_Cmp_t cmp  )
 void VG_(HT_print_stats) ( VgHashTable table, HT_Cmp_t cmp )
 {
    #define MAXOCCUR 20
-   UInt elt_occurences[MAXOCCUR];
-   UInt key_occurences[MAXOCCUR];
-   UInt cno_occurences[MAXOCCUR];
+   UInt elt_occurences[MAXOCCUR+1];
+   UInt key_occurences[MAXOCCUR+1];
+   UInt cno_occurences[MAXOCCUR+1];
    /* Key occurence  : how many ht elements have the same key.
       elt_occurences : how many elements are inserted multiple time.
       cno_occurences : how many chains have that length.
-      The last entry in these arrays collects all occurences >= MAXOCCUR-1. */
-   #define INCOCCUR(occur,n) (n >= MAXOCCUR ? occur[n-1]++ : occur[n]++)
+      The last entry in these arrays collects all occurences >= MAXOCCUR. */
+   #define INCOCCUR(occur,n) (n >= MAXOCCUR ? occur[MAXOCCUR]++ : occur[n]++)
    UInt i;
    UInt nkey, nelt, ncno;
    VgHashNode *cnode, *node;
 
-   for (i = 0; i < 20; i++) {
-      key_occurences[i] = 0;
-      elt_occurences[i] = 0;
-      cno_occurences[i] = 0;
-   }
+   VG_(memset)(key_occurences, 0, sizeof(key_occurences));
+   VG_(memset)(elt_occurences, 0, sizeof(elt_occurences));
+   VG_(memset)(cno_occurences, 0, sizeof(cno_occurences));
 
    // Note that the below algorithm is quadractic in nr of elements in a chain
    // but if that happens, the hash table/function is really bad and that
@@ -307,16 +306,20 @@ void VG_(HT_print_stats) ( VgHashTable table, HT_Cmp_t cmp )
                 " N-plicated keys,"
                 " N-plicated elts\n");
    nkey = nelt = ncno = 0;
-   for (i = 0; i < MAXOCCUR; i++) {
-      if (elt_occurences[i] > 0 || key_occurences[i] > 0 || cno_occurences[i] > 0)
-          VG_(message)(Vg_DebugMsg,
-                       "N:%2d : nr chain %6d, nr keys %6d, nr elts %6d\n",
-                       i, cno_occurences[i], key_occurences[i], elt_occurences[i]);
+   for (i = 0; i <= MAXOCCUR; i++) {
+      if (elt_occurences[i] > 0 
+          || key_occurences[i] > 0 
+          || cno_occurences[i] > 0)
+         VG_(message)(Vg_DebugMsg,
+                      "%s=%2d : nr chain %6d, nr keys %6d, nr elts %6d\n",
+                      i == MAXOCCUR ? ">" : "N", i,
+                      cno_occurences[i], key_occurences[i], elt_occurences[i]);
       nkey += key_occurences[i];
       nelt += elt_occurences[i];
       ncno += cno_occurences[i];
    }
-   VG_(message)(Vg_DebugMsg, "total nr of unique   chains: %6d, keys %6d, elts %6d\n",
+   VG_(message)(Vg_DebugMsg, 
+                "total nr of unique   chains: %6d, keys %6d, elts %6d\n",
                 ncno, nkey, nelt);
 }
 

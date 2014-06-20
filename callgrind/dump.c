@@ -990,16 +990,6 @@ static int my_cmp(BBCC** pbbcc1, BBCC** pbbcc2)
 */
 
 static __inline__
-void swapfunc(BBCC** a, BBCC** b, int n)
-{
-    while(n>0) {
-	BBCC* t = *a; *a = *b; *b = t;
-	a++, b++;
-	n--;
-    }
-}
-
-static __inline__
 void swap(BBCC** a, BBCC** b)
 {
     BBCC* t;

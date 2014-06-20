@@ -72,7 +72,7 @@
 #define msgh_request_port      msgh_remote_port
 #define msgh_reply_port        msgh_local_port
 #define BOOTSTRAP_MAX_NAME_LEN                  128
-typedef char name_t[BOOTSTRAP_MAX_NAME_LEN];
+typedef HChar name_t[BOOTSTRAP_MAX_NAME_LEN];
 
 typedef uint64_t mig_addr_t;
 
@@ -358,7 +358,7 @@ typedef struct OpenPort
    mach_port_t port;
    mach_port_type_t type;         /* right type(s) */
    Int send_count;                /* number of send rights */
-   Char *name;                    /* bootstrap name or NULL */
+   HChar *name;                   /* bootstrap name or NULL */
    ExeContext *where;             /* first allocation only */
    struct OpenPort *next, *prev;
 } OpenPort;
@@ -423,7 +423,7 @@ static OpenPort *info_for_port(mach_port_t port)
 
 // Give a port a name, without changing its refcount
 // GrP fixme don't override name if it already has a specific one
-__private_extern__ void assign_port_name(mach_port_t port, const char *name)
+__private_extern__ void assign_port_name(mach_port_t port, const HChar *name)
 {
    OpenPort *i;
    if (!port) return;
@@ -436,19 +436,19 @@ __private_extern__ void assign_port_name(mach_port_t port, const char *name)
    i->name = 
        VG_(arena_malloc)(VG_AR_CORE, "syswrap-darwin.mach-port-name", 
                          VG_(strlen)(name) + PORT_STRLEN + 1);
-   VG_(sprintf)((HChar*)i->name, name, port);
+   VG_(sprintf)(i->name, name, port);
 }
 
 
 // Return the name of the given port or "UNKNOWN 0x1234" if not known.
-static const Char *name_for_port(mach_port_t port)
+static const HChar *name_for_port(mach_port_t port)
 {
-   static Char buf[8 + PORT_STRLEN + 1];
+   static HChar buf[8 + PORT_STRLEN + 1];
    OpenPort *i;
 
    // hack
-   if (port == VG_(gettid)()) return (const Char *)"mach_thread_self()";
-   if (port == 0) return (const Char *)"NULL";
+   if (port == VG_(gettid)()) return "mach_thread_self()";
+   if (port == 0) return "NULL";
 
    i = allocated_ports;
    while (i) {
@@ -458,7 +458,7 @@ static const Char *name_for_port(mach_port_t port)
       i = i->next;
    }
 
-   VG_(sprintf)((HChar*)buf, "NONPORT-%#x", port);
+   VG_(sprintf)(buf, "NONPORT-%#x", port);
    return buf;
 }
 
@@ -555,7 +555,7 @@ void record_port_destroy(mach_port_t port)
 /* Note the fact that a Mach port was just allocated or transferred.
    If the port is already known, increment its reference count. */
 void record_named_port(ThreadId tid, mach_port_t port, 
-                       mach_port_right_t right, const char *name)
+                       mach_port_right_t right, const HChar *name)
 {
    OpenPort *i;
    if (!port) return;
@@ -1060,7 +1060,7 @@ POST(ioctl)
 /* ---------------------------------------------------------------------
    darwin fcntl wrapper
    ------------------------------------------------------------------ */
-static const char *name_for_fcntl(UWord cmd) {
+static const HChar *name_for_fcntl(UWord cmd) {
 #define F(n) case VKI_##n: return #n
    switch (cmd) {
       F(F_CHKCLEAN);
@@ -1600,7 +1600,7 @@ PRE(workq_open)
    // but we ignore them all until some work item starts running on it.
 }
 
-static const char *workqop_name(int op)
+static const HChar *workqop_name(int op)
 {
    switch (op) {
    case VKI_WQOPS_QUEUE_ADD:        return "QUEUE_ADD";
@@ -2464,7 +2464,7 @@ PRE(mount)
    // by 'data'.
    *flags |= SfMayBlock;
    PRINT("sys_mount( %#lx(%s), %#lx(%s), %#lx, %#lx )",
-         ARG1,(Char*)ARG1, ARG2,(Char*)ARG2, ARG3, ARG4);
+         ARG1,(char*)ARG1, ARG2,(char*)ARG2, ARG3, ARG4);
    PRE_REG_READ4(long, "mount",
                  const char *, type, const char *, dir,
                  int, flags, void *, data);
@@ -2887,7 +2887,7 @@ static SysRes simple_pre_exec_check ( const HChar* exe_name,
    // is, they to be run natively.
    setuid_allowed = trace_this_child  ? False  : True;
    ret = VG_(check_executable)(NULL/*&is_setuid*/,
-                               (HChar*)exe_name, setuid_allowed);
+                               exe_name, setuid_allowed);
    if (0 != ret) {
       return VG_(mk_SysRes_Error)(ret);
    }
@@ -2970,7 +2970,7 @@ PRE(posix_spawn)
    }
 
    /* Ok.  So let's give it a try. */
-   VG_(debugLog)(1, "syswrap", "Posix_spawn of %s\n", (Char*)ARG2);
+   VG_(debugLog)(1, "syswrap", "Posix_spawn of %s\n", (HChar*)ARG2);
 
    /* posix_spawn on Darwin is combining the fork and exec in one syscall.
       So, we should not terminate gdbserver : this is still the parent
@@ -7377,7 +7377,7 @@ static int is_task_port(mach_port_t port)
 
    if (port == vg_task_port) return True;
 
-   return (0 == VG_(strncmp)("task-", (const HChar *)name_for_port(port), 5));
+   return (0 == VG_(strncmp)("task-", name_for_port(port), 5));
 }
 
 

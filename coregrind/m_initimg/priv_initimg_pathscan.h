@@ -30,10 +30,10 @@
 */
 
 #ifndef __PRIV_INITIMG_PATHSCAN_H
-#define __PRIV_INITIMG_PATHSCAN_
+#define __PRIV_INITIMG_PATHSCAN_H
 
 #include "pub_core_basics.h"   // HChar
 
 extern const HChar* ML_(find_executable) ( const HChar* exec );
 
-#endif
+#endif // ndef __PRIV_INITIMG_PATHSCAN_H

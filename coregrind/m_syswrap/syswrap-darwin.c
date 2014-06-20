@@ -8545,7 +8545,6 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
    MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(21), mach__21), 
    MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(22), mach__22), 
    MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(23), mach__23), 
-   MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(24), mach__24), 
 #  else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(16)), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(17)), 
@@ -8555,6 +8554,11 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(21)), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(22)), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(23)), 
+#  endif
+
+#  if DARWIN_VERS >= DARWIN_10_9
+   MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(24), mach__24), 
+#  else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(24)), 
 #  endif
 

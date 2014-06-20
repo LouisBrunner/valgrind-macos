@@ -344,7 +344,7 @@ DECL_TEMPLATE(darwin, chmod_extended);          // 282
 DECL_TEMPLATE(darwin, fchmod_extended);         // 283
 DECL_TEMPLATE(darwin, access_extended);         // 284
 DECL_TEMPLATE(darwin, settid);                  // 285
-#if DARWIN_VERS >= DARWIN_10_8
+#if DARWIN_VERS >= DARWIN_10_7
 DECL_TEMPLATE(darwin, gettid);                  // 286
 #endif
 // NYI setsgroups 287

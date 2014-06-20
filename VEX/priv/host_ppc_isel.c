@@ -4853,16 +4853,16 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
-      case Iop_Clz8Sx16: fpop = Pav_ZEROCNTBYTE;   goto do_zerocnt;
-      case Iop_Clz16Sx8: fpop = Pav_ZEROCNTHALF;   goto do_zerocnt;
-      case Iop_Clz32Sx4: fpop = Pav_ZEROCNTWORD;   goto do_zerocnt;
-      case Iop_Clz64x2:  fpop = Pav_ZEROCNTDBL;    goto do_zerocnt;
-      case Iop_PwBitMtxXpose64x2: fpop = Pav_BITMTXXPOSE;  goto do_zerocnt;
+      case Iop_Clz8Sx16: op = Pav_ZEROCNTBYTE;   goto do_zerocnt;
+      case Iop_Clz16Sx8: op = Pav_ZEROCNTHALF;   goto do_zerocnt;
+      case Iop_Clz32Sx4: op = Pav_ZEROCNTWORD;   goto do_zerocnt;
+      case Iop_Clz64x2:  op = Pav_ZEROCNTDBL;    goto do_zerocnt;
+      case Iop_PwBitMtxXpose64x2: op = Pav_BITMTXXPOSE;  goto do_zerocnt;
       do_zerocnt:
       {
         HReg arg = iselVecExpr(env, e->Iex.Unop.arg);
         HReg dst = newVRegV(env);
-        addInstr(env, PPCInstr_AvUnary(fpop, dst, arg));
+        addInstr(env, PPCInstr_AvUnary(op, dst, arg));
         return dst;
       }
 

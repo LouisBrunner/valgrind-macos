@@ -517,6 +517,7 @@ typedef
 
 #define SecMap_MAGIC   0x571e58cbU
 
+__attribute__((unused))
 static inline Bool is_sane_SecMap ( SecMap* sm ) {
    return sm != NULL && sm->magic == SecMap_MAGIC;
 }
@@ -3789,6 +3790,7 @@ static inline VtsID SVal__unC_Wmin ( SVal s ) {
 static inline Bool SVal__isA ( SVal s ) {
    return (2ULL << 62) == (s & SVAL_TAGMASK);
 }
+__attribute__((unused))
 static inline SVal SVal__mkA ( void ) {
    return 2ULL << 62;
 }

@@ -436,19 +436,19 @@ __private_extern__ void assign_port_name(mach_port_t port, const char *name)
    i->name = 
        VG_(arena_malloc)(VG_AR_CORE, "syswrap-darwin.mach-port-name", 
                          VG_(strlen)(name) + PORT_STRLEN + 1);
-   VG_(sprintf)(i->name, name, port);
+   VG_(sprintf)((HChar*)i->name, name, port);
 }
 
 
 // Return the name of the given port or "UNKNOWN 0x1234" if not known.
-static const char *name_for_port(mach_port_t port)
+static const Char *name_for_port(mach_port_t port)
 {
-   static char buf[8 + PORT_STRLEN + 1];
+   static Char buf[8 + PORT_STRLEN + 1];
    OpenPort *i;
 
    // hack
-   if (port == VG_(gettid)()) return "mach_thread_self()";
-   if (port == 0) return "NULL";
+   if (port == VG_(gettid)()) return (const Char *)"mach_thread_self()";
+   if (port == 0) return (const Char *)"NULL";
 
    i = allocated_ports;
    while (i) {
@@ -458,7 +458,7 @@ static const char *name_for_port(mach_port_t port)
       i = i->next;
    }
 
-   VG_(sprintf)(buf, "NONPORT-%#x", port);
+   VG_(sprintf)((HChar*)buf, "NONPORT-%#x", port);
    return buf;
 }
 
@@ -2073,7 +2073,7 @@ POST(shm_open)
       SET_STATUS_Failure( VKI_EMFILE );
    } else {
       if (VG_(clo_track_fds))
-         ML_(record_fd_open_with_given_name)(tid, RES, (Char*)ARG1);
+         ML_(record_fd_open_with_given_name)(tid, RES, (char*)ARG1);
    }
 }
 
@@ -2852,7 +2852,7 @@ PRE(initgroups)
 /* Largely copied from PRE(sys_execve) in syswrap-generic.c, and from
    the simpler AIX equivalent (syswrap-aix5.c). */
 // Pre_read a char** argument.
-static void pre_argv_envp(Addr a, ThreadId tid, const Char* s1, const Char* s2)
+static void pre_argv_envp(Addr a, ThreadId tid, const HChar* s1, const HChar* s2)
 {
    while (True) {
       Addr a_deref;
@@ -2893,11 +2893,11 @@ static SysRes simple_pre_exec_check ( const HChar* exe_name,
 }
 PRE(posix_spawn)
 {
-   Char*        path = NULL;       /* path to executable */
+   HChar*       path = NULL;       /* path to executable */
    HChar**      envp = NULL;
    HChar**      argv = NULL;
    HChar**      arg2copy;
-   Char*        launcher_basename = NULL;
+   HChar*       launcher_basename = NULL;
    Int          i, j, tot_args;
    SysRes       res;
    Bool         trace_this_child;
@@ -2990,7 +2990,7 @@ PRE(posix_spawn)
       launcher_basename = path;
 
    } else {
-      path = (Char*)ARG2;
+      path = (HChar*)ARG2;
    }
 
    // Set up the child's environment.
@@ -3058,7 +3058,7 @@ PRE(posix_spawn)
             continue;
          argv[j++] = * (HChar**) VG_(indexXA)( VG_(args_for_valgrind), i );
       }
-      argv[j++] = (Char*)ARG2;
+      argv[j++] = (HChar*)ARG2;
       if (arg2copy && arg2copy[0])
          for (i = 1; arg2copy[i]; i++)
             argv[j++] = arg2copy[i];
@@ -4109,8 +4109,8 @@ static void import_complex_message(ThreadId tid, mach_msg_header_t *mh)
             Addr start = VG_PGROUNDDN((Addr)desc->out_of_line.address);
             Addr end = VG_PGROUNDUP((Addr)desc->out_of_line.address + 
                                     (Addr)desc->out_of_line.size);
-            PRINT("got ool mem %p..%#lx;\n", desc->out_of_line.address, 
-                  (Addr)desc->out_of_line.address+desc->out_of_line.size);
+            PRINT("got ool mem %p..%p;\n", desc->out_of_line.address, 
+                  (char*)desc->out_of_line.address+desc->out_of_line.size);
 
             ML_(notify_core_and_tool_of_mmap)(
                start, end - start, VKI_PROT_READ|VKI_PROT_WRITE, 
@@ -6464,10 +6464,12 @@ PRE(mach_vm_map)
    Request *req = (Request *)ARG1;
 
    // GrP fixme check these
-   PRINT("mach_vm_map(in %s, at 0x%llx, size %llu, from %s ...)", 
-         name_for_port(MACH_REMOTE), 
+   PRINT("mach_vm_map(in %s->%s at 0x%llx, size %llu, cur_prot:%x max_prot:%x ...)", 
+         name_for_port(req->Head.msgh_remote_port), 
+         name_for_port(req->object.name),
          req->address, req->size, 
-         name_for_port(req->object.name));
+         req->cur_protection,
+         req->max_protection);
 
    MACH_ARG(mach_vm_map.size) = req->size;
    MACH_ARG(mach_vm_map.copy) = req->copy;
@@ -7373,7 +7375,7 @@ static int is_task_port(mach_port_t port)
 
    if (port == vg_task_port) return True;
 
-   return (0 == VG_(strncmp)("task-", name_for_port(port), 5));
+   return (0 == VG_(strncmp)("task-", (const HChar *)name_for_port(port), 5));
 }
 
 
@@ -8148,7 +8150,7 @@ POST(psynch_cvclrprepost)
 
 PRE(kernelrpc_mach_vm_allocate_trap)
 {
-   PRINT("kernelrpc_mach_vm_allocate_trap(target:%#lx, address:%p, size:%#lx, flags:%#lx)", ARG1, *(void**)ARG2, ARG3, ARG4);
+   PRINT("kernelrpc_mach_vm_allocate_trap(target:%s, address:%p, size:%#lx, flags:%#lx)", name_for_port(ARG1), *(void**)ARG2, ARG3, ARG4);
    if ((ARG4 & VM_FLAGS_ANYWHERE) == VM_FLAGS_FIXED)
       ML_(notify_core_and_tool_of_mmap)(*(mach_vm_address_t*)ARG2, ARG3, VKI_PROT_READ|VKI_PROT_WRITE, VKI_MAP_ANON, -1, 0);
 }

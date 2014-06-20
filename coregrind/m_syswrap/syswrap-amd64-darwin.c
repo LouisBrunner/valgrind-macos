@@ -134,8 +134,25 @@ void thread_state_from_vex(thread_state_t mach_generic,
       vg_assert(count == x86_FLOAT_STATE64_COUNT);
       x86_float_state64_from_vex((x86_float_state64_t *)mach_generic, vex);
       break;
+
+   case x86_THREAD_STATE:
+      ((x86_float_state_t *)mach_generic)->fsh.flavor = flavor;
+      ((x86_float_state_t *)mach_generic)->fsh.count = count;
+      x86_thread_state64_from_vex(&((x86_thread_state_t *)mach_generic)->uts.ts64, vex);
+      break;
+
+   case x86_FLOAT_STATE:
+      ((x86_float_state_t *)mach_generic)->fsh.flavor = flavor;
+      ((x86_float_state_t *)mach_generic)->fsh.count = count;
+      x86_float_state64_from_vex(&((x86_float_state_t *)mach_generic)->ufs.fs64, vex);
+      break;
        
+   case x86_EXCEPTION_STATE:
+      VG_(printf)("thread_state_from_vex: TODO, want exception state\n");
+      vg_assert(0);
+
    default:
+      VG_(printf)("thread_state_from_vex: flavor:%#x\n",  flavor);
       vg_assert(0);
    }
 }

@@ -476,8 +476,13 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
         idea why. */
 #      if DARWIN_VERS <= DARWIN_10_6
        UWord magic_delta = 0;
-#      elif DARWIN_VERS >= DARWIN_10_7
+#      elif DARWIN_VERS == DARWIN_10_7 || DARWIN_VERS == DARWIN_10_8
        UWord magic_delta = 0x60;
+#      elif DARWIN_VERS == DARWIN_10_9
+       UWord magic_delta = 0xE0;
+#      else
+#        error "magic_delta: to be computed on new OS version"
+         // magic_delta = tst->os_state.pthread - self
 #      endif
 
        // This thread already exists; we're merely re-entering 

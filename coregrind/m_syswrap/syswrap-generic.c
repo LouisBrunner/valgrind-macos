@@ -927,7 +927,7 @@ void msghdr_foreachfield (
         struct vki_msghdr *msg,
         UInt length,
         void (*foreach_func)( ThreadId, Bool, const HChar *, Addr, SizeT ),
-        Bool recv
+        Bool rekv /* "recv" apparently shadows some header decl on OSX108 */
      )
 {
    HChar *fieldName;
@@ -948,7 +948,7 @@ void msghdr_foreachfield (
 
    /* msg_flags is completely ignored for send_mesg, recv_mesg doesn't read
       the field, but does write to it. */
-   if ( recv )
+   if ( rekv )
       foreach_func ( tid, False, fieldName, (Addr)&msg->msg_flags, sizeof( msg->msg_flags ) );
 
    if ( ML_(safe_to_deref)(&msg->msg_name, sizeof (void *))

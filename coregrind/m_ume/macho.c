@@ -82,7 +82,7 @@ static void check_mmap(SysRes res, Addr base, SizeT len, const HChar* who)
    }
 }
 
-#if DARWIN_VERS == DARWIN_10_8
+#if DARWIN_VERS >= DARWIN_10_8
 static void check_mmap_float(SysRes res, SizeT len, const HChar* who)
 {
    if (sr_isError(res)) {
@@ -386,7 +386,7 @@ load_unixthread(vki_uint8_t **out_stack_start, vki_uint8_t **out_stack_end,
    This is a really nasty hack -- allocates 64M+stack size, then
    deallocates the 64M, to guarantee that the stack is at least 64M
    above zero. */
-#if DARWIN_VERS == DARWIN_10_8
+#if DARWIN_VERS >= DARWIN_10_8
 static int
 handle_lcmain ( vki_uint8_t **out_stack_start,
                 vki_uint8_t **out_stack_end,
@@ -416,7 +416,7 @@ handle_lcmain ( vki_uint8_t **out_stack_start,
 
    return 0;
 }
-#endif /* DARWIN_VERS == DARWIN_10_8 */
+#endif /* DARWIN_VERS >= DARWIN_10_8 */
 
 
 
@@ -558,7 +558,7 @@ load_thin_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
 
       switch (lc->cmd) {
 
-#if   DARWIN_VERS == DARWIN_10_8
+#if   DARWIN_VERS >= DARWIN_10_8
       case LC_MAIN: { /* New in 10.8 */
          struct entry_point_command* epcmd
             = (struct entry_point_command*)lc;

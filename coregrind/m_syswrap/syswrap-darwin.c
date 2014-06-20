@@ -1065,12 +1065,17 @@ static const char *name_for_fcntl(UWord cmd) {
       F(F_PREALLOCATE);
       F(F_SETSIZE);
       F(F_RDADVISE);
+#     if DARWIN_VERS < DARWIN_10_9
       F(F_READBOOTSTRAP);
       F(F_WRITEBOOTSTRAP);
+#     endif
       F(F_LOG2PHYS);
       F(F_GETPATH);
       F(F_PATHPKG_CHECK);
-      F(F_ADDSIGS);   
+      F(F_ADDSIGS);
+#     if DARWIN_VERS >= DARWIN_10_9
+      F(F_ADDFILESIGS);
+#     endif
    default:
       return "UNKNOWN";
    }
@@ -1167,6 +1172,7 @@ PRE(fcntl)
       }
       break;
 
+#  if DARWIN_VERS < DARWIN_10_9
        // struct fbootstraptransfer
    case VKI_F_READBOOTSTRAP:
    case VKI_F_WRITEBOOTSTRAP:
@@ -1177,6 +1183,7 @@ PRE(fcntl)
       PRE_MEM_READ( "fcntl(F_READ/WRITEBOOTSTRAP, bootstrap)", 
                     ARG3, sizeof(struct vki_fbootstraptransfer) );
       break;
+#  endif
 
        // struct log2phys (out)
    case VKI_F_LOG2PHYS:
@@ -1224,6 +1231,21 @@ PRE(fcntl)
          if (fsigs->fs_blob_start)
             PRE_MEM_READ( "fcntl(F_ADDSIGS, fsigs->fs_blob_start)",
                           (Addr)fsigs->fs_blob_start, fsigs->fs_blob_size);
+      }
+      break;
+
+   case VKI_F_ADDFILESIGS: /* Add signature from same file (used by dyld for shared libs) */
+      PRINT("fcntl ( %ld, %s )", ARG1, name_for_fcntl(ARG2));
+      PRE_REG_READ3(long, "fcntl",
+                    unsigned int, fd, unsigned int, cmd,
+                    vki_fsignatures_t *, sigs);
+
+      {
+         vki_fsignatures_t *fsigs = (vki_fsignatures_t*)ARG3;
+         PRE_FIELD_READ( "fcntl(F_ADDFILESIGS, fsigs->fs_blob_start)",
+                         fsigs->fs_blob_start);
+         PRE_FIELD_READ( "fcntl(F_ADDFILESIGS, fsigs->fs_blob_size)",
+                         fsigs->fs_blob_size);
       }
       break;
 
@@ -7908,6 +7930,13 @@ PRE(mach__14)
    PRINT("mach__14(FIXME,ARGUMENTS_UNKNOWN)");
 }
 
+#if DARWIN_VERS >= DARWIN_10_9
+PRE(mach__15)
+{
+   PRINT("mach__15(FIXME,ARGUMENTS_UNKNOWN)");
+}
+#endif /* DARWIN_VERS >= DARWIN_10_9 */
+
 PRE(mach__16)
 {
    PRINT("mach__16(FIXME,ARGUMENTS_UNKNOWN)");
@@ -7947,6 +7976,13 @@ PRE(mach__23)
 {
    PRINT("mach__23(FIXME,ARGUMENTS_UNKNOWN)");
 }
+
+#if DARWIN_VERS >= DARWIN_10_9
+PRE(mach__24)
+{
+   PRINT("mach__24(FIXME,ARGUMENTS_UNKNOWN)");
+}
+#endif /* DARWIN_VERS >= DARWIN_10_9 */
 
 PRE(iopolicysys)
 {
@@ -8489,11 +8525,16 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
 
 #  if DARWIN_VERS >= DARWIN_10_8
    MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(14), mach__14), 
-#  else
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(14)), 
 #  endif
 
+#  if DARWIN_VERS >= DARWIN_10_9
+   MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(15), mach__15), 
+#  endif
+
+#  if DARWIN_VERS < DARWIN_10_8
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(14)), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(15)), 
+#  endif
 
 #  if DARWIN_VERS >= DARWIN_10_8
    MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(16), mach__16), 
@@ -8504,6 +8545,7 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
    MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(21), mach__21), 
    MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(22), mach__22), 
    MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(23), mach__23), 
+   MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(24), mach__24), 
 #  else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(16)), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(17)), 
@@ -8513,9 +8555,9 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(21)), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(22)), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(23)), 
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(24)), 
 #  endif
 
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(24)), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(25)), 
    MACXY(__NR_mach_reply_port, mach_reply_port), 
    MACXY(__NR_thread_self_trap, mach_thread_self), 

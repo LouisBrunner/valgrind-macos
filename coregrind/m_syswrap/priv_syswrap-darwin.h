@@ -560,7 +560,7 @@ DECL_TEMPLATE(darwin, mach_msg_task);
 DECL_TEMPLATE(darwin, mach_msg_thread);
 
 // Mach traps
-#if DARWIN_VERS == DARWIN_10_8
+#if DARWIN_VERS == DARWIN_10_8 || DARWIN_VERS == DARWIN_10_9
 DECL_TEMPLATE(darwin, mach__10);
 DECL_TEMPLATE(darwin, mach__12);
 DECL_TEMPLATE(darwin, mach__14);
@@ -569,7 +569,7 @@ DECL_TEMPLATE(darwin, mach__18);
 DECL_TEMPLATE(darwin, mach__19);
 DECL_TEMPLATE(darwin, mach__20);
 DECL_TEMPLATE(darwin, mach__21);
-#endif /* DARWIN_VERS == DARWIN_10_8 */
+#endif /* DARWIN_VERS == DARWIN_10_8 || DARWIN_VERS == DARWIN_10_9 */
 DECL_TEMPLATE(darwin, mach_msg_unhandled);
 DECL_TEMPLATE(darwin, mach_msg);
 DECL_TEMPLATE(darwin, mach_reply_port);

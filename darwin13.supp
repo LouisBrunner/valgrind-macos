@@ -1,0 +1,179 @@
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc_zone_?alloc
+   ...
+   fun:_read_images
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:?alloc
+   ...
+   fun:_ZN4dyld24initializeMainExecutableEv
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc_zone_?alloc
+   fun:recursive_mutex_init
+   fun:_objc_init
+   fun:_os_object_init
+   fun:libSystem_initializer
+   ...
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc_zone_?alloc
+   ...
+   fun:dyld_register_image_state_change_handler
+   ...
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:?alloc
+   ...
+   fun:dyld_register_image_state_change_handler
+   ...
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc_zone_?alloc
+   ...
+   fun:map_images_nolock
+   fun:map_images
+   ...
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc_zone_?alloc
+   ...
+   fun:map_images_nolock
+   fun:map_images
+   ...
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:?alloc
+   ...
+   fun:libSystem_initializer
+   ...
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc_zone_?alloc
+   ...
+   fun:libSystem_initializer
+   ...
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:?alloc
+   ...
+   fun:libSystem_initializer
+   ...
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Addr1
+   ...
+   fun:libSystem_initializer
+   ...
+   fun:_dyld_start
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Addr4
+   ...
+   fun:libSystem_initializer
+   ...
+   fun:_dyld_start
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Addr8
+   ...
+   fun:libSystem_initializer
+   ...
+   fun:_dyld_start
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Addr8
+   ...
+   fun:libSystem_initializer
+   ...
+   fun:_ZN4dyld24initializeMainExecutableEv
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Addr16
+   ...
+   fun:dyld_register_image_state_change_handler
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Cond
+   fun:_platform_memchr
+   ...
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Addr16
+   obj:/usr/lib/system/libsystem_platform.dylib
+   ...
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Addr16
+   obj:/usr/lib/system/libsystem_c.dylib
+   ...
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Cond
+   obj:/usr/lib/system/libsystem_c.dylib
+   ...
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Cond
+   obj:/usr/lib/system/libsystem_platform.dylib
+   ...
+}

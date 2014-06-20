@@ -114,7 +114,7 @@ AM_CFLAGS_BASE = \
 # into (and through) the preloads.
 if VGCONF_OS_IS_DARWIN
 AM_CFLAGS_PIC = -dynamic -O -g -fno-omit-frame-pointer -fno-strict-aliasing \
-		-mno-dynamic-no-pic -fpic -fPIC \
+		-fpic -fPIC \
 		-fno-builtin
 else
 AM_CFLAGS_PIC = -fpic -O -g -fno-omit-frame-pointer -fno-strict-aliasing \

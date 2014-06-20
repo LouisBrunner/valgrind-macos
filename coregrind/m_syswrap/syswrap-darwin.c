@@ -633,7 +633,7 @@ void VG_(show_open_ports)(void)
    sync_mappings
    ------------------------------------------------------------------ */
 
-void ML_(sync_mappings)(const HChar *when, const HChar *where, Int num)
+Bool ML_(sync_mappings)(const HChar *when, const HChar *where, Int num)
 {
    // Usually the number of segments added/removed in a single calls is very
    // small e.g. 1.  But it sometimes gets up to at least 100 or so (eg. for
@@ -689,6 +689,8 @@ void ML_(sync_mappings)(const HChar *when, const HChar *where, Int num)
    }
 
    VG_(free)(css);
+
+   return css_used > 0;
 }
 
 /* ---------------------------------------------------------------------
@@ -7463,12 +7465,132 @@ PRE(mach_msg)
       return;
    }
    else {
-      // arbitrary message to arbitrary port
-      PRINT("UNHANDLED mach_msg [id %d, to %s, reply 0x%x]", 
-            mh->msgh_id, name_for_port(mh->msgh_request_port), 
-            mh->msgh_reply_port);
+      // this is an attempt to optimize mapping sync
+      // but there are always some cases hard to find 
+#if 0
+      Bool do_mapping_update = False;
+      // sorted by msgh_id, we suppose that msgh_id are different for each service,
+      // which is obviously not true...
+      switch (mh->msgh_id) {
+         // com.apple.windowserver.active
+         case 29008: // this one opens a port type 'a'
 
+         // com.apple.windowserver.active 'a' port
+         case 29000:
+         case 29822:
+         case 29820: // adds a vm mapping
+         case 29809: // contains a ool mem
+         case 29800: // opens a port type 'b'
+         case 29873:
+         case 29876: // adds a vm mapping
+
+         // com.apple.windowserver.active 'b' port
+         case 29624:
+         case 29625:
+         case 29506:
+         case 29504:
+         case 29509:
+         case 29315:
+         case 29236:
+         case 29473:
+         case 29268:
+         case 29237: // contains a ool mem
+         case 29360:
+         case 29301:
+         case 29287:
+         case 29568:
+         case 29570: // contains a ool mem
+         case 29211:
+         case 29569: // contains a ool mem
+         case 29374:
+         case 29246:
+         case 29239:
+         case 29272:
+            if (mh->msgh_id == 29820 ||
+               mh->msgh_id == 29876)
+               do_mapping_update = True;
+
+            PRINT("com.apple.windowserver.active service mach_msg [id %d, to %s, reply 0x%x]",
+               mh->msgh_id, name_for_port(mh->msgh_request_port),
+               mh->msgh_reply_port);
+            break;
+
+         // com.apple.FontServer
+         case 13024:
+            PRINT("com.apple.FontServerservice mach_msg [id %d, to %s, reply 0x%x]",
+               mh->msgh_id, name_for_port(mh->msgh_request_port),
+               mh->msgh_reply_port);
+            break;
+
+         // com.apple.system.notification_center
+         case 78945698:
+         case 78945701:
+         case 78945695: // contains a ool mem
+         case 78945694:
+         case 78945700:
+            if (mh->msgh_id == 78945695)
+               do_mapping_update = False;
+            PRINT("com.apple.system.notification_center mach_msg [id %d, to %s, reply 0x%x]",
+               mh->msgh_id, name_for_port(mh->msgh_request_port),
+               mh->msgh_reply_port);
+            break;
+
+         // com.apple.CoreServices.coreservicesd
+         case 10000:
+         case 10019:
+         case 10002: // adds vm mappings
+         case 10003: // adds vm mappings
+         case 14007:
+         case 13000:
+         case 13001:
+         case 13011:
+         case 13016: // contains a ool mem
+            if (mh->msgh_id == 10002|| 
+                mh->msgh_id == 10003)
+               do_mapping_update = True;
+            PRINT("com.apple.CoreServices.coreservicesd mach_msg [id %d, to %s, reply 0x%x]",
+               mh->msgh_id, name_for_port(mh->msgh_request_port),
+               mh->msgh_reply_port);
+            break;
+
+         // com.apple.system.logger
+         case 118:
+            PRINT("com.apple.system.logger mach_msg [id %d, to %s, reply 0x%x]",
+               mh->msgh_id, name_for_port(mh->msgh_request_port),
+               mh->msgh_reply_port);
+            break;
+
+         // com.apple.coreservices.launchservicesd, and others
+         case 1999646836: // might adds vm mapping
+            if (mh->msgh_id == 1999646836)
+               do_mapping_update = True;
+            PRINT("om.apple.coreservices.launchservicesd mach_msg [id %d, to %s, reply 0x%x]",
+               mh->msgh_id, name_for_port(mh->msgh_request_port),
+               mh->msgh_reply_port);
+            break;
+
+         // com.apple.ocspd
+         case 33012:
+            PRINT("com.apple.ocspd mach_msg [id %d, to %s, reply 0x%x]",
+               mh->msgh_id, name_for_port(mh->msgh_request_port),
+               mh->msgh_reply_port);
+
+         default:
+            // arbitrary message to arbitrary port
+            do_mapping_update = True;
+            PRINT("UNHANDLED mach_msg [id %d, to %s, reply 0x%x]",
+               mh->msgh_id, name_for_port(mh->msgh_request_port),
+               mh->msgh_reply_port);
+      }
+
+      // this is an optimization, don't check mapping on known mach_msg
+      if (do_mapping_update)
+         AFTER = POST_FN(mach_msg_unhandled);
+      else
+         AFTER = POST_FN(mach_msg_unhandled_check);
+#else
       AFTER = POST_FN(mach_msg_unhandled);
+#endif
 
       // Assume the entire message body may be read.
       // GrP fixme generates false positives for unknown protocols
@@ -7516,6 +7638,12 @@ POST(mach_msg)
 POST(mach_msg_unhandled)
 {
    ML_(sync_mappings)("after", "mach_msg_receive (unhandled)", 0);
+}
+
+POST(mach_msg_unhandled_check)
+{
+   if (ML_(sync_mappings)("after", "mach_msg_receive (unhandled_check)", 0))
+      PRINT("mach_msg_unhandled_check tid:%d missed mapping change()", tid);
 }
 
 

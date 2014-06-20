@@ -51,7 +51,7 @@ extern const UInt ML_(mdep_trap_table_size);
 
 void VG_(show_open_ports)(void);
 
-void ML_(sync_mappings)(const HChar *when, const HChar *where, Int num);
+Bool ML_(sync_mappings)(const HChar *when, const HChar *where, Int num);
 
 // Unix syscalls.  
 // GEN = it uses the generic wrapper
@@ -599,6 +599,7 @@ DECL_TEMPLATE(darwin, iopolicysys);
 DECL_TEMPLATE(darwin, process_policy);
 #endif /* DARWIN_VERS == DARWIN_10_8 || DARWIN_VERS == DARWIN_10_9 */
 DECL_TEMPLATE(darwin, mach_msg_unhandled);
+DECL_TEMPLATE(darwin, mach_msg_unhandled_check);
 DECL_TEMPLATE(darwin, mach_msg);
 DECL_TEMPLATE(darwin, mach_reply_port);
 DECL_TEMPLATE(darwin, mach_thread_self);

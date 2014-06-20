@@ -344,7 +344,9 @@ DECL_TEMPLATE(darwin, chmod_extended);          // 282
 DECL_TEMPLATE(darwin, fchmod_extended);         // 283
 DECL_TEMPLATE(darwin, access_extended);         // 284
 DECL_TEMPLATE(darwin, settid);                  // 285
-// NYI gettid 286
+#if DARWIN_VERS >= DARWIN_10_8
+DECL_TEMPLATE(darwin, gettid);                  // 286
+#endif
 // NYI setsgroups 287
 // NYI getsgroups 288
 // NYI setwgroups 289
@@ -431,7 +433,7 @@ DECL_TEMPLATE(darwin, kevent);                  // 363
 DECL_TEMPLATE(darwin, bsdthread_register);      // 366
 DECL_TEMPLATE(darwin, workq_open);              // 367
 DECL_TEMPLATE(darwin, workq_ops);               // 368
-// 369
+DECL_TEMPLATE(darwin, kevent64);                // 369
 // 370
 // 371
 DECL_TEMPLATE(darwin, __thread_selfid);         // 372
@@ -492,6 +494,19 @@ DECL_TEMPLATE(darwin, __mac_syscall);           // 381
 DECL_TEMPLATE(darwin, fsgetpath);                // 427
 DECL_TEMPLATE(darwin, audit_session_self);       // 428
 // NYI audit_session_join 429
+DECL_TEMPLATE(darwin, fileport_makeport);        // 430
+
+// NYI shared_region_map_and_slide_np            // 438
+// NYI kas_info                                  // 439
+// NYI memorystatus_control                      // 440
+DECL_TEMPLATE(darwin, guarded_open_np);          // 441
+DECL_TEMPLATE(darwin, guarded_close_np);         // 442
+DECL_TEMPLATE(darwin, guarded_kqueue_np);        // 443
+DECL_TEMPLATE(darwin, change_fdguard_np);        // 444
+
+// NYI proc_rlimit_control                       // 446
+DECL_TEMPLATE(darwin, connectx);                 // 447
+DECL_TEMPLATE(darwin, disconnectx);              // 448
 
 // Mach message helpers
 DECL_TEMPLATE(darwin, mach_port_set_context);
@@ -519,6 +534,7 @@ DECL_TEMPLATE(darwin, task_get_special_port);
 DECL_TEMPLATE(darwin, task_get_exception_ports);
 DECL_TEMPLATE(darwin, semaphore_create);
 DECL_TEMPLATE(darwin, semaphore_destroy);
+DECL_TEMPLATE(darwin, task_policy_set);
 DECL_TEMPLATE(darwin, mach_ports_lookup);
 DECL_TEMPLATE(darwin, task_threads);
 DECL_TEMPLATE(darwin, task_suspend);
@@ -540,8 +556,10 @@ DECL_TEMPLATE(darwin, mach_vm_allocate);
 DECL_TEMPLATE(darwin, mach_vm_deallocate);
 DECL_TEMPLATE(darwin, mach_vm_protect);
 DECL_TEMPLATE(darwin, mach_vm_copy);
+DECL_TEMPLATE(darwin, mach_vm_read_overwrite);
 DECL_TEMPLATE(darwin, mach_vm_inherit);
 DECL_TEMPLATE(darwin, mach_vm_map);
+DECL_TEMPLATE(darwin, mach_vm_remap);
 DECL_TEMPLATE(darwin, mach_vm_region_recurse);
 DECL_TEMPLATE(darwin, thread_terminate);
 DECL_TEMPLATE(darwin, thread_create);
@@ -561,14 +579,24 @@ DECL_TEMPLATE(darwin, mach_msg_thread);
 
 // Mach traps
 #if DARWIN_VERS == DARWIN_10_8 || DARWIN_VERS == DARWIN_10_9
-DECL_TEMPLATE(darwin, mach__10);
-DECL_TEMPLATE(darwin, mach__12);
-DECL_TEMPLATE(darwin, mach__14);
-DECL_TEMPLATE(darwin, mach__16);
-DECL_TEMPLATE(darwin, mach__18);
-DECL_TEMPLATE(darwin, mach__19);
-DECL_TEMPLATE(darwin, mach__20);
-DECL_TEMPLATE(darwin, mach__21);
+DECL_TEMPLATE(darwin, kernelrpc_mach_vm_allocate_trap);
+DECL_TEMPLATE(darwin, kernelrpc_mach_vm_deallocate_trap);
+DECL_TEMPLATE(darwin, kernelrpc_mach_vm_protect_trap);
+DECL_TEMPLATE(darwin, kernelrpc_mach_vm_map_trap);
+DECL_TEMPLATE(darwin, kernelrpc_mach_port_allocate_trap);
+DECL_TEMPLATE(darwin, kernelrpc_mach_port_destroy_trap);
+DECL_TEMPLATE(darwin, kernelrpc_mach_port_deallocate_trap);
+DECL_TEMPLATE(darwin, kernelrpc_mach_port_mod_refs_trap);
+DECL_TEMPLATE(darwin, kernelrpc_mach_port_move_member_trap);
+DECL_TEMPLATE(darwin, kernelrpc_mach_port_insert_right_trap);
+DECL_TEMPLATE(darwin, kernelrpc_mach_port_insert_member_trap);
+DECL_TEMPLATE(darwin, kernelrpc_mach_port_extract_member_trap);
+DECL_TEMPLATE(darwin, kernelrpc_mach_port_construct_trap);
+DECL_TEMPLATE(darwin, kernelrpc_mach_port_destruct_trap);
+DECL_TEMPLATE(darwin, kernelrpc_mach_port_guard_trap);
+DECL_TEMPLATE(darwin, kernelrpc_mach_port_unguard_trap);
+DECL_TEMPLATE(darwin, iopolicysys);
+DECL_TEMPLATE(darwin, process_policy);
 #endif /* DARWIN_VERS == DARWIN_10_8 || DARWIN_VERS == DARWIN_10_9 */
 DECL_TEMPLATE(darwin, mach_msg_unhandled);
 DECL_TEMPLATE(darwin, mach_msg);

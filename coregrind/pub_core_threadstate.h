@@ -253,6 +253,10 @@ typedef
             UWord protection;
          } mach_vm_map;
          struct {
+            ULong size;
+            int copy;
+         } mach_vm_remap;
+         struct {
             Addr thread;
             UWord flavor;
          } thread_get_state;

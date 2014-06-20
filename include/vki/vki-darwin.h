@@ -789,6 +789,7 @@ typedef
 #include <sys/event.h>
 
 #define vki_kevent kevent
+#define vki_kevent64 kevent64_s
 
 
 #include <sys/ev.h>

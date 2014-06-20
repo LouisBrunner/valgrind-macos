@@ -919,6 +919,12 @@ PRE(ioctl)
        PRE_MEM_WRITE( "ioctl(TIOCPTYGNAME)", ARG3, 128 );
        break;
 
+   // filio.h
+   case VKI_FIOCLEX:
+       break;
+   case VKI_FIONCLEX:
+       break;
+
    default: 
       ML_(PRE_unknown_ioctl)(tid, ARG2, ARG3);
       break;
@@ -1459,6 +1465,61 @@ POST(kqueue)
    }
 }
 
+PRE(fileport_makeport)
+{
+    PRINT("guarded_open_np(fd:%#lx, portnamep:%#lx) FIXME",
+      ARG1, ARG2);
+}
+
+PRE(guarded_open_np)
+{
+    PRINT("guarded_open_np(path:%#lx(%s), guard:%#lx, guardflags:%#lx, flags:%#lx) FIXME",
+      ARG1, (char*)ARG1, ARG2, ARG3, ARG4);
+}
+
+PRE(guarded_kqueue_np)
+{
+    PRINT("guarded_kqueue_np(guard:%#lx, guardflags:%#lx) FIXME",
+      ARG1, ARG2);
+}
+
+POST(guarded_kqueue_np)
+{
+   if (!ML_(fd_allowed)(RES, "guarded_kqueue_np", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds)) {
+         ML_(record_fd_open_with_given_name)(tid, RES, NULL);
+      }
+   }
+}
+
+PRE(guarded_close_np)
+{
+    PRINT("guarded_close_np(fd:%#lx, guard:%#lx) FIXME",
+      ARG1, ARG2);
+}
+
+PRE(change_fdguard_np)
+{
+    PRINT("change_fdguard_np(fd:%#lx, guard:%#lx, guardflags:%#lx, nguard:%#lx, nguardflags:%#lx, fdflagsp:%#lx) FIXME",
+      ARG1, ARG2, ARG3, ARG4, ARG5, ARG6);
+}
+
+PRE(connectx)
+{
+    PRINT("connectx(s:%#lx, src:%#lx, srclen:%#lx, dsts:%#lx, dstlen:%#lx, ifscope:%#lx, aid:%#lx, out_cid:%#lx) FIXME",
+      ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7, ARG8);
+}
+
+PRE(disconnectx)
+{
+    PRINT("disconnectx(s:%#lx, aid:%#lx, cid:%#lx) FIXME",
+      ARG1, ARG2, ARG3);
+}
+
+
 PRE(kevent)
 {
    PRINT("kevent( %ld, %#lx, %ld, %#lx, %ld, %#lx )", 
@@ -1482,6 +1543,32 @@ POST(kevent)
 {
    PRINT("kevent ret %ld dst %#lx (%zu)", RES, ARG4, sizeof(struct vki_kevent));
    if (RES > 0) POST_MEM_WRITE(ARG4, RES * sizeof(struct vki_kevent));
+}
+
+
+PRE(kevent64)
+{
+   PRINT("kevent64( %ld, %#lx, %ld, %#lx, %ld, %#lx )",
+         ARG1, ARG2, ARG3, ARG4, ARG5, ARG6);
+   PRE_REG_READ6(int,"kevent64", int,kq,
+                 const struct vki_kevent64 *,changelist, int,nchanges,
+                 struct vki_kevent64 *,eventlist, int,nevents,
+                 const struct vki_timespec *,timeout);
+
+   if (ARG3) PRE_MEM_READ ("kevent64(changelist)",
+                           ARG2, ARG3 * sizeof(struct vki_kevent64));
+   if (ARG5) PRE_MEM_WRITE("kevent64(eventlist)",
+                           ARG4, ARG5 * sizeof(struct vki_kevent64));
+   if (ARG6) PRE_MEM_READ ("kevent64(timeout)",
+                           ARG6, sizeof(struct vki_timespec));
+
+   *flags |= SfMayBlock;
+}
+
+POST(kevent64)
+{
+   PRINT("kevent64 ret %ld dst %#lx (%zu)", RES, ARG4, sizeof(struct vki_kevent64));
+   if (RES > 0) POST_MEM_WRITE(ARG4, RES * sizeof(struct vki_kevent64));
 }
 
 
@@ -1806,13 +1893,15 @@ PRE(getxattr)
                 vki_size_t, size, uint32_t, position, int, options);
    PRE_MEM_RASCIIZ("getxattr(path)", ARG1);
    PRE_MEM_RASCIIZ("getxattr(name)", ARG2);
-   PRE_MEM_WRITE( "getxattr(value)", ARG3, ARG4);
+   if (ARG3)
+      PRE_MEM_WRITE( "getxattr(value)", ARG3, ARG4);
 }
 
 POST(getxattr)
 {
    vg_assert((vki_ssize_t)RES >= 0);
-   POST_MEM_WRITE(ARG3, (vki_ssize_t)RES);
+   if (ARG3)
+      POST_MEM_WRITE(ARG3, (vki_ssize_t)RES);
 }
 
 PRE(fgetxattr)
@@ -5200,6 +5289,41 @@ POST(semaphore_destroy)
    }
 }
 
+PRE(task_policy_set)
+{
+#pragma pack(4)
+   typedef struct {
+      mach_msg_header_t Head;
+      NDR_record_t NDR;
+      task_policy_flavor_t flavor;
+      mach_msg_type_number_t policy_infoCnt;
+      integer_t policy_info[16];
+   } Request;
+#pragma pack()
+
+   Request *req = (Request *)ARG1;
+
+   PRINT("task_policy_set(%s) flacor:%d", name_for_port(MACH_REMOTE), req->flavor);
+
+   AFTER = POST_FN(task_policy_set);
+}
+
+POST(task_policy_set)
+{
+#pragma pack(4)
+   typedef struct {
+      mach_msg_header_t Head;
+      NDR_record_t NDR;
+      kern_return_t RetCode;
+   } Reply;
+#pragma pack()
+
+   Reply *reply = (Reply *)ARG1;        
+   if (!reply->RetCode) {
+   } else {
+      PRINT("mig return %d", reply->RetCode);
+   }
+}
 
 PRE(mach_ports_lookup)
 {
@@ -6271,6 +6395,49 @@ POST(mach_vm_copy)
    }
 }
 
+PRE(mach_vm_read_overwrite)
+{
+#pragma pack(4)
+   typedef struct {
+      mach_msg_header_t Head;
+      NDR_record_t NDR;
+      mach_vm_address_t address;
+      mach_vm_size_t size;
+      mach_vm_address_t data;
+   } Request;
+#pragma pack()
+
+   Request *req = (Request *)ARG1;
+
+   PRINT("mach_vm_read_overwrite(%s, 0x%llx, %llu, 0x%llx)",
+         name_for_port(MACH_REMOTE),
+         req->address, req->size, req->data);
+
+   AFTER = POST_FN(mach_vm_read_overwrite);
+}
+
+POST(mach_vm_read_overwrite)
+{
+#pragma pack(4)
+   typedef struct {
+      mach_msg_header_t Head;
+      NDR_record_t NDR;
+      kern_return_t RetCode;
+      mach_vm_size_t outsize;
+   } Reply;
+#pragma pack()
+
+   Reply *reply = (Reply *)ARG1;
+
+   if (!reply->RetCode) {
+      if (MACH_REMOTE == vg_task_port) {
+         // GrP fixme set dest's initialization equal to src's
+         // BUT vm_copy allocates no memory
+      }
+   } else {
+      PRINT("mig return %d", reply->RetCode);
+   }
+}
 
 PRE(mach_vm_map)
 {
@@ -6331,6 +6498,69 @@ POST(mach_vm_map)
       ML_(notify_core_and_tool_of_mmap)(
             reply->address, VG_PGROUNDUP(MACH_ARG(mach_vm_map.size)), 
             MACH_ARG(mach_vm_map.protection), VKI_MAP_SHARED, -1, 0);
+      // GrP fixme VKI_MAP_PRIVATE if !copy?
+   } else {
+      PRINT("mig return %d", reply->RetCode);
+   }
+}
+
+
+PRE(mach_vm_remap)
+{
+#pragma pack(4)
+   typedef struct {
+      mach_msg_header_t Head;
+      /* start of the kernel processed data */
+      mach_msg_body_t msgh_body;
+      mach_msg_port_descriptor_t src_task;
+      /* end of the kernel processed data */
+      NDR_record_t NDR;
+      mach_vm_address_t target_address;
+      mach_vm_size_t size;
+      mach_vm_offset_t mask;
+      int flags;
+      mach_vm_address_t src_address;
+      boolean_t copy;
+      vm_inherit_t inheritance;
+   } Request;
+#pragma pack()
+
+   Request *req = (Request *)ARG1;
+
+   // GrP fixme check these
+   PRINT("mach_vm_remap(in %s, at 0x%llx, size %llu, from %s ...)",
+         name_for_port(MACH_REMOTE),
+         req->target_address, req->size,
+         name_for_port(req->src_task.name));
+
+   MACH_ARG(mach_vm_remap.size) = req->size;
+   MACH_ARG(mach_vm_remap.copy) = req->copy;
+
+   AFTER = POST_FN(mach_vm_remap);
+}
+
+POST(mach_vm_remap)
+{
+#pragma pack(4)
+   typedef struct {
+      mach_msg_header_t Head;
+      NDR_record_t NDR;
+      kern_return_t RetCode;
+      mach_vm_address_t target_address;
+      vm_prot_t cur_protection;
+      vm_prot_t max_protection;
+   } Reply;
+#pragma pack()
+
+   Reply *reply = (Reply *)ARG1;
+
+   if (!reply->RetCode) {
+      // GrP fixme check src and dest tasks
+      PRINT("mapped at 0x%llx", reply->target_address);
+      // GrP fixme max prot
+      ML_(notify_core_and_tool_of_mmap)(
+            reply->target_address, VG_PGROUNDUP(MACH_ARG(mach_vm_remap.size)),
+            reply->cur_protection, VKI_MAP_SHARED, -1, 0);
       // GrP fixme VKI_MAP_PRIVATE if !copy?
    } else {
       PRINT("mig return %d", reply->RetCode);
@@ -7009,6 +7239,9 @@ PRE(mach_msg_task)
    case 3419:
       CALL_PRE(semaphore_destroy);
       return;
+   case 3420:
+      CALL_PRE(task_policy_set);
+      return;
       
    case 3801:
       CALL_PRE(vm_allocate);
@@ -7062,8 +7295,14 @@ PRE(mach_msg_task)
    case 4807:
       CALL_PRE(mach_vm_copy);
       return;
+   case 4808:
+      CALL_PRE(mach_vm_read_overwrite);
+      return;
    case 4811:
       CALL_PRE(mach_vm_map);
+      return;
+   case 4813:
+      CALL_PRE(mach_vm_remap);
       return;
    case 4815:
       CALL_PRE(mach_vm_region_recurse);
@@ -7907,81 +8146,128 @@ POST(psynch_cvclrprepost)
 
 #if DARWIN_VERS >= DARWIN_10_8
 
-PRE(mach__10)
+PRE(kernelrpc_mach_vm_allocate_trap)
 {
-   PRINT("mach__10(FIXME,ARGUMENTS_UNKNOWN)");
+   PRINT("kernelrpc_mach_vm_allocate_trap(target:%#lx, address:%p, size:%#lx, flags:%#lx)", ARG1, *(void**)ARG2, ARG3, ARG4);
+   if ((ARG4 & VM_FLAGS_ANYWHERE) == VM_FLAGS_FIXED)
+      ML_(notify_core_and_tool_of_mmap)(*(mach_vm_address_t*)ARG2, ARG3, VKI_PROT_READ|VKI_PROT_WRITE, VKI_MAP_ANON, -1, 0);
 }
-POST(mach__10)
+POST(kernelrpc_mach_vm_allocate_trap)
 {
-   ML_(sync_mappings)("after", "mach__10", 0);
-}
-
-PRE(mach__12)
-{
-   PRINT("mach__12(FIXME,ARGUMENTS_UNKNOWN)");
-}
-POST(mach__12)
-{
-   ML_(sync_mappings)("after", "mach__12", 0);
+   PRINT("address:%p size:%#lx", *(void**)ARG2, ARG3);
+   if ((ARG4 & VM_FLAGS_ANYWHERE) != VM_FLAGS_FIXED)
+      ML_(notify_core_and_tool_of_mmap)(*(mach_vm_address_t*)ARG2, ARG3, VKI_PROT_READ|VKI_PROT_WRITE, VKI_MAP_ANON, -1, 0);
 }
 
-PRE(mach__14)
+PRE(kernelrpc_mach_vm_deallocate_trap)
 {
-   PRINT("mach__14(FIXME,ARGUMENTS_UNKNOWN)");
+   PRINT("kernelrpc_mach_vm_deallocate_trap(target:%#lx, address:%#lx, size:%#lx)", ARG1, ARG2, ARG3);
+}
+POST(kernelrpc_mach_vm_deallocate_trap)
+{
+   // kernelrpc_mach_vm_deallocate_trap could be call with address == 0 && size == 0, 
+   // we shall not notify any unmap then
+   if (ARG3)
+      ML_(notify_core_and_tool_of_munmap)(ARG2, ARG3);
+}
+
+PRE(kernelrpc_mach_vm_protect_trap)
+{
+   PRINT("kernelrpc_mach_vm_protect_trap(task:%#lx, address:%#lx, size:%#lx, set_maximum:%#lx, new_prot:%#lx)", ARG1, ARG2, ARG3, ARG4, ARG5);
+   ML_(notify_core_and_tool_of_mprotect)(ARG2, ARG3, ARG5);
 }
 
 #if DARWIN_VERS >= DARWIN_10_9
-PRE(mach__15)
+PRE(kernelrpc_mach_vm_map_trap)
 {
-   PRINT("mach__15(FIXME,ARGUMENTS_UNKNOWN)");
+   PRINT("kernelrpc_mach_vm_map_trap(target:%#lx, address:%p, size:%#lx, mask:%#lx, flags:%#lx, cur_prot:%#lx)",
+    ARG1, *(void**)ARG2, ARG3, ARG4, ARG5, ARG6);
+}
+
+POST(kernelrpc_mach_vm_map_trap)
+{
+   PRINT("-> address:%p", *(void**)ARG2);
+   ML_(notify_core_and_tool_of_mmap)(*(mach_vm_address_t*)ARG2, ARG3, VKI_PROT_READ|VKI_PROT_WRITE, VKI_MAP_ANON, -1, 0);
+  // ML_(sync_mappings)("after", "kernelrpc_mach_vm_map_trap", 0);
 }
 #endif /* DARWIN_VERS >= DARWIN_10_9 */
 
-PRE(mach__16)
+PRE(kernelrpc_mach_port_allocate_trap)
 {
-   PRINT("mach__16(FIXME,ARGUMENTS_UNKNOWN)");
+   PRINT("kernelrpc_mach_port_allocate_trap(task:%#lx, mach_port_right_t:%#lx)", ARG1, ARG2);
+   PRE_MEM_WRITE("kernelrpc_mach_port_allocate_trap(name)", ARG3, sizeof(mach_port_name_t));
 }
 
-PRE(mach__17)
+POST(kernelrpc_mach_port_allocate_trap)
 {
-   PRINT("mach__17(FIXME,ARGUMENTS_UNKNOWN)");
+   POST_MEM_WRITE(ARG3, sizeof(mach_port_name_t));
+   PRINT(", name:%#x", *(mach_port_name_t*)ARG3);
+   record_unnamed_port(tid, *(mach_port_name_t *)ARG3, ARG2);
 }
 
-PRE(mach__18)
+PRE(kernelrpc_mach_port_destroy_trap)
 {
-   PRINT("mach__18(FIXME,ARGUMENTS_UNKNOWN)");
+   PRINT("kernelrpc_mach_port_destroy_trap(task:%#lx, name:%#lx)", ARG1, ARG2);
+   record_port_destroy(ARG2);
 }
 
-PRE(mach__19)
+PRE(kernelrpc_mach_port_deallocate_trap)
 {
-   PRINT("mach__19(FIXME,ARGUMENTS_UNKNOWN)");
+   PRINT("kernelrpc_mach_port_deallocate_trap(task:%#lx, name:%#lx ) FIXME", ARG1, ARG2);
 }
 
-PRE(mach__20)
+POST(kernelrpc_mach_port_deallocate_trap)
 {
-   PRINT("mach__20(FIXME,ARGUMENTS_UNKNOWN)");
 }
 
-PRE(mach__21)
+PRE(kernelrpc_mach_port_mod_refs_trap)
 {
-   PRINT("mach__21(FIXME,ARGUMENTS_UNKNOWN)");
+   PRINT("kernelrpc_mach_port_mod_refs_trap(task:%#lx, name:%#lx, right:%#lx refs:%#lx) FIXME",
+    ARG1, ARG2, ARG3, ARG4);
 }
 
-PRE(mach__22)
+PRE(kernelrpc_mach_port_move_member_trap)
 {
-   PRINT("mach__22(FIXME,ARGUMENTS_UNKNOWN)");
+   PRINT("kernelrpc_mach_port_move_member_trap(task:%#lx, name:%#lx, after:%#lx ) FIXME",
+    ARG1, ARG2, ARG3);
 }
 
-PRE(mach__23)
+PRE(kernelrpc_mach_port_insert_right_trap)
 {
-   PRINT("mach__23(FIXME,ARGUMENTS_UNKNOWN)");
+   PRINT("kernelrpc_mach_port_insert_right_trap(FIXME,ARGUMENTS_UNKNOWN)");
+}
+
+PRE(kernelrpc_mach_port_insert_member_trap)
+{
+   PRINT("kernelrpc_mach_port_insert_member_trap(FIXME,ARGUMENTS_UNKNOWN)");
+}
+
+PRE(kernelrpc_mach_port_extract_member_trap)
+{
+   PRINT("kernelrpc_mach_port_extract_member_trap(FIXME,ARGUMENTS_UNKNOWN)");
 }
 
 #if DARWIN_VERS >= DARWIN_10_9
-PRE(mach__24)
+PRE(kernelrpc_mach_port_construct_trap)
 {
-   PRINT("mach__24(FIXME,ARGUMENTS_UNKNOWN)");
+   PRINT("kernelrpc_mach_port_construct_trap(FIXME,ARGUMENTS_UNKNOWN)");
 }
+
+PRE(kernelrpc_mach_port_destruct_trap)
+{
+   PRINT("kernelrpc_mach_port_destruct_trap(FIXME,ARGUMENTS_UNKNOWN)");
+}
+
+PRE(kernelrpc_mach_port_guard_trap)
+{
+   PRINT("kernelrpc_mach_port_guard_trap(FIXME)");
+}
+
+PRE(kernelrpc_mach_port_unguard_trap)
+{
+   PRINT("kernelrpc_mach_port_unguard_trap(FIXME)");
+}
+
 #endif /* DARWIN_VERS >= DARWIN_10_9 */
 
 PRE(iopolicysys)
@@ -7990,6 +8276,16 @@ PRE(iopolicysys)
    /* mem effects unknown */
 }
 POST(iopolicysys)
+{
+}
+
+PRE(process_policy)
+{
+   PRINT("process_policy(FIXME)(scope:0x%lx, action:0x%lx, policy:0x%lx, policy_subtype:0x%lx, attr:%lx, target_pid:%lx, target_threadid:%lx)",
+    ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7);
+   /* mem effects unknown */
+}
+POST(process_policy)
 {
 }
 
@@ -8361,10 +8657,14 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACX_(__NR_aio_write,      aio_write), 
 // _____(__NR_lio_listio),   // 320
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(321)),   // ???
+
 #if DARWIN_VERS >= DARWIN_10_8
    MACXY(__NR_iopolicysys, iopolicysys), 
-#endif
+   MACXY(__NR_process_policy, process_policy),
+#else
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(322)),   // ???
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(323)),   // ???
+#endif
 // _____(__NR_mlockall), 
 // _____(__NR_munlockall), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(326)),   // ???
@@ -8415,7 +8715,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACX_(__NR_workq_open,  workq_open), 
    MACXY(__NR_workq_ops,   workq_ops), 
 #if DARWIN_VERS >= DARWIN_10_6
-// _____(__NR_kevent64), 
+   MACXY(__NR_kevent64,      kevent64), 
 #else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(369)),   // ???
 #endif
@@ -8486,6 +8786,15 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACXY(__NR_audit_session_self, audit_session_self),
 // _____(__NR_audit_session_join),
 #endif
+#if DARWIN_VERS >= DARWIN_10_9
+    MACX_(__NR_fileport_makeport, fileport_makeport),
+    MACX_(__NR_guarded_open_np, guarded_open_np),
+    MACX_(__NR_guarded_close_np, guarded_close_np),
+    MACX_(__NR_guarded_kqueue_np, guarded_kqueue_np),
+    MACX_(__NR_change_fdguard_np, change_fdguard_np),
+    MACX_(__NR_connectx, connectx),
+    MACX_(__NR_disconnectx, disconnectx),
+#endif
 
 // _____(__NR_MAXSYSCALL)
    MACX_(__NR_DARWIN_FAKE_SIGRETURN, FAKE_SIGRETURN)
@@ -8494,6 +8803,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
 // Mach traps use negative syscall numbers. 
 // Use ML_(mach_trap_table)[-mach_trap_number] .
+// cf xnu sources osfmk/kern/syscall_sw.c
 
 const SyscallTableEntry ML_(mach_trap_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(0)), 
@@ -8508,7 +8818,7 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(9)), 
 
 #  if DARWIN_VERS >= DARWIN_10_8
-   MACXY(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(10), mach__10), 
+   MACXY(__NR_kernelrpc_mach_vm_allocate_trap, kernelrpc_mach_vm_allocate_trap),
 #  else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(10)), 
 #  endif
@@ -8516,7 +8826,7 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(11)), 
 
 #  if DARWIN_VERS >= DARWIN_10_8
-   MACXY(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(12), mach__12), 
+   MACXY(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(12), kernelrpc_mach_vm_deallocate_trap),
 #  else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(12)), 
 #  endif
@@ -8524,11 +8834,11 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(13)), 
 
 #  if DARWIN_VERS >= DARWIN_10_8
-   MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(14), mach__14), 
+   MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(14), kernelrpc_mach_vm_protect_trap),
 #  endif
 
 #  if DARWIN_VERS >= DARWIN_10_9
-   MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(15), mach__15), 
+   MACXY(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(15), kernelrpc_mach_vm_map_trap),
 #  endif
 
 #  if DARWIN_VERS < DARWIN_10_8
@@ -8537,14 +8847,14 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
 #  endif
 
 #  if DARWIN_VERS >= DARWIN_10_8
-   MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(16), mach__16), 
-   MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(17), mach__17), 
-   MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(18), mach__18), 
-   MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(19), mach__19), 
-   MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(20), mach__20),
-   MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(21), mach__21), 
-   MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(22), mach__22), 
-   MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(23), mach__23), 
+   MACXY(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(16), kernelrpc_mach_port_allocate_trap),
+   MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(17), kernelrpc_mach_port_destroy_trap),
+   MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(18), kernelrpc_mach_port_deallocate_trap),
+   MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(19), kernelrpc_mach_port_mod_refs_trap),
+   MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(20), kernelrpc_mach_port_move_member_trap),
+   MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(21), kernelrpc_mach_port_insert_right_trap),
+   MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(22), kernelrpc_mach_port_insert_member_trap),
+   MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(23), kernelrpc_mach_port_extract_member_trap),
 #  else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(16)), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(17)), 
@@ -8557,12 +8867,13 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
 #  endif
 
 #  if DARWIN_VERS >= DARWIN_10_9
-   MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(24), mach__24), 
+   MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(24), kernelrpc_mach_port_construct_trap),
+   MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(25), kernelrpc_mach_port_destruct_trap),
 #  else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(24)), 
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(25)),
 #  endif
 
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(25)), 
    MACXY(__NR_mach_reply_port, mach_reply_port), 
    MACXY(__NR_thread_self_trap, mach_thread_self), 
    MACXY(__NR_task_self_trap, mach_task_self), 
@@ -8583,8 +8894,8 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(42)), 
 // _____(__NR_map_fd), 
 #else
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(41)), 
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(42)), 
+   MACX_(__NR_kernelrpc_mach_port_guard_trap, kernelrpc_mach_port_guard_trap),
+   MACX_(__NR_kernelrpc_mach_port_unguard_trap, kernelrpc_mach_port_unguard_trap),
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(43)), 
 #endif
 // _____(__NR_task_name_for_pid), 

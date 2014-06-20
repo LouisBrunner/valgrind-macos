@@ -50,12 +50,6 @@
    File stuff
    ------------------------------------------------------------------ */
 
-static inline Bool fd_exists(Int fd)
-{
-   struct vg_stat st;
-   return VG_(fstat)(fd, &st) == 0;
-}
-
 /* Move an fd into the Valgrind-safe range */
 Int VG_(safe_fd)(Int oldfd)
 {

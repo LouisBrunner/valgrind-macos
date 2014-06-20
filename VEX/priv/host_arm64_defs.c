@@ -122,6 +122,8 @@ HReg hregARM64_D13 ( void ) { return mkHReg(13, HRcFlt64, False); }
 HReg hregARM64_Q16 ( void ) { return mkHReg(16, HRcVec128, False); }
 HReg hregARM64_Q17 ( void ) { return mkHReg(17, HRcVec128, False); }
 HReg hregARM64_Q18 ( void ) { return mkHReg(18, HRcVec128, False); }
+HReg hregARM64_Q19 ( void ) { return mkHReg(19, HRcVec128, False); }
+HReg hregARM64_Q20 ( void ) { return mkHReg(20, HRcVec128, False); }
 //ZZ HReg hregARM_Q11 ( void ) { return mkHReg(11, HRcVec128, False); }
 //ZZ HReg hregARM_Q12 ( void ) { return mkHReg(12, HRcVec128, False); }
 //ZZ HReg hregARM_Q13 ( void ) { return mkHReg(13, HRcVec128, False); }
@@ -131,7 +133,7 @@ HReg hregARM64_Q18 ( void ) { return mkHReg(18, HRcVec128, False); }
 void getAllocableRegs_ARM64 ( Int* nregs, HReg** arr )
 {
    Int i = 0;
-   *nregs = 24;
+   *nregs = 26;
    *arr = LibVEX_Alloc(*nregs * sizeof(HReg));
 
    // callee saves ones (22 to 28) are listed first, since we prefer
@@ -168,6 +170,8 @@ void getAllocableRegs_ARM64 ( Int* nregs, HReg** arr )
    (*arr)[i++] = hregARM64_Q16();
    (*arr)[i++] = hregARM64_Q17();
    (*arr)[i++] = hregARM64_Q18();
+   (*arr)[i++] = hregARM64_Q19();
+   (*arr)[i++] = hregARM64_Q20();
 
    // F64 regs, all of which are callee-saved
    (*arr)[i++] = hregARM64_D8();
@@ -2692,8 +2696,8 @@ void getRegUsage_ARM64Instr ( HRegUsage* u, ARM64Instr* i, Bool mode64 )
          /* This is a bit subtle. */
          /* First off, claim it trashes all the caller-saved regs
             which fall within the register allocator's jurisdiction.
-            These I believe to be x0 to x7.  Also need to be
-            careful about vector regs. */
+            These I believe to be x0 to x7 and the 128-bit vector
+            registers in use, q16 .. q20. */
          addHRegUse(u, HRmWrite, hregARM64_X0());
          addHRegUse(u, HRmWrite, hregARM64_X1());
          addHRegUse(u, HRmWrite, hregARM64_X2());
@@ -2705,6 +2709,8 @@ void getRegUsage_ARM64Instr ( HRegUsage* u, ARM64Instr* i, Bool mode64 )
          addHRegUse(u, HRmWrite, hregARM64_Q16());
          addHRegUse(u, HRmWrite, hregARM64_Q17());
          addHRegUse(u, HRmWrite, hregARM64_Q18());
+         addHRegUse(u, HRmWrite, hregARM64_Q19());
+         addHRegUse(u, HRmWrite, hregARM64_Q20());
          /* Now we have to state any parameter-carrying registers
             which might be read.  This depends on nArgRegs. */
             switch (i->ARM64in.Call.nArgRegs) {

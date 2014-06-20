@@ -79,6 +79,8 @@ extern HReg hregARM64_D13 ( void );
 extern HReg hregARM64_Q16 ( void );
 extern HReg hregARM64_Q17 ( void );
 extern HReg hregARM64_Q18 ( void );
+extern HReg hregARM64_Q19 ( void );
+extern HReg hregARM64_Q20 ( void );
 
 /* Number of registers used arg passing in function calls */
 #define ARM64_N_ARGREGS 8   /* x0 .. x7 */

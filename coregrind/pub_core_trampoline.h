@@ -129,6 +129,9 @@ extern char* VG_(amd64_darwin_REDIR_FOR_strcpy)( char *s1, char *s2 );
 extern SizeT VG_(amd64_darwin_REDIR_FOR_strlcat)( char *s1, const char *s2,
                                                   SizeT size );
 extern UInt VG_(amd64_darwin_REDIR_FOR_arc4random)( void );
+# if DARWIN_VERS == DARWIN_10_9
+  extern char* VG_(amd64_darwin_REDIR_FOR_strchr)( const char*, int );
+# endif
 #endif
 
 #if defined(VGP_s390x_linux)

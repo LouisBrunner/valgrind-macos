@@ -1081,6 +1081,29 @@ VG_(amd64_darwin_REDIR_FOR_arc4random):
 	movq	$0x76616c6772696e64, %rax
 	ret
 
+.globl VG_(amd64_darwin_REDIR_FOR_strchr)
+VG_(amd64_darwin_REDIR_FOR_strchr):
+        pushq   %rbp
+        movq    %rsp, %rbp
+        movb    (%rdi), %cl
+        cmpb    %sil, %cl
+        jne     1f
+        movq    %rdi, %rax
+        popq    %rbp
+        ret
+1:
+        testb   %cl, %cl
+        movl    $0, %eax
+        je      2f
+        movb    1(%rdi), %cl
+        incq    %rdi
+        cmpb    %sil, %cl
+        movq    %rdi, %rax
+        jne     1b
+2:
+        popq    %rbp
+        ret
+        
 .globl VG_(trampoline_stuff_end)
 VG_(trampoline_stuff_end):
 

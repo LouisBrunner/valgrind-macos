@@ -1387,6 +1387,10 @@ void VG_(redir_initialise) ( void )
       // DDD: #warning fixme rdar://6166275
       add_hardwired_spec("dyld", "arc4random",
                          (Addr)&VG_(amd64_darwin_REDIR_FOR_arc4random), NULL);
+#     if DARWIN_VERS == DARWIN_10_9
+      add_hardwired_spec("dyld", "strchr",
+                         (Addr)&VG_(amd64_darwin_REDIR_FOR_strchr), NULL);
+#     endif
    }
 
 #  elif defined(VGP_s390x_linux)

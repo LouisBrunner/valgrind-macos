@@ -162,6 +162,7 @@
 
 #define TRACE_D3(format, args...) \
    if (UNLIKELY(td3)) { VG_(printf)(format, ## args); }
+#define TD3 (UNLIKELY(td3))
 
 #define D3_INVALID_CUOFF  ((UWord)(-1UL))
 #define D3_FAKEVOID_CUOFF ((UWord)(-2UL))
@@ -1178,7 +1179,7 @@ void get_Form_contents ( /*OUT*/FormContents* cts,
             not just the first byte of it. */
          DiCursor str
             = ML_(cur_plus)( ML_(cur_from_sli)(cc->escn_debug_str), uw );
-         if (td3) {
+         if (TD3) {
             HChar* tmp = ML_(cur_read_strdup)(str, "di.getFC.1");
             TRACE_D3("(indirect string, offset: 0x%lx): %s", uw, tmp);
             ML_(dinfo_free)(tmp);
@@ -1189,7 +1190,7 @@ void get_Form_contents ( /*OUT*/FormContents* cts,
       }
       case DW_FORM_string: {
          DiCursor str = get_AsciiZ(c);
-         if (td3) {
+         if (TD3) {
             HChar* tmp = ML_(cur_read_strdup)(str, "di.getFC.2");
             TRACE_D3("%s", tmp);
             ML_(dinfo_free)(tmp);
@@ -1353,7 +1354,7 @@ void get_Form_contents ( /*OUT*/FormContents* cts,
             not just the first byte of it. */
          DiCursor str
             = ML_(cur_plus)( ML_(cur_from_sli)(cc->escn_debug_str_alt), uw);
-         if (td3) {
+         if (TD3) {
             HChar* tmp = ML_(cur_read_strdup)(str, "di.getFC.3");
             TRACE_D3("(indirect alt string, offset: 0x%lx): %s", uw, tmp);
             ML_(dinfo_free)(tmp);
@@ -1530,7 +1531,7 @@ static void varstack_push ( CUConst* cc,
    parser->level[parser->sp]  = level;
    parser->isFunc[parser->sp] = isFunc;
    parser->fbGX[parser->sp]   = fbGX;
-   if (td3)
+   if (TD3)
       varstack_show( parser, "after push" );
 }
 
@@ -2535,7 +2536,7 @@ static void typestack_push ( CUConst* cc,
    vg_assert(parentE->cuOff != D3_INVALID_CUOFF);
    parser->qparentE[parser->sp] = *parentE;
    parser->qlevel[parser->sp]  = level;
-   if (td3)
+   if (TD3)
       typestack_show( parser, "after push" );
 }
 
@@ -3741,7 +3742,7 @@ static void read_DIE (
    abbv = get_abbv(cc, abbv_code);
    atag      = abbv->atag;
 
-   if (td3) {
+   if (TD3) {
       TRACE_D3("\n");
       trace_DIE ((DW_TAG)atag, posn, level,
                  get_position_of_Cursor( c ), abbv, cc);
@@ -4064,7 +4065,7 @@ void new_dwarf3_reader_wrk (
    VgHashTable signature_types = NULL;
 
    /* Display/trace various information, if requested. */
-   if (td3) {
+   if (TD3) {
       trace_debug_loc    (di, barf, escn_debug_loc);
       trace_debug_ranges (di, barf, escn_debug_ranges);
       trace_debug_abbrev (di, barf, escn_debug_abbv);
@@ -4413,7 +4414,7 @@ void new_dwarf3_reader_wrk (
    if (VG_(clo_read_var_info)) {
       /* From here on we're post-processing the stuff we got
          out of the .debug_info section. */
-      if (td3) {
+      if (TD3) {
          TRACE_D3("\n");
          ML_(pp_TyEnts)(tyents, "Initial type entity (TyEnt) array");
          TRACE_D3("\n");
@@ -4424,7 +4425,7 @@ void new_dwarf3_reader_wrk (
                                         sizeof(TyEntIndexCache) );
       ML_(TyEntIndexCache__invalidate)( tyents_cache );
       dedup_types( td3, tyents, tyents_cache );
-      if (td3) {
+      if (TD3) {
          TRACE_D3("\n");
          ML_(pp_TyEnts)(tyents, "After type entity (TyEnt) compression");
       }
@@ -4530,7 +4531,7 @@ void new_dwarf3_reader_wrk (
          varp = *(TempVar**)VG_(indexXA)( tempvars, j );
 
          /* Possibly show .. */
-         if (td3) {
+         if (TD3) {
             VG_(printf)("<%lx> addVar: level %d: %s :: ",
                         varp->dioff,
                         varp->level,

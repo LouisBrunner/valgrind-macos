@@ -1,0 +1,5 @@
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: temp_member_func_b<int> (inltemplate.cpp:12)
+   by 0x........: int X::temp_member_func_noinline<int>(int) (inltemplate.cpp:19)
+   by 0x........: main (inltemplate.cpp:27)
+

@@ -2425,7 +2425,6 @@ static HChar* get_inlFnName (Int absori, CUConst* cc, Bool td3)
    abbv_code = get_ULEB128( &c );
    abbv      = get_abbv ( cc, abbv_code);
    atag      = abbv->atag;
-   TRACE_D3("\n");
    TRACE_D3(" <get_inlFnName><%lx>: Abbrev Number: %llu (%s)\n",
             posn, abbv_code, ML_(pp_DW_TAG)( atag ) );
 
@@ -2454,14 +2453,28 @@ static HChar* get_inlFnName (Int absori, CUConst* cc, Bool td3)
                                         "get_inlFnName.1" );
          ret = ML_(addStr)(cc->di, fnname, -1);
          ML_(dinfo_free) (fnname);
-         break;
+         break; /* Name found, get out of the loop, as this has priority over
+                 DW_AT_specification. */
+      }
+      if (attr == DW_AT_specification) {
+         if (cts.szB == 0)
+            cc->barf("get_inlFnName: AT specification missing");
+         /* hoping that there is no loop */
+         ret = get_inlFnName (cts.u.val, cc, td3);
+         /* 
+            Unclear if having both DW_AT_specification and DW_AT_name is
+            possible but in any case, we do not break here. 
+            If we find later on a DW_AT_name, it will override the name found
+            in the DW_AT_specification.*/
       }
    }
 
    if (ret)
       return ret;
-   else
+   else {
+      TRACE_D3("AbsOriFnNameNotFound");
       return ML_(addStr)(cc->di, "AbsOriFnNameNotFound", -1);
+   }
 }
 
 /* Returns True if the (possibly) childrens of the current DIE are interesting

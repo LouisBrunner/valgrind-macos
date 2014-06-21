@@ -120,6 +120,7 @@ EXTRA_DIST = \
 	inlinfo.stderr.exp inlinfo.stdout.exp inlinfo.vgtest \
 	inlinfosupp.stderr.exp inlinfosupp.stdout.exp inlinfosupp.supp inlinfosupp.vgtest \
 	inlinfosuppobj.stderr.exp inlinfosuppobj.stdout.exp inlinfosuppobj.supp inlinfosuppobj.vgtest \
+	inltemplate.stderr.exp inltemplate.stdout.exp inltemplate.vgtest \
 	leak-0.vgtest leak-0.stderr.exp \
 	leak-cases-full.vgtest leak-cases-full.stderr.exp \
 	leak-cases-possible.vgtest leak-cases-possible.stderr.exp \
@@ -302,7 +303,7 @@ check_PROGRAMS = \
 	err_disable1 err_disable2 err_disable3 err_disable4 \
 	err_disable_arange1 \
 	file_locking \
-	fprw fwrite inits inline inlinfo \
+	fprw fwrite inits inline inlinfo inltemplate \
 	holey_buffer_too_small \
 	leak-0 \
 	leak-cases \
@@ -410,6 +411,9 @@ fprw_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 inits_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 
 inlinfo_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
+
+inltemplate_SOURCES = inltemplate.cpp
+inltemplate_CXXFLAGS = $(AM_CXXFLAGS) @FLAG_W_NO_UNINITIALIZED@
 
 long_namespace_xml_SOURCES = long_namespace_xml.cpp
 

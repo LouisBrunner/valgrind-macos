@@ -238,12 +238,10 @@ static inline void my_exit ( int x )
 # endif
 
 #elif defined(VGO_darwin)
- //STRCHR(VG_Z_LIBC_SONAME,          strchr)
- //STRCHR(VG_Z_LIBC_SONAME,          index)
- //STRCHR(VG_Z_DYLD,                 strchr)
- //STRCHR(VG_Z_DYLD,                 index)
  STRCHR(VG_Z_LIBC_SONAME, strchr)
-
+# if DARWIN_VERS == DARWIN_10_9
+  STRCHR(libsystemZuplatformZddylib, _platform_strchr)
+# endif
 #endif
 
 
@@ -422,9 +420,10 @@ static inline void my_exit ( int x )
 # endif
 
 #elif defined(VGO_darwin)
- //STRLEN(VG_Z_LIBC_SONAME,          strlen)
  STRLEN(VG_Z_LIBC_SONAME, strlen)
-
+# if DARWIN_VERS == DARWIN_10_9
+  STRLEN(libsystemZucZddylib, strlen)
+# endif
 #endif
 
 
@@ -760,8 +759,10 @@ static inline void my_exit ( int x )
 # endif
 
 #elif defined(VGO_darwin)
- //STRCMP(VG_Z_LIBC_SONAME,          strcmp)
  STRCMP(VG_Z_LIBC_SONAME, strcmp)
+# if DARWIN_VERS == DARWIN_10_9
+  STRCMP(libsystemZuplatformZddylib, _platform_strcmp)
+# endif
 
 #endif
 

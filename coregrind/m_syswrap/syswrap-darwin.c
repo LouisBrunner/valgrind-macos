@@ -8279,12 +8279,17 @@ POST(psynch_cvclrprepost)
 PRE(kernelrpc_mach_vm_allocate_trap)
 {
    PRINT("kernelrpc_mach_vm_allocate_trap(target:%s, address:%p, size:%#lx, flags:%#lx)", name_for_port(ARG1), *(void**)ARG2, ARG3, ARG4);
+   PRE_MEM_WRITE("kernelrpc_mach_vm_allocate_trap(address)",
+                 ARG2, sizeof(void*));
    if ((ARG4 & VM_FLAGS_ANYWHERE) == VM_FLAGS_FIXED)
       ML_(notify_core_and_tool_of_mmap)(*(mach_vm_address_t*)ARG2, ARG3, VKI_PROT_READ|VKI_PROT_WRITE, VKI_MAP_ANON, -1, 0);
 }
 POST(kernelrpc_mach_vm_allocate_trap)
 {
    PRINT("address:%p size:%#lx", *(void**)ARG2, ARG3);
+   if (ML_(safe_to_deref)(ARG2, sizeof(void*))) {
+      POST_MEM_WRITE(ARG2, sizeof(void*));
+   }
    if ((ARG4 & VM_FLAGS_ANYWHERE) != VM_FLAGS_FIXED)
       ML_(notify_core_and_tool_of_mmap)(*(mach_vm_address_t*)ARG2, ARG3, VKI_PROT_READ|VKI_PROT_WRITE, VKI_MAP_ANON, -1, 0);
 }

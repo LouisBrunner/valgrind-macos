@@ -217,6 +217,10 @@ static inline void set_position_of_Cursor ( Cursor* c, ULong pos ) {
    c->sli_next = c->sli.ioff + pos;
    vg_assert(is_sane_Cursor(c));
 }
+static inline void advance_position_of_Cursor ( Cursor* c, ULong delta ) {
+   c->sli_next += delta;
+   vg_assert(is_sane_Cursor(c));
+}
 
 static /*signed*/Long get_remaining_length_Cursor ( Cursor* c ) {
    vg_assert(is_sane_Cursor(c));
@@ -380,9 +384,24 @@ static ULong get_Initial_Length ( /*OUT*/Bool* is64,
 
 typedef
    struct _name_form {
-      ULong at_name;
-      ULong at_form;
+      ULong at_name;  // Dwarf Attribute name
+      ULong at_form;  // Dward Attribute form
+      UInt  skip_szB; // Nr of bytes skippable from here ...
+      UInt  next_nf;  // ... to reach this attr/form index in the g_abbv.nf
    } name_form;
+/* skip_szB and n_nf are used to optimise the skipping of uninteresting DIEs.
+   Each name_form maintains how many (fixed) nr of bytes can be skipped from
+   the beginning of this form till the next attr/form to look at.
+   The next form to look can be:
+       an 'interesting' attr/form to read while skipping a DIE
+          (currently, this is only DW_AT_sibling)
+   or
+       a variable length form which must be read to be skipped.
+   For a variable length form, the skip_szB will be equal to VARSZ_FORM.
+
+   Note: this technique could also be used to speed up the parsing
+   of DIEs : for each parser kind, we could have the nr of bytes
+   to skip to directly reach the interesting form(s) for the parser. */
 
 typedef
    struct _g_abbv {
@@ -392,7 +411,9 @@ typedef
       ULong  has_children;
       name_form nf[0];
       /* Variable-length array of name/form pairs, terminated
-         by a 0/0 pair. */
+         by a 0/0 pair.
+         The skip_szB/next_nf allows to skip efficiently a DIE
+         described by this g_abbv; */
     } g_abbv;
 
 /* Holds information that is constant through the parsing of a
@@ -865,6 +886,9 @@ static XArray* /* of AddrRange */
    return xa;
 }
 
+#define VARSZ_FORM 0xffffffff
+static UInt get_Form_szB (CUConst* cc, DW_FORM form );
+
 /* Initialises the hash table of abbreviations.
    We do a single scan of the abbv slice to parse and
    build all abbreviations, for the following reasons:
@@ -880,7 +904,8 @@ static void init_ht_abbvs (CUConst* cc,
    g_abbv *ta; // temporary abbreviation, reallocated if needed.
    UInt ta_nf_maxE; // max nr of pairs in ta.nf[], doubled when reallocated.
    UInt ta_nf_n;    // nr of pairs in ta->nf that are initialised.
-   g_abbv *ht_ta; // abbv to insert in hash table. 
+   g_abbv *ht_ta; // abbv to insert in hash table.
+   Int i;
 
    #define SZ_G_ABBV(_nf_szE) (sizeof(g_abbv) + _nf_szE * sizeof(name_form))
 
@@ -914,13 +939,42 @@ static void init_ht_abbvs (CUConst* cc,
          }
         ta_nf_n++;
       }
+
+      // Initialises the skip_szB/next_nf elements : an element at position
+      // i must contain the sum of its own size + the sizes of all elements
+      // following i till either the next variable size element, the next
+      // sibling element or the end of the DIE.
+      ta->nf[ta_nf_n - 1].skip_szB = 0;
+      ta->nf[ta_nf_n - 1].next_nf = 0;
+      for (i = ta_nf_n - 2; i >= 0; i--) {
+         const UInt form_szB = get_Form_szB (cc, (DW_FORM)ta->nf[i].at_form);
+          
+         if (ta->nf[i+1].at_name == DW_AT_sibling
+             || ta->nf[i+1].skip_szB == VARSZ_FORM) {
+            ta->nf[i].skip_szB = form_szB;
+            ta->nf[i].next_nf  = i+1;
+         } else if (form_szB == VARSZ_FORM) {
+            ta->nf[i].skip_szB = form_szB;
+            ta->nf[i].next_nf  = i+1;
+         } else {
+            ta->nf[i].skip_szB = ta->nf[i+1].skip_szB + form_szB;
+            ta->nf[i].next_nf  = ta->nf[i+1].next_nf;
+         }
+      }
+
       ht_ta = ML_(dinfo_zalloc) ("di.readdwarf3.ht_ta", SZ_G_ABBV(ta_nf_n));
       VG_(memcpy) (ht_ta, ta, SZ_G_ABBV(ta_nf_n));
       VG_(HT_add_node) ( cc->ht_abbvs, ht_ta );
-      TRACE_D3("  Adding abbv_code %llu TAG  %s [%s] nf %d\n",
-               (ULong) ht_ta->abbv_code, ML_(pp_DW_TAG)(ht_ta->atag),
-               ML_(pp_DW_children)(ht_ta->has_children),
-               ta_nf_n);
+      if (TD3) {
+         TRACE_D3("  Adding abbv_code %llu TAG  %s [%s] nf %d ",
+                  (ULong) ht_ta->abbv_code, ML_(pp_DW_TAG)(ht_ta->atag),
+                  ML_(pp_DW_children)(ht_ta->has_children),
+                  ta_nf_n);
+         TRACE_D3("  ");
+         for (i = 0; i < ta_nf_n; i++)
+            TRACE_D3("[%u,%u] ", ta->nf[i].skip_szB, ta->nf[i].next_nf);
+         TRACE_D3("\n");
+      }
    }
 
    ML_(dinfo_free) (ta);
@@ -1082,6 +1136,9 @@ void get_Form_contents ( /*OUT*/FormContents* cts,
                          Bool td3, DW_FORM form )
 {
    VG_(bzero_inline)(cts, sizeof(*cts));
+   // !!! keep switch in sync with get_Form_szB. The nr of characters read below
+   // must be computed similarly in get_Form_szB.
+   // The consistency is verified in trace_DIE.
    switch (form) {
       case DW_FORM_data1:
          cts->u.val = (ULong)(UChar)get_UChar(c);
@@ -1372,6 +1429,119 @@ void get_Form_contents ( /*OUT*/FormContents* cts,
    }
 }
 
+static inline UInt sizeof_Dwarfish_UWord (Bool is_dw64)
+{
+   if (is_dw64)
+      return sizeof(ULong);
+   else
+      return sizeof(UInt);
+}
+
+#define VARSZ_FORM 0xffffffff
+/* If the form is a fixed length form, return the nr of bytes for this form.
+   If the form is a variable length form, return VARSZ_FORM. */
+static
+UInt get_Form_szB (CUConst* cc, DW_FORM form )
+{
+   // !!! keep switch in sync with get_Form_contents : the nr of bytes
+   // read from a cursor by get_Form_contents must be returned by
+   // the below switch.
+   // The consistency is verified in trace_DIE.
+   switch (form) {
+      case DW_FORM_data1: return 1;
+      case DW_FORM_data2: return 2;
+      case DW_FORM_data4: return 4;
+      case DW_FORM_data8: return 8;
+      case DW_FORM_sec_offset:
+         if (cc->is_dw64)
+            return 8;
+         else
+            return 4;
+      case DW_FORM_sdata:
+         return VARSZ_FORM;
+      case DW_FORM_udata:
+         return VARSZ_FORM;
+      case DW_FORM_addr: // See hack in get_Form_contents
+         return sizeof(UWord);
+      case DW_FORM_ref_addr: // See hack in get_Form_contents
+         if (cc->version == 2)
+            return sizeof(UWord);
+         else 
+            return sizeof_Dwarfish_UWord (cc->is_dw64);
+      case DW_FORM_strp:
+         return sizeof_Dwarfish_UWord (cc->is_dw64);
+      case DW_FORM_string: 
+         return VARSZ_FORM;
+      case DW_FORM_ref1:
+         return 1;
+      case DW_FORM_ref2:
+         return 2;
+      case DW_FORM_ref4:
+         return 4;
+      case DW_FORM_ref8:
+         return 8;
+      case DW_FORM_ref_udata:
+         return VARSZ_FORM;
+      case DW_FORM_flag: 
+         return 1;
+      case DW_FORM_flag_present:
+         return 0; // !!! special case, no data.
+      case DW_FORM_block1:
+         return VARSZ_FORM;
+      case DW_FORM_block2:
+         return VARSZ_FORM;
+      case DW_FORM_block4:
+         return VARSZ_FORM;
+      case DW_FORM_exprloc:
+      case DW_FORM_block:
+         return VARSZ_FORM;
+      case DW_FORM_ref_sig8:
+         return 8 + 8;
+      case DW_FORM_indirect:
+         return VARSZ_FORM;
+      case DW_FORM_GNU_ref_alt:
+         return sizeof_Dwarfish_UWord(cc->is_dw64);
+      case DW_FORM_GNU_strp_alt:
+         return sizeof_Dwarfish_UWord(cc->is_dw64);
+      default:
+         VG_(printf)(
+            "get_Form_szB: unhandled %d (%s)\n",
+            form, ML_(pp_DW_FORM)(form));
+         cc->barf("get_Form_contents: unhandled DW_FORM");
+   }
+}
+
+/* Skip a DIE as described by abbv.
+   If the DIE has a sibling, *sibling is set to the skipped DIE sibling value. */
+static
+void skip_DIE (UWord  *sibling,
+               Cursor* c_die,
+               g_abbv *abbv,
+               CUConst* cc)
+{
+   UInt nf_i;
+   FormContents cts;
+   nf_i = 0;
+   while (True) {
+      if (abbv->nf[nf_i].at_name == DW_AT_sibling) {
+         get_Form_contents( &cts, cc, c_die, False /*td3*/,
+                            (DW_FORM)abbv->nf[nf_i].at_form );
+         if ( cts.szB > 0 ) 
+            *sibling = cts.u.val;
+         nf_i++;
+      } else if (abbv->nf[nf_i].skip_szB == VARSZ_FORM) {
+         get_Form_contents( &cts, cc, c_die, False /*td3*/,
+                            (DW_FORM)abbv->nf[nf_i].at_form );
+         nf_i++;
+      } else {
+         advance_position_of_Cursor (c_die, (ULong)abbv->nf[nf_i].skip_szB);
+         nf_i = abbv->nf[nf_i].next_nf;
+      }
+      if (nf_i == 0)
+         break;
+   }
+}
+
 
 /*------------------------------------------------------------*/
 /*---                                                      ---*/
@@ -1586,8 +1756,8 @@ void read_filename_table( /*MOD*/XArray* /* of UChar* */ filenameTable,
                 "Overrun whilst reading .debug_line section(1)" );
 
    /* unit_length = */
-      get_Initial_Length( &is_dw64, &c,
-           "read_filename_table: invalid initial-length field" );
+   get_Initial_Length( &is_dw64, &c,
+                       "read_filename_table: invalid initial-length field" );
    version = get_UShort( &c );
    if (version != 2 && version != 3 && version != 4)
      cc->barf("read_filename_table: Only DWARF version 2, 3 and 4 line info "
@@ -1685,9 +1855,12 @@ static void trace_DIE(
 {
    Cursor c;
    FormContents cts;
+   UWord sibling = 0;
    UInt nf_i;
    Bool  debug_types_flag;
    Bool  alt_flag;
+   Cursor check_skip;
+   UWord check_sibling = 0;
 
    posn = uncook_die( cc, posn, &debug_types_flag, &alt_flag );
    init_Cursor (&c, 
@@ -1695,6 +1868,7 @@ static void trace_DIE(
                 alt_flag ? cc->escn_debug_info_alt : cc->escn_debug_info,
                 saved_die_c_offset, cc->barf, 
                 "Overrun trace_DIE");
+   check_skip = c;
    VG_(printf)(" <%d><%lx>: Abbrev Number: %llu (%s)%s%s\n",
                level, posn, (ULong) abbv->abbv_code, ML_(pp_DW_TAG)( dtag ),
                debug_types_flag ? " (in .debug_types)" : "",
@@ -1708,8 +1882,22 @@ static void trace_DIE(
       VG_(printf)("     %18s: ", ML_(pp_DW_AT)(attr));
       /* Get the form contents, so as to print them */
       get_Form_contents( &cts, cc, &c, True, form );
+      if (attr == DW_AT_sibling && cts.szB > 0) {
+         sibling = cts.u.val;
+      }
       VG_(printf)("\t\n");
    }
+
+   /* Verify that skipping a DIE gives the same displacement as
+      tracing (i.e. reading) a DIE. If there is an inconsistency in
+      the nr of bytes read by get_Form_contents and get_Form_szB, this
+      should be detected by the below. Using --trace-symtab=yes
+      --read-var-info=yes will ensure all DIEs are systematically
+      verified. */
+   skip_DIE (&check_sibling, &check_skip, abbv, cc);
+   vg_assert (check_sibling == sibling);
+   vg_assert (get_position_of_Cursor (&check_skip) 
+              == get_position_of_Cursor (&c));
 }
 
 __attribute__((noreturn))
@@ -3823,26 +4011,11 @@ static void read_DIE (
       // DIE was read by a parser above, so we know where the DIE ends.
       set_position_of_Cursor( c, after_die_c_offset );
    } else {
-      /* No parser has parsed this DIE. So, we need to read the DIE
-         to skip its data, in order to read the next DIE.
+      /* No parser has parsed this DIE. So, we need to skip the DIE,
+         in order to read the next DIE.
          At the same time, establish sibling value if the DIE has one. */
-      UInt nf_i;
-
-      TRACE_D3("    (skipped DIE)\n");
-      nf_i = 0;
-      while (True) {
-         FormContents cts;
-         ULong at_name = abbv->nf[nf_i].at_name;
-         ULong at_form = abbv->nf[nf_i].at_form;
-         nf_i++;
-         if (at_name == 0 && at_form == 0) break;
-         /* Get the form contents, but ignore them; the only purpose is
-            to skip the data or get the DIE sibling, if it has one. */
-         get_Form_contents( &cts, cc, c, False /*td3*/, (DW_FORM)at_form );
-         if (UNLIKELY(at_name == DW_AT_sibling && cts.szB > 0)) {
-            sibling = cts.u.val;
-         }
-      }
+      TRACE_D3("    uninteresting DIE -> skipping ...\n");
+      skip_DIE (&sibling, c, abbv, cc);
    }
 
    /* --- Now recurse into its children, if any 

@@ -801,6 +801,7 @@ AC_ARG_WITH(tmpdir,
    tmpdir="$withval",
    tmpdir="/tmp")
 AC_DEFINE_UNQUOTED(VG_TMPDIR, "$tmpdir", [Temporary files directory])
+AC_SUBST(VG_TMPDIR, [$tmpdir])
 
 
 #----------------------------------------------------------------------------

@@ -108,8 +108,6 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
 
 === Tools/Massif =======================================================
 
-332765  ms_print reports bad error if temp file can't be created
-        in current directory
 
 === Tools/Cachegrind ===================================================
 

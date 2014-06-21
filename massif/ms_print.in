@@ -51,8 +51,13 @@ my $graph_y = 20;
 # Input file name
 my $input_file = undef;
 
+# Where to create tmp files. See also function VG_(tmpdir) in m_libcfile.c.
+my $tmp_dir = $ENV{"TMPDIR"};
+$tmp_dir = "@VG_TMPDIR@" if (! $tmp_dir);
+$tmp_dir = "/tmp" if (! $tmp_dir);
+
 # Tmp file name.
-my $tmp_file = "ms_print.tmp.$$";
+my $tmp_file = "$tmp_dir/ms_print.tmp.$$";
 
 # Version number.
 my $version = "@VERSION@";
@@ -390,7 +395,7 @@ sub read_input_file()
     # Print snapshot list header to $tmp_file.
     #-------------------------------------------------------------------------
     open(TMPFILE, "> $tmp_file") 
-         || die "Cannot open $tmp_file for reading\n";
+         || die "Cannot open $tmp_file for writing\n";
 
     my $time_column = sprintf("%14s", "time($time_unit)");
     my $column_format = "%3s %14s %16s %16s %13s %12s\n";

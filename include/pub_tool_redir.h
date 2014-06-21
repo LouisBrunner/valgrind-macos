@@ -246,11 +246,19 @@
 #elif defined(VGO_darwin) && (DARWIN_VERS <= DARWIN_10_6)
 #  define  VG_Z_LIBC_SONAME  libSystemZdZaZddylib    // libSystem.*.dylib
 
-#elif defined(VGO_darwin) && (DARWIN_VERS == DARWIN_10_7 || DARWIN_VERS == DARWIN_10_8)
+#elif defined(VGO_darwin) && (DARWIN_VERS == DARWIN_10_7 \
+                              || DARWIN_VERS == DARWIN_10_8)
 #  define  VG_Z_LIBC_SONAME  libsystemZucZaZddylib   // libsystem_c*.dylib
+   /* Note that the idea of a single name for the C library falls
+      apart on more recent Darwins (10.8 and later) since the
+      functionality (malloc, free, str*) is split between
+      libsystem_c.dylib, libsystem_malloc.dylib and
+      libsystem_platform.dylib.  This makes VG_Z_LIBC_SONAME somewhat useless
+      at least inside vg_replace_strmem.c, and that hardwires some dylib
+      names directly, for OSX 10.9. */
 
 #elif defined(VGO_darwin) && (DARWIN_VERS >= DARWIN_10_9)
-#  define  VG_Z_LIBC_SONAME  libsystemZumallocZddylib   // libsystem_malloc.dylib
+#  define  VG_Z_LIBC_SONAME  libsystemZumallocZddylib  // libsystem_malloc.dylib
 
 #else
 #  error "Unknown platform"
@@ -282,7 +290,8 @@
 #define  VG_Z_LD_LINUX_SO_2         ldZhlinuxZdsoZd2           // ld-linux.so.2
 #define  VG_U_LD_LINUX_SO_2         "ld-linux.so.2"
 
-#define  VG_Z_LD_LINUX_X86_64_SO_2  ldZhlinuxZhx86Zh64ZdsoZd2  // ld-linux-x86-64.so.2
+#define  VG_Z_LD_LINUX_X86_64_SO_2  ldZhlinuxZhx86Zh64ZdsoZd2
+                                                        // ld-linux-x86-64.so.2
 #define  VG_U_LD_LINUX_X86_64_SO_2  "ld-linux-x86-64.so.2"
 
 #define  VG_Z_LD64_SO_1             ld64ZdsoZd1                // ld64.so.1

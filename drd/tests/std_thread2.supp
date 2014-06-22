@@ -1,0 +1,10 @@
+{
+   dl_lookup_symbol_x
+   drd:ConflictingAccess
+   fun:_dl_lookup_symbol_x
+}
+{
+   pthread_create
+   drd:ConflictingAccess
+   fun:pthread_create@@GLIBC_2.2.5
+}

@@ -719,6 +719,7 @@ static irop_t irops[] = {
   { DEFOP(Iop_Abs8x16, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Abs16x8, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Abs32x4, UNDEF_UNKNOWN), },
+  { DEFOP(Iop_Abs64x2, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Avg8Ux16, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Avg16Ux8, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Avg32Ux4, UNDEF_UNKNOWN), },

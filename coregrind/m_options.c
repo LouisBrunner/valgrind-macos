@@ -78,6 +78,7 @@ HChar* VG_(clo_log_fname_expanded) = NULL;
 HChar* VG_(clo_xml_fname_expanded) = NULL;
 Bool   VG_(clo_time_stamp)     = False;
 Int    VG_(clo_input_fd)       = 0; /* stdin */
+Bool   VG_(clo_default_supp)   = True;
 Int    VG_(clo_n_suppressions) = 0;
 const HChar* VG_(clo_suppressions)[VG_CLO_MAX_SFILES];
 Int    VG_(clo_n_fullpath_after) = 0;

@@ -396,10 +396,11 @@ run of <computeroutput>valgrind -v --tool=memcheck ls -l</computeroutput>:</para
 --1610-- used_suppression:      2 glibc-2.5.x-on-SUSE-10.2-(PPC)-2a /usr/lib/valgrind/default.supp:1234
 ]]></programlisting>
 
-<para>Multiple suppressions files are allowed.  By default, Valgrind
-uses <filename>$PREFIX/lib/valgrind/default.supp</filename>.  You can
-ask to add suppressions from another file, by specifying
-<option>--suppressions=/path/to/file.supp</option>.
+<para>Multiple suppressions files are allowed.  Valgrind loads suppression
+patterns from <filename>$PREFIX/lib/valgrind/default.supp</filename> unless
+<option>--defaultsupp=no</option> has been specified.  You can
+ask to add suppressions from additional files by specifying
+<option>--suppressions=/path/to/file.supp</option> one or more times.
 </para>
 
 <para>If you want to understand more about suppressions, look at an

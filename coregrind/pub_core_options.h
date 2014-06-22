@@ -139,6 +139,8 @@ extern Bool  VG_(clo_time_stamp);
 /* The file descriptor to read for input.  default: 0 == stdin */
 extern Int   VG_(clo_input_fd);
 
+/* Whether or not to load the default suppressions. */
+extern Bool  VG_(clo_default_supp);
 /* The number of suppression files specified. */
 extern Int   VG_(clo_n_suppressions);
 /* The names of the suppression files. */

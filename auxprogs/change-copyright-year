@@ -16,14 +16,14 @@
 
 # The find command deliberately skips .svn/ subdirs -- we don't want to
 # change them.
-for i in `find . -name '*.[chS]' -type f -not -path '*.svn\/*'` ; do
+for i in `find . -name '*.[chS]' -o -name '*.in' -type f -not -path '*.svn\/*'` ; do
     echo $i
-    perl -p -e 's/Copyright \(C\) 20([0-1])([0-9])-2012/Copyright (C) 20$1$2-2013/' < $i > tmp.$$
+    if [ -L $i ]; then continue; fi  # skip symbolic links
+    perl -p -e 's/Copyright \(C\) 20([0-1])([0-9])-2013/Copyright (C) 20$1$2-2014/' < $i > tmp.$$
     mv tmp.$$ $i
 
 # Copyright IBM Corp. 2010-2011
 
-    perl -p -e 's/Copyright IBM Corp. 20([0-1])([0-9])-2012/Copyright IBM Corp. 20$1$2-2013/' < $i > tmp.$$
+    perl -p -e 's/Copyright IBM Corp. 20([0-1])([0-9])-2013/Copyright IBM Corp. 20$1$2-2014/' < $i > tmp.$$
     mv tmp.$$ $i
 done
-

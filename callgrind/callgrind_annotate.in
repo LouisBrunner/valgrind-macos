@@ -8,11 +8,11 @@
 #  This file is part of Callgrind, a cache-simulator and call graph
 #  tracer built on Valgrind.
 #
-#  Copyright (C) 2003 Josef Weidendorfer
+#  Copyright (C) 2003-2013 Josef Weidendorfer
 #     Josef.Weidendorfer@gmx.de
 #
 #  This file is based heavily on cg_annotate, part of Valgrind.
-#  Copyright (C) 2002 Nicholas Nethercote
+#  Copyright (C) 2002-2013 Nicholas Nethercote
 #     njn@valgrind.org
 #
 #  This program is free software; you can redistribute it and/or

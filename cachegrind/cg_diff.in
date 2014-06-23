@@ -7,7 +7,7 @@
 #  This file is part of Cachegrind, a Valgrind tool for cache
 #  profiling programs.
 #
-#  Copyright (C) 2002-2010 Nicholas Nethercote
+#  Copyright (C) 2002-2013 Nicholas Nethercote
 #     njn@valgrind.org
 #
 #  This program is free software; you can redistribute it and/or
@@ -52,7 +52,7 @@ usage: cg_diff [options] <cachegrind-out-file1> <cachegrind-out-file2>
                           to filenames, eg. --mod-filename='s/prog[0-9]/projN/'
     --mod-funcname=<expr> like --mod-filename, but applied to function names
 
-  cg_diff is Copyright (C) 2010-2010 Nicholas Nethercote.
+  cg_diff is Copyright (C) 2002-2013 Nicholas Nethercote.
   and licensed under the GNU General Public License, version 2.
   Bug reports, feedback, admiration, abuse, etc, to: njn\@valgrind.org.
                                                 

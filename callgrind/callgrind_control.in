@@ -7,7 +7,7 @@
 #  This file is part of Callgrind, a cache-simulator and call graph
 #  tracer built on Valgrind.
 #
-#  Copyright (C) 2003-2011 Josef Weidendorfer <Josef.Weidendorfer@gmx.de>
+#  Copyright (C) 2003-2013 Josef Weidendorfer <Josef.Weidendorfer@gmx.de>
 #
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License as

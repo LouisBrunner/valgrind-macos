@@ -8291,7 +8291,7 @@ PRE(kernelrpc_mach_vm_allocate_trap)
 POST(kernelrpc_mach_vm_allocate_trap)
 {
    PRINT("address:%p size:%#lx", *(void**)ARG2, ARG3);
-   if (ML_(safe_to_deref)(ARG2, sizeof(void*))) {
+   if (ML_(safe_to_deref)((void*)ARG2, sizeof(void*))) {
       POST_MEM_WRITE(ARG2, sizeof(void*));
    }
    if ((ARG4 & VM_FLAGS_ANYWHERE) != VM_FLAGS_FIXED)
@@ -8321,24 +8321,6 @@ PRE(kernelrpc_mach_vm_protect_trap)
          " set_maximum:%#lx, new_prot:%#lx)", ARG1, ARG2, ARG3, ARG4, ARG5);
    ML_(notify_core_and_tool_of_mprotect)(ARG2, ARG3, ARG5);
 }
-
-#if DARWIN_VERS >= DARWIN_10_9
-PRE(kernelrpc_mach_vm_map_trap)
-{
-   PRINT("kernelrpc_mach_vm_map_trap"
-         "(target:%#lx, address:%p, size:%#lx,"
-         " mask:%#lx, flags:%#lx, cur_prot:%#lx)",
-    ARG1, *(void**)ARG2, ARG3, ARG4, ARG5, ARG6);
-}
-POST(kernelrpc_mach_vm_map_trap)
-{
-   PRINT("-> address:%p", *(void**)ARG2);
-   ML_(notify_core_and_tool_of_mmap)(
-      *(mach_vm_address_t*)ARG2, ARG3,
-      VKI_PROT_READ|VKI_PROT_WRITE, VKI_MAP_ANON, -1, 0);
-  // ML_(sync_mappings)("after", "kernelrpc_mach_vm_map_trap", 0);
-}
-#endif /* DARWIN_VERS >= DARWIN_10_9 */
 
 PRE(kernelrpc_mach_port_allocate_trap)
 {
@@ -8398,29 +8380,6 @@ PRE(kernelrpc_mach_port_extract_member_trap)
    PRINT("kernelrpc_mach_port_extract_member_trap(FIXME,ARGUMENTS_UNKNOWN)");
 }
 
-#if DARWIN_VERS >= DARWIN_10_9
-PRE(kernelrpc_mach_port_construct_trap)
-{
-   PRINT("kernelrpc_mach_port_construct_trap(FIXME,ARGUMENTS_UNKNOWN)");
-}
-
-PRE(kernelrpc_mach_port_destruct_trap)
-{
-   PRINT("kernelrpc_mach_port_destruct_trap(FIXME,ARGUMENTS_UNKNOWN)");
-}
-
-PRE(kernelrpc_mach_port_guard_trap)
-{
-   PRINT("kernelrpc_mach_port_guard_trap(FIXME)");
-}
-
-PRE(kernelrpc_mach_port_unguard_trap)
-{
-   PRINT("kernelrpc_mach_port_unguard_trap(FIXME)");
-}
-
-#endif /* DARWIN_VERS >= DARWIN_10_9 */
-
 PRE(iopolicysys)
 {
    PRINT("iopolicysys(FIXME)(0x%lx, 0x%lx, 0x%lx)", ARG1, ARG2, ARG3);
@@ -8443,6 +8402,54 @@ POST(process_policy)
 }
 
 #endif /* DARWIN_VERS >= DARWIN_10_8 */
+
+
+/* ---------------------------------------------------------------------
+   Added for OSX 10.9 (Mavericks)
+   ------------------------------------------------------------------ */
+
+#if DARWIN_VERS >= DARWIN_10_9
+PRE(kernelrpc_mach_vm_map_trap)
+{
+   PRINT("kernelrpc_mach_vm_map_trap"
+         "(target:%#lx, address:%p, size:%#lx,"
+         " mask:%#lx, flags:%#lx, cur_prot:%#lx)",
+         ARG1, *(void**)ARG2, ARG3, ARG4, ARG5, ARG6);
+   PRE_MEM_WRITE("kernelrpc_mach_vm_map_trap(address)", ARG2, sizeof(void*));
+}
+POST(kernelrpc_mach_vm_map_trap)
+{
+   PRINT("-> address:%p", *(void**)ARG2);
+   if (ML_(safe_to_deref)((void*)ARG2, sizeof(void*))) {
+      POST_MEM_WRITE(ARG2, sizeof(void*));
+   }
+   ML_(notify_core_and_tool_of_mmap)(
+      *(mach_vm_address_t*)ARG2, ARG3,
+      VKI_PROT_READ|VKI_PROT_WRITE, VKI_MAP_ANON, -1, 0);
+  // ML_(sync_mappings)("after", "kernelrpc_mach_vm_map_trap", 0);
+}
+
+PRE(kernelrpc_mach_port_construct_trap)
+{
+   PRINT("kernelrpc_mach_port_construct_trap(FIXME,ARGUMENTS_UNKNOWN)");
+}
+
+PRE(kernelrpc_mach_port_destruct_trap)
+{
+   PRINT("kernelrpc_mach_port_destruct_trap(FIXME,ARGUMENTS_UNKNOWN)");
+}
+
+PRE(kernelrpc_mach_port_guard_trap)
+{
+   PRINT("kernelrpc_mach_port_guard_trap(FIXME)");
+}
+
+PRE(kernelrpc_mach_port_unguard_trap)
+{
+   PRINT("kernelrpc_mach_port_unguard_trap(FIXME)");
+}
+
+#endif /* DARWIN_VERS >= DARWIN_10_9 */
 
 
 /* ---------------------------------------------------------------------

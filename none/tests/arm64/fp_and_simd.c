@@ -3630,22 +3630,22 @@ int main ( void )
    if (1) test_ext_8b_8b_8b_0x7(TyB);
 
    // ins      d[]_d[],s[]_s[],h[]_h[],b[]_b[]
-   if (0) test_ins_d0_d0(TyD);
-   if (0) test_ins_d0_d1(TyD);
-   if (0) test_ins_d1_d0(TyD);
-   if (0) test_ins_d1_d1(TyD);
-   if (0) test_ins_s0_s2(TyS);
-   if (0) test_ins_s3_s0(TyS);
-   if (0) test_ins_s2_s1(TyS);
-   if (0) test_ins_s1_s3(TyS);
-   if (0) test_ins_h0_h6(TyH);
-   if (0) test_ins_h7_h0(TyH);
-   if (0) test_ins_h6_h1(TyH);
-   if (0) test_ins_h1_h7(TyH);
-   if (0) test_ins_b0_b14(TyB);
-   if (0) test_ins_b15_b8(TyB);
-   if (0) test_ins_b13_b9(TyB);
-   if (0) test_ins_b5_b12(TyB);
+   if (1) test_ins_d0_d0(TyD);
+   if (1) test_ins_d0_d1(TyD);
+   if (1) test_ins_d1_d0(TyD);
+   if (1) test_ins_d1_d1(TyD);
+   if (1) test_ins_s0_s2(TyS);
+   if (1) test_ins_s3_s0(TyS);
+   if (1) test_ins_s2_s1(TyS);
+   if (1) test_ins_s1_s3(TyS);
+   if (1) test_ins_h0_h6(TyH);
+   if (1) test_ins_h7_h0(TyH);
+   if (1) test_ins_h6_h1(TyH);
+   if (1) test_ins_h1_h7(TyH);
+   if (1) test_ins_b0_b14(TyB);
+   if (1) test_ins_b15_b8(TyB);
+   if (1) test_ins_b13_b9(TyB);
+   if (1) test_ins_b5_b12(TyB);
 
    // ins      d[]_x, s[]_w, h[]_w, b[]_w
    if (1) test_INS_general();
@@ -3653,30 +3653,30 @@ int main ( void )
    // mla   4s_4s_s[],2s_2s_s[],8h_8h_h[],4h_4h_h[]
    // mls   4s_4s_s[],2s_2s_s[],8h_8h_h[],4h_4h_h[]
    // mul   4s_4s_s[],2s_2s_s[],8h_8h_h[],4h_4h_h[]
-   if (0) test_mla_4s_4s_s0(TyS);
-   if (0) test_mla_4s_4s_s3(TyS);
-   if (0) test_mla_2s_2s_s0(TyS);
-   if (0) test_mla_2s_2s_s3(TyS);
-   if (0) test_mla_8h_8h_h1(TyH);
-   if (0) test_mla_8h_8h_h5(TyH);
-   if (0) test_mla_4h_4h_h2(TyH);
-   if (0) test_mla_4h_4h_h7(TyH);
-   if (0) test_mls_4s_4s_s0(TyS);
-   if (0) test_mls_4s_4s_s3(TyS);
-   if (0) test_mls_2s_2s_s0(TyS);
-   if (0) test_mls_2s_2s_s3(TyS);
-   if (0) test_mls_8h_8h_h1(TyH);
-   if (0) test_mls_8h_8h_h5(TyH);
-   if (0) test_mls_4h_4h_h2(TyH);
-   if (0) test_mls_4h_4h_h7(TyH);
-   if (0) test_mul_4s_4s_s0(TyS);
-   if (0) test_mul_4s_4s_s3(TyS);
-   if (0) test_mul_2s_2s_s0(TyS);
-   if (0) test_mul_2s_2s_s3(TyS);
-   if (0) test_mul_8h_8h_h1(TyH);
-   if (0) test_mul_8h_8h_h5(TyH);
-   if (0) test_mul_4h_4h_h2(TyH);
-   if (0) test_mul_4h_4h_h7(TyH);
+   if (1) test_mla_4s_4s_s0(TyS);
+   if (1) test_mla_4s_4s_s3(TyS);
+   if (1) test_mla_2s_2s_s0(TyS);
+   if (1) test_mla_2s_2s_s3(TyS);
+   if (1) test_mla_8h_8h_h1(TyH);
+   if (1) test_mla_8h_8h_h5(TyH);
+   if (1) test_mla_4h_4h_h2(TyH);
+   if (1) test_mla_4h_4h_h7(TyH);
+   if (1) test_mls_4s_4s_s0(TyS);
+   if (1) test_mls_4s_4s_s3(TyS);
+   if (1) test_mls_2s_2s_s0(TyS);
+   if (1) test_mls_2s_2s_s3(TyS);
+   if (1) test_mls_8h_8h_h1(TyH);
+   if (1) test_mls_8h_8h_h5(TyH);
+   if (1) test_mls_4h_4h_h2(TyH);
+   if (1) test_mls_4h_4h_h7(TyH);
+   if (1) test_mul_4s_4s_s0(TyS);
+   if (1) test_mul_4s_4s_s3(TyS);
+   if (1) test_mul_2s_2s_s0(TyS);
+   if (1) test_mul_2s_2s_s3(TyS);
+   if (1) test_mul_8h_8h_h1(TyH);
+   if (1) test_mul_8h_8h_h5(TyH);
+   if (1) test_mul_4h_4h_h2(TyH);
+   if (1) test_mul_4h_4h_h7(TyH);
 
    // mla   4s,2s,8h,4h,16b,8b
    // mls   4s,2s,8h,4h,16b,8b
@@ -3708,53 +3708,53 @@ int main ( void )
 
    // movi  8h,4h    #imm8, LSL #0 or 8
    // mvni  8h,4h    #imm8, LSL #0 or 8
-   if (0) test_movi_8h_0x5A_lsl0(TyH);
-   if (0) test_movi_8h_0xA5_lsl8(TyH);
-   if (0) test_movi_4h_0x5A_lsl0(TyH);
-   if (0) test_movi_4h_0xA5_lsl8(TyH);
-   if (0) test_mvni_8h_0x5A_lsl0(TyH);
-   if (0) test_mvni_8h_0xA5_lsl8(TyH);
-   if (0) test_mvni_4h_0x5A_lsl0(TyH);
-   if (0) test_mvni_4h_0xA5_lsl8(TyH);
+   if (1) test_movi_8h_0x5A_lsl0(TyH);
+   if (1) test_movi_8h_0xA5_lsl8(TyH);
+   if (1) test_movi_4h_0x5A_lsl0(TyH);
+   if (1) test_movi_4h_0xA5_lsl8(TyH);
+   if (1) test_mvni_8h_0x5A_lsl0(TyH);
+   if (1) test_mvni_8h_0xA5_lsl8(TyH);
+   if (1) test_mvni_4h_0x5A_lsl0(TyH);
+   if (1) test_mvni_4h_0xA5_lsl8(TyH);
 
    // movi  4s,2s    #imm8, LSL #0, 8, 16, 24
    // mvni  4s,2s    #imm8, LSL #0, 8, 16, 24
    if (1) test_movi_4s_0x5A_lsl0(TyS);
    if (1) test_movi_4s_0x6B_lsl8(TyS);
-   if (0) test_movi_4s_0x49_lsl16(TyS);
-   if (0) test_movi_4s_0x3D_lsl24(TyS);
-   if (0) test_movi_2s_0x5A_lsl0(TyS);
-   if (0) test_movi_2s_0x6B_lsl8(TyS);
-   if (0) test_movi_2s_0x49_lsl16(TyS);
-   if (0) test_movi_2s_0x3D_lsl24(TyS);
-   if (0) test_mvni_4s_0x5A_lsl0(TyS);
-   if (0) test_mvni_4s_0x6B_lsl8(TyS);
-   if (0) test_mvni_4s_0x49_lsl16(TyS);
-   if (0) test_mvni_4s_0x3D_lsl24(TyS);
-   if (0) test_mvni_2s_0x5A_lsl0(TyS);
-   if (0) test_mvni_2s_0x6B_lsl8(TyS);
-   if (0) test_mvni_2s_0x49_lsl16(TyS);
-   if (0) test_mvni_2s_0x3D_lsl24(TyS);
+   if (1) test_movi_4s_0x49_lsl16(TyS);
+   if (1) test_movi_4s_0x3D_lsl24(TyS);
+   if (1) test_movi_2s_0x5A_lsl0(TyS);
+   if (1) test_movi_2s_0x6B_lsl8(TyS);
+   if (1) test_movi_2s_0x49_lsl16(TyS);
+   if (1) test_movi_2s_0x3D_lsl24(TyS);
+   if (1) test_mvni_4s_0x5A_lsl0(TyS);
+   if (1) test_mvni_4s_0x6B_lsl8(TyS);
+   if (1) test_mvni_4s_0x49_lsl16(TyS);
+   if (1) test_mvni_4s_0x3D_lsl24(TyS);
+   if (1) test_mvni_2s_0x5A_lsl0(TyS);
+   if (1) test_mvni_2s_0x6B_lsl8(TyS);
+   if (1) test_mvni_2s_0x49_lsl16(TyS);
+   if (1) test_mvni_2s_0x3D_lsl24(TyS);
 
    // movi  4s,2s    #imm8, MSL #8 or 16
    // mvni  4s,2s    #imm8, MSL #8 or 16
-   if (0) test_movi_4s_0x6B_msl8(TyS);
-   if (0) test_movi_4s_0x94_msl16(TyS);
-   if (0) test_movi_2s_0x7A_msl8(TyS);
-   if (0) test_movi_2s_0xA5_msl16(TyS);
-   if (0) test_mvni_4s_0x6B_msl8(TyS);
-   if (0) test_mvni_4s_0x94_msl16(TyS);
-   if (0) test_mvni_2s_0x7A_msl8(TyS);
-   if (0) test_mvni_2s_0xA5_msl16(TyS);
+   if (1) test_movi_4s_0x6B_msl8(TyS);
+   if (1) test_movi_4s_0x94_msl16(TyS);
+   if (1) test_movi_2s_0x7A_msl8(TyS);
+   if (1) test_movi_2s_0xA5_msl16(TyS);
+   if (1) test_mvni_4s_0x6B_msl8(TyS);
+   if (1) test_mvni_4s_0x94_msl16(TyS);
+   if (1) test_mvni_2s_0x7A_msl8(TyS);
+   if (1) test_mvni_2s_0xA5_msl16(TyS);
 
    // movi  d,       #imm64
    // movi  2d,      #imm64
-   if (0) test_movi_d_0xA5(TyD);
-   if (0) test_movi_2d_0xB4(TyD);
+   if (1) test_movi_d_0xA5(TyD);
+   if (1) test_movi_2d_0xB4(TyD);
 
    // not   16b,8b
-   if (0) test_not_16b_16b(TyB);
-   if (0) test_not_8b_8b(TyB);
+   if (1) test_not_16b_16b(TyB);
+   if (1) test_not_8b_8b(TyB);
 
    // pmul  16b,8b
    if (0) test_pmul_16b_16b_16b(TyB);

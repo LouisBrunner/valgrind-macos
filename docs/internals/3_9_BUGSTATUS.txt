@@ -141,7 +141,6 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
 326724  Valgrind does not compile on OSX 1.9 Mavericks
 326797  Assertion 'sizeof(UWord) == sizeof(UInt)' failed.
 327745  valgrind 3.9.0 build fails on Mac OS X 10.6.8
-330257  LLVM does not support `-mno-dynamic-no-pic` option
 333248  WARNING: unhandled syscall: unix:443
 
 === GDB server =========================================================

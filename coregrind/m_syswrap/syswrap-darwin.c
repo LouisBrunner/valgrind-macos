@@ -8278,11 +8278,15 @@ POST(psynch_cvclrprepost)
 
 PRE(kernelrpc_mach_vm_allocate_trap)
 {
-   PRINT("kernelrpc_mach_vm_allocate_trap(target:%s, address:%p, size:%#lx, flags:%#lx)", name_for_port(ARG1), *(void**)ARG2, ARG3, ARG4);
+   PRINT("kernelrpc_mach_vm_allocate_trap"
+         "(target:%s, address:%p, size:%#lx, flags:%#lx)",
+         name_for_port(ARG1), *(void**)ARG2, ARG3, ARG4);
    PRE_MEM_WRITE("kernelrpc_mach_vm_allocate_trap(address)",
                  ARG2, sizeof(void*));
    if ((ARG4 & VM_FLAGS_ANYWHERE) == VM_FLAGS_FIXED)
-      ML_(notify_core_and_tool_of_mmap)(*(mach_vm_address_t*)ARG2, ARG3, VKI_PROT_READ|VKI_PROT_WRITE, VKI_MAP_ANON, -1, 0);
+      ML_(notify_core_and_tool_of_mmap)(
+         *(mach_vm_address_t*)ARG2, ARG3, VKI_PROT_READ|VKI_PROT_WRITE,
+         VKI_MAP_ANON, -1, 0);
 }
 POST(kernelrpc_mach_vm_allocate_trap)
 {
@@ -8291,16 +8295,20 @@ POST(kernelrpc_mach_vm_allocate_trap)
       POST_MEM_WRITE(ARG2, sizeof(void*));
    }
    if ((ARG4 & VM_FLAGS_ANYWHERE) != VM_FLAGS_FIXED)
-      ML_(notify_core_and_tool_of_mmap)(*(mach_vm_address_t*)ARG2, ARG3, VKI_PROT_READ|VKI_PROT_WRITE, VKI_MAP_ANON, -1, 0);
+      ML_(notify_core_and_tool_of_mmap)(
+         *(mach_vm_address_t*)ARG2, ARG3,
+         VKI_PROT_READ|VKI_PROT_WRITE, VKI_MAP_ANON, -1, 0);
 }
 
 PRE(kernelrpc_mach_vm_deallocate_trap)
 {
-   PRINT("kernelrpc_mach_vm_deallocate_trap(target:%#lx, address:%#lx, size:%#lx)", ARG1, ARG2, ARG3);
+   PRINT("kernelrpc_mach_vm_deallocate_trap"
+         "(target:%#lx, address:%#lx, size:%#lx)", ARG1, ARG2, ARG3);
 }
 POST(kernelrpc_mach_vm_deallocate_trap)
 {
-   // kernelrpc_mach_vm_deallocate_trap could be call with address == 0 && size == 0, 
+   // kernelrpc_mach_vm_deallocate_trap could be call with
+   // address ==0 && size == 0,
    // we shall not notify any unmap then
    if (ARG3)
       ML_(notify_core_and_tool_of_munmap)(ARG2, ARG3);
@@ -8308,31 +8316,37 @@ POST(kernelrpc_mach_vm_deallocate_trap)
 
 PRE(kernelrpc_mach_vm_protect_trap)
 {
-   PRINT("kernelrpc_mach_vm_protect_trap(task:%#lx, address:%#lx, size:%#lx, set_maximum:%#lx, new_prot:%#lx)", ARG1, ARG2, ARG3, ARG4, ARG5);
+   PRINT("kernelrpc_mach_vm_protect_trap"
+         "(task:%#lx, address:%#lx, size:%#lx,"
+         " set_maximum:%#lx, new_prot:%#lx)", ARG1, ARG2, ARG3, ARG4, ARG5);
    ML_(notify_core_and_tool_of_mprotect)(ARG2, ARG3, ARG5);
 }
 
 #if DARWIN_VERS >= DARWIN_10_9
 PRE(kernelrpc_mach_vm_map_trap)
 {
-   PRINT("kernelrpc_mach_vm_map_trap(target:%#lx, address:%p, size:%#lx, mask:%#lx, flags:%#lx, cur_prot:%#lx)",
+   PRINT("kernelrpc_mach_vm_map_trap"
+         "(target:%#lx, address:%p, size:%#lx,"
+         " mask:%#lx, flags:%#lx, cur_prot:%#lx)",
     ARG1, *(void**)ARG2, ARG3, ARG4, ARG5, ARG6);
 }
-
 POST(kernelrpc_mach_vm_map_trap)
 {
    PRINT("-> address:%p", *(void**)ARG2);
-   ML_(notify_core_and_tool_of_mmap)(*(mach_vm_address_t*)ARG2, ARG3, VKI_PROT_READ|VKI_PROT_WRITE, VKI_MAP_ANON, -1, 0);
+   ML_(notify_core_and_tool_of_mmap)(
+      *(mach_vm_address_t*)ARG2, ARG3,
+      VKI_PROT_READ|VKI_PROT_WRITE, VKI_MAP_ANON, -1, 0);
   // ML_(sync_mappings)("after", "kernelrpc_mach_vm_map_trap", 0);
 }
 #endif /* DARWIN_VERS >= DARWIN_10_9 */
 
 PRE(kernelrpc_mach_port_allocate_trap)
 {
-   PRINT("kernelrpc_mach_port_allocate_trap(task:%#lx, mach_port_right_t:%#lx)", ARG1, ARG2);
-   PRE_MEM_WRITE("kernelrpc_mach_port_allocate_trap(name)", ARG3, sizeof(mach_port_name_t));
+   PRINT("kernelrpc_mach_port_allocate_trap(task:%#lx, mach_port_right_t:%#lx)",
+         ARG1, ARG2);
+   PRE_MEM_WRITE("kernelrpc_mach_port_allocate_trap(name)",
+                 ARG3, sizeof(mach_port_name_t));
 }
-
 POST(kernelrpc_mach_port_allocate_trap)
 {
    POST_MEM_WRITE(ARG3, sizeof(mach_port_name_t));
@@ -8348,23 +8362,25 @@ PRE(kernelrpc_mach_port_destroy_trap)
 
 PRE(kernelrpc_mach_port_deallocate_trap)
 {
-   PRINT("kernelrpc_mach_port_deallocate_trap(task:%#lx, name:%#lx ) FIXME", ARG1, ARG2);
+   PRINT("kernelrpc_mach_port_deallocate_trap(task:%#lx, name:%#lx ) FIXME",
+         ARG1, ARG2);
 }
-
 POST(kernelrpc_mach_port_deallocate_trap)
 {
 }
 
 PRE(kernelrpc_mach_port_mod_refs_trap)
 {
-   PRINT("kernelrpc_mach_port_mod_refs_trap(task:%#lx, name:%#lx, right:%#lx refs:%#lx) FIXME",
-    ARG1, ARG2, ARG3, ARG4);
+   PRINT("kernelrpc_mach_port_mod_refs_trap"
+         "(task:%#lx, name:%#lx, right:%#lx refs:%#lx) FIXME",
+         ARG1, ARG2, ARG3, ARG4);
 }
 
 PRE(kernelrpc_mach_port_move_member_trap)
 {
-   PRINT("kernelrpc_mach_port_move_member_trap(task:%#lx, name:%#lx, after:%#lx ) FIXME",
-    ARG1, ARG2, ARG3);
+   PRINT("kernelrpc_mach_port_move_member_trap"
+         "(task:%#lx, name:%#lx, after:%#lx ) FIXME",
+         ARG1, ARG2, ARG3);
 }
 
 PRE(kernelrpc_mach_port_insert_right_trap)
@@ -8416,8 +8432,10 @@ POST(iopolicysys)
 
 PRE(process_policy)
 {
-   PRINT("process_policy(FIXME)(scope:0x%lx, action:0x%lx, policy:0x%lx, policy_subtype:0x%lx, attr:%lx, target_pid:%lx, target_threadid:%lx)",
-    ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7);
+   PRINT("process_policy(FIXME)("
+         "scope:0x%lx, action:0x%lx, policy:0x%lx, policy_subtype:0x%lx,"
+         " attr:%lx, target_pid:%lx, target_threadid:%lx)",
+         ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7);
    /* mem effects unknown */
 }
 POST(process_policy)
@@ -8432,8 +8450,13 @@ POST(process_policy)
    ------------------------------------------------------------------ */
 
 /* Add a Darwin-specific, arch-independent wrapper to a syscall table. */
-#define MACX_(sysno, name)    WRAPPER_ENTRY_X_(darwin, VG_DARWIN_SYSNO_INDEX(sysno), name) 
-#define MACXY(sysno, name)    WRAPPER_ENTRY_XY(darwin, VG_DARWIN_SYSNO_INDEX(sysno), name)
+
+#define MACX_(sysno, name) \
+           WRAPPER_ENTRY_X_(darwin, VG_DARWIN_SYSNO_INDEX(sysno), name) 
+
+#define MACXY(sysno, name) \
+           WRAPPER_ENTRY_XY(darwin, VG_DARWIN_SYSNO_INDEX(sysno), name)
+
 #define _____(sysno) GENX_(sysno, sys_ni_syscall)  /* UNIX style only */
 
 /*

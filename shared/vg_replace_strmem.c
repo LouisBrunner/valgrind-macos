@@ -383,7 +383,9 @@ static inline void my_exit ( int x )
  STRNLEN(VG_Z_LIBC_SONAME, __GI_strnlen)
 
 #elif defined(VGO_darwin)
- //STRNLEN(VG_Z_LIBC_SONAME, strnlen)
+# if DARWIN_VERS == DARWIN_10_9
+  STRNLEN(libsystemZucZddylib, strnlen)
+# endif
 
 #endif
 
@@ -457,9 +459,10 @@ static inline void my_exit ( int x )
  STRCPY(VG_Z_LIBC_SONAME, __GI_strcpy)
 
 #elif defined(VGO_darwin)
- //STRCPY(VG_Z_LIBC_SONAME, strcpy)
- //STRCPY(VG_Z_DYLD,        strcpy)
  STRCPY(VG_Z_LIBC_SONAME, strcpy)
+# if DARWIN_VERS == DARWIN_10_9
+  STRCPY(libsystemZucZddylib, strcpy)
+# endif
 
 #endif
 
@@ -493,9 +496,10 @@ static inline void my_exit ( int x )
  STRNCPY(VG_Z_LIBC_SONAME, __strncpy_sse2_unaligned)
 
 #elif defined(VGO_darwin)
- //STRNCPY(VG_Z_LIBC_SONAME, strncpy)
- //STRNCPY(VG_Z_DYLD,        strncpy)
  STRNCPY(VG_Z_LIBC_SONAME, strncpy)
+# if DARWIN_VERS == DARWIN_10_9
+  STRNCPY(libsystemZucZddylib, strncpy)
+# endif
 
 #endif
 
@@ -788,8 +792,9 @@ static inline void my_exit ( int x )
  MEMCHR(VG_Z_LIBC_SONAME, __GI_memchr)
 
 #elif defined(VGO_darwin)
- //MEMCHR(VG_Z_LIBC_SONAME, memchr)
- //MEMCHR(VG_Z_DYLD,        memchr)
+# if DARWIN_VERS == DARWIN_10_9
+  MEMCHR(libsystemZuplatformZddylib, _platform_memchr)
+# endif
 
 #endif
 
@@ -967,10 +972,9 @@ static inline void my_exit ( int x )
  MEMCMP(VG_Z_LD_SO_1,     bcmp)
 
 #elif defined(VGO_darwin)
- //MEMCMP(VG_Z_LIBC_SONAME, memcmp)
- //MEMCMP(VG_Z_LIBC_SONAME, bcmp)
- //MEMCMP(VG_Z_DYLD,        memcmp)
- //MEMCMP(VG_Z_DYLD,        bcmp)
+# if DARWIN_VERS == DARWIN_10_9
+  MEMCMP(libsystemZuplatformZddylib, _platform_memcmp)
+# endif
 
 #endif
 

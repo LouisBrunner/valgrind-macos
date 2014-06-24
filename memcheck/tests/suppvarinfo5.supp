@@ -1,0 +1,29 @@
+{
+   obj4
+   Memcheck:User
+   obj:*varinfo5so.so
+   obj:*varinfo5so.so
+   obj:*varinfo5so.so
+   obj:*varinfo5
+}
+
+{
+   obj5
+   Memcheck:User
+   obj:*varinfo5so.so
+   obj:*varinfo5so.so
+   obj:*varinfo5so.so
+   obj:*varinfo5so.so
+   obj:*varinfo5
+}
+
+{
+   obj6
+   Memcheck:User
+   obj:*varinfo5so.so
+   obj:*varinfo5so.so
+   obj:*
+   obj:*varinfo5so.so
+   obj:*varinfo5so.so
+   obj:*varinfo5
+}

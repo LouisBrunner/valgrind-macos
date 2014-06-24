@@ -235,6 +235,8 @@ EXTRA_DIST = \
 	supp.supp \
 	suppfree.stderr.exp suppfree.supp suppfree.vgtest \
 	suppfreecollision.stderr.exp suppfreecollision.supp suppfreecollision.vgtest \
+	supponlyobj.stderr.exp supponlyobj.supp supponlyobj.vgtest \
+	suppvarinfo5.stderr.exp suppvarinfo5.supp suppvarinfo5.vgtest \
 	test-plo-no.vgtest test-plo-no.stdout.exp \
 	    test-plo-no.stderr.exp-le64 test-plo-no.stderr.exp-le32 \
 	test-plo-yes.vgtest test-plo-yes.stdout.exp \

@@ -1,0 +1,16 @@
+{
+   obj5
+   Memcheck:Cond
+   obj:*inlinfo
+   obj:*inlinfo
+   obj:*inlinfo
+   obj:*inlinfo
+   obj:*inlinfo
+}
+{
+   obj2
+   Memcheck:Cond
+   obj:*inlinfo
+   obj:*inlinfo
+}
+

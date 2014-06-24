@@ -34,6 +34,7 @@
 #include "pub_core_threadstate.h"      // For VG_N_THREADS
 #include "pub_core_debugger.h"
 #include "pub_core_debuginfo.h"
+#include "pub_core_debuglog.h"
 #include "pub_core_errormgr.h"
 #include "pub_core_execontext.h"
 #include "pub_core_gdbserver.h"
@@ -49,6 +50,8 @@
 #include "pub_core_tooliface.h"
 #include "pub_core_translate.h"        // for VG_(translate)()
 #include "pub_core_xarray.h"           // VG_(xaprintf) et al
+
+#define DEBUG_ERRORMGR 0 // set to 1 for heavyweight tracing
 
 /*------------------------------------------------------------*/
 /*--- Globals                                              ---*/
@@ -1541,10 +1544,47 @@ typedef
    }
    IPtoFunOrObjCompleter;
 
-// free the memory in ip2fo.
-static void clearIPtoFunOrObjCompleter
-  (IPtoFunOrObjCompleter* ip2fo)
+static void pp_ip2fo (IPtoFunOrObjCompleter* ip2fo)
 {
+  Int i, j;
+  Int o;
+
+  VG_(printf)("n_ips %lu n_ips_expanded %lu resulting in n_expanded %lu\n",
+              ip2fo->n_ips, ip2fo->n_ips_expanded, ip2fo->n_expanded);
+  for (i = 0; i < ip2fo->n_ips_expanded; i++) {
+     o = 0;
+     for (j = 0; j < i; j++)
+        o += ip2fo->n_offsets_per_ip[j];
+     VG_(printf)("ips %d 0x08%lx offset [%d,%d] ", 
+                 i, ip2fo->ips[i], 
+                 o, o+ip2fo->n_offsets_per_ip[i]-1);
+     for (j = 0; j < ip2fo->n_offsets_per_ip[i]; j++) {
+        VG_(printf)("%sfun:%s obj:%s\n",
+                    j == 0 ? "" : "                              ",
+                    ip2fo->fun_offsets[o+j] == -1 ? 
+                    "<not expanded>" : &ip2fo->names[ip2fo->fun_offsets[o+j]],
+                    ip2fo->obj_offsets[o+j] == -1 ?
+                    "<not expanded>" : &ip2fo->names[ip2fo->obj_offsets[o+j]]);
+    }
+  }
+}
+
+/* free the memory in ip2fo.
+   At debuglog 4, su (or NULL) will be used to show the matching (or non matching)
+   with ip2fo. */
+static void clearIPtoFunOrObjCompleter ( Supp  *su, IPtoFunOrObjCompleter* ip2fo)
+{
+   if (DEBUG_ERRORMGR || VG_(debugLog_getLevel)() >= 4) {
+      if (su)
+         VG_(dmsg)("errormgr matching end suppression %s  %s:%d matched:\n",
+                   su->sname,
+                   VG_(clo_suppressions)[su->clo_suppressions_i],
+                   su->sname_lineno);
+      else
+         VG_(dmsg)("errormgr matching end no suppression matched:\n");
+      VG_(pp_StackTrace) (ip2fo->ips, ip2fo->n_ips);
+      pp_ip2fo(ip2fo);
+   }
    if (ip2fo->n_offsets_per_ip) VG_(free)(ip2fo->n_offsets_per_ip);
    if (ip2fo->fun_offsets)      VG_(free)(ip2fo->fun_offsets);
    if (ip2fo->obj_offsets)      VG_(free)(ip2fo->obj_offsets);
@@ -1589,6 +1629,9 @@ static HChar* foComplete(IPtoFunOrObjCompleter* ip2fo,
    if ((*offsets)[ixInput] == -1) {
       HChar* caller_name = grow_names(ip2fo);
       (*offsets)[ixInput] = ip2fo->names_free;
+      if (DEBUG_ERRORMGR) VG_(printf)("marking %s ixInput %d offset %d\n", 
+                                      needFun ? "fun" : "obj",
+                                      ixInput, ip2fo->names_free);
       if (needFun) {
          // With inline info, fn names must have been completed already.
          vg_assert (!VG_(clo_read_inline_info));
@@ -1613,7 +1656,7 @@ static HChar* foComplete(IPtoFunOrObjCompleter* ip2fo,
          /* First get the pos in ips corresponding to ixInput */
          for (pos_ips = 0; pos_ips < ip2fo->n_expanded; pos_ips++) {
             last_expand_pos_ips += ip2fo->n_offsets_per_ip[pos_ips];
-            if (ixInput <= last_expand_pos_ips)
+            if (ixInput < last_expand_pos_ips)
                break;
          }
          /* pos_ips is the position in ips corresponding to ixInput.
@@ -1624,12 +1667,16 @@ static HChar* foComplete(IPtoFunOrObjCompleter* ip2fo,
             VG_(strcpy)(caller_name, "???");
 
          // Have all inlined calls pointing at this object name
-         for (i = last_expand_pos_ips - ip2fo->n_offsets_per_ip[pos_ips] - 1;
-              i <= last_expand_pos_ips;
-              i++)
+         for (i = last_expand_pos_ips - ip2fo->n_offsets_per_ip[pos_ips] + 1;
+              i < last_expand_pos_ips;
+              i++) {
             ip2fo->obj_offsets[i] = ip2fo->names_free;
+            if (DEBUG_ERRORMGR) 
+               VG_(printf) ("   set obj_offset %lu to %d\n", i, ip2fo->names_free);
+         }
       }
       ip2fo->names_free += VG_(strlen)(caller_name) + 1;
+      if (DEBUG_ERRORMGR) pp_ip2fo(ip2fo);
    }
 
    return ip2fo->names + (*offsets)[ixInput];
@@ -1729,6 +1776,7 @@ static Bool supp_pattEQinp ( const void* supplocV, const void* addrV,
    const SuppLoc* supploc = supplocV; /* PATTERN */
    IPtoFunOrObjCompleter* ip2fo = inputCompleter;
    HChar* funobj_name; // Fun or Obj name.
+   Bool ret;
 
    expandInput(ip2fo, ixInput);
    vg_assert(ixInput < ip2fo->n_expanded);
@@ -1757,9 +1805,15 @@ static Bool supp_pattEQinp ( const void* supplocV, const void* addrV,
       supploc->name.  Hence (and leading to a re-entrant call of
       VG_(generic_match) if there is a wildcard character): */
    if (supploc->name_is_simple_str)
-      return VG_(strcmp) (supploc->name, funobj_name) == 0;
+      ret = VG_(strcmp) (supploc->name, funobj_name) == 0;
    else
-      return VG_(string_match)(supploc->name, funobj_name);
+      ret = VG_(string_match)(supploc->name, funobj_name);
+   if (DEBUG_ERRORMGR)
+      VG_(printf) ("supp_pattEQinp %s patt %s ixUnput %lu value:%s match:%s\n",
+                   supploc->ty == FunName ? "fun" : "obj",
+                   supploc->name, ixInput, funobj_name,
+                   ret ? "yes" : "no");
+   return ret;
 }
 
 /////////////////////////////////////////////////////
@@ -1774,6 +1828,11 @@ static Bool supp_matches_callers(IPtoFunOrObjCompleter* ip2fo, Supp* su)
    UWord      n_supps  = su->n_callers;
    UWord      szbPatt  = sizeof(SuppLoc);
    Bool       matchAll = False; /* we just want to match a prefix */
+   if (DEBUG_ERRORMGR)
+      VG_(dmsg)("   errormgr Checking match with  %s  %s:%d\n",
+                su->sname,
+                VG_(clo_suppressions)[su->clo_suppressions_i],
+                su->sname_lineno);
    return
       VG_(generic_match)(
          matchAll,
@@ -1851,6 +1910,8 @@ static Supp* is_suppressible_error ( Error* err )
    ip2fo.names_free = 0;
 
    /* See if the error context matches any suppression. */
+   if (DEBUG_ERRORMGR || VG_(debugLog_getLevel)() >= 4)
+     VG_(dmsg)("errormgr matching begin\n");
    su_prev = NULL;
    for (su = suppressions; su != NULL; su = su->next) {
       em_supplist_cmps++;
@@ -1867,12 +1928,12 @@ static Supp* is_suppressible_error ( Error* err )
             su->next = suppressions;
             suppressions = su;
          }
-         clearIPtoFunOrObjCompleter(&ip2fo);
+         clearIPtoFunOrObjCompleter(su, &ip2fo);
          return su;
       }
       su_prev = su;
    }
-   clearIPtoFunOrObjCompleter(&ip2fo);
+   clearIPtoFunOrObjCompleter(NULL, &ip2fo);
    return NULL;      /* no matches */
 }
 

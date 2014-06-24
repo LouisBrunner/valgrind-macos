@@ -379,12 +379,9 @@ static ExeContext* record_ExeContext_wrk2 ( Addr* ips, UInt n_ips )
    while (True) {
       if (list == NULL) break;
       ec_searchcmps++;
-      same = True;
-      for (i = 0; i < n_ips; i++) {
-         if (list->ips[i] != ips[i]) {
-            same = False;
-            break; 
-         }
+      same = list->n_ips == n_ips;
+      for (i = 0; i < n_ips && same ; i++) {
+         same = list->ips[i] == ips[i];
       }
       if (same) break;
       prev2 = prev;

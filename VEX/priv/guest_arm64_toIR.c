@@ -4448,7 +4448,7 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
-   /* ---------- LD1/ST1 (multiple structures, no offset) ---------- */
+   /* -------- LD1/ST1 (multi 1-elem structs, 2 regs, no offset) -------- */
    /* Only a very few cases. */
    /* 31        23
       0100 1100 0100 0000 1010 00 n t  LD1 {Vt.16b, V(t+1)%32.16b}, [Xn|SP]
@@ -4475,6 +4475,41 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn)
       }
       DIP("%s {v%u.%s, v%u.%s}, [%s], #32\n", isLD ? "ld1" : "st1",
           (vT+0) % 32, name, (vT+1) % 32, name, nameIReg64orSP(rN));
+      return True;
+   }
+
+   /* -------- LD1/ST1 (multi 1-elem structs, 3 regs, no offset) -------- */
+   /* Only a very few cases. */
+   /* 31        23
+      0100 1100 0100 0000 0110 00 n t  LD1 {Vt.16b .. V(t+2)%32.16b}, [Xn|SP]
+      0100 1100 0000 0000 0110 00 n t  ST1 {Vt.16b .. V(t+2)%32.16b}, [Xn|SP]
+   */
+   if (   (insn & 0xFFFFFC00) == 0x4C406000 // LD1
+       || (insn & 0xFFFFFC00) == 0x4C006000 // ST1
+      ) {
+      Bool   isLD = INSN(22,22) == 1;
+      UInt   rN   = INSN(9,5);
+      UInt   vT   = INSN(4,0);
+      IRTemp tEA  = newTemp(Ity_I64);
+      const HChar* name = "16b";
+      assign(tEA, getIReg64orSP(rN));
+      if (rN == 31) { /* FIXME generate stack alignment check */ }
+      IRExpr* tEA_0  = binop(Iop_Add64, mkexpr(tEA), mkU64(0));
+      IRExpr* tEA_16 = binop(Iop_Add64, mkexpr(tEA), mkU64(16));
+      IRExpr* tEA_32 = binop(Iop_Add64, mkexpr(tEA), mkU64(32));
+      if (isLD) {
+         putQReg128((vT+0) % 32, loadLE(Ity_V128, tEA_0));
+         putQReg128((vT+1) % 32, loadLE(Ity_V128, tEA_16));
+         putQReg128((vT+2) % 32, loadLE(Ity_V128, tEA_32));
+      } else {
+         storeLE(tEA_0,  getQReg128((vT+0) % 32));
+         storeLE(tEA_16, getQReg128((vT+1) % 32));
+         storeLE(tEA_32, getQReg128((vT+2) % 32));
+      }
+      DIP("%s {v%u.%s, v%u.%s, v%u.%s}, [%s], #32\n",
+          isLD ? "ld1" : "st1",
+          (vT+0) % 32, name, (vT+1) % 32, name, (vT+2) % 32, name,
+          nameIReg64orSP(rN));
       return True;
    }
 

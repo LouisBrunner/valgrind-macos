@@ -127,7 +127,8 @@ static void usage_NORETURN ( Bool debug_help )
 "    --error-limit=no|yes      stop showing new errors if too many? [yes]\n"
 "    --error-exitcode=<number> exit code to return if errors found [0=disable]\n"
 "    --show-below-main=no|yes  continue stack traces below main() [no]\n"
-"    --defaultsupp=yes|no      load default suppressions [yes]\n"
+"    --default-suppressions=yes|no\n"
+"                              load default suppressions [yes]\n"
 "    --suppressions=<filename> suppress errors described in <filename>\n"
 "    --gen-suppressions=no|yes|all    print suppressions for errors? [no]\n"
 "    --db-attach=no|yes        start debugger when errors detected? [no]\n"
@@ -691,7 +692,8 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
       else if VG_STR_CLO(arg, "--xml-user-comment",
                               VG_(clo_xml_user_comment)) {}
 
-      else if VG_BOOL_CLO(arg, "--defaultsupp", VG_(clo_default_supp)) { }
+      else if VG_BOOL_CLO(arg, "--default-suppressions",
+                          VG_(clo_default_supp)) { }
 
       else if VG_STR_CLO(arg, "--suppressions", tmp_str) {
          if (VG_(clo_n_suppressions) >= VG_CLO_MAX_SFILES) {

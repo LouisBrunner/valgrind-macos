@@ -398,7 +398,7 @@ run of <computeroutput>valgrind -v --tool=memcheck ls -l</computeroutput>:</para
 
 <para>Multiple suppressions files are allowed.  Valgrind loads suppression
 patterns from <filename>$PREFIX/lib/valgrind/default.supp</filename> unless
-<option>--defaultsupp=no</option> has been specified.  You can
+<option>--default-suppressions=no</option> has been specified.  You can
 ask to add suppressions from additional files by specifying
 <option>--suppressions=/path/to/file.supp</option> one or more times.
 </para>

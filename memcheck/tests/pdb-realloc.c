@@ -12,7 +12,7 @@
 
 int main(void)
 {
-   int i, t;
+   int i, t = 0;
    char* x = malloc(1000);
 
    // Write some PDBs (partially defined bytes)
@@ -26,6 +26,8 @@ int main(void)
    for (i = 0; i < 1000; i++)
       t += x[i];
    
+   __asm__ __volatile__ ("" :: "r"(t));
+
    return 0;
 }
 

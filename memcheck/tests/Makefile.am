@@ -443,6 +443,8 @@ origin6_fp_CFLAGS	= $(AM_CFLAGS) -O
 # because then we can't intercept it
 overlap_CFLAGS		= $(AM_CFLAGS) -fno-builtin-memcpy -fno-builtin-strcpy
 
+pdb_realloc_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
+
 str_tester_CFLAGS	= $(AM_CFLAGS) -Wno-shadow
 
 supp_CFLAGS             = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@

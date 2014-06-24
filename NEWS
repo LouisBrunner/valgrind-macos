@@ -116,6 +116,7 @@ where XXXXXX is the bug number as listed below.
 328711  valgrind.1 manpage "memcheck options" section is badly generated
 328878  vex amd64->IR pcmpestri SSE4.2 instruction is unsupported 0x14
 329612  Incorrect handling of AT_BASE for image execution 
+329694  clang warns about using uninitialized variable 
 329956  valgrind crashes when lmw/stmw instructions are used on ppc64
 330228  mmap must align to VKI_SHMLBA on mips32
 330257  LLVM does not support `-mno-dynamic-no-pic` option

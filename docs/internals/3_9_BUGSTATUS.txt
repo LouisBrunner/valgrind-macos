@@ -79,7 +79,6 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
 === Tools/Memcheck =====================================================
 
 329619  leak-check gets assertion failure when nesting VALGRIND_MALLOCLIKE_BLOCK
-329694  clang warns about using uninitialized variable
 330617  ppc false positive conditional jump depends on uninitialised value
 331833  the memory initialized by semget(key, 0, GETALL, semun)
         is treated as uninitialized on some platforms

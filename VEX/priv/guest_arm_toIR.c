@@ -7974,7 +7974,7 @@ static void math_INTERLEAVE_2 (/*OUT*/IRTemp* i0, /*OUT*/IRTemp* i1,
    /* The following assumes that the guest is little endian, and hence
       that the memory-side (interleaved) data is stored
       little-endianly. */
-   vassert(i0 && *i1);
+   vassert(i0 && i1);
    /* This is pretty easy, since we have primitives directly to
       hand. */
    if (laneszB == 4) {

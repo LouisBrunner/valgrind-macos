@@ -575,9 +575,10 @@ static inline void my_exit ( int x )
  STRNCMP(VG_Z_LIBC_SONAME, __strncmp_sse42)
 
 #elif defined(VGO_darwin)
- //STRNCMP(VG_Z_LIBC_SONAME, strncmp)
- //STRNCMP(VG_Z_DYLD,        strncmp)
  STRNCMP(VG_Z_LIBC_SONAME,        strncmp)
+# if DARWIN_VERS == DARWIN_10_9
+  STRNCMP(libsystemZuplatformZddylib, _platform_strncmp)
+# endif
 
 #endif
 
@@ -793,6 +794,7 @@ static inline void my_exit ( int x )
 
 #elif defined(VGO_darwin)
 # if DARWIN_VERS == DARWIN_10_9
+  MEMCHR(VG_Z_DYLD,                   memchr)
   MEMCHR(libsystemZuplatformZddylib, _platform_memchr)
 # endif
 

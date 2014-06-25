@@ -243,6 +243,7 @@ sub process_command_line()
               . " --run-libc-freeres=no --sim-hints=enable-outer"
               . " --smc-check=all-non-file"
               . " --vgdb=no --trace-children=yes --read-var-info=no"
+              . " --read-inline-info=yes"
               . " --suppressions=" 
               . validate_program($tests_dir,"./tests/outer_inner.supp",1,0)
               . " --memcheck:leak-check=full --memcheck:show-reachable=no"

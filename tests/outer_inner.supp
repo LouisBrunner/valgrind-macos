@@ -1,46 +1,56 @@
 
 # errors to suppress when an outer runs an inner.
+# The below suppressions are assuming --read-inline-info=yes is used.
 
-# ==31040== 16 bytes in 1 blocks are definitely lost in loss record 10 of 106
-# ==31040==    at 0x2803A367: vgPlain_arena_malloc (m_mallocfree.c:1599)
-# ==31040==    by 0x2803ADE3: vgPlain_strdup (m_mallocfree.c:2140)
-# ==31040==    by 0x2803208A: valgrind_main (m_main.c:437)
-# ==31040==    by 0x28035F3C: _start_in_C_linux (m_main.c:2799)
-# ==31040==    by 0x28030B4B: ??? (in install/lib/valgrind/memcheck-x86-linux)
+#==4649== 16 bytes in 1 blocks are definitely lost in loss record 6 of 131
+#==4649==    at 0x2804262C: vgPlain_arena_malloc (m_mallocfree.c:1771)
+#==4649==    by 0x28042CB2: vgPlain_arena_strdup (m_mallocfree.c:2325)
+#==4649==    by 0x28042CB2: vgPlain_strdup (m_mallocfree.c:2391)
+#==4649==    by 0x280391D9: main_process_cmd_line_options (m_main.c:484)
+#==4649==    by 0x280391D9: valgrind_main (m_main.c:1965)
+#==4649==    by 0x2803DB32: _start_in_C_linux (m_main.c:3107)
+#==4649==    by 0x2803794B: ??? (in /home/philippe/valgrind/inner_trunk_untouched/memcheck/memcheck-x86-linux)
 {
    "keep duplicated args forever as tools can make copies"
    Memcheck:Leak
    fun:vgPlain_arena_malloc
+   fun:vgPlain_arena_strdup
    fun:vgPlain_strdup
+   fun:main_process_cmd_line_options
    fun:valgrind_main
 }
 
-# ==31040== 392 bytes in 1 blocks are definitely lost in loss record 58 of 106
-# ==31040==    at 0x2803A367: vgPlain_arena_malloc (m_mallocfree.c:1599)
-# ==31040==    by 0x2803A9CF: vgPlain_malloc (m_mallocfree.c:2156)
-# ==31040==    by 0x280738F0: vgPlain_ii_create_image (initimg-linux.c:202)
-# ==31040==    by 0x280327CF: valgrind_main (m_main.c:1718)
-# ==31040==    by 0x28035F3C: _start_in_C_linux (m_main.c:2799)
-# ==31040==    by 0x28030B4B: ??? (in install/lib/valgrind/memcheck-x86-linux)
+#==4649== 344 bytes in 1 blocks are definitely lost in loss record 75 of 131
+#==4649==    at 0x2804262C: vgPlain_arena_malloc (m_mallocfree.c:1771)
+#==4649==    by 0x28042B3E: vgPlain_malloc (m_mallocfree.c:2371)
+#==4649==    by 0x2808A893: setup_client_env (initimg-linux.c:202)
+#==4649==    by 0x2808A893: vgPlain_ii_create_image (initimg-linux.c:885)
+#==4649==    by 0x2803A538: valgrind_main (m_main.c:1839)
+#==4649==    by 0x2803DB32: _start_in_C_linux (m_main.c:3107)
+#==4649==    by 0x2803794B: ??? (in /home/philippe/valgrind/inner_trunk_untouched/memcheck/memcheck-x86-linux)
 {
    "LD_PRELOAD_STRING inserted in env, difficult to free"
    Memcheck:Leak
    fun:vgPlain_arena_malloc
    fun:vgPlain_malloc
+   fun:setup_client_env
    fun:vgPlain_ii_create_image
    fun:valgrind_main
 }
 
-# ==32749== 400 bytes in 1 blocks are definitely lost in loss record 47 of 96
-# ==32749==    at 0x2803D0D7: vgPlain_arena_malloc (m_mallocfree.c:1599)
-# ==32749==    by 0x28072DAB: vgPlain_ii_create_image (initimg-linux.c:202)
-# ==32749==    by 0x28036264: valgrind_main (m_main.c:1718)
-# ==32749==    by 0x280392FC: _start_in_C_linux (m_main.c:2799)
-# ==32749==    by 0x28034920: ??? (in install/lib/valgrind/memcheck-amd64-linux)
+#==14848== 368 bytes in 1 blocks are definitely lost in loss record 69 of 122
+#==14848==    at 0x280452C4: vgPlain_arena_malloc (m_mallocfree.c:1771)
+#==14848==    by 0x28085D7B: setup_client_env (initimg-linux.c:202)
+#==14848==    by 0x28085D7B: vgPlain_ii_create_image (initimg-linux.c:885)
+#==14848==    by 0x2803DDF6: valgrind_main (m_main.c:1839)
+#==14848==    by 0x28040DDB: _start_in_C_linux (m_main.c:3107)
+#==14848==    by 0x2803B7D0: ??? (in /home/philippe/valgrind/inner_trunk_untouched/memcheck/memcheck-amd64-linux)
 {
    "LD_PRELOAD_STRING inserted in env, difficult to free"
    Memcheck:Leak
    fun:vgPlain_arena_malloc
+#??????? unclear why this is not in the stacktrace on amd64/gcc20   fun:vgPlain_malloc
+   fun:setup_client_env
    fun:vgPlain_ii_create_image
    fun:valgrind_main
 }

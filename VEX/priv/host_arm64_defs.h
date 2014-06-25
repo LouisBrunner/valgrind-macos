@@ -35,14 +35,12 @@
 #include "libvex.h"                      // VexArch
 #include "host_generic_regs.h"           // HReg
 
-//ZZ extern UInt arm_hwcaps;
-
 
 /* --------- Registers. --------- */
 
-//ZZ /* The usual HReg abstraction.
-//ZZ    There are 16 general purpose regs.
-//ZZ */
+/* The usual HReg abstraction.
+    There are 31 general purpose regs.
+*/
 
 extern void ppHRegARM64 ( HReg );
 
@@ -54,7 +52,6 @@ extern HReg hregARM64_X4  ( void );
 extern HReg hregARM64_X5  ( void );
 extern HReg hregARM64_X6  ( void );
 extern HReg hregARM64_X7  ( void );
-//ZZ extern HReg hregARM_R8  ( void );
 extern HReg hregARM64_X9  ( void );
 extern HReg hregARM64_X10 ( void );
 extern HReg hregARM64_X11 ( void );
@@ -377,146 +374,6 @@ typedef
    }
    ARM64VecShiftOp;
 
-//ZZ extern const HChar* showARMVfpUnaryOp ( ARMVfpUnaryOp op );
-//ZZ 
-//ZZ typedef
-//ZZ    enum {
-//ZZ       ARMneon_VAND=90,
-//ZZ       ARMneon_VORR,
-//ZZ       ARMneon_VXOR,
-//ZZ       ARMneon_VADD,
-//ZZ       ARMneon_VADDFP,
-//ZZ       ARMneon_VRHADDS,
-//ZZ       ARMneon_VRHADDU,
-//ZZ       ARMneon_VPADDFP,
-//ZZ       ARMneon_VABDFP,
-//ZZ       ARMneon_VSUB,
-//ZZ       ARMneon_VSUBFP,
-//ZZ       ARMneon_VMAXU,
-//ZZ       ARMneon_VMAXS,
-//ZZ       ARMneon_VMAXF,
-//ZZ       ARMneon_VMINU,
-//ZZ       ARMneon_VMINS,
-//ZZ       ARMneon_VMINF,
-//ZZ       ARMneon_VQADDU,
-//ZZ       ARMneon_VQADDS,
-//ZZ       ARMneon_VQSUBU,
-//ZZ       ARMneon_VQSUBS,
-//ZZ       ARMneon_VCGTU,
-//ZZ       ARMneon_VCGTS,
-//ZZ       ARMneon_VCGEU,
-//ZZ       ARMneon_VCGES,
-//ZZ       ARMneon_VCGTF,
-//ZZ       ARMneon_VCGEF,
-//ZZ       ARMneon_VCEQ,
-//ZZ       ARMneon_VCEQF,
-//ZZ       ARMneon_VEXT,
-//ZZ       ARMneon_VMUL,
-//ZZ       ARMneon_VMULFP,
-//ZZ       ARMneon_VMULLU,
-//ZZ       ARMneon_VMULLS,
-//ZZ       ARMneon_VMULP,
-//ZZ       ARMneon_VMULLP,
-//ZZ       ARMneon_VQDMULH,
-//ZZ       ARMneon_VQRDMULH,
-//ZZ       ARMneon_VPADD,
-//ZZ       ARMneon_VPMINU,
-//ZZ       ARMneon_VPMINS,
-//ZZ       ARMneon_VPMINF,
-//ZZ       ARMneon_VPMAXU,
-//ZZ       ARMneon_VPMAXS,
-//ZZ       ARMneon_VPMAXF,
-//ZZ       ARMneon_VTBL,
-//ZZ       ARMneon_VQDMULL,
-//ZZ       ARMneon_VRECPS,
-//ZZ       ARMneon_VRSQRTS,
-//ZZ       /* ... */
-//ZZ    }
-//ZZ    ARMNeonBinOp;
-//ZZ 
-//ZZ typedef
-//ZZ    enum {
-//ZZ       ARMneon_VSHL=150,
-//ZZ       ARMneon_VSAL, /* Yah, not SAR but SAL */
-//ZZ       ARMneon_VQSHL,
-//ZZ       ARMneon_VQSAL
-//ZZ    }
-//ZZ    ARMNeonShiftOp;
-//ZZ 
-//ZZ typedef
-//ZZ    enum {
-//ZZ       ARMneon_COPY=160,
-//ZZ       ARMneon_COPYLU,
-//ZZ       ARMneon_COPYLS,
-//ZZ       ARMneon_COPYN,
-//ZZ       ARMneon_COPYQNSS,
-//ZZ       ARMneon_COPYQNUS,
-//ZZ       ARMneon_COPYQNUU,
-//ZZ       ARMneon_NOT,
-//ZZ       ARMneon_EQZ,
-//ZZ       ARMneon_DUP,
-//ZZ       ARMneon_PADDLS,
-//ZZ       ARMneon_PADDLU,
-//ZZ       ARMneon_CNT,
-//ZZ       ARMneon_CLZ,
-//ZZ       ARMneon_CLS,
-//ZZ       ARMneon_VCVTxFPxINT,
-//ZZ       ARMneon_VQSHLNSS,
-//ZZ       ARMneon_VQSHLNUU,
-//ZZ       ARMneon_VQSHLNUS,
-//ZZ       ARMneon_VCVTFtoU,
-//ZZ       ARMneon_VCVTFtoS,
-//ZZ       ARMneon_VCVTUtoF,
-//ZZ       ARMneon_VCVTStoF,
-//ZZ       ARMneon_VCVTFtoFixedU,
-//ZZ       ARMneon_VCVTFtoFixedS,
-//ZZ       ARMneon_VCVTFixedUtoF,
-//ZZ       ARMneon_VCVTFixedStoF,
-//ZZ       ARMneon_VCVTF16toF32,
-//ZZ       ARMneon_VCVTF32toF16,
-//ZZ       ARMneon_REV16,
-//ZZ       ARMneon_REV32,
-//ZZ       ARMneon_REV64,
-//ZZ       ARMneon_ABS,
-//ZZ       ARMneon_VNEGF,
-//ZZ       ARMneon_VRECIP,
-//ZZ       ARMneon_VRECIPF,
-//ZZ       ARMneon_VABSFP,
-//ZZ       ARMneon_VRSQRTEFP,
-//ZZ       ARMneon_VRSQRTE
-//ZZ       /* ... */
-//ZZ    }
-//ZZ    ARMNeonUnOp;
-//ZZ 
-//ZZ typedef
-//ZZ    enum {
-//ZZ       ARMneon_SETELEM=200,
-//ZZ       ARMneon_GETELEMU,
-//ZZ       ARMneon_GETELEMS,
-//ZZ       ARMneon_VDUP,
-//ZZ    }
-//ZZ    ARMNeonUnOpS;
-//ZZ 
-//ZZ typedef
-//ZZ    enum {
-//ZZ       ARMneon_TRN=210,
-//ZZ       ARMneon_ZIP,
-//ZZ       ARMneon_UZP
-//ZZ       /* ... */
-//ZZ    }
-//ZZ    ARMNeonDualOp;
-//ZZ 
-//ZZ extern const HChar* showARMNeonBinOp ( ARMNeonBinOp op );
-//ZZ extern const HChar* showARMNeonUnOp ( ARMNeonUnOp op );
-//ZZ extern const HChar* showARMNeonUnOpS ( ARMNeonUnOpS op );
-//ZZ extern const HChar* showARMNeonShiftOp ( ARMNeonShiftOp op );
-//ZZ extern const HChar* showARMNeonDualOp ( ARMNeonDualOp op );
-//ZZ extern const HChar* showARMNeonBinOpDataType ( ARMNeonBinOp op );
-//ZZ extern const HChar* showARMNeonUnOpDataType ( ARMNeonUnOp op );
-//ZZ extern const HChar* showARMNeonUnOpSDataType ( ARMNeonUnOpS op );
-//ZZ extern const HChar* showARMNeonShiftOpDataType ( ARMNeonShiftOp op );
-//ZZ extern const HChar* showARMNeonDualOpDataType ( ARMNeonDualOp op );
-
 typedef
    enum {
       /* baseline */
@@ -543,7 +400,6 @@ typedef
       ARM64in_LdrEX,
       ARM64in_StrEX,
       ARM64in_MFence,
-//ZZ       ARMin_CLREX,
       /* ARM64in_V*: scalar ops involving vector registers */
       ARM64in_VLdStS,   /* 32-bit FP load/store, with imm offset  */
       ARM64in_VLdStD,   /* 64-bit FP load/store, with imm offset  */
@@ -564,21 +420,6 @@ typedef
       ARM64in_VNarrowV,
       ARM64in_VShiftImmV,
       ARM64in_VExtV,
-//ZZ       ARMin_VAluS,
-//ZZ       ARMin_VCMovD,
-//ZZ       ARMin_VCMovS,
-//ZZ       ARMin_VXferD,
-//ZZ       ARMin_VXferS,
-//ZZ       ARMin_VCvtID,
-//ZZ       /* Neon */
-//ZZ       ARMin_NLdStD,
-//ZZ       ARMin_NUnary,
-//ZZ       ARMin_NUnaryS,
-//ZZ       ARMin_NDual,
-//ZZ       ARMin_NBinary,
-//ZZ       ARMin_NBinaryS,
-//ZZ       ARMin_NShift,
-//ZZ       ARMin_NShl64, // special case 64-bit shift of Dreg by immediate
       ARM64in_VImmQ,
       ARM64in_VDfromX,    /* Move an Xreg to a Dreg */
       ARM64in_VQfromXX,   /* Move 2 Xregs to a Qreg */
@@ -743,9 +584,6 @@ typedef
             total nuclear overkill, but better safe than sorry. */
          struct {
          } MFence;
-//ZZ          /* A CLREX instruction. */
-//ZZ          struct {
-//ZZ          } CLREX;
          /* --- INSTRUCTIONS INVOLVING VECTOR REGISTERS --- */
          /* 32-bit Fp load/store */
          struct {
@@ -864,106 +702,6 @@ typedef
            HReg srcHi;
            UInt amtB;
         } VExtV;
-//ZZ          /* 32-bit FP binary arithmetic */
-//ZZ          struct {
-//ZZ             ARMVfpOp op;
-//ZZ             HReg     dst;
-//ZZ             HReg     argL;
-//ZZ             HReg     argR;
-//ZZ          } VAluS;
-//ZZ          /* 64-bit FP mov src to dst on the given condition, which may
-//ZZ             not be ARMcc_AL. */
-//ZZ          struct {
-//ZZ             ARMCondCode cond;
-//ZZ             HReg        dst;
-//ZZ             HReg        src;
-//ZZ          } VCMovD;
-//ZZ          /* 32-bit FP mov src to dst on the given condition, which may
-//ZZ             not be ARMcc_AL. */
-//ZZ          struct {
-//ZZ             ARMCondCode cond;
-//ZZ             HReg        dst;
-//ZZ             HReg        src;
-//ZZ          } VCMovS;
-//ZZ          /* Transfer a VFP D reg to/from two integer registers (VMOV) */
-//ZZ          struct {
-//ZZ             Bool toD;
-//ZZ             HReg dD;
-//ZZ             HReg rHi;
-//ZZ             HReg rLo;
-//ZZ          } VXferD;
-//ZZ          /* Transfer a VFP S reg to/from an integer register (VMOV) */
-//ZZ          struct {
-//ZZ             Bool toS;
-//ZZ             HReg fD;
-//ZZ             HReg rLo;
-//ZZ          } VXferS;
-//ZZ          /* Convert between 32-bit ints and 64-bit FP values (both ways
-//ZZ             and both signednesses). (FSITOD, FUITOD, FTOSID, FTOUID) */
-//ZZ          struct {
-//ZZ             Bool iToD; /* True: I32->F64.  False: F64->I32 */
-//ZZ             Bool syned; /* True: I32 is signed.  False: I32 is unsigned */
-//ZZ             HReg dst;
-//ZZ             HReg src;
-//ZZ          } VCvtID;
-//ZZ          /* Neon data processing instruction: 3 registers of the same
-//ZZ             length */
-//ZZ          struct {
-//ZZ             ARMNeonBinOp op;
-//ZZ             HReg dst;
-//ZZ             HReg argL;
-//ZZ             HReg argR;
-//ZZ             UInt size;
-//ZZ             Bool Q;
-//ZZ          } NBinary;
-//ZZ          struct {
-//ZZ             ARMNeonBinOp op;
-//ZZ             ARMNRS* dst;
-//ZZ             ARMNRS* argL;
-//ZZ             ARMNRS* argR;
-//ZZ             UInt size;
-//ZZ             Bool Q;
-//ZZ          } NBinaryS;
-//ZZ          struct {
-//ZZ             ARMNeonShiftOp op;
-//ZZ             HReg dst;
-//ZZ             HReg argL;
-//ZZ             HReg argR;
-//ZZ             UInt size;
-//ZZ             Bool Q;
-//ZZ          } NShift;
-//ZZ          struct {
-//ZZ             HReg dst;
-//ZZ             HReg src;
-//ZZ             UInt amt; /* 1..63 only */
-//ZZ          } NShl64;
-//ZZ          struct {
-//ZZ             Bool isLoad;
-//ZZ             HReg dD;
-//ZZ             ARMAModeN *amode;
-//ZZ          } NLdStD
-//ZZ          struct {
-//ZZ             ARMNeonUnOpS op;
-//ZZ             ARMNRS*  dst;
-//ZZ             ARMNRS*  src;
-//ZZ             UInt size;
-//ZZ             Bool Q;
-//ZZ          } NUnaryS;
-//ZZ          struct {
-//ZZ             ARMNeonUnOp op;
-//ZZ             HReg  dst;
-//ZZ             HReg  src;
-//ZZ             UInt size;
-//ZZ             Bool Q;
-//ZZ          } NUnary;
-//ZZ          /* Takes two arguments and modifies them both. */
-//ZZ          struct {
-//ZZ             ARMNeonDualOp op;
-//ZZ             HReg  arg1;
-//ZZ             HReg  arg2;
-//ZZ             UInt size;
-//ZZ             Bool Q;
-//ZZ          } NDual;
          struct {
             HReg   rQ;
             UShort imm; /* Same 1-bit-per-byte encoding as IR */
@@ -1006,21 +744,19 @@ typedef
    }
    ARM64Instr;
 
-//ZZ 
+
 extern ARM64Instr* ARM64Instr_Arith   ( HReg, HReg, ARM64RIA*, Bool isAdd );
 extern ARM64Instr* ARM64Instr_Cmp     ( HReg, ARM64RIA*, Bool is64 );
 extern ARM64Instr* ARM64Instr_Logic   ( HReg, HReg, ARM64RIL*, ARM64LogicOp );
 extern ARM64Instr* ARM64Instr_Test    ( HReg, ARM64RIL* );
 extern ARM64Instr* ARM64Instr_Shift   ( HReg, HReg, ARM64RI6*, ARM64ShiftOp );
 extern ARM64Instr* ARM64Instr_Unary   ( HReg, HReg, ARM64UnaryOp );
-//ZZ extern ARMInstr* ARMInstr_CmpOrTst ( Bool isCmp, HReg, ARMRI84* );
 extern ARM64Instr* ARM64Instr_MovI    ( HReg, HReg );
 extern ARM64Instr* ARM64Instr_Imm64   ( HReg, ULong );
 extern ARM64Instr* ARM64Instr_LdSt64  ( Bool isLoad, HReg, ARM64AMode* );
 extern ARM64Instr* ARM64Instr_LdSt32  ( Bool isLoad, HReg, ARM64AMode* );
 extern ARM64Instr* ARM64Instr_LdSt16  ( Bool isLoad, HReg, ARM64AMode* );
 extern ARM64Instr* ARM64Instr_LdSt8   ( Bool isLoad, HReg, ARM64AMode* );
-//ZZ extern ARMInstr* ARMInstr_Ld8S     ( ARMCondCode, HReg, ARMAMode2* );
 extern ARM64Instr* ARM64Instr_XDirect ( Addr64 dstGA, ARM64AMode* amPC,
                                         ARM64CondCode cond, Bool toFastEP );
 extern ARM64Instr* ARM64Instr_XIndir  ( HReg dstGA, ARM64AMode* amPC,
@@ -1038,7 +774,6 @@ extern ARM64Instr* ARM64Instr_Mul     ( HReg dst, HReg argL, HReg argR,
 extern ARM64Instr* ARM64Instr_LdrEX   ( Int szB );
 extern ARM64Instr* ARM64Instr_StrEX   ( Int szB );
 extern ARM64Instr* ARM64Instr_MFence  ( void );
-//ZZ extern ARMInstr* ARMInstr_CLREX    ( void );
 extern ARM64Instr* ARM64Instr_VLdStS  ( Bool isLoad, HReg sD, HReg rN,
                                         UInt uimm12 /* 0 .. 16380, 0 % 4 */ );
 extern ARM64Instr* ARM64Instr_VLdStD  ( Bool isLoad, HReg dD, HReg rN,
@@ -1062,23 +797,6 @@ extern ARM64Instr* ARM64Instr_VShiftImmV ( ARM64VecShiftOp op,
                                            HReg dst, HReg src, UInt amt );
 extern ARM64Instr* ARM64Instr_VExtV   ( HReg dst,
                                         HReg srcLo, HReg srcHi, UInt amtB );
-//ZZ extern ARMInstr* ARMInstr_VAluS    ( ARMVfpOp op, HReg, HReg, HReg );
-//ZZ extern ARMInstr* ARMInstr_VCMovD   ( ARMCondCode, HReg dst, HReg src );
-//ZZ extern ARMInstr* ARMInstr_VCMovS   ( ARMCondCode, HReg dst, HReg src );
-//ZZ extern ARMInstr* ARMInstr_VXferD   ( Bool toD, HReg dD, HReg rHi, HReg rLo );
-//ZZ extern ARMInstr* ARMInstr_VXferS   ( Bool toS, HReg fD, HReg rLo );
-//ZZ extern ARMInstr* ARMInstr_VCvtID   ( Bool iToD, Bool syned,
-//ZZ                                      HReg dst, HReg src );
-//ZZ extern ARMInstr* ARMInstr_NLdStD   ( Bool isLoad, HReg, ARMAModeN* );
-//ZZ extern ARMInstr* ARMInstr_NUnary   ( ARMNeonUnOp, HReg, HReg, UInt, Bool );
-//ZZ extern ARMInstr* ARMInstr_NUnaryS  ( ARMNeonUnOpS, ARMNRS*, ARMNRS*,
-//ZZ                                      UInt, Bool );
-//ZZ extern ARMInstr* ARMInstr_NDual    ( ARMNeonDualOp, HReg, HReg, UInt, Bool );
-//ZZ extern ARMInstr* ARMInstr_NBinary  ( ARMNeonBinOp, HReg, HReg, HReg,
-//ZZ                                      UInt, Bool );
-//ZZ extern ARMInstr* ARMInstr_NShift   ( ARMNeonShiftOp, HReg, HReg, HReg,
-//ZZ                                      UInt, Bool );
-//ZZ extern ARMInstr* ARMInstr_NShl64   ( HReg, HReg, UInt );
 extern ARM64Instr* ARM64Instr_VImmQ   ( HReg, UShort );
 extern ARM64Instr* ARM64Instr_VDfromX ( HReg rD, HReg rX );
 extern ARM64Instr* ARM64Instr_VQfromXX( HReg rQ, HReg rXhi, HReg rXlo );

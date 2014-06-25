@@ -4986,6 +4986,7 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_InterleaveLO32x4:
          case Iop_InterleaveLO16x8:
          case Iop_InterleaveLO8x16:
+         case Iop_PolynomialMul8x16:
          {
             HReg res  = newVRegV(env);
             HReg argL = iselV128Expr(env, e->Iex.Binop.arg1);
@@ -5066,6 +5067,7 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
                                           break;
                case Iop_InterleaveLO8x16: op = ARM64vecb_ZIP18x16; sw = True;
                                           break;
+               case Iop_PolynomialMul8x16: op = ARM64vecb_PMUL8x16; break;
                default: vassert(0);
             }
             if (sw) {

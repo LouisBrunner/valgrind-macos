@@ -94,7 +94,13 @@
    10190 MALLOC_STATS
    10200 MALLINFO
    10210 DEFAULT_ZONE
-   10220 ZONE_CHECK
+   10220 CREATE_ZONE
+   10230 ZONE_FROM_PTR
+   10240 ZONE_CHECK
+   10250 ZONE_REGISTER
+   10260 ZONE_UNREGISTER
+   10270 ZONE_SET_NAME
+   10280 ZONE_GET_NAME
 */
 
 /* 2 Apr 05: the Portland Group compiler, which uses cfront/ARM style
@@ -1081,12 +1087,24 @@ static vki_malloc_zone_t vg_default_zone = {
 
 DEFAULT_ZONE(VG_Z_LIBC_SONAME, malloc_default_zone);
 DEFAULT_ZONE(SO_SYN_MALLOC,    malloc_default_zone);
+DEFAULT_ZONE(VG_Z_LIBC_SONAME, malloc_default_purgeable_zone);
+DEFAULT_ZONE(SO_SYN_MALLOC,    malloc_default_purgeable_zone);
+
+
+#define CREATE_ZONE(soname, fnname) \
+   \
+   void *VG_REPLACE_FUNCTION_EZU(10220,soname,fnname)(size_t sz, unsigned fl); \
+   void *VG_REPLACE_FUNCTION_EZU(10220,soname,fnname)(size_t sz, unsigned fl)  \
+   { \
+      return &vg_default_zone; \
+   }
+CREATE_ZONE(VG_Z_LIBC_SONAME, malloc_create_zone);
 
 
 #define ZONE_FROM_PTR(soname, fnname) \
    \
-   void *VG_REPLACE_FUNCTION_EZU(10220,soname,fnname) ( void* ptr ); \
-   void *VG_REPLACE_FUNCTION_EZU(10220,soname,fnname) ( void* ptr )  \
+   void *VG_REPLACE_FUNCTION_EZU(10230,soname,fnname) ( void* ptr ); \
+   void *VG_REPLACE_FUNCTION_EZU(10230,soname,fnname) ( void* ptr )  \
    { \
       return &vg_default_zone; \
    }
@@ -1098,14 +1116,65 @@ ZONE_FROM_PTR(SO_SYN_MALLOC,    malloc_zone_from_ptr);
 // GrP fixme bypass libc's use of zone->introspect->check
 #define ZONE_CHECK(soname, fnname) \
    \
-   int VG_REPLACE_FUNCTION_EZU(10230,soname,fnname)(void* zone); \
-   int VG_REPLACE_FUNCTION_EZU(10230,soname,fnname)(void* zone)  \
+   int VG_REPLACE_FUNCTION_EZU(10240,soname,fnname)(void* zone); \
+   int VG_REPLACE_FUNCTION_EZU(10240,soname,fnname)(void* zone)  \
    { \
       trigger_memcheck_error_if_undefined((ULong) zone); \
+      panic(#fnname); \
       return 1; \
    }
 
-//ZONE_CHECK(VG_Z_LIBC_SONAME, malloc_zone_check);    
+ZONE_CHECK(VG_Z_LIBC_SONAME, malloc_zone_check);    
+ZONE_CHECK(SO_SYN_MALLOC,    malloc_zone_check);
+
+
+#define ZONE_REGISTER(soname, fnname) \
+   \
+   void VG_REPLACE_FUNCTION_EZU(10250,soname,fnname)(void* zone); \
+   void VG_REPLACE_FUNCTION_EZU(10250,soname,fnname)(void* zone)  \
+   { \
+      trigger_memcheck_error_if_undefined((ULong) zone); \
+   }
+
+ZONE_REGISTER(VG_Z_LIBC_SONAME, malloc_zone_register);
+ZONE_REGISTER(SO_SYN_MALLOC,    malloc_zone_register);
+
+
+#define ZONE_UNREGISTER(soname, fnname) \
+   \
+   void VG_REPLACE_FUNCTION_EZU(10260,soname,fnname)(void* zone); \
+   void VG_REPLACE_FUNCTION_EZU(10260,soname,fnname)(void* zone)  \
+   { \
+      trigger_memcheck_error_if_undefined((ULong) zone); \
+   }
+
+ZONE_UNREGISTER(VG_Z_LIBC_SONAME, malloc_zone_unregister);
+ZONE_UNREGISTER(SO_SYN_MALLOC,    malloc_zone_unregister);
+
+
+#define ZONE_SET_NAME(soname, fnname) \
+   \
+   void VG_REPLACE_FUNCTION_EZU(10270,soname,fnname)(void* zone, char* nm); \
+   void VG_REPLACE_FUNCTION_EZU(10270,soname,fnname)(void* zone, char* nm)  \
+   { \
+      trigger_memcheck_error_if_undefined((ULong) zone); \
+   }
+
+ZONE_SET_NAME(VG_Z_LIBC_SONAME, malloc_set_zone_name);
+ZONE_SET_NAME(SO_SYN_MALLOC,    malloc_set_zone_name);
+
+
+#define ZONE_GET_NAME(soname, fnname) \
+   \
+   char* VG_REPLACE_FUNCTION_EZU(10280,soname,fnname)(void* zone); \
+   char* VG_REPLACE_FUNCTION_EZU(10280,soname,fnname)(void* zone)  \
+   { \
+      trigger_memcheck_error_if_undefined((ULong) zone); \
+      return vg_default_zone.zone_name; \
+   }
+
+ZONE_SET_NAME(VG_Z_LIBC_SONAME, malloc_get_zone_name);
+ZONE_SET_NAME(SO_SYN_MALLOC,    malloc_get_zone_name);
 
 #endif /* defined(VGO_darwin) */
 

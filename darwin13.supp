@@ -1,5 +1,11 @@
+
+# Suppressions for Darwin 13.x / Mac OS X 10.9 Mavericks
+
+############################################
+## Leaks.  For other stuff see below.
+
 {
-   <insert_a_suppression_name_here>
+   OSX109:1-Leak
    Memcheck:Leak
    match-leak-kinds: possible
    fun:malloc_zone_?alloc
@@ -8,7 +14,7 @@
 }
 
 {
-   <insert_a_suppression_name_here>
+   OSX109:2-Leak
    Memcheck:Leak
    match-leak-kinds: definite
    fun:?alloc
@@ -17,7 +23,7 @@
 }
 
 {
-   <insert_a_suppression_name_here>
+   OSX109:3-Leak
    Memcheck:Leak
    match-leak-kinds: definite
    fun:malloc_zone_?alloc
@@ -29,7 +35,7 @@
 }
 
 {
-   <insert_a_suppression_name_here>
+   OSX109:4-Leak
    Memcheck:Leak
    match-leak-kinds: reachable
    fun:malloc_zone_?alloc
@@ -39,7 +45,7 @@
 }
 
 {
-   <insert_a_suppression_name_here>
+   OSX109:5-Leak
    Memcheck:Leak
    match-leak-kinds: reachable
    fun:?alloc
@@ -49,7 +55,7 @@
 }
 
 {
-   <insert_a_suppression_name_here>
+   OSX109:6-Leak
    Memcheck:Leak
    match-leak-kinds: reachable
    fun:malloc_zone_?alloc
@@ -60,7 +66,7 @@
 }
 
 {
-   <insert_a_suppression_name_here>
+   OSX109:7-Leak
    Memcheck:Leak
    match-leak-kinds: possible
    fun:malloc_zone_?alloc
@@ -71,7 +77,7 @@
 }
 
 {
-   <insert_a_suppression_name_here>
+   OSX109:8-Leak
    Memcheck:Leak
    match-leak-kinds: indirect
    fun:?alloc
@@ -81,7 +87,7 @@
 }
 
 {
-   <insert_a_suppression_name_here>
+   OSX109:9-Leak
    Memcheck:Leak
    match-leak-kinds: reachable
    fun:malloc_zone_?alloc
@@ -91,7 +97,7 @@
 }
 
 {
-   <insert_a_suppression_name_here>
+   OSX109:10-Leak
    Memcheck:Leak
    match-leak-kinds: reachable
    fun:?alloc
@@ -100,80 +106,138 @@
    ...
 }
 
-{
-   <insert_a_suppression_name_here>
-   Memcheck:Addr1
-   ...
-   fun:libSystem_initializer
-   ...
-   fun:_dyld_start
-}
+############################################
+## Non-leak errors
 
 {
-   <insert_a_suppression_name_here>
-   Memcheck:Addr4
-   ...
-   fun:libSystem_initializer
-   ...
-   fun:_dyld_start
-}
-
-{
-   <insert_a_suppression_name_here>
-   Memcheck:Addr8
-   ...
-   fun:libSystem_initializer
-   ...
-   fun:_dyld_start
-}
-
-{
-   <insert_a_suppression_name_here>
-   Memcheck:Addr8
-   ...
-   fun:libSystem_initializer
-   ...
-   fun:_ZN4dyld24initializeMainExecutableEv
-}
-
-{
-   <insert_a_suppression_name_here>
-   Memcheck:Addr16
-   ...
-   fun:dyld_register_image_state_change_handler
-}
-
-{
-   <insert_a_suppression_name_here>
+   OSX109:AppKit-1
    Memcheck:Cond
-   fun:_platform_memchr
-   ...
+   obj:*AppKit.framework*AppKit*
+   obj:*AppKit.framework*AppKit*
+   obj:*AppKit.framework*AppKit*
 }
 
 {
-   <insert_a_suppression_name_here>
-   Memcheck:Addr16
-   obj:/usr/lib/system/libsystem_platform.dylib
-   ...
-}
-
-{
-   <insert_a_suppression_name_here>
-   Memcheck:Addr16
-   obj:/usr/lib/system/libsystem_c.dylib
-   ...
-}
-
-{
-   <insert_a_suppression_name_here>
+   OSX109:AppKit-2
    Memcheck:Cond
-   obj:/usr/lib/system/libsystem_c.dylib
-   ...
+   obj:*AppKit.framework*AppKit*
+   obj:*AppKit.framework*AppKit*
+   obj:*libdispatch.dylib*
 }
 
 {
-   <insert_a_suppression_name_here>
+   OSX109:AppKit-3
    Memcheck:Cond
-   obj:/usr/lib/system/libsystem_platform.dylib
-   ...
+   obj:*AppKit.framework*AppKit*
+   obj:*libdispatch.dylib*
+   obj:*libdispatch.dylib*
+}
+
+{
+   OSX109:ColorSync-1
+   Memcheck:Cond
+   obj:*ColorSync.framework*ColorSync*
+   obj:*ColorSync.framework*ColorSync*
+   obj:*ColorSync.framework*ColorSync*
+}
+
+{
+   OSX109:ColorSync-2
+   Memcheck:Value8
+   obj:*ColorSync.framework*ColorSync*
+   obj:*ColorSync.framework*ColorSync*
+   obj:*ColorSync.framework*ColorSync*
+}
+
+{
+   OSX109:CoreGraphics-1
+   Memcheck:Cond
+   obj:*CoreGraphics.framework*CoreGraphics*
+   obj:*CoreGraphics.framework*CoreGraphics*
+   obj:*CoreGraphics.framework*CoreGraphics*
+}
+
+{
+   OSX109:CoreGraphics-2
+   Memcheck:Value8
+   obj:*CoreGraphics.framework*CoreGraphics*
+   obj:*CoreGraphics.framework*CoreGraphics*
+   obj:*CoreGraphics.framework*CoreGraphics*
+}
+
+{
+   OSX109:CoreGraphics-3
+   Memcheck:Cond
+   obj:*CoreGraphics.framework*CoreGraphics*
+   obj:*CoreGraphics.framework*libRIP*
+   obj:*CoreGraphics.framework*libRIP*
+}
+
+{
+   OSX109:CoreGraphics-4
+   Memcheck:Cond
+   obj:*CoreGraphics.framework*CoreGraphics*
+   obj:*CoreGraphics.framework*CoreGraphics*
+   obj:*CoreGraphics.framework*libRIP*
+}
+
+{
+   OSX109:CoreGraphics-5
+   Memcheck:Cond
+   obj:*CoreGraphics.framework*CoreGraphics*
+   obj:*libdispatch.dylib*
+   obj:*libdispatch.dylib*
+}
+
+{
+   OSX109:dyld-2
+   Memcheck:Cond
+   obj:/usr/lib/dyld
+   obj:/usr/lib/dyld
+   obj:/usr/lib/dyld
+}
+
+{
+   OSX109:HIServices-1
+   Memcheck:Cond
+   obj:*HIServices.framework*HIServices*
+   obj:*HIToolbox.framework*HIToolbox*
+   obj:*HIToolbox.framework*HIToolbox*
+}
+
+{  
+   OSX109:LaunchServices-1
+   Memcheck:Cond
+   obj:*LaunchServices.framework*LaunchServices*
+   obj:*AppKit.framework*AppKit*
+   obj:*AppKit.framework*AppKit*
+}
+
+{
+   OSX109:QuartzCore-1
+   Memcheck:Cond
+   obj:*QuartzCore.framework*QuartzCore
+   obj:*QuartzCore.framework*QuartzCore
+   obj:*QuartzCore.framework*QuartzCore
+}
+
+{
+   OSX109:vImage-1
+   Memcheck:Cond
+   obj:*vImage.framework*vImage*
+   obj:*vImage.framework*vImage*
+   obj:*CoreGraphics.framework*CoreGraphics*
+}
+
+{
+   OSX109:zlib-C
+   Memcheck:Cond
+   obj:/usr/lib/libz.*dylib
+   obj:/usr/lib/libz.*dylib
+}
+{
+   OSX109:zlib-8
+   Memcheck:Value8
+   obj:/usr/lib/libz.*dylib
+   obj:/usr/lib/libz.*dylib
 }

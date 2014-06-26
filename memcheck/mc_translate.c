@@ -4195,41 +4195,41 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
 
       case Iop_CmpNEZ8x8:
       case Iop_Cnt8x8:
-      case Iop_Clz8Sx8:
-      case Iop_Cls8Sx8:
+      case Iop_Clz8x8:
+      case Iop_Cls8x8:
       case Iop_Abs8x8:
          return mkPCast8x8(mce, vatom);
 
       case Iop_CmpNEZ8x16:
       case Iop_Cnt8x16:
-      case Iop_Clz8Sx16:
-      case Iop_Cls8Sx16:
+      case Iop_Clz8x16:
+      case Iop_Cls8x16:
       case Iop_Abs8x16:
          return mkPCast8x16(mce, vatom);
 
       case Iop_CmpNEZ16x4:
-      case Iop_Clz16Sx4:
-      case Iop_Cls16Sx4:
+      case Iop_Clz16x4:
+      case Iop_Cls16x4:
       case Iop_Abs16x4:
          return mkPCast16x4(mce, vatom);
 
       case Iop_CmpNEZ16x8:
-      case Iop_Clz16Sx8:
-      case Iop_Cls16Sx8:
+      case Iop_Clz16x8:
+      case Iop_Cls16x8:
       case Iop_Abs16x8:
          return mkPCast16x8(mce, vatom);
 
       case Iop_CmpNEZ32x2:
-      case Iop_Clz32Sx2:
-      case Iop_Cls32Sx2:
+      case Iop_Clz32x2:
+      case Iop_Cls32x2:
       case Iop_FtoI32Ux2_RZ:
       case Iop_FtoI32Sx2_RZ:
       case Iop_Abs32x2:
          return mkPCast32x2(mce, vatom);
 
       case Iop_CmpNEZ32x4:
-      case Iop_Clz32Sx4:
-      case Iop_Cls32Sx4:
+      case Iop_Clz32x4:
+      case Iop_Cls32x4:
       case Iop_FtoI32Ux4_RZ:
       case Iop_FtoI32Sx4_RZ:
       case Iop_Abs32x4:

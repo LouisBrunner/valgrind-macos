@@ -344,8 +344,8 @@ typeof_primop(IROp op, IRType *t_dst, IRType *t_arg1, IRType *t_arg2,
       case Iop_Not64:
       case Iop_CmpNEZ32x2: case Iop_CmpNEZ16x4: case Iop_CmpNEZ8x8:
       case Iop_Cnt8x8:
-      case Iop_Clz8Sx8: case Iop_Clz16Sx4: case Iop_Clz32Sx2:
-      case Iop_Cls8Sx8: case Iop_Cls16Sx4: case Iop_Cls32Sx2:
+      case Iop_Clz8x8: case Iop_Clz16x4: case Iop_Clz32x2:
+      case Iop_Cls8x8: case Iop_Cls16x4: case Iop_Cls32x2:
       case Iop_PwAddL8Ux8: case Iop_PwAddL16Ux4: case Iop_PwAddL32Ux2:
       case Iop_PwAddL8Sx8: case Iop_PwAddL16Sx4: case Iop_PwAddL32Sx2:
       case Iop_Reverse64_8x8: case Iop_Reverse64_16x4: case Iop_Reverse64_32x2:
@@ -713,8 +713,8 @@ typeof_primop(IROp op, IRType *t_dst, IRType *t_arg1, IRType *t_arg2,
       case Iop_CmpNEZ8x16: case Iop_CmpNEZ16x8:
       case Iop_CmpNEZ32x4: case Iop_CmpNEZ64x2:
       case Iop_Cnt8x16:
-      case Iop_Clz8Sx16: case Iop_Clz16Sx8: case Iop_Clz32Sx4:
-      case Iop_Cls8Sx16: case Iop_Cls16Sx8: case Iop_Cls32Sx4:
+      case Iop_Clz8x16: case Iop_Clz16x8: case Iop_Clz32x4:
+      case Iop_Cls8x16: case Iop_Cls16x8: case Iop_Cls32x4:
       case Iop_PwAddL8Ux16: case Iop_PwAddL16Ux8: case Iop_PwAddL32Ux4:
       case Iop_PwAddL8Sx16: case Iop_PwAddL16Sx8: case Iop_PwAddL32Sx4:
       case Iop_Reverse64_8x16: case Iop_Reverse64_16x8: case Iop_Reverse64_32x4:

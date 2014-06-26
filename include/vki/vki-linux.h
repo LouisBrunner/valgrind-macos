@@ -2312,6 +2312,59 @@ enum {
 	VKI_SNDRV_TIMER_IOCTL_PAUSE = _VKI_IO('T', 0xa3),
 };
 
+struct vki_snd_ctl_card_info {
+	int card;			/* card number */
+	int pad;			/* reserved for future (was type) */
+	unsigned char id[16];		/* ID of card (user selectable) */
+	unsigned char driver[16];	/* Driver name */
+	unsigned char name[32];		/* Short name of soundcard */
+	unsigned char longname[80];	/* name + info text about soundcard */
+	unsigned char reserved_[16];	/* reserved for future (was ID of mixer) */
+	unsigned char mixername[80];	/* visual mixer identification */
+	unsigned char components[128];	/* card components / fine identification, delimited with one space (AC97 etc..) */
+};
+
+typedef int vki_snd_ctl_elem_iface_t;
+#define	VKI_SNDRV_CTL_ELEM_IFACE_CARD		((vki_snd_ctl_elem_iface_t) 0) /* global control */
+#define	VKI_SNDRV_CTL_ELEM_IFACE_HWDEP		((vki_snd_ctl_elem_iface_t) 1) /* hardware dependent device */
+#define	VKI_SNDRV_CTL_ELEM_IFACE_MIXER		((vki_snd_ctl_elem_iface_t) 2) /* virtual mixer device */
+#define	VKI_SNDRV_CTL_ELEM_IFACE_PCM		((vki_snd_ctl_elem_iface_t) 3) /* PCM device */
+#define	VKI_SNDRV_CTL_ELEM_IFACE_RAWMIDI	((vki_snd_ctl_elem_iface_t) 4) /* RawMidi device */
+#define	VKI_SNDRV_CTL_ELEM_IFACE_TIMER		((vki_snd_ctl_elem_iface_t) 5) /* timer device */
+#define	VKI_SNDRV_CTL_ELEM_IFACE_SEQUENCER	((vki_snd_ctl_elem_iface_t) 6) /* sequencer client */
+#define	VKI_SNDRV_CTL_ELEM_IFACE_LAST		VKI_SNDRV_CTL_ELEM_IFACE_SEQUENCER
+
+struct vki_snd_ctl_elem_id {
+	unsigned int numid;		/* numeric identifier, zero = invalid */
+	vki_snd_ctl_elem_iface_t iface;	/* interface identifier */
+	unsigned int device;		/* device/client number */
+	unsigned int subdevice;		/* subdevice (substream) number */
+	unsigned char name[44];		/* ASCII name of item */
+	unsigned int index;		/* index of item */
+};
+
+struct vki_snd_ctl_elem_list {
+	unsigned int offset;		/* W: first element ID to get */
+	unsigned int space;		/* W: count of element IDs to get */
+	unsigned int used;		/* R: count of element IDs set */
+	unsigned int count;		/* R: count of all elements */
+	struct vki_snd_ctl_elem_id __user *pids; /* R: IDs */
+	unsigned char reserved[50];
+};
+
+struct vki_snd_ctl_tlv {
+    unsigned int numid;	/* control element numeric identification */
+    unsigned int length;	/* in bytes aligned to 4 */
+    unsigned int tlv[0];	/* first TLV */
+};
+
+#define VKI_SNDRV_CTL_IOCTL_PVERSION	_VKI_IOR('U', 0x00, int)
+#define VKI_SNDRV_CTL_IOCTL_CARD_INFO	_VKI_IOR('U', 0x01, struct vki_snd_ctl_card_info)
+#define VKI_SNDRV_CTL_IOCTL_ELEM_LIST	_VKI_IOWR('U', 0x10, struct vki_snd_ctl_elem_list)
+#define VKI_SNDRV_CTL_IOCTL_TLV_READ	_VKI_IOWR('U', 0x1a, struct vki_snd_ctl_tlv)
+#define VKI_SNDRV_CTL_IOCTL_TLV_WRITE	_VKI_IOWR('U', 0x1b, struct vki_snd_ctl_tlv)
+#define VKI_SNDRV_CTL_IOCTL_TLV_COMMAND	_VKI_IOWR('U', 0x1c, struct vki_snd_ctl_tlv)
+
 //----------------------------------------------------------------------
 // From linux-2.6.15.4/include/linux/serial.h
 //----------------------------------------------------------------------

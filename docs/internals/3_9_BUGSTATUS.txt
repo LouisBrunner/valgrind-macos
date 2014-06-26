@@ -168,7 +168,6 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
 ========================================================================
 ========================================================================
 
-334936  patch to fix false positives on alsa SNDRV_CTL_* ioctls
 333628  Out of tree build  (is fixed, but needs to land)
 335143  Capabilities not supported
 197259  (wine) Unsupported arch_prtctl option

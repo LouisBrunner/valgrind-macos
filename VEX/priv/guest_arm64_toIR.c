@@ -5657,6 +5657,16 @@ void putLO64andZUorPutHI64 ( Bool is2, UInt dd, IRTemp new64 )
 }
 
 
+/* |fullWidth| is a full V128 width result.  Depending on bitQ,
+   zero out the upper half. */
+static IRExpr* math_MAYBE_ZERO_HI64 ( UInt bitQ, IRTemp fullWidth )
+{
+   if (bitQ == 1) return mkexpr(fullWidth);
+   if (bitQ == 0) return unop(Iop_ZeroHI64ofV128, mkexpr(fullWidth));
+   vassert(0);
+}
+
+
 static
 Bool dis_AdvSIMD_EXT(/*MB_OUT*/DisResult* dres, UInt insn)
 {
@@ -7464,6 +7474,17 @@ Bool dis_AdvSIMD_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
    UInt dd     = INSN(4,0);
    vassert(size < 4);
 
+   if (bitU == 0 && size == X00 && opcode == BITS5(0,0,0,0,1)) {
+      /* -------- 0,00,00001: REV16 16b_16b, 8b_8b -------- */
+      IRTemp res = newTemp(Ity_V128);
+      assign(res, unop(Iop_Reverse8sIn16_x8, getQReg128(nn)));
+      putQReg128(dd, math_MAYBE_ZERO_HI64(bitQ, res));
+      const HChar* arr = nameArr_Q_SZ(bitQ, 0);
+      DIP("%s %s.%s, %s.%s\n", "rev16",
+          nameQReg128(dd), arr, nameQReg128(nn), arr);
+      return True;
+   }
+
    if (opcode == BITS5(0,0,1,0,0)) {
       /* -------- 0,xx,00100: CLS std6_std6 -------- */
       /* -------- 1,xx,00100: CLZ std6_std6 -------- */
@@ -7489,8 +7510,20 @@ Bool dis_AdvSIMD_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
       assign(res, unop(bitU == 0 ? Iop_Cnt8x16 : Iop_NotV128, getQReg128(nn)));
       putQReg128(dd, bitQ == 0 ? unop(Iop_ZeroHI64ofV128, mkexpr(res))
                                : mkexpr(res));
-      const HChar* arr = nameArr_Q_SZ(bitQ, size);
+      const HChar* arr = nameArr_Q_SZ(bitQ, 0);
       DIP("%s %s.%s, %s.%s\n", bitU == 0 ? "cnt" : "not",
+          nameQReg128(dd), arr, nameQReg128(nn), arr);
+      return True;
+   }
+
+   if (bitU == 1 && size == X01 && opcode == BITS5(0,0,1,0,1)) {
+      /* -------- 1,01,00101  RBIT 16b_16b, 8b_8b -------- */
+      IRTemp res = newTemp(Ity_V128);
+      assign(res, unop(Iop_Reverse1sIn8_x16, getQReg128(nn)));
+      putQReg128(dd, bitQ == 0 ? unop(Iop_ZeroHI64ofV128, mkexpr(res))
+                               : mkexpr(res));
+      const HChar* arr = nameArr_Q_SZ(bitQ, 0);
+      DIP("%s %s.%s, %s.%s\n", "rbit",
           nameQReg128(dd), arr, nameQReg128(nn), arr);
       return True;
    }

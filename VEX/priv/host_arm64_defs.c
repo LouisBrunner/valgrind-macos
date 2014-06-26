@@ -947,6 +947,8 @@ static void showARM64VecUnaryOp(/*OUT*/const HChar** nm,
       case ARM64vecu_CLZ16x8:  *nm = "clz  "; *ar = "8h";  return;
       case ARM64vecu_CLZ8x16:  *nm = "clz  "; *ar = "16b"; return;
       case ARM64vecu_CNT8x16:  *nm = "cnt  "; *ar = "16b"; return;
+      case ARM64vecu_RBIT:     *nm = "rbit "; *ar = "16b"; return;
+      case ARM64vecu_REV1616B: *nm = "rev16"; *ar = "16b"; return;
       default: vpanic("showARM64VecUnaryOp");
    }
 }
@@ -5387,6 +5389,10 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
             011 01110 00 1 00000 010010 n d  CLZ  Vd.16b, Vn.16b
 
             010 01110 00 1 00000 010110 n d  CNT  Vd.16b, Vn.16b
+
+            011 01110 01 1 00000 010110 n d  RBIT  Vd.16b, Vn.16b
+
+            010 01110 00 1 00000 000110 n d  REV16 Vd.16b, Vn.16b
          */
          UInt vD = qregNo(i->ARM64in.VUnaryV.dst);
          UInt vN = qregNo(i->ARM64in.VUnaryV.arg);
@@ -5438,6 +5444,12 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
                break;
             case ARM64vecu_CNT8x16:
                *p++ = X_3_8_5_6_5_5(X010, X01110001, X00000, X010110, vN, vD);
+               break;
+            case ARM64vecu_RBIT:
+               *p++ = X_3_8_5_6_5_5(X011, X01110011, X00000, X010110, vN, vD);
+               break;
+            case ARM64vecu_REV1616B:
+               *p++ = X_3_8_5_6_5_5(X010, X01110001, X00000, X000110, vN, vD);
                break;
             default:
                goto bad;

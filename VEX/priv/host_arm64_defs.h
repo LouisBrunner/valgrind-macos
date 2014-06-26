@@ -360,6 +360,8 @@ typedef
       ARM64vecu_CLS32x4,      ARM64vecu_CLS16x8,      ARM64vecu_CLS8x16, 
       ARM64vecu_CLZ32x4,      ARM64vecu_CLZ16x8,      ARM64vecu_CLZ8x16, 
       ARM64vecu_CNT8x16,
+      ARM64vecu_RBIT,
+      ARM64vecu_REV1616B,
       ARM64vecu_INVALID
    }
    ARM64VecUnaryOp;

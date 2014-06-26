@@ -4417,6 +4417,8 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_Cls32x4: case Iop_Cls16x8: case Iop_Cls8x16:
          case Iop_Clz32x4: case Iop_Clz16x8: case Iop_Clz8x16:
          case Iop_Cnt8x16:
+         case Iop_Reverse1sIn8_x16:
+         case Iop_Reverse8sIn16_x8:
          {
             HReg res = newVRegV(env);
             HReg arg = iselV128Expr(env, e->Iex.Unop.arg);
@@ -4438,6 +4440,8 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
                case Iop_Clz16x8:  op = ARM64vecu_CLZ16x8;  break;
                case Iop_Clz8x16:  op = ARM64vecu_CLZ8x16;  break;
                case Iop_Cnt8x16:  op = ARM64vecu_CNT8x16;  break;
+               case Iop_Reverse1sIn8_x16: op = ARM64vecu_RBIT;     break;
+               case Iop_Reverse8sIn16_x8: op = ARM64vecu_REV1616B; break;
                default: vassert(0);
             }
             addInstr(env, ARM64Instr_VUnaryV(op, res, arg));

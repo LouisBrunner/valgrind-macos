@@ -976,6 +976,7 @@ void ppIROp ( IROp op )
       case Iop_Reverse8sIn64_x2: vex_printf("Reverse8sIn64_x2"); return;
       case Iop_Reverse16sIn64_x2: vex_printf("Reverse16sIn64_x2"); return;
       case Iop_Reverse32sIn64_x2: vex_printf("Reverse32sIn64_x2"); return;
+      case Iop_Reverse1sIn8_x16: vex_printf("Reverse1sIn8_x16"); return;
 
       case Iop_F32ToFixed32Ux4_RZ: vex_printf("F32ToFixed32Ux4_RZ"); return;
       case Iop_F32ToFixed32Sx4_RZ: vex_printf("F32ToFixed32Sx4_RZ"); return;
@@ -2912,6 +2913,7 @@ void typeOfPrimop ( IROp op,
       case Iop_Reverse32sIn64_x2:
       case Iop_Reverse8sIn32_x4: case Iop_Reverse16sIn32_x4:
       case Iop_Reverse8sIn16_x8:
+      case Iop_Reverse1sIn8_x16:
       case Iop_Neg64Fx2: case Iop_Neg32Fx4:
       case Iop_Abs8x16: case Iop_Abs16x8: case Iop_Abs32x4: case Iop_Abs64x2:
       case Iop_CipherSV128:

@@ -1598,6 +1598,7 @@ typedef
       Iop_Reverse8sIn16_x8,
       Iop_Reverse8sIn32_x4, Iop_Reverse16sIn32_x4,
       Iop_Reverse8sIn64_x2, Iop_Reverse16sIn64_x2, Iop_Reverse32sIn64_x2,
+      Iop_Reverse1sIn8_x16, /* Reverse bits in each byte lane. */
 
       /* PERMUTING -- copy src bytes to dst,
          as indexed by control vector bytes:

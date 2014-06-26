@@ -609,7 +609,7 @@ void MC_(pp_Error) ( Error* err )
                      extra->Err.Overlap.dst, extra->Err.Overlap.src );
             } else {
                emit( "  <what>Source and destination overlap "
-                     "in %s(%#lx, %#lx, %lu)</what>\n",
+                     "in %pS(%#lx, %#lx, %lu)</what>\n",
                      VG_(get_error_string)(err),
                      extra->Err.Overlap.dst, extra->Err.Overlap.src,
                      extra->Err.Overlap.szB );
@@ -617,7 +617,7 @@ void MC_(pp_Error) ( Error* err )
             VG_(pp_ExeContext)( VG_(get_error_where)(err) );
          } else {
             if (extra->Err.Overlap.szB == 0) {
-               emit( "Source and destination overlap in %pS(%#lx, %#lx)\n",
+               emit( "Source and destination overlap in %s(%#lx, %#lx)\n",
                      VG_(get_error_string)(err),
                      extra->Err.Overlap.dst, extra->Err.Overlap.src );
             } else {

@@ -3757,12 +3757,12 @@ int main ( void )
    if (1) test_not_8b_8b(TyB);
 
    // pmul  16b,8b
-   if (0) test_pmul_16b_16b_16b(TyB);
-   if (0) test_pmul_8b_8b_8b(TyB);
+   if (1) test_pmul_16b_16b_16b(TyB);
+   if (1) test_pmul_8b_8b_8b(TyB);
 
    // pmull{2}  8h_8b_8b,8h_16b_16b,1q_1d_1d,1q_2d_2d
-   if (0) test_pmull_8h_8b_8b(TyB);
-   if (0) test_pmull2_8h_16b_16b(TyB);
+   if (1) test_pmull_8h_8b_8b(TyB);
+   if (1) test_pmull2_8h_16b_16b(TyB);
    //if (0) test_pmull_1q_1d_1d(TyD);
    //if (0) test_pmull_1q_2d_2d(TyD);
 
@@ -3770,10 +3770,10 @@ int main ( void )
    // rev16   16b,8b
    // rev32   16b,8b,8h,4h
    // rev64   16b,8b,8h,4h,4s,2s
-   if (0) test_rbit_16b_16b(TyB);
-   if (0) test_rbit_8b_8b(TyB);
-   if (0) test_rev16_16b_16b(TyB);
-   if (0) test_rev16_8b_8b(TyB);
+   if (1) test_rbit_16b_16b(TyB);
+   if (1) test_rbit_8b_8b(TyB);
+   if (1) test_rev16_16b_16b(TyB);
+   if (1) test_rev16_8b_8b(TyB);
    if (0) test_rev32_16b_16b(TyB);
    if (0) test_rev32_8b_8b(TyB);
    if (0) test_rev32_8h_8h(TyH);

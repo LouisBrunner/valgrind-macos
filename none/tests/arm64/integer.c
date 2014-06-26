@@ -10950,22 +10950,22 @@ static void show_block_xor ( UChar* block1, UChar* block2, Int n )
 // Out: memory area, xferred vec regs, xferred int regs, addr reg1, addr reg2
 //
 // INSN may mention the following regs as containing load/store data:
-//     x13 x23 v17 v18
+//     x13 x23 v17 v18 v19 v20
 // and
 //     x5 as containing the base address
 //     x6 as containing an offset, if required
-// A memory area is filled with random data, and x13, x23, v17 and v18
+// A memory area is filled with random data, and x13, x23, v17, v18, v19, v20
 // are loaded with random data too.  INSN is then executed, with
 // x5 set to the middle of the memory area + AREG1OFF, and x6 set to AREG2VAL.
 //
-// What is printed out: the XOR of the old and new versions of the
+// What is printed out: the XOR of the new and old versions of the
 // following:
 //    the memory area
-//    x13 x23 v17 v18
-// and the new-old values of these
+//    x13 x23 v17 v18 v19 v20
+// and the SUB of the new and old values of the following:
 //    x5 x6
-// If the insn modifies its base register then the x5 version will
-// be different.
+// If the insn modifies its base register then (obviously) the x5 "new - old"
+// value will be nonzero.
 
 #define MEM_TEST(INSN, AREG1OFF, AREG2VAL) { \
   int i; \
@@ -10973,39 +10973,50 @@ static void show_block_xor ( UChar* block1, UChar* block2, Int n )
   UChar* area = memalign16(N); \
   UChar area2[N]; \
   for (i = 0; i < N; i++) area[i] = area2[i] = randUChar(); \
-  ULong block[8]; /* x13 x23 v17.d[0] v17.d[1] v18.d[0] v18.d[1] x5 x6 */ \
-  for (i = 0; i < 6; i++) block[i] = randULong(); \
-  block[6] = (ULong)(&area[128]) + (Long)(Int)AREG1OFF; \
-  block[7] = (Long)AREG2VAL; \
-  ULong block2[8]; \
-  for (i = 0; i < 8; i++) block2[i] = block[i]; \
+  ULong block[12]; \
+  /* 0:x13      1:x23      2:v17.d[0] 3:v17.d[1] 4:v18.d[0] 5:v18.d[1] */ \
+  /* 6:v19.d[0] 7:v19.d[1] 8:v20.d[0] 9:v20.d[1] 10:x5      11:x6 */ \
+  for (i = 0; i < 12; i++) block[i] = randULong(); \
+  block[10] = (ULong)(&area[128]) + (Long)(Int)AREG1OFF; \
+  block[11] = (Long)AREG2VAL; \
+  ULong block2[12]; \
+  for (i = 0; i < 12; i++) block2[i] = block[i]; \
   __asm__ __volatile__( \
   "ldr x13, [%0, #0]  ; " \
   "ldr x23, [%0, #8]  ; " \
   "ldr q17, [%0, #16] ; " \
   "ldr q18, [%0, #32] ; " \
-  "ldr x5,  [%0, #48] ; " \
-  "ldr x6,  [%0, #56] ; " \
+  "ldr q19, [%0, #48] ; " \
+  "ldr q20, [%0, #64] ; " \
+  "ldr x5,  [%0, #80] ; " \
+  "ldr x6,  [%0, #88] ; " \
   INSN " ; " \
   "str x13, [%0, #0]  ; " \
   "str x23, [%0, #8]  ; " \
   "str q17, [%0, #16] ; " \
   "str q18, [%0, #32] ; " \
-  "str x5,  [%0, #48] ; " \
-  "str x6,  [%0, #56] ; " \
-  : : "r"(&block[0]) : "x5", "x6", "x13","x23","v17","v18","memory","cc" \
+  "str q19, [%0, #48] ; " \
+  "str q20, [%0, #64] ; " \
+  "str x5,  [%0, #80] ; " \
+  "str x6,  [%0, #88] ; " \
+  : : "r"(&block[0]) : "x5", "x6", "x13", "x23", \
+                       "v17", "v18", "v19", "v20", "memory", "cc" \
   ); \
   printf("%s  with  x5 = middle_of_block+%lld,  x6=%lld\n", \
          INSN, (Long)AREG1OFF, (Long)AREG2VAL); \
   show_block_xor(&area2[0], area, 256); \
-  printf("  %016llx  x13      (xfer intreg #1)\n", block[0] ^ block2[0]); \
-  printf("  %016llx  x23      (xfer intreg #2)\n", block[1] ^ block2[1]); \
-  printf("  %016llx  v17.d[0] (xfer vecreg #1)\n", block[2] ^ block2[2]); \
-  printf("  %016llx  v17.d[1] (xfer vecreg #1)\n", block[3] ^ block2[3]); \
-  printf("  %016llx  v18.d[0] (xfer vecreg #2)\n", block[4] ^ block2[4]); \
-  printf("  %016llx  v18.d[1] (xfer vecreg #2)\n", block[5] ^ block2[5]); \
-  printf("  %16lld  x5       (base reg)\n",       block[6] - block2[6]); \
-  printf("  %16lld  x6       (index reg)\n",      block[7] - block2[7]); \
+  printf("  %016llx  x13      (xor, xfer intreg #1)\n", block[0] ^ block2[0]); \
+  printf("  %016llx  x23      (xor, xfer intreg #2)\n", block[1] ^ block2[1]); \
+  printf("  %016llx  v17.d[0] (xor, xfer vecreg #1)\n", block[2] ^ block2[2]); \
+  printf("  %016llx  v17.d[1] (xor, xfer vecreg #1)\n", block[3] ^ block2[3]); \
+  printf("  %016llx  v18.d[0] (xor, xfer vecreg #2)\n", block[4] ^ block2[4]); \
+  printf("  %016llx  v18.d[1] (xor, xfer vecreg #2)\n", block[5] ^ block2[5]); \
+  printf("  %016llx  v19.d[0] (xor, xfer vecreg #3)\n", block[6] ^ block2[6]); \
+  printf("  %016llx  v19.d[1] (xor, xfer vecreg #3)\n", block[7] ^ block2[7]); \
+  printf("  %016llx  v20.d[0] (xor, xfer vecreg #3)\n", block[8] ^ block2[8]); \
+  printf("  %016llx  v20.d[1] (xor, xfer vecreg #3)\n", block[9] ^ block2[9]); \
+  printf("  %16lld  x5       (sub, base reg)\n",     block[10] - block2[10]); \
+  printf("  %16lld  x6       (sub, index reg)\n",    block[11] - block2[11]); \
   printf("\n"); \
   free(area); \
   }
@@ -11397,7 +11408,8 @@ MEM_TEST("ld1r {v17.16b}, [x5], x6", 3, 2)
 MEM_TEST("ld1r {v17.8b},  [x5], x6", 3, 3)
 
 ////////////////////////////////////////////////////////////////
-printf("LD2/ST2 (multiple structures, post index) (VERY INCOMPLETE)\n");
+printf("LD2/ST2 (multiple 2-elem structs to/from 2/regs, post index)"
+       " (VERY INCOMPLETE)\n");
 
 MEM_TEST("ld2 {v17.2d, v18.2d}, [x5], #32", 3, 0)
 MEM_TEST("st2 {v17.2d, v18.2d}, [x5], #32", 7, 0)
@@ -11407,10 +11419,28 @@ MEM_TEST("st2 {v17.4s, v18.4s}, [x5], #32", 17, 0)
 
 
 ////////////////////////////////////////////////////////////////
-printf("LD1/ST1 (multiple structures, no offset) (VERY INCOMPLETE)\n");
+printf("LD1/ST1 (multiple 1-elem structs to/from 2 regs, no offset)"
+        " (VERY INCOMPLETE)\n");
 
 MEM_TEST("ld1 {v17.16b, v18.16b}, [x5]", 3, 0)
 MEM_TEST("st1 {v17.16b, v18.16b}, [x5]", 7, 0)
+
+
+////////////////////////////////////////////////////////////////
+printf("LD1/ST1 (multiple 1-elem structs to/from 3 regs, no offset)"
+        " (VERY INCOMPLETE)\n");
+
+MEM_TEST("ld1 {v17.16b, v18.16b, v19.16b}, [x5]", 3, 0)
+MEM_TEST("st1 {v17.16b, v18.16b, v19.16b}, [x5]", 7, 0)
+
+
+////////////////////////////////////////////////////////////////
+printf("LD3/ST3 (multiple 3-elem structs to/from 3/regs, post index)"
+       " (VERY INCOMPLETE)\n");
+
+MEM_TEST("ld3 {v17.2d, v18.2d, v19.2d}, [x5], #48", 13, 0)
+MEM_TEST("st3 {v17.2d, v18.2d, v19.2d}, [x5], #48", 17, 0)
+
 
 
 } /* end of test_memory2() */

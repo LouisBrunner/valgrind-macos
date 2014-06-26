@@ -4048,12 +4048,12 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_Dup8x16:
       case Iop_Dup16x8:
       case Iop_Dup32x4:
-      case Iop_Reverse16_8x16:
-      case Iop_Reverse32_8x16:
-      case Iop_Reverse32_16x8:
-      case Iop_Reverse64_8x16:
-      case Iop_Reverse64_16x8:
-      case Iop_Reverse64_32x4:
+      case Iop_Reverse8sIn16_x8:
+      case Iop_Reverse8sIn32_x4:
+      case Iop_Reverse16sIn32_x4:
+      case Iop_Reverse8sIn64_x2:
+      case Iop_Reverse16sIn64_x2:
+      case Iop_Reverse32sIn64_x2:
       case Iop_V256toV128_1: case Iop_V256toV128_0:
       case Iop_ZeroHI64ofV128:
       case Iop_ZeroHI96ofV128:
@@ -4134,12 +4134,12 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_Dup8x8:
       case Iop_Dup16x4:
       case Iop_Dup32x2:
-      case Iop_Reverse16_8x8:
-      case Iop_Reverse32_8x8:
-      case Iop_Reverse32_16x4:
-      case Iop_Reverse64_8x8:
-      case Iop_Reverse64_16x4:
-      case Iop_Reverse64_32x2:
+      case Iop_Reverse8sIn16_x4:
+      case Iop_Reverse8sIn32_x2:
+      case Iop_Reverse16sIn32_x2:
+      case Iop_Reverse8sIn64_x1:
+      case Iop_Reverse16sIn64_x1:
+      case Iop_Reverse32sIn64_x1:
       case Iop_V256to64_0: case Iop_V256to64_1:
       case Iop_V256to64_2: case Iop_V256to64_3:
          return assignNew('V', mce, Ity_I64, unop(op, vatom));

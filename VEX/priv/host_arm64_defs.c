@@ -922,6 +922,7 @@ static void showARM64VecBinOp(/*OUT*/const HChar** nm,
       case ARM64vecb_ZIP216x8:  *nm = "zip2";  *ar = "8h";  return;
       case ARM64vecb_ZIP28x16:  *nm = "zip2";  *ar = "16b"; return;
       case ARM64vecb_PMUL8x16:  *nm = "pmul";  *ar = "16b"; return;
+      case ARM64vecb_PMULL8x8:  *nm = "pmull"; *ar = "8hb";  return;
       default: vpanic("showARM64VecBinOp");
    }
 }
@@ -5126,6 +5127,8 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
             010 01110 10 0 m  011110 n d   ZIP2 Vd.16b, Vn.16b, Vm.16b
 
             011 01110 00 1 m  100111 n d   PMUL Vd.16b, Vn.16b, Vm.16b
+
+            000 01110 00 1 m  111000 n d   PMULL Vd.8h, Vn.8b, Vm.8b
          */
          UInt vD = qregNo(i->ARM64in.VBinV.dst);
          UInt vN = qregNo(i->ARM64in.VBinV.argL);
@@ -5351,6 +5354,10 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
 
             case ARM64vecb_PMUL8x16:
                *p++ = X_3_8_5_6_5_5(X011, X01110001, vM, X100111, vN, vD);
+               break;
+
+            case ARM64vecb_PMULL8x8:
+               *p++ = X_3_8_5_6_5_5(X000, X01110001, vM, X111000, vN, vD);
                break;
 
             default:

@@ -345,6 +345,7 @@ typedef
       ARM64vecb_ZIP18x16,    ARM64vecb_ZIP232x4,
       ARM64vecb_ZIP216x8,    ARM64vecb_ZIP28x16,
                              ARM64vecb_PMUL8x16,
+                             ARM64vecb_PMULL8x8,
       ARM64vecb_INVALID
    }
    ARM64VecBinOp;

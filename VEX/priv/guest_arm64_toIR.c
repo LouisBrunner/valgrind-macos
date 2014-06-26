@@ -5609,6 +5609,24 @@ static IRTemp math_TBL_TBX ( IRTemp tab[4], UInt len, IRTemp src,
 }
 
 
+/* Let |argL| and |argR| be V128 values, and let |opI64x2toV128| be
+   an op which takes two I64s and produces a V128.  That is, a widening
+   operator.  Generate IR which applies |opI64x2toV128| to either the
+   lower (if |is2| is False) or upper (if |is2| is True) halves of
+   |argL| and |argR|, and return the value in a new IRTemp.
+*/
+static
+IRTemp math_BINARY_WIDENING_V128 ( Bool is2, IROp opI64x2toV128,
+                                   IRExpr* argL, IRExpr* argR )
+{
+   IRTemp res   = newTemp(Ity_V128);
+   IROp   slice = is2 ? Iop_V128HIto64 : Iop_V128to64;
+   assign(res, binop(opI64x2toV128, unop(slice, argL),
+                                    unop(slice, argR)));
+   return res;
+}
+
+
 /* Let |new64| be a V128 in which only the lower 64 bits are interesting,
    and the upper can contain any value -- it is ignored.  If |is2| is False,
    generate IR to put |new64| in the lower half of vector reg |dd| and zero
@@ -6933,6 +6951,22 @@ Bool dis_AdvSIMD_three_different(/*MB_OUT*/DisResult* dres, UInt insn)
       const HChar* nm = isADD ? (isR ? "raddhn" : "addhn")
                               : (isR ? "rsubhn" : "subhn");
       DIP("%s%s %s.%s, %s.%s, %s.%s\n", nm, is2 ? "2" : "",
+          nameQReg128(dd), arrNarrow,
+          nameQReg128(nn), arrWide, nameQReg128(mm), arrWide);
+      return True;
+   }
+
+   if (bitU == 0 && opcode == BITS4(1,1,1,0)) {
+      /* -------- 0,1110  PMULL{2} -------- */
+      /* Narrows, and size refers to the narrowed lanes. */
+      if (size != X00) return False;
+      IRTemp res
+         = math_BINARY_WIDENING_V128(is2, Iop_PolynomialMull8x8,
+                                     getQReg128(nn), getQReg128(mm));
+      putQReg128(dd, mkexpr(res));
+      const HChar* arrNarrow = nameArr_Q_SZ(bitQ, size);
+      const HChar* arrWide   = nameArr_Q_SZ(1,    size+1);
+      DIP("%s%s %s.%s, %s.%s, %s.%s\n", "pmull", is2 ? "2" : "",
           nameQReg128(dd), arrNarrow,
           nameQReg128(nn), arrWide, nameQReg128(mm), arrWide);
       return True;

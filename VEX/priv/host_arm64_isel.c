@@ -5671,6 +5671,19 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
             break;
          }
 
+         case Iop_PolynomialMull8x8: {
+            HReg iSrcL = iselIntExpr_R(env, e->Iex.Binop.arg1);
+            HReg iSrcR = iselIntExpr_R(env, e->Iex.Binop.arg2);
+            HReg vSrcL = newVRegV(env);
+            HReg vSrcR = newVRegV(env);
+            HReg dst   = newVRegV(env);
+            addInstr(env, ARM64Instr_VQfromXX(vSrcL, iSrcL, iSrcL));
+            addInstr(env, ARM64Instr_VQfromXX(vSrcR, iSrcR, iSrcR));
+            addInstr(env, ARM64Instr_VBinV(ARM64vecb_PMULL8x8,
+                                           dst, vSrcL, vSrcR));
+            return dst;
+         }
+
 //ZZ          case Iop_CmpGT8Ux16:
 //ZZ          case Iop_CmpGT16Ux8:
 //ZZ          case Iop_CmpGT32Ux4: {

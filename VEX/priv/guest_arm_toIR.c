@@ -6740,9 +6740,9 @@ Bool dis_neon_data_2reg_misc ( UInt theInstr, IRTemp condT )
                /* VCLS */
                IROp op;
                switch (size) {
-                  case 0: op = Q ? Iop_Cls8Sx16 : Iop_Cls8Sx8; break;
-                  case 1: op = Q ? Iop_Cls16Sx8 : Iop_Cls16Sx4; break;
-                  case 2: op = Q ? Iop_Cls32Sx4 : Iop_Cls32Sx2; break;
+                  case 0: op = Q ? Iop_Cls8x16 : Iop_Cls8x8; break;
+                  case 1: op = Q ? Iop_Cls16x8 : Iop_Cls16x4; break;
+                  case 2: op = Q ? Iop_Cls32x4 : Iop_Cls32x2; break;
                   case 3: return False;
                   default: vassert(0);
                }
@@ -6755,9 +6755,9 @@ Bool dis_neon_data_2reg_misc ( UInt theInstr, IRTemp condT )
                /* VCLZ */
                IROp op;
                switch (size) {
-                  case 0: op = Q ? Iop_Clz8Sx16 : Iop_Clz8Sx8; break;
-                  case 1: op = Q ? Iop_Clz16Sx8 : Iop_Clz16Sx4; break;
-                  case 2: op = Q ? Iop_Clz32Sx4 : Iop_Clz32Sx2; break;
+                  case 0: op = Q ? Iop_Clz8x16 : Iop_Clz8x8; break;
+                  case 1: op = Q ? Iop_Clz16x8 : Iop_Clz16x4; break;
+                  case 2: op = Q ? Iop_Clz32x4 : Iop_Clz32x2; break;
                   case 3: return False;
                   default: vassert(0);
                }

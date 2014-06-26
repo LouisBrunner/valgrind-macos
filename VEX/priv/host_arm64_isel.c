@@ -4414,8 +4414,8 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_Neg64Fx2: case Iop_Neg32Fx4:
          case Iop_Abs64x2:  case Iop_Abs32x4:
          case Iop_Abs16x8:  case Iop_Abs8x16:
-         case Iop_Cls32Sx4: case Iop_Cls16Sx8: case Iop_Cls8Sx16:
-         case Iop_Clz32Sx4: case Iop_Clz16Sx8: case Iop_Clz8Sx16:
+         case Iop_Cls32x4: case Iop_Cls16x8: case Iop_Cls8x16:
+         case Iop_Clz32x4: case Iop_Clz16x8: case Iop_Clz8x16:
          case Iop_Cnt8x16:
          {
             HReg res = newVRegV(env);
@@ -4431,12 +4431,12 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
                case Iop_Abs32x4:  op = ARM64vecu_ABS32x4;  break;
                case Iop_Abs16x8:  op = ARM64vecu_ABS16x8;  break;
                case Iop_Abs8x16:  op = ARM64vecu_ABS8x16;  break;
-               case Iop_Cls32Sx4: op = ARM64vecu_CLS32x4;  break;
-               case Iop_Cls16Sx8: op = ARM64vecu_CLS16x8;  break;
-               case Iop_Cls8Sx16: op = ARM64vecu_CLS8x16;  break;
-               case Iop_Clz32Sx4: op = ARM64vecu_CLZ32x4;  break;
-               case Iop_Clz16Sx8: op = ARM64vecu_CLZ16x8;  break;
-               case Iop_Clz8Sx16: op = ARM64vecu_CLZ8x16;  break;
+               case Iop_Cls32x4:  op = ARM64vecu_CLS32x4;  break;
+               case Iop_Cls16x8:  op = ARM64vecu_CLS16x8;  break;
+               case Iop_Cls8x16:  op = ARM64vecu_CLS8x16;  break;
+               case Iop_Clz32x4:  op = ARM64vecu_CLZ32x4;  break;
+               case Iop_Clz16x8:  op = ARM64vecu_CLZ16x8;  break;
+               case Iop_Clz8x16:  op = ARM64vecu_CLZ8x16;  break;
                case Iop_Cnt8x16:  op = ARM64vecu_CNT8x16;  break;
                default: vassert(0);
             }

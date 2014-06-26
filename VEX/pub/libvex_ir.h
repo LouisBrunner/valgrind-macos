@@ -900,8 +900,8 @@ typedef
       /* COUNT ones / leading zeroes / leading sign bits (not including topmost
          bit) */
       Iop_Cnt8x8,
-      Iop_Clz8Sx8, Iop_Clz16Sx4, Iop_Clz32Sx2,
-      Iop_Cls8Sx8, Iop_Cls16Sx4, Iop_Cls32Sx2,
+      Iop_Clz8x8, Iop_Clz16x4, Iop_Clz32x2,
+      Iop_Cls8x8, Iop_Cls16x4, Iop_Cls32x2,
       Iop_Clz64x2,
 
       /* VECTOR x VECTOR SHIFT / ROTATE */
@@ -1503,8 +1503,8 @@ typedef
       /* COUNT ones / leading zeroes / leading sign bits (not including topmost
          bit) */
       Iop_Cnt8x16,
-      Iop_Clz8Sx16, Iop_Clz16Sx8, Iop_Clz32Sx4,
-      Iop_Cls8Sx16, Iop_Cls16Sx8, Iop_Cls32Sx4,
+      Iop_Clz8x16, Iop_Clz16x8, Iop_Clz32x4,
+      Iop_Cls8x16, Iop_Cls16x8, Iop_Cls32x4,
 
       /* VECTOR x SCALAR SHIFT (shift amt :: Ity_I8) */
       Iop_ShlN8x16, Iop_ShlN16x8, Iop_ShlN32x4, Iop_ShlN64x2,

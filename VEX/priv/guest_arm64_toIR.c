@@ -7468,8 +7468,8 @@ Bool dis_AdvSIMD_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
       /* -------- 0,xx,00100: CLS std6_std6 -------- */
       /* -------- 1,xx,00100: CLZ std6_std6 -------- */
       if (size == X11) return False; // no 1d or 2d cases
-      const IROp opsCLS[3] = { Iop_Cls8Sx16, Iop_Cls16Sx8, Iop_Cls32Sx4 };
-      const IROp opsCLZ[3] = { Iop_Clz8Sx16, Iop_Clz16Sx8, Iop_Clz32Sx4 };
+      const IROp opsCLS[3] = { Iop_Cls8x16, Iop_Cls16x8, Iop_Cls32x4 };
+      const IROp opsCLZ[3] = { Iop_Clz8x16, Iop_Clz16x8, Iop_Clz32x4 };
       Bool   isCLZ = bitU == 1;
       IRTemp res   = newTemp(Ity_V128);
       vassert(size <= 2);

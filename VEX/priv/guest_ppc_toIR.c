@@ -13303,17 +13303,17 @@ dis_av_count_bitTranspose ( UInt theInstr, UInt opc2 )
    switch (opc2) {
       case 0x702:    // vclzb
          DIP("vclzb v%d,v%d\n", vRT_addr, vRB_addr);
-         putVReg( vRT_addr, unop(Iop_Clz8Sx16, mkexpr( vB ) ) );
+         putVReg( vRT_addr, unop(Iop_Clz8x16, mkexpr( vB ) ) );
          break;
 
       case 0x742:    // vclzh
          DIP("vclzh v%d,v%d\n", vRT_addr, vRB_addr);
-         putVReg( vRT_addr, unop(Iop_Clz16Sx8, mkexpr( vB ) ) );
+         putVReg( vRT_addr, unop(Iop_Clz16x8, mkexpr( vB ) ) );
          break;
 
       case 0x782:    // vclzw
          DIP("vclzw v%d,v%d\n", vRT_addr, vRB_addr);
-         putVReg( vRT_addr, unop(Iop_Clz32Sx4, mkexpr( vB ) ) );
+         putVReg( vRT_addr, unop(Iop_Clz32x4, mkexpr( vB ) ) );
          break;
 
       case 0x7C2:    // vclzd

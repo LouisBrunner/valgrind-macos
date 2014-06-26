@@ -4853,10 +4853,10 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
-      case Iop_Clz8Sx16: op = Pav_ZEROCNTBYTE;   goto do_zerocnt;
-      case Iop_Clz16Sx8: op = Pav_ZEROCNTHALF;   goto do_zerocnt;
-      case Iop_Clz32Sx4: op = Pav_ZEROCNTWORD;   goto do_zerocnt;
-      case Iop_Clz64x2:  op = Pav_ZEROCNTDBL;    goto do_zerocnt;
+      case Iop_Clz8x16: op = Pav_ZEROCNTBYTE;   goto do_zerocnt;
+      case Iop_Clz16x8: op = Pav_ZEROCNTHALF;   goto do_zerocnt;
+      case Iop_Clz32x4: op = Pav_ZEROCNTWORD;   goto do_zerocnt;
+      case Iop_Clz64x2: op = Pav_ZEROCNTDBL;    goto do_zerocnt;
       case Iop_PwBitMtxXpose64x2: op = Pav_BITMTXXPOSE;  goto do_zerocnt;
       do_zerocnt:
       {

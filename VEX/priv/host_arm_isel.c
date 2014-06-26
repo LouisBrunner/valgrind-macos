@@ -3577,32 +3577,32 @@ static HReg iselNeon64Expr_wrk ( ISelEnv* env, IRExpr* e )
                                           res, arg, size, False));
             return res;
          }
-         case Iop_Clz8Sx8:
-         case Iop_Clz16Sx4:
-         case Iop_Clz32Sx2: {
+         case Iop_Clz8x8:
+         case Iop_Clz16x4:
+         case Iop_Clz32x2: {
             HReg res = newVRegD(env);
             HReg arg = iselNeon64Expr(env, e->Iex.Unop.arg);
             UInt size = 0;
             switch(e->Iex.Binop.op) {
-               case Iop_Clz8Sx8: size = 0; break;
-               case Iop_Clz16Sx4: size = 1; break;
-               case Iop_Clz32Sx2: size = 2; break;
+               case Iop_Clz8x8: size = 0; break;
+               case Iop_Clz16x4: size = 1; break;
+               case Iop_Clz32x2: size = 2; break;
                default: vassert(0);
             }
             addInstr(env, ARMInstr_NUnary(ARMneon_CLZ,
                                           res, arg, size, False));
             return res;
          }
-         case Iop_Cls8Sx8:
-         case Iop_Cls16Sx4:
-         case Iop_Cls32Sx2: {
+         case Iop_Cls8x8:
+         case Iop_Cls16x4:
+         case Iop_Cls32x2: {
             HReg res = newVRegD(env);
             HReg arg = iselNeon64Expr(env, e->Iex.Unop.arg);
             UInt size = 0;
             switch(e->Iex.Binop.op) {
-               case Iop_Cls8Sx8: size = 0; break;
-               case Iop_Cls16Sx4: size = 1; break;
-               case Iop_Cls32Sx2: size = 2; break;
+               case Iop_Cls8x8: size = 0; break;
+               case Iop_Cls16x4: size = 1; break;
+               case Iop_Cls32x2: size = 2; break;
                default: vassert(0);
             }
             addInstr(env, ARMInstr_NUnary(ARMneon_CLS,
@@ -4174,31 +4174,31 @@ static HReg iselNeonExpr_wrk ( ISelEnv* env, IRExpr* e )
             addInstr(env, ARMInstr_NUnary(ARMneon_CNT, res, arg, size, True));
             return res;
          }
-         case Iop_Clz8Sx16:
-         case Iop_Clz16Sx8:
-         case Iop_Clz32Sx4: {
+         case Iop_Clz8x16:
+         case Iop_Clz16x8:
+         case Iop_Clz32x4: {
             HReg res = newVRegV(env);
             HReg arg = iselNeonExpr(env, e->Iex.Unop.arg);
             UInt size = 0;
             switch(e->Iex.Binop.op) {
-               case Iop_Clz8Sx16: size = 0; break;
-               case Iop_Clz16Sx8: size = 1; break;
-               case Iop_Clz32Sx4: size = 2; break;
+               case Iop_Clz8x16: size = 0; break;
+               case Iop_Clz16x8: size = 1; break;
+               case Iop_Clz32x4: size = 2; break;
                default: vassert(0);
             }
             addInstr(env, ARMInstr_NUnary(ARMneon_CLZ, res, arg, size, True));
             return res;
          }
-         case Iop_Cls8Sx16:
-         case Iop_Cls16Sx8:
-         case Iop_Cls32Sx4: {
+         case Iop_Cls8x16:
+         case Iop_Cls16x8:
+         case Iop_Cls32x4: {
             HReg res = newVRegV(env);
             HReg arg = iselNeonExpr(env, e->Iex.Unop.arg);
             UInt size = 0;
             switch(e->Iex.Binop.op) {
-               case Iop_Cls8Sx16: size = 0; break;
-               case Iop_Cls16Sx8: size = 1; break;
-               case Iop_Cls32Sx4: size = 2; break;
+               case Iop_Cls8x16: size = 0; break;
+               case Iop_Cls16x8: size = 1; break;
+               case Iop_Cls32x4: size = 2; break;
                default: vassert(0);
             }
             addInstr(env, ARMInstr_NUnary(ARMneon_CLS, res, arg, size, True));

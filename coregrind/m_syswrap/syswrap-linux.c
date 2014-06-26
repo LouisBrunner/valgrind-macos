@@ -5761,7 +5761,15 @@ PRE(sys_ioctl)
       PRE_MEM_READ( "ioctl(SG_SET_COMMAND_Q)", ARG3, sizeof(int) );
       break;
    case VKI_SG_IO:
-      PRE_MEM_WRITE( "ioctl(SG_IO)", ARG3, sizeof(vki_sg_io_hdr_t) );
+      PRE_MEM_READ( "ioctl(SG_IO)", ARG3, sizeof(vki_sg_io_hdr_t) );
+      {
+         vki_sg_io_hdr_t *sgio = (vki_sg_io_hdr_t*)ARG3;
+         PRE_MEM_READ( "ioctl(SG_IO)", (Addr)sgio->cmdp, sgio->cmd_len );
+         if ( sgio->dxfer_direction == VKI_SG_DXFER_TO_DEV ||
+              sgio->dxfer_direction == VKI_SG_DXFER_TO_FROM_DEV ) {
+            PRE_MEM_READ( "ioctl(SG_IO)", (Addr)sgio->dxferp, sgio->dxfer_len );
+         }
+      }
       break;
    case VKI_SG_GET_SCSI_ID:
       PRE_MEM_WRITE( "ioctl(SG_GET_SCSI_ID)", ARG3, sizeof(vki_sg_scsi_id_t) );
@@ -7189,7 +7197,17 @@ POST(sys_ioctl)
    case VKI_SG_SET_COMMAND_Q:
       break;
    case VKI_SG_IO:
-      POST_MEM_WRITE(ARG3, sizeof(vki_sg_io_hdr_t));
+      {
+         vki_sg_io_hdr_t *sgio = (vki_sg_io_hdr_t*)ARG3;
+         if ( sgio->sbp ) {
+            POST_MEM_WRITE( (Addr)sgio->sbp, sgio->sb_len_wr );
+         }
+         if ( sgio->dxfer_direction == VKI_SG_DXFER_FROM_DEV ||
+              sgio->dxfer_direction == VKI_SG_DXFER_TO_FROM_DEV ) {
+            int transferred = sgio->dxfer_len - sgio->resid;
+            POST_MEM_WRITE( (Addr)sgio->dxferp, transferred );
+         }
+      }
       break;
    case VKI_SG_GET_SCSI_ID:
       POST_MEM_WRITE(ARG3, sizeof(vki_sg_scsi_id_t));

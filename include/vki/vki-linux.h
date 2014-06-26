@@ -1769,6 +1769,14 @@ typedef struct vki_sg_io_hdr
     unsigned int info;          /* [o] auxiliary information */
 } vki_sg_io_hdr_t;  /* 64 bytes long (on i386) */
 
+#define VKI_SG_DXFER_NONE -1        /* e.g. a SCSI Test Unit Ready command */
+#define VKI_SG_DXFER_TO_DEV -2      /* e.g. a SCSI WRITE command */
+#define VKI_SG_DXFER_FROM_DEV -3    /* e.g. a SCSI READ command */
+#define VKI_SG_DXFER_TO_FROM_DEV -4 /* treated like SG_DXFER_FROM_DEV with the
+				   additional property than during indirect
+				   IO the user buffer is copied into the
+				   kernel buffers before the transfer */
+
 typedef struct vki_sg_scsi_id { /* used by SG_GET_SCSI_ID ioctl() */
     int host_no;        /* as in "scsi<n>" where 'n' is one of 0, 1, 2 etc */
     int channel;

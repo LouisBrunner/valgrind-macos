@@ -6646,13 +6646,13 @@ Bool dis_neon_data_2reg_misc ( UInt theInstr, IRTemp condT )
                IROp op;
                switch (size) {
                   case 0:
-                     op = Q ? Iop_Reverse64_8x16 : Iop_Reverse64_8x8;
+                     op = Q ? Iop_Reverse8sIn64_x2 : Iop_Reverse8sIn64_x1;
                      break;
                   case 1:
-                     op = Q ? Iop_Reverse64_16x8 : Iop_Reverse64_16x4;
+                     op = Q ? Iop_Reverse16sIn64_x2 : Iop_Reverse16sIn64_x1;
                      break;
                   case 2:
-                     op = Q ? Iop_Reverse64_32x4 : Iop_Reverse64_32x2;
+                     op = Q ? Iop_Reverse32sIn64_x2 : Iop_Reverse32sIn64_x1;
                      break;
                   case 3:
                      return False;
@@ -6669,10 +6669,10 @@ Bool dis_neon_data_2reg_misc ( UInt theInstr, IRTemp condT )
                IROp op;
                switch (size) {
                   case 0:
-                     op = Q ? Iop_Reverse32_8x16 : Iop_Reverse32_8x8;
+                     op = Q ? Iop_Reverse8sIn32_x4 : Iop_Reverse8sIn32_x2;
                      break;
                   case 1:
-                     op = Q ? Iop_Reverse32_16x8 : Iop_Reverse32_16x4;
+                     op = Q ? Iop_Reverse16sIn32_x4 : Iop_Reverse16sIn32_x2;
                      break;
                   case 2:
                   case 3:
@@ -6690,7 +6690,7 @@ Bool dis_neon_data_2reg_misc ( UInt theInstr, IRTemp condT )
                IROp op;
                switch (size) {
                   case 0:
-                     op = Q ? Iop_Reverse16_8x16 : Iop_Reverse16_8x8;
+                     op = Q ? Iop_Reverse8sIn16_x8 : Iop_Reverse8sIn16_x4;
                      break;
                   case 1:
                   case 2:

@@ -984,15 +984,16 @@ typedef
       /* Note: the arm back-end handles only constant third argumnet. */
       Iop_Extract64,
 
-      /* REVERSE the order of elements in each Half-words, Words,
-         Double-words */
+      /* REVERSE the order of chunks in vector lanes.  Chunks must be
+         smaller than the vector lanes (obviously) and so may be 8-,
+         16- and 32-bit in size. */
       /* Examples:
-            Reverse16_8x8([a,b,c,d,e,f,g,h]) = [b,a,d,c,f,e,h,g]
-            Reverse32_8x8([a,b,c,d,e,f,g,h]) = [d,c,b,a,h,g,f,e]
-            Reverse64_8x8([a,b,c,d,e,f,g,h]) = [h,g,f,e,d,c,b,a] */
-      Iop_Reverse16_8x8,
-      Iop_Reverse32_8x8, Iop_Reverse32_16x4,
-      Iop_Reverse64_8x8, Iop_Reverse64_16x4, Iop_Reverse64_32x2,
+            Reverse8sIn16_x4([a,b,c,d,e,f,g,h]) = [b,a,d,c,f,e,h,g]
+            Reverse8sIn32_x2([a,b,c,d,e,f,g,h]) = [d,c,b,a,h,g,f,e]
+            Reverse8sIn64_x1([a,b,c,d,e,f,g,h]) = [h,g,f,e,d,c,b,a] */
+      Iop_Reverse8sIn16_x4,
+      Iop_Reverse8sIn32_x2, Iop_Reverse16sIn32_x2,
+      Iop_Reverse8sIn64_x1, Iop_Reverse16sIn64_x1, Iop_Reverse32sIn64_x1,
 
       /* PERMUTING -- copy src bytes to dst,
          as indexed by control vector bytes:
@@ -1590,14 +1591,13 @@ typedef
       /* Note: the ARM back end handles only constant arg3 in this operation. */
       Iop_ExtractV128,
 
-      /* REVERSE the order of elements in each Half-words, Words,
-         Double-words */
-      /* Examples:
-            Reverse32_16x8([a,b,c,d,e,f,g,h]) = [b,a,d,c,f,e,h,g]
-            Reverse64_16x8([a,b,c,d,e,f,g,h]) = [d,c,b,a,h,g,f,e] */
-      Iop_Reverse16_8x16,
-      Iop_Reverse32_8x16, Iop_Reverse32_16x8,
-      Iop_Reverse64_8x16, Iop_Reverse64_16x8, Iop_Reverse64_32x4,
+      /* REVERSE the order of chunks in vector lanes.  Chunks must be
+         smaller than the vector lanes (obviously) and so may be 8-,
+         16- and 32-bit in size.  See definitions of 64-bit SIMD
+         versions above for examples. */
+      Iop_Reverse8sIn16_x8,
+      Iop_Reverse8sIn32_x4, Iop_Reverse16sIn32_x4,
+      Iop_Reverse8sIn64_x2, Iop_Reverse16sIn64_x2, Iop_Reverse32sIn64_x2,
 
       /* PERMUTING -- copy src bytes to dst,
          as indexed by control vector bytes:

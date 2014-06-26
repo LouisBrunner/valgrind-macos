@@ -632,7 +632,7 @@ struct vki_termios {
 //# define VKI_TIOCPKT_NOSTOP		16
 //# define VKI_TIOCPKT_DOSTOP		32
 
-//#define VKI_TIOCNOTTY		0x5422
+#define VKI_TIOCNOTTY		0x5422
 //#define VKI_TIOCSETD		0x5423
 //#define VKI_TIOCGETD		0x5424
 #define VKI_TCSBRKP		0x5425  /* Needed for POSIX tcsendbreak() */

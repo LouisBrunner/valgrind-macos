@@ -631,6 +631,7 @@ struct vki_termios {
 #define VKI_FIONREAD        _VKI_IOR('f', 127, int)
 #define VKI_TIOCLINUX       0x541C
 #define VKI_FIONBIO         _VKI_IOW('f', 126, int)
+#define VKI_TIOCNOTTY       0x5422
 #define VKI_TCSBRKP         0x5425  /* Needed for POSIX tcsendbreak() */
 #define VKI_TIOCGPTN        _VKI_IOR('T',0x30, unsigned int) 
                             /* Get Pty Number (of pty-mux device) */

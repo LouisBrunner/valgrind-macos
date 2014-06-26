@@ -597,6 +597,7 @@ struct vki_termios {
 #define VKI_TIOCLINUX	0x541C
 
 #define VKI_FIONBIO	0x5421
+#define VKI_TIOCNOTTY	0x5422
 
 #define VKI_TCSBRKP	0x5425	/* Needed for POSIX tcsendbreak() */
 

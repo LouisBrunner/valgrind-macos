@@ -5519,6 +5519,7 @@ PRE(sys_ioctl)
       /* asm-generic/ioctls.h */
    case VKI_FIOCLEX:
    case VKI_FIONCLEX:
+   case VKI_TIOCNOTTY:
 
       /* linux/soundcard interface (ALSA) */
    case VKI_SNDRV_PCM_IOCTL_HW_FREE:
@@ -7163,6 +7164,8 @@ POST(sys_ioctl)
    case VKI_FIONCLEX:
       break;
    case VKI_FIOCLEX:
+      break;
+   case VKI_TIOCNOTTY:
       break;
    case VKI_FIOASYNC:
       break;

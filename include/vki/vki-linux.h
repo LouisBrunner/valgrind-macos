@@ -2956,6 +2956,17 @@ typedef struct {
 #define VKI_HCIDEVRESTAT    _VKI_IOW('H', 204, int)
 
 #define VKI_HCIGETDEVLIST   _VKI_IOR('H', 210, int)
+
+struct vki_hci_dev_req {
+	__vki_u16  dev_id;
+	__vki_u32  dev_opt;
+};
+
+struct vki_hci_dev_list_req {
+	__vki_u16  dev_num;
+	struct vki_hci_dev_req dev_req[0];	/* hci_dev_req structures */
+};
+
 #define VKI_HCIGETDEVINFO   _VKI_IOR('H', 211, int)
 #define VKI_HCIGETCONNLIST  _VKI_IOR('H', 212, int)
 #define VKI_HCIGETCONNINFO  _VKI_IOR('H', 213, int)

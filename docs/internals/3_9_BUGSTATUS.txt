@@ -168,7 +168,6 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
 ========================================================================
 ========================================================================
 
-335034  Unhandled ioctl: HCIGETDEVLIST
 334936  patch to fix false positives on alsa SNDRV_CTL_* ioctls
 333628  Out of tree build  (is fixed, but needs to land)
 335143  Capabilities not supported
@@ -180,7 +179,6 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
 334802  valgrind does not always explain why a given option is bad
 334834  PPC64 Little Endian support, patch 2
 334836  PPC64 Little Endian support, patch 3 testcase fixes
-335034  Unhandled ioctl: HCIGETDEVLIST
 335353  expected output of exp-sgcheck/tests/hackedbz2 mismatch with gcc 4.8.1
 335441  unhandled ioctl 0x8905 (SIOCATMARK) when running wine under valgrind (patch)
 249435  Analyzing wine programs with callgrind triggers a crash (NEEDS CLOSE)

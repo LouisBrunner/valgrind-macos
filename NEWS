@@ -160,6 +160,7 @@ where XXXXXX is the bug number as listed below.
 334705  sendmsg and recvmsg should guard against bogus msghdr fields.
 334727  Build fails with -Werror=format-security
 334788  clarify doc about --log-file initial program directory
+335034  Unhandled ioctl: HCIGETDEVLIST
 335155  vgdb, fix error print statement.
 335262  arm64: movi 8bit version is not supported
 335263  arm64: dmb instruction is not implemented

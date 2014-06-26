@@ -6903,6 +6903,17 @@ PRE(sys_ioctl)
        break;
 #  endif /* defined(VGPV_*_linux_android) */
 
+   case VKI_HCIGETDEVLIST:
+      if (ARG3) {
+         struct vki_hci_dev_list_req* dlr = (struct vki_hci_dev_list_req*)ARG3;
+         PRE_MEM_READ("ioctl(HCIGETDEVLIST)",
+                      (Addr)ARG3, sizeof(struct vki_hci_dev_list_req));
+         PRE_MEM_WRITE("ioctl(HCIGETDEVLIST)",
+                       (Addr)ARG3 + sizeof(struct vki_hci_dev_list_req),
+                       dlr->dev_num * sizeof(struct vki_hci_dev_req));
+      }
+      break;
+      
    case VKI_HCIINQUIRY:
       if (ARG3) {
          struct vki_hci_inquiry_req* ir = (struct vki_hci_inquiry_req*)ARG3;
@@ -8004,6 +8015,14 @@ POST(sys_ioctl)
        }
        break;
 #  endif /* defined(VGPV_*_linux_android) */
+
+   case VKI_HCIGETDEVLIST:
+      if (ARG3) {
+        struct vki_hci_dev_list_req* dlr = (struct vki_hci_dev_list_req*)ARG3;
+        POST_MEM_WRITE((Addr)ARG3 + sizeof(struct vki_hci_dev_list_req),
+                       dlr->dev_num * sizeof(struct vki_hci_dev_req));
+      }
+      break;
 
    case VKI_HCIINQUIRY:
       if (ARG3) {

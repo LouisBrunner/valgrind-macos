@@ -6038,6 +6038,10 @@ PRE(sys_ioctl)
       //tst->sys_flags &= ~SfMayBlock;
       break;
 
+    case VKI_SIOCATMARK:
+      PRE_MEM_READ( "ioctl(SIOCATMARK)", ARG3, sizeof(int) );
+      break;
+
       /* linux/soundcard interface (OSS) */
    case VKI_SNDCTL_SEQ_GETOUTCOUNT:
    case VKI_SNDCTL_SEQ_GETINCOUNT:
@@ -7412,6 +7416,10 @@ POST(sys_ioctl)
       POST_MEM_WRITE(ARG3, sizeof(int));
       break;
    case VKI_SIOCSPGRP:
+      break;
+
+   case VKI_SIOCATMARK:
+      POST_MEM_WRITE(ARG3, sizeof(int));
       break;
 
       /* linux/soundcard interface (OSS) */

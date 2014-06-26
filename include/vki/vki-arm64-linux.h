@@ -284,6 +284,7 @@ struct vki_f_owner_ex {
 
 #define VKI_SIOCSPGRP		0x8902
 #define VKI_SIOCGPGRP		0x8904
+#define VKI_SIOCATMARK		0x8905
 #define VKI_SIOCGSTAMP		0x8906		/* Get stamp (timeval) */
 #define VKI_SIOCGSTAMPNS	0x8907		/* Get stamp (timespec) */
 

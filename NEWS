@@ -165,6 +165,7 @@ where XXXXXX is the bug number as listed below.
 335155  vgdb, fix error print statement.
 335262  arm64: movi 8bit version is not supported
 335263  arm64: dmb instruction is not implemented
+335441  unhandled ioctl 0x8905 (SIOCATMARK) when running wine under valgrind
 335496  arm64: sbc/abc instructions are not implemented
 n-i-bz  Fix KVM_CREATE_IRQCHIP ioctl handling
 n-i-bz  s390x: Fix memory corruption for multithreaded applications

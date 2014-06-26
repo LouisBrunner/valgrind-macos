@@ -179,7 +179,6 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
 334834  PPC64 Little Endian support, patch 2
 334836  PPC64 Little Endian support, patch 3 testcase fixes
 335353  expected output of exp-sgcheck/tests/hackedbz2 mismatch with gcc 4.8.1
-335441  unhandled ioctl 0x8905 (SIOCATMARK) when running wine under valgrind (patch)
 249435  Analyzing wine programs with callgrind triggers a crash (NEEDS CLOSE)
 335563  wine's kernel32/thread test fails under valgrind
 335618  arm(thumb): unhanded instruction: mov.w rN, pc/sp

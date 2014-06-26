@@ -153,6 +153,7 @@ where XXXXXX is the bug number as listed below.
 333230  AAarch64 missing instruction encodings: dc, ic, dsb.
 333428  ldr.w pc [rD, #imm] instruction leads to assertion
 333666  Recognize MPX instructions and bnd prefix.
+333788  Valgrind does not support the CDROM_DISC_STATUS ioctl (has patch)
 334049  lzcnt fails silently (x86_32)
 334705  sendmsg and recvmsg should guard against bogus msghdr fields.
 334727  Build fails with -Werror=format-security

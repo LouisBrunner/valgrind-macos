@@ -1838,6 +1838,7 @@ struct vki_scsi_idlun {
                                 	           (struct cdrom_read) */
 #define VKI_CDROM_CLEAR_OPTIONS		0x5321  /* Clear behavior options */
 #define VKI_CDROM_DRIVE_STATUS		0x5326  /* Get tray position, etc. */
+#define VKI_CDROM_DISC_STATUS		0x5327	/* get CD type information */
 #define VKI_CDROM_GET_CAPABILITY	0x5331	/* get capabilities */
 
 #define VKI_CDROM_SEND_PACKET		0x5393	/* send a packet to the drive */

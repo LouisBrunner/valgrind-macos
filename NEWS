@@ -157,6 +157,7 @@ where XXXXXX is the bug number as listed below.
 333817  Valgrind reports the memory areas written to by the SG_IO
         ioctl as untouched
 334049  lzcnt fails silently (x86_32)
+334585  recvmmsg unhandled (+patch) (arm)
 334705  sendmsg and recvmsg should guard against bogus msghdr fields.
 334727  Build fails with -Werror=format-security
 334788  clarify doc about --log-file initial program directory

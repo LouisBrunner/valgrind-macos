@@ -57,7 +57,6 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
 333434  In some weird corner case Valgrind cannot execute
         executable files symlinked by /proc/self/fd (related to 331311?)
 333051  handling hugepages (is largely broken)
-334585  recvmmsg unhandled (+patch) (arm)
 
 === Debuginfo reader ===================================================
 

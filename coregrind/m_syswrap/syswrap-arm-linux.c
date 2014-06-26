@@ -1220,7 +1220,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_pwritev,           sys_pwritev),          // 362
    LINXY(__NR_rt_tgsigqueueinfo, sys_rt_tgsigqueueinfo),// 363
    LINXY(__NR_perf_event_open,   sys_perf_event_open),  // 364
-
+   LINXY(__NR_recvmmsg,          sys_recvmmsg),         // 365
    LINXY(__NR_accept4,           sys_accept4),          // 366
    LINXY(__NR_fanotify_init,     sys_fanotify_init),    // 367
    LINX_(__NR_fanotify_mark,     sys_fanotify_mark),    // 368

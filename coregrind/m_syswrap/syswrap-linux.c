@@ -5869,6 +5869,127 @@ PRE(sys_ioctl)
                      sizeof(((struct vki_ifreq *)ARG3)->vki_ifr_ifindex) );
       PRE_MEM_WRITE( "ioctl(SIOCGIFNAME)", ARG3, sizeof(struct vki_ifreq));
       break;
+   case VKI_SIOCETHTOOL: {       /* ethtool(8) interface         */
+      struct vki_ifreq *ir = (struct vki_ifreq *)ARG3;
+      PRE_MEM_READ( "ioctl(SIOCETHTOOL)", (Addr)ir, sizeof(struct vki_ifreq) );
+      PRE_MEM_RASCIIZ( "ioctl(SIOCETHTOOL)", (Addr)ir->vki_ifr_name );
+      PRE_MEM_READ( "ioctl(SIOCETHTOOL)", (Addr)ir->vki_ifr_data, sizeof(vki_u32) );
+      PRINT("SIOCETHTOOL( 0x%x )", *(vki_u32 *)ir->vki_ifr_data );
+      switch ( *(vki_u32 *)ir->vki_ifr_data ) {
+      case VKI_ETHTOOL_GSET:
+         PRE_MEM_WRITE( "ioctl(SIOCETHTOOL,GSET)",
+                        (Addr)ir->vki_ifr_data, sizeof(struct vki_ethtool_cmd) );
+         break;
+      case VKI_ETHTOOL_SSET:
+         PRE_MEM_READ( "ioctl(SIOCETHTOOL,SSET)",
+                       (Addr)ir->vki_ifr_data, sizeof(struct vki_ethtool_cmd) );
+         break;
+      case VKI_ETHTOOL_GDRVINFO:
+         PRE_MEM_WRITE( "ioctl(SIOCETHTOOL,GDRVINFO)",
+                        (Addr)ir->vki_ifr_data, sizeof(struct vki_ethtool_drvinfo) );
+         break;
+      case VKI_ETHTOOL_GREGS:
+         PRE_MEM_READ( "ioctl(SIOCETHTOOL,GREGS)",
+                       (Addr)ir->vki_ifr_data, sizeof(struct vki_ethtool_regs) );
+         PRE_MEM_WRITE( "ioctl(SIOCETHTOOL,GREGS)",
+                        (Addr)((struct vki_ethtool_regs *)ir->vki_ifr_data)->data,
+                        ((struct vki_ethtool_regs *)ir->vki_ifr_data)->len );
+         break;
+      case VKI_ETHTOOL_GWOL:
+         PRE_MEM_WRITE( "ioctl(SIOCETHTOOL,GWOL)",
+                        (Addr)ir->vki_ifr_data, sizeof(struct vki_ethtool_wolinfo) );
+         break;
+      case VKI_ETHTOOL_SWOL:
+         PRE_MEM_READ( "ioctl(SIOCETHTOOL,SWOL)",
+                       (Addr)ir->vki_ifr_data, sizeof(struct vki_ethtool_wolinfo) );
+         break;
+      case VKI_ETHTOOL_GMSGLVL:
+      case VKI_ETHTOOL_GLINK:
+      case VKI_ETHTOOL_GRXCSUM:
+      case VKI_ETHTOOL_GSG:
+      case VKI_ETHTOOL_GTSO:
+      case VKI_ETHTOOL_GUFO:
+      case VKI_ETHTOOL_GGSO:
+      case VKI_ETHTOOL_GFLAGS:
+      case VKI_ETHTOOL_GGRO:
+         PRE_MEM_WRITE( "ioctl(SIOCETHTOOL,Gvalue)",
+                        (Addr)ir->vki_ifr_data, sizeof(struct vki_ethtool_value) );
+         break;
+      case VKI_ETHTOOL_SMSGLVL:
+      case VKI_ETHTOOL_SRXCSUM:
+      case VKI_ETHTOOL_SSG:
+      case VKI_ETHTOOL_STSO:
+      case VKI_ETHTOOL_SUFO:
+      case VKI_ETHTOOL_SGSO:
+      case VKI_ETHTOOL_SFLAGS:
+      case VKI_ETHTOOL_SGRO:
+         PRE_MEM_READ( "ioctl(SIOCETHTOOL,Svalue)",
+                       (Addr)ir->vki_ifr_data, sizeof(struct vki_ethtool_value) );
+         break;
+      case VKI_ETHTOOL_NWAY_RST:
+         break;
+      case VKI_ETHTOOL_GRINGPARAM:
+         PRE_MEM_WRITE( "ioctl(SIOCETHTOOL,GRINGPARAM)",
+                        (Addr)ir->vki_ifr_data, sizeof(struct vki_ethtool_ringparam) );
+         break;
+      case VKI_ETHTOOL_SRINGPARAM:
+         PRE_MEM_READ( "ioctl(SIOCETHTOOL,SRINGPARAM)",
+                       (Addr)ir->vki_ifr_data, sizeof(struct vki_ethtool_ringparam) );
+         break;
+      case VKI_ETHTOOL_TEST:
+         PRE_MEM_READ( "ioctl(SIOCETHTOOL,TEST)",
+                       (Addr)ir->vki_ifr_data, sizeof(struct vki_ethtool_test) );
+         PRE_MEM_WRITE( "ioctl(SIOCETHTOOL,TEST)",
+                        (Addr)((struct vki_ethtool_test *)ir->vki_ifr_data)->data,
+                        ((struct vki_ethtool_test *)ir->vki_ifr_data)->len * sizeof(__vki_u64) );
+         break;
+      case VKI_ETHTOOL_PHYS_ID:
+         break;
+      case VKI_ETHTOOL_GPERMADDR:
+         PRE_MEM_READ( "ioctl(SIOCETHTOOL,GPERMADDR)",
+                       (Addr)ir->vki_ifr_data, sizeof(struct vki_ethtool_perm_addr) );
+         PRE_MEM_WRITE( "ioctl(SIOCETHTOOL,GPERMADDR)",
+                        (Addr)((struct vki_ethtool_perm_addr *)ir->vki_ifr_data)->data,
+                        ((struct vki_ethtool_perm_addr *)ir->vki_ifr_data)->size );
+         break;
+      case VKI_ETHTOOL_RESET:
+         break;
+      case VKI_ETHTOOL_GSSET_INFO:
+         PRE_MEM_READ( "ioctl(SIOCETHTOOL,GSSET_INFO)",
+                       (Addr)ir->vki_ifr_data, sizeof(struct vki_ethtool_sset_info) );
+         PRE_MEM_WRITE( "ioctl(SIOCETHTOOL,GSSET_INFO)",
+                        (Addr)((struct vki_ethtool_sset_info *)ir->vki_ifr_data)->data,
+                        __builtin_popcountll(((struct vki_ethtool_sset_info *)ir->vki_ifr_data)->sset_mask) * sizeof(__vki_u32) );
+         break;
+      case VKI_ETHTOOL_GFEATURES:
+         PRE_MEM_READ( "ioctl(SIOCETHTOOL,GFEATURES)",
+                       (Addr)ir->vki_ifr_data, sizeof(struct vki_ethtool_gfeatures) );
+         PRE_MEM_WRITE( "ioctl(SIOCETHTOOL,GFEATURES)",
+                        (Addr)((struct vki_ethtool_gfeatures *)ir->vki_ifr_data)->features,
+                        ((struct vki_ethtool_gfeatures *)ir->vki_ifr_data)->size * sizeof(struct vki_ethtool_get_features_block) );
+         break;
+      case VKI_ETHTOOL_SFEATURES:
+         PRE_MEM_READ( "ioctl(SIOCETHTOOL,SFEATURES)",
+                       (Addr)ir->vki_ifr_data, sizeof(struct vki_ethtool_sfeatures) );
+         PRE_MEM_READ( "ioctl(SIOCETHTOOL,SFEATURES)",
+                       (Addr)((struct vki_ethtool_sfeatures *)ir->vki_ifr_data)->features,
+                       ((struct vki_ethtool_sfeatures *)ir->vki_ifr_data)->size * sizeof(struct vki_ethtool_set_features_block) );
+         break;
+      case VKI_ETHTOOL_GCHANNELS:
+         PRE_MEM_WRITE( "ioctl(SIOCETHTOOL,GCHANNELS)",
+                        (Addr)ir->vki_ifr_data, sizeof(struct vki_ethtool_channels) );
+         break;
+      case VKI_ETHTOOL_SCHANNELS:
+         PRE_MEM_READ( "ioctl(SIOCETHTOOL,SCHANNELS)",
+                       (Addr)ir->vki_ifr_data, sizeof(struct vki_ethtool_channels) );
+         break;
+      case VKI_ETHTOOL_GET_TS_INFO:
+         PRE_MEM_WRITE( "ioctl(SIOCETHTOOL,GET_TS_INFO)",
+                        (Addr)ir->vki_ifr_data, sizeof(struct vki_ethtool_ts_info) );
+         break;
+      }
+      break;
+   }
    case VKI_SIOCGMIIPHY:         /* get hardware entry           */
       PRE_MEM_RASCIIZ( "ioctl(SIOCGIFMIIPHY)",
                      (Addr)((struct vki_ifreq *)ARG3)->vki_ifr_name );
@@ -7332,6 +7453,86 @@ POST(sys_ioctl)
                 (Addr)&((struct vki_ifreq *)ARG3)->vki_ifr_name,
                 sizeof(((struct vki_ifreq *)ARG3)->vki_ifr_name) );
       break;
+   case VKI_SIOCETHTOOL: {       /* ethtool(8) interface         */
+      struct vki_ifreq *ir = (struct vki_ifreq *)ARG3;
+      switch ( *(vki_u32 *)ir->vki_ifr_data ) {
+      case VKI_ETHTOOL_GSET:
+         POST_MEM_WRITE( (Addr)ir->vki_ifr_data, sizeof(struct vki_ethtool_cmd));
+         break;
+      case VKI_ETHTOOL_SSET:
+         break;
+      case VKI_ETHTOOL_GDRVINFO:
+         POST_MEM_WRITE( (Addr)ir->vki_ifr_data, sizeof(struct vki_ethtool_drvinfo) );
+         break;
+      case VKI_ETHTOOL_GREGS:
+         POST_MEM_WRITE( (Addr)((struct vki_ethtool_regs *)ir->vki_ifr_data)->data,
+                         ((struct vki_ethtool_regs *)ir->vki_ifr_data)->len );
+         break;
+      case VKI_ETHTOOL_GWOL:
+         POST_MEM_WRITE( (Addr)ir->vki_ifr_data, sizeof(struct vki_ethtool_wolinfo) );
+         break;
+      case VKI_ETHTOOL_SWOL:
+         break;
+      case VKI_ETHTOOL_GMSGLVL:
+      case VKI_ETHTOOL_GLINK:
+      case VKI_ETHTOOL_GRXCSUM:
+      case VKI_ETHTOOL_GSG:
+      case VKI_ETHTOOL_GTSO:
+      case VKI_ETHTOOL_GUFO:
+      case VKI_ETHTOOL_GGSO:
+      case VKI_ETHTOOL_GFLAGS:
+      case VKI_ETHTOOL_GGRO:
+         POST_MEM_WRITE( (Addr)ir->vki_ifr_data, sizeof(struct vki_ethtool_value));
+         break;
+      case VKI_ETHTOOL_SMSGLVL:
+      case VKI_ETHTOOL_SRXCSUM:
+      case VKI_ETHTOOL_SSG:
+      case VKI_ETHTOOL_STSO:
+      case VKI_ETHTOOL_SUFO:
+      case VKI_ETHTOOL_SGSO:
+      case VKI_ETHTOOL_SFLAGS:
+      case VKI_ETHTOOL_SGRO:
+         break;
+      case VKI_ETHTOOL_NWAY_RST:
+         break;
+      case VKI_ETHTOOL_GRINGPARAM:
+         POST_MEM_WRITE( (Addr)ir->vki_ifr_data, sizeof(struct vki_ethtool_ringparam));
+         break;
+      case VKI_ETHTOOL_SRINGPARAM:
+         break;
+      case VKI_ETHTOOL_TEST:
+         POST_MEM_WRITE( (Addr)((struct vki_ethtool_test *)ir->vki_ifr_data)->data,
+                         ((struct vki_ethtool_test *)ir->vki_ifr_data)->len * sizeof(__vki_u64) );
+         break;
+      case VKI_ETHTOOL_PHYS_ID:
+         break;
+      case VKI_ETHTOOL_GPERMADDR:
+         POST_MEM_WRITE( (Addr)((struct vki_ethtool_perm_addr *)ir->vki_ifr_data)->data,
+                         ((struct vki_ethtool_perm_addr *)ir->vki_ifr_data)->size );
+         break;
+      case VKI_ETHTOOL_RESET:
+         break;
+      case VKI_ETHTOOL_GSSET_INFO:
+         POST_MEM_WRITE( (Addr)((struct vki_ethtool_sset_info *)ir->vki_ifr_data)->data,
+                        __builtin_popcountll(((struct vki_ethtool_sset_info *)ir->vki_ifr_data)->sset_mask) * sizeof(__vki_u32) );
+         break;
+      case VKI_ETHTOOL_GFEATURES:
+         POST_MEM_WRITE( (Addr)((struct vki_ethtool_gfeatures *)ir->vki_ifr_data)->features,
+                         ((struct vki_ethtool_gfeatures *)ir->vki_ifr_data)->size * sizeof(struct vki_ethtool_get_features_block) );
+         break;
+      case VKI_ETHTOOL_SFEATURES:
+         break;
+      case VKI_ETHTOOL_GCHANNELS:
+         POST_MEM_WRITE( (Addr)ir->vki_ifr_data, sizeof(struct vki_ethtool_channels) );
+         break;
+      case VKI_ETHTOOL_SCHANNELS:
+         break;
+      case VKI_ETHTOOL_GET_TS_INFO:
+         POST_MEM_WRITE( (Addr)ir->vki_ifr_data, sizeof(struct vki_ethtool_ts_info) );
+         break;
+      }
+      break;
+   }
    case VKI_SIOCGMIIPHY:         /* get hardware entry           */
       POST_MEM_WRITE(
                 (Addr)&((struct vki_mii_ioctl_data *)&((struct vki_ifreq *)ARG3)->vki_ifr_data)->phy_id,

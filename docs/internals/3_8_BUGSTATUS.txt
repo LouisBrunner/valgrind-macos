@@ -52,9 +52,6 @@ branch.
   ** no it's not; v38BRANCH shows error, vTRUNK doesn't -- investigate
   REOP
 
-303536  ioctl for SIOCETHTOOL (ethtool(8)) isn't wrapped (w/ patch)
-  SYSCALL, HAS_PATCH
-
 -------- Unfixed in 3.8.0
 
 303741  sockaddr* parameter of recvfrom not handled correctly

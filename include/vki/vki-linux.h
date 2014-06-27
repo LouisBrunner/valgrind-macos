@@ -1631,6 +1631,8 @@ typedef struct {
 #define VKI_SIOCGIFTXQLEN	0x8942	/* Get the tx queue length	*/
 #define VKI_SIOCSIFTXQLEN	0x8943	/* Set the tx queue length 	*/
 
+#define VKI_SIOCETHTOOL		0x8946	/* Ethtool interface		*/
+
 #define VKI_SIOCGMIIPHY		0x8947	/* Get address of MII PHY in use. */
 #define VKI_SIOCGMIIREG		0x8948	/* Read MII PHY register.	*/
 #define VKI_SIOCSMIIREG		0x8949	/* Write MII PHY register.	*/
@@ -3235,6 +3237,189 @@ struct vki_sock_fprog {
 	struct vki_sock_filter *filter;
 };
    
+//----------------------------------------------------------------------
+// From linux/include/uapi/linux/ethtool.h
+//----------------------------------------------------------------------
+
+struct vki_ethtool_cmd {
+	__vki_u32	cmd;
+	__vki_u32	supported;
+	__vki_u32	advertising;
+	__vki_u16	speed;
+	__vki_u8	duplex;
+	__vki_u8	port;
+	__vki_u8	phy_address;
+	__vki_u8	transceiver;
+	__vki_u8	autoneg;
+	__vki_u8	mdio_support;
+	__vki_u32	maxtxpkt;
+	__vki_u32	maxrxpkt;
+	__vki_u16	speed_hi;
+	__vki_u8	eth_tp_mdix;
+	__vki_u8	eth_tp_mdix_ctrl;
+	__vki_u32	lp_advertising;
+	__vki_u32	reserved[2];
+};
+
+#define VKI_ETHTOOL_FWVERS_LEN	32
+#define VKI_ETHTOOL_BUSINFO_LEN	32
+
+struct vki_ethtool_drvinfo {
+	__vki_u32	cmd;
+	char	driver[32];
+	char	version[32];
+	char	fw_version[VKI_ETHTOOL_FWVERS_LEN];
+	char	bus_info[VKI_ETHTOOL_BUSINFO_LEN];
+	char	reserved1[32];
+	char	reserved2[12];
+	__vki_u32	n_priv_flags;
+	__vki_u32	n_stats;
+	__vki_u32	testinfo_len;
+	__vki_u32	eedump_len;
+	__vki_u32	regdump_len;
+};
+
+#define VKI_SOPASS_MAX	6
+
+struct vki_ethtool_wolinfo {
+	__vki_u32	cmd;
+	__vki_u32	supported;
+	__vki_u32	wolopts;
+	__vki_u8	sopass[VKI_SOPASS_MAX];
+};
+
+struct vki_ethtool_value {
+	__vki_u32	cmd;
+	__vki_u32	data;
+};
+
+struct vki_ethtool_regs {
+	__vki_u32	cmd;
+	__vki_u32	version;
+	__vki_u32	len;
+	__vki_u8	data[0];
+};
+
+struct vki_ethtool_ringparam {
+	__vki_u32	cmd;
+	__vki_u32	rx_max_pending;
+	__vki_u32	rx_mini_max_pending;
+	__vki_u32	rx_jumbo_max_pending;
+	__vki_u32	tx_max_pending;
+	__vki_u32	rx_pending;
+	__vki_u32	rx_mini_pending;
+	__vki_u32	rx_jumbo_pending;
+	__vki_u32	tx_pending;
+};
+
+struct vki_ethtool_channels {
+	__vki_u32	cmd;
+	__vki_u32	max_rx;
+	__vki_u32	max_tx;
+	__vki_u32	max_other;
+	__vki_u32	max_combined;
+	__vki_u32	rx_count;
+	__vki_u32	tx_count;
+	__vki_u32	other_count;
+	__vki_u32	combined_count;
+};
+
+struct vki_ethtool_sset_info {
+	__vki_u32	cmd;
+	__vki_u32	reserved;
+	__vki_u64	sset_mask;
+	__vki_u32	data[0];
+};
+
+struct vki_ethtool_test {
+	__vki_u32	cmd;
+	__vki_u32	flags;
+	__vki_u32	reserved;
+	__vki_u32	len;
+	__vki_u64	data[0];
+};
+
+struct vki_ethtool_perm_addr {
+	__vki_u32	cmd;
+	__vki_u32	size;
+	__vki_u8	data[0];
+};
+
+struct vki_ethtool_get_features_block {
+	__vki_u32	available;
+	__vki_u32	requested;
+	__vki_u32	active;
+	__vki_u32	never_changed;
+};
+
+struct vki_ethtool_gfeatures {
+	__vki_u32	cmd;
+	__vki_u32	size;
+	struct vki_ethtool_get_features_block features[0];
+};
+
+struct vki_ethtool_set_features_block {
+	__vki_u32	valid;
+	__vki_u32	requested;
+};
+
+struct vki_ethtool_sfeatures {
+	__vki_u32	cmd;
+	__vki_u32	size;
+	struct vki_ethtool_set_features_block features[0];
+};
+
+struct vki_ethtool_ts_info {
+	__vki_u32	cmd;
+	__vki_u32	so_timestamping;
+	__vki_s32	phc_index;
+	__vki_u32	tx_types;
+	__vki_u32	tx_reserved[3];
+	__vki_u32	rx_filters;
+	__vki_u32	rx_reserved[3];
+};
+
+#define VKI_ETHTOOL_GSET	0x00000001 /* Get settings. */
+#define VKI_ETHTOOL_SSET	0x00000002 /* Set settings. */
+#define VKI_ETHTOOL_GDRVINFO	0x00000003 /* Get driver info. */
+#define VKI_ETHTOOL_GREGS	0x00000004 /* Get NIC registers. */
+#define VKI_ETHTOOL_GWOL	0x00000005 /* Get wake-on-lan options. */
+#define VKI_ETHTOOL_SWOL	0x00000006 /* Set wake-on-lan options. */
+#define VKI_ETHTOOL_GMSGLVL	0x00000007 /* Get driver message level */
+#define VKI_ETHTOOL_SMSGLVL	0x00000008 /* Set driver msg level. */
+#define VKI_ETHTOOL_NWAY_RST	0x00000009 /* Restart autonegotiation. */
+#define VKI_ETHTOOL_GLINK	0x0000000a
+#define VKI_ETHTOOL_GRINGPARAM	0x00000010 /* Get ring parameters */
+#define VKI_ETHTOOL_SRINGPARAM	0x00000011 /* Set ring parameters. */
+#define VKI_ETHTOOL_GRXCSUM	0x00000014 /* Get RX hw csum enable (ethtool_value) */
+#define VKI_ETHTOOL_SRXCSUM	0x00000015 /* Set RX hw csum enable (ethtool_value) */
+#define VKI_ETHTOOL_GTXCSUM	0x00000016 /* Get TX hw csum enable (ethtool_value) */
+#define VKI_ETHTOOL_STXCSUM	0x00000017 /* Set TX hw csum enable (ethtool_value) */
+#define VKI_ETHTOOL_GSG		0x00000018 /* Get scatter-gather enable
+					    * (ethtool_value) */
+#define VKI_ETHTOOL_SSG		0x00000019 /* Set scatter-gather enable
+					    * (ethtool_value). */
+#define VKI_ETHTOOL_TEST	0x0000001a /* execute NIC self-test. */
+#define VKI_ETHTOOL_PHYS_ID	0x0000001c /* identify the NIC */
+#define VKI_ETHTOOL_GTSO	0x0000001e /* Get TSO enable (ethtool_value) */
+#define VKI_ETHTOOL_STSO	0x0000001f /* Set TSO enable (ethtool_value) */
+#define VKI_ETHTOOL_GPERMADDR	0x00000020 /* Get permanent hardware address */
+#define VKI_ETHTOOL_GUFO	0x00000021 /* Get UFO enable (ethtool_value) */
+#define VKI_ETHTOOL_SUFO	0x00000022 /* Set UFO enable (ethtool_value) */
+#define VKI_ETHTOOL_GGSO	0x00000023 /* Get GSO enable (ethtool_value) */
+#define VKI_ETHTOOL_SGSO	0x00000024 /* Set GSO enable (ethtool_value) */
+#define VKI_ETHTOOL_GFLAGS	0x00000025 /* Get flags bitmap(ethtool_value) */
+#define VKI_ETHTOOL_SFLAGS	0x00000026 /* Set flags bitmap(ethtool_value) */
+#define VKI_ETHTOOL_GGRO	0x0000002b /* Get GRO enable (ethtool_value) */
+#define VKI_ETHTOOL_SGRO	0x0000002c /* Set GRO enable (ethtool_value) */
+#define VKI_ETHTOOL_RESET	0x00000034 /* Reset hardware */
+#define VKI_ETHTOOL_GSSET_INFO	0x00000037 /* Get string set info */
+#define VKI_ETHTOOL_GFEATURES	0x0000003a /* Get device offload settings */
+#define VKI_ETHTOOL_SFEATURES	0x0000003b /* Change device offload settings */
+#define VKI_ETHTOOL_GCHANNELS	0x0000003c /* Get no of channels */
+#define VKI_ETHTOOL_SCHANNELS	0x0000003d /* Set no of channels */
+#define VKI_ETHTOOL_GET_TS_INFO	0x00000041 /* Get time stamping and PHC info */
+
 #endif // __VKI_LINUX_H
 
 /*--------------------------------------------------------------------*/

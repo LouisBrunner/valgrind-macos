@@ -949,6 +949,11 @@ static void showARM64VecUnaryOp(/*OUT*/const HChar** nm,
       case ARM64vecu_CNT8x16:  *nm = "cnt  "; *ar = "16b"; return;
       case ARM64vecu_RBIT:     *nm = "rbit "; *ar = "16b"; return;
       case ARM64vecu_REV1616B: *nm = "rev16"; *ar = "16b"; return;
+      case ARM64vecu_REV3216B: *nm = "rev32"; *ar = "16b"; return;
+      case ARM64vecu_REV328H:  *nm = "rev32"; *ar = "8h";  return;
+      case ARM64vecu_REV6416B: *nm = "rev64"; *ar = "16b"; return;
+      case ARM64vecu_REV648H:  *nm = "rev64"; *ar = "8h";  return;
+      case ARM64vecu_REV644S:  *nm = "rev64"; *ar = "4s";  return;
       default: vpanic("showARM64VecUnaryOp");
    }
 }
@@ -3449,6 +3454,7 @@ static inline UChar qregNo ( HReg r )
 
 #define X000000  BITS8(0,0, 0,0,0,0,0,0)
 #define X000001  BITS8(0,0, 0,0,0,0,0,1)
+#define X000010  BITS8(0,0, 0,0,0,0,1,0)
 #define X000100  BITS8(0,0, 0,0,0,1,0,0)
 #define X000110  BITS8(0,0, 0,0,0,1,1,0)
 #define X000111  BITS8(0,0, 0,0,0,1,1,1)
@@ -5391,8 +5397,13 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
             010 01110 00 1 00000 010110 n d  CNT  Vd.16b, Vn.16b
 
             011 01110 01 1 00000 010110 n d  RBIT  Vd.16b, Vn.16b
-
             010 01110 00 1 00000 000110 n d  REV16 Vd.16b, Vn.16b
+            011 01110 00 1 00000 000010 n d  REV32 Vd.16b, Vn.16b
+            011 01110 01 1 00000 000010 n d  REV32 Vd.8h, Vn.8h
+
+            010 01110 00 1 00000 000010 n d  REV64 Vd.16b, Vn.16b
+            010 01110 01 1 00000 000010 n d  REV64 Vd.8h, Vn.8h
+            010 01110 10 1 00000 000010 n d  REV64 Vd.4s, Vn.4s
          */
          UInt vD = qregNo(i->ARM64in.VUnaryV.dst);
          UInt vN = qregNo(i->ARM64in.VUnaryV.arg);
@@ -5450,6 +5461,21 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
                break;
             case ARM64vecu_REV1616B:
                *p++ = X_3_8_5_6_5_5(X010, X01110001, X00000, X000110, vN, vD);
+               break;
+            case ARM64vecu_REV3216B:
+               *p++ = X_3_8_5_6_5_5(X011, X01110001, X00000, X000010, vN, vD);
+               break;
+            case ARM64vecu_REV328H:
+               *p++ = X_3_8_5_6_5_5(X011, X01110011, X00000, X000010, vN, vD);
+               break;
+            case ARM64vecu_REV6416B:
+               *p++ = X_3_8_5_6_5_5(X010, X01110001, X00000, X000010, vN, vD);
+               break;
+            case ARM64vecu_REV648H:
+               *p++ = X_3_8_5_6_5_5(X010, X01110011, X00000, X000010, vN, vD);
+               break;
+            case ARM64vecu_REV644S:
+               *p++ = X_3_8_5_6_5_5(X010, X01110101, X00000, X000010, vN, vD);
                break;
             default:
                goto bad;

@@ -362,6 +362,8 @@ typedef
       ARM64vecu_CNT8x16,
       ARM64vecu_RBIT,
       ARM64vecu_REV1616B,
+      ARM64vecu_REV3216B,     ARM64vecu_REV328H,
+      ARM64vecu_REV6416B,     ARM64vecu_REV648H,      ARM64vecu_REV644S,
       ARM64vecu_INVALID
    }
    ARM64VecUnaryOp;

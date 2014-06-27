@@ -3774,31 +3774,31 @@ int main ( void )
    if (1) test_rbit_8b_8b(TyB);
    if (1) test_rev16_16b_16b(TyB);
    if (1) test_rev16_8b_8b(TyB);
-   if (0) test_rev32_16b_16b(TyB);
-   if (0) test_rev32_8b_8b(TyB);
-   if (0) test_rev32_8h_8h(TyH);
-   if (0) test_rev32_4h_4h(TyH);
-   if (0) test_rev64_16b_16b(TyB);
-   if (0) test_rev64_8b_8b(TyB);
-   if (0) test_rev64_8h_8h(TyH);
-   if (0) test_rev64_4h_4h(TyH);
-   if (0) test_rev64_4s_4s(TyS);
-   if (0) test_rev64_2s_2s(TyS);
+   if (1) test_rev32_16b_16b(TyB);
+   if (1) test_rev32_8b_8b(TyB);
+   if (1) test_rev32_8h_8h(TyH);
+   if (1) test_rev32_4h_4h(TyH);
+   if (1) test_rev64_16b_16b(TyB);
+   if (1) test_rev64_8b_8b(TyB);
+   if (1) test_rev64_8h_8h(TyH);
+   if (1) test_rev64_4h_4h(TyH);
+   if (1) test_rev64_4s_4s(TyS);
+   if (1) test_rev64_2s_2s(TyS);
 
    // saba      16b,8b,8h,4h,4s,2s
    // uaba      16b,8b,8h,4h,4s,2s
-   if (0) test_saba_4s_4s_4s(TyS);
-   if (0) test_saba_2s_2s_2s(TyS);
-   if (0) test_saba_8h_8h_8h(TyH);
-   if (0) test_saba_4h_4h_4h(TyH);
-   if (0) test_saba_16b_16b_16b(TyB);
-   if (0) test_saba_8b_8b_8b(TyB);
-   if (0) test_uaba_4s_4s_4s(TyS);
-   if (0) test_uaba_2s_2s_2s(TyS);
-   if (0) test_uaba_8h_8h_8h(TyH);
-   if (0) test_uaba_4h_4h_4h(TyH);
-   if (0) test_uaba_16b_16b_16b(TyB);
-   if (0) test_uaba_8b_8b_8b(TyB);
+   if (1) test_saba_4s_4s_4s(TyS);
+   if (1) test_saba_2s_2s_2s(TyS);
+   if (1) test_saba_8h_8h_8h(TyH);
+   if (1) test_saba_4h_4h_4h(TyH);
+   if (1) test_saba_16b_16b_16b(TyB);
+   if (1) test_saba_8b_8b_8b(TyB);
+   if (1) test_uaba_4s_4s_4s(TyS);
+   if (1) test_uaba_2s_2s_2s(TyS);
+   if (1) test_uaba_8h_8h_8h(TyH);
+   if (1) test_uaba_4h_4h_4h(TyH);
+   if (1) test_uaba_16b_16b_16b(TyB);
+   if (1) test_uaba_8b_8b_8b(TyB);
 
    // sabal{2}  2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h), 8h_(8b_8b)/(16b_16b)
    // uabal{2}  2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h), 8h_(8b_8b)/(16b_16b)
@@ -3817,18 +3817,18 @@ int main ( void )
 
    // sabd      16b,8b,8h,4h,4s,2s
    // uabd      16b,8b,8h,4h,4s,2s
-   if (0) test_sabd_4s_4s_4s(TyS);
-   if (0) test_sabd_2s_2s_2s(TyS);
-   if (0) test_sabd_8h_8h_8h(TyH);
-   if (0) test_sabd_4h_4h_4h(TyH);
-   if (0) test_sabd_16b_16b_16b(TyB);
-   if (0) test_sabd_8b_8b_8b(TyB);
-   if (0) test_uabd_4s_4s_4s(TyS);
-   if (0) test_uabd_2s_2s_2s(TyS);
-   if (0) test_uabd_8h_8h_8h(TyH);
-   if (0) test_uabd_4h_4h_4h(TyH);
-   if (0) test_uabd_16b_16b_16b(TyB);
-   if (0) test_uabd_8b_8b_8b(TyB);
+   if (1) test_sabd_4s_4s_4s(TyS);
+   if (1) test_sabd_2s_2s_2s(TyS);
+   if (1) test_sabd_8h_8h_8h(TyH);
+   if (1) test_sabd_4h_4h_4h(TyH);
+   if (1) test_sabd_16b_16b_16b(TyB);
+   if (1) test_sabd_8b_8b_8b(TyB);
+   if (1) test_uabd_4s_4s_4s(TyS);
+   if (1) test_uabd_2s_2s_2s(TyS);
+   if (1) test_uabd_8h_8h_8h(TyH);
+   if (1) test_uabd_4h_4h_4h(TyH);
+   if (1) test_uabd_16b_16b_16b(TyB);
+   if (1) test_uabd_8b_8b_8b(TyB);
 
    // sabdl{2}  2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h), 8h_(8b_8b)/(16b_16b)
    // uabdl{2}  2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h), 8h_(8b_8b)/(16b_16b)

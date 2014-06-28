@@ -1178,6 +1178,28 @@ ULong LibVEX_GuestARM64_get_nzcv ( /*IN*/const VexGuestARM64State* vex_state )
 }
 
 /* VISIBLE TO LIBVEX CLIENT */
+ULong LibVEX_GuestARM64_get_fpsr ( const VexGuestARM64State* vex_state )
+{
+   UInt w32 = vex_state->guest_QCFLAG[0] | vex_state->guest_QCFLAG[1]
+              | vex_state->guest_QCFLAG[2] | vex_state->guest_QCFLAG[3];
+   ULong fpsr = 0;
+   // QC
+   if (w32 != 0)
+      fpsr |= (1 << 27);
+   return fpsr;
+}
+
+void LibVEX_GuestARM64_set_fpsr ( /*MOD*/VexGuestARM64State* vex_state,
+                                  ULong fpsr )
+{
+   // QC
+   vex_state->guest_QCFLAG[0] = (UInt)((fpsr >> 27) & 1);
+   vex_state->guest_QCFLAG[1] = 0;
+   vex_state->guest_QCFLAG[2] = 0;
+   vex_state->guest_QCFLAG[3] = 0;
+}
+
+/* VISIBLE TO LIBVEX CLIENT */
 void LibVEX_GuestARM64_initialise ( /*OUT*/VexGuestARM64State* vex_state )
 {
    vex_bzero(vex_state, sizeof(*vex_state));
@@ -1345,7 +1367,7 @@ VexGuestLayout
 
           /* Describe any sections to be regarded by Memcheck as
              'always-defined'. */
-          .n_alwaysDefd = 10,
+          .n_alwaysDefd = 9,
 
           /* flags thunk: OP is always defd, whereas DEP1 and DEP2
              have to be tracked.  See detailed comment in gdefs.h on
@@ -1359,8 +1381,7 @@ VexGuestLayout
                  /* 5 */ ALWAYSDEFD(guest_CMLEN),
                  /* 6 */ ALWAYSDEFD(guest_NRADDR),
                  /* 7 */ ALWAYSDEFD(guest_IP_AT_SYSCALL),
-                 /* 8 */ ALWAYSDEFD(guest_FPCR),
-                 /* 9 */ ALWAYSDEFD(guest_FPSR)
+                 /* 8 */ ALWAYSDEFD(guest_TPIDR_EL0)
                }
         };
 

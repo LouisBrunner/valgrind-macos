@@ -697,14 +697,7 @@ static IRExpr* narrowFrom64 ( IRType dstTy, IRExpr* e )
 #define OFFB_Q31      offsetof(VexGuestARM64State,guest_Q31)
 
 #define OFFB_FPCR     offsetof(VexGuestARM64State,guest_FPCR)
-#define OFFB_FPSR     offsetof(VexGuestARM64State,guest_FPSR)
-//ZZ #define OFFB_TPIDRURO offsetof(VexGuestARMState,guest_TPIDRURO)
-//ZZ #define OFFB_ITSTATE  offsetof(VexGuestARMState,guest_ITSTATE)
-//ZZ #define OFFB_QFLAG32  offsetof(VexGuestARMState,guest_QFLAG32)
-//ZZ #define OFFB_GEFLAG0  offsetof(VexGuestARMState,guest_GEFLAG0)
-//ZZ #define OFFB_GEFLAG1  offsetof(VexGuestARMState,guest_GEFLAG1)
-//ZZ #define OFFB_GEFLAG2  offsetof(VexGuestARMState,guest_GEFLAG2)
-//ZZ #define OFFB_GEFLAG3  offsetof(VexGuestARMState,guest_GEFLAG3)
+#define OFFB_QCFLAG   offsetof(VexGuestARM64State,guest_QCFLAG)
 
 #define OFFB_CMSTART  offsetof(VexGuestARM64State,guest_CMSTART)
 #define OFFB_CMLEN    offsetof(VexGuestARM64State,guest_CMLEN)
@@ -4879,16 +4872,37 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
    /* Cases for FPSR 
       0xD51B44 001 Rt  MSR fpsr, rT
       0xD53B44 001 Rt  MSR rT, fpsr
+      The only part of this we model is FPSR.QC.  All other bits
+      are ignored when writing to it and RAZ when reading from it.
    */
    if (   (INSN(31,0) & 0xFFFFFFE0) == 0xD51B4420 /*MSR*/
        || (INSN(31,0) & 0xFFFFFFE0) == 0xD53B4420 /*MRS*/) {
       Bool toSys = INSN(21,21) == 0;
       UInt tt    = INSN(4,0);
       if (toSys) {
-         stmt( IRStmt_Put( OFFB_FPSR, getIReg32orZR(tt)) );
+         /* Just deal with FPSR.QC.  Make up a V128 value which is
+            zero if Xt[27] is zero and any other value if Xt[27] is
+            nonzero. */
+         IRTemp qc64 = newTemp(Ity_I64);
+         assign(qc64, binop(Iop_And64,
+                            binop(Iop_Shr64, getIReg64orZR(tt), mkU8(27)),
+                            mkU64(1)));
+         IRExpr* qcV128 = binop(Iop_64HLtoV128, mkexpr(qc64), mkexpr(qc64));
+         stmt( IRStmt_Put( OFFB_QCFLAG, qcV128 ) );
          DIP("msr fpsr, %s\n", nameIReg64orZR(tt));
       } else {
-         putIReg32orZR(tt, IRExpr_Get(OFFB_FPSR, Ity_I32));
+         /* Generate a value which is all zeroes except for bit 27,
+            which must be zero if QCFLAG is all zeroes and one otherwise. */
+         IRTemp qcV128 = newTemp(Ity_V128);
+         assign(qcV128, IRExpr_Get( OFFB_QCFLAG, Ity_V128 ));
+         IRTemp qc64 = newTemp(Ity_I64);
+         assign(qc64, binop(Iop_Or64, unop(Iop_V128HIto64, mkexpr(qcV128)),
+                                      unop(Iop_V128to64,   mkexpr(qcV128))));
+         IRExpr* res = binop(Iop_Shl64, 
+                             unop(Iop_1Uto64,
+                                  binop(Iop_CmpNE64, mkexpr(qc64), mkU64(0))),
+                             mkU8(27));
+         putIReg64orZR(tt, res);
          DIP("mrs %s, fpsr\n", nameIReg64orZR(tt));
       }
       return True;
@@ -4896,6 +4910,9 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
    /* Cases for NZCV
       D51B42 000 Rt  MSR nzcv, rT
       D53B42 000 Rt  MRS rT, nzcv
+      The only parts of NZCV that actually exist are bits 31:28, which 
+      are the N Z C and V bits themselves.  Hence the flags thunk provides
+      all the state we need.
    */
    if (   (INSN(31,0) & 0xFFFFFFE0) == 0xD51B4200 /*MSR*/
        || (INSN(31,0) & 0xFFFFFFE0) == 0xD53B4200 /*MRS*/) {

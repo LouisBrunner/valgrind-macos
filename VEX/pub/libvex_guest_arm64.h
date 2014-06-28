@@ -123,6 +123,13 @@ typedef
       U128 guest_Q30;
       U128 guest_Q31;
 
+      /* A 128-bit value which is used to represent the FPSR.QC (sticky
+         saturation) flag, when necessary.  If the value stored here
+         is zero, FPSR.QC is currently zero.  If it is any other value,
+         FPSR.QC is currently one.  We don't currently represent any 
+         other bits of FPSR, so this is all that that is for FPSR. */
+      U128 guest_QCFLAG;
+
       /* Various pseudo-regs mandated by Vex or Valgrind. */
       /* Emulation notes */
       UInt guest_EMNOTE;
@@ -152,15 +159,9 @@ typedef
          note of bits 23 and 22. */
       UInt  guest_FPCR;
 
-      /* The complete FPSR.  As with FPCR, the guest may write and
-         read any values here, and the emulation ignores it, with the
-         exception of bit 27 (QC, the sticky saturation bit) which
-         does get set when required. */
-      UInt  guest_FPSR;
-
       /* Padding to make it have an 16-aligned size */
-      UInt  pad_end_0;
-      ULong pad_end_1;
+      /* UInt  pad_end_0; */
+      /* ULong pad_end_1; */
    }
    VexGuestARM64State;
 
@@ -181,6 +182,18 @@ void LibVEX_GuestARM64_initialise ( /*OUT*/VexGuestARM64State* vex_state );
 extern
 ULong LibVEX_GuestARM64_get_nzcv ( /*IN*/
                                    const VexGuestARM64State* vex_state );
+
+/* Calculate the ARM64 FPSR state from the saved data, in the format
+   36x0:qc:27x0 */
+extern
+ULong LibVEX_GuestARM64_get_fpsr ( /*IN*/
+                                   const VexGuestARM64State* vex_state );
+
+/* Set the ARM64 FPSR representation from the given FPSR value. */
+extern
+void LibVEX_GuestARM64_set_fpsr ( /*MOD*/VexGuestARM64State* vex_state,
+                                  ULong fpsr );
+                                  
 
 #endif /* ndef __LIBVEX_PUB_GUEST_ARM64_H */
 

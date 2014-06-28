@@ -217,7 +217,22 @@ void transfer_register (ThreadId tid, int abs_regno, void * buf,
    case 63: VG_(transfer) (&arm->guest_Q29, buf, dir, size, mod); break;
    case 64: VG_(transfer) (&arm->guest_Q30, buf, dir, size, mod); break;
    case 65: VG_(transfer) (&arm->guest_Q31, buf, dir, size, mod); break;
-   case 66: VG_(transfer) (&arm->guest_FPSR, buf, dir, size, mod); break;
+   case 66: {
+      /* The ARM64 FPSR representation is not the same as the
+          architecturally defined representation.  Hence use conversion
+          functions to convert to/from it. */
+      if (dir == valgrind_to_gdbserver) {
+         ULong fpsr = LibVEX_GuestARM64_get_fpsr(arm);
+         // XXX FIXME what if size != 8 ?  Does this still work?
+         VG_(transfer) (&fpsr, buf, dir, size, mod);
+      } else {
+         // XXX FIXME what if size != 8 ?  Does this still work?
+         ULong fpsr = 0;
+         VG_(transfer) (&fpsr, buf, dir, size, mod);
+         LibVEX_GuestARM64_set_fpsr(arm, fpsr);
+      }
+      break;
+   }
    case 67: VG_(transfer) (&arm->guest_FPCR, buf, dir, size, mod); break;
    default: vg_assert(0);
    }

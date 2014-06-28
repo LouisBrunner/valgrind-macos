@@ -1053,7 +1053,7 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o >= GOF(Q31)  && o+sz <= GOF(Q31)+SZB(Q31)) return GOF(Q31);
 
    if (o == GOF(FPCR) && sz == 4) return -1; // untracked
-   if (o == GOF(FPSR) && sz == 4) return -1; // untracked
+   if (o == GOF(QCFLAG) && sz == 16) return o;
 
    if (o == GOF(CMSTART) && sz == 8) return -1; // untracked
    if (o == GOF(CMLEN)   && sz == 8) return -1; // untracked

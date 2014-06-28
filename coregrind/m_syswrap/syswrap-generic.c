@@ -3427,16 +3427,27 @@ void ML_(PRE_unknown_ioctl)(ThreadId tid, UWord request, UWord arg)
        * commands becomes very tiresome.
        */
    } else if (/* size == 0 || */ dir == _VKI_IOC_NONE) {
-      //VG_(message)(Vg_UserMsg, "UNKNOWN ioctl %#lx\n", request);
-      //VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
-      static Int moans = 3;
+      static UWord unknown_ioctl[10];
+      static Int moans = sizeof(unknown_ioctl) / sizeof(unknown_ioctl[0]);
+
       if (moans > 0 && !VG_(clo_xml)) {
-         moans--;
-         VG_(umsg)("Warning: noted but unhandled ioctl 0x%lx"
-                   " with no size/direction hints\n", request); 
-         VG_(umsg)("   This could cause spurious value errors to appear.\n");
-         VG_(umsg)("   See README_MISSING_SYSCALL_OR_IOCTL for "
-                   "guidance on writing a proper wrapper.\n" );
+         /* Check if have not already moaned for this request. */
+         UInt i;
+         for (i = 0; i < sizeof(unknown_ioctl)/sizeof(unknown_ioctl[0]); i++) {
+            if (unknown_ioctl[i] == request)
+               break;
+            if (unknown_ioctl[i] == 0) {
+               unknown_ioctl[i] = request;
+               moans--;
+               VG_(umsg)("Warning: noted but unhandled ioctl 0x%lx"
+                         " with no size/direction hints.\n", request); 
+               VG_(umsg)("   This could cause spurious value errors to appear.\n");
+               VG_(umsg)("   See README_MISSING_SYSCALL_OR_IOCTL for "
+                         "guidance on writing a proper wrapper.\n" );
+               //VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
+               return;
+            }
+         }
       }
    } else {
       //VG_(message)(Vg_UserMsg, "UNKNOWN ioctl %#lx\n", request);

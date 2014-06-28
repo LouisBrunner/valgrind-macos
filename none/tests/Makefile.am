@@ -49,6 +49,7 @@ dist_noinst_SCRIPTS = \
 	filter_cmdline0 \
 	filter_cmdline1 \
 	filter_fdleak \
+	filter_ioctl_moans \
 	filter_linenos \
 	filter_none_discards \
 	filter_shell_output \
@@ -100,6 +101,7 @@ EXTRA_DIST = \
 	fucomip.stderr.exp fucomip.vgtest \
 	gxx304.stderr.exp gxx304.vgtest \
 	ifunc.stderr.exp ifunc.stdout.exp ifunc.vgtest \
+	ioctl_moans.stderr.exp ioctl_moans.vgtest \
 	manythreads.stdout.exp manythreads.stderr.exp manythreads.vgtest \
 	map_unaligned.stderr.exp map_unaligned.vgtest \
 	map_unmap.stderr.exp map_unmap.stdout.exp map_unmap.vgtest \
@@ -184,6 +186,7 @@ check_PROGRAMS = \
 	fdleak_fcntl fdleak_ipv4 fdleak_open fdleak_pipe \
 	fdleak_socketpair \
 	floored fork fucomip \
+	ioctl_moans \
 	mmap_fcntl_bug \
 	munmap_exe map_unaligned map_unmap mq \
 	pending \

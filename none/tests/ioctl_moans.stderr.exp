@@ -1,0 +1,30 @@
+Warning: noted but unhandled ioctl 0x12345670 with no size/direction hints.
+   This could cause spurious value errors to appear.
+   See README_MISSING_SYSCALL_OR_IOCTL for guidance on writing a proper wrapper.
+Warning: noted but unhandled ioctl 0x12345671 with no size/direction hints.
+   This could cause spurious value errors to appear.
+   See README_MISSING_SYSCALL_OR_IOCTL for guidance on writing a proper wrapper.
+Warning: noted but unhandled ioctl 0x12345672 with no size/direction hints.
+   This could cause spurious value errors to appear.
+   See README_MISSING_SYSCALL_OR_IOCTL for guidance on writing a proper wrapper.
+Warning: noted but unhandled ioctl 0x12345673 with no size/direction hints.
+   This could cause spurious value errors to appear.
+   See README_MISSING_SYSCALL_OR_IOCTL for guidance on writing a proper wrapper.
+Warning: noted but unhandled ioctl 0x12345674 with no size/direction hints.
+   This could cause spurious value errors to appear.
+   See README_MISSING_SYSCALL_OR_IOCTL for guidance on writing a proper wrapper.
+Warning: noted but unhandled ioctl 0x12345675 with no size/direction hints.
+   This could cause spurious value errors to appear.
+   See README_MISSING_SYSCALL_OR_IOCTL for guidance on writing a proper wrapper.
+Warning: noted but unhandled ioctl 0x12345676 with no size/direction hints.
+   This could cause spurious value errors to appear.
+   See README_MISSING_SYSCALL_OR_IOCTL for guidance on writing a proper wrapper.
+Warning: noted but unhandled ioctl 0x12345677 with no size/direction hints.
+   This could cause spurious value errors to appear.
+   See README_MISSING_SYSCALL_OR_IOCTL for guidance on writing a proper wrapper.
+Warning: noted but unhandled ioctl 0x12345678 with no size/direction hints.
+   This could cause spurious value errors to appear.
+   See README_MISSING_SYSCALL_OR_IOCTL for guidance on writing a proper wrapper.
+Warning: noted but unhandled ioctl 0x12345679 with no size/direction hints.
+   This could cause spurious value errors to appear.
+   See README_MISSING_SYSCALL_OR_IOCTL for guidance on writing a proper wrapper.

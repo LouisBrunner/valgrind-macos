@@ -1,0 +1,8 @@
+#! /bin/sh
+
+dir=`dirname $0`
+
+$dir/../../tests/filter_stderr_basic |
+
+# Remove "Nulgrind, ..." line and the following copyright line.
+sed "/^Nulgrind, the minimal Valgrind tool/ , /./ d"

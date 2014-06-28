@@ -5640,10 +5640,13 @@ IRTemp math_BINARY_WIDENING_V128 ( Bool is2, IROp opI64x2toV128,
 static
 IRTemp math_ABD ( Bool isU, UInt size, IRExpr* argLE, IRExpr* argRE )
 {
-   const IROp opSUB[3] = { Iop_Sub8x16, Iop_Sub16x8, Iop_Sub32x4 };
-   const IROp opGTU[3] = { Iop_CmpGT8Ux16, Iop_CmpGT16Ux8, Iop_CmpGT32Ux4 };
-   const IROp opGTS[3] = { Iop_CmpGT8Sx16, Iop_CmpGT16Sx8, Iop_CmpGT32Sx4 };
-   vassert(size <= 2);
+   const IROp opSUB[4]
+      = { Iop_Sub8x16, Iop_Sub16x8, Iop_Sub32x4, Iop_Sub64x2 };
+   const IROp opGTU[4]
+      = { Iop_CmpGT8Ux16, Iop_CmpGT16Ux8, Iop_CmpGT32Ux4, Iop_CmpGT64Ux2 };
+   const IROp opGTS[4]
+      = { Iop_CmpGT8Sx16, Iop_CmpGT16Sx8, Iop_CmpGT32Sx4, Iop_CmpGT64Sx2 };
+   vassert(size <= 3);
    IRTemp argL = newTemp(Ity_V128);
    IRTemp argR = newTemp(Ity_V128);
    IRTemp msk = newTemp(Ity_V128);
@@ -5660,6 +5663,51 @@ IRTemp math_ABD ( Bool isU, UInt size, IRExpr* argLE, IRExpr* argRE )
                 binop(Iop_AndV128,
                       binop(opSUB[size], mkexpr(argR), mkexpr(argL)),
                       unop(Iop_NotV128, mkexpr(msk)))));
+   return res;
+}
+
+
+/* Generate IR that takes a V128 and sign- or zero-widens
+   either the lower or upper set of lanes to twice-as-wide,
+   resulting in a new V128 value. */
+static
+IRTemp math_WIDEN_LANES ( Bool zWiden, Bool fromUpperHalf,
+                          UInt sizeNarrow, IRExpr* srcE )
+{
+   IRTemp src = newTemp(Ity_V128);
+   IRTemp res = newTemp(Ity_V128);
+   assign(src, srcE);
+   switch (sizeNarrow) {
+      case X10:
+         assign(res,
+                binop(zWiden ? Iop_ShrN64x2 : Iop_SarN64x2,
+                      binop(fromUpperHalf ? Iop_InterleaveHI32x4
+                                          : Iop_InterleaveLO32x4,
+                            mkexpr(src),
+                            mkexpr(src)),
+                      mkU8(32)));
+         break;
+      case X01:
+         assign(res,
+                binop(zWiden ? Iop_ShrN32x4 : Iop_SarN32x4,
+                      binop(fromUpperHalf ? Iop_InterleaveHI16x8
+                                          : Iop_InterleaveLO16x8,
+                            mkexpr(src),
+                            mkexpr(src)),
+                      mkU8(16)));
+         break;
+      case X00:
+         assign(res,
+                binop(zWiden ? Iop_ShrN16x8 : Iop_SarN16x8,
+                      binop(fromUpperHalf ? Iop_InterleaveHI8x16
+                                          : Iop_InterleaveLO8x16,
+                            mkexpr(src),
+                            mkexpr(src)),
+                      mkU8(8)));
+         break;
+      default:
+         vassert(0);
+   }
    return res;
 }
 
@@ -6937,6 +6985,34 @@ Bool dis_AdvSIMD_three_different(/*MB_OUT*/DisResult* dres, UInt insn)
    vassert(size < 4);
    Bool is2    = bitQ == 1;
 
+   if (opcode == BITS4(0,0,0,0) || opcode == BITS4(0,0,1,0)) {
+      /* -------- 0,0000 SADDL{2} -------- */
+      /* -------- 1,0000 UADDL{2} -------- */
+      /* -------- 0,0010 SSUBL{2} -------- */
+      /* -------- 1,0010 USUBL{2} -------- */
+      /* Widens, and size refers to the narrowed lanes. */
+      const IROp opADD[3] = { Iop_Add16x8,  Iop_Add32x4,  Iop_Add64x2 };
+      const IROp opSUB[3] = { Iop_Sub16x8,  Iop_Sub32x4,  Iop_Sub64x2 };
+      if (size == X11) return False;
+      vassert(size <= 2);
+      Bool   isU   = bitU == 1;
+      Bool   isADD = opcode == BITS4(0,0,0,0);
+      IRTemp argL  = math_WIDEN_LANES(isU, is2, size, getQReg128(nn));
+      IRTemp argR  = math_WIDEN_LANES(isU, is2, size, getQReg128(mm));
+      IRTemp res   = newTemp(Ity_V128);
+      assign(res, binop(isADD ? opADD[size] : opSUB[size],
+                        mkexpr(argL), mkexpr(argR)));
+      putQReg128(dd, mkexpr(res));
+      const HChar* arrNarrow = nameArr_Q_SZ(bitQ, size);
+      const HChar* arrWide   = nameArr_Q_SZ(1,    size+1);
+      const HChar* nm        = isADD ? (isU ? "uaddl" : "saddl")
+                                     : (isU ? "usubl" : "ssubl");
+      DIP("%s%s %s.%s, %s.%s, %s.%s\n", nm, is2 ? "2" : "",
+          nameQReg128(dd), arrWide,
+          nameQReg128(nn), arrNarrow, nameQReg128(mm), arrNarrow);
+      return True;
+   }
+
    if (opcode == BITS4(0,1,0,0) || opcode == BITS4(0,1,1,0)) {
       /* -------- 0,0100  ADDHN{2} -------- */
       /* -------- 1,0100 RADDHN{2} -------- */
@@ -6990,9 +7066,79 @@ Bool dis_AdvSIMD_three_different(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
+   if (opcode == BITS4(0,1,0,1) || opcode == BITS4(0,1,1,1)) {
+      /* -------- 0,0101 SABAL{2} -------- */
+      /* -------- 1,0101 UABAL{2} -------- */
+      /* -------- 0,0111 SABDL{2} -------- */
+      /* -------- 1,0111 UABDL{2} -------- */
+      /* Widens, and size refers to the narrowed lanes. */
+      const IROp opADD[3] = { Iop_Add16x8,  Iop_Add32x4,  Iop_Add64x2 };
+      if (size == X11) return False;
+      vassert(size <= 2);
+      Bool   isU   = bitU == 1;
+      Bool   isACC = opcode == BITS4(0,1,0,1);
+      IRTemp argL  = math_WIDEN_LANES(isU, is2, size, getQReg128(nn));
+      IRTemp argR  = math_WIDEN_LANES(isU, is2, size, getQReg128(mm));
+      IRTemp abd   = math_ABD(isU, size+1, mkexpr(argL), mkexpr(argR));
+      IRTemp res   = newTemp(Ity_V128);
+      assign(res, isACC ? binop(opADD[size], mkexpr(abd), getQReg128(dd))
+                        : mkexpr(abd));
+      putQReg128(dd, mkexpr(res));
+      const HChar* arrNarrow = nameArr_Q_SZ(bitQ, size);
+      const HChar* arrWide   = nameArr_Q_SZ(1,    size+1);
+      const HChar* nm        = isACC ? (isU ? "uabal" : "sabal")
+                                     : (isU ? "uabdl" : "sabdl");
+      DIP("%s%s %s.%s, %s.%s, %s.%s\n", nm, is2 ? "2" : "",
+          nameQReg128(dd), arrWide,
+          nameQReg128(nn), arrNarrow, nameQReg128(mm), arrNarrow);
+      return True;
+   }
+
+   if (opcode == BITS4(1,1,0,0)
+       || opcode == BITS4(1,0,0,0) || opcode == BITS4(1,0,1,0)) {
+      /* -------- 0,1100  SMULL{2} -------- */ // 0 (ix)
+      /* -------- 1,1100  UMULL{2} -------- */ // 0
+      /* -------- 0,1000  SMLAL{2} -------- */ // 1
+      /* -------- 1,1000  UMLAL{2} -------- */ // 1
+      /* -------- 0,1010  SMLSL{2} -------- */ // 2
+      /* -------- 1,1010  UMLSL{2} -------- */ // 2
+      /* Widens, and size refers to the narrowed lanes. */
+      UInt ix = 3;
+      switch (opcode) {
+         case BITS4(1,1,0,0): ix = 0; break;
+         case BITS4(1,0,0,0): ix = 1; break;
+         case BITS4(1,0,1,0): ix = 2; break;
+         default: vassert(0);
+      }
+      vassert(ix >= 0 && ix <= 2);
+      const IROp opMULLU[3] = { Iop_Mull8Ux8, Iop_Mull16Ux4, Iop_Mull32Ux2 };
+      const IROp opMULLS[3] = { Iop_Mull8Sx8, Iop_Mull16Sx4, Iop_Mull32Sx2 };
+      const IROp opADD[3]   = { Iop_Add16x8,  Iop_Add32x4,   Iop_Add64x2   };
+      const IROp opSUB[3]   = { Iop_Sub16x8,  Iop_Sub32x4,   Iop_Sub64x2   };
+      if (size == X11) return False;
+      vassert(size <= 2);
+      Bool   isU   = bitU == 1;
+      IROp   mulOp = isU ? opMULLU[size] : opMULLS[size];
+      IROp   accOp = (ix == 1) ? opADD[size] 
+                               : (ix == 2 ? opSUB[size] : Iop_INVALID);
+      IRTemp mul = math_BINARY_WIDENING_V128(is2, mulOp,
+                                             getQReg128(nn), getQReg128(mm));
+      IRTemp res = newTemp(Ity_V128);
+      assign(res, ix == 0 ? mkexpr(mul) 
+                          : binop(accOp, getQReg128(dd), mkexpr(mul)));
+      putQReg128(dd, mkexpr(res));
+      const HChar* arrNarrow = nameArr_Q_SZ(bitQ, size);
+      const HChar* arrWide   = nameArr_Q_SZ(1,    size+1);
+      const HChar* nm        = ix == 0 ? "mull" : (ix == 1 ? "mlal" : "mlsl");
+      DIP("%c%s%s %s.%s, %s.%s, %s.%s\n", isU ? 'u' : 's', nm, is2 ? "2" : "",
+          nameQReg128(dd), arrWide,
+          nameQReg128(nn), arrNarrow, nameQReg128(mm), arrNarrow);
+      return True;
+   }
+
    if (bitU == 0 && opcode == BITS4(1,1,1,0)) {
       /* -------- 0,1110  PMULL{2} -------- */
-      /* Narrows, and size refers to the narrowed lanes. */
+      /* Widens, and size refers to the narrowed lanes. */
       if (size != X00) return False;
       IRTemp res
          = math_BINARY_WIDENING_V128(is2, Iop_PolynomialMull8x8,

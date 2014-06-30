@@ -95,6 +95,7 @@ EXTRA_DIST = \
 	deep-backtrace.vgtest deep-backtrace.stderr.exp \
 	deep_templates.vgtest \
 	deep_templates.stdout.exp deep_templates.stderr.exp \
+	demangle.stderr.exp demangle.vgtest \
 	describe-block.stderr.exp describe-block.vgtest \
 	doublefree.stderr.exp doublefree.vgtest \
 	dw4.vgtest dw4.stderr.exp dw4.stdout.exp \
@@ -299,6 +300,7 @@ check_PROGRAMS = \
 	leak_cpp_interior \
 	custom_alloc \
 	custom-overlap \
+	demangle \
 	deep-backtrace \
 	describe-block \
 	doublefree error_counts errs1 exitprog execve1 execve2 erringfds \
@@ -392,6 +394,8 @@ leak_cpp_interior_SOURCES	= leak_cpp_interior.cpp
 
 deep_templates_SOURCES	= deep_templates.cpp
 deep_templates_CXXFLAGS	= $(AM_CFLAGS) -O -gstabs
+
+demangle_SOURCES = demangle.cpp
 
 dw4_CFLAGS		= $(AM_CFLAGS) -gdwarf-4 -fdebug-types-section
 

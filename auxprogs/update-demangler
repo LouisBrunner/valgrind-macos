@@ -6,19 +6,19 @@ set -e
 # This quick and dirty script assists in updating the C++ demangler
 # machinery in coregrind/m_demangle.
 # The script will check out 
-# - old and new revisions of the C++ demangler related files from GCC 
+# - old and new revisions of the C++ demangler related files from GCC's trunk
 # - m_demangle from valgrind's trunk.
 # It will assemble
 # - a patch file with local changes that were applied to the C++
 #   demangler to make it work within valgrind
 # - a directory new_m_demangle whose contents should be copied to
 #   m_demangle in valgrind trunk
-# The patch will *not* be applied automacially.
+# The patch will *not* be applied automatically.
 #---------------------------------------------------------------------
 
 # You need to modify these revision numbers for your update.
-old_gcc_revision=r141363  # the revision of the previous update
-new_gcc_revision=r181975  # the revision for this update
+old_gcc_revision=r181975  # the revision of the previous update
+new_gcc_revision=r212125  # the revision for this update
 
 # Unless the organization of demangler related files has changed, no
 # changes below this line should be necessary.

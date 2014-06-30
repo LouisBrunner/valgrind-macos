@@ -69,6 +69,8 @@ Release 3.10.0 (?? ?????? 201?)
   - Code compiled with -ffunction-sections -fdata-sections -Wl,--gc-sections
     does not cause assert errors anymore.
 
+* The C++ demangler has been updated for better C++11 support.
+
 * ==================== FIXED BUGS ====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"

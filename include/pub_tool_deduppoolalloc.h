@@ -35,7 +35,7 @@
 
 //-----------------------------------------------------------------------------
 // PURPOSE: Provides a pool allocator for elements, storing only once identical
-//  elements. In other words, this can be considered a "dictionary" of elements.
+// elements. In other words, this can be considered a "dictionary" of elements.
 //
 // This pool allocator manages elements allocation by allocating "pools" of
 // many elements from a lower level allocator (typically pub_tool_mallocfree.h).
@@ -43,6 +43,29 @@
 // Currently, elements can only be allocated, elements cannot be freed
 // individually.
 // Once allocated, an element must not be modified anymore.
+//
+// Elements can be inserted in the pool using VG_(allocEltDedupPA)
+// or using VG_(allocFixedEltDedupPA).
+//
+// Use VG_(allocFixedEltDedupPA) to allocate elements that are all of
+// the same size and that you want to identify with a (small) number:
+// VG_(allocFixedEltDedupPA) will assign a sequence number to each
+// unique allocated element. This unique number can be translated to
+// an address when the element data must be used.
+// The idea is that such small numbers can be used as reference instead
+// of the element address, to spare memory.
+// Elements are numbered starting from 1. The nr 0 can thus be used
+// as 'null element'. The address identified by a nr can change
+// if new elements are inserted in the pool. Once the pool is frozen,
+// an element address does not change.
+//
+// Use VG_(allocEltDedupPA) for variable size elements or when the
+// memory needed to store the element reference is not critical or
+// when performance to access elements is critical.
+// The address of an element allocated with VG_(allocEltDedupPA) does
+// not change, even if new elements are inserted in the pool.
+//
+// In the same pool, you can only use one of the allocate element functions.
 // 
 // A dedup pool allocator has significantly less memory overhead than
 // calling directly pub_tool_mallocfree.h if the deduplication factor
@@ -50,7 +73,7 @@
 // if an identical element is already in the pool.
 //
 // Note: the elements of the pool cannot be freed (at least currently).
-// The only way to free the elements is to delete the pool allocator.
+// The only way to free the elements is to delete the dedup pool allocator.
 //--------------------------------------------------------------------
 
 
@@ -72,16 +95,29 @@ extern DedupPoolAlloc* VG_(newDedupPA) ( SizeT  poolSzB,
 extern void* VG_(allocEltDedupPA) (DedupPoolAlloc *ddpa,
                                    SizeT eltSzB, const void *elt);
 
+/* Allocates a new (fixed size) element from ddpa. Returns the
+   unique number identifying this element. */
+extern UInt VG_(allocFixedEltDedupPA) (DedupPoolAlloc *ddpa,
+                                       SizeT eltSzB, const void *elt);
+
+/* Translate an element number to its address. Note that the address
+   corresponding to eltNr can change if new elements are inserted
+   in the pool. */
+extern void* VG_(indexEltNumber) (DedupPoolAlloc *ddpa,
+                                  UInt eltNr);
 
 /* The Dedup Pool Allocator must maintain a data structure to avoid
    duplicates as long as new elements can be allocated from the pool.
    Once no new elements will be allocated, this dedup data structure
    can be released using VG_(freezeDedupPA). Once ddpa has been frozen,
-   it is an error to call VG_(allocEltDedupPA).
+   it is an error to call VG_(allocEltDedupPA) or VG_(allocFixedEltDedupPA).
    If shrink_block is not NULL, the last pool will be shrunk using
    shrink_block. */
 extern void VG_(freezeDedupPA) (DedupPoolAlloc *ddpa,
                                 void (*shrink_block)(void*, SizeT));
+
+/* How many (unique) elements are there in this ddpa now? */
+extern UInt VG_(sizeDedupPA) (DedupPoolAlloc *ddpa);
 
 /* Free all memory associated with a DedupPoolAlloc. */
 extern void VG_(deleteDedupPA) ( DedupPoolAlloc *ddpa);

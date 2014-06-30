@@ -40,12 +40,14 @@
 
 struct _DedupPoolAlloc {
    SizeT  poolSzB; /* Minimum size of a pool. */
+   SizeT  fixedSzb; /* If using VG_(allocFixedEltDedupPA), size of elements */
    SizeT  eltAlign;
    void*   (*alloc)(const HChar*, SizeT); /* pool allocator */
    const HChar*  cc; /* pool allocator's cc */
    void    (*free)(void*); /* pool allocator's free-er */
    /* XArray of void* (pointers to pools).  The pools themselves.
-      Each element is a pointer to a block of size at least PoolSzB bytes. */
+      Each element is a pointer to a block of size at least PoolSzB bytes.
+      The last block might be smaller due to a call to shrink_block. */
    XArray *pools;
 
    /* hash table of pool elements, used to dedup.
@@ -56,12 +58,17 @@ struct _DedupPoolAlloc {
       decrease memory overhead during insertion in the DedupPoolAlloc. */
    PoolAlloc *ht_node_pa;
 
-   UChar *curpool_free;  /* Pos in current pool to allocate next elt. */
+   UChar *curpool;       /* last allocated pool. */
+   UChar *curpool_free;  /* Pos in current pool to allocate next elt.
+                            always aligned on eltAlign. */
    UChar *curpool_limit; /* Last pos in current pool. */
+   /* Note that for a fixed size pool, we only have a single pool to allow
+      simple/fast indexing. This single pool is grown, which might change
+      the address of the already allocated elements. */
 
    /* Total nr of alloc calls, resulting in (we hope) a lot less
       real (dedup) elements. */
-    ULong nr_alloc_calls;
+   ULong nr_alloc_calls;
 };
 
 typedef
@@ -90,6 +97,7 @@ extern DedupPoolAlloc* VG_(newDedupPA) ( SizeT  poolSzB,
    vg_assert(ddpa);
    VG_(memset)(ddpa, 0, sizeof(*ddpa));
    ddpa->poolSzB  = poolSzB;
+   ddpa->fixedSzb = 0;
    ddpa->eltAlign = eltAlign;
    ddpa->alloc    = alloc;
    ddpa->cc       = cc;
@@ -102,7 +110,7 @@ extern DedupPoolAlloc* VG_(newDedupPA) ( SizeT  poolSzB,
                                    alloc,
                                    cc,
                                    free_fn);
-
+   ddpa->curpool = NULL;
    ddpa->curpool_limit = NULL;
    ddpa->curpool_free = ddpa->curpool_limit + 1;
    vg_assert(ddpa->pools);
@@ -113,7 +121,8 @@ void VG_(deleteDedupPA) ( DedupPoolAlloc* ddpa)
 {
    Word i;
    if (ddpa->ht_elements)
-      VG_(freezeDedupPA) (ddpa, NULL); // Free data structures used for insertion.
+      // Free data structures used for insertion.
+      VG_(freezeDedupPA) (ddpa, NULL);
    for (i = 0; i < VG_(sizeXA) (ddpa->pools); i++)
       ddpa->free (*(UWord **)VG_(indexXA) ( ddpa->pools, i ));
    VG_(deleteXA) (ddpa->pools);
@@ -121,22 +130,46 @@ void VG_(deleteDedupPA) ( DedupPoolAlloc* ddpa)
 }
 
 static __inline__
-void ddpa_align_curpool_free ( DedupPoolAlloc* ddpa )
+UChar* ddpa_align ( DedupPoolAlloc* ddpa, UChar *c )
 {
-   ddpa->curpool_free = (UChar*)VG_ROUNDUP(ddpa->curpool_free, ddpa->eltAlign);
+   return (UChar*)VG_ROUNDUP(c, ddpa->eltAlign);
 }
 
-/* No space.  Allocate a new pool. */
+/* Allocate a new pool or grow the (only) pool for a fixed size ddpa. */
 __attribute__((noinline))
-static void ddpa_add_new_pool ( DedupPoolAlloc* ddpa ) 
+static void ddpa_add_new_pool_or_grow ( DedupPoolAlloc* ddpa ) 
 {
    vg_assert(ddpa);
-   ddpa->curpool_free = ddpa->alloc( ddpa->cc, ddpa->poolSzB);
-   vg_assert(ddpa->curpool_free);
-   ddpa->curpool_limit = ddpa->curpool_free + ddpa->poolSzB - 1;
-   /* add to our collection of pools */
-   VG_(addToXA)( ddpa->pools, &ddpa->curpool_free );
-   ddpa_align_curpool_free (ddpa);
+
+   if (ddpa->fixedSzb > 0 && ddpa->curpool != NULL) {
+      // Grow (* 2) the current (fixed elt) pool
+      UChar *curpool_align = ddpa_align(ddpa, ddpa->curpool);
+      SizeT curpool_used = ddpa->curpool_free - curpool_align;
+      SizeT curpool_size = ddpa->curpool_limit - ddpa->curpool + 1;
+      UChar *newpool = ddpa->alloc (ddpa->cc, 2 * curpool_size);
+      UChar *newpool_free = ddpa_align (ddpa, newpool);
+      UChar *newpool_limit = newpool + 2 * curpool_size - 1;
+
+      vg_assert (newpool);
+      VG_(memcpy) (newpool_free, curpool_align, curpool_used);
+      newpool_free += curpool_used;
+
+      VG_(dropHeadXA) (ddpa->pools, 1);
+      ddpa->free (ddpa->curpool);
+      ddpa->curpool = newpool;
+      ddpa->curpool_free = newpool_free;
+      ddpa->curpool_limit = newpool_limit;
+      VG_(addToXA)( ddpa->pools, &ddpa->curpool);
+   } else {
+      /* Allocate a new pool, or allocate the first/only pool for a
+         fixed size ddpa. */
+      ddpa->curpool = ddpa->alloc( ddpa->cc, ddpa->poolSzB);
+      vg_assert(ddpa->curpool);
+      ddpa->curpool_limit = ddpa->curpool + ddpa->poolSzB - 1;
+      ddpa->curpool_free = ddpa_align (ddpa, ddpa->curpool);
+      /* add to our collection of pools */
+      VG_(addToXA)( ddpa->pools, &ddpa->curpool );
+   }
 }
 
 static Word cmp_pool_elt (const void* node1, const void* node2 )
@@ -183,12 +216,9 @@ void VG_(freezeDedupPA) (DedupPoolAlloc *ddpa,
        && (VG_(clo_verbosity) > 2 || VG_(debugLog_getLevel) () >= 2)) {
       print_stats(ddpa);
    }
-   if (shrink_block && ddpa->curpool_limit > ddpa->curpool_free) {
-      UChar *last_added_pool = 
-         (*(UChar **)VG_(indexXA) ( ddpa->pools, 
-                                    VG_(sizeXA)(ddpa->pools) - 1));
-      (*shrink_block)(last_added_pool, ddpa->curpool_free - last_added_pool);
-   }
+   vg_assert (!ddpa->fixedSzb || VG_(sizeXA) (ddpa->pools) == 1);
+   if (shrink_block && ddpa->curpool_limit > ddpa->curpool_free)
+      (*shrink_block)(ddpa->curpool, ddpa->curpool_free - ddpa->curpool);
    VG_(HT_destruct) ( ddpa->ht_elements, htelem_dummyfree);
    ddpa->ht_elements = NULL;
    VG_(deletePA) (ddpa->ht_node_pa);
@@ -225,15 +255,14 @@ void* VG_(allocEltDedupPA) (DedupPoolAlloc *ddpa, SizeT eltSzB, const void *elt)
    /* Not found -> we need to allocate a new element from the pool
       and insert it in the hash table of inserted elements. */
 
-   // Add a new pool if not enough space in the current pool
+   // Add a new pool or grow pool if not enough space in the current pool
    if (UNLIKELY(ddpa->curpool_free + eltSzB - 1 > ddpa->curpool_limit)) {
-      ddpa_add_new_pool(ddpa);
+      ddpa_add_new_pool_or_grow (ddpa);
    }
 
    elt_ins = ddpa->curpool_free;
    VG_(memcpy)(elt_ins, elt, eltSzB);
-   ddpa->curpool_free = ddpa->curpool_free + eltSzB;
-   ddpa_align_curpool_free (ddpa);
+   ddpa->curpool_free = ddpa_align(ddpa, ddpa->curpool_free + eltSzB);
 
    ht_ins = VG_(allocEltPA) (ddpa->ht_node_pa);
    ht_ins->key = ht_elt.key;
@@ -241,4 +270,51 @@ void* VG_(allocEltDedupPA) (DedupPoolAlloc *ddpa, SizeT eltSzB, const void *elt)
    ht_ins->elt = elt_ins;
    VG_(HT_add_node)(ddpa->ht_elements, ht_ins);
    return elt_ins;
+}
+
+static __inline__
+UInt elt2nr (DedupPoolAlloc *ddpa, const void *dedup_elt)
+{
+   vg_assert ((UChar*)dedup_elt >= ddpa->curpool 
+              && (UChar*)dedup_elt < ddpa->curpool_free);
+   return 1 + ((UChar*)dedup_elt - ddpa->curpool)
+      / VG_ROUNDUP(ddpa->fixedSzb, ddpa->eltAlign);
+}
+
+UInt VG_(allocFixedEltDedupPA) (DedupPoolAlloc *ddpa,
+                                SizeT eltSzB, const void *elt)
+{
+   if (ddpa->fixedSzb == 0) {
+      // First insertion in this ddpa
+      vg_assert (ddpa->nr_alloc_calls == 0);
+      vg_assert (eltSzB > 0);
+      ddpa->fixedSzb = eltSzB;
+   }
+   vg_assert (ddpa->fixedSzb == eltSzB);
+   void *dedup_elt = VG_(allocEltDedupPA) (ddpa, eltSzB, elt);
+   return elt2nr (ddpa, dedup_elt);
+}
+
+void* VG_(indexEltNumber) (DedupPoolAlloc *ddpa,
+                           UInt eltNr)
+{
+   void *dedup_elt;
+
+   dedup_elt = ddpa->curpool 
+      + (eltNr - 1) * VG_ROUNDUP(ddpa->fixedSzb, ddpa->eltAlign);
+
+   vg_assert ((UChar*)dedup_elt >= ddpa->curpool 
+              && (UChar*)dedup_elt < ddpa->curpool_free);
+
+   return dedup_elt;
+}
+
+UInt VG_(sizeDedupPA) (DedupPoolAlloc *ddpa)
+{
+   if (ddpa->curpool == NULL)
+      return 0;
+
+   vg_assert (ddpa->fixedSzb);
+   return (ddpa->curpool_free - ddpa_align(ddpa, ddpa->curpool))
+      / VG_ROUNDUP(ddpa->fixedSzb, ddpa->eltAlign);
 }

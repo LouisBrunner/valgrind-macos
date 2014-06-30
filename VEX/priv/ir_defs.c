@@ -2818,14 +2818,14 @@ void typeOfPrimop ( IROp op,
       case Iop_Add8x16:   case Iop_Add16x8:   
       case Iop_Add32x4:   case Iop_Add64x2:
       case Iop_QAdd8Ux16: case Iop_QAdd16Ux8:
-      case Iop_QAdd32Ux4: //case Iop_QAdd64Ux2:
+      case Iop_QAdd32Ux4: case Iop_QAdd64Ux2:
       case Iop_QAdd8Sx16: case Iop_QAdd16Sx8:
       case Iop_QAdd32Sx4: case Iop_QAdd64Sx2:
       case Iop_PwAdd8x16: case Iop_PwAdd16x8: case Iop_PwAdd32x4:
       case Iop_Sub8x16:   case Iop_Sub16x8:
       case Iop_Sub32x4:   case Iop_Sub64x2:
       case Iop_QSub8Ux16: case Iop_QSub16Ux8:
-      case Iop_QSub32Ux4: //case Iop_QSub64Ux2:
+      case Iop_QSub32Ux4: case Iop_QSub64Ux2:
       case Iop_QSub8Sx16: case Iop_QSub16Sx8:
       case Iop_QSub32Sx4: case Iop_QSub64Sx2:
       case Iop_Mul8x16: case Iop_Mul16x8: case Iop_Mul32x4:

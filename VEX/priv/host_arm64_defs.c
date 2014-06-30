@@ -929,6 +929,22 @@ static void showARM64VecBinOp(/*OUT*/const HChar** nm,
       case ARM64vecb_SMULL2DSS:  *nm = "smull";  *ar = "2dss"; return;
       case ARM64vecb_SMULL4SHH:  *nm = "smull";  *ar = "4shh"; return;
       case ARM64vecb_SMULL8HBB:  *nm = "smull";  *ar = "8hbb"; return;
+      case ARM64vecb_SQADD64x2:  *nm = "sqadd";  *ar = "2d";   return;
+      case ARM64vecb_SQADD32x4:  *nm = "sqadd";  *ar = "4s";   return;
+      case ARM64vecb_SQADD16x8:  *nm = "sqadd";  *ar = "8h";   return;
+      case ARM64vecb_SQADD8x16:  *nm = "sqadd";  *ar = "16b";  return;
+      case ARM64vecb_UQADD64x2:  *nm = "uqadd";  *ar = "2d";   return;
+      case ARM64vecb_UQADD32x4:  *nm = "uqadd";  *ar = "4s";   return;
+      case ARM64vecb_UQADD16x8:  *nm = "uqadd";  *ar = "8h";   return;
+      case ARM64vecb_UQADD8x16:  *nm = "uqadd";  *ar = "16b";  return;
+      case ARM64vecb_SQSUB64x2:  *nm = "sqsub";  *ar = "2d";   return;
+      case ARM64vecb_SQSUB32x4:  *nm = "sqsub";  *ar = "4s";   return;
+      case ARM64vecb_SQSUB16x8:  *nm = "sqsub";  *ar = "8h";   return;
+      case ARM64vecb_SQSUB8x16:  *nm = "sqsub";  *ar = "16b";  return;
+      case ARM64vecb_UQSUB64x2:  *nm = "uqsub";  *ar = "2d";   return;
+      case ARM64vecb_UQSUB32x4:  *nm = "uqsub";  *ar = "4s";   return;
+      case ARM64vecb_UQSUB16x8:  *nm = "uqsub";  *ar = "8h";   return;
+      case ARM64vecb_UQSUB8x16:  *nm = "uqsub";  *ar = "16b";  return;
       default: vpanic("showARM64VecBinOp");
    }
 }
@@ -3461,12 +3477,14 @@ static inline UChar qregNo ( HReg r )
 #define X000000  BITS8(0,0, 0,0,0,0,0,0)
 #define X000001  BITS8(0,0, 0,0,0,0,0,1)
 #define X000010  BITS8(0,0, 0,0,0,0,1,0)
+#define X000011  BITS8(0,0, 0,0,0,0,1,1)
 #define X000100  BITS8(0,0, 0,0,0,1,0,0)
 #define X000110  BITS8(0,0, 0,0,0,1,1,0)
 #define X000111  BITS8(0,0, 0,0,0,1,1,1)
 #define X001000  BITS8(0,0, 0,0,1,0,0,0)
 #define X001001  BITS8(0,0, 0,0,1,0,0,1)
 #define X001010  BITS8(0,0, 0,0,1,0,1,0)
+#define X001011  BITS8(0,0, 0,0,1,0,1,1)
 #define X001101  BITS8(0,0, 0,0,1,1,0,1)
 #define X001110  BITS8(0,0, 0,0,1,1,1,0)
 #define X001111  BITS8(0,0, 0,0,1,1,1,1)
@@ -5151,6 +5169,26 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
             000 01110 10 1 m  110000 n d   SMULL Vd.2d, Vn.2s, Vm.2s
             000 01110 01 1 m  110000 n d   SMULL Vd.4s, Vn.4h, Vm.4h
             000 01110 00 1 m  110000 n d   SMULL Vd.8h, Vn.8b, Vm.8b
+
+            010 01110 11 1 m  000011 n d   SQADD Vd.2d,  Vn.2d,  Vm.2d
+            010 01110 10 1 m  000011 n d   SQADD Vd.4s,  Vn.4s,  Vm.4s
+            010 01110 01 1 m  000011 n d   SQADD Vd.8h,  Vn.8h,  Vm.8h
+            010 01110 00 1 m  000011 n d   SQADD Vd.16b, Vn.16b, Vm.16b
+
+            011 01110 11 1 m  000011 n d   UQADD Vd.2d,  Vn.2d,  Vm.2d
+            011 01110 10 1 m  000011 n d   UQADD Vd.4s,  Vn.4s,  Vm.4s
+            011 01110 01 1 m  000011 n d   UQADD Vd.8h,  Vn.8h,  Vm.8h
+            011 01110 00 1 m  000011 n d   UQADD Vd.16b, Vn.16b, Vm.16b
+
+            010 01110 11 1 m  001011 n d   SQSUB Vd.2d,  Vn.2d,  Vm.2d
+            010 01110 10 1 m  001011 n d   SQSUB Vd.4s,  Vn.4s,  Vm.4s
+            010 01110 01 1 m  001011 n d   SQSUB Vd.8h,  Vn.8h,  Vm.8h
+            010 01110 00 1 m  001011 n d   SQSUB Vd.16b, Vn.16b, Vm.16b
+
+            011 01110 11 1 m  001011 n d   UQSUB Vd.2d,  Vn.2d,  Vm.2d
+            011 01110 10 1 m  001011 n d   UQSUB Vd.4s,  Vn.4s,  Vm.4s
+            011 01110 01 1 m  001011 n d   UQSUB Vd.8h,  Vn.8h,  Vm.8h
+            011 01110 00 1 m  001011 n d   UQSUB Vd.16b, Vn.16b, Vm.16b
          */
          UInt vD = qregNo(i->ARM64in.VBinV.dst);
          UInt vN = qregNo(i->ARM64in.VBinV.argL);
@@ -5400,6 +5438,58 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
                break;
             case ARM64vecb_SMULL8HBB:
                *p++ = X_3_8_5_6_5_5(X000, X01110001, vM, X110000, vN, vD);
+               break;
+
+            case ARM64vecb_SQADD64x2:
+               *p++ = X_3_8_5_6_5_5(X010, X01110111, vM, X000011, vN, vD);
+               break;
+            case ARM64vecb_SQADD32x4:
+               *p++ = X_3_8_5_6_5_5(X010, X01110101, vM, X000011, vN, vD);
+               break;
+            case ARM64vecb_SQADD16x8:
+               *p++ = X_3_8_5_6_5_5(X010, X01110011, vM, X000011, vN, vD);
+               break;
+            case ARM64vecb_SQADD8x16:
+               *p++ = X_3_8_5_6_5_5(X010, X01110001, vM, X000011, vN, vD);
+               break;
+
+            case ARM64vecb_UQADD64x2:
+               *p++ = X_3_8_5_6_5_5(X011, X01110111, vM, X000011, vN, vD);
+               break;
+            case ARM64vecb_UQADD32x4:
+               *p++ = X_3_8_5_6_5_5(X011, X01110101, vM, X000011, vN, vD);
+               break;
+            case ARM64vecb_UQADD16x8:
+               *p++ = X_3_8_5_6_5_5(X011, X01110011, vM, X000011, vN, vD);
+               break;
+            case ARM64vecb_UQADD8x16:
+               *p++ = X_3_8_5_6_5_5(X011, X01110001, vM, X000011, vN, vD);
+               break;
+
+            case ARM64vecb_SQSUB64x2:
+               *p++ = X_3_8_5_6_5_5(X010, X01110111, vM, X001011, vN, vD);
+               break;
+            case ARM64vecb_SQSUB32x4:
+               *p++ = X_3_8_5_6_5_5(X010, X01110101, vM, X001011, vN, vD);
+               break;
+            case ARM64vecb_SQSUB16x8:
+               *p++ = X_3_8_5_6_5_5(X010, X01110011, vM, X001011, vN, vD);
+               break;
+            case ARM64vecb_SQSUB8x16:
+               *p++ = X_3_8_5_6_5_5(X010, X01110001, vM, X001011, vN, vD);
+               break;
+
+            case ARM64vecb_UQSUB64x2:
+               *p++ = X_3_8_5_6_5_5(X011, X01110111, vM, X001011, vN, vD);
+               break;
+            case ARM64vecb_UQSUB32x4:
+               *p++ = X_3_8_5_6_5_5(X011, X01110101, vM, X001011, vN, vD);
+               break;
+            case ARM64vecb_UQSUB16x8:
+               *p++ = X_3_8_5_6_5_5(X011, X01110011, vM, X001011, vN, vD);
+               break;
+            case ARM64vecb_UQSUB8x16:
+               *p++ = X_3_8_5_6_5_5(X011, X01110001, vM, X001011, vN, vD);
                break;
 
             default:

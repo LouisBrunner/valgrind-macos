@@ -539,6 +539,113 @@ static IROp mkSQRTF ( IRType ty ) {
    }
 }
 
+static IROp mkVecADD ( UInt size ) {
+   const IROp ops[4]
+      = { Iop_Add8x16, Iop_Add16x8, Iop_Add32x4, Iop_Add64x2 };
+   vassert(size < 4);
+   return ops[size];
+}
+
+static IROp mkVecQADDU ( UInt size ) {
+   const IROp ops[4]
+      = { Iop_QAdd8Ux16, Iop_QAdd16Ux8, Iop_QAdd32Ux4, Iop_QAdd64Ux2 };
+   vassert(size < 4);
+   return ops[size];
+}
+
+static IROp mkVecQADDS ( UInt size ) {
+   const IROp ops[4]
+      = { Iop_QAdd8Sx16, Iop_QAdd16Sx8, Iop_QAdd32Sx4, Iop_QAdd64Sx2 };
+   vassert(size < 4);
+   return ops[size];
+}
+
+static IROp mkVecSUB ( UInt size ) {
+   const IROp ops[4]
+      = { Iop_Sub8x16, Iop_Sub16x8, Iop_Sub32x4, Iop_Sub64x2 };
+   vassert(size < 4);
+   return ops[size];
+}
+
+static IROp mkVecQSUBU ( UInt size ) {
+   const IROp ops[4]
+      = { Iop_QSub8Ux16, Iop_QSub16Ux8, Iop_QSub32Ux4, Iop_QSub64Ux2 };
+   vassert(size < 4);
+   return ops[size];
+}
+
+static IROp mkVecQSUBS ( UInt size ) {
+   const IROp ops[4]
+      = { Iop_QSub8Sx16, Iop_QSub16Sx8, Iop_QSub32Sx4, Iop_QSub64Sx2 };
+   vassert(size < 4);
+   return ops[size];
+}
+
+static IROp mkVecSARN ( UInt size ) {
+   const IROp ops[4]
+      = { Iop_SarN8x16, Iop_SarN16x8, Iop_SarN32x4, Iop_SarN64x2 };
+   vassert(size < 4);
+   return ops[size];
+}
+
+static IROp mkVecSHRN ( UInt size ) {
+   const IROp ops[4]
+      = { Iop_ShrN8x16, Iop_ShrN16x8, Iop_ShrN32x4, Iop_ShrN64x2 };
+   vassert(size < 4);
+   return ops[size];
+}
+
+static IROp mkVecSHLN ( UInt size ) {
+   const IROp ops[4]
+      = { Iop_ShlN8x16, Iop_ShlN16x8, Iop_ShlN32x4, Iop_ShlN64x2 };
+   vassert(size < 4);
+   return ops[size];
+}
+
+static IROp mkVecCATEVENLANES ( UInt size ) {
+   const IROp ops[4]
+      = { Iop_CatEvenLanes8x16, Iop_CatEvenLanes16x8,
+          Iop_CatEvenLanes32x4, Iop_InterleaveLO64x2 };
+   vassert(size < 4);
+   return ops[size];
+}
+
+static IROp mkVecCATODDLANES ( UInt size ) {
+   const IROp ops[4]
+      = { Iop_CatOddLanes8x16, Iop_CatOddLanes16x8,
+          Iop_CatOddLanes32x4, Iop_InterleaveHI64x2 };
+   vassert(size < 4);
+   return ops[size];
+}
+
+static IROp mkVecMAXU ( UInt size ) {
+   const IROp ops[4]
+      = { Iop_Max8Ux16, Iop_Max16Ux8, Iop_Max32Ux4, Iop_Max64Ux2 };
+   vassert(size < 4);
+   return ops[size];
+}
+
+static IROp mkVecMAXS ( UInt size ) {
+   const IROp ops[4]
+      = { Iop_Max8Sx16, Iop_Max16Sx8, Iop_Max32Sx4, Iop_Max64Sx2 };
+   vassert(size < 4);
+   return ops[size];
+}
+
+static IROp mkVecMINU ( UInt size ) {
+   const IROp ops[4]
+      = { Iop_Min8Ux16, Iop_Min16Ux8, Iop_Min32Ux4, Iop_Min64Ux2 };
+   vassert(size < 4);
+   return ops[size];
+}
+
+static IROp mkVecMINS ( UInt size ) {
+   const IROp ops[4]
+      = { Iop_Min8Sx16, Iop_Min16Sx8, Iop_Min32Sx4, Iop_Min64Sx2 };
+   vassert(size < 4);
+   return ops[size];
+}
+
 static IRExpr* mkU ( IRType ty, ULong imm ) {
    switch (ty) {
       case Ity_I32: return mkU32((UInt)(imm & 0xFFFFFFFFULL));
@@ -1728,6 +1835,14 @@ static IRExpr* math_MAYBE_ZERO_HI64 ( UInt bitQ, IRTemp fullWidth )
    if (bitQ == 1) return mkexpr(fullWidth);
    if (bitQ == 0) return unop(Iop_ZeroHI64ofV128, mkexpr(fullWidth));
    vassert(0);
+}
+
+/* The same, but from an expression instead. */
+static IRExpr* math_MAYBE_ZERO_HI64_fromE ( UInt bitQ, IRExpr* fullWidth )
+{
+   IRTemp fullWidthT = newTemp(Ity_V128);
+   assign(fullWidthT, fullWidth);
+   return math_MAYBE_ZERO_HI64(bitQ, fullWidthT);
 }
 
 
@@ -5539,6 +5654,18 @@ static IRTemp math_FOLDV ( IRTemp src, IROp op )
          assign(res, unop(Iop_ZeroHI96ofV128, mkexpr(max3210)));
          return res;
       }
+      case Iop_Add64x2: {
+         IRTemp x10 = src;
+         IRTemp x00 = newTemp(Ity_V128);
+         IRTemp x11 = newTemp(Ity_V128);
+         assign(x11, binop(Iop_InterleaveHI64x2, mkexpr(x10), mkexpr(x10)));
+         assign(x00, binop(Iop_InterleaveLO64x2, mkexpr(x10), mkexpr(x10)));
+         IRTemp max10 = newTemp(Ity_V128);
+         assign(max10, binop(op, mkexpr(x11), mkexpr(x00)));
+         IRTemp res = newTemp(Ity_V128);
+         assign(res, unop(Iop_ZeroHI64ofV128, mkexpr(max10)));
+         return res;
+      }
       default:
          vassert(0);
    }
@@ -5688,8 +5815,8 @@ IRTemp math_ABD ( Bool isU, UInt size, IRExpr* argLE, IRExpr* argRE )
    either the lower or upper set of lanes to twice-as-wide,
    resulting in a new V128 value. */
 static
-IRTemp math_WIDEN_LANES ( Bool zWiden, Bool fromUpperHalf,
-                          UInt sizeNarrow, IRExpr* srcE )
+IRTemp math_WIDEN_LO_OR_HI_LANES ( Bool zWiden, Bool fromUpperHalf,
+                                   UInt sizeNarrow, IRExpr* srcE )
 {
    IRTemp src = newTemp(Ity_V128);
    IRTemp res = newTemp(Ity_V128);
@@ -5729,6 +5856,49 @@ IRTemp math_WIDEN_LANES ( Bool zWiden, Bool fromUpperHalf,
 }
 
 
+/* Generate IR that takes a V128 and sign- or zero-widens
+   either the even or odd lanes to twice-as-wide,
+   resulting in a new V128 value. */
+static
+IRTemp math_WIDEN_EVEN_OR_ODD_LANES ( Bool zWiden, Bool fromOdd,
+                                      UInt sizeNarrow, IRExpr* srcE )
+{
+   IRTemp src   = newTemp(Ity_V128);
+   IRTemp res   = newTemp(Ity_V128);
+   IROp   opSAR = mkVecSARN(sizeNarrow+1);
+   IROp   opSHR = mkVecSHRN(sizeNarrow+1);
+   IROp   opSHL = mkVecSHLN(sizeNarrow+1);
+   IROp   opSxR = zWiden ? opSHR : opSAR;
+   UInt   amt   = 0;
+   switch (sizeNarrow) {
+      case X10: amt = 32; break;
+      case X01: amt = 16; break;
+      case X00: amt = 8;  break;
+      default: vassert(0);
+   }
+   assign(src, srcE);
+   if (fromOdd) {
+      assign(res, binop(opSxR, mkexpr(src), mkU8(amt)));
+   } else {
+      assign(res, binop(opSxR, binop(opSHL, mkexpr(src), mkU8(amt)),
+                               mkU8(amt)));
+   }
+   return res;
+}
+
+
+/* Generate IR that takes two V128s and narrows (takes lower half)
+   of each lane, producing a single V128 value. */
+static
+IRTemp math_NARROW_LANES ( IRTemp argHi, IRTemp argLo, UInt sizeNarrow )
+{
+   IRTemp res = newTemp(Ity_V128);
+   assign(res, binop(mkVecCATEVENLANES(sizeNarrow),
+                     mkexpr(argHi), mkexpr(argLo)));
+   return res;
+}
+
+
 /* Let |new64| be a V128 in which only the lower 64 bits are interesting,
    and the upper can contain any value -- it is ignored.  If |is2| is False,
    generate IR to put |new64| in the lower half of vector reg |dd| and zero
@@ -5756,6 +5926,22 @@ void putLO64andZUorPutHI64 ( Bool is2, UInt dd, IRTemp new64 )
       /* This is simple. */
       putQReg128(dd, unop(Iop_ZeroHI64ofV128, mkexpr(new64)));
    }
+}
+
+
+/* QCFLAG tracks the SIMD sticky saturation status.  Update the status
+   thusly: if |nres| and |qres| hold the same value, leave QCFLAG
+   unchanged.  Otherwise, set it (implicitly) to 1. */
+static
+void updateQCFLAGwithDifference ( IRTemp nres, IRTemp qres )
+{
+   IRTemp diff      = newTemp(Ity_V128);
+   IRTemp oldQCFLAG = newTemp(Ity_V128);
+   IRTemp newQCFLAG = newTemp(Ity_V128);
+   assign(diff,      binop(Iop_XorV128, mkexpr(nres), mkexpr(qres)));
+   assign(oldQCFLAG, IRExpr_Get(OFFB_QCFLAG, Ity_V128));
+   assign(newQCFLAG, binop(Iop_OrV128, mkexpr(oldQCFLAG), mkexpr(diff)));
+   stmt(IRStmt_Put(OFFB_QCFLAG, mkexpr(newQCFLAG)));
 }
 
 
@@ -5908,6 +6094,41 @@ Bool dis_AdvSIMD_across_lanes(/*MB_OUT*/DisResult* dres, UInt insn)
    UInt opcode = INSN(16,12);
    UInt nn     = INSN(9,5);
    UInt dd     = INSN(4,0);
+
+   if (opcode == BITS5(0,0,0,1,1)) {
+      /* -------- 0,xx,00011 SADDLV -------- */
+      /* -------- 1,xx,00011 UADDLV -------- */
+      /* size is the narrow size */
+      if (size == X11 || (size == X10 && bitQ == 0)) return False;
+      Bool   isU = bitU == 1;
+      IRTemp src = newTemp(Ity_V128);
+      assign(src, getQReg128(nn));
+      /* The basic plan is to widen the lower half, and if Q = 1,
+         the upper half too.  Add them together (if Q = 1), and in
+         either case fold with add at twice the lane width.
+      */
+      IRExpr* widened
+         = mkexpr(math_WIDEN_LO_OR_HI_LANES(
+                     isU, False/*!fromUpperHalf*/, size, mkexpr(src)));
+      if (bitQ == 1) {
+         widened
+            = binop(mkVecADD(size+1),
+                    widened,
+                    mkexpr(math_WIDEN_LO_OR_HI_LANES(
+                              isU, True/*fromUpperHalf*/, size, mkexpr(src)))
+              );
+      }
+      /* Now fold. */
+      IRTemp tWi = newTemp(Ity_V128);
+      assign(tWi, widened);
+      IRTemp res = math_FOLDV(tWi, mkVecADD(size+1));
+      putQReg128(dd, mkexpr(res));
+      const HChar* arr = nameArr_Q_SZ(bitQ, size);
+      const HChar  ch  = "bhsd"[size];
+      DIP("%s %s.%c, %s.%s\n", isU ? "uaddlv" : "saddlv",
+          nameQReg128(dd), ch, nameQReg128(nn), arr);
+      return True;
+   }
 
    UInt ix = 0;
    /**/ if (opcode == BITS5(0,1,0,1,0)) { ix = bitU == 0 ? 1 : 2; }
@@ -7014,8 +7235,8 @@ Bool dis_AdvSIMD_three_different(/*MB_OUT*/DisResult* dres, UInt insn)
       vassert(size <= 2);
       Bool   isU   = bitU == 1;
       Bool   isADD = opcode == BITS4(0,0,0,0);
-      IRTemp argL  = math_WIDEN_LANES(isU, is2, size, getQReg128(nn));
-      IRTemp argR  = math_WIDEN_LANES(isU, is2, size, getQReg128(mm));
+      IRTemp argL  = math_WIDEN_LO_OR_HI_LANES(isU, is2, size, getQReg128(nn));
+      IRTemp argR  = math_WIDEN_LO_OR_HI_LANES(isU, is2, size, getQReg128(mm));
       IRTemp res   = newTemp(Ity_V128);
       assign(res, binop(isADD ? opADD[size] : opSUB[size],
                         mkexpr(argL), mkexpr(argR)));
@@ -7027,6 +7248,31 @@ Bool dis_AdvSIMD_three_different(/*MB_OUT*/DisResult* dres, UInt insn)
       DIP("%s%s %s.%s, %s.%s, %s.%s\n", nm, is2 ? "2" : "",
           nameQReg128(dd), arrWide,
           nameQReg128(nn), arrNarrow, nameQReg128(mm), arrNarrow);
+      return True;
+   }
+
+   if (opcode == BITS4(0,0,0,1) || opcode == BITS4(0,0,1,1)) {
+      /* -------- 0,0001 SADDW{2} -------- */
+      /* -------- 1,0001 UADDW{2} -------- */
+      /* -------- 0,0011 SSUBW{2} -------- */
+      /* -------- 1,0011 USUBW{2} -------- */
+      /* Widens, and size refers to the narrowed lanes. */
+      if (size == X11) return False;
+      vassert(size <= 2);
+      Bool   isU   = bitU == 1;
+      Bool   isADD = opcode == BITS4(0,0,0,1);
+      IRTemp argR  = math_WIDEN_LO_OR_HI_LANES(isU, is2, size, getQReg128(mm));
+      IRTemp res   = newTemp(Ity_V128);
+      assign(res, binop(isADD ? mkVecADD(size+1) : mkVecSUB(size+1),
+                        getQReg128(nn), mkexpr(argR)));
+      putQReg128(dd, mkexpr(res));
+      const HChar* arrNarrow = nameArr_Q_SZ(bitQ, size);
+      const HChar* arrWide   = nameArr_Q_SZ(1,    size+1);
+      const HChar* nm        = isADD ? (isU ? "uaddw" : "saddw")
+                                     : (isU ? "usubw" : "ssubw");
+      DIP("%s%s %s.%s, %s.%s, %s.%s\n", nm, is2 ? "2" : "",
+          nameQReg128(dd), arrWide,
+          nameQReg128(nn), arrWide, nameQReg128(mm), arrNarrow);
       return True;
    }
 
@@ -7094,8 +7340,8 @@ Bool dis_AdvSIMD_three_different(/*MB_OUT*/DisResult* dres, UInt insn)
       vassert(size <= 2);
       Bool   isU   = bitU == 1;
       Bool   isACC = opcode == BITS4(0,1,0,1);
-      IRTemp argL  = math_WIDEN_LANES(isU, is2, size, getQReg128(nn));
-      IRTemp argR  = math_WIDEN_LANES(isU, is2, size, getQReg128(mm));
+      IRTemp argL  = math_WIDEN_LO_OR_HI_LANES(isU, is2, size, getQReg128(nn));
+      IRTemp argR  = math_WIDEN_LO_OR_HI_LANES(isU, is2, size, getQReg128(mm));
       IRTemp abd   = math_ABD(isU, size+1, mkexpr(argL), mkexpr(argR));
       IRTemp res   = newTemp(Ity_V128);
       assign(res, isACC ? binop(opADD[size], mkexpr(abd), getQReg128(dd))
@@ -7196,6 +7442,85 @@ Bool dis_AdvSIMD_three_same(/*MB_OUT*/DisResult* dres, UInt insn)
    UInt nn     = INSN(9,5);
    UInt dd     = INSN(4,0);
    vassert(size < 4);
+
+   if (opcode == BITS5(0,0,0,0,0) || opcode == BITS5(0,0,1,0,0)) {
+      /* -------- 0,xx,00000 SHADD std6_std6_std6 -------- */
+      /* -------- 1,xx,00000 UHADD std6_std6_std6 -------- */
+      /* -------- 0,xx,00100 SHSUB std6_std6_std6 -------- */
+      /* -------- 1,xx,00100 UHSUB std6_std6_std6 -------- */
+      if (size == X11) return False;
+      Bool isADD = opcode == BITS5(0,0,0,0,0);
+      Bool isU   = bitU == 1;
+      /* Widen both args out, do the math, narrow to final result. */
+      IRTemp argL   = newTemp(Ity_V128);
+      IRTemp argLhi = IRTemp_INVALID;
+      IRTemp argLlo = IRTemp_INVALID;
+      IRTemp argR   = newTemp(Ity_V128);
+      IRTemp argRhi = IRTemp_INVALID;
+      IRTemp argRlo = IRTemp_INVALID;
+      IRTemp resHi  = newTemp(Ity_V128);
+      IRTemp resLo  = newTemp(Ity_V128);
+      IRTemp res    = IRTemp_INVALID;
+      assign(argL, getQReg128(nn));
+      argLlo = math_WIDEN_LO_OR_HI_LANES(isU, False, size, mkexpr(argL));
+      argLhi = math_WIDEN_LO_OR_HI_LANES(isU, True,  size, mkexpr(argL));
+      assign(argR, getQReg128(mm));
+      argRlo = math_WIDEN_LO_OR_HI_LANES(isU, False, size, mkexpr(argR));
+      argRhi = math_WIDEN_LO_OR_HI_LANES(isU, True,  size, mkexpr(argR));
+      IROp opADDSUB = isADD ? mkVecADD(size+1) : mkVecSUB(size+1);
+      IROp opSxR = isU ? mkVecSHRN(size+1) : mkVecSARN(size+1);
+      assign(resHi, binop(opSxR,
+                          binop(opADDSUB, mkexpr(argLhi), mkexpr(argRhi)),
+                          mkU8(1)));
+      assign(resLo, binop(opSxR,
+                          binop(opADDSUB, mkexpr(argLlo), mkexpr(argRlo)),
+                          mkU8(1)));
+      res = math_NARROW_LANES ( resHi, resLo, size );
+      putQReg128(dd, math_MAYBE_ZERO_HI64(bitQ, res));
+      const HChar* nm  = isADD ? (isU ? "uhadd" : "shadd") 
+                               : (isU ? "uhsub" : "shsub");
+      const HChar* arr = nameArr_Q_SZ(bitQ, size);
+      DIP("%s %s.%s, %s.%s, %s.%s\n", nm,
+          nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(mm), arr);
+      return True;
+   }
+
+   if (opcode == BITS5(0,0,0,0,1) || opcode == BITS5(0,0,1,0,1)) {
+      /* -------- 0,xx,00001 SQADD std7_std7_std7 -------- */
+      /* -------- 1,xx,00001 UQADD std7_std7_std7 -------- */
+      /* -------- 0,xx,00101 SQSUB std7_std7_std7 -------- */
+      /* -------- 1,xx,00101 UQSUB std7_std7_std7 -------- */
+      if (bitQ == 0 && size == X11) return False; // implied 1d case
+      Bool isADD = opcode == BITS5(0,0,0,0,1);
+      Bool isU   = bitU == 1;
+      IROp qop   = Iop_INVALID;
+      IROp nop   = Iop_INVALID;
+      if (isADD) {
+         qop = isU ? mkVecQADDU(size) : mkVecQADDS(size);
+         nop = mkVecADD(size);
+      } else {
+         qop = isU ? mkVecQSUBU(size) : mkVecQSUBS(size);
+         nop = mkVecSUB(size);
+      }
+      IRTemp argL = newTemp(Ity_V128);
+      IRTemp argR = newTemp(Ity_V128);
+      IRTemp qres = newTemp(Ity_V128);
+      IRTemp nres = newTemp(Ity_V128);
+      assign(argL, getQReg128(nn));
+      assign(argR, getQReg128(mm));
+      assign(qres, math_MAYBE_ZERO_HI64_fromE(
+                      bitQ, binop(qop, mkexpr(argL), mkexpr(argR))));
+      assign(nres, math_MAYBE_ZERO_HI64_fromE(
+                      bitQ, binop(nop, mkexpr(argL), mkexpr(argR))));
+      putQReg128(dd, mkexpr(qres));
+      updateQCFLAGwithDifference(nres, qres);
+      const HChar* nm  = isADD ? (isU ? "uqadd" : "sqadd") 
+                               : (isU ? "uqsub" : "sqsub");
+      const HChar* arr = nameArr_Q_SZ(bitQ, size);
+      DIP("%s %s.%s, %s.%s, %s.%s\n", nm,
+          nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(mm), arr);
+      return True;
+   }
 
    if (bitU == 0 && opcode == BITS5(0,0,0,1,1)) {
       /* -------- 0,00,00011 AND 16b_16b_16b, 8b_8b_8b -------- */
@@ -7433,39 +7758,6 @@ Bool dis_AdvSIMD_three_same(/*MB_OUT*/DisResult* dres, UInt insn)
       return False;
    }
 
-   if (bitU == 0 && opcode == BITS5(1,0,1,1,1)) {
-      if (bitQ == 0 && size == X11) return False; // implied 1d case
-      /* -------- 0,xx,10111 ADDP std7_std7_std7 -------- */
-      const IROp opsADD[4]
-         = { Iop_Add8x16, Iop_Add16x8, Iop_Add32x4, Iop_Add64x2 };
-      const IROp opsCEV[4]
-         = { Iop_CatEvenLanes8x16, Iop_CatEvenLanes16x8, Iop_CatEvenLanes32x4,
-             Iop_InterleaveLO64x2 };
-      const IROp opsCOD[4]
-         = { Iop_CatOddLanes8x16, Iop_CatOddLanes16x8, Iop_CatOddLanes32x4,
-             Iop_InterleaveHI64x2 };
-      IRTemp vN = newTemp(Ity_V128);
-      IRTemp vM = newTemp(Ity_V128);
-      assign(vN, getQReg128(nn));
-      assign(vM, getQReg128(mm));
-      IRTemp res128 = newTemp(Ity_V128);
-      assign(res128, binop(opsADD[size],
-                           binop(opsCEV[size], mkexpr(vM), mkexpr(vN)),
-                           binop(opsCOD[size], mkexpr(vM), mkexpr(vN))));
-      /* In the half-width case, use CatEL32x4 to extract the half-width
-         result from the full-width result. */
-      IRExpr* res
-         = bitQ == 0 ? unop(Iop_ZeroHI64ofV128,
-                            binop(Iop_CatEvenLanes32x4, mkexpr(res128),
-                                                        mkexpr(res128)))
-                     : mkexpr(res128);
-      putQReg128(dd, res);
-      const HChar* arr = nameArr_Q_SZ(bitQ, size);
-      DIP("addp %s.%s, %s.%s, %s.%s\n",
-      nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(mm), arr);
-      return True;
-   }
-
    if (opcode == BITS5(1,0,0,1,1)) {
       /* -------- 0,xx,10011 MUL  std7_std7_std7 -------- */
       /* -------- 1,xx,10011 PMUL 16b_16b_16b, 8b_8b_8b -------- */
@@ -7486,6 +7778,67 @@ Bool dis_AdvSIMD_three_same(/*MB_OUT*/DisResult* dres, UInt insn)
          return True;
       }
       return False;
+   }
+
+   if (opcode == BITS5(1,0,1,0,0) || opcode == BITS5(1,0,1,0,1)) {
+      /* -------- 0,xx,10100 SMAXP std6_std6_std6 -------- */
+      /* -------- 1,xx,10100 UMAXP std6_std6_std6 -------- */
+      /* -------- 0,xx,10101 SMINP std6_std6_std6 -------- */
+      /* -------- 1,xx,10101 UMINP std6_std6_std6 -------- */
+      if (size == X11) return False;
+      Bool isU   = bitU == 1;
+      Bool isMAX = opcode == BITS5(1,0,1,0,0);
+      IRTemp vN  = newTemp(Ity_V128);
+      IRTemp vM  = newTemp(Ity_V128);
+      IROp op = isMAX ? (isU ? mkVecMAXU(size) : mkVecMAXS(size))
+                      : (isU ? mkVecMINU(size) : mkVecMINS(size));
+      assign(vN, getQReg128(nn));
+      assign(vM, getQReg128(mm));
+      IRTemp res128 = newTemp(Ity_V128);
+      assign(res128,
+             binop(op,
+                   binop(mkVecCATEVENLANES(size), mkexpr(vM), mkexpr(vN)),
+                   binop(mkVecCATODDLANES(size),  mkexpr(vM), mkexpr(vN))));
+      /* In the half-width case, use CatEL32x4 to extract the half-width
+         result from the full-width result. */
+      IRExpr* res
+         = bitQ == 0 ? unop(Iop_ZeroHI64ofV128,
+                            binop(Iop_CatEvenLanes32x4, mkexpr(res128),
+                                                        mkexpr(res128)))
+                     : mkexpr(res128);
+      putQReg128(dd, res);
+      const HChar* arr = nameArr_Q_SZ(bitQ, size);
+      const HChar* nm  = isMAX ? (isU ? "umaxp" : "smaxp")
+                               : (isU ? "uminp" : "sminp");
+      DIP("%s %s.%s, %s.%s, %s.%s\n", nm,
+          nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(mm), arr);
+      return True;
+   }
+
+   if (bitU == 0 && opcode == BITS5(1,0,1,1,1)) {
+      /* -------- 0,xx,10111 ADDP std7_std7_std7 -------- */
+      if (bitQ == 0 && size == X11) return False; // implied 1d case
+      IRTemp vN = newTemp(Ity_V128);
+      IRTemp vM = newTemp(Ity_V128);
+      assign(vN, getQReg128(nn));
+      assign(vM, getQReg128(mm));
+      IRTemp res128 = newTemp(Ity_V128);
+      assign(res128,
+             binop(mkVecADD(size),
+                   binop(mkVecCATEVENLANES(size), mkexpr(vM), mkexpr(vN)),
+                   binop(mkVecCATODDLANES(size),  mkexpr(vM), mkexpr(vN))));
+      /* In the half-width case, use CatEL32x4 to extract the half-width
+         result from the full-width result. */
+      IRExpr* res
+         = bitQ == 0 ? unop(Iop_ZeroHI64ofV128,
+                            binop(Iop_CatEvenLanes32x4, mkexpr(res128),
+                                                        mkexpr(res128)))
+                     : mkexpr(res128);
+      putQReg128(dd, res);
+      const HChar* arr = nameArr_Q_SZ(bitQ, size);
+      DIP("addp %s.%s, %s.%s, %s.%s\n",
+          nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(mm), arr);
+      return True;
    }
 
    if (bitU == 0 && opcode == BITS5(1,1,0,0,1)) {
@@ -7702,6 +8055,36 @@ Bool dis_AdvSIMD_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
       const HChar* arr = nameArr_Q_SZ(bitQ, size);
       DIP("%s %s.%s, %s.%s\n", "rev16",
           nameQReg128(dd), arr, nameQReg128(nn), arr);
+      return True;
+   }
+
+   if (opcode == BITS5(0,0,0,1,0) || opcode == BITS5(0,0,1,1,0)) {
+      /* -------- 0,xx,00010: SADDLP std6_std6 -------- */
+      /* -------- 1,xx,00010: UADDLP std6_std6 -------- */
+      /* -------- 0,xx,00110: SADALP std6_std6 -------- */
+      /* -------- 1,xx,00110: UADALP std6_std6 -------- */
+      /* Widens, and size refers to the narrow size. */
+      if (size == X11) return False; // no 1d or 2d cases
+      Bool   isU   = bitU == 1;
+      Bool   isACC = opcode == BITS5(0,0,1,1,0);
+      IRTemp src   = newTemp(Ity_V128);
+      IRTemp sum   = newTemp(Ity_V128);
+      IRTemp res   = newTemp(Ity_V128);
+      assign(src, getQReg128(nn));
+      assign(sum,
+             binop(mkVecADD(size+1),
+                   mkexpr(math_WIDEN_EVEN_OR_ODD_LANES(
+                             isU, True/*fromOdd*/, size, mkexpr(src))),
+                   mkexpr(math_WIDEN_EVEN_OR_ODD_LANES(
+                             isU, False/*!fromOdd*/, size, mkexpr(src)))));
+      assign(res, isACC ? binop(mkVecADD(size+1), mkexpr(sum), getQReg128(dd))
+                        : mkexpr(sum));
+      putQReg128(dd, math_MAYBE_ZERO_HI64(bitQ, res));
+      const HChar* arrNarrow = nameArr_Q_SZ(bitQ, size);
+      const HChar* arrWide   = nameArr_Q_SZ(bitQ, size+1);
+      DIP("%s %s.%s, %s.%s\n", isACC ? (isU ? "uadalp" : "sadalp")
+                                     : (isU ? "uaddlp" : "saddlp"),
+          nameQReg128(dd), arrWide, nameQReg128(nn), arrNarrow);
       return True;
    }
 

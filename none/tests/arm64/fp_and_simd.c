@@ -100,20 +100,23 @@ static void* memalign16(size_t szB)
   static void test_##INSN##_##SUFFIXD##_##SUFFIXN ( LaneTy ty ) { \
      Int i; \
      for (i = 0; i < ITERS; i++) { \
-        V128 block[2]; \
+        V128 block[2+1]; \
         memset(block, 0x55, sizeof(block)); \
         randV128(&block[0], ty); \
         randV128(&block[1], ty); \
         __asm__ __volatile__( \
+           "mov   x30, #0 ; msr fpsr, x30 ; " \
            "ldr   q7, [%0, #0]   ; " \
            "ldr   q8, [%0, #16]   ; " \
            #INSN " v8." #SUFFIXD ", v7." #SUFFIXN " ; " \
-           "str   q8, [%0, #16] " \
-           : : "r"(&block[0]) : "memory", "v7", "v8" \
+           "str   q8, [%0, #16] ; " \
+           "mrs   x30, fpsr ; str x30, [%0, #32] " \
+           : : "r"(&block[0]) : "memory", "v7", "v8", "x30" \
         ); \
         printf(#INSN   " v8." #SUFFIXD ", v7." #SUFFIXN); \
+        UInt fpsr = 0xFFFFFF60 & block[2].u32[0]; \
         showV128(&block[0]); printf("  "); \
-        showV128(&block[1]); printf("\n"); \
+        showV128(&block[1]); printf(" fpsr=%08x\n", fpsr); \
      } \
   }
 
@@ -125,24 +128,27 @@ static void* memalign16(size_t szB)
   static void test_##INSN##_##SUFFIXD##_##SUFFIXN##_##SUFFIXM ( LaneTy ty ) { \
      Int i; \
      for (i = 0; i < ITERS; i++) { \
-        V128 block[3]; \
+        V128 block[3+1]; \
         memset(block, 0x55, sizeof(block)); \
         randV128(&block[0], ty); \
         randV128(&block[1], ty); \
         randV128(&block[2], ty); \
         __asm__ __volatile__( \
+           "mov   x30, #0 ; msr fpsr, x30 ; " \
            "ldr   q7, [%0, #0]   ; " \
            "ldr   q8, [%0, #16]   ; " \
            "ldr   q9, [%0, #32]   ; " \
            #INSN " v9." #SUFFIXD ", v7." #SUFFIXN ", v8." #SUFFIXM " ; " \
-           "str   q9, [%0, #32] " \
-           : : "r"(&block[0]) : "memory", "v7", "v8", "v9" \
+           "str   q9, [%0, #32] ; " \
+           "mrs   x30, fpsr ; str x30, [%0, #48] " \
+           : : "r"(&block[0]) : "memory", "v7", "v8", "v9", "x30" \
         ); \
         printf(#INSN   " v9." #SUFFIXD \
                ", v7." #SUFFIXN ", v8." #SUFFIXM "  ");   \
+        UInt fpsr = 0xFFFFFF60 & block[3].u32[0]; \
         showV128(&block[0]); printf("  "); \
         showV128(&block[1]); printf("  "); \
-        showV128(&block[2]); printf("\n"); \
+        showV128(&block[2]); printf(" fpsr=%08x\n", fpsr); \
      } \
   }
 
@@ -154,20 +160,23 @@ static void* memalign16(size_t szB)
   static void test_##INSN##_##SUFFIXD##_##SUFFIXN##_##AMOUNT ( LaneTy ty ) { \
      Int i; \
      for (i = 0; i < ITERS; i++) { \
-        V128 block[2]; \
+        V128 block[2+1]; \
         memset(block, 0x55, sizeof(block)); \
         randV128(&block[0], ty); \
         randV128(&block[1], ty); \
         __asm__ __volatile__( \
+           "mov   x30, #0 ; msr fpsr, x30 ; " \
            "ldr   q7, [%0, #0]   ; " \
            "ldr   q8, [%0, #16]   ; " \
            #INSN " v8." #SUFFIXD ", v7." #SUFFIXN ", #" #AMOUNT " ; " \
-           "str   q8, [%0, #16] " \
-           : : "r"(&block[0]) : "memory", "v7", "v8" \
+           "str   q8, [%0, #16] ; " \
+           "mrs   x30, fpsr ; str x30, [%0, #32] " \
+           : : "r"(&block[0]) : "memory", "v7", "v8", "x30" \
         ); \
         printf(#INSN   " v8." #SUFFIXD ", v7." #SUFFIXN ", #" #AMOUNT "  "); \
+        UInt fpsr = 0xFFFFFF60 & block[2].u32[0]; \
         showV128(&block[0]); printf("  "); \
-        showV128(&block[1]); printf("\n"); \
+        showV128(&block[1]); printf(" fpsr=%08x\n", fpsr); \
      } \
   }
 
@@ -178,26 +187,30 @@ static void* memalign16(size_t szB)
   __attribute__((noinline)) \
   static void test_##TESTNAME ( LaneTy ty ) { \
      Int i; \
+     assert(INTREGNO != 30); \
      for (i = 0; i < ITERS; i++) { \
-        V128 block[4]; \
+        V128 block[4+1]; \
         memset(block, 0x55, sizeof(block)); \
         randV128(&block[0], ty); \
         randV128(&block[1], ty); \
         randV128(&block[2], ty); \
         randV128(&block[3], ty); \
         __asm__ __volatile__( \
+           "mov   x30, #0 ; msr fpsr, x30 ; " \
            "ldr   q"#VECREGNO", [%0, #0]  ; " \
            "ldr   x"#INTREGNO", [%0, #16] ; " \
            INSN " ; " \
            "str   q"#VECREGNO", [%0, #32] ; " \
            "str   x"#INTREGNO", [%0, #48] ; " \
-           : : "r"(&block[0]) : "memory", "v"#VECREGNO, "x"#INTREGNO \
+           "mrs   x30, fpsr ; str x30, [%0, #64] " \
+           : : "r"(&block[0]) : "memory", "v"#VECREGNO, "x"#INTREGNO, "x30" \
         ); \
         printf(INSN   "   "); \
+        UInt fpsr = 0xFFFFFF60 & block[4].u32[0]; \
         showV128(&block[0]); printf("  "); \
         showV128(&block[1]); printf("  "); \
         showV128(&block[2]); printf("  "); \
-        showV128(&block[3]); printf("\n"); \
+        showV128(&block[3]); printf(" fpsr=%08x\n", fpsr); \
      } \
   }
 
@@ -210,26 +223,29 @@ static void* memalign16(size_t szB)
   static void test_##TESTNAME ( LaneTy ty ) { \
      Int i; \
      for (i = 0; i < ITERS; i++) { \
-        V128 block[4]; \
+        V128 block[4+1]; \
         memset(block, 0x55, sizeof(block)); \
         randV128(&block[0], ty); \
         randV128(&block[1], ty); \
         randV128(&block[2], ty); \
         randV128(&block[3], ty); \
         __asm__ __volatile__( \
+           "mov   x30, #0 ; msr fpsr, x30 ; " \
            "ldr   q"#VECREG1NO", [%0, #0]  ; " \
            "ldr   q"#VECREG2NO", [%0, #16] ; " \
            INSN " ; " \
            "str   q"#VECREG1NO", [%0, #32] ; " \
            "str   q"#VECREG2NO", [%0, #48] ; " \
+           "mrs   x30, fpsr ; str x30, [%0, #64] " \
            : : "r"(&block[0]) \
-             : "memory", "v"#VECREG1NO, "v"#VECREG2NO, "x10" \
+             : "memory", "v"#VECREG1NO, "v"#VECREG2NO, "x10", "x30" \
         ); \
         printf(INSN   "   "); \
+        UInt fpsr = 0xFFFFFF60 & block[4].u32[0]; \
         showV128(&block[0]); printf("  "); \
         showV128(&block[1]); printf("  "); \
         showV128(&block[2]); printf("  "); \
-        showV128(&block[3]); printf("\n"); \
+        showV128(&block[3]); printf(" fpsr=%08x\n", fpsr); \
      } \
   }
 
@@ -242,7 +258,7 @@ static void* memalign16(size_t szB)
   static void test_##TESTNAME ( LaneTy ty ) { \
      Int i; \
      for (i = 0; i < ITERS; i++) { \
-        V128 block[6]; \
+        V128 block[6+1]; \
         memset(block, 0x55, sizeof(block)); \
         randV128(&block[0], ty); \
         randV128(&block[1], ty); \
@@ -251,6 +267,7 @@ static void* memalign16(size_t szB)
         randV128(&block[4], ty); \
         randV128(&block[5], ty); \
         __asm__ __volatile__( \
+           "mov   x30, #0 ; msr fpsr, x30 ; " \
            "ldr   q"#VECREG1NO", [%0, #0]  ; " \
            "ldr   q"#VECREG2NO", [%0, #16] ; " \
            "ldr   q"#VECREG3NO", [%0, #32] ; " \
@@ -258,17 +275,19 @@ static void* memalign16(size_t szB)
            "str   q"#VECREG1NO", [%0, #48] ; " \
            "str   q"#VECREG2NO", [%0, #64] ; " \
            "str   q"#VECREG3NO", [%0, #80] ; " \
+           "mrs   x30, fpsr ; str x30, [%0, #96] " \
            : : "r"(&block[0]) \
            : "memory", "v"#VECREG1NO, "v"#VECREG2NO, "v"#VECREG3NO, \
-             "v16", "v17", "v18" \
+             "v16", "v17", "v18", "x30" \
         ); \
         printf(INSN   "   "); \
+        UInt fpsr = 0xFFFFFF60 & block[6].u32[0]; \
         showV128(&block[0]); printf("  "); \
         showV128(&block[1]); printf("  "); \
         showV128(&block[2]); printf("  "); \
         showV128(&block[3]); printf("  "); \
         showV128(&block[4]); printf("  "); \
-        showV128(&block[5]); printf("\n"); \
+        showV128(&block[5]); printf(" fpsr=%08x\n", fpsr); \
      } \
   }
 
@@ -3847,18 +3866,18 @@ int main ( void )
 
    // sadalp    4h_8b,8h_16b,2s_4h,4s_8h,1d_2s,2d_4s
    // uadalp    4h_8b,8h_16b,2s_4h,4s_8h,1d_2s,2d_4s
-   if (0) test_sadalp_1d_2s(TyS);
-   if (0) test_sadalp_2d_4s(TyS);
-   if (0) test_sadalp_2s_4h(TyH);
-   if (0) test_sadalp_4s_8h(TyH);
-   if (0) test_sadalp_4h_8b(TyB);
-   if (0) test_sadalp_8h_16b(TyB);
-   if (0) test_uadalp_1d_2s(TyS);
-   if (0) test_uadalp_2d_4s(TyS);
-   if (0) test_uadalp_2s_4h(TyH);
-   if (0) test_uadalp_4s_8h(TyH);
-   if (0) test_uadalp_4h_8b(TyB);
-   if (0) test_uadalp_8h_16b(TyB);
+   if (1) test_sadalp_1d_2s(TyS);
+   if (1) test_sadalp_2d_4s(TyS);
+   if (1) test_sadalp_2s_4h(TyH);
+   if (1) test_sadalp_4s_8h(TyH);
+   if (1) test_sadalp_4h_8b(TyB);
+   if (1) test_sadalp_8h_16b(TyB);
+   if (1) test_uadalp_1d_2s(TyS);
+   if (1) test_uadalp_2d_4s(TyS);
+   if (1) test_uadalp_2s_4h(TyH);
+   if (1) test_uadalp_4s_8h(TyH);
+   if (1) test_uadalp_4h_8b(TyB);
+   if (1) test_uadalp_8h_16b(TyB);
 
    // saddl{2}  2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h), 8h_(8b_8b)/(16b_16b)
    // uaddl{2}  2d_(2s_2s)/(4s_4s), 4s_(4h_4h)/(8h_8h), 8h_(8b_8b)/(16b_16b)
@@ -3891,89 +3910,89 @@ int main ( void )
 
    // saddlp    4h_8b,8h_16b,2s_4h,4s_8h,1d_2s,2d_4s
    // uaddlp    4h_8b,8h_16b,2s_4h,4s_8h,1d_2s,2d_4s
-   if (0) test_saddlp_1d_2s(TyS);
-   if (0) test_saddlp_2d_4s(TyS);
-   if (0) test_saddlp_2s_4h(TyH);
-   if (0) test_saddlp_4s_8h(TyH);
-   if (0) test_saddlp_4h_8b(TyB);
-   if (0) test_saddlp_8h_16b(TyB);
-   if (0) test_uaddlp_1d_2s(TyS);
-   if (0) test_uaddlp_2d_4s(TyS);
-   if (0) test_uaddlp_2s_4h(TyH);
-   if (0) test_uaddlp_4s_8h(TyH);
-   if (0) test_uaddlp_4h_8b(TyB);
-   if (0) test_uaddlp_8h_16b(TyB);
+   if (1) test_saddlp_1d_2s(TyS);
+   if (1) test_saddlp_2d_4s(TyS);
+   if (1) test_saddlp_2s_4h(TyH);
+   if (1) test_saddlp_4s_8h(TyH);
+   if (1) test_saddlp_4h_8b(TyB);
+   if (1) test_saddlp_8h_16b(TyB);
+   if (1) test_uaddlp_1d_2s(TyS);
+   if (1) test_uaddlp_2d_4s(TyS);
+   if (1) test_uaddlp_2s_4h(TyH);
+   if (1) test_uaddlp_4s_8h(TyH);
+   if (1) test_uaddlp_4h_8b(TyB);
+   if (1) test_uaddlp_8h_16b(TyB);
 
    // saddlv    h_16b/8b, s_8h/4h, d_4s
    // uaddlv    h_16b/8b, s_8h/4h, d_4s
-   if (0) test_saddlv_h_16b(TyB);
-   if (0) test_saddlv_h_8b(TyB);
-   if (0) test_saddlv_s_8h(TyH);
-   if (0) test_saddlv_s_4h(TyH);
-   if (0) test_saddlv_d_4s(TyH);
-   if (0) test_uaddlv_h_16b(TyB);
-   if (0) test_uaddlv_h_8b(TyB);
-   if (0) test_uaddlv_s_8h(TyH);
-   if (0) test_uaddlv_s_4h(TyH);
-   if (0) test_uaddlv_d_4s(TyH);
+   if (1) test_saddlv_h_16b(TyB);
+   if (1) test_saddlv_h_8b(TyB);
+   if (1) test_saddlv_s_8h(TyH);
+   if (1) test_saddlv_s_4h(TyH);
+   if (1) test_saddlv_d_4s(TyH);
+   if (1) test_uaddlv_h_16b(TyB);
+   if (1) test_uaddlv_h_8b(TyB);
+   if (1) test_uaddlv_s_8h(TyH);
+   if (1) test_uaddlv_s_4h(TyH);
+   if (1) test_uaddlv_d_4s(TyH);
 
    // saddw{2}  8h_8h_16b/8b, 4s_4s_8h/4h, 2d_2d_4s/2s
    // uaddw{2}  8h_8h_16b/8b, 4s_4s_8h/4h, 2d_2d_4s/2s
    // ssubw{2}  8h_8h_16b/8b, 4s_4s_8h/4h, 2d_2d_4s/2s
    // usubw{2}  8h_8h_16b/8b, 4s_4s_8h/4h, 2d_2d_4s/2s
-   if (0) test_saddw2_8h_8h_16b(TyB);
-   if (0) test_saddw_8h_8h_8b(TyB);
-   if (0) test_saddw2_4s_4s_8h(TyH);
-   if (0) test_saddw_4s_4s_4h(TyH);
-   if (0) test_saddw2_2d_2d_4s(TyS);
-   if (0) test_saddw_2d_2d_2s(TyS);
-   if (0) test_uaddw2_8h_8h_16b(TyB);
-   if (0) test_uaddw_8h_8h_8b(TyB);
-   if (0) test_uaddw2_4s_4s_8h(TyH);
-   if (0) test_uaddw_4s_4s_4h(TyH);
-   if (0) test_uaddw2_2d_2d_4s(TyS);
-   if (0) test_uaddw_2d_2d_2s(TyS);
-   if (0) test_ssubw2_8h_8h_16b(TyB);
-   if (0) test_ssubw_8h_8h_8b(TyB);
-   if (0) test_ssubw2_4s_4s_8h(TyH);
-   if (0) test_ssubw_4s_4s_4h(TyH);
-   if (0) test_ssubw2_2d_2d_4s(TyS);
-   if (0) test_ssubw_2d_2d_2s(TyS);
-   if (0) test_usubw2_8h_8h_16b(TyB);
-   if (0) test_usubw_8h_8h_8b(TyB);
-   if (0) test_usubw2_4s_4s_8h(TyH);
-   if (0) test_usubw_4s_4s_4h(TyH);
-   if (0) test_usubw2_2d_2d_4s(TyS);
-   if (0) test_usubw_2d_2d_2s(TyS);
+   if (1) test_saddw2_8h_8h_16b(TyB);
+   if (1) test_saddw_8h_8h_8b(TyB);
+   if (1) test_saddw2_4s_4s_8h(TyH);
+   if (1) test_saddw_4s_4s_4h(TyH);
+   if (1) test_saddw2_2d_2d_4s(TyS);
+   if (1) test_saddw_2d_2d_2s(TyS);
+   if (1) test_uaddw2_8h_8h_16b(TyB);
+   if (1) test_uaddw_8h_8h_8b(TyB);
+   if (1) test_uaddw2_4s_4s_8h(TyH);
+   if (1) test_uaddw_4s_4s_4h(TyH);
+   if (1) test_uaddw2_2d_2d_4s(TyS);
+   if (1) test_uaddw_2d_2d_2s(TyS);
+   if (1) test_ssubw2_8h_8h_16b(TyB);
+   if (1) test_ssubw_8h_8h_8b(TyB);
+   if (1) test_ssubw2_4s_4s_8h(TyH);
+   if (1) test_ssubw_4s_4s_4h(TyH);
+   if (1) test_ssubw2_2d_2d_4s(TyS);
+   if (1) test_ssubw_2d_2d_2s(TyS);
+   if (1) test_usubw2_8h_8h_16b(TyB);
+   if (1) test_usubw_8h_8h_8b(TyB);
+   if (1) test_usubw2_4s_4s_8h(TyH);
+   if (1) test_usubw_4s_4s_4h(TyH);
+   if (1) test_usubw2_2d_2d_4s(TyS);
+   if (1) test_usubw_2d_2d_2s(TyS);
 
    // shadd        16b,8b,8h,4h,4s,2s
    // uhadd        16b,8b,8h,4h,4s,2s
    // shsub        16b,8b,8h,4h,4s,2s
    // uhsub        16b,8b,8h,4h,4s,2s
-   if (0) test_shadd_4s_4s_4s(TyS);
-   if (0) test_shadd_2s_2s_2s(TyS);
-   if (0) test_shadd_8h_8h_8h(TyH);
-   if (0) test_shadd_4h_4h_4h(TyH);
-   if (0) test_shadd_16b_16b_16b(TyB);
-   if (0) test_shadd_8b_8b_8b(TyB);
-   if (0) test_uhadd_4s_4s_4s(TyS);
-   if (0) test_uhadd_2s_2s_2s(TyS);
-   if (0) test_uhadd_8h_8h_8h(TyH);
-   if (0) test_uhadd_4h_4h_4h(TyH);
-   if (0) test_uhadd_16b_16b_16b(TyB);
-   if (0) test_uhadd_8b_8b_8b(TyB);
-   if (0) test_shsub_4s_4s_4s(TyS);
-   if (0) test_shsub_2s_2s_2s(TyS);
-   if (0) test_shsub_8h_8h_8h(TyH);
-   if (0) test_shsub_4h_4h_4h(TyH);
-   if (0) test_shsub_16b_16b_16b(TyB);
-   if (0) test_shsub_8b_8b_8b(TyB);
-   if (0) test_uhsub_4s_4s_4s(TyS);
-   if (0) test_uhsub_2s_2s_2s(TyS);
-   if (0) test_uhsub_8h_8h_8h(TyH);
-   if (0) test_uhsub_4h_4h_4h(TyH);
-   if (0) test_uhsub_16b_16b_16b(TyB);
-   if (0) test_uhsub_8b_8b_8b(TyB);
+   if (1) test_shadd_4s_4s_4s(TyS);
+   if (1) test_shadd_2s_2s_2s(TyS);
+   if (1) test_shadd_8h_8h_8h(TyH);
+   if (1) test_shadd_4h_4h_4h(TyH);
+   if (1) test_shadd_16b_16b_16b(TyB);
+   if (1) test_shadd_8b_8b_8b(TyB);
+   if (1) test_uhadd_4s_4s_4s(TyS);
+   if (1) test_uhadd_2s_2s_2s(TyS);
+   if (1) test_uhadd_8h_8h_8h(TyH);
+   if (1) test_uhadd_4h_4h_4h(TyH);
+   if (1) test_uhadd_16b_16b_16b(TyB);
+   if (1) test_uhadd_8b_8b_8b(TyB);
+   if (1) test_shsub_4s_4s_4s(TyS);
+   if (1) test_shsub_2s_2s_2s(TyS);
+   if (1) test_shsub_8h_8h_8h(TyH);
+   if (1) test_shsub_4h_4h_4h(TyH);
+   if (1) test_shsub_16b_16b_16b(TyB);
+   if (1) test_shsub_8b_8b_8b(TyB);
+   if (1) test_uhsub_4s_4s_4s(TyS);
+   if (1) test_uhsub_2s_2s_2s(TyS);
+   if (1) test_uhsub_8h_8h_8h(TyH);
+   if (1) test_uhsub_4h_4h_4h(TyH);
+   if (1) test_uhsub_16b_16b_16b(TyB);
+   if (1) test_uhsub_8b_8b_8b(TyB);
 
    // shll{2}      8h_8b/16b_#8, 4s_4h/8h_#16, 2d_2s/4s_#32
    if (0) test_shll_8h_8b_8(TyB);
@@ -4097,30 +4116,30 @@ int main ( void )
    // umaxp        4s,2s,8h,4h,16b,8b
    // sminp        4s,2s,8h,4h,16b,8b
    // uminp        4s,2s,8h,4h,16b,8b
-   if (0) test_smaxp_4s_4s_4s(TyS);
-   if (0) test_smaxp_2s_2s_2s(TyS);
-   if (0) test_smaxp_8h_8h_8h(TyH);
-   if (0) test_smaxp_4h_4h_4h(TyH);
-   if (0) test_smaxp_16b_16b_16b(TyB);
-   if (0) test_smaxp_8b_8b_8b(TyB);
-   if (0) test_umaxp_4s_4s_4s(TyS);
-   if (0) test_umaxp_2s_2s_2s(TyS);
-   if (0) test_umaxp_8h_8h_8h(TyH);
-   if (0) test_umaxp_4h_4h_4h(TyH);
-   if (0) test_umaxp_16b_16b_16b(TyB);
-   if (0) test_umaxp_8b_8b_8b(TyB);
-   if (0) test_sminp_4s_4s_4s(TyS);
-   if (0) test_sminp_2s_2s_2s(TyS);
-   if (0) test_sminp_8h_8h_8h(TyH);
-   if (0) test_sminp_4h_4h_4h(TyH);
-   if (0) test_sminp_16b_16b_16b(TyB);
-   if (0) test_sminp_8b_8b_8b(TyB);
-   if (0) test_uminp_4s_4s_4s(TyS);
-   if (0) test_uminp_2s_2s_2s(TyS);
-   if (0) test_uminp_8h_8h_8h(TyH);
-   if (0) test_uminp_4h_4h_4h(TyH);
-   if (0) test_uminp_16b_16b_16b(TyB);
-   if (0) test_uminp_8b_8b_8b(TyB);
+   if (1) test_smaxp_4s_4s_4s(TyS);
+   if (1) test_smaxp_2s_2s_2s(TyS);
+   if (1) test_smaxp_8h_8h_8h(TyH);
+   if (1) test_smaxp_4h_4h_4h(TyH);
+   if (1) test_smaxp_16b_16b_16b(TyB);
+   if (1) test_smaxp_8b_8b_8b(TyB);
+   if (1) test_umaxp_4s_4s_4s(TyS);
+   if (1) test_umaxp_2s_2s_2s(TyS);
+   if (1) test_umaxp_8h_8h_8h(TyH);
+   if (1) test_umaxp_4h_4h_4h(TyH);
+   if (1) test_umaxp_16b_16b_16b(TyB);
+   if (1) test_umaxp_8b_8b_8b(TyB);
+   if (1) test_sminp_4s_4s_4s(TyS);
+   if (1) test_sminp_2s_2s_2s(TyS);
+   if (1) test_sminp_8h_8h_8h(TyH);
+   if (1) test_sminp_4h_4h_4h(TyH);
+   if (1) test_sminp_16b_16b_16b(TyB);
+   if (1) test_sminp_8b_8b_8b(TyB);
+   if (1) test_uminp_4s_4s_4s(TyS);
+   if (1) test_uminp_2s_2s_2s(TyS);
+   if (1) test_uminp_8h_8h_8h(TyH);
+   if (1) test_uminp_4h_4h_4h(TyH);
+   if (1) test_uminp_16b_16b_16b(TyB);
+   if (1) test_uminp_8b_8b_8b(TyB);
 
    // smaxv        s_4s,h_8h,h_4h,b_16b,b_8b
    // umaxv        s_4s,h_8h,h_4h,b_16b,b_8b
@@ -4303,34 +4322,34 @@ int main ( void )
    // uqadd        2d,4s,2s,8h,4h,16b,8b
    // sqsub        2d,4s,2s,8h,4h,16b,8b
    // uqsub        2d,4s,2s,8h,4h,16b,8b
-   if (0) test_sqadd_2d_2d_2d(TyD);
-   if (0) test_sqadd_4s_4s_4s(TyS);
-   if (0) test_sqadd_2s_2s_2s(TyS);
-   if (0) test_sqadd_8h_8h_8h(TyH);
-   if (0) test_sqadd_4h_4h_4h(TyH);
-   if (0) test_sqadd_16b_16b_16b(TyB);
-   if (0) test_sqadd_8b_8b_8b(TyB);
-   if (0) test_uqadd_2d_2d_2d(TyD);
-   if (0) test_uqadd_4s_4s_4s(TyS);
-   if (0) test_uqadd_2s_2s_2s(TyS);
-   if (0) test_uqadd_8h_8h_8h(TyH);
-   if (0) test_uqadd_4h_4h_4h(TyH);
-   if (0) test_uqadd_16b_16b_16b(TyB);
-   if (0) test_uqadd_8b_8b_8b(TyB);
-   if (0) test_sqsub_2d_2d_2d(TyD);
-   if (0) test_sqsub_4s_4s_4s(TyS);
-   if (0) test_sqsub_2s_2s_2s(TyS);
-   if (0) test_sqsub_8h_8h_8h(TyH);
-   if (0) test_sqsub_4h_4h_4h(TyH);
-   if (0) test_sqsub_16b_16b_16b(TyB);
-   if (0) test_sqsub_8b_8b_8b(TyB);
-   if (0) test_uqsub_2d_2d_2d(TyD);
-   if (0) test_uqsub_4s_4s_4s(TyS);
-   if (0) test_uqsub_2s_2s_2s(TyS);
-   if (0) test_uqsub_8h_8h_8h(TyH);
-   if (0) test_uqsub_4h_4h_4h(TyH);
-   if (0) test_uqsub_16b_16b_16b(TyB);
-   if (0) test_uqsub_8b_8b_8b(TyB);
+   if (1) test_sqadd_2d_2d_2d(TyD);
+   if (1) test_sqadd_4s_4s_4s(TyS);
+   if (1) test_sqadd_2s_2s_2s(TyS);
+   if (1) test_sqadd_8h_8h_8h(TyH);
+   if (1) test_sqadd_4h_4h_4h(TyH);
+   if (1) test_sqadd_16b_16b_16b(TyB);
+   if (1) test_sqadd_8b_8b_8b(TyB);
+   if (1) test_uqadd_2d_2d_2d(TyD);
+   if (1) test_uqadd_4s_4s_4s(TyS);
+   if (1) test_uqadd_2s_2s_2s(TyS);
+   if (1) test_uqadd_8h_8h_8h(TyH);
+   if (1) test_uqadd_4h_4h_4h(TyH);
+   if (1) test_uqadd_16b_16b_16b(TyB);
+   if (1) test_uqadd_8b_8b_8b(TyB);
+   if (1) test_sqsub_2d_2d_2d(TyD);
+   if (1) test_sqsub_4s_4s_4s(TyS);
+   if (1) test_sqsub_2s_2s_2s(TyS);
+   if (1) test_sqsub_8h_8h_8h(TyH);
+   if (1) test_sqsub_4h_4h_4h(TyH);
+   if (1) test_sqsub_16b_16b_16b(TyB);
+   if (1) test_sqsub_8b_8b_8b(TyB);
+   if (1) test_uqsub_2d_2d_2d(TyD);
+   if (1) test_uqsub_4s_4s_4s(TyS);
+   if (1) test_uqsub_2s_2s_2s(TyS);
+   if (1) test_uqsub_8h_8h_8h(TyH);
+   if (1) test_uqsub_4h_4h_4h(TyH);
+   if (1) test_uqsub_16b_16b_16b(TyB);
+   if (1) test_uqsub_8b_8b_8b(TyB);
 
    // sqdmlal      d_s_s[], s_h_h[]
    // sqdmlsl      d_s_s[], s_h_h[]

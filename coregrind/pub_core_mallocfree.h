@@ -110,6 +110,16 @@ extern void* VG_(arena_memalign)( ArenaId aid, const HChar* cc,
 extern HChar* VG_(arena_strdup)  ( ArenaId aid, const HChar* cc, 
                                    const HChar* s);
 
+/* Specialised version of realloc, that shrinks the size of the block ptr from
+   its current size to req_pszB.
+   req_pszB must be <= to the current size of ptr (otherwise it will assert).
+   Compared to VG_(arena_realloc):
+     * VG_(arena_realloc_shrink) cannot increase the size of ptr.
+     * If large enough, the unused memory is made usable for other allocation.
+     * ptr is shrunk in place, so as to avoid temporary allocation and memcpy. */
+extern void VG_(arena_realloc_shrink) ( ArenaId aid,
+                                        void* ptr, SizeT req_pszB);
+
 extern SizeT VG_(arena_malloc_usable_size) ( ArenaId aid, void* payload );
 
 extern SizeT VG_(arena_redzone_size) ( ArenaId aid );

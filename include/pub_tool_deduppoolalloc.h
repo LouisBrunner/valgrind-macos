@@ -63,10 +63,10 @@ typedef  struct _DedupPoolAlloc  DedupPoolAlloc;
    eltAlign is the minimum required alignement for the elements allocated
    from the DedupPoolAlloc. */
 extern DedupPoolAlloc* VG_(newDedupPA) ( SizeT  poolSzB,
-                                       SizeT  eltAlign,
-                                       void*  (*alloc)(const HChar*, SizeT),
-                                       const  HChar* cc,
-                                       void   (*free_fn)(void*) );
+                                         SizeT  eltAlign,
+                                         void*  (*alloc)(const HChar*, SizeT),
+                                         const  HChar* cc,
+                                         void   (*free_fn)(void*) );
 
 /* Allocates a new element from ddpa with eltSzB bytes to store elt. */
 extern void* VG_(allocEltDedupPA) (DedupPoolAlloc *ddpa,
@@ -77,8 +77,11 @@ extern void* VG_(allocEltDedupPA) (DedupPoolAlloc *ddpa,
    duplicates as long as new elements can be allocated from the pool.
    Once no new elements will be allocated, this dedup data structure
    can be released using VG_(freezeDedupPA). Once ddpa has been frozen,
-   it is an error to call VG_(allocEltDedupPA). */
-extern void VG_(freezeDedupPA) (DedupPoolAlloc *ddpa);
+   it is an error to call VG_(allocEltDedupPA).
+   If shrink_block is not NULL, the last pool will be shrunk using
+   shrink_block. */
+extern void VG_(freezeDedupPA) (DedupPoolAlloc *ddpa,
+                                void (*shrink_block)(void*, SizeT));
 
 /* Free all memory associated with a DedupPoolAlloc. */
 extern void VG_(deleteDedupPA) ( DedupPoolAlloc *ddpa);

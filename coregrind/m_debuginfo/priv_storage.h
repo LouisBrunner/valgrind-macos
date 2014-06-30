@@ -537,7 +537,7 @@ struct _DebugInfoFSM
 
 
 /* To do with the string table in struct _DebugInfo (::strpool) */
-#define SEGINFO_STRPOOLSIZE (16*1024)
+#define SEGINFO_STRPOOLSIZE (64*1024)
 
 
 /* We may encounter more than one .eh_frame section in an object --

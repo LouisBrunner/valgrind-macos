@@ -331,21 +331,13 @@ static void addLoc ( struct _DebugInfo* di, DiLoc* loc )
 
 /* Resize the LocTab (line number table) to save memory, by removing
    (and, potentially, allowing m_mallocfree to unmap) any unused space
-   at the end of the table.
-*/
+   at the end of the table. */
 static void shrinkLocTab ( struct _DebugInfo* di )
 {
-   DiLoc* new_tab;
    UWord new_sz = di->loctab_used;
    if (new_sz == di->loctab_size) return;
    vg_assert(new_sz < di->loctab_size);
-
-   new_tab = ML_(dinfo_zalloc)( "di.storage.shrinkLocTab", 
-                                new_sz * sizeof(DiLoc) );
-   VG_(memcpy)(new_tab, di->loctab, new_sz * sizeof(DiLoc));
-
-   ML_(dinfo_free)(di->loctab);
-   di->loctab = new_tab;
+   ML_(dinfo_shrink_block)( di->loctab, new_sz * sizeof(DiLoc));
    di->loctab_size = new_sz;
 }
 
@@ -484,21 +476,13 @@ static void addInl ( struct _DebugInfo* di, DiInlLoc* inl )
 
 /* Resize the InlTab (inlined call table) to save memory, by removing
    (and, potentially, allowing m_mallocfree to unmap) any unused space
-   at the end of the table.
-*/
+   at the end of the table. */
 static void shrinkInlTab ( struct _DebugInfo* di )
 {
-   DiInlLoc* new_tab;
    UWord new_sz = di->inltab_used;
    if (new_sz == di->inltab_size) return;
    vg_assert(new_sz < di->inltab_size);
-
-   new_tab = ML_(dinfo_zalloc)( "di.storage.shrinkInlTab", 
-                                new_sz * sizeof(DiInlLoc) );
-   VG_(memcpy)(new_tab, di->inltab, new_sz * sizeof(DiInlLoc));
-
-   ML_(dinfo_free)(di->inltab);
-   di->inltab = new_tab;
+   ML_(dinfo_shrink_block)( di->inltab, new_sz * sizeof(DiInlLoc));
    di->inltab_size = new_sz;
 }
 
@@ -1967,7 +1951,7 @@ void ML_(canonicaliseTables) ( struct _DebugInfo* di )
    ML_(canonicaliseCFI) ( di );
    canonicaliseVarInfo ( di );
    if (di->strpool)
-      VG_(freezeDedupPA) (di->strpool);
+      VG_(freezeDedupPA) (di->strpool, ML_(dinfo_shrink_block));
 }
 
 

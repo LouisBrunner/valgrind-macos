@@ -113,7 +113,7 @@ void VG_(deleteDedupPA) ( DedupPoolAlloc* ddpa)
 {
    Word i;
    if (ddpa->ht_elements)
-      VG_(freezeDedupPA) (ddpa); // Free data structures used for insertion.
+      VG_(freezeDedupPA) (ddpa, NULL); // Free data structures used for insertion.
    for (i = 0; i < VG_(sizeXA) (ddpa->pools); i++)
       ddpa->free (*(UWord **)VG_(indexXA) ( ddpa->pools, i ));
    VG_(deleteXA) (ddpa->pools);
@@ -176,11 +176,18 @@ static void htelem_dummyfree(void* ht_elem)
 {
 }
 
-void VG_(freezeDedupPA) (DedupPoolAlloc *ddpa)
+void VG_(freezeDedupPA) (DedupPoolAlloc *ddpa,
+                         void (*shrink_block)(void*, SizeT))
 {
    if (VG_(clo_stats) 
        && (VG_(clo_verbosity) > 2 || VG_(debugLog_getLevel) () >= 2)) {
       print_stats(ddpa);
+   }
+   if (shrink_block && ddpa->curpool_limit > ddpa->curpool_free) {
+      UChar *last_added_pool = 
+         (*(UChar **)VG_(indexXA) ( ddpa->pools, 
+                                    VG_(sizeXA)(ddpa->pools) - 1));
+      (*shrink_block)(last_added_pool, ddpa->curpool_free - last_added_pool);
    }
    VG_(HT_destruct) ( ddpa->ht_elements, htelem_dummyfree);
    ddpa->ht_elements = NULL;

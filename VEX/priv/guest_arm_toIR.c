@@ -14400,13 +14400,14 @@ static Bool decode_NV_instruction ( /*MOD*/DisResult* dres,
    // Should only be called for NV instructions
    vassert(BITS4(1,1,1,1) == INSN_COND);
 
-   /* ------------------------ pld ------------------------ */
-   if (BITS8(0,1,0,1, 0, 1,0,1) == (INSN(27,20) & BITS8(1,1,1,1,0,1,1,1))
+   /* ------------------------ pld{w} ------------------------ */
+   if (BITS8(0,1,0,1, 0,0, 0,1) == (INSN(27,20) & BITS8(1,1,1,1, 0,0, 1,1))
        && BITS4(1,1,1,1) == INSN(15,12)) {
       UInt rN    = INSN(19,16);
       UInt imm12 = INSN(11,0);
       UInt bU    = INSN(23,23);
-      DIP("pld [r%u, #%c%u]\n", rN, bU ? '+' : '-', imm12);
+      UInt bR    = INSN(22,22);
+      DIP("pld%c [r%u, #%c%u]\n", bR ? ' ' : 'w', rN, bU ? '+' : '-', imm12);
       return True;
    }
 

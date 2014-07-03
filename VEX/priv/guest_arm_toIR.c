@@ -14411,7 +14411,7 @@ static Bool decode_NV_instruction ( /*MOD*/DisResult* dres,
       return True;
    }
 
-   if (BITS8(0,1,1,1, 0, 1,0,1) == (INSN(27,20) & BITS8(1,1,1,1,0,1,1,1))
+   if (BITS8(0,1,1,1, 0,0, 0,1) == (INSN(27,20) & BITS8(1,1,1,1, 0,0, 1,1))
        && BITS4(1,1,1,1) == INSN(15,12)
        && 0 == INSN(4,4)) {
       UInt rN   = INSN(19,16);
@@ -14419,7 +14419,8 @@ static Bool decode_NV_instruction ( /*MOD*/DisResult* dres,
       UInt imm5 = INSN(11,7);
       UInt sh2  = INSN(6,5);
       UInt bU   = INSN(23,23);
-      if (rM != 15) {
+      UInt bR   = INSN(22,22);
+      if (rM != 15 && (rN != 15 || bR)) {
          IRExpr* eaE = mk_EA_reg_plusminus_shifted_reg(rN, bU, rM,
                                                        sh2, imm5, dis_buf);
          IRTemp eaT = newTemp(Ity_I32);
@@ -14428,7 +14429,7 @@ static Bool decode_NV_instruction ( /*MOD*/DisResult* dres,
             by iropt a little later on. */
          vassert(eaE);
          assign(eaT, eaE);
-         DIP("pld %s\n", dis_buf);
+         DIP("pld%c %s\n", bR ? ' ' : 'w', dis_buf);
          return True;
       }
       /* fall through */

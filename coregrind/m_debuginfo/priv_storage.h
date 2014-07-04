@@ -841,7 +841,7 @@ struct _DebugInfo {
       cfsi_base[i] is given
         by ((UChar*) cfsi_m_ix)[i] if sizeof_ix == 1
         by ((UShort*)cfsi_m_ix)[i] if sizeof_ix == 2
-        by ((UInt*)  cfsi_m_ix)[i] if sizeof_ix == 3.
+        by ((UInt*)  cfsi_m_ix)[i] if sizeof_ix == 4.
 
       The end of the code range starting at cfsi_base[i] is given by
       cfsi_base[i+1]-1 (or cfsi_maxavma for  cfsi_base[cfsi_used-1]).

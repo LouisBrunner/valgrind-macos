@@ -7,5 +7,5 @@
 
 <!DOCTYPE feature SYSTEM "gdb-target.dtd">
 <feature name="org.gnu.gdb.i386.linux">
-  <reg name="orig_rax" bitsize="64" type="int" regnum="57"/>
+  <reg name="orig_rax" bitsize="64" type="int"/>
 </feature>

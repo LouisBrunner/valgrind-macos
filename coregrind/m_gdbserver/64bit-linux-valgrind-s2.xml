@@ -7,5 +7,5 @@
 
 <!DOCTYPE feature SYSTEM "gdb-target.dtd">
 <feature name="org.gnu.gdb.i386.linux.valgrind.s2">
-  <reg name="orig_raxs2" bitsize="64" type="int" regnum="173"/>
+  <reg name="orig_raxs2" bitsize="64" type="int"/>
 </feature>

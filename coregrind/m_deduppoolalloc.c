@@ -84,7 +84,7 @@ extern DedupPoolAlloc* VG_(newDedupPA) ( SizeT  poolSzB,
                                          SizeT  eltAlign,
                                          void*  (*alloc)(const HChar*, SizeT),
                                          const  HChar* cc,
-                                         void   (*free_fn)(void*) ) 
+                                         void   (*free_fn)(void*) )
 {
    DedupPoolAlloc* ddpa;
    vg_assert(poolSzB >= eltAlign);
@@ -137,7 +137,7 @@ UChar* ddpa_align ( DedupPoolAlloc* ddpa, UChar *c )
 
 /* Allocate a new pool or grow the (only) pool for a fixed size ddpa. */
 __attribute__((noinline))
-static void ddpa_add_new_pool_or_grow ( DedupPoolAlloc* ddpa ) 
+static void ddpa_add_new_pool_or_grow ( DedupPoolAlloc* ddpa )
 {
    vg_assert(ddpa);
 
@@ -149,9 +149,17 @@ static void ddpa_add_new_pool_or_grow ( DedupPoolAlloc* ddpa )
       UChar *newpool = ddpa->alloc (ddpa->cc, 2 * curpool_size);
       UChar *newpool_free = ddpa_align (ddpa, newpool);
       UChar *newpool_limit = newpool + 2 * curpool_size - 1;
+      Word reloc_offset = (Addr)newpool_free - (Addr)curpool_align;
+      ht_node *n;
 
       vg_assert (newpool);
       VG_(memcpy) (newpool_free, curpool_align, curpool_used);
+      /* We have reallocated the (only) pool. We need to relocate the pointers
+         in the hash table nodes. */
+      VG_(HT_ResetIter) (ddpa->ht_elements);
+      while ((n = VG_(HT_Next) (ddpa->ht_elements))) {
+        n->elt = (void*)((Addr)n->elt + reloc_offset);
+      }
       newpool_free += curpool_used;
 
       VG_(dropHeadXA) (ddpa->pools, 1);
@@ -193,7 +201,7 @@ static Word cmp_pool_elt (const void* node1, const void* node2 )
 static void print_stats (DedupPoolAlloc *ddpa)
 {
    VG_(message)(Vg_DebugMsg,
-                "dedupPA:%s %ld allocs (%d uniq)" 
+                "dedupPA:%s %ld allocs (%d uniq)"
                 " %ld pools (%ld bytes free in last pool)\n",
                 ddpa->cc,
                 (long int) ddpa->nr_alloc_calls,
@@ -212,7 +220,7 @@ static void htelem_dummyfree(void* ht_elem)
 void VG_(freezeDedupPA) (DedupPoolAlloc *ddpa,
                          void (*shrink_block)(void*, SizeT))
 {
-   if (VG_(clo_stats) 
+   if (VG_(clo_stats)
        && (VG_(clo_verbosity) > 2 || VG_(debugLog_getLevel) () >= 2)) {
       print_stats(ddpa);
    }
@@ -275,7 +283,7 @@ void* VG_(allocEltDedupPA) (DedupPoolAlloc *ddpa, SizeT eltSzB, const void *elt)
 static __inline__
 UInt elt2nr (DedupPoolAlloc *ddpa, const void *dedup_elt)
 {
-   vg_assert ((UChar*)dedup_elt >= ddpa->curpool 
+   vg_assert ((UChar*)dedup_elt >= ddpa->curpool
               && (UChar*)dedup_elt < ddpa->curpool_free);
    return 1 + ((UChar*)dedup_elt - ddpa->curpool)
       / VG_ROUNDUP(ddpa->fixedSzb, ddpa->eltAlign);
@@ -300,10 +308,10 @@ void* VG_(indexEltNumber) (DedupPoolAlloc *ddpa,
 {
    void *dedup_elt;
 
-   dedup_elt = ddpa->curpool 
+   dedup_elt = ddpa->curpool
       + (eltNr - 1) * VG_ROUNDUP(ddpa->fixedSzb, ddpa->eltAlign);
 
-   vg_assert ((UChar*)dedup_elt >= ddpa->curpool 
+   vg_assert ((UChar*)dedup_elt >= ddpa->curpool
               && (UChar*)dedup_elt < ddpa->curpool_free);
 
    return dedup_elt;

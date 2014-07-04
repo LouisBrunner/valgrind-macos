@@ -2126,12 +2126,6 @@ typedef
 
 /* ------------ Deal with summary-info records ------------ */
 
-static void initCfiSI ( DiCfSI* si )
-{
-   VG_(bzero_inline)(si, sizeof(*si));
-}
-
-
 /* --------------- Summarisation --------------- */
 
 /* Forward */
@@ -2145,14 +2139,20 @@ Int copy_convert_CfiExpr_tree ( XArray*        dst,
    summary is up to but not including the current loc.  This works
    on both x86 and amd64.
 */
-static Bool summarise_context( /*OUT*/DiCfSI* si,
+static Bool summarise_context(/*OUT*/Addr* base,
+                              /*OUT*/UInt* len,
+                              /*OUT*/DiCfSI_m* si_m,
                                Addr loc_start,
 	                       UnwindContext* ctx,
                                struct _DebugInfo* debuginfo )
 {
    Int why = 0;
    struct UnwindContextState* ctxs;
-   initCfiSI(si);
+
+   *base = 0;
+   *len = 0;
+   VG_(bzero_inline)(si_m, sizeof(*si_m));
+
 
    /* Guard against obviously stupid settings of the reg-rule stack
       pointer. */
@@ -2177,49 +2177,49 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
                     ( dst, ctx, ctxs->cfa_expr_ix );
       vg_assert(conv >= -1);
       if (conv == -1) { why = 6; goto failed; }
-      si->cfa_how = CFIC_EXPR;
-      si->cfa_off = conv;
+      si_m->cfa_how = CFIC_EXPR;
+      si_m->cfa_off = conv;
       if (0 && debuginfo->ddump_frames)
          ML_(ppCfiExpr)(dst, conv);
    }
    else
    if (ctxs->cfa_is_regoff && ctxs->cfa_reg == SP_REG) {
-      si->cfa_off = ctxs->cfa_off;
+      si_m->cfa_off = ctxs->cfa_off;
 #     if defined(VGA_x86) || defined(VGA_amd64) || defined(VGA_s390x) \
          || defined(VGA_mips32) || defined(VGA_mips64)
-      si->cfa_how = CFIC_IA_SPREL;
+      si_m->cfa_how = CFIC_IA_SPREL;
 #     elif defined(VGA_arm)
-      si->cfa_how = CFIC_ARM_R13REL;
+      si_m->cfa_how = CFIC_ARM_R13REL;
 #     elif defined(VGA_arm64)
-      si->cfa_how = CFIC_ARM64_SPREL;
+      si_m->cfa_how = CFIC_ARM64_SPREL;
 #     else
-      si->cfa_how = 0; /* invalid */
+      si_m->cfa_how = 0; /* invalid */
 #     endif
    }
    else
    if (ctxs->cfa_is_regoff && ctxs->cfa_reg == FP_REG) {
-      si->cfa_off = ctxs->cfa_off;
+      si_m->cfa_off = ctxs->cfa_off;
 #     if defined(VGA_x86) || defined(VGA_amd64) || defined(VGA_s390x) \
          || defined(VGA_mips32) || defined(VGA_mips64)
-      si->cfa_how = CFIC_IA_BPREL;
+      si_m->cfa_how = CFIC_IA_BPREL;
 #     elif defined(VGA_arm)
-      si->cfa_how = CFIC_ARM_R12REL;
+      si_m->cfa_how = CFIC_ARM_R12REL;
 #     elif defined(VGA_arm64)
-      si->cfa_how = CFIC_ARM64_X29REL;
+      si_m->cfa_how = CFIC_ARM64_X29REL;
 #     else
-      si->cfa_how = 0; /* invalid */
+      si_m->cfa_how = 0; /* invalid */
 #     endif
    }
 #  if defined(VGA_arm)
    else
    if (ctxs->cfa_is_regoff && ctxs->cfa_reg == 11/*??_REG*/) {
-      si->cfa_how = CFIC_ARM_R11REL;
-      si->cfa_off = ctxs->cfa_off;
+      si_m->cfa_how = CFIC_ARM_R11REL;
+      si_m->cfa_off = ctxs->cfa_off;
    }
    else
    if (ctxs->cfa_is_regoff && ctxs->cfa_reg == 7/*??_REG*/) {
-      si->cfa_how = CFIC_ARM_R7REL;
-      si->cfa_off = ctxs->cfa_off;
+      si_m->cfa_how = CFIC_ARM_R7REL;
+      si_m->cfa_off = ctxs->cfa_off;
    }
 #  elif defined(VGA_arm64)
    // do we need any arm64 specifics here?
@@ -2271,23 +2271,23 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
 
    /* --- entire tail of this fn specialised for x86/amd64 --- */
 
-   SUMMARISE_HOW(si->ra_how, si->ra_off,
-                             ctxs->reg[ctx->ra_reg] );
-   SUMMARISE_HOW(si->bp_how, si->bp_off,
-                             ctxs->reg[FP_REG] );
+   SUMMARISE_HOW(si_m->ra_how, si_m->ra_off,
+                               ctxs->reg[ctx->ra_reg] );
+   SUMMARISE_HOW(si_m->bp_how, si_m->bp_off,
+                               ctxs->reg[FP_REG] );
 
    /* on x86/amd64, it seems the old %{e,r}sp value before the call is
       always the same as the CFA.  Therefore ... */
-   si->sp_how = CFIR_CFAREL;
-   si->sp_off = 0;
+   si_m->sp_how = CFIR_CFAREL;
+   si_m->sp_off = 0;
 
    /* also, gcc says "Undef" for %{e,r}bp when it is unchanged.  So
       .. */
    if (ctxs->reg[FP_REG].tag == RR_Undef)
-      si->bp_how = CFIR_SAME;
+      si_m->bp_how = CFIR_SAME;
 
    /* knock out some obviously stupid cases */
-   if (si->ra_how == CFIR_SAME) 
+   if (si_m->ra_how == CFIR_SAME) 
       { why = 3; goto failed; }
 
    /* bogus looking range?  Note, we require that the difference is
@@ -2297,8 +2297,8 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
    if (ctx->loc - loc_start > 10000000 /* let's say */)
       { why = 5; goto failed; }
 
-   si->base = loc_start + ctx->initloc;
-   si->len  = (UInt)(ctx->loc - loc_start);
+   *base = loc_start + ctx->initloc;
+   *len  = (UInt)(ctx->loc - loc_start);
 
    return True;
 
@@ -2306,20 +2306,20 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
 
    /* ---- entire tail of this fn specialised for arm ---- */
 
-   SUMMARISE_HOW(si->r14_how, si->r14_off,
-                              ctxs->reg[14] );
+   SUMMARISE_HOW(si_m->r14_how, si_m->r14_off,
+                                ctxs->reg[14] );
 
-   //SUMMARISE_HOW(si->r13_how, si->r13_off,
-   //                           ctxs->reg[13] );
+   //SUMMARISE_HOW(si_m->r13_how, si_m->r13_off,
+   //                             ctxs->reg[13] );
 
-   SUMMARISE_HOW(si->r12_how, si->r12_off,
-                              ctxs->reg[FP_REG] );
+   SUMMARISE_HOW(si_m->r12_how, si_m->r12_off,
+                                ctxs->reg[FP_REG] );
 
-   SUMMARISE_HOW(si->r11_how, si->r11_off,
-                              ctxs->reg[11/*FP_REG*/] );
+   SUMMARISE_HOW(si_m->r11_how, si_m->r11_off,
+                                ctxs->reg[11/*FP_REG*/] );
 
-   SUMMARISE_HOW(si->r7_how, si->r7_off,
-                             ctxs->reg[7] );
+   SUMMARISE_HOW(si_m->r7_how, si_m->r7_off,
+                               ctxs->reg[7] );
 
    if (ctxs->reg[14/*LR*/].tag == RR_Same
        && ctx->ra_reg == 14/*as we expect it always to be*/) {
@@ -2331,19 +2331,19 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
                                              "di.ccCt.2a",
                                              ML_(dinfo_free),
                                              sizeof(CfiExpr) );
-      si->ra_off = ML_(CfiExpr_CfiReg)( debuginfo->cfsi_exprs,
-                                        Creg_ARM_R14);
-      si->ra_how = CFIR_EXPR;
+      si_m->ra_off = ML_(CfiExpr_CfiReg)( debuginfo->cfsi_exprs,
+                                         Creg_ARM_R14);
+      si_m->ra_how = CFIR_EXPR;
    } else {
       /* Just summarise it in the normal way */
-      SUMMARISE_HOW(si->ra_how, si->ra_off,
-                                ctxs->reg[ctx->ra_reg] );
+      SUMMARISE_HOW(si_m->ra_how, si_m->ra_off,
+                                  ctxs->reg[ctx->ra_reg] );
    }
 
    /* on arm, it seems the old r13 (SP) value before the call is
       always the same as the CFA.  Therefore ... */
-   si->r13_how = CFIR_CFAREL;
-   si->r13_off = 0;
+   si_m->r13_how = CFIR_CFAREL;
+   si_m->r13_off = 0;
 
    /* bogus looking range?  Note, we require that the difference is
       representable in 32 bits. */
@@ -2352,8 +2352,8 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
    if (ctx->loc - loc_start > 10000000 /* let's say */)
       { why = 5; goto failed; }
 
-   si->base = loc_start + ctx->initloc;
-   si->len  = (UInt)(ctx->loc - loc_start);
+   *base = loc_start + ctx->initloc;
+   *len  = (UInt)(ctx->loc - loc_start);
 
    return True;
 
@@ -2361,8 +2361,8 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
 
    /* --- entire tail of this fn specialised for arm64 --- */
 
-   SUMMARISE_HOW(si->x30_how, si->x30_off, ctxs->reg[30/*LR*/]);
-   SUMMARISE_HOW(si->x29_how, si->x29_off, ctxs->reg[29/*FP*/]);
+   SUMMARISE_HOW(si_m->x30_how, si_m->x30_off, ctxs->reg[30/*LR*/]);
+   SUMMARISE_HOW(si_m->x29_how, si_m->x29_off, ctxs->reg[29/*FP*/]);
 
    if (ctxs->reg[30/*LR*/].tag == RR_Same
        && ctx->ra_reg == 30/*as we expect it always to be*/) {
@@ -2374,18 +2374,18 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
                                              "di.ccCt.2a-arm64",
                                              ML_(dinfo_free),
                                              sizeof(CfiExpr) );
-      si->ra_off = ML_(CfiExpr_CfiReg)( debuginfo->cfsi_exprs,
-                                        Creg_ARM64_X30);
-      si->ra_how = CFIR_EXPR;
+      si_m->ra_off = ML_(CfiExpr_CfiReg)( debuginfo->cfsi_exprs,
+                                          Creg_ARM64_X30);
+      si_m->ra_how = CFIR_EXPR;
    } else {
       /* Just summarise it in the normal way */
-      SUMMARISE_HOW(si->ra_how, si->ra_off, ctxs->reg[ctx->ra_reg]);
+      SUMMARISE_HOW(si_m->ra_how, si_m->ra_off, ctxs->reg[ctx->ra_reg]);
    }
 
    /* on arm64, it seems the old SP value before the call is always
       the same as the CFA.  Therefore ... */
-   si->sp_how = CFIR_CFAREL;
-   si->sp_off = 0;
+   si_m->sp_how = CFIR_CFAREL;
+   si_m->sp_off = 0;
 
    /* bogus looking range?  Note, we require that the difference is
       representable in 32 bits. */
@@ -2394,8 +2394,8 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
    if (ctx->loc - loc_start > 10000000 /* let's say */)
       { why = 5; goto failed; }
 
-   si->base = loc_start + ctx->initloc;
-   si->len  = (UInt)(ctx->loc - loc_start);
+   *base = loc_start + ctx->initloc;
+   *len  = (UInt)(ctx->loc - loc_start);
 
    return True;
 
@@ -2403,37 +2403,37 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
 
    /* --- entire tail of this fn specialised for s390 --- */
 
-   SUMMARISE_HOW(si->ra_how, si->ra_off,
-                             ctxs->reg[ctx->ra_reg] );
-   SUMMARISE_HOW(si->fp_how, si->fp_off,
-                             ctxs->reg[FP_REG] );
-   SUMMARISE_HOW(si->sp_how, si->sp_off,
-                             ctxs->reg[SP_REG] );
+   SUMMARISE_HOW(si_m->ra_how, si_m->ra_off,
+                               ctxs->reg[ctx->ra_reg] );
+   SUMMARISE_HOW(si_m->fp_how, si_m->fp_off,
+                               ctxs->reg[FP_REG] );
+   SUMMARISE_HOW(si_m->sp_how, si_m->sp_off,
+                               ctxs->reg[SP_REG] );
 
    /* change some defaults to consumable values */
-   if (si->sp_how == CFIR_UNKNOWN)
-      si->sp_how = CFIR_SAME;
+   if (si_m->sp_how == CFIR_UNKNOWN)
+      si_m->sp_how = CFIR_SAME;
 
-   if (si->fp_how == CFIR_UNKNOWN)
-      si->fp_how = CFIR_SAME;
+   if (si_m->fp_how == CFIR_UNKNOWN)
+      si_m->fp_how = CFIR_SAME;
 
-   if (si->cfa_how == CFIR_UNKNOWN) {
-      si->cfa_how = CFIC_IA_SPREL;
-      si->cfa_off = 160;
+   if (si_m->cfa_how == CFIR_UNKNOWN) {
+      si_m->cfa_how = CFIC_IA_SPREL;
+      si_m->cfa_off = 160;
    }
-   if (si->ra_how == CFIR_UNKNOWN) {
+   if (si_m->ra_how == CFIR_UNKNOWN) {
       if (!debuginfo->cfsi_exprs)
          debuginfo->cfsi_exprs = VG_(newXA)( ML_(dinfo_zalloc),
                                              "di.ccCt.2a",
                                              ML_(dinfo_free),
                                              sizeof(CfiExpr) );
-      si->ra_how = CFIR_EXPR;
-      si->ra_off = ML_(CfiExpr_CfiReg)( debuginfo->cfsi_exprs,
-                                        Creg_S390_R14);
+      si_m->ra_how = CFIR_EXPR;
+      si_m->ra_off = ML_(CfiExpr_CfiReg)( debuginfo->cfsi_exprs,
+                                          Creg_S390_R14);
    }
 
    /* knock out some obviously stupid cases */
-   if (si->ra_how == CFIR_SAME)
+   if (si_m->ra_how == CFIR_SAME)
       { why = 3; goto failed; }
 
    /* bogus looking range?  Note, we require that the difference is
@@ -2443,8 +2443,8 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
    if (ctx->loc - loc_start > 10000000 /* let's say */)
       { why = 5; goto failed; }
 
-   si->base = loc_start + ctx->initloc;
-   si->len  = (UInt)(ctx->loc - loc_start);
+   *base = loc_start + ctx->initloc;
+   *len  = (UInt)(ctx->loc - loc_start);
 
    return True;
 
@@ -2452,33 +2452,33 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
  
    /* --- entire tail of this fn specialised for mips --- */
  
-   SUMMARISE_HOW(si->ra_how, si->ra_off,
-                             ctxs->reg[ctx->ra_reg] );
-   SUMMARISE_HOW(si->fp_how, si->fp_off,
-                             ctxs->reg[FP_REG] );
-   SUMMARISE_HOW(si->sp_how, si->sp_off,
-                             ctxs->reg[SP_REG] );
-      si->sp_how = CFIR_CFAREL;
-   si->sp_off = 0;
+   SUMMARISE_HOW(si_m->ra_how, si_m->ra_off,
+                               ctxs->reg[ctx->ra_reg] );
+   SUMMARISE_HOW(si_m->fp_how, si_m->fp_off,
+                               ctxs->reg[FP_REG] );
+   SUMMARISE_HOW(si_m->sp_how, si_m->sp_off,
+                               ctxs->reg[SP_REG] );
+   si_m->sp_how = CFIR_CFAREL;
+   si_m->sp_off = 0;
 
-   if (si->fp_how == CFIR_UNKNOWN)
-       si->fp_how = CFIR_SAME;
-   if (si->cfa_how == CFIR_UNKNOWN) {
-      si->cfa_how = CFIC_IA_SPREL;
-      si->cfa_off = 160;
+   if (si_m->fp_how == CFIR_UNKNOWN)
+       si_m->fp_how = CFIR_SAME;
+   if (si_m->cfa_how == CFIR_UNKNOWN) {
+      si_m->cfa_how = CFIC_IA_SPREL;
+      si_m->cfa_off = 160;
    }
-   if (si->ra_how == CFIR_UNKNOWN) {
+   if (si_m->ra_how == CFIR_UNKNOWN) {
       if (!debuginfo->cfsi_exprs)
          debuginfo->cfsi_exprs = VG_(newXA)( ML_(dinfo_zalloc),
                                              "di.ccCt.2a",
                                              ML_(dinfo_free),
                                              sizeof(CfiExpr) );
-      si->ra_how = CFIR_EXPR;
-      si->ra_off = ML_(CfiExpr_CfiReg)( debuginfo->cfsi_exprs,
-                                        Creg_MIPS_RA);
+      si_m->ra_how = CFIR_EXPR;
+      si_m->ra_off = ML_(CfiExpr_CfiReg)( debuginfo->cfsi_exprs,
+                                          Creg_MIPS_RA);
    }
 
-   if (si->ra_how == CFIR_SAME)
+   if (si_m->ra_how == CFIR_SAME)
       { why = 3; goto failed; }
 
    if (loc_start >= ctx->loc) 
@@ -2486,8 +2486,8 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
    if (ctx->loc - loc_start > 10000000 /* let's say */)
       { why = 5; goto failed; }
 
-   si->base = loc_start + ctx->initloc;
-   si->len  = (UInt)(ctx->loc - loc_start);
+   *base = loc_start + ctx->initloc;
+   *len  = (UInt)(ctx->loc - loc_start);
 
    return True;
 
@@ -3656,7 +3656,9 @@ Bool run_CF_instructions ( struct _DebugInfo* di,
                            UnwindContext* restore_ctx,
                            AddressDecodingInfo* adi )
 {
-   DiCfSI cfsi;
+   Addr base;
+   UInt len;
+   DiCfSI_m cfsi_m;
    Bool summ_ok;
    Int j, i = 0;
    Addr loc_prev;
@@ -3674,11 +3676,12 @@ Bool run_CF_instructions ( struct _DebugInfo* di,
       i += j;
       if (0) ppUnwindContext(ctx);
       if (record && loc_prev != ctx->loc) {
-         summ_ok = summarise_context ( &cfsi, loc_prev, ctx, di );
+         summ_ok = summarise_context ( &base, &len, &cfsi_m,
+                                       loc_prev, ctx, di );
          if (summ_ok) {
-            ML_(addDiCfSI)(di, &cfsi);
+            ML_(addDiCfSI)(di, base, len, &cfsi_m);
             if (di->trace_cfi)
-               ML_(ppDiCfSI)(di->cfsi_exprs, &cfsi);
+               ML_(ppDiCfSI)(di->cfsi_exprs, base, len, &cfsi_m);
          }
       }
    }
@@ -3686,11 +3689,12 @@ Bool run_CF_instructions ( struct _DebugInfo* di,
       loc_prev = ctx->loc;
       ctx->loc = fde_arange;
       if (record) {
-         summ_ok = summarise_context ( &cfsi, loc_prev, ctx, di );
+         summ_ok = summarise_context ( &base, &len, &cfsi_m,
+                                       loc_prev, ctx, di );
          if (summ_ok) {
-            ML_(addDiCfSI)(di, &cfsi);
+            ML_(addDiCfSI)(di, base, len, &cfsi_m);
             if (di->trace_cfi)
-               ML_(ppDiCfSI)(di->cfsi_exprs, &cfsi);
+               ML_(ppDiCfSI)(di->cfsi_exprs, base, len, &cfsi_m);
          }
       }
    }
@@ -4180,8 +4184,8 @@ void ML_(read_callframe_info_dwarf3)
                /* current unsearched space is from lo to hi, inclusive. */
                if (lo > hi) break; /* not found */
                mid      = (lo + hi) / 2;
-               a_mid_lo = di->cfsi[mid].base;
-               size     = di->cfsi[mid].len;
+               a_mid_lo = di->cfsi_rd[mid].base;
+               size     = di->cfsi_rd[mid].len;
                a_mid_hi = a_mid_lo + size - 1;
                vg_assert(a_mid_hi >= a_mid_lo);
                if (fde_initloc + fde_arange <= a_mid_lo) {

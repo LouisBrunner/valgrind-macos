@@ -102,7 +102,7 @@
 /*------------------------------------------------------------*/
 
 static UInt CF_info_generation = 0;
-static void cfsi_cache__invalidate ( void );
+static void cfsi_m_cache__invalidate ( void );
 
 
 /*------------------------------------------------------------*/
@@ -213,7 +213,10 @@ static void free_DebugInfo ( DebugInfo* di )
    if (di->soname)       ML_(dinfo_free)(di->soname);
    if (di->loctab)       ML_(dinfo_free)(di->loctab);
    if (di->inltab)       ML_(dinfo_free)(di->inltab);
-   if (di->cfsi)         ML_(dinfo_free)(di->cfsi);
+   if (di->cfsi_base)    ML_(dinfo_free)(di->cfsi_base);
+   if (di->cfsi_m_ix)    ML_(dinfo_free)(di->cfsi_m_ix);
+   if (di->cfsi_rd)      ML_(dinfo_free)(di->cfsi_rd);
+   if (di->cfsi_m_pool)  VG_(deleteDedupPA)(di->cfsi_m_pool);
    if (di->cfsi_exprs)   VG_(deleteXA)(di->cfsi_exprs);
    if (di->fpo)          ML_(dinfo_free)(di->fpo);
 
@@ -520,7 +523,7 @@ static void check_CFSI_related_invariants ( DebugInfo* di )
       di2 = NULL;
 
       /* invariant (2) */
-      if (di->cfsi) {
+      if (di->cfsi_rd) {
          vg_assert(di->cfsi_minavma <= di->cfsi_maxavma); /* duh! */
          /* Assume the csfi fits completely into one individual mapping
             for now. This might need to be improved/reworked later. */
@@ -532,25 +535,25 @@ static void check_CFSI_related_invariants ( DebugInfo* di )
 
    /* degenerate case: all r-x sections are empty */
    if (!has_nonempty_rx) {
-      vg_assert(di->cfsi == NULL);
+      vg_assert(di->cfsi_rd == NULL);
       return;
    }
 
    /* invariant (2) - cont. */
-   if (di->cfsi)
+   if (di->cfsi_rd)
       vg_assert(cfsi_fits);
 
    /* invariants (3) and (4) */
-   if (di->cfsi) {
+   if (di->cfsi_rd) {
       vg_assert(di->cfsi_used > 0);
       vg_assert(di->cfsi_size > 0);
       for (i = 0; i < di->cfsi_used; i++) {
-         DiCfSI* cfsi = &di->cfsi[i];
+         DiCfSI* cfsi = &di->cfsi_rd[i];
          vg_assert(cfsi->len > 0);
          vg_assert(cfsi->base >= di->cfsi_minavma);
          vg_assert(cfsi->base + cfsi->len - 1 <= di->cfsi_maxavma);
          if (i > 0) {
-            DiCfSI* cfsip = &di->cfsi[i-1];
+            DiCfSI* cfsip = &di->cfsi_rd[i-1];
             vg_assert(cfsip->base + cfsip->len <= cfsi->base);
          }
       }
@@ -576,7 +579,7 @@ void VG_(di_initialise) ( void )
    vg_assert(debugInfo_list == NULL);
 
    /* flush the CFI fast query cache. */
-   cfsi_cache__invalidate();
+   cfsi_m_cache__invalidate();
 }
 
 
@@ -637,9 +640,14 @@ static ULong di_notify_ACHIEVE_ACCEPT_STATE ( struct _DebugInfo* di )
       TRACE_SYMTAB("\n------ Canonicalising the "
                    "acquired info ------\n");
       /* invalidate the CFI unwind cache. */
-      cfsi_cache__invalidate();
+      cfsi_m_cache__invalidate();
       /* prepare read data for use */
       ML_(canonicaliseTables)( di );
+      /* Check invariants listed in
+         Comment_on_IMPORTANT_REPRESENTATIONAL_INVARIANTS in
+         priv_storage.h. */
+      check_CFSI_related_invariants(di);
+      ML_(finish_CFSI_arrays)(di);
       /* notify m_redir about it */
       TRACE_SYMTAB("\n------ Notifying m_redir ------\n");
       VG_(redir_notify_new_DebugInfo)( di );
@@ -647,10 +655,6 @@ static ULong di_notify_ACHIEVE_ACCEPT_STATE ( struct _DebugInfo* di )
       di->have_dinfo = True;
       tl_assert(di->handle > 0);
       di_handle = di->handle;
-      /* Check invariants listed in
-         Comment_on_IMPORTANT_REPRESENTATIONAL_INVARIANTS in
-         priv_storage.h. */
-      check_CFSI_related_invariants(di);
 
    } else {
       TRACE_SYMTAB("\n------ ELF reading failed ------\n");
@@ -940,7 +944,7 @@ void VG_(di_notify_munmap)( Addr a, SizeT len )
    if (0) VG_(printf)("DISCARD %#lx %#lx\n", a, a+len);
    anyFound = discard_syms_in_range(a, len);
    if (anyFound)
-      cfsi_cache__invalidate();
+      cfsi_m_cache__invalidate();
 }
 
 
@@ -957,7 +961,7 @@ void VG_(di_notify_mprotect)( Addr a, SizeT len, UInt prot )
    if (0 && !exe_ok) {
       Bool anyFound = discard_syms_in_range(a, len);
       if (anyFound)
-         cfsi_cache__invalidate();
+         cfsi_m_cache__invalidate();
    }
 }
 
@@ -1237,7 +1241,7 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
 
    /* play safe; always invalidate the CFI cache.  I don't know if
       this is necessary, but anyway .. */
-   cfsi_cache__invalidate();
+   cfsi_m_cache__invalidate();
    /* dump old info for this range, if any */
    discard_syms_in_range( avma_obj, total_size );
 
@@ -2364,17 +2368,17 @@ UWord evalCfiExpr ( XArray* exprs, Int ix,
 }
 
 
-/* Search all the DebugInfos in the entire system, to find the DiCfSI
+/* Search all the DebugInfos in the entire system, to find the DiCfSI_m
    that pertains to 'ip'. 
 
    If found, set *diP to the DebugInfo in which it resides, and
-   *ixP to the index in that DebugInfo's cfsi array.
+   *cfsi_mP to the cfsi_m pointer in that DebugInfo's cfsi_m_pool.
 
-   If not found, set *diP to (DebugInfo*)1 and *ixP to zero.
+   If not found, set *diP to (DebugInfo*)1 and *cfsi_mP to zero.
 */
 __attribute__((noinline))
 static void find_DiCfSI ( /*OUT*/DebugInfo** diP, 
-                          /*OUT*/Word* ixP,
+                          /*OUT*/DiCfSI_m** cfsi_mP,
                           Addr ip )
 {
    DebugInfo* di;
@@ -2411,17 +2415,22 @@ static void find_DiCfSI ( /*OUT*/DebugInfo** diP,
 
       /* we didn't find it. */
       *diP = (DebugInfo*)1;
-      *ixP = 0;
+      *cfsi_mP = 0;
 
    } else {
 
-      /* found it. */
+      /* found a di corresponding to ip. */
       /* ensure that di is 4-aligned (at least), so it can't possibly
          be equal to (DebugInfo*)1. */
       vg_assert(di && VG_IS_4_ALIGNED(di));
-      vg_assert(i >= 0 && i < di->cfsi_used);
-      *diP = di;
-      *ixP = i;
+      *cfsi_mP = ML_(get_cfsi_m) (di, i);
+      if (*cfsi_mP == NULL) {
+         // This is a cfsi hole. Report no cfi information found.
+         *diP = (DebugInfo*)1;
+         // But we will still perform the hack below.
+      } else {
+         *diP = di;
+      }
 
       /* Start of performance-enhancing hack: once every 64 (chosen
          hackily after profiling) successful searches, move the found
@@ -2449,35 +2458,34 @@ static void find_DiCfSI ( /*OUT*/DebugInfo** diP,
 /* Now follows a mechanism for caching queries to find_DiCfSI, since
    they are extremely frequent on amd64-linux, during stack unwinding.
 
-   Each cache entry binds an ip value to a (di, ix) pair.  Possible
+   Each cache entry binds an ip value to a (di, cfsi_m*) pair.  Possible
    values:
 
-   di is non-null, ix >= 0  ==>  cache slot in use, "di->cfsi[ix]"
-   di is (DebugInfo*)1      ==>  cache slot in use, no associated di
-   di is NULL               ==>  cache slot not in use
+   di is non-null, cfsi_m* >= 0  ==>  cache slot in use, "cfsi_m*"
+   di is (DebugInfo*)1           ==>  cache slot in use, no associated di
+   di is NULL                    ==>  cache slot not in use
 
    Hence simply zeroing out the entire cache invalidates all
    entries.
 
-   Why not map ip values directly to DiCfSI*'s?  Because this would
-   cause problems if/when the cfsi array is moved due to resizing.
-   Instead we cache .cfsi array index value, which should be invariant
-   across resizing.  (That said, I don't think the current
-   implementation will resize whilst during queries, since the DiCfSI
-   records are added all at once, when the debuginfo for an object is
-   read, and is not changed ever thereafter. */
+   We can map an ip value directly to a (di, cfsi_m*) pair as
+   once a DebugInfo is read, adding new DiCfSI_m* is not possible
+   anymore, as the cfsi_m_pool is frozen once the reading is terminated.
+   Also, the cache is invalidated when new debuginfo is read due to
+   an mmap or some debuginfo is discarded due to an munmap. */
 
-// Prime number, giving about 3K cache on 32 bits, 6K cache on 64 bits.
-#define N_CFSI_CACHE 509
+// Prime number, giving about 6Kbytes cache on 32 bits,
+//                           12Kbytes cache on 64 bits.
+#define N_CFSI_M_CACHE 509
 
 typedef
-   struct { Addr ip; DebugInfo* di; Word ix; }
-   CFSICacheEnt;
+   struct { Addr ip; DebugInfo* di; DiCfSI_m* cfsi_m; }
+   CFSI_m_CacheEnt;
 
-static CFSICacheEnt cfsi_cache[N_CFSI_CACHE];
+static CFSI_m_CacheEnt cfsi_m_cache[N_CFSI_M_CACHE];
 
-static void cfsi_cache__invalidate ( void ) {
-   VG_(memset)(&cfsi_cache, 0, sizeof(cfsi_cache));
+static void cfsi_m_cache__invalidate ( void ) {
+   VG_(memset)(&cfsi_m_cache, 0, sizeof(cfsi_m_cache));
    CF_info_generation++;
 }
 
@@ -2486,10 +2494,10 @@ UInt VG_(CF_info_generation) (void)
    return CF_info_generation;
 }
 
-static inline CFSICacheEnt* cfsi_cache__find ( Addr ip )
+static inline CFSI_m_CacheEnt* cfsi_m_cache__find ( Addr ip )
 {
-   UWord         hash = ip % N_CFSI_CACHE;
-   CFSICacheEnt* ce = &cfsi_cache[hash];
+   UWord         hash = ip % N_CFSI_M_CACHE;
+   CFSI_m_CacheEnt* ce = &cfsi_m_cache[hash];
    static UWord  n_q = 0, n_m = 0;
 
    n_q++;
@@ -2502,7 +2510,7 @@ static inline CFSICacheEnt* cfsi_cache__find ( Addr ip )
       /* not found in cache.  Search and update. */
       n_m++;
       ce->ip = ip;
-      find_DiCfSI( &ce->di, &ce->ix, ip );
+      find_DiCfSI( &ce->di, &ce->cfsi_m, ip );
    }
 
    if (UNLIKELY(ce->di == (DebugInfo*)1)) {
@@ -2518,7 +2526,7 @@ static inline CFSICacheEnt* cfsi_cache__find ( Addr ip )
 inline
 static Addr compute_cfa ( D3UnwindRegs* uregs,
                           Addr min_accessible, Addr max_accessible,
-                          DebugInfo* di, DiCfSI* cfsi )
+                          DebugInfo* di, DiCfSI_m* cfsi_m )
 {
    CfiExprEvalContext eec;
    Addr               cfa;
@@ -2526,34 +2534,34 @@ static Addr compute_cfa ( D3UnwindRegs* uregs,
 
    /* Compute the CFA. */
    cfa = 0;
-   switch (cfsi->cfa_how) {
+   switch (cfsi_m->cfa_how) {
 #     if defined(VGA_x86) || defined(VGA_amd64)
       case CFIC_IA_SPREL: 
-         cfa = cfsi->cfa_off + uregs->xsp;
+         cfa = cfsi_m->cfa_off + uregs->xsp;
          break;
       case CFIC_IA_BPREL: 
-         cfa = cfsi->cfa_off + uregs->xbp;
+         cfa = cfsi_m->cfa_off + uregs->xbp;
          break;
 #     elif defined(VGA_arm)
       case CFIC_ARM_R13REL: 
-         cfa = cfsi->cfa_off + uregs->r13;
+         cfa = cfsi_m->cfa_off + uregs->r13;
          break;
       case CFIC_ARM_R12REL: 
-         cfa = cfsi->cfa_off + uregs->r12;
+         cfa = cfsi_m->cfa_off + uregs->r12;
          break;
       case CFIC_ARM_R11REL: 
-         cfa = cfsi->cfa_off + uregs->r11;
+         cfa = cfsi_m->cfa_off + uregs->r11;
          break;
       case CFIC_ARM_R7REL: 
-         cfa = cfsi->cfa_off + uregs->r7;
+         cfa = cfsi_m->cfa_off + uregs->r7;
          break;
 #     elif defined(VGA_s390x)
       case CFIC_IA_SPREL:
-         cfa = cfsi->cfa_off + uregs->sp;
+         cfa = cfsi_m->cfa_off + uregs->sp;
          break;
       case CFIR_MEMCFAREL:
       {
-         Addr a = uregs->sp + cfsi->cfa_off;
+         Addr a = uregs->sp + cfsi_m->cfa_off;
          if (a < min_accessible || a > max_accessible-sizeof(Addr))
             break;
          cfa = ML_(read_Addr)((void *)a);
@@ -2563,25 +2571,25 @@ static Addr compute_cfa ( D3UnwindRegs* uregs,
          cfa = uregs->fp;
          break;
       case CFIC_IA_BPREL:
-         cfa = cfsi->cfa_off + uregs->fp;
+         cfa = cfsi_m->cfa_off + uregs->fp;
          break;
 #     elif defined(VGA_mips32) || defined(VGA_mips64)
       case CFIC_IA_SPREL:
-         cfa = cfsi->cfa_off + uregs->sp;
+         cfa = cfsi_m->cfa_off + uregs->sp;
          break;
       case CFIR_SAME:
          cfa = uregs->fp;
          break;
       case CFIC_IA_BPREL:
-         cfa = cfsi->cfa_off + uregs->fp;
+         cfa = cfsi_m->cfa_off + uregs->fp;
          break;
 #     elif defined(VGA_ppc32) || defined(VGA_ppc64)
 #     elif defined(VGP_arm64_linux)
       case CFIC_ARM64_SPREL: 
-         cfa = cfsi->cfa_off + uregs->sp;
+         cfa = cfsi_m->cfa_off + uregs->sp;
          break;
       case CFIC_ARM64_X29REL: 
-         cfa = cfsi->cfa_off + uregs->x29;
+         cfa = cfsi_m->cfa_off + uregs->x29;
          break;
 #     else
 #       error "Unsupported arch"
@@ -2589,14 +2597,14 @@ static Addr compute_cfa ( D3UnwindRegs* uregs,
       case CFIC_EXPR: /* available on all archs */
          if (0) {
             VG_(printf)("CFIC_EXPR: ");
-            ML_(ppCfiExpr)(di->cfsi_exprs, cfsi->cfa_off);
+            ML_(ppCfiExpr)(di->cfsi_exprs, cfsi_m->cfa_off);
             VG_(printf)("\n");
          }
          eec.uregs          = uregs;
          eec.min_accessible = min_accessible;
          eec.max_accessible = max_accessible;
          ok = True;
-         cfa = evalCfiExpr(di->cfsi_exprs, cfsi->cfa_off, &eec, &ok );
+         cfa = evalCfiExpr(di->cfsi_exprs, cfsi_m->cfa_off, &eec, &ok );
          if (!ok) return 0;
          break;
       default: 
@@ -2612,17 +2620,17 @@ static Addr compute_cfa ( D3UnwindRegs* uregs,
 Addr ML_(get_CFA) ( Addr ip, Addr sp, Addr fp,
                     Addr min_accessible, Addr max_accessible )
 {
-   CFSICacheEnt* ce;
+   CFSI_m_CacheEnt* ce;
    DebugInfo*    di;
-   DiCfSI*       cfsi __attribute__((unused));
+   DiCfSI_m*     cfsi_m __attribute__((unused));
 
-   ce = cfsi_cache__find(ip);
+   ce = cfsi_m_cache__find(ip);
 
    if (UNLIKELY(ce == NULL))
       return 0; /* no info.  Nothing we can do. */
 
    di = ce->di;
-   cfsi = &di->cfsi[ ce->ix ];
+   cfsi_m = ce->cfsi_m;
 
    /* Temporary impedance-matching kludge so that this keeps working
       on x86-linux and amd64-linux. */
@@ -2632,7 +2640,7 @@ Addr ML_(get_CFA) ( Addr ip, Addr sp, Addr fp,
      uregs.xsp = sp;
      uregs.xbp = fp;
      return compute_cfa(&uregs,
-                        min_accessible,  max_accessible, di, cfsi);
+                        min_accessible,  max_accessible, di, cfsi_m);
    }
 #elif defined(VGA_s390x)
    { D3UnwindRegs uregs;
@@ -2640,7 +2648,7 @@ Addr ML_(get_CFA) ( Addr ip, Addr sp, Addr fp,
      uregs.sp = sp;
      uregs.fp = fp;
      return compute_cfa(&uregs,
-                        min_accessible,  max_accessible, di, cfsi);
+                        min_accessible,  max_accessible, di, cfsi_m);
    }
 #elif defined(VGA_mips32) || defined(VGA_mips64)
    { D3UnwindRegs uregs;
@@ -2648,7 +2656,7 @@ Addr ML_(get_CFA) ( Addr ip, Addr sp, Addr fp,
      uregs.sp = sp;
      uregs.fp = fp;
      return compute_cfa(&uregs,
-                        min_accessible,  max_accessible, di, cfsi);
+                        min_accessible,  max_accessible, di, cfsi_m);
    }
 
 #  else
@@ -2674,9 +2682,9 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
                         Addr max_accessible )
 {
    DebugInfo*         di;
-   DiCfSI*            cfsi = NULL;
+   DiCfSI_m*          cfsi_m = NULL;
    Addr               cfa, ipHere = 0;
-   CFSICacheEnt*      ce;
+   CFSI_m_CacheEnt*   ce;
    CfiExprEvalContext eec __attribute__((unused));
    D3UnwindRegs       uregsPrev;
 
@@ -2694,24 +2702,24 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
 #  else
 #    error "Unknown arch"
 #  endif
-   ce = cfsi_cache__find(ipHere);
+   ce = cfsi_m_cache__find(ipHere);
 
    if (UNLIKELY(ce == NULL))
       return False; /* no info.  Nothing we can do. */
 
    di = ce->di;
-   cfsi = &di->cfsi[ ce->ix ];
+   cfsi_m = ce->cfsi_m;
 
    if (0) {
-      VG_(printf)("found cfisi: "); 
-      ML_(ppDiCfSI)(di->cfsi_exprs, cfsi);
+      VG_(printf)("found cfsi_m (but printing fake base/len): "); 
+      ML_(ppDiCfSI)(di->cfsi_exprs, 0, 0, cfsi_m);
    }
 
    VG_(bzero_inline)(&uregsPrev, sizeof(uregsPrev));
 
    /* First compute the CFA. */
    cfa = compute_cfa(uregsHere,
-                     min_accessible, max_accessible, di, cfsi);
+                     min_accessible, max_accessible, di, cfsi_m);
    if (UNLIKELY(cfa == 0))
       return False;
 
@@ -2752,30 +2760,30 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
       } while (0)
 
 #  if defined(VGA_x86) || defined(VGA_amd64)
-   COMPUTE(uregsPrev.xip, uregsHere->xip, cfsi->ra_how, cfsi->ra_off);
-   COMPUTE(uregsPrev.xsp, uregsHere->xsp, cfsi->sp_how, cfsi->sp_off);
-   COMPUTE(uregsPrev.xbp, uregsHere->xbp, cfsi->bp_how, cfsi->bp_off);
+   COMPUTE(uregsPrev.xip, uregsHere->xip, cfsi_m->ra_how, cfsi_m->ra_off);
+   COMPUTE(uregsPrev.xsp, uregsHere->xsp, cfsi_m->sp_how, cfsi_m->sp_off);
+   COMPUTE(uregsPrev.xbp, uregsHere->xbp, cfsi_m->bp_how, cfsi_m->bp_off);
 #  elif defined(VGA_arm)
-   COMPUTE(uregsPrev.r15, uregsHere->r15, cfsi->ra_how,  cfsi->ra_off);
-   COMPUTE(uregsPrev.r14, uregsHere->r14, cfsi->r14_how, cfsi->r14_off);
-   COMPUTE(uregsPrev.r13, uregsHere->r13, cfsi->r13_how, cfsi->r13_off);
-   COMPUTE(uregsPrev.r12, uregsHere->r12, cfsi->r12_how, cfsi->r12_off);
-   COMPUTE(uregsPrev.r11, uregsHere->r11, cfsi->r11_how, cfsi->r11_off);
-   COMPUTE(uregsPrev.r7,  uregsHere->r7,  cfsi->r7_how,  cfsi->r7_off);
+   COMPUTE(uregsPrev.r15, uregsHere->r15, cfsi_m->ra_how,  cfsi_m->ra_off);
+   COMPUTE(uregsPrev.r14, uregsHere->r14, cfsi_m->r14_how, cfsi_m->r14_off);
+   COMPUTE(uregsPrev.r13, uregsHere->r13, cfsi_m->r13_how, cfsi_m->r13_off);
+   COMPUTE(uregsPrev.r12, uregsHere->r12, cfsi_m->r12_how, cfsi_m->r12_off);
+   COMPUTE(uregsPrev.r11, uregsHere->r11, cfsi_m->r11_how, cfsi_m->r11_off);
+   COMPUTE(uregsPrev.r7,  uregsHere->r7,  cfsi_m->r7_how,  cfsi_m->r7_off);
 #  elif defined(VGA_s390x)
-   COMPUTE(uregsPrev.ia, uregsHere->ia, cfsi->ra_how, cfsi->ra_off);
-   COMPUTE(uregsPrev.sp, uregsHere->sp, cfsi->sp_how, cfsi->sp_off);
-   COMPUTE(uregsPrev.fp, uregsHere->fp, cfsi->fp_how, cfsi->fp_off);
+   COMPUTE(uregsPrev.ia, uregsHere->ia, cfsi_m->ra_how, cfsi_m->ra_off);
+   COMPUTE(uregsPrev.sp, uregsHere->sp, cfsi_m->sp_how, cfsi_m->sp_off);
+   COMPUTE(uregsPrev.fp, uregsHere->fp, cfsi_m->fp_how, cfsi_m->fp_off);
 #  elif defined(VGA_mips32) || defined(VGA_mips64)
-   COMPUTE(uregsPrev.pc, uregsHere->pc, cfsi->ra_how, cfsi->ra_off);
-   COMPUTE(uregsPrev.sp, uregsHere->sp, cfsi->sp_how, cfsi->sp_off);
-   COMPUTE(uregsPrev.fp, uregsHere->fp, cfsi->fp_how, cfsi->fp_off);
+   COMPUTE(uregsPrev.pc, uregsHere->pc, cfsi_m->ra_how, cfsi_m->ra_off);
+   COMPUTE(uregsPrev.sp, uregsHere->sp, cfsi_m->sp_how, cfsi_m->sp_off);
+   COMPUTE(uregsPrev.fp, uregsHere->fp, cfsi_m->fp_how, cfsi_m->fp_off);
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64)
 #  elif defined(VGP_arm64_linux)
-   COMPUTE(uregsPrev.pc,  uregsHere->pc,  cfsi->ra_how,  cfsi->ra_off);
-   COMPUTE(uregsPrev.sp,  uregsHere->sp,  cfsi->sp_how,  cfsi->sp_off);
-   COMPUTE(uregsPrev.x30, uregsHere->x30, cfsi->x30_how, cfsi->x30_off);
-   COMPUTE(uregsPrev.x29, uregsHere->x29, cfsi->x29_how, cfsi->x29_off);
+   COMPUTE(uregsPrev.pc,  uregsHere->pc,  cfsi_m->ra_how,  cfsi_m->ra_off);
+   COMPUTE(uregsPrev.sp,  uregsHere->sp,  cfsi_m->sp_how,  cfsi_m->sp_off);
+   COMPUTE(uregsPrev.x30, uregsHere->x30, cfsi_m->x30_how, cfsi_m->x30_off);
+   COMPUTE(uregsPrev.x29, uregsHere->x29, cfsi_m->x29_how, cfsi_m->x29_off);
 #  else
 #    error "Unknown arch"
 #  endif

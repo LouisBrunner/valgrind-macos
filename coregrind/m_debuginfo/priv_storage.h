@@ -236,11 +236,11 @@ typedef
 #define CFIR_MEMCFAREL    ((UChar)67)
 #define CFIR_EXPR         ((UChar)68)
 
+/* Definition of the DiCfSI_m DiCfSI machine dependent part.
+   These are highly duplicated, and are stored in a pool. */
 #if defined(VGA_x86) || defined(VGA_amd64)
 typedef
    struct {
-      Addr  base;
-      UInt  len;
       UChar cfa_how; /* a CFIC_IA value */
       UChar ra_how;  /* a CFIR_ value */
       UChar sp_how;  /* a CFIR_ value */
@@ -250,12 +250,10 @@ typedef
       Int   sp_off;
       Int   bp_off;
    }
-   DiCfSI;
+   DiCfSI_m;
 #elif defined(VGA_arm)
 typedef
    struct {
-      Addr  base;
-      UInt  len;
       UChar cfa_how; /* a CFIC_ value */
       UChar ra_how;  /* a CFIR_ value */
       UChar r14_how; /* a CFIR_ value */
@@ -271,12 +269,10 @@ typedef
       Int   r11_off;
       Int   r7_off;
    }
-   DiCfSI;
+   DiCfSI_m;
 #elif defined(VGA_arm64)
 typedef
    struct {
-      Addr  base;
-      UInt  len;
       UChar cfa_how; /* a CFIC_ value */
       UChar ra_how;  /* a CFIR_ value */
       UChar sp_how;  /* a CFIR_ value */ /*dw31=SP*/
@@ -288,7 +284,7 @@ typedef
       Int   x30_off;
       Int   x29_off;
    }
-   DiCfSI;
+   DiCfSI_m;
 #elif defined(VGA_ppc32) || defined(VGA_ppc64)
 /* Just have a struct with the common fields in, so that code that
    processes the common fields doesn't have to be ifdef'd against
@@ -296,19 +292,15 @@ typedef
    at the moment. */
 typedef
    struct {
-      Addr  base;
-      UInt  len;
       UChar cfa_how; /* a CFIC_ value */
       UChar ra_how;  /* a CFIR_ value */
       Int   cfa_off;
       Int   ra_off;
    }
-   DiCfSI;
+   DiCfSI_m;
 #elif defined(VGA_s390x)
 typedef
    struct {
-      Addr  base;
-      UInt  len;
       UChar cfa_how; /* a CFIC_ value */
       UChar sp_how;  /* a CFIR_ value */
       UChar ra_how;  /* a CFIR_ value */
@@ -318,12 +310,10 @@ typedef
       Int   ra_off;
       Int   fp_off;
    }
-   DiCfSI;
+   DiCfSI_m;
 #elif defined(VGA_mips32) || defined(VGA_mips64)
 typedef
    struct {
-      Addr  base;
-      UInt  len;
       UChar cfa_how; /* a CFIC_ value */
       UChar ra_how;  /* a CFIR_ value */
       UChar sp_how;  /* a CFIR_ value */
@@ -333,11 +323,18 @@ typedef
       Int   sp_off;
       Int   fp_off;
    }
-   DiCfSI;
+   DiCfSI_m;
 #else
 #  error "Unknown arch"
 #endif
 
+typedef
+   struct {
+      Addr  base;
+      UInt  len;
+      UInt  cfsi_m_ix;
+   }
+   DiCfSI;
 
 typedef
    enum {
@@ -820,14 +817,67 @@ struct _DebugInfo {
    UWord   inltab_used;
    UWord   inltab_size;
    SizeT   maxinl_codesz;
-   /* An expandable array of CFI summary info records.  Also includes
-      summary address bounds, showing the min and max address covered
-      by any of the records, as an aid to fast searching.  And, if the
+
+   /* A set of expandable arrays to store CFI summary info records.
+      The machine specific information (i.e. the DiCfSI_m struct)
+      are stored in cfsi_m_pool, as these are highly duplicated.
+      The DiCfSI_m are allocated in cfsi_m_pool and identified using
+      a (we hope) small integer : often one byte is enough, sometimes
+      2 bytes are needed.
+
+      cfsi_base contains the bases of the code address ranges.
+      cfsi_size is the size of the cfsi_base array.
+      The elements cfsi_base[0] till cfsi_base[cfsi_used-1] are used.
+      Following elements are not used (yet).
+
+      For each base in cfsi_base, an index into cfsi_m_pool is stored
+      in cfsi_m_ix array. The size of cfsi_m_ix is equal to
+      cfsi_size*sizeof_ix. The used portion of cfsi_m_ix is
+      cfsi_m_ix[0] till cfsi_m_ix[(cfsi_used-1)*sizeof_ix].
+
+      cfsi_base[i] gives the base address of a code range covered by
+      some CF Info. The corresponding CF Info is identified by an index
+      in cfsi_m_pool. The DiCfSI_m index in cfsi_m_pool corresponding to
+      cfsi_base[i] is given
+        by ((UChar*) cfsi_m_ix)[i] if sizeof_ix == 1
+        by ((UShort*)cfsi_m_ix)[i] if sizeof_ix == 2
+        by ((UInt*)  cfsi_m_ix)[i] if sizeof_ix == 3.
+
+      The end of the code range starting at cfsi_base[i] is given by
+      cfsi_base[i+1]-1 (or cfsi_maxavma for  cfsi_base[cfsi_used-1]).
+      Some code ranges between cfsi_minavma and cfsi_maxavma might not
+      be covered by cfi information. Such not covered ranges are stored by
+      a base in cfsi_base and a corresponding 0 index in cfsi_m_ix.
+
+      A variable size representation has been chosen for the elements of
+      cfsi_m_ix as in many case, one byte is good enough. For big
+      objects, 2 bytes are needed. No object has yet been found where
+      4 bytes are needed (but the code is ready to handle this case).
+      Not covered ranges ('cfi holes') are stored explicitely in
+      cfsi_base/cfsi_m_ix as this is more memory efficient than storing
+      a length for each covered range : on x86 or amd64, we typically have
+      a hole every 8 covered ranges. On arm64, we have very few holes
+      (1 every 50 or 100 ranges).
+      
+      The cfsi information is read and prepared in the cfsi_rd array.
+      Once all the information has been read, the cfsi_base and cfsi_m_ix
+      arrays will be filled in from cfsi_rd. cfsi_rd will then be freed.
+      This is all done by ML_(finish_CFSI_arrays).
+
+      Also includes summary address bounds, showing the min and max address
+      covered by any of the records, as an aid to fast searching.  And, if the
       records require any expression nodes, they are stored in
       cfsi_exprs. */
-   DiCfSI* cfsi;
+   Addr* cfsi_base;
+   UInt  sizeof_ix; /* size in byte of the indexes stored in cfsi_m_ix. */
+   void* cfsi_m_ix; /* Each index occupies sizeof_ix bytes. */
+
+   DiCfSI* cfsi_rd; /* Only used during reading, NULL once info is read. */
+                                   
    UWord   cfsi_used;
    UWord   cfsi_size;
+
+   DedupPoolAlloc *cfsi_m_pool;
    Addr    cfsi_minavma;
    Addr    cfsi_maxavma;
    XArray* cfsi_exprs; /* XArray of CfiExpr */
@@ -919,8 +969,14 @@ void ML_(addInlInfo) ( struct _DebugInfo* di,
                        const HChar* dirname,  /* NULL is allowable */
                        Int lineno, UShort level);
 
-/* Add a CFI summary record.  The supplied DiCfSI is copied. */
-extern void ML_(addDiCfSI) ( struct _DebugInfo* di, DiCfSI* cfsi );
+/* Add a CFI summary record.  The supplied DiCfSI_m is copied. */
+extern void ML_(addDiCfSI) ( struct _DebugInfo* di, 
+                             Addr base, UInt len, DiCfSI_m* cfsi_m );
+
+/* Given a position in the di->cfsi_base/cfsi_m_ix arrays, return
+   the corresponding cfsi_m*. Return NULL if the position corresponds
+   to a cfsi hole. */
+DiCfSI_m* ML_(get_cfsi_m) (struct _DebugInfo* di, UInt pos);
 
 /* Add a string to the string table of a DebugInfo.  If len==-1,
    ML_(addStr) will itself measure the length of the string. */
@@ -951,6 +1007,10 @@ extern void ML_(canonicaliseTables) ( struct _DebugInfo* di );
    for use. This is called by ML_(canonicaliseTables) but can also be
    called on it's own to sort just this table. */
 extern void ML_(canonicaliseCFI) ( struct _DebugInfo* di );
+
+/* ML_(finish_CFSI_arrays) fills in the cfsi_base and cfsi_m_ix arrays
+   from cfsi_rd array. cfsi_rd is then freed. */
+extern void ML_(finish_CFSI_arrays) ( struct _DebugInfo* di );
 
 /* ------ Searching ------ */
 
@@ -991,7 +1051,9 @@ void ML_(symerr) ( struct _DebugInfo* di, Bool serious, const HChar* msg );
 extern void ML_(ppSym) ( Int idx, DiSym* sym );
 
 /* Print a call-frame-info summary. */
-extern void ML_(ppDiCfSI) ( XArray* /* of CfiExpr */ exprs, DiCfSI* si );
+extern void ML_(ppDiCfSI) ( XArray* /* of CfiExpr */ exprs,
+                            Addr base, UInt len,
+                            DiCfSI_m* si_m );
 
 
 #define TRACE_SYMTAB_ENABLED (di->trace_symtab)

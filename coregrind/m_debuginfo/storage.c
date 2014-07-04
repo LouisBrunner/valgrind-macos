@@ -40,6 +40,7 @@
 #include "pub_core_basics.h"
 #include "pub_core_options.h"      /* VG_(clo_verbosity) */
 #include "pub_core_debuginfo.h"
+#include "pub_core_debuglog.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcprint.h"
@@ -114,7 +115,9 @@ void ML_(ppSym) ( Int idx, DiSym* sym )
 }
 
 /* Print a call-frame-info summary. */
-void ML_(ppDiCfSI) ( XArray* /* of CfiExpr */ exprs, DiCfSI* si )
+void ML_(ppDiCfSI) ( XArray* /* of CfiExpr */ exprs,
+                     Addr base, UInt len,
+                     DiCfSI_m* si_m )
 {
 #  define SHOW_HOW(_how, _off)                   \
       do {                                       \
@@ -139,39 +142,39 @@ void ML_(ppDiCfSI) ( XArray* /* of CfiExpr */ exprs, DiCfSI* si )
          }                                       \
       } while (0)
 
-   VG_(printf)("[%#lx .. %#lx]: ", si->base,
-                               si->base + (UWord)si->len - 1);
-   switch (si->cfa_how) {
+   VG_(printf)("[%#lx .. %#lx]: ", base,
+                                   base + (UWord)len - 1);
+   switch (si_m->cfa_how) {
       case CFIC_IA_SPREL: 
-         VG_(printf)("let cfa=oldSP+%d", si->cfa_off); 
+         VG_(printf)("let cfa=oldSP+%d", si_m->cfa_off); 
          break;
       case CFIC_IA_BPREL: 
-         VG_(printf)("let cfa=oldBP+%d", si->cfa_off); 
+         VG_(printf)("let cfa=oldBP+%d", si_m->cfa_off); 
          break;
       case CFIC_ARM_R13REL: 
-         VG_(printf)("let cfa=oldR13+%d", si->cfa_off); 
+         VG_(printf)("let cfa=oldR13+%d", si_m->cfa_off); 
          break;
       case CFIC_ARM_R12REL: 
-         VG_(printf)("let cfa=oldR12+%d", si->cfa_off); 
+         VG_(printf)("let cfa=oldR12+%d", si_m->cfa_off); 
          break;
       case CFIC_ARM_R11REL: 
-         VG_(printf)("let cfa=oldR11+%d", si->cfa_off); 
+         VG_(printf)("let cfa=oldR11+%d", si_m->cfa_off); 
          break;
       case CFIR_SAME:
          VG_(printf)("let cfa=Same");
          break;
       case CFIC_ARM_R7REL: 
-         VG_(printf)("let cfa=oldR7+%d", si->cfa_off); 
+         VG_(printf)("let cfa=oldR7+%d", si_m->cfa_off); 
          break;
       case CFIC_ARM64_SPREL: 
-         VG_(printf)("let cfa=oldSP+%d", si->cfa_off); 
+         VG_(printf)("let cfa=oldSP+%d", si_m->cfa_off); 
          break;
       case CFIC_ARM64_X29REL: 
-         VG_(printf)("let cfa=oldX29+%d", si->cfa_off); 
+         VG_(printf)("let cfa=oldX29+%d", si_m->cfa_off); 
          break;
       case CFIC_EXPR: 
          VG_(printf)("let cfa={"); 
-         ML_(ppCfiExpr)(exprs, si->cfa_off);
+         ML_(ppCfiExpr)(exprs, si_m->cfa_off);
          VG_(printf)("}"); 
          break;
       default: 
@@ -179,36 +182,36 @@ void ML_(ppDiCfSI) ( XArray* /* of CfiExpr */ exprs, DiCfSI* si )
    }
 
    VG_(printf)(" in RA=");
-   SHOW_HOW(si->ra_how, si->ra_off);
+   SHOW_HOW(si_m->ra_how, si_m->ra_off);
 #  if defined(VGA_x86) || defined(VGA_amd64)
    VG_(printf)(" SP=");
-   SHOW_HOW(si->sp_how, si->sp_off);
+   SHOW_HOW(si_m->sp_how, si_m->sp_off);
    VG_(printf)(" BP=");
-   SHOW_HOW(si->bp_how, si->bp_off);
+   SHOW_HOW(si_m->bp_how, si_m->bp_off);
 #  elif defined(VGA_arm)
    VG_(printf)(" R14=");
-   SHOW_HOW(si->r14_how, si->r14_off);
+   SHOW_HOW(si_m->r14_how, si_m->r14_off);
    VG_(printf)(" R13=");
-   SHOW_HOW(si->r13_how, si->r13_off);
+   SHOW_HOW(si_m->r13_how, si_m->r13_off);
    VG_(printf)(" R12=");
-   SHOW_HOW(si->r12_how, si->r12_off);
+   SHOW_HOW(si_m->r12_how, si_m->r12_off);
    VG_(printf)(" R11=");
-   SHOW_HOW(si->r11_how, si->r11_off);
+   SHOW_HOW(si_m->r11_how, si_m->r11_off);
    VG_(printf)(" R7=");
-   SHOW_HOW(si->r7_how, si->r7_off);
+   SHOW_HOW(si_m->r7_how, si_m->r7_off);
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64)
 #  elif defined(VGA_s390x) || defined(VGA_mips32) || defined(VGA_mips64)
    VG_(printf)(" SP=");
-   SHOW_HOW(si->sp_how, si->sp_off);
+   SHOW_HOW(si_m->sp_how, si_m->sp_off);
    VG_(printf)(" FP=");
-   SHOW_HOW(si->fp_how, si->fp_off);
+   SHOW_HOW(si_m->fp_how, si_m->fp_off);
 #  elif defined(VGA_arm64)
    VG_(printf)(" SP=");
-   SHOW_HOW(si->sp_how, si->sp_off);
+   SHOW_HOW(si_m->sp_how, si_m->sp_off);
    VG_(printf)(" X30=");
-   SHOW_HOW(si->x30_how, si->x30_off);
+   SHOW_HOW(si_m->x30_how, si_m->x30_off);
    VG_(printf)(" X29=");
-   SHOW_HOW(si->x29_how, si->x29_off);
+   SHOW_HOW(si_m->x29_how, si_m->x29_off);
 #  else
 #    error "Unknown arch"
 #  endif
@@ -543,41 +546,55 @@ void ML_(addInlInfo) ( struct _DebugInfo* di,
    addInl ( di, &inl );
 }
 
+DiCfSI_m* ML_(get_cfsi_m) (struct _DebugInfo* di, UInt pos)
+{
+   UInt cfsi_m_ix;
+
+   vg_assert(pos >= 0 && pos < di->cfsi_used);
+   switch (di->sizeof_ix) {
+      case 1: cfsi_m_ix = ((UChar*)  di->cfsi_m_ix)[pos]; break;
+      case 2: cfsi_m_ix = ((UShort*) di->cfsi_m_ix)[pos]; break;
+      case 4: cfsi_m_ix = ((UInt*)   di->cfsi_m_ix)[pos]; break;
+      default: vg_assert(0);
+   }
+   if (cfsi_m_ix == 0)
+      return NULL; // cfi hole
+   else
+      return VG_(indexEltNumber) (di->cfsi_m_pool, cfsi_m_ix);
+}
 
 /* Top-level place to call to add a CFI summary record.  The supplied
-   DiCfSI is copied. */
-void ML_(addDiCfSI) ( struct _DebugInfo* di, DiCfSI* cfsi_orig )
+   DiCfSI_m is copied. */
+void ML_(addDiCfSI) ( struct _DebugInfo* di,
+                      Addr base, UInt len, DiCfSI_m* cfsi_m )
 {
    static const Bool debug = False;
-   UInt    new_sz, i;
+   UInt    new_sz;
    DiCfSI* new_tab;
    SSizeT  delta;
    struct _DebugInfoMapping* map;
    struct _DebugInfoMapping* map2;
 
-   /* copy the original, so we can mess with it */
-   DiCfSI cfsi = *cfsi_orig;
-
    if (debug) {
       VG_(printf)("adding DiCfSI: ");
-      ML_(ppDiCfSI)(di->cfsi_exprs, &cfsi);
+      ML_(ppDiCfSI)(di->cfsi_exprs, base, len, cfsi_m);
    }
 
    /* sanity */
-   vg_assert(cfsi.len > 0);
+   vg_assert(len > 0);
    /* If this fails, the implication is you have a single procedure
       with more than 5 million bytes of code.  Which is pretty
       unlikely.  Either that, or the debuginfo reader is somehow
       broken.  5 million is of course arbitrary; but it's big enough
       to be bigger than the size of any plausible piece of code that
       would fall within a single procedure. */
-   vg_assert(cfsi.len < 5000000);
+   vg_assert(len < 5000000);
 
    vg_assert(di->fsm.have_rx_map && di->fsm.have_rw_map);
    /* Find mapping where at least one end of the CFSI falls into. */
-   map  = ML_(find_rx_mapping)(di, cfsi.base, cfsi.base);
-   map2 = ML_(find_rx_mapping)(di, cfsi.base + cfsi.len - 1,
-                                   cfsi.base + cfsi.len - 1);
+   map  = ML_(find_rx_mapping)(di, base, base);
+   map2 = ML_(find_rx_mapping)(di, base + len - 1,
+                                   base + len - 1);
    if (map == NULL)
       map = map2;
    else if (map2 == NULL)
@@ -595,13 +612,13 @@ void ML_(addDiCfSI) ( struct _DebugInfo* di, DiCfSI* cfsi_orig )
             VG_(message)(
                Vg_DebugMsg,
                "warning: DiCfSI %#lx .. %#lx outside mapped rw segments (%s)\n",
-               cfsi.base, 
-               cfsi.base + cfsi.len - 1,
+               base, 
+               base + len - 1,
                di->soname
             );
          }
          if (VG_(clo_trace_cfi)) 
-            ML_(ppDiCfSI)(di->cfsi_exprs, &cfsi);
+            ML_(ppDiCfSI)(di->cfsi_exprs, base, len, cfsi_m);
       }
       return;
    }
@@ -614,28 +631,28 @@ void ML_(addDiCfSI) ( struct _DebugInfo* di, DiCfSI* cfsi_orig )
       will fail.  See
       "Comment_on_IMPORTANT_CFSI_REPRESENTATIONAL_INVARIANTS" in
       priv_storage.h for background. */
-   if (cfsi.base < map->avma) {
+   if (base < map->avma) {
       /* Lower end is outside the mapped area.  Hence upper end must
          be inside it. */
       if (0) VG_(printf)("XXX truncate lower\n");
-      vg_assert(cfsi.base + cfsi.len - 1 >= map->avma);
-      delta = (SSizeT)(map->avma - cfsi.base);
+      vg_assert(base + len - 1 >= map->avma);
+      delta = (SSizeT)(map->avma - base);
       vg_assert(delta > 0);
-      vg_assert(delta < (SSizeT)cfsi.len);
-      cfsi.base += delta;
-      cfsi.len -= delta;
+      vg_assert(delta < (SSizeT)len);
+      base += delta;
+      len -= delta;
    }
    else
-   if (cfsi.base + cfsi.len - 1 > map->avma + map->size - 1) {
+   if (base + len - 1 > map->avma + map->size - 1) {
       /* Upper end is outside the mapped area.  Hence lower end must be
          inside it. */
       if (0) VG_(printf)("XXX truncate upper\n");
-      vg_assert(cfsi.base <= map->avma + map->size - 1);
-      delta = (SSizeT)( (cfsi.base + cfsi.len - 1) 
+      vg_assert(base <= map->avma + map->size - 1);
+      delta = (SSizeT)( (base + len - 1) 
                         - (map->avma + map->size - 1) );
       vg_assert(delta > 0);
-      vg_assert(delta < (SSizeT)cfsi.len);
-      cfsi.len -= delta;
+      vg_assert(delta < (SSizeT)len);
+      len -= delta;
    }
 
    /* Final checks */
@@ -644,11 +661,11 @@ void ML_(addDiCfSI) ( struct _DebugInfo* di, DiCfSI* cfsi_orig )
       case we asserted that len > 0 at the start, OR it fell partially
       inside the range, in which case we reduced it by some size
       (delta) which is < its original size. */
-   vg_assert(cfsi.len > 0);
+   vg_assert(len > 0);
 
    /* Similar logic applies for the next two assertions. */
-   vg_assert(cfsi.base >= map->avma);
-   vg_assert(cfsi.base + cfsi.len - 1
+   vg_assert(base >= map->avma);
+   vg_assert(base + len - 1
              <= map->avma + map->size - 1);
 
    if (di->cfsi_used == di->cfsi_size) {
@@ -656,16 +673,27 @@ void ML_(addDiCfSI) ( struct _DebugInfo* di, DiCfSI* cfsi_orig )
       if (new_sz == 0) new_sz = 20;
       new_tab = ML_(dinfo_zalloc)( "di.storage.addDiCfSI.1",
                                    new_sz * sizeof(DiCfSI) );
-      if (di->cfsi != NULL) {
-         for (i = 0; i < di->cfsi_used; i++)
-            new_tab[i] = di->cfsi[i];
-         ML_(dinfo_free)(di->cfsi);
+      if (di->cfsi_rd != NULL) {
+         VG_(memcpy)(new_tab, di->cfsi_rd,
+                     di->cfsi_used * sizeof(DiCfSI));
+         ML_(dinfo_free)(di->cfsi_rd);
       }
-      di->cfsi = new_tab;
+      di->cfsi_rd = new_tab;
       di->cfsi_size = new_sz;
+      if (di->cfsi_m_pool == NULL)
+         di->cfsi_m_pool = VG_(newDedupPA)(1000 * sizeof(DiCfSI_m),
+                                           vg_alignof(DiCfSI_m),
+                                           ML_(dinfo_zalloc),
+                                           "di.storage.DiCfSI_m_pool",
+                                           ML_(dinfo_free));
    }
 
-   di->cfsi[di->cfsi_used] = cfsi;
+   di->cfsi_rd[di->cfsi_used].base = base;
+   di->cfsi_rd[di->cfsi_used].len  = len;
+   di->cfsi_rd[di->cfsi_used].cfsi_m_ix 
+      = VG_(allocFixedEltDedupPA)(di->cfsi_m_pool,
+                                  sizeof(DiCfSI_m),
+                                  cfsi_m);
    di->cfsi_used++;
    vg_assert(di->cfsi_used <= di->cfsi_size);
 }
@@ -1834,7 +1862,7 @@ static void canonicaliseInltab ( struct _DebugInfo* di )
 }
 
 
-/* Sort the call-frame-info table by starting address.  Mash the table
+/* Sort the call-frame-info cfsi_rd by starting address.  Mash the table
    around so as to establish the property that addresses are in order
    and the ranges do not overlap.  This facilitates using binary
    search to map addresses to locations when we come to query the
@@ -1854,6 +1882,26 @@ static Int compare_DiCfSI ( const void* va, const void* vb )
    return 0;
 }
 
+static void get_cfsi_rd_stats ( struct _DebugInfo* di,
+                                UWord *n_mergeables, UWord *n_holes )
+{
+   Word i;
+
+   *n_mergeables = 0;
+   *n_holes = 0;
+
+   vg_assert (di->cfsi_used == 0 || di->cfsi_rd);
+   for (i = 1; i < (Word)di->cfsi_used; i++) {
+      Addr here_min = di->cfsi_rd[i].base;
+      Addr prev_max = di->cfsi_rd[i-1].base + di->cfsi_rd[i-1].len - 1;
+      Addr sep = here_min - prev_max;
+      if (sep > 1)
+         (*n_holes)++;
+      if (sep == 1 && di->cfsi_rd[i-1].cfsi_m_ix == di->cfsi_rd[i].cfsi_m_ix)
+         (*n_mergeables)++;
+   }
+}
+
 void ML_(canonicaliseCFI) ( struct _DebugInfo* di )
 {
    Word  i, j;
@@ -1862,18 +1910,22 @@ void ML_(canonicaliseCFI) ( struct _DebugInfo* di )
 
    /* Note: take care in here.  di->cfsi can be NULL, in which
       case _used and _size fields will be zero. */
-   if (di->cfsi == NULL) {
+   if (di->cfsi_rd == NULL) {
       vg_assert(di->cfsi_used == 0);
       vg_assert(di->cfsi_size == 0);
+      vg_assert(di->cfsi_m_pool == NULL);
+   } else {
+      vg_assert(di->cfsi_size != 0);
+      vg_assert(di->cfsi_m_pool != NULL);
    }
 
    /* Set cfsi_minavma and cfsi_maxavma to summarise the entire
-      address range contained in cfsi[0 .. cfsi_used-1]. */
+      address range contained in cfsi_rd[0 .. cfsi_used-1]. */
    di->cfsi_minavma = maxAvma; 
    di->cfsi_maxavma = minAvma;
    for (i = 0; i < (Word)di->cfsi_used; i++) {
-      Addr here_min = di->cfsi[i].base;
-      Addr here_max = di->cfsi[i].base + di->cfsi[i].len - 1;
+      Addr here_min = di->cfsi_rd[i].base;
+      Addr here_max = di->cfsi_rd[i].base + di->cfsi_rd[i].len - 1;
       if (here_min < di->cfsi_minavma)
          di->cfsi_minavma = here_min;
       if (here_max > di->cfsi_maxavma)
@@ -1885,18 +1937,18 @@ void ML_(canonicaliseCFI) ( struct _DebugInfo* di )
                   di->cfsi_used,
 	          di->cfsi_minavma, di->cfsi_maxavma);
 
-   /* Sort the cfsi array by base address. */
-   VG_(ssort)(di->cfsi, di->cfsi_used, sizeof(*di->cfsi), compare_DiCfSI);
+   /* Sort the cfsi_rd array by base address. */
+   VG_(ssort)(di->cfsi_rd, di->cfsi_used, sizeof(*di->cfsi_rd), compare_DiCfSI);
 
    /* If two adjacent entries overlap, truncate the first. */
    for (i = 0; i < (Word)di->cfsi_used-1; i++) {
-      if (di->cfsi[i].base + di->cfsi[i].len > di->cfsi[i+1].base) {
-         Word new_len = di->cfsi[i+1].base - di->cfsi[i].base;
+      if (di->cfsi_rd[i].base + di->cfsi_rd[i].len > di->cfsi_rd[i+1].base) {
+         Word new_len = di->cfsi_rd[i+1].base - di->cfsi_rd[i].base;
          /* how could it be otherwise?  The entries are sorted by the
             .base field. */         
          vg_assert(new_len >= 0);
-	 vg_assert(new_len <= di->cfsi[i].len);
-         di->cfsi[i].len = new_len;
+	 vg_assert(new_len <= di->cfsi_rd[i].len);
+         di->cfsi_rd[i].len = new_len;
       }
    }
 
@@ -1904,9 +1956,9 @@ void ML_(canonicaliseCFI) ( struct _DebugInfo* di )
       process. */
    j = 0;
    for (i = 0; i < (Word)di->cfsi_used; i++) {
-      if (di->cfsi[i].len > 0) {
+      if (di->cfsi_rd[i].len > 0) {
          if (j != i)
-            di->cfsi[j] = di->cfsi[i];
+            di->cfsi_rd[j] = di->cfsi_rd[i];
          j++;
       }
    }
@@ -1916,10 +1968,10 @@ void ML_(canonicaliseCFI) ( struct _DebugInfo* di )
    /* Ensure relevant postconditions hold. */
    for (i = 0; i < (Word)di->cfsi_used; i++) {
       /* No zero-length ranges. */
-      vg_assert(di->cfsi[i].len > 0);
+      vg_assert(di->cfsi_rd[i].len > 0);
       /* Makes sense w.r.t. summary address range */
-      vg_assert(di->cfsi[i].base >= di->cfsi_minavma);
-      vg_assert(di->cfsi[i].base + di->cfsi[i].len - 1
+      vg_assert(di->cfsi_rd[i].base >= di->cfsi_minavma);
+      vg_assert(di->cfsi_rd[i].base + di->cfsi_rd[i].len - 1
                 <= di->cfsi_maxavma);
 
       if (i < di->cfsi_used - 1) {
@@ -1931,13 +1983,107 @@ void ML_(canonicaliseCFI) ( struct _DebugInfo* di )
          }
          */
          /* In order. */
-         vg_assert(di->cfsi[i].base < di->cfsi[i+1].base);
+         vg_assert(di->cfsi_rd[i].base < di->cfsi_rd[i+1].base);
          /* No overlaps. */
-         vg_assert(di->cfsi[i].base + di->cfsi[i].len - 1
-                   < di->cfsi[i+1].base);
+         vg_assert(di->cfsi_rd[i].base + di->cfsi_rd[i].len - 1
+                   < di->cfsi_rd[i+1].base);
       }
    }
 
+   if (VG_(clo_stats) && VG_(clo_verbosity) >= 2) {
+      UWord n_mergeables, n_holes;
+      get_cfsi_rd_stats (di, &n_mergeables, &n_holes);
+      VG_(dmsg)("CFSI total %lu mergeables %lu holes %lu uniq cfsi_m %u\n",
+                di->cfsi_used, n_mergeables, n_holes,
+                VG_(sizeDedupPA) (di->cfsi_m_pool));
+   }
+}
+
+void ML_(finish_CFSI_arrays) ( struct _DebugInfo* di )
+{
+   UWord n_mergeables, n_holes;
+   UWord new_used;
+   UWord i;
+   UWord pos;
+   UWord f_mergeables, f_holes;
+   UInt sz_cfsi_m_pool;
+
+   get_cfsi_rd_stats (di, &n_mergeables, &n_holes);
+
+   if (di->cfsi_used == 0) {
+      vg_assert (di->cfsi_rd == NULL);
+      vg_assert (di->cfsi_m_pool == NULL);
+      vg_assert (n_mergeables == 0);
+      vg_assert (n_holes == 0);
+      return;
+   }
+
+   vg_assert (di->cfsi_used > n_mergeables);
+   new_used = di->cfsi_used - n_mergeables + n_holes;
+
+   sz_cfsi_m_pool = VG_(sizeDedupPA)(di->cfsi_m_pool);
+   vg_assert (sz_cfsi_m_pool > 0);
+   if (sz_cfsi_m_pool <= 255)
+      di->sizeof_ix = 1;
+   else if (sz_cfsi_m_pool <= 65535)
+      di->sizeof_ix = 2;
+   else
+      di->sizeof_ix = 4;
+
+   di->cfsi_base = ML_(dinfo_zalloc)( "di.storage.finCfSI.1",
+                                       new_used * sizeof(Addr) );
+   di->cfsi_m_ix = ML_(dinfo_zalloc)( "di.storage.finCfSI.2",
+                                      new_used * sizeof(UChar)*di->sizeof_ix);
+
+   pos = 0;
+   f_mergeables = 0;
+   f_holes = 0;
+   for (i = 0; i < (Word)di->cfsi_used; i++) {
+      if (i > 0) {
+         Addr here_min = di->cfsi_rd[i].base;
+         Addr prev_max = di->cfsi_rd[i-1].base + di->cfsi_rd[i-1].len - 1;
+         SizeT sep = here_min - prev_max;
+
+         // Skip a mergeable entry.
+         if (sep == 1) {
+            if (di->cfsi_rd[i-1].cfsi_m_ix == di->cfsi_rd[i].cfsi_m_ix) {
+               f_mergeables++;
+               continue;
+            }
+         }
+         // Insert a hole if needed.
+         if (sep > 1) {
+            f_holes++;
+            di->cfsi_base[pos] = prev_max + 1;
+            switch (di->sizeof_ix) {
+               case 1: ((UChar*) di->cfsi_m_ix)[pos] = 0; break;
+               case 2: ((UShort*)di->cfsi_m_ix)[pos] = 0; break;
+               case 4: ((UInt*)  di->cfsi_m_ix)[pos] = 0; break;
+               default: vg_assert(0);
+            }
+            pos++;
+         }
+      }
+
+      // Insert the cfsi entry i.
+      di->cfsi_base[pos] = di->cfsi_rd[i].base;
+      switch (di->sizeof_ix) {
+         case 1: ((UChar*) di->cfsi_m_ix)[pos] = di->cfsi_rd[i].cfsi_m_ix; break;
+         case 2: ((UShort*)di->cfsi_m_ix)[pos] = di->cfsi_rd[i].cfsi_m_ix; break;
+         case 4: ((UInt*)  di->cfsi_m_ix)[pos] = di->cfsi_rd[i].cfsi_m_ix; break;
+         default: vg_assert(0);
+      }
+      pos++;
+   }
+
+   vg_assert (f_mergeables == n_mergeables);
+   vg_assert (f_holes == n_holes);
+   vg_assert (pos == new_used);
+
+   di->cfsi_used = new_used;
+   di->cfsi_size = new_used;
+   ML_(dinfo_free) (di->cfsi_rd);
+   di->cfsi_rd = NULL;
 }
 
 
@@ -1949,6 +2095,9 @@ void ML_(canonicaliseTables) ( struct _DebugInfo* di )
    canonicaliseLoctab ( di );
    canonicaliseInltab ( di );
    ML_(canonicaliseCFI) ( di );
+   if (di->cfsi_m_pool)
+      VG_(freezeDedupPA) (di->cfsi_m_pool, ML_(dinfo_shrink_block));
+   /// TBD prepare cfsi_base and cfsi_m_ix
    canonicaliseVarInfo ( di );
    if (di->strpool)
       VG_(freezeDedupPA) (di->strpool, ML_(dinfo_shrink_block));
@@ -2021,23 +2170,26 @@ Word ML_(search_one_loctab) ( struct _DebugInfo* di, Addr ptr )
 
 Word ML_(search_one_cfitab) ( struct _DebugInfo* di, Addr ptr )
 {
-   Addr a_mid_lo, a_mid_hi;
-   Word mid, size, 
+   Word mid, 
         lo = 0, 
         hi = di->cfsi_used-1;
-   while (True) {
-      /* current unsearched space is from lo to hi, inclusive. */
-      if (lo > hi) return -1; /* not found */
+
+   while (lo <= hi) {
       mid      = (lo + hi) / 2;
-      a_mid_lo = di->cfsi[mid].base;
-      size     = di->cfsi[mid].len;
-      a_mid_hi = a_mid_lo + size - 1;
-      vg_assert(a_mid_hi >= a_mid_lo);
-      if (ptr < a_mid_lo) { hi = mid-1; continue; } 
-      if (ptr > a_mid_hi) { lo = mid+1; continue; }
-      vg_assert(ptr >= a_mid_lo && ptr <= a_mid_hi);
-      return mid;
+      if (ptr < di->cfsi_base[mid]) { hi = mid-1; continue; } 
+      if (ptr > di->cfsi_base[mid]) { lo = mid+1; continue; }
+      lo = mid; break;
    }
+
+   while (lo <= di->cfsi_used-1 && di->cfsi_base[lo] <= ptr)
+      lo++;
+#if 0
+   for (mid = 0; mid <= di->cfsi_used-1; mid++)
+      if (ptr < di->cfsi_base[mid])
+         break;
+   vg_assert (lo - 1 == mid - 1);
+#endif
+   return lo - 1;
 }
 
 

@@ -171,11 +171,14 @@ where XXXXXX is the bug number as listed below.
 335263  arm64: dmb instruction is not implemented
 335441  unhandled ioctl 0x8905 (SIOCATMARK) when running wine under valgrind
 335496  arm64: sbc/abc instructions are not implemented
+336772  Make moans about unknown ioctls more informative
 n-i-bz  Fix KVM_CREATE_IRQCHIP ioctl handling
 n-i-bz  s390x: Fix memory corruption for multithreaded applications
 n-i-bz  vex arm->IR: allow PC as basereg in some LDRD cases
 n-i-bz  internal error in Valgrind if vgdb transmit signals when ptrace invoked
 n-i-bz  Fix mingw64 support in valgrind.h (dev@, 9 May 2014)
+n-i-bz  drd manual: Document how to C++11 programs that use class "std::thread"
+n-i-bz  Add command-line option --default-suppressions
 
 
 Release 3.9.0 (31 October 2013)

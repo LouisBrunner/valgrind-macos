@@ -2175,14 +2175,16 @@ Word ML_(search_one_cfitab) ( struct _DebugInfo* di, Addr ptr )
         hi = di->cfsi_used-1;
 
    while (lo <= hi) {
+      /* Invariants : hi == cfsi_used-1 || ptr < cfsi_base[hi+1]
+                      lo == 0           || ptr > cfsi_base[lo-1]
+         (the first part of the invariants is similar to considering 
+         that cfsi_base[-1] is 0 and cfsi_base[cfsi_used] is ~0) */
       mid      = (lo + hi) / 2;
       if (ptr < di->cfsi_base[mid]) { hi = mid-1; continue; } 
       if (ptr > di->cfsi_base[mid]) { lo = mid+1; continue; }
-      lo = mid; break;
+      lo = mid+1; break;
    }
 
-   while (lo <= di->cfsi_used-1 && di->cfsi_base[lo] <= ptr)
-      lo++;
 #if 0
    for (mid = 0; mid <= di->cfsi_used-1; mid++)
       if (ptr < di->cfsi_base[mid])

@@ -274,6 +274,28 @@ void safe_mknod (char *nod)
    }
 }
 
+/* If remote_desc is not opened, open it.
+   Setup remote_desc_pollfdread_activity. */
+static void setup_remote_desc_for_reading (void)
+{
+   int save_fcntl_flags;
+
+   if (remote_desc == INVALID_DESCRIPTOR) {
+      /* we open the read side FIFO in non blocking mode
+         We then set the fd in blocking mode.
+         Opening in non-blocking read mode always succeeds while opening
+         in non-blocking write mode succeeds only if the fifo is already
+         opened in read mode. So, we wait till we have read the first
+         character from the read side before opening the write side. */
+      remote_desc = open_fifo ("read", from_gdb, VKI_O_RDONLY|VKI_O_NONBLOCK);
+      save_fcntl_flags = VG_(fcntl) (remote_desc, VKI_F_GETFL, 0);
+      VG_(fcntl) (remote_desc, VKI_F_SETFL, save_fcntl_flags & ~VKI_O_NONBLOCK);
+   }
+   remote_desc_pollfdread_activity.fd = remote_desc;
+   remote_desc_pollfdread_activity.events = VKI_POLLIN;
+   remote_desc_pollfdread_activity.revents = 0;
+}
+
 /* Open a connection to a remote debugger.
    NAME is the filename used for communication.  
    For Valgrind, name is the prefix for the two read and write FIFOs
@@ -286,7 +308,7 @@ void safe_mknod (char *nod)
 void remote_open (const HChar *name)
 {
    const HChar *user, *host;
-   int save_fcntl_flags, len;
+   int len;
    VgdbShared vgdbinit = 
       {0, 0, (Addr) VG_(invoke_gdbserver),
        (Addr) VG_(threads), sizeof(ThreadState), 
@@ -401,20 +423,7 @@ void remote_open (const HChar *name)
       VG_(close) (shared_mem_fd);
    }
    
-   if (remote_desc == INVALID_DESCRIPTOR) {
-      /* we open the read side FIFO in non blocking mode
-         We then set the fd in blocking mode.
-         Opening in non-blocking read mode always succeeds while opening
-         in non-blocking write mode succeeds only if the fifo is already
-         opened in read mode. So, we wait till we have read the first
-         character from the read side before opening the write side. */
-      remote_desc = open_fifo ("read", from_gdb, VKI_O_RDONLY|VKI_O_NONBLOCK);
-      save_fcntl_flags = VG_(fcntl) (remote_desc, VKI_F_GETFL, 0);
-      VG_(fcntl) (remote_desc, VKI_F_SETFL, save_fcntl_flags & ~VKI_O_NONBLOCK);
-   }
-   remote_desc_pollfdread_activity.fd = remote_desc;
-   remote_desc_pollfdread_activity.events = VKI_POLLIN;
-   remote_desc_pollfdread_activity.revents = 0;
+   setup_remote_desc_for_reading ();
 }
 
 /* sync_gdb_connection wait a time long enough to let the connection
@@ -452,17 +461,27 @@ void remote_finish (FinishReason reason)
       VG_(close) (write_remote_desc);
    write_remote_desc = INVALID_DESCRIPTOR;
    
-   if (remote_desc != INVALID_DESCRIPTOR && reason != reset_after_error) {
+   if (remote_desc != INVALID_DESCRIPTOR) {
       /* Fully close the connection, either due to orderly_finish or
          to reset_after_fork.
-         For reset_after_error, keep the reading side opened, to always be
-         ready to accept new vgdb connection. */
-      vg_assert (reason == reset_after_fork || reason == orderly_finish);
-      remote_desc_pollfdread_activity.fd = INVALID_DESCRIPTOR;
-      remote_desc_pollfdread_activity.events = 0;
-      remote_desc_pollfdread_activity.revents = 0;
-      VG_(close) (remote_desc);
-      remote_desc = INVALID_DESCRIPTOR;
+         For reset_after_error, we must always keep the reading side open,
+         to always be ready to accept new vgdb connection. So, we first
+         re-open the FIFO before closing the currently opened fd. */
+      if (reason == reset_after_error) {
+         /* Save current remote_desc, and set it to invalid, so that
+            setup_remote_desc_for_reading does (re-)open the read FIFO side. */
+         int save_remote_desc = remote_desc;
+         remote_desc = INVALID_DESCRIPTOR;
+         setup_remote_desc_for_reading();
+         VG_(close) (save_remote_desc);
+      } else {
+         vg_assert (reason == reset_after_fork || reason == orderly_finish);
+         remote_desc_pollfdread_activity.fd = INVALID_DESCRIPTOR;
+         remote_desc_pollfdread_activity.events = 0;
+         remote_desc_pollfdread_activity.revents = 0;
+         VG_(close) (remote_desc);
+         remote_desc = INVALID_DESCRIPTOR;
+      }
    }
    noack_mode = False;
    

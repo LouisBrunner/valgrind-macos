@@ -1995,7 +1995,7 @@ void ML_(canonicaliseCFI) ( struct _DebugInfo* di )
       get_cfsi_rd_stats (di, &n_mergeables, &n_holes);
       VG_(dmsg)("CFSI total %lu mergeables %lu holes %lu uniq cfsi_m %u\n",
                 di->cfsi_used, n_mergeables, n_holes,
-                VG_(sizeDedupPA) (di->cfsi_m_pool));
+                di->cfsi_m_pool ? VG_(sizeDedupPA) (di->cfsi_m_pool) : 0);
    }
 }
 

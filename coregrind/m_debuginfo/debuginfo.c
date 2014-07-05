@@ -2621,16 +2621,11 @@ Addr ML_(get_CFA) ( Addr ip, Addr sp, Addr fp,
                     Addr min_accessible, Addr max_accessible )
 {
    CFSI_m_CacheEnt* ce;
-   DebugInfo*    di;
-   DiCfSI_m*     cfsi_m __attribute__((unused));
 
    ce = cfsi_m_cache__find(ip);
 
    if (UNLIKELY(ce == NULL))
       return 0; /* no info.  Nothing we can do. */
-
-   di = ce->di;
-   cfsi_m = ce->cfsi_m;
 
    /* Temporary impedance-matching kludge so that this keeps working
       on x86-linux and amd64-linux. */
@@ -2640,7 +2635,7 @@ Addr ML_(get_CFA) ( Addr ip, Addr sp, Addr fp,
      uregs.xsp = sp;
      uregs.xbp = fp;
      return compute_cfa(&uregs,
-                        min_accessible,  max_accessible, di, cfsi_m);
+                        min_accessible,  max_accessible, ce->di, ce->cfsi_m);
    }
 #elif defined(VGA_s390x)
    { D3UnwindRegs uregs;
@@ -2648,7 +2643,7 @@ Addr ML_(get_CFA) ( Addr ip, Addr sp, Addr fp,
      uregs.sp = sp;
      uregs.fp = fp;
      return compute_cfa(&uregs,
-                        min_accessible,  max_accessible, di, cfsi_m);
+                        min_accessible,  max_accessible, ce->di, ce->cfsi_m);
    }
 #elif defined(VGA_mips32) || defined(VGA_mips64)
    { D3UnwindRegs uregs;
@@ -2656,7 +2651,7 @@ Addr ML_(get_CFA) ( Addr ip, Addr sp, Addr fp,
      uregs.sp = sp;
      uregs.fp = fp;
      return compute_cfa(&uregs,
-                        min_accessible,  max_accessible, di, cfsi_m);
+                        min_accessible,  max_accessible, ce->di, ce->cfsi_m);
    }
 
 #  else

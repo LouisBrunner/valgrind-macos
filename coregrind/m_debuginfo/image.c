@@ -571,7 +571,7 @@ static UChar get_slowcase ( DiImage* img, DiOffT off )
 }
 
 // This is called a lot, so do the usual fast/slow split stuff on it. */
-static UChar get ( DiImage* img, DiOffT off )
+static inline UChar get ( DiImage* img, DiOffT off )
 {
    /* Most likely case is, it's in the ces[0] position. */
    /* ML_(img_from_local_file) requests a read for ces[0] when

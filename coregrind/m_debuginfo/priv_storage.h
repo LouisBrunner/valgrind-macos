@@ -506,13 +506,19 @@ ML_(cmp_for_DiAddrRange_range) ( const void* keyV, const void* elemV );
 
    that is, take the first r-x and rw- mapping we see, and we're done.
 
-   On MacOSX 10.7, 32-bit, there appears to be a new variant:
+   On MacOSX >= 10.7, 32-bit, there appears to be a new variant:
 
    start  -->  r-- mapping  -->  rw- mapping  
           -->  upgrade r-- mapping to r-x mapping  -->  accept
 
-   where the upgrade is done by a call to vm_protect.  Hence we
-   need to also track this possibility.
+   where the upgrade is done by a call to mach_vm_protect (OSX 10.7)
+   or kernelrpc_mach_vm_protect_trap (OSX 10.9 and possibly 10.8).
+   Hence we need to also track this possibility.
+
+   From perusal of dyld sources, it appears that this scheme could
+   also be used 64 bit libraries, although that doesn't seem to happen
+   in practice.  dyld uses this scheme when the text section requires
+   relocation, which only appears to be the case for 32 bit objects.
 */
 
 struct _DebugInfoMapping

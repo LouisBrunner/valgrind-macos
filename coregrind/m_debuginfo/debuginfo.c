@@ -844,7 +844,7 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
 #    error "Unknown platform"
 #  endif
 
-#  if defined(VGP_x86_darwin) && DARWIN_VERS == DARWIN_10_7
+#  if defined(VGP_x86_darwin) && DARWIN_VERS >= DARWIN_10_7
    is_ro_map = seg->hasR && !seg->hasW && !seg->hasX;
 #  endif
 
@@ -981,7 +981,7 @@ void VG_(di_notify_mprotect)( Addr a, SizeT len, UInt prot )
 }
 
 
-/* This is a MacOSX 10.7 32-bit only special.  See comments on the
+/* This is a MacOSX >= 10.7 32-bit only special.  See comments on the
    declaration of struct _DebugInfoFSM for details. */
 void VG_(di_notify_vm_protect)( Addr a, SizeT len, UInt prot )
 {

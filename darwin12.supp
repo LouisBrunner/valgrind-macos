@@ -229,6 +229,14 @@
    obj:*AppKit.framework/Versions/C/AppKit
 }
 
+{
+   OSX108:32bit:_libxpc_initializer
+   Memcheck:Cond
+   fun:_libxpc_initializer
+   fun:libSystem_initializer
+   fun:*ImageLoaderMachO*doModInitFunctions*
+}
+
 #########################################################
 ## Leaks (apparently) in even hello-world style programs
 

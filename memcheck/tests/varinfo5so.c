@@ -146,7 +146,7 @@ static int varinfo4_main ( void )
   fprintf(stderr, "answer is %d\n", blah4(3,7) );
   return 0;
 }
-
+static void inlinetest(void);
 /* ------------ varinfo5 ------------ */
 
 void varinfo5_main ( void )
@@ -155,4 +155,25 @@ void varinfo5_main ( void )
    varinfo2_main();
    varinfo3_main();
    varinfo4_main();
+   inlinetest();
+}
+
+#define INLINE    inline __attribute__((always_inline))
+
+INLINE void fun_c(int argc) {
+   croak(&argc);
+}
+
+INLINE void fun_b(int argb) {
+   fun_c(argb);
+}
+
+INLINE void fun_a(int *arga) {
+   fun_b(*arga);
+}
+
+void inlinetest(void)
+{
+   int i = 1;
+   fun_a(&i);
 }

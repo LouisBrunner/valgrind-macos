@@ -2593,6 +2593,9 @@ static Bool parse_inl_DIE (
       if (have_lo && have_hi1 && (!have_range)) {
          /* This inlined call is just a single address range. */
          if (ip_lo < ip_hi1) {
+            /* Apply text debug biasing */
+            ip_lo += cc->di->text_debug_bias;
+            ip_hi1 += cc->di->text_debug_bias;
             ML_(addInlInfo) (cc->di,
                              ip_lo, ip_hi1, 
                              get_inlFnName (inlinedfn_abstract_origin, cc, td3),
@@ -2606,6 +2609,8 @@ static Bool parse_inl_DIE (
          Word j;
          HChar *inlfnname = get_inlFnName (inlinedfn_abstract_origin, cc, td3);
 
+         /* Why is get_range_list biasing with cc->cu_svma and 
+            not with text_debug_bias ? */
          ranges = get_range_list( cc, td3,
                                   rangeoff, cc->cu_svma );
          for (j = 0; j < VG_(sizeXA)( ranges ); j++) {

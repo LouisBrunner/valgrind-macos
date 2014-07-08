@@ -27,3 +27,12 @@
    obj:*varinfo5so.so
    obj:*varinfo5
 }
+
+{
+   funinl_not_shown
+   Memcheck:User
+   fun:croak
+   fun:varinfo5_main
+   fun:main
+
+}

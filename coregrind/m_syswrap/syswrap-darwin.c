@@ -710,7 +710,7 @@ Bool ML_(sync_mappings)(const HChar *when, const HChar *where, Int num)
 // Combine two 32-bit values into a 64-bit value
 // Always use with low-numbered arg first (e.g. LOHI64(ARG1,ARG2) )
 # if defined(VGA_x86)
-#  define LOHI64(lo,hi)   ( (lo) | ((ULong)(hi) << 32) )
+#  define LOHI64(lo,hi)   ( ((ULong)(UInt)(lo)) | (((ULong)(UInt)(hi)) << 32) )
 # else
 #  error unknown architecture
 # endif
@@ -1570,7 +1570,10 @@ PRE(kevent64)
 POST(kevent64)
 {
    PRINT("kevent64 ret %ld dst %#lx (%zu)", RES, ARG4, sizeof(struct vki_kevent64));
-   if (RES > 0) POST_MEM_WRITE(ARG4, RES * sizeof(struct vki_kevent64));
+   if (RES > 0) {
+      ML_(sync_mappings)("after", "kevent64", 0);
+      POST_MEM_WRITE(ARG4, RES * sizeof(struct vki_kevent64));
+   }
 }
 
 
@@ -1660,6 +1663,16 @@ POST(workq_ops)
 {
    ThreadState *tst = VG_(get_ThreadState)(tid);
    tst->os_state.wq_jmpbuf_valid = False;
+   switch (ARG1) {
+      case VKI_WQOPS_THREAD_RETURN:
+         ML_(sync_mappings)("after", "workq_ops(THREAD_RETURN)", 0);
+         break;
+      case VKI_WQOPS_QUEUE_REQTHREADS:
+         ML_(sync_mappings)("after", "workq_ops(QUEUE_REQTHREADS)", 0);
+         break;
+      default:
+         break;
+   }
 }
 
 
@@ -3710,6 +3723,7 @@ POST(mmap)
       // Try to load symbols from the region
       VG_(di_notify_mmap)( (Addr)RES, False/*allow_SkFileV*/,
                            -1/*don't use_fd*/ );
+      ML_(sync_mappings)("after", "mmap", 0);
    }
 }
 
@@ -6498,11 +6512,15 @@ POST(mach_vm_map)
    if (!reply->RetCode) {
       // GrP fixme check src and dest tasks
       PRINT("mapped at 0x%llx", reply->address);
+#     if 0
       // GrP fixme max prot
       ML_(notify_core_and_tool_of_mmap)(
             reply->address, VG_PGROUNDUP(MACH_ARG(mach_vm_map.size)), 
             MACH_ARG(mach_vm_map.protection), VKI_MAP_SHARED, -1, 0);
       // GrP fixme VKI_MAP_PRIVATE if !copy?
+#     else
+      ML_(sync_mappings)("after", "mach_vm_map", 0);
+#     endif
    } else {
       PRINT("mig return %d", reply->RetCode);
    }
@@ -8274,56 +8292,161 @@ POST(psynch_cvclrprepost)
    Added for OSX 10.8 (Mountain Lion)
    ------------------------------------------------------------------ */
 
+/* About munge tags, eg munge_wllww.
+
+   Means the syscall takes 5 args.  For a 64 bit process each arg
+   occupies one 64-bit value and so the mapping to ARGn macros is
+   direct.  For a 32 bit process, this is more complex: 'w' denotes a
+   32-bit word and 'l' a 64-bit word.  Hence the wllww denotation
+   indicates that, in a 64 bit process, the args are: ARG1 ARG2 ARG3
+   ARG4 ARG5, but in a 32 bit process they are: ARG1 ARG3:ARG2
+   ARG5:ARG4 ARG6 ARG7.  And we have to laboriously reconstruct them
+   in order to get sane values for the arguments in 32-bit
+   processes. */
+
+static void munge_wwl(UWord* a1, UWord* a2, ULong* a3,
+                      UWord aRG1, UWord aRG2, UWord aRG3, UWord aRG4)
+{
+#  if defined(VGA_x86)
+   *a1 = aRG1; *a2 = aRG2; *a3 = LOHI64(aRG3,aRG4);
+#  else
+   *a1 = aRG1; *a2 = aRG2; *a3 = aRG3;
+#  endif
+}
+
+static void munge_wll(UWord* a1, ULong* a2, ULong* a3,
+                      UWord aRG1, UWord aRG2, UWord aRG3,
+                      UWord aRG4, UWord aRG5)
+{
+#  if defined(VGA_x86)
+   *a1 = aRG1; *a2 = LOHI64(aRG2,aRG3); *a3 = LOHI64(aRG4,aRG5);
+#  else
+   *a1 = aRG1; *a2 = aRG2; *a3 = aRG3;
+#  endif
+}
+
+static void munge_wwlw(UWord* a1, UWord* a2, ULong* a3, UWord* a4,
+                       UWord aRG1, UWord aRG2, UWord aRG3,
+                       UWord aRG4, UWord aRG5)
+{
+#  if defined(VGA_x86)
+   *a1 = aRG1; *a2 = aRG2; *a3 = LOHI64(aRG3,aRG4); *a4 = aRG5;
+#  else
+   *a1 = aRG1; *a2 = aRG2; *a3 = aRG3; *a4 = aRG4;
+#  endif
+}
+
+static void munge_wwwl(UWord* a1, UWord* a2, UWord* a3, ULong* a4,
+                       UWord aRG1, UWord aRG2, UWord aRG3,
+                       UWord aRG4, UWord aRG5)
+{
+#  if defined(VGA_x86)
+   *a1 = aRG1; *a2 = aRG2; *a3 = aRG3; *a4 = LOHI64(aRG4,aRG5);
+#  else
+   *a1 = aRG1; *a2 = aRG2; *a3 = aRG3; *a4 = aRG4;
+#  endif
+}
+
+static void munge_wllww(UWord* a1, ULong* a2, ULong* a3, UWord* a4, UWord* a5,
+                        UWord aRG1, UWord aRG2, UWord aRG3,
+                        UWord aRG4, UWord aRG5, UWord aRG6, UWord aRG7)
+{
+#  if defined(VGA_x86)
+   *a1 = aRG1; *a2 = LOHI64(aRG2,aRG3); *a3 = LOHI64(aRG4,aRG5);
+   *a4 = aRG6; *a5 = aRG7;
+#  else
+   *a1 = aRG1; *a2 = aRG2; *a3 = aRG3; *a4 = aRG4; *a5 = aRG5;
+#  endif
+}
+
+static void munge_wwllww(UWord* a1, UWord* a2, ULong* a3,
+                         ULong* a4, UWord* a5, UWord* a6,
+                         UWord aRG1, UWord aRG2, UWord aRG3, UWord aRG4,
+                         UWord aRG5, UWord aRG6, UWord aRG7, UWord aRG8)
+{
+#  if defined(VGA_x86)
+   *a1 = aRG1; *a2 = aRG2;
+   *a3 = LOHI64(aRG3,aRG4); *a4 = LOHI64(aRG5,aRG6);
+   *a5 = aRG7; *a6 = aRG8;
+#  else
+   *a1 = aRG1; *a2 = aRG2; *a3 = aRG3; *a4 = aRG4; *a5 = aRG5; *a6 = aRG6;
+#  endif
+}
+
 #if DARWIN_VERS >= DARWIN_10_8
 
 PRE(kernelrpc_mach_vm_allocate_trap)
 {
+   UWord a1; UWord a2; ULong a3; UWord a4;
+   munge_wwlw(&a1, &a2, &a3, &a4, ARG1, ARG2, ARG3, ARG4, ARG5);
    PRINT("kernelrpc_mach_vm_allocate_trap"
-         "(target:%s, address:%p, size:%#lx, flags:%#lx)",
-         name_for_port(ARG1), *(void**)ARG2, ARG3, ARG4);
+         "(target:%s, address:%p, size:%#llx, flags:%#lx)",
+         name_for_port(a1), *(void**)a2, a3, a4);
    PRE_MEM_WRITE("kernelrpc_mach_vm_allocate_trap(address)",
-                 ARG2, sizeof(void*));
-   if ((ARG4 & VM_FLAGS_ANYWHERE) == VM_FLAGS_FIXED)
-      ML_(notify_core_and_tool_of_mmap)(
-         *(mach_vm_address_t*)ARG2, ARG3, VKI_PROT_READ|VKI_PROT_WRITE,
-         VKI_MAP_ANON, -1, 0);
+                 a2, sizeof(void*));
 }
 POST(kernelrpc_mach_vm_allocate_trap)
 {
-   PRINT("address:%p size:%#lx", *(void**)ARG2, ARG3);
-   if (ML_(safe_to_deref)((void*)ARG2, sizeof(void*))) {
-      POST_MEM_WRITE(ARG2, sizeof(void*));
+   UWord a1; UWord a2; ULong a3; UWord a4;
+   munge_wwlw(&a1, &a2, &a3, &a4, ARG1, ARG2, ARG3, ARG4, ARG5);
+   PRINT("address:%p size:%#llx", *(void**)a2, a3);
+   if (ML_(safe_to_deref)((void*)a2, sizeof(void*))) {
+      POST_MEM_WRITE(a2, sizeof(void*));
    }
-   if ((ARG4 & VM_FLAGS_ANYWHERE) != VM_FLAGS_FIXED)
+   if (a1 == mach_task_self()) {
+#     if 1
+      ML_(sync_mappings)("POST(kernelrpc_mach_vm_allocate_trap)", "??", 0);
+#     else
+      /* This is nearly right, but not always -- sometimes the mapping
+         appears to be r--, for some reason.  Hence resync. */
       ML_(notify_core_and_tool_of_mmap)(
-         *(mach_vm_address_t*)ARG2, ARG3,
+         *(UWord*)a2, a3,
          VKI_PROT_READ|VKI_PROT_WRITE, VKI_MAP_ANON, -1, 0);
+#     endif
+   }
 }
 
 PRE(kernelrpc_mach_vm_deallocate_trap)
 {
+   UWord a1; ULong a2; ULong a3;
+   munge_wll(&a1, &a2, &a3, ARG1, ARG2, ARG3, ARG4, ARG5);
    PRINT("kernelrpc_mach_vm_deallocate_trap"
-         "(target:%#lx, address:%#lx, size:%#lx)", ARG1, ARG2, ARG3);
+         "(target:%#lx, address:%#llx, size:%#llx)", a1, a2, a3);
 }
 POST(kernelrpc_mach_vm_deallocate_trap)
 {
+   UWord a1; ULong a2; ULong a3;
+   munge_wll(&a1, &a2, &a3, ARG1, ARG2, ARG3, ARG4, ARG5);
    // kernelrpc_mach_vm_deallocate_trap could be call with
    // address ==0 && size == 0,
    // we shall not notify any unmap then
-   if (ARG3)
-      ML_(notify_core_and_tool_of_munmap)(ARG2, ARG3);
+   if (a3)
+      ML_(notify_core_and_tool_of_munmap)(a2, a3);
 }
 
 PRE(kernelrpc_mach_vm_protect_trap)
 {
+   UWord a1; ULong a2; ULong a3; UWord a4; UWord a5;
+   munge_wllww(&a1, &a2, &a3, &a4, &a5,
+               ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7);
    PRINT("kernelrpc_mach_vm_protect_trap"
-         "(task:%#lx, address:%#lx, size:%#lx,"
-         " set_maximum:%#lx, new_prot:%#lx)", ARG1, ARG2, ARG3, ARG4, ARG5);
-   ML_(notify_core_and_tool_of_mprotect)(ARG2, ARG3, ARG5);
+         "(task:%#lx, address:%#llx, size:%#llx,"
+         " set_maximum:%#lx, new_prot:%#lx)", a1, a2, a3, a4, a5);
+}
+POST(kernelrpc_mach_vm_protect_trap)
+{
+   UWord a1; ULong a2; ULong a3; UWord a4; UWord a5;
+   munge_wllww(&a1, &a2, &a3, &a4, &a5,
+               ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7);
+   if (/*a4 set_maximum == 0 && */a1 == mach_task_self()) {
+      ML_(notify_core_and_tool_of_mprotect)((Addr)a2, (SizeT)a3, (Int)a5);
+      VG_(di_notify_vm_protect)((Addr)a2, (SizeT)a3, (UInt)a5);
+   }
 }
 
 PRE(kernelrpc_mach_port_allocate_trap)
 {
+   // munge_www -- no need to call helper
    PRINT("kernelrpc_mach_port_allocate_trap(task:%#lx, mach_port_right_t:%#lx)",
          ARG1, ARG2);
    PRE_MEM_WRITE("kernelrpc_mach_port_allocate_trap(name)",
@@ -8331,6 +8454,7 @@ PRE(kernelrpc_mach_port_allocate_trap)
 }
 POST(kernelrpc_mach_port_allocate_trap)
 {
+   // munge_www -- no need to call helper
    POST_MEM_WRITE(ARG3, sizeof(mach_port_name_t));
    PRINT(", name:%#x", *(mach_port_name_t*)ARG3);
    record_unnamed_port(tid, *(mach_port_name_t *)ARG3, ARG2);
@@ -8338,21 +8462,25 @@ POST(kernelrpc_mach_port_allocate_trap)
 
 PRE(kernelrpc_mach_port_destroy_trap)
 {
+   // munge_ww -- no need to call helper
    PRINT("kernelrpc_mach_port_destroy_trap(task:%#lx, name:%#lx)", ARG1, ARG2);
    record_port_destroy(ARG2);
 }
 
 PRE(kernelrpc_mach_port_deallocate_trap)
 {
+   // munge_ww -- no need to call helper
    PRINT("kernelrpc_mach_port_deallocate_trap(task:%#lx, name:%#lx ) FIXME",
          ARG1, ARG2);
 }
 POST(kernelrpc_mach_port_deallocate_trap)
 {
+   // munge_ww -- no need to call helper
 }
 
 PRE(kernelrpc_mach_port_mod_refs_trap)
 {
+   // munge_wwww -- no need to call helper
    PRINT("kernelrpc_mach_port_mod_refs_trap"
          "(task:%#lx, name:%#lx, right:%#lx refs:%#lx) FIXME",
          ARG1, ARG2, ARG3, ARG4);
@@ -8360,6 +8488,7 @@ PRE(kernelrpc_mach_port_mod_refs_trap)
 
 PRE(kernelrpc_mach_port_move_member_trap)
 {
+   // munge_www -- no need to call helper
    PRINT("kernelrpc_mach_port_move_member_trap"
          "(task:%#lx, name:%#lx, after:%#lx ) FIXME",
          ARG1, ARG2, ARG3);
@@ -8367,30 +8496,39 @@ PRE(kernelrpc_mach_port_move_member_trap)
 
 PRE(kernelrpc_mach_port_insert_right_trap)
 {
-   PRINT("kernelrpc_mach_port_insert_right_trap(FIXME,ARGUMENTS_UNKNOWN)");
+   //munge_wwww -- no need to call helper
+   PRINT("kernelrpc_mach_port_insert_right_trap(FIXME)"
+         "(%lx,%lx,%lx,%lx)", ARG1, ARG2, ARG3, ARG4);
 }
 
 PRE(kernelrpc_mach_port_insert_member_trap)
 {
-   PRINT("kernelrpc_mach_port_insert_member_trap(FIXME,ARGUMENTS_UNKNOWN)");
+   // munge_www -- no need to call helper
+   PRINT("kernelrpc_mach_port_insert_member_trap(FIXME)"
+         "(%lx,%lx,%lx)", ARG1, ARG2, ARG3);
 }
 
 PRE(kernelrpc_mach_port_extract_member_trap)
 {
-   PRINT("kernelrpc_mach_port_extract_member_trap(FIXME,ARGUMENTS_UNKNOWN)");
+   // munge_www -- no need to call helper
+   PRINT("kernelrpc_mach_port_extract_member_trap(FIXME)"
+         "(%lx,%lx,%lx)", ARG1, ARG2, ARG3);
 }
 
 PRE(iopolicysys)
 {
+   // munge_???
    PRINT("iopolicysys(FIXME)(0x%lx, 0x%lx, 0x%lx)", ARG1, ARG2, ARG3);
    /* mem effects unknown */
 }
 POST(iopolicysys)
 {
+   // munge_???
 }
 
 PRE(process_policy)
 {
+   // munge_???
    PRINT("process_policy(FIXME)("
          "scope:0x%lx, action:0x%lx, policy:0x%lx, policy_subtype:0x%lx,"
          " attr:%lx, target_pid:%lx, target_threadid:%lx)",
@@ -8399,6 +8537,7 @@ PRE(process_policy)
 }
 POST(process_policy)
 {
+   // munge_???
 }
 
 #endif /* DARWIN_VERS >= DARWIN_10_8 */
@@ -8409,44 +8548,64 @@ POST(process_policy)
    ------------------------------------------------------------------ */
 
 #if DARWIN_VERS >= DARWIN_10_9
+
 PRE(kernelrpc_mach_vm_map_trap)
 {
+   UWord a1; UWord a2; ULong a3; ULong a4; UWord a5; UWord a6;
+   munge_wwllww(&a1, &a2, &a3, &a4, &a5, &a6,
+                ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7, ARG8);
    PRINT("kernelrpc_mach_vm_map_trap"
-         "(target:%#lx, address:%p, size:%#lx,"
-         " mask:%#lx, flags:%#lx, cur_prot:%#lx)",
-         ARG1, *(void**)ARG2, ARG3, ARG4, ARG5, ARG6);
-   PRE_MEM_WRITE("kernelrpc_mach_vm_map_trap(address)", ARG2, sizeof(void*));
+         "(target:%#lx, address:%p, size:%#llx,"
+         " mask:%#llx, flags:%#lx, cur_prot:%#lx)",
+         a1, *(void**)a2, a3, a4, a5, a6);
+   PRE_MEM_WRITE("kernelrpc_mach_vm_map_trap(address)", a2, sizeof(void*));
 }
 POST(kernelrpc_mach_vm_map_trap)
 {
-   PRINT("-> address:%p", *(void**)ARG2);
-   if (ML_(safe_to_deref)((void*)ARG2, sizeof(void*))) {
-      POST_MEM_WRITE(ARG2, sizeof(void*));
+   UWord a1; UWord a2; ULong a3; ULong a4; UWord a5; UWord a6;
+   munge_wwllww(&a1, &a2, &a3, &a4, &a5, &a6,
+                ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7, ARG8);
+   PRINT("-> address:%p", *(void**)a2);
+   if (ML_(safe_to_deref)((void*)a2, sizeof(void*))) {
+      POST_MEM_WRITE(a2, sizeof(void*));
    }
    ML_(notify_core_and_tool_of_mmap)(
-      *(mach_vm_address_t*)ARG2, ARG3,
+      *(mach_vm_address_t*)a2, a3,
       VKI_PROT_READ|VKI_PROT_WRITE, VKI_MAP_ANON, -1, 0);
-  // ML_(sync_mappings)("after", "kernelrpc_mach_vm_map_trap", 0);
+   // ML_(sync_mappings)("after", "kernelrpc_mach_vm_map_trap", 0);
 }
 
 PRE(kernelrpc_mach_port_construct_trap)
 {
-   PRINT("kernelrpc_mach_port_construct_trap(FIXME,ARGUMENTS_UNKNOWN)");
+   UWord a1; UWord a2; ULong a3; UWord a4;
+   munge_wwlw(&a1, &a2, &a3, &a4, ARG1, ARG2, ARG3, ARG4, ARG5);
+   PRINT("kernelrpc_mach_port_construct_trap(FIXME)"
+         "(%lx,%lx,%llx,%lx)", a1, a2, a3, a4);
 }
 
 PRE(kernelrpc_mach_port_destruct_trap)
 {
-   PRINT("kernelrpc_mach_port_destruct_trap(FIXME,ARGUMENTS_UNKNOWN)");
+   UWord a1; UWord a2; UWord a3; ULong a4;
+   munge_wwwl(&a1, &a2, &a3, &a4, ARG1, ARG2, ARG3, ARG4, ARG5);
+   PRINT("kernelrpc_mach_port_destruct_trap(FIXME)"
+         "(%lx,%lx,%lx,%llx)", a1, a2, a3, a4);
 }
 
 PRE(kernelrpc_mach_port_guard_trap)
 {
-   PRINT("kernelrpc_mach_port_guard_trap(FIXME)");
+   UWord a1; UWord a2; ULong a3; UWord a4;
+   munge_wwlw(&a1, &a2, &a3, &a4, ARG1, ARG2, ARG3, ARG4, ARG5);
+   PRINT("kernelrpc_mach_port_guard_trap(FIXME)"
+         "(%lx,%lx,%llx,%lx)", a1, a2, a3, a4);
 }
 
 PRE(kernelrpc_mach_port_unguard_trap)
 {
-   PRINT("kernelrpc_mach_port_unguard_trap(FIXME)");
+   // munge_wwl
+   UWord a1; UWord a2; ULong a3;
+   munge_wwl(&a1, &a2, &a3, ARG1, ARG2, ARG3, ARG4);
+   PRINT("kernelrpc_mach_port_unguard_trap(FIXME)"
+         "(%lx,%lx,%llx)", a1, a2, a3);
 }
 
 #endif /* DARWIN_VERS >= DARWIN_10_9 */
@@ -8999,7 +9158,7 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(13)), 
 
 #  if DARWIN_VERS >= DARWIN_10_8
-   MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(14), kernelrpc_mach_vm_protect_trap),
+   MACXY(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(14), kernelrpc_mach_vm_protect_trap),
 #  endif
 
 #  if DARWIN_VERS >= DARWIN_10_9

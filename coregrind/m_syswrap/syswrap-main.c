@@ -80,9 +80,10 @@
    fills in the immediate field.
    s390x r1/SVC r2   r3   r4   r5   r6   r7   n/a  n/a  r2        (== ARG1)
 
+          NUM   ARG1 ARG2 ARG3 ARG4 ARG5 ARG6 ARG7 ARG8 RESULT
    DARWIN:
-   x86    eax +4   +8   +12  +16  +20  +24  +28  +32  edx:eax, eflags.c
-   amd64  rax rdi  rsi  rdx  rcx  r8   r9   +8   +16  rdx:rax, rflags.c
+   x86    eax   +4   +8   +12  +16  +20  +24  +28  +32  edx:eax, eflags.c
+   amd64  rax   rdi  rsi  rdx  rcx  r8   r9   +8   +16  rdx:rax, rflags.c
 
    For x86-darwin, "+N" denotes "in memory at N(%esp)"; ditto
    amd64-darwin.  Apparently 0(%esp) is some kind of return address
@@ -2379,6 +2380,8 @@ void ML_(wqthread_continue_NORETURN)(ThreadId tid)
    sci->status = convert_SysRes_to_SyscallStatus( VG_(mk_SysRes_Success)(0) );
    sci->flags |= SfNoWriteResult;
    VG_(post_syscall)(tid);
+
+   ML_(sync_mappings)("in", "ML_(wqthread_continue_NORETURN)", 0);
 
    sci->status.what = SsIdle;
 

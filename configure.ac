@@ -1727,6 +1727,25 @@ AC_MSG_RESULT([no])
 CFLAGS=$safe_CFLAGS
 
 
+# does this compiler support -Wno-tautological-compare ?
+
+AC_MSG_CHECKING([if gcc accepts -Wno-tautological-compare])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-Wno-tautological-compare"
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ ]], [[
+  return 0;
+]])], [
+AC_SUBST([FLAG_W_NO_TAUTOLOGICAL_COMPARE], [-Wno-tautological-compare])
+AC_MSG_RESULT([yes])
+], [
+AC_SUBST([FLAG_W_NO_TAUTOLOGICAL_COMPARE], [])
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
+
 # does this compiler support -Wno-nonnull ?
 
 AC_MSG_CHECKING([if gcc accepts -Wno-nonnull])

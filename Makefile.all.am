@@ -105,6 +105,7 @@ AM_CFLAGS_BASE = \
 	-Wstrict-prototypes \
 	-Wmissing-declarations \
 	@FLAG_W_NO_FORMAT_ZERO_LENGTH@ \
+	@FLAG_W_NO_TAUTOLOGICAL_COMPARE@ \
 	-fno-strict-aliasing \
 	-fno-builtin
 

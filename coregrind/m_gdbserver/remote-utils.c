@@ -463,25 +463,31 @@ void remote_finish (FinishReason reason)
    
    if (remote_desc != INVALID_DESCRIPTOR) {
       /* Fully close the connection, either due to orderly_finish or
-         to reset_after_fork.
-         For reset_after_error, we must always keep the reading side open,
-         to always be ready to accept new vgdb connection. So, we first
-         re-open the FIFO before closing the currently opened fd. */
-      if (reason == reset_after_error) {
-         /* Save current remote_desc, and set it to invalid, so that
-            setup_remote_desc_for_reading does (re-)open the read FIFO side. */
-         int save_remote_desc = remote_desc;
-         remote_desc = INVALID_DESCRIPTOR;
-         setup_remote_desc_for_reading();
-         VG_(close) (save_remote_desc);
-      } else {
-         vg_assert (reason == reset_after_fork || reason == orderly_finish);
-         remote_desc_pollfdread_activity.fd = INVALID_DESCRIPTOR;
-         remote_desc_pollfdread_activity.events = 0;
-         remote_desc_pollfdread_activity.revents = 0;
-         VG_(close) (remote_desc);
-         remote_desc = INVALID_DESCRIPTOR;
-      }
+         to reset_after_fork or reset_after_error.  For
+         reset_after_error, the FIFO will be re-opened soon.  This
+         leaves a small window during which a race condition can
+         happen between vgdb and a forking process: Just after fork,
+         both the parent and the child have the FIFO open.  The child
+         will close it asap (as part of the 'after fork cleanup').  If
+         2 vgdbs are launched very quickly just after the fork, the
+         parent will close its FIFO when the 1st vgdb exits.  Then if
+         the 2nd vgdb is started before the parent has the time to
+         re-open the FIFO, the 2nd vgdb will be able to open the FIFO
+         (as it is still opened by the child).  The 2nd vgdb can then
+         have a 'write' error when the child closes the FIFO.  After
+         the 1st vgdb closes its FIFO write side, the parent gets EOF
+         on its reading FIFO till it is closed and re-opened.  Opening
+         a 2nd time the FIFO before closing the 'previous fd' solves
+         this race condition, but causes other (not understood)
+         problems due to too early re-invocation of gdbsrv.  Rather
+         than to handle this race condition in gdbsrv side, we put a
+         'retry' loop in vgdb for the initial write on the write
+         FIFO. */
+      remote_desc_pollfdread_activity.fd = INVALID_DESCRIPTOR;
+      remote_desc_pollfdread_activity.events = 0;
+      remote_desc_pollfdread_activity.revents = 0;
+      VG_(close) (remote_desc);
+      remote_desc = INVALID_DESCRIPTOR;
    }
    noack_mode = False;
    

@@ -958,7 +958,17 @@ void standalone_send_commands(int pid,
       We then start to wait for packets (normally first a resume reply)
       At that point, we send our command and expect replies */
    buf[0] = '\003';
-   write_buf(to_pid, buf, 1, "write \\003 to wake up", /* notify */ True);
+   i = 0;
+   while (!write_buf(to_pid, buf, 1, 
+                     "write \\003 to wake up", /* notify */ True)) {
+      /* If write fails, retries up to 10 times every 0.5 seconds
+         This aims at solving the race condition described in
+         remote-utils.c remote_finish function. */
+      usleep(500*1000);
+      i++;
+      if (i >= 10)
+         XERROR (errno, "failed to send wake up char after 10 trials\n");
+   }
    from_pid = open_fifo(to_gdb_from_pid, O_RDONLY, 
                         "read cmd result from pid");
    

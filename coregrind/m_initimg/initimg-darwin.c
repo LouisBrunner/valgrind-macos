@@ -486,6 +486,15 @@ Addr setup_client_stack( void*  init_sp,
 
 static void record_system_memory(void)
 {
+  /* JRS 2014-Jul-08: this messes up the sync checker, because the
+     information that the kernel gives us doesn't include anything
+     about the commpage mapping.  This functionality has therefore
+     been moved to m_main.c, valgrind_main(), section "Tell the tool
+     about the initial client memory permissions".  See comments there
+     for rationale. */
+   return;
+   /*NOTREACHED*/
+
    /* Tell aspacem where the client's kernel commpage is */
 #if defined(VGA_amd64)
    /* commpage 0x7fff:ffe00000+ - not in vm_region */

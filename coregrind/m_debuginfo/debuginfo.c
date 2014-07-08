@@ -67,6 +67,11 @@
 #endif
 
 
+/* Set this to 1 to enable debug printing for the
+   should-we-load-debuginfo-now? finite state machine. */
+#define DEBUG_FSM 0
+
+
 /*------------------------------------------------------------*/
 /*--- The _svma / _avma / _image / _bias naming scheme     ---*/
 /*------------------------------------------------------------*/
@@ -702,7 +707,7 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
    Int        actual_fd, oflags;
    SysRes     preadres;
    HChar      buf1k[1024];
-   Bool       debug = False;
+   Bool       debug = (DEBUG_FSM != 0);
    SysRes     statres;
    struct vg_stat statbuf;
 
@@ -714,11 +719,13 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
    seg = VG_(am_find_nsegment)(a);
    vg_assert(seg);
 
-   if (debug)
+   if (debug) {
+      VG_(printf)("di_notify_mmap-0:\n");
       VG_(printf)("di_notify_mmap-1: %#lx-%#lx %c%c%c\n",
                   seg->start, seg->end, 
                   seg->hasR ? 'r' : '-',
                   seg->hasW ? 'w' : '-',seg->hasX ? 'x' : '-' );
+   }
 
    /* guaranteed by aspacemgr-linux.c, sane_NSegment() */
    vg_assert(seg->end > seg->start);
@@ -842,8 +849,9 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
 #  endif
 
    if (debug)
-      VG_(printf)("di_notify_mmap-3: is_rx_map %d, is_rw_map %d\n",
-                  (Int)is_rx_map, (Int)is_rw_map);
+      VG_(printf)("di_notify_mmap-3: "
+                  "is_rx_map %d, is_rw_map %d, is_ro_map %d\n",
+                  (Int)is_rx_map, (Int)is_rw_map, (Int)is_ro_map);
 
    /* Ignore mappings with permissions we can't possibly be interested in. */
    if (!(is_rx_map || is_rw_map || is_ro_map))
@@ -906,6 +914,10 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
    di = find_or_create_DebugInfo_for( filename );
    vg_assert(di);
 
+   if (debug)
+      VG_(printf)("di_notify_mmap-4: "
+                  "noting details in DebugInfo* at %p\n", di);
+
    /* Note the details about the mapping. */
    struct _DebugInfoMapping map;
    map.avma = a;
@@ -926,6 +938,9 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
       /* Ok, so, finally, we found what we need, and we haven't
          already read debuginfo for this object.  So let's do so now.
          Yee-ha! */
+      if (debug)
+         VG_(printf)("di_notify_mmap-5: "
+                     "achieved accept state for %s\n", filename);
       return di_notify_ACHIEVE_ACCEPT_STATE ( di );
    } else {
       /* If we don't have an rx and rw mapping, or if we already have
@@ -970,16 +985,29 @@ void VG_(di_notify_mprotect)( Addr a, SizeT len, UInt prot )
    declaration of struct _DebugInfoFSM for details. */
 void VG_(di_notify_vm_protect)( Addr a, SizeT len, UInt prot )
 {
-   Bool do_nothing = True;
-#  if defined(VGP_x86_darwin) && (DARWIN_VERS >= DARWIN_10_7)
-   do_nothing = False;
-#  endif
-   if (do_nothing /* wrong platform */)
-      return;
+   Bool debug = (DEBUG_FSM != 0);
 
    Bool r_ok = toBool(prot & VKI_PROT_READ);
    Bool w_ok = toBool(prot & VKI_PROT_WRITE);
    Bool x_ok = toBool(prot & VKI_PROT_EXEC);
+   if (debug) {
+      VG_(printf)("di_notify_vm_protect-0:\n");
+      VG_(printf)("di_notify_vm_protect-1: %#lx-%#lx %c%c%c\n",
+                  a, a + len - 1,
+                  r_ok ? 'r' : '-', w_ok ? 'w' : '-', x_ok ? 'x' : '-' );
+   }
+
+   Bool do_nothing = True;
+#  if defined(VGP_x86_darwin) && (DARWIN_VERS >= DARWIN_10_7)
+   do_nothing = False;
+#  endif
+   if (do_nothing /* wrong platform */) {
+      if (debug)
+         VG_(printf)("di_notify_vm_protect-2: wrong platform, "
+                     "doing nothing.\n");
+      return;
+   }
+
    if (! (r_ok && !w_ok && x_ok))
       return; /* not an upgrade to r-x */
 
@@ -987,6 +1015,8 @@ void VG_(di_notify_vm_protect)( Addr a, SizeT len, UInt prot )
       observed as a r-- mapping, plus some other rw- mapping.  If such
       is found, conclude we're in an accept state and read debuginfo
       accordingly. */
+   if (debug)
+      VG_(printf)("di_notify_vm_protect-3: looking for existing DebugInfo*\n");
    DebugInfo* di;
    struct _DebugInfoMapping *map = NULL;
    Word i;
@@ -1015,6 +1045,10 @@ void VG_(di_notify_vm_protect)( Addr a, SizeT len, UInt prot )
    if (di == NULL)
       return; /* didn't find anything */
 
+   if (debug)
+     VG_(printf)("di_notify_vm_protect-4: found existing DebugInfo* at %p\n",
+                 di);
+
    /* Do the upgrade.  Simply update the flags of the mapping
       and pretend we never saw the RO map at all. */
    vg_assert(di->fsm.have_ro_map);
@@ -1033,6 +1067,9 @@ void VG_(di_notify_vm_protect)( Addr a, SizeT len, UInt prot )
 
    /* Check if we're now in an accept state and read debuginfo.  Finally. */
    if (di->fsm.have_rx_map && di->fsm.have_rw_map && !di->have_dinfo) {
+      if (debug)
+         VG_(printf)("di_notify_vm_protect-5: "
+                     "achieved accept state for %s\n", di->fsm.filename);
       ULong di_handle __attribute__((unused))
          = di_notify_ACHIEVE_ACCEPT_STATE( di );
       /* di_handle is ignored. That's not a problem per se -- it just

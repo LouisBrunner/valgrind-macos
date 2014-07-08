@@ -5173,8 +5173,15 @@ static Bool mc_expensive_sanity_check ( void )
 /*--- Command line args                                    ---*/
 /*------------------------------------------------------------*/
 
-
+/* --partial-loads-ok: enable by default on MacOS.  The MacOS system
+   graphics libraries are heavily vectorised, and not enabling this by
+   default causes lots of false errors. */
+#if defined(VGO_darwin)
+Bool          MC_(clo_partial_loads_ok)       = True;
+#else
 Bool          MC_(clo_partial_loads_ok)       = False;
+#endif
+
 Long          MC_(clo_freelist_vol)           = 20*1000*1000LL;
 Long          MC_(clo_freelist_big_blocks)    =  1*1000*1000LL;
 LeakCheckMode MC_(clo_leak_check)             = LC_Summary;
@@ -5347,7 +5354,12 @@ static Bool mc_process_cmd_line_options(const HChar* arg)
 }
 
 static void mc_print_usage(void)
-{  
+{
+   const HChar* plo_default = "no";
+#  if defined(VGO_darwin)
+   plo_default = "yes";
+#  endif
+
    VG_(printf)(
 "    --leak-check=no|summary|full     search for memory leaks at exit?  [summary]\n"
 "    --leak-resolution=low|med|high   differentiation of leak stack traces [high]\n"
@@ -5366,7 +5378,7 @@ static void mc_print_usage(void)
 "                                     same as --show-leak-kinds=definite\n"
 "    --undef-value-errors=no|yes      check for undefined value errors [yes]\n"
 "    --track-origins=no|yes           show origins of undefined values? [no]\n"
-"    --partial-loads-ok=no|yes        too hard to explain here; see manual [no]\n"
+"    --partial-loads-ok=no|yes        too hard to explain here; see manual [%s]\n"
 "    --freelist-vol=<number>          volume of freed blocks queue     [20000000]\n"
 "    --freelist-big-blocks=<number>   releases first blocks with size>= [1000000]\n"
 "    --workaround-gcc296-bugs=no|yes  self explanatory [no]\n"
@@ -5375,6 +5387,7 @@ static void mc_print_usage(void)
 "    --free-fill=<hexnumber>          fill free'd areas with given value\n"
 "    --keep-stacktraces=alloc|free|alloc-and-free|alloc-then-free|none\n"
 "        stack trace(s) to keep for malloc'd/free'd areas       [alloc-then-free]\n"
+, plo_default
    );
 }
 

@@ -241,3 +241,11 @@
    obj:/usr/lib/libz.*dylib
    obj:/usr/lib/libz.*dylib
 }
+
+{
+   OSX109:32bit:_libxpc_initializer
+   Memcheck:Cond
+   fun:_libxpc_initializer
+   fun:libSystem_initializer
+   fun:*ImageLoaderMachO*doModInitFunctions*
+}

@@ -1342,15 +1342,6 @@ static void print_preamble ( Bool logging_to_fd,
    else if (VG_(clo_verbosity) > 0)
       VG_(umsg)("\n");
 
-#  if defined(VGO_darwin) && DARWIN_VERS >= DARWIN_10_8
-   /* Uh, this doesn't play nice with XML output. */
-   umsg_or_xml( "WARNING: Support on MacOS 10.8/10.9 is experimental and mostly broken.\n");
-   umsg_or_xml( "WARNING: Expect incorrect results, assertions and crashes.\n");
-   umsg_or_xml( "WARNING: In particular, Memcheck on 32-bit programs will fail to\n");
-   umsg_or_xml( "WARNING: detect any errors associated with heap-allocated data.\n");
-   umsg_or_xml( "\n" );
-#  endif
-
    if (VG_(clo_verbosity) > 1) {
       SysRes fd;
       VexArch vex_arch;

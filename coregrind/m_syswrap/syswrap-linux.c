@@ -5451,6 +5451,9 @@ PRE(sys_fcntl64)
    case VKI_F_SETLK64:
    case VKI_F_SETLKW64:
 #  endif
+   case VKI_F_OFD_GETLK:
+   case VKI_F_OFD_SETLK:
+   case VKI_F_OFD_SETLKW:
       PRINT("sys_fcntl64[ARG3=='lock'] ( %ld, %ld, %#lx )", ARG1,ARG2,ARG3);
       PRE_REG_READ3(long, "fcntl64",
                     unsigned int, fd, unsigned int, cmd,

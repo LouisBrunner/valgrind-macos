@@ -343,6 +343,10 @@ struct vki_sigcontext {
 #define VKI_F_SETOWN_EX		15
 #define VKI_F_GETOWN_EX		16
 
+#define VKI_F_OFD_GETLK		36
+#define VKI_F_OFD_SETLK		37
+#define VKI_F_OFD_SETLKW	38
+
 #define VKI_F_GETLK64		33			/*  using 'struct flock64' */
 #define VKI_F_SETLK64		34
 #define VKI_F_SETLKW64		35

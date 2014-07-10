@@ -312,6 +312,10 @@ struct vki_sigcontext {
 #define VKI_F_SETOWN_EX		15
 #define VKI_F_GETOWN_EX		16
 
+#define VKI_F_OFD_GETLK		36
+#define VKI_F_OFD_SETLK		37
+#define VKI_F_OFD_SETLKW	38
+
 #define VKI_F_OWNER_TID		0
 #define VKI_F_OWNER_PID		1
 #define VKI_F_OWNER_PGRP	2

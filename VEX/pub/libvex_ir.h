@@ -1572,7 +1572,9 @@ typedef
       Iop_InterleaveOddLanes32x4, Iop_InterleaveEvenLanes32x4,
 
       /* CONCATENATION -- build a new value by concatenating either
-         the even or odd lanes of both operands. */
+         the even or odd lanes of both operands.  Note that
+         Cat{Odd,Even}Lanes64x2 are identical to Interleave{HI,LO}64x2
+         and so are omitted. */
       Iop_CatOddLanes8x16, Iop_CatOddLanes16x8, Iop_CatOddLanes32x4,
       Iop_CatEvenLanes8x16, Iop_CatEvenLanes16x8, Iop_CatEvenLanes32x4,
 

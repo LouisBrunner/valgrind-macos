@@ -4358,7 +4358,7 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
       /* Only a very limited range of constants is handled. */
       vassert(e->Iex.Const.con->tag == Ico_V128);
       UShort con = e->Iex.Const.con->Ico.V128;
-      if (con == 0x0000) {
+      if (con == 0x0000 || con == 0xFFFF) {
          HReg res = newVRegV(env);
          addInstr(env, ARM64Instr_VImmQ(res, con));
          return res;

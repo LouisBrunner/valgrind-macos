@@ -6642,6 +6642,12 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
             *p++ = 0x2F07E7E0 | rQ;
             goto done;
          }
+         if (imm == 0xFFFF) {
+            /* mvni rQ.4s, #0x0 == 0x6F 0x00 0x04 000 rQ */
+            vassert(rQ < 32);
+            *p++ = 0x6F000400 | rQ;
+            goto done;
+         }
          goto bad; /* no other handled cases right now */
       }
 

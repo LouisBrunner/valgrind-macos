@@ -172,6 +172,7 @@ where XXXXXX is the bug number as listed below.
 335441  unhandled ioctl 0x8905 (SIOCATMARK) when running wine under valgrind
 335496  arm64: sbc/abc instructions are not implemented
 336772  Make moans about unknown ioctls more informative
+336957  Add a section about the Solaris/illumos port on the webpage
 337285  fcntl commands F_OFD_SETLK, F_OFD_SETLKW, and F_OFD_GETLK not supported
 n-i-bz  Fix KVM_CREATE_IRQCHIP ioctl handling
 n-i-bz  s390x: Fix memory corruption for multithreaded applications

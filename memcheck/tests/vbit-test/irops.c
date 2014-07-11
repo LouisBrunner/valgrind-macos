@@ -877,6 +877,7 @@ static irop_t irops[] = {
   { DEFOP(Iop_Reverse8sIn64_x2, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Reverse16sIn64_x2, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Reverse32sIn64_x2, UNDEF_UNKNOWN), },
+  { DEFOP(Iop_Reverse1sIn8_x16, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Perm8x16, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Perm32x4, UNDEF_UNKNOWN), },
   { DEFOP(Iop_GetMSBs8x16, UNDEF_UNKNOWN), },

@@ -493,10 +493,15 @@ std_list_CXXFLAGS           = $(AM_CXXFLAGS) -std=c++0x -Wno-sign-compare
 std_string_SOURCES          = std_string.cpp
 std_string_CXXFLAGS         = $(AM_CXXFLAGS) -std=c++0x -Wno-sign-compare
 
+# Note: -Wl,--no-as-needed is a workaround for
+# https://bugs.launchpad.net/ubuntu/+source/gcc-defaults/+bug/1228201
+
 std_thread_SOURCES          = std_thread.cpp
 std_thread_CXXFLAGS         = $(AM_CXXFLAGS) -std=c++0x
+std_thread_LDFLAGS          = -Wl,--no-as-needed
 
 std_thread2_SOURCES          = std_thread2.cpp
 std_thread2_CXXFLAGS         = $(AM_CXXFLAGS) -std=c++0x
+std_thread2_LDFLAGS          = -Wl,--no-as-needed
 
 sem_wait_SOURCES            = sem_wait.cpp

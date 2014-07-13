@@ -45,6 +45,12 @@ problems that are common in C and C++ programs.</para>
   </listitem>
 
   <listitem>
+    <para>Passing a fishy (presumably negative) value to the
+    <computeroutput>size</computeroutput> parameter of a memory
+    allocation function.</para>
+  </listitem>
+
+  <listitem>
     <para>Memory leaks.</para>
   </listitem>
 </itemizedlist>
@@ -374,6 +380,48 @@ destination's cache line(s) can improve performance.</para>
 <para>The moral of the story is: if you want to write truly portable
 code, don't make any assumptions about the language
 implementation.</para>
+
+</sect2>
+
+
+<sect2 id="mc-manual.fishyvalue"
+       xreflabel="Fishy argument values">
+<title>Fishy argument values</title>
+
+<para>All memory allocation functions take an argument specifying the
+size of the memory block that should be allocated. Clearly, the requested
+size should be a non-negative value and is typically not excessively large. 
+For instance, it is extremely unlikly that the size of an allocation
+request exceeds 2**63 bytes on a 64-bit machine. It is much more likely that
+such a value is the result of an erroneous size calculation and is in effect
+a negative value (that just happens to appear excessively large because
+the bit pattern is interpreted as an unsigned integer).
+Such a value is called a "fishy value".
+
+The <varname>size</varname> argument of the following allocation functions
+is checked for being fishy:
+<function>malloc</function>,
+<function>calloc</function>,
+<function>realloc</function>,
+<function>memalign</function>,
+<function>new</function>,
+<function>new []</function>. 
+<function>__builtin_new</function>,
+<function>__builtin_vec_new</function>,
+For <function>calloc</function> both arguments are being checked.
+</para>
+
+<para>For example:</para>
+<programlisting><![CDATA[
+==32233== Argument 'size' of function malloc has a fishy (possibly negative) value: -3
+==32233==    at 0x4C2CFA7: malloc (vg_replace_malloc.c:298)
+==32233==    by 0x400555: foo (fishy.c:15)
+==32233==    by 0x400583: main (fishy.c:23)
+]]></programlisting>
+
+<para>In earlier Valgrind versions those values were being referred to
+as "silly arguments" and no back-trace was included.
+</para>
 
 </sect2>
 

@@ -1,2 +1,8 @@
-Warning: silly arg (-1) to malloc()
-Warning: silly args (0,-1) to calloc()
+Argument 'size' of function malloc has a fishy (possibly negative) value: -1
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (malloc3.c:15)
+
+Argument 'size' of function calloc has a fishy (possibly negative) value: -1
+   at 0x........: calloc (vg_replace_malloc.c:...)
+   by 0x........: main (malloc3.c:23)
+

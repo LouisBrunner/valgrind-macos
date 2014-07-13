@@ -441,6 +441,9 @@ Bool MC_(record_leak_error)     ( ThreadId tid,
                                   Bool print_record,
                                   Bool count_error );
 
+Bool MC_(record_fishy_value_error)  ( ThreadId tid, const HChar* function,
+                                      const HChar *argument_name, SizeT value );
+
 /* Parses a set of leak kinds (separated by ,).
    and give the resulting set in *lks.
    If parsing is succesful, returns True and *lks contains the resulting set.

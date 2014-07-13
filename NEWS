@@ -71,6 +71,9 @@ Release 3.10.0 (?? ?????? 201?)
 
 * The C++ demangler has been updated for better C++11 support.
 
+* Error messages about fishy arguments (formerly known as silly arguments)
+  now include a back-trace to aid debugging.
+
 * ==================== FIXED BUGS ====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"
@@ -1053,6 +1056,7 @@ To see details of a given bug, visit
 https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
 
+ 79311  malloc silly arg warning does not give stack trace
 210935  port valgrind.h (not valgrind) to win32 to support client requests
 214223  valgrind SIGSEGV on startup gcc 4.4.1 ppc32 (G4) Ubuntu 9.10
 243404  Port to zSeries

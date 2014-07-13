@@ -335,33 +335,6 @@ UInt MC_(n_where_pointers) (void)
 /*--- client_malloc(), etc                                 ---*/
 /*------------------------------------------------------------*/
 
-// XXX: should make this a proper error (bug #79311).
-static Bool complain_about_silly_args(SizeT sizeB, const HChar* fn)
-{
-   // Cast to a signed type to catch any unexpectedly negative args.  We're
-   // assuming here that the size asked for is not greater than 2^31 bytes
-   // (for 32-bit platforms) or 2^63 bytes (for 64-bit platforms).
-   if ((SSizeT)sizeB < 0) {
-      if (!VG_(clo_xml)) 
-         VG_(message)(Vg_UserMsg, "Warning: silly arg (%ld) to %s()\n",
-                      (SSizeT)sizeB, fn );
-      return True;
-   }
-   return False;
-}
-
-static Bool complain_about_silly_args2(SizeT n, SizeT sizeB)
-{
-   if ((SSizeT)n < 0 || (SSizeT)sizeB < 0) {
-      if (!VG_(clo_xml))
-         VG_(message)(Vg_UserMsg,
-                      "Warning: silly args (%ld,%ld) to calloc()\n",
-                      (SSizeT)n, (SSizeT)sizeB);
-      return True;
-   }
-   return False;
-}
-
 /* Allocate memory and note change in memory available */
 void* MC_(new_block) ( ThreadId tid,
                        Addr p, SizeT szB, SizeT alignB,
@@ -406,7 +379,7 @@ void* MC_(new_block) ( ThreadId tid,
 
 void* MC_(malloc) ( ThreadId tid, SizeT n )
 {
-   if (complain_about_silly_args(n, "malloc")) {
+   if (MC_(record_fishy_value_error)(tid, "malloc", "size", n)) {
       return NULL;
    } else {
       return MC_(new_block) ( tid, 0, n, VG_(clo_alignment), 
@@ -416,7 +389,7 @@ void* MC_(malloc) ( ThreadId tid, SizeT n )
 
 void* MC_(__builtin_new) ( ThreadId tid, SizeT n )
 {
-   if (complain_about_silly_args(n, "__builtin_new")) {
+   if (MC_(record_fishy_value_error)(tid, "__builtin_new", "size", n)) {
       return NULL;
    } else {
       return MC_(new_block) ( tid, 0, n, VG_(clo_alignment), 
@@ -426,7 +399,7 @@ void* MC_(__builtin_new) ( ThreadId tid, SizeT n )
 
 void* MC_(__builtin_vec_new) ( ThreadId tid, SizeT n )
 {
-   if (complain_about_silly_args(n, "__builtin_vec_new")) {
+   if (MC_(record_fishy_value_error)(tid, "__builtin_vec_new", "size", n)) {
       return NULL;
    } else {
       return MC_(new_block) ( tid, 0, n, VG_(clo_alignment), 
@@ -436,7 +409,7 @@ void* MC_(__builtin_vec_new) ( ThreadId tid, SizeT n )
 
 void* MC_(memalign) ( ThreadId tid, SizeT alignB, SizeT n )
 {
-   if (complain_about_silly_args(n, "memalign")) {
+   if (MC_(record_fishy_value_error)(tid, "memalign", "size", n)) {
       return NULL;
    } else {
       return MC_(new_block) ( tid, 0, n, alignB, 
@@ -446,7 +419,8 @@ void* MC_(memalign) ( ThreadId tid, SizeT alignB, SizeT n )
 
 void* MC_(calloc) ( ThreadId tid, SizeT nmemb, SizeT size1 )
 {
-   if (complain_about_silly_args2(nmemb, size1)) {
+   if (MC_(record_fishy_value_error)(tid, "calloc", "nmemb", nmemb) ||
+       MC_(record_fishy_value_error)(tid, "calloc", "size", size1)) {
       return NULL;
    } else {
       return MC_(new_block) ( tid, 0, nmemb*size1, VG_(clo_alignment),
@@ -538,7 +512,7 @@ void* MC_(realloc) ( ThreadId tid, void* p_old, SizeT new_szB )
    Addr      a_new; 
    SizeT     old_szB;
 
-   if (complain_about_silly_args(new_szB, "realloc")) 
+   if (MC_(record_fishy_value_error)(tid, "realloc", "size", new_szB))
       return NULL;
 
    cmalloc_n_frees ++;

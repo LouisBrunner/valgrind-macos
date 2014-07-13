@@ -75,6 +75,7 @@ typedef
       Err_Overlap,
       Err_Leak,
       Err_IllegalMempool,
+      Err_FishyValue,
    }
    MC_ErrorTag;
 
@@ -178,6 +179,15 @@ struct _MC_Error {
          AddrInfo ai;
       } IllegalMempool;
 
+      // A fishy function argument value
+      // An argument value is considered fishy if the corresponding
+      // parameter has SizeT type and the value when interpreted as a
+      // signed number is negative.
+     struct {
+         const HChar *function_name;
+         const HChar *argument_name;
+         SizeT value;
+      } FishyValue;
    } Err;
 };
 
@@ -655,6 +665,27 @@ void MC_(pp_Error) ( Error* err )
          break;
       }
 
+      case Err_FishyValue:
+         if (xml) {
+            emit( "  <kind>FishyValue</kind>\n" );
+            emit( "  <what>");
+            emit( "Argument '%s' of function %s has a fishy "
+                  "(possibly negative) value: %ld\n",
+                  extra->Err.FishyValue.argument_name,
+                  extra->Err.FishyValue.function_name,
+                  (SSizeT)extra->Err.FishyValue.value);
+            emit( "</what>");
+            VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+         } else {
+            emit( "Argument '%s' of function %s has a fishy "
+                  "(possibly negative) value: %ld\n",
+                  extra->Err.FishyValue.argument_name,
+                  extra->Err.FishyValue.function_name,
+                  (SSizeT)extra->Err.FishyValue.value);
+            VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+         }
+         break;
+
       default: 
          VG_(printf)("Error:\n  unknown Memcheck error code %d\n",
                      VG_(get_error_kind)(err));
@@ -835,6 +866,25 @@ Bool MC_(record_leak_error) ( ThreadId tid, UInt n_this_record,
                        /*allow_GDB_attach*/False, count_error );
 }
 
+Bool MC_(record_fishy_value_error) ( ThreadId tid, const HChar *function_name,
+                                     const HChar *argument_name, SizeT value)
+{
+   MC_Error extra;
+
+   tl_assert(VG_INVALID_THREADID != tid);
+
+   if ((SSizeT)value >= 0) return False;  // not a fishy value
+
+   extra.Err.FishyValue.function_name = function_name;
+   extra.Err.FishyValue.argument_name = argument_name;
+   extra.Err.FishyValue.value = value;
+
+   VG_(maybe_record_error)( 
+      tid, Err_FishyValue, /*addr*/0, /*s*/NULL, &extra );
+
+   return True;
+}
+
 void MC_(record_user_error) ( ThreadId tid, Addr a,
                               Bool isAddrErr, UInt otag )
 {
@@ -903,6 +953,12 @@ Bool MC_(eq_Error) ( VgRes res, Error* e1, Error* e2 )
       case Err_Overlap:
       case Err_Cond:
          return True;
+
+      case Err_FishyValue:
+         return VG_STREQ(extra1->Err.FishyValue.function_name,
+                         extra2->Err.FishyValue.function_name) &&
+                VG_STREQ(extra1->Err.FishyValue.argument_name,
+                         extra2->Err.FishyValue.argument_name);
 
       case Err_Addr:
          return ( extra1->Err.Addr.szB == extra2->Err.Addr.szB
@@ -1033,6 +1089,7 @@ UInt MC_(update_Error_extra)( Error* err )
    //case Err_Value:
    //case Err_Cond:
    case Err_Overlap:
+   case Err_FishyValue:
    // For Err_Leaks the returned size does not matter -- they are always
    // shown with VG_(unique_error)() so they 'extra' not copied.  But
    // we make it consistent with the others.
@@ -1186,6 +1243,7 @@ typedef
       OverlapSupp,   // Overlapping blocks in memcpy(), strcpy(), etc
       LeakSupp,      // Something to be suppressed in a leak check.
       MempoolSupp,   // Memory pool suppression.
+      FishyValueSupp,// Fishy value suppression.
    } 
    MC_SuppKind;
 
@@ -1213,6 +1271,7 @@ Bool MC_(is_recognised_suppression) ( const HChar* name, Supp* su )
    else if (VG_STREQ(name, "Value4"))  skind = Value4Supp;
    else if (VG_STREQ(name, "Value8"))  skind = Value8Supp;
    else if (VG_STREQ(name, "Value16")) skind = Value16Supp;
+   else if (VG_STREQ(name, "FishyValue")) skind = FishyValueSupp;
    else 
       return False;
 
@@ -1233,6 +1292,11 @@ struct _MC_LeakSuppExtra {
    SizeT bytes_suppressed;
    UInt  leak_search_gen;
 };
+
+typedef struct {
+   const HChar *function_name;
+   const HChar *argument_name;
+} MC_FishyValueExtra;
 
 Bool MC_(read_extra_suppression_info) ( Int fd, HChar** bufpp,
                                         SizeT* nBufp, Int* lineno, Supp *su )
@@ -1265,6 +1329,26 @@ Bool MC_(read_extra_suppression_info) ( Int fd, HChar** bufpp,
       } else {
          return False; // unknown extra line.
       }
+   } else if (VG_(get_supp_kind)(su) == FishyValueSupp) {
+      MC_FishyValueExtra *extra;
+      HChar *p;
+
+      eof = VG_(get_line) ( fd, bufpp, nBufp, lineno );
+      if (eof) return True;
+
+      extra = VG_(malloc)("mc.resi.3", sizeof *extra);
+      extra->function_name = VG_(strdup)("mv.resi.4", *bufpp);
+
+      // The suppression string is: function_name(argument_name)
+      p = VG_(strchr)(extra->function_name, '(');
+      if (p == NULL) return False;  // malformed suppression string
+      *p++ = '\0';
+      extra->argument_name = p;
+      p = VG_(strchr)(p, ')');
+      if (p == NULL) return False;  // malformed suppression string
+      *p = '\0';
+
+      VG_(set_supp_extra)(su, extra);
    }
    return True;
 }
@@ -1334,6 +1418,16 @@ Bool MC_(error_matches_suppression) ( Error* err, Supp* su )
       case MempoolSupp:
          return (ekind == Err_IllegalMempool);
 
+      case FishyValueSupp: {
+         MC_FishyValueExtra *supp_extra = VG_(get_supp_extra)(su);
+
+         return (ekind == Err_FishyValue) &&
+                VG_STREQ(extra->Err.FishyValue.function_name,
+                         supp_extra->function_name) &&
+                VG_STREQ(extra->Err.FishyValue.argument_name,
+                         supp_extra->argument_name);
+      }
+
       default:
          VG_(printf)("Error:\n"
                      "  unknown suppression type %d\n",
@@ -1357,6 +1451,7 @@ const HChar* MC_(get_error_name) ( Error* err )
    case Err_Overlap:        return "Overlap";
    case Err_Leak:           return "Leak";
    case Err_Cond:           return "Cond";
+   case Err_FishyValue:     return "FishyValue";
    case Err_Addr: {
       MC_Error* extra = VG_(get_error_extra)(err);
       switch ( extra->Err.Addr.szB ) {
@@ -1399,6 +1494,12 @@ Bool MC_(get_extra_suppression_info) ( Error* err,
       VG_(snprintf)
          (buf, nBuf-1, "match-leak-kinds: %s",
           pp_Reachedness_for_leak_kinds(extra->Err.Leak.lr->key.state));
+      return True;
+   } else if (Err_FishyValue == ekind) {
+      MC_Error* extra = VG_(get_error_extra)(err);
+      VG_(snprintf)
+         (buf, nBuf-1, "%s(%s)", extra->Err.FishyValue.function_name,
+          extra->Err.FishyValue.argument_name);
       return True;
    } else {
       return False;

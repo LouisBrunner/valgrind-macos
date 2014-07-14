@@ -677,6 +677,21 @@ ULong arm64g_calculate_condition ( /* ARM64Condcode << 4 | cc_op */
 }
 
 
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (non-referentially-transparent) */
+/* Horrible hack.  On non-arm64 platforms, return 0. */
+ULong arm64g_dirtyhelper_MRS_CNTVCT_EL0 ( void )
+{
+#  if defined(__aarch64__) && !defined(__arm__)
+   ULong w = 0x5555555555555555ULL; /* overwritten */
+   __asm__ __volatile__("mrs %0, cntvct_el0" : "=r"(w));
+   return w;
+#  else
+   return 0ULL;
+#  endif
+}
+
+
 /*---------------------------------------------------------------*/
 /*--- Flag-helpers translation-time function specialisers.    ---*/
 /*--- These help iropt specialise calls the above run-time    ---*/

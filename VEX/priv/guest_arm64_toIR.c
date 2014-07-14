@@ -5050,7 +5050,7 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
    }
 
    /* ------------------ M{SR,RS} ------------------ */
-   /* Only handles the case where the system register is TPIDR_EL0.
+   /* ---- Cases for TPIDR_EL0 ----
       0xD51BD0 010 Rt   MSR tpidr_el0, rT
       0xD53BD0 010 Rt   MRS rT, tpidr_el0
    */
@@ -5067,7 +5067,7 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       }
       return True;
    }
-   /* Cases for FPCR 
+   /* ---- Cases for FPCR ----
       0xD51B44 000 Rt  MSR fpcr, rT
       0xD53B44 000 Rt  MSR rT, fpcr
    */
@@ -5084,7 +5084,7 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       }
       return True;
    }
-   /* Cases for FPSR 
+   /* ---- Cases for FPSR ----
       0xD51B44 001 Rt  MSR fpsr, rT
       0xD53B44 001 Rt  MSR rT, fpsr
       The only part of this we model is FPSR.QC.  All other bits
@@ -5122,7 +5122,7 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       }
       return True;
    }
-   /* Cases for NZCV
+   /* ---- Cases for NZCV ----
       D51B42 000 Rt  MSR nzcv, rT
       D53B42 000 Rt  MRS rT, nzcv
       The only parts of NZCV that actually exist are bits 31:28, which 
@@ -5146,7 +5146,7 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       }
       return True;
    }
-   /* Cases for DCZID_EL0
+   /* ---- Cases for DCZID_EL0 ----
       Don't support arbitrary reads and writes to this register.  Just
       return the value 16, which indicates that the DC ZVA instruction
       is not permitted, so we don't have to emulate it.
@@ -5158,7 +5158,7 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       DIP("mrs %s, dczid_el0 (FAKED)\n", nameIReg64orZR(tt));
       return True;
    }
-   /* Cases for CTR_EL0
+   /* ---- Cases for CTR_EL0 ----
       We just handle reads, and make up a value from the D and I line
       sizes in the VexArchInfo we are given, and patch in the following
       fields that the Foundation model gives ("natively"):
@@ -5184,6 +5184,28 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       DIP("mrs %s, ctr_el0\n", nameIReg64orZR(tt));
       return True;
    }
+   /* ---- Cases for CNTVCT_EL0 ----
+      This is a timestamp counter of some sort.  Support reads of it only
+      by passing through to the host.
+      D5 3B E0 010 Rt  MRS Xt, cntvct_el0
+   */
+   if ((INSN(31,0) & 0xFFFFFFE0) == 0xD53BE040) {
+      UInt     tt   = INSN(4,0);
+      IRTemp   val  = newTemp(Ity_I64);
+      IRExpr** args = mkIRExprVec_0();
+      IRDirty* d    = unsafeIRDirty_1_N ( 
+                         val, 
+                         0/*regparms*/, 
+                         "arm64g_dirtyhelper_MRS_CNTVCT_EL0",
+                         &arm64g_dirtyhelper_MRS_CNTVCT_EL0,
+                         args 
+                      );
+      /* execute the dirty call, dumping the result in val. */
+      stmt( IRStmt_Dirty(d) );
+      putIReg64orZR(tt, mkexpr(val));
+      DIP("mrs %s, cntvct_el0\n", nameIReg64orZR(tt));
+      return True;
+   }   
 
    /* ------------------ IC_IVAU ------------------ */
    /* D5 0B 75 001 Rt  ic ivau, rT

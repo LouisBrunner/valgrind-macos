@@ -110,6 +110,11 @@ ULong arm64g_calculate_condition ( /* ARM64Condcode << 4 | cc_op */
 //ZZ                               UInt resR1, UInt resR2 );
 
 
+/* --- DIRTY HELPERS --- */
+
+extern ULong arm64g_dirtyhelper_MRS_CNTVCT_EL0 ( void );
+
+
 /*---------------------------------------------------------*/
 /*--- Condition code stuff                              ---*/
 /*---------------------------------------------------------*/

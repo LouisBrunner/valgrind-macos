@@ -1630,7 +1630,11 @@ static ULong DEBUG_SnarfLinetab(
                         ((const unsigned short *)(pnt2.ui + linecount))[j],
                         startaddr, endaddr );
                   ML_(addLineInfo)(
-                     di, fnmstr, dirstr, startaddr, endaddr,
+                     di, 
+                     ML_(addFnDn) (di, // fndnTBD
+                                   fnmstr,
+                                   dirstr), 
+                     startaddr, endaddr,
                      ((const unsigned short *)(pnt2.ui + linecount))[j], j );
                   n_lines_read++;
                }
@@ -1767,7 +1771,10 @@ static ULong codeview_dump_linetab2(
             if (debug)
                VG_(printf)("%s  line %d: %08lx to %08lx\n",
                            pfx, lbh->l[i].lineno ^ 0x80000000, svma_s, svma_e);
-            ML_(addLineInfo)( di, filename, dirname,
+            ML_(addLineInfo)( di, 
+                              ML_(addFnDn) (di, // fndnTBD
+                                            filename,
+                                            dirname),
                               bias + svma_s,
                               bias + svma_e + 1,
                               lbh->l[i].lineno ^ 0x80000000, 0 );
@@ -1781,7 +1788,10 @@ static ULong codeview_dump_linetab2(
             VG_(printf)("%s  line %d: %08lx to %08lx\n",
                         pfx, lbh->l[ lbh->nlines-1  ].lineno ^ 0x80000000,
                         svma_s, svma_e);
-          ML_(addLineInfo)( di, filename, dirname,
+          ML_(addLineInfo)( di, 
+                            ML_(addFnDn) (di, // fndnTBD
+                                          filename,
+                                          dirname),
                             bias + svma_s,
                             bias + svma_e + 1,
                             lbh->l[lbh->nlines-1].lineno ^ 0x80000000, 0 );

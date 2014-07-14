@@ -74,6 +74,8 @@ Release 3.10.0 (?? ?????? 201?)
 * Error messages about fishy arguments (formerly known as silly arguments)
   now include a back-trace to aid debugging.
 
+* Reduction of memory used by Valgrind to read and store the debug information.
+
 * ==================== FIXED BUGS ====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"

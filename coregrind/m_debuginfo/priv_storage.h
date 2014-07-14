@@ -103,6 +103,15 @@ typedef
  */
 #define OVERFLOW_DIFFERENCE     (LINENO_OVERFLOW - 5000)
 
+/* Filename and Dirname pair. FnDn are stored in di->fndnpool
+   and are allocated using VG_(allocFixedEltDedupPA).
+   The filename/dirname strings are themselves stored in di->strpool. */
+typedef
+   struct {
+      const HChar* filename;     /* source filename */
+      const HChar* dirname;      /* source directory name */
+   } FnDn;
+
 /* A structure to hold addr-to-source info for a single line.  There
   can be a lot of these, hence the dense packing. */
 typedef
@@ -112,10 +121,6 @@ typedef
       /* Word 2 */
       UShort size:LOC_SIZE_BITS; /* # bytes; we catch overflows of this */
       UInt   lineno:LINENO_BITS; /* source line number, or zero */
-      /* Word 3 */
-      const HChar* filename;     /* source filename */
-      /* Word 4 */
-      const HChar* dirname;      /* source directory name */
    }
    DiLoc;
 
@@ -123,7 +128,10 @@ typedef
 #define MAX_LEVEL     ((1 << LEVEL_BITS) - 1)
 
 /* A structure to hold addr-to-inlined fn info.  There
-  can be a lot of these, hence the dense packing. */
+   can be a lot of these, hence the dense packing.
+   Only caller source filename and lineno are stored.
+   Handling dirname should be done using fndn_ix technique
+   similar to  ML_(addLineInfo). */
 typedef
    struct {
       /* Word 1 */
@@ -135,8 +143,6 @@ typedef
       /* Word 4 */
       const HChar* filename;     /* caller source filename */
       /* Word 5 */
-      const HChar* dirname;      /* caller source directory name */
-      /* Word 6 */
       UInt   lineno:LINENO_BITS; /* caller line number */
       UShort level:LEVEL_BITS;   /* level of inlining */
    }
@@ -812,8 +818,14 @@ struct _DebugInfo {
    DiSym*  symtab;
    UWord   symtab_used;
    UWord   symtab_size;
-   /* An expandable array of locations. */
+   /* Two expandable arrays, storing locations and their filename/dirname. */
    DiLoc*  loctab;
+   UInt    sizeof_fndn_ix;  /* Similar use as sizeof_cfsi_m_ix below. */
+   void*   loctab_fndn_ix;  /* loctab[i] filename/dirname is identified by
+                               loctab_fnindex_ix[i] (an index in di->fndnpool)
+                               0 means filename/dirname unknown.
+                               The void* is an UChar* or UShort* or UInt*
+                               depending on sizeof_fndn_ix. */
    UWord   loctab_used;
    UWord   loctab_size;
    /* An expandable array of inlined fn info.
@@ -838,16 +850,16 @@ struct _DebugInfo {
 
       For each base in cfsi_base, an index into cfsi_m_pool is stored
       in cfsi_m_ix array. The size of cfsi_m_ix is equal to
-      cfsi_size*sizeof_ix. The used portion of cfsi_m_ix is
-      cfsi_m_ix[0] till cfsi_m_ix[(cfsi_used-1)*sizeof_ix].
+      cfsi_size*sizeof_cfsi_m_ix. The used portion of cfsi_m_ix is
+      cfsi_m_ix[0] till cfsi_m_ix[(cfsi_used-1)*sizeof_cfsi_m_ix].
 
       cfsi_base[i] gives the base address of a code range covered by
       some CF Info. The corresponding CF Info is identified by an index
       in cfsi_m_pool. The DiCfSI_m index in cfsi_m_pool corresponding to
       cfsi_base[i] is given
-        by ((UChar*) cfsi_m_ix)[i] if sizeof_ix == 1
-        by ((UShort*)cfsi_m_ix)[i] if sizeof_ix == 2
-        by ((UInt*)  cfsi_m_ix)[i] if sizeof_ix == 4.
+        by ((UChar*) cfsi_m_ix)[i] if sizeof_cfsi_m_ix == 1
+        by ((UShort*)cfsi_m_ix)[i] if sizeof_cfsi_m_ix == 2
+        by ((UInt*)  cfsi_m_ix)[i] if sizeof_cfsi_m_ix == 4.
 
       The end of the code range starting at cfsi_base[i] is given by
       cfsi_base[i+1]-1 (or cfsi_maxavma for  cfsi_base[cfsi_used-1]).
@@ -875,8 +887,8 @@ struct _DebugInfo {
       records require any expression nodes, they are stored in
       cfsi_exprs. */
    Addr* cfsi_base;
-   UInt  sizeof_ix; /* size in byte of the indexes stored in cfsi_m_ix. */
-   void* cfsi_m_ix; /* Each index occupies sizeof_ix bytes. */
+   UInt  sizeof_cfsi_m_ix; /* size in byte of indexes stored in cfsi_m_ix. */
+   UInt* cfsi_m_ix; /* Each index occupies sizeof_cfsi_m_ix bytes. */
 
    DiCfSI* cfsi_rd; /* Only used during reading, NULL once info is read. */
                                    
@@ -899,6 +911,10 @@ struct _DebugInfo {
    /* Pool of strings -- the string table.  Pointers
       into this are stable (the memory is not reallocated). */
    DedupPoolAlloc *strpool;
+
+   /* Pool of FnDn -- filename and dirname.
+      Elements in the pool are allocated using VG_(allocFixedEltDedupPA). */
+   DedupPoolAlloc *fndnpool;
 
    /* Variable scope information, as harvested from Dwarf3 files.
 
@@ -953,18 +969,30 @@ struct _DebugInfo {
    to ensure that's OK. */
 extern void ML_(addSym) ( struct _DebugInfo* di, DiSym* sym );
 
-/* Add a line-number record to a DebugInfo. */
+/* Add a filename/dirname pair to a DebugInfo and returns the index
+   in the fndnpool fixed pool. */
+extern UInt ML_(addFnDn) (struct _DebugInfo* di,
+                          const HChar* filename, 
+                          const HChar* dirname);  /* NULL is allowable */
+
+/* Returns the fndn_ix for the LineInfo locno in di->loctab.
+   0 if filename/dirname are unknown. */
+extern UInt ML_(fndn_ix) (struct _DebugInfo* di, Word locno);
+
+/* Add a line-number record to a DebugInfo.
+   fndn_ix is an index in di->fndnpool, allocated using  ML_(addFnDn).
+   Give a 0 index for a unknown filename/dirname pair. */
 extern
 void ML_(addLineInfo) ( struct _DebugInfo* di, 
-                        const HChar* filename, 
-                        const HChar* dirname,  /* NULL is allowable */
+                        UInt fndn_ix,
                         Addr this, Addr next, Int lineno, Int entry);
 
 /* Add a call inlined record to a DebugInfo.
    A call to the below means that inlinedfn code has been
    inlined, resulting in code from [addr_lo, addr_hi[.
    Note that addr_hi is excluded, i.e. is not part of the inlined code.
-   The call that caused this inlining is in filename/dirname/lineno
+   The call that caused this inlining is in filename/lineno (dirname
+   is not recorded).
    In case of nested inlining, a small level indicates the call
    is closer to main that a call with a higher level. */
 extern
@@ -972,7 +1000,6 @@ void ML_(addInlInfo) ( struct _DebugInfo* di,
                        Addr addr_lo, Addr addr_hi,
                        const HChar* inlinedfn,
                        const HChar* filename, 
-                       const HChar* dirname,  /* NULL is allowable */
                        Int lineno, UShort level);
 
 /* Add a CFI summary record.  The supplied DiCfSI_m is copied. */

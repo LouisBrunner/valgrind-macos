@@ -2600,7 +2600,6 @@ static Bool parse_inl_DIE (
                              ip_lo, ip_hi1, 
                              get_inlFnName (inlinedfn_abstract_origin, cc, td3),
                              caller_filename,
-                             NULL, // INLINED TBD dirname ?????
                              caller_lineno, level);
          }
       } else if (have_range) {
@@ -2622,7 +2621,6 @@ static Bool parse_inl_DIE (
                              // included.
                              inlfnname,
                              caller_filename,
-                             NULL, // INLINED TBD dirname ?????
                              caller_lineno, level);
          }
          VG_(deleteXA)( ranges );

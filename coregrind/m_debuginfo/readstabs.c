@@ -124,6 +124,12 @@ void ML_(read_debuginfo_stabs) ( DebugInfo* di,
       Bool     first;         /* first line in function */
    } line = { 0, 0, 0, 0, False };
 
+   vg_assert (0);
+   /* Stab reader broken since debuginfo server (revision 13440)
+      See #if 0 for call to  ML_(read_debuginfo_stabs) in readelf.c.
+      If ever it is repaired, file.name above should be replaced by a fndn_ix
+      for performance reasons. */
+
    /* Ok.  It all looks plausible.  Go on and read debug data. 
          stab kinds: 100   N_SO     a source file name
                       68   N_SLINE  a source line number
@@ -270,7 +276,11 @@ void ML_(read_debuginfo_stabs) ( DebugInfo* di,
 
             if (line.addr != 0) {
                /* finish off previous line */
-               ML_(addLineInfo)(di, file.name, NULL, line.addr,
+               ML_(addLineInfo)(di, 
+                                ML_(addFnDn) (di,
+                                              file.name,
+                                              NULL),
+                                line.addr,
                                 addr, line.no + line.ovf * LINENO_OVERFLOW, i);
             }
 
@@ -294,7 +304,11 @@ void ML_(read_debuginfo_stabs) ( DebugInfo* di,
 
             if (line.addr != 0) {
                /* there was a previous */
-               ML_(addLineInfo)(di, file.name, NULL, line.addr,
+               ML_(addLineInfo)(di, 
+                                ML_(addFnDn)(di,
+                                             file.name,
+                                             NULL), 
+                                line.addr,
                                 addr, line.no + line.ovf * LINENO_OVERFLOW, i);
             }
 
@@ -353,7 +367,11 @@ void ML_(read_debuginfo_stabs) ( DebugInfo* di,
             }
 
             if (line.addr) {
-               ML_(addLineInfo)(di, file.name, NULL, line.addr,
+               ML_(addLineInfo)(di, 
+                                ML_(addFnDn) (di,
+                                              file.name,
+                                              NULL),
+                                line.addr,
                                 addr, line.no + line.ovf * LINENO_OVERFLOW, i);
                line.addr = 0;
             }

@@ -217,6 +217,7 @@ static void free_DebugInfo ( DebugInfo* di )
    if (di->fsm.filename) ML_(dinfo_free)(di->fsm.filename);
    if (di->soname)       ML_(dinfo_free)(di->soname);
    if (di->loctab)       ML_(dinfo_free)(di->loctab);
+   if (di->loctab_fndn_ix) ML_(dinfo_free)(di->loctab_fndn_ix);
    if (di->inltab)       ML_(dinfo_free)(di->inltab);
    if (di->cfsi_base)    ML_(dinfo_free)(di->cfsi_base);
    if (di->cfsi_m_ix)    ML_(dinfo_free)(di->cfsi_m_ix);
@@ -240,6 +241,8 @@ static void free_DebugInfo ( DebugInfo* di )
 
    if (di->strpool)
       VG_(deleteDedupPA) (di->strpool);
+   if (di->fndnpool)
+      VG_(deleteDedupPA) (di->fndnpool);
 
    /* Delete the two admin arrays.  These lists exist primarily so
       that we can visit each object exactly once when we need to
@@ -1909,10 +1912,19 @@ Bool VG_(get_filename)( Addr a, HChar* filename, Int n_filename )
 {
    DebugInfo* si;
    Word       locno;
+   UInt       fndn_ix;
+   FnDn*      fndn;
+
    search_all_loctabs ( a, &si, &locno );
    if (si == NULL) 
       return False;
-   VG_(strncpy_safely)(filename, si->loctab[locno].filename, n_filename);
+   fndn_ix = ML_(fndn_ix) (si, locno);
+   if (fndn_ix == 0)
+      VG_(strncpy_safely)(filename, "???", n_filename);
+   else {
+      fndn = VG_(indexEltNumber) (si->fndnpool, fndn_ix);
+      VG_(strncpy_safely)(filename, fndn->filename, n_filename);
+   }
    return True;
 }
 
@@ -1940,6 +1952,8 @@ Bool VG_(get_filename_linenum) ( Addr a,
 {
    DebugInfo* si;
    Word       locno;
+   UInt       fndn_ix;
+   FnDn*      fndn = NULL;
 
    vg_assert( (dirname == NULL && dirname_available == NULL)
               ||
@@ -1954,17 +1968,22 @@ Bool VG_(get_filename_linenum) ( Addr a,
       return False;
    }
 
-   VG_(strncpy_safely)(filename, si->loctab[locno].filename, n_filename);
+   fndn_ix = ML_(fndn_ix)(si, locno);
+   if (fndn_ix == 0)
+      VG_(strncpy_safely)(filename, "???", n_filename);
+   else {
+      fndn = VG_(indexEltNumber) (si->fndnpool, fndn_ix);
+      VG_(strncpy_safely)(filename, fndn->filename, n_filename);
+   }
    *lineno = si->loctab[locno].lineno;
 
    if (dirname) {
       /* caller wants directory info too .. */
       vg_assert(n_dirname > 0);
-      if (si->loctab[locno].dirname) {
+      if (fndn_ix != 0 && fndn->dirname) {
          /* .. and we have some */
          *dirname_available = True;
-         VG_(strncpy_safely)(dirname, si->loctab[locno].dirname,
-                                      n_dirname);
+         VG_(strncpy_safely)(dirname, fndn->dirname, n_dirname);
       } else {
          /* .. but we don't have any */
          *dirname_available = False;
@@ -2156,8 +2175,7 @@ HChar* VG_(describe_IP)(Addr eip, HChar* buf, Int n_buf, InlIPCursor *iipc)
       VG_(snprintf) (buf_srcloc, BUF_LEN, "%s", cur_inl->filename);
       lineno = cur_inl->lineno;
 
-      know_dirinfo = False; //INLINED TBD
-
+      know_dirinfo = False;
       know_srcloc = True;
    }
          

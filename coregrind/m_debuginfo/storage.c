@@ -252,6 +252,24 @@ HChar* ML_(addStr) ( struct _DebugInfo* di, const HChar* str, Int len )
    return p;
 }
 
+UInt ML_(addFnDn) (struct _DebugInfo* di,
+                   const HChar* filename, 
+                   const HChar* dirname)
+{
+   FnDn fndn;
+   UInt fndn_ix;
+
+   if (UNLIKELY(di->fndnpool == NULL))
+      di->fndnpool = VG_(newDedupPA)(500,
+                                     vg_alignof(FnDn),
+                                     ML_(dinfo_zalloc),
+                                     "di.storage.addFnDn.1",
+                                     ML_(dinfo_free));
+   fndn.filename = ML_(addStr)(di, filename, -1);
+   fndn.dirname = dirname ? ML_(addStr)(di, dirname, -1) : NULL;
+   fndn_ix = VG_(allocFixedEltDedupPA) (di->fndnpool, sizeof(FnDn), &fndn);
+   return fndn_ix;
+}
 
 /* Add a string to the string table of a DebugInfo, by copying the
    string from the given DiCursor.  Measures the length of the string
@@ -301,32 +319,101 @@ void ML_(addSym) ( struct _DebugInfo* di, DiSym* sym )
    vg_assert(di->symtab_used <= di->symtab_size);
 }
 
+UInt ML_(fndn_ix) (struct _DebugInfo* di, Word locno)
+{
+   UInt fndn_ix;
+
+   switch(di->sizeof_fndn_ix) {
+      case 1: fndn_ix = ((UChar*)  di->loctab_fndn_ix)[locno]; break;
+      case 2: fndn_ix = ((UShort*) di->loctab_fndn_ix)[locno]; break;
+      case 4: fndn_ix = ((UInt*)   di->loctab_fndn_ix)[locno]; break;
+      default: vg_assert(0);
+   }
+   return fndn_ix;
+}
+
+static inline void set_fndn_ix (struct _DebugInfo* di, Word locno, UInt fndn_ix)
+{
+   Word i;
+
+   switch(di->sizeof_fndn_ix) {
+      case 1: 
+         if (LIKELY (fndn_ix <= 255)) {
+            ((UChar*) di->loctab_fndn_ix)[locno] = fndn_ix;
+            return;
+         }
+         {
+            UChar* old = (UChar*) di->loctab_fndn_ix;
+            UShort* new = ML_(dinfo_zalloc)( "di.storage.sfix.1",
+                                             di->loctab_size * 2 );
+            for (i = 0; i < di->loctab_used; i++)
+               new[i] = old[i];
+            ML_(dinfo_free)(old);
+            di->sizeof_fndn_ix = 2;
+            di->loctab_fndn_ix = new;
+         }
+         // Fallthrough
+
+      case 2:
+         if (LIKELY (fndn_ix <= 65535)) {
+            ((UShort*) di->loctab_fndn_ix)[locno] = fndn_ix;
+            return;
+         }
+         {
+            UShort* old = (UShort*) di->loctab_fndn_ix;
+            UInt* new = ML_(dinfo_zalloc)( "di.storage.sfix.2",
+                                           di->loctab_size * 4 );
+            for (i = 0; i < di->loctab_used; i++)
+               new[i] = old[i];
+            ML_(dinfo_free)(old);
+            di->sizeof_fndn_ix = 4;
+            di->loctab_fndn_ix = new;
+         }
+         // Fallthrough
+
+      case 4:
+         ((UInt*) di->loctab_fndn_ix)[locno] = fndn_ix;
+         return;
+
+      default: vg_assert(0);
+   }
+}
 
 /* Add a location to the location table. 
 */
-static void addLoc ( struct _DebugInfo* di, DiLoc* loc )
+static void addLoc ( struct _DebugInfo* di, DiLoc* loc, UInt fndn_ix )
 {
-   UInt   new_sz, i;
-   DiLoc* new_tab;
-
    /* Zero-sized locs should have been ignored earlier */
    vg_assert(loc->size > 0);
 
    if (di->loctab_used == di->loctab_size) {
+      UInt   new_sz;
+      DiLoc* new_loctab;
+      void*  new_loctab_fndn_ix;
+
       new_sz = 2 * di->loctab_size;
       if (new_sz == 0) new_sz = 500;
-      new_tab = ML_(dinfo_zalloc)( "di.storage.addLoc.1",
-                                   new_sz * sizeof(DiLoc) );
+      new_loctab = ML_(dinfo_zalloc)( "di.storage.addLoc.1",
+                                      new_sz * sizeof(DiLoc) );
+      if (di->sizeof_fndn_ix == 0)
+         di->sizeof_fndn_ix = 1; // To start with.
+      new_loctab_fndn_ix = ML_(dinfo_zalloc)( "di.storage.addLoc.2",
+                                              new_sz * di->sizeof_fndn_ix );
       if (di->loctab != NULL) {
-         for (i = 0; i < di->loctab_used; i++)
-            new_tab[i] = di->loctab[i];
+         VG_(memcpy)(new_loctab, di->loctab,
+                     di->loctab_used * sizeof(DiLoc));
+         VG_(memcpy)(new_loctab_fndn_ix, di->loctab_fndn_ix,
+                     di->loctab_used * di->sizeof_fndn_ix);
          ML_(dinfo_free)(di->loctab);
+         ML_(dinfo_free)(di->loctab_fndn_ix);
       }
-      di->loctab = new_tab;
+      di->loctab = new_loctab;
+      di->loctab_fndn_ix = new_loctab_fndn_ix;
       di->loctab_size = new_sz;
    }
 
    di->loctab[di->loctab_used] = *loc;
+   set_fndn_ix (di, di->loctab_used, fndn_ix);
    di->loctab_used++;
    vg_assert(di->loctab_used <= di->loctab_size);
 }
@@ -341,6 +428,7 @@ static void shrinkLocTab ( struct _DebugInfo* di )
    if (new_sz == di->loctab_size) return;
    vg_assert(new_sz < di->loctab_size);
    ML_(dinfo_shrink_block)( di->loctab, new_sz * sizeof(DiLoc));
+   ML_(dinfo_shrink_block)( di->loctab_fndn_ix, new_sz * di->sizeof_fndn_ix);
    di->loctab_size = new_sz;
 }
 
@@ -348,8 +436,7 @@ static void shrinkLocTab ( struct _DebugInfo* di )
 /* Top-level place to call to add a source-location mapping entry.
 */
 void ML_(addLineInfo) ( struct _DebugInfo* di,
-                        const HChar* filename,
-                        const HChar* dirname, /* NULL == directory is unknown */
+                        UInt     fndn_ix,
                         Addr     this,
                         Addr     next,
                         Int      lineno,
@@ -363,10 +450,13 @@ void ML_(addLineInfo) ( struct _DebugInfo* di,
    /* Ignore zero-sized locs */
    if (this == next) return;
 
-   if (debug)
-      VG_(printf)( "  src %s %s line %d %#lx-%#lx\n",
-                   dirname ? dirname : "(unknown)",
-                   filename, lineno, this, next );
+   if (debug) {
+      FnDn *fndn = VG_(indexEltNumber) (di->fndnpool, fndn_ix);
+      VG_(printf)( "  src ix %u %s %s line %d %#lx-%#lx\n",
+                   fndn_ix, 
+                   fndn->dirname ? fndn->dirname : "(unknown)",
+                   fndn->filename, lineno, this, next );
+   }
 
    /* Maximum sanity checking.  Some versions of GNU as do a shabby
     * job with stabs entries; if anything looks suspicious, revert to
@@ -435,14 +525,12 @@ void ML_(addLineInfo) ( struct _DebugInfo* di,
    loc.addr      = this;
    loc.size      = (UShort)size;
    loc.lineno    = lineno;
-   loc.filename  = filename;
-   loc.dirname   = dirname;
 
    if (0) VG_(message)(Vg_DebugMsg, 
-		       "addLoc: addr %#lx, size %lu, line %d, file %s\n",
-		       this,size,lineno,filename);
+		       "addLoc: addr %#lx, size %lu, line %d, fndn_ix %u\n",
+		       this,size,lineno,fndn_ix);
 
-   addLoc ( di, &loc );
+   addLoc ( di, &loc, fndn_ix );
 }
 
 /* Add an inlined call info to the inlined call table. 
@@ -494,7 +582,6 @@ void ML_(addInlInfo) ( struct _DebugInfo* di,
                        Addr addr_lo, Addr addr_hi,
                        const HChar* inlinedfn,
                        const HChar* filename, 
-                       const HChar* dirname,  /* NULL is allowable */
                        Int lineno, UShort level)
 {
    DiInlLoc inl;
@@ -532,16 +619,14 @@ void ML_(addInlInfo) ( struct _DebugInfo* di,
    inl.inlinedfn = inlinedfn;
    // caller:
    inl.filename  = filename;
-   inl.dirname   = dirname;
    inl.lineno    = lineno;
    inl.level     = level;
 
    if (0) VG_(message)
              (Vg_DebugMsg, 
               "addInlInfo: fn %s inlined as addr_lo %#lx,addr_hi %#lx,"
-              "caller %s:%d (dir %s)\n",
-              inlinedfn, addr_lo, addr_hi, filename, lineno, 
-              dirname ? dirname : "???");
+              "caller %s:%d\n",
+              inlinedfn, addr_lo, addr_hi, filename, lineno);
 
    addInl ( di, &inl );
 }
@@ -551,7 +636,7 @@ DiCfSI_m* ML_(get_cfsi_m) (struct _DebugInfo* di, UInt pos)
    UInt cfsi_m_ix;
 
    vg_assert(pos >= 0 && pos < di->cfsi_used);
-   switch (di->sizeof_ix) {
+   switch (di->sizeof_cfsi_m_ix) {
       case 1: cfsi_m_ix = ((UChar*)  di->cfsi_m_ix)[pos]; break;
       case 2: cfsi_m_ix = ((UShort*) di->cfsi_m_ix)[pos]; break;
       case 4: cfsi_m_ix = ((UInt*)   di->cfsi_m_ix)[pos]; break;
@@ -1743,33 +1828,72 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
 }
 
 
+static DiLoc* sorting_loctab = NULL;
+static Int compare_DiLoc_via_ix ( const void* va, const void* vb ) 
+{
+   const DiLoc* a = &sorting_loctab[*(UInt*)va];
+   const DiLoc* b = &sorting_loctab[*(UInt*)vb];
+   if (a->addr < b->addr) return -1;
+   if (a->addr > b->addr) return  1;
+   return 0;
+}
+static void sort_loctab_and_loctab_fndn_ix (struct _DebugInfo* di )
+{
+   /* We have to sort the array loctab by addr
+      together with its "parallel" array loctab_fndn_ix.
+      We first build sort_ix : an array of indexes in loctab,
+      that we sort by loctab address. Then we can reorder both
+      arrays according to sort_ix. */
+   UInt *sort_ix = ML_(dinfo_zalloc)("di.storage.six",
+                                     di->loctab_used*sizeof(UInt));
+   Word i, j, k;
+
+   for (i = 0; i < di->loctab_used; i++) sort_ix[i] = i;
+   sorting_loctab = di->loctab;
+   VG_(ssort)(sort_ix, di->loctab_used, 
+              sizeof(*sort_ix), compare_DiLoc_via_ix);
+   sorting_loctab = NULL;
+
+   // Permute in place, using the sort_ix.
+   for (i=0; i < di->loctab_used; i++) {
+      DiLoc tmp_diloc;
+      UInt  tmp_fndn_ix;
+
+      if (i == sort_ix[i])
+         continue; // i already at the good place
+
+      tmp_diloc = di->loctab[i];
+      tmp_fndn_ix = ML_(fndn_ix)(di, i);
+      j = i;
+      for (;;) {
+         k = sort_ix[j];
+         sort_ix[j] = j;
+         if (k == i)
+            break;
+         di->loctab[j] = di->loctab[k];
+         set_fndn_ix (di, j, ML_(fndn_ix)(di, k));
+         j = k;
+      }
+      di->loctab[j] = tmp_diloc;
+      set_fndn_ix (di, j, tmp_fndn_ix);
+   }
+   ML_(dinfo_free)(sort_ix);
+}
+
 /* Sort the location table by starting address.  Mash the table around
    so as to establish the property that addresses are in order and the
    ranges do not overlap.  This facilitates using binary search to map
    addresses to locations when we come to query the table.
 */
-static Int compare_DiLoc ( const void* va, const void* vb ) 
-{
-   const DiLoc* a = va;
-   const DiLoc* b = vb;
-   if (a->addr < b->addr) return -1;
-   if (a->addr > b->addr) return  1;
-   return 0;
-}
-
 static void canonicaliseLoctab ( struct _DebugInfo* di )
 {
    Word i, j;
 
-#  define SWAP(ty,aa,bb) \
-      do { ty tt = (aa); (aa) = (bb); (bb) = tt; } while (0);
-
    if (di->loctab_used == 0)
       return;
 
-   /* Sort by start address. */
-   VG_(ssort)(di->loctab, di->loctab_used, 
-                          sizeof(*di->loctab), compare_DiLoc);
+   /* sort loctab and loctab_fndn_ix by addr. */
+   sort_loctab_and_loctab_fndn_ix (di);
 
    /* If two adjacent entries overlap, truncate the first. */
    for (i = 0; i < ((Word)di->loctab_used)-1; i++) {
@@ -1794,8 +1918,10 @@ static void canonicaliseLoctab ( struct _DebugInfo* di )
    j = 0;
    for (i = 0; i < (Word)di->loctab_used; i++) {
       if (di->loctab[i].size > 0) {
-         if (j != i)
+         if (j != i) {
             di->loctab[j] = di->loctab[i];
+            set_fndn_ix(di, j, ML_(fndn_ix)(di, i));
+         }
          j++;
       }
    }
@@ -1803,11 +1929,15 @@ static void canonicaliseLoctab ( struct _DebugInfo* di )
 
    /* Ensure relevant postconditions hold. */
    for (i = 0; i < ((Word)di->loctab_used)-1; i++) {
-      /* 
-      VG_(printf)("%d   (%d) %d 0x%x\n", 
-                   i, di->loctab[i+1].confident, 
-                   di->loctab[i+1].size, di->loctab[i+1].addr );
-      */
+      if (0)
+         VG_(printf)("%lu  0x%p  lno:%d sz:%d fndn_ix:%d  i+1 0x%p\n", 
+                     i,
+                     (void*)di->loctab[i].addr,
+                     di->loctab[i].lineno, 
+                     di->loctab[i].size,
+                     ML_(fndn_ix)(di, i),
+                     (void*)di->loctab[i+1].addr);
+      
       /* No zero-sized symbols. */
       vg_assert(di->loctab[i].size > 0);
       /* In order. */
@@ -1816,7 +1946,6 @@ static void canonicaliseLoctab ( struct _DebugInfo* di )
       vg_assert(di->loctab[i].addr + di->loctab[i].size - 1
                 < di->loctab[i+1].addr);
    }
-#  undef SWAP
 
    /* Free up unused space at the end of the table. */
    shrinkLocTab(di);
@@ -2024,16 +2153,16 @@ void ML_(finish_CFSI_arrays) ( struct _DebugInfo* di )
    sz_cfsi_m_pool = VG_(sizeDedupPA)(di->cfsi_m_pool);
    vg_assert (sz_cfsi_m_pool > 0);
    if (sz_cfsi_m_pool <= 255)
-      di->sizeof_ix = 1;
+      di->sizeof_cfsi_m_ix = 1;
    else if (sz_cfsi_m_pool <= 65535)
-      di->sizeof_ix = 2;
+      di->sizeof_cfsi_m_ix = 2;
    else
-      di->sizeof_ix = 4;
+      di->sizeof_cfsi_m_ix = 4;
 
    di->cfsi_base = ML_(dinfo_zalloc)( "di.storage.finCfSI.1",
                                        new_used * sizeof(Addr) );
    di->cfsi_m_ix = ML_(dinfo_zalloc)( "di.storage.finCfSI.2",
-                                      new_used * sizeof(UChar)*di->sizeof_ix);
+                                      new_used * sizeof(UChar)*di->sizeof_cfsi_m_ix);
 
    pos = 0;
    f_mergeables = 0;
@@ -2055,7 +2184,7 @@ void ML_(finish_CFSI_arrays) ( struct _DebugInfo* di )
          if (sep > 1) {
             f_holes++;
             di->cfsi_base[pos] = prev_max + 1;
-            switch (di->sizeof_ix) {
+            switch (di->sizeof_cfsi_m_ix) {
                case 1: ((UChar*) di->cfsi_m_ix)[pos] = 0; break;
                case 2: ((UShort*)di->cfsi_m_ix)[pos] = 0; break;
                case 4: ((UInt*)  di->cfsi_m_ix)[pos] = 0; break;
@@ -2067,7 +2196,7 @@ void ML_(finish_CFSI_arrays) ( struct _DebugInfo* di )
 
       // Insert the cfsi entry i.
       di->cfsi_base[pos] = di->cfsi_rd[i].base;
-      switch (di->sizeof_ix) {
+      switch (di->sizeof_cfsi_m_ix) {
          case 1: ((UChar*) di->cfsi_m_ix)[pos] = di->cfsi_rd[i].cfsi_m_ix; break;
          case 2: ((UShort*)di->cfsi_m_ix)[pos] = di->cfsi_rd[i].cfsi_m_ix; break;
          case 4: ((UInt*)  di->cfsi_m_ix)[pos] = di->cfsi_rd[i].cfsi_m_ix; break;
@@ -2097,10 +2226,11 @@ void ML_(canonicaliseTables) ( struct _DebugInfo* di )
    ML_(canonicaliseCFI) ( di );
    if (di->cfsi_m_pool)
       VG_(freezeDedupPA) (di->cfsi_m_pool, ML_(dinfo_shrink_block));
-   /// TBD prepare cfsi_base and cfsi_m_ix
    canonicaliseVarInfo ( di );
    if (di->strpool)
       VG_(freezeDedupPA) (di->strpool, ML_(dinfo_shrink_block));
+   if (di->fndnpool)
+      VG_(freezeDedupPA) (di->fndnpool, ML_(dinfo_shrink_block));
 }
 
 

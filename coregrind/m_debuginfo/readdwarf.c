@@ -54,80 +54,29 @@
 /*---                                                      ---*/
 /*------------------------------------------------------------*/
 
-/*------------------------------------------------------------*/
-/*--- Expanding arrays of words, for holding file name and ---*/
-/*--- directory name arrays.                               ---*/
-/*------------------------------------------------------------*/
+/* The below "safe_*ix" functions allow to resist to malformed dwarf info:
+   if dwarf info contains wrong file or dirname indexes, these are (silently!)
+   ignored. */
 
-typedef
-   struct {
-      Word* tab;
-      UInt  tab_size;
-      UInt  tab_used;
-   }
-   WordArray;
-
-static void init_WordArray ( WordArray* wa )
+/* if xa_ix is a valid index in fndn_ix_xa,
+    return the element (i.e. the UInt indexing in fndnpool).
+   If xa_ix is invalid, return 0 (i.e. the "null" element in fndnpool). */
+static UInt safe_fndn_ix (XArray* fndn_ix_xa, Int xa_ix)
 {
-   wa->tab      = NULL;
-   wa->tab_size = 0;
-   wa->tab_used = 0;
+   if (xa_ix < 0) return 0;
+   if (xa_ix >= VG_(sizeXA) (fndn_ix_xa)) return 0;
+   return *(UInt*)VG_(indexXA) ( fndn_ix_xa, xa_ix );
 }
 
-static void free_WordArray ( WordArray* wa )
+/* if xa_ix is a valid index in dirname_xa,
+    return the element (i.e. the HChar*).
+   If xa_ix is invalid, return NULL. */
+static HChar* safe_dirname_ix (XArray* dirname_xa, Int xa_ix)
 {
-   if (wa->tab) {
-      vg_assert(wa->tab_size > 0);
-      ML_(dinfo_free)(wa->tab);
-   }
-   init_WordArray(wa);
+   if (xa_ix < 0) return NULL;
+   if (xa_ix >= VG_(sizeXA) (dirname_xa)) return NULL;
+   return *(HChar**)VG_(indexXA) ( dirname_xa, xa_ix );
 }
-
-static void addto_WordArray ( WordArray* wa, Word w )
-{
-   UInt  new_size, i;
-   Word* new_tab;
-
-   if (0) VG_(printf)("<<ADD %p (new sz = %d) >>\n", 
-                      (HChar*)w, wa->tab_used+1);
-
-   if (wa->tab_used < wa->tab_size) {
-      /* fine */
-   } else {
-      /* expand array */
-      if (0) VG_(printf)("EXPAND ARRAY from %d\n", wa->tab_size);
-      vg_assert(wa->tab_used == wa->tab_size);
-      vg_assert( (wa->tab_size == 0 && wa->tab == NULL)
-                 || (wa->tab_size != 0 && wa->tab != NULL) );
-      new_size = wa->tab_size == 0 ? 8 : 2 * wa->tab_size;
-      new_tab  = ML_(dinfo_zalloc)("di.aWA.1", new_size * sizeof(Word));
-      vg_assert(new_tab != NULL);
-      for (i = 0; i < wa->tab_used; i++)
-         new_tab[i] = wa->tab[i];
-      wa->tab_size = new_size;
-      if (wa->tab)
-         ML_(dinfo_free)(wa->tab);
-      wa->tab = new_tab;
-   }
-
-   vg_assert(wa->tab_used < wa->tab_size);
-   vg_assert(wa->tab_size > 0);
-   wa->tab[wa->tab_used] = w;
-   wa->tab_used++;
-}
-
-static Word index_WordArray ( /*OUT*/Bool* inRange, WordArray* wa, Int i )
-{
-   vg_assert(inRange);
-   if (i >= 0 && i < wa->tab_used) {
-      *inRange = True;
-      return wa->tab[i];
-   } else {
-      *inRange = False;
-      return 0;
-   }
-}
-
 
 /*------------------------------------------------------------*/
 /*--- Read DWARF2 format line number info.                 ---*/
@@ -296,26 +245,6 @@ void reset_state_machine ( Int is_stmt )
    state_machine_regs.end_sequence = 0;
 }
 
-/* Look up a directory name, or return NULL if unknown. */
-static
-HChar* lookupDir ( Int filename_index,
-                   WordArray* fnidx2dir,
-                   WordArray* dirnames )
-{
-   Bool inRange;
-   Word diridx, dirname;
-
-   diridx = index_WordArray( &inRange, fnidx2dir, filename_index );
-   if (!inRange) goto bad;
-
-   dirname = index_WordArray( &inRange, dirnames, (Int)diridx );
-   if (!inRange) goto bad;
-
-   return (HChar*)dirname;
-  bad:
-   return NULL;
-}
-
 ////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////
 
@@ -323,9 +252,7 @@ HChar* lookupDir ( Int filename_index,
    accordingly. */
 static 
 void process_extended_line_op( struct _DebugInfo* di,
-                               WordArray* filenames, 
-                               WordArray* dirnames, 
-                               WordArray* fnidx2dir, 
+                               XArray* fndn_ix_xa,
                                DiCursor* data, Int is_stmt)
 {
    UInt len = step_leb128U(data);
@@ -349,17 +276,10 @@ void process_extended_line_op( struct _DebugInfo* di,
 
          if (state_machine_regs.is_stmt) {
             if (state_machine_regs.last_address) {
-               Bool inRange = False;
-               const HChar* filename
-                  = (HChar*)index_WordArray( &inRange, filenames, 
-                                             state_machine_regs.last_file);
-               if (!inRange || !filename)
-                  filename = "???";
                ML_(addLineInfo) (
-                  di, 
-                  filename, 
-                  lookupDir( state_machine_regs.last_file,
-                             fnidx2dir, dirnames ),
+                  di,
+                  safe_fndn_ix (fndn_ix_xa,
+                                state_machine_regs.last_file),
                   di->text_debug_bias + state_machine_regs.last_address, 
                   di->text_debug_bias + state_machine_regs.address, 
                   state_machine_regs.last_line, 0
@@ -383,7 +303,8 @@ void process_extended_line_op( struct _DebugInfo* di,
 
       case DW_LNE_define_file: {
          HChar* name = ML_(cur_step_strdup)(data, "di.pelo.1");
-         addto_WordArray( filenames, (Word)ML_(addStr)(di,name,-1) );
+         UInt fndn_ix = ML_(addFnDn) (di, name, NULL);
+         VG_(addToXA) (fndn_ix_xa, &fndn_ix);
          ML_(dinfo_free)(name);
          (void)step_leb128U(data); // ignored: dir index
          (void)step_leb128U(data); // ignored: mod time
@@ -425,55 +346,48 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
    Int            i;
    DebugLineInfo  info;
    Bool           is64;
-   WordArray      filenames;
-   WordArray      dirnames;
-   WordArray      fnidx2dir;
+   XArray*        fndn_ix_xa; /* xarray of UInt fndn_ix */
+   UInt           fndn_ix;
+   XArray*        dirname_xa;   /* xarray of HChar* dirname */
+   HChar*         dirname;
 
    DiCursor       external = theBlock;
    DiCursor       data = theBlock;
 
-   /* filenames is an array of file names harvested from the DWARF2
-      info.  Entry [0] is NULL and is never referred to by the state
-      machine.
+   /* fndn_ix_xa is an xarray of fndn_ix (indexes in di->fndnpool) which
+      are build from file names harvested from the DWARF2
+      info.  Entry [0] is the "null" pool index and is never referred to
+      by the state machine.
 
-      Similarly, dirnames is an array of directory names.  Entry [0]
+      Similarly, dirname_xa is an xarray of directory names.  Entry [0]
       is also NULL and denotes "we don't know what the path is", since
       that is different from "the path is the empty string".  Unlike
-      the file name table, the state machine does refer to entry [0],
+      the fndn_ix_xa table, the state machine does refer to entry [0],
       which basically means "." ("the current directory of the
       compilation", whatever that means, according to the DWARF3
       spec.)
-
-      fnidx2dir is an array of indexes into the dirnames table.
-      (confused yet?)  filenames[] and fnidx2dir[] are indexed
-      together.  That is, for some index i in the filename table, then
-
-         the filename  is filenames[i]
-         the directory is dirnames[ fnidx2dir[i] ] */
+   */
 
    /* Fails due to gcc padding ...
    vg_assert(sizeof(DWARF2_External_LineInfo)
              == sizeof(DWARF2_Internal_LineInfo));
    */
 
-   init_WordArray(&filenames);
-   init_WordArray(&dirnames);
-   init_WordArray(&fnidx2dir);
+   dirname_xa = VG_(newXA) (ML_(dinfo_zalloc), "di.rd2l.1", ML_(dinfo_free),
+                            sizeof(HChar*) );
+   fndn_ix_xa = VG_(newXA) (ML_(dinfo_zalloc), "di.rd2l.2", ML_(dinfo_free),
+                            sizeof(UInt) );
 
    /* DWARF2 starts numbering filename entries at 1, so we need to
-      add a dummy zeroth entry to the table.  The zeroth dirnames
-      entry denotes 'current directory of compilation' so we might
-      as well make the fnidx2dir zeroth entry denote that. 
-   */
-   addto_WordArray( &filenames, (Word)NULL );
+      add a dummy zeroth entry to the table. */
+   fndn_ix = 0; // 0 is the "null" index in a fixed pool.
+   VG_(addToXA) (fndn_ix_xa, &fndn_ix);
 
    if (ML_(cur_is_valid)(ui->compdir))
-      addto_WordArray( &dirnames,
-                       (Word)ML_(addStrFromCursor)(di, ui->compdir) );
+      dirname = ML_(addStrFromCursor)(di, ui->compdir);
    else
-      addto_WordArray( &dirnames, (Word)ML_(addStr)(di, ".", -1) );
-
-   addto_WordArray( &fnidx2dir, (Word)0 );  /* compilation dir */
+      dirname = ML_(addStr)(di, ".", -1);
+   VG_(addToXA) (dirname_xa, &dirname);
 
    info.li_length = step_initial_length_field( &external, &is64 );
    if (di->ddump_line)
@@ -629,12 +543,14 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
          VG_(strcat)(buf, "/");
          VG_(strcat)(buf, data_str);
          vg_assert(VG_(strlen)(buf) < NBUF);
-         addto_WordArray( &dirnames, (Word)ML_(addStr)(di,buf,-1) );
+         dirname = ML_(addStr)(di,buf,-1);
+         VG_(addToXA) (dirname_xa, &dirname);
          if (0) VG_(printf)("rel path  %s\n", buf);
          ML_(dinfo_free)(compdir_str);
       } else {
          /* just use 'data'. */
-         addto_WordArray( &dirnames, (Word)ML_(addStr)(di,data_str,-1) );
+         dirname = ML_(addStr)(di,data_str,-1);
+         VG_(addToXA) (dirname_xa, &dirname);
          if (0) VG_(printf)("abs path  %s\n", data_str);
       }
 
@@ -655,8 +571,7 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
    data = ML_(cur_plus)(data, 1);
 
    /* Read the contents of the File Name table.  This produces a bunch
-      of file names, and for each, an index to the corresponding
-      directory name entry. */
+      of fndn_ix in fndn_ix_xa. */
    if (di->ddump_line) {
       VG_(printf)(" The File Name Table:\n");
       VG_(printf)("  Entry	Dir	Time	Size	Name\n");
@@ -668,8 +583,10 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
       Int    diridx  = step_leb128U(&data);
       Int    uu_time = step_leb128U(&data); /* unused */
       Int    uu_size = step_leb128U(&data); /* unused */
-      addto_WordArray( &filenames, (Word)ML_(addStr)(di,name,-1) );
-      addto_WordArray( &fnidx2dir, (Word)diridx );
+
+      dirname = safe_dirname_ix( dirname_xa, diridx );
+      fndn_ix = ML_(addFnDn) (di, name, dirname);
+      VG_(addToXA) (fndn_ix_xa, &fndn_ix);
       if (0) VG_(printf)("file %s diridx %d\n", name, diridx );
       if (di->ddump_line)
          VG_(printf)("  %d\t%d\t%d\t%d\t%s\n", 
@@ -720,17 +637,10 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
          if (state_machine_regs.is_stmt) {
             /* only add a statement if there was a previous boundary */
             if (state_machine_regs.last_address) {
-               Bool inRange = False;
-               const HChar* filename
-                  = (HChar*)index_WordArray( &inRange, &filenames, 
-                                             state_machine_regs.last_file);
-               if (!inRange || !filename)
-                  filename = "???";
                ML_(addLineInfo)(
-                  di, 
-                  filename,
-                  lookupDir( state_machine_regs.last_file,
-                             &fnidx2dir, &dirnames ),
+                  di,
+                  safe_fndn_ix (fndn_ix_xa,
+                                state_machine_regs.last_file),
                   di->text_debug_bias + state_machine_regs.last_address, 
                   di->text_debug_bias + state_machine_regs.address, 
                   state_machine_regs.last_line, 
@@ -748,7 +658,7 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
       switch (op_code) {
          case DW_LNS_extended_op:
             process_extended_line_op (
-                       di, &filenames, &dirnames, &fnidx2dir,
+                       di, fndn_ix_xa,
                        &data, info.li_default_is_stmt);
             break;
 
@@ -758,17 +668,10 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
             if (state_machine_regs.is_stmt) {
                /* only add a statement if there was a previous boundary */
                if (state_machine_regs.last_address) {
-                  Bool inRange = False;
-                  const HChar* filename
-                     = (HChar*)index_WordArray( &inRange, &filenames,
-                                                state_machine_regs.last_file );
-                  if (!inRange || !filename)
-                     filename = "???";
                   ML_(addLineInfo)(
-                     di, 
-                     filename,
-                     lookupDir( state_machine_regs.last_file,
-                                &fnidx2dir, &dirnames ),
+                     di,
+                     safe_fndn_ix (fndn_ix_xa,
+                                   state_machine_regs.last_file), 
                      di->text_debug_bias + state_machine_regs.last_address, 
                      di->text_debug_bias + state_machine_regs.address,
                      state_machine_regs.last_line, 
@@ -887,9 +790,8 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
       VG_(printf)("\n");
 
   out:
-   free_WordArray(&filenames);
-   free_WordArray(&dirnames);
-   free_WordArray(&fnidx2dir);
+   VG_(deleteXA)(dirname_xa);
+   VG_(deleteXA)(fndn_ix_xa);
 }
 
 ////////////////////////////////////////////////////////////////////

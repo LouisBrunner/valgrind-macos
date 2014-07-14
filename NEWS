@@ -72,7 +72,8 @@ Release 3.10.0 (?? ?????? 201?)
 * The C++ demangler has been updated for better C++11 support.
 
 * Error messages about fishy arguments (formerly known as silly arguments)
-  now include a back-trace to aid debugging.
+  are output like other errors (e.g. they can be suppressed) and now include a 
+  backtrace to aid debugging.
 
 * Reduction of memory used by Valgrind to read and store the debug information.
 

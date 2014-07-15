@@ -77,17 +77,28 @@ void * VG_NOTIFY_ON_LOAD(ifunc_wrapper) (void)
 {
     OrigFn fn;
     Addr result = 0;
+    Addr fnentry;
 
     /* Call the original indirect function and get it's result */
     VALGRIND_GET_ORIG_FN(fn);
     CALL_FN_W_v(result, fn);
+
+#if defined(VGP_ppc64_linux)
+   /* ppc64 uses function descriptors, so get the actual function entry
+      address for the client request, but return the function descriptor
+      from this function. */
+    UWord *descr = (UWord*)result;
+    fnentry = (void*)(descr[0]);
+#else
+    fnentry = result;
+#endif
 
     /* Ask the valgrind core running on the real CPU (as opposed to this
        code which runs on the emulated CPU) to update the redirection that
        led to this function. This client request eventually gives control to
        the function VG_(redir_add_ifunc_target) in m_redir.c  */
     VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__ADD_IFUNC_TARGET,
-                                    fn.nraddr, result, 0, 0, 0);
+                                    fn.nraddr, fnentry, 0, 0, 0);
     return (void*)result;
 }
 

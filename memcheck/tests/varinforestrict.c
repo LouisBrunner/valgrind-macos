@@ -15,7 +15,7 @@
 
 /* Cause memcheck to complain about the address "a" and so to print
    its best guess as to what "a" actually is.  a must be addressible. */
-void croak ( void * restrict aV )
+void croak (void *aV )
 {
   char* a = (char*)aV;
   char* undefp = malloc(1);
@@ -28,9 +28,9 @@ void croak ( void * restrict aV )
 }
 
 void
-bad_restrict_ptr (char * restrict bad_ptr)
+bad_restrict_ptr (void * restrict bad_ptr)
 {
-  croak (&bad_ptr);
+  croak ((void *) &bad_ptr);
 }
 
 char *
@@ -52,7 +52,7 @@ main (int argc, char **argv)
   fprintf (stderr, "Hello %s\n", cpy (earth, hello, l));
   free (earth);
 
-  const char *bad = malloc (16);
+  void *bad = malloc (16);
   bad_restrict_ptr (bad);
   free (bad);
   return 0;

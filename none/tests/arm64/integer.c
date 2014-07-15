@@ -11427,6 +11427,14 @@ MEM_TEST("st1 {v17.16b, v18.16b}, [x5]", 7, 0)
 
 
 ////////////////////////////////////////////////////////////////
+printf("LD1/ST1 (multiple 1-elem structs to/from 2 regs, post index)"
+        " (VERY INCOMPLETE)\n");
+
+MEM_TEST("ld1 {v17.16b, v18.16b}, [x5], #32", 3, 0)
+MEM_TEST("st1 {v17.16b, v18.16b}, [x5], #32", 7, 0)
+
+
+////////////////////////////////////////////////////////////////
 printf("LD1/ST1 (multiple 1-elem structs to/from 3 regs, no offset)"
         " (VERY INCOMPLETE)\n");
 

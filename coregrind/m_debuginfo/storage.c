@@ -2119,7 +2119,7 @@ void ML_(canonicaliseCFI) ( struct _DebugInfo* di )
       }
    }
 
-   if (VG_(clo_stats) && VG_(clo_verbosity) >= 2) {
+   if (VG_(clo_stats) && VG_(clo_verbosity) >= 3) {
       UWord n_mergeables, n_holes;
       get_cfsi_rd_stats (di, &n_mergeables, &n_holes);
       VG_(dmsg)("CFSI total %lu mergeables %lu holes %lu uniq cfsi_m %u\n",

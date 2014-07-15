@@ -1,0 +1,8 @@
+Hello World
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (varinforestrict.c:25)
+   by 0x........: bad_restrict_ptr (varinforestrict.c:33)
+   by 0x........: main (varinforestrict.c:56)
+ Location 0x........ is 0 bytes inside local var "bad_ptr"
+ declared at varinforestrict.c:31, in frame #1 of thread 1
+

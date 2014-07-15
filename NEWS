@@ -177,6 +177,7 @@ where XXXXXX is the bug number as listed below.
 335263  arm64: dmb instruction is not implemented
 335441  unhandled ioctl 0x8905 (SIOCATMARK) when running wine under valgrind
 335496  arm64: sbc/abc instructions are not implemented
+336619  valgrind --read-var-info=yes doesn't handle DW_TAG_restrict_type
 336772  Make moans about unknown ioctls more informative
 336957  Add a section about the Solaris/illumos port on the webpage
 337094  ifunc wrapper is broken on ppc64

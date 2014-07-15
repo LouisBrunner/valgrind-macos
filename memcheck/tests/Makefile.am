@@ -260,6 +260,7 @@ EXTRA_DIST = \
 		varinfo5.stderr.exp-ppc64 \
 	varinfo6.vgtest varinfo6.stdout.exp varinfo6.stderr.exp \
 		varinfo6.stderr.exp-ppc64 \
+	varinforestrict.vgtest varinforestrict.stderr.exp \
 	vcpu_bz2.stdout.exp vcpu_bz2.stderr.exp vcpu_bz2.vgtest \
 	vcpu_fbench.stdout.exp vcpu_fbench.stderr.exp vcpu_fbench.vgtest \
 	vcpu_fnfns.stdout.exp vcpu_fnfns.stdout.exp-glibc28-amd64 \
@@ -350,6 +351,7 @@ check_PROGRAMS = \
 	unit_libcbase unit_oset \
 	varinfo1 varinfo2 varinfo3 varinfo4 \
 	varinfo5 varinfo5so.so varinfo6 \
+	varinforestrict \
 	vcpu_fbench vcpu_fnfns \
 	wcs \
 	xml1 \
@@ -498,6 +500,7 @@ else
  varinfo5so_so_LDFLAGS  = -fpic $(AM_FLAG_M3264_PRI) -shared \
 				-Wl,-soname -Wl,varinfo5so.so
 endif
+varinforestrict_CFLAGS	= $(AM_CFLAGS) -O0 -g -std=c99
 
 # Build shared object for wrap7
 wrap7_SOURCES           = wrap7.c

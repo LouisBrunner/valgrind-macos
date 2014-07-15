@@ -133,7 +133,7 @@ typedef
          struct {
          } TyFn;
          struct {
-            UChar qual; /* C:const V:volatile */
+            UChar qual; /* C:const V:volatile R:restrict */
             UWord typeR;
          } TyQual;
          struct {

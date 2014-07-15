@@ -3478,13 +3478,15 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       goto acquire_Type;
    }
 
-   if (dtag == DW_TAG_volatile_type || dtag == DW_TAG_const_type) {
+   if (dtag == DW_TAG_volatile_type || dtag == DW_TAG_const_type
+       || dtag == DW_TAG_restrict_type) {
       Int have_ty = 0;
       VG_(memset)(&typeE, 0, sizeof(typeE));
       typeE.cuOff = D3_INVALID_CUOFF;
       typeE.tag   = Te_TyQual;
       typeE.Te.TyQual.qual
-         = dtag == DW_TAG_volatile_type ? 'V' : 'C';
+         = (dtag == DW_TAG_volatile_type ? 'V'
+            : (dtag == DW_TAG_const_type ? 'C' : 'R'));
       /* target type defaults to 'void' */
       typeE.Te.TyQual.typeR = D3_FAKEVOID_CUOFF;
       nf_i = 0;

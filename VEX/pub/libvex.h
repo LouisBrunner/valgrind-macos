@@ -301,8 +301,6 @@ void LibVEX_default_VexArchInfo ( /*OUT*/VexArchInfo* vai );
    guest_stack_redzone_size
       guest is ppc32-linux                ==> 0
       guest is ppc64-linux                ==> 288
-      guest is ppc32-aix5                 ==> 220
-      guest is ppc64-aix5                 ==> unknown
       guest is amd64-linux                ==> 128
       guest is other                      ==> inapplicable
 
@@ -319,32 +317,16 @@ void LibVEX_default_VexArchInfo ( /*OUT*/VexArchInfo* vai );
    guest_ppc_zap_RZ_at_blr
       guest is ppc64-linux                ==> True
       guest is ppc32-linux                ==> False
-      guest is ppc64-aix5                 ==> unknown
-      guest is ppc32-aix5                 ==> False
       guest is other                      ==> inapplicable
 
    guest_ppc_zap_RZ_at_bl
       guest is ppc64-linux                ==> const True
       guest is ppc32-linux                ==> const False
-      guest is ppc64-aix5                 ==> unknown
-      guest is ppc32-aix5                 ==> True except for calls to
-                                              millicode, $SAVEFn, $RESTFn
-      guest is other                      ==> inapplicable
-
-   guest_ppc_sc_continues_at_LR:
-      guest is ppc32-aix5  or ppc64-aix5  ==> True
-      guest is ppc32-linux or ppc64-linux ==> False
       guest is other                      ==> inapplicable
 
    host_ppc_calls_use_fndescrs:
       host is ppc32-linux                 ==> False
       host is ppc64-linux                 ==> True
-      host is ppc32-aix5 or ppc64-aix5    ==> True
-      host is other                       ==> inapplicable
-
-   host_ppc32_regalign_int64_args:
-      host is ppc32-linux                 ==> True
-      host is ppc32-aix5                  ==> False
       host is other                       ==> inapplicable
 */
 
@@ -374,20 +356,10 @@ typedef
          is assumed equivalent to a fn which always returns False. */
       Bool (*guest_ppc_zap_RZ_at_bl)(Addr64);
 
-      /* PPC32/PPC64 GUESTS only: where does the kernel resume after
-         'sc'?  False => Linux style, at the next insn.  True => AIX
-         style, at the address stated in the link register. */
-      Bool guest_ppc_sc_continues_at_LR;
-
       /* PPC32/PPC64 HOSTS only: does '&f' give us a pointer to a
          function descriptor on the host, or to the function code
          itself?  True => descriptor, False => code. */
       Bool host_ppc_calls_use_fndescrs;
-
-      /* PPC32 HOSTS only: when generating code to pass a 64-bit value
-         (actual parameter) in a pair of regs, should we skip an arg
-         reg if it is even-numbered?  True => yes, False => no. */
-      Bool host_ppc32_regalign_int64_args;
    }
    VexAbiInfo;
 

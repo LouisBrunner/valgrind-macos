@@ -1248,9 +1248,7 @@ void LibVEX_default_VexAbiInfo ( /*OUT*/VexAbiInfo* vbi )
    vbi->guest_amd64_assume_gs_is_0x60  = False;
    vbi->guest_ppc_zap_RZ_at_blr        = False;
    vbi->guest_ppc_zap_RZ_at_bl         = NULL;
-   vbi->guest_ppc_sc_continues_at_LR   = False;
    vbi->host_ppc_calls_use_fndescrs    = False;
-   vbi->host_ppc32_regalign_int64_args = False;
 }
 
 

@@ -704,12 +704,6 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
    UInt nVECRETs = 0;
    UInt nBBPTRs  = 0;
 
-   /* Do we need to force use of an odd-even reg pair for 64-bit args?
-      JRS 31-07-2013: is this still relevant, now that we are not
-      generating code for 32-bit AIX ? */
-   Bool regalign_int64s
-      = (!mode64) && env->vbi->host_ppc32_regalign_int64_args;
-
    /* Marshal args for a call and do the call.
 
       This function only deals with a tiny set of possibilities, which
@@ -867,7 +861,7 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
                                          iselWordExpr_R(env, arg) ));
                } else { // Ity_I64 in 32-bit mode
                   HReg rHi, rLo;
-                  if (regalign_int64s && (argreg%2) == 1) 
+                  if ((argreg%2) == 1)
                                  // ppc32 ELF abi spec for passing LONG_LONG
                      argreg++;   // XXX: odd argreg => even rN
                   vassert(argreg < PPC_N_REGPARMS-1);
@@ -943,7 +937,7 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
                   tmpregs[argreg] = iselWordExpr_R(env, arg);
                } else { // Ity_I64 in 32-bit mode
                   HReg rHi, rLo;
-                  if (regalign_int64s && (argreg%2) == 1)
+                  if ((argreg%2) == 1)
                                 // ppc32 ELF abi spec for passing LONG_LONG
                      argreg++;  // XXX: odd argreg => even rN
                   vassert(argreg < PPC_N_REGPARMS-1);

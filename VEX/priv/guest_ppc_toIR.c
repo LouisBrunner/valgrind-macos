@@ -6066,9 +6066,7 @@ static Bool dis_syslink ( UInt theInstr,
    /* It's important that all ArchRegs carry their up-to-date value
       at this point.  So we declare an end-of-block here, which
       forces any TempRegs caching ArchRegs to be flushed. */
-   putGST( PPC_GST_CIA, abiinfo->guest_ppc_sc_continues_at_LR
-                        ? getGST( PPC_GST_LR )
-                        : mkSzImm( ty, nextInsnAddr() ));
+   putGST( PPC_GST_CIA, mkSzImm( ty, nextInsnAddr() ));
 
    dres->whatNext    = Dis_StopHere;
    dres->jk_StopHere = Ijk_Sys_syscall;

@@ -1253,6 +1253,7 @@ static IRExpr* mkZeroOfPrimopResultType ( IROp op )
       case Iop_Xor64: return IRExpr_Const(IRConst_U64(0));
       case Iop_XorV128:
       case Iop_AndV128: return IRExpr_Const(IRConst_V128(0));
+      case Iop_AndV256: return IRExpr_Const(IRConst_V256(0));
       default: vpanic("mkZeroOfPrimopResultType: bad primop");
    }
 }
@@ -2195,9 +2196,9 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
                }
                /* Deal with either arg zero.  Could handle other And
                   cases here too. */
-               if (e->Iex.Binop.op == Iop_And64
-                   && (isZeroU64(e->Iex.Binop.arg1)
-                       || isZeroU64(e->Iex.Binop.arg2))) {
+               if (e->Iex.Binop.op == Iop_AndV256
+                   && (isZeroV256(e->Iex.Binop.arg1)
+                       || isZeroV256(e->Iex.Binop.arg2))) {
                   e2 =  mkZeroOfPrimopResultType(e->Iex.Binop.op);
                   break;
                } else if (e->Iex.Binop.op == Iop_AndV128

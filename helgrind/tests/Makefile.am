@@ -15,6 +15,8 @@ EXTRA_DIST = \
 	cond_init_destroy.vgtest cond_init_destroy.stderr.exp \
 	cond_timedwait_invalid.vgtest cond_timedwait_invalid.stdout.exp \
 		cond_timedwait_invalid.stderr.exp \
+	cond_timedwait_test.vgtest cond_timedwait_test.stdout.exp \
+		cond_timedwait_test.stderr.exp \
 	bar_bad.vgtest bar_bad.stdout.exp bar_bad.stderr.exp \
 	bar_trivial.vgtest bar_trivial.stdout.exp bar_trivial.stderr.exp \
 	free_is_write.vgtest free_is_write.stdout.exp \
@@ -108,6 +110,7 @@ check_PROGRAMS = \
 	annotate_hbefore \
 	cond_init_destroy \
 	cond_timedwait_invalid \
+	cond_timedwait_test \
 	free_is_write \
 	hg01_all_ok \
 	hg02_deadlock \

@@ -87,8 +87,8 @@ void * VG_NOTIFY_ON_LOAD(ifunc_wrapper) (void)
    /* ppc64 uses function descriptors, so get the actual function entry
       address for the client request, but return the function descriptor
       from this function. */
-    UWord *descr = (UWord*)result;
-    fnentry = (void*)(descr[0]);
+    UWord *descr = (UWord*)(void*)result;
+    fnentry = (Addr)(void*)(descr[0]);
 #else
     fnentry = result;
 #endif

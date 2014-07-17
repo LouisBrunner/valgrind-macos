@@ -177,7 +177,11 @@ static test_table_t all_tests[] = {
    { NULL, NULL },
 };
 
-int main(void)
+/*
+ * gcc is not happy if we modify r31 (the frame pointer) behind its back
+ * so we omit it
+ */
+int __attribute__((optimize("-fomit-frame-pointer"))) main(void)
 {
    test_func_t func;
    int i = 0;

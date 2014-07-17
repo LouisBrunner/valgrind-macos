@@ -1521,7 +1521,6 @@ Bool VG_(translate) ( ThreadId tid,
 #  if defined(VGP_ppc32_linux)
    vex_abiinfo.guest_ppc_zap_RZ_at_blr        = False;
    vex_abiinfo.guest_ppc_zap_RZ_at_bl         = NULL;
-   vex_abiinfo.host_ppc32_regalign_int64_args = True;
 #  endif
 #  if defined(VGP_ppc64_linux)
    vex_abiinfo.guest_ppc_zap_RZ_at_blr        = True;

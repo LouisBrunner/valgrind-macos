@@ -75,35 +75,65 @@ typedef
    }
    AddrTag;
 
+/* Note about ThreadInfo tid and tnr in various parts of _Addrinfo:
+   A tid is an index in the VG_(threads)[] array. The entries
+   in  VG_(threads) array are re-used, so the tid in an 'old' _Addrinfo
+   might be misleading: if the thread that was using tid has been terminated
+   and the tid was re-used by another thread, the tid will very probably
+   be wrongly interpreted by the user.
+   So, such an _Addrinfo should be printed just after it has been produced,
+   before the tid could possibly be re-used by another thread.
+
+   A tool such as helgrind is uniquely/unambiguously identifying each thread
+   by a number. If the tool sets tnr between the call to
+   VG_(describe_addr) and the call to VG_(pp_addrinfo), then VG_(pp_addrinfo)
+   will by preference print tnr instead of tid.
+   Visually, a tid will be printed as   thread %d
+   while a tnr will be printed as       thread #%d
+*/
+
+typedef
+   struct _ThreadInfo {
+      ThreadId tid;   // 0 means thread not known.
+      UInt     tnr;   // 0 means no tool specific thread nr, or not known.
+   } ThreadInfo;
+
+/* Zeroes/clear all the fields of *tinfo. */
+extern void VG_(initThreadInfo) (ThreadInfo *tinfo);
+
 typedef
    struct _AddrInfo
    AddrInfo;
-
+   
 struct _AddrInfo {
    AddrTag tag;
    union {
       // As-yet unclassified.
       struct { } Undescribed;
 
-      // On a stack. tid indicates which thread's stack?
+      // On a stack. tinfo indicates which thread's stack?
       // IP is the address of an instruction of the function where the
       // stack address was. 0 if not found.
       // frameNo is the frame nr of the call where the stack address was.
       // -1 if not found.
       struct {
-         ThreadId tid;
+         ThreadInfo tinfo;
          Addr     IP;
          Int      frameNo;
       } Stack;
 
       // This covers heap blocks (normal and from mempools), user-defined
       // blocks and Arena blocks.
+      // alloc_tinfo identifies the thread that has allocated the block.
+      // This is used by tools such as helgrind that maintain
+      // more detailed informations about client blocks.
       struct {
          BlockKind   block_kind;
          const HChar* block_desc;   // "block","mempool","user-defined",arena
          SizeT       block_szB;
          PtrdiffT    rwoffset;
          ExeContext* allocated_at;  // might be null_ExeContext.
+         ThreadInfo  alloc_tinfo;   // which thread did alloc this block.
          ExeContext* freed_at;      // might be null_ExeContext.
       } Block;
 

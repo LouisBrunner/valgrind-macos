@@ -17,6 +17,8 @@ Release 3.10.0 (?? ?????? 201?)
 * Helgrind:
   - Helgrind GDB server monitor command 'info locks' giving
     the list of locks, their location, and their status.
+  - Race condition error message with allocated blocks also show
+    the thread nr that allocated the racy block.
   - Helgrind now understands the Ada task termination rules
     and creates a 'H-B relationship' between a terminated task and
     its master. This avoids some false positive and avoids big

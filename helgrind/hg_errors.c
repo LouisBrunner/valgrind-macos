@@ -865,6 +865,17 @@ void HG_(before_pp_Error) ( Error* err )
             announce_one_thread( xe->XE.Race.h2_ct );
          if (xe->XE.Race.h1_ct)
             announce_one_thread( xe->XE.Race.h1_ct );
+         if (xe->XE.Race.data_addrinfo.Addr.Block.alloc_tinfo.tnr) {
+            Thread* thr = get_admin_threads();
+            while (thr) {
+               if (thr->errmsg_index 
+                   == xe->XE.Race.data_addrinfo.Addr.Block.alloc_tinfo.tnr) {
+                  announce_one_thread (thr);
+                  break;
+               }
+               thr = thr->admin;
+            }
+         }
          break;
       default:
          tl_assert(0);

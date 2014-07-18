@@ -32,6 +32,7 @@
 #include "pub_tool_libcbase.h"
 #include "pub_tool_libcprint.h"
 #include "pub_tool_libcassert.h"
+#include "pub_tool_wordfm.h"
 #include "pub_tool_xarray.h"
 #include "pub_tool_execontext.h"
 #include "pub_tool_debuginfo.h"
@@ -39,14 +40,17 @@
 #include "pub_tool_addrinfo.h"
 
 #include "hg_basics.h"
+#include "hg_wordset.h"
+#include "hg_lock_n_thread.h"
 #include "hg_addrdescr.h"            /* self */
 
 void HG_(describe_addr) ( Addr a, /*OUT*/AddrInfo* ai )
 {
    tl_assert(ai->tag == Addr_Undescribed);
 
-   /* hctxt/haddr/hszB describe the addr if it is a heap block. */
+   /* hctxt/tnr/haddr/hszB describe the addr if it is a heap block. */
    ExeContext* hctxt;
+   UInt        tnr;
    Addr        haddr;
    SizeT       hszB;
 
@@ -58,6 +62,7 @@ void HG_(describe_addr) ( Addr a, /*OUT*/AddrInfo* ai )
    Bool is_heapblock
       = HG_(mm_find_containing_block)( 
            &hctxt,
+           &tnr,
            &haddr,
            &hszB,
            a
@@ -70,10 +75,27 @@ void HG_(describe_addr) ( Addr a, /*OUT*/AddrInfo* ai )
       ai->Addr.Block.block_szB  = hszB;
       ai->Addr.Block.rwoffset   = (Word)(a) - (Word)(haddr);
       ai->Addr.Block.allocated_at = hctxt;
+      VG_(initThreadInfo) (&ai->Addr.Block.alloc_tinfo);
+      ai->Addr.Block.alloc_tinfo.tnr = tnr;
       ai->Addr.Block.freed_at = VG_(null_ExeContext)();;
    } else {
       /* No block found. Search a non-heap block description. */
       VG_(describe_addr) (a, ai);
+
+      /* In case ai contains a tid, set tnr to the corresponding helgrind
+         thread number. */
+      if (ai->tag == Addr_Stack) {
+         Thread* thr = get_admin_threads();
+
+         tl_assert(ai->Addr.Stack.tinfo.tid);
+         while (thr) {
+            if (thr->coretid == ai->Addr.Stack.tinfo.tid) {
+               ai->Addr.Stack.tinfo.tnr = thr->errmsg_index;
+               break;
+            }
+            thr = thr->admin;
+         }
+      }
    }
 }
 

@@ -827,6 +827,7 @@ void MC_(record_freemismatch_error) ( ThreadId tid, MC_Chunk* mc )
    ai->Addr.Block.block_szB  = mc->szB;
    ai->Addr.Block.rwoffset   = 0;
    ai->Addr.Block.allocated_at = MC_(allocated_at) (mc);
+   VG_(initThreadInfo) (&ai->Addr.Block.alloc_tinfo);
    ai->Addr.Block.freed_at = MC_(freed_at) (mc);
    VG_(maybe_record_error)( tid, Err_FreeMismatch, mc->data, /*s*/NULL,
                             &extra );
@@ -1035,6 +1036,7 @@ static void describe_addr ( Addr a, /*OUT*/AddrInfo* ai )
          ai->Addr.Block.block_szB  = mc->szB;
          ai->Addr.Block.rwoffset   = (Word)a - (Word)mc->data;
          ai->Addr.Block.allocated_at = MC_(allocated_at)(mc);
+         VG_(initThreadInfo) (&ai->Addr.Block.alloc_tinfo);
          ai->Addr.Block.freed_at = MC_(freed_at)(mc);
          return;
       }
@@ -1048,6 +1050,7 @@ static void describe_addr ( Addr a, /*OUT*/AddrInfo* ai )
       ai->Addr.Block.block_szB  = mc->szB;
       ai->Addr.Block.rwoffset   = (Word)a - (Word)mc->data;
       ai->Addr.Block.allocated_at = MC_(allocated_at)(mc);
+      VG_(initThreadInfo) (&ai->Addr.Block.alloc_tinfo);
       ai->Addr.Block.freed_at = MC_(freed_at)(mc);
       return;
    }
@@ -1182,6 +1185,7 @@ static Bool client_block_maybe_describe( Addr a,
          ai->Addr.Block.block_szB  = cgbs[i].size;
          ai->Addr.Block.rwoffset   = (Word)(a) - (Word)(cgbs[i].start);
          ai->Addr.Block.allocated_at = cgbs[i].where;
+         VG_(initThreadInfo) (&ai->Addr.Block.alloc_tinfo);
          ai->Addr.Block.freed_at = VG_(null_ExeContext)();;
          return True;
       }
@@ -1209,6 +1213,7 @@ static Bool mempool_block_maybe_describe( Addr a,
                ai->Addr.Block.block_szB  = mc->szB;
                ai->Addr.Block.rwoffset   = (Word)a - (Word)mc->data;
                ai->Addr.Block.allocated_at = MC_(allocated_at)(mc);
+               VG_(initThreadInfo) (&ai->Addr.Block.alloc_tinfo);
                ai->Addr.Block.freed_at = MC_(freed_at)(mc);
                return True;
             }

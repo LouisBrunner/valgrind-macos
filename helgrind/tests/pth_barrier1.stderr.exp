@@ -14,6 +14,10 @@ Thread #x was created
    by 0x........: barriers_and_races (pth_barrier.c:92)
    by 0x........: main (pth_barrier.c:122)
 
+---Thread-Announcement------------------------------------------
+
+Thread #x is the program's root thread
+
 ----------------------------------------------------------------
 
 Possible data race during write of size 1 at 0x........ by thread #x
@@ -31,4 +35,5 @@ Locks held: none
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: barriers_and_races (pth_barrier.c:76)
    by 0x........: main (pth_barrier.c:122)
+ Block was alloc'd by thread #x
 

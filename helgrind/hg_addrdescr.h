@@ -59,6 +59,7 @@ extern Bool HG_(get_and_pp_addrdescr) (Addr a);
    considered to contain the searched-for address if they equal that
    address. */
 Bool HG_(mm_find_containing_block)( /*OUT*/ExeContext** where,
+                                    /*OUT*/UInt*        tnr,
                                     /*OUT*/Addr*        payload,
                                     /*OUT*/SizeT*       szB,
                                     Addr                data_addr );

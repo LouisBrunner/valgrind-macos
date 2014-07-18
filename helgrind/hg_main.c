@@ -4213,6 +4213,7 @@ static inline Bool addr_is_in_MM_Chunk( MallocMeta* mm, Addr a )
 }
 
 Bool HG_(mm_find_containing_block)( /*OUT*/ExeContext** where,
+                                    /*OUT*/UInt*        tnr,
                                     /*OUT*/Addr*        payload,
                                     /*OUT*/SizeT*       szB,
                                     Addr                data_addr )
@@ -4249,6 +4250,7 @@ Bool HG_(mm_find_containing_block)( /*OUT*/ExeContext** where,
    tl_assert(mm);
    tl_assert(addr_is_in_MM_Chunk(mm, data_addr));
    if (where)   *where   = mm->where;
+   if (tnr)     *tnr     = mm->thr->errmsg_index;
    if (payload) *payload = mm->payload;
    if (szB)     *szB     = mm->szB;
    return True;
@@ -4868,7 +4870,8 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
          SizeT pszB = 0;
          if (0) VG_(printf)("VG_USERREQ__HG_CLEAN_MEMORY_HEAPBLOCK(%#lx)\n",
                             args[1]);
-         if (HG_(mm_find_containing_block)(NULL, &payload, &pszB, args[1])) {
+         if (HG_(mm_find_containing_block)(NULL, NULL, 
+                                           &payload, &pszB, args[1])) {
             if (pszB > 0) {
                evh__die_mem(payload, pszB);
                evh__new_mem(payload, pszB);

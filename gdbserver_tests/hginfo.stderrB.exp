@@ -10,6 +10,7 @@ Lock ga 0x........ {
    by 0x........: th (hg01_all_ok.c:22)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Block was alloc'd by thread #x
 Lock ga 0x........ {
  Address 0x........ is 0 bytes inside data symbol "mx"
    kind   mbRec

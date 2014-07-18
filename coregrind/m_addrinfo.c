@@ -105,7 +105,8 @@ void VG_(describe_addr) ( Addr a, /*OUT*/AddrInfo* ai )
             UInt f;
 
             ai->tag            = Addr_Stack;
-            ai->Addr.Stack.tid = tid;
+            VG_(initThreadInfo)(&ai->Addr.Stack.tinfo);
+            ai->Addr.Stack.tinfo.tid = tid;
             ai->Addr.Stack.IP = 0;
             ai->Addr.Stack.frameNo = -1;
             /* It is on thread tid stack. Build a stacktrace, and
@@ -153,6 +154,7 @@ void VG_(describe_addr) ( Addr a, /*OUT*/AddrInfo* ai )
          ai->Addr.Block.block_szB = aai.block_szB;
          ai->Addr.Block.rwoffset = aai.rwoffset;
          ai->Addr.Block.allocated_at = VG_(null_ExeContext)();
+         VG_(initThreadInfo) (&ai->Addr.Block.alloc_tinfo);
          ai->Addr.Block.freed_at = VG_(null_ExeContext)();
          return;
       }
@@ -175,6 +177,12 @@ void VG_(describe_addr) ( Addr a, /*OUT*/AddrInfo* ai )
    /* -- Clueless ... -- */
    ai->tag = Addr_Unknown;
    return;
+}
+
+void VG_(initThreadInfo) (ThreadInfo *tinfo)
+{
+   tinfo->tid = 0;
+   tinfo->tnr = 0;
 }
 
 void VG_(clear_addrinfo) ( AddrInfo* ai)
@@ -230,6 +238,22 @@ static Bool is_arena_BlockKind(BlockKind bk)
    }
 }
 
+static const HChar* opt_tnr_prefix (ThreadInfo tinfo)
+{
+   if (tinfo.tnr != 0)
+      return "#";
+   else
+      return "";
+}
+
+static UInt tnr_else_tid (ThreadInfo tinfo)
+{
+   if (tinfo.tnr != 0)
+      return tinfo.tnr;
+   else
+      return tinfo.tid;
+}
+
 static void pp_addrinfo_WRK ( Addr a, AddrInfo* ai, Bool mc, Bool maybe_gcc )
 {
    const HChar* xpre  = VG_(clo_xml) ? "  <auxwhat>" : " ";
@@ -254,8 +278,11 @@ static void pp_addrinfo_WRK ( Addr a, AddrInfo* ai, Bool mc, Bool maybe_gcc )
          break;
 
       case Addr_Stack: 
-         VG_(emit)( "%sAddress 0x%llx is on thread %d's stack%s\n", 
-                    xpre, (ULong)a, ai->Addr.Stack.tid, xpost );
+         VG_(emit)( "%sAddress 0x%llx is on thread %s%d's stack%s\n", 
+                    xpre, (ULong)a, 
+                    opt_tnr_prefix (ai->Addr.Stack.tinfo), 
+                    tnr_else_tid (ai->Addr.Stack.tinfo), 
+                    xpost );
          if (ai->Addr.Stack.frameNo != -1 && ai->Addr.Stack.IP != 0) {
 #define     FLEN                256
             HChar fn[FLEN];
@@ -344,7 +371,7 @@ static void pp_addrinfo_WRK ( Addr a, AddrInfo* ai, Bool mc, Bool maybe_gcc )
             VG_(pp_ExeContext)(ai->Addr.Block.freed_at);
             if (ai->Addr.Block.allocated_at != VG_(null_ExeContext)()) {
                VG_(emit)(
-                  "%s block was alloc'd at%s\n",
+                  "%sBlock was alloc'd at%s\n",
                   xpre,
                   xpost
                );
@@ -364,7 +391,14 @@ static void pp_addrinfo_WRK ( Addr a, AddrInfo* ai, Bool mc, Bool maybe_gcc )
             tl_assert (ai->Addr.Block.allocated_at == VG_(null_ExeContext)());
             tl_assert (ai->Addr.Block.freed_at == VG_(null_ExeContext)());
          }
-         
+         if (ai->Addr.Block.alloc_tinfo.tnr || ai->Addr.Block.alloc_tinfo.tid)
+            VG_(emit)(
+               "%sBlock was alloc'd by thread %s%d%s\n",
+               xpre,
+               opt_tnr_prefix (ai->Addr.Block.alloc_tinfo),
+               tnr_else_tid (ai->Addr.Block.alloc_tinfo),
+               xpost
+            );  
          break;
       }
 

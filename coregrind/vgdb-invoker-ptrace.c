@@ -515,7 +515,13 @@ void detach_from_all_threads (pid_t pid)
 }
 
 #  if defined(VGA_arm64)
+/* arm64 is extra special, old glibc defined kernel user_pt_regs, but
+   newer glibc instead define user_regs_struct. */
+#    ifdef HAVE_SYS_USER_REGS
+static struct user_regs_struct user_save;
+#    else
 static struct user_pt_regs user_save;
+#    endif
 #  else
 static struct user user_save;
 #  endif
@@ -783,7 +789,13 @@ Bool invoker_invoke_gdbserver (pid_t pid)
    long res;
    Bool stopped;
 #  if defined(VGA_arm64)
+/* arm64 is extra special, old glibc defined kernel user_pt_regs, but
+   newer glibc instead define user_regs_struct. */
+#    ifdef HAVE_SYS_USER_REGS
+   struct user_regs_struct user_mod;
+#    else
    struct user_pt_regs user_mod;
+#    endif
 #  else
    struct user user_mod;
 #  endif

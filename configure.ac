@@ -1461,6 +1461,22 @@ AC_LANG(C)
 
 AM_CONDITIONAL(CXX_CAN_INCLUDE_THREAD_HEADER, test x$ac_cxx_can_include_thread_header = xyes)
 
+
+# On aarch64 before glibc 2.20 we would get the kernel user_pt_regs instead
+# of the user_regs_struct from sys/user.h. They are structurally the same
+# but we get either one or the other.
+
+AC_CHECK_TYPE([struct user_regs_struct],
+              [sys_user_has_user_regs=yes], [sys_user_has_user_regs=no],
+              [[#include <sys/ptrace.h>]
+               [#include <sys/time.h>]
+               [#include <sys/user.h>]])
+if test "$sys_user_has_user_regs" = "yes"; then
+  AC_DEFINE(HAVE_SYS_USER_REGS, 1,
+            [Define to 1 if <sys/user.h> defines struct user_regs_struct])
+fi
+
+
 #----------------------------------------------------------------------------
 # Checking for supported compiler flags.
 #----------------------------------------------------------------------------

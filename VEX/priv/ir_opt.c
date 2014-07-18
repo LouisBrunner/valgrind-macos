@@ -2163,32 +2163,37 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
                }
                break;
 
-            case Iop_And64:
+            case Iop_And8:
+            case Iop_And16:
             case Iop_And32:
-               /* And32/And64(x,1---1b) ==> x */
+            case Iop_And64:
+               /* And8/And16/And32/And64(x,1---1b) ==> x */
                if (isOnesU(e->Iex.Binop.arg2)) {
                   e2 = e->Iex.Binop.arg1;
                   break;
                }
-               /* And32/And64(x,0) ==> 0 */
+               /* And8/And16/And32/And64(1---1b,x) ==> x */
+               if (isOnesU(e->Iex.Binop.arg1)) {
+                  e2 = e->Iex.Binop.arg2;
+                  break;
+               }
+               /* And8/And16/And32/And64(x,0) ==> 0 */
                if (isZeroU(e->Iex.Binop.arg2)) {
                   e2 = e->Iex.Binop.arg2;
                   break;
                }
-               /* And32/And64(0,x) ==> 0 */
+               /* And8/And16/And32/And64(0,x) ==> 0 */
                if (isZeroU(e->Iex.Binop.arg1)) {
                   e2 = e->Iex.Binop.arg1;
                   break;
                }
-               /* And32/And64(t,t) ==> t, for some IRTemp t */
+               /* And8/And16/And32/And64(t,t) ==> t, for some IRTemp t */
                if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
                   e2 = e->Iex.Binop.arg1;
                   break;
                }
                break;
 
-            case Iop_And8:
-            case Iop_And16:
             case Iop_AndV128:
             case Iop_AndV256:
                /* And8/And16/AndV128/AndV256(t,t) 

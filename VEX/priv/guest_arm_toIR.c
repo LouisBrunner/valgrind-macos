@@ -5132,7 +5132,7 @@ Bool dis_neon_data_3diff ( UInt theInstr, IRTemp condT )
             case 0: case 3:
                return False;
             case 1:
-               op = Iop_QDMulLong16Sx4;
+               op = Iop_QDMull16Sx4;
                cmp = Iop_CmpEQ16x4;
                add = P ? Iop_QSub32Sx4 : Iop_QAdd32Sx4;
                op2 = P ? Iop_Sub32x4 : Iop_Add32x4;
@@ -5141,7 +5141,7 @@ Bool dis_neon_data_3diff ( UInt theInstr, IRTemp condT )
                imm = (imm << 32) | imm;
                break;
             case 2:
-               op = Iop_QDMulLong32Sx2;
+               op = Iop_QDMull32Sx2;
                cmp = Iop_CmpEQ32x2;
                add = P ? Iop_QSub64Sx2 : Iop_QAdd64Sx2;
                op2 = P ? Iop_Sub64x2 : Iop_Add64x2;
@@ -5206,14 +5206,14 @@ Bool dis_neon_data_3diff ( UInt theInstr, IRTemp condT )
             case 3:
                return False;
             case 1:
-               op = Iop_QDMulLong16Sx4;
+               op = Iop_QDMull16Sx4;
                op2 = Iop_CmpEQ16x4;
                imm = 1LL << 15;
                imm = (imm << 16) | imm;
                imm = (imm << 32) | imm;
                break;
             case 2:
-               op = Iop_QDMulLong32Sx2;
+               op = Iop_QDMull32Sx2;
                op2 = Iop_CmpEQ32x2;
                imm = 1LL << 31;
                imm = (imm << 32) | imm;
@@ -5454,7 +5454,7 @@ Bool dis_neon_data_2reg_and_scalar ( UInt theInstr, IRTemp condT )
          case 3:
             return False;
          case 1:
-            op = Iop_QDMulLong16Sx4;
+            op = Iop_QDMull16Sx4;
             cmp = Iop_CmpEQ16x4;
             add = P ? Iop_QSub32Sx4 : Iop_QAdd32Sx4;
             op2 = P ? Iop_Sub32x4 : Iop_Add32x4;
@@ -5463,7 +5463,7 @@ Bool dis_neon_data_2reg_and_scalar ( UInt theInstr, IRTemp condT )
             imm = (imm << 32) | imm;
             break;
          case 2:
-            op = Iop_QDMulLong32Sx2;
+            op = Iop_QDMull32Sx2;
             cmp = Iop_CmpEQ32x2;
             add = P ? Iop_QSub64Sx2 : Iop_QAdd64Sx2;
             op2 = P ? Iop_Sub64x2 : Iop_Add64x2;
@@ -5667,14 +5667,14 @@ Bool dis_neon_data_2reg_and_scalar ( UInt theInstr, IRTemp condT )
          case 3:
             return False;
          case 1:
-            op = Iop_QDMulLong16Sx4;
+            op = Iop_QDMull16Sx4;
             op2 = Iop_CmpEQ16x4;
             imm = 1LL << 15;
             imm = (imm << 16) | imm;
             imm = (imm << 32) | imm;
             break;
          case 2:
-            op = Iop_QDMulLong32Sx2;
+            op = Iop_QDMull32Sx2;
             op2 = Iop_CmpEQ32x2;
             imm = 1LL << 31;
             imm = (imm << 32) | imm;

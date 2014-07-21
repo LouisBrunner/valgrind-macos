@@ -5658,6 +5658,8 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_Mull32Sx2:
          case Iop_Mull16Sx4:
          case Iop_Mull8Sx8:
+         case Iop_QDMull32Sx2:
+         case Iop_QDMull16Sx4:
          {
             HReg iSrcL = iselIntExpr_R(env, e->Iex.Binop.arg1);
             HReg iSrcR = iselIntExpr_R(env, e->Iex.Binop.arg2);
@@ -5666,13 +5668,15 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
             HReg dst   = newVRegV(env);
             ARM64VecBinOp op = ARM64vecb_INVALID;
             switch (e->Iex.Binop.op) {
-               case Iop_PolynomialMull8x8: op = ARM64vecb_PMULL8x8;  break;
-               case Iop_Mull32Ux2:         op = ARM64vecb_UMULL2DSS; break;
-               case Iop_Mull16Ux4:         op = ARM64vecb_UMULL4SHH; break;
-               case Iop_Mull8Ux8:          op = ARM64vecb_UMULL8HBB; break;
-               case Iop_Mull32Sx2:         op = ARM64vecb_SMULL2DSS; break;
-               case Iop_Mull16Sx4:         op = ARM64vecb_SMULL4SHH; break;
-               case Iop_Mull8Sx8:          op = ARM64vecb_SMULL8HBB; break;
+               case Iop_PolynomialMull8x8: op = ARM64vecb_PMULL8x8;    break;
+               case Iop_Mull32Ux2:         op = ARM64vecb_UMULL2DSS;   break;
+               case Iop_Mull16Ux4:         op = ARM64vecb_UMULL4SHH;   break;
+               case Iop_Mull8Ux8:          op = ARM64vecb_UMULL8HBB;   break;
+               case Iop_Mull32Sx2:         op = ARM64vecb_SMULL2DSS;   break;
+               case Iop_Mull16Sx4:         op = ARM64vecb_SMULL4SHH;   break;
+               case Iop_Mull8Sx8:          op = ARM64vecb_SMULL8HBB;   break;
+               case Iop_QDMull32Sx2:       op = ARM64vecb_SQDMULL2DSS; break;
+               case Iop_QDMull16Sx4:       op = ARM64vecb_SQDMULL4SHH; break;
                default: vassert(0);
             }
             addInstr(env, ARM64Instr_VQfromXX(vSrcL, iSrcL, iSrcL));

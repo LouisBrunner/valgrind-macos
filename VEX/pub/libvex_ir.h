@@ -1411,20 +1411,24 @@ typedef
       /* (widening signed/unsigned of even lanes, with lowest lane=zero) */
       Iop_MullEven8Ux16, Iop_MullEven16Ux8, Iop_MullEven32Ux4,
       Iop_MullEven8Sx16, Iop_MullEven16Sx8, Iop_MullEven32Sx4,
-      /* FIXME: document these */
+
+      /* Widening multiplies, all of the form (I64, I64) -> V128 */
       Iop_Mull8Ux8, Iop_Mull8Sx8,
       Iop_Mull16Ux4, Iop_Mull16Sx4,
       Iop_Mull32Ux2, Iop_Mull32Sx2,
+
+      /* Signed doubling saturating widening multiplies, (I64, I64) -> V128 */
+      Iop_QDMull16Sx4, Iop_QDMull32Sx2,
+
       /* Vector Saturating Doubling Multiply Returning High Half and
          Vector Saturating Rounding Doubling Multiply Returning High Half */
-      /* These IROp's multiply corresponding elements in two vectors, double
+      /* These IROps multiply corresponding elements in two vectors, double
          the results, and place the most significant half of the final results
          in the destination vector. The results are truncated or rounded. If
          any of the results overflow, they are saturated. */
       Iop_QDMulHi16Sx8, Iop_QDMulHi32Sx4,
       Iop_QRDMulHi16Sx8, Iop_QRDMulHi32Sx4,
-      /* Doubling saturating multiplication (long) (I64, I64) -> V128 */
-      Iop_QDMulLong16Sx4, Iop_QDMulLong32Sx2,
+
       /* Polynomial multiplication treats its arguments as
          coefficients of polynomials over {0, 1}. */
       Iop_PolynomialMul8x16, /* (V128, V128) -> V128 */

@@ -470,8 +470,8 @@ void ppIROp ( IROp op )
       case Iop_QDMulHi32Sx2: vex_printf("QDMulHi32Sx2"); return;
       case Iop_QRDMulHi16Sx4: vex_printf("QRDMulHi16Sx4"); return;
       case Iop_QRDMulHi32Sx2: vex_printf("QRDMulHi32Sx2"); return;
-      case Iop_QDMulLong16Sx4: vex_printf("QDMulLong16Sx4"); return;
-      case Iop_QDMulLong32Sx2: vex_printf("QDMulLong32Sx2"); return;
+      case Iop_QDMull16Sx4: vex_printf("QDMull16Sx4"); return;
+      case Iop_QDMull32Sx2: vex_printf("QDMull32Sx2"); return;
       case Iop_Avg8Ux8: vex_printf("Avg8Ux8"); return;
       case Iop_Avg16Ux4: vex_printf("Avg16Ux4"); return;
       case Iop_Max8Sx8: vex_printf("Max8Sx8"); return;
@@ -2979,7 +2979,7 @@ void typeOfPrimop ( IROp op,
       case Iop_BCDAdd:
       case Iop_BCDSub:
          TERNARY(Ity_V128,Ity_V128, Ity_I8, Ity_V128);
-      case Iop_QDMulLong16Sx4: case Iop_QDMulLong32Sx2:
+      case Iop_QDMull16Sx4: case Iop_QDMull32Sx2:
          BINARY(Ity_I64, Ity_I64, Ity_V128);
 
       /* s390 specific */

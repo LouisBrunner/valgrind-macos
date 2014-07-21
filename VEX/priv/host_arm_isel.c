@@ -5118,15 +5118,15 @@ static HReg iselNeonExpr_wrk ( ISelEnv* env, IRExpr* e )
             return res;
          }
 
-         case Iop_QDMulLong16Sx4:
-         case Iop_QDMulLong32Sx2: {
+         case Iop_QDMull16Sx4:
+         case Iop_QDMull32Sx2: {
             HReg res = newVRegV(env);
             HReg argL = iselNeon64Expr(env, e->Iex.Binop.arg1);
             HReg argR = iselNeon64Expr(env, e->Iex.Binop.arg2);
             UInt size = 0;
             switch(e->Iex.Binop.op) {
-               case Iop_QDMulLong16Sx4: size = 1; break;
-               case Iop_QDMulLong32Sx2: size = 2; break;
+               case Iop_QDMull16Sx4: size = 1; break;
+               case Iop_QDMull32Sx2: size = 2; break;
                default: vassert(0);
             }
             addInstr(env, ARMInstr_NBinary(ARMneon_VQDMULL,

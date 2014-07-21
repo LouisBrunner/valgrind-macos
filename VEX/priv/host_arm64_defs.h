@@ -350,14 +350,17 @@ typedef
       ARM64vecb_UMULL4SHH,   ARM64vecb_UMULL8HBB,
                              ARM64vecb_SMULL2DSS,
       ARM64vecb_SMULL4SHH,   ARM64vecb_SMULL8HBB,
-      ARM64vecb_SQADD64x2,     ARM64vecb_SQADD32x4,
-      ARM64vecb_SQADD16x8,     ARM64vecb_SQADD8x16,
-      ARM64vecb_UQADD64x2,     ARM64vecb_UQADD32x4,
-      ARM64vecb_UQADD16x8,     ARM64vecb_UQADD8x16,
-      ARM64vecb_SQSUB64x2,     ARM64vecb_SQSUB32x4,
-      ARM64vecb_SQSUB16x8,     ARM64vecb_SQSUB8x16,
-      ARM64vecb_UQSUB64x2,     ARM64vecb_UQSUB32x4,
-      ARM64vecb_UQSUB16x8,     ARM64vecb_UQSUB8x16,
+      ARM64vecb_SQADD64x2,   ARM64vecb_SQADD32x4,
+      ARM64vecb_SQADD16x8,   ARM64vecb_SQADD8x16,
+      ARM64vecb_UQADD64x2,   ARM64vecb_UQADD32x4,
+      ARM64vecb_UQADD16x8,   ARM64vecb_UQADD8x16,
+      ARM64vecb_SQSUB64x2,   ARM64vecb_SQSUB32x4,
+      ARM64vecb_SQSUB16x8,   ARM64vecb_SQSUB8x16,
+      ARM64vecb_UQSUB64x2,   ARM64vecb_UQSUB32x4,
+      ARM64vecb_UQSUB16x8,   ARM64vecb_UQSUB8x16,
+                             ARM64vecb_SQDMULL2DSS,
+      ARM64vecb_SQDMULL4SHH,
+
       ARM64vecb_INVALID
    }
    ARM64VecBinOp;

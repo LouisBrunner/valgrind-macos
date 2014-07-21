@@ -3657,8 +3657,8 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
       case 4:
          if (B == 0) {
             /* VSHL */
-            IROp op, sub_op;
-            IRTemp tmp;
+            IROp op = Iop_INVALID, sub_op = Iop_INVALID;
+            IRTemp tmp = IRTemp_INVALID;
             if (U) {
                switch (size) {
                   case 0: op = Q ? Iop_Shl8x16 : Iop_Shl8x8; break;

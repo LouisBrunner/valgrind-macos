@@ -3361,13 +3361,13 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
 
       case Iop_Mull32Sx2:
       case Iop_Mull32Ux2:
-      case Iop_QDMulLong32Sx2:
+      case Iop_QDMull32Sx2:
          return vectorWidenI64(mce, Iop_Widen32Sto64x2,
                                     mkUifU64(mce, vatom1, vatom2));
 
       case Iop_Mull16Sx4:
       case Iop_Mull16Ux4:
-      case Iop_QDMulLong16Sx4:
+      case Iop_QDMull16Sx4:
          return vectorWidenI64(mce, Iop_Widen16Sto32x4,
                                     mkUifU64(mce, vatom1, vatom2));
 

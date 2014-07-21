@@ -779,7 +779,7 @@ typeof_primop(IROp op, IRType *t_dst, IRType *t_arg1, IRType *t_arg2,
       case Iop_ExtractV128:
          TERNARY(Ity_V128, Ity_V128, Ity_I8, Ity_V128);
 
-      case Iop_QDMulLong16Sx4: case Iop_QDMulLong32Sx2:
+      case Iop_QDMull16Sx4: case Iop_QDMull32Sx2:
          BINARY(Ity_I64, Ity_I64, Ity_V128);
 
          /* s390 specific */

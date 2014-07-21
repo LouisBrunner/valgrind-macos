@@ -5197,8 +5197,9 @@ Int           MC_(clo_mc_level)               = 2;
 
 static Bool MC_(parse_leak_heuristics) ( const HChar *str0, UInt *lhs )
 {
-   return  VG_(parse_enum_set) ("-,stdstring,newarray,multipleinheritance",
-                                str0, lhs);
+   return 
+      VG_(parse_enum_set) ("-,stdstring,length64,newarray,multipleinheritance",
+                           str0, lhs);
 }
 
 
@@ -5370,7 +5371,8 @@ static void mc_print_usage(void)
 "        where kind is one of definite indirect possible reachable all none\n"
 "    --leak-check-heuristics=heur1,heur2,... which heuristics to use for\n"
 "        improving leak search false positive [none]\n"
-"        where heur is one of stdstring newarray multipleinheritance all none\n"
+"        where heur is one of stdstring length64 newarray\n"
+"                                multipleinheritance all none\n"
 "    --show-reachable=yes             same as --show-leak-kinds=all\n"
 "    --show-reachable=no --show-possibly-lost=yes\n"
 "                                     same as --show-leak-kinds=definite,possible\n"
@@ -5508,7 +5510,8 @@ static void print_monitor_help ( void )
 "                [unlimited*|limited <max_loss_records_output>]\n"
 "            * = defaults\n"
 "       where kind is one of definite indirect possible reachable all none\n"
-"       where heur is one of stdstring newarray multipleinheritance all none*\n"
+"       where heur is one of stdstring length64 newarray\n"
+"                               multipleinheritance all none*\n"
 "        Examples: leak_check\n"
 "                  leak_check summary any\n"
 "                  leak_check full kinds indirect,possible\n"

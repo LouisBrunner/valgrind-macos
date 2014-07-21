@@ -513,18 +513,23 @@ typedef
       LchStdString           =1,
       // Consider interior pointer pointing at the array of char in a
       // std::string as reachable.
-      LchNewArray            =2,
+      LchLength64            =2,
+      // Consider interior pointer pointing at offset 64bit of a block as
+      // reachable, when the first 8 bytes contains the block size - 8.
+      // Such length+interior pointers are used by e.g. sqlite3MemMalloc.
+      // On 64bit platforms LchNewArray will also match these blocks.
+      LchNewArray            =3,
       // Consider interior pointer pointing at second word of a new[] array as
       // reachable. Such interior pointers are used for arrays whose elements
       // have a destructor.
-      LchMultipleInheritance =3,
+      LchMultipleInheritance =4,
       // Conside interior pointer pointing just after what looks a vtable
       // as reachable.
   }
   LeakCheckHeuristic;
 
 // Nr of heuristics, including the LchNone heuristic.
-#define N_LEAK_CHECK_HEURISTICS 4
+#define N_LEAK_CHECK_HEURISTICS 5
 
 // Build mask to check or set Heuristic h membership
 #define H2S(h) (1 << (h))
@@ -532,7 +537,8 @@ typedef
 #define HiS(h,s) ((s) & R2S(h))
 // A set with all Heuristics:
 #define HallS \
-   (H2S(LchStdString) | H2S(LchNewArray) | H2S(LchMultipleInheritance))
+   (H2S(LchStdString) | H2S(LchLength64) | H2S(LchNewArray) | \
+       H2S(LchMultipleInheritance))
 
 /* Heuristics set to use for the leak search.
    Default : no heuristic. */

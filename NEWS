@@ -13,6 +13,9 @@ Release 3.10.0 (?? ?????? 201?)
   - new client requests 
     VALGRIND_DISABLE_ADDR_ERROR_REPORTING_IN_RANGE and
     VALGRIND_ENABLE_ADDR_ERROR_REPORTING_IN_RANGE
+  - new leak check heuristic 'length64' to detect interior pointers
+    pointing at offset 64bit of a block, when the first 8 bytes contains
+    the block size - 8. This is e.g. used by sqlite3MemMalloc.
 
 * Helgrind:
   - Helgrind GDB server monitor command 'info locks' giving
@@ -184,6 +187,7 @@ where XXXXXX is the bug number as listed below.
 336957  Add a section about the Solaris/illumos port on the webpage
 337094  ifunc wrapper is broken on ppc64
 337285  fcntl commands F_OFD_SETLK, F_OFD_SETLKW, and F_OFD_GETLK not supported
+337528  leak check heuristic for block prefixed by length as 64bit number
 n-i-bz  Fix KVM_CREATE_IRQCHIP ioctl handling
 n-i-bz  s390x: Fix memory corruption for multithreaded applications
 n-i-bz  vex arm->IR: allow PC as basereg in some LDRD cases

@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <unistd.h>
+#include <stdint.h>
+#include <stdlib.h>
 #include <string>
 #include <sstream>
 #include "../memcheck.h"
@@ -7,6 +9,8 @@
 
 class MyClass
 { 
+   char m1;
+   int  m2;
 public:
    ~MyClass() 
    { fprintf(stderr, "destruct MyClass\n"); 
@@ -65,6 +69,23 @@ struct C : public A, public B
    } 
 };
 
+void* wrap64_malloc(int size)
+{
+  uint64_t *p = (uint64_t*)malloc(size + 8);
+  *p = size;
+  ++p;
+  return p;
+}
+
+void wrap64_free(void *p)
+{
+  uint64_t *p2 = (uint64_t*)p;
+  if (p2 == NULL)
+    return;
+  --p2;
+  free(p2);
+}
+
 std::string str;
 std::string str2;
 MyClass *ptr;
@@ -73,6 +94,7 @@ Be *ptrBCe;
 Ae *ptrACe;
 B *ptrBC;
 A *ptrAC;
+void* ptr64;
 
 char who_points_at_cmd[100];
 
@@ -81,6 +103,7 @@ void doit(void)
   str = "Valgrind"; // interior ptr.
   str2 = str;
   ptr = new MyClass[3]; // interior ptr.
+  ptr64 = wrap64_malloc(23);
   
   // prepare the who_points_at cmd we will run.
   // Do it here to avoid having ptr or its exterior ptr kept in a register.
@@ -112,8 +135,18 @@ int main() {
    (void) VALGRIND_MONITOR_COMMAND("leak_check summary heuristics multipleinheritance");
    fprintf(stderr, "leak_check summary any heuristics newarray\n");
    (void) VALGRIND_MONITOR_COMMAND("leak_check summary heuristics newarray");
+   fprintf(stderr, "leak_check summary heuristics length64\n");
+   (void) VALGRIND_MONITOR_COMMAND("leak_check summary heuristics length64");
    fprintf(stderr, "leak_check summary heuristics stdstring\n");
    (void) VALGRIND_MONITOR_COMMAND("leak_check summary heuristics stdstring");
+
+   // check all and none
+   fprintf(stderr, "leak_check summary heuristics multipleinheritance,newarray,stdstring,length64\n");
+   (void) VALGRIND_MONITOR_COMMAND("leak_check summary heuristics multipleinheritance,newarray,stdstring,length64");
+   fprintf(stderr, "leak_check summary heuristics all\n");
+   (void) VALGRIND_MONITOR_COMMAND("leak_check summary heuristics all");
+   fprintf(stderr, "leak_check summary heuristics none\n");
+   (void) VALGRIND_MONITOR_COMMAND("leak_check summary heuristics none");
 
    // Test the who_points_at when the block is pointed to with an interior ptr.
    (void) VALGRIND_MONITOR_COMMAND(who_points_at_cmd);
@@ -124,6 +157,7 @@ int main() {
    delete ptrACe;
    delete ptrBC;
    delete ptrAC;
+   wrap64_free(ptr64);
    fprintf(stderr, "Finished!\n");
    return 0;
 }

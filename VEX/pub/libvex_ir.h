@@ -1421,13 +1421,20 @@ typedef
       Iop_QDMull16Sx4, Iop_QDMull32Sx2,
 
       /* Vector Saturating Doubling Multiply Returning High Half and
-         Vector Saturating Rounding Doubling Multiply Returning High Half */
-      /* These IROps multiply corresponding elements in two vectors, double
+         Vector Saturating Rounding Doubling Multiply Returning High Half.
+         These IROps multiply corresponding elements in two vectors, double
          the results, and place the most significant half of the final results
-         in the destination vector. The results are truncated or rounded. If
-         any of the results overflow, they are saturated. */
-      Iop_QDMulHi16Sx8, Iop_QDMulHi32Sx4,
-      Iop_QRDMulHi16Sx8, Iop_QRDMulHi32Sx4,
+         in the destination vector.  The results are truncated or rounded.  If
+         any of the results overflow, they are saturated.  To be more precise,
+         for each lane, the computed result is: 
+           QDMulHi:  
+             hi-half( sign-extend(laneL) *q sign-extend(laneR) *q 2 )
+           QRDMulHi:
+             hi-half( sign-extend(laneL) *q sign-extend(laneR) *q 2
+                      +q (1 << (lane-width-in-bits - 1)) )
+      */
+      Iop_QDMulHi16Sx8,  Iop_QDMulHi32Sx4,  /* (V128, V128) -> V128 */
+      Iop_QRDMulHi16Sx8, Iop_QRDMulHi32Sx4, /* (V128, V128) -> V128 */
 
       /* Polynomial multiplication treats its arguments as
          coefficients of polynomials over {0, 1}. */

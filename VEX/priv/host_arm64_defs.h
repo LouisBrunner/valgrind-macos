@@ -360,7 +360,10 @@ typedef
       ARM64vecb_UQSUB16x8,   ARM64vecb_UQSUB8x16,
                              ARM64vecb_SQDMULL2DSS,
       ARM64vecb_SQDMULL4SHH,
-
+                             ARM64vecb_SQDMULH32x4,
+      ARM64vecb_SQDMULH16x8,
+                             ARM64vecb_SQRDMULH32x4,
+      ARM64vecb_SQRDMULH16x8,
       ARM64vecb_INVALID
    }
    ARM64VecBinOp;

@@ -947,6 +947,10 @@ static void showARM64VecBinOp(/*OUT*/const HChar** nm,
       case ARM64vecb_UQSUB8x16:    *nm = "uqsub";    *ar = "16b";  return;
       case ARM64vecb_SQDMULL2DSS:  *nm = "sqdmull";  *ar = "2dss"; return;
       case ARM64vecb_SQDMULL4SHH:  *nm = "sqdmull";  *ar = "4shh"; return;
+      case ARM64vecb_SQDMULH32x4:  *nm = "sqdmulh";  *ar = "4s";   return;
+      case ARM64vecb_SQDMULH16x8:  *nm = "sqdmulh";  *ar = "8h";   return;
+      case ARM64vecb_SQRDMULH32x4: *nm = "sqrdmulh"; *ar = "4s";   return;
+      case ARM64vecb_SQRDMULH16x8: *nm = "sqrdmulh"; *ar = "8h";   return;
       default: vpanic("showARM64VecBinOp");
    }
 }
@@ -3506,6 +3510,7 @@ static inline UChar qregNo ( HReg r )
 #define X100101  BITS8(0,0, 1,0,0,1,0,1)
 #define X100110  BITS8(0,0, 1,0,0,1,1,0)
 #define X100111  BITS8(0,0, 1,0,0,1,1,1)
+#define X101101  BITS8(0,0, 1,0,1,1,0,1)
 #define X101110  BITS8(0,0, 1,0,1,1,1,0)
 #define X110000  BITS8(0,0, 1,1,0,0,0,0)
 #define X110001  BITS8(0,0, 1,1,0,0,0,1)
@@ -5195,6 +5200,11 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
 
             000 01110 10 1 m  110100 n d   SQDMULL Vd.2d, Vn.2s, Vm.2s
             000 01110 01 1 m  110100 n d   SQDMULL Vd.4s, Vn.4h, Vm.4h
+
+            010 01110 10 1 m  101101 n d   SQDMULH   Vd.4s,  Vn.4s,  Vm.4s
+            010 01110 01 1 m  101101 n d   SQDMULH   Vd.8h,  Vn.8h,  Vm.8h
+            011 01110 10 1 m  101101 n d   SQRDMULH  Vd.4s,  Vn.4s,  Vm.4s
+            011 01110 10 1 m  101101 n d   SQRDMULH  Vd.8h,  Vn.8h,  Vm.8h
          */
          UInt vD = qregNo(i->ARM64in.VBinV.dst);
          UInt vN = qregNo(i->ARM64in.VBinV.argL);
@@ -5503,6 +5513,19 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
                break;
             case ARM64vecb_SQDMULL4SHH:
                *p++ = X_3_8_5_6_5_5(X000, X01110011, vM, X110100, vN, vD);
+               break;
+
+            case ARM64vecb_SQDMULH32x4:
+               *p++ = X_3_8_5_6_5_5(X010, X01110101, vM, X101101, vN, vD);
+               break;
+            case ARM64vecb_SQDMULH16x8:
+               *p++ = X_3_8_5_6_5_5(X010, X01110011, vM, X101101, vN, vD);
+               break;
+            case ARM64vecb_SQRDMULH32x4:
+               *p++ = X_3_8_5_6_5_5(X011, X01110101, vM, X101101, vN, vD);
+               break;
+            case ARM64vecb_SQRDMULH16x8:
+               *p++ = X_3_8_5_6_5_5(X011, X01110011, vM, X101101, vN, vD);
                break;
 
             default:

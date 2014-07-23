@@ -101,6 +101,7 @@ where XXXXXX is the bug number as listed below.
 278972  support for inlined function calls in stacktraces and suppression
 303536  ioctl for SIOCETHTOOL (ethtool(8)) isn't wrapped
 308729  vex x86->IR: unhandled instruction bytes 0xf 0x5 (syscall) 
+315199  vgcore file for threaded app does not show which thread crashed
 325110  Add test-cases for Power ISA 2.06 insns: divdo/divdo. and divduo/divduo.
 325124  [MIPSEL] Compilation error
 325477  Phase 4 support for IBM Power ISA 2.07

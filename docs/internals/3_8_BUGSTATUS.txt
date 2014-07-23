@@ -269,10 +269,6 @@ gcp libnss3.so debuginfo read hang
 314365  enable VEX to run asm helpers that do callee register saving
         In progress; not sure whether this is a good idea
 
-315199  vgcore file for threaded app does not show which thread crashed
-        HAS_PATCH; needs review
-        Severity: low  Audience: med
-
 -- Thu Feb 28 09:54:56 CET 2013
 
 315936  UNKNOWN task message [id 3403, to mach_task_self(), reply

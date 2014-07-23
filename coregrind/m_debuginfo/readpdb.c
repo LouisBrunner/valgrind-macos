@@ -1568,6 +1568,7 @@ static ULong DEBUG_SnarfLinetab(
    for (i = 0; i < nfile; i++) {
       HChar *fnmstr;
       HChar *dirstr;
+      UInt  fnmdirstr_ix;
 
       /*
        * Get the pointer into the segment information.
@@ -1599,6 +1600,7 @@ static ULong DEBUG_SnarfLinetab(
       k = VG_(strlen)(fnmstr);
       dirstr = ML_(addStr)(di, filename, *fn - k);
       fnmstr = ML_(addStr)(di, fnmstr, k);
+      fnmdirstr_ix = ML_(addFnDn) (di, fnmstr, dirstr);
 
       for (k = 0; k < file_segcount; k++, this_seg++) {
          Int linecount;
@@ -1631,9 +1633,7 @@ static ULong DEBUG_SnarfLinetab(
                         startaddr, endaddr );
                   ML_(addLineInfo)(
                      di, 
-                     ML_(addFnDn) (di, // fndnTBD
-                                   fnmstr,
-                                   dirstr), 
+                     fnmdirstr_ix,
                      startaddr, endaddr,
                      ((const unsigned short *)(pnt2.ui + linecount))[j], j );
                   n_lines_read++;
@@ -1716,6 +1716,7 @@ static ULong codeview_dump_linetab2(
    while ((HChar*)lbh < linetab + size) {
 
       HChar *filename, *dirname;
+      UInt filedirname_ix;
       Addr svma_s, svma_e;
       if (lbh->header != 0x000000f2) {
          /* FIXME: should also check that whole lbh fits in linetab + size */
@@ -1756,6 +1757,8 @@ static ULong codeview_dump_linetab2(
       if (debug)
          VG_(printf)("%s  file=%s\n", pfx, filename);
 
+      filedirname_ix = ML_(addFnDn) (di, filename, dirname);
+
       for (i = 0; i < lbh->nlines; i++) {
          if (debug)
             VG_(printf)("%s  offset=%08x line=%d\n",
@@ -1772,9 +1775,7 @@ static ULong codeview_dump_linetab2(
                VG_(printf)("%s  line %d: %08lx to %08lx\n",
                            pfx, lbh->l[i].lineno ^ 0x80000000, svma_s, svma_e);
             ML_(addLineInfo)( di, 
-                              ML_(addFnDn) (di, // fndnTBD
-                                            filename,
-                                            dirname),
+                              filedirname_ix,
                               bias + svma_s,
                               bias + svma_e + 1,
                               lbh->l[i].lineno ^ 0x80000000, 0 );
@@ -1789,9 +1790,7 @@ static ULong codeview_dump_linetab2(
                         pfx, lbh->l[ lbh->nlines-1  ].lineno ^ 0x80000000,
                         svma_s, svma_e);
           ML_(addLineInfo)( di, 
-                            ML_(addFnDn) (di, // fndnTBD
-                                          filename,
-                                          dirname),
+                            filedirname_ix,
                             bias + svma_s,
                             bias + svma_e + 1,
                             lbh->l[lbh->nlines-1].lineno ^ 0x80000000, 0 );

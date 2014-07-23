@@ -525,6 +525,32 @@ static void fill_xfpu(const ThreadState *tst, vki_elf_fpxregset_t *xfpu)
 #endif
 
 static
+void dump_one_thread(struct note **notelist, const vki_siginfo_t *si, ThreadId tid)
+{
+   vki_elf_fpregset_t  fpu;
+   struct vki_elf_prstatus prstatus;
+#     if defined(VGP_x86_linux) && !defined(VGPV_x86_linux_android)
+      {
+         vki_elf_fpxregset_t xfpu;
+         fill_xfpu(&VG_(threads)[tid], &xfpu);
+         add_note(notelist, "LINUX", NT_PRXFPREG, &xfpu, sizeof(xfpu));
+      }
+#     endif
+
+      fill_fpu(&VG_(threads)[tid], &fpu);
+#     if !defined(VGPV_arm_linux_android) && !defined(VGPV_x86_linux_android) \
+         && !defined(VGPV_mips32_linux_android)
+      add_note(notelist, "CORE", NT_FPREGSET, &fpu, sizeof(fpu));
+#     endif
+
+      fill_prstatus(&VG_(threads)[tid], &prstatus, si);
+#     if !defined(VGPV_arm_linux_android) && !defined(VGPV_x86_linux_android) \
+         && !defined(VGPV_mips32_linux_android)
+      add_note(notelist, "CORE", NT_PRSTATUS, &prstatus, sizeof(prstatus));
+#     endif
+}
+
+static
 void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, ULong max_size)
 {
    HChar* buf = NULL;
@@ -541,7 +567,6 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, ULong max_size)
    struct note *notelist, *note;
    UInt notesz;
    struct vki_elf_prpsinfo prpsinfo;
-   struct vki_elf_prstatus prstatus;
    Addr *seg_starts;
    Int n_seg_starts;
 
@@ -605,32 +630,23 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, ULong max_size)
    phdrs = VG_(arena_malloc)(VG_AR_CORE, "coredump-elf.mec.1", 
                              sizeof(*phdrs) * num_phdrs);
 
+   /* Add details for all threads except the one that faulted */
    for(i = 1; i < VG_N_THREADS; i++) {
-      vki_elf_fpregset_t  fpu;
 
       if (VG_(threads)[i].status == VgTs_Empty)
 	 continue;
 
-#     if defined(VGP_x86_linux) && !defined(VGPV_x86_linux_android)
-      {
-         vki_elf_fpxregset_t xfpu;
-         fill_xfpu(&VG_(threads)[i], &xfpu);
-         add_note(&notelist, "LINUX", NT_PRXFPREG, &xfpu, sizeof(xfpu));
-      }
-#     endif
+      if (i == tid)
+	 continue;
 
-      fill_fpu(&VG_(threads)[i], &fpu);
-#     if !defined(VGPV_arm_linux_android) && !defined(VGPV_x86_linux_android) \
-         && !defined(VGPV_mips32_linux_android)
-      add_note(&notelist, "CORE", NT_FPREGSET, &fpu, sizeof(fpu));
-#     endif
-
-      fill_prstatus(&VG_(threads)[i], &prstatus, si);
-#     if !defined(VGPV_arm_linux_android) && !defined(VGPV_x86_linux_android) \
-         && !defined(VGPV_mips32_linux_android)
-      add_note(&notelist, "CORE", NT_PRSTATUS, &prstatus, sizeof(prstatus));
-#     endif
+      dump_one_thread(&notelist, si, i);
    }
+
+   /* Add details for the faulting thread. Note that because we are
+      adding to the head of a linked list this thread will actually
+      come out first in the core file, which seems to be how
+      debuggers determine that it is the faulting thread. */
+   dump_one_thread(&notelist, si, tid);
 
    fill_prpsinfo(&VG_(threads)[tid], &prpsinfo);
 #  if !defined(VGPV_arm_linux_android) && !defined(VGPV_x86_linux_android) \

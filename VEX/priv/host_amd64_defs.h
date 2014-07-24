@@ -754,8 +754,10 @@ extern void         getRegUsage_AMD64Instr ( HRegUsage*, AMD64Instr*, Bool );
 extern void         mapRegs_AMD64Instr     ( HRegRemap*, AMD64Instr*, Bool );
 extern Bool         isMove_AMD64Instr      ( AMD64Instr*, HReg*, HReg* );
 extern Int          emit_AMD64Instr        ( /*MB_MOD*/Bool* is_profInc,
-                                             UChar* buf, Int nbuf, AMD64Instr* i, 
+                                             UChar* buf, Int nbuf,
+                                             AMD64Instr* i, 
                                              Bool mode64,
+                                             VexEndness endness_host,
                                              void* disp_cp_chain_me_to_slowEP,
                                              void* disp_cp_chain_me_to_fastEP,
                                              void* disp_cp_xindir,
@@ -782,19 +784,22 @@ extern HInstrArray* iselSB_AMD64           ( IRSB*,
    and so assumes that they are both <= 128, and so can use the short
    offset encoding.  This is all checked with assertions, so in the
    worst case we will merely assert at startup. */
-extern Int evCheckSzB_AMD64 ( void );
+extern Int evCheckSzB_AMD64 ( VexEndness endness_host );
 
 /* Perform a chaining and unchaining of an XDirect jump. */
-extern VexInvalRange chainXDirect_AMD64 ( void* place_to_chain,
+extern VexInvalRange chainXDirect_AMD64 ( VexEndness endness_host,
+                                          void* place_to_chain,
                                           void* disp_cp_chain_me_EXPECTED,
                                           void* place_to_jump_to );
 
-extern VexInvalRange unchainXDirect_AMD64 ( void* place_to_unchain,
+extern VexInvalRange unchainXDirect_AMD64 ( VexEndness endness_host,
+                                            void* place_to_unchain,
                                             void* place_to_jump_to_EXPECTED,
                                             void* disp_cp_chain_me );
 
 /* Patch the counter location into an existing ProfInc point. */
-extern VexInvalRange patchProfInc_AMD64 ( void*  place_to_patch,
+extern VexInvalRange patchProfInc_AMD64 ( VexEndness endness_host,
+                                          void*  place_to_patch,
                                           ULong* location_of_counter );
 
 

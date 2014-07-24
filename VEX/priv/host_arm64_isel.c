@@ -7106,6 +7106,9 @@ HInstrArray* iselSB_ARM64 ( IRSB* bb,
    /* sanity ... */
    vassert(arch_host == VexArchARM64);
 
+   /* Check that the host's endianness is as expected. */
+   vassert(archinfo_host->endness == VexEndnessLE);
+
    /* guard against unexpected space regressions */
    vassert(sizeof(ARM64Instr) <= 32);
 

@@ -152,8 +152,8 @@ typedef
       /* ABI info for both guest and host */
       /*IN*/  VexAbiInfo*  abiinfo,
 
-      /* Is the host bigendian? */
-      /*IN*/  Bool         host_bigendian,
+      /* The endianness of the host */
+      /*IN*/  VexEndness   host_endness,
 
       /* Should diagnostics be printed for illegal instructions? */
       /*IN*/  Bool         sigill_diag
@@ -176,7 +176,7 @@ IRSB* bb_to_IR (
          /*IN*/ UChar*           guest_code,
          /*IN*/ Addr64           guest_IP_bbstart,
          /*IN*/ Bool             (*chase_into_ok)(void*,Addr64),
-         /*IN*/ Bool             host_bigendian,
+         /*IN*/ VexEndness       host_endness,
          /*IN*/ Bool             sigill_diag,
          /*IN*/ VexArch          arch_guest,
          /*IN*/ VexArchInfo*     archinfo_guest,

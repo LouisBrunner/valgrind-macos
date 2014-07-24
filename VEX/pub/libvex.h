@@ -51,7 +51,7 @@
 
 typedef 
    enum { 
-      VexArch_INVALID,
+      VexArch_INVALID=0x400,
       VexArchX86, 
       VexArchAMD64, 
       VexArchARM,
@@ -63,6 +63,16 @@ typedef
       VexArchMIPS64
    }
    VexArch;
+
+
+/* Information about endianness. */
+typedef
+   enum {
+      VexEndness_INVALID=0x600, /* unknown endianness */
+      VexEndnessLE,             /* little endian */
+      VexEndnessBE              /* big endian */
+   }
+   VexEndness;
 
 
 /* For a given architecture, these specify extra capabilities beyond
@@ -220,12 +230,13 @@ typedef
 /* These return statically allocated strings. */
 
 extern const HChar* LibVEX_ppVexArch    ( VexArch );
+extern const HChar* LibVEX_ppVexEndness ( VexEndness endness );
 extern const HChar* LibVEX_ppVexHwCaps  ( VexArch, UInt );
 
 
 /* The various kinds of caches */
 typedef enum {
-   DATA_CACHE,
+   DATA_CACHE=0x500,
    INSN_CACHE,
    UNIFIED_CACHE
 } VexCacheKind;
@@ -270,8 +281,9 @@ typedef struct {
 
 typedef
    struct {
-      /* The following two fields are mandatory. */
-      UInt hwcaps;
+      /* The following three fields are mandatory. */
+      UInt         hwcaps;
+      VexEndness   endness;
       VexCacheInfo hwcache_info;
       /* PPC32/PPC64 only: size of instruction cache line */
       Int ppc_icache_line_szB;
@@ -389,7 +401,7 @@ void LibVEX_default_VexAbiInfo ( /*OUT*/VexAbiInfo* vbi );
    points.
 
    VexRegUpdAllregsAtEachInsn : all registers up to date at each instruction. */
-typedef enum { VexRegUpdSpAtMemAccess,
+typedef enum { VexRegUpdSpAtMemAccess=0x700,
                VexRegUpdUnwindregsAtMemAccess,
                VexRegUpdAllregsAtMemAccess,
                VexRegUpdAllregsAtEachInsn } VexRegisterUpdates;
@@ -583,7 +595,7 @@ extern void LibVEX_Init (
 typedef
    struct {
       /* overall status */
-      enum { VexTransOK,
+      enum { VexTransOK=0x800,
              VexTransAccessFail, VexTransOutputFull } status;
       /* The number of extents that have a self-check (0 to 3) */
       UInt n_sc_extents;
@@ -778,35 +790,39 @@ typedef
    currently contains a call to the dispatcher specified by
    disp_cp_chain_me_EXPECTED. */
 extern
-VexInvalRange LibVEX_Chain ( VexArch arch_host,
-                             void*   place_to_chain,
-                             void*   disp_cp_chain_me_EXPECTED,
-                             void*   place_to_jump_to );
+VexInvalRange LibVEX_Chain ( VexArch    arch_host,
+                             VexEndness endhess_host,
+                             void*      place_to_chain,
+                             void*      disp_cp_chain_me_EXPECTED,
+                             void*      place_to_jump_to );
 
 /* Undo an XDirect jump located at place_to_unchain, so it is
    converted back into a call to disp_cp_chain_me.  It is expected
    (and checked) that this site currently contains a jump directly to
    the address specified by place_to_jump_to_EXPECTED. */
 extern
-VexInvalRange LibVEX_UnChain ( VexArch arch_host,
-                               void*   place_to_unchain,
-                               void*   place_to_jump_to_EXPECTED,
-                               void*   disp_cp_chain_me );
+VexInvalRange LibVEX_UnChain ( VexArch    arch_host,
+                               VexEndness endness_host,
+                               void*      place_to_unchain,
+                               void*      place_to_jump_to_EXPECTED,
+                               void*      disp_cp_chain_me );
 
 /* Returns a constant -- the size of the event check that is put at
    the start of every translation.  This makes it possible to
    calculate the fast entry point address if the slow entry point
    address is known (the usual case), or vice versa. */
 extern
-Int LibVEX_evCheckSzB ( VexArch arch_host );
+Int LibVEX_evCheckSzB ( VexArch    arch_host,
+                        VexEndness endness_host );
 
 
 /* Patch the counter location into an existing ProfInc point.  The
    specified point is checked to make sure it is plausible. */
 extern
-VexInvalRange LibVEX_PatchProfInc ( VexArch arch_host,
-                                    void*   place_to_patch,
-                                    ULong*  location_of_counter );
+VexInvalRange LibVEX_PatchProfInc ( VexArch    arch_host,
+                                    VexEndness endness_host,
+                                    void*      place_to_patch,
+                                    ULong*     location_of_counter );
 
 
 /*-------------------------------------------------------*/

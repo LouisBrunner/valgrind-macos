@@ -5920,6 +5920,9 @@ HInstrArray* iselSB_PPC ( IRSB* bb,
       vassert((hwcaps_host & mask64) == 0);
    }
 
+   /* Check that the host's endianness is as expected. */
+   vassert(archinfo_host->endness == VexEndnessBE);
+
    /* Make up an initial environment to use. */
    env = LibVEX_Alloc(sizeof(ISelEnv));
    env->vreg_ctr = 0;

@@ -186,7 +186,7 @@ IRSB* bb_to_IR (
          /*IN*/ UChar*           guest_code,
          /*IN*/ Addr64           guest_IP_bbstart,
          /*IN*/ Bool             (*chase_into_ok)(void*,Addr64),
-         /*IN*/ Bool             host_bigendian,
+         /*IN*/ VexEndness       host_endness,
          /*IN*/ Bool             sigill_diag,
          /*IN*/ VexArch          arch_guest,
          /*IN*/ VexArchInfo*     archinfo_guest,
@@ -362,7 +362,7 @@ IRSB* bb_to_IR (
                             arch_guest,
                             archinfo_guest,
                             abiinfo_both,
-                            host_bigendian,
+                            host_endness,
                             sigill_diag );
 
       /* stay sane ... */

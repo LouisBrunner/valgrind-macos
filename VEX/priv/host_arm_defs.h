@@ -1027,6 +1027,7 @@ extern Bool isMove_ARMInstr      ( ARMInstr*, HReg*, HReg* );
 extern Int  emit_ARMInstr        ( /*MB_MOD*/Bool* is_profInc,
                                    UChar* buf, Int nbuf, ARMInstr* i, 
                                    Bool mode64,
+                                   VexEndness endness_host,
                                    void* disp_cp_chain_me_to_slowEP,
                                    void* disp_cp_chain_me_to_fastEP,
                                    void* disp_cp_xindir,
@@ -1051,19 +1052,22 @@ extern HInstrArray* iselSB_ARM   ( IRSB*,
 /* How big is an event check?  This is kind of a kludge because it
    depends on the offsets of host_EvC_FAILADDR and
    host_EvC_COUNTER. */
-extern Int evCheckSzB_ARM ( void );
+extern Int evCheckSzB_ARM ( VexEndness endness_host );
 
 /* Perform a chaining and unchaining of an XDirect jump. */
-extern VexInvalRange chainXDirect_ARM ( void* place_to_chain,
+extern VexInvalRange chainXDirect_ARM ( VexEndness endness_host,
+                                        void* place_to_chain,
                                         void* disp_cp_chain_me_EXPECTED,
                                         void* place_to_jump_to );
 
-extern VexInvalRange unchainXDirect_ARM ( void* place_to_unchain,
+extern VexInvalRange unchainXDirect_ARM ( VexEndness endness_host,
+                                          void* place_to_unchain,
                                           void* place_to_jump_to_EXPECTED,
                                           void* disp_cp_chain_me );
 
 /* Patch the counter location into an existing ProfInc point. */
-extern VexInvalRange patchProfInc_ARM ( void*  place_to_patch,
+extern VexInvalRange patchProfInc_ARM ( VexEndness endness_host,
+                                        void*  place_to_patch,
                                         ULong* location_of_counter );
 
 

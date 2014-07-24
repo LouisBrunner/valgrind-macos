@@ -16565,13 +16565,13 @@ disInstr_S390(IRSB        *irsb_IN,
               VexArch      guest_arch,
               VexArchInfo *archinfo,
               VexAbiInfo  *abiinfo,
-              Bool         host_bigendian,
+              VexEndness   host_endness,
               Bool         sigill_diag_IN)
 {
    vassert(guest_arch == VexArchS390X);
 
    /* The instruction decoder requires a big-endian machine. */
-   vassert(host_bigendian == True);
+   vassert(host_endness == VexEndnessBE);
 
    /* Set globals (see top of this file) */
    guest_IA_curr_instr = guest_IP;

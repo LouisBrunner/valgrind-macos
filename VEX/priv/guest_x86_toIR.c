@@ -195,7 +195,7 @@
    given insn. */
 
 /* We need to know this to do sub-register accesses correctly. */
-static Bool host_is_bigendian;
+static VexEndness host_endness;
 
 /* Pointer to the guest code area (points to start of BB, not to the
    insn being processed). */
@@ -452,7 +452,7 @@ static Int integerGuestRegOffset ( Int sz, UInt archreg )
    vassert(archreg < 8);
 
    /* Correct for little-endian host only. */
-   vassert(!host_is_bigendian);
+   vassert(host_endness == VexEndnessLE);
 
    if (sz == 4 || sz == 2 || (sz == 1 && archreg < 4)) {
       switch (archreg) {
@@ -515,7 +515,7 @@ static Int xmmGuestRegOffset ( UInt xmmreg )
 static Int xmmGuestRegLane16offset ( UInt xmmreg, Int laneno )
 {
    /* Correct for little-endian host only. */
-   vassert(!host_is_bigendian);
+   vassert(host_endness == VexEndnessLE);
    vassert(laneno >= 0 && laneno < 8);
    return xmmGuestRegOffset( xmmreg ) + 2 * laneno;
 }
@@ -523,7 +523,7 @@ static Int xmmGuestRegLane16offset ( UInt xmmreg, Int laneno )
 static Int xmmGuestRegLane32offset ( UInt xmmreg, Int laneno )
 {
    /* Correct for little-endian host only. */
-   vassert(!host_is_bigendian);
+   vassert(host_endness == VexEndnessLE);
    vassert(laneno >= 0 && laneno < 4);
    return xmmGuestRegOffset( xmmreg ) + 4 * laneno;
 }
@@ -531,7 +531,7 @@ static Int xmmGuestRegLane32offset ( UInt xmmreg, Int laneno )
 static Int xmmGuestRegLane64offset ( UInt xmmreg, Int laneno )
 {
    /* Correct for little-endian host only. */
-   vassert(!host_is_bigendian);
+   vassert(host_endness == VexEndnessLE);
    vassert(laneno >= 0 && laneno < 2);
    return xmmGuestRegOffset( xmmreg ) + 8 * laneno;
 }
@@ -15421,7 +15421,7 @@ DisResult disInstr_X86 ( IRSB*        irsb_IN,
                          VexArch      guest_arch,
                          VexArchInfo* archinfo,
                          VexAbiInfo*  abiinfo,
-                         Bool         host_bigendian_IN,
+                         VexEndness   host_endness_IN,
                          Bool         sigill_diag_IN )
 {
    Int       i, x1, x2;
@@ -15432,7 +15432,7 @@ DisResult disInstr_X86 ( IRSB*        irsb_IN,
    vassert(guest_arch == VexArchX86);
    guest_code           = guest_code_IN;
    irsb                 = irsb_IN;
-   host_is_bigendian    = host_bigendian_IN;
+   host_endness         = host_endness_IN;
    guest_EIP_curr_instr = (Addr32)guest_IP;
    guest_EIP_bbstart    = (Addr32)toUInt(guest_IP - delta);
 

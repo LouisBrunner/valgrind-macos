@@ -49,10 +49,10 @@
    that we don't have to pass them around endlessly. CONST means does
    not change during translation of the instruction. */
 
-/* CONST: is the host bigendian?  This has to do with float vs double
-   register accesses on VFP, but it's complex and not properly thought
-   out. */
-static Bool host_is_bigendian;
+/* CONST: what is the host's endianness?  This has to do with float vs
+   double register accesses on VFP, but it's complex and not properly
+   thought out. */
+static VexEndness host_endness;
 
 /* Pointer to the guest code area. */
 static UChar *guest_code;
@@ -17202,7 +17202,7 @@ DisResult disInstr_MIPS( IRSB*        irsb_IN,
                          VexArch      guest_arch,
                          VexArchInfo* archinfo,
                          VexAbiInfo*  abiinfo,
-                         Bool         host_bigendian_IN,
+                         VexEndness   host_endness_IN,
                          Bool         sigill_diag_IN )
 {
    DisResult dres;
@@ -17217,7 +17217,7 @@ DisResult disInstr_MIPS( IRSB*        irsb_IN,
 
    guest_code = guest_code_IN;
    irsb = irsb_IN;
-   host_is_bigendian = host_bigendian_IN;
+   host_endness = host_endness_IN;
 #if defined(VGP_mips32_linux)
    guest_PC_curr_instr = (Addr32)guest_IP;
 #elif defined(VGP_mips64_linux)

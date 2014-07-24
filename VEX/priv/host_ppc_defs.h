@@ -1138,6 +1138,7 @@ extern Bool         isMove_PPCInstr      ( PPCInstr*, HReg*, HReg* );
 extern Int          emit_PPCInstr        ( /*MB_MOD*/Bool* is_profInc,
                                            UChar* buf, Int nbuf, PPCInstr* i, 
                                            Bool mode64,
+                                           VexEndness endness_host,
                                            void* disp_cp_chain_me_to_slowEP,
                                            void* disp_cp_chain_me_to_fastEP,
                                            void* disp_cp_xindir,
@@ -1162,21 +1163,24 @@ extern HInstrArray* iselSB_PPC           ( IRSB*,
 /* How big is an event check?  This is kind of a kludge because it
    depends on the offsets of host_EvC_FAILADDR and
    host_EvC_COUNTER. */
-extern Int evCheckSzB_PPC ( void );
+extern Int evCheckSzB_PPC ( VexEndness endness_host );
 
 /* Perform a chaining and unchaining of an XDirect jump. */
-extern VexInvalRange chainXDirect_PPC ( void* place_to_chain,
+extern VexInvalRange chainXDirect_PPC ( VexEndness endness_host,
+                                        void* place_to_chain,
                                         void* disp_cp_chain_me_EXPECTED,
                                         void* place_to_jump_to,
                                         Bool  mode64 );
 
-extern VexInvalRange unchainXDirect_PPC ( void* place_to_unchain,
+extern VexInvalRange unchainXDirect_PPC ( VexEndness endness_host,
+                                          void* place_to_unchain,
                                           void* place_to_jump_to_EXPECTED,
                                           void* disp_cp_chain_me,
                                           Bool  mode64 );
 
 /* Patch the counter location into an existing ProfInc point. */
-extern VexInvalRange patchProfInc_PPC ( void*  place_to_patch,
+extern VexInvalRange patchProfInc_PPC ( VexEndness endness_host,
+                                        void*  place_to_patch,
                                         ULong* location_of_counter,
                                         Bool   mode64 );
 

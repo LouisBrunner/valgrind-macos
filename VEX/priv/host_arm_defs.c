@@ -2971,7 +2971,7 @@ static UInt* do_load_or_store32 ( UInt* p,
 
 Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
                     UChar* buf, Int nbuf, ARMInstr* i, 
-                    Bool mode64,
+                    Bool mode64, VexEndness endness_host,
                     void* disp_cp_chain_me_to_slowEP,
                     void* disp_cp_chain_me_to_fastEP,
                     void* disp_cp_xindir,
@@ -4644,7 +4644,7 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
          /* nofail: */
 
          /* Crosscheck */
-         vassert(evCheckSzB_ARM() == (UChar*)p - (UChar*)p0);
+         vassert(evCheckSzB_ARM(endness_host) == (UChar*)p - (UChar*)p0);
          goto done;
       }
 
@@ -4695,7 +4695,7 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
 /* How big is an event check?  See case for ARMin_EvCheck in
    emit_ARMInstr just above.  That crosschecks what this returns, so
    we can tell if we're inconsistent. */
-Int evCheckSzB_ARM ( void )
+Int evCheckSzB_ARM ( VexEndness endness_host )
 {
    return 24;
 }
@@ -4703,10 +4703,13 @@ Int evCheckSzB_ARM ( void )
 
 /* NB: what goes on here has to be very closely coordinated with the
    emitInstr case for XDirect, above. */
-VexInvalRange chainXDirect_ARM ( void* place_to_chain,
+VexInvalRange chainXDirect_ARM ( VexEndness endness_host,
+                                 void* place_to_chain,
                                  void* disp_cp_chain_me_EXPECTED,
                                  void* place_to_jump_to )
 {
+   vassert(endness_host == VexEndnessLE);
+
    /* What we're expecting to see is:
         movw r12, lo16(disp_cp_chain_me_to_EXPECTED)
         movt r12, hi16(disp_cp_chain_me_to_EXPECTED)
@@ -4783,10 +4786,13 @@ VexInvalRange chainXDirect_ARM ( void* place_to_chain,
 
 /* NB: what goes on here has to be very closely coordinated with the
    emitInstr case for XDirect, above. */
-VexInvalRange unchainXDirect_ARM ( void* place_to_unchain,
+VexInvalRange unchainXDirect_ARM ( VexEndness endness_host,
+                                   void* place_to_unchain,
                                    void* place_to_jump_to_EXPECTED,
                                    void* disp_cp_chain_me )
 {
+   vassert(endness_host == VexEndnessLE);
+
    /* What we're expecting to see is:
         (general case)
           movw r12, lo16(place_to_jump_to_EXPECTED)
@@ -4844,9 +4850,11 @@ VexInvalRange unchainXDirect_ARM ( void* place_to_unchain,
 
 /* Patch the counter address into a profile inc point, as previously
    created by the ARMin_ProfInc case for emit_ARMInstr. */
-VexInvalRange patchProfInc_ARM ( void*  place_to_patch,
+VexInvalRange patchProfInc_ARM ( VexEndness endness_host,
+                                 void*  place_to_patch,
                                  ULong* location_of_counter )
 {
+   vassert(endness_host == VexEndnessLE);
    vassert(sizeof(ULong*) == 4);
    UInt* p = (UInt*)place_to_patch;
    vassert(0 == (3 & (HWord)p));

@@ -736,7 +736,7 @@ void  getRegUsage_S390Instr( HRegUsage *, s390_insn *, Bool );
 void  mapRegs_S390Instr    ( HRegRemap *, s390_insn *, Bool );
 Bool  isMove_S390Instr     ( s390_insn *, HReg *, HReg * );
 Int   emit_S390Instr       ( Bool *, UChar *, Int, s390_insn *, Bool,
-                             void *, void *, void *, void *);
+                             VexEndness, void *, void *, void *, void *);
 void  getAllocableRegs_S390( Int *, HReg **, Bool );
 void  genSpill_S390        ( HInstr **, HInstr **, HReg , Int , Bool );
 void  genReload_S390       ( HInstr **, HInstr **, HReg , Int , Bool );
@@ -745,19 +745,22 @@ HInstrArray *iselSB_S390   ( IRSB *, VexArch, VexArchInfo *, VexAbiInfo *,
                              Int, Int, Bool, Bool, Addr64);
 
 /* Return the number of bytes of code needed for an event check */
-Int evCheckSzB_S390(void);
+Int evCheckSzB_S390(VexEndness endness_host);
 
 /* Perform a chaining and unchaining of an XDirect jump. */
-VexInvalRange chainXDirect_S390(void *place_to_chain,
+VexInvalRange chainXDirect_S390(VexEndness endness_host,
+                                void *place_to_chain,
                                 void *disp_cp_chain_me_EXPECTED,
                                 void *place_to_jump_to);
 
-VexInvalRange unchainXDirect_S390(void *place_to_unchain,
+VexInvalRange unchainXDirect_S390(VexEndness endness_host,
+                                  void *place_to_unchain,
                                   void *place_to_jump_to_EXPECTED,
                                   void *disp_cp_chain_me);
 
 /* Patch the counter location into an existing ProfInc point. */
-VexInvalRange patchProfInc_S390(void  *code_to_patch,
+VexInvalRange patchProfInc_S390(VexEndness endness_host,
+                                void  *code_to_patch,
                                 ULong *location_of_counter);
 
 /* KLUDGE: See detailled comment in host_s390_defs.c. */

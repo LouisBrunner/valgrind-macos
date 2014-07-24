@@ -4173,6 +4173,10 @@ HInstrArray *iselSB_MIPS ( IRSB* bb,
            || VEX_PRID_COMP_BROADCOM == hwcaps_host
            || VEX_PRID_COMP_NETLOGIC);
 
+   /* Check that the host's endianness is as expected. */
+   vassert(archinfo_host->endness == VexEndnessLE
+           || archinfo_host->endness == VexEndnessBE);
+
    mode64 = arch_host != VexArchMIPS32;
 #if (__mips_fpr==64)
    fp_mode64 = ((VEX_MIPS_REV(hwcaps_host) == VEX_PRID_CPU_32FPR)

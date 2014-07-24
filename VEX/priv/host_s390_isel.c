@@ -4094,6 +4094,9 @@ iselSB_S390(IRSB *bb, VexArch arch_host, VexArchInfo *archinfo_host,
    /* Do some sanity checks */
    vassert((VEX_HWCAPS_S390X(hwcaps_host) & ~(VEX_HWCAPS_S390X_ALL)) == 0);
 
+   /* Check that the host's endianness is as expected. */
+   vassert(archinfo_host->endness == VexEndnessBE);
+
    /* Make up an initial environment to use. */
    env = LibVEX_Alloc(sizeof(ISelEnv));
    env->vreg_ctr = 0;

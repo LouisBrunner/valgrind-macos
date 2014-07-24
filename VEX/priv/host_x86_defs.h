@@ -717,6 +717,7 @@ extern Bool         isMove_X86Instr      ( X86Instr*, HReg*, HReg* );
 extern Int          emit_X86Instr        ( /*MB_MOD*/Bool* is_profInc,
                                            UChar* buf, Int nbuf, X86Instr* i, 
                                            Bool mode64,
+                                           VexEndness endness_host,
                                            void* disp_cp_chain_me_to_slowEP,
                                            void* disp_cp_chain_me_to_fastEP,
                                            void* disp_cp_xindir,
@@ -745,19 +746,22 @@ extern HInstrArray* iselSB_X86           ( IRSB*,
    and so assumes that they are both <= 128, and so can use the short
    offset encoding.  This is all checked with assertions, so in the
    worst case we will merely assert at startup. */
-extern Int evCheckSzB_X86 ( void );
+extern Int evCheckSzB_X86 ( VexEndness endness_host );
 
 /* Perform a chaining and unchaining of an XDirect jump. */
-extern VexInvalRange chainXDirect_X86 ( void* place_to_chain,
+extern VexInvalRange chainXDirect_X86 ( VexEndness endness_host,
+                                        void* place_to_chain,
                                         void* disp_cp_chain_me_EXPECTED,
                                         void* place_to_jump_to );
 
-extern VexInvalRange unchainXDirect_X86 ( void* place_to_unchain,
+extern VexInvalRange unchainXDirect_X86 ( VexEndness endness_host,
+                                          void* place_to_unchain,
                                           void* place_to_jump_to_EXPECTED,
                                           void* disp_cp_chain_me );
 
 /* Patch the counter location into an existing ProfInc point. */
-extern VexInvalRange patchProfInc_X86 ( void*  place_to_patch,
+extern VexInvalRange patchProfInc_X86 ( VexEndness endness_host,
+                                        void*  place_to_patch,
                                         ULong* location_of_counter );
 
 

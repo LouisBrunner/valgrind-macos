@@ -123,10 +123,10 @@
    not change during translation of the instruction.
 */
 
-/* CONST: is the host bigendian?  This has to do with float vs double
-   register accesses on VFP, but it's complex and not properly thought
-   out. */
-static Bool host_is_bigendian;
+/* CONST: what is the host's endianness?  This has to do with float vs
+   double register accesses on VFP, but it's complex and not properly
+   thought out. */
+static VexEndness host_endness;
 
 /* CONST: The guest address for the instruction currently being
    translated.  This is the real, "decoded" address (not subject
@@ -849,11 +849,11 @@ static Int floatGuestRegOffset ( UInt fregNo )
    Int off;
    vassert(fregNo < 32);
    off = doubleGuestRegOffset(fregNo >> 1);
-   if (host_is_bigendian) {
-      vassert(0);
-   } else {
+   if (host_endness == VexEndnessLE) {
       if (fregNo & 1)
          off += 4;
+   } else {
+      vassert(0);
    }
    return off;
 }
@@ -21976,7 +21976,7 @@ DisResult disInstr_ARM ( IRSB*        irsb_IN,
                          VexArch      guest_arch,
                          VexArchInfo* archinfo,
                          VexAbiInfo*  abiinfo,
-                         Bool         host_bigendian_IN,
+                         VexEndness   host_endness_IN,
                          Bool         sigill_diag_IN )
 {
    DisResult dres;
@@ -21985,9 +21985,9 @@ DisResult disInstr_ARM ( IRSB*        irsb_IN,
    /* Set globals (see top of this file) */
    vassert(guest_arch == VexArchARM);
 
-   irsb              = irsb_IN;
-   host_is_bigendian = host_bigendian_IN;
-   __curr_is_Thumb   = isThumb;
+   irsb            = irsb_IN;
+   host_endness    = host_endness_IN;
+   __curr_is_Thumb = isThumb;
 
    if (isThumb) {
       guest_R15_curr_instr_notENC = (Addr32)guest_IP_ENCODED - 1;

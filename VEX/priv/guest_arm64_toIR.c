@@ -119,9 +119,10 @@
    not change during translation of the instruction.
 */
 
-/* CONST: is the host bigendian?  We need to know this in order to do
-   sub-register accesses to the SIMD/FP registers correctly. */
-static Bool host_is_bigendian;
+/* CONST: what is the host's endianness?  We need to know this in
+   order to do sub-register accesses to the SIMD/FP registers
+   correctly. */
+static VexEndness host_endness;
 
 /* CONST: The guest address for the instruction currently being
    translated.  */
@@ -1227,7 +1228,7 @@ static IRType preferredVectorSubTypeFromSize ( UInt szB )
    has the lowest offset. */
 static Int offsetQRegLane ( UInt qregNo, IRType laneTy, UInt laneNo )
 {
-   vassert(!host_is_bigendian);
+   vassert(host_endness == VexEndnessLE);
    Int base = offsetQReg128(qregNo);
    /* Since the host is little-endian, the least significant lane
       will be at the lowest address. */
@@ -10355,7 +10356,7 @@ DisResult disInstr_ARM64 ( IRSB*        irsb_IN,
                            VexArch      guest_arch,
                            VexArchInfo* archinfo,
                            VexAbiInfo*  abiinfo,
-                           Bool         host_bigendian_IN,
+                           VexEndness   host_endness_IN,
                            Bool         sigill_diag_IN )
 {
    DisResult dres;
@@ -10365,7 +10366,7 @@ DisResult disInstr_ARM64 ( IRSB*        irsb_IN,
    vassert(guest_arch == VexArchARM64);
 
    irsb                = irsb_IN;
-   host_is_bigendian   = host_bigendian_IN;
+   host_endness        = host_endness_IN;
    guest_PC_curr_instr = (Addr64)guest_IP;
 
    /* Sanity checks */

@@ -6331,6 +6331,9 @@ HInstrArray* iselSB_ARM ( IRSB* bb,
    /* sanity ... */
    vassert(arch_host == VexArchARM);
 
+   /* Check that the host's endianness is as expected. */
+   vassert(archinfo_host->endness == VexEndnessLE);
+
    /* guard against unexpected space regressions */
    vassert(sizeof(ARMInstr) <= 28);
 

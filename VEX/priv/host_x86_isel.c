@@ -4440,6 +4440,9 @@ HInstrArray* iselSB_X86 ( IRSB* bb,
    vassert(sizeof(max_ga) == 8);
    vassert((max_ga >> 32) == 0);
 
+   /* Check that the host's endianness is as expected. */
+   vassert(archinfo_host->endness == VexEndnessLE);
+
    /* Make up an initial environment to use. */
    env = LibVEX_Alloc(sizeof(ISelEnv));
    env->vreg_ctr = 0;

@@ -185,7 +185,7 @@
    that we don't have to pass them around endlessly. */
 
 /* We need to know this to do sub-register accesses correctly. */
-static Bool host_is_bigendian;
+static VexEndness host_endness;
 
 /* Pointer to the guest code area (points to start of BB, not to the
    insn being processed). */
@@ -975,7 +975,7 @@ Int offsetIReg ( Int sz, UInt reg, Bool irregular )
 
 static IRExpr* getIRegCL ( void )
 {
-   vassert(!host_is_bigendian);
+   vassert(host_endness == VexEndnessLE);
    return IRExpr_Get( OFFB_RCX, Ity_I8 );
 }
 
@@ -984,7 +984,7 @@ static IRExpr* getIRegCL ( void )
 
 static void putIRegAH ( IRExpr* e )
 {
-   vassert(!host_is_bigendian);
+   vassert(host_endness == VexEndnessLE);
    vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_I8);
    stmt( IRStmt_Put( OFFB_RAX+1, e ) );
 }
@@ -1006,7 +1006,7 @@ static const HChar* nameIRegRAX ( Int sz )
 
 static IRExpr* getIRegRAX ( Int sz )
 {
-   vassert(!host_is_bigendian);
+   vassert(host_endness == VexEndnessLE);
    switch (sz) {
       case 1: return IRExpr_Get( OFFB_RAX, Ity_I8 );
       case 2: return IRExpr_Get( OFFB_RAX, Ity_I16 );
@@ -1019,7 +1019,7 @@ static IRExpr* getIRegRAX ( Int sz )
 static void putIRegRAX ( Int sz, IRExpr* e )
 {
    IRType ty = typeOfIRExpr(irsb->tyenv, e);
-   vassert(!host_is_bigendian);
+   vassert(host_endness == VexEndnessLE);
    switch (sz) {
       case 8: vassert(ty == Ity_I64);
               stmt( IRStmt_Put( OFFB_RAX, e ));
@@ -1054,7 +1054,7 @@ static const HChar* nameIRegRDX ( Int sz )
 
 static IRExpr* getIRegRDX ( Int sz )
 {
-   vassert(!host_is_bigendian);
+   vassert(host_endness == VexEndnessLE);
    switch (sz) {
       case 1: return IRExpr_Get( OFFB_RDX, Ity_I8 );
       case 2: return IRExpr_Get( OFFB_RDX, Ity_I16 );
@@ -1066,7 +1066,7 @@ static IRExpr* getIRegRDX ( Int sz )
 
 static void putIRegRDX ( Int sz, IRExpr* e )
 {
-   vassert(!host_is_bigendian);
+   vassert(host_endness == VexEndnessLE);
    vassert(typeOfIRExpr(irsb->tyenv, e) == szToITy(sz));
    switch (sz) {
       case 8: stmt( IRStmt_Put( OFFB_RDX, e ));
@@ -1108,7 +1108,7 @@ static const HChar* nameIReg64 ( UInt regno )
 
 static IRExpr* getIReg32 ( UInt regno )
 {
-   vassert(!host_is_bigendian);
+   vassert(host_endness == VexEndnessLE);
    return unop(Iop_64to32,
                IRExpr_Get( integerGuestReg64Offset(regno),
                            Ity_I64 ));
@@ -1132,7 +1132,7 @@ static const HChar* nameIReg32 ( UInt regno )
 
 static IRExpr* getIReg16 ( UInt regno )
 {
-   vassert(!host_is_bigendian);
+   vassert(host_endness == VexEndnessLE);
    return IRExpr_Get( integerGuestReg64Offset(regno),
                       Ity_I16 );
 }
@@ -1253,7 +1253,7 @@ static UInt eregOfRexRM ( Prefix pfx, UChar mod_reg_rm )
 static UInt offsetIRegG ( Int sz, Prefix pfx, UChar mod_reg_rm )
 {
    UInt reg;
-   vassert(!host_is_bigendian);
+   vassert(host_endness == VexEndnessLE);
    vassert(IS_VALID_PFX(pfx));
    vassert(sz == 8 || sz == 4 || sz == 2 || sz == 1);
    reg = gregOfRexRM( pfx, mod_reg_rm );
@@ -1332,7 +1332,7 @@ const HChar* nameIRegV ( Int sz, Prefix pfx )
 static UInt offsetIRegE ( Int sz, Prefix pfx, UChar mod_reg_rm )
 {
    UInt reg;
-   vassert(!host_is_bigendian);
+   vassert(host_endness == VexEndnessLE);
    vassert(IS_VALID_PFX(pfx));
    vassert(sz == 8 || sz == 4 || sz == 2 || sz == 1);
    reg = eregOfRexRM( pfx, mod_reg_rm );
@@ -1401,7 +1401,7 @@ static Int ymmGuestRegOffset ( UInt ymmreg )
 static Int xmmGuestRegOffset ( UInt xmmreg )
 {
    /* Correct for little-endian host only. */
-   vassert(!host_is_bigendian);
+   vassert(host_endness == VexEndnessLE);
    return ymmGuestRegOffset( xmmreg );
 }
 
@@ -1411,7 +1411,7 @@ static Int xmmGuestRegOffset ( UInt xmmreg )
 static Int xmmGuestRegLane16offset ( UInt xmmreg, Int laneno )
 {
    /* Correct for little-endian host only. */
-   vassert(!host_is_bigendian);
+   vassert(host_endness == VexEndnessLE);
    vassert(laneno >= 0 && laneno < 8);
    return xmmGuestRegOffset( xmmreg ) + 2 * laneno;
 }
@@ -1419,7 +1419,7 @@ static Int xmmGuestRegLane16offset ( UInt xmmreg, Int laneno )
 static Int xmmGuestRegLane32offset ( UInt xmmreg, Int laneno )
 {
    /* Correct for little-endian host only. */
-   vassert(!host_is_bigendian);
+   vassert(host_endness == VexEndnessLE);
    vassert(laneno >= 0 && laneno < 4);
    return xmmGuestRegOffset( xmmreg ) + 4 * laneno;
 }
@@ -1427,7 +1427,7 @@ static Int xmmGuestRegLane32offset ( UInt xmmreg, Int laneno )
 static Int xmmGuestRegLane64offset ( UInt xmmreg, Int laneno )
 {
    /* Correct for little-endian host only. */
-   vassert(!host_is_bigendian);
+   vassert(host_endness == VexEndnessLE);
    vassert(laneno >= 0 && laneno < 2);
    return xmmGuestRegOffset( xmmreg ) + 8 * laneno;
 }
@@ -1435,7 +1435,7 @@ static Int xmmGuestRegLane64offset ( UInt xmmreg, Int laneno )
 static Int ymmGuestRegLane128offset ( UInt ymmreg, Int laneno )
 {
    /* Correct for little-endian host only. */
-   vassert(!host_is_bigendian);
+   vassert(host_endness == VexEndnessLE);
    vassert(laneno >= 0 && laneno < 2);
    return ymmGuestRegOffset( ymmreg ) + 16 * laneno;
 }
@@ -1443,7 +1443,7 @@ static Int ymmGuestRegLane128offset ( UInt ymmreg, Int laneno )
 static Int ymmGuestRegLane64offset ( UInt ymmreg, Int laneno )
 {
    /* Correct for little-endian host only. */
-   vassert(!host_is_bigendian);
+   vassert(host_endness == VexEndnessLE);
    vassert(laneno >= 0 && laneno < 4);
    return ymmGuestRegOffset( ymmreg ) + 8 * laneno;
 }
@@ -1451,7 +1451,7 @@ static Int ymmGuestRegLane64offset ( UInt ymmreg, Int laneno )
 static Int ymmGuestRegLane32offset ( UInt ymmreg, Int laneno )
 {
    /* Correct for little-endian host only. */
-   vassert(!host_is_bigendian);
+   vassert(host_endness == VexEndnessLE);
    vassert(laneno >= 0 && laneno < 8);
    return ymmGuestRegOffset( ymmreg ) + 4 * laneno;
 }
@@ -31745,7 +31745,7 @@ DisResult disInstr_AMD64 ( IRSB*        irsb_IN,
                            VexArch      guest_arch,
                            VexArchInfo* archinfo,
                            VexAbiInfo*  abiinfo,
-                           Bool         host_bigendian_IN,
+                           VexEndness   host_endness_IN,
                            Bool         sigill_diag_IN )
 {
    Int       i, x1, x2;
@@ -31756,7 +31756,7 @@ DisResult disInstr_AMD64 ( IRSB*        irsb_IN,
    vassert(guest_arch == VexArchAMD64);
    guest_code           = guest_code_IN;
    irsb                 = irsb_IN;
-   host_is_bigendian    = host_bigendian_IN;
+   host_endness         = host_endness_IN;
    guest_RIP_curr_instr = guest_IP;
    guest_RIP_bbstart    = guest_IP - delta;
 

@@ -2102,7 +2102,7 @@ static UChar* push_word_from_tags ( UChar* p, UShort tags )
 
 Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
                     UChar* buf, Int nbuf, X86Instr* i, 
-                    Bool mode64,
+                    Bool mode64, VexEndness endness_host,
                     void* disp_cp_chain_me_to_slowEP,
                     void* disp_cp_chain_me_to_fastEP,
                     void* disp_cp_xindir,
@@ -3291,7 +3291,7 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
       p = doAMode_M(p, fake(4), i->Xin.EvCheck.amFailAddr);
       vassert(p - p0 == 8); /* also ensures that 0x03 offset above is ok */
       /* And crosscheck .. */
-      vassert(evCheckSzB_X86() == 8);
+      vassert(evCheckSzB_X86(endness_host) == 8);
       goto done;
    }
 
@@ -3336,7 +3336,7 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
 /* How big is an event check?  See case for Xin_EvCheck in
    emit_X86Instr just above.  That crosschecks what this returns, so
    we can tell if we're inconsistent. */
-Int evCheckSzB_X86 ( void )
+Int evCheckSzB_X86 ( VexEndness endness_host )
 {
    return 8;
 }
@@ -3344,10 +3344,13 @@ Int evCheckSzB_X86 ( void )
 
 /* NB: what goes on here has to be very closely coordinated with the
    emitInstr case for XDirect, above. */
-VexInvalRange chainXDirect_X86 ( void* place_to_chain,
+VexInvalRange chainXDirect_X86 ( VexEndness endness_host,
+                                 void* place_to_chain,
                                  void* disp_cp_chain_me_EXPECTED,
                                  void* place_to_jump_to )
 {
+   vassert(endness_host == VexEndnessLE);
+
    /* What we're expecting to see is:
         movl $disp_cp_chain_me_EXPECTED, %edx
         call *%edx
@@ -3389,10 +3392,13 @@ VexInvalRange chainXDirect_X86 ( void* place_to_chain,
 
 /* NB: what goes on here has to be very closely coordinated with the
    emitInstr case for XDirect, above. */
-VexInvalRange unchainXDirect_X86 ( void* place_to_unchain,
+VexInvalRange unchainXDirect_X86 ( VexEndness endness_host,
+                                   void* place_to_unchain,
                                    void* place_to_jump_to_EXPECTED,
                                    void* disp_cp_chain_me )
 {
+   vassert(endness_host == VexEndnessLE);
+
    /* What we're expecting to see is:
           jmp d32
           ud2;
@@ -3432,9 +3438,11 @@ VexInvalRange unchainXDirect_X86 ( void* place_to_unchain,
 
 /* Patch the counter address into a profile inc point, as previously
    created by the Xin_ProfInc case for emit_X86Instr. */
-VexInvalRange patchProfInc_X86 ( void*  place_to_patch,
+VexInvalRange patchProfInc_X86 ( VexEndness endness_host,
+                                 void*  place_to_patch,
                                  ULong* location_of_counter )
 {
+   vassert(endness_host == VexEndnessLE);
    vassert(sizeof(ULong*) == 4);
    UChar* p = (UChar*)place_to_patch;
    vassert(p[0] == 0x83);

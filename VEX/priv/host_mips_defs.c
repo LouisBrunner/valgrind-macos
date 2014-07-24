@@ -2920,6 +2920,7 @@ static UChar *mkMoveReg(UChar * p, UInt r_dst, UInt r_src)
 Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
                      UChar* buf, Int nbuf, MIPSInstr* i,
                      Bool mode64,
+                     VexEndness endness_host,
                      void* disp_cp_chain_me_to_slowEP,
                      void* disp_cp_chain_me_to_fastEP,
                      void* disp_cp_xindir,
@@ -4229,7 +4230,7 @@ Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
          /* nofail: */
 
          /* Crosscheck */
-         vassert(evCheckSzB_MIPS() == (UChar*)p - (UChar*)p0);
+         vassert(evCheckSzB_MIPS(endness_host) == (UChar*)p - (UChar*)p0);
          goto done;
       }
 
@@ -4315,7 +4316,7 @@ Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
 /* How big is an event check?  See case for Min_EvCheck in
    emit_MIPSInstr just above.  That crosschecks what this returns, so
    we can tell if we're inconsistent. */
-Int evCheckSzB_MIPS ( void )
+Int evCheckSzB_MIPS ( VexEndness endness_host )
 {
   UInt kInstrSize = 4;
   return 7*kInstrSize;
@@ -4323,11 +4324,13 @@ Int evCheckSzB_MIPS ( void )
 
 /* NB: what goes on here has to be very closely coordinated with the
    emitInstr case for XDirect, above. */
-VexInvalRange chainXDirect_MIPS ( void* place_to_chain,
+VexInvalRange chainXDirect_MIPS ( VexEndness endness_host,
+                                  void* place_to_chain,
                                   void* disp_cp_chain_me_EXPECTED,
                                   void* place_to_jump_to,
                                   Bool  mode64 )
 {
+   vassert(endness_host == VexEndnessLE || endness_host == VexEndnessBE);
    /* What we're expecting to see is:
         move r9, disp_cp_chain_me_to_EXPECTED
         jalr r9
@@ -4369,11 +4372,13 @@ VexInvalRange chainXDirect_MIPS ( void* place_to_chain,
 
 /* NB: what goes on here has to be very closely coordinated with the
    emitInstr case for XDirect, above. */
-VexInvalRange unchainXDirect_MIPS ( void* place_to_unchain,
+VexInvalRange unchainXDirect_MIPS ( VexEndness endness_host,
+                                    void* place_to_unchain,
                                     void* place_to_jump_to_EXPECTED,
                                     void* disp_cp_chain_me,
                                     Bool  mode64 )
 {
+   vassert(endness_host == VexEndnessLE || endness_host == VexEndnessBE);
    /* What we're expecting to see is:
         move r9, place_to_jump_to_EXPECTED
         jalr r9
@@ -4413,13 +4418,16 @@ VexInvalRange unchainXDirect_MIPS ( void* place_to_unchain,
 
 /* Patch the counter address into a profile inc point, as previously
    created by the Min_ProfInc case for emit_MIPSInstr. */
-VexInvalRange patchProfInc_MIPS ( void*  place_to_patch,
+VexInvalRange patchProfInc_MIPS ( VexEndness endness_host,
+                                  void*  place_to_patch,
                                   ULong* location_of_counter, Bool mode64 )
 {
-   if (mode64)
+   vassert(endness_host == VexEndnessLE || endness_host == VexEndnessBE);
+   if (mode64) {
       vassert(sizeof(ULong*) == 8);
-   else
+   } else {
       vassert(sizeof(ULong*) == 4);
+   }
    UChar* p = (UChar*)place_to_patch;
    vassert(0 == (3 & (HWord)p));
    vassert(isLoadImm_EXACTLY2or6((UChar *)p, /*r*/9,

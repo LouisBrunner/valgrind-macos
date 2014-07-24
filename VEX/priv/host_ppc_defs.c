@@ -3720,7 +3720,7 @@ static UChar* mkFormVA ( UChar* p, UInt opc1, UInt r1, UInt r2,
 */
 Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
                     UChar* buf, Int nbuf, PPCInstr* i, 
-                    Bool mode64,
+                    Bool mode64, VexEndness endness_host,
                     void* disp_cp_chain_me_to_slowEP,
                     void* disp_cp_chain_me_to_fastEP,
                     void* disp_cp_xindir,
@@ -5707,7 +5707,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       /* nofail: */
 
       /* Crosscheck */
-      vassert(evCheckSzB_PPC() == (UChar*)p - (UChar*)p0);
+      vassert(evCheckSzB_PPC(endness_host) == (UChar*)p - (UChar*)p0);
       goto done;
    }
 
@@ -5772,7 +5772,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
 /* How big is an event check?  See case for Pin_EvCheck in
    emit_PPCInstr just above.  That crosschecks what this returns, so
    we can tell if we're inconsistent. */
-Int evCheckSzB_PPC ( void )
+Int evCheckSzB_PPC ( VexEndness endness_host )
 {
   return 28;
 }
@@ -5780,11 +5780,18 @@ Int evCheckSzB_PPC ( void )
 
 /* NB: what goes on here has to be very closely coordinated with the
    emitInstr case for XDirect, above. */
-VexInvalRange chainXDirect_PPC ( void* place_to_chain,
+VexInvalRange chainXDirect_PPC ( VexEndness endness_host,
+                                 void* place_to_chain,
                                  void* disp_cp_chain_me_EXPECTED,
                                  void* place_to_jump_to,
                                  Bool  mode64 )
 {
+   if (mode64) {
+      vassert(endness_host == VexEndnessBE); /* later: or LE */
+   } else {
+      vassert(endness_host == VexEndnessBE);
+   }
+
    /* What we're expecting to see is:
         imm32/64-fixed r30, disp_cp_chain_me_to_EXPECTED
         mtctr r30
@@ -5825,11 +5832,18 @@ VexInvalRange chainXDirect_PPC ( void* place_to_chain,
 
 /* NB: what goes on here has to be very closely coordinated with the
    emitInstr case for XDirect, above. */
-VexInvalRange unchainXDirect_PPC ( void* place_to_unchain,
+VexInvalRange unchainXDirect_PPC ( VexEndness endness_host,
+                                   void* place_to_unchain,
                                    void* place_to_jump_to_EXPECTED,
                                    void* disp_cp_chain_me,
                                    Bool  mode64 )
 {
+   if (mode64) {
+      vassert(endness_host == VexEndnessBE); /* later: or LE */
+   } else {
+      vassert(endness_host == VexEndnessBE);
+   }
+
    /* What we're expecting to see is:
         imm32/64-fixed r30, place_to_jump_to_EXPECTED
         mtctr r30
@@ -5870,10 +5884,17 @@ VexInvalRange unchainXDirect_PPC ( void* place_to_unchain,
 
 /* Patch the counter address into a profile inc point, as previously
    created by the Pin_ProfInc case for emit_PPCInstr. */
-VexInvalRange patchProfInc_PPC ( void*  place_to_patch,
+VexInvalRange patchProfInc_PPC ( VexEndness endness_host,
+                                 void*  place_to_patch,
                                  ULong* location_of_counter,
                                  Bool   mode64 )
 {
+   if (mode64) {
+      vassert(endness_host == VexEndnessBE); /* later: or LE */
+   } else {
+      vassert(endness_host == VexEndnessBE);
+   }
+
    UChar* p = (UChar*)place_to_patch;
    vassert(0 == (3 & (HWord)p));
 

@@ -764,8 +764,6 @@ static void announce_LockP ( Lock* lk )
    if (lk == Lock_INVALID)
       return; /* Can't be announced -- we know nothing about it. */
    tl_assert(lk->magic == LockP_MAGIC);
-   if (!lk->appeared_at)
-     return; /* There's nothing we can show */
 
    if (VG_(clo_xml)) {
       /* fixme: add announcement */

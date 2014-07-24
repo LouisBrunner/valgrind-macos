@@ -1650,8 +1650,7 @@ Bool VG_(translate) ( ThreadId tid,
                                 tmpbuf_used,
                                 tres.n_sc_extents > 0,
                                 tres.offs_profInc,
-                                tres.n_guest_instrs,
-                                vex_arch );
+                                tres.n_guest_instrs );
       } else {
           vg_assert(tres.offs_profInc == -1); /* -1 == unset */
           VG_(add_to_unredir_transtab)( &vge,

@@ -1377,9 +1377,10 @@ static void print_preamble ( Bool logging_to_fd,
       VG_(machine_get_VexArchInfo)( &vex_arch, &vex_archinfo );
       VG_(message)(
          Vg_DebugMsg, 
-         "Arch and hwcaps: %s, %s\n",
-         LibVEX_ppVexArch   ( vex_arch ),
-         LibVEX_ppVexHwCaps ( vex_arch, vex_archinfo.hwcaps )
+         "Arch and hwcaps: %s, %s, %s\n",
+         LibVEX_ppVexArch    ( vex_arch ),
+         LibVEX_ppVexEndness ( vex_archinfo.endness ),
+         LibVEX_ppVexHwCaps  ( vex_arch, vex_archinfo.hwcaps )
       );
       VG_(message)(
          Vg_DebugMsg, 

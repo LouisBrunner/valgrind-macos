@@ -747,8 +747,11 @@ void VG_(tt_tc_do_chaining) ( void* from__patch_addr,
                               Bool  to_fastEP )
 {
    /* Get the CPU info established at startup. */
-   VexArch vex_arch = VexArch_INVALID;
-   VG_(machine_get_VexArchInfo)( &vex_arch, NULL );
+   VexArch     arch_host = VexArch_INVALID;
+   VexArchInfo archinfo_host;
+   VG_(bzero_inline)(&archinfo_host, sizeof(archinfo_host));
+   VG_(machine_get_VexArchInfo)( &arch_host, &archinfo_host );
+   VexEndness endness_host = archinfo_host.endness;
 
    // host_code is where we're patching to.  So it needs to
    // take into account, whether we're jumping to the slow
@@ -757,7 +760,8 @@ void VG_(tt_tc_do_chaining) ( void* from__patch_addr,
    // the slow (tcptr) entry point.
    TTEntry* to_tte    = index_tte(to_sNo, to_tteNo);
    void*    host_code = ((UChar*)to_tte->tcptr)
-                        + (to_fastEP ? LibVEX_evCheckSzB(vex_arch) : 0);
+                        + (to_fastEP ? LibVEX_evCheckSzB(arch_host,
+                                                         endness_host) : 0);
 
    // stay sane -- the patch point (dst) is in this sector's code cache
    vg_assert( (UChar*)host_code >= (UChar*)sectors[to_sNo].tc );
@@ -789,7 +793,7 @@ void VG_(tt_tc_do_chaining) ( void* from__patch_addr,
       since it is host-dependent. */
    VexInvalRange vir
       = LibVEX_Chain(
-           vex_arch,
+           arch_host, endness_host,
            from__patch_addr,
            VG_(fnptr_to_fnentry)(
               to_fastEP ? &VG_(disp_cp_chain_me_to_fastEP)
@@ -833,7 +837,7 @@ void VG_(tt_tc_do_chaining) ( void* from__patch_addr,
    addresses of the destination block (that is, the block that owns
    this InEdge). */
 __attribute__((noinline))
-static void unchain_one ( VexArch vex_arch,
+static void unchain_one ( VexArch arch_host, VexEndness endness_host,
                           InEdge* ie,
                           void* to_fastEPaddr, void* to_slowEPaddr )
 {
@@ -858,7 +862,7 @@ static void unchain_one ( VexArch vex_arch,
    // place_to_jump_to_EXPECTED really is the current dst, and
    // asserts if it isn't.
    VexInvalRange vir
-       = LibVEX_UnChain( vex_arch, place_to_patch, 
+       = LibVEX_UnChain( arch_host, endness_host, place_to_patch, 
                          place_to_jump_to_EXPECTED, disp_cp_chain_me );
    VG_(invalidate_icache)( (void*)vir.start, vir.len );
 }
@@ -868,13 +872,14 @@ static void unchain_one ( VexArch vex_arch,
    succs of its associated blocks accordingly.  This includes undoing
    any chained jumps to this block. */
 static
-void unchain_in_preparation_for_deletion ( VexArch vex_arch,
+void unchain_in_preparation_for_deletion ( VexArch arch_host,
+                                           VexEndness endness_host,
                                            UInt here_sNo, UInt here_tteNo )
 {
    if (DEBUG_TRANSTAB)
       VG_(printf)("QQQ unchain_in_prep %u.%u...\n", here_sNo, here_tteNo);
    UWord    i, j, n, m;
-   Int      evCheckSzB = LibVEX_evCheckSzB(vex_arch);
+   Int      evCheckSzB = LibVEX_evCheckSzB(arch_host, endness_host);
    TTEntry* here_tte   = index_tte(here_sNo, here_tteNo);
    if (DEBUG_TRANSTAB)
       VG_(printf)("... QQQ tt.entry 0x%llu tt.tcptr 0x%p\n",
@@ -888,7 +893,7 @@ void unchain_in_preparation_for_deletion ( VexArch vex_arch,
       // Undo the chaining.
       UChar* here_slow_EP = (UChar*)here_tte->tcptr;
       UChar* here_fast_EP = here_slow_EP + evCheckSzB;
-      unchain_one(vex_arch, ie, here_fast_EP, here_slow_EP);
+      unchain_one(arch_host, endness_host, ie, here_fast_EP, here_slow_EP);
       // Find the corresponding entry in the "from" node's out_edges,
       // and remove it.
       TTEntry* from_tte = index_tte(ie->from_sNo, ie->from_tteNo);
@@ -1427,8 +1432,11 @@ static void initialiseSector ( Int sno )
       vg_assert(sec->tc_next != NULL);
       n_dump_count += sec->tt_n_inuse;
 
-      VexArch vex_arch = VexArch_INVALID;
-      VG_(machine_get_VexArchInfo)( &vex_arch, NULL );
+      VexArch     arch_host = VexArch_INVALID;
+      VexArchInfo archinfo_host;
+      VG_(bzero_inline)(&archinfo_host, sizeof(archinfo_host));
+      VG_(machine_get_VexArchInfo)( &arch_host, &archinfo_host );
+      VexEndness endness_host = archinfo_host.endness;
 
       /* Visit each just-about-to-be-abandoned translation. */
       if (DEBUG_TRANSTAB) VG_(printf)("QQQ unlink-entire-sector: %d START\n",
@@ -1444,7 +1452,8 @@ static void initialiseSector ( Int sno )
                               sec->tt[i].entry,
                               sec->tt[i].vge );
             }
-            unchain_in_preparation_for_deletion(vex_arch, sno, i);
+            unchain_in_preparation_for_deletion(arch_host,
+                                                endness_host, sno, i);
          } else {
             vg_assert(sec->tt[i].n_tte2ec == 0);
          }
@@ -1508,8 +1517,7 @@ void VG_(add_to_transtab)( VexGuestExtents* vge,
                            UInt             code_len,
                            Bool             is_self_checking,
                            Int              offs_profInc,
-                           UInt             n_guest_instrs,
-                           VexArch          arch_host )
+                           UInt             n_guest_instrs )
 {
    Int    tcAvailQ, reqdQ, y, i;
    ULong  *tcptr, *tcptr2;
@@ -1627,8 +1635,13 @@ void VG_(add_to_transtab)( VexGuestExtents* vge,
    /* Patch in the profile counter location, if necessary. */
    if (offs_profInc != -1) {
       vg_assert(offs_profInc >= 0 && offs_profInc < code_len);
+      VexArch     arch_host = VexArch_INVALID;
+      VexArchInfo archinfo_host;
+      VG_(bzero_inline)(&archinfo_host, sizeof(archinfo_host));
+      VG_(machine_get_VexArchInfo)( &arch_host, &archinfo_host );
+      VexEndness endness_host = archinfo_host.endness;
       VexInvalRange vir
-         = LibVEX_PatchProfInc( arch_host,
+         = LibVEX_PatchProfInc( arch_host, endness_host,
                                 dstP + offs_profInc,
                                 &sectors[y].tt[i].count );
       VG_(invalidate_icache)( (void*)vir.start, vir.len );
@@ -1775,7 +1788,7 @@ Bool overlaps ( Addr64 start, ULong range, VexGuestExtents* vge )
 /* Delete a tt entry, and update all the eclass data accordingly. */
 
 static void delete_tte ( /*MOD*/Sector* sec, UInt secNo, Int tteno,
-                         VexArch vex_arch )
+                         VexArch arch_host, VexEndness endness_host )
 {
    Int      i, ec_num, ec_idx;
    TTEntry* tte;
@@ -1789,7 +1802,7 @@ static void delete_tte ( /*MOD*/Sector* sec, UInt secNo, Int tteno,
    vg_assert(tte->n_tte2ec >= 1 && tte->n_tte2ec <= 3);
 
    /* Unchain .. */
-   unchain_in_preparation_for_deletion(vex_arch, secNo, tteno);
+   unchain_in_preparation_for_deletion(arch_host, endness_host, secNo, tteno);
 
    /* Deal with the ec-to-tte links first. */
    for (i = 0; i < tte->n_tte2ec; i++) {
@@ -1829,7 +1842,8 @@ static
 Bool delete_translations_in_sector_eclass ( /*MOD*/Sector* sec, UInt secNo,
                                             Addr64 guest_start, ULong range,
                                             Int ec,
-                                            VexArch vex_arch )
+                                            VexArch arch_host,
+                                            VexEndness endness_host )
 {
    Int      i;
    UShort   tteno;
@@ -1853,7 +1867,7 @@ Bool delete_translations_in_sector_eclass ( /*MOD*/Sector* sec, UInt secNo,
 
       if (overlaps( guest_start, range, &tte->vge )) {
          anyDeld = True;
-         delete_tte( sec, secNo, (Int)tteno, vex_arch );
+         delete_tte( sec, secNo, (Int)tteno, arch_host, endness_host );
       }
 
    }
@@ -1868,7 +1882,8 @@ Bool delete_translations_in_sector_eclass ( /*MOD*/Sector* sec, UInt secNo,
 static 
 Bool delete_translations_in_sector ( /*MOD*/Sector* sec, UInt secNo,
                                      Addr64 guest_start, ULong range,
-                                     VexArch vex_arch )
+                                     VexArch arch_host,
+                                     VexEndness endness_host )
 {
    Int  i;
    Bool anyDeld = False;
@@ -1877,7 +1892,7 @@ Bool delete_translations_in_sector ( /*MOD*/Sector* sec, UInt secNo,
       if (sec->tt[i].status == InUse
           && overlaps( guest_start, range, &sec->tt[i].vge )) {
          anyDeld = True;
-         delete_tte( sec, secNo, i, vex_arch );
+         delete_tte( sec, secNo, i, arch_host, endness_host );
       }
    }
 
@@ -1907,8 +1922,11 @@ void VG_(discard_translations) ( Addr64 guest_start, ULong range,
    if (range == 0)
       return;
 
-   VexArch vex_arch = VexArch_INVALID;
-   VG_(machine_get_VexArchInfo)( &vex_arch, NULL );
+   VexArch     arch_host = VexArch_INVALID;
+   VexArchInfo archinfo_host;
+   VG_(bzero_inline)(&archinfo_host, sizeof(archinfo_host));
+   VG_(machine_get_VexArchInfo)( &arch_host, &archinfo_host );
+   VexEndness endness_host = archinfo_host.endness;
 
    /* There are two different ways to do this.
 
@@ -1950,11 +1968,11 @@ void VG_(discard_translations) ( Addr64 guest_start, ULong range,
             continue;
          anyDeleted |= delete_translations_in_sector_eclass( 
                           sec, sno, guest_start, range, ec, 
-                          vex_arch
+                          arch_host, endness_host
                        );
          anyDeleted |= delete_translations_in_sector_eclass( 
                           sec, sno, guest_start, range, ECLASS_MISC,
-                          vex_arch
+                          arch_host, endness_host
                        );
       }
 
@@ -1970,7 +1988,9 @@ void VG_(discard_translations) ( Addr64 guest_start, ULong range,
          if (sec->tc == NULL)
             continue;
          anyDeleted |= delete_translations_in_sector( 
-                          sec, sno, guest_start, range, vex_arch );
+                          sec, sno, guest_start, range,
+                          arch_host, endness_host
+                       );
       }
 
    }

@@ -774,6 +774,7 @@ Bool VG_(machine_get_hwcaps)( void )
         have_mmxext = True;
 
      va = VexArchX86;
+     vai.endness = VexEndnessLE;
      if (have_sse2 && have_sse1 && have_mmxext) {
         vai.hwcaps  = VEX_HWCAPS_X86_MMXEXT;
         vai.hwcaps |= VEX_HWCAPS_X86_SSE1;
@@ -891,14 +892,15 @@ Bool VG_(machine_get_hwcaps)( void )
         have_avx2 = (ebx & (1<<5)) != 0; /* True => have AVX2 */
      }
 
-     va         = VexArchAMD64;
-     vai.hwcaps = (have_sse3   ? VEX_HWCAPS_AMD64_SSE3   : 0)
-                | (have_cx16   ? VEX_HWCAPS_AMD64_CX16   : 0)
-                | (have_lzcnt  ? VEX_HWCAPS_AMD64_LZCNT  : 0)
-                | (have_avx    ? VEX_HWCAPS_AMD64_AVX    : 0)
-                | (have_bmi    ? VEX_HWCAPS_AMD64_BMI    : 0)
-                | (have_avx2   ? VEX_HWCAPS_AMD64_AVX2   : 0)
-                | (have_rdtscp ? VEX_HWCAPS_AMD64_RDTSCP : 0);
+     va          = VexArchAMD64;
+     vai.endness = VexEndnessLE;
+     vai.hwcaps  = (have_sse3   ? VEX_HWCAPS_AMD64_SSE3   : 0)
+                 | (have_cx16   ? VEX_HWCAPS_AMD64_CX16   : 0)
+                 | (have_lzcnt  ? VEX_HWCAPS_AMD64_LZCNT  : 0)
+                 | (have_avx    ? VEX_HWCAPS_AMD64_AVX    : 0)
+                 | (have_bmi    ? VEX_HWCAPS_AMD64_BMI    : 0)
+                 | (have_avx2   ? VEX_HWCAPS_AMD64_AVX2   : 0)
+                 | (have_rdtscp ? VEX_HWCAPS_AMD64_RDTSCP : 0);
 
      VG_(machine_get_cache_info)(&vai);
 
@@ -1047,6 +1049,7 @@ Bool VG_(machine_get_hwcaps)( void )
      VG_(machine_ppc32_has_VMX) = have_V ? 1 : 0;
 
      va = VexArchPPC32;
+     vai.endness = VexEndnessBE;
 
      vai.hwcaps = 0;
      if (have_F)  vai.hwcaps |= VEX_HWCAPS_PPC32_F;
@@ -1185,6 +1188,9 @@ Bool VG_(machine_get_hwcaps)( void )
      VG_(machine_ppc64_has_VMX) = have_V ? 1 : 0;
 
      va = VexArchPPC64;
+     // CARLL fixme: when the time comes, copy .endness setting code
+     // from the VGA_mips32 case
+     vai.endness = VexEndnessBE;
 
      vai.hwcaps = 0;
      if (have_V)  vai.hwcaps |= VEX_HWCAPS_PPC64_V;
@@ -1277,6 +1283,7 @@ Bool VG_(machine_get_hwcaps)( void )
      r = VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
      vg_assert(r == 0);
      va = VexArchS390X;
+     vai.endness = VexEndnessBE;
 
      vai.hwcaps = model;
      if (have_STFLE) vai.hwcaps |= VEX_HWCAPS_S390X_STFLE;
@@ -1438,6 +1445,7 @@ Bool VG_(machine_get_hwcaps)( void )
      VG_(machine_arm_archlevel) = archlevel;
 
      va = VexArchARM;
+     vai.endness = VexEndnessLE;
 
      vai.hwcaps = VEX_ARM_ARCHLEVEL(archlevel);
      if (have_VFP3) vai.hwcaps |= VEX_HWCAPS_ARM_VFP3;
@@ -1453,6 +1461,7 @@ Bool VG_(machine_get_hwcaps)( void )
 #elif defined(VGA_arm64)
    {
      va = VexArchARM64;
+     vai.endness = VexEndnessLE;
 
      /* So far there are no variants. */
      vai.hwcaps = 0;
@@ -1485,6 +1494,14 @@ Bool VG_(machine_get_hwcaps)( void )
          return False;
 
      vai.hwcaps = model;
+
+#    if defined(VKI_LITTLE_ENDIAN)
+     vai.endness = VexEndnessLE;
+#    elif defined(VKI_BIG_ENDIAN)
+     vai.endness = VexEndnessBE;
+#    else
+     vai.endness = VexEndness_INVALID;
+#    endif
 
      /* Same instruction set detection algorithm as for ppc32/arm... */
      vki_sigset_t          saved_set, tmp_set;
@@ -1565,10 +1582,18 @@ Bool VG_(machine_get_hwcaps)( void )
    {
      va = VexArchMIPS64;
      UInt model = VG_(get_machine_model)();
-     if (model== -1)
+     if (model == -1)
          return False;
 
      vai.hwcaps = model;
+
+#    if defined(VKI_LITTLE_ENDIAN)
+     vai.endness = VexEndnessLE;
+#    elif defined(VKI_BIG_ENDIAN)
+     vai.endness = VexEndnessBE;
+#    else
+     vai.endness = VexEndness_INVALID;
+#    endif
 
      VG_(machine_get_cache_info)(&vai);
 

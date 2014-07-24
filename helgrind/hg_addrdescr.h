@@ -39,12 +39,6 @@
    VG_(clear_addrinfo). */
 extern void HG_(describe_addr) ( Addr a, /*OUT*/AddrInfo* ai );
 
-/* Prints (using *print) the readable description of addr given in ai.
-   "what" identifies the type pointed to by addr (e.g. a lock). */
-extern void HG_(pp_addrdescr) (Bool xml, const HChar* what, Addr addr,
-                               AddrInfo* ai,
-                               void(*print)(const HChar *format, ...));
-
 /* Get a readable description of addr, then print it using HG_(pp_addrdescr)
    using xml False and VG_(printf) to emit the characters.
    Returns True if a description was found/printed, False otherwise. */

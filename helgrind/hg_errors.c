@@ -770,9 +770,15 @@ static void announce_LockP ( Lock* lk )
    if (VG_(clo_xml)) {
       /* fixme: add announcement */
    } else {
-      VG_(umsg)( "Lock at %p was first observed\n",
-                 (void*)lk->guestaddr );
-      VG_(pp_ExeContext)( lk->appeared_at );
+      if (lk->appeared_at) {
+         VG_(umsg)( "Lock at %p was first observed\n",
+                    (void*)lk->guestaddr );
+         VG_(pp_ExeContext)( lk->appeared_at );
+      } else {
+         VG_(umsg)( "Lock at %p : no stacktrace for first observation\n",
+                    (void*)lk->guestaddr );
+      }
+      HG_(get_and_pp_addrdescr) (lk->guestaddr);
       VG_(umsg)("\n");
    }
 }

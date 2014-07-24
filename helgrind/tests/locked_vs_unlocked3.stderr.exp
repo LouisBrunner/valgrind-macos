@@ -17,6 +17,7 @@ Thread #x was created
 Lock at 0x........ was first observed
    at 0x........: pthread_mutex_init (hg_intercepts.c:...)
    by 0x........: main (locked_vs_unlocked3.c:51)
+ Address 0x........ is 0 bytes inside data symbol "mx"
 
 Possible data race during write of size 4 at 0x........ by thread #x
 Locks held: none

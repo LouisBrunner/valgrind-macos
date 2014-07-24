@@ -19,6 +19,7 @@ Lock at 0x........ was first observed
    by 0x........: child_fn (locked_vs_unlocked1.c:18)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+ Address 0x........ is 0 bytes inside data symbol "mx"
 
 Possible data race during write of size 4 at 0x........ by thread #x
 Locks held: 1, at address 0x........

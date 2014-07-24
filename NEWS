@@ -18,16 +18,18 @@ Release 3.10.0 (?? ?????? 201?)
     the block size - 8. This is e.g. used by sqlite3MemMalloc.
 
 * Helgrind:
-  - Helgrind GDB server monitor command 'info locks' giving
-    the list of locks, their location, and their status.
   - Race condition error message with allocated blocks also show
     the thread nr that allocated the racy block.
+  - The message indicating where a lock was first observed now also
+    describes the address/location of the lock.
   - Helgrind now understands the Ada task termination rules
     and creates a 'H-B relationship' between a terminated task and
     its master. This avoids some false positive and avoids big
     memory usage when a lot of Ada tasks are created and terminated.
     The interceptions are only activated with gnatpro >= 7.3.0w-20140611
     or gcc >= ????? (TBD: check when changes pushed to FSF gcc).
+  - Helgrind GDB server monitor command 'info locks' giving
+    the list of locks, their location, and their status.
 
 * Callgrind:
   - callgrind_control now supports the --vgdb-prefix argument,

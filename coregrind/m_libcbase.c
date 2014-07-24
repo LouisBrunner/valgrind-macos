@@ -29,7 +29,33 @@
 */
 
 #include "pub_core_basics.h"
+#include "pub_core_libcassert.h"    // VG_(exit_now)
+#include "pub_core_debuglog.h"      // VG_(debugLog)
 #include "pub_core_libcbase.h"
+
+
+/* ---------------------------------------------------------------------
+   Assert machinery for use in this file. VG_(assert) cannot be called
+   here due to cyclic dependencies.
+   ------------------------------------------------------------------ */
+#define libcbase_assert(expr)                             \
+  ((void) ((expr) ? 0 :                                   \
+           (ML_(libcbase_assert_fail)(#expr,              \
+                                __FILE__, __LINE__,       \
+                                __PRETTY_FUNCTION__))))
+
+static void ML_(libcbase_assert_fail)( const HChar *expr,
+                                       const HChar *file,
+                                       Int line, 
+                                       const HChar *fn )
+{
+   VG_(debugLog)(0, "libcbase", 
+                    "Valgrind: FATAL: assertion failed:\n");
+   VG_(debugLog)(0, "libcbase", "  %s\n", expr);
+   VG_(debugLog)(0, "libcbase", "  at %s:%d (%s)\n", file, line, fn);
+   VG_(debugLog)(0, "libcbase", "Exiting now.\n");
+   VG_(exit_now)(1);
+}
 
 /* ---------------------------------------------------------------------
    HChar functions.
@@ -276,6 +302,8 @@ HChar* VG_(strcpy) ( HChar* dest, const HChar* src )
    zero termination. */
 void VG_(strncpy_safely) ( HChar* dest, const HChar* src, SizeT ndest )
 {
+   libcbase_assert(ndest > 0);
+
    SizeT i = 0;
    while (True) {
       dest[i] = 0;

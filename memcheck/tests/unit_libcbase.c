@@ -3,10 +3,29 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 
 #include "pub_tool_basics.h"  /* UInt et al, needed for pub_tool_vki.h */
 #include "pub_tool_vki.h"
 #include "m_libcbase.c"
+
+/* Provide a stub to not have to pull in m_debuglog.c */
+void VG_(debugLog) ( Int level, const HChar* modulename,
+                                const HChar* format, ... )
+{
+   va_list args;
+   va_start(args, format);
+   fprintf(stderr, "debuglog: %s: ", modulename);
+   vfprintf(stderr, format, args);
+   va_end(args);
+}
+
+/* Provide a stub to not have to pull in m_libcassert.c */
+void VG_(exit_now)( Int status )
+{
+   exit(status);
+}
+
 
 #define  CHECK(x) \
    if (!x) { fprintf(stderr, "failure: %s:%d\n", __FILE__, __LINE__); }

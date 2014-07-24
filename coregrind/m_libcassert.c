@@ -256,6 +256,15 @@ static void exit_wrk( Int status, Bool gdbserver_call_allowed)
    }
    exit_called = True;
 
+   VG_(exit_now) (status);
+}
+
+/* Call the appropriate system call and nothing else. This function should
+   be called in places where the dependencies of VG_(exit) need to be
+   avoided. */
+__attribute__ ((__noreturn__))
+void VG_(exit_now)( Int status )
+{
 #if defined(VGO_linux)
    (void)VG_(do_syscall1)(__NR_exit_group, status );
 #elif defined(VGO_darwin)

@@ -54,14 +54,7 @@
 __attribute__ ((noreturn))
 void ML_(am_exit)( Int status )
 {
-#  if defined(VGO_linux)
-   (void)VG_(do_syscall1)(__NR_exit_group, status);
-#  endif
-   (void)VG_(do_syscall1)(__NR_exit, status);
-   /* Why are we still alive here? */
-   /*NOTREACHED*/
-   *(volatile Int *)0 = 'x';
-   aspacem_assert(2+2 == 5);
+   VG_(exit_now) (status);
 }
 
 void ML_(am_barf) ( const HChar* what )

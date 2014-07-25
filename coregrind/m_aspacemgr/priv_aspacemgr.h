@@ -77,7 +77,7 @@ extern void   ML_(am_assert_fail) ( const HChar* expr,
                                     const HChar* fn );
 
 #define aspacem_assert(expr)                              \
-  ((void) ((expr) ? 0 :                                   \
+  ((void) (LIKELY(expr) ? 0 :                             \
            (ML_(am_assert_fail)(#expr,                    \
                                 __FILE__, __LINE__,       \
                                 __PRETTY_FUNCTION__))))

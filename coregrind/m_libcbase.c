@@ -35,11 +35,11 @@
 
 
 /* ---------------------------------------------------------------------
-   Assert machinery for use in this file. VG_(assert) cannot be called
+   Assert machinery for use in this file. vg_assert cannot be called
    here due to cyclic dependencies.
    ------------------------------------------------------------------ */
 #define libcbase_assert(expr)                             \
-  ((void) ((expr) ? 0 :                                   \
+  ((void) (LIKELY(expr) ? 0 :                             \
            (ML_(libcbase_assert_fail)(#expr,              \
                                 __FILE__, __LINE__,       \
                                 __PRETTY_FUNCTION__))))

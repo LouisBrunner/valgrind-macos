@@ -433,6 +433,11 @@ static void pp_addrinfo_WRK ( Addr a, AddrInfo* ai, Bool mc, Bool maybe_gcc )
                     VG_(pp_SectKind)(ai->Addr.SectKind.kind),
                     ai->Addr.SectKind.objname,
                     xpost );
+         if (ai->Addr.SectKind.kind == Vg_SectText) {
+            /* To better describe the address in a text segment,
+               pp a dummy stacktrace made of this single address. */
+            VG_(pp_StackTrace)( &a, 1 );
+         }
          break;
 
       default:

@@ -122,6 +122,7 @@ EXTRA_DIST = \
 	inlinfosupp.stderr.exp inlinfosupp.stdout.exp inlinfosupp.supp inlinfosupp.vgtest \
 	inlinfosuppobj.stderr.exp inlinfosuppobj.stdout.exp inlinfosuppobj.supp inlinfosuppobj.vgtest \
 	inltemplate.stderr.exp inltemplate.stdout.exp inltemplate.vgtest \
+		inltemplate.stderr.exp-old-gcc \
 	leak-0.vgtest leak-0.stderr.exp \
 	leak-cases-full.vgtest leak-cases-full.stderr.exp \
 	leak-cases-possible.vgtest leak-cases-possible.stderr.exp \

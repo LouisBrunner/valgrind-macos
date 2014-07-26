@@ -1,6 +1,15 @@
 #include <stdio.h>
 #include <valgrind.h>
+
+/* GCC 3.4.6 will not compile inlined member template functions.
+   Let's assume GCC 4.x does */
+#ifdef __GNUC__
+#if __GNUC__ > 3
 #define INLINE    inline __attribute__((always_inline))
+#else
+#define INLINE
+#endif
+#endif
 
 class X
 {

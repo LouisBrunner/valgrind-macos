@@ -28,11 +28,9 @@
 #include "drd_suppression.h"
 #include "pub_drd_bitmap.h"
 #include "pub_tool_basics.h"      /* Addr, SizeT */
-#include "pub_tool_debuginfo.h"   /* VG_(get_objname)() */
 #include "pub_tool_libcassert.h"  /* tl_assert() */
 #include "pub_tool_libcbase.h"    /* VG_(memset) */
 #include "pub_tool_libcprint.h"   /* VG_(printf) */
-#include "pub_tool_machine.h"     /* VG_(get_IP)() */
 #include "pub_tool_mallocfree.h"  /* VG_(malloc), VG_(free) */
 
 

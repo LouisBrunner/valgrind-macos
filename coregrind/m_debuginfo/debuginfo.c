@@ -1821,7 +1821,7 @@ Vg_FnNameKind VG_(get_fnname_kind_from_IP) ( Addr ip )
    HChar buf[50];
 
    // We don't demangle, because it's faster not to, and the special names
-   // we're looking for won't be demangled.
+   // we're looking for won't be mangled.
    if (VG_(get_fnname_raw) ( ip, buf, BUFLEN )) {
       buf[BUFLEN-1] = '\0';      // paranoia
       return VG_(get_fnname_kind)(buf);

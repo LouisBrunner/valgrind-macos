@@ -1,6 +1,6 @@
 /* Test whether assigning names to threads works properly. */
 
-
+#define _GNU_SOURCE
 #include <pthread.h>
 #include <stddef.h>
 #include <stdio.h>

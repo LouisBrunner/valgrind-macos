@@ -1786,7 +1786,7 @@ Bool VG_(get_inst_offset_in_function)( Addr a,
                          /*below-main-renaming*/False,
                          a, fnname, 64,
                          /*match_anywhere_in_sym*/True, 
-                         /*show offset?*/True,
+                         /*show offset?*/False,
                          /*data syms only please*/True,
                          offset );
 }

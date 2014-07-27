@@ -3,6 +3,7 @@
 dir=`dirname $0`
 
 $dir/../tests/filter_stderr_basic    |
+perl  -0777 -p -e   's/error 4 Interrupted system call\nVG_\(poll\) failed \(old kernel \?\) retrying .*\n//g' |
 sed -e '/^Copyright (C) /d' \
     \
     -e '/TO DEBUG THIS PROCESS USING GDB/d' \

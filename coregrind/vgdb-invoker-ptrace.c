@@ -64,6 +64,13 @@
 
 #include <sys/procfs.h>
 
+#if defined(VGA_s390x)
+/* RHEL 5 uses glibc 2.3.4 which does not define PTRACE_GETSIGINFO */
+#   ifndef PTRACE_GETSIGINFO
+#   define PTRACE_GETSIGINFO 0x4202
+#   endif
+#endif
+
 #if VEX_HOST_WORDSIZE == 8
 typedef Addr64 CORE_ADDR;
 #elif VEX_HOST_WORDSIZE == 4

@@ -1787,7 +1787,7 @@ Bool VG_(get_inst_offset_in_function)( Addr a,
                          a, fnname, 64,
                          /*match_anywhere_in_sym*/True, 
                          /*show offset?*/False,
-                         /*data syms only please*/True,
+                         /*text syms only*/True,
                          offset );
 }
 

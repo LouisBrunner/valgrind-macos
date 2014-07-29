@@ -20,6 +20,8 @@ Release 3.10.0 (?? ?????? 201?)
 * Helgrind:
   - Race condition error message with allocated blocks also show
     the thread nr that allocated the racy block.
+  - All locks referenced by an error message are now announced.
+    Previously, some error messages were just showing the lock addresses.
   - The message indicating where a lock was first observed now also
     describes the address/location of the lock.
   - Helgrind now understands the Ada task termination rules

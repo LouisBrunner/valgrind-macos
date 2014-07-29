@@ -1870,6 +1870,7 @@ Bool VG_(get_objname) ( Addr a, HChar* buf, Int nbuf )
           && di->text_avma <= a 
           && a < di->text_avma + di->text_size) {
          VG_(strncpy_safely)(buf, di->fsm.filename, nbuf);
+         buf[nbuf-1] = 0;
          return True;
       }
    }

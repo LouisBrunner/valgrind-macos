@@ -304,8 +304,14 @@ void VG_(strncpy_safely) ( HChar* dest, const HChar* src, SizeT ndest )
 {
    libcbase_assert(ndest > 0);
 
-   VG_(strncpy)(dest, src, ndest);
-   dest[ndest - 1] = '\0';
+   SizeT i = 0;
+   while (True) {
+      dest[i] = 0;
+      if (src[i] == 0) return;
+      if (i >= ndest-1) return;
+      dest[i] = src[i];
+      i++;
+   }
 }
 
 HChar* VG_(strncpy) ( HChar* dest, const HChar* src, SizeT ndest )

@@ -16,10 +16,13 @@ Thread #x unlocked a not-locked lock at 0x........
    at 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
    by 0x........: nearly_main (tc10_rec_lock.c:42)
    by 0x........: main (tc10_rec_lock.c:47)
-  Lock at 0x........ was first observed
+ Lock at 0x........ was first observed
    at 0x........: pthread_mutex_init (hg_intercepts.c:...)
    by 0x........: nearly_main (tc10_rec_lock.c:24)
    by 0x........: main (tc10_rec_lock.c:47)
+ Address 0x........ is on thread #x's stack
+ in frame #x, created by nearly_main (tc10_rec_lock.c:15)
+
 
 ----------------------------------------------------------------
 

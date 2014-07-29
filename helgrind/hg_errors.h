@@ -63,7 +63,7 @@ void HG_(record_error_PthAPIerror)    ( Thread*, const HChar*, Word,
                                         const HChar* );
 
 /* see the implementation for meaning of these params */
-void HG_(record_error_LockOrder)      ( Thread*, Addr, Addr,
+void HG_(record_error_LockOrder)      ( Thread*, Lock*, Lock*,
                                         ExeContext*, ExeContext*,
                                         ExeContext* );
 

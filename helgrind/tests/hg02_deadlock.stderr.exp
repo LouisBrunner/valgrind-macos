@@ -34,5 +34,18 @@ Required order was established by acquisition of lock at 0x........
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
+ Lock at 0x........ was first observed
+   at 0x........: pthread_mutex_lock (hg_intercepts.c:...)
+   by 0x........: main (hg02_deadlock.c:32)
+ Address 0x........ is 0 bytes inside data symbol "m1"
+
+ Lock at 0x........ was first observed
+   at 0x........: pthread_mutex_lock (hg_intercepts.c:...)
+   by 0x........: t1 (hg02_deadlock.c:10)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   ...
+ Address 0x........ is 0 bytes inside data symbol "m2"
+
+
 
 ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

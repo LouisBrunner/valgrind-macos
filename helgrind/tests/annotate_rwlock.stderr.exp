@@ -99,7 +99,7 @@ Locks held: none
 
 ----------------------------------------------------------------
 
-Lock at 0x........ was first observed
+ Lock at 0x........ was first observed
    at 0x........: rwlock_init (annotate_rwlock.c:54)
    by 0x........: main (annotate_rwlock.c:161)
  Address 0x........ is 0 bytes inside data symbol "s_rwlock"

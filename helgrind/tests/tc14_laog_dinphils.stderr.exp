@@ -4,7 +4,7 @@
 Thread #x was created
    ...
    by 0x........: pthread_create@* (hg_intercepts.c:...)
-   by 0x........: main (tc14_laog_dinphils.c:34)
+   by 0x........: main (tc14_laog_dinphils.c:39)
 
 ----------------------------------------------------------------
 
@@ -12,15 +12,26 @@ Thread #x: lock order "0x........ before 0x........" violated
 
 Observed (incorrect) order is: acquisition of lock at 0x........
    at 0x........: pthread_mutex_lock (hg_intercepts.c:...)
-   by 0x........: dine (tc14_laog_dinphils.c:18)
+   by 0x........: dine (tc14_laog_dinphils.c:21)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
  followed by a later acquisition of lock at 0x........
    at 0x........: pthread_mutex_lock (hg_intercepts.c:...)
-   by 0x........: dine (tc14_laog_dinphils.c:19)
+   by 0x........: dine (tc14_laog_dinphils.c:22)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
+
+ Lock at 0x........ was first observed
+   at 0x........: pthread_mutex_init (hg_intercepts.c:...)
+   by 0x........: main (tc14_laog_dinphils.c:36)
+ Address 0x........ is 0 bytes inside data symbol "chop"
+
+ Lock at 0x........ was first observed
+   at 0x........: pthread_mutex_init (hg_intercepts.c:...)
+   by 0x........: main (tc14_laog_dinphils.c:36)
+ Address 0x........ is 480 bytes inside data symbol "chop"
+
 
 
 ERROR SUMMARY: 1000 errors from 1 contexts (suppressed: 0 from 0)

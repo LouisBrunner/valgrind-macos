@@ -3802,7 +3802,7 @@ static void laog__pre_thread_acquires_lock (
          tl_assert(found->src_ec);
          tl_assert(found->dst_ec);
          HG_(record_error_LockOrder)( 
-            thr, lk->guestaddr, other->guestaddr,
+            thr, lk, other,
                  found->src_ec, found->dst_ec, other->acquired_at );
       } else {
          /* Hmm.  This can't happen (can it?) */
@@ -3852,7 +3852,7 @@ static void laog__pre_thread_acquires_lock (
             held by this thread, with its 'acquired_at'. */
                     
          HG_(record_error_LockOrder)(
-            thr, lk->guestaddr, other->guestaddr,
+            thr, lk, other,
                  NULL, NULL, other->acquired_at );
       }
    }

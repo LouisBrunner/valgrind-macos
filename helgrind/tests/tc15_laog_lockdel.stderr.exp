@@ -25,6 +25,23 @@ Required order was established by acquisition of lock at 0x........
    at 0x........: pthread_mutex_lock (hg_intercepts.c:...)
    by 0x........: main (tc15_laog_lockdel.c:28)
 
+ Lock at 0x........ was first observed
+   at 0x........: pthread_mutex_init (hg_intercepts.c:...)
+   by 0x........: main (tc15_laog_lockdel.c:22)
+ Address 0x........ is 0 bytes inside a block of size 120 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (tc15_laog_lockdel.c:16)
+ Block was alloc'd by thread #x
+
+ Lock at 0x........ was first observed
+   at 0x........: pthread_mutex_init (hg_intercepts.c:...)
+   by 0x........: main (tc15_laog_lockdel.c:23)
+ Address 0x........ is 0 bytes inside a block of size 120 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (tc15_laog_lockdel.c:17)
+ Block was alloc'd by thread #x
+
+
 Free 2 and re-allocate it.  This gives it a new identity,
 so a second locking sequence 2 -> 1 should now be OK.
 done

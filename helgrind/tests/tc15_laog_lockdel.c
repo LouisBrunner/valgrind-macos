@@ -12,9 +12,9 @@ int main ( void )
 {
    int r;
    pthread_mutex_t *mx1, *mx2;
-
-   mx1 = malloc(sizeof(pthread_mutex_t));
-   mx2 = malloc(sizeof(pthread_mutex_t));
+   assert (sizeof(pthread_mutex_t) <= 120);
+   mx1 = malloc(120 + sizeof(pthread_mutex_t) - sizeof(pthread_mutex_t));
+   mx2 = malloc(120 + sizeof(pthread_mutex_t) - sizeof(pthread_mutex_t));
 
    assert(mx1);
    assert(mx2);

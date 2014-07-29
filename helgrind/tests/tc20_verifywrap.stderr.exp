@@ -157,10 +157,13 @@ Thread #x unlocked a not-locked lock at 0x........
    at 0x........: pthread_rwlock_unlock_WRK (hg_intercepts.c:...)
    by 0x........: pthread_rwlock_unlock (hg_intercepts.c:...)
    by 0x........: main (tc20_verifywrap.c:179)
-  Lock at 0x........ was first observed
+ Lock at 0x........ was first observed
    at 0x........: pthread_rwlock_init_WRK (hg_intercepts.c:...)
    by 0x........: pthread_rwlock_init (hg_intercepts.c:...)
    by 0x........: main (tc20_verifywrap.c:178)
+ Location 0x........ is 0 bytes inside local var "rwl"
+ declared at tc20_verifywrap.c:47, in frame #x of thread x
+
 
 (1) no error on next line
 (2) no error on next line
@@ -171,10 +174,13 @@ Thread #x unlocked a not-locked lock at 0x........
    at 0x........: pthread_rwlock_unlock_WRK (hg_intercepts.c:...)
    by 0x........: pthread_rwlock_unlock (hg_intercepts.c:...)
    by 0x........: main (tc20_verifywrap.c:196)
-  Lock at 0x........ was first observed
+ Lock at 0x........ was first observed
    at 0x........: pthread_rwlock_init_WRK (hg_intercepts.c:...)
    by 0x........: pthread_rwlock_init (hg_intercepts.c:...)
    by 0x........: main (tc20_verifywrap.c:186)
+ Location 0x........ is 0 bytes inside local var "rwl2"
+ declared at tc20_verifywrap.c:48, in frame #x of thread x
+
 
 (4) no error on next line
 (5) no error on next line
@@ -187,10 +193,13 @@ Thread #x unlocked a not-locked lock at 0x........
    at 0x........: pthread_rwlock_unlock_WRK (hg_intercepts.c:...)
    by 0x........: pthread_rwlock_unlock (hg_intercepts.c:...)
    by 0x........: main (tc20_verifywrap.c:212)
-  Lock at 0x........ was first observed
+ Lock at 0x........ was first observed
    at 0x........: pthread_rwlock_init_WRK (hg_intercepts.c:...)
    by 0x........: pthread_rwlock_init (hg_intercepts.c:...)
    by 0x........: main (tc20_verifywrap.c:186)
+ Location 0x........ is 0 bytes inside local var "rwl2"
+ declared at tc20_verifywrap.c:48, in frame #x of thread x
+
 
 
 ---------------- sem_* ----------------

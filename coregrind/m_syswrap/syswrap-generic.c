@@ -1074,8 +1074,13 @@ void pre_mem_read_sockaddr ( ThreadId tid,
 #endif
 
       default:
-         VG_(sprintf) ( outmsg, description, "" );
-         PRE_MEM_READ( outmsg, (Addr) sa, salen );
+         /* No specific information about this address family.
+            Let's just check the full data following the family.
+            Note that this can give false positive if this (unknown)
+            struct sockaddr_???? has padding bytes between its elements. */
+         VG_(sprintf) ( outmsg, description, "sa_data" );
+         PRE_MEM_READ( outmsg, (Addr)&sa->sa_family + sizeof(sa->sa_family),
+                       salen );
          break;
    }
    

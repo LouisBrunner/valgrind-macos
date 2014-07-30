@@ -677,7 +677,8 @@ void construct_error ( Error* err, ThreadId tid, ErrorKind ekind, Addr a,
    All detected errors are notified here; this routine decides if/when the
    user should see the error. */
 void VG_(maybe_record_error) ( ThreadId tid, 
-                               ErrorKind ekind, Addr a, const HChar* s, void* extra )
+                               ErrorKind ekind, Addr a, 
+                               const HChar* s, void* extra )
 {
           Error  err;
           Error* p;
@@ -818,9 +819,17 @@ void VG_(maybe_record_error) ( ThreadId tid,
          break;
    }
 
+   /* copy the error string, if there is one.
+      note: if we would have many errors with big strings, using a
+      DedupPoolAlloc for these strings will avoid duplicating
+      such string in each error using it. */
+   if (NULL != p->string) {
+      p->string = VG_(arena_strdup)(VG_AR_CORE, "errormgr.mre.2", p->string);
+   }
+
    /* copy block pointed to by 'extra', if there is one */
    if (NULL != p->extra && 0 != extra_size) { 
-      void* new_extra = VG_(malloc)("errormgr.mre.2", extra_size);
+      void* new_extra = VG_(malloc)("errormgr.mre.3", extra_size);
       VG_(memcpy)(new_extra, p->extra, extra_size);
       p->extra = new_extra;
    }
@@ -870,7 +879,7 @@ Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, const HChar* s,
       Then update the 'extra' part with VG_(tdict).tool_update_extra),
       because that can have an affect on whether it's suppressed.  Ignore
       the size return value of VG_(tdict).tool_update_extra, because we're
-      not copying 'extra'. */
+      not copying 'extra'. Similarly, 's' is also not copied. */
    (void)VG_TDICT_CALL(tool_update_extra, &err);
 
    su = is_suppressible_error(&err);
@@ -1514,10 +1523,11 @@ typedef
       // n_expanded >= n_ips_expanded.
 
       Int* n_offsets_per_ip;
-      // n_offsets_per_ip[i] gives the nr of offsets in fun_offsets and obj_offsets
-      // resulting of the expansion of ips[i].
+      // n_offsets_per_ip[i] gives the nr of offsets in fun_offsets and
+      // obj_offsets resulting of the expansion of ips[i].
       // The sum of all n_expanded_per_ip must be equal to n_expanded.
-      // This array allows to retrieve the position in ips corresponding to an ixInput.
+      // This array allows to retrieve the position in ips corresponding to 
+      // an ixInput.
 
       // size (in elements) of fun_offsets and obj_offsets.
       // (fun|obj)_offsets are reallocated if more space is needed
@@ -1570,9 +1580,10 @@ static void pp_ip2fo (IPtoFunOrObjCompleter* ip2fo)
 }
 
 /* free the memory in ip2fo.
-   At debuglog 4, su (or NULL) will be used to show the matching (or non matching)
-   with ip2fo. */
-static void clearIPtoFunOrObjCompleter ( Supp  *su, IPtoFunOrObjCompleter* ip2fo)
+   At debuglog 4, su (or NULL) will be used to show the matching
+   (or non matching) with ip2fo. */
+static void clearIPtoFunOrObjCompleter ( Supp  *su, 
+                                         IPtoFunOrObjCompleter* ip2fo)
 {
    if (DEBUG_ERRORMGR || VG_(debugLog_getLevel)() >= 4) {
       if (su)
@@ -1672,7 +1683,8 @@ static HChar* foComplete(IPtoFunOrObjCompleter* ip2fo,
               i++) {
             ip2fo->obj_offsets[i] = ip2fo->names_free;
             if (DEBUG_ERRORMGR) 
-               VG_(printf) ("   set obj_offset %lu to %d\n", i, ip2fo->names_free);
+               VG_(printf) ("   set obj_offset %lu to %d\n", 
+                            i, ip2fo->names_free);
          }
       }
       ip2fo->names_free += VG_(strlen)(caller_name) + 1;

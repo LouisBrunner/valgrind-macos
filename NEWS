@@ -16,6 +16,10 @@ Release 3.10.0 (?? ?????? 201?)
   - new leak check heuristic 'length64' to detect interior pointers
     pointing at offset 64bit of a block, when the first 8 bytes contains
     the block size - 8. This is e.g. used by sqlite3MemMalloc.
+  - if a syscall param (e.g. bind struct sockaddr, sendmsg struct msghdr,
+    ...) has several fields not initialised, an error is now reported for
+    each field. Previously, an error was reported only for the first wrong
+    field.
 
 * Helgrind:
   - Race condition error message with allocated blocks also show

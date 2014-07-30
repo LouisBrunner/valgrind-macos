@@ -66,9 +66,15 @@ void*        VG_(get_error_extra)   ( Error* err );
    seen before.  If it has, the existing error record will have its count
    incremented.
 
-   'tid' can be found as for VG_(record_ExeContext)().  The `extra' field can
-   be stack-allocated;  it will be copied by the core if needed (but it
-   won't be copied if it's NULL).
+   'tid' can be found as for VG_(record_ExeContext)().  The `s' string
+   and `extra' field can be stack-allocated;  they will be copied by the core
+   if needed (but it won't be copied if it's NULL).
+   Note that `ekind' and `s' are also used to generate a suppression.
+   `s' should therefore not contain data depending on the specific
+   execution (such as addresses, values) but should rather contain
+   e.g. a system call parameter symbolic name.
+   `extra' is also (optionally) used for generating a suppression
+   (see pub_tool_tooliface.h print_extra_suppression_info).
 
    If no 'a', 's' or 'extra' of interest needs to be recorded, just use
    NULL for them.  */

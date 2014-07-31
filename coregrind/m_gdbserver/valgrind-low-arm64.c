@@ -232,6 +232,9 @@ void transfer_register (ThreadId tid, int abs_regno, void * buf,
          ULong fpsr = 0;
          VG_(transfer) ((UInt*)&fpsr, buf, dir, size, mod);
          LibVEX_GuestARM64_set_fpsr(arm, fpsr);
+         /* resync the cache with the part of fpsr that VEX represents. */
+         fpsr = LibVEX_GuestARM64_get_fpsr(arm);
+         VG_(transfer) ((UInt*)&fpsr, buf, valgrind_to_gdbserver, size, mod);
       }
       break;
    }

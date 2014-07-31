@@ -904,7 +904,9 @@ struct _DebugInfo {
       cfsi_exprs. */
    Addr* cfsi_base;
    UInt  sizeof_cfsi_m_ix; /* size in byte of indexes stored in cfsi_m_ix. */
-   UInt* cfsi_m_ix; /* Each index occupies sizeof_cfsi_m_ix bytes. */
+   void* cfsi_m_ix; /* Each index occupies sizeof_cfsi_m_ix bytes.
+                       The void* is an UChar* or UShort* or UInt*
+                       depending on sizeof_cfsi_m_ix.  */
 
    DiCfSI* cfsi_rd; /* Only used during reading, NULL once info is read. */
                                    

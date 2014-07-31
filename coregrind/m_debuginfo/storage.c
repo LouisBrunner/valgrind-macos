@@ -696,7 +696,7 @@ void ML_(addDiCfSI) ( struct _DebugInfo* di,
          if (VG_(clo_verbosity) > 1) {
             VG_(message)(
                Vg_DebugMsg,
-               "warning: DiCfSI %#lx .. %#lx outside mapped rw segments (%s)\n",
+               "warning: DiCfSI %#lx .. %#lx outside mapped rx segments (%s)\n",
                base, 
                base + len - 1,
                di->soname
@@ -875,6 +875,7 @@ static void ppCfiBinop ( CfiBinop op )
 static void ppCfiReg ( CfiReg reg )
 {
    switch (reg) {
+      case Creg_INVALID:   VG_(printf)("Creg_INVALID"); break;
       case Creg_IA_SP:     VG_(printf)("xSP"); break;
       case Creg_IA_BP:     VG_(printf)("xBP"); break;
       case Creg_IA_IP:     VG_(printf)("xIP"); break;
@@ -882,6 +883,7 @@ static void ppCfiReg ( CfiReg reg )
       case Creg_ARM_R12:   VG_(printf)("R12"); break;
       case Creg_ARM_R15:   VG_(printf)("R15"); break;
       case Creg_ARM_R14:   VG_(printf)("R14"); break;
+      case Creg_ARM_R7:    VG_(printf)("R7");  break;
       case Creg_ARM64_X30: VG_(printf)("X30"); break;
       case Creg_MIPS_RA:   VG_(printf)("RA"); break;
       case Creg_S390_R14:  VG_(printf)("R14"); break;

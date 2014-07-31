@@ -90,6 +90,10 @@ Release 3.10.0 (?? ?????? 201?)
 
 * Reduction of memory used by Valgrind to read and store the debug information.
 
+* Valgrind can now read EXIDX unwind information on 32-bit ARM targets.
+  If an object contains both CFI and EXIDX unwind information, Valgrind
+  will prefer the CFI over the EXIDX.
+
 * ==================== FIXED BUGS ====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"

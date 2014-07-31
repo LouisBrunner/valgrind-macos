@@ -274,6 +274,8 @@ typedef
       Int   r12_off;
       Int   r11_off;
       Int   r7_off;
+      // If you add additional fields, don't forget to update the
+      // initialisation of this in readexidx.c accordingly.
    }
    DiCfSI_m;
 #elif defined(VGA_arm64)
@@ -369,13 +371,15 @@ typedef
 
 typedef
    enum {
-      Creg_IA_SP=0x213,
+      Creg_INVALID=0x213,
+      Creg_IA_SP,
       Creg_IA_BP,
       Creg_IA_IP,
       Creg_ARM_R13,
       Creg_ARM_R12,
       Creg_ARM_R15,
       Creg_ARM_R14,
+      Creg_ARM_R7,
       Creg_ARM64_X30,
       Creg_S390_R14,
       Creg_MIPS_RA
@@ -788,6 +792,18 @@ struct _DebugInfo {
    PtrdiffT sbss_bias;
    Addr     sbss_debug_svma;
    PtrdiffT sbss_debug_bias;
+   /* .ARM.exidx -- sometimes present on arm32, containing unwind info. */
+   Bool     exidx_present;
+   Addr     exidx_avma;
+   Addr     exidx_svma;
+   SizeT    exidx_size;
+   PtrdiffT exidx_bias;
+   /* .ARM.extab -- sometimes present on arm32, containing unwind info. */
+   Bool     extab_present;
+   Addr     extab_avma;
+   Addr     extab_svma;
+   SizeT    extab_size;
+   PtrdiffT extab_bias;
    /* .plt */
    Bool   plt_present;
    Addr	  plt_avma;

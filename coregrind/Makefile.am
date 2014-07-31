@@ -222,6 +222,7 @@ noinst_HEADERS = \
 	m_debuginfo/priv_readdwarf.h	\
 	m_debuginfo/priv_readdwarf3.h	\
 	m_debuginfo/priv_readelf.h	\
+	m_debuginfo/priv_readexidx.h	\
 	m_debuginfo/priv_readmacho.h	\
 	m_debuginfo/priv_image.h	\
 	m_debuginfo/lzoconf.h		\
@@ -319,6 +320,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_debuginfo/readdwarf.c \
 	m_debuginfo/readdwarf3.c \
 	m_debuginfo/readelf.c \
+	m_debuginfo/readexidx.c \
 	m_debuginfo/readmacho.c \
 	m_debuginfo/readpdb.c \
 	m_debuginfo/readstabs.c \

@@ -51,6 +51,7 @@
 #include "priv_readdwarf.h"        /* 'cos ELF contains DWARF */
 #include "priv_readdwarf3.h"
 #include "priv_readstabs.h"        /* and stabs, if we're unlucky */
+#include "priv_readexidx.h"
 
 /* --- !!! --- EXTERNAL HEADERS start --- !!! --- */
 #include <elf.h>
@@ -2176,6 +2177,50 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          }
       }
 
+      /* Accept .ARM.exidx where mapped as rx (code). */
+      /* FIXME: make sure the entire section is mapped in, not just
+         the first address. */
+      if (0 == VG_(strcmp)(name, ".ARM.exidx")) {
+         if (inrx && !di->exidx_present) {
+            di->exidx_present = True;
+            di->exidx_svma = svma;
+            di->exidx_avma = svma + inrx->bias;
+            di->exidx_size = size;
+            di->exidx_bias = inrx->bias;
+            TRACE_SYMTAB("acquiring .exidx svma = %#lx .. %#lx\n",
+                         di->exidx_svma, 
+                         di->exidx_svma + di->exidx_size - 1);
+            TRACE_SYMTAB("acquiring .exidx avma = %#lx .. %#lx\n",
+                         di->exidx_avma, 
+                         di->exidx_avma + di->exidx_size - 1);
+            TRACE_SYMTAB("acquiring .exidx bias = %#lx\n", di->exidx_bias);
+         } else {
+            BAD(".ARM.exidx");
+         }
+      }
+
+      /* Accept .ARM.extab where mapped as rx (code). */
+      /* FIXME: make sure the entire section is mapped in, not just
+         the first address. */
+      if (0 == VG_(strcmp)(name, ".ARM.extab")) {
+         if (inrx && !di->extab_present) {
+            di->extab_present = True;
+            di->extab_svma = svma;
+            di->extab_avma = svma + inrx->bias;
+            di->extab_size = size;
+            di->extab_bias = inrx->bias;
+            TRACE_SYMTAB("acquiring .extab svma = %#lx .. %#lx\n",
+                         di->extab_svma, 
+                         di->extab_svma + di->extab_size - 1);
+            TRACE_SYMTAB("acquiring .extab avma = %#lx .. %#lx\n",
+                         di->extab_avma, 
+                         di->extab_avma + di->extab_size - 1);
+            TRACE_SYMTAB("acquiring .extab bias = %#lx\n", di->extab_bias);
+         } else {
+            BAD(".ARM.extab");
+         }
+      }
+
       ML_(dinfo_free)(name);
 
 #     undef BAD
@@ -2729,6 +2774,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       vg_assert((dynsym_escn.szB % sizeof(ElfXX_Sym)) == 0);
       vg_assert((symtab_escn.szB % sizeof(ElfXX_Sym)) == 0);
 
+      /* TOPLEVEL */
       /* Read symbols */
       {
          void (*read_elf_symtab)(struct _DebugInfo*, const HChar*,
@@ -2746,7 +2792,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          read_elf_symtab(di, "dynamic symbol table",
                          &dynsym_escn, &dynstr_escn, &opd_escn,
                          False);
-      } /* Read symbols */
+      }
 
       /* TOPLEVEL */
       /* Read .eh_frame and .debug_frame (call-frame-info) if any.  Do
@@ -2781,13 +2827,15 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          && !defined(VGPV_arm_linux_android) \
          && !defined(VGPV_x86_linux_android) \
          && !defined(VGP_mips64_linux)
-#if 0
-      if (stab_img && stabstr_img) {
-         ML_(read_debuginfo_stabs) ( di, stab_img, stab_sz, 
-                                         stabstr_img, stabstr_sz );
-      }
-#endif
+      // JRS 31 July 2014: stabs reading is currently broken and
+      // therefore deactivated.
+      //if (stab_img && stabstr_img) {
+      //   ML_(read_debuginfo_stabs) ( di, stab_img, stab_sz, 
+      //                                   stabstr_img, stabstr_sz );
+      //}
 #     endif
+
+      /* TOPLEVEL */
       /* jrs 2006-01-01: icc-8.1 has been observed to generate
          binaries without debug_str sections.  Don't preclude
          debuginfo reading for that reason, but, in
@@ -2820,13 +2868,50 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             );
          }
       }
-#if 0
-      if (dwarf1d_img && dwarf1l_img) {
-         ML_(read_debuginfo_dwarf1) ( di, dwarf1d_img, dwarf1d_sz, 
-                                          dwarf1l_img, dwarf1l_sz );
-      }
-#endif
+
       /* TOPLEVEL */
+      // JRS 31 July 2014: dwarf-1 reading is currently broken and
+      // therefore deactivated.
+      //if (dwarf1d_img && dwarf1l_img) {
+      //   ML_(read_debuginfo_dwarf1) ( di, dwarf1d_img, dwarf1d_sz, 
+      //                                    dwarf1l_img, dwarf1l_sz );
+      //}
+
+#     if defined(VGA_arm)
+      /* TOPLEVEL */
+      /* ARM32 only: read .exidx/.extab if present.  Note we are
+         reading these directly out of the mapped in (running) image.
+         Also, read these only if no CFI based unwind info was
+         acquired for this file.
+
+         An .exidx section is always required, but the .extab section
+         can be optionally omitted, provided that .exidx does not
+         refer to it.  If the .exidx is erroneous and does refer to
+         .extab even though .extab is missing, the range checks done
+         by GET_EX_U32 in ExtabEntryExtract in readexidx.c should
+         prevent any invalid memory accesses, and cause the .extab to
+         be rejected as invalid.
+
+         FIXME:
+         * check with m_aspacemgr that the entire [exidx_avma, +exidx_size)
+           and [extab_avma, +extab_size) areas are readable, since we're
+           reading this stuff out of the running image (not from a file/socket)
+           and we don't want to segfault.
+         * DebugInfo::exidx_bias and use text_bias instead.
+           I think it's always the same.
+         * remove DebugInfo::{extab_bias, exidx_svma, extab_svma} since
+           they are never used.
+      */
+      if (di->exidx_present
+          && di->cfsi_used == 0
+          && di->text_present && di->text_size > 0) {
+         Addr text_last_svma = di->text_svma + di->text_size - 1;
+         ML_(read_exidx)( di, (UChar*)di->exidx_avma, di->exidx_size,
+                              (UChar*)di->extab_avma, di->extab_size,
+                              text_last_svma,
+                              di->exidx_bias );
+      }
+#     endif /* defined(VGA_arm) */
 
    } /* "Find interesting sections, read the symbol table(s), read any debug
         information" (a local scope) */

@@ -657,17 +657,17 @@ int hexify (char *hex, const char *bin, int count)
    Useful for register and int image */
 char* heximage (char *buf, char *bin, int count)
 {
-#if defined(VGA_x86) || defined(VGA_amd64)
+#if (VKI_LITTLE_ENDIAN)
    char rev[count]; 
    /* note: no need for trailing \0, length is known with count */
-  int i;
-  for (i = 0; i < count; i++)
-    rev[i] = bin[count - i - 1];
-  hexify (buf, rev, count);
+   int i;
+   for (i = 0; i < count; i++)
+      rev[i] = bin[count - i - 1];
+   hexify (buf, rev, count);
 #else
-  hexify (buf, bin, count);
+   hexify (buf, bin, count);
 #endif
-  return buf;
+   return buf;
 }
 
 void* C2v(CORE_ADDR addr)

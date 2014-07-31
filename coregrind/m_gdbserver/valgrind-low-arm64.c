@@ -222,15 +222,15 @@ void transfer_register (ThreadId tid, int abs_regno, void * buf,
           architecturally defined representation.  Hence use conversion
           functions to convert to/from it.
           VEX FPSR only models QC (bit 27), and uses a 64 bits to store
-          this FPSR QC bit. So, we need to transfer from/to the lowest part
-          of the ULong that VEX provides/needs, as GDB expects or
-          gives only 4 bytes. */
+          this FPSR QC bit. So, we need to transfer from/to the lowest
+          significant part of the ULong that VEX provides/needs,
+          as GDB expects or gives only 4 bytes. */
       if (dir == valgrind_to_gdbserver) {
          ULong fpsr = LibVEX_GuestARM64_get_fpsr(arm);
-         VG_(transfer) ((UInt*)&fpsr + 1, buf, dir, size, mod);
+         VG_(transfer) ((UInt*)&fpsr, buf, dir, size, mod);
       } else {
          ULong fpsr = 0;
-         VG_(transfer) ((UInt*)&fpsr + 1, buf, dir, size, mod);
+         VG_(transfer) ((UInt*)&fpsr, buf, dir, size, mod);
          LibVEX_GuestARM64_set_fpsr(arm, fpsr);
       }
       break;

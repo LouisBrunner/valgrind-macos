@@ -6292,7 +6292,7 @@ void math_SQNEG ( /*OUT*/IRTemp* qneg, /*OUT*/IRTemp* nneg,
 }
 
 
-static IRTemp math_ZERO_ALL_EXCEPT_LOWEST_LANE ( IRExpr* srcE, UInt size )
+static IRTemp math_ZERO_ALL_EXCEPT_LOWEST_LANE ( UInt size, IRExpr* srcE )
 {
    vassert(size < 4);
    IRTemp t = newTempV128();
@@ -6412,6 +6412,9 @@ void math_MULLS ( /*OUT*/IRTemp* resHI, /*OUT*/IRTemp* resLO,
 }
 
 
+/* Generate IR for SQDMULH and SQRDMULH: signedly wideningly multiply,
+   double that, possibly add a rounding constant (R variants), and take
+   the high half. */
 static
 void math_SQDMULH ( /*OUT*/IRTemp* res,
                     /*OUT*/IRTemp* sat1q, /*OUT*/IRTemp* sat1n,
@@ -6469,7 +6472,8 @@ void updateQCFLAGwithDifferenceZHI ( IRTemp qres, IRTemp nres, IROp opZHI )
    if (opZHI == Iop_INVALID) {
       assign(diff, binop(Iop_XorV128, mkexpr(qres), mkexpr(nres)));
    } else {
-      vassert(opZHI == Iop_ZeroHI64ofV128 || opZHI == Iop_ZeroHI96ofV128);
+      vassert(opZHI == Iop_ZeroHI64ofV128
+              || opZHI == Iop_ZeroHI96ofV128 || opZHI == Iop_ZeroHI112ofV128);
       assign(diff, unop(opZHI, binop(Iop_XorV128, mkexpr(qres), mkexpr(nres))));
    }
    assign(oldQCFLAG, IRExpr_Get(OFFB_QCFLAG, Ity_V128));
@@ -7491,9 +7495,9 @@ Bool dis_AdvSIMD_scalar_three_same(/*MB_OUT*/DisResult* dres, UInt insn)
       assign(argL, getQReg128(nn));
       assign(argR, getQReg128(mm));
       assign(qres, mkexpr(math_ZERO_ALL_EXCEPT_LOWEST_LANE(
-                             binop(qop, mkexpr(argL), mkexpr(argR)), size)));
+                             size, binop(qop, mkexpr(argL), mkexpr(argR)))));
       assign(nres, mkexpr(math_ZERO_ALL_EXCEPT_LOWEST_LANE(
-                             binop(nop, mkexpr(argL), mkexpr(argR)), size)));
+                             size, binop(nop, mkexpr(argL), mkexpr(argR)))));
       putQReg128(dd, mkexpr(qres));
       updateQCFLAGwithDifference(qres, nres);
       const HChar* nm  = isADD ? (isU ? "uqadd" : "sqadd") 
@@ -7573,6 +7577,28 @@ Bool dis_AdvSIMD_scalar_three_same(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
+   if (opcode == BITS5(1,0,1,1,0)) {
+      /* -------- 0,xx,10110 SQDMULH s and h variants only -------- */
+      /* -------- 1,xx,10110 SQRDMULH s and h variants only -------- */
+      if (size == X00 || size == X11) return False;
+      Bool isR = bitU == 1;
+      IRTemp res, sat1q, sat1n, vN, vM;
+      res = sat1q = sat1n = vN = vM = IRTemp_INVALID;
+      newTempsV128_2(&vN, &vM);
+      assign(vN, getQReg128(nn));
+      assign(vM, getQReg128(mm));
+      math_SQDMULH(&res, &sat1q, &sat1n, isR, size, vN, vM);
+      putQReg128(dd,
+                 mkexpr(math_ZERO_ALL_EXCEPT_LOWEST_LANE(size, mkexpr(res))));
+      updateQCFLAGwithDifference(
+         math_ZERO_ALL_EXCEPT_LOWEST_LANE(size, mkexpr(sat1q)),
+         math_ZERO_ALL_EXCEPT_LOWEST_LANE(size, mkexpr(sat1n)));
+      const HChar  arr = "bhsd"[size];
+      const HChar* nm  = isR ? "sqrdmulh" : "sqdmulh";
+      DIP("%s %c%d, %c%d, %c%d\n", nm, arr, dd, arr, nn, arr, mm);
+      return True;
+   }
+
    if (bitU == 1 && size >= X10 && opcode == BITS5(1,1,0,1,0)) {
       /* -------- 1,1x,11010 FABD d_d_d, s_s_s -------- */
       IRType ity = size == X11 ? Ity_F64 : Ity_F32;
@@ -7621,8 +7647,8 @@ Bool dis_AdvSIMD_scalar_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
       IRTemp qresFW = IRTemp_INVALID, nresFW = IRTemp_INVALID;
       (isNEG ? math_SQNEG : math_SQABS)( &qresFW, &nresFW,
                                          getQReg128(nn), size );
-      IRTemp qres = math_ZERO_ALL_EXCEPT_LOWEST_LANE(mkexpr(qresFW), size);
-      IRTemp nres = math_ZERO_ALL_EXCEPT_LOWEST_LANE(mkexpr(nresFW), size);
+      IRTemp qres = math_ZERO_ALL_EXCEPT_LOWEST_LANE(size, mkexpr(qresFW));
+      IRTemp nres = math_ZERO_ALL_EXCEPT_LOWEST_LANE(size, mkexpr(nresFW));
       putQReg128(dd, mkexpr(qres));
       updateQCFLAGwithDifference(qres, nres);
       const HChar arr = "bhsd"[size];
@@ -7768,6 +7794,40 @@ Bool dis_AdvSIMD_scalar_x_indexed_element(/*MB_OUT*/DisResult* dres, UInt insn)
       const HChar  arrWide   = "bhsd"[size+1];
       DIP("%s %c%d, %c%d, v%d.%c[%u]\n",
           nm, arrWide, dd, arrNarrow, nn, dd, arrNarrow, ix);
+      return True;
+   }
+
+   if (opcode == BITS4(1,1,0,0) || opcode == BITS4(1,1,0,1)) {
+      /* -------- 0,xx,1100 SQDMULH s and h variants only -------- */
+      /* -------- 0,xx,1101 SQRDMULH s and h variants only -------- */
+      UInt mm  = 32; // invalid
+      UInt ix  = 16; // invalid
+      switch (size) {
+         case X00:
+            return False; // b case is not allowed
+         case X01:
+            mm = mmLO4; ix = (bitH << 2) | (bitL << 1) | (bitM << 0); break;
+         case X10:
+            mm = (bitM << 4) | mmLO4; ix = (bitH << 1) | (bitL << 0); break;
+         case X11:
+            return False; // q case is not allowed
+         default:
+            vassert(0);
+      }
+      vassert(mm < 32 && ix < 16);
+      Bool isR = opcode == BITS4(1,1,0,1);
+      IRTemp res, sat1q, sat1n, vN, vM;
+      res = sat1q = sat1n = vN = vM = IRTemp_INVALID;
+      vN = newTempV128();
+      assign(vN, getQReg128(nn));
+      vM = math_DUP_VEC_ELEM(getQReg128(mm), size, ix);
+      math_SQDMULH(&res, &sat1q, &sat1n, isR, size, vN, vM);
+      IROp opZHI = mkVecZEROHIxxOFV128(size);
+      putQReg128(dd, unop(opZHI, mkexpr(res)));
+      updateQCFLAGwithDifferenceZHI(sat1q, sat1n, opZHI);
+      const HChar* nm  = isR ? "sqrdmulh" : "sqdmulh";
+      HChar ch         = size == X01 ? 'h' : 's';
+      DIP("%s %c%d, %c%d, v%d.%c[%u]\n", nm, ch, dd, ch, nn, ch, dd, ix);
       return True;
    }
 
@@ -9397,6 +9457,42 @@ Bool dis_AdvSIMD_vector_x_indexed_elem(/*MB_OUT*/DisResult* dres, UInt insn)
           nm, is2 ? "2" : "",
           nameQReg128(dd), arrWide,
           nameQReg128(nn), arrNarrow, nameQReg128(dd), ch, ix);
+      return True;
+   }
+
+   if (opcode == BITS4(1,1,0,0) || opcode == BITS4(1,1,0,1)) {
+      /* -------- 0,xx,1100 SQDMULH s and h variants only -------- */
+      /* -------- 0,xx,1101 SQRDMULH s and h variants only -------- */
+      UInt mm  = 32; // invalid
+      UInt ix  = 16; // invalid
+      switch (size) {
+         case X00:
+            return False; // b case is not allowed
+         case X01:
+            mm = mmLO4; ix = (bitH << 2) | (bitL << 1) | (bitM << 0); break;
+         case X10:
+            mm = (bitM << 4) | mmLO4; ix = (bitH << 1) | (bitL << 0); break;
+         case X11:
+            return False; // q case is not allowed
+         default:
+            vassert(0);
+      }
+      vassert(mm < 32 && ix < 16);
+      Bool isR = opcode == BITS4(1,1,0,1);
+      IRTemp res, sat1q, sat1n, vN, vM;
+      res = sat1q = sat1n = vN = vM = IRTemp_INVALID;
+      vN = newTempV128();
+      assign(vN, getQReg128(nn));
+      vM = math_DUP_VEC_ELEM(getQReg128(mm), size, ix);
+      math_SQDMULH(&res, &sat1q, &sat1n, isR, size, vN, vM);
+      putQReg128(dd, math_MAYBE_ZERO_HI64(bitQ, res));
+      IROp opZHI = bitQ == 0 ? Iop_ZeroHI64ofV128 : Iop_INVALID;
+      updateQCFLAGwithDifferenceZHI(sat1q, sat1n, opZHI);
+      const HChar* nm  = isR ? "sqrdmulh" : "sqdmulh";
+      const HChar* arr = nameArr_Q_SZ(bitQ, size);
+      HChar ch         = size == X01 ? 'h' : 's';
+      DIP("%s %s.%s, %s.%s, %s.%c[%u]\n", nm,
+          nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(dd), ch, ix);
       return True;
    }
 

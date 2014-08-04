@@ -2259,6 +2259,18 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
                   e2 = mkZeroOfPrimopResultType(e->Iex.Binop.op);
                   break;
                }
+               /* XorV128(t,0) ==> t */
+               if (e->Iex.Binop.op == Iop_XorV128) {
+                  if (isZeroV128(e->Iex.Binop.arg2)) {
+                     e2 = e->Iex.Binop.arg1;
+                     break;
+                  }
+                  //Disabled because there's no known test case right now.
+                  //if (isZeroV128(e->Iex.Binop.arg1)) {
+                  //   e2 = e->Iex.Binop.arg2;
+                  //   break;
+                  //}
+               }
                break;
 
             case Iop_CmpNE32:

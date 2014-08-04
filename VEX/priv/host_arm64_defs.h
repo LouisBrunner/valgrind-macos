@@ -364,6 +364,14 @@ typedef
       ARM64vecb_SQDMULH16x8,
                              ARM64vecb_SQRDMULH32x4,
       ARM64vecb_SQRDMULH16x8,
+      ARM64vecb_SQSHL64x2,   ARM64vecb_SQSHL32x4,
+      ARM64vecb_SQSHL16x8,   ARM64vecb_SQSHL8x16,
+      ARM64vecb_UQSHL64x2,   ARM64vecb_UQSHL32x4,
+      ARM64vecb_UQSHL16x8,   ARM64vecb_UQSHL8x16,
+      ARM64vecb_SQRSHL64x2,  ARM64vecb_SQRSHL32x4,
+      ARM64vecb_SQRSHL16x8,  ARM64vecb_SQRSHL8x16,
+      ARM64vecb_UQRSHL64x2,  ARM64vecb_UQRSHL32x4,
+      ARM64vecb_UQRSHL16x8,  ARM64vecb_UQRSHL8x16,
       ARM64vecb_INVALID
    }
    ARM64VecBinOp;
@@ -438,6 +446,7 @@ typedef
       ARM64in_VCmpD,
       ARM64in_VCmpS,
       ARM64in_FPCR,
+      ARM64in_FPSR,
       /* ARM64in_V*V: vector ops on vector registers */
       ARM64in_VBinV,
       ARM64in_VUnaryV,
@@ -446,6 +455,7 @@ typedef
       ARM64in_VExtV,
       ARM64in_VImmQ,
       ARM64in_VDfromX,    /* Move an Xreg to a Dreg */
+      ARM64in_VQfromX,    /* Move an Xreg to a Qreg lo64, and zero hi64 */
       ARM64in_VQfromXX,   /* Move 2 Xregs to a Qreg */
       ARM64in_VXfromQ,    /* Move half a Qreg to an Xreg */
       ARM64in_VXfromDorS, /* Move Dreg or Sreg(ZX) to an Xreg */
@@ -691,6 +701,11 @@ typedef
             Bool toFPCR;
             HReg iReg;
          } FPCR;
+         /* Move a 32-bit value to/from the FPSR */
+         struct {
+            Bool toFPSR;
+            HReg iReg;
+         } FPSR;
          /* binary vector operation on vector registers */
          struct {
             ARM64VecBinOp op;
@@ -734,6 +749,10 @@ typedef
             HReg rD;
             HReg rX;
          } VDfromX;
+         struct {
+            HReg rQ;
+            HReg rXlo;
+         } VQfromX;
          struct {
             HReg rQ;
             HReg rXhi;
@@ -814,6 +833,7 @@ extern ARM64Instr* ARM64Instr_VBinS   ( ARM64FpBinOp op, HReg, HReg, HReg );
 extern ARM64Instr* ARM64Instr_VCmpD   ( HReg argL, HReg argR );
 extern ARM64Instr* ARM64Instr_VCmpS   ( HReg argL, HReg argR );
 extern ARM64Instr* ARM64Instr_FPCR    ( Bool toFPCR, HReg iReg );
+extern ARM64Instr* ARM64Instr_FPSR    ( Bool toFPSR, HReg iReg );
 extern ARM64Instr* ARM64Instr_VBinV   ( ARM64VecBinOp op, HReg, HReg, HReg );
 extern ARM64Instr* ARM64Instr_VUnaryV ( ARM64VecUnaryOp op, HReg, HReg );
 extern ARM64Instr* ARM64Instr_VNarrowV ( UInt dszBlg2, HReg dst, HReg src );
@@ -823,6 +843,7 @@ extern ARM64Instr* ARM64Instr_VExtV   ( HReg dst,
                                         HReg srcLo, HReg srcHi, UInt amtB );
 extern ARM64Instr* ARM64Instr_VImmQ   ( HReg, UShort );
 extern ARM64Instr* ARM64Instr_VDfromX ( HReg rD, HReg rX );
+extern ARM64Instr* ARM64Instr_VQfromX ( HReg rQ, HReg rXlo );
 extern ARM64Instr* ARM64Instr_VQfromXX( HReg rQ, HReg rXhi, HReg rXlo );
 extern ARM64Instr* ARM64Instr_VXfromQ ( HReg rX, HReg rQ, UInt laneNo );
 extern ARM64Instr* ARM64Instr_VXfromDorS ( HReg rX, HReg rDorS, Bool fromD );

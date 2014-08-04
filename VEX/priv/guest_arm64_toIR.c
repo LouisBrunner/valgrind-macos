@@ -809,6 +809,42 @@ static IROp mkVecQRDMULHIS ( UInt size ) {
    return ops[size];
 }
 
+static IROp mkVecQANDUQSH ( UInt size )
+{
+   const IROp ops[4]
+      = { Iop_QandUQsh8x16, Iop_QandUQsh16x8,
+          Iop_QandUQsh32x4, Iop_QandUQsh64x2 };
+   vassert(size < 4);
+   return ops[size];
+}
+
+static IROp mkVecQANDSQSH ( UInt size )
+{
+   const IROp ops[4]
+      = { Iop_QandSQsh8x16, Iop_QandSQsh16x8,
+          Iop_QandSQsh32x4, Iop_QandSQsh64x2 };
+   vassert(size < 4);
+   return ops[size];
+}
+
+static IROp mkVecQANDUQRSH ( UInt size )
+{
+   const IROp ops[4]
+      = { Iop_QandUQRsh8x16, Iop_QandUQRsh16x8,
+          Iop_QandUQRsh32x4, Iop_QandUQRsh64x2 };
+   vassert(size < 4);
+   return ops[size];
+}
+
+static IROp mkVecQANDSQRSH ( UInt size )
+{
+   const IROp ops[4]
+      = { Iop_QandSQRsh8x16, Iop_QandSQRsh16x8,
+          Iop_QandSQRsh32x4, Iop_QandSQRsh64x2 };
+   vassert(size < 4);
+   return ops[size];
+}
+
 /* Generate IR to create 'arg rotated right by imm', for sane values
    of 'ty' and 'imm'. */
 static IRTemp mathROR ( IRType ty, IRTemp arg, UInt imm )
@@ -7503,8 +7539,7 @@ Bool dis_AdvSIMD_scalar_three_same(/*MB_OUT*/DisResult* dres, UInt insn)
       const HChar* nm  = isADD ? (isU ? "uqadd" : "sqadd") 
                                : (isU ? "uqsub" : "sqsub");
       const HChar  arr = "bhsd"[size];
-      DIP("%s %s.%c, %s.%c, %s.%c\n", nm,
-          nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(mm), arr);
+      DIP("%s %c%u, %c%u, %c%u\n", nm, arr, dd, arr, nn, arr, mm);
       return True;
    }
 
@@ -7539,6 +7574,41 @@ Bool dis_AdvSIMD_scalar_three_same(/*MB_OUT*/DisResult* dres, UInt insn)
       DIP("%s %s, %s, %s\n", isGE ? "cmge" : "cmhs",
           nameQRegLO(dd, Ity_I64),
           nameQRegLO(nn, Ity_I64), nameQRegLO(mm, Ity_I64));
+      return True;
+   }
+
+   if (opcode == BITS5(0,1,0,0,1) || opcode == BITS5(0,1,0,1,1)) {
+      /* -------- 0,xx,01001 SQSHL  std4_std4_std4 -------- */
+      /* -------- 0,xx,01011 SQRSHL std4_std4_std4 -------- */
+      /* -------- 1,xx,01001 UQSHL  std4_std4_std4 -------- */
+      /* -------- 1,xx,01011 UQRSHL std4_std4_std4 -------- */
+      Bool isU = bitU == 1;
+      Bool isR = opcode == BITS5(0,1,0,1,1);
+      IROp op  = isR ? (isU ? mkVecQANDUQRSH(size) : mkVecQANDSQRSH(size))
+                     : (isU ? mkVecQANDUQSH(size)  : mkVecQANDSQSH(size));
+      /* This is a bit tricky.  Since we're only interested in the lowest
+         lane of the result, we zero out all the rest in the operands, so
+         as to ensure that other lanes don't pollute the returned Q value.
+         This works because it means, for the lanes we don't care about, we
+         are shifting zero by zero, which can never saturate. */
+      IRTemp res256 = newTemp(Ity_V256);
+      IRTemp resSH  = newTempV128();
+      IRTemp resQ   = newTempV128();
+      IRTemp zero   = newTempV128();
+      assign(
+         res256,
+         binop(op, 
+               mkexpr(math_ZERO_ALL_EXCEPT_LOWEST_LANE(size, getQReg128(nn))),
+               mkexpr(math_ZERO_ALL_EXCEPT_LOWEST_LANE(size, getQReg128(mm)))));
+      assign(resSH, unop(Iop_V256toV128_0, mkexpr(res256)));
+      assign(resQ,  unop(Iop_V256toV128_1, mkexpr(res256)));
+      assign(zero,  mkV128(0x0000));      
+      putQReg128(dd, mkexpr(resSH));
+      updateQCFLAGwithDifference(resQ, zero);
+      const HChar* nm  = isR ? (isU ? "uqrshl" : "sqrshl")
+                             : (isU ? "uqshl"  : "sqshl");
+      const HChar  arr = "bhsd"[size];
+      DIP("%s %c%u, %c%u, %c%u\n", nm, arr, dd, arr, nn, arr, mm);
       return True;
    }
 
@@ -8536,6 +8606,43 @@ Bool dis_AdvSIMD_three_same(/*MB_OUT*/DisResult* dres, UInt insn)
                   : unop(Iop_NotV128, binop(mkVecCMPGTU(size), argR, argL)));
       putQReg128(dd, math_MAYBE_ZERO_HI64(bitQ, res));
       const HChar* nm  = isGE ? "cmge" : "cmhs";
+      const HChar* arr = nameArr_Q_SZ(bitQ, size);
+      DIP("%s %s.%s, %s.%s, %s.%s\n", nm,
+          nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(mm), arr);
+      return True;
+   }
+
+   if (opcode == BITS5(0,1,0,0,1) || opcode == BITS5(0,1,0,1,1)) {
+      /* -------- 0,xx,01001 SQSHL  std7_std7_std7 -------- */
+      /* -------- 0,xx,01011 SQRSHL std7_std7_std7 -------- */
+      /* -------- 1,xx,01001 UQSHL  std7_std7_std7 -------- */
+      /* -------- 1,xx,01011 UQRSHL std7_std7_std7 -------- */
+      if (bitQ == 0 && size == X11) return False; // implied 1d case
+      Bool isU = bitU == 1;
+      Bool isR = opcode == BITS5(0,1,0,1,1);
+      IROp op  = isR ? (isU ? mkVecQANDUQRSH(size) : mkVecQANDSQRSH(size))
+                     : (isU ? mkVecQANDUQSH(size)  : mkVecQANDSQSH(size));
+      /* This is a bit tricky.  If we're only interested in the lowest 64 bits
+         of the result (viz, bitQ == 0), then we must adjust the operands to
+         ensure that the upper part of the result, that we don't care about,
+         doesn't pollute the returned Q value.  To do this, zero out the upper
+         operand halves beforehand.  This works because it means, for the
+         lanes we don't care about, we are shifting zero by zero, which can
+         never saturate. */
+      IRTemp res256 = newTemp(Ity_V256);
+      IRTemp resSH  = newTempV128();
+      IRTemp resQ   = newTempV128();
+      IRTemp zero   = newTempV128();
+      assign(res256, binop(op, 
+                           math_MAYBE_ZERO_HI64_fromE(bitQ, getQReg128(nn)),
+                           math_MAYBE_ZERO_HI64_fromE(bitQ, getQReg128(mm))));
+      assign(resSH, unop(Iop_V256toV128_0, mkexpr(res256)));
+      assign(resQ,  unop(Iop_V256toV128_1, mkexpr(res256)));
+      assign(zero,  mkV128(0x0000));      
+      putQReg128(dd, mkexpr(resSH));
+      updateQCFLAGwithDifference(resQ, zero);
+      const HChar* nm  = isR ? (isU ? "uqrshl" : "sqrshl")
+                             : (isU ? "uqshl"  : "sqshl");
       const HChar* arr = nameArr_Q_SZ(bitQ, size);
       DIP("%s %s.%s, %s.%s, %s.%s\n", nm,
           nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(mm), arr);

@@ -1538,6 +1538,34 @@ typedef
       Iop_QShlN8x16, Iop_QShlN16x8, Iop_QShlN32x4, Iop_QShlN64x2,
       Iop_QSalN8x16, Iop_QSalN16x8, Iop_QSalN32x4, Iop_QSalN64x2,
 
+      /* VECTOR x VECTOR BIDIRECTIONAL SATURATING (& MAYBE ROUNDING) SHIFT */
+      /* The least significant 8 bits of each lane of the second
+         operand are used as the shift amount, and interpreted signedly.
+         Positive values mean a shift left, negative a shift right.  The
+         result is signedly or unsignedly saturated.  There are also
+         rounding variants, which add 2^(shift_amount-1) to the value before
+         shifting, but only in the shift-right case.  Vacated positions
+         are filled with zeroes.  IOW, it's either SHR or SHL, but not SAR.
+
+         These operations return 129 bits: one bit ("Q") indicating whether
+         saturation occurred, and the shift result.  The result type is V256,
+         of which the lower V128 is the shift result, and Q occupies the
+         least significant bit of the upper V128.  All other bits of the
+         upper V128 are zero. */
+      // Unsigned saturation, no rounding
+      Iop_QandUQsh8x16, Iop_QandUQsh16x8,
+      Iop_QandUQsh32x4, Iop_QandUQsh64x2,
+      // Signed saturation, no rounding
+      Iop_QandSQsh8x16, Iop_QandSQsh16x8,
+      Iop_QandSQsh32x4, Iop_QandSQsh64x2,
+
+      // Unsigned saturation, rounding
+      Iop_QandUQRsh8x16, Iop_QandUQRsh16x8,
+      Iop_QandUQRsh32x4, Iop_QandUQRsh64x2,
+      // Signed saturation, rounding
+      Iop_QandSQRsh8x16, Iop_QandSQRsh16x8,
+      Iop_QandSQRsh32x4, Iop_QandSQRsh64x2,
+
       /* NARROWING (binary) 
          -- narrow 2xV128 into 1xV128, hi half from left arg */
       /* See comments above w.r.t. U vs S issues in saturated narrowing. */

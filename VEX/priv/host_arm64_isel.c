@@ -136,6 +136,16 @@ static HReg lookupIRTemp ( ISelEnv* env, IRTemp tmp )
    return env->vregmap[tmp];
 }
 
+static void lookupIRTempPair ( HReg* vrHI, HReg* vrLO, 
+                               ISelEnv* env, IRTemp tmp )
+{
+   vassert(tmp >= 0);
+   vassert(tmp < env->n_vregmap);
+   vassert(! hregIsInvalid(env->vregmapHI[tmp]));
+   *vrLO = env->vregmap[tmp];
+   *vrHI = env->vregmapHI[tmp];
+}
+
 static void addInstr ( ISelEnv* env, ARM64Instr* instr )
 {
    addHInstr(env->code, instr);
@@ -230,23 +240,19 @@ static void        iselInt128Expr_wrk    ( /*OUT*/HReg* rHi, HReg* rLo,
 static void        iselInt128Expr        ( /*OUT*/HReg* rHi, HReg* rLo, 
                                            ISelEnv* env, IRExpr* e );
 
-
-//ZZ static void        iselInt64Expr_wrk      ( HReg* rHi, HReg* rLo, 
-//ZZ                                             ISelEnv* env, IRExpr* e );
-//ZZ static void        iselInt64Expr          ( HReg* rHi, HReg* rLo, 
-//ZZ                                             ISelEnv* env, IRExpr* e );
-
 static HReg        iselDblExpr_wrk        ( ISelEnv* env, IRExpr* e );
 static HReg        iselDblExpr            ( ISelEnv* env, IRExpr* e );
 
 static HReg        iselFltExpr_wrk        ( ISelEnv* env, IRExpr* e );
 static HReg        iselFltExpr            ( ISelEnv* env, IRExpr* e );
 
-//ZZ static HReg        iselNeon64Expr_wrk     ( ISelEnv* env, IRExpr* e );
-//ZZ static HReg        iselNeon64Expr         ( ISelEnv* env, IRExpr* e );
-
 static HReg        iselV128Expr_wrk       ( ISelEnv* env, IRExpr* e );
 static HReg        iselV128Expr           ( ISelEnv* env, IRExpr* e );
+
+static void        iselV256Expr_wrk       ( /*OUT*/HReg* rHi, HReg* rLo, 
+                                            ISelEnv* env, IRExpr* e );
+static void        iselV256Expr           ( /*OUT*/HReg* rHi, HReg* rLo, 
+                                            ISelEnv* env, IRExpr* e );
 
 static ARM64RIL* mb_mkARM64RIL_I ( ULong imm64 );
 
@@ -4332,7 +4338,7 @@ static void iselInt128Expr_wrk ( HReg* rHi, HReg* rLo,
 
 
 /*---------------------------------------------------------*/
-/*--- ISEL: Vector (NEON) expressions (128 bit)         ---*/
+/*--- ISEL: Vector expressions (128 bit)                ---*/
 /*---------------------------------------------------------*/
 
 static HReg iselV128Expr ( ISelEnv* env, IRExpr* e )
@@ -4389,7 +4395,7 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
 
    if (e->tag == Iex_Unop) {
 
-     /* Iop_ZeroHIXXofV128 cases */
+      /* Iop_ZeroHIXXofV128 cases */
       UShort imm16 = 0;
       switch (e->Iex.Unop.op) {
          case Iop_ZeroHI64ofV128:  imm16 = 0x00FF; break;
@@ -4476,6 +4482,12 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
             addInstr(env, ARM64Instr_VBinV(cmp, res, arg, zero));
             addInstr(env, ARM64Instr_VUnaryV(ARM64vecu_NOT, res, res));
             return res;
+         }
+         case Iop_V256toV128_0:
+         case Iop_V256toV128_1: {
+            HReg vHi, vLo;
+            iselV256Expr(&vHi, &vLo, env, e->Iex.Unop.arg);
+            return (e->Iex.Unop.op == Iop_V256toV128_1) ? vHi : vLo;
          }
 
 //ZZ          case Iop_NotV128: {
@@ -6425,6 +6437,111 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
 
 
 /*---------------------------------------------------------*/
+/*--- ISEL: Vector expressions (256 bit)                ---*/
+/*---------------------------------------------------------*/
+
+static void iselV256Expr ( /*OUT*/HReg* rHi, HReg* rLo, 
+                           ISelEnv* env, IRExpr* e )
+{
+   iselV256Expr_wrk( rHi, rLo, env, e );
+   vassert(hregClass(*rHi) == HRcVec128);
+   vassert(hregClass(*rLo) == HRcVec128);
+   vassert(hregIsVirtual(*rHi));
+   vassert(hregIsVirtual(*rLo));
+}
+
+/* DO NOT CALL THIS DIRECTLY */
+static void iselV256Expr_wrk ( /*OUT*/HReg* rHi, /*OUT*/HReg* rLo, 
+                               ISelEnv* env, IRExpr* e )
+{
+   vassert(e);
+   IRType ty = typeOfIRExpr(env->type_env,e);
+   vassert(ty == Ity_V256);
+
+   /* read 256-bit IRTemp */
+   if (e->tag == Iex_RdTmp) {
+      lookupIRTempPair( rHi, rLo, env, e->Iex.RdTmp.tmp);
+      return;
+   }
+ 
+   if (e->tag == Iex_Binop) {
+      switch (e->Iex.Binop.op) {
+
+         case Iop_QandSQsh64x2:
+         case Iop_QandSQsh32x4:
+         case Iop_QandSQsh16x8:
+         case Iop_QandSQsh8x16:
+         case Iop_QandUQsh64x2:
+         case Iop_QandUQsh32x4:
+         case Iop_QandUQsh16x8:
+         case Iop_QandUQsh8x16:
+         case Iop_QandSQRsh64x2:
+         case Iop_QandSQRsh32x4:
+         case Iop_QandSQRsh16x8:
+         case Iop_QandSQRsh8x16:
+         case Iop_QandUQRsh64x2:
+         case Iop_QandUQRsh32x4:
+         case Iop_QandUQRsh16x8:
+         case Iop_QandUQRsh8x16:
+         {
+            HReg argL  = iselV128Expr(env, e->Iex.Binop.arg1);
+            HReg argR  = iselV128Expr(env, e->Iex.Binop.arg2);
+            HReg fpsr  = newVRegI(env);
+            HReg resHi = newVRegV(env);
+            HReg resLo = newVRegV(env);
+            ARM64VecBinOp op = ARM64vecb_INVALID;
+            switch (e->Iex.Binop.op) {
+               case Iop_QandSQsh64x2:  op = ARM64vecb_SQSHL64x2;  break;
+               case Iop_QandSQsh32x4:  op = ARM64vecb_SQSHL32x4;  break;
+               case Iop_QandSQsh16x8:  op = ARM64vecb_SQSHL16x8;  break;
+               case Iop_QandSQsh8x16:  op = ARM64vecb_SQSHL8x16;  break;
+               case Iop_QandUQsh64x2:  op = ARM64vecb_UQSHL64x2;  break;
+               case Iop_QandUQsh32x4:  op = ARM64vecb_UQSHL32x4;  break;
+               case Iop_QandUQsh16x8:  op = ARM64vecb_UQSHL16x8;  break;
+               case Iop_QandUQsh8x16:  op = ARM64vecb_UQSHL8x16;  break;
+               case Iop_QandSQRsh64x2: op = ARM64vecb_SQRSHL64x2; break;
+               case Iop_QandSQRsh32x4: op = ARM64vecb_SQRSHL32x4; break;
+               case Iop_QandSQRsh16x8: op = ARM64vecb_SQRSHL16x8; break;
+               case Iop_QandSQRsh8x16: op = ARM64vecb_SQRSHL8x16; break;
+               case Iop_QandUQRsh64x2: op = ARM64vecb_UQRSHL64x2; break;
+               case Iop_QandUQRsh32x4: op = ARM64vecb_UQRSHL32x4; break;
+               case Iop_QandUQRsh16x8: op = ARM64vecb_UQRSHL16x8; break;
+               case Iop_QandUQRsh8x16: op = ARM64vecb_UQRSHL8x16; break;
+               default: vassert(0);
+            }
+            /* Clear FPSR.Q, do the operation, and return both its result
+               and the new value of FPSR.Q.  We can simply zero the whole
+               thing out since FPSR is essentially a scratch status register
+               on the host. */
+            addInstr(env, ARM64Instr_Imm64(fpsr, 0));
+            addInstr(env, ARM64Instr_FPSR(True/*toFPSR*/, fpsr));
+            addInstr(env, ARM64Instr_VBinV(op, resLo, argL, argR));
+            addInstr(env, ARM64Instr_FPSR(False/*!toFPSR*/, fpsr));
+            addInstr(env, ARM64Instr_Shift(fpsr, fpsr, ARM64RI6_I6(27),
+                                                       ARM64sh_SHR));
+            ARM64RIL* ril_one = mb_mkARM64RIL_I(1);
+            vassert(ril_one);
+            addInstr(env, ARM64Instr_Logic(fpsr, fpsr, ril_one, ARM64lo_AND));
+            /* Now we have: the main (shift) result in |resLo|, and the
+               Q bit at the bottom of |fpsr|. */
+            addInstr(env, ARM64Instr_VQfromX(resHi, fpsr));
+            *rHi = resHi;
+            *rLo = resLo;
+            return;
+         }
+
+         /* ... */
+         default:
+            break;
+      } /* switch on the binop */
+   } /* if (e->tag == Iex_Binop) */
+
+   ppIRExpr(e);
+   vpanic("iselV256Expr_wrk");
+}
+
+
+/*---------------------------------------------------------*/
 /*--- ISEL: Statements                                  ---*/
 /*---------------------------------------------------------*/
 
@@ -6761,6 +6878,14 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          HReg src = iselV128Expr(env, stmt->Ist.WrTmp.data);
          HReg dst = lookupIRTemp(env, tmp);
          addInstr(env, ARM64Instr_VMov(16, dst, src));
+         return;
+      }
+      if (ty == Ity_V256) {
+         HReg srcHi, srcLo, dstHi, dstLo;
+         iselV256Expr(&srcHi,&srcLo, env, stmt->Ist.WrTmp.data);
+         lookupIRTempPair( &dstHi, &dstLo, env, tmp);
+         addInstr(env, ARM64Instr_VMov(16, dstHi, srcHi));
+         addInstr(env, ARM64Instr_VMov(16, dstLo, srcLo));
          return;
       }
       break;
@@ -7154,6 +7279,10 @@ HInstrArray* iselSB_ARM64 ( IRSB* bb,
             break;
          case Ity_V128:
             hreg = mkHReg(j++, HRcVec128, True);
+            break;
+         case Ity_V256:
+            hreg   = mkHReg(j++, HRcVec128, True);
+            hregHI = mkHReg(j++, HRcVec128, True);
             break;
          default:
             ppIRType(bb->tyenv->types[i]);

@@ -5373,6 +5373,8 @@ PRE(sys_ioctl)
 {
    *flags |= SfMayBlock;
 
+   ARG2 = (UInt)ARG2;
+
    // We first handle the ones that don't use ARG3 (even as a
    // scalar/non-pointer argument).
    switch (ARG2 /* request */) {
@@ -7102,6 +7104,8 @@ PRE(sys_ioctl)
 POST(sys_ioctl)
 {
    vg_assert(SUCCESS);
+
+   ARG2 = (UInt)ARG2;
 
    /* --- BEGIN special IOCTL handlers for specific Android hardware --- */
 

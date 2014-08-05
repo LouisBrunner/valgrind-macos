@@ -6087,6 +6087,9 @@ PRE(sys_ioctl)
    case VKI_BLKPBSZGET:
       PRE_MEM_WRITE( "ioctl(BLKPBSZGET)", ARG3, sizeof(int));
       break;
+   case VKI_BLKDISCARDZEROES:
+      PRE_MEM_WRITE( "ioctl(BLKDISCARDZEROES)", ARG3, sizeof(vki_uint));
+      break;
 
       /* Hard disks */
    case VKI_HDIO_GETGEO: /* 0x0301 */
@@ -7693,6 +7696,9 @@ POST(sys_ioctl)
       break;
    case VKI_BLKPBSZGET:
       POST_MEM_WRITE(ARG3, sizeof(int));
+      break;
+   case VKI_BLKDISCARDZEROES:
+      POST_MEM_WRITE(ARG3, sizeof(vki_uint));
       break;
 
       /* Hard disks */

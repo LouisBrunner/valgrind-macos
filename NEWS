@@ -209,6 +209,7 @@ n-i-bz  internal error in Valgrind if vgdb transmit signals when ptrace invoked
 n-i-bz  Fix mingw64 support in valgrind.h (dev@, 9 May 2014)
 n-i-bz  drd manual: Document how to C++11 programs that use class "std::thread"
 n-i-bz  Add command-line option --default-suppressions
+n-i-bz  Add support for BLKDISCARDZEROES ioctl
 
 
 Release 3.9.0 (31 October 2013)

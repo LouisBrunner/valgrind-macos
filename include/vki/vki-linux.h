@@ -1720,7 +1720,7 @@ struct vki_ppdev_frob_struct {
 #define VKI_PPSETFLAGS	_VKI_IOW(VKI_PP_IOCTL, 0x9b, int)
 
 //----------------------------------------------------------------------
-// From linux-2.6.8.1/include/linux/fs.h
+// From linux-3.16/include/uapi/linux/fs.h
 //----------------------------------------------------------------------
 
 #define VKI_BLKROSET   _VKI_IO(0x12,93)	/* set device read-only (0 = read-write) */
@@ -1736,6 +1736,7 @@ struct vki_ppdev_frob_struct {
 #define VKI_BLKBSZSET  _VKI_IOW(0x12,113,vki_size_t)
 #define VKI_BLKGETSIZE64 _VKI_IOR(0x12,114,vki_size_t) /* return device size in bytes (u64 *arg) */
 #define VKI_BLKPBSZGET _VKI_IO(0x12,123)
+#define VKI_BLKDISCARDZEROES _VKI_IO(0x12,124)
 
 #define VKI_FIBMAP	_VKI_IO(0x00,1)	/* bmap access */
 #define VKI_FIGETBSZ    _VKI_IO(0x00,2)	/* get the block size used for bmap */

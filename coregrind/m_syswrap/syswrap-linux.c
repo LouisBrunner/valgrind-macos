@@ -7069,6 +7069,12 @@ PRE(sys_ioctl)
    }
 #endif
 
+   /* To do: figure out which software layer extends the sign of 'request' */
+   case VKI_OBD_IOC_FID2PATH:
+      PRE_MEM_READ("VKI_OBD_IOC_FID2PATH(args)", ARG3,
+                   sizeof(struct vki_getinfo_fid2path));
+      break;
+
    default:
       /* EVIOC* are variable length and return size written on success */
       switch (ARG2 & ~(_VKI_IOC_SIZEMASK << _VKI_IOC_SIZESHIFT)) {
@@ -8357,6 +8363,13 @@ POST(sys_ioctl)
       }
       break;
 #endif
+
+   /* To do: figure out which software layer extends the sign of 'request' */
+   case VKI_OBD_IOC_FID2PATH: {
+       struct vki_getinfo_fid2path *args = (void *)(ARG3);
+       POST_MEM_WRITE((Addr)args->gf_path, args->gf_pathlen);
+      }
+      break;
 
    default:
       /* EVIOC* are variable length and return size written on success */

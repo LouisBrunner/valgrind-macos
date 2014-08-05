@@ -3420,6 +3420,40 @@ struct vki_ethtool_ts_info {
 #define VKI_ETHTOOL_SCHANNELS	0x0000003d /* Set no of channels */
 #define VKI_ETHTOOL_GET_TS_INFO	0x00000041 /* Get time stamping and PHC info */
 
+//----------------------------------------------------------------------
+// From drivers/staging/lustre/lustre/include/lustre/lustre_user.h
+//----------------------------------------------------------------------
+
+struct vki_lu_fid {
+	__vki_u64	f_seq;
+	__vki_u32	f_oid;
+	__vki_u32	f_ver;
+};
+
+//----------------------------------------------------------------------
+// From drivers/staging/lustre/lustre/include/lustre/lustre_idl.h
+//----------------------------------------------------------------------
+
+struct vki_getinfo_fid2path {
+	struct vki_lu_fid	gf_fid;
+	__vki_u64		gf_recno;
+	__vki_u32		gf_linkno;
+	__vki_u32		gf_pathlen;
+	char			gf_path[0];
+} __attribute__((packed));
+
+//----------------------------------------------------------------------
+// From drivers/staging/lustre/lustre/include/linux/lustre_lib.h
+//----------------------------------------------------------------------
+
+#define OBD_IOC_DATA_TYPE               long
+
+//----------------------------------------------------------------------
+// From drivers/staging/lustre/lustre/include/lustre_lib.h
+//----------------------------------------------------------------------
+
+#define VKI_OBD_IOC_FID2PATH            _VKI_IOWR ('f', 150, OBD_IOC_DATA_TYPE)
+
 #endif // __VKI_LINUX_H
 
 /*--------------------------------------------------------------------*/

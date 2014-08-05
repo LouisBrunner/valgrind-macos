@@ -2608,14 +2608,18 @@ static Bool parse_inl_DIE (
          Word j;
          HChar *inlfnname = get_inlFnName (inlinedfn_abstract_origin, cc, td3);
 
-         /* Why is get_range_list biasing with cc->cu_svma and 
-            not with text_debug_bias ? */
+         /* Ranges are biased for the inline info using the same logic
+            as what is used for biasing ranges for the var info, for which
+            ranges are read using cc->cu_svma (see parse_var_DIE).
+            Then text_debug_bias is added when a (non global) var
+            is recorded (see just before the call to ML_(addVar)) */
          ranges = get_range_list( cc, td3,
                                   rangeoff, cc->cu_svma );
          for (j = 0; j < VG_(sizeXA)( ranges ); j++) {
             AddrRange* range = (AddrRange*) VG_(indexXA)( ranges, j );
             ML_(addInlInfo) (cc->di,
-                             range->aMin, range->aMax+1,
+                             range->aMin   + cc->di->text_debug_bias,
+                             range->aMax+1 + cc->di->text_debug_bias,
                              // aMax+1 as range has its last bound included
                              // while ML_(addInlInfo) expects last bound not
                              // included.

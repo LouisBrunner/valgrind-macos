@@ -1021,9 +1021,12 @@ void pre_mem_read_sockaddr ( ThreadId tid,
    struct vki_sockaddr_un*  sun  = (struct vki_sockaddr_un *)sa;
    struct vki_sockaddr_in*  sin  = (struct vki_sockaddr_in *)sa;
    struct vki_sockaddr_in6* sin6 = (struct vki_sockaddr_in6 *)sa;
-#ifdef VKI_AF_BLUETOOTH
+#  ifdef VKI_AF_BLUETOOTH
    struct vki_sockaddr_rc*  rc   = (struct vki_sockaddr_rc *)sa;
-#endif
+#  endif
+#  ifdef VKI_AF_NETLINK
+   struct vki_sockaddr_nl*  nl   = (struct vki_sockaddr_nl *)sa;
+#  endif
 
    /* NULL/zero-length sockaddrs are legal */
    if ( sa == NULL || salen == 0 ) return;
@@ -1064,14 +1067,23 @@ void pre_mem_read_sockaddr ( ThreadId tid,
             (Addr) &sin6->sin6_scope_id, sizeof (sin6->sin6_scope_id) );
          break;
 
-#ifdef VKI_AF_BLUETOOTH
+#     ifdef VKI_AF_BLUETOOTH
       case VKI_AF_BLUETOOTH:
          VG_(sprintf) ( outmsg, description, "rc_bdaddr" );
          PRE_MEM_READ( outmsg, (Addr) &rc->rc_bdaddr, sizeof (rc->rc_bdaddr) );
          VG_(sprintf) ( outmsg, description, "rc_channel" );
          PRE_MEM_READ( outmsg, (Addr) &rc->rc_channel, sizeof (rc->rc_channel) );
          break;
-#endif
+#     endif
+
+#     ifdef VKI_AF_NETLINK
+      case VKI_AF_NETLINK:
+         VG_(sprintf)(outmsg, description, "nl_pid");
+         PRE_MEM_READ(outmsg, (Addr)&nl->nl_pid, sizeof(nl->nl_pid));
+         VG_(sprintf)(outmsg, description, "nl_groups");
+         PRE_MEM_READ(outmsg, (Addr)&nl->nl_groups, sizeof(nl->nl_groups));
+         break;
+#     endif
 
       default:
          /* No specific information about this address family.

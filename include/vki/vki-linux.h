@@ -682,9 +682,11 @@ __KINLINE struct vki_cmsghdr * vki_cmsg_nxthdr (struct vki_msghdr *__msg, struct
 
 #define	VKI_SCM_RIGHTS	0x01		/* rw: access rights (array of int) */
 
+#define VKI_AF_UNSPEC   0
 #define VKI_AF_UNIX	1	/* Unix domain sockets 		*/
 #define VKI_AF_INET	2	/* Internet IP Protocol		*/
 #define VKI_AF_INET6	10	/* IP version 6			*/
+#define VKI_AF_NETLINK  16
 #define VKI_AF_BLUETOOTH 31	/* Bluetooth sockets		*/
 
 #define VKI_MSG_NOSIGNAL	0x4000	/* Do not generate SIGPIPE */
@@ -754,6 +756,17 @@ struct vki_sockaddr_in6 {
 struct vki_sockaddr_un {
 	vki_sa_family_t sun_family;	/* AF_UNIX */
 	char sun_path[VKI_UNIX_PATH_MAX];	/* pathname */
+};
+
+//----------------------------------------------------------------------
+// From linux-3.15.8/include/uapi/linux/netlink.h
+//----------------------------------------------------------------------
+
+struct vki_sockaddr_nl {
+        vki_sa_family_t    nl_family;      /* AF_NETLINK   */
+        unsigned short     nl_pad;         /* zero         */
+        __vki_u32          nl_pid;         /* port ID      */
+        __vki_u32          nl_groups;      /* multicast groups mask */
 };
 
 //----------------------------------------------------------------------

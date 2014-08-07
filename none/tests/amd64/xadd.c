@@ -9,7 +9,7 @@
 #undef PLAT_x86_linux
 #undef PLAT_amd64_linux
 #undef PLAT_ppc32_linux
-#undef PLAT_ppc64_linux
+#undef PLAT_ppc64be_linux
 
 #if defined(__i386__)
 #  define PLAT_x86_linux 1

@@ -2,7 +2,7 @@
 
 int main ( void )
 {
-#if defined(__powerpc64__)
+#if defined(__powerpc64__) && _CALL_ELF != 2
    /* on ppc64-linux, a function pointer points to a function
       descriptor, not to the function's entry point.  Hence to get
       uniform behaviour on all supported targets - a jump to an

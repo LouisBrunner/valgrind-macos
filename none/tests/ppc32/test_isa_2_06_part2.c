@@ -39,6 +39,13 @@ typedef uint64_t HWord_t;
 typedef unsigned char Bool;
 #define True 1
 #define False 0
+
+#ifdef VGP_ppc64le_linux
+#define isLE 1
+#else
+#define isLE 0
+#endif
+
 register HWord_t r14 __asm__ ("r14");
 register HWord_t r15 __asm__ ("r15");
 register HWord_t r16 __asm__ ("r16");
@@ -798,8 +805,20 @@ static void test_xxspltw(void)
 {
    int uim;
    unsigned long long * dst = NULL;
-   unsigned long long xb[] =  { 0xfedc432124681235ULL, 0xf1e2d3c4e0057708ULL};
-   memcpy(&vec_inB, xb, 16);
+   unsigned int xb[] =  { 0xfedc4321, 0x24681235, 0xf1e2d3c4, 0xe0057708};
+   int i;
+   void * vecB_ptr = &vec_inB;
+   if (isLE) {
+      for (i = 3; i >=0; i--) {
+         memcpy(vecB_ptr, &xb[i], 4);
+         vecB_ptr+=4;
+      }
+   } else {
+      for (i = 0; i < 4; i++) {
+         memcpy(vecB_ptr, &xb[i], 4);
+         vecB_ptr+=4;
+      }
+   }
 
    for (uim = 0; uim < 4; uim++) {
       switch (uim) {
@@ -817,7 +836,8 @@ static void test_xxspltw(void)
             break;
       }
       dst = (unsigned long long *) &vec_out;
-      printf("xxspltw 0x%016llx%016llx %d=> 0x%016llx",  xb[0], xb[1], uim, *dst);
+      printf("xxspltw 0x%08x%08x%08x%08x %d=> 0x%016llx",  xb[0], xb[1],
+             xb[2], xb[3], uim, *dst);
       dst++;
       printf("%016llx\n", *dst);
    }
@@ -1226,22 +1246,33 @@ static void test_vx_simple_scalar_fp_ops(void)
        * (e.g. xssqrtdp).
        */
       if (test_group.num_tests == nb_special_fargs && !test_group.targs) {
-         void * inB;
+         void * inB, * vec_void_ptr = (void *)&vec_inB;
          int i;
+         if (isLE)
+            vec_void_ptr += 8;
          for (i = 0; i < nb_special_fargs; i++) {
             inB = (void *)&spec_fargs[i];
             frbp = (unsigned long long *)&spec_fargs[i];
-            memcpy(&vec_inB, inB, 8);
+            memcpy(vec_void_ptr, inB, 8);
             (*func)();
             dst = (unsigned long long *) &vec_out;
+            if (isLE)
+               dst++;
             printf("#%d: %s %016llx => %016llx\n", i, test_group.name, *frbp,
                    convToWord ? (*dst & 0x00000000ffffffffULL) : *dst);
          }
       } else {
-         void * inA, * inB;
+         void * inA, * inB, * vecA_void_ptr, * vecB_void_ptr;
          unsigned int condreg, flags;
          int isTdiv = (strstr(test_group.name, "xstdivdp") != NULL) ? 1 : 0;
          int i;
+         if (isLE) {
+            vecA_void_ptr = (void *)&vec_inA + 8;
+            vecB_void_ptr = (void *)&vec_inB + 8;
+         } else {
+            vecA_void_ptr = (void *)&vec_inA;
+            vecB_void_ptr = (void *)&vec_inB;
+         }
          for (i = 0; i < test_group.num_tests; i++) {
             fp_test_args_t aTest = test_group.targs[i];
             inA = (void *)&spec_fargs[aTest.fra_idx];
@@ -1249,8 +1280,8 @@ static void test_vx_simple_scalar_fp_ops(void)
             frap = (unsigned long long *)&spec_fargs[aTest.fra_idx];
             frbp = (unsigned long long *)&spec_fargs[aTest.frb_idx];
             // Only need to copy one doubleword into each vector's element 0
-            memcpy(&vec_inA, inA, 8);
-            memcpy(&vec_inB, inB, 8);
+            memcpy(vecA_void_ptr, inA, 8);
+            memcpy(vecB_void_ptr, inB, 8);
             SET_FPSCR_ZERO;
             SET_CR_XER_ZERO;
             (*func)();
@@ -1260,6 +1291,8 @@ static void test_vx_simple_scalar_fp_ops(void)
                printf("#%d: %s %016llx,%016llx => cr %x\n", i, test_group.name, *frap, *frbp, condreg);
             } else {
                dst = (unsigned long long *) &vec_out;
+               if (isLE)
+                  dst++;
                printf("#%d: %s %016llx,%016llx => %016llx\n", i, test_group.name,
                       *frap, *frbp, *dst);
             }
@@ -1346,21 +1379,26 @@ again:
           *    src3 <= VSX[XB]
           */
          if (scalar) {
+#ifdef VGP_ppc64le_linux
+#define VECTOR_ADDR(_v) ((void *)&_v) + 8
+#else
+#define VECTOR_ADDR(_v) ((void *)&_v)
+#endif
             // For scalar op, only need to copy one doubleword into each vector's element 0
             inA = (void *)&spec_fargs[aTest.fra_idx];
             inB = (void *)&spec_fargs[aTest.frb_idx];
             frap = (unsigned long long *)&spec_fargs[aTest.fra_idx];
-            memcpy(&vec_inA, inA, 8);
+            memcpy(VECTOR_ADDR(vec_inA), inA, 8);
             if (repeat) {
-               memcpy(&vec_out, inB, 8);  // src2
-               memcpy(&vec_inB, &spec_fargs[fp_idx[0]], 8);  //src3
+               memcpy(VECTOR_ADDR(vec_out), inB, 8);  // src2
+               memcpy(VECTOR_ADDR(vec_inB), &spec_fargs[fp_idx[0]], 8);  //src3
                frbp = (unsigned long long *)&spec_fargs[fp_idx[0]];
             } else {
                frbp = (unsigned long long *)&spec_fargs[aTest.frb_idx];
-               memcpy(&vec_inB, inB, 8);  // src2
-               memcpy(&vec_out, &spec_fargs[fp_idx[0]], 8);  //src3
+               memcpy(VECTOR_ADDR(vec_inB), inB, 8);  // src2
+               memcpy(VECTOR_ADDR(vec_out), &spec_fargs[fp_idx[0]], 8);  //src3
             }
-            memcpy(vsr_XT, &vec_out, 8);
+            memcpy(vsr_XT, VECTOR_ADDR(vec_out), 8);
          } else {
             int j, loops = do_dp ? 2 : 4;
             size_t len = do_dp ? 8 : 4;
@@ -1382,6 +1420,8 @@ again:
 
          (*func)();
          dst = (unsigned long long *) &vec_out;
+         if (isLE)
+            dst++;
          if (test_type < VX_VECTOR_FP_MULT_AND_OP2)
             printf( "#%d: %s %s(%016llx,%016llx,%016llx) = %016llx\n", i,
                     test_name, test_group.op, vsr_XT[0], *frap, *frbp, *dst );

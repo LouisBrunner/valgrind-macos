@@ -154,21 +154,21 @@ PPC altivec integer arith insns with three args:
 
 PPC altivec integer logical insns with three args:
        vperm: 0102030405060708090a0b0c0e0d0e0f, 0102030405060708090a0b0c0e0d0e0f, 0102030405060708090a0b0c0e0d0e0f
-       vperm:  => 02030405060708090a0b0c0e0e0d0e0f (00000000)
+       vperm:  => 0d0e0f090a0b0c050607080103020304 (00000000)
        vperm: 0102030405060708090a0b0c0e0d0e0f, 0102030405060708090a0b0c0e0d0e0f, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
-       vperm:  => 02030405060708090a0b0c0e0e0d0e0f (00000000)
+       vperm:  => 0d0e0f090a0b0c050607080103020304 (00000000)
        vperm: 0102030405060708090a0b0c0e0d0e0f, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 0102030405060708090a0b0c0e0d0e0f
-       vperm:  => 02030405060708090a0b0c0e0e0d0e0f (00000000)
+       vperm:  => 0d0e0f090a0b0c050607080103020304 (00000000)
        vperm: 0102030405060708090a0b0c0e0d0e0f, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
-       vperm:  => f2f3f4f5f6f7f8f9fafbfcfefefdfeff (00000000)
+       vperm:  => fdfefff9fafbfcf5f6f7f8f1f3f2f3f4 (00000000)
        vperm: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 0102030405060708090a0b0c0e0d0e0f, 0102030405060708090a0b0c0e0d0e0f
-       vperm:  => f2f3f4f5f6f7f8f9fafbfcfefefdfeff (00000000)
+       vperm:  => fdfefff9fafbfcf5f6f7f8f1f3f2f3f4 (00000000)
        vperm: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 0102030405060708090a0b0c0e0d0e0f, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
-       vperm:  => 02030405060708090a0b0c0e0e0d0e0f (00000000)
+       vperm:  => 0d0e0f090a0b0c050607080103020304 (00000000)
        vperm: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 0102030405060708090a0b0c0e0d0e0f
-       vperm:  => f2f3f4f5f6f7f8f9fafbfcfefefdfeff (00000000)
+       vperm:  => fdfefff9fafbfcf5f6f7f8f1f3f2f3f4 (00000000)
        vperm: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
-       vperm:  => f2f3f4f5f6f7f8f9fafbfcfefefdfeff (00000000)
+       vperm:  => fdfefff9fafbfcf5f6f7f8f1f3f2f3f4 (00000000)
 
         vsel: 0102030405060708090a0b0c0e0d0e0f, 0102030405060708090a0b0c0e0d0e0f, 0102030405060708090a0b0c0e0d0e0f
         vsel:  => 0102030405060708090a0b0c0e0d0e0f (00000000)
@@ -441,22 +441,22 @@ PPC altivec integer arith insns with two args:
      vmulesh:  => 00c588c4 0064c864 00244824 00010609 (00000000)
 
      vsumsws: 0102030405060708090a0b0c0e0d0e0f, 0102030405060708090a0b0c0e0d0e0f
-     vsumsws:  => 00000000 00000000 00000000 2b2c3136 (00000000)
+     vsumsws:  => 1e21262b 00000000 00000000 00000000 (00000000)
      vsumsws: 0102030405060708090a0b0c0e0d0e0f, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
-     vsumsws:  => 00000000 00000000 00000000 1c1d2226 (00000000)
+     vsumsws:  => 0f12171b 00000000 00000000 00000000 (00000000)
      vsumsws: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 0102030405060708090a0b0c0e0d0e0f
-     vsumsws:  => 00000000 00000000 00000000 eeeff4f6 (00000000)
+     vsumsws:  => e1e4e9eb 00000000 00000000 00000000 (00000000)
      vsumsws: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
-     vsumsws:  => 00000000 00000000 00000000 dfe0e5e6 (00000000)
+     vsumsws:  => d2d5dadb 00000000 00000000 00000000 (00000000)
 
     vsum2sws: 0102030405060708090a0b0c0e0d0e0f, 0102030405060708090a0b0c0e0d0e0f
-    vsum2sws:  => 00000000 0b0e1114 00000000 2524272a (00000000)
+    vsum2sws:  => 070a0d10 00000000 20212427 00000000 (00000000)
     vsum2sws: 0102030405060708090a0b0c0e0d0e0f, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
-    vsum2sws:  => 00000000 fbff0204 00000000 1615181a (00000000)
+    vsum2sws:  => f7fafe00 00000000 11121517 00000000 (00000000)
     vsum2sws: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 0102030405060708090a0b0c0e0d0e0f
-    vsum2sws:  => 00000000 eceff2f4 00000000 0706090a (00000000)
+    vsum2sws:  => e8ebeef0 00000000 02030607 00000000 (00000000)
     vsum2sws: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
-    vsum2sws:  => 00000000 dde0e3e4 00000000 f7f6f9fa (00000000)
+    vsum2sws:  => d9dcdfe0 00000000 f2f3f6f7 00000000 (00000000)
 
     vsum4ubs: 0102030405060708090a0b0c0e0d0e0f, 0102030405060708090a0b0c0e0d0e0f
     vsum4ubs:  => 0102030e 05060722 090a0b36 0e0d0e47 (00000000)
@@ -802,22 +802,22 @@ PPC altivec integer logical insns with two args:
        vsraw:  => ffffff1f fffffff5 ffffffff ffffffff (00000000)
 
      vpkuhum: 0102030405060708090a0b0c0e0d0e0f, 0102030405060708090a0b0c0e0d0e0f
-     vpkuhum:  => 02040608 0a0c0d0f 02040608 0a0c0d0f (00000000)
+     vpkuhum:  => 06080204 0d0f0a0c 06080204 0d0f0a0c (00000000)
      vpkuhum: 0102030405060708090a0b0c0e0d0e0f, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
-     vpkuhum:  => 02040608 0a0c0d0f f2f4f6f8 fafcfdff (00000000)
+     vpkuhum:  => f6f8f2f4 fdfffafc 06080204 0d0f0a0c (00000000)
      vpkuhum: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 0102030405060708090a0b0c0e0d0e0f
-     vpkuhum:  => f2f4f6f8 fafcfdff 02040608 0a0c0d0f (00000000)
+     vpkuhum:  => 06080204 0d0f0a0c f6f8f2f4 fdfffafc (00000000)
      vpkuhum: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
-     vpkuhum:  => f2f4f6f8 fafcfdff f2f4f6f8 fafcfdff (00000000)
+     vpkuhum:  => f6f8f2f4 fdfffafc f6f8f2f4 fdfffafc (00000000)
 
      vpkuwum: 0102030405060708090a0b0c0e0d0e0f, 0102030405060708090a0b0c0e0d0e0f
-     vpkuwum:  => 03040708 0b0c0e0f 03040708 0b0c0e0f (00000000)
+     vpkuwum:  => 07080304 0e0f0b0c 07080304 0e0f0b0c (00000000)
      vpkuwum: 0102030405060708090a0b0c0e0d0e0f, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
-     vpkuwum:  => 03040708 0b0c0e0f f3f4f7f8 fbfcfeff (00000000)
+     vpkuwum:  => f7f8f3f4 fefffbfc 07080304 0e0f0b0c (00000000)
      vpkuwum: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 0102030405060708090a0b0c0e0d0e0f
-     vpkuwum:  => f3f4f7f8 fbfcfeff 03040708 0b0c0e0f (00000000)
+     vpkuwum:  => 07080304 0e0f0b0c f7f8f3f4 fefffbfc (00000000)
      vpkuwum: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
-     vpkuwum:  => f3f4f7f8 fbfcfeff f3f4f7f8 fbfcfeff (00000000)
+     vpkuwum:  => f7f8f3f4 fefffbfc f7f8f3f4 fefffbfc (00000000)
 
      vpkuhus: 0102030405060708090a0b0c0e0d0e0f, 0102030405060708090a0b0c0e0d0e0f
      vpkuhus:  => ffffffff ffffffff ffffffff ffffffff (00000000)
@@ -840,150 +840,150 @@ PPC altivec integer logical insns with two args:
      vpkshus: 0102030405060708090a0b0c0e0d0e0f, 0102030405060708090a0b0c0e0d0e0f
      vpkshus:  => ffffffff ffffffff ffffffff ffffffff (00000000)
      vpkshus: 0102030405060708090a0b0c0e0d0e0f, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
-     vpkshus:  => ffffffff ffffffff 00000000 00000000 (00000000)
-     vpkshus: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 0102030405060708090a0b0c0e0d0e0f
      vpkshus:  => 00000000 00000000 ffffffff ffffffff (00000000)
+     vpkshus: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 0102030405060708090a0b0c0e0d0e0f
+     vpkshus:  => ffffffff ffffffff 00000000 00000000 (00000000)
      vpkshus: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
      vpkshus:  => 00000000 00000000 00000000 00000000 (00000000)
 
      vpkswus: 0102030405060708090a0b0c0e0d0e0f, 0102030405060708090a0b0c0e0d0e0f
      vpkswus:  => ffffffff ffffffff ffffffff ffffffff (00000000)
      vpkswus: 0102030405060708090a0b0c0e0d0e0f, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
-     vpkswus:  => ffffffff ffffffff 00000000 00000000 (00000000)
-     vpkswus: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 0102030405060708090a0b0c0e0d0e0f
      vpkswus:  => 00000000 00000000 ffffffff ffffffff (00000000)
+     vpkswus: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 0102030405060708090a0b0c0e0d0e0f
+     vpkswus:  => ffffffff ffffffff 00000000 00000000 (00000000)
      vpkswus: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
      vpkswus:  => 00000000 00000000 00000000 00000000 (00000000)
 
      vpkshss: 0102030405060708090a0b0c0e0d0e0f, 0102030405060708090a0b0c0e0d0e0f
      vpkshss:  => 7f7f7f7f 7f7f7f7f 7f7f7f7f 7f7f7f7f (00000000)
      vpkshss: 0102030405060708090a0b0c0e0d0e0f, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
-     vpkshss:  => 7f7f7f7f 7f7f7f7f 80808080 80808080 (00000000)
-     vpkshss: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 0102030405060708090a0b0c0e0d0e0f
      vpkshss:  => 80808080 80808080 7f7f7f7f 7f7f7f7f (00000000)
+     vpkshss: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 0102030405060708090a0b0c0e0d0e0f
+     vpkshss:  => 7f7f7f7f 7f7f7f7f 80808080 80808080 (00000000)
      vpkshss: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
      vpkshss:  => 80808080 80808080 80808080 80808080 (00000000)
 
      vpkswss: 0102030405060708090a0b0c0e0d0e0f, 0102030405060708090a0b0c0e0d0e0f
      vpkswss:  => 7fff7fff 7fff7fff 7fff7fff 7fff7fff (00000000)
      vpkswss: 0102030405060708090a0b0c0e0d0e0f, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
-     vpkswss:  => 7fff7fff 7fff7fff 80008000 80008000 (00000000)
-     vpkswss: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 0102030405060708090a0b0c0e0d0e0f
      vpkswss:  => 80008000 80008000 7fff7fff 7fff7fff (00000000)
+     vpkswss: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 0102030405060708090a0b0c0e0d0e0f
+     vpkswss:  => 7fff7fff 7fff7fff 80008000 80008000 (00000000)
      vpkswss: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
      vpkswss:  => 80008000 80008000 80008000 80008000 (00000000)
 
        vpkpx: 0102030405060708090a0b0c0e0d0e0f, 0102030405060708090a0b0c0e0d0e0f
-       vpkpx:  => 80008001 84210421 80008001 84210421 (00000000)
+       vpkpx:  => 80018000 04218421 80018000 04218421 (00000000)
        vpkpx: 0102030405060708090a0b0c0e0d0e0f, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
-       vpkpx:  => 80008001 84210421 fbdefbdf ffff7fff (00000000)
+       vpkpx:  => fbdffbde 7fffffff 80018000 04218421 (00000000)
        vpkpx: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 0102030405060708090a0b0c0e0d0e0f
-       vpkpx:  => fbdefbdf ffff7fff 80008001 84210421 (00000000)
+       vpkpx:  => 80018000 04218421 fbdffbde 7fffffff (00000000)
        vpkpx: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
-       vpkpx:  => fbdefbdf ffff7fff fbdefbdf ffff7fff (00000000)
+       vpkpx:  => fbdffbde 7fffffff fbdffbde 7fffffff (00000000)
 
       vmrghb: 0102030405060708090a0b0c0e0d0e0f, 0102030405060708090a0b0c0e0d0e0f
-      vmrghb:  => 01010202 03030404 05050606 07070808 (00000000)
+      vmrghb:  => 0b0b0c0c 09090a0a 0e0e0f0f 0e0e0d0d (00000000)
       vmrghb: 0102030405060708090a0b0c0e0d0e0f, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
-      vmrghb:  => 01f102f2 03f304f4 05f506f6 07f708f8 (00000000)
+      vmrghb:  => 0bfb0cfc 09f90afa 0efe0fff 0efe0dfd (00000000)
       vmrghb: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 0102030405060708090a0b0c0e0d0e0f
-      vmrghb:  => f101f202 f303f404 f505f606 f707f808 (00000000)
+      vmrghb:  => fb0bfc0c f909fa0a fe0eff0f fe0efd0d (00000000)
       vmrghb: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
-      vmrghb:  => f1f1f2f2 f3f3f4f4 f5f5f6f6 f7f7f8f8 (00000000)
+      vmrghb:  => fbfbfcfc f9f9fafa fefeffff fefefdfd (00000000)
 
       vmrghh: 0102030405060708090a0b0c0e0d0e0f, 0102030405060708090a0b0c0e0d0e0f
-      vmrghh:  => 01020102 03040304 05060506 07080708 (00000000)
+      vmrghh:  => 0b0c0b0c 090a090a 0e0f0e0f 0e0d0e0d (00000000)
       vmrghh: 0102030405060708090a0b0c0e0d0e0f, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
-      vmrghh:  => 0102f1f2 0304f3f4 0506f5f6 0708f7f8 (00000000)
+      vmrghh:  => 0b0cfbfc 090af9fa 0e0ffeff 0e0dfefd (00000000)
       vmrghh: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 0102030405060708090a0b0c0e0d0e0f
-      vmrghh:  => f1f20102 f3f40304 f5f60506 f7f80708 (00000000)
+      vmrghh:  => fbfc0b0c f9fa090a feff0e0f fefd0e0d (00000000)
       vmrghh: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
-      vmrghh:  => f1f2f1f2 f3f4f3f4 f5f6f5f6 f7f8f7f8 (00000000)
+      vmrghh:  => fbfcfbfc f9faf9fa fefffeff fefdfefd (00000000)
 
       vmrghw: 0102030405060708090a0b0c0e0d0e0f, 0102030405060708090a0b0c0e0d0e0f
-      vmrghw:  => 01020304 01020304 05060708 05060708 (00000000)
+      vmrghw:  => 090a0b0c 090a0b0c 0e0d0e0f 0e0d0e0f (00000000)
       vmrghw: 0102030405060708090a0b0c0e0d0e0f, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
-      vmrghw:  => 01020304 f1f2f3f4 05060708 f5f6f7f8 (00000000)
+      vmrghw:  => f9fafbfc 090a0b0c fefdfeff 0e0d0e0f (00000000)
       vmrghw: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 0102030405060708090a0b0c0e0d0e0f
-      vmrghw:  => f1f2f3f4 01020304 f5f6f7f8 05060708 (00000000)
+      vmrghw:  => 090a0b0c f9fafbfc 0e0d0e0f fefdfeff (00000000)
       vmrghw: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
-      vmrghw:  => f1f2f3f4 f1f2f3f4 f5f6f7f8 f5f6f7f8 (00000000)
+      vmrghw:  => f9fafbfc f9fafbfc fefdfeff fefdfeff (00000000)
 
       vmrglb: 0102030405060708090a0b0c0e0d0e0f, 0102030405060708090a0b0c0e0d0e0f
-      vmrglb:  => 09090a0a 0b0b0c0c 0e0e0d0d 0e0e0f0f (00000000)
+      vmrglb:  => 03030404 01010202 07070808 05050606 (00000000)
       vmrglb: 0102030405060708090a0b0c0e0d0e0f, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
-      vmrglb:  => 09f90afa 0bfb0cfc 0efe0dfd 0efe0fff (00000000)
+      vmrglb:  => 03f304f4 01f102f2 07f708f8 05f506f6 (00000000)
       vmrglb: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 0102030405060708090a0b0c0e0d0e0f
-      vmrglb:  => f909fa0a fb0bfc0c fe0efd0d fe0eff0f (00000000)
+      vmrglb:  => f303f404 f101f202 f707f808 f505f606 (00000000)
       vmrglb: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
-      vmrglb:  => f9f9fafa fbfbfcfc fefefdfd fefeffff (00000000)
+      vmrglb:  => f3f3f4f4 f1f1f2f2 f7f7f8f8 f5f5f6f6 (00000000)
 
       vmrglh: 0102030405060708090a0b0c0e0d0e0f, 0102030405060708090a0b0c0e0d0e0f
-      vmrglh:  => 090a090a 0b0c0b0c 0e0d0e0d 0e0f0e0f (00000000)
+      vmrglh:  => 03040304 01020102 07080708 05060506 (00000000)
       vmrglh: 0102030405060708090a0b0c0e0d0e0f, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
-      vmrglh:  => 090af9fa 0b0cfbfc 0e0dfefd 0e0ffeff (00000000)
+      vmrglh:  => 0304f3f4 0102f1f2 0708f7f8 0506f5f6 (00000000)
       vmrglh: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 0102030405060708090a0b0c0e0d0e0f
-      vmrglh:  => f9fa090a fbfc0b0c fefd0e0d feff0e0f (00000000)
+      vmrglh:  => f3f40304 f1f20102 f7f80708 f5f60506 (00000000)
       vmrglh: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
-      vmrglh:  => f9faf9fa fbfcfbfc fefdfefd fefffeff (00000000)
+      vmrglh:  => f3f4f3f4 f1f2f1f2 f7f8f7f8 f5f6f5f6 (00000000)
 
       vmrglw: 0102030405060708090a0b0c0e0d0e0f, 0102030405060708090a0b0c0e0d0e0f
-      vmrglw:  => 090a0b0c 090a0b0c 0e0d0e0f 0e0d0e0f (00000000)
+      vmrglw:  => 01020304 01020304 05060708 05060708 (00000000)
       vmrglw: 0102030405060708090a0b0c0e0d0e0f, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
-      vmrglw:  => 090a0b0c f9fafbfc 0e0d0e0f fefdfeff (00000000)
+      vmrglw:  => f1f2f3f4 01020304 f5f6f7f8 05060708 (00000000)
       vmrglw: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 0102030405060708090a0b0c0e0d0e0f
-      vmrglw:  => f9fafbfc 090a0b0c fefdfeff 0e0d0e0f (00000000)
+      vmrglw:  => 01020304 f1f2f3f4 05060708 f5f6f7f8 (00000000)
       vmrglw: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
-      vmrglw:  => f9fafbfc f9fafbfc fefdfeff fefdfeff (00000000)
+      vmrglw:  => f1f2f3f4 f1f2f3f4 f5f6f7f8 f5f6f7f8 (00000000)
 
         vslo: 0102030405060708090a0b0c0e0d0e0f, 0102030405060708090a0b0c0e0d0e0f
-        vslo:  => 02030405 06070809 0a0b0c0e 0d0e0f00 (00000000)
+        vslo:  => 01020304 05060708 090a0b0c 0e0d0e0f (00000000)
         vslo: 0102030405060708090a0b0c0e0d0e0f, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
-        vslo:  => 0f000000 00000000 00000000 00000000 (00000000)
+        vslo:  => 00000000 00000000 00000000 03040000 (00000000)
         vslo: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 0102030405060708090a0b0c0e0d0e0f
-        vslo:  => f2f3f4f5 f6f7f8f9 fafbfcfe fdfeff00 (00000000)
+        vslo:  => f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff (00000000)
         vslo: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
-        vslo:  => ff000000 00000000 00000000 00000000 (00000000)
+        vslo:  => 00000000 00000000 00000000 f3f40000 (00000000)
 
         vsro: 0102030405060708090a0b0c0e0d0e0f, 0102030405060708090a0b0c0e0d0e0f
-        vsro:  => 00010203 04050607 08090a0b 0c0e0d0e (00000000)
+        vsro:  => 01020304 05060708 090a0b0c 0e0d0e0f (00000000)
         vsro: 0102030405060708090a0b0c0e0d0e0f, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
-        vsro:  => 00000000 00000000 00000000 00000001 (00000000)
+        vsro:  => 00000e0d 00000000 00000000 00000000 (00000000)
         vsro: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 0102030405060708090a0b0c0e0d0e0f
-        vsro:  => 00f1f2f3 f4f5f6f7 f8f9fafb fcfefdfe (00000000)
+        vsro:  => f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff (00000000)
         vsro: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff
-        vsro:  => 00000000 00000000 00000000 000000f1 (00000000)
+        vsro:  => 0000fefd 00000000 00000000 00000000 (00000000)
 
 PPC altivec integer logical insns with one arg:
      vupkhsb: 01020304 05060708 090a0b0c 0e0d0e0f
-     vupkhsb:  => 00010002 00030004 00050006 00070008 (00000000)
+     vupkhsb:  => 000b000c 0009000a 000e000f 000e000d (00000000)
      vupkhsb: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff
-     vupkhsb:  => fff1fff2 fff3fff4 fff5fff6 fff7fff8 (00000000)
+     vupkhsb:  => fffbfffc fff9fffa fffeffff fffefffd (00000000)
 
      vupkhsh: 01020304 05060708 090a0b0c 0e0d0e0f
-     vupkhsh:  => 00000102 00000304 00000506 00000708 (00000000)
+     vupkhsh:  => 00000b0c 0000090a 00000e0f 00000e0d (00000000)
      vupkhsh: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff
-     vupkhsh:  => fffff1f2 fffff3f4 fffff5f6 fffff7f8 (00000000)
+     vupkhsh:  => fffffbfc fffff9fa fffffeff fffffefd (00000000)
 
      vupkhpx: 01020304 05060708 090a0b0c 0e0d0e0f
-     vupkhpx:  => 00000802 00001804 00010806 00011808 (00000000)
+     vupkhpx:  => 0002180c 0002080a 0003100f 0003100d (00000000)
      vupkhpx: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff
-     vupkhpx:  => ff1c0f12 ff1c1f14 ff1d0f16 ff1d1f18 (00000000)
+     vupkhpx:  => ff1e1f1c ff1e0f1a ff1f171f ff1f171d (00000000)
 
      vupklsb: 01020304 05060708 090a0b0c 0e0d0e0f
-     vupklsb:  => 0009000a 000b000c 000e000d 000e000f (00000000)
+     vupklsb:  => 00030004 00010002 00070008 00050006 (00000000)
      vupklsb: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff
-     vupklsb:  => fff9fffa fffbfffc fffefffd fffeffff (00000000)
+     vupklsb:  => fff3fff4 fff1fff2 fff7fff8 fff5fff6 (00000000)
 
      vupklsh: 01020304 05060708 090a0b0c 0e0d0e0f
-     vupklsh:  => 0000090a 00000b0c 00000e0d 00000e0f (00000000)
+     vupklsh:  => 00000304 00000102 00000708 00000506 (00000000)
      vupklsh: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff
-     vupklsh:  => fffff9fa fffffbfc fffffefd fffffeff (00000000)
+     vupklsh:  => fffff3f4 fffff1f2 fffff7f8 fffff5f6 (00000000)
 
      vupklpx: 01020304 05060708 090a0b0c 0e0d0e0f
-     vupklpx:  => 0002080a 0002180c 0003100d 0003100f (00000000)
+     vupklpx:  => 00001804 00000802 00011808 00010806 (00000000)
      vupklpx: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff
-     vupklpx:  => ff1e0f1a ff1e1f1c ff1f171d ff1f171f (00000000)
+     vupklpx:  => ff1c1f14 ff1c0f12 ff1d1f18 ff1d0f16 (00000000)
 
 Altivec integer compare insns:
     vcmpgtub: 0102030405060708090a0b0c0e0d0e0f, 0102030405060708090a0b0c0e0d0e0f
@@ -1161,135 +1161,135 @@ Altivec integer special insns:
          vsl: 0102030405060708090a0b0c0e0d0e0f, 04040404040404040404040404040404
          vsl:  => 10203040 50607080 90a0b0c0 e0d0e0f0 (00000000)
          vsl: 0102030405060708090a0b0c0e0d0e0f, 05050505050505050505050505050505
-         vsl:  => 20406080 a0c0e101 21416181 c1a1c1e0 (00000000)
+         vsl:  => 20406080 a0c0e100 21416180 c1a1c1e1 (00000000)
          vsl: 0102030405060708090a0b0c0e0d0e0f, 06060606060606060606060606060606
-         vsl:  => 4080c101 4181c202 4282c303 834383c0 (00000000)
+         vsl:  => 4080c100 4181c200 4282c301 834383c2 (00000000)
          vsl: 0102030405060708090a0b0c0e0d0e0f, 07070707070707070707070707070707
-         vsl:  => 81018202 83038404 85058607 06870780 (00000000)
+         vsl:  => 81018200 83038400 85058602 06870784 (00000000)
          vsl: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 00000000000000000000000000000000
          vsl:  => f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff (00000000)
          vsl: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 01010101010101010101010101010101
-         vsl:  => e3e5e7e9 ebedeff1 f3f5f7f9 fdfbfdfe (00000000)
+         vsl:  => e3e5e7e8 ebedeff1 f3f5f7f9 fdfbfdff (00000000)
          vsl: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 02020202020202020202020202020202
-         vsl:  => c7cbcfd3 d7dbdfe3 e7ebeff3 fbf7fbfc (00000000)
+         vsl:  => c7cbcfd0 d7dbdfe3 e7ebeff3 fbf7fbff (00000000)
          vsl: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 03030303030303030303030303030303
-         vsl:  => 8f979fa7 afb7bfc7 cfd7dfe7 f7eff7f8 (00000000)
+         vsl:  => 8f979fa0 afb7bfc7 cfd7dfe7 f7eff7ff (00000000)
          vsl: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 04040404040404040404040404040404
-         vsl:  => 1f2f3f4f 5f6f7f8f 9fafbfcf efdfeff0 (00000000)
+         vsl:  => 1f2f3f40 5f6f7f8f 9fafbfcf efdfefff (00000000)
          vsl: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 05050505050505050505050505050505
-         vsl:  => 3e5e7e9e bedeff1f 3f5f7f9f dfbfdfe0 (00000000)
+         vsl:  => 3e5e7e80 bedeff1e 3f5f7f9e dfbfdfff (00000000)
          vsl: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 06060606060606060606060606060606
-         vsl:  => 7cbcfd3d 7dbdfe3e 7ebeff3f bf7fbfc0 (00000000)
+         vsl:  => 7cbcfd00 7dbdfe3c 7ebeff3d bf7fbffe (00000000)
          vsl: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 07070707070707070707070707070707
-         vsl:  => f979fa7a fb7bfc7c fd7dfe7f 7eff7f80 (00000000)
+         vsl:  => f979fa00 fb7bfc78 fd7dfe7a 7eff7ffc (00000000)
 
          vsr: 0102030405060708090a0b0c0e0d0e0f, 00000000000000000000000000000000
          vsr:  => 01020304 05060708 090a0b0c 0e0d0e0f (00000000)
          vsr: 0102030405060708090a0b0c0e0d0e0f, 01010101010101010101010101010101
-         vsr:  => 00810182 02830384 04850586 07068707 (00000000)
+         vsr:  => 00810182 02830384 84850586 07068707 (00000000)
          vsr: 0102030405060708090a0b0c0e0d0e0f, 02020202020202020202020202020202
-         vsr:  => 004080c1 014181c2 024282c3 03834383 (00000000)
+         vsr:  => 004080c1 014181c2 c24282c3 03834383 (00000000)
          vsr: 0102030405060708090a0b0c0e0d0e0f, 03030303030303030303030303030303
-         vsr:  => 00204060 80a0c0e1 01214161 81c1a1c1 (00000000)
+         vsr:  => 00204060 80a0c0e1 e1214161 01c1a1c1 (00000000)
          vsr: 0102030405060708090a0b0c0e0d0e0f, 04040404040404040404040404040404
-         vsr:  => 00102030 40506070 8090a0b0 c0e0d0e0 (00000000)
+         vsr:  => 80102030 c0506070 f090a0b0 00e0d0e0 (00000000)
          vsr: 0102030405060708090a0b0c0e0d0e0f, 05050505050505050505050505050505
-         vsr:  => 00081018 20283038 40485058 60706870 (00000000)
+         vsr:  => 40081018 60283038 78485058 00706870 (00000000)
          vsr: 0102030405060708090a0b0c0e0d0e0f, 06060606060606060606060606060606
-         vsr:  => 0004080c 1014181c 2024282c 30383438 (00000000)
+         vsr:  => 2004080c 3014181c 3c24282c 00383438 (00000000)
          vsr: 0102030405060708090a0b0c0e0d0e0f, 07070707070707070707070707070707
-         vsr:  => 00020406 080a0c0e 10121416 181c1a1c (00000000)
+         vsr:  => 10020406 180a0c0e 1e121416 001c1a1c (00000000)
          vsr: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 00000000000000000000000000000000
          vsr:  => f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff (00000000)
          vsr: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 01010101010101010101010101010101
-         vsr:  => 78f979fa 7afb7bfc 7cfd7dfe 7f7eff7f (00000000)
+         vsr:  => 78f979fa 7afb7bfc fcfd7dfe 7f7eff7f (00000000)
          vsr: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 02020202020202020202020202020202
-         vsr:  => 3c7cbcfd 3d7dbdfe 3e7ebeff 3fbf7fbf (00000000)
+         vsr:  => 3c7cbcfd 3d7dbdfe fe7ebeff 3fbf7fbf (00000000)
          vsr: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 03030303030303030303030303030303
-         vsr:  => 1e3e5e7e 9ebedeff 1f3f5f7f 9fdfbfdf (00000000)
+         vsr:  => 1e3e5e7e 9ebedeff ff3f5f7f 1fdfbfdf (00000000)
          vsr: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 04040404040404040404040404040404
-         vsr:  => 0f1f2f3f 4f5f6f7f 8f9fafbf cfefdfef (00000000)
+         vsr:  => 8f1f2f3f cf5f6f7f ff9fafbf 0fefdfef (00000000)
          vsr: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 05050505050505050505050505050505
-         vsr:  => 078f979f a7afb7bf c7cfd7df e7f7eff7 (00000000)
+         vsr:  => c78f979f e7afb7bf ffcfd7df 07f7eff7 (00000000)
          vsr: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 06060606060606060606060606060606
-         vsr:  => 03c7cbcf d3d7dbdf e3e7ebef f3fbf7fb (00000000)
+         vsr:  => e3c7cbcf f3d7dbdf ffe7ebef 03fbf7fb (00000000)
          vsr: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 07070707070707070707070707070707
-         vsr:  => 01e3e5e7 e9ebedef f1f3f5f7 f9fdfbfd (00000000)
+         vsr:  => f1e3e5e7 f9ebedef fff3f5f7 01fdfbfd (00000000)
 
       vspltb: 01020304 05060708 090a0b0c 0e0d0e0f, 0
-      vspltb:  => 01010101 01010101 01010101 01010101 (00000000)
-      vspltb: 01020304 05060708 090a0b0c 0e0d0e0f, 3
-      vspltb:  => 04040404 04040404 04040404 04040404 (00000000)
-      vspltb: 01020304 05060708 090a0b0c 0e0d0e0f, 6
-      vspltb:  => 07070707 07070707 07070707 07070707 (00000000)
-      vspltb: 01020304 05060708 090a0b0c 0e0d0e0f, 9
-      vspltb:  => 0a0a0a0a 0a0a0a0a 0a0a0a0a 0a0a0a0a (00000000)
-      vspltb: 01020304 05060708 090a0b0c 0e0d0e0f, 12
       vspltb:  => 0e0e0e0e 0e0e0e0e 0e0e0e0e 0e0e0e0e (00000000)
-      vspltb: 01020304 05060708 090a0b0c 0e0d0e0f, 15
+      vspltb: 01020304 05060708 090a0b0c 0e0d0e0f, 3
       vspltb:  => 0f0f0f0f 0f0f0f0f 0f0f0f0f 0f0f0f0f (00000000)
+      vspltb: 01020304 05060708 090a0b0c 0e0d0e0f, 6
+      vspltb:  => 0b0b0b0b 0b0b0b0b 0b0b0b0b 0b0b0b0b (00000000)
+      vspltb: 01020304 05060708 090a0b0c 0e0d0e0f, 9
+      vspltb:  => 06060606 06060606 06060606 06060606 (00000000)
+      vspltb: 01020304 05060708 090a0b0c 0e0d0e0f, 12
+      vspltb:  => 01010101 01010101 01010101 01010101 (00000000)
+      vspltb: 01020304 05060708 090a0b0c 0e0d0e0f, 15
+      vspltb:  => 04040404 04040404 04040404 04040404 (00000000)
       vspltb: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff, 0
-      vspltb:  => f1f1f1f1 f1f1f1f1 f1f1f1f1 f1f1f1f1 (00000000)
-      vspltb: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff, 3
-      vspltb:  => f4f4f4f4 f4f4f4f4 f4f4f4f4 f4f4f4f4 (00000000)
-      vspltb: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff, 6
-      vspltb:  => f7f7f7f7 f7f7f7f7 f7f7f7f7 f7f7f7f7 (00000000)
-      vspltb: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff, 9
-      vspltb:  => fafafafa fafafafa fafafafa fafafafa (00000000)
-      vspltb: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff, 12
       vspltb:  => fefefefe fefefefe fefefefe fefefefe (00000000)
-      vspltb: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff, 15
+      vspltb: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff, 3
       vspltb:  => ffffffff ffffffff ffffffff ffffffff (00000000)
+      vspltb: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff, 6
+      vspltb:  => fbfbfbfb fbfbfbfb fbfbfbfb fbfbfbfb (00000000)
+      vspltb: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff, 9
+      vspltb:  => f6f6f6f6 f6f6f6f6 f6f6f6f6 f6f6f6f6 (00000000)
+      vspltb: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff, 12
+      vspltb:  => f1f1f1f1 f1f1f1f1 f1f1f1f1 f1f1f1f1 (00000000)
+      vspltb: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff, 15
+      vspltb:  => f4f4f4f4 f4f4f4f4 f4f4f4f4 f4f4f4f4 (00000000)
 
       vsplth: 01020304 05060708 090a0b0c 0e0d0e0f, 0
-      vsplth:  => 01020102 01020102 01020102 01020102 (00000000)
-      vsplth: 01020304 05060708 090a0b0c 0e0d0e0f, 3
-      vsplth:  => 07080708 07080708 07080708 07080708 (00000000)
-      vsplth: 01020304 05060708 090a0b0c 0e0d0e0f, 6
       vsplth:  => 0e0d0e0d 0e0d0e0d 0e0d0e0d 0e0d0e0d (00000000)
+      vsplth: 01020304 05060708 090a0b0c 0e0d0e0f, 3
+      vsplth:  => 0b0c0b0c 0b0c0b0c 0b0c0b0c 0b0c0b0c (00000000)
+      vsplth: 01020304 05060708 090a0b0c 0e0d0e0f, 6
+      vsplth:  => 01020102 01020102 01020102 01020102 (00000000)
       vsplth: 01020304 05060708 090a0b0c 0e0d0e0f, 9
-      vsplth:  => 03040304 03040304 03040304 03040304 (00000000)
-      vsplth: 01020304 05060708 090a0b0c 0e0d0e0f, 12
-      vsplth:  => 090a090a 090a090a 090a090a 090a090a (00000000)
-      vsplth: 01020304 05060708 090a0b0c 0e0d0e0f, 15
       vsplth:  => 0e0f0e0f 0e0f0e0f 0e0f0e0f 0e0f0e0f (00000000)
+      vsplth: 01020304 05060708 090a0b0c 0e0d0e0f, 12
+      vsplth:  => 05060506 05060506 05060506 05060506 (00000000)
+      vsplth: 01020304 05060708 090a0b0c 0e0d0e0f, 15
+      vsplth:  => 03040304 03040304 03040304 03040304 (00000000)
       vsplth: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff, 0
-      vsplth:  => f1f2f1f2 f1f2f1f2 f1f2f1f2 f1f2f1f2 (00000000)
-      vsplth: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff, 3
-      vsplth:  => f7f8f7f8 f7f8f7f8 f7f8f7f8 f7f8f7f8 (00000000)
-      vsplth: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff, 6
       vsplth:  => fefdfefd fefdfefd fefdfefd fefdfefd (00000000)
+      vsplth: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff, 3
+      vsplth:  => fbfcfbfc fbfcfbfc fbfcfbfc fbfcfbfc (00000000)
+      vsplth: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff, 6
+      vsplth:  => f1f2f1f2 f1f2f1f2 f1f2f1f2 f1f2f1f2 (00000000)
       vsplth: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff, 9
-      vsplth:  => f3f4f3f4 f3f4f3f4 f3f4f3f4 f3f4f3f4 (00000000)
-      vsplth: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff, 12
-      vsplth:  => f9faf9fa f9faf9fa f9faf9fa f9faf9fa (00000000)
-      vsplth: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff, 15
       vsplth:  => fefffeff fefffeff fefffeff fefffeff (00000000)
+      vsplth: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff, 12
+      vsplth:  => f5f6f5f6 f5f6f5f6 f5f6f5f6 f5f6f5f6 (00000000)
+      vsplth: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff, 15
+      vsplth:  => f3f4f3f4 f3f4f3f4 f3f4f3f4 f3f4f3f4 (00000000)
 
       vspltw: 01020304 05060708 090a0b0c 0e0d0e0f, 0
-      vspltw:  => 01020304 01020304 01020304 01020304 (00000000)
+      vspltw:  => 0e0d0e0f 0e0d0e0f 0e0d0e0f 0e0d0e0f (00000000)
       vspltw: 01020304 05060708 090a0b0c 0e0d0e0f, 3
-      vspltw:  => 0e0d0e0f 0e0d0e0f 0e0d0e0f 0e0d0e0f (00000000)
-      vspltw: 01020304 05060708 090a0b0c 0e0d0e0f, 6
-      vspltw:  => 090a0b0c 090a0b0c 090a0b0c 090a0b0c (00000000)
-      vspltw: 01020304 05060708 090a0b0c 0e0d0e0f, 9
-      vspltw:  => 05060708 05060708 05060708 05060708 (00000000)
-      vspltw: 01020304 05060708 090a0b0c 0e0d0e0f, 12
       vspltw:  => 01020304 01020304 01020304 01020304 (00000000)
-      vspltw: 01020304 05060708 090a0b0c 0e0d0e0f, 15
+      vspltw: 01020304 05060708 090a0b0c 0e0d0e0f, 6
+      vspltw:  => 05060708 05060708 05060708 05060708 (00000000)
+      vspltw: 01020304 05060708 090a0b0c 0e0d0e0f, 9
+      vspltw:  => 090a0b0c 090a0b0c 090a0b0c 090a0b0c (00000000)
+      vspltw: 01020304 05060708 090a0b0c 0e0d0e0f, 12
       vspltw:  => 0e0d0e0f 0e0d0e0f 0e0d0e0f 0e0d0e0f (00000000)
+      vspltw: 01020304 05060708 090a0b0c 0e0d0e0f, 15
+      vspltw:  => 01020304 01020304 01020304 01020304 (00000000)
       vspltw: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff, 0
-      vspltw:  => f1f2f3f4 f1f2f3f4 f1f2f3f4 f1f2f3f4 (00000000)
+      vspltw:  => fefdfeff fefdfeff fefdfeff fefdfeff (00000000)
       vspltw: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff, 3
-      vspltw:  => fefdfeff fefdfeff fefdfeff fefdfeff (00000000)
-      vspltw: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff, 6
-      vspltw:  => f9fafbfc f9fafbfc f9fafbfc f9fafbfc (00000000)
-      vspltw: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff, 9
-      vspltw:  => f5f6f7f8 f5f6f7f8 f5f6f7f8 f5f6f7f8 (00000000)
-      vspltw: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff, 12
       vspltw:  => f1f2f3f4 f1f2f3f4 f1f2f3f4 f1f2f3f4 (00000000)
-      vspltw: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff, 15
+      vspltw: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff, 6
+      vspltw:  => f5f6f7f8 f5f6f7f8 f5f6f7f8 f5f6f7f8 (00000000)
+      vspltw: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff, 9
+      vspltw:  => f9fafbfc f9fafbfc f9fafbfc f9fafbfc (00000000)
+      vspltw: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff, 12
       vspltw:  => fefdfeff fefdfeff fefdfeff fefdfeff (00000000)
+      vspltw: f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff, 15
+      vspltw:  => f1f2f3f4 f1f2f3f4 f1f2f3f4 f1f2f3f4 (00000000)
 
     vspltisb:  0 => 00000000 00000000 00000000 00000000 (00000000)
     vspltisb:  1 => 01010101 01010101 01010101 01010101 (00000000)
@@ -1393,72 +1393,72 @@ Altivec integer special insns:
       vsldoi: 0102030405060708090a0b0c0e0d0e0f, 0102030405060708090a0b0c0e0d0e0f, 0
       vsldoi:  => 01020304 05060708 090a0b0c 0e0d0e0f] (00000000)
       vsldoi: 0102030405060708090a0b0c0e0d0e0f, 0102030405060708090a0b0c0e0d0e0f, 14
-      vsldoi:  => 0e0f0102 03040506 0708090a 0b0c0e0d] (00000000)
+      vsldoi:  => 07080102 0b0c0506 0e0f090a 03040e0d] (00000000)
       vsldoi: 0102030405060708090a0b0c0e0d0e0f, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 0
       vsldoi:  => 01020304 05060708 090a0b0c 0e0d0e0f] (00000000)
       vsldoi: 0102030405060708090a0b0c0e0d0e0f, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 14
-      vsldoi:  => 0e0ff1f2 f3f4f5f6 f7f8f9fa fbfcfefd] (00000000)
+      vsldoi:  => f7f8f1f2 fbfcf5f6 fefff9fa 0304fefd] (00000000)
       vsldoi: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 0102030405060708090a0b0c0e0d0e0f, 0
       vsldoi:  => f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff] (00000000)
       vsldoi: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 0102030405060708090a0b0c0e0d0e0f, 14
-      vsldoi:  => feff0102 03040506 0708090a 0b0c0e0d] (00000000)
+      vsldoi:  => 07080102 0b0c0506 0e0f090a f3f40e0d] (00000000)
       vsldoi: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 0
       vsldoi:  => f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff] (00000000)
       vsldoi: f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, f1f2f3f4f5f6f7f8f9fafbfcfefdfeff, 14
-      vsldoi:  => fefff1f2 f3f4f5f6 f7f8f9fa fbfcfefd] (00000000)
+      vsldoi:  => f7f8f1f2 fbfcf5f6 fefff9fa f3f4fefd] (00000000)
 
-        lvsl 3,   0 => 0x030405060708090a 0x0b0c0d0e0f101112 (00000000)
-        lvsl 4,   0 => 0x0405060708090a0b 0x0c0d0e0f10111213 (00000000)
-        lvsl 5,   0 => 0x05060708090a0b0c 0x0d0e0f1011121314 (00000000)
-        lvsl 6,   0 => 0x060708090a0b0c0d 0x0e0f101112131415 (00000000)
-        lvsl 7,   0 => 0x0708090a0b0c0d0e 0x0f10111213141516 (00000000)
-        lvsl 8,   0 => 0x08090a0b0c0d0e0f 0x1011121314151617 (00000000)
-        lvsl 9,   0 => 0x090a0b0c0d0e0f10 0x1112131415161718 (00000000)
-        lvsl a,   0 => 0x0a0b0c0d0e0f1011 0x1213141516171819 (00000000)
-        lvsl b,   0 => 0x0b0c0d0e0f101112 0x131415161718191a (00000000)
-        lvsl c,   0 => 0x0c0d0e0f10111213 0x1415161718191a1b (00000000)
-        lvsl d,   0 => 0x0d0e0f1011121314 0x15161718191a1b1c (00000000)
-        lvsl e,   0 => 0x0e0f101112131415 0x161718191a1b1c1d (00000000)
-        lvsl f,   0 => 0x0f10111213141516 0x1718191a1b1c1d1e (00000000)
-        lvsl 0,   0 => 0x0001020304050607 0x08090a0b0c0d0e0f (00000000)
-        lvsl 1,   0 => 0x0102030405060708 0x090a0b0c0d0e0f10 (00000000)
-        lvsl 2,   0 => 0x0203040506070809 0x0a0b0c0d0e0f1011 (00000000)
-        lvsl 3,   0 => 0x030405060708090a 0x0b0c0d0e0f101112 (00000000)
-        lvsl 4,   0 => 0x0405060708090a0b 0x0c0d0e0f10111213 (00000000)
+        lvsl 3,   0 => 0x1211100f0e0d0c0b 0x0a09080706050403 (00000000)
+        lvsl 4,   0 => 0x131211100f0e0d0c 0x0b0a090807060504 (00000000)
+        lvsl 5,   0 => 0x14131211100f0e0d 0x0c0b0a0908070605 (00000000)
+        lvsl 6,   0 => 0x1514131211100f0e 0x0d0c0b0a09080706 (00000000)
+        lvsl 7,   0 => 0x161514131211100f 0x0e0d0c0b0a090807 (00000000)
+        lvsl 8,   0 => 0x1716151413121110 0x0f0e0d0c0b0a0908 (00000000)
+        lvsl 9,   0 => 0x1817161514131211 0x100f0e0d0c0b0a09 (00000000)
+        lvsl a,   0 => 0x1918171615141312 0x11100f0e0d0c0b0a (00000000)
+        lvsl b,   0 => 0x1a19181716151413 0x1211100f0e0d0c0b (00000000)
+        lvsl c,   0 => 0x1b1a191817161514 0x131211100f0e0d0c (00000000)
+        lvsl d,   0 => 0x1c1b1a1918171615 0x14131211100f0e0d (00000000)
+        lvsl e,   0 => 0x1d1c1b1a19181716 0x1514131211100f0e (00000000)
+        lvsl f,   0 => 0x1e1d1c1b1a191817 0x161514131211100f (00000000)
+        lvsl 0,   0 => 0x0f0e0d0c0b0a0908 0x0706050403020100 (00000000)
+        lvsl 1,   0 => 0x100f0e0d0c0b0a09 0x0807060504030201 (00000000)
+        lvsl 2,   0 => 0x11100f0e0d0c0b0a 0x0908070605040302 (00000000)
+        lvsl 3,   0 => 0x1211100f0e0d0c0b 0x0a09080706050403 (00000000)
+        lvsl 4,   0 => 0x131211100f0e0d0c 0x0b0a090807060504 (00000000)
 
-        lvsr 3,   0 => 0x0d0e0f1011121314 0x15161718191a1b1c (00000000)
-        lvsr 4,   0 => 0x0c0d0e0f10111213 0x1415161718191a1b (00000000)
-        lvsr 5,   0 => 0x0b0c0d0e0f101112 0x131415161718191a (00000000)
-        lvsr 6,   0 => 0x0a0b0c0d0e0f1011 0x1213141516171819 (00000000)
-        lvsr 7,   0 => 0x090a0b0c0d0e0f10 0x1112131415161718 (00000000)
-        lvsr 8,   0 => 0x08090a0b0c0d0e0f 0x1011121314151617 (00000000)
-        lvsr 9,   0 => 0x0708090a0b0c0d0e 0x0f10111213141516 (00000000)
-        lvsr a,   0 => 0x060708090a0b0c0d 0x0e0f101112131415 (00000000)
-        lvsr b,   0 => 0x05060708090a0b0c 0x0d0e0f1011121314 (00000000)
-        lvsr c,   0 => 0x0405060708090a0b 0x0c0d0e0f10111213 (00000000)
-        lvsr d,   0 => 0x030405060708090a 0x0b0c0d0e0f101112 (00000000)
-        lvsr e,   0 => 0x0203040506070809 0x0a0b0c0d0e0f1011 (00000000)
-        lvsr f,   0 => 0x0102030405060708 0x090a0b0c0d0e0f10 (00000000)
-        lvsr 0,   0 => 0x1011121314151617 0x18191a1b1c1d1e1f (00000000)
-        lvsr 1,   0 => 0x0f10111213141516 0x1718191a1b1c1d1e (00000000)
-        lvsr 2,   0 => 0x0e0f101112131415 0x161718191a1b1c1d (00000000)
-        lvsr 3,   0 => 0x0d0e0f1011121314 0x15161718191a1b1c (00000000)
-        lvsr 4,   0 => 0x0c0d0e0f10111213 0x1415161718191a1b (00000000)
+        lvsr 3,   0 => 0x1c1b1a1918171615 0x14131211100f0e0d (00000000)
+        lvsr 4,   0 => 0x1b1a191817161514 0x131211100f0e0d0c (00000000)
+        lvsr 5,   0 => 0x1a19181716151413 0x1211100f0e0d0c0b (00000000)
+        lvsr 6,   0 => 0x1918171615141312 0x11100f0e0d0c0b0a (00000000)
+        lvsr 7,   0 => 0x1817161514131211 0x100f0e0d0c0b0a09 (00000000)
+        lvsr 8,   0 => 0x1716151413121110 0x0f0e0d0c0b0a0908 (00000000)
+        lvsr 9,   0 => 0x161514131211100f 0x0e0d0c0b0a090807 (00000000)
+        lvsr a,   0 => 0x1514131211100f0e 0x0d0c0b0a09080706 (00000000)
+        lvsr b,   0 => 0x14131211100f0e0d 0x0c0b0a0908070605 (00000000)
+        lvsr c,   0 => 0x131211100f0e0d0c 0x0b0a090807060504 (00000000)
+        lvsr d,   0 => 0x1211100f0e0d0c0b 0x0a09080706050403 (00000000)
+        lvsr e,   0 => 0x11100f0e0d0c0b0a 0x0908070605040302 (00000000)
+        lvsr f,   0 => 0x100f0e0d0c0b0a09 0x0807060504030201 (00000000)
+        lvsr 0,   0 => 0x1f1e1d1c1b1a1918 0x1716151413121110 (00000000)
+        lvsr 1,   0 => 0x1e1d1c1b1a191817 0x161514131211100f (00000000)
+        lvsr 2,   0 => 0x1d1c1b1a19181716 0x1514131211100f0e (00000000)
+        lvsr 3,   0 => 0x1c1b1a1918171615 0x14131211100f0e0d (00000000)
+        lvsr 4,   0 => 0x1b1a191817161514 0x131211100f0e0d0c (00000000)
 
 Altivec load insns with two register args:
-       lvebx   0, 01020304 05060708 090a0b0c 0e0d0e0f => 01000000 00000000 00000000 00000000 (00000000)
-       lvebx   7, 01020304 05060708 090a0b0c 0e0d0e0f => 00000000 00000008 00000000 00000000 (00000000)
-       lvebx  14, 01020304 05060708 090a0b0c 0e0d0e0f => 00000000 00000000 00000000 00000e00 (00000000)
-       lvebx   0, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => f1000000 00000000 00000000 00000000 (00000000)
-       lvebx   7, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => 00000000 000000f8 00000000 00000000 (00000000)
-       lvebx  14, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => 00000000 00000000 00000000 0000fe00 (00000000)
+       lvebx   0, 01020304 05060708 090a0b0c 0e0d0e0f => 00000004 00000000 00000000 00000000 (00000000)
+       lvebx   7, 01020304 05060708 090a0b0c 0e0d0e0f => 00000000 05000000 00000000 00000000 (00000000)
+       lvebx  14, 01020304 05060708 090a0b0c 0e0d0e0f => 00000000 00000000 00000000 000d0000 (00000000)
+       lvebx   0, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => 000000f4 00000000 00000000 00000000 (00000000)
+       lvebx   7, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => 00000000 f5000000 00000000 00000000 (00000000)
+       lvebx  14, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => 00000000 00000000 00000000 00fd0000 (00000000)
 
-       lvehx   0, 01020304 05060708 090a0b0c 0e0d0e0f => 01020000 00000000 00000000 00000000 (00000000)
-       lvehx   7, 01020304 05060708 090a0b0c 0e0d0e0f => 00000000 00000708 00000000 00000000 (00000000)
-       lvehx  14, 01020304 05060708 090a0b0c 0e0d0e0f => 00000000 00000000 00000000 00000e0f (00000000)
-       lvehx   0, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => f1f20000 00000000 00000000 00000000 (00000000)
-       lvehx   7, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => 00000000 0000f7f8 00000000 00000000 (00000000)
-       lvehx  14, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => 00000000 00000000 00000000 0000feff (00000000)
+       lvehx   0, 01020304 05060708 090a0b0c 0e0d0e0f => 00000304 00000000 00000000 00000000 (00000000)
+       lvehx   7, 01020304 05060708 090a0b0c 0e0d0e0f => 00000000 05060000 00000000 00000000 (00000000)
+       lvehx  14, 01020304 05060708 090a0b0c 0e0d0e0f => 00000000 00000000 00000000 0e0d0000 (00000000)
+       lvehx   0, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => 0000f3f4 00000000 00000000 00000000 (00000000)
+       lvehx   7, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => 00000000 f5f60000 00000000 00000000 (00000000)
+       lvehx  14, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => 00000000 00000000 00000000 fefd0000 (00000000)
 
        lvewx   0, 01020304 05060708 090a0b0c 0e0d0e0f => 01020304 00000000 00000000 00000000 (00000000)
        lvewx   7, 01020304 05060708 090a0b0c 0e0d0e0f => 00000000 05060708 00000000 00000000 (00000000)
@@ -1482,19 +1482,19 @@ Altivec load insns with two register args:
         lvxl  14, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff (00000000)
 
 Altivec store insns with three register args:
-      stvebx   0, 01020304 05060708 090a0b0c 0e0d0e0f => 01000000 00000000 00000000 00000000 (00000000)
-      stvebx   7, 01020304 05060708 090a0b0c 0e0d0e0f => 01000000 00000008 00000000 00000000 (00000000)
-      stvebx  14, 01020304 05060708 090a0b0c 0e0d0e0f => 01000000 00000008 00000000 00000e00 (00000000)
-      stvebx   0, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => f1000000 00000000 00000000 00000000 (00000000)
-      stvebx   7, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => f1000000 000000f8 00000000 00000000 (00000000)
-      stvebx  14, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => f1000000 000000f8 00000000 0000fe00 (00000000)
+      stvebx   0, 01020304 05060708 090a0b0c 0e0d0e0f => 00000004 00000000 00000000 00000000 (00000000)
+      stvebx   7, 01020304 05060708 090a0b0c 0e0d0e0f => 00000004 05000000 00000000 00000000 (00000000)
+      stvebx  14, 01020304 05060708 090a0b0c 0e0d0e0f => 00000004 05000000 00000000 000d0000 (00000000)
+      stvebx   0, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => 000000f4 00000000 00000000 00000000 (00000000)
+      stvebx   7, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => 000000f4 f5000000 00000000 00000000 (00000000)
+      stvebx  14, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => 000000f4 f5000000 00000000 00fd0000 (00000000)
 
-      stvehx   0, 01020304 05060708 090a0b0c 0e0d0e0f => 01020000 00000000 00000000 00000000 (00000000)
-      stvehx   7, 01020304 05060708 090a0b0c 0e0d0e0f => 01020000 00000708 00000000 00000000 (00000000)
-      stvehx  14, 01020304 05060708 090a0b0c 0e0d0e0f => 01020000 00000708 00000000 00000e0f (00000000)
-      stvehx   0, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => f1f20000 00000000 00000000 00000000 (00000000)
-      stvehx   7, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => f1f20000 0000f7f8 00000000 00000000 (00000000)
-      stvehx  14, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => f1f20000 0000f7f8 00000000 0000feff (00000000)
+      stvehx   0, 01020304 05060708 090a0b0c 0e0d0e0f => 00000304 00000000 00000000 00000000 (00000000)
+      stvehx   7, 01020304 05060708 090a0b0c 0e0d0e0f => 00000304 05060000 00000000 00000000 (00000000)
+      stvehx  14, 01020304 05060708 090a0b0c 0e0d0e0f => 00000304 05060000 00000000 0e0d0000 (00000000)
+      stvehx   0, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => 0000f3f4 00000000 00000000 00000000 (00000000)
+      stvehx   7, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => 0000f3f4 f5f60000 00000000 00000000 (00000000)
+      stvehx  14, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => 0000f3f4 f5f60000 00000000 fefd0000 (00000000)
 
       stvewx   0, 01020304 05060708 090a0b0c 0e0d0e0f => 01020304 00000000 00000000 00000000 (00000000)
       stvewx   7, 01020304 05060708 090a0b0c 0e0d0e0f => 01020304 05060708 00000000 00000000 (00000000)

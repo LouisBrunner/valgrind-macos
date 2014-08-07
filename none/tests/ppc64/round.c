@@ -49,19 +49,32 @@ typedef unsigned int fpscr_t;
 typedef union {
 	float flt;
 	struct {
+#if defined(VGP_ppc64le_linux)
+      unsigned int frac:23;
+      unsigned int exp:8;
+      unsigned int sign:1;
+#else
 		unsigned int sign:1;
 		unsigned int exp:8;
 		unsigned int frac:23;
+#endif
 	} layout;
 } flt_overlay;
 
 typedef union {
 	double dbl;
 	struct {
+#if defined(VGP_ppc64le_linux)
+      unsigned int frac_lo:32;
+      unsigned int frac_hi:20;
+      unsigned int exp:11;
+      unsigned int sign:1;
+#else
 		unsigned int sign:1;
 		unsigned int exp:11;
 		unsigned int frac_hi:20;
 		unsigned int frac_lo:32;
+#endif
 	} layout;
 	struct {
 		unsigned int hi;
@@ -227,7 +240,7 @@ init()
 	F.layout.frac = 1;
 	denorm_small = F.flt;	/* == 2^(-149) */
 	if (debug) {
-		print_double("float small", F.flt);
+		print_single("float small", &F.flt);
 	}
 
 	D.layout.sign = 0;

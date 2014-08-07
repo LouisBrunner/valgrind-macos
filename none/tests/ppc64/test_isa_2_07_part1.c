@@ -135,6 +135,12 @@ typedef uint64_t  HWord_t;
 #define ZERO 0ULL
 #endif /* __powerpc64__ */
 
+#ifdef VGP_ppc64le_linux
+#define isLE 1
+#else
+#define isLE 0
+#endif
+
 typedef uint64_t Word_t;
 
 enum {
@@ -1116,7 +1122,10 @@ static void mfvs(const char* name, test_func_t func,
 
    for (i=0; i < NB_VDARGS; i++) {
       r14 = ZERO;
-      vec_inA = (vector unsigned long long){ vdargs[i], 0ULL };
+      if (isLE)
+         vec_inA = (vector unsigned long long){ 0ULL, vdargs[i] };
+      else
+         vec_inA = (vector unsigned long long){ vdargs[i], 0ULL };
 
       (*func)();
       result = r14;
@@ -1139,6 +1148,8 @@ static void mtvs(const char* name, test_func_t func,
 
       (*func)();
       dst = (unsigned long long *) &vec_out;
+      if (isLE)
+         dst++;
       printf("%s: %016llx => %016llx\n", name, vdargs[i], *dst);
    }
 }
@@ -1154,13 +1165,16 @@ static void mtvs2s(const char* name, test_func_t func,
    for (i=0; i < NB_VDARGS; i++) {
       // Only the lower half of the vdarg doubleword arg will be used as input by mtvsrwa
       unsigned int * src = (unsigned int *)&vdargs[i];
-      src++;
+      if (!isLE)
+         src++;
       r14  = vdargs[i];
       vec_out = (vector unsigned long long){ 0ULL, 0ULL };
 
       (*func)();
       // Only doubleword 0 is used in output
       dst = (unsigned long long *) &vec_out;
+      if (isLE)
+         dst++;
       printf("%s: %08x => %016llx\n", name, *src, *dst);
    }
 }
@@ -1222,16 +1236,27 @@ static void test_av_dint_two_args (const char* name, test_func_t func,
    unsigned int * dst_int;
    int i,j;
    int family = test_flags & PPC_FAMILY;
-   int is_vpkudum;
+   int is_vpkudum, is_vpmsumd;
    if (strcmp(name, "vpkudum") == 0)
       is_vpkudum = 1;
    else
       is_vpkudum = 0;
 
+   if (strcmp(name, "vpmsumd") == 0)
+      is_vpmsumd = 1;
+   else
+      is_vpmsumd = 0;
+
    for (i = 0; i < NB_VDARGS; i+=2) {
-      vec_inA = (vector unsigned long long){ vdargs[i], vdargs[i+1] };
+      if (isLE && family == PPC_ALTIVECQ)
+         vec_inA = (vector unsigned long long){ vdargs[i+1], vdargs[i] };
+      else
+         vec_inA = (vector unsigned long long){ vdargs[i], vdargs[i+1] };
       for (j = 0; j < NB_VDARGS; j+=2) {
-         vec_inB = (vector unsigned long long){ vdargs[j], vdargs[j+1] };
+         if (isLE && family == PPC_ALTIVECQ)
+            vec_inB = (vector unsigned long long){ vdargs[j+1], vdargs[j] };
+         else
+            vec_inB = (vector unsigned long long){ vdargs[j], vdargs[j+1] };
          vec_out = (vector unsigned long long){ 0,0 };
 
          (*func)();
@@ -1244,12 +1269,32 @@ static void test_av_dint_two_args (const char* name, test_func_t func,
             printf("Inputs: %08llx %08llx %08llx %08llx\n", vdargs[i] & 0x00000000ffffffffULL,
                    vdargs[i+1] & 0x00000000ffffffffULL, vdargs[j] & 0x00000000ffffffffULL,
                    vdargs[j+1] & 0x00000000ffffffffULL);
-            printf("         Output: %08x %08x %08x %08x\n", dst_int[0], dst_int[1],
-                   dst_int[2], dst_int[3]);
+            if (isLE)
+               printf("         Output: %08x %08x %08x %08x\n", dst_int[2], dst_int[3],
+                      dst_int[0], dst_int[1]);
+            else
+               printf("         Output: %08x %08x %08x %08x\n", dst_int[0], dst_int[1],
+                      dst_int[2], dst_int[3]);
+         } else if (is_vpmsumd) {
+            printf("%016llx @@ %016llx ", vdargs[i], vdargs[j]);
+            if (isLE)
+               printf(" ==> %016llx\n", dst[1]);
+            else
+               printf(" ==> %016llx\n", dst[0]);
+            printf("\t%016llx @@ %016llx ", vdargs[i+1], vdargs[j+1]);
+            if (isLE)
+               printf(" ==> %016llx\n", dst[0]);
+            else
+               printf(" ==> %016llx\n", dst[1]);
          } else if (family == PPC_ALTIVECQ) {
-            printf("%016llx%016llx @@ %016llx%016llx ==> %016llx%016llx\n",
-                   vdargs[i], vdargs[i+1], vdargs[j], vdargs[j+1],
-                   dst[0], dst[1]);
+            if (isLE)
+               printf("%016llx%016llx @@ %016llx%016llx ==> %016llx%016llx\n",
+                      vdargs[i], vdargs[i+1], vdargs[j], vdargs[j+1],
+                      dst[1], dst[0]);
+            else
+               printf("%016llx%016llx @@ %016llx%016llx ==> %016llx%016llx\n",
+                      vdargs[i], vdargs[i+1], vdargs[j], vdargs[j+1],
+                      dst[0], dst[1]);
          } else {
             printf("%016llx @@ %016llx ", vdargs[i], vdargs[j]);
             printf(" ==> %016llx\n", dst[0]);
@@ -1311,9 +1356,15 @@ static void test_av_bcd (const char* name, test_func_t func,
    int i, j;
 
    for (i = 0; i < NUM_VBCD_VALS; i+=2) {
-      vec_inA = (vector unsigned long long){ vbcd_args[i], vbcd_args[i +1 ] };
+      if (isLE)
+         vec_inA = (vector unsigned long long){ vbcd_args[i+1], vbcd_args[i] };
+      else
+         vec_inA = (vector unsigned long long){ vbcd_args[i], vbcd_args[i+1] };
       for (j = 0; j < NUM_VBCD_VALS; j+=2) {
-         vec_inB = (vector unsigned long long){ vbcd_args[j], vbcd_args[j +1 ] };
+         if (isLE)
+            vec_inB = (vector unsigned long long){ vbcd_args[j+1], vbcd_args[j] };
+         else
+            vec_inB = (vector unsigned long long){ vbcd_args[j], vbcd_args[j+1] };
          vec_out = (vector unsigned long long){ 0, 0 };
 
          for (PS_bit = 0; PS_bit < 2; PS_bit++) {
@@ -1323,7 +1374,10 @@ static void test_av_bcd (const char* name, test_func_t func,
             printf("%016llx || %016llx @@ %016llx || %016llx",
                    vbcd_args[i], vbcd_args[i + 1],
                    vbcd_args[j], vbcd_args[j + 1]);
-            printf(" ==> %016llx || %016llx\n", dst[0], dst[1]);
+            if (isLE)
+               printf(" ==> %016llx || %016llx\n", dst[1], dst[0]);
+            else
+               printf(" ==> %016llx || %016llx\n", dst[0], dst[1]);
          }
       }
    }
@@ -1349,8 +1403,12 @@ static void test_av_dint_to_int_two_args (const char* name, test_func_t func,
          printf("%016llx, %016llx @@ %016llx, %016llx ",
                 vdargs_x[i], vdargs_x[i+1],
                 vdargs_x[j], vdargs_x[j+1]);
-         printf(" ==> %08x %08x %08x %08x\n", dst_int[0], dst_int[1],
-                dst_int[2], dst_int[3]);
+         if (isLE)
+            printf(" ==> %08x %08x %08x %08x\n", dst_int[2], dst_int[3],
+                   dst_int[0], dst_int[1]);
+         else
+            printf(" ==> %08x %08x %08x %08x\n", dst_int[0], dst_int[1],
+                   dst_int[2], dst_int[3]);
       }
    }
 }
@@ -1365,16 +1423,26 @@ static void test_av_wint_two_args_dres (const char* name, test_func_t func,
    int i,j;
 
    for (i = 0; i < NB_VWARGS; i+=4) {
-      vec_inA_wd = (vector unsigned int){ vwargs[i], vwargs[i+1], vwargs[i+2], vwargs[i+3] };
+      if (isLE)
+         vec_inA_wd = (vector unsigned int){ vwargs[i+3], vwargs[i+2], vwargs[i+1], vwargs[i] };
+      else
+         vec_inA_wd = (vector unsigned int){ vwargs[i], vwargs[i+1], vwargs[i+2], vwargs[i+3] };
       for (j = 0; j < NB_VWARGS; j+=4) {
-         vec_inB_wd = (vector unsigned int){ vwargs[j], vwargs[j+1], vwargs[j+2], vwargs[j+3] };
+         if (isLE)
+            vec_inB_wd = (vector unsigned int){ vwargs[j+3], vwargs[j+2], vwargs[j+1], vwargs[j] };
+         else
+            vec_inB_wd = (vector unsigned int){ vwargs[j], vwargs[j+1], vwargs[j+2], vwargs[j+3] };
          vec_out = (vector unsigned long long){ 0, 0 };
 
          (*func)();
          dst  = (unsigned long long *)&vec_out;
          printf("%s: ", name);
-         printf("%08x %08x %08x %08x ==> %016llx %016llx\n",
-                vwargs[i], vwargs[i+1], vwargs[i+2], vwargs[i+3], dst[0], dst[1]);
+         if (isLE)
+            printf("%08x %08x %08x %08x ==> %016llx %016llx\n",
+                   vwargs[i], vwargs[i+1], vwargs[i+2], vwargs[i+3], dst[1], dst[0]);
+         else
+            printf("%08x %08x %08x %08x ==> %016llx %016llx\n",
+                   vwargs[i], vwargs[i+1], vwargs[i+2], vwargs[i+3], dst[0], dst[1]);
       }
    }
 }
@@ -1387,14 +1455,21 @@ static void test_av_wint_one_arg_dres (const char* name, test_func_t func,
    unsigned long long * dst;
    int i;
    for (i = 0; i < NB_VWARGS; i+=4) {
-      vec_inB_wd = (vector unsigned int){ vwargs[i], vwargs[i+1], vwargs[i+2], vwargs[i+3] };
+      if (isLE)
+         vec_inB_wd = (vector unsigned int){ vwargs[i+3], vwargs[i+2], vwargs[i+1], vwargs[i] };
+      else
+         vec_inB_wd = (vector unsigned int){ vwargs[i], vwargs[i+1], vwargs[i+2], vwargs[i+3] };
       vec_out = (vector unsigned long long){ 0, 0 };
 
       (*func)();
       dst  = (unsigned long long *)&vec_out;
       printf("%s: ", name);
-      printf("%08x %08x %08x %08x ==> %016llx %016llx\n",
-             vwargs[i], vwargs[i+1], vwargs[i+2], vwargs[i+3], dst[0], dst[1]);
+      if (isLE)
+         printf("%08x %08x %08x %08x ==> %016llx %016llx\n",
+                vwargs[i], vwargs[i+1], vwargs[i+2], vwargs[i+3], dst[1], dst[0]);
+      else
+         printf("%08x %08x %08x %08x ==> %016llx %016llx\n",
+                vwargs[i], vwargs[i+1], vwargs[i+2], vwargs[i+3], dst[0], dst[1]);
    }
 }
 
@@ -1556,28 +1631,52 @@ static void test_av_dint_three_args (const char* name, test_func_t func,
                                     0xf000000000000000ULL, 0xf000000000000001ULL
    };
    for (i = 0; i < NB_VDARGS; i+=2) {
-      vec_inA = (vector unsigned long long){ vdargs[i], vdargs[i+1] };
+      if (isLE)
+         vec_inA = (vector unsigned long long){ vdargs[i+1], vdargs[i] };
+      else
+         vec_inA = (vector unsigned long long){ vdargs[i], vdargs[i+1] };
       for (j = 0; j < NB_VDARGS; j+=2) {
-         vec_inB = (vector unsigned long long){ vdargs[j], vdargs[j+1] };
+         if (isLE)
+            vec_inB = (vector unsigned long long){ vdargs[j+1], vdargs[j] };
+         else
+            vec_inB = (vector unsigned long long){ vdargs[j], vdargs[j+1] };
          for (k = 0; k < 4; k+=2) {
-            if (family == PPC_ALTIVECQ)
-               vec_inC = (vector unsigned long long){ cin_vals[k], cin_vals[k+1] };
-            else
-               vec_inC = (vector unsigned long long){ vdargs[k], vdargs[k+1] };
+            if (family == PPC_ALTIVECQ) {
+               if (isLE)
+                  vec_inC = (vector unsigned long long){ cin_vals[k+1], cin_vals[k] };
+               else
+                  vec_inC = (vector unsigned long long){ cin_vals[k], cin_vals[k+1] };
+            } else {
+               if (isLE)
+                  vec_inC = (vector unsigned long long){ vdargs[k+1], vdargs[k] };
+               else
+                  vec_inC = (vector unsigned long long){ vdargs[k], vdargs[k+1] };
+            }
             vec_out = (vector unsigned long long){ 0,0 };
 
             (*func)();
             dst  = (unsigned long long*)&vec_out;
             printf("%s: ", name);
             if (family == PPC_ALTIVECQ) {
-               printf("%016llx%016llx @@ %016llx%016llx @@ %llx ==> %016llx%016llx\n",
-                      vdargs[i], vdargs[i+1], vdargs[j], vdargs[j+1], cin_vals[k+1],
-                      dst[0], dst[1]);
+               if (isLE)
+                  printf("%016llx%016llx @@ %016llx%016llx @@ %llx ==> %016llx%016llx\n",
+                         vdargs[i], vdargs[i+1], vdargs[j], vdargs[j+1], cin_vals[k+1],
+                         dst[1], dst[0]);
+               else
+                  printf("%016llx%016llx @@ %016llx%016llx @@ %llx ==> %016llx%016llx\n",
+                         vdargs[i], vdargs[i+1], vdargs[j], vdargs[j+1], cin_vals[k+1],
+                         dst[0], dst[1]);
             } else {
                printf("%016llx @@ %016llx @@ %016llx ", vdargs[i], vdargs[j], vdargs[k]);
-               printf(" ==> %016llx\n", dst[0]);
+               if (isLE)
+                  printf(" ==> %016llx\n", dst[1]);
+               else
+                  printf(" ==> %016llx\n", dst[0]);
                printf("\t%016llx @@ %016llx @@ %016llx ", vdargs[i+1], vdargs[j+1], vdargs[k+1]);
-               printf(" ==> %016llx\n", dst[1]);
+               if (isLE)
+                  printf(" ==> %016llx\n", dst[0]);
+               else
+                  printf(" ==> %016llx\n", dst[1]);
             }
          }
       }

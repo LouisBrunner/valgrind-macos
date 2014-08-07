@@ -40,6 +40,12 @@ typedef uint32_t HWord_t;
 typedef uint64_t HWord_t;
 #endif /* __powerpc64__ */
 
+#ifdef VGP_ppc64le_linux
+#define isLE 1
+#else
+#define isLE 0
+#endif
+
 register HWord_t r14 __asm__ ("r14");
 register HWord_t r15 __asm__ ("r15");
 register HWord_t r16 __asm__ ("r16");
@@ -340,6 +346,16 @@ static unsigned int viargs[] __attribute__ ((aligned (16))) = { 0x80000001,
 };
 #define NUM_VIARGS_INTS (sizeof viargs/sizeof viargs[0])
 #define NUM_VIARGS_VECS  (NUM_VIARGS_INTS/4)
+
+
+static unsigned long long vdargs[] __attribute__ ((aligned (16))) = {
+                                                                     0x0102030405060708ULL,
+                                                                     0x090A0B0C0E0D0E0FULL,
+                                                                     0xF1F2F3F4F5F6F7F8ULL,
+                                                                     0xF9FAFBFCFEFDFEFFULL
+};
+#define NUM_VDARGS_INTS (sizeof vdargs/sizeof vdargs[0])
+#define NUM_VDARGS_VECS  (NUM_VDARGS_INTS/2)
 
 typedef void (*test_func_t)(void);
 
@@ -727,7 +743,7 @@ static vx_fp_test_basic_t vx_fp_tests[] = {
 
 static vx_fp_test2_t
 vsx_one_fp_arg_tests[] = {
-                          { &test_xscvdpspn, "xscvdpspn", NULL, 20, SINGLE_TEST_SINGLE_RES, VX_SCALAR_SP_TO_VECTOR_SP, "conv"},
+                          { &test_xscvdpspn, "xscvdpspn", NULL, 20, DOUBLE_TEST_SINGLE_RES, VX_SCALAR_SP_TO_VECTOR_SP, "conv"},
                           { &test_xscvspdpn, "xscvspdpn", NULL, 20, SINGLE_TEST, VX_DEFAULT, "conv"},
                           { &test_xsresp,    "xsresp", NULL, 20, DOUBLE_TEST, VX_ESTIMATE, "1/x"},
                           { &test_xsrsp,     "xsrsp", NULL, 20, DOUBLE_TEST, VX_DEFAULT, "round"},
@@ -749,7 +765,7 @@ ldst_tests[] = {
                     { &test_stxsspx, "stxsspx", DOUBLE_TEST_SINGLE_RES, vstg, 0, VSX_STORE },
                     { &test_stxsiwx, "stxsiwx", SINGLE_TEST_SINGLE_RES, vstg, 4, VSX_STORE },
                     { &test_lxsiwax, "lxsiwax", SINGLE_TEST, viargs, 0, VSX_LOAD },
-                    { &test_lxsiwzx, "lxsiwzx", SINGLE_TEST, viargs, 1, VSX_LOAD },
+                    { &test_lxsiwzx, "lxsiwzx", SINGLE_TEST, viargs, 4, VSX_LOAD },
                     { &test_lxsspx,  "lxsspx",  SINGLE_TEST, NULL, 0, VSX_LOAD },
                     { NULL, NULL, 0, NULL, 0, 0 } };
 
@@ -881,8 +897,19 @@ static void test_vx_fp_ops(void)
    test_func_t func;
    int k;
    char * test_name = (char *)malloc(20);
-   k = 0;
+   void  * vecA_void_ptr, * vecB_void_ptr, * vecOut_void_ptr;
 
+   if (isLE) {
+      vecA_void_ptr = (void *)&vec_inA + 8;
+      vecB_void_ptr = (void *)&vec_inB + 8;
+      vecOut_void_ptr = (void *)&vec_out + 8;
+   } else {
+      vecA_void_ptr = (void *)&vec_inA;
+      vecB_void_ptr = (void *)&vec_inB;
+      vecOut_void_ptr = (void *)&vec_out;
+   }
+
+   k = 0;
    build_special_fargs_table();
    while ((func = vx_fp_tests[k].test_func)) {
       int i, repeat = 0;
@@ -932,8 +959,8 @@ again:
          pv = (unsigned int *)&vec_out;
 
          // Only need to copy one doubleword into each vector's element 0
-         memcpy(&vec_inA, inA, 8);
-         memcpy(&vec_inB, inB, 8);
+         memcpy(vecA_void_ptr, inA, 8);
+         memcpy(vecB_void_ptr, inB, 8);
 
          // clear vec_out
          for (idx = 0; idx < 4; idx++, pv++)
@@ -963,18 +990,20 @@ again:
                 *    src2 <= VSX[XT]
                 *    src3 <= VSX[XB]
                 */
-               memcpy(&vec_out, inB, 8);  // src2
-               memcpy(&vec_inB, &spec_fargs[extra_arg_idx], 8);  //src3
+               memcpy(vecOut_void_ptr, inB, 8);  // src2
+               memcpy(vecB_void_ptr, &spec_fargs[extra_arg_idx], 8);  //src3
                frbp = (unsigned long long *)&spec_fargs[extra_arg_idx];
             } else {
                // Don't need to init src2, as it's done before the switch()
-               memcpy(&vec_out, &spec_fargs[extra_arg_idx], 8);  //src3
+               memcpy(vecOut_void_ptr, &spec_fargs[extra_arg_idx], 8);  //src3
             }
-            memcpy(&vsr_XT, &vec_out, 8);
+            memcpy(&vsr_XT, vecOut_void_ptr, 8);
          }
 
          (*func)();
          dst = (unsigned long long *) &vec_out;
+         if (isLE)
+            dst++;
 
          if (test_type == VX_FP_OTHER)
             printf("#%d: %s %016llx %016llx = %016llx\n", i, test_name,
@@ -1033,6 +1062,8 @@ static void test_vsx_one_fp_arg(void)
 {
    test_func_t func;
    int k;
+   void  * vecB_void_ptr;
+
    k = 0;
    build_special_fargs_table();
 
@@ -1047,26 +1078,13 @@ static void test_vsx_one_fp_arg(void)
       /* size of result */
       Bool dp_res = IS_DP_RESULT(test_group.precision);
       Bool is_sqrt = (strstr(test_group.name, "sqrt")) ? True : False;
-      Bool is_scalar = (strstr(test_group.name, "xs")) ? True : False;
-      Bool sparse_sp = False;
-      int stride = dp ? 2 : 4;
-      int loops = is_scalar ? 1 : stride;
-      stride = is_scalar ? 1: stride;
 
-      /* For conversions of single to double, the 128-bit input register is sparsely populated:
-       *    |___ SP___|_Unused_|___SP___|__Unused__|   // for vector op
-       *                     or
-       *    |___ SP___|_Unused_|_Unused_|__Unused__|   // for scalar op
-       *
-       * For the vector op case, we need to adjust stride from '4' to '2', since
-       * we'll only be loading two values per loop into the input register.
-       */
-      if (!dp && !is_scalar && test_group.test_type == VX_CONV_TO_DOUBLE) {
-         sparse_sp = True;
-         stride = 2;
+      vecB_void_ptr = (void *)&vec_inB;
+      if (isLE) {
+         vecB_void_ptr += dp? 8 : 12;
       }
 
-      for (i = 0; i < test_group.num_tests; i+=stride) {
+      for (i = 0; i < test_group.num_tests; i++) {
          unsigned int * pv;
          void * inB;
 
@@ -1076,44 +1094,12 @@ static void test_vsx_one_fp_arg(void)
             *pv = 0;
 
          if (dp) {
-            int j;
+            int vec_out_idx;
             unsigned long long * frB_dp;
-            for (j = 0; j < loops; j++) {
-               inB = (void *)&spec_fargs[i + j];
-               // copy double precision FP into vector element i
-               memcpy(((void *)&vec_inB) + (j * 8), inB, 8);
-            }
-            // execute test insn
-            (*func)();
-            if (dp_res)
-               dst_dp = (unsigned long long *) &vec_out;
+            if (isLE)
+               vec_out_idx = dp_res ? 1 : 3;
             else
-               dst_sp = (unsigned int *) &vec_out;
-
-            printf("#%d: %s ", i/stride, test_group.name);
-            for (j = 0; j < loops; j++) {
-               if (j)
-                  printf("; ");
-               frB_dp = (unsigned long long *)&spec_fargs[i + j];
-               printf("%s(%016llx)", test_group.op, *frB_dp);
-               if (test_group.test_type == VX_ESTIMATE)
-               {
-                  Bool res;
-                  res = check_reciprocal_estimate(is_sqrt, i + j, j);
-                  printf(" ==> %s)", res ? "PASS" : "FAIL");
-               } else if (dp_res) {
-                  printf(" = %016llx", dst_dp[j]);
-               } else {
-                  printf(" = %08x", dst_sp[j]);
-               }
-            }
-            printf("\n");
-         } else {  // single precision test type
-            int j;
-            // Clear input vector
-            pv = (unsigned int *)&vec_inB;
-            for (idx = 0; idx < 4; idx++, pv++)
-               *pv = 0;
+               vec_out_idx = 0;
 
             if (test_group.test_type == VX_SCALAR_SP_TO_VECTOR_SP) {
                /* Take a single-precision value stored in double word element 0
@@ -1121,25 +1107,48 @@ static void test_vsx_one_fp_arg(void)
                 * precision and store in word element 0 of dst.
                 */
                double input = spec_sp_fargs[i];
-               memcpy(((void *)&vec_inB), (void *)&input, 8);
+               memcpy(vecB_void_ptr, (void *)&input, 8);
             } else {
-               int skip_slot;
-               if (sparse_sp) {
-                  skip_slot = 1;
-                  loops = 2;
-               } else {
-                  skip_slot = 0;
-               }
-               for (j = 0; j < loops; j++) {
-                  inB = (void *)&spec_sp_fargs[i + j];
-                  // copy single precision FP into vector element i
-
-                  if (skip_slot && j > 0)
-                     memcpy(((void *)&vec_inB) + ((j + j) * 4), inB, 4);
-                  else
-                     memcpy(((void *)&vec_inB) + (j * 4), inB, 4);
-               }
+               inB = (void *)&spec_fargs[i];
+               // copy double precision FP into input vector element 0
+               memcpy(vecB_void_ptr, inB, 8);
             }
+
+            // execute test insn
+            (*func)();
+            if (dp_res)
+               dst_dp = (unsigned long long *) &vec_out;
+            else
+               dst_sp = (unsigned int *) &vec_out;
+
+            printf("#%d: %s ", i, test_group.name);
+            frB_dp = (unsigned long long *)&spec_fargs[i];
+            printf("%s(%016llx)", test_group.op, *frB_dp);
+            if (test_group.test_type == VX_ESTIMATE)
+            {
+               Bool res;
+               res = check_reciprocal_estimate(is_sqrt, i, vec_out_idx);
+               printf(" ==> %s)", res ? "PASS" : "FAIL");
+            } else if (dp_res) {
+               printf(" = %016llx", dst_dp[vec_out_idx]);
+            } else {
+               printf(" = %08x", dst_sp[vec_out_idx]);
+            }
+
+            printf("\n");
+         } else {  // single precision test type
+            int vec_out_idx;
+            if (isLE)
+               vec_out_idx = dp_res ? 1 : 3;
+            else
+               vec_out_idx = 0;
+            // Clear input vector
+            pv = (unsigned int *)&vec_inB;
+            for (idx = 0; idx < 4; idx++, pv++)
+               *pv = 0;
+            inB = (void *)&spec_sp_fargs[i];
+            // copy single precision FP into input vector element i
+            memcpy(vecB_void_ptr, inB, 4);
             // execute test insn
             (*func)();
             if (dp_res)
@@ -1147,16 +1156,13 @@ static void test_vsx_one_fp_arg(void)
             else
                dst_sp = (unsigned int *) &vec_out;
             // print result
-            printf("#%d: %s ", i/stride, test_group.name);
-            for (j = 0; j < loops; j++) {
-               if (j)
-                  printf("; ");
-               printf("%s(%08x)", test_group.op, *((unsigned int *)&spec_sp_fargs[i + j]));
+            printf("#%d: %s ", i, test_group.name);
+               printf("%s(%08x)", test_group.op, *((unsigned int *)&spec_sp_fargs[i]));
                if (dp_res)
-                     printf(" = %016llx", dst_dp[j]);
+                     printf(" = %016llx", dst_dp[vec_out_idx]);
                else
-                  printf(" = %08x", dst_sp[j]);
-            }
+                  printf(" = %08x", dst_sp[vec_out_idx]);
+
             printf("\n");
          }
       }
@@ -1170,6 +1176,15 @@ static void test_vsx_two_fp_arg(void)
 {
    test_func_t func;
    int k = 0;
+   void  * vecA_void_ptr, * vecB_void_ptr;
+
+   if (isLE) {
+      vecA_void_ptr = (void *)&vec_inA + 8;
+      vecB_void_ptr = (void *)&vec_inB + 8;
+   } else {
+      vecA_void_ptr = (void *)&vec_inA;
+      vecB_void_ptr = (void *)&vec_inB;
+   }
 
    build_special_fargs_table();
    while ((func = vx_simple_scalar_fp_tests[k].test_func)) {
@@ -1191,10 +1206,12 @@ static void test_vsx_two_fp_arg(void)
          frap = (unsigned long long *)&spec_fargs[aTest.fra_idx];
          frbp = (unsigned long long *)&spec_fargs[aTest.frb_idx];
          // Only need to copy one doubleword into each vector's element 0
-         memcpy(&vec_inA, inA, 8);
-         memcpy(&vec_inB, inB, 8);
+         memcpy(vecA_void_ptr, inA, 8);
+         memcpy(vecB_void_ptr, inB, 8);
          (*func)();
          dst = (unsigned long long *) &vec_out;
+         if (isLE)
+            dst++;
          printf("#%d: %s %016llx,%016llx => %016llx\n", i, test_group.name,
                 *frap, *frbp, *dst);
       }
@@ -1214,84 +1231,91 @@ static void _do_store_test (ldst_test_t storeTest)
    unsigned int *dst32;
    unsigned int i, idx;
    unsigned int * pv = (unsigned int *) storeTest.base_addr;
+   void  * vecA_void_ptr;
+
+   if (isLE) {
+      if (storeTest.precision == SINGLE_TEST_SINGLE_RES)
+         vecA_void_ptr = (void *)&vec_inA + 8;
+   } else {
+      if (storeTest.precision == SINGLE_TEST_SINGLE_RES)
+         vecA_void_ptr = (void *)&vec_inA + 4;
+      else
+         vecA_void_ptr = (void *)&vec_inA;
+   }
 
    func = storeTest.test_func;
    r14 = (HWord_t) storeTest.base_addr;
    r15 = (HWord_t) storeTest.offset;
 
-   if (storeTest.precision == DOUBLE_TEST_SINGLE_RES) {
-      /* source is single precision stored in double precision format */
-      /* test some of the pre-defined single precision values */
-      for (i = 0; i < nb_special_fargs; i+=3) {
-         // clear out storage destination
-         for (idx = 0; idx < 4; idx++)
-            *(pv + idx) = 0;
+   /* test some of the pre-defined single precision values */
+   for (i = 0; i < nb_special_fargs; i+=3) {
+      // clear out storage destination
+      for (idx = 0; idx < 4; idx++)
+         *(pv + idx) = 0;
 
-         printf( "%s:", storeTest.name );
+      printf( "%s:", storeTest.name );
+      if (storeTest.precision == SINGLE_TEST_SINGLE_RES)
+      {
+         unsigned int * arg_ptr = (unsigned int *)&spec_sp_fargs[i];
+         memcpy(vecA_void_ptr, arg_ptr, sizeof(unsigned int));
+         printf(" %08x ==> ", *arg_ptr);
+      } else {
          unsigned long long * dp;
          double input = spec_sp_fargs[i];
          dp = (unsigned long long *)&input;
-         memcpy(&vec_inA, dp, sizeof(unsigned long long));
+         memcpy(vecA_void_ptr, dp, sizeof(unsigned long long));
          printf(" %016llx ==> ", *dp);
-
-         // execute test insn
-         (*func)();
-         dst32 = (unsigned int*)(storeTest.base_addr + storeTest.offset);
-         printf( "%08x\n", *dst32);
       }
-   } else {
-      // source is an integer word
-      for (i = 0; i < NUM_VIARGS_INTS; i++) {
-         // clear out storage destination
-         for (idx = 0; idx < 4; idx++)
-            *(pv + idx) = 0;
-         printf( "%s:", storeTest.name );
-         unsigned int * pi = (unsigned int *)&vec_inA;
-         memcpy(pi + 1, &viargs[i], sizeof(unsigned int));
-         printf(" %08x ==> ", *(pi + 1));
 
-         // execute test insn
-         (*func)();
-         dst32 = (unsigned int*)(storeTest.base_addr + storeTest.offset);
-         printf( "%08x\n", *dst32);
-      }
+      // execute test insn
+      (*func)();
+      dst32 = (unsigned int*)(storeTest.base_addr);
+      dst32 += (storeTest.offset/sizeof(int));
+      printf( "%08x\n", *dst32);
    }
+
    printf("\n");
 }
 
-static void _do_load_test(ldst_test_t storeTest)
+static void _do_load_test(ldst_test_t loadTest)
 {
    test_func_t func;
    unsigned int i;
    unsigned long long * dst_dp;
 
-   func = storeTest.test_func;
-   r15 = (HWord_t) storeTest.offset;
+   func = loadTest.test_func;
+   r15 = (HWord_t) loadTest.offset;
 
-   if (storeTest.base_addr == NULL) {
+   if (loadTest.base_addr == NULL) {
       /* Test lxsspx: source is single precision value, so let's */
       /* test some of the pre-defined single precision values. */
-      for (i = 0; i + storeTest.offset < nb_special_fargs; i+=3) {
-         unsigned int * sp = (unsigned int *)&spec_sp_fargs[i + storeTest.offset];
-         printf( "%s:", storeTest.name );
+      int num_loops = (loadTest.offset == 0) ?  nb_special_fargs : (nb_special_fargs - (loadTest.offset/sizeof(int)));
+      for (i = 0; i < num_loops; i+=3) {
+         unsigned int * sp = (unsigned int *)&spec_sp_fargs[i + (loadTest.offset/sizeof(int))];
+         printf( "%s:", loadTest.name );
          printf(" %08x ==> ", *sp);
          r14 = (HWord_t)&spec_sp_fargs[i];
 
          // execute test insn
          (*func)();
          dst_dp = (unsigned long long *) &vec_out;
+         if (isLE)
+            dst_dp++;
          printf("%016llx\n", *dst_dp);
       }
    } else {
       // source is an integer word
-      for (i = 0; i < NUM_VIARGS_INTS; i++) {
-         printf( "%s:", storeTest.name );
-         r14 = (HWord_t)&viargs[i + storeTest.offset];
-         printf(" %08x ==> ", viargs[i + storeTest.offset]);
+      int num_loops = (loadTest.offset == 0) ?  NUM_VIARGS_INTS : (NUM_VIARGS_INTS - (loadTest.offset/sizeof(int)));
+      for (i = 0; i < num_loops; i++) {
+         printf( "%s:", loadTest.name );
+         r14 = (HWord_t)&viargs[i];
+         printf(" %08x ==> ", viargs[i + (loadTest.offset/sizeof(int))]);
 
          // execute test insn
          (*func)();
          dst_dp = (unsigned long long *) &vec_out;
+         if (isLE)
+            dst_dp++;
          printf("%016llx\n", *dst_dp);
       }
    }
@@ -1318,24 +1342,32 @@ static void test_xs_conv_ops(void)
 
    test_func_t func;
    int k = 0;
+   void  * vecB_void_ptr;
+
+   if (isLE)
+      vecB_void_ptr = (void *)&vec_inB + 8;
+   else
+      vecB_void_ptr = (void *)&vec_inB;
 
    build_special_fargs_table();
    while ((func = xs_conv_tests[k].test_func)) {
       int i;
       unsigned long long * dst;
       xs_conv_test_t test_group = xs_conv_tests[k];
-      for (i = 0; i < NUM_VIARGS_INTS; i++) {
-         unsigned int * inB, * pv;
+      for (i = 0; i < NUM_VDARGS_INTS; i++) {
+         unsigned long long  * inB, * pv;
          int idx;
-         inB = (unsigned int *)&viargs[i];
-         memcpy(&vec_inB, inB, 4);
-         pv = (unsigned int *)&vec_out;
+         inB = (unsigned long long *)&vdargs[i];
+         memcpy(vecB_void_ptr, inB, 8);
+         pv = (unsigned long long *)&vec_out;
          // clear vec_out
-         for (idx = 0; idx < 4; idx++, pv++)
-            *pv = 0;
+         for (idx = 0; idx < 2; idx++, pv++)
+            *pv = 0ULL;
          (*func)();
          dst = (unsigned long long *) &vec_out;
-         printf("#%d: %s %08x => %016llx\n", i, test_group.name, viargs[i], *dst);
+         if (isLE)
+            dst++;
+         printf("#%d: %s %016llx => %016llx\n", i, test_group.name, vdargs[i], *dst);
       }
       k++;
       printf("\n");

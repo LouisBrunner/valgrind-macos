@@ -31,8 +31,13 @@ typedef union stuff {
    _Decimal128  dec_val128;
    unsigned long long u64_val;
    struct {
+#if defined(VGP_ppc64le_linux)
+      unsigned long long vall;
+      unsigned long long valu;
+#else
       unsigned long long valu;
       unsigned long long vall;
+#endif
    } u128;
 } dfp_val_t;
 
@@ -495,7 +500,6 @@ static void test_dfp_ClassAndGroupTest_ops(void)
             test_val.u64_val = dfp64_vals[i];
          } else {
             test_val.u128.valu = dfp128_vals[i * 2];
-            test_val.u64_val = test_val.u128.valu;
             test_val.u128.vall = dfp128_vals[(i * 2) + 1];
          }
 
@@ -509,11 +513,15 @@ again:
             GET_CR(flags);
 
             condreg = ((flags >> (4 * (7-BF)))) & 0xf;
-            printf("%s (DC/DG=%d) %s%016llx", test_def.name, data_class_OR_group,
-                   test_def.op, test_val.u64_val);
+            printf("%s (DC/DG=%d) %s", test_def.name, data_class_OR_group,
+                   test_def.op);
             if (test_def.precision == QUAD_TEST) {
-               printf(" %016llx", test_val.u128.vall);
+               printf("%016llx %016llx", test_val.u128.valu, test_val.u128.vall);
+            } else {
+               printf("%016llx", test_val.u64_val);
             }
+
+               //%016llx
             printf(" => %x (BF=%d)\n", condreg, BF);
          }
          if (repeat) {
@@ -562,10 +570,8 @@ again:
             test_val2.u64_val  = dfp64_vals[test_def.targs[i].frb_idx];
          } else {
             test_val1.u128.valu = dfp128_vals[test_def.targs[i].fra_idx * 2];
-            test_val1.u64_val = test_val1.u128.valu;
             test_val1.u128.vall = dfp128_vals[(test_def.targs[i].fra_idx * 2) + 1];
             test_val2.u128.valu = dfp128_vals[test_def.targs[i].frb_idx * 2];
-            test_val2.u64_val = test_val2.u128.valu;
             test_val2.u128.vall = dfp128_vals[(test_def.targs[i].frb_idx * 2) + 1];
          }
 
@@ -575,13 +581,13 @@ again:
          GET_CR(flags);
 
          condreg = ((flags >> (4 * (7-BF)))) & 0xf;
-         printf("%s %016llx", test_def.name, test_val1.u64_val);
+         printf("%s ", test_def.name);
          if (test_def.precision == LONG_TEST) {
-            printf(" %s %016llx ",
-                   test_def.op, test_val2.u64_val);
+            printf("%016llx %s %016llx ",
+                   test_val1.u64_val, test_def.op, test_val2.u64_val);
          } else {
-            printf(" %016llx %s %016llx %016llx ",
-                   test_val1.u128.vall, test_def.op, test_val2.u128.valu, test_val2.u128.vall);
+            printf("%016llx %016llx %s %016llx %016llx ",
+                   test_val1.u128.valu, test_val1.u128.vall, test_def.op, test_val2.u128.valu, test_val2.u128.vall);
          }
          printf(" => %x (BF=%d)\n", condreg, BF);
       }

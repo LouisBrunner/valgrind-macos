@@ -31,8 +31,13 @@ typedef union stuff {
    _Decimal128  dec_val128;
    unsigned long long u64_val;
    struct {
+#if defined(VGP_ppc64le_linux)
+      unsigned long long vall;
+      unsigned long long valu;
+#else
       unsigned long long valu;
       unsigned long long vall;
+#endif
    } u128;
 } dfp_val_t;
 
@@ -418,22 +423,20 @@ static void test_dfp_ddedpd_ops(void)
             test_val.u64_val = dfp64_vals[i];
          } else {
             test_val.u128.valu = dfp128_vals[i * 2];
-            test_val.u64_val = test_val.u128.valu;
             test_val.u128.vall = dfp128_vals[(i * 2) + 1];
          }
 
          for (SP = 0; SP < 4; SP++) {
             dfp_val_t result;
             result = (*func)(SP, test_val);
-            printf("%s (SP=%d) %s%016llx", test_def.name, SP,
-                   test_def.op, test_val.u64_val);
-            if (test_def.precision == QUAD_TEST) {
-               printf(" %016llx", test_val.u128.vall);
+            printf("%s (SP=%d) %s", test_def.name, SP, test_def.op);
+            if (test_def.precision == LONG_TEST) {
+               printf("%016llx ==> %016llx\n", test_val.u64_val, result.u64_val);
+            } else {
+               printf("%016llx %016llx ==> %016llx %016llx\n",
+                      test_val.u128.valu, test_val.u128.vall,
+                      result.u128.valu, result.u128.vall);
             }
-            if (test_def.precision == LONG_TEST)
-               printf(" ==> %016llx\n", result.u64_val);
-            else
-               printf(" ==> %016llx %016llx\n", result.u128.valu, result.u128.vall);
          }
       }
       k++;
@@ -484,20 +487,18 @@ static void test_dfp_denbcd_ops(void)
                test_val.u64_val = bcd64_vals[i];
             } else {
                test_val.u128.valu = bcd128_vals[i * 2];
-               test_val.u64_val = test_val.u128.valu;
                test_val.u128.vall = bcd128_vals[(i * 2) + 1];
             }
 
             result = (*func)(S, test_val);
-            printf("%s (S=%d) %s%016llx", test_def.name, S,
-                   test_def.op, test_val.u64_val);
-            if (test_def.precision == QUAD_TEST) {
-               printf(" %016llx", test_val.u128.vall);
+            printf("%s (S=%d) %s", test_def.name, S, test_def.op);
+            if (test_def.precision == LONG_TEST) {
+               printf("%016llx ==> %016llx\n", test_val.u64_val, result.u64_val);
+            } else {
+               printf("%016llx %016llx ==> %016llx %016llx\n",
+                      test_val.u128.valu, test_val.u128.vall,
+                      result.u128.valu, result.u128.vall);
             }
-            if (test_def.precision == LONG_TEST)
-               printf(" ==> %016llx\n", result.u64_val);
-            else
-               printf(" ==> %016llx %016llx\n", result.u128.valu, result.u128.vall);
          }
       }
       k++;
@@ -532,7 +533,6 @@ static void test_dfp_test_significance_ops(void)
             test_valB.u64_val = dfp64_vals[i];
          } else {
             test_valB.u128.valu = dfp128_vals[i * 2];
-            test_valB.u64_val = test_valB.u128.valu;
             test_valB.u128.vall = dfp128_vals[(i * 2) + 1];
          }
 
@@ -549,10 +549,11 @@ static void test_dfp_test_significance_ops(void)
                GET_CR(flags);
 
                condreg = ((flags >> (4 * (7-BF)))) & 0xf;
-               printf("%s (ref_sig=%d) %s%016llx", test_def.name, reference_sig,
-                      test_def.op, test_valB.u64_val);
-               if (test_def.precision == QUAD_TEST) {
-                  printf(" %016llx", test_valB.u128.vall);
+               printf("%s (ref_sig=%d) %s", test_def.name, reference_sig, test_def.op);
+               if (test_def.precision == LONG_TEST) {
+                  printf("%016llx", test_valB.u64_val);
+               } else {
+                  printf("%016llx %016llx", test_valB.u128.valu, test_valB.u128.vall);
                }
                printf(" => %x (BF=%d)\n", condreg, BF);
             }

@@ -36,6 +36,12 @@ typedef uint32_t HWord_t;
 typedef uint64_t HWord_t;
 #endif /* __powerpc64__ */
 
+#ifdef VGP_ppc64le_linux
+#define isLE 1
+#else
+#define isLE 0
+#endif
+
 typedef unsigned char Bool;
 #define True 1
 #define False 0
@@ -1116,7 +1122,7 @@ static void test_vsx_one_fp_arg(void)
 
       for (i = 0; i < test_group.num_tests; i+=stride) {
          unsigned int * pv;
-         void * inB;
+         void * inB, * vecB_void_ptr = (void *)&vec_inB;
 
          pv = (unsigned int *)&vec_out;
          // clear vec_out
@@ -1129,11 +1135,15 @@ static void test_vsx_one_fp_arg(void)
             for (j = 0; j < loops; j++) {
                inB = (void *)&spec_fargs[i + j];
                // copy double precision FP into vector element i
-               memcpy(((void *)&vec_inB) + (j * 8), inB, 8);
+               if (isLE && is_scalar)
+                  vecB_void_ptr += 8;
+               memcpy(vecB_void_ptr + (j * 8), inB, 8);
             }
             // execute test insn
             (*func)();
             dst_dp = (unsigned long long *) &vec_out;
+            if (isLE && is_scalar)
+               dst_dp++;
             printf("#%d: %s ", i/stride, test_group.name);
             for (j = 0; j < loops; j++) {
                if (j)
@@ -1141,7 +1151,7 @@ static void test_vsx_one_fp_arg(void)
                frB_dp = (unsigned long long *)&spec_fargs[i + j];
                printf("%s(%016llx)", test_group.op, *frB_dp);
                if (estimate) {
-                  Bool res = check_estimate(DOUBLE_TEST, is_sqrt, i + j, j);
+                  Bool res = check_estimate(DOUBLE_TEST, is_sqrt, i + j, (isLE && is_scalar) ? 1: j);
                   printf(" ==> %s)", res ? "PASS" : "FAIL");
                   /* For debugging . . .
                    printf(" ==> %s (res=%016llx)", res ? "PASS" : "FAIL", dst_dp[j]);
@@ -1162,29 +1172,36 @@ static void test_vsx_one_fp_arg(void)
             }
             printf("\n");
          } else {
-            int j, skip_slot;
+            int j;
             unsigned int * frB_sp, * dst_sp = NULL;
             unsigned long long * dst_dp = NULL;
-            if (sparse_sp) {
-               skip_slot = 1;
+            if (sparse_sp)
                loops = 2;
-            } else {
-               skip_slot = 0;
-            }
             for (j = 0; j < loops; j++) {
                inB = (void *)&spec_sp_fargs[i + j];
                // copy single precision FP into vector element i
-               if (skip_slot && j > 0)
-                  memcpy(((void *)&vec_inB) + ((j + j) * 4), inB, 4);
-               else
-                  memcpy(((void *)&vec_inB) + (j * 4), inB, 4);
+               if (sparse_sp) {
+                  if (isLE)
+                     memcpy(vecB_void_ptr + ((2 * j * 4) + 4), inB, 4);
+                  else
+                     memcpy(vecB_void_ptr + ((2 * j * 4) ), inB, 4);
+               } else {
+                  if (isLE && is_scalar)
+                     vecB_void_ptr += 12;
+                  memcpy(vecB_void_ptr + (j * 4), inB, 4);
+               }
             }
             // execute test insn
             (*func)();
-            if (test_group.type == VX_CONV_TO_DOUBLE)
+            if (test_group.type == VX_CONV_TO_DOUBLE) {
                dst_dp = (unsigned long long *) &vec_out;
-            else
+               if (isLE && is_scalar)
+                  dst_dp++;
+            } else {
                dst_sp = (unsigned int *) &vec_out;
+               if (isLE && is_scalar)
+                  dst_sp += 3;
+            }
             // print result
             printf("#%d: %s ", i/stride, test_group.name);
             for (j = 0; j < loops; j++) {
@@ -1193,7 +1210,7 @@ static void test_vsx_one_fp_arg(void)
                frB_sp = (unsigned int *)&spec_sp_fargs[i + j];
                printf("%s(%08x)", test_group.op, *frB_sp);
                if (estimate) {
-                  Bool res = check_estimate(SINGLE_TEST, is_sqrt, i + j, j);
+                  Bool res = check_estimate(SINGLE_TEST, is_sqrt, i + j, (isLE && is_scalar) ? 3 : j);
                   printf(" ==> %s)", res ? "PASS" : "FAIL");
                } else {
                   if (test_group.type == VX_CONV_TO_DOUBLE)
@@ -1275,23 +1292,24 @@ static void test_int_to_fp_convert(void)
             }
             printf("\n");
          } else {
-            int j, skip_slot;
+            int j;
             unsigned int * dst_sp = NULL;
             unsigned int * targs = test_group.targs;
             unsigned long long * dst_dp = NULL;
-            if (sparse_sp) {
-               skip_slot = 1;
+            void * vecB_void_ptr = (void *)&vec_inB;
+            if (sparse_sp)
                loops = 2;
-            } else {
-               skip_slot = 0;
-            }
             for (j = 0; j < loops; j++) {
                inB = (void *)&targs[i + j];
                // copy single word into vector element i
-               if (skip_slot && j > 0)
-                  memcpy(((void *)&vec_inB) + ((j + j) * 4), inB, 4);
-               else
-                  memcpy(((void *)&vec_inB) + (j * 4), inB, 4);
+               if (sparse_sp) {
+                  if (isLE)
+                     memcpy(vecB_void_ptr + ((2 * j * 4) + 4), inB, 4);
+                  else
+                     memcpy(vecB_void_ptr + ((2 * j * 4) ), inB, 4);
+               } else {
+                  memcpy(vecB_void_ptr + (j * 4), inB, 4);
+               }
             }
             // execute test insn
             (*func)();
@@ -1441,7 +1459,7 @@ static void test_vx_tdivORtsqrt(void)
 
       for (i = 0; i < test_group.num_tests; i+=stride) {
          unsigned int * pv;
-         void * inB;
+         void * inB, * vecB_void_ptr = (void *)&vec_inB;
 
          pv = (unsigned int *)&vec_out;
          // clear vec_out
@@ -1457,7 +1475,9 @@ static void test_vx_tdivORtsqrt(void)
                for (j = 0; j < loops; j++) {
                   inB = (void *)&spec_fargs[i + j];
                   // copy double precision FP into vector element i
-                  memcpy(((void *)&vec_inB) + (j * 8), inB, 8);
+                  if (isLE && is_scalar)
+                     vecB_void_ptr += 8;
+                  memcpy(vecB_void_ptr + (j * 8), inB, 8);
                }
             }
             // execute test insn

@@ -260,6 +260,7 @@ asm(".section \".text\"\n"                 \
     "\t.previous\n"                        \
     )
 #else
+#if defined(VGP_ppc64be_linux)
 #define ASSEMBLY_FUNC(__fname, __insn)     \
 asm(".section  \".text\"\n"                \
     "\t.align 2\n"                         \
@@ -275,6 +276,16 @@ asm(".section  \".text\"\n"                \
     "\t"__insn"\n"                         \
     "\tblr\n"                              \
     )
+#elif defined(VGP_ppc64le_linux)
+#define ASSEMBLY_FUNC(__fname, __insn)     \
+asm(".section  \".text\"\n"         \
+    "\t.align 2\n"                         \
+    "\t.global "__fname"\n"                \
+    ""__fname":\n"                         \
+    "\t"__insn"\n"                         \
+    "\tblr\n"                              \
+    )
+#endif // VGP_ppc64 or VGP_ppc64le
 #endif // #ifndef __powerpc64__
 
 
@@ -4849,7 +4860,7 @@ static inline
 test_func_t init_function( test_func_t p_func_F, uint32_t func_buf[] )
 {
    uint32_t* p_func = (uint32_t*)p_func_F;
-#ifndef __powerpc64__
+#if !defined(__powerpc64__) || _CALL_ELF == 2
    func_buf[0] = p_func[0];
    func_buf[1] = p_func[1];
    return (test_func_t)&func_buf[0];
@@ -5521,20 +5532,21 @@ static void test_int_ld_one_reg_imm16 (const char* name,
    uint32_t* func_buf = get_rwx_area();
    volatile HWord_t res, base;
    volatile uint32_t flags, xer;
-   int i, offs, is_lwa=0;
+   int i, offs, shift_offset = 0;
 
 #ifdef __powerpc64__
-   is_lwa = strstr(name, "lwa") != NULL;
+   if (strstr(name, "lwa") || strstr(name, "ld") || strstr(name, "ldu"))
+      shift_offset = 1;
 #endif
 
    // +ve d
    base = (HWord_t)&iargs[0];
    for (i=0; i<nb_iargs; i++) {
-      offs = i * sizeof(HWord_t);
+      offs = (i == 0) ? i : (i * sizeof(HWord_t)) - 1;
 
       /* Patch up the instruction */
       func = init_function( func_IN, func_buf );
-      if (is_lwa)
+      if (shift_offset)
          patch_op_imm(&func_buf[0], offs>>2, 2, 14);
       else
          patch_op_imm16(&func_buf[0], offs);
@@ -5557,8 +5569,8 @@ static void test_int_ld_one_reg_imm16 (const char* name,
    
    // -ve d
    base = (HWord_t)&iargs[nb_iargs-1];
-   for (i = -nb_iargs+1; i<=0; i++) {
-      offs = i * sizeof(HWord_t);
+   for (i = 0; i > -nb_iargs; i--) {
+      offs = (i * sizeof(HWord_t)) + 1;
 
       /* Patch up the instruction */
       func = init_function( func, func_buf );
@@ -5574,9 +5586,9 @@ static void test_int_ld_one_reg_imm16 (const char* name,
 #ifndef __powerpc64__
       printf("%s %2d, (%08x) => %08x, %2d (%08x %08x)\n",
 #else
-      printf("%s %3d, (%016llx) => %016llx, %3lld (%08x %08x)\n",
+      printf("%s %3d, (%016x) => %016llx, %3lld (%08x %08x)\n",
 #endif
-             name, offs, iargs[nb_iargs-1+i], res, r14-base, flags, xer);
+             name, offs, iargs[nb_iargs-1 + i], res, r14-base, flags, xer);
    }
 }
 
@@ -5767,7 +5779,6 @@ static void test_float_three_args (const char* name, test_func_t func,
    /* Note: using nb_normal_fargs:
       - not testing special values for these insns
    */
-
    for (i=0; i<nb_normal_fargs; i+=3) {
       for (j=0; j<nb_normal_fargs; j+=5) {
          for (k=0; k<nb_normal_fargs; k+=7) {
@@ -5965,10 +5976,11 @@ static void test_float_ld_one_reg_imm16 (const char* name,
 {
    volatile test_func_t func;
    uint32_t* func_buf = get_rwx_area();
-   uint32_t base;
+   HWord_t base;
    volatile uint32_t flags, xer;
    volatile double src, res;
-   int i, offs;
+   int i;
+   uint16_t offs;
 
    /* offset within [1-nb_fargs:nb_fargs] */
    for (i=1-nb_fargs; i<nb_fargs; i++) {
@@ -6016,7 +6028,7 @@ static void test_float_ld_two_regs (const char* name,
    volatile uint32_t flags, xer;
    volatile double src, res;
    int i, offs;
-   
+
    /* offset within [1-nb_fargs:nb_fargs] */
    for (i=1-nb_fargs; i<nb_fargs; i++) {
       offs = i * 8;                // offset = i * sizeof(double)
@@ -6721,8 +6733,9 @@ static void lvs_cb (const char *name, test_func_t func,
    volatile uint32_t flags, tmpcr;
    volatile vector unsigned int tmpvscr;
    volatile vector unsigned int vec_out, vscr;
-   unsigned int *dst;
-   int i;
+   unsigned shift;
+   unsigned char * dst;
+   int i, j;
 #if defined TEST_VSCR_SAT
    unsigned int* p_vscr;
 #endif
@@ -6731,7 +6744,8 @@ static void lvs_cb (const char *name, test_func_t func,
       vec_out = (vector unsigned int){ 0,0,0,0 };
       
       // make sure start address is 16 aligned - use viargs[0]
-      r15 = (HWord_t)&viargs[0];
+      HWord_t * r15_in_ptr = (HWord_t *)&viargs[0];
+      r15 = *r15_in_ptr;
       r14 = i;
 
       /* Save flags */
@@ -6758,11 +6772,18 @@ static void lvs_cb (const char *name, test_func_t func,
       __asm__ __volatile__ ("mtcr   %0" : : "r"  (tmpcr));
       __asm__ __volatile__ ("mtvscr %0" : : "v" (tmpvscr));
       
-      dst = (unsigned int*)&vec_out;
+      dst = (unsigned char*)&vec_out;
 
-      printf("%s %3d, %3d", name, i, 0);
-      printf(" => %08x %08x %08x %08x ", dst[0], dst[1], dst[2], dst[3]);
-      printf("(%08x)\n", flags);
+      shift = ((unsigned int)i + *r15_in_ptr) & 0xf;
+      printf("%s %x, %3d", name, shift, 0);
+      printf(" => 0x");
+      for (j = 0; j < 16; j++) {
+         printf("%02x", dst[j]);
+         if (j == 7)
+            printf(" 0x");
+      }
+
+      printf(" (%08x)\n", flags);
    }
    if (verbose) printf("\n");
 }

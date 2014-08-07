@@ -11,13 +11,13 @@ EXTRA_DIST = \
 	ldstrev.stderr.exp ldstrev.stdout.exp ldstrev.vgtest \
 	lsw.stderr.exp lsw.stdout.exp lsw.vgtest \
 	jm-int.stderr.exp jm-int.stdout.exp jm-int.vgtest \
-	jm-fp.stderr.exp jm-fp.stdout.exp jm-fp.vgtest \
+	jm-fp.stderr.exp jm-fp.stdout.exp jm-fp.vgtest jm-fp.stdout.exp-BE2 \
 	jm-vmx.stderr.exp jm-vmx.stdout.exp jm-vmx.stdout.exp_Minus_nan \
 	jm-vmx.vgtest \
 	jm-misc.stderr.exp jm-misc.stdout.exp jm-misc.vgtest \
 	mftocrf.stderr.exp mftocrf.stdout.exp mftocrf.vgtest \
 	mcrfs.stderr.exp mcrfs.stdout.exp mcrfs.vgtest \
-	round.stderr.exp round.stdout.exp round.vgtest \
+	round.stderr.exp round.stdout.exp round.vgtest round.stdout.exp-RM-fix\
 	test_fx.stderr.exp test_fx.stdout.exp test_fx.stdout.exp_Minus_nan \
 	test_fx.vgtest \
 	test_gx.stderr.exp test_gx.stdout.exp test_gx.stdout.exp_Minus_nan \
@@ -113,29 +113,41 @@ test_isa_2_06_part1_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(VSX_
 test_isa_2_06_part2_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(VSX_FLAG) \
 			@FLAG_M32@ $(ALTIVEC_FLAG) $(BUILD_FLAG_VSX)
 
-test_isa_2_06_part3_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(VSX_FLAG) \
+test_isa_2_06_part3_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(VSX_FLAG) \
 			@FLAG_M32@ $(ALTIVEC_FLAG) $(BUILD_FLAG_VSX)
 
-test_dfp1_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(DFP_FLAG) \
+test_dfp1_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(DFP_FLAG) \
 			@FLAG_M32@ $(BUILD_FLAGS_DFP)
-test_dfp2_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(DFP_FLAG) \
+test_dfp2_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(DFP_FLAG) \
 			@FLAG_M32@ $(BUILD_FLAGS_DFP)
-test_dfp3_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(DFP_FLAG) \
-			@FLAG_M32@ $(BUILD_FLAGS_DFP)
-
-test_dfp4_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(DFP_FLAG) \
+test_dfp3_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(DFP_FLAG) \
 			@FLAG_M32@ $(BUILD_FLAGS_DFP)
 
-test_dfp5_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(DFP_FLAG) \
+test_dfp4_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(DFP_FLAG) \
 			@FLAG_M32@ $(BUILD_FLAGS_DFP)
 
-test_isa_2_07_part1_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(ISA_2_07_FLAG) \
+test_dfp5_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(DFP_FLAG) \
+			@FLAG_M32@ $(BUILD_FLAGS_DFP)
+
+test_isa_2_07_part1_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(ISA_2_07_FLAG) \
                         @FLAG_M32@ $(BUILD_FLAGS_ISA_2_07)
 
-test_isa_2_07_part2_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(ISA_2_07_FLAG) \
+test_isa_2_07_part2_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(ISA_2_07_FLAG) \
 			@FLAG_M32@ $(BUILD_FLAGS_ISA_2_07)
 
-test_tm_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(ISA_2_07_FLAG) \
+test_tm_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(ISA_2_07_FLAG) \
 			@FLAG_M32@ $(BUILD_FLAGS_ISA_2_07)
-test_touch_tm_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(ISA_2_07_FLAG) \
+test_touch_tm_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(ISA_2_07_FLAG) \
 			@FLAG_M32@ $(BUILD_FLAGS_ISA_2_07)
+
+test_isa_2_06_part3_LDADD = -lm
+test_dfp1_LDADD = -lm
+test_dfp2_LDADD = -lm
+test_dfp3_LDADD = -lm
+test_dfp4_LDADD = -lm
+test_dfp5_LDADD = -lm
+test_isa_2_07_part1_LDADD = -lm
+test_isa_2_07_part2_LDADD = -lm
+test_tm_LDADD = -lm
+test_touch_tm_LDADD = -lm
+

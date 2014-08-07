@@ -651,26 +651,26 @@ Test VSX floating point instructions
 
 
 Test VSX vector and scalar single argument instructions
-#0: xscvdpspn conv(3ec00000) = 3ec00000
-#1: xscvdpspn conv(42780000) = 42780000
-#2: xscvdpspn conv(00000000) = 00000000
-#3: xscvdpspn conv(7f800000) = 7f800000
-#4: xscvdpspn conv(00000000) = 00000000
-#5: xscvdpspn conv(00000000) = 00000000
-#6: xscvdpspn conv(80000000) = 80000000
-#7: xscvdpspn conv(7f800000) = 7f800000
-#8: xscvdpspn conv(ff800000) = ff800000
-#9: xscvdpspn conv(7fbfffff) = 7fbfffff
-#10: xscvdpspn conv(ffbfffff) = ffbfffff
-#11: xscvdpspn conv(7fc00000) = 7fc00000
-#12: xscvdpspn conv(ffc00000) = ffc00000
-#13: xscvdpspn conv(80000000) = 80000000
-#14: xscvdpspn conv(c683287b) = c683287b
-#15: xscvdpspn conv(49192c2d) = 49192c2d
-#16: xscvdpspn conv(49c1288d) = 49c1288d
-#17: xscvdpspn conv(418977ad) = 418977ad
-#18: xscvdpspn conv(428a5faf) = 428a5faf
-#19: xscvdpspn conv(44bb5fcc) = 44bb5fcc
+#0: xscvdpspn conv(3fd8000000000000) = 3ec00000
+#1: xscvdpspn conv(404f000000000000) = 42780000
+#2: xscvdpspn conv(0018000000b77501) = 00000000
+#3: xscvdpspn conv(7fe800000000051b) = 7f800000
+#4: xscvdpspn conv(0123214569900000) = 00000000
+#5: xscvdpspn conv(0000000000000000) = 00000000
+#6: xscvdpspn conv(8000000000000000) = 80000000
+#7: xscvdpspn conv(7ff0000000000000) = 7f800000
+#8: xscvdpspn conv(fff0000000000000) = ff800000
+#9: xscvdpspn conv(7ff7ffffffffffff) = 7fbfffff
+#10: xscvdpspn conv(fff7ffffffffffff) = ffbfffff
+#11: xscvdpspn conv(7ff8000000000000) = 7fc00000
+#12: xscvdpspn conv(fff8000000000000) = ffc00000
+#13: xscvdpspn conv(8008340000078000) = 80000000
+#14: xscvdpspn conv(c0d0650f5a07b353) = c683287b
+#15: xscvdpspn conv(41232585a9900000) = 49192c2d
+#16: xscvdpspn conv(41382511a2000000) = 49c1288d
+#17: xscvdpspn conv(40312ef5a9300000) = 418977ad
+#18: xscvdpspn conv(40514bf5d2300000) = 428a5faf
+#19: xscvdpspn conv(40976bf982440000) = 44bb5fcc
 
 #0: xscvspdpn conv(3ec00000) = 3fd8000000000000
 #1: xscvspdpn conv(42780000) = 404f000000000000
@@ -783,23 +783,15 @@ Test VSX logic instructions
 #2:    xxlnand  (80000001 89abcdef 00112233 74556677,  80000001 89abcdef 00112233 74556677) ==> 7ffffffe 76543210 ffeeddcc 8baa9988
 
 Test VSX scalar integer conversion instructions
-#0: xscvsxdsp 80000001 => c3e0000000000000
-#1: xscvsxdsp 89abcdef => c3dd950c80000000
-#2: xscvsxdsp 00112233 => 4331223380000000
-#3: xscvsxdsp 74556677 => 43dd1559a0000000
-#4: xscvsxdsp 00001abb => 42babb89a0000000
-#5: xscvsxdsp 00000001 => 41f89abce0000000
-#6: xscvsxdsp 31929394 => 43c8c949c0000000
-#7: xscvsxdsp a1a2a3a4 => c3d7975720000000
+#0: xscvsxdsp 0102030405060708 => 4370203040000000
+#1: xscvsxdsp 090a0b0c0e0d0e0f => 43a2141620000000
+#2: xscvsxdsp f1f2f3f4f5f6f7f8 => c3ac1a1820000000
+#3: xscvsxdsp f9fafbfcfefdfeff => c398141000000000
 
-#0: xscvuxdsp 80000001 => 43e0000000000000
-#1: xscvuxdsp 89abcdef => 43e13579c0000000
-#2: xscvuxdsp 00112233 => 4331223380000000
-#3: xscvuxdsp 74556677 => 43dd1559a0000000
-#4: xscvuxdsp 00001abb => 42babb89a0000000
-#5: xscvuxdsp 00000001 => 41f89abce0000000
-#6: xscvuxdsp 31929394 => 43c8c949c0000000
-#7: xscvuxdsp a1a2a3a4 => 43e4345480000000
+#0: xscvuxdsp 0102030405060708 => 4370203040000000
+#1: xscvuxdsp 090a0b0c0e0d0e0f => 43a2141620000000
+#2: xscvuxdsp f1f2f3f4f5f6f7f8 => 43ee3e5e80000000
+#3: xscvuxdsp f9fafbfcfefdfeff => 43ef3f5f80000000
 
 
 Test VSX load/store dp to sp instructions
@@ -812,14 +804,13 @@ stxsspx: 41232585a0000000 ==> 49192c2d
 stxsspx: 40514bf5e0000000 ==> 428a5faf
 
 
-stxsiwx: 80000001 ==> 80000001
-stxsiwx: 89abcdef ==> 89abcdef
-stxsiwx: 00112233 ==> 00112233
-stxsiwx: 74556677 ==> 74556677
-stxsiwx: 00001abb ==> 00001abb
-stxsiwx: 00000001 ==> 00000001
-stxsiwx: 31929394 ==> 31929394
-stxsiwx: a1a2a3a4 ==> a1a2a3a4
+stxsiwx: 3ec00000 ==> 3ec00000
+stxsiwx: 7f800000 ==> 7f800000
+stxsiwx: 80000000 ==> 80000000
+stxsiwx: 7fbfffff ==> 7fbfffff
+stxsiwx: ffc00000 ==> ffc00000
+stxsiwx: 49192c2d ==> 49192c2d
+stxsiwx: 428a5faf ==> 428a5faf
 
 
 lxsiwax: 80000001 ==> ffffffff80000001
@@ -832,14 +823,13 @@ lxsiwax: 31929394 ==> 0000000031929394
 lxsiwax: a1a2a3a4 ==> ffffffffa1a2a3a4
 
 
-lxsiwzx: 89abcdef ==> 00000000abcdef00
-lxsiwzx: 00112233 ==> 0000000011223374
-lxsiwzx: 74556677 ==> 0000000055667700
-lxsiwzx: 00001abb ==> 00000000001abb00
-lxsiwzx: 00000001 ==> 0000000000000131
-lxsiwzx: 31929394 ==> 00000000929394a1
-lxsiwzx: a1a2a3a4 ==> 00000000a2a3a410
-lxsiwzx: 10000b08 ==> 00000000000b0810
+lxsiwzx: 89abcdef ==> 0000000089abcdef
+lxsiwzx: 00112233 ==> 0000000000112233
+lxsiwzx: 74556677 ==> 0000000074556677
+lxsiwzx: 00001abb ==> 0000000000001abb
+lxsiwzx: 00000001 ==> 0000000000000001
+lxsiwzx: 31929394 ==> 0000000031929394
+lxsiwzx: a1a2a3a4 ==> 00000000a1a2a3a4
 
 
 lxsspx: 3ec00000 ==> 3fd8000000000000

@@ -1,5 +1,5 @@
-lwarx => 0
-ldarx => bad0beef
+lwarx => 0xbad0beef
+ldarx => 0xbad0beef44556677
 fcpsgn sign=10.101010, base=11.111111 => 11.111111
 fcpsgn sign=10.101010, base=-0.000000 => 0.000000
 fcpsgn sign=10.101010, base=0.000000 => 0.000000
@@ -20,7 +20,7 @@ lfdp (-1024.000000, 1025.000000) => F_hi=-1024.000000, F_lo=1025.000000
 stfdp (2.204800, -4.102400) => F_hi=2.204800, F_lo=-4.102400
 lfdpx (2.204800, -4.102400) => F_hi=2.204800, F_lo=-4.102400
 stfdpx (2.204800, 2.204800) => F_hi=2.204800, F_lo=2.204800
-lfiwax (-1024.000000) => FRT=(ffffffff, c0900000)
+lfiwax (-1024.000000) => FRT=(ffffffff, c4800000)
 prtyd (0) => parity=0
 prtyw (0) => parity=0
 prtyd (1) => parity=1

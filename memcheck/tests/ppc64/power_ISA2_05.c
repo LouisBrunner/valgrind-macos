@@ -41,19 +41,25 @@ void test_parity_instrs()
 void test_lfiwax()
 {
    unsigned long base;
+   float foo_s;
 
    typedef struct {
+#if defined(VGP_ppc64le_linux)
+      unsigned int lo;
+      unsigned int hi;
+#else
       unsigned int hi;
       unsigned int lo;
+#endif
    } int_pair_t;
 
    int_pair_t *ip;
-   foo = -1024.0;
-   base = (unsigned long) &foo;
+   foo_s = -1024.0;
+   base = (unsigned long) &foo_s;
 
    __asm__ volatile ("lfiwax %0, 0, %1":"=f" (FRT1):"r"(base));
    ip = (int_pair_t *) & FRT1;
-   printf("lfiwax (%f) => FRT=(%x, %x)\n", foo, ip->hi, ip->lo);
+   printf("lfiwax (%f) => FRT=(%x, %x)\n", foo_s, ip->hi, ip->lo);
 
 
 }
@@ -167,24 +173,27 @@ void test_fcpsgn()
 void test_reservation()
 {
 
-   int RT;
+   unsigned long long RT;
    unsigned long base;
    unsigned long offset;
-   long arr[4] = { 0xdeadbeef, 0xbad0beef, 0xbeefdead, 0xbeef0bad };
+   long arrL[] __attribute__ ((aligned (8))) = { 0xdeadbeef00112233ULL, 0xbad0beef44556677ULL, 0xbeefdead8899aabbULL, 0xbeef0badccddeeffULL };
+   int arrI[] __attribute__ ((aligned (4))) = { 0xdeadbeef, 0xbad0beef, 0xbeefdead, 0xbeef0bad };
 
 
-   base = (unsigned long) &arr;
-   offset = (unsigned long) &arr[1] - base;
+   base = (unsigned long) &arrI;
+   offset = ((unsigned long) &arrI[1]) - base;
    __asm__ volatile ("ori 20, %0, 0"::"r" (base));
    __asm__ volatile ("ori 21, %0, 0"::"r" (offset));
    __asm__ volatile ("lwarx %0, 20, 21, 1":"=r" (RT));
-   printf("lwarx => %x\n", RT);
+   printf("lwarx => 0x%llx\n", RT);
 
 #ifdef __powerpc64__
-   offset = (unsigned long) &arr[1] - base;
+   base = (unsigned long) &arrL;
+   offset = ((unsigned long) &arrL[1]) - base;
+   __asm__ volatile ("ori 20, %0, 0"::"r" (base));
    __asm__ volatile ("ori 21, %0, 0"::"r" (offset));
    __asm__ volatile ("ldarx %0, 20, 21, 1":"=r" (RT));
-   printf("ldarx => %x\n", RT);
+   printf("ldarx => 0x%llx\n", RT);
 #endif
 
 }

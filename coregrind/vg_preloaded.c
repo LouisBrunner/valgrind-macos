@@ -83,8 +83,8 @@ void * VG_NOTIFY_ON_LOAD(ifunc_wrapper) (void)
     VALGRIND_GET_ORIG_FN(fn);
     CALL_FN_W_v(result, fn);
 
-#if defined(VGP_ppc64_linux)
-   /* ppc64 uses function descriptors, so get the actual function entry
+#if defined(VGP_ppc64be_linux)
+   /* ppc64be uses function descriptors, so get the actual function entry
       address for the client request, but return the function descriptor
       from this function. 
       result points to the function descriptor, which starts with the

@@ -31,7 +31,8 @@ check_PROGRAMS = \
 	x86_amd64_features \
 	s390x_features \
 	mips_features \
-	power_insn_available
+	power_insn_available \
+	is_ppc64_BE
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)

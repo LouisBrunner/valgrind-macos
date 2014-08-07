@@ -66,9 +66,9 @@ xxlandc: 00112233 44556677 8899aabb 91929394 xxlandc a1a2a3a4 b1b2b3b4 c1c2c3c4 
 xxlandc: 44556677 8899aabb 91929394 a1a2a3a4 xxlandc b1b2b3b4 c1c2c3c4 d1d2d3d4 7a6b5d3e => 44454443 0819283b 00000000 8180a280
 
 Test ldbrx instruction
-ldbrx: 01 23 45 67 89 ab cd (reverse) => ef cd ab 89 67 45 23 01
-ldbrx: 89 ab cd ef 00 11 22 (reverse) => 33 22 11 00 ef cd ab 89
-ldbrx: 00 11 22 33 44 55 66 (reverse) => 77 66 55 44 33 22 11 00
+ldbrx: 01 23 45 67 89 ab cd ef (reverse) => ef cd ab 89 67 45 23 01
+ldbrx: 89 ab cd ef 00 11 22 33 (reverse) => 33 22 11 00 ef cd ab 89
+ldbrx: 00 11 22 33 44 55 66 77 (reverse) => 77 66 55 44 33 22 11 00
 
 Test popcntd instruction
 popcntd: 0x9182736405504536 => 24
@@ -138,13 +138,27 @@ ftdiv: 0000000000000000 <=> 0000000000000000 ? e (CRx)
 ftdiv: 0000000000000000 <=> 8000000000000000 ? e (CRx)
 
 Test VSX move instructions
-xsabsdp: 01234567 89abcdef xsabsdp 8899aabb 91929394x => 0899aabb 91929394
+xsabsdp: X[B]: 0123456789abcdef => 0123456789abcdef
+xsabsdp: X[B]: 8899aabb19293942 => 0899aabb19293942
+xsabsdp: X[B]: c1c2c3c4d1d2d3d4 => 41c2c3c4d1d2d3d4
 
-xscpsgndp: 8899aabb 91929394 xscpsgndp 01234567 89abcdefx => 81234567 89abcdef
+xscpsgndp: X[A]: 0123456789abcdef  X[B]: 0123456789abcdef => 0123456789abcdef
+xscpsgndp: X[A]: 8899aabb19293942  X[B]: 0123456789abcdef => 8123456789abcdef
+xscpsgndp: X[A]: c1c2c3c4d1d2d3d4  X[B]: 0123456789abcdef => 8123456789abcdef
+xscpsgndp: X[A]: 0123456789abcdef  X[B]: 8899aabb19293942 => 0899aabb19293942
+xscpsgndp: X[A]: 8899aabb19293942  X[B]: 8899aabb19293942 => 8899aabb19293942
+xscpsgndp: X[A]: c1c2c3c4d1d2d3d4  X[B]: 8899aabb19293942 => 8899aabb19293942
+xscpsgndp: X[A]: 0123456789abcdef  X[B]: c1c2c3c4d1d2d3d4 => 41c2c3c4d1d2d3d4
+xscpsgndp: X[A]: 8899aabb19293942  X[B]: c1c2c3c4d1d2d3d4 => c1c2c3c4d1d2d3d4
+xscpsgndp: X[A]: c1c2c3c4d1d2d3d4  X[B]: c1c2c3c4d1d2d3d4 => c1c2c3c4d1d2d3d4
 
-xsnabsdp: b1b2b3b4 c1c2c3c4 xsnabsdp 44556677 8899aabbx => c4556677 8899aabb
+xsnabsdp: X[B]: 0123456789abcdef => 8123456789abcdef
+xsnabsdp: X[B]: 8899aabb19293942 => 8899aabb19293942
+xsnabsdp: X[B]: c1c2c3c4d1d2d3d4 => c1c2c3c4d1d2d3d4
 
-xsnegdp: 01234567 89abcdef xsnegdp b1b2b3b4 c1c2c3c4x => 31b2b3b4 c1c2c3c4
+xsnegdp: X[B]: 0123456789abcdef => 8123456789abcdef
+xsnegdp: X[B]: 8899aabb19293942 => 0899aabb19293942
+xsnegdp: X[B]: c1c2c3c4d1d2d3d4 => 41c2c3c4d1d2d3d4
 
 Test VSX permute instructions
 xxmrghw:
@@ -1028,4 +1042,3 @@ Test VSX scalar integer conversion instructions
 #14: xscvuxddp c0d0650f5a07b353 => 43e81a0ca1eb40f6
 
 
-Testcase PASSED

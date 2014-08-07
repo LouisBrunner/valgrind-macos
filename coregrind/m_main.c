@@ -2024,7 +2024,8 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
 
 #     if defined(VGP_x86_linux)
       iters = 10;
-#     elif defined(VGP_amd64_linux) || defined(VGP_ppc64_linux)
+#     elif defined(VGP_amd64_linux) || defined(VGP_ppc64be_linux) \
+         || defined(VGP_ppc64le_linux)
       iters = 10;
 #     elif defined(VGP_ppc32_linux)
       iters = 5;
@@ -2603,7 +2604,7 @@ void shutdown_actions_NORETURN( ThreadId tid,
 static void final_tidyup(ThreadId tid)
 {
 #if !defined(VGO_darwin)
-#  if defined(VGP_ppc64_linux)
+#  if defined(VGP_ppc64be_linux)
    Addr r2;
 #  endif
    Addr __libc_freeres_wrapper = VG_(client___libc_freeres_wrapper);
@@ -2615,7 +2616,7 @@ static void final_tidyup(ThreadId tid)
         0 == __libc_freeres_wrapper )
       return;			/* can't/won't do it */
 
-#  if defined(VGP_ppc64_linux)
+#  if defined(VGP_ppc64be_linux)
    r2 = VG_(get_tocptr)( __libc_freeres_wrapper );
    if (r2 == 0) {
       VG_(message)(Vg_UserMsg, 
@@ -2633,12 +2634,12 @@ static void final_tidyup(ThreadId tid)
 		   "Caught __NR_exit; running __libc_freeres()\n");
       
    /* set thread context to point to libc_freeres_wrapper */
-   /* ppc64-linux note: __libc_freeres_wrapper gives us the real
+   /* ppc64be-linux note: __libc_freeres_wrapper gives us the real
       function entry point, not a fn descriptor, so can use it
       directly.  However, we need to set R2 (the toc pointer)
       appropriately. */
    VG_(set_IP)(tid, __libc_freeres_wrapper);
-#  if defined(VGP_ppc64_linux)
+#  if defined(VGP_ppc64be_linux)
    VG_(threads)[tid].arch.vex.guest_GPR2 = r2;
 #  endif
    /* mips-linux note: we need to set t9 */
@@ -2835,7 +2836,7 @@ asm("\n"
     "\ttrap\n"
     ".previous\n"
 );
-#elif defined(VGP_ppc64_linux)
+#elif defined(VGP_ppc64be_linux)
 asm("\n"
     /* PPC64 ELF ABI says '_start' points to a function descriptor.
        So we must have one, and that is what goes into the .opd section. */
@@ -3094,10 +3095,10 @@ void _start_in_C_linux ( UWord* pArgc )
 
    the_iicii.sp_at_startup = (Addr)pArgc;
 
-#  if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux) \
-      || defined(VGP_arm64_linux)
+#  if defined(VGP_ppc32_linux) || defined(VGP_ppc64be_linux) \
+      || defined(VGP_ppc64le_linux) || defined(VGP_arm64_linux)
    {
-      /* ppc/ppc64 can be configured with different page sizes.
+      /* ppc32/ppc64 can be configured with different page sizes.
          Determine this early.  This is an ugly hack and really should
          be moved into valgrind_main. */
       UWord *sp = &pArgc[1+argc+1];

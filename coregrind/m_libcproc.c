@@ -555,8 +555,8 @@ Int VG_(getgroups)( Int size, UInt* list )
       list[i] = (UInt)list16[i];
    return sr_Res(sres);
 
-#  elif defined(VGP_amd64_linux) || defined(VGP_ppc64_linux)  \
-        || defined(VGP_arm_linux)                             \
+#  elif defined(VGP_amd64_linux) || defined(VGP_arm_linux) \
+        || defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)  \
         || defined(VGO_darwin) || defined(VGP_s390x_linux)    \
         || defined(VGP_mips32_linux) || defined(VGP_arm64_linux)
    SysRes sres;
@@ -741,7 +741,7 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
    // If I-caches are coherent, nothing needs to be done here
    if (vai.hwcache_info.icaches_maintain_coherence) return;
 
-#  if defined(VGA_ppc32) || defined(VGA_ppc64)
+#  if defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
    Addr startaddr = (Addr) ptr;
    Addr endaddr   = startaddr + nbytes;
    Addr cls;

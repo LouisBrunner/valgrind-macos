@@ -85,7 +85,7 @@
 #  include "vki-posixtypes-amd64-linux.h"
 #elif defined(VGA_ppc32)
 #  include "vki-posixtypes-ppc32-linux.h"
-#elif defined(VGA_ppc64)
+#elif defined(VGA_ppc64be) || defined(VGA_ppc64le)
 #  include "vki-posixtypes-ppc64-linux.h"
 #elif defined(VGA_arm)
 #  include "vki-posixtypes-arm-linux.h"
@@ -211,7 +211,7 @@ typedef unsigned int	        vki_uint;
 #  include "vki-amd64-linux.h"
 #elif defined(VGA_ppc32)
 #  include "vki-ppc32-linux.h"
-#elif defined(VGA_ppc64)
+#elif defined(VGA_ppc64be) || defined(VGA_ppc64le)
 #  include "vki-ppc64-linux.h"
 #elif defined(VGA_arm)
 #  include "vki-arm-linux.h"

@@ -7,7 +7,7 @@
 
 typedef enum exit_codes_ {
 
-#if defined(VGA_ppc32) || defined(VGA_ppc64)
+#if defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
   /* If the insn that got queried for: exists */
   POWER_INSN_AVAILABLE    = 0,
   /* If the insn that got queried for: does not exist on this platform */
@@ -24,7 +24,7 @@ typedef enum exit_codes_ {
 
 } exit_code;
 
-#if defined(VGA_ppc32) || defined(VGA_ppc64)
+#if defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
 /* Signal Handling support for unsupported instructions. */
 static jmp_buf unsup_insn_env;
 static void unsup_insn_handler(int signal_number)
@@ -72,7 +72,7 @@ int main(int argc, char **argv)
 {
   exit_code status;
 
-#if defined(VGA_ppc32) || defined(VGA_ppc64)
+#if defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
   char *insn;
   if (argc != 2) {
     fprintf(stderr, "usage: power_insn_available <insn>\n" );

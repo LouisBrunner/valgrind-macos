@@ -657,7 +657,7 @@ void valgrind_initialize_target(void)
    arm64_init_architecture(&the_low_target);
 #elif defined(VGA_ppc32)
    ppc32_init_architecture(&the_low_target);
-#elif defined(VGA_ppc64)
+#elif defined(VGA_ppc64be) || defined(VGA_ppc64le)
    ppc64_init_architecture(&the_low_target);
 #elif defined(VGA_s390x)
    s390x_init_architecture(&the_low_target);

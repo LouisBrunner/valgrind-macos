@@ -62,7 +62,7 @@ __attribute__((noinline)) void atomic_add_8bit ( char* p, int n )
          : /*trash*/ "memory", "cc", "r15"
       );
    } while (success != 1);
-#elif defined(VGA_ppc64)
+#elif defined(VGA_ppc64be)
    /* Nasty hack.  Does correctly atomically do *p += n, but only if p
       is 8-aligned -- guaranteed by caller. */
    unsigned long success;
@@ -261,7 +261,7 @@ __attribute__((noinline)) void atomic_add_16bit ( short* p, int n )
          : /*trash*/ "memory", "cc", "r15"
       );
    } while (success != 1);
-#elif defined(VGA_ppc64)
+#elif defined(VGA_ppc64be)
    /* Nasty hack.  Does correctly atomically do *p += n, but only if p
       is 8-aligned -- guaranteed by caller. */
    unsigned long success;
@@ -457,7 +457,7 @@ __attribute__((noinline)) void atomic_add_32bit ( int* p, int n )
          : /*trash*/ "memory", "cc", "r15"
       );
    } while (success != 1);
-#elif defined(VGA_ppc64)
+#elif defined(VGA_ppc64be)
    /* Nasty hack.  Does correctly atomically do *p += n, but only if p
       is 8-aligned -- guaranteed by caller. */
    unsigned long success;
@@ -574,7 +574,7 @@ __attribute__((noinline)) void atomic_add_64bit ( long long int* p, int n )
       "lock; addq %%rbx,(%%rax)" "\n"
       : : "S"(&block[0])/* S means "rsi only" */ : "memory","cc","rax","rbx"
    );
-#elif defined(VGA_ppc64)
+#elif defined(VGA_ppc64be)
    unsigned long success;
    do {
       __asm__ __volatile__(

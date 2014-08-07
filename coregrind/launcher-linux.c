@@ -236,7 +236,7 @@ static const char *select_platform(const char *clientname)
             if (ehdr->e_machine == EM_PPC64 &&
                 (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
                  ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
-               platform = "ppc64-linux";
+               platform = "ppc64be-linux";
             } 
             else 
             if (ehdr->e_machine == EM_S390 &&
@@ -320,7 +320,7 @@ int main(int argc, char** argv, char** envp)
    if ((0==strcmp(VG_PLATFORM,"x86-linux"))    ||
        (0==strcmp(VG_PLATFORM,"amd64-linux"))  ||
        (0==strcmp(VG_PLATFORM,"ppc32-linux"))  ||
-       (0==strcmp(VG_PLATFORM,"ppc64-linux"))  ||
+       (0==strcmp(VG_PLATFORM,"ppc64be-linux"))  ||
        (0==strcmp(VG_PLATFORM,"arm-linux"))    ||
        (0==strcmp(VG_PLATFORM,"arm64-linux"))  ||
        (0==strcmp(VG_PLATFORM,"s390x-linux"))  ||

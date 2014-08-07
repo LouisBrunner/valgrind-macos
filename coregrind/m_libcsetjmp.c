@@ -149,7 +149,7 @@ __asm__(
 
 /* ------------ ppc64-linux ------------ */
 
-#if defined(VGP_ppc64_linux)
+#if defined(VGP_ppc64be_linux)
 
 __asm__(
 ".section \".toc\",\"aw\""          "\n"
@@ -270,7 +270,7 @@ __asm__(
 ".previous"  "\n"
 );
 
-#endif /* VGP_ppc64_linux */
+#endif /* VGP_ppc64be_linux */
 
 
 /* ------------ amd64-{linux,darwin} ------------ */

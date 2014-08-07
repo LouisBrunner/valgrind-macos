@@ -1735,7 +1735,7 @@ void ML_(read_debuginfo_dwarf1) (
 #  define FP_REG         1
 #  define SP_REG         1
 #  define RA_REG_DEFAULT 65
-#elif defined(VGP_ppc64_linux)
+#elif defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
 #  define FP_REG         1
 #  define SP_REG         1
 #  define RA_REG_DEFAULT 65
@@ -1775,8 +1775,9 @@ void ML_(read_debuginfo_dwarf1) (
    arm-linux (320) seems ludicrously high, but the ARM IHI 0040A page
    7 (DWARF for the ARM Architecture) specifies that values up to 320
    might exist, for Neon/VFP-v3. */
-#if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux) \
-    || defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
+#if defined(VGP_ppc32_linux) || defined(VGP_ppc64be_linux) \
+     || defined(VGP_ppc64le_linux) || defined(VGP_mips32_linux) \
+     || defined(VGP_mips64_linux)
 # define N_CFI_REGS 72
 #elif defined(VGP_arm_linux)
 # define N_CFI_REGS 320
@@ -2393,7 +2394,7 @@ static Bool summarise_context(/*OUT*/Addr* base,
 
    return True;
 
-#  elif defined(VGA_ppc32) || defined(VGA_ppc64)
+#  elif defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
    /* These don't use CFI based unwinding (is that really true?) */
 
 #  else
@@ -2487,7 +2488,8 @@ static Int copy_convert_CfiExpr_tree ( XArray*        dstxa,
             return ML_(CfiExpr_CfiReg)( dstxa, Creg_IA_IP );
 #        elif defined(VGA_arm64)
          I_die_here;
-#        elif defined(VGA_ppc32) || defined(VGA_ppc64)
+#        elif defined(VGA_ppc32) || defined(VGA_ppc64be) \
+            || defined(VGA_ppc64le)
 #        else
 #           error "Unknown arch"
 #        endif
@@ -3658,7 +3660,8 @@ void ML_(read_callframe_info_dwarf3)
    if (!is_ehframe)
       vg_assert(frame_avma == 0);
 
-#  if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
+#  if defined(VGP_ppc32_linux) || defined(VGP_ppc64be_linux) \
+      || defined(VGP_ppc64le_linux)
    /* These targets don't use CFI-based stack unwinding.  */
    return;
 #  endif

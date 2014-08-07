@@ -205,19 +205,19 @@ void show_raw_elf_symbol ( DiImage* strtab_img,
    .data, size of .data + size of .bss).  I don't know if this is
    really correct/justifiable, or not.
 
-   For ppc64-linux it's more complex.  If the symbol is seen to be in
+   For ppc64be-linux it's more complex.  If the symbol is seen to be in
    the .opd section, it is taken to be a function descriptor, and so
    a dereference is attempted, in order to get hold of the real entry
    point address.  Also as part of the dereference, there is an attempt
    to calculate the TOC pointer (R2 value) associated with the symbol.
 
-   To support the ppc64-linux pre-"dotless" ABI (prior to gcc 4.0.0),
+   To support the ppc64be-linux pre-"dotless" ABI (prior to gcc 4.0.0),
    if the symbol is seen to be outside the .opd section and its name
    starts with a dot, an .opd deference is not attempted, and no TOC
    pointer is calculated, but the the leading dot is removed from the
    name.
 
-   As a result, on ppc64-linux, the caller of this function may have
+   As a result, on ppc64be-linux, the caller of this function may have
    to piece together the real size, address, name of the symbol from
    multiple calls to this function.  Ugly and confusing.
 */
@@ -230,22 +230,22 @@ Bool get_elf_symbol_info (
         DiSlice*   escn_strtab,   /* holds the name */
         Addr       sym_svma,   /* address as stated in the object file */
         Bool       symtab_in_debug, /* symbol table is in the debug file */
-        DiSlice*   escn_opd,   /* the .opd (ppc64-linux only) */
+        DiSlice*   escn_opd,   /* the .opd (ppc64be-linux only) */
         PtrdiffT   opd_bias,   /* for biasing AVMAs found in .opd */
         /* OUTPUTS */
         DiOffT* sym_name_out_ioff, /* name (in strtab) we should record */
         Addr*   sym_avma_out,   /* addr we should record */
         Int*    sym_size_out,   /* symbol size */
-        Addr*   sym_tocptr_out, /* ppc64-linux only: R2 value to be
+        Addr*   sym_tocptr_out, /* ppc64be-linux only: R2 value to be
                                    used on entry */
-        Bool*   from_opd_out,   /* ppc64-linux only: did we deref an
+        Bool*   from_opd_out,   /* ppc64be-linux only: did we deref an
                                   .opd entry? */
         Bool*   is_text_out,    /* is this a text symbol? */
         Bool*   is_ifunc        /* is this a  STT_GNU_IFUNC function ?*/
      )
 {
    Bool plausible;
-#  if defined(VGP_ppc64_linux)
+#  if defined(VGP_ppc64be_linux)
    Bool is_in_opd;
 #  endif
    Bool in_text, in_data, in_sdata, in_rodata, in_bss, in_sbss;
@@ -375,9 +375,9 @@ Bool get_elf_symbol_info (
    }
 #  endif
 
-#  if defined(VGP_ppc64_linux)
+#  if defined(VGP_ppc64be_linux)
    /* Allow STT_NOTYPE in the very special case where we're running on
-      ppc64-linux and the symbol is one which the .opd-chasing hack
+      ppc64be-linux and the symbol is one which the .opd-chasing hack
       below will chase. */
    if (!plausible
        && *is_text_out
@@ -474,7 +474,7 @@ Bool get_elf_symbol_info (
       return False;
    }
 
-   /* ppc64-linux nasty hack: if the symbol is in an .opd section,
+   /* ppc64be-linux nasty hack: if the symbol is in an .opd section,
       then really what we have is the address of a function
       descriptor.  So use the first word of that as the function's
       text.
@@ -482,7 +482,8 @@ Bool get_elf_symbol_info (
       See thread starting at
       http://gcc.gnu.org/ml/gcc-patches/2004-08/msg00557.html
    */
-#  if defined(VGP_ppc64_linux)
+#  if defined(VGP_ppc64be_linux)
+   /* Host and guest may have different Endianess, used by BE only */
    is_in_opd = False;
 #  endif
 
@@ -490,7 +491,7 @@ Bool get_elf_symbol_info (
        && di->opd_size > 0
        && *sym_avma_out >= di->opd_avma
        && *sym_avma_out <  di->opd_avma + di->opd_size) {
-#     if !defined(VGP_ppc64_linux)
+#     if !defined(VGP_ppc64be_linux)
       if (TRACE_SYMTAB_ENABLED) {
          HChar* sym_name = ML_(img_strdup)(escn_strtab->img,
                                            "di.gesi.6", sym_name_ioff);
@@ -585,7 +586,7 @@ Bool get_elf_symbol_info (
 
    /* Here's yet another ppc64-linux hack.  Get rid of leading dot if
       the symbol is outside .opd. */
-#  if defined(VGP_ppc64_linux)
+#  if defined(VGP_ppc64be_linux)
    if (di->opd_size > 0
        && !is_in_opd
        && *sym_name_out_ioff != DiOffT_INVALID
@@ -669,7 +670,7 @@ Bool get_elf_symbol_info (
       }
    }
 
-#  if defined(VGP_ppc64_linux)
+#  if defined(VGP_ppc64be_linux)
    /* It's crucial that we never add symbol addresses in the .opd
       section.  This would completely mess up function redirection and
       intercepting.  This assert ensures that any symbols that make it
@@ -693,7 +694,7 @@ void read_elf_symtab__normal(
         struct _DebugInfo* di, const HChar* tab_name,
         DiSlice*   escn_symtab,
         DiSlice*   escn_strtab,
-        DiSlice*   escn_opd, /* ppc64-linux only */ 
+        DiSlice*   escn_opd, /* ppc64be-linux only */
         Bool       symtab_in_debug
      )
 {
@@ -769,7 +770,7 @@ void read_elf_symtab__normal(
 
 
 /* Read an ELF symbol table (normal or dynamic).  This one is for
-   ppc64-linux, which requires special treatment. */
+   ppc64be-linux, which requires special treatment. */
 
 typedef
    struct { 
@@ -807,7 +808,7 @@ static Word cmp_TempSymKey ( TempSymKey* key1, TempSym* elem2 )
 
 static
 __attribute__((unused)) /* not referred to on all targets */
-void read_elf_symtab__ppc64_linux( 
+void read_elf_symtab__ppc64be_linux(
         struct _DebugInfo* di, const HChar* tab_name,
         DiSlice*   escn_symtab,
         DiSlice*   escn_strtab,
@@ -831,7 +832,7 @@ void read_elf_symtab__ppc64_linux(
       return;
    }
 
-   TRACE_SYMTAB("\n--- Reading (ELF, ppc64-linux) %s (%lld entries) ---\n",
+   TRACE_SYMTAB("\n--- Reading (ELF, ppc64be-linux) %s (%lld entries) ---\n",
                 tab_name, escn_symtab->szB/sizeof(ElfXX_Sym) );
 
    oset = VG_(OSetGen_Create)( offsetof(TempSym,key), 
@@ -2118,7 +2119,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             BAD(".plt");
          }
       }
-#     elif defined(VGP_ppc64_linux)
+#     elif defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
       /* Accept .plt where mapped as rw (data), or unmapped */
       if (0 == VG_(strcmp)(name, ".plt")) {
          if (inrw && !di->plt_present) {
@@ -2275,7 +2276,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       DiSlice dwarf1d_escn        = DiSlice_INVALID; // .debug        (dwarf1)
       DiSlice dwarf1l_escn        = DiSlice_INVALID; // .line         (dwarf1)
       DiSlice opd_escn            = DiSlice_INVALID; // .opd (dwarf2, 
-                                                     //       ppc64-linux)
+                                                     //       ppc64be-linux)
       DiSlice ehframe_escn[N_EHFRAME_SECTS];         // .eh_frame (dwarf2)
 
       for (i = 0; i < N_EHFRAME_SECTS; i++)
@@ -2780,8 +2781,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          void (*read_elf_symtab)(struct _DebugInfo*, const HChar*,
                                  DiSlice*, DiSlice*, DiSlice*, Bool);
          Bool symtab_in_debug;
-#        if defined(VGP_ppc64_linux)
-         read_elf_symtab = read_elf_symtab__ppc64_linux;
+#        if defined(VGP_ppc64be_linux)
+         read_elf_symtab = read_elf_symtab__ppc64be_linux;
 #        else
          read_elf_symtab = read_elf_symtab__normal;
 #        endif
@@ -2823,7 +2824,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          seems OK though.  Also skip on Android. */
 #     if !defined(VGP_amd64_linux) \
          && !defined(VGP_s390x_linux) \
-         && !defined(VGP_ppc64_linux) \
+         && !defined(VGP_ppc64be_linux) \
          && !defined(VGPV_arm_linux_android) \
          && !defined(VGPV_x86_linux_android) \
          && !defined(VGP_mips64_linux)

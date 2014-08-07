@@ -836,8 +836,8 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
       || defined(VGA_mips64)
    is_rx_map = seg->hasR && seg->hasX;
    is_rw_map = seg->hasR && seg->hasW;
-#  elif defined(VGA_amd64) || defined(VGA_ppc64) || defined(VGA_arm) \
-        || defined(VGA_arm64)
+#  elif defined(VGA_amd64) || defined(VGA_ppc64be) || defined(VGA_ppc64le)  \
+        || defined(VGA_arm) || defined(VGA_arm64)
    is_rx_map = seg->hasR && seg->hasX && !seg->hasW;
    is_rw_map = seg->hasR && seg->hasW && !seg->hasX;
 #  elif defined(VGP_s390x_linux)
@@ -1678,7 +1678,7 @@ Bool get_sym_name ( Bool do_cxx_demangling, Bool do_z_demangling,
    return True;
 }
 
-/* ppc64-linux only: find the TOC pointer (R2 value) that should be in
+/* ppc64be-linux only: find the TOC pointer (R2 value) that should be in
    force at the entry point address of the function containing
    guest_code_addr.  Returns 0 if not known. */
 Addr VG_(get_tocptr) ( Addr guest_code_addr )
@@ -2389,7 +2389,8 @@ UWord evalCfiExpr ( XArray* exprs, Int ix,
             case Creg_IA_SP: return eec->uregs->sp;
             case Creg_IA_BP: return eec->uregs->fp;
             case Creg_MIPS_RA: return eec->uregs->ra;
-#           elif defined(VGA_ppc32) || defined(VGA_ppc64)
+#           elif defined(VGA_ppc32) || defined(VGA_ppc64be) \
+               || defined(VGA_ppc64le)
 #           elif defined(VGP_arm64_linux)
             case Creg_ARM64_X30: return eec->uregs->x30;
 #           else
@@ -2639,7 +2640,7 @@ static Addr compute_cfa ( D3UnwindRegs* uregs,
       case CFIC_IA_BPREL:
          cfa = cfsi_m->cfa_off + uregs->fp;
          break;
-#     elif defined(VGA_ppc32) || defined(VGA_ppc64)
+#     elif defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
 #     elif defined(VGP_arm64_linux)
       case CFIC_ARM64_SPREL: 
          cfa = cfsi_m->cfa_off + uregs->sp;
@@ -2747,7 +2748,7 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
    ipHere = uregsHere->ia;
 #  elif defined(VGA_mips32) || defined(VGA_mips64)
    ipHere = uregsHere->pc;
-#  elif defined(VGA_ppc32) || defined(VGA_ppc64)
+#  elif defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
 #  elif defined(VGP_arm64_linux)
    ipHere = uregsHere->pc;
 #  else
@@ -2829,7 +2830,7 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
    COMPUTE(uregsPrev.pc, uregsHere->pc, cfsi_m->ra_how, cfsi_m->ra_off);
    COMPUTE(uregsPrev.sp, uregsHere->sp, cfsi_m->sp_how, cfsi_m->sp_off);
    COMPUTE(uregsPrev.fp, uregsHere->fp, cfsi_m->fp_how, cfsi_m->fp_off);
-#  elif defined(VGA_ppc32) || defined(VGA_ppc64)
+#  elif defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
 #  elif defined(VGP_arm64_linux)
    COMPUTE(uregsPrev.pc,  uregsHere->pc,  cfsi_m->ra_how,  cfsi_m->ra_off);
    COMPUTE(uregsPrev.sp,  uregsHere->sp,  cfsi_m->sp_how,  cfsi_m->sp_off);

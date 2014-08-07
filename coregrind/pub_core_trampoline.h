@@ -81,7 +81,7 @@ extern UInt  VG_(ppc32_linux_REDIR_FOR_strcmp)( void*, void* );
 extern void* VG_(ppc32_linux_REDIR_FOR_strchr)( void*, Int );
 #endif
 
-#if defined(VGP_ppc64_linux)
+#if defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
 extern Addr  VG_(ppc64_linux_SUBST_FOR_rt_sigreturn);
 extern UInt  VG_(ppc64_linux_REDIR_FOR_strlen)( void* );
 extern void* VG_(ppc64_linux_REDIR_FOR_strchr)( void*, Int );

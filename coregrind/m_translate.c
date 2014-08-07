@@ -868,7 +868,7 @@ static Bool chase_into_ok ( void* closureV, Addr64 addr64 )
    if (addr != VG_(redir_do_lookup)(addr, NULL))
       goto dontchase;
 
-#  if defined(VG_PLAT_USES_PPCTOC)
+#  if defined(VG_PLAT_USES_PPCTOC) || defined(VGP_ppc64le_linux)
    /* This needs to be at the start of its own block.  Don't chase. Re
       ULong_to_Ptr, be careful to ensure we only compare 32 bits on a
       32-bit target.*/
@@ -918,7 +918,7 @@ static IRExpr* mkU32 ( UInt n ) {
    return IRExpr_Const(IRConst_U32(n));
 }
 
-#if defined(VG_PLAT_USES_PPCTOC)
+#if defined(VG_PLAT_USES_PPCTOC) || defined(VGP_ppc64le_linux)
 static IRExpr* mkU8 ( UChar n ) {
    return IRExpr_Const(IRConst_U8(n));
 }
@@ -941,7 +941,7 @@ static void gen_PUSH ( IRSB* bb, IRExpr* e )
    IRTemp      t1;
    IRExpr*     one;
 
-#  if defined(VGP_ppc64_linux)
+#  if defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
    Int    stack_size       = VEX_GUEST_PPC64_REDIR_STACK_SIZE;
    Int    offB_REDIR_SP    = offsetof(VexGuestPPC64State,guest_REDIR_SP);
    Int    offB_REDIR_STACK = offsetof(VexGuestPPC64State,guest_REDIR_STACK);
@@ -1035,7 +1035,7 @@ static void gen_PUSH ( IRSB* bb, IRExpr* e )
 
 static IRTemp gen_POP ( IRSB* bb )
 {
-#  if defined(VGP_ppc64_linux)
+#  if defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
    Int    stack_size       = VEX_GUEST_PPC64_REDIR_STACK_SIZE;
    Int    offB_REDIR_SP    = offsetof(VexGuestPPC64State,guest_REDIR_SP);
    Int    offB_REDIR_STACK = offsetof(VexGuestPPC64State,guest_REDIR_STACK);
@@ -1127,7 +1127,7 @@ static IRTemp gen_POP ( IRSB* bb )
 
 static void gen_push_and_set_LR_R2 ( IRSB* bb, Addr64 new_R2_value )
 {
-#  if defined(VGP_ppc64_linux)
+#  if defined(VGP_ppc64be_linux)
    Addr64 bogus_RA  = (Addr64)&VG_(ppctoc_magic_redirect_return_stub);
    Int    offB_GPR2 = offsetof(VexGuestPPC64State,guest_GPR2);
    Int    offB_LR   = offsetof(VexGuestPPC64State,guest_LR);
@@ -1143,7 +1143,7 @@ static void gen_push_and_set_LR_R2 ( IRSB* bb, Addr64 new_R2_value )
 
 static void gen_pop_R2_LR_then_bLR ( IRSB* bb )
 {
-#  if defined(VGP_ppc64_linux)
+#  if defined(VGP_ppc64be_linux)  || defined(VGP_ppc64le_linux)
    Int    offB_GPR2 = offsetof(VexGuestPPC64State,guest_GPR2);
    Int    offB_LR   = offsetof(VexGuestPPC64State,guest_LR);
    Int    offB_CIA  = offsetof(VexGuestPPC64State,guest_CIA);
@@ -1277,7 +1277,7 @@ Bool mk_preamble__set_NRADDR_to_nraddr ( void* closureV, IRSB* bb )
    Int offB_GPR25 = offsetof(VexGuestMIPS64State, guest_r25);
    addStmtToIRSB(bb, IRStmt_Put(offB_GPR25, mkU64(closure->readdr)));
 #  endif
-#  if defined(VGP_ppc64_linux)
+#  if defined(VGP_ppc64be_linux)
    addStmtToIRSB( 
       bb,
       IRStmt_Put( 
@@ -1522,7 +1522,7 @@ Bool VG_(translate) ( ThreadId tid,
    vex_abiinfo.guest_ppc_zap_RZ_at_blr        = False;
    vex_abiinfo.guest_ppc_zap_RZ_at_bl         = NULL;
 #  endif
-#  if defined(VGP_ppc64_linux)
+#  if defined(VGP_ppc64be_linux)
    vex_abiinfo.guest_ppc_zap_RZ_at_blr        = True;
    vex_abiinfo.guest_ppc_zap_RZ_at_bl         = const_True;
    vex_abiinfo.host_ppc_calls_use_fndescrs    = True;

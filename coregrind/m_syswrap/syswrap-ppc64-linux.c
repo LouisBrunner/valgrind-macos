@@ -28,7 +28,7 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#if defined(VGP_ppc64_linux)
+#if defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
 
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
@@ -1074,7 +1074,7 @@ SyscallTableEntry* ML_(get_linux_syscall_entry) ( UInt sysno )
    return NULL;
 }
 
-#endif // defined(VGP_ppc64_linux)
+#endif // defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

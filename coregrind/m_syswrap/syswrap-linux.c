@@ -244,7 +244,8 @@ static void run_a_thread_NORETURN ( Word tidW )
          : "n" (VgTs_Empty), "n" (__NR_exit), "m" (tst->os_state.exitcode)
          : "rax", "rdi"
       );
-#elif defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
+#elif defined(VGP_ppc32_linux) || defined(VGP_ppc64be_linux) \
+      || defined(VGP_ppc64le_linux)
       { UInt vgts_empty = (UInt)VgTs_Empty;
         asm volatile (
           "stw %1,%0\n\t"          /* set tst->status = VgTs_Empty */
@@ -385,7 +386,7 @@ void VG_(main_thread_wrapper_NORETURN)(ThreadId tid)
    sp -= 16;
    sp &= ~0xF;
    *(UWord *)sp = 0;
-#elif defined(VGP_ppc64_linux)
+#elif defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
    /* make a stack frame */
    sp -= 112;
    sp &= ~((Addr)0xF);
@@ -438,7 +439,8 @@ SysRes ML_(do_fork_clone) ( ThreadId tid, UInt flags,
    /* Since this is the fork() form of clone, we don't need all that
       VG_(clone) stuff */
 #if defined(VGP_x86_linux) \
-    || defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux) \
+    || defined(VGP_ppc32_linux) \
+    || defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)	\
     || defined(VGP_arm_linux) || defined(VGP_mips32_linux) \
     || defined(VGP_mips64_linux) || defined(VGP_arm64_linux)
    res = VG_(do_syscall5)( __NR_clone, flags, 

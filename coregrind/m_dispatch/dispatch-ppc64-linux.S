@@ -28,7 +28,7 @@
   The GNU General Public License is contained in the file COPYING.
 */
 
-#if defined(VGP_ppc64_linux)
+#if defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
 
 #include "pub_core_basics_asm.h"
 #include "pub_core_dispatch_asm.h"
@@ -193,7 +193,7 @@ VG_(disp_run_translations):
         /* 88(sp) used later to load fpscr with zero */
 	/* 48:87(sp) free */
 	
-        /* Linkage Area (reserved)
+        /* Linkage Area (reserved)  BE ABI
            40(sp) : TOC
            32(sp) : link editor doubleword
            24(sp) : compiler doubleword
@@ -530,7 +530,7 @@ VG_(disp_cp_evcheck_fail):
 /* Let the linker know we don't need an executable stack */
 .section .note.GNU-stack,"",@progbits
 
-#endif // defined(VGP_ppc64_linux)
+#endif // defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

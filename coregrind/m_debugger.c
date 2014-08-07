@@ -152,7 +152,7 @@ static Int ptrace_setregs(Int pid, VexGuestArchState* vex)
                      (void*)LibVEX_GuestPPC32_get_XER(vex));
    return rc;
 
-#elif defined(VGP_ppc64_linux)
+#elif defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
    Int rc = 0; 
    /* FRJ: copied nearly verbatim from the ppc32 case. I compared the 
       vki-ppc64-linux.h with its ppc32 counterpart and saw no 

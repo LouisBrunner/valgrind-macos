@@ -442,7 +442,7 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
    canonical->arg7  = 0;
    canonical->arg8  = 0;
 
-#elif defined(VGP_ppc64_linux)
+#elif defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
    VexGuestPPC64State* gst = (VexGuestPPC64State*)gst_vanilla;
    canonical->sysno = gst->guest_GPR0;
    canonical->arg1  = gst->guest_GPR3;
@@ -688,7 +688,7 @@ void putSyscallArgsIntoGuestState ( /*IN*/ SyscallArgs*       canonical,
    gst->guest_GPR7 = canonical->arg5;
    gst->guest_GPR8 = canonical->arg6;
 
-#elif defined(VGP_ppc64_linux)
+#elif defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
    VexGuestPPC64State* gst = (VexGuestPPC64State*)gst_vanilla;
    gst->guest_GPR0 = canonical->sysno;
    gst->guest_GPR3 = canonical->arg1;
@@ -819,7 +819,7 @@ void getSyscallStatusFromGuestState ( /*OUT*/SyscallStatus*     canonical,
    canonical->sres = VG_(mk_SysRes_ppc32_linux)( gst->guest_GPR3, cr0so );
    canonical->what = SsComplete;
 
-#  elif defined(VGP_ppc64_linux)
+#  elif defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
    VexGuestPPC64State* gst   = (VexGuestPPC64State*)gst_vanilla;
    UInt                cr    = LibVEX_GuestPPC64_get_CR( gst );
    UInt                cr0so = (cr >> 28) & 1;
@@ -977,7 +977,7 @@ void putSyscallStatusIntoGuestState ( /*IN*/ ThreadId tid,
    VG_TRACK( post_reg_write, Vg_CoreSysCall, tid, 
              OFFSET_ppc32_CR0_0, sizeof(UChar) );
 
-#  elif defined(VGP_ppc64_linux)
+#  elif defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
    VexGuestPPC64State* gst = (VexGuestPPC64State*)gst_vanilla;
    UInt old_cr = LibVEX_GuestPPC64_get_CR(gst);
    vg_assert(canonical->what == SsComplete);
@@ -1182,7 +1182,7 @@ void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout )
    layout->uu_arg7  = -1; /* impossible value */
    layout->uu_arg8  = -1; /* impossible value */
 
-#elif defined(VGP_ppc64_linux)
+#elif defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
    layout->o_sysno  = OFFSET_ppc64_GPR0;
    layout->o_arg1   = OFFSET_ppc64_GPR3;
    layout->o_arg2   = OFFSET_ppc64_GPR4;
@@ -1988,7 +1988,7 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
       vg_assert(p[0] == 0x0F && p[1] == 0x05);
    }
 
-#elif defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
+#elif defined(VGP_ppc32_linux) || defined(VGP_ppc64be_linux)
    arch->vex.guest_CIA -= 4;             // sizeof(ppc32 instr)
 
    /* Make sure our caller is actually sane, and we're really backing

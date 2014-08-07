@@ -118,7 +118,7 @@ typedef
 typedef
    struct { Addr pc; Addr sp; Addr x30; Addr x29; } /* PC, SP, LR, FP */
    D3UnwindRegs;
-#elif defined(VGA_ppc32) || defined(VGA_ppc64)
+#elif defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
 typedef
    UChar  /* should be void, but gcc complains at use points */
    D3UnwindRegs;

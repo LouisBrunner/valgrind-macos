@@ -348,7 +348,7 @@ typedef struct SigQueue {
         (srP)->misc.PPC32.r_lr = (uc)->uc_regs->mc_gregs[VKI_PT_LNK]; \
       }
 
-#elif defined(VGP_ppc64_linux)
+#elif defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
 #  define VG_UCONTEXT_INSTR_PTR(uc)  ((uc)->uc_mcontext.gp_regs[VKI_PT_NIP])
 #  define VG_UCONTEXT_STACK_PTR(uc)  ((uc)->uc_mcontext.gp_regs[VKI_PT_R1])
    /* Dubious hack: if there is an error, only consider the lowest 8
@@ -851,7 +851,7 @@ extern void my_sigreturn(void);
    "	sc\n" \
    ".previous\n"
 
-#elif defined(VGP_ppc64_linux)
+#elif defined(VGP_ppc64be_linux)
 #  define _MY_SIGRETURN(name) \
    ".align   2\n" \
    ".globl   my_sigreturn\n" \

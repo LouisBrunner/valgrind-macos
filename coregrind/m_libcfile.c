@@ -677,8 +677,8 @@ SysRes VG_(pread) ( Int fd, void* buf, Int count, OffT offset )
    res = VG_(do_syscall6)(__NR_pread64, fd, (UWord)buf, count, 
                           0, 0, offset);
    return res;
-#  elif defined(VGP_amd64_linux) \
-      || defined(VGP_ppc64_linux) || defined(VGP_s390x_linux) \
+#  elif defined(VGP_amd64_linux) || defined(VGP_s390x_linux) \
+      || defined(VGP_ppc64be_linux)  || defined(VGP_ppc64le_linux) \
       || defined(VGP_mips64_linux) \
       || defined(VGP_arm64_linux)
    res = VG_(do_syscall4)(__NR_pread64, fd, (UWord)buf, count, offset);
@@ -923,7 +923,8 @@ static Int parse_inet_addr_and_port ( const HChar* str, UInt* ip_addr, UShort* p
 Int VG_(socket) ( Int domain, Int type, Int protocol )
 {
 #  if defined(VGP_x86_linux) || defined(VGP_ppc32_linux) \
-      || defined(VGP_ppc64_linux) || defined(VGP_s390x_linux)
+      || defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux) \
+      || defined(VGP_s390x_linux)
    SysRes res;
    UWord  args[3];
    args[0] = domain;
@@ -963,7 +964,8 @@ static
 Int my_connect ( Int sockfd, struct vki_sockaddr_in* serv_addr, Int addrlen )
 {
 #  if defined(VGP_x86_linux) || defined(VGP_ppc32_linux) \
-      || defined(VGP_ppc64_linux) || defined(VGP_s390x_linux)
+      || defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux) \
+      || defined(VGP_s390x_linux)
    SysRes res;
    UWord  args[3];
    args[0] = sockfd;
@@ -1002,7 +1004,8 @@ Int VG_(write_socket)( Int sd, const void *msg, Int count )
       SIGPIPE */
 
 #  if defined(VGP_x86_linux) || defined(VGP_ppc32_linux) \
-      || defined(VGP_ppc64_linux) || defined(VGP_s390x_linux)
+      || defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux) \
+      || defined(VGP_s390x_linux)
    SysRes res;
    UWord  args[4];
    args[0] = sd;
@@ -1033,7 +1036,8 @@ Int VG_(write_socket)( Int sd, const void *msg, Int count )
 Int VG_(getsockname) ( Int sd, struct vki_sockaddr *name, Int *namelen)
 {
 #  if defined(VGP_x86_linux) || defined(VGP_ppc32_linux) \
-      || defined(VGP_ppc64_linux) || defined(VGP_s390x_linux) \
+      || defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux) \
+      || defined(VGP_s390x_linux) \
       || defined(VGP_mips32_linux)
    SysRes res;
    UWord  args[3];
@@ -1064,7 +1068,8 @@ Int VG_(getsockname) ( Int sd, struct vki_sockaddr *name, Int *namelen)
 Int VG_(getpeername) ( Int sd, struct vki_sockaddr *name, Int *namelen)
 {
 #  if defined(VGP_x86_linux) || defined(VGP_ppc32_linux) \
-      || defined(VGP_ppc64_linux) || defined(VGP_s390x_linux) \
+      || defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux) \
+      || defined(VGP_s390x_linux) \
       || defined(VGP_mips32_linux)
    SysRes res;
    UWord  args[3];
@@ -1096,7 +1101,8 @@ Int VG_(getsockopt) ( Int sd, Int level, Int optname, void *optval,
                       Int *optlen)
 {
 #  if defined(VGP_x86_linux) || defined(VGP_ppc32_linux) \
-      || defined(VGP_ppc64_linux) || defined(VGP_s390x_linux)
+      || defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux) \
+      || defined(VGP_s390x_linux)
    SysRes res;
    UWord  args[5];
    args[0] = sd;
@@ -1133,7 +1139,8 @@ Int VG_(setsockopt) ( Int sd, Int level, Int optname, void *optval,
                       Int optlen)
 {
 #  if defined(VGP_x86_linux) || defined(VGP_ppc32_linux) \
-      || defined(VGP_ppc64_linux) || defined(VGP_s390x_linux)
+      || defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux) \
+      || defined(VGP_s390x_linux)
    SysRes res;
    UWord  args[5];
    args[0] = sd;

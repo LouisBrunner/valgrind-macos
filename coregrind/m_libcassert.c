@@ -98,7 +98,7 @@
         (srP)->r_sp = (ULong)r1;                          \
         (srP)->misc.PPC32.r_lr = lr;                      \
       }
-#elif defined(VGP_ppc64_linux)
+#elif defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
 #  define GET_STARTREGS(srP)                              \
       { ULong cia, r1, lr;                                \
         __asm__ __volatile__(                             \

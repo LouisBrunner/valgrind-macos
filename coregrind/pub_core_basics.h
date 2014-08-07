@@ -54,7 +54,7 @@
 #  include "libvex_guest_amd64.h"
 #elif defined(VGA_ppc32)
 #  include "libvex_guest_ppc32.h"
-#elif defined(VGA_ppc64)
+#elif defined(VGA_ppc64be) || defined(VGA_ppc64le)
 #  include "libvex_guest_ppc64.h"
 #elif defined(VGA_arm)
 #  include "libvex_guest_arm.h"

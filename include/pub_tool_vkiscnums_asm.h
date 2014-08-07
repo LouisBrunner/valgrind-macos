@@ -42,7 +42,7 @@
 #elif defined(VGP_ppc32_linux)
 #  include "vki/vki-scnums-ppc32-linux.h"
 
-#elif defined(VGP_ppc64_linux)
+#elif defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
 #  include "vki/vki-scnums-ppc64-linux.h"
 
 #elif defined(VGP_s390x_linux)

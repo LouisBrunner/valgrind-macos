@@ -42,8 +42,8 @@
 /* ppc32/64-linux determines page size at startup, hence m_vki is
    the logical place to store that info. */
 
-#if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux) \
-    || defined(VGP_arm64_linux)
+#if defined(VGP_ppc32_linux) || defined(VGP_ppc64be_linux) \
+    || defined(VGP_ppc64le_linux) || defined(VGP_arm64_linux)
 unsigned long VKI_PAGE_SHIFT = 12;
 unsigned long VKI_PAGE_SIZE  = 1UL << 12;
 #endif

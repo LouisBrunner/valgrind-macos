@@ -1278,7 +1278,7 @@ void VG_(redir_initialise) ( void )
       );
    }
 
-#  elif defined(VGP_ppc64_linux)
+#  elif defined(VGP_ppc64be_linux)
    /* If we're using memcheck, use these intercepts right from
       the start, otherwise ld.so makes a lot of noise. */
    if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {

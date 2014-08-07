@@ -768,7 +768,7 @@ static void do_pre_run_checks ( ThreadState* tst )
    vg_assert(VG_IS_8_ALIGNED(offsetof(VexGuestAMD64State,guest_RIP)));
 #  endif
 
-#  if defined(VGA_ppc32) || defined(VGA_ppc64)
+#  if defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
    /* ppc guest_state vector regs must be 16 byte aligned for
       loads/stores.  This is important! */
    vg_assert(VG_IS_16_ALIGNED(& tst->arch.vex.guest_VSR0));
@@ -1622,7 +1622,7 @@ void VG_(nuke_all_threads_except) ( ThreadId me, VgSchedReturnCode src )
 #elif defined(VGA_amd64)
 #  define VG_CLREQ_ARGS       guest_RAX
 #  define VG_CLREQ_RET        guest_RDX
-#elif defined(VGA_ppc32) || defined(VGA_ppc64)
+#elif defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
 #  define VG_CLREQ_ARGS       guest_GPR4
 #  define VG_CLREQ_RET        guest_GPR3
 #elif defined(VGA_arm)

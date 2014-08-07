@@ -353,7 +353,7 @@ configure_caches(cache_t *I1c, cache_t *D1c, cache_t *LLc,
    *D1c = (cache_t) {  65536, 2, 64 };
    *LLc = (cache_t) { 262144, 8, 64 };
 
-#elif defined(VGA_ppc64)
+#elif defined(VGA_ppc64be) || defined(VGA_ppc64le)
 
    // Default cache configuration
    *I1c = (cache_t) {  65536, 2, 64 };

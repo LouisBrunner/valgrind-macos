@@ -406,7 +406,7 @@ static Bool get_Dwarf_Reg( /*OUT*/Addr* a, Word regno, RegSummary* regs )
    if (regno == 7/*RSP*/) { *a = regs->sp; return True; }
 #  elif defined(VGP_ppc32_linux)
    if (regno == 1/*SP*/) { *a = regs->sp; return True; }
-#  elif defined(VGP_ppc64_linux)
+#  elif defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
    if (regno == 1/*SP*/) { *a = regs->sp; return True; }
 #  elif defined(VGP_arm_linux)
    if (regno == 13) { *a = regs->sp; return True; }
@@ -863,7 +863,8 @@ GXResult ML_(evaluate_Dwarf3_Expr) ( UChar* expr, UWord exprszB,
             if (!regs)
                FAIL("evaluate_Dwarf3_Expr: "
                     "DW_OP_call_frame_cfa but no reg info");
-#if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
+#if defined(VGP_ppc32_linux) || defined(VGP_ppc64be_linux) \
+    || defined(VGP_ppc64le_linux)
             /* Valgrind on ppc32/ppc64 currently doesn't use unwind info. */
             uw1 = ML_(read_Addr)((UChar*)regs->sp);
 #else

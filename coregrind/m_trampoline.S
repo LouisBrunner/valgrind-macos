@@ -416,7 +416,7 @@ VG_(trampoline_stuff_end):
 
 /*---------------- ppc64-linux ----------------*/
 #else
-#if defined(VGP_ppc64_linux)
+#if defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
 
 #	define UD2_16     trap ; trap ; trap; trap
 #	define UD2_64     UD2_16   ; UD2_16   ; UD2_16   ; UD2_16

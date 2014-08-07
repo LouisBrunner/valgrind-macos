@@ -115,7 +115,7 @@
 #undef PLAT_x86_linux
 #undef PLAT_amd64_linux
 #undef PLAT_ppc32_linux
-#undef PLAT_ppc64_linux
+#undef PLAT_ppc64be_linux
 #undef PLAT_arm_linux
 #undef PLAT_arm64_linux
 #undef PLAT_s390x_linux
@@ -140,8 +140,9 @@
 #  define PLAT_amd64_linux 1
 #elif defined(__linux__) && defined(__powerpc__) && !defined(__powerpc64__)
 #  define PLAT_ppc32_linux 1
-#elif defined(__linux__) && defined(__powerpc__) && defined(__powerpc64__)
-#  define PLAT_ppc64_linux 1
+#elif defined(__linux__) && defined(__powerpc__) && defined(__powerpc64__) && _CALL_ELF != 2
+/* Big Endian uses ELF version 1 */
+#  define PLAT_ppc64be_linux 1
 #elif defined(__linux__) && defined(__arm__) && !defined(__aarch64__)
 #  define PLAT_arm_linux 1
 #elif defined(__linux__) && defined(__aarch64__) && !defined(__arm__)
@@ -521,7 +522,7 @@ typedef
 
 /* ------------------------ ppc64-linux ------------------------ */
 
-#if defined(PLAT_ppc64_linux)
+#if defined(PLAT_ppc64be_linux)
 
 typedef
    struct { 
@@ -596,7 +597,8 @@ typedef
                     );                                           \
  } while (0)
 
-#endif /* PLAT_ppc64_linux */
+#endif /* PLAT_ppc64be_linux */
+
 
 /* ------------------------- arm-linux ------------------------- */
 
@@ -2536,7 +2538,7 @@ typedef
 
 /* ------------------------ ppc64-linux ------------------------ */
 
-#if defined(PLAT_ppc64_linux)
+#if defined(PLAT_ppc64be_linux)
 
 /* ARGREGS: r3 r4 r5 r6 r7 r8 r9 r10 (the rest on stack somewhere) */
 
@@ -3089,7 +3091,7 @@ typedef
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
 
-#endif /* PLAT_ppc64_linux */
+#endif /* PLAT_ppc64be_linux */
 
 /* ------------------------- arm-linux ------------------------- */
 
@@ -5935,7 +5937,7 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
 #undef PLAT_x86_linux
 #undef PLAT_amd64_linux
 #undef PLAT_ppc32_linux
-#undef PLAT_ppc64_linux
+#undef PLAT_ppc64be_linux
 #undef PLAT_arm_linux
 #undef PLAT_s390x_linux
 #undef PLAT_mips32_linux

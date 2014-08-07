@@ -366,7 +366,7 @@ struct auxv *find_auxv(UWord* sp)
       sp++;
    sp++;
    
-#if defined(VGA_ppc32) || defined(VGA_ppc64)
+#if defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
 # if defined AT_IGNOREPPC
    while (*sp == AT_IGNOREPPC)        // skip AT_IGNOREPPC entries
       sp += 2;
@@ -457,7 +457,8 @@ Addr setup_client_stack( void*  init_sp,
       auxsize += sizeof(*cauxv);
    }
 
-#  if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
+#  if defined(VGP_ppc32_linux) || defined(VGP_ppc64be_linux) \
+      || defined(VGP_ppc64le_linux)
    auxsize += 2 * sizeof(*cauxv);
 #  endif
 
@@ -614,7 +615,8 @@ Addr setup_client_stack( void*  init_sp,
    // We do not take ULong* (as ULong 8 bytes on a 32 bits),
    // => we take UWord*
 
-#  if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
+#  if defined(VGP_ppc32_linux) || defined(VGP_ppc64be_linux) \
+      || defined(VGP_ppc64le_linux)
    auxv[0].a_type  = AT_IGNOREPPC;
    auxv[0].u.a_val = AT_IGNOREPPC;
    auxv[1].a_type  = AT_IGNOREPPC;
@@ -707,7 +709,7 @@ Addr setup_client_stack( void*  init_sp,
                                 "PPC32 icache line size %u (type %u)\n", 
                                 (UInt)auxv->u.a_val, (UInt)auxv->a_type );
             }
-#           elif defined(VGP_ppc64_linux)
+#           elif defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
             /* acquire cache info */
             if (auxv->u.a_val > 0) {
                VG_(machine_ppc64_set_clszB)( auxv->u.a_val );
@@ -718,7 +720,8 @@ Addr setup_client_stack( void*  init_sp,
 #           endif
             break;
 
-#        if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
+#        if defined(VGP_ppc32_linux) || defined(VGP_ppc64be_linux) \
+            || defined(VGP_ppc64le_linux)
          case AT_IGNOREPPC:
             break;
 #        endif
@@ -738,7 +741,8 @@ Addr setup_client_stack( void*  init_sp,
             auxv->a_type = AT_IGNORE;
             break;
 
-#        if !defined(VGP_ppc32_linux) && !defined(VGP_ppc64_linux)
+#        if !defined(VGP_ppc32_linux) && !defined(VGP_ppc64be_linux) \
+            && !defined(VGP_ppc64le_linux)
          case AT_SYSINFO_EHDR: {
             /* Trash this, because we don't reproduce it */
             const NSegment* ehdrseg = VG_(am_find_nsegment)((Addr)auxv->u.a_ptr);
@@ -1024,7 +1028,7 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
    arch->vex.guest_GPR1 = iifii.initial_client_SP;
    arch->vex.guest_CIA  = iifii.initial_client_IP;
 
-#  elif defined(VGP_ppc64_linux)
+#  elif defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
    vg_assert(0 == sizeof(VexGuestPPC64State) % 16);
 
    /* Zero out the initial state, and set up the simulated FPU in a

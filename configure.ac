@@ -163,6 +163,18 @@ AC_MSG_CHECKING([for a supported CPU])
 # is a 64-bit capable PowerPC, then it must be set to ppc64 and not ppc32.
 # Ditto for amd64.  It is used for more configuration below, but is not used
 # outside this file.
+#
+# Power PC returns powerpc for Big Endian.  This was not changed when Little
+# Endian support was added to the 64-bit architecture.  The 64-bit Little
+# Endian systems explicitly state le in the host_cpu.  For clarity in the
+# Valgrind code, the ARCH_MAX name will state LE or BE for the endianess of
+# the 64-bit system.  Big Endian is the only mode supported on 32-bit Power PC.
+# The abreviation PPC or ppc refers to 32-bit and 64-bit systems with either
+# Endianess.  The name PPC64 or ppc64 to 64-bit systems of either Endianess.
+# The names ppc64be or PPC64BE refer to only 64-bit systems that are Big
+# Endian.  Similarly, ppc64le or PPC64LE refer to only 64-bit systems that are
+# Little Endian.
+
 case "${host_cpu}" in
      i?86) 
 	AC_MSG_RESULT([ok (${host_cpu})])
@@ -175,8 +187,15 @@ case "${host_cpu}" in
         ;;
 
      powerpc64)
+     # this only referrs to 64-bit Big Endian
         AC_MSG_RESULT([ok (${host_cpu})])
-        ARCH_MAX="ppc64"
+        ARCH_MAX="ppc64be"
+        ;;
+
+     powerpc64le)
+     # this only referrs to 64-bit Little Endian
+        AC_MSG_RESULT([ok (${host_cpu})])
+        ARCH_MAX="ppc64le"
         ;;
 
      powerpc)
@@ -378,7 +397,7 @@ esac
 # does not support building 32 bit programs
 
 case "$ARCH_MAX-$VGCONF_OS" in
-     amd64-linux|ppc64-linux)
+     amd64-linux|ppc64be-linux)
         AC_MSG_CHECKING([for 32 bit build support])
         safe_CFLAGS=$CFLAGS
         CFLAGS="-m32"
@@ -496,13 +515,13 @@ case "$ARCH_MAX-$VGCONF_OS" in
         valt_load_address_sec_inner="0xUNSET"
         AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
 	;;
-     ppc64-linux)
+     ppc64be-linux)
         valt_load_address_sec_norml="0xUNSET"
         valt_load_address_sec_inner="0xUNSET"
 	if test x$vg_cv_only64bit = xyes; then
-	   VGCONF_ARCH_PRI="ppc64"
+	   VGCONF_ARCH_PRI="ppc64be"
            VGCONF_ARCH_SEC=""
-	   VGCONF_PLATFORM_PRI_CAPS="PPC64_LINUX"
+	   VGCONF_PLATFORM_PRI_CAPS="PPC64BE_LINUX"
 	   VGCONF_PLATFORM_SEC_CAPS=""
            valt_load_address_pri_norml="0x38000000"
            valt_load_address_pri_inner="0x28000000"
@@ -514,9 +533,9 @@ case "$ARCH_MAX-$VGCONF_OS" in
            valt_load_address_pri_norml="0x38000000"
            valt_load_address_pri_inner="0x28000000"
 	else
-	   VGCONF_ARCH_PRI="ppc64"
+	   VGCONF_ARCH_PRI="ppc64be"
            VGCONF_ARCH_SEC="ppc32"
-	   VGCONF_PLATFORM_PRI_CAPS="PPC64_LINUX"
+	   VGCONF_PLATFORM_PRI_CAPS="PPC64BE_LINUX"
 	   VGCONF_PLATFORM_SEC_CAPS="PPC32_LINUX"
            valt_load_address_pri_norml="0x38000000"
            valt_load_address_pri_inner="0x28000000"
@@ -525,6 +544,18 @@ case "$ARCH_MAX-$VGCONF_OS" in
 	fi
         AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
 	;;
+     ppc64le-linux)
+        # Little Endian is only supported on PPC64
+        valt_load_address_sec_norml="0xUNSET"
+        valt_load_address_sec_inner="0xUNSET"
+        VGCONF_ARCH_PRI="ppc64le"
+        VGCONF_ARCH_SEC=""
+        VGCONF_PLATFORM_PRI_CAPS="PPC64LE_LINUX"
+        VGCONF_PLATFORM_SEC_CAPS=""
+        valt_load_address_pri_norml="0x38000000"
+        valt_load_address_pri_inner="0x28000000"
+        AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
+       ;;
      # Darwin gets identified as 32-bit even when it supports 64-bit.
      # (Not sure why, possibly because 'uname' returns "i386"?)  Just about
      # all Macs support both 32-bit and 64-bit, so we just build both.  If
@@ -663,7 +694,8 @@ AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_PPC32,
                test x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_LINUX \ 
                  -o x$VGCONF_PLATFORM_SEC_CAPS = xPPC32_LINUX )
 AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_PPC64, 
-               test x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_LINUX )
+               test x$VGCONF_PLATFORM_PRI_CAPS = xPPC64BE_LINUX \
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC64LE_LINUX )
 AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_ARM,   
                test x$VGCONF_PLATFORM_PRI_CAPS = xARM_LINUX \
                  -o x$VGCONF_PLATFORM_SEC_CAPS = xARM_LINUX )
@@ -686,8 +718,10 @@ AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_AMD64_LINUX,
 AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_PPC32_LINUX, 
                test x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_LINUX \ 
                  -o x$VGCONF_PLATFORM_SEC_CAPS = xPPC32_LINUX)
-AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_PPC64_LINUX, 
-               test x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_LINUX)
+AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_PPC64BE_LINUX,
+               test x$VGCONF_PLATFORM_PRI_CAPS = xPPC64BE_LINUX)
+AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_PPC64LE_LINUX,
+               test x$VGCONF_PLATFORM_PRI_CAPS = xPPC64LE_LINUX)
 AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_ARM_LINUX, 
                test x$VGCONF_PLATFORM_PRI_CAPS = xARM_LINUX \
                  -o x$VGCONF_PLATFORM_SEC_CAPS = xARM_LINUX)
@@ -714,7 +748,8 @@ AM_CONDITIONAL(VGCONF_OS_IS_LINUX,
                test x$VGCONF_PLATFORM_PRI_CAPS = xX86_LINUX \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_LINUX \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_LINUX \
-                 -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_LINUX \
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC64BE_LINUX \
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC64LE_LINUX \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xARM_LINUX \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xARM64_LINUX \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xS390X_LINUX \

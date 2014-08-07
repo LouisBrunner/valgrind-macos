@@ -48,7 +48,7 @@ static Bool go(char* arch)
 #elif defined(VGP_ppc32_linux)
    if ( 0 == strcmp( arch, "ppc32" ) ) return True;
 
-#elif defined(VGP_ppc64_linux)
+#elif defined(VGP_ppc64be_linux)
    if ( 0 == strcmp( arch, "ppc64" ) ) return True;
 #if defined(VGA_SEC_ppc32)
    if ( 0 == strcmp( arch, "ppc32" ) ) return True;

@@ -622,7 +622,8 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 
 /* -----------------------ppc32/64 ---------------------- */
 
-#if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
+#if defined(VGP_ppc32_linux) || defined(VGP_ppc64be_linux) \
+    || defined(VGP_ppc64le_linux)
 
 UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
                                /*OUT*/Addr* ips, UInt max_n_ips,
@@ -631,7 +632,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
                                Addr fp_max_orig )
 {
    Bool  lr_is_first_RA = False;
-#  if defined(VG_PLAT_USES_PPCTOC)
+#  if defined(VG_PLAT_USES_PPCTOC) || defined(VGP_ppc64le_linux)
    Word redir_stack_size = 0;
    Word redirs_used      = 0;
 #  endif
@@ -650,7 +651,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    Addr fp = sp;
 #  if defined(VGP_ppc32_linux)
    Addr lr = startRegs->misc.PPC32.r_lr;
-#  elif defined(VGP_ppc64_linux)
+#  elif defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
    Addr lr = startRegs->misc.PPC64.r_lr;
 #  endif
    Addr fp_min = sp;
@@ -686,7 +687,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    /* fp is %r1.  ip is %cia.  Note, ppc uses r1 as both the stack and
       frame pointers. */
 
-#  if defined(VGP_ppc64_linux)
+#  if defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
    redir_stack_size = VEX_GUEST_PPC64_REDIR_STACK_SIZE;
    redirs_used      = 0;
 #  endif
@@ -742,7 +743,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
         /* On ppc64-linux (ppc64-elf, really), the lr save
            slot is 2 words back from sp, whereas on ppc32-elf(?) it's
            only one word back. */
-#        if defined(VG_PLAT_USES_PPCTOC)
+#        if defined(VG_PLAT_USES_PPCTOC) || defined(VGP_ppc64le_linux)
          const Int lr_offset = 2;
 #        else
          const Int lr_offset = 1;
@@ -761,7 +762,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
             else
                ip = (((UWord*)fp)[lr_offset]);
 
-#           if defined(VG_PLAT_USES_PPCTOC)
+#           if defined(VG_PLAT_USES_PPCTOC) || defined(VGP_ppc64le_linux)
             /* Nasty hack to do with function replacement/wrapping on
                ppc64-linux.  If LR points to our magic return stub,
                then we are in a wrapped or intercepted function, in

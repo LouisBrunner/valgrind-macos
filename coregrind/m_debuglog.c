@@ -189,7 +189,7 @@ static UInt local_sys_getpid ( void )
    return __res;
 }
 
-#elif defined(VGP_ppc64_linux)
+#elif defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
 
 static UInt local_sys_write_stderr ( const HChar* buf, Int n )
 {

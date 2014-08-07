@@ -20,7 +20,7 @@
 
 typedef  unsigned long int  UWord;
 
-#if defined(VGA_ppc64)
+#if defined(VGA_ppc64be) || defined(VGA_ppc64le)
 
 // ppc64
 /* return 1 if success, 0 if failure */

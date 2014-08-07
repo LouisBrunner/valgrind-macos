@@ -293,7 +293,7 @@ typedef
       Int   x29_off;
    }
    DiCfSI_m;
-#elif defined(VGA_ppc32) || defined(VGA_ppc64)
+#elif defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
 /* Just have a struct with the common fields in, so that code that
    processes the common fields doesn't have to be ifdef'd against
    VGP_/VGA_ symbols.  These are not used in any way on ppc32/64-linux

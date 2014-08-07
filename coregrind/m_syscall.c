@@ -386,7 +386,7 @@ asm(
 ".previous\n"
 );
 
-#elif defined(VGP_ppc64_linux)
+#elif defined(VGP_ppc64be_linux)
 /* Due to the need to return 65 bits of result, this is completely
    different from the ppc32 case.  The single arg register points to a
    7-word block containing the syscall # and the 6 args.  The syscall
@@ -720,7 +720,7 @@ SysRes VG_(do_syscall) ( UWord sysno, UWord a1, UWord a2, UWord a3,
    UInt  cr0so   = (UInt)(ret);
    return VG_(mk_SysRes_ppc32_linux)( val, cr0so );
 
-#  elif defined(VGP_ppc64_linux)
+#  elif defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
    ULong argblock[7];
    argblock[0] = sysno;
    argblock[1] = a1;

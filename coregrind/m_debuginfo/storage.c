@@ -199,7 +199,7 @@ void ML_(ppDiCfSI) ( XArray* /* of CfiExpr */ exprs,
    SHOW_HOW(si_m->r11_how, si_m->r11_off);
    VG_(printf)(" R7=");
    SHOW_HOW(si_m->r7_how, si_m->r7_off);
-#  elif defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64be)
+#  elif defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
 #  elif defined(VGA_s390x) || defined(VGA_mips32) || defined(VGA_mips64)
    VG_(printf)(" SP=");
    SHOW_HOW(si_m->sp_how, si_m->sp_off);

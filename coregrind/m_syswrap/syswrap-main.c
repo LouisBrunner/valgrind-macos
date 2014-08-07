@@ -2007,6 +2007,25 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
       vg_assert(p[0] == 0x44 && p[1] == 0x0 && p[2] == 0x0 && p[3] == 0x2);
    }
 
+#elif defined(VGP_ppc64le_linux)
+   arch->vex.guest_CIA -= 4;             // sizeof(ppc32 instr)
+
+   /* Make sure our caller is actually sane, and we're really backing
+      back over a syscall.
+
+      sc == 44 00 00 02
+   */
+   {
+      UChar *p = (UChar *)arch->vex.guest_CIA;
+
+      if (p[3] != 0x44 || p[2] != 0x0 || p[1] != 0x0 || p[0] != 0x02)
+         VG_(message)(Vg_DebugMsg,
+                      "?! restarting over syscall at %#llx %02x %02x %02x %02x\n",
+                      arch->vex.guest_CIA + 0ULL, p[3], p[2], p[1], p[0]);
+
+      vg_assert(p[3] == 0x44 && p[2] == 0x0 && p[1] == 0x0 && p[0] == 0x2);
+   }
+
 #elif defined(VGP_arm_linux)
    if (arch->vex.guest_R15T & 1) {
       // Thumb mode.  SVC is a encoded as

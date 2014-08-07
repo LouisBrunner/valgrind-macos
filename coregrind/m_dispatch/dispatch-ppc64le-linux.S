@@ -28,13 +28,22 @@
   The GNU General Public License is contained in the file COPYING.
 */
 
-#if defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
+#if  defined(VGP_ppc64le_linux)
 
 #include "pub_core_basics_asm.h"
 #include "pub_core_dispatch_asm.h"
 #include "pub_core_transtab_asm.h"
 #include "libvex_guest_offsets.h"	/* for OFFSET_ppc64_CIA */
 
+/* NOTE: PPC64 supports Big Endian and Little Endian.  It also supports the
+	ELF version 1 and ELF version 2 APIs.
+
+	Currently LE uses ELF version 2 and BE uses ELF version 1.  However,
+	BE and LE may support the other ELF version in the future.  So, the
+	_CALL_ELF is used in the assembly function to enable code for a
+	specific ELF version independently of the Enianess of the machine.
+	The test "#if  _CALL_ELF == 2" checks if ELF version 2 is being used.
+*/
 
 /* References to globals via the TOC */
 
@@ -74,14 +83,26 @@ void VG_(disp_run_translations)( UWord* two_words,
 .section ".text"
 .align   2
 .globl   VG_(disp_run_translations)
+#if _CALL_ELF == 2
+.type VG_(disp_run_translations),@function
+VG_(disp_run_translations):
+.type    .VG_(disp_run_translations),@function
+#else
 .section ".opd","aw"
 .align   3
 VG_(disp_run_translations):
 .quad    .VG_(disp_run_translations),.TOC.@tocbase,0
 .previous
 .type    .VG_(disp_run_translations),@function
+#endif
 .globl   .VG_(disp_run_translations)
 .VG_(disp_run_translations):
+#if  _CALL_ELF == 2
+0:      addis 2, 12,.TOC.-0b@ha
+        addi  2,2,.TOC.-0b@l
+        .localentry VG_(disp_run_translations), .-VG_(disp_run_translations)
+#endif
+
 	/* r3 holds two_words */
 	/* r4 holds guest_state */
         /* r5 holds host_addr */
@@ -228,8 +249,13 @@ VG_(disp_run_translations):
         /* make a stack frame for the code we are calling */
         stdu    1,-48(1)
 
-        /* Set up the guest state ptr */
+	/* Set up the guest state ptr */
         mr      31,4      /* r31 (generated code gsp) = r4 */
+#if  _CALL_ELF == 2
+/*  for the LE ABI need to setup r2 and r12 */
+0:      addis 2, 12,.TOC.-0b@ha
+        addi  2,2,.TOC.-0b@l
+#endif
 
         /* and jump into the code cache.  Chained translations in
            the code cache run, until for whatever reason, they can't
@@ -384,6 +410,9 @@ VG_(disp_run_translations):
         mtlr    0
         addi    1,1,624   /* stack_size */
         blr
+#if _CALL_ELF == 2
+	.size VG_(disp_run_translations),.-VG_(disp_run_translations)
+#endif
 
 
 /*----------------------------------------------------*/
@@ -394,15 +423,25 @@ VG_(disp_run_translations):
         .section ".text"
         .align   2
         .globl   VG_(disp_cp_chain_me_to_slowEP)
-        .section ".opd","aw"
+#if  _CALL_ELF == 2
+        .type VG_(disp_cp_chain_me_to_slowEP),@function
+	VG_(disp_cp_chain_me_to_slowEP):
+#else
+	.section ".opd","aw"
         .align   3
 VG_(disp_cp_chain_me_to_slowEP):
         .quad    .VG_(disp_cp_chain_me_to_slowEP),.TOC.@tocbase,0
         .previous
+#endif
         .type    .VG_(disp_cp_chain_me_to_slowEP),@function
         .globl   .VG_(disp_cp_chain_me_to_slowEP)
 .VG_(disp_cp_chain_me_to_slowEP):
-        /* We got called.  The return address indicates
+#if  _CALL_ELF == 2
+0:      addis 2, 12,.TOC.-0b@ha
+        addi  2,2,.TOC.-0b@l
+        .localentry VG_(disp_cp_chain_me_to_slowEP), .-VG_(disp_cp_chain_me_to_slowEP)
+#endif
+	/* We got called.  The return address indicates
            where the patching needs to happen.  Collect
            the return address and, exit back to C land,
            handing the caller the pair (Chain_me_S, RA) */
@@ -414,20 +453,33 @@ VG_(disp_cp_chain_me_to_slowEP):
         */
         subi 7,7,20+4+4
         b    .postamble
+#if  _CALL_ELF == 2
+        .size VG_(disp_cp_chain_me_to_slowEP),.-VG_(disp_cp_chain_me_to_slowEP)
+#endif
 
 /* ------ Chain me to fast entry point ------ */
         .section ".text"
         .align   2
         .globl   VG_(disp_cp_chain_me_to_fastEP)
-        .section ".opd","aw"
+#if  _CALL_ELF == 2
+        .type VG_(disp_cp_chain_me_to_fastEP),@function
+VG_(disp_cp_chain_me_to_fastEP):
+#else
+	.section ".opd","aw"
         .align   3
 VG_(disp_cp_chain_me_to_fastEP):
         .quad    .VG_(disp_cp_chain_me_to_fastEP),.TOC.@tocbase,0
         .previous
+#endif
         .type    .VG_(disp_cp_chain_me_to_fastEP),@function
         .globl   .VG_(disp_cp_chain_me_to_fastEP)
 .VG_(disp_cp_chain_me_to_fastEP):
-        /* We got called.  The return address indicates
+#if  _CALL_ELF == 2
+0:      addis 2, 12,.TOC.-0b@ha
+        addi  2,2,.TOC.-0b@l
+        .localentry VG_(disp_cp_chain_me_to_fastEP), .-VG_(disp_cp_chain_me_to_fastEP)
+#endif
+	/* We got called.  The return address indicates
            where the patching needs to happen.  Collect
            the return address and, exit back to C land,
            handing the caller the pair (Chain_me_S, RA) */
@@ -439,20 +491,33 @@ VG_(disp_cp_chain_me_to_fastEP):
         */
         subi 7,7,20+4+4
         b    .postamble
+#if _CALL_ELF == 2
+        .size VG_(disp_cp_chain_me_to_fastEP),.-VG_(disp_cp_chain_me_to_fastEP)
+#endif
 
 /* ------ Indirect but boring jump ------ */
         .section ".text"
         .align   2
         .globl   VG_(disp_cp_xindir)
-        .section ".opd","aw"
+#if _CALL_ELF == 2
+        .type VG_(disp_cp_xindir),@function
+VG_(disp_cp_xindir):
+#else
+	.section ".opd","aw"
         .align   3
 VG_(disp_cp_xindir):
         .quad    .VG_(disp_cp_xindir),.TOC.@tocbase,0
         .previous
+#endif
         .type    .VG_(disp_cp_xindir),@function
         .globl   .VG_(disp_cp_xindir)
 .VG_(disp_cp_xindir):
-        /* Where are we going? */
+#if  _CALL_ELF == 2
+0:      addis 2, 12,.TOC.-0b@ha
+        addi  2,2,.TOC.-0b@l
+        .localentry VG_(disp_cp_xindir), .-VG_(disp_cp_xindir)
+#endif
+	/* Where are we going? */
         ld      3,OFFSET_ppc64_CIA(31)
 
         /* stats only */
@@ -478,6 +543,9 @@ VG_(disp_cp_xindir):
         /* Found a match.  Jump to .host. */
         mtctr   7
         bctr
+#if _CALL_ELF == 2
+        .size VG_(disp_cp_xindir),.-VG_(disp_cp_xindir)
+#endif
 
 .fast_lookup_failed:
         /* stats only */
@@ -495,36 +563,61 @@ VG_(disp_cp_xindir):
 .section ".text"
         .align   2
         .globl   VG_(disp_cp_xassisted)
-        .section ".opd","aw"
+#if _CALL_ELF == 2
+        .type VG_(disp_cp_xassisted),@function
+VG_(disp_cp_xassisted):
+#else
+	.section ".opd","aw"
         .align   3
 VG_(disp_cp_xassisted):
         .quad    .VG_(disp_cp_xassisted),.TOC.@tocbase,0
         .previous
-        .type    .VG_(disp_cp_xassisted),@function
+#endif
+#if  _CALL_ELF == 2
+0:      addis 2, 12,.TOC.-0b@ha
+        addi  2,2,.TOC.-0b@l
+        .localentry VG_(disp_cp_xassisted), .-VG_(disp_cp_xassisted)
+#endif
+	.type    .VG_(disp_cp_xassisted),@function
         .globl   .VG_(disp_cp_xassisted)
 .VG_(disp_cp_xassisted):
         /* r31 contains the TRC */
         mr      6,31
         li      7,0
         b       .postamble
+#if _CALL_ELF == 2
+        .size VG_(disp_cp_xassisted),.-VG_(disp_cp_xassisted)
+#endif
 
 /* ------ Event check failed ------ */
         .section ".text"
         .align   2
         .globl   VG_(disp_cp_evcheck_fail)
-        .section ".opd","aw"
+#if _CALL_ELF == 2
+        .type VG_(disp_cp_evcheck_fail),@function
+VG_(disp_cp_evcheck_fail):
+#else
+	.section ".opd","aw"
         .align   3
 VG_(disp_cp_evcheck_fail):
         .quad    .VG_(disp_cp_evcheck_fail),.TOC.@tocbase,0
         .previous
+#endif
+#if  _CALL_ELF == 2
+0:      addis 2, 12,.TOC.-0b@ha
+        addi  2,2,.TOC.-0b@l
+        .localentry VG_(disp_cp_evcheck_fail), .-VG_(disp_cp_evcheck_fail)
+#endif
         .type    .VG_(disp_cp_evcheck_fail),@function
         .globl   .VG_(disp_cp_evcheck_fail)
 .VG_(disp_cp_evcheck_fail):
         li      6,VG_TRC_INNER_COUNTERZERO
         li      7,0
         b       .postamble
+#if  _CALL_ELF == 2
+       .size VG_(disp_cp_evcheck_fail),.-VG_(disp_cp_evcheck_fail)
+#endif
 
-        
 .size .VG_(disp_run_translations), .-.VG_(disp_run_translations)
 
 /* Let the linker know we don't need an executable stack */

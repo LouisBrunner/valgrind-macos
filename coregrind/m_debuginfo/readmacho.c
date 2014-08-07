@@ -199,6 +199,8 @@ static DiSlice map_image_aboard ( DebugInfo* di, /* only for err msgs */
          Int cputype = CPU_TYPE_POWERPC;
 #        elif defined(VGA_ppc64be)
          Int cputype = CPU_TYPE_POWERPC64BE;
+#        elif defined(VGA_ppc64le)
+         Int cputype = CPU_TYPE_POWERPC64LE;
 #        elif defined(VGA_x86)
          Int cputype = CPU_TYPE_X86;
 #        elif defined(VGA_amd64)

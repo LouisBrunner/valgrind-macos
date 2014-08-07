@@ -495,6 +495,7 @@ Int VG_(load_ELF)(Int fd, const HChar* name, /*MOD*/ExeInfo* info)
       VG_(close)(interp->fd);
 
       entry = (void *)(advised - interp_addr + interp->e.e_entry);
+
       info->interp_offset = advised - interp_addr;
 
       VG_(free)(interp->p);
@@ -514,6 +515,10 @@ Int VG_(load_ELF)(Int fd, const HChar* name, /*MOD*/ExeInfo* info)
    info->init_toc = ((ULong*)entry)[1];
    info->init_ip  += info->interp_offset;
    info->init_toc += info->interp_offset;
+#elif defined(VGP_ppc64le_linux)
+   /* On PPC64LE, ELF ver 2. API doesn't use a func ptr */
+   info->init_ip  = (Addr)entry;
+   info->init_toc = 0; /* meaningless on this platform */
 #else
    info->init_ip  = (Addr)entry;
    info->init_toc = 0; /* meaningless on this platform */

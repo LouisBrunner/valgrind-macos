@@ -27,6 +27,7 @@ char* all_archs[] = {
    "amd64",
    "ppc32",
    "ppc64",
+   "ppc64le",
    "arm",
    "s390x",
    "mips32",
@@ -53,6 +54,9 @@ static Bool go(char* arch)
 #if defined(VGA_SEC_ppc32)
    if ( 0 == strcmp( arch, "ppc32" ) ) return True;
 #endif
+
+#elif defined(VGP_ppc64le_linux)
+   if ( 0 == strcmp( arch, "ppc64" ) ) return True;
 
 #elif defined(VGP_s390x_linux)
    if ( 0 == strcmp( arch, "s390x" ) ) return True;

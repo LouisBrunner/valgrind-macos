@@ -1043,6 +1043,9 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
    arch->vex.guest_GPR1 = iifii.initial_client_SP;
    arch->vex.guest_GPR2 = iifii.initial_client_TOC;
    arch->vex.guest_CIA  = iifii.initial_client_IP;
+#if defined(VGP_ppc64le_linux)
+   arch->vex.guest_GPR12 = iifii.initial_client_IP;
+#endif
 
 #  elif defined(VGP_arm_linux)
    /* Zero out the initial state, and set up the simulated FPU in a

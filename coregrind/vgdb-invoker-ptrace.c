@@ -1034,6 +1034,16 @@ Bool invoker_invoke_gdbserver (pid_t pid)
       user_mod.regs.gpr[3] = check;
       /* put bad_return return address in Link Register */
       user_mod.regs.link = bad_return;
+#elif defined(VGA_ppc64le)
+      /* LE does not use the function pointer structure used in BE */
+      user_mod.regs.nip = shared64->invoke_gdbserver;
+      user_mod.regs.gpr[1] = sp - 512;
+      user_mod.regs.gpr[12] = user_mod.regs.nip;
+      user_mod.regs.trap = -1L;
+      /* put check arg in register 3 */
+      user_mod.regs.gpr[3] = check;
+      /* put bad_return return address in Link Register */
+      user_mod.regs.link = bad_return;
 #elif defined(VGA_s390x)
       /* put check arg in register r2 */
       user_mod.regs.gprs[2] = check;

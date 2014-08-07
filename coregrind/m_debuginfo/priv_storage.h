@@ -71,7 +71,8 @@
 typedef 
    struct { 
       Addr    addr;    /* lowest address of entity */
-      Addr    tocptr;  /* ppc64-linux only: value that R2 should have */
+      Addr    tocptr;  /* ppc64be-linux only: value that R2 should have */
+      Addr    local_ep;  /* address for local entry point, ppc64le */
       HChar*  pri_name;  /* primary name, never NULL */
       HChar** sec_names; /* NULL, or a NULL term'd array of other names */
       // XXX: this could be shrunk (on 32-bit platforms) by using 30
@@ -816,7 +817,7 @@ struct _DebugInfo {
    Bool   gotplt_present;
    Addr   gotplt_avma;
    SizeT  gotplt_size;
-   /* .opd -- needed on ppc64-linux for finding symbols */
+   /* .opd -- needed on ppc64be-linux for finding symbols */
    Bool   opd_present;
    Addr   opd_avma;
    SizeT  opd_size;

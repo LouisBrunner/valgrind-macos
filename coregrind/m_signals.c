@@ -866,6 +866,23 @@ extern void my_sigreturn(void);
    "	li	0, " #name "\n" \
    "	sc\n"
 
+#elif defined(VGP_ppc64le_linux)
+/* Little Endian supports ELF version 2.  In the future, it may
+ * support other versions.
+ */
+#  define _MY_SIGRETURN(name) \
+   ".align   2\n" \
+   ".globl   my_sigreturn\n" \
+   ".type    .my_sigreturn,@function\n" \
+   "my_sigreturn:\n" \
+   "#if _CALL_ELF == 2 \n" \
+   "0: addis        2,12,.TOC.-0b@ha\n" \
+   "   addi         2,2,.TOC.-0b@l\n" \
+   "   .localentry my_sigreturn,.-my_sigreturn\n" \
+   "#endif \n" \
+   "   sc\n" \
+   "   .size my_sigreturn,.-my_sigreturn\n"
+
 #elif defined(VGP_arm_linux)
 #  define _MY_SIGRETURN(name) \
    ".text\n" \

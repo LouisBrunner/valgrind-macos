@@ -64,6 +64,7 @@ static struct {
    { CPU_TYPE_ARM,         "arm",     "arm" },
    { CPU_TYPE_POWERPC,     "ppc",     "ppc32" },
    { CPU_TYPE_POWERPC64BE, "ppc64be", "ppc64be" },
+   { CPU_TYPE_POWERPC64LE, "ppc64le", "ppc64le" },
 };
 static int valid_archs_count = sizeof(valid_archs)/sizeof(valid_archs[0]);
 

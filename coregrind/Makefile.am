@@ -336,7 +336,8 @@ COREGRIND_SOURCES_COMMON = \
 	m_dispatch/dispatch-x86-linux.S \
 	m_dispatch/dispatch-amd64-linux.S \
 	m_dispatch/dispatch-ppc32-linux.S \
-	m_dispatch/dispatch-ppc64-linux.S \
+	m_dispatch/dispatch-ppc64be-linux.S \
+	m_dispatch/dispatch-ppc64le-linux.S \
 	m_dispatch/dispatch-arm-linux.S \
 	m_dispatch/dispatch-arm64-linux.S \
 	m_dispatch/dispatch-s390x-linux.S \
@@ -388,7 +389,8 @@ COREGRIND_SOURCES_COMMON = \
 	m_syswrap/syscall-x86-linux.S \
 	m_syswrap/syscall-amd64-linux.S \
 	m_syswrap/syscall-ppc32-linux.S \
-	m_syswrap/syscall-ppc64-linux.S \
+	m_syswrap/syscall-ppc64be-linux.S \
+	m_syswrap/syscall-ppc64le-linux.S \
 	m_syswrap/syscall-arm-linux.S \
 	m_syswrap/syscall-arm64-linux.S \
 	m_syswrap/syscall-s390x-linux.S \

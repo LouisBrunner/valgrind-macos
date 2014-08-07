@@ -444,6 +444,12 @@ VG_(ppctoc_magic_redirect_return_stub):
 	/* this function is written using the "dotless" ABI convention */
 	.align 2
 	.globl VG_(ppc64_linux_REDIR_FOR_strlen)
+#if !defined VGP_ppc64be_linux || _CALL_ELF == 2
+        /* Little Endian uses ELF version 2 */
+        .type VG_(ppc64_linux_REDIR_FOR_strlen),@function
+VG_(ppc64_linux_REDIR_FOR_strlen):
+#else
+        /* Big Endian uses ELF version 1 */
 	.section        ".opd","aw"
 	.align 3
 VG_(ppc64_linux_REDIR_FOR_strlen):
@@ -454,6 +460,12 @@ VG_(ppc64_linux_REDIR_FOR_strlen):
 	.type	VG_(ppc64_linux_REDIR_FOR_strlen), @function
 
 .L.VG_(ppc64_linux_REDIR_FOR_strlen):
+#endif
+#if _CALL_ELF == 2
+0:      addis        2,12,.TOC.-0b@ha
+        addi         2,2,.TOC.-0b@l
+        .localentry  VG_(ppc64_linux_REDIR_FOR_strlen), .-VG_(ppc64_linux_REDIR_FOR_strlen)
+#endif
         mr 9,3
         lbz 0,0(3)
         li 3,0
@@ -467,6 +479,12 @@ VG_(ppc64_linux_REDIR_FOR_strlen):
         cmpwi 7,0,0
         bne 7,.L01
         blr
+
+#if !defined VGP_ppc64be_linux || _CALL_ELF == 2
+        .size VG_(ppc64_linux_REDIR_FOR_strlen),.-VG_(ppc64_linux_REDIR_FOR_strlen)
+#else
+        .size VG_(ppc64_linux_REDIR_FOR_strlen),.-.L.VG_(ppc64_linux_REDIR_FOR_strlen)
+#endif
         .long 0
         .byte 0,0,0,0,0,0,0,0
 .L0end:
@@ -474,6 +492,10 @@ VG_(ppc64_linux_REDIR_FOR_strlen):
         /* this function is written using the "dotless" ABI convention */
         .align 2
         .globl VG_(ppc64_linux_REDIR_FOR_strchr)
+#if !defined VGP_ppc64be_linux || _CALL_ELF == 2
+        .type   VG_(ppc64_linux_REDIR_FOR_strchr),@function
+VG_(ppc64_linux_REDIR_FOR_strchr):
+#else
 	.section        ".opd","aw"
 	.align 3
 VG_(ppc64_linux_REDIR_FOR_strchr):
@@ -482,8 +504,14 @@ VG_(ppc64_linux_REDIR_FOR_strchr):
         .size   VG_(ppc64_linux_REDIR_FOR_strchr), \
                         .L1end-.L.VG_(ppc64_linux_REDIR_FOR_strchr)
         .type   VG_(ppc64_linux_REDIR_FOR_strchr),@function
-	
+
 .L.VG_(ppc64_linux_REDIR_FOR_strchr):
+#endif
+#if  _CALL_ELF == 2
+0:      addis         2,12,.TOC.-0b@ha
+        addi         2,2,.TOC.-0b@l
+        .localentry VG_(ppc64_linux_REDIR_FOR_strchr), .-VG_(ppc64_linux_REDIR_FOR_strchr)
+#endif
         lbz 0,0(3)
         rldicl 4,4,0,56
         cmpw 7,4,0
@@ -491,6 +519,11 @@ VG_(ppc64_linux_REDIR_FOR_strchr):
         cmpdi 7,0,0
         bne 7,.L18
         b .L14
+#if !defined VGP_ppc64be_linux || _CALL_ELF == 2
+        .size VG_(ppc64_linux_REDIR_FOR_strchr),.-VG_(ppc64_linux_REDIR_FOR_strchr)
+#else
+        .size VG_(ppc64_linux_REDIR_FOR_strchr),.-.L.VG_(ppc64_linux_REDIR_FOR_strchr)
+#endif
 .L19:	
         beq 6,.L14
 .L18:	

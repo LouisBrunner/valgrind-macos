@@ -2641,6 +2641,10 @@ static void final_tidyup(ThreadId tid)
    VG_(set_IP)(tid, __libc_freeres_wrapper);
 #  if defined(VGP_ppc64be_linux)
    VG_(threads)[tid].arch.vex.guest_GPR2 = r2;
+#  elif  defined(VGP_ppc64le_linux)
+   /* setting GPR2 but not really needed, GPR12 is needed */
+   VG_(threads)[tid].arch.vex.guest_GPR2  = __libc_freeres_wrapper;
+   VG_(threads)[tid].arch.vex.guest_GPR12 = __libc_freeres_wrapper;
 #  endif
    /* mips-linux note: we need to set t9 */
 #  if defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
@@ -2877,6 +2881,51 @@ asm("\n"
     "\toris 14,14,_start_in_C_linux@h\n"
     "\tori  14,14,_start_in_C_linux@l\n"
     "\tld 14,0(14)\n"
+    "\tmtctr 14\n"
+    "\tbctrl\n"
+    "\tnop\n"
+    "\ttrap\n"
+);
+#elif defined(VGP_ppc64le_linux)
+/* Little Endian uses ELF version 2 but in the future may also
+ * support other ELF versions.
+ */
+asm("\n"
+    "\t.align 2\n"
+    "\t.global _start\n"
+    "\t.type _start,@function\n"
+    "_start:\n"
+    "#if _CALL_ELF == 2    \n"
+    "0:  addis        2,12,.TOC.-0b@ha\n"
+    "    addi         2,2,.TOC.-0b@l\n"
+    "    .localentry  _start, .-_start\n"
+    "#endif \n"
+    /* set up the new stack in r16 */
+    "\tlis  16,   vgPlain_interim_stack@highest\n"
+    "\tori  16,16,vgPlain_interim_stack@higher\n"
+    "\tsldi 16,16,32\n"
+    "\toris 16,16,vgPlain_interim_stack@h\n"
+    "\tori  16,16,vgPlain_interim_stack@l\n"
+    "\txor  17,17,17\n"
+    "\tlis    17,("VG_STRINGIFY(VG_STACK_GUARD_SZB)" >> 16)\n"
+    "\tori 17,17,("VG_STRINGIFY(VG_STACK_GUARD_SZB)" & 0xFFFF)\n"
+    "\txor 18,18,18\n"
+    "\tlis    18,("VG_STRINGIFY(VG_STACK_ACTIVE_SZB)" >> 16)\n"
+    "\tori 18,18,("VG_STRINGIFY(VG_STACK_ACTIVE_SZB)" & 0xFFFF)\n"
+    "\tadd 16,17,16\n"
+    "\tadd 16,18,16\n"
+    "\trldicr 16,16,0,59\n"
+    /* now r16 = &vgPlain_interim_stack + VG_STACK_GUARD_SZB +
+       VG_STACK_ACTIVE_SZB rounded down to the nearest 16-byte
+       boundary.  And r1 is the original SP.  Set the SP to r16 and
+       call _start_in_C_linux, passing it the initial SP. */
+    "\tmr 3,1\n"
+    "\tmr 1,16\n"
+    "\tlis  14,   _start_in_C_linux@highest\n"
+    "\tori  14,14,_start_in_C_linux@higher\n"
+    "\tsldi 14,14,32\n"
+    "\toris 14,14,_start_in_C_linux@h\n"
+    "\tori  14,14,_start_in_C_linux@l\n"
     "\tmtctr 14\n"
     "\tbctrl\n"
     "\tnop\n"

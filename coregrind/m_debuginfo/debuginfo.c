@@ -1,4 +1,5 @@
 
+
 /*--------------------------------------------------------------------*/
 /*--- Top level management of symbols and debugging information.   ---*/
 /*---                                                  debuginfo.c ---*/
@@ -4138,6 +4139,7 @@ void VG_(DebugInfo_syms_getidx) ( const DebugInfo *si,
                                         Int idx,
                                   /*OUT*/Addr*    avma,
                                   /*OUT*/Addr*    tocptr,
+                                  /*OUT*/Addr*    local_ep,
                                   /*OUT*/UInt*    size,
                                   /*OUT*/HChar**  pri_name,
                                   /*OUT*/HChar*** sec_names,
@@ -4147,6 +4149,7 @@ void VG_(DebugInfo_syms_getidx) ( const DebugInfo *si,
    vg_assert(idx >= 0 && idx < si->symtab_used);
    if (avma)      *avma      = si->symtab[idx].addr;
    if (tocptr)    *tocptr    = si->symtab[idx].tocptr;
+   if (local_ep)  *local_ep  = si->symtab[idx].local_ep;
    if (size)      *size      = si->symtab[idx].size;
    if (pri_name)  *pri_name  = si->symtab[idx].pri_name;
    if (sec_names) *sec_names = (HChar **)si->symtab[idx].sec_names; // FIXME

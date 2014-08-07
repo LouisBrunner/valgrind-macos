@@ -252,7 +252,11 @@ void VG_(sigframe_create)( ThreadId tid,
 #  undef DO
 
    frame->uc.uc_mcontext.gp_regs[VKI_PT_NIP]     = tst->arch.vex.guest_CIA;
-   frame->uc.uc_mcontext.gp_regs[VKI_PT_MSR]     = 0xf032;   /* pretty arbitrary */
+#ifdef VGP_ppc64le_linux
+   frame->uc.uc_mcontext.gp_regs[VKI_PT_MSR]     = 0xf033;  /* pretty arbitrary */
+#else
+   frame->uc.uc_mcontext.gp_regs[VKI_PT_MSR]     = 0xf032;  /* pretty arbitrary */
+#endif
    frame->uc.uc_mcontext.gp_regs[VKI_PT_ORIG_R3] = tst->arch.vex.guest_GPR3;
    frame->uc.uc_mcontext.gp_regs[VKI_PT_CTR]     = tst->arch.vex.guest_CTR;
    frame->uc.uc_mcontext.gp_regs[VKI_PT_LNK]     = tst->arch.vex.guest_LR;
@@ -302,9 +306,13 @@ void VG_(sigframe_create)( ThreadId tid,
 
    /* Handler is in fact a standard ppc64-linux function descriptor, 
       so extract the function entry point and also the toc ptr to use. */
+#if defined(VGP_ppc64be_linux)
    SET_SIGNAL_GPR(tid, 2, (Addr) ((ULong*)handler)[1]);
    tst->arch.vex.guest_CIA = (Addr) ((ULong*)handler)[0];
-
+#else
+   SET_SIGNAL_GPR(tid, 12, (Addr) handler);
+   tst->arch.vex.guest_CIA = (Addr) handler;
+#endif
    priv = &frame->priv;
    priv->magicPI       = 0x31415927;
    priv->sigNo_private = sigNo;

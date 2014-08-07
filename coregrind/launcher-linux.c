@@ -228,6 +228,10 @@ static const char *select_platform(const char *clientname)
                 (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
                  ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
                platform = "arm64-linux";
+            } else if (ehdr->e_machine == EM_PPC64 &&
+                (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
+                 ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
+               platform = "ppc64le-linux";
             }
          } else if (header[EI_DATA] == ELFDATA2MSB) {
 #           if !defined(VGPV_arm_linux_android) \
@@ -321,6 +325,7 @@ int main(int argc, char** argv, char** envp)
        (0==strcmp(VG_PLATFORM,"amd64-linux"))  ||
        (0==strcmp(VG_PLATFORM,"ppc32-linux"))  ||
        (0==strcmp(VG_PLATFORM,"ppc64be-linux"))  ||
+       (0==strcmp(VG_PLATFORM,"ppc64le-linux"))  ||
        (0==strcmp(VG_PLATFORM,"arm-linux"))    ||
        (0==strcmp(VG_PLATFORM,"arm64-linux"))  ||
        (0==strcmp(VG_PLATFORM,"s390x-linux"))  ||

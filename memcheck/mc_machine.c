@@ -167,7 +167,11 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
             return GOF(GPRn);
          by testing ox instead of o, and setting ox back 4 bytes when sz == 4.
       */
+#if defined(VGA_ppc64le)
+      Int ox = o;
+#else
       Int ox = sz == 8 ? o : (o - 4);
+#endif
       if (ox == GOF(GPR0)) return ox;
       if (ox == GOF(GPR1)) return ox;
       if (ox == GOF(GPR2)) return ox;
@@ -367,7 +371,11 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    Int  o  = offset;
    Int  sz = szB;
    tl_assert(sz > 0);
+#if defined(VGA_ppc64)
    tl_assert(host_is_big_endian());
+#elif defined(VGA_ppc64le)
+   tl_assert(host_is_little_endian());
+#endif
 
    if (o == GOF(GPR0) && sz == 4) return o;
    if (o == GOF(GPR1) && sz == 4) return o;

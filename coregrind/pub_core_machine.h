@@ -61,6 +61,11 @@
 #  define VG_ELF_MACHINE      EM_PPC64
 #  define VG_ELF_CLASS        ELFCLASS64
 #  define VG_PLAT_USES_PPCTOC 1
+#elif defined(VGP_ppc64le_linux)
+#  define VG_ELF_DATA2XXX     ELFDATA2LSB
+#  define VG_ELF_MACHINE      EM_PPC64
+#  define VG_ELF_CLASS        ELFCLASS64
+#  undef VG_PLAT_USES_PPCTOC
 #elif defined(VGP_arm_linux)
 #  define VG_ELF_DATA2XXX     ELFDATA2LSB
 #  define VG_ELF_MACHINE      EM_ARM

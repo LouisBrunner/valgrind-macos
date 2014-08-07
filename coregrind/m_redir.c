@@ -397,7 +397,7 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
    TopSpec*     newts;
    HChar*       sym_name_pri;
    HChar**      sym_names_sec;
-   Addr         sym_addr, sym_toc;
+   Addr         sym_addr, sym_toc, local_ep;
    HChar        demangled_sopatt[N_DEMANGLED];
    HChar        demangled_fnpatt[N_DEMANGLED];
    Bool         check_ppcTOCs = False;
@@ -499,7 +499,7 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
 
    nsyms = VG_(DebugInfo_syms_howmany)( newdi );
    for (i = 0; i < nsyms; i++) {
-      VG_(DebugInfo_syms_getidx)( newdi, i, &sym_addr, &sym_toc,
+      VG_(DebugInfo_syms_getidx)( newdi, i, &sym_addr, &sym_toc, &local_ep,
                                   NULL, &sym_name_pri, &sym_names_sec,
                                   &isText, NULL );
       /* Set up to conveniently iterate over all names for this symbol. */
@@ -592,7 +592,7 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
 
    if (check_ppcTOCs) {
       for (i = 0; i < nsyms; i++) {
-         VG_(DebugInfo_syms_getidx)( newdi, i, &sym_addr, &sym_toc,
+         VG_(DebugInfo_syms_getidx)( newdi, i, &sym_addr, &sym_toc, &local_ep,
                                      NULL, &sym_name_pri, &sym_names_sec,
                                      &isText, NULL );
          HChar*  twoslots[2];
@@ -755,7 +755,9 @@ void generate_and_add_actives (
       of trashing the caches less. */
    nsyms = VG_(DebugInfo_syms_howmany)( di );
    for (i = 0; i < nsyms; i++) {
-      VG_(DebugInfo_syms_getidx)( di, i, &sym_addr, NULL,
+      Addr local_ep = 0;
+
+      VG_(DebugInfo_syms_getidx)( di, i, &sym_addr, NULL, &local_ep,
                                   NULL, &sym_name_pri, &sym_names_sec,
                                   &isText, &isIFunc );
       HChar*  twoslots[2];
@@ -783,6 +785,18 @@ void generate_and_add_actives (
                act.isIFunc     = isIFunc;
                sp->done = True;
                maybe_add_active( act );
+
+               /* If the function being wrapped has a local entry point
+                * redirect it to the global entry point.  The redirection
+                * must save and setup r2 then setup r12 for the new function.
+                * On return, r2 must be restored.  Local entry points used
+                * used in PPC64 Little Endian.
+                */
+               if (local_ep != 0) {
+                  act.from_addr = local_ep;
+                  maybe_add_active( act );
+               }
+
             }
          } /* for (sp = specs; sp; sp = sp->next) */
 
@@ -1298,6 +1312,27 @@ void VG_(redir_initialise) ( void )
       );
    }
 
+#  elif defined(VGP_ppc64le_linux)
+   /* If we're using memcheck, use these intercepts right from
+    * the start, otherwise ld.so makes a lot of noise.
+    */
+   if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
+
+      /* this is mandatory - can't sanely continue without it */
+      add_hardwired_spec(
+         "ld64.so.2", "strlen",
+         (Addr)&VG_(ppc64_linux_REDIR_FOR_strlen),
+         complain_about_stripped_glibc_ldso
+      );
+
+      add_hardwired_spec(
+         "ld64.so.2", "index",
+         (Addr)&VG_(ppc64_linux_REDIR_FOR_strchr),
+         NULL /* not mandatory - so why bother at all? */
+         /* glibc-2.5 (FC6, ppc64) seems fine without it */
+      );
+   }
+
 #  elif defined(VGP_arm_linux)
    /* If we're using memcheck, use these intercepts right from the
       start, otherwise ld.so makes a lot of noise.  In most ARM-linux
@@ -1569,7 +1604,7 @@ static void handle_require_text_symbols ( DebugInfo* di )
          Bool    isText        = False;
          HChar*  sym_name_pri  = NULL;
          HChar** sym_names_sec = NULL;
-         VG_(DebugInfo_syms_getidx)( di, j, NULL, NULL,
+         VG_(DebugInfo_syms_getidx)( di, j, NULL, NULL, NULL,
                                      NULL, &sym_name_pri, &sym_names_sec,
                                      &isText, NULL );
          HChar*  twoslots[2];

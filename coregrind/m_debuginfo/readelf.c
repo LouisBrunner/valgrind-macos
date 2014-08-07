@@ -241,7 +241,10 @@ Bool get_elf_symbol_info (
         Bool*   from_opd_out,   /* ppc64be-linux only: did we deref an
                                   .opd entry? */
         Bool*   is_text_out,    /* is this a text symbol? */
-        Bool*   is_ifunc        /* is this a  STT_GNU_IFUNC function ?*/
+        Bool*   is_ifunc,       /* is this a  STT_GNU_IFUNC function ?*/
+        Addr*   sym_local_ep    /* addr for local entry point.  PPC64 LE
+                                   supports a local and global entry points.
+                                   Use this value to return the entry point. */
      )
 {
    Bool plausible;
@@ -259,6 +262,8 @@ Bool get_elf_symbol_info (
    *sym_tocptr_out    = 0; /* unknown/inapplicable */
    *from_opd_out      = False;
    *is_ifunc          = False;
+   *sym_local_ep      = 0; /* unknown/inapplicable */
+
    /* Get the symbol size, but restrict it to fit in a signed 32 bit
       int.  Also, deal with the stupid case of negative size by making
       the size be 1.  Note that sym->st_size has type UWord,
@@ -671,13 +676,56 @@ Bool get_elf_symbol_info (
    }
 
 #  if defined(VGP_ppc64be_linux)
-   /* It's crucial that we never add symbol addresses in the .opd
-      section.  This would completely mess up function redirection and
-      intercepting.  This assert ensures that any symbols that make it
-      into the symbol table on ppc64-linux don't point into .opd. */
    if (di->opd_present && di->opd_size > 0) {
       vg_assert(*sym_avma_out + *sym_size_out <= di->opd_avma
                 || *sym_avma_out >= di->opd_avma + di->opd_size);
+   }
+#endif
+
+#  if defined(VGP_ppc64le_linux)
+   /* PPC64 LE ABI uses three bits in the st_other field to indicate the number
+    * of instructions between the function's global and local entry points. An
+    * offset of 0 indicates that there is one entry point.  The value must be:
+    *
+    * 0  - one entry point, local and global are the same
+    * 1  - reserved
+    * 2  - local entry point is one instruction after the global entry point
+    * 3  - local entry point is two instructions after the global entry point
+    * 4  - local entry point is four instructions after the global entry point
+    * 5  - local entry point is eight instructions after the global entry point
+    * 6  - local entry point is sixteen two instructions after the global entry point
+    * 7  - reserved
+    *
+    *  The extract the three bit field from the other field.
+    *        (other_field & STO_PPC64_LOCAL_MASK) >> STO_PPC_LOCAL_BIT
+    *
+    *  where the #define values are given in include/elf/powerpc.h file for
+    *  the PPC binutils.
+    *
+    * coversion of the three bit field to bytes is given by
+    *
+    *       ((1 << bit_field) >> 2) << 2
+    */
+
+   #define STO_PPC64_LOCAL_BIT             5
+   #define STO_PPC64_LOCAL_MASK            (7 << STO_PPC64_LOCAL_BIT)
+   {
+      unsigned int bit_field, dist_to_local_entry;
+      /* extract the other filed */
+      bit_field = (sym->st_other & STO_PPC64_LOCAL_MASK) >> STO_PPC64_LOCAL_BIT;
+
+      if ((bit_field > 0) && (bit_field < 7)) {
+         /* store the local entry point address */
+         dist_to_local_entry = ((1 << bit_field) >> 2) << 2;
+         *sym_local_ep = *sym_avma_out + dist_to_local_entry;
+
+         if (TRACE_SYMTAB_ENABLED) {
+            HChar* sym_name = ML_(img_strdup)(escn_strtab->img,
+                                             "di.gesi.5", sym_name_ioff);
+            VG_(printf)("Local entry point: %s at %#010x\n",
+			sym_name, (unsigned int)*sym_local_ep);
+         }
+      }
    }
 #  endif
 
@@ -687,7 +735,7 @@ Bool get_elf_symbol_info (
 
 
 /* Read an ELF symbol table (normal or dynamic).  This one is for the
-   "normal" case ({x86,amd64,ppc32,arm,mips32,mips64}-linux). */
+   "normal" case ({x86,amd64,ppc32,arm,mips32,mips64, ppc64le}-linux). */
 static
 __attribute__((unused)) /* not referred to on all targets */
 void read_elf_symtab__normal( 
@@ -726,6 +774,7 @@ void read_elf_symtab__normal(
       Addr   sym_avma_really = 0;
       Int    sym_size = 0;
       Addr   sym_tocptr = 0;
+      Addr   local_ep = 0;
       Bool   from_opd = False, is_text = False, is_ifunc = False;
       DiOffT sym_name_really = DiOffT_INVALID;
       if (get_elf_symbol_info(di, &sym, sym_name, escn_strtab, 
@@ -735,7 +784,8 @@ void read_elf_symtab__normal(
                               &sym_avma_really,
                               &sym_size,
                               &sym_tocptr,
-                              &from_opd, &is_text, &is_ifunc)) {
+                              &from_opd, &is_text, &is_ifunc,
+                              &local_ep)) {
 
          DiSym  disym;
          VG_(memset)(&disym, 0, sizeof(disym));
@@ -743,6 +793,7 @@ void read_elf_symtab__normal(
                                        "di.res__n.1", sym_name_really);
          disym.addr      = sym_avma_really;
          disym.tocptr    = sym_tocptr;
+         disym.local_ep  = local_ep;
          disym.pri_name  = ML_(addStr) ( di, cstr, -1 );
          disym.sec_names = NULL;
          disym.size      = sym_size;
@@ -750,7 +801,7 @@ void read_elf_symtab__normal(
          disym.isIFunc   = is_ifunc;
          if (cstr) { ML_(dinfo_free)(cstr); cstr = NULL; }
          vg_assert(disym.pri_name);
-         vg_assert(disym.tocptr == 0); /* has no role except on ppc64-linux */
+         vg_assert(disym.tocptr == 0); /* has no role except on ppc64be-linux */
          ML_(addSym) ( di, &disym );
 
          if (TRACE_SYMTAB_ENABLED) {
@@ -762,6 +813,10 @@ void read_elf_symtab__normal(
                          (Int)disym.size,
                          (HChar*)disym.pri_name
             );
+	    if (local_ep != 0) {
+               TRACE_SYMTAB("               local entry point %#010lx\n",
+                            local_ep)
+	    }
          }
 
       }
@@ -857,6 +912,7 @@ void read_elf_symtab__ppc64be_linux(
       Addr   sym_avma_really = 0;
       Int    sym_size = 0;
       Addr   sym_tocptr = 0;
+      Addr   sym_local_ep = 0;
       Bool   from_opd = False, is_text = False, is_ifunc = False;
       DiOffT sym_name_really = DiOffT_INVALID;
       DiSym  disym;
@@ -868,7 +924,8 @@ void read_elf_symtab__ppc64be_linux(
                               &sym_avma_really,
                               &sym_size,
                               &sym_tocptr,
-                              &from_opd, &is_text, &is_ifunc)) {
+                              &from_opd, &is_text, &is_ifunc,
+                              &sym_local_ep)) {
 
          /* Check if we've seen this (name,addr) key before. */
          key.addr = sym_avma_really;
@@ -2825,6 +2882,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 #     if !defined(VGP_amd64_linux) \
          && !defined(VGP_s390x_linux) \
          && !defined(VGP_ppc64be_linux) \
+         && !defined(VGP_ppc64le_linux) \
          && !defined(VGPV_arm_linux_android) \
          && !defined(VGPV_x86_linux_android) \
          && !defined(VGP_mips64_linux)

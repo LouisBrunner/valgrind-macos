@@ -296,6 +296,7 @@
 
 #define  VG_Z_LD64_SO_1             ld64ZdsoZd1                // ld64.so.1
 #define  VG_U_LD64_SO_1             "ld64.so.1"
+#define  VG_U_LD64_SO_2             "ld64.so.2"                // PPC LE loader
 
 #define  VG_Z_LD_SO_1               ldZdsoZd1                  // ld.so.1
 #define  VG_U_LD_SO_1               "ld.so.1"

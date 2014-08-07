@@ -31,9 +31,11 @@
 #ifndef __VKI_PPC64_LINUX_H
 #define __VKI_PPC64_LINUX_H
 
-// ppc64 is big-endian.
+#if defined(VGP_ppc32_linux) || defined(VGP_ppc64be_linux)
 #define VKI_BIG_ENDIAN  1
-
+#elif defined(VGP_ppc64le_linux)
+#define VKI_LITTLE_ENDIAN  1
+#endif
 //----------------------------------------------------------------------
 // From linux-2.6.13/include/asm-ppc64/types.h
 //----------------------------------------------------------------------

@@ -701,6 +701,8 @@ load_fat_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
    good_arch = CPU_TYPE_POWERPC;
 #elif defined(VGA_ppc64be)
    good_arch = CPU_TYPE_POWERPC64BE;
+#elif defined(VGA_ppc64le)
+   good_arch = CPU_TYPE_POWERPC64LE;
 #elif defined(VGA_x86)
    good_arch = CPU_TYPE_I386;
 #elif defined(VGA_amd64)

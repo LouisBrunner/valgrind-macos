@@ -1188,9 +1188,13 @@ Bool VG_(machine_get_hwcaps)( void )
      VG_(machine_ppc64_has_VMX) = have_V ? 1 : 0;
 
      va = VexArchPPC64;
-     // CARLL fixme: when the time comes, copy .endness setting code
-     // from the VGA_mips32 case
+#    if defined(VKI_LITTLE_ENDIAN)
+     vai.endness = VexEndnessLE;
+#    elif defined(VKI_BIG_ENDIAN)
      vai.endness = VexEndnessBE;
+#    else
+     vai.endness = VexEndness_INVALID;
+#    endif
 
      vai.hwcaps = 0;
      if (have_V)  vai.hwcaps |= VEX_HWCAPS_PPC64_V;

@@ -27,7 +27,7 @@
   The GNU General Public License is contained in the file COPYING.
 */
 
-#if defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
+#if defined(VGP_ppc64le_linux)
 
 #include "pub_core_basics_asm.h"
 #include "pub_core_vkiscnums_asm.h"
@@ -75,12 +75,25 @@
 
 .align 2
 .globl ML_(do_syscall_for_client_WRK)
+#if _CALL_ELF == 2
+.type .ML_(do_syscall_for_client_WRK),@function
+ML_(do_syscall_for_client_WRK):
+0:      addis         2,12,.TOC.-0b@ha
+        addi          2,2,.TOC.-0b@l
+        .localentry   ML_(do_syscall_for_client_WRK), .-ML_(do_syscall_for_client_WRK)
+#else
 .section ".opd","aw"
 .align 3
-ML_(do_syscall_for_client_WRK):	
+ML_(do_syscall_for_client_WRK):
 .quad .ML_(do_syscall_for_client_WRK),.TOC.@tocbase,0
 .previous
-.type .ML_(do_syscall_for_client_WRK),@function
+#endif
+#if _CALL_ELF == 2
+0:      addis        2,12,.TOC.-0b@ha
+        addi         2,2,.TOC.-0b@l
+        .localentry  ML_(do_syscall_for_client_WRK), .-ML_(do_syscall_for_client_WRK)
+#endif
+.type  .ML_(do_syscall_for_client_WRK),@function
 .globl .ML_(do_syscall_for_client_WRK)
 .ML_(do_syscall_for_client_WRK):
         /* make a stack frame */
@@ -144,7 +157,11 @@ ML_(do_syscall_for_client_WRK):
 	/* failure: return 0x8000 | error code */
 7:	ori	3,3,0x8000	/* FAILURE -- ensure return value is nonzero */
         b       5b
-
+#if _CALL_ELF == 2
+        .size .ML_(do_syscall_for_client_WRK),.-.ML_(do_syscall_for_client_WRK)
+#else
+        .size .ML_(do_syscall_for_client_WRK),.-.ML_(do_syscall_for_client_WRK)
+#endif
 .section .rodata
 /* export the ranges so that
    VG_(fixup_guest_state_after_syscall_interrupted) can do the
@@ -165,7 +182,7 @@ ML_(blksys_finished):  .quad 5b
 /* Let the linker know we don't need an executable stack */
 .section .note.GNU-stack,"",@progbits
 
-#endif // defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
+#endif defined(VGP_ppc64le_linux)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

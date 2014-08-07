@@ -78,6 +78,7 @@ void ML_(call_on_new_stack_0_1) ( Addr stack,
    address, the second word is the TOC ptr (r2), and the third word is
    the static chain value. */
 asm(
+#if defined(VGP_ppc64be_linux)
 "   .align   2\n"
 "   .globl   vgModuleLocal_call_on_new_stack_0_1\n"
 "   .section \".opd\",\"aw\"\n"
@@ -126,6 +127,55 @@ asm(
 "   mtcr 0\n\t"            // CAB: Need this?
 "   bctr\n\t"              // jump to dst
 "   trap\n"                // should never get here
+#else
+//  ppc64le_linux
+"   .align   2\n"
+"   .globl   vgModuleLocal_call_on_new_stack_0_1\n"
+"vgModuleLocal_call_on_new_stack_0_1:\n"
+"   .type    .vgModuleLocal_call_on_new_stack_0_1,@function\n"
+"#if _CALL_ELF == 2 \n"
+"0: addis        2,12,.TOC.-0b@ha\n"
+"   addi         2,2,.TOC.-0b@l\n"
+"#endif\n"
+".localentry vgModuleLocal_call_on_new_stack_0_1, .-vgModuleLocal_call_on_new_stack_0_1\n"
+"   mr    %r1,%r3\n\t"     // stack to %sp
+"   mtlr  %r4\n\t"         // retaddr to %lr
+"   mtctr %r5\n\t"         // f_ptr to count reg
+"   mr %r3,%r6\n\t"        // arg1 to %r3
+"   li 0,0\n\t"            // zero all GP regs
+"   li 4,0\n\t"
+"   li 5,0\n\t"
+"   li 6,0\n\t"
+"   li 7,0\n\t"
+"   li 8,0\n\t"
+"   li 9,0\n\t"
+"   li 10,0\n\t"
+"   li 11,0\n\t"
+"   li 12,0\n\t"
+"   li 13,0\n\t"
+"   li 14,0\n\t"
+"   li 15,0\n\t"
+"   li 16,0\n\t"
+"   li 17,0\n\t"
+"   li 18,0\n\t"
+"   li 19,0\n\t"
+"   li 20,0\n\t"
+"   li 21,0\n\t"
+"   li 22,0\n\t"
+"   li 23,0\n\t"
+"   li 24,0\n\t"
+"   li 25,0\n\t"
+"   li 26,0\n\t"
+"   li 27,0\n\t"
+"   li 28,0\n\t"
+"   li 29,0\n\t"
+"   li 30,0\n\t"
+"   li 31,0\n\t"
+"   mtxer 0\n\t"           // CAB: Need this?
+"   mtcr 0\n\t"            // CAB: Need this?
+"   bctr\n\t"              // jump to dst
+"   trap\n"                // should never get here
+#endif
 );
 
 
@@ -170,6 +220,7 @@ ULong do_syscall_clone_ppc64_linux ( Word (*fn)(void *),
                                      Int*  parent_tid, 
                                      void/*vki_modify_ldt_t*/ * );
 asm(
+#if defined(VGP_ppc64be_linux)
 "   .align   2\n"
 "   .globl   do_syscall_clone_ppc64_linux\n"
 "   .section \".opd\",\"aw\"\n"
@@ -240,6 +291,78 @@ asm(
 "       ld      31,56(1)\n"
 "       addi    1,1,64\n"
 "       blr\n"
+#else
+"   .align   2\n"
+"   .globl   do_syscall_clone_ppc64_linux\n"
+"   .type    do_syscall_clone_ppc64_linux,@function\n"
+"do_syscall_clone_ppc64_linux:\n"
+"   .globl   .do_syscall_clone_ppc64_linux\n"
+".do_syscall_clone_ppc64_linux:\n"
+"#if _CALL_ELF == 2 \n"
+"0:     addis        2,12,.TOC.-0b@ha \n"
+"       addi         2,2,.TOC.-0b@l \n"
+"#endif \n"
+"   .localentry  do_syscall_clone_ppc64_linux, .-do_syscall_clone_ppc64_linux \n"
+"       stdu    1,-64(1)\n"
+"       std     29,40(1)\n"
+"       std     30,48(1)\n"
+"       std     31,56(1)\n"
+"       mr      30,3\n"              // preserve fn
+"       mr      31,6\n"              // preserve arg
+
+        // setup child stack
+"       rldicr  4,4, 0,59\n"         // trim sp to multiple of 16 bytes
+                                     // (r4 &= ~0xF)
+"       li      0,0\n"
+"       stdu    0,-32(4)\n"          // make initial stack frame
+"       mr      29,4\n"              // preserve sp
+
+        // setup syscall
+"       li      0,"__NR_CLONE"\n"    // syscall number
+"       mr      3,5\n"               // syscall arg1: flags
+        // r4 already setup          // syscall arg2: child_stack
+"       mr      5,8\n"               // syscall arg3: parent_tid
+"       mr      6,13\n"              // syscall arg4: REAL THREAD tls
+"       mr      7,7\n"               // syscall arg5: child_tid
+"       mr      8,8\n"               // syscall arg6: ????
+"       mr      9,9\n"               // syscall arg7: ????
+
+"       sc\n"                        // clone()
+
+"       mfcr    4\n"                 // CR now in low half r4
+"       sldi    4,4,32\n"            // CR now in hi half r4
+
+"       sldi    3,3,32\n"
+"       srdi    3,3,32\n"            // zero out hi half r3
+
+"       or      3,3,4\n"             // r3 = CR : syscall-retval
+"       cmpwi   3,0\n"               // child if retval == 0 (note, cmpw)
+"       bne     1f\n"                // jump if !child
+
+        /* CHILD - call thread function */
+        /* Note: 2.4 kernel doesn't set the child stack pointer,
+           so we do it here.
+           That does leave a small window for a signal to be delivered
+           on the wrong stack, unfortunately. */
+"       mr      1,29\n"
+"       mtctr   30\n"                // ctr reg = fn
+"       mr      3,31\n"              // r3 = arg
+"       bctrl\n"                     // call fn()
+
+        // exit with result
+"       li      0,"__NR_EXIT"\n"
+"       sc\n"
+
+        // Exit returned?!
+"       .long   0\n"
+
+        // PARENT or ERROR - return
+"1:     ld      29,40(1)\n"
+"       ld      30,48(1)\n"
+"       ld      31,56(1)\n"
+"       addi    1,1,64\n"
+"       blr\n"
+#endif
 );
 
 #undef __NR_CLONE

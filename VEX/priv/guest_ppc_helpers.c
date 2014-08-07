@@ -153,10 +153,12 @@ void ppc32g_dirtyhelper_LVS ( VexGuestPPC32State* gst,
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (reads guest state, writes guest mem) */
 void ppc64g_dirtyhelper_LVS ( VexGuestPPC64State* gst,
-                              UInt vD_off, UInt sh, UInt shift_right )
+                              UInt vD_off, UInt sh, UInt shift_right,
+                              UInt endness )
 {
   UChar ref[32];
   ULong i;
+  Int k;
   /* ref[] used to be a static const array, but this doesn't work on
      ppc64 because VEX doesn't load the TOC pointer for the call here,
      and so we wind up picking up some totally random other data.
@@ -179,10 +181,19 @@ void ppc64g_dirtyhelper_LVS ( VexGuestPPC64State* gst,
   pU128_src = (U128*)&ref[sh];
   pU128_dst = (U128*)( ((UChar*)gst) + vD_off );
 
-  (*pU128_dst)[0] = (*pU128_src)[0];
-  (*pU128_dst)[1] = (*pU128_src)[1];
-  (*pU128_dst)[2] = (*pU128_src)[2];
-  (*pU128_dst)[3] = (*pU128_src)[3];
+  if ((0x1 & endness) == 0x0) {
+     /* Little endian */
+     unsigned char *srcp, *dstp;
+     srcp = (unsigned char *)pU128_src;
+     dstp = (unsigned char *)pU128_dst;
+     for (k = 15; k >= 0; k--, srcp++)
+        dstp[k] = *srcp;
+  } else {
+     (*pU128_dst)[0] = (*pU128_src)[0];
+     (*pU128_dst)[1] = (*pU128_src)[1];
+     (*pU128_dst)[2] = (*pU128_src)[2];
+     (*pU128_dst)[3] = (*pU128_src)[3];
+  }
 }
 
 

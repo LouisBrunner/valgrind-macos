@@ -161,7 +161,8 @@ extern void ppc32g_dirtyhelper_LVS ( VexGuestPPC32State* gst,
 
 extern void ppc64g_dirtyhelper_LVS ( VexGuestPPC64State* gst,
                                      UInt vD_idx, UInt sh,
-                                     UInt shift_right );
+                                     UInt shift_right,
+                                     UInt endness );
 
 #endif /* ndef __VEX_GUEST_PPC_DEFS_H */
 

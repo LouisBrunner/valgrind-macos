@@ -3115,24 +3115,38 @@ static UInt vregNo ( HReg v )
    return n;
 }
 
-/* Emit an instruction big-endianly */
-static UChar* emit32 ( UChar* p, UInt w32 )
+/* Emit an instruction ppc-endianly */
+static UChar* emit32 ( UChar* p, UInt w32, VexEndness endness_host )
 {
-   *p++ = toUChar((w32 >> 24) & 0x000000FF);
-   *p++ = toUChar((w32 >> 16) & 0x000000FF);
-   *p++ = toUChar((w32 >>  8) & 0x000000FF);
-   *p++ = toUChar((w32)       & 0x000000FF);
+  if (endness_host == VexEndnessBE) {
+    *p++ = toUChar((w32 >> 24) & 0x000000FF);
+    *p++ = toUChar((w32 >> 16) & 0x000000FF);
+    *p++ = toUChar((w32 >>  8) & 0x000000FF);
+    *p++ = toUChar((w32)       & 0x000000FF);
+  } else {
+    *p++ = toUChar((w32)       & 0x000000FF);
+    *p++ = toUChar((w32 >>  8) & 0x000000FF);
+    *p++ = toUChar((w32 >> 16) & 0x000000FF);
+    *p++ = toUChar((w32 >> 24) & 0x000000FF);
+  }
    return p;
 }
 
-/* Fetch an instruction big-endianly */
-static UInt fetch32 ( UChar* p )
+/* Fetch an instruction ppc-endianly */
+static UInt fetch32 ( UChar* p, VexEndness endness_host )
 {
    UInt w32 = 0;
-   w32 |= ((0xFF & (UInt)p[0]) << 24);
-   w32 |= ((0xFF & (UInt)p[1]) << 16);
-   w32 |= ((0xFF & (UInt)p[2]) <<  8);
-   w32 |= ((0xFF & (UInt)p[3]) <<  0);
+   if (endness_host == VexEndnessBE) {
+      w32 |= ((0xFF & (UInt)p[0]) << 24);
+      w32 |= ((0xFF & (UInt)p[1]) << 16);
+      w32 |= ((0xFF & (UInt)p[2]) <<  8);
+      w32 |= ((0xFF & (UInt)p[3]) <<  0);
+  } else {
+      w32 |= ((0xFF & (UInt)p[3]) << 24);
+      w32 |= ((0xFF & (UInt)p[2]) << 16);
+      w32 |= ((0xFF & (UInt)p[1]) <<  8);
+      w32 |= ((0xFF & (UInt)p[0]) <<  0);
+  }
    return w32;
 }
 
@@ -3141,7 +3155,7 @@ static UInt fetch32 ( UChar* p )
  */
 
 static UChar* mkFormD ( UChar* p, UInt opc1,
-                        UInt r1, UInt r2, UInt imm )
+                        UInt r1, UInt r2, UInt imm, VexEndness endness_host )
 {
    UInt theInstr;
    vassert(opc1 < 0x40);
@@ -3149,11 +3163,12 @@ static UChar* mkFormD ( UChar* p, UInt opc1,
    vassert(r2   < 0x20);
    imm = imm & 0xFFFF;
    theInstr = ((opc1<<26) | (r1<<21) | (r2<<16) | (imm));
-   return emit32(p, theInstr);
+   return emit32(p, theInstr, endness_host);
 }
 
 static UChar* mkFormMD ( UChar* p, UInt opc1, UInt r1, UInt r2,
-                         UInt imm1, UInt imm2, UInt opc2 )
+                         UInt imm1, UInt imm2, UInt opc2,
+                         VexEndness endness_host )
 {
    UInt theInstr;
    vassert(opc1 < 0x40);
@@ -3166,11 +3181,11 @@ static UChar* mkFormMD ( UChar* p, UInt opc1, UInt r1, UInt r2,
    theInstr = ((opc1<<26) | (r1<<21) | (r2<<16) |
                ((imm1 & 0x1F)<<11) | (imm2<<5) |
                (opc2<<2) | ((imm1 >> 5)<<1));
-   return emit32(p, theInstr);
+   return emit32(p, theInstr, endness_host);
 }
 
 static UChar* mkFormX ( UChar* p, UInt opc1, UInt r1, UInt r2,
-                        UInt r3, UInt opc2, UInt b0 )
+                        UInt r3, UInt opc2, UInt b0, VexEndness endness_host )
 {
    UInt theInstr;
    vassert(opc1 < 0x40);
@@ -3181,11 +3196,12 @@ static UChar* mkFormX ( UChar* p, UInt opc1, UInt r1, UInt r2,
    vassert(b0   < 0x2);
    theInstr = ((opc1<<26) | (r1<<21) | (r2<<16) |
                (r3<<11) | (opc2<<1) | (b0));
-   return emit32(p, theInstr);
+   return emit32(p, theInstr, endness_host);
 }
 
 static UChar* mkFormXO ( UChar* p, UInt opc1, UInt r1, UInt r2,
-                         UInt r3, UInt b10, UInt opc2, UInt b0 )
+                         UInt r3, UInt b10, UInt opc2, UInt b0,
+                         VexEndness endness_host )
 {
    UInt theInstr;
    vassert(opc1 < 0x40);
@@ -3197,11 +3213,11 @@ static UChar* mkFormXO ( UChar* p, UInt opc1, UInt r1, UInt r2,
    vassert(b0   < 0x2);
    theInstr = ((opc1<<26) | (r1<<21) | (r2<<16) |
                (r3<<11) | (b10 << 10) | (opc2<<1) | (b0));
-   return emit32(p, theInstr);
+   return emit32(p, theInstr, endness_host);
 }
 
 static UChar* mkFormXL ( UChar* p, UInt opc1, UInt f1, UInt f2,
-                         UInt f3, UInt opc2, UInt b0 )
+                         UInt f3, UInt opc2, UInt b0, VexEndness endness_host )
 {
    UInt theInstr;
    vassert(opc1 < 0x40);
@@ -3212,11 +3228,12 @@ static UChar* mkFormXL ( UChar* p, UInt opc1, UInt f1, UInt f2,
    vassert(b0   < 0x2);
    theInstr = ((opc1<<26) | (f1<<21) | (f2<<16) |
                (f3<<11) | (opc2<<1) | (b0));
-   return emit32(p, theInstr);
+   return emit32(p, theInstr, endness_host);
 }
 
 // Note: for split field ops, give mnemonic arg
-static UChar* mkFormXFX ( UChar* p, UInt r1, UInt f2, UInt opc2 )
+static UChar* mkFormXFX ( UChar* p, UInt r1, UInt f2, UInt opc2,
+                          VexEndness endness_host )
 {
    UInt theInstr;
    vassert(r1   < 0x20);
@@ -3237,21 +3254,23 @@ static UChar* mkFormXFX ( UChar* p, UInt r1, UInt f2, UInt opc2 )
    default: vpanic("mkFormXFX(ppch)");
    }
    theInstr = ((31<<26) | (r1<<21) | (f2<<11) | (opc2<<1));
-   return emit32(p, theInstr);
+   return emit32(p, theInstr, endness_host);
 }
 
 // Only used by mtfsf
-static UChar* mkFormXFL ( UChar* p, UInt FM, UInt freg, UInt dfp_rm )
+static UChar* mkFormXFL ( UChar* p, UInt FM, UInt freg, UInt dfp_rm,
+                          VexEndness endness_host )
 {
    UInt theInstr;
    vassert(FM   < 0x100);
    vassert(freg < 0x20);
    theInstr = ((63<<26) | (FM<<17) | (dfp_rm<<16) | (freg<<11) | (711<<1));
-   return emit32(p, theInstr);
+   return emit32(p, theInstr, endness_host);
 }
 
 static UChar* mkFormXS ( UChar* p, UInt opc1, UInt r1, UInt r2,
-                         UInt imm, UInt opc2, UInt b0 )
+                         UInt imm, UInt opc2, UInt b0,
+                         VexEndness endness_host )
 {
    UInt theInstr;
    vassert(opc1 < 0x40);
@@ -3262,26 +3281,27 @@ static UChar* mkFormXS ( UChar* p, UInt opc1, UInt r1, UInt r2,
    vassert(b0   < 0x2);
    theInstr = ((opc1<<26) | (r1<<21) | (r2<<16) |
                ((imm & 0x1F)<<11) | (opc2<<2) | ((imm>>5)<<1) | (b0));
-   return emit32(p, theInstr);
+   return emit32(p, theInstr, endness_host);
 }
 
 
 #if 0
 // 'b'
-static UChar* mkFormI ( UChar* p, UInt LI, UInt AA, UInt LK )
+static UChar* mkFormI ( UChar* p, UInt LI, UInt AA, UInt LK,
+                        VexEndness endness_host )
 {
    UInt theInstr;
    vassert(LI  < 0x1000000);
    vassert(AA  < 0x2);
    vassert(LK  < 0x2);
    theInstr = ((18<<26) | (LI<<2) | (AA<<1) | (LK));
-   return emit32(p, theInstr);
+   return emit32(p, theInstr, endness_host);
 }
 #endif
 
 // 'bc'
 static UChar* mkFormB ( UChar* p, UInt BO, UInt BI,
-                        UInt BD, UInt AA, UInt LK )
+                        UInt BD, UInt AA, UInt LK, VexEndness endness_host )
 {
    UInt theInstr;
    vassert(BO  < 0x20);
@@ -3291,12 +3311,13 @@ static UChar* mkFormB ( UChar* p, UInt BO, UInt BI,
    vassert(LK  < 0x2);
    theInstr = ((16<<26) | (BO<<21) | (BI<<16) |
                (BD<<2) | (AA<<1) | (LK));
-   return emit32(p, theInstr);
+   return emit32(p, theInstr, endness_host);
 }
 
 // rotates
 static UChar* mkFormM ( UChar* p, UInt opc1, UInt r1, UInt r2,
-                        UInt f3, UInt MB, UInt ME, UInt Rc )
+                        UInt f3, UInt MB, UInt ME, UInt Rc,
+                        VexEndness endness_host )
 {
    UInt theInstr;
    vassert(opc1 < 0x40);
@@ -3308,11 +3329,12 @@ static UChar* mkFormM ( UChar* p, UInt opc1, UInt r1, UInt r2,
    vassert(Rc   < 0x2);
    theInstr = ((opc1<<26) | (r1<<21) | (r2<<16) |
                (f3<<11) | (MB<<6) | (ME<<1) | (Rc));
-   return emit32(p, theInstr);
+   return emit32(p, theInstr, endness_host);
 }
 
 static UChar* mkFormA ( UChar* p, UInt opc1, UInt r1, UInt r2,
-                        UInt r3, UInt r4, UInt opc2, UInt b0 )
+                        UInt r3, UInt r4, UInt opc2, UInt b0,
+                        VexEndness endness_host )
 {
    UInt theInstr;
    vassert(opc1 < 0x40);
@@ -3324,11 +3346,12 @@ static UChar* mkFormA ( UChar* p, UInt opc1, UInt r1, UInt r2,
    vassert(b0   < 0x2 );
    theInstr = ((opc1<<26) | (r1<<21) | (r2<<16) | (r3<<11) |
                (r4<<6) | (opc2<<1) | (b0));
-   return emit32(p, theInstr);
+   return emit32(p, theInstr, endness_host);
 }
 
 static UChar* mkFormZ22 ( UChar* p, UInt opc1, UInt r1, UInt r2,
-                          UInt constant, UInt opc2, UInt b0 )
+                          UInt constant, UInt opc2, UInt b0,
+                          VexEndness endness_host)
 {
    UInt theInstr;
    vassert(opc1     < 0x40);
@@ -3339,11 +3362,12 @@ static UChar* mkFormZ22 ( UChar* p, UInt opc1, UInt r1, UInt r2,
    vassert(b0       < 0x2);
    theInstr = ((opc1<<26) | (r1<<21) | (r2<<16) |
                (constant<<10) | (opc2<<1) | (b0));
-   return emit32(p, theInstr);
+   return emit32(p, theInstr, endness_host);
 }
 
 static UChar* mkFormZ23 ( UChar* p, UInt opc1, UInt r1, UInt r2,
-                          UInt r3, UInt rmc, UInt opc2, UInt b0 )
+                          UInt r3, UInt rmc, UInt opc2, UInt b0,
+                          VexEndness endness_host)
 {
    UInt theInstr;
    vassert(opc1 < 0x40);
@@ -3355,11 +3379,11 @@ static UChar* mkFormZ23 ( UChar* p, UInt opc1, UInt r1, UInt r2,
    vassert(b0   < 0x2);
    theInstr = ((opc1<<26) | (r1<<21) | (r2<<16) |
                (r3<<11) | (rmc<<9) | (opc2<<1) | (b0));
-   return emit32(p, theInstr);
+   return emit32(p, theInstr, endness_host);
 }
 
 static UChar* doAMode_IR ( UChar* p, UInt opc1, UInt rSD,
-                           PPCAMode* am, Bool mode64 )
+                           PPCAMode* am, Bool mode64, VexEndness endness_host )
 {
    UInt rA, idx;
    vassert(am->tag == Pam_IR);
@@ -3374,12 +3398,13 @@ static UChar* doAMode_IR ( UChar* p, UInt opc1, UInt rSD,
          should be guaranteed to us by iselWordExpr_AMode. */
       vassert(0 == (idx & 3));
    }
-   p = mkFormD(p, opc1, rSD, rA, idx);
+   p = mkFormD(p, opc1, rSD, rA, idx, endness_host);
    return p;
 }
 
 static UChar* doAMode_RR ( UChar* p, UInt opc1, UInt opc2,
-                           UInt rSD, PPCAMode* am, Bool mode64 )
+                           UInt rSD, PPCAMode* am, Bool mode64,
+                           VexEndness endness_host )
 {
    UInt rA, rB;
    vassert(am->tag == Pam_RR);
@@ -3387,13 +3412,14 @@ static UChar* doAMode_RR ( UChar* p, UInt opc1, UInt opc2,
    rA  = iregNo(am->Pam.RR.base, mode64);
    rB  = iregNo(am->Pam.RR.index, mode64);
    
-   p = mkFormX(p, opc1, rSD, rA, rB, opc2, 0);
+   p = mkFormX(p, opc1, rSD, rA, rB, opc2, 0, endness_host);
    return p;
 }
 
 
 /* Load imm to r_dst */
-static UChar* mkLoadImm ( UChar* p, UInt r_dst, ULong imm, Bool mode64 )
+static UChar* mkLoadImm ( UChar* p, UInt r_dst, ULong imm, Bool mode64,
+                          VexEndness endness_host )
 {
    vassert(r_dst < 0x20);
 
@@ -3411,15 +3437,15 @@ static UChar* mkLoadImm ( UChar* p, UInt r_dst, ULong imm, Bool mode64 )
       // sign-extendable from 16 bits
 
       // addi r_dst,0,imm  => li r_dst,imm
-      p = mkFormD(p, 14, r_dst, 0, imm & 0xFFFF);
+      p = mkFormD(p, 14, r_dst, 0, imm & 0xFFFF, endness_host);
    } else {
       if (imm >= 0xFFFFFFFF80000000ULL || imm < 0x80000000ULL) {
          // sign-extendable from 32 bits
 
          // addis r_dst,r0,(imm>>16) => lis r_dst, (imm>>16)
-         p = mkFormD(p, 15, r_dst, 0, (imm>>16) & 0xFFFF);
+         p = mkFormD(p, 15, r_dst, 0, (imm>>16) & 0xFFFF, endness_host);
          // ori r_dst, r_dst, (imm & 0xFFFF)
-         p = mkFormD(p, 24, r_dst, r_dst, imm & 0xFFFF);
+         p = mkFormD(p, 24, r_dst, r_dst, imm & 0xFFFF, endness_host);
       } else {
          // full 64bit immediate load: 5 (five!) insns.
          vassert(mode64);
@@ -3427,24 +3453,24 @@ static UChar* mkLoadImm ( UChar* p, UInt r_dst, ULong imm, Bool mode64 )
          // load high word
 
          // lis r_dst, (imm>>48) & 0xFFFF
-         p = mkFormD(p, 15, r_dst, 0, (imm>>48) & 0xFFFF);
+         p = mkFormD(p, 15, r_dst, 0, (imm>>48) & 0xFFFF, endness_host);
 
          // ori r_dst, r_dst, (imm>>32) & 0xFFFF
          if ((imm>>32) & 0xFFFF)
-            p = mkFormD(p, 24, r_dst, r_dst, (imm>>32) & 0xFFFF);
+	   p = mkFormD(p, 24, r_dst, r_dst, (imm>>32) & 0xFFFF, endness_host);
          
          // shift r_dst low word to high word => rldicr
-         p = mkFormMD(p, 30, r_dst, r_dst, 32, 31, 1);
+         p = mkFormMD(p, 30, r_dst, r_dst, 32, 31, 1, endness_host);
 
          // load low word
 
          // oris r_dst, r_dst, (imm>>16) & 0xFFFF
          if ((imm>>16) & 0xFFFF)
-            p = mkFormD(p, 25, r_dst, r_dst, (imm>>16) & 0xFFFF);
+            p = mkFormD(p, 25, r_dst, r_dst, (imm>>16) & 0xFFFF, endness_host);
 
          // ori r_dst, r_dst, (imm) & 0xFFFF
          if (imm & 0xFFFF)
-            p = mkFormD(p, 24, r_dst, r_dst, imm & 0xFFFF);
+            p = mkFormD(p, 24, r_dst, r_dst, imm & 0xFFFF, endness_host);
       }
    }
    return p;
@@ -3455,7 +3481,8 @@ static UChar* mkLoadImm ( UChar* p, UInt r_dst, ULong imm, Bool mode64 )
    fewer.  This is needed for generating fixed sized patchable
    sequences. */
 static UChar* mkLoadImm_EXACTLY2or5 ( UChar* p,
-                                      UInt r_dst, ULong imm, Bool mode64 )
+                                      UInt r_dst, ULong imm, Bool mode64,
+                                      VexEndness endness_host )
 {
    vassert(r_dst < 0x20);
 
@@ -3470,29 +3497,29 @@ static UChar* mkLoadImm_EXACTLY2or5 ( UChar* p,
 
    if (!mode64) {
       // addis r_dst,r0,(imm>>16) => lis r_dst, (imm>>16)
-      p = mkFormD(p, 15, r_dst, 0, (imm>>16) & 0xFFFF);
+      p = mkFormD(p, 15, r_dst, 0, (imm>>16) & 0xFFFF, endness_host);
       // ori r_dst, r_dst, (imm & 0xFFFF)
-      p = mkFormD(p, 24, r_dst, r_dst, imm & 0xFFFF);
+      p = mkFormD(p, 24, r_dst, r_dst, imm & 0xFFFF, endness_host);
 
    } else {
       // full 64bit immediate load: 5 (five!) insns.
 
       // load high word
       // lis r_dst, (imm>>48) & 0xFFFF
-      p = mkFormD(p, 15, r_dst, 0, (imm>>48) & 0xFFFF);
+      p = mkFormD(p, 15, r_dst, 0, (imm>>48) & 0xFFFF, endness_host);
 
       // ori r_dst, r_dst, (imm>>32) & 0xFFFF
-      p = mkFormD(p, 24, r_dst, r_dst, (imm>>32) & 0xFFFF);
+      p = mkFormD(p, 24, r_dst, r_dst, (imm>>32) & 0xFFFF, endness_host);
          
       // shift r_dst low word to high word => rldicr
-      p = mkFormMD(p, 30, r_dst, r_dst, 32, 31, 1);
+      p = mkFormMD(p, 30, r_dst, r_dst, 32, 31, 1, endness_host);
 
       // load low word
       // oris r_dst, r_dst, (imm>>16) & 0xFFFF
-      p = mkFormD(p, 25, r_dst, r_dst, (imm>>16) & 0xFFFF);
+      p = mkFormD(p, 25, r_dst, r_dst, (imm>>16) & 0xFFFF, endness_host);
 
       // ori r_dst, r_dst, (imm) & 0xFFFF
-      p = mkFormD(p, 24, r_dst, r_dst, imm & 0xFFFF);
+      p = mkFormD(p, 24, r_dst, r_dst, imm & 0xFFFF, endness_host);
    }
    return p;
 }
@@ -3500,7 +3527,8 @@ static UChar* mkLoadImm_EXACTLY2or5 ( UChar* p,
 /* Checks whether the sequence of bytes at p was indeed created
    by mkLoadImm_EXACTLY2or5 with the given parameters. */
 static Bool isLoadImm_EXACTLY2or5 ( UChar* p_to_check,
-                                    UInt r_dst, ULong imm, Bool mode64 )
+                                    UInt r_dst, ULong imm, Bool mode64,
+                                    VexEndness endness_host )
 {
    vassert(r_dst < 0x20);
 
@@ -3517,13 +3545,13 @@ static Bool isLoadImm_EXACTLY2or5 ( UChar* p_to_check,
       UInt   expect[2] = { 0, 0 };
       UChar* p         = (UChar*)&expect[0];
       // addis r_dst,r0,(imm>>16) => lis r_dst, (imm>>16)
-      p = mkFormD(p, 15, r_dst, 0, (imm>>16) & 0xFFFF);
+      p = mkFormD(p, 15, r_dst, 0, (imm>>16) & 0xFFFF, endness_host);
       // ori r_dst, r_dst, (imm & 0xFFFF)
-      p = mkFormD(p, 24, r_dst, r_dst, imm & 0xFFFF);
+      p = mkFormD(p, 24, r_dst, r_dst, imm & 0xFFFF, endness_host);
       vassert(p == (UChar*)&expect[2]);
 
-      return fetch32(p_to_check + 0) == expect[0]
-             && fetch32(p_to_check + 4) == expect[1];
+      return fetch32(p_to_check + 0, endness_host) == expect[0]
+             && fetch32(p_to_check + 4, endness_host) == expect[1];
 
    } else {
       UInt   expect[5] = { 0, 0, 0, 0, 0 };
@@ -3532,28 +3560,28 @@ static Bool isLoadImm_EXACTLY2or5 ( UChar* p_to_check,
 
       // load high word
       // lis r_dst, (imm>>48) & 0xFFFF
-      p = mkFormD(p, 15, r_dst, 0, (imm>>48) & 0xFFFF);
+      p = mkFormD(p, 15, r_dst, 0, (imm>>48) & 0xFFFF, endness_host);
 
       // ori r_dst, r_dst, (imm>>32) & 0xFFFF
-      p = mkFormD(p, 24, r_dst, r_dst, (imm>>32) & 0xFFFF);
+      p = mkFormD(p, 24, r_dst, r_dst, (imm>>32) & 0xFFFF, endness_host);
          
       // shift r_dst low word to high word => rldicr
-      p = mkFormMD(p, 30, r_dst, r_dst, 32, 31, 1);
+      p = mkFormMD(p, 30, r_dst, r_dst, 32, 31, 1, endness_host);
 
       // load low word
       // oris r_dst, r_dst, (imm>>16) & 0xFFFF
-      p = mkFormD(p, 25, r_dst, r_dst, (imm>>16) & 0xFFFF);
+      p = mkFormD(p, 25, r_dst, r_dst, (imm>>16) & 0xFFFF, endness_host);
 
       // ori r_dst, r_dst, (imm) & 0xFFFF
-      p = mkFormD(p, 24, r_dst, r_dst, imm & 0xFFFF);
+      p = mkFormD(p, 24, r_dst, r_dst, imm & 0xFFFF, endness_host);
 
       vassert(p == (UChar*)&expect[5]);
 
-      return fetch32(p_to_check + 0) == expect[0]
-             && fetch32(p_to_check + 4) == expect[1]
-             && fetch32(p_to_check + 8) == expect[2]
-             && fetch32(p_to_check + 12) == expect[3]
-             && fetch32(p_to_check + 16) == expect[4];
+      return fetch32(p_to_check + 0, endness_host) == expect[0]
+             && fetch32(p_to_check + 4,  endness_host) == expect[1]
+             && fetch32(p_to_check + 8,  endness_host) == expect[2]
+             && fetch32(p_to_check + 12, endness_host) == expect[3]
+             && fetch32(p_to_check + 16, endness_host) == expect[4];
    }
 }
 
@@ -3562,7 +3590,7 @@ static Bool isLoadImm_EXACTLY2or5 ( UChar* p_to_check,
    the Pin_Load and Pin_Store cases below. */
 static UChar* do_load_or_store_machine_word ( 
                  UChar* p, Bool isLoad,
-                 UInt reg, PPCAMode* am, Bool mode64 )
+                 UInt reg, PPCAMode* am, Bool mode64, VexEndness endness_host )
 {
    if (isLoad) {
       UInt opc1, sz = mode64 ? 8 : 4;
@@ -3576,7 +3604,7 @@ static UChar* do_load_or_store_machine_word (
                case 8:  opc1 = 58; vassert(mode64);  break;
                default: vassert(0);
             }
-            p = doAMode_IR(p, opc1, reg, am, mode64);
+            p = doAMode_IR(p, opc1, reg, am, mode64, endness_host);
             break;
          case Pam_RR:
             /* we could handle this case, but we don't expect to ever
@@ -3597,7 +3625,7 @@ static UChar* do_load_or_store_machine_word (
                case 8:  opc1 = 62; vassert(mode64);  break;
                default: vassert(0);
             }
-            p = doAMode_IR(p, opc1, reg, am, mode64);
+            p = doAMode_IR(p, opc1, reg, am, mode64, endness_host);
             break;
          case Pam_RR:
             /* we could handle this case, but we don't expect to ever
@@ -3614,7 +3642,7 @@ static UChar* do_load_or_store_machine_word (
    do_load_or_store_machine_word above. */
 static UChar* do_load_or_store_word32 ( 
                  UChar* p, Bool isLoad,
-                 UInt reg, PPCAMode* am, Bool mode64 )
+                 UInt reg, PPCAMode* am, Bool mode64, VexEndness endness_host )
 {
    if (isLoad) {
       UInt opc1;
@@ -3624,7 +3652,7 @@ static UChar* do_load_or_store_word32 (
                vassert(0 == (am->Pam.IR.index & 3));
             }
             opc1 = 32;
-            p = doAMode_IR(p, opc1, reg, am, mode64);
+            p = doAMode_IR(p, opc1, reg, am, mode64, endness_host);
             break;
          case Pam_RR:
             /* we could handle this case, but we don't expect to ever
@@ -3641,7 +3669,7 @@ static UChar* do_load_or_store_word32 (
                vassert(0 == (am->Pam.IR.index & 3));
             }
             opc1 = 36;
-            p = doAMode_IR(p, opc1, reg, am, mode64);
+            p = doAMode_IR(p, opc1, reg, am, mode64, endness_host);
             break;
          case Pam_RR:
             /* we could handle this case, but we don't expect to ever
@@ -3655,20 +3683,21 @@ static UChar* do_load_or_store_word32 (
 }
 
 /* Move r_dst to r_src */
-static UChar* mkMoveReg ( UChar* p, UInt r_dst, UInt r_src )
+static UChar* mkMoveReg ( UChar* p, UInt r_dst, UInt r_src,
+                          VexEndness endness_host )
 {
    vassert(r_dst < 0x20);
    vassert(r_src < 0x20);
 
    if (r_dst != r_src) {
       /* or r_dst, r_src, r_src */
-      p = mkFormX(p, 31, r_src, r_dst, r_src, 444, 0 );
+      p = mkFormX(p, 31, r_src, r_dst, r_src, 444, 0, endness_host );
    }
    return p;
 }
 
 static UChar* mkFormVX ( UChar* p, UInt opc1, UInt r1, UInt r2,
-                         UInt r3, UInt opc2 )
+                         UInt r3, UInt opc2, VexEndness endness_host )
 {
    UInt theInstr;
    vassert(opc1 < 0x40);
@@ -3677,11 +3706,12 @@ static UChar* mkFormVX ( UChar* p, UInt opc1, UInt r1, UInt r2,
    vassert(r3   < 0x20);
    vassert(opc2 < 0x800);
    theInstr = ((opc1<<26) | (r1<<21) | (r2<<16) | (r3<<11) | opc2);
-   return emit32(p, theInstr);
+   return emit32(p, theInstr, endness_host);
 }
 
 static UChar* mkFormVXR ( UChar* p, UInt opc1, UInt r1, UInt r2,
-                          UInt r3, UInt Rc, UInt opc2 )
+                          UInt r3, UInt Rc, UInt opc2,
+                          VexEndness endness_host )
 {
    UInt theInstr;
    vassert(opc1 < 0x40);
@@ -3692,11 +3722,11 @@ static UChar* mkFormVXR ( UChar* p, UInt opc1, UInt r1, UInt r2,
    vassert(opc2 < 0x400);
    theInstr = ((opc1<<26) | (r1<<21) | (r2<<16) |
                (r3<<11) | (Rc<<10) | opc2);
-   return emit32(p, theInstr);
+   return emit32(p, theInstr, endness_host);
 }
 
 static UChar* mkFormVA ( UChar* p, UInt opc1, UInt r1, UInt r2,
-                         UInt r3, UInt r4, UInt opc2 )
+                         UInt r3, UInt r4, UInt opc2, VexEndness endness_host )
 {
    UInt theInstr;
    vassert(opc1 < 0x40);
@@ -3707,7 +3737,7 @@ static UChar* mkFormVA ( UChar* p, UInt opc1, UInt r1, UInt r2,
    vassert(opc2 < 0x40);
    theInstr = ((opc1<<26) | (r1<<21) | (r2<<16) |
                (r3<<11) | (r4<<6) | opc2);
-   return emit32(p, theInstr);
+   return emit32(p, theInstr, endness_host);
 }
 
 
@@ -3724,7 +3754,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
                     void* disp_cp_chain_me_to_slowEP,
                     void* disp_cp_chain_me_to_fastEP,
                     void* disp_cp_xindir,
-                    void* disp_cp_xassisted )
+                    void* disp_cp_xassisted)
 {
    UChar* p = &buf[0];
    vassert(nbuf >= 32);
@@ -3737,7 +3767,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
 
    case Pin_LI:
       p = mkLoadImm(p, iregNo(i->Pin.LI.dst, mode64),
-                    i->Pin.LI.imm64, mode64);
+                    i->Pin.LI.imm64, mode64, endness_host);
       goto done;
 
    case Pin_Alu: {
@@ -3754,10 +3784,10 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
             /* addi (PPC32 p350) */
             vassert(srcR->Prh.Imm.syned);
             vassert(srcR->Prh.Imm.imm16 != 0x8000);
-            p = mkFormD(p, 14, r_dst, r_srcL, srcR->Prh.Imm.imm16);
+            p = mkFormD(p, 14, r_dst, r_srcL, srcR->Prh.Imm.imm16, endness_host);
          } else {
             /* add (PPC32 p347) */
-            p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 266, 0);
+            p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 266, 0, endness_host);
          }
          break;
 
@@ -3766,10 +3796,11 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
             /* addi (PPC32 p350), but with negated imm */
             vassert(srcR->Prh.Imm.syned);
             vassert(srcR->Prh.Imm.imm16 != 0x8000);
-            p = mkFormD(p, 14, r_dst, r_srcL, (- srcR->Prh.Imm.imm16));
+            p = mkFormD(p, 14, r_dst, r_srcL, (- srcR->Prh.Imm.imm16),
+                        endness_host);
          } else {
             /* subf (PPC32 p537), with args the "wrong" way round */
-            p = mkFormXO(p, 31, r_dst, r_srcR, r_srcL, 0, 40, 0);
+            p = mkFormXO(p, 31, r_dst, r_srcR, r_srcL, 0, 40, 0, endness_host);
          }
          break;
 
@@ -3777,10 +3808,10 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
          if (immR) {
             /* andi. (PPC32 p358) */
             vassert(!srcR->Prh.Imm.syned);
-            p = mkFormD(p, 28, r_srcL, r_dst, srcR->Prh.Imm.imm16);
+            p = mkFormD(p, 28, r_srcL, r_dst, srcR->Prh.Imm.imm16, endness_host);
          } else {
             /* and (PPC32 p356) */
-            p = mkFormX(p, 31, r_srcL, r_dst, r_srcR, 28, 0);
+            p = mkFormX(p, 31, r_srcL, r_dst, r_srcR, 28, 0, endness_host);
          }
          break;
 
@@ -3788,10 +3819,10 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
          if (immR) {
             /* ori (PPC32 p497) */
             vassert(!srcR->Prh.Imm.syned);
-            p = mkFormD(p, 24, r_srcL, r_dst, srcR->Prh.Imm.imm16);
+            p = mkFormD(p, 24, r_srcL, r_dst, srcR->Prh.Imm.imm16, endness_host);
          } else {
             /* or (PPC32 p495) */
-            p = mkFormX(p, 31, r_srcL, r_dst, r_srcR, 444, 0);
+            p = mkFormX(p, 31, r_srcL, r_dst, r_srcR, 444, 0, endness_host);
          }
          break;
 
@@ -3799,10 +3830,10 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
          if (immR) {
             /* xori (PPC32 p550) */
             vassert(!srcR->Prh.Imm.syned);
-            p = mkFormD(p, 26, r_srcL, r_dst, srcR->Prh.Imm.imm16);
+            p = mkFormD(p, 26, r_srcL, r_dst, srcR->Prh.Imm.imm16, endness_host);
          } else {
             /* xor (PPC32 p549) */
-            p = mkFormX(p, 31, r_srcL, r_dst, r_srcR, 316, 0);
+            p = mkFormX(p, 31, r_srcL, r_dst, r_srcR, 316, 0, endness_host);
          }
          break;
 
@@ -3834,10 +3865,10 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
                UInt n = srcR->Prh.Imm.imm16;
                vassert(!srcR->Prh.Imm.syned);
                vassert(n > 0 && n < 32);
-               p = mkFormM(p, 21, r_srcL, r_dst, n, 0, 31-n, 0);
+               p = mkFormM(p, 21, r_srcL, r_dst, n, 0, 31-n, 0, endness_host);
             } else {
                /* slw (PPC32 p505) */
-               p = mkFormX(p, 31, r_srcL, r_dst, r_srcR, 24, 0);
+               p = mkFormX(p, 31, r_srcL, r_dst, r_srcR, 24, 0, endness_host);
             }
          } else {
             if (immR) {
@@ -3848,10 +3879,10 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
                UInt n = srcR->Prh.Imm.imm16;
                vassert(!srcR->Prh.Imm.syned);
                vassert(n > 0 && n < 64);
-               p = mkFormMD(p, 30, r_srcL, r_dst, n, 63-n, 1);
+               p = mkFormMD(p, 30, r_srcL, r_dst, n, 63-n, 1, endness_host);
             } else {
                /* sld (PPC64 p568) */
-               p = mkFormX(p, 31, r_srcL, r_dst, r_srcR, 27, 0);
+               p = mkFormX(p, 31, r_srcL, r_dst, r_srcR, 27, 0, endness_host);
             }
          }
          break;
@@ -3866,10 +3897,10 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
                UInt n = srcR->Prh.Imm.imm16;
                vassert(!srcR->Prh.Imm.syned);
                vassert(n > 0 && n < 32);
-               p = mkFormM(p, 21, r_srcL, r_dst, 32-n, n, 31, 0);
+               p = mkFormM(p, 21, r_srcL, r_dst, 32-n, n, 31, 0, endness_host);
             } else {
                /* srw (PPC32 p508) */
-               p = mkFormX(p, 31, r_srcL, r_dst, r_srcR, 536, 0);
+               p = mkFormX(p, 31, r_srcL, r_dst, r_srcR, 536, 0, endness_host);
             }
          } else {
             if (immR) {
@@ -3880,10 +3911,10 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
                UInt n = srcR->Prh.Imm.imm16;
                vassert(!srcR->Prh.Imm.syned);
                vassert(n > 0 && n < 64);
-               p = mkFormMD(p, 30, r_srcL, r_dst, 64-n, n, 0);
+               p = mkFormMD(p, 30, r_srcL, r_dst, 64-n, n, 0, endness_host);
             } else {
                /* srd (PPC64 p574) */
-               p = mkFormX(p, 31, r_srcL, r_dst, r_srcR, 539, 0);
+               p = mkFormX(p, 31, r_srcL, r_dst, r_srcR, 539, 0, endness_host);
             }
          }
          break;
@@ -3901,10 +3932,10 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
                   vassert(n >= 0 && n < 32);
                else 
                   vassert(n > 0 && n < 32);
-               p = mkFormX(p, 31, r_srcL, r_dst, n, 824, 0);
+               p = mkFormX(p, 31, r_srcL, r_dst, n, 824, 0, endness_host);
             } else {
                /* sraw (PPC32 p506) */
-               p = mkFormX(p, 31, r_srcL, r_dst, r_srcR, 792, 0);
+               p = mkFormX(p, 31, r_srcL, r_dst, r_srcR, 792, 0, endness_host);
             }
          } else {
             if (immR) {
@@ -3912,10 +3943,10 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
                UInt n = srcR->Prh.Imm.imm16;
                vassert(!srcR->Prh.Imm.syned);
                vassert(n > 0 && n < 64);
-               p = mkFormXS(p, 31, r_srcL, r_dst, n, 413, 0);
+               p = mkFormXS(p, 31, r_srcL, r_dst, n, 413, 0, endness_host);
             } else {
                /* srad (PPC32 p570) */
-               p = mkFormX(p, 31, r_srcL, r_dst, r_srcR, 794, 0);
+               p = mkFormX(p, 31, r_srcL, r_dst, r_srcR, 794, 0, endness_host);
             }
          }
          break;
@@ -3935,15 +3966,15 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       
       if (isAdd) {
          if (setC) /* addc (PPC32 p348) */
-            p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 10, 0);
+            p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 10, 0, endness_host);
          else          /* adde (PPC32 p349) */
-            p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 138, 0);
+            p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 138, 0, endness_host);
       } else {
          /* subfX, with args the "wrong" way round */
          if (setC) /* subfc (PPC32 p538) */
-            p = mkFormXO(p, 31, r_dst, r_srcR, r_srcL, 0, 8, 0);
+            p = mkFormXO(p, 31, r_dst, r_srcR, r_srcL, 0, 8, 0, endness_host);
          else          /* subfe (PPC32 p539) */
-            p = mkFormXO(p, 31, r_dst, r_srcR, r_srcL, 0, 136, 0);
+            p = mkFormXO(p, 31, r_dst, r_srcR, r_srcL, 0, 136, 0, endness_host);
       }
       goto done;
    }
@@ -3967,17 +3998,17 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
          imm_srcR = srcR->Prh.Imm.imm16;
          if (syned) {  // cmpw/di  (signed)   (PPC32 p368)
             vassert(imm_srcR != 0x8000);
-            p = mkFormD(p, 11, fld1, r_srcL, imm_srcR);
+            p = mkFormD(p, 11, fld1, r_srcL, imm_srcR, endness_host);
          } else {      // cmplw/di (unsigned) (PPC32 p370)
-            p = mkFormD(p, 10, fld1, r_srcL, imm_srcR);
+            p = mkFormD(p, 10, fld1, r_srcL, imm_srcR, endness_host);
          }
          break;
       case Prh_Reg:
          r_srcR = iregNo(srcR->Prh.Reg.reg, mode64);
          if (syned)  // cmpwi  (signed)   (PPC32 p367)
-            p = mkFormX(p, 31, fld1, r_srcL, r_srcR, 0, 0);
+            p = mkFormX(p, 31, fld1, r_srcL, r_srcR, 0, 0, endness_host);
          else        // cmplwi (unsigned) (PPC32 p379)
-            p = mkFormX(p, 31, fld1, r_srcL, r_srcR, 32, 0);
+            p = mkFormX(p, 31, fld1, r_srcL, r_srcR, 32, 0, endness_host);
          break;
       default: 
          goto bad;
@@ -3991,21 +4022,21 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
 
       switch (i->Pin.Unary.op) {
       case Pun_NOT:  // nor r_dst,r_src,r_src
-         p = mkFormX(p, 31, r_src, r_dst, r_src, 124, 0);
+         p = mkFormX(p, 31, r_src, r_dst, r_src, 124, 0, endness_host);
          break;
       case Pun_NEG:  // neg r_dst,r_src
-         p = mkFormXO(p, 31, r_dst, r_src, 0, 0, 104, 0);
+         p = mkFormXO(p, 31, r_dst, r_src, 0, 0, 104, 0, endness_host);
          break;
       case Pun_CLZ32:  // cntlzw r_dst, r_src
-         p = mkFormX(p, 31, r_src, r_dst, 0, 26, 0);
+         p = mkFormX(p, 31, r_src, r_dst, 0, 26, 0, endness_host);
          break;
       case Pun_CLZ64:  // cntlzd r_dst, r_src
          vassert(mode64);
-         p = mkFormX(p, 31, r_src, r_dst, 0, 58, 0);
+         p = mkFormX(p, 31, r_src, r_dst, 0, 58, 0, endness_host);
          break;
       case Pun_EXTSW:  // extsw r_dst, r_src
          vassert(mode64);
-         p = mkFormX(p, 31, r_src, r_dst, 0, 986, 0);
+         p = mkFormX(p, 31, r_src, r_dst, 0, 986, 0, endness_host);
          break;
       default: goto bad;
       }
@@ -4026,22 +4057,25 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
          // mul hi words, must consider sign
          if (sz32) {
             if (syned)  // mulhw r_dst,r_srcL,r_srcR
-               p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 75, 0);
+               p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 75, 0,
+                            endness_host);
             else        // mulhwu r_dst,r_srcL,r_srcR
-               p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 11, 0);
+               p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 11, 0,
+                            endness_host);
          } else {
             if (syned)  // mulhd r_dst,r_srcL,r_srcR
-               p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 73, 0);
+               p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 73, 0,
+                            endness_host);
             else        // mulhdu r_dst,r_srcL,r_srcR
-               p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 9, 0);
+               p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 9, 0, endness_host);
          }
       } else {
          // mul low word, sign is irrelevant
          vassert(!i->Pin.MulL.syned);
          if (sz32)      // mullw r_dst,r_srcL,r_srcR
-            p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 235, 0);
+            p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 235, 0, endness_host);
          else           // mulld r_dst,r_srcL,r_srcR
-            p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 233, 0);
+            p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 233, 0, endness_host);
       }
       goto done;
    }
@@ -4060,28 +4094,32 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
          if (sz32) {
             if (syned)
                // divwe r_dst,r_srcL,r_srcR
-               p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 427, 0);
+               p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 427, 0,
+                            endness_host);
             else
                // divweu r_dst,r_srcL,r_srcR
-               p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 395, 0);
+               p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 395, 0,
+                            endness_host);
          } else {
             if (syned)
                // divde r_dst,r_srcL,r_srcR
-               p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 425, 0);
+               p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 425, 0,
+                            endness_host);
             else
                // divdeu r_dst,r_srcL,r_srcR
-               p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 393, 0);
+               p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 393, 0,
+                            endness_host);
          }
       } else if (sz32) {
          if (syned)  // divw r_dst,r_srcL,r_srcR
-            p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 491, 0);
+            p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 491, 0, endness_host);
          else        // divwu r_dst,r_srcL,r_srcR
-            p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 459, 0);
+            p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 459, 0, endness_host);
       } else {
          if (syned)  // divd r_dst,r_srcL,r_srcR
-            p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 489, 0);
+            p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 489, 0, endness_host);
          else        // divdu r_dst,r_srcL,r_srcR
-            p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 457, 0);
+            p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 457, 0, endness_host);
       }
       goto done;
    }
@@ -4113,13 +4151,13 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       }
 
       /* load target to r_dst */                          // p += 4|8|20
-      p = mkLoadImm(p, r_dst, i->Pin.Call.target, mode64);
+      p = mkLoadImm(p, r_dst, i->Pin.Call.target, mode64, endness_host);
 
       /* mtspr 9,r_dst => move r_dst to count register */
-      p = mkFormXFX(p, r_dst, 9, 467);                    // p += 4
+      p = mkFormXFX(p, r_dst, 9, 467, endness_host);               // p += 4
       
       /* bctrl => branch to count register (and save to lr) */
-      p = mkFormXL(p, 19, Pct_ALWAYS, 0, 0, 528, 1);      // p += 4
+      p = mkFormXL(p, 19, Pct_ALWAYS, 0, 0, 528, 1, endness_host); // p += 4
 
       /* Fix up the conditional jump, if there was one. */
       if (cond.test != Pct_ALWAYS) {
@@ -4127,7 +4165,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
          vassert(delta >= 16 && delta <= 32);
          /* bc !ct,cf,delta */
          mkFormB(ptmp, invertCondTest(cond.test),
-                 cond.flag, (delta>>2), 0, 0);
+                 cond.flag, (delta>>2), 0, 0, endness_host);
       }
       goto done;
    }
@@ -4156,11 +4194,12 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       /* Update the guest CIA. */
       /* imm32/64 r30, dstGA */
       if (!mode64) vassert(0 == (((ULong)i->Pin.XDirect.dstGA) >> 32));
-      p = mkLoadImm(p, /*r*/30, (ULong)i->Pin.XDirect.dstGA, mode64);
+      p = mkLoadImm(p, /*r*/30, (ULong)i->Pin.XDirect.dstGA, mode64,
+                    endness_host);
       /* stw/std r30, amCIA */
       p = do_load_or_store_machine_word(
              p, False/*!isLoad*/,
-             /*r*/30, i->Pin.XDirect.amCIA, mode64
+             /*r*/30, i->Pin.XDirect.amCIA, mode64, endness_host
           );
 
       /* --- FIRST PATCHABLE BYTE follows --- */
@@ -4173,11 +4212,11 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
                = i->Pin.XDirect.toFastEP ? disp_cp_chain_me_to_fastEP 
                                          : disp_cp_chain_me_to_slowEP;
       p = mkLoadImm_EXACTLY2or5(
-             p, /*r*/30, Ptr_to_ULong(disp_cp_chain_me), mode64);
+             p, /*r*/30, Ptr_to_ULong(disp_cp_chain_me), mode64, endness_host);
       /* mtctr r30 */
-      p = mkFormXFX(p, /*r*/30, 9, 467);
+      p = mkFormXFX(p, /*r*/30, 9, 467, endness_host);
       /* bctrl */
-      p = mkFormXL(p, 19, Pct_ALWAYS, 0, 0, 528, 1);
+      p = mkFormXL(p, 19, Pct_ALWAYS, 0, 0, 528, 1, endness_host);
       /* --- END of PATCHABLE BYTES --- */
 
       /* Fix up the conditional jump, if there was one. */
@@ -4186,7 +4225,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
          vassert(delta >= 16 && delta <= 64 && 0 == (delta & 3));
          /* bc !ct,cf,delta */
          mkFormB(ptmp, invertCondTest(i->Pin.XDirect.cond.test),
-                 i->Pin.XDirect.cond.flag, (delta>>2), 0, 0);
+                 i->Pin.XDirect.cond.flag, (delta>>2), 0, 0, endness_host);
       }
       goto done;
    }
@@ -4217,15 +4256,16 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       p = do_load_or_store_machine_word(
              p, False/*!isLoad*/,
              iregNo(i->Pin.XIndir.dstGA, mode64),
-             i->Pin.XIndir.amCIA, mode64
+             i->Pin.XIndir.amCIA, mode64, endness_host
           );
 
       /* imm32/64 r30, VG_(disp_cp_xindir) */
-      p = mkLoadImm(p, /*r*/30, (ULong)Ptr_to_ULong(disp_cp_xindir), mode64);
+      p = mkLoadImm(p, /*r*/30, (ULong)Ptr_to_ULong(disp_cp_xindir), mode64,
+                    endness_host);
       /* mtctr r30 */
-      p = mkFormXFX(p, /*r*/30, 9, 467);
+      p = mkFormXFX(p, /*r*/30, 9, 467, endness_host);
       /* bctr */
-      p = mkFormXL(p, 19, Pct_ALWAYS, 0, 0, 528, 0);
+      p = mkFormXL(p, 19, Pct_ALWAYS, 0, 0, 528, 0, endness_host);
 
       /* Fix up the conditional jump, if there was one. */
       if (i->Pin.XIndir.cond.test != Pct_ALWAYS) {
@@ -4233,7 +4273,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
          vassert(delta >= 16 && delta <= 32 && 0 == (delta & 3));
          /* bc !ct,cf,delta */
          mkFormB(ptmp, invertCondTest(i->Pin.XIndir.cond.test),
-                 i->Pin.XIndir.cond.flag, (delta>>2), 0, 0);
+                 i->Pin.XIndir.cond.flag, (delta>>2), 0, 0, endness_host);
       }
       goto done;
    }
@@ -4256,7 +4296,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       p = do_load_or_store_machine_word(
              p, False/*!isLoad*/,
              iregNo(i->Pin.XIndir.dstGA, mode64),
-             i->Pin.XIndir.amCIA, mode64
+             i->Pin.XIndir.amCIA, mode64, endness_host
           );
 
       /* imm32/64 r31, $magic_number */
@@ -4285,15 +4325,16 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
             vpanic("emit_ARMInstr.Pin_XAssisted: unexpected jump kind");
       }
       vassert(trcval != 0);
-      p = mkLoadImm(p, /*r*/31, trcval, mode64);
+      p = mkLoadImm(p, /*r*/31, trcval, mode64, endness_host);
 
       /* imm32/64 r30, VG_(disp_cp_xassisted) */
       p = mkLoadImm(p, /*r*/30,
-                       (ULong)Ptr_to_ULong(disp_cp_xassisted), mode64);
+                       (ULong)Ptr_to_ULong(disp_cp_xassisted), mode64,
+                     endness_host);
       /* mtctr r30 */
-      p = mkFormXFX(p, /*r*/30, 9, 467);
+      p = mkFormXFX(p, /*r*/30, 9, 467, endness_host);
       /* bctr */
-      p = mkFormXL(p, 19, Pct_ALWAYS, 0, 0, 528, 0);
+      p = mkFormXL(p, 19, Pct_ALWAYS, 0, 0, 528, 0, endness_host);
 
       /* Fix up the conditional jump, if there was one. */
       if (i->Pin.XAssisted.cond.test != Pct_ALWAYS) {
@@ -4301,7 +4342,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
          vassert(delta >= 16 && delta <= 32 && 0 == (delta & 3));
          /* bc !ct,cf,delta */
          mkFormB(ptmp, invertCondTest(i->Pin.XAssisted.cond.test),
-                 i->Pin.XAssisted.cond.flag, (delta>>2), 0, 0);
+                 i->Pin.XAssisted.cond.flag, (delta>>2), 0, 0, endness_host);
       }
       goto done;
    }
@@ -4328,11 +4369,11 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       switch (i->Pin.CMov.src->tag) {
       case Pri_Imm:
          imm_src = i->Pin.CMov.src->Pri.Imm;
-         p = mkLoadImm(p, r_dst, imm_src, mode64);  // p += 4|8|20
+         p = mkLoadImm(p, r_dst, imm_src, mode64, endness_host);  // p += 4|8|20
          break;
       case Pri_Reg:
          r_src = iregNo(i->Pin.CMov.src->Pri.Reg, mode64);
-         p = mkMoveReg(p, r_dst, r_src);            // p += 4
+         p = mkMoveReg(p, r_dst, r_src, endness_host);            // p += 4
          break;
       default: goto bad;
       }
@@ -4343,7 +4384,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
          vassert(delta >= 8 && delta <= 24);
          /* bc !ct,cf,delta */
          mkFormB(ptmp, invertCondTest(cond.test),
-                 cond.flag, (delta>>2), 0, 0);
+                 cond.flag, (delta>>2), 0, 0, endness_host);
       }
       goto done;
    }
@@ -4365,7 +4406,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
             case 8:  opc1 = 58; vassert(mode64); break;
             default: goto bad;
          }
-         p = doAMode_IR(p, opc1, r_dst, am_addr, mode64);
+         p = doAMode_IR(p, opc1, r_dst, am_addr, mode64, endness_host);
          goto done;
       case Pam_RR:
          switch(sz) {
@@ -4375,7 +4416,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
             case 8:  opc2 = 21; vassert(mode64); break;
             default: goto bad;
          }
-         p = doAMode_RR(p, 31, opc2, r_dst, am_addr, mode64);
+         p = doAMode_RR(p, 31, opc2, r_dst, am_addr, mode64, endness_host);
          goto done;
       default:
          goto bad;
@@ -4385,12 +4426,12 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
    case Pin_LoadL: {
       if (i->Pin.LoadL.sz == 4) {
          p = mkFormX(p, 31, iregNo(i->Pin.LoadL.dst, mode64),
-                     0, iregNo(i->Pin.LoadL.src, mode64), 20, 0);
+                     0, iregNo(i->Pin.LoadL.src, mode64), 20, 0, endness_host);
          goto done;
       }
       if (i->Pin.LoadL.sz == 8 && mode64) {
          p = mkFormX(p, 31, iregNo(i->Pin.LoadL.dst, mode64),
-                     0, iregNo(i->Pin.LoadL.src, mode64), 84, 0);
+                     0, iregNo(i->Pin.LoadL.src, mode64), 84, 0, endness_host);
          goto done;
       }
       goto bad;
@@ -4405,22 +4446,22 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
 
       if (cond.test == Pct_ALWAYS) {
          // Just load 1 to dst => li dst,1
-         p = mkFormD(p, 14, r_dst, 0, 1);
+         p = mkFormD(p, 14, r_dst, 0, 1, endness_host);
       } else {
          vassert(cond.flag != Pcf_NONE);
          rot_imm = 1 + cond.flag;
          r_tmp = 0;  // Not set in getAllocable, so no need to declare.
 
          // r_tmp = CR  => mfcr r_tmp
-         p = mkFormX(p, 31, r_tmp, 0, 0, 19, 0);
+         p = mkFormX(p, 31, r_tmp, 0, 0, 19, 0, endness_host);
 
          // r_dst = flag (rotate left and mask)
          //  => rlwinm r_dst,r_tmp,rot_imm,31,31
-         p = mkFormM(p, 21, r_tmp, r_dst, rot_imm, 31, 31, 0);
+         p = mkFormM(p, 21, r_tmp, r_dst, rot_imm, 31, 31, 0, endness_host);
 
          if (cond.test == Pct_FALSE) {
             // flip bit  => xori r_dst,r_dst,1
-            p = mkFormD(p, 26, r_dst, r_dst, 1);
+            p = mkFormD(p, 26, r_dst, r_dst, 1, endness_host);
          }
       }
       goto done;
@@ -4428,11 +4469,12 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
 
    case Pin_MfCR:
       // mfcr dst
-      p = mkFormX(p, 31, iregNo(i->Pin.MfCR.dst, mode64), 0, 0, 19, 0);
+      p = mkFormX(p, 31, iregNo(i->Pin.MfCR.dst, mode64), 0, 0, 19, 0,
+                  endness_host);
       goto done;
 
    case Pin_MFence: {
-      p = mkFormX(p, 31, 0, 0, 0, 598, 0);   // sync, PPC32 p616
+      p = mkFormX(p, 31, 0, 0, 0, 598, 0, endness_host);   // sync, PPC32 p616
       // CAB: Should this be isync?
       //    p = mkFormXL(p, 19, 0, 0, 0, 150, 0);  // isync, PPC32 p467
       goto done;
@@ -4457,7 +4499,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
          default:
             goto bad;
          }
-         p = doAMode_IR(p, opc1, r_src, am_addr, mode64);
+         p = doAMode_IR(p, opc1, r_src, am_addr, mode64, endness_host);
          goto done;
       case Pam_RR:
          switch(sz) {
@@ -4469,7 +4511,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
          default:
             goto bad;
          }
-         p = doAMode_RR(p, 31, opc2, r_src, am_addr, mode64);
+         p = doAMode_RR(p, 31, opc2, r_src, am_addr, mode64, endness_host);
          goto done;
       default:
          goto bad;
@@ -4480,12 +4522,12 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
    case Pin_StoreC: {
       if (i->Pin.StoreC.sz == 4) {
          p = mkFormX(p, 31, iregNo(i->Pin.StoreC.src, mode64),
-                     0, iregNo(i->Pin.StoreC.dst, mode64), 150, 1);
+                     0, iregNo(i->Pin.StoreC.dst, mode64), 150, 1, endness_host);
          goto done;
       }
       if (i->Pin.StoreC.sz == 8 && mode64) {
          p = mkFormX(p, 31, iregNo(i->Pin.StoreC.src, mode64),
-                     0, iregNo(i->Pin.StoreC.dst, mode64), 214, 1);
+                     0, iregNo(i->Pin.StoreC.dst, mode64), 214, 1, endness_host);
          goto done;
       }
       goto bad;
@@ -4496,34 +4538,34 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       UInt fr_src = fregNo(i->Pin.FpUnary.src);
       switch (i->Pin.FpUnary.op) {
       case Pfp_RSQRTE: // frsqrtre, PPC32 p424
-         p = mkFormA( p, 63, fr_dst, 0, fr_src, 0, 26, 0 );
+         p = mkFormA( p, 63, fr_dst, 0, fr_src, 0, 26, 0, endness_host );
          break;
       case Pfp_RES:   // fres, PPC32 p421
-         p = mkFormA( p, 59, fr_dst, 0, fr_src, 0, 24, 0 );
+         p = mkFormA( p, 59, fr_dst, 0, fr_src, 0, 24, 0, endness_host );
          break;
       case Pfp_SQRT:  // fsqrt, PPC32 p427
-         p = mkFormA( p, 63, fr_dst, 0, fr_src, 0, 22, 0 );
+         p = mkFormA( p, 63, fr_dst, 0, fr_src, 0, 22, 0, endness_host );
          break;
       case Pfp_ABS:   // fabs, PPC32 p399
-         p = mkFormX(p, 63, fr_dst, 0, fr_src, 264, 0);
+         p = mkFormX(p, 63, fr_dst, 0, fr_src, 264, 0, endness_host);
          break;
       case Pfp_NEG:   // fneg, PPC32 p416
-         p = mkFormX(p, 63, fr_dst, 0, fr_src, 40, 0);
+         p = mkFormX(p, 63, fr_dst, 0, fr_src, 40, 0, endness_host);
          break;
       case Pfp_MOV:   // fmr, PPC32 p410
-         p = mkFormX(p, 63, fr_dst, 0, fr_src, 72, 0);
+         p = mkFormX(p, 63, fr_dst, 0, fr_src, 72, 0, endness_host);
          break;
       case Pfp_FRIM:  // frim, PPC ISA 2.05 p137
-         p = mkFormX(p, 63, fr_dst, 0, fr_src, 488, 0);
+         p = mkFormX(p, 63, fr_dst, 0, fr_src, 488, 0, endness_host);
          break;
       case Pfp_FRIP:  // frip, PPC ISA 2.05 p137
-         p = mkFormX(p, 63, fr_dst, 0, fr_src, 456, 0);
+         p = mkFormX(p, 63, fr_dst, 0, fr_src, 456, 0, endness_host);
          break;
       case Pfp_FRIN:  // frin, PPC ISA 2.05 p137
-         p = mkFormX(p, 63, fr_dst, 0, fr_src, 392, 0);
+         p = mkFormX(p, 63, fr_dst, 0, fr_src, 392, 0, endness_host);
          break;
       case Pfp_FRIZ:  // friz, PPC ISA 2.05 p137
-         p = mkFormX(p, 63, fr_dst, 0, fr_src, 424, 0);
+         p = mkFormX(p, 63, fr_dst, 0, fr_src, 424, 0, endness_host);
          break;
       default:
          goto bad;
@@ -4537,28 +4579,28 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       UInt fr_srcR = fregNo(i->Pin.FpBinary.srcR);
       switch (i->Pin.FpBinary.op) {
       case Pfp_ADDD:   // fadd, PPC32 p400
-         p = mkFormA( p, 63, fr_dst, fr_srcL, fr_srcR, 0, 21, 0 );
+         p = mkFormA( p, 63, fr_dst, fr_srcL, fr_srcR, 0, 21, 0, endness_host );
          break;
       case Pfp_ADDS:   // fadds, PPC32 p401
-         p = mkFormA( p, 59, fr_dst, fr_srcL, fr_srcR, 0, 21, 0 );
+         p = mkFormA( p, 59, fr_dst, fr_srcL, fr_srcR, 0, 21, 0, endness_host );
          break;
       case Pfp_SUBD:   // fsub, PPC32 p429
-         p = mkFormA( p, 63, fr_dst, fr_srcL, fr_srcR, 0, 20, 0 );
+         p = mkFormA( p, 63, fr_dst, fr_srcL, fr_srcR, 0, 20, 0, endness_host );
          break;
       case Pfp_SUBS:   // fsubs, PPC32 p430
-         p = mkFormA( p, 59, fr_dst, fr_srcL, fr_srcR, 0, 20, 0 );
+         p = mkFormA( p, 59, fr_dst, fr_srcL, fr_srcR, 0, 20, 0, endness_host );
          break;
       case Pfp_MULD:   // fmul, PPC32 p413
-         p = mkFormA( p, 63, fr_dst, fr_srcL, 0, fr_srcR, 25, 0 );
+         p = mkFormA( p, 63, fr_dst, fr_srcL, 0, fr_srcR, 25, 0, endness_host );
          break;
       case Pfp_MULS:   // fmuls, PPC32 p414
-         p = mkFormA( p, 59, fr_dst, fr_srcL, 0, fr_srcR, 25, 0 );
+         p = mkFormA( p, 59, fr_dst, fr_srcL, 0, fr_srcR, 25, 0, endness_host );
          break;
       case Pfp_DIVD:   // fdiv, PPC32 p406
-         p = mkFormA( p, 63, fr_dst, fr_srcL, fr_srcR, 0, 18, 0 );
+         p = mkFormA( p, 63, fr_dst, fr_srcL, fr_srcR, 0, 18, 0, endness_host );
          break;
       case Pfp_DIVS:   // fdivs, PPC32 p407
-         p = mkFormA( p, 59, fr_dst, fr_srcL, fr_srcR, 0, 18, 0 );
+         p = mkFormA( p, 59, fr_dst, fr_srcL, fr_srcR, 0, 18, 0, endness_host );
          break;
       default:
          goto bad;
@@ -4573,16 +4615,20 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       UInt fr_srcAcc = fregNo(i->Pin.FpMulAcc.srcAcc);
       switch (i->Pin.FpMulAcc.op) {
       case Pfp_MADDD:   // fmadd, PPC32 p408
-         p = mkFormA( p, 63, fr_dst, fr_srcML, fr_srcAcc, fr_srcMR, 29, 0 );
+         p = mkFormA( p, 63, fr_dst, fr_srcML, fr_srcAcc, fr_srcMR, 29, 0,
+                      endness_host );
          break;
       case Pfp_MADDS:   // fmadds, PPC32 p409
-         p = mkFormA( p, 59, fr_dst, fr_srcML, fr_srcAcc, fr_srcMR, 29, 0 );
+         p = mkFormA( p, 59, fr_dst, fr_srcML, fr_srcAcc, fr_srcMR, 29, 0,
+                      endness_host );
          break;
       case Pfp_MSUBD:   // fmsub, PPC32 p411
-         p = mkFormA( p, 63, fr_dst, fr_srcML, fr_srcAcc, fr_srcMR, 28, 0 );
+         p = mkFormA( p, 63, fr_dst, fr_srcML, fr_srcAcc, fr_srcMR, 28, 0,
+                      endness_host );
          break;
       case Pfp_MSUBS:   // fmsubs, PPC32 p412
-         p = mkFormA( p, 59, fr_dst, fr_srcML, fr_srcAcc, fr_srcMR, 28, 0 );
+         p = mkFormA( p, 59, fr_dst, fr_srcML, fr_srcAcc, fr_srcMR, 28, 0,
+                      endness_host );
          break;
       default:
          goto bad;
@@ -4601,18 +4647,18 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       if (i->Pin.FpLdSt.isLoad) {   // Load from memory
          if (idxd) {  // lf[s|d]x, PPC32 p444|440
             opc = (sz == 4) ? 535 : 599;
-            p = doAMode_RR(p, 31, opc, f_reg, am_addr, mode64);
+            p = doAMode_RR(p, 31, opc, f_reg, am_addr, mode64, endness_host);
          } else {     // lf[s|d], PPC32 p441|437
             opc = (sz == 4) ? 48 : 50;
-            p = doAMode_IR(p, opc, f_reg, am_addr, mode64);
+            p = doAMode_IR(p, opc, f_reg, am_addr, mode64, endness_host);
          }
       } else {                      // Store to memory
          if (idxd) { // stf[s|d]x, PPC32 p521|516
             opc = (sz == 4) ? 663 : 727;
-            p = doAMode_RR(p, 31, opc, f_reg, am_addr, mode64);
+            p = doAMode_RR(p, 31, opc, f_reg, am_addr, mode64, endness_host);
          } else {    // stf[s|d], PPC32 p518|513
             opc = (sz == 4) ? 52 : 54;
-            p = doAMode_IR(p, opc, f_reg, am_addr, mode64);
+            p = doAMode_IR(p, opc, f_reg, am_addr, mode64, endness_host);
          }
       }
       goto done;
@@ -4623,7 +4669,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       UInt fr_data = fregNo(i->Pin.FpSTFIW.data);
       // stfiwx (store fp64[lo32] as int32), PPC32 p517
       // Use rA==0, so that EA == rB == ir_addr
-      p = mkFormX(p, 31, fr_data, 0/*rA=0*/, ir_addr, 983, 0);
+      p = mkFormX(p, 31, fr_data, 0/*rA=0*/, ir_addr, 983, 0, endness_host);
       goto done;
    }
 
@@ -4631,7 +4677,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       UInt fr_dst = fregNo(i->Pin.FpRSP.dst);
       UInt fr_src = fregNo(i->Pin.FpRSP.src);
       // frsp, PPC32 p423
-      p = mkFormX(p, 63, fr_dst, 0, fr_src, 12, 0);
+      p = mkFormX(p, 63, fr_dst, 0, fr_src, 12, 0, endness_host);
       goto done;
    }
 
@@ -4641,37 +4687,37 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       if (i->Pin.FpCftI.fromI == False && i->Pin.FpCftI.int32 == True) {
          if (i->Pin.FpCftI.syned == True) {
             // fctiw (conv f64 to i32), PPC32 p404
-            p = mkFormX(p, 63, fr_dst, 0, fr_src, 14, 0);
+            p = mkFormX(p, 63, fr_dst, 0, fr_src, 14, 0, endness_host);
             goto done;
          } else {
             // fctiwu (conv f64 to u32)
-            p = mkFormX(p, 63, fr_dst, 0, fr_src, 142, 0);
+            p = mkFormX(p, 63, fr_dst, 0, fr_src, 142, 0, endness_host);
             goto done;
          }
       }
       if (i->Pin.FpCftI.fromI == False && i->Pin.FpCftI.int32 == False) {
          if (i->Pin.FpCftI.syned == True) {
             // fctid (conv f64 to i64), PPC64 p437
-            p = mkFormX(p, 63, fr_dst, 0, fr_src, 814, 0);
+            p = mkFormX(p, 63, fr_dst, 0, fr_src, 814, 0, endness_host);
             goto done;
          } else {
             // fctidu (conv f64 to u64)
-            p = mkFormX(p, 63, fr_dst, 0, fr_src, 942, 0);
+            p = mkFormX(p, 63, fr_dst, 0, fr_src, 942, 0, endness_host);
             goto done;
          }
       }
       if (i->Pin.FpCftI.fromI == True && i->Pin.FpCftI.int32 == False) {
          if (i->Pin.FpCftI.syned == True) {
             // fcfid (conv i64 to f64), PPC64 p434
-            p = mkFormX(p, 63, fr_dst, 0, fr_src, 846, 0);
+            p = mkFormX(p, 63, fr_dst, 0, fr_src, 846, 0, endness_host);
             goto done;
          } else if (i->Pin.FpCftI.flt64 == True) {
             // fcfidu (conv u64 to f64)
-            p = mkFormX(p, 63, fr_dst, 0, fr_src, 974, 0);
+            p = mkFormX(p, 63, fr_dst, 0, fr_src, 974, 0, endness_host);
             goto done;
          } else {
             // fcfidus (conv u64 to f32)
-            p = mkFormX(p, 59, fr_dst, 0, fr_src, 974, 0);
+            p = mkFormX(p, 59, fr_dst, 0, fr_src, 974, 0, endness_host);
             goto done;
          }
       }
@@ -4690,17 +4736,18 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       /* jmp fwds if !condition */
       if (cc.test != Pct_ALWAYS) {
          /* bc !ct,cf,n_bytes>>2 */
-         p = mkFormB(p, invertCondTest(cc.test), cc.flag, 8>>2, 0, 0);
+         p = mkFormB(p, invertCondTest(cc.test), cc.flag, 8>>2, 0, 0,
+                     endness_host);
       }
 
       // fmr, PPC32 p410
-      p = mkFormX(p, 63, fr_dst, 0, fr_src, 72, 0);
+      p = mkFormX(p, 63, fr_dst, 0, fr_src, 72, 0, endness_host);
       goto done;
    }
 
    case Pin_FpLdFPSCR: {
       UInt fr_src = fregNo(i->Pin.FpLdFPSCR.src);
-      p = mkFormXFL(p, 0xFF, fr_src, i->Pin.FpLdFPSCR.dfp_rm);     // mtfsf, PPC32 p480
+      p = mkFormXFL(p, 0xFF, fr_src, i->Pin.FpLdFPSCR.dfp_rm, endness_host); // mtfsf, PPC32 p480
       goto done;
    }
 
@@ -4711,21 +4758,22 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       UInt  fr_srcR = fregNo(i->Pin.FpCmp.srcR);
       vassert(crfD < 8);
       // fcmpo, PPC32 p402
-      p = mkFormX(p, 63, crfD<<2, fr_srcL, fr_srcR, 32, 0);
+      p = mkFormX(p, 63, crfD<<2, fr_srcL, fr_srcR, 32, 0, endness_host);
 
       // mfcr (mv CR to r_dst), PPC32 p467
-      p = mkFormX(p, 31, r_dst, 0, 0, 19, 0);
+      p = mkFormX(p, 31, r_dst, 0, 0, 19, 0, endness_host);
       
       // rlwinm r_dst,r_dst,8,28,31, PPC32 p501
       //  => rotate field 1 to bottomw of word, masking out upper 28
-      p = mkFormM(p, 21, r_dst, r_dst, 8, 28, 31, 0);
+      p = mkFormM(p, 21, r_dst, r_dst, 8, 28, 31, 0, endness_host);
       goto done;
    }
 
    case Pin_RdWrLR: {
       UInt reg = iregNo(i->Pin.RdWrLR.gpr, mode64);
       /* wrLR==True ? mtlr r4 : mflr r4 */
-      p = mkFormXFX(p, reg, 8, (i->Pin.RdWrLR.wrLR==True) ? 467 : 339);
+      p = mkFormXFX(p, reg, 8, (i->Pin.RdWrLR.wrLR==True) ? 467 : 339,
+                    endness_host);
       goto done;
    }
 
@@ -4744,17 +4792,17 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       if (!idxd) {
          r_idx = 30;                       // XXX: Using r30 as temp
          p = mkLoadImm(p, r_idx,
-                       i->Pin.AvLdSt.addr->Pam.IR.index, mode64);
+                       i->Pin.AvLdSt.addr->Pam.IR.index, mode64, endness_host);
       } else {
          r_idx  = iregNo(i->Pin.AvLdSt.addr->Pam.RR.index, mode64);
       }
 
       if (i->Pin.FpLdSt.isLoad) {  // Load from memory (1,2,4,16)
          opc2 = (sz==1) ?   7 : (sz==2) ?  39 : (sz==4) ?  71 : 103;
-         p = mkFormX(p, 31, v_reg, r_idx, r_base, opc2, 0);
+         p = mkFormX(p, 31, v_reg, r_idx, r_base, opc2, 0, endness_host);
       } else {                      // Store to memory (1,2,4,16)
          opc2 = (sz==1) ? 135 : (sz==2) ? 167 : (sz==4) ? 199 : 231;
-         p = mkFormX(p, 31, v_reg, r_idx, r_base, opc2, 0);
+         p = mkFormX(p, 31, v_reg, r_idx, r_base, opc2, 0, endness_host);
       }
       goto done;
    }
@@ -4784,10 +4832,10 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       switch (i->Pin.AvUnary.op) {
       case Pav_MOV:
       case Pav_NOT:
-         p = mkFormVX( p, 4, v_dst, v_src, v_src, opc2 );
+         p = mkFormVX( p, 4, v_dst, v_src, v_src, opc2, endness_host );
          break;
       default:
-         p = mkFormVX( p, 4, v_dst, 0, v_src, opc2 );
+         p = mkFormVX( p, 4, v_dst, 0, v_src, opc2, endness_host );
          break;
       }
       goto done;
@@ -4799,13 +4847,13 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       UInt v_srcR = vregNo(i->Pin.AvBinary.srcR);
       UInt opc2;
       if (i->Pin.AvBinary.op == Pav_SHL) {
-         p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, 1036 ); // vslo
-         p = mkFormVX( p, 4, v_dst, v_dst,  v_srcR, 452 );  // vsl
+         p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, 1036, endness_host ); // vslo
+         p = mkFormVX( p, 4, v_dst, v_dst,  v_srcR, 452, endness_host );  // vsl
          goto done;
       }
       if (i->Pin.AvBinary.op == Pav_SHR) {
-         p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, 1100 ); // vsro
-         p = mkFormVX( p, 4, v_dst, v_dst,  v_srcR, 708 );  // vsr
+         p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, 1100, endness_host ); // vsro
+         p = mkFormVX( p, 4, v_dst, v_dst,  v_srcR, 708, endness_host );  // vsr
          goto done;
       }
       switch (i->Pin.AvBinary.op) {
@@ -4816,7 +4864,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       default:
          goto bad;
       }
-      p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, opc2 );
+      p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, opc2, endness_host );
       goto done;
    }
 
@@ -4864,7 +4912,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       default:
          goto bad;
       }
-      p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, opc2 );
+      p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, opc2, endness_host );
       goto done;
    }
 
@@ -4918,7 +4966,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       default:
          goto bad;
       }
-      p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, opc2 );
+      p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, opc2, endness_host );
       goto done;
    }
 
@@ -4977,7 +5025,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       default:
          goto bad;
       }
-      p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, opc2 );
+      p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, opc2, endness_host );
       goto done;
    }
 
@@ -5009,7 +5057,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       default:
          goto bad;
       }
-      p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, opc2 );
+      p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, opc2, endness_host );
       goto done;
    }
    case Pin_AvCipherV128Unary: {
@@ -5021,7 +5069,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       default:
          goto bad;
       }
-      p = mkFormVX( p, 4, v_dst, v_src, 0, opc2 );
+      p = mkFormVX( p, 4, v_dst, v_src, 0, opc2, endness_host );
       goto done;
    }
    case Pin_AvCipherV128Binary: {
@@ -5037,7 +5085,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       default:
          goto bad;
       }
-      p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, opc2 );
+      p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, opc2, endness_host );
       goto done;
    }
    case Pin_AvHashV128Binary: {
@@ -5051,7 +5099,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       default:
          goto bad;
       }
-      p = mkFormVX( p, 4, v_dst, v_src, s_field->Pri.Imm, opc2 );
+      p = mkFormVX( p, 4, v_dst, v_src, s_field->Pri.Imm, opc2, endness_host );
       goto done;
    }
    case Pin_AvBCDV128Trinary: {
@@ -5067,7 +5115,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
          goto bad;
       }
       p = mkFormVXR( p, 4, v_dst, v_src1, v_src2,
-                     0x1, (ps->Pri.Imm << 9) | opc2 );
+                     0x1, (ps->Pri.Imm << 9) | opc2, endness_host );
       goto done;
    }
    case Pin_AvBin32Fx4: {
@@ -5077,16 +5125,16 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       switch (i->Pin.AvBin32Fx4.op) {
 
       case Pavfp_ADDF:
-         p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, 10 );   // vaddfp
+         p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, 10, endness_host );   // vaddfp
          break;
       case Pavfp_SUBF:
-         p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, 74 );   // vsubfp
+         p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, 74, endness_host );   // vsubfp
          break;
       case Pavfp_MAXF:
-         p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, 1034 ); // vmaxfp
+         p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, 1034, endness_host ); // vmaxfp
          break;
       case Pavfp_MINF:
-         p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, 1098 ); // vminfp
+         p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, 1098, endness_host ); // vminfp
          break;
 
       case Pavfp_MULF: {
@@ -5101,23 +5149,23 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
 
          // Better way to load -0.0 (0x80000000) ?
          // vspltisw vB,0x1F   (0x1F => each word of vB)
-         p = mkFormVX( p, 4, vB, konst, 0, 908 );
+         p = mkFormVX( p, 4, vB, konst, 0, 908, endness_host );
 
          // vslw vB,vB,vB (each word of vB = (0x1F << 0x1F) = 0x80000000
-         p = mkFormVX( p, 4, vB, vB, vB, 388 );
+         p = mkFormVX( p, 4, vB, vB, vB, 388, endness_host );
 
          // Finally, do the multiply:
-         p = mkFormVA( p, 4, v_dst, v_srcL, vB, v_srcR, 46 );
+         p = mkFormVA( p, 4, v_dst, v_srcL, vB, v_srcR, 46, endness_host );
          break;
       }
       case Pavfp_CMPEQF:  // vcmpeqfp
-         p = mkFormVXR( p, 4, v_dst, v_srcL, v_srcR, 0, 198 );
+         p = mkFormVXR( p, 4, v_dst, v_srcL, v_srcR, 0, 198, endness_host);
          break;
       case Pavfp_CMPGTF:  // vcmpgtfp
-         p = mkFormVXR( p, 4, v_dst, v_srcL, v_srcR, 0, 710 );
+         p = mkFormVXR( p, 4, v_dst, v_srcL, v_srcR, 0, 710, endness_host );
          break;
       case Pavfp_CMPGEF:  // vcmpgefp
-         p = mkFormVXR( p, 4, v_dst, v_srcL, v_srcR, 0, 454 );
+         p = mkFormVXR( p, 4, v_dst, v_srcL, v_srcR, 0, 454, endness_host );
          break;
 
       default:
@@ -5144,7 +5192,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       default:
          goto bad;
       }
-      p = mkFormVX( p, 4, v_dst, 0, v_src, opc2 );
+      p = mkFormVX( p, 4, v_dst, 0, v_src, opc2, endness_host );
       goto done;
    }
 
@@ -5153,7 +5201,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       UInt v_srcL = vregNo(i->Pin.AvPerm.srcL);
       UInt v_srcR = vregNo(i->Pin.AvPerm.srcR);
       UInt v_ctl  = vregNo(i->Pin.AvPerm.ctl);
-      p = mkFormVA( p, 4, v_dst, v_srcL, v_srcR, v_ctl, 43 );
+      p = mkFormVA( p, 4, v_dst, v_srcL, v_srcR, v_ctl, 43, endness_host );
       goto done;
    }
 
@@ -5162,7 +5210,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       UInt v_dst  = vregNo(i->Pin.AvSel.dst);
       UInt v_srcL = vregNo(i->Pin.AvSel.srcL);
       UInt v_srcR = vregNo(i->Pin.AvSel.srcR);
-      p = mkFormVA( p, 4, v_dst, v_srcL, v_srcR, v_ctl, 42 );
+      p = mkFormVA( p, 4, v_dst, v_srcL, v_srcR, v_ctl, 42, endness_host );
       goto done;
    }
 
@@ -5172,7 +5220,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       UInt v_srcL = vregNo(i->Pin.AvShlDbl.srcL);
       UInt v_srcR = vregNo(i->Pin.AvShlDbl.srcR);
       vassert(shift <= 0xF);
-      p = mkFormVA( p, 4, v_dst, v_srcL, v_srcR, shift, 44 );
+      p = mkFormVA( p, 4, v_dst, v_srcL, v_srcR, shift, 44, endness_host );
       goto done;
    }
 
@@ -5189,7 +5237,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
          simm5 = i->Pin.AvSplat.src->Pvi.Imm5s;
          vassert(simm5 >= -16 && simm5 <= 15);
          simm5 = simm5 & 0x1F;
-         p = mkFormVX( p, 4, v_dst, (UInt)simm5, 0, opc2 );
+         p = mkFormVX( p, 4, v_dst, (UInt)simm5, 0, opc2, endness_host );
       }
       else {  // Pri_Reg
          UInt lowest_lane;
@@ -5197,7 +5245,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
          vassert(hregClass(i->Pin.AvSplat.src->Pvi.Reg) == HRcVec128);
          v_src = vregNo(i->Pin.AvSplat.src->Pvi.Reg);
          lowest_lane = (128/sz)-1;
-         p = mkFormVX( p, 4, v_dst, lowest_lane, v_src, opc2 );
+         p = mkFormVX( p, 4, v_dst, lowest_lane, v_src, opc2, endness_host );
       }
       goto done;
    }
@@ -5214,16 +5262,17 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       /* jmp fwds 2 insns if !condition */
       if (cc.test != Pct_ALWAYS) {
          /* bc !ct,cf,n_bytes>>2 */
-         p = mkFormB(p, invertCondTest(cc.test), cc.flag, 8>>2, 0, 0);
+         p = mkFormB(p, invertCondTest(cc.test), cc.flag, 8>>2, 0, 0,
+                     endness_host);
       }
       /* vmr */
-      p = mkFormVX( p, 4, v_dst, v_src, v_src, 1156 );
+      p = mkFormVX( p, 4, v_dst, v_src, v_src, 1156, endness_host );
       goto done;
    }
 
    case Pin_AvLdVSCR: {  // mtvscr
       UInt v_src = vregNo(i->Pin.AvLdVSCR.src);
-      p = mkFormVX( p, 4, 0, 0, v_src, 1604 );
+      p = mkFormVX( p, 4, 0, 0, v_src, 1604, endness_host );
       goto done;
    }
 
@@ -5233,23 +5282,23 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
 
       switch (i->Pin.Dfp64Unary.op) {
       case Pfp_MOV: // fmr, PPC32 p410
-         p = mkFormX( p, 63, fr_dst, 0, fr_src, 72, 0 );
+         p = mkFormX( p, 63, fr_dst, 0, fr_src, 72, 0, endness_host );
          break;
       case Pfp_DCTDP:   // D32 to D64
-         p = mkFormX( p, 59, fr_dst, 0, fr_src, 258, 0 );
+         p = mkFormX( p, 59, fr_dst, 0, fr_src, 258, 0, endness_host );
          break;
       case Pfp_DRSP:    // D64 to D32
-         p = mkFormX( p, 59, fr_dst, 0, fr_src, 770, 0 );
+         p = mkFormX( p, 59, fr_dst, 0, fr_src, 770, 0, endness_host );
          break;
       case Pfp_DCFFIX:   // I64 to D64 conversion
          /* ONLY WORKS ON POWER7 */
-         p = mkFormX( p, 59, fr_dst, 0, fr_src, 802, 0);
+         p = mkFormX( p, 59, fr_dst, 0, fr_src, 802, 0, endness_host );
          break;
       case Pfp_DCTFIX:   // D64 to I64 conversion
-         p = mkFormX( p, 59, fr_dst, 0, fr_src, 290, 0);
+         p = mkFormX( p, 59, fr_dst, 0, fr_src, 290, 0, endness_host );
          break;
       case Pfp_DXEX:     // Extract exponent
-         p = mkFormX( p, 59, fr_dst, 0, fr_src, 354, 0 );
+         p = mkFormX( p, 59, fr_dst, 0, fr_src, 354, 0, endness_host );
          break;                                
       default:
          goto bad;
@@ -5264,22 +5313,22 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       switch (i->Pin.Dfp64Binary.op) {
       case Pfp_DFPADD: /* dadd, dfp add, use default RM from reg ignore mode
                         * from the Iop instruction. */
-         p = mkFormX( p, 59, fr_dst, fr_srcL, fr_srcR, 2, 0 );
+         p = mkFormX( p, 59, fr_dst, fr_srcL, fr_srcR, 2, 0, endness_host );
          break;
       case Pfp_DFPSUB: /* dsub, dfp subtract, use default RM from reg ignore
                         * mode from the Iop instruction. */
-         p = mkFormX( p, 59, fr_dst, fr_srcL, fr_srcR, 514, 0 );
+         p = mkFormX( p, 59, fr_dst, fr_srcL, fr_srcR, 514, 0, endness_host );
          break;
       case Pfp_DFPMUL: /* dmul, dfp multipy, use default RM from reg ignore
                         * mode from the Iop instruction. */
-         p = mkFormX( p, 59, fr_dst, fr_srcL, fr_srcR, 34, 0 );
+         p = mkFormX( p, 59, fr_dst, fr_srcL, fr_srcR, 34, 0, endness_host );
          break;
       case Pfp_DFPDIV: /* ddiv, dfp divide, use default RM from reg ignore
                         * mode from the Iop instruction. */
-         p = mkFormX( p, 59, fr_dst, fr_srcL, fr_srcR, 546, 0 );
+         p = mkFormX( p, 59, fr_dst, fr_srcL, fr_srcR, 546, 0, endness_host );
          break;
       case Pfp_DIEX:  /* diex, insert exponent */
-         p = mkFormX( p, 59, fr_dst, fr_srcL, fr_srcR, 866, 0 );
+         p = mkFormX( p, 59, fr_dst, fr_srcL, fr_srcR, 866, 0, endness_host );
          break;
       default:
          goto bad;
@@ -5296,10 +5345,10 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
 
       switch (i->Pin.DfpShift.op) {
       case Pfp_DSCLI:    /* dscli, DFP shift left by fr_srcR */
-         p = mkFormZ22( p, 59, fr_dst, fr_src, shift,  66, 0 );
+         p = mkFormZ22( p, 59, fr_dst, fr_src, shift,  66, 0, endness_host );
          break;
       case Pfp_DSCRI:    /* dscri, DFP shift right by fr_srcR */
-         p = mkFormZ22( p, 59, fr_dst, fr_src, shift,  98, 0 );
+         p = mkFormZ22( p, 59, fr_dst, fr_src, shift,  98, 0, endness_host );
          break;
       default:
          vex_printf("ERROR: emit_PPCInstr default case\n");
@@ -5318,14 +5367,14 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
          /* Setup the upper and lower registers of the source operand
           * register pair.
           */
-         p = mkFormX( p, 63, 12, 0, fr_srcHi, 72, 0);
-         p = mkFormX( p, 63, 13, 0, fr_srcLo, 72, 0);
-         p = mkFormX( p, 63, 10, 0, 12, 354, 0 );
+         p = mkFormX( p, 63, 12, 0, fr_srcHi, 72, 0, endness_host );
+         p = mkFormX( p, 63, 13, 0, fr_srcLo, 72, 0, endness_host );
+         p = mkFormX( p, 63, 10, 0, 12, 354, 0, endness_host );
 
          /* The instruction will put the 64-bit result in
           * register 10.
           */
-         p = mkFormX(p, 63, fr_dst, 0, 10,  72, 0);
+         p = mkFormX(p, 63, fr_dst, 0, 10,  72, 0, endness_host);
          break;
       default:
          vex_printf("Error: emit_PPCInstr case Pin_DfpExtractExp, case inst Default\n");
@@ -5343,16 +5392,16 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       */
      switch (i->Pin.Dfp128Unary.op) {
      case Pfp_DCTQPQ: // D64 to D128, srcLo holds 64 bit operand              
-        p = mkFormX( p, 63, 12, 0, fr_srcLo, 72, 0);
+        p = mkFormX( p, 63, 12, 0, fr_srcLo, 72, 0, endness_host );
 
-        p = mkFormX( p, 63, 10, 0, 12, 258, 0 );
+        p = mkFormX( p, 63, 10, 0, 12, 258, 0, endness_host );
 
         /* The instruction will put the 128-bit result in
          * registers (10,11).  Note, the operand in the instruction only
          * reference the first of the two registers in the pair.
          */
-        p = mkFormX(p, 63, fr_dstHi, 0, 10,  72, 0);
-        p = mkFormX(p, 63, fr_dstLo, 0, 11,  72, 0);
+        p = mkFormX(p, 63, fr_dstHi, 0, 10,  72, 0, endness_host);
+        p = mkFormX(p, 63, fr_dstLo, 0, 11,  72, 0, endness_host);
         break;
      default:
         vex_printf("Error: emit_PPCInstr case Pin_Dfp128Unary, case inst Default\
@@ -5374,26 +5423,26 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       /* Setup the upper and lower registers of the source operand
        * register pair.
        */
-      p = mkFormX( p, 63, 10, 0, fr_dstHi, 72, 0 );
-      p = mkFormX( p, 63, 11, 0, fr_dstLo, 72, 0 );
-      p = mkFormX( p, 63, 12, 0, fr_srcRHi, 72, 0 );
-      p = mkFormX( p, 63, 13, 0, fr_srcRLo, 72, 0 );
+      p = mkFormX( p, 63, 10, 0, fr_dstHi, 72, 0, endness_host );
+      p = mkFormX( p, 63, 11, 0, fr_dstLo, 72, 0, endness_host );
+      p = mkFormX( p, 63, 12, 0, fr_srcRHi, 72, 0, endness_host );
+      p = mkFormX( p, 63, 13, 0, fr_srcRLo, 72, 0, endness_host );
 
       /* Do instruction with 128-bit source operands in registers (10,11)
        * and (12,13).
        */
       switch (i->Pin.Dfp128Binary.op) {
       case Pfp_DFPADDQ:
-         p = mkFormX( p, 63, 10, 10, 12, 2, 0 );
+         p = mkFormX( p, 63, 10, 10, 12, 2, 0, endness_host );
          break;
       case Pfp_DFPSUBQ:
-         p = mkFormX( p, 63, 10, 10, 12, 514, 0 );
+         p = mkFormX( p, 63, 10, 10, 12, 514, 0, endness_host );
          break;
       case Pfp_DFPMULQ:
-         p = mkFormX( p, 63, 10, 10, 12, 34, 0 );
+         p = mkFormX( p, 63, 10, 10, 12, 34, 0, endness_host );
          break;
       case Pfp_DFPDIVQ:
-         p = mkFormX( p, 63, 10, 10, 12, 546, 0 );
+         p = mkFormX( p, 63, 10, 10, 12, 546, 0, endness_host );
          break;
       default:
          goto bad;
@@ -5403,8 +5452,8 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
        * registers (10,11).  Note, the operand in the instruction only
        * reference the first of the two registers in the pair.
        */
-      p = mkFormX(p, 63, fr_dstHi, 0, 10,  72, 0);
-      p = mkFormX(p, 63, fr_dstLo, 0, 11,  72, 0);
+      p = mkFormX(p, 63, fr_dstHi, 0, 10,  72, 0, endness_host);
+      p = mkFormX(p, 63, fr_dstLo, 0, 11,  72, 0, endness_host);
       goto done;
    }
 
@@ -5418,20 +5467,20 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       shift =  i->Pin.DfpShift128.shift->Pri.Imm;
 
       /* setup source operand in register 12, 13 pair */
-      p = mkFormX(p, 63, 12, 0, fr_src_hi, 72, 0);
-      p = mkFormX(p, 63, 13, 0, fr_src_lo, 72, 0);
+      p = mkFormX(p, 63, 12, 0, fr_src_hi, 72, 0, endness_host);
+      p = mkFormX(p, 63, 13, 0, fr_src_lo, 72, 0, endness_host);
 
       /* execute instruction putting result in register 10, 11 pair */
       switch (i->Pin.DfpShift128.op) {
       case Pfp_DSCLIQ:    /* dscliq, DFP shift left, fr_srcR is the integer
                            * shift amount.
                            */
-         p = mkFormZ22( p, 63, 10, 12, shift,  66, 0 );
+         p = mkFormZ22( p, 63, 10, 12, shift,  66, 0, endness_host );
          break;
       case Pfp_DSCRIQ:    /* dscriq, DFP shift right, fr_srcR is the integer
                            * shift amount.
                            */
-         p = mkFormZ22( p, 63, 10, 12, shift,  98, 0 );
+         p = mkFormZ22( p, 63, 10, 12, shift,  98, 0, endness_host );
          break;
       default:
          vex_printf("ERROR: emit_PPCInstr quad default case %d \n",
@@ -5443,8 +5492,8 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
        * Note, the operand in the instruction only reference the first of 
        * the two registers in the pair.
        */
-      p = mkFormX(p, 63, fr_dst_hi, 0, 10,  72, 0);
-      p = mkFormX(p, 63, fr_dst_lo, 0, 11,  72, 0);
+      p = mkFormX(p, 63, fr_dst_hi, 0, 10,  72, 0, endness_host);
+      p = mkFormX(p, 63, fr_dst_lo, 0, 11,  72, 0, endness_host);
       goto done;
    }
 
@@ -5458,7 +5507,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       rmc = r_rmc & 0x3;
 
       // drintx
-      p = mkFormZ23(p, 59, fr_dst, r, fr_src, rmc, 99, 0);
+      p = mkFormZ23(p, 59, fr_dst, r, fr_src, rmc, 99, 0, endness_host);
       goto done;
    }
 
@@ -5476,20 +5525,20 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       /* Setup the upper and lower registers of the source operand 
        * register pair.
        */
-      p = mkFormX(p, 63, 12, 0, fr_srcHi, 72, 0);
-      p = mkFormX(p, 63, 13, 0, fr_srcLo, 72, 0);
+      p = mkFormX(p, 63, 12, 0, fr_srcHi, 72, 0, endness_host);
+      p = mkFormX(p, 63, 13, 0, fr_srcLo, 72, 0, endness_host);
 
       /* Do drintx instruction with 128-bit source operands in 
        * registers (12,13).  
        */
-      p = mkFormZ23(p, 63, 10, r, 12, rmc, 99, 0);
+      p = mkFormZ23(p, 63, 10, r, 12, rmc, 99, 0, endness_host);
 
       /* The instruction will put the 128-bit result in 
        * registers (10,11).  Note, the operand in the instruction only 
        * reference the first of the two registers in the pair.
        */
-      p = mkFormX(p, 63, fr_dstHi, 0, 10,  72, 0);
-      p = mkFormX(p, 63, fr_dstLo, 0, 11,  72, 0);
+      p = mkFormX(p, 63, fr_dstHi, 0, 10,  72, 0, endness_host);
+      p = mkFormX(p, 63, fr_dstLo, 0, 11,  72, 0, endness_host);
       goto done;
    }
 
@@ -5503,10 +5552,10 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
 
       switch (i->Pin.DfpQuantize.op) {
       case Pfp_DQUA:
-         p = mkFormZ23(p, 59, fr_dst, fr_srcL, fr_srcR, rmc, 3, 0);
+         p = mkFormZ23(p, 59, fr_dst, fr_srcL, fr_srcR, rmc, 3, 0, endness_host);
          break;
       case Pfp_RRDTR:
-         p = mkFormZ23(p, 59, fr_dst, fr_srcL, fr_srcR, rmc, 35, 0);
+         p = mkFormZ23(p, 59, fr_dst, fr_srcL, fr_srcR, rmc, 35, 0, endness_host);
          break;
       default:
          break;
@@ -5526,20 +5575,20 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
        * register pairs.  Note, left source operand passed in via the
        * dst register pair.
        */
-      p = mkFormX(p, 63, 10, 0, fr_dst_hi, 72, 0);
-      p = mkFormX(p, 63, 11, 0, fr_dst_lo, 72, 0);
-      p = mkFormX(p, 63, 12, 0, fr_src_hi, 72, 0);
-      p = mkFormX(p, 63, 13, 0, fr_src_lo, 72, 0);
+      p = mkFormX(p, 63, 10, 0, fr_dst_hi, 72, 0, endness_host);
+      p = mkFormX(p, 63, 11, 0, fr_dst_lo, 72, 0, endness_host);
+      p = mkFormX(p, 63, 12, 0, fr_src_hi, 72, 0, endness_host);
+      p = mkFormX(p, 63, 13, 0, fr_src_lo, 72, 0, endness_host);
 
       /* Do dquaq instruction with 128-bit source operands in 
        * registers (12,13).  
        */
       switch (i->Pin.DfpQuantize128.op) {
       case Pfp_DQUAQ:
-         p = mkFormZ23(p, 63, 10, 10, 12, rmc, 3, 0);
+         p = mkFormZ23(p, 63, 10, 10, 12, rmc, 3, 0, endness_host);
          break;
       case Pfp_DRRNDQ:
-         p = mkFormZ23(p, 63, 10, 10, 12, rmc, 35, 0);
+         p = mkFormZ23(p, 63, 10, 10, 12, rmc, 35, 0, endness_host);
          break;
       default:
          vpanic("Pin_DfpQuantize128: default case, couldn't find inst to issue \n");
@@ -5550,8 +5599,8 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
        * registers (10,11).  Note, the operand in the instruction only 
        * reference the first of the two registers in the pair.
        */
-      p = mkFormX(p, 63, fr_dst_hi, 0, 10,  72, 0);
-      p = mkFormX(p, 63, fr_dst_lo, 0, 11,  72, 0);
+      p = mkFormX(p, 63, fr_dst_hi, 0, 10,  72, 0, endness_host);
+      p = mkFormX(p, 63, fr_dst_lo, 0, 11,  72, 0, endness_host);
       goto done;
    }
 
@@ -5563,24 +5612,24 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       /* Setup the upper and lower registers of the source operand
        * register pair.
        */
-      p = mkFormX( p, 63, 10, 0, fr_dst, 72, 0 );
-      p = mkFormX( p, 63, 12, 0, fr_srcHi, 72, 0 );
-      p = mkFormX( p, 63, 13, 0, fr_srcLo, 72, 0 );
+      p = mkFormX( p, 63, 10, 0, fr_dst, 72, 0, endness_host );
+      p = mkFormX( p, 63, 12, 0, fr_srcHi, 72, 0, endness_host );
+      p = mkFormX( p, 63, 13, 0, fr_srcLo, 72, 0, endness_host );
 
       /* Do instruction with 128-bit source operands in registers (10,11) */
       switch (i->Pin.Dfp128Binary.op) {
       case Pfp_DRDPQ:
-         p = mkFormX( p, 63, 10, 0, 12, 770, 0 );
+         p = mkFormX( p, 63, 10, 0, 12, 770, 0, endness_host );
          break;
       case Pfp_DCTFIXQ:
-         p = mkFormX( p, 63, 10, 0, 12, 290, 0 );
+         p = mkFormX( p, 63, 10, 0, 12, 290, 0, endness_host );
          break;
       default:
          goto bad;
       }
 
       /* The instruction will put the 64-bit result in registers 10. */
-      p = mkFormX(p, 63, fr_dst, 0, 10,  72, 0);
+      p = mkFormX(p, 63, fr_dst, 0, 10,  72, 0, endness_host);
       goto done;
    }
 
@@ -5591,15 +5640,15 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
 
       switch (i->Pin.Dfp128Binary.op) {
       case Pfp_DCFFIXQ:
-         p = mkFormX( p, 63, 10, 11, fr_src, 802, 0 );
+         p = mkFormX( p, 63, 10, 11, fr_src, 802, 0, endness_host );
          break;
       default:
          goto bad;
       }
 
       /* The instruction will put the 64-bit result in registers 10, 11. */
-      p = mkFormX(p, 63, fr_dstHi, 0, 10,  72, 0);
-      p = mkFormX(p, 63, fr_dstLo, 0, 11,  72, 0);
+      p = mkFormX(p, 63, fr_dstHi, 0, 10,  72, 0, endness_host);
+      p = mkFormX(p, 63, fr_dstLo, 0, 11,  72, 0, endness_host);
       goto done;
    }
 
@@ -5613,17 +5662,17 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       /* The left operand is a single F64 value, the right is an F128
        * register pair.
        */
-      p = mkFormX(p, 63, 10, 0, fr_srcL, 72, 0);
-      p = mkFormX(p, 63, 12, 0, fr_srcRHi, 72, 0);
-      p = mkFormX(p, 63, 13, 0, fr_srcRLo, 72, 0);
-      p = mkFormX(p, 63, 10, 10, 12, 866, 0 );
+      p = mkFormX(p, 63, 10, 0, fr_srcL, 72, 0, endness_host);
+      p = mkFormX(p, 63, 12, 0, fr_srcRHi, 72, 0, endness_host);
+      p = mkFormX(p, 63, 13, 0, fr_srcRLo, 72, 0, endness_host);
+      p = mkFormX(p, 63, 10, 10, 12, 866, 0, endness_host );
 
       /* The instruction will put the 128-bit result into
        * registers (10,11).  Note, the operand in the instruction only
        * reference the first of the two registers in the pair.
        */
-      p = mkFormX(p, 63, fr_dstHi, 0, 10,  72, 0);
-      p = mkFormX(p, 63, fr_dstLo, 0, 11,  72, 0);
+      p = mkFormX(p, 63, fr_dstHi, 0, 10,  72, 0, endness_host);
+      p = mkFormX(p, 63, fr_dstLo, 0, 11,  72, 0, endness_host);
       goto done;
    }                                                                           
 
@@ -5634,14 +5683,14 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       UInt  fr_srcR = fregNo(i->Pin.Dfp64Cmp.srcR);
       vassert(crfD < 8);
       // dcmpo, dcmpu
-      p = mkFormX(p, 59, crfD<<2, fr_srcL, fr_srcR, 130, 0);
+      p = mkFormX(p, 59, crfD<<2, fr_srcL, fr_srcR, 130, 0, endness_host);
 
       // mfcr (mv CR to r_dst)
-      p = mkFormX(p, 31, r_dst, 0, 0, 19, 0);
+      p = mkFormX(p, 31, r_dst, 0, 0, 19, 0, endness_host);
 
       // rlwinm r_dst,r_dst,8,28,31
       //  => rotate field 1 to bottomw of word, masking out upper 28
-      p = mkFormM(p, 21, r_dst, r_dst, 8, 28, 31, 0);
+      p = mkFormM(p, 21, r_dst, r_dst, 8, 28, 31, 0, endness_host);
       goto done;
    }
 
@@ -5657,19 +5706,19 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       /* Setup the upper and lower registers of the source operand
        * register pair.
        */
-      p = mkFormX(p, 63, 10, 0, fr_srcL_hi, 72, 0);
-      p = mkFormX(p, 63, 11, 0, fr_srcL_lo, 72, 0);
-      p = mkFormX(p, 63, 12, 0, fr_srcR_hi, 72, 0);
-      p = mkFormX(p, 63, 13, 0, fr_srcR_lo, 72, 0);
+      p = mkFormX(p, 63, 10, 0, fr_srcL_hi, 72, 0, endness_host);
+      p = mkFormX(p, 63, 11, 0, fr_srcL_lo, 72, 0, endness_host);
+      p = mkFormX(p, 63, 12, 0, fr_srcR_hi, 72, 0, endness_host);
+      p = mkFormX(p, 63, 13, 0, fr_srcR_lo, 72, 0, endness_host);
 
-      p = mkFormX(p, 63, crfD<<2, 10, 12, 130, 0);
+      p = mkFormX(p, 63, crfD<<2, 10, 12, 130, 0, endness_host);
 
       // mfcr (mv CR to r_dst)
-      p = mkFormX(p, 31, r_dst, 0, 0, 19, 0);
+      p = mkFormX(p, 31, r_dst, 0, 0, 19, 0, endness_host);
 
       // rlwinm r_dst,r_dst,8,28,31
       //  => rotate field 1 to bottomw of word, masking out upper 28
-      p = mkFormM(p, 21, r_dst, r_dst, 8, 28, 31, 0);
+      p = mkFormM(p, 21, r_dst, r_dst, 8, 28, 31, 0, endness_host);
       goto done;
    }
 
@@ -5689,21 +5738,24 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       UChar* p0 = p;
       /* lwz r30, amCounter */
       p = do_load_or_store_word32(p, True/*isLoad*/, /*r*/30,
-                                  i->Pin.EvCheck.amCounter, mode64);
+                                  i->Pin.EvCheck.amCounter, mode64,
+                                  endness_host);
       /* addic. r30,r30,-1 */
-      p = emit32(p, 0x37DEFFFF);
+      p = emit32(p, 0x37DEFFFF, endness_host);
       /* stw r30, amCounter */
       p = do_load_or_store_word32(p, False/*!isLoad*/, /*r*/30,
-                                  i->Pin.EvCheck.amCounter, mode64);
+                                  i->Pin.EvCheck.amCounter, mode64,
+                                  endness_host);
       /* bge nofail */
-      p = emit32(p, 0x40800010);
+      p = emit32(p, 0x40800010, endness_host);
       /* lwz/ld r30, amFailAddr */
       p = do_load_or_store_machine_word(p, True/*isLoad*/, /*r*/30,
-                                        i->Pin.EvCheck.amFailAddr, mode64);
+                                        i->Pin.EvCheck.amFailAddr, mode64,
+                                        endness_host);
       /* mtctr r30 */
-      p = mkFormXFX(p, /*r*/30, 9, 467);
+      p = mkFormXFX(p, /*r*/30, 9, 467, endness_host);
       /* bctr */
-      p = mkFormXL(p, 19, Pct_ALWAYS, 0, 0, 528, 0);
+      p = mkFormXL(p, 19, Pct_ALWAYS, 0, 0, 528, 0, endness_host);
       /* nofail: */
 
       /* Crosscheck */
@@ -5733,19 +5785,19 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       */
       if (mode64) {
          p = mkLoadImm_EXACTLY2or5(
-                p, /*r*/30, 0x6555655565556555ULL, True/*mode64*/);
-         p = emit32(p, 0xEBBE0000);
-         p = emit32(p, 0x3BBD0001);
-         p = emit32(p, 0xFBBE0000);
+                p, /*r*/30, 0x6555655565556555ULL, True/*mode64*/, endness_host);
+         p = emit32(p, 0xEBBE0000, endness_host);
+         p = emit32(p, 0x3BBD0001, endness_host);
+         p = emit32(p, 0xFBBE0000, endness_host);
       } else {
          p = mkLoadImm_EXACTLY2or5(
-                p, /*r*/30, 0x65556555ULL, False/*!mode64*/);
-         p = emit32(p, 0x83BE0004);
-         p = emit32(p, 0x37BD0001);
-         p = emit32(p, 0x93BE0004);
-         p = emit32(p, 0x83BE0000);
-         p = emit32(p, 0x7FBD0194);
-         p = emit32(p, 0x93BE0000);
+                p, /*r*/30, 0x65556555ULL, False/*!mode64*/, endness_host);
+         p = emit32(p, 0x83BE0004, endness_host);
+         p = emit32(p, 0x37BD0001, endness_host);
+         p = emit32(p, 0x93BE0004, endness_host);
+         p = emit32(p, 0x83BE0000, endness_host);
+         p = emit32(p, 0x7FBD0194, endness_host);
+         p = emit32(p, 0x93BE0000, endness_host);
       }
       /* Tell the caller .. */
       vassert(!(*is_profInc));
@@ -5787,7 +5839,8 @@ VexInvalRange chainXDirect_PPC ( VexEndness endness_host,
                                  Bool  mode64 )
 {
    if (mode64) {
-      vassert(endness_host == VexEndnessBE); /* later: or LE */
+      vassert((endness_host == VexEndnessBE) ||
+              (endness_host == VexEndnessLE));
    } else {
       vassert(endness_host == VexEndnessBE);
    }
@@ -5805,9 +5858,9 @@ VexInvalRange chainXDirect_PPC ( VexEndness endness_host,
    vassert(0 == (3 & (HWord)p));
    vassert(isLoadImm_EXACTLY2or5(p, /*r*/30,
                                  Ptr_to_ULong(disp_cp_chain_me_EXPECTED),
-                                 mode64));
-   vassert(fetch32(p + (mode64 ? 20 : 8) + 0) == 0x7FC903A6);
-   vassert(fetch32(p + (mode64 ? 20 : 8) + 4) == 0x4E800421);
+                                 mode64, endness_host));
+   vassert(fetch32(p + (mode64 ? 20 : 8) + 0, endness_host) == 0x7FC903A6);
+   vassert(fetch32(p + (mode64 ? 20 : 8) + 4, endness_host) == 0x4E800421);
    /* And what we want to change it to is:
         imm32/64-fixed r30, place_to_jump_to
         mtctr r30
@@ -5819,9 +5872,10 @@ VexInvalRange chainXDirect_PPC ( VexEndness endness_host,
       The replacement has the same length as the original.
    */
    p = mkLoadImm_EXACTLY2or5(p, /*r*/30,
-                             Ptr_to_ULong(place_to_jump_to), mode64);
-   p = emit32(p, 0x7FC903A6);
-   p = emit32(p, 0x4E800420);
+                             Ptr_to_ULong(place_to_jump_to), mode64, 
+                             endness_host);
+   p = emit32(p, 0x7FC903A6, endness_host);
+   p = emit32(p, 0x4E800420, endness_host);
 
    Int len = p - (UChar*)place_to_chain;
    vassert(len == (mode64 ? 28 : 16)); /* stay sane */
@@ -5839,7 +5893,8 @@ VexInvalRange unchainXDirect_PPC ( VexEndness endness_host,
                                    Bool  mode64 )
 {
    if (mode64) {
-      vassert(endness_host == VexEndnessBE); /* later: or LE */
+      vassert((endness_host == VexEndnessBE) ||
+              (endness_host == VexEndnessLE));
    } else {
       vassert(endness_host == VexEndnessBE);
    }
@@ -5857,9 +5912,9 @@ VexInvalRange unchainXDirect_PPC ( VexEndness endness_host,
    vassert(0 == (3 & (HWord)p));
    vassert(isLoadImm_EXACTLY2or5(p, /*r*/30,
                                  Ptr_to_ULong(place_to_jump_to_EXPECTED),
-                                 mode64));
-   vassert(fetch32(p + (mode64 ? 20 : 8) + 0) == 0x7FC903A6);
-   vassert(fetch32(p + (mode64 ? 20 : 8) + 4) == 0x4E800420);
+                                 mode64, endness_host));
+   vassert(fetch32(p + (mode64 ? 20 : 8) + 0, endness_host) == 0x7FC903A6);
+   vassert(fetch32(p + (mode64 ? 20 : 8) + 4, endness_host) == 0x4E800420);
    /* And what we want to change it to is:
         imm32/64-fixed r30, disp_cp_chain_me
         mtctr r30
@@ -5871,9 +5926,10 @@ VexInvalRange unchainXDirect_PPC ( VexEndness endness_host,
       The replacement has the same length as the original.
    */
    p = mkLoadImm_EXACTLY2or5(p, /*r*/30,
-                             Ptr_to_ULong(disp_cp_chain_me), mode64);
-   p = emit32(p, 0x7FC903A6);
-   p = emit32(p, 0x4E800421);
+                             Ptr_to_ULong(disp_cp_chain_me), mode64, 
+                             endness_host);
+   p = emit32(p, 0x7FC903A6, endness_host);
+   p = emit32(p, 0x4E800421, endness_host);
 
    Int len = p - (UChar*)place_to_unchain;
    vassert(len == (mode64 ? 28 : 16)); /* stay sane */
@@ -5890,7 +5946,8 @@ VexInvalRange patchProfInc_PPC ( VexEndness endness_host,
                                  Bool   mode64 )
 {
    if (mode64) {
-      vassert(endness_host == VexEndnessBE); /* later: or LE */
+      vassert((endness_host == VexEndnessBE) ||
+              (endness_host == VexEndnessLE));
    } else {
       vassert(endness_host == VexEndnessBE);
    }
@@ -5901,27 +5958,29 @@ VexInvalRange patchProfInc_PPC ( VexEndness endness_host,
    Int len = 0;
    if (mode64) {
       vassert(isLoadImm_EXACTLY2or5(p, /*r*/30,
-                                    0x6555655565556555ULL, True/*mode64*/));
-      vassert(fetch32(p + 20) == 0xEBBE0000);
-      vassert(fetch32(p + 24) == 0x3BBD0001);
-      vassert(fetch32(p + 28) == 0xFBBE0000);
+                                    0x6555655565556555ULL, True/*mode64*/,
+                                    endness_host));
+      vassert(fetch32(p + 20, endness_host) == 0xEBBE0000);
+      vassert(fetch32(p + 24, endness_host) == 0x3BBD0001);
+      vassert(fetch32(p + 28, endness_host) == 0xFBBE0000);
       p = mkLoadImm_EXACTLY2or5(p, /*r*/30,
                                 Ptr_to_ULong(location_of_counter),
-                                True/*mode64*/);
+                                True/*mode64*/, endness_host);
       len = p - (UChar*)place_to_patch;
       vassert(len == 20);
    } else {
       vassert(isLoadImm_EXACTLY2or5(p, /*r*/30,
-                                    0x65556555ULL, False/*!mode64*/));
-      vassert(fetch32(p +  8) == 0x83BE0004);
-      vassert(fetch32(p + 12) == 0x37BD0001);
-      vassert(fetch32(p + 16) == 0x93BE0004);
-      vassert(fetch32(p + 20) == 0x83BE0000);
-      vassert(fetch32(p + 24) == 0x7FBD0194);
-      vassert(fetch32(p + 28) == 0x93BE0000);
+                                    0x65556555ULL, False/*!mode64*/, 
+                                    endness_host));
+      vassert(fetch32(p +  8, endness_host) == 0x83BE0004);
+      vassert(fetch32(p + 12, endness_host) == 0x37BD0001);
+      vassert(fetch32(p + 16, endness_host) == 0x93BE0004);
+      vassert(fetch32(p + 20, endness_host) == 0x83BE0000);
+      vassert(fetch32(p + 24, endness_host) == 0x7FBD0194);
+      vassert(fetch32(p + 28, endness_host) == 0x93BE0000);
       p = mkLoadImm_EXACTLY2or5(p, /*r*/30,
                                 Ptr_to_ULong(location_of_counter),
-                                False/*!mode64*/);
+                                False/*!mode64*/, endness_host);
       len = p - (UChar*)place_to_patch;
       vassert(len == 8);
    }

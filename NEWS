@@ -203,6 +203,7 @@ where XXXXXX is the bug number as listed below.
 337285  fcntl commands F_OFD_SETLK, F_OFD_SETLKW, and F_OFD_GETLK not supported
 337528  leak check heuristic for block prefixed by length as 64bit number
 338024  inlined functions are not shown if DW_AT_ranges is used
+338115  DRD: computed conflict set differs from actual after fork
 n-i-bz  Fix KVM_CREATE_IRQCHIP ioctl handling
 n-i-bz  s390x: Fix memory corruption for multithreaded applications
 n-i-bz  vex arm->IR: allow PC as basereg in some LDRD cases

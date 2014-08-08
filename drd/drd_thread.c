@@ -557,6 +557,9 @@ void DRD_(drd_thread_atfork_child)(const DrdThreadId tid)
 	 DRD_(thread_delete)(i, True);
       tl_assert(!DRD_(IsValidDrdThreadId(i)));
    }
+
+   DRD_(bm_cleanup)(DRD_(g_conflict_set));
+   DRD_(bm_init)(DRD_(g_conflict_set));
 }
 
 /** Called just before pthread_cancel(). */

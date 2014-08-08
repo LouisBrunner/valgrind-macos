@@ -508,10 +508,10 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
       }
       VG_(printf)("\n");
    }
-
-   /* Read the contents of the Directory table.  */
+   /* skip over "standard_opcode_lengths" */
    data = ML_(cur_plus)(standard_opcodes, info.li_opcode_base - 1);
 
+   /* Read the contents of the Directory table.  */
    if (di->ddump_line)
       VG_(printf)(" The Directory Table%s\n", 
                   ML_(cur_read_UChar)(data) == 0 ? " is empty." : ":" );

@@ -271,6 +271,33 @@ UInt ML_(addFnDn) (struct _DebugInfo* di,
    return fndn_ix;
 }
 
+const HChar* ML_(fndn_ix2filename) (struct _DebugInfo* di,
+                                    UInt fndn_ix)
+{
+   FnDn *fndn;
+   if (fndn_ix == 0)
+      return "???";
+   else {
+      fndn = VG_(indexEltNumber) (di->fndnpool, fndn_ix);
+      return fndn->filename;
+   }
+}
+
+const HChar* ML_(fndn_ix2dirname) (struct _DebugInfo* di,
+                                   UInt fndn_ix)
+{
+   FnDn *fndn;
+   if (fndn_ix == 0)
+      return "";
+   else {
+      fndn = VG_(indexEltNumber) (di->fndnpool, fndn_ix);
+      if (fndn->dirname)
+         return fndn->dirname;
+      else
+         return "";
+   }
+}
+
 /* Add a string to the string table of a DebugInfo, by copying the
    string from the given DiCursor.  Measures the length of the string
    itself. */
@@ -581,7 +608,7 @@ static void shrinkInlTab ( struct _DebugInfo* di )
 void ML_(addInlInfo) ( struct _DebugInfo* di, 
                        Addr addr_lo, Addr addr_hi,
                        const HChar* inlinedfn,
-                       const HChar* filename, 
+                       UInt fndn_ix,
                        Int lineno, UShort level)
 {
    DiInlLoc inl;
@@ -618,15 +645,16 @@ void ML_(addInlInfo) ( struct _DebugInfo* di,
    inl.addr_hi   = addr_hi;
    inl.inlinedfn = inlinedfn;
    // caller:
-   inl.filename  = filename;
+   inl.fndn_ix   = fndn_ix;
    inl.lineno    = lineno;
    inl.level     = level;
 
    if (0) VG_(message)
              (Vg_DebugMsg, 
               "addInlInfo: fn %s inlined as addr_lo %#lx,addr_hi %#lx,"
-              "caller %s:%d\n",
-              inlinedfn, addr_lo, addr_hi, filename, lineno);
+              "caller fndn_ix %d %s:%d\n",
+              inlinedfn, addr_lo, addr_hi, fndn_ix,
+              ML_(fndn_ix2filename) (di, fndn_ix), lineno);
 
    addInl ( di, &inl );
 }
@@ -1125,8 +1153,8 @@ void ML_(addVar)( struct _DebugInfo* di,
                   UWord  typeR, /* a cuOff */
                   GExpr* gexpr,
                   GExpr* fbGX,
-                  HChar* fileName, /* where decl'd - may be NULL.
-                                      in di's .strpool */
+                  UInt   fndn_ix, /* where decl'd - may be zero.
+                                     index in in di's .fndnpool */
                   Int    lineNo, /* where decl'd - may be zero */
                   Bool   show )
 {
@@ -1260,7 +1288,7 @@ void ML_(addVar)( struct _DebugInfo* di,
    var.typeR    = typeR;
    var.gexpr    = gexpr;
    var.fbGX     = fbGX;
-   var.fileName = fileName;
+   var.fndn_ix  = fndn_ix;
    var.lineNo   = lineNo;
 
    all = aMin == (Addr)0 && aMax == ~(Addr)0;

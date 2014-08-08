@@ -1574,7 +1574,7 @@ typedef
       GExpr*  gexpr; /* for this variable */
       GExpr*  fbGX;  /* to find the frame base of the enclosing fn, if
                         any */
-      HChar*  fName; /* declaring file name, or NULL */
+      UInt    fndn_ix; /* declaring file/dirname index in fndnpool, or 0 */
       Int     fLine; /* declaring file line number, or zero */
       /* offset in .debug_info, so that abstract instances can be
          found to satisfy references from concrete instances. */
@@ -1610,9 +1610,9 @@ typedef
       Bool    isFunc[N_D3_VAR_STACK]; /* from DW_AT_subprogram? */
       GExpr*  fbGX[N_D3_VAR_STACK];   /* if isFunc, contains the FB
                                          expr, else NULL */
-      /* The file name table.  Is a mapping from integer index to the
-         (permanent) copy of the string in in DebugInfo's .strpool. */
-      XArray* /* of UChar* */ filenameTable;
+      /* The fndn_ix file name/dirname table.  Is a mapping from dwarf
+         integer index to the index in di->fndnpool. */
+      XArray* /* of UInt* */ fndn_ix_Table;
    }
    D3VarParser;
 
@@ -1733,9 +1733,92 @@ static GExpr* get_GX ( CUConst* cc, Bool td3, const FormContents* cts )
    return gexpr;
 }
 
+/* Returns an xarray* of directory names (indexed by the dwarf dirname
+   integer).
+   If 'compdir' is NULL, entry [0] will be set to "."
+   otherwise entry [0] is set to compdir.
+   Entry [0] basically means "the current directory of the compilation",
+   whatever that means, according to the DWARF3 spec.
+   FIXME??? readdwarf3.c/readdwarf.c have a lot of duplicated code */
+static
+XArray* read_dirname_xa (struct _DebugInfo* di, const HChar *compdir,
+                         Cursor *c,
+                         Bool td3 )
+{
+   XArray*        dirname_xa;   /* xarray of HChar* dirname */
+   const HChar*   dirname;
+   UInt           compdir_len = 0;
+
+   dirname_xa = VG_(newXA) (ML_(dinfo_zalloc), "di.rdxa.1", ML_(dinfo_free),
+                            sizeof(HChar*) );
+
+   if (compdir == NULL) {
+      dirname = ".";
+      compdir_len = 0;
+   } else {
+      dirname = compdir;
+      compdir_len = VG_(strlen)(compdir);
+   }
+   VG_(addToXA) (dirname_xa, &dirname);
+
+   TRACE_D3(" The Directory Table%s\n", 
+            peek_UChar(c) == 0 ? " is empty." : ":" );
+
+   while (peek_UChar(c) != 0) {
+
+#     define NBUF 4096
+      static HChar buf[NBUF];
+      DiCursor cur = get_AsciiZ(c);
+      HChar* data_str = ML_(cur_read_strdup)( cur, "dirname_xa.1" );
+      TRACE_D3("  %s\n", data_str);
+
+      /* If data_str[0] is '/', then 'data' is an absolute path and we
+         don't mess with it.  Otherwise, if we can, construct the
+         path 'compdir' ++ "/" ++ 'data'. */
+
+      if (data_str[0] != '/' 
+          /* not an absolute path */
+          && compdir
+          /* actually got something sensible for compdir */
+          && compdir_len
+             + VG_(strlen)(data_str) + 5/*paranoia*/ < NBUF
+          /* it's short enough to concatenate */) 
+      {
+         buf[0] = 0;
+         VG_(strcat)(buf, compdir);
+         VG_(strcat)(buf, "/");
+         VG_(strcat)(buf, data_str);
+         vg_assert(VG_(strlen)(buf) < NBUF);
+         dirname = ML_(addStr)(di,buf,-1);
+         VG_(addToXA) (dirname_xa, &dirname);
+         if (0) VG_(printf)("rel path  %s\n", buf);
+      } else {
+         /* just use 'data'. */
+         dirname = ML_(addStr)(di,data_str,-1);
+         VG_(addToXA) (dirname_xa, &dirname);
+         if (0) VG_(printf)("abs path  %s\n", data_str);
+      }
+
+      ML_(dinfo_free)(data_str);
+
+#     undef NBUF
+   }
+
+   TRACE_D3 ("\n");
+
+   if (get_UChar (c) != 0) {
+      ML_(symerr)(NULL, True,
+                  "could not get NUL at end of DWARF directory table");
+      VG_(deleteXA)(dirname_xa);
+      return NULL;
+   }
+
+   return dirname_xa;
+}
 
 static 
-void read_filename_table( /*MOD*/XArray* /* of UChar* */ filenameTable,
+void read_filename_table( /*MOD*/XArray* /* of UInt* */ fndn_ix_Table,
+                          HChar* compdir,
                           CUConst* cc, ULong debug_line_offset,
                           Bool td3 )
 {
@@ -1745,8 +1828,12 @@ void read_filename_table( /*MOD*/XArray* /* of UChar* */ filenameTable,
    UShort version;
    UChar  opcode_base;
    HChar* str;
+   XArray* dirname_xa;   /* xarray of HChar* dirname */
+   ULong  dir_xa_ix;     /* Index in dirname_xa, as read from dwarf info. */
+   HChar* dirname;
+   UInt   fndn_ix;
 
-   vg_assert(filenameTable && cc && cc->barf);
+   vg_assert(fndn_ix_Table && cc && cc->barf);
    if (!ML_(sli_is_valid)(cc->escn_debug_line)
        || cc->escn_debug_line.szB <= debug_line_offset) {
       cc->barf("read_filename_table: .debug_line is missing?");
@@ -1774,29 +1861,34 @@ void read_filename_table( /*MOD*/XArray* /* of UChar* */ filenameTable,
    for (i = 1; i < (Word)opcode_base; i++)
      (void)get_UChar( &c );
 
-   /* skip over the directory names table */
-   while (peek_UChar(&c) != 0) {
-     (void)get_AsciiZ(&c);
-   }
-   (void)get_UChar(&c); /* skip terminating zero */
+   dirname_xa = read_dirname_xa(cc->di, compdir, &c, td3);
 
    /* Read and record the file names table */
-   vg_assert( VG_(sizeXA)( filenameTable ) == 0 );
+   vg_assert( VG_(sizeXA)( fndn_ix_Table ) == 0 );
    /* Add a dummy index-zero entry.  DWARF3 numbers its files
       from 1, for some reason. */
-   str = ML_(addStr)( cc->di, "<unknown_file>", -1 );
-   VG_(addToXA)( filenameTable, &str );
+   fndn_ix = ML_(addFnDn) ( cc->di, "<unknown_file>", NULL );
+   VG_(addToXA)( fndn_ix_Table, &fndn_ix );
    while (peek_UChar(&c) != 0) {
       DiCursor cur = get_AsciiZ(&c);
       str = ML_(addStrFromCursor)( cc->di, cur );
-      TRACE_D3("  read_filename_table: %ld %s\n",
-               VG_(sizeXA)(filenameTable), str);
-      VG_(addToXA)( filenameTable, &str );
-      (void)get_ULEB128( &c ); /* skip directory index # */
+      dir_xa_ix = get_ULEB128( &c );
+      if (dirname_xa != NULL 
+          && dir_xa_ix >= 0 && dir_xa_ix < VG_(sizeXA) (dirname_xa))
+         dirname = *(HChar**)VG_(indexXA) ( dirname_xa, dir_xa_ix );
+      else
+         dirname = NULL;
+      fndn_ix = ML_(addFnDn)( cc->di, str, dirname);
+      TRACE_D3("  read_filename_table: %ld fndn_ix %d %s %s\n",
+               VG_(sizeXA)(fndn_ix_Table), fndn_ix, 
+               dirname, str);
+      VG_(addToXA)( fndn_ix_Table, &fndn_ix );
       (void)get_ULEB128( &c ); /* skip last mod time */
       (void)get_ULEB128( &c ); /* file size */
    }
    /* We're done!  The rest of it is not interesting. */
+   if (dirname_xa != NULL)
+      VG_(deleteXA)(dirname_xa);
 }
 
 /* setup_cu_svma to be called when a cu is found at level 0,
@@ -1955,6 +2047,7 @@ static void parse_var_DIE (
       Addr ip_lo    = 0;
       Addr ip_hi1   = 0;
       Addr rangeoff = 0;
+      HChar *compdir = NULL;
       nf_i = 0;
       while (True) {
          DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
@@ -1976,8 +2069,17 @@ static void parse_var_DIE (
             rangeoff   = cts.u.val;
             have_range = True;
          }
+         if (attr == DW_AT_comp_dir) {
+            if (cts.szB >= 0)
+               cc->barf("parse_var_DIE compdir: expecting indirect string");
+            HChar *str = ML_(cur_read_strdup)( cts.u.cur,
+                                               "parse_var_DIE.compdir" );
+            compdir = ML_(addStr)(cc->di, str, -1);
+            ML_(dinfo_free) (str);
+         }
          if (attr == DW_AT_stmt_list && cts.szB > 0) {
-            read_filename_table( parser->filenameTable, cc, cts.u.val, td3 );
+            read_filename_table( parser->fndn_ix_Table, compdir,
+                                 cc, cts.u.val, td3 );
          }
       }
       if (have_lo && have_hi1 && hiIsRelative)
@@ -2133,7 +2235,7 @@ static void parse_var_DIE (
       Int    n_attrs     = 0;
       UWord  abs_ori     = (UWord)D3_INVALID_CUOFF;
       Int    lineNo      = 0;
-      HChar* fileName    = NULL;
+      UInt   fndn_ix     = 0;
       nf_i = 0;
       while (True) {
          DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
@@ -2169,12 +2271,11 @@ static void parse_var_DIE (
          if (attr == DW_AT_decl_file && cts.szB > 0) {
             Int ftabIx = (Int)cts.u.val;
             if (ftabIx >= 1
-                && ftabIx < VG_(sizeXA)( parser->filenameTable )) {
-               fileName = *(HChar**)
-                          VG_(indexXA)( parser->filenameTable, ftabIx );
-               vg_assert(fileName);
+                && ftabIx < VG_(sizeXA)( parser->fndn_ix_Table )) {
+               fndn_ix = *(UInt*)VG_(indexXA)( parser->fndn_ix_Table, ftabIx );
             }
-            if (0) VG_(printf)("XXX filename = %s\n", fileName);
+            if (0) VG_(printf)("XXX filename fndn_ix = %d %s\n", fndn_ix,
+                               ML_(fndn_ix2filename) (cc->di, fndn_ix));
          }
       }
       if (!global && dtag == DW_TAG_variable && level == 1) {
@@ -2190,7 +2291,7 @@ static void parse_var_DIE (
          (1) has location and type    -> completed
          (2) has type only            -> is an abstract instance
          (3) has location and abs_ori -> is a concrete instance
-         Name, filename and line number are all optional frills.
+         Name, fndn_ix and line number are all optional frills.
       */
       if ( /* 1 */ (gexpr && typeR != D3_INVALID_CUOFF) 
            /* 2 */ || (typeR != D3_INVALID_CUOFF)
@@ -2262,7 +2363,7 @@ static void parse_var_DIE (
          tv->typeR  = typeR;
          tv->gexpr  = gexpr;
          tv->fbGX   = fbGX;
-         tv->fName  = fileName;
+         tv->fndn_ix= fndn_ix;
          tv->fLine  = lineNo;
          tv->dioff  = posn;
          tv->absOri = abs_ori;
@@ -2398,9 +2499,9 @@ static void parse_var_DIE (
 
 typedef
    struct {
-      /* The file name table.  Is a mapping from integer index to the
-         (permanent) copy of the string in DebugInfo's .strchunks. */
-      XArray* /* of UChar* */ filenameTable;
+      /* The fndn_ix file name/dirname table.  Is a mapping from dwarf
+         integer index to the index in di->fndnpool. */
+      XArray* /* of UInt* */ fndn_ix_Table;
       UWord sibling; // sibling of the last read DIE (if it has a sibling).
    }
    D3InlParser;
@@ -2503,6 +2604,7 @@ static Bool parse_inl_DIE (
    if (dtag == DW_TAG_compile_unit || dtag == DW_TAG_partial_unit) {
       Bool have_lo    = False;
       Addr ip_lo    = 0;
+      HChar *compdir = NULL;
 
       nf_i = 0;
       while (True) {
@@ -2515,8 +2617,17 @@ static Bool parse_inl_DIE (
             ip_lo   = cts.u.val;
             have_lo = True;
          }
+         if (attr == DW_AT_comp_dir) {
+            if (cts.szB >= 0)
+               cc->barf("parse_inl_DIE compdir: expecting indirect string");
+            HChar *str = ML_(cur_read_strdup)( cts.u.cur,
+                                               "parse_inl_DIE.compdir" );
+            compdir = ML_(addStr)(cc->di, str, -1);
+            ML_(dinfo_free) (str);
+         }
          if (attr == DW_AT_stmt_list && cts.szB > 0) {
-            read_filename_table( parser->filenameTable, cc, cts.u.val, td3 );
+            read_filename_table( parser->fndn_ix_Table, compdir,
+                                 cc, cts.u.val, td3 );
          }
          if (attr == DW_AT_sibling && cts.szB > 0) {
             parser->sibling = cts.u.val;
@@ -2534,7 +2645,7 @@ static Bool parse_inl_DIE (
       Addr   ip_lo      = 0;
       Addr   ip_hi1     = 0;
       Addr   rangeoff   = 0;
-      HChar* caller_filename = NULL;
+      UInt   caller_fndn_ix = 0;
       Int caller_lineno = 0;
       Int inlinedfn_abstract_origin = 0;
 
@@ -2548,12 +2659,12 @@ static Bool parse_inl_DIE (
          if (attr == DW_AT_call_file && cts.szB > 0) {
             Int ftabIx = (Int)cts.u.val;
             if (ftabIx >= 1
-                && ftabIx < VG_(sizeXA)( parser->filenameTable )) {
-               caller_filename = *(HChar**)
-                          VG_(indexXA)( parser->filenameTable, ftabIx );
-               vg_assert(caller_filename);
+                && ftabIx < VG_(sizeXA)( parser->fndn_ix_Table )) {
+               caller_fndn_ix = *(UInt*)
+                          VG_(indexXA)( parser->fndn_ix_Table, ftabIx );
             }
-            if (0) VG_(printf)("XXX caller_filename = %s\n", caller_filename);
+            if (0) VG_(printf)("XXX caller_fndn_ix = %d %s\n", caller_fndn_ix,
+                               ML_(fndn_ix2filename) (cc->di, caller_fndn_ix));
          }  
          if (attr == DW_AT_call_line && cts.szB > 0) {
             caller_lineno = cts.u.val;
@@ -2599,7 +2710,7 @@ static Bool parse_inl_DIE (
             ML_(addInlInfo) (cc->di,
                              ip_lo, ip_hi1, 
                              get_inlFnName (inlinedfn_abstract_origin, cc, td3),
-                             caller_filename,
+                             caller_fndn_ix,
                              caller_lineno, level);
          }
       } else if (have_range) {
@@ -2624,7 +2735,7 @@ static Bool parse_inl_DIE (
                              // while ML_(addInlInfo) expects last bound not
                              // included.
                              inlfnname,
-                             caller_filename,
+                             caller_fndn_ix,
                              caller_lineno, level);
          }
          VG_(deleteXA)( ranges );
@@ -4514,28 +4625,28 @@ void new_dwarf3_reader_wrk (
                            unitary_range_list(0UL, ~0UL),
                            -1, False/*isFunc*/, NULL/*fbGX*/ );
 
-            /* And set up the file name table.  When we come across the top
+            /* And set up the fndn_ix_Table.  When we come across the top
                level DIE for this CU (which is what the next call to
                read_DIE should process) we will copy all the file names out
                of the .debug_line img area and use this table to look up the
                copies when we later see filename numbers in DW_TAG_variables
                etc. */
-            vg_assert(!varparser.filenameTable );
-            varparser.filenameTable 
+            vg_assert(!varparser.fndn_ix_Table );
+            varparser.fndn_ix_Table 
                = VG_(newXA)( ML_(dinfo_zalloc), "di.readdwarf3.ndrw.5var",
                              ML_(dinfo_free),
-                             sizeof(UChar*) );
-            vg_assert(varparser.filenameTable);
+                             sizeof(UInt) );
+            vg_assert(varparser.fndn_ix_Table);
          }
 
          if (VG_(clo_read_inline_info)) {
-            /* filename table for the inlined call parser */
-            vg_assert(!inlparser.filenameTable );
-            inlparser.filenameTable 
+            /* fndn_ix_Table for the inlined call parser */
+            vg_assert(!inlparser.fndn_ix_Table );
+            inlparser.fndn_ix_Table 
                = VG_(newXA)( ML_(dinfo_zalloc), "di.readdwarf3.ndrw.5inl",
                              ML_(dinfo_free),
-                             sizeof(UChar*) );
-            vg_assert(inlparser.filenameTable);
+                             sizeof(UInt) );
+            vg_assert(inlparser.fndn_ix_Table);
          }
 
          /* Now read the one-and-only top-level DIE for this CU. */
@@ -4588,14 +4699,14 @@ void new_dwarf3_reader_wrk (
          }
 
          if (VG_(clo_read_var_info)) {
-            vg_assert(varparser.filenameTable );
-            VG_(deleteXA)( varparser.filenameTable );
-            varparser.filenameTable = NULL;
+            vg_assert(varparser.fndn_ix_Table );
+            VG_(deleteXA)( varparser.fndn_ix_Table );
+            varparser.fndn_ix_Table = NULL;
          }
          if (VG_(clo_read_inline_info)) {
-            vg_assert(inlparser.filenameTable );
-            VG_(deleteXA)( inlparser.filenameTable );
-            inlparser.filenameTable = NULL;
+            vg_assert(inlparser.fndn_ix_Table );
+            VG_(deleteXA)( inlparser.fndn_ix_Table );
+            inlparser.fndn_ix_Table = NULL;
          }
          clear_CUConst(&cc);
 
@@ -4750,8 +4861,9 @@ void new_dwarf3_reader_wrk (
             } else {
                VG_(printf)("  FrB=none\n");
             }
-            VG_(printf)("  declared at: %s:%d\n",
-                        varp->fName ? varp->fName : "NULL",
+            VG_(printf)("  declared at: %d %s:%d\n",
+                        varp->fndn_ix,
+                        ML_(fndn_ix2filename) (di, varp->fndn_ix),
                         varp->fLine );
             if (varp->absOri != (UWord)D3_INVALID_CUOFF)
                VG_(printf)("  abstract origin: <%lx>\n", varp->absOri);
@@ -4798,8 +4910,8 @@ void new_dwarf3_reader_wrk (
                varp->typeR = varAI->typeR;
             if (varAI->name && !varp->name)
                varp->name = varAI->name;
-            if (varAI->fName && !varp->fName)
-               varp->fName = varAI->fName;
+            if (varAI->fndn_ix && !varp->fndn_ix)
+               varp->fndn_ix = varAI->fndn_ix;
             if (varAI->fLine > 0 && varp->fLine == 0)
                varp->fLine = varAI->fLine;
          }
@@ -4891,7 +5003,7 @@ void new_dwarf3_reader_wrk (
                      pcMin, pcMax,
                      varp->name,  varp->typeR,
                      varp->gexpr, varp->fbGX,
-                     varp->fName, varp->fLine, td3 
+                     varp->fndn_ix, varp->fLine, td3 
               );
            }
          }
@@ -4921,7 +5033,7 @@ void new_dwarf3_reader_wrk (
       ML_(dinfo_free)( tyents_to_keep_cache );
       tyents_to_keep_cache = NULL;
 
-      vg_assert( varparser.filenameTable == NULL );
+      vg_assert( varparser.fndn_ix_Table == NULL );
 
       /* And the signatured type hash.  */
       VG_(HT_destruct) ( signature_types, ML_(dinfo_free) );

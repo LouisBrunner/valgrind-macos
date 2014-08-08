@@ -141,9 +141,9 @@ typedef
       Addr   addr_hi;            /* highest address following the inlined fn */
       /* Word 3 */
       const HChar* inlinedfn;    /* inlined function name */
-      /* Word 4 */
-      const HChar* filename;     /* caller source filename */
-      /* Word 5 */
+      /* Word 4 and 5 */
+      UInt   fndn_ix;            /* index in di->fndnpool of caller source
+                                    dirname/filename */
       UInt   lineno:LINENO_BITS; /* caller line number */
       UShort level:LEVEL_BITS;   /* level of inlining */
    }
@@ -480,8 +480,8 @@ typedef
       UWord  typeR; /* a cuOff */
       GExpr* gexpr; /* on DebugInfo.gexprs list */
       GExpr* fbGX;  /* SHARED. */
-      HChar* fileName; /* where declared; may be NULL. in
-                          DebugInfo.strpool */
+      UInt   fndn_ix; /* where declared; may be zero. index
+                         in DebugInfo.fndnpool */
       Int    lineNo;   /* where declared; may be zero. */
    }
    DiVariable;
@@ -994,6 +994,16 @@ extern UInt ML_(addFnDn) (struct _DebugInfo* di,
                           const HChar* filename, 
                           const HChar* dirname);  /* NULL is allowable */
 
+/* Returns the filename of the fndn pair identified by fndn_ix.
+   Returns "???" if fndn_ix is 0. */
+extern const HChar* ML_(fndn_ix2filename) (struct _DebugInfo* di,
+                                           UInt fndn_ix);
+
+/* Returns the dirname of the fndn pair identified by fndn_ix.
+   Returns "" if fndn_ix is 0 or fndn->dirname is NULL. */
+extern const HChar* ML_(fndn_ix2dirname) (struct _DebugInfo* di,
+                                          UInt fndn_ix);
+
 /* Returns the fndn_ix for the LineInfo locno in di->loctab.
    0 if filename/dirname are unknown. */
 extern UInt ML_(fndn_ix) (struct _DebugInfo* di, Word locno);
@@ -1010,15 +1020,17 @@ void ML_(addLineInfo) ( struct _DebugInfo* di,
    A call to the below means that inlinedfn code has been
    inlined, resulting in code from [addr_lo, addr_hi[.
    Note that addr_hi is excluded, i.e. is not part of the inlined code.
-   The call that caused this inlining is in filename/lineno (dirname
-   is not recorded).
+   fndn_ix and lineno identifies the location of the call that caused
+   this inlining.
+   fndn_ix is an index in di->fndnpool, allocated using  ML_(addFnDn).
+   Give a 0 index for an unknown filename/dirname pair.
    In case of nested inlining, a small level indicates the call
    is closer to main that a call with a higher level. */
 extern
 void ML_(addInlInfo) ( struct _DebugInfo* di, 
                        Addr addr_lo, Addr addr_hi,
                        const HChar* inlinedfn,
-                       const HChar* filename, 
+                       UInt fndn_ix,
                        Int lineno, UShort level);
 
 /* Add a CFI summary record.  The supplied DiCfSI_m is copied. */
@@ -1047,9 +1059,11 @@ extern void ML_(addVar)( struct _DebugInfo* di,
                          UWord  typeR, /* a cuOff */
                          GExpr* gexpr,
                          GExpr* fbGX, /* SHARED. */
-                         HChar* fileName, /* where decl'd - may be NULL */
+                         UInt   fndn_ix, /* where decl'd - may be zero */
                          Int    lineNo, /* where decl'd - may be zero */
                          Bool   show );
+/* Note: fndn_ix identifies a filename/dirname pair similarly to
+   ML_(addInlInfo) and ML_(addLineInfo). */
 
 /* Canonicalise the tables held by 'di', in preparation for use.  Call
    this after finishing adding entries to these tables. */

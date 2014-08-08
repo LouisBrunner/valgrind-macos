@@ -1,0 +1,3 @@
+prereq: ./supported_libpthread
+vgopts: --verify-conflict-set=yes
+prog: threaded-fork

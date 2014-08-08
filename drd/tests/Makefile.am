@@ -321,6 +321,8 @@ EXTRA_DIST =                                        \
 	thread_name_xml.vgtest			    \
 	threaded-fork.stderr.exp		    \
 	threaded-fork.vgtest			    \
+	threaded-fork-vcs.stderr.exp		    \
+	threaded-fork-vcs.vgtest		    \
 	trylock.stderr.exp                          \
 	trylock.vgtest				    \
 	unit_bitmap.stderr.exp                      \

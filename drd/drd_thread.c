@@ -68,6 +68,7 @@ static ThreadId s_vg_running_tid  = VG_INVALID_THREADID;
 DrdThreadId     DRD_(g_drd_running_tid) = DRD_INVALID_THREADID;
 ThreadInfo      DRD_(g_threadinfo)[DRD_N_THREADS];
 struct bitmap*  DRD_(g_conflict_set);
+int DRD_(verify_conflict_set) = -1;
 static Bool     s_trace_context_switches = False;
 static Bool     s_trace_conflict_set = False;
 static Bool     s_trace_conflict_set_bm = False;
@@ -1347,14 +1348,13 @@ void DRD_(thread_report_conflicting_segments)(const DrdThreadId tid,
  */
 static Bool thread_conflict_set_up_to_date(const DrdThreadId tid)
 {
-   static int do_verify_conflict_set = -1;
    Bool result;
    struct bitmap* computed_conflict_set = 0;
 
-   if (do_verify_conflict_set < 0)
-      do_verify_conflict_set = VG_(getenv)("DRD_VERIFY_CONFLICT_SET") != 0;
+   if (DRD_(verify_conflict_set) < 0)
+      DRD_(verify_conflict_set) = VG_(getenv)("DRD_VERIFY_CONFLICT_SET") != 0;
 
-   if (do_verify_conflict_set == 0)
+   if (DRD_(verify_conflict_set) == 0)
       return True;
 
    thread_compute_conflict_set(&computed_conflict_set, tid);

@@ -121,6 +121,8 @@ static Bool DRD_(process_cmd_line_option)(const HChar* arg)
    else if VG_BOOL_CLO(arg, "--trace-semaphore",     trace_semaphore) {}
    else if VG_BOOL_CLO(arg, "--trace-suppr",         trace_suppression) {}
    else if VG_BOOL_CLO(arg, "--var-info",            s_var_info) {}
+   else if VG_BOOL_CLO(arg, "--verify-conflict-set", DRD_(verify_conflict_set))
+   {}
    else if VG_INT_CLO (arg, "--exclusive-threshold", exclusive_threshold_ms) {}
    else if VG_STR_CLO (arg, "--ptrace-addr",         ptrace_address) {}
    else if VG_INT_CLO (arg, "--shared-threshold",    shared_threshold_ms)    {}
@@ -262,6 +264,7 @@ static void DRD_(print_debug_usage)(void)
 "                              which data race detection is suppressed.\n"
 "    --trace-segment=yes|no    Trace segment actions [no].\n"
 "    --trace-suppr=yes|no      Trace all address suppression actions [no].\n"
+"    --verify-conflict-set=yes|no Verify conflict set consistency [no].\n"
 );
 }
 

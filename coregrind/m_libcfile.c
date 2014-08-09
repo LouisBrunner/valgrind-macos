@@ -721,12 +721,7 @@ SizeT VG_(mkstemp_fullname_bufsz) ( SizeT part_of_name_len )
 }
 
 
-/* Create and open (-rw------) a tmp file name incorporating said arg.
-   Returns -1 on failure, else the fd of the file.  If fullname is
-   non-NULL, the file's name is written into it.  The number of bytes
-   written is equal to VG_(mkstemp_fullname_bufsz)(part_of_name). */
-
-Int VG_(mkstemp) ( HChar* part_of_name, /*OUT*/HChar* fullname )
+Int VG_(mkstemp) ( const HChar* part_of_name, /*OUT*/HChar* fullname )
 {
    HChar  buf[VG_(mkstemp_fullname_bufsz)(VG_(strlen)(part_of_name))];
    Int    n, tries, fd;

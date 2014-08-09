@@ -589,7 +589,15 @@ Int VG_(ptrace) ( Int request, Int pid, void *addr, void *data )
 
 Int VG_(fork) ( void )
 {
-#  if defined(VGO_linux)
+#  if defined(VGP_arm64_linux)
+   SysRes res;
+   res = VG_(do_syscall5)(__NR_clone, VKI_SIGCHLD,
+                          (UWord)NULL, (UWord)NULL, (UWord)NULL, (UWord)NULL);
+   if (sr_isError(res))
+      return -1;
+   return sr_Res(res);
+
+#  elif defined(VGO_linux)
    SysRes res;
    res = VG_(do_syscall0)(__NR_fork);
    if (sr_isError(res))

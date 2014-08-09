@@ -709,7 +709,7 @@ const HChar *VG_(tmpdir)(void)
    return tmpdir;
 }
 
-static const HChar *mkstemp_format = "%s/valgrind_%s_%08x";
+static const HChar mkstemp_format[] = "%s/valgrind_%s_%08x";
 
 SizeT VG_(mkstemp_fullname_bufsz) ( SizeT part_of_name_len )
 {
@@ -742,7 +742,7 @@ Int VG_(mkstemp) ( const HChar* part_of_name, /*OUT*/HChar* fullname )
    while (True) {
       if (tries++ > 10) 
          return -1;
-      VG_(sprintf)( buf, "%s/valgrind_%s_%08x",
+      VG_(sprintf)( buf, mkstemp_format,
                     tmpdir, part_of_name, VG_(random)( &seed ));
       if (0)
          VG_(printf)("VG_(mkstemp): trying: %s\n", buf);

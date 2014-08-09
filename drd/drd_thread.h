@@ -116,7 +116,7 @@ extern DrdThreadId    DRD_(g_drd_running_tid);
 extern ThreadInfo     DRD_(g_threadinfo)[DRD_N_THREADS];
 /** Conflict set for the currently running thread. */
 extern struct bitmap* DRD_(g_conflict_set);
-extern int            DRD_(verify_conflict_set);
+extern Bool           DRD_(verify_conflict_set);
 
 
 /* Function declarations. */

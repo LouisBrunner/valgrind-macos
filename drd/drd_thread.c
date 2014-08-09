@@ -36,7 +36,6 @@
 #include "pub_tool_libcassert.h"  // tl_assert()
 #include "pub_tool_libcbase.h"    // VG_(strlen)()
 #include "pub_tool_libcprint.h"   // VG_(printf)()
-#include "pub_tool_libcproc.h"    // VG_(getenv)()
 #include "pub_tool_machine.h"
 #include "pub_tool_mallocfree.h"  // VG_(malloc)(), VG_(free)()
 #include "pub_tool_options.h"     // VG_(clo_backtrace_size)
@@ -68,7 +67,7 @@ static ThreadId s_vg_running_tid  = VG_INVALID_THREADID;
 DrdThreadId     DRD_(g_drd_running_tid) = DRD_INVALID_THREADID;
 ThreadInfo      DRD_(g_threadinfo)[DRD_N_THREADS];
 struct bitmap*  DRD_(g_conflict_set);
-int DRD_(verify_conflict_set) = -1;
+Bool DRD_(verify_conflict_set);
 static Bool     s_trace_context_switches = False;
 static Bool     s_trace_conflict_set = False;
 static Bool     s_trace_conflict_set_bm = False;
@@ -1354,10 +1353,7 @@ static Bool thread_conflict_set_up_to_date(const DrdThreadId tid)
    Bool result;
    struct bitmap* computed_conflict_set = 0;
 
-   if (DRD_(verify_conflict_set) < 0)
-      DRD_(verify_conflict_set) = VG_(getenv)("DRD_VERIFY_CONFLICT_SET") != 0;
-
-   if (DRD_(verify_conflict_set) == 0)
+   if (!DRD_(verify_conflict_set))
       return True;
 
    thread_compute_conflict_set(&computed_conflict_set, tid);

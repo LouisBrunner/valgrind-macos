@@ -44,7 +44,7 @@
 #include "pub_tool_libcassert.h"  // tl_assert()
 #include "pub_tool_libcbase.h"    // VG_(strcmp)
 #include "pub_tool_libcprint.h"   // VG_(printf)
-#include "pub_tool_libcproc.h"
+#include "pub_tool_libcproc.h"    // VG_(getenv)()
 #include "pub_tool_machine.h"
 #include "pub_tool_mallocfree.h"  // VG_(malloc)(), VG_(free)()
 #include "pub_tool_options.h"     // command line options
@@ -883,6 +883,10 @@ void drd_pre_clo_init(void)
       if (smi)
          DRD_(thread_set_segment_merge_interval)(VG_(strtoll10)(smi, NULL));
    }
+
+   if (VG_(getenv)("DRD_VERIFY_CONFLICT_SET"))
+      DRD_(verify_conflict_set) = True;
+
 }
 
 

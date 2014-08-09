@@ -34,6 +34,7 @@ How to test DRD
      
 6. Run the regression tests as follows:
      perl tests/vg_regtest drd
+     DRD_VERIFY_CONFLICT_SET=1 perl tests/vg_regtest drd
 
 7. Run the regression tests that were developed for Thread Sanitizer:
      ./vg-in-place --tool=drd --check-stack-var=yes drd/tests/tsan_unittest 2>&1|less

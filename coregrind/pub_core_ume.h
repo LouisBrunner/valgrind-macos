@@ -61,7 +61,7 @@ typedef
       Addr  stack_end;        // OUT: address of end of stack segment (cold)
       Addr  text;             // OUT: address of executable's Mach header
       Bool  dynamic;          // OUT: False iff executable is static
-      char* executable_path;  // OUT: path passed to execve()
+      HChar* executable_path; // OUT: path passed to execve()
 #endif
 
       Addr entry;        // OUT: entrypoint in main executable

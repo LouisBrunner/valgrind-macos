@@ -20157,7 +20157,7 @@ DisResult disInstr_PPC ( IRSB*        irsb_IN,
       dres.whatNext    = Dis_StopHere;
       dres.jk_StopHere = Ijk_NoDecode;
       dres.len         = 0;
-      dis.continueAt   = 0;
+      dres.continueAt   = 0;
       return dres;
    }
 

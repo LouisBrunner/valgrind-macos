@@ -226,15 +226,19 @@ void transfer_register (ThreadId tid, int abs_regno, void * buf,
           significant part of the ULong that VEX provides/needs,
           as GDB expects or gives only 4 bytes. */
       if (dir == valgrind_to_gdbserver) {
-         ULong fpsr = LibVEX_GuestARM64_get_fpsr(arm);
-         VG_(transfer) ((UInt*)&fpsr, buf, dir, size, mod);
+         ULong fpsr64 = LibVEX_GuestARM64_get_fpsr(arm);
+         UInt fpsr = (UInt)fpsr64;
+         VG_(transfer) (&fpsr, buf, dir, size, mod);
       } else {
-         ULong fpsr = 0;
+         UInt fpsr;
+         ULong fpsr64;
          VG_(transfer) ((UInt*)&fpsr, buf, dir, size, mod);
-         LibVEX_GuestARM64_set_fpsr(arm, fpsr);
+         fpsr64 = fpsr;
+         LibVEX_GuestARM64_set_fpsr(arm, fpsr64);
          /* resync the cache with the part of fpsr that VEX represents. */
-         fpsr = LibVEX_GuestARM64_get_fpsr(arm);
-         VG_(transfer) ((UInt*)&fpsr, buf, valgrind_to_gdbserver, size, mod);
+         fpsr64 = LibVEX_GuestARM64_get_fpsr(arm);
+         fpsr = (UInt)fpsr64;
+         VG_(transfer) (&fpsr, buf, valgrind_to_gdbserver, size, mod);
       }
       break;
    }

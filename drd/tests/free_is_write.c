@@ -1,12 +1,13 @@
 /* Stress test for the --free-is-write command-line option. */
 
-#include <pthread.h>
 #include <assert.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <limits.h>
 #include <pthread.h>
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #define MALLOC_SIZE 22816
 #define THREAD_COUNT 10
@@ -44,7 +45,11 @@ int main(int argc, char **argv)
   int i;
 
   for (i = 0; i < THREAD_COUNT; i++) {
-    result = pthread_create(&thread[i], 0, thread_func, 0);
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setstacksize(&attr, PTHREAD_STACK_MIN + 4096);
+    result = pthread_create(&thread[i], &attr, thread_func, 0);
+    pthread_attr_destroy(&attr);
     assert(result == 0);
   }
 

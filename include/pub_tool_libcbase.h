@@ -224,7 +224,6 @@ extern Int VG_(log2_64)( ULong x );
 // is NULL, it uses its own seed, which starts at zero.  If pSeed is
 // non-NULL, it uses and updates whatever pSeed points at.
 extern UInt VG_(random) ( /*MOD*/UInt* pSeed );
-#define VG_RAND_MAX (1ULL << 32)
 
 /* Update a running Adler-32 checksum with the bytes buf[0..len-1] and
    return the updated checksum. If buf is NULL, this function returns

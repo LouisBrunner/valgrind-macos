@@ -935,10 +935,10 @@ void VG_(ssort)( void* base, SizeT nmemb, SizeT size,
 // is NULL, it uses its own seed, which starts at zero.  If pSeed is
 // non-NULL, it uses and updates whatever pSeed points at.
 
-static UInt seed = 0;
-
 UInt VG_(random)( /*MOD*/UInt* pSeed )
 {
+   static UInt seed = 0;
+
    if (pSeed == NULL) 
       pSeed = &seed;
 

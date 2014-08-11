@@ -1566,6 +1566,43 @@ typedef
       Iop_QandSQRsh8x16, Iop_QandSQRsh16x8,
       Iop_QandSQRsh32x4, Iop_QandSQRsh64x2,
 
+      /* VECTOR x SCALAR SATURATING (& MAYBE ROUNDING) NARROWING SHIFT RIGHT */
+      /* All of type (V128, I8) -> V128 */
+      /* The first argument is shifted right, then narrowed to half the width
+         by saturating it.  The second argument is a scalar shift amount that
+         applies to all lanes, and must be a value in the range 1 to lane_width.
+         The shift may be done signedly (Sar variants) or unsignedly (Shr
+         variants).  The saturation is done according to the two signedness
+         indicators at the end of the name.  For example 64Sto32U means a
+         signed 64 bit value is saturated into an unsigned 32 bit value.
+         Additionally, the QRS variants do rounding, that is, they add the
+         value (1 << (shift_amount-1)) to each source lane before shifting.
+
+         These operations return 65 bits: one bit ("Q") indicating whether
+         saturation occurred, and the shift result.  The result type is V128,
+         of which the lower half is the shift result, and Q occupies the
+         least significant bit of the upper half.  All other bits of the
+         upper half are zero. */
+      // No rounding, sat U->U
+      Iop_QandQShrNnarrow16Uto8Ux8,
+      Iop_QandQShrNnarrow32Uto16Ux4, Iop_QandQShrNnarrow64Uto32Ux2,
+      // No rounding, sat S->S
+      Iop_QandQSarNnarrow16Sto8Sx8,
+      Iop_QandQSarNnarrow32Sto16Sx4, Iop_QandQSarNnarrow64Sto32Sx2,
+      // No rounding, sat S->U
+      Iop_QandQSarNnarrow16Sto8Ux8,
+      Iop_QandQSarNnarrow32Sto16Ux4, Iop_QandQSarNnarrow64Sto32Ux2,
+
+      // Rounding, sat U->U
+      Iop_QandQRShrNnarrow16Uto8Ux8,
+      Iop_QandQRShrNnarrow32Uto16Ux4, Iop_QandQRShrNnarrow64Uto32Ux2,
+      // Rounding, sat S->S
+      Iop_QandQRSarNnarrow16Sto8Sx8,
+      Iop_QandQRSarNnarrow32Sto16Sx4, Iop_QandQRSarNnarrow64Sto32Sx2,
+      // Rounding, sat S->U
+      Iop_QandQRSarNnarrow16Sto8Ux8,
+      Iop_QandQRSarNnarrow32Sto16Ux4, Iop_QandQRSarNnarrow64Sto32Ux2,
+
       /* NARROWING (binary) 
          -- narrow 2xV128 into 1xV128, hi half from left arg */
       /* See comments above w.r.t. U vs S issues in saturated narrowing. */

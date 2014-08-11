@@ -920,6 +920,43 @@ void ppIROp ( IROp op )
       case Iop_QandSQRsh32x4: vex_printf("QandSQRsh32x4"); return;
       case Iop_QandSQRsh64x2: vex_printf("QandSQRsh64x2"); return;
 
+      case Iop_QandQShrNnarrow16Uto8Ux8:
+         vex_printf("QandQShrNnarrow16Uto8Ux8"); return;
+      case Iop_QandQShrNnarrow32Uto16Ux4:
+         vex_printf("QandQShrNnarrow32Uto16Ux4"); return;
+      case Iop_QandQShrNnarrow64Uto32Ux2:
+         vex_printf("QandQShrNnarrow64Uto32Ux2"); return;
+      case Iop_QandQSarNnarrow16Sto8Sx8:
+         vex_printf("QandQSarNnarrow16Sto8Sx8"); return;
+      case Iop_QandQSarNnarrow32Sto16Sx4:
+         vex_printf("QandQSarNnarrow32Sto16Sx4"); return;
+      case Iop_QandQSarNnarrow64Sto32Sx2:
+         vex_printf("QandQSarNnarrow64Sto32Sx2"); return;
+      case Iop_QandQSarNnarrow16Sto8Ux8:
+         vex_printf("QandQSarNnarrow16Sto8Ux8"); return;
+      case Iop_QandQSarNnarrow32Sto16Ux4:
+         vex_printf("QandQSarNnarrow32Sto16Ux4"); return;
+      case Iop_QandQSarNnarrow64Sto32Ux2:
+         vex_printf("QandQSarNnarrow64Sto32Ux2"); return;
+      case Iop_QandQRShrNnarrow16Uto8Ux8:
+         vex_printf("QandQRShrNnarrow16Uto8Ux8"); return;
+      case Iop_QandQRShrNnarrow32Uto16Ux4:
+         vex_printf("QandQRShrNnarrow32Uto16Ux4"); return;
+      case Iop_QandQRShrNnarrow64Uto32Ux2:
+         vex_printf("QandQRShrNnarrow64Uto32Ux2"); return;
+      case Iop_QandQRSarNnarrow16Sto8Sx8:
+         vex_printf("QandQRSarNnarrow16Sto8Sx8"); return;
+      case Iop_QandQRSarNnarrow32Sto16Sx4:
+         vex_printf("QandQRSarNnarrow32Sto16Sx4"); return;
+      case Iop_QandQRSarNnarrow64Sto32Sx2:
+         vex_printf("QandQRSarNnarrow64Sto32Sx2"); return;
+      case Iop_QandQRSarNnarrow16Sto8Ux8:
+         vex_printf("QandQRSarNnarrow16Sto8Ux8"); return;
+      case Iop_QandQRSarNnarrow32Sto16Ux4:
+         vex_printf("QandQRSarNnarrow32Sto16Ux4"); return;
+      case Iop_QandQRSarNnarrow64Sto32Ux2:
+         vex_printf("QandQRSarNnarrow64Sto32Ux2"); return;
+
       case Iop_NarrowBin16to8x16:    vex_printf("NarrowBin16to8x16"); return;
       case Iop_NarrowBin32to16x8:    vex_printf("NarrowBin32to16x8"); return;
       case Iop_QNarrowBin16Uto8Ux16: vex_printf("QNarrowBin16Uto8Ux16"); return;
@@ -2953,6 +2990,24 @@ void typeOfPrimop ( IROp op,
       case Iop_QSalN8x16: case Iop_QSalN16x8:
       case Iop_QSalN32x4: case Iop_QSalN64x2:
       case Iop_SHA256:    case Iop_SHA512:
+      case Iop_QandQShrNnarrow16Uto8Ux8:
+      case Iop_QandQShrNnarrow32Uto16Ux4:
+      case Iop_QandQShrNnarrow64Uto32Ux2:
+      case Iop_QandQSarNnarrow16Sto8Sx8:
+      case Iop_QandQSarNnarrow32Sto16Sx4:
+      case Iop_QandQSarNnarrow64Sto32Sx2:
+      case Iop_QandQSarNnarrow16Sto8Ux8:
+      case Iop_QandQSarNnarrow32Sto16Ux4:
+      case Iop_QandQSarNnarrow64Sto32Ux2:
+      case Iop_QandQRShrNnarrow16Uto8Ux8:
+      case Iop_QandQRShrNnarrow32Uto16Ux4:
+      case Iop_QandQRShrNnarrow64Uto32Ux2:
+      case Iop_QandQRSarNnarrow16Sto8Sx8:
+      case Iop_QandQRSarNnarrow32Sto16Sx4:
+      case Iop_QandQRSarNnarrow64Sto32Sx2:
+      case Iop_QandQRSarNnarrow16Sto8Ux8:
+      case Iop_QandQRSarNnarrow32Sto16Ux4:
+      case Iop_QandQRSarNnarrow64Sto32Ux2:
          BINARY(Ity_V128,Ity_I8, Ity_V128);
 
       case Iop_F32ToFixed32Ux4_RZ:

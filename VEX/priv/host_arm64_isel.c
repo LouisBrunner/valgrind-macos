@@ -2146,18 +2146,51 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          }
          case Iop_NarrowUn16to8x8:
          case Iop_NarrowUn32to16x4:
-         case Iop_NarrowUn64to32x2: {
+         case Iop_NarrowUn64to32x2:
+         case Iop_QNarrowUn16Sto8Sx8:
+         case Iop_QNarrowUn32Sto16Sx4:
+         case Iop_QNarrowUn64Sto32Sx2:
+         case Iop_QNarrowUn16Uto8Ux8:
+         case Iop_QNarrowUn32Uto16Ux4:
+         case Iop_QNarrowUn64Uto32Ux2:
+         case Iop_QNarrowUn16Sto8Ux8:
+         case Iop_QNarrowUn32Sto16Ux4:
+         case Iop_QNarrowUn64Sto32Ux2:
+         {
             HReg src = iselV128Expr(env, e->Iex.Unop.arg);
             HReg tmp = newVRegV(env);
             HReg dst = newVRegI(env);
             UInt dszBlg2 = 3; /* illegal */
+            ARM64VecNarrowOp op = ARM64vecna_INVALID;
             switch (e->Iex.Unop.op) {
-               case Iop_NarrowUn16to8x8:  dszBlg2 = 0; break; // 16to8_x8
-               case Iop_NarrowUn32to16x4: dszBlg2 = 1; break; // 32to16_x4
-               case Iop_NarrowUn64to32x2: dszBlg2 = 2; break; // 64to32_x2
-               default: vassert(0);
+               case Iop_NarrowUn16to8x8:
+                  dszBlg2 = 0; op = ARM64vecna_XTN; break;
+               case Iop_NarrowUn32to16x4:
+                  dszBlg2 = 1; op = ARM64vecna_XTN; break;
+               case Iop_NarrowUn64to32x2:
+                  dszBlg2 = 2; op = ARM64vecna_XTN; break;
+               case Iop_QNarrowUn16Sto8Sx8:
+                  dszBlg2 = 0; op = ARM64vecna_SQXTN; break;
+               case Iop_QNarrowUn32Sto16Sx4:
+                  dszBlg2 = 1; op = ARM64vecna_SQXTN; break;
+               case Iop_QNarrowUn64Sto32Sx2:
+                  dszBlg2 = 2; op = ARM64vecna_SQXTN; break;
+               case Iop_QNarrowUn16Uto8Ux8:
+                  dszBlg2 = 0; op = ARM64vecna_UQXTN; break;
+               case Iop_QNarrowUn32Uto16Ux4:
+                  dszBlg2 = 1; op = ARM64vecna_UQXTN; break;
+               case Iop_QNarrowUn64Uto32Ux2:
+                  dszBlg2 = 2; op = ARM64vecna_UQXTN; break;
+               case Iop_QNarrowUn16Sto8Ux8:
+                  dszBlg2 = 0; op = ARM64vecna_SQXTUN; break;
+               case Iop_QNarrowUn32Sto16Ux4:
+                  dszBlg2 = 1; op = ARM64vecna_SQXTUN; break;
+               case Iop_QNarrowUn64Sto32Ux2:
+                  dszBlg2 = 2; op = ARM64vecna_SQXTUN; break;
+               default:
+                  vassert(0);
             }
-            addInstr(env, ARM64Instr_VNarrowV(dszBlg2, tmp, src));
+            addInstr(env, ARM64Instr_VNarrowV(op, dszBlg2, tmp, src));
             addInstr(env, ARM64Instr_VXfromQ(dst, tmp, 0/*laneNo*/));
             return dst;
          }
@@ -4489,6 +4522,12 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
             iselV256Expr(&vHi, &vLo, env, e->Iex.Unop.arg);
             return (e->Iex.Unop.op == Iop_V256toV128_1) ? vHi : vLo;
          }
+         case Iop_64UtoV128: {
+            HReg res = newVRegV(env);
+            HReg arg = iselIntExpr_R(env, e->Iex.Unop.arg);
+            addInstr(env, ARM64Instr_VQfromX(res, arg));
+            return res;
+         }
 
 //ZZ          case Iop_NotV128: {
 //ZZ             DECLARE_PATTERN(p_veqz_8x16);
@@ -5616,10 +5655,127 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
                   HReg src = iselV128Expr(env, argL);
                   HReg dst = newVRegV(env);
                   if (amt > 0) {
+                     /* For left shifts, the allowable amt values are
+                        0 .. lane_bits-1.  For right shifts the allowable
+                        values are 1 .. lane_bits.  By restricting it to
+                        1 .. lane_bits-1, we are guaranteed to create a
+                        valid instruction. */
                      addInstr(env, ARM64Instr_VShiftImmV(op, dst, src, amt));
                   } else {
                      dst = src;
                   }
+                  return dst;
+               }
+            }
+            /* else fall out; this is unhandled */
+            break;
+         }
+
+         /* uu */
+         case Iop_QandQShrNnarrow16Uto8Ux8:
+         case Iop_QandQShrNnarrow32Uto16Ux4:
+         case Iop_QandQShrNnarrow64Uto32Ux2:
+         /* ss */
+         case Iop_QandQSarNnarrow16Sto8Sx8:
+         case Iop_QandQSarNnarrow32Sto16Sx4:
+         case Iop_QandQSarNnarrow64Sto32Sx2:
+         /* su */
+         case Iop_QandQSarNnarrow16Sto8Ux8:
+         case Iop_QandQSarNnarrow32Sto16Ux4:
+         case Iop_QandQSarNnarrow64Sto32Ux2:
+         /* ruu */
+         case Iop_QandQRShrNnarrow16Uto8Ux8:
+         case Iop_QandQRShrNnarrow32Uto16Ux4:
+         case Iop_QandQRShrNnarrow64Uto32Ux2:
+         /* rss */
+         case Iop_QandQRSarNnarrow16Sto8Sx8:
+         case Iop_QandQRSarNnarrow32Sto16Sx4:
+         case Iop_QandQRSarNnarrow64Sto32Sx2:
+         /* rsu */
+         case Iop_QandQRSarNnarrow16Sto8Ux8:
+         case Iop_QandQRSarNnarrow32Sto16Ux4:
+         case Iop_QandQRSarNnarrow64Sto32Ux2:
+         {
+            IRExpr* argL = e->Iex.Binop.arg1;
+            IRExpr* argR = e->Iex.Binop.arg2;
+            if (argR->tag == Iex_Const && argR->Iex.Const.con->tag == Ico_U8) {
+               UInt amt   = argR->Iex.Const.con->Ico.U8;
+               UInt limit = 0;
+               ARM64VecShiftOp op = ARM64vecsh_INVALID;
+               switch (e->Iex.Binop.op) {
+                  /* uu */
+                  case Iop_QandQShrNnarrow64Uto32Ux2:
+                     op = ARM64vecsh_UQSHRN2SD; limit = 64; break;
+                  case Iop_QandQShrNnarrow32Uto16Ux4:
+                     op = ARM64vecsh_UQSHRN4HS; limit = 32; break;
+                  case Iop_QandQShrNnarrow16Uto8Ux8:
+                     op = ARM64vecsh_UQSHRN8BH; limit = 16; break;
+                  /* ss */
+                  case Iop_QandQSarNnarrow64Sto32Sx2:
+                     op = ARM64vecsh_SQSHRN2SD; limit = 64; break;
+                  case Iop_QandQSarNnarrow32Sto16Sx4:
+                     op = ARM64vecsh_SQSHRN4HS; limit = 32; break;
+                  case Iop_QandQSarNnarrow16Sto8Sx8:
+                     op = ARM64vecsh_SQSHRN8BH; limit = 16; break;
+                  /* su */
+                  case Iop_QandQSarNnarrow64Sto32Ux2:
+                     op = ARM64vecsh_SQSHRUN2SD; limit = 64; break;
+                  case Iop_QandQSarNnarrow32Sto16Ux4:
+                     op = ARM64vecsh_SQSHRUN4HS; limit = 32; break;
+                  case Iop_QandQSarNnarrow16Sto8Ux8:
+                     op = ARM64vecsh_SQSHRUN8BH; limit = 16; break;
+                  /* ruu */
+                  case Iop_QandQRShrNnarrow64Uto32Ux2:
+                     op = ARM64vecsh_UQRSHRN2SD; limit = 64; break;
+                  case Iop_QandQRShrNnarrow32Uto16Ux4:
+                     op = ARM64vecsh_UQRSHRN4HS; limit = 32; break;
+                  case Iop_QandQRShrNnarrow16Uto8Ux8:
+                     op = ARM64vecsh_UQRSHRN8BH; limit = 16; break;
+                  /* rss */
+                  case Iop_QandQRSarNnarrow64Sto32Sx2:
+                     op = ARM64vecsh_SQRSHRN2SD; limit = 64; break;
+                  case Iop_QandQRSarNnarrow32Sto16Sx4:
+                     op = ARM64vecsh_SQRSHRN4HS; limit = 32; break;
+                  case Iop_QandQRSarNnarrow16Sto8Sx8:
+                     op = ARM64vecsh_SQRSHRN8BH; limit = 16; break;
+                  /* rsu */
+                  case Iop_QandQRSarNnarrow64Sto32Ux2:
+                     op = ARM64vecsh_SQRSHRUN2SD; limit = 64; break;
+                  case Iop_QandQRSarNnarrow32Sto16Ux4:
+                     op = ARM64vecsh_SQRSHRUN4HS; limit = 32; break;
+                  case Iop_QandQRSarNnarrow16Sto8Ux8:
+                     op = ARM64vecsh_SQRSHRUN8BH; limit = 16; break;
+                  /**/
+                  default:
+                     vassert(0);
+               }
+               if (op != ARM64vecsh_INVALID && amt >= 1 && amt <= limit) {
+                  HReg src  = iselV128Expr(env, argL);
+                  HReg dst  = newVRegV(env);
+                  HReg fpsr = newVRegI(env);
+                  /* Clear FPSR.Q, do the operation, and return both its
+                     result and the new value of FPSR.Q.  We can simply
+                     zero out FPSR since all the other bits have no relevance
+                     in VEX generated code. */
+                  addInstr(env, ARM64Instr_Imm64(fpsr, 0));
+                  addInstr(env, ARM64Instr_FPSR(True/*toFPSR*/, fpsr));
+                  addInstr(env, ARM64Instr_VShiftImmV(op, dst, src, amt));
+                  addInstr(env, ARM64Instr_FPSR(False/*!toFPSR*/, fpsr));
+                  addInstr(env, ARM64Instr_Shift(fpsr, fpsr, ARM64RI6_I6(27),
+                                                             ARM64sh_SHR));
+                  ARM64RIL* ril_one = mb_mkARM64RIL_I(1);
+                  vassert(ril_one);
+                  addInstr(env, ARM64Instr_Logic(fpsr,
+                                                 fpsr, ril_one, ARM64lo_AND));
+                  /* Now we have: the main (shift) result in the bottom half
+                     of |dst|, and the Q bit at the bottom of |fpsr|.  
+                     Combining them with a "InterleaveLO64x2" style operation 
+                     produces a 128 bit value, dst[63:0]:fpsr[63:0], 
+                     which is what we want. */
+                  HReg scratch = newVRegV(env);
+                  addInstr(env, ARM64Instr_VQfromX(scratch, fpsr));
+                  addInstr(env, ARM64Instr_VBinV(ARM64vecb_UZP164x2,
+                                                 dst, dst, scratch));
                   return dst;
                }
             }
@@ -6510,9 +6666,9 @@ static void iselV256Expr_wrk ( /*OUT*/HReg* rHi, /*OUT*/HReg* rLo,
                default: vassert(0);
             }
             /* Clear FPSR.Q, do the operation, and return both its result
-               and the new value of FPSR.Q.  We can simply zero the whole
-               thing out since FPSR is essentially a scratch status register
-               on the host. */
+               and the new value of FPSR.Q.  We can simply zero out FPSR
+               since all the other bits have no relevance in VEX generated
+               code. */
             addInstr(env, ARM64Instr_Imm64(fpsr, 0));
             addInstr(env, ARM64Instr_FPSR(True/*toFPSR*/, fpsr));
             addInstr(env, ARM64Instr_VBinV(op, resLo, argL, argR));

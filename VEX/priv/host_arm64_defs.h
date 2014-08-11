@@ -402,9 +402,27 @@ typedef
       ARM64vecsh_SSHR16x8,     ARM64vecsh_SSHR8x16,
       ARM64vecsh_SHL64x2,      ARM64vecsh_SHL32x4,
       ARM64vecsh_SHL16x8,      ARM64vecsh_SHL8x16,
+      /* These narrowing shifts zero out the top half of the destination
+         register. */
+      ARM64vecsh_SQSHRN2SD,    ARM64vecsh_SQSHRN4HS,   ARM64vecsh_SQSHRN8BH,
+      ARM64vecsh_UQSHRN2SD,    ARM64vecsh_UQSHRN4HS,   ARM64vecsh_UQSHRN8BH,
+      ARM64vecsh_SQSHRUN2SD,   ARM64vecsh_SQSHRUN4HS,  ARM64vecsh_SQSHRUN8BH,
+      ARM64vecsh_SQRSHRN2SD,   ARM64vecsh_SQRSHRN4HS,  ARM64vecsh_SQRSHRN8BH,
+      ARM64vecsh_UQRSHRN2SD,   ARM64vecsh_UQRSHRN4HS,  ARM64vecsh_UQRSHRN8BH,
+      ARM64vecsh_SQRSHRUN2SD,  ARM64vecsh_SQRSHRUN4HS, ARM64vecsh_SQRSHRUN8BH,
       ARM64vecsh_INVALID
    }
    ARM64VecShiftOp;
+
+typedef
+   enum {
+      ARM64vecna_XTN=400,
+      ARM64vecna_SQXTN,
+      ARM64vecna_UQXTN,
+      ARM64vecna_SQXTUN,
+      ARM64vecna_INVALID
+   }
+   ARM64VecNarrowOp;
 
 typedef
    enum {
@@ -720,11 +738,13 @@ typedef
             HReg            arg;
          } VUnaryV;
          /* vector narrowing, Q -> Q.  Result goes in the bottom half
-            of dst and the top half is zeroed out.  Iow is XTN. */
+            of dst and the top half is zeroed out.  Iow one of the
+            XTN family. */
         struct {
-           UInt dszBlg2; // 0: 16to8_x8  1: 32to16_x4  2: 64to32_x2
-           HReg dst;     // Q reg
-           HReg src;     // Q reg
+           ARM64VecNarrowOp op;
+           UInt             dszBlg2; // 0: 16to8_x8  1: 32to16_x4  2: 64to32_x2
+           HReg             dst;     // Q reg
+           HReg             src;     // Q reg
         } VNarrowV;
         /* Vector shift by immediate.  |amt| needs to be > 0 and <
            implied lane size of |op|.  Zero shifts and out of range
@@ -836,7 +856,8 @@ extern ARM64Instr* ARM64Instr_FPCR    ( Bool toFPCR, HReg iReg );
 extern ARM64Instr* ARM64Instr_FPSR    ( Bool toFPSR, HReg iReg );
 extern ARM64Instr* ARM64Instr_VBinV   ( ARM64VecBinOp op, HReg, HReg, HReg );
 extern ARM64Instr* ARM64Instr_VUnaryV ( ARM64VecUnaryOp op, HReg, HReg );
-extern ARM64Instr* ARM64Instr_VNarrowV ( UInt dszBlg2, HReg dst, HReg src );
+extern ARM64Instr* ARM64Instr_VNarrowV ( ARM64VecNarrowOp op, UInt dszBlg2,
+                                         HReg dst, HReg src );
 extern ARM64Instr* ARM64Instr_VShiftImmV ( ARM64VecShiftOp op,
                                            HReg dst, HReg src, UInt amt );
 extern ARM64Instr* ARM64Instr_VExtV   ( HReg dst,

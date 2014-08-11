@@ -5232,6 +5232,11 @@ static IRExpr* fold_IRExpr_Unop ( IROp op, IRExpr* aa )
       if (is_Unop(aa, Iop_Left64))
          return IRExpr_Unop( Iop_Left64, aa->Iex.Unop.arg );
       break;
+   case Iop_ZeroHI64ofV128:
+      /* ZeroHI64ofV128( ZeroHI64ofV128(x) ) --> ZeroHI64ofV128(x) */
+      if (is_Unop(aa, Iop_ZeroHI64ofV128))
+         return IRExpr_Unop( Iop_ZeroHI64ofV128, aa->Iex.Unop.arg );
+      break;
    case Iop_32to1:
       /* 32to1( 1Uto32 ( x ) ) --> x */
       if (is_Unop(aa, Iop_1Uto32))

@@ -31,8 +31,6 @@
 #define __PUB_TOOL_GDBSERVER_H
 
 #include "pub_tool_basics.h"   // VG_ macro
-#include "libvex.h"
-#include "libvex_ir.h"
 
 //--------------------------------------------------------------------
 // PURPOSE: This module provides the support to have a gdb

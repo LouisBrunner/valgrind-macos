@@ -17277,9 +17277,10 @@ DisResult disInstr_ARM_WRK (
       now. */
    vassert(0 == (guest_R15_curr_instr_notENC & 3));
    llPutIReg( 15, mkU32(guest_R15_curr_instr_notENC) );
+   dres.len         = 0;
    dres.whatNext    = Dis_StopHere;
    dres.jk_StopHere = Ijk_NoDecode;
-   dres.len         = 0;
+   dres.continueAt  = 0;
    return dres;
 
   decode_success:
@@ -21846,9 +21847,10 @@ DisResult disInstr_THUMB_WRK (
       now. */
    vassert(0 == (guest_R15_curr_instr_notENC & 1));
    llPutIReg( 15, mkU32(guest_R15_curr_instr_notENC | 1) );
+   dres.len         = 0;
    dres.whatNext    = Dis_StopHere;
    dres.jk_StopHere = Ijk_NoDecode;
-   dres.len         = 0;
+   dres.continueAt  = 0;
    return dres;
 
   decode_success:

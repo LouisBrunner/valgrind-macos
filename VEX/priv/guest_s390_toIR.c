@@ -16515,10 +16515,10 @@ disInstr_S390_WRK(UChar *insn)
          incorrect address. */
       put_IA(mkaddr_expr(guest_IA_curr_instr));
 
+      dres.len         = 0;
       dres.whatNext    = Dis_StopHere;
       dres.jk_StopHere = Ijk_NoDecode;
       dres.continueAt  = 0;
-      dres.len         = 0;
    } else {
       /* Decode success */
       switch (dres.whatNext) {

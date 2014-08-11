@@ -20086,11 +20086,11 @@ DisResult disInstr_PPC_WRK (
       insn, but nevertheless be paranoid and update it again right
       now. */
    putGST( PPC_GST_CIA, mkSzImm(ty, guest_CIA_curr_instr) );
+   dres.len         = 0;
    dres.whatNext    = Dis_StopHere;
    dres.jk_StopHere = Ijk_NoDecode;
-   dres.len         = 0;
+   dres.continueAt  = 0;
    return dres;
-
    } /* switch (opc) for the main (primary) opcode switch. */
 
   decode_success:
@@ -20154,9 +20154,9 @@ DisResult disInstr_PPC ( IRSB*        irsb_IN,
    ty = mode64 ? Ity_I64 : Ity_I32;
    if (!mode64 && (host_endness_IN == VexEndnessLE)) {
       vex_printf("disInstr(ppc): Little Endian 32-bit mode is not supported\n");
+      dres.len         = 0;
       dres.whatNext    = Dis_StopHere;
       dres.jk_StopHere = Ijk_NoDecode;
-      dres.len         = 0;
       dres.continueAt   = 0;
       return dres;
    }

@@ -6213,22 +6213,6 @@ IRTemp math_NARROW_LANES ( IRTemp argHi, IRTemp argLo, UInt sizeNarrow )
 }
 
 
-/* Generate IR that takes an I64 and sign- or zero- widens each
-   lane, giving a V128 value. */
-static
-IRTemp math_WIDEN_LANES ( Bool zWiden, UInt sizeNarrow, IRExpr* srcE )
-{
-   IRTemp src = newTemp(Ity_I64);
-   assign(src, srcE);
-   return math_WIDEN_LO_OR_HI_LANES(
-             zWiden,
-             False/*!fromUpperHalf*/,
-             sizeNarrow,
-             binop(Iop_64HLtoV128, mkexpr(src), mkexpr(src))
-          );
-}
-
-
 /* Return a temp which holds the vector dup of the lane of width
    (1 << size) obtained from src[laneNo]. */
 static
@@ -10836,10 +10820,10 @@ DisResult disInstr_ARM64 ( IRSB*        irsb_IN,
          start of each insn, but nevertheless be paranoid and update
          it again right now. */
       putPC( mkU64(guest_PC_curr_instr) );
-      dres.whatNext    = Dis_StopHere;
       dres.len         = 0;
-      dres.continueAt  = 0;
+      dres.whatNext    = Dis_StopHere;
       dres.jk_StopHere = Ijk_NoDecode;
+      dres.continueAt  = 0;
    }
    return dres;
 }

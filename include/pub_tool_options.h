@@ -176,7 +176,7 @@ extern const HChar* VG_(clo_xml_user_comment);
    less aggressively if that is needed (callgrind needs this). */
 extern VexControl VG_(clo_vex_control);
 
-/* Number of parents of a backtrace.  Default: 8.  */
+/* Number of parents of a backtrace.  Default: 12  */
 extern Int   VG_(clo_backtrace_size);
 
 /* Continue stack traces below main()?  Default: NO */

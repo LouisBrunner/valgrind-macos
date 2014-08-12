@@ -30,9 +30,7 @@
 */
 
 #include "pub_core_basics.h"
-#include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
-
 #include "pub_core_vkiscnums.h"     /* self */
 
 /* We have pub_{core,tool}_vkiscnums.h.  This is the matching implementation
@@ -46,23 +44,22 @@
 #if defined(VGO_linux)
 //---------------------------------------------------------------------------
 
-HChar* VG_(sysnum_string)(Word sysnum, SizeT n_buf, HChar* buf)
+const HChar* VG_(sysnum_string)(Word sysnum)
 {
-   VG_(snprintf)(buf, n_buf, "%3ld", sysnum);
-   return buf;
-}
+   static HChar buf[20+1];   // large enough
 
-HChar* VG_(sysnum_string_extra)(Word sysnum, SizeT n_buf, HChar* buf)
-{
-   return VG_(sysnum_string)(sysnum, n_buf, buf);
+   VG_(sprintf)(buf, "%ld", sysnum);
+   return buf;
 }
 
 //---------------------------------------------------------------------------
 #elif defined(VGO_darwin)
 //---------------------------------------------------------------------------
 
-HChar* VG_(sysnum_string)(Word sysnum, SizeT n_buf, HChar* buf)
+const HChar* VG_(sysnum_string)(Word sysnum, SizeT n_buf, HChar* buf)
 {
+   static HChar buf[7+1+20+1];   // large enough
+
    const HChar* classname = NULL;
    switch (VG_DARWIN_SYSNO_CLASS(sysnum)) {
       case VG_DARWIN_SYSCALL_CLASS_MACH: classname = "mach"; break;
@@ -71,14 +68,8 @@ HChar* VG_(sysnum_string)(Word sysnum, SizeT n_buf, HChar* buf)
       case VG_DARWIN_SYSCALL_CLASS_DIAG: classname = "diag"; break;
       default: classname = "UNKNOWN"; break;
    }
-   VG_(snprintf)(buf, n_buf, "%s:%3ld",
-                             classname, VG_DARWIN_SYSNO_INDEX(sysnum));
+   VG_(sprintf)("%s:%ld", classname, VG_DARWIN_SYSNO_INDEX(sysnum));
    return buf;
-}
-
-HChar* VG_(sysnum_string_extra)(Word sysnum, SizeT n_buf, HChar* buf)
-{
-   return VG_(sysnum_string)(sysnum, n_buf, buf);
 }
 
 //---------------------------------------------------------------------------

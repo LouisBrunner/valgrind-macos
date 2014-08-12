@@ -39,19 +39,12 @@
 
 // This converts a syscall number into a string, suitable for printing.  It is
 // needed because some platforms (Darwin) munge sysnums in various ways.
-// It is used in places where the sycall name will be printed alongside.
-extern HChar* VG_(sysnum_string)      (Word sysnum, SizeT n_buf, HChar* buf);
+// The string is allocated in a static buffer and will be overwritten in the
+// next invocation.
+extern const HChar *VG_(sysnum_string) (Word sysnum);
 
-// This is like VG_(sysnum_string), but prints extra info if needed.  It is
-// called in places where the syscall name will *not* be printed alongside.
-extern HChar* VG_(sysnum_string_extra)(Word sysnum, SizeT n_buf, HChar* buf);
-
-// Macros that make the above functions easier to use by declaring a local
-// buffer.
-#define VG_SYSNUM_STRING(sysnum) \
-   ({ HChar qq_zz_buf[32]; VG_(sysnum_string)(sysnum, 32, qq_zz_buf); })
-#define VG_SYSNUM_STRING_EXTRA(sysnum) \
-   ({ HChar qq_zz_buf[64]; VG_(sysnum_string_extra)(sysnum, 64, qq_zz_buf); })
+// Macro provided for backward compatibility purposes.
+#define VG_SYSNUM_STRING(sysnum) VG_(sysnum_string)(sysnum)
 
 
 #endif   // __PUB_TOOL_VKISCNUMS_H

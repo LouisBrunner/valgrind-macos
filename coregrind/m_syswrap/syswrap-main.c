@@ -552,9 +552,9 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
       canonical->arg7  = stack[8];
       canonical->arg8  = stack[9];
       
-      PRINT("SYSCALL[%d,?](%s) syscall(%s, ...); please stand by...\n",
+      PRINT("SYSCALL[%d,?](0) syscall(%s, ...); please stand by...\n",
             VG_(getpid)(), /*tid,*/
-            VG_SYSNUM_STRING(0), VG_SYSNUM_STRING(canonical->sysno));
+            VG_SYSNUM_STRING(canonical->sysno));
    }
 
    // Here we determine what kind of syscall it was by looking at the
@@ -631,9 +631,9 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
       canonical->arg7  = stack[2];
       canonical->arg8  = stack[3];
       
-      PRINT("SYSCALL[%d,?](%s) syscall(%s, ...); please stand by...\n",
+      PRINT("SYSCALL[%d,?](0) syscall(%s, ...); please stand by...\n",
             VG_(getpid)(), /*tid,*/
-            VG_SYSNUM_STRING(0), VG_SYSNUM_STRING(canonical->sysno));
+            VG_SYSNUM_STRING(canonical->sysno));
    }
 
    // no canonical->sysno adjustment needed
@@ -1291,7 +1291,7 @@ void bad_before ( ThreadId              tid,
                   /*OUT*/UWord*         flags )
 {
    VG_(dmsg)("WARNING: unhandled syscall: %s\n",
-      VG_SYSNUM_STRING_EXTRA(args->sysno));
+      VG_SYSNUM_STRING(args->sysno));
    if (VG_(clo_verbosity) > 1) {
       VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
    }

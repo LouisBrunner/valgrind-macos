@@ -56,7 +56,7 @@ const HChar* VG_(sysnum_string)(Word sysnum)
 #elif defined(VGO_darwin)
 //---------------------------------------------------------------------------
 
-const HChar* VG_(sysnum_string)(Word sysnum, SizeT n_buf, HChar* buf)
+const HChar* VG_(sysnum_string)(Word sysnum)
 {
    static HChar buf[7+1+20+1];   // large enough
 
@@ -68,7 +68,7 @@ const HChar* VG_(sysnum_string)(Word sysnum, SizeT n_buf, HChar* buf)
       case VG_DARWIN_SYSCALL_CLASS_DIAG: classname = "diag"; break;
       default: classname = "UNKNOWN"; break;
    }
-   VG_(sprintf)("%s:%ld", classname, VG_DARWIN_SYSNO_INDEX(sysnum));
+   VG_(sprintf)(buf, "%s:%ld", classname, VG_DARWIN_SYSNO_INDEX(sysnum));
    return buf;
 }
 

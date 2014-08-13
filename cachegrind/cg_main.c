@@ -1363,8 +1363,6 @@ IRSB* cg_instrument ( VgCallbackClosure* closure,
 /*--- Cache configuration                                  ---*/
 /*------------------------------------------------------------*/
 
-#define UNDEFINED_CACHE     { -1, -1, -1 }
-
 static cache_t clo_I1_cache = UNDEFINED_CACHE;
 static cache_t clo_D1_cache = UNDEFINED_CACHE;
 static cache_t clo_LL_cache = UNDEFINED_CACHE;

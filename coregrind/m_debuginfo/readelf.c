@@ -687,22 +687,22 @@ Bool get_elf_symbol_info (
     * of instructions between the function's global and local entry points. An
     * offset of 0 indicates that there is one entry point.  The value must be:
     *
-    * 0  - one entry point, local and global are the same
-    * 1  - reserved
-    * 2  - local entry point is one instruction after the global entry point
-    * 3  - local entry point is two instructions after the global entry point
-    * 4  - local entry point is four instructions after the global entry point
-    * 5  - local entry point is eight instructions after the global entry point
-    * 6  - local entry point is sixteen two instructions after the global entry point
-    * 7  - reserved
+    * 0 - one entry point, local and global are the same
+    * 1 - reserved
+    * 2 - local entry point is one instruction after the global entry point
+    * 3 - local entry point is two instructions after the global entry point
+    * 4 - local entry point is four instructions after the global entry point
+    * 5 - local entry point is eight instructions after the global entry point
+    * 6 - local entry point is sixteen instructions after the global entry point
+    * 7 - reserved
     *
-    *  The extract the three bit field from the other field.
+    *  Extract the three bit field from the other field is done by:
     *        (other_field & STO_PPC64_LOCAL_MASK) >> STO_PPC_LOCAL_BIT
     *
     *  where the #define values are given in include/elf/powerpc.h file for
     *  the PPC binutils.
     *
-    * coversion of the three bit field to bytes is given by
+    * conversion of the three bit field to bytes is given by
     *
     *       ((1 << bit_field) >> 2) << 2
     */

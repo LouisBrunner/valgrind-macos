@@ -69,10 +69,10 @@
    sec_names[] does not need to be allocated.
 */
 typedef 
-   struct { 
-      Addr    addr;    /* lowest address of entity */
-      Addr    tocptr;  /* ppc64be-linux only: value that R2 should have */
-      Addr    local_ep;  /* address for local entry point, ppc64le */
+   struct {
+      SymAVMAs avmas;    /* Symbol Actual VMAs: lowest address of entity,
+                            + platform specific fields, to access with
+                            the macros defined in pub_core_debuginfo.h */
       HChar*  pri_name;  /* primary name, never NULL */
       HChar** sec_names; /* NULL, or a NULL term'd array of other names */
       // XXX: this could be shrunk (on 32-bit platforms) by using 30

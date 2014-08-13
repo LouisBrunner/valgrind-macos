@@ -234,17 +234,12 @@ Bool get_elf_symbol_info (
         PtrdiffT   opd_bias,   /* for biasing AVMAs found in .opd */
         /* OUTPUTS */
         DiOffT* sym_name_out_ioff, /* name (in strtab) we should record */
-        Addr*   sym_avma_out,   /* addr we should record */
+        SymAVMAs* sym_avmas_out,     /* sym avmas we should record */
         Int*    sym_size_out,   /* symbol size */
-        Addr*   sym_tocptr_out, /* ppc64be-linux only: R2 value to be
-                                   used on entry */
         Bool*   from_opd_out,   /* ppc64be-linux only: did we deref an
                                   .opd entry? */
         Bool*   is_text_out,    /* is this a text symbol? */
-        Bool*   is_ifunc,       /* is this a  STT_GNU_IFUNC function ?*/
-        Addr*   sym_local_ep    /* addr for local entry point.  PPC64 LE
-                                   supports a local and global entry points.
-                                   Use this value to return the entry point. */
+        Bool*   is_ifunc        /* is this a  STT_GNU_IFUNC function ?*/
      )
 {
    Bool plausible;
@@ -257,12 +252,12 @@ Bool get_elf_symbol_info (
 
    /* Set defaults */
    *sym_name_out_ioff = sym_name_ioff;
-   *sym_avma_out      = sym_svma; /* we will bias this shortly */
+   (*sym_avmas_out).main   = sym_svma; /* we will bias this shortly */
    *is_text_out       = True;
-   *sym_tocptr_out    = 0; /* unknown/inapplicable */
+   SET_TOCPTR_AVMA(*sym_avmas_out, 0);   /* default to unknown/inapplicable */
+   SET_LOCAL_EP_AVMA(*sym_avmas_out, 0); /* default to unknown/inapplicable */
    *from_opd_out      = False;
    *is_ifunc          = False;
-   *sym_local_ep      = 0; /* unknown/inapplicable */
 
    /* Get the symbol size, but restrict it to fit in a signed 32 bit
       int.  Also, deal with the stupid case of negative size by making
@@ -322,7 +317,7 @@ Bool get_elf_symbol_info (
       sbss_bias = di->sbss_bias;
    }
 
-   /* Now bias sym_avma_out accordingly by figuring out exactly which
+   /* Now bias (*sym_avmas_out).main accordingly by figuring out exactly which
       section the symbol is from and bias accordingly.  Screws up if
       the previously deduced section svma address ranges are wrong. */
    if (di->text_present
@@ -330,46 +325,46 @@ Bool get_elf_symbol_info (
        && sym_svma >= text_svma 
        && sym_svma < text_svma + di->text_size) {
       *is_text_out = True;
-      *sym_avma_out += text_bias;
+      (*sym_avmas_out).main += text_bias;
    } else
    if (di->data_present
        && di->data_size > 0
        && sym_svma >= data_svma 
        && sym_svma < data_svma + di->data_size) {
       *is_text_out = False;
-      *sym_avma_out += data_bias;
+      (*sym_avmas_out).main += data_bias;
    } else
    if (di->sdata_present
        && di->sdata_size > 0
        && sym_svma >= sdata_svma 
        && sym_svma < sdata_svma + di->sdata_size) {
       *is_text_out = False;
-      *sym_avma_out += sdata_bias;
+      (*sym_avmas_out).main += sdata_bias;
    } else
    if (di->rodata_present
        && di->rodata_size > 0
        && sym_svma >= rodata_svma 
        && sym_svma < rodata_svma + di->rodata_size) {
       *is_text_out = False;
-      *sym_avma_out += rodata_bias;
+      (*sym_avmas_out).main += rodata_bias;
    } else
    if (di->bss_present
        && di->bss_size > 0
        && sym_svma >= bss_svma 
        && sym_svma < bss_svma + di->bss_size) {
       *is_text_out = False;
-      *sym_avma_out += bss_bias;
+      (*sym_avmas_out).main += bss_bias;
    } else
    if (di->sbss_present
        && di->sbss_size > 0
        && sym_svma >= sbss_svma 
        && sym_svma < sbss_svma + di->sbss_size) {
       *is_text_out = False;
-      *sym_avma_out += sbss_bias;
+      (*sym_avmas_out).main += sbss_bias;
    } else {
       /* Assume it's in .text.  Is this a good idea? */
       *is_text_out = True;
-      *sym_avma_out += text_bias;
+      (*sym_avmas_out).main += text_bias;
    }
 
 #  ifdef STT_GNU_IFUNC
@@ -390,8 +385,8 @@ Bool get_elf_symbol_info (
        && *sym_size_out > 0
        && di->opd_present
        && di->opd_size > 0
-       && *sym_avma_out >= di->opd_avma
-       && *sym_avma_out <  di->opd_avma + di->opd_size)
+       && (*sym_avmas_out).main >= di->opd_avma
+       && (*sym_avmas_out).main <  di->opd_avma + di->opd_size)
       plausible = True;
 #  endif
 
@@ -456,8 +451,8 @@ Bool get_elf_symbol_info (
       symbol defined elsewhere, so ignore it. */
    if (di->got_present
        && di->got_size > 0
-       && *sym_avma_out >= di->got_avma 
-       && *sym_avma_out <  di->got_avma + di->got_size) {
+       && (*sym_avmas_out).main >= di->got_avma 
+       && (*sym_avmas_out).main <  di->got_avma + di->got_size) {
       if (TRACE_SYMTAB_ENABLED) {
          HChar* sym_name = ML_(img_strdup)(escn_strtab->img,
                                            "di.gesi.4", sym_name_ioff);
@@ -468,8 +463,8 @@ Bool get_elf_symbol_info (
    }
    if (di->plt_present
        && di->plt_size > 0
-       && *sym_avma_out >= di->plt_avma
-       && *sym_avma_out <  di->plt_avma + di->plt_size) {
+       && (*sym_avmas_out).main >= di->plt_avma
+       && (*sym_avmas_out).main <  di->plt_avma + di->plt_size) {
       if (TRACE_SYMTAB_ENABLED) {
          HChar* sym_name = ML_(img_strdup)(escn_strtab->img,
                                            "di.gesi.5", sym_name_ioff);
@@ -494,8 +489,8 @@ Bool get_elf_symbol_info (
 
    if (di->opd_present
        && di->opd_size > 0
-       && *sym_avma_out >= di->opd_avma
-       && *sym_avma_out <  di->opd_avma + di->opd_size) {
+       && (*sym_avmas_out).main >= di->opd_avma
+       && (*sym_avmas_out).main <  di->opd_avma + di->opd_size) {
 #     if !defined(VGP_ppc64be_linux)
       if (TRACE_SYMTAB_ENABLED) {
          HChar* sym_name = ML_(img_strdup)(escn_strtab->img,
@@ -510,9 +505,9 @@ Bool get_elf_symbol_info (
 
       if (details)
          TRACE_SYMTAB("opdXXX: opd_bias %p, sym_svma_out %p\n", 
-                      (void*)(opd_bias), (void*)*sym_avma_out);
+                      (void*)(opd_bias), (void*)(*sym_avmas_out).main);
 
-      if (!VG_IS_8_ALIGNED(*sym_avma_out)) {
+      if (!VG_IS_8_ALIGNED((*sym_avmas_out).main)) {
          if (TRACE_SYMTAB_ENABLED) {
             HChar* sym_name = ML_(img_strdup)(escn_strtab->img,
                                               "di.gesi.6a", sym_name_ioff);
@@ -522,11 +517,11 @@ Bool get_elf_symbol_info (
          return False;
       }
 
-      /* *sym_avma_out is a vma pointing into the .opd section.  We
+      /* (*sym_avmas_out).main is a avma pointing into the .opd section.  We
          know the vma of the opd section start, so we can figure out
          how far into the opd section this is. */
 
-      offset_in_opd = (Addr)(*sym_avma_out) - (Addr)(di->opd_avma);
+      offset_in_opd = (Addr)(*sym_avmas_out).main - (Addr)(di->opd_avma);
       if (offset_in_opd < 0 || offset_in_opd >= di->opd_size) {
          if (TRACE_SYMTAB_ENABLED) {
             HChar* sym_name = ML_(img_strdup)(escn_strtab->img,
@@ -576,13 +571,13 @@ Bool get_elf_symbol_info (
          OK for fn_descr[0], but surely we need to use the data bias
          and not the text bias for fn_descr[1] ?  Oh Well.
       */
-      *sym_avma_out   = fn_descr[0] + opd_bias;
-      *sym_tocptr_out = fn_descr[1] + opd_bias;
+      (*sym_avmas_out).main   = fn_descr[0] + opd_bias;
+      SET_TOCPTR_AVMA(*sym_avmas_out, fn_descr[1] + opd_bias);
       *from_opd_out   = True;
       is_in_opd = True;
 
       /* Do a final sanity check: if the symbol falls outside the
-         DebugInfo's mapped range, ignore it.  Since *sym_avma_out has
+         DebugInfo's mapped range, ignore it.  Since (*sym_avmas_out).main has
          been updated, that can be achieved simply by falling through
          to the test below. */
 
@@ -607,38 +602,38 @@ Bool get_elf_symbol_info (
    in_text 
       = di->text_present
         && di->text_size > 0
-        && !(*sym_avma_out + *sym_size_out <= di->text_avma
-             || *sym_avma_out >= di->text_avma + di->text_size);
+        && !((*sym_avmas_out).main + *sym_size_out <= di->text_avma
+             || (*sym_avmas_out).main >= di->text_avma + di->text_size);
 
    in_data 
       = di->data_present
         && di->data_size > 0
-        && !(*sym_avma_out + *sym_size_out <= di->data_avma
-             || *sym_avma_out >= di->data_avma + di->data_size);
+        && !((*sym_avmas_out).main + *sym_size_out <= di->data_avma
+             || (*sym_avmas_out).main >= di->data_avma + di->data_size);
 
    in_sdata 
       = di->sdata_present
         && di->sdata_size > 0
-        && !(*sym_avma_out + *sym_size_out <= di->sdata_avma
-             || *sym_avma_out >= di->sdata_avma + di->sdata_size);
+        && !((*sym_avmas_out).main + *sym_size_out <= di->sdata_avma
+             || (*sym_avmas_out).main >= di->sdata_avma + di->sdata_size);
 
    in_rodata 
       = di->rodata_present
         && di->rodata_size > 0
-        && !(*sym_avma_out + *sym_size_out <= di->rodata_avma
-             || *sym_avma_out >= di->rodata_avma + di->rodata_size);
+        && !((*sym_avmas_out).main + *sym_size_out <= di->rodata_avma
+             || (*sym_avmas_out).main >= di->rodata_avma + di->rodata_size);
 
    in_bss 
       = di->bss_present
         && di->bss_size > 0
-        && !(*sym_avma_out + *sym_size_out <= di->bss_avma
-             || *sym_avma_out >= di->bss_avma + di->bss_size);
+        && !((*sym_avmas_out).main + *sym_size_out <= di->bss_avma
+             || (*sym_avmas_out).main >= di->bss_avma + di->bss_size);
 
    in_sbss 
       = di->sbss_present
         && di->sbss_size > 0
-        && !(*sym_avma_out + *sym_size_out <= di->sbss_avma
-             || *sym_avma_out >= di->sbss_avma + di->sbss_size);
+        && !((*sym_avmas_out).main + *sym_size_out <= di->sbss_avma
+             || (*sym_avmas_out).main >= di->sbss_avma + di->sbss_size);
 
 
    if (*is_text_out) {
@@ -653,14 +648,16 @@ Bool get_elf_symbol_info (
       /* This could actually wrap around and cause
          ML_(find_rx_mapping) to assert.  But that seems so unlikely,
          let's wait for it to happen before fixing it. */
-      in_rx = (ML_(find_rx_mapping)(di, *sym_avma_out,
-                                    *sym_avma_out + *sym_size_out) != NULL);
+      in_rx = (ML_(find_rx_mapping)(
+                      di,
+                      (*sym_avmas_out).main,
+                      (*sym_avmas_out).main + *sym_size_out) != NULL);
       if (in_text)
          vg_assert(in_rx);
       if (!in_rx) {
          TRACE_SYMTAB(
             "ignore -- %#lx .. %#lx outside .text svma range %#lx .. %#lx\n",
-            *sym_avma_out, *sym_avma_out + *sym_size_out,
+            (*sym_avmas_out).main, (*sym_avmas_out).main + *sym_size_out,
             di->text_avma,
             di->text_avma + di->text_size);
          return False;
@@ -670,15 +667,15 @@ Bool get_elf_symbol_info (
          TRACE_SYMTAB(
             "ignore -- %#lx .. %#lx outside .data / .sdata / .rodata "
             "/ .bss / .sbss svma ranges\n",
-            *sym_avma_out, *sym_avma_out + *sym_size_out);
+            (*sym_avmas_out).main, (*sym_avmas_out).main + *sym_size_out);
          return False;
       }
    }
 
 #  if defined(VGP_ppc64be_linux)
    if (di->opd_present && di->opd_size > 0) {
-      vg_assert(*sym_avma_out + *sym_size_out <= di->opd_avma
-                || *sym_avma_out >= di->opd_avma + di->opd_size);
+      vg_assert((*sym_avmas_out).main + *sym_size_out <= di->opd_avma
+                || (*sym_avmas_out).main >= di->opd_avma + di->opd_size);
    }
 #endif
 
@@ -717,13 +714,15 @@ Bool get_elf_symbol_info (
       if ((bit_field > 0) && (bit_field < 7)) {
          /* store the local entry point address */
          dist_to_local_entry = ((1 << bit_field) >> 2) << 2;
-         *sym_local_ep = *sym_avma_out + dist_to_local_entry;
+         SET_LOCAL_EP_AVMA(*sym_avmas_out,
+                           (*sym_avmas_out).main + dist_to_local_entry);
 
          if (TRACE_SYMTAB_ENABLED) {
             HChar* sym_name = ML_(img_strdup)(escn_strtab->img,
                                              "di.gesi.5", sym_name_ioff);
             VG_(printf)("Local entry point: %s at %#010x\n",
-			sym_name, (unsigned int)*sym_local_ep);
+			sym_name,
+                        (unsigned int)GET_LOCAL_EP_AVMA(*sym_avmas_out));
          }
       }
    }
@@ -771,29 +770,26 @@ void read_elf_symtab__normal(
         show_raw_elf_symbol(escn_strtab->img, i,
                             &sym, sym_name, sym_svma, False);
 
-      Addr   sym_avma_really = 0;
+      SymAVMAs sym_avmas_really;
       Int    sym_size = 0;
-      Addr   sym_tocptr = 0;
-      Addr   local_ep = 0;
       Bool   from_opd = False, is_text = False, is_ifunc = False;
       DiOffT sym_name_really = DiOffT_INVALID;
+      sym_avmas_really.main = 0;
+      SET_TOCPTR_AVMA(sym_avmas_really, 0);
+      SET_LOCAL_EP_AVMA(sym_avmas_really, 0);
       if (get_elf_symbol_info(di, &sym, sym_name, escn_strtab, 
                               sym_svma, symtab_in_debug,
                               escn_opd, di->text_bias,
                               &sym_name_really, 
-                              &sym_avma_really,
+                              &sym_avmas_really,
                               &sym_size,
-                              &sym_tocptr,
-                              &from_opd, &is_text, &is_ifunc,
-                              &local_ep)) {
+                              &from_opd, &is_text, &is_ifunc)) {
 
          DiSym  disym;
          VG_(memset)(&disym, 0, sizeof(disym));
          HChar* cstr = ML_(img_strdup)(escn_strtab->img,
                                        "di.res__n.1", sym_name_really);
-         disym.addr      = sym_avma_really;
-         disym.tocptr    = sym_tocptr;
-         disym.local_ep  = local_ep;
+         disym.avmas  = sym_avmas_really;
          disym.pri_name  = ML_(addStr) ( di, cstr, -1 );
          disym.sec_names = NULL;
          disym.size      = sym_size;
@@ -801,7 +797,8 @@ void read_elf_symtab__normal(
          disym.isIFunc   = is_ifunc;
          if (cstr) { ML_(dinfo_free)(cstr); cstr = NULL; }
          vg_assert(disym.pri_name);
-         vg_assert(disym.tocptr == 0); /* has no role except on ppc64be-linux */
+         vg_assert(GET_TOCPTR_AVMA(disym.avmas) == 0);
+         /* has no role except on ppc64be-linux */
          ML_(addSym) ( di, &disym );
 
          if (TRACE_SYMTAB_ENABLED) {
@@ -809,13 +806,13 @@ void read_elf_symtab__normal(
                          "  val %#010lx, sz %4d  %s\n",
                          is_text ? 't' : 'd',
                          i,
-                         disym.addr,
+                         disym.avmas.main,
                          (Int)disym.size,
                          (HChar*)disym.pri_name
             );
-	    if (local_ep != 0) {
+	    if (GET_LOCAL_EP_AVMA(disym.avmas) != 0) {
                TRACE_SYMTAB("               local entry point %#010lx\n",
-                            local_ep)
+                            GET_LOCAL_EP_AVMA(disym.avmas));
 	    }
          }
 
@@ -909,26 +906,25 @@ void read_elf_symtab__ppc64be_linux(
          show_raw_elf_symbol(escn_strtab->img, i,
                              &sym, sym_name, sym_svma, True);
 
-      Addr   sym_avma_really = 0;
+      SymAVMAs sym_avmas_really;
       Int    sym_size = 0;
-      Addr   sym_tocptr = 0;
-      Addr   sym_local_ep = 0;
       Bool   from_opd = False, is_text = False, is_ifunc = False;
       DiOffT sym_name_really = DiOffT_INVALID;
       DiSym  disym;
       VG_(memset)(&disym, 0, sizeof(disym));
+      sym_avmas_really.main = 0;
+      SET_TOCPTR_AVMA(sym_avmas_really, 0);
+      SET_LOCAL_EP_AVMA(sym_avmas_really, 0);
       if (get_elf_symbol_info(di, &sym, sym_name, escn_strtab,
                               sym_svma, symtab_in_debug,
                               escn_opd, di->text_bias,
                               &sym_name_really, 
-                              &sym_avma_really,
+                              &sym_avmas_really,
                               &sym_size,
-                              &sym_tocptr,
-                              &from_opd, &is_text, &is_ifunc,
-                              &sym_local_ep)) {
+                              &from_opd, &is_text, &is_ifunc)) {
 
          /* Check if we've seen this (name,addr) key before. */
-         key.addr = sym_avma_really;
+         key.addr = sym_avmas_really.main;
          key.name = sym_name_really;
          key.img  = escn_strtab->img;
          prev = VG_(OSetGen_Lookup)( oset, &key );
@@ -959,7 +955,7 @@ void read_elf_symtab__ppc64be_linux(
                   shouldn't currently have an known TOC ptr. */
                vg_assert(prev->tocptr == 0);
                modify_tocptr = True;
-               prev->tocptr = sym_tocptr;
+               prev->tocptr = GET_TOCPTR_AVMA(sym_avmas_really);
             }
             else {
                /* ignore. can we do better here? */
@@ -994,7 +990,7 @@ void read_elf_symtab__ppc64be_linux(
             elem = VG_(OSetGen_AllocNode)(oset, sizeof(TempSym));
             vg_assert(elem);
             elem->key      = key;
-            elem->tocptr   = sym_tocptr;
+            elem->tocptr   = GET_TOCPTR_AVMA(sym_avmas_really);
             elem->size     = sym_size;
             elem->from_opd = from_opd;
             elem->is_text  = is_text;
@@ -1029,8 +1025,9 @@ void read_elf_symtab__ppc64be_linux(
       VG_(memset)(&disym, 0, sizeof(disym));
       HChar* cstr = ML_(img_strdup)(escn_strtab->img,
                                     "di.res__ppc64.1", elem->key.name);
-      disym.addr      = elem->key.addr;
-      disym.tocptr    = elem->tocptr;
+      disym.avmas.main = elem->key.addr;
+      SET_TOCPTR_AVMA(disym.avmas, elem->tocptr);
+      SET_LOCAL_EP_AVMA(disym.avmas, 0); // ppc64be does not use local_ep.
       disym.pri_name  = ML_(addStr) ( di, cstr, -1 );
       disym.sec_names = NULL;
       disym.size      = elem->size;
@@ -1045,8 +1042,8 @@ void read_elf_symtab__ppc64be_linux(
                      "   val %#010lx, toc %#010lx, sz %4d  %s\n",
                      disym.isText ? 't' : 'd',
                      i,
-                     disym.addr,
-                     disym.tocptr,
+                     disym.avmas.main,
+                     GET_TOCPTR_AVMA(disym.avmas),
                      (Int)   disym.size,
                      (HChar*)disym.pri_name
                );

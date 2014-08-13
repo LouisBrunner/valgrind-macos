@@ -102,8 +102,8 @@ void ML_(ppSym) ( Int idx, DiSym* sym )
                 idx,
                 sym->isText ? 'T' : '-',
                 sym->isIFunc ? 'I' : '-',
-                sym->addr, 
-                sym->addr + sym->size - 1, sym->size,
+                sym->avmas.main, 
+                sym->avmas.main + sym->size - 1, sym->size,
                 sym->pri_name, sec_names ? " " : "" );
    if (sec_names) {
       while (*sec_names) {
@@ -1388,8 +1388,8 @@ static Int compare_DiSym ( const void* va, const void* vb )
 {
    const DiSym* a = va;
    const DiSym* b = vb;
-   if (a->addr < b->addr) return -1;
-   if (a->addr > b->addr) return  1;
+   if (a->avmas.main < b->avmas.main) return -1;
+   if (a->avmas.main > b->avmas.main) return  1;
    return 0;
 }
 
@@ -1656,9 +1656,9 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
       /* A pass merging entries together */
       for (r = 1; r < di->symtab_used; r++) {
          vg_assert(w < r);
-         if (   di->symtab[w].addr      == di->symtab[r].addr
-             && di->symtab[w].size      == di->symtab[r].size
-             && !!di->symtab[w].isText  == !!di->symtab[r].isText) {
+         if (   di->symtab[w].avmas.main == di->symtab[r].avmas.main
+             && di->symtab[w].size       == di->symtab[r].size
+             && !!di->symtab[w].isText   == !!di->symtab[r].isText) {
             /* merge the two into one */
             n_merged++;
             /* Add r names to w if r has secondary names 
@@ -1707,11 +1707,11 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
 
    for (i = 0; i < ((Word)di->symtab_used) -1; i++) {
 
-      vg_assert(di->symtab[i].addr <= di->symtab[i+1].addr);
+      vg_assert(di->symtab[i].avmas.main <= di->symtab[i+1].avmas.main);
 
       /* Check for common (no overlap) case. */ 
-      if (di->symtab[i].addr + di->symtab[i].size 
-          <= di->symtab[i+1].addr)
+      if (di->symtab[i].avmas.main + di->symtab[i].size 
+          <= di->symtab[i+1].avmas.main)
          continue;
 
       /* There's an overlap.  Truncate one or the other. */
@@ -1724,17 +1724,19 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
       }
 
       /* Truncate one or the other. */
-      sta1 = di->symtab[i].addr;
+      sta1 = di->symtab[i].avmas.main;
       end1 = sta1 + di->symtab[i].size - 1;
-      toc1 = di->symtab[i].tocptr;
+      toc1 = GET_TOCPTR_AVMA(di->symtab[i].avmas);
+      // aren't we missing local_ep here ????
       pri1 = di->symtab[i].pri_name;
       sec1 = di->symtab[i].sec_names;
       ist1 = di->symtab[i].isText;
       isf1 = di->symtab[i].isIFunc;
 
-      sta2 = di->symtab[i+1].addr;
+      sta2 = di->symtab[i+1].avmas.main;
       end2 = sta2 + di->symtab[i+1].size - 1;
-      toc2 = di->symtab[i+1].tocptr;
+      toc2 = GET_TOCPTR_AVMA(di->symtab[i+1].avmas);
+      // aren't we missing local_ep here ????
       pri2 = di->symtab[i+1].pri_name;
       sec2 = di->symtab[i+1].sec_names;
       ist2 = di->symtab[i+1].isText;
@@ -1757,17 +1759,19 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
               up back at cleanup_more, which will take care of it. */
 	 }
       }
-      di->symtab[i].addr      = sta1;
-      di->symtab[i].size      = end1 - sta1 + 1;
-      di->symtab[i].tocptr    = toc1;
+      di->symtab[i].avmas.main = sta1;
+      di->symtab[i].size       = end1 - sta1 + 1;
+      SET_TOCPTR_AVMA(di->symtab[i].avmas, toc1);
+      // missing local_ep ???
       di->symtab[i].pri_name  = pri1;
       di->symtab[i].sec_names = sec1;
       di->symtab[i].isText    = ist1;
       di->symtab[i].isIFunc   = isf1;
 
-      di->symtab[i+1].addr      = sta2;
-      di->symtab[i+1].size      = end2 - sta2 + 1;
-      di->symtab[i+1].tocptr    = toc2;
+      di->symtab[i+1].avmas.main = sta2;
+      di->symtab[i+1].size       = end2 - sta2 + 1;
+      SET_TOCPTR_AVMA(di->symtab[i+1].avmas, toc2);
+      // missing local_ep ???
       di->symtab[i+1].pri_name  = pri2;
       di->symtab[i+1].sec_names = sec2;
       di->symtab[i+1].isText    = ist2;
@@ -1780,7 +1784,7 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
          along to maintain the address order requirement. */
       j = i+1;
       while (j < ((Word)di->symtab_used)-1 
-             && di->symtab[j].addr > di->symtab[j+1].addr) {
+             && di->symtab[j].avmas.main > di->symtab[j+1].avmas.main) {
          SWAP(DiSym,di->symtab[j],di->symtab[j+1]);
          j++;
       }
@@ -1794,10 +1798,10 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
       /* No zero-sized symbols. */
       vg_assert(di->symtab[i].size > 0);
       /* In order. */
-      vg_assert(di->symtab[i].addr < di->symtab[i+1].addr);
+      vg_assert(di->symtab[i].avmas.main < di->symtab[i+1].avmas.main);
       /* No overlaps. */
-      vg_assert(di->symtab[i].addr + di->symtab[i].size - 1
-                < di->symtab[i+1].addr);
+      vg_assert(di->symtab[i].avmas.main + di->symtab[i].size - 1
+                < di->symtab[i+1].avmas.main);
       /* Names are sane(ish) */
       vg_assert(di->symtab[i].pri_name);
       if (di->symtab[i].sec_names) {
@@ -1834,7 +1838,7 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
       /* Choose the most favoured. */
       Word best = 0;
       for (j = 1; j < n_tmp; j++) {
-         if (preferName(di, tmp[best], tmp[j], di->symtab[i].addr)) {
+         if (preferName(di, tmp[best], tmp[j], di->symtab[i].avmas.main)) {
             /* best is unchanged */
          } else {
             best = j;
@@ -2283,11 +2287,11 @@ Word ML_(search_one_symtab) ( struct _DebugInfo* di, Addr ptr,
       /* current unsearched space is from lo to hi, inclusive. */
       if (lo > hi) return -1; /* not found */
       mid      = (lo + hi) / 2;
-      a_mid_lo = di->symtab[mid].addr;
+      a_mid_lo = di->symtab[mid].avmas.main;
       size = ( match_anywhere_in_sym
              ? di->symtab[mid].size
              : 1);
-      a_mid_hi = ((Addr)di->symtab[mid].addr) + size - 1;
+      a_mid_hi = ((Addr)di->symtab[mid].avmas.main) + size - 1;
 
       if (ptr < a_mid_lo) { hi = mid-1; continue; } 
       if (ptr > a_mid_hi) { lo = mid+1; continue; }

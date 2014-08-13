@@ -356,8 +356,9 @@ void read_symtab( /*OUT*/XArray* /* DiSym */ syms,
          continue;
       }
 
-      disym.addr      = sym_addr;
-      disym.tocptr    = 0;
+      disym.main      = sym_addr;
+      SET_TOCPTR_AVMA(disym, 0);
+      SET_LOCAL_EP_AVMA(disym, 0);
       disym.pri_name  = ML_(addStr)(di, name, -1);
       disym.sec_names = NULL;
       disym.size      = // let canonicalize fix it

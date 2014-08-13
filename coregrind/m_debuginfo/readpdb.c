@@ -1264,9 +1264,9 @@ static ULong DEBUG_SnarfCodeView(
 
          if (0 /*VG_(needs).data_syms*/) {
             nmstr = ML_(addStr)(di, symname, sym->data_v1.p_name.namelen);
-            vsym.addr      = bias + sectp[sym->data_v1.segment-1].VirtualAddress
+            vsym.avmas.main = bias + sectp[sym->data_v1.segment-1].VirtualAddress
                                  + sym->data_v1.offset;
-            vsym.tocptr    = 0;
+            SET_TOCPTR_AVMA(vsym.avmas, 0);
             vsym.pri_name  = nmstr;
             vsym.sec_names = NULL;
             vsym.size      = sym->data_v1.p_name.namelen;
@@ -1290,9 +1290,9 @@ static ULong DEBUG_SnarfCodeView(
 
          if (sym->generic.id==S_PUB_V2 /*VG_(needs).data_syms*/) {
             nmstr = ML_(addStr)(di, symname, k);
-            vsym.addr      = bias + sectp[sym->data_v2.segment-1].VirtualAddress
+            vsym.avmas.main = bias + sectp[sym->data_v2.segment-1].VirtualAddress
                                   + sym->data_v2.offset;
-            vsym.tocptr    = 0;
+            SET_TOCPTR_AVMA(vsym.avmas, 0);
             vsym.pri_name  = nmstr;
             vsym.sec_names = NULL;
             vsym.size      = 4000;
@@ -1324,9 +1324,9 @@ static ULong DEBUG_SnarfCodeView(
          if (1  /*sym->generic.id==S_PUB_FUNC1_V3 
                   || sym->generic.id==S_PUB_FUNC2_V3*/) {
             nmstr = ML_(addStr)(di, symname, k);
-            vsym.addr      = bias + sectp[sym->public_v3.segment-1].VirtualAddress
+            vsym.avmas.main = bias + sectp[sym->public_v3.segment-1].VirtualAddress
                                   + sym->public_v3.offset;
-            vsym.tocptr    = 0;
+            SET_TOCPTR_AVMA(vsym.avmas, 0);
             vsym.pri_name  = nmstr;
             vsym.sec_names = NULL;
             vsym.size      = 4000;
@@ -1360,9 +1360,9 @@ static ULong DEBUG_SnarfCodeView(
                               sym->proc_v1.p_name.namelen);
          symname[sym->proc_v1.p_name.namelen] = '\0';
          nmstr = ML_(addStr)(di, symname, sym->proc_v1.p_name.namelen);
-         vsym.addr      = bias + sectp[sym->proc_v1.segment-1].VirtualAddress
+         vsym.avmas.main = bias + sectp[sym->proc_v1.segment-1].VirtualAddress
                                + sym->proc_v1.offset;
-         vsym.tocptr    = 0;
+         SET_TOCPTR_AVMA(vsym.avmas, 0);
          vsym.pri_name  = nmstr;
          vsym.sec_names = NULL;
          vsym.size      = sym->proc_v1.proc_len;
@@ -1371,7 +1371,7 @@ static ULong DEBUG_SnarfCodeView(
          if (debug)
              VG_(message)(Vg_UserMsg,
                          "  Adding function %s addr=%#lx length=%d\n",
-                         symname, vsym.addr, vsym.size );
+                         symname, vsym.avmas.main, vsym.size );
          ML_(addSym)( di, &vsym );
          n_syms_read++;
          break;
@@ -1382,9 +1382,9 @@ static ULong DEBUG_SnarfCodeView(
                               sym->proc_v2.p_name.namelen);
          symname[sym->proc_v2.p_name.namelen] = '\0';
          nmstr = ML_(addStr)(di, symname, sym->proc_v2.p_name.namelen);
-         vsym.addr      = bias + sectp[sym->proc_v2.segment-1].VirtualAddress
+         vsym.avmas.main = bias + sectp[sym->proc_v2.segment-1].VirtualAddress
                                + sym->proc_v2.offset;
-         vsym.tocptr    = 0;
+         SET_TOCPTR_AVMA(vsym.avmas, 0);
          vsym.pri_name  = nmstr;
          vsym.sec_names = NULL;
          vsym.size      = sym->proc_v2.proc_len;
@@ -1393,7 +1393,7 @@ static ULong DEBUG_SnarfCodeView(
          if (debug)
             VG_(message)(Vg_UserMsg,
                          "  Adding function %s addr=%#lx length=%d\n",
-                         symname, vsym.addr, vsym.size );
+                         symname, vsym.avmas.main, vsym.size );
          ML_(addSym)( di, &vsym );
          n_syms_read++;
          break;
@@ -1406,9 +1406,9 @@ static ULong DEBUG_SnarfCodeView(
          if (1) {
             nmstr = ML_(addStr)(di, sym->proc_v3.name,
                                     VG_(strlen)(sym->proc_v3.name));
-            vsym.addr      = bias + sectp[sym->proc_v3.segment-1].VirtualAddress
+            vsym.avmas.main = bias + sectp[sym->proc_v3.segment-1].VirtualAddress
                                   + sym->proc_v3.offset;
-            vsym.tocptr    = 0;
+            SET_TOCPTR_AVMA(vsym.avmas, 0);
             vsym.pri_name  = nmstr;
             vsym.sec_names = NULL;
             vsym.size      = sym->proc_v3.proc_len;

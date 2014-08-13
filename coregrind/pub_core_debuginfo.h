@@ -153,12 +153,60 @@ extern Bool VG_(use_FPO_info) ( /*MOD*/Addr* ipP,
                                 Addr min_accessible,
                                 Addr max_accessible );
 
+/* AVMAs for a symbol. Usually only the lowest address of the entity.
+   On ppc64 platforms, also contains tocptr and local_ep.
+   These fields should only be accessed using the macros
+   GET_TOCPTR_AVMA/SET_TOCPTR_AVMA/GET_LOCAL_EP_AVMA/SET_LOCAL_EP_AVMA. */
+typedef
+   struct {
+      Addr main;      /* lowest address of entity */
+#     if defined(VGA_ppc64be) || defined(VGA_ppc64le)
+      Addr tocptr;    /* ppc64be/le-linux only: value that R2 should have */
+#     endif
+#     if defined(VGA_ppc64le)
+      Addr local_ep;  /* address for local entry point, ppc64le only */
+#     endif
+   }
+   SymAVMAs;
+
+#if defined(VGA_ppc64be) || defined(VGA_ppc64le)
+# define GET_TOCPTR_AVMA(_sym_avmas)          (_sym_avmas).tocptr
+# define SET_TOCPTR_AVMA(_sym_avmas, _val)    (_sym_avmas).tocptr = (_val)
+#else
+# define GET_TOCPTR_AVMA(_sym_avmas)          ((Addr)0)
+# define SET_TOCPTR_AVMA(_sym_avmas, _val)    /* */
+#endif
+
+#if defined(VGA_ppc64le)
+# define GET_LOCAL_EP_AVMA(_sym_avmas)        (_sym_avmas).local_ep
+# define SET_LOCAL_EP_AVMA(_sym_avmas, _val)  (_sym_avmas).local_ep = (_val)
+#else
+# define GET_LOCAL_EP_AVMA(_sym_avmas)        ((Addr)0)
+# define SET_LOCAL_EP_AVMA(_sym_avmas, _val)  /* */
+#endif
+
+/* Functions for traversing all the symbols in a DebugInfo.  _howmany
+   tells how many symbol table entries there are.  _getidx retrieves
+   the n'th entry, for n in 0 .. _howmany-1.  You may not modify the
+   function names thereby acquired; if you want to do so, first strdup
+   them.  The primary name is returned in *pri_name, and *sec_names is
+   set either to NULL or to a NULL terminated vector containing
+   pointers to the secondary names. */
+Int  VG_(DebugInfo_syms_howmany) ( const DebugInfo *di );
+void VG_(DebugInfo_syms_getidx)  ( const DebugInfo *di, 
+                                   Int idx,
+                                   /*OUT*/SymAVMAs* ad,
+                                   /*OUT*/UInt*     size,
+                                   /*OUT*/HChar**   pri_name,
+                                   /*OUT*/HChar***  sec_names,
+                                   /*OUT*/Bool*     isText,
+                                   /*OUT*/Bool*     isIFunc );
 /* ppc64-linux only: find the TOC pointer (R2 value) that should be in
    force at the entry point address of the function containing
    guest_code_addr.  Returns 0 if not known. */
 extern Addr VG_(get_tocptr) ( Addr guest_code_addr );
 
-/* Map a function name to its entry point and toc pointer.  Is done by
+/* Map a function name to its SymAVMAs.  Is done by
    sequential search of all symbol tables, so is very slow.  To
    mitigate the worst performance effects, you may specify a soname
    pattern, and only objects matching that pattern are searched.
@@ -166,8 +214,7 @@ extern Addr VG_(get_tocptr) ( Addr guest_code_addr );
    platforms, a symbol is deemed to be found only if it has a nonzero
    TOC pointer.  */
 extern
-Bool VG_(lookup_symbol_SLOW)(const HChar* sopatt, HChar* name, Addr* pEnt,
-                             Addr* pToc);
+Bool VG_(lookup_symbol_SLOW)(const HChar* sopatt, HChar* name, SymAVMAs* avmas);
 
 #endif   // __PUB_CORE_DEBUGINFO_H
 

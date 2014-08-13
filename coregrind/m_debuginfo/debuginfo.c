@@ -1654,7 +1654,7 @@ Bool get_sym_name ( Bool do_cxx_demangling, Bool do_z_demangling,
    {
       VG_(strncpy_safely)(buf, "(below main)", nbuf);
    }
-   offset = a - di->symtab[sno].addr;
+   offset = a - di->symtab[sno].avmas.main;
    if (offsetP) *offsetP = offset;
 
    if (show_offset && offset != 0) {
@@ -1684,6 +1684,7 @@ Bool get_sym_name ( Bool do_cxx_demangling, Bool do_z_demangling,
    guest_code_addr.  Returns 0 if not known. */
 Addr VG_(get_tocptr) ( Addr guest_code_addr )
 {
+#if defined(VGA_ppc64be) || defined(VGA_ppc64le)
    DebugInfo* si;
    Word       sno;
    search_all_symtabs ( guest_code_addr, 
@@ -1693,7 +1694,10 @@ Addr VG_(get_tocptr) ( Addr guest_code_addr )
    if (si == NULL) 
       return 0;
    else
-      return si->symtab[sno].tocptr;
+      return GET_TOCPTR_AVMA(si->symtab[sno].avmas);
+#else
+   return 0;
+#endif
 }
 
 /* This is available to tools... always demangle C++ names,
@@ -1990,8 +1994,7 @@ Bool VG_(get_filename_linenum) ( Addr a,
    Therefore specify "*" to search all the objects.  On TOC-afflicted
    platforms, a symbol is deemed to be found only if it has a nonzero
    TOC pointer.  */
-Bool VG_(lookup_symbol_SLOW)(const HChar* sopatt, HChar* name, 
-                             Addr* pEnt, Addr* pToc)
+Bool VG_(lookup_symbol_SLOW)(const HChar* sopatt, HChar* name, SymAVMAs* avmas)
 {
    Bool     require_pToc = False;
    Int      i;
@@ -2012,9 +2015,8 @@ Bool VG_(lookup_symbol_SLOW)(const HChar* sopatt, HChar* name,
          HChar* pri_name = si->symtab[i].pri_name;
          tl_assert(pri_name);
          if (0==VG_(strcmp)(name, pri_name)
-             && (require_pToc ? si->symtab[i].tocptr : True)) {
-            *pEnt = si->symtab[i].addr;
-            *pToc = si->symtab[i].tocptr;
+             && (require_pToc ? GET_TOCPTR_AVMA(si->symtab[i].avmas) : True)) {
+            *avmas = si->symtab[i].avmas;
             return True;
          }
          HChar** sec_names = si->symtab[i].sec_names;
@@ -2022,9 +2024,9 @@ Bool VG_(lookup_symbol_SLOW)(const HChar* sopatt, HChar* name,
             tl_assert(sec_names[0]);
             while (*sec_names) {
                if (0==VG_(strcmp)(name, *sec_names)
-                   && (require_pToc ? si->symtab[i].tocptr : True)) {
-                  *pEnt = si->symtab[i].addr;
-                  *pToc = si->symtab[i].tocptr;
+                   && (require_pToc 
+                       ? GET_TOCPTR_AVMA(si->symtab[i].avmas) : True)) {
+                  *avmas = si->symtab[i].avmas;
                   return True;
                }
                sec_names++;
@@ -4138,19 +4140,15 @@ Int VG_(DebugInfo_syms_howmany) ( const DebugInfo *si )
 
 void VG_(DebugInfo_syms_getidx) ( const DebugInfo *si, 
                                         Int idx,
-                                  /*OUT*/Addr*    avma,
-                                  /*OUT*/Addr*    tocptr,
-                                  /*OUT*/Addr*    local_ep,
-                                  /*OUT*/UInt*    size,
-                                  /*OUT*/HChar**  pri_name,
-                                  /*OUT*/HChar*** sec_names,
-                                  /*OUT*/Bool*    isText,
-                                  /*OUT*/Bool*    isIFunc )
+                                  /*OUT*/SymAVMAs* avmas,
+                                  /*OUT*/UInt*     size,
+                                  /*OUT*/HChar**   pri_name,
+                                  /*OUT*/HChar***  sec_names,
+                                  /*OUT*/Bool*     isText,
+                                  /*OUT*/Bool*     isIFunc )
 {
    vg_assert(idx >= 0 && idx < si->symtab_used);
-   if (avma)      *avma      = si->symtab[idx].addr;
-   if (tocptr)    *tocptr    = si->symtab[idx].tocptr;
-   if (local_ep)  *local_ep  = si->symtab[idx].local_ep;
+   if (avmas)     *avmas     = si->symtab[idx].avmas;
    if (size)      *size      = si->symtab[idx].size;
    if (pri_name)  *pri_name  = si->symtab[idx].pri_name;
    if (sec_names) *sec_names = (HChar **)si->symtab[idx].sec_names; // FIXME

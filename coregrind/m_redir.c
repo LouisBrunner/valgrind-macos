@@ -397,7 +397,7 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
    TopSpec*     newts;
    HChar*       sym_name_pri;
    HChar**      sym_names_sec;
-   Addr         sym_addr, sym_toc, local_ep;
+   SymAVMAs     sym_avmas;
    HChar        demangled_sopatt[N_DEMANGLED];
    HChar        demangled_fnpatt[N_DEMANGLED];
    Bool         check_ppcTOCs = False;
@@ -499,7 +499,7 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
 
    nsyms = VG_(DebugInfo_syms_howmany)( newdi );
    for (i = 0; i < nsyms; i++) {
-      VG_(DebugInfo_syms_getidx)( newdi, i, &sym_addr, &sym_toc, &local_ep,
+      VG_(DebugInfo_syms_getidx)( newdi, i, &sym_avmas,
                                   NULL, &sym_name_pri, &sym_names_sec,
                                   &isText, NULL );
       /* Set up to conveniently iterate over all names for this symbol. */
@@ -518,10 +518,10 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
          if (!ok) {
             /* It's not a full-scale redirect, but perhaps it is a load-notify
                fn?  Let the load-notify department see it. */
-            handle_maybe_load_notifier( newdi_soname, *names, sym_addr );
+            handle_maybe_load_notifier( newdi_soname, *names, sym_avmas.main );
             continue; 
          }
-         if (check_ppcTOCs && sym_toc == 0) {
+         if (check_ppcTOCs && GET_TOCPTR_AVMA(sym_avmas) == 0) {
             /* This platform uses toc pointers, but none could be found
                for this symbol, so we can't safely redirect/wrap to it.
                Just skip it; we'll make a second pass over the symbols in
@@ -576,12 +576,12 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
          spec->from_fnpatt = dinfo_strdup("redir.rnnD.3", demangled_fnpatt);
          vg_assert(spec->from_sopatt);
          vg_assert(spec->from_fnpatt);
-         spec->to_addr = sym_addr;
+         spec->to_addr = sym_avmas.main;
          spec->isWrap = isWrap;
          spec->becTag = becTag;
          spec->becPrio = becPrio;
          /* check we're not adding manifestly stupid destinations */
-         vg_assert(is_plausible_guest_addr(sym_addr));
+         vg_assert(is_plausible_guest_addr(sym_avmas.main));
          spec->next = specList;
          spec->mark = False; /* not significant */
          spec->done = False; /* not significant */
@@ -592,7 +592,7 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
 
    if (check_ppcTOCs) {
       for (i = 0; i < nsyms; i++) {
-         VG_(DebugInfo_syms_getidx)( newdi, i, &sym_addr, &sym_toc, &local_ep,
+         VG_(DebugInfo_syms_getidx)( newdi, i, &sym_avmas,
                                      NULL, &sym_name_pri, &sym_names_sec,
                                      &isText, NULL );
          HChar*  twoslots[2];
@@ -607,7 +607,7 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
             if (!ok)
                /* not a redirect.  Ignore. */
                continue;
-            if (sym_toc != 0)
+            if (GET_TOCPTR_AVMA(sym_avmas) != 0)
                /* has a valid toc pointer.  Ignore. */
                continue;
 
@@ -732,7 +732,7 @@ void generate_and_add_actives (
    Bool    anyMark, isText, isIFunc;
    Active  act;
    Int     nsyms, i;
-   Addr    sym_addr;
+   SymAVMAs  sym_avmas;
    HChar*  sym_name_pri;
    HChar** sym_names_sec;
 
@@ -755,9 +755,7 @@ void generate_and_add_actives (
       of trashing the caches less. */
    nsyms = VG_(DebugInfo_syms_howmany)( di );
    for (i = 0; i < nsyms; i++) {
-      Addr local_ep = 0;
-
-      VG_(DebugInfo_syms_getidx)( di, i, &sym_addr, NULL, &local_ep,
+      VG_(DebugInfo_syms_getidx)( di, i, &sym_avmas,
                                   NULL, &sym_name_pri, &sym_names_sec,
                                   &isText, &isIFunc );
       HChar*  twoslots[2];
@@ -775,7 +773,7 @@ void generate_and_add_actives (
                continue; /* soname doesn't match */
             if (VG_(string_match)( sp->from_fnpatt, *names )) {
                /* got a new binding.  Add to collection. */
-               act.from_addr   = sym_addr;
+               act.from_addr   = sym_avmas.main;
                act.to_addr     = sp->to_addr;
                act.parent_spec = parent_spec;
                act.parent_sym  = parent_sym;
@@ -790,10 +788,10 @@ void generate_and_add_actives (
                 * redirect it to the global entry point.  The redirection
                 * must save and setup r2 then setup r12 for the new function.
                 * On return, r2 must be restored.  Local entry points used
-                * used in PPC64 Little Endian.
+                * in PPC64 Little Endian.
                 */
-               if (local_ep != 0) {
-                  act.from_addr = local_ep;
+               if (GET_LOCAL_EP_AVMA(sym_avmas) != 0) {
+                  act.from_addr = GET_LOCAL_EP_AVMA(sym_avmas);
                   maybe_add_active( act );
                }
 
@@ -1604,7 +1602,7 @@ static void handle_require_text_symbols ( DebugInfo* di )
          Bool    isText        = False;
          HChar*  sym_name_pri  = NULL;
          HChar** sym_names_sec = NULL;
-         VG_(DebugInfo_syms_getidx)( di, j, NULL, NULL, NULL,
+         VG_(DebugInfo_syms_getidx)( di, j, NULL,
                                      NULL, &sym_name_pri, &sym_names_sec,
                                      &isText, NULL );
          HChar*  twoslots[2];

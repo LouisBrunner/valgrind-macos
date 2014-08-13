@@ -59,11 +59,15 @@ static struct {
    const char *apple_name;     // e.g. x86_64
    const char *valgrind_name;  // e.g. amd64
 } valid_archs[] = {
-   { CPU_TYPE_X86,         "i386",    "x86" },
-   { CPU_TYPE_X86_64,      "x86_64",  "amd64" },
-   { CPU_TYPE_ARM,         "arm",     "arm" },
-   { CPU_TYPE_POWERPC,     "ppc",     "ppc32" },
-   { CPU_TYPE_POWERPC64BE, "ppc64be", "ppc64be" },
+   { CPU_TYPE_X86,       "i386",   "x86" },
+   { CPU_TYPE_X86_64,    "x86_64", "amd64" },
+   { CPU_TYPE_ARM,       "arm",    "arm" },
+   /* Not that it's actually relevant, since we don't support PPC on
+      MacOS X, but .. the Apple PPC descriptors refer to the BE
+      variant, since the LE variant is something that appeared long
+      after Apple dropped PPC. */
+   { CPU_TYPE_POWERPC,   "ppc",    "ppc32" }, 
+   { CPU_TYPE_POWERPC64, "ppc64",  "ppc64be" }
 };
 static int valid_archs_count = sizeof(valid_archs)/sizeof(valid_archs[0]);
 

@@ -7489,6 +7489,64 @@ Bool dis_AdvSIMD_scalar_shift_by_imm(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
+   if (opcode == BITS5(1,0,0,1,0) || opcode == BITS5(1,0,0,1,1)
+       || (bitU == 1
+           && (opcode == BITS5(1,0,0,0,0) || opcode == BITS5(1,0,0,0,1)))) {
+      /* -------- 0,10010   SQSHRN #imm -------- */
+      /* -------- 1,10010   UQSHRN #imm -------- */
+      /* -------- 0,10011  SQRSHRN #imm -------- */
+      /* -------- 1,10011  UQRSHRN #imm -------- */
+      /* -------- 1,10000  SQSHRUN #imm -------- */
+      /* -------- 1,10001 SQRSHRUN #imm -------- */
+      UInt size  = 0;
+      UInt shift = 0;
+      Bool ok    = getLaneInfo_IMMH_IMMB(&shift, &size, immh, immb);
+      if (!ok || size == X11) return False;
+      vassert(size >= X00 && size <= X10);
+      vassert(shift >= 1 && shift <= (8 << size));
+      const HChar* nm = "??";
+      IROp op = Iop_INVALID;
+      /* Decide on the name and the operation. */
+      /**/ if (bitU == 0 && opcode == BITS5(1,0,0,1,0)) {
+         nm = "sqshrn"; op = mkVecQANDqsarNNARROWSS(size);
+      }
+      else if (bitU == 1 && opcode == BITS5(1,0,0,1,0)) {
+         nm = "uqshrn"; op = mkVecQANDqshrNNARROWUU(size);
+      }
+      else if (bitU == 0 && opcode == BITS5(1,0,0,1,1)) {
+         nm = "sqrshrn"; op = mkVecQANDqrsarNNARROWSS(size);
+      }
+      else if (bitU == 1 && opcode == BITS5(1,0,0,1,1)) {
+         nm = "uqrshrn"; op = mkVecQANDqrshrNNARROWUU(size);
+      }
+      else if (bitU == 1 && opcode == BITS5(1,0,0,0,0)) {
+         nm = "sqshrun"; op = mkVecQANDqsarNNARROWSU(size);
+      }
+      else if (bitU == 1 && opcode == BITS5(1,0,0,0,1)) {
+         nm = "sqrshrun"; op = mkVecQANDqrsarNNARROWSU(size);
+      }
+      else vassert(0);
+      /* Compute the result (Q, shifted value) pair. */
+      IRTemp src128 = math_ZERO_ALL_EXCEPT_LOWEST_LANE(size+1, getQReg128(nn));
+      IRTemp pair   = newTempV128();
+      assign(pair, binop(op, mkexpr(src128), mkU8(shift)));
+      /* Update the result reg */
+      IRTemp res64in128 = newTempV128();
+      assign(res64in128, unop(Iop_ZeroHI64ofV128, mkexpr(pair)));
+      putQReg128(dd, mkexpr(res64in128));
+      /* Update the Q flag. */
+      IRTemp q64q64 = newTempV128();
+      assign(q64q64, binop(Iop_InterleaveHI64x2, mkexpr(pair), mkexpr(pair)));
+      IRTemp z128 = newTempV128();
+      assign(z128, mkV128(0x0000));
+      updateQCFLAGwithDifference(q64q64, z128);
+      /* */
+      const HChar arrNarrow = "bhsd"[size];
+      const HChar arrWide   = "bhsd"[size+1];
+      DIP("%s %c%u, %c%u, #%u\n", nm, arrNarrow, dd, arrWide, nn, shift);
+      return True;
+   }
+
 #  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
    return False;
 #  undef INSN

@@ -34,7 +34,7 @@ void
 load_rounded(void)
 {
    f = d;
-   printf("load rounded  d = %22.20g    f = %22.20g\n", d, f);
+   printf("load rounded  d = %10.3f     f = %10.3f\n", d, f);
 }
 
 void
@@ -47,7 +47,37 @@ load_lengthened(void)
 /* Tests for load rounded and load lengthened */
 int main()
 {
-   d = 12345678.98765432E21;
+   d = 12345678.25;
+   set_rounding_mode(0);
+   load_rounded();
+   set_rounding_mode(1);
+   load_rounded();
+   set_rounding_mode(2);
+   load_rounded();
+   set_rounding_mode(3);
+   load_rounded();
+   printf("======================================\n");
+   d = 12345678.75;
+   set_rounding_mode(0);
+   load_rounded();
+   set_rounding_mode(1);
+   load_rounded();
+   set_rounding_mode(2);
+   load_rounded();
+   set_rounding_mode(3);
+   load_rounded();
+   printf("======================================\n");
+   d = -12345678.25;
+   set_rounding_mode(0);
+   load_rounded();
+   set_rounding_mode(1);
+   load_rounded();
+   set_rounding_mode(2);
+   load_rounded();
+   set_rounding_mode(3);
+   load_rounded();
+   printf("======================================\n");
+   d = -12345678.75;
    set_rounding_mode(0);
    load_rounded();
    set_rounding_mode(1);
@@ -58,17 +88,7 @@ int main()
    load_rounded();
    printf("\n");
 
-   d = -12345678.98765432E21;
-   set_rounding_mode(0);
-   load_rounded();
-   set_rounding_mode(1);
-   load_rounded();
-   set_rounding_mode(2);
-   load_rounded();
-   set_rounding_mode(3);
-   load_rounded();
-   printf("\n");
-
+   f = 1234.5678f;
    load_lengthened();
 
    return 0;

@@ -71,10 +71,10 @@ int main(void)
    int i, j;
    static const unsigned rmodes[] = { 0, 1, 2, 3 };
    static const float fval[] = {
-      1.4f, 1.5f, 2.5f, 1.6f, -1.4f, -1.5f, -2.5f, -1.6f, 0.0f,
+      1.25f, 1.5f, 2.5f, 1.75f, -1.25f, -1.5f, -2.5f, -1.75f, 0.0f,
    };
    static const double dval[] = {
-      1.4, 1.5, 2.5, 1.6, -1.4, -1.5, -2.5, -1.6, 0.0,
+      1.25, 1.5, 2.5, 1.75, -1.25, -1.5, -2.5, -1.75, 0.0,
    };
 
 

@@ -49,19 +49,32 @@ typedef unsigned int fpscr_t;
 typedef union {
 	float flt;
 	struct {
+#if defined(VGP_ppc64le_linux)
+      unsigned int frac:23;
+      unsigned int exp:8;
+      unsigned int sign:1;
+#else
 		unsigned int sign:1;
 		unsigned int exp:8;
 		unsigned int frac:23;
+#endif
 	} layout;
 } flt_overlay;
 
 typedef union {
 	double dbl;
 	struct {
+#if defined(VGP_ppc64le_linux)
+      unsigned int frac_lo:32;
+      unsigned int frac_hi:20;
+      unsigned int exp:11;
+      unsigned int sign:1;
+#else
 		unsigned int sign:1;
 		unsigned int exp:11;
 		unsigned int frac_hi:20;
 		unsigned int frac_lo:32;
+#endif
 	} layout;
 	struct {
 		unsigned int hi;
@@ -227,7 +240,7 @@ init()
 	F.layout.frac = 1;
 	denorm_small = F.flt;	/* == 2^(-149) */
 	if (debug) {
-		print_double("float small", F.flt);
+		print_single("float small", &F.flt);
 	}
 
 	D.layout.sign = 0;
@@ -794,7 +807,21 @@ int check_single_guarded_arithmetic_op(flt_op_t op)
 			status = 0;
 		}
 
-		printf("%s:%s:%s(%-13f",
+		/* There seems to be some noise in the lower bits. The value
+		* on the least significant digit seems to vary when printing
+		* based on the rounding mode of the compiler.  Just trying
+		* to get rid of the noise in the least significant bits when
+		* printing the operand.
+		*/
+
+		fA = ((long int)(fA*10000))/10000.0;
+		/* Change -0.0 to a positive 0.0.  Some compilers print -0.0
+		 * others do not.  Make it consistent.
+		 */
+		if (fA == -0.0)
+		  fA = 0.0;
+
+		printf("%s:%s:%s(%-13.6f",
 			round_mode_name[mode], result, flt_op_names[op], fA);
 		if (arg_count > 1) printf(", %-13a", fB);
 		if (arg_count > 2) printf(", %-13a", fC);

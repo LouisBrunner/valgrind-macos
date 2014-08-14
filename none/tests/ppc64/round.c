@@ -807,7 +807,21 @@ int check_single_guarded_arithmetic_op(flt_op_t op)
 			status = 0;
 		}
 
-		printf("%s:%s:%s(%-13f",
+		/* There seems to be some noise in the lower bits. The value
+		* on the least significant digit seems to vary when printing
+		* based on the rounding mode of the compiler.  Just trying
+		* to get rid of the noise in the least significant bits when
+		* printing the operand.
+		*/
+
+		fA = ((long int)(fA*10000))/10000.0;
+		/* Change -0.0 to a positive 0.0.  Some compilers print -0.0
+		 * others do not.  Make it consistent.
+		 */
+		if (fA == -0.0)
+		  fA = 0.0;
+
+		printf("%s:%s:%s(%-13.6f",
 			round_mode_name[mode], result, flt_op_names[op], fA);
 		if (arg_count > 1) printf(", %-13a", fB);
 		if (arg_count > 2) printf(", %-13a", fC);

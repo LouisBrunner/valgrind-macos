@@ -17,7 +17,7 @@ EXTRA_DIST = \
 	jm-misc.stderr.exp jm-misc.stdout.exp jm-misc.vgtest \
 	mftocrf.stderr.exp mftocrf.stdout.exp mftocrf.vgtest \
 	mcrfs.stderr.exp mcrfs.stdout.exp mcrfs.vgtest \
-	round.stderr.exp round.stdout.exp round.vgtest round.stdout.exp-RM-fix\
+	round.stderr.exp round.stdout.exp round.vgtest \
 	test_fx.stderr.exp test_fx.stdout.exp test_fx.stdout.exp_Minus_nan \
 	test_fx.vgtest \
 	test_gx.stderr.exp test_gx.stdout.exp test_gx.stdout.exp_Minus_nan \

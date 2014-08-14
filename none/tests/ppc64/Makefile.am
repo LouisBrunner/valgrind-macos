@@ -11,7 +11,7 @@ EXTRA_DIST = \
 	jm-misc.stderr.exp jm-misc.stdout.exp jm-misc.vgtest \
 	lsw.stderr.exp lsw.stdout.exp lsw.vgtest \
 	std_reg_imm.vgtest std_reg_imm.stderr.exp std_reg_imm.stdout.exp std_reg_imm.stdout.exp-LE \
-	round.stderr.exp round.stdout.exp round.vgtest round.stdout.exp-RM-fix \
+	round.stderr.exp round.stdout.exp round.vgtest \
 	twi_tdi.stderr.exp twi_tdi.stdout.exp twi_tdi.vgtest \
 	tw_td.stderr.exp tw_td.stdout.exp tw_td.vgtest \
 	opcodes.h \

@@ -1657,6 +1657,18 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
             break;
          }
 
+         case Iop_ZeroHI64ofV128: {
+            /* Could do better here -- only need to look at the bottom 64 bits
+               of the argument, really. */
+            UShort v128 = e->Iex.Unop.arg->Iex.Const.con->Ico.V128;
+            if (v128 == 0x0000) {
+               e2 = IRExpr_Const(IRConst_V128(0x0000));
+            } else {
+               goto unhandled;
+            }
+            break;
+         }
+
          default: 
             goto unhandled;
       }

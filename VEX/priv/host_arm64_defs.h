@@ -410,6 +410,13 @@ typedef
       ARM64vecsh_SQRSHRN2SD,   ARM64vecsh_SQRSHRN4HS,  ARM64vecsh_SQRSHRN8BH,
       ARM64vecsh_UQRSHRN2SD,   ARM64vecsh_UQRSHRN4HS,  ARM64vecsh_UQRSHRN8BH,
       ARM64vecsh_SQRSHRUN2SD,  ARM64vecsh_SQRSHRUN4HS, ARM64vecsh_SQRSHRUN8BH,
+      /* Saturating left shifts, of various flavours. */
+      ARM64vecsh_UQSHL64x2,    ARM64vecsh_UQSHL32x4,
+      ARM64vecsh_UQSHL16x8,    ARM64vecsh_UQSHL8x16, 
+      ARM64vecsh_SQSHL64x2,    ARM64vecsh_SQSHL32x4,
+      ARM64vecsh_SQSHL16x8,    ARM64vecsh_SQSHL8x16, 
+      ARM64vecsh_SQSHLU64x2,   ARM64vecsh_SQSHLU32x4,
+      ARM64vecsh_SQSHLU16x8,   ARM64vecsh_SQSHLU8x16, 
       ARM64vecsh_INVALID
    }
    ARM64VecShiftOp;
@@ -746,9 +753,10 @@ typedef
            HReg             dst;     // Q reg
            HReg             src;     // Q reg
         } VNarrowV;
-        /* Vector shift by immediate.  |amt| needs to be > 0 and <
-           implied lane size of |op|.  Zero shifts and out of range
-           shifts are not allowed. */
+        /* Vector shift by immediate.  For left shifts, |amt| must be
+           >= 0 and < implied lane size of |op|.  For right shifts,
+           |amt| must be > 0 and <= implied lane size of |op|.  Shifts
+           beyond these ranges are not allowed. */
         struct {
            ARM64VecShiftOp op;
            HReg            dst;

@@ -921,6 +921,28 @@ static IROp mkVecQANDqrsarNNARROWSU ( UInt sizeNarrow ) {
    return ops[sizeNarrow];
 }
 
+static IROp mkVecQSHLNSATU2U ( UInt size ) {
+   const IROp ops[4]
+      = { Iop_QShlN8x16, Iop_QShlN16x8, Iop_QShlN32x4, Iop_QShlN64x2 };
+   vassert(size < 4);
+   return ops[size];
+}
+
+static IROp mkVecQSHLNSATS2S ( UInt size ) {
+   const IROp ops[4]
+      = { Iop_QSalN8x16, Iop_QSalN16x8, Iop_QSalN32x4, Iop_QSalN64x2 };
+   vassert(size < 4);
+   return ops[size];
+}
+
+static IROp mkVecQSHLNSATS2U ( UInt size ) {
+   const IROp ops[4]
+      = { Iop_QShlN8Sx16, Iop_QShlN16Sx8, Iop_QShlN32Sx4, Iop_QShlN64Sx2 };
+   vassert(size < 4);
+   return ops[size];
+}
+
+
 /* Generate IR to create 'arg rotated right by imm', for sane values
    of 'ty' and 'imm'. */
 static IRTemp mathROR ( IRType ty, IRTemp arg, UInt imm )
@@ -6569,6 +6591,91 @@ void math_SQDMULH ( /*OUT*/IRTemp* res,
 }
 
 
+/* Generate IR for SQSHL, UQSHL, SQSHLU by imm.  Put the result in
+   a new temp in *res, and the Q difference pair in new temps in
+   *qDiff1 and *qDiff2 respectively.  |nm| denotes which of the
+   three operations it is. */
+static
+void math_QSHL_IMM ( /*OUT*/IRTemp* res,
+                     /*OUT*/IRTemp* qDiff1, /*OUT*/IRTemp* qDiff2, 
+                     IRTemp src, UInt size, UInt shift, const HChar* nm )
+{
+   vassert(size <= 3);
+   UInt laneBits = 8 << size;
+   vassert(shift < laneBits);
+   newTempsV128_3(res, qDiff1, qDiff2);
+   IRTemp z128 = newTempV128();
+   assign(z128, mkV128(0x0000));
+
+   /* UQSHL */
+   if (vex_streq(nm, "uqshl")) {
+      IROp qop = mkVecQSHLNSATU2U(size);
+      assign(*res, binop(qop, mkexpr(src), mkU8(shift)));
+      if (shift == 0) {
+         /* No shift means no saturation. */
+         assign(*qDiff1, mkexpr(z128));
+         assign(*qDiff2, mkexpr(z128));
+      } else {
+         /* Saturation has occurred if any of the shifted-out bits are
+            nonzero.  We get the shifted-out bits by right-shifting the
+            original value. */
+         UInt rshift = laneBits - shift;
+         vassert(rshift >= 1 && rshift < laneBits);
+         assign(*qDiff1, binop(mkVecSHRN(size), mkexpr(src), mkU8(rshift)));
+         assign(*qDiff2, mkexpr(z128));
+      }
+      return;
+   }
+
+   /* SQSHL */
+   if (vex_streq(nm, "sqshl")) {
+      IROp qop = mkVecQSHLNSATS2S(size);
+      assign(*res, binop(qop, mkexpr(src), mkU8(shift)));
+      if (shift == 0) {
+         /* No shift means no saturation. */
+         assign(*qDiff1, mkexpr(z128));
+         assign(*qDiff2, mkexpr(z128));
+      } else {
+         /* Saturation has occurred if any of the shifted-out bits are
+            different from the top bit of the original value. */
+         UInt rshift = laneBits - 1 - shift;
+         vassert(rshift >= 0 && rshift < laneBits-1);
+         /* qDiff1 is the shifted out bits, and the top bit of the original
+            value, preceded by zeroes. */
+         assign(*qDiff1, binop(mkVecSHRN(size), mkexpr(src), mkU8(rshift)));
+         /* qDiff2 is the top bit of the original value, cloned the 
+            correct number of times. */
+         assign(*qDiff2, binop(mkVecSHRN(size),
+                               binop(mkVecSARN(size), mkexpr(src),
+                                                      mkU8(laneBits-1)),
+                               mkU8(rshift)));
+         /* This also succeeds in comparing the top bit of the original
+            value to itself, which is a bit stupid, but not wrong. */
+      }
+      return;
+   }
+
+   /* SQSHLU */
+   if (vex_streq(nm, "sqshlu")) {
+      IROp qop = mkVecQSHLNSATS2U(size);
+      assign(*res, binop(qop, mkexpr(src), mkU8(shift)));
+      /* This is different from the other two cases, in that
+         saturation can occur even if there is no shift. */
+      /* Saturation has occurred if any of the shifted-out bits, or
+         the top bit of the original value, are nonzero. */
+      UInt rshift = laneBits - 1 - shift;
+      vassert(rshift >= 0 && rshift < laneBits);
+      /* qDiff1 is the shifted out bits, and the top bit of the original
+         value, preceded by zeroes. */
+      assign(*qDiff1, binop(mkVecSHRN(size), mkexpr(src), mkU8(rshift)));
+      assign(*qDiff2, mkexpr(z128));
+      return;
+   }
+
+   vassert(0);
+}
+
+
 /* QCFLAG tracks the SIMD sticky saturation status.  Update the status
    thusly: if, after application of |opZHI| to both |qres| and |nres|,
    they have the same value, leave QCFLAG unchanged.  Otherwise, set it
@@ -8227,6 +8334,42 @@ Bool dis_AdvSIMD_shift_by_immediate(/*MB_OUT*/DisResult* dres, UInt insn)
       DIP("%s %s.%u%c, %s.%u%c, #%u\n", nm,
           nameQReg128(dd), nLanes, laneCh,
           nameQReg128(nn), nLanes, laneCh, shift);
+      return True;
+   }
+
+   if (opcode == BITS5(0,1,1,1,0)
+       || (bitU == 1 && opcode == BITS5(0,1,1,0,0))) {
+      /* -------- 0,01110  SQSHL  std7_std7_#imm -------- */
+      /* -------- 1,01110  UQSHL  std7_std7_#imm -------- */
+      /* -------- 1,01100  SQSHLU std7_std7_#imm -------- */
+      UInt size  = 0;
+      UInt shift = 0;
+      Bool isQ   = bitQ == 1;
+      Bool ok    = getLaneInfo_IMMH_IMMB(&shift, &size, immh, immb);
+      if (!ok || (bitQ == 0 && size == X11)) return False;
+      vassert(size >= 0 && size <= 3);
+      /* The shift encoding has opposite sign for the leftwards case.
+         Adjust shift to compensate. */
+      UInt lanebits = 8 << size;
+      shift = lanebits - shift;
+      vassert(shift >= 0 && shift < lanebits);
+      const HChar* nm = NULL;
+      /**/ if (bitU == 0 && opcode == BITS5(0,1,1,1,0)) nm = "sqshl";
+      else if (bitU == 1 && opcode == BITS5(0,1,1,1,0)) nm = "uqshl";
+      else if (bitU == 1 && opcode == BITS5(0,1,1,0,0)) nm = "sqshlu";
+      else vassert(0);
+      IRTemp qDiff1 = IRTemp_INVALID;
+      IRTemp qDiff2 = IRTemp_INVALID;
+      IRTemp res = IRTemp_INVALID;
+      IRTemp src = newTempV128();
+      assign(src, getQReg128(nn));
+      math_QSHL_IMM(&res, &qDiff1, &qDiff2, src, size, shift, nm);
+      putQReg128(dd, math_MAYBE_ZERO_HI64(bitQ, res));
+      updateQCFLAGwithDifferenceZHI(qDiff1, qDiff2,
+                                    isQ ? Iop_ZeroHI64ofV128 : Iop_INVALID);
+      const HChar* arr = nameArr_Q_SZ(bitQ, size);
+      DIP("%s %s.%s, %s.%s, #%u\n", nm,
+          nameQReg128(dd), arr, nameQReg128(nn), arr, shift);
       return True;
    }
 

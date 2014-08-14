@@ -1037,6 +1037,18 @@ static void showARM64VecShiftOp(/*OUT*/const HChar** nm,
       case ARM64vecsh_SQRSHRUN2SD: *nm = "sqrshrun"; *ar = "2sd"; return;
       case ARM64vecsh_SQRSHRUN4HS: *nm = "sqrshrun"; *ar = "4hs"; return;
       case ARM64vecsh_SQRSHRUN8BH: *nm = "sqrshrun"; *ar = "8bh"; return;
+      case ARM64vecsh_UQSHL64x2:   *nm = "uqshl ";   *ar = "2d";  return;
+      case ARM64vecsh_UQSHL32x4:   *nm = "uqshl ";   *ar = "4s";  return;
+      case ARM64vecsh_UQSHL16x8:   *nm = "uqshl ";   *ar = "8h";  return;
+      case ARM64vecsh_UQSHL8x16:   *nm = "uqshl ";   *ar = "16b"; return;
+      case ARM64vecsh_SQSHL64x2:   *nm = "sqshl ";   *ar = "2d";  return;
+      case ARM64vecsh_SQSHL32x4:   *nm = "sqshl ";   *ar = "4s";  return;
+      case ARM64vecsh_SQSHL16x8:   *nm = "sqshl ";   *ar = "8h";  return;
+      case ARM64vecsh_SQSHL8x16:   *nm = "sqshl ";   *ar = "16b"; return;
+      case ARM64vecsh_SQSHLU64x2:  *nm = "sqshlu";   *ar = "2d";  return;
+      case ARM64vecsh_SQSHLU32x4:  *nm = "sqshlu";   *ar = "4s";  return;
+      case ARM64vecsh_SQSHLU16x8:  *nm = "sqshlu";   *ar = "8h";  return;
+      case ARM64vecsh_SQSHLU8x16:  *nm = "sqshlu";   *ar = "16b"; return;
       default: vpanic("showARM64VecShiftOp");
    }
 }
@@ -1763,48 +1775,53 @@ ARM64Instr* ARM64Instr_VShiftImmV ( ARM64VecShiftOp op,
    i->ARM64in.VShiftImmV.dst = dst;
    i->ARM64in.VShiftImmV.src = src;
    i->ARM64in.VShiftImmV.amt = amt;
+   UInt minSh = 0;
    UInt maxSh = 0;
    switch (op) {
-      /* NB: the comments below are wrong.  Correct is: for right shifts,
-         the allowed shift amounts are 1 .. lane_size.  For left shifts,
-         the allowed shift amoutns are 0 .. lane_size-1. */
-      /* For these ordinary, non-saturating non-magical shifts,
-         the min shift value is actually zero, but we reject such cases
-         and instead only accept 1 as the minimum shift value. */
+      /* For right shifts, the allowed shift amounts are 1 .. lane_size.
+         For left shifts,  the allowed shift amounts are 0 .. lane_size-1. 
+      */
       case ARM64vecsh_USHR64x2: case ARM64vecsh_SSHR64x2:
-      case ARM64vecsh_SHL64x2:
-         maxSh = 63; break;
-      case ARM64vecsh_USHR32x4: case ARM64vecsh_SSHR32x4:
-      case ARM64vecsh_SHL32x4:
-         maxSh = 31; break;
-      case ARM64vecsh_USHR16x8: case ARM64vecsh_SSHR16x8:
-      case ARM64vecsh_SHL16x8:
-         maxSh = 15; break;
-      case ARM64vecsh_USHR8x16: case ARM64vecsh_SSHR8x16:
-      case ARM64vecsh_SHL8x16:
-         maxSh = 7; break;
-      /* Whereas for these shift right and narrow set, the min shift
-         value really is 1. */
-      case ARM64vecsh_UQSHRN2SD:  case ARM64vecsh_SQSHRN2SD:
+      case ARM64vecsh_UQSHRN2SD: case ARM64vecsh_SQSHRN2SD:
       case ARM64vecsh_SQSHRUN2SD:
       case ARM64vecsh_UQRSHRN2SD: case ARM64vecsh_SQRSHRN2SD:
       case ARM64vecsh_SQRSHRUN2SD:
-         maxSh = 64; break;
-      case ARM64vecsh_UQSHRN4HS:  case ARM64vecsh_SQSHRN4HS:
+         minSh = 1; maxSh = 64; break;
+      case ARM64vecsh_SHL64x2:
+      case ARM64vecsh_UQSHL64x2: case ARM64vecsh_SQSHL64x2:
+      case ARM64vecsh_SQSHLU64x2:
+         minSh = 0; maxSh = 63; break;
+      case ARM64vecsh_USHR32x4: case ARM64vecsh_SSHR32x4:
+      case ARM64vecsh_UQSHRN4HS: case ARM64vecsh_SQSHRN4HS:
       case ARM64vecsh_SQSHRUN4HS:
       case ARM64vecsh_UQRSHRN4HS: case ARM64vecsh_SQRSHRN4HS:
       case ARM64vecsh_SQRSHRUN4HS:
-         maxSh = 32; break;
-      case ARM64vecsh_UQSHRN8BH:  case ARM64vecsh_SQSHRN8BH:
+         minSh = 1; maxSh = 32; break;
+      case ARM64vecsh_SHL32x4:
+      case ARM64vecsh_UQSHL32x4: case ARM64vecsh_SQSHL32x4:
+      case ARM64vecsh_SQSHLU32x4:
+         minSh = 0; maxSh = 31; break;
+      case ARM64vecsh_USHR16x8: case ARM64vecsh_SSHR16x8:
+      case ARM64vecsh_UQSHRN8BH: case ARM64vecsh_SQSHRN8BH:
       case ARM64vecsh_SQSHRUN8BH:
       case ARM64vecsh_UQRSHRN8BH: case ARM64vecsh_SQRSHRN8BH:
       case ARM64vecsh_SQRSHRUN8BH:
-         maxSh = 16; break;
+         minSh = 1; maxSh = 16; break;
+      case ARM64vecsh_SHL16x8:
+      case ARM64vecsh_UQSHL16x8: case ARM64vecsh_SQSHL16x8:
+      case ARM64vecsh_SQSHLU16x8:
+         minSh = 0; maxSh = 15; break;
+      case ARM64vecsh_USHR8x16: case ARM64vecsh_SSHR8x16:
+         minSh = 1; maxSh = 8; break;
+      case ARM64vecsh_SHL8x16:
+      case ARM64vecsh_UQSHL8x16: case ARM64vecsh_SQSHL8x16:
+      case ARM64vecsh_SQSHLU8x16:
+         minSh = 0; maxSh = 7; break;
       default:
          vassert(0);
    }
    vassert(maxSh > 0);
-   vassert(amt > 0 && amt <= maxSh);
+   vassert(amt >= minSh && amt <= maxSh);
    return i;
 }
 ARM64Instr* ARM64Instr_VExtV ( HReg dst, HReg srcLo, HReg srcHi, UInt amtB ) {
@@ -3623,6 +3640,7 @@ static inline UChar qregNo ( HReg r )
 #define X011001  BITS8(0,0, 0,1,1,0,0,1)
 #define X011010  BITS8(0,0, 0,1,1,0,1,0)
 #define X011011  BITS8(0,0, 0,1,1,0,1,1)
+#define X011101  BITS8(0,0, 0,1,1,1,0,1)
 #define X011110  BITS8(0,0, 0,1,1,1,1,0)
 #define X011111  BITS8(0,0, 0,1,1,1,1,1)
 #define X100001  BITS8(0,0, 1,0,0,0,0,1)
@@ -5888,6 +5906,7 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
             001 011110 immh immb 100111 n d  UQRSHRN  ,,#sh
             000 011110 immh immb 100111 n d  SQRSHRN  ,,#sh
             001 011110 immh immb 100011 n d  SQRSHRUN ,,#sh
+
             where immh:immb
                = case T of 
                     2d  | sh in 1..64 -> let xxxxxx = 64-sh in 1xxx:xxx
@@ -5895,7 +5914,12 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
                     8h  | sh in 1..16 -> let   xxxx = 16-sh in 001x:xxx
                     16b | sh in 1..8  -> let    xxx =  8-sh in 0001:xxx
 
-            010 011110 immh immb 010101 n d  SHL Vd.T, Vn.T, #sh
+            010 011110 immh immb 010101 n d  SHL    Vd.T, Vn.T, #sh
+
+            011 011110 immh immb 011101 n d  UQSHL  Vd.T, Vn.T, #sh
+            010 011110 immh immb 011101 n d  SQSHL  Vd.T, Vn.T, #sh
+            011 011110 immh immb 011001 n d  SQSHLU Vd.T, Vn.T, #sh
+
             where immh:immb
                = case T of 
                     2d  | sh in 0..63 -> let xxxxxx = sh in 1xxx:xxx
@@ -5930,11 +5954,20 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
          const UInt tmpl_SHL
             = X_3_6_7_6_5_5(X010, X011110, 0, X010101, vN, vD);
 
+         const UInt tmpl_UQSHL
+            = X_3_6_7_6_5_5(X011, X011110, 0, X011101, vN, vD);
+         const UInt tmpl_SQSHL
+            = X_3_6_7_6_5_5(X010, X011110, 0, X011101, vN, vD);
+         const UInt tmpl_SQSHLU
+            = X_3_6_7_6_5_5(X011, X011110, 0, X011001, vN, vD);
+
          switch (i->ARM64in.VShiftImmV.op) {
             case ARM64vecsh_SSHR64x2:    tmpl = tmpl_SSHR;     goto right64x2;
             case ARM64vecsh_USHR64x2:    tmpl = tmpl_USHR;     goto right64x2;
             case ARM64vecsh_SHL64x2:     tmpl = tmpl_SHL;      goto left64x2;
-
+            case ARM64vecsh_UQSHL64x2:   tmpl = tmpl_UQSHL;    goto left64x2;
+            case ARM64vecsh_SQSHL64x2:   tmpl = tmpl_SQSHL;    goto left64x2;
+            case ARM64vecsh_SQSHLU64x2:  tmpl = tmpl_SQSHLU;   goto left64x2;
             case ARM64vecsh_SSHR32x4:    tmpl = tmpl_SSHR;     goto right32x4;
             case ARM64vecsh_USHR32x4:    tmpl = tmpl_USHR;     goto right32x4;
             case ARM64vecsh_UQSHRN2SD:   tmpl = tmpl_UQSHRN;   goto right32x4;
@@ -5944,7 +5977,9 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
             case ARM64vecsh_SQRSHRN2SD:  tmpl = tmpl_SQRSHRN;  goto right32x4;
             case ARM64vecsh_SQRSHRUN2SD: tmpl = tmpl_SQRSHRUN; goto right32x4;
             case ARM64vecsh_SHL32x4:     tmpl = tmpl_SHL;      goto left32x4;
-
+            case ARM64vecsh_UQSHL32x4:   tmpl = tmpl_UQSHL;    goto left32x4;
+            case ARM64vecsh_SQSHL32x4:   tmpl = tmpl_SQSHL;    goto left32x4;
+            case ARM64vecsh_SQSHLU32x4:  tmpl = tmpl_SQSHLU;   goto left32x4;
             case ARM64vecsh_SSHR16x8:    tmpl = tmpl_SSHR;     goto right16x8;
             case ARM64vecsh_USHR16x8:    tmpl = tmpl_USHR;     goto right16x8;
             case ARM64vecsh_UQSHRN4HS:   tmpl = tmpl_UQSHRN;   goto right16x8;
@@ -5954,7 +5989,9 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
             case ARM64vecsh_SQRSHRN4HS:  tmpl = tmpl_SQRSHRN;  goto right16x8;
             case ARM64vecsh_SQRSHRUN4HS: tmpl = tmpl_SQRSHRUN; goto right16x8;
             case ARM64vecsh_SHL16x8:     tmpl = tmpl_SHL;      goto left16x8;
-
+            case ARM64vecsh_UQSHL16x8:   tmpl = tmpl_UQSHL;    goto left16x8;
+            case ARM64vecsh_SQSHL16x8:   tmpl = tmpl_SQSHL;    goto left16x8;
+            case ARM64vecsh_SQSHLU16x8:  tmpl = tmpl_SQSHLU;   goto left16x8;
             case ARM64vecsh_SSHR8x16:    tmpl = tmpl_SSHR;     goto right8x16;
             case ARM64vecsh_USHR8x16:    tmpl = tmpl_USHR;     goto right8x16;
             case ARM64vecsh_UQSHRN8BH:   tmpl = tmpl_UQSHRN;   goto right8x16;
@@ -5964,6 +6001,9 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
             case ARM64vecsh_SQRSHRN8BH:  tmpl = tmpl_SQRSHRN;  goto right8x16;
             case ARM64vecsh_SQRSHRUN8BH: tmpl = tmpl_SQRSHRUN; goto right8x16;
             case ARM64vecsh_SHL8x16:     tmpl = tmpl_SHL;      goto left8x16;
+            case ARM64vecsh_UQSHL8x16:   tmpl = tmpl_UQSHL;    goto left8x16;
+            case ARM64vecsh_SQSHL8x16:   tmpl = tmpl_SQSHL;    goto left8x16;
+            case ARM64vecsh_SQSHLU8x16:  tmpl = tmpl_SQSHLU;   goto left8x16;
 
             default: break;
 
@@ -5993,25 +6033,25 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
                break;
 
             left64x2:
-               if (sh >= 1 && sh <= 63) {
+               if (sh >= 0 && sh <= 63) {
                   *p++ = tmpl | X_3_6_7_6_5_5(0,0, X1000000 | sh, 0,0,0);
                   goto done;
                }
                break;
             left32x4:
-               if (sh >= 1 && sh <= 31) {
+               if (sh >= 0 && sh <= 31) {
                   *p++ = tmpl | X_3_6_7_6_5_5(0,0, X0100000 | sh, 0,0,0);
                   goto done;
                }
                break;
             left16x8:
-               if (sh >= 1 && sh <= 15) {
+               if (sh >= 0 && sh <= 15) {
                   *p++ = tmpl | X_3_6_7_6_5_5(0,0, X0010000 | sh, 0,0,0);
                   goto done;
                }
                break;
             left8x16:
-               if (sh >= 1 && sh <= 7) {
+               if (sh >= 0 && sh <= 7) {
                   *p++ = tmpl | X_3_6_7_6_5_5(0,0, X0001000 | sh, 0,0,0);
                   goto done;
                }
@@ -7024,6 +7064,12 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
         HReg rD = i->ARM64in.VMov.dst;
         HReg rN = i->ARM64in.VMov.src;
         switch (i->ARM64in.VMov.szB) {
+           case 16: {
+              UInt dd = qregNo(rD);
+              UInt nn = qregNo(rN);
+              *p++ = X_3_8_5_6_5_5(X010, X01110101, nn, X000111, nn, dd);
+              goto done;
+           }
            case 8: {
               UInt dd = dregNo(rD);
               UInt nn = dregNo(rN);

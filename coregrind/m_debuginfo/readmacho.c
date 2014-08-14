@@ -356,15 +356,16 @@ void read_symtab( /*OUT*/XArray* /* DiSym */ syms,
          continue;
       }
 
-      disym.main      = sym_addr;
+      VG_(bzero_inline)(&disym, sizeof(disym));
+      disym.avmas.main = sym_addr;
       SET_TOCPTR_AVMA(disym, 0);
       SET_LOCAL_EP_AVMA(disym, 0);
-      disym.pri_name  = ML_(addStr)(di, name, -1);
-      disym.sec_names = NULL;
-      disym.size      = // let canonicalize fix it
-                        di->text_avma+di->text_size - sym_addr;
-      disym.isText    = True;
-      disym.isIFunc   = False;
+      disym.pri_name   = ML_(addStr)(di, name, -1);
+      disym.sec_names  = NULL;
+      disym.size       = // let canonicalize fix it
+                         di->text_avma+di->text_size - sym_addr;
+      disym.isText     = True;
+      disym.isIFunc    = False;
       // Lots of user function names get prepended with an underscore.  Eg. the
       // function 'f' becomes the symbol '_f'.  And the "below main"
       // function is called "start".  So we skip the leading underscore, and
@@ -394,8 +395,8 @@ static Int cmp_DiSym_by_start_then_name ( const void* v1, const void* v2 )
 {
    const DiSym* s1 = (DiSym*)v1;
    const DiSym* s2 = (DiSym*)v2;
-   if (s1->addr < s2->addr) return -1;
-   if (s1->addr > s2->addr) return 1;
+   if (s1->avmas.main < s2->avmas.main) return -1;
+   if (s1->avmas.main > s2->avmas.main) return 1;
    return VG_(strcmp)(s1->pri_name, s2->pri_name);
 }
 
@@ -434,8 +435,8 @@ static void tidy_up_cand_syms ( /*MOD*/XArray* /* of DiSym */ syms,
    for (i = 0; i < nsyms; i++) {
       for (k = i+1;
            k < nsyms
-             && ((DiSym*)VG_(indexXA)(syms,i))->addr
-                 == ((DiSym*)VG_(indexXA)(syms,k))->addr;
+             && ((DiSym*)VG_(indexXA)(syms,i))->avmas.main
+                 == ((DiSym*)VG_(indexXA)(syms,k))->avmas.main;
            k++)
          ;
       /* So now [i .. k-1] is a group all with the same start address.
@@ -445,9 +446,9 @@ static void tidy_up_cand_syms ( /*MOD*/XArray* /* of DiSym */ syms,
          DiSym* next = (DiSym*)VG_(indexXA)(syms,k);
          for (m = i; m < k; m++) {
             DiSym* here = (DiSym*)VG_(indexXA)(syms,m);
-            vg_assert(here->addr < next->addr);
-            if (here->addr + here->size > next->addr)
-               here->size = next->addr - here->addr;
+            vg_assert(here->avmas.main < next->avmas.main);
+            if (here->avmas.main + here->size > next->avmas.main)
+               here->size = next->avmas.main - here->avmas.main;
          }
       }
       i = k-1;
@@ -463,7 +464,7 @@ static void tidy_up_cand_syms ( /*MOD*/XArray* /* of DiSym */ syms,
          s_j1 = (DiSym*)VG_(indexXA)(syms, j-1);
          s_j  = (DiSym*)VG_(indexXA)(syms, j);
          s_i  = (DiSym*)VG_(indexXA)(syms, i);
-         if (s_i->addr != s_j1->addr
+         if (s_i->avmas.main != s_j1->avmas.main
              || s_i->size != s_j1->size
              || 0 != VG_(strcmp)(s_i->pri_name, s_j1->pri_name)) {
             *s_j = *s_i;
@@ -471,7 +472,7 @@ static void tidy_up_cand_syms ( /*MOD*/XArray* /* of DiSym */ syms,
          } else {
             if (trace_symtab)
                VG_(printf)("nlist cleanup: dump duplicate avma %010lx  %s\n",
-                           s_i->addr, s_i->pri_name );
+                           s_i->avmas.main, s_i->pri_name );
          }
       }
    }
@@ -956,7 +957,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
          vg_assert(cand->sec_names == NULL);
          if (di->trace_symtab)
             VG_(printf)("nlist final: acquire  avma %010lx-%010lx  %s\n",
-                        cand->addr, cand->addr + cand->size - 1,
+                        cand->avmas.main, cand->avmas.main + cand->size - 1,
                         cand->pri_name );
          ML_(addSym)( di, cand );
       }

@@ -106,6 +106,23 @@
    ...
 }
 
+{
+   OSX109:11-Leak
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:currentlocale
+}
+
+{
+   OSX109:12-Leak
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:tzsetwall_basic
+   fun:_st_tzset_basic
+}
+
 ############################################
 ## Non-leak errors
 

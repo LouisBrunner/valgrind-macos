@@ -263,12 +263,9 @@ const char* target_xml (Bool shadow_mode)
 
 static CORE_ADDR** target_get_dtv (ThreadState *tst)
 {
-#if defined(VGA_arm64)
+   VexGuestARM64State* arm64 = (VexGuestARM64State*)&tst->arch.vex;
    // arm64 dtv is pointed to by TPIDR_EL0.
-   return (CORE_ADDR**)(tst->arch.vex.guest_TPIDR_EL0);
-#else
-   vg_assert(0);
-#endif
+   return (CORE_ADDR**)((CORE_ADDR)arm64->guest_TPIDR_EL0);
 }
 
 static struct valgrind_target_ops low_target = {

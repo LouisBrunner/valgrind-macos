@@ -199,14 +199,11 @@ const char* target_xml (Bool shadow_mode)
 
 static CORE_ADDR** target_get_dtv (ThreadState *tst)
 {
-#if defined(VGA_s390x)
+   VexGuestS390XState* s390x = (VexGuestS390XState*)&tst->arch.vex;
    // Thread pointer is in a0 (high 32 bits) and a1. Dtv is the second word.
-   return (CORE_ADDR**)(((CORE_ADDR)tst->arch.vex.guest_a0 << 32 
-                         | (CORE_ADDR)tst->arch.vex.guest_a1)
+   return (CORE_ADDR**)((Addr)((Addr64)s390x->guest_a0 << 32
+                              | (Addr64)s390x->guest_a1)
                         + sizeof(CORE_ADDR));
-#else
-   vg_assert(0);
-#endif
 }
 
 static struct valgrind_target_ops low_target = {

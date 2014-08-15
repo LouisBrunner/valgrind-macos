@@ -356,12 +356,10 @@ const char* target_xml (Bool shadow_mode)
 
 static CORE_ADDR** target_get_dtv (ThreadState *tst)
 {
-#if defined(VGA_mips32)
+   VexGuestMIPS32State* mips32 = (VexGuestMIPS32State*)&tst->arch.vex;
    // mips32 dtv location similar to ppc64
-   return (CORE_ADDR**)(tst->arch.vex.guest_ULR - 0x7000 - sizeof(CORE_ADDR));
-#else
-   vg_assert(0);
-#endif
+   return (CORE_ADDR**)((CORE_ADDR)mips32->guest_ULR 
+                        - 0x7000 - sizeof(CORE_ADDR));
 }
 
 static struct valgrind_target_ops low_target = {

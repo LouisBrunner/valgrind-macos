@@ -331,13 +331,11 @@ const char* target_xml (Bool shadow_mode)
 
 static CORE_ADDR** target_get_dtv (ThreadState *tst)
 {
-#if defined(VGA_ppc64be) || defined(VGA_ppc64le)
+   VexGuestPPC64State* ppc64 = (VexGuestPPC64State*)&tst->arch.vex;
    // ppc64 dtv is located just before the tcb, which is 0x7000 before 
    // the thread id (r13)
-   return (CORE_ADDR**)(tst->arch.vex.guest_GPR13 - 0x7000 - sizeof(CORE_ADDR));
-#else
-   vg_assert(0);
-#endif
+   return (CORE_ADDR**)((CORE_ADDR)ppc64->guest_GPR13 
+                        - 0x7000 - sizeof(CORE_ADDR));
 }
 
 static struct valgrind_target_ops low_target = {

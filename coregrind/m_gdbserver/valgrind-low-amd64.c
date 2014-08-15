@@ -348,11 +348,8 @@ const char* target_xml (Bool shadow_mode)
 
 static CORE_ADDR** target_get_dtv (ThreadState *tst)
 {
-#if defined(VGA_amd64)
-   return (CORE_ADDR**)(tst->arch.vex.guest_FS_ZERO + 0x8);
-#else
-   vg_assert(0);
-#endif
+   VexGuestAMD64State* amd64 = (VexGuestAMD64State*)&tst->arch.vex;
+   return (CORE_ADDR**)((CORE_ADDR)amd64->guest_FS_ZERO + 0x8);
 }
 
 static struct valgrind_target_ops low_target = {

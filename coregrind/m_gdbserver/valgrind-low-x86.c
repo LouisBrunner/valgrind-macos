@@ -259,14 +259,14 @@ const char* target_xml (Bool shadow_mode)
 
 static CORE_ADDR** target_get_dtv (ThreadState *tst)
 {
-#if defined(VGA_x86)
+   VexGuestX86State* x86 = (VexGuestX86State*)&tst->arch.vex;
    // FIXME: should make the below formally visible from VEX.
    extern ULong x86g_use_seg_selector ( HWord ldt, HWord gdt,
                                         UInt seg_selector, UInt virtual_addr );
 
-   ULong dtv_loc_g = x86g_use_seg_selector (tst->arch.vex.guest_LDT,
-                                            tst->arch.vex.guest_GDT,
-                                            tst->arch.vex.guest_GS,
+   ULong dtv_loc_g = x86g_use_seg_selector (x86->guest_LDT,
+                                            x86->guest_GDT,
+                                            x86->guest_GS,
                                             0x4);
    if (dtv_loc_g == 1ULL << 32) {
       dlog(0, "Error getting x86 dtv\n");
@@ -275,9 +275,6 @@ static CORE_ADDR** target_get_dtv (ThreadState *tst)
       CORE_ADDR dtv_loc = dtv_loc_g;
       return (CORE_ADDR**)dtv_loc;
    }
-#else
-   vg_assert(0);
-#endif
 }
 
 static struct valgrind_target_ops low_target = {

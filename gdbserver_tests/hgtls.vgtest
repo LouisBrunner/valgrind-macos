@@ -9,4 +9,3 @@ argsB: --quiet -l 60 --nx ../none/tests/tls
 stdinB: hgtls.stdinB.gdb
 stdoutB_filter: filter_gdb
 stderrB_filter: filter_make_empty
-# stderrB_filter_args: hg01_all_ok.c

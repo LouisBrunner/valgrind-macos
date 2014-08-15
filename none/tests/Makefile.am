@@ -277,7 +277,7 @@ threaded_fork_LDADD	= -lpthread
 threadederrno_LDADD	= -lpthread
 tls_SOURCES		= tls.c tls2.c
 tls_DEPENDENCIES	= tls.so tls2.so
-tls_LDFLAGS		= -Wl,-rpath,$(top_builddir)/none/tests
+tls_LDFLAGS		= -Wl,-rpath,$(abs_top_builddir)/none/tests
 tls_LDADD		= tls.so tls2.so -lpthread
 tls_so_SOURCES		= tls_so.c
 tls_so_DEPENDENCIES	= tls2.so
@@ -285,7 +285,7 @@ if VGCONF_OS_IS_DARWIN
  tls_so_LDFLAGS		= -dynamic -dynamiclib -all_load -fpic
  tls_so_LDADD		= `pwd`/tls2.so
 else
- tls_so_LDFLAGS		= -Wl,-rpath,$(top_builddir)/none/tests -shared -fPIC
+ tls_so_LDFLAGS		= -Wl,-rpath,$(abs_top_builddir)/none/tests -shared -fPIC
  tls_so_LDADD		= tls2.so
 endif
 tls_so_CFLAGS		= $(AM_CFLAGS) -fPIC

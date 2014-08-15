@@ -649,6 +649,45 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
 {
    static struct inferior_list_entry *thread_ptr;
 
+   /* thread local storage query */
+   if (strncmp ("qGetTLSAddr:", arg_own_buf, 12) == 0) {
+      char *from, *to;
+      char *end = arg_own_buf + strlen(arg_own_buf);
+      unsigned long gdb_id;
+      CORE_ADDR lm;
+      CORE_ADDR offset;
+      struct thread_info *ti;
+      
+      from = arg_own_buf + 12;
+      to = strchr(from, ',');
+      *to = 0;
+      gdb_id = strtoul (from, NULL, 16);
+      from = to + 1;
+      to = strchr(from, ',');
+      decode_address (&offset, from, to - from);
+      from = to + 1;
+      to = end;
+      decode_address (&lm, from, to - from);
+      dlog(2, "qGetTLSAddr thread %lu offset %p lm %p\n", 
+           gdb_id, (void*)offset, (void*)lm);
+
+      ti = gdb_id_to_thread (gdb_id);
+      if (ti != NULL) {
+         ThreadState *tst;
+         Addr tls_addr;
+
+         tst = (ThreadState *) inferior_target_data (ti);
+         if (valgrind_get_tls_addr(tst, offset, lm, &tls_addr)) {
+            VG_(sprintf) (arg_own_buf, "%lx", tls_addr);
+            return;
+         }
+         // else we will report we do not support qGetTLSAddr
+      } else {
+         write_enn (arg_own_buf);
+         return;
+      }
+   }
+   
    /* qRcmd, monitor command handling.  */
    if (strncmp ("qRcmd,", arg_own_buf, 6) == 0) {
       char *p = arg_own_buf + 6;
@@ -706,7 +745,7 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
          return;
       }
    }
-   
+
    if (strcmp ("qAttached", arg_own_buf) == 0) {
       /* tell gdb to always detach, never kill the process */
       arg_own_buf[0] = '1';

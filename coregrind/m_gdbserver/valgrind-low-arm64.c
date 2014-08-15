@@ -261,6 +261,16 @@ const char* target_xml (Bool shadow_mode)
 #endif 
 }
 
+static CORE_ADDR** target_get_dtv (ThreadState *tst)
+{
+#if defined(VGA_arm64)
+   // arm64 dtv is pointed to by TPIDR_EL0.
+   return (CORE_ADDR**)(tst->arch.vex.guest_TPIDR_EL0);
+#else
+   vg_assert(0);
+#endif
+}
+
 static struct valgrind_target_ops low_target = {
    num_regs,
    regs,
@@ -269,7 +279,8 @@ static struct valgrind_target_ops low_target = {
    get_pc,
    set_pc,
    "arm64",
-   target_xml
+   target_xml,
+   target_get_dtv
 };
 
 void arm64_init_architecture (struct valgrind_target_ops *target)

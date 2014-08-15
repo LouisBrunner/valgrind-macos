@@ -332,6 +332,17 @@ const char* target_xml (Bool shadow_mode)
    }  
 }
 
+static CORE_ADDR** target_get_dtv (ThreadState *tst)
+{
+#if defined(VGA_ppc32)
+   // ppc32 dtv is located just before the tcb, which is 0x7000 before
+   // the thread id (r2)
+   return (CORE_ADDR**)(tst->arch.vex.guest_GPR2 - 0x7000 - sizeof(CORE_ADDR));
+#else
+   vg_assert(0);
+#endif
+}
+
 static struct valgrind_target_ops low_target = {
    num_regs,
    regs,
@@ -340,7 +351,8 @@ static struct valgrind_target_ops low_target = {
    get_pc,
    set_pc,
    "ppc32",
-   target_xml
+   target_xml,
+   target_get_dtv
 };
 
 void ppc32_init_architecture (struct valgrind_target_ops *target)

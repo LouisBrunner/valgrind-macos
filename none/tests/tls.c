@@ -46,8 +46,8 @@ typedef int *(*func_t)(void);
 struct testcase {
 	const char *name;
 	func_t func;
+        char pad[2 * (8 - sizeof(void*))];
 };
-
 static void *tls_ptr(void *p)
 {
 	struct testcase *test = (struct testcase *)p;

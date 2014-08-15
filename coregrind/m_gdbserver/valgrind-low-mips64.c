@@ -355,6 +355,17 @@ const char* target_xml (Bool shadow_mode)
    }  
 }
 
+static CORE_ADDR** target_get_dtv (ThreadState *tst)
+{
+#if defined(VGA_mips64)
+   // mips64 dtv location similar to ppc64
+   return (CORE_ADDR**)(tst->arch.vex.guest_ULR - 0x7000 - sizeof(CORE_ADDR));
+   return NULL;
+#else
+   vg_assert(0);
+#endif
+}
+
 static struct valgrind_target_ops low_target = {
    num_regs,
    regs,
@@ -363,7 +374,8 @@ static struct valgrind_target_ops low_target = {
    get_pc,
    set_pc,
    "mips64",
-   target_xml
+   target_xml,
+   target_get_dtv
 };
 
 void mips64_init_architecture (struct valgrind_target_ops *target)

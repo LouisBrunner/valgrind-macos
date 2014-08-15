@@ -286,6 +286,16 @@ const char* target_xml (Bool shadow_mode)
    }  
 }
 
+static CORE_ADDR** target_get_dtv (ThreadState *tst)
+{
+#if defined(VGA_arm)
+   // arm dtv is pointed to by TPIDRURO
+   return (CORE_ADDR**)(tst->arch.vex.guest_TPIDRURO);
+#else
+   vg_assert(0);
+#endif
+}
+
 static struct valgrind_target_ops low_target = {
    num_regs,
    regs,
@@ -294,7 +304,8 @@ static struct valgrind_target_ops low_target = {
    get_pc,
    set_pc,
    "arm",
-   target_xml
+   target_xml,
+   target_get_dtv
 };
 
 void arm_init_architecture (struct valgrind_target_ops *target)

@@ -547,6 +547,144 @@ int valgrind_remove_watchpoint (char type, CORE_ADDR addr, int len)
    return valgrind_point (/* insert*/ False, type, addr, len);
 }
 
+/* Returns the (platform specific) offset of lm_modid field in the link map
+   struct.
+   Stores the offset in *result and returns True if offset can be determined.
+   Returns False otherwise. *result is not to be used then. */
+static Bool getplatformoffset (SizeT *result)
+{
+   static Bool getplatformoffset_called = False;
+
+   static Bool lm_modid_offset_found = False;
+   static SizeT lm_modid_offset = 1<<31; // Rubbish initial value.
+   // lm_modid_offset is a magic offset, retrieved using an external program.
+
+   if (!getplatformoffset_called) {
+      const HChar *platform = VG_PLATFORM;
+      const HChar *cmdformat = "%s/%s-%s -o %s";
+      const HChar *getoff = "getoff";
+      HChar outfile[VG_(mkstemp_fullname_bufsz) (VG_(strlen)(getoff))];
+      Int fd = VG_(mkstemp) (getoff, outfile);
+      HChar cmd[ VG_(strlen)(cmdformat)
+                 + VG_(strlen)(VG_(libdir)) - 2
+                 + VG_(strlen)(getoff)      - 2
+                 + VG_(strlen)(platform)    - 2
+                 + VG_(strlen)(outfile)     - 2
+                 + 1];
+      UInt cmdlen;
+      struct vg_stat stat_buf;
+      Int ret;
+
+      cmdlen = VG_(snprintf)(cmd, sizeof(cmd),
+                             cmdformat, 
+                             VG_(libdir), getoff, platform, outfile);
+      vg_assert (cmdlen == sizeof(cmd) - 1);
+      ret = VG_(system) (cmd);
+      if (ret != 0 || VG_(debugLog_getLevel)() >= 1)
+         VG_(dmsg) ("command %s exit code %d\n", cmd, ret);
+      ret = VG_(fstat)( fd, &stat_buf );
+      if (ret != 0)
+         VG_(dmsg) ("error VG_(fstat) %d %s\n", fd, outfile);
+      else {
+         HChar *w;
+         HChar *ssaveptr;
+         HChar *os;
+         HChar *str;
+         HChar *endptr;
+
+         os = malloc (stat_buf.size+1);
+         vg_assert (os);
+         ret = VG_(read)(fd, os, stat_buf.size);
+         vg_assert(ret == stat_buf.size);
+         os[ret] = '\0';
+         str = os;
+         while ((w = VG_(strtok_r)(str, " \n", &ssaveptr)) != NULL) {
+            if (VG_(strcmp) (w, "lm_modid_offset") == 0) {
+               w = VG_(strtok_r)(NULL, " \n", &ssaveptr);
+               lm_modid_offset = (SizeT) VG_(strtoull16) ( w, &endptr );
+               if (endptr == w)
+                  VG_(dmsg) ("%s lm_modid_offset unexpected hex value %s\n",
+                             cmd, w);
+               else
+                  lm_modid_offset_found = True;
+            } else {
+               VG_(dmsg) ("%s produced unexpected %s\n", cmd, w);
+            }
+            str = NULL; // ensure next  VG_(strtok_r) continues the parsing.
+         }
+         VG_(free) (os);
+      }
+
+      VG_(close)(fd);
+      ret = VG_(unlink)( outfile );
+      if (ret != 0)
+         VG_(umsg) ("error: could not unlink %s\n", outfile);
+      getplatformoffset_called = True;
+   }
+
+   *result = lm_modid_offset;
+   return lm_modid_offset_found;
+}
+
+Bool valgrind_get_tls_addr (ThreadState *tst,
+                            CORE_ADDR offset,
+                            CORE_ADDR lm,
+                            CORE_ADDR *tls_addr)
+{
+   CORE_ADDR **dtv_loc;
+   CORE_ADDR *dtv;
+   SizeT lm_modid_offset;
+   unsigned long int modid;
+
+#define CHECK_DEREF(addr, len, name) \
+   if (!VG_(am_is_valid_for_client) ((Addr)(addr), (len), VKI_PROT_READ)) { \
+      dlog(0, "get_tls_addr: %s at %p len %lu not addressable\n",       \
+           name, (void*)(addr), (unsigned long)(len));                  \
+      return False;                                                     \
+   }
+
+   *tls_addr = 0;
+
+   if (the_low_target.target_get_dtv == NULL) {
+      dlog(1, "low level dtv support not available\n");
+      return False;
+   }
+
+   if (!getplatformoffset (&lm_modid_offset)) {
+      dlog(0, "link_map modid field offset not available\n");
+      return False;
+   }
+   dlog (2, "link_map modid offset %p\n", (void*)lm_modid_offset);
+   vg_assert (lm_modid_offset < 0x10000); // let's say
+   
+   dtv_loc = (*the_low_target.target_get_dtv)(tst);
+   if (dtv_loc == NULL) {
+      dlog(0, "low level dtv support returned NULL\n");
+      return False;
+   }
+
+   CHECK_DEREF(dtv_loc, sizeof(CORE_ADDR), "dtv_loc");
+   dtv = *dtv_loc;
+
+   // Check we can read at least 2 address at the beginning of dtv.
+   CHECK_DEREF(dtv, 2*sizeof(CORE_ADDR), "dtv 2 first entries");
+   dlog (2, "tid %d dtv %p\n", tst->tid, (void*)dtv);
+
+   // Check we can read the modid
+   CHECK_DEREF(lm+lm_modid_offset, sizeof(unsigned long int), "link_map modid");
+   modid = *(unsigned long int *)(lm+lm_modid_offset);
+
+   // Check we can access the dtv entry for modid
+   CHECK_DEREF(dtv + 2 * modid, sizeof(CORE_ADDR), "dtv[2*modid]");
+
+   // And finally compute the address of the tls variable.
+   *tls_addr = *(dtv + 2 * modid) + offset;
+   
+   return True;
+
+#undef CHECK_DEREF
+}
+
 /* returns a pointer to the architecture state corresponding to
    the provided register set: 0 => normal guest registers,
                               1 => shadow1

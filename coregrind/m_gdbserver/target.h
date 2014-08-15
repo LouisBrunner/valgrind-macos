@@ -200,10 +200,28 @@ extern int valgrind_write_memory (CORE_ADDR memaddr,
 extern int valgrind_insert_watchpoint (char type, CORE_ADDR addr, int len);
 extern int valgrind_remove_watchpoint (char type, CORE_ADDR addr, int len);
 
+/* Get the address of a thread local variable.
+   'tst' is the thread for which thread local address is searched for.
+   'offset' is the offset of the variable in the tls data of the load
+   module identified by 'lm'.
+   'lm' is the link_map address of the loaded  module : it is the address
+   of the data structure used by the dynamic linker to maintain various
+   information about a loaded object.
+   
+   Returns True if the address of the variable could be found.
+      *tls_addr is then set to this address.
+   Returns False if tls support is not available for this arch, or
+   if an error occured. *tls_addr is set to NULL. */
+extern Bool valgrind_get_tls_addr (ThreadState *tst,
+                                   CORE_ADDR offset,
+                                   CORE_ADDR lm,
+                                   CORE_ADDR *tls_addr);
+
 
 /* -------------------------------------------------------------------------- */
 /* ----------- Utils functions for low level arch specific files ------------ */
 /* -------------------------------------------------------------------------- */
+
 
 /* returns a pointer to the architecture state corresponding to
    the provided register set: 0 => normal guest registers,

@@ -197,6 +197,18 @@ const char* target_xml (Bool shadow_mode)
    }  
 }
 
+static CORE_ADDR** target_get_dtv (ThreadState *tst)
+{
+#if defined(VGA_s390x)
+   // Thread pointer is in a0 (high 32 bits) and a1. Dtv is the second word.
+   return (CORE_ADDR**)(((CORE_ADDR)tst->arch.vex.guest_a0 << 32 
+                         | (CORE_ADDR)tst->arch.vex.guest_a1)
+                        + sizeof(CORE_ADDR));
+#else
+   vg_assert(0);
+#endif
+}
+
 static struct valgrind_target_ops low_target = {
    num_regs,
    regs,
@@ -205,7 +217,8 @@ static struct valgrind_target_ops low_target = {
    get_pc,
    set_pc,
    "s390x",
-   target_xml
+   target_xml,
+   target_get_dtv
 };
 
 void s390x_init_architecture (struct valgrind_target_ops *target)

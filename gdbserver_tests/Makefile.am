@@ -14,6 +14,11 @@ EXTRA_DIST = \
 	hginfo.stdinB.gdb \
 	hginfo.stdoutB.exp \
 	hginfo.vgtest \
+	hgtls.stderrB.exp \
+	hgtls.stderr.exp \
+	hgtls.stdinB.gdb \
+	hgtls.stdoutB.exp \
+	hgtls.vgtest \
 	mcblocklistsearch.stderr.exp \
 	mcblocklistsearch.stdinB.gdb \
 	mcblocklistsearch.vgtest \

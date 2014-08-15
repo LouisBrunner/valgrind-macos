@@ -55,6 +55,8 @@ Release 3.10.0 (?? ?????? 201?)
 
 * New and modified GDB server monitor features:
 
+  - thread local variables/storage (__thread) can now be displayed.
+
   - The GDB server monitor command 'v.info location <address>'
     outputs information about an address. The information produced depends
     on the tool and on the options given to valgrind.
@@ -204,6 +206,7 @@ where XXXXXX is the bug number as listed below.
 337528  leak check heuristic for block prefixed by length as 64bit number
 338024  inlined functions are not shown if DW_AT_ranges is used
 338115  DRD: computed conflict set differs from actual after fork
+338160  implement display of thread local storage in gdbsrv
 n-i-bz  Fix KVM_CREATE_IRQCHIP ioctl handling
 n-i-bz  s390x: Fix memory corruption for multithreaded applications
 n-i-bz  vex arm->IR: allow PC as basereg in some LDRD cases

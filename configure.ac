@@ -1449,6 +1449,37 @@ AM_CONDITIONAL(HAVE_PTHREAD_CREATE_GLIBC_2_0,
 	       test x$ac_have_pthread_create_glibc_2_0 = xyes)
 
 
+# Check for dlinfo RTLD_DI_TLS_MODID
+AC_MSG_CHECKING([for dlinfo RTLD_DI_TLS_MODID])
+
+safe_LIBS="$LIBS"
+LIBS="-ldl"
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+#include <link.h>
+#include <dlfcn.h>
+]], [[
+  size_t sizes[10000];
+  size_t modid_offset;
+  (void) dlinfo ((void*)sizes, RTLD_DI_TLS_MODID, &modid_offset);
+  return 0;
+]])], [
+ac_have_dlinfo_rtld_di_tls_modid=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([HAVE_DLINFO_RTLD_DI_TLS_MODID], 1,
+          [Define to 1 if you have a dlinfo that can do RTLD_DI_TLS_MODID.])
+], [
+ac_have_dlinfo_rtld_di_tls_modid=no
+AC_MSG_RESULT([no])
+])
+LIBS=$safe_LIBS
+
+AM_CONDITIONAL(HAVE_DLINFO_RTLD_DI_TLS_MODID,
+	       test x$ac_have_dlinfo_rtld_di_tls_modid = xyes)
+
+
 # Check for eventfd_t, eventfd() and eventfd_read()
 AC_MSG_CHECKING([for eventfd()])
 

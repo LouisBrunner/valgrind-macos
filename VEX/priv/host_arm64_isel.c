@@ -3316,10 +3316,10 @@ static void iselInt128Expr_wrk ( HReg* rHi, HReg* rLo,
 //ZZ                                           res, argL, size, False));
 //ZZ             return res;
 //ZZ          }
-//ZZ          case Iop_QSalN8x8:
-//ZZ          case Iop_QSalN16x4:
-//ZZ          case Iop_QSalN32x2:
-//ZZ          case Iop_QSalN64x1: {
+//ZZ          case Iop_QShlNsatSS8x8:
+//ZZ          case Iop_QShlNsatSS16x4:
+//ZZ          case Iop_QShlNsatSS32x2:
+//ZZ          case Iop_QShlNsatSS64x1: {
 //ZZ             HReg res = newVRegD(env);
 //ZZ             HReg argL = iselNeon64Expr(env, e->Iex.Binop.arg1);
 //ZZ             UInt size, imm;
@@ -3330,10 +3330,10 @@ static void iselInt128Expr_wrk ( HReg* rHi, HReg* rLo,
 //ZZ             }
 //ZZ             imm = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
 //ZZ             switch (e->Iex.Binop.op) {
-//ZZ                case Iop_QSalN8x8: size = 8 | imm; break;
-//ZZ                case Iop_QSalN16x4: size = 16 | imm; break;
-//ZZ                case Iop_QSalN32x2: size = 32 | imm; break;
-//ZZ                case Iop_QSalN64x1: size = 64 | imm; break;
+//ZZ                case Iop_QShlNsatSS8x8: size = 8 | imm; break;
+//ZZ                case Iop_QShlNsatSS16x4: size = 16 | imm; break;
+//ZZ                case Iop_QShlNsatSS32x2: size = 32 | imm; break;
+//ZZ                case Iop_QShlNsatSS64x1: size = 64 | imm; break;
 //ZZ                default: vassert(0);
 //ZZ             }
 //ZZ             addInstr(env, ARMInstr_NUnary(ARMneon_VQSHLNSS,
@@ -5580,10 +5580,10 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
 //ZZ                                           res, argL, size, True));
 //ZZ             return res;
 //ZZ          }
-//ZZ          case Iop_QSalN8x16:
-//ZZ          case Iop_QSalN16x8:
-//ZZ          case Iop_QSalN32x4:
-//ZZ          case Iop_QSalN64x2: {
+//ZZ          case Iop_QShlNsatSS8x16:
+//ZZ          case Iop_QShlNsatSS16x8:
+//ZZ          case Iop_QShlNsatSS32x4:
+//ZZ          case Iop_QShlNsatSS64x2: {
 //ZZ             HReg res = newVRegV(env);
 //ZZ             HReg argL = iselNeonExpr(env, e->Iex.Binop.arg1);
 //ZZ             UInt size, imm;
@@ -5594,10 +5594,10 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
 //ZZ             }
 //ZZ             imm = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
 //ZZ             switch (e->Iex.Binop.op) {
-//ZZ                case Iop_QSalN8x16: size = 8 | imm; break;
-//ZZ                case Iop_QSalN16x8: size = 16 | imm; break;
-//ZZ                case Iop_QSalN32x4: size = 32 | imm; break;
-//ZZ                case Iop_QSalN64x2: size = 64 | imm; break;
+//ZZ                case Iop_QShlNsatSS8x16: size = 8 | imm; break;
+//ZZ                case Iop_QShlNsatSS16x8: size = 16 | imm; break;
+//ZZ                case Iop_QShlNsatSS32x4: size = 32 | imm; break;
+//ZZ                case Iop_QShlNsatSS64x2: size = 64 | imm; break;
 //ZZ                default: vassert(0);
 //ZZ             }
 //ZZ             addInstr(env, ARMInstr_NUnary(ARMneon_VQSHLNSS,
@@ -5610,12 +5610,12 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_SarN16x8: case Iop_SarN8x16:
          case Iop_ShlN64x2: case Iop_ShlN32x4:
          case Iop_ShlN16x8: case Iop_ShlN8x16:
-         case Iop_QShlN64x2: case Iop_QShlN32x4:
-         case Iop_QShlN16x8: case Iop_QShlN8x16:
-         case Iop_QSalN64x2: case Iop_QSalN32x4:
-         case Iop_QSalN16x8: case Iop_QSalN8x16:
-         case Iop_QShlN64Sx2: case Iop_QShlN32Sx4:
-         case Iop_QShlN16Sx8: case Iop_QShlN8Sx16:
+         case Iop_QShlNsatUU64x2: case Iop_QShlNsatUU32x4:
+         case Iop_QShlNsatUU16x8: case Iop_QShlNsatUU8x16:
+         case Iop_QShlNsatSS64x2: case Iop_QShlNsatSS32x4:
+         case Iop_QShlNsatSS16x8: case Iop_QShlNsatSS8x16:
+         case Iop_QShlNsatSU64x2: case Iop_QShlNsatSU32x4:
+         case Iop_QShlNsatSU16x8: case Iop_QShlNsatSU8x16:
          {
             IRExpr* argL = e->Iex.Binop.arg1;
             IRExpr* argR = e->Iex.Binop.arg2;
@@ -5626,58 +5626,58 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
                ARM64VecShiftOp op = ARM64vecsh_INVALID;
                /* Establish the instruction to use. */
                switch (e->Iex.Binop.op) {
-                  case Iop_ShrN64x2:   op = ARM64vecsh_USHR64x2;   break;
-                  case Iop_ShrN32x4:   op = ARM64vecsh_USHR32x4;   break;
-                  case Iop_ShrN16x8:   op = ARM64vecsh_USHR16x8;   break;
-                  case Iop_ShrN8x16:   op = ARM64vecsh_USHR8x16;   break;
-                  case Iop_SarN64x2:   op = ARM64vecsh_SSHR64x2;   break;
-                  case Iop_SarN32x4:   op = ARM64vecsh_SSHR32x4;   break;
-                  case Iop_SarN16x8:   op = ARM64vecsh_SSHR16x8;   break;
-                  case Iop_SarN8x16:   op = ARM64vecsh_SSHR8x16;   break;
-                  case Iop_ShlN64x2:   op = ARM64vecsh_SHL64x2;    break;
-                  case Iop_ShlN32x4:   op = ARM64vecsh_SHL32x4;    break;
-                  case Iop_ShlN16x8:   op = ARM64vecsh_SHL16x8;    break;
-                  case Iop_ShlN8x16:   op = ARM64vecsh_SHL8x16;    break;
-                  case Iop_QShlN64x2:  op = ARM64vecsh_UQSHL64x2;  break;
-                  case Iop_QShlN32x4:  op = ARM64vecsh_UQSHL32x4;  break;
-                  case Iop_QShlN16x8:  op = ARM64vecsh_UQSHL16x8;  break;
-                  case Iop_QShlN8x16:  op = ARM64vecsh_UQSHL8x16;  break;
-                  case Iop_QSalN64x2:  op = ARM64vecsh_SQSHL64x2;  break;
-                  case Iop_QSalN32x4:  op = ARM64vecsh_SQSHL32x4;  break;
-                  case Iop_QSalN16x8:  op = ARM64vecsh_SQSHL16x8;  break;
-                  case Iop_QSalN8x16:  op = ARM64vecsh_SQSHL8x16;  break;
-                  case Iop_QShlN64Sx2: op = ARM64vecsh_SQSHLU64x2; break;
-                  case Iop_QShlN32Sx4: op = ARM64vecsh_SQSHLU32x4; break;
-                  case Iop_QShlN16Sx8: op = ARM64vecsh_SQSHLU16x8; break;
-                  case Iop_QShlN8Sx16: op = ARM64vecsh_SQSHLU8x16; break;
+                  case Iop_ShrN64x2:       op = ARM64vecsh_USHR64x2;   break;
+                  case Iop_ShrN32x4:       op = ARM64vecsh_USHR32x4;   break;
+                  case Iop_ShrN16x8:       op = ARM64vecsh_USHR16x8;   break;
+                  case Iop_ShrN8x16:       op = ARM64vecsh_USHR8x16;   break;
+                  case Iop_SarN64x2:       op = ARM64vecsh_SSHR64x2;   break;
+                  case Iop_SarN32x4:       op = ARM64vecsh_SSHR32x4;   break;
+                  case Iop_SarN16x8:       op = ARM64vecsh_SSHR16x8;   break;
+                  case Iop_SarN8x16:       op = ARM64vecsh_SSHR8x16;   break;
+                  case Iop_ShlN64x2:       op = ARM64vecsh_SHL64x2;    break;
+                  case Iop_ShlN32x4:       op = ARM64vecsh_SHL32x4;    break;
+                  case Iop_ShlN16x8:       op = ARM64vecsh_SHL16x8;    break;
+                  case Iop_ShlN8x16:       op = ARM64vecsh_SHL8x16;    break;
+                  case Iop_QShlNsatUU64x2: op = ARM64vecsh_UQSHL64x2;  break;
+                  case Iop_QShlNsatUU32x4: op = ARM64vecsh_UQSHL32x4;  break;
+                  case Iop_QShlNsatUU16x8: op = ARM64vecsh_UQSHL16x8;  break;
+                  case Iop_QShlNsatUU8x16: op = ARM64vecsh_UQSHL8x16;  break;
+                  case Iop_QShlNsatSS64x2: op = ARM64vecsh_SQSHL64x2;  break;
+                  case Iop_QShlNsatSS32x4: op = ARM64vecsh_SQSHL32x4;  break;
+                  case Iop_QShlNsatSS16x8: op = ARM64vecsh_SQSHL16x8;  break;
+                  case Iop_QShlNsatSS8x16: op = ARM64vecsh_SQSHL8x16;  break;
+                  case Iop_QShlNsatSU64x2: op = ARM64vecsh_SQSHLU64x2; break;
+                  case Iop_QShlNsatSU32x4: op = ARM64vecsh_SQSHLU32x4; break;
+                  case Iop_QShlNsatSU16x8: op = ARM64vecsh_SQSHLU16x8; break;
+                  case Iop_QShlNsatSU8x16: op = ARM64vecsh_SQSHLU8x16; break;
                   default: vassert(0);
                }
                /* Establish the shift limits, for sanity check purposes only. */
                switch (e->Iex.Binop.op) {
-                  case Iop_ShrN64x2:   limLo = 1; limHi = 64; break;
-                  case Iop_ShrN32x4:   limLo = 1; limHi = 32; break;
-                  case Iop_ShrN16x8:   limLo = 1; limHi = 16; break;
-                  case Iop_ShrN8x16:   limLo = 1; limHi = 8;  break;
-                  case Iop_SarN64x2:   limLo = 1; limHi = 64; break;
-                  case Iop_SarN32x4:   limLo = 1; limHi = 32; break;
-                  case Iop_SarN16x8:   limLo = 1; limHi = 16; break;
-                  case Iop_SarN8x16:   limLo = 1; limHi = 8;  break;
-                  case Iop_ShlN64x2:   limLo = 0; limHi = 63; break;
-                  case Iop_ShlN32x4:   limLo = 0; limHi = 31; break;
-                  case Iop_ShlN16x8:   limLo = 0; limHi = 15; break;
-                  case Iop_ShlN8x16:   limLo = 0; limHi = 7;  break;
-                  case Iop_QShlN64x2:  limLo = 0; limHi = 63; break;
-                  case Iop_QShlN32x4:  limLo = 0; limHi = 31; break;
-                  case Iop_QShlN16x8:  limLo = 0; limHi = 15; break;
-                  case Iop_QShlN8x16:  limLo = 0; limHi = 7;  break;
-                  case Iop_QSalN64x2:  limLo = 0; limHi = 63; break;
-                  case Iop_QSalN32x4:  limLo = 0; limHi = 31; break;
-                  case Iop_QSalN16x8:  limLo = 0; limHi = 15; break;
-                  case Iop_QSalN8x16:  limLo = 0; limHi = 7;  break;
-                  case Iop_QShlN64Sx2: limLo = 0; limHi = 63; break;
-                  case Iop_QShlN32Sx4: limLo = 0; limHi = 31; break;
-                  case Iop_QShlN16Sx8: limLo = 0; limHi = 15; break;
-                  case Iop_QShlN8Sx16: limLo = 0; limHi = 7;  break;
+                  case Iop_ShrN64x2:       limLo = 1; limHi = 64; break;
+                  case Iop_ShrN32x4:       limLo = 1; limHi = 32; break;
+                  case Iop_ShrN16x8:       limLo = 1; limHi = 16; break;
+                  case Iop_ShrN8x16:       limLo = 1; limHi = 8;  break;
+                  case Iop_SarN64x2:       limLo = 1; limHi = 64; break;
+                  case Iop_SarN32x4:       limLo = 1; limHi = 32; break;
+                  case Iop_SarN16x8:       limLo = 1; limHi = 16; break;
+                  case Iop_SarN8x16:       limLo = 1; limHi = 8;  break;
+                  case Iop_ShlN64x2:       limLo = 0; limHi = 63; break;
+                  case Iop_ShlN32x4:       limLo = 0; limHi = 31; break;
+                  case Iop_ShlN16x8:       limLo = 0; limHi = 15; break;
+                  case Iop_ShlN8x16:       limLo = 0; limHi = 7;  break;
+                  case Iop_QShlNsatUU64x2: limLo = 0; limHi = 63; break;
+                  case Iop_QShlNsatUU32x4: limLo = 0; limHi = 31; break;
+                  case Iop_QShlNsatUU16x8: limLo = 0; limHi = 15; break;
+                  case Iop_QShlNsatUU8x16: limLo = 0; limHi = 7;  break;
+                  case Iop_QShlNsatSS64x2: limLo = 0; limHi = 63; break;
+                  case Iop_QShlNsatSS32x4: limLo = 0; limHi = 31; break;
+                  case Iop_QShlNsatSS16x8: limLo = 0; limHi = 15; break;
+                  case Iop_QShlNsatSS8x16: limLo = 0; limHi = 7;  break;
+                  case Iop_QShlNsatSU64x2: limLo = 0; limHi = 63; break;
+                  case Iop_QShlNsatSU32x4: limLo = 0; limHi = 31; break;
+                  case Iop_QShlNsatSU16x8: limLo = 0; limHi = 15; break;
+                  case Iop_QShlNsatSU8x16: limLo = 0; limHi = 7;  break;
                   default: vassert(0);
                }
                /* For left shifts, the allowable amt values are

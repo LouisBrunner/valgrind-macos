@@ -2672,72 +2672,72 @@ static HReg iselNeon64Expr_wrk ( ISelEnv* env, IRExpr* e )
                                           res, argL, argR, size, False));
             return res;
          }
-         case Iop_QShlN8x8:
-         case Iop_QShlN16x4:
-         case Iop_QShlN32x2:
-         case Iop_QShlN64x1: {
+         case Iop_QShlNsatUU8x8:
+         case Iop_QShlNsatUU16x4:
+         case Iop_QShlNsatUU32x2:
+         case Iop_QShlNsatUU64x1: {
             HReg res = newVRegD(env);
             HReg argL = iselNeon64Expr(env, e->Iex.Binop.arg1);
             UInt size, imm;
             if (e->Iex.Binop.arg2->tag != Iex_Const ||
                 typeOfIRExpr(env->type_env, e->Iex.Binop.arg2) != Ity_I8) {
-               vpanic("ARM taget supports Iop_QShlNAxB with constant "
+               vpanic("ARM target supports Iop_QShlNsatUUAxB with constant "
                       "second argument only\n");
             }
             imm = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
             switch (e->Iex.Binop.op) {
-               case Iop_QShlN8x8: size = 8 | imm; break;
-               case Iop_QShlN16x4: size = 16 | imm; break;
-               case Iop_QShlN32x2: size = 32 | imm; break;
-               case Iop_QShlN64x1: size = 64 | imm; break;
+               case Iop_QShlNsatUU8x8: size = 8 | imm; break;
+               case Iop_QShlNsatUU16x4: size = 16 | imm; break;
+               case Iop_QShlNsatUU32x2: size = 32 | imm; break;
+               case Iop_QShlNsatUU64x1: size = 64 | imm; break;
                default: vassert(0);
             }
             addInstr(env, ARMInstr_NUnary(ARMneon_VQSHLNUU,
                                           res, argL, size, False));
             return res;
          }
-         case Iop_QShlN8Sx8:
-         case Iop_QShlN16Sx4:
-         case Iop_QShlN32Sx2:
-         case Iop_QShlN64Sx1: {
+         case Iop_QShlNsatSU8x8:
+         case Iop_QShlNsatSU16x4:
+         case Iop_QShlNsatSU32x2:
+         case Iop_QShlNsatSU64x1: {
             HReg res = newVRegD(env);
             HReg argL = iselNeon64Expr(env, e->Iex.Binop.arg1);
             UInt size, imm;
             if (e->Iex.Binop.arg2->tag != Iex_Const ||
                 typeOfIRExpr(env->type_env, e->Iex.Binop.arg2) != Ity_I8) {
-               vpanic("ARM taget supports Iop_QShlNAxB with constant "
+               vpanic("ARM target supports Iop_QShlNsatSUAxB with constant "
                       "second argument only\n");
             }
             imm = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
             switch (e->Iex.Binop.op) {
-               case Iop_QShlN8Sx8: size = 8 | imm; break;
-               case Iop_QShlN16Sx4: size = 16 | imm; break;
-               case Iop_QShlN32Sx2: size = 32 | imm; break;
-               case Iop_QShlN64Sx1: size = 64 | imm; break;
+               case Iop_QShlNsatSU8x8: size = 8 | imm; break;
+               case Iop_QShlNsatSU16x4: size = 16 | imm; break;
+               case Iop_QShlNsatSU32x2: size = 32 | imm; break;
+               case Iop_QShlNsatSU64x1: size = 64 | imm; break;
                default: vassert(0);
             }
             addInstr(env, ARMInstr_NUnary(ARMneon_VQSHLNUS,
                                           res, argL, size, False));
             return res;
          }
-         case Iop_QSalN8x8:
-         case Iop_QSalN16x4:
-         case Iop_QSalN32x2:
-         case Iop_QSalN64x1: {
+         case Iop_QShlNsatSS8x8:
+         case Iop_QShlNsatSS16x4:
+         case Iop_QShlNsatSS32x2:
+         case Iop_QShlNsatSS64x1: {
             HReg res = newVRegD(env);
             HReg argL = iselNeon64Expr(env, e->Iex.Binop.arg1);
             UInt size, imm;
             if (e->Iex.Binop.arg2->tag != Iex_Const ||
                 typeOfIRExpr(env->type_env, e->Iex.Binop.arg2) != Ity_I8) {
-               vpanic("ARM taget supports Iop_QShlNAxB with constant "
+               vpanic("ARM target supports Iop_QShlNsatSSAxB with constant "
                       "second argument only\n");
             }
             imm = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
             switch (e->Iex.Binop.op) {
-               case Iop_QSalN8x8: size = 8 | imm; break;
-               case Iop_QSalN16x4: size = 16 | imm; break;
-               case Iop_QSalN32x2: size = 32 | imm; break;
-               case Iop_QSalN64x1: size = 64 | imm; break;
+               case Iop_QShlNsatSS8x8: size = 8 | imm; break;
+               case Iop_QShlNsatSS16x4: size = 16 | imm; break;
+               case Iop_QShlNsatSS32x2: size = 32 | imm; break;
+               case Iop_QShlNsatSS64x1: size = 64 | imm; break;
                default: vassert(0);
             }
             addInstr(env, ARMInstr_NUnary(ARMneon_VQSHLNSS,
@@ -4842,72 +4842,72 @@ static HReg iselNeonExpr_wrk ( ISelEnv* env, IRExpr* e )
                                           res, argL, argR, size, True));
             return res;
          }
-         case Iop_QShlN8x16:
-         case Iop_QShlN16x8:
-         case Iop_QShlN32x4:
-         case Iop_QShlN64x2: {
+         case Iop_QShlNsatUU8x16:
+         case Iop_QShlNsatUU16x8:
+         case Iop_QShlNsatUU32x4:
+         case Iop_QShlNsatUU64x2: {
             HReg res = newVRegV(env);
             HReg argL = iselNeonExpr(env, e->Iex.Binop.arg1);
             UInt size, imm;
             if (e->Iex.Binop.arg2->tag != Iex_Const ||
                 typeOfIRExpr(env->type_env, e->Iex.Binop.arg2) != Ity_I8) {
-               vpanic("ARM taget supports Iop_QShlNAxB with constant "
+               vpanic("ARM target supports Iop_QShlNsatUUAxB with constant "
                       "second argument only\n");
             }
             imm = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
             switch (e->Iex.Binop.op) {
-               case Iop_QShlN8x16: size = 8 | imm; break;
-               case Iop_QShlN16x8: size = 16 | imm; break;
-               case Iop_QShlN32x4: size = 32 | imm; break;
-               case Iop_QShlN64x2: size = 64 | imm; break;
+               case Iop_QShlNsatUU8x16: size = 8 | imm; break;
+               case Iop_QShlNsatUU16x8: size = 16 | imm; break;
+               case Iop_QShlNsatUU32x4: size = 32 | imm; break;
+               case Iop_QShlNsatUU64x2: size = 64 | imm; break;
                default: vassert(0);
             }
             addInstr(env, ARMInstr_NUnary(ARMneon_VQSHLNUU,
                                           res, argL, size, True));
             return res;
          }
-         case Iop_QShlN8Sx16:
-         case Iop_QShlN16Sx8:
-         case Iop_QShlN32Sx4:
-         case Iop_QShlN64Sx2: {
+         case Iop_QShlNsatSU8x16:
+         case Iop_QShlNsatSU16x8:
+         case Iop_QShlNsatSU32x4:
+         case Iop_QShlNsatSU64x2: {
             HReg res = newVRegV(env);
             HReg argL = iselNeonExpr(env, e->Iex.Binop.arg1);
             UInt size, imm;
             if (e->Iex.Binop.arg2->tag != Iex_Const ||
                 typeOfIRExpr(env->type_env, e->Iex.Binop.arg2) != Ity_I8) {
-               vpanic("ARM taget supports Iop_QShlNASxB with constant "
+               vpanic("ARM target supports Iop_QShlNsatSUAxB with constant "
                       "second argument only\n");
             }
             imm = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
             switch (e->Iex.Binop.op) {
-               case Iop_QShlN8Sx16: size = 8 | imm; break;
-               case Iop_QShlN16Sx8: size = 16 | imm; break;
-               case Iop_QShlN32Sx4: size = 32 | imm; break;
-               case Iop_QShlN64Sx2: size = 64 | imm; break;
+               case Iop_QShlNsatSU8x16: size = 8 | imm; break;
+               case Iop_QShlNsatSU16x8: size = 16 | imm; break;
+               case Iop_QShlNsatSU32x4: size = 32 | imm; break;
+               case Iop_QShlNsatSU64x2: size = 64 | imm; break;
                default: vassert(0);
             }
             addInstr(env, ARMInstr_NUnary(ARMneon_VQSHLNUS,
                                           res, argL, size, True));
             return res;
          }
-         case Iop_QSalN8x16:
-         case Iop_QSalN16x8:
-         case Iop_QSalN32x4:
-         case Iop_QSalN64x2: {
+         case Iop_QShlNsatSS8x16:
+         case Iop_QShlNsatSS16x8:
+         case Iop_QShlNsatSS32x4:
+         case Iop_QShlNsatSS64x2: {
             HReg res = newVRegV(env);
             HReg argL = iselNeonExpr(env, e->Iex.Binop.arg1);
             UInt size, imm;
             if (e->Iex.Binop.arg2->tag != Iex_Const ||
                 typeOfIRExpr(env->type_env, e->Iex.Binop.arg2) != Ity_I8) {
-               vpanic("ARM taget supports Iop_QShlNAxB with constant "
+               vpanic("ARM target supports Iop_QShlNsatSSAxB with constant "
                       "second argument only\n");
             }
             imm = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
             switch (e->Iex.Binop.op) {
-               case Iop_QSalN8x16: size = 8 | imm; break;
-               case Iop_QSalN16x8: size = 16 | imm; break;
-               case Iop_QSalN32x4: size = 32 | imm; break;
-               case Iop_QSalN64x2: size = 64 | imm; break;
+               case Iop_QShlNsatSS8x16: size = 8 | imm; break;
+               case Iop_QShlNsatSS16x8: size = 16 | imm; break;
+               case Iop_QShlNsatSS32x4: size = 32 | imm; break;
+               case Iop_QShlNsatSS64x2: size = 64 | imm; break;
                default: vassert(0);
             }
             addInstr(env, ARMInstr_NUnary(ARMneon_VQSHLNSS,

@@ -6257,19 +6257,19 @@ Bool dis_neon_data_2reg_and_shift ( UInt theInstr, IRTemp condT )
             if (A & 1) {
                switch (size) {
                   case 0:
-                     op = Q ? Iop_QShlN8x16 : Iop_QShlN8x8;
+                     op = Q ? Iop_QShlNsatUU8x16 : Iop_QShlNsatUU8x8;
                      op_rev = Q ? Iop_ShrN8x16 : Iop_ShrN8x8;
                      break;
                   case 1:
-                     op = Q ? Iop_QShlN16x8 : Iop_QShlN16x4;
+                     op = Q ? Iop_QShlNsatUU16x8 : Iop_QShlNsatUU16x4;
                      op_rev = Q ? Iop_ShrN16x8 : Iop_ShrN16x4;
                      break;
                   case 2:
-                     op = Q ? Iop_QShlN32x4 : Iop_QShlN32x2;
+                     op = Q ? Iop_QShlNsatUU32x4 : Iop_QShlNsatUU32x2;
                      op_rev = Q ? Iop_ShrN32x4 : Iop_ShrN32x2;
                      break;
                   case 3:
-                     op = Q ? Iop_QShlN64x2 : Iop_QShlN64x1;
+                     op = Q ? Iop_QShlNsatUU64x2 : Iop_QShlNsatUU64x1;
                      op_rev = Q ? Iop_ShrN64x2 : Iop_Shr64;
                      break;
                   default:
@@ -6281,19 +6281,19 @@ Bool dis_neon_data_2reg_and_shift ( UInt theInstr, IRTemp condT )
             } else {
                switch (size) {
                   case 0:
-                     op = Q ? Iop_QShlN8Sx16 : Iop_QShlN8Sx8;
+                     op = Q ? Iop_QShlNsatSU8x16 : Iop_QShlNsatSU8x8;
                      op_rev = Q ? Iop_ShrN8x16 : Iop_ShrN8x8;
                      break;
                   case 1:
-                     op = Q ? Iop_QShlN16Sx8 : Iop_QShlN16Sx4;
+                     op = Q ? Iop_QShlNsatSU16x8 : Iop_QShlNsatSU16x4;
                      op_rev = Q ? Iop_ShrN16x8 : Iop_ShrN16x4;
                      break;
                   case 2:
-                     op = Q ? Iop_QShlN32Sx4 : Iop_QShlN32Sx2;
+                     op = Q ? Iop_QShlNsatSU32x4 : Iop_QShlNsatSU32x2;
                      op_rev = Q ? Iop_ShrN32x4 : Iop_ShrN32x2;
                      break;
                   case 3:
-                     op = Q ? Iop_QShlN64Sx2 : Iop_QShlN64Sx1;
+                     op = Q ? Iop_QShlNsatSU64x2 : Iop_QShlNsatSU64x1;
                      op_rev = Q ? Iop_ShrN64x2 : Iop_Shr64;
                      break;
                   default:
@@ -6308,19 +6308,19 @@ Bool dis_neon_data_2reg_and_shift ( UInt theInstr, IRTemp condT )
                return False;
             switch (size) {
                case 0:
-                  op = Q ? Iop_QSalN8x16 : Iop_QSalN8x8;
+                  op = Q ? Iop_QShlNsatSS8x16 : Iop_QShlNsatSS8x8;
                   op_rev = Q ? Iop_SarN8x16 : Iop_SarN8x8;
                   break;
                case 1:
-                  op = Q ? Iop_QSalN16x8 : Iop_QSalN16x4;
+                  op = Q ? Iop_QShlNsatSS16x8 : Iop_QShlNsatSS16x4;
                   op_rev = Q ? Iop_SarN16x8 : Iop_SarN16x4;
                   break;
                case 2:
-                  op = Q ? Iop_QSalN32x4 : Iop_QSalN32x2;
+                  op = Q ? Iop_QShlNsatSS32x4 : Iop_QShlNsatSS32x2;
                   op_rev = Q ? Iop_SarN32x4 : Iop_SarN32x2;
                   break;
                case 3:
-                  op = Q ? Iop_QSalN64x2 : Iop_QSalN64x1;
+                  op = Q ? Iop_QShlNsatSS64x2 : Iop_QShlNsatSS64x1;
                   op_rev = Q ? Iop_SarN64x2 : Iop_Sar64;
                   break;
                default:

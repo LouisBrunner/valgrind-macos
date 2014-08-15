@@ -919,9 +919,12 @@ typedef
       Iop_QShl8x8, Iop_QShl16x4, Iop_QShl32x2, Iop_QShl64x1,
       Iop_QSal8x8, Iop_QSal16x4, Iop_QSal32x2, Iop_QSal64x1,
       /* VECTOR x INTEGER SATURATING SHIFT */
-      Iop_QShlN8Sx8, Iop_QShlN16Sx4, Iop_QShlN32Sx2, Iop_QShlN64Sx1,
-      Iop_QShlN8x8, Iop_QShlN16x4, Iop_QShlN32x2, Iop_QShlN64x1,
-      Iop_QSalN8x8, Iop_QSalN16x4, Iop_QSalN32x2, Iop_QSalN64x1,
+      Iop_QShlNsatSU8x8,  Iop_QShlNsatSU16x4,
+      Iop_QShlNsatSU32x2, Iop_QShlNsatSU64x1,
+      Iop_QShlNsatUU8x8,  Iop_QShlNsatUU16x4,
+      Iop_QShlNsatUU32x2, Iop_QShlNsatUU64x1,
+      Iop_QShlNsatSS8x8,  Iop_QShlNsatSS16x4,
+      Iop_QShlNsatSS32x2, Iop_QShlNsatSS64x1,
 
       /* NARROWING (binary) 
          -- narrow 2xI64 into 1xI64, hi half from left arg */
@@ -1534,9 +1537,12 @@ typedef
       Iop_QShl8x16, Iop_QShl16x8, Iop_QShl32x4, Iop_QShl64x2,
       Iop_QSal8x16, Iop_QSal16x8, Iop_QSal32x4, Iop_QSal64x2,
       /* VECTOR x INTEGER SATURATING SHIFT */
-      Iop_QShlN8Sx16, Iop_QShlN16Sx8, Iop_QShlN32Sx4, Iop_QShlN64Sx2,
-      Iop_QShlN8x16, Iop_QShlN16x8, Iop_QShlN32x4, Iop_QShlN64x2,
-      Iop_QSalN8x16, Iop_QSalN16x8, Iop_QSalN32x4, Iop_QSalN64x2,
+      Iop_QShlNsatSU8x16, Iop_QShlNsatSU16x8,
+      Iop_QShlNsatSU32x4, Iop_QShlNsatSU64x2,
+      Iop_QShlNsatUU8x16, Iop_QShlNsatUU16x8,
+      Iop_QShlNsatUU32x4, Iop_QShlNsatUU64x2,
+      Iop_QShlNsatSS8x16, Iop_QShlNsatSS16x8,
+      Iop_QShlNsatSS32x4, Iop_QShlNsatSS64x2,
 
       /* VECTOR x VECTOR BIDIRECTIONAL SATURATING (& MAYBE ROUNDING) SHIFT */
       /* The least significant 8 bits of each lane of the second

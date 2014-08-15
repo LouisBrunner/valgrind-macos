@@ -921,23 +921,26 @@ static IROp mkVecQANDqrsarNNARROWSU ( UInt sizeNarrow ) {
    return ops[sizeNarrow];
 }
 
-static IROp mkVecQSHLNSATU2U ( UInt size ) {
+static IROp mkVecQSHLNSATUU ( UInt size ) {
    const IROp ops[4]
-      = { Iop_QShlN8x16, Iop_QShlN16x8, Iop_QShlN32x4, Iop_QShlN64x2 };
+      = { Iop_QShlNsatUU8x16, Iop_QShlNsatUU16x8,
+          Iop_QShlNsatUU32x4, Iop_QShlNsatUU64x2 };
    vassert(size < 4);
    return ops[size];
 }
 
-static IROp mkVecQSHLNSATS2S ( UInt size ) {
+static IROp mkVecQSHLNSATSS ( UInt size ) {
    const IROp ops[4]
-      = { Iop_QSalN8x16, Iop_QSalN16x8, Iop_QSalN32x4, Iop_QSalN64x2 };
+      = { Iop_QShlNsatSS8x16, Iop_QShlNsatSS16x8,
+          Iop_QShlNsatSS32x4, Iop_QShlNsatSS64x2 };
    vassert(size < 4);
    return ops[size];
 }
 
-static IROp mkVecQSHLNSATS2U ( UInt size ) {
+static IROp mkVecQSHLNSATSU ( UInt size ) {
    const IROp ops[4]
-      = { Iop_QShlN8Sx16, Iop_QShlN16Sx8, Iop_QShlN32Sx4, Iop_QShlN64Sx2 };
+      = { Iop_QShlNsatSU8x16, Iop_QShlNsatSU16x8,
+          Iop_QShlNsatSU32x4, Iop_QShlNsatSU64x2 };
    vassert(size < 4);
    return ops[size];
 }
@@ -6609,7 +6612,7 @@ void math_QSHL_IMM ( /*OUT*/IRTemp* res,
 
    /* UQSHL */
    if (vex_streq(nm, "uqshl")) {
-      IROp qop = mkVecQSHLNSATU2U(size);
+      IROp qop = mkVecQSHLNSATUU(size);
       assign(*res, binop(qop, mkexpr(src), mkU8(shift)));
       if (shift == 0) {
          /* No shift means no saturation. */
@@ -6629,7 +6632,7 @@ void math_QSHL_IMM ( /*OUT*/IRTemp* res,
 
    /* SQSHL */
    if (vex_streq(nm, "sqshl")) {
-      IROp qop = mkVecQSHLNSATS2S(size);
+      IROp qop = mkVecQSHLNSATSS(size);
       assign(*res, binop(qop, mkexpr(src), mkU8(shift)));
       if (shift == 0) {
          /* No shift means no saturation. */
@@ -6657,7 +6660,7 @@ void math_QSHL_IMM ( /*OUT*/IRTemp* res,
 
    /* SQSHLU */
    if (vex_streq(nm, "sqshlu")) {
-      IROp qop = mkVecQSHLNSATS2U(size);
+      IROp qop = mkVecQSHLNSATSU(size);
       assign(*res, binop(qop, mkexpr(src), mkU8(shift)));
       if (shift == 0) {
          /* If there's no shift, saturation depends on the top bit

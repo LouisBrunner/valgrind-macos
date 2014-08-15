@@ -316,12 +316,12 @@ typeof_primop(IROp op, IRType *t_dst, IRType *t_arg1, IRType *t_arg2,
       case Iop_ShlN32x2: case Iop_ShlN16x4: case Iop_ShlN8x8:
       case Iop_ShrN32x2: case Iop_ShrN16x4: case Iop_ShrN8x8:
       case Iop_SarN32x2: case Iop_SarN16x4: case Iop_SarN8x8:
-      case Iop_QShlN8x8: case Iop_QShlN16x4:
-      case Iop_QShlN32x2: case Iop_QShlN64x1:
-      case Iop_QShlN8Sx8: case Iop_QShlN16Sx4:
-      case Iop_QShlN32Sx2: case Iop_QShlN64Sx1:
-      case Iop_QSalN8x8: case Iop_QSalN16x4:
-      case Iop_QSalN32x2: case Iop_QSalN64x1:
+      case Iop_QShlNsatUU8x8:  case Iop_QShlNsatUU16x4:
+      case Iop_QShlNsatUU32x2: case Iop_QShlNsatUU64x1:
+      case Iop_QShlNsatSU8x8:  case Iop_QShlNsatSU16x4:
+      case Iop_QShlNsatSU32x2: case Iop_QShlNsatSU64x1:
+      case Iop_QShlNsatSS8x8:  case Iop_QShlNsatSS16x4:
+      case Iop_QShlNsatSS32x2: case Iop_QShlNsatSS64x1:
          BINARY(Ity_I64,Ity_I8, Ity_I64);
 
       case Iop_Shl8: case Iop_Shr8: case Iop_Sar8:
@@ -733,12 +733,12 @@ typeof_primop(IROp op, IRType *t_dst, IRType *t_arg1, IRType *t_arg2,
       case Iop_ShrN32x4: case Iop_ShrN64x2:
       case Iop_SarN8x16: case Iop_SarN16x8:
       case Iop_SarN32x4: case Iop_SarN64x2:
-      case Iop_QShlN8x16: case Iop_QShlN16x8:
-      case Iop_QShlN32x4: case Iop_QShlN64x2:
-      case Iop_QShlN8Sx16: case Iop_QShlN16Sx8:
-      case Iop_QShlN32Sx4: case Iop_QShlN64Sx2:
-      case Iop_QSalN8x16: case Iop_QSalN16x8:
-      case Iop_QSalN32x4: case Iop_QSalN64x2:
+      case Iop_QShlNsatUU8x16: case Iop_QShlNsatUU16x8:
+      case Iop_QShlNsatUU32x4: case Iop_QShlNsatUU64x2:
+      case Iop_QShlNsatSU8x16: case Iop_QShlNsatSU16x8:
+      case Iop_QShlNsatSU32x4: case Iop_QShlNsatSU64x2:
+      case Iop_QShlNsatSS8x16: case Iop_QShlNsatSS16x8:
+      case Iop_QShlNsatSS32x4: case Iop_QShlNsatSS64x2:
          BINARY(Ity_V128,Ity_I8, Ity_V128);
 
       case Iop_F32ToFixed32Ux4_RZ:

@@ -2965,27 +2965,27 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_Sal64x1:
          return binary64Ix1(mce, vatom1, vatom2);
 
-      case Iop_QShlN8Sx8:
-      case Iop_QShlN8x8:
-      case Iop_QSalN8x8:
+      case Iop_QShlNsatSU8x8:
+      case Iop_QShlNsatUU8x8:
+      case Iop_QShlNsatSS8x8:
          complainIfUndefined(mce, atom2, NULL);
          return mkPCast8x8(mce, vatom1);
 
-      case Iop_QShlN16Sx4:
-      case Iop_QShlN16x4:
-      case Iop_QSalN16x4:
+      case Iop_QShlNsatSU16x4:
+      case Iop_QShlNsatUU16x4:
+      case Iop_QShlNsatSS16x4:
          complainIfUndefined(mce, atom2, NULL);
          return mkPCast16x4(mce, vatom1);
 
-      case Iop_QShlN32Sx2:
-      case Iop_QShlN32x2:
-      case Iop_QSalN32x2:
+      case Iop_QShlNsatSU32x2:
+      case Iop_QShlNsatUU32x2:
+      case Iop_QShlNsatSS32x2:
          complainIfUndefined(mce, atom2, NULL);
          return mkPCast32x2(mce, vatom1);
 
-      case Iop_QShlN64Sx1:
-      case Iop_QShlN64x1:
-      case Iop_QSalN64x1:
+      case Iop_QShlNsatSU64x1:
+      case Iop_QShlNsatUU64x1:
+      case Iop_QShlNsatSS64x1:
          complainIfUndefined(mce, atom2, NULL);
          return mkPCast32x2(mce, vatom1);
 
@@ -3335,27 +3335,27 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_Add32F0x4:
          return binary32F0x4(mce, vatom1, vatom2);      
 
-      case Iop_QShlN8Sx16:
-      case Iop_QShlN8x16:
-      case Iop_QSalN8x16:
+      case Iop_QShlNsatSU8x16:
+      case Iop_QShlNsatUU8x16:
+      case Iop_QShlNsatSS8x16:
          complainIfUndefined(mce, atom2, NULL);
          return mkPCast8x16(mce, vatom1);
 
-      case Iop_QShlN16Sx8:
-      case Iop_QShlN16x8:
-      case Iop_QSalN16x8:
+      case Iop_QShlNsatSU16x8:
+      case Iop_QShlNsatUU16x8:
+      case Iop_QShlNsatSS16x8:
          complainIfUndefined(mce, atom2, NULL);
          return mkPCast16x8(mce, vatom1);
 
-      case Iop_QShlN32Sx4:
-      case Iop_QShlN32x4:
-      case Iop_QSalN32x4:
+      case Iop_QShlNsatSU32x4:
+      case Iop_QShlNsatUU32x4:
+      case Iop_QShlNsatSS32x4:
          complainIfUndefined(mce, atom2, NULL);
          return mkPCast32x4(mce, vatom1);
 
-      case Iop_QShlN64Sx2:
-      case Iop_QShlN64x2:
-      case Iop_QSalN64x2:
+      case Iop_QShlNsatSU64x2:
+      case Iop_QShlNsatUU64x2:
+      case Iop_QShlNsatSS64x2:
          complainIfUndefined(mce, atom2, NULL);
          return mkPCast32x4(mce, vatom1);
 

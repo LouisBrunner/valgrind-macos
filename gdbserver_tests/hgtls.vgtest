@@ -1,7 +1,7 @@
 # test tls addresses
 prog: ../none/tests/tls
 vgopts: --tool=helgrind --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-hgtls -q 
-prereq: test -e ../none/tests/tls
+prereq: test -e ../none/tests/tls && grep '^#define HAVE_TLS 1' ../config.h > /dev/null  && grep '^#define HAVE_DLINFO_RTLD_DI_TLS_MODID 1'  ../config.h > /dev/null
 stdout_filter: filter_make_empty
 stderr_filter: filter_make_empty
 progB: gdb

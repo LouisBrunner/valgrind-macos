@@ -96,6 +96,9 @@ Release 3.10.0 (?? ?????? 201?)
   If an object contains both CFI and EXIDX unwind information, Valgrind
   will prefer the CFI over the EXIDX.
 
+* Typos or unknown values in --sim-hints and --kernel-variant command
+  line options are now detected and reported to the user as a usage error.
+
 * ==================== FIXED BUGS ====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"

@@ -118,14 +118,16 @@ extern Bool VG_(parse_Addr) ( const HChar** ppc, Addr* result );
    Using in 'tokens' the special token "-" (a minus character) indicates that
    the corresponding bit position cannot be set.
    In addition to the words specified in 'tokens', VG_(parse_enum_set)
-   automatically accept the words "none" and "all" to indicate respectively
-   an empty enum_set (0) or an enum_set with all bits corresponding
-   to the words in tokens set.
+   automatically accept the word "none" to indicate an empty enum_set (0).
+   If allow_all, VG_(parse_enum_set) automatically accept the word "all"
+   to indicate an enum_set with all bits corresponding to the words in tokens
+    set.
    If "none" or "all" is present in 'input', no other word can be given
    in 'input'.
    If parsing is successful, returns True and sets *enum_set.
    If parsing fails, returns False. */
 extern Bool VG_(parse_enum_set) ( const HChar *tokens,
+                                  Bool  allow_all,
                                   const HChar *input,
                                   UInt *enum_set);
 

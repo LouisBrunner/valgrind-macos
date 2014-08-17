@@ -36,7 +36,6 @@
 // plus some functions and macros for manipulating them.  Almost every
 // other module imports this one, if only for VG_(clo_verbosity).
 //--------------------------------------------------------------------
-
 #include "pub_tool_options.h"
 
 /* The max number of suppression files. */
@@ -82,11 +81,6 @@ typedef
 #define VgdbStopAt2S(a) (1 << (a))
 // VgdbStopAt a is member of the Set s ?
 #define VgdbStopAtiS(a,s) ((s) & VgdbStopAt2S(a))
-// A set with all VgdbStopAt:
-#define VgdbStopAtallS \
-     (VgdbStopAt2S(VgdbStopAt_Startup) \
-    | VgdbStopAt2S(VgdbStopAt_Exit)    \
-    | VgdbStopAt2S(VgdbStopAt_ValgrindAbExit)
 extern UInt VG_(clo_vgdb_stop_at); // A set of VgdbStopAt reasons.
 
 /* prefix for the named pipes (FIFOs) used by vgdb/gdb to communicate with valgrind */
@@ -225,8 +219,23 @@ extern Int VG_(clo_redzone_size);
 /* DEBUG: display gory details for the k'th most popular error.
    default: Infinity. */
 extern Int   VG_(clo_dump_error);
+
 /* Engage miscellaneous weird hacks needed for some progs. */
-extern const HChar* VG_(clo_sim_hints);
+typedef
+   enum {
+      SimHint_no_inner_prefix,
+      SimHint_fuse_compatible,
+      SimHint_lax_ioctls,
+      SimHint_enable_outer
+   }
+   SimHint;
+
+// Build mask to check or set SimHint a membership
+#define SimHint2S(a) (1 << (a))
+// SimHint h is member of the Set s ?
+#define SimHintiS(h,s) ((s) & SimHint2S(h))
+extern UInt VG_(clo_sim_hints);
+
 /* Show symbols in the form 'name+offset' ?  Default: NO */
 extern Bool VG_(clo_sym_offsets);
 /* Read DWARF3 inline info ? */
@@ -326,9 +335,17 @@ typedef
    auto-detected. */
 extern VgSmc VG_(clo_smc_check);
 
-/* String containing comma-separated names of minor kernel variants,
+/* A set of minor kernel variants,
    so they can be properly handled by m_syswrap. */
-extern const HChar* VG_(clo_kernel_variant);
+typedef enum {
+      KernelVariant_bproc
+   }
+   KernelVariant;
+// Build mask to check or set KernelVariant a membership
+#define KernelVariant2S(v) (1 << (v))
+// KernelVariant v is member of the Set s ?
+#define KernelVariantiS(v,s) ((s) & KernelVariant2S(v))
+extern UInt VG_(clo_kernel_variant);
 
 /* Darwin-specific: automatically run /usr/bin/dsymutil to update
    .dSYM directories as necessary? */

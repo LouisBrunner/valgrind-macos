@@ -1368,7 +1368,7 @@ PRE(sys_syscall223)
    /* 223 is used by sys_bproc.  If we're not on a declared bproc
       variant, fail in the usual way. */
 
-   if (!VG_(strstr)(VG_(clo_kernel_variant), "bproc")) {
+   if (!KernelVariantiS(KernelVariant_bproc, VG_(clo_kernel_variant))) {
       PRINT("non-existent syscall! (syscall 223)");
       PRE_REG_READ0(long, "ni_syscall(223)");
       SET_STATUS_Failure( VKI_ENOSYS );

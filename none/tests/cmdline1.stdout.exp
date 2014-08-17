@@ -87,11 +87,12 @@ usage: valgrind [options] prog-and-args
     --vgdb-shadow-registers=no|yes   let gdb see the shadow registers [no]
     --vgdb-prefix=<prefix>    prefix for vgdb FIFOs [/tmp/vgdb-pipe]
     --run-libc-freeres=no|yes free up glibc memory at exit on Linux? [yes]
-    --sim-hints=hint1,hint2,...  known hints:
-                                 lax-ioctls, enable-outer, fuse-compatible [none]
+    --sim-hints=hint1,hint2,...  activate unusual sim behaviours [none] 
+         where hint is one of no-inner-prefix lax-ioctls enable-outer
+                 fuse-compatible none
     --fair-sched=no|yes|try   schedule threads fairly on multicore systems [no]
-    --kernel-variant=variant1,variant2,...  known variants: bproc [none]
-                              handle non-standard kernel variants
+    --kernel-variant=variant1,variant2,...  handle non-standard kernel variants [none]
+         where variant is one of bproc none
     --merge-recursive-frames=<number>  merge frames between identical
            program counters in max <number> frames) [0]
     --num-transtab-sectors=<number> size of translated code cache [16]

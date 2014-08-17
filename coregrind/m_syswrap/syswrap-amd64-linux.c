@@ -664,7 +664,7 @@ PRE(sys_syscall184)
    /* 184 is used by sys_bproc.  If we're not on a declared bproc
       variant, fail in the usual way, since it is otherwise unused. */
 
-   if (!VG_(strstr)(VG_(clo_kernel_variant), "bproc")) {
+   if (!KernelVariantiS(KernelVariant_bproc, VG_(clo_kernel_variant))) {
       PRINT("non-existent syscall! (syscall 184)");
       PRE_REG_READ0(long, "ni_syscall(184)");
       SET_STATUS_Failure( VKI_ENOSYS );

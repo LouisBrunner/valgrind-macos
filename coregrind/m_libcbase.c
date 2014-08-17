@@ -521,6 +521,7 @@ Bool VG_(parse_Addr) ( const HChar** ppc, Addr* result )
 }
 
 Bool VG_(parse_enum_set) ( const HChar *tokens,
+                           Bool  allow_all,
                            const HChar *input,
                            UInt *enum_set)
 {
@@ -549,7 +550,7 @@ Bool VG_(parse_enum_set) ( const HChar *tokens,
         input_word;
         input_word = VG_(strtok_r)(NULL, ",", &input_saveptr)) {
       word_nr++;
-      if (0 == VG_(strcmp)(input_word, "all")) {
+      if (allow_all && 0 == VG_(strcmp)(input_word, "all")) {
          seen_all_kw = True;
          known_words++;
       } else if (0 == VG_(strcmp)(input_word, "none")) {

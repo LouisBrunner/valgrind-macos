@@ -5195,13 +5195,11 @@ Int           MC_(clo_free_fill)              = -1;
 KeepStacktraces MC_(clo_keep_stacktraces)     = KS_alloc_then_free;
 Int           MC_(clo_mc_level)               = 2;
 
-static Bool MC_(parse_leak_heuristics) ( const HChar *str0, UInt *lhs )
-{
-   return 
-      VG_(parse_enum_set) ("-,stdstring,length64,newarray,multipleinheritance",
-                           str0, lhs);
-}
-
+static const HChar * MC_(parse_leak_heuristics_tokens) =
+   "-,stdstring,length64,newarray,multipleinheritance";
+/* The first heuristic value (LchNone) has no keyword, as this is
+   a fake heuristic used to collect the blocks found without any
+   heuristic. */
 
 static Bool mc_process_cmd_line_options(const HChar* arg)
 {
@@ -5247,21 +5245,18 @@ static Bool mc_process_cmd_line_options(const HChar* arg)
    }
 
         if VG_BOOL_CLO(arg, "--partial-loads-ok", MC_(clo_partial_loads_ok)) {}
-   else if VG_STR_CLO(arg, "--errors-for-leak-kinds" , tmp_str) {
-      if (!MC_(parse_leak_kinds)(tmp_str, &MC_(clo_error_for_leak_kinds)))
-         return False;
-   }
-   else if VG_STR_CLO(arg, "--show-leak-kinds", tmp_str) {
-      if (!MC_(parse_leak_kinds)(tmp_str, &MC_(clo_show_leak_kinds)))
-         return False;
-   }
-   else if VG_STR_CLO(arg, "--leak-check-heuristics", tmp_str) {
-      if (!MC_(parse_leak_heuristics)(tmp_str, &MC_(clo_leak_check_heuristics)))
-         return False;
-   }
+   else if VG_USET_CLO(arg, "--errors-for-leak-kinds",
+                       MC_(parse_leak_kinds_tokens),
+                       MC_(clo_error_for_leak_kinds)) {}
+   else if VG_USET_CLO(arg, "--show-leak-kinds",
+                       MC_(parse_leak_kinds_tokens),
+                       MC_(clo_show_leak_kinds)) {}
+   else if VG_USET_CLO(arg, "--leak-check-heuristics",
+                       MC_(parse_leak_heuristics_tokens),
+                       MC_(clo_leak_check_heuristics)) {}
    else if (VG_BOOL_CLO(arg, "--show-reachable", tmp_show)) {
       if (tmp_show) {
-         MC_(clo_show_leak_kinds) = RallS;
+         MC_(clo_show_leak_kinds) = MC_(all_Reachedness)();
       } else {
          MC_(clo_show_leak_kinds) &= ~R2S(Reachable);
       }
@@ -5615,15 +5610,18 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
             lcp.mode = LC_Summary; break;
          case  2: { /* kinds */
             wcmd = VG_(strtok_r) (NULL, " ", &ssaveptr);
-            if (wcmd == NULL || !MC_(parse_leak_kinds)(wcmd,
-                                                       &lcp.show_leak_kinds)) {
+            if (wcmd == NULL 
+                || !VG_(parse_enum_set)(MC_(parse_leak_kinds_tokens),
+                                        True/*allow_all*/,
+                                        wcmd,
+                                        &lcp.show_leak_kinds)) {
                VG_(gdb_printf) ("missing or malformed leak kinds set\n");
                err++;
             }
             break;
          }
          case  3: /* reachable */
-            lcp.show_leak_kinds = RallS;
+            lcp.show_leak_kinds = MC_(all_Reachedness)();
             break;
          case  4: /* possibleleak */
             lcp.show_leak_kinds 
@@ -5634,8 +5632,11 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
             break;
          case  6: { /* heuristics */
             wcmd = VG_(strtok_r) (NULL, " ", &ssaveptr);
-            if (wcmd == NULL || !MC_(parse_leak_heuristics)(wcmd,
-                                                            &lcp.heuristics)) {
+            if (wcmd == NULL 
+                || !VG_(parse_enum_set)(MC_(parse_leak_heuristics_tokens),
+                                        True,/*allow_all*/
+                                        wcmd,
+                                        &lcp.heuristics)) {
                VG_(gdb_printf) ("missing or malformed heuristics set\n");
                err++;
             }

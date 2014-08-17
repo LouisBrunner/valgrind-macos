@@ -422,7 +422,8 @@ static void add_to__vmessage_buf ( HChar c, void *p )
       // (useful to run regression tests in an outer/inner setup
       // and avoid the diff failing due to these unexpected '>').
       depth = RUNNING_ON_VALGRIND;
-      if (depth > 0 && !VG_(strstr)(VG_(clo_sim_hints), "no-inner-prefix")) {
+      if (depth > 0 
+          && !SimHintiS(SimHint_no_inner_prefix, VG_(clo_sim_hints))) {
          if (depth > 10)
             depth = 10; // ?!?!
          for (i = 0; i < depth; i++) {

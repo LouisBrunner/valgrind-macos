@@ -71,6 +71,31 @@
     }) \
    )
 
+// UInt enum set arg, eg. --foo=fubar,bar,baz or --foo=none
+// or --foo=all  (if qq_all is True)
+#define VG_USETGEN_CLO(qq_arg, qq_option, qq_vals, qq_var, qq_all) \
+   (VG_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"=") && \
+    ({ \
+      const HChar* val = &(qq_arg)[ VG_(strlen)(qq_option)+1 ]; \
+      if (!VG_(parse_enum_set)(qq_vals, \
+                               qq_all,/*allow_all*/ \
+                               val, \
+                               &(qq_var))) \
+            VG_(fmsg_bad_option)(qq_arg, "%s is an invalid %s set\n", \
+                                 val, qq_option+2); \
+      True; \
+     }) \
+    )
+
+// UInt enum set arg, eg. --foo=fubar,bar,baz or --foo=none or --foo=all
+#define VG_USET_CLO(qq_arg, qq_option, qq_vals, qq_var) \
+   VG_USETGEN_CLO((qq_arg), qq_option, (qq_vals), (qq_var), True)
+
+/* Same as VG_USET_CLO but not allowing --foo=all.
+   To be used when some or all of the enum set are mutually eXclusive. */
+#define VG_USETX_CLO(qq_arg, qq_option, qq_vals, qq_var) \
+   VG_USETGEN_CLO((qq_arg), qq_option, (qq_vals), (qq_var), False)
+
 // Unbounded integer arg, eg. --foo=10
 #define VG_INT_CLO(qq_arg, qq_option, qq_var) \
    (VG_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"=") && \

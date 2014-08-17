@@ -279,9 +279,8 @@ typedef
 #define R2S(r) (1 << (r))
 // Reachedness r is member of the Set s ?
 #define RiS(r,s) ((s) & R2S(r))
-// A set with all Reachedness:
-#define RallS \
-   (R2S(Reachable) | R2S(Possible) | R2S(IndirectLeak) | R2S(Unreached))
+// Returns a set containing all Reachedness
+UInt MC_(all_Reachedness)(void);
 
 /* For VALGRIND_COUNT_LEAKS client request */
 extern SizeT MC_(bytes_leaked);
@@ -444,11 +443,8 @@ Bool MC_(record_leak_error)     ( ThreadId tid,
 Bool MC_(record_fishy_value_error)  ( ThreadId tid, const HChar* function,
                                       const HChar *argument_name, SizeT value );
 
-/* Parses a set of leak kinds (separated by ,).
-   and give the resulting set in *lks.
-   If parsing is succesful, returns True and *lks contains the resulting set.
-   else return False. */
-extern Bool MC_(parse_leak_kinds) ( const HChar* str0, UInt* lks );
+/* Leak kinds tokens to call VG_(parse_enum_set). */
+extern const HChar* MC_(parse_leak_kinds_tokens);
 
 /* prints a description of address a */
 void MC_(pp_describe_addr) (Addr a);
@@ -533,12 +529,8 @@ typedef
 
 // Build mask to check or set Heuristic h membership
 #define H2S(h) (1 << (h))
-// CppHeuristic h is member of the Set s ?
-#define HiS(h,s) ((s) & R2S(h))
-// A set with all Heuristics:
-#define HallS \
-   (H2S(LchStdString) | H2S(LchLength64) | H2S(LchNewArray) | \
-       H2S(LchMultipleInheritance))
+// Heuristic h is member of the Set s ?
+#define HiS(h,s) ((s) & H2S(h))
 
 /* Heuristics set to use for the leak search.
    Default : no heuristic. */

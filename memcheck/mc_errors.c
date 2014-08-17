@@ -248,10 +248,23 @@ static const HChar* xml_leak_kind ( Reachedness lossmode )
    return loss;
 }
 
-Bool MC_(parse_leak_kinds) ( const HChar* str0, UInt* lks )
+const HChar* MC_(parse_leak_kinds_tokens) = 
+   "reachable,possible,indirect,definite";
+
+UInt MC_(all_Reachedness)(void)
 {
-   return VG_(parse_enum_set)("reachable,possible,indirect,definite",
-                              str0, lks);
+   static UInt all;
+
+   if (all == 0) {
+      // Compute a set with all values by doing a parsing of the "all" keyword.
+      Bool parseok = VG_(parse_enum_set)(MC_(parse_leak_kinds_tokens),
+                                         True,/*allow_all*/
+                                         "all",
+                                         &all);
+      tl_assert (parseok && all);
+   }
+
+   return all;
 }
 
 static const HChar* pp_Reachedness_for_leak_kinds(Reachedness r)
@@ -1317,7 +1330,7 @@ Bool MC_(read_extra_suppression_info) ( Int fd, HChar** bufpp,
       // We might have the optional match-leak-kinds line
       MC_LeakSuppExtra* lse;
       lse = VG_(malloc)("mc.resi.2", sizeof(MC_LeakSuppExtra));
-      lse->match_leak_kinds = RallS;
+      lse->match_leak_kinds = MC_(all_Reachedness)();
       lse->blocks_suppressed = 0;
       lse->bytes_suppressed = 0;
       lse->leak_search_gen = 0;
@@ -1328,7 +1341,9 @@ Bool MC_(read_extra_suppression_info) ( Int fd, HChar** bufpp,
          i = 17;
          while ((*bufpp)[i] && VG_(isspace((*bufpp)[i])))
             i++;
-         if (!MC_(parse_leak_kinds)((*bufpp)+i, &lse->match_leak_kinds)) {
+         if (!VG_(parse_enum_set)(MC_(parse_leak_kinds_tokens),
+                                  True/*allow_all*/,
+                                  (*bufpp)+i, &lse->match_leak_kinds)) {
             return False;
          }
       } else {

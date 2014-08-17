@@ -920,6 +920,23 @@ void ppIROp ( IROp op )
       case Iop_QandSQRsh32x4: vex_printf("QandSQRsh32x4"); return;
       case Iop_QandSQRsh64x2: vex_printf("QandSQRsh64x2"); return;
 
+      case Iop_Sh8Sx16: vex_printf("Sh8Sx16"); return;
+      case Iop_Sh16Sx8: vex_printf("Sh16Sx8"); return;
+      case Iop_Sh32Sx4: vex_printf("Sh32Sx4"); return;
+      case Iop_Sh64Sx2: vex_printf("Sh64Sx2"); return;
+      case Iop_Sh8Ux16: vex_printf("Sh8Ux16"); return;
+      case Iop_Sh16Ux8: vex_printf("Sh16Ux8"); return;
+      case Iop_Sh32Ux4: vex_printf("Sh32Ux4"); return;
+      case Iop_Sh64Ux2: vex_printf("Sh64Ux2"); return;
+      case Iop_Rsh8Sx16: vex_printf("Rsh8Sx16"); return;
+      case Iop_Rsh16Sx8: vex_printf("Rsh16Sx8"); return;
+      case Iop_Rsh32Sx4: vex_printf("Rsh32Sx4"); return;
+      case Iop_Rsh64Sx2: vex_printf("Rsh64Sx2"); return;
+      case Iop_Rsh8Ux16: vex_printf("Rsh8Ux16"); return;
+      case Iop_Rsh16Ux8: vex_printf("Rsh16Ux8"); return;
+      case Iop_Rsh32Ux4: vex_printf("Rsh32Ux4"); return;
+      case Iop_Rsh64Ux2: vex_printf("Rsh64Ux2"); return;
+
       case Iop_QandQShrNnarrow16Uto8Ux8:
          vex_printf("QandQShrNnarrow16Uto8Ux8"); return;
       case Iop_QandQShrNnarrow32Uto16Ux4:
@@ -2940,6 +2957,14 @@ void typeOfPrimop ( IROp op,
       case Iop_CipherLV128:
       case Iop_NCipherV128:
       case Iop_NCipherLV128:
+      case Iop_Sh8Sx16: case Iop_Sh16Sx8:
+      case Iop_Sh32Sx4: case Iop_Sh64Sx2:
+      case Iop_Sh8Ux16: case Iop_Sh16Ux8:
+      case Iop_Sh32Ux4: case Iop_Sh64Ux2:
+      case Iop_Rsh8Sx16: case Iop_Rsh16Sx8:
+      case Iop_Rsh32Sx4: case Iop_Rsh64Sx2:
+      case Iop_Rsh8Ux16: case Iop_Rsh16Ux8:
+      case Iop_Rsh32Ux4: case Iop_Rsh64Ux2:
          BINARY(Ity_V128,Ity_V128, Ity_V128);
 
       case Iop_PolynomialMull8x8:

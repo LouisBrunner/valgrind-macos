@@ -372,6 +372,14 @@ typedef
       ARM64vecb_SQRSHL16x8,  ARM64vecb_SQRSHL8x16,
       ARM64vecb_UQRSHL64x2,  ARM64vecb_UQRSHL32x4,
       ARM64vecb_UQRSHL16x8,  ARM64vecb_UQRSHL8x16,
+      ARM64vecb_SSHL64x2,    ARM64vecb_SSHL32x4,
+      ARM64vecb_SSHL16x8,    ARM64vecb_SSHL8x16, 
+      ARM64vecb_USHL64x2,    ARM64vecb_USHL32x4,
+      ARM64vecb_USHL16x8,    ARM64vecb_USHL8x16, 
+      ARM64vecb_SRSHL64x2,   ARM64vecb_SRSHL32x4,
+      ARM64vecb_SRSHL16x8,   ARM64vecb_SRSHL8x16, 
+      ARM64vecb_URSHL64x2,   ARM64vecb_URSHL32x4,
+      ARM64vecb_URSHL16x8,   ARM64vecb_URSHL8x16, 
       ARM64vecb_INVALID
    }
    ARM64VecBinOp;
@@ -396,30 +404,30 @@ typedef
 
 typedef
    enum {
-      ARM64vecsh_USHR64x2=350, ARM64vecsh_USHR32x4,
-      ARM64vecsh_USHR16x8,     ARM64vecsh_USHR8x16,
-      ARM64vecsh_SSHR64x2,     ARM64vecsh_SSHR32x4,
-      ARM64vecsh_SSHR16x8,     ARM64vecsh_SSHR8x16,
-      ARM64vecsh_SHL64x2,      ARM64vecsh_SHL32x4,
-      ARM64vecsh_SHL16x8,      ARM64vecsh_SHL8x16,
+      ARM64vecshi_USHR64x2=350, ARM64vecshi_USHR32x4,
+      ARM64vecshi_USHR16x8,     ARM64vecshi_USHR8x16,
+      ARM64vecshi_SSHR64x2,     ARM64vecshi_SSHR32x4,
+      ARM64vecshi_SSHR16x8,     ARM64vecshi_SSHR8x16,
+      ARM64vecshi_SHL64x2,      ARM64vecshi_SHL32x4,
+      ARM64vecshi_SHL16x8,      ARM64vecshi_SHL8x16,
       /* These narrowing shifts zero out the top half of the destination
          register. */
-      ARM64vecsh_SQSHRN2SD,    ARM64vecsh_SQSHRN4HS,   ARM64vecsh_SQSHRN8BH,
-      ARM64vecsh_UQSHRN2SD,    ARM64vecsh_UQSHRN4HS,   ARM64vecsh_UQSHRN8BH,
-      ARM64vecsh_SQSHRUN2SD,   ARM64vecsh_SQSHRUN4HS,  ARM64vecsh_SQSHRUN8BH,
-      ARM64vecsh_SQRSHRN2SD,   ARM64vecsh_SQRSHRN4HS,  ARM64vecsh_SQRSHRN8BH,
-      ARM64vecsh_UQRSHRN2SD,   ARM64vecsh_UQRSHRN4HS,  ARM64vecsh_UQRSHRN8BH,
-      ARM64vecsh_SQRSHRUN2SD,  ARM64vecsh_SQRSHRUN4HS, ARM64vecsh_SQRSHRUN8BH,
+      ARM64vecshi_SQSHRN2SD,    ARM64vecshi_SQSHRN4HS,   ARM64vecshi_SQSHRN8BH,
+      ARM64vecshi_UQSHRN2SD,    ARM64vecshi_UQSHRN4HS,   ARM64vecshi_UQSHRN8BH,
+      ARM64vecshi_SQSHRUN2SD,   ARM64vecshi_SQSHRUN4HS,  ARM64vecshi_SQSHRUN8BH,
+      ARM64vecshi_SQRSHRN2SD,   ARM64vecshi_SQRSHRN4HS,  ARM64vecshi_SQRSHRN8BH,
+      ARM64vecshi_UQRSHRN2SD,   ARM64vecshi_UQRSHRN4HS,  ARM64vecshi_UQRSHRN8BH,
+      ARM64vecshi_SQRSHRUN2SD,  ARM64vecshi_SQRSHRUN4HS, ARM64vecshi_SQRSHRUN8BH,
       /* Saturating left shifts, of various flavours. */
-      ARM64vecsh_UQSHL64x2,    ARM64vecsh_UQSHL32x4,
-      ARM64vecsh_UQSHL16x8,    ARM64vecsh_UQSHL8x16, 
-      ARM64vecsh_SQSHL64x2,    ARM64vecsh_SQSHL32x4,
-      ARM64vecsh_SQSHL16x8,    ARM64vecsh_SQSHL8x16, 
-      ARM64vecsh_SQSHLU64x2,   ARM64vecsh_SQSHLU32x4,
-      ARM64vecsh_SQSHLU16x8,   ARM64vecsh_SQSHLU8x16, 
-      ARM64vecsh_INVALID
+      ARM64vecshi_UQSHL64x2,    ARM64vecshi_UQSHL32x4,
+      ARM64vecshi_UQSHL16x8,    ARM64vecshi_UQSHL8x16, 
+      ARM64vecshi_SQSHL64x2,    ARM64vecshi_SQSHL32x4,
+      ARM64vecshi_SQSHL16x8,    ARM64vecshi_SQSHL8x16, 
+      ARM64vecshi_SQSHLU64x2,   ARM64vecshi_SQSHLU32x4,
+      ARM64vecshi_SQSHLU16x8,   ARM64vecshi_SQSHLU8x16, 
+      ARM64vecshi_INVALID
    }
-   ARM64VecShiftOp;
+   ARM64VecShiftImmOp;
 
 typedef
    enum {
@@ -758,10 +766,10 @@ typedef
            |amt| must be > 0 and <= implied lane size of |op|.  Shifts
            beyond these ranges are not allowed. */
         struct {
-           ARM64VecShiftOp op;
-           HReg            dst;
-           HReg            src;
-           UInt            amt;
+           ARM64VecShiftImmOp op;
+           HReg               dst;
+           HReg               src;
+           UInt               amt;
         } VShiftImmV;
         struct {
            HReg dst;
@@ -866,7 +874,7 @@ extern ARM64Instr* ARM64Instr_VBinV   ( ARM64VecBinOp op, HReg, HReg, HReg );
 extern ARM64Instr* ARM64Instr_VUnaryV ( ARM64VecUnaryOp op, HReg, HReg );
 extern ARM64Instr* ARM64Instr_VNarrowV ( ARM64VecNarrowOp op, UInt dszBlg2,
                                          HReg dst, HReg src );
-extern ARM64Instr* ARM64Instr_VShiftImmV ( ARM64VecShiftOp op,
+extern ARM64Instr* ARM64Instr_VShiftImmV ( ARM64VecShiftImmOp op,
                                            HReg dst, HReg src, UInt amt );
 extern ARM64Instr* ARM64Instr_VExtV   ( HReg dst,
                                         HReg srcLo, HReg srcHi, UInt amtB );

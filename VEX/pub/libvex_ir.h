@@ -1545,6 +1545,7 @@ typedef
       Iop_QShlNsatSS32x4, Iop_QShlNsatSS64x2,
 
       /* VECTOR x VECTOR BIDIRECTIONAL SATURATING (& MAYBE ROUNDING) SHIFT */
+      /* All of type (V128, V128) -> V256. */
       /* The least significant 8 bits of each lane of the second
          operand are used as the shift amount, and interpreted signedly.
          Positive values mean a shift left, negative a shift right.  The
@@ -1571,6 +1572,34 @@ typedef
       // Signed saturation, rounding
       Iop_QandSQRsh8x16, Iop_QandSQRsh16x8,
       Iop_QandSQRsh32x4, Iop_QandSQRsh64x2,
+
+      /* VECTOR x VECTOR BIDIRECTIONAL (& MAYBE ROUNDING) SHIFT */
+      /* All of type (V128, V128) -> V128 */
+      /* The least significant 8 bits of each lane of the second
+         operand are used as the shift amount, and interpreted signedly.
+         Positive values mean a shift left, negative a shift right.
+         There are also rounding variants, which add 2^(shift_amount-1)
+         to the value before shifting, but only in the shift-right case.
+
+         For left shifts, the vacated places are filled with zeroes.
+         For right shifts, the vacated places are filled with zeroes
+         for the U variants and sign bits for the S variants. */
+      // Signed and unsigned, non-rounding
+      Iop_Sh8Sx16, Iop_Sh16Sx8, Iop_Sh32Sx4, Iop_Sh64Sx2,
+      Iop_Sh8Ux16, Iop_Sh16Ux8, Iop_Sh32Ux4, Iop_Sh64Ux2,
+
+      // Signed and unsigned, rounding
+      Iop_Rsh8Sx16, Iop_Rsh16Sx8, Iop_Rsh32Sx4, Iop_Rsh64Sx2,
+      Iop_Rsh8Ux16, Iop_Rsh16Ux8, Iop_Rsh32Ux4, Iop_Rsh64Ux2,
+
+      /* The least significant 8 bits of each lane of the second
+         operand are used as the shift amount, and interpreted signedly.
+         Positive values mean a shift left, negative a shift right.  The
+         result is signedly or unsignedly saturated.  There are also
+         rounding variants, which add 2^(shift_amount-1) to the value before
+         shifting, but only in the shift-right case.  Vacated positions
+         are filled with zeroes.  IOW, it's either SHR or SHL, but not SAR.
+      */
 
       /* VECTOR x SCALAR SATURATING (& MAYBE ROUNDING) NARROWING SHIFT RIGHT */
       /* All of type (V128, I8) -> V128 */

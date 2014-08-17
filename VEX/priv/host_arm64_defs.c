@@ -682,6 +682,22 @@ static void showARM64VecBinOp(/*OUT*/const HChar** nm,
       case ARM64vecb_UQRSHL32x4:   *nm = "uqrshl";    *ar = "4s";   return;
       case ARM64vecb_UQRSHL16x8:   *nm = "uqrshl";    *ar = "8h";   return;
       case ARM64vecb_UQRSHL8x16:   *nm = "uqrshl";    *ar = "16b";  return;
+      case ARM64vecb_SSHL64x2:     *nm = "sshl";      *ar = "2d";   return;
+      case ARM64vecb_SSHL32x4:     *nm = "sshl";      *ar = "4s";   return;
+      case ARM64vecb_SSHL16x8:     *nm = "sshl";      *ar = "8h";   return;
+      case ARM64vecb_SSHL8x16:     *nm = "sshl";      *ar = "16b";  return;
+      case ARM64vecb_USHL64x2:     *nm = "ushl";      *ar = "2d";   return;
+      case ARM64vecb_USHL32x4:     *nm = "ushl";      *ar = "4s";   return;
+      case ARM64vecb_USHL16x8:     *nm = "ushl";      *ar = "8h";   return;
+      case ARM64vecb_USHL8x16:     *nm = "ushl";      *ar = "16b";  return;
+      case ARM64vecb_SRSHL64x2:    *nm = "srshl";     *ar = "2d";   return;
+      case ARM64vecb_SRSHL32x4:    *nm = "srshl";     *ar = "4s";   return;
+      case ARM64vecb_SRSHL16x8:    *nm = "srshl";     *ar = "8h";   return;
+      case ARM64vecb_SRSHL8x16:    *nm = "srshl";     *ar = "16b";  return;
+      case ARM64vecb_URSHL64x2:    *nm = "urshl";     *ar = "2d";   return;
+      case ARM64vecb_URSHL32x4:    *nm = "urshl";     *ar = "4s";   return;
+      case ARM64vecb_URSHL16x8:    *nm = "urshl";     *ar = "8h";   return;
+      case ARM64vecb_URSHL8x16:    *nm = "urshl";     *ar = "16b";  return;
       default: vpanic("showARM64VecBinOp");
    }
 }
@@ -717,54 +733,54 @@ static void showARM64VecUnaryOp(/*OUT*/const HChar** nm,
    }
 }
 
-static void showARM64VecShiftOp(/*OUT*/const HChar** nm,
-                                /*OUT*/const HChar** ar,
-                                ARM64VecShiftOp op )
+static void showARM64VecShiftImmOp(/*OUT*/const HChar** nm,
+                                   /*OUT*/const HChar** ar,
+                                   ARM64VecShiftImmOp op )
 {
    switch (op) {
-      case ARM64vecsh_USHR64x2:    *nm = "ushr  ";   *ar = "2d";  return;
-      case ARM64vecsh_USHR32x4:    *nm = "ushr  ";   *ar = "4s";  return;
-      case ARM64vecsh_USHR16x8:    *nm = "ushr  ";   *ar = "8h";  return;
-      case ARM64vecsh_USHR8x16:    *nm = "ushr  ";   *ar = "16b"; return;
-      case ARM64vecsh_SSHR64x2:    *nm = "sshr  ";   *ar = "2d";  return;
-      case ARM64vecsh_SSHR32x4:    *nm = "sshr  ";   *ar = "4s";  return;
-      case ARM64vecsh_SSHR16x8:    *nm = "sshr  ";   *ar = "8h";  return;
-      case ARM64vecsh_SSHR8x16:    *nm = "sshr  ";   *ar = "16b"; return;
-      case ARM64vecsh_SHL64x2:     *nm = "shl   ";   *ar = "2d";  return;
-      case ARM64vecsh_SHL32x4:     *nm = "shl   ";   *ar = "4s";  return;
-      case ARM64vecsh_SHL16x8:     *nm = "shl   ";   *ar = "8h";  return;
-      case ARM64vecsh_SHL8x16:     *nm = "shl   ";   *ar = "16b"; return;
-      case ARM64vecsh_SQSHRN2SD:   *nm = "sqshrn";   *ar = "2sd"; return;
-      case ARM64vecsh_SQSHRN4HS:   *nm = "sqshrn";   *ar = "4hs"; return;
-      case ARM64vecsh_SQSHRN8BH:   *nm = "sqshrn";   *ar = "8bh"; return;
-      case ARM64vecsh_UQSHRN2SD:   *nm = "uqshrn";   *ar = "2sd"; return;
-      case ARM64vecsh_UQSHRN4HS:   *nm = "uqshrn";   *ar = "4hs"; return;
-      case ARM64vecsh_UQSHRN8BH:   *nm = "uqshrn";   *ar = "8bh"; return;
-      case ARM64vecsh_SQSHRUN2SD:  *nm = "sqshrun";  *ar = "2sd"; return;
-      case ARM64vecsh_SQSHRUN4HS:  *nm = "sqshrun";  *ar = "4hs"; return;
-      case ARM64vecsh_SQSHRUN8BH:  *nm = "sqshrun";  *ar = "8bh"; return;
-      case ARM64vecsh_SQRSHRN2SD:  *nm = "sqrshrn";  *ar = "2sd"; return;
-      case ARM64vecsh_SQRSHRN4HS:  *nm = "sqrshrn";  *ar = "4hs"; return;
-      case ARM64vecsh_SQRSHRN8BH:  *nm = "sqrshrn";  *ar = "8bh"; return;
-      case ARM64vecsh_UQRSHRN2SD:  *nm = "uqrshrn";  *ar = "2sd"; return;
-      case ARM64vecsh_UQRSHRN4HS:  *nm = "uqrshrn";  *ar = "4hs"; return;
-      case ARM64vecsh_UQRSHRN8BH:  *nm = "uqrshrn";  *ar = "8bh"; return;
-      case ARM64vecsh_SQRSHRUN2SD: *nm = "sqrshrun"; *ar = "2sd"; return;
-      case ARM64vecsh_SQRSHRUN4HS: *nm = "sqrshrun"; *ar = "4hs"; return;
-      case ARM64vecsh_SQRSHRUN8BH: *nm = "sqrshrun"; *ar = "8bh"; return;
-      case ARM64vecsh_UQSHL64x2:   *nm = "uqshl ";   *ar = "2d";  return;
-      case ARM64vecsh_UQSHL32x4:   *nm = "uqshl ";   *ar = "4s";  return;
-      case ARM64vecsh_UQSHL16x8:   *nm = "uqshl ";   *ar = "8h";  return;
-      case ARM64vecsh_UQSHL8x16:   *nm = "uqshl ";   *ar = "16b"; return;
-      case ARM64vecsh_SQSHL64x2:   *nm = "sqshl ";   *ar = "2d";  return;
-      case ARM64vecsh_SQSHL32x4:   *nm = "sqshl ";   *ar = "4s";  return;
-      case ARM64vecsh_SQSHL16x8:   *nm = "sqshl ";   *ar = "8h";  return;
-      case ARM64vecsh_SQSHL8x16:   *nm = "sqshl ";   *ar = "16b"; return;
-      case ARM64vecsh_SQSHLU64x2:  *nm = "sqshlu";   *ar = "2d";  return;
-      case ARM64vecsh_SQSHLU32x4:  *nm = "sqshlu";   *ar = "4s";  return;
-      case ARM64vecsh_SQSHLU16x8:  *nm = "sqshlu";   *ar = "8h";  return;
-      case ARM64vecsh_SQSHLU8x16:  *nm = "sqshlu";   *ar = "16b"; return;
-      default: vpanic("showARM64VecShiftOp");
+      case ARM64vecshi_USHR64x2:    *nm = "ushr  ";   *ar = "2d";  return;
+      case ARM64vecshi_USHR32x4:    *nm = "ushr  ";   *ar = "4s";  return;
+      case ARM64vecshi_USHR16x8:    *nm = "ushr  ";   *ar = "8h";  return;
+      case ARM64vecshi_USHR8x16:    *nm = "ushr  ";   *ar = "16b"; return;
+      case ARM64vecshi_SSHR64x2:    *nm = "sshr  ";   *ar = "2d";  return;
+      case ARM64vecshi_SSHR32x4:    *nm = "sshr  ";   *ar = "4s";  return;
+      case ARM64vecshi_SSHR16x8:    *nm = "sshr  ";   *ar = "8h";  return;
+      case ARM64vecshi_SSHR8x16:    *nm = "sshr  ";   *ar = "16b"; return;
+      case ARM64vecshi_SHL64x2:     *nm = "shl   ";   *ar = "2d";  return;
+      case ARM64vecshi_SHL32x4:     *nm = "shl   ";   *ar = "4s";  return;
+      case ARM64vecshi_SHL16x8:     *nm = "shl   ";   *ar = "8h";  return;
+      case ARM64vecshi_SHL8x16:     *nm = "shl   ";   *ar = "16b"; return;
+      case ARM64vecshi_SQSHRN2SD:   *nm = "sqshrn";   *ar = "2sd"; return;
+      case ARM64vecshi_SQSHRN4HS:   *nm = "sqshrn";   *ar = "4hs"; return;
+      case ARM64vecshi_SQSHRN8BH:   *nm = "sqshrn";   *ar = "8bh"; return;
+      case ARM64vecshi_UQSHRN2SD:   *nm = "uqshrn";   *ar = "2sd"; return;
+      case ARM64vecshi_UQSHRN4HS:   *nm = "uqshrn";   *ar = "4hs"; return;
+      case ARM64vecshi_UQSHRN8BH:   *nm = "uqshrn";   *ar = "8bh"; return;
+      case ARM64vecshi_SQSHRUN2SD:  *nm = "sqshrun";  *ar = "2sd"; return;
+      case ARM64vecshi_SQSHRUN4HS:  *nm = "sqshrun";  *ar = "4hs"; return;
+      case ARM64vecshi_SQSHRUN8BH:  *nm = "sqshrun";  *ar = "8bh"; return;
+      case ARM64vecshi_SQRSHRN2SD:  *nm = "sqrshrn";  *ar = "2sd"; return;
+      case ARM64vecshi_SQRSHRN4HS:  *nm = "sqrshrn";  *ar = "4hs"; return;
+      case ARM64vecshi_SQRSHRN8BH:  *nm = "sqrshrn";  *ar = "8bh"; return;
+      case ARM64vecshi_UQRSHRN2SD:  *nm = "uqrshrn";  *ar = "2sd"; return;
+      case ARM64vecshi_UQRSHRN4HS:  *nm = "uqrshrn";  *ar = "4hs"; return;
+      case ARM64vecshi_UQRSHRN8BH:  *nm = "uqrshrn";  *ar = "8bh"; return;
+      case ARM64vecshi_SQRSHRUN2SD: *nm = "sqrshrun"; *ar = "2sd"; return;
+      case ARM64vecshi_SQRSHRUN4HS: *nm = "sqrshrun"; *ar = "4hs"; return;
+      case ARM64vecshi_SQRSHRUN8BH: *nm = "sqrshrun"; *ar = "8bh"; return;
+      case ARM64vecshi_UQSHL64x2:   *nm = "uqshl ";   *ar = "2d";  return;
+      case ARM64vecshi_UQSHL32x4:   *nm = "uqshl ";   *ar = "4s";  return;
+      case ARM64vecshi_UQSHL16x8:   *nm = "uqshl ";   *ar = "8h";  return;
+      case ARM64vecshi_UQSHL8x16:   *nm = "uqshl ";   *ar = "16b"; return;
+      case ARM64vecshi_SQSHL64x2:   *nm = "sqshl ";   *ar = "2d";  return;
+      case ARM64vecshi_SQSHL32x4:   *nm = "sqshl ";   *ar = "4s";  return;
+      case ARM64vecshi_SQSHL16x8:   *nm = "sqshl ";   *ar = "8h";  return;
+      case ARM64vecshi_SQSHL8x16:   *nm = "sqshl ";   *ar = "16b"; return;
+      case ARM64vecshi_SQSHLU64x2:  *nm = "sqshlu";   *ar = "2d";  return;
+      case ARM64vecshi_SQSHLU32x4:  *nm = "sqshlu";   *ar = "4s";  return;
+      case ARM64vecshi_SQSHLU16x8:  *nm = "sqshlu";   *ar = "8h";  return;
+      case ARM64vecshi_SQSHLU8x16:  *nm = "sqshlu";   *ar = "16b"; return;
+      default: vpanic("showARM64VecShiftImmOp");
    }
 }
 
@@ -1120,7 +1136,7 @@ ARM64Instr* ARM64Instr_VNarrowV ( ARM64VecNarrowOp op,
    vassert(dszBlg2 == 0 || dszBlg2 == 1 || dszBlg2 == 2);
    return i;
 }
-ARM64Instr* ARM64Instr_VShiftImmV ( ARM64VecShiftOp op,
+ARM64Instr* ARM64Instr_VShiftImmV ( ARM64VecShiftImmOp op,
                                     HReg dst, HReg src, UInt amt ) {
    ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
    i->tag                    = ARM64in_VShiftImmV;
@@ -1134,41 +1150,41 @@ ARM64Instr* ARM64Instr_VShiftImmV ( ARM64VecShiftOp op,
       /* For right shifts, the allowed shift amounts are 1 .. lane_size.
          For left shifts,  the allowed shift amounts are 0 .. lane_size-1. 
       */
-      case ARM64vecsh_USHR64x2: case ARM64vecsh_SSHR64x2:
-      case ARM64vecsh_UQSHRN2SD: case ARM64vecsh_SQSHRN2SD:
-      case ARM64vecsh_SQSHRUN2SD:
-      case ARM64vecsh_UQRSHRN2SD: case ARM64vecsh_SQRSHRN2SD:
-      case ARM64vecsh_SQRSHRUN2SD:
+      case ARM64vecshi_USHR64x2: case ARM64vecshi_SSHR64x2:
+      case ARM64vecshi_UQSHRN2SD: case ARM64vecshi_SQSHRN2SD:
+      case ARM64vecshi_SQSHRUN2SD:
+      case ARM64vecshi_UQRSHRN2SD: case ARM64vecshi_SQRSHRN2SD:
+      case ARM64vecshi_SQRSHRUN2SD:
          minSh = 1; maxSh = 64; break;
-      case ARM64vecsh_SHL64x2:
-      case ARM64vecsh_UQSHL64x2: case ARM64vecsh_SQSHL64x2:
-      case ARM64vecsh_SQSHLU64x2:
+      case ARM64vecshi_SHL64x2:
+      case ARM64vecshi_UQSHL64x2: case ARM64vecshi_SQSHL64x2:
+      case ARM64vecshi_SQSHLU64x2:
          minSh = 0; maxSh = 63; break;
-      case ARM64vecsh_USHR32x4: case ARM64vecsh_SSHR32x4:
-      case ARM64vecsh_UQSHRN4HS: case ARM64vecsh_SQSHRN4HS:
-      case ARM64vecsh_SQSHRUN4HS:
-      case ARM64vecsh_UQRSHRN4HS: case ARM64vecsh_SQRSHRN4HS:
-      case ARM64vecsh_SQRSHRUN4HS:
+      case ARM64vecshi_USHR32x4: case ARM64vecshi_SSHR32x4:
+      case ARM64vecshi_UQSHRN4HS: case ARM64vecshi_SQSHRN4HS:
+      case ARM64vecshi_SQSHRUN4HS:
+      case ARM64vecshi_UQRSHRN4HS: case ARM64vecshi_SQRSHRN4HS:
+      case ARM64vecshi_SQRSHRUN4HS:
          minSh = 1; maxSh = 32; break;
-      case ARM64vecsh_SHL32x4:
-      case ARM64vecsh_UQSHL32x4: case ARM64vecsh_SQSHL32x4:
-      case ARM64vecsh_SQSHLU32x4:
+      case ARM64vecshi_SHL32x4:
+      case ARM64vecshi_UQSHL32x4: case ARM64vecshi_SQSHL32x4:
+      case ARM64vecshi_SQSHLU32x4:
          minSh = 0; maxSh = 31; break;
-      case ARM64vecsh_USHR16x8: case ARM64vecsh_SSHR16x8:
-      case ARM64vecsh_UQSHRN8BH: case ARM64vecsh_SQSHRN8BH:
-      case ARM64vecsh_SQSHRUN8BH:
-      case ARM64vecsh_UQRSHRN8BH: case ARM64vecsh_SQRSHRN8BH:
-      case ARM64vecsh_SQRSHRUN8BH:
+      case ARM64vecshi_USHR16x8: case ARM64vecshi_SSHR16x8:
+      case ARM64vecshi_UQSHRN8BH: case ARM64vecshi_SQSHRN8BH:
+      case ARM64vecshi_SQSHRUN8BH:
+      case ARM64vecshi_UQRSHRN8BH: case ARM64vecshi_SQRSHRN8BH:
+      case ARM64vecshi_SQRSHRUN8BH:
          minSh = 1; maxSh = 16; break;
-      case ARM64vecsh_SHL16x8:
-      case ARM64vecsh_UQSHL16x8: case ARM64vecsh_SQSHL16x8:
-      case ARM64vecsh_SQSHLU16x8:
+      case ARM64vecshi_SHL16x8:
+      case ARM64vecshi_UQSHL16x8: case ARM64vecshi_SQSHL16x8:
+      case ARM64vecshi_SQSHLU16x8:
          minSh = 0; maxSh = 15; break;
-      case ARM64vecsh_USHR8x16: case ARM64vecsh_SSHR8x16:
+      case ARM64vecshi_USHR8x16: case ARM64vecshi_SSHR8x16:
          minSh = 1; maxSh = 8; break;
-      case ARM64vecsh_SHL8x16:
-      case ARM64vecsh_UQSHL8x16: case ARM64vecsh_SQSHL8x16:
-      case ARM64vecsh_SQSHLU8x16:
+      case ARM64vecshi_SHL8x16:
+      case ARM64vecshi_UQSHL8x16: case ARM64vecshi_SQSHL8x16:
+      case ARM64vecshi_SQSHLU8x16:
          minSh = 0; maxSh = 7; break;
       default:
          vassert(0);
@@ -1649,7 +1665,7 @@ void ppARM64Instr ( ARM64Instr* i ) {
       case ARM64in_VShiftImmV: {
          const HChar* nm = "??";
          const HChar* ar = "??";
-         showARM64VecShiftOp(&nm, &ar, i->ARM64in.VShiftImmV.op);
+         showARM64VecShiftImmOp(&nm, &ar, i->ARM64in.VShiftImmV.op);
          vex_printf("%s ", nm);
          ppHRegARM64(i->ARM64in.VShiftImmV.dst);
          vex_printf(".%s, ", ar);
@@ -4040,6 +4056,11 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
             010 01110 sz 1 m  010111 n d   SQRSHL@sz  Vd, Vn, Vm
             011 01110 sz 1 m  010011 n d   UQSHL@sz   Vd, Vn, Vm
             011 01110 sz 1 m  010111 n d   URQSHL@sz  Vd, Vn, Vm
+
+            010 01110 sz 1 m  010001 n d   SSHL@sz   Vd, Vn, Vm
+            010 01110 sz 1 m  010101 n d   SRSHL@sz  Vd, Vn, Vm
+            011 01110 sz 1 m  010001 n d   USHL@sz   Vd, Vn, Vm
+            011 01110 sz 1 m  010101 n d   URSHL@sz  Vd, Vn, Vm
          */
          UInt vD = qregNo(i->ARM64in.VBinV.dst);
          UInt vN = qregNo(i->ARM64in.VBinV.argL);
@@ -4415,6 +4436,58 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
                *p++ = X_3_8_5_6_5_5(X011, X01110001, vM, X010111, vN, vD);
                break;
 
+            case ARM64vecb_SSHL64x2:
+               *p++ = X_3_8_5_6_5_5(X010, X01110111, vM, X010001, vN, vD);
+               break;
+            case ARM64vecb_SSHL32x4:
+               *p++ = X_3_8_5_6_5_5(X010, X01110101, vM, X010001, vN, vD);
+               break;
+            case ARM64vecb_SSHL16x8:
+               *p++ = X_3_8_5_6_5_5(X010, X01110011, vM, X010001, vN, vD);
+               break;
+            case ARM64vecb_SSHL8x16:
+               *p++ = X_3_8_5_6_5_5(X010, X01110001, vM, X010001, vN, vD);
+               break;
+
+            case ARM64vecb_SRSHL64x2:
+               *p++ = X_3_8_5_6_5_5(X010, X01110111, vM, X010101, vN, vD);
+               break;
+            case ARM64vecb_SRSHL32x4:
+               *p++ = X_3_8_5_6_5_5(X010, X01110101, vM, X010101, vN, vD);
+               break;
+            case ARM64vecb_SRSHL16x8:
+               *p++ = X_3_8_5_6_5_5(X010, X01110011, vM, X010101, vN, vD);
+               break;
+            case ARM64vecb_SRSHL8x16:
+               *p++ = X_3_8_5_6_5_5(X010, X01110001, vM, X010101, vN, vD);
+               break;
+
+            case ARM64vecb_USHL64x2:
+               *p++ = X_3_8_5_6_5_5(X011, X01110111, vM, X010001, vN, vD);
+               break;
+            case ARM64vecb_USHL32x4:
+               *p++ = X_3_8_5_6_5_5(X011, X01110101, vM, X010001, vN, vD);
+               break;
+            case ARM64vecb_USHL16x8:
+               *p++ = X_3_8_5_6_5_5(X011, X01110011, vM, X010001, vN, vD);
+               break;
+            case ARM64vecb_USHL8x16:
+               *p++ = X_3_8_5_6_5_5(X011, X01110001, vM, X010001, vN, vD);
+               break;
+
+            case ARM64vecb_URSHL64x2:
+               *p++ = X_3_8_5_6_5_5(X011, X01110111, vM, X010101, vN, vD);
+               break;
+            case ARM64vecb_URSHL32x4:
+               *p++ = X_3_8_5_6_5_5(X011, X01110101, vM, X010101, vN, vD);
+               break;
+            case ARM64vecb_URSHL16x8:
+               *p++ = X_3_8_5_6_5_5(X011, X01110011, vM, X010101, vN, vD);
+               break;
+            case ARM64vecb_URSHL8x16:
+               *p++ = X_3_8_5_6_5_5(X011, X01110001, vM, X010101, vN, vD);
+               break;
+
             default:
                goto bad;
          }
@@ -4641,48 +4714,48 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
             = X_3_6_7_6_5_5(X011, X011110, 0, X011001, vN, vD);
 
          switch (i->ARM64in.VShiftImmV.op) {
-            case ARM64vecsh_SSHR64x2:    tmpl = tmpl_SSHR;     goto right64x2;
-            case ARM64vecsh_USHR64x2:    tmpl = tmpl_USHR;     goto right64x2;
-            case ARM64vecsh_SHL64x2:     tmpl = tmpl_SHL;      goto left64x2;
-            case ARM64vecsh_UQSHL64x2:   tmpl = tmpl_UQSHL;    goto left64x2;
-            case ARM64vecsh_SQSHL64x2:   tmpl = tmpl_SQSHL;    goto left64x2;
-            case ARM64vecsh_SQSHLU64x2:  tmpl = tmpl_SQSHLU;   goto left64x2;
-            case ARM64vecsh_SSHR32x4:    tmpl = tmpl_SSHR;     goto right32x4;
-            case ARM64vecsh_USHR32x4:    tmpl = tmpl_USHR;     goto right32x4;
-            case ARM64vecsh_UQSHRN2SD:   tmpl = tmpl_UQSHRN;   goto right32x4;
-            case ARM64vecsh_SQSHRN2SD:   tmpl = tmpl_SQSHRN;   goto right32x4;
-            case ARM64vecsh_SQSHRUN2SD:  tmpl = tmpl_SQSHRUN;  goto right32x4;
-            case ARM64vecsh_UQRSHRN2SD:  tmpl = tmpl_UQRSHRN;  goto right32x4;
-            case ARM64vecsh_SQRSHRN2SD:  tmpl = tmpl_SQRSHRN;  goto right32x4;
-            case ARM64vecsh_SQRSHRUN2SD: tmpl = tmpl_SQRSHRUN; goto right32x4;
-            case ARM64vecsh_SHL32x4:     tmpl = tmpl_SHL;      goto left32x4;
-            case ARM64vecsh_UQSHL32x4:   tmpl = tmpl_UQSHL;    goto left32x4;
-            case ARM64vecsh_SQSHL32x4:   tmpl = tmpl_SQSHL;    goto left32x4;
-            case ARM64vecsh_SQSHLU32x4:  tmpl = tmpl_SQSHLU;   goto left32x4;
-            case ARM64vecsh_SSHR16x8:    tmpl = tmpl_SSHR;     goto right16x8;
-            case ARM64vecsh_USHR16x8:    tmpl = tmpl_USHR;     goto right16x8;
-            case ARM64vecsh_UQSHRN4HS:   tmpl = tmpl_UQSHRN;   goto right16x8;
-            case ARM64vecsh_SQSHRN4HS:   tmpl = tmpl_SQSHRN;   goto right16x8;
-            case ARM64vecsh_SQSHRUN4HS:  tmpl = tmpl_SQSHRUN;  goto right16x8;
-            case ARM64vecsh_UQRSHRN4HS:  tmpl = tmpl_UQRSHRN;  goto right16x8;
-            case ARM64vecsh_SQRSHRN4HS:  tmpl = tmpl_SQRSHRN;  goto right16x8;
-            case ARM64vecsh_SQRSHRUN4HS: tmpl = tmpl_SQRSHRUN; goto right16x8;
-            case ARM64vecsh_SHL16x8:     tmpl = tmpl_SHL;      goto left16x8;
-            case ARM64vecsh_UQSHL16x8:   tmpl = tmpl_UQSHL;    goto left16x8;
-            case ARM64vecsh_SQSHL16x8:   tmpl = tmpl_SQSHL;    goto left16x8;
-            case ARM64vecsh_SQSHLU16x8:  tmpl = tmpl_SQSHLU;   goto left16x8;
-            case ARM64vecsh_SSHR8x16:    tmpl = tmpl_SSHR;     goto right8x16;
-            case ARM64vecsh_USHR8x16:    tmpl = tmpl_USHR;     goto right8x16;
-            case ARM64vecsh_UQSHRN8BH:   tmpl = tmpl_UQSHRN;   goto right8x16;
-            case ARM64vecsh_SQSHRN8BH:   tmpl = tmpl_SQSHRN;   goto right8x16;
-            case ARM64vecsh_SQSHRUN8BH:  tmpl = tmpl_SQSHRUN;  goto right8x16;
-            case ARM64vecsh_UQRSHRN8BH:  tmpl = tmpl_UQRSHRN;  goto right8x16;
-            case ARM64vecsh_SQRSHRN8BH:  tmpl = tmpl_SQRSHRN;  goto right8x16;
-            case ARM64vecsh_SQRSHRUN8BH: tmpl = tmpl_SQRSHRUN; goto right8x16;
-            case ARM64vecsh_SHL8x16:     tmpl = tmpl_SHL;      goto left8x16;
-            case ARM64vecsh_UQSHL8x16:   tmpl = tmpl_UQSHL;    goto left8x16;
-            case ARM64vecsh_SQSHL8x16:   tmpl = tmpl_SQSHL;    goto left8x16;
-            case ARM64vecsh_SQSHLU8x16:  tmpl = tmpl_SQSHLU;   goto left8x16;
+            case ARM64vecshi_SSHR64x2:    tmpl = tmpl_SSHR;     goto right64x2;
+            case ARM64vecshi_USHR64x2:    tmpl = tmpl_USHR;     goto right64x2;
+            case ARM64vecshi_SHL64x2:     tmpl = tmpl_SHL;      goto left64x2;
+            case ARM64vecshi_UQSHL64x2:   tmpl = tmpl_UQSHL;    goto left64x2;
+            case ARM64vecshi_SQSHL64x2:   tmpl = tmpl_SQSHL;    goto left64x2;
+            case ARM64vecshi_SQSHLU64x2:  tmpl = tmpl_SQSHLU;   goto left64x2;
+            case ARM64vecshi_SSHR32x4:    tmpl = tmpl_SSHR;     goto right32x4;
+            case ARM64vecshi_USHR32x4:    tmpl = tmpl_USHR;     goto right32x4;
+            case ARM64vecshi_UQSHRN2SD:   tmpl = tmpl_UQSHRN;   goto right32x4;
+            case ARM64vecshi_SQSHRN2SD:   tmpl = tmpl_SQSHRN;   goto right32x4;
+            case ARM64vecshi_SQSHRUN2SD:  tmpl = tmpl_SQSHRUN;  goto right32x4;
+            case ARM64vecshi_UQRSHRN2SD:  tmpl = tmpl_UQRSHRN;  goto right32x4;
+            case ARM64vecshi_SQRSHRN2SD:  tmpl = tmpl_SQRSHRN;  goto right32x4;
+            case ARM64vecshi_SQRSHRUN2SD: tmpl = tmpl_SQRSHRUN; goto right32x4;
+            case ARM64vecshi_SHL32x4:     tmpl = tmpl_SHL;      goto left32x4;
+            case ARM64vecshi_UQSHL32x4:   tmpl = tmpl_UQSHL;    goto left32x4;
+            case ARM64vecshi_SQSHL32x4:   tmpl = tmpl_SQSHL;    goto left32x4;
+            case ARM64vecshi_SQSHLU32x4:  tmpl = tmpl_SQSHLU;   goto left32x4;
+            case ARM64vecshi_SSHR16x8:    tmpl = tmpl_SSHR;     goto right16x8;
+            case ARM64vecshi_USHR16x8:    tmpl = tmpl_USHR;     goto right16x8;
+            case ARM64vecshi_UQSHRN4HS:   tmpl = tmpl_UQSHRN;   goto right16x8;
+            case ARM64vecshi_SQSHRN4HS:   tmpl = tmpl_SQSHRN;   goto right16x8;
+            case ARM64vecshi_SQSHRUN4HS:  tmpl = tmpl_SQSHRUN;  goto right16x8;
+            case ARM64vecshi_UQRSHRN4HS:  tmpl = tmpl_UQRSHRN;  goto right16x8;
+            case ARM64vecshi_SQRSHRN4HS:  tmpl = tmpl_SQRSHRN;  goto right16x8;
+            case ARM64vecshi_SQRSHRUN4HS: tmpl = tmpl_SQRSHRUN; goto right16x8;
+            case ARM64vecshi_SHL16x8:     tmpl = tmpl_SHL;      goto left16x8;
+            case ARM64vecshi_UQSHL16x8:   tmpl = tmpl_UQSHL;    goto left16x8;
+            case ARM64vecshi_SQSHL16x8:   tmpl = tmpl_SQSHL;    goto left16x8;
+            case ARM64vecshi_SQSHLU16x8:  tmpl = tmpl_SQSHLU;   goto left16x8;
+            case ARM64vecshi_SSHR8x16:    tmpl = tmpl_SSHR;     goto right8x16;
+            case ARM64vecshi_USHR8x16:    tmpl = tmpl_USHR;     goto right8x16;
+            case ARM64vecshi_UQSHRN8BH:   tmpl = tmpl_UQSHRN;   goto right8x16;
+            case ARM64vecshi_SQSHRN8BH:   tmpl = tmpl_SQSHRN;   goto right8x16;
+            case ARM64vecshi_SQSHRUN8BH:  tmpl = tmpl_SQSHRUN;  goto right8x16;
+            case ARM64vecshi_UQRSHRN8BH:  tmpl = tmpl_UQRSHRN;  goto right8x16;
+            case ARM64vecshi_SQRSHRN8BH:  tmpl = tmpl_SQRSHRN;  goto right8x16;
+            case ARM64vecshi_SQRSHRUN8BH: tmpl = tmpl_SQRSHRUN; goto right8x16;
+            case ARM64vecshi_SHL8x16:     tmpl = tmpl_SHL;      goto left8x16;
+            case ARM64vecshi_UQSHL8x16:   tmpl = tmpl_UQSHL;    goto left8x16;
+            case ARM64vecshi_SQSHL8x16:   tmpl = tmpl_SQSHL;    goto left8x16;
+            case ARM64vecshi_SQSHLU8x16:  tmpl = tmpl_SQSHLU;   goto left8x16;
 
             default: break;
 

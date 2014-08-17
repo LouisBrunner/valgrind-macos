@@ -6711,6 +6711,51 @@ void math_QSHL_IMM ( /*OUT*/IRTemp* res,
 }
 
 
+/* Generate IR to do SRHADD and URHADD. */
+static
+IRTemp math_RHADD ( UInt size, Bool isU, IRTemp aa, IRTemp bb )
+{
+   /* Generate this:
+      (A >> 1) + (B >> 1) + (((A & 1) + (B & 1) + 1) >> 1)
+   */
+   vassert(size <= 3);
+   IROp opSHR = isU ? mkVecSHRN(size) : mkVecSARN(size);
+   IROp opADD = mkVecADD(size);
+   /* The only tricky bit is to generate the correct vector 1 constant. */
+   const ULong ones64[4]
+      = { 0x0101010101010101ULL, 0x0001000100010001ULL,
+          0x0000000100000001ULL, 0x0000000000000001ULL };
+   IRTemp imm64 = newTemp(Ity_I64);
+   assign(imm64, mkU64(ones64[size]));
+   IRTemp vecOne = newTempV128();
+   assign(vecOne, binop(Iop_64HLtoV128, mkexpr(imm64), mkexpr(imm64)));
+   IRTemp scaOne = newTemp(Ity_I8);
+   assign(scaOne, mkU8(1));
+   IRTemp res = newTempV128();
+   assign(res,
+          binop(opADD,
+                binop(opSHR, mkexpr(aa), mkexpr(scaOne)),
+                binop(opADD,
+                      binop(opSHR, mkexpr(bb), mkexpr(scaOne)),
+                      binop(opSHR,
+                            binop(opADD,
+                                  binop(opADD,
+                                        binop(Iop_AndV128, mkexpr(aa),
+                                                           mkexpr(vecOne)),
+                                        binop(Iop_AndV128, mkexpr(bb),
+                                                           mkexpr(vecOne))
+                                  ),
+                                  mkexpr(vecOne)
+                            ),
+                            mkexpr(scaOne)
+                      )
+                )
+          )
+   );
+   return res;
+}
+
+
 /* QCFLAG tracks the SIMD sticky saturation status.  Update the status
    thusly: if, after application of |opZHI| to both |qres| and |nres|,
    they have the same value, leave QCFLAG unchanged.  Otherwise, set it
@@ -9030,6 +9075,23 @@ Bool dis_AdvSIMD_three_same(/*MB_OUT*/DisResult* dres, UInt insn)
                                : (isU ? "uhsub" : "shsub");
       const HChar* arr = nameArr_Q_SZ(bitQ, size);
       DIP("%s %s.%s, %s.%s, %s.%s\n", nm,
+          nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(mm), arr);
+      return True;
+   }
+
+   if (opcode == BITS5(0,0,0,1,0)) {
+      /* -------- 0,xx,00010 SRHADD std7_std7_std7 -------- */
+      /* -------- 1,xx,00010 URHADD std7_std7_std7 -------- */
+      if (bitQ == 0 && size == X11) return False; // implied 1d case
+      Bool   isU  = bitU == 1;
+      IRTemp argL = newTempV128();
+      IRTemp argR = newTempV128();
+      assign(argL, getQReg128(nn));
+      assign(argR, getQReg128(mm));
+      IRTemp res = math_RHADD(size, isU, argL, argR);
+      putQReg128(dd, math_MAYBE_ZERO_HI64(bitQ, res));
+      const HChar* arr = nameArr_Q_SZ(bitQ, size);
+      DIP("%s %s.%s, %s.%s, %s.%s\n", isU ? "urhadd" : "srhadd",
           nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(mm), arr);
       return True;
    }

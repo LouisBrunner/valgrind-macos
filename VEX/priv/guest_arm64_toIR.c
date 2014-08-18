@@ -621,6 +621,22 @@ static IROp mkVecQADDS ( UInt size ) {
    return ops[size];
 }
 
+static IROp mkVecQADDEXTSUSATUU ( UInt size ) {
+   const IROp ops[4]
+      = { Iop_QAddExtSUsatUU8x16, Iop_QAddExtSUsatUU16x8,
+          Iop_QAddExtSUsatUU32x4, Iop_QAddExtSUsatUU64x2 };
+   vassert(size < 4);
+   return ops[size];
+}
+
+static IROp mkVecQADDEXTUSSATSS ( UInt size ) {
+   const IROp ops[4]
+      = { Iop_QAddExtUSsatSS8x16, Iop_QAddExtUSsatSS16x8,
+          Iop_QAddExtUSsatSS32x4, Iop_QAddExtUSsatSS64x2 };
+   vassert(size < 4);
+   return ops[size];
+}
+
 static IROp mkVecSUB ( UInt size ) {
    const IROp ops[4]
       = { Iop_Sub8x16, Iop_Sub16x8, Iop_Sub32x4, Iop_Sub64x2 };
@@ -8137,6 +8153,31 @@ Bool dis_AdvSIMD_scalar_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
    UInt dd     = INSN(4,0);
    vassert(size < 4);
 
+   if (opcode == BITS5(0,0,0,1,1)) {
+      /* -------- 0,xx,00011: SUQADD std4_std4 -------- */
+      /* -------- 1,xx,00011: USQADD std4_std4 -------- */
+      /* These are a bit tricky (to say the least).  See comments on
+         the vector variants (in dis_AdvSIMD_two_reg_misc) below for
+         details. */
+      Bool   isUSQADD = bitU == 1;
+      IROp   qop  = isUSQADD ? mkVecQADDEXTSUSATUU(size)
+                             : mkVecQADDEXTUSSATSS(size);
+      IROp   nop  = mkVecADD(size);
+      IRTemp argL = newTempV128();
+      IRTemp argR = newTempV128();
+      assign(argL, getQReg128(nn));
+      assign(argR, getQReg128(dd));
+      IRTemp qres = math_ZERO_ALL_EXCEPT_LOWEST_LANE(
+                       size, binop(qop, mkexpr(argL), mkexpr(argR)));
+      IRTemp nres = math_ZERO_ALL_EXCEPT_LOWEST_LANE(
+                       size, binop(nop, mkexpr(argL), mkexpr(argR)));
+      putQReg128(dd, mkexpr(qres));
+      updateQCFLAGwithDifference(qres, nres);
+      const HChar arr = "bhsd"[size];
+      DIP("%s %c%u, %c%u\n", isUSQADD ? "usqadd" : "suqadd", arr, dd, arr, nn);
+      return True;
+   }
+
    if (opcode == BITS5(0,0,1,1,1)) {
       /* -------- 0,xx,00111 SQABS std4_std4 -------- */
       /* -------- 1,xx,00111 SQNEG std4_std4 -------- */
@@ -9744,6 +9785,39 @@ Bool dis_AdvSIMD_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
       DIP("%s %s.%s, %s.%s\n", isACC ? (isU ? "uadalp" : "sadalp")
                                      : (isU ? "uaddlp" : "saddlp"),
           nameQReg128(dd), arrWide, nameQReg128(nn), arrNarrow);
+      return True;
+   }
+
+   if (opcode == BITS5(0,0,0,1,1)) {
+      /* -------- 0,xx,00011: SUQADD std7_std7 -------- */
+      /* -------- 1,xx,00011: USQADD std7_std7 -------- */
+      if (bitQ == 0 && size == X11) return False; // implied 1d case
+      Bool isUSQADD = bitU == 1;
+      /* This is switched (in the US vs SU sense) deliberately.
+         SUQADD corresponds to the ExtUSsatSS variants and 
+         USQADD corresponds to the ExtSUsatUU variants.
+         See libvex_ir for more details. */
+      IROp   qop  = isUSQADD ? mkVecQADDEXTSUSATUU(size)
+                             : mkVecQADDEXTUSSATSS(size);
+      IROp   nop  = mkVecADD(size);
+      IRTemp argL = newTempV128();
+      IRTemp argR = newTempV128();
+      IRTemp qres = newTempV128();
+      IRTemp nres = newTempV128();
+      /* Because the two arguments to the addition are implicitly 
+         extended differently (one signedly, the other unsignedly) it is
+         important to present them to the primop in the correct order. */
+      assign(argL, getQReg128(nn));
+      assign(argR, getQReg128(dd));
+      assign(qres, math_MAYBE_ZERO_HI64_fromE(
+                      bitQ, binop(qop, mkexpr(argL), mkexpr(argR))));
+      assign(nres, math_MAYBE_ZERO_HI64_fromE(
+                      bitQ, binop(nop, mkexpr(argL), mkexpr(argR))));
+      putQReg128(dd, mkexpr(qres));
+      updateQCFLAGwithDifference(qres, nres);
+      const HChar* arr = nameArr_Q_SZ(bitQ, size);
+      DIP("%s %s.%s, %s.%s\n", isUSQADD ? "usqadd" : "suqadd",
+          nameQReg128(dd), arr, nameQReg128(nn), arr);
       return True;
    }
 

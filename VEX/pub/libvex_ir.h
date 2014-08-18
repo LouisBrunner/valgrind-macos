@@ -1397,10 +1397,20 @@ typedef
       /* MISC (vector integer cmp != 0) */
       Iop_CmpNEZ8x16, Iop_CmpNEZ16x8, Iop_CmpNEZ32x4, Iop_CmpNEZ64x2,
 
-      /* ADDITION (normal / unsigned sat / signed sat) */
-      Iop_Add8x16,   Iop_Add16x8,   Iop_Add32x4,   Iop_Add64x2,
-      Iop_QAdd8Ux16, Iop_QAdd16Ux8, Iop_QAdd32Ux4, Iop_QAdd64Ux2,
-      Iop_QAdd8Sx16, Iop_QAdd16Sx8, Iop_QAdd32Sx4, Iop_QAdd64Sx2,
+      /* ADDITION (normal / U->U sat / S->S sat) */
+      Iop_Add8x16,    Iop_Add16x8,    Iop_Add32x4,    Iop_Add64x2,
+      Iop_QAdd8Ux16,  Iop_QAdd16Ux8,  Iop_QAdd32Ux4,  Iop_QAdd64Ux2,
+      Iop_QAdd8Sx16,  Iop_QAdd16Sx8,  Iop_QAdd32Sx4,  Iop_QAdd64Sx2,
+
+      /* ADDITION, ARM64 specific saturating variants. */
+      /* Unsigned widen left arg, signed widen right arg, add, saturate S->S.
+         This corresponds to SUQADD. */
+      Iop_QAddExtUSsatSS8x16, Iop_QAddExtUSsatSS16x8,
+      Iop_QAddExtUSsatSS32x4, Iop_QAddExtUSsatSS64x2,
+      /* Signed widen left arg, unsigned widen right arg, add, saturate U->U.
+         This corresponds to USQADD. */
+      Iop_QAddExtSUsatUU8x16, Iop_QAddExtSUsatUU16x8,
+      Iop_QAddExtSUsatUU32x4, Iop_QAddExtSUsatUU64x2,
 
       /* SUBTRACTION (normal / unsigned sat / signed sat) */
       Iop_Sub8x16,   Iop_Sub16x8,   Iop_Sub32x4,   Iop_Sub64x2,

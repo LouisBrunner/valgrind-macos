@@ -2296,6 +2296,7 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
             addInstr(env, ARM64Instr_VQfromXX(res, argL, argR));
             return res;
          }
+         /* -- Cases where we can generate a simple three-reg instruction. -- */
          case Iop_AndV128:
          case Iop_OrV128:
          case Iop_XorV128:
@@ -2471,6 +2472,40 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
             }
             return res;
          }
+         /* -- These only have 2 operand instructions, so we have to first move
+            the first argument into a new register, for modification. -- */
+         case Iop_QAddExtUSsatSS8x16: case Iop_QAddExtUSsatSS16x8:
+         case Iop_QAddExtUSsatSS32x4: case Iop_QAddExtUSsatSS64x2:
+         case Iop_QAddExtSUsatUU8x16: case Iop_QAddExtSUsatUU16x8:
+         case Iop_QAddExtSUsatUU32x4: case Iop_QAddExtSUsatUU64x2:
+         {
+            HReg res  = newVRegV(env);
+            HReg argL = iselV128Expr(env, e->Iex.Binop.arg1);
+            HReg argR = iselV128Expr(env, e->Iex.Binop.arg2);
+            ARM64VecModifyOp op = ARM64vecmo_INVALID;
+            switch (e->Iex.Binop.op) {
+               /* In the following 8 cases, the US - SU switching is intended.
+                  See comments on the libvex_ir.h for details.  Also in the 
+                  ARM64 front end, where used these primops are generated. */
+               case Iop_QAddExtUSsatSS8x16: op = ARM64vecmo_SUQADD8x16; break;
+               case Iop_QAddExtUSsatSS16x8: op = ARM64vecmo_SUQADD16x8; break;
+               case Iop_QAddExtUSsatSS32x4: op = ARM64vecmo_SUQADD32x4; break;
+               case Iop_QAddExtUSsatSS64x2: op = ARM64vecmo_SUQADD64x2; break;
+               case Iop_QAddExtSUsatUU8x16: op = ARM64vecmo_USQADD8x16; break;
+               case Iop_QAddExtSUsatUU16x8: op = ARM64vecmo_USQADD16x8; break;
+               case Iop_QAddExtSUsatUU32x4: op = ARM64vecmo_USQADD32x4; break;
+               case Iop_QAddExtSUsatUU64x2: op = ARM64vecmo_USQADD64x2; break;
+               default: vassert(0);
+            }
+            /* The order of the operands is important.  Although this is
+               basically addition, the two operands are extended differently,
+               making it important to get them into the correct registers in
+               the instruction. */
+            addInstr(env, ARM64Instr_VMov(16, res, argR));
+            addInstr(env, ARM64Instr_VModifyV(op, res, argL));
+            return res;
+         }
+         /* -- Shifts by an immediate. -- */
          case Iop_ShrN64x2: case Iop_ShrN32x4:
          case Iop_ShrN16x8: case Iop_ShrN8x16:
          case Iop_SarN64x2: case Iop_SarN32x4:
@@ -2574,7 +2609,7 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
             /* else fall out; this is unhandled */
             break;
          }
-
+         /* -- Saturating narrowing by an immediate -- */
          /* uu */
          case Iop_QandQShrNnarrow16Uto8Ux8:
          case Iop_QandQShrNnarrow32Uto16Ux4:

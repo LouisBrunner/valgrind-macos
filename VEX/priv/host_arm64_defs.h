@@ -386,6 +386,16 @@ typedef
 
 typedef
    enum {
+      ARM64vecmo_SUQADD64x2=335, ARM64vecmo_SUQADD32x4,
+      ARM64vecmo_SUQADD16x8,     ARM64vecmo_SUQADD8x16,
+      ARM64vecmo_USQADD64x2,     ARM64vecmo_USQADD32x4,
+      ARM64vecmo_USQADD16x8,     ARM64vecmo_USQADD8x16,
+      ARM64vecmo_INVALID
+   }
+   ARM64VecModifyOp;
+
+typedef
+   enum {
       ARM64vecu_FNEG64x2=300, ARM64vecu_FNEG32x4,
       ARM64vecu_FABS64x2,     ARM64vecu_FABS32x4,
       ARM64vecu_NOT,
@@ -482,6 +492,7 @@ typedef
       ARM64in_FPSR,
       /* ARM64in_V*V: vector ops on vector registers */
       ARM64in_VBinV,
+      ARM64in_VModifyV,
       ARM64in_VUnaryV,
       ARM64in_VNarrowV,
       ARM64in_VShiftImmV,
@@ -746,6 +757,13 @@ typedef
             HReg          argL;
             HReg          argR;
          } VBinV;
+         /* binary vector operation on vector registers.
+            Dst reg is also a src. */
+         struct {
+            ARM64VecModifyOp op;
+            HReg             mod;
+            HReg             arg;
+         } VModifyV;
          /* unary vector operation on vector registers */
          struct {
             ARM64VecUnaryOp op;
@@ -871,6 +889,7 @@ extern ARM64Instr* ARM64Instr_VCmpS   ( HReg argL, HReg argR );
 extern ARM64Instr* ARM64Instr_FPCR    ( Bool toFPCR, HReg iReg );
 extern ARM64Instr* ARM64Instr_FPSR    ( Bool toFPSR, HReg iReg );
 extern ARM64Instr* ARM64Instr_VBinV   ( ARM64VecBinOp op, HReg, HReg, HReg );
+extern ARM64Instr* ARM64Instr_VModifyV ( ARM64VecModifyOp, HReg, HReg );
 extern ARM64Instr* ARM64Instr_VUnaryV ( ARM64VecUnaryOp op, HReg, HReg );
 extern ARM64Instr* ARM64Instr_VNarrowV ( ARM64VecNarrowOp op, UInt dszBlg2,
                                          HReg dst, HReg src );

@@ -702,6 +702,22 @@ static void showARM64VecBinOp(/*OUT*/const HChar** nm,
    }
 }
 
+static void showARM64VecModifyOp(/*OUT*/const HChar** nm,
+                                 /*OUT*/const HChar** ar,
+                                 ARM64VecModifyOp op ) {
+   switch (op) {
+      case ARM64vecmo_SUQADD64x2:   *nm = "suqadd";    *ar = "2d";   return;
+      case ARM64vecmo_SUQADD32x4:   *nm = "suqadd";    *ar = "4s";   return;
+      case ARM64vecmo_SUQADD16x8:   *nm = "suqadd";    *ar = "8h";   return;
+      case ARM64vecmo_SUQADD8x16:   *nm = "suqadd";    *ar = "16b";  return;
+      case ARM64vecmo_USQADD64x2:   *nm = "usqadd";    *ar = "2d";   return;
+      case ARM64vecmo_USQADD32x4:   *nm = "usqadd";    *ar = "4s";   return;
+      case ARM64vecmo_USQADD16x8:   *nm = "usqadd";    *ar = "8h";   return;
+      case ARM64vecmo_USQADD8x16:   *nm = "usqadd";    *ar = "16b";  return;
+      default: vpanic("showARM64VecModifyOp");
+   }
+}
+
 static void showARM64VecUnaryOp(/*OUT*/const HChar** nm,
                                 /*OUT*/const HChar** ar, ARM64VecUnaryOp op )
 {
@@ -1115,6 +1131,14 @@ ARM64Instr* ARM64Instr_VBinV ( ARM64VecBinOp op,
    i->ARM64in.VBinV.dst  = dst;
    i->ARM64in.VBinV.argL = argL;
    i->ARM64in.VBinV.argR = argR;
+   return i;
+}
+ARM64Instr* ARM64Instr_VModifyV ( ARM64VecModifyOp op, HReg mod, HReg arg ) {
+   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   i->tag                  = ARM64in_VModifyV;
+   i->ARM64in.VModifyV.op  = op;
+   i->ARM64in.VModifyV.mod = mod;
+   i->ARM64in.VModifyV.arg = arg;
    return i;
 }
 ARM64Instr* ARM64Instr_VUnaryV ( ARM64VecUnaryOp op, HReg dst, HReg arg ) {
@@ -1639,6 +1663,17 @@ void ppARM64Instr ( ARM64Instr* i ) {
          vex_printf(".%s", ar);
          return;
       }
+      case ARM64in_VModifyV: {
+         const HChar* nm = "??";
+         const HChar* ar = "??";
+         showARM64VecModifyOp(&nm, &ar, i->ARM64in.VModifyV.op);
+         vex_printf("%s ", nm);
+         ppHRegARM64(i->ARM64in.VModifyV.mod);
+         vex_printf(".%s, ", ar);
+         ppHRegARM64(i->ARM64in.VModifyV.arg);
+         vex_printf(".%s", ar);
+         return;
+      }
       case ARM64in_VUnaryV: {
          const HChar* nm = "??";
          const HChar* ar = "??";
@@ -2000,6 +2035,11 @@ void getRegUsage_ARM64Instr ( HRegUsage* u, ARM64Instr* i, Bool mode64 )
          addHRegUse(u, HRmRead, i->ARM64in.VBinV.argL);
          addHRegUse(u, HRmRead, i->ARM64in.VBinV.argR);
          return;
+      case ARM64in_VModifyV:
+         addHRegUse(u, HRmWrite, i->ARM64in.VModifyV.mod);
+         addHRegUse(u, HRmRead, i->ARM64in.VModifyV.mod);
+         addHRegUse(u, HRmRead, i->ARM64in.VModifyV.arg);
+         return;
       case ARM64in_VUnaryV:
          addHRegUse(u, HRmWrite, i->ARM64in.VUnaryV.dst);
          addHRegUse(u, HRmRead, i->ARM64in.VUnaryV.arg);
@@ -2213,6 +2253,10 @@ void mapRegs_ARM64Instr ( HRegRemap* m, ARM64Instr* i, Bool mode64 )
          i->ARM64in.VBinV.dst  = lookupHRegRemap(m, i->ARM64in.VBinV.dst);
          i->ARM64in.VBinV.argL = lookupHRegRemap(m, i->ARM64in.VBinV.argL);
          i->ARM64in.VBinV.argR = lookupHRegRemap(m, i->ARM64in.VBinV.argR);
+         return;
+      case ARM64in_VModifyV:
+         i->ARM64in.VModifyV.mod = lookupHRegRemap(m, i->ARM64in.VModifyV.mod);
+         i->ARM64in.VModifyV.arg = lookupHRegRemap(m, i->ARM64in.VModifyV.arg);
          return;
       case ARM64in_VUnaryV:
          i->ARM64in.VUnaryV.dst = lookupHRegRemap(m, i->ARM64in.VUnaryV.dst);
@@ -4488,6 +4532,43 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
                *p++ = X_3_8_5_6_5_5(X011, X01110001, vM, X010101, vN, vD);
                break;
 
+            default:
+               goto bad;
+         }
+         goto done;
+      }
+      case ARM64in_VModifyV: {
+         /* 31        23   20    15     9 4
+            010 01110 sz 1 00000 001110 n d   SUQADD@sz  Vd, Vn
+            011 01110 sz 1 00000 001110 n d   USQADD@sz  Vd, Vn
+         */
+         UInt vD = qregNo(i->ARM64in.VModifyV.mod);
+         UInt vN = qregNo(i->ARM64in.VModifyV.arg);
+         switch (i->ARM64in.VModifyV.op) {
+            case ARM64vecmo_SUQADD64x2:
+               *p++ = X_3_8_5_6_5_5(X010, X01110111, X00000, X001110, vN, vD);
+               break;
+            case ARM64vecmo_SUQADD32x4:
+               *p++ = X_3_8_5_6_5_5(X010, X01110101, X00000, X001110, vN, vD);
+               break;
+            case ARM64vecmo_SUQADD16x8:
+               *p++ = X_3_8_5_6_5_5(X010, X01110011, X00000, X001110, vN, vD);
+               break;
+            case ARM64vecmo_SUQADD8x16:
+               *p++ = X_3_8_5_6_5_5(X010, X01110001, X00000, X001110, vN, vD);
+               break;
+            case ARM64vecmo_USQADD64x2:
+               *p++ = X_3_8_5_6_5_5(X011, X01110111, X00000, X001110, vN, vD);
+               break;
+            case ARM64vecmo_USQADD32x4:
+               *p++ = X_3_8_5_6_5_5(X011, X01110101, X00000, X001110, vN, vD);
+               break;
+            case ARM64vecmo_USQADD16x8:
+               *p++ = X_3_8_5_6_5_5(X011, X01110011, X00000, X001110, vN, vD);
+               break;
+            case ARM64vecmo_USQADD8x16:
+               *p++ = X_3_8_5_6_5_5(X011, X01110001, X00000, X001110, vN, vD);
+               break;
             default:
                goto bad;
          }

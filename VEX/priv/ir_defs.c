@@ -740,6 +740,16 @@ void ppIROp ( IROp op )
       case Iop_QAdd32Sx4: vex_printf("QAdd32Sx4"); return;
       case Iop_QAdd64Ux2: vex_printf("QAdd64Ux2"); return;
       case Iop_QAdd64Sx2: vex_printf("QAdd64Sx2"); return;
+
+      case Iop_QAddExtUSsatSS8x16: vex_printf("QAddExtUSsatSS8x16"); return;
+      case Iop_QAddExtUSsatSS16x8: vex_printf("QAddExtUSsatSS16x8"); return;
+      case Iop_QAddExtUSsatSS32x4: vex_printf("QAddExtUSsatSS32x4"); return;
+      case Iop_QAddExtUSsatSS64x2: vex_printf("QAddExtUSsatSS64x2"); return;
+      case Iop_QAddExtSUsatUU8x16: vex_printf("QAddExtSUsatUU8x16"); return;
+      case Iop_QAddExtSUsatUU16x8: vex_printf("QAddExtSUsatUU16x8"); return;
+      case Iop_QAddExtSUsatUU32x4: vex_printf("QAddExtSUsatUU32x4"); return;
+      case Iop_QAddExtSUsatUU64x2: vex_printf("QAddExtSUsatUU64x2"); return;
+
       case Iop_PwAdd8x16: vex_printf("PwAdd8x16"); return;
       case Iop_PwAdd16x8: vex_printf("PwAdd16x8"); return;
       case Iop_PwAdd32x4: vex_printf("PwAdd32x4"); return;
@@ -2892,6 +2902,10 @@ void typeOfPrimop ( IROp op,
       case Iop_QAdd32Ux4: case Iop_QAdd64Ux2:
       case Iop_QAdd8Sx16: case Iop_QAdd16Sx8:
       case Iop_QAdd32Sx4: case Iop_QAdd64Sx2:
+      case Iop_QAddExtUSsatSS8x16: case Iop_QAddExtUSsatSS16x8:
+      case Iop_QAddExtUSsatSS32x4: case Iop_QAddExtUSsatSS64x2:
+      case Iop_QAddExtSUsatUU8x16: case Iop_QAddExtSUsatUU16x8:
+      case Iop_QAddExtSUsatUU32x4: case Iop_QAddExtSUsatUU64x2:
       case Iop_PwAdd8x16: case Iop_PwAdd16x8: case Iop_PwAdd32x4:
       case Iop_Sub8x16:   case Iop_Sub16x8:
       case Iop_Sub32x4:   case Iop_Sub64x2:

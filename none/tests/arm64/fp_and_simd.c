@@ -17,7 +17,7 @@ typedef  unsigned char           Bool;
 #define True  ((Bool)1)
 
 
-#define ITERS 20
+#define ITERS 1
 
 typedef
   enum { TySF=1234, TyDF, TyB, TyH, TyS, TyD, TyNONE }
@@ -4861,18 +4861,18 @@ int main ( void )
 
    // srhadd       4s,2s,8h,4h,16b,8b
    // urhadd       4s,2s,8h,4h,16b,8b
-   if (0) test_srhadd_4s_4s_4s(TyS);
-   if (0) test_srhadd_2s_2s_2s(TyS);
-   if (0) test_srhadd_8h_8h_8h(TyH);
-   if (0) test_srhadd_4h_4h_4h(TyH);
-   if (0) test_srhadd_16b_16b_16b(TyB);
-   if (0) test_srhadd_8b_8b_8b(TyB);
-   if (0) test_urhadd_4s_4s_4s(TyS);
-   if (0) test_urhadd_2s_2s_2s(TyS);
-   if (0) test_urhadd_8h_8h_8h(TyH);
-   if (0) test_urhadd_4h_4h_4h(TyH);
-   if (0) test_urhadd_16b_16b_16b(TyB);
-   if (0) test_urhadd_8b_8b_8b(TyB);
+   if (1) test_srhadd_4s_4s_4s(TyS);
+   if (1) test_srhadd_2s_2s_2s(TyS);
+   if (1) test_srhadd_8h_8h_8h(TyH);
+   if (1) test_srhadd_4h_4h_4h(TyH);
+   if (1) test_srhadd_16b_16b_16b(TyB);
+   if (1) test_srhadd_8b_8b_8b(TyB);
+   if (1) test_urhadd_4s_4s_4s(TyS);
+   if (1) test_urhadd_2s_2s_2s(TyS);
+   if (1) test_urhadd_8h_8h_8h(TyH);
+   if (1) test_urhadd_4h_4h_4h(TyH);
+   if (1) test_urhadd_16b_16b_16b(TyB);
+   if (1) test_urhadd_8b_8b_8b(TyB);
 
    // sshl (reg)   d
    // ushl (reg)   d
@@ -5195,31 +5195,31 @@ int main ( void )
 
    // suqadd  d,s,h,b
    // usqadd  d,s,h,b
-   if (0) test_suqadd_d_d(TyD);
-   if (0) test_suqadd_s_s(TyS);
-   if (0) test_suqadd_h_h(TyH);
-   if (0) test_suqadd_b_b(TyB);
-   if (0) test_usqadd_d_d(TyD);
-   if (0) test_usqadd_s_s(TyS);
-   if (0) test_usqadd_h_h(TyH);
-   if (0) test_usqadd_b_b(TyB);
+   if (1) test_suqadd_d_d(TyD);
+   if (1) test_suqadd_s_s(TyS);
+   if (1) test_suqadd_h_h(TyH);
+   if (1) test_suqadd_b_b(TyB);
+   if (1) test_usqadd_d_d(TyD);
+   if (1) test_usqadd_s_s(TyS);
+   if (1) test_usqadd_h_h(TyH);
+   if (1) test_usqadd_b_b(TyB);
 
    // suqadd  2d,4s,2s,8h,4h,16b,8b
    // usqadd  2d,4s,2s,8h,4h,16b,8b
-   if (0) test_suqadd_2d_2d(TyD);
-   if (0) test_suqadd_4s_4s(TyS);
-   if (0) test_suqadd_2s_2s(TyS);
-   if (0) test_suqadd_8h_8h(TyH);
-   if (0) test_suqadd_4h_4h(TyH);
-   if (0) test_suqadd_16b_16b(TyB);
-   if (0) test_suqadd_8b_8b(TyB);
-   if (0) test_usqadd_2d_2d(TyD);
-   if (0) test_usqadd_4s_4s(TyS);
-   if (0) test_usqadd_2s_2s(TyS);
-   if (0) test_usqadd_8h_8h(TyH);
-   if (0) test_usqadd_4h_4h(TyH);
-   if (0) test_usqadd_16b_16b(TyB);
-   if (0) test_usqadd_8b_8b(TyB);
+   if (1) test_suqadd_2d_2d(TyD);
+   if (1) test_suqadd_4s_4s(TyS);
+   if (1) test_suqadd_2s_2s(TyS);
+   if (1) test_suqadd_8h_8h(TyH);
+   if (1) test_suqadd_4h_4h(TyH);
+   if (1) test_suqadd_16b_16b(TyB);
+   if (1) test_suqadd_8b_8b(TyB);
+   if (1) test_usqadd_2d_2d(TyD);
+   if (1) test_usqadd_4s_4s(TyS);
+   if (1) test_usqadd_2s_2s(TyS);
+   if (1) test_usqadd_8h_8h(TyH);
+   if (1) test_usqadd_4h_4h(TyH);
+   if (1) test_usqadd_16b_16b(TyB);
+   if (1) test_usqadd_8b_8b(TyB);
 
    // tbl     8b_{16b}_8b, 16b_{16b}_16b
    // tbl     8b_{16b,16b}_8b, 16b_{16b,16b}_16b

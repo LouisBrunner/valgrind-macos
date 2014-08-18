@@ -41,9 +41,6 @@
  * (define to 0 if you get compile errors) */
 #define CLG_MICROSYSTIME 0
 
-/* Set to 1 if you want full sanity checks for JCC */
-#define JCC_CHECK 0
-
 
 
 /*------------------------------------------------------------*/
@@ -104,10 +101,6 @@ struct _CommandLineOptions {
 /*--- Constants                                            ---*/
 /*------------------------------------------------------------*/
 
-
-/* According to IA-32 Intel Architecture Software Developer's Manual: Vol 2 */
-#define MAX_x86_INSTR_SIZE              16
-
 /* Minimum cache line size allowed */
 #define MIN_LINE_SIZE   16
 
@@ -117,9 +110,7 @@ struct _CommandLineOptions {
 #define OBJ_NAME_LEN                    256
 #define COSTS_LEN                       512 /* at least 17x 64bit values */
 #define BUF_LEN                         512
-#define COMMIFY_BUF_LEN                 128
 #define RESULTS_BUF_LEN                 256
-#define LINE_BUF_LEN                     64
 
 
 /* Convenience macros */
@@ -452,7 +443,6 @@ struct _fn_node {
 #define   N_OBJ_ENTRIES         47
 #define  N_FILE_ENTRIES         53
 #define    N_FN_ENTRIES         87
-#define N_BBCC2_ENTRIES         37
 
 struct _file_node {
    HChar*     name;
@@ -681,10 +671,6 @@ struct cachesim_if
     const HChar *log_0I1Dr_name, *log_0I1Dw_name;
 };
 
-// set by setup_bbcc at start of every BB, and needed by log_* helpers
-extern Addr   CLG_(bb_base);
-extern ULong* CLG_(cost_base);
-
 // Event groups
 #define EG_USE   0
 #define EG_IR    1
@@ -699,7 +685,6 @@ extern ULong* CLG_(cost_base);
 struct event_sets {
     EventSet *base, *full;
 };
-extern struct event_sets CLG_(sets);
 
 #define fullOffset(group) (CLG_(sets).full->offset[group])
 
@@ -717,7 +702,6 @@ void CLG_(print_usage)(void);
 void CLG_(print_debug_usage)(void);
 
 /* from sim.c */
-extern struct cachesim_if CLG_(cachesim);
 void CLG_(init_eventsets)(void);
 
 /* from main.c */
@@ -811,7 +795,6 @@ void CLG_(post_signal)(ThreadId tid, Int sigNum);
 void CLG_(run_post_signal_on_call_stack_bottom)(void);
 
 /* from dump.c */
-extern FullCost CLG_(total_cost);
 void CLG_(init_dumps)(void);
 HChar* CLG_(get_out_file)(void);
 HChar* CLG_(get_out_directory)(void);
@@ -829,11 +812,17 @@ extern UInt* CLG_(fn_active_array);
 extern Bool CLG_(instrument_state);
  /* min of L1 and LL cache line sizes */
 extern Int CLG_(min_line_size);
-
 extern call_stack CLG_(current_call_stack);
 extern fn_stack   CLG_(current_fn_stack);
 extern exec_state CLG_(current_state);
 extern ThreadId   CLG_(current_tid);
+extern FullCost   CLG_(total_cost);
+extern struct cachesim_if CLG_(cachesim);
+extern struct event_sets  CLG_(sets);
+
+// set by setup_bbcc at start of every BB, and needed by log_* helpers
+extern Addr   CLG_(bb_base);
+extern ULong* CLG_(cost_base);
 
 
 /*------------------------------------------------------------*/

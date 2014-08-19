@@ -1,0 +1,2 @@
+prog: tls_threads
+vgopts: -q --sim-hints=no-nptl-pthread-stackcache

@@ -972,6 +972,16 @@ unlock(mx)                             unlock(mx)
   </listitem>
 
   <listitem>
+    <para>If your application is using thread local variables,
+    helgrind might report false positive race conditions on these
+    variables, despite being very probably race free.  On Linux, you can
+    use <option>--sim-hints=deactivate-pthread-stack-cache-via-hack</option>
+    to avoid such false positive error messages
+    (see <xref linkend="opt.sim-hints"/>).
+    </para>
+  </listitem>
+
+  <listitem>
     <para>Round up all finished threads using
     <function>pthread_join</function>.  Avoid
     detaching threads: don't create threads in the detached state, and

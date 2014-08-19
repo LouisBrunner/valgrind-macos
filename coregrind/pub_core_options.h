@@ -223,10 +223,11 @@ extern Int   VG_(clo_dump_error);
 /* Engage miscellaneous weird hacks needed for some progs. */
 typedef
    enum {
-      SimHint_no_inner_prefix,
-      SimHint_fuse_compatible,
       SimHint_lax_ioctls,
-      SimHint_enable_outer
+      SimHint_fuse_compatible,
+      SimHint_enable_outer,
+      SimHint_no_inner_prefix,
+      SimHint_no_nptl_pthread_stackcache
    }
    SimHint;
 

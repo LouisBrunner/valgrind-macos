@@ -175,8 +175,8 @@ static void usage_NORETURN ( Bool debug_help )
 "    --vgdb-prefix=<prefix>    prefix for vgdb FIFOs [%s]\n"
 "    --run-libc-freeres=no|yes free up glibc memory at exit on Linux? [yes]\n"
 "    --sim-hints=hint1,hint2,...  activate unusual sim behaviours [none] \n"
-"         where hint is one of no-inner-prefix lax-ioctls enable-outer\n"
-"                 fuse-compatible none\n"
+"         where hint is one of lax-ioctls fuse-compatible enable-outer\n"
+"           no-inner-prefix no-nptl-pthread-stackcache none\n"
 "    --fair-sched=no|yes|try   schedule threads fairly on multicore systems [no]\n"
 "    --kernel-variant=variant1,variant2,...  handle non-standard kernel"
                                                                " variants [none]\n"
@@ -380,7 +380,8 @@ static void early_process_cmd_line_options ( /*OUT*/Int* need_help,
       // as early as possible.
       else if VG_USETX_CLO (str, "--sim-hints",
                             "no-inner-prefix,fuse-compatible,"
-                            "lax-ioctls,enable-outer",
+                            "lax-ioctls,enable-outer,"
+                            "no-nptl-pthread-stackcache",
                             VG_(clo_sim_hints)) {}
    }
 }

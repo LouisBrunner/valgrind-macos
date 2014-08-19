@@ -93,6 +93,24 @@ extern Addr VG_(client___libc_freeres_wrapper);
 extern Addr VG_(client__dl_sysinfo_int80);
 
 
+/* glibc nptl pthread systems only, when no-nptl-pthread-stackcache
+   was given in --sim-hints.
+   Used for a (kludgy) way to disable the cache of stacks as implemented in
+   nptl glibc. 
+   Based on internal knowledge of the pthread glibc nptl/allocatestack.c code:
+   a huge value in stack_cache_actsize (bigger than the constant
+   stack_cache_maxsize) makes glibc believes the cache is full
+   and so stacks are always released when a pthread terminates.
+   Several ugliness in this kludge:
+    * hardcodes private glibc var name "stack_cache_maxsize"
+    * based on knowledge of the code of the functions
+      queue_stack and __free_stacks
+    * static symbol for "stack_cache_maxsize" must be in
+      the debug info.
+   It would be much cleaner to have a documented and supported
+   way to disable the pthread stack cache. */
+extern SizeT* VG_(client__stack_cache_actsize__addr);
+
 #endif   // __PUB_CORE_CLIENTSTATE_H
 
 /*--------------------------------------------------------------------*/

@@ -1956,6 +1956,7 @@ need to use them.</para>
       the simulated behaviour in nonstandard or dangerous ways, possibly
       to help the simulation of strange features.  By default no hints
       are enabled.  Use with caution!  Currently known hints are:</para>
+
       <itemizedlist>
         <listitem>
           <para><option>lax-ioctls: </option> Be very lax about ioctl
@@ -1965,11 +1966,23 @@ need to use them.</para>
           large number of strange ioctl commands becomes very
           tiresome.</para>
         </listitem>
+
+        <listitem>
+          <para><option>fuse-compatible: </option> Enable special
+            handling for certain system calls that may block in a FUSE
+            file-system.  This may be necessary when running Valgrind
+            on a multi-threaded program that uses one thread to manage
+            a FUSE file-system and another thread to access that
+            file-system.
+          </para>
+        </listitem>
+
         <listitem>
           <para><option>enable-outer: </option> Enable some special
           magic needed when the program being run is itself
           Valgrind.</para>
         </listitem>
+
         <listitem>
           <para><option>no-inner-prefix: </option> Disable printing
           a prefix <option>&gt;</option> in front of each stdout or
@@ -1980,13 +1993,39 @@ need to use them.</para>
           front of the inner debug logging lines.</para>
         </listitem>
         <listitem>
-          <para><option>fuse-compatible: </option> Enable special
-            handling for certain system calls that may block in a FUSE
-            file-system.  This may be necessary when running Valgrind
-            on a multi-threaded program that uses one thread to manage
-            a FUSE file-system and another thread to access that
-            file-system.
-          </para>
+          <para><option>no-nptl-pthread-stackcache: </option>
+            This hint is only relevant when running Valgrind on Linux.</para>
+
+          <para>The GNU glibc pthread library
+            (<function>libpthread.so</function>), which is used by
+            pthread programs, maintains a cache of pthread stacks.
+            When a pthread terminates, the memory used for the pthread
+            stack and some thread local storage related data structure
+            are not always directly released.  This memory is kept in
+            a cache (up to a certain size), and is re-used if a new
+            thread is started.</para>
+
+          <para>This cache causes the helgrind tool to report some
+            false positive race condition errors on this cached
+            memory, as helgrind does not understand the internal glibc
+            cache synchronisation primitives. So, when using helgrind,
+            disabling the cache helps to avoid false positive race
+            conditions, in particular when using thread local storage
+            variables (e.g. variables using the
+            <function>__thread</function> qualifier).</para>
+
+          <para>When using the memcheck tool, disabling the cache
+            ensures the memory used by glibc to handle __thread
+            variables is directly released when a thread
+            terminates.</para>
+
+          <para>Note: Valgrind disables the cache using some internal
+            knowledge of the glibc stack cache implementation and by
+            examining the debug information of the pthread
+            library. This technique is thus somewhat fragile and might
+            not work for all glibc versions. This has been succesfully
+            tested with various glibc versions (e.g. 2.11, 2.16, 2.18)
+            on various platforms.</para>
         </listitem>
       </itemizedlist>
     </listitem>

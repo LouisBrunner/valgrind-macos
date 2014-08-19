@@ -102,7 +102,9 @@ EXTRA_DIST = \
 		tc23_bogus_condwait.stderr.exp \
 		tc23_bogus_condwait.stderr.exp-mips32 \
 	tc24_nonzero_sem.vgtest tc24_nonzero_sem.stdout.exp \
-		tc24_nonzero_sem.stderr.exp
+		tc24_nonzero_sem.stderr.exp \
+	tls_threads.vgtest tls_threads.stdout.exp \
+		tls_threads.stderr.exp
 
 # XXX: tc18_semabuse uses operations that are unsupported on Darwin.  It
 # should be conditionally compiled like tc20_verifywrap is.
@@ -144,7 +146,8 @@ check_PROGRAMS = \
 	tc19_shadowmem \
 	tc21_pthonce \
 	tc23_bogus_condwait \
-	tc24_nonzero_sem
+	tc24_nonzero_sem \
+	tls_threads
 
 # DDD: it seg faults, and then the Valgrind exit path hangs
 # JRS 29 July 09: it craps out in the stack unwinder, in

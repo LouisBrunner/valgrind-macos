@@ -107,6 +107,11 @@ Addr VG_(client___libc_freeres_wrapper) = 0;
    VG_(get_StackTrace) in m_stacktrace.c for further info. */
 Addr VG_(client__dl_sysinfo_int80) = 0;
 
+/* Address of the (internal) glibc nptl pthread stack cache size,
+   declared as:
+      static size_t stack_cache_actsize;
+   in nptl/allocatestack.c */
+SizeT* VG_(client__stack_cache_actsize__addr) = 0;
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

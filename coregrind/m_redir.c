@@ -403,6 +403,10 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
    Bool         check_ppcTOCs = False;
    Bool         isText;
    const HChar* newdi_soname;
+   Bool         dehacktivate_pthread_stack_cache_var_search = False;
+   const HChar* const pthread_soname = "libpthread.so.0";
+   const HChar* const pthread_stack_cache_actsize_varname
+      = "stack_cache_actsize";
 
 #  if defined(VG_PLAT_USES_PPCTOC)
    check_ppcTOCs = True;
@@ -497,6 +501,10 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
 
    specList = NULL; /* the spec list we're building up */
 
+   dehacktivate_pthread_stack_cache_var_search = 
+      SimHintiS(SimHint_no_nptl_pthread_stackcache, VG_(clo_sim_hints))
+      && 0 == VG_(strcmp)(newdi_soname, pthread_soname);
+
    nsyms = VG_(DebugInfo_syms_howmany)( newdi );
    for (i = 0; i < nsyms; i++) {
       VG_(DebugInfo_syms_getidx)( newdi, i, &sym_avmas,
@@ -513,8 +521,22 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
                                      demangled_fnpatt, N_DEMANGLED,
                                      &isWrap, &becTag, &becPrio );
          /* ignore data symbols */
-         if (!isText)
+         if (!isText) {
+            /* But search for dehacktivate stack cache var if needed. */
+            if (dehacktivate_pthread_stack_cache_var_search
+                && 0 == VG_(strcmp)(*names,
+                                    pthread_stack_cache_actsize_varname)) {
+               if ( VG_(clo_verbosity) > 1 ) {
+                  VG_(message)( Vg_DebugMsg,
+                                "deactivate nptl pthread stackcache via kludge:"
+                                " found symbol %s at addr %p\n",
+                                *names, (void*) sym_avmas.main); 
+               }
+               VG_(client__stack_cache_actsize__addr) = (SizeT*) sym_avmas.main;
+               dehacktivate_pthread_stack_cache_var_search = False;
+            }
             continue;
+         }
          if (!ok) {
             /* It's not a full-scale redirect, but perhaps it is a load-notify
                fn?  Let the load-notify department see it. */
@@ -588,6 +610,13 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
          specList = spec;
       }
       free_symname_array(names_init, &twoslots[0]);
+   }
+   if (dehacktivate_pthread_stack_cache_var_search) {
+      VG_(message)(Vg_DebugMsg,
+                   "WARNING: could not find symbol for var %s in %s\n",
+                   pthread_stack_cache_actsize_varname, pthread_soname);
+      VG_(message)(Vg_DebugMsg,
+                   "=> pthread stack cache cannot be disabled!\n");
    }
 
    if (check_ppcTOCs) {

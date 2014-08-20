@@ -1085,6 +1085,11 @@ void pre_mem_read_sockaddr ( ThreadId tid,
          break;
 #     endif
 
+#     ifdef VKI_AF_UNSPEC
+      case VKI_AF_UNSPEC:
+         break;
+#     endif
+
       default:
          /* No specific information about this address family.
             Let's just check the full data following the family.

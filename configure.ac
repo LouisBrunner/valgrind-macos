@@ -1727,163 +1727,52 @@ CFLAGS=$safe_CFLAGS
 AC_SUBST(PREFERRED_STACK_BOUNDARY)
 
 
-# does this compiler support -Wno-pointer-sign ?
-AC_MSG_CHECKING([if gcc accepts -Wno-pointer-sign])
-
-safe_CFLAGS=$CFLAGS
-CFLAGS="-Wno-pointer-sign"
-
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
-  return 0;
-]])], [
-no_pointer_sign=yes
-AC_MSG_RESULT([yes])
-], [
-no_pointer_sign=no
-AC_MSG_RESULT([no])
-])
+# Convenience function to check whether GCC supports a particular
+# warning option. Takes two arguments, first the warning flag name
+# to check (without -W), then the conditional name to set if that
+# warning flag is supported.
+AC_DEFUN([AC_GCC_WARNING_COND],[
+AC_MSG_CHECKING([if gcc accepts -W$1])
+safe_CFLAGS=$CLFLAGS
+CFLAGS="-W$1"
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[;]])], [
+has_warning_flag=yes
+AC_MSG_RESULT([yes])], [
+has_warning_flag=no
+AC_MSG_RESULT([no])])
 CFLAGS=$safe_CFLAGS
+AM_CONDITIONAL([$2], test x$has_warning_flag = xyes)]
+)
 
-AM_CONDITIONAL(HAS_POINTER_SIGN_WARNING, test x$no_pointer_sign = xyes)
+AC_GCC_WARNING_COND([pointer-sign], [HAS_POINTER_SIGN_WARNING])
+AC_GCC_WARNING_COND([write-strings], [HAS_WRITE_STRINGS_WARNING])
 
-
-# does this compiler support -Wno-write-strings ?
-AC_MSG_CHECKING([if gcc accepts -Wwrite-strings])
-
-safe_CFLAGS=$CFLAGS
-CFLAGS="-Wwrite-strings"
-
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
-  return 0;
-]])], [
-no_write_strings=yes
-AC_MSG_RESULT([yes])
-], [
-no_write_strings=no
-AC_MSG_RESULT([no])
-])
+# Convenience function to check whether GCC supports a particular
+# warning option. Similar to AC_GCC_WARNING_COND, but does a
+# substitution instead of setting an conditional. Takes two arguments,
+# first the warning flag name to check (without -W), then the
+# substitution name to set with -Wno-warning-flag if the flag exists,
+# or the empty string if the compiler doesn't accept the flag. Note
+# that checking is done against the warning flag itself, but the
+# substitution is then done to cancel the warning flag.
+AC_DEFUN([AC_GCC_WARNING_SUBST_NO],[
+AC_MSG_CHECKING([if gcc accepts -W$1])
+safe_CFLAGS=$CLFLAGS
+CFLAGS="-W$1"
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[;]])], [
+AC_SUBST([$2], [-Wno-$1])
+AC_MSG_RESULT([yes])], [
+AC_SUBST([$2], [])
+AC_MSG_RESULT([no])])
 CFLAGS=$safe_CFLAGS
-
-if test x$no_write_strings = xyes; then
-  CFLAGS="$CFLAGS -Wwrite-strings"
-  CXXFLAGS="$CXXFLAGS -Wwrite-strings"
-fi
-
-AM_CONDITIONAL(HAS_WRITE_STRINGS_WARNING, test x$no_write_strings = xyes)
-
-# does this compiler support -Wno-empty-body ?
-
-AC_MSG_CHECKING([if gcc accepts -Wno-empty-body])
-
-safe_CFLAGS=$CFLAGS
-CFLAGS="-Wno-empty-body"
-
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ ]], [[
-  return 0;
-]])], [
-AC_SUBST([FLAG_W_NO_EMPTY_BODY], [-Wno-empty-body])
-AC_MSG_RESULT([yes])
-], [
-AC_SUBST([FLAG_W_NO_EMPTY_BODY], [])
-AC_MSG_RESULT([no])
 ])
-CFLAGS=$safe_CFLAGS
 
-
-# does this compiler support -Wno-format-zero-length ?
-
-AC_MSG_CHECKING([if gcc accepts -Wno-format-zero-length])
-
-safe_CFLAGS=$CFLAGS
-CFLAGS="-Wno-format-zero-length"
-
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ ]], [[
-  return 0;
-]])], [
-AC_SUBST([FLAG_W_NO_FORMAT_ZERO_LENGTH], [-Wno-format-zero-length])
-AC_MSG_RESULT([yes])
-], [
-AC_SUBST([FLAG_W_NO_FORMAT_ZERO_LENGTH], [])
-AC_MSG_RESULT([no])
-])
-CFLAGS=$safe_CFLAGS
-
-
-# does this compiler support -Wno-tautological-compare ?
-
-AC_MSG_CHECKING([if gcc accepts -Wno-tautological-compare])
-
-safe_CFLAGS=$CFLAGS
-CFLAGS="-Wno-tautological-compare"
-
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ ]], [[
-  return 0;
-]])], [
-AC_SUBST([FLAG_W_NO_TAUTOLOGICAL_COMPARE], [-Wno-tautological-compare])
-AC_MSG_RESULT([yes])
-], [
-AC_SUBST([FLAG_W_NO_TAUTOLOGICAL_COMPARE], [])
-AC_MSG_RESULT([no])
-])
-CFLAGS=$safe_CFLAGS
-
-
-# does this compiler support -Wno-nonnull ?
-
-AC_MSG_CHECKING([if gcc accepts -Wno-nonnull])
-
-safe_CFLAGS=$CFLAGS
-CFLAGS="-Wno-nonnull"
-
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ ]], [[
-  return 0;
-]])], [
-AC_SUBST([FLAG_W_NO_NONNULL], [-Wno-nonnull])
-AC_MSG_RESULT([yes])
-], [
-AC_SUBST([FLAG_W_NO_NONNULL], [])
-AC_MSG_RESULT([no])
-])
-CFLAGS=$safe_CFLAGS
-
-
-# does this compiler support -Wno-overflow ?
-
-AC_MSG_CHECKING([if gcc accepts -Wno-overflow])
-
-safe_CFLAGS=$CFLAGS
-CFLAGS="-Wno-overflow"
-
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ ]], [[
-  return 0;
-]])], [
-AC_SUBST([FLAG_W_NO_OVERFLOW], [-Wno-overflow])
-AC_MSG_RESULT([yes])
-], [
-AC_SUBST([FLAG_W_NO_OVERFLOW], [])
-AC_MSG_RESULT([no])
-])
-CFLAGS=$safe_CFLAGS
-
-
-# does this compiler support -Wno-uninitialized ?
-
-AC_MSG_CHECKING([if gcc accepts -Wno-uninitialized])
-
-safe_CFLAGS=$CFLAGS
-CFLAGS="-Wno-uninitialized"
-
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ ]], [[
-  return 0;
-]])], [
-AC_SUBST([FLAG_W_NO_UNINITIALIZED], [-Wno-uninitialized])
-AC_MSG_RESULT([yes])
-], [
-AC_SUBST([FLAG_W_NO_UNINITIALIZED], [])
-AC_MSG_RESULT([no])
-])
-CFLAGS=$safe_CFLAGS
-
+AC_GCC_WARNING_SUBST_NO([empty-body], [FLAG_W_NO_EMPTY_BODY])
+AC_GCC_WARNING_SUBST_NO([format-zero-length], [FLAG_W_NO_FORMAT_ZERO_LENGTH])
+AC_GCC_WARNING_SUBST_NO([tautological-compare], [FLAG_W_NO_TAUTOLOGICAL_COMPARE])
+AC_GCC_WARNING_SUBST_NO([nonnull], [FLAG_W_NO_NONNULL])
+AC_GCC_WARNING_SUBST_NO([overflow], [FLAG_W_NO_OVERFLOW])
+AC_GCC_WARNING_SUBST_NO([uninitialized], [FLAG_W_NO_UNINITIALIZED])
 
 # does this compiler support -Wextra or the older -W ?
 

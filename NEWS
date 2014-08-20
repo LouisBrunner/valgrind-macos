@@ -32,8 +32,8 @@ Release 3.10.0 (?? ?????? 201?)
     and creates a 'H-B relationship' between a terminated task and
     its master. This avoids some false positive and avoids big
     memory usage when a lot of Ada tasks are created and terminated.
-    The interceptions are only activated with gnatpro >= 7.3.0w-20140611
-    or gcc >= ????? (TBD: check when changes pushed to FSF gcc).
+    The interceptions are only activated with forthcoming releasses of
+    gnatpro >= 7.3.0w-20140611 and gcc >= 5.0.
   - Helgrind GDB server monitor command 'info locks' giving
     the list of locks, their location, and their status.
 

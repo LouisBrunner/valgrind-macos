@@ -796,8 +796,6 @@ void CLG_(run_post_signal_on_call_stack_bottom)(void);
 
 /* from dump.c */
 void CLG_(init_dumps)(void);
-HChar* CLG_(get_out_file)(void);
-HChar* CLG_(get_out_directory)(void);
 
 /*------------------------------------------------------------*/
 /*--- Exported global variables                            ---*/

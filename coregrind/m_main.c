@@ -1275,8 +1275,7 @@ static void print_preamble ( Bool logging_to_fd,
       // paste the command line (because of the "==pid==" prefixes), so we now
       // favour utility and simplicity over aesthetics.
       umsg_or_xml("%sCommand: ", xpre);
-      if (VG_(args_the_exename))
-         umsg_or_xml_arg(VG_(args_the_exename));
+      umsg_or_xml_arg(VG_(args_the_exename));
           
       for (i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) {
          HChar* s = *(HChar**)VG_(indexXA)( VG_(args_for_client), i );
@@ -1327,8 +1326,7 @@ static void print_preamble ( Bool logging_to_fd,
       VG_(printf_xml)("  </vargv>\n");
 
       VG_(printf_xml)("  <argv>\n");
-      if (VG_(args_the_exename))
-         VG_(printf_xml)("    <exe>%pS</exe>\n",
+      VG_(printf_xml)("    <exe>%pS</exe>\n",
                                 VG_(args_the_exename));
       for (i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) {
          VG_(printf_xml)(
@@ -1876,8 +1874,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
          VG_(err_config_error)("Can't create client cmdline file in %s\n", buf2);
 
       nul[0] = 0;
-      exename = VG_(args_the_exename) ? VG_(args_the_exename)
-                                      : "unknown_exename";
+      exename = VG_(args_the_exename);
       VG_(write)(fd, exename, VG_(strlen)( exename ));
       VG_(write)(fd, nul, 1);
 

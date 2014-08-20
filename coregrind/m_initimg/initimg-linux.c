@@ -400,7 +400,6 @@ Addr setup_client_stack( void*  init_sp,
    Addr client_SP;	        /* client stack base (initial SP) */
    Addr clstack_start;
    Int i;
-   Bool have_exename;
 
    vg_assert(VG_IS_PAGE_ALIGNED(clstack_end+1));
    vg_assert( VG_(args_for_client) );
@@ -412,7 +411,6 @@ Addr setup_client_stack( void*  init_sp,
 
    /* first of all, work out how big the client stack will be */
    stringsize   = 0;
-   have_exename = VG_(args_the_exename) != NULL;
 
    /* paste on the extra args if the loader needs them (ie, the #! 
       interpreter and its argument) */
@@ -427,8 +425,7 @@ Addr setup_client_stack( void*  init_sp,
    }
 
    /* now scan the args we're given... */
-   if (have_exename)
-      stringsize += VG_(strlen)( VG_(args_the_exename) ) + 1;
+   stringsize += VG_(strlen)( VG_(args_the_exename) ) + 1;
 
    for (i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) {
       argc++;
@@ -452,7 +449,7 @@ Addr setup_client_stack( void*  init_sp,
 	 stringsize += VG_(strlen)(cauxv->u.a_ptr) + 1;
       else if (cauxv->a_type == AT_RANDOM)
 	 stringsize += 16;
-      else if (cauxv->a_type == AT_EXECFN && have_exename)
+      else if (cauxv->a_type == AT_EXECFN)
 	 stringsize += VG_(strlen)(VG_(args_the_exename)) + 1;
       auxsize += sizeof(*cauxv);
    }
@@ -465,7 +462,7 @@ Addr setup_client_stack( void*  init_sp,
    /* OK, now we know how big the client stack is */
    stacksize =
       sizeof(Word) +                          /* argc */
-      (have_exename ? sizeof(HChar **) : 0) + /* argc[0] == exename */
+      sizeof(HChar **) +                      /* argc[0] == exename */
       sizeof(HChar **)*argc +                 /* argv */
       sizeof(HChar **) +                      /* terminal NULL */
       sizeof(HChar **)*envc +                 /* envp */
@@ -577,7 +574,7 @@ Addr setup_client_stack( void*  init_sp,
    ptr = (Addr*)client_SP;
 
    /* --- client argc --- */
-   *ptr++ = argc + (have_exename ? 1 : 0);
+   *ptr++ = argc + 1;
 
    /* --- client argv --- */
    if (info->interp_name) {
@@ -589,8 +586,7 @@ Addr setup_client_stack( void*  init_sp,
       VG_(free)(info->interp_args);
    }
 
-   if (have_exename)
-      *ptr++ = (Addr)copy_str(&strtab, VG_(args_the_exename));
+   *ptr++ = (Addr)copy_str(&strtab, VG_(args_the_exename));
 
    for (i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) {
       *ptr++ = (Addr)copy_str(

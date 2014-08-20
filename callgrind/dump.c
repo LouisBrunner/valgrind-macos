@@ -1623,10 +1623,8 @@ void init_cmdbuf(void)
   Int i,j,size = 0;
   HChar* argv;
 
-  if (VG_(args_the_exename)) {
-      CLG_ASSERT( VG_(strlen)( VG_(args_the_exename) ) < BUF_LEN-1);
-      size = VG_(sprintf)(cmdbuf, " %s", VG_(args_the_exename));
-  }
+  CLG_ASSERT( VG_(strlen)( VG_(args_the_exename) ) < BUF_LEN-1);
+  size = VG_(sprintf)(cmdbuf, " %s", VG_(args_the_exename));
 
   for(i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) {
       argv = * (HChar**) VG_(indexXA)( VG_(args_for_client), i );

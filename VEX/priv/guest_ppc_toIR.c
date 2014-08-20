@@ -2933,21 +2933,59 @@ static void putGST_masked ( PPC_GST reg, IRExpr* src, ULong mask )
    switch (reg) {
    case PPC_GST_FPSCR: {
       /* Allow writes to either binary or decimal floating point
-       * Rounding Mode
-       */
+         Rounding Mode.
+      */
+      /* If any part of |mask| covers FPSCR.RN, update the bits of
+         FPSCR.RN by copying in |src| for locations where the
+         corresponding bit in |mask| is 1, and leaving it unchanged
+         for corresponding |mask| zero bits. */
       if (mask & MASK_FPSCR_RN) {
-         stmt( IRStmt_Put( OFFB_FPROUND,
-                           unop( Iop_32to8,
-                                 binop( Iop_And32,
-                                        unop( Iop_64to32, src ),
-                                        mkU32( MASK_FPSCR_RN & mask ) ) ) ) );
-      } else if (mask & MASK_FPSCR_DRN) {
-         stmt( IRStmt_Put( OFFB_DFPROUND,
-                           unop( Iop_32to8,
-                                 binop( Iop_And32,
-                                        unop( Iop_64HIto32, src ),
-                                        mkU32( ( MASK_FPSCR_DRN & mask )
-                                                 >> 32 ) ) ) ) );
+         stmt( 
+            IRStmt_Put(
+               OFFB_FPROUND,
+               unop(
+                  Iop_32to8,
+                  binop(
+                     Iop_Or32, 
+                     binop(
+                        Iop_And32,
+                        unop(Iop_64to32, src),
+                        mkU32(MASK_FPSCR_RN & mask)
+                     ),
+                     binop(
+                        Iop_And32, 
+                        unop(Iop_8Uto32, IRExpr_Get(OFFB_FPROUND,Ity_I8)),
+                        mkU32(MASK_FPSCR_RN & ~mask)
+                     )
+                  )
+               )
+            )
+         );
+      }
+      /* Similarly, update FPSCR.DRN if any bits of |mask|
+         corresponding to FPSCR.DRN are set. */
+      if (mask & MASK_FPSCR_DRN) {
+         stmt( 
+            IRStmt_Put(
+               OFFB_DFPROUND,
+               unop(
+                  Iop_32to8,
+                  binop(
+                     Iop_Or32, 
+                     binop(
+                        Iop_And32,
+                        unop(Iop_64HIto32, src),
+                        mkU32((MASK_FPSCR_DRN & mask) >> 32)
+                     ),
+                     binop(
+                        Iop_And32, 
+                        unop(Iop_8Uto32, IRExpr_Get(OFFB_DFPROUND,Ity_I8)),
+                        mkU32((MASK_FPSCR_DRN & ~mask) >> 32)
+                     )
+                  )
+               )
+            )
+         );
       }
 
       /* Give EmNote for attempted writes to:

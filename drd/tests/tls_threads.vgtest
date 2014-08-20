@@ -1,0 +1,2 @@
+prog: ../../helgrind/tests/tls_threads
+vgopts: -q

@@ -1708,7 +1708,7 @@ AC_SUBST(FLAG_MSSE)
 
 
 # does this compiler support -mpreferred-stack-boundary=2 ?
-AC_MSG_CHECKING([if gcc accepts -mpreferred-stack-boundary])
+AC_MSG_CHECKING([if gcc accepts -mpreferred-stack-boundary=2])
 
 safe_CFLAGS=$CFLAGS
 CFLAGS="-mpreferred-stack-boundary=2"

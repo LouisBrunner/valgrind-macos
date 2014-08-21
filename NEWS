@@ -152,6 +152,7 @@ where XXXXXX is the bug number as listed below.
 329956  valgrind crashes when lmw/stmw instructions are used on ppc64
 330228  mmap must align to VKI_SHMLBA on mips32
 330257  LLVM does not support `-mno-dynamic-no-pic` option
+330319  amd64->IR: unhandled instruction bytes: 0xF 0x1 0xD5 (xend)
 330459  --track-fds=yes doesn't track eventfds
 330469  Add clock_adjtime syscall support
 330622  Add test to regression suite for POWER instruction: dcbzl

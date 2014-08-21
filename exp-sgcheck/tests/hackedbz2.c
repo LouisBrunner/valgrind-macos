@@ -999,8 +999,8 @@ static HChar vex_toupper ( HChar c )
    else
       return c;
 }
-
-static Int vex_strlen ( const HChar* str )
+/* Explicitly set noinline so the test can check it is in the backtrace. */
+static __attribute__(( noinline)) Int vex_strlen ( const HChar* str )
 {
    Int i = 0;
    while (str[i] != 0) i++;

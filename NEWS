@@ -211,6 +211,7 @@ where XXXXXX is the bug number as listed below.
 338115  DRD: computed conflict set differs from actual after fork
 338160  implement display of thread local storage in gdbsrv
 338205  configure.ac and check for -Wno-tautological-compare
+338445  amd64 vbit-test fails with unknown opcodes used by arm64 VEX
 n-i-bz  Fix KVM_CREATE_IRQCHIP ioctl handling
 n-i-bz  s390x: Fix memory corruption for multithreaded applications
 n-i-bz  vex arm->IR: allow PC as basereg in some LDRD cases

@@ -2541,7 +2541,8 @@ fi
 # Note: this is a kludge in that it assumes the specified mpicc 
 # understands -m32/-m64 regardless of what is specified using
 # --with-mpicc=.
-MPI_CC="mpicc"
+AC_PATH_PROG([MPI_CC], [mpicc], [mpicc],
+             [$PATH:/usr/lib/openmpi/bin:/usr/lib64/openmpi/bin])
 
 mflag_primary=
 if test x$VGCONF_PLATFORM_PRI_CAPS = xX86_LINUX \

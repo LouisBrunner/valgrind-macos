@@ -1211,6 +1211,30 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
       }
    }
 
+   if (SimHintiS(SimHint_no_nptl_pthread_stackcache, VG_(clo_sim_hints))
+       && tid != 1) {
+      /* We disable the stack cache the first time we see a thread other
+         than the main thread appearing. At this moment, we are sure the pthread
+         lib loading is done/variable was initialised by pthread lib/... */
+      if (VG_(client__stack_cache_actsize__addr)) {
+         if (*VG_(client__stack_cache_actsize__addr) == 0) {
+            VG_(debugLog)(1,"sched",
+                          "pthread stack cache size disable done"
+                          " via kludge\n");
+            *VG_(client__stack_cache_actsize__addr) = 1000 * 1000 * 1000;
+            /* Set a value big enough to be above the hardcoded maximum stack
+               cache size in glibc, small enough to allow a pthread stack size
+               to be added without risk of overflow. */
+         }
+      } else {
+          VG_(debugLog)(0,"sched",
+                        "WARNING: pthread stack cache cannot be disabled!\n");
+          VG_(clo_sim_hints) &= !SimHint2S(SimHint_no_nptl_pthread_stackcache);
+          /* Remove SimHint_no_nptl_pthread_stackcache from VG_(clo_sim_hints)
+             to avoid having a msg for all following threads. */
+      }
+   }
+
    /* set the proper running signal mask */
    block_signals();
    
@@ -1579,30 +1603,6 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 
    if (VG_(clo_trace_sched))
       print_sched_event(tid, "exiting VG_(scheduler)");
-
-   if (SimHintiS(SimHint_no_nptl_pthread_stackcache, VG_(clo_sim_hints))) {
-      if (VG_(client__stack_cache_actsize__addr)) {
-         if (*VG_(client__stack_cache_actsize__addr) == 0) {
-            /* We disable the stack cache just before the first
-               thread exits. At this moment, we are sure the pthread lib
-               loading is done/variable was initialised by
-               pthread lib/... */
-            VG_(debugLog)(1,"sched",
-                          "pthread stack cache size disabling done"
-                          " via kludge\n");
-            *VG_(client__stack_cache_actsize__addr) = 1000 * 1000 * 1000;
-            /* Set a value big enough to be above the hardcoded maximum stack
-               cache size in glibc, small enough to allow a pthread stack size
-               to be added without risk of overflow. */
-         }
-      } else {
-          VG_(debugLog)(0,"sched",
-                        "WARNING: pthread stack cache cannot be disabled!\n");
-          VG_(clo_sim_hints) &= !SimHint2S(SimHint_no_nptl_pthread_stackcache);
-          /* Remove SimHint_no_nptl_pthread_stackcache from VG_(clo_sim_hints)
-             to avoid having a msg for at all thread terminations. */
-      }
-   }
 
    vg_assert(VG_(is_exiting)(tid));
 

@@ -21107,6 +21107,18 @@ Long dis_ESC_0F (
          putIRegRDX(4, mkU32(0));
          return delta;
       }
+      /* BEGIN HACKY SUPPORT FOR xend */
+      /* 0F 01 D5 = XEND */
+      if (modrm == 0xD5 && (archinfo->hwcaps & VEX_HWCAPS_AMD64_AVX)) {
+         /* We are never in an transaction (xbegin immediately aborts).
+            So this just always generates a General Protection Fault. */
+         delta += 1;
+         jmp_lit(dres, Ijk_SigSEGV, guest_RIP_bbstart + delta);
+         vassert(dres->whatNext == Dis_StopHere);
+         DIP("xend\n");
+         return delta;
+      }
+      /* END HACKY SUPPORT FOR xend */
       /* BEGIN HACKY SUPPORT FOR xtest */
       /* 0F 01 D6 = XTEST */
       if (modrm == 0xD6 && (archinfo->hwcaps & VEX_HWCAPS_AMD64_AVX)) {

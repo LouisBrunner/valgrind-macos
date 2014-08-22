@@ -28,15 +28,13 @@
 
 #include "global.h"
 
-#define N_JCC_INITIAL_ENTRIES  4437
-
 /*------------------------------------------------------------*/
 /*--- Jump Cost Center (JCC) operations, including Calls   ---*/
 /*------------------------------------------------------------*/
 
 #define N_JCC_INITIAL_ENTRIES  4437
 
-jcc_hash current_jccs;
+static jcc_hash current_jccs;
 
 void CLG_(init_jcc_hash)(jcc_hash* jccs)
 {

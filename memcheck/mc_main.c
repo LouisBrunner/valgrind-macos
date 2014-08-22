@@ -1286,7 +1286,7 @@ void mc_LOADV_128_or_256_slow ( /*OUT*/ULong* res,
    /* "at least one of the addresses is invalid" */
    ok = False;
    for (j = 0; j < szL; j++)
-      ok |= pessim[j] != V_BITS8_DEFINED;
+      ok |= pessim[j] != V_BITS64_DEFINED;
    tl_assert(ok);
 
    if (0 == (a & (szB - 1)) && n_addrs_bad < szB) {

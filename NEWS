@@ -20,6 +20,8 @@ Release 3.10.0 (?? ?????? 201?)
     ...) has several fields not initialised, an error is now reported for
     each field. Previously, an error was reported only for the first wrong
     field.
+  - new flag --show-mismatched-frees=no|yes [yes], to optionally disable
+    allocator/deallocator mismatch checking.
 
 * Helgrind:
   - Race condition error message with allocated blocks also show

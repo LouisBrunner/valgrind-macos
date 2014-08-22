@@ -5194,6 +5194,7 @@ Int           MC_(clo_malloc_fill)            = -1;
 Int           MC_(clo_free_fill)              = -1;
 KeepStacktraces MC_(clo_keep_stacktraces)     = KS_alloc_then_free;
 Int           MC_(clo_mc_level)               = 2;
+Bool          MC_(clo_show_mismatched_frees)  = True;
 
 static const HChar * MC_(parse_leak_heuristics_tokens) =
    "-,stdstring,length64,newarray,multipleinheritance";
@@ -5338,6 +5339,9 @@ static Bool mc_process_cmd_line_options(const HChar* arg)
    else if VG_XACT_CLO(arg, "--keep-stacktraces=none",
                        MC_(clo_keep_stacktraces), KS_none) {}
 
+   else if VG_BOOL_CLO(arg, "--show-mismatched-frees",
+                       MC_(clo_show_mismatched_frees)) {}
+
    else
       return VG_(replacement_malloc_process_cmd_line_option)(arg);
 
@@ -5384,6 +5388,7 @@ static void mc_print_usage(void)
 "    --free-fill=<hexnumber>          fill free'd areas with given value\n"
 "    --keep-stacktraces=alloc|free|alloc-and-free|alloc-then-free|none\n"
 "        stack trace(s) to keep for malloc'd/free'd areas       [alloc-then-free]\n"
+"    --show-mismatched-frees=no|yes   show frees that don't match the allocator? [yes]\n"
 , plo_default
    );
 }

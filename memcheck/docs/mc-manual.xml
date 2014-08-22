@@ -1090,6 +1090,44 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
     </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.show-mismatched-frees"
+                xreflabel="--show-mismatched-frees">
+    <term>
+      <option><![CDATA[--show-mismatched-frees=<yes|no> [default: yes] ]]></option>
+    </term>
+    <listitem>
+      <para>When enabled, Memcheck checks that heap blocks are
+      deallocated using a function that matches the allocating
+      function.  That is, it expects <varname>free</varname> to be
+      used to deallocate blocks allocated
+      by <varname>malloc</varname>, <varname>delete</varname> for
+      blocks allocated by <varname>new</varname>,
+      and <varname>delete[]</varname> for blocks allocated
+      by <varname>new[]</varname>.  If a mismatch is detected, an
+      error is reported.  This is in general important because in some
+      environments, freeing with a non-matching function can cause
+      crashes.</para>
+
+      <para>There is however a scenario where such mismatches cannot
+      be avoided.  That is when the user provides implementations of
+      <varname>new</varname>/<varname>new[]</varname> that
+      call <varname>malloc</varname> and
+      of <varname>delete</varname>/<varname>delete[]</varname> that
+      call <varname>free</varname>, and these functions are
+      asymmetrically inlined.  For example, imagine
+      that <varname>delete[]</varname> is inlined
+      but <varname>new[]</varname> is not.  The result is that
+      Memcheck "sees" all <varname>delete[]</varname> calls as direct
+      calls to <varname>free</varname>, even when the program source
+      contains no mismatched calls.</para>
+
+      <para>This causes a lot of confusing and irrelevant error
+      reports.  <varname>--show-mismatched-frees=no</varname> disables
+      these checks.  It is not generally advisable to disable them,
+      though, because you may miss real errors as a result.</para>
+    </listitem>
+  </varlistentry>
+
   <varlistentry id="opt.ignore-ranges" xreflabel="--ignore-ranges">
     <term>
       <option><![CDATA[--ignore-ranges=0xPP-0xQQ[,0xRR-0xSS] ]]></option>

@@ -456,6 +456,10 @@ void die_and_free_mem ( ThreadId tid, MC_Chunk* mc, SizeT rzB )
 static
 void record_freemismatch_error (ThreadId tid, MC_Chunk* mc)
 {
+   /* Only show such an error if the user hasn't disabled doing so. */
+   if (!MC_(clo_show_mismatched_frees))
+      return;
+
    /* MC_(record_freemismatch_error) reports errors for still
       allocated blocks but we are in the middle of freeing it.  To
       report the error correctly, we re-insert the chunk (making it

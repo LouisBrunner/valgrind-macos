@@ -46,6 +46,8 @@ ULong* CLG_(get_costarray)(Int size)
     CostChunk* cc  = (CostChunk*) CLG_MALLOC("cl.costs.gc.1",
                                               sizeof(CostChunk) +
 					      COSTCHUNK_SIZE * sizeof(ULong));
+    CLG_ASSERT(size < COSTCHUNK_SIZE);
+
     cc->size = COSTCHUNK_SIZE;
     cc->used = 0;
     cc->next = 0;
@@ -65,16 +67,4 @@ ULong* CLG_(get_costarray)(Int size)
   CLG_(costarray_entries) += size;
 
   return ptr;
-}
-
-void CLG_(free_costarrays)()
-{
-  CostChunk* cc = cost_chunk_base, *cc_next;
-  while(cc) {
-    cc_next = cc->next;
-    VG_(free)(cc);
-    cc = cc_next;
-  }
-  cost_chunk_base = 0;
-  cost_chunk_current = 0;
 }

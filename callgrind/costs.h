@@ -40,7 +40,7 @@ extern UInt CLG_(costarray_chunks);
 
 /* Array of 64bit costs. This is separated from other structs
  * to support a dynamic number of costs for a cost item.
- * Chunks are allocated on demand, and deallocated at program termination.
+ * Chunks are allocated on demand.
  */
 typedef struct _CostChunk CostChunk;
 struct _CostChunk {
@@ -53,7 +53,5 @@ struct _CostChunk {
 /* Allocate a number of 64bit cost values.
  * Typically used from ct_events.c */
 ULong* CLG_(get_costarray)(Int size);
-void CLG_(free_costarrays)(void);
-
 
 #endif /* CLG_COSTS */

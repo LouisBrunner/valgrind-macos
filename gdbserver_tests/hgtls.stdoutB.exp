@@ -1,59 +1,59 @@
 Breakpoint 1 at 0x........: file tls.c, line 55.
 Continuing.
 [New Thread ....]
-Breakpoint 1, tls_ptr (p=0x........ <tests>) at tls.c:55
+Breakpoint 1, tls_ptr (p=0x........) at tls.c:55
 55		int here = 0;
 test race tls_ip 0x........ ip 0x........ equal 1
 [New Thread ....]
-Breakpoint 1, tls_ptr (p=0x........ <tests>) at tls.c:55
+Breakpoint 1, tls_ptr (p=0x........) at tls.c:55
 55		int here = 0;
 test race tls_ip 0x........ ip 0x........ equal 1
 [New Thread ....]
-Breakpoint 1, tls_ptr (p=0x........ <tests+16>) at tls.c:55
+Breakpoint 1, tls_ptr (p=0x........) at tls.c:55
 55		int here = 0;
 test local tls_ip 0x........ ip 0x........ equal 1
 [New Thread ....]
-Breakpoint 1, tls_ptr (p=0x........ <tests+16>) at tls.c:55
+Breakpoint 1, tls_ptr (p=0x........) at tls.c:55
 55		int here = 0;
 test local tls_ip 0x........ ip 0x........ equal 1
 [New Thread ....]
-Breakpoint 1, tls_ptr (p=0x........ <tests+32>) at tls.c:55
+Breakpoint 1, tls_ptr (p=0x........) at tls.c:55
 55		int here = 0;
 test global tls_ip 0x........ ip 0x........ equal 1
 [New Thread ....]
-Breakpoint 1, tls_ptr (p=0x........ <tests+32>) at tls.c:55
+Breakpoint 1, tls_ptr (p=0x........) at tls.c:55
 55		int here = 0;
 test global tls_ip 0x........ ip 0x........ equal 1
 [New Thread ....]
-Breakpoint 1, tls_ptr (p=0x........ <tests+48>) at tls.c:55
+Breakpoint 1, tls_ptr (p=0x........) at tls.c:55
 55		int here = 0;
 test static_extern tls_ip 0x........ ip 0x........ equal 1
 [New Thread ....]
-Breakpoint 1, tls_ptr (p=0x........ <tests+48>) at tls.c:55
+Breakpoint 1, tls_ptr (p=0x........) at tls.c:55
 55		int here = 0;
 test static_extern tls_ip 0x........ ip 0x........ equal 1
 [New Thread ....]
-Breakpoint 1, tls_ptr (p=0x........ <tests+64>) at tls.c:55
+Breakpoint 1, tls_ptr (p=0x........) at tls.c:55
 55		int here = 0;
 test so_extern tls_ip 0x........ ip 0x........ equal 1
 [New Thread ....]
-Breakpoint 1, tls_ptr (p=0x........ <tests+64>) at tls.c:55
+Breakpoint 1, tls_ptr (p=0x........) at tls.c:55
 55		int here = 0;
 test so_extern tls_ip 0x........ ip 0x........ equal 1
 [New Thread ....]
-Breakpoint 1, tls_ptr (p=0x........ <tests+80>) at tls.c:55
+Breakpoint 1, tls_ptr (p=0x........) at tls.c:55
 55		int here = 0;
 test so_local tls_ip 0x........ ip 0x........ equal 1
 [New Thread ....]
-Breakpoint 1, tls_ptr (p=0x........ <tests+80>) at tls.c:55
+Breakpoint 1, tls_ptr (p=0x........) at tls.c:55
 55		int here = 0;
 test so_local tls_ip 0x........ ip 0x........ equal 1
 [New Thread ....]
-Breakpoint 1, tls_ptr (p=0x........ <tests+96>) at tls.c:55
+Breakpoint 1, tls_ptr (p=0x........) at tls.c:55
 55		int here = 0;
 test so_global tls_ip 0x........ ip 0x........ equal 1
 [New Thread ....]
-Breakpoint 1, tls_ptr (p=0x........ <tests+96>) at tls.c:55
+Breakpoint 1, tls_ptr (p=0x........) at tls.c:55
 55		int here = 0;
 test so_global tls_ip 0x........ ip 0x........ equal 1
 Program exited normally.

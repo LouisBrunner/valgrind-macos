@@ -105,8 +105,6 @@ Bool CLG_(add_and_zero_cost2)(EventSet*,ULong* dst,EventSet*,ULong* src);
  * Returns false if nothing changed */
 Bool CLG_(add_diff_cost)(EventSet*,ULong* dst, ULong* old, ULong* new_cost);
 Bool CLG_(add_diff_cost_lz)(EventSet*,ULong** pdst, ULong* old, ULong* new_cost);
-/* Returns number of characters written */
-Int CLG_(sprint_cost)(HChar* buf, EventSet*, ULong*);
 
 /* EventMapping: An ordered subset of events from an event set.
  * This is used to print out part of an EventSet, or in another order.

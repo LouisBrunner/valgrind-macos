@@ -445,33 +445,6 @@ Bool CLG_(add_diff_cost_lz)(EventSet* es, ULong** pdst, ULong* old, ULong* new_c
 }
 
 
-/* Returns number of characters written */
-Int CLG_(sprint_cost)(HChar* buf, EventSet* es, ULong* c)
-{
-    Int i, pos, skipped = 0;
-
-    if (!c || es->size==0) return 0;
-
-    /* At least one entry */
-    pos = VG_(sprintf)(buf, "%llu", c[0]);
-    for(i=1; i<es->size; i++) {
-	if (c[i] == 0) {
-	    skipped++;
-	    continue;
-	}
-	while(skipped>0) {
-	    buf[pos++] = ' ';
-	    buf[pos++] = '0';
-	    skipped--;
-	}
-	buf[pos++] = ' ';
-	pos += VG_(sprintf)(buf+pos, "%llu", c[i]);
-    }
-
-    return pos;
-}
-
-
 /* Allocate space for an event mapping */
 EventMapping* CLG_(get_eventmapping)(EventSet* es)
 {

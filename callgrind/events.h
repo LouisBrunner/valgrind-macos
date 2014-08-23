@@ -74,12 +74,9 @@ struct _EventSet {
 /* Same event set is returned when requesting same event groups */
 EventSet* CLG_(get_event_set)(Int id);
 EventSet* CLG_(get_event_set2)(Int id1, Int id2);
-EventSet* CLG_(get_event_set3)(Int id1, Int id2, Int id3);
 EventSet* CLG_(add_event_group)(EventSet*, Int id);
 EventSet* CLG_(add_event_group2)(EventSet*, Int id1, Int id2);
 EventSet* CLG_(add_event_set)(EventSet*, EventSet*);
-/* Writes event names into buf. Returns number of characters written */
-Int CLG_(sprint_eventset)(HChar* buf, EventSet*);
 
 
 /* Operations on costs. A cost pointer of 0 means zero cost.
@@ -93,7 +90,6 @@ void CLG_(init_cost_lz)(EventSet*,ULong**);
 /* Set costs of an event set to zero */
 void CLG_(zero_cost)(EventSet*,ULong*);
 Bool CLG_(is_zero_cost)(EventSet*,ULong*);
-Bool CLG_(is_equal_cost)(EventSet*,ULong*,ULong*);
 void CLG_(copy_cost)(EventSet*,ULong* dst, ULong* src);
 void CLG_(copy_cost_lz)(EventSet*,ULong** pdst, ULong* src);
 void CLG_(add_cost)(EventSet*,ULong* dst, ULong* src);

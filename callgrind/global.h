@@ -776,7 +776,6 @@ void CLG_(setup_bbcc)(BB* bb) VG_REGPARM(1);
 /* from jumps.c */
 void CLG_(init_jcc_hash)(jcc_hash*);
 void CLG_(copy_current_jcc_hash)(jcc_hash* dst);
-jcc_hash* CLG_(get_current_jcc_hash)(void);
 void CLG_(set_current_jcc_hash)(jcc_hash*);
 jCC* CLG_(get_jcc)(BBCC* from, UInt, BBCC* to);
 
@@ -793,11 +792,9 @@ Int CLG_(unwind_call_stack)(Addr sp, Int);
 /* from context.c */
 void CLG_(init_fn_stack)(fn_stack*);
 void CLG_(copy_current_fn_stack)(fn_stack*);
-fn_stack* CLG_(get_current_fn_stack)(void);
 void CLG_(set_current_fn_stack)(fn_stack*);
 
 void CLG_(init_cxt_table)(void);
-cxt_hash* CLG_(get_cxt_hash)(void);
 Context* CLG_(get_cxt)(fn_node** fn);
 void CLG_(push_cxt)(fn_node* fn);
 

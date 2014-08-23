@@ -162,14 +162,6 @@ EventSet* CLG_(get_event_set2)(Int id1, Int id2)
     return eventset_from_mask((1u << id1) | (1u << id2));
 }
 
-EventSet* CLG_(get_event_set3)(Int id1, Int id2, Int id3)
-{
-    CLG_ASSERT(id1>=0 && id1<MAX_EVENTGROUP_COUNT);
-    CLG_ASSERT(id2>=0 && id2<MAX_EVENTGROUP_COUNT);
-    CLG_ASSERT(id3>=0 && id3<MAX_EVENTGROUP_COUNT);
-    return eventset_from_mask((1u << id1) | (1u << id2) | (1u << id3));
-}
-
 EventSet* CLG_(add_event_group)(EventSet* es, Int id)
 {
     CLG_ASSERT(id>=0 && id<MAX_EVENTGROUP_COUNT);
@@ -190,30 +182,6 @@ EventSet* CLG_(add_event_set)(EventSet* es1, EventSet* es2)
     if (!es1) es1 = eventset_from_mask(0);
     if (!es2) es2 = eventset_from_mask(0);
     return eventset_from_mask(es1->mask | es2->mask);
-}
-
-Int CLG_(sprint_eventset)(HChar* buf, EventSet* es)
-{
-    Int i, j, pos;
-    UInt mask;
-    EventGroup* eg;
-
-
-    CLG_ASSERT(es->size >0);
-    pos = 0;
-    for(i=0, mask=1; i<MAX_EVENTGROUP_COUNT; i++, mask=mask<<1) {
-	if ((es->mask & mask)==0) continue;
-	if (eventGroup[i] ==0) continue;
-
-	eg = eventGroup[i];
-	for(j=0; j<eg->size; j++) {
-	    if (pos>0) buf[pos++] = ' ';
-	    pos += VG_(sprintf)(buf + pos, "%s", eg->name[j]);
-	}
-    }
-    buf[pos] = 0;
-
-    return pos;
 }
 
 
@@ -265,19 +233,6 @@ Bool CLG_(is_zero_cost)(EventSet* es, ULong* cost)
 
     for(i=0; i<es->size; i++)
 	if (cost[i] != 0) return False;
-
-    return True;
-}
-
-Bool CLG_(is_equal_cost)(EventSet* es, ULong* c1, ULong* c2)
-{
-    Int i;
-
-    if (!c1) return CLG_(is_zero_cost)(es, c2);
-    if (!c2) return CLG_(is_zero_cost)(es, c1);
-
-    for(i=0; i<es->size; i++)
-	if (c1[i] != c2[i]) return False;
 
     return True;
 }

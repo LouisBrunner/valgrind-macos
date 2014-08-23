@@ -82,11 +82,6 @@ void CLG_(init_cxt_table)()
      cxts.table[i] = 0;
 }
 
-cxt_hash* CLG_(get_cxt_hash)()
-{
-  return &cxts;
-}
-
 /* double size of cxt table  */
 static void resize_cxt_table(void)
 {

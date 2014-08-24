@@ -309,8 +309,8 @@ typeof_primop(IROp op, IRType *t_dst, IRType *t_arg1, IRType *t_arg2,
       case Iop_Sal8x8: case Iop_Sal16x4: case Iop_Sal32x2: case Iop_Sal64x1:
       case Iop_QShl8x8: case Iop_QShl16x4: case Iop_QShl32x2: case Iop_QShl64x1:
       case Iop_QSal8x8: case Iop_QSal16x4: case Iop_QSal32x2: case Iop_QSal64x1:
-      case Iop_Recps32Fx2:
-      case Iop_Rsqrts32Fx2:
+      case Iop_RecipStep32Fx2:
+      case Iop_RSqrtStep32Fx2:
          BINARY(Ity_I64,Ity_I64, Ity_I64);
 
       case Iop_ShlN32x2: case Iop_ShlN16x4: case Iop_ShlN8x8:
@@ -354,10 +354,10 @@ typeof_primop(IROp op, IRType *t_dst, IRType *t_arg1, IRType *t_arg2,
       case Iop_Reverse8sIn16_x4:
       case Iop_FtoI32Sx2_RZ: case Iop_FtoI32Ux2_RZ:
       case Iop_I32StoFx2: case Iop_I32UtoFx2:
-      case Iop_Recip32x2: case Iop_Recip32Fx2:
+      case Iop_RecipEst32Ux2: case Iop_RecipEst32Fx2:
       case Iop_Abs32Fx2:
-      case Iop_Rsqrte32Fx2:
-      case Iop_Rsqrte32x2:
+      case Iop_RSqrtEst32Fx2:
+      case Iop_RSqrtEst32Ux2:
       case Iop_Neg32Fx2:
       case Iop_Abs8x8: case Iop_Abs16x4: case Iop_Abs32x2:
          UNARY(Ity_I64, Ity_I64);
@@ -549,7 +549,7 @@ typeof_primop(IROp op, IRType *t_dst, IRType *t_arg1, IRType *t_arg2,
       case Iop_MAddF64r32: case Iop_MSubF64r32:
          QUATERNARY(ity_RMode,Ity_F64,Ity_F64,Ity_F64, Ity_F64);
 
-      case Iop_Est5FRSqrt:
+      case Iop_RSqrtEst5GoodF64:
       case Iop_RoundF64toF64_NEAREST: case Iop_RoundF64toF64_NegINF:
       case Iop_RoundF64toF64_PosINF: case Iop_RoundF64toF64_ZERO:
          UNARY(Ity_F64, Ity_F64);
@@ -569,8 +569,8 @@ typeof_primop(IROp op, IRType *t_dst, IRType *t_arg1, IRType *t_arg2,
       case Iop_RoundF32x4_RN:
       case Iop_RoundF32x4_RZ:
       case Iop_Abs32Fx4:
-      case Iop_Rsqrte32Fx4:
-      case Iop_Rsqrte32x4:
+      case Iop_RSqrtEst32Fx4:
+      case Iop_RSqrtEst32Ux4:
          UNARY(Ity_V128, Ity_V128);
 
       case Iop_64HLtoV128:
@@ -693,8 +693,8 @@ typeof_primop(IROp op, IRType *t_dst, IRType *t_arg1, IRType *t_arg2,
       case Iop_InterleaveOddLanes16x8: case Iop_InterleaveEvenLanes16x8:
       case Iop_InterleaveOddLanes32x4: case Iop_InterleaveEvenLanes32x4:
       case Iop_Perm8x16: case Iop_Perm32x4:
-      case Iop_Recps32Fx4:
-      case Iop_Rsqrts32Fx4:
+      case Iop_RecipStep32Fx4:
+      case Iop_RSqrtStep32Fx4:
          BINARY(Ity_V128,Ity_V128, Ity_V128);
 
       case Iop_PolynomialMull8x8:
@@ -704,11 +704,9 @@ typeof_primop(IROp op, IRType *t_dst, IRType *t_arg1, IRType *t_arg2,
          BINARY(Ity_I64, Ity_I64, Ity_V128);
 
       case Iop_NotV128:
-      case Iop_Recip32Fx4: case Iop_Recip32F0x4:
-      case Iop_Recip32x4:
-      case Iop_Recip64Fx2: case Iop_Recip64F0x2:
-      case Iop_RSqrt32Fx4: case Iop_RSqrt32F0x4:
-      case Iop_RSqrt64Fx2: case Iop_RSqrt64F0x2:
+      case Iop_RecipEst32Fx4: case Iop_RecipEst32F0x4:
+      case Iop_RecipEst32Ux4:
+      case Iop_RSqrtEst32F0x4:
       case Iop_Sqrt32Fx4:  case Iop_Sqrt32F0x4:
       case Iop_Sqrt64Fx2:  case Iop_Sqrt64F0x2:
       case Iop_CmpNEZ8x16: case Iop_CmpNEZ16x8:
@@ -1032,10 +1030,10 @@ typeof_primop(IROp op, IRType *t_dst, IRType *t_arg1, IRType *t_arg2,
          BINARY(Ity_V128,Ity_V128, Ity_V256);
 
       case Iop_NotV256:
-      case Iop_RSqrt32Fx8:
+      case Iop_RSqrtEst32Fx8:
       case Iop_Sqrt32Fx8:
       case Iop_Sqrt64Fx4:
-      case Iop_Recip32Fx8:
+      case Iop_RecipEst32Fx8:
       case Iop_CmpNEZ64x4: case Iop_CmpNEZ32x8:
          UNARY(Ity_V256, Ity_V256);
 

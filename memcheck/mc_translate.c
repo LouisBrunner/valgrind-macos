@@ -3307,8 +3307,8 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_CmpUN32Fx4:
       case Iop_CmpGT32Fx4:
       case Iop_CmpGE32Fx4:
-      case Iop_Recps32Fx4:
-      case Iop_Rsqrts32Fx4:
+      case Iop_RecipStep32Fx4:
+      case Iop_RSqrtStep32Fx4:
          return binary32Fx4(mce, vatom1, vatom2);      
 
       case Iop_Sub32Fx2:
@@ -3319,8 +3319,8 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_CmpGT32Fx2:
       case Iop_CmpGE32Fx2:
       case Iop_Add32Fx2:
-      case Iop_Recps32Fx2:
-      case Iop_Rsqrts32Fx2:
+      case Iop_RecipStep32Fx2:
+      case Iop_RSqrtStep32Fx2:
          return binary32Fx2(mce, vatom1, vatom2);      
 
       case Iop_Sub32F0x4:
@@ -4005,16 +4005,15 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
          return unary64F0x2(mce, vatom);
 
       case Iop_Sqrt32Fx8:
-      case Iop_RSqrt32Fx8:
-      case Iop_Recip32Fx8:
+      case Iop_RSqrtEst32Fx8:
+      case Iop_RecipEst32Fx8:
          return unary32Fx8(mce, vatom);
 
       case Iop_Sqrt64Fx4:
          return unary64Fx4(mce, vatom);
 
       case Iop_Sqrt32Fx4:
-      case Iop_RSqrt32Fx4:
-      case Iop_Recip32Fx4:
+      case Iop_RecipEst32Fx4:
       case Iop_I32UtoFx4:
       case Iop_I32StoFx4:
       case Iop_QFtoI32Ux4_RZ:
@@ -4023,24 +4022,24 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_RoundF32x4_RP:
       case Iop_RoundF32x4_RN:
       case Iop_RoundF32x4_RZ:
-      case Iop_Recip32x4:
+      case Iop_RecipEst32Ux4:
       case Iop_Abs32Fx4:
       case Iop_Neg32Fx4:
-      case Iop_Rsqrte32Fx4:
+      case Iop_RSqrtEst32Fx4:
          return unary32Fx4(mce, vatom);
 
       case Iop_I32UtoFx2:
       case Iop_I32StoFx2:
-      case Iop_Recip32Fx2:
-      case Iop_Recip32x2:
+      case Iop_RecipEst32Fx2:
+      case Iop_RecipEst32Ux2:
       case Iop_Abs32Fx2:
       case Iop_Neg32Fx2:
-      case Iop_Rsqrte32Fx2:
+      case Iop_RSqrtEst32Fx2:
          return unary32Fx2(mce, vatom);
 
       case Iop_Sqrt32F0x4:
-      case Iop_RSqrt32F0x4:
-      case Iop_Recip32F0x4:
+      case Iop_RSqrtEst32F0x4:
+      case Iop_RecipEst32F0x4:
          return unary32F0x4(mce, vatom);
 
       case Iop_32UtoV128:
@@ -4089,7 +4088,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_I32UtoF64:
       case Iop_NegF64:
       case Iop_AbsF64:
-      case Iop_Est5FRSqrt:
+      case Iop_RSqrtEst5GoodF64:
       case Iop_RoundF64toF64_NEAREST:
       case Iop_RoundF64toF64_NegINF:
       case Iop_RoundF64toF64_PosINF:

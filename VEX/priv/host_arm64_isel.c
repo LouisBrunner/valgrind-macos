@@ -2213,35 +2213,39 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_Reverse8sIn16_x8:
          case Iop_Reverse8sIn32_x4: case Iop_Reverse16sIn32_x4:
          case Iop_Reverse8sIn64_x2: case Iop_Reverse16sIn64_x2:
-         case Iop_Reverse32sIn64_x2: 
+         case Iop_Reverse32sIn64_x2:
+         case Iop_RecipEst32Ux4:
+         case Iop_RSqrtEst32Ux4:
          {
             HReg res = newVRegV(env);
             HReg arg = iselV128Expr(env, e->Iex.Unop.arg);
             ARM64VecUnaryOp op = ARM64vecu_INVALID;
             switch (e->Iex.Unop.op) {
-               case Iop_NotV128:  op = ARM64vecu_NOT;      break;
-               case Iop_Abs64Fx2: op = ARM64vecu_FABS64x2; break;
-               case Iop_Abs32Fx4: op = ARM64vecu_FABS32x4; break;
-               case Iop_Neg64Fx2: op = ARM64vecu_FNEG64x2; break;
-               case Iop_Neg32Fx4: op = ARM64vecu_FNEG32x4; break;
-               case Iop_Abs64x2:  op = ARM64vecu_ABS64x2;  break;
-               case Iop_Abs32x4:  op = ARM64vecu_ABS32x4;  break;
-               case Iop_Abs16x8:  op = ARM64vecu_ABS16x8;  break;
-               case Iop_Abs8x16:  op = ARM64vecu_ABS8x16;  break;
-               case Iop_Cls32x4:  op = ARM64vecu_CLS32x4;  break;
-               case Iop_Cls16x8:  op = ARM64vecu_CLS16x8;  break;
-               case Iop_Cls8x16:  op = ARM64vecu_CLS8x16;  break;
-               case Iop_Clz32x4:  op = ARM64vecu_CLZ32x4;  break;
-               case Iop_Clz16x8:  op = ARM64vecu_CLZ16x8;  break;
-               case Iop_Clz8x16:  op = ARM64vecu_CLZ8x16;  break;
-               case Iop_Cnt8x16:  op = ARM64vecu_CNT8x16;  break;
-               case Iop_Reverse1sIn8_x16:  op = ARM64vecu_RBIT;     break;
-               case Iop_Reverse8sIn16_x8:  op = ARM64vecu_REV1616B; break;
-               case Iop_Reverse8sIn32_x4:  op = ARM64vecu_REV3216B; break;
-               case Iop_Reverse16sIn32_x4: op = ARM64vecu_REV328H;  break;
-               case Iop_Reverse8sIn64_x2:  op = ARM64vecu_REV6416B; break;
-               case Iop_Reverse16sIn64_x2: op = ARM64vecu_REV648H;  break;
-               case Iop_Reverse32sIn64_x2: op = ARM64vecu_REV644S;  break;
+               case Iop_NotV128:           op = ARM64vecu_NOT;         break;
+               case Iop_Abs64Fx2:          op = ARM64vecu_FABS64x2;    break;
+               case Iop_Abs32Fx4:          op = ARM64vecu_FABS32x4;    break;
+               case Iop_Neg64Fx2:          op = ARM64vecu_FNEG64x2;    break;
+               case Iop_Neg32Fx4:          op = ARM64vecu_FNEG32x4;    break;
+               case Iop_Abs64x2:           op = ARM64vecu_ABS64x2;     break;
+               case Iop_Abs32x4:           op = ARM64vecu_ABS32x4;     break;
+               case Iop_Abs16x8:           op = ARM64vecu_ABS16x8;     break;
+               case Iop_Abs8x16:           op = ARM64vecu_ABS8x16;     break;
+               case Iop_Cls32x4:           op = ARM64vecu_CLS32x4;     break;
+               case Iop_Cls16x8:           op = ARM64vecu_CLS16x8;     break;
+               case Iop_Cls8x16:           op = ARM64vecu_CLS8x16;     break;
+               case Iop_Clz32x4:           op = ARM64vecu_CLZ32x4;     break;
+               case Iop_Clz16x8:           op = ARM64vecu_CLZ16x8;     break;
+               case Iop_Clz8x16:           op = ARM64vecu_CLZ8x16;     break;
+               case Iop_Cnt8x16:           op = ARM64vecu_CNT8x16;     break;
+               case Iop_Reverse1sIn8_x16:  op = ARM64vecu_RBIT;        break;
+               case Iop_Reverse8sIn16_x8:  op = ARM64vecu_REV1616B;    break;
+               case Iop_Reverse8sIn32_x4:  op = ARM64vecu_REV3216B;    break;
+               case Iop_Reverse16sIn32_x4: op = ARM64vecu_REV328H;     break;
+               case Iop_Reverse8sIn64_x2:  op = ARM64vecu_REV6416B;    break;
+               case Iop_Reverse16sIn64_x2: op = ARM64vecu_REV648H;     break;
+               case Iop_Reverse32sIn64_x2: op = ARM64vecu_REV644S;     break;
+               case Iop_RecipEst32Ux4:     op = ARM64vecu_URECPE32x4;  break;
+               case Iop_RSqrtEst32Ux4:     op = ARM64vecu_URSQRTE32x4; break;
                default: vassert(0);
             }
             addInstr(env, ARM64Instr_VUnaryV(op, res, arg));

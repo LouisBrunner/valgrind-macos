@@ -386,7 +386,7 @@ typedef
 
 typedef
    enum {
-      ARM64vecmo_SUQADD64x2=335, ARM64vecmo_SUQADD32x4,
+      ARM64vecmo_SUQADD64x2=300, ARM64vecmo_SUQADD32x4,
       ARM64vecmo_SUQADD16x8,     ARM64vecmo_SUQADD8x16,
       ARM64vecmo_USQADD64x2,     ARM64vecmo_USQADD32x4,
       ARM64vecmo_USQADD16x8,     ARM64vecmo_USQADD8x16,
@@ -396,7 +396,7 @@ typedef
 
 typedef
    enum {
-      ARM64vecu_FNEG64x2=300, ARM64vecu_FNEG32x4,
+      ARM64vecu_FNEG64x2=350, ARM64vecu_FNEG32x4,
       ARM64vecu_FABS64x2,     ARM64vecu_FABS32x4,
       ARM64vecu_NOT,
       ARM64vecu_ABS64x2,      ARM64vecu_ABS32x4,
@@ -408,13 +408,15 @@ typedef
       ARM64vecu_REV1616B,
       ARM64vecu_REV3216B,     ARM64vecu_REV328H,
       ARM64vecu_REV6416B,     ARM64vecu_REV648H,      ARM64vecu_REV644S,
+      ARM64vecu_URECPE32x4,
+      ARM64vecu_URSQRTE32x4,
       ARM64vecu_INVALID
    }
    ARM64VecUnaryOp;
 
 typedef
    enum {
-      ARM64vecshi_USHR64x2=350, ARM64vecshi_USHR32x4,
+      ARM64vecshi_USHR64x2=400, ARM64vecshi_USHR32x4,
       ARM64vecshi_USHR16x8,     ARM64vecshi_USHR8x16,
       ARM64vecshi_SSHR64x2,     ARM64vecshi_SSHR32x4,
       ARM64vecshi_SSHR16x8,     ARM64vecshi_SSHR8x16,
@@ -441,7 +443,7 @@ typedef
 
 typedef
    enum {
-      ARM64vecna_XTN=400,
+      ARM64vecna_XTN=450,
       ARM64vecna_SQXTN,
       ARM64vecna_UQXTN,
       ARM64vecna_SQXTUN,

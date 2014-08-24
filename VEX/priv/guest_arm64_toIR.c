@@ -6937,7 +6937,99 @@ Bool dis_AdvSIMD_TBL_TBX(/*MB_OUT*/DisResult* dres, UInt insn)
 static
 Bool dis_AdvSIMD_ZIP_UZP_TRN(/*MB_OUT*/DisResult* dres, UInt insn)
 {
+   /* 31  29     23   21 20 15 14     11 9 4
+      0 q 001110 size 0  m  0  opcode 10 n d
+      Decode fields: opcode
+   */
 #  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
+   if (INSN(31,31) != 0
+       || INSN(29,24) != BITS6(0,0,1,1,1,0)
+       || INSN(21,21) != 0 || INSN(15,15) != 0 || INSN(11,10) != BITS2(1,0)) {
+      return False;
+   }
+   UInt bitQ   = INSN(30,30);
+   UInt size   = INSN(23,22);
+   UInt mm     = INSN(20,16);
+   UInt opcode = INSN(14,12);
+   UInt nn     = INSN(9,5);
+   UInt dd     = INSN(4,0);
+
+   if (opcode == BITS3(0,0,1) || opcode == BITS3(1,0,1)) {
+      /* -------- 001 UZP1 std7_std7_std7 -------- */
+      /* -------- 101 UZP2 std7_std7_std7 -------- */
+      if (bitQ == 0 && size == X11) return False; // implied 1d case
+      Bool   isUZP1 = opcode == BITS3(0,0,1);
+      IROp   op     = isUZP1 ? mkVecCATEVENLANES(size)
+                             : mkVecCATODDLANES(size);
+      IRTemp preL = newTempV128();
+      IRTemp preR = newTempV128();
+      IRTemp res  = newTempV128();
+      if (bitQ == 0) {
+         assign(preL, binop(Iop_InterleaveLO64x2, getQReg128(mm),
+                                                  getQReg128(nn)));
+         assign(preR, mkexpr(preL));
+      } else {
+         assign(preL, getQReg128(mm));
+         assign(preR, getQReg128(nn));
+      }
+      assign(res, binop(op, mkexpr(preL), mkexpr(preR)));
+      putQReg128(dd, math_MAYBE_ZERO_HI64(bitQ, res));
+      const HChar* nm  = isUZP1 ? "uzp1" : "uzp2";
+      const HChar* arr = nameArr_Q_SZ(bitQ, size);
+      DIP("%s %s.%s, %s.%s, %s.%s\n", nm,
+          nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(mm), arr);
+      return True;
+   }
+
+   if (opcode == BITS3(0,1,0) || opcode == BITS3(1,1,0)) {
+      /* -------- 010 TRN1 std7_std7_std7 -------- */
+      /* -------- 110 TRN2 std7_std7_std7 -------- */
+      if (bitQ == 0 && size == X11) return False; // implied 1d case
+      Bool   isTRN1 = opcode == BITS3(0,1,0);
+      IROp   op1    = isTRN1 ? mkVecCATEVENLANES(size)
+                             : mkVecCATODDLANES(size);
+      IROp op2 = mkVecINTERLEAVEHI(size);
+      IRTemp srcM = newTempV128();
+      IRTemp srcN = newTempV128();
+      IRTemp res  = newTempV128();
+      assign(srcM, getQReg128(mm));
+      assign(srcN, getQReg128(nn));
+      assign(res, binop(op2, binop(op1, mkexpr(srcM), mkexpr(srcM)),
+                             binop(op1, mkexpr(srcN), mkexpr(srcN))));
+      putQReg128(dd, math_MAYBE_ZERO_HI64(bitQ, res));
+      const HChar* nm  = isTRN1 ? "trn1" : "trn2";
+      const HChar* arr = nameArr_Q_SZ(bitQ, size);
+      DIP("%s %s.%s, %s.%s, %s.%s\n", nm,
+          nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(mm), arr);
+      return True;
+   }
+
+   if (opcode == BITS3(0,1,1) || opcode == BITS3(1,1,1)) {
+      /* -------- 011 ZIP1 std7_std7_std7 -------- */
+      /* -------- 111 ZIP2 std7_std7_std7 -------- */
+      if (bitQ == 0 && size == X11) return False; // implied 1d case
+      Bool   isZIP1 = opcode == BITS3(0,1,1);
+      IROp   op     = isZIP1 ? mkVecINTERLEAVELO(size)
+                             : mkVecINTERLEAVEHI(size);
+      IRTemp preL = newTempV128();
+      IRTemp preR = newTempV128();
+      IRTemp res  = newTempV128();
+      if (bitQ == 0 && !isZIP1) {
+         assign(preL, binop(Iop_ShlV128, getQReg128(mm), mkU8(32)));
+         assign(preR, binop(Iop_ShlV128, getQReg128(nn), mkU8(32)));
+      } else {
+         assign(preL, getQReg128(mm));
+         assign(preR, getQReg128(nn));
+      }
+      assign(res, binop(op, mkexpr(preL), mkexpr(preR)));
+      putQReg128(dd, math_MAYBE_ZERO_HI64(bitQ, res));
+      const HChar* nm  = isZIP1 ? "zip1" : "zip2";
+      const HChar* arr = nameArr_Q_SZ(bitQ, size);
+      DIP("%s %s.%s, %s.%s, %s.%s\n", nm,
+          nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(mm), arr);
+      return True;
+   }
+
    return False;
 #  undef INSN
 }
@@ -10053,6 +10145,21 @@ Bool dis_AdvSIMD_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
       }
       DIP("fcvtn%s %s.%s, %s.2d\n", bitQ ? "2" : "",
           nameQReg128(dd), bitQ ? "4s" : "2s", nameQReg128(nn));
+      return True;
+   }
+
+   if (size == X10 && opcode == BITS5(1,1,1,0,0)) {
+      /* -------- 0,10,11100: URECPE  4s_4s, 2s_2s -------- */
+      /* -------- 1,10,11100: URSQRTE 4s_4s, 2s_2s -------- */
+      Bool isREC = bitU == 0;
+      IROp op    = isREC ? Iop_RecipEst32Ux4 : Iop_RSqrtEst32Ux4;
+      IRTemp res = newTempV128();
+      assign(res, unop(op, getQReg128(nn)));
+      putQReg128(dd, math_MAYBE_ZERO_HI64(bitQ, res));
+      const HChar* nm  = isREC ? "urecpe" : "ursqrte";
+      const HChar* arr = nameArr_Q_SZ(bitQ, size);
+      DIP("%s %s.%s, %s.%s\n", nm,
+          nameQReg128(dd), arr, nameQReg128(nn), arr);
       return True;
    }
 

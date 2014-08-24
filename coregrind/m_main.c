@@ -379,8 +379,8 @@ static void early_process_cmd_line_options ( /*OUT*/Int* need_help,
       // running in an outer, to have "no-inner-prefix" enabled
       // as early as possible.
       else if VG_USETX_CLO (str, "--sim-hints",
-                            "no-inner-prefix,fuse-compatible,"
-                            "lax-ioctls,enable-outer,"
+                            "lax-ioctls,fuse-compatible,"
+                            "enable-outer,no-inner-prefix,"
                             "no-nptl-pthread-stackcache",
                             VG_(clo_sim_hints)) {}
    }

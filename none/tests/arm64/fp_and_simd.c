@@ -5249,60 +5249,60 @@ int main ( void )
 
    // trn1    2d,4s,2s,8h,4h,16b,8b
    // trn2    2d,4s,2s,8h,4h,16b,8b
-   if (0) test_trn1_2d_2d_2d(TyD);
-   if (0) test_trn1_4s_4s_4s(TyS);
-   if (0) test_trn1_2s_2s_2s(TyS);
-   if (0) test_trn1_8h_8h_8h(TyH);
-   if (0) test_trn1_4h_4h_4h(TyH);
-   if (0) test_trn1_16b_16b_16b(TyB);
-   if (0) test_trn1_8b_8b_8b(TyB);
-   if (0) test_trn2_2d_2d_2d(TyD);
-   if (0) test_trn2_4s_4s_4s(TyS);
-   if (0) test_trn2_2s_2s_2s(TyS);
-   if (0) test_trn2_8h_8h_8h(TyH);
-   if (0) test_trn2_4h_4h_4h(TyH);
-   if (0) test_trn2_16b_16b_16b(TyB);
-   if (0) test_trn2_8b_8b_8b(TyB);
+   if (1) test_trn1_2d_2d_2d(TyD);
+   if (1) test_trn1_4s_4s_4s(TyS);
+   if (1) test_trn1_2s_2s_2s(TyS);
+   if (1) test_trn1_8h_8h_8h(TyH);
+   if (1) test_trn1_4h_4h_4h(TyH);
+   if (1) test_trn1_16b_16b_16b(TyB);
+   if (1) test_trn1_8b_8b_8b(TyB);
+   if (1) test_trn2_2d_2d_2d(TyD);
+   if (1) test_trn2_4s_4s_4s(TyS);
+   if (1) test_trn2_2s_2s_2s(TyS);
+   if (1) test_trn2_8h_8h_8h(TyH);
+   if (1) test_trn2_4h_4h_4h(TyH);
+   if (1) test_trn2_16b_16b_16b(TyB);
+   if (1) test_trn2_8b_8b_8b(TyB);
 
    // urecpe      4s,2s
    // ursqrte     4s,2s
-   if (0) test_urecpe_4s_4s(TyS);
-   if (0) test_urecpe_2s_2s(TyS);
-   if (0) test_ursqrte_4s_4s(TyS);
-   if (0) test_ursqrte_2s_2s(TyS);
+   if (1) test_urecpe_4s_4s(TyS);
+   if (1) test_urecpe_2s_2s(TyS);
+   if (1) test_ursqrte_4s_4s(TyS);
+   if (1) test_ursqrte_2s_2s(TyS);
 
    // uzp1      2d,4s,2s,8h,4h,16b,8b
    // uzp2      2d,4s,2s,8h,4h,16b,8b
    // zip1      2d,4s,2s,8h,4h,16b,8b
    // zip2      2d,4s,2s,8h,4h,16b,8b
-   if (0) test_uzp1_2d_2d_2d(TyD);
-   if (0) test_uzp1_4s_4s_4s(TyS);
-   if (0) test_uzp1_2s_2s_2s(TyS);
-   if (0) test_uzp1_8h_8h_8h(TyH);
-   if (0) test_uzp1_4h_4h_4h(TyH);
-   if (0) test_uzp1_16b_16b_16b(TyB);
-   if (0) test_uzp1_8b_8b_8b(TyB);
-   if (0) test_uzp2_2d_2d_2d(TyD);
-   if (0) test_uzp2_4s_4s_4s(TyS);
-   if (0) test_uzp2_2s_2s_2s(TyS);
-   if (0) test_uzp2_8h_8h_8h(TyH);
-   if (0) test_uzp2_4h_4h_4h(TyH);
-   if (0) test_uzp2_16b_16b_16b(TyB);
-   if (0) test_uzp2_8b_8b_8b(TyB);
-   if (0) test_zip1_2d_2d_2d(TyD);
-   if (0) test_zip1_4s_4s_4s(TyS);
-   if (0) test_zip1_2s_2s_2s(TyS);
-   if (0) test_zip1_8h_8h_8h(TyH);
-   if (0) test_zip1_4h_4h_4h(TyH);
-   if (0) test_zip1_16b_16b_16b(TyB);
-   if (0) test_zip1_8b_8b_8b(TyB);
-   if (0) test_zip2_2d_2d_2d(TyD);
-   if (0) test_zip2_4s_4s_4s(TyS);
-   if (0) test_zip2_2s_2s_2s(TyS);
-   if (0) test_zip2_8h_8h_8h(TyH);
-   if (0) test_zip2_4h_4h_4h(TyH);
-   if (0) test_zip2_16b_16b_16b(TyB);
-   if (0) test_zip2_8b_8b_8b(TyB);
+   if (1) test_uzp1_2d_2d_2d(TyD);
+   if (1) test_uzp1_4s_4s_4s(TyS);
+   if (1) test_uzp1_2s_2s_2s(TyS);
+   if (1) test_uzp1_8h_8h_8h(TyH);
+   if (1) test_uzp1_4h_4h_4h(TyH);
+   if (1) test_uzp1_16b_16b_16b(TyB);
+   if (1) test_uzp1_8b_8b_8b(TyB);
+   if (1) test_uzp2_2d_2d_2d(TyD);
+   if (1) test_uzp2_4s_4s_4s(TyS);
+   if (1) test_uzp2_2s_2s_2s(TyS);
+   if (1) test_uzp2_8h_8h_8h(TyH);
+   if (1) test_uzp2_4h_4h_4h(TyH);
+   if (1) test_uzp2_16b_16b_16b(TyB);
+   if (1) test_uzp2_8b_8b_8b(TyB);
+   if (1) test_zip1_2d_2d_2d(TyD);
+   if (1) test_zip1_4s_4s_4s(TyS);
+   if (1) test_zip1_2s_2s_2s(TyS);
+   if (1) test_zip1_8h_8h_8h(TyH);
+   if (1) test_zip1_4h_4h_4h(TyH);
+   if (1) test_zip1_16b_16b_16b(TyB);
+   if (1) test_zip1_8b_8b_8b(TyB);
+   if (1) test_zip2_2d_2d_2d(TyD);
+   if (1) test_zip2_4s_4s_4s(TyS);
+   if (1) test_zip2_2s_2s_2s(TyS);
+   if (1) test_zip2_8h_8h_8h(TyH);
+   if (1) test_zip2_4h_4h_4h(TyH);
+   if (1) test_zip2_16b_16b_16b(TyB);
+   if (1) test_zip2_8b_8b_8b(TyB);
 
    // xtn{2}    2s/4s_2d, 4h/8h_4s, 8b/16b_8h
    if (1) test_xtn_2s_2d(TyD);

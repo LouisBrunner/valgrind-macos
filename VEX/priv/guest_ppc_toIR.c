@@ -7951,7 +7951,7 @@ static Bool dis_fp_arith ( UInt theInstr )
             return False;
          DIP("frsqrtes%s fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frB_addr);
-         assign( frD, unop(Iop_Est5FRSqrt, mkexpr(frB)) );
+         assign( frD, unop(Iop_RSqrtEst5GoodF64, mkexpr(frB)) );
          break;
 
       default:
@@ -8052,7 +8052,7 @@ static Bool dis_fp_arith ( UInt theInstr )
             return False;
          DIP("frsqrte%s fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frB_addr);
-         assign( frD, unop(Iop_Est5FRSqrt, mkexpr(frB)) );
+         assign( frD, unop(Iop_RSqrtEst5GoodF64, mkexpr(frB)) );
          break;
 
       default:
@@ -18077,12 +18077,12 @@ static Bool dis_av_fp_arith ( UInt theInstr )
    switch (opc2) {
    case 0x10A: // vrefp (Reciprocal Esimate FP, AV p228)
       DIP("vrefp v%d,v%d\n", vD_addr, vB_addr);
-      putVReg( vD_addr, unop(Iop_Recip32Fx4, mkexpr(vB)) );
+      putVReg( vD_addr, unop(Iop_RecipEst32Fx4, mkexpr(vB)) );
       return True;
 
    case 0x14A: // vrsqrtefp (Reciprocal Sqrt Estimate FP, AV p237)
       DIP("vrsqrtefp v%d,v%d\n", vD_addr, vB_addr);
-      putVReg( vD_addr, unop(Iop_RSqrt32Fx4, mkexpr(vB)) );
+      putVReg( vD_addr, unop(Iop_RSqrtEst32Fx4, mkexpr(vB)) );
       return True;
 
    case 0x18A: // vexptefp (2 Raised to the Exp Est FP, AV p173)

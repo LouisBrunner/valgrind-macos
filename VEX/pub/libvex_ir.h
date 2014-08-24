@@ -740,7 +740,7 @@ typedef
       Iop_MAddF64r32, Iop_MSubF64r32,
 
       /* :: F64 -> F64 */
-      Iop_Est5FRSqrt,    /* reciprocal square root estimate, 5 good bits */
+      Iop_RSqrtEst5GoodF64, /* reciprocal square root estimate, 5 good bits */
       Iop_RoundF64toF64_NEAREST, /* frin */
       Iop_RoundF64toF64_NegINF,  /* frim */ 
       Iop_RoundF64toF64_PosINF,  /* frip */
@@ -811,21 +811,21 @@ typedef
       /* Vector Reciprocal Estimate finds an approximate reciprocal of each
       element in the operand vector, and places the results in the destination
       vector.  */
-      Iop_Recip32Fx2,
+      Iop_RecipEst32Fx2,
 
       /* Vector Reciprocal Step computes (2.0 - arg1 * arg2).
          Note, that if one of the arguments is zero and another one is infinity
          of arbitrary sign the result of the operation is 2.0. */
-      Iop_Recps32Fx2,
+      Iop_RecipStep32Fx2,
 
       /* Vector Reciprocal Square Root Estimate finds an approximate reciprocal
          square root of each element in the operand vector. */
-      Iop_Rsqrte32Fx2,
+      Iop_RSqrtEst32Fx2,
 
       /* Vector Reciprocal Square Root Step computes (3.0 - arg1 * arg2) / 2.0.
          Note, that of one of the arguments is zero and another one is infiinty
          of arbitrary sign the result of the operation is 1.5. */
-      Iop_Rsqrts32Fx2,
+      Iop_RSqrtStep32Fx2,
 
       /* Unary */
       Iop_Neg32Fx2, Iop_Abs32Fx2,
@@ -1010,8 +1010,8 @@ typedef
       Iop_GetMSBs8x8, /* I64 -> I8 */
 
       /* Vector Reciprocal Estimate and Vector Reciprocal Square Root Estimate
-         See floating-point equiwalents for details. */
-      Iop_Recip32x2, Iop_Rsqrte32x2,
+         See floating-point equivalents for details. */
+      Iop_RecipEst32Ux2, Iop_RSqrtEst32Ux2,
 
       /* ------------------ Decimal Floating Point ------------------ */
 
@@ -1280,27 +1280,27 @@ typedef
 
       /* unary */
       Iop_Abs32Fx4,
-      Iop_Sqrt32Fx4, Iop_RSqrt32Fx4,
+      Iop_Sqrt32Fx4,
       Iop_Neg32Fx4,
 
       /* Vector Reciprocal Estimate finds an approximate reciprocal of each
       element in the operand vector, and places the results in the destination
       vector.  */
-      Iop_Recip32Fx4,
+      Iop_RecipEst32Fx4,
 
       /* Vector Reciprocal Step computes (2.0 - arg1 * arg2).
          Note, that if one of the arguments is zero and another one is infinity
          of arbitrary sign the result of the operation is 2.0. */
-      Iop_Recps32Fx4,
+      Iop_RecipStep32Fx4,
 
       /* Vector Reciprocal Square Root Estimate finds an approximate reciprocal
          square root of each element in the operand vector. */
-      Iop_Rsqrte32Fx4,
+      Iop_RSqrtEst32Fx4,
 
       /* Vector Reciprocal Square Root Step computes (3.0 - arg1 * arg2) / 2.0.
          Note, that of one of the arguments is zero and another one is infiinty
          of arbitrary sign the result of the operation is 1.5. */
-      Iop_Rsqrts32Fx4,
+      Iop_RSqrtStep32Fx4,
 
       /* --- Int to/from FP conversion --- */
       /* Unlike the standard fp conversions, these irops take no
@@ -1332,7 +1332,7 @@ typedef
       Iop_CmpEQ32F0x4, Iop_CmpLT32F0x4, Iop_CmpLE32F0x4, Iop_CmpUN32F0x4, 
 
       /* unary */
-      Iop_Recip32F0x4, Iop_Sqrt32F0x4, Iop_RSqrt32F0x4,
+      Iop_RecipEst32F0x4, Iop_Sqrt32F0x4, Iop_RSqrtEst32F0x4,
 
       /* --- 64x2 vector FP --- */
 
@@ -1345,11 +1345,8 @@ typedef
 
       /* unary */
       Iop_Abs64Fx2,
-      Iop_Sqrt64Fx2, Iop_RSqrt64Fx2,
+      Iop_Sqrt64Fx2,
       Iop_Neg64Fx2,
-
-      /* Vector Reciprocal Estimate */
-      Iop_Recip64Fx2, 
 
       /* --- 64x2 lowest-lane-only scalar FP --- */
 
@@ -1362,7 +1359,7 @@ typedef
       Iop_CmpEQ64F0x2, Iop_CmpLT64F0x2, Iop_CmpLE64F0x2, Iop_CmpUN64F0x2, 
 
       /* unary */
-      Iop_Recip64F0x2, Iop_Sqrt64F0x2, Iop_RSqrt64F0x2,
+      Iop_Sqrt64F0x2,
 
       /* --- pack / unpack --- */
 
@@ -1736,8 +1733,8 @@ typedef
       Iop_GetMSBs8x16, /* V128 -> I16 */
 
       /* Vector Reciprocal Estimate and Vector Reciprocal Square Root Estimate
-         See floating-point equiwalents for details. */
-      Iop_Recip32x4, Iop_Rsqrte32x4,
+         See floating-point equivalents for details. */
+      Iop_RecipEst32Ux4, Iop_RSqrtEst32Ux4,
 
       /* ------------------ 256-bit SIMD Integer. ------------------ */
 
@@ -1808,8 +1805,8 @@ typedef
 
       Iop_Sqrt32Fx8,
       Iop_Sqrt64Fx4,
-      Iop_RSqrt32Fx8,
-      Iop_Recip32Fx8,
+      Iop_RSqrtEst32Fx8,
+      Iop_RecipEst32Fx8,
 
       Iop_Max32Fx8, Iop_Min32Fx8,
       Iop_Max64Fx4, Iop_Min64Fx4,

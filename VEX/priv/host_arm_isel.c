@@ -2286,7 +2286,7 @@ static HReg iselNeon64Expr_wrk ( ISelEnv* env, IRExpr* e )
                                            res, argL, argR, size, False));
             return res;
          }
-         case Iop_Recps32Fx2: {
+         case Iop_RecipStep32Fx2: {
             HReg res = newVRegD(env);
             HReg argL = iselNeon64Expr(env, e->Iex.Binop.arg1);
             HReg argR = iselNeon64Expr(env, e->Iex.Binop.arg2);
@@ -2295,7 +2295,7 @@ static HReg iselNeon64Expr_wrk ( ISelEnv* env, IRExpr* e )
                                            res, argL, argR, size, False));
             return res;
          }
-         case Iop_Rsqrts32Fx2: {
+         case Iop_RSqrtStep32Fx2: {
             HReg res = newVRegD(env);
             HReg argL = iselNeon64Expr(env, e->Iex.Binop.arg1);
             HReg argR = iselNeon64Expr(env, e->Iex.Binop.arg2);
@@ -3644,14 +3644,14 @@ static HReg iselNeon64Expr_wrk ( ISelEnv* env, IRExpr* e )
                                           res, arg, 2, False));
             return res;
          }
-         case Iop_Recip32Fx2: {
+         case Iop_RecipEst32Fx2: {
             HReg res = newVRegD(env);
             HReg argL = iselNeon64Expr(env, e->Iex.Binop.arg1);
             addInstr(env, ARMInstr_NUnary(ARMneon_VRECIPF,
                                           res, argL, 0, False));
             return res;
          }
-         case Iop_Recip32x2: {
+         case Iop_RecipEst32Ux2: {
             HReg res = newVRegD(env);
             HReg argL = iselNeon64Expr(env, e->Iex.Binop.arg1);
             addInstr(env, ARMInstr_NUnary(ARMneon_VRECIP,
@@ -3680,14 +3680,14 @@ static HReg iselNeon64Expr_wrk ( ISelEnv* env, IRExpr* e )
                return res;
             }
          }
-         case Iop_Rsqrte32Fx2: {
+         case Iop_RSqrtEst32Fx2: {
             HReg res = newVRegD(env);
             HReg arg = iselNeon64Expr(env, e->Iex.Unop.arg);
             addInstr(env, ARMInstr_NUnary(ARMneon_VRSQRTEFP,
                                           res, arg, 0, False));
             return res;
          }
-         case Iop_Rsqrte32x2: {
+         case Iop_RSqrtEst32Ux2: {
             HReg res = newVRegD(env);
             HReg arg = iselNeon64Expr(env, e->Iex.Unop.arg);
             addInstr(env, ARMInstr_NUnary(ARMneon_VRSQRTE,
@@ -4239,14 +4239,14 @@ static HReg iselNeonExpr_wrk ( ISelEnv* env, IRExpr* e )
                                           res, arg, 2, True));
             return res;
          }
-         case Iop_Recip32Fx4: {
+         case Iop_RecipEst32Fx4: {
             HReg res = newVRegV(env);
             HReg argL = iselNeonExpr(env, e->Iex.Unop.arg);
             addInstr(env, ARMInstr_NUnary(ARMneon_VRECIPF,
                                           res, argL, 0, True));
             return res;
          }
-         case Iop_Recip32x4: {
+         case Iop_RecipEst32Ux4: {
             HReg res = newVRegV(env);
             HReg argL = iselNeonExpr(env, e->Iex.Unop.arg);
             addInstr(env, ARMInstr_NUnary(ARMneon_VRECIP,
@@ -4260,14 +4260,14 @@ static HReg iselNeonExpr_wrk ( ISelEnv* env, IRExpr* e )
                                           res, argL, 0, True));
             return res;
          }
-         case Iop_Rsqrte32Fx4: {
+         case Iop_RSqrtEst32Fx4: {
             HReg res = newVRegV(env);
             HReg argL = iselNeonExpr(env, e->Iex.Unop.arg);
             addInstr(env, ARMInstr_NUnary(ARMneon_VRSQRTEFP,
                                           res, argL, 0, True));
             return res;
          }
-         case Iop_Rsqrte32x4: {
+         case Iop_RSqrtEst32Ux4: {
             HReg res = newVRegV(env);
             HReg argL = iselNeonExpr(env, e->Iex.Unop.arg);
             addInstr(env, ARMInstr_NUnary(ARMneon_VRSQRTE,
@@ -4442,7 +4442,7 @@ static HReg iselNeonExpr_wrk ( ISelEnv* env, IRExpr* e )
                                            res, argL, argR, size, True));
             return res;
          }
-         case Iop_Recps32Fx4: {
+         case Iop_RecipStep32Fx4: {
             HReg res = newVRegV(env);
             HReg argL = iselNeonExpr(env, e->Iex.Binop.arg1);
             HReg argR = iselNeonExpr(env, e->Iex.Binop.arg2);
@@ -4451,7 +4451,7 @@ static HReg iselNeonExpr_wrk ( ISelEnv* env, IRExpr* e )
                                            res, argL, argR, size, True));
             return res;
          }
-         case Iop_Rsqrts32Fx4: {
+         case Iop_RSqrtStep32Fx4: {
             HReg res = newVRegV(env);
             HReg argL = iselNeonExpr(env, e->Iex.Binop.arg1);
             HReg argR = iselNeonExpr(env, e->Iex.Binop.arg2);

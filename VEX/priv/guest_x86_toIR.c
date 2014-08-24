@@ -9351,7 +9351,7 @@ DisResult disInstr_X86_WRK (
    if (insn[0] == 0x0F && insn[1] == 0x53) {
       vassert(sz == 4);
       delta = dis_SSE_E_to_G_unary_all( sorb, delta+2, 
-                                        "rcpps", Iop_Recip32Fx4 );
+                                        "rcpps", Iop_RecipEst32Fx4 );
       goto decode_success;
    }
 
@@ -9359,7 +9359,7 @@ DisResult disInstr_X86_WRK (
    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x53) {
       vassert(sz == 4);
       delta = dis_SSE_E_to_G_unary_lo32( sorb, delta+3, 
-                                         "rcpss", Iop_Recip32F0x4 );
+                                         "rcpss", Iop_RecipEst32F0x4 );
       goto decode_success;
    }
 
@@ -9367,7 +9367,7 @@ DisResult disInstr_X86_WRK (
    if (insn[0] == 0x0F && insn[1] == 0x52) {
       vassert(sz == 4);
       delta = dis_SSE_E_to_G_unary_all( sorb, delta+2, 
-                                        "rsqrtps", Iop_RSqrt32Fx4 );
+                                        "rsqrtps", Iop_RSqrtEst32Fx4 );
       goto decode_success;
    }
 
@@ -9375,7 +9375,7 @@ DisResult disInstr_X86_WRK (
    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x52) {
       vassert(sz == 4);
       delta = dis_SSE_E_to_G_unary_lo32( sorb, delta+3, 
-                                         "rsqrtss", Iop_RSqrt32F0x4 );
+                                         "rsqrtss", Iop_RSqrtEst32F0x4 );
       goto decode_success;
    }
 

@@ -12671,13 +12671,13 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
       /* F3 0F 52 = RSQRTSS -- approx reciprocal sqrt 32F0x4 from R/M to R */
       if (haveF3no66noF2(pfx) && sz == 4) {
          delta = dis_SSE_E_to_G_unary_lo32( vbi, pfx, delta, 
-                                            "rsqrtss", Iop_RSqrt32F0x4 );
+                                            "rsqrtss", Iop_RSqrtEst32F0x4 );
          goto decode_success;
       }
       /* 0F 52 = RSQRTPS -- approx reciprocal sqrt 32Fx4 from R/M to R */
       if (haveNo66noF2noF3(pfx) && sz == 4) {
          delta = dis_SSE_E_to_G_unary_all( vbi, pfx, delta, 
-                                           "rsqrtps", Iop_RSqrt32Fx4 );
+                                           "rsqrtps", Iop_RSqrtEst32Fx4 );
          goto decode_success;
       }
       break;
@@ -12686,13 +12686,13 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
       /* F3 0F 53 = RCPSS -- approx reciprocal 32F0x4 from R/M to R */
       if (haveF3no66noF2(pfx) && sz == 4) {
          delta = dis_SSE_E_to_G_unary_lo32( vbi, pfx, delta,
-                                            "rcpss", Iop_Recip32F0x4 );
+                                            "rcpss", Iop_RecipEst32F0x4 );
          goto decode_success;
       }
       /* 0F 53 = RCPPS -- approx reciprocal 32Fx4 from R/M to R */
       if (haveNo66noF2noF3(pfx) && sz == 4) {
          delta = dis_SSE_E_to_G_unary_all( vbi, pfx, delta,
-                                           "rcpps", Iop_Recip32Fx4 );
+                                           "rcpps", Iop_RecipEst32Fx4 );
          goto decode_success;
       }
       break;
@@ -24365,19 +24365,20 @@ Long dis_ESC_0F__VEX (
       /* VRSQRTSS xmm3/m64(E), xmm2(V), xmm1(G) = VEX.NDS.LIG.F3.0F.WIG 52 /r */
       if (haveF3no66noF2(pfx)) {
          delta = dis_AVX128_E_V_to_G_lo32_unary(
-                    uses_vvvv, vbi, pfx, delta, "vrsqrtss", Iop_RSqrt32F0x4 );
+                    uses_vvvv, vbi, pfx, delta, "vrsqrtss",
+                    Iop_RSqrtEst32F0x4 );
          goto decode_success;
       }
       /* VRSQRTPS xmm2/m128(E), xmm1(G) = VEX.NDS.128.0F.WIG 52 /r */
       if (haveNo66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
          delta = dis_AVX128_E_to_G_unary_all(
-                    uses_vvvv, vbi, pfx, delta, "vrsqrtps", Iop_RSqrt32Fx4 );
+                    uses_vvvv, vbi, pfx, delta, "vrsqrtps", Iop_RSqrtEst32Fx4 );
          goto decode_success;
       }
       /* VRSQRTPS ymm2/m256(E), ymm1(G) = VEX.NDS.256.0F.WIG 52 /r */
       if (haveNo66noF2noF3(pfx) && 1==getVexL(pfx)/*256*/) {
          delta = dis_AVX256_E_to_G_unary_all(
-                    uses_vvvv, vbi, pfx, delta, "vrsqrtps", Iop_RSqrt32Fx8 );
+                    uses_vvvv, vbi, pfx, delta, "vrsqrtps", Iop_RSqrtEst32Fx8 );
          goto decode_success;
       }
       break;
@@ -24386,19 +24387,19 @@ Long dis_ESC_0F__VEX (
       /* VRCPSS xmm3/m64(E), xmm2(V), xmm1(G) = VEX.NDS.LIG.F3.0F.WIG 53 /r */
       if (haveF3no66noF2(pfx)) {
          delta = dis_AVX128_E_V_to_G_lo32_unary(
-                    uses_vvvv, vbi, pfx, delta, "vrcpss", Iop_Recip32F0x4 );
+                    uses_vvvv, vbi, pfx, delta, "vrcpss", Iop_RecipEst32F0x4 );
          goto decode_success;
       }
       /* VRCPPS xmm2/m128(E), xmm1(G) = VEX.NDS.128.0F.WIG 53 /r */
       if (haveNo66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
          delta = dis_AVX128_E_to_G_unary_all(
-                    uses_vvvv, vbi, pfx, delta, "vrcpps", Iop_Recip32Fx4 );
+                    uses_vvvv, vbi, pfx, delta, "vrcpps", Iop_RecipEst32Fx4 );
          goto decode_success;
       }
       /* VRCPPS ymm2/m256(E), ymm1(G) = VEX.NDS.256.0F.WIG 53 /r */
       if (haveNo66noF2noF3(pfx) && 1==getVexL(pfx)/*256*/) {
          delta = dis_AVX256_E_to_G_unary_all(
-                    uses_vvvv, vbi, pfx, delta, "vrcpps", Iop_Recip32Fx8 );
+                    uses_vvvv, vbi, pfx, delta, "vrcpps", Iop_RecipEst32Fx8 );
          goto decode_success;
       }
       break;

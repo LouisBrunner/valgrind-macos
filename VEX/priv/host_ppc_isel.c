@@ -4139,7 +4139,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e, IREndness IEndianess )
       switch (e->Iex.Unop.op) {
          case Iop_NegF64:     fpop = Pfp_NEG; break;
          case Iop_AbsF64:     fpop = Pfp_ABS; break;
-         case Iop_Est5FRSqrt: fpop = Pfp_RSQRTE; break;
+         case Iop_RSqrtEst5GoodF64:      fpop = Pfp_RSQRTE; break;
          case Iop_RoundF64toF64_NegINF:  fpop = Pfp_FRIM; break;
          case Iop_RoundF64toF64_PosINF:  fpop = Pfp_FRIP; break;
          case Iop_RoundF64toF64_NEAREST: fpop = Pfp_FRIN; break;
@@ -4930,8 +4930,8 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e, IREndness IEndianess )
          return dst;
       }
 
-      case Iop_Recip32Fx4:    fpop = Pavfp_RCPF;    goto do_32Fx4_unary;
-      case Iop_RSqrt32Fx4:    fpop = Pavfp_RSQRTF;  goto do_32Fx4_unary;
+      case Iop_RecipEst32Fx4: fpop = Pavfp_RCPF;    goto do_32Fx4_unary;
+      case Iop_RSqrtEst32Fx4: fpop = Pavfp_RSQRTF;  goto do_32Fx4_unary;
       case Iop_I32UtoFx4:     fpop = Pavfp_CVTU2F;  goto do_32Fx4_unary;
       case Iop_I32StoFx4:     fpop = Pavfp_CVTS2F;  goto do_32Fx4_unary;
       case Iop_QFtoI32Ux4_RZ: fpop = Pavfp_QCVTF2U; goto do_32Fx4_unary;

@@ -4790,7 +4790,8 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                   /* VRECPS */
                   if ((theInstr >> 20) & 1)
                      return False;
-                  assign(res, binop(Q ? Iop_Recps32Fx4 : Iop_Recps32Fx2,
+                  assign(res, binop(Q ? Iop_RecipStep32Fx4
+                                      : Iop_RecipStep32Fx2,
                                     mkexpr(arg_n),
                                     mkexpr(arg_m)));
                   DIP("vrecps.f32 %c%u, %c%u, %c%u\n", Q ? 'q' : 'd', dreg,
@@ -4799,7 +4800,8 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                   /* VRSQRTS  */
                   if ((theInstr >> 20) & 1)
                      return False;
-                  assign(res, binop(Q ? Iop_Rsqrts32Fx4 : Iop_Rsqrts32Fx2,
+                  assign(res, binop(Q ? Iop_RSqrtStep32Fx4
+                                      : Iop_RSqrtStep32Fx2,
                                     mkexpr(arg_n),
                                     mkexpr(arg_m)));
                   DIP("vrsqrts.f32 %c%u, %c%u, %c%u\n", Q ? 'q' : 'd', dreg,
@@ -7489,11 +7491,11 @@ Bool dis_neon_data_2reg_misc ( UInt theInstr, IRTemp condT )
             if (size != 2)
                return False;
             if (Q) {
-               op = F ? Iop_Recip32Fx4 : Iop_Recip32x4;
+               op = F ? Iop_RecipEst32Fx4 : Iop_RecipEst32Ux4;
                putQReg(dreg, unop(op, getQReg(mreg)), condT);
                DIP("vrecpe.%c32 q%u, q%u\n", F ? 'f' : 'u', dreg, mreg);
             } else {
-               op = F ? Iop_Recip32Fx2 : Iop_Recip32x2;
+               op = F ? Iop_RecipEst32Fx2 : Iop_RecipEst32Ux2;
                putDRegI64(dreg, unop(op, getDRegI64(mreg)), condT);
                DIP("vrecpe.%c32 d%u, d%u\n", F ? 'f' : 'u', dreg, mreg);
             }
@@ -7506,10 +7508,10 @@ Bool dis_neon_data_2reg_misc ( UInt theInstr, IRTemp condT )
                return False;
             if (F) {
                /* fp */
-               op = Q ? Iop_Rsqrte32Fx4 : Iop_Rsqrte32Fx2;
+               op = Q ? Iop_RSqrtEst32Fx4 : Iop_RSqrtEst32Fx2;
             } else {
                /* unsigned int */
-               op = Q ? Iop_Rsqrte32x4 : Iop_Rsqrte32x2;
+               op = Q ? Iop_RSqrtEst32Ux4 : Iop_RSqrtEst32Ux2;
             }
             if (Q) {
                putQReg(dreg, unop(op, getQReg(mreg)), condT);

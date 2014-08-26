@@ -2973,7 +2973,6 @@ AC_CONFIG_FILES([
    memcheck/tests/ppc64/Makefile
    memcheck/tests/s390x/Makefile
    memcheck/tests/vbit-test/Makefile
-   memcheck/tests/irop-test/Makefile
    cachegrind/Makefile
    cachegrind/tests/Makefile
    cachegrind/tests/x86/Makefile

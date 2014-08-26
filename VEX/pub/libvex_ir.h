@@ -1534,6 +1534,13 @@ typedef
       Iop_SarN8x16, Iop_SarN16x8, Iop_SarN32x4, Iop_SarN64x2,
 
       /* VECTOR x VECTOR SHIFT / ROTATE */
+      /* FIXME: I'm pretty sure the ARM32 front/back ends interpret these
+         differently from all other targets.  The intention is that
+         the shift amount (2nd arg) is interpreted as unsigned and
+         only the lowest log2(lane-bits) bits are relevant.  But the
+         ARM32 versions treat the shift amount as an 8 bit signed
+         number.  The ARM32 uses should be replaced by the relevant
+         vector x vector bidirectional shifts instead. */
       Iop_Shl8x16, Iop_Shl16x8, Iop_Shl32x4, Iop_Shl64x2,
       Iop_Shr8x16, Iop_Shr16x8, Iop_Shr32x4, Iop_Shr64x2,
       Iop_Sar8x16, Iop_Sar16x8, Iop_Sar32x4, Iop_Sar64x2,

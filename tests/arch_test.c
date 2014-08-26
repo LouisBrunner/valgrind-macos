@@ -29,6 +29,7 @@ char* all_archs[] = {
    "ppc64",
    "ppc64le",
    "arm",
+   "arm64",
    "s390x",
    "mips32",
    "mips64",

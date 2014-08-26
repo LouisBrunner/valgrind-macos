@@ -1,0 +1,20 @@
+
+include $(top_srcdir)/Makefile.tool-tests.am
+
+dist_noinst_SCRIPTS = filter_stderr
+
+EXTRA_DIST = \
+	integer.stdout.exp integer.stderr.exp integer.vgtest \
+	fp_and_simd.stdout.exp fp_and_simd.stderr.exp fp_and_simd.vgtest
+
+check_PROGRAMS = \
+	integer \
+	fp_and_simd
+
+AM_CFLAGS    += @FLAG_M64@
+AM_CXXFLAGS  += @FLAG_M64@
+AM_CCASFLAGS += @FLAG_M64@
+
+integer_CFLAGS     = $(AM_CFLAGS) -g -O0 -DTEST_BFM=0
+
+fp_and_simd_LDADD  = -lm

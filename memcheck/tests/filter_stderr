@@ -24,6 +24,7 @@ perl -p -e "s/in loss record \d+ of \d+/in loss record ... of .../" |
 
 # Filter out glibc debuginfo if installed.
 perl -p -e "s/\(syscall-template.S:[0-9]*\)/(in \/...libc...)/" |
+perl -p -e "s/\(socket.S:[0-9]*\)/(in \/...libc...)/" |
 
 $dir/../../memcheck/tests/filter_memcheck "$@"
 

@@ -1,0 +1,2 @@
+prog: fp_and_simd
+vgopts: -q

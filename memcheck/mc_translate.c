@@ -3148,7 +3148,6 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_Sar32x4:
       case Iop_Sal32x4:
       case Iop_Rol32x4:
-      case Iop_Rol64x2:
          return mkUifUV128(mce,
                    assignNew('V', mce, Ity_V128, binop(op, vatom1, atom2)),
                    mkPCast32x4(mce,vatom2)
@@ -3158,6 +3157,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_Shr64x2:
       case Iop_Sar64x2:
       case Iop_Sal64x2:
+      case Iop_Rol64x2:
          return mkUifUV128(mce,
                    assignNew('V', mce, Ity_V128, binop(op, vatom1, atom2)),
                    mkPCast64x2(mce,vatom2)

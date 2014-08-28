@@ -36,6 +36,9 @@ sed \
  -e "/^the cost of reduced accuracy of conflicting-access information$/d" \
  -e "/pthread_create_WRK (hg_intercepts.c:/d" |
 
+# Some arches return ENOSYS instead of EINVAL for undefined futex operations.
+sed -e "s/with error code 38 (ENOSYS: Function not implemented)/with error code 22 (EINVAL: Invalid argument)/" |
+
 $dir/../../helgrind/tests/filter_helgrind "$@"
 
 exit 0

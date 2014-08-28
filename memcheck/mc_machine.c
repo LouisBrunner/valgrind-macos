@@ -371,7 +371,7 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    Int  o  = offset;
    Int  sz = szB;
    tl_assert(sz > 0);
-#if defined(VGA_ppc64)
+#if defined(VGA_ppc64be)
    tl_assert(host_is_big_endian());
 #elif defined(VGA_ppc64le)
    tl_assert(host_is_little_endian());

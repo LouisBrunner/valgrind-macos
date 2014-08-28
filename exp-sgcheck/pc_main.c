@@ -65,7 +65,7 @@ static void pc_pre_clo_init(void)
    VG_(printf)("SGCheck doesn't work on s390x yet, sorry.\n");
    VG_(exit)(1);
 #endif
-#if defined(VGA_ppc32) || defined(VGA_ppc64)
+#if defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
    VG_(printf)("SGCheck doesn't work on PPC yet, sorry.\n");
    VG_(exit)(1);
 #endif

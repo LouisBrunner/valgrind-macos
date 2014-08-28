@@ -10,7 +10,8 @@ prog: sleepers
 args: 1000000000 1000000000 1000000000 BSBSBSBS
 vgopts: --tool=none --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-nlcontrolc
 stderr_filter: filter_stderr
-prereq: test -e gdb -a -f vgdb.invoker
+# Bug 338633 nlcontrol hangs on arm64 currently.
+prereq: test -e gdb -a -f vgdb.invoker && ! ../tests/arch_test arm64
 progB: gdb
 argsB: --quiet -l 60 --nx ./sleepers
 stdinB: nlcontrolc.stdinB.gdb

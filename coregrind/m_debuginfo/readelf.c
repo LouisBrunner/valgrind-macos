@@ -214,7 +214,7 @@ void show_raw_elf_symbol ( DiImage* strtab_img,
    To support the ppc64be-linux pre-"dotless" ABI (prior to gcc 4.0.0),
    if the symbol is seen to be outside the .opd section and its name
    starts with a dot, an .opd deference is not attempted, and no TOC
-   pointer is calculated, but the the leading dot is removed from the
+   pointer is calculated, but the leading dot is removed from the
    name.
 
    As a result, on ppc64be-linux, the caller of this function may have
@@ -864,7 +864,7 @@ void read_elf_symtab__ppc64be_linux(
         struct _DebugInfo* di, const HChar* tab_name,
         DiSlice*   escn_symtab,
         DiSlice*   escn_strtab,
-        DiSlice*   escn_opd, /* ppc64-linux only */ 
+        DiSlice*   escn_opd, /* ppc64be-linux only */ 
         Bool       symtab_in_debug
      )
 {

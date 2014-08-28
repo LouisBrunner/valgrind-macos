@@ -71,7 +71,7 @@ static void *sleeper_or_burner(void *v)
 {
    int i = 0;
    struct spec* s = (struct spec*)v;
-
+   int ret;
    fprintf(stderr, "%s ready to sleep and/or burn\n", s->name);
    fflush (stderr);
    signal_ready();
@@ -81,7 +81,10 @@ static void *sleeper_or_burner(void *v)
       if (sleepms > 0 && s->sleep) {
          t[s->t].tv_sec = sleepms / 1000;
          t[s->t].tv_usec = (sleepms % 1000) * 1000;
-         select (0, NULL, NULL, NULL, &t[s->t]);
+         ret = select (0, NULL, NULL, NULL, &t[s->t]);
+         /* We only expect a timeout result from the above. */
+         if (ret != 0)
+            perror("unexpected result from select");
       }
       if (burn > 0 && s->burn)
          do_burn();

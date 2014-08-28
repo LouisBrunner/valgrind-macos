@@ -14,13 +14,11 @@ general valgrind monitor commands:
   v.set mixed_output      : set valgrind output to log, interactive output to gdb
   v.set merge-recursive-frames <num> : merge recursive calls in max <num> frames
   v.set vgdb-error <errornr> : debug me at error >= <errornr> 
-
 massif monitor commands:
   snapshot [<filename>]
   detailed_snapshot [<filename>]
        takes a snapshot (or a detailed snapshot)
        and saves it in <filename>
              default <filename> is massif.vgdb.out
-
 monitor command request to kill this process
 Remote connection closed

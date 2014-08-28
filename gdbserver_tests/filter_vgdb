@@ -17,4 +17,7 @@ sed -e 's/\(relaying data between gdb and process \)[0-9][0-9]*/\1..../' \
     -e '/^[1-9][0-9]*	\.\.\/sysdeps\/powerpc\/powerpc32\/dl-start\.S: No such file or directory\./d' |
     
 # filter some debuginfo problems with ld.so and SLES11
-sed -e '/^1	rtld.c: No such file or directory\./d'
+sed -e '/^1	rtld.c: No such file or directory\./d' |
+
+# and filter out any remaining empty lines
+sed -e '/^$/d'

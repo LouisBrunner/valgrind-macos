@@ -12,7 +12,6 @@ general valgrind monitor commands:
   v.set mixed_output      : set valgrind output to log, interactive output to gdb
   v.set merge-recursive-frames <num> : merge recursive calls in max <num> frames
   v.set vgdb-error <errornr> : debug me at error >= <errornr> 
-
 memcheck monitor commands:
   get_vbits <addr> [<len>]
         returns validity bits for <len> (or 1) bytes at <addr>
@@ -43,7 +42,6 @@ memcheck monitor commands:
         shows places pointing inside <len> (default 1) bytes at <addr>
         (with len 1, only shows "start pointers" pointing exactly to <addr>,
          with len > 1, will also show "interior pointers")
-
 general valgrind monitor commands:
   help [debug]            : monitor command help. With debug: + debugging commands
   v.wait [<ms>]           : sleep <ms> (default 0) then continue
@@ -72,7 +70,6 @@ debugging valgrind internals monitor commands:
   v.translate <addr> [<traceflags>]  : debug translation of <addr> with <traceflags>
     (default traceflags 0b00100000 : show after instrumentation)
    An additional flag  0b100000000 allows to show gdbserver instrumentation
-
 memcheck monitor commands:
   get_vbits <addr> [<len>]
         returns validity bits for <len> (or 1) bytes at <addr>
@@ -103,5 +100,4 @@ memcheck monitor commands:
         shows places pointing inside <len> (default 1) bytes at <addr>
         (with len 1, only shows "start pointers" pointing exactly to <addr>,
          with len > 1, will also show "interior pointers")
-
 monitor command request to kill this process

@@ -7,4 +7,7 @@ dir=`dirname $0`
 $dir/../helgrind/tests/filter_stderr "$@"              |
 
 # filter vgdb messages
-$dir/filter_vgdb 
+$dir/filter_vgdb |
+
+# and remove any remaining empty lines
+sed -e '/^$/d'

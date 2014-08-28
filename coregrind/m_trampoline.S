@@ -700,6 +700,22 @@ VG_(arm_linux_REDIR_FOR_memcpy):
 	ldmfd	sp!, {r4, r5, pc}
 	UD2_4
 
+.global VG_(arm_linux_REDIR_FOR_strcmp)
+VG_(arm_linux_REDIR_FOR_strcmp):
+.L64:
+	ldrb	r3, [r0], #1	@ zero_extendqisi2
+	ldrb	r2, [r1], #1	@ zero_extendqisi2
+	cmp	r3, #0
+	beq	.L67
+	cmp	r3, r2
+	beq	.L64
+	rsb	r0, r2, r3
+	bx	lr
+.L67:
+	rsb	r0, r2, #0
+	bx	lr
+	UD2_4
+
 .global VG_(trampoline_stuff_end)
 VG_(trampoline_stuff_end):
 

@@ -1388,6 +1388,17 @@ void VG_(redir_initialise) ( void )
          (Addr)&VG_(arm_linux_REDIR_FOR_memcpy),
          complain_about_stripped_glibc_ldso
       );
+      /* strcmp */
+      add_hardwired_spec(
+         "ld-linux.so.3", "strcmp",
+         (Addr)&VG_(arm_linux_REDIR_FOR_strcmp),
+         complain_about_stripped_glibc_ldso
+      );
+      add_hardwired_spec(
+         "ld-linux-armhf.so.3", "strcmp",
+         (Addr)&VG_(arm_linux_REDIR_FOR_strcmp),
+         complain_about_stripped_glibc_ldso
+      );
    }
 
 #  elif defined(VGP_arm64_linux)

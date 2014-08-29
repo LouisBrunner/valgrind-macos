@@ -60,12 +60,42 @@
 #include "pub_core_syswrap.h"
 #include "pub_core_tooliface.h"
 #include "pub_core_ume.h"
+#include "pub_core_stacks.h"
 
 #include "priv_types_n_macros.h"
 #include "priv_syswrap-generic.h"
 
 #include "config.h"
 
+
+void ML_(guess_and_register_stack) (Addr sp, ThreadState* tst)
+{
+   Bool debug = False;
+   NSegment const* seg;
+
+   /* We don't really know where the client stack is, because its
+      allocated by the client.  The best we can do is look at the
+      memory mappings and try to derive some useful information.  We
+      assume that sp starts near its highest possible value, and can
+      only go down to the start of the mmaped segment. */
+   seg = VG_(am_find_nsegment)(sp);
+   if (seg && seg->kind != SkResvn) {
+      tst->client_stack_highest_byte = (Addr)VG_PGROUNDUP(sp)-1;
+      tst->client_stack_szB = tst->client_stack_highest_byte - seg->start + 1;
+
+      VG_(register_stack)(seg->start, tst->client_stack_highest_byte);
+
+      if (debug)
+	 VG_(printf)("tid %d: guessed client stack range [%#lx-%#lx]\n",
+		     tst->tid, seg->start, tst->client_stack_highest_byte);
+   } else {
+      VG_(message)(Vg_UserMsg,
+                   "!? New thread %d starts with SP(%#lx) unmapped\n",
+		   tst->tid, sp);
+      tst->client_stack_highest_byte = 0;
+      tst->client_stack_szB  = 0;
+   }
+}
 
 /* Returns True iff address range is something the client can
    plausibly mess with: all of it is either already belongs to the

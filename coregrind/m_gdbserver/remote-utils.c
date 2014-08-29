@@ -44,7 +44,7 @@ void sr_extended_perror (SysRes sr, const HChar *msg)
       Int i;
       vki_sigset_t cursigset;
       VG_(show_sched_status) (True,  // host_stacktrace
-                              True,  // valgrind_stack_usage
+                              True,  // stack_usage
                               True); // exited_threads
       VG_(sigprocmask) (0,           // dummy how.
                         NULL,        // do not change the sigmask

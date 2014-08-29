@@ -216,7 +216,6 @@ static SysRes do_clone ( ThreadId ptid,
    ThreadState* ptst = VG_(get_ThreadState)(ptid);
    ThreadState* ctst = VG_(get_ThreadState)(ctid);
    UWord*       stack;
-   NSegment const* seg;
    SysRes       res;
    ULong        r2;
    vki_sigset_t blockall, savedmask;
@@ -262,27 +261,7 @@ static SysRes do_clone ( ThreadId ptid,
    /* have the parents thread group */
    ctst->os_state.threadgroup = ptst->os_state.threadgroup;
 
-   /* We don't really know where the client stack is, because its
-      allocated by the client.  The best we can do is look at the
-      memory mappings and try to derive some useful information.  We
-      assume that esp starts near its highest possible value, and can
-      only go down to the start of the mmaped segment. */
-   seg = VG_(am_find_nsegment)((Addr)sp);
-   if (seg && seg->kind != SkResvn) {
-      ctst->client_stack_highest_word = (Addr)VG_PGROUNDUP(sp);
-      ctst->client_stack_szB = ctst->client_stack_highest_word - seg->start;
-
-      VG_(register_stack)(seg->start, ctst->client_stack_highest_word);
-
-      if (debug)
-	 VG_(printf)("tid %d: guessed client stack range %#lx-%#lx\n",
-		     ctid, seg->start, VG_PGROUNDUP(sp));
-   } else {
-      VG_(message)(Vg_UserMsg,
-                   "!? New thread %d starts with SP(%#lx) unmapped\n",
-		   ctid, sp);
-      ctst->client_stack_szB  = 0;
-   }
+   ML_(guess_and_register_stack) (sp, ctst);
 
    /* Assume the clone will succeed, and tell any tool that wants to
       know that this thread has come into existence.  If the clone

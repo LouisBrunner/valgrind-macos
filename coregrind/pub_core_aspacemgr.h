@@ -58,7 +58,7 @@
    Takes a pointer to the SP at the time V gained control.  This is
    taken to be the highest usable address (more or less).  Based on
    that (and general consultation of tea leaves, etc) return a
-   suggested end address for the client's stack. */
+   suggested end address (highest addressable byte) for the client's stack. */
 extern Addr VG_(am_startup) ( Addr sp_at_startup );
 
 

@@ -45,9 +45,9 @@
 // TODO: get rid of as many of these as possible.
 
 /* ***Initial*** lowest address of the stack segment of the main thread.
-   The main stack will grow if needed but VG_(clstk_base) will
+   The main stack will grow if needed but VG_(clstk_start_base) will
    not be changed according to the growth. */
-Addr  VG_(clstk_base)  = 0;
+Addr  VG_(clstk_start_base)  = 0;
 /* Initial highest address of the stack segment of the main thread. */
 Addr  VG_(clstk_end)   = 0;
 UWord VG_(clstk_id)    = 0;

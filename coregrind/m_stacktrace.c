@@ -1395,8 +1395,8 @@ UInt VG_(get_StackTrace) ( ThreadId tid,
    VG_(memset)( &startRegs, 0, sizeof(startRegs) );
    VG_(get_UnwindStartRegs)( &startRegs, tid );
 
-   Addr stack_highest_word = VG_(threads)[tid].client_stack_highest_word;
-   Addr stack_lowest_word  = 0;
+   Addr stack_highest_byte = VG_(threads)[tid].client_stack_highest_byte;
+   Addr stack_lowest_byte  = 0;
 
 #  if defined(VGP_x86_linux)
    /* Nasty little hack to deal with syscalls - if libc is using its
@@ -1428,7 +1428,7 @@ UInt VG_(get_StackTrace) ( ThreadId tid,
 
    /* See if we can get a better idea of the stack limits */
    VG_(stack_limits)( (Addr)startRegs.r_sp,
-                      &stack_lowest_word, &stack_highest_word );
+                      &stack_lowest_byte, &stack_highest_byte );
 
    /* Take into account the first_ip_delta. */
    startRegs.r_pc += (Long)(Word)first_ip_delta;
@@ -1436,13 +1436,13 @@ UInt VG_(get_StackTrace) ( ThreadId tid,
    if (0)
       VG_(printf)("tid %d: stack_highest=0x%08lx ip=0x%010llx "
                   "sp=0x%010llx\n",
-		  tid, stack_highest_word,
+		  tid, stack_highest_byte,
                   startRegs.r_pc, startRegs.r_sp);
 
    return VG_(get_StackTrace_wrk)(tid, ips, max_n_ips, 
                                        sps, fps,
                                        &startRegs,
-                                       stack_highest_word);
+                                       stack_highest_byte);
 }
 
 static void printIpDesc(UInt n, Addr ip, void* uu_opaque)

@@ -564,8 +564,8 @@ Addr setup_client_stack( void*  init_sp,
      vg_assert(!sr_isError(res)); 
 
      /* Record stack extent -- needed for stack-change code. */
-     VG_(clstk_base) = anon_start -inner_HACK;
-     VG_(clstk_end)  = VG_(clstk_base) + anon_size +inner_HACK -1;
+     VG_(clstk_start_base) = anon_start -inner_HACK;
+     VG_(clstk_end)  = VG_(clstk_start_base) + anon_size +inner_HACK -1;
 
    }
 
@@ -917,7 +917,7 @@ IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo iicii )
       iifii.initial_client_SP
          = setup_client_stack( init_sp, env, 
                                &info, &iifii.client_auxv, 
-                               iicii.clstack_top, iifii.clstack_max_size );
+                               iicii.clstack_end, iifii.clstack_max_size );
 
       VG_(free)(env);
 

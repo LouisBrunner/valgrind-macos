@@ -38,6 +38,15 @@
 // purposes of detecting stack switches.
 //--------------------------------------------------------------------
 
+/* Convention for start and end:
+   'start' is the lowest address, 'end' is the highest address.
+   'start' and 'end' bytes are included in the stack.
+   In other words, the stack is the byte interval ['start', 'end']
+   (both bounds are included).
+
+   Note: for compatibility reasons, VG_(register_stack) accepts
+   'start' bigger than 'end' and will (transparently) swap 'start/end'
+   to register the stack. */
 extern UWord VG_(register_stack)   ( Addr start, Addr end );
 extern void  VG_(deregister_stack) ( UWord id );
 extern void  VG_(change_stack)     ( UWord id, Addr start, Addr end );

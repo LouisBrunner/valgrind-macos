@@ -36,6 +36,12 @@
 #include "priv_types_n_macros.h"  // DECL_TEMPLATE
 
 
+/* Guess the client stack from the segment in which sp is mapped.
+   Register the guessed stack using VG_(register_stack).
+   Setup tst client_stack_highest_byte and client_stack_szB.
+   If sp is not in a mapped segment, does nothing. */
+extern void ML_(guess_and_register_stack) (Addr sp, ThreadState* tst);
+
 // Return true if address range entirely contained within client
 // address space.
 extern

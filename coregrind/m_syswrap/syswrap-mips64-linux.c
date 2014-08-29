@@ -232,10 +232,12 @@ static SysRes do_clone ( ThreadId ptid,
    ctst->os_state.threadgroup = ptst->os_state.threadgroup;
    seg = VG_(am_find_nsegment)((Addr)sp);
 
+   // FIXME mips64: the below differs significantly from the code
+   // factorised in syswrap-generic.c e.g. does not round sp ????
    if (seg && seg->kind != SkResvn) {
-      ctst->client_stack_highest_word = sp;
-      ctst->client_stack_szB = ctst->client_stack_highest_word - seg->start;
-      VG_(register_stack)(seg->start, ctst->client_stack_highest_word);
+      ctst->client_stack_highest_byte = sp;
+      ctst->client_stack_szB = ctst->client_stack_highest_byte - seg->start + 1;
+      VG_(register_stack)(seg->start, ctst->client_stack_highest_byte);
       if (debug)
         VG_(printf)("tid %d: guessed client stack range %#lx-%#lx\n",
                     ctid, seg->start, sp /* VG_PGROUNDUP (sp) */ );

@@ -72,7 +72,7 @@ struct _IICreateImageInfo {
    /* ------ Mandatory fields ------ */
    const HChar*  toolname;
    Addr    sp_at_startup;
-   Addr    clstack_top;
+   Addr    clstack_end; // Highest stack addressable byte
    /* ------ Per-OS fields ------ */
    HChar** argv;
    HChar** envp;
@@ -96,7 +96,7 @@ struct _IICreateImageInfo {
    /* ------ Mandatory fields ------ */
    const HChar*  toolname;
    Addr    sp_at_startup;
-   Addr    clstack_top;
+   Addr    clstack_end; // highest stack addressable byte
    /* ------ Per-OS fields ------ */
    HChar** argv;
    HChar** envp;

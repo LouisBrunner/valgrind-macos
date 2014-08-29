@@ -1609,19 +1609,11 @@ static void read_maps_callback ( Addr addr, SizeT len, UInt prot,
    add_segment( &seg );
 }
 
-/* Initialise the address space manager, setting up the initial
-   segment list, and reading /proc/self/maps into it.  This must
-   be called before any other function.
-
-   Takes a pointer to the SP at the time V gained control.  This is
-   taken to be the highest usable address (more or less).  Based on
-   that (and general consultation of tea leaves, etc) return a
-   suggested end address for the client's stack. */
-
+/* See description in pub_core_aspacemgr.h */
 Addr VG_(am_startup) ( Addr sp_at_startup )
 {
    NSegment seg;
-   Addr     suggested_clstack_top;
+   Addr     suggested_clstack_end;
 
    aspacem_assert(sizeof(Word)   == sizeof(void*));
    aspacem_assert(sizeof(Addr)   == sizeof(void*));
@@ -1660,7 +1652,7 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
    // 0x7fff:5c000000..0x7fff:ffe00000? is stack, dyld, shared cache
 # endif
 
-   suggested_clstack_top = -1; // ignored; Mach-O specifies its stack
+   suggested_clstack_end = -1; // ignored; Mach-O specifies its stack
 
 #else /* !defined(VGO_darwin) */
 
@@ -1690,7 +1682,7 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
    aspacem_vStart -= 0x10000000; // 256M
 #  endif
 
-   suggested_clstack_top = aspacem_maxAddr - 16*1024*1024ULL
+   suggested_clstack_end = aspacem_maxAddr - 16*1024*1024ULL
                                            + VKI_PAGE_SIZE;
 
 #endif /* #else of 'defined(VGO_darwin)' */
@@ -1699,7 +1691,7 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
    aspacem_assert(VG_IS_PAGE_ALIGNED(aspacem_maxAddr + 1));
    aspacem_assert(VG_IS_PAGE_ALIGNED(aspacem_cStart));
    aspacem_assert(VG_IS_PAGE_ALIGNED(aspacem_vStart));
-   aspacem_assert(VG_IS_PAGE_ALIGNED(suggested_clstack_top + 1));
+   aspacem_assert(VG_IS_PAGE_ALIGNED(suggested_clstack_end + 1));
 
    VG_(debugLog)(2, "aspacem", 
                     "              minAddr = 0x%010llx (computed)\n", 
@@ -1714,8 +1706,8 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
                     "               vStart = 0x%010llx (computed)\n", 
                     (ULong)aspacem_vStart);
    VG_(debugLog)(2, "aspacem", 
-                    "suggested_clstack_top = 0x%010llx (computed)\n", 
-                    (ULong)suggested_clstack_top);
+                    "suggested_clstack_end = 0x%010llx (computed)\n", 
+                    (ULong)suggested_clstack_end);
 
    if (aspacem_cStart > Addr_MIN) {
       init_resvn(&seg, Addr_MIN, aspacem_cStart-1);
@@ -1751,7 +1743,7 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
    VG_(am_show_nsegments)(2, "With contents of /proc/self/maps");
 
    AM_SANITY_CHECK;
-   return suggested_clstack_top;
+   return suggested_clstack_end;
 }
 
 

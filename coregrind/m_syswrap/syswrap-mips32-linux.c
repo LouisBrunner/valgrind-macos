@@ -248,7 +248,6 @@ static SysRes do_clone (ThreadId ptid,
    ThreadState * ctst = VG_ (get_ThreadState) (ctid);
    UInt ret = 0;
    UWord * stack;
-   NSegment const *seg;
    SysRes res;
    vki_sigset_t blockall, savedmask;
 
@@ -283,22 +282,8 @@ static SysRes do_clone (ThreadId ptid,
       See #226116. */ 
 
    ctst->os_state.threadgroup = ptst->os_state.threadgroup;
-   seg = VG_ (am_find_nsegment) ((Addr) sp);
 
-   if (seg && seg->kind != SkResvn) {
-      ctst->client_stack_highest_word = (Addr) VG_PGROUNDUP (sp);
-      ctst->client_stack_szB = ctst->client_stack_highest_word - seg->start;
-      VG_ (register_stack) (seg->start, ctst->client_stack_highest_word);
-      if (debug)
-         VG_ (printf) ("tid %d: guessed client stack range %#lx-%#lx\n",
-
-      ctid, seg->start, VG_PGROUNDUP (sp));
-   } else {
-      VG_ (message) (Vg_UserMsg,
-                     "!? New thread %d starts with sp+%#lx) unmapped\n",
-                     ctid, sp);
-      ctst->client_stack_szB = 0;
-   }
+   ML_(guess_and_register_stack) (sp, ctst);
 
    VG_TRACK (pre_thread_ll_create, ptid, ctid);
    if (flags & VKI_CLONE_SETTLS) {

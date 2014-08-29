@@ -314,7 +314,7 @@ void pthread_hijack(Addr self, Addr kport, Addr func, Addr func_arg,
    if ((flags & 0x01000000) == 0) {
       // kernel allocated stack - needs mapping
       Addr stack = VG_PGROUNDUP(sp) - stacksize;
-      tst->client_stack_highest_word = stack+stacksize;
+      tst->client_stack_highest_byte = stack+stacksize-1;
       tst->client_stack_szB = stacksize;
 
       // pthread structure
@@ -475,7 +475,7 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
       record_named_port(tst->tid, kport, MACH_PORT_RIGHT_SEND, "wqthread-%p");
       
       // kernel allocated stack - needs mapping
-      tst->client_stack_highest_word = stack+stacksize;
+      tst->client_stack_highest_byte = stack+stacksize-1;
       tst->client_stack_szB = stacksize;
 
       // GrP fixme scheduler lock?!

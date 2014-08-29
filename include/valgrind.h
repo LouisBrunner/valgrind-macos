@@ -6507,7 +6507,9 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
                                VG_USERREQ__MEMPOOL_EXISTS,        \
                                pool, 0, 0, 0, 0)
 
-/* Mark a piece of memory as being a stack. Returns a stack id. */
+/* Mark a piece of memory as being a stack. Returns a stack id.
+   start is the lowest addressable stack byte, end is the highest
+   addressable stack byte. */
 #define VALGRIND_STACK_REGISTER(start, end)                       \
     (unsigned)VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                  \
                                VG_USERREQ__STACK_REGISTER,        \
@@ -6519,7 +6521,9 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
     VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__STACK_DEREGISTER, \
                                     id, 0, 0, 0, 0)
 
-/* Change the start and end address of the stack id. */
+/* Change the start and end address of the stack id.
+   start is the new lowest addressable stack byte, end is the new highest
+   addressable stack byte. */
 #define VALGRIND_STACK_CHANGE(id, start, end)                     \
     VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__STACK_CHANGE,     \
                                     id, start, end, 0, 0)

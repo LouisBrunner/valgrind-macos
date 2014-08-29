@@ -341,11 +341,11 @@ typedef struct {
    /* The allocated size of this thread's stack */
    SizeT client_stack_szB;
 
-   /* Address of the highest legitimate word in this stack.  This is
+   /* Address of the highest legitimate byte in this stack.  This is
       used for error messages only -- not critical for execution
       correctness.  Is is set for all stacks, specifically including
       ThreadId == 1 (the main thread). */
-   Addr client_stack_highest_word;
+   Addr client_stack_highest_byte;
 
    /* Alternate signal stack */
    vki_stack_t altstack;

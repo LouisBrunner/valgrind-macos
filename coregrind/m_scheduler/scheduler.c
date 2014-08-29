@@ -620,7 +620,7 @@ ThreadId VG_(scheduler_init_phase1) ( void )
 
       VG_(threads)[i].status                    = VgTs_Empty;
       VG_(threads)[i].client_stack_szB          = 0;
-      VG_(threads)[i].client_stack_highest_word = (Addr)NULL;
+      VG_(threads)[i].client_stack_highest_byte = (Addr)NULL;
       VG_(threads)[i].err_disablement_level     = 0;
       VG_(threads)[i].thread_name               = NULL;
    }
@@ -656,8 +656,8 @@ void VG_(scheduler_init_phase2) ( ThreadId tid_main,
    vg_assert(VG_IS_PAGE_ALIGNED(clstack_end+1));
    vg_assert(VG_IS_PAGE_ALIGNED(clstack_size));
 
-   VG_(threads)[tid_main].client_stack_highest_word 
-      = clstack_end + 1 - sizeof(UWord);
+   VG_(threads)[tid_main].client_stack_highest_byte 
+      = clstack_end;
    VG_(threads)[tid_main].client_stack_szB 
       = clstack_size;
 
@@ -2167,7 +2167,7 @@ void scheduler_sanity ( ThreadId tid )
          VG_(printf)("\n------------ Sched State at %d ms ------------\n",
                      (Int)now);
          VG_(show_sched_status)(True,  // host_stacktrace
-                                True,  // valgrind_stack_usage
+                                True,  // stack_usage
                                 True); // exited_threads);
       }
    }

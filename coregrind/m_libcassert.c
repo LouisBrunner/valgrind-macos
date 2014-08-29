@@ -39,6 +39,8 @@
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"      // For VG_(gettid)()
+#include "pub_core_machine.h"
+#include "pub_core_stacks.h"
 #include "pub_core_stacktrace.h"
 #include "pub_core_syscall.h"
 #include "pub_core_tooliface.h"     // For VG_(details).{name,bug_reports_to}
@@ -294,7 +296,7 @@ void VG_(client_exit)( Int status )
 
 // Print the scheduler status.
 static void show_sched_status_wrk ( Bool host_stacktrace,
-                                    Bool valgrind_stack_usage,
+                                    Bool stack_usage,
                                     Bool exited_threads,
                                     UnwindStartRegs* startRegsIN)
 {
@@ -349,7 +351,19 @@ static void show_sched_status_wrk ( Bool host_stacktrace,
                   VG_(name_of_ThreadStatus)(VG_(threads)[i].status) );
       if (VG_(threads)[i].status != VgTs_Empty)
          VG_(get_and_pp_StackTrace)( i, BACKTRACE_DEPTH );
-      if (valgrind_stack_usage && stack != 0)
+      if (stack_usage && VG_(threads)[i].client_stack_highest_byte != 0 ) {
+         Addr start, end;
+         
+         start = end = 0;
+         VG_(stack_limits)(VG_(threads)[i].client_stack_highest_byte,
+                           &start, &end);
+         if (start != end)
+            VG_(printf)("client stack range: [%p %p] client SP: %p\n",
+                        (void*)start, (void*)end, (void*)VG_(get_SP)(i));
+         else
+            VG_(printf)("client stack range: ???????\n");
+      }
+      if (stack_usage && stack != 0)
           VG_(printf)("valgrind stack top usage: %ld of %ld\n",
                       VG_STACK_ACTIVE_SZB 
                       - VG_(am_get_VgStack_unused_szB)(stack,
@@ -360,11 +374,11 @@ static void show_sched_status_wrk ( Bool host_stacktrace,
 }
 
 void VG_(show_sched_status) ( Bool host_stacktrace,
-                              Bool valgrind_stack_usage,
+                              Bool stack_usage,
                               Bool exited_threads)
 {
    show_sched_status_wrk (host_stacktrace,
-                          valgrind_stack_usage,
+                          stack_usage,
                           exited_threads,
                           NULL);
 }
@@ -374,7 +388,7 @@ static void report_and_quit ( const HChar* report,
                               UnwindStartRegs* startRegsIN )
 {
    show_sched_status_wrk (True,  // host_stacktrace
-                          False, // valgrind_stack_usage
+                          False, // stack_usage
                           False, // exited_threads
                           startRegsIN);
    VG_(printf)(
@@ -485,7 +499,7 @@ void VG_(unimplemented) ( const HChar* msg )
    VG_(umsg)("Valgrind has to exit now.  Sorry.  Bye!\n");
    VG_(umsg)("\n");
    VG_(show_sched_status)(False,  // host_stacktrace
-                          False,  // valgrind_stack_usage
+                          False,  // stack_usage
                           False); // exited_threads
    VG_(exit)(1);
 }

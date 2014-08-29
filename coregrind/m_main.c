@@ -1649,7 +1649,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    vg_assert(VKI_PAGE_SIZE <= VKI_MAX_PAGE_SIZE);
    vg_assert(VKI_PAGE_SIZE     == (1 << VKI_PAGE_SHIFT));
    vg_assert(VKI_MAX_PAGE_SIZE == (1 << VKI_MAX_PAGE_SHIFT));
-   the_iicii.clstack_top = VG_(am_startup)( the_iicii.sp_at_startup );
+   the_iicii.clstack_end = VG_(am_startup)( the_iicii.sp_at_startup );
    VG_(debugLog)(1, "main", "Address space manager is running\n");
 
    //--------------------------------------------------------------
@@ -2365,7 +2365,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    //--------------------------------------------------------------
    // register client stack
    //--------------------------------------------------------------
-   VG_(clstk_id) = VG_(register_stack)(VG_(clstk_base), VG_(clstk_end));
+   VG_(clstk_id) = VG_(register_stack)(VG_(clstk_start_base), VG_(clstk_end));
 
    //--------------------------------------------------------------
    // Show the address space state so far

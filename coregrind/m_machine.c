@@ -380,7 +380,7 @@ Bool VG_(thread_stack_next)(/*MOD*/ThreadId* tid,
       if (VG_(threads)[i].status != VgTs_Empty) {
          *tid       = i;
          *stack_min = VG_(get_SP)(i);
-         *stack_max = VG_(threads)[i].client_stack_highest_word;
+         *stack_max = VG_(threads)[i].client_stack_highest_byte;
          return True;
       }
    }
@@ -391,7 +391,7 @@ Addr VG_(thread_get_stack_max)(ThreadId tid)
 {
    vg_assert(0 <= tid && tid < VG_N_THREADS && tid != VG_INVALID_THREADID);
    vg_assert(VG_(threads)[tid].status != VgTs_Empty);
-   return VG_(threads)[tid].client_stack_highest_word;
+   return VG_(threads)[tid].client_stack_highest_byte;
 }
 
 SizeT VG_(thread_get_stack_size)(ThreadId tid)

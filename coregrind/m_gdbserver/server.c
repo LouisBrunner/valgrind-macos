@@ -398,7 +398,7 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
          break;
       case  5: /* scheduler */
          VG_(show_sched_status) (True,  // host_stacktrace
-                                 True,  // valgrind_stack_usage
+                                 True,  // stack_usage
                                  True); // exited_threads
          ret = 1;
          break;

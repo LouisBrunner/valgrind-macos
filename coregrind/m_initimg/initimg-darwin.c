@@ -410,7 +410,7 @@ Addr setup_client_stack( void*  init_sp,
 
    /* Record stack extent -- needed for stack-change code. */
    /* GrP fixme really? */
-   VG_(clstk_base) = clstack_start;
+   VG_(clstk_start_base) = clstack_start;
    VG_(clstk_end)  = clstack_end;
 
    if (0)
@@ -548,18 +548,18 @@ IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo iicii )
    //   p: load_client()     [for 'info']
    //   p: fix_environment() [for 'env']
    //--------------------------------------------------------------
-   iicii.clstack_top = info.stack_end - 1;
-   iifii.clstack_max_size = info.stack_end - info.stack_start;
+   iicii.clstack_end = info.stack_end;
+   iifii.clstack_max_size = info.stack_end - info.stack_start + 1;
    
    iifii.initial_client_SP = 
        setup_client_stack( iicii.argv - 1, env, &info, 
-                           iicii.clstack_top, iifii.clstack_max_size );
+                           iicii.clstack_end, iifii.clstack_max_size );
 
    VG_(free)(env);
 
    VG_(debugLog)(2, "initimg",
                  "Client info: "
-                 "initial_IP=%p initial_SP=%p stack=%p..%p\n", 
+                 "initial_IP=%p initial_SP=%p stack=[%p..%p]\n", 
                  (void*)(iifii.initial_client_IP),
                  (void*)(iifii.initial_client_SP),
                  (void*)(info.stack_start), 

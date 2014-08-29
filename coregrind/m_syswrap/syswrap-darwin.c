@@ -174,26 +174,7 @@ Addr allocstack ( ThreadId tid )
 
 void find_stack_segment(ThreadId tid, Addr sp)
 {
-   /* We don't really know where the client stack is, because it's
-      allocated by the client.  The best we can do is look at the
-      memory mappings and try to derive some useful information.  We
-      assume that esp starts near its highest possible value, and can
-      only go down to the start of the mmaped segment. */
-   ThreadState *tst = VG_(get_ThreadState)(tid);
-   const NSegment *seg = VG_(am_find_nsegment)(sp);
-   if (seg && seg->kind != SkResvn) {
-      tst->client_stack_highest_word = (Addr)VG_PGROUNDUP(sp);
-      tst->client_stack_szB = tst->client_stack_highest_word - seg->start;
-
-      if (1)
-         VG_(printf)("tid %d: guessed client stack range %#lx-%#lx\n",
-                     tid, seg->start, VG_PGROUNDUP(sp));
-   } else {
-       VG_(printf)("couldn't find user stack\n");
-      VG_(message)(Vg_UserMsg, "!? New thread %d starts with SP(%#lx) unmapped\n",
-                   tid, sp);
-      tst->client_stack_szB  = 0;
-   }
+   ML_(guess_and_register_stack) (sp, VG_(get_ThreadState)(tid));
 }
 
 
@@ -3783,6 +3764,10 @@ PRE(__sysctl)
             Addr *oldp = (Addr *)ARG3;
             size_t *oldlenp = (size_t *)ARG4;
             if (oldlenp) {
+               // According to some searches on the net, it looks like USRSTACK
+               // gives the address of the byte following the highest byte of the stack
+               // As VG_(clstk_end) is the address of the highest addressable byte, we
+               // add +1.
                Addr stack_end = VG_(clstk_end)+1;
                size_t oldlen = *oldlenp;
                // always return actual size

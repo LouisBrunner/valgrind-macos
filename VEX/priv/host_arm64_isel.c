@@ -3844,8 +3844,7 @@ HInstrArray* iselSB_ARM64 ( IRSB* bb,
       it is zero.  It will have to be patched later, but before this
       translation is used, by a call to LibVEX_patchProfCtr. */
    if (addProfInc) {
-      vassert(0);
-      //addInstr(env, ARM64Instr_ProfInc());
+      addInstr(env, ARM64Instr_ProfInc());
    }
 
    /* Ok, finally we can iterate over the statements. */

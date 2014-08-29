@@ -1140,6 +1140,8 @@ VexInvalRange LibVEX_PatchProfInc ( VexArch    arch_host,
          patchProfInc = patchProfInc_AMD64; break;
       case VexArchARM:
          patchProfInc = patchProfInc_ARM; break;
+      case VexArchARM64:
+         patchProfInc = patchProfInc_ARM64; break;
       case VexArchS390X:
          patchProfInc = patchProfInc_S390; break;
       case VexArchPPC32:

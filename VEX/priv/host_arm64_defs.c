@@ -89,6 +89,7 @@ HReg hregARM64_X4  ( void ) { return mkHReg(4,  HRcInt64, False); }
 HReg hregARM64_X5  ( void ) { return mkHReg(5,  HRcInt64, False); }
 HReg hregARM64_X6  ( void ) { return mkHReg(6,  HRcInt64, False); }
 HReg hregARM64_X7  ( void ) { return mkHReg(7,  HRcInt64, False); }
+HReg hregARM64_X8  ( void ) { return mkHReg(8,  HRcInt64, False); }
 HReg hregARM64_X9  ( void ) { return mkHReg(9,  HRcInt64, False); }
 HReg hregARM64_X10 ( void ) { return mkHReg(10, HRcInt64, False); }
 HReg hregARM64_X11 ( void ) { return mkHReg(11, HRcInt64, False); }
@@ -143,7 +144,7 @@ void getAllocableRegs_ARM64 ( Int* nregs, HReg** arr )
    (*arr)[i++] = hregARM64_X5();
    (*arr)[i++] = hregARM64_X6();
    (*arr)[i++] = hregARM64_X7();
-   // X8 .. who knows.
+   // X8 is used as a ProfInc temporary, not available to regalloc.
    // X9 is a chaining/spill temporary, not available to regalloc.
 
    // Do we really need all these?
@@ -171,8 +172,8 @@ void getAllocableRegs_ARM64 ( Int* nregs, HReg** arr )
    (*arr)[i++] = hregARM64_D13();
 
    // unavail: x21 as GSP
+   // x8 is used as a ProfInc temporary
    // x9 is used as a spill/reload/chaining/call temporary
-   // x8 is unassigned
    // x30 as LR
    // x31 because dealing with the SP-vs-ZR overloading is too
    // confusing, and we don't need to do so, so let's just avoid
@@ -188,7 +189,7 @@ void getAllocableRegs_ARM64 ( Int* nregs, HReg** arr )
    //
    // If the set of available registers changes or if the e/r status
    // changes, be sure to re-check/sync the definition of
-   // getHRegUsage for ARMInstr_Call too.
+   // getRegUsage for ARM64Instr_Call too.
    vassert(i == *nregs);
 }
 
@@ -1303,6 +1304,11 @@ ARM64Instr* ARM64Instr_EvCheck ( ARM64AMode* amCounter,
    i->ARM64in.EvCheck.amFailAddr = amFailAddr;
    return i;
 }
+ARM64Instr* ARM64Instr_ProfInc ( void ) {
+   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   i->tag        = ARM64in_ProfInc;
+   return i;
+}
 
 /* ... */
 
@@ -1772,7 +1778,7 @@ void ppARM64Instr ( ARM64Instr* i ) {
          vex_printf(", ");
          ppHRegARM64(i->ARM64in.VMov.src);
          return;
-   }
+      }
       case ARM64in_EvCheck:
          vex_printf("(evCheck) ldr w9,");
          ppARM64AMode(i->ARM64in.EvCheck.amCounter);
@@ -1782,16 +1788,10 @@ void ppARM64Instr ( ARM64Instr* i ) {
          ppARM64AMode(i->ARM64in.EvCheck.amFailAddr);
          vex_printf("; br x9; nofail:");
          return;
-//ZZ       case ARMin_ProfInc:
-//ZZ          vex_printf("(profInc) movw r12,LO16($NotKnownYet); "
-//ZZ                     "movw r12,HI16($NotKnownYet); "
-//ZZ                     "ldr r11,[r12]; "
-//ZZ                     "adds r11,r11,$1; "
-//ZZ                     "str r11,[r12]; "
-//ZZ                     "ldr r11,[r12+4]; "
-//ZZ                     "adc r11,r11,$0; "
-//ZZ                     "str r11,[r12+4]");
-//ZZ          return;
+      case ARM64in_ProfInc:
+         vex_printf("(profInc) imm64-fixed4 x9,$NotKnownYet; "
+                    "ldr x8,[x9]; add x8,x8,#1, str x8,[x9]");
+         return;
       default:
          vex_printf("ppARM64Instr: unhandled case (tag %d)", (Int)i->tag);
          vpanic("ppARM64Instr(1)");
@@ -2094,10 +2094,12 @@ void getRegUsage_ARM64Instr ( HRegUsage* u, ARM64Instr* i, Bool mode64 )
          addRegUsage_ARM64AMode(u, i->ARM64in.EvCheck.amFailAddr);
          addHRegUse(u, HRmWrite, hregARM64_X9()); /* also unavail to RA */
          return;
-//ZZ       case ARMin_ProfInc:
-//ZZ          addHRegUse(u, HRmWrite, hregARM_R12());
-//ZZ          addHRegUse(u, HRmWrite, hregARM_R11());
-//ZZ          return;
+      case ARM64in_ProfInc:
+         /* Again, pointless to actually state these since neither
+            is available to RA. */
+         addHRegUse(u, HRmWrite, hregARM64_X9()); /* unavail to RA */
+         addHRegUse(u, HRmWrite, hregARM64_X8()); /* unavail to RA */
+         return;
       default:
          ppARM64Instr(i);
          vpanic("getRegUsage_ARM64Instr");
@@ -2325,9 +2327,9 @@ void mapRegs_ARM64Instr ( HRegRemap* m, ARM64Instr* i, Bool mode64 )
          mapRegs_ARM64AMode(m, i->ARM64in.EvCheck.amCounter);
          mapRegs_ARM64AMode(m, i->ARM64in.EvCheck.amFailAddr);
          return;
-//ZZ       case ARMin_ProfInc:
-//ZZ          /* hardwires r11 and r12 -- nothing to modify. */
-//ZZ          return;
+      case ARM64in_ProfInc:
+         /* hardwires x8 and x9 -- nothing to modify. */
+         return;
       default:
          ppARM64Instr(i);
          vpanic("mapRegs_ARM64Instr");
@@ -5084,33 +5086,26 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
          goto done;
       }
 
-//ZZ       case ARMin_ProfInc: {
-//ZZ          /* We generate:
-//ZZ               (ctrP is unknown now, so use 0x65556555 in the
-//ZZ               expectation that a later call to LibVEX_patchProfCtr
-//ZZ               will be used to fill in the immediate fields once the
-//ZZ               right value is known.)
-//ZZ             movw r12, lo16(0x65556555)
-//ZZ             movt r12, lo16(0x65556555)
-//ZZ             ldr  r11, [r12]
-//ZZ             adds r11, r11, #1
-//ZZ             str  r11, [r12]
-//ZZ             ldr  r11, [r12+4]
-//ZZ             adc  r11, r11, #0
-//ZZ             str  r11, [r12+4]
-//ZZ          */
-//ZZ          p = imm32_to_iregNo_EXACTLY2(p, /*r*/12, 0x65556555);
-//ZZ          *p++ = 0xE59CB000;
-//ZZ          *p++ = 0xE29BB001;
-//ZZ          *p++ = 0xE58CB000;
-//ZZ          *p++ = 0xE59CB004;
-//ZZ          *p++ = 0xE2ABB000;
-//ZZ          *p++ = 0xE58CB004;
-//ZZ          /* Tell the caller .. */
-//ZZ          vassert(!(*is_profInc));
-//ZZ          *is_profInc = True;
-//ZZ          goto done;
-//ZZ       }
+      case ARM64in_ProfInc: {
+         /* We generate:
+              (ctrP is unknown now, so use 0x6555'7555'8555'9566 in the
+              expectation that a later call to LibVEX_patchProfCtr
+              will be used to fill in the immediate fields once the
+              right value is known.)
+            imm64-exactly4 x9, 0x6555'7555'8555'9566
+            ldr  x8, [x9]
+            add  x8, x8, #1
+            str  x8, [x9]
+         */
+         p = imm64_to_iregNo_EXACTLY4(p, /*x*/9, 0x6555755585559566ULL);
+         *p++ = 0xF9400128;
+         *p++ = 0x91000508;
+         *p++ = 0xF9000128;
+         /* Tell the caller .. */
+         vassert(!(*is_profInc));
+         *is_profInc = True;
+         goto done;
+      }
 
       /* ... */
       default: 
@@ -5227,27 +5222,25 @@ VexInvalRange unchainXDirect_ARM64 ( VexEndness endness_host,
 }
 
 
-//ZZ /* Patch the counter address into a profile inc point, as previously
-//ZZ    created by the ARMin_ProfInc case for emit_ARMInstr. */
-//ZZ VexInvalRange patchProfInc_ARM ( VexEndness endness_host,
-//ZZ                                  void*  place_to_patch,
-//ZZ                                  ULong* location_of_counter )
-//ZZ {
-//ZZ    vassert(sizeof(ULong*) == 4);
-//ZZ    UInt* p = (UInt*)place_to_patch;
-//ZZ    vassert(0 == (3 & (HWord)p));
-//ZZ    vassert(is_imm32_to_iregNo_EXACTLY2(p, /*r*/12, 0x65556555));
-//ZZ    vassert(p[2] == 0xE59CB000);
-//ZZ    vassert(p[3] == 0xE29BB001);
-//ZZ    vassert(p[4] == 0xE58CB000);
-//ZZ    vassert(p[5] == 0xE59CB004);
-//ZZ    vassert(p[6] == 0xE2ABB000);
-//ZZ    vassert(p[7] == 0xE58CB004);
-//ZZ    imm32_to_iregNo_EXACTLY2(p, /*r*/12, 
-//ZZ                             (UInt)Ptr_to_ULong(location_of_counter));
-//ZZ    VexInvalRange vir = {(HWord)p, 8};
-//ZZ    return vir;
-//ZZ }
+/* Patch the counter address into a profile inc point, as previously
+   created by the ARM64in_ProfInc case for emit_ARM64Instr. */
+VexInvalRange patchProfInc_ARM64 ( VexEndness endness_host,
+                                   void*  place_to_patch,
+                                   ULong* location_of_counter )
+{
+   vassert(sizeof(ULong*) == 8);
+   vassert(endness_host == VexEndnessLE);
+   UInt* p = (UInt*)place_to_patch;
+   vassert(0 == (3 & (HWord)p));
+   vassert(is_imm64_to_iregNo_EXACTLY4(p, /*x*/9, 0x6555755585559566ULL));
+   vassert(p[4] == 0xF9400128);
+   vassert(p[5] == 0x91000508);
+   vassert(p[6] == 0xF9000128);
+   imm64_to_iregNo_EXACTLY4(p, /*x*/9, 
+                            Ptr_to_ULong(location_of_counter));
+   VexInvalRange vir = {(HWord)p, 4*4};
+   return vir;
+}
 
 /*---------------------------------------------------------------*/
 /*--- end                                   host_arm64_defs.c ---*/

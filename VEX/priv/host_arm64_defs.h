@@ -52,6 +52,7 @@ extern HReg hregARM64_X4  ( void );
 extern HReg hregARM64_X5  ( void );
 extern HReg hregARM64_X6  ( void );
 extern HReg hregARM64_X7  ( void );
+extern HReg hregARM64_X8  ( void );
 extern HReg hregARM64_X9  ( void );
 extern HReg hregARM64_X10 ( void );
 extern HReg hregARM64_X11 ( void );
@@ -507,8 +508,8 @@ typedef
       ARM64in_VXfromDorS, /* Move Dreg or Sreg(ZX) to an Xreg */
       ARM64in_VMov,       /* vector reg-reg move, 16, 8 or 4 bytes */
       /* infrastructure */
-      ARM64in_EvCheck,     /* Event check */
-//ZZ       ARMin_ProfInc      /* 64-bit profile counter increment */
+      ARM64in_EvCheck,    /* Event check */
+      ARM64in_ProfInc     /* 64-bit profile counter increment */
    }
    ARM64InstrTag;
 
@@ -834,11 +835,11 @@ typedef
             ARM64AMode* amCounter;
             ARM64AMode* amFailAddr;
          } EvCheck;
-//ZZ          struct {
-//ZZ             /* No fields.  The address of the counter to inc is
-//ZZ                installed later, post-translation, by patching it in,
-//ZZ                as it is not known at translation time. */
-//ZZ          } ProfInc;
+         struct {
+            /* No fields.  The address of the counter to inc is
+               installed later, post-translation, by patching it in,
+               as it is not known at translation time. */
+         } ProfInc;
       } ARM64in;
    }
    ARM64Instr;
@@ -909,7 +910,7 @@ extern ARM64Instr* ARM64Instr_VMov    ( UInt szB, HReg dst, HReg src );
 
 extern ARM64Instr* ARM64Instr_EvCheck ( ARM64AMode* amCounter,
                                         ARM64AMode* amFailAddr );
-//ZZ extern ARMInstr* ARMInstr_ProfInc  ( void );
+extern ARM64Instr* ARM64Instr_ProfInc ( void );
 
 extern void ppARM64Instr ( ARM64Instr* );
 
@@ -960,10 +961,10 @@ extern VexInvalRange unchainXDirect_ARM64 ( VexEndness endness_host,
                                             void* place_to_jump_to_EXPECTED,
                                             void* disp_cp_chain_me );
 
-//ZZ /* Patch the counter location into an existing ProfInc point. */
-//ZZ extern VexInvalRange patchProfInc_ARM ( VexEndness endness_host,
-//ZZ                                         void*  place_to_patch,
-//ZZ                                         ULong* location_of_counter );
+/* Patch the counter location into an existing ProfInc point. */
+extern VexInvalRange patchProfInc_ARM64 ( VexEndness endness_host,
+                                          void*  place_to_patch,
+                                          ULong* location_of_counter );
 
 
 #endif /* ndef __VEX_HOST_ARM64_DEFS_H */

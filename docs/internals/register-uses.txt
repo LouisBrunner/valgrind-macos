@@ -143,7 +143,7 @@ Name       Saves?     Reg?       Comment              Vex-uses?
 r0                    int#0      ret#0 (??)
 r1                    int#1      ret#1 (??)
 r2-7                  int#2..7 
-r8                              "Indirect res loc reg"
+r8                              "Indirect res loc reg" ProfInc scratch
 r9                              "Temporary regs"      chaining scratch
 r10-15                          "Temporary regs"      avail
 r16(IP0)

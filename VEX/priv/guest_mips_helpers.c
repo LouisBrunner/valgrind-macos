@@ -1072,9 +1072,6 @@ ULong mips64_dirtyhelper_dmfc0 ( UInt rd, UInt sel )
    return x;
 }
 
-#define ASM_VOLATILE_CASE(rd, sel) \
-   case rd: asm volatile ("dmfc0 %0, $" #rd ", "#sel"\n\t" :"=r" (x) ); break;
-
 #if defined(__mips__) && ((defined(__mips_isa_rev) && __mips_isa_rev >= 2))
 UInt mips32_dirtyhelper_rdhwr ( UInt rt, UInt rd )
 {

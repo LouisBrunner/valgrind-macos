@@ -2249,7 +2249,7 @@ static Bool dis_instr_CVM ( UInt theInstr )
          switch(opc2) { 
             case 0x03: {  /* DMUL rd, rs, rt */
                DIP("dmul r%d, r%d, r%d", regRd, regRs, regRt);
-               IRType t0 = newTemp(Ity_I128);
+               IRTemp t0 = newTemp(Ity_I128);
                assign(t0, binop(Iop_MullU64, getIReg(regRs), getIReg(regRt)));
                putIReg(regRd, unop(Iop_128to64, mkexpr(t0)));
                break;

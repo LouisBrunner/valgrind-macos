@@ -1,3 +1,4 @@
+prereq: host www.yahoo.com > /dev/null
 prog: res_search
 args: www.yahoo.com
 vgopts: -q

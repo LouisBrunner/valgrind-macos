@@ -837,7 +837,7 @@ void VG_(init_preopened_fds)(void)
 // DDD: should probably use HAVE_PROC here or similar, instead.
 #if defined(VGO_linux)
    Int ret;
-   struct vki_dirent d;
+   struct vki_dirent64 d;
    SysRes f;
 
    f = VG_(open)("/proc/self/fd", VKI_O_RDONLY, 0);
@@ -846,7 +846,7 @@ void VG_(init_preopened_fds)(void)
       return;
    }
 
-   while ((ret = VG_(getdents)(sr_Res(f), &d, sizeof(d))) != 0) {
+   while ((ret = VG_(getdents64)(sr_Res(f), &d, sizeof(d))) != 0) {
       if (ret == -1)
          goto out;
 

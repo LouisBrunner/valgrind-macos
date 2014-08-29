@@ -1373,11 +1373,21 @@ struct vki_robust_list_head {
 // From linux-2.6.8.1/include/linux/dirent.h
 //----------------------------------------------------------------------
 
+/* This is the old compat structure to use with the old dirent syscall. */
 struct vki_dirent {
 	long		d_ino;
 	__vki_kernel_off_t	d_off;
 	unsigned short	d_reclen;
 	char		d_name[256]; /* We must not include limits.h! */
+};
+
+/* This is the new structure to use with the dirent64 syscall. */
+struct vki_dirent64 {
+	__vki_u64 d_ino;
+	__vki_s64 d_off;
+	unsigned short d_reclen;
+	unsigned char d_type;
+	char d_name[256]; /* Note we hard code a max file length here. */
 };
 
 //----------------------------------------------------------------------

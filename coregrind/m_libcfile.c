@@ -522,12 +522,12 @@ Int VG_(readlink) (const HChar* path, HChar* buf, UInt bufsiz)
    return sr_isError(res) ? -1 : sr_Res(res);
 }
 
-Int VG_(getdents) (Int fd, struct vki_dirent *dirp, UInt count)
+Int VG_(getdents64) (Int fd, struct vki_dirent64 *dirp, UInt count)
 {
 #  if defined(VGO_linux)
    SysRes res;
    /* res = getdents( fd, dirp, count ); */
-   res = VG_(do_syscall3)(__NR_getdents, fd, (UWord)dirp, count);
+   res = VG_(do_syscall3)(__NR_getdents64, fd, (UWord)dirp, count);
    return sr_isError(res) ? -1 : sr_Res(res);
 #  elif defined(VGO_darwin)
    I_die_here;

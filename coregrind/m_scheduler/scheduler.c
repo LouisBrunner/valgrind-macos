@@ -964,7 +964,24 @@ void run_thread_for_a_while ( /*OUT*/HWord* two_words,
    vg_assert(tst->arch.vex.host_EvC_FAILADDR
              == (HWord)VG_(fnptr_to_fnentry)( &VG_(disp_cp_evcheck_fail)) );
 
-   done_this_time = *dispatchCtrP - ((Int)tst->arch.vex.host_EvC_COUNTER + 1);
+   /* The number of events done this time is the difference between
+      the event counter originally and what it is now.  Except -- if
+      it has gone negative (to -1) then the transition 0 to -1 doesn't
+      correspond to a real executed block, so back it out.  It's like
+      this because the event checks decrement the counter first and
+      check it for negativeness second, hence the 0 to -1 transition
+      causes a bailout and the block it happens in isn't executed. */
+   {
+     Int dispatchCtrAfterwards = (Int)tst->arch.vex.host_EvC_COUNTER;
+     done_this_time = *dispatchCtrP - dispatchCtrAfterwards;
+     if (dispatchCtrAfterwards == -1) {
+        done_this_time--;
+     } else {
+        /* If the generated code drives the counter below -1, something
+           is seriously wrong. */
+        vg_assert(dispatchCtrAfterwards >= 0);
+     }
+   }
 
    vg_assert(done_this_time >= 0);
    bbs_done += (ULong)done_this_time;
@@ -1285,14 +1302,7 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 	 /* For stats purposes only. */
 	 n_scheduling_events_MAJOR++;
 
-	 /* Figure out how many bbs to ask vg_run_innerloop to do.  Note
-	    that it decrements the counter before testing it for zero, so
-	    that if tst->dispatch_ctr is set to N you get at most N-1
-	    iterations.  Also this means that tst->dispatch_ctr must
-	    exceed zero before entering the innerloop.  Also also, the
-	    decrement is done before the bb is actually run, so you
-	    always get at least one decrement even if nothing happens. */
-         // FIXME is this right?
+	 /* Figure out how many bbs to ask vg_run_innerloop to do. */
          dispatch_ctr = SCHEDULING_QUANTUM;
 
 	 /* paranoia ... */
@@ -1337,6 +1347,18 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
             next block to be executed should be no-redir.  Then we can
             suspend and resume at any point, which isn't the case at
             the moment. */
+         /* We can't enter a no-redir translation with the dispatch
+            ctr set to zero, for the reasons commented just above --
+            we need to force it to execute right now.  So, if the
+            dispatch ctr is zero, set it to one.  Note that this would
+            have the bad side effect of holding the Big Lock arbitrary
+            long should there be an arbitrarily long sequence of
+            back-to-back no-redir translations to run.  But we assert
+            just below that this translation cannot request another
+            no-redir jump, so we should be safe against that. */
+         if (dispatch_ctr == 0) {
+            dispatch_ctr = 1;
+         }
          handle_noredir_jump( &trc[0], 
                               &dispatch_ctr,
                               tid );
@@ -1348,6 +1370,8 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
             can, since handle_noredir_jump will assert if the counter
             is zero on entry. */
          vg_assert(trc[0] != VG_TRC_INNER_COUNTERZERO);
+         /* This asserts the same thing. */
+         vg_assert(dispatch_ctr >= 0);
 
          /* A no-redir translation can't return with a chain-me
             request, since chaining in the no-redir cache is too
@@ -1365,7 +1389,7 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
          break;
 
       case VG_TRC_INNER_FASTMISS:
-	 vg_assert(dispatch_ctr > 0);
+	 vg_assert(dispatch_ctr >= 0);
 	 handle_tt_miss(tid);
 	 break;
 
@@ -1402,7 +1426,7 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
             before swapping to another.  That means that short term
             spins waiting for hardware to poke memory won't cause a
             thread swap. */
-	 if (dispatch_ctr > 1000) 
+         if (dispatch_ctr > 1000)
             dispatch_ctr = 1000;
 	 break;
 

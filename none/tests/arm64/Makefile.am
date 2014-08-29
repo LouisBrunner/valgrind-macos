@@ -8,12 +8,15 @@ EXTRA_DIST = \
 	fp_and_simd.stdout.exp fp_and_simd.stderr.exp fp_and_simd.vgtest
 
 check_PROGRAMS = \
+	allexec \
 	integer \
 	fp_and_simd
 
 AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@
 AM_CCASFLAGS += @FLAG_M64@
+
+allexec_CFLAGS     = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 
 integer_CFLAGS     = $(AM_CFLAGS) -g -O0 -DTEST_BFM=0
 

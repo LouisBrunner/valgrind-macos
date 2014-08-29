@@ -1,4 +1,4 @@
-prereq: host www.yahoo.com > /dev/null
+prereq: which host >/dev/null 2>/dev/null && host www.yahoo.com > /dev/null
 prog: res_search
 args: www.yahoo.com
 vgopts: -q

@@ -45,6 +45,11 @@ Release 3.10.0 (?? ?????? 201?)
 
 * ==================== OTHER CHANGES ====================
 
+* The semantic of stack start/end boundaries in valgrind.h
+  VALGRIND_STACK_REGISTER has been clarified/documented.
+  The convention is that start and end are respectively the lowest
+  and highest addressable bytes of the stack.
+
 * Better stacktraces and suppression matching for inlined function calls.
   The new option --read-inline-info=yes|no allows to control the reading
   of the dwarf debug information describing inlined function calls.

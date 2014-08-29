@@ -391,7 +391,7 @@
 //__SYSCALL(__NR_fstatfs, sys_fstatfs)
 //#define __NR_statfs 1056
 //__SYSCALL(__NR_statfs, sys_statfs)
-#define __NR_lseek 1057
+//#define __NR_lseek 1057
 #define __NR_mmap 1058
 //
 //#undef __NR_syscalls
@@ -475,7 +475,7 @@
 //#define __NR_fstatfs __NR3264_fstatfs
 //#define __NR_truncate __NR3264_truncate
 //#define __NR_ftruncate __NR3264_ftruncate
-//#define __NR_lseek __NR3264_lseek
+#define __NR_lseek __NR3264_lseek
 //#define __NR_sendfile __NR3264_sendfile
 //#define __NR_newfstatat __NR3264_fstatat
 #define __NR_fstat __NR3264_fstat

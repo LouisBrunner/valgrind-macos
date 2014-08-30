@@ -122,6 +122,7 @@ where XXXXXX is the bug number as listed below.
 175819  Support for ipv6 socket reporting with --track-fds
 199144  == 278972
 232510  make distcheck fails
+249435  Analyzing wine programs with callgrind triggers a crash
 278972  support for inlined function calls in stacktraces and suppression
 303536  ioctl for SIOCETHTOOL (ethtool(8)) isn't wrapped
 308729  vex x86->IR: unhandled instruction bytes 0xf 0x5 (syscall) 
@@ -205,6 +206,8 @@ where XXXXXX is the bug number as listed below.
 334705  sendmsg and recvmsg should guard against bogus msghdr fields.
 334727  Build fails with -Werror=format-security
 334788  clarify doc about --log-file initial program directory
+334834  PPC64 Little Endian support, patch 2
+334836  PPC64 Little Endian support, patch 3 testcase fixes
 334936  patch to fix false positives on alsa SNDRV_CTL_* ioctls
 335034  Unhandled ioctl: HCIGETDEVLIST
 335155  vgdb, fix error print statement.
@@ -212,6 +215,16 @@ where XXXXXX is the bug number as listed below.
 335263  arm64: dmb instruction is not implemented
 335441  unhandled ioctl 0x8905 (SIOCATMARK) when running wine under valgrind
 335496  arm64: sbc/abc instructions are not implemented
+335554  arm64: unhandled instruction: abs
+335735  arm64: unhandled instruction: cnt
+335736  arm64: unhandled instruction: uaddlv
+335848  arm64: unhandled instruction: {s,u}cvtf
+335902  arm64: unhandled instruction: sli
+335903  arm64: unhandled instruction: umull (vector)
+336055  arm64: unhandled instruction: mov (element)
+336062  arm64: unhandled instruction: shrn{,2}
+336189  arm64: unhandled Instruction: mvn
+336435  Valgrind hangs in pthread_spin_lock consuming 100% CPU
 336619  valgrind --read-var-info=yes doesn't handle DW_TAG_restrict_type
 336772  Make moans about unknown ioctls more informative
 336957  Add a section about the Solaris/illumos port on the webpage

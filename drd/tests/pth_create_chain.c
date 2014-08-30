@@ -3,6 +3,7 @@
 
 
 #include <assert.h>
+#include <limits.h>  /* PTHREAD_STACK_MIN */
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
@@ -14,13 +15,18 @@ static int       s_arg[1000];
 static void* thread_func(void* p)
 {
   int thread_count = *(int*)(p);
+  pthread_attr_t attr;
+
   if (thread_count > 0)
   {
     thread_count--;
     // std::cout << "create " << thread_count << std::endl;
     s_arg[thread_count] = thread_count;
-    pthread_create(&s_thread[thread_count], 0, thread_func,
+    pthread_attr_init(&attr);
+    pthread_attr_setstacksize(&attr, PTHREAD_STACK_MIN);
+    pthread_create(&s_thread[thread_count], &attr, thread_func,
                    &s_arg[thread_count]);
+    pthread_attr_destroy(&attr);
 #if 0
     std::cout << "created " << thread_count << "(" << s_thread[thread_count]
               << ")" << std::endl;
@@ -31,6 +37,7 @@ static void* thread_func(void* p)
 
 int main(int argc, char** argv)
 {
+  pthread_attr_t attr;
   unsigned thread_count;
   int i;
 
@@ -39,8 +46,11 @@ int main(int argc, char** argv)
   assert(thread_count >= 1);
   thread_count--;
   // std::cout << "create " << thread_count << std::endl;
-  pthread_create(&s_thread[thread_count], 0, thread_func,
+  pthread_attr_init(&attr);
+  pthread_attr_setstacksize(&attr, PTHREAD_STACK_MIN);
+  pthread_create(&s_thread[thread_count], &attr, thread_func,
                  &thread_count);
+  pthread_attr_destroy(&attr);
 #if 0
   std::cout << "created " << thread_count << "(" << s_thread[thread_count]
             << ")" << std::endl;

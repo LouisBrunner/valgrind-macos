@@ -1568,7 +1568,7 @@ void evh__pre_thread_ll_create ( ThreadId parent, ThreadId child )
       /* Record where the parent is so we can later refer to this in
          error messages.
 
-         On amd64-linux, this entails a nasty glibc-2.5 specific hack.
+         On x86/amd64-linux, this entails a nasty glibc specific hack.
          The stack snapshot is taken immediately after the parent has
          returned from its sys_clone call.  Unfortunately there is no
          unwind info for the insn following "syscall" - reading the
@@ -1577,7 +1577,7 @@ void evh__pre_thread_ll_create ( ThreadId parent, ThreadId child )
          is unwind info.  Sigh.
       */
       { Word first_ip_delta = 0;
-#       if defined(VGP_amd64_linux)
+#       if defined(VGP_amd64_linux) || defined(VGP_x86_linux)
         first_ip_delta = -3;
 #       elif defined(VGP_arm64_linux)
         first_ip_delta = -1;

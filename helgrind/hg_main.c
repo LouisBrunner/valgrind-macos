@@ -1579,6 +1579,8 @@ void evh__pre_thread_ll_create ( ThreadId parent, ThreadId child )
       { Word first_ip_delta = 0;
 #       if defined(VGP_amd64_linux)
         first_ip_delta = -3;
+#       elif defined(VGP_arm64_linux)
+        first_ip_delta = -1;
 #       endif
         thr_c->created_at = VG_(record_ExeContext)(parent, first_ip_delta);
       }

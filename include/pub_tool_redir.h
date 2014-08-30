@@ -301,6 +301,8 @@
 #define  VG_Z_LD_SO_1               ldZdsoZd1                  // ld.so.1
 #define  VG_U_LD_SO_1               "ld.so.1"
 
+#define  VG_U_LD_LINUX_AARCH64_SO_1 "ld-linux-aarch64.so.1"
+
 #endif
 
 /* --- Executable name for Darwin Mach-O linker. --- */

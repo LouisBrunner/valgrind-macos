@@ -1,0 +1,26 @@
+describing 0x........ 1500 bytes below a local var
+ Address 0x........ is on thread 1's stack
+ .... bytes below stack pointer
+describing 0x........ 1500 bytes below a local var
+ Address 0x........ is on thread 2's stack
+ .... bytes below stack pointer
+Thread 2:
+Invalid read of size 1
+   at 0x........: bad_things_till_guard_page (descr_belowsp.c:73)
+   by 0x........: child_fn_0 (descr_belowsp.c:112)
+   ...
+ Address 0x........ is on thread 2's stack
+ .... bytes below stack pointer
+
+describing 0x........ discovered address giving SEGV in thread stack
+ Address 0x........ is on thread 2's stack
+ In stack guard protected page, .... bytes below stack pointer
+describing 0x........ byte just above highest guardpage byte
+ Address 0x........ is on thread 2's stack
+ .... bytes below stack pointer
+describing 0x........ highest guardpage byte
+ Address 0x........ is on thread 2's stack
+ In stack guard protected page, .... bytes below stack pointer
+describing 0x........ lowest guardpage byte
+ Address 0x........ is on thread 2's stack
+ In stack guard protected page, .... bytes below stack pointer

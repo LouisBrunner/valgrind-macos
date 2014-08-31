@@ -58,6 +58,9 @@ sed "s/\(signal [0-9]* (SIG[A-Z]*)\): dumping core/\1/" |
 # Remove the size in "The main thread stack size..." message.
 sed "s/The main thread stack size used in this run was [0-9]*/The main thread stack size used in this run was .../" |
 
+# Remove the size in "10482464 bytes below stack pointer" message.
+sed "s/[0-9][0-9]* bytes below stack pointer/.... bytes below stack pointer/" |
+
 # Suppress warnings from incompatible debug info
 sed '/warning: the debug information found in "[^"]*" does not match/d' |
 

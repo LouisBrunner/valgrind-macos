@@ -75,6 +75,16 @@ typedef
    }
    AddrTag;
 
+/* For an address in a stack, gives the address position in this stack. */
+typedef 
+   enum {
+      StackPos_stacked,         // Addressable and 'active' stack zone.
+      StackPos_below_stack_ptr, // Below stack ptr
+      StackPos_guard_page       // In the guard page
+   }
+   StackPos;
+
+
 /* Note about ThreadInfo tid and tnr in various parts of _Addrinfo:
    A tid is an index in the VG_(threads)[] array. The entries
    in  VG_(threads) array are re-used, so the tid in an 'old' _Addrinfo
@@ -116,10 +126,16 @@ struct _AddrInfo {
       // stack address was. 0 if not found.
       // frameNo is the frame nr of the call where the stack address was.
       // -1 if not found.
+      // stackPos describes the address 'position' in the stack.
+      // If stackPos is StackPos_below_stack_ptr or StackPos_guard_page,
+      // spoffset gives the offset from the thread stack pointer.
+      // (spoffset will be negative, as stacks are assumed growing down).
       struct {
          ThreadInfo tinfo;
          Addr     IP;
          Int      frameNo;
+         StackPos stackPos;
+         PtrdiffT spoffset;
       } Stack;
 
       // This covers heap blocks (normal and from mempools), user-defined

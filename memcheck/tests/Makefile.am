@@ -97,6 +97,7 @@ EXTRA_DIST = \
 	deep_templates.stdout.exp deep_templates.stderr.exp \
 	demangle.stderr.exp demangle.vgtest \
 	describe-block.stderr.exp describe-block.vgtest \
+	descr_belowsp.vgtest descr_belowsp.stderr.exp \
 	doublefree.stderr.exp doublefree.vgtest \
 	dw4.vgtest dw4.stderr.exp dw4.stdout.exp \
 	err_disable1.vgtest err_disable1.stderr.exp \
@@ -299,6 +300,7 @@ check_PROGRAMS = \
 	clireq_nofill \
 	clo_redzone \
 	cond_ld_st \
+	descr_belowsp \
 	leak_cpp_interior \
 	custom_alloc \
 	custom-overlap \
@@ -402,6 +404,7 @@ demangle_SOURCES = demangle.cpp
 
 dw4_CFLAGS		= $(AM_CFLAGS) -gdwarf-4 -fdebug-types-section
 
+descr_belowsp_LDADD     = -lpthread
 err_disable3_LDADD 	= -lpthread
 err_disable4_LDADD 	= -lpthread
 reach_thread_register_CFLAGS	= $(AM_CFLAGS) -O2

@@ -818,8 +818,9 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
 
    /* Notify about deprecated features */
    if (VG_(clo_db_attach))
-      VG_(umsg)("\nWarning: --db-attach is a deprecated feature which will be removed\n"
-                "           in the next release. Use --vgdb-errors=1 instead\n\n");
+      VG_(umsg)
+         ("\nWarning: --db-attach is a deprecated feature which will be\n"
+          "   removed in the next release. Use --vgdb-error=1 instead\n\n");
 
    /* Determine the path prefix for vgdb */
    if (VG_(clo_vgdb_prefix) == NULL)

@@ -92,7 +92,10 @@ extern Int    VG_(unlink) ( const HChar* file_name );
 extern SysRes VG_(poll) (struct vki_pollfd *fds, Int nfds, Int timeout);
 
 extern Int    VG_(readlink)( const HChar* path, HChar* buf, UInt bufsize );
+
+#if defined(VGO_linux)
 extern Int    VG_(getdents64)( Int fd, struct vki_dirent64 *dirp, UInt count );
+#endif
 
 extern const HChar* VG_(basename)( const HChar* path );
 extern const HChar* VG_(dirname) ( const HChar* path );

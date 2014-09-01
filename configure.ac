@@ -1732,17 +1732,17 @@ AC_SUBST(PREFERRED_STACK_BOUNDARY)
 # to check (without -W), then the conditional name to set if that
 # warning flag is supported.
 AC_DEFUN([AC_GCC_WARNING_COND],[
-AC_MSG_CHECKING([if gcc accepts -W$1])
-safe_CFLAGS=$CFLAGS
-CFLAGS="-W$1"
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[;]])], [
-has_warning_flag=yes
-AC_MSG_RESULT([yes])], [
-has_warning_flag=no
-AC_MSG_RESULT([no])])
-CFLAGS=$safe_CFLAGS
-AM_CONDITIONAL([$2], test x$has_warning_flag = xyes)]
-)
+  AC_MSG_CHECKING([if gcc accepts -W$1])
+  safe_CFLAGS=$CFLAGS
+  CFLAGS="-W$1"
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[;]])], [
+  has_warning_flag=yes
+  AC_MSG_RESULT([yes])], [
+  has_warning_flag=no
+  AC_MSG_RESULT([no])])
+  CFLAGS=$safe_CFLAGS
+  AM_CONDITIONAL([$2], test x$has_warning_flag = xyes)
+])
 
 AC_GCC_WARNING_COND([pointer-sign], [HAS_POINTER_SIGN_WARNING])
 AC_GCC_WARNING_COND([write-strings], [HAS_WRITE_STRINGS_WARNING])
@@ -1756,15 +1756,15 @@ AC_GCC_WARNING_COND([write-strings], [HAS_WRITE_STRINGS_WARNING])
 # that checking is done against the warning flag itself, but the
 # substitution is then done to cancel the warning flag.
 AC_DEFUN([AC_GCC_WARNING_SUBST_NO],[
-AC_MSG_CHECKING([if gcc accepts -W$1])
-safe_CFLAGS=$CFLAGS
-CFLAGS="-W$1"
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[;]])], [
-AC_SUBST([$2], [-Wno-$1])
-AC_MSG_RESULT([yes])], [
-AC_SUBST([$2], [])
-AC_MSG_RESULT([no])])
-CFLAGS=$safe_CFLAGS
+  AC_MSG_CHECKING([if gcc accepts -W$1])
+  safe_CFLAGS=$CFLAGS
+  CFLAGS="-W$1"
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[;]])], [
+  AC_SUBST([$2], [-Wno-$1])
+  AC_MSG_RESULT([yes])], [
+  AC_SUBST([$2], [])
+  AC_MSG_RESULT([no])])
+  CFLAGS=$safe_CFLAGS
 ])
 
 AC_GCC_WARNING_SUBST_NO([empty-body], [FLAG_W_NO_EMPTY_BODY])
@@ -1773,6 +1773,7 @@ AC_GCC_WARNING_SUBST_NO([tautological-compare], [FLAG_W_NO_TAUTOLOGICAL_COMPARE]
 AC_GCC_WARNING_SUBST_NO([nonnull], [FLAG_W_NO_NONNULL])
 AC_GCC_WARNING_SUBST_NO([overflow], [FLAG_W_NO_OVERFLOW])
 AC_GCC_WARNING_SUBST_NO([uninitialized], [FLAG_W_NO_UNINITIALIZED])
+
 
 # does this compiler support -Wextra or the older -W ?
 
@@ -2024,7 +2025,6 @@ if test x$ac_have_as_ppc_fpPO = xyes ; then
   AC_DEFINE(HAVE_AS_PPC_FPPO, 1, [Define to 1 if as supports floating point phased out category.])
 fi
 
-CFLAGS=$safe_CFLAGS
 
 # does the x86/amd64 assembler understand SSE3 instructions?
 # Note, this doesn't generate a C-level symbol.  It generates a

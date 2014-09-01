@@ -1733,7 +1733,7 @@ AC_SUBST(PREFERRED_STACK_BOUNDARY)
 # warning flag is supported.
 AC_DEFUN([AC_GCC_WARNING_COND],[
 AC_MSG_CHECKING([if gcc accepts -W$1])
-safe_CFLAGS=$CLFLAGS
+safe_CFLAGS=$CFLAGS
 CFLAGS="-W$1"
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[;]])], [
 has_warning_flag=yes
@@ -1757,7 +1757,7 @@ AC_GCC_WARNING_COND([write-strings], [HAS_WRITE_STRINGS_WARNING])
 # substitution is then done to cancel the warning flag.
 AC_DEFUN([AC_GCC_WARNING_SUBST_NO],[
 AC_MSG_CHECKING([if gcc accepts -W$1])
-safe_CFLAGS=$CLFLAGS
+safe_CFLAGS=$CFLAGS
 CFLAGS="-W$1"
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[;]])], [
 AC_SUBST([$2], [-Wno-$1])

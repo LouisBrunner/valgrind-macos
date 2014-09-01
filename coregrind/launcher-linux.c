@@ -61,6 +61,10 @@
 #define EM_AARCH64 183  // ditto
 #endif
 
+#ifndef EM_PPC64
+#define EM_PPC64 21  // ditto
+#endif
+
 /* Report fatal errors */
 __attribute__((noreturn))
 static void barf ( const char *format, ... )

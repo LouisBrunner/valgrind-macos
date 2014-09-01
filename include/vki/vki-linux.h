@@ -3470,13 +3470,14 @@ struct vki_getinfo_fid2path {
 // From drivers/staging/lustre/lustre/include/linux/lustre_lib.h
 //----------------------------------------------------------------------
 
-#define OBD_IOC_DATA_TYPE               long
+#define VKI_OBD_IOC_DATA_TYPE               long
 
 //----------------------------------------------------------------------
 // From drivers/staging/lustre/lustre/include/lustre_lib.h
 //----------------------------------------------------------------------
 
-#define VKI_OBD_IOC_FID2PATH            _VKI_IOWR ('f', 150, OBD_IOC_DATA_TYPE)
+#define VKI_OBD_IOC_FID2PATH \
+           _VKI_IOWR ('f', 150, VKI_OBD_IOC_DATA_TYPE)
 
 #endif // __VKI_LINUX_H
 

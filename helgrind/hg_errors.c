@@ -475,6 +475,8 @@ void HG_(record_error_Race) ( Thread* thr,
      if (sect == Vg_SectGOTPLT) return;
      /* SectPLT is required on ppc32/64-linux */
      if (sect == Vg_SectPLT) return;
+     /* SectGOT is required on arm-linux */
+     if (sect == Vg_SectGOT) return;
    }
 #  endif
 

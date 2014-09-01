@@ -1579,7 +1579,7 @@ void evh__pre_thread_ll_create ( ThreadId parent, ThreadId child )
       { Word first_ip_delta = 0;
 #       if defined(VGP_amd64_linux) || defined(VGP_x86_linux)
         first_ip_delta = -3;
-#       elif defined(VGP_arm64_linux)
+#       elif defined(VGP_arm64_linux) || defined(VGP_arm_linux)
         first_ip_delta = -1;
 #       endif
         thr_c->created_at = VG_(record_ExeContext)(parent, first_ip_delta);
@@ -4480,6 +4480,7 @@ static Bool is_in_dynamic_linker_shared_object( Addr64 ga )
    if (VG_STREQ(soname, VG_U_LD64_SO_2))            return True;
    if (VG_STREQ(soname, VG_U_LD_SO_1))              return True;
    if (VG_STREQ(soname, VG_U_LD_LINUX_AARCH64_SO_1)) return True;
+   if (VG_STREQ(soname, VG_U_LD_LINUX_ARMHF_SO_3))  return True;
 #  elif defined(VGO_darwin)
    if (VG_STREQ(soname, VG_U_DYLD)) return True;
 #  else

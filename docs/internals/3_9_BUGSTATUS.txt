@@ -171,7 +171,6 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
 === GDB server =========================================================
 
 328081  embedded gdbserver and non-stop mode (wishlist)
-337871  deprecate --db-attach=yes in favor of --vgdb-debug=1
 338633  gdbserver_tests/nlcontrolc.vgtest hangs on arm64
 
 === Output =============================================================

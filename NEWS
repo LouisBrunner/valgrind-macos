@@ -2,6 +2,13 @@ Release 3.10.0 (?? ?????? 201?)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 3.10.0 is not yet released.
 
+* ================== DEPRECATED FEATURES =================
+
+* --db-attach is now a deprecated feature which will be removed in the
+  next valgrind release (not counting bug-fix releases). The vgdb
+  capabilities are superior and should be used instead. Learn more here:
+  http://valgrind.org/docs/manual/manual-core-adv.html#manual-core-adv.gdbserver
+
 * ================== PLATFORM CHANGES =================
 
 * Support for Android on MIPS32.
@@ -231,6 +238,7 @@ where XXXXXX is the bug number as listed below.
 337094  ifunc wrapper is broken on ppc64
 337285  fcntl commands F_OFD_SETLK, F_OFD_SETLKW, and F_OFD_GETLK not supported
 337528  leak check heuristic for block prefixed by length as 64bit number
+337871  deprecate --db-attach
 338024  inlined functions are not shown if DW_AT_ranges is used
 338115  DRD: computed conflict set differs from actual after fork
 338160  implement display of thread local storage in gdbsrv

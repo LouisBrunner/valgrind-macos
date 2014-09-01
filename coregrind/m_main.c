@@ -132,6 +132,7 @@ static void usage_NORETURN ( Bool debug_help )
 "    --suppressions=<filename> suppress errors described in <filename>\n"
 "    --gen-suppressions=no|yes|all    print suppressions for errors? [no]\n"
 "    --db-attach=no|yes        start debugger when errors detected? [no]\n"
+"                              Note: deprecated feature\n"
 "    --db-command=<command>    command to start debugger [%s -nw %%f %%p]\n"
 "    --input-fd=<number>       file descriptor for input [0=stdin]\n"
 "    --dsymutil=no|yes         run dsymutil on Mac OS X when helpful? [no]\n"
@@ -814,6 +815,11 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
    }
 
    /* END command-line processing loop */
+
+   /* Notify about deprecated features */
+   if (VG_(clo_db_attach))
+      VG_(umsg)("\nWarning: --db-attach is a deprecated feature which will be removed\n"
+                "           in the next release. Use --vgdb-errors=1 instead\n\n");
 
    /* Determine the path prefix for vgdb */
    if (VG_(clo_vgdb_prefix) == NULL)

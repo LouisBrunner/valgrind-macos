@@ -681,7 +681,7 @@ struct vki_ucontext {
   struct vki_ucontext  *uc_link;
   vki_stack_t           uc_stack;
   vki_sigset_t          uc_sigmask;
-  vki_sigset_t          __unused[15]; /* Allow for uc_sigmask growth */
+  vki_sigset_t          __unused0[15]; /* Allow for uc_sigmask growth */
   struct vki_sigcontext uc_mcontext;  /* last for extensibility */
 };
 

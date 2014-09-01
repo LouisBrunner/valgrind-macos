@@ -530,7 +530,7 @@ struct vki_ucontext {
         vki_stack_t             uc_stack;
         vki_sigset_t            uc_sigmask;
         /* glibc uses a 1024-bit sigset_t */
-        __vki_u8                __unused[1024 / 8 - sizeof(vki_sigset_t)];
+        __vki_u8                __unused0[1024 / 8 - sizeof(vki_sigset_t)];
         /* last for future expansion */
         struct vki_sigcontext   uc_mcontext;
 };

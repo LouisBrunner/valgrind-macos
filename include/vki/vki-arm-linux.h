@@ -621,7 +621,7 @@ struct vki_ucontext {
 	vki_stack_t		uc_stack;
 	struct vki_sigcontext	uc_mcontext;
 	vki_sigset_t		uc_sigmask;	/* mask last for extensibility */
-	int               __unused[32 - (sizeof (vki_sigset_t) / sizeof (int))];
+	int              __unused0[32 - (sizeof (vki_sigset_t) / sizeof (int))];
 	unsigned long     uc_regspace[128] __attribute__((__aligned__(8)));
 
 };

@@ -462,7 +462,7 @@ struct vki_stat {
 	unsigned long  st_ctime_nsec;
         unsigned long  st_blksize;
         long           st_blocks;
-        unsigned long  __unused[3];
+        unsigned long  __unused0[3];
 };
 
 #endif /* VGA_s390x */

@@ -1417,7 +1417,7 @@ struct __vki_sysctl_args {
 	vki_size_t __user *oldlenp;
 	void __user *newval;
 	vki_size_t newlen;
-	unsigned long __unused[4];
+	unsigned long __unused0[4];
 };
 
 //----------------------------------------------------------------------

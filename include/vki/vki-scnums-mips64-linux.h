@@ -342,6 +342,12 @@
 #define __NR_setns                  (__NR_Linux + 303)
 #define __NR_process_vm_readv       (__NR_Linux + 304)
 #define __NR_process_vm_writev      (__NR_Linux + 305)
+#define __NR_kcmp                   (__NR_Linux + 306)
+#define __NR_finit_module           (__NR_Linux + 307)
+#define __NR_getdents64             (__NR_Linux + 308)
+#define __NR_sched_setattr          (__NR_Linux + 309)
+#define __NR_sched_getattr          (__NR_Linux + 310)
+#define __NR_renameat2              (__NR_Linux + 311)
 
 #endif /* __VKI_SCNUMS_MIPS64_LINUX_H */
 

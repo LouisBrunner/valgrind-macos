@@ -405,7 +405,7 @@ handle_lcmain ( vki_uint8_t **out_stack_start,
    check_mmap_float(res, requested_size, "handle_lcmain");
    vg_assert(!sr_isError(res));
    *out_stack_start = (vki_uint8_t*)sr_Res(res);
-   *out_stack_end   = *out_stack_start + requested_size;
+   *out_stack_end   = *out_stack_start + requested_size - 1;
 
    Bool need_discard = False;
    res = VG_(am_munmap_client)(&need_discard, (Addr)*out_stack_start, HACK);

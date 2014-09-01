@@ -6844,11 +6844,9 @@ Bool dis_AdvSIMD_EXT(/*MB_OUT*/DisResult* dres, UInt insn)
          if (imm4 == 0) {
             assign(res, mkexpr(sLo));
          } else {
-            vassert(imm4 <= 15);
-            assign(res,
-                   binop(Iop_OrV128,
-                         binop(Iop_ShlV128, mkexpr(sHi), mkU8(8 * (16-imm4))),
-                         binop(Iop_ShrV128, mkexpr(sLo), mkU8(8 * imm4))));
+            vassert(imm4 >= 1 && imm4 <= 15);
+            assign(res, triop(Iop_SliceV128,
+                              mkexpr(sHi), mkexpr(sLo), mkU8(imm4)));
          }
          putQReg128(dd, mkexpr(res));
          DIP("ext v%u.16b, v%u.16b, v%u.16b, #%u\n", dd, nn, mm, imm4);
@@ -6857,10 +6855,12 @@ Bool dis_AdvSIMD_EXT(/*MB_OUT*/DisResult* dres, UInt insn)
          if (imm4 == 0) {
             assign(res, mkexpr(sLo));
          } else {
-           assign(res,
-                  binop(Iop_ShrV128,
-                        binop(Iop_InterleaveLO64x2, mkexpr(sHi), mkexpr(sLo)),
-                        mkU8(8 * imm4)));
+            vassert(imm4 >= 1 && imm4 <= 7);
+            IRTemp hi64lo64 = newTempV128();
+            assign(hi64lo64, binop(Iop_InterleaveLO64x2,
+                                   mkexpr(sHi), mkexpr(sLo)));
+            assign(res, triop(Iop_SliceV128,
+                              mkexpr(hi64lo64), mkexpr(hi64lo64), mkU8(imm4)));
          }
          putQReg128(dd, unop(Iop_ZeroHI64ofV128, mkexpr(res)));
          DIP("ext v%u.8b, v%u.8b, v%u.8b, #%u\n", dd, nn, mm, imm4);
@@ -7015,8 +7015,15 @@ Bool dis_AdvSIMD_ZIP_UZP_TRN(/*MB_OUT*/DisResult* dres, UInt insn)
       IRTemp preR = newTempV128();
       IRTemp res  = newTempV128();
       if (bitQ == 0 && !isZIP1) {
-         assign(preL, binop(Iop_ShlV128, getQReg128(mm), mkU8(32)));
-         assign(preR, binop(Iop_ShlV128, getQReg128(nn), mkU8(32)));
+         IRTemp z128 = newTempV128();
+         assign(z128, mkV128(0x0000));
+         // preL = Vm shifted left 32 bits
+         // preR = Vn shifted left 32 bits
+         assign(preL, triop(Iop_SliceV128,
+                            getQReg128(mm), mkexpr(z128), mkU8(12)));
+         assign(preR, triop(Iop_SliceV128,
+                            getQReg128(nn), mkexpr(z128), mkU8(12)));
+
       } else {
          assign(preL, getQReg128(mm));
          assign(preR, getQReg128(nn));

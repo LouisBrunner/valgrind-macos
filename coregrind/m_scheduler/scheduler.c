@@ -1093,7 +1093,7 @@ static void handle_syscall(ThreadId tid, UInt trc)
       runnable again.  We could take a signal while the
       syscall runs. */
 
-   if (VG_(clo_sanity_level >= 3)) {
+   if (VG_(clo_sanity_level) >= 3) {
       HChar buf[50];
       VG_(sprintf)(buf, "(BEFORE SYSCALL, tid %d)", tid);
       Bool ok = VG_(am_do_sync_check)(buf, __FILE__, __LINE__);
@@ -1102,7 +1102,7 @@ static void handle_syscall(ThreadId tid, UInt trc)
 
    SCHEDSETJMP(tid, jumped, VG_(client_syscall)(tid, trc));
 
-   if (VG_(clo_sanity_level >= 3)) {
+   if (VG_(clo_sanity_level) >= 3) {
       HChar buf[50];
       VG_(sprintf)(buf, "(AFTER SYSCALL, tid %d)", tid);
       Bool ok = VG_(am_do_sync_check)(buf, __FILE__, __LINE__);

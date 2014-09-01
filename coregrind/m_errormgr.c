@@ -1119,7 +1119,7 @@ static Bool get_nbnc_line ( Int fd, HChar** bufpp, SizeT* nBufp, Int* lineno )
       while (True) {
          n = get_char(fd, &ch);
          if (n == 1 && !VG_(isspace)(ch)) break;
-         if (n == 1 && ch == '\n' && lineno)
+         if (n == 1 && ch == '\n')
             (*lineno)++;
          if (n <= 0) return True;
       }
@@ -1130,7 +1130,7 @@ static Bool get_nbnc_line ( Int fd, HChar** bufpp, SizeT* nBufp, Int* lineno )
       while (True) {
          n = get_char(fd, &ch);
          if (n <= 0) return False; /* the next call will return True */
-         if (ch == '\n' && lineno)
+         if (ch == '\n')
             (*lineno)++;
          if (ch == '\n') break;
          if (i > 0 && i == nBuf-1) {

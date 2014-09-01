@@ -101,8 +101,8 @@ extern Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind,
    small for the line, it will be realloc'd until big enough (updating
    *bufpp and *nBufp in the process).  (It will bomb out if the size
    gets ridiculous).  Skips leading spaces on the line.  Increments
-   *lineno with the number of lines read if lineno is non-NULL. Returns
-   True if no extra information line could be read. */
+   *lineno with the number of lines read. Returns True if no extra
+   information line could be read. */
 extern Bool VG_(get_line) ( Int fd, HChar** bufpp, SizeT* nBufp, Int* lineno );
 
 

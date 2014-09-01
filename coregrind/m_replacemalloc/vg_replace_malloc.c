@@ -793,7 +793,7 @@ static void init(void);
       static int pszB = 0; \
       if (pszB == 0) \
          pszB = my_getpagesize(); \
-      TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(UWord) zone);	      \
+      TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED((UWord) zone);	      \
       return VG_REPLACE_FUNCTION_EZU(10110,VG_Z_LIBC_SONAME,memalign) \
                 ((SizeT)pszB, size); \
    }

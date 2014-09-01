@@ -1,0 +1,2 @@
+prog: memory
+vgopts: -q

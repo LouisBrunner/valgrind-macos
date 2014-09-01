@@ -4,13 +4,15 @@ include $(top_srcdir)/Makefile.tool-tests.am
 dist_noinst_SCRIPTS = filter_stderr
 
 EXTRA_DIST = \
+	fp_and_simd.stdout.exp fp_and_simd.stderr.exp fp_and_simd.vgtest \
 	integer.stdout.exp integer.stderr.exp integer.vgtest \
-	fp_and_simd.stdout.exp fp_and_simd.stderr.exp fp_and_simd.vgtest
+	memory.stdout.exp memory.stderr.exp memory.vgtest
 
 check_PROGRAMS = \
 	allexec \
+	fp_and_simd \
 	integer \
-	fp_and_simd
+	memory
 
 AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@

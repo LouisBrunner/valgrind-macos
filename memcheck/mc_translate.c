@@ -2845,10 +2845,12 @@ IRAtom* expr2vbits_Triop ( MCEnv* mce,
       case Iop_SignificanceRoundD128:
          /* IRRoundingMode(I32) x I8 x D128 -> D128 */
          return mkLazy3(mce, Ity_I128, vatom1, vatom2, vatom3);
-      case Iop_ExtractV128:
+      case Iop_SliceV128:
+         /* (V128, V128, I8) -> V128 */
          complainIfUndefined(mce, atom3, NULL);
          return assignNew('V', mce, Ity_V128, triop(op, vatom1, vatom2, atom3));
-      case Iop_Extract64:
+      case Iop_Slice64:
+         /* (I64, I64, I8) -> I64 */
          complainIfUndefined(mce, atom3, NULL);
          return assignNew('V', mce, Ity_I64, triop(op, vatom1, vatom2, atom3));
       case Iop_SetElem8x8:

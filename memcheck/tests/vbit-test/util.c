@@ -772,9 +772,9 @@ typeof_primop(IROp op, IRType *t_dst, IRType *t_arg1, IRType *t_arg2,
       case Iop_SetElem32x2:
          TERNARY(Ity_I64, Ity_I8, Ity_I32, Ity_I64);
 
-      case Iop_Extract64:
+      case Iop_Slice64:
          TERNARY(Ity_I64, Ity_I64, Ity_I8, Ity_I64);
-      case Iop_ExtractV128:
+      case Iop_SliceV128:
          TERNARY(Ity_V128, Ity_V128, Ity_I8, Ity_V128);
 
       case Iop_QDMull16Sx4: case Iop_QDMull32Sx2:

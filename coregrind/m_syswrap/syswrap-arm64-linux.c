@@ -220,8 +220,6 @@ static SysRes do_clone ( ThreadId ptid,
                          Int*  child_tidptr, 
                          Addr  child_tls )
 {
-   const Bool debug = False;
-
    ThreadId     ctid = VG_(alloc_ThreadState)();
    ThreadState* ptst = VG_(get_ThreadState)(ptid);
    ThreadState* ctst = VG_(get_ThreadState)(ctid);

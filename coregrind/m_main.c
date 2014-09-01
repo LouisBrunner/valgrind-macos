@@ -1801,6 +1801,19 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
                     "(early_) Process Valgrind's command line options\n");
    early_process_cmd_line_options(&need_help, &toolname);
 
+   // BEGIN HACK
+   vg_assert(toolname != NULL);
+   vg_assert(VG_(clo_read_inline_info) == False);
+   if (0 == VG_(strcmp)(toolname, "memcheck")
+       || 0 == VG_(strcmp)(toolname, "helgrind")) {
+      /* Change the default setting.  Later on (just below)
+         main_process_cmd_line_options should pick up any
+         user-supplied setting for it and will override the default
+         set here. */
+      VG_(clo_read_inline_info) = True;
+   }
+   // END HACK
+
    // Set default vex control params
    LibVEX_default_VexControl(& VG_(clo_vex_control));
 

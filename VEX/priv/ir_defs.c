@@ -1041,8 +1041,8 @@ void ppIROp ( IROp op )
       case Iop_SetElem16x4: vex_printf("SetElem16x4"); return;
       case Iop_SetElem32x2: vex_printf("SetElem32x2"); return;
 
-      case Iop_Extract64: vex_printf("Extract64"); return;
-      case Iop_ExtractV128: vex_printf("ExtractV128"); return;
+      case Iop_Slice64: vex_printf("Slice64"); return;
+      case Iop_SliceV128: vex_printf("SliceV128"); return;
 
       case Iop_Perm8x16: vex_printf("Perm8x16"); return;
       case Iop_Perm32x4: vex_printf("Perm32x4"); return;
@@ -3075,9 +3075,9 @@ void typeOfPrimop ( IROp op,
       case Iop_SetElem32x2:
          TERNARY(Ity_I64, Ity_I8, Ity_I32, Ity_I64);
 
-      case Iop_Extract64:
+      case Iop_Slice64:
          TERNARY(Ity_I64, Ity_I64, Ity_I8, Ity_I64);
-      case Iop_ExtractV128:
+      case Iop_SliceV128:
          TERNARY(Ity_V128, Ity_V128, Ity_I8, Ity_V128);
 
       case Iop_BCDAdd:

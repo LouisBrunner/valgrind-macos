@@ -980,12 +980,12 @@ typedef
       /* DUPLICATING -- copy value to all lanes */
       Iop_Dup8x8,   Iop_Dup16x4,   Iop_Dup32x2,
 
-      /* EXTRACT -- copy 8-arg3 highest bytes from arg1 to 8-arg3 lowest bytes
-         of result and arg3 lowest bytes of arg2 to arg3 highest bytes of
-         result.
-         It is a triop: (I64, I64, I8) -> I64 */
-      /* Note: the arm back-end handles only constant third argumnet. */
-      Iop_Extract64,
+      /* SLICE -- produces the lowest 64 bits of (arg1:arg2) >> (8 * arg3).
+         arg3 is a shift amount in bytes and may be between 0 and 8
+         inclusive.  When 0, the result is arg2; when 8, the result is arg1.
+         Not all back ends handle all values.  The arm32 and arm64 back
+         ends handle only immediate arg3 values. */
+      Iop_Slice64,  // (I64, I64, I8) -> I64
 
       /* REVERSE the order of chunks in vector lanes.  Chunks must be
          smaller than the vector lanes (obviously) and so may be 8-,
@@ -1711,12 +1711,12 @@ typedef
       /* DUPLICATING -- copy value to all lanes */
       Iop_Dup8x16,   Iop_Dup16x8,   Iop_Dup32x4,
 
-      /* EXTRACT -- copy 16-arg3 highest bytes from arg1 to 16-arg3 lowest bytes
-         of result and arg3 lowest bytes of arg2 to arg3 highest bytes of
-         result.
-         It is a triop: (V128, V128, I8) -> V128 */
-      /* Note: the ARM back end handles only constant arg3 in this operation. */
-      Iop_ExtractV128,
+      /* SLICE -- produces the lowest 128 bits of (arg1:arg2) >> (8 * arg3).
+         arg3 is a shift amount in bytes and may be between 0 and 16
+         inclusive.  When 0, the result is arg2; when 16, the result is arg1.
+         Not all back ends handle all values.  The arm64 back
+         end handles only immediate arg3 values. */
+      Iop_SliceV128,  // (V128, V128, I8) -> V128
 
       /* REVERSE the order of chunks in vector lanes.  Chunks must be
          smaller than the vector lanes (obviously) and so may be 8-,

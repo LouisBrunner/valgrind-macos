@@ -3710,10 +3710,10 @@ static HReg iselNeon64Expr_wrk ( ISelEnv* env, IRExpr* e )
       IRTriop *triop = e->Iex.Triop.details;
 
       switch (triop->op) {
-         case Iop_Extract64: {
+         case Iop_Slice64: {
             HReg res = newVRegD(env);
-            HReg argL = iselNeon64Expr(env, triop->arg1);
-            HReg argR = iselNeon64Expr(env, triop->arg2);
+            HReg argL = iselNeon64Expr(env, triop->arg2);
+            HReg argR = iselNeon64Expr(env, triop->arg1);
             UInt imm4;
             if (triop->arg3->tag != Iex_Const ||
                 typeOfIRExpr(env->type_env, triop->arg3) != Ity_I8) {
@@ -5291,10 +5291,10 @@ static HReg iselNeonExpr_wrk ( ISelEnv* env, IRExpr* e )
       IRTriop *triop = e->Iex.Triop.details;
 
       switch (triop->op) {
-         case Iop_ExtractV128: {
+         case Iop_SliceV128: {
             HReg res = newVRegV(env);
-            HReg argL = iselNeonExpr(env, triop->arg1);
-            HReg argR = iselNeonExpr(env, triop->arg2);
+            HReg argL = iselNeonExpr(env, triop->arg2);
+            HReg argR = iselNeonExpr(env, triop->arg1);
             UInt imm4;
             if (triop->arg3->tag != Iex_Const ||
                 typeOfIRExpr(env->type_env, triop->arg3) != Ity_I8) {

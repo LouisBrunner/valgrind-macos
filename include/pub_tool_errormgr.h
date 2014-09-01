@@ -96,12 +96,12 @@ extern Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind,
 /* Gets from fd (an opened suppression file) a non-blank, non-comment
    line containing suppression extra information (e.g. the syscall
    line for the Param memcheck suppression kind.  bufpp is a pointer
-   to a pointer to a buffer that must be allocated with VG_(malloc);
+   to a buffer that must be allocated with VG_(malloc);
    nBufp is a pointer to size_t holding its size; if the buffer is too
    small for the line, it will be realloc'd until big enough (updating
    *bufpp and *nBufp in the process).  (It will bomb out if the size
    gets ridiculous).  Skips leading spaces on the line.  Increments
-   lineno with the number of lines read if lineno is non-NULL. Returns
+   *lineno with the number of lines read if lineno is non-NULL. Returns
    True if no extra information line could be read. */
 extern Bool VG_(get_line) ( Int fd, HChar** bufpp, SizeT* nBufp, Int* lineno );
 

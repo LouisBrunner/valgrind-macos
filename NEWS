@@ -1,5 +1,6 @@
-Release 3.10.0 (?? ?????? 2014)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Release 3.10.0 (mid September 2014)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 3.10.0 is not yet released.  This is a beta of 3.10.0.
 
@@ -307,6 +308,8 @@ n-i-bz  drd manual: Document how to C++11 programs that use class "std::thread"
 n-i-bz  Add command-line option --default-suppressions
 n-i-bz  Add support for BLKDISCARDZEROES ioctl
 n-i-bz  ppc32/64: fix a regression with the mtfsb0/mtfsb1 instructions
+
+(3.10.0.BETA1: 2 September 2014, vex r2940, valgrind r14428)
 
 
 

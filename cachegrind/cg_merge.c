@@ -261,10 +261,14 @@ static void ddel_FileFn ( FileFn* ffn )
 
 static FileFn* dopy_FileFn ( FileFn* ff )
 {
-   char* fi2 = strdup(ff->fi_name);
-   char* fn2 = strdup(ff->fn_name);
-   if ((!fi2) || (!fn2))
+   char *fi2, *fn2;
+   fi2 = strdup(ff->fi_name);
+   if (fi2 == NULL) return NULL;
+   fn2 = strdup(ff->fn_name);
+   if (fn2 == NULL) {
+      free(fi2);
       return NULL;
+   }
    return new_FileFn( fi2, fn2 );
 }
 

@@ -249,6 +249,7 @@
    Helgrind:Race
    fun:mempcpy
    fun:_dl_allocate_tls_init
+   ...
    fun:pthread_create@@GLIBC_2.2*
    fun:pthread_create_WRK
    fun:pthread_create@*

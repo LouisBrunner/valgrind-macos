@@ -3181,6 +3181,8 @@ struct vki_hwtstamp_config {
 #define VKI_TUNGETVNETHDRSZ _VKI_IOR('T', 215, int)
 #define VKI_TUNSETVNETHDRSZ _VKI_IOW('T', 216, int)
 #define VKI_TUNSETQUEUE  _VKI_IOW('T', 217, int)
+#define VKI_TUNSETIFINDEX	_VKI_IOW('T', 218, unsigned int)
+//#define VKI_TUNGETFILTER _VKI_IOR('T', 219, struct sock_fprog)
 
 //----------------------------------------------------------------------
 // From linux-3.8/include/uapi/linux/vhost.h

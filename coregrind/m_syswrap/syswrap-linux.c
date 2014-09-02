@@ -5893,20 +5893,49 @@ PRE(sys_ioctl)
       break;
 
       /* tun/tap related ioctls */
+   case VKI_TUNSETNOCSUM:
+   case VKI_TUNSETDEBUG:
+      break;
    case VKI_TUNSETIFF:
       PRE_MEM_RASCIIZ( "ioctl(TUNSETIFF)",
                      (Addr)((struct vki_ifreq *)ARG3)->vki_ifr_name );
       PRE_MEM_READ( "ioctl(TUNSETIFF)",
                      (Addr)&((struct vki_ifreq *)ARG3)->vki_ifr_flags,
                      sizeof(((struct vki_ifreq *)ARG3)->vki_ifr_flags) );
-      PRE_MEM_WRITE( "ioctl(TUNSETIFF)", ARG3, 
-		     sizeof(struct vki_ifreq));
+      PRE_MEM_WRITE( "ioctl(TUNSETIFF)", ARG3, sizeof(struct vki_ifreq) );
+      break;
+   case VKI_TUNSETPERSIST:
+   case VKI_TUNSETOWNER:
+   case VKI_TUNSETLINK:
+   case VKI_TUNSETGROUP:
+      break;
+   case VKI_TUNGETFEATURES:
+      PRE_MEM_WRITE( "ioctl(TUNGETFEATURES)", ARG3, sizeof(unsigned int) );
       break;
    case VKI_TUNSETOFFLOAD:
-      break; 
+      break;
    case VKI_TUNGETIFF:
-      PRE_MEM_WRITE( "ioctl(TUNGETIFF)", ARG3, 
-		     sizeof(struct vki_ifreq));
+      PRE_MEM_WRITE( "ioctl(TUNGETIFF)", ARG3, sizeof(struct vki_ifreq) );
+      break;
+   case VKI_TUNGETSNDBUF:
+      PRE_MEM_WRITE( "ioctl(TUNGETSNDBUF)", ARG3, sizeof(int) );
+      break;
+   case VKI_TUNSETSNDBUF:
+      PRE_MEM_READ( "ioctl(TUNSETSNDBUF)", ARG3, sizeof(int) );
+      break;
+   case VKI_TUNGETVNETHDRSZ:
+      PRE_MEM_WRITE( "ioctl(TUNGETVNETHDRSZ)", ARG3, sizeof(int) );
+      break;
+   case VKI_TUNSETVNETHDRSZ:
+      PRE_MEM_READ( "ioctl(TUNSETVNETHDRSZ)", ARG3, sizeof(int) );
+      break;
+   case VKI_TUNSETQUEUE:
+      PRE_MEM_READ( "ioctl(TUNSETQUEUE)",
+                     (Addr)&((struct vki_ifreq *)ARG3)->vki_ifr_flags,
+                     sizeof(((struct vki_ifreq *)ARG3)->vki_ifr_flags) );
+      break;
+   case VKI_TUNSETIFINDEX:
+      PRE_MEM_READ( "ioctl(TUNSETIFINDEX)", ARG3, sizeof(unsigned int));
       break;
 
       /* RARP cache control calls. */
@@ -7472,11 +7501,20 @@ POST(sys_ioctl)
       POST_MEM_WRITE( (Addr)&((struct vki_ifreq *)ARG3)->vki_ifr_name,
                       sizeof(((struct vki_ifreq *)ARG3)->vki_ifr_name) );
       break;
+   case VKI_TUNGETFEATURES:
+      POST_MEM_WRITE( ARG3, sizeof(unsigned int) );
+      break;
    case VKI_TUNGETIFF:
       POST_MEM_WRITE( (Addr)&((struct vki_ifreq *)ARG3)->vki_ifr_name,
                       sizeof(((struct vki_ifreq *)ARG3)->vki_ifr_name) );
       POST_MEM_WRITE( (Addr)&((struct vki_ifreq *)ARG3)->vki_ifr_flags,
                       sizeof(((struct vki_ifreq *)ARG3)->vki_ifr_flags) );
+      break;
+   case VKI_TUNGETSNDBUF:
+      POST_MEM_WRITE( ARG3, sizeof(int) );
+      break;
+   case VKI_TUNGETVNETHDRSZ:
+      POST_MEM_WRITE( ARG3, sizeof(int) );
       break;
 
    case VKI_SIOCGIFCONF:         /* get iface list               */

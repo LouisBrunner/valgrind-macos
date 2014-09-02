@@ -76,7 +76,7 @@ significantly improved relative to the 3.9.0 release.
     creates a happens-before relationship between a terminated task
     and its master.  This avoids some false positives and avoids a big
     memory leak when a lot of Ada tasks are created and terminated.
-    The interceptions are only activated with forthcoming releasses of
+    The interceptions are only activated with forthcoming releases of
     gnatpro >= 7.3.0w-20140611 and gcc >= 5.0.
 
   - A new GDB server monitor command "info locks" giving the list of

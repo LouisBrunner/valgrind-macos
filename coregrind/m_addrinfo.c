@@ -228,7 +228,9 @@ void VG_(describe_addr) ( Addr a, /*OUT*/AddrInfo* ai )
       too small). */
    {
       ThreadId   tid;
-      StackPos stackPos;
+      StackPos stackPos = StackPos_stacked;
+      // Default init to StackPos_stacked, to silence gcc warning.
+      // We assert this value is overriden if a stack descr is produced.
 
       // First try to find a tid with stack containing a
       tid = find_tid_with_stack_containing (a);
@@ -256,6 +258,7 @@ void VG_(describe_addr) ( Addr a, /*OUT*/AddrInfo* ai )
          ai->Addr.Stack.tinfo.tid = tid;
          ai->Addr.Stack.IP = 0;
          ai->Addr.Stack.frameNo = -1;
+         vg_assert (stackPos != StackPos_stacked);
          ai->Addr.Stack.stackPos = stackPos;
          vg_assert (a < VG_(get_SP)(tid));
          ai->Addr.Stack.spoffset = a - VG_(get_SP)(tid);

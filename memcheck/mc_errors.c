@@ -1551,7 +1551,7 @@ void MC_(update_extra_suppression_use) ( Error* err, Supp* su)
       MC_LeakSuppExtra *lse = (MC_LeakSuppExtra*) VG_(get_supp_extra) (su);
       MC_Error* extra = VG_(get_error_extra)(err);
 
-      tl_assert (lse->leak_search_gen = MC_(leak_search_gen));
+      tl_assert (lse->leak_search_gen == MC_(leak_search_gen));
       lse->blocks_suppressed += extra->Err.Leak.lr->num_blocks;
       lse->bytes_suppressed 
          += extra->Err.Leak.lr->szB + extra->Err.Leak.lr->indirect_szB;

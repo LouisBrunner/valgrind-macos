@@ -884,8 +884,8 @@ static Bool handle_transaction ( int conn_no )
 //printf("SERVER: send %c%c%c%c\n", res->data[0], res->data[1], res->data[2], res->data[3]); fflush(stdout);
 
    /* So, success. */
-   if (req) free_Frame(req);
-   if (res) free_Frame(res);
+   free_Frame(req);
+   free_Frame(res);
    return False;  /* "connection still in use" */
 
    // Is there any difference between these?

@@ -718,7 +718,7 @@ DiImage* ML_(img_from_di_server)(const HChar* filename,
    return img;
 
   fail:
-   if (req) free_Frame(req);
+   free_Frame(req);
    if (res) {
       UChar* reason = NULL;
       if (parse_Frame_asciiz(res, "FAIL", &reason)) {
@@ -1006,8 +1006,8 @@ UInt ML_(img_calc_gnu_debuglink_crc32)(DiImage* img)
       ULong crc32 = 0;
       if (!parse_Frame_le64(res, "CROK", &crc32)) goto remote_crc_fail;
       if ((crc32 & ~0xFFFFFFFFULL) != 0) goto remote_crc_fail;
-      if (req) free_Frame(req);
-      if (res) free_Frame(res);
+      free_Frame(req);
+      free_Frame(res);
       return (UInt)crc32;
      remote_crc_fail:
 

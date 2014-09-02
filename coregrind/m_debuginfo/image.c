@@ -493,9 +493,9 @@ static void set_CEnt ( DiImage* img, UInt entNo, DiOffT off )
       // Tell the lib the max number of output bytes it can write.
       // After the call, this holds the number of bytes actually written,
       // and it's an error if it is different.
-      UInt out_len = len;
+      lzo_uint out_len = len;
       Int lzo_rc = lzo1x_decompress_safe(rx_data, rx_zdata_len,
-                                         &ce->data[0], (lzo_uint*)&out_len,
+                                         &ce->data[0], &out_len,
                                          NULL);
       Bool ok = lzo_rc == LZO_E_OK && out_len == len;
       if (!ok) goto server_fail;

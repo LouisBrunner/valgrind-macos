@@ -810,7 +810,7 @@ static Bool handle_transaction ( int conn_no )
             free_Frame(res);
             res = mk_Frame_asciiz("FAIL", "READ: I/O error reading file");
             ok = False;
-         }         UInt zLen = 0;
+         }         
          if (ok) {
             // Now compress it with LZO.  LZO appears to recommend
             // the worst-case output size as (in_len + in_len / 16 + 67).
@@ -823,9 +823,9 @@ static Bool handle_transaction ( int conn_no )
 #           undef STACK_ALLOC
             UInt zLenMax = req_len + req_len / 4 + 1024;
             UChar* zBuf = malloc(zLenMax);
-            zLen = zLenMax;
+            lzo_uint zLen = zLenMax;
             Int lzo_rc = lzo1x_1_compress(unzBuf, req_len,
-                                          zBuf, (lzo_uint*)&zLen, wrkmem); 
+                                          zBuf, &zLen, wrkmem); 
             if (lzo_rc == LZO_E_OK) {
               //printf("XXXXX req_len %u  zLen %u\n", (UInt)req_len, (UInt)zLen);
                assert(zLen <= zLenMax);

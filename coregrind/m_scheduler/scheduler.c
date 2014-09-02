@@ -1246,7 +1246,7 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
       } else {
           VG_(debugLog)(0,"sched",
                         "WARNING: pthread stack cache cannot be disabled!\n");
-          VG_(clo_sim_hints) &= !SimHint2S(SimHint_no_nptl_pthread_stackcache);
+          VG_(clo_sim_hints) &= ~SimHint2S(SimHint_no_nptl_pthread_stackcache);
           /* Remove SimHint_no_nptl_pthread_stackcache from VG_(clo_sim_hints)
              to avoid having a msg for all following threads. */
       }

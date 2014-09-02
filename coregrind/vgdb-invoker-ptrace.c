@@ -567,7 +567,8 @@ Bool getregs (pid_t pid, void *regs, long regs_bsz)
       elf_gregset_t elf_regs;
       struct iovec iovec;
 
-      DEBUG(1, "getregs PTRACE_GETREGSET sizeof(elf_regs) %d\n", sizeof(elf_regs));
+      DEBUG(1, "getregs PTRACE_GETREGSET sizeof(elf_regs) %zu\n",
+            sizeof(elf_regs));
       iovec.iov_base = regs;
       iovec.iov_len =  sizeof(elf_regs);
 
@@ -682,7 +683,8 @@ Bool setregs (pid_t pid, void *regs, long regs_bsz)
 
       // setregset can never be called before getregset has done a runtime check.
       assert (has_working_ptrace_getregset == 1);
-      DEBUG(1, "setregs PTRACE_SETREGSET sizeof(elf_regs) %d\n", sizeof(elf_regs));
+      DEBUG(1, "setregs PTRACE_SETREGSET sizeof(elf_regs) %zu\n",
+            sizeof(elf_regs));
       iovec.iov_base = regs;
       iovec.iov_len =  sizeof(elf_regs);
       res = ptrace (PTRACE_SETREGSET, pid, NT_PRSTATUS, &iovec);

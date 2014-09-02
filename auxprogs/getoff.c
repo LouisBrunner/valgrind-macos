@@ -152,7 +152,7 @@ int main (int argc, char** argv)
                   &modid_offset) == 0) {
          assert(modid_offset >= 0 && modid_offset < MAX_LINKMAP_WORDS);
          fprintf(outputfile,
-                 "lm_modid_offset 0x%x\n", modid_offset*sizeof(size_t));
+                 "lm_modid_offset 0x%zx\n", modid_offset*sizeof(size_t));
       } else {
          fprintf(stderr, 
                  "Error computing lm_modid_offset.\n"

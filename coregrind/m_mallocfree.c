@@ -1673,6 +1673,9 @@ void add_one_block_to_stats (Arena* a, SizeT loaned)
    a->stats__tot_bytes  += (ULong)loaned;
 }
 
+/* Allocate a piece of memory of req_pszB bytes on the given arena.
+   The function may return NULL if (and only if) aid == VG_AR_CLIENT.
+   Otherwise, the function returns a non-NULL value. */
 void* VG_(arena_malloc) ( ArenaId aid, const HChar* cc, SizeT req_pszB )
 {
    SizeT       req_bszB, frag_bszB, b_bszB;

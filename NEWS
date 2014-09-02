@@ -1,117 +1,167 @@
-Release 3.10.0 (?? ?????? 201?)
+Release 3.10.0 (?? ?????? 2014)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-3.10.0 is not yet released.
 
-* ================== DEPRECATED FEATURES =================
+3.10.0 is not yet released.  This is a beta of 3.10.0.
 
-* --db-attach is now a deprecated feature which will be removed in the
-  next valgrind release (not counting bug-fix releases). The vgdb
-  capabilities are superior and should be used instead. Learn more here:
-  http://valgrind.org/docs/manual/manual-core-adv.html#manual-core-adv.gdbserver
+3.10.0 is a feature release with many improvements and the usual
+collection of bug fixes.
+
+This release supports X86/Linux, AMD64/Linux, ARM32/Linux,
+ARM64/Linux, PPC32/Linux, PPC64BE/Linux, PPC64LE/Linux, S390X/Linux,
+MIPS32/Linux, MIPS64/Linux, ARM/Android, X86/Android, X86/MacOSX 10.9
+and AMD64/MacOSX 10.9.  Support for MacOSX 10.8 and 10.9 is
+significantly improved relative to the 3.9.0 release.
 
 * ================== PLATFORM CHANGES =================
 
+* Support for the 64-bit ARM Architecture (AArch64 ARMv8).  This port
+  is mostly complete, and is usable, but some SIMD instructions are as
+  yet unsupported.
+
+* Support for little-endian variant of the 64-bit POWER architecture.
+
 * Support for Android on MIPS32.
+
 * Support for 64bit FPU on MIPS32 platforms.
+
+* Both 32- and 64-bit executables are supported on MacOSX 10.8 and 10.9.
+
+* ================== DEPRECATED FEATURES =================
+
+* --db-attach is now deprecated and will be removed in the next
+  valgrind feature release.  The built-in GDB server capabilities are
+  superior and should be used instead. Learn more here:
+  http://valgrind.org/docs/manual/manual-core-adv.html#manual-core-adv.gdbserver
 
 * ==================== TOOL CHANGES ====================
 
 * Memcheck:
-  - new client requests 
-    VALGRIND_DISABLE_ADDR_ERROR_REPORTING_IN_RANGE and
-    VALGRIND_ENABLE_ADDR_ERROR_REPORTING_IN_RANGE
-  - new leak check heuristic 'length64' to detect interior pointers
-    pointing at offset 64bit of a block, when the first 8 bytes contains
-    the block size - 8. This is e.g. used by sqlite3MemMalloc.
-  - if a syscall param (e.g. bind struct sockaddr, sendmsg struct msghdr,
-    ...) has several fields not initialised, an error is now reported for
-    each field. Previously, an error was reported only for the first wrong
-    field.
-  - new flag --show-mismatched-frees=no|yes [yes], to optionally disable
-    allocator/deallocator mismatch checking.
+
+  - Client code can now selectively disable and re-enable reporting of
+    invalid address errors in specific ranges using the new client
+    requests VALGRIND_DISABLE_ADDR_ERROR_REPORTING_IN_RANGE and
+    VALGRIND_ENABLE_ADDR_ERROR_REPORTING_IN_RANGE.
+
+  - Leak checker: there is a new leak check heuristic called
+    "length64".  This is used to detect interior pointers pointing 8
+    bytes inside a block, on the assumption that the first 8 bytes
+    holds the value "block size - 8".  This is used by
+    sqlite3MemMalloc, for example.
+
+  - Checking of system call parameters: if a syscall parameter
+    (e.g. bind struct sockaddr, sendmsg struct msghdr, ...) has
+    several fields not initialised, an error is now reported for each
+    field. Previously, an error was reported only for the first
+    uninitialised field.
+
+  - Mismatched alloc/free checking: a new flag
+    --show-mismatched-frees=no|yes [yes] makes it possible to turn off
+    such checks if necessary.
 
 * Helgrind:
-  - Race condition error message with allocated blocks also show
-    the thread nr that allocated the racy block.
-  - All locks referenced by an error message are now announced.
-    Previously, some error messages were just showing the lock addresses.
-  - The message indicating where a lock was first observed now also
-    describes the address/location of the lock.
-  - Helgrind now understands the Ada task termination rules
-    and creates a 'H-B relationship' between a terminated task and
-    its master. This avoids some false positive and avoids big
-    memory usage when a lot of Ada tasks are created and terminated.
+
+  - Improvements to error messages:
+
+    o Race condition error message involving heap allocated blocks also
+      show the thread number that allocated the raced-on block.
+
+    o All locks referenced by an error message are now announced.
+      Previously, some error messages only showed the lock addresses.
+
+    o The message indicating where a lock was first observed now also
+      describes the address/location of the lock.
+
+  - Helgrind now understands the Ada task termination rules and
+    creates a happens-before relationship between a terminated task
+    and its master.  This avoids some false positives and avoids a big
+    memory leak when a lot of Ada tasks are created and terminated.
     The interceptions are only activated with forthcoming releasses of
     gnatpro >= 7.3.0w-20140611 and gcc >= 5.0.
-  - Helgrind GDB server monitor command 'info locks' giving
-    the list of locks, their location, and their status.
+
+  - A new GDB server monitor command "info locks" giving the list of
+    locks, their location, and their status.
 
 * Callgrind:
+
   - callgrind_control now supports the --vgdb-prefix argument,
     which is needed if valgrind was started with this same argument.
 
 * ==================== OTHER CHANGES ====================
 
-* The semantic of stack start/end boundaries in valgrind.h
-  VALGRIND_STACK_REGISTER has been clarified/documented.
-  The convention is that start and end are respectively the lowest
-  and highest addressable bytes of the stack.
+* Unwinding through inlined function calls.  By default, stack
+  unwinding now makes use of Dwarf3 inlined-unwind information if it
+  is available.  The practical effect is that inlined calls become
+  visible in stack traces.  The suppression matching machinery has
+  been adjusted accordingly.  This is controlled by the new option
+  --read-inline-info=yes|no [yes].
 
-* Better stacktraces and suppression matching for inlined function calls.
-  The new option --read-inline-info=yes|no allows to control the reading
-  of the dwarf debug information describing inlined function calls.
-  When this debug info is read, stacktraces will properly show inlined
-  function calls.
+  In the 3.10.0 beta release(s), inlined unwinding is only enabled for
+  Memcheck and Helgrind.  It is hoped to enable it for all tools in
+  the 3.10.0 final release.
 
-* Address description logic has been improved and is now common 
-  between memcheck and helgrind, resulting in better address
-  descriptions for some error messages.
+* Valgrind can now read EXIDX unwind information on 32-bit ARM
+  targets.  If an object contains both CFI and EXIDX unwind
+  information, Valgrind will prefer the CFI over the EXIDX.  This
+  facilitates unwinding through system libraries on arm-android
+  targets.
 
-* New and modified GDB server monitor features:
+* Address description logic has been improved and is now common
+  between Memcheck and Helgrind, resulting in better address
+  descriptions for some kinds of error messages.
 
-  - thread local variables/storage (__thread) can now be displayed.
-
-  - The GDB server monitor command 'v.info location <address>'
-    outputs information about an address. The information produced depends
-    on the tool and on the options given to valgrind.
-    Possibly, the following are described: global variables, local (stack)
-    variables, allocated or freed blocks, ...
-
-  - The option "--vgdb-stop-at=event1,event2,..." allows the user
-    to ask GDB server to stop before program execution, at the end
-    of the program execution and on Valgrind internal errors.
-
-  - A new monitor command "v.info stats" that shows various valgrind core and
-    tool statistics.
-
-  - A new monitor command "v.set hostvisibility" that allows GDB server
-    to provide access to Valgrind internal host status/memory.
-
-* New option --aspace-minaddr=<address> allows to (possibly) make
-  use of some more memory by decreasing the default value above which
-  Valgrind maps memory or solve some conflicts with system libraries
-  by increasing the value.
-  See user manual for details.
- 
-* Minor improvements in dwarf handling with --read-var-info=yes
-  - Ada and C struct containing VLA do not cause a bad DIE error anymore
-  - Code compiled with -ffunction-sections -fdata-sections -Wl,--gc-sections
-    does not cause assert errors anymore.
+* Error messages about dubious arguments (eg, to malloc or calloc) are
+  output like other errors.  This means that they can be suppressed
+  and they have a stack trace.
 
 * The C++ demangler has been updated for better C++11 support.
 
-* Error messages about fishy arguments (formerly known as silly arguments)
-  are output like other errors (e.g. they can be suppressed) and now include a 
-  backtrace to aid debugging.
+* New and modified GDB server monitor features:
 
-* Reduction of memory used by Valgrind to read and store the debug information.
+  - Thread local variables/storage (__thread) can now be displayed.
 
-* Valgrind can now read EXIDX unwind information on 32-bit ARM targets.
-  If an object contains both CFI and EXIDX unwind information, Valgrind
-  will prefer the CFI over the EXIDX.
+  - The GDB server monitor command "v.info location <address>"
+    displays information about an address.  The information produced
+    depends on the tool and on the options given to valgrind.
+    Possibly, the following are described: global variables, local
+    (stack) variables, allocated or freed blocks, ...
 
-* Typos or unknown values in --sim-hints and --kernel-variant command
-  line options are now detected and reported to the user as a usage error.
+  - The option "--vgdb-stop-at=event1,event2,..." allows the user to
+    ask the GDB server to stop at the start of program execution, at
+    the end of the program execution and on Valgrind internal errors.
+
+  - A new monitor command "v.info stats" shows various Valgrind core
+    and tool statistics.
+
+  - A new monitor command "v.set hostvisibility" allows the GDB server
+    to provide access to Valgrind internal host status/memory.
+
+* A new option "--aspace-minaddr=<address>" can in some situations
+  allow the use of more memory by decreasing the address above which
+  Valgrind maps memory.  It can also be used to solve address
+  conflicts with system libraries by increasing the default value.
+  See user manual for details.
+
+* The amount of memory used by Valgrind to store debug info (unwind
+  info, line number information and symbol data) has been
+  significantly reduced, even though Valgrind now reads more
+  information in order to support unwinding of inlined function calls.
+
+* Dwarf3 handling with --read-var-info=yes has been improved:
+
+  - Ada and C struct containing VLAs no longer cause a "bad DIE" error
+
+  - Code compiled with
+    -ffunction-sections -fdata-sections -Wl,--gc-sections
+    no longer causes assertion failures.
+
+* Improved checking for the --sim-hints= and --kernel-variant=
+  options.  Unknown strings are now detected and reported to the user
+  as a usage error.
+
+* The semantics of stack start/end boundaries in the valgrind.h
+  VALGRIND_STACK_REGISTER client request has been clarified and
+  documented.  The convention is that start and end are respectively
+  the lowest and highest addressable bytes of the stack.
 
 * ==================== FIXED BUGS ====================
 
@@ -257,6 +307,7 @@ n-i-bz  drd manual: Document how to C++11 programs that use class "std::thread"
 n-i-bz  Add command-line option --default-suppressions
 n-i-bz  Add support for BLKDISCARDZEROES ioctl
 n-i-bz  ppc32/64: fix a regression with the mtfsb0/mtfsb1 instructions
+
 
 
 Release 3.9.0 (31 October 2013)

@@ -21,7 +21,7 @@ Program received signal SIGTRAP, Trace/breakpoint trap.
 0x........ in do_burn () at sleepers.c:39
 39	   for (i = 0; i < burn; i++) loopnr++;
 [Switching to thread 1 (Thread ....)]
-#0  0x........ in do_burn () at sleepers.c:39
+#0  0x........ in do_burn ()
 39	   for (i = 0; i < burn; i++) loopnr++;
 $1 = void
 [Switching to thread 2 (Thread ....)]

@@ -58,6 +58,8 @@ sed -e '/^\ \ \ \ \.\.\.$/d'                                        |
 #       differently between gdb versions, normalize to "Program exited...".
 #       for hgtls the breakpoint p=... address might show var location.
 #	gdb might also try to show the "entry value" p=p@entry=0x...
+#	Some gdb versions don't show the source line:number after switching
+#		threads in #0  0x........ in do_burn ().
 sed -e '/Remote debugging using/,/vgdb launched process attached/d'                                   \
     -e '/filter_gdb BEGIN drop/,/filter_gdb END drop/d'                                               \
     -e 's/^\[?1034hReading symbols/Reading symbols/'                                                \
@@ -71,6 +73,7 @@ sed -e '/Remote debugging using/,/vgdb launched process attached/d'             
     -e 's/\(\[Switching to thread [1234] (Thread ....)\]\)#0/\1\n#0/'                                 \
     -e 's/^\([ \* ] [0-9] Thread .... (tid [0-9] VgTs_WaitSys)  0x........ in\).*$/\1 syscall .../'   \
     -e 's/#[0-9]\(  0x........ in sleeper_or_burner\)/#.\1/'                                          \
+    -e 's/\(#0  0x........ in do_burn ()\) at sleepers.c:39/\1/'                                      \
     -e '/^Reading symbols from .*\.\.\.done\./d'                                                      \
     -e '/^Loaded symbols for .*$/d'                                                                   \
     -e '/^Current language.*/d'                                                                       \

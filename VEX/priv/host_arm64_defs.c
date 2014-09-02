@@ -2058,6 +2058,7 @@ void getRegUsage_ARM64Instr ( HRegUsage* u, ARM64Instr* i, Bool mode64 )
          addHRegUse(u, HRmWrite, i->ARM64in.VExtV.dst);
          addHRegUse(u, HRmRead, i->ARM64in.VExtV.srcLo);
          addHRegUse(u, HRmRead, i->ARM64in.VExtV.srcHi);
+         return;
       case ARM64in_VImmQ:
          addHRegUse(u, HRmWrite, i->ARM64in.VImmQ.rQ);
          return;

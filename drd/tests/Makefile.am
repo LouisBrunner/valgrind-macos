@@ -256,6 +256,7 @@ EXTRA_DIST =                                        \
 	std_thread.vgtest			    \
 	std_thread2.stderr.exp		  	    \
 	std_thread2.vgtest			    \
+	std_thread2.supp			    \
 	str_tester.stderr.exp		  	    \
 	str_tester.vgtest			    \
 	tc01_simple_race.stderr.exp                 \

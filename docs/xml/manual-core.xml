@@ -2088,10 +2088,34 @@ need to use them.</para>
       need it.  Currently known variants are:</para>
       <itemizedlist>
         <listitem>
-          <para><option>bproc: </option> Support the
-          <function>sys_broc</function> system call on x86.  This is for
-          running on BProc, which is a minor variant of standard Linux which
-          is sometimes used for building clusters.</para>
+          <para><option>bproc</option>: support the
+            <function>sys_broc</function> system call on x86.  This is for
+            running on BProc, which is a minor variant of standard Linux which
+            is sometimes used for building clusters.
+          </para>
+        </listitem>
+        <listitem>
+          <para><option>android-emulator-no-hw-tls</option>: some
+          versions of the Android emulator for ARM do not provide a
+          hardware TLS (thread-local state) register, and Valgrind
+          crashes at startup.  Use this variant to select software
+          support for TLS.
+          </para>
+        </listitem>
+        <listitem>
+          <para><option>android-gpu-sgx5xx</option>: use this to
+          support handling of proprietary ioctls for the PowerVR SGX
+          5XX series of GPUs on Android devices.  Failure to select
+          this does not cause stability problems, but may cause
+          Memcheck to report false errors after the program performs
+          GPU-specific ioctls.
+          </para>
+        </listitem>
+        <listitem>
+          <para><option>android-gpu-adreno3xx</option>: similarly, use
+          this to support handling of proprietary ioctls for the
+          Qualcomm Adreno 3XX series of GPUs on Android devices.
+          </para>
         </listitem>
       </itemizedlist>
     </listitem>

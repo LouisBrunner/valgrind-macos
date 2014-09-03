@@ -774,6 +774,11 @@ static Bool branch_or_jump(UChar * addr)
       return True;
    }
 
+   /* Cavium Specific instructions. */
+   if (opcode == 0x32 || opcode == 0x3A) {  /* BBIT0, BBIT1 */
+      return True;
+   }
+
    return False;
 }
 
@@ -17085,6 +17090,47 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       LOAD_STORE_PATTERN;
       store(mkexpr(t1), getIReg(rt));
       break;
+
+   case 0x32:  /* Branch on Bit Clear - BBIT0; Cavium OCTEON */
+      /* Cavium Specific instructions. */
+      if (VEX_MIPS_COMP_ID(archinfo->hwcaps) == VEX_PRID_COMP_CAVIUM) {
+         DIP("bbit0 r%d, 0x%x, %x", rs, rt, imm);
+         t0 = newTemp(Ity_I32);
+         t1 = newTemp(Ity_I32);
+         assign(t0, mkU32(0x1));
+         assign(t1, binop(Iop_Shl32, mkexpr(t0), mkU8(rt)));
+         dis_branch(False, binop(Iop_CmpEQ32,
+                                 binop(Iop_And32,
+                                       mkexpr(t1),
+                                       mkNarrowTo32(ty, getIReg(rs))),
+                                 mkU32(0x0)),
+                    imm, &bstmt);
+         break;
+      } else {
+         goto decode_failure;
+      }
+
+   case 0x3A:  /* Branch on Bit Set - BBIT1; Cavium OCTEON */
+      /* Cavium Specific instructions. */
+      if (VEX_MIPS_COMP_ID(archinfo->hwcaps) == VEX_PRID_COMP_CAVIUM) {
+         DIP("bbit1 r%d, 0x%x, %x", rs, rt, imm);
+         t0 = newTemp(Ity_I32);
+         t1 = newTemp(Ity_I32);
+         assign(t0, mkU32(0x1));
+         assign(t1, binop(Iop_Shl32, mkexpr(t0), mkU8(rt)));
+         dis_branch(False, binop(Iop_CmpNE32,
+                                 binop(Iop_And32,
+                                       mkexpr(t1),
+                                       mkNarrowTo32(ty, getIReg(rs))),
+                                 mkU32(0x0)),
+                    imm, &bstmt);
+         break;
+      } else {
+         goto decode_failure;
+      }
+
+   default:
+      goto decode_failure;
 
    decode_failure_dsp:
       vex_printf("Error occured while trying to decode MIPS32 DSP "

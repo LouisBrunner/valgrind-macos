@@ -1391,11 +1391,13 @@ void get_Form_contents ( /*OUT*/FormContents* cts,
          TRACE_D3("0x%lx", (UWord)cts->u.val);
          if (0) VG_(printf)("DW_FORM_GNU_ref_alt 0x%lx\n", (UWord)cts->u.val);
          if (/* the following is surely impossible, but ... */
-             !ML_(sli_is_valid)(cc->escn_debug_info_alt)
-             || cts->u.val >= (ULong)cc->escn_debug_info_alt.szB) {
+             !ML_(sli_is_valid)(cc->escn_debug_info_alt))
+            cc->barf("get_Form_contents: DW_FORM_GNU_ref_addr used, "
+                     "but no alternate .debug_info");
+         else if (cts->u.val >= (ULong)cc->escn_debug_info_alt.szB) {
             /* Hmm.  Offset is nonsensical for this object's .debug_info
                section.  Be safe and reject it. */
-            cc->barf("get_Form_contents: DW_FORM_ref_addr points "
+            cc->barf("get_Form_contents: DW_FORM_GNU_ref_addr points "
                      "outside alternate .debug_info");
          }
          break;
@@ -1403,8 +1405,10 @@ void get_Form_contents ( /*OUT*/FormContents* cts,
       case DW_FORM_GNU_strp_alt: {
          /* this is an offset into alternate .debug_str */
          SizeT uw = (UWord)get_Dwarfish_UWord( c, cc->is_dw64 );
-         if (!ML_(sli_is_valid)(cc->escn_debug_str_alt)
-             || uw >= cc->escn_debug_str_alt.szB)
+         if (!ML_(sli_is_valid)(cc->escn_debug_str_alt))
+            cc->barf("get_Form_contents: DW_FORM_GNU_strp_alt used, "
+                     "but no alternate .debug_str");
+         else if (uw >= cc->escn_debug_str_alt.szB)
             cc->barf("get_Form_contents: DW_FORM_GNU_strp_alt "
                      "points outside alternate .debug_str");
          /* FIXME: check the entire string lies inside debug_str,

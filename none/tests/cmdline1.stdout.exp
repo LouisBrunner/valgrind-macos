@@ -22,7 +22,8 @@ usage: valgrind [options] prog-and-args
                               to get started quickly, use --vgdb-error=0
                               and follow the on-screen directions
     --vgdb-stop-at=event1,event2,... invoke gdbserver for given events [none]
-         where event is one of startup exit valgrindabexit all none
+         where event is one of:
+           startup exit valgrindabexit all none
     --track-fds=no|yes        track open file descriptors? [no]
     --time-stamp=no|yes       add timestamps to log messages? [no]
     --log-fd=<number>         log messages to file descriptor [2=stderr]
@@ -89,7 +90,8 @@ usage: valgrind [options] prog-and-args
     --vgdb-prefix=<prefix>    prefix for vgdb FIFOs [/tmp/vgdb-pipe]
     --run-libc-freeres=no|yes free up glibc memory at exit on Linux? [yes]
     --sim-hints=hint1,hint2,...  activate unusual sim behaviours [none] 
-         where hint is one of lax-ioctls fuse-compatible enable-outer
+         where hint is one of:
+           lax-ioctls fuse-compatible enable-outer
            no-inner-prefix no-nptl-pthread-stackcache none
     --fair-sched=no|yes|try   schedule threads fairly on multicore systems [no]
     --kernel-variant=variant1,variant2,...

@@ -29,13 +29,14 @@ memcheck monitor commands:
                 [increased*|changed|any]
                 [unlimited*|limited <max_loss_records_output>]
             * = defaults
-       where kind is one of definite indirect possible reachable all none
-       where heur is one of stdstring length64 newarray
-                               multipleinheritance all none*
-        Examples: leak_check
-                  leak_check summary any
-                  leak_check full kinds indirect,possible
-                  leak_check full reachable any limited 100
+       where kind is one of:
+         definite indirect possible reachable all none
+       where heur is one of:
+         stdstring length64 newarray multipleinheritance all none*
+       Examples: leak_check
+                 leak_check summary any
+                 leak_check full kinds indirect,possible
+                 leak_check full reachable any limited 100
   block_list <loss_record_nr>
         after a leak search, shows the list of blocks of <loss_record_nr>
   who_points_at <addr> [<len>]
@@ -87,13 +88,14 @@ memcheck monitor commands:
                 [increased*|changed|any]
                 [unlimited*|limited <max_loss_records_output>]
             * = defaults
-       where kind is one of definite indirect possible reachable all none
-       where heur is one of stdstring length64 newarray
-                               multipleinheritance all none*
-        Examples: leak_check
-                  leak_check summary any
-                  leak_check full kinds indirect,possible
-                  leak_check full reachable any limited 100
+       where kind is one of:
+         definite indirect possible reachable all none
+       where heur is one of:
+         stdstring length64 newarray multipleinheritance all none*
+       Examples: leak_check
+                 leak_check summary any
+                 leak_check full kinds indirect,possible
+                 leak_check full reachable any limited 100
   block_list <loss_record_nr>
         after a leak search, shows the list of blocks of <loss_record_nr>
   who_points_at <addr> [<len>]

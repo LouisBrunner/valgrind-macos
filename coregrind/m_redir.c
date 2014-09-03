@@ -1467,7 +1467,12 @@ void VG_(redir_initialise) ( void )
    }
 
 #  elif defined(VGP_s390x_linux)
-   /* nothing so far */
+   if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
+      // added in rsponse to BZ 327943
+      add_hardwired_spec("ld64.so.1", "index",
+                         (Addr)&VG_(s390x_linux_REDIR_FOR_index),
+                         complain_about_stripped_glibc_ldso);
+   }
 
 #  elif defined(VGP_mips32_linux)
    if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {

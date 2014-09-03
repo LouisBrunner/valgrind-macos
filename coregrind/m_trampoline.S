@@ -1189,6 +1189,28 @@ VG_(s390x_linux_SUBST_FOR_rt_sigreturn):
         svc __NR_rt_sigreturn
 	.short 0
 
+.global VG_(s390x_linux_REDIR_FOR_index)
+.type   VG_(s390x_linux_REDIR_FOR_index),@function
+VG_(s390x_linux_REDIR_FOR_index):
+#
+#   %r2 = addess of string
+#   %r3 = character to find
+#
+        lghi    %r0,255
+        ngr     %r0,%r3        # r0 = (unsigned char)r3
+        lghi    %r4,0
+.L1:
+        llgc    %r1,0(%r2)     # r1 = byte from string
+        cr      %r1,%r0        # compare
+        ber     %r14           # return if found
+        cr      %r1,%r4        # end of string ?
+        je      .L2
+        aghi    %r2,1          # increment r2
+        j       .L1
+.L2:    lghi    %r2,0          # return value 0
+        br      %r14
+.size VG_(s390x_linux_REDIR_FOR_index), .-VG_(s390x_linux_REDIR_FOR_index)
+
 .globl VG_(trampoline_stuff_end)
 VG_(trampoline_stuff_end):
 	.fill 2048, 2, 0x0000

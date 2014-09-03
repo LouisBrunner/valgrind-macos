@@ -217,6 +217,7 @@ where XXXXXX is the bug number as listed below.
 327639  vex amd64->IR pcmpestri SSE4.2 instruction is unsupported 0x34
 327837  dwz compressed alternate .debug_info and .debug_str not read correctly
 327916  DW_TAG_typedef may have no name
+327943  s390x: add a redirection for the 'index' function
 328100  XABORT not implemented
 328205  Implement additional Xen hypercalls
 328454  add support Backtraces with ARM unwind tables (EXIDX)

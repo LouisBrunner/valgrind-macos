@@ -185,11 +185,13 @@ where XXXXXX is the bug number as listed below.
 303536  ioctl for SIOCETHTOOL (ethtool(8)) isn't wrapped
 308729  vex x86->IR: unhandled instruction bytes 0xf 0x5 (syscall) 
 315199  vgcore file for threaded app does not show which thread crashed
+315952  tun/tap ioctls are not supported
 323178  Unhandled instruction: PLDW register (ARM) 
 323179  Unhandled instruction: PLDW immediate (ARM)
 325110  Add test-cases for Power ISA 2.06 insns: divdo/divdo. and divduo/divduo.
 325124  [MIPSEL] Compilation error
 325477  Phase 4 support for IBM Power ISA 2.07
+325538  cavium octeon mips64, valgrind reported "dumping core" [...]
 325628  Phase 5 support for IBM Power ISA 2.07
 325714  Empty vgcore but RLIMIT_CORE is big enough (too big) 
 325751  Missing the two privileged Power PC Transactional Memory Instructions
@@ -201,6 +203,7 @@ where XXXXXX is the bug number as listed below.
 326462  Refactor vgdb to isolate invoker stuff into separate module
 326469  amd64->IR: 0x66 0xF 0x3A 0x63 0xC1 0xE (pcmpistri 0x0E)
 326623  DRD: false positive conflict report in a field assignment
+326724  Valgrind does not compile on OSX 1.9 Mavericks
 326816  Intercept for __strncpy_sse2_unaligned missing?
 326921  coregrind fails to compile m_trampoline.S with MIPS/Linux port of V
 326983  Clear direction flag after tests on amd64.
@@ -213,6 +216,7 @@ where XXXXXX is the bug number as listed below.
 327916  DW_TAG_typedef may have no name
 328100  XABORT not implemented
 328205  Implement additional Xen hypercalls
+328454  add support Backtraces with ARM unwind tables (EXIDX)
 328455  s390x: SIGILL after emitting wrong register pair for ldxbr
 328711  valgrind.1 manpage "memcheck options" section is badly generated
 328878  vex amd64->IR pcmpestri SSE4.2 instruction is unsupported 0x14
@@ -254,12 +258,15 @@ where XXXXXX is the bug number as listed below.
 333145  Tests for missaligned PC+#imm access for arm
 333228  AAarch64 Missing instruction encoding: mrs %[reg], ctr_el0
 333230  AAarch64 missing instruction encodings: dc, ic, dsb.
+333248  WARNING: unhandled syscall: unix:443
 333428  ldr.w pc [rD, #imm] instruction leads to assertion
 333666  Recognize MPX instructions and bnd prefix.
 333788  Valgrind does not support the CDROM_DISC_STATUS ioctl (has patch)
 333817  Valgrind reports the memory areas written to by the SG_IO
         ioctl as untouched
 334049  lzcnt fails silently (x86_32)
+334384  Valgrind does not have support Little Endian support for
+        IBM POWER PPC 64
 334585  recvmmsg unhandled (+patch) (arm)
 334705  sendmsg and recvmsg should guard against bogus msghdr fields.
 334727  Build fails with -Werror=format-security

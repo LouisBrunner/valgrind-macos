@@ -179,9 +179,11 @@ static void usage_NORETURN ( Bool debug_help )
 "         where hint is one of lax-ioctls fuse-compatible enable-outer\n"
 "           no-inner-prefix no-nptl-pthread-stackcache none\n"
 "    --fair-sched=no|yes|try   schedule threads fairly on multicore systems [no]\n"
-"    --kernel-variant=variant1,variant2,...  handle non-standard kernel"
-                                                               " variants [none]\n"
-"         where variant is one of bproc none\n"
+"    --kernel-variant=variant1,variant2,...\n"
+"         handle non-standard kernel variants [none]\n"
+"         where variant is one of:\n"
+"           bproc android-emulator-no-hw-tls\n"
+"           android-gpu-sgx5xx android-gpu-adreno3xx none\n"
 "    --merge-recursive-frames=<number>  merge frames between identical\n"
 "           program counters in max <number> frames) [0]\n"
 "    --num-transtab-sectors=<number> size of translated code cache [%d]\n"
@@ -627,7 +629,11 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
                                                     VG_(clo_smc_check),
                                                     Vg_SmcAllNonFile);
 
-      else if VG_USETX_CLO (arg, "--kernel-variant", "bproc",
+      else if VG_USETX_CLO (arg, "--kernel-variant",
+                            "bproc,"
+                            "android-emulator-no-hw-tls,"
+                            "android-gpu-sgx5xx,"
+                            "android-gpu-adreno3xx",
                             VG_(clo_kernel_variant)) {}
 
       else if VG_BOOL_CLO(arg, "--dsymutil",        VG_(clo_dsymutil)) {}

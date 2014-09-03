@@ -3447,6 +3447,57 @@ struct vki_ethtool_ts_info {
 #define VKI_ETHTOOL_GET_TS_INFO	0x00000041 /* Get time stamping and PHC info */
 
 //----------------------------------------------------------------------
+// From linux-3.15.8/drivers/staging/android/uapi/ion.h
+//----------------------------------------------------------------------
+
+typedef int vki_ion_user_handle_t;
+
+struct vki_ion_allocation_data {
+        vki_size_t len;
+        vki_size_t align;
+        unsigned int heap_id_mask;
+        unsigned int flags;
+        vki_ion_user_handle_t handle;
+};
+
+struct vki_ion_fd_data {
+        vki_ion_user_handle_t handle;
+        int fd;
+};
+
+struct vki_ion_handle_data {
+        vki_ion_user_handle_t handle;
+};
+
+struct vki_ion_custom_data {
+        unsigned int cmd;
+        unsigned long arg;
+};
+
+#define VKI_ION_IOC_MAGIC   'I'
+
+#define VKI_ION_IOC_ALLOC \
+   _VKI_IOWR(VKI_ION_IOC_MAGIC, 0, struct vki_ion_allocation_data)
+
+#define VKI_ION_IOC_FREE \
+   _VKI_IOWR(VKI_ION_IOC_MAGIC, 1, struct vki_ion_handle_data)
+
+#define VKI_ION_IOC_MAP \
+   _VKI_IOWR(VKI_ION_IOC_MAGIC, 2, struct vki_ion_fd_data)
+
+#define VKI_ION_IOC_SHARE \
+   _VKI_IOWR(VKI_ION_IOC_MAGIC, 4, struct vki_ion_fd_data)
+
+#define VKI_ION_IOC_IMPORT \
+   _VKI_IOWR(VKI_ION_IOC_MAGIC, 5, struct vki_ion_fd_data)
+
+#define VKI_ION_IOC_SYNC \
+   _VKI_IOWR(VKI_ION_IOC_MAGIC, 7, struct vki_ion_fd_data)
+
+#define VKI_ION_IOC_CUSTOM \
+   _VKI_IOWR(VKI_ION_IOC_MAGIC, 6, struct vki_ion_custom_data)
+
+//----------------------------------------------------------------------
 // From drivers/staging/lustre/lustre/include/lustre/lustre_user.h
 //----------------------------------------------------------------------
 

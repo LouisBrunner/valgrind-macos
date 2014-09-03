@@ -27,6 +27,9 @@ significantly improved relative to the 3.9.0 release.
 
 * Both 32- and 64-bit executables are supported on MacOSX 10.8 and 10.9.
 
+* Configuration for and running on Android targets has changed.
+  See README.android in the source tree for details.
+
 * ================== DEPRECATED FEATURES =================
 
 * --db-attach is now deprecated and will be removed in the next

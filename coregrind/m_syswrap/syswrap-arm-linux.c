@@ -280,41 +280,43 @@ static void assign_guest_tls(ThreadId tid, Addr tlsptr)
 static SysRes sys_set_tls ( ThreadId tid, Addr tlsptr )
 {
    assign_guest_tls(tid, tlsptr);
-#if defined(ANDROID_HARDWARE_emulator)
-   /* Android emulator does not provide an hw tls register.
-      So, the tls register is emulated by the kernel.
-      This emulated value is set by the __NR_ARM_set_tls syscall.
-      The emulated value must be read by the kernel helper function
-      located at 0xffff0fe0.
-      
-      The emulated tlsptr is located at 0xffff0ff0
-      (so slightly after the kernel helper function).
-      Note that applications are not supposed to read this directly.
-      
-      For compatibility : if there is a hw tls register, the kernel
-      will put at 0xffff0fe0 the instructions to read it, so
-      as to have old applications calling the kernel helper
-      working properly.
 
-      For having emulated guest TLS working correctly with
-      Valgrind, it is needed to execute the syscall to set
-      the emulated TLS value in addition to the assignment
-      of TPIDRURO.
+   if (KernelVariantiS(KernelVariant_android_emulator_no_hw_tls,
+                       VG_(clo_kernel_variant))) {
+      /* Android emulator does not provide an hw tls register.
+         So, the tls register is emulated by the kernel.
+         This emulated value is set by the __NR_ARM_set_tls syscall.
+         The emulated value must be read by the kernel helper function
+         located at 0xffff0fe0.
+      
+         The emulated tlsptr is located at 0xffff0ff0
+         (so slightly after the kernel helper function).
+         Note that applications are not supposed to read this directly.
+      
+         For compatibility : if there is a hw tls register, the kernel
+         will put at 0xffff0fe0 the instructions to read it, so
+         as to have old applications calling the kernel helper
+         working properly.
 
-      Note: the below means that if we need thread local storage
-      for Valgrind host, then there will be a conflict between
-      the need of the guest tls and of the host tls.
-      If all the guest code would cleanly call 0xffff0fe0,
-      then we might maybe intercept this. However, at least
-      __libc_preinit reads directly 0xffff0ff0.
-   */
-   /* ??? might call the below if auxv->u.a_val & VKI_HWCAP_TLS ???
-      Unclear if real hardware having tls hw register sets
-      VKI_HWCAP_TLS. */
-   return VG_(do_syscall1) (__NR_ARM_set_tls, tlsptr);
-#else
-   return VG_(mk_SysRes_Success)( 0 );
-#endif
+         For having emulated guest TLS working correctly with
+         Valgrind, it is needed to execute the syscall to set
+         the emulated TLS value in addition to the assignment
+         of TPIDRURO.
+
+         Note: the below means that if we need thread local storage
+         for Valgrind host, then there will be a conflict between
+         the need of the guest tls and of the host tls.
+         If all the guest code would cleanly call 0xffff0fe0,
+         then we might maybe intercept this. However, at least
+         __libc_preinit reads directly 0xffff0ff0.
+      */
+      /* ??? might call the below if auxv->u.a_val & VKI_HWCAP_TLS ???
+         Unclear if real hardware having tls hw register sets
+         VKI_HWCAP_TLS. */
+      return VG_(do_syscall1) (__NR_ARM_set_tls, tlsptr);
+   } else {
+      return VG_(mk_SysRes_Success)( 0 );
+   }
 }
 
 /* ---------------------------------------------------------------------

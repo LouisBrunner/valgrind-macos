@@ -338,8 +338,12 @@ extern VgSmc VG_(clo_smc_check);
 
 /* A set of minor kernel variants,
    so they can be properly handled by m_syswrap. */
-typedef enum {
-      KernelVariant_bproc
+typedef
+   enum {
+      KernelVariant_bproc,
+      KernelVariant_android_emulator_no_hw_tls,
+      KernelVariant_android_gpu_sgx5xx,
+      KernelVariant_android_gpu_adreno3xx
    }
    KernelVariant;
 // Build mask to check or set KernelVariant a membership

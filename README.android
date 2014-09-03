@@ -1,9 +1,15 @@
 
-How to cross-compile for Android.  These notes were last updated on 
-17 Feb 2012, for Valgrind SVN revision 12390/2257.
+How to cross-compile and run on Android.  Please read to the end,
+since there are important details further down regarding crash
+avoidance and GPU support.
 
-This is known to work at least for :
-ARM:
+These notes were last updated on 3 Sept 2014, for Valgrind SVN
+revision 14439/2941.
+
+These instructions are known to work, or have worked at some time in
+the past, for:
+
+arm:
   Android 4.0.3 running on a (rooted, AOSP build) Nexus S.
   Android 4.0.3 running on Motorola Xoom.
   Android 4.0.3 running on android arm emulator.
@@ -34,7 +40,7 @@ install them are described in README.android_emulator.
 
 You can get android-ndk-r6 from
 http://dl.google.com/android/ndk/android-ndk-r6-linux-x86.tar.bz2
-Install it somewhere.  Doesn't matter where.  Then do this:
+Install it somewhere.  Doesn't matter where.  Then:
 
 
 # Modify this (obviously).  Note, this "export" command is only done
@@ -44,25 +50,12 @@ Install it somewhere.  Doesn't matter where.  Then do this:
 export NDKROOT=/path/to/android-ndk-r6
 
 
-# Modify this too.  Tell the build system which Android hardware you
-# are building for.  It needs to know this so it can compile in
-# support for the right Android-hw-specific ioctls.  (sigh.)  As with
-# NDKROOT above, this is merely to avoid repeated typing; none of the
-# commands read it.
-#
-# Currently the supported values are:  nexus_s pandaboard
-# So choose one of the below:
-#
-export HWKIND=nexus_s         # Samsung Nexus S; also Xoom (for now)
-export HWKIND=generic         # A generic Android device. eg, Pandaboard
-export HWKIND=emulator        # Android emulator
-
 # Then cd to the root of your Valgrind source tree.
 #
 cd /path/to/valgrind/source/tree
 
 
-# After this point, you don't need to modify anything; just copy and
+# After this point, you don't need to modify anything.  Just copy and
 # paste the commands below.
 
 
@@ -83,6 +76,7 @@ export AR=$NDKROOT/toolchains/mipsel-linux-android-4.8/prebuilt/linux-x86_64/bin
 export LD=$NDKROOT/toolchains/mipsel-linux-android-4.8/prebuilt/linux-x86_64/bin/mipsel-linux-android-ld
 export CC=$NDKROOT/toolchains/mipsel-linux-android-4.8/prebuilt/linux-x86_64/bin/mipsel-linux-android-gcc
 
+
 # Do configuration stuff.  Don't mess with the --prefix in the
 # configure command below, even if you think it's wrong.
 # You may need to set the --with-tmpdir path to something
@@ -94,7 +88,7 @@ export CC=$NDKROOT/toolchains/mipsel-linux-android-4.8/prebuilt/linux-x86_64/bin
 ./autogen.sh
 
 # for ARM
-CPPFLAGS="--sysroot=$NDKROOT/platforms/android-3/arch-arm -DANDROID_HARDWARE_$HWKIND" \
+CPPFLAGS="--sysroot=$NDKROOT/platforms/android-3/arch-arm" \
    CFLAGS="--sysroot=$NDKROOT/platforms/android-3/arch-arm" \
    ./configure --prefix=/data/local/Inst \
    --host=armv7-unknown-linux --target=armv7-unknown-linux \
@@ -103,18 +97,19 @@ CPPFLAGS="--sysroot=$NDKROOT/platforms/android-3/arch-arm -DANDROID_HARDWARE_$HW
 # It is not clear what this platform nr really is.
 
 # for x86
-CPPFLAGS="--sysroot=$NDKROOT/platforms/android-9/arch-x86 -DANDROID_HARDWARE_$HWKIND" \
+CPPFLAGS="--sysroot=$NDKROOT/platforms/android-9/arch-x86" \
    CFLAGS="--sysroot=$NDKROOT/platforms/android-9/arch-x86 -fno-pic" \
    ./configure --prefix=/data/local/Inst \
    --host=i686-android-linux --target=i686-android-linux \
    --with-tmpdir=/sdcard
 
 # for MIPS32
-CPPFLAGS="--sysroot=$NDKROOT/platforms/android-18/arch-mips -DANDROID_HARDWARE_$HWKIND" \
+CPPFLAGS="--sysroot=$NDKROOT/platforms/android-18/arch-mips" \
    CFLAGS="--sysroot=$NDKROOT/platforms/android-18/arch-mips" \
    ./configure --prefix=/data/local/Inst \
    --host=mipsel-linux-android --target=mipsel-linux-android \
    --with-tmpdir=/sdcard
+
 
 # At the end of the configure run, a few lines of details
 # are printed.  Make sure that you see these two lines:
@@ -148,8 +143,26 @@ make -j2 install DESTDIR=`pwd`/Inst
 #
 adb push Inst /
 
-# To run (on the device)
-/data/local/Inst/bin/valgrind [the usual args etc]
+
+# To run (on the device).  There are two things you need to consider:
+#
+# (1) if you are running on the Android emulator, Valgrind may crash
+#     at startup.  This is because the emulator (for ARM) may not be
+#     simulating a hardware TLS register.  To get around this, run
+#     Valgrind with:
+#       --kernel-variant=android-emulator-no-hw-tls
+# 
+# (2) if you are running a real device, you need to tell Valgrind
+#     what GPU it has, so Valgrind knows how to handle custom GPU
+#     ioctls.  You can choose one of the following:
+#       --kernel-variant=android-gpu-sgx5xx     # PowerVR SGX 5XX series
+#       --kernel-variant=android-gpu-adreno3xx  # Qualcomm Adreno 3XX series
+#     If you don't choose one, the program will still run, but Memcheck
+#     may report false errors after the program performs GPU-specific ioctls.
+#
+# Anyway: to run on the device:
+#
+/data/local/Inst/bin/valgrind [kernel variant args] [the usual args etc]
 
 
 # Once you're up and running, a handy modify-V-rebuild-reinstall

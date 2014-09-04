@@ -7101,6 +7101,47 @@ PRE(sys_ioctl)
                     (Addr)args->arr, sizeof(*(args->arr)) * args->num);
       break;
    }
+
+   case VKI_XEN_IOCTL_EVTCHN_BIND_VIRQ: {
+         struct vki_xen_ioctl_evtchn_bind_virq *args =
+            (struct vki_xen_ioctl_evtchn_bind_virq *)(ARG3);
+         PRE_MEM_READ("VKI_XEN_IOCTL_EVTCHN_BIND_VIRQ(virq)",
+                 (Addr)&args->virq, sizeof(args->virq));
+      }
+      break;
+   case VKI_XEN_IOCTL_EVTCHN_BIND_INTERDOMAIN: {
+         struct vki_xen_ioctl_evtchn_bind_interdomain *args =
+            (struct vki_xen_ioctl_evtchn_bind_interdomain *)(ARG3);
+         PRE_MEM_READ("VKI_XEN_IOCTL_EVTCHN_BIND_INTERDOMAIN(remote_domain)",
+                 (Addr)&args->remote_domain, sizeof(args->remote_domain));
+         PRE_MEM_READ("VKI_XEN_IOCTL_EVTCHN_BIND_INTERDOMAIN(remote_port)",
+                 (Addr)&args->remote_port, sizeof(args->remote_port));
+      }
+      break;
+   case VKI_XEN_IOCTL_EVTCHN_BIND_UNBOUND_PORT: {
+         struct vki_xen_ioctl_evtchn_bind_unbound_port *args =
+            (struct vki_xen_ioctl_evtchn_bind_unbound_port *)(ARG3);
+         PRE_MEM_READ("VKI_XEN_IOCTL_EVTCHN_BIND_UNBOUND_PORT(remote_domain)",
+                 (Addr)&args->remote_domain, sizeof(args->remote_domain));
+      }
+      break;
+   case VKI_XEN_IOCTL_EVTCHN_UNBIND: {
+         struct vki_xen_ioctl_evtchn_unbind *args =
+            (struct vki_xen_ioctl_evtchn_unbind *)(ARG3);
+         PRE_MEM_READ("VKI_XEN_IOCTL_EVTCHN_UNBIND(port)",
+                 (Addr)&args->port, sizeof(args->port));
+      }
+      break;
+   case VKI_XEN_IOCTL_EVTCHN_NOTIFY: {
+         struct vki_xen_ioctl_evtchn_notify *args =
+            (struct vki_xen_ioctl_evtchn_notify*)(ARG3);
+         PRE_MEM_READ("VKI_XEN_IOCTL_EVTCHN_notify(port)",
+                 (Addr)&args->port, sizeof(args->port));
+      }
+      break;
+   case VKI_XEN_IOCTL_EVTCHN_RESET:
+      /* No input*/
+      break;
 #endif
 
    /* To do: figure out which software layer extends the sign of 'request' */
@@ -8370,25 +8411,25 @@ POST(sys_ioctl)
 
 #ifdef ENABLE_XEN
    case VKI_XEN_IOCTL_PRIVCMD_HYPERCALL: {
-      SyscallArgs harrghs;
-      struct vki_xen_privcmd_hypercall *args =
-         (struct vki_xen_privcmd_hypercall *)(ARG3);
+       SyscallArgs harrghs;
+       struct vki_xen_privcmd_hypercall *args =
+          (struct vki_xen_privcmd_hypercall *)(ARG3);
 
-      if (!args)
-         break;
+       if (!args)
+          break;
 
-      VG_(memset)(&harrghs, 0, sizeof(harrghs));
-      harrghs.sysno = args->op;
-      harrghs.arg1 = args->arg[0];
-      harrghs.arg2 = args->arg[1];
-      harrghs.arg3 = args->arg[2];
-      harrghs.arg4 = args->arg[3];
-      harrghs.arg5 = args->arg[4];
-      harrghs.arg6 = harrghs.arg7 = harrghs.arg8 = 0;
+       VG_(memset)(&harrghs, 0, sizeof(harrghs));
+       harrghs.sysno = args->op;
+       harrghs.arg1 = args->arg[0];
+       harrghs.arg2 = args->arg[1];
+       harrghs.arg3 = args->arg[2];
+       harrghs.arg4 = args->arg[3];
+       harrghs.arg5 = args->arg[4];
+       harrghs.arg6 = harrghs.arg7 = harrghs.arg8 = 0;
 
-      WRAPPER_POST_NAME(xen, hypercall) (tid, &harrghs, status);
+       WRAPPER_POST_NAME(xen, hypercall) (tid, &harrghs, status);
+      }
       break;
-   };
 
    case VKI_XEN_IOCTL_PRIVCMD_MMAP:
       break;
@@ -8403,6 +8444,15 @@ POST(sys_ioctl)
            (struct vki_xen_privcmd_mmapbatch_v2 *)(ARG3);
        POST_MEM_WRITE((Addr)args->err, sizeof(*(args->err)) * args->num);
       }
+      break;
+
+   case VKI_XEN_IOCTL_EVTCHN_BIND_VIRQ:
+   case VKI_XEN_IOCTL_EVTCHN_BIND_INTERDOMAIN:
+   case VKI_XEN_IOCTL_EVTCHN_BIND_UNBOUND_PORT:
+   case VKI_XEN_IOCTL_EVTCHN_UNBIND:
+   case VKI_XEN_IOCTL_EVTCHN_NOTIFY:
+   case VKI_XEN_IOCTL_EVTCHN_RESET:
+      /* No output */
       break;
 #endif
 

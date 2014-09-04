@@ -3237,6 +3237,46 @@ struct vki_xen_privcmd_mmapbatch_v2 {
 #define VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH_V2 _VKI_IOC(_VKI_IOC_NONE, 'P', 4, sizeof(struct vki_xen_privcmd_mmapbatch_v2))
 
 //----------------------------------------------------------------------
+// Xen evtchn IOCTL
+//----------------------------------------------------------------------
+
+#define VKI_XEN_IOCTL_EVTCHN_BIND_VIRQ				\
+	_VKI_IOC(_VKI_IOC_NONE, 'E', 0, sizeof(struct vki_xen_ioctl_evtchn_bind_virq))
+struct vki_xen_ioctl_evtchn_bind_virq {
+	vki_uint32_t virq;
+	vki_uint32_t port;
+};
+
+#define VKI_XEN_IOCTL_EVTCHN_BIND_INTERDOMAIN			\
+	_VKI_IOC(_VKI_IOC_NONE, 'E', 1, sizeof(struct vki_xen_ioctl_evtchn_bind_interdomain))
+struct vki_xen_ioctl_evtchn_bind_interdomain {
+	vki_uint32_t remote_domain;
+	vki_uint32_t remote_port;
+};
+
+#define VKI_XEN_IOCTL_EVTCHN_BIND_UNBOUND_PORT			\
+	_VKI_IOC(_VKI_IOC_NONE, 'E', 2, sizeof(struct vki_xen_ioctl_evtchn_bind_unbound_port))
+struct vki_xen_ioctl_evtchn_bind_unbound_port {
+	vki_uint32_t remote_domain;
+};
+
+#define VKI_XEN_IOCTL_EVTCHN_UNBIND				\
+	_VKI_IOC(_VKI_IOC_NONE, 'E', 3, sizeof(struct vki_xen_ioctl_evtchn_unbind))
+struct vki_xen_ioctl_evtchn_unbind {
+	vki_uint32_t port;
+};
+
+#define VKI_XEN_IOCTL_EVTCHN_NOTIFY				\
+	_VKI_IOC(_VKI_IOC_NONE, 'E', 4, sizeof(struct vki_xen_ioctl_evtchn_notify))
+struct vki_xen_ioctl_evtchn_notify {
+	vki_uint32_t port;
+};
+
+#define VKI_XEN_IOCTL_EVTCHN_RESET				\
+	_VKI_IOC(_VKI_IOC_NONE, 'E', 5, 0)
+
+
+//----------------------------------------------------------------------
 // From linux-3.4.0/include/linux/fs.h
 //----------------------------------------------------------------------
 

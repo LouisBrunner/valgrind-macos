@@ -1013,6 +1013,8 @@ static SyscallTableEntry syscall_main_table[] = {
    PLAX_(__NR3264_fadvise64,     sys_fadvise64),         // 223
 
    GENXY(__NR_mprotect,          sys_mprotect),          // 226
+   GENX_(__NR_mlock,             sys_mlock),             // 228
+   GENX_(__NR_mlockall,          sys_mlockall),          // 230
    GENX_(__NR_madvise,           sys_madvise),           // 233
    GENXY(__NR_wait4,             sys_wait4),             // 260
 
@@ -1178,9 +1180,7 @@ static SyscallTableEntry syscall_main_table[] = {
 //ZZ    GENX_(__NR_fdatasync,         sys_fdatasync),      // 148
 //ZZ    LINXY(__NR__sysctl,           sys_sysctl),         // 149
 //ZZ 
-//ZZ    GENX_(__NR_mlock,             sys_mlock),          // 150
 //ZZ    GENX_(__NR_munlock,           sys_munlock),        // 151
-//ZZ    GENX_(__NR_mlockall,          sys_mlockall),       // 152
 //ZZ    LINX_(__NR_munlockall,        sys_munlockall),     // 153
 //ZZ    LINXY(__NR_sched_setparam,    sys_sched_setparam), // 154
 //ZZ 

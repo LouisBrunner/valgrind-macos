@@ -589,7 +589,6 @@ MEM_TEST("ldr s17, [x5, w6, uxtw #2]", 12,  4);
 MEM_TEST("ldr s17, [x5, w6, sxtw]",    12,  4);
 MEM_TEST("ldr s17, [x5, w6, sxtw #2]", 12,  -4);
 
-#if 0
 MEM_TEST("str h17, [x5, x6]",          12, -4);
 MEM_TEST("str h17, [x5, x6, lsl #1]",  12, -4);
 MEM_TEST("str h17, [x5, w6, uxtw]",    12,  4);
@@ -615,7 +614,6 @@ MEM_TEST("ldr b17, [x5, w6, uxtw]",    12,  4);
 MEM_TEST("ldr b17, [x5, w6, uxtw #0]", 12,  4);
 MEM_TEST("ldr b17, [x5, w6, sxtw]",    12,  4);
 MEM_TEST("ldr b17, [x5, w6, sxtw #0]", 12,  -4);
-#endif
 
 ////////////////////////////////////////////////////////////////
 printf("LDRS{B,H,W} (integer register, SX)\n");

@@ -5424,6 +5424,9 @@ PRE(sys_ioctl)
 
    /* InfiniBand */
    case VKI_IB_USER_MAD_ENABLE_PKEY:
+
+   /* V4L2 */
+   case VKI_V4L2_LOG_STATUS:
       PRINT("sys_ioctl ( %ld, 0x%lx )",ARG1,ARG2);
       PRE_REG_READ2(long, "ioctl",
                     unsigned int, fd, unsigned int, request);
@@ -7150,6 +7153,956 @@ PRE(sys_ioctl)
                    sizeof(struct vki_getinfo_fid2path));
       break;
 
+   /* V4L2 */
+   case VKI_V4L2_QUERYCAP: {
+      struct vki_v4l2_capability *data = (struct vki_v4l2_capability *)ARG3;
+      PRE_MEM_WRITE("ioctl(VKI_V4L2_QUERYCAP)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_ENUM_FMT: {
+      struct vki_v4l2_fmtdesc *data = (struct vki_v4l2_fmtdesc *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_ENUM_FMT).index", data->index);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_ENUM_FMT).type", data->type);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_ENUM_FMT).flags", data->flags);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_ENUM_FMT).description", data->description);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_ENUM_FMT).pixelformat", data->pixelformat);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_ENUM_FMT).reserved", data->reserved);
+      break;
+   }
+   case VKI_V4L2_G_FMT: {
+      struct vki_v4l2_format *data = (struct vki_v4l2_format *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_G_FMT).type", data->type);
+      switch (data->type) {
+      case VKI_V4L2_BUF_TYPE_VIDEO_CAPTURE:
+      case VKI_V4L2_BUF_TYPE_VIDEO_OUTPUT:
+         PRE_FIELD_READ("ioctl(VKI_V4L2_G_FMT).fmt.pix.priv", data->fmt.pix.priv);
+         PRE_FIELD_WRITE("ioctl(VKI_V4L2_G_FMT).fmt.pix", data->fmt.pix);
+         PRE_MEM_READ("ioctl(VKI_V4L2_G_FMT)",
+               (Addr)&data->type + sizeof(data->type) + sizeof(data->fmt.pix),
+               sizeof(*data) - sizeof(data->type) - sizeof(data->fmt.pix));
+         break;
+      case VKI_V4L2_BUF_TYPE_VBI_CAPTURE:
+      case VKI_V4L2_BUF_TYPE_VBI_OUTPUT:
+         PRE_FIELD_WRITE("ioctl(VKI_V4L2_G_FMT).fmt.vbi", data->fmt.vbi);
+         break;
+      case VKI_V4L2_BUF_TYPE_SLICED_VBI_CAPTURE:
+      case VKI_V4L2_BUF_TYPE_SLICED_VBI_OUTPUT:
+         PRE_FIELD_WRITE("ioctl(VKI_V4L2_G_FMT).fmt.sliced", data->fmt.sliced);
+         break;
+      case VKI_V4L2_BUF_TYPE_VIDEO_OVERLAY:
+      case VKI_V4L2_BUF_TYPE_VIDEO_OUTPUT_OVERLAY:
+         PRE_FIELD_READ("ioctl(VKI_V4L2_G_FMT).fmt.win.clips", data->fmt.win.clips);
+         PRE_FIELD_READ("ioctl(VKI_V4L2_G_FMT).fmt.win.bitmap", data->fmt.win.bitmap);
+         PRE_FIELD_READ("ioctl(VKI_V4L2_G_FMT).fmt.win.clipcount", data->fmt.win.clipcount);
+         if (data->fmt.win.clipcount && data->fmt.win.clips)
+            PRE_MEM_WRITE("ioctl(VKI_V4L2_G_FMT).fmt.win.clips[]",
+                  (Addr)data->fmt.win.clips,
+                  data->fmt.win.clipcount * sizeof(data->fmt.win.clips[0]));
+         PRE_FIELD_WRITE("ioctl(VKI_V4L2_G_FMT).fmt.win.clipcount", data->fmt.win.clipcount);
+         PRE_FIELD_WRITE("ioctl(VKI_V4L2_G_FMT).fmt.win.w", data->fmt.win.w);
+         PRE_FIELD_WRITE("ioctl(VKI_V4L2_G_FMT).fmt.win.field", data->fmt.win.field);
+         PRE_FIELD_WRITE("ioctl(VKI_V4L2_G_FMT).fmt.win.chromakey", data->fmt.win.chromakey);
+         PRE_FIELD_WRITE("ioctl(VKI_V4L2_G_FMT).fmt.win.global_alpha", data->fmt.win.global_alpha);
+         break;
+      case VKI_V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE:
+      case VKI_V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE:
+         PRE_FIELD_WRITE("ioctl(VKI_V4L2_G_FMT).fmt.pix_mp", data->fmt.pix_mp);
+         break;
+      case VKI_V4L2_BUF_TYPE_SDR_CAPTURE:
+         PRE_FIELD_WRITE("ioctl(VKI_V4L2_G_FMT).fmt.sdr", data->fmt.sdr);
+         break;
+      }
+      break;
+   }
+   case VKI_V4L2_S_FMT: {
+      struct vki_v4l2_format *data = (struct vki_v4l2_format *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_S_FMT).type", data->type);
+      switch (data->type) {
+      case VKI_V4L2_BUF_TYPE_VIDEO_CAPTURE:
+      case VKI_V4L2_BUF_TYPE_VIDEO_OUTPUT:
+         PRE_MEM_READ("ioctl(VKI_V4L2_S_FMT)",
+               (Addr)&data->type + sizeof(data->type),
+               sizeof(*data) - sizeof(data->type));
+         break;
+      case VKI_V4L2_BUF_TYPE_VBI_CAPTURE:
+      case VKI_V4L2_BUF_TYPE_VBI_OUTPUT:
+         PRE_FIELD_READ("ioctl(VKI_V4L2_S_FMT).fmt.vbi", data->fmt.vbi);
+         break;
+      case VKI_V4L2_BUF_TYPE_SLICED_VBI_CAPTURE:
+      case VKI_V4L2_BUF_TYPE_SLICED_VBI_OUTPUT:
+         PRE_FIELD_READ("ioctl(VKI_V4L2_S_FMT).fmt.sliced", data->fmt.sliced);
+         break;
+      case VKI_V4L2_BUF_TYPE_VIDEO_OVERLAY:
+      case VKI_V4L2_BUF_TYPE_VIDEO_OUTPUT_OVERLAY:
+         PRE_FIELD_READ("ioctl(VKI_V4L2_S_FMT).fmt.win", data->fmt.win);
+         if (data->fmt.win.clipcount && data->fmt.win.clips)
+            PRE_MEM_READ("ioctl(VKI_V4L2_S_FMT).fmt.win.clips[]",
+                  (Addr)data->fmt.win.clips,
+                  data->fmt.win.clipcount * sizeof(data->fmt.win.clips[0]));
+         if (data->fmt.win.bitmap)
+            PRE_MEM_READ("ioctl(VKI_V4L2_S_FMT).fmt.win.bitmap[]",
+                  (Addr)data->fmt.win.bitmap,
+                  data->fmt.win.w.height * ((data->fmt.win.w.width + 7) / 8));
+         break;
+      case VKI_V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE:
+      case VKI_V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE:
+         PRE_FIELD_READ("ioctl(VKI_V4L2_S_FMT).fmt.pix_mp", data->fmt.pix_mp);
+         break;
+      case VKI_V4L2_BUF_TYPE_SDR_CAPTURE:
+         PRE_FIELD_READ("ioctl(VKI_V4L2_S_FMT).fmt.sdr", data->fmt.sdr);
+         break;
+      }
+      break;
+   }
+   case VKI_V4L2_TRY_FMT: {
+      struct vki_v4l2_format *data = (struct vki_v4l2_format *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_TRY_FMT).type", data->type);
+      switch (data->type) {
+      case VKI_V4L2_BUF_TYPE_VIDEO_CAPTURE:
+      case VKI_V4L2_BUF_TYPE_VIDEO_OUTPUT:
+         PRE_MEM_READ("ioctl(VKI_V4L2_TRY_FMT)",
+               (Addr)&data->type + sizeof(data->type),
+               sizeof(*data) - sizeof(data->type));
+         break;
+      case VKI_V4L2_BUF_TYPE_VBI_CAPTURE:
+      case VKI_V4L2_BUF_TYPE_VBI_OUTPUT:
+         PRE_FIELD_READ("ioctl(VKI_V4L2_TRY_FMT).fmt.vbi", data->fmt.vbi);
+         break;
+      case VKI_V4L2_BUF_TYPE_SLICED_VBI_CAPTURE:
+      case VKI_V4L2_BUF_TYPE_SLICED_VBI_OUTPUT:
+         PRE_FIELD_READ("ioctl(VKI_V4L2_TRY_FMT).fmt.sliced", data->fmt.sliced);
+         break;
+      case VKI_V4L2_BUF_TYPE_VIDEO_OVERLAY:
+      case VKI_V4L2_BUF_TYPE_VIDEO_OUTPUT_OVERLAY:
+         PRE_FIELD_READ("ioctl(VKI_V4L2_TRY_FMT).fmt.win", data->fmt.win);
+         if (data->fmt.win.clipcount && data->fmt.win.clips)
+            PRE_MEM_READ("ioctl(VKI_V4L2_TRY_FMT).fmt.win.clips[]",
+                  (Addr)data->fmt.win.clips,
+                  data->fmt.win.clipcount * sizeof(data->fmt.win.clips[0]));
+         if (data->fmt.win.bitmap)
+            PRE_MEM_READ("ioctl(VKI_V4L2_TRY_FMT).fmt.win.bitmap[]",
+                  (Addr)data->fmt.win.bitmap,
+                  data->fmt.win.w.height * ((data->fmt.win.w.width + 7) / 8));
+         break;
+      case VKI_V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE:
+      case VKI_V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE:
+         PRE_FIELD_READ("ioctl(VKI_V4L2_TRY_FMT).fmt.pix_mp", data->fmt.pix_mp);
+         break;
+      case VKI_V4L2_BUF_TYPE_SDR_CAPTURE:
+         PRE_FIELD_READ("ioctl(VKI_V4L2_TRY_FMT).fmt.sdr", data->fmt.sdr);
+         break;
+      }
+      break;
+   }
+   case VKI_V4L2_REQBUFS: {
+      struct vki_v4l2_requestbuffers *data = (struct vki_v4l2_requestbuffers *)ARG3;
+      PRE_MEM_READ("ioctl(VKI_V4L2_REQBUFS)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_QUERYBUF: {
+      struct vki_v4l2_buffer *data = (struct vki_v4l2_buffer *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_QUERYBUF).type", data->type);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_QUERYBUF).index", data->index);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_QUERYBUF).reserved", data->reserved);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_QUERYBUF).reserved2", data->reserved2);
+      if (data->type == VKI_V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE ||
+            data->type == VKI_V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE) {
+         unsigned i;
+
+         PRE_FIELD_READ("ioctl(VKI_V4L2_QUERYBUF).length", data->length);
+         PRE_FIELD_READ("ioctl(VKI_V4L2_QUERYBUF).m.planes", data->m.planes);
+         for (i = 0; i < data->length; i++) {
+            PRE_FIELD_WRITE("ioctl(VKI_V4L2_QUERYBUF).m.planes[].bytesused", data->m.planes[i].bytesused);
+            PRE_FIELD_WRITE("ioctl(VKI_V4L2_QUERYBUF).m.planes[].length", data->m.planes[i].length);
+            PRE_FIELD_WRITE("ioctl(VKI_V4L2_QUERYBUF).m.planes[].m", data->m.planes[i].m);
+            PRE_FIELD_WRITE("ioctl(VKI_V4L2_QUERYBUF).m.planes[].data_offset", data->m.planes[i].data_offset);
+            PRE_FIELD_WRITE("ioctl(VKI_V4L2_QUERYBUF).m.planes[].reserved", data->m.planes[i].reserved);
+         }
+      } else {
+         PRE_FIELD_WRITE("ioctl(VKI_V4L2_QUERYBUF).m", data->m);
+         PRE_FIELD_WRITE("ioctl(VKI_V4L2_QUERYBUF).length", data->length);
+      }
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_QUERYBUF).bytesused", data->bytesused);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_QUERYBUF).flags", data->flags);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_QUERYBUF).field", data->field);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_QUERYBUF).timestamp", data->timestamp);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_QUERYBUF).timecode", data->timecode);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_QUERYBUF).sequence", data->sequence);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_QUERYBUF).memory", data->memory);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_QUERYBUF).sequence", data->sequence);
+      break;
+   }
+   case VKI_V4L2_G_FBUF: {
+      struct vki_v4l2_framebuffer *data = (struct vki_v4l2_framebuffer *)ARG3;
+      PRE_MEM_WRITE("ioctl(VKI_V4L2_G_FBUF)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_S_FBUF: {
+      struct vki_v4l2_framebuffer *data = (struct vki_v4l2_framebuffer *)ARG3;
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_S_FBUF).capability", data->capability);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_S_FBUF).flags", data->flags);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_S_FBUF).base", data->base);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_S_FBUF).fmt", data->fmt);
+      break;
+   }
+   case VKI_V4L2_OVERLAY: {
+      int *data = (int *)ARG3;
+      PRE_MEM_READ("ioctl(VKI_V4L2_OVERLAY)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_QBUF: {
+      struct vki_v4l2_buffer *data = (struct vki_v4l2_buffer *)ARG3;
+      int is_output = data->type == VKI_V4L2_BUF_TYPE_VIDEO_OUTPUT ||
+         data->type == VKI_V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE ||
+         data->type == VKI_V4L2_BUF_TYPE_VBI_OUTPUT ||
+         data->type == VKI_V4L2_BUF_TYPE_SLICED_VBI_OUTPUT;
+
+      PRE_FIELD_READ("ioctl(VKI_V4L2_QBUF).type", data->type);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_QBUF).index", data->index);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_QBUF).flags", data->flags);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_QBUF).memory", data->memory);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_QBUF).reserved", data->reserved);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_QBUF).reserved2", data->reserved2);
+      if (is_output) {
+         PRE_FIELD_READ("ioctl(VKI_V4L2_QBUF).bytesused", data->bytesused);
+         PRE_FIELD_READ("ioctl(VKI_V4L2_QBUF).field", data->field);
+      }
+      if (data->type == VKI_V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE ||
+            data->type == VKI_V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE) {
+         unsigned i;
+
+         PRE_FIELD_READ("ioctl(VKI_V4L2_QBUF).length", data->length);
+         PRE_FIELD_READ("ioctl(VKI_V4L2_QBUF).m.planes", data->m.planes);
+         for (i = 0; i < data->length; i++) {
+            if (is_output) {
+               PRE_FIELD_READ("ioctl(VKI_V4L2_QBUF).m.planes[].bytesused", data->m.planes[i].bytesused);
+               PRE_FIELD_READ("ioctl(VKI_V4L2_QBUF).m.planes[].data_offset", data->m.planes[i].data_offset);
+            }
+            if (data->memory == VKI_V4L2_MEMORY_MMAP)
+               PRE_FIELD_WRITE("ioctl(VKI_V4L2_QBUF).m.planes[].m", data->m.planes[i].m);
+            else if (data->memory == VKI_V4L2_MEMORY_DMABUF)
+               PRE_FIELD_READ("ioctl(VKI_V4L2_QBUF).m.planes[].m.fd", data->m.planes[i].m.fd);
+            else
+               PRE_FIELD_READ("ioctl(VKI_V4L2_QBUF).m.planes[].m", data->m.planes[i].m);
+            PRE_FIELD_READ("ioctl(VKI_V4L2_QBUF).m.planes[].reserved", data->m.planes[i].reserved);
+         }
+      } else {
+         if (data->memory == VKI_V4L2_MEMORY_MMAP)
+            PRE_FIELD_WRITE("ioctl(VKI_V4L2_QBUF).m", data->m);
+         else if (data->memory == VKI_V4L2_MEMORY_DMABUF)
+            PRE_FIELD_READ("ioctl(VKI_V4L2_QBUF).m.fd", data->m.fd);
+         else
+            PRE_FIELD_READ("ioctl(VKI_V4L2_QBUF).m", data->m);
+         if (is_output) {
+            PRE_FIELD_READ("ioctl(VKI_V4L2_QBUF).bytesused", data->bytesused);
+            PRE_FIELD_READ("ioctl(VKI_V4L2_QBUF).field", data->field);
+         }
+      }
+      if (is_output && (data->flags & VKI_V4L2_BUF_FLAG_TIMESTAMP_MASK) == VKI_V4L2_BUF_FLAG_TIMESTAMP_COPY) {
+         PRE_FIELD_READ("ioctl(VKI_V4L2_QBUF).timestamp", data->timestamp);
+         PRE_FIELD_READ("ioctl(VKI_V4L2_QBUF).timecode", data->timecode);
+      }
+      break;
+   }
+   case VKI_V4L2_EXPBUF: {
+      struct vki_v4l2_exportbuffer *data = (struct vki_v4l2_exportbuffer *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_EXPBUF).type", data->type);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_EXPBUF).index", data->index);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_EXPBUF).plane", data->plane);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_EXPBUF).flags", data->flags);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_EXPBUF).fd", data->fd);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_EXPBUF).reserved", data->reserved);
+      break;
+   }
+   case VKI_V4L2_DQBUF: {
+      struct vki_v4l2_buffer *data = (struct vki_v4l2_buffer *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_DQBUF).type", data->type);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_DQBUF).index", data->index);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_DQBUF).memory", data->memory);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_DQBUF).reserved", data->reserved);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_DQBUF).reserved2", data->reserved2);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_DQBUF).bytesused", data->bytesused);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_DQBUF).field", data->field);
+      if (data->type == VKI_V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE ||
+            data->type == VKI_V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE) {
+         unsigned i;
+
+         PRE_FIELD_READ("ioctl(VKI_V4L2_DQBUF).length", data->length);
+         PRE_FIELD_READ("ioctl(VKI_V4L2_DQBUF).m.planes", data->m.planes);
+         for (i = 0; i < data->length; i++) {
+            PRE_FIELD_WRITE("ioctl(VKI_V4L2_DQBUF).m.planes[].bytesused", data->m.planes[i].bytesused);
+            PRE_FIELD_WRITE("ioctl(VKI_V4L2_DQBUF).m.planes[].data_offset", data->m.planes[i].data_offset);
+            PRE_FIELD_WRITE("ioctl(VKI_V4L2_DQBUF).m.planes[].length", data->m.planes[i].length);
+            PRE_FIELD_WRITE("ioctl(VKI_V4L2_DQBUF).m.planes[].m", data->m.planes[i].m);
+            PRE_FIELD_READ("ioctl(VKI_V4L2_DQBUF).m.planes[].reserved", data->m.planes[i].reserved);
+         }
+      } else {
+         PRE_FIELD_WRITE("ioctl(VKI_V4L2_DQBUF).m", data->m);
+         PRE_FIELD_WRITE("ioctl(VKI_V4L2_DQBUF).length", data->length);
+         PRE_FIELD_WRITE("ioctl(VKI_V4L2_DQBUF).bytesused", data->bytesused);
+         PRE_FIELD_WRITE("ioctl(VKI_V4L2_DQBUF).field", data->field);
+      }
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_DQBUF).timestamp", data->timestamp);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_DQBUF).timecode", data->timecode);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_DQBUF).sequence", data->sequence);
+      break;
+   }
+   case VKI_V4L2_STREAMON: {
+      int *data = (int *)ARG3;
+      PRE_MEM_READ("ioctl(VKI_V4L2_STREAMON)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_STREAMOFF: {
+      int *data = (int *)ARG3;
+      PRE_MEM_READ("ioctl(VKI_V4L2_STREAMOFF)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_G_PARM: {
+      struct vki_v4l2_streamparm *data = (struct vki_v4l2_streamparm *)ARG3;
+      int is_output = data->type == VKI_V4L2_BUF_TYPE_VIDEO_OUTPUT ||
+         data->type == VKI_V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE ||
+         data->type == VKI_V4L2_BUF_TYPE_VBI_OUTPUT ||
+         data->type == VKI_V4L2_BUF_TYPE_SLICED_VBI_OUTPUT;
+
+      PRE_FIELD_READ("ioctl(VKI_V4L2_G_PARM).type", data->type);
+      if (is_output) {
+         PRE_MEM_WRITE("ioctl(VKI_V4L2_G_PARM)", (Addr)&data->parm.output,
+            sizeof(data->parm.output) - sizeof(data->parm.output.reserved));
+         PRE_FIELD_READ("ioctl(VKI_V4L2_G_PARM).parm.output.reserved", data->parm.output.reserved);
+      } else {
+         PRE_MEM_WRITE("ioctl(VKI_V4L2_G_PARM)", (Addr)&data->parm.capture,
+            sizeof(data->parm.capture) - sizeof(data->parm.capture.reserved));
+         PRE_FIELD_READ("ioctl(VKI_V4L2_G_PARM).parm.capture.reserved", data->parm.capture.reserved);
+      }
+      break;
+   }
+   case VKI_V4L2_S_PARM: {
+      struct vki_v4l2_streamparm *data = (struct vki_v4l2_streamparm *)ARG3;
+      int is_output = data->type == VKI_V4L2_BUF_TYPE_VIDEO_OUTPUT ||
+         data->type == VKI_V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE ||
+         data->type == VKI_V4L2_BUF_TYPE_VBI_OUTPUT ||
+         data->type == VKI_V4L2_BUF_TYPE_SLICED_VBI_OUTPUT;
+
+      PRE_FIELD_READ("ioctl(VKI_V4L2_S_PARM).type", data->type);
+      if (is_output)
+         PRE_FIELD_READ("ioctl(VKI_V4L2_S_PARM).parm.output", data->parm.output);
+      else
+         PRE_FIELD_READ("ioctl(VKI_V4L2_S_PARM).parm.capture", data->parm.capture);
+      break;
+   }
+   case VKI_V4L2_G_STD: {
+      vki_v4l2_std_id *data = (vki_v4l2_std_id *)ARG3;
+      PRE_MEM_WRITE("ioctl(VKI_V4L2_G_STD)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_S_STD: {
+      vki_v4l2_std_id *data = (vki_v4l2_std_id *)ARG3;
+      PRE_MEM_READ("ioctl(VKI_V4L2_S_STD)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_ENUMSTD: {
+      struct vki_v4l2_standard *data = (struct vki_v4l2_standard *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_ENUMSTD).index", data->index);
+      PRE_MEM_WRITE("ioctl(VKI_V4L2_ENUMSTD)", (Addr)&data->id, sizeof(*data) - sizeof(data->index));
+      break;
+   }
+   case VKI_V4L2_ENUMINPUT: {
+      struct vki_v4l2_input *data = (struct vki_v4l2_input *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_ENUMINPUT).index", data->index);
+      PRE_MEM_WRITE("ioctl(VKI_V4L2_ENUMINPUT)", (Addr)data->name, sizeof(*data) - sizeof(data->index));
+      break;
+   }
+   case VKI_V4L2_G_CTRL: {
+      struct vki_v4l2_control *data = (struct vki_v4l2_control *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_G_CTRL).id", data->id);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_G_CTRL).value", data->value);
+      break;
+   }
+   case VKI_V4L2_S_CTRL: {
+      struct vki_v4l2_control *data = (struct vki_v4l2_control *)ARG3;
+      PRE_MEM_READ("ioctl(VKI_V4L2_S_CTRL)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_G_TUNER: {
+      struct vki_v4l2_tuner *data = (struct vki_v4l2_tuner *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_G_TUNER).index", data->index);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_G_TUNER).reserved", data->reserved);
+      PRE_MEM_WRITE("ioctl(VKI_V4L2_G_TUNER)", (Addr)data->name,
+            sizeof(*data) - sizeof(data->index) - sizeof(data->reserved));
+      break;
+   }
+   case VKI_V4L2_S_TUNER: {
+      struct vki_v4l2_tuner *data = (struct vki_v4l2_tuner *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_S_TUNER).index", data->index);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_S_TUNER).audmode", data->audmode);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_S_TUNER).reserved", data->reserved);
+      break;
+   }
+   case VKI_V4L2_G_AUDIO: {
+      struct vki_v4l2_audio *data = (struct vki_v4l2_audio *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_G_AUDIO).index", data->index);
+      PRE_MEM_WRITE("ioctl(VKI_V4L2_G_AUDIO)", (Addr)data->name,
+            sizeof(*data) - sizeof(data->index) - sizeof(data->reserved));
+      PRE_FIELD_READ("ioctl(VKI_V4L2_G_AUDIO).reserved", data->reserved);
+      break;
+   }
+   case VKI_V4L2_S_AUDIO: {
+      struct vki_v4l2_audio *data = (struct vki_v4l2_audio *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_S_AUDIO).index", data->index);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_S_AUDIO).mode", data->mode);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_S_AUDIO).reserved", data->reserved);
+      break;
+   }
+   case VKI_V4L2_QUERYCTRL: {
+      struct vki_v4l2_queryctrl *data = (struct vki_v4l2_queryctrl *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_QUERYCTRL).id", data->id);
+      PRE_MEM_WRITE("ioctl(VKI_V4L2_QUERYCTRL)", (Addr)&data->type,
+            sizeof(*data) - sizeof(data->id));
+      break;
+   }
+   case VKI_V4L2_QUERYMENU: {
+      struct vki_v4l2_querymenu *data = (struct vki_v4l2_querymenu *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_QUERYMENU).id", data->id);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_QUERYMENU).index", data->index);
+      PRE_MEM_WRITE("ioctl(VKI_V4L2_QUERYMENU)", (Addr)data->name,
+            sizeof(*data) - sizeof(data->id) - sizeof(data->index));
+      break;
+   }
+   case VKI_V4L2_G_INPUT: {
+      int *data = (int *)ARG3;
+      PRE_MEM_WRITE("ioctl(VKI_V4L2_G_INPUT)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_S_INPUT: {
+      int *data = (int *)ARG3;
+      PRE_MEM_READ("ioctl(VKI_V4L2_S_INPUT)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_G_EDID: {
+      struct vki_v4l2_edid *data = (struct vki_v4l2_edid *)ARG3;
+      PRE_MEM_READ("ioctl(VKI_V4L2_G_EDID)", (Addr)data, sizeof(*data));
+      if (data->blocks && data->edid)
+         PRE_MEM_WRITE("ioctl(VKI_V4L2_G_EDID)", (Addr)data->edid, data->blocks * 128);
+      break;
+   }
+   case VKI_V4L2_S_EDID: {
+      struct vki_v4l2_edid *data = (struct vki_v4l2_edid *)ARG3;
+      PRE_MEM_READ("ioctl(VKI_V4L2_S_EDID)", (Addr)data, sizeof(*data));
+      if (data->blocks && data->edid)
+         PRE_MEM_READ("ioctl(VKI_V4L2_S_EDID)", (Addr)data->edid, data->blocks * 128);
+      break;
+   }
+   case VKI_V4L2_G_OUTPUT: {
+      int *data = (int *)ARG3;
+      PRE_MEM_WRITE("ioctl(VKI_V4L2_G_OUTPUT)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_S_OUTPUT: {
+      int *data = (int *)ARG3;
+      PRE_MEM_READ("ioctl(VKI_V4L2_S_OUTPUT)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_ENUMOUTPUT: {
+      struct vki_v4l2_output *data = (struct vki_v4l2_output *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_ENUMOUTPUT).index", data->index);
+      PRE_MEM_WRITE("ioctl(VKI_V4L2_ENUMOUTPUT)", (Addr)data->name, sizeof(*data) - sizeof(data->index));
+      break;
+   }
+   case VKI_V4L2_G_AUDOUT: {
+      struct vki_v4l2_audioout *data = (struct vki_v4l2_audioout *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_G_AUDOUT).index", data->index);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_G_AUDOUT).reserved", data->reserved);
+      PRE_MEM_WRITE("ioctl(VKI_V4L2_G_AUDOUT)", (Addr)data->name,
+            sizeof(*data) - sizeof(data->index) - sizeof(data->reserved));
+      break;
+   }
+   case VKI_V4L2_S_AUDOUT: {
+      struct vki_v4l2_audioout *data = (struct vki_v4l2_audioout *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_S_AUDOUT).index", data->index);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_S_AUDOUT).reserved", data->reserved);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_S_AUDOUT).mode", data->mode);
+      break;
+   }
+   case VKI_V4L2_G_MODULATOR: {
+      struct vki_v4l2_modulator *data = (struct vki_v4l2_modulator *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_G_MODULATOR).index", data->index);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_G_MODULATOR).reserved", data->reserved);
+      PRE_MEM_WRITE("ioctl(VKI_V4L2_G_MODULATOR)", (Addr)data->name,
+            sizeof(*data) - sizeof(data->index) - sizeof(data->reserved));
+      break;
+   }
+   case VKI_V4L2_S_MODULATOR: {
+      struct vki_v4l2_modulator *data = (struct vki_v4l2_modulator *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_S_MODULATOR).index", data->index);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_S_MODULATOR).txsubchans", data->txsubchans);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_S_MODULATOR).reserved", data->reserved);
+      break;
+   }
+   case VKI_V4L2_G_FREQUENCY: {
+      struct vki_v4l2_frequency *data = (struct vki_v4l2_frequency *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_G_FREQUENCY).tuner", data->tuner);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_G_FREQUENCY).reserved", data->reserved);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_G_FREQUENCY).type", data->type);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_G_FREQUENCY).frequency", data->frequency);
+      break;
+   }
+   case VKI_V4L2_S_FREQUENCY: {
+      struct vki_v4l2_frequency *data = (struct vki_v4l2_frequency *)ARG3;
+      PRE_MEM_READ("ioctl(VKI_V4L2_S_FREQUENCY)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_CROPCAP: {
+      struct vki_v4l2_cropcap *data = (struct vki_v4l2_cropcap *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_CROPCAP)", data->type);
+      PRE_MEM_WRITE("ioctl(VKI_V4L2_CROPCAP)", (Addr)&data->bounds, sizeof(*data) - sizeof(data->type));
+      break;
+   }
+   case VKI_V4L2_G_CROP: {
+      struct vki_v4l2_crop *data = (struct vki_v4l2_crop *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_G_CROP).type", data->type);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_G_CROP).c", data->c);
+      break;
+   }
+   case VKI_V4L2_S_CROP: {
+      struct vki_v4l2_crop *data = (struct vki_v4l2_crop *)ARG3;
+      PRE_MEM_READ("ioctl(VKI_V4L2_S_CROP)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_G_JPEGCOMP: {
+      struct vki_v4l2_jpegcompression *data = (struct vki_v4l2_jpegcompression *)ARG3;
+      PRE_MEM_WRITE("ioctl(VKI_V4L2_G_JPEGCOMP)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_S_JPEGCOMP: {
+      struct vki_v4l2_jpegcompression *data = (struct vki_v4l2_jpegcompression *)ARG3;
+      PRE_MEM_READ("ioctl(VKI_V4L2_S_JPEGCOMP)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_QUERYSTD: {
+      vki_v4l2_std_id *data = (vki_v4l2_std_id *)ARG3;
+      PRE_MEM_WRITE("ioctl(VKI_V4L2_QUERYSTD)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_ENUMAUDIO: {
+      struct vki_v4l2_audio *data = (struct vki_v4l2_audio *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_ENUMAUDIO).index", data->index);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_ENUMAUDIO).reserved", data->reserved);
+      PRE_MEM_WRITE("ioctl(VKI_V4L2_ENUMAUDIO)", (Addr)data->name,
+            sizeof(*data) - sizeof(data->index) - sizeof(data->reserved));
+      break;
+   }
+   case VKI_V4L2_ENUMAUDOUT: {
+      struct vki_v4l2_audioout *data = (struct vki_v4l2_audioout *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_ENUMAUDOUT).index", data->index);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_ENUMAUDOUT).reserved", data->reserved);
+      PRE_MEM_WRITE("ioctl(VKI_V4L2_ENUMAUDOUT)", (Addr)data->name,
+            sizeof(*data) - sizeof(data->index) - sizeof(data->reserved));
+      break;
+   }
+   case VKI_V4L2_G_PRIORITY: {
+      __vki_u32 *data = (__vki_u32 *)ARG3;
+      PRE_MEM_WRITE("ioctl(VKI_V4L2_G_PRIORITY)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_S_PRIORITY: {
+      __vki_u32 *data = (__vki_u32 *)ARG3;
+      PRE_MEM_READ("ioctl(VKI_V4L2_S_PRIORITY)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_G_SLICED_VBI_CAP: {
+      struct vki_v4l2_sliced_vbi_cap *data = (struct vki_v4l2_sliced_vbi_cap *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_G_SLICED_VBI_CAP).type", data->type);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_G_SLICED_VBI_CAP).reserved", data->reserved);
+      PRE_MEM_WRITE("ioctl(VKI_V4L2_G_SLICED_VBI_CAP)", (Addr)data,
+            sizeof(*data) - sizeof(data->type) - sizeof(data->reserved));
+      break;
+   }
+   case VKI_V4L2_G_EXT_CTRLS: {
+      struct vki_v4l2_ext_controls *data = (struct vki_v4l2_ext_controls *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_G_EXT_CTRLS).ctrl_class", data->ctrl_class);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_G_EXT_CTRLS).count", data->count);
+      if (data->count) {
+         unsigned i;
+
+         PRE_FIELD_READ("ioctl(VKI_V4L2_G_EXT_CTRLS).controls", data->controls);
+         for (i = 0; i < data->count; i++) {
+            PRE_FIELD_READ("ioctl(VKI_V4L2_G_EXT_CTRLS).controls[].id", data->controls[i].id);
+            PRE_FIELD_READ("ioctl(VKI_V4L2_G_EXT_CTRLS).controls[].size", data->controls[i].size);
+            PRE_FIELD_READ("ioctl(VKI_V4L2_G_EXT_CTRLS).controls[].reserved2", data->controls[i].reserved2);
+            if (data->controls[i].size) {
+               PRE_FIELD_READ("ioctl(VKI_V4L2_G_EXT_CTRLS).controls[].ptr", data->controls[i].ptr);
+               PRE_MEM_WRITE("ioctl(VKI_V4L2_G_EXT_CTRLS).controls[].ptr[]",
+                     (Addr)data->controls[i].ptr, data->controls[i].size);
+            } else {
+               PRE_FIELD_WRITE("ioctl(VKI_V4L2_G_EXT_CTRLS).controls[].value64",
+                     data->controls[i].value64);
+            }
+         }
+      }
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_G_EXT_CTRLS).error_idx", data->error_idx);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_G_EXT_CTRLS).reserved", data->reserved);
+      break;
+   }
+   case VKI_V4L2_S_EXT_CTRLS: {
+      struct vki_v4l2_ext_controls *data = (struct vki_v4l2_ext_controls *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_S_EXT_CTRLS).ctrl_class", data->ctrl_class);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_S_EXT_CTRLS).count", data->count);
+      if (data->count) {
+         unsigned i;
+
+         PRE_FIELD_READ("ioctl(VKI_V4L2_S_EXT_CTRLS).controls", data->controls);
+         PRE_MEM_READ("ioctl(VKI_V4L2_S_EXT_CTRLS)", (Addr)data->controls,
+               data->count * sizeof(data->controls[0]));
+         for (i = 0; i < data->count; i++) {
+            if (data->controls[i].size) {
+               PRE_MEM_READ("ioctl(VKI_V4L2_S_EXT_CTRLS).controls[].ptr[]",
+                     (Addr)data->controls[i].ptr, data->controls[i].size);
+            }
+         }
+      }
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_S_EXT_CTRLS).error_idx", data->error_idx);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_S_EXT_CTRLS).reserved", data->reserved);
+      break;
+   }
+   case VKI_V4L2_TRY_EXT_CTRLS: {
+      struct vki_v4l2_ext_controls *data = (struct vki_v4l2_ext_controls *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_TRY_EXT_CTRLS).ctrl_class", data->ctrl_class);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_TRY_EXT_CTRLS).count", data->count);
+      if (data->count) {
+         unsigned i;
+
+         PRE_FIELD_READ("ioctl(VKI_V4L2_TRY_EXT_CTRLS).controls", data->controls);
+         PRE_MEM_READ("ioctl(VKI_V4L2_TRY_EXT_CTRLS)", (Addr)data->controls,
+               data->count * sizeof(data->controls[0]));
+         for (i = 0; i < data->count; i++) {
+            if (data->controls[i].size) {
+               PRE_MEM_READ("ioctl(VKI_V4L2_TRY_EXT_CTRLS).controls[].ptr[]",
+                     (Addr)data->controls[i].ptr, data->controls[i].size);
+            }
+         }
+      }
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_TRY_EXT_CTRLS).error_idx", data->error_idx);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_TRY_EXT_CTRLS).reserved", data->reserved);
+      break;
+   }
+   case VKI_V4L2_ENUM_FRAMESIZES: {
+      struct vki_v4l2_frmsizeenum *data = (struct vki_v4l2_frmsizeenum *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_ENUM_FRAMESIZES).index", data->index);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_ENUM_FRAMESIZES).pixel_format", data->pixel_format);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_ENUM_FRAMESIZES).reserved", data->reserved);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_ENUM_FRAMESIZES).type", data->type);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_ENUM_FRAMESIZES).stepwise", data->stepwise);
+      break;
+   }
+   case VKI_V4L2_ENUM_FRAMEINTERVALS: {
+      struct vki_v4l2_frmivalenum *data = (struct vki_v4l2_frmivalenum *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_ENUM_FRAMEINTERVALS).index", data->index);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_ENUM_FRAMEINTERVALS).pixel_format", data->pixel_format);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_ENUM_FRAMEINTERVALS).width", data->width);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_ENUM_FRAMEINTERVALS).height", data->height);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_ENUM_FRAMEINTERVALS).reserved", data->reserved);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_ENUM_FRAMEINTERVALS).type", data->type);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_ENUM_FRAMEINTERVALS).stepwise", data->stepwise);
+      break;
+   }
+   case VKI_V4L2_G_ENC_INDEX: {
+      struct vki_v4l2_enc_idx *data = (struct vki_v4l2_enc_idx *)ARG3;
+      PRE_MEM_READ("ioctl(VKI_V4L2_G_ENC_INDEX)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_ENCODER_CMD: {
+      struct vki_v4l2_encoder_cmd *data = (struct vki_v4l2_encoder_cmd *)ARG3;
+      PRE_MEM_READ("ioctl(VKI_V4L2_ENCODER_CMD)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_TRY_ENCODER_CMD: {
+      struct vki_v4l2_encoder_cmd *data = (struct vki_v4l2_encoder_cmd *)ARG3;
+      PRE_MEM_READ("ioctl(VKI_V4L2_TRY_ENCODER_CMD)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_DBG_S_REGISTER: {
+      struct vki_v4l2_dbg_register *data = (struct vki_v4l2_dbg_register *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_DBG_S_REGISTER).match.type", data->match.type);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_DBG_S_REGISTER).match.addr", data->match.addr);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_DBG_S_REGISTER).reg", data->reg);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_DBG_S_REGISTER).val", data->val);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_DBG_S_REGISTER).size", data->size);
+      break;
+   }
+   case VKI_V4L2_DBG_G_REGISTER: {
+      struct vki_v4l2_dbg_register *data = (struct vki_v4l2_dbg_register *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_DBG_G_REGISTER).match.type", data->match.type);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_DBG_G_REGISTER).match.addr", data->match.addr);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_DBG_G_REGISTER).reg", data->reg);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_DBG_G_REGISTER).val", data->val);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_DBG_G_REGISTER).size", data->size);
+      break;
+   }
+   case VKI_V4L2_S_HW_FREQ_SEEK: {
+      struct vki_v4l2_hw_freq_seek *data = (struct vki_v4l2_hw_freq_seek *)ARG3;
+      PRE_MEM_READ("ioctl(VKI_V4L2_S_HW_FREQ_SEEK)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_S_DV_TIMINGS: {
+      struct vki_v4l2_dv_timings *data = (struct vki_v4l2_dv_timings *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_S_DV_TIMINGS).type", data->type);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_S_DV_TIMINGS).bt", data->bt);
+      break;
+   }
+   case VKI_V4L2_G_DV_TIMINGS: {
+      struct vki_v4l2_dv_timings *data = (struct vki_v4l2_dv_timings *)ARG3;
+      PRE_MEM_WRITE("ioctl(VKI_V4L2_G_DV_TIMINGS)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_DQEVENT: {
+      struct vki_v4l2_event *data = (struct vki_v4l2_event *)ARG3;
+      PRE_MEM_WRITE("ioctl(VKI_V4L2_DQEVENT)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_SUBSCRIBE_EVENT: {
+      struct vki_v4l2_event_subscription *data = (struct vki_v4l2_event_subscription *)ARG3;
+      PRE_MEM_READ("ioctl(VKI_V4L2_SUBSCRIBE_EVENT)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_UNSUBSCRIBE_EVENT: {
+      struct vki_v4l2_event_subscription *data = (struct vki_v4l2_event_subscription *)ARG3;
+      PRE_MEM_READ("ioctl(VKI_V4L2_UNSUBSCRIBE_EVENT)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_CREATE_BUFS: {
+      struct vki_v4l2_create_buffers *data = (struct vki_v4l2_create_buffers *)ARG3;
+      struct vki_v4l2_format *fmt = &data->format;
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_CREATE_BUFS).index", data->index);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_CREATE_BUFS).count", data->count);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_CREATE_BUFS).memory", data->memory);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_CREATE_BUFS).reserved", data->reserved);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_CREATE_BUFS).format.type", fmt->type);
+      switch (fmt->type) {
+      case VKI_V4L2_BUF_TYPE_VIDEO_CAPTURE:
+      case VKI_V4L2_BUF_TYPE_VIDEO_OUTPUT:
+         PRE_FIELD_READ("ioctl(VKI_V4L2_CREATE_BUFS).format.pix", fmt->fmt.raw_data);
+         break;
+      case VKI_V4L2_BUF_TYPE_VBI_CAPTURE:
+      case VKI_V4L2_BUF_TYPE_VBI_OUTPUT:
+         PRE_FIELD_READ("ioctl(VKI_V4L2_CREATE_BUFS).format.vbi", fmt->fmt.vbi);
+         break;
+      case VKI_V4L2_BUF_TYPE_SLICED_VBI_CAPTURE:
+      case VKI_V4L2_BUF_TYPE_SLICED_VBI_OUTPUT:
+         PRE_FIELD_READ("ioctl(VKI_V4L2_CREATE_BUFS).format.sliced", fmt->fmt.sliced);
+         break;
+      case VKI_V4L2_BUF_TYPE_VIDEO_OVERLAY:
+      case VKI_V4L2_BUF_TYPE_VIDEO_OUTPUT_OVERLAY:
+         PRE_FIELD_READ("ioctl(VKI_V4L2_CREATE_BUFS).format.win", fmt->fmt.win);
+         break;
+      case VKI_V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE:
+      case VKI_V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE:
+         PRE_FIELD_READ("ioctl(VKI_V4L2_CREATE_BUFS).format.pix_mp", fmt->fmt.pix_mp);
+         break;
+      case VKI_V4L2_BUF_TYPE_SDR_CAPTURE:
+         PRE_FIELD_READ("ioctl(VKI_V4L2_CREATE_BUFS).format.sdr", fmt->fmt.sdr);
+         break;
+      }
+      break;
+   }
+   case VKI_V4L2_PREPARE_BUF: {
+      struct vki_v4l2_buffer *data = (struct vki_v4l2_buffer *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_PREPARE_BUF).index", data->index);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_PREPARE_BUF).type", data->type);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_PREPARE_BUF).memory", data->memory);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_PREPARE_BUF).reserved", data->reserved);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_PREPARE_BUF).reserved2", data->reserved2);
+      if (data->type == VKI_V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE ||
+            data->type == VKI_V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE) {
+         unsigned i;
+
+         PRE_FIELD_READ("ioctl(VKI_V4L2_PREPARE_BUF).length", data->length);
+         PRE_FIELD_READ("ioctl(VKI_V4L2_PREPARE_BUF).m.planes", data->m.planes);
+         for (i = 0; i < data->length; i++) {
+            PRE_FIELD_READ("ioctl(VKI_V4L2_PREPARE_BUF).m.planes[].reserved", data->m.planes[i].reserved);
+         }
+      }
+      break;
+   }
+   case VKI_V4L2_G_SELECTION: {
+      struct vki_v4l2_selection *data = (struct vki_v4l2_selection *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_G_SELECTION).type", data->type);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_G_SELECTION).target", data->target);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_G_SELECTION).flags", data->flags);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_G_SELECTION).reserved", data->reserved);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_G_SELECTION).r", data->r);
+      break;
+   }
+   case VKI_V4L2_S_SELECTION: {
+      struct vki_v4l2_selection *data = (struct vki_v4l2_selection *)ARG3;
+      PRE_MEM_READ("ioctl(VKI_V4L2_S_SELECTION)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_DECODER_CMD: {
+      struct vki_v4l2_decoder_cmd *data = (struct vki_v4l2_decoder_cmd *)ARG3;
+      PRE_MEM_READ("ioctl(VKI_V4L2_DECODER_CMD)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_TRY_DECODER_CMD: {
+      struct vki_v4l2_decoder_cmd *data = (struct vki_v4l2_decoder_cmd *)ARG3;
+      PRE_MEM_READ("ioctl(VKI_V4L2_TRY_DECODER_CMD)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_ENUM_DV_TIMINGS: {
+      struct vki_v4l2_enum_dv_timings *data = (struct vki_v4l2_enum_dv_timings *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_ENUM_DV_TIMINGS).index", data->index);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_ENUM_DV_TIMINGS).pad", data->pad);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_ENUM_DV_TIMINGS).reserved", data->reserved);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_ENUM_DV_TIMINGS).timings", data->timings);
+      break;
+   }
+   case VKI_V4L2_QUERY_DV_TIMINGS: {
+      struct vki_v4l2_dv_timings *data = (struct vki_v4l2_dv_timings *)ARG3;
+      PRE_MEM_WRITE("ioctl(VKI_V4L2_QUERY_DV_TIMINGS)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_DV_TIMINGS_CAP: {
+      struct vki_v4l2_dv_timings_cap *data = (struct vki_v4l2_dv_timings_cap *)ARG3;
+      PRE_MEM_WRITE("ioctl(VKI_V4L2_DV_TIMINGS_CAP)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_ENUM_FREQ_BANDS: {
+      struct vki_v4l2_frequency_band *data = (struct vki_v4l2_frequency_band *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_ENUM_FREQ_BANDS).tuner", data->tuner);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_ENUM_FREQ_BANDS).type", data->type);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_ENUM_FREQ_BANDS).index", data->index);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_ENUM_FREQ_BANDS).reserved", data->reserved);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_ENUM_FREQ_BANDS).capability", data->capability);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_ENUM_FREQ_BANDS).rangelow", data->rangelow);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_ENUM_FREQ_BANDS).rangehigh", data->rangehigh);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_ENUM_FREQ_BANDS).modulation", data->modulation);
+      break;
+   }
+   case VKI_V4L2_DBG_G_CHIP_INFO: {
+      struct vki_v4l2_dbg_chip_info *data = (struct vki_v4l2_dbg_chip_info *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_DBG_G_CHIP_INFO).match.type", data->match.type);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_DBG_G_CHIP_INFO).match.addr", data->match.addr);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_DBG_G_CHIP_INFO).name", data->name);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_DBG_G_CHIP_INFO).flags", data->flags);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_DBG_G_CHIP_INFO).reserved", data->reserved);
+      break;
+   }
+   case VKI_V4L2_QUERY_EXT_CTRL: {
+      struct vki_v4l2_query_ext_ctrl *data = (struct vki_v4l2_query_ext_ctrl *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_QUERY_EXT_CTRL).id", data->id);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_QUERY_EXT_CTRL).reserved", data->reserved);
+      PRE_MEM_WRITE("ioctl(VKI_V4L2_QUERY_EXT_CTRL)", (Addr)&data->type,
+            sizeof(*data) - sizeof(data->id) - sizeof(data->reserved));
+      break;
+   }
+   case VKI_V4L2_SUBDEV_G_FMT: {
+      struct vki_v4l2_subdev_format *data = (struct vki_v4l2_subdev_format *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_G_FMT).pad", data->pad);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_G_FMT).which", data->which);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_G_FMT).reserved", data->reserved);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_SUBDEV_G_FMT).format", data->format);
+      break;
+   }
+   case VKI_V4L2_SUBDEV_S_FMT: {
+      struct vki_v4l2_subdev_format *data = (struct vki_v4l2_subdev_format *)ARG3;
+      PRE_MEM_READ("ioctl(VKI_V4L2_SUBDEV_S_FMT)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_SUBDEV_G_FRAME_INTERVAL: {
+      struct vki_v4l2_subdev_frame_interval *data = (struct vki_v4l2_subdev_frame_interval *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_G_FRAME_SIZE).pad", data->pad);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_G_FRAME_SIZE).reserved", data->reserved);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_SUBDEV_G_FRAME_SIZE).interval", data->interval);
+      break;
+   }
+   case VKI_V4L2_SUBDEV_S_FRAME_INTERVAL: {
+      struct vki_v4l2_subdev_frame_interval *data = (struct vki_v4l2_subdev_frame_interval *)ARG3;
+      PRE_MEM_READ("ioctl(VKI_V4L2_SUBDEV_S_FRAME_INTERVAL)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_SUBDEV_ENUM_MBUS_CODE: {
+      struct vki_v4l2_subdev_mbus_code_enum *data = (struct vki_v4l2_subdev_mbus_code_enum *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_ENUM_MBUS_CODE).index", data->index);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_ENUM_MBUS_CODE).pad", data->pad);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_SUBDEV_ENUM_MBUS_CODE).code", data->code);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_ENUM_MBUS_CODE).reserved", data->reserved);
+      break;
+   }
+   case VKI_V4L2_SUBDEV_ENUM_FRAME_SIZE: {
+      struct vki_v4l2_subdev_frame_size_enum *data = (struct vki_v4l2_subdev_frame_size_enum *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_ENUM_FRAME_SIZE).index", data->index);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_ENUM_FRAME_SIZE).pad", data->pad);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_ENUM_FRAME_SIZE).code", data->code);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_ENUM_FRAME_SIZE).reserved", data->reserved);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_SUBDEV_ENUM_FRAME_SIZE).min_width", data->min_width);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_SUBDEV_ENUM_FRAME_SIZE).min_height", data->min_height);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_SUBDEV_ENUM_FRAME_SIZE).max_width", data->max_width);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_SUBDEV_ENUM_FRAME_SIZE).max_height", data->max_height);
+      break;
+   }
+   case VKI_V4L2_SUBDEV_ENUM_FRAME_INTERVAL: {
+      struct vki_v4l2_subdev_frame_interval_enum *data = (struct vki_v4l2_subdev_frame_interval_enum *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_ENUM_FRAME_INTERVAL).index", data->index);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_ENUM_FRAME_INTERVAL).pad", data->pad);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_ENUM_FRAME_INTERVAL).code", data->code);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_ENUM_FRAME_INTERVAL).width", data->width);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_ENUM_FRAME_INTERVAL).height", data->height);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_ENUM_FRAME_INTERVAL).reserved", data->reserved);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_SUBDEV_ENUM_FRAME_INTERVAL).interval", data->interval);
+      break;
+   }
+   case VKI_V4L2_SUBDEV_G_CROP: {
+      struct vki_v4l2_subdev_crop *data = (struct vki_v4l2_subdev_crop *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_G_CROP).pad", data->pad);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_G_CROP).which", data->which);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_G_CROP).reserved", data->reserved);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_SUBDEV_G_CROP).rect", data->rect);
+      break;
+   }
+   case VKI_V4L2_SUBDEV_S_CROP: {
+      struct vki_v4l2_subdev_crop *data = (struct vki_v4l2_subdev_crop *)ARG3;
+      PRE_MEM_READ("ioctl(VKI_V4L2_SUBDEV_S_CROP)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_SUBDEV_G_SELECTION: {
+      struct vki_v4l2_subdev_selection *data = (struct vki_v4l2_subdev_selection *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_G_SELECTION).pad", data->pad);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_G_SELECTION).which", data->which);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_G_SELECTION).target", data->target);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_G_SELECTION).flags", data->flags);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_G_SELECTION).reserved", data->reserved);
+      PRE_FIELD_WRITE("ioctl(VKI_V4L2_SUBDEV_G_SELECTION).r", data->r);
+      break;
+   }
+   case VKI_V4L2_SUBDEV_S_SELECTION: {
+      struct vki_v4l2_subdev_selection *data = (struct vki_v4l2_subdev_selection *)ARG3;
+      PRE_MEM_READ("ioctl(VKI_V4L2_SUBDEV_S_SELECTION)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_MEDIA_IOC_DEVICE_INFO: {
+      struct vki_media_device_info *data = (struct vki_media_device_info *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_MEDIA_IOC_DEVICE_INFO).reserved", data->reserved);
+      PRE_MEM_WRITE("ioctl(VKI_MEDIA_IOC_DEVICE_INFO)",
+            (Addr)data, sizeof(*data) - sizeof(data->reserved));
+      break;
+   }
+   case VKI_MEDIA_IOC_ENUM_ENTITIES: {
+      struct vki_media_entity_desc *data = (struct vki_media_entity_desc *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_MEDIA_IOC_ENUM_ENTITIES).id", data->id);
+      PRE_MEM_WRITE("ioctl(VKI_MEDIA_IOC_ENUM_ENTITIES)",
+            (Addr)data->name, sizeof(*data) - sizeof(data->id));
+      break;
+   }
+   case VKI_MEDIA_IOC_ENUM_LINKS: {
+      struct vki_media_links_enum *data = (struct vki_media_links_enum *)ARG3;
+      PRE_MEM_READ("ioctl(VKI_MEDIA_IOC_ENUM_LINKS)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_MEDIA_IOC_SETUP_LINK: {
+      struct vki_media_link_desc *data = (struct vki_media_link_desc *)ARG3;
+      PRE_MEM_READ("ioctl(VKI_MEDIA_IOC_SETUP_LINK)", (Addr)data, sizeof(*data));
+      break;
+   }
+
    default:
       /* EVIOC* are variable length and return size written on success */
       switch (ARG2 & ~(_VKI_IOC_SIZEMASK << _VKI_IOC_SIZESHIFT)) {
@@ -8461,6 +9414,498 @@ POST(sys_ioctl)
        struct vki_getinfo_fid2path *args = (void *)(ARG3);
        POST_MEM_WRITE((Addr)args->gf_path, args->gf_pathlen);
       }
+      break;
+
+   /* V4L2 */
+   case VKI_V4L2_S_FMT:
+   case VKI_V4L2_TRY_FMT:
+   case VKI_V4L2_REQBUFS:
+   case VKI_V4L2_OVERLAY:
+   case VKI_V4L2_STREAMON:
+   case VKI_V4L2_STREAMOFF:
+   case VKI_V4L2_S_PARM:
+   case VKI_V4L2_S_STD:
+   case VKI_V4L2_S_FREQUENCY:
+   case VKI_V4L2_S_CTRL:
+   case VKI_V4L2_S_TUNER:
+   case VKI_V4L2_S_AUDIO:
+   case VKI_V4L2_S_INPUT:
+   case VKI_V4L2_S_EDID:
+   case VKI_V4L2_S_OUTPUT:
+   case VKI_V4L2_S_AUDOUT:
+   case VKI_V4L2_S_MODULATOR:
+   case VKI_V4L2_S_JPEGCOMP:
+   case VKI_V4L2_S_CROP:
+   case VKI_V4L2_S_PRIORITY:
+   case VKI_V4L2_G_ENC_INDEX:
+   case VKI_V4L2_S_HW_FREQ_SEEK:
+   case VKI_V4L2_S_DV_TIMINGS:
+   case VKI_V4L2_SUBSCRIBE_EVENT:
+   case VKI_V4L2_UNSUBSCRIBE_EVENT:
+   case VKI_V4L2_PREPARE_BUF:
+      break;
+   case VKI_V4L2_QUERYCAP: {
+      struct vki_v4l2_capability *data = (struct vki_v4l2_capability *)ARG3;
+      POST_MEM_WRITE((Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_ENUM_FMT: {
+      struct vki_v4l2_fmtdesc *data = (struct vki_v4l2_fmtdesc *)ARG3;
+      POST_FIELD_WRITE(data->flags);
+      POST_FIELD_WRITE(data->description);
+      POST_FIELD_WRITE(data->pixelformat);
+      POST_FIELD_WRITE(data->reserved);
+      break;
+   }
+   case VKI_V4L2_G_FMT: {
+      struct vki_v4l2_format *data = (struct vki_v4l2_format *)ARG3;
+      switch (data->type) {
+      case VKI_V4L2_BUF_TYPE_VIDEO_CAPTURE:
+      case VKI_V4L2_BUF_TYPE_VIDEO_OUTPUT:
+         POST_FIELD_WRITE(data->fmt.pix);
+         break;
+      case VKI_V4L2_BUF_TYPE_VBI_CAPTURE:
+      case VKI_V4L2_BUF_TYPE_VBI_OUTPUT:
+         POST_FIELD_WRITE(data->fmt.vbi);
+         break;
+      case VKI_V4L2_BUF_TYPE_SLICED_VBI_CAPTURE:
+      case VKI_V4L2_BUF_TYPE_SLICED_VBI_OUTPUT:
+         POST_FIELD_WRITE(data->fmt.sliced);
+         break;
+      case VKI_V4L2_BUF_TYPE_VIDEO_OVERLAY:
+      case VKI_V4L2_BUF_TYPE_VIDEO_OUTPUT_OVERLAY:
+         POST_FIELD_WRITE(data->fmt.win);
+         break;
+      case VKI_V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE:
+      case VKI_V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE:
+         POST_FIELD_WRITE(data->fmt.pix_mp);
+         break;
+      case VKI_V4L2_BUF_TYPE_SDR_CAPTURE:
+         POST_FIELD_WRITE(data->fmt.sdr);
+         break;
+      }
+      break;
+   }
+   case VKI_V4L2_QUERYBUF: {
+      struct vki_v4l2_buffer *data = (struct vki_v4l2_buffer *)ARG3;
+      if (data->type == VKI_V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE ||
+            data->type == VKI_V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE) {
+         unsigned i;
+
+         for (i = 0; i < data->length; i++) {
+            POST_FIELD_WRITE(data->m.planes[i].bytesused);
+            POST_FIELD_WRITE(data->m.planes[i].length);
+            POST_FIELD_WRITE(data->m.planes[i].m);
+            POST_FIELD_WRITE(data->m.planes[i].data_offset);
+            POST_FIELD_WRITE(data->m.planes[i].reserved);
+         }
+      } else {
+         POST_FIELD_WRITE(data->m);
+         POST_FIELD_WRITE(data->length);
+      }
+      POST_FIELD_WRITE(data->bytesused);
+      POST_FIELD_WRITE(data->flags);
+      POST_FIELD_WRITE(data->field);
+      POST_FIELD_WRITE(data->timestamp);
+      POST_FIELD_WRITE(data->timecode);
+      POST_FIELD_WRITE(data->sequence);
+      POST_FIELD_WRITE(data->memory);
+      POST_FIELD_WRITE(data->sequence);
+      break;
+   }
+   case VKI_V4L2_G_FBUF: {
+      struct vki_v4l2_framebuffer *data = (struct vki_v4l2_framebuffer *)ARG3;
+      POST_MEM_WRITE((Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_S_FBUF: {
+      struct vki_v4l2_framebuffer *data = (struct vki_v4l2_framebuffer *)ARG3;
+      POST_FIELD_WRITE(data->capability);
+      POST_FIELD_WRITE(data->flags);
+      POST_FIELD_WRITE(data->fmt);
+      break;
+   }
+   case VKI_V4L2_QBUF: {
+      struct vki_v4l2_buffer *data = (struct vki_v4l2_buffer *)ARG3;
+
+      if (data->type == VKI_V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE ||
+            data->type == VKI_V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE) {
+         unsigned i;
+
+         for (i = 0; i < data->length; i++) {
+            POST_FIELD_WRITE(data->m.planes[i].length);
+            if (data->memory == VKI_V4L2_MEMORY_MMAP)
+               POST_FIELD_WRITE(data->m.planes[i].m);
+         }
+      } else {
+         if (data->memory == VKI_V4L2_MEMORY_MMAP)
+            POST_FIELD_WRITE(data->m);
+         POST_FIELD_WRITE(data->length);
+      }
+      break;
+   }
+   case VKI_V4L2_EXPBUF: {
+      struct vki_v4l2_exportbuffer *data = (struct vki_v4l2_exportbuffer *)ARG3;
+      POST_FIELD_WRITE(data->fd);
+      break;
+   }
+   case VKI_V4L2_DQBUF: {
+      struct vki_v4l2_buffer *data = (struct vki_v4l2_buffer *)ARG3;
+      POST_FIELD_WRITE(data->index);
+      POST_FIELD_WRITE(data->bytesused);
+      POST_FIELD_WRITE(data->field);
+      if (data->type == VKI_V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE ||
+            data->type == VKI_V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE) {
+         unsigned i;
+
+         for (i = 0; i < data->length; i++) {
+            POST_FIELD_WRITE(data->m.planes[i].bytesused);
+            POST_FIELD_WRITE(data->m.planes[i].data_offset);
+            POST_FIELD_WRITE(data->m.planes[i].length);
+            POST_FIELD_WRITE(data->m.planes[i].m);
+         }
+      } else {
+         POST_FIELD_WRITE(data->m);
+         POST_FIELD_WRITE(data->length);
+         POST_FIELD_WRITE(data->bytesused);
+         POST_FIELD_WRITE(data->field);
+      }
+      POST_FIELD_WRITE(data->timestamp);
+      POST_FIELD_WRITE(data->timecode);
+      POST_FIELD_WRITE(data->sequence);
+      break;
+   }
+   case VKI_V4L2_G_PARM: {
+      struct vki_v4l2_streamparm *data = (struct vki_v4l2_streamparm *)ARG3;
+      int is_output = data->type == VKI_V4L2_BUF_TYPE_VIDEO_OUTPUT ||
+         data->type == VKI_V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE ||
+         data->type == VKI_V4L2_BUF_TYPE_VBI_OUTPUT ||
+         data->type == VKI_V4L2_BUF_TYPE_SLICED_VBI_OUTPUT;
+
+      if (is_output)
+        POST_MEM_WRITE((Addr)&data->parm.output,
+            sizeof(data->parm.output) - sizeof(data->parm.output.reserved));
+      else
+        POST_MEM_WRITE((Addr)&data->parm.capture,
+            sizeof(data->parm.capture) - sizeof(data->parm.capture.reserved));
+      break;
+   }
+   case VKI_V4L2_G_STD: {
+      vki_v4l2_std_id *data = (vki_v4l2_std_id *)ARG3;
+      POST_MEM_WRITE((Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_ENUMSTD: {
+      struct vki_v4l2_standard *data = (struct vki_v4l2_standard *)ARG3;
+      POST_MEM_WRITE((Addr)&data->id, sizeof(*data) - sizeof(data->index));
+      break;
+   }
+   case VKI_V4L2_ENUMINPUT: {
+      struct vki_v4l2_input *data = (struct vki_v4l2_input *)ARG3;
+      POST_MEM_WRITE((Addr)data->name, sizeof(*data) - sizeof(data->index));
+      break;
+   }
+   case VKI_V4L2_G_CTRL: {
+      struct vki_v4l2_control *data = (struct vki_v4l2_control *)ARG3;
+      POST_FIELD_WRITE(data->value);
+      break;
+   }
+   case VKI_V4L2_G_TUNER: {
+      struct vki_v4l2_tuner *data = (struct vki_v4l2_tuner *)ARG3;
+      POST_MEM_WRITE((Addr)data->name,
+            sizeof(*data) - sizeof(data->index) - sizeof(data->reserved));
+      break;
+   }
+   case VKI_V4L2_G_AUDIO: {
+      struct vki_v4l2_audio *data = (struct vki_v4l2_audio *)ARG3;
+      POST_MEM_WRITE((Addr)data->name,
+            sizeof(*data) - sizeof(data->index) - sizeof(data->reserved));
+      break;
+   }
+   case VKI_V4L2_QUERYCTRL: {
+      struct vki_v4l2_queryctrl *data = (struct vki_v4l2_queryctrl *)ARG3;
+      POST_MEM_WRITE((Addr)&data->type,
+            sizeof(*data) - sizeof(data->id));
+      break;
+   }
+   case VKI_V4L2_QUERYMENU: {
+      struct vki_v4l2_querymenu *data = (struct vki_v4l2_querymenu *)ARG3;
+      POST_MEM_WRITE((Addr)data->name,
+            sizeof(*data) - sizeof(data->id) - sizeof(data->index));
+      break;
+   }
+   case VKI_V4L2_G_INPUT: {
+      int *data = (int *)ARG3;
+      POST_MEM_WRITE((Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_G_EDID: {
+      struct vki_v4l2_edid *data = (struct vki_v4l2_edid *)ARG3;
+      if (data->blocks && data->edid)
+         POST_MEM_WRITE((Addr)data->edid, data->blocks * 128);
+      break;
+   }
+   case VKI_V4L2_G_OUTPUT: {
+      int *data = (int *)ARG3;
+      POST_MEM_WRITE((Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_ENUMOUTPUT: {
+      struct vki_v4l2_output *data = (struct vki_v4l2_output *)ARG3;
+      POST_MEM_WRITE((Addr)data->name, sizeof(*data) - sizeof(data->index));
+      break;
+   }
+   case VKI_V4L2_G_AUDOUT: {
+      struct vki_v4l2_audioout *data = (struct vki_v4l2_audioout *)ARG3;
+      POST_MEM_WRITE((Addr)data->name,
+            sizeof(*data) - sizeof(data->index) - sizeof(data->reserved));
+      break;
+   }
+   case VKI_V4L2_G_MODULATOR: {
+      struct vki_v4l2_modulator *data = (struct vki_v4l2_modulator *)ARG3;
+      POST_MEM_WRITE((Addr)data->name,
+            sizeof(*data) - sizeof(data->index) - sizeof(data->reserved));
+      break;
+   }
+   case VKI_V4L2_G_FREQUENCY: {
+      struct vki_v4l2_frequency *data = (struct vki_v4l2_frequency *)ARG3;
+      POST_FIELD_WRITE(data->type);
+      POST_FIELD_WRITE(data->frequency);
+      break;
+   }
+   case VKI_V4L2_CROPCAP: {
+      struct vki_v4l2_cropcap *data = (struct vki_v4l2_cropcap *)ARG3;
+      POST_MEM_WRITE((Addr)&data->bounds, sizeof(*data) - sizeof(data->type));
+      break;
+   }
+   case VKI_V4L2_G_CROP: {
+      struct vki_v4l2_crop *data = (struct vki_v4l2_crop *)ARG3;
+      POST_FIELD_WRITE(data->c);
+      break;
+   }
+   case VKI_V4L2_G_JPEGCOMP: {
+      struct vki_v4l2_jpegcompression *data = (struct vki_v4l2_jpegcompression *)ARG3;
+      POST_MEM_WRITE((Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_QUERYSTD: {
+      vki_v4l2_std_id *data = (vki_v4l2_std_id *)ARG3;
+      POST_MEM_WRITE((Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_ENUMAUDIO: {
+      struct vki_v4l2_audio *data = (struct vki_v4l2_audio *)ARG3;
+      POST_MEM_WRITE((Addr)data->name,
+            sizeof(*data) - sizeof(data->index) - sizeof(data->reserved));
+      break;
+   }
+   case VKI_V4L2_ENUMAUDOUT: {
+      struct vki_v4l2_audioout *data = (struct vki_v4l2_audioout *)ARG3;
+      POST_MEM_WRITE((Addr)data->name,
+            sizeof(*data) - sizeof(data->index) - sizeof(data->reserved));
+      break;
+   }
+   case VKI_V4L2_G_PRIORITY: {
+      __vki_u32 *data = (__vki_u32 *)ARG3;
+      POST_MEM_WRITE((Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_G_SLICED_VBI_CAP: {
+      struct vki_v4l2_sliced_vbi_cap *data = (struct vki_v4l2_sliced_vbi_cap *)ARG3;
+      POST_MEM_WRITE((Addr)data,
+            sizeof(*data) - sizeof(data->type) - sizeof(data->reserved));
+      break;
+   }
+   case VKI_V4L2_G_EXT_CTRLS: {
+      struct vki_v4l2_ext_controls *data = (struct vki_v4l2_ext_controls *)ARG3;
+      if (data->count) {
+         unsigned i;
+
+         for (i = 0; i < data->count; i++) {
+            if (data->controls[i].size)
+               POST_MEM_WRITE((Addr)data->controls[i].ptr, data->controls[i].size);
+            else
+               POST_FIELD_WRITE(data->controls[i].value64);
+         }
+      }
+      POST_FIELD_WRITE(data->error_idx);
+      break;
+   }
+   case VKI_V4L2_S_EXT_CTRLS: {
+      struct vki_v4l2_ext_controls *data = (struct vki_v4l2_ext_controls *)ARG3;
+      POST_FIELD_WRITE(data->error_idx);
+      break;
+   }
+   case VKI_V4L2_TRY_EXT_CTRLS: {
+      struct vki_v4l2_ext_controls *data = (struct vki_v4l2_ext_controls *)ARG3;
+      POST_FIELD_WRITE(data->error_idx);
+      break;
+   }
+   case VKI_V4L2_ENUM_FRAMESIZES: {
+      struct vki_v4l2_frmsizeenum *data = (struct vki_v4l2_frmsizeenum *)ARG3;
+      POST_FIELD_WRITE(data->type);
+      POST_FIELD_WRITE(data->stepwise);
+      break;
+   }
+   case VKI_V4L2_ENUM_FRAMEINTERVALS: {
+      struct vki_v4l2_frmivalenum *data = (struct vki_v4l2_frmivalenum *)ARG3;
+      POST_FIELD_WRITE(data->type);
+      POST_FIELD_WRITE(data->stepwise);
+      break;
+   }
+   case VKI_V4L2_ENCODER_CMD: {
+      struct vki_v4l2_encoder_cmd *data = (struct vki_v4l2_encoder_cmd *)ARG3;
+      POST_FIELD_WRITE(data->flags);
+      break;
+   }
+   case VKI_V4L2_TRY_ENCODER_CMD: {
+      struct vki_v4l2_encoder_cmd *data = (struct vki_v4l2_encoder_cmd *)ARG3;
+      POST_FIELD_WRITE(data->flags);
+      break;
+   }
+   case VKI_V4L2_DBG_S_REGISTER: {
+      struct vki_v4l2_dbg_register *data = (struct vki_v4l2_dbg_register *)ARG3;
+      POST_FIELD_WRITE(data->size);
+      break;
+   }
+   case VKI_V4L2_DBG_G_REGISTER: {
+      struct vki_v4l2_dbg_register *data = (struct vki_v4l2_dbg_register *)ARG3;
+      POST_FIELD_WRITE(data->val);
+      POST_FIELD_WRITE(data->size);
+      break;
+   }
+   case VKI_V4L2_G_DV_TIMINGS: {
+      struct vki_v4l2_dv_timings *data = (struct vki_v4l2_dv_timings *)ARG3;
+      POST_MEM_WRITE((Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_DQEVENT: {
+      struct vki_v4l2_event *data = (struct vki_v4l2_event *)ARG3;
+      POST_MEM_WRITE((Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_CREATE_BUFS: {
+      struct vki_v4l2_create_buffers *data = (struct vki_v4l2_create_buffers *)ARG3;
+      POST_FIELD_WRITE(data->index);
+      break;
+   }
+   case VKI_V4L2_G_SELECTION: {
+      struct vki_v4l2_selection *data = (struct vki_v4l2_selection *)ARG3;
+      POST_FIELD_WRITE(data->r);
+      break;
+   }
+   case VKI_V4L2_S_SELECTION: {
+      struct vki_v4l2_selection *data = (struct vki_v4l2_selection *)ARG3;
+      POST_FIELD_WRITE(data->r);
+      break;
+   }
+   case VKI_V4L2_DECODER_CMD: {
+      struct vki_v4l2_decoder_cmd *data = (struct vki_v4l2_decoder_cmd *)ARG3;
+      POST_FIELD_WRITE(data->flags);
+      break;
+   }
+   case VKI_V4L2_TRY_DECODER_CMD: {
+      struct vki_v4l2_decoder_cmd *data = (struct vki_v4l2_decoder_cmd *)ARG3;
+      POST_FIELD_WRITE(data->flags);
+      break;
+   }
+   case VKI_V4L2_ENUM_DV_TIMINGS: {
+      struct vki_v4l2_enum_dv_timings *data = (struct vki_v4l2_enum_dv_timings *)ARG3;
+      POST_FIELD_WRITE(data->timings);
+      break;
+   }
+   case VKI_V4L2_QUERY_DV_TIMINGS: {
+      struct vki_v4l2_dv_timings *data = (struct vki_v4l2_dv_timings *)ARG3;
+      POST_MEM_WRITE((Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_DV_TIMINGS_CAP: {
+      struct vki_v4l2_dv_timings_cap *data = (struct vki_v4l2_dv_timings_cap *)ARG3;
+      POST_MEM_WRITE((Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_V4L2_ENUM_FREQ_BANDS: {
+      struct vki_v4l2_frequency_band *data = (struct vki_v4l2_frequency_band *)ARG3;
+      POST_FIELD_WRITE(data->capability);
+      POST_FIELD_WRITE(data->rangelow);
+      POST_FIELD_WRITE(data->rangehigh);
+      POST_FIELD_WRITE(data->modulation);
+      break;
+   }
+   case VKI_V4L2_DBG_G_CHIP_INFO: {
+      struct vki_v4l2_dbg_chip_info *data = (struct vki_v4l2_dbg_chip_info *)ARG3;
+      POST_FIELD_WRITE(data->name);
+      POST_FIELD_WRITE(data->flags);
+      break;
+   }
+   case VKI_V4L2_QUERY_EXT_CTRL: {
+      struct vki_v4l2_query_ext_ctrl *data = (struct vki_v4l2_query_ext_ctrl *)ARG3;
+      POST_MEM_WRITE((Addr)&data->type,
+            sizeof(*data) - sizeof(data->id) - sizeof(data->reserved));
+      break;
+   }
+
+   case VKI_V4L2_SUBDEV_S_FMT:
+   case VKI_V4L2_SUBDEV_S_FRAME_INTERVAL:
+   case VKI_V4L2_SUBDEV_S_CROP:
+   case VKI_V4L2_SUBDEV_S_SELECTION:
+      break;
+
+   case VKI_V4L2_SUBDEV_G_FMT: {
+      struct vki_v4l2_subdev_format *data = (struct vki_v4l2_subdev_format *)ARG3;
+      POST_FIELD_WRITE(data->format);
+      break;
+   }
+   case VKI_V4L2_SUBDEV_G_FRAME_INTERVAL: {
+      struct vki_v4l2_subdev_frame_interval *data = (struct vki_v4l2_subdev_frame_interval *)ARG3;
+      POST_FIELD_WRITE(data->interval);
+      break;
+   }
+   case VKI_V4L2_SUBDEV_ENUM_MBUS_CODE: {
+      struct vki_v4l2_subdev_mbus_code_enum *data = (struct vki_v4l2_subdev_mbus_code_enum *)ARG3;
+      POST_FIELD_WRITE(data->code);
+      break;
+   }
+   case VKI_V4L2_SUBDEV_ENUM_FRAME_SIZE: {
+      struct vki_v4l2_subdev_frame_size_enum *data = (struct vki_v4l2_subdev_frame_size_enum *)ARG3;
+      POST_FIELD_WRITE(data->min_width);
+      POST_FIELD_WRITE(data->min_height);
+      POST_FIELD_WRITE(data->max_width);
+      POST_FIELD_WRITE(data->max_height);
+      break;
+   }
+   case VKI_V4L2_SUBDEV_ENUM_FRAME_INTERVAL: {
+      struct vki_v4l2_subdev_frame_interval_enum *data = (struct vki_v4l2_subdev_frame_interval_enum *)ARG3;
+      POST_FIELD_WRITE(data->interval);
+      break;
+   }
+   case VKI_V4L2_SUBDEV_G_CROP: {
+      struct vki_v4l2_subdev_crop *data = (struct vki_v4l2_subdev_crop *)ARG3;
+      POST_FIELD_WRITE(data->rect);
+      break;
+   }
+   case VKI_V4L2_SUBDEV_G_SELECTION: {
+      struct vki_v4l2_subdev_selection *data = (struct vki_v4l2_subdev_selection *)ARG3;
+      POST_FIELD_WRITE(data->r);
+      break;
+   }
+   case VKI_MEDIA_IOC_DEVICE_INFO: {
+      struct vki_media_device_info *data = (struct vki_media_device_info *)ARG3;
+      POST_MEM_WRITE((Addr)data, sizeof(*data) - sizeof(data->reserved));
+      break;
+   }
+   case VKI_MEDIA_IOC_ENUM_ENTITIES: {
+      struct vki_media_entity_desc *data = (struct vki_media_entity_desc *)ARG3;
+      POST_MEM_WRITE((Addr)data->name, sizeof(*data) - sizeof(data->id));
+      break;
+   }
+   case VKI_MEDIA_IOC_ENUM_LINKS:
+      /*
+       * This ioctl does write to the provided pointers, but it's not
+       * possible to deduce the size of the array those pointers point to.
+       */
+      break;
+   case VKI_MEDIA_IOC_SETUP_LINK:
       break;
 
    default:

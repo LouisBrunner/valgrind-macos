@@ -123,6 +123,126 @@ struct vki_xen_vcpu_guest_context {
 typedef struct vki_xen_vcpu_guest_context vki_xen_vcpu_guest_context_t;
 DEFINE_VKI_XEN_GUEST_HANDLE(vki_xen_vcpu_guest_context_t);
 
+
+/* HVM_SAVE types and declarations for getcontext_partial */
+# define VKI_DECLARE_HVM_SAVE_TYPE(_x, _code, _type)                         \
+    struct __VKI_HVM_SAVE_TYPE_##_x { _type t; char c[_code]; char cpt[1];}
+
+#define VKI_HVM_SAVE_TYPE(_x) typeof (((struct __VKI_HVM_SAVE_TYPE_##_x *)(0))->t)
+#define VKI_HVM_SAVE_LENGTH(_x) (sizeof (VKI_HVM_SAVE_TYPE(_x)))
+#define VKI_HVM_SAVE_CODE(_x) (sizeof (((struct __VKI_HVM_SAVE_TYPE_##_x *)(0))->c))
+
+struct vki_hvm_hw_cpu {
+   vki_uint8_t  fpu_regs[512];
+
+   vki_uint64_t rax;
+   vki_uint64_t rbx;
+   vki_uint64_t rcx;
+   vki_uint64_t rdx;
+   vki_uint64_t rbp;
+   vki_uint64_t rsi;
+   vki_uint64_t rdi;
+   vki_uint64_t rsp;
+   vki_uint64_t r8;
+   vki_uint64_t r9;
+   vki_uint64_t r10;
+   vki_uint64_t r11;
+   vki_uint64_t r12;
+   vki_uint64_t r13;
+   vki_uint64_t r14;
+   vki_uint64_t r15;
+
+   vki_uint64_t rip;
+   vki_uint64_t rflags;
+
+   vki_uint64_t cr0;
+   vki_uint64_t cr2;
+   vki_uint64_t cr3;
+   vki_uint64_t cr4;
+
+   vki_uint64_t dr0;
+   vki_uint64_t dr1;
+   vki_uint64_t dr2;
+   vki_uint64_t dr3;
+   vki_uint64_t dr6;
+   vki_uint64_t dr7;
+
+   vki_uint32_t cs_sel;
+   vki_uint32_t ds_sel;
+   vki_uint32_t es_sel;
+   vki_uint32_t fs_sel;
+   vki_uint32_t gs_sel;
+   vki_uint32_t ss_sel;
+   vki_uint32_t tr_sel;
+   vki_uint32_t ldtr_sel;
+
+   vki_uint32_t cs_limit;
+   vki_uint32_t ds_limit;
+   vki_uint32_t es_limit;
+   vki_uint32_t fs_limit;
+   vki_uint32_t gs_limit;
+   vki_uint32_t ss_limit;
+   vki_uint32_t tr_limit;
+   vki_uint32_t ldtr_limit;
+   vki_uint32_t idtr_limit;
+   vki_uint32_t gdtr_limit;
+
+   vki_uint64_t cs_base;
+   vki_uint64_t ds_base;
+   vki_uint64_t es_base;
+   vki_uint64_t fs_base;
+   vki_uint64_t gs_base;
+   vki_uint64_t ss_base;
+   vki_uint64_t tr_base;
+   vki_uint64_t ldtr_base;
+   vki_uint64_t idtr_base;
+   vki_uint64_t gdtr_base;
+
+   vki_uint32_t cs_arbytes;
+   vki_uint32_t ds_arbytes;
+   vki_uint32_t es_arbytes;
+   vki_uint32_t fs_arbytes;
+   vki_uint32_t gs_arbytes;
+   vki_uint32_t ss_arbytes;
+   vki_uint32_t tr_arbytes;
+   vki_uint32_t ldtr_arbytes;
+
+   vki_uint64_t sysenter_cs;
+   vki_uint64_t sysenter_esp;
+   vki_uint64_t sysenter_eip;
+
+    /* msr for em64t */
+   vki_uint64_t shadow_gs;
+
+    /* msr content saved/restored. */
+   vki_uint64_t msr_flags;
+   vki_uint64_t msr_lstar;
+   vki_uint64_t msr_star;
+   vki_uint64_t msr_cstar;
+   vki_uint64_t msr_syscall_mask;
+   vki_uint64_t msr_efer;
+   vki_uint64_t msr_tsc_aux;
+
+    /* guest's idea of what rdtsc() would return */
+   vki_uint64_t tsc;
+
+    /* pending event, if any */
+    union {
+       vki_uint32_t pending_event;
+        struct {
+           vki_uint8_t  pending_vector:8;
+           vki_uint8_t  pending_type:3;
+           vki_uint8_t  pending_error_valid:1;
+           vki_uint32_t pending_reserved:19;
+           vki_uint8_t  pending_valid:1;
+        };
+    };
+    /* error code for pending event */
+   vki_uint32_t error_code;
+};
+
+VKI_DECLARE_HVM_SAVE_TYPE(CPU, 2, struct vki_hvm_hw_cpu);
+
 #endif // __VKI_XEN_H
 
 /*--------------------------------------------------------------------*/

@@ -20,6 +20,7 @@
 #define VKI_XENMEM_get_pod_target       17
 #define VKI_XENMEM_get_sharing_freed_pages    18
 #define VKI_XENMEM_get_sharing_shared_pages   19
+#define VKI_XENMEM_access_op                  21
 #define VKI_XENMEM_claim_pages                24
 
 struct vki_xen_memory_map {
@@ -64,6 +65,13 @@ struct vki_xen_add_to_physmap {
 struct vki_xen_remove_from_physmap {
     vki_xen_domid_t domid;
     vki_xen_pfn_t gpfn;
+};
+
+struct vki_xen_mem_event_op {
+    vki_uint8_t     op;
+    vki_xen_domid_t     domain;
+    vki_uint64_t    buffer;
+    vki_uint64_t    gfn;
 };
 
 #endif // __VKI_XEN_MEMORY_H

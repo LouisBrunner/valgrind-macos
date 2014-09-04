@@ -4399,7 +4399,6 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn)
                putQRegLO(tt, loadLE(Ity_I8, mkexpr(ea)));
                DIP("ldr %s, %s\n", nameQRegLO(tt, Ity_I8), dis_buf);
             } else {
-               vassert(0); //ATC
                storeLE(mkexpr(ea), getQRegLO(tt, Ity_I8));
                DIP("str %s, %s\n", nameQRegLO(tt, Ity_I8), dis_buf);
             }
@@ -4410,7 +4409,6 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn)
                putQRegLO(tt, loadLE(Ity_I16, mkexpr(ea)));
                DIP("ldr %s, %s\n", nameQRegLO(tt, Ity_I16), dis_buf);
             } else {
-               vassert(0); //ATC
                storeLE(mkexpr(ea), getQRegLO(tt, Ity_I16));
                DIP("str %s, %s\n", nameQRegLO(tt, Ity_I16), dis_buf);
             }

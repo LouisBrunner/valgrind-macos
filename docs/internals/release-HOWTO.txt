@@ -51,6 +51,12 @@ First of all:
 
 - Add "wantedX.Y.Z+1" and "wantedX.Y+1.Z" milestones to Bugzilla.
 
+- Check whether copyright years need updating.
+  If so, run  auxprogs/change-copyright-year  in the top of the tree.
+
+- Consider upgrading the C++ demangler.
+  auxprogs/update-demangler   helps with that
+
 
 For each release candidate (should do release candidates for feature
 releases, bug-fix-only releases might not need one):

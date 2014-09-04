@@ -7,7 +7,7 @@
 # Comment out the next line to skip building print docs.  The default
 # is not to skip building print docs.  Note, after changing it
 # you need to re-run autogen.sh and configure to make it take effect.
-BUILD_ALL_DOCS=yes
+# BUILD_ALL_DOCS=yes
 
 ##-------------------------------------------------------------
 ## END OF HACK

@@ -118,7 +118,7 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
 === Tools/Massif =======================================================
 
 === Tools/Cachegrind ===================================================
-HERE
+
 333501  [cachegrind - 3.9] LL cache configuration not supported:
         Cache set count is not a power of two.
 336577  Auto-detected LL cache configuration not supported: Cache

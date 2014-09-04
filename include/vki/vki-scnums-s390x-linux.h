@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright IBM Corp. 2010-2013
+   Copyright IBM Corp. 2010-2014
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -34,7 +34,7 @@
 #define __VKI_SCNUMS_S390X_LINUX_H
 
 //----------------------------------------------------------------------
-// From linux-2.6/arch/s390/include/asm/unistd.h
+// From linux-3.16/arch/s390/include/uapi/asm/unistd.h
 //----------------------------------------------------------------------
 
 /*
@@ -307,7 +307,13 @@
 #define __NR_setns		339
 #define __NR_process_vm_readv	340
 #define __NR_process_vm_writev	341
-#define NR_syscalls 342
+#define __NR_s390_runtime_instr 342
+#define __NR_kcmp		343
+#define __NR_finit_module	344
+#define __NR_sched_setattr	345
+#define __NR_sched_getattr	346
+#define __NR_renameat2		347
+#define NR_syscalls 348
 
 /* 
  * There are some system calls that are not present on 64 bit, some

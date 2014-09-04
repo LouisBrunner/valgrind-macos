@@ -1,0 +1,3 @@
+prog: cvm_bbit
+prereq: ../../../tests/mips_features cavium-octeon
+vgopts: -q

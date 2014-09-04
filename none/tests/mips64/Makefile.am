@@ -10,6 +10,8 @@ EXTRA_DIST = \
 	branch_and_jump_instructions.stdout.exp \
 	branch_and_jump_instructions.stderr.exp branch_and_jump_instructions.vgtest \
 	branches.stdout.exp branches.stderr.exp branches.vgtest \
+	cvm_bbit.stdout.exp cvm_bbit.stdout.exp-non-octeon \
+	cvm_bbit.stderr.exp cvm_bbit.vgtest \
 	cvm_ins.stdout.exp cvm_ins.stdout.exp-non-octeon \
 	cvm_ins.stderr.exp cvm_ins.vgtest \
 	cvm_lx_ins.stdout.exp-LE cvm_lx_ins.stdout.exp-BE \
@@ -63,6 +65,7 @@ check_PROGRAMS = \
 	arithmetic_instruction \
 	branch_and_jump_instructions \
 	branches \
+	cvm_bbit \
 	cvm_ins \
 	cvm_lx_ins \
 	cvm_atomic \
@@ -93,6 +96,7 @@ AM_CCASFLAGS += @FLAG_M64@
 
 allexec_CFLAGS          = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 
+cvm_bbit_CFLAGS = $(AM_CFLAGS) -g -O0 @FLAG_OCTEON@
 cvm_ins_CFLAGS = $(AM_CFLAGS) -g -O0 @FLAG_OCTEON@
 cvm_lx_ins_CFLAGS = $(AM_CFLAGS) -g -O0 @FLAG_OCTEON2@
 cvm_atomic_CFLAGS = $(AM_CFLAGS) -g -O0 @FLAG_OCTEON2@

@@ -393,6 +393,7 @@
 #define __NR_getcpu             309
 #define __NR_process_vm_readv   310
 #define __NR_process_vm_writev  311
+#define __NR_kcmp               312
 
 #endif /* __VKI_SCNUMS_AMD64_LINUX_H */
 

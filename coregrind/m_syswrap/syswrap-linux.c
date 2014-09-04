@@ -8606,6 +8606,14 @@ ML_(linux_POST_getregset) ( ThreadId tid, long arg3, long arg4 )
    POST_MEM_WRITE((unsigned long) iov->iov_base, iov->iov_len);
 }
 
+PRE(sys_kcmp)
+{
+   PRINT("kcmp ( %ld, %ld, %ld, %lu, %lu )", ARG1, ARG1, ARG3, ARG4, ARG5);
+   PRE_REG_READ5(long, "kcmp",
+                 vki_pid_t, pid1, vki_pid_t, pid2, int, type,
+                 unsigned long, idx1, unsigned long, idx2);
+}
+
 #undef PRE
 #undef POST
 

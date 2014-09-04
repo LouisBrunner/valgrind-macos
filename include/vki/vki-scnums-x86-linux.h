@@ -383,6 +383,7 @@
 #define __NR_setns		346
 #define __NR_process_vm_readv   347
 #define __NR_process_vm_writev  348
+#define __NR_kcmp               349
 
 #endif /* __VKI_SCNUMS_X86_LINUX_H */
 

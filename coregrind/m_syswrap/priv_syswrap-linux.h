@@ -352,7 +352,7 @@ DECL_TEMPLATE(linux, sys_listen);
 DECL_TEMPLATE(linux, sys_getsockname);
 DECL_TEMPLATE(linux, sys_getpeername);
 DECL_TEMPLATE(linux, sys_socketpair);
-
+DECL_TEMPLATE(linux, sys_kcmp);
 
 #endif   // __PRIV_SYSWRAP_LINUX_H
 

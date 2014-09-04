@@ -1060,7 +1060,8 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_getcpu,            sys_getcpu),           // 309
 
    LINXY(__NR_process_vm_readv,  sys_process_vm_readv), // 310
-   LINX_(__NR_process_vm_writev, sys_process_vm_writev) // 311
+   LINX_(__NR_process_vm_writev, sys_process_vm_writev),// 311
+   LINX_(__NR_kcmp,              sys_kcmp)              // 312
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry) ( UInt sysno )

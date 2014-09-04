@@ -112,7 +112,7 @@ static void fill_ehdr(ESZ(Ehdr) *ehdr, Int num_phdrs)
 
 static void fill_phdr(ESZ(Phdr) *phdr, const NSegment *seg, UInt off, Bool write)
 {
-   SizeT len = seg->end - seg->start;
+   SizeT len = seg->end - seg->start + 1;
 
    write = write && should_dump(seg);
 
@@ -700,7 +700,7 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, ULong max_size)
 	 continue;
 
       fill_phdr(&phdrs[idx], seg, off,
-                (seg->end - seg->start + off) < max_size);
+                (seg->end - seg->start + 1 + off) < max_size);
       
       off += phdrs[idx].p_filesz;
 
@@ -725,7 +725,7 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, ULong max_size)
       if (phdrs[idx].p_filesz > 0) {
 	 vg_assert(VG_(lseek)(core_fd, phdrs[idx].p_offset, VKI_SEEK_SET) 
                    == phdrs[idx].p_offset);
-	 vg_assert(seg->end - seg->start >= phdrs[idx].p_filesz);
+	 vg_assert(seg->end - seg->start + 1 >= phdrs[idx].p_filesz);
 
 	 (void)VG_(write)(core_fd, (void *)seg->start, phdrs[idx].p_filesz);
       }

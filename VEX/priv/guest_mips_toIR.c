@@ -2110,7 +2110,7 @@ static Bool dis_instr_branch ( UInt theInstr, DisResult * dres,
                eCond = binop(mkSzOp(ty, Iop_CmpNE8), mkexpr(tmpLt),
                              mkexpr(tmpReg0));
 
-               jmpKind = Ijk_Call;
+               jmpKind = Ijk_Boring;
                break;
             }
 
@@ -2125,7 +2125,7 @@ static Bool dis_instr_branch ( UInt theInstr, DisResult * dres,
                eCond = binop(mkSzOp(ty, Iop_CmpEQ8), mkexpr(tmpLt),
                                     mkexpr(tmpReg0));
 
-               jmpKind = Ijk_Call;
+               jmpKind = Ijk_Boring;
                break;
             }
 

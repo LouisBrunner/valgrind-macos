@@ -583,7 +583,7 @@ extern void LibVEX_Init (
    Bool valgrind_support,
 
    /* Control ... */
-   /*READONLY*/VexControl* vcon
+   const VexControl* vcon
 );
 
 

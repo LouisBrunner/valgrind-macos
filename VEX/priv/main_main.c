@@ -116,7 +116,7 @@ void LibVEX_Init (
    /* Are we supporting valgrind checking? */
    Bool valgrind_support,
    /* Control ... */
-   /*READONLY*/VexControl* vcon
+   const VexControl* vcon
 )
 {
    /* First off, do enough minimal setup so that the following

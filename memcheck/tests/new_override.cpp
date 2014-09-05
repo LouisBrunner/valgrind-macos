@@ -1,12 +1,13 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <new>
 
 class Test {
 public:
   int a, b, c, d;
 };
 
-void *operator new[](size_t size)
+void *operator new[](size_t size) throw(std::bad_alloc)
 {
   void *ret = malloc(size);
   printf("Here.\n");

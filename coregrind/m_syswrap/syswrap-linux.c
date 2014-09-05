@@ -10103,10 +10103,22 @@ ML_(linux_POST_getregset) ( ThreadId tid, long arg3, long arg4 )
 
 PRE(sys_kcmp)
 {
-   PRINT("kcmp ( %ld, %ld, %ld, %lu, %lu )", ARG1, ARG1, ARG3, ARG4, ARG5);
-   PRE_REG_READ5(long, "kcmp",
-                 vki_pid_t, pid1, vki_pid_t, pid2, int, type,
-                 unsigned long, idx1, unsigned long, idx2);
+   PRINT("kcmp ( %ld, %ld, %ld, %lu, %lu )", ARG1, ARG2, ARG3, ARG4, ARG5);
+   switch (ARG3) {
+      case VKI_KCMP_VM: case VKI_KCMP_FILES: case VKI_KCMP_FS:
+      case VKI_KCMP_SIGHAND: case VKI_KCMP_IO: case VKI_KCMP_SYSVSEM:
+         /* Most of the comparison types don't look at |idx1| or
+            |idx2|. */
+         PRE_REG_READ3(long, "kcmp",
+                       vki_pid_t, pid1, vki_pid_t, pid2, int, type);
+         break;
+      case VKI_KCMP_FILE:
+      default:
+         PRE_REG_READ5(long, "kcmp",
+                       vki_pid_t, pid1, vki_pid_t, pid2, int, type,
+                       unsigned long, idx1, unsigned long, idx2);
+         break;
+   }
 }
 
 #undef PRE

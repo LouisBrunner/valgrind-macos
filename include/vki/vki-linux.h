@@ -4502,6 +4502,19 @@ struct vki_media_links_enum {
 #define VKI_MEDIA_IOC_ENUM_LINKS		_VKI_IOWR('|', 0x02, struct vki_media_links_enum)
 #define VKI_MEDIA_IOC_SETUP_LINK		_VKI_IOWR('|', 0x03, struct vki_media_link_desc)
 
+/* Comparison type */
+enum vki_kcmp_type {
+   VKI_KCMP_FILE,
+   VKI_KCMP_VM,
+   VKI_KCMP_FILES,
+   VKI_KCMP_FS,
+   VKI_KCMP_SIGHAND,
+   VKI_KCMP_IO,
+   VKI_KCMP_SYSVSEM,
+
+   VKI_KCMP_TYPES
+};
+
 #endif // __VKI_LINUX_H
 
 /*--------------------------------------------------------------------*/

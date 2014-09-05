@@ -390,11 +390,6 @@ void remote_open (const HChar *name)
       VG_(unlink)(to_gdb);
       VG_(unlink)(shared_mem);
 
-      safe_mknod(from_gdb);
-      safe_mknod(to_gdb);
-
-      pid_from_to_creator = pid;
-      
       o = VG_(open) (shared_mem, VKI_O_CREAT|VKI_O_RDWR, 0600);
       if (sr_isError (o)) {
          sr_perror(o, "cannot create shared_mem file %s\n", shared_mem);
@@ -421,6 +416,15 @@ void remote_open (const HChar *name)
       }
       shared = (VgdbShared*) addr_shared;
       VG_(close) (shared_mem_fd);
+
+      safe_mknod(to_gdb);
+      safe_mknod(from_gdb);
+      /* from_gdb is the last resource created: vgdb searches such FIFOs
+         to detect the presence of a valgrind process.
+         So, we better create this resource when all the rest needed by
+         vgdb is ready : the other FIFO and the shared memory. */
+
+      pid_from_to_creator = pid;
    }
    
    setup_remote_desc_for_reading ();

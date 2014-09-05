@@ -309,6 +309,7 @@ where XXXXXX is the bug number as listed below.
 338499  --sim-hints parsing broken due to wrong order in tokens
 338615  suppress glibc 2.20 optimized strcmp implementation for ARMv7
 338681  Unable to unwind through clone thread created on i386-linux
+338698  race condition between gdbsrv and vgdb on startup
 338703  helgrind on arm-linux gets false positives in dynamic loader
 n-i-bz  Fix KVM_CREATE_IRQCHIP ioctl handling
 n-i-bz  s390x: Fix memory corruption for multithreaded applications

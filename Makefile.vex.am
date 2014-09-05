@@ -64,6 +64,12 @@ noinst_HEADERS = \
 BUILT_SOURCES = pub/libvex_guest_offsets.h
 CLEANFILES    = pub/libvex_guest_offsets.h
 
+if COMPILER_IS_CLANG
+CFLAGS_FOR_GENOFFSETS = $(CFLAGS) -no-integrated-as
+else
+CFLAGS_FOR_GENOFFSETS = $(CFLAGS)
+endif
+
 # This is very uggerly.  Need to sed out both "xyzzyN" and
 # "xyzzy$N" since gcc on different targets emits the constants
 # differently -- with a leading $ on x86/amd64 but none on ppc32/64.
@@ -80,7 +86,7 @@ pub/libvex_guest_offsets.h: auxprogs/genoffsets.c \
 			    pub/libvex_guest_mips64.h
 	rm -f auxprogs/genoffsets.s
 	$(mkdir_p) auxprogs pub
-	$(CC) $(CFLAGS) \
+	$(CC) $(CFLAGS_FOR_GENOFFSETS) \
 	      $(LIBVEX_CFLAGS) \
 	      $(AM_CFLAGS_@VGCONF_PLATFORM_PRI_CAPS@) \
 				-O -S -o auxprogs/genoffsets.s \

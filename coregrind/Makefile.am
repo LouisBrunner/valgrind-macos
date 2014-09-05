@@ -470,14 +470,14 @@ libreplacemalloc_toolpreload_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_SOURCES = \
 libreplacemalloc_toolpreload_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CPPFLAGS = \
 	$(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
 libreplacemalloc_toolpreload_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CFLAGS = \
-	$(AM_CFLAGS_@VGCONF_PLATFORM_PRI_CAPS@) $(AM_CFLAGS_PIC)
+	$(AM_CFLAGS_PSO_@VGCONF_PLATFORM_PRI_CAPS@)
 if VGCONF_HAVE_PLATFORM_SEC
 libreplacemalloc_toolpreload_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_SOURCES = \
 	m_replacemalloc/vg_replace_malloc.c
 libreplacemalloc_toolpreload_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CPPFLAGS = \
 	$(AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
 libreplacemalloc_toolpreload_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CFLAGS = \
-	$(AM_CFLAGS_@VGCONF_PLATFORM_SEC_CAPS@) $(AM_CFLAGS_PIC)
+	$(AM_CFLAGS_PSO_@VGCONF_PLATFORM_SEC_CAPS@)
 endif
 
 #----------------------------------------------------------------------------
@@ -497,7 +497,7 @@ vgpreload_core_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_SOURCES = vg_preloaded.c
 vgpreload_core_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_CPPFLAGS = \
 	$(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
 vgpreload_core_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_CFLAGS = \
-	$(AM_CFLAGS_@VGCONF_PLATFORM_PRI_CAPS@) $(AM_CFLAGS_PIC)
+	$(AM_CFLAGS_PSO_@VGCONF_PLATFORM_PRI_CAPS@)
 vgpreload_core_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_LDFLAGS = \
 	$(PRELOAD_LDFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
 if VGCONF_HAVE_PLATFORM_SEC
@@ -505,7 +505,7 @@ vgpreload_core_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_SOURCES = vg_preloaded.c
 vgpreload_core_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_CPPFLAGS = \
 	$(AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
 vgpreload_core_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_CFLAGS = \
-	$(AM_CFLAGS_@VGCONF_PLATFORM_SEC_CAPS@) $(AM_CFLAGS_PIC)
+	$(AM_CFLAGS_PSO_@VGCONF_PLATFORM_SEC_CAPS@)
 vgpreload_core_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_LDFLAGS = \
 	$(PRELOAD_LDFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
 endif

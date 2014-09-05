@@ -1707,24 +1707,29 @@ CFLAGS=$safe_CFLAGS
 AC_SUBST(FLAG_MSSE)
 
 
-# does this compiler support -mpreferred-stack-boundary=2 ?
-AC_MSG_CHECKING([if gcc accepts -mpreferred-stack-boundary=2])
+# does this compiler support -mpreferred-stack-boundary=2 when
+# generating code for a 32-bit target?  Note that we only care about
+# this when generating code for (32-bit) x86, so if the compiler
+# doesn't recognise -m32 it's no big deal.  We'll just get code for
+# the Memcheck and other helper functions, that is a bit slower than
+# it could be, on x86; and no difference at all on any other platform.
+AC_MSG_CHECKING([if gcc accepts -mpreferred-stack-boundary=2 -m32])
 
 safe_CFLAGS=$CFLAGS
-CFLAGS="-mpreferred-stack-boundary=2"
+CFLAGS="-mpreferred-stack-boundary=2 -m32"
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   return 0;
 ]])], [
-PREFERRED_STACK_BOUNDARY="-mpreferred-stack-boundary=2"
+PREFERRED_STACK_BOUNDARY_2="-mpreferred-stack-boundary=2"
 AC_MSG_RESULT([yes])
 ], [
-PREFERRED_STACK_BOUNDARY=""
+PREFERRED_STACK_BOUNDARY_2=""
 AC_MSG_RESULT([no])
 ])
 CFLAGS=$safe_CFLAGS
 
-AC_SUBST(PREFERRED_STACK_BOUNDARY)
+AC_SUBST(PREFERRED_STACK_BOUNDARY_2)
 
 
 # Convenience function to check whether GCC supports a particular

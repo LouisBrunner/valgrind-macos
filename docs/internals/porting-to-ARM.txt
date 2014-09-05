@@ -40,8 +40,8 @@ You'll need to:
 	AC_MSG_RESULT([ok (${host_cpu})])
         VG_ARCH="arm"
         KICKSTART_BASE="0xb0000000"
-        ARCH_CORE_AM_CFLAGS="-fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@"
-        ARCH_TOOL_AM_CFLAGS="-fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@"
+        ARCH_CORE_AM_CFLAGS="-fomit-frame-pointer"
+        ARCH_TOOL_AM_CFLAGS="-fomit-frame-pointer"
         ARCH_CORE_AM_CCASFLAGS=""
         ;;
 

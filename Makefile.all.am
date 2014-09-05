@@ -109,17 +109,20 @@ AM_CFLAGS_BASE = \
 	-fno-strict-aliasing \
 	-fno-builtin
 
-# These flags are used for building the preload shared objects.
+# These flags are used for building the preload shared objects (PSOs).
 # The aim is to give reasonable performance but also to have good
 # stack traces, since users often see stack traces extending 
-# into (and through) the preloads.
+# into (and through) the preloads.  Also, we must use any
+# -mpreferred-stack-boundary flag to build the preload shared
+# objects, since that risks misaligning the client's stack and
+# results in segfaults like (eg) #324050.
 if VGCONF_OS_IS_DARWIN
-AM_CFLAGS_PIC = -dynamic -O -g -fno-omit-frame-pointer -fno-strict-aliasing \
-		-fpic -fPIC \
-		-fno-builtin
+AM_CFLAGS_PSO_BASE = -dynamic \
+		     -O -g -fno-omit-frame-pointer -fno-strict-aliasing \
+		     -fpic -fPIC -fno-builtin
 else
-AM_CFLAGS_PIC = -fpic -O -g -fno-omit-frame-pointer -fno-strict-aliasing \
-		-fno-builtin
+AM_CFLAGS_PSO_BASE = -O -g -fno-omit-frame-pointer -fno-strict-aliasing \
+		     -fpic -fno-builtin
 endif
 
 
@@ -150,35 +153,43 @@ AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@ = \
 endif
 
 AM_FLAG_M3264_X86_LINUX   = @FLAG_M32@
-AM_CFLAGS_X86_LINUX       = @FLAG_M32@  @PREFERRED_STACK_BOUNDARY@ \
+AM_CFLAGS_X86_LINUX       = @FLAG_M32@ @PREFERRED_STACK_BOUNDARY_2@ \
 				$(AM_CFLAGS_BASE) -fomit-frame-pointer
+AM_CFLAGS_PSO_X86_LINUX   = @FLAG_M32@ $(AM_CFLAGS_BASE) $(AM_CFLAGS_PSO_BASE)
 AM_CCASFLAGS_X86_LINUX    = @FLAG_M32@ -g
 
 AM_FLAG_M3264_AMD64_LINUX = @FLAG_M64@
-AM_CFLAGS_AMD64_LINUX     = @FLAG_M64@ @PREFERRED_STACK_BOUNDARY@ \
+AM_CFLAGS_AMD64_LINUX     = @FLAG_M64@ \
 				$(AM_CFLAGS_BASE) -fomit-frame-pointer
+AM_CFLAGS_PSO_AMD64_LINUX = @FLAG_M64@ $(AM_CFLAGS_BASE) $(AM_CFLAGS_PSO_BASE)
 AM_CCASFLAGS_AMD64_LINUX  = @FLAG_M64@ -g
 
 AM_FLAG_M3264_PPC32_LINUX = @FLAG_M32@
 AM_CFLAGS_PPC32_LINUX     = @FLAG_M32@ $(AM_CFLAGS_BASE)
+AM_CFLAGS_PSO_PPC32_LINUX = @FLAG_M32@ $(AM_CFLAGS_BASE) $(AM_CFLAGS_PSO_BASE)
 AM_CCASFLAGS_PPC32_LINUX  = @FLAG_M32@ -g
 
 AM_FLAG_M3264_PPC64BE_LINUX = @FLAG_M64@
 AM_CFLAGS_PPC64BE_LINUX     = @FLAG_M64@ $(AM_CFLAGS_BASE)
+AM_CFLAGS_PSO_PPC64BE_LINUX = @FLAG_M64@ $(AM_CFLAGS_BASE) $(AM_CFLAGS_PSO_BASE)
 AM_CCASFLAGS_PPC64BE_LINUX  = @FLAG_M64@ -g
 
 AM_FLAG_M3264_PPC64LE_LINUX = @FLAG_M64@
 AM_CFLAGS_PPC64LE_LINUX     = @FLAG_M64@ $(AM_CFLAGS_BASE)
+AM_CFLAGS_PSO_PPC64LE_LINUX = @FLAG_M64@ $(AM_CFLAGS_BASE) $(AM_CFLAGS_PSO_BASE)
 AM_CCASFLAGS_PPC64LE_LINUX  = @FLAG_M64@ -g
 
 AM_FLAG_M3264_ARM_LINUX   = @FLAG_M32@
-AM_CFLAGS_ARM_LINUX       = @FLAG_M32@ @PREFERRED_STACK_BOUNDARY@ \
+AM_CFLAGS_ARM_LINUX       = @FLAG_M32@ \
 			 	$(AM_CFLAGS_BASE) -marm -mcpu=cortex-a8
+AM_CFLAGS_PSO_ARM_LINUX   = @FLAG_M32@ $(AM_CFLAGS_BASE) \
+				-marm -mcpu=cortex-a8 $(AM_CFLAGS_PSO_BASE)
 AM_CCASFLAGS_ARM_LINUX    = @FLAG_M32@ \
 				-marm -mcpu=cortex-a8 -g
 
 AM_FLAG_M3264_ARM64_LINUX = @FLAG_M64@
 AM_CFLAGS_ARM64_LINUX     = @FLAG_M64@ $(AM_CFLAGS_BASE)
+AM_CFLAGS_PSO_ARM64_LINUX = @FLAG_M64@ $(AM_CFLAGS_BASE) $(AM_CFLAGS_PSO_BASE)
 AM_CCASFLAGS_ARM64_LINUX  = @FLAG_M64@ -g
 
 AM_FLAG_M3264_X86_DARWIN = -arch i386
@@ -186,23 +197,30 @@ AM_CFLAGS_X86_DARWIN     = $(WERROR) -arch i386 $(AM_CFLAGS_BASE) \
 				-mmacosx-version-min=10.5 \
 				-fno-stack-protector -fno-pic -fno-PIC
 
+AM_CFLAGS_PSO_X86_DARWIN = $(AM_CFLAGS_X86_DARWIN) $(AM_CFLAGS_PSO_BASE)
 AM_CCASFLAGS_X86_DARWIN  = -arch i386 -g
 
 AM_FLAG_M3264_AMD64_DARWIN = -arch x86_64
 AM_CFLAGS_AMD64_DARWIN     = $(WERROR) -arch x86_64 $(AM_CFLAGS_BASE) \
 			    -mmacosx-version-min=10.5 -fno-stack-protector
+AM_CFLAGS_PSO_AMD64_DARWIN = $(AM_CFLAGS_AMD64_DARWIN) $(AM_CFLAGS_PSO_BASE)
 AM_CCASFLAGS_AMD64_DARWIN  = -arch x86_64 -g
 
 AM_FLAG_M3264_S390X_LINUX = @FLAG_M64@
 AM_CFLAGS_S390X_LINUX     = @FLAG_M64@ $(AM_CFLAGS_BASE) -fomit-frame-pointer
+AM_CFLAGS_PSO_S390X_LINUX = @FLAG_M64@ $(AM_CFLAGS_BASE) $(AM_CFLAGS_PSO_BASE)
 AM_CCASFLAGS_S390X_LINUX  = @FLAG_M64@ -g -mzarch -march=z900
 
 AM_FLAG_M3264_MIPS32_LINUX = @FLAG_M32@
 AM_CFLAGS_MIPS32_LINUX     = @FLAG_M32@ $(AM_CFLAGS_BASE) @FLAG_MIPS32@
+AM_CFLAGS_PSO_MIPS32_LINUX = @FLAG_M32@ $(AM_CFLAGS_BASE) @FLAG_MIPS32@ \
+				$(AM_CFLAGS_PSO_BASE)
 AM_CCASFLAGS_MIPS32_LINUX  = @FLAG_M32@ -g @FLAG_MIPS32@
 
 AM_FLAG_M3264_MIPS64_LINUX = @FLAG_M64@
 AM_CFLAGS_MIPS64_LINUX     = @FLAG_M64@ $(AM_CFLAGS_BASE) @FLAG_MIPS64@
+AM_CFLAGS_PSO_MIPS64_LINUX = @FLAG_M64@ $(AM_CFLAGS_BASE) @FLAG_MIPS64@ \
+				$(AM_CFLAGS_PSO_BASE)
 AM_CCASFLAGS_MIPS64_LINUX  = @FLAG_M64@ -g @FLAG_MIPS64@
 
 # Flags for the primary target.  These must be used to build the

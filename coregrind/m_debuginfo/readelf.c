@@ -1180,7 +1180,12 @@ DiImage* open_debug_file( const HChar* name, const HChar* buildid, UInt crc,
          VG_(message)(Vg_DebugMsg, "  Considering %s ..\n", name);
    }
 
-   if (buildid) {
+   /* We will always check the crc if we have one (altfiles don't have one)
+      for now because we might be opening the main file again by any other
+      name, and that obviously also has the same buildid. More efficient
+      would be an fstat bases check or a check that the file actually
+      contains .debug* sections. */
+   if (buildid && crc == 0) {
       HChar* debug_buildid = find_buildid(dimg, rel_ok, True);
       if (debug_buildid == NULL || VG_(strcmp)(buildid, debug_buildid) != 0) {
          ML_(img_done)(dimg);

@@ -1244,7 +1244,7 @@ DiImage* find_debug_file( struct _DebugInfo* di,
       }
    }
 
-   if (dimg == NULL && debugname != NULL && !rel_ok) {
+   if (dimg == NULL && debugname != NULL) {
       HChar *objdir = ML_(dinfo_strdup)("di.fdf.2", objpath);
       HChar *objdirptr;
 
@@ -1258,21 +1258,21 @@ DiImage* find_debug_file( struct _DebugInfo* di,
                      + (serverpath ? VG_(strlen)(serverpath) : 0));
 
       VG_(sprintf)(debugpath, "%s/%s", objdir, debugname);
-      dimg = open_debug_file(debugpath, NULL, crc, rel_ok, NULL);
+      dimg = open_debug_file(debugpath, buildid, crc, rel_ok, NULL);
       if (dimg != NULL) goto dimg_ok;
 
       VG_(sprintf)(debugpath, "%s/.debug/%s", objdir, debugname);
-      dimg = open_debug_file(debugpath, NULL, crc, rel_ok, NULL);
+      dimg = open_debug_file(debugpath, buildid, crc, rel_ok, NULL);
       if (dimg != NULL) goto dimg_ok;
       
       VG_(sprintf)(debugpath, "/usr/lib/debug%s/%s", objdir, debugname);
-      dimg = open_debug_file(debugpath, NULL, crc, rel_ok, NULL);
+      dimg = open_debug_file(debugpath, buildid, crc, rel_ok, NULL);
       if (dimg != NULL) goto dimg_ok;
 
       if (extrapath) {
          VG_(sprintf)(debugpath, "%s%s/%s", extrapath,
                                             objdir, debugname);
-         dimg = open_debug_file(debugpath, NULL, crc, rel_ok, NULL);
+         dimg = open_debug_file(debugpath, buildid, crc, rel_ok, NULL);
          if (dimg != NULL) goto dimg_ok;
       }
 
@@ -1284,7 +1284,7 @@ DiImage* find_debug_file( struct _DebugInfo* di,
             basename = VG_(strrchr)(basename, '/') + 1;
          }
          VG_(sprintf)(debugpath, "%s on %s", basename, serverpath);
-         dimg = open_debug_file(basename, NULL, crc, rel_ok, serverpath);
+         dimg = open_debug_file(basename, buildid, crc, rel_ok, serverpath);
          if (dimg) goto dimg_ok;
       }
 
@@ -1297,6 +1297,10 @@ DiImage* find_debug_file( struct _DebugInfo* di,
       vg_assert(debugpath);
       TRACE_SYMTAB("\n");
       TRACE_SYMTAB("------ Found a debuginfo file: %s\n", debugpath);
+
+      /* Only set once, we might be called again for opening the altfile. */
+      if (di->fsm.dbgname == NULL)
+         di->fsm.dbgname = ML_(dinfo_strdup)("di.fdf.4", debugpath);
    }
 
    if (debugpath)
@@ -2714,6 +2718,9 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       vg_assert(aimg == NULL);
 
       if (debugaltlink_escn.img != NULL) {
+         HChar* altfile_str_m
+             = ML_(img_strdup)(debugaltlink_escn.img,
+                               "di.fbi.3", debugaltlink_escn.ioff);
          UInt buildid_offset = ML_(img_strlen)(debugaltlink_escn.img,
                                                debugaltlink_escn.ioff)+1;
 
@@ -2724,6 +2731,9 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                                 (debugaltlink_escn.szB - buildid_offset)
                                 * 2 + 1);
 
+         /* The altfile might be relative to the debug file or main file. */
+         HChar *dbgname = di->fsm.dbgname ? di->fsm.dbgname : di->fsm.filename;
+
          for (j = 0; j < debugaltlink_escn.szB - buildid_offset; j++)
             VG_(sprintf)(
                altbuildid + 2 * j, "%02x",
@@ -2732,9 +2742,11 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                                         + buildid_offset + j));
 
          /* See if we can find a matching debug file */
-         aimg = find_debug_file( di, di->fsm.filename, altbuildid,
-                                 NULL, 0, True );
+         aimg = find_debug_file( di, dbgname, altbuildid,
+                                 altfile_str_m, 0, True );
 
+         if (altfile_str_m)
+            ML_(dinfo_free)(altfile_str_m);
          ML_(dinfo_free)(altbuildid);
       }
 

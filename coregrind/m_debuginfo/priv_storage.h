@@ -543,6 +543,7 @@ struct _DebugInfoMapping
 struct _DebugInfoFSM
 {
    HChar*  filename;  /* in mallocville (VG_AR_DINFO)               */
+   HChar*  dbgname;   /* in mallocville (VG_AR_DINFO)               */
    XArray* maps;      /* XArray of _DebugInfoMapping structs        */
    Bool  have_rx_map; /* did we see a r?x mapping yet for the file? */
    Bool  have_rw_map; /* did we see a rw? mapping yet for the file? */

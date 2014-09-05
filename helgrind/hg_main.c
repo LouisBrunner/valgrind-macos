@@ -1794,12 +1794,8 @@ void evh__new_mem_heap ( Addr a, SizeT len, Bool is_inited ) {
    if (SHOW_EVENTS >= 1)
       VG_(printf)("evh__new_mem_heap(%p, %lu, inited=%d)\n", 
                   (void*)a, len, (Int)is_inited );
-   // FIXME: this is kinda stupid
-   if (is_inited) {
-      shadow_mem_make_New(get_current_Thread(), a, len);
-   } else {
-      shadow_mem_make_New(get_current_Thread(), a, len);
-   }
+   // We ignore the initialisation state (is_inited); that's ok.
+   shadow_mem_make_New(get_current_Thread(), a, len);
    if (len >= SCE_BIGRANGE_T && (HG_(clo_sanity_flags) & SCE_BIGRANGE))
       all__sanity_check("evh__pre_mem_read-post");
 }

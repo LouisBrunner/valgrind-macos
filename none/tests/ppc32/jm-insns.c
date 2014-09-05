@@ -5586,7 +5586,7 @@ static void test_int_ld_one_reg_imm16 (const char* name,
 #ifndef __powerpc64__
       printf("%s %2d, (%08x) => %08x, %2d (%08x %08x)\n",
 #else
-      printf("%s %3d, (%016x) => %016llx, %3lld (%08x %08x)\n",
+      printf("%s %3d, (%016llx) => %016llx, %3lld (%08x %08x)\n",
 #endif
              name, offs, iargs[nb_iargs-1 + i], res, r14-base, flags, xer);
    }

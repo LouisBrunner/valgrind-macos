@@ -180,11 +180,14 @@ static void check_cache_or_override(const HChar* desc, cache_t* c, Bool clo_rede
 
    That sometimes gives a problem.  For example, some Core iX based
    Intel CPUs have T = 12MB, A = 16, L = 64, which gives 12288
-   sets.  The "fix" in this case is to increase the associativity
-   by 50% to 24, which reduces the number of sets to 8192, making
-   it a power of 2.  That's what the following code does (handing
-   the "3/2 rescaling case".)  We might need to deal with other
-   ratios later (5/4 ?).
+   sets.  Some AMD cpus have T = 5MB, A = 48, L = 64, which gives
+   1706.667 sets (!).
+
+   The "fix" is to force S down to the nearest power of two below its
+   original value, and increase A proportionately, so as to keep the
+   total cache size the same.  In fact to be safe we recalculate the
+   cache size afterwards anyway, to guarantee that it divides exactly
+   between the new number of sets.
 
    The "fix" is "justified" (cough, cough) by alleging that
    increases of associativity above about 4 have very little effect
@@ -193,29 +196,78 @@ static void check_cache_or_override(const HChar* desc, cache_t* c, Bool clo_rede
    changing the associativity is a much better option.
 */
 
+/* (Helper function) Returns the largest power of 2 that is <= |x|.
+   Even works when |x| == 0. */
+static UInt floor_power_of_2 ( UInt x )
+{
+   x = x | (x >> 1);
+   x = x | (x >> 2);
+   x = x | (x >> 4);
+   x = x | (x >> 8);
+   x = x | (x >> 16);
+   return x - (x >> 1);
+}
+
 static void
 maybe_tweak_LLc(cache_t *LLc)
 {
-  if (LLc->size > 0 && LLc->assoc > 0 && LLc->line_size > 0) {
-      Long nSets = (Long)LLc->size / (Long)(LLc->line_size * LLc->assoc);
-      if (/* stay sane */
-          nSets >= 4
-          /* nSets is not a power of 2 */
-          && VG_(log2_64)( (ULong)nSets ) == -1
-          /* nSets is 50% above a power of 2 */
-          && VG_(log2_64)( (ULong)((2 * nSets) / (Long)3) ) != -1
-          /* associativity can be increased by exactly 50% */
-          && (LLc->assoc % 2) == 0
-         ) {
-         /* # sets is 1.5 * a power of two, but the associativity is
-            even, so we can increase that up by 50% and implicitly
-            scale the # sets down accordingly. */
-         Int new_assoc = LLc->assoc + (LLc->assoc / 2);
-         VG_(dmsg)("warning: pretending that LL cache has associativity"
-                   " %d instead of actual %d\n", new_assoc, LLc->assoc);
-         LLc->assoc = new_assoc;
-      }
-   }
+  if (LLc->size == 0 || LLc->assoc == 0 || LLc->line_size == 0)
+     return;
+
+  tl_assert(LLc->size > 0 && LLc->assoc > 0 && LLc->line_size > 0);
+
+  UInt old_size      = (UInt)LLc->size;
+  UInt old_assoc     = (UInt)LLc->assoc;
+  UInt old_line_size = (UInt)LLc->line_size;
+
+  UInt new_size      = old_size;
+  UInt new_assoc     = old_assoc;
+  UInt new_line_size = old_line_size;
+
+  UInt old_nSets = old_size / (old_assoc * old_line_size);
+  if (old_nSets == 0) {
+     /* This surely can't happen; but would cause chaos with the maths
+      * below if it did.  Just give up if it does. */
+     return;
+  }
+
+  if (-1 != VG_(log2_64)(old_nSets)) {
+     /* The number of sets is already a power of 2.  Make sure that
+        the size divides exactly between the sets.  Almost all of the
+        time this will have no effect. */
+     new_size = old_line_size * old_assoc * old_nSets;
+  } else {
+     /* The number of sets isn't a power of two.  Calculate some
+        scale-down factor which causes the number of sets to become a
+        power of two.  Then, increase the associativity by that
+        factor.  Finally, re-calculate the total size so as to make
+        sure it divides exactly between the sets. */
+     tl_assert(old_nSets >= 0);
+     UInt new_nSets = floor_power_of_2 ( old_nSets );
+     tl_assert(new_nSets > 0 && new_nSets < old_nSets);
+     Double factor = (Double)old_nSets / (Double)new_nSets;
+     tl_assert(factor >= 1.0);
+
+     new_assoc = (UInt)(0.5 + factor * (Double)old_assoc);
+     tl_assert(new_assoc >= old_assoc);
+
+     new_size = old_line_size * new_assoc * new_nSets;
+  }
+  
+  tl_assert(new_line_size == old_line_size); /* we never change this */
+  if (new_size == old_size && new_assoc == old_assoc)
+     return;
+
+  VG_(dmsg)("warning: "
+            "specified LL cache: line_size %u  assoc %u  total_size %'u\n",
+            old_line_size, old_assoc, old_size);
+  VG_(dmsg)("warning: "
+            "simulated LL cache: line_size %u  assoc %u  total_size %'u\n",\
+            new_line_size, new_assoc, new_size);
+
+  LLc->size      = new_size;
+  LLc->assoc     = new_assoc;
+  LLc->line_size = new_line_size;
 }
 
 void VG_(post_clo_init_configure_caches)(cache_t* I1c,

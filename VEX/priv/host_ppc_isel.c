@@ -5761,26 +5761,18 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt, IREndness IEndianess )
       if (d->tmp != IRTemp_INVALID)
          retty = typeOfIRTemp(env->type_env, d->tmp);
 
-      /* Throw out any return types we don't know about. */
+      /* Throw out any return types we don't know about.  The set of
+         acceptable return types is the same in both 32- and 64-bit
+         mode, so we don't need to inspect mode64 to make a
+         decision. */
       Bool retty_ok = False;
-      if (mode64) {
-         switch (retty) {
-            case Ity_INVALID: /* function doesn't return anything */
-            case Ity_V128:
-            case Ity_I64: case Ity_I32: case Ity_I16: case Ity_I8:
-               retty_ok = True; break;
-            default:
-               break;
-         }
-      } else {
-         switch (retty) {
-            case Ity_INVALID: /* function doesn't return anything */
-            case Ity_V128:
-            case Ity_I64: case Ity_I32: case Ity_I16: case Ity_I8:
-               retty_ok = True; break;
-            default:
-               break;
-         }
+      switch (retty) {
+         case Ity_INVALID: /* function doesn't return anything */
+         case Ity_V128:
+         case Ity_I64: case Ity_I32: case Ity_I16: case Ity_I8:
+            retty_ok = True; break;
+         default:
+            break;
       }
       if (!retty_ok)
          break; /* will go to stmt_fail: */

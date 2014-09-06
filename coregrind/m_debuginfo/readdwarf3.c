@@ -2511,7 +2511,28 @@ typedef
    D3InlParser;
 
 /* Return the function name corresponding to absori.
-   The return value is a (permanent) string in DebugInfo's .strchunks. */
+
+   absori is a 'cooked' reference to a DIE, i.e. absori can be either
+   in cc->escn_debug_info or in cc->escn_debug_info_alt.
+   get_inlFnName will uncook absori. 
+
+   The returned value is a (permanent) string in DebugInfo's .strchunks.
+
+   LIMITATION: absori must point in the CU of cc. If absori points
+   in another CU, returns "UnknownInlinedFun".
+
+   Here are the problems to retrieve the fun name if absori is in
+   another CU:  the DIE reading code cannot properly extract data from
+   another CU, as the abbv code retrieved in the other CU cannot be
+   translated in an abbreviation. Reading data from the alternate debug
+   info also gives problems as the string reference is also in the alternate
+   file, but when reading the alt DIE, the string form is a 'local' string,
+   but cannot be read in the current CU, but must be read in the alt CU.
+   See bug 338803 comment#3 and attachment for a failed attempt to handle
+   these problems (failed because with the patch, only one alt abbrev hash
+   table is kept, while we must handle all abbreviations in all CUs
+   referenced by an absori (being a reference to an alt CU, or a previous
+   or following CU). */
 static HChar* get_inlFnName (Int absori, CUConst* cc, Bool td3)
 {
    Cursor c;
@@ -2519,14 +2540,37 @@ static HChar* get_inlFnName (Int absori, CUConst* cc, Bool td3)
    ULong  atag, abbv_code;
    UInt   has_children;
    UWord  posn;
+   Bool type_flag, alt_flag;
    HChar *ret = NULL;
    FormContents cts;
    UInt nf_i;
 
-   init_Cursor (&c, cc->escn_debug_info, absori, cc->barf, 
+   posn = uncook_die( cc, absori, &type_flag, &alt_flag);
+   if (type_flag)
+      cc->barf("get_inlFnName: uncooked absori in type debug info");
+
+   /* LIMITATION: check we are in the same CU.
+      If not, return unknown inlined function name. */
+   /* if crossing between alt debug info<>normal info
+          or posn not in the cu range,
+      then it is in another CU. */
+   if (alt_flag != cc->is_alt_info
+       || posn < cc->cu_start_offset
+       || posn >= cc->cu_start_offset + cc->unit_length) {
+      static Bool reported = False;
+      if (!reported) {
+         VG_(message)(Vg_DebugMsg,
+                      "Warning: cross-CU LIMITATION: some inlined fn names\n"
+                      "might be shown as UnknownInlinedFun\n");
+         reported = True;
+      }
+      TRACE_D3(" <get_inlFnName><%lx>: cross-CU LIMITATION", posn);
+      return ML_(addStr)(cc->di, "UnknownInlinedFun", -1);
+   }
+
+   init_Cursor (&c, cc->escn_debug_info, posn, cc->barf, 
                 "Overrun get_inlFnName absori");
 
-   posn      = cook_die( cc, get_position_of_Cursor( &c ) );
    abbv_code = get_ULEB128( &c );
    abbv      = get_abbv ( cc, abbv_code);
    atag      = abbv->atag;
@@ -2562,12 +2606,19 @@ static HChar* get_inlFnName (Int absori, CUConst* cc, Bool td3)
                  DW_AT_specification. */
       }
       if (attr == DW_AT_specification) {
+         UWord cdie;
+
          if (cts.szB == 0)
             cc->barf("get_inlFnName: AT specification missing");
+
+         /* The recursive call to get_inlFnName will uncook its arg.
+            So, we need to cook it here, so as to reference the
+            correct section (e.g. the alt info). */
+         cdie = cook_die_using_form(cc, (UWord)cts.u.val, form);
+
          /* hoping that there is no loop */
-         ret = get_inlFnName (cts.u.val, cc, td3);
-         /* 
-            Unclear if having both DW_AT_specification and DW_AT_name is
+         ret = get_inlFnName (cdie, cc, td3);
+         /* Unclear if having both DW_AT_specification and DW_AT_name is
             possible but in any case, we do not break here. 
             If we find later on a DW_AT_name, it will override the name found
             in the DW_AT_specification.*/
@@ -2675,7 +2726,8 @@ static Bool parse_inl_DIE (
          }  
 
          if (attr == DW_AT_abstract_origin  && cts.szB > 0) {
-            inlinedfn_abstract_origin = cts.u.val;
+            inlinedfn_abstract_origin
+               = cook_die_using_form (cc, (UWord)cts.u.val, form);
          }
 
          if (attr == DW_AT_low_pc && cts.szB > 0) {

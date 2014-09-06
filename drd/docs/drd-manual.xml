@@ -1278,8 +1278,7 @@ before Valgrind's header files are available.
 </para>
 <para>For more information, see also <emphasis>The
 GNU C++ Library Manual, Debugging Support</emphasis>
-(<ulink url="http://gcc.gnu.org/onlinedocs/libstdc++/manual/debug.html">http://gcc.gnu.org/onlinedocs/libstdc++/manual/debug.html</ulink>)
-for more information.</para>
+(<ulink url="http://gcc.gnu.org/onlinedocs/libstdc++/manual/debug.html">http://gcc.gnu.org/onlinedocs/libstdc++/manual/debug.html</ulink>).</para>
 
 </sect2>
 

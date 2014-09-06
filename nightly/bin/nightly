@@ -222,7 +222,11 @@ if [ "x$libc_so" != "x" ]; then
 fi
 libc=`echo $libc | sed "s/, by Roland.*//"`
 uname_stuff="`uname -mrs`"
-if [ -e "/etc/issue.net" -a -r "/etc/issue.net" ]; then
+if [ -r /etc/os-release ]; then
+  vendor_stuff="`source /etc/os-release; echo ${NAME} ${VERSION}`"
+elif which lsb_release 2>&1 > /dev/null; then
+  vendor_stuff="`lsb_release -sicr | xargs echo`"
+elif [ -e "/etc/issue.net" -a -r "/etc/issue.net" ]; then
   vendor_stuff="`cat /etc/issue.net | head -1`"
 else
   vendor_stuff="unknown"

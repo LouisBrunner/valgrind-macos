@@ -2095,7 +2095,7 @@ need to use them.</para>
           </para>
         </listitem>
         <listitem>
-          <para><option>android-emulator-no-hw-tls</option>: some
+          <para><option>android-no-hw-tls</option>: some
           versions of the Android emulator for ARM do not provide a
           hardware TLS (thread-local state) register, and Valgrind
           crashes at startup.  Use this variant to select software

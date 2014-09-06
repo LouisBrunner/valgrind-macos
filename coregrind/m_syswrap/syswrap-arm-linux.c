@@ -279,7 +279,7 @@ static SysRes sys_set_tls ( ThreadId tid, Addr tlsptr )
 {
    assign_guest_tls(tid, tlsptr);
 
-   if (KernelVariantiS(KernelVariant_android_emulator_no_hw_tls,
+   if (KernelVariantiS(KernelVariant_android_no_hw_tls,
                        VG_(clo_kernel_variant))) {
       /* Android emulator does not provide an hw tls register.
          So, the tls register is emulated by the kernel.

@@ -184,7 +184,7 @@ static void usage_NORETURN ( Bool debug_help )
 "    --kernel-variant=variant1,variant2,...\n"
 "         handle non-standard kernel variants [none]\n"
 "         where variant is one of:\n"
-"           bproc android-emulator-no-hw-tls\n"
+"           bproc android-no-hw-tls\n"
 "           android-gpu-sgx5xx android-gpu-adreno3xx none\n"
 "    --merge-recursive-frames=<number>  merge frames between identical\n"
 "           program counters in max <number> frames) [0]\n"
@@ -633,7 +633,7 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
 
       else if VG_USETX_CLO (arg, "--kernel-variant",
                             "bproc,"
-                            "android-emulator-no-hw-tls,"
+                            "android-no-hw-tls,"
                             "android-gpu-sgx5xx,"
                             "android-gpu-adreno3xx",
                             VG_(clo_kernel_variant)) {}

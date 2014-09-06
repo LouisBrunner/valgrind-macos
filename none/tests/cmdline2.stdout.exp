@@ -97,7 +97,7 @@ usage: valgrind [options] prog-and-args
     --kernel-variant=variant1,variant2,...
          handle non-standard kernel variants [none]
          where variant is one of:
-           bproc android-emulator-no-hw-tls
+           bproc android-no-hw-tls
            android-gpu-sgx5xx android-gpu-adreno3xx none
     --merge-recursive-frames=<number>  merge frames between identical
            program counters in max <number> frames) [0]

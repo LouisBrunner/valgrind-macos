@@ -341,7 +341,7 @@ extern VgSmc VG_(clo_smc_check);
 typedef
    enum {
       KernelVariant_bproc,
-      KernelVariant_android_emulator_no_hw_tls,
+      KernelVariant_android_no_hw_tls,
       KernelVariant_android_gpu_sgx5xx,
       KernelVariant_android_gpu_adreno3xx
    }

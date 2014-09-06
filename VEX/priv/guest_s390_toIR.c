@@ -482,20 +482,36 @@ put_dpr_pair(UInt archreg, IRExpr *expr)
 
 /* Terminate the current IRSB with an emulation failure. */
 static void
-emulation_failure(VexEmNote fail_kind)
+emulation_failure_with_expr(IRExpr *emfailure)
 {
-   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_EMNOTE), mkU32(fail_kind)));
+   vassert(typeOfIRExpr(irsb->tyenv, emfailure) == Ity_I32);
+
+   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_EMNOTE), emfailure));
    dis_res->whatNext = Dis_StopHere;
    dis_res->jk_StopHere = Ijk_EmFail;
 }
 
+static void
+emulation_failure(VexEmNote fail_kind)
+{
+   emulation_failure_with_expr(mkU32(fail_kind));
+}
+
 /* Terminate the current IRSB with an emulation warning. */
+static void
+emulation_warning_with_expr(IRExpr *emwarning)
+{
+   vassert(typeOfIRExpr(irsb->tyenv, emwarning) == Ity_I32);
+
+   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_EMNOTE), emwarning));
+   dis_res->whatNext = Dis_StopHere;
+   dis_res->jk_StopHere = Ijk_EmWarn;
+}
+
 static void
 emulation_warning(VexEmNote warn_kind)
 {
-   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_EMNOTE), mkU32(warn_kind)));
-   dis_res->whatNext = Dis_StopHere;
-   dis_res->jk_StopHere = Ijk_EmWarn;
+   emulation_warning_with_expr(mkU32(warn_kind));
 }
 
 /*------------------------------------------------------------*/
@@ -7262,12 +7278,7 @@ s390_irgen_PFPO(void)
 
    /* Check validity of function code in GR 0 */
    assign(ef, s390_call_pfpo_helper(unop(Iop_32Uto64, mkexpr(gr0))));
-
-   /* fixs390: Function emulation_failure can be used if it takes argument as
-      IRExpr * instead of VexEmNote. */
-   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_EMNOTE), mkexpr(ef)));
-   dis_res->whatNext = Dis_StopHere;
-   dis_res->jk_StopHere = Ijk_EmFail;
+   emulation_failure_with_expr(mkexpr(ef));
 
    stmt(
         IRStmt_Exit(

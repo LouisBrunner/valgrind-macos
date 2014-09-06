@@ -204,32 +204,24 @@ HChar* VG_(expand_file_name)(const HChar* option_name, const HChar* format)
             i++;
             if ('{' == format[i]) {
                // Get the env var name, print its contents.
-               const HChar* qualname;
-               HChar* qual;
-               i++;
-               qualname = &format[i];
+               HChar *qual;
+               Int begin_qualname = ++i;
                while (True) {
                   if (0 == format[i]) {
                      VG_(fmsg)("%s: malformed %%q specifier\n", option_name);
                      goto bad;
                   } else if ('}' == format[i]) {
-                     // Temporarily replace the '}' with NUL to extract var
-                     // name.
-                     // FIXME: this is not safe as FORMAT is sometimes a
-                     // string literal which may reside in read-only memory
-                    ((HChar *)format)[i] = 0;
+                     Int qualname_len = i - begin_qualname;
+                     HChar qualname[qualname_len + 1];
+                     VG_(strncpy)(qualname, format + begin_qualname,
+                                  qualname_len);
+                     qualname[qualname_len] = '\0';
                      qual = VG_(getenv)(qualname);
                      if (NULL == qual) {
                         VG_(fmsg)("%s: environment variable %s is not set\n",
                                   option_name, qualname);
-                     // FIXME: this is not safe as FORMAT is sometimes a
-                     // string literal which may reside in read-only memory
-                        ((HChar *)format)[i] = '}';  // Put the '}' back.
                         goto bad;
                      }
-                     // FIXME: this is not safe as FORMAT is sometimes a
-                     // string literal which may reside in read-only memory
-                     ((HChar *)format)[i] = '}';     // Put the '}' back.
                      i++;
                      break;
                   }

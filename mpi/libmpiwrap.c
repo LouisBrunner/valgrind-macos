@@ -152,7 +152,7 @@ typedef    signed long  Word;
 typedef  unsigned long  UWord;
 
 #if !defined(offsetof)
-#  define offsetof(type,memb) ((int)&((type*)0)->memb)
+#  define offsetof(type,memb) ((UWord)&((type*)0)->memb)
 #endif
 
 /* Find the size of long double image (not 'sizeof(long double)').

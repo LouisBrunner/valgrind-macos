@@ -29,6 +29,7 @@ sed \
 -e "s: BSS section of [^<]*/: BSS section of :g" \
 -e "s: vc \[[ ,:0-9]*\]: vc ...:g" \
 -e "s/[@\$*]* (drd_pthread_intercepts.c:/ (drd_pthread_intercepts.c:/" \
+-e "/\(pthread\|sem\)_[a-zA-Z0-9_]*_intercept/d" \
 -e "s/ (\([a-zA-Z_]*\.c\):[0-9]*)/ (\1:?)/" \
 -e "s/ (\([a-zA-Z_]*\.h\):[0-9]*)/ (\1:?)/" \
 -e "s/ (\([a-zA-Z_]*\.cpp\):[0-9]*)/ (\1:?)/" \
@@ -42,6 +43,12 @@ awk 'BEGIN{begin=1} {if ($0 == "More than 100 errors detected.  Subsequent error
 
 # Remove the message about experimental support for Darwin.
 awk 'BEGIN{begin=1} { if ($0 == "WARNING: DRD support for Darwin is still considered as experimental.") { getline; getline; } else { if (begin) begin = 0; else print last_line; }; last_line = $0; } END { if (! begin) print last_line; }' |
+
+# Make sure the first line of a stack trace starts with "at"
+awk '{ s = !match(prev, "  by ") && !match(prev, "  at ") && match($0, "  by "); prev = $0; if (s) sub("  by ", "  at ", $0); print }' |
+
+# Remove <frame>...<file>drd_pthread_intercepts.c</file>...</frame>
+awk '/^    <frame>$/ { in_frame = 1; line = 0; drd_pthread_intercepts = 0; fn = 0; } /^      <file>drd_pthread_intercepts.c<\/file>$/ { drd_pthread_intercepts = 1; } /^      <fn>/ { fn = 1; } { if (in_frame) frame[line++] = $0; else print; } /^    <\/frame>/ { if (in_frame) { if (!drd_pthread_intercepts || fn) for (i = 0; i < line; i++) { print frame[i]; }; in_frame = 0; } }' |
 
 # Anonymise addresses
 $dir/../../tests/filter_addresses

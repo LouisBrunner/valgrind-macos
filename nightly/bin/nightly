@@ -213,7 +213,7 @@ vex_revision="`svn info valgrind-new/VEX | grep Revision | sed 's/Revision[ ]*:[
 gcc_version="`gcc --version 2> /dev/null | head -1`"
 gdb_version="`gdb --version 2> /dev/null | head -1`"
 as_version="`as --version 2> /dev/null | head -1`"
-libc_so="`ls -1 /lib/libc.so.* /lib64/libc.so.* 2>/dev/null | tail -1`"
+libc_so="`ls -1 /lib/libc.so.* /lib64/libc.so.* /lib32/libc.so.* /lib/*-linux-gnu/libc.so.* 2>/dev/null | tail -1`"
 libc="unknown"
 if [ "x$libc_so" != "x" ]; then
   if [ -e "$libc_so" -a -r "$libc_so" ]; then

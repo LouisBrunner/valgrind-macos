@@ -301,7 +301,12 @@ load_genericthread(vki_uint8_t **stack_end,
       if (flavor == i386_THREAD_STATE && count == i386_THREAD_STATE_COUNT) {
          i386_thread_state_t *state = (i386_thread_state_t *)p;
          if (entry) *entry = (vki_uint8_t *)state->__eip;
-         if (stack_end) *stack_end = (vki_uint8_t *)(state->__esp ? state->__esp : VKI_USRSTACK);
+         if (stack_end) {
+            *stack_end = (vki_uint8_t *)(state->__esp ? state->__esp
+                                                      : VKI_USRSTACK);
+            vg_assert(VG_IS_PAGE_ALIGNED(*stack_end));
+            (*stack_end)--;
+         }
          if (customstack) *customstack = state->__esp;
          return 0;
       }
@@ -310,7 +315,12 @@ load_genericthread(vki_uint8_t **stack_end,
       if (flavor == x86_THREAD_STATE64 && count == x86_THREAD_STATE64_COUNT){
          x86_thread_state64_t *state = (x86_thread_state64_t *)p;
          if (entry) *entry = (vki_uint8_t *)state->__rip;
-         if (stack_end) *stack_end = (vki_uint8_t *)(state->__rsp ? state->__rsp : VKI_USRSTACK64);
+         if (stack_end) {
+            *stack_end = (vki_uint8_t *)(state->__rsp ? state->__rsp 
+                                                      : VKI_USRSTACK64);
+            vg_assert(VG_IS_PAGE_ALIGNED(*stack_end));
+            (*stack_end)--;
+         }
          if (customstack) *customstack = state->__rsp;
          return 0;
       }
@@ -364,7 +374,7 @@ load_unixthread(vki_uint8_t **out_stack_start, vki_uint8_t **out_stack_end,
    if (!customstack) {
       // Map the stack
       vki_size_t stacksize = VG_PGROUNDUP(default_stack_size());
-      vm_address_t stackbase = VG_PGROUNDDN(stack_end-stacksize);
+      vm_address_t stackbase = VG_PGROUNDDN(stack_end+1-stacksize);
       SysRes res;
         
       res = VG_(am_mmap_anon_fixed_client)(stackbase, stacksize, VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC);

@@ -395,7 +395,7 @@ Addr setup_client_stack( void*  init_sp,
    if (0) VG_(printf)("stacksize = %d\n", stacksize);
 
    /* client_SP is the client's stack pointer */
-   client_SP = clstack_end - stacksize;
+   client_SP = clstack_end + 1 - stacksize;
    client_SP = VG_ROUNDDN(client_SP, 32); /* make stack 32 byte aligned */
 
    /* base of the string table (aligned) */
@@ -406,7 +406,7 @@ Addr setup_client_stack( void*  init_sp,
    clstack_max_size = VG_PGROUNDUP(clstack_max_size);
 
    /* Darwin stack is chosen by the ume loader */
-   clstack_start = clstack_end - clstack_max_size;
+   clstack_start = clstack_end + 1 - clstack_max_size;
 
    /* Record stack extent -- needed for stack-change code. */
    /* GrP fixme really? */
@@ -518,6 +518,8 @@ static void record_system_memory(void)
 IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo iicii )
 {
    ExeInfo info;
+   VG_(memset)( &info, 0, sizeof(info) );
+
    HChar** env = NULL;
 
    IIFinaliseImageInfo iifii;

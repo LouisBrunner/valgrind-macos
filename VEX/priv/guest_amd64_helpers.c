@@ -1723,7 +1723,8 @@ void do_get_x87 ( /*IN*/VexGuestAMD64State* vex_state,
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (reads guest state, writes guest mem) */
 /* NOTE: only handles 32-bit format (no REX.W on the insn) */
-void amd64g_dirtyhelper_FXSAVE ( VexGuestAMD64State* gst, HWord addr )
+void amd64g_dirtyhelper_FXSAVE_ALL_EXCEPT_XMM ( VexGuestAMD64State* gst,
+                                                HWord addr )
 {
    /* Derived from values obtained from
       vendor_id       : AuthenticAMD
@@ -1738,7 +1739,6 @@ void amd64g_dirtyhelper_FXSAVE ( VexGuestAMD64State* gst, HWord addr )
    Fpu_State tmp;
    UShort*   addrS = (UShort*)addr;
    UChar*    addrC = (UChar*)addr;
-   U128*     xmm   = (U128*)(addr + 160);
    UInt      mxcsr;
    UShort    fp_tags;
    UInt      summary_tags;
@@ -1803,76 +1803,30 @@ void amd64g_dirtyhelper_FXSAVE ( VexGuestAMD64State* gst, HWord addr )
    }
 
    /* That's the first 160 bytes of the image done.  Now only %xmm0
-      .. %xmm15 remain to be copied.  If the host is big-endian, these
-      need to be byte-swapped. */
-   vassert(host_is_little_endian());
-
-#  define COPY_U128(_dst,_src)                       \
-      do { _dst[0] = _src[0]; _dst[1] = _src[1];     \
-           _dst[2] = _src[2]; _dst[3] = _src[3]; }   \
-      while (0)
-
-   COPY_U128( xmm[0],  gst->guest_YMM0 );
-   COPY_U128( xmm[1],  gst->guest_YMM1 );
-   COPY_U128( xmm[2],  gst->guest_YMM2 );
-   COPY_U128( xmm[3],  gst->guest_YMM3 );
-   COPY_U128( xmm[4],  gst->guest_YMM4 );
-   COPY_U128( xmm[5],  gst->guest_YMM5 );
-   COPY_U128( xmm[6],  gst->guest_YMM6 );
-   COPY_U128( xmm[7],  gst->guest_YMM7 );
-   COPY_U128( xmm[8],  gst->guest_YMM8 );
-   COPY_U128( xmm[9],  gst->guest_YMM9 );
-   COPY_U128( xmm[10], gst->guest_YMM10 );
-   COPY_U128( xmm[11], gst->guest_YMM11 );
-   COPY_U128( xmm[12], gst->guest_YMM12 );
-   COPY_U128( xmm[13], gst->guest_YMM13 );
-   COPY_U128( xmm[14], gst->guest_YMM14 );
-   COPY_U128( xmm[15], gst->guest_YMM15 );
-
-#  undef COPY_U128
+      .. %xmm15 remain to be copied, and we let the generated IR do
+      that, so as to make Memcheck's definedness flow for the non-XMM
+      parts independant from that of the all the other control and
+      status words in the structure.  This avoids the false positives
+      shown in #291310. */
 }
 
 
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (writes guest state, reads guest mem) */
-VexEmNote amd64g_dirtyhelper_FXRSTOR ( VexGuestAMD64State* gst, HWord addr )
+VexEmNote amd64g_dirtyhelper_FXRSTOR_ALL_EXCEPT_XMM ( VexGuestAMD64State* gst,
+                                                      HWord addr )
 {
    Fpu_State tmp;
    VexEmNote warnX87 = EmNote_NONE;
    VexEmNote warnXMM = EmNote_NONE;
    UShort*   addrS   = (UShort*)addr;
    UChar*    addrC   = (UChar*)addr;
-   U128*     xmm     = (U128*)(addr + 160);
    UShort    fp_tags;
    Int       r, stno, i;
 
-   /* Restore %xmm0 .. %xmm15.  If the host is big-endian, these need
-      to be byte-swapped. */
-   vassert(host_is_little_endian());
-
-#  define COPY_U128(_dst,_src)                       \
-      do { _dst[0] = _src[0]; _dst[1] = _src[1];     \
-           _dst[2] = _src[2]; _dst[3] = _src[3]; }   \
-      while (0)
-
-   COPY_U128( gst->guest_YMM0, xmm[0] );
-   COPY_U128( gst->guest_YMM1, xmm[1] );
-   COPY_U128( gst->guest_YMM2, xmm[2] );
-   COPY_U128( gst->guest_YMM3, xmm[3] );
-   COPY_U128( gst->guest_YMM4, xmm[4] );
-   COPY_U128( gst->guest_YMM5, xmm[5] );
-   COPY_U128( gst->guest_YMM6, xmm[6] );
-   COPY_U128( gst->guest_YMM7, xmm[7] );
-   COPY_U128( gst->guest_YMM8, xmm[8] );
-   COPY_U128( gst->guest_YMM9, xmm[9] );
-   COPY_U128( gst->guest_YMM10, xmm[10] );
-   COPY_U128( gst->guest_YMM11, xmm[11] );
-   COPY_U128( gst->guest_YMM12, xmm[12] );
-   COPY_U128( gst->guest_YMM13, xmm[13] );
-   COPY_U128( gst->guest_YMM14, xmm[14] );
-   COPY_U128( gst->guest_YMM15, xmm[15] );
-
-#  undef COPY_U128
+   /* Don't restore %xmm0 .. %xmm15, for the same reasons that
+      amd64g_dirtyhelper_FXSAVE_ALL_EXCEPT_XMM doesn't save them.  See
+      comment in that function for details. */
 
    /* Copy the x87 registers out of the image, into a temporary
       Fpu_State struct. */

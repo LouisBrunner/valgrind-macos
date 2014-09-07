@@ -13575,11 +13575,12 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
          DIP("%sfxsave %s\n", sz==8 ? "rex64/" : "", dis_buf);
 
          /* Uses dirty helper: 
-               void amd64g_do_FXSAVE ( VexGuestAMD64State*, ULong ) */
+              void amd64g_do_FXSAVE_ALL_EXCEPT_XMM ( VexGuestAMD64State*,
+                                                     ULong ) */
          d = unsafeIRDirty_0_N ( 
                 0/*regparms*/, 
-                "amd64g_dirtyhelper_FXSAVE", 
-                &amd64g_dirtyhelper_FXSAVE,
+                "amd64g_dirtyhelper_FXSAVE_ALL_EXCEPT_XMM",
+                &amd64g_dirtyhelper_FXSAVE_ALL_EXCEPT_XMM,
                 mkIRExprVec_2( IRExpr_BBPTR(), mkexpr(addr) )
              );
 
@@ -13589,7 +13590,7 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
          d->mSize = 464; /* according to recent Intel docs */
 
          /* declare we're reading guest state */
-         d->nFxState = 7;
+         d->nFxState = 6;
          vex_bzero(&d->fxState, sizeof(d->fxState));
 
          d->fxState[0].fx     = Ifx_Read;
@@ -13613,23 +13614,24 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
          d->fxState[4].size   = sizeof(ULong);
 
          d->fxState[5].fx     = Ifx_Read;
-         d->fxState[5].offset = OFFB_YMM0;
-         d->fxState[5].size   = sizeof(U128);
-         /* plus 15 more of the above, spaced out in YMM sized steps */
-         d->fxState[5].nRepeats  = 15; 
-         d->fxState[5].repeatLen = sizeof(U256);
+         d->fxState[5].offset = OFFB_SSEROUND;
+         d->fxState[5].size   = sizeof(ULong);
 
-         d->fxState[6].fx     = Ifx_Read;
-         d->fxState[6].offset = OFFB_SSEROUND;
-         d->fxState[6].size   = sizeof(ULong);
-
-         /* Be paranoid ... this assertion tries to ensure the 16 %ymm
-            images are packed back-to-back.  If not, the settings for
-            d->fxState[5] are wrong. */
-         vassert(32 == sizeof(U256));
-         vassert(OFFB_YMM15 == (OFFB_YMM0 + 15 * 32));
-
+         /* Call the helper.  This creates all parts of the in-memory
+            image except for the XMM[0..15] array, which we do
+            separately, in order that any undefinedness in the XMM
+            registers is tracked separately by Memcheck and does not
+            "infect" the in-memory shadow for the other parts of the
+            image (FPTOP, FPREGS, FPTAGS, FPROUND, FC3210,
+            SSEROUND). */
          stmt( IRStmt_Dirty(d) );
+
+         /* And now the XMMs themselves. */
+         UInt xmm;
+         for (xmm = 0; xmm < 16; xmm++) {
+            storeLE( binop(Iop_Add64, mkexpr(addr), mkU64(160 + xmm * 16)),
+                     getXMMReg(xmm) );
+         }
 
          goto decode_success;
       }
@@ -13650,14 +13652,15 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
          DIP("%sfxrstor %s\n", sz==8 ? "rex64/" : "", dis_buf);
 
          /* Uses dirty helper: 
-               VexEmNote amd64g_do_FXRSTOR ( VexGuestAMD64State*, ULong )
+              VexEmNote amd64g_do_FXRSTOR_ALL_EXCEPT_XMM ( VexGuestAMD64State*,
+                                                           ULong )
             NOTE:
-               the VexEmNote value is simply ignored
+              the VexEmNote value is simply ignored
          */
          d = unsafeIRDirty_0_N ( 
                 0/*regparms*/, 
-                "amd64g_dirtyhelper_FXRSTOR", 
-                &amd64g_dirtyhelper_FXRSTOR,
+                "amd64g_dirtyhelper_FXRSTOR_ALL_EXCEPT_XMM", 
+                &amd64g_dirtyhelper_FXRSTOR_ALL_EXCEPT_XMM,
                 mkIRExprVec_2( IRExpr_BBPTR(), mkexpr(addr) )
              );
 
@@ -13667,7 +13670,7 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
          d->mSize = 464; /* according to recent Intel docs */
 
          /* declare we're writing guest state */
-         d->nFxState = 7;
+         d->nFxState = 6;
          vex_bzero(&d->fxState, sizeof(d->fxState));
 
          d->fxState[0].fx     = Ifx_Write;
@@ -13691,23 +13694,25 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
          d->fxState[4].size   = sizeof(ULong);
 
          d->fxState[5].fx     = Ifx_Write;
-         d->fxState[5].offset = OFFB_YMM0;
-         d->fxState[5].size   = sizeof(U128);
-         /* plus 15 more of the above, spaced out in YMM sized steps */
-         d->fxState[5].nRepeats  = 15; 
-         d->fxState[5].repeatLen = sizeof(U256);
+         d->fxState[5].offset = OFFB_SSEROUND;
+         d->fxState[5].size   = sizeof(ULong);
 
-         d->fxState[6].fx     = Ifx_Write;
-         d->fxState[6].offset = OFFB_SSEROUND;
-         d->fxState[6].size   = sizeof(ULong);
-
-         /* Be paranoid ... this assertion tries to ensure the 16 %ymm
-            images are packed back-to-back.  If not, the settings for
-            d->fxState[5] are wrong. */
-         vassert(32 == sizeof(U256));
-         vassert(OFFB_YMM15 == (OFFB_YMM0 + 15 * 32));
-
+         /* Call the helper.  This reads all parts of the in-memory
+            image except for the XMM[0..15] array, which we do
+            separately, in order that any undefinedness in the XMM
+            registers is tracked separately by Memcheck and does not
+            "infect" the in-guest-state shadow for the other parts of the
+            image (FPTOP, FPREGS, FPTAGS, FPROUND, FC3210,
+            SSEROUND). */
          stmt( IRStmt_Dirty(d) );
+
+         /* And now the XMMs themselves. */
+         UInt xmm;
+         for (xmm = 0; xmm < 16; xmm++) {
+            putXMMReg(xmm, loadLE(Ity_V128,
+                                  binop(Iop_Add64, mkexpr(addr),
+                                                   mkU64(160 + xmm * 16))));
+         }
 
          goto decode_success;
       }

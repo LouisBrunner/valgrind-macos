@@ -1812,14 +1812,17 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    // BEGIN HACK
    vg_assert(toolname != NULL);
    vg_assert(VG_(clo_read_inline_info) == False);
+#  if !defined(VGO_darwin)
    if (0 == VG_(strcmp)(toolname, "memcheck")
-       || 0 == VG_(strcmp)(toolname, "helgrind")) {
+       || 0 == VG_(strcmp)(toolname, "helgrind")
+       || 0 == VG_(strcmp)(toolname, "drd")) {
       /* Change the default setting.  Later on (just below)
          main_process_cmd_line_options should pick up any
          user-supplied setting for it and will override the default
          set here. */
       VG_(clo_read_inline_info) = True;
    }
+#  endif
    // END HACK
 
    // Set default vex control params

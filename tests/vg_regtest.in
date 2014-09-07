@@ -670,8 +670,8 @@ foreach my $f (@fs) {
         my $file = `basename $f`;   chomp $file;
         chdir($dir) or die "Could not change into $dir\n";
         do_one_test($dir, $file);
-        chdir($tests_dir);
     }
+    chdir($tests_dir);
 }
 summarise_results();
 

@@ -2558,7 +2558,7 @@ static HChar* get_inlFnName (Int absori, CUConst* cc, Bool td3)
        || posn < cc->cu_start_offset
        || posn >= cc->cu_start_offset + cc->unit_length) {
       static Bool reported = False;
-      if (!reported) {
+      if (!reported && VG_(clo_verbosity) > 1) {
          VG_(message)(Vg_DebugMsg,
                       "Warning: cross-CU LIMITATION: some inlined fn names\n"
                       "might be shown as UnknownInlinedFun\n");

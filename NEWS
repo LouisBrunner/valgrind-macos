@@ -7,9 +7,9 @@ Release 3.10.0 (mid September 2014)
 3.10.0 is a feature release with many improvements and the usual
 collection of bug fixes.
 
-This release supports X86/Linux, AMD64/Linux, ARM32/Linux,
-ARM64/Linux, PPC32/Linux, PPC64BE/Linux, PPC64LE/Linux, S390X/Linux,
-MIPS32/Linux, MIPS64/Linux, ARM/Android, X86/Android, X86/MacOSX 10.9
+This release supports X86/Linux, AMD64/Linux, ARM32/Linux, ARM64/Linux,
+PPC32/Linux, PPC64BE/Linux, PPC64LE/Linux, S390X/Linux, MIPS32/Linux,
+MIPS64/Linux, ARM/Android, MIPS32/Android, X86/Android, X86/MacOSX 10.9
 and AMD64/MacOSX 10.9.  Support for MacOSX 10.8 and 10.9 is
 significantly improved relative to the 3.9.0 release.
 

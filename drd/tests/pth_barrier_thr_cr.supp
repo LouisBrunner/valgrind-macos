@@ -3,3 +3,9 @@
    drd:BarrierErr
    fun:pthread_barrier_wait
 }
+{
+   number-of-concurrent-pthead_barrier_wait()-calls-exceeds-barrier-count
+   drd:BarrierErr
+   fun:pthread_barrier_wait_intercept
+   fun:pthread_barrier_wait
+}

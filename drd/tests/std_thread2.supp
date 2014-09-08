@@ -8,3 +8,9 @@
    drd:ConflictingAccess
    fun:pthread_create@@GLIBC_2.2*
 }
+{
+   pthread_create
+   drd:ConflictingAccess
+   fun:allocate_stack
+   fun:pthread_create@@GLIBC_2.2*
+}

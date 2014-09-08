@@ -181,16 +181,18 @@ To see details of a given bug, visit
 where XXXXXX is the bug number as listed below.
 
 175819  Support for ipv6 socket reporting with --track-fds
-199144  == 278972
 232510  make distcheck fails
 249435  Analyzing wine programs with callgrind triggers a crash
 278972  support for inlined function calls in stacktraces and suppression
+        == 199144
+291310  FXSAVE instruction marks memory as undefined on amd64
 303536  ioctl for SIOCETHTOOL (ethtool(8)) isn't wrapped
 308729  vex x86->IR: unhandled instruction bytes 0xf 0x5 (syscall) 
 315199  vgcore file for threaded app does not show which thread crashed
 315952  tun/tap ioctls are not supported
 323178  Unhandled instruction: PLDW register (ARM) 
 323179  Unhandled instruction: PLDW immediate (ARM)
+324050  Helgrind: SEGV because of unaligned stack when using movdqa
 325110  Add test-cases for Power ISA 2.06 insns: divdo/divdo. and divduo/divduo.
 325124  [MIPSEL] Compilation error
 325477  Phase 4 support for IBM Power ISA 2.07
@@ -232,6 +234,7 @@ where XXXXXX is the bug number as listed below.
 330319  amd64->IR: unhandled instruction bytes: 0xF 0x1 0xD5 (xend)
 330459  --track-fds=yes doesn't track eventfds
 330469  Add clock_adjtime syscall support
+330594  Missing sysalls on PowerPC / uClibc
 330622  Add test to regression suite for POWER instruction: dcbzl
 330939  Support for AMD's syscall instruction on x86
         == 308729
@@ -264,6 +267,9 @@ where XXXXXX is the bug number as listed below.
 333230  AAarch64 missing instruction encodings: dc, ic, dsb.
 333248  WARNING: unhandled syscall: unix:443
 333428  ldr.w pc [rD, #imm] instruction leads to assertion
+333501  cachegrind: assertion: Cache set count is not a power of two.
+        == 336577
+        == 292281
 333666  Recognize MPX instructions and bnd prefix.
 333788  Valgrind does not support the CDROM_DISC_STATUS ioctl (has patch)
 333817  Valgrind reports the memory areas written to by the SG_IO
@@ -285,6 +291,7 @@ where XXXXXX is the bug number as listed below.
 335441  unhandled ioctl 0x8905 (SIOCATMARK) when running wine under valgrind
 335496  arm64: sbc/abc instructions are not implemented
 335554  arm64: unhandled instruction: abs
+335564  arm64: unhandled instruction: fcvtpu  Xn, Sn
 335735  arm64: unhandled instruction: cnt
 335736  arm64: unhandled instruction: uaddlv
 335848  arm64: unhandled instruction: {s,u}cvtf
@@ -292,6 +299,7 @@ where XXXXXX is the bug number as listed below.
 335903  arm64: unhandled instruction: umull (vector)
 336055  arm64: unhandled instruction: mov (element)
 336062  arm64: unhandled instruction: shrn{,2}
+336139  mip64: [...] valgrind hangs and spins on a single core [...]
 336189  arm64: unhandled Instruction: mvn
 336435  Valgrind hangs in pthread_spin_lock consuming 100% CPU
 336619  valgrind --read-var-info=yes doesn't handle DW_TAG_restrict_type
@@ -300,17 +308,25 @@ where XXXXXX is the bug number as listed below.
 337094  ifunc wrapper is broken on ppc64
 337285  fcntl commands F_OFD_SETLK, F_OFD_SETLKW, and F_OFD_GETLK not supported
 337528  leak check heuristic for block prefixed by length as 64bit number
+337740  Implement additional Xen hypercalls
+337762  guest_arm64_toIR.c:4166 (dis_ARM64_load_store): Assertion `0' failed.
+337766  arm64-linux: unhandled syscalls mlock (228) and mlockall (230)
 337871  deprecate --db-attach
+338023  Add support for all V4L2/media ioctls
 338024  inlined functions are not shown if DW_AT_ranges is used
+338106  Add support for 'kcmp' syscall
 338115  DRD: computed conflict set differs from actual after fork
 338160  implement display of thread local storage in gdbsrv
 338205  configure.ac and check for -Wno-tautological-compare
+338300  coredumps are missing one byte of every segment
 338445  amd64 vbit-test fails with unknown opcodes used by arm64 VEX
 338499  --sim-hints parsing broken due to wrong order in tokens
 338615  suppress glibc 2.20 optimized strcmp implementation for ARMv7
 338681  Unable to unwind through clone thread created on i386-linux
 338698  race condition between gdbsrv and vgdb on startup
 338703  helgrind on arm-linux gets false positives in dynamic loader
+338791  alt dwz files can be relative of debug/main file
+338878  on MacOS: assertion 'VG_IS_PAGE_ALIGNED(clstack_end+1)' failed
 n-i-bz  Fix KVM_CREATE_IRQCHIP ioctl handling
 n-i-bz  s390x: Fix memory corruption for multithreaded applications
 n-i-bz  vex arm->IR: allow PC as basereg in some LDRD cases
@@ -320,6 +336,7 @@ n-i-bz  drd manual: Document how to C++11 programs that use class "std::thread"
 n-i-bz  Add command-line option --default-suppressions
 n-i-bz  Add support for BLKDISCARDZEROES ioctl
 n-i-bz  ppc32/64: fix a regression with the mtfsb0/mtfsb1 instructions
+n-i-bz  Add support for	sys_pivot_root and sys_unshare
 
 (3.10.0.BETA1: 2 September 2014, vex r2940, valgrind r14428)
 

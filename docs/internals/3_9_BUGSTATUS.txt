@@ -4,6 +4,8 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
 
 === VEX/amd64 ==========================================================
 
+276252  callgrind / valgrind + intel ipp h264 decoder gets killed in
+        intel optimised ipp libraries
 325328  __float128 loses precision under memcheck
         == 197915
 327285  amd64->IR: 0x8F 0xEA 0xF8 0x10 0xCE 0x3 0x1D 0x0
@@ -29,10 +31,7 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
 === VEX/arm64 ==========================================================
 
 335440  arm64: ld1 (single structure) is not implemented
-335564  arm64: unhandled instruction fcvtpu  Xn, Sn
 335713  arm64: unhanded instruction: prfm (immediate) (PREFETCH)
-337762  vex: priv/guest_arm64_toIR.c:4166 (dis_ARM64_load_store):
-        Assertion `0' failed.
 
 === VEX/x86 ============================================================
 
@@ -40,8 +39,6 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
 335563  wine's kernel32/thread test fails under valgrind (x87 FPU limitations)
 
 === VEX/mips ===========================================================
-
-328147  vex mips->IR: unhandled instruction bytes: 0x0 0x0 0x0 0xE
 
 === VEX/ppc ============================================================
 
@@ -54,7 +51,6 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
 === Syscalls/ioctls ====================================================
 
 197259  (wine) Unsupported arch_prtctl option
-330594  Missing sysalls on PowerPC / uClibc
 331311  Valgrind shows open files in /proc/self/fd that don't
         work for the process
         Probable wontfix
@@ -63,14 +59,11 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
 333051  handling hugepages (is largely broken)
 337388  fcntl works on Valgrind's own file descriptors
 337716  False positive for openat system call with absolute paths
-337740  Implement additional Xen hypercalls
-337766  WARNING: unhandled syscall: 230 & WARNING: unhandled
-        syscall: 228 (ARM64, mlock, mlockall)
-338023  Add support for all V4L2/media ioctls
-338106  Add support for 'kcmp' syscall
+338877  sys_capget and sys_catset not correctly handled
 
 === Debuginfo reader ===================================================
 
+306340  parse_var_DIE confused by DWARF from clang-3.1
 327427  ifunc wrapper crashes when symbols are discarded because of false mmap
         overlaps
 328468  unwind x86/amd64 gcc <= 4.4 compiled code does not unwind properly
@@ -81,6 +74,7 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
 333175  dwarf3 reader problems with Fortran (against 3.8.1)
 335907  segfault when running wine's ddrawex/tests/surface.c under
         valgrind (stack unwind, QUERIED)
+338803  Handling of dwz debug alt files or cross-CU is broken
 
 === Tools/Memcheck =====================================================
 
@@ -105,8 +99,6 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
 327548  Helgrind: false positive while destroying mutex
 327881  Helgrind: False Positive Warning on std::atomic_bool
 337735  Helgrind does not know pthread_once is a memory barrier
-324050  Helgrind: SEGV because of unaligned stack when using movdqa
-        (important)
 
 === Tools/SGCheck ======================================================
 
@@ -119,10 +111,6 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
 
 === Tools/Cachegrind ===================================================
 
-333501  [cachegrind - 3.9] LL cache configuration not supported:
-        Cache set count is not a power of two.
-336577  Auto-detected LL cache configuration not supported: Cache
-        set count is not a power of two
 338141  Cachegrind's Cycle Estimation is very different from the
         free run
 
@@ -135,8 +123,6 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
 334649  Cavium Octeon 2 MIPS64: valgrind is up but ld.so assert
         "rtld.c: 1257: dl_main: Assertion
         '_rtld_local._dl_rtld_map.l_relocated' failed" and exits
-336139  Upon memory check, valgrind hangs and spins on a single
-        core, also fails to detect memory leaks.
 336768  vex mips->IR: unhandled instruction bytes: 0x3B 0xE8 0x3 0xEC
         (possibly invalid)
 
@@ -185,21 +171,18 @@ For bugs reported before this time, see 3_8_BUGSTATUS.txt
 334110  Why install internal headers/libraries/.pc file?
 334802  valgrind does not always explain why a given option is bad
 335143  Capabilities not supported
-337812  Invalid stack behavior in a function that contains only a
-        client request (looks invalid)
 337869  Eliminate fixed size buffers (in progress)
         Hercules, Augean stables, etc
 338252  CFLAGS="-flto" and VEX/pub/libvex_guest_offsets.h (wishlist)
-338300  coredumps are missing one bytes of every segment (easy fix?)
-        QUERIED
 338606  Strange error message for invalid interpreter
 338365  New client request to fetch valgrind version (probably invalid)
-        QUERIED
+        QUERIED.  PROBABLY INVALID.
 
 ========================================================================
 ========================================================================
 
-3 September 2014
-
-338698  race condition between gdbsrv and vgdb on startup
 338731  ppc testsuite does not build in case compiler doesnot support -maltivec
+338781  Unable to read debug information (3.10.0 BETA1) (OSX)
+338896  Valgrind refuses to run SUID programs
+
+Mon Sep  8 13:20:50 CEST 2014

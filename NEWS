@@ -339,6 +339,7 @@ n-i-bz  ppc32/64: fix a regression with the mtfsb0/mtfsb1 instructions
 n-i-bz  Add support for	sys_pivot_root and sys_unshare
 
 (3.10.0.BETA1: 2 September 2014, vex r2940, valgrind r14428)
+(3.10.0.BETA2: 8 September 2014, vex r2950, valgrind r14503)
 
 
 

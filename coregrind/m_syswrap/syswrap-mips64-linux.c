@@ -205,7 +205,6 @@ static SysRes do_clone ( ThreadId ptid,
    ThreadState * ctst = VG_ (get_ThreadState) (ctid);
    UInt ret = 0;
    UWord * stack;
-   NSegment const *seg;
    SysRes res;
    vki_sigset_t blockall, savedmask;
 
@@ -230,23 +229,8 @@ static SysRes do_clone ( ThreadId ptid,
    ctst->tmp_sig_mask = ptst->sig_mask;
 
    ctst->os_state.threadgroup = ptst->os_state.threadgroup;
-   seg = VG_(am_find_nsegment)((Addr)sp);
 
-   // FIXME mips64: the below differs significantly from the code
-   // factorised in syswrap-generic.c e.g. does not round sp ????
-   if (seg && seg->kind != SkResvn) {
-      ctst->client_stack_highest_byte = sp;
-      ctst->client_stack_szB = ctst->client_stack_highest_byte - seg->start + 1;
-      VG_(register_stack)(seg->start, ctst->client_stack_highest_byte);
-      if (debug)
-        VG_(printf)("tid %d: guessed client stack range %#lx-%#lx\n",
-                    ctid, seg->start, sp /* VG_PGROUNDUP (sp) */ );
-   } else {
-      VG_(message)(Vg_UserMsg,
-                    "!? New thread %d starts with sp+%#lx) unmapped\n",
-                    ctid, sp);
-      ctst->client_stack_szB = 0;
-   }
+   ML_(guess_and_register_stack) (sp, ctst);
 
    VG_TRACK(pre_thread_ll_create, ptid, ctid);
    if (flags & VKI_CLONE_SETTLS) {

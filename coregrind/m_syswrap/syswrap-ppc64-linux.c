@@ -1022,7 +1022,7 @@ static SyscallTableEntry syscall_table[] = {
 // _____(__NR_pciconfig_iobase,  sys_pciconfig_iobase),   // 200
 // _____(__NR_multiplexer,       sys_multiplexer),        // 201
    GENXY(__NR_getdents64,        sys_getdents64),         // 202
-// _____(__NR_pivot_root,        sys_pivot_root),         // 203
+   LINX_(__NR_pivot_root,        sys_pivot_root),         // 203
    LINXY(__NR_fcntl64,           sys_fcntl64),            // 204 !!!!?? 32bit only */
 
    GENX_(__NR_madvise,           sys_madvise),            // 205

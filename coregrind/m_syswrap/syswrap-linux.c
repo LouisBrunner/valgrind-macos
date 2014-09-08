@@ -554,6 +554,18 @@ PRE(sys_umount)
    PRE_MEM_RASCIIZ( "umount2(path)", ARG1);
 }
 
+/* Not actually wrapped by GLibc but does things with the system
+ * mounts so it is put here.
+ */
+PRE(sys_pivot_root)
+{
+   PRINT("sys_pivot_root ( %s %s )", (HChar*)ARG1, (HChar*)ARG2);
+   PRE_REG_READ2(int, "pivot_root", char *, new_root, char *, old_root);
+   PRE_MEM_RASCIIZ( "pivot_root(new_root)", ARG1);
+   PRE_MEM_RASCIIZ( "pivot_root(old_root)", ARG2);
+}
+
+
 /* ---------------------------------------------------------------------
    16- and 32-bit uid/gid wrappers
    ------------------------------------------------------------------ */
@@ -2747,6 +2759,12 @@ PRE(sys_sched_getaffinity)
 POST(sys_sched_getaffinity)
 {
    POST_MEM_WRITE(ARG3, ARG2);
+}
+
+PRE(sys_unshare)
+{
+   PRINT("sys_unshare ( %ld )", ARG1);
+   PRE_REG_READ1(int, "unshare", int, flags);
 }
 
 /* ---------------------------------------------------------------------

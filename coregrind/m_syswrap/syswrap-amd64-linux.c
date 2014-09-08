@@ -873,7 +873,7 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_vhangup,           sys_vhangup),        // 153 
    //   (__NR_modify_ldt,        sys_modify_ldt),     // 154 
 
-   //   (__NR_pivot_root,        sys_pivot_root),     // 155 
+   LINX_(__NR_pivot_root,        sys_pivot_root),     // 155
    LINXY(__NR__sysctl,           sys_sysctl),         // 156 
    LINXY(__NR_prctl,             sys_prctl),          // 157 
    PLAX_(__NR_arch_prctl,	 sys_arch_prctl),     // 158 
@@ -1013,7 +1013,7 @@ static SyscallTableEntry syscall_table[] = {
 
    LINX_(__NR_pselect6,		 sys_pselect6),         // 270
    LINXY(__NR_ppoll,		 sys_ppoll),            // 271
-//   LINX_(__NR_unshare,		 sys_unshare),          // 272
+   LINX_(__NR_unshare,		 sys_unshare),          // 272
    LINX_(__NR_set_robust_list,	 sys_set_robust_list),  // 273
    LINXY(__NR_get_robust_list,	 sys_get_robust_list),  // 274
 

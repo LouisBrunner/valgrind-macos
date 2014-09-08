@@ -782,7 +782,7 @@ static SyscallTableEntry syscall_main_table[] = {
    GENX_ (__NR_mlockall, sys_mlockall),
    LINX_ (__NR_munlockall, sys_munlockall),
    LINX_ (__NR_vhangup, sys_vhangup),
-   /* GENX_(__NR_pivot_root,sys_pivot_root), */
+   LINX_ (__NR_pivot_root,sys_pivot_root),
    LINXY (__NR__sysctl, sys_sysctl),
    LINXY (__NR_prctl, sys_prctl),
    LINXY (__NR_adjtimex, sys_adjtimex),

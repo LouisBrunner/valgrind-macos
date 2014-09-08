@@ -1103,7 +1103,7 @@ static SyscallTableEntry syscall_table[] = {
 // __NR_multiplexer                                           // 201
 
    GENXY(__NR_getdents64,        sys_getdents64),        // 202
-//..    //   (__NR_pivot_root,        sys_pivot_root),        // 203 */Linux
+   LINX_(__NR_pivot_root,        sys_pivot_root),        // 203
    LINXY(__NR_fcntl64,           sys_fcntl64),           // 204
    GENX_(__NR_madvise,           sys_madvise),           // 205
    GENXY(__NR_mincore,           sys_mincore),           // 206

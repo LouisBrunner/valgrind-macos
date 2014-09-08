@@ -1022,7 +1022,7 @@ static SyscallTableEntry syscall_main_table[] = {
 
    LINX_(__NR_setfsuid32,        sys_setfsuid),       // 215
    LINX_(__NR_setfsgid32,        sys_setfsgid),       // 216
-//zz    //   (__NR_pivot_root,        sys_pivot_root),     // 217 */Linux
+   LINX_(__NR_pivot_root,        sys_pivot_root),     // 217
    GENXY(__NR_mincore,           sys_mincore),        // 218
    GENX_(__NR_madvise,           sys_madvise),        // 219
 
@@ -1161,7 +1161,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_shmctl,            sys_shmctl),         // 308 
 //   LINX_(__NR_pselect6,       sys_pselect6),         //
 
-//   LINX_(__NR_unshare,       sys_unshare),          // 310
+   LINX_(__NR_unshare,       sys_unshare),          // 310
    LINX_(__NR_set_robust_list,    sys_set_robust_list),  // 311
    LINXY(__NR_get_robust_list,    sys_get_robust_list),  // 312
 //   LINX_(__NR_splice,            sys_ni_syscall),       // 313

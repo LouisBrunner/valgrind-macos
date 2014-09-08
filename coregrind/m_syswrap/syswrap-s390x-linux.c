@@ -892,7 +892,7 @@ static SyscallTableEntry syscall_table[] = {
 
    LINX_(__NR_setfsuid, sys_setfsuid),                                // 215
    LINX_(__NR_setfsgid, sys_setfsgid),                                // 216
-// ?????(__NR_pivot_root, ),
+   LINX_(__NR_pivot_root, sys_pivot_root),                            // 217
    GENXY(__NR_mincore, sys_mincore),                                  // 218
    GENX_(__NR_madvise,  sys_madvise),                                 // 219
 
@@ -995,7 +995,7 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_faccessat,  sys_faccessat),                             // 300
    LINX_(__NR_pselect6, sys_pselect6),                                // 301
    LINXY(__NR_ppoll, sys_ppoll),                                      // 302
-// ?????(__NR_unshare, ),
+   LINX_(__NR_unshare, sys_unshare),                                  // 303
    LINX_(__NR_set_robust_list,  sys_set_robust_list),                 // 304
 
    LINXY(__NR_get_robust_list,  sys_get_robust_list),                 // 305

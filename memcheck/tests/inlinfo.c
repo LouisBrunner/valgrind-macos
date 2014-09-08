@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <../memcheck.h>
+#include "../memcheck.h"
 #define INLINE    inline __attribute__((always_inline))
 
 INLINE int fun_d(int argd) {

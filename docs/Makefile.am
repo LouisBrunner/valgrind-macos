@@ -28,6 +28,7 @@ EXTRA_DIST = \
 	internals/3_7_BUGSTATUS.txt \
 	internals/3_8_BUGSTATUS.txt \
 	internals/3_9_BUGSTATUS.txt \
+	internals/3_10_BUGSTATUS.txt \
 	internals/arm_thumb_notes_gdbserver.txt \
 	internals/avx-notes.txt \
 	internals/BIG_APP_NOTES.txt \

@@ -183,7 +183,7 @@ void transfer_register (ThreadId tid, int abs_regno, void * buf,
    case 30: VG_(transfer) (&arm->guest_X30,  buf, dir, size, mod); break;
    case 31: VG_(transfer) (&arm->guest_XSP,  buf, dir, size, mod); break;
    case 32: VG_(transfer) (&arm->guest_PC,   buf, dir, size, mod); break;
-   case 33: *mod = False; // GDBTD cpsr what to do for arm64 ???
+   case 33: *mod = False; break; // GDBTD cpsr what to do for arm64 ???
 
    case 34: VG_(transfer) (&arm->guest_Q0,  buf, dir, size, mod); break;
    case 35: VG_(transfer) (&arm->guest_Q1,  buf, dir, size, mod); break;

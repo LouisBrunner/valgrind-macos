@@ -92,16 +92,14 @@ significantly improved relative to the 3.9.0 release.
 
 * ==================== OTHER CHANGES ====================
 
-* Unwinding through inlined function calls.  By default, stack
-  unwinding now makes use of Dwarf3 inlined-unwind information if it
-  is available.  The practical effect is that inlined calls become
-  visible in stack traces.  The suppression matching machinery has
-  been adjusted accordingly.  This is controlled by the new option
-  --read-inline-info=yes|no [yes].
-
-  In the 3.10.0 beta release(s), inlined unwinding is only enabled for
-  Memcheck and Helgrind.  It is hoped to enable it for all tools in
-  the 3.10.0 final release.
+* Unwinding through inlined function calls.  Stack unwinding can now
+  make use of Dwarf3 inlined-unwind information if it is available.
+  The practical effect is that inlined calls become visible in stack
+  traces.  The suppression matching machinery has been adjusted
+  accordingly.  This is controlled by the new option
+  --read-inline-info=yes|no.  Currently this is enabled by default
+  only on Linux and Android targets and only for the tools Memcheck,
+  Helgrind and DRD.
 
 * Valgrind can now read EXIDX unwind information on 32-bit ARM
   targets.  If an object contains both CFI and EXIDX unwind

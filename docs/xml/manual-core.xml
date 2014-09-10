@@ -1784,14 +1784,19 @@ need to use them.</para>
 
   <varlistentry id="opt.read-inline-info" xreflabel="--read-inline-info">
     <term>
-      <option><![CDATA[--read-inline-info=<yes|no> [default: no] ]]></option>
+      <option><![CDATA[--read-inline-info=<yes|no> [default: see below] ]]></option>
     </term>
     <listitem>
-      <para>When enabled, Valgrind will read information about
-      inlined function calls from DWARF3 debug info.
-      This slows Valgrind startup and makes it use more memory (typically
-      for each inlined piece of code, 6 words + the function name), but
-      it results in more descriptive stacktraces:</para>
+      <para>When enabled, Valgrind will read information about inlined
+      function calls from DWARF3 debug info.  This slows Valgrind
+      startup and makes it use more memory (typically for each inlined
+      piece of code, 6 words and space for the function name), but it
+      results in more descriptive stacktraces.  For the 3.10.0
+      release, this functionality is enabled by default only for Linux
+      and Android targets and only for the tools Memcheck, Helgrind
+      and DRD.  Here is an example of some stacktraces with
+      <option>--read-inline-info=no</option>:
+</para>
 <programlisting><![CDATA[
 ==15380== Conditional jump or move depends on uninitialised value(s)
 ==15380==    at 0x80484EA: main (inlinfo.c:6)
@@ -1801,11 +1806,10 @@ need to use them.</para>
 ==15380==    by 0x804850E: main (inlinfo.c:34)
 ==15380== 
 ==15380== Conditional jump or move depends on uninitialised value(s)
-==15380==    at 0x8048520: main (inlinfo.c:6)]]></programlisting>
-
+==15380==    at 0x8048520: main (inlinfo.c:6)
+]]></programlisting>
       <para>And here are the same errors with
       <option>--read-inline-info=yes</option>:</para>
-
 <programlisting><![CDATA[
 ==15377== Conditional jump or move depends on uninitialised value(s)
 ==15377==    at 0x80484EA: fun_d (inlinfo.c:6)

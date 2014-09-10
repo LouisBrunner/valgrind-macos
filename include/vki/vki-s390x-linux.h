@@ -258,7 +258,13 @@ struct vki_old_sigaction {
 struct vki_sigaction {
         // [[See comment about extra 'k' above]]
         __vki_sighandler_t ksa_handler;
-        unsigned long sa_flags;
+        // Yes, the reserved field is really glibc specific. The kernel
+        // doesn't have it and uses an unsigned long for sa_flags.
+        // The glibc and the kernel agreed this is fine and the
+        // __glibc_reserved0 field can be undefined.
+        // See https://sourceware.org/ml/libc-alpha/2014-09/msg00161.html
+        int __glibc_reserved0;
+        int sa_flags;
         void (*sa_restorer)(void);
         vki_sigset_t sa_mask;               /* mask last for extensibility */
 };

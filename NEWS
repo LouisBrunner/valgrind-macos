@@ -328,6 +328,7 @@ where XXXXXX is the bug number as listed below.
 338791  alt dwz files can be relative of debug/main file
 338878  on MacOS: assertion 'VG_IS_PAGE_ALIGNED(clstack_end+1)' failed
 338932  build V-trunk with gcc-trunk
+338974  glibc 2.20 changed size of struct sigaction sa_flags field on s390
 n-i-bz  Fix KVM_CREATE_IRQCHIP ioctl handling
 n-i-bz  s390x: Fix memory corruption for multithreaded applications
 n-i-bz  vex arm->IR: allow PC as basereg in some LDRD cases

@@ -138,6 +138,9 @@ case "${is_clang}-${gcc_version}" in
      notclang-4.*)
 	AC_MSG_RESULT([ok (${gcc_version})])
 	;;
+     notclang-5.*)
+	AC_MSG_RESULT([ok (${gcc_version})])
+	;;
      clang-2.9|clang-3.*|clang-4.*)
 	AC_MSG_RESULT([ok (clang-${gcc_version})])
 	;;
@@ -855,7 +858,7 @@ if test x$ac_cv_header_features_h = xyes; then
 glibc version is: __GLIBC__ __GLIBC_MINOR__
 #endif
 _ACEOF
-  GLIBC_VERSION="`$CPP conftest.$ac_ext | $SED -n 's/^glibc version is: //p' | $SED 's/ /./g'`"
+  GLIBC_VERSION="`$CPP -P conftest.$ac_ext | $SED -n 's/^glibc version is: //p' | $SED 's/ /./g'`"
 fi
 
 # not really a version check

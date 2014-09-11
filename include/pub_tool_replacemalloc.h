@@ -42,6 +42,10 @@
  * alloc/freeing. */
 extern void* VG_(cli_malloc) ( SizeT align, SizeT nbytes );
 extern void  VG_(cli_free)   ( void* p );
+// Returns the usable size of a heap-block.  It's the asked-for size plus
+// possibly some more due to rounding up.
+extern SizeT VG_(cli_malloc_usable_size)( void* p );
+
 
 /* If a tool uses deferred freeing (e.g. memcheck to catch accesses to
    freed memory) it can maintain number and total size of queued blocks

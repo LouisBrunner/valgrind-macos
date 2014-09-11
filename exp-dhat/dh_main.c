@@ -466,7 +466,7 @@ void* new_block ( ThreadId tid, void* p, SizeT req_szB, SizeT req_alignB,
          return NULL;
       }
       if (is_zeroed) VG_(memset)(p, 0, req_szB);
-      actual_szB = VG_(malloc_usable_size)(p);
+      actual_szB = VG_(cli_malloc_usable_size)(p);
       tl_assert(actual_szB >= req_szB);
       /* slop_szB = actual_szB - req_szB; */
    } else {

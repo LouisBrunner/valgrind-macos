@@ -45,10 +45,6 @@ extern void* VG_(calloc)         ( const HChar* cc, SizeT n, SizeT bytes_per_ele
 extern void*  VG_(realloc)       ( const HChar* cc, void* p, SizeT size );
 extern HChar* VG_(strdup)        ( const HChar* cc, const HChar* s );
 
-// Returns the usable size of a heap-block.  It's the asked-for size plus
-// possibly some more due to rounding up.
-extern SizeT VG_(malloc_usable_size)( void* p );
-
 // TODO: move somewhere else
 // Call here to bomb the system when out of memory (mmap anon fails)
 __attribute__((noreturn))
@@ -60,8 +56,7 @@ extern void VG_(out_of_memory_NORETURN) ( const HChar* who, SizeT szB );
 // on a multiple of align.
 // Use the macro vg_alignof (type) to get a safe alignment for a type.
 // No other function can be used on these permanently allocated blocks.
-// In particular, do *not* call VG_(free) or VG_(malloc_usable_size)
-// or VG_(realloc).
+// In particular, do *not* call VG_(free) or VG_(realloc).
 // Technically, these blocks will be returned from big superblocks
 // only containing such permanently allocated blocks.
 // Note that there is no cc cost centre : all such blocks will be

@@ -2599,12 +2599,6 @@ HChar* VG_(strdup) ( const HChar* cc, const HChar* s )
    return VG_(arena_strdup) ( VG_AR_CORE, cc, s ); 
 }
 
-// Useful for querying user blocks.           
-SizeT VG_(malloc_usable_size) ( void* p )                    
-{                                                            
-   return VG_(arena_malloc_usable_size)(VG_AR_CLIENT, p);
-}                                                            
-  
 void* VG_(perm_malloc) ( SizeT size, Int align  )
 {
    return VG_(arena_perm_malloc) ( VG_AR_CORE, size, align );

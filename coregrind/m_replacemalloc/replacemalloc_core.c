@@ -101,6 +101,12 @@ void VG_(cli_free) ( void* p )
    VG_(arena_free) ( VG_AR_CLIENT, p );                          
 }
 
+// Useful for querying user blocks.           
+SizeT VG_(cli_malloc_usable_size) ( void* p )                    
+{                                                            
+   return VG_(arena_malloc_usable_size)(VG_AR_CLIENT, p);
+}                                                            
+  
 Bool VG_(addr_is_in_block)( Addr a, Addr start, SizeT size, SizeT rz_szB )
 {
    return ( start - rz_szB <= a  &&  a < start + size + rz_szB );

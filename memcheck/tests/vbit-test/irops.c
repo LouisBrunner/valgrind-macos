@@ -1087,6 +1087,7 @@ get_irop(IROp op)
             rc /= 256;
             if (rc != 0) return NULL;
          }
+         break;
          /* PFPO Iops */
          case Iop_F32toD32:
          case Iop_F32toD64:
@@ -1113,6 +1114,7 @@ get_irop(IROp op)
             rc /= 256;
             if (rc != 0) return NULL;
          }
+         break;
          }
          return p->s390x ? p : NULL;
 #endif

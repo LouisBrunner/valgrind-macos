@@ -112,7 +112,7 @@ extern DedupPoolAlloc* VG_(newDedupPA) ( SizeT  poolSzB,
                                    free_fn);
    ddpa->curpool = NULL;
    ddpa->curpool_limit = NULL;
-   ddpa->curpool_free = ddpa->curpool_limit + 1;
+   ddpa->curpool_free = NULL;
    vg_assert(ddpa->pools);
    return ddpa;
 }
@@ -207,7 +207,8 @@ static void print_stats (DedupPoolAlloc *ddpa)
                 (long int) ddpa->nr_alloc_calls,
                 VG_(HT_count_nodes)(ddpa->ht_elements),
                 VG_(sizeXA)(ddpa->pools),
-                (long int) (ddpa->curpool_limit - ddpa->curpool_free + 1));
+                ddpa->curpool ?
+                (long int) (ddpa->curpool_limit - ddpa->curpool_free + 1) : 0);
    VG_(HT_print_stats) (ddpa->ht_elements, cmp_pool_elt);
 }
 
@@ -264,7 +265,8 @@ void* VG_(allocEltDedupPA) (DedupPoolAlloc *ddpa, SizeT eltSzB, const void *elt)
       and insert it in the hash table of inserted elements. */
 
    // Add a new pool or grow pool if not enough space in the current pool
-   if (UNLIKELY(ddpa->curpool_free + eltSzB - 1 > ddpa->curpool_limit)) {
+   if (UNLIKELY(ddpa->curpool_free == NULL
+                || ddpa->curpool_free + eltSzB - 1 > ddpa->curpool_limit)) {
       ddpa_add_new_pool_or_grow (ddpa);
    }
 

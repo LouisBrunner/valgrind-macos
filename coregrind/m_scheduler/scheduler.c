@@ -242,7 +242,7 @@ ThreadId VG_(alloc_ThreadState) ( void )
 	 VG_(threads)[i].status = VgTs_Init;
 	 VG_(threads)[i].exitreason = VgSrc_None;
          if (VG_(threads)[i].thread_name)
-            VG_(arena_free)(VG_AR_CORE, VG_(threads)[i].thread_name);
+            VG_(free)(VG_(threads)[i].thread_name);
          VG_(threads)[i].thread_name = NULL;
          return i;
       }

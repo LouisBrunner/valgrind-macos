@@ -358,8 +358,7 @@ static Int allocated_port_count = 0;
 static void port_create_vanilla(mach_port_t port)
 {
    OpenPort* op
-     = VG_(arena_calloc)(VG_AR_CORE, "syswrap-darwin.port_create_vanilla", 
-			 sizeof(OpenPort), 1);
+     = VG_(calloc)("syswrap-darwin.port_create_vanilla", sizeof(OpenPort), 1);
    op->port = port;
    /* Add it to the list. */
    op->next = allocated_ports;
@@ -413,10 +412,10 @@ __private_extern__ void assign_port_name(mach_port_t port, const HChar *name)
    i = info_for_port(port);
    vg_assert(i);
 
-   if (i->name) VG_(arena_free)(VG_AR_CORE, i->name);
+   if (i->name) VG_(free)(i->name);
    i->name = 
-       VG_(arena_malloc)(VG_AR_CORE, "syswrap-darwin.mach-port-name", 
-                         VG_(strlen)(name) + PORT_STRLEN + 1);
+       VG_(malloc)("syswrap-darwin.mach-port-name", 
+                   VG_(strlen)(name) + PORT_STRLEN + 1);
    VG_(sprintf)(i->name, name, port);
 }
 
@@ -482,8 +481,8 @@ void record_port_mod_refs(mach_port_t port, mach_port_type_t right, Int delta)
          if(i->next)
             i->next->prev = i->prev;
          if(i->name) 
-            VG_(arena_free) (VG_AR_CORE, i->name);
-         VG_(arena_free) (VG_AR_CORE, i);
+            VG_(free) (i->name);
+         VG_(free) (i);
          allocated_port_count--;
          return;
       }
@@ -553,8 +552,7 @@ void record_named_port(ThreadId tid, mach_port_t port,
 
    /* Not already one: allocate an OpenPort */
    if (i == NULL) {
-      i = VG_(arena_malloc)(VG_AR_CORE, "syswrap-darwin.mach-port", 
-                            sizeof(OpenPort));
+      i = VG_(malloc)("syswrap-darwin.mach-port", sizeof(OpenPort));
 
       i->prev = NULL;
       i->next = allocated_ports;
@@ -7041,7 +7039,7 @@ POST(bootstrap_look_up)
    } else {
        PRINT("not found");
    }
-   VG_(arena_free)(VG_AR_CORE, MACH_ARG(bootstrap_look_up.service_name));
+   VG_(free)(MACH_ARG(bootstrap_look_up.service_name));
 }
 
 PRE(bootstrap_look_up)
@@ -7059,8 +7057,7 @@ PRE(bootstrap_look_up)
    PRINT("bootstrap_look_up(\"%s\")", req->service_name);
 
    MACH_ARG(bootstrap_look_up.service_name) =
-      VG_(arena_strdup)(VG_AR_CORE, "syswrap-darwin.bootstrap-name", 
-                        req->service_name);
+      VG_(strdup)("syswrap-darwin.bootstrap-name", req->service_name);
 
    AFTER = POST_FN(bootstrap_look_up);
 }
@@ -8105,7 +8102,7 @@ PRE(sigreturn)
 static VexGuestX86SegDescr* alloc_zeroed_x86_LDT ( void )
 {
    Int nbytes = VEX_GUEST_X86_LDT_NENT * sizeof(VexGuestX86SegDescr);
-   return VG_(arena_calloc)(VG_AR_CORE, "syswrap-darwin.ldt", nbytes, 1);
+   return VG_(calloc)("syswrap-darwin.ldt", nbytes, 1);
 }
 #endif
 

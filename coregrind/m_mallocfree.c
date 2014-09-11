@@ -2594,6 +2594,11 @@ void* VG_(realloc) ( const HChar* cc, void* ptr, SizeT size )
    return VG_(arena_realloc) ( VG_AR_CORE, cc, ptr, size );
 }
 
+void VG_(realloc_shrink) ( void* ptr, SizeT size )
+{
+   VG_(arena_realloc_shrink) ( VG_AR_CORE, ptr, size );
+}
+
 HChar* VG_(strdup) ( const HChar* cc, const HChar* s )
 {
    return VG_(arena_strdup) ( VG_AR_CORE, cc, s ); 

@@ -156,11 +156,11 @@ extern ThreadId vgdb_interrupted_tid;
                                VG_(strtoull16) ((s),(r)) \
                                : VG_(strtoull10) ((s),(r)))
 
-#define malloc(sz)            VG_(arena_malloc)  (VG_AR_CORE, "gdbsrv", sz)
-#define calloc(n,sz)          VG_(arena_calloc)  (VG_AR_CORE, "gdbsrv", n, sz)
-#define realloc(p,size)       VG_(arena_realloc) (VG_AR_CORE, "gdbsrv", p, size)
-#define strdup(s)             VG_(arena_strdup)  (VG_AR_CORE, "gdbsrv", (s))
-#define free(b)               VG_(arena_free)    (VG_AR_CORE, b)
+#define malloc(sz)            VG_(malloc)  ("gdbsrv", sz)
+#define calloc(n,sz)          VG_(calloc)  ("gdbsrv", n, sz)
+#define realloc(p,size)       VG_(realloc) ("gdbsrv", p, size)
+#define strdup(s)             VG_(strdup)  ("gdbsrv", (s))
+#define free(b)               VG_(free)    (b)
 
 #ifndef ATTR_NORETURN
 #if defined(__GNUC__) && (__GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 7))

@@ -191,7 +191,7 @@ UWord VG_(register_stack)(Addr start, Addr end)
       start = t;
    }
 
-   i = (Stack *)VG_(arena_malloc)(VG_AR_CORE, "stacks.rs.1", sizeof(Stack));
+   i = VG_(malloc)("stacks.rs.1", sizeof(Stack));
    i->start = start;
    i->end = end;
    i->id = next_id++;
@@ -230,7 +230,7 @@ void VG_(deregister_stack)(UWord id)
          } else {
             prev->next = i->next;
          }
-         VG_(arena_free)(VG_AR_CORE, i);
+         VG_(free)(i);
          return;
       }
       prev = i;

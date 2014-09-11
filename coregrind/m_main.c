@@ -1146,7 +1146,7 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
          the default one. */
       static const HChar default_supp[] = "default.supp";
       Int len = VG_(strlen)(VG_(libdir)) + 1 + sizeof(default_supp);
-      HChar *buf = VG_(arena_malloc)(VG_AR_CORE, "main.mpclo.3", len);
+      HChar *buf = VG_(malloc)("main.mpclo.3", len);
       VG_(sprintf)(buf, "%s/%s", VG_(libdir), default_supp);
       VG_(clo_suppressions)[VG_(clo_n_suppressions)] = buf;
       VG_(clo_n_suppressions)++;

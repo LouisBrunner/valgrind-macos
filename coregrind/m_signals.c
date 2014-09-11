@@ -1328,7 +1328,7 @@ void VG_(clear_out_queued_signals)( ThreadId tid, vki_sigset_t* saved_mask )
 {
    block_all_host_signals(saved_mask);
    if (VG_(threads)[tid].sig_queue != NULL) {
-      VG_(arena_free)(VG_AR_CORE, VG_(threads)[tid].sig_queue);
+      VG_(free)(VG_(threads)[tid].sig_queue);
       VG_(threads)[tid].sig_queue = NULL;
    }
    restore_all_host_signals(saved_mask);
@@ -2052,8 +2052,7 @@ void queue_signal(ThreadId tid, const vki_siginfo_t *si)
    block_all_host_signals(&savedmask);
 
    if (tst->sig_queue == NULL) {
-      tst->sig_queue = VG_(arena_malloc)(VG_AR_CORE, "signals.qs.1",
-                                         sizeof(*tst->sig_queue));
+      tst->sig_queue = VG_(malloc)("signals.qs.1", sizeof(*tst->sig_queue));
       VG_(memset)(tst->sig_queue, 0, sizeof(*tst->sig_queue));
    }
    sq = tst->sig_queue;

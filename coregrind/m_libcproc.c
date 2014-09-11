@@ -114,8 +114,7 @@ HChar **VG_(env_setenv) ( HChar ***envp, const HChar* varname,
    HChar **env = (*envp);
    HChar **cpp;
    Int len = VG_(strlen)(varname);
-   HChar *valstr = VG_(arena_malloc)(VG_AR_CORE, "libcproc.es.1",
-                                     len + VG_(strlen)(val) + 2);
+   HChar *valstr = VG_(malloc)("libcproc.es.1", len + VG_(strlen)(val) + 2);
    HChar **oldenv = NULL;
 
    VG_(sprintf)(valstr, "%s=%s", varname, val);
@@ -128,7 +127,7 @@ HChar **VG_(env_setenv) ( HChar ***envp, const HChar* varname,
    }
 
    if (env == NULL) {
-      env = VG_(arena_malloc)(VG_AR_CORE, "libcproc.es.2", sizeof(HChar *) * 2);
+      env = VG_(malloc)("libcproc.es.2", sizeof(HChar *) * 2);
       env[0] = valstr;
       env[1] = NULL;
 
@@ -136,8 +135,7 @@ HChar **VG_(env_setenv) ( HChar ***envp, const HChar* varname,
 
    }  else {
       Int envlen = (cpp-env) + 2;
-      HChar **newenv = VG_(arena_malloc)(VG_AR_CORE, "libcproc.es.3",
-                                         envlen * sizeof(HChar *));
+      HChar **newenv = VG_(malloc)("libcproc.es.3", envlen * sizeof(HChar *));
 
       for (cpp = newenv; *env; )
 	 *cpp++ = *env++;
@@ -243,21 +241,20 @@ void VG_(env_remove_valgrind_env_stuff)(HChar** envp)
    // - DYLD_INSERT_LIBRARIES and DYLD_SHARED_REGION are Darwin-only
    for (i = 0; envp[i] != NULL; i++) {
       if (VG_(strncmp)(envp[i], "LD_PRELOAD=", 11) == 0) {
-         envp[i] = VG_(arena_strdup)(VG_AR_CORE, "libcproc.erves.1", envp[i]);
+         envp[i] = VG_(strdup)("libcproc.erves.1", envp[i]);
          ld_preload_str = &envp[i][11];
       }
       if (VG_(strncmp)(envp[i], "LD_LIBRARY_PATH=", 16) == 0) {
-         envp[i] = VG_(arena_strdup)(VG_AR_CORE, "libcproc.erves.2", envp[i]);
+         envp[i] = VG_(strdup)("libcproc.erves.2", envp[i]);
          ld_library_path_str = &envp[i][16];
       }
       if (VG_(strncmp)(envp[i], "DYLD_INSERT_LIBRARIES=", 22) == 0) {
-         envp[i] = VG_(arena_strdup)(VG_AR_CORE, "libcproc.erves.3", envp[i]);
+         envp[i] = VG_(strdup)("libcproc.erves.3", envp[i]);
          dyld_insert_libraries_str = &envp[i][22];
       }
    }
 
-   buf = VG_(arena_malloc)(VG_AR_CORE, "libcproc.erves.4",
-                           VG_(strlen)(VG_(libdir)) + 20);
+   buf = VG_(malloc)("libcproc.erves.4", VG_(strlen)(VG_(libdir)) + 20);
 
    // Remove Valgrind-specific entries from LD_*.
    VG_(sprintf)(buf, "%s*/vgpreload_*.so", VG_(libdir));
@@ -274,7 +271,7 @@ void VG_(env_remove_valgrind_env_stuff)(HChar** envp)
 
    // XXX if variable becomes empty, remove it completely?
 
-   VG_(arena_free)(VG_AR_CORE, buf);
+   VG_(free)(buf);
 }
 
 /* ---------------------------------------------------------------------
@@ -309,8 +306,7 @@ HChar **VG_(env_clone) ( HChar **oldenv )
 
    envlen = oldenvp - oldenv + 1;
    
-   newenv = VG_(arena_malloc)(VG_AR_CORE, "libcproc.ec.1",
-                              envlen * sizeof(HChar *));
+   newenv = VG_(malloc)("libcproc.ec.1", envlen * sizeof(HChar *));
 
    oldenvp = oldenv;
    newenvp = newenv;

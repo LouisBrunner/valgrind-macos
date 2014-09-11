@@ -1052,8 +1052,7 @@ POST(sys_prctl)
 
             /* Don't bother reusing the memory. This is a rare event. */
             tst->thread_name =
-              VG_(arena_realloc)(VG_AR_CORE, "syswrap.prctl",
-                                 tst->thread_name, new_len + 1);
+              VG_(realloc)("syswrap.prctl", tst->thread_name, new_len + 1);
             VG_(strcpy)(tst->thread_name, new_name);
          }
       }

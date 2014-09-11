@@ -570,8 +570,8 @@ void record_fd_close(Int fd)
          if(i->next)
             i->next->prev = i->prev;
          if(i->pathname) 
-            VG_(arena_free) (VG_AR_CORE, i->pathname);
-         VG_(arena_free) (VG_AR_CORE, i);
+            VG_(free) (i->pathname);
+         VG_(free) (i);
          fd_count--;
          break;
       }
@@ -596,7 +596,7 @@ void ML_(record_fd_open_with_given_name)(ThreadId tid, Int fd, char *pathname)
    i = allocated_fds;
    while (i) {
       if (i->fd == fd) {
-         if (i->pathname) VG_(arena_free)(VG_AR_CORE, i->pathname);
+         if (i->pathname) VG_(free)(i->pathname);
          break;
       }
       i = i->next;
@@ -604,7 +604,7 @@ void ML_(record_fd_open_with_given_name)(ThreadId tid, Int fd, char *pathname)
 
    /* Not already one: allocate an OpenFd */
    if (i == NULL) {
-      i = VG_(arena_malloc)(VG_AR_CORE, "syswrap.rfdowgn.1", sizeof(OpenFd));
+      i = VG_(malloc)("syswrap.rfdowgn.1", sizeof(OpenFd));
 
       i->prev = NULL;
       i->next = allocated_fds;
@@ -614,7 +614,7 @@ void ML_(record_fd_open_with_given_name)(ThreadId tid, Int fd, char *pathname)
    }
 
    i->fd = fd;
-   i->pathname = VG_(arena_strdup)(VG_AR_CORE, "syswrap.rfdowgn.2", pathname);
+   i->pathname = VG_(strdup)("syswrap.rfdowgn.2", pathname);
    i->where = (tid == -1) ? NULL : VG_(record_ExeContext)(tid, 0/*first_ip_delta*/);
 }
 
@@ -926,7 +926,7 @@ void pre_mem_read_sendmsg ( ThreadId tid, Bool read,
    HChar *outmsg = strdupcat ( "di.syswrap.pmrs.1",
                                "sendmsg", msg, VG_AR_CORE );
    PRE_MEM_READ( outmsg, base, size );
-   VG_(arena_free) ( VG_AR_CORE, outmsg );
+   VG_(free) ( outmsg );
 }
 
 static 
@@ -939,7 +939,7 @@ void pre_mem_write_recvmsg ( ThreadId tid, Bool read,
       PRE_MEM_READ( outmsg, base, size );
    else
       PRE_MEM_WRITE( outmsg, base, size );
-   VG_(arena_free) ( VG_AR_CORE, outmsg );
+   VG_(free) ( outmsg );
 }
 
 static
@@ -965,7 +965,7 @@ void msghdr_foreachfield (
    if ( !msg )
       return;
 
-   fieldName = VG_(arena_malloc) ( VG_AR_CORE, "di.syswrap.mfef", VG_(strlen)(name) + 32 );
+   fieldName = VG_(malloc) ( "di.syswrap.mfef", VG_(strlen)(name) + 32 );
 
    VG_(sprintf) ( fieldName, "(%s)", name );
 
@@ -1015,7 +1015,7 @@ void msghdr_foreachfield (
                      (Addr)msg->msg_control, msg->msg_controllen );
    }
 
-   VG_(arena_free) ( VG_AR_CORE, fieldName );
+   VG_(free) ( fieldName );
 }
 
 static void check_cmsg_for_fds(ThreadId tid, struct vki_msghdr *msg)
@@ -1061,8 +1061,8 @@ void pre_mem_read_sockaddr ( ThreadId tid,
    /* NULL/zero-length sockaddrs are legal */
    if ( sa == NULL || salen == 0 ) return;
 
-   outmsg = VG_(arena_malloc) ( VG_AR_CORE, "di.syswrap.pmr_sockaddr.1",
-                                VG_(strlen)( description ) + 30 );
+   outmsg = VG_(malloc) ( "di.syswrap.pmr_sockaddr.1",
+                          VG_(strlen)( description ) + 30 );
 
    VG_(sprintf) ( outmsg, description, "sa_family" );
    PRE_MEM_READ( outmsg, (Addr) &sa->sa_family, sizeof(vki_sa_family_t));
@@ -1131,7 +1131,7 @@ void pre_mem_read_sockaddr ( ThreadId tid,
          break;
    }
    
-   VG_(arena_free) ( VG_AR_CORE, outmsg );
+   VG_(free) ( outmsg );
 }
 
 /* Dereference a pointer to a UInt. */

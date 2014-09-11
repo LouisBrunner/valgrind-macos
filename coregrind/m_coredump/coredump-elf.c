@@ -169,7 +169,7 @@ static void add_note(struct note **list, const HChar *name, UInt type,
    Int notelen = sizeof(struct note) + 
       VG_ROUNDUP(namelen, 4) + 
       VG_ROUNDUP(datasz, 4);
-   struct note *n = VG_(arena_malloc)(VG_AR_CORE, "coredump-elf.an.1", notelen);
+   struct note *n = VG_(malloc)("coredump-elf.an.1", notelen);
 
    VG_(memset)(n, 0, notelen);
 
@@ -648,8 +648,7 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, ULong max_size)
    notelist = NULL;
 
    /* Second, work out their layout */
-   phdrs = VG_(arena_malloc)(VG_AR_CORE, "coredump-elf.mec.1", 
-                             sizeof(*phdrs) * num_phdrs);
+   phdrs = VG_(malloc)("coredump-elf.mec.1", sizeof(*phdrs) * num_phdrs);
 
    /* Add details for all threads except the one that faulted */
    for(i = 1; i < VG_N_THREADS; i++) {

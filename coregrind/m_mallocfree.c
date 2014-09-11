@@ -2574,6 +2574,7 @@ void* VG_(arena_perm_malloc) ( ArenaId aid, SizeT size, Int align  )
 
 // All just wrappers to avoid exposing arenas to tools.
 
+// This function never returns NULL.
 void* VG_(malloc) ( const HChar* cc, SizeT nbytes )
 {
    return VG_(arena_malloc) ( VG_AR_CORE, cc, nbytes );

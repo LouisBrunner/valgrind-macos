@@ -741,10 +741,8 @@ static CacheProfFile* parse_CacheProfFile ( SOURCE* s )
 
    // since the summary counts are OK, free up the summary_line text
    // which contains the same info.
-   if (cpf->summary_line) {
-      free(cpf->summary_line);
-      cpf->summary_line = NULL;
-   }
+   free(cpf->summary_line);
+   cpf->summary_line = NULL;
 
    free(curr_fn);
    free(curr_fl);

@@ -1677,7 +1677,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    //--------------------------------------------------------------
    VG_(debugLog)(1, "main", "Starting the dynamic memory manager\n");
    { void* p = VG_(malloc)( "main.vm.1", 12345 );
-     if (p) VG_(free)( p );
+     VG_(free)( p );
    }
    VG_(debugLog)(1, "main", "Dynamic memory manager is running\n");
 

@@ -380,7 +380,7 @@ void DRD_(thread_post_join)(DrdThreadId drd_joiner, DrdThreadId drd_joinee)
       HChar* msg;
 
       msg = VG_(malloc)("drd.main.dptj.1", msg_size);
-      tl_assert(msg);
+
       VG_(snprintf)(msg, msg_size,
                     "drd_post_thread_join joiner = %d, joinee = %d",
                     drd_joiner, drd_joinee);

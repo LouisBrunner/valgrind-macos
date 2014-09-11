@@ -1501,7 +1501,7 @@ static void print_bbccs_of_thread(thread_info* ti)
   init_fpos(&lastFnPos);
   init_apos(&lastAPos, 0, 0, 0);
 
-  if (p) while(1) {
+  while(1) {
 
     /* on context/function change, print old cost buffer before */
     if (lastFnPos.cxt && ((*p==0) ||				 
@@ -1557,7 +1557,7 @@ static void print_bbccs_of_thread(thread_info* ti)
   }
 
   close_dumpfile(print_fd);
-  if (array) VG_(free)(array);
+  VG_(free)(array);
   
   /* set counters of last dump */
   CLG_(copy_cost)( CLG_(sets).full, ti->lastdump_cost,

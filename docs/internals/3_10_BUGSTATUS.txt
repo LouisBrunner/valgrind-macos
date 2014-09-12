@@ -2,3 +2,28 @@
 Created Mon Sep 8 13:22:16 CEST 2014.  All new bugs after this point
 go in here.
 
+==================
+
+Bugs that didn't make 3.10.0, that might be considered for 3.10.1
+
+335618  mov.w rN, pc/sp (ARM32)
+335440  arm64 LD1
+335713  arm64 prfm
+
+327427  ifunc crash when symbols are discarded
+330321  debuginfo readers complain about DT_AT_signature
+
+330147  libmpiwrap PMPI_Get_count
+326487  child of debugged process exits without becoming zombie
+338781  OSX: unable to read debug info
+
+==================
+
+Commits on the trunk that should be considered for merging to 3.10.1
+(write here :-)
+
+==================
+
+New bugs reported in 3.10.0
+
+==================

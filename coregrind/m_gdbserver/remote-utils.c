@@ -323,10 +323,12 @@ void remote_open (const HChar *name)
    user = VG_(getenv)("LOGNAME");
    if (user == NULL) user = VG_(getenv)("USER");
    if (user == NULL) user = "???";
+   if (VG_(strchr)(user, '/')) user = "???";
 
    host = VG_(getenv)("HOST");
    if (host == NULL) host = VG_(getenv)("HOSTNAME");
    if (host == NULL) host = "???";
+   if (VG_(strchr)(host, '/')) host = "???";
 
    len = strlen(name) + strlen(user) + strlen(host) + 40;
 

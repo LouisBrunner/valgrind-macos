@@ -517,10 +517,12 @@ void prepare_fifos_and_shared_mem(int pid)
    user = getenv("LOGNAME");
    if (user == NULL) user = getenv("USER");
    if (user == NULL) user = "???";
+   if (strchr(user, '/')) user = "???";
 
    host = getenv("HOST");
    if (host == NULL) host = getenv("HOSTNAME");
    if (host == NULL) host = "???";
+   if (strchr(host, '/')) host = "???";
 
    len = strlen(vgdb_prefix) + strlen(user) + strlen(host) + 40;
    from_gdb_to_pid = vmalloc (len);

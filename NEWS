@@ -1,8 +1,6 @@
 
-Release 3.10.0 (mid September 2014)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-3.10.0 is not yet released.  This is a beta of 3.10.0.
+Release 3.10.0 (10 September 2014)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 3.10.0 is a feature release with many improvements and the usual
 collection of bug fixes.
@@ -338,7 +336,9 @@ n-i-bz  Add support for BLKDISCARDZEROES ioctl
 n-i-bz  ppc32/64: fix a regression with the mtfsb0/mtfsb1 instructions
 n-i-bz  Add support for	sys_pivot_root and sys_unshare
 
-(3.10.0.BETA1: 2 September 2014, vex r2940, valgrind r14428)
+(3.10.0.BETA1:  2 September 2014, vex r2940, valgrind r14428)
+(3.10.0.BETA2:  8 September 2014, vex r2950, valgrind r14503)
+(3.10.0:       10 September 2014, vex r2950, valgrind r14514)
 
 
 

@@ -595,7 +595,6 @@ static void initialise_data_structures ( Thr* hbthr_root )
 
    tl_assert(map_threads == NULL);
    map_threads = HG_(zalloc)( "hg.ids.1", VG_N_THREADS * sizeof(Thread*) );
-   tl_assert(map_threads != NULL);
 
    tl_assert(sizeof(Addr) == sizeof(UWord));
    tl_assert(map_locks == NULL);
@@ -2853,7 +2852,6 @@ typedef
 
 static Bar* new_Bar ( void ) {
    Bar* bar = HG_(zalloc)( "hg.nB.1 (new_Bar)", sizeof(Bar) );
-   tl_assert(bar);
    /* all fields are zero */
    tl_assert(bar->initted == False);
    return bar;

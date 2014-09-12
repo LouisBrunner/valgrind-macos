@@ -93,8 +93,6 @@ static void resize_cxt_table(void)
     new_table = (Context**) CLG_MALLOC("cl.context.rct.1",
                                        new_size * sizeof(Context*));
 
-    if (!new_table) return;
-
     for (i = 0; i < new_size; i++)
       new_table[i] = NULL;
 

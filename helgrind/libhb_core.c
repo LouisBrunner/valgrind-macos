@@ -882,7 +882,6 @@ void alloc_F_for_writing ( /*MOD*/SecMap* sm, /*OUT*/Word* fixp ) {
    new_size = sm->linesF_size==0 ? 1 : 2 * sm->linesF_size;
    nyu      = HG_(zalloc)( "libhb.aFfw.1 (LineF storage)",
                            new_size * sizeof(LineF) );
-   tl_assert(nyu);
 
    stats__secmap_linesF_allocd += (new_size - sm->linesF_size);
    stats__secmap_linesF_bytes  += (new_size - sm->linesF_size)
@@ -4411,7 +4410,6 @@ static void event_map_init ( void )
    tl_assert(!contextTab);
    contextTab = HG_(zalloc)( "libhb.event_map_init.2 (context table)",
                              N_RCEC_TAB * sizeof(RCEC*) );
-   tl_assert(contextTab);
    for (i = 0; i < N_RCEC_TAB; i++)
       contextTab[i] = NULL;
 

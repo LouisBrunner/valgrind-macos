@@ -71,7 +71,6 @@ static HChar* read_dot_valgrindrc ( const HChar* dir )
           && (!(stat_buf.mode & VKI_S_IWOTH))) {
          if ( stat_buf.size > 0 ) {
             f_clo = VG_(malloc)("commandline.rdv.1", stat_buf.size+1);
-            vg_assert(f_clo);
             n = VG_(read)(sr_Res(fd), f_clo, stat_buf.size);
             if (n == -1) n = 0;
             vg_assert(n >= 0 && n <= stat_buf.size+1);

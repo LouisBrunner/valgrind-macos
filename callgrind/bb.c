@@ -74,8 +74,6 @@ void resize_bb_table(void)
     new_table = (BB**) CLG_MALLOC("cl.bb.rbt.1",
                                   new_size * sizeof(BB*));
  
-    if (!new_table) return;
- 
     for (i = 0; i < new_size; i++)
       new_table[i] = NULL;
  

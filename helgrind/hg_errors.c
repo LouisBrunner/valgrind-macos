@@ -85,7 +85,6 @@ static HChar* string_table_strdup ( const HChar* str ) {
       return copy;
    } else {
       copy = HG_(strdup)("hg.sts.2", str);
-      tl_assert(copy);
       VG_(addToFM)( string_table, (UWord)copy, (UWord)copy );
       return copy;
    }
@@ -202,7 +201,6 @@ Lock** enumerate_WordSet_into_LockP_vector( WordSetU* univ_lsets,
    UWord  nLocks = HG_(cardinalityWS)(univ_lsets, lockset);
    Lock** lockPs = HG_(zalloc)( "hg.eWSiLPa",
                                 (nLocks+1) * sizeof(Lock*) );
-   tl_assert(lockPs);
    tl_assert(lockPs[nLocks] == NULL); /* pre-NULL terminated */
    UWord* lockNs  = NULL;
    UWord  nLockNs = 0;

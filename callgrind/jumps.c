@@ -91,8 +91,6 @@ static void resize_jcc_table(void)
     new_table = (jCC**) CLG_MALLOC("cl.jumps.rjt.1",
                                    new_size * sizeof(jCC*));
  
-    if (!new_table) return;
- 
     for (i = 0; i < new_size; i++)
       new_table[i] = NULL;
  

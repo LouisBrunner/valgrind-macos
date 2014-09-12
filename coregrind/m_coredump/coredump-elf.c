@@ -603,7 +603,6 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, ULong max_size)
    buf = VG_(malloc)( "coredump-elf.mec.1", 
                       VG_(strlen)(coreext) + VG_(strlen)(basename)
                          + 100/*for the two %ds. */ );
-   vg_assert(buf);
 
    for(;;) {
       Int oflags = VKI_O_CREAT|VKI_O_WRONLY|VKI_O_EXCL|VKI_O_TRUNC;

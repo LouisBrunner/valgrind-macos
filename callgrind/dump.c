@@ -1682,7 +1682,6 @@ void CLG_(init_dumps)()
    /* allocate space big enough for final filenames */
    filename = (HChar*) CLG_MALLOC("cl.dump.init_dumps.2",
                                  VG_(strlen)(out_file)+32);
-   CLG_ASSERT(filename != 0);
        
    /* Make sure the output base file can be written.
     * This is used for the dump at program termination.

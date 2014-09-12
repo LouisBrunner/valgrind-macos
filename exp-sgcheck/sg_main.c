@@ -73,7 +73,6 @@ static void* sg_malloc ( const HChar* cc, SizeT n ) {
    void* p;
    tl_assert(n > 0);
    p = VG_(malloc)( cc, n );
-   tl_assert(p);
    return p;
 }
 

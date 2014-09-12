@@ -124,7 +124,6 @@ Segment* DRD_(sg_new)(const DrdThreadId creator, const DrdThreadId created)
       s_max_segments_alive_count = s_segments_alive_count;
 
    sg = VG_(malloc)("drd.segment.sn.1", sizeof(*sg));
-   tl_assert(sg);
    sg_init(sg, creator, created);
    if (DRD_(g_sg_list)) {
       DRD_(g_sg_list)->g_prev = sg;

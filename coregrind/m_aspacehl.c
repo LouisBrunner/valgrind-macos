@@ -46,18 +46,11 @@ Addr* VG_(get_segment_starts) ( /*OUT*/Int* n_acquired )
    n_starts = 1;
    while (True) {
       starts = VG_(malloc)( "main.gss.1", n_starts * sizeof(Addr) );
-      if (starts == NULL)
-         break;
       r = VG_(am_get_segment_starts)( starts, n_starts );
       if (r >= 0)
          break;
       VG_(free)(starts);
       n_starts *= 2;
-   }
-
-   if (starts == NULL) {
-     *n_acquired = 0;
-     return NULL;
    }
 
    *n_acquired = r;

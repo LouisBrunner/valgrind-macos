@@ -201,8 +201,6 @@ static void resize_bbcc_hash(void)
     new_table = (BBCC**) CLG_MALLOC("cl.bbcc.rbh.1",
                                     new_size * sizeof(BBCC*));
  
-    if (!new_table) return;
- 
     for (i = 0; i < new_size; i++)
       new_table[i] = NULL;
  

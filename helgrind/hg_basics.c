@@ -47,7 +47,6 @@ void* HG_(zalloc) ( const HChar* cc, SizeT n )
    void* p;
    tl_assert(n > 0);
    p = VG_(malloc)( cc, n );
-   tl_assert(p);
    VG_(memset)(p, 0, n);
    return p;
 }

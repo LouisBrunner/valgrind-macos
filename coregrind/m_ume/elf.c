@@ -95,7 +95,6 @@ struct elfinfo *readelf(Int fd, const HChar *filename)
    struct elfinfo *e = VG_(malloc)("ume.re.1", sizeof(*e));
    Int phsz;
 
-   vg_assert(e);
    e->fd = fd;
 
    sres = VG_(pread)(fd, &e->e, sizeof(e->e), 0);
@@ -136,7 +135,6 @@ struct elfinfo *readelf(Int fd, const HChar *filename)
 
    phsz = sizeof(ESZ(Phdr)) * e->e.e_phnum;
    e->p = VG_(malloc)("ume.re.2", phsz);
-   vg_assert(e->p);
 
    sres = VG_(pread)(fd, e->p, phsz, e->e.e_phoff);
    if (sr_isError(sres) || sr_Res(sres) != phsz) {
@@ -372,7 +370,6 @@ Int VG_(load_ELF)(Int fd, const HChar* name, /*MOD*/ExeInfo* info)
          Int intfd;
          Int baseaddr_set;
 
-         vg_assert(buf);
          VG_(pread)(fd, buf, ph->p_filesz, ph->p_offset);
          buf[ph->p_filesz] = '\0';
 

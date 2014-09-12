@@ -2856,7 +2856,6 @@ PRE(sys_execve)
       // allocate
       argv = VG_(malloc)( "di.syswrap.pre_sys_execve.1",
                           (tot_args+1) * sizeof(HChar*) );
-      if (argv == 0) goto hosed;
       // copy
       j = 0;
       argv[j++] = launcher_basename;

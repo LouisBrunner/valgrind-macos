@@ -3043,7 +3043,6 @@ PRE(posix_spawn)
       // allocate
       argv = VG_(malloc)( "di.syswrap.pre_sys_execve.1",
                           (tot_args+1) * sizeof(HChar*) );
-      vg_assert(argv);
       // copy
       j = 0;
       argv[j++] = launcher_basename;

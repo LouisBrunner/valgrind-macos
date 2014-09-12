@@ -126,6 +126,9 @@ static void load_client ( /*OUT*/ExeInfo* info,
 */
 static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
 {
+   vg_assert(origenv);
+   vg_assert(toolname);
+
    const HChar* preload_core    = "vgpreload_core";
    const HChar* ld_preload      = "LD_PRELOAD=";
    const HChar* v_launcher      = VALGRIND_LAUNCHER "=";
@@ -151,14 +154,9 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
    Int preload_string_len    = preload_core_path_len + preload_tool_path_len;
    HChar* preload_string     = VG_(malloc)("initimg-linux.sce.1",
                                            preload_string_len);
-   vg_assert(origenv);
-   vg_assert(toolname);
-   vg_assert(preload_string);
-
    /* Determine if there's a vgpreload_<tool>_<platform>.so file, and setup
       preload_string. */
    preload_tool_path = VG_(malloc)("initimg-linux.sce.2", preload_tool_path_len);
-   vg_assert(preload_tool_path);
    VG_(snprintf)(preload_tool_path, preload_tool_path_len,
                  "%s/vgpreload_%s-%s.so", VG_(libdir), toolname, VG_PLATFORM);
    if (VG_(access)(preload_tool_path, True/*r*/, False/*w*/, False/*x*/) == 0) {
@@ -184,7 +182,6 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
    /* Allocate a new space */
    ret = VG_(malloc) ("initimg-linux.sce.3",
                       sizeof(HChar *) * (envc+1+1)); /* 1 new entry + NULL */
-   vg_assert(ret);
 
    /* copy it over */
    for (cpp = ret; *origenv; ) {
@@ -200,7 +197,6 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
       if (VG_(memcmp)(*cpp, ld_preload, ld_preload_len) == 0) {
          Int len = VG_(strlen)(*cpp) + preload_string_len;
          HChar *cp = VG_(malloc)("initimg-linux.sce.4", len);
-         vg_assert(cp);
 
          VG_(snprintf)(cp, len, "%s%s:%s",
                        ld_preload, preload_string, (*cpp)+ld_preload_len);
@@ -216,7 +212,6 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
    if (!ld_preload_done) {
       Int len = ld_preload_len + preload_string_len;
       HChar *cp = VG_(malloc) ("initimg-linux.sce.5", len);
-      vg_assert(cp);
 
       VG_(snprintf)(cp, len, "%s%s", ld_preload, preload_string);
 

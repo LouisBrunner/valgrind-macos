@@ -80,7 +80,9 @@ usage: valgrind [options] prog-and-args
                               code found in stacks, for all code, or for all
                               code except that from file-backed mappings
     --read-inline-info=yes|no read debug info about inlined function calls
-                              and use it to do better stack traces [no]
+                              and use it to do better stack traces.  [yes]
+                              on Linux/Android for Memcheck/Helgrind/DRD
+                              only.  [no] for all other tools and platforms.
     --read-var-info=yes|no    read debug info on stack and global variables
                               and use it to print better error messages in
                               tools that make use of it (Memcheck, Helgrind,

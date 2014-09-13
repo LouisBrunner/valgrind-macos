@@ -1047,7 +1047,6 @@ static void add_var_to_arange (
       vg_assert(first->aMin <= first->aMax);
       /* create a new range */
       nyu = VG_(OSetGen_AllocNode)( scope, sizeof(DiAddrRange) );
-      vg_assert(nyu);
       nyu->aMin = aMin;
       nyu->aMax = tmp;
       vg_assert(nyu->aMin <= nyu->aMax);
@@ -1077,7 +1076,6 @@ static void add_var_to_arange (
       vg_assert(last->aMin <= last->aMax);
       /* create a new range */
       nyu = VG_(OSetGen_AllocNode)( scope, sizeof(DiAddrRange) );
-      vg_assert(nyu);
       nyu->aMin = tmp;
       nyu->aMax = aMax;
       vg_assert(nyu->aMin <= nyu->aMax);
@@ -1260,7 +1258,6 @@ void ML_(addVar)( struct _DebugInfo* di,
                                    ML_(cmp_for_DiAddrRange_range),
                                    ML_(dinfo_zalloc), "di.storage.addVar.2",
                                    ML_(dinfo_free) );
-      vg_assert(scope);
       if (0) VG_(printf)("create: scope = %p, adding at %ld\n",
                          scope, VG_(sizeXA)(di->varinfo));
       VG_(addToXA)( di->varinfo, &scope );
@@ -1270,7 +1267,6 @@ void ML_(addVar)( struct _DebugInfo* di,
          All of these invariants get checked both add_var_to_arange
          and after reading is complete, in canonicaliseVarInfo. */
       nyu = VG_(OSetGen_AllocNode)( scope, sizeof(DiAddrRange) );
-      vg_assert(nyu);
       nyu->aMin = (Addr)0;
       nyu->aMax = ~(Addr)0;
       nyu->vars = VG_(newXA)( ML_(dinfo_zalloc), "di.storage.addVar.3",

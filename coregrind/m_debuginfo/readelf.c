@@ -891,7 +891,6 @@ void read_elf_symtab__ppc64be_linux(
                                (OSetCmp_t)cmp_TempSymKey, 
                                ML_(dinfo_zalloc), "di.respl.1",
                                ML_(dinfo_free) );
-   vg_assert(oset);
 
    /* Perhaps should start at i = 1; ELF docs suggest that entry
       0 always denotes 'unknown symbol'. */
@@ -988,7 +987,6 @@ void read_elf_symtab__ppc64be_linux(
 
             /* A new (name,addr) key.  Add and continue. */
             elem = VG_(OSetGen_AllocNode)(oset, sizeof(TempSym));
-            vg_assert(elem);
             elem->key      = key;
             elem->tocptr   = GET_TOCPTR_AVMA(sym_avmas_really);
             elem->size     = sym_size;

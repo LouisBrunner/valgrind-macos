@@ -60,7 +60,6 @@ void DRD_(clientobj_init)(void)
    tl_assert(s_clientobj_set == 0);
    s_clientobj_set = VG_(OSetGen_Create)(0, 0, VG_(malloc),
                                          "drd.clientobj.ci.1", VG_(free));
-   tl_assert(s_clientobj_set);
 }
 
 /**

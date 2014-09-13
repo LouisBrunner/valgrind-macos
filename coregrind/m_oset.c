@@ -112,9 +112,9 @@ struct _OSetNode {
 struct _OSet {
    SizeT       keyOff;     // key offset
    OSetCmp_t   cmp;        // compare a key and an element, or NULL
-   OSetAlloc_t alloc;      // allocator
-   const HChar* cc;        // cc for allocator
-   OSetFree_t  free;       // deallocator
+   OSetAlloc_t alloc_fn;   // allocator
+   const HChar* cc;        // cost centre for allocator
+   OSetFree_t  free_fn;    // deallocator
    PoolAlloc*  node_pa;    // (optional) pool allocator for nodes.
    SizeT       maxEltSize; // for node_pa, must be > 0. Otherwise unused.
    Word        nElems;     // number of elements in the tree
@@ -285,9 +285,9 @@ static inline Bool stackPop(AvlTree* t, AvlNode** n, Int* i)
 /*--------------------------------------------------------------------*/
 
 // The underscores avoid GCC complaints about overshadowing global names.
-AvlTree* VG_(OSetGen_Create)(PtrdiffT _keyOff, OSetCmp_t _cmp,
-                             OSetAlloc_t _alloc, const HChar* _cc,
-                             OSetFree_t _free)
+AvlTree* VG_(OSetGen_Create)(PtrdiffT keyOff, OSetCmp_t cmp,
+                             OSetAlloc_t alloc_fn, const HChar* cc,
+                             OSetFree_t free_fn)
 {
    AvlTree* t;
 
@@ -295,16 +295,16 @@ AvlTree* VG_(OSetGen_Create)(PtrdiffT _keyOff, OSetCmp_t _cmp,
    vg_assert(sizeof(AvlNode) == 3*sizeof(void*));
 
    // Sanity check args
-   vg_assert(_alloc);
-   vg_assert(_free);
-   if (!_cmp) vg_assert(0 == _keyOff);    // If no cmp, offset must be zero
+   vg_assert(alloc_fn);
+   vg_assert(free_fn);
+   if (!cmp) vg_assert(0 == keyOff);    // If no cmp, offset must be zero
 
-   t           = _alloc(_cc, sizeof(AvlTree));
-   t->keyOff   = _keyOff;
-   t->cmp      = _cmp;
-   t->alloc    = _alloc;
-   t->cc       = _cc;
-   t->free     = _free;
+   t           = alloc_fn(cc, sizeof(AvlTree));
+   t->keyOff   = keyOff;
+   t->cmp      = cmp;
+   t->alloc_fn = alloc_fn;
+   t->cc       = cc;
+   t->free_fn  = free_fn;
    t->node_pa  = NULL;
    t->maxEltSize = 0; // Just in case it would be wrongly used.
    t->nElems   = 0;
@@ -314,27 +314,25 @@ AvlTree* VG_(OSetGen_Create)(PtrdiffT _keyOff, OSetCmp_t _cmp,
    return t;
 }
 
-AvlTree* VG_(OSetGen_Create_With_Pool)(PtrdiffT _keyOff, OSetCmp_t _cmp,
-                                       OSetAlloc_t _alloc, const HChar* _cc,
-                                       OSetFree_t _free,
-                                       SizeT _poolSize,
-                                       SizeT _maxEltSize)
+AvlTree* VG_(OSetGen_Create_With_Pool)(PtrdiffT keyOff, OSetCmp_t cmp,
+                                       OSetAlloc_t alloc_fn, const HChar* cc,
+                                       OSetFree_t free_fn,
+                                       SizeT poolSize,
+                                       SizeT maxEltSize)
 {
    AvlTree* t;
 
-   t = VG_(OSetGen_Create) (_keyOff, _cmp,
-                            _alloc, _cc,
-                            _free);
+   t = VG_(OSetGen_Create) (keyOff, cmp, alloc_fn, cc, free_fn);
 
-   vg_assert (_poolSize > 0);
-   vg_assert (_maxEltSize > 0);
-   t->maxEltSize = _maxEltSize;
+   vg_assert (poolSize > 0);
+   vg_assert (maxEltSize > 0);
+   t->maxEltSize = maxEltSize;
    t->node_pa = VG_(newPA)(sizeof(AvlNode) 
-                           + VG_ROUNDUP(_maxEltSize, sizeof(void*)),
-                           _poolSize,
-                           t->alloc,
-                           _cc,
-                           t->free);
+                           + VG_ROUNDUP(maxEltSize, sizeof(void*)),
+                           poolSize,
+                           t->alloc_fn,
+                           cc,
+                           t->free_fn);
    VG_(addRefPA) (t->node_pa);
 
    return t;
@@ -346,12 +344,12 @@ AvlTree* VG_(OSetGen_EmptyClone) (AvlTree* os)
 
    vg_assert(os);
 
-   t           = os->alloc(os->cc, sizeof(AvlTree));
+   t           = os->alloc_fn(os->cc, sizeof(AvlTree));
    t->keyOff   = os->keyOff;
    t->cmp      = os->cmp;
-   t->alloc    = os->alloc;
+   t->alloc_fn = os->alloc_fn;
    t->cc       = os->cc;
-   t->free     = os->free;
+   t->free_fn  = os->free_fn;
    t->node_pa  = os->node_pa;
    if (t->node_pa)
       VG_(addRefPA) (t->node_pa);
@@ -363,10 +361,10 @@ AvlTree* VG_(OSetGen_EmptyClone) (AvlTree* os)
    return t;
 }
 
-AvlTree* VG_(OSetWord_Create)(OSetAlloc_t _alloc, const HChar* _cc, 
-                              OSetFree_t _free)
+AvlTree* VG_(OSetWord_Create)(OSetAlloc_t alloc_fn, const HChar* cc, 
+                              OSetFree_t free_fn)
 {
-   return VG_(OSetGen_Create)(/*keyOff*/0, /*cmp*/NULL, _alloc, _cc, _free);
+   return VG_(OSetGen_Create)(/*keyOff*/0, /*cmp*/NULL, alloc_fn, cc, free_fn);
 }
 
 // Destructor, frees up all memory held by remaining nodes.
@@ -407,7 +405,7 @@ void VG_(OSetGen_Destroy)(AvlTree* t)
             if (has_node_pa)
                VG_(freeEltPA) (t->node_pa, n);
             else
-               t->free(n);
+               t->free_fn(n);
             sz++;
             break;
          }
@@ -416,7 +414,7 @@ void VG_(OSetGen_Destroy)(AvlTree* t)
    }
 
    /* Free the AvlTree itself. */
-   t->free(t);
+   t->free_fn(t);
 }
 
 void VG_(OSetWord_Destroy)(AvlTree* t)
@@ -434,7 +432,7 @@ void* VG_(OSetGen_AllocNode)(AvlTree* t, SizeT elemSize)
       vg_assert(elemSize <= t->maxEltSize);
       n = VG_(allocEltPA) (t->node_pa);
    } else {
-      n = t->alloc( t->cc, nodeSize );
+      n = t->alloc_fn( t->cc, nodeSize );
    }
    VG_(memset)(n, 0, nodeSize);
    n->magic = OSET_MAGIC;
@@ -446,7 +444,7 @@ void VG_(OSetGen_FreeNode)(AvlTree* t, void* e)
    if (t->node_pa)
       VG_(freeEltPA) (t->node_pa, node_of_elem (e));
    else
-      t->free( node_of_elem(e) );
+      t->free_fn( node_of_elem(e) );
 }
 
 /*--------------------------------------------------------------------*/

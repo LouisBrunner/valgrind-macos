@@ -293,7 +293,6 @@ void DRD_(register_malloc_wrappers)(const StartUsingMem start_callback,
 {
    tl_assert(s_malloc_list == 0);
    s_malloc_list = VG_(HT_construct)("drd_malloc_list");
-   tl_assert(s_malloc_list);
    tl_assert(start_callback);
    tl_assert(stop_callback);
 

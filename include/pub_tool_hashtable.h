@@ -54,7 +54,7 @@ typedef struct _VgHashTable * VgHashTable;
 /* Make a new table.  Allocates the memory with VG_(calloc)(), so can
    be freed with VG_(free)().  The table starts small but will
    periodically be expanded.  This is transparent to the users of this
-   module. */
+   module. The function never returns NULL. */
 extern VgHashTable VG_(HT_construct) ( const HChar* name );
 
 /* Count the number of nodes in a table. */
@@ -95,7 +95,8 @@ extern void VG_(HT_print_stats) ( VgHashTable table, HT_Cmp_t cmp );
 
 /* Allocates a suitably-sized array, copies pointers to all the hashtable
    elements into it, then returns both the array and the size of it.  The
-   array must be freed with VG_(free). */
+   array must be freed with VG_(free). If the hashtable is empty, the
+   function returns NULL and assigns *nelems = 0. */
 extern VgHashNode** VG_(HT_to_array) ( VgHashTable t, /*OUT*/ UInt* n_elems );
 
 /* Reset the table's iterator to point to the first element. */

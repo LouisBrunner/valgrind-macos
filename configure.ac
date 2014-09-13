@@ -131,17 +131,13 @@ fi
 ]
 AM_CONDITIONAL(COMPILER_IS_CLANG, test $is_clang = clang)
 
+# Note: m4 arguments are quoted with [ and ] so square brackets in shell
+# statements have to be quoted.
 case "${is_clang}-${gcc_version}" in
-     notclang-3.*)
+     notclang-[[3-9]].*|notclang-[[1-9][0-9]]*)
 	AC_MSG_RESULT([ok (${gcc_version})])
 	;;
-     notclang-4.*)
-	AC_MSG_RESULT([ok (${gcc_version})])
-	;;
-     notclang-5.*)
-	AC_MSG_RESULT([ok (${gcc_version})])
-	;;
-     clang-2.9|clang-3.*|clang-4.*)
+     clang-2.9|clang-[[3-9]].*|clang-[[1-9][0-9]]*)
 	AC_MSG_RESULT([ok (clang-${gcc_version})])
 	;;
      *)

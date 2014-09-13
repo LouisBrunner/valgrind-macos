@@ -53,7 +53,7 @@
 #include "pub_core_demangle.h"     // VG_(maybe_Z_demangle)
 #include "pub_core_libcproc.h"     // VG_(libdir)
 
-#include "config.h" /* GLIBC_2_* */
+#include "config.h" /* GLIBC_MANDATORY_*_REDIRECT */
 
 
 /* This module is a critical part of the redirection/intercept system.
@@ -1242,10 +1242,7 @@ void VG_(redir_initialise) ( void )
       start, otherwise ld.so (glibc-2.3.5) makes a lot of noise. */
    if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
       const HChar** mandatory;
-#     if defined(GLIBC_2_2) || defined(GLIBC_2_3) || defined(GLIBC_2_4) \
-         || defined(GLIBC_2_5) || defined(GLIBC_2_6) || defined(GLIBC_2_7) \
-         || defined(GLIBC_2_8) || defined(GLIBC_2_9) \
-         || defined(GLIBC_2_10) || defined(GLIBC_2_11)
+#     ifndef GLIBC_MANDATORY_INDEX_AND_STRLEN_REDIRECT
       mandatory = NULL;
 #     else
       /* for glibc-2.12 and later, this is mandatory - can't sanely
@@ -1282,9 +1279,7 @@ void VG_(redir_initialise) ( void )
       add_hardwired_spec(
          "ld-linux-x86-64.so.2", "strlen",
          (Addr)&VG_(amd64_linux_REDIR_FOR_strlen),
-#        if defined(GLIBC_2_2) || defined(GLIBC_2_3) || defined(GLIBC_2_4) \
-            || defined(GLIBC_2_5) || defined(GLIBC_2_6) || defined(GLIBC_2_7) \
-            || defined(GLIBC_2_8) || defined(GLIBC_2_9)
+#        ifndef GLIBC_MANDATORY_STRLEN_REDIRECT
          NULL
 #        else
          /* for glibc-2.10 and later, this is mandatory - can't sanely

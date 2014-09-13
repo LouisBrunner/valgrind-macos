@@ -4429,7 +4429,6 @@ static void event_map_init ( void )
                    "libhb.event_map_init.4 (oldref tree)", 
                    HG_(free)
                 );
-   tl_assert(oldrefTree);
 
    oldrefGen = 0;
    oldrefGenIncAt = 0;

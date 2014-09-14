@@ -76,7 +76,6 @@ static HChar* string_table_strdup ( const HChar* str ) {
    if (!string_table) {
       string_table = VG_(newFM)( HG_(zalloc), "hg.sts.1",
                                  HG_(free), string_table_cmp );
-      tl_assert(string_table);
    }
    if (VG_(lookupFM)( string_table,
                       NULL, (UWord*)&copy, (UWord)str )) {
@@ -164,7 +163,6 @@ static Lock* mk_LockP_from_LockN ( Lock* lkn,
    if (!map_LockN_to_P) {
       map_LockN_to_P = VG_(newFM)( HG_(zalloc), "hg.mLPfLN.1",
                                    HG_(free), lock_unique_cmp );
-      tl_assert(map_LockN_to_P);
    }
    if (!VG_(lookupFM)( map_LockN_to_P, NULL, (UWord*)&lkp, (UWord)lkn)) {
       lkp = HG_(zalloc)( "hg.mLPfLN.2", sizeof(Lock) );

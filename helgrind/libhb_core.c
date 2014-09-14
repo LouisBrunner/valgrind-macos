@@ -1758,7 +1758,6 @@ static void zsm_init ( void(*p_rcinc)(SVal), void(*p_rcdec)(SVal) )
    map_shmem = VG_(newFM)( HG_(zalloc), "libhb.zsm_init.1 (map_shmem)",
                            HG_(free), 
                            NULL/*unboxed UWord cmp*/);
-   tl_assert(map_shmem != NULL);
    shmem__invalidate_scache();
 
    /* a SecMap must contain an integral number of CacheLines */
@@ -2489,7 +2488,6 @@ static void vts_set_init ( void )
    vts_set = VG_(newFM)( HG_(zalloc), "libhb.vts_set_init.1",
                          HG_(free),
                          (Word(*)(UWord,UWord))VTS__cmp_structural );
-   tl_assert(vts_set);
 }
 
 /* Given a VTS, look in vts_set to see if we already have a

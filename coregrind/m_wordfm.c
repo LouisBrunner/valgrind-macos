@@ -506,10 +506,10 @@ AvlNode* avl_dopy ( AvlNode* nd,
                     const HChar* cc )
 {
    AvlNode* nyu;
-   if (! nd)
-      return NULL;
+
+   vg_assert(nd != NULL);
+
    nyu = alloc_nofail(cc, sizeof(AvlNode));
-   tl_assert(nyu);
    
    nyu->child[0] = nd->child[0];
    nyu->child[1] = nd->child[1];
@@ -518,8 +518,6 @@ AvlNode* avl_dopy ( AvlNode* nd,
    /* Copy key */
    if (dopyK) {
       nyu->key = dopyK( nd->key );
-      if (nd->key != 0 && nyu->key == 0)
-         return NULL; /* oom in key dcopy */
    } else {
       /* copying assumedly unboxed keys */
       nyu->key = nd->key;
@@ -528,8 +526,6 @@ AvlNode* avl_dopy ( AvlNode* nd,
    /* Copy val */
    if (dopyV) {
       nyu->val = dopyV( nd->val );
-      if (nd->val != 0 && nyu->val == 0)
-         return NULL; /* oom in val dcopy */
    } else {
       /* copying assumedly unboxed vals */
       nyu->val = nd->val;
@@ -539,14 +535,10 @@ AvlNode* avl_dopy ( AvlNode* nd,
    if (nyu->child[0]) {
       nyu->child[0] = avl_dopy( nyu->child[0], dopyK, dopyV, 
                                 alloc_nofail, cc );
-      if (! nyu->child[0])
-         return NULL;
    }
    if (nyu->child[1]) {
       nyu->child[1] = avl_dopy( nyu->child[1], dopyK, dopyV,
                                 alloc_nofail, cc );
-      if (! nyu->child[1])
-         return NULL;
    }
 
    return nyu;
@@ -582,7 +574,6 @@ WordFM* VG_(newFM) ( void* (*alloc_nofail)( const HChar*, SizeT ),
                      Word  (*kCmp)(UWord,UWord) )
 {
    WordFM* fm = alloc_nofail(cc, sizeof(WordFM));
-   tl_assert(fm);
    initFM(fm, alloc_nofail, cc, dealloc, kCmp);
    return fm;
 }
@@ -797,7 +788,7 @@ Bool VG_(nextIterFM) ( WordFM* fm, /*OUT*/UWord* pKey, /*OUT*/UWord* pVal )
    return False;
 }
 
-// clear the I'm iterating flag
+// Finish an FM iteration
 void VG_(doneIterFM) ( WordFM* fm )
 {
 }
@@ -810,7 +801,6 @@ WordFM* VG_(dopyFM) ( WordFM* fm, UWord(*dopyK)(UWord), UWord(*dopyV)(UWord) )
    tl_assert(fm->stackTop == 0);
 
    nyu = fm->alloc_nofail( fm->cc, sizeof(WordFM) );
-   tl_assert(nyu);
 
    *nyu = *fm;
 
@@ -826,12 +816,6 @@ WordFM* VG_(dopyFM) ( WordFM* fm, UWord(*dopyK)(UWord), UWord(*dopyV)(UWord) )
    }
 
    return nyu;
-}
-
-// admin: what's the 'common' allocation size (for tree nodes?)
-SizeT VG_(getNodeSizeFM)( void )
-{
-   return sizeof(AvlNode);
 }
 
 //------------------------------------------------------------------//

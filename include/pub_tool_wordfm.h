@@ -77,7 +77,8 @@ typedef  struct _WordFM  WordFM; /* opaque */
    VG_(initIterAtFM), VG_(nextIterFM), VG_(doneIterFM) to iterate over
    sections of the map, or the whole thing.  If kCmp is NULL then the
    ordering used is unsigned word ordering (UWord) on the key
-   values. */
+   values.
+   The function never returns NULL. */
 WordFM* VG_(newFM) ( void* (*alloc_nofail)( const HChar* cc, SizeT ),
                      const HChar* cc,
                      void  (*dealloc)(void*),
@@ -129,11 +130,6 @@ Bool VG_(findBoundsFM)( WordFM* fm,
 // since it involves walking the whole tree.
 UWord VG_(sizeFM) ( WordFM* fm );
 
-// Is fm empty?  This at least is an O(1) operation.
-// Code is present in m_wordfm.c but commented out due to no
-// current usage.  Un-comment (and TEST IT) if required.
-//Bool VG_(isEmptyFM)( WordFM* fm );
-
 // set up FM for iteration
 void VG_(initIterFM) ( WordFM* fm );
 
@@ -148,20 +144,17 @@ void VG_(initIterAtFM) ( WordFM* fm, UWord start_at );
 Bool VG_(nextIterFM) ( WordFM* fm,
                        /*OUT*/UWord* pKey, /*OUT*/UWord* pVal );
 
-// clear the I'm iterating flag
+// Finish an FM iteration
 void VG_(doneIterFM) ( WordFM* fm );
 
 // Deep copy a FM.  If dopyK is NULL, keys are copied verbatim.
 // If non-null, dopyK is applied to each key to generate the
-// version in the new copy.  In that case, if the argument to dopyK
-// is non-NULL but the result is NULL, it is assumed that dopyK
-// could not allocate memory, in which case the copy is abandoned
-// and NULL is returned.  Ditto with dopyV for values.
+// version in the new copy.  dopyK may be called with a NULL argument
+// in which case it should return NULL. For all other argument values
+// dopyK must not return NULL. Ditto with dopyV for values.
+// VG_(dopyFM) never returns NULL.
 WordFM* VG_(dopyFM) ( WordFM* fm,
                       UWord(*dopyK)(UWord), UWord(*dopyV)(UWord) );
-
-// admin: what's the 'common' allocation size (for tree nodes?)
-SizeT VG_(getNodeSizeFM)( void );
 
 //------------------------------------------------------------------//
 //---                         end WordFM                         ---//
@@ -175,7 +168,7 @@ SizeT VG_(getNodeSizeFM)( void );
 
 typedef  struct _WordBag  WordBag; /* opaque */
 
-/* Allocate and initialise a WordBag */
+/* Allocate and initialise a WordBag. Never returns NULL. */
 WordBag* VG_(newBag) ( void* (*alloc_nofail)( const HChar* cc, SizeT ),
                        const HChar* cc,
                        void  (*dealloc)(void*) );

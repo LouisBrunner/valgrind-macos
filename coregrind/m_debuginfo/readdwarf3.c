@@ -632,7 +632,6 @@ static GExpr* make_singleton_GX ( DiCursor block, ULong nbytes )
 
    gx = ML_(dinfo_zalloc)( "di.readdwarf3.msGX.1", 
                            sizeof(GExpr) + bytesReqd );
-   vg_assert(gx);
 
    p = pstart = &gx->payload[0];
 
@@ -747,7 +746,6 @@ static GExpr* make_general_GX ( CUConst* cc,
    vg_assert(nbytes >= 1);
 
    gx = ML_(dinfo_zalloc)( "di.readdwarf3.mgGX.2", sizeof(GExpr) + nbytes );
-   vg_assert(gx);
    VG_(memcpy)( &gx->payload[0], (UChar*)VG_(indexXA)(xa,0), nbytes );
    vg_assert( &gx->payload[nbytes] 
               == ((UChar*)gx) + sizeof(GExpr) + nbytes );
@@ -3451,7 +3449,6 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
          fieldE.Te.Field.name
             = ML_(dinfo_strdup)( "di.readdwarf3.ptD.member.3",
                                  "<anon_field>" );
-      vg_assert(fieldE.Te.Field.name);
       if (fieldE.Te.Field.typeR == D3_INVALID_CUOFF)
          goto_bad_DIE;
       if (fieldE.Te.Field.nLoc) {

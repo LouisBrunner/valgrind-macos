@@ -38,7 +38,8 @@
 
 #include "pub_core_basics.h"    // SizeT
 
-/* Allocate(zeroed), free, strdup, memdup, shrink, all in VG_AR_DINFO. */
+/* Allocate(zeroed), free, strdup, memdup, shrink, all in VG_AR_DINFO.
+   The allocation functions never return NULL. */
 void*  ML_(dinfo_zalloc)( const HChar* cc, SizeT szB );
 void   ML_(dinfo_free)( void* v );
 HChar* ML_(dinfo_strdup)( const HChar* cc, const HChar* str );

@@ -1088,7 +1088,6 @@ static void init_gIgnoredAddressRanges ( void )
       return;
    gIgnoredAddressRanges = VG_(newRangeMap)( VG_(malloc), "mc.igIAR.1",
                                              VG_(free), IAR_NotIgnored );
-   tl_assert(gIgnoredAddressRanges != NULL);
 }
 
 INLINE Bool MC_(in_ignored_range) ( Addr a )

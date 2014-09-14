@@ -43,9 +43,10 @@
 typedef  struct _RangeMap  RangeMap;
 
 /* Create a new RangeMap, using given allocation and free functions.
-   Alloc fn must not fail (that is, if it returns it must have
+   alloc_fn must not return NULL (that is, if it returns it must have
    succeeded.)  The new array will contain a single range covering the
-   entire key space, which will be bound to the value |initialVal|. */
+   entire key space, which will be bound to the value |initialVal|.
+   This function never returns NULL. */
 RangeMap* VG_(newRangeMap) ( void*(*alloc_fn)(const HChar*,SizeT), 
                              const HChar* cc,
                              void(*free_fn)(void*),

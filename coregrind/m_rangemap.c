@@ -48,9 +48,9 @@ typedef
 
 
 struct _RangeMap {
-   void* (*alloc) ( const HChar*, SizeT ); /* alloc fn (nofail) */
-   const HChar* cc;                 /* cost centre for alloc */
-   void  (*free) ( void* );         /* free fn */
+   void* (*alloc_fn) ( const HChar*, SizeT ); /* alloc fn (nofail) */
+   const HChar* cc;                    /* cost centre for alloc */
+   void  (*free_fn) ( void* );         /* free fn */
    XArray* ranges;
 };
 
@@ -71,10 +71,9 @@ RangeMap* VG_(newRangeMap) ( void*(*alloc_fn)(const HChar*,SizeT),
    vg_assert(alloc_fn);
    vg_assert(free_fn);
    RangeMap* rm = alloc_fn(cc, sizeof(RangeMap));
-   vg_assert(rm);
-   rm->alloc  = alloc_fn;
-   rm->cc     = cc;
-   rm->free   = free_fn;
+   rm->alloc_fn = alloc_fn;
+   rm->cc       = cc;
+   rm->free_fn  = free_fn;
    rm->ranges = VG_(newXA)( alloc_fn, cc, free_fn, sizeof(Range) );
    vg_assert(rm->ranges);
    /* Add the initial range */
@@ -92,10 +91,10 @@ RangeMap* VG_(newRangeMap) ( void*(*alloc_fn)(const HChar*,SizeT),
 void VG_(deleteRangeMap) ( RangeMap* rm )
 {
    vg_assert(rm);
-   vg_assert(rm->free);
+   vg_assert(rm->free_fn);
    vg_assert(rm->ranges);
    VG_(deleteXA)(rm->ranges);
-   rm->free(rm);
+   rm->free_fn(rm);
 }
 
 void VG_(bindRangeMap) ( RangeMap* rm,

@@ -836,6 +836,7 @@ int putpkt_binary (char *buf, int cnt)
    /* we might have to write a pkt when out FIFO not yet/anymore opened */
    if (!ensure_write_remote_desc()) {
       warning ("putpkt(write) error: no write_remote_desc\n");
+      free (buf2);
       return -1;
    }
 
@@ -845,6 +846,7 @@ int putpkt_binary (char *buf, int cnt)
    do {
       if (VG_(write) (write_remote_desc, buf2, p - buf2) != p - buf2) {
          warning ("putpkt(write) error\n");
+         free (buf2);
          return -1;
       }
 

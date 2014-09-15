@@ -42,9 +42,9 @@ struct _DedupPoolAlloc {
    SizeT  poolSzB; /* Minimum size of a pool. */
    SizeT  fixedSzb; /* If using VG_(allocFixedEltDedupPA), size of elements */
    SizeT  eltAlign;
-   void*   (*alloc)(const HChar*, SizeT); /* pool allocator */
-   const HChar*  cc; /* pool allocator's cc */
-   void    (*free)(void*); /* pool allocator's free-er */
+   void*   (*alloc_fn)(const HChar*, SizeT); /* pool allocator */
+   const HChar*  cc; /* pool allocator's cost centre */
+   void    (*free_fn)(void*); /* pool allocator's deallocation function */
    /* XArray of void* (pointers to pools).  The pools themselves.
       Each element is a pointer to a block of size at least PoolSzB bytes.
       The last block might be smaller due to a call to shrink_block. */
@@ -80,34 +80,33 @@ typedef
    }
    ht_node;
 
-extern DedupPoolAlloc* VG_(newDedupPA) ( SizeT  poolSzB,
-                                         SizeT  eltAlign,
-                                         void*  (*alloc)(const HChar*, SizeT),
-                                         const  HChar* cc,
-                                         void   (*free_fn)(void*) )
+DedupPoolAlloc* VG_(newDedupPA) ( SizeT  poolSzB,
+                                  SizeT  eltAlign,
+                                  void*  (*alloc_fn)(const HChar*, SizeT),
+                                  const  HChar* cc,
+                                  void   (*free_fn)(void*) )
 {
    DedupPoolAlloc* ddpa;
    vg_assert(poolSzB >= eltAlign);
    vg_assert(poolSzB >= 100); /* let's say */
    vg_assert(poolSzB >= 10*eltAlign); /* let's say */
-   vg_assert(alloc);
+   vg_assert(alloc_fn);
    vg_assert(cc);
    vg_assert(free_fn);
-   ddpa = alloc(cc, sizeof(*ddpa));
-   vg_assert(ddpa);
+   ddpa = alloc_fn(cc, sizeof(*ddpa));
    VG_(memset)(ddpa, 0, sizeof(*ddpa));
    ddpa->poolSzB  = poolSzB;
    ddpa->fixedSzb = 0;
    ddpa->eltAlign = eltAlign;
-   ddpa->alloc    = alloc;
+   ddpa->alloc_fn = alloc_fn;
    ddpa->cc       = cc;
-   ddpa->free     = free_fn;
-   ddpa->pools    = VG_(newXA)( alloc, cc, free_fn, sizeof(void*) );
+   ddpa->free_fn  = free_fn;
+   ddpa->pools    = VG_(newXA)( alloc_fn, cc, free_fn, sizeof(void*) );
 
    ddpa->ht_elements = VG_(HT_construct) (cc);
    ddpa->ht_node_pa = VG_(newPA) ( sizeof(ht_node),
                                    1000,
-                                   alloc,
+                                   alloc_fn,
                                    cc,
                                    free_fn);
    ddpa->curpool = NULL;
@@ -124,9 +123,9 @@ void VG_(deleteDedupPA) ( DedupPoolAlloc* ddpa)
       // Free data structures used for insertion.
       VG_(freezeDedupPA) (ddpa, NULL);
    for (i = 0; i < VG_(sizeXA) (ddpa->pools); i++)
-      ddpa->free (*(UWord **)VG_(indexXA) ( ddpa->pools, i ));
+      ddpa->free_fn (*(UWord **)VG_(indexXA) ( ddpa->pools, i ));
    VG_(deleteXA) (ddpa->pools);
-   ddpa->free (ddpa);
+   ddpa->free_fn (ddpa);
 }
 
 static __inline__
@@ -146,13 +145,12 @@ static void ddpa_add_new_pool_or_grow ( DedupPoolAlloc* ddpa )
       UChar *curpool_align = ddpa_align(ddpa, ddpa->curpool);
       SizeT curpool_used = ddpa->curpool_free - curpool_align;
       SizeT curpool_size = ddpa->curpool_limit - ddpa->curpool + 1;
-      UChar *newpool = ddpa->alloc (ddpa->cc, 2 * curpool_size);
+      UChar *newpool = ddpa->alloc_fn (ddpa->cc, 2 * curpool_size);
       UChar *newpool_free = ddpa_align (ddpa, newpool);
       UChar *newpool_limit = newpool + 2 * curpool_size - 1;
       Word reloc_offset = (Addr)newpool_free - (Addr)curpool_align;
       ht_node *n;
 
-      vg_assert (newpool);
       VG_(memcpy) (newpool_free, curpool_align, curpool_used);
       /* We have reallocated the (only) pool. We need to relocate the pointers
          in the hash table nodes. */
@@ -163,7 +161,7 @@ static void ddpa_add_new_pool_or_grow ( DedupPoolAlloc* ddpa )
       newpool_free += curpool_used;
 
       VG_(dropHeadXA) (ddpa->pools, 1);
-      ddpa->free (ddpa->curpool);
+      ddpa->free_fn (ddpa->curpool);
       ddpa->curpool = newpool;
       ddpa->curpool_free = newpool_free;
       ddpa->curpool_limit = newpool_limit;
@@ -171,8 +169,7 @@ static void ddpa_add_new_pool_or_grow ( DedupPoolAlloc* ddpa )
    } else {
       /* Allocate a new pool, or allocate the first/only pool for a
          fixed size ddpa. */
-      ddpa->curpool = ddpa->alloc( ddpa->cc, ddpa->poolSzB);
-      vg_assert(ddpa->curpool);
+      ddpa->curpool = ddpa->alloc_fn( ddpa->cc, ddpa->poolSzB);
       ddpa->curpool_limit = ddpa->curpool + ddpa->poolSzB - 1;
       ddpa->curpool_free = ddpa_align (ddpa, ddpa->curpool);
       /* add to our collection of pools */

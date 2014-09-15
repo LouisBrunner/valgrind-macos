@@ -147,7 +147,7 @@ HChar* VG_(expand_file_name)(const HChar* option_name, const HChar* format)
    HChar* out;
 
    Bool ok = VG_(get_startup_wd)(base_dir, VKI_PATH_MAX);
-   tl_assert(ok);
+   vg_assert(ok);
 
    if (VG_STREQ(format, "")) {
       // Empty name, bad.

@@ -354,8 +354,8 @@ static HChar** alloc_symname_array ( HChar* pri_name, HChar** sec_names,
    arr[i++] = pri_name;
    pp = sec_names;
    while (*pp) { arr[i++] = *pp; pp++; }
-   tl_assert(i == n_req);
-   tl_assert(arr[n_req] == NULL);
+   vg_assert(i == n_req);
+   vg_assert(arr[n_req] == NULL);
    return arr;
 }
 
@@ -1508,13 +1508,13 @@ static void* dinfo_zalloc(const HChar* ec, SizeT n) {
    void* p;
    vg_assert(n > 0);
    p = VG_(arena_malloc)(VG_AR_DINFO, ec, n);
-   tl_assert(p);
+   vg_assert(p);
    VG_(memset)(p, 0, n);
    return p;
 }
 
 static void dinfo_free(void* p) {
-   tl_assert(p);
+   vg_assert(p);
    return VG_(arena_free)(VG_AR_DINFO, p);
 }
 

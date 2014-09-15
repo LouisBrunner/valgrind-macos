@@ -43,7 +43,7 @@
 // statement.  This lets us say "x = VG_TDICT_CALL(...)" in the required
 // places, while still checking the assertion.
 #define VG_TDICT_CALL(fn, args...) \
-   ( tl_assert2(VG_(tdict).fn, \
+   ( vg_assert2(VG_(tdict).fn, \
                 "you forgot to set VgToolInterface function '" #fn "'"), \
      VG_(tdict).fn(args) )
 

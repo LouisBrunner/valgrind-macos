@@ -849,7 +849,7 @@ XArray* /*HChar*/ ML_(describe_type)( /*OUT*/PtrdiffT* residual_offset,
             offset -= offMin;
             ty = ML_(TyEnts__index_by_cuOff)(tyents, NULL,
                                              field->Te.Field.typeR );
-            tl_assert(ty);
+            vg_assert(ty);
             if (ty->tag == Te_UNKNOWN) goto done;
             /* keep going; look inside the field. */
             break;
@@ -899,7 +899,7 @@ XArray* /*HChar*/ ML_(describe_type)( /*OUT*/PtrdiffT* residual_offset,
          case Te_TyQual: {
             ty = ML_(TyEnts__index_by_cuOff)(tyents, NULL,
                                              ty->Te.TyQual.typeR);
-            tl_assert(ty);
+            vg_assert(ty);
             if (ty->tag == Te_UNKNOWN) goto done;
             break;
          }
@@ -907,7 +907,7 @@ XArray* /*HChar*/ ML_(describe_type)( /*OUT*/PtrdiffT* residual_offset,
          case Te_TyTyDef: {
             ty = ML_(TyEnts__index_by_cuOff)(tyents, NULL,
                                              ty->Te.TyTyDef.typeR);
-            tl_assert(ty);
+            vg_assert(ty);
             if (ty->tag == Te_UNKNOWN) goto done;
             break;
          }

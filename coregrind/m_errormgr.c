@@ -404,7 +404,7 @@ static void gen_suppression(Error* err)
 
    // Print stack trace elements
    UInt n_ips = VG_(get_ExeContext_n_ips)(ec);
-   tl_assert(n_ips > 0);
+   vg_assert(n_ips > 0);
    if (n_ips > VG_MAX_SUPP_CALLERS)
       n_ips = VG_MAX_SUPP_CALLERS;
    VG_(apply_StackTrace)(printSuppForIp_nonXML,
@@ -647,7 +647,7 @@ void construct_error ( Error* err, ThreadId tid, ErrorKind ekind, Addr a,
    /* DO NOT MAKE unique_counter NON-STATIC */
    static UInt unique_counter = 0;
 
-   tl_assert(tid < VG_N_THREADS);
+   vg_assert(tid < VG_N_THREADS);
 
    /* Core-only parts */
    err->unique   = unique_counter++;

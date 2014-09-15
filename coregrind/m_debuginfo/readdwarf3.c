@@ -777,7 +777,7 @@ typedef
 static Word cmp__XArrays_of_AddrRange ( XArray* rngs1, XArray* rngs2 )
 {
    Word n1, n2, i;
-   tl_assert(rngs1 && rngs2);
+   vg_assert(rngs1 && rngs2);
    n1 = VG_(sizeXA)( rngs1 );  
    n2 = VG_(sizeXA)( rngs2 );
    if (n1 < n2) return -1;
@@ -2388,8 +2388,8 @@ static void parse_var_DIE (
             UWord keyW, valW;
             if (VG_(lookupFM)( rangestree, &keyW, &valW, (UWord)xa )) {
                XArray* old = (XArray*)keyW;
-               tl_assert(valW == 0);
-               tl_assert(old != xa);
+               vg_assert(valW == 0);
+               vg_assert(old != xa);
                tv->rngMany = old;
             } else {
                XArray* cloned = VG_(cloneXA)( "di.readdwarf3.pvD.2", xa );

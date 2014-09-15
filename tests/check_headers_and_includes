@@ -10,6 +10,8 @@
 # (4) tool *.[ch] files must not include pub_core_...h
 # (5) include pub_core/tool_clreq.h instead of valgrind.h except in tools'
 #     export headers
+# (6) coregrind/ *.[ch] must not use tl_assert
+# (7) include/*.h must not use vg_assert
 #-------------------------------------------------------------------
 
 use strict;
@@ -205,6 +207,7 @@ sub get_included_files {
 #---------------------------------------------------------------------
 sub check_coregrind_export_header {
     my ($path_name) = @_;
+    my $file = basename($path_name);
 
     foreach my $inc (get_included_files($path_name)) {
         $inc = basename($inc);
@@ -216,6 +219,11 @@ sub check_coregrind_export_header {
         if (($inc eq "valgrind.h") && ($path_name ne "include/pub_tool_clreq.h")) {
             error("File $path_name should include pub_tool_clreq.h instead of $inc\n");
         }
+    }
+# Must not use vg_assert
+    my $assert = `grep vg_assert $file`;
+    if ($assert ne "") {
+        error("File $path_name must not use vg_assert\n");
     }
 }
 
@@ -241,6 +249,11 @@ sub check_coregrind_file {
             error("File $path_name should include pub_core_clreq.h instead of $inc\n");
         }
     }
+# Must not use tl_assert
+    my $assert = `grep tl_assert $file`;
+    if ($assert ne "") {
+        error("File $path_name must not use tl_assert\n");
+    }
 }
 
 #---------------------------------------------------------------------
@@ -260,6 +273,11 @@ sub check_tool_file {
         if ($inc eq "valgrind.h" && ! $tool_export_header{$path_name}) {
             error("File $path_name should include pub_tool_clreq.h instead of $inc\n");
         }
+    }
+# Must not use vg_assert
+    my $assert = `grep vg_assert $file`;
+    if ($assert ne "") {
+        error("File $path_name must not use vg_assert\n");
     }
 }
 

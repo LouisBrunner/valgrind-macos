@@ -211,7 +211,7 @@ Bool VG_(eq_ExeContext) ( VgRes res, ExeContext* e1, ExeContext* e2 )
       return False;
 
    // Must be at least one address in each trace.
-   tl_assert(e1->n_ips >= 1 && e2->n_ips >= 1);
+   vg_assert(e1->n_ips >= 1 && e2->n_ips >= 1);
 
    switch (res) {
    case Vg_LowRes:
@@ -362,7 +362,7 @@ static ExeContext* record_ExeContext_wrk2 ( Addr* ips, UInt n_ips )
 
    static UInt ctr = 0;
 
-   tl_assert(n_ips >= 1 && n_ips <= VG_(clo_backtrace_size));
+   vg_assert(n_ips >= 1 && n_ips <= VG_(clo_backtrace_size));
 
    /* Now figure out if we've seen this one before.  First hash it so
       as to determine the list number. */

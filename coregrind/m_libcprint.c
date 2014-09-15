@@ -108,7 +108,7 @@ static void add_to__printf_buf ( HChar c, void *p )
    }
    b->buf[b->buf_used++] = c;
    b->buf[b->buf_used]   = 0;
-   tl_assert(b->buf_used < sizeof(b->buf));
+   vg_assert(b->buf_used < sizeof(b->buf));
 }
 
 static UInt vprintf_to_buf ( printf_buf_t* b,

@@ -1111,7 +1111,7 @@ GXResult ML_(evaluate_trivial_GX)( GExpr* gx, const DebugInfo* di )
          VG_(printf)(" ML_(evaluate_trivial_GX): unhandled:\n   ");
          ML_(pp_GX)( gx );
          VG_(printf)("\n");
-         tl_assert(0);
+         vg_assert(0);
       }
       else
          if (!badness)
@@ -1124,10 +1124,10 @@ GXResult ML_(evaluate_trivial_GX)( GExpr* gx, const DebugInfo* di )
 
    res.kind = GXR_Failure;
 
-   tl_assert(nGuards == VG_(sizeXA)( results ));
-   tl_assert(nGuards >= 0);
+   vg_assert(nGuards == VG_(sizeXA)( results ));
+   vg_assert(nGuards >= 0);
    if (nGuards == 0) {
-      tl_assert(!badness);
+      vg_assert(!badness);
       res.word = (UWord)"trivial GExpr has no guards (!)";
       VG_(deleteXA)( results );
       return res;
@@ -1151,11 +1151,11 @@ GXResult ML_(evaluate_trivial_GX)( GExpr* gx, const DebugInfo* di )
    /* All the subexpressions produced a constant, but did they all produce
       the same one? */
    mul = VG_(indexXA)( results, 0 );
-   tl_assert(mul->b == True); /* we just established that all exprs are ok */
+   vg_assert(mul->b == True); /* we just established that all exprs are ok */
 
    for (i = 1; i < nGuards; i++) {
       mul2 = VG_(indexXA)( results, i );
-      tl_assert(mul2->b == True);
+      vg_assert(mul2->b == True);
       if (mul2->ul != mul->ul) {
          res.word = (UWord)"trivial GExpr: subexpressions disagree";
          VG_(deleteXA)( results );

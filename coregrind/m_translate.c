@@ -344,7 +344,7 @@ IRSB* vg_SP_update_pass ( void*             closureV,
                                                                         \
          addStmtToIRSB( bb, IRStmt_Dirty(dcall) );                      \
                                                                         \
-         tl_assert(syze > 0);                                           \
+         vg_assert(syze > 0);                                           \
          update_SP_aliases(syze);                                       \
                                                                         \
          n_SP_updates_fast++;                                           \
@@ -374,7 +374,7 @@ IRSB* vg_SP_update_pass ( void*             closureV,
                                                                         \
          addStmtToIRSB( bb, IRStmt_Dirty(dcall) );                      \
                                                                         \
-         tl_assert(syze > 0);                                           \
+         vg_assert(syze > 0);                                           \
          update_SP_aliases(-(syze));                                    \
                                                                         \
          n_SP_updates_fast++;                                           \
@@ -1564,7 +1564,7 @@ Bool VG_(translate) ( ThreadId tid,
 #  endif
 
    /* ------ Actually do the translation. ------ */
-   tl_assert2(VG_(tdict).tool_instrument,
+   vg_assert2(VG_(tdict).tool_instrument,
               "you forgot to set VgToolInterface function 'tool_instrument'");
 
    /* Get the CPU info established at startup. */

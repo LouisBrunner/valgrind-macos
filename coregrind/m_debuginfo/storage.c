@@ -1161,7 +1161,7 @@ void ML_(addVar)( struct _DebugInfo* di,
    MaybeULong mul;
    const HChar* badness;
 
-   tl_assert(di && di->admin_tyents);
+   vg_assert(di && di->admin_tyents);
 
    if (0) {
       VG_(printf)("  ML_(addVar): level %d  %#lx-%#lx  %s :: ",
@@ -1186,7 +1186,7 @@ void ML_(addVar)( struct _DebugInfo* di,
    vg_assert(gexpr);
 
    ent = ML_(TyEnts__index_by_cuOff)( di->admin_tyents, NULL, typeR);
-   tl_assert(ent);
+   vg_assert(ent);
    vg_assert(ML_(TyEnt__is_type)(ent));
 
    /* "Comment_Regarding_Text_Range_Checks" (is referred to elsewhere)

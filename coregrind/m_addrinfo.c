@@ -474,7 +474,7 @@ static void pp_addrinfo_WRK ( Addr a, AddrInfo* ai, Bool mc, Bool maybe_gcc )
             );
          if (ai->Addr.Block.block_kind==Block_Mallocd) {
             VG_(pp_ExeContext)(ai->Addr.Block.allocated_at);
-            tl_assert (ai->Addr.Block.freed_at == VG_(null_ExeContext)());
+            vg_assert (ai->Addr.Block.freed_at == VG_(null_ExeContext)());
          }
          else if (ai->Addr.Block.block_kind==Block_Freed) {
             VG_(pp_ExeContext)(ai->Addr.Block.freed_at);
@@ -491,14 +491,14 @@ static void pp_addrinfo_WRK ( Addr a, AddrInfo* ai, Bool mc, Bool maybe_gcc )
                   || ai->Addr.Block.block_kind==Block_UserG) {
             // client-defined
             VG_(pp_ExeContext)(ai->Addr.Block.allocated_at);
-            tl_assert (ai->Addr.Block.freed_at == VG_(null_ExeContext)());
+            vg_assert (ai->Addr.Block.freed_at == VG_(null_ExeContext)());
             /* Nb: cannot have a freed_at, as a freed client-defined block
                has a Block_Freed block_kind. */
          } else {
             // Client or Valgrind arena. At least currently, we never
             // have stacktraces for these.
-            tl_assert (ai->Addr.Block.allocated_at == VG_(null_ExeContext)());
-            tl_assert (ai->Addr.Block.freed_at == VG_(null_ExeContext)());
+            vg_assert (ai->Addr.Block.allocated_at == VG_(null_ExeContext)());
+            vg_assert (ai->Addr.Block.freed_at == VG_(null_ExeContext)());
          }
          if (ai->Addr.Block.alloc_tinfo.tnr || ai->Addr.Block.alloc_tinfo.tid)
             VG_(emit)(

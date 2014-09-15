@@ -65,7 +65,7 @@ HChar* ML_(dinfo_strdup) ( const HChar* cc, const HChar* str ) {
 
 void* ML_(dinfo_memdup) ( const HChar* cc, void* str, SizeT nStr ) {
    void* dst = VG_(arena_malloc)( VG_AR_DINFO, cc, nStr );
-   tl_assert(dst);
+   vg_assert(dst);
    VG_(memcpy)(dst, str, nStr);
    return dst;
 }

@@ -152,7 +152,7 @@ VG_(get_shadow_regs_area) ( ThreadId tid,
       case 1: src = (void*)(((Addr)&(tst->arch.vex_shadow1)) + offset); break;
       case 2: src = (void*)(((Addr)&(tst->arch.vex_shadow2)) + offset); break;
    }
-   tl_assert(src != NULL);
+   vg_assert(src != NULL);
    VG_(memcpy)( dst, src, size);
 }
 
@@ -176,7 +176,7 @@ VG_(set_shadow_regs_area) ( ThreadId tid,
       case 1: dst = (void*)(((Addr)&(tst->arch.vex_shadow1)) + offset); break;
       case 2: dst = (void*)(((Addr)&(tst->arch.vex_shadow2)) + offset); break;
    }
-   tl_assert(dst != NULL);
+   vg_assert(dst != NULL);
    VG_(memcpy)( dst, src, size);
 }
 

@@ -1427,13 +1427,13 @@ static void cc_analyse_alloc_arena ( ArenaId aid )
          if (!blockSane(a, b)) {
             VG_(printf)("sanity_check_malloc_arena: sb %p, block %ld "
                         "(bszB %lu):  BAD\n", sb, i, b_bszB );
-            tl_assert(0);
+            vg_assert(0);
          }
          thisFree = !is_inuse_block(b);
          if (thisFree && lastWasFree) {
             VG_(printf)("sanity_check_malloc_arena: sb %p, block %ld "
                         "(bszB %lu): UNMERGED FREES\n", sb, i, b_bszB );
-            tl_assert(0);
+            vg_assert(0);
          }
          lastWasFree = thisFree;
 
@@ -1448,35 +1448,35 @@ static void cc_analyse_alloc_arena ( ArenaId aid )
                      (Int)(!thisFree), 
                      (Int)bszB_to_pszB(a, b_bszB),
                      get_cc(b));
-         tl_assert(cc);
+         vg_assert(cc);
          for (k = 0; k < n_ccs; k++) {
-           tl_assert(anCCs[k].cc);
+           vg_assert(anCCs[k].cc);
             if (0 == VG_(strcmp)(cc, anCCs[k].cc))
                break;
          }
-         tl_assert(k >= 0 && k <= n_ccs);
+         vg_assert(k >= 0 && k <= n_ccs);
 
          if (k == n_ccs) {
-            tl_assert(n_ccs < N_AN_CCS-1);
+            vg_assert(n_ccs < N_AN_CCS-1);
             n_ccs++;
             anCCs[k].nBytes  = 0;
             anCCs[k].nBlocks = 0;
             anCCs[k].cc      = cc;
          }
 
-         tl_assert(k >= 0 && k < n_ccs && k < N_AN_CCS);
+         vg_assert(k >= 0 && k < n_ccs && k < N_AN_CCS);
          anCCs[k].nBytes += (ULong)bszB_to_pszB(a, b_bszB);
          anCCs[k].nBlocks++;
       }
       if (i > sb->n_payload_bytes) {
          VG_(printf)( "sanity_check_malloc_arena: sb %p: last block "
                       "overshoots end\n", sb);
-         tl_assert(0);
+         vg_assert(0);
       }
    }
 
    if (a->stats__perm_bytes_on_loan > 0) {
-      tl_assert(n_ccs < N_AN_CCS-1);
+      vg_assert(n_ccs < N_AN_CCS-1);
       anCCs[n_ccs].nBytes  = a->stats__perm_bytes_on_loan;
       anCCs[n_ccs].nBlocks = a->stats__perm_blocks;
       anCCs[n_ccs].cc      = "perm_malloc";

@@ -216,7 +216,7 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
          case -2: int_value = 0; break;
          case -1: int_value = 0; break;
          case  0: int_value = 1; break;
-         default: tl_assert (0);
+         default: vg_assert (0);
          }
       }
 
@@ -321,7 +321,7 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
             case 1:
                hostvisibility = False;
                break;
-            default: tl_assert (0);
+            default: vg_assert (0);
             }
          } else {
             hostvisibility = True;
@@ -390,7 +390,7 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
             case  0: 
                VG_(am_show_nsegments) (0, "gdbserver v.info memory aspacemgr");
                break;
-            default: tl_assert (0);
+            default: vg_assert (0);
             }
          }
 
@@ -518,7 +518,7 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
             VG_(clo_sanity_level) = save_clo_sanity_level;
             break;
          }
-         default: tl_assert (0);
+         default: vg_assert (0);
       }
       break;
 

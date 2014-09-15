@@ -2112,7 +2112,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    //--------------------------------------------------------------
    VG_(debugLog)(1, "main", "Load initial debug info\n");
 
-   tl_assert(!addr2dihandle);
+   vg_assert(!addr2dihandle);
    addr2dihandle = VG_(newXA)( VG_(malloc), "main.vm.2",
                                VG_(free), sizeof(Addr_n_ULong) );
 
@@ -2219,12 +2219,12 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    { Addr*     seg_starts;
      Int       n_seg_starts;
 
-     tl_assert(addr2dihandle);
+     vg_assert(addr2dihandle);
 
      /* Mark the main thread as running while we tell the tool about
         the client memory so that the tool can associate that memory
         with the main thread. */
-     tl_assert(VG_(running_tid) == VG_INVALID_THREADID);
+     vg_assert(VG_(running_tid) == VG_INVALID_THREADID);
      VG_(running_tid) = tid_main;
 
      seg_starts = VG_(get_segment_starts)( &n_seg_starts );
@@ -2271,7 +2271,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
            for (j = 0; j < n; j++) {
               Addr_n_ULong* anl = VG_(indexXA)( addr2dihandle, j );
               if (anl->a == seg->start) {
-                  tl_assert(anl->ull > 0); /* check it's a valid handle */
+                  vg_assert(anl->ull > 0); /* check it's a valid handle */
                   break;
               }
            }
@@ -2327,7 +2327,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
 
      /* Clear the running thread indicator */
      VG_(running_tid) = VG_INVALID_THREADID;
-     tl_assert(VG_(running_tid) == VG_INVALID_THREADID);
+     vg_assert(VG_(running_tid) == VG_INVALID_THREADID);
 
      /* Darwin only: tell the tools where the client's kernel commpage
         is.  It would be better to do this by telling aspacemgr about

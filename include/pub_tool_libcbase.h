@@ -54,11 +54,6 @@ extern HChar VG_(tolower) ( HChar c );
 // is set to the start of the string.  None of them test that the number
 // fits into 64 bits.
 //
-// Nb: if you're wondering why we don't just have a single VG_(strtoll) which
-// takes a base, it's because I wanted it to assert if it was given a bogus
-// base (the standard glibc one sets 'errno' in this case).  But
-// m_libcbase.c doesn't import any code, not even vg_assert. --njn
-// 
 // Nb: we also don't provide VG_(atoll*);  these functions are worse than
 // useless because they don't do any error checking and so accept malformed
 // numbers and non-numbers -- eg. "123xyz" gives 123, and "foo" gives 0!

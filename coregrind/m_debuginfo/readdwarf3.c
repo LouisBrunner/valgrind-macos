@@ -4689,7 +4689,6 @@ void new_dwarf3_reader_wrk (
                = VG_(newXA)( ML_(dinfo_zalloc), "di.readdwarf3.ndrw.5var",
                              ML_(dinfo_free),
                              sizeof(UInt) );
-            vg_assert(varparser.fndn_ix_Table);
          }
 
          if (VG_(clo_read_inline_info)) {
@@ -4699,7 +4698,6 @@ void new_dwarf3_reader_wrk (
                = VG_(newXA)( ML_(dinfo_zalloc), "di.readdwarf3.ndrw.5inl",
                              ML_(dinfo_free),
                              sizeof(UInt) );
-            vg_assert(inlparser.fndn_ix_Table);
          }
 
          /* Now read the one-and-only top-level DIE for this CU. */
@@ -4855,7 +4853,6 @@ void new_dwarf3_reader_wrk (
          = VG_(newXA)( ML_(dinfo_zalloc), "di.readdwarf3.ndrw.9",
                        ML_(dinfo_free), 
                        sizeof(TempVar*) );
-      vg_assert(dioff_lookup_tab);
 
       n = VG_(sizeXA)( tempvars );
       Word first_primary_var = 0;

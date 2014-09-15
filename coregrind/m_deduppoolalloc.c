@@ -112,7 +112,7 @@ DedupPoolAlloc* VG_(newDedupPA) ( SizeT  poolSzB,
    ddpa->curpool = NULL;
    ddpa->curpool_limit = NULL;
    ddpa->curpool_free = NULL;
-   vg_assert(ddpa->pools);
+
    return ddpa;
 }
 

@@ -1053,7 +1053,6 @@ static void add_var_to_arange (
       /* copy vars into it */
       vg_assert(first->vars);
       nyu->vars = VG_(cloneXA)( "di.storage.avta.1", first->vars );
-      vg_assert(nyu->vars);
       VG_(OSetGen_Insert)( scope, nyu );
       first = nyu;
    }
@@ -1082,7 +1081,6 @@ static void add_var_to_arange (
       /* copy vars into it */
       vg_assert(last->vars);
       nyu->vars = VG_(cloneXA)( "di.storage.avta.2", last->vars );
-      vg_assert(nyu->vars);
       VG_(OSetGen_Insert)( scope, nyu );
       last = nyu;
    }
@@ -1272,7 +1270,6 @@ void ML_(addVar)( struct _DebugInfo* di,
       nyu->vars = VG_(newXA)( ML_(dinfo_zalloc), "di.storage.addVar.3",
                               ML_(dinfo_free),
                               sizeof(DiVariable) );
-      vg_assert(nyu->vars);
       VG_(OSetGen_Insert)( scope, nyu );
    }
 

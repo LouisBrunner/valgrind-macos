@@ -2115,7 +2115,6 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    tl_assert(!addr2dihandle);
    addr2dihandle = VG_(newXA)( VG_(malloc), "main.vm.2",
                                VG_(free), sizeof(Addr_n_ULong) );
-   tl_assert(addr2dihandle);
 
 #  if defined(VGO_linux)
    { Addr* seg_starts;

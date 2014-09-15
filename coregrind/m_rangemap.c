@@ -75,7 +75,6 @@ RangeMap* VG_(newRangeMap) ( void*(*alloc_fn)(const HChar*,SizeT),
    rm->cc       = cc;
    rm->free_fn  = free_fn;
    rm->ranges = VG_(newXA)( alloc_fn, cc, free_fn, sizeof(Range) );
-   vg_assert(rm->ranges);
    /* Add the initial range */
    Range r;
    r.key_min = UWORD_MIN;

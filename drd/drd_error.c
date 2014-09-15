@@ -171,8 +171,6 @@ void drd_report_data_race(Error* const err, const DataRaceErrInfo* const dri)
    tl_assert(dri);
    tl_assert(dri->addr);
    tl_assert(dri->size > 0);
-   tl_assert(descr1);
-   tl_assert(descr2);
 
    (void) VG_(get_data_description)(descr1, descr2, dri->addr);
    /* If there's nothing in descr1/2, free them.  Why is it safe to to

@@ -2073,7 +2073,6 @@ static Bool summarise_context(/*OUT*/Addr* base,
       if (src && (VG_(sizeXA)(src) > 0) && (!dst)) {
          dst = VG_(newXA)( ML_(dinfo_zalloc), "di.ccCt.1", ML_(dinfo_free),
                            sizeof(CfiExpr) );
-         vg_assert(dst);
          debuginfo->cfsi_exprs = dst;
       }
       conv = copy_convert_CfiExpr_tree
@@ -2152,7 +2151,6 @@ static Bool summarise_context(/*OUT*/Addr* base,
                               "di.ccCt.2",                    \
                               ML_(dinfo_free),                \
                               sizeof(CfiExpr) );              \
-            vg_assert(dst);                                   \
             debuginfo->cfsi_exprs = dst;                      \
          }                                                    \
          conv = copy_convert_CfiExpr_tree                     \
@@ -4125,7 +4123,6 @@ void ML_(read_callframe_info_dwarf3)
          ctx.exprs    = VG_(newXA)( ML_(dinfo_zalloc), "di.rcid.1",
                                     ML_(dinfo_free), 
                                     sizeof(CfiExpr) );
-         vg_assert(ctx.exprs);
 
 	 /* Run the CIE's instructions.  Ugly hack: if
             --debug-dump=frames is in effect, suppress output for

@@ -51,8 +51,9 @@ typedef  struct _XArray  XArray;
 typedef Int (*XACmpFn_t)(const void *, const void *);
 
 /* Create new XArray, using given allocation and free function, and
-   for elements of the specified size.  Alloc fn must not fail (that
-   is, if it returns it must have succeeded.) */
+   for elements of the specified size.  alloc_fn must not return NULL (that
+   is, if it returns it must have succeeded.)
+   This function never returns NULL. */
 extern XArray* VG_(newXA) ( void*(*alloc_fn)(const HChar*,SizeT), 
                             const HChar* cc,
                             void(*free_fn)(void*),
@@ -136,10 +137,9 @@ extern void VG_(insertIndexXA)( XArray*, Word, const void* elem );
 
 /* Make a new, completely independent copy of the given XArray, using
    the existing allocation function to allocate the new space.
-   Returns NULL if the allocation function didn't manage to allocate
-   space (but did return NULL rather than merely abort.)  Space for
-   the clone (and all additions to it) is billed to 'cc' unless that
-   is NULL, in which case the parent's cost-center is used. */
+   Space for the clone (and all additions to it) is billed to 'cc' unless
+   that is NULL, in which case the parent's cost-center is used.
+   Ths function never returns NULL. */
 extern XArray* VG_(cloneXA)( const HChar* cc, XArray* xa );
 
 /* Get the raw array and size so callers can index it really fast.

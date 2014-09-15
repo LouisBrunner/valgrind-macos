@@ -754,7 +754,6 @@ XArray* /*HChar*/ ML_(describe_type)( /*OUT*/PtrdiffT* residual_offset,
    XArray* xa = VG_(newXA)( ML_(dinfo_zalloc), "di.tytypes.dt.1",
                             ML_(dinfo_free),
                             sizeof(HChar) );
-   vg_assert(xa);
 
    ty = ML_(TyEnts__index_by_cuOff)(tyents, NULL, ty_cuOff);
 

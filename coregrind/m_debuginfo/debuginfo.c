@@ -3953,7 +3953,6 @@ void* /* really, XArray* of GlobalBlock */
    /* we'll put the collected variables in here. */
    gvars = VG_(newXA)( ML_(dinfo_zalloc), "di.debuginfo.dggbfd.1",
                        ML_(dinfo_free), sizeof(GlobalBlock) );
-   tl_assert(gvars);
 
    /* any var info at all? */
    if (!di->varinfo)

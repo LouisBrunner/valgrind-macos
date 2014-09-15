@@ -164,19 +164,16 @@ void VG_(split_up_argv)( Int argc, HChar** argv )
 
    tmp_xarray = VG_(newXA)( VG_(malloc), "commandline.sua.1",
                             VG_(free), sizeof(HChar*) );
-   vg_assert(tmp_xarray);
 
    vg_assert( ! VG_(args_for_valgrind) );
    VG_(args_for_valgrind)
       = VG_(newXA)( VG_(malloc), "commandline.sua.2",
                     VG_(free), sizeof(HChar*) );
-   vg_assert( VG_(args_for_valgrind) );
 
    vg_assert( ! VG_(args_for_client) );
    VG_(args_for_client)
       = VG_(newXA)( VG_(malloc), "commandline.sua.3",
                     VG_(free), sizeof(HChar*) );
-   vg_assert( VG_(args_for_client) );
 
    /* Collect up the args-for-V. */
    i = 1; /* skip the exe (stage2) name. */

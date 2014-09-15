@@ -1846,7 +1846,6 @@ static void verydead_thread_table_init ( void )
      = VG_(newXA)( HG_(zalloc),
                    "libhb.verydead_thread_table_init.1",
                    HG_(free), sizeof(ThrID) );
-   tl_assert(verydead_thread_table);
    VG_(setCmpFnXA)(verydead_thread_table, cmp__ThrID);
 }
 
@@ -2562,12 +2561,9 @@ static Word vts_next_GC_at = 1000;
 
 static void vts_tab_init ( void )
 {
-   vts_tab
-      = VG_(newXA)( HG_(zalloc), "libhb.vts_tab_init.1",
-                    HG_(free), sizeof(VtsTE) );
-   vts_tab_freelist
-      = VtsID_INVALID;
-   tl_assert(vts_tab);
+   vts_tab = VG_(newXA)( HG_(zalloc), "libhb.vts_tab_init.1",
+                         HG_(free), sizeof(VtsTE) );
+   vts_tab_freelist = VtsID_INVALID;
 }
 
 /* Add ii to the free list, checking that it looks out-of-use. */
@@ -3677,7 +3673,6 @@ static Thr* Thr__new ( void )
    if (!thrid_to_thr_map) {
       thrid_to_thr_map = VG_(newXA)( HG_(zalloc), "libhb.Thr__new.4",
                                      HG_(free), sizeof(Thr*) );
-      tl_assert(thrid_to_thr_map);
    }
 
    if (thrid_counter >= ThrID_MAX_VALID) {

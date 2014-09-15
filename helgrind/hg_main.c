@@ -2946,7 +2946,6 @@ static void evh__HG_PTHREAD_BARRIER_INIT_PRE ( ThreadId tid,
                                  sizeof(Thread*) );
    }
 
-   tl_assert(bar->waiting);
    tl_assert(VG_(sizeXA)(bar->waiting) == 0);
    bar->initted   = True;
    bar->resizable = resizable == 1 ? True : False;

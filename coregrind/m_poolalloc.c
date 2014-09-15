@@ -72,7 +72,7 @@ PoolAlloc* VG_(newPA) ( UWord  elemSzB,
    pa->free_fn  = free_fn;
    pa->pools    = VG_(newXA)( alloc_fn, cc, free_fn, sizeof(void*) );
    pa->nextFree = NULL;
-   vg_assert(pa->pools);
+
    return pa;
 }
 

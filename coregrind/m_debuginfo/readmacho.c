@@ -930,7 +930,6 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
                     ML_(dinfo_zalloc), "di.readmacho.candsyms.1",
                     ML_(dinfo_free), sizeof(DiSym)
                  );
-      vg_assert(candSyms);
 
       // extern symbols
       read_symtab(candSyms,

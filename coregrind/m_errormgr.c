@@ -388,7 +388,6 @@ static void gen_suppression(Error* err)
       mode.  So generate it into TEXT. */
    text = VG_(newXA)( VG_(malloc), "errormgr.gen_suppression.1",
                       VG_(free), sizeof(HChar) );
-   vg_assert(text);
 
    /* Ok.  Generate the plain text version into TEXT. */
    VG_(xaprintf)(text, "{\n");

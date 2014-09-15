@@ -38,9 +38,9 @@
 /* See pub_tool_xarray.h for details of what this is all about. */
 
 struct _XArray {
-   void* (*alloc) ( const HChar*, SizeT ); /* alloc fn (nofail) */
-   const HChar* cc;                 /* cost centre for alloc */
-   void  (*free) ( void* );         /* free fn */
+   void* (*alloc_fn) ( const HChar*, SizeT ); /* alloc fn (nofail) */
+   const HChar* cc;                    /* cost centre for alloc */
+   void  (*free_fn) ( void* );         /* free fn */
    Int   (*cmpFn) ( const void*, const void* ); /* cmp fn (may be NULL) */
    Word  elemSzB;   /* element size in bytes */
    void* arr;       /* pointer to elements */
@@ -55,7 +55,7 @@ XArray* VG_(newXA) ( void*(*alloc_fn)(const HChar*,SizeT),
                      void(*free_fn)(void*),
                      Word elemSzB )
 {
-   struct _XArray* xa;
+   XArray* xa;
    /* Implementation relies on Word being signed and (possibly)
       on SizeT being unsigned. */
    vg_assert( sizeof(Word) == sizeof(void*) );
@@ -66,10 +66,9 @@ XArray* VG_(newXA) ( void*(*alloc_fn)(const HChar*,SizeT),
    vg_assert(free_fn);
    vg_assert(elemSzB > 0);
    xa = alloc_fn( cc, sizeof(struct _XArray) );
-   vg_assert(xa);
-   xa->alloc     = alloc_fn;
+   xa->alloc_fn  = alloc_fn;
    xa->cc        = cc;
-   xa->free      = free_fn;
+   xa->free_fn   = free_fn;
    xa->cmpFn     = NULL;
    xa->elemSzB   = elemSzB;
    xa->usedsizeE = 0;
@@ -79,19 +78,17 @@ XArray* VG_(newXA) ( void*(*alloc_fn)(const HChar*,SizeT),
    return xa;
 }
 
-XArray* VG_(cloneXA)( const HChar* cc, XArray* xao )
+XArray* VG_(cloneXA)( const HChar* cc, XArray* xa )
 {
-   struct _XArray* xa = (struct _XArray*)xao;
-   struct _XArray* nyu;
+   XArray* nyu;
    const HChar* nyu_cc;
    vg_assert(xa);
-   vg_assert(xa->alloc);
-   vg_assert(xa->free);
+   vg_assert(xa->alloc_fn);
+   vg_assert(xa->free_fn);
    vg_assert(xa->elemSzB >= 1);
    nyu_cc = cc ? cc : xa->cc;
-   nyu = xa->alloc( nyu_cc, sizeof(struct _XArray) );
-   if (!nyu)
-      return NULL;
+   nyu = xa->alloc_fn( nyu_cc, sizeof(struct _XArray) );
+
    /* Copy everything verbatim ... */
    *nyu = *xa;
    nyu->cc = nyu_cc;
@@ -104,46 +101,39 @@ XArray* VG_(cloneXA)( const HChar* cc, XArray* xao )
          element is later added to it, unfortunately. */
       nyu->totsizeE = nyu->usedsizeE;
       /* and allocate .. */
-      nyu->arr = nyu->alloc( nyu->cc, nyu->totsizeE * nyu->elemSzB );
-      if (!nyu->arr) {
-         nyu->free(nyu);
-         return NULL;
-      }
+      nyu->arr = nyu->alloc_fn( nyu->cc, nyu->totsizeE * nyu->elemSzB );
       VG_(memcpy)( nyu->arr, xa->arr, nyu->totsizeE * nyu->elemSzB );
    }
    /* We're done! */
    return nyu;
 }
 
-void VG_(deleteXA) ( XArray* xao )
+void VG_(deleteXA) ( XArray* xa )
 {
-   struct _XArray* xa = (struct _XArray*)xao;
    vg_assert(xa);
-   vg_assert(xa->free);
+   vg_assert(xa->free_fn);
    if (xa->arr)
-      xa->free(xa->arr);
-   xa->free(xa);
+      xa->free_fn(xa->arr);
+   xa->free_fn(xa);
 }
 
-void VG_(setCmpFnXA) ( XArray* xao, XACmpFn_t compar )
+void VG_(setCmpFnXA) ( XArray* xa, XACmpFn_t compar )
 {
-   struct _XArray* xa = (struct _XArray*)xao;
    vg_assert(xa);
    vg_assert(compar);
    xa->cmpFn  = compar;
    xa->sorted = False;
 }
 
-inline void* VG_(indexXA) ( XArray* xao, Word n )
+inline void* VG_(indexXA) ( XArray* xa, Word n )
 {
-   struct _XArray* xa = (struct _XArray*)xao;
    vg_assert(xa);
    vg_assert(n >= 0);
    vg_assert(n < xa->usedsizeE);
    return ((char*)xa->arr) + n * xa->elemSzB;
 }
 
-static inline void ensureSpaceXA ( struct _XArray* xa )
+static inline void ensureSpaceXA ( XArray* xa )
 {
    if (xa->usedsizeE == xa->totsizeE) {
       void* tmp;
@@ -167,20 +157,18 @@ static inline void ensureSpaceXA ( struct _XArray* xa )
       if (0 && xa->totsizeE >= 10000) 
          VG_(printf)("addToXA: increasing from %ld to %ld\n", 
                      xa->totsizeE, newsz);
-      tmp = xa->alloc(xa->cc, newsz * xa->elemSzB);
-      vg_assert(tmp);
+      tmp = xa->alloc_fn(xa->cc, newsz * xa->elemSzB);
       if (xa->usedsizeE > 0) 
          VG_(memcpy)(tmp, xa->arr, xa->usedsizeE * xa->elemSzB);
       if (xa->arr)
-         xa->free(xa->arr);
+         xa->free_fn(xa->arr);
       xa->arr = tmp;
       xa->totsizeE = newsz;
    }
 }
 
-Word VG_(addToXA) ( XArray* xao, const void* elem )
+Word VG_(addToXA) ( XArray* xa, const void* elem )
 {
-   struct _XArray* xa = (struct _XArray*)xao;
    vg_assert(xa);
    vg_assert(elem);
    vg_assert(xa->totsizeE >= 0);
@@ -195,10 +183,9 @@ Word VG_(addToXA) ( XArray* xao, const void* elem )
    return xa->usedsizeE-1;
 }
 
-Word VG_(addBytesToXA) ( XArray* xao, const void* bytesV, Word nbytes )
+Word VG_(addBytesToXA) ( XArray* xa, const void* bytesV, Word nbytes )
 {
    Word r, i;
-   struct _XArray* xa = (struct _XArray*)xao;
    vg_assert(xa);
    vg_assert(xa->elemSzB == 1);
    vg_assert(nbytes >= 0);
@@ -216,22 +203,20 @@ Word VG_(addBytesToXA) ( XArray* xao, const void* bytesV, Word nbytes )
    return r;
 }
 
-void VG_(sortXA) ( XArray* xao )
+void VG_(sortXA) ( XArray* xa )
 {
-   struct _XArray* xa = (struct _XArray*)xao;
    vg_assert(xa);
    vg_assert(xa->cmpFn);
    VG_(ssort)( xa->arr, xa->usedsizeE, xa->elemSzB, xa->cmpFn );
    xa->sorted = True;
 }
 
-Bool VG_(lookupXA_UNSAFE) ( XArray* xao, const void* key,
+Bool VG_(lookupXA_UNSAFE) ( XArray* xa, const void* key,
                             /*OUT*/Word* first, /*OUT*/Word* last,
                             Int(*cmpFn)(const void*, const void*) )
 {
    Word  lo, mid, hi, cres;
    void* midv;
-   struct _XArray* xa = (struct _XArray*)xao;
    vg_assert(xa);
    lo = 0;
    hi = xa->usedsizeE-1;
@@ -264,35 +249,31 @@ Bool VG_(lookupXA_UNSAFE) ( XArray* xao, const void* key,
    }
 }
 
-Bool VG_(lookupXA) ( XArray* xao, const void* key,
+Bool VG_(lookupXA) ( XArray* xa, const void* key,
                      /*OUT*/Word* first, /*OUT*/Word* last )
 {
-   struct _XArray* xa = (struct _XArray*)xao;
    vg_assert(xa);
    vg_assert(xa->cmpFn);
    vg_assert(xa->sorted);
-   return VG_(lookupXA_UNSAFE)(xao, key, first, last, xa->cmpFn);
+   return VG_(lookupXA_UNSAFE)(xa, key, first, last, xa->cmpFn);
 }
 
-Word VG_(sizeXA) ( XArray* xao )
+Word VG_(sizeXA) ( XArray* xa )
 {
-   struct _XArray* xa = (struct _XArray*)xao;
    vg_assert(xa);
    return xa->usedsizeE;
 }
 
-void VG_(dropTailXA) ( XArray* xao, Word n )
+void VG_(dropTailXA) ( XArray* xa, Word n )
 {
-   struct _XArray* xa = (struct _XArray*)xao;
    vg_assert(xa);
    vg_assert(n >= 0);
    vg_assert(n <= xa->usedsizeE);
    xa->usedsizeE -= n;
 }
 
-void VG_(dropHeadXA) ( XArray* xao, Word n )
+void VG_(dropHeadXA) ( XArray* xa, Word n )
 {
-   struct _XArray* xa = (struct _XArray*)xao;
    vg_assert(xa);
    vg_assert(n >= 0);
    vg_assert(n <= xa->usedsizeE);
@@ -311,9 +292,8 @@ void VG_(dropHeadXA) ( XArray* xao, Word n )
    xa->usedsizeE -= n;
 }
 
-void VG_(removeIndexXA)( XArray* xao, Word n )
+void VG_(removeIndexXA)( XArray* xa, Word n )
 {
-   struct _XArray* xa = (struct _XArray*)xao;
    vg_assert(xa);
    vg_assert(n >= 0);
    vg_assert(n < xa->usedsizeE);
@@ -325,9 +305,8 @@ void VG_(removeIndexXA)( XArray* xao, Word n )
    xa->usedsizeE--;
 }
 
-void VG_(insertIndexXA)( XArray* xao, Word n, const void* elem )
+void VG_(insertIndexXA)( XArray* xa, Word n, const void* elem )
 {
-   struct _XArray* xa = (struct _XArray*)xao;
    vg_assert(xa);
    vg_assert(n >= 0);
    vg_assert(n <= xa->usedsizeE);
@@ -346,11 +325,10 @@ void VG_(insertIndexXA)( XArray* xao, Word n, const void* elem )
    xa->sorted = False;
 }
 
-void VG_(getContentsXA_UNSAFE)( XArray* xao,
+void VG_(getContentsXA_UNSAFE)( XArray* xa,
                                 /*OUT*/void** ctsP,
                                 /*OUT*/Word* usedP )
 {
-   struct _XArray* xa = (struct _XArray*)xao;
    vg_assert(xa);
    *ctsP  = (void*)xa->arr;
    *usedP = xa->usedsizeE;

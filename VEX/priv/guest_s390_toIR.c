@@ -16464,10 +16464,12 @@ s390_decode_and_irgen(UChar *bytes, UInt insn_length, DisResult *dres)
          vex_printf("unimplemented special insn: ");
          break;
 
-      default:
       case S390_DECODE_ERROR:
          vex_printf("decoding error: ");
          break;
+
+      default:
+         vpanic("s390_decode_and_irgen");
       }
 
       vex_printf("%02x%02x", bytes[0], bytes[1]);
@@ -16550,7 +16552,7 @@ disInstr_S390_WRK(UChar *insn)
          }
          break;
       default:
-         vassert(0);
+         vpanic("disInstr_S390_WRK");
       }
    }
 

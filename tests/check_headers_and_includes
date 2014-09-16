@@ -12,6 +12,8 @@
 #     export headers
 # (6) coregrind/ *.[ch] must not use tl_assert
 # (7) include/*.h and tool *.[ch] must not use vg_assert
+# (8) coregrind/ *.[ch] must not use VG_(tool_panic)
+# (9) include/*.h and tool *.[ch] must not use VG_(core_panic)
 #-------------------------------------------------------------------
 
 use strict;
@@ -225,6 +227,11 @@ sub check_coregrind_export_header {
     if ($assert ne "") {
         error("File $path_name must not use vg_assert\n");
     }
+# Must not use VG_(core_panic)
+    my $panic = `grep 'VG_(core_panic)' $file`;
+    if ($panic ne "") {
+        error("File $path_name must not use VG_(core_panic)\n");
+    }
 }
 
 #---------------------------------------------------------------------
@@ -254,6 +261,18 @@ sub check_coregrind_file {
     if ($assert ne "") {
         error("File $path_name must not use tl_assert\n");
     }
+# Must not use VG_(tool_panic)
+    my $panic = `grep 'VG_(tool_panic)' $file`;
+    if ($panic ne "") {
+        chomp($panic);
+# Do not complain about the definition of VG_(tool_panic)
+        if (($path_name eq "coregrind/m_libcassert.c") &&
+            ($panic eq "void VG_(tool_panic) ( const HChar* str )")) {
+# OK
+        } else {
+            error("File $path_name must not use VG_(tool_panic)\n");
+        }
+    }
 }
 
 #---------------------------------------------------------------------
@@ -278,6 +297,11 @@ sub check_tool_file {
     my $assert = `grep vg_assert $file`;
     if ($assert ne "") {
         error("File $path_name must not use vg_assert\n");
+    }
+# Must not use VG_(core_panic)
+    my $panic = `grep 'VG_(core_panic)' $file`;
+    if ($panic ne "") {
+        error("File $path_name must not use VG_(core_panic)\n");
     }
 }
 

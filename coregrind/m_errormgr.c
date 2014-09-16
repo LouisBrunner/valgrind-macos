@@ -310,7 +310,7 @@ static Bool eq_Error ( VgRes res, Error* e1, Error* e2 )
             VG_(printf)("\nUnhandled error type: %u. VG_(needs).tool_errors\n"
                         "probably needs to be set.\n",
                         e1->ekind);
-            VG_(tool_panic)("unhandled error type");
+            VG_(core_panic)("unhandled error type");
          }
    }
 }
@@ -999,7 +999,7 @@ void VG_(show_all_errors) (  Int verbosity, Bool xml )
          }
       }
       // XXX: this isn't right.  See bug 203651.
-      if (p_min == NULL) continue; //VG_(tool_panic)("show_all_errors()");
+      if (p_min == NULL) continue; //VG_(core_panic)("show_all_errors()");
 
       VG_(umsg)("\n");
       VG_(umsg)("%d errors in context %d of %d:\n",
@@ -1869,7 +1869,7 @@ Bool supp_matches_error(Supp* su, Error* err)
                "\nUnhandled suppression type: %u.  VG_(needs).tool_errors\n"
                "probably needs to be set.\n",
                err->ekind);
-            VG_(tool_panic)("unhandled suppression type");
+            VG_(core_panic)("unhandled suppression type");
          }
    }
 }

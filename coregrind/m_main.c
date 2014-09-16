@@ -2026,7 +2026,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
       Bool  ok;
       ok = VG_(sanity_check_needs)( &s );
       if (!ok) {
-         VG_(tool_panic)(s);
+         VG_(core_panic)(s);
       }
    }
 

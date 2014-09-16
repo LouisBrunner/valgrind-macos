@@ -550,7 +550,7 @@ static void pp_addrinfo_WRK ( Addr a, AddrInfo* ai, Bool mc, Bool maybe_gcc )
          break;
 
       default:
-         VG_(tool_panic)("mc_pp_AddrInfo");
+         VG_(core_panic)("mc_pp_AddrInfo");
    }
 }
 

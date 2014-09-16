@@ -315,7 +315,7 @@ void VG_(percentify)(ULong n, ULong m, UInt d, Int n_buf, HChar buf[])
       case 1: ex = 10;    break;
       case 2: ex = 100;   break;
       case 3: ex = 1000;  break;
-      default: VG_(tool_panic)("Currently can only handle 3 decimal places");
+      default: VG_(core_panic)("Currently can only handle 3 decimal places");
       }
       p2 = ((100*n*ex) / m) % ex;
       // Have to generate the format string in order to be flexible about

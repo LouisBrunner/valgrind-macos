@@ -11,7 +11,7 @@
 # (5) include pub_core/tool_clreq.h instead of valgrind.h except in tools'
 #     export headers
 # (6) coregrind/ *.[ch] must not use tl_assert
-# (7) include/*.h must not use vg_assert
+# (7) include/*.h and tool *.[ch] must not use vg_assert
 #-------------------------------------------------------------------
 
 use strict;

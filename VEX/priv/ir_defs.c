@@ -2231,6 +2231,7 @@ IRConst* deepCopyIRConst ( IRConst* c )
       case Ico_F64:  return IRConst_F64(c->Ico.F64);
       case Ico_F64i: return IRConst_F64i(c->Ico.F64i);
       case Ico_V128: return IRConst_V128(c->Ico.V128);
+      case Ico_V256: return IRConst_V256(c->Ico.V256);
       default: vpanic("deepCopyIRConst");
    }
 }
@@ -2302,6 +2303,9 @@ IRExpr* deepCopyIRExpr ( IRExpr* e )
 
       case Iex_BBPTR:
          return IRExpr_BBPTR();
+
+      case Iex_Binder:
+         return IRExpr_Binder(e->Iex.Binder.binder);
 
       default:
          vpanic("deepCopyIRExpr");

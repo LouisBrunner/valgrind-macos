@@ -803,6 +803,10 @@ static void handle_gets_Stmt (
          vassert(isIRAtom(st->Ist.Exit.guard));
          break;
 
+      case Ist_Put:
+         vassert(isIRAtom(st->Ist.Put.data));
+         break;
+
       case Ist_PutI:
          vassert(isIRAtom(st->Ist.PutI.details->ix));
          vassert(isIRAtom(st->Ist.PutI.details->data));
@@ -849,9 +853,10 @@ static void handle_gets_Stmt (
                   env->inuse[j] = False;
             }
             break;
-         default:
+         case VexRegUpdAllregsAtEachInsn:
             // VexRegUpdAllregsAtEachInsn cannot happen here.
-            // Neither any rubbish other value.
+            // fall through
+         default:
             vassert(0);
       }
    } /* if (memRW) */

@@ -1656,6 +1656,10 @@ AC_DEFUN([AC_GCC_WARNING_COND],[
 
 AC_GCC_WARNING_COND([pointer-sign], [HAS_POINTER_SIGN_WARNING])
 AC_GCC_WARNING_COND([write-strings], [HAS_WRITE_STRINGS_WARNING])
+if test $has_warning_flag = yes; then
+  CFLAGS="$CFLAGS -Wwrite-strings"
+  CXXFLAGS="$CXXFLAGS -Wwrite-strings"
+fi
 
 # Convenience function to check whether GCC supports a particular
 # warning option. Similar to AC_GCC_WARNING_COND, but does a

@@ -22,7 +22,6 @@ endif
 
 
 EXTRA_DIST = \
-	m_debuginfo/UNUSED_STABS.txt \
 	m_debuginfo/README.txt \
 	m_gdbserver/README_DEVELOPERS \
 	docs/vgdb-manpage.xml
@@ -216,7 +215,6 @@ noinst_HEADERS = \
 	m_debuginfo/priv_misc.h	\
 	m_debuginfo/priv_storage.h	\
 	m_debuginfo/priv_tytypes.h      \
-	m_debuginfo/priv_readstabs.h	\
 	m_debuginfo/priv_readpdb.h	\
 	m_debuginfo/priv_d3basics.h	\
 	m_debuginfo/priv_readdwarf.h	\
@@ -323,7 +321,6 @@ COREGRIND_SOURCES_COMMON = \
 	m_debuginfo/readexidx.c \
 	m_debuginfo/readmacho.c \
 	m_debuginfo/readpdb.c \
-	m_debuginfo/readstabs.c \
 	m_debuginfo/storage.c \
 	m_debuginfo/tytypes.c \
 	m_debuginfo/image.c \

@@ -57,7 +57,6 @@
 #include "priv_tytypes.h"
 #include "priv_storage.h"
 #include "priv_readdwarf.h"
-#include "priv_readstabs.h"
 #if defined(VGO_linux)
 # include "priv_readelf.h"
 # include "priv_readdwarf3.h"

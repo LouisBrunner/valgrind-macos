@@ -623,23 +623,6 @@ cg_annotate issues warnings.</para>
   </listitem>
 
   <listitem>
-    <para>Files with more than 65,535 lines cause difficulties
-    for the Stabs-format debug info reader.  This is because the line
-    number in the <computeroutput>struct nlist</computeroutput>
-    defined in <filename>a.out.h</filename> under Linux is only a
-    16-bit value.  Valgrind can handle some files with more than
-    65,535 lines correctly by making some guesses to identify
-    line number overflows.  But some cases are beyond it, in
-    which case you'll get a warning message explaining that
-    annotations for the file might be incorrect.</para>
-    
-    <para>If you are using GCC 3.1 or later, this is most likely
-    irrelevant, since GCC switched to using the more modern DWARF2 
-    format by default at version 3.1.  DWARF2 does not have any such
-    limitations on line numbers.</para>
-  </listitem>
-
-  <listitem>
     <para>If you compile some files with
     <option>-g</option> and some without, some
     events that take place in a file without debug info could be

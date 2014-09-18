@@ -55,7 +55,6 @@
 #include "priv_readmacho.h"
 #include "priv_readdwarf.h"
 #include "priv_readdwarf3.h"
-#include "priv_readstabs.h"
 
 /* --- !!! --- EXTERNAL HEADERS start --- !!! --- */
 #include <mach-o/loader.h>
@@ -708,7 +707,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
    struct _DebugInfoMapping* rw_map = NULL;
 
    /* mmap the object file to look for di->soname and di->text_bias 
-      and uuid and nlist and STABS */
+      and uuid and nlist */
 
    /* This should be ensured by our caller (that we're in the accept
       state). */

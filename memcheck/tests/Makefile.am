@@ -93,8 +93,6 @@ EXTRA_DIST = \
 		custom_alloc.stderr.exp-s390x-mvc \
 	custom-overlap.stderr.exp custom-overlap.vgtest \
 	deep-backtrace.vgtest deep-backtrace.stderr.exp \
-	deep_templates.vgtest \
-	deep_templates.stdout.exp deep_templates.stderr.exp \
 	demangle.stderr.exp demangle.vgtest \
 	describe-block.stderr.exp describe-block.vgtest \
 	descr_belowsp.vgtest descr_belowsp.stderr.exp \
@@ -377,10 +375,6 @@ if HAVE_PTHREAD_BARRIER
 check_PROGRAMS += reach_thread_register
 endif
 
-if HAVE_GSTABS
-check_PROGRAMS += deep_templates
-endif
-
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 
@@ -396,9 +390,6 @@ atomic_incs_CFLAGS = $(AM_CFLAGS)
 endif
 
 leak_cpp_interior_SOURCES	= leak_cpp_interior.cpp
-
-deep_templates_SOURCES	= deep_templates.cpp
-deep_templates_CXXFLAGS	= $(AM_CFLAGS) -O -gstabs
 
 demangle_SOURCES = demangle.cpp
 

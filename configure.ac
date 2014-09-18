@@ -1781,25 +1781,6 @@ AM_CONDITIONAL(DWARF4, test x$ac_have_dwarf4 = xyes)
 CFLAGS=$safe_CFLAGS
 
 
-# does this compiler support -gstabs ?
-
-AC_MSG_CHECKING([if gcc accepts -gstabs])
-
-safe_CFLAGS=$CFLAGS
-CFLAGS="-gstabs"
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
-  return 0;
-]])], [
-ac_have_gstabs=yes
-AC_MSG_RESULT([yes])
-], [
-ac_have_gstabs=no
-AC_MSG_RESULT([no])
-])
-CFLAGS=$safe_CFLAGS
-AM_CONDITIONAL([HAVE_GSTABS], [test x$ac_have_gstabs = xyes])
-
-
 # does this compiler support nested functions ?
 
 AC_MSG_CHECKING([if gcc accepts nested functions])

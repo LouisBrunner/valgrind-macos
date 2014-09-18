@@ -1,3 +1,0 @@
-prereq: test -e ./deep_templates
-prog: deep_templates
-vgopts: -q

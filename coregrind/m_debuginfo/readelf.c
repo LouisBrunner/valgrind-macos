@@ -50,7 +50,6 @@
 #include "priv_readelf.h"          /* self */
 #include "priv_readdwarf.h"        /* 'cos ELF contains DWARF */
 #include "priv_readdwarf3.h"
-#include "priv_readstabs.h"        /* and stabs, if we're unlucky */
 #include "priv_readexidx.h"
 
 /* --- !!! --- EXTERNAL HEADERS start --- !!! --- */
@@ -2320,8 +2319,6 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       DiSlice dynsym_escn         = DiSlice_INVALID; // .dynsym
       DiSlice debuglink_escn      = DiSlice_INVALID; // .gnu_debuglink
       DiSlice debugaltlink_escn   = DiSlice_INVALID; // .gnu_debugaltlink
-      DiSlice stab_escn           = DiSlice_INVALID; // .stab         (stabs) 
-      DiSlice stabstr_escn        = DiSlice_INVALID; // .stabstr      (stabs) 
       DiSlice debug_line_escn     = DiSlice_INVALID; // .debug_line   (dwarf2)
       DiSlice debug_info_escn     = DiSlice_INVALID; // .debug_info   (dwarf2)
       DiSlice debug_types_escn    = DiSlice_INVALID; // .debug_types  (dwarf4)
@@ -2404,9 +2401,6 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
          FIND(".gnu_debuglink",     debuglink_escn)
          FIND(".gnu_debugaltlink",  debugaltlink_escn)
-
-         FIND(".stab",              stab_escn)
-         FIND(".stabstr",           stabstr_escn)
 
          FIND(".debug_line",        debug_line_escn)
          FIND(".debug_info",        debug_info_escn)
@@ -2530,7 +2524,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          Addr     rw_dsvma_limit = 0;
          PtrdiffT rw_dbias = 0;
 
-         Bool need_symtab, need_stabs, need_dwarf2, need_dwarf1;
+         Bool need_symtab, need_dwarf2, need_dwarf1;
 
          if (phdr_dnent == 0
              || !ML_(img_valid)(dimg, phdr_dioff,
@@ -2600,7 +2594,6 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          }
 
          need_symtab = (symtab_escn.img == NULL);
-         need_stabs  = (stab_escn.img == NULL);
          need_dwarf2 = (debug_info_escn.img == NULL);
          need_dwarf1 = (dwarf1d_escn.img == NULL);
 
@@ -2693,8 +2686,6 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             /* NEEDED?        NAME             ElfSec */
             FIND(need_symtab, ".symtab",       symtab_escn)
             FIND(need_symtab, ".strtab",       strtab_escn)
-            FIND(need_stabs,  ".stab",         stab_escn)
-            FIND(need_stabs,  ".stabstr",      stabstr_escn)
             FIND(need_dwarf2, ".debug_line",   debug_line_escn)
             FIND(need_dwarf2, ".debug_info",   debug_info_escn)
             FIND(need_dwarf2, ".debug_types",  debug_types_escn)
@@ -2884,27 +2875,6 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                                           0/*assume zero avma*/,
                                           False/*!is_ehframe*/ );
       }
-
-      /* Read the stabs and/or dwarf2 debug information, if any.  It
-         appears reading stabs stuff on amd64-linux doesn't work, so
-         we ignore it.  On s390x stabs also doesnt work and we always
-         have the dwarf info in the eh_frame.  We also segfault on
-         ppc64-linux when reading stabs, so skip that.  ppc32-linux
-         seems OK though.  Also skip on Android. */
-#     if !defined(VGP_amd64_linux) \
-         && !defined(VGP_s390x_linux) \
-         && !defined(VGP_ppc64be_linux) \
-         && !defined(VGP_ppc64le_linux) \
-         && !defined(VGPV_arm_linux_android) \
-         && !defined(VGPV_x86_linux_android) \
-         && !defined(VGP_mips64_linux)
-      // JRS 31 July 2014: stabs reading is currently broken and
-      // therefore deactivated.
-      //if (stab_img && stabstr_img) {
-      //   ML_(read_debuginfo_stabs) ( di, stab_img, stab_sz, 
-      //                                   stabstr_img, stabstr_sz );
-      //}
-#     endif
 
       /* TOPLEVEL */
       /* jrs 2006-01-01: icc-8.1 has been observed to generate

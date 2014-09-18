@@ -28,6 +28,7 @@ To see details of a given bug, visit
 where XXXXXX is the bug number as listed below.
 
 339020 ppc64: memcheck/tests/ppc64/power_ISA2_05 failing in nightly build
+n-i-bz Old STABS code is still being compiled, but never used. Remove it.
 
 
 Release 3.10.0 (10 September 2014)

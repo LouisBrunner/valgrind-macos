@@ -249,10 +249,10 @@ void* VG_(allocEltDedupPA) (DedupPoolAlloc *ddpa, SizeT eltSzB, const void *elt)
    // (A lot can be 10% of the elements colliding, even on
    // small nr of elements such as 10_000).
    ht_elt.key = VG_(adler32) (0, NULL, 0);
-   ht_elt.key = VG_(adler32) (ht_elt.key, (UChar*)elt, eltSzB);
+   ht_elt.key = VG_(adler32) (ht_elt.key, elt, eltSzB);
 
    ht_elt.eltSzB = eltSzB;
-   ht_elt.elt = (UChar*) elt;
+   ht_elt.elt = (void *)elt;
 
    ht_ins = VG_(HT_gen_lookup) (ddpa->ht_elements, &ht_elt, cmp_pool_elt);
    if (ht_ins)
@@ -282,9 +282,9 @@ void* VG_(allocEltDedupPA) (DedupPoolAlloc *ddpa, SizeT eltSzB, const void *elt)
 static __inline__
 UInt elt2nr (DedupPoolAlloc *ddpa, const void *dedup_elt)
 {
-   vg_assert ((UChar*)dedup_elt >= ddpa->curpool
-              && (UChar*)dedup_elt < ddpa->curpool_free);
-   return 1 + ((UChar*)dedup_elt - ddpa->curpool)
+   vg_assert (dedup_elt >= (const void *)ddpa->curpool
+              && dedup_elt < (const void *)ddpa->curpool_free);
+   return 1 + ((const UChar*)dedup_elt - (const UChar *)ddpa->curpool)
       / VG_ROUNDUP(ddpa->fixedSzb, ddpa->eltAlign);
 }
 

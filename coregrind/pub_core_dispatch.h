@@ -62,7 +62,7 @@
    where we have to return a chain-me request.
 */
 void VG_(disp_run_translations)( HWord* two_words,
-                                 void*  guest_state, 
+                                 volatile void*  guest_state, 
                                  Addr   host_addr );
 
 /* We need to know addresses of the continuation-point (cp_) labels so

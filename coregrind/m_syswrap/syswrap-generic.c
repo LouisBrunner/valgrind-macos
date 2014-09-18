@@ -673,7 +673,8 @@ void inet6_format(HChar *s, const UChar ip[16])
    static const unsigned char V4mappedprefix[12] = {0,0,0,0,0,0,0,0,0,0,0xff,0xff};
 
    if (!VG_(memcmp)(ip, V4mappedprefix, 12)) {
-      struct vki_in_addr *sin_addr = (struct vki_in_addr *)(ip + 12);
+      const struct vki_in_addr *sin_addr =
+          (const struct vki_in_addr *)(ip + 12);
       UInt addr = VG_(ntohl)(sin_addr->s_addr);
 
       VG_(sprintf)(s, "::ffff:%u.%u.%u.%u",

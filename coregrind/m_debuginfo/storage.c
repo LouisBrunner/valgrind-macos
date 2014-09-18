@@ -1858,8 +1858,8 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
 static DiLoc* sorting_loctab = NULL;
 static Int compare_DiLoc_via_ix ( const void* va, const void* vb ) 
 {
-   const DiLoc* a = &sorting_loctab[*(UInt*)va];
-   const DiLoc* b = &sorting_loctab[*(UInt*)vb];
+   const DiLoc* a = &sorting_loctab[*(const UInt*)va];
+   const DiLoc* b = &sorting_loctab[*(const UInt*)vb];
    if (a->addr < b->addr) return -1;
    if (a->addr > b->addr) return  1;
    return 0;

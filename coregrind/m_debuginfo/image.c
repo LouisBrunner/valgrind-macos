@@ -877,7 +877,7 @@ Int ML_(img_strcmp_c)(DiImage* img, DiOffT off1, const HChar* str2)
    ensure_valid(img, off1, 1, "ML_(img_strcmp_c)");
    while (True) {
       UChar c1 = get(img, off1);
-      UChar c2 = *(UChar*)str2;
+      UChar c2 = *(const UChar*)str2;
       if (c1 < c2) return -1;
       if (c1 > c2) return 1;
       if (c1 == 0) return 0;

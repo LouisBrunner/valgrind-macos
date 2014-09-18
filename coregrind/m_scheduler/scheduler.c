@@ -696,7 +696,7 @@ void VG_(scheduler_init_phase2) ( ThreadId tid_main,
    guest state, its two copies, and the spill area.  In short, all 4
    areas must have a 16-aligned size and be 16-aligned, and placed
    back-to-back. */
-static void do_pre_run_checks ( ThreadState* tst )
+static void do_pre_run_checks ( volatile ThreadState* tst )
 {
    Addr a_vex     = (Addr) & tst->arch.vex;
    Addr a_vexsh1  = (Addr) & tst->arch.vex_shadow1;
@@ -859,7 +859,7 @@ void run_thread_for_a_while ( /*OUT*/HWord* two_words,
    vg_assert(*dispatchCtrP > 0);
 
    tst = VG_(get_ThreadState)(tid);
-   do_pre_run_checks( (ThreadState*)tst );
+   do_pre_run_checks( tst );
    /* end Paranoia */
 
    /* Futz with the XIndir stats counters. */
@@ -934,7 +934,7 @@ void run_thread_for_a_while ( /*OUT*/HWord* two_words,
       jumped, 
       VG_(disp_run_translations)( 
          two_words,
-         (void*)&tst->arch.vex,
+         (volatile void*)&tst->arch.vex,
          host_code_addr
       )
    );

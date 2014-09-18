@@ -99,6 +99,7 @@ clean-noinst_DSYMS:
 AM_CFLAGS_BASE = \
 	-O2 -g \
 	-Wall \
+	-Wcast-align \
 	-Wmissing-prototypes \
 	-Wshadow \
 	-Wpointer-arith \

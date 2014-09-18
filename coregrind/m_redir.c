@@ -593,11 +593,8 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
          }
 
          spec = dinfo_zalloc("redir.rnnD.1", sizeof(Spec));
-         vg_assert(spec);
          spec->from_sopatt = dinfo_strdup("redir.rnnD.2", demangled_sopatt);
          spec->from_fnpatt = dinfo_strdup("redir.rnnD.3", demangled_fnpatt);
-         vg_assert(spec->from_sopatt);
-         vg_assert(spec->from_fnpatt);
          spec->to_addr = sym_avmas.main;
          spec->isWrap = isWrap;
          spec->becTag = becTag;
@@ -661,7 +658,6 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
    /* Ok.  Now specList holds the list of specs from the DebugInfo.
       Build a new TopSpec, but don't add it to topSpecs yet. */
    newts = dinfo_zalloc("redir.rnnD.4", sizeof(TopSpec));
-   vg_assert(newts);
    newts->next    = NULL; /* not significant */
    newts->seginfo = newdi;
    newts->specs   = specList;
@@ -1175,11 +1171,9 @@ static void add_hardwired_spec (const  HChar* sopatt, const HChar* fnpatt,
                                 const HChar** mandatory )
 {
    Spec* spec = dinfo_zalloc("redir.ahs.1", sizeof(Spec));
-   vg_assert(spec);
 
    if (topSpecs == NULL) {
       topSpecs = dinfo_zalloc("redir.ahs.2", sizeof(TopSpec));
-      vg_assert(topSpecs);
       /* symtab_zalloc sets all fields to zero */
    }
 
@@ -1508,7 +1502,6 @@ static void* dinfo_zalloc(const HChar* ec, SizeT n) {
    void* p;
    vg_assert(n > 0);
    p = VG_(arena_malloc)(VG_AR_DINFO, ec, n);
-   vg_assert(p);
    VG_(memset)(p, 0, n);
    return p;
 }

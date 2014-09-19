@@ -37,16 +37,9 @@ Rationale for (1) and (2) are obvious.
 Originally there was also goal (3) Simplify the stabs reader.
 But stabs support was broken since 3.9.0 and completely removed in 3.10.0.
 
-The worst thing is that it is the stabs type reader that is crashing,
-not the stabs line-number reader, but the type info is only used by
-Helgrind, which is looking pretty dead at the moment. Old versions
-of the stabs type reader can be found in the subversion repository
+The worst thing is that it is the stabs type reader that was crashing,
+not the stabs line-number reader.
+Old versions of the stabs type reader can be found in the subversion repository
 as m_debuginfo/UNUSED_STABS.txt, the stabs line-number reader was in
 m_debuginfo/readstabs.c. The old version of this file explained more
 about the setup.
-
-If Helgrind ever does come back to life we will need to reinstate the
-type storage/reader stuff but with DWARF as its primary target.
-Placing the existing stabs type-reader in hibernation improves
-stability whilst retaining the development effort/expertise that went
-into it for possible future reinstatement.

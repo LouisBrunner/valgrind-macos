@@ -280,11 +280,14 @@ void VG_(initThreadInfo) (ThreadInfo *tinfo)
 void VG_(clear_addrinfo) ( AddrInfo* ai)
 {
    switch (ai->tag) {
+      case Addr_Undescribed:
+         break;
+
       case Addr_Unknown:
-          break;
+         break;
 
       case Addr_Stack: 
-          break;
+         break;
 
       case Addr_Block:
          break;
@@ -354,6 +357,9 @@ static void pp_addrinfo_WRK ( Addr a, AddrInfo* ai, Bool mc, Bool maybe_gcc )
    vg_assert (!maybe_gcc || mc); // maybe_gcc can only be given in mc mode.
 
    switch (ai->tag) {
+      case Addr_Undescribed:
+         VG_(core_panic)("mc_pp_AddrInfo Addr_Undescribed");
+
       case Addr_Unknown:
          if (maybe_gcc) {
             VG_(emit)( "%sAddress 0x%llx is just below the stack ptr.  "

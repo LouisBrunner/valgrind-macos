@@ -188,7 +188,8 @@ extern void VG_(describe_addr) ( Addr a, /*OUT*/AddrInfo* ai );
 
 extern void VG_(clear_addrinfo) ( AddrInfo* ai);
 
-/* Prints the AddrInfo ai describing a. */
+/* Prints the AddrInfo ai describing a.
+   Note that an ai with tag Addr_Undescribed will cause an assert.*/
 extern void VG_(pp_addrinfo) ( Addr a, AddrInfo* ai );
 
 /* Same as VG_(pp_addrinfo) but provides some memcheck specific behaviour:

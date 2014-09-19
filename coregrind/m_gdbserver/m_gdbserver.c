@@ -931,6 +931,31 @@ Bool VG_(gdbserver_activity) (ThreadId tid)
    return ret;
 }
 
+
+void VG_(gdbserver_report_fatal_signal) (Int vki_sigNo, ThreadId tid)
+{
+   dlog(1, "VG core calling VG_(gdbserver_report_fatal_signal) "
+        "vki_nr %d %s gdb_nr %d %s tid %d\n", 
+        vki_sigNo, VG_(signame)(vki_sigNo),
+        target_signal_from_host (vki_sigNo),
+        target_signal_to_name(target_signal_from_host (vki_sigNo)), 
+        tid);
+
+   if (remote_connected()) {
+      dlog(1, "already connected, assuming already reported\n");
+      return;
+   }
+
+   VG_(umsg)("(action on fatal signal) vgdb me ... \n");
+
+   /* indicate to gdbserver that there is a signal */
+   gdbserver_signal_encountered (vki_sigNo);
+
+   /* let gdbserver do some work, e.g. show the signal to the user */
+   call_gdbserver (tid, signal_reason);
+   
+}
+
 Bool VG_(gdbserver_report_signal) (Int vki_sigNo, ThreadId tid)
 {
    dlog(1, "VG core calling VG_(gdbserver_report_signal) "

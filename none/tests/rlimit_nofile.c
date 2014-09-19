@@ -97,6 +97,12 @@ int main(int argc, char **argv)
    {
       perror("open");
    }
+
+   if (setrlimit(RLIMIT_NOFILE, NULL) != -1  || errno != EFAULT)
+   {
+      fprintf(stderr, "setrlimit non addressable arg2 must set errno=EFAULT\n");
+      exit(1);
+   }
    
    exit(0);
 }

@@ -4115,8 +4115,12 @@ PRE(sys_setrlimit)
    arg1 &= ~_RLIMIT_POSIX_FLAG;
 #endif
 
-   if (ARG2 &&
-       ((struct vki_rlimit *)ARG2)->rlim_cur > ((struct vki_rlimit *)ARG2)->rlim_max) {
+   if (!VG_(am_is_valid_for_client)(ARG2, sizeof(struct vki_rlimit), 
+                                    VKI_PROT_READ)) {
+      SET_STATUS_Failure( VKI_EFAULT );
+   }
+   else if (((struct vki_rlimit *)ARG2)->rlim_cur 
+            > ((struct vki_rlimit *)ARG2)->rlim_max) {
       SET_STATUS_Failure( VKI_EINVAL );
    }
    else if (arg1 == VKI_RLIMIT_NOFILE) {

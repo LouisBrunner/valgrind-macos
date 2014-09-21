@@ -218,14 +218,14 @@ typedef  unsigned long HWord;
 
 
 #if VEX_HOST_WORDSIZE == 8
-   static inline ULong Ptr_to_ULong ( void* p ) {
+   static inline ULong Ptr_to_ULong ( const void* p ) {
       return (ULong)p;
    }
    static inline void* ULong_to_Ptr ( ULong n ) {
       return (void*)n;
    }
 #elif VEX_HOST_WORDSIZE == 4
-   static inline ULong Ptr_to_ULong ( void* p ) {
+   static inline ULong Ptr_to_ULong ( const void* p ) {
       UInt w = (UInt)p;
       return (ULong)w;
    }

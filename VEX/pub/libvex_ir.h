@@ -320,13 +320,13 @@ extern IRConst* IRConst_V128 ( UShort );
 extern IRConst* IRConst_V256 ( UInt );
 
 /* Deep-copy an IRConst */
-extern IRConst* deepCopyIRConst ( IRConst* );
+extern IRConst* deepCopyIRConst ( const IRConst* );
 
 /* Pretty-print an IRConst */
-extern void ppIRConst ( IRConst* );
+extern void ppIRConst ( const IRConst* );
 
 /* Compare two IRConsts for equality */
-extern Bool eqIRConst ( IRConst*, IRConst* );
+extern Bool eqIRConst ( const IRConst*, const IRConst* );
 
 
 /* ------------------ Call targets ------------------ */
@@ -359,10 +359,10 @@ typedef
 extern IRCallee* mkIRCallee ( Int regparms, const HChar* name, void* addr );
 
 /* Deep-copy an IRCallee. */
-extern IRCallee* deepCopyIRCallee ( IRCallee* );
+extern IRCallee* deepCopyIRCallee ( const IRCallee* );
 
 /* Pretty-print an IRCallee. */
-extern void ppIRCallee ( IRCallee* );
+extern void ppIRCallee ( const IRCallee* );
 
 
 /* ------------------ Guest state arrays ------------------ */
@@ -380,10 +380,10 @@ typedef
 
 extern IRRegArray* mkIRRegArray ( Int, IRType, Int );
 
-extern IRRegArray* deepCopyIRRegArray ( IRRegArray* );
+extern IRRegArray* deepCopyIRRegArray ( const IRRegArray* );
 
-extern void ppIRRegArray ( IRRegArray* );
-extern Bool eqIRRegArray ( IRRegArray*, IRRegArray* );
+extern void ppIRRegArray ( const IRRegArray* );
+extern Bool eqIRRegArray ( const IRRegArray*, const IRRegArray* );
 
 
 /* ------------------ Temporaries ------------------ */
@@ -2124,7 +2124,7 @@ struct _IRQop {
    only appear at most once in an argument list, and it may not appear
    at all in argument lists for clean helper calls. */
 
-static inline Bool is_IRExpr_VECRET_or_BBPTR ( IRExpr* e ) {
+static inline Bool is_IRExpr_VECRET_or_BBPTR ( const IRExpr* e ) {
    return e->tag == Iex_VECRET || e->tag == Iex_BBPTR;
 }
 
@@ -2148,10 +2148,10 @@ extern IRExpr* IRExpr_VECRET ( void );
 extern IRExpr* IRExpr_BBPTR  ( void );
 
 /* Deep-copy an IRExpr. */
-extern IRExpr* deepCopyIRExpr ( IRExpr* );
+extern IRExpr* deepCopyIRExpr ( const IRExpr* );
 
 /* Pretty-print an IRExpr. */
-extern void ppIRExpr ( IRExpr* );
+extern void ppIRExpr ( const IRExpr* );
 
 /* NULL-terminated IRExpr vector constructors, suitable for
    use as arg lists in clean/dirty helper calls. */
@@ -2174,7 +2174,7 @@ extern IRExpr** mkIRExprVec_8 ( IRExpr*, IRExpr*, IRExpr*, IRExpr*,
      elements with the original).
    - deepCopy: deep-copy (ie. create a completely new vector). */
 extern IRExpr** shallowCopyIRExprVec ( IRExpr** );
-extern IRExpr** deepCopyIRExprVec ( IRExpr** );
+extern IRExpr** deepCopyIRExprVec ( IRExpr *const * );
 
 /* Make a constant expression from the given host word taking into
    account (of course) the host word size. */
@@ -2189,13 +2189,13 @@ IRExpr* mkIRExprCCall ( IRType retty,
 
 /* Convenience functions for atoms (IRExprs which are either Iex_Tmp or
  * Iex_Const). */
-static inline Bool isIRAtom ( IRExpr* e ) {
+static inline Bool isIRAtom ( const IRExpr* e ) {
    return toBool(e->tag == Iex_RdTmp || e->tag == Iex_Const);
 }
 
 /* Are these two IR atoms identical?  Causes an assertion
    failure if they are passed non-atoms. */
-extern Bool eqIRAtom ( IRExpr*, IRExpr* );
+extern Bool eqIRAtom ( const IRExpr*, const IRExpr* );
 
 
 /* ------------------ Jump kinds ------------------ */
@@ -2374,13 +2374,13 @@ typedef
    IRDirty;
 
 /* Pretty-print a dirty call */
-extern void     ppIRDirty ( IRDirty* );
+extern void     ppIRDirty ( const IRDirty* );
 
 /* Allocate an uninitialised dirty call */
 extern IRDirty* emptyIRDirty ( void );
 
 /* Deep-copy a dirty call */
-extern IRDirty* deepCopyIRDirty ( IRDirty* );
+extern IRDirty* deepCopyIRDirty ( const IRDirty* );
 
 /* A handy function which takes some of the tedium out of constructing
    dirty helper calls.  The called function impliedly does not return
@@ -2493,14 +2493,14 @@ typedef
    }
    IRCAS;
 
-extern void ppIRCAS ( IRCAS* cas );
+extern void ppIRCAS ( const IRCAS* cas );
 
 extern IRCAS* mkIRCAS ( IRTemp oldHi, IRTemp oldLo,
                         IREndness end, IRExpr* addr, 
                         IRExpr* expdHi, IRExpr* expdLo,
                         IRExpr* dataHi, IRExpr* dataLo );
 
-extern IRCAS* deepCopyIRCAS ( IRCAS* );
+extern IRCAS* deepCopyIRCAS ( const IRCAS* );
 
 
 /* ------------------ Circular Array Put ------------------ */
@@ -2513,12 +2513,12 @@ typedef
       IRExpr*     data;  /* The value to write */
    } IRPutI;
 
-extern void ppIRPutI ( IRPutI* puti );
+extern void ppIRPutI ( const IRPutI* puti );
 
 extern IRPutI* mkIRPutI ( IRRegArray* descr, IRExpr* ix,
                           Int bias, IRExpr* data );
 
-extern IRPutI* deepCopyIRPutI ( IRPutI* );
+extern IRPutI* deepCopyIRPutI ( const IRPutI* );
 
 
 /* --------------- Guarded loads and stores --------------- */
@@ -2585,11 +2585,11 @@ typedef
    }
    IRLoadG;
 
-extern void ppIRStoreG ( IRStoreG* sg );
+extern void ppIRStoreG ( const IRStoreG* sg );
 
 extern void ppIRLoadGOp ( IRLoadGOp cvt );
 
-extern void ppIRLoadG ( IRLoadG* lg );
+extern void ppIRLoadG ( const IRLoadG* lg );
 
 extern IRStoreG* mkIRStoreG ( IREndness end,
                               IRExpr* addr, IRExpr* data,
@@ -2893,10 +2893,10 @@ extern IRStmt* IRStmt_Exit    ( IRExpr* guard, IRJumpKind jk, IRConst* dst,
                                 Int offsIP );
 
 /* Deep-copy an IRStmt. */
-extern IRStmt* deepCopyIRStmt ( IRStmt* );
+extern IRStmt* deepCopyIRStmt ( const IRStmt* );
 
 /* Pretty-print an IRStmt. */
-extern void ppIRStmt ( IRStmt* );
+extern void ppIRStmt ( const IRStmt* );
 
 
 /* ------------------ Basic Blocks ------------------ */
@@ -2919,10 +2919,10 @@ typedef
 extern IRTemp newIRTemp ( IRTypeEnv*, IRType );
 
 /* Deep-copy a type environment */
-extern IRTypeEnv* deepCopyIRTypeEnv ( IRTypeEnv* );
+extern IRTypeEnv* deepCopyIRTypeEnv ( const IRTypeEnv* );
 
 /* Pretty-print a type environment */
-extern void ppIRTypeEnv ( IRTypeEnv* );
+extern void ppIRTypeEnv ( const IRTypeEnv* );
 
 
 /* Code blocks, which in proper compiler terminology are superblocks
@@ -2956,14 +2956,14 @@ typedef
 extern IRSB* emptyIRSB ( void );
 
 /* Deep-copy an IRSB */
-extern IRSB* deepCopyIRSB ( IRSB* );
+extern IRSB* deepCopyIRSB ( const IRSB* );
 
 /* Deep-copy an IRSB, except for the statements list, which set to be
    a new, empty, list of statements. */
-extern IRSB* deepCopyIRSBExceptStmts ( IRSB* );
+extern IRSB* deepCopyIRSBExceptStmts ( const IRSB* );
 
 /* Pretty-print an IRSB */
-extern void ppIRSB ( IRSB* );
+extern void ppIRSB ( const IRSB* );
 
 /* Append an IRStmt to an IRSB */
 extern void addStmtToIRSB ( IRSB*, IRStmt* );
@@ -2977,9 +2977,9 @@ extern void addStmtToIRSB ( IRSB*, IRStmt* );
 extern IRTypeEnv* emptyIRTypeEnv  ( void );
 
 /* What is the type of this expression? */
-extern IRType typeOfIRConst ( IRConst* );
-extern IRType typeOfIRTemp  ( IRTypeEnv*, IRTemp );
-extern IRType typeOfIRExpr  ( IRTypeEnv*, IRExpr* );
+extern IRType typeOfIRConst ( const IRConst* );
+extern IRType typeOfIRTemp  ( const IRTypeEnv*, IRTemp );
+extern IRType typeOfIRExpr  ( const IRTypeEnv*, const IRExpr* );
 
 /* What are the arg and result type for this IRLoadGOp? */
 extern void typeOfIRLoadGOp ( IRLoadGOp cvt,
@@ -2987,11 +2987,11 @@ extern void typeOfIRLoadGOp ( IRLoadGOp cvt,
                               /*OUT*/IRType* t_arg );
 
 /* Sanity check a BB of IR */
-extern void sanityCheckIRSB ( IRSB*  bb, 
+extern void sanityCheckIRSB ( const  IRSB*  bb, 
                               const  HChar* caller,
                               Bool   require_flatness, 
                               IRType guest_word_size );
-extern Bool isFlatIRStmt ( IRStmt* );
+extern Bool isFlatIRStmt ( const IRStmt* );
 
 /* Is this any value actually in the enumeration 'IRType' ? */
 extern Bool isPlausibleIRType ( IRType ty );

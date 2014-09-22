@@ -3346,8 +3346,8 @@ Int evCheckSzB_X86 ( VexEndness endness_host )
    emitInstr case for XDirect, above. */
 VexInvalRange chainXDirect_X86 ( VexEndness endness_host,
                                  void* place_to_chain,
-                                 void* disp_cp_chain_me_EXPECTED,
-                                 void* place_to_jump_to )
+                                 const void* disp_cp_chain_me_EXPECTED,
+                                 const void* place_to_jump_to )
 {
    vassert(endness_host == VexEndnessLE);
 
@@ -3373,7 +3373,7 @@ VexInvalRange chainXDirect_X86 ( VexEndness endness_host,
    */
    /* This is the delta we need to put into a JMP d32 insn.  It's
       relative to the start of the next insn, hence the -5.  */
-   Long delta = (Long)((UChar*)place_to_jump_to - (UChar*)p) - (Long)5;
+   Long delta = (Long)((const UChar *)place_to_jump_to - p) - 5;
 
    /* And make the modifications. */
    p[0] = 0xE9;
@@ -3394,8 +3394,8 @@ VexInvalRange chainXDirect_X86 ( VexEndness endness_host,
    emitInstr case for XDirect, above. */
 VexInvalRange unchainXDirect_X86 ( VexEndness endness_host,
                                    void* place_to_unchain,
-                                   void* place_to_jump_to_EXPECTED,
-                                   void* disp_cp_chain_me )
+                                   const void* place_to_jump_to_EXPECTED,
+                                   const void* disp_cp_chain_me )
 {
    vassert(endness_host == VexEndnessLE);
 
@@ -3412,7 +3412,7 @@ VexInvalRange unchainXDirect_X86 ( VexEndness endness_host,
        && p[5]  == 0x0F && p[6]  == 0x0B) {
       /* Check the offset is right. */
       Int s32 = *(Int*)(&p[1]);
-      if ((UChar*)p + 5 + s32 == (UChar*)place_to_jump_to_EXPECTED) {
+      if ((UChar*)p + 5 + s32 == place_to_jump_to_EXPECTED) {
          valid = True;
          if (0)
             vex_printf("QQQ unchainXDirect_X86: found valid\n");
@@ -3440,7 +3440,7 @@ VexInvalRange unchainXDirect_X86 ( VexEndness endness_host,
    created by the Xin_ProfInc case for emit_X86Instr. */
 VexInvalRange patchProfInc_X86 ( VexEndness endness_host,
                                  void*  place_to_patch,
-                                 ULong* location_of_counter )
+                                 const ULong* location_of_counter )
 {
    vassert(endness_host == VexEndnessLE);
    vassert(sizeof(ULong*) == 4);

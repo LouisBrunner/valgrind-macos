@@ -5137,8 +5137,8 @@ Int evCheckSzB_ARM64 ( VexEndness endness_host )
    emitInstr case for XDirect, above. */
 VexInvalRange chainXDirect_ARM64 ( VexEndness endness_host,
                                    void* place_to_chain,
-                                   void* disp_cp_chain_me_EXPECTED,
-                                   void* place_to_jump_to )
+                                   const void* disp_cp_chain_me_EXPECTED,
+                                   const void* place_to_jump_to )
 {
    vassert(endness_host == VexEndnessLE);
 
@@ -5183,8 +5183,8 @@ VexInvalRange chainXDirect_ARM64 ( VexEndness endness_host,
    emitInstr case for XDirect, above. */
 VexInvalRange unchainXDirect_ARM64 ( VexEndness endness_host,
                                      void* place_to_unchain,
-                                     void* place_to_jump_to_EXPECTED,
-                                     void* disp_cp_chain_me )
+                                     const void* place_to_jump_to_EXPECTED,
+                                     const void* disp_cp_chain_me )
 {
    vassert(endness_host == VexEndnessLE);
 
@@ -5227,7 +5227,7 @@ VexInvalRange unchainXDirect_ARM64 ( VexEndness endness_host,
    created by the ARM64in_ProfInc case for emit_ARM64Instr. */
 VexInvalRange patchProfInc_ARM64 ( VexEndness endness_host,
                                    void*  place_to_patch,
-                                   ULong* location_of_counter )
+                                   const ULong* location_of_counter )
 {
    vassert(sizeof(ULong*) == 8);
    vassert(endness_host == VexEndnessLE);

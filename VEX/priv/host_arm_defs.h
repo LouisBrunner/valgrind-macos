@@ -1057,18 +1057,18 @@ extern Int evCheckSzB_ARM ( VexEndness endness_host );
 /* Perform a chaining and unchaining of an XDirect jump. */
 extern VexInvalRange chainXDirect_ARM ( VexEndness endness_host,
                                         void* place_to_chain,
-                                        void* disp_cp_chain_me_EXPECTED,
-                                        void* place_to_jump_to );
+                                        const void* disp_cp_chain_me_EXPECTED,
+                                        const void* place_to_jump_to );
 
 extern VexInvalRange unchainXDirect_ARM ( VexEndness endness_host,
                                           void* place_to_unchain,
-                                          void* place_to_jump_to_EXPECTED,
-                                          void* disp_cp_chain_me );
+                                          const void* place_to_jump_to_EXPECTED,
+                                          const void* disp_cp_chain_me );
 
 /* Patch the counter location into an existing ProfInc point. */
 extern VexInvalRange patchProfInc_ARM ( VexEndness endness_host,
                                         void*  place_to_patch,
-                                        ULong* location_of_counter );
+                                        const ULong* location_of_counter );
 
 
 #endif /* ndef __VEX_HOST_ARM_DEFS_H */

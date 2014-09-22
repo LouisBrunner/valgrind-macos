@@ -4326,8 +4326,8 @@ Int evCheckSzB_MIPS ( VexEndness endness_host )
    emitInstr case for XDirect, above. */
 VexInvalRange chainXDirect_MIPS ( VexEndness endness_host,
                                   void* place_to_chain,
-                                  void* disp_cp_chain_me_EXPECTED,
-                                  void* place_to_jump_to,
+                                  const void* disp_cp_chain_me_EXPECTED,
+                                  const void* place_to_jump_to,
                                   Bool  mode64 )
 {
    vassert(endness_host == VexEndnessLE || endness_host == VexEndnessBE);
@@ -4374,8 +4374,8 @@ VexInvalRange chainXDirect_MIPS ( VexEndness endness_host,
    emitInstr case for XDirect, above. */
 VexInvalRange unchainXDirect_MIPS ( VexEndness endness_host,
                                     void* place_to_unchain,
-                                    void* place_to_jump_to_EXPECTED,
-                                    void* disp_cp_chain_me,
+                                    const void* place_to_jump_to_EXPECTED,
+                                    const void* disp_cp_chain_me,
                                     Bool  mode64 )
 {
    vassert(endness_host == VexEndnessLE || endness_host == VexEndnessBE);
@@ -4420,7 +4420,8 @@ VexInvalRange unchainXDirect_MIPS ( VexEndness endness_host,
    created by the Min_ProfInc case for emit_MIPSInstr. */
 VexInvalRange patchProfInc_MIPS ( VexEndness endness_host,
                                   void*  place_to_patch,
-                                  ULong* location_of_counter, Bool mode64 )
+                                  const ULong* location_of_counter,
+                                  Bool mode64 )
 {
    vassert(endness_host == VexEndnessLE || endness_host == VexEndnessBE);
    if (mode64) {

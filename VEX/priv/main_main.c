@@ -999,24 +999,38 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
 
 /* --------- Chain/Unchain XDirects. --------- */
 
-VexInvalRange LibVEX_Chain ( VexArch    arch_host,
-                             VexEndness endness_host,
-                             void*      place_to_chain,
-                             void*      disp_cp_chain_me_EXPECTED,
-                             void*      place_to_jump_to )
+VexInvalRange LibVEX_Chain ( VexArch     arch_host,
+                             VexEndness  endness_host,
+                             void*       place_to_chain,
+                             const void* disp_cp_chain_me_EXPECTED,
+                             const void* place_to_jump_to )
 {
-   VexInvalRange (*chainXDirect)(VexEndness, void*, void*, void*) = NULL;
    switch (arch_host) {
       case VexArchX86:
-         chainXDirect = chainXDirect_X86; break;
+         return chainXDirect_X86(endness_host,
+                                 place_to_chain,
+                                 disp_cp_chain_me_EXPECTED,
+                                 place_to_jump_to);
       case VexArchAMD64:
-         chainXDirect = chainXDirect_AMD64; break;
+         return chainXDirect_AMD64(endness_host,
+                                   place_to_chain,
+                                   disp_cp_chain_me_EXPECTED,
+                                   place_to_jump_to);
       case VexArchARM:
-         chainXDirect = chainXDirect_ARM; break;
+         return chainXDirect_ARM(endness_host,
+                                 place_to_chain,
+                                 disp_cp_chain_me_EXPECTED,
+                                 place_to_jump_to);
       case VexArchARM64:
-         chainXDirect = chainXDirect_ARM64; break;
+         return chainXDirect_ARM64(endness_host,
+                                   place_to_chain,
+                                   disp_cp_chain_me_EXPECTED,
+                                   place_to_jump_to);
       case VexArchS390X:
-         chainXDirect = chainXDirect_S390; break;
+         return chainXDirect_S390(endness_host,
+                                  place_to_chain,
+                                  disp_cp_chain_me_EXPECTED,
+                                  place_to_jump_to);
       case VexArchPPC32:
          return chainXDirect_PPC(endness_host,
                                  place_to_chain,
@@ -1040,31 +1054,40 @@ VexInvalRange LibVEX_Chain ( VexArch    arch_host,
       default:
          vassert(0);
    }
-   vassert(chainXDirect);
-   VexInvalRange vir
-      = chainXDirect(endness_host, place_to_chain,
-                     disp_cp_chain_me_EXPECTED, place_to_jump_to);
-   return vir;
 }
 
-VexInvalRange LibVEX_UnChain ( VexArch    arch_host,
-                               VexEndness endness_host,
-                               void*      place_to_unchain,
-                               void*      place_to_jump_to_EXPECTED,
-                               void*      disp_cp_chain_me )
+VexInvalRange LibVEX_UnChain ( VexArch     arch_host,
+                               VexEndness  endness_host,
+                               void*       place_to_unchain,
+                               const void* place_to_jump_to_EXPECTED,
+                               const void* disp_cp_chain_me )
 {
-   VexInvalRange (*unchainXDirect)(VexEndness, void*, void*, void*) = NULL;
    switch (arch_host) {
       case VexArchX86:
-         unchainXDirect = unchainXDirect_X86; break;
+         return unchainXDirect_X86(endness_host,
+                                   place_to_unchain,
+                                   place_to_jump_to_EXPECTED,
+                                   disp_cp_chain_me);
       case VexArchAMD64:
-         unchainXDirect = unchainXDirect_AMD64; break;
+         return unchainXDirect_AMD64(endness_host,
+                                     place_to_unchain,
+                                     place_to_jump_to_EXPECTED,
+                                     disp_cp_chain_me);
       case VexArchARM:
-         unchainXDirect = unchainXDirect_ARM; break;
+         return unchainXDirect_ARM(endness_host,
+                                   place_to_unchain,
+                                   place_to_jump_to_EXPECTED,
+                                   disp_cp_chain_me);
       case VexArchARM64:
-         unchainXDirect = unchainXDirect_ARM64; break;
+         return unchainXDirect_ARM64(endness_host,
+                                     place_to_unchain,
+                                     place_to_jump_to_EXPECTED,
+                                     disp_cp_chain_me);
       case VexArchS390X:
-         unchainXDirect = unchainXDirect_S390; break;
+         return unchainXDirect_S390(endness_host,
+                                    place_to_unchain,
+                                    place_to_jump_to_EXPECTED,
+                                    disp_cp_chain_me);
       case VexArchPPC32:
          return unchainXDirect_PPC(endness_host,
                                    place_to_unchain,
@@ -1088,11 +1111,6 @@ VexInvalRange LibVEX_UnChain ( VexArch    arch_host,
       default:
          vassert(0);
    }
-   vassert(unchainXDirect);
-   VexInvalRange vir
-      = unchainXDirect(endness_host, place_to_unchain,
-                       place_to_jump_to_EXPECTED, disp_cp_chain_me);
-   return vir;
 }
 
 Int LibVEX_evCheckSzB ( VexArch    arch_host,
@@ -1127,20 +1145,24 @@ Int LibVEX_evCheckSzB ( VexArch    arch_host,
 VexInvalRange LibVEX_PatchProfInc ( VexArch    arch_host,
                                     VexEndness endness_host,
                                     void*      place_to_patch,
-                                    ULong*     location_of_counter )
+                                    const ULong* location_of_counter )
 {
-   VexInvalRange (*patchProfInc)(VexEndness,void*,ULong*) = NULL;
    switch (arch_host) {
       case VexArchX86:
-         patchProfInc = patchProfInc_X86; break;
+         return patchProfInc_X86(endness_host, place_to_patch,
+                                 location_of_counter);
       case VexArchAMD64:
-         patchProfInc = patchProfInc_AMD64; break;
+         return patchProfInc_AMD64(endness_host, place_to_patch,
+                                   location_of_counter);
       case VexArchARM:
-         patchProfInc = patchProfInc_ARM; break;
+         return patchProfInc_ARM(endness_host, place_to_patch,
+                                 location_of_counter);
       case VexArchARM64:
-         patchProfInc = patchProfInc_ARM64; break;
+         return patchProfInc_ARM64(endness_host, place_to_patch,
+                                   location_of_counter);
       case VexArchS390X:
-         patchProfInc = patchProfInc_S390; break;
+         return patchProfInc_S390(endness_host, place_to_patch,
+                                  location_of_counter);
       case VexArchPPC32:
          return patchProfInc_PPC(endness_host, place_to_patch,
                                  location_of_counter, False/*!mode64*/);
@@ -1156,10 +1178,6 @@ VexInvalRange LibVEX_PatchProfInc ( VexArch    arch_host,
       default:
          vassert(0);
    }
-   vassert(patchProfInc);
-   VexInvalRange vir
-      = patchProfInc(endness_host, place_to_patch, location_of_counter);
-   return vir;
 }
 
 

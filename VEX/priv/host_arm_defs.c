@@ -4705,8 +4705,8 @@ Int evCheckSzB_ARM ( VexEndness endness_host )
    emitInstr case for XDirect, above. */
 VexInvalRange chainXDirect_ARM ( VexEndness endness_host,
                                  void* place_to_chain,
-                                 void* disp_cp_chain_me_EXPECTED,
-                                 void* place_to_jump_to )
+                                 const void* disp_cp_chain_me_EXPECTED,
+                                 const void* place_to_jump_to )
 {
    vassert(endness_host == VexEndnessLE);
 
@@ -4751,7 +4751,7 @@ VexInvalRange chainXDirect_ARM ( VexEndness endness_host,
 
    /* This is the delta we need to put into a B insn.  It's relative
       to the start of the next-but-one insn, hence the -8.  */
-   Long delta   = (Long)((UChar*)place_to_jump_to - (UChar*)p) - (Long)8;
+   Long delta   = (Long)((const UChar *)place_to_jump_to - (const UChar*)p) - 8;
    Bool shortOK = delta >= -30*1000*1000 && delta < 30*1000*1000;
    vassert(0 == (delta & (Long)3));
 
@@ -4788,8 +4788,8 @@ VexInvalRange chainXDirect_ARM ( VexEndness endness_host,
    emitInstr case for XDirect, above. */
 VexInvalRange unchainXDirect_ARM ( VexEndness endness_host,
                                    void* place_to_unchain,
-                                   void* place_to_jump_to_EXPECTED,
-                                   void* disp_cp_chain_me )
+                                   const void* place_to_jump_to_EXPECTED,
+                                   const void* disp_cp_chain_me )
 {
    vassert(endness_host == VexEndnessLE);
 
@@ -4824,7 +4824,7 @@ VexInvalRange unchainXDirect_ARM ( VexEndness endness_host,
       /* It's the short form.  Check the displacement is right. */
       Int simm24 = p[0] & 0x00FFFFFF;
       simm24 <<= 8; simm24 >>= 8;
-      if ((UChar*)p + (simm24 << 2) + 8 == (UChar*)place_to_jump_to_EXPECTED) {
+      if ((UChar*)p + (simm24 << 2) + 8 == place_to_jump_to_EXPECTED) {
          valid = True;
          if (0)
             vex_printf("QQQ unchainXDirect_ARM: found short form\n");
@@ -4852,7 +4852,7 @@ VexInvalRange unchainXDirect_ARM ( VexEndness endness_host,
    created by the ARMin_ProfInc case for emit_ARMInstr. */
 VexInvalRange patchProfInc_ARM ( VexEndness endness_host,
                                  void*  place_to_patch,
-                                 ULong* location_of_counter )
+                                 const ULong* location_of_counter )
 {
    vassert(endness_host == VexEndnessLE);
    vassert(sizeof(ULong*) == 4);

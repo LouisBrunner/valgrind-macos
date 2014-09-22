@@ -3552,8 +3552,8 @@ Int evCheckSzB_AMD64 ( VexEndness endness_host )
    emitInstr case for XDirect, above. */
 VexInvalRange chainXDirect_AMD64 ( VexEndness endness_host,
                                    void* place_to_chain,
-                                   void* disp_cp_chain_me_EXPECTED,
-                                   void* place_to_jump_to )
+                                   const void* disp_cp_chain_me_EXPECTED,
+                                   const void* place_to_jump_to )
 {
    vassert(endness_host == VexEndnessLE);
 
@@ -3599,7 +3599,7 @@ VexInvalRange chainXDirect_AMD64 ( VexEndness endness_host,
    */
    /* This is the delta we need to put into a JMP d32 insn.  It's
       relative to the start of the next insn, hence the -5.  */
-   Long delta   = (Long)((UChar*)place_to_jump_to - (UChar*)p) - (Long)5;
+   Long delta   = (Long)((const UChar *)place_to_jump_to - (const UChar*)p) - 5;
    Bool shortOK = delta >= -1000*1000*1000 && delta < 1000*1000*1000;
 
    static UInt shortCTR = 0; /* DO NOT MAKE NON-STATIC */
@@ -3641,8 +3641,8 @@ VexInvalRange chainXDirect_AMD64 ( VexEndness endness_host,
    emitInstr case for XDirect, above. */
 VexInvalRange unchainXDirect_AMD64 ( VexEndness endness_host,
                                      void* place_to_unchain,
-                                     void* place_to_jump_to_EXPECTED,
-                                     void* disp_cp_chain_me )
+                                     const void* place_to_jump_to_EXPECTED,
+                                     const void* disp_cp_chain_me )
 {
    vassert(endness_host == VexEndnessLE);
 
@@ -3678,7 +3678,7 @@ VexInvalRange unchainXDirect_AMD64 ( VexEndness endness_host,
       /* It's the short form.  Check the offset is right. */
       Int  s32 = *(Int*)(&p[1]);
       Long s64 = (Long)s32;
-      if ((UChar*)p + 5 + s64 == (UChar*)place_to_jump_to_EXPECTED) {
+      if ((UChar*)p + 5 + s64 == place_to_jump_to_EXPECTED) {
          valid = True;
          if (0)
             vex_printf("QQQ unchainXDirect_AMD64: found short form\n");
@@ -3708,7 +3708,7 @@ VexInvalRange unchainXDirect_AMD64 ( VexEndness endness_host,
    created by the Ain_ProfInc case for emit_AMD64Instr. */
 VexInvalRange patchProfInc_AMD64 ( VexEndness endness_host,
                                    void*  place_to_patch,
-                                   ULong* location_of_counter )
+                                   const ULong* location_of_counter )
 {
    vassert(endness_host == VexEndnessLE);
    vassert(sizeof(ULong*) == 8);

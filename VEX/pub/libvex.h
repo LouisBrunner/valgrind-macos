@@ -787,22 +787,22 @@ typedef
    currently contains a call to the dispatcher specified by
    disp_cp_chain_me_EXPECTED. */
 extern
-VexInvalRange LibVEX_Chain ( VexArch    arch_host,
-                             VexEndness endhess_host,
-                             void*      place_to_chain,
-                             void*      disp_cp_chain_me_EXPECTED,
-                             void*      place_to_jump_to );
+VexInvalRange LibVEX_Chain ( VexArch     arch_host,
+                             VexEndness  endhess_host,
+                             void*       place_to_chain,
+                             const void* disp_cp_chain_me_EXPECTED,
+                             const void* place_to_jump_to );
 
 /* Undo an XDirect jump located at place_to_unchain, so it is
    converted back into a call to disp_cp_chain_me.  It is expected
    (and checked) that this site currently contains a jump directly to
    the address specified by place_to_jump_to_EXPECTED. */
 extern
-VexInvalRange LibVEX_UnChain ( VexArch    arch_host,
-                               VexEndness endness_host,
-                               void*      place_to_unchain,
-                               void*      place_to_jump_to_EXPECTED,
-                               void*      disp_cp_chain_me );
+VexInvalRange LibVEX_UnChain ( VexArch     arch_host,
+                               VexEndness  endness_host,
+                               void*       place_to_unchain,
+                               const void* place_to_jump_to_EXPECTED,
+                               const void* disp_cp_chain_me );
 
 /* Returns a constant -- the size of the event check that is put at
    the start of every translation.  This makes it possible to
@@ -816,10 +816,10 @@ Int LibVEX_evCheckSzB ( VexArch    arch_host,
 /* Patch the counter location into an existing ProfInc point.  The
    specified point is checked to make sure it is plausible. */
 extern
-VexInvalRange LibVEX_PatchProfInc ( VexArch    arch_host,
-                                    VexEndness endness_host,
-                                    void*      place_to_patch,
-                                    ULong*     location_of_counter );
+VexInvalRange LibVEX_PatchProfInc ( VexArch      arch_host,
+                                    VexEndness   endness_host,
+                                    void*        place_to_patch,
+                                    const ULong* location_of_counter );
 
 
 /*-------------------------------------------------------*/

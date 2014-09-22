@@ -113,8 +113,6 @@ void LibVEX_Init (
    void (*log_bytes) ( HChar*, Int nbytes ),
    /* debug paranoia level */
    Int debuglevel,
-   /* Are we supporting valgrind checking? */
-   Bool valgrind_support,
    /* Control ... */
    const VexControl* vcon
 )
@@ -195,7 +193,6 @@ void LibVEX_Init (
 
    /* Really start up .. */
    vex_debuglevel         = debuglevel;
-   vex_valgrind_support   = valgrind_support;
    vex_control            = *vcon;
    vex_initdone           = True;
    vexSetAllocMode ( VexAllocModeTEMP );

@@ -579,9 +579,6 @@ extern void LibVEX_Init (
    /* debug paranoia level */
    Int debuglevel,
 
-   /* Are we supporting valgrind checking? */
-   Bool valgrind_support,
-
    /* Control ... */
    const VexControl* vcon
 );

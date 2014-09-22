@@ -768,7 +768,7 @@ int main ( Int argc, HChar** argv )
    vcon.guest_chase_thresh=0;
    vcon.iropt_level=2;
 
-   LibVEX_Init( failure_exit, log_bytes, 1, False, &vcon );
+   LibVEX_Init( failure_exit, log_bytes, 1, &vcon );
    LibVEX_Guest_initialise(&gst);
    gst.host_EvC_COUNTER  = 999999999; // so we should never get an exit
    gst.host_EvC_FAILADDR = 0x5a5a5a5a5a5a5a5a;

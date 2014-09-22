@@ -59,9 +59,6 @@ extern Int vex_debuglevel;
 /* trace flags */
 extern Int vex_traceflags;
 
-/* Are we supporting valgrind checking? */
-extern Bool vex_valgrind_support;
-
 /* Optimiser/front-end control */
 extern VexControl vex_control;
 

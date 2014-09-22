@@ -58,9 +58,6 @@ Int vex_debuglevel = 0;
 /* trace flags */
 Int vex_traceflags = 0;
 
-/* Are we supporting valgrind checking? */
-Bool vex_valgrind_support = False;
-
 /* Max # guest insns per bb */
 VexControl vex_control = { 0,0,False,0,0,0 };
 

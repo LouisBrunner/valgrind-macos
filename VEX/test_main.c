@@ -127,7 +127,6 @@ int main ( int argc, char** argv )
 
    LibVEX_Init ( &failure_exit, &log_bytes, 
                  1,  /* debug_paranoia */ 
-                 TEST_VSUPPORT, /* valgrind support */
                  &vcon );
 
 

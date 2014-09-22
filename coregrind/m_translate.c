@@ -1418,7 +1418,6 @@ Bool VG_(translate) ( ThreadId tid,
    if (!vex_init_done) {
       LibVEX_Init ( &failure_exit, &log_bytes, 
                     1,     /* debug_paranoia */ 
-                    False, /* valgrind support */
                     &VG_(clo_vex_control) );
       vex_init_done = True;
    }

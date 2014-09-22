@@ -138,11 +138,11 @@ static void ocache_sarp_Clear_Origins ( Addr, UWord ); /* fwds */
 
    On 64-bit machines it's more complicated.  If we followed the same basic
    scheme we'd have a four-level table which would require too many memory
-   accesses.  So instead the top-level map table has 2^19 entries (indexed
-   using bits 16..34 of the address);  this covers the bottom 32GB.  Any
-   accesses above 32GB are handled with a slow, sparse auxiliary table.
+   accesses.  So instead the top-level map table has 2^20 entries (indexed
+   using bits 16..35 of the address);  this covers the bottom 64GB.  Any
+   accesses above 64GB are handled with a slow, sparse auxiliary table.
    Valgrind's address space manager tries very hard to keep things below
-   this 32GB barrier so that performance doesn't suffer too much.
+   this 64GB barrier so that performance doesn't suffer too much.
 
    Note that this file has a lot of different functions for reading and
    writing shadow memory.  Only a couple are strictly necessary (eg.

@@ -1852,7 +1852,7 @@ need to use them.</para>
 ==15363==    by 0x8048550: main (varinfo1.c:56)
 ==15363==  Address 0xbea0d0cc is on thread 1's stack
 ==15363==  in frame #1, created by main (varinfo1.c:45)
-></programlisting>
+]]></programlisting>
 
       <para>And here are the same errors with
       <option>--read-var-info=yes</option>:</para>

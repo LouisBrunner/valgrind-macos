@@ -5350,9 +5350,7 @@ static Bool dis_int_store ( UInt theInstr, VexAbiInfo* vbi )
             /* lower half of upper 64-bits */
             assign( EA_lo, ea_rAor0_simm( rA_addr, simm16+12 ) );
          }
-         putIReg( rA_addr, mkexpr(EA_hi) );
          store( mkexpr(EA_hi), mkexpr(rS) );
-         putIReg( rA_addr, mkexpr( EA_lo) );
          store( mkexpr(EA_lo), getIReg( rS_addr+1 ) );
          break;
       }

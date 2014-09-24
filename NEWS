@@ -30,6 +30,7 @@ where XXXXXX is the bug number as listed below.
 339020 ppc64: memcheck/tests/ppc64/power_ISA2_05 failing in nightly build
 339156 - gdbsrv not called for fatal signal
 n-i-bz Old STABS code is still being compiled, but never used. Remove it.
+n-i-bz Fix compilation on distros with glibc < 2.5
 
 
 Release 3.10.0 (10 September 2014)

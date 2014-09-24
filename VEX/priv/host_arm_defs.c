@@ -2972,10 +2972,10 @@ static UInt* do_load_or_store32 ( UInt* p,
 Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
                     UChar* buf, Int nbuf, ARMInstr* i, 
                     Bool mode64, VexEndness endness_host,
-                    void* disp_cp_chain_me_to_slowEP,
-                    void* disp_cp_chain_me_to_fastEP,
-                    void* disp_cp_xindir,
-                    void* disp_cp_xassisted )
+                    const void* disp_cp_chain_me_to_slowEP,
+                    const void* disp_cp_chain_me_to_fastEP,
+                    const void* disp_cp_xindir,
+                    const void* disp_cp_xassisted )
 {
    UInt* p = (UInt*)buf;
    vassert(nbuf >= 32);
@@ -3238,7 +3238,7 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
          /* movw r12, lo16(VG_(disp_cp_chain_me_to_{slowEP,fastEP})) */
          /* movt r12, hi16(VG_(disp_cp_chain_me_to_{slowEP,fastEP})) */
          /* blx  r12  (A1) */
-         void* disp_cp_chain_me
+         const void* disp_cp_chain_me
                   = i->ARMin.XDirect.toFastEP ? disp_cp_chain_me_to_fastEP 
                                               : disp_cp_chain_me_to_slowEP;
          p = imm32_to_iregNo_EXACTLY2(p, /*r*/12,

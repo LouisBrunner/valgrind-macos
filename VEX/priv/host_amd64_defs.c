@@ -2266,10 +2266,10 @@ static UChar* do_ffree_st ( UChar* p, Int n )
 Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
                       UChar* buf, Int nbuf, AMD64Instr* i, 
                       Bool mode64, VexEndness endness_host,
-                      void* disp_cp_chain_me_to_slowEP,
-                      void* disp_cp_chain_me_to_fastEP,
-                      void* disp_cp_xindir,
-                      void* disp_cp_xassisted )
+                      const void* disp_cp_chain_me_to_slowEP,
+                      const void* disp_cp_chain_me_to_fastEP,
+                      const void* disp_cp_xindir,
+                      const void* disp_cp_xassisted )
 {
    UInt /*irno,*/ opc, opc_rr, subopc_imm, opc_imma, opc_cl, opc_imm, subopc;
    UInt   xtra;
@@ -2762,7 +2762,7 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
       /* movabsq $disp_cp_chain_me_to_{slow,fast}EP,%r11; */
       *p++ = 0x49;
       *p++ = 0xBB;
-      void* disp_cp_chain_me
+      const void* disp_cp_chain_me
                = i->Ain.XDirect.toFastEP ? disp_cp_chain_me_to_fastEP 
                                          : disp_cp_chain_me_to_slowEP;
       p = emit64(p, Ptr_to_ULong(disp_cp_chain_me));

@@ -48,7 +48,7 @@
 /*------------------------------------------------------------*/
 /*--- Forward declarations                                 ---*/
 /*------------------------------------------------------------*/
-static UInt s390_decode_and_irgen(UChar *, UInt, DisResult *);
+static UInt s390_decode_and_irgen(const UChar *, UInt, DisResult *);
 static void s390_irgen_xonc(IROp, IRTemp, IRTemp, IRTemp);
 static void s390_irgen_CLC_EX(IRTemp, IRTemp, IRTemp);
 
@@ -13904,7 +13904,7 @@ s390_irgen_call_noredir(void)
 
 
 static s390_decode_t
-s390_decode_2byte_and_irgen(UChar *bytes)
+s390_decode_2byte_and_irgen(const UChar *bytes)
 {
    typedef union {
       struct {
@@ -14037,7 +14037,7 @@ unimplemented:
 }
 
 static s390_decode_t
-s390_decode_4byte_and_irgen(UChar *bytes)
+s390_decode_4byte_and_irgen(const UChar *bytes)
 {
    typedef union {
       struct {
@@ -15091,7 +15091,7 @@ unimplemented:
 }
 
 static s390_decode_t
-s390_decode_6byte_and_irgen(UChar *bytes)
+s390_decode_6byte_and_irgen(const UChar *bytes)
 {
    typedef union {
       struct {
@@ -16356,7 +16356,7 @@ unimplemented:
 
 /* Handle "special" instructions. */
 static s390_decode_t
-s390_decode_special_and_irgen(UChar *bytes)
+s390_decode_special_and_irgen(const UChar *bytes)
 {
    s390_decode_t status = S390_DECODE_OK;
 
@@ -16397,7 +16397,7 @@ s390_decode_special_and_irgen(UChar *bytes)
 
 /* Function returns # bytes that were decoded or 0 in case of failure */
 static UInt
-s390_decode_and_irgen(UChar *bytes, UInt insn_length, DisResult *dres)
+s390_decode_and_irgen(const UChar *bytes, UInt insn_length, DisResult *dres)
 {
    s390_decode_t status;
 
@@ -16488,7 +16488,7 @@ s390_decode_and_irgen(UChar *bytes, UInt insn_length, DisResult *dres)
 
 /* Disassemble a single instruction INSN into IR. */
 static DisResult
-disInstr_S390_WRK(UChar *insn)
+disInstr_S390_WRK(const UChar *insn)
 {
    UChar byte;
    UInt  insn_length;
@@ -16572,7 +16572,7 @@ disInstr_S390(IRSB        *irsb_IN,
               Bool       (*resteerOkFn)(void *, Addr64),
               Bool         resteerCisOk,
               void        *callback_opaque,
-              UChar       *guest_code,
+              const UChar *guest_code,
               Long         delta,
               Addr64       guest_IP,
               VexArch      guest_arch,

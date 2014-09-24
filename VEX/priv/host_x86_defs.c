@@ -2103,10 +2103,10 @@ static UChar* push_word_from_tags ( UChar* p, UShort tags )
 Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
                     UChar* buf, Int nbuf, X86Instr* i, 
                     Bool mode64, VexEndness endness_host,
-                    void* disp_cp_chain_me_to_slowEP,
-                    void* disp_cp_chain_me_to_fastEP,
-                    void* disp_cp_xindir,
-                    void* disp_cp_xassisted )
+                    const void* disp_cp_chain_me_to_slowEP,
+                    const void* disp_cp_chain_me_to_fastEP,
+                    const void* disp_cp_xindir,
+                    const void* disp_cp_xassisted )
 {
    UInt irno, opc, opc_rr, subopc_imm, opc_imma, opc_cl, opc_imm, subopc;
 
@@ -2465,7 +2465,7 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
          two instructions below. */
       /* movl $disp_cp_chain_me_to_{slow,fast}EP,%edx; */
       *p++ = 0xBA;
-      void* disp_cp_chain_me
+      const void* disp_cp_chain_me
                = i->Xin.XDirect.toFastEP ? disp_cp_chain_me_to_fastEP 
                                          : disp_cp_chain_me_to_slowEP;
       p = emit32(p, (UInt)Ptr_to_ULong(disp_cp_chain_me));

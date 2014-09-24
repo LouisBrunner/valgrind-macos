@@ -714,14 +714,14 @@ extern void ppX86Instr ( X86Instr*, Bool );
 extern void         getRegUsage_X86Instr ( HRegUsage*, X86Instr*, Bool );
 extern void         mapRegs_X86Instr     ( HRegRemap*, X86Instr*, Bool );
 extern Bool         isMove_X86Instr      ( X86Instr*, HReg*, HReg* );
-extern Int          emit_X86Instr        ( /*MB_MOD*/Bool* is_profInc,
-                                           UChar* buf, Int nbuf, X86Instr* i, 
-                                           Bool mode64,
-                                           VexEndness endness_host,
-                                           void* disp_cp_chain_me_to_slowEP,
-                                           void* disp_cp_chain_me_to_fastEP,
-                                           void* disp_cp_xindir,
-                                           void* disp_cp_xassisted );
+extern Int          emit_X86Instr   ( /*MB_MOD*/Bool* is_profInc,
+                                      UChar* buf, Int nbuf, X86Instr* i, 
+                                      Bool mode64,
+                                      VexEndness endness_host,
+                                      const void* disp_cp_chain_me_to_slowEP,
+                                      const void* disp_cp_chain_me_to_fastEP,
+                                      const void* disp_cp_xindir,
+                                      const void* disp_cp_xassisted );
 
 extern void genSpill_X86  ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
                             HReg rreg, Int offset, Bool );

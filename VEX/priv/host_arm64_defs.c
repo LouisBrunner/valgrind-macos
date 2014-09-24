@@ -3109,10 +3109,10 @@ static UInt* do_load_or_store64 ( UInt* p,
 Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
                       UChar* buf, Int nbuf, ARM64Instr* i,
                       Bool mode64, VexEndness endness_host,
-                      void* disp_cp_chain_me_to_slowEP,
-                      void* disp_cp_chain_me_to_fastEP,
-                      void* disp_cp_xindir,
-                      void* disp_cp_xassisted )
+                      const void* disp_cp_chain_me_to_slowEP,
+                      const void* disp_cp_chain_me_to_fastEP,
+                      const void* disp_cp_xindir,
+                      const void* disp_cp_xassisted )
 {
    UInt* p = (UInt*)buf;
    vassert(nbuf >= 32);
@@ -3387,7 +3387,7 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
          /* movk x9, VG_(disp_cp_chain_me_to_{slowEP,fastEP})[47:32], lsl 32 */
          /* movk x9, VG_(disp_cp_chain_me_to_{slowEP,fastEP})[63:48], lsl 48 */
          /* blr  x9 */
-         void* disp_cp_chain_me
+         const void* disp_cp_chain_me
                   = i->ARM64in.XDirect.toFastEP ? disp_cp_chain_me_to_fastEP 
                                                 : disp_cp_chain_me_to_slowEP;
          p = imm64_to_iregNo_EXACTLY4(p, /*x*/9,

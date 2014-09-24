@@ -2921,10 +2921,10 @@ Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
                      UChar* buf, Int nbuf, MIPSInstr* i,
                      Bool mode64,
                      VexEndness endness_host,
-                     void* disp_cp_chain_me_to_slowEP,
-                     void* disp_cp_chain_me_to_fastEP,
-                     void* disp_cp_xindir,
-                     void* disp_cp_xassisted )
+                     const void* disp_cp_chain_me_to_slowEP,
+                     const void* disp_cp_chain_me_to_fastEP,
+                     const void* disp_cp_xindir,
+                     const void* disp_cp_xassisted )
 {
    UChar *p = &buf[0];
    UChar *ptmp = p;
@@ -3439,7 +3439,7 @@ Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
             number of instructions (3) below. */
          /* move r9, VG_(disp_cp_chain_me_to_{slowEP,fastEP}) */
          /* jr  r9  */
-         void* disp_cp_chain_me
+         const void* disp_cp_chain_me
                   = i->Min.XDirect.toFastEP ? disp_cp_chain_me_to_fastEP
                                               : disp_cp_chain_me_to_slowEP;
          p = mkLoadImm_EXACTLY2or6(p, /*r*/ 9,

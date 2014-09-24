@@ -55,7 +55,7 @@
 static VexEndness host_endness;
 
 /* Pointer to the guest code area. */
-static UChar *guest_code;
+static const UChar *guest_code;
 
 /* CONST: The guest address for the instruction currently being
    translated. */
@@ -423,7 +423,7 @@ static UInt accumulatorGuestRegOffset(UInt acNo)
 
 /* Do a endian load of a 32-bit word, regardless of the endianness of the
    underlying host. */
-static inline UInt getUInt(UChar * p)
+static inline UInt getUInt(const UChar * p)
 {
    UInt w = 0;
 #if defined (_MIPSEL)
@@ -716,7 +716,7 @@ static UInt get_dspImm(UInt mipsins)
    return (0x03ff0000 & mipsins) >> 16;
 }
 
-static Bool branch_or_jump(UChar * addr)
+static Bool branch_or_jump(const UChar * addr)
 {
    UInt fmt;
    UInt cins = getUInt(addr);
@@ -782,7 +782,7 @@ static Bool branch_or_jump(UChar * addr)
    return False;
 }
 
-static Bool is_Branch_or_Jump_and_Link(UChar * addr)
+static Bool is_Branch_or_Jump_and_Link(const UChar * addr)
 {
    UInt cins = getUInt(addr);
 
@@ -813,7 +813,7 @@ static Bool is_Branch_or_Jump_and_Link(UChar * addr)
    return False;
 }
 
-static Bool branch_or_link_likely(UChar * addr)
+static Bool branch_or_link_likely(const UChar * addr)
 {
    UInt cins = getUInt(addr);
    UInt opcode = get_opcode(cins);
@@ -12045,7 +12045,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
    delay_slot_branch = likely_delay_slot = delay_slot_jump = False;
 
-   UChar *code = (UChar *) (guest_code + delta);
+   const UChar *code = guest_code + delta;
    cins = getUInt(code);
    DIP("\t0x%lx:\t0x%08x\t", (long)guest_PC_curr_instr, cins);
 
@@ -17242,7 +17242,7 @@ DisResult disInstr_MIPS( IRSB*        irsb_IN,
                          Bool         (*resteerOkFn) ( void *, Addr64 ),
                          Bool         resteerCisOk,
                          void*        callback_opaque,
-                         UChar*       guest_code_IN,
+                         const UChar* guest_code_IN,
                          Long         delta,
                          Addr64       guest_IP,
                          VexArch      guest_arch,

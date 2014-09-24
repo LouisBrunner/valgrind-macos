@@ -205,7 +205,7 @@
 static VexEndness host_endness;
 
 /* Pointer to the guest code area. */
-static UChar* guest_code;
+static const UChar* guest_code;
 
 /* The guest address corresponding to guest_code[0]. */
 static Addr64 guest_CIA_bbstart;
@@ -553,7 +553,7 @@ static ULong extend_s_32to64 ( UInt x )
 
 /* Do a proper-endian load of a 32-bit word, regardless of the endianness
    of the underlying host. */
-static UInt getUIntPPCendianly ( UChar* p )
+static UInt getUIntPPCendianly ( const UChar* p )
 {
    UInt w = 0;
    if (host_endness == VexEndnessBE) {
@@ -18756,7 +18756,7 @@ DisResult disInstr_PPC_WRK (
    /* At least this is simple on PPC32: insns are all 4 bytes long, and
       4-aligned.  So just fish the whole thing out of memory right now
       and have done. */
-   theInstr = getUIntPPCendianly( (UChar*)(&guest_code[delta]) );
+   theInstr = getUIntPPCendianly( &guest_code[delta] );
 
    if (0) vex_printf("insn: 0x%x\n", theInstr);
 
@@ -18764,7 +18764,7 @@ DisResult disInstr_PPC_WRK (
 
    /* Spot "Special" instructions (see comment at top of file). */
    {
-      UChar* code = (UChar*)(guest_code + delta);
+      const UChar* code = guest_code + delta;
       /* Spot the 16-byte preamble: 
          32-bit mode:
             5400183E  rlwinm 0,0,3,0,31
@@ -19555,7 +19555,7 @@ DisResult disInstr_PPC_WRK (
       case 0x32E: case 0x34E: case 0x36E: // tabortdc., tabortwci., tabortdci.
       case 0x38E: case 0x3AE: case 0x3EE: // tabort., treclaim., trechkpt.
       if (dis_transactional_memory( theInstr,
-                                    getUIntPPCendianly( (UChar*)(&guest_code[delta + 4])),
+                                    getUIntPPCendianly( &guest_code[delta + 4]),
                                     abiinfo, &dres,
                                     resteerOkFn, callback_opaque))
             goto decode_success;
@@ -20169,7 +20169,7 @@ DisResult disInstr_PPC ( IRSB*        irsb_IN,
                          Bool         (*resteerOkFn) ( void*, Addr64 ),
                          Bool         resteerCisOk,
                          void*        callback_opaque,
-                         UChar*       guest_code_IN,
+                         const UChar* guest_code_IN,
                          Long         delta,
                          Addr64       guest_IP,
                          VexArch      guest_arch,

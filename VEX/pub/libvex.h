@@ -642,7 +642,7 @@ typedef
 
       /* IN: the block to translate, and its guest address. */
       /* where are the actual bytes in the host's address space? */
-      UChar*  guest_bytes;
+      const UChar*  guest_bytes;
       /* where do the bytes really come from in the guest's aspace?
          This is the post-redirection guest address.  Not that Vex
          understands anything about redirection; that is all done on
@@ -743,10 +743,10 @@ typedef
 
          FIXME: update this comment
       */
-      void* disp_cp_chain_me_to_slowEP;
-      void* disp_cp_chain_me_to_fastEP;
-      void* disp_cp_xindir;
-      void* disp_cp_xassisted;
+      const void* disp_cp_chain_me_to_slowEP;
+      const void* disp_cp_chain_me_to_fastEP;
+      const void* disp_cp_xindir;
+      const void* disp_cp_xassisted;
    }
    VexTranslateArgs;
 

@@ -222,7 +222,8 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
                                   Int, Int, Bool, Bool, Addr64 );
    Int          (*emit)         ( /*MB_MOD*/Bool*,
                                   UChar*, Int, HInstr*, Bool, VexEndness,
-                                  void*, void*, void*, void* );
+                                  const void*, const void*, const void*,
+                                  const void* );
    IRExpr*      (*specHelper)   ( const HChar*, IRExpr**, IRStmt**, Int );
    Bool         (*preciseMemExnsFn) ( Int, Int );
 
@@ -308,7 +309,8 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          ppReg        = (void(*)(HReg)) ppHRegX86;
          iselSB       = iselSB_X86;
          emit         = (Int(*)(Bool*,UChar*,Int,HInstr*,Bool,VexEndness,
-                               void*,void*,void*,void*))
+                                const void*,const void*,const void*,
+                                const void*))
                         emit_X86Instr;
          host_word_type    = Ity_I32;
          vassert(are_valid_hwcaps(VexArchX86, vta->archinfo_host.hwcaps));
@@ -331,7 +333,8 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          ppReg       = (void(*)(HReg)) ppHRegAMD64;
          iselSB      = iselSB_AMD64;
          emit        = (Int(*)(Bool*,UChar*,Int,HInstr*,Bool,VexEndness,
-                               void*,void*,void*,void*))
+                               const void*,const void*,const void*,
+                               const void*))
                        emit_AMD64Instr;
          host_word_type    = Ity_I64;
          vassert(are_valid_hwcaps(VexArchAMD64, vta->archinfo_host.hwcaps));
@@ -351,7 +354,8 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          ppReg       = (void(*)(HReg)) ppHRegPPC;
          iselSB      = iselSB_PPC;
          emit        = (Int(*)(Bool*,UChar*,Int,HInstr*,Bool,VexEndness,
-                               void*,void*,void*,void*))
+                               const void*,const void*,const void*,
+                               const void*))
                        emit_PPCInstr;
          host_word_type    = Ity_I32;
          vassert(are_valid_hwcaps(VexArchPPC32, vta->archinfo_host.hwcaps));
@@ -371,7 +375,8 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          ppReg       = (void(*)(HReg)) ppHRegPPC;
          iselSB      = iselSB_PPC;
          emit        = (Int(*)(Bool*,UChar*,Int,HInstr*,Bool,VexEndness,
-                               void*,void*,void*,void*))
+                               const void*,const void*,const void*,
+                               const void*))
                        emit_PPCInstr;
          host_word_type    = Ity_I64;
          vassert(are_valid_hwcaps(VexArchPPC64, vta->archinfo_host.hwcaps));
@@ -392,7 +397,9 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          ppReg       = (void(*)(HReg)) ppHRegS390;
          iselSB      = iselSB_S390;
          emit        = (Int(*)(Bool*,UChar*,Int,HInstr*,Bool,VexEndness,
-                               void*,void*,void*,void*)) emit_S390Instr;
+                               const void*,const void*,const void*,
+                               const void*))
+                               emit_S390Instr;
          host_word_type    = Ity_I64;
          vassert(are_valid_hwcaps(VexArchS390X, vta->archinfo_host.hwcaps));
          vassert(vta->archinfo_host.endness == VexEndnessBE);
@@ -411,7 +418,8 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          ppReg       = (void(*)(HReg)) ppHRegARM;
          iselSB      = iselSB_ARM;
          emit        = (Int(*)(Bool*,UChar*,Int,HInstr*,Bool,VexEndness,
-                               void*,void*,void*,void*))
+                               const void*,const void*,const void*,
+                               const void*))
                        emit_ARMInstr;
          host_word_type    = Ity_I32;
          vassert(are_valid_hwcaps(VexArchARM, vta->archinfo_host.hwcaps));
@@ -435,7 +443,8 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          ppReg       = (void(*)(HReg)) ppHRegARM64;
          iselSB      = iselSB_ARM64;
          emit        = (Int(*)(Bool*,UChar*,Int,HInstr*,Bool,VexEndness,
-                               void*,void*,void*,void*))
+                               const void*,const void*,const void*,
+                               const void*))
                        emit_ARM64Instr;
          host_word_type    = Ity_I64;
          vassert(are_valid_hwcaps(VexArchARM64, vta->archinfo_host.hwcaps));
@@ -455,7 +464,8 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          ppReg       = (void(*)(HReg)) ppHRegMIPS;
          iselSB      = iselSB_MIPS;
          emit        = (Int(*)(Bool*,UChar*,Int,HInstr*,Bool,VexEndness,
-                               void*,void*,void*,void*))
+                               const void*,const void*,const void*,
+                               const void*))
                        emit_MIPSInstr;
          host_word_type    = Ity_I32;
          vassert(are_valid_hwcaps(VexArchMIPS32, vta->archinfo_host.hwcaps));
@@ -476,7 +486,8 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          ppReg       = (void(*)(HReg)) ppHRegMIPS;
          iselSB      = iselSB_MIPS;
          emit        = (Int(*)(Bool*,UChar*,Int,HInstr*,Bool,VexEndness,
-                               void*,void*,void*,void*))
+                               const void*,const void*,const void*,
+                               const void*))
                        emit_MIPSInstr;
          host_word_type    = Ity_I64;
          vassert(are_valid_hwcaps(VexArchMIPS64, vta->archinfo_host.hwcaps));
@@ -754,7 +765,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          vex_printf("can't show code due to extents > 1\n");
       } else {
          /* HACK */
-         UChar* p = (UChar*)vta->guest_bytes;
+         const UChar* p = vta->guest_bytes;
          UInt   sum = 0;
          UInt   guest_bytes_read = (UInt)vta->guest_extents->len[0];
          vex_printf("GuestBytes %llx %u ", vta->guest_bytes_addr, 

@@ -736,7 +736,8 @@ void  getRegUsage_S390Instr( HRegUsage *, s390_insn *, Bool );
 void  mapRegs_S390Instr    ( HRegRemap *, s390_insn *, Bool );
 Bool  isMove_S390Instr     ( s390_insn *, HReg *, HReg * );
 Int   emit_S390Instr       ( Bool *, UChar *, Int, s390_insn *, Bool,
-                             VexEndness, void *, void *, void *, void *);
+                             VexEndness, const void *, const void *,
+                             const void *, const void *);
 void  getAllocableRegs_S390( Int *, HReg **, Bool );
 void  genSpill_S390        ( HInstr **, HInstr **, HReg , Int , Bool );
 void  genReload_S390       ( HInstr **, HInstr **, HReg , Int , Bool );

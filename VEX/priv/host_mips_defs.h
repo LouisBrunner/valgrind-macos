@@ -712,14 +712,14 @@ extern void ppMIPSInstr(MIPSInstr *, Bool mode64);
 extern void       getRegUsage_MIPSInstr (HRegUsage *, MIPSInstr *, Bool);
 extern void       mapRegs_MIPSInstr     (HRegRemap *, MIPSInstr *, Bool mode64);
 extern Bool       isMove_MIPSInstr      (MIPSInstr *, HReg *, HReg *);
-extern Int        emit_MIPSInstr        (/*MB_MOD*/Bool* is_profInc,
-                                         UChar* buf, Int nbuf, MIPSInstr* i,
-                                         Bool mode64,
-                                         VexEndness endness_host,
-                                         void* disp_cp_chain_me_to_slowEP,
-                                         void* disp_cp_chain_me_to_fastEP,
-                                         void* disp_cp_xindir,
-                                         void* disp_cp_xassisted );
+extern Int        emit_MIPSInstr (/*MB_MOD*/Bool* is_profInc,
+                                  UChar* buf, Int nbuf, MIPSInstr* i,
+                                  Bool mode64,
+                                  VexEndness endness_host,
+                                  const void* disp_cp_chain_me_to_slowEP,
+                                  const void* disp_cp_chain_me_to_fastEP,
+                                  const void* disp_cp_xindir,
+                                  const void* disp_cp_xassisted );
 
 extern void genSpill_MIPS ( /*OUT*/ HInstr ** i1, /*OUT*/ HInstr ** i2,
                             HReg rreg, Int offset, Bool);

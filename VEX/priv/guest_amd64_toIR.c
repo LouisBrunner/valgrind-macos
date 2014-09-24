@@ -189,7 +189,7 @@ static VexEndness host_endness;
 
 /* Pointer to the guest code area (points to start of BB, not to the
    insn being processed). */
-static UChar* guest_code;
+static const UChar* guest_code;
 
 /* The guest address corresponding to guest_code[0]. */
 static Addr64 guest_RIP_bbstart;
@@ -9868,7 +9868,7 @@ static void gen_SEGV_if_not_32_aligned ( IRTemp effective_addr ) {
 
    Same for BTS, BTR
 */
-static Bool can_be_used_with_LOCK_prefix ( UChar* opc )
+static Bool can_be_used_with_LOCK_prefix ( const UChar* opc )
 {
    switch (opc[0]) {
       case 0x00: case 0x01: case 0x08: case 0x09:
@@ -31167,7 +31167,7 @@ DisResult disInstr_AMD64_WRK (
 
    /* Spot "Special" instructions (see comment at top of file). */
    {
-      UChar* code = (UChar*)(guest_code + delta);
+      const UChar* code = guest_code + delta;
       /* Spot the 16-byte preamble:
          48C1C703   rolq $3,  %rdi
          48C1C70D   rolq $13, %rdi
@@ -31379,7 +31379,7 @@ DisResult disInstr_AMD64_WRK (
       leading escapes.  Check that any LOCK prefix is actually
       allowed. */
    if (haveLOCK(pfx)) {
-      if (can_be_used_with_LOCK_prefix( (UChar*)&guest_code[delta] )) {
+      if (can_be_used_with_LOCK_prefix( &guest_code[delta] )) {
          DIP("lock ");
       } else {
          *expect_CAS = False;
@@ -31500,7 +31500,7 @@ DisResult disInstr_AMD64_WRK (
       SSE2 as a minimum so there is no point distinguishing SSE1 vs
       SSE2. */
 
-   insn = (UChar*)&guest_code[delta];
+   insn = &guest_code[delta];
 
    /* FXSAVE is spuriously at the start here only because it is
       thusly placed in guest-x86/toIR.c. */
@@ -31757,7 +31757,7 @@ DisResult disInstr_AMD64 ( IRSB*        irsb_IN,
                            Bool         (*resteerOkFn) ( void*, Addr64 ),
                            Bool         resteerCisOk,
                            void*        callback_opaque,
-                           UChar*       guest_code_IN,
+                           const UChar* guest_code_IN,
                            Long         delta,
                            Addr64       guest_IP,
                            VexArch      guest_arch,

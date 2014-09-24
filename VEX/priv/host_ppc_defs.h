@@ -1135,14 +1135,14 @@ extern void ppPPCInstr(PPCInstr*, Bool mode64);
 extern void         getRegUsage_PPCInstr ( HRegUsage*, PPCInstr*, Bool mode64 );
 extern void         mapRegs_PPCInstr     ( HRegRemap*, PPCInstr* , Bool mode64);
 extern Bool         isMove_PPCInstr      ( PPCInstr*, HReg*, HReg* );
-extern Int          emit_PPCInstr        ( /*MB_MOD*/Bool* is_profInc,
-                                           UChar* buf, Int nbuf, PPCInstr* i, 
-                                           Bool mode64,
-                                           VexEndness endness_host,
-                                           void* disp_cp_chain_me_to_slowEP,
-                                           void* disp_cp_chain_me_to_fastEP,
-                                           void* disp_cp_xindir,
-                                           void* disp_cp_xassisted );
+extern Int          emit_PPCInstr   ( /*MB_MOD*/Bool* is_profInc,
+                                      UChar* buf, Int nbuf, PPCInstr* i, 
+                                      Bool mode64,
+                                      VexEndness endness_host,
+                                      const void* disp_cp_chain_me_to_slowEP,
+                                      const void* disp_cp_chain_me_to_fastEP,
+                                      const void* disp_cp_xindir,
+                                      const void* disp_cp_xassisted );
 
 extern void genSpill_PPC  ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
                             HReg rreg, Int offsetB, Bool mode64 );

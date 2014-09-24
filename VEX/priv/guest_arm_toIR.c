@@ -190,7 +190,7 @@ static IRTemp r15kind;
 
 /* Do a little-endian load of a 32-bit word, regardless of the
    endianness of the underlying host. */
-static inline UInt getUIntLittleEndianly ( UChar* p )
+static inline UInt getUIntLittleEndianly ( const UChar* p )
 {
    UInt w = 0;
    w = (w << 8) | p[3];
@@ -202,7 +202,7 @@ static inline UInt getUIntLittleEndianly ( UChar* p )
 
 /* Do a little-endian load of a 16-bit word, regardless of the
    endianness of the underlying host. */
-static inline UShort getUShortLittleEndianly ( UChar* p )
+static inline UShort getUShortLittleEndianly ( const UChar* p )
 {
    UShort w = 0;
    w = (w << 8) | p[1];
@@ -14546,7 +14546,7 @@ DisResult disInstr_ARM_WRK (
              Bool         (*resteerOkFn) ( /*opaque*/void*, Addr64 ),
              Bool         resteerCisOk,
              void*        callback_opaque,
-             UChar*       guest_instr,
+             const UChar* guest_instr,
              VexArchInfo* archinfo,
              VexAbiInfo*  abiinfo,
              Bool         sigill_diag
@@ -14595,7 +14595,7 @@ DisResult disInstr_ARM_WRK (
 
    /* Spot "Special" instructions (see comment at top of file). */
    {
-      UChar* code = (UChar*)guest_instr;
+      const UChar* code = guest_instr;
       /* Spot the 16-byte preamble: 
 
          e1a0c1ec  mov r12, r12, ROR #3
@@ -17378,7 +17378,7 @@ DisResult disInstr_THUMB_WRK (
              Bool         (*resteerOkFn) ( /*opaque*/void*, Addr64 ),
              Bool         resteerCisOk,
              void*        callback_opaque,
-             UChar*       guest_instr,
+             const UChar* guest_instr,
              VexArchInfo* archinfo,
              VexAbiInfo*  abiinfo,
              Bool         sigill_diag
@@ -17437,7 +17437,7 @@ DisResult disInstr_THUMB_WRK (
    /* ----------------------------------------------------------- */
    /* Spot "Special" instructions (see comment at top of file). */
    {
-      UChar* code = (UChar*)guest_instr;
+      const UChar* code = guest_instr;
       /* Spot the 16-byte preamble: 
 
          ea4f 0cfc  mov.w   ip, ip, ror #3
@@ -21974,7 +21974,7 @@ DisResult disInstr_ARM ( IRSB*        irsb_IN,
                          Bool         (*resteerOkFn) ( void*, Addr64 ),
                          Bool         resteerCisOk,
                          void*        callback_opaque,
-                         UChar*       guest_code_IN,
+                         const UChar* guest_code_IN,
                          Long         delta_ENCODED,
                          Addr64       guest_IP_ENCODED,
                          VexArch      guest_arch,

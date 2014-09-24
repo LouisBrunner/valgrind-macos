@@ -137,7 +137,7 @@ typedef
       /*IN*/  void*        callback_opaque,
 
       /* Where is the guest code? */
-      /*IN*/  UChar*       guest_code,
+      /*IN*/  const UChar* guest_code,
 
       /* Where is the actual insn?  Note: it's at &guest_code[delta] */
       /*IN*/  Long         delta,
@@ -173,7 +173,7 @@ IRSB* bb_to_IR (
          /*OUT*/UInt*            n_guest_instrs, /* stats only */
          /*IN*/ void*            callback_opaque,
          /*IN*/ DisOneInstrFn    dis_instr_fn,
-         /*IN*/ UChar*           guest_code,
+         /*IN*/ const UChar*     guest_code,
          /*IN*/ Addr64           guest_IP_bbstart,
          /*IN*/ Bool             (*chase_into_ok)(void*,Addr64),
          /*IN*/ VexEndness       host_endness,

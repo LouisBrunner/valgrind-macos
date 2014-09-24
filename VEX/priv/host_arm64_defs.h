@@ -924,10 +924,10 @@ extern Int  emit_ARM64Instr        ( /*MB_MOD*/Bool* is_profInc,
                                      UChar* buf, Int nbuf, ARM64Instr* i,
                                      Bool mode64,
                                      VexEndness endness_host,
-                                     void* disp_cp_chain_me_to_slowEP,
-                                     void* disp_cp_chain_me_to_fastEP,
-                                     void* disp_cp_xindir,
-                                     void* disp_cp_xassisted );
+                                     const void* disp_cp_chain_me_to_slowEP,
+                                     const void* disp_cp_chain_me_to_fastEP,
+                                     const void* disp_cp_xindir,
+                                     const void* disp_cp_xassisted );
 
 extern void genSpill_ARM64  ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
                               HReg rreg, Int offset, Bool );

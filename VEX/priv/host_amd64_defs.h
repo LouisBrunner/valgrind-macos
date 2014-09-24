@@ -753,15 +753,15 @@ extern void ppAMD64Instr ( AMD64Instr*, Bool );
 extern void         getRegUsage_AMD64Instr ( HRegUsage*, AMD64Instr*, Bool );
 extern void         mapRegs_AMD64Instr     ( HRegRemap*, AMD64Instr*, Bool );
 extern Bool         isMove_AMD64Instr      ( AMD64Instr*, HReg*, HReg* );
-extern Int          emit_AMD64Instr        ( /*MB_MOD*/Bool* is_profInc,
-                                             UChar* buf, Int nbuf,
-                                             AMD64Instr* i, 
-                                             Bool mode64,
-                                             VexEndness endness_host,
-                                             void* disp_cp_chain_me_to_slowEP,
-                                             void* disp_cp_chain_me_to_fastEP,
-                                             void* disp_cp_xindir,
-                                             void* disp_cp_xassisted );
+extern Int          emit_AMD64Instr   ( /*MB_MOD*/Bool* is_profInc,
+                                        UChar* buf, Int nbuf,
+                                        AMD64Instr* i, 
+                                        Bool mode64,
+                                        VexEndness endness_host,
+                                        const void* disp_cp_chain_me_to_slowEP,
+                                        const void* disp_cp_chain_me_to_fastEP,
+                                        const void* disp_cp_xindir,
+                                        const void* disp_cp_xassisted );
 
 extern void genSpill_AMD64  ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
                               HReg rreg, Int offset, Bool );

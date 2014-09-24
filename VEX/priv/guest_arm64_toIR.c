@@ -152,7 +152,7 @@ static IRSB* irsb;
 
 /* Do a little-endian load of a 32-bit word, regardless of the
    endianness of the underlying host. */
-static inline UInt getUIntLittleEndianly ( UChar* p )
+static inline UInt getUIntLittleEndianly ( const UChar* p )
 {
    UInt w = 0;
    w = (w << 8) | p[3];
@@ -11230,7 +11230,7 @@ Bool disInstr_ARM64_WRK (
         Bool         (*resteerOkFn) ( /*opaque*/void*, Addr64 ),
         Bool         resteerCisOk,
         void*        callback_opaque,
-        UChar*       guest_instr,
+        const UChar* guest_instr,
         VexArchInfo* archinfo,
         VexAbiInfo*  abiinfo
      )
@@ -11271,7 +11271,7 @@ Bool disInstr_ARM64_WRK (
 
    /* Spot "Special" instructions (see comment at top of file). */
    {
-      UChar* code = (UChar*)guest_instr;
+      const UChar* code = guest_instr;
       /* Spot the 16-byte preamble: 
             93CC0D8C   ror x12, x12, #3
             93CC358C   ror x12, x12, #13
@@ -11409,7 +11409,7 @@ DisResult disInstr_ARM64 ( IRSB*        irsb_IN,
                            Bool         (*resteerOkFn) ( void*, Addr64 ),
                            Bool         resteerCisOk,
                            void*        callback_opaque,
-                           UChar*       guest_code_IN,
+                           const UChar* guest_code_IN,
                            Long         delta_IN,
                            Addr64       guest_IP,
                            VexArch      guest_arch,
@@ -11436,7 +11436,7 @@ DisResult disInstr_ARM64 ( IRSB*        irsb_IN,
    /* Try to decode */
    Bool ok = disInstr_ARM64_WRK( &dres,
                                  resteerOkFn, resteerCisOk, callback_opaque,
-                                 (UChar*)&guest_code_IN[delta_IN],
+                                 &guest_code_IN[delta_IN],
                                  archinfo, abiinfo );
    if (ok) {
       /* All decode successes end up here. */
@@ -11461,7 +11461,7 @@ DisResult disInstr_ARM64 ( IRSB*        irsb_IN,
          Int   i, j;
          UChar buf[64];
          UInt  insn
-                  = getUIntLittleEndianly( (UChar*)&guest_code_IN[delta_IN] );
+                  = getUIntLittleEndianly( &guest_code_IN[delta_IN] );
          vex_bzero(buf, sizeof(buf));
          for (i = j = 0; i < 32; i++) {
             if (i > 0) {

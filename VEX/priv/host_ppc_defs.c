@@ -3751,10 +3751,10 @@ static UChar* mkFormVA ( UChar* p, UInt opc1, UInt r1, UInt r2,
 Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
                     UChar* buf, Int nbuf, PPCInstr* i, 
                     Bool mode64, VexEndness endness_host,
-                    void* disp_cp_chain_me_to_slowEP,
-                    void* disp_cp_chain_me_to_fastEP,
-                    void* disp_cp_xindir,
-                    void* disp_cp_xassisted)
+                    const void* disp_cp_chain_me_to_slowEP,
+                    const void* disp_cp_chain_me_to_fastEP,
+                    const void* disp_cp_xindir,
+                    const void* disp_cp_xassisted)
 {
    UChar* p = &buf[0];
    vassert(nbuf >= 32);
@@ -4208,7 +4208,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
          the first patchable byte.  So: don't change the number of
          instructions (32-bit: 4, 64-bit: 7) below. */
       /* imm32/64-fixed r30, VG_(disp_cp_chain_me_to_{slowEP,fastEP} */
-      void* disp_cp_chain_me
+      const void* disp_cp_chain_me
                = i->Pin.XDirect.toFastEP ? disp_cp_chain_me_to_fastEP 
                                          : disp_cp_chain_me_to_slowEP;
       p = mkLoadImm_EXACTLY2or5(

@@ -9601,8 +9601,8 @@ s390_tchain_patch_load64(UChar *code, ULong imm64)
    chainXDirect_S390 and unchainXDirect_S390 below. */
 static UChar *
 s390_insn_xdirect_emit(UChar *buf, const s390_insn *insn,
-                       void *disp_cp_chain_me_to_slowEP,
-                       void *disp_cp_chain_me_to_fastEP)
+                       const void *disp_cp_chain_me_to_slowEP,
+                       const void *disp_cp_chain_me_to_fastEP)
 {
    /* We're generating chain-me requests here, so we need to be
       sure this is actually allowed -- no-redir translations can't
@@ -9641,7 +9641,7 @@ s390_insn_xdirect_emit(UChar *buf, const s390_insn *insn,
    buf = s390_emit_STG(buf, R0, 0, b, DISP20(d));
 
    /* Load the chosen entry point into the scratch reg */
-   void *disp_cp_chain_me;
+   const void *disp_cp_chain_me;
 
    disp_cp_chain_me =
       insn->variant.xdirect.to_fast_entry ? disp_cp_chain_me_to_fastEP 
@@ -9681,7 +9681,8 @@ s390_xdirect_patchable_len(void)
 
 
 static UChar *
-s390_insn_xindir_emit(UChar *buf, const s390_insn *insn, void *disp_cp_xindir)
+s390_insn_xindir_emit(UChar *buf, const s390_insn *insn,
+                      const void *disp_cp_xindir)
 {
    /* We're generating transfers that could lead indirectly to a
       chain-me, so we need to be sure this is actually allowed --
@@ -9741,7 +9742,7 @@ s390_insn_xindir_emit(UChar *buf, const s390_insn *insn, void *disp_cp_xindir)
 
 static UChar *
 s390_insn_xassisted_emit(UChar *buf, const s390_insn *insn,
-                         void *disp_cp_xassisted)
+                         const void *disp_cp_xassisted)
 {
    /* Use ptmp for backpatching conditional jumps. */
    UChar *ptmp = buf;
@@ -9898,9 +9899,10 @@ s390_insn_profinc_emit(UChar *buf,
 Int
 emit_S390Instr(Bool *is_profinc, UChar *buf, Int nbuf, s390_insn *insn,
                Bool mode64, VexEndness endness_host,
-               void *disp_cp_chain_me_to_slowEP,
-               void *disp_cp_chain_me_to_fastEP, void *disp_cp_xindir,
-               void *disp_cp_xassisted)
+               const void *disp_cp_chain_me_to_slowEP,
+               const void *disp_cp_chain_me_to_fastEP,
+               const void *disp_cp_xindir,
+               const void *disp_cp_xassisted)
 {
    UChar *end;
 

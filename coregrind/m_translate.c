@@ -59,7 +59,7 @@
 
 #include "pub_core_execontext.h"  // VG_(make_depth_1_ExeContext_from_Addr)
 
-#include "pub_core_gdbserver.h"   // VG_(tool_instrument_then_gdbserver_if_needed)
+#include "pub_core_gdbserver.h"   // VG_(instrument_for_gdbserver_if_needed)
 
 #include "libvex_emnote.h"        // For PPC, EmWarn_PPC64_redir_underflow
 
@@ -219,10 +219,10 @@ static IRExpr* mk_ecu_Expr ( Addr64 guest_IP )
 */
 static
 IRSB* tool_instrument_then_gdbserver_if_needed ( VgCallbackClosure* closureV,
-                                                 IRSB*              sb_in, 
-                                                 VexGuestLayout*    layout, 
-                                                 VexGuestExtents*   vge,
-                                                 VexArchInfo*       vai,
+                                                 IRSB*              sb_in,
+                                                 const VexGuestLayout*  layout,
+                                                 const VexGuestExtents* vge,
+                                                 const VexArchInfo*     vai,
                                                  IRType             gWordTy, 
                                                  IRType             hWordTy )
 {
@@ -261,9 +261,9 @@ IRSB* tool_instrument_then_gdbserver_if_needed ( VgCallbackClosure* closureV,
 static
 IRSB* vg_SP_update_pass ( void*             closureV,
                           IRSB*             sb_in, 
-                          VexGuestLayout*   layout, 
-                          VexGuestExtents*  vge,
-                          VexArchInfo*      vai,
+                          const VexGuestLayout*   layout, 
+                          const VexGuestExtents*  vge,
+                          const VexArchInfo*      vai,
                           IRType            gWordTy, 
                           IRType            hWordTy )
 {
@@ -776,7 +776,7 @@ static Bool translations_allowable_from_seg ( NSegment const* seg, Addr addr )
    return convention. */
 
 static UInt needs_self_check ( void* closureV,
-                               VexGuestExtents* vge )
+                               const VexGuestExtents* vge )
 {
    VgCallbackClosure* closure = (VgCallbackClosure*)closureV;
    UInt i, bitset;
@@ -1622,16 +1622,16 @@ Bool VG_(translate) ( ThreadId tid,
         They are entirely legal but longwinded so as to maximise the
         chance of the C typechecker picking up any type snafus. */
      IRSB*(*f)(VgCallbackClosure*,
-               IRSB*,VexGuestLayout*,VexGuestExtents*, VexArchInfo*,
-               IRType,IRType)
+               IRSB*,const VexGuestLayout*,const VexGuestExtents*,
+               const VexArchInfo*,IRType,IRType)
         = VG_(clo_vgdb) != Vg_VgdbNo
              ? tool_instrument_then_gdbserver_if_needed
              : VG_(tdict).tool_instrument;
      IRSB*(*g)(void*,
-               IRSB*,VexGuestLayout*,VexGuestExtents*,VexArchInfo*,
-               IRType,IRType)
-       = (IRSB*(*)(void*,IRSB*,VexGuestLayout*,VexGuestExtents*,
-                   VexArchInfo*,IRType,IRType))f;
+               IRSB*,const VexGuestLayout*,const VexGuestExtents*,
+               const VexArchInfo*,IRType,IRType)
+       = (IRSB*(*)(void*,IRSB*,const VexGuestLayout*,
+                   const VexGuestExtents*, const VexArchInfo*,IRType,IRType))f;
      vta.instrument1     = g;
    }
    /* No need for type kludgery here. */

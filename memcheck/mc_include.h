@@ -657,9 +657,9 @@ VG_REGPARM(1) UWord MC_(helperc_b_load32)( Addr a );
 /* Functions defined in mc_translate.c */
 IRSB* MC_(instrument) ( VgCallbackClosure* closure,
                         IRSB* bb_in, 
-                        VexGuestLayout* layout, 
-                        VexGuestExtents* vge,
-                        VexArchInfo* archinfo_host,
+                        const VexGuestLayout* layout, 
+                        const VexGuestExtents* vge,
+                        const VexArchInfo* archinfo_host,
                         IRType gWordTy, IRType hWordTy );
 
 IRSB* MC_(final_tidy) ( IRSB* );

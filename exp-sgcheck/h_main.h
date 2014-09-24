@@ -70,9 +70,9 @@ SizeT h_replace_malloc_usable_size ( ThreadId tid, void* p );
 /* Note that this also does the sg_ instrumentation. */
 IRSB* h_instrument ( VgCallbackClosure* closure,
                      IRSB* sbIn,
-                     VexGuestLayout* layout,
-                     VexGuestExtents* vge,
-                     VexArchInfo* archinfo_host,
+                     const VexGuestLayout* layout,
+                     const VexGuestExtents* vge,
+                     const VexArchInfo* archinfo_host,
                      IRType gWordTy, IRType hWordTy );
 
 #endif

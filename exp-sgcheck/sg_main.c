@@ -2079,7 +2079,7 @@ struct _SGEnv {
 
 static IRTemp gen_Get_SP ( struct _SGEnv*  sge,
                            IRSB*           bbOut,
-                           VexGuestLayout* layout,
+                           const VexGuestLayout* layout,
                            Int             hWordTy_szB )
 {
    IRExpr* sp_expr;
@@ -2097,7 +2097,7 @@ static IRTemp gen_Get_SP ( struct _SGEnv*  sge,
 
 static IRTemp gen_Get_FP ( struct _SGEnv*  sge,
                            IRSB*           bbOut,
-                           VexGuestLayout* layout,
+                           const VexGuestLayout* layout,
                            Int             hWordTy_szB )
 {
    IRExpr* fp_expr;
@@ -2120,7 +2120,7 @@ static void instrument_mem_access ( struct _SGEnv* sge,
                                     Bool    isStore,
                                     Int     hWordTy_szB,
                                     Addr    curr_IP,
-                                    VexGuestLayout* layout )
+                                    const VexGuestLayout* layout )
 {
    IRType  tyAddr      = Ity_INVALID;
    XArray* frameBlocks = NULL;
@@ -2198,7 +2198,7 @@ void sg_instrument_fini ( struct _SGEnv * env )
 void sg_instrument_IRStmt ( /*MOD*/struct _SGEnv * env, 
                             /*MOD*/IRSB* sbOut,
                             IRStmt* st,
-                            VexGuestLayout* layout,
+                            const VexGuestLayout* layout,
                             IRType gWordTy, IRType hWordTy )
 {
    if (!sg_clo_enable_sg_checks)
@@ -2333,7 +2333,7 @@ void sg_instrument_final_jump ( /*MOD*/struct _SGEnv * env,
                                 /*MOD*/IRSB* sbOut,
                                 IRExpr* next,
                                 IRJumpKind jumpkind,
-                                VexGuestLayout* layout,
+                                const VexGuestLayout* layout,
                                 IRType gWordTy, IRType hWordTy )
 {
    if (!sg_clo_enable_sg_checks)

@@ -652,9 +652,9 @@ static void lk_post_clo_init(void)
 static
 IRSB* lk_instrument ( VgCallbackClosure* closure,
                       IRSB* sbIn, 
-                      VexGuestLayout* layout, 
-                      VexGuestExtents* vge,
-                      VexArchInfo* archinfo_host,
+                      const VexGuestLayout* layout, 
+                      const VexGuestExtents* vge,
+                      const VexArchInfo* archinfo_host,
                       IRType gWordTy, IRType hWordTy )
 {
    IRDirty*   di;

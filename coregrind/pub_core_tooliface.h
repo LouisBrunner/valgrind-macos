@@ -110,8 +110,8 @@ typedef struct {
    void  (*tool_post_clo_init)(void);
    IRSB* (*tool_instrument)   (VgCallbackClosure*,
                                IRSB*, 
-                               VexGuestLayout*, VexGuestExtents*, 
-                               VexArchInfo*, IRType, IRType);
+                               const VexGuestLayout*, const VexGuestExtents*, 
+                               const VexArchInfo*, IRType, IRType);
    void  (*tool_fini)         (Int);
 
    // VG_(needs).core_errors

@@ -345,10 +345,10 @@ static Int get_inst_type(Int len, Addr addr)
    /*    gWordTy = size of guest word    */
    /*    hWordTy = size of host word     */
 static IRSB* bbv_instrument ( VgCallbackClosure* closure,
-                             IRSB* sbIn, VexGuestLayout* layout,
-                             VexGuestExtents* vge,
-                             VexArchInfo* archinfo_host,
-                             IRType gWordTy, IRType hWordTy )
+                              IRSB* sbIn, const VexGuestLayout* layout,
+                              const VexGuestExtents* vge,
+                              const VexArchInfo* archinfo_host,
+                              IRType gWordTy, IRType hWordTy )
 {
    Int      i,n_instrs=1;
    IRSB     *sbOut;

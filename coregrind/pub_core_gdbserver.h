@@ -150,8 +150,8 @@ extern Bool VG_(client_monitor_command) (HChar* cmd);
    gdbserver. */
 extern IRSB* VG_(instrument_for_gdbserver_if_needed)
      (IRSB* sb_in,                   /* block to be instrumented */
-      VexGuestLayout* layout,
-      VexGuestExtents* vge,
+      const VexGuestLayout* layout,
+      const VexGuestExtents* vge,
       IRType gWordTy, IRType hWordTy);
 
 /* reason for which gdbserver connection must be finished */

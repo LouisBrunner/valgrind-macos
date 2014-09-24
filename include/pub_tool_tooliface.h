@@ -218,9 +218,9 @@ extern void VG_(basic_tool_funcs)(
    */
    IRSB*(*instrument)(VgCallbackClosure* closure, 
                       IRSB*              sb_in, 
-                      VexGuestLayout*    layout, 
-                      VexGuestExtents*   vge, 
-                      VexArchInfo*       archinfo_host,
+                      const VexGuestLayout*  layout, 
+                      const VexGuestExtents* vge, 
+                      const VexArchInfo*     archinfo_host,
                       IRType             gWordTy, 
                       IRType             hWordTy),
 

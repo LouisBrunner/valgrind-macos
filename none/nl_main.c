@@ -38,9 +38,9 @@ static void nl_post_clo_init(void)
 static
 IRSB* nl_instrument ( VgCallbackClosure* closure,
                       IRSB* bb,
-                      VexGuestLayout* layout, 
-                      VexGuestExtents* vge,
-                      VexArchInfo* archinfo_host,
+                      const VexGuestLayout* layout, 
+                      const VexGuestExtents* vge,
+                      const VexArchInfo* archinfo_host,
                       IRType gWordTy, IRType hWordTy )
 {
     return bb;

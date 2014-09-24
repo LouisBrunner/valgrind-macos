@@ -607,9 +607,9 @@ static IRTemp for_sg__newIRTemp_cb ( IRType ty, void* opaque )
 
 IRSB* h_instrument ( VgCallbackClosure* closure,
                      IRSB* sbIn,
-                     VexGuestLayout* layout,
-                     VexGuestExtents* vge,
-                     VexArchInfo* archinfo_host,
+                     const VexGuestLayout* layout,
+                     const VexGuestExtents* vge,
+                     const VexArchInfo* archinfo_host,
                      IRType gWordTy, IRType hWordTy )
 {
    Bool  verboze = 0||False;

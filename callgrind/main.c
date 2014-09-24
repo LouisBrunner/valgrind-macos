@@ -950,10 +950,10 @@ void addBBSetupCall(ClgState* clgs)
 
 static
 IRSB* CLG_(instrument)( VgCallbackClosure* closure,
-			IRSB* sbIn,
-			VexGuestLayout* layout,
-			VexGuestExtents* vge,
-                        VexArchInfo* archinfo_host,
+                        IRSB* sbIn,
+			const VexGuestLayout* layout,
+			const VexGuestExtents* vge,
+                        const VexArchInfo* archinfo_host,
 			IRType gWordTy, IRType hWordTy )
 {
    Int        i;

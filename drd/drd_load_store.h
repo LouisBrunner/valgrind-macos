@@ -41,9 +41,9 @@ Bool DRD_(get_first_race_only)(void);
 void DRD_(set_first_race_only)(const Bool fro);
 IRSB* DRD_(instrument)(VgCallbackClosure* const closure,
                        IRSB* const bb_in,
-                       VexGuestLayout* const layout,
-                       VexGuestExtents* const vge,
-                       VexArchInfo* const archinfo_host,
+                       const VexGuestLayout* const layout,
+                       const VexGuestExtents* const vge,
+                       const VexArchInfo* const archinfo_host,
                        IRType const gWordTy,
                        IRType const hWordTy);
 void DRD_(trace_mem_access)(const Addr addr, const SizeT size,

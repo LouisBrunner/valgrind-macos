@@ -483,7 +483,7 @@ Bool VG_(is_watched)(PointKind kind, Addr addr, Int szB)
 }
 
 /* Returns the reason for which gdbserver instrumentation is needed */
-static VgVgdb VG_(gdbserver_instrumentation_needed) (VexGuestExtents* vge)
+static VgVgdb VG_(gdbserver_instrumentation_needed) (const VexGuestExtents* vge)
 {
    GS_Address* g;
    int e;
@@ -1088,8 +1088,8 @@ void VG_(helperc_invalidate_if_not_gdbserved) ( Addr addr )
 
 static void VG_(add_stmt_call_invalidate_if_not_gdbserved)
      ( IRSB* sb_in,
-       VexGuestLayout* layout, 
-       VexGuestExtents* vge,
+       const VexGuestLayout* layout, 
+       const VexGuestExtents* vge,
        IRTemp jmp, 
        IRSB* irsb)
 {
@@ -1126,8 +1126,8 @@ static void VG_(add_stmt_call_invalidate_if_not_gdbserved)
    debugger statement will be inserted for all instructions of a block. */
 static void VG_(add_stmt_call_gdbserver) 
      (IRSB* sb_in,                /* block being translated */
-      VexGuestLayout* layout, 
-      VexGuestExtents* vge,
+      const VexGuestLayout* layout, 
+      const VexGuestExtents* vge,
       IRType gWordTy, IRType hWordTy,
       Addr  iaddr,                /* Addr of instruction being instrumented */
       UChar delta,                /* delta to add to iaddr to obtain IP */
@@ -1201,8 +1201,8 @@ static void VG_(add_stmt_call_gdbserver)
    or VG_(add_stmt_call_invalidate_if_not_gdbserved).  */
 static void VG_(add_stmt_call_invalidate_exit_target_if_not_gdbserved)
    (IRSB* sb_in,
-    VexGuestLayout* layout,
-    VexGuestExtents* vge,
+    const VexGuestLayout* layout,
+    const VexGuestExtents* vge,
     IRType gWordTy,
     IRSB* irsb)
 {
@@ -1220,8 +1220,8 @@ static void VG_(add_stmt_call_invalidate_exit_target_if_not_gdbserved)
 
 IRSB* VG_(instrument_for_gdbserver_if_needed)
      (IRSB* sb_in,
-      VexGuestLayout* layout,
-      VexGuestExtents* vge,
+      const VexGuestLayout* layout,
+      const VexGuestExtents* vge,
       IRType gWordTy, IRType hWordTy)
 {
    IRSB* sb_out;

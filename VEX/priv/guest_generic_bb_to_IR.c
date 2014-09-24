@@ -192,7 +192,7 @@ IRSB* bb_to_IR (
          /*IN*/ VexArchInfo*     archinfo_guest,
          /*IN*/ VexAbiInfo*      abiinfo_both,
          /*IN*/ IRType           guest_word_type,
-         /*IN*/ UInt             (*needs_self_check)(void*,VexGuestExtents*),
+         /*IN*/ UInt             (*needs_self_check)(void*,const VexGuestExtents*),
          /*IN*/ Bool             (*preamble_function)(void*,IRSB*),
          /*IN*/ Int              offB_GUEST_CMSTART,
          /*IN*/ Int              offB_GUEST_CMLEN,

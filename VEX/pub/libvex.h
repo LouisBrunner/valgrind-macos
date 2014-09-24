@@ -666,15 +666,15 @@ typedef
 	 NULL. */
       IRSB*   (*instrument1) ( /*callback_opaque*/void*, 
                                IRSB*, 
-                               VexGuestLayout*, 
-                               VexGuestExtents*,
-                               VexArchInfo*,
+                               const VexGuestLayout*, 
+                               const VexGuestExtents*,
+                               const VexArchInfo*,
                                IRType gWordTy, IRType hWordTy );
       IRSB*   (*instrument2) ( /*callback_opaque*/void*, 
                                IRSB*, 
-                               VexGuestLayout*, 
-                               VexGuestExtents*,
-                               VexArchInfo*,
+                               const VexGuestLayout*, 
+                               const VexGuestExtents*,
+                               const VexArchInfo*,
                                IRType gWordTy, IRType hWordTy );
 
       IRSB* (*finaltidy) ( IRSB* );
@@ -685,7 +685,7 @@ typedef
          that the i'th extent needs a check.  Since there can be at most
          3 extents, the returned values must be between 0 and 7. */
       UInt (*needs_self_check)( /*callback_opaque*/void*,
-                                VexGuestExtents* );
+                                const VexGuestExtents* );
 
       /* IN: optionally, a callback which allows the caller to add its
          own IR preamble following the self-check and any other

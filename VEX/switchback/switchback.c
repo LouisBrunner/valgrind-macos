@@ -110,7 +110,7 @@ static Bool chase_into_ok ( void* opaque, Addr64 dst ) {
    return False;
 }
 
-static UInt needs_self_check ( void* opaque, VexGuestExtents* vge ) {
+static UInt needs_self_check ( void* opaque, const VexGuestExtents* vge ) {
    return 0;
 }
 

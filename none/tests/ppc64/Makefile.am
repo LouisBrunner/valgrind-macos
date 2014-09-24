@@ -50,8 +50,10 @@ AM_CCASFLAGS += @FLAG_M64@
 allexec_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 
 if HAS_ALTIVEC
+BUILD_FLAG_ALTIVEC = -maltivec
 ALTIVEC_FLAG = -DHAS_ALTIVEC
 else
+BUILD_FLAG_ALTIVEC =
 ALTIVEC_FLAG =
 endif
 
@@ -88,8 +90,8 @@ test_isa_2_06_part2_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(VSX_
 test_isa_2_06_part3_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(VSX_FLAG) \
 			@FLAG_M64@ $(ALTIVEC_FLAG) $(BUILD_FLAG_VSX)
 
-jm_insns_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames -maltivec \
-			@FLAG_M64@ $(ALTIVEC_FLAG)
+jm_insns_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames \
+			@FLAG_M64@ $(ALTIVEC_FLAG) $(BUILD_FLAG_ALTIVEC)
 
 test_dfp1_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(DFP_FLAG) \
 			@FLAG_M64@ $(BUILD_FLAGS_DFP)

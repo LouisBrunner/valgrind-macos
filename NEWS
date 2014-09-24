@@ -27,6 +27,7 @@ To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
 
+338731 ppc: Fix testuite build for toolchains not supporting -maltivec
 339020 ppc64: memcheck/tests/ppc64/power_ISA2_05 failing in nightly build
 339156 - gdbsrv not called for fatal signal
 n-i-bz Old STABS code is still being compiled, but never used. Remove it.

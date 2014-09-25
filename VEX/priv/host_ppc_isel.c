@@ -1327,7 +1327,7 @@ static HReg mk_AvDuplicateRI( ISelEnv* env, IRExpr* e, IREndness IEndianess )
       }
 
       /* Effectively splat the r_src value to dst */
-      addInstr(env, PPCInstr_AvLdSt( True/*ld*/, 4, dst, am_offset_zero ) );
+      addInstr(env, PPCInstr_AvLdSt( True/*ld*/, 16, dst, am_offset_zero ) );
       add_to_sp( env, 32 );       // Reset SP
 
       return dst;

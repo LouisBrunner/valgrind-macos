@@ -8727,7 +8727,6 @@ s390_insn_helper_call_emit(UChar *buf, const s390_insn *insn)
    s390_cc_t cond;
    ULong target;
    UChar *ptmp = buf;
-   UChar *bufIN = buf;
    s390_helper_call *helper_call = insn->variant.helper_call.details;
 
    cond = helper_call->cond;
@@ -8741,7 +8740,7 @@ s390_insn_helper_call_emit(UChar *buf, const s390_insn *insn)
          register(s) in the case where the call doesn't happen.  If
          this ever becomes necessary, maybe copy code from the ARM
          equivalent.  Until that day, just give up. */
-      return bufIN; /* To denote failure. */
+      return buf; /* To denote failure. */
    }
 
    if (cond != S390_CC_ALWAYS) {

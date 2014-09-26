@@ -5430,6 +5430,7 @@ PRE(sys_ioctl)
    case VKI_KVM_S390_ENABLE_SIE:
    case VKI_KVM_CREATE_IRQCHIP:
    case VKI_KVM_S390_INITIAL_RESET:
+   case VKI_KVM_KVMCLOCK_CTRL:
 
    /* vhost without parameter */
    case VKI_VHOST_SET_OWNER:
@@ -9379,6 +9380,7 @@ POST(sys_ioctl)
    case VKI_KVM_CREATE_IRQCHIP:
    case VKI_KVM_RUN:
    case VKI_KVM_S390_INITIAL_RESET:
+   case VKI_KVM_KVMCLOCK_CTRL:
       break;
 
 #ifdef ENABLE_XEN

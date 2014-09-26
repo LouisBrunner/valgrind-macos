@@ -3116,6 +3116,7 @@ struct vki_sockaddr_rc {
 #define VKI_KVM_RUN                   _VKI_IO(KVMIO,   0x80)
 #define VKI_KVM_S390_INITIAL_RESET    _VKI_IO(KVMIO,   0x97)
 #define VKI_KVM_NMI                   _VKI_IO(KVMIO,   0x9a)
+#define VKI_KVM_KVMCLOCK_CTRL         _VKI_IO(KVMIO,   0xad)
 
 //----------------------------------------------------------------------
 // From linux-2.6/include/linux/net_stamp.h

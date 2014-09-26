@@ -7052,6 +7052,7 @@ PRE(sys_ioctl)
    case VKI_KVM_CREATE_VM:
    case VKI_KVM_GET_VCPU_MMAP_SIZE:
    case VKI_KVM_CHECK_EXTENSION:
+   case VKI_KVM_SET_TSS_ADDR:
    case VKI_KVM_CREATE_VCPU:
    case VKI_KVM_RUN:
       break;
@@ -9374,6 +9375,7 @@ POST(sys_ioctl)
    case VKI_KVM_GET_VCPU_MMAP_SIZE:
    case VKI_KVM_S390_ENABLE_SIE:
    case VKI_KVM_CREATE_VCPU:
+   case VKI_KVM_SET_TSS_ADDR:
    case VKI_KVM_CREATE_IRQCHIP:
    case VKI_KVM_RUN:
    case VKI_KVM_S390_INITIAL_RESET:

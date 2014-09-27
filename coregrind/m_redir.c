@@ -451,15 +451,15 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
             pointing to files inside the valgrind build directories. */
          struct vg_stat newdi_stat;
          SysRes newdi_res;
-         HChar in_vglib_filename[VKI_PATH_MAX];
          struct vg_stat in_vglib_stat;
          SysRes in_vglib_res;
 
          newdi_res = VG_(stat)(newdi_filename, &newdi_stat);
-         
-         VG_(strncpy) (in_vglib_filename, VG_(libdir), VKI_PATH_MAX);
-         VG_(strncat) (in_vglib_filename, "/", VKI_PATH_MAX);
-         VG_(strncat) (in_vglib_filename, newdi_basename, VKI_PATH_MAX);
+
+         HChar in_vglib_filename[VG_(strlen)(VG_(libdir)) + 1 +
+                                 VG_(strlen)(newdi_basename) + 1];
+         VG_(sprintf)("%s/%s", VG_(libdir), newdi_basename);
+
          in_vglib_res = VG_(stat)(in_vglib_filename, &in_vglib_stat);
 
          /* If we find newdi_basename in inner VALGRIND_LIB

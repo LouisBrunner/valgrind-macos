@@ -3,6 +3,7 @@
 
 int main()
 {
+#if defined(__mips_hard_float)
    int i;
    int s1 = sizeof(int);
    int s2 = sizeof(unsigned long long);
@@ -64,6 +65,7 @@ int main()
    for (i = 0; i < (N-1)*s1; i = i+4) {
       TEST6("swxc1", i);
    }
+#endif
 
    return 0;
 }

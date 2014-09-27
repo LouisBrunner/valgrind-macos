@@ -2,6 +2,7 @@
 
 int main ()
 {
+#if defined(__mips_hard_float)
    long out [] = {0, 0};
    __asm__ volatile("cfc1       $a1,   $31"                 "\n\t"
                     "dli        $t0,   0x405ee0a3d70a3d71"  "\n\t"
@@ -22,5 +23,6 @@ int main ()
                     : "a1", "a2", "t0", "$f0"
                    );
    printf("FCSR::1: 0x%lx, 2: 0x%lx\n", out[0], out[1]);
+#endif
    return 0;
 }

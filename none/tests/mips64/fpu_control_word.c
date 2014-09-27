@@ -1,5 +1,6 @@
 #include <stdio.h>
 
+#if defined(__mips_hard_float)
 #define TESTINST_CFC1_CTC1(N)          \
 {                                      \
    unsigned int out = 0;               \
@@ -14,6 +15,9 @@
    );                                  \
    printf("out=%d, in=%d\n", out, N);  \
 }
+#else
+#define TESTINST_CFC1_CTC1(N)
+#endif
 
 int main()
 {

@@ -3,6 +3,7 @@
 
 int main()
 {
+#if defined(__mips_hard_float)
    int i = 0;
 
    printf("--- BC1F ---  if fs == ft then " \
@@ -144,6 +145,7 @@ int main()
       TESTINST_CONDs("c.ngt.s", i);
       TESTINST_CONDd("c.ngt.d", i);
    }
+#endif
    return 0;
 }
 

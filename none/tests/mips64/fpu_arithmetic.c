@@ -3,6 +3,7 @@
 #include "rounding_mode.h"
 #include "macro_fpu.h"
 
+#if defined(__mips_hard_float)
 int arithmeticOperations(flt_art_op_t op) 
 {
    double fd_d = 0;
@@ -154,9 +155,11 @@ int arithmeticOperations(flt_art_op_t op)
    }
    return 0;
 }
+#endif
 
 int main()
 {
+#if defined(__mips_hard_float)
    flt_art_op_t op;
 
    printf("-------------------------- %s --------------------------\n",
@@ -164,6 +167,6 @@ int main()
    for (op = ABSS; op <= NMSUBD; op++) {
       arithmeticOperations(op);
    }
-
+#endif
    return 0;
 }

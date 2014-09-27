@@ -46,6 +46,7 @@ const double fs2_f[] = {
    -347856.475, 23.04        -1.0,        356047.56
 };
 
+#if defined(__mips_hard_float)
 #define TEST1(mem)                                           \
 {                                                            \
    unsigned long long out;                                   \
@@ -190,9 +191,11 @@ const double fs2_f[] = {
    printf("%s ::  RDval: 0x%x, RSval: 0x%x, out: 0x%lx\n",        \
           instruction, RDval, RSval, out);                        \
 }
+#endif
 
 int main()
 {
+#if defined(__mips_hard_float)
    int i;
    init_reg_val2();
 
@@ -366,6 +369,6 @@ int main()
       TEST5("movt", 0x5555ffff, 0xffffffff, t3, t1);
       TEST5("movt", 0xeeeeeeee, 0xffffeeee, t3, t0);
    }
-
+#endif
    return 0;
 }

@@ -23,6 +23,7 @@ unsigned long long memDst[] = {
 
 int main()
 {
+#if defined(__mips_hard_float)
    int i, index;
    unsigned long long outLoad;
    for (i = 0; i < N * SOLL; i++) {
@@ -42,5 +43,6 @@ int main()
       printf("i: %d, memSrc[%d]: 0x%llx, memDst[%d]: 0x%llx, outLoad: 0x%llx\n",
               i, index, memSrc[index], index, memDst[index], outLoad);
    }
+#endif
    return 0;
 }

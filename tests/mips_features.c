@@ -47,7 +47,17 @@ static int mipsCPUInfo(const char *search_string) {
 static int go(char *feature)
 {
    int cpuinfo;
-   if (strcmp(feature, "mips32-dsp") == 0) {
+   if (strcmp(feature, "hard-float") == 0) {
+#if defined(__mips_hard_float)
+      /* This is not a runtime detection.
+         If mips_features is built as hard-float, the assumption is that
+         the target MIPS platform has a floating-point unit. */
+      return FEATURE_PRESENT;
+#else
+      return FEATURE_NOT_PRESENT;
+#endif
+   }
+   else if (strcmp(feature, "mips32-dsp") == 0) {
       const char *dsp = "dsp";
       cpuinfo = mipsCPUInfo(dsp);
       if (cpuinfo == 1) {

@@ -1,3 +1,4 @@
+/* -*- mode: C; c-basic-offset: 3; -*- */
 
 /*--------------------------------------------------------------------*/
 /*--- File- and socket-related libc stuff.            m_libcfile.c ---*/
@@ -37,8 +38,8 @@
 #include "pub_core_libcfile.h"
 #include "pub_core_libcprint.h"     // VG_(sprintf)
 #include "pub_core_libcproc.h"      // VG_(getpid), VG_(getppid)
-#include "pub_core_xarray.h"
 #include "pub_core_clientstate.h"   // VG_(fd_hard_limit)
+#include "pub_core_mallocfree.h"    // VG_(realloc)
 #include "pub_core_syscall.h"
 
 /* IMPORTANT: on Darwin it is essential to use the _nocancel versions
@@ -1166,8 +1167,8 @@ Int VG_(setsockopt) ( Int sd, Int level, Int optname, void *optval,
 
 const HChar *VG_(basename)(const HChar *path)
 {
-   static HChar buf[VKI_PATH_MAX];
-   
+   static HChar *buf = NULL;
+   static SizeT  buf_len = 0;
    const HChar *p, *end;
 
    if (path == NULL  ||  
@@ -1193,6 +1194,11 @@ const HChar *VG_(basename)(const HChar *path)
 
    if (*p == '/') p++;
 
+   SizeT need = end-p+1 + 1;
+   if (need > buf_len) {
+      buf_len = (buf_len == 0) ? 500 : need;
+      buf = VG_(realloc)("basename", buf, buf_len);
+   }
    VG_(strncpy)(buf, p, end-p+1);
    buf[end-p+1] = '\0';
 
@@ -1202,7 +1208,8 @@ const HChar *VG_(basename)(const HChar *path)
 
 const HChar *VG_(dirname)(const HChar *path)
 {
-   static HChar buf[VKI_PATH_MAX];
+   static HChar *buf = NULL;
+   static SizeT  buf_len = 0;
     
    const HChar *p;
 
@@ -1234,6 +1241,11 @@ const HChar *VG_(dirname)(const HChar *path)
       p--;
    }
 
+   SizeT need = p-path+1 + 1;
+   if (need > buf_len) {
+      buf_len = (buf_len == 0) ? 500 : need;
+      buf = VG_(realloc)("dirname", buf, buf_len);
+   }
    VG_(strncpy)(buf, path, p-path+1);
    buf[p-path+1] = '\0';
 

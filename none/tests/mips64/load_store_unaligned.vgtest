@@ -1,2 +1,3 @@
 prog: load_store_unaligned
+prereq: ../../../tests/mips_features fpu
 vgopts: -q

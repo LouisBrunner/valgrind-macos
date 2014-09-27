@@ -47,7 +47,7 @@ static int mipsCPUInfo(const char *search_string) {
 static int go(char *feature)
 {
    int cpuinfo;
-   if (strcmp(feature, "hard-float") == 0) {
+   if (strcmp(feature, "fpu") == 0) {
 #if defined(__mips_hard_float)
       /* This is not a runtime detection.
          If mips_features is built as hard-float, the assumption is that

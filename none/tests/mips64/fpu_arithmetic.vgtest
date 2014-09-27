@@ -1,2 +1,3 @@
 prog: fpu_arithmetic
+prereq: ../../../tests/mips_features fpu
 vgopts: -q

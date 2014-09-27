@@ -1,2 +1,3 @@
 prog: round
+prereq: ../../../tests/mips_features fpu
 vgopts: -q

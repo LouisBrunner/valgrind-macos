@@ -218,9 +218,8 @@ void VG_(split_up_argv)( Int argc, HChar** argv )
       // Don't read ./.valgrindrc if "." is the same as "$HOME", else its
       // contents will be applied twice. (bug #142488)
       if (home) {
-         HChar cwd[VKI_PATH_MAX+1];
-         Bool  cwd_ok = VG_(get_startup_wd)(cwd, VKI_PATH_MAX);
-         f2_clo = ( (cwd_ok && VG_STREQ(home, cwd))
+         const HChar *cwd = VG_(get_startup_wd)();
+         f2_clo = ( VG_STREQ(home, cwd)
                        ? NULL : read_dot_valgrindrc(".") );
       }
 

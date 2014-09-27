@@ -142,12 +142,11 @@ UInt   VG_(clo_unw_stack_scan_frames) = 5;
 // expanding %p and %q entries.  Returns a new, malloc'd string.
 HChar* VG_(expand_file_name)(const HChar* option_name, const HChar* format)
 {
-   static HChar base_dir[VKI_PATH_MAX];
+   const HChar *base_dir;
    Int len, i = 0, j = 0;
    HChar* out;
 
-   Bool ok = VG_(get_startup_wd)(base_dir, VKI_PATH_MAX);
-   vg_assert(ok);
+   base_dir = VG_(get_startup_wd)();
 
    if (VG_STREQ(format, "")) {
       // Empty name, bad.

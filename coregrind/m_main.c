@@ -1763,12 +1763,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
         VG_(err_config_error)( "Can't establish current working "
                                "directory at startup\n");
    }
-   { HChar buf[VKI_PATH_MAX+1];
-     Bool ok = VG_(get_startup_wd)( buf, sizeof(buf) );
-     vg_assert(ok);
-     buf[VKI_PATH_MAX] = 0;
-     VG_(debugLog)(1, "main", "... %s\n", buf );
-   }
+   VG_(debugLog)(1, "main", "... %s\n", VG_(get_startup_wd)() );
 
    //============================================================
    // Command line argument handling order:

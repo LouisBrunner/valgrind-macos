@@ -418,14 +418,12 @@ Int VG_(unlink) ( const HChar* file_name )
    return sr_isError(res) ? (-1) : 0;
 }
 
-/* The working directory at startup.  AIX doesn't provide an easy
-   system call to do getcwd, but fortunately we don't need arbitrary
-   getcwd support.  All that is really needed is to note the cwd at
-   process startup.  Hence VG_(record_startup_wd) notes it (in a
-   platform dependent way) and VG_(get_startup_wd) produces the noted
-   value.  Hence: */
-static HChar startup_wd[VKI_PATH_MAX];
-static Bool  startup_wd_acquired = False;
+/* The working directory at startup.
+   All that is really needed is to note the cwd at process startup.
+   Hence VG_(record_startup_wd) notes it (in a platform dependent way)
+   and VG_(get_startup_wd) produces the noted value. */
+static HChar *startup_wd;
+static Bool   startup_wd_acquired = False;
 
 /* Record the process' working directory at startup.  Is intended to
    be called exactly once, at startup, before the working directory
@@ -434,37 +432,39 @@ static Bool  startup_wd_acquired = False;
    there is a problem. */
 Bool VG_(record_startup_wd) ( void )
 {
-   const Int szB = sizeof(startup_wd);
    vg_assert(!startup_wd_acquired);
-   vg_assert(szB >= 512 && szB <= 16384/*let's say*/); /* stay sane */
-   VG_(memset)(startup_wd, 0, szB);
+
 #  if defined(VGO_linux)
    /* Simple: just ask the kernel */
-   { SysRes res
-        = VG_(do_syscall2)(__NR_getcwd, (UWord)startup_wd, szB-1);
-     vg_assert(startup_wd[szB-1] == 0);
-     if (sr_isError(res)) {
-        return False;
-     } else {
-        startup_wd_acquired = True;
-        return True;
-     }
-   }
+   SysRes res;
+   SizeT szB = 0;
+   do { 
+      szB += 500;
+      startup_wd = VG_(realloc)("startup_wd", startup_wd, szB);
+      VG_(memset)(startup_wd, 0, szB);
+      res = VG_(do_syscall2)(__NR_getcwd, (UWord)startup_wd, szB-1);
+   } while (sr_isError(res));
+
+   vg_assert(startup_wd[szB-1] == 0);
+   startup_wd_acquired = True;
+   return True;
+
 #  elif defined(VGO_darwin)
    /* We can't ask the kernel, so instead rely on launcher-*.c to
       tell us the startup path.  Note the env var is keyed to the
       parent's PID, not ours, since our parent is the launcher
       process. */
-   { HChar  envvar[100];
-     HChar* wd = NULL;
+   { HChar  envvar[100];   // large enough
+     HChar* wd;
      VG_(memset)(envvar, 0, sizeof(envvar));
      VG_(sprintf)(envvar, "VALGRIND_STARTUP_PWD_%d_XYZZY", 
                           (Int)VG_(getppid)());
      wd = VG_(getenv)( envvar );
-     if (wd == NULL || (1+VG_(strlen)(wd) >= szB))
+     if (wd == NULL)
         return False;
-     VG_(strncpy_safely)(startup_wd, wd, szB);
-     vg_assert(startup_wd[szB-1] == 0);
+     SizeT need = VG_(strlen)(wd) + 1;
+     startup_wd = VG_(malloc)("startup_wd", need);
+     VG_(strcpy)(startup_wd, wd);
      startup_wd_acquired = True;
      return True;
    }
@@ -473,16 +473,12 @@ Bool VG_(record_startup_wd) ( void )
 #  endif
 }
 
-/* Copy the previously acquired startup_wd into buf[0 .. size-1],
-   or return False if buf isn't big enough. */
-Bool VG_(get_startup_wd) ( HChar* buf, SizeT size )
+/* Return the previously acquired startup_wd. */
+const HChar *VG_(get_startup_wd) ( void )
 {
    vg_assert(startup_wd_acquired);
-   vg_assert(startup_wd[ sizeof(startup_wd)-1 ] == 0);
-   if (1+VG_(strlen)(startup_wd) >= size)
-      return False;
-   VG_(strncpy_safely)(buf, startup_wd, size);
-   return True;
+
+   return startup_wd;
 }
 
 SysRes VG_(poll) (struct vki_pollfd *fds, Int nfds, Int timeout)

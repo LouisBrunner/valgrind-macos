@@ -59,10 +59,13 @@ static HChar* read_dot_valgrindrc ( const HChar* dir )
    SysRes fd;
    struct vg_stat stat_buf;
    HChar* f_clo = NULL;
-   HChar  filename[VKI_PATH_MAX];
+   const  HChar dot_valgrindrc[] = ".valgrindrc";
 
-   VG_(snprintf)(filename, VKI_PATH_MAX, "%s/.valgrindrc", 
-                           ( NULL == dir ? "" : dir ) );
+   vg_assert(dir != NULL);
+
+   HChar filename[VG_(strlen)(dir) + 1 + VG_(strlen)(dot_valgrindrc) + 1];
+   VG_(sprintf)(filename, "%s/%s", dir, dot_valgrindrc);
+
    fd = VG_(open)(filename, 0, VKI_S_IRUSR);
    if ( !sr_isError(fd) ) {
       Int res = VG_(fstat)( sr_Res(fd), &stat_buf );

@@ -3,10 +3,10 @@
 #include <pthread.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/prctl.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <assert.h>
+
 
 static pthread_t children[3];
 

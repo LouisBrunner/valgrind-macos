@@ -1427,12 +1427,14 @@ static void print_results(ThreadId tid, LeakCheckParams* lcp)
    }
 
    if (VG_(clo_verbosity) > 0 && !VG_(clo_xml)) {
-      HChar d_bytes[20];
-      HChar d_blocks[20];
+      HChar d_bytes[31];
+      HChar d_blocks[31];
 #     define DBY(new,old) \
-      MC_(snprintf_delta) (d_bytes, 20, (new), (old), lcp->deltamode)
+      MC_(snprintf_delta) (d_bytes, sizeof(d_bytes), (new), (old), \
+                           lcp->deltamode)
 #     define DBL(new,old) \
-      MC_(snprintf_delta) (d_blocks, 20, (new), (old), lcp->deltamode)
+      MC_(snprintf_delta) (d_blocks, sizeof(d_blocks), (new), (old), \
+                           lcp->deltamode)
 
       VG_(umsg)("LEAK SUMMARY:\n");
       VG_(umsg)("   definitely lost: %'lu%s bytes in %'lu%s blocks\n",

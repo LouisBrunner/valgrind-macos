@@ -305,6 +305,12 @@ HChar * MC_(snprintf_delta) (HChar * buf, Int size,
                              SizeT current_val, SizeT old_val, 
                              LeakCheckDeltaMode delta_mode)
 {
+   // Make sure the buffer size is large enough. With old_val == 0 and
+   // current_val == ULLONG_MAX the delta including inserted commas is:
+   // 18,446,744,073,709,551,615
+   // whose length is 26. Therefore:
+   tl_assert(size >= 26 + 4 + 1);
+
    if (delta_mode == LCD_Any)
       buf[0] = '\0';
    else if (current_val >= old_val)
@@ -320,24 +326,24 @@ static void pp_LossRecord(UInt n_this_record, UInt n_total_records,
 {
    // char arrays to produce the indication of increase/decrease in case
    // of delta_mode != LCD_Any
-   HChar d_bytes[20];
-   HChar d_direct_bytes[20];
-   HChar d_indirect_bytes[20];
-   HChar d_num_blocks[20];
+   HChar d_bytes[31];
+   HChar d_direct_bytes[31];
+   HChar d_indirect_bytes[31];
+   HChar d_num_blocks[31];
 
-   MC_(snprintf_delta) (d_bytes, 20, 
+   MC_(snprintf_delta) (d_bytes, sizeof(d_bytes),
                         lr->szB + lr->indirect_szB, 
                         lr->old_szB + lr->old_indirect_szB,
                         MC_(detect_memory_leaks_last_delta_mode));
-   MC_(snprintf_delta) (d_direct_bytes, 20,
+   MC_(snprintf_delta) (d_direct_bytes, sizeof(d_direct_bytes),
                         lr->szB,
                         lr->old_szB,
                         MC_(detect_memory_leaks_last_delta_mode));
-   MC_(snprintf_delta) (d_indirect_bytes, 20,
+   MC_(snprintf_delta) (d_indirect_bytes, sizeof(d_indirect_bytes),
                         lr->indirect_szB,
                         lr->old_indirect_szB,
                         MC_(detect_memory_leaks_last_delta_mode));
-   MC_(snprintf_delta) (d_num_blocks, 20,
+   MC_(snprintf_delta) (d_num_blocks, sizeof(d_num_blocks),
                         (SizeT) lr->num_blocks,
                         (SizeT) lr->old_num_blocks,
                         MC_(detect_memory_leaks_last_delta_mode));

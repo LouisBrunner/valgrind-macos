@@ -29,21 +29,12 @@
 */
 
 #include "pub_core_basics.h"
-#include "pub_core_vki.h"
-#include "pub_core_debuglog.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcfile.h"
 #include "pub_core_libcproc.h"
 #include "pub_core_libcprint.h"
-#include "pub_core_xarray.h"
-#include "pub_core_clientstate.h"
-#include "pub_core_aspacemgr.h"
 #include "pub_core_mallocfree.h"
-#include "pub_core_machine.h"
-#include "pub_core_ume.h"
-#include "pub_core_options.h"
-#include "pub_core_tooliface.h"       /* VG_TRACK */
 #include "pub_core_initimg.h"         /* self */
 
 #include "priv_initimg_pathscan.h"
@@ -92,19 +83,19 @@ static Bool scan_colsep(HChar *colsep, Bool (*func)(const HChar *))
    return False;
 }
 
-/* Need a static copy because can't use dynamic mem allocation yet */
-static HChar executable_name_in [VKI_PATH_MAX];
-static HChar executable_name_out[VKI_PATH_MAX];
+
+static const HChar *executable_name_in;
+static HChar *executable_name_out;
 
 static Bool match_executable(const HChar *entry) 
 {
-   HChar buf[VG_(strlen)(entry) + VG_(strlen)(executable_name_in) + 3];
-
-   /* empty PATH element means '.' */
+   /* empty ENTRY element means '.' */
    if (*entry == '\0')
       entry = ".";
 
-   VG_(snprintf)(buf, sizeof(buf), "%s/%s", entry, executable_name_in);
+   HChar buf[VG_(strlen)(entry) + 1 + VG_(strlen)(executable_name_in) + 1];
+
+   VG_(sprintf)(buf, "%s/%s", entry, executable_name_in);
 
    // Don't match directories
    if (VG_(is_dir)(buf))
@@ -114,14 +105,13 @@ static Bool match_executable(const HChar *entry)
    // matching non-executable we remember it but keep looking for an
    // matching executable later in the path.
    if (VG_(access)(buf, True/*r*/, False/*w*/, True/*x*/) == 0) {
-      VG_(strncpy)( executable_name_out, buf, VKI_PATH_MAX-1 );
-      executable_name_out[VKI_PATH_MAX-1] = 0;
+      VG_(free)(executable_name_out);
+      executable_name_out = VG_(strdup)("match_executable", buf);
       return True;      // Stop looking
    } else if (VG_(access)(buf, True/*r*/, False/*w*/, False/*x*/) == 0 
-           && VG_STREQ(executable_name_out, "")) 
+              && executable_name_out == NULL)
    {
-      VG_(strncpy)( executable_name_out, buf, VKI_PATH_MAX-1 );
-      executable_name_out[VKI_PATH_MAX-1] = 0;
+      executable_name_out = VG_(strdup)("match_executable", buf);
       return False;     // Keep looking
    } else { 
       return False;     // Keep looking
@@ -132,18 +122,25 @@ static Bool match_executable(const HChar *entry)
 const HChar* ML_(find_executable) ( const HChar* exec )
 {
    vg_assert(NULL != exec);
+
    if (VG_(strchr)(exec, '/')) {
-      // Has a '/' - use the name as is
-      VG_(strncpy)( executable_name_out, exec, VKI_PATH_MAX-1 );
-   } else {
-      // No '/' - we need to search the path
-      HChar* path;
-      VG_(strncpy)( executable_name_in,  exec, VKI_PATH_MAX-1 );
-      VG_(memset) ( executable_name_out, 0,    VKI_PATH_MAX );
-      path = VG_(getenv)("PATH");
-      scan_colsep(path, match_executable);
+      // Has a '/' - use the name as is even if exec is a directory.
+      // The reason is that we get a better error message this way:
+      //   valgrind  ./foo
+      //   valgrind: ./foo: is a directory
+      return exec;
    }
-   return VG_STREQ(executable_name_out, "") ? NULL : executable_name_out;
+
+   // No '/' - we need to search the path
+   HChar* path = VG_(getenv)("PATH");
+
+   VG_(free)(executable_name_out);
+
+   executable_name_in  = exec;
+   executable_name_out = NULL;
+   scan_colsep(path, match_executable);
+
+   return executable_name_out;
 }
 
 /*--------------------------------------------------------------------*/

@@ -410,8 +410,7 @@ static void report_and_quit ( const HChar* report,
 void VG_(assert_fail) ( Bool isCore, const HChar* expr, const HChar* file, 
                         Int line, const HChar* fn, const HChar* format, ... )
 {
-   va_list vargs;
-   HChar buf[512];
+   va_list vargs, vargs_copy;
    const HChar* component;
    const HChar* bugs_to;
    UInt written;
@@ -420,15 +419,6 @@ void VG_(assert_fail) ( Bool isCore, const HChar* expr, const HChar* file,
    if (entered) 
       VG_(exit)(2);
    entered = True;
-
-   va_start(vargs, format);
-   written = VG_(vsnprintf) ( buf, sizeof(buf), format, vargs );
-   va_end(vargs);
-
-   if (written >= sizeof(buf)) {
-      VG_(printf)("\nvalgrind: %s: buf is too small, sizeof(buf) = %u, "
-                  "written = %d\n", __func__, (unsigned)sizeof(buf), written);
-   }
 
    if (isCore) {
       component = "valgrind";
@@ -449,8 +439,19 @@ void VG_(assert_fail) ( Bool isCore, const HChar* expr, const HChar* file,
       VG_(printf)("\n%s: %s:%d (%s): Assertion '%s' failed.\n",
                   component, file, line, fn, expr );
    }
-   if (!VG_STREQ(buf, ""))
-      VG_(printf)("%s: %s\n", component, buf );
+
+   /* Check whether anything will be written */
+   HChar buf[5];
+   va_start(vargs, format);
+   va_copy(vargs_copy, vargs);
+   written = VG_(vsnprintf) ( buf, sizeof(buf), format, vargs );
+   va_end(vargs);
+
+   if (written > 0) {
+      VG_(printf)("%s: ", component);
+      VG_(vprintf)(format, vargs_copy);
+      VG_(printf)("\n");
+   }
 
    report_and_quit(bugs_to, NULL);
 }

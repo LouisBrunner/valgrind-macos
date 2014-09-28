@@ -1380,18 +1380,21 @@ static void print_preamble ( Bool logging_to_fd,
       if (sr_isError(fd)) {
          VG_(message)(Vg_DebugMsg, "  can't open /proc/version\n");
       } else {
-#        define BUF_LEN    256
-         HChar version_buf[BUF_LEN];
-         Int n = VG_(read) ( sr_Res(fd), version_buf, BUF_LEN );
-         vg_assert(n <= BUF_LEN);
-         if (n > 0) {
-            version_buf[n-1] = '\0';
-            VG_(message)(Vg_DebugMsg, "  %s\n", version_buf);
-         } else {
-            VG_(message)(Vg_DebugMsg, "  (empty?)\n");
-         }
-         VG_(close)(sr_Res(fd));
-#        undef BUF_LEN
+         const SizeT bufsiz = 255;
+         HChar version_buf[bufsiz+1];
+         VG_(message)(Vg_DebugMsg, "  ");
+         Int n, fdno = sr_Res(fd);
+         do {
+            n = VG_(read)(fdno, version_buf, bufsiz);
+            if (n < 0) {
+               VG_(message)(Vg_DebugMsg, "  error reading /proc/version\n");
+               break;
+            }
+            version_buf[n] = '\0';
+            VG_(message)(Vg_DebugMsg, "%s", version_buf);
+         } while (n == bufsiz);
+         VG_(message)(Vg_DebugMsg, "\n");
+         VG_(close)(fdno);
       }
 
       VG_(machine_get_VexArchInfo)( &vex_arch, &vex_archinfo );

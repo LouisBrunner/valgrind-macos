@@ -4,6 +4,11 @@
    fun:_dl_lookup_symbol_x
 }
 {
+   drd-libpthread-nanosleep
+   drd:ConflictingAccess
+   fun:nanosleep
+}
+{
    pthread_create
    drd:ConflictingAccess
    fun:pthread_create@@GLIBC_2.2*

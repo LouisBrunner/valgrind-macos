@@ -458,7 +458,7 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
 
          HChar in_vglib_filename[VG_(strlen)(VG_(libdir)) + 1 +
                                  VG_(strlen)(newdi_basename) + 1];
-         VG_(sprintf)("%s/%s", VG_(libdir), newdi_basename);
+         VG_(sprintf)(in_vglib_filename, "%s/%s", VG_(libdir), newdi_basename);
 
          in_vglib_res = VG_(stat)(in_vglib_filename, &in_vglib_stat);
 

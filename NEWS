@@ -33,6 +33,8 @@ where XXXXXX is the bug number as listed below.
 339442 Fix testsuite build failure on OS X 10.9
 n-i-bz Old STABS code is still being compiled, but never used. Remove it.
 n-i-bz Fix compilation on distros with glibc < 2.5
+339182 ppc64: AvSplat ought to load destination vector register with 16/16
+       bytes stored prior
 
 
 Release 3.10.0 (10 September 2014)

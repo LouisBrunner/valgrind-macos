@@ -17,13 +17,102 @@ Bugs that didn't make 3.10.0, that might be considered for 3.10.1
 326487  child of debugged process exits without becoming zombie
 338781  OSX: unable to read debug info
 
+arm64 critical regtest fails:
+  getregset.stderr.out   sys 117, ptrace
+  proc-auxv no auxv?
+  memcheck/tests/linux/stack_changes asserts
+  sigaltstack.stderr.out segfaults -- host seems broken too
+     recursive signal delivery (!)
+
 ==================
 
 Commits on the trunk that should be considered for merging to 3.10.1
 (write here :-)
 
+(mjw comments from 30 Sept 2014)
+
+  there are some mips fixes that might be interesting, but I don't
+  have a mips setup atm.
+
+  There were patches for the PTRACE_GETSIGINFO issue, which would be
+  nice to get thing to build out of the box on some older setups
+
+  silly, but ugly: Add missing ]] to terminate CDATA. (r14561).
+
+  r14559 maybe (Fix wrong checking of ARG2 of getrlimit).
+
+  Nice to have (but ask Philippe) #339156/r14556. 
+
+  Maybe r14549 (DRD/arm, ask Bart?). 
+
+  ppc/ stfdpx #339020/r14545
+
+  The lxvw4x would be nice, but I think the fix is not correct yet
+  (see endian issue I reported today)
+
+  Bug 339182 Vex r2960
+
+  Bug 339336 Vex r2957
+
+  Check Vex r2953 (are those real bugs or just cleanup?)
+
+  (consider): backwards-compatibility-special-sequence-on-ppc32
+  https://bugs.kde.org/show_bug.cgi?id=278808#c6
+
 ==================
 
 New bugs reported in 3.10.0
+
+338731  ppc testsuite does not build in case compiler does not
+        support -maltivec
+
+249435  Analyzing wine programs with callgrind triggers a crash
+
+211529  valgrind doesn't show proper call stacks for programs compiled
+        by newer versions of visual c++
+
+339020  ppc64:  memcheck/tests/ppc64/power_ISA2_05 failing in nightly build
+
+339156  gdbsrv not called for fatal signal
+
+339160  Running signal handler with alternate stack allocated on current 
+        stack crashes callgrind
+
+339163  Valgrind 3.10.0 fails to mmap() hugepages because it requests
+        4K alignment
+
+339182  New: POWER AvSplat ought to load destination vector register
+        with 16/16 bytes stored prior.
+
+339215  Valgrind 3.10.0 contain 2013 in copyrights notice
+
+339218  AVX2 binaries compiled with the Intel compiler fail to
+        run under Valgrind 3.10.0
+
+339288  support Cavium Octeon MIPS specific BBIT*32 instructions
+
+339330  Feature request: Add support for C++11's std::atomic
+
+339336  PPC64 store quad instruction (stq) is not supposed to
+        change the address register contents
+
+339405  Adds ability to invoke a script in order to determine a
+        log-file name for a child being forked
+
+339416  unhandled instruction bytes 0xC5 0xF1 0xEF 0xC9
+
+339424  Full support of KVM ioctl
+
+339433  power lxvw4x instruction uses 4 32 byte loads
+
+__builtin_popcountll in the source ([Valgrind-users] valgrind-3.10
+does not link on)
+
+339442  OS X 10.9 testsuite build failure: threadname.c:6:10:
+fatal error: 'sys/prctl.h' file not found
+
+339499  memcheck does not always detect access beyond mmaped page
+
+Tue Sep 30 14:41:06 CEST 2014
 
 ==================

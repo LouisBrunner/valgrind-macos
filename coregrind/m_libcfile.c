@@ -615,9 +615,17 @@ Int VG_(check_executable)(/*OUT*/Bool* is_setuid,
       if (VG_(getegid)() == st.gid)
 	 grpmatch = 1;
       else {
-	 UInt groups[32];
-	 Int ngrp = VG_(getgroups)(32, groups);
-	 Int i;
+         UInt *groups = NULL;
+         Int   ngrp;
+
+         /* Find out # groups, allocate large enough array and fetch groups */
+         ngrp = VG_(getgroups)(0, NULL);
+         if (ngrp != -1) {
+            groups = VG_(malloc)("check_executable", ngrp * sizeof *groups);
+            ngrp   = VG_(getgroups)(ngrp, groups);
+         }
+
+         Int i;
          /* ngrp will be -1 if VG_(getgroups) failed. */
          for (i = 0; i < ngrp; i++) {
 	    if (groups[i] == st.gid) {
@@ -625,6 +633,7 @@ Int VG_(check_executable)(/*OUT*/Bool* is_setuid,
 	       break;
 	    }
          }
+         VG_(free)(groups);
       }
 
       if (grpmatch) {

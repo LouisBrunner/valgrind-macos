@@ -130,7 +130,7 @@ static void function_entered(fn_node* fn)
 #endif		
 	    
   if (fn->dump_before) {
-    HChar trigger[FN_NAME_LEN];
+    HChar trigger[VG_(strlen)(fn->name) + 20];
     VG_(sprintf)(trigger, "--dump-before=%s", fn->name);
     CLG_(dump_profile)(trigger, True);
   }
@@ -152,7 +152,7 @@ static void function_left(fn_node* fn)
   CLG_ASSERT(fn != 0);
 
   if (fn->dump_after) {
-    HChar trigger[FN_NAME_LEN];
+    HChar trigger[VG_(strlen)(fn->name) + 20];
     VG_(sprintf)(trigger, "--dump-after=%s", fn->name);
     CLG_(dump_profile)(trigger, True);
   }

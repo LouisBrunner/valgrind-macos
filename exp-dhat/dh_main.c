@@ -1094,7 +1094,7 @@ static void show_N_div_100( /*OUT*/HChar* buf, ULong n )
 
 static void show_APInfo ( APInfo* api )
 {
-   HChar bufA[80];
+   HChar bufA[80];   // large enough
    VG_(memset)(bufA, 0, sizeof(bufA));
    if (api->tot_blocks > 0) {
       show_N_div_100( bufA, ((ULong)api->tot_bytes * 100ULL)
@@ -1121,7 +1121,7 @@ static void show_APInfo ( APInfo* api )
       ULong aad_frac_10k
          = g_guest_instrs_executed == 0
            ? 0 : (10000ULL * aad) / g_guest_instrs_executed;
-      HChar buf[16];
+      HChar buf[80];  // large enough
       show_N_div_100(buf, aad_frac_10k);
       VG_(umsg)("deaths:      %'llu, at avg age %'llu "
                 "(%s%% of prog lifetime)\n",
@@ -1130,7 +1130,7 @@ static void show_APInfo ( APInfo* api )
       VG_(umsg)("deaths:      none (none of these blocks were freed)\n");
    }
 
-   HChar bufR[80], bufW[80];
+   HChar bufR[80], bufW[80];   // large enough
    VG_(memset)(bufR, 0, sizeof(bufR));
    VG_(memset)(bufW, 0, sizeof(bufW));
    if (api->tot_bytes > 0) {

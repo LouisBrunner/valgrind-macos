@@ -57,7 +57,6 @@
 /* Set to 1 for very verbose debugging */
 #define DEBUG_CG 0
 
-#define MIN_LINE_SIZE         16
 #define FILE_LEN              VKI_PATH_MAX
 #define FN_LEN                256
 

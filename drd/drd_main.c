@@ -40,7 +40,6 @@
 #include "pub_drd_bitmap.h"
 #include "pub_tool_vki.h"         // Must be included before pub_tool_libcproc
 #include "pub_tool_basics.h"
-#include "pub_tool_debuginfo.h"   // VG_(describe_IP)()
 #include "pub_tool_libcassert.h"  // tl_assert()
 #include "pub_tool_libcbase.h"    // VG_(strcmp)
 #include "pub_tool_libcprint.h"   // VG_(printf)

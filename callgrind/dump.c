@@ -1479,7 +1479,6 @@ static void close_dumpfile(int fd)
 
 /* Helper for print_bbccs */
 
-static Int   print_fd;
 static const HChar* print_trigger;
 static HChar print_buf[BUF_LEN];
 
@@ -1491,7 +1490,7 @@ static void print_bbccs_of_thread(thread_info* ti)
 
   CLG_DEBUG(1, "+ print_bbccs(tid %d)\n", CLG_(current_tid));
 
-  print_fd = new_dumpfile(print_buf, CLG_(current_tid), print_trigger);
+  Int print_fd = new_dumpfile(print_buf, CLG_(current_tid), print_trigger);
   if (print_fd <0) {
     CLG_DEBUG(1, "- print_bbccs(tid %d): No output...\n", CLG_(current_tid));
     return;
@@ -1572,7 +1571,6 @@ static void print_bbccs(const HChar* trigger, Bool only_current_thread)
   init_dump_array();
   init_debug_cache();
 
-  print_fd = -1;
   print_trigger = trigger;
 
   if (!CLG_(clo).separate_threads) {

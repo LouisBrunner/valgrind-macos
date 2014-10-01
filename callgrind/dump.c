@@ -40,7 +40,7 @@ static HChar* out_file = 0;
 static Bool dumps_initialized = False;
 
 /* Command */
-static HChar cmdbuf[BUF_LEN];
+static HChar *cmdbuf;
 
 /* Total reads/writes/misses sum over all dumps and threads.
  * Updated during CC traversal at dump time.
@@ -1618,22 +1618,30 @@ void CLG_(dump_profile)(const HChar* trigger, Bool only_current_thread)
 static
 void init_cmdbuf(void)
 {
-  Int i,j,size = 0;
-  HChar* argv;
+  SizeT size;
+  Int i,j;
 
-  CLG_ASSERT( VG_(strlen)( VG_(args_the_exename) ) < BUF_LEN-1);
+  /* Pass #1: How many bytes do we need? */
+  size  = 1;  // leading ' '
+  size += VG_(strlen)( VG_(args_the_exename) );
+  for (i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) {
+     const HChar *arg = *(HChar**)VG_(indexXA)( VG_(args_for_client), i );
+     size += 1;   // separator ' '
+     size += VG_(strlen)(arg);
+  }
+
+  cmdbuf = CLG_MALLOC("cl.dump.ic.1", size + 1);  // +1 for '\0'
+
+  /* Pass #2: Build up the string */
   size = VG_(sprintf)(cmdbuf, " %s", VG_(args_the_exename));
 
   for(i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) {
-      argv = * (HChar**) VG_(indexXA)( VG_(args_for_client), i );
-      if (!argv) continue;
-      if ((size>0) && (size < BUF_LEN)) cmdbuf[size++] = ' ';
-      for(j=0;argv[j]!=0;j++)
-	  if (size < BUF_LEN) cmdbuf[size++] = argv[j];
+     const HChar *arg = * (HChar**) VG_(indexXA)( VG_(args_for_client), i );
+     cmdbuf[size++] = ' ';
+     for(j=0; arg[j]; j++)
+        cmdbuf[size++] = arg[j];
   }
-
-  if (size >= BUF_LEN) size = BUF_LEN-1;
-  cmdbuf[size] = 0;
+  cmdbuf[size] = '\0';
 }
 
 /*

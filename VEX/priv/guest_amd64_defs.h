@@ -548,7 +548,7 @@ typedef
       AMD64CondP      = 10, /* parity even        */
       AMD64CondNP     = 11, /* not parity even    */
 
-      AMD64CondL      = 12, /* jump less          */
+      AMD64CondL      = 12, /* less               */
       AMD64CondNL     = 13, /* not less           */
 
       AMD64CondLE     = 14, /* less or equal      */

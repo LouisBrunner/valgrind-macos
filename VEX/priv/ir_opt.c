@@ -2075,7 +2075,8 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
             case Iop_Shl32:
             case Iop_Shl64:
             case Iop_Shr64:
-               /* Shl32/Shl64/Shr64(x,0) ==> x */
+            case Iop_Sar64:
+               /* Shl32/Shl64/Shr64/Sar64(x,0) ==> x */
                if (isZeroU(e->Iex.Binop.arg2)) {
                   e2 = e->Iex.Binop.arg1;
                   break;
@@ -2087,8 +2088,9 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
                }
                break;
 
+            case Iop_Sar32:
             case Iop_Shr32:
-               /* Shr32(x,0) ==> x */
+               /* Shr32/Sar32(x,0) ==> x */
                if (isZeroU(e->Iex.Binop.arg2)) {
                   e2 = e->Iex.Binop.arg1;
                   break;

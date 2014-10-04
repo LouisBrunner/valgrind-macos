@@ -3074,7 +3074,7 @@ static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
                              DiVariable* var,
                              PtrdiffT var_offset,
                              PtrdiffT residual_offset,
-                             XArray* /*UChar*/ described,
+                             XArray* /*HChar*/ described,
                              Int      frameNo, 
                              ThreadId tid )
 {
@@ -3102,7 +3102,7 @@ static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
    vg_assert(described);
    vg_assert(var && var->name);
    have_descr = VG_(sizeXA)(described) > 0
-                && *(UChar*)VG_(indexXA)(described,0) != '\0';
+                && *(HChar*)VG_(indexXA)(described,0) != '\0';
    have_srcloc = var->fndn_ix > 0 && var->lineNo > 0;
 
    tagL[0] = tagR[0] = xagL[0] = xagR[0] = 0;

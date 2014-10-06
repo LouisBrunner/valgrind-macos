@@ -35,7 +35,7 @@ where XXXXXX is the bug number as listed below.
 339182 ppc64: AvSplat ought to load destination vector register with 16/16
        bytes stored prior
 339433 ppc64 lxvw4x instruction uses four 32-byte loads
-339721 assertion 'check_sibling == sibling' failed in readdwarf3.c ...
+(not fully fixed yet) 339721 assertion 'check_sibling == sibling' failed in readdwarf3.c ...
 n-i-bz Old STABS code is still being compiled, but never used. Remove it.
 n-i-bz Fix compilation on distros with glibc < 2.5
 

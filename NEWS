@@ -32,11 +32,12 @@ where XXXXXX is the bug number as listed below.
 339156 gdbsrv not called for fatal signal
 339442 Fix testsuite build failure on OS X 10.9
 339645 Use correct tag names in sys_getdents/64 wrappers
-n-i-bz Old STABS code is still being compiled, but never used. Remove it.
-n-i-bz Fix compilation on distros with glibc < 2.5
 339182 ppc64: AvSplat ought to load destination vector register with 16/16
        bytes stored prior
 339433 ppc64 lxvw4x instruction uses four 32-byte loads
+339721 assertion 'check_sibling == sibling' failed in readdwarf3.c ...
+n-i-bz Old STABS code is still being compiled, but never used. Remove it.
+n-i-bz Fix compilation on distros with glibc < 2.5
 
 
 Release 3.10.0 (10 September 2014)

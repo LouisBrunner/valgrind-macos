@@ -1498,7 +1498,7 @@ UInt get_Form_szB (CUConst* cc, DW_FORM form )
       case DW_FORM_block:
          return VARSZ_FORM;
       case DW_FORM_ref_sig8:
-         return 8 + 8;
+         return 8;
       case DW_FORM_indirect:
          return VARSZ_FORM;
       case DW_FORM_GNU_ref_alt:

@@ -41,55 +41,12 @@
 #include "pub_tool_libcassert.h"
 #include "pub_tool_libcprint.h"
 #include "pub_tool_tooliface.h"
+#include "pub_tool_guest.h"         // VexGuestArchState
 
 #include "mc_include.h"
 
-#undef MC_SIZEOF_GUEST_STATE
+#define MC_SIZEOF_GUEST_STATE  sizeof(VexGuestArchState)
 
-#if defined(VGA_x86)
-# include "libvex_guest_x86.h"
-# define MC_SIZEOF_GUEST_STATE sizeof(VexGuestX86State)
-#endif
-
-#if defined(VGA_amd64)
-# include "libvex_guest_amd64.h"
-# define MC_SIZEOF_GUEST_STATE sizeof(VexGuestAMD64State)
-#endif
-
-#if defined(VGA_ppc32)
-# include "libvex_guest_ppc32.h"
-# define MC_SIZEOF_GUEST_STATE sizeof(VexGuestPPC32State)
-#endif
-
-#if defined(VGA_ppc64be) || defined(VGA_ppc64le)
-# include "libvex_guest_ppc64.h"
-# define MC_SIZEOF_GUEST_STATE sizeof(VexGuestPPC64State)
-#endif
-
-#if defined(VGA_s390x)
-# include "libvex_guest_s390x.h"
-# define MC_SIZEOF_GUEST_STATE sizeof(VexGuestS390XState)
-#endif
-
-#if defined(VGA_arm)
-# include "libvex_guest_arm.h"
-# define MC_SIZEOF_GUEST_STATE sizeof(VexGuestARMState)
-#endif
-
-#if defined(VGA_arm64)
-# include "libvex_guest_arm64.h"
-# define MC_SIZEOF_GUEST_STATE sizeof(VexGuestARM64State)
-#endif
-
-#if defined(VGA_mips32)
-# include "libvex_guest_mips32.h"
-# define MC_SIZEOF_GUEST_STATE sizeof(VexGuestMIPS32State)
-#endif
-
-#if defined(VGA_mips64)
-# include "libvex_guest_mips64.h"
-# define MC_SIZEOF_GUEST_STATE sizeof(VexGuestMIPS64State)
-#endif
 
 static inline Bool host_is_big_endian ( void ) {
    UInt x = 0x11223344;

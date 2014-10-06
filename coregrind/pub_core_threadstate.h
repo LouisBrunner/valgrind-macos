@@ -42,6 +42,9 @@
 #include "pub_tool_threadstate.h"
 #include "pub_core_libcsetjmp.h"   // VG_MINIMAL_JMP_BUF
 #include "pub_core_vki.h"          // vki_sigset_t
+#include "pub_core_guest.h"        // VexGuestAMD64State etc.
+#include "libvex.h"                // LibVEX_N_SPILL_BYTES
+
 
 /*------------------------------------------------------------*/
 /*--- Types                                                ---*/
@@ -77,28 +80,6 @@ typedef
    }
    VgSchedReturnCode;
 
-
-#if defined(VGA_x86)
-   typedef VexGuestX86State   VexGuestArchState;
-#elif defined(VGA_amd64)
-   typedef VexGuestAMD64State VexGuestArchState;
-#elif defined(VGA_ppc32)
-   typedef VexGuestPPC32State VexGuestArchState;
-#elif defined(VGA_ppc64be) || defined(VGA_ppc64le)
-   typedef VexGuestPPC64State VexGuestArchState;
-#elif defined(VGA_arm)
-   typedef VexGuestARMState   VexGuestArchState;
-#elif defined(VGA_arm64)
-   typedef VexGuestARM64State VexGuestArchState;
-#elif defined(VGA_s390x)
-   typedef VexGuestS390XState VexGuestArchState;
-#elif defined(VGA_mips32)
-   typedef VexGuestMIPS32State VexGuestArchState;
-#elif defined(VGA_mips64)
-   typedef VexGuestMIPS64State VexGuestArchState;
-#else
-#  error Unknown architecture
-#endif
 
 /* Forward declarations */
 struct SyscallStatus;

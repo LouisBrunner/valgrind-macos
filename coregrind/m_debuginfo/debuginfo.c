@@ -2257,14 +2257,15 @@ HChar* VG_(describe_IP)(Addr eip, HChar* buf, Int n_buf, InlIPCursor *iipc)
          APPEND(" (");
          // Get the directory name, if any, possibly pruned, into dirname.
          HChar* dirname = NULL;
-         if (VG_(clo_n_fullpath_after) > 0) {
+         if (VG_(sizeXA)(VG_(clo_fullpath_after)) > 0) {
             Int i;
             dirname = buf_dirname;
             // Remove leading prefixes from the dirname.
             // If user supplied --fullpath-after=foo, this will remove 
             // a leading string which matches '.*foo' (not greedy).
-            for (i = 0; i < VG_(clo_n_fullpath_after); i++) {
-               const HChar* prefix = VG_(clo_fullpath_after)[i];
+            for (i = 0; i < VG_(sizeXA)(VG_(clo_fullpath_after)); i++) {
+               const HChar* prefix =
+                  *(HChar**) VG_(indexXA)( VG_(clo_fullpath_after), i );
                HChar* str    = VG_(strstr)(dirname, prefix);
                if (str) {
                   dirname = str + VG_(strlen)(prefix);

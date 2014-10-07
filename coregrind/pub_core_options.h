@@ -37,15 +37,7 @@
 // other module imports this one, if only for VG_(clo_verbosity).
 //--------------------------------------------------------------------
 #include "pub_tool_options.h"
-
-/* The max number of suppression files. */
-#define VG_CLO_MAX_SFILES 100
-
-/* The max number of --require-text-symbol= specification strings. */
-#define VG_CLO_MAX_REQ_TSYMS 100
-
-/* The max number of --fullpath-after= parameters. */
-#define VG_CLO_MAX_FULLPATH_AFTER 100
+#include "pub_core_xarray.h"
 
 /* Should we stop collecting errors if too many appear?  default: YES */
 extern Bool  VG_(clo_error_limit);
@@ -135,14 +127,12 @@ extern Int   VG_(clo_input_fd);
 
 /* Whether or not to load the default suppressions. */
 extern Bool  VG_(clo_default_supp);
-/* The number of suppression files specified. */
-extern Int   VG_(clo_n_suppressions);
+
 /* The names of the suppression files. */
-extern const HChar* VG_(clo_suppressions)[VG_CLO_MAX_SFILES];
+extern XArray *VG_(clo_suppressions);
 
 /* An array of strings harvested from --fullpath-after= flags. */
-extern Int   VG_(clo_n_fullpath_after);
-extern const HChar* VG_(clo_fullpath_after)[VG_CLO_MAX_FULLPATH_AFTER];
+extern XArray *VG_(clo_fullpath_after);
 
 /* Full path to additional path to search for debug symbols */
 extern const HChar* VG_(clo_extra_debuginfo_path);
@@ -276,8 +266,7 @@ extern const HChar* VG_(clo_prefix_to_strip);
    silently with the un-marked-up library.  Note that you should put
    the entire flag in quotes to stop shells messing up the * and ?
    wildcards. */
-extern Int    VG_(clo_n_req_tsyms);
-extern const HChar* VG_(clo_req_tsyms)[VG_CLO_MAX_REQ_TSYMS];
+extern XArray *VG_(clo_req_tsyms);
 
 /* Track open file descriptors? */
 extern Bool  VG_(clo_track_fds);

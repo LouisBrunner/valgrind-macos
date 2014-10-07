@@ -79,10 +79,8 @@ HChar* VG_(clo_xml_fname_expanded) = NULL;
 Bool   VG_(clo_time_stamp)     = False;
 Int    VG_(clo_input_fd)       = 0; /* stdin */
 Bool   VG_(clo_default_supp)   = True;
-Int    VG_(clo_n_suppressions) = 0;
-const HChar* VG_(clo_suppressions)[VG_CLO_MAX_SFILES];
-Int    VG_(clo_n_fullpath_after) = 0;
-const HChar* VG_(clo_fullpath_after)[VG_CLO_MAX_FULLPATH_AFTER];
+XArray *VG_(clo_suppressions);   // array of strings
+XArray *VG_(clo_fullpath_after); // array of strings
 const HChar* VG_(clo_extra_debuginfo_path) = NULL;
 const HChar* VG_(clo_debuginfo_server) = NULL;
 Bool   VG_(clo_allow_mismatched_debuginfo) = False;
@@ -116,8 +114,7 @@ UInt   VG_(clo_sim_hints)      = 0;
 Bool   VG_(clo_sym_offsets)    = False;
 Bool   VG_(clo_read_inline_info) = False; // Or should be put it to True by default ???
 Bool   VG_(clo_read_var_info)  = False;
-Int    VG_(clo_n_req_tsyms)    = 0;
-const HChar* VG_(clo_req_tsyms)[VG_CLO_MAX_REQ_TSYMS];
+XArray *VG_(clo_req_tsyms);  // array of strings
 HChar* VG_(clo_require_text_symbol) = NULL;
 Bool   VG_(clo_run_libc_freeres) = True;
 Bool   VG_(clo_track_fds)      = False;

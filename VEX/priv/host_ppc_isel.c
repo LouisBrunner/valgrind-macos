@@ -4871,7 +4871,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e, IREndness IEndianess )
    }
 
    if (e->tag == Iex_Load && e->Iex.Load.end == IEndianess) {
-      /* Need to be able to do V128 unaligned loads.  The unaligned load can
+      /* Need to be able to do V128 unaligned loads. The unaligned load can
        * be accomplised using the following code sequece from the ISA.  It
        * uses the lvx instruction that does two aligned loads and then
        * permute the data to store the required data as if it had been an

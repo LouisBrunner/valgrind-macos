@@ -1427,7 +1427,7 @@ PPCInstr* PPCInstr_AvSel ( HReg ctl, HReg dst, HReg srcL, HReg srcR ) {
    return i;
 }
 PPCInstr* PPCInstr_AvSh ( Bool shLeft, HReg dst, PPCAMode* addr ) {
-   PPCInstr* i        = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr*  i       = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag             = Pin_AvSh;
    i->Pin.AvSh.shLeft = shLeft;
    i->Pin.AvSh.dst    = dst;
@@ -5277,7 +5277,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       r_base = iregNo(i->Pin.AvSh.addr->Pam.RR.base, mode64);
 
       if (!idxd) {
-         r_idx = 30;                       // XXX: Using r30 as temp
+         r_idx = 30; // XXX: Using r30 as temp
          p = mkLoadImm(p, r_idx,
                        i->Pin.AvSh.addr->Pam.IR.index, mode64, endness_host);
       } else {

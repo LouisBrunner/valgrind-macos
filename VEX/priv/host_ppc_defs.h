@@ -858,7 +858,7 @@ typedef
          struct {
             Bool  shLeft;
             HReg  dst;
-            PPCAMode*  addr;
+            PPCAMode* addr;
          } AvSh;
          struct {
             UChar shift;

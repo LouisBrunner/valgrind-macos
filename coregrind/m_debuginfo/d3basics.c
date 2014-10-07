@@ -324,6 +324,8 @@ const HChar* ML_(pp_DW_AT) ( DW_AT attr )
       case DW_AT_body_begin: return "DW_AT_body_begin";
       case DW_AT_body_end: return "DW_AT_body_end";
       case DW_AT_GNU_vector: return "DW_AT_GNU_vector";
+      case DW_AT_GNU_all_tail_call_sites: return "DW_AT_GNU_all_tail_call_sites";
+      case DW_AT_GNU_all_call_sites: return "DW_AT_GNU_all_call_sites";
       /* VMS extensions.  */
       case DW_AT_VMS_rtnbeg_pd_address: return "DW_AT_VMS_rtnbeg_pd_address";
       /* UPC extension.  */

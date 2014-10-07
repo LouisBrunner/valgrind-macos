@@ -393,6 +393,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          mapRegs     = (void(*)(HRegRemap*,HInstr*, Bool)) mapRegs_S390Instr;
          genSpill    = (void(*)(HInstr**,HInstr**,HReg,Int,Bool)) genSpill_S390;
          genReload   = (void(*)(HInstr**,HInstr**,HReg,Int,Bool)) genReload_S390;
+         // fixs390: consider implementing directReload_S390
          ppInstr     = (void(*)(HInstr*, Bool)) ppS390Instr;
          ppReg       = (void(*)(HReg)) ppHRegS390;
          iselSB      = iselSB_S390;

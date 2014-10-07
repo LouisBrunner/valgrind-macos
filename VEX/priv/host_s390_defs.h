@@ -741,7 +741,6 @@ Int   emit_S390Instr       ( Bool *, UChar *, Int, s390_insn *, Bool,
 void  getAllocableRegs_S390( Int *, HReg **, Bool );
 void  genSpill_S390        ( HInstr **, HInstr **, HReg , Int , Bool );
 void  genReload_S390       ( HInstr **, HInstr **, HReg , Int , Bool );
-s390_insn *directReload_S390 ( s390_insn *, HReg, Short );
 HInstrArray *iselSB_S390   ( IRSB *, VexArch, VexArchInfo *, VexAbiInfo *,
                              Int, Int, Bool, Bool, Addr64);
 

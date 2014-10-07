@@ -4871,12 +4871,47 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e, IREndness IEndianess )
    }
 
    if (e->tag == Iex_Load && e->Iex.Load.end == IEndianess) {
-      PPCAMode* am_addr;
+      /* Need to be able to do V128 unaligned loads.  The unaligned load can
+       * be accomplised using the following code sequece from the ISA.  It
+       * uses the lvx instruction that does two aligned loads and then
+       * permute the data to store the required data as if it had been an
+       * unaligned load.
+       *
+       *   lvx  Vhi,0,Rb        # load MSQ, using the unaligned address in Rb
+       *   lvsl Vp, 0,Rb        # Set permute control vector
+       *   addi Rb,Rb,15        # Address of LSQ
+       *   lvx  Vlo,0,Rb        # load LSQ
+       *   vperm Vt,Vhi,Vlo,Vp  # align the data as requested
+       */
+
+      HReg Vhi   = newVRegV(env);
+      HReg Vlo   = newVRegV(env);
+      HReg Vp    = newVRegV(env);
       HReg v_dst = newVRegV(env);
+      HReg rB;
+      HReg rB_plus_15 = newVRegI(env);
+
       vassert(e->Iex.Load.ty == Ity_V128);
-      am_addr = iselWordExpr_AMode(env, e->Iex.Load.addr, Ity_V128/*xfer*/,
-                                   IEndianess);
-      addInstr(env, PPCInstr_AvLdSt( True/*load*/, 16, v_dst, am_addr));
+      rB = iselWordExpr_R( env, e->Iex.Load.addr, IEndianess );
+
+      // lvx  Vhi, 0, Rb
+      addInstr(env, PPCInstr_AvLdSt( True/*load*/, 16, Vhi,
+                                     PPCAMode_IR(0, rB)) );
+
+      // lvsl Vp, 0, Rb
+      addInstr(env, PPCInstr_AvSh( True/*left shift*/, Vp,
+                                   PPCAMode_IR(0, rB)) );
+
+      // addi Rb_plus_15, Rb, 15
+      addInstr(env, PPCInstr_Alu( Palu_ADD, rB_plus_15,
+                                  rB, PPCRH_Imm(True, toUShort(15))) );
+
+      // lvx  Vlo, 0, Rb_plus_15
+      addInstr(env, PPCInstr_AvLdSt( True/*load*/, 16, Vlo,
+                                     PPCAMode_IR(0, rB_plus_15)) );
+
+      // vperm Vt, Vhi, Vlo, Vp
+      addInstr(env, PPCInstr_AvPerm( v_dst, Vhi, Vlo, Vp ));
       return v_dst;
    }
 

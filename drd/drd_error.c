@@ -600,17 +600,21 @@ static const HChar* drd_get_error_name(Error* e)
  * define any 'extra' suppression information.
  */
 static
-Bool drd_get_extra_suppression_info(Error* e,
-                                    /*OUT*/HChar* buf, Int nBuf)
+SizeT drd_get_extra_suppression_info(Error* e,
+                                     /*OUT*/HChar* buf, Int nBuf)
 {
-   return False;
+   tl_assert(nBuf >= 1);
+   buf[0] = '\0';
+   return 0;
 }
 
 static
-Bool drd_print_extra_suppression_use(Supp* su,
-                                     /*OUT*/HChar* buf, Int nBuf)
+SizeT drd_print_extra_suppression_use(Supp* su,
+                                      /*OUT*/HChar* buf, Int nBuf)
 {
-   return False;
+   tl_assert(nBuf >= 1);
+   buf[0] = '\0';
+   return 0;
 }
 
 static

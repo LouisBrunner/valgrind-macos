@@ -128,8 +128,8 @@ typedef struct {
                                               Supp*);
    Bool  (*tool_error_matches_suppression)   (Error*, Supp*);
    const HChar* (*tool_get_error_name)       (Error*);
-   Bool  (*tool_get_extra_suppression_info)  (Error*,/*OUT*/HChar*,Int);
-   Bool  (*tool_print_extra_suppression_use) (Supp*,/*OUT*/HChar*,Int);
+   SizeT (*tool_get_extra_suppression_info)  (Error*,/*OUT*/HChar*,Int);
+   SizeT (*tool_print_extra_suppression_use) (Supp*,/*OUT*/HChar*,Int);
    void  (*tool_update_extra_suppression_use) (Error*, Supp*);
 
    // VG_(needs).superblock_discards

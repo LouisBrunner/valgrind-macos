@@ -335,21 +335,19 @@ extern void VG_(needs_tool_errors) (
 
    // This should print into buf[0..nBuf-1] any extra info for the
    // error, for --gen-suppressions, but not including any leading
-   // spaces nor a trailing newline.  When called, buf[0 .. nBuf-1]
-   // will be zero filled, and it is expected and checked that the
-   // last element is still zero after the call.  In other words the
-   // tool may not overrun the buffer, and this is checked for.  If
-   // there is any info printed in the buffer, return True, otherwise
-   // do nothing, and return False.  This function is the inverse of
-   // VG_(tdict).tool_read_extra_suppression_info().
-   Bool (*print_extra_suppression_info)(Error* err,
-                                        /*OUT*/HChar* buf, Int nBuf),
+   // spaces nor a trailing newline.  The string needs to be null 
+   // terminated. If the buffer is large enough to hold the string
+   // including the terminating null character the function shall
+   // return the value that strlen would return for the string.
+   // If the buffer is too small the function shall return nBuf.
+   SizeT (*print_extra_suppression_info)(Error* err,
+                                         /*OUT*/HChar* buf, Int nBuf),
 
    // This is similar to print_extra_suppression_info, but is used
    // to print information such as additional statistical counters
    // as part of the used suppression list produced by -v.
-   Bool (*print_extra_suppression_use)(Supp* su,
-                                       /*OUT*/HChar* buf, Int nBuf),
+   SizeT (*print_extra_suppression_use)(Supp* su,
+                                        /*OUT*/HChar* buf, Int nBuf),
 
    // Called by error mgr once it has been established that err
    // is suppressed by su. update_extra_suppression_use typically

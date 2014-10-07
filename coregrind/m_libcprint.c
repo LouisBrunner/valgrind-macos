@@ -227,6 +227,17 @@ UInt VG_(sprintf) ( HChar* buf, const HChar *format, ... )
 
 /* --------- snprintf --------- */
 
+/* The return value of VG_(snprintf) and VG_(vsnprintf) differs from
+   what is defined in C99. Let S be the size of the buffer as given in
+   the 2nd argument.
+   Return value R:
+     R < S:  The output string was successfully written to the buffer.
+             It is null-terminated and R == strlen( output string )
+     R == S: The supplied buffer was too small to hold the output string.
+             The first S-1 characters of the output string were written
+             to the buffer followed by the terminating null character.
+*/
+
 typedef 
    struct {
       HChar* buf;

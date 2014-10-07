@@ -44,9 +44,9 @@ Bool  HG_(read_extra_suppression_info) ( Int fd, HChar** bufpp, SizeT* nBufp,
                                          Int* lineno, Supp* su );
 Bool  HG_(error_matches_suppression) ( Error* err, Supp* su );
 const HChar* HG_(get_error_name) ( Error* err );
-Bool  HG_(get_extra_suppression_info) ( Error* err,
+SizeT HG_(get_extra_suppression_info) ( Error* err,
                                         /*OUT*/HChar* buf, Int nBuf );
-Bool  HG_(print_extra_suppression_use) ( Supp* su,
+SizeT HG_(print_extra_suppression_use) ( Supp* su,
                                          /*OUT*/HChar* buf, Int nBuf );
 void  HG_(update_extra_suppression_use) ( Error* err, Supp* su );
 

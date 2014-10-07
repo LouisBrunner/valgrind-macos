@@ -1308,18 +1308,22 @@ Bool HG_(error_matches_suppression) ( Error* err, Supp* su )
    }
 }
 
-Bool HG_(get_extra_suppression_info) ( Error* err,
+SizeT HG_(get_extra_suppression_info) ( Error* err,
                                        /*OUT*/HChar* buf, Int nBuf )
 {
+   tl_assert(nBuf >= 1);
    /* Do nothing */
-   return False;
+   buf[0] = '\0';
+   return 0;
 }
 
-Bool HG_(print_extra_suppression_use) ( Supp* su,
+SizeT HG_(print_extra_suppression_use) ( Supp* su,
                                         /*OUT*/HChar* buf, Int nBuf )
 {
+   tl_assert(nBuf >= 1);
    /* Do nothing */
-   return False;
+   buf[0] = '\0';
+   return 0;
 }
 
 void HG_(update_extra_suppression_use) ( Error* err, Supp* su )

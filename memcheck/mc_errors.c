@@ -1511,51 +1511,51 @@ const HChar* MC_(get_error_name) ( Error* err )
    }
 }
 
-Bool MC_(get_extra_suppression_info) ( Error* err,
-                                       /*OUT*/HChar* buf, Int nBuf )
+SizeT MC_(get_extra_suppression_info) ( Error* err,
+                                        /*OUT*/HChar* buf, Int nBuf )
 {
    ErrorKind ekind = VG_(get_error_kind )(err);
    tl_assert(buf);
-   tl_assert(nBuf >= 16); // stay sane
+   tl_assert(nBuf >= 1);
+
    if (Err_RegParam == ekind || Err_MemParam == ekind) {
       const HChar* errstr = VG_(get_error_string)(err);
       tl_assert(errstr);
-      VG_(snprintf)(buf, nBuf-1, "%s", errstr);
-      return True;
+      return VG_(snprintf)(buf, nBuf, "%s", errstr);
    } else if (Err_Leak == ekind) {
       MC_Error* extra = VG_(get_error_extra)(err);
-      VG_(snprintf)
-         (buf, nBuf-1, "match-leak-kinds: %s",
+      return VG_(snprintf) (buf, nBuf, "match-leak-kinds: %s",
           pp_Reachedness_for_leak_kinds(extra->Err.Leak.lr->key.state));
-      return True;
    } else if (Err_FishyValue == ekind) {
       MC_Error* extra = VG_(get_error_extra)(err);
-      VG_(snprintf)
-         (buf, nBuf-1, "%s(%s)", extra->Err.FishyValue.function_name,
-          extra->Err.FishyValue.argument_name);
-      return True;
+      return VG_(snprintf) (buf, nBuf, "%s(%s)",
+                            extra->Err.FishyValue.function_name,
+                            extra->Err.FishyValue.argument_name);
    } else {
-      return False;
+      buf[0] = '\0';
+      return 0;
    }
 }
 
-Bool MC_(print_extra_suppression_use) ( Supp *su,
-                                        /*OUT*/HChar *buf, Int nBuf )
+SizeT MC_(print_extra_suppression_use) ( Supp *su,
+                                         /*OUT*/HChar *buf, Int nBuf )
 {
+   tl_assert(nBuf >= 1);
+
    if (VG_(get_supp_kind)(su) == LeakSupp) {
       MC_LeakSuppExtra *lse = (MC_LeakSuppExtra*) VG_(get_supp_extra) (su);
 
       if (lse->leak_search_gen == MC_(leak_search_gen)
           && lse->blocks_suppressed > 0) {
-         VG_(snprintf) (buf, nBuf-1, 
-                        "suppressed: %'lu bytes in %'lu blocks",
-                        lse->bytes_suppressed,
-                        lse->blocks_suppressed);
-         return True;
-      } else
-         return False;
-   } else
-      return False;
+         return VG_(snprintf) (buf, nBuf,
+                               "suppressed: %'lu bytes in %'lu blocks",
+                               lse->bytes_suppressed,
+                               lse->blocks_suppressed);
+      }
+   }
+
+   buf[0] = '\0';
+   return 0;
 }
 
 void MC_(update_extra_suppression_use) ( Error* err, Supp* su)

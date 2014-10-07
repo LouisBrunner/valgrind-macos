@@ -56,9 +56,9 @@ Bool pc_read_extra_suppression_info ( Int fd, HChar** bufpp,
                                       SizeT* nBufp, Int* lineno, Supp* su );
 Bool pc_error_matches_suppression (Error* err, Supp* su);
 const HChar* pc_get_error_name ( Error* err );
-Bool pc_get_extra_suppression_info ( Error* err,
+SizeT pc_get_extra_suppression_info ( Error* err,
                                      /*OUT*/HChar* buf, Int nBuf );
-Bool pc_print_extra_suppression_use ( Supp* su,
+SizeT pc_print_extra_suppression_use ( Supp* su,
                                       /*OUT*/HChar* buf, Int nBuf );
 void pc_update_extra_suppression_use (Error* err, Supp* su);
 

@@ -362,8 +362,6 @@ static void printSuppForIp_nonXML(UInt n, Addr ip, void* textV)
 */
 static void gen_suppression(Error* err)
 {
-   HChar       xtra[256]; /* assumed big enough (is overrun-safe) */
-   Bool        anyXtra;
    const HChar* name;
    ExeContext* ec;
    XArray* /* HChar */ text;
@@ -394,12 +392,21 @@ static void gen_suppression(Error* err)
    VG_(xaprintf)(text, "   <%s>\n", dummy_name);
    VG_(xaprintf)(text, "   %s:%s\n", VG_(details).name, name);
 
-   VG_(memset)(xtra, 0, sizeof(xtra));
-   anyXtra = VG_TDICT_CALL(tool_get_extra_suppression_info,
-                           err, xtra, sizeof(xtra));
-   vg_assert(xtra[sizeof(xtra)-1] == 0);
+   HChar       *xtra = NULL;
+   SizeT       xtra_size = 0;
+   SizeT       num_written;
 
-   if (anyXtra)
+   do {
+      xtra_size += 256;
+      xtra = VG_(realloc)("errormgr.gen_suppression.2", xtra,xtra_size);
+      num_written = VG_TDICT_CALL(tool_get_extra_suppression_info,
+                                  err, xtra, xtra_size);
+   } while (num_written == xtra_size);  // resize buffer and retry
+
+   // Ensure buffer is properly terminated
+   vg_assert(xtra[num_written] == '\0');
+
+   if (num_written)
       VG_(xaprintf)(text, "   %s\n", xtra);
 
    // Print stack trace elements
@@ -432,7 +439,7 @@ static void gen_suppression(Error* err)
       VG_(printf_xml)("    <sname>%s</sname>\n", dummy_name);
       VG_(printf_xml)(
                       "    <skind>%pS:%pS</skind>\n", VG_(details).name, name);
-      if (anyXtra)
+      if (num_written)
          VG_(printf_xml)("    <skaux>%pS</skaux>\n", xtra);
 
       // Print stack trace elements
@@ -454,6 +461,7 @@ static void gen_suppression(Error* err)
    }
 
    VG_(deleteXA)(text);
+   VG_(free)(xtra);
 }
 
 
@@ -932,19 +940,28 @@ static Bool show_used_suppressions ( void )
                                  "  </pair>\n",
                                  su->count, su->sname );
       } else {
-         HChar       xtra[256]; /* assumed big enough (is overrun-safe) */
-         Bool        anyXtra;
+         HChar      *xtra = NULL;
+         Int         xtra_size = 0;
+         SizeT       num_written;
          // blank line before the first shown suppression, if any
          if (!any_supp)
             VG_(dmsg)("\n");
-         VG_(memset)(xtra, 0, sizeof(xtra));
-         anyXtra = VG_TDICT_CALL(tool_print_extra_suppression_use,
-                                 su, xtra, sizeof(xtra));
-         vg_assert(xtra[sizeof(xtra)-1] == 0);
+
+         do {
+            xtra_size += 256;
+            xtra = VG_(realloc)("errormgr.sus.1", xtra, xtra_size);
+            num_written = VG_TDICT_CALL(tool_print_extra_suppression_use,
+                                        su, xtra, xtra_size);
+         } while (num_written == xtra_size); // resize buffer and retry
+
+         // Ensure buffer is properly terminated
+         vg_assert(xtra[num_written] == '\0');
+
          VG_(dmsg)("used_suppression: %6d %s %s:%d%s%s\n", su->count, su->sname,
                    VG_(clo_suppressions)[su->clo_suppressions_i],
                    su->sname_lineno,
-                   anyXtra ? " " : "", xtra);
+                   num_written ? " " : "", xtra);
+         VG_(free)(xtra);
       }
       any_supp = True;
    }

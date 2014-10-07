@@ -777,26 +777,29 @@ const HChar* pc_get_error_name ( Error* err )
    }
 }
 
-Bool pc_get_extra_suppression_info ( Error* err,
-                                     /*OUT*/HChar* buf, Int nBuf )
+SizeT pc_get_extra_suppression_info ( Error* err,
+                                      /*OUT*/HChar* buf, Int nBuf )
 {
    ErrorKind ekind = VG_(get_error_kind )(err);
    tl_assert(buf);
-   tl_assert(nBuf >= 16); // stay sane
+   tl_assert(nBuf >= 1);
+
    if (XE_SysParam == ekind) {
       const HChar* errstr = VG_(get_error_string)(err);
       tl_assert(errstr);
-      VG_(snprintf)(buf, nBuf-1, "%s", errstr);
-      return True;
+      return VG_(snprintf)(buf, nBuf, "%s", errstr);
    } else {
-      return False;
+      buf[0] = '\0';
+      return 0;
    }
 }
 
-Bool pc_print_extra_suppression_use ( Supp* su,
-                                      /*OUT*/HChar* buf, Int nBuf )
+SizeT pc_print_extra_suppression_use ( Supp* su,
+                                       /*OUT*/HChar* buf, Int nBuf )
 {
-   return False;
+   tl_assert(nBuf >= 1);
+   buf[0] = '\0';
+   return 0;
 }
 
 void pc_update_extra_suppression_use (Error* err, Supp* su)

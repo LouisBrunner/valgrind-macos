@@ -296,22 +296,16 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          mode64       = False;
          getAllocableRegs_X86 ( &n_available_real_regs,
                                 &available_real_regs );
-         isMove       = (Bool(*)(HInstr*,HReg*,HReg*)) isMove_X86Instr;
-         getRegUsage  = (void(*)(HRegUsage*,HInstr*, Bool))
-                        getRegUsage_X86Instr;
-         mapRegs      = (void(*)(HRegRemap*,HInstr*, Bool)) mapRegs_X86Instr;
-         genSpill     = (void(*)(HInstr**,HInstr**,HReg,Int,Bool))
-                        genSpill_X86;
-         genReload    = (void(*)(HInstr**,HInstr**,HReg,Int,Bool))
-                        genReload_X86;
-         directReload = (HInstr*(*)(HInstr*,HReg,Short)) directReload_X86;
-         ppInstr      = (void(*)(HInstr*, Bool)) ppX86Instr;
-         ppReg        = (void(*)(HReg)) ppHRegX86;
+         isMove       = (__typeof__(isMove)) isMove_X86Instr;
+         getRegUsage  = (__typeof__(getRegUsage)) getRegUsage_X86Instr;
+         mapRegs      = (__typeof__(mapRegs)) mapRegs_X86Instr;
+         genSpill     = (__typeof__(genSpill)) genSpill_X86;
+         genReload    = (__typeof__(genReload)) genReload_X86;
+         directReload = (__typeof__(directReload)) directReload_X86;
+         ppInstr      = (__typeof__(ppInstr)) ppX86Instr;
+         ppReg        = (__typeof__(ppReg)) ppHRegX86;
          iselSB       = iselSB_X86;
-         emit         = (Int(*)(Bool*,UChar*,Int,HInstr*,Bool,VexEndness,
-                                const void*,const void*,const void*,
-                                const void*))
-                        emit_X86Instr;
+         emit         = (__typeof__(emit)) emit_X86Instr;
          host_word_type    = Ity_I32;
          vassert(are_valid_hwcaps(VexArchX86, vta->archinfo_host.hwcaps));
          vassert(vta->archinfo_host.endness == VexEndnessLE);
@@ -321,21 +315,15 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          mode64      = True;
          getAllocableRegs_AMD64 ( &n_available_real_regs,
                                   &available_real_regs );
-         isMove      = (Bool(*)(HInstr*,HReg*,HReg*)) isMove_AMD64Instr;
-         getRegUsage = (void(*)(HRegUsage*,HInstr*, Bool))
-                       getRegUsage_AMD64Instr;
-         mapRegs     = (void(*)(HRegRemap*,HInstr*, Bool)) mapRegs_AMD64Instr;
-         genSpill    = (void(*)(HInstr**,HInstr**,HReg,Int,Bool))
-                       genSpill_AMD64;
-         genReload   = (void(*)(HInstr**,HInstr**,HReg,Int,Bool))
-                       genReload_AMD64;
-         ppInstr     = (void(*)(HInstr*, Bool)) ppAMD64Instr;
-         ppReg       = (void(*)(HReg)) ppHRegAMD64;
-         iselSB      = iselSB_AMD64;
-         emit        = (Int(*)(Bool*,UChar*,Int,HInstr*,Bool,VexEndness,
-                               const void*,const void*,const void*,
-                               const void*))
-                       emit_AMD64Instr;
+         isMove       = (__typeof__(isMove)) isMove_AMD64Instr;
+         getRegUsage  = (__typeof__(getRegUsage)) getRegUsage_AMD64Instr;
+         mapRegs      = (__typeof__(mapRegs)) mapRegs_AMD64Instr;
+         genSpill     = (__typeof__(genSpill)) genSpill_AMD64;
+         genReload    = (__typeof__(genReload)) genReload_AMD64;
+         ppInstr      = (__typeof__(ppInstr)) ppAMD64Instr;
+         ppReg        = (__typeof__(ppReg)) ppHRegAMD64;
+         iselSB       = iselSB_AMD64;
+         emit         = (__typeof__(emit)) emit_AMD64Instr;
          host_word_type    = Ity_I64;
          vassert(are_valid_hwcaps(VexArchAMD64, vta->archinfo_host.hwcaps));
          vassert(vta->archinfo_host.endness == VexEndnessLE);
@@ -345,18 +333,15 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          mode64      = False;
          getAllocableRegs_PPC ( &n_available_real_regs,
                                 &available_real_regs, mode64 );
-         isMove      = (Bool(*)(HInstr*,HReg*,HReg*)) isMove_PPCInstr;
-         getRegUsage = (void(*)(HRegUsage*,HInstr*,Bool)) getRegUsage_PPCInstr;
-         mapRegs     = (void(*)(HRegRemap*,HInstr*,Bool)) mapRegs_PPCInstr;
-         genSpill    = (void(*)(HInstr**,HInstr**,HReg,Int,Bool)) genSpill_PPC;
-         genReload   = (void(*)(HInstr**,HInstr**,HReg,Int,Bool)) genReload_PPC;
-         ppInstr     = (void(*)(HInstr*,Bool)) ppPPCInstr;
-         ppReg       = (void(*)(HReg)) ppHRegPPC;
-         iselSB      = iselSB_PPC;
-         emit        = (Int(*)(Bool*,UChar*,Int,HInstr*,Bool,VexEndness,
-                               const void*,const void*,const void*,
-                               const void*))
-                       emit_PPCInstr;
+         isMove       = (__typeof__(isMove)) isMove_PPCInstr;
+         getRegUsage  = (__typeof__(getRegUsage)) getRegUsage_PPCInstr;
+         mapRegs      = (__typeof__(mapRegs)) mapRegs_PPCInstr;
+         genSpill     = (__typeof__(genSpill)) genSpill_PPC;
+         genReload    = (__typeof__(genReload)) genReload_PPC;
+         ppInstr      = (__typeof__(ppInstr)) ppPPCInstr;
+         ppReg        = (__typeof__(ppReg)) ppHRegPPC;
+         iselSB       = iselSB_PPC;
+         emit         = (__typeof__(emit)) emit_PPCInstr;
          host_word_type    = Ity_I32;
          vassert(are_valid_hwcaps(VexArchPPC32, vta->archinfo_host.hwcaps));
          vassert(vta->archinfo_host.endness == VexEndnessBE);
@@ -366,18 +351,15 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          mode64      = True;
          getAllocableRegs_PPC ( &n_available_real_regs,
                                 &available_real_regs, mode64 );
-         isMove      = (Bool(*)(HInstr*,HReg*,HReg*)) isMove_PPCInstr;
-         getRegUsage = (void(*)(HRegUsage*,HInstr*, Bool)) getRegUsage_PPCInstr;
-         mapRegs     = (void(*)(HRegRemap*,HInstr*, Bool)) mapRegs_PPCInstr;
-         genSpill    = (void(*)(HInstr**,HInstr**,HReg,Int,Bool)) genSpill_PPC;
-         genReload   = (void(*)(HInstr**,HInstr**,HReg,Int,Bool)) genReload_PPC;
-         ppInstr     = (void(*)(HInstr*, Bool)) ppPPCInstr;
-         ppReg       = (void(*)(HReg)) ppHRegPPC;
-         iselSB      = iselSB_PPC;
-         emit        = (Int(*)(Bool*,UChar*,Int,HInstr*,Bool,VexEndness,
-                               const void*,const void*,const void*,
-                               const void*))
-                       emit_PPCInstr;
+         isMove       = (__typeof__(isMove)) isMove_PPCInstr;
+         getRegUsage  = (__typeof__(getRegUsage)) getRegUsage_PPCInstr;
+         mapRegs      = (__typeof__(mapRegs)) mapRegs_PPCInstr;
+         genSpill     = (__typeof__(genSpill)) genSpill_PPC;
+         genReload    = (__typeof__(genReload)) genReload_PPC;
+         ppInstr      = (__typeof__(ppInstr)) ppPPCInstr;
+         ppReg        = (__typeof__(ppReg)) ppHRegPPC;
+         iselSB       = iselSB_PPC;
+         emit         = (__typeof__(emit)) emit_PPCInstr;
          host_word_type    = Ity_I64;
          vassert(are_valid_hwcaps(VexArchPPC64, vta->archinfo_host.hwcaps));
          vassert(vta->archinfo_host.endness == VexEndnessBE ||
@@ -388,19 +370,16 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          mode64      = True;
          getAllocableRegs_S390 ( &n_available_real_regs,
                                  &available_real_regs, mode64 );
-         isMove      = (Bool(*)(HInstr*,HReg*,HReg*)) isMove_S390Instr;
-         getRegUsage = (void(*)(HRegUsage*,HInstr*, Bool)) getRegUsage_S390Instr;
-         mapRegs     = (void(*)(HRegRemap*,HInstr*, Bool)) mapRegs_S390Instr;
-         genSpill    = (void(*)(HInstr**,HInstr**,HReg,Int,Bool)) genSpill_S390;
-         genReload   = (void(*)(HInstr**,HInstr**,HReg,Int,Bool)) genReload_S390;
+         isMove       = (__typeof__(isMove)) isMove_S390Instr;
+         getRegUsage  = (__typeof__(getRegUsage)) getRegUsage_S390Instr;
+         mapRegs      = (__typeof__(mapRegs)) mapRegs_S390Instr;
+         genSpill     = (__typeof__(genSpill)) genSpill_S390;
+         genReload    = (__typeof__(genReload)) genReload_S390;
          // fixs390: consider implementing directReload_S390
-         ppInstr     = (void(*)(HInstr*, Bool)) ppS390Instr;
-         ppReg       = (void(*)(HReg)) ppHRegS390;
-         iselSB      = iselSB_S390;
-         emit        = (Int(*)(Bool*,UChar*,Int,HInstr*,Bool,VexEndness,
-                               const void*,const void*,const void*,
-                               const void*))
-                               emit_S390Instr;
+         ppInstr      = (__typeof__(ppInstr)) ppS390Instr;
+         ppReg        = (__typeof__(ppReg)) ppHRegS390;
+         iselSB       = iselSB_S390;
+         emit         = (__typeof__(emit)) emit_S390Instr;
          host_word_type    = Ity_I64;
          vassert(are_valid_hwcaps(VexArchS390X, vta->archinfo_host.hwcaps));
          vassert(vta->archinfo_host.endness == VexEndnessBE);
@@ -410,18 +389,15 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          mode64      = False;
          getAllocableRegs_ARM ( &n_available_real_regs,
                                 &available_real_regs );
-         isMove      = (Bool(*)(HInstr*,HReg*,HReg*)) isMove_ARMInstr;
-         getRegUsage = (void(*)(HRegUsage*,HInstr*, Bool)) getRegUsage_ARMInstr;
-         mapRegs     = (void(*)(HRegRemap*,HInstr*, Bool)) mapRegs_ARMInstr;
-         genSpill    = (void(*)(HInstr**,HInstr**,HReg,Int,Bool)) genSpill_ARM;
-         genReload   = (void(*)(HInstr**,HInstr**,HReg,Int,Bool)) genReload_ARM;
-         ppInstr     = (void(*)(HInstr*, Bool)) ppARMInstr;
-         ppReg       = (void(*)(HReg)) ppHRegARM;
-         iselSB      = iselSB_ARM;
-         emit        = (Int(*)(Bool*,UChar*,Int,HInstr*,Bool,VexEndness,
-                               const void*,const void*,const void*,
-                               const void*))
-                       emit_ARMInstr;
+         isMove       = (__typeof__(isMove)) isMove_ARMInstr;
+         getRegUsage  = (__typeof__(getRegUsage)) getRegUsage_ARMInstr;
+         mapRegs      = (__typeof__(mapRegs)) mapRegs_ARMInstr;
+         genSpill     = (__typeof__(genSpill)) genSpill_ARM;
+         genReload    = (__typeof__(genReload)) genReload_ARM;
+         ppInstr      = (__typeof__(ppInstr)) ppARMInstr;
+         ppReg        = (__typeof__(ppReg)) ppHRegARM;
+         iselSB       = iselSB_ARM;
+         emit         = (__typeof__(emit)) emit_ARMInstr;
          host_word_type    = Ity_I32;
          vassert(are_valid_hwcaps(VexArchARM, vta->archinfo_host.hwcaps));
          vassert(vta->archinfo_host.endness == VexEndnessLE);
@@ -431,22 +407,15 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          mode64      = True;
          getAllocableRegs_ARM64 ( &n_available_real_regs,
                                   &available_real_regs );
-         isMove      = (Bool(*)(HInstr*,HReg*,HReg*)) isMove_ARM64Instr;
-         getRegUsage = (void(*)(HRegUsage*,HInstr*, Bool))
-                       getRegUsage_ARM64Instr;
-         mapRegs     = (void(*)(HRegRemap*,HInstr*, Bool))
-                       mapRegs_ARM64Instr;
-         genSpill    = (void(*)(HInstr**,HInstr**,HReg,Int,Bool))
-                       genSpill_ARM64;
-         genReload   = (void(*)(HInstr**,HInstr**,HReg,Int,Bool))
-                       genReload_ARM64;
-         ppInstr     = (void(*)(HInstr*, Bool)) ppARM64Instr;
-         ppReg       = (void(*)(HReg)) ppHRegARM64;
-         iselSB      = iselSB_ARM64;
-         emit        = (Int(*)(Bool*,UChar*,Int,HInstr*,Bool,VexEndness,
-                               const void*,const void*,const void*,
-                               const void*))
-                       emit_ARM64Instr;
+         isMove       = (__typeof__(isMove)) isMove_ARM64Instr;
+         getRegUsage  = (__typeof__(getRegUsage)) getRegUsage_ARM64Instr;
+         mapRegs      = (__typeof__(mapRegs)) mapRegs_ARM64Instr;
+         genSpill     = (__typeof__(genSpill)) genSpill_ARM64;
+         genReload    = (__typeof__(genReload)) genReload_ARM64;
+         ppInstr      = (__typeof__(ppInstr)) ppARM64Instr;
+         ppReg        = (__typeof__(ppReg)) ppHRegARM64;
+         iselSB       = iselSB_ARM64;
+         emit         = (__typeof__(emit)) emit_ARM64Instr;
          host_word_type    = Ity_I64;
          vassert(are_valid_hwcaps(VexArchARM64, vta->archinfo_host.hwcaps));
          vassert(vta->archinfo_host.endness == VexEndnessLE);
@@ -456,18 +425,15 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          mode64      = False;
          getAllocableRegs_MIPS ( &n_available_real_regs,
                                 &available_real_regs, mode64 );
-         isMove      = (Bool(*)(HInstr*,HReg*,HReg*)) isMove_MIPSInstr;
-         getRegUsage = (void(*)(HRegUsage*,HInstr*, Bool)) getRegUsage_MIPSInstr;
-         mapRegs     = (void(*)(HRegRemap*,HInstr*, Bool)) mapRegs_MIPSInstr;
-         genSpill    = (void(*)(HInstr**,HInstr**,HReg,Int,Bool)) genSpill_MIPS;
-         genReload   = (void(*)(HInstr**,HInstr**,HReg,Int,Bool)) genReload_MIPS;
-         ppInstr     = (void(*)(HInstr*, Bool)) ppMIPSInstr;
-         ppReg       = (void(*)(HReg)) ppHRegMIPS;
-         iselSB      = iselSB_MIPS;
-         emit        = (Int(*)(Bool*,UChar*,Int,HInstr*,Bool,VexEndness,
-                               const void*,const void*,const void*,
-                               const void*))
-                       emit_MIPSInstr;
+         isMove       = (__typeof__(isMove)) isMove_MIPSInstr;
+         getRegUsage  = (__typeof__(getRegUsage)) getRegUsage_MIPSInstr;
+         mapRegs      = (__typeof__(mapRegs)) mapRegs_MIPSInstr;
+         genSpill     = (__typeof__(genSpill)) genSpill_MIPS;
+         genReload    = (__typeof__(genReload)) genReload_MIPS;
+         ppInstr      = (__typeof__(ppInstr)) ppMIPSInstr;
+         ppReg        = (__typeof__(ppReg)) ppHRegMIPS;
+         iselSB       = iselSB_MIPS;
+         emit         = (__typeof__(emit)) emit_MIPSInstr;
          host_word_type    = Ity_I32;
          vassert(are_valid_hwcaps(VexArchMIPS32, vta->archinfo_host.hwcaps));
          vassert(vta->archinfo_host.endness == VexEndnessLE
@@ -478,18 +444,15 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          mode64      = True;
          getAllocableRegs_MIPS ( &n_available_real_regs,
                                  &available_real_regs, mode64 );
-         isMove      = (Bool(*)(HInstr*,HReg*,HReg*)) isMove_MIPSInstr;
-         getRegUsage = (void(*)(HRegUsage*,HInstr*, Bool)) getRegUsage_MIPSInstr;
-         mapRegs     = (void(*)(HRegRemap*,HInstr*, Bool)) mapRegs_MIPSInstr;
-         genSpill    = (void(*)(HInstr**,HInstr**,HReg,Int,Bool)) genSpill_MIPS;
-         genReload   = (void(*)(HInstr**,HInstr**,HReg,Int,Bool)) genReload_MIPS;
-         ppInstr     = (void(*)(HInstr*, Bool)) ppMIPSInstr;
-         ppReg       = (void(*)(HReg)) ppHRegMIPS;
-         iselSB      = iselSB_MIPS;
-         emit        = (Int(*)(Bool*,UChar*,Int,HInstr*,Bool,VexEndness,
-                               const void*,const void*,const void*,
-                               const void*))
-                       emit_MIPSInstr;
+         isMove       = (__typeof__(isMove)) isMove_MIPSInstr;
+         getRegUsage  = (__typeof__(getRegUsage)) getRegUsage_MIPSInstr;
+         mapRegs      = (__typeof__(mapRegs)) mapRegs_MIPSInstr;
+         genSpill     = (__typeof__(genSpill)) genSpill_MIPS;
+         genReload    = (__typeof__(genReload)) genReload_MIPS;
+         ppInstr      = (__typeof__(ppInstr)) ppMIPSInstr;
+         ppReg        = (__typeof__(ppReg)) ppHRegMIPS;
+         iselSB       = iselSB_MIPS;
+         emit         = (__typeof__(emit)) emit_MIPSInstr;
          host_word_type    = Ity_I64;
          vassert(are_valid_hwcaps(VexArchMIPS64, vta->archinfo_host.hwcaps));
          vassert(vta->archinfo_host.endness == VexEndnessLE

@@ -705,15 +705,15 @@ extern MIPSInstr *MIPSInstr_EvCheck(MIPSAMode* amCounter,
                                     MIPSAMode* amFailAddr );
 extern MIPSInstr *MIPSInstr_ProfInc( void );
 
-extern void ppMIPSInstr(MIPSInstr *, Bool mode64);
+extern void ppMIPSInstr(const MIPSInstr *, Bool mode64);
 
 /* Some functions that insulate the register allocator from details
    of the underlying instruction set. */
-extern void       getRegUsage_MIPSInstr (HRegUsage *, MIPSInstr *, Bool);
-extern void       mapRegs_MIPSInstr     (HRegRemap *, MIPSInstr *, Bool mode64);
-extern Bool       isMove_MIPSInstr      (MIPSInstr *, HReg *, HReg *);
+extern void getRegUsage_MIPSInstr (HRegUsage *, const MIPSInstr *, Bool);
+extern void mapRegs_MIPSInstr     (HRegRemap *, MIPSInstr *, Bool mode64);
+extern Bool isMove_MIPSInstr      (const MIPSInstr *, HReg *, HReg *);
 extern Int        emit_MIPSInstr (/*MB_MOD*/Bool* is_profInc,
-                                  UChar* buf, Int nbuf, MIPSInstr* i,
+                                  UChar* buf, Int nbuf, const MIPSInstr* i,
                                   Bool mode64,
                                   VexEndness endness_host,
                                   const void* disp_cp_chain_me_to_slowEP,
@@ -729,8 +729,8 @@ extern void genReload_MIPS( /*OUT*/ HInstr ** i1, /*OUT*/ HInstr ** i2,
 extern void        getAllocableRegs_MIPS (Int *, HReg **, Bool mode64);
 extern HInstrArray *iselSB_MIPS          ( IRSB*,
                                            VexArch,
-                                           VexArchInfo*,
-                                           VexAbiInfo*,
+                                           const VexArchInfo*,
+                                           const VexAbiInfo*,
                                            Int offs_Host_EvC_Counter,
                                            Int offs_Host_EvC_FailAddr,
                                            Bool chainingAllowed,

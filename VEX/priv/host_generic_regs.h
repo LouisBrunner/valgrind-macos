@@ -326,10 +326,10 @@ HInstrArray* doRegisterAllocation (
 
    /* Return True iff the given insn is a reg-reg move, in which
       case also return the src and dst regs. */
-   Bool (*isMove) (HInstr*, HReg*, HReg*),
+   Bool (*isMove) (const HInstr*, HReg*, HReg*),
 
    /* Get info about register usage in this insn. */
-   void (*getRegUsage) (HRegUsage*, HInstr*, Bool),
+   void (*getRegUsage) (HRegUsage*, const HInstr*, Bool),
 
    /* Apply a reg-reg mapping to an insn. */
    void (*mapRegs) (HRegRemap*, HInstr*, Bool),
@@ -342,7 +342,7 @@ HInstrArray* doRegisterAllocation (
    Int     guest_sizeB,
 
    /* For debug printing only. */
-   void (*ppInstr) ( HInstr*, Bool ),
+   void (*ppInstr) ( const HInstr*, Bool ),
    void (*ppReg) ( HReg ),
 
    /* 32/64bit mode */

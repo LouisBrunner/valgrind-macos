@@ -1010,7 +1010,7 @@ AMD64Instr* AMD64Instr_ProfInc ( void ) {
    return i;
 }
 
-void ppAMD64Instr ( AMD64Instr* i, Bool mode64 ) 
+void ppAMD64Instr ( const AMD64Instr* i, Bool mode64 ) 
 {
    vassert(mode64 == True);
    switch (i->tag) {
@@ -1327,7 +1327,7 @@ void ppAMD64Instr ( AMD64Instr* i, Bool mode64 )
 
 /* --------- Helpers for register allocation. --------- */
 
-void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i, Bool mode64 )
+void getRegUsage_AMD64Instr ( HRegUsage* u, const AMD64Instr* i, Bool mode64 )
 {
    Bool unary;
    vassert(mode64 == True);
@@ -1818,7 +1818,7 @@ void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i, Bool mode64 )
    source and destination to *src and *dst.  If in doubt say No.  Used
    by the register allocator to do move coalescing. 
 */
-Bool isMove_AMD64Instr ( AMD64Instr* i, HReg* src, HReg* dst )
+Bool isMove_AMD64Instr ( const AMD64Instr* i, HReg* src, HReg* dst )
 {
    switch (i->tag) {
       case Ain_Alu64R:
@@ -2264,7 +2264,7 @@ static UChar* do_ffree_st ( UChar* p, Int n )
    leave it unchanged. */
 
 Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
-                      UChar* buf, Int nbuf, AMD64Instr* i, 
+                      UChar* buf, Int nbuf, const AMD64Instr* i, 
                       Bool mode64, VexEndness endness_host,
                       const void* disp_cp_chain_me_to_slowEP,
                       const void* disp_cp_chain_me_to_fastEP,

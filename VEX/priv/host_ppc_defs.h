@@ -1134,16 +1134,16 @@ extern PPCInstr* PPCInstr_EvCheck     ( PPCAMode* amCounter,
                                         PPCAMode* amFailAddr );
 extern PPCInstr* PPCInstr_ProfInc     ( void );
 
-extern void ppPPCInstr(PPCInstr*, Bool mode64);
+extern void ppPPCInstr(const PPCInstr*, Bool mode64);
 
 
 /* Some functions that insulate the register allocator from details
    of the underlying instruction set. */
-extern void         getRegUsage_PPCInstr ( HRegUsage*, PPCInstr*, Bool mode64 );
-extern void         mapRegs_PPCInstr     ( HRegRemap*, PPCInstr* , Bool mode64);
-extern Bool         isMove_PPCInstr      ( PPCInstr*, HReg*, HReg* );
+extern void getRegUsage_PPCInstr ( HRegUsage*, const PPCInstr*, Bool mode64 );
+extern void mapRegs_PPCInstr     ( HRegRemap*, PPCInstr* , Bool mode64);
+extern Bool isMove_PPCInstr      ( const PPCInstr*, HReg*, HReg* );
 extern Int          emit_PPCInstr   ( /*MB_MOD*/Bool* is_profInc,
-                                      UChar* buf, Int nbuf, PPCInstr* i, 
+                                      UChar* buf, Int nbuf, const PPCInstr* i, 
                                       Bool mode64,
                                       VexEndness endness_host,
                                       const void* disp_cp_chain_me_to_slowEP,
@@ -1159,8 +1159,8 @@ extern void genReload_PPC ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
 extern void         getAllocableRegs_PPC ( Int*, HReg**, Bool mode64 );
 extern HInstrArray* iselSB_PPC           ( IRSB*, 
                                            VexArch,
-                                           VexArchInfo*,
-                                           VexAbiInfo*,
+                                           const VexArchInfo*,
+                                           const VexAbiInfo*,
                                            Int offs_Host_EvC_Counter,
                                            Int offs_Host_EvC_FailAddr,
                                            Bool chainingAllowed,

@@ -924,7 +924,7 @@ X86Instr* X86Instr_ProfInc ( void ) {
    return i;
 }
 
-void ppX86Instr ( X86Instr* i, Bool mode64 ) {
+void ppX86Instr ( const X86Instr* i, Bool mode64 ) {
    vassert(mode64 == False);
    switch (i->tag) {
       case Xin_Alu32R:
@@ -1220,7 +1220,7 @@ void ppX86Instr ( X86Instr* i, Bool mode64 ) {
 
 /* --------- Helpers for register allocation. --------- */
 
-void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i, Bool mode64)
+void getRegUsage_X86Instr (HRegUsage* u, const X86Instr* i, Bool mode64)
 {
    Bool unary;
    vassert(mode64 == False);
@@ -1668,7 +1668,7 @@ void mapRegs_X86Instr ( HRegRemap* m, X86Instr* i, Bool mode64 )
    source and destination to *src and *dst.  If in doubt say No.  Used
    by the register allocator to do move coalescing. 
 */
-Bool isMove_X86Instr ( X86Instr* i, HReg* src, HReg* dst )
+Bool isMove_X86Instr ( const X86Instr* i, HReg* src, HReg* dst )
 {
    /* Moves between integer regs */
    if (i->tag == Xin_Alu32R) {
@@ -2101,7 +2101,7 @@ static UChar* push_word_from_tags ( UChar* p, UShort tags )
    leave it unchanged. */
 
 Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
-                    UChar* buf, Int nbuf, X86Instr* i, 
+                    UChar* buf, Int nbuf, const X86Instr* i, 
                     Bool mode64, VexEndness endness_host,
                     const void* disp_cp_chain_me_to_slowEP,
                     const void* disp_cp_chain_me_to_fastEP,

@@ -1034,7 +1034,7 @@ static const HChar* showARMNeonDataSize_wrk ( UInt size )
    }
 }
 
-static const HChar* showARMNeonDataSize ( ARMInstr* i )
+static const HChar* showARMNeonDataSize ( const ARMInstr* i )
 {
    switch (i->tag) {
       case ARMin_NBinary:
@@ -1551,7 +1551,7 @@ ARMInstr* ARMInstr_ProfInc ( void ) {
 
 /* ... */
 
-void ppARMInstr ( ARMInstr* i ) {
+void ppARMInstr ( const ARMInstr* i ) {
    switch (i->tag) {
       case ARMin_Alu:
          vex_printf("%-4s  ", showARMAluOp(i->ARMin.Alu.op));
@@ -2018,7 +2018,7 @@ void ppARMInstr ( ARMInstr* i ) {
 
 /* --------- Helpers for register allocation. --------- */
 
-void getRegUsage_ARMInstr ( HRegUsage* u, ARMInstr* i, Bool mode64 )
+void getRegUsage_ARMInstr ( HRegUsage* u, const ARMInstr* i, Bool mode64 )
 {
    vassert(mode64 == False);
    initHRegUsage(u);
@@ -2523,7 +2523,7 @@ void mapRegs_ARMInstr ( HRegRemap* m, ARMInstr* i, Bool mode64 )
    source and destination to *src and *dst.  If in doubt say No.  Used
    by the register allocator to do move coalescing. 
 */
-Bool isMove_ARMInstr ( ARMInstr* i, HReg* src, HReg* dst )
+Bool isMove_ARMInstr ( const ARMInstr* i, HReg* src, HReg* dst )
 {
    /* Moves between integer regs */
    switch (i->tag) {
@@ -2970,7 +2970,7 @@ static UInt* do_load_or_store32 ( UInt* p,
    leave it unchanged. */
 
 Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
-                    UChar* buf, Int nbuf, ARMInstr* i, 
+                    UChar* buf, Int nbuf, const ARMInstr* i, 
                     Bool mode64, VexEndness endness_host,
                     const void* disp_cp_chain_me_to_slowEP,
                     const void* disp_cp_chain_me_to_fastEP,

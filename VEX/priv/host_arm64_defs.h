@@ -912,16 +912,16 @@ extern ARM64Instr* ARM64Instr_EvCheck ( ARM64AMode* amCounter,
                                         ARM64AMode* amFailAddr );
 extern ARM64Instr* ARM64Instr_ProfInc ( void );
 
-extern void ppARM64Instr ( ARM64Instr* );
+extern void ppARM64Instr ( const ARM64Instr* );
 
 
 /* Some functions that insulate the register allocator from details
    of the underlying instruction set. */
-extern void getRegUsage_ARM64Instr ( HRegUsage*, ARM64Instr*, Bool );
+extern void getRegUsage_ARM64Instr ( HRegUsage*, const ARM64Instr*, Bool );
 extern void mapRegs_ARM64Instr     ( HRegRemap*, ARM64Instr*, Bool );
-extern Bool isMove_ARM64Instr      ( ARM64Instr*, HReg*, HReg* );
+extern Bool isMove_ARM64Instr      ( const ARM64Instr*, HReg*, HReg* );
 extern Int  emit_ARM64Instr        ( /*MB_MOD*/Bool* is_profInc,
-                                     UChar* buf, Int nbuf, ARM64Instr* i,
+                                     UChar* buf, Int nbuf, const ARM64Instr* i,
                                      Bool mode64,
                                      VexEndness endness_host,
                                      const void* disp_cp_chain_me_to_slowEP,
@@ -937,8 +937,8 @@ extern void genReload_ARM64 ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
 extern void getAllocableRegs_ARM64 ( Int*, HReg** );
 extern HInstrArray* iselSB_ARM64 ( IRSB*, 
                                    VexArch,
-                                   VexArchInfo*,
-                                   VexAbiInfo*,
+                                   const VexArchInfo*,
+                                   const VexAbiInfo*,
                                    Int offs_Host_EvC_Counter,
                                    Int offs_Host_EvC_FailAddr,
                                    Bool chainingAllowed,

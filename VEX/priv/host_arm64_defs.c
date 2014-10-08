@@ -1312,7 +1312,7 @@ ARM64Instr* ARM64Instr_ProfInc ( void ) {
 
 /* ... */
 
-void ppARM64Instr ( ARM64Instr* i ) {
+void ppARM64Instr ( const ARM64Instr* i ) {
    switch (i->tag) {
       case ARM64in_Arith:
          vex_printf("%s    ", i->ARM64in.Arith.isAdd ? "add" : "sub");
@@ -1802,7 +1802,7 @@ void ppARM64Instr ( ARM64Instr* i ) {
 
 /* --------- Helpers for register allocation. --------- */
 
-void getRegUsage_ARM64Instr ( HRegUsage* u, ARM64Instr* i, Bool mode64 )
+void getRegUsage_ARM64Instr ( HRegUsage* u, const ARM64Instr* i, Bool mode64 )
 {
    vassert(mode64 == True);
    initHRegUsage(u);
@@ -2341,7 +2341,7 @@ void mapRegs_ARM64Instr ( HRegRemap* m, ARM64Instr* i, Bool mode64 )
    source and destination to *src and *dst.  If in doubt say No.  Used
    by the register allocator to do move coalescing. 
 */
-Bool isMove_ARM64Instr ( ARM64Instr* i, HReg* src, HReg* dst )
+Bool isMove_ARM64Instr ( const ARM64Instr* i, HReg* src, HReg* dst )
 {
    switch (i->tag) {
       case ARM64in_MovI:
@@ -3107,7 +3107,7 @@ static UInt* do_load_or_store64 ( UInt* p,
    leave it unchanged. */
 
 Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
-                      UChar* buf, Int nbuf, ARM64Instr* i,
+                      UChar* buf, Int nbuf, const ARM64Instr* i,
                       Bool mode64, VexEndness endness_host,
                       const void* disp_cp_chain_me_to_slowEP,
                       const void* disp_cp_chain_me_to_fastEP,

@@ -727,22 +727,22 @@ const HChar *s390_insn_as_string(const s390_insn *);
 /*--------------------------------------------------------*/
 
 void ppS390AMode(s390_amode *);
-void ppS390Instr(s390_insn *, Bool mode64);
+void ppS390Instr(const s390_insn *, Bool mode64);
 void ppHRegS390(HReg);
 
 /* Some functions that insulate the register allocator from details
    of the underlying instruction set. */
-void  getRegUsage_S390Instr( HRegUsage *, s390_insn *, Bool );
+void  getRegUsage_S390Instr( HRegUsage *, const s390_insn *, Bool );
 void  mapRegs_S390Instr    ( HRegRemap *, s390_insn *, Bool );
-Bool  isMove_S390Instr     ( s390_insn *, HReg *, HReg * );
-Int   emit_S390Instr       ( Bool *, UChar *, Int, s390_insn *, Bool,
+Bool  isMove_S390Instr     ( const s390_insn *, HReg *, HReg * );
+Int   emit_S390Instr       ( Bool *, UChar *, Int, const s390_insn *, Bool,
                              VexEndness, const void *, const void *,
                              const void *, const void *);
 void  getAllocableRegs_S390( Int *, HReg **, Bool );
 void  genSpill_S390        ( HInstr **, HInstr **, HReg , Int , Bool );
 void  genReload_S390       ( HInstr **, HInstr **, HReg , Int , Bool );
-HInstrArray *iselSB_S390   ( IRSB *, VexArch, VexArchInfo *, VexAbiInfo *,
-                             Int, Int, Bool, Bool, Addr64);
+HInstrArray *iselSB_S390   ( IRSB *, VexArch, const VexArchInfo *,
+                             const VexAbiInfo *, Int, Int, Bool, Bool, Addr64);
 
 /* Return the number of bytes of code needed for an event check */
 Int evCheckSzB_S390(VexEndness endness_host);

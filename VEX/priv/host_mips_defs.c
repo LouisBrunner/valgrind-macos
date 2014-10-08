@@ -1601,7 +1601,7 @@ static void ppLoadImm(HReg dst, ULong imm, Bool mode64)
    vex_printf(",0x%016llx", imm);
 }
 
-void ppMIPSInstr(MIPSInstr * i, Bool mode64)
+void ppMIPSInstr(const MIPSInstr * i, Bool mode64)
 {
    switch (i->tag) {
       case Min_LI:
@@ -1991,7 +1991,7 @@ void ppMIPSInstr(MIPSInstr * i, Bool mode64)
 
 /* --------- Helpers for register allocation. --------- */
 
-void getRegUsage_MIPSInstr(HRegUsage * u, MIPSInstr * i, Bool mode64)
+void getRegUsage_MIPSInstr(HRegUsage * u, const MIPSInstr * i, Bool mode64)
 {
    initHRegUsage(u);
    switch (i->tag) {
@@ -2370,7 +2370,7 @@ void mapRegs_MIPSInstr(HRegRemap * m, MIPSInstr * i, Bool mode64)
    source and destination to *src and *dst.  If in doubt say No.  Used
    by the register allocator to do move coalescing.
 */
-Bool isMove_MIPSInstr(MIPSInstr * i, HReg * src, HReg * dst)
+Bool isMove_MIPSInstr(const MIPSInstr * i, HReg * src, HReg * dst)
 {
    /* Moves between integer regs */
    if (i->tag == Min_Alu) {
@@ -2918,7 +2918,7 @@ static UChar *mkMoveReg(UChar * p, UInt r_dst, UInt r_src)
    instruction was a profiler inc, set *is_profInc to True, else
    leave it unchanged. */
 Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
-                     UChar* buf, Int nbuf, MIPSInstr* i,
+                     UChar* buf, Int nbuf, const MIPSInstr* i,
                      Bool mode64,
                      VexEndness endness_host,
                      const void* disp_cp_chain_me_to_slowEP,

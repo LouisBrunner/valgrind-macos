@@ -210,18 +210,19 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
       from the target instruction set. */
    HReg* available_real_regs;
    Int   n_available_real_regs;
-   Bool         (*isMove)       ( HInstr*, HReg*, HReg* );
-   void         (*getRegUsage)  ( HRegUsage*, HInstr*, Bool );
+   Bool         (*isMove)       ( const HInstr*, HReg*, HReg* );
+   void         (*getRegUsage)  ( HRegUsage*, const HInstr*, Bool );
    void         (*mapRegs)      ( HRegRemap*, HInstr*, Bool );
    void         (*genSpill)     ( HInstr**, HInstr**, HReg, Int, Bool );
    void         (*genReload)    ( HInstr**, HInstr**, HReg, Int, Bool );
    HInstr*      (*directReload) ( HInstr*, HReg, Short );
-   void         (*ppInstr)      ( HInstr*, Bool );
+   void         (*ppInstr)      ( const HInstr*, Bool );
    void         (*ppReg)        ( HReg );
-   HInstrArray* (*iselSB)       ( IRSB*, VexArch, VexArchInfo*, VexAbiInfo*,
-                                  Int, Int, Bool, Bool, Addr64 );
+   HInstrArray* (*iselSB)       ( IRSB*, VexArch, const VexArchInfo*,
+                                  const VexAbiInfo*, Int, Int, Bool, Bool,
+                                  Addr64 );
    Int          (*emit)         ( /*MB_MOD*/Bool*,
-                                  UChar*, Int, HInstr*, Bool, VexEndness,
+                                  UChar*, Int, const HInstr*, Bool, VexEndness,
                                   const void*, const void*, const void*,
                                   const void* );
    IRExpr*      (*specHelper)   ( const HChar*, IRExpr**, IRStmt**, Int );

@@ -4078,8 +4078,8 @@ iselNext(ISelEnv *env, IRExpr *next, IRJumpKind jk, Int offsIP)
    Do not assign it to a global variable! */
 
 HInstrArray *
-iselSB_S390(IRSB *bb, VexArch arch_host, VexArchInfo *archinfo_host,
-            VexAbiInfo *vbi, Int offset_host_evcheck_counter,
+iselSB_S390(IRSB *bb, VexArch arch_host, const VexArchInfo *archinfo_host,
+            const VexAbiInfo *vbi, Int offset_host_evcheck_counter,
             Int offset_host_evcheck_fail_addr, Bool chaining_allowed,
             Bool add_profinc, Addr64 max_ga)
 {

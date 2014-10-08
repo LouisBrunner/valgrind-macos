@@ -285,7 +285,7 @@ typedef
 
       Bool         mode64;
 
-      VexAbiInfo*  vbi;
+      const VexAbiInfo*  vbi;   // unused
 
       Bool         chainingAllowed;
       Addr64       max_ga;
@@ -6085,8 +6085,8 @@ static void iselNext ( ISelEnv* env,
 /* Translate an entire SB to ppc code. */
 HInstrArray* iselSB_PPC ( IRSB* bb, 
                           VexArch      arch_host,
-                          VexArchInfo* archinfo_host,
-                          VexAbiInfo*  vbi,
+                          const VexArchInfo* archinfo_host,
+                          const VexAbiInfo*  vbi,
                           Int offs_Host_EvC_Counter,
                           Int offs_Host_EvC_FailAddr,
                           Bool chainingAllowed,

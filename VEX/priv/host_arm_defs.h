@@ -1016,16 +1016,16 @@ extern ARMInstr* ARMInstr_EvCheck  ( ARMAMode1* amCounter,
                                      ARMAMode1* amFailAddr );
 extern ARMInstr* ARMInstr_ProfInc  ( void );
 
-extern void ppARMInstr ( ARMInstr* );
+extern void ppARMInstr ( const ARMInstr* );
 
 
 /* Some functions that insulate the register allocator from details
    of the underlying instruction set. */
-extern void getRegUsage_ARMInstr ( HRegUsage*, ARMInstr*, Bool );
+extern void getRegUsage_ARMInstr ( HRegUsage*, const ARMInstr*, Bool );
 extern void mapRegs_ARMInstr     ( HRegRemap*, ARMInstr*, Bool );
-extern Bool isMove_ARMInstr      ( ARMInstr*, HReg*, HReg* );
+extern Bool isMove_ARMInstr      ( const ARMInstr*, HReg*, HReg* );
 extern Int  emit_ARMInstr        ( /*MB_MOD*/Bool* is_profInc,
-                                   UChar* buf, Int nbuf, ARMInstr* i, 
+                                   UChar* buf, Int nbuf, const ARMInstr* i, 
                                    Bool mode64,
                                    VexEndness endness_host,
                                    const void* disp_cp_chain_me_to_slowEP,
@@ -1041,8 +1041,8 @@ extern void genReload_ARM ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
 extern void getAllocableRegs_ARM ( Int*, HReg** );
 extern HInstrArray* iselSB_ARM   ( IRSB*, 
                                    VexArch,
-                                   VexArchInfo*,
-                                   VexAbiInfo*,
+                                   const VexArchInfo*,
+                                   const VexAbiInfo*,
                                    Int offs_Host_EvC_Counter,
                                    Int offs_Host_EvC_FailAddr,
                                    Bool chainingAllowed,

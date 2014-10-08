@@ -1528,7 +1528,7 @@ static void ppMovReg ( HReg dst, HReg src ) {
    }
 }
 
-void ppPPCInstr ( PPCInstr* i, Bool mode64 )
+void ppPPCInstr ( const PPCInstr* i, Bool mode64 )
 {
    switch (i->tag) {
    case Pin_LI:
@@ -2297,7 +2297,7 @@ void ppPPCInstr ( PPCInstr* i, Bool mode64 )
 
 /* --------- Helpers for register allocation. --------- */
 
-void getRegUsage_PPCInstr ( HRegUsage* u, PPCInstr* i, Bool mode64 )
+void getRegUsage_PPCInstr ( HRegUsage* u, const PPCInstr* i, Bool mode64 )
 {
    initHRegUsage(u);
    switch (i->tag) {
@@ -3034,7 +3034,7 @@ void mapRegs_PPCInstr ( HRegRemap* m, PPCInstr* i, Bool mode64 )
    source and destination to *src and *dst.  If in doubt say No.  Used
    by the register allocator to do move coalescing. 
 */
-Bool isMove_PPCInstr ( PPCInstr* i, HReg* src, HReg* dst )
+Bool isMove_PPCInstr ( const PPCInstr* i, HReg* src, HReg* dst )
 {
    /* Moves between integer regs */
    if (i->tag == Pin_Alu) {
@@ -3804,7 +3804,7 @@ static UChar* mkFormVA ( UChar* p, UInt opc1, UInt r1, UInt r2,
    it unchanged.
 */
 Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
-                    UChar* buf, Int nbuf, PPCInstr* i, 
+                    UChar* buf, Int nbuf, const PPCInstr* i, 
                     Bool mode64, VexEndness endness_host,
                     const void* disp_cp_chain_me_to_slowEP,
                     const void* disp_cp_chain_me_to_fastEP,

@@ -707,15 +707,15 @@ extern X86Instr* X86Instr_EvCheck   ( X86AMode* amCounter,
 extern X86Instr* X86Instr_ProfInc   ( void );
 
 
-extern void ppX86Instr ( X86Instr*, Bool );
+extern void ppX86Instr ( const X86Instr*, Bool );
 
 /* Some functions that insulate the register allocator from details
    of the underlying instruction set. */
-extern void         getRegUsage_X86Instr ( HRegUsage*, X86Instr*, Bool );
+extern void         getRegUsage_X86Instr ( HRegUsage*, const X86Instr*, Bool );
 extern void         mapRegs_X86Instr     ( HRegRemap*, X86Instr*, Bool );
-extern Bool         isMove_X86Instr      ( X86Instr*, HReg*, HReg* );
+extern Bool         isMove_X86Instr      ( const X86Instr*, HReg*, HReg* );
 extern Int          emit_X86Instr   ( /*MB_MOD*/Bool* is_profInc,
-                                      UChar* buf, Int nbuf, X86Instr* i, 
+                                      UChar* buf, Int nbuf, const X86Instr* i, 
                                       Bool mode64,
                                       VexEndness endness_host,
                                       const void* disp_cp_chain_me_to_slowEP,
@@ -733,8 +733,8 @@ extern X86Instr*    directReload_X86     ( X86Instr* i,
 extern void         getAllocableRegs_X86 ( Int*, HReg** );
 extern HInstrArray* iselSB_X86           ( IRSB*, 
                                            VexArch,
-                                           VexArchInfo*,
-                                           VexAbiInfo*,
+                                           const VexArchInfo*,
+                                           const VexAbiInfo*,
                                            Int offs_Host_EvC_Counter,
                                            Int offs_Host_EvC_FailAddr,
                                            Bool chainingAllowed,

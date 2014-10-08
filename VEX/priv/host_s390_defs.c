@@ -406,7 +406,7 @@ ppS390AMode(s390_amode *am)
 }
 
 void
-ppS390Instr(s390_insn *insn, Bool mode64)
+ppS390Instr(const s390_insn *insn, Bool mode64)
 {
    vex_printf("%s", s390_insn_as_string(insn));
 }
@@ -432,7 +432,7 @@ getAllocableRegs_S390(Int *nregs, HReg **arr, Bool mode64)
 /* Tell the register allocator how the given instruction uses the registers
    it refers to. */
 void
-getRegUsage_S390Instr(HRegUsage *u, s390_insn *insn, Bool mode64)
+getRegUsage_S390Instr(HRegUsage *u, const s390_insn *insn, Bool mode64)
 {
    s390_insn_get_reg_usage(u, insn);
 }
@@ -450,7 +450,7 @@ mapRegs_S390Instr(HRegRemap *m, s390_insn *insn, Bool mode64)
    assign the source and destination to *src and *dst.  If in doubt say No.
    Used by the register allocator to do move coalescing. */
 Bool
-isMove_S390Instr(s390_insn *insn, HReg *src, HReg *dst)
+isMove_S390Instr(const s390_insn *insn, HReg *src, HReg *dst)
 {
    return s390_insn_is_reg_reg_move(insn, src, dst);
 }
@@ -9896,7 +9896,7 @@ s390_insn_profinc_emit(UChar *buf,
 
 
 Int
-emit_S390Instr(Bool *is_profinc, UChar *buf, Int nbuf, s390_insn *insn,
+emit_S390Instr(Bool *is_profinc, UChar *buf, Int nbuf, const s390_insn *insn,
                Bool mode64, VexEndness endness_host,
                const void *disp_cp_chain_me_to_slowEP,
                const void *disp_cp_chain_me_to_fastEP,

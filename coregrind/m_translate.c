@@ -1629,9 +1629,7 @@ Bool VG_(translate) ( ThreadId tid,
              : VG_(tdict).tool_instrument;
      IRSB*(*g)(void*,
                IRSB*,const VexGuestLayout*,const VexGuestExtents*,
-               const VexArchInfo*,IRType,IRType)
-       = (IRSB*(*)(void*,IRSB*,const VexGuestLayout*,
-                   const VexGuestExtents*, const VexArchInfo*,IRType,IRType))f;
+               const VexArchInfo*,IRType,IRType) = (__typeof__(g)) f;
      vta.instrument1     = g;
    }
    /* No need for type kludgery here. */

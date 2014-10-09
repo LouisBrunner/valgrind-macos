@@ -4871,9 +4871,9 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e, IREndness IEndianess )
    }
 
    if (e->tag == Iex_Load && e->Iex.Load.end == IEndianess) {
-      /* Need to be able to do V128 unaligned loads. The unaligned load can
-       * be accomplised using the following code sequece from the ISA.  It
-       * uses the lvx instruction that does two aligned loads and then
+      /* Need to be able to do V128 unaligned loads. The BE unaligned load
+       * can be accomplised using the following code sequece from the ISA.
+       * It uses the lvx instruction that does two aligned loads and then
        * permute the data to store the required data as if it had been an
        * unaligned load.
        *
@@ -4898,9 +4898,14 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e, IREndness IEndianess )
       addInstr(env, PPCInstr_AvLdSt( True/*load*/, 16, Vhi,
                                      PPCAMode_IR(0, rB)) );
 
-      // lvsl Vp, 0, Rb
-      addInstr(env, PPCInstr_AvSh( True/*left shift*/, Vp,
-                                   PPCAMode_IR(0, rB)) );
+      if (IEndianess == Iend_LE)
+         // lvsr Vp, 0, Rb
+         addInstr(env, PPCInstr_AvSh( False/*right shift*/, Vp,
+                                      PPCAMode_IR(0, rB)) );
+      else
+         // lvsl Vp, 0, Rb
+         addInstr(env, PPCInstr_AvSh( True/*left shift*/, Vp,
+                                      PPCAMode_IR(0, rB)) );
 
       // addi Rb_plus_15, Rb, 15
       addInstr(env, PPCInstr_Alu( Palu_ADD, rB_plus_15,
@@ -4910,8 +4915,13 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e, IREndness IEndianess )
       addInstr(env, PPCInstr_AvLdSt( True/*load*/, 16, Vlo,
                                      PPCAMode_IR(0, rB_plus_15)) );
 
-      // vperm Vt, Vhi, Vlo, Vp
-      addInstr(env, PPCInstr_AvPerm( v_dst, Vhi, Vlo, Vp ));
+      if (IEndianess == Iend_LE)
+         // vperm Vt, Vhi, Vlo, Vp
+         addInstr(env, PPCInstr_AvPerm( v_dst, Vlo, Vhi, Vp ));
+      else
+         // vperm Vt, Vhi, Vlo, Vp
+         addInstr(env, PPCInstr_AvPerm( v_dst, Vhi, Vlo, Vp ));
+
       return v_dst;
    }
 

@@ -15323,7 +15323,22 @@ dis_vx_load ( UInt theInstr )
 
       DIP("lxvw4x %d,r%u,r%u\n", (UInt)XT, rA_addr, rB_addr);
 
-      t0 = load( Ity_V128, mkexpr( EA ) );
+      /* The load will result in the data being in BE order. */
+      if (host_endness == VexEndnessLE) {
+         IRExpr *t0_BE;
+         IRTemp perm_LE = newTemp(Ity_V128);
+
+         t0_BE = load( Ity_V128, mkexpr( EA ) );
+
+         /*  Permute the data to LE format */
+         assign( perm_LE, binop( Iop_64HLtoV128, mkU64(0x0c0d0e0f08090a0b),
+                                 mkU64(0x0405060700010203)));
+
+         t0 = binop( Iop_Perm8x16, t0_BE, mkexpr(perm_LE) );
+      } else {
+         t0 = load( Ity_V128, mkexpr( EA ) );
+      }
+
       putVSReg( XT, t0 );
       break;
    }

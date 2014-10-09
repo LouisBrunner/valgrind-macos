@@ -3954,6 +3954,7 @@ static void iselStmt(ISelEnv * env, IRStmt * stmt)
             addInstr(env, MIPSInstr_Cas(4, old, addr, expd, data, mode64));
          }
       }
+      return;
 
    /* --------- INSTR MARK --------- */
    /* Doesn't generate any executable code ... */

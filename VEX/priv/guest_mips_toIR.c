@@ -13371,8 +13371,8 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                      DIP("ceil.l.d %d, %d", fd, fs);
                      if (fp_mode64) {
                         calculateFCSR(fs, 0, CEILLD, False, 1);
-                        putFReg(fd, binop(Iop_RoundF64toInt, mkU32(0x2),
-                                          getFReg(fs)));
+                        putDReg(fd, binop(Iop_RoundF64toInt, mkU32(0x2),
+                                          getDReg(fs)));
                      } else {
                         ILLEGAL_INSTRUCTON;
                      }

@@ -953,6 +953,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_setresuid,         sys_setresuid),         // 147
    LINXY(__NR_getresuid,         sys_getresuid),         // 148
    LINXY(__NR_getresgid,         sys_getresgid),         // 150
+   GENXY(__NR_times,             sys_times),             // 153
    GENX_(__NR_setpgid,           sys_setpgid),           // 154
    GENX_(__NR_getpgid,           sys_getpgid),           // 155
    GENXY(__NR_uname,             sys_newuname),          // 160
@@ -1068,7 +1069,6 @@ static SyscallTableEntry syscall_main_table[] = {
 //ZZ 
 //ZZ    GENX_(__NR_rmdir,             sys_rmdir),          // 40
 //ZZ    LINXY(__NR_pipe,              sys_pipe),           // 42
-//ZZ    GENXY(__NR_times,             sys_times),          // 43
 //ZZ //   GENX_(__NR_prof,              sys_ni_syscall),     // 44
 
 //ZZ    LINX_(__NR_setgid,            sys_setgid16),       // 46

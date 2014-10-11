@@ -113,6 +113,61 @@ fatal error: 'sys/prctl.h' file not found
 
 339499  memcheck does not always detect access beyond mmaped page
 
-Tue Sep 30 14:41:06 CEST 2014
+339537  two threads hang in pthread_spin_lock and pthread_spin_unlock
 
-==================
+339542  Experiences with compiling valgrind with ICC
+
+339563  The DVB demux DMX_STOP ioctl doesn't have a wrapper
+
+339566  valgrind reports memory leaks at glibc's getdelim()
+
+339596  vex amd64->IR: 0x8F 0xE8 0x78 0xCD 0xC1 0x4 0xC5 0xF9
+
+339605  vgpreload_helgrind-arm-linux.so is not liked to libc.so 
+        and can't find sched_yield, pthread_self and so on
+
+339636  Use fxsave64 and fxrstor64 mnemonics instead of rex64 prefix
+
+339645  linux_dirent has no place in syswrap-generic.c
+
+339677  L3 cache size is not supported
+
+339688  Mac-specific ASM does not support .version directive (cpuid,
+        tronical and pushfpopf tests)
+
+339706  [PATCH] add TIOCSIG annotation on linux
+
+339721  assertion failed in m_debuginfo/readdwarf3.c when parsing
+        .debug_info for memcheck/tests/dw4
+
+339744  warning: evaluate_Dwarf3_Expr: unhandled DW_OP_ 0xf2
+
+339745  Valgrind crash when check Marmalade app
+
+339755  Valgrind on Mac 10.9 should suppress setenv() mem leak
+
+339762  missing replacement alias for glibc __strchr_sse42, __strcpy_sse2,
+        __strcpy_ssse3
+
+339778  Linux/TileGx platform support to Valgrind
+
+339780  [PATCH] Valgrind on Mac 10.9 should suppress pthread_rwlock_init()
+
+339789] [PATCH] Fix none/tests/execve test on Mac OS X 10.9
+
+339808] [PATCH] Fix none/tests/rlimit64_nofile test on Mac OS X 10.9
+
+339820  vex amd64->IR: 0x66 0xF 0x3A 0x63 0xA 0x42 0x74 0x9
+        (pcmpistrix  $0x42, (%rdx), %xmm1)
+
+339853  arm64 times syscall unknown
+
+339855  arm64  unhandled getsid/setsid syscalls
+
+339858  arm64 dmb sy not implemented
+
+339861  Remove Elf32_Nhdr definition for Android
+
+339862  v6intThumb.c does not compile when -pie options is specified
+
+Sat Oct 11 17:43:20 CEST 2014

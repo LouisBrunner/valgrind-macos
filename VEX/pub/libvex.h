@@ -452,50 +452,8 @@ void LibVEX_default_VexControl ( /*OUT*/ VexControl* vcon );
    You can only call it inside an instrumentation or optimisation
    callback that you have previously specified in a call to
    LibVEX_Translate.  The storage allocated will only stay alive until
-   translation of the current basic block is complete.
- */
-extern HChar* private_LibVEX_alloc_first;
-extern HChar* private_LibVEX_alloc_curr;
-extern HChar* private_LibVEX_alloc_last;
-extern void   private_LibVEX_alloc_OOM(void) __attribute__((noreturn));
-
-static inline void* LibVEX_Alloc ( Int nbytes )
-{
-   struct align {
-      char c;
-      union {
-         char c;
-         short s;
-         int i;
-         long l;
-         long long ll;
-         float f;
-         double d;
-         /* long double is currently not used and would increase alignment
-            unnecessarily. */
-         /* long double ld; */
-         void *pto;
-         void (*ptf)(void);
-      } x;
-   };
-
-#if 0
-  /* Nasty debugging hack, do not use. */
-  return malloc(nbytes);
-#else
-   HChar* curr;
-   HChar* next;
-   Int    ALIGN;
-   ALIGN  = offsetof(struct align,x) - 1;
-   nbytes = (nbytes + ALIGN) & ~ALIGN;
-   curr   = private_LibVEX_alloc_curr;
-   next   = curr + nbytes;
-   if (next >= private_LibVEX_alloc_last)
-      private_LibVEX_alloc_OOM();
-   private_LibVEX_alloc_curr = next;
-   return curr;
-#endif
-}
+   translation of the current basic block is complete. */
+extern void* LibVEX_Alloc ( Int nbytes );
 
 /* Show Vex allocation statistics. */
 extern void LibVEX_ShowAllocStats ( void );

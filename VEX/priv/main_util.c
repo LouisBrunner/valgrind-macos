@@ -67,6 +67,11 @@ static HChar* permanent_first = &permanent[0];
 static HChar* permanent_curr  = &permanent[0];
 static HChar* permanent_last  = &permanent[N_PERMANENT_BYTES-1];
 
+static HChar* private_LibVEX_alloc_first = &temporary[0];
+static HChar* private_LibVEX_alloc_curr  = &temporary[0];
+static HChar* private_LibVEX_alloc_last  = &temporary[N_TEMPORARY_BYTES-1];
+
+
 static VexAllocMode mode = VexAllocModeTEMP;
 
 void vexAllocSanityCheck ( void )
@@ -149,14 +154,8 @@ VexAllocMode vexGetAllocMode ( void )
    return mode;
 }
 
-/* Visible to library client, unfortunately. */
-
-HChar* private_LibVEX_alloc_first = &temporary[0];
-HChar* private_LibVEX_alloc_curr  = &temporary[0];
-HChar* private_LibVEX_alloc_last  = &temporary[N_TEMPORARY_BYTES-1];
-
 __attribute__((noreturn))
-void private_LibVEX_alloc_OOM(void)
+static void private_LibVEX_alloc_OOM(void)
 {
    const HChar* pool = "???";
    if (private_LibVEX_alloc_first == &temporary[0]) pool = "TEMP";
@@ -196,6 +195,51 @@ void vexSetAllocModeTEMP_and_clear ( void )
 
 
 /* Exported to library client. */
+
+/* Allocate in Vex's temporary allocation area.  Be careful with this.
+   You can only call it inside an instrumentation or optimisation
+   callback that you have previously specified in a call to
+   LibVEX_Translate.  The storage allocated will only stay alive until
+   translation of the current basic block is complete.
+ */
+
+void* LibVEX_Alloc ( Int nbytes )
+{
+   struct align {
+      char c;
+      union {
+         char c;
+         short s;
+         int i;
+         long l;
+         long long ll;
+         float f;
+         double d;
+         /* long double is currently not used and would increase alignment
+            unnecessarily. */
+         /* long double ld; */
+         void *pto;
+         void (*ptf)(void);
+      } x;
+   };
+
+#if 0
+  /* Nasty debugging hack, do not use. */
+  return malloc(nbytes);
+#else
+   HChar* curr;
+   HChar* next;
+   Int    ALIGN;
+   ALIGN  = offsetof(struct align,x) - 1;
+   nbytes = (nbytes + ALIGN) & ~ALIGN;
+   curr   = private_LibVEX_alloc_curr;
+   next   = curr + nbytes;
+   if (next >= private_LibVEX_alloc_last)
+      private_LibVEX_alloc_OOM();
+   private_LibVEX_alloc_curr = next;
+   return curr;
+#endif
+}
 
 void LibVEX_ShowAllocStats ( void )
 {

@@ -38,6 +38,7 @@ where XXXXXX is the bug number as listed below.
 339721 assertion 'check_sibling == sibling' failed in readdwarf3.c ...
 339853 arm64 times syscall unknown
 339855 arm64 unhandled getsid/setsid syscalls
+339858 arm64 dmb sy not implemented
 n-i-bz Old STABS code is still being compiled, but never used. Remove it.
 n-i-bz Fix compilation on distros with glibc < 2.5
 

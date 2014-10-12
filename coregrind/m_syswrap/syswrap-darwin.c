@@ -3915,9 +3915,41 @@ POST(proc_info)
 {
 #if VG_WORDSIZE == 4
    vg_assert(SUCCESS);
+
+   // Intercept internal call to proc_setcontrol() where flavor = 2, arg = 0
+   if (ARG1 == 5 && ARG3 == 2 && LOHI64(ARG4,ARG5) == 0 )
+   {
+       const HChar* new_name = (const HChar*) ARG6;
+       if (new_name) {    // Paranoia
+          ThreadState* tst = VG_(get_ThreadState)(tid);
+          SizeT new_len = VG_(strlen)(new_name);
+           
+          /* Don't bother reusing the memory. This is a rare event. */
+          tst->thread_name =
+             VG_(realloc)("syscall(proc_info)", tst->thread_name, new_len + 1);
+          VG_(strcpy)(tst->thread_name, new_name);
+       }
+   }
+    
    POST_MEM_WRITE(ARG6, ARG7);
 #else
    vg_assert(SUCCESS);
+
+   // Intercept internal call to proc_setcontrol() where flavor = 2, arg = 0
+   if (ARG1 == 5 && ARG3 == 2 && ARG4 == 0 )
+   {
+      const HChar* new_name = (const HChar*) ARG5;
+      if (new_name) {    // Paranoia
+         ThreadState* tst = VG_(get_ThreadState)(tid);
+         SizeT new_len = VG_(strlen)(new_name);
+            
+         /* Don't bother reusing the memory. This is a rare event. */
+         tst->thread_name =
+            VG_(realloc)("syscall(proc_info)", tst->thread_name, new_len + 1);
+         VG_(strcpy)(tst->thread_name, new_name);
+       }
+   }
+
    POST_MEM_WRITE(ARG5, ARG6);
 #endif
 }

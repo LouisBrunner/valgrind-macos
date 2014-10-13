@@ -1090,7 +1090,7 @@ static void init_gIgnoredAddressRanges ( void )
                                              VG_(free), IAR_NotIgnored );
 }
 
-INLINE Bool MC_(in_ignored_range) ( Addr a )
+Bool MC_(in_ignored_range) ( Addr a )
 {
    if (LIKELY(gIgnoredAddressRanges == NULL))
       return False;

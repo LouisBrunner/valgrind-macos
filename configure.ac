@@ -103,6 +103,7 @@ AC_MSG_CHECKING([for a supported version of gcc])
 # 
 # A few examples of how the ${CC} --version output looks like:
 #
+# ######## gcc variants ########
 # Arch Linux: i686-pc-linux-gnu-gcc (GCC) 4.6.2
 # Debian Linux: gcc (Debian 4.3.2-1.1) 4.3.2
 # openSUSE: gcc (SUSE Linux) 4.5.1 20101208 [gcc-4_5-branch revision 167585]
@@ -110,17 +111,26 @@ AC_MSG_CHECKING([for a supported version of gcc])
 # MontaVista Linux for ARM: arm-none-linux-gnueabi-gcc (Sourcery G++ Lite 2009q1-203) 4.3.3
 # OS/X 10.6: i686-apple-darwin10-gcc-4.2.1 (GCC) 4.2.1 (Apple Inc. build 5666) (dot 3)
 # OS/X 10.7: i686-apple-darwin11-llvm-gcc-4.2 (GCC) 4.2.1 (Based on Apple Inc. build 5658) (LLVM build 2335.15.00)
+#
+# ######## clang variants ########
 # Clang: clang version 2.9 (tags/RELEASE_29/final)
 # Apple clang: Apple clang version 3.1 (tags/Apple/clang-318.0.58) (based on LLVM 3.1svn)
 # FreeBSD clang: FreeBSD clang version 3.1 (branches/release_31 156863) 20120523
 #
+# ######## Apple LLVM variants ########
+# Apple LLVM version 5.1 (clang-503.0.40) (based on LLVM 3.4svn)
+# Apple LLVM version 6.0 (clang-600.0.51) (based on LLVM 3.5svn)
+#
 [
-if test "x`${CC} --version | $SED -n -e 's/.*\(clang\) version.*/\1/p'`" = "xclang" ; then
+if test "x`${CC} --version | $SED -n -e 's/.*\Apple \(LLVM\) version.*clang.*/\1/p'`" = "xLLVM" ;
+then
+    is_clang="applellvm"
+    gcc_version=`${CC} --version | $SED -n -e 's/.*LLVM version \([0-9.]*\).*$/\1/p'`
+elif test "x`${CC} --version | $SED -n -e 's/.*\(clang\) version.*/\1/p'`" = "xclang" ;
+then
     is_clang="clang"
     # Don't use -dumpversion with clang: it will always produce "4.2.1".
     gcc_version=`${CC} --version | $SED -n -e 's/.*clang version \([0-9.]*\).*$/\1/p'`
-    CFLAGS="$CFLAGS -Wno-tautological-compare -Wno-cast-align -Wno-self-assign"
-    CXXFLAGS="$CXXFLAGS -Wno-tautological-compare -Wno-cast-align -Wno-self-assign"
 else
     is_clang="notclang"
     gcc_version=`${CC} -dumpversion 2>/dev/null`
@@ -129,11 +139,19 @@ else
     fi
 fi
 ]
-AM_CONDITIONAL(COMPILER_IS_CLANG, test $is_clang = clang)
+AM_CONDITIONAL(COMPILER_IS_CLANG, test $is_clang = clang -o $is_clang = applellvm)
+
+if test $is_clang = clang -o $is_clang = applellvm ; then
+    CFLAGS="$CFLAGS -Wno-tautological-compare -Wno-cast-align -Wno-self-assign"
+    CXXFLAGS="$CXXFLAGS -Wno-tautological-compare -Wno-cast-align -Wno-self-assign"
+fi
 
 # Note: m4 arguments are quoted with [ and ] so square brackets in shell
 # statements have to be quoted.
 case "${is_clang}-${gcc_version}" in
+     applellvm-5.1|applellvm-6.0*)
+	AC_MSG_RESULT([ok (Apple LLVM version ${gcc_version})])
+	;;
      notclang-[[3-9]].*|notclang-[[1-9][0-9]]*)
 	AC_MSG_RESULT([ok (${gcc_version})])
 	;;

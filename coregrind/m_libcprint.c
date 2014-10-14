@@ -304,12 +304,12 @@ void VG_(percentify)(ULong n, ULong m, UInt d, Int n_buf, HChar buf[])
 {
    Int i, len, space;
    ULong p1;
-   HChar fmt[32];
+   HChar fmt[32];   // large enough
 
    if (m == 0) {
       // Have to generate the format string in order to be flexible about
       // the width of the field.
-      VG_(sprintf)(fmt, "%%-%ds", n_buf);
+      VG_(sprintf)(fmt, "%%%ds", n_buf);
       // fmt is now "%<n_buf>s" where <d> is 1,2,3...
       VG_(sprintf)(buf, fmt, "--%");
       return;
@@ -318,7 +318,7 @@ void VG_(percentify)(ULong n, ULong m, UInt d, Int n_buf, HChar buf[])
    p1 = (100*n) / m;
     
    if (d == 0) {
-      VG_(sprintf)(buf, "%lld%%", p1);
+      VG_(sprintf)(buf, "%llu%%", p1);  // FIXME: unsafe
    } else {
       ULong p2;
       UInt  ex;
@@ -331,9 +331,9 @@ void VG_(percentify)(ULong n, ULong m, UInt d, Int n_buf, HChar buf[])
       p2 = ((100*n*ex) / m) % ex;
       // Have to generate the format string in order to be flexible about
       // the width of the post-decimal-point part.
-      VG_(sprintf)(fmt, "%%lld.%%0%dlld%%%%", d);
-      // fmt is now "%lld.%0<d>lld%%" where <d> is 1,2,3...
-      VG_(sprintf)(buf, fmt, p1, p2);
+      VG_(sprintf)(fmt, "%%llu.%%0%ullu%%%%", d);
+      // fmt is now "%llu.%0<d>llu%%" where <d> is 1,2,3...
+      VG_(sprintf)(buf, fmt, p1, p2);   // FIXME: unsafe
    }
 
    len = VG_(strlen)(buf);

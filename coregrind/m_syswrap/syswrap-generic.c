@@ -621,9 +621,9 @@ void ML_(record_fd_open_with_given_name)(ThreadId tid, Int fd, char *pathname)
 // Record opening of an fd, and find its name.
 void ML_(record_fd_open_named)(ThreadId tid, Int fd)
 {
-   static HChar buf[VKI_PATH_MAX];
+   HChar* buf;
    HChar* name;
-   if (VG_(resolve_filename)(fd, buf, VKI_PATH_MAX))
+   if (VG_(resolve_filename)(fd, &buf))
       name = buf;
    else
       name = NULL;

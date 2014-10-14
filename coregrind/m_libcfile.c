@@ -71,27 +71,58 @@ Int VG_(safe_fd)(Int oldfd)
 
 /* Given a file descriptor, attempt to deduce its filename.  To do
    this, we use /proc/self/fd/<FD>.  If this doesn't point to a file,
-   or if it doesn't exist, we return False. */
-Bool VG_(resolve_filename) ( Int fd, HChar* buf, Int n_buf )
+   or if it doesn't exist, we return False. 
+   Upon successful completion *result contains the filename. The
+   filename will be overwritten with the next invocation so callers
+   need to copy the filename if needed. *result is NULL if the filename
+   cannot be deduced. */
+Bool VG_(resolve_filename) ( Int fd, HChar** result )
 {
 #  if defined(VGO_linux)
-   HChar tmp[64];
+   static HChar *buf = NULL;
+   static SizeT  bufsiz = 0;
+
+   if (buf == NULL) {   // first time
+      bufsiz = 500;
+      buf = VG_(malloc)("resolve_filename", bufsiz);
+   }
+
+   HChar tmp[64];   // large enough
    VG_(sprintf)(tmp, "/proc/self/fd/%d", fd);
-   VG_(memset)(buf, 0, n_buf);
-   if (VG_(readlink)(tmp, buf, n_buf) > 0 && buf[0] == '/')
+
+   while (42) {
+      SSizeT res = VG_(readlink)(tmp, buf, bufsiz);
+      if (res < 0) break;
+      if (res == bufsiz) {  // buffer too small; increase and retry
+         bufsiz += 500;
+         buf = VG_(realloc)("resolve_filename", buf, bufsiz);
+         continue;
+      }
+      vg_assert(bufsiz > res);  // paranoia
+      if (buf[0] != '/') break;
+
+      buf[res] = '\0';
+      *result = buf;
       return True;
-   else
-      return False;
+   }
+   // Failure
+   *result = NULL;
+   return False;
 
 #  elif defined(VGO_darwin)
    HChar tmp[VKI_MAXPATHLEN+1];
    if (0 == VG_(fcntl)(fd, VKI_F_GETPATH, (UWord)tmp)) {
-      if (n_buf > 0) {
-         VG_(strncpy)( buf, tmp, n_buf < sizeof(tmp) ? n_buf : sizeof(tmp) );
-         buf[n_buf-1] = 0;
-      }
-      if (tmp[0] == '/') return True;
+      static HChar *buf = NULL;
+
+      if (buf == NULL) 
+         buf = VG_(malloc)("resolve_filename", VKI_MAXPATHLEN+1);
+      VG_(strcpy)( buf, tmp );
+
+      *result = buf;
+      if (buf[0] == '/') return True;
    }
+   // Failure
+   *result = NULL;
    return False;
 
 #  else
@@ -506,7 +537,11 @@ SysRes VG_(poll) (struct vki_pollfd *fds, Int nfds, Int timeout)
 }
 
 
-Int VG_(readlink) (const HChar* path, HChar* buf, UInt bufsiz)
+/* Performs the readlink operation and puts the result into 'buf'.
+   Note, that the string in 'buf' is *not* null-terminated. The function
+   returns the number of characters put into 'buf' or -1 if an error
+   occurred. */
+SSizeT VG_(readlink) (const HChar* path, HChar* buf, SizeT bufsiz)
 {
    SysRes res;
    /* res = readlink( path, buf, bufsiz ); */

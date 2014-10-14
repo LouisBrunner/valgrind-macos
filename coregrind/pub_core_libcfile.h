@@ -44,7 +44,7 @@ extern Int VG_(safe_fd) ( Int oldfd );
 extern Int VG_(fcntl)   ( Int fd, Int cmd, Addr arg );
 
 /* Convert an fd into a filename */
-extern Bool VG_(resolve_filename) ( Int fd, HChar* buf, Int n_buf );
+extern Bool VG_(resolve_filename) ( Int fd, HChar** buf );
 
 /* Return the size of a file, or -1 in case of error */
 extern Long VG_(fsize) ( Int fd );

@@ -1091,7 +1091,6 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
 {
    Int    i, r, sz_exename;
    ULong  obj_mtime, pdb_mtime;
-   HChar  exename[VKI_PATH_MAX];
    HChar* pdbname = NULL;
    HChar* dot;
    SysRes sres;
@@ -1112,21 +1111,17 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
       time into obj_mtime. */
    r = VG_(fstat)(fd_obj, &stat_buf);
    if (r == -1)
-      goto out; /* stat failed ?! */
+      return; /* stat failed ?! */
    vg_assert(r == 0);
    obj_mtime = stat_buf.mtime;
 
-   /* and get its name into exename[]. */
-   vg_assert(VKI_PATH_MAX > 100); /* to ensure /proc/self/fd/%d is safe */
-   VG_(memset)(exename, 0, sizeof(exename));
-   VG_(sprintf)(exename, "/proc/self/fd/%d", fd_obj);
-   /* convert exename from a symlink to real name .. overwrites the
-      old contents of the buffer.  Ick. */
-   sz_exename = VG_(readlink)(exename, exename, sizeof(exename)-2 );
-   if (sz_exename == -1)
-      goto out; /* readlink failed ?! */
-   vg_assert(sz_exename >= 0 && sz_exename < sizeof(exename));
-   vg_assert(exename[sizeof(exename)-1] == 0);
+   /* and get its name into exename. */
+   HChar *exe;
+   if (! VG_(resolve_filename)(fd_obj, &exe))
+      return; /*  failed */
+   sz_exename = VG_(strlen)(exe);
+   HChar exename[sz_exename + 1];
+   VG_(strcpy)(exename, exe);  // make a copy on the stack 
 
    if (VG_(clo_verbosity) > 0) {
       VG_(message)(Vg_UserMsg, "LOAD_PDB_DEBUGINFO: objname: %s\n", exename);

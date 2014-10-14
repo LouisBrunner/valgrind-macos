@@ -108,9 +108,6 @@ New bugs reported in 3.10.0
 __builtin_popcountll in the source ([Valgrind-users] valgrind-3.10
 does not link on)
 
-339442  OS X 10.9 testsuite build failure: threadname.c:6:10:
-fatal error: 'sys/prctl.h' file not found
-
 339499  memcheck does not always detect access beyond mmaped page
 
 339537  two threads hang in pthread_spin_lock and pthread_spin_unlock
@@ -131,9 +128,6 @@ fatal error: 'sys/prctl.h' file not found
 339645  linux_dirent has no place in syswrap-generic.c
 
 339677  L3 cache size is not supported
-
-339688  Mac-specific ASM does not support .version directive (cpuid,
-        tronical and pushfpopf tests)
 
 339706  [PATCH] add TIOCSIG annotation on linux
 

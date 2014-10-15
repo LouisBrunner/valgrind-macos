@@ -1690,6 +1690,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                for (j = 0; j < VG_(sizeXA)(di->fsm.maps); j++) {
                   struct _DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, j);
                   if (   (map->rx || map->rw)
+                      && map->size > 0 /* stay sane */
                       && a_phdr.p_offset >= map->foff
                       && a_phdr.p_offset <  map->foff + map->size
                       && a_phdr.p_offset + a_phdr.p_filesz 
@@ -1704,7 +1705,9 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                             == (PF_R | PF_W)) {
                         item.exec = False;
                         VG_(addToXA)(svma_ranges, &item);
-                        TRACE_SYMTAB("PT_LOAD[%ld]:   acquired as rw\n", i);
+                        TRACE_SYMTAB(
+                           "PT_LOAD[%ld]:   acquired as rw, bias 0x%lx\n",
+                           i, item.bias);
                         loaded = True;
                      }
                      if (map->rx
@@ -1712,7 +1715,9 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                             == (PF_R | PF_X)) {
                         item.exec = True;
                         VG_(addToXA)(svma_ranges, &item);
-                        TRACE_SYMTAB("PT_LOAD[%ld]:   acquired as rx\n", i);
+                        TRACE_SYMTAB(
+                           "PT_LOAD[%ld]:   acquired as rx, bias 0x%lx\n",
+                           i, item.bias);
                         loaded = True;
                      }
                   }

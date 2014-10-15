@@ -600,6 +600,110 @@ void VG_(di_initialise) ( void )
 
 #if defined(VGO_linux)  ||  defined(VGO_darwin)
 
+/* Helper (indirect) for di_notify_ACHIEVE_ACCEPT_STATE */
+static Bool overlaps_DebugInfoMappings ( struct _DebugInfoMapping* map1,
+                                         struct _DebugInfoMapping* map2 )
+{
+   vg_assert(map1 && map2 && map1 != map2);
+   vg_assert(map1->size != 0 && map2->size != 0);
+   if (map1->avma + map1->size <= map2->avma) return False;
+   if (map2->avma + map2->size <= map1->avma) return False;
+   return True;
+}
+
+
+/* Helper (indirect) for di_notify_ACHIEVE_ACCEPT_STATE */
+static void show_DebugInfoMappings 
+               ( struct _DebugInfo* di,
+                 /*MOD*/XArray* maps /* XArray<struct _DebugInfoMapping> */ )
+{
+   Word i, n;
+   vg_assert(maps);
+   n = VG_(sizeXA)(maps);
+   for (i = 0; i < n; i++) {
+      struct _DebugInfoMapping* map
+         = (struct _DebugInfoMapping*) VG_(indexXA)(maps, i);
+      TRACE_SYMTAB("  [%ld]    avma 0x%-16llx    size %-8lu    "
+                   "foff %-8lld    %s %s %s\n",
+                   i, (ULong)map->avma, map->size, (Long)map->foff,
+                   map->rx ? "rx" : "--",
+                   map->rw ? "rw" : "--",
+                   map->ro ? "ro" : "--");
+   }
+}
+
+
+/* Helper for di_notify_ACHIEVE_ACCEPT_STATE.  This removes overlaps
+   in |maps|, in a fairly weak way, by truncating overlapping ends.
+   This may need to be strengthened in future.  Currently it performs
+   a post-fixup check, so as least we can be sure that if this
+   function returns (rather than asserts) that |maps| is overlap
+   free. */
+static void truncate_DebugInfoMapping_overlaps
+               ( struct _DebugInfo* di,
+                 /*MOD*/XArray* maps /* XArray<struct _DebugInfoMapping> */ )
+{
+   TRACE_SYMTAB("Un-de-overlapped _DebugInfoMappings:\n");
+   show_DebugInfoMappings(di, maps);
+   TRACE_SYMTAB("\n");
+
+   Word i, j, n;
+   struct _DebugInfoMapping *map_i, *map_j;
+
+   n = VG_(sizeXA)(maps);
+   for (i = 0; i < n; i++) {
+
+      map_i = (struct _DebugInfoMapping*) VG_(indexXA)(maps, i);
+      if (map_i->size == 0)
+        continue; // Hmm, mutancy.  Shouldn't happen.
+
+      for (j = i+1; j < n; j++) {
+
+         map_j = (struct _DebugInfoMapping*) VG_(indexXA)(maps, j);
+         if (map_j->size == 0)
+           continue; // Hmm, mutancy.  Shouldn't happen.
+
+         /* map_j was observed later than map_i, since the entries are
+            in the XArray in the order in which they were observed.
+            If map_j starts inside map_i, trim map_i's end so it does
+            not overlap map_j.  This reflects the reality that when
+            two mmaped areas overlap, the later mmap silently
+            overwrites the earlier mmap's mapping. */
+         if (map_j->avma >= map_i->avma
+             && map_j->avma < map_i->avma + map_i->size) {
+            SizeT map_i_newsize = map_j->avma - map_i->avma;
+            vg_assert(map_i_newsize < map_i->size);
+            map_i->size = map_i_newsize;
+         }
+
+      }
+   }
+
+   TRACE_SYMTAB("De-overlapped _DebugInfoMappings:\n");
+   show_DebugInfoMappings(di, maps);
+   TRACE_SYMTAB("\n");
+   TRACE_SYMTAB("Checking that there are no remaining overlaps.\n");
+
+   for (i = 0; i < n; i++) {
+      map_i = (struct _DebugInfoMapping*) VG_(indexXA)(maps, i);
+      if (map_i->size == 0)
+        continue;
+      for (j = i+1; j < n; j++) {
+         map_j = (struct _DebugInfoMapping*) VG_(indexXA)(maps, j);
+         if (map_j->size == 0)
+           continue;
+         Bool overlap
+            = overlaps_DebugInfoMappings( map_i, map_j );
+         /* If the following assert ever fails, it means the de-overlapping
+            scheme above is too weak, and needs improvement. */
+         vg_assert(!overlap);
+      }
+   }
+
+   TRACE_SYMTAB("Check successful.\n");
+}
+
+
 /* The debug info system is driven by notifications that a text
    segment has been mapped in, or unmapped, or when sections change
    permission.  It's all a bit kludgey and basically means watching
@@ -625,6 +729,7 @@ static ULong di_notify_ACHIEVE_ACCEPT_STATE ( struct _DebugInfo* di )
    vg_assert(di->fsm.filename);
    TRACE_SYMTAB("\n");
    TRACE_SYMTAB("------ start ELF OBJECT "
+                "-------------------------"
                 "------------------------------\n");
    TRACE_SYMTAB("------ name = %s\n", di->fsm.filename);
    TRACE_SYMTAB("\n");
@@ -635,7 +740,13 @@ static ULong di_notify_ACHIEVE_ACCEPT_STATE ( struct _DebugInfo* di )
       ranges (to avoid total confusion). */
    discard_DebugInfos_which_overlap_with( di );
 
-   /* .. and acquire new info. */
+   /* The DebugInfoMappings that now exist in the FSM may involve
+      overlaps.  This confuses ML_(read_elf_debug_info), and may cause
+      it to compute wrong biases.  So de-overlap them now.
+      See http://bugzilla.mozilla.org/show_bug.cgi?id=788974 */
+   truncate_DebugInfoMapping_overlaps( di, di->fsm.maps );
+
+   /* And acquire new info. */
 #  if defined(VGO_linux)
    ok = ML_(read_elf_debug_info)( di );
 #  elif defined(VGO_darwin)
@@ -677,6 +788,7 @@ static ULong di_notify_ACHIEVE_ACCEPT_STATE ( struct _DebugInfo* di )
    TRACE_SYMTAB("\n");
    TRACE_SYMTAB("------ name = %s\n", di->fsm.filename);
    TRACE_SYMTAB("------ end ELF OBJECT "
+                "-------------------------"
                 "------------------------------\n");
    TRACE_SYMTAB("\n");
 

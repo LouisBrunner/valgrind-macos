@@ -217,9 +217,14 @@ static inline Bool sr_EQ ( SysRes sr1, SysRes sr2 ) {
 
 static inline Bool sr_isError ( SysRes sr ) {
    switch (sr._mode) {
-      case SysRes_UNIX_ERR: return True;
-      default:              return False;
+      case SysRes_UNIX_ERR:
+         return True;
       /* should check tags properly and assert here, but we can't here */
+      case SysRes_MACH:
+      case SysRes_MDEP:
+      case SysRes_UNIX_OK:
+      default:
+         return False;
    }
 }
 
@@ -227,22 +232,38 @@ static inline UWord sr_Res ( SysRes sr ) {
    switch (sr._mode) {
       case SysRes_MACH:
       case SysRes_MDEP:
-      case SysRes_UNIX_OK: return sr._wLO;
-      default: return 0; /* should assert, but we can't here */
+      case SysRes_UNIX_OK:
+         return sr._wLO;
+      /* should assert, but we can't here */
+      case SysRes_UNIX_ERR:
+      default:
+         return 0;
    }
 }
 
 static inline UWord sr_ResHI ( SysRes sr ) {
    switch (sr._mode) {
-      case SysRes_UNIX_OK: return sr._wHI;
-      default: return 0; /* should assert, but we can't here */
+      case SysRes_UNIX_OK:
+         return sr._wHI;
+      /* should assert, but we can't here */
+      case SysRes_MACH:
+      case SysRes_MDEP:
+      case SysRes_UNIX_ERR:
+      default:
+         return 0;
    }
 }
 
 static inline UWord sr_Err ( SysRes sr ) {
    switch (sr._mode) {
-      case SysRes_UNIX_ERR: return sr._wLO;
-      default: return 0; /* should assert, but we can't here */
+      case SysRes_UNIX_ERR:
+         return sr._wLO;
+      /* should assert, but we can't here */
+      case SysRes_MACH:
+      case SysRes_MDEP:
+      case SysRes_UNIX_OK:
+      default:
+         return 0;
    }
 }
 

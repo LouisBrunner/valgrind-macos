@@ -204,6 +204,9 @@ static inline void my_exit ( int x )
  //STRRCHR(VG_Z_DYLD,          strrchr)
  //STRRCHR(VG_Z_DYLD,          rindex)
  STRRCHR(VG_Z_LIBC_SONAME, strrchr)
+# if DARWIN_VERS == DARWIN_10_9
+  STRRCHR(libsystemZucZddylib, strrchr)
+# endif
 
 #endif
 
@@ -1115,7 +1118,10 @@ static inline void my_exit ( int x )
 # endif
  MEMMOVE(VG_Z_LIBC_SONAME,  memmoveZDVARIANTZDsse3x) /* memmove$VARIANT$sse3x */
  MEMMOVE(VG_Z_LIBC_SONAME,  memmoveZDVARIANTZDsse42) /* memmove$VARIANT$sse42 */
-
+# if DARWIN_VERS == DARWIN_10_9
+  /* _platform_memmove$VARIANT$Nehalem */
+  MEMMOVE(libsystemZuplatformZddylib, ZuplatformZumemmoveZDVARIANTZDIvybridge)
+# endif
 #endif
 
 

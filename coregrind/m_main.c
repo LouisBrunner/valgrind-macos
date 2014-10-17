@@ -419,7 +419,7 @@ static void early_process_cmd_line_options ( /*OUT*/Int* need_help,
 */
 static
 void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
-                                     /*OUT*/HChar** xml_fname_unexpanded,
+                                     /*OUT*/const HChar** xml_fname_unexpanded,
                                      const HChar* toolname )
 {
    // VG_(clo_log_fd) is used by all the messaging.  It starts as 2 (stderr)
@@ -1033,9 +1033,7 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
          if (!sr_isError(sres)) {
             tmp_xml_fd = sr_Res(sres);
             VG_(clo_xml_fname_expanded) = xmlfilename;
-            /* strdup here is probably paranoid overkill, but ... */
-            *xml_fname_unexpanded = VG_(strdup)( "main.mpclo.2",
-                                                 xml_fsname_unexpanded );
+            *xml_fname_unexpanded = xml_fsname_unexpanded;
          } else {
             VG_(fmsg)("can't create XML file '%s': %s\n", 
                       xmlfilename, VG_(strerror)(sr_Err(sres)));
@@ -1145,7 +1143,10 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
 }
 
 // Write the name and value of log file qualifiers to the xml file.
-static void print_file_vars(HChar* format)
+// We can safely assume here that the format string is well-formed.
+// It has been checked earlier in VG_(expand_file_name) when processing
+// command line options.
+static void print_file_vars(const HChar* format)
 {
    Int i = 0;
    
@@ -1157,28 +1158,24 @@ static void print_file_vars(HChar* format)
             i++;
             if ('{' == format[i]) {
 	       // Get the env var name, print its contents.
-	       HChar* qualname;
                HChar* qual;
-               i++;
-               qualname = &format[i];
+               Int begin_qualname = ++i;
                while (True) {
 		  if ('}' == format[i]) {
-                     // Temporarily replace the '}' with NUL to extract var
-                     // name.
-		     format[i] = 0;
+                     Int qualname_len = i - begin_qualname;
+                     HChar qualname[qualname_len + 1];
+                     VG_(strncpy)(qualname, format + begin_qualname,
+                                  qualname_len);
+                     qualname[qualname_len] = '\0';
                      qual = VG_(getenv)(qualname);
+                     i++;
+                     VG_(printf_xml)("<logfilequalifier> <var>%pS</var> "
+                                     "<value>%pS</value> </logfilequalifier>\n",
+                                     qualname, qual);
 		     break;
                   }
                   i++;
                }
-
-               VG_(printf_xml)(
-                  "<logfilequalifier> <var>%pS</var> "
-                  "<value>%pS</value> </logfilequalifier>\n",
-                  qualname,qual
-               );
-	       format[i] = '}';
-	       i++;
 	    }
          }
       } else {
@@ -1217,7 +1214,7 @@ static void xml_arg(const HChar* arg)
    command line args, to help people trying to interpret the
    results of a run which encompasses multiple processes. */
 static void print_preamble ( Bool logging_to_fd, 
-                             HChar* xml_fname_unexpanded,
+                             const HChar* xml_fname_unexpanded,
                              const HChar* toolname )
 {
    Int    i;
@@ -1522,7 +1519,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    Int     need_help          = 0; // 0 = no, 1 = --help, 2 = --help-debug
    ThreadId tid_main          = VG_INVALID_THREADID;
    Bool    logging_to_fd      = False;
-   HChar* xml_fname_unexpanded = NULL;
+   const HChar* xml_fname_unexpanded = NULL;
    Int     loglevel, i;
    struct vki_rlimit zero = { 0, 0 };
    XArray* addr2dihandle = NULL;

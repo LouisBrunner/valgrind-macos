@@ -564,8 +564,8 @@ void VG_(fmsg_bad_option) ( const HChar* opt, const HChar* format, ... )
    VG_(message) (Vg_FailMsg, "Bad option: %s\n", opt);
    VG_(vmessage)(Vg_FailMsg, format, vargs );
    VG_(message) (Vg_FailMsg, "Use --help for more information or consult the user manual.\n");
-   VG_(exit)(1);
    va_end(vargs);
+   VG_(exit)(1);
 }
 
 UInt VG_(umsg) ( const HChar* format, ... )
@@ -615,8 +615,8 @@ void VG_(err_config_error) ( const HChar* format, ... )
    VG_(message) (Vg_FailMsg, "Startup or configuration error:\n   ");
    VG_(vmessage)(Vg_FailMsg, format, vargs );
    VG_(message) (Vg_FailMsg, "Unable to start up properly.  Giving up.\n");
-   VG_(exit)(1);
    va_end(vargs);
+   VG_(exit)(1);
 }
 
 

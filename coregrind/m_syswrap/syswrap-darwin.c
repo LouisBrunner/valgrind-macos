@@ -6882,6 +6882,33 @@ PRE(thread_suspend)
        // Do keep the scheduler lock while suspending any other thread. 
        // Otherwise we might halt the other thread while it holds the lock, 
        // which would deadlock the process.
+       *flags &= ~SfMayBlock;
+   }
+}
+
+
+POST(thread_resume)
+{
+}
+
+PRE(thread_resume)
+{
+   mach_msg_header_t *mh = (mach_msg_header_t *)ARG1;
+   Bool self_resume = (mh->msgh_request_port == MACH_THREAD);
+
+   PRINT("thread_resume(%s)", name_for_port(mh->msgh_request_port));
+
+   AFTER = POST_FN(thread_resume);
+
+   if (self_resume) {
+       // This doesn't make much sense.  If we are resuming ourself, we can't
+       // already be running.  So I don't see how we can ever get here.
+       vg_assert(0);
+   } else {
+       // Resuming some other thread.  It might not yet come back to life
+       // (if the suspend count is still above zero) so make sure we keep
+       // holding the lock.
+       *flags &= ~SfMayBlock;
    }
 }
 
@@ -7374,6 +7401,9 @@ PRE(mach_msg_thread)
       return;
    case 3605: 
       CALL_PRE(thread_suspend);
+      return;
+   case 3606:
+      CALL_PRE(thread_resume);
       return;
    case 3612: 
       CALL_PRE(thread_info);

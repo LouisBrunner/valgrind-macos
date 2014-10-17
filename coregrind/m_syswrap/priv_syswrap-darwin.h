@@ -565,6 +565,7 @@ DECL_TEMPLATE(darwin, thread_terminate);
 DECL_TEMPLATE(darwin, thread_create);
 DECL_TEMPLATE(darwin, thread_create_running);
 DECL_TEMPLATE(darwin, thread_suspend);
+DECL_TEMPLATE(darwin, thread_resume);
 DECL_TEMPLATE(darwin, thread_get_state);
 DECL_TEMPLATE(darwin, thread_policy);
 DECL_TEMPLATE(darwin, thread_policy_set);

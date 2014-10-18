@@ -194,7 +194,7 @@ typedef
 
    Note for ARM: addr in GS_Address is the value without the thumb bit set.
 */
-static VgHashTable gs_addresses = NULL;
+static VgHashTable *gs_addresses = NULL;
 
 // Transform addr in the form stored in the list of addresses.
 // For the ARM architecture, we store it with the thumb bit set to 0.

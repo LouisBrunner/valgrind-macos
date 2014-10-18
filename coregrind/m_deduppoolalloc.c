@@ -52,7 +52,7 @@ struct _DedupPoolAlloc {
 
    /* hash table of pool elements, used to dedup.
       If NULL, it means the DedupPoolAlloc is frozen. */
-   VgHashTable ht_elements;
+   VgHashTable *ht_elements;
 
    /* Hash table nodes of pool_elements are allocated with a pool, to
       decrease memory overhead during insertion in the DedupPoolAlloc. */

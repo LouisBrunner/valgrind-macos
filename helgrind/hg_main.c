@@ -3974,7 +3974,7 @@ typedef
 
 /* A hash table of MallocMetas, used to track malloc'd blocks
    (obviously). */
-static VgHashTable hg_mallocmeta_table = NULL;
+static VgHashTable *hg_mallocmeta_table = NULL;
 
 /* MallocMeta are small elements. We use a pool to avoid
    the overhead of malloc for each MallocMeta. */

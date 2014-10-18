@@ -467,7 +467,7 @@ typedef
       /* --- Needed so we can add stuff to the string table. --- */
       struct _DebugInfo* di;
       /* --- a hash table of g_abbv (i.e. parsed abbreviations) --- */
-      VgHashTable ht_abbvs;
+      VgHashTable *ht_abbvs;
 
       /* True if this came from .debug_types; otherwise it came from
          .debug_info.  */
@@ -480,7 +480,7 @@ typedef
 
       /* Signatured type hash; computed once and then shared by all
          CUs.  */
-      VgHashTable signature_types;
+      VgHashTable *signature_types;
 
       /* True if this came from alternate .debug_info; otherwise
          it came from normal .debug_info or .debug_types.  */
@@ -1081,7 +1081,7 @@ typedef
    D3SignatureType;
 
 /* Record a signatured type in the hash table.  */
-static void record_signatured_type ( VgHashTable tab,
+static void record_signatured_type ( VgHashTable *tab,
                                      ULong type_signature,
                                      UWord die )
 {
@@ -1096,7 +1096,7 @@ static void record_signatured_type ( VgHashTable tab,
 /* Given a type signature hash table and a type signature, return the
    cooked DIE offset of the type.  If the type cannot be found, call
    BARF.  */
-static UWord lookup_signatured_type ( VgHashTable tab,
+static UWord lookup_signatured_type ( const VgHashTable *tab,
                                       ULong type_signature,
                                       void (*barf)( const HChar* ) __attribute__((noreturn)) )
 {
@@ -4439,7 +4439,7 @@ void new_dwarf3_reader_wrk (
    Bool td3 = di->trace_symtab;
    XArray* /* of TempVar* */ dioff_lookup_tab;
    Int pass;
-   VgHashTable signature_types = NULL;
+   VgHashTable *signature_types = NULL;
 
    /* Display/trace various information, if requested. */
    if (TD3) {

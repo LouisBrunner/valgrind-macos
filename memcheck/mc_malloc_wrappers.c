@@ -66,11 +66,11 @@ static ULong cmalloc_bs_mallocd = 0;
 SizeT MC_(Malloc_Redzone_SzB) = -10000000; // If used before set, should BOMB
 
 /* Record malloc'd blocks. */
-VgHashTable MC_(malloc_list) = NULL;
+VgHashTable *MC_(malloc_list) = NULL;
 
 /* Memory pools: a hash table of MC_Mempools.  Search key is
    MC_Mempool::pool. */
-VgHashTable MC_(mempool_list) = NULL;
+VgHashTable *MC_(mempool_list) = NULL;
 
 /* Pool allocator for MC_Chunk. */   
 PoolAlloc *MC_(chunk_poolalloc) = NULL;
@@ -224,7 +224,7 @@ void delete_MC_Chunk (MC_Chunk* mc)
 }
 
 // True if mc is in the given block list.
-static Bool in_block_list (VgHashTable block_list, MC_Chunk* mc)
+static Bool in_block_list (const VgHashTable *block_list, MC_Chunk* mc)
 {
    MC_Chunk* found_mc = VG_(HT_lookup) ( block_list, (UWord)mc->data );
    if (found_mc) {
@@ -338,7 +338,7 @@ UInt MC_(n_where_pointers) (void)
 /* Allocate memory and note change in memory available */
 void* MC_(new_block) ( ThreadId tid,
                        Addr p, SizeT szB, SizeT alignB,
-                       Bool is_zeroed, MC_AllocKind kind, VgHashTable table)
+                       Bool is_zeroed, MC_AllocKind kind, VgHashTable *table)
 {
    MC_Chunk* mc;
 

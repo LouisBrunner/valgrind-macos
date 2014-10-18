@@ -93,7 +93,7 @@ typedef
       Addr          pool;           // pool identifier
       SizeT         rzB;            // pool red-zone size
       Bool          is_zeroed;      // allocations from this pool are zeroed
-      VgHashTable   chunks;         // chunks associated with this pool
+      VgHashTable  *chunks;         // chunks associated with this pool
    }
    MC_Mempool;
 
@@ -101,7 +101,7 @@ typedef
 void* MC_(new_block)  ( ThreadId tid,
                         Addr p, SizeT size, SizeT align,
                         Bool is_zeroed, MC_AllocKind kind,
-                        VgHashTable table);
+                        VgHashTable *table);
 void MC_(handle_free) ( ThreadId tid,
                         Addr p, UInt rzB, MC_AllocKind kind );
 
@@ -127,10 +127,10 @@ extern PoolAlloc* MC_(chunk_poolalloc);
    VgHashTable, because VgHashTable allows duplicate keys without complaint.
    This can occur if a user marks a malloc() block as also a custom block with
    MALLOCLIKE_BLOCK. */
-extern VgHashTable MC_(malloc_list);
+extern VgHashTable *MC_(malloc_list);
 
 /* For tracking memory pools. */
-extern VgHashTable MC_(mempool_list);
+extern VgHashTable *MC_(mempool_list);
 
 /* Shadow memory functions */
 Bool MC_(check_mem_is_noaccess)( Addr a, SizeT len, Addr* bad_addr );

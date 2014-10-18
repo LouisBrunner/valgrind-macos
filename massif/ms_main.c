@@ -1485,7 +1485,7 @@ typedef
    }
    HP_Chunk;
 
-static VgHashTable malloc_list  = NULL;   // HP_Chunks
+static VgHashTable *malloc_list  = NULL;   // HP_Chunks
 
 static void update_alloc_stats(SSizeT szB_delta)
 {

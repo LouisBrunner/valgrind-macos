@@ -61,7 +61,7 @@ static SizeT s_cmalloc_n_mallocs  = 0;
 static SizeT s_cmalloc_n_frees    = 0;
 static SizeT s_cmalloc_bs_mallocd = 0;
 /* Record malloc'd blocks. */
-static VgHashTable s_malloc_list = NULL;
+static VgHashTable *s_malloc_list = NULL;
 
 
 /* Function definitions. */

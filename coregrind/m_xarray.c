@@ -78,7 +78,7 @@ XArray* VG_(newXA) ( void*(*alloc_fn)(const HChar*,SizeT),
    return xa;
 }
 
-XArray* VG_(cloneXA)( const HChar* cc, XArray* xa )
+XArray* VG_(cloneXA)( const HChar* cc, const XArray* xa )
 {
    XArray* nyu;
    const HChar* nyu_cc;
@@ -125,7 +125,7 @@ void VG_(setCmpFnXA) ( XArray* xa, XACmpFn_t compar )
    xa->sorted = False;
 }
 
-inline void* VG_(indexXA) ( XArray* xa, Word n )
+inline void* VG_(indexXA) ( const XArray* xa, Word n )
 {
    vg_assert(xa);
    vg_assert(n >= 0);
@@ -211,7 +211,7 @@ void VG_(sortXA) ( XArray* xa )
    xa->sorted = True;
 }
 
-Bool VG_(lookupXA_UNSAFE) ( XArray* xa, const void* key,
+Bool VG_(lookupXA_UNSAFE) ( const XArray* xa, const void* key,
                             /*OUT*/Word* first, /*OUT*/Word* last,
                             Int(*cmpFn)(const void*, const void*) )
 {
@@ -249,7 +249,7 @@ Bool VG_(lookupXA_UNSAFE) ( XArray* xa, const void* key,
    }
 }
 
-Bool VG_(lookupXA) ( XArray* xa, const void* key,
+Bool VG_(lookupXA) ( const XArray* xa, const void* key,
                      /*OUT*/Word* first, /*OUT*/Word* last )
 {
    vg_assert(xa);
@@ -258,7 +258,7 @@ Bool VG_(lookupXA) ( XArray* xa, const void* key,
    return VG_(lookupXA_UNSAFE)(xa, key, first, last, xa->cmpFn);
 }
 
-Word VG_(sizeXA) ( XArray* xa )
+Word VG_(sizeXA) ( const XArray* xa )
 {
    vg_assert(xa);
    return xa->usedsizeE;

@@ -76,7 +76,7 @@ Bool VG_(delFromSWA) ( SparseWA* swa,
 // mapping), and returns the associated value, if any, in *valP.  For
 // compatibility with WordFM, 'key' is also returned in *keyP.  Returned
 // Bool is True iff a binding for 'key' actually existed.
-Bool VG_(lookupSWA) ( SparseWA* swa,
+Bool VG_(lookupSWA) ( const SparseWA* swa,
                       /*OUT*/UWord* keyP, /*OUT*/UWord* valP,
                       UWord key );
 
@@ -93,7 +93,7 @@ Bool VG_(nextIterSWA)( SparseWA* swa,
 // How many elements are there in 'swa'?  NOTE: dangerous in the
 // sense that this is not an O(1) operation but rather O(N),
 // since it involves walking the whole tree.
-UWord VG_(sizeSWA) ( SparseWA* swa );
+UWord VG_(sizeSWA) ( const SparseWA* swa );
 
 #endif   // __PUB_TOOL_SPARSEWA_H
 

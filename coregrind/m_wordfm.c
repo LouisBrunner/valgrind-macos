@@ -136,7 +136,7 @@ static void avl_nasty ( AvlNode* root )
 }
 
 /* Find size of a non-NULL tree. */
-static UWord size_avl_nonNull ( AvlNode* nd )
+static UWord size_avl_nonNull ( const AvlNode* nd )
 {
    return 1 + (nd->child[0] ? size_avl_nonNull(nd->child[0]) : 0)
             + (nd->child[1] ? size_avl_nonNull(nd->child[1]) : 0);
@@ -417,7 +417,7 @@ AvlNode* avl_find_node ( AvlNode* t, Word k, Word(*kCmp)(UWord,UWord) )
 }
 
 static
-Bool avl_find_bounds ( AvlNode* t, 
+Bool avl_find_bounds ( const AvlNode* t, 
                        /*OUT*/UWord* kMinP, /*OUT*/UWord* vMinP,
                        /*OUT*/UWord* kMaxP, /*OUT*/UWord* vMaxP,
                        UWord minKey, UWord minVal,
@@ -499,7 +499,7 @@ static inline Bool stackPop(WordFM* fm, AvlNode** n, Int* i)
 }
 
 static 
-AvlNode* avl_dopy ( AvlNode* nd, 
+AvlNode* avl_dopy ( const AvlNode* nd, 
                     UWord(*dopyK)(UWord), 
                     UWord(*dopyV)(UWord),
                     void*(alloc_nofail)(const HChar*,SizeT),
@@ -644,7 +644,7 @@ Bool VG_(delFromFM) ( WordFM* fm,
 }
 
 // Look up in fm, assigning found key & val at spec'd addresses
-Bool VG_(lookupFM) ( WordFM* fm, 
+Bool VG_(lookupFM) ( const WordFM* fm, 
                      /*OUT*/UWord* keyP, /*OUT*/UWord* valP, UWord key )
 {
    AvlNode* node = avl_find_node( fm->root, key, fm->kCmp );
@@ -660,7 +660,7 @@ Bool VG_(lookupFM) ( WordFM* fm,
 }
 
 // See comment in pub_tool_wordfm.h for explanation
-Bool VG_(findBoundsFM)( WordFM* fm,
+Bool VG_(findBoundsFM)( const WordFM* fm,
                         /*OUT*/UWord* kMinP, /*OUT*/UWord* vMinP,
                         /*OUT*/UWord* kMaxP, /*OUT*/UWord* vMaxP,
                         UWord minKey, UWord minVal,
@@ -677,14 +677,14 @@ Bool VG_(findBoundsFM)( WordFM* fm,
 }
 
 // See comment in pub_tool_wordfm.h for performance warning
-UWord VG_(sizeFM) ( WordFM* fm )
+UWord VG_(sizeFM) ( const WordFM* fm )
 {
    // Hmm, this is a bad way to do this
    return fm->root ? size_avl_nonNull( fm->root ) : 0;
 }
 
 // NB UNTESTED!  TEST BEFORE USE!
-//Bool VG_(isEmptyFM)( WordFM* fm )
+//Bool VG_(isEmptyFM)( const WordFM* fm )
 //{
 //   return fm->root ? False : True;
 //}
@@ -793,7 +793,8 @@ void VG_(doneIterFM) ( WordFM* fm )
 {
 }
 
-WordFM* VG_(dopyFM) ( WordFM* fm, UWord(*dopyK)(UWord), UWord(*dopyV)(UWord) )
+WordFM* VG_(dopyFM) ( WordFM* fm, UWord(*dopyK)(UWord),
+                      UWord(*dopyV)(UWord) )
 {
    WordFM* nyu; 
 
@@ -862,7 +863,7 @@ void VG_(addToBag)( WordBag* bag, UWord w )
    }
 }
 
-UWord VG_(elemBag) ( WordBag* bag, UWord w )
+UWord VG_(elemBag) ( const WordBag* bag, UWord w )
 {
    UWord key, count;
    if (VG_(lookupFM)( bag->fm, &key, &count, w)) {
@@ -874,12 +875,12 @@ UWord VG_(elemBag) ( WordBag* bag, UWord w )
    }
 }
 
-UWord VG_(sizeUniqueBag) ( WordBag* bag )
+UWord VG_(sizeUniqueBag) ( const WordBag* bag )
 {
    return VG_(sizeFM)( bag->fm );
 }
 
-static UWord sizeTotalBag_wrk ( AvlNode* nd )
+static UWord sizeTotalBag_wrk ( const AvlNode* nd )
 {
    /* unchecked pre: nd is non-NULL */
    UWord w = nd->val;
@@ -890,7 +891,7 @@ static UWord sizeTotalBag_wrk ( AvlNode* nd )
       w += sizeTotalBag_wrk(nd->child[1]);
    return w;
 }
-UWord VG_(sizeTotalBag)( WordBag* bag )
+UWord VG_(sizeTotalBag)( const WordBag* bag )
 {
    if (bag->fm->root)
       return sizeTotalBag_wrk(bag->fm->root);
@@ -916,12 +917,12 @@ Bool VG_(delFromBag)( WordBag* bag, UWord w )
    }
 }
 
-Bool VG_(isEmptyBag)( WordBag* bag )
+Bool VG_(isEmptyBag)( const WordBag* bag )
 {
    return VG_(sizeFM)(bag->fm) == 0;
 }
 
-Bool VG_(isSingletonTotalBag)( WordBag* bag )
+Bool VG_(isSingletonTotalBag)( const WordBag* bag )
 {
    AvlNode* nd;
    if (VG_(sizeFM)(bag->fm) != 1)
@@ -933,7 +934,7 @@ Bool VG_(isSingletonTotalBag)( WordBag* bag )
    return nd->val == 1;
 }
 
-UWord VG_(anyElementOfBag)( WordBag* bag )
+UWord VG_(anyElementOfBag)( const WordBag* bag )
 {
    /* Return an arbitrarily chosen element in the bag.  We might as
       well return the one at the root of the underlying AVL tree. */

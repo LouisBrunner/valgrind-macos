@@ -165,13 +165,13 @@ void* elem_of_node_no_check(const AvlNode *n)
 }
 
 static inline
-void* slow_key_of_node(AvlTree* t, AvlNode* n)
+void* slow_key_of_node(const AvlTree* t, const AvlNode* n)
 {
    return (void*)((Addr)elem_of_node(n) + t->keyOff);
 }
 
 static inline
-void* fast_key_of_node(AvlNode* n)
+void* fast_key_of_node(const AvlNode* n)
 {
    return elem_of_node(n);
 }
@@ -338,7 +338,7 @@ AvlTree* VG_(OSetGen_Create_With_Pool)(PtrdiffT keyOff, OSetCmp_t cmp,
    return t;
 }
 
-AvlTree* VG_(OSetGen_EmptyClone) (AvlTree* os)
+AvlTree* VG_(OSetGen_EmptyClone) (const AvlTree* os)
 {
    AvlTree* t;
 
@@ -423,7 +423,7 @@ void VG_(OSetWord_Destroy)(AvlTree* t)
 }
 
 // Allocate and initialise a new node.
-void* VG_(OSetGen_AllocNode)(AvlTree* t, SizeT elemSize)
+void* VG_(OSetGen_AllocNode)(const AvlTree* t, SizeT elemSize)
 {
    AvlNode* n;
    Int nodeSize = sizeof(AvlNode) + elemSize;
@@ -439,7 +439,7 @@ void* VG_(OSetGen_AllocNode)(AvlTree* t, SizeT elemSize)
    return elem_of_node(n);
 }
 
-void VG_(OSetGen_FreeNode)(AvlTree* t, void* e)
+void VG_(OSetGen_FreeNode)(const AvlTree* t, void* e)
 {
    if (t->node_pa)
       VG_(freeEltPA) (t->node_pa, node_of_elem (e));
@@ -451,7 +451,7 @@ void VG_(OSetGen_FreeNode)(AvlTree* t, void* e)
 /*--- Insertion                                                    ---*/
 /*--------------------------------------------------------------------*/
 
-static inline Word cmp_key_root(AvlTree* t, AvlNode* n)
+static inline Word cmp_key_root(const AvlTree* t, const AvlNode* n)
 {
    return t->cmp
           ? slow_cmp(t, slow_key_of_node(t, n), t->root)
@@ -633,7 +633,7 @@ Bool VG_(OSetGen_Contains)(const AvlTree* t, const void* k)
    return (NULL != VG_(OSetGen_Lookup)(t, k));
 }
 
-Bool VG_(OSetWord_Contains)(AvlTree* t, UWord val)
+Bool VG_(OSetWord_Contains)(const AvlTree* t, UWord val)
 {
    return (NULL != VG_(OSetGen_Lookup)(t, &val));
 }
@@ -646,7 +646,7 @@ static Bool avl_removeroot(AvlTree* t);
 
 // Remove an already-selected node n from the AVL tree t.
 // Returns True if the depth of the tree has shrunk.
-static Bool avl_remove(AvlTree* t, AvlNode* n)
+static Bool avl_remove(AvlTree* t, const AvlNode* n)
 {
    Bool ch;
    Word cmpres = cmp_key_root(t, n);
@@ -918,13 +918,13 @@ Word VG_(OSetGen_Size)(const AvlTree* t)
    return t->nElems;
 }
 
-Word VG_(OSetWord_Size)(AvlTree* t)
+Word VG_(OSetWord_Size)(const AvlTree* t)
 {
    return VG_(OSetGen_Size)(t);
 }
 
-static void OSet_Print2( AvlTree* t, AvlNode* n,
-                         HChar*(*strElem)(void *), Int p )
+static void OSet_Print2( const AvlTree* t, const AvlNode* n,
+                         const HChar*(*strElem)(const void *), Int p )
 {
    // This is a recursive in-order traversal.
    Int q = p;
@@ -936,8 +936,8 @@ static void OSet_Print2( AvlTree* t, AvlNode* n,
 }
 
 __attribute__((unused))
-static void OSet_Print( AvlTree* t, const HChar *where,
-                        HChar*(*strElem)(void *) )
+static void OSet_Print( const AvlTree* t, const HChar *where,
+                        const HChar*(*strElem)(const void *) )
 {
    VG_(printf)("-- start %s ----------------\n", where);
    OSet_Print2(t, t->root, strElem, 0);

@@ -99,7 +99,7 @@ Bool VG_(delFromFM) ( WordFM* fm,
                       /*OUT*/UWord* oldK, /*OUT*/UWord* oldV, UWord key );
 
 // Look up in fm, assigning found key & val at spec'd addresses
-Bool VG_(lookupFM) ( WordFM* fm, 
+Bool VG_(lookupFM) ( const WordFM* fm, 
                      /*OUT*/UWord* keyP, /*OUT*/UWord* valP, UWord key );
 
 // Find the closest key values bracketing the given key, assuming the 
@@ -118,7 +118,7 @@ Bool VG_(lookupFM) ( WordFM* fm,
 // False is returned, and *kMinP, *vMinP, *kMaxP and *vMaxP are
 // undefined.  Any of kMinP, vMinP, kMaxP and vMaxP may be safely
 // supplied as NULL.
-Bool VG_(findBoundsFM)( WordFM* fm,
+Bool VG_(findBoundsFM)( const WordFM* fm,
                         /*OUT*/UWord* kMinP, /*OUT*/UWord* vMinP,
                         /*OUT*/UWord* kMaxP, /*OUT*/UWord* vMaxP,
                         UWord minKey, UWord minVal,
@@ -128,7 +128,7 @@ Bool VG_(findBoundsFM)( WordFM* fm,
 // How many elements are there in fm?  NOTE: dangerous in the
 // sense that this is not an O(1) operation but rather O(N),
 // since it involves walking the whole tree.
-UWord VG_(sizeFM) ( WordFM* fm );
+UWord VG_(sizeFM) ( const WordFM* fm );
 
 // set up FM for iteration
 void VG_(initIterFM) ( WordFM* fm );
@@ -180,23 +180,23 @@ void VG_(deleteBag) ( WordBag* );
 void VG_(addToBag)( WordBag*, UWord );
 
 /* Find out how many times the given word exists in the bag. */
-UWord VG_(elemBag) ( WordBag*, UWord );
+UWord VG_(elemBag) ( const WordBag*, UWord );
 
 /* Delete a word from the bag. */
 Bool VG_(delFromBag)( WordBag*, UWord );
 
 /* Is the bag empty? */
-Bool VG_(isEmptyBag)( WordBag* );
+Bool VG_(isEmptyBag)( const WordBag* );
 
 /* Does the bag have exactly one element? */
-Bool VG_(isSingletonTotalBag)( WordBag* );
+Bool VG_(isSingletonTotalBag)( const WordBag* );
 
 /* Return an arbitrary element from the bag. */
-UWord VG_(anyElementOfBag)( WordBag* );
+UWord VG_(anyElementOfBag)( const WordBag* );
 
 /* How many different / total elements are in the bag? */
-UWord VG_(sizeUniqueBag)( WordBag* ); /* fast */
-UWord VG_(sizeTotalBag)( WordBag* );  /* warning: slow */
+UWord VG_(sizeUniqueBag)( const WordBag* ); /* fast */
+UWord VG_(sizeTotalBag)( const WordBag* );  /* warning: slow */
 
 /* Iterating over the elements of a bag. */
 void VG_(initIterBag)( WordBag* );

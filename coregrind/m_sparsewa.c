@@ -89,7 +89,7 @@ struct _SparseWA {
 
 //////// SWA helper functions (bitarray)
 
-static inline UWord swa_bitarray_read ( UChar* arr, UWord ix ) {
+static inline UWord swa_bitarray_read ( const UChar* arr, UWord ix ) {
    UWord bix = ix >> 3;
    UWord off = ix & 7;
    return (arr[bix] >> off) & 1;
@@ -146,7 +146,7 @@ static void swa_POP ( SparseWA* swa,
 
 //////// SWA helper functions (allocation)
 
-static LevelN* swa_new_LevelN ( SparseWA* swa, Int level )
+static LevelN* swa_new_LevelN ( const SparseWA* swa, Int level )
 {
    LevelN* levelN = swa->alloc_nofail( swa->cc, sizeof(LevelN) );
    VG_(memset)(levelN, 0, sizeof(*levelN));
@@ -155,7 +155,7 @@ static LevelN* swa_new_LevelN ( SparseWA* swa, Int level )
    return levelN;
 }
 
-static Level0* swa_new_Level0 ( SparseWA* swa )
+static Level0* swa_new_Level0 ( const SparseWA* swa )
 {
    Level0* level0 = swa->alloc_nofail( swa->cc, sizeof(Level0) );
    VG_(memset)(level0, 0, sizeof(*level0));
@@ -273,7 +273,7 @@ void VG_(deleteSWA) ( SparseWA* swa )
 }
 
 
-Bool VG_(lookupSWA) ( SparseWA* swa,
+Bool VG_(lookupSWA) ( const SparseWA* swa,
                       /*OUT*/UWord* keyP, /*OUT*/UWord* valP,
                       UWord key )
 {
@@ -432,12 +432,12 @@ Bool VG_(delFromSWA) ( SparseWA* swa,
 }
 
 
-static UWord swa_sizeSWA_wrk ( void* nd )
+static UWord swa_sizeSWA_wrk ( const void* nd )
 {
    Int   i;
-   if (*(UWord*)nd == LevelN_MAGIC) {
+   if (*(const UWord*)nd == LevelN_MAGIC) {
       UWord sum = 0;
-      LevelN* levelN = (LevelN*)nd;
+      const LevelN* levelN = nd;
       for (i = 0; i < 256; i++) {
          if (levelN->child[i]) {
             sum += swa_sizeSWA_wrk( levelN->child[i] );
@@ -445,13 +445,13 @@ static UWord swa_sizeSWA_wrk ( void* nd )
       }
       return sum;
    } else {
-      Level0* level0;
-      vg_assert(*(UWord*)nd == Level0_MAGIC);
-      level0 = (Level0*)nd;
+      const Level0* level0;
+      vg_assert(*(const UWord*)nd == Level0_MAGIC);
+      level0 = nd;
       return level0->nInUse;
    }
 }
-UWord VG_(sizeSWA) ( SparseWA* swa )
+UWord VG_(sizeSWA) ( const SparseWA* swa )
 {
    if (swa->root)
       return swa_sizeSWA_wrk ( swa->root );

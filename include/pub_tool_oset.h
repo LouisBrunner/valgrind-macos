@@ -147,9 +147,9 @@ extern void  VG_(OSetWord_Destroy) ( OSet* os );
 //   they will return False if VG_(OSetWord_Next)() is called without an
 //   intervening call to VG_(OSetWord_ResetIter)().
 
-extern Word  VG_(OSetWord_Size)         ( OSet* os );
+extern Word  VG_(OSetWord_Size)         ( const OSet* os );
 extern void  VG_(OSetWord_Insert)       ( OSet* os, UWord val );
-extern Bool  VG_(OSetWord_Contains)     ( OSet* os, UWord val );
+extern Bool  VG_(OSetWord_Contains)     ( const OSet* os, UWord val );
 extern Bool  VG_(OSetWord_Remove)       ( OSet* os, UWord val );
 extern void  VG_(OSetWord_ResetIter)    ( OSet* os );
 extern Bool  VG_(OSetWord_Next)         ( OSet* os, /*OUT*/UWord* val );
@@ -225,11 +225,11 @@ extern OSet* VG_(OSetGen_Create_With_Pool)    ( PtrdiffT keyOff, OSetCmp_t cmp,
 // always <= than a (small) maximum value.
 // In such a case, allocating the nodes in pools reduces significantly
 // the memory overhead needed by each node.
-// When a node is freed (i.e. OsetGen_Freenode is called), the node is
+// When a node is freed (i.e. OSetGen_Freenode is called), the node is
 // put back in the pool allocator free list (for sub-sequent re-use by
-// Osetgen_Allocnode). Note that the pool memory is only released when
+// OSetGen_AllocNode). Note that the pool memory is only released when
 // the pool is destroyed : calls to VG_(OSetGen_Free) do not cause
-// any calls to OsetFree_t _free function.
+// any calls to OSetFree_t _free function.
 // If there are several OSet managing similar such elements, it might be
 // interesting to use a shared pool for these OSet.
 // To have multiple OSets sharing a pool allocator, create the first OSet
@@ -237,10 +237,10 @@ extern OSet* VG_(OSetGen_Create_With_Pool)    ( PtrdiffT keyOff, OSetCmp_t cmp,
 // VG_(OSetGen_EmptyClone).
 
 extern void  VG_(OSetGen_Destroy)   ( OSet* os );
-extern void* VG_(OSetGen_AllocNode) ( OSet* os, SizeT elemSize );
-extern void  VG_(OSetGen_FreeNode)  ( OSet* os, void* elem );
+extern void* VG_(OSetGen_AllocNode) ( const OSet* os, SizeT elemSize );
+extern void  VG_(OSetGen_FreeNode)  ( const OSet* os, void* elem );
 
-extern OSet* VG_(OSetGen_EmptyClone) (OSet* os);
+extern OSet* VG_(OSetGen_EmptyClone) (const OSet* os);
 // Creates a new empty OSet.
 // The new OSet will have the same characteristics as os.
 // If os uses a pool allocator, this pool allocator will be shared with

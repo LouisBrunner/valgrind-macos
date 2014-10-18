@@ -69,7 +69,7 @@ static void free_node(void* p)
 // case a Word), in which case the element is also the key.
 
 __attribute__((unused))
-static HChar *wordToStr(void *p)
+static const HChar *wordToStr(const void *p)
 {
    static HChar buf[32];
    sprintf(buf, "%ld", *(Word*)p);

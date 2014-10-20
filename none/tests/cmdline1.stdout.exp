@@ -89,7 +89,7 @@ usage: valgrind [options] prog-and-args
                               DRD) [no]
     --vgdb-poll=<number>      gdbserver poll max every <number> basic blocks [5000] 
     --vgdb-shadow-registers=no|yes   let gdb see the shadow registers [no]
-    --vgdb-prefix=<prefix>    prefix for vgdb FIFOs [/tmp/vgdb-pipe]
+    --vgdb-prefix=<prefix>    prefix for vgdb FIFOs [.../vgdb-pipe]
     --run-libc-freeres=no|yes free up glibc memory at exit on Linux? [yes]
     --sim-hints=hint1,hint2,...  activate unusual sim behaviours [none] 
          where hint is one of:

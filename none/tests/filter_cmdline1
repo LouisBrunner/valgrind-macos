@@ -1,5 +1,6 @@
 #! /bin/sh
 
 sed -e 's/\(set minimum alignment of heap allocations\) \[[0-9]*\]/\1 [...]/' \
-    -e 's/\(command to start debugger\) \[.* -nw %f %p\]/\1 [... -nw %f %p]/'
+    -e 's/\(command to start debugger\) \[.* -nw %f %p\]/\1 [... -nw %f %p]/' \
+    -e 's/\(prefix for vgdb FIFOs\) \[.*\/vgdb-pipe\]/\1 [...\/vgdb-pipe]/'
 

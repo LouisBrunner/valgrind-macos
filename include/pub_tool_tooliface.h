@@ -284,7 +284,7 @@ extern void VG_(needs_tool_errors) (
    // passed to VG_(eq_ExeContext)() if the ExeContexts are considered.  Other
    // than that, probably don't worry about it unless you have lots of very
    // similar errors occurring.
-   Bool (*eq_Error)(VgRes res, Error* e1, Error* e2),
+   Bool (*eq_Error)(VgRes res, const Error* e1, const Error* e2),
 
    // We give tools a chance to have a look at errors
    // just before they are printed.  That is, before_pp_Error is 
@@ -294,10 +294,10 @@ extern void VG_(needs_tool_errors) (
    // is printed.  This functionality was added to allow Helgrind to
    // print thread-announcement messages immediately before the 
    // errors that refer to them.
-   void (*before_pp_Error)(Error* err),
+   void (*before_pp_Error)(const Error* err),
 
    // Print error context.
-   void (*pp_Error)(Error* err),
+   void (*pp_Error)(const Error* err),
 
    // Should the core indicate which ThreadId each error comes from?
    Bool show_ThreadIDs_for_errors,
@@ -309,7 +309,7 @@ extern void VG_(needs_tool_errors) (
    // Yuk.
    // Return value: must be the size of the `extra' part in bytes -- used by
    // the core to make a copy.
-   UInt (*update_extra)(Error* err),
+   UInt (*update_extra)(const Error* err),
 
    // Return value indicates recognition.  If recognised, must set skind using
    // VG_(set_supp_kind)().
@@ -326,12 +326,12 @@ extern void VG_(needs_tool_errors) (
    // This should just check the kinds match and maybe some stuff in the
    // `string' and `extra' field if appropriate (using VG_(get_supp_*)() to
    // get the relevant suppression parts).
-   Bool (*error_matches_suppression)(Error* err, Supp* su),
+   Bool (*error_matches_suppression)(const Error* err, const Supp* su),
 
    // This should return the suppression name, for --gen-suppressions, or NULL
    // if that error type cannot be suppressed.  This is the inverse of
    // VG_(tdict).tool_recognised_suppression().
-   const HChar* (*get_error_name)(Error* err),
+   const HChar* (*get_error_name)(const Error* err),
 
    // This should print into buf[0..nBuf-1] any extra info for the
    // error, for --gen-suppressions, but not including any leading
@@ -340,13 +340,13 @@ extern void VG_(needs_tool_errors) (
    // including the terminating null character the function shall
    // return the value that strlen would return for the string.
    // If the buffer is too small the function shall return nBuf.
-   SizeT (*print_extra_suppression_info)(Error* err,
+   SizeT (*print_extra_suppression_info)(const Error* err,
                                          /*OUT*/HChar* buf, Int nBuf),
 
    // This is similar to print_extra_suppression_info, but is used
    // to print information such as additional statistical counters
    // as part of the used suppression list produced by -v.
-   SizeT (*print_extra_suppression_use)(Supp* su,
+   SizeT (*print_extra_suppression_use)(const Supp* su,
                                         /*OUT*/HChar* buf, Int nBuf),
 
    // Called by error mgr once it has been established that err
@@ -354,7 +354,7 @@ extern void VG_(needs_tool_errors) (
    // can be used to update suppression extra information such as
    // some statistical counters that will be printed by
    // print_extra_suppression_use.
-   void (*update_extra_suppression_use)(Error* err, Supp* su)
+   void (*update_extra_suppression_use)(const Error* err, const Supp* su)
 );
 
 /* Is information kept by the tool about specific instructions or

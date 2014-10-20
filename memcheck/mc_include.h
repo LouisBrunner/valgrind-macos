@@ -393,25 +393,25 @@ extern Bool MC_(any_value_errors);
 
 /* Standard functions for error and suppressions as required by the
    core/tool iface */
-Bool MC_(eq_Error)           ( VgRes res, Error* e1, Error* e2 );
-void MC_(before_pp_Error)    ( Error* err );
-void MC_(pp_Error)           ( Error* err );
-UInt MC_(update_Error_extra) ( Error* err );
+Bool MC_(eq_Error)           ( VgRes res, const Error* e1, const Error* e2 );
+void MC_(before_pp_Error)    ( const Error* err );
+void MC_(pp_Error)           ( const Error* err );
+UInt MC_(update_Error_extra) ( const Error* err );
 
 Bool MC_(is_recognised_suppression) ( const HChar* name, Supp* su );
 
 Bool MC_(read_extra_suppression_info) ( Int fd, HChar** buf,
                                         SizeT* nBuf, Int* lineno, Supp *su );
 
-Bool MC_(error_matches_suppression) ( Error* err, Supp* su );
+Bool MC_(error_matches_suppression) ( const Error* err, const Supp* su );
 
-SizeT MC_(get_extra_suppression_info) ( Error* err,
+SizeT MC_(get_extra_suppression_info) ( const Error* err,
                                         /*OUT*/HChar* buf, Int nBuf );
-SizeT MC_(print_extra_suppression_use) ( Supp* su,
+SizeT MC_(print_extra_suppression_use) ( const Supp* su,
                                          /*OUT*/HChar* buf, Int nBuf );
-void MC_(update_extra_suppression_use) ( Error* err, Supp* su );
+void MC_(update_extra_suppression_use) ( const Error* err, const Supp* su );
 
-const HChar* MC_(get_error_name) ( Error* err );
+const HChar* MC_(get_error_name) ( const Error* err );
 
 /* Recording of errors */
 void MC_(record_address_error) ( ThreadId tid, Addr a, Int szB,

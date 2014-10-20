@@ -147,27 +147,27 @@ struct _Error {
 };
 
 
-ExeContext* VG_(get_error_where) ( Error* err )
+ExeContext* VG_(get_error_where) ( const Error* err )
 {
    return err->where;
 }
 
-ErrorKind VG_(get_error_kind) ( Error* err )
+ErrorKind VG_(get_error_kind) ( const Error* err )
 {
    return err->ekind;
 }
 
-Addr VG_(get_error_address) ( Error* err )
+Addr VG_(get_error_address) ( const Error* err )
 {
    return err->addr;
 }
 
-const HChar* VG_(get_error_string) ( Error* err )
+const HChar* VG_(get_error_string) ( const Error* err )
 {
    return err->string;
 }
 
-void* VG_(get_error_extra)  ( Error* err )
+void* VG_(get_error_extra)  ( const Error* err )
 {
    return err->extra;
 }
@@ -246,17 +246,17 @@ struct _Supp {
    void* extra;      // Anything else -- use is optional.  NULL by default.
 };
 
-SuppKind VG_(get_supp_kind) ( Supp* su )
+SuppKind VG_(get_supp_kind) ( const Supp* su )
 {
    return su->skind;
 }
 
-HChar* VG_(get_supp_string) ( Supp* su )
+HChar* VG_(get_supp_string) ( const Supp* su )
 {
    return su->string;
 }
 
-void* VG_(get_supp_extra)  ( Supp* su )
+void* VG_(get_supp_extra)  ( const Supp* su )
 {
    return su->extra;
 }

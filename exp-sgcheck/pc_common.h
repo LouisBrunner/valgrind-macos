@@ -47,20 +47,20 @@ void h_record_arith_error( Seg* seg1, Seg* seg2, HChar* opname );
 void h_record_sysparam_error( ThreadId tid, CorePart part, const HChar* s,
                               Addr lo, Addr hi, Seg* seglo, Seg* seghi );
 
-Bool pc_eq_Error           ( VgRes res, Error* e1, Error* e2 );
-void pc_before_pp_Error    ( Error* err );
-void pc_pp_Error           ( Error* err );
-UInt pc_update_Error_extra ( Error* err );
+Bool pc_eq_Error           ( VgRes res, const Error* e1, const Error* e2 );
+void pc_before_pp_Error    ( const Error* err );
+void pc_pp_Error           ( const Error* err );
+UInt pc_update_Error_extra ( const Error* err );
 Bool pc_is_recognised_suppression ( const HChar* name, Supp *su );
 Bool pc_read_extra_suppression_info ( Int fd, HChar** bufpp, 
                                       SizeT* nBufp, Int* lineno, Supp* su );
-Bool pc_error_matches_suppression (Error* err, Supp* su);
-const HChar* pc_get_error_name ( Error* err );
-SizeT pc_get_extra_suppression_info ( Error* err,
+Bool pc_error_matches_suppression (const Error* err, const Supp* su);
+const HChar* pc_get_error_name ( const Error* err );
+SizeT pc_get_extra_suppression_info ( const Error* err,
                                      /*OUT*/HChar* buf, Int nBuf );
-SizeT pc_print_extra_suppression_use ( Supp* su,
+SizeT pc_print_extra_suppression_use ( const Supp* su,
                                       /*OUT*/HChar* buf, Int nBuf );
-void pc_update_extra_suppression_use (Error* err, Supp* su);
+void pc_update_extra_suppression_use (const Error* err, const Supp* su);
 
 extern Bool h_clo_partial_loads_ok;
 /* extern Bool h_clo_lossage_check; */

@@ -227,18 +227,18 @@ void VG_(needs_superblock_discards)(
 }
 
 void VG_(needs_tool_errors)(
-   Bool (*eq)         (VgRes, Error*, Error*),
-   void (*before_pp)  (Error*),
-   void (*pp)         (Error*),
+   Bool (*eq)         (VgRes, const Error*, const Error*),
+   void (*before_pp)  (const Error*),
+   void (*pp)         (const Error*),
    Bool show_TIDs,
-   UInt (*update)     (Error*),
+   UInt (*update)     (const Error*),
    Bool (*recog)      (const HChar*, Supp*),
    Bool (*read_extra) (Int, HChar**, SizeT*, Int*, Supp*),
-   Bool (*matches)    (Error*, Supp*),
-   const HChar* (*name) (Error*),
-   SizeT (*get_xtra_si)(Error*,/*OUT*/HChar*,Int),
-   SizeT (*print_xtra_su)(Supp*,/*OUT*/HChar*,Int),
-   void (*update_xtra_su)(Error*, Supp*)
+   Bool (*matches)    (const Error*, const Supp*),
+   const HChar* (*name) (const Error*),
+   SizeT (*get_xtra_si)(const Error*,/*OUT*/HChar*,Int),
+   SizeT (*print_xtra_su)(const Supp*,/*OUT*/HChar*,Int),
+   void (*update_xtra_su)(const Error*, const Supp*)
 )
 {
    VG_(needs).tool_errors = True;

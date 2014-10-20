@@ -118,19 +118,19 @@ typedef struct {
    // (none)
    
    // VG_(needs).tool_errors
-   Bool  (*tool_eq_Error)                    (VgRes, Error*, Error*);
-   void  (*tool_before_pp_Error)             (Error*);
-   void  (*tool_pp_Error)                    (Error*);
+   Bool  (*tool_eq_Error)                  (VgRes, const Error*, const Error*);
+   void  (*tool_before_pp_Error)           (const Error*);
+   void  (*tool_pp_Error)                  (const Error*);
    Bool  tool_show_ThreadIDs_for_errors;
-   UInt  (*tool_update_extra)                (Error*);
+   UInt  (*tool_update_extra)                (const Error*);
    Bool  (*tool_recognised_suppression)      (const HChar*, Supp*);
    Bool  (*tool_read_extra_suppression_info) (Int, HChar**, SizeT*, Int*,
                                               Supp*);
-   Bool  (*tool_error_matches_suppression)   (Error*, Supp*);
-   const HChar* (*tool_get_error_name)       (Error*);
-   SizeT (*tool_get_extra_suppression_info)  (Error*,/*OUT*/HChar*,Int);
-   SizeT (*tool_print_extra_suppression_use) (Supp*,/*OUT*/HChar*,Int);
-   void  (*tool_update_extra_suppression_use) (Error*, Supp*);
+   Bool  (*tool_error_matches_suppression)   (const Error*, const Supp*);
+   const HChar* (*tool_get_error_name)       (const Error*);
+   SizeT (*tool_get_extra_suppression_info)  (const Error*,/*OUT*/HChar*,Int);
+   SizeT (*tool_print_extra_suppression_use) (const Supp*,/*OUT*/HChar*,Int);
+   void  (*tool_update_extra_suppression_use) (const Error*, const Supp*);
 
    // VG_(needs).superblock_discards
    void (*tool_discard_superblock_info)(Addr64, VexGuestExtents);

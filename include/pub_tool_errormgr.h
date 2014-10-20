@@ -56,11 +56,11 @@ typedef
 
 /* Useful in VG_(tdict).tool_error_matches_suppression(),
  * VG_(tdict).tool_pp_Error(), etc */
-ExeContext*  VG_(get_error_where)   ( Error* err );
-ErrorKind    VG_(get_error_kind)    ( Error* err );
-Addr         VG_(get_error_address) ( Error* err );
-const HChar* VG_(get_error_string)  ( Error* err );
-void*        VG_(get_error_extra)   ( Error* err );
+ExeContext*  VG_(get_error_where)   ( const Error* err );
+ErrorKind    VG_(get_error_kind)    ( const Error* err );
+Addr         VG_(get_error_address) ( const Error* err );
+const HChar* VG_(get_error_string)  ( const Error* err );
+void*        VG_(get_error_extra)   ( const Error* err );
 
 /* Call this when an error occurs.  It will be recorded if it hasn't been
    seen before.  If it has, the existing error record will have its count
@@ -127,9 +127,9 @@ typedef
    Supp;
 
 /* Useful in VG_(tdict).tool_error_matches_suppression() */
-SuppKind VG_(get_supp_kind)   ( Supp* su );
-HChar*   VG_(get_supp_string) ( Supp* su );
-void*    VG_(get_supp_extra)  ( Supp* su );
+SuppKind VG_(get_supp_kind)   ( const Supp* su );
+HChar*   VG_(get_supp_string) ( const Supp* su );
+void*    VG_(get_supp_extra)  ( const Supp* su );
 
 /* Must be used in VG_(recognised_suppression)() */
 void VG_(set_supp_kind)   ( Supp* su, SuppKind suppkind );

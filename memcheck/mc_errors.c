@@ -200,7 +200,7 @@ struct _MC_Error {
    look at it any print any preamble you want" function.  Which, in
    Memcheck, we don't use.  Hence a no-op.
 */
-void MC_(before_pp_Error) ( Error* err ) {
+void MC_(before_pp_Error) ( const Error* err ) {
 }
 
 /* Do a printf-style operation on either the XML or normal output
@@ -410,7 +410,7 @@ void MC_(pp_LossRecord)(UInt n_this_record, UInt n_total_records,
    pp_LossRecord (n_this_record, n_total_records, l, /* xml */ False);
 }
 
-void MC_(pp_Error) ( Error* err )
+void MC_(pp_Error) ( const Error* err )
 {
    const Bool xml  = VG_(clo_xml); /* a shorthand */
    MC_Error* extra = VG_(get_error_extra)(err);
@@ -931,7 +931,7 @@ void MC_(record_user_error) ( ThreadId tid, Addr a,
 /* Compare error contexts, to detect duplicates.  Note that if they
    are otherwise the same, the faulting addrs and associated rwoffsets
    are allowed to be different.  */
-Bool MC_(eq_Error) ( VgRes res, Error* e1, Error* e2 )
+Bool MC_(eq_Error) ( VgRes res, const Error* e1, const Error* e2 )
 {
    MC_Error* extra1 = VG_(get_error_extra)(e1);
    MC_Error* extra2 = VG_(get_error_extra)(e2);
@@ -1100,7 +1100,7 @@ static void update_origin ( /*OUT*/ExeContext** origin_ec,
 }
 
 /* Updates the copy with address info if necessary (but not for all errors). */
-UInt MC_(update_Error_extra)( Error* err )
+UInt MC_(update_Error_extra)( const Error* err )
 {
    MC_Error* extra = VG_(get_error_extra)(err);
 
@@ -1386,7 +1386,7 @@ Bool MC_(read_extra_suppression_info) ( Int fd, HChar** bufpp,
    return True;
 }
 
-Bool MC_(error_matches_suppression) ( Error* err, Supp* su )
+Bool MC_(error_matches_suppression) ( const Error* err, const Supp* su )
 {
    Int       su_szB;
    MC_Error* extra = VG_(get_error_extra)(err);
@@ -1470,7 +1470,7 @@ Bool MC_(error_matches_suppression) ( Error* err, Supp* su )
    }
 }
 
-const HChar* MC_(get_error_name) ( Error* err )
+const HChar* MC_(get_error_name) ( const Error* err )
 {
    switch (VG_(get_error_kind)(err)) {
    case Err_RegParam:       return "Param";
@@ -1511,7 +1511,7 @@ const HChar* MC_(get_error_name) ( Error* err )
    }
 }
 
-SizeT MC_(get_extra_suppression_info) ( Error* err,
+SizeT MC_(get_extra_suppression_info) ( const Error* err,
                                         /*OUT*/HChar* buf, Int nBuf )
 {
    ErrorKind ekind = VG_(get_error_kind )(err);
@@ -1537,7 +1537,7 @@ SizeT MC_(get_extra_suppression_info) ( Error* err,
    }
 }
 
-SizeT MC_(print_extra_suppression_use) ( Supp *su,
+SizeT MC_(print_extra_suppression_use) ( const Supp *su,
                                          /*OUT*/HChar *buf, Int nBuf )
 {
    tl_assert(nBuf >= 1);
@@ -1558,7 +1558,7 @@ SizeT MC_(print_extra_suppression_use) ( Supp *su,
    return 0;
 }
 
-void MC_(update_extra_suppression_use) ( Error* err, Supp* su)
+void MC_(update_extra_suppression_use) ( const Error* err, const Supp* su)
 {
    if (VG_(get_supp_kind)(su) == LeakSupp) {
       MC_LeakSuppExtra *lse = (MC_LeakSuppExtra*) VG_(get_supp_extra) (su);

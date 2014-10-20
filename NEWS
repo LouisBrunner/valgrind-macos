@@ -43,6 +43,7 @@ where XXXXXX is the bug number as listed below.
        tronical and pushfpopf tests)
 
 339721 assertion 'check_sibling == sibling' failed in readdwarf3.c ...
+339789 Fix none/tests/execve test on Mac OS X 10.9
 339808 Fix none/tests/rlimit64_nofile test on Mac OS X 10.9
 339853 arm64 times syscall unknown
 339855 arm64 unhandled getsid/setsid syscalls

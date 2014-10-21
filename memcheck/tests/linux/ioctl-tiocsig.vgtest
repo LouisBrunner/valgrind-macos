@@ -1,0 +1,2 @@
+prog: ioctl-tiocsig
+vgopts: -q

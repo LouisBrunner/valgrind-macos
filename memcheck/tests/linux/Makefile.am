@@ -6,6 +6,7 @@ dist_noinst_SCRIPTS = filter_stderr
 EXTRA_DIST = \
 	brk.stderr.exp brk.vgtest \
 	capget.vgtest capget.stderr.exp capget.stderr.exp2 \
+	ioctl-tiocsig.vgtest ioctl-tiocsig.stderr.exp \
 	lsframe1.vgtest lsframe1.stdout.exp lsframe1.stderr.exp \
 	lsframe2.vgtest lsframe2.stdout.exp lsframe2.stderr.exp \
 	rfcomm.vgtest rfcomm.stderr.exp \
@@ -24,6 +25,7 @@ EXTRA_DIST = \
 check_PROGRAMS = \
 	brk \
 	capget \
+	ioctl-tiocsig \
 	getregset \
 	lsframe1 \
 	lsframe2 \

@@ -42,6 +42,7 @@ where XXXXXX is the bug number as listed below.
 339688 Mac-specific ASM does not support .version directive (cpuid,
        tronical and pushfpopf tests)
 
+339706 Fix false positive for ioctl(TIOCSIG) on linux
 339721 assertion 'check_sibling == sibling' failed in readdwarf3.c ...
 339789 Fix none/tests/execve test on Mac OS X 10.9
 339808 Fix none/tests/rlimit64_nofile test on Mac OS X 10.9

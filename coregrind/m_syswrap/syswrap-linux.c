@@ -5481,6 +5481,7 @@ PRE(sys_ioctl)
    case VKI_TCXONC:
    case VKI_TCSBRKP:
    case VKI_TCFLSH:
+   case VKI_TIOCSIG:
       /* These just take an int by value */
       break;
    case VKI_TIOCGWINSZ:
@@ -8270,6 +8271,7 @@ POST(sys_ioctl)
    case VKI_TCXONC:
    case VKI_TCSBRKP:
    case VKI_TCFLSH:
+   case VKI_TIOCSIG:
       break;
    case VKI_TIOCGWINSZ:
       POST_MEM_WRITE( ARG3, sizeof(struct vki_winsize) );

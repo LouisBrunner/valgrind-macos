@@ -136,7 +136,7 @@
 
 #define DO_PthAPIerror(_fnnameF, _errF)                  \
    do {                                                  \
-      char* _fnname = (char*)(_fnnameF);                 \
+      const char* _fnname = (_fnnameF);                  \
       long  _err    = (long)(int)(_errF);                \
       const char* _errstr = lame_strerror(_err);         \
       DO_CREQ_v_WWW(_VG_USERREQ__HG_PTH_API_ERROR,       \

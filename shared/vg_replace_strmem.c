@@ -1327,8 +1327,6 @@ static inline void my_exit ( int x )
    void* VG_REPLACE_FUNCTION_EZU(20290,soname,fnname) \
             ( void *dst, const void *src, SizeT len ) \
    { \
-      register HChar *d; \
-      register HChar *s; \
       SizeT len_saved = len; \
       \
       if (len == 0) \
@@ -1338,14 +1336,14 @@ static inline void my_exit ( int x )
          RECORD_OVERLAP_ERROR("mempcpy", dst, src, len); \
       \
       if ( dst > src ) { \
-         d = (char *)dst + len - 1; \
-         s = (char *)src + len - 1; \
+         register HChar *d = (char *)dst + len - 1; \
+         register const HChar *s = (const char *)src + len - 1; \
          while ( len-- ) { \
             *d-- = *s--; \
          } \
       } else if ( dst < src ) { \
-         d = (char *)dst; \
-         s = (char *)src; \
+         register HChar *d = dst; \
+         register const HChar *s = src; \
          while ( len-- ) { \
             *d++ = *s++; \
          } \

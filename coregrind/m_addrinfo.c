@@ -349,7 +349,8 @@ static UInt tnr_else_tid (ThreadInfo tinfo)
       return tinfo.tid;
 }
 
-static void pp_addrinfo_WRK ( Addr a, AddrInfo* ai, Bool mc, Bool maybe_gcc )
+static void pp_addrinfo_WRK ( Addr a, const AddrInfo* ai, Bool mc,
+                              Bool maybe_gcc )
 {
    const HChar* xpre  = VG_(clo_xml) ? "  <auxwhat>" : " ";
    const HChar* xpost = VG_(clo_xml) ? "</auxwhat>"  : "";
@@ -560,12 +561,12 @@ static void pp_addrinfo_WRK ( Addr a, AddrInfo* ai, Bool mc, Bool maybe_gcc )
    }
 }
 
-void VG_(pp_addrinfo) ( Addr a, AddrInfo* ai )
+void VG_(pp_addrinfo) ( Addr a, const AddrInfo* ai )
 {
    pp_addrinfo_WRK (a, ai, False /*mc*/, False /*maybe_gcc*/);
 }
 
-void VG_(pp_addrinfo_mc) ( Addr a, AddrInfo* ai, Bool maybe_gcc )
+void VG_(pp_addrinfo_mc) ( Addr a, const AddrInfo* ai, Bool maybe_gcc )
 {
    pp_addrinfo_WRK (a, ai, True /*mc*/, maybe_gcc);
 }

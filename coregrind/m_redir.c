@@ -256,7 +256,7 @@ typedef
 typedef
    struct _TopSpec {
       struct _TopSpec* next; /* linked list */
-      DebugInfo* seginfo;    /* symbols etc */
+      const DebugInfo* seginfo;    /* symbols etc */
       Spec*      specs;      /* specs pulled out of seginfo */
       Bool       mark; /* transient temporary used during deletion */
    }
@@ -308,12 +308,12 @@ static HChar* dinfo_strdup(const HChar* ec, const HChar*);
 static Bool   is_plausible_guest_addr(Addr);
 
 static void   show_redir_state ( const HChar* who );
-static void   show_active ( const HChar* left, Active* act );
+static void   show_active ( const HChar* left, const Active* act );
 
 static void   handle_maybe_load_notifier( const HChar* soname, 
                                           const HChar* symbol, Addr addr );
 
-static void   handle_require_text_symbols ( DebugInfo* );
+static void   handle_require_text_symbols ( const DebugInfo* );
 
 /*------------------------------------------------------------*/
 /*--- NOTIFICATIONS                                        ---*/
@@ -325,7 +325,7 @@ void generate_and_add_actives (
         Spec*    specs, 
         TopSpec* parent_spec,
 	/* debuginfo and the owning TopSpec */
-        DebugInfo* di,
+        const DebugInfo* di,
         TopSpec* parent_sym 
      );
 
@@ -388,7 +388,7 @@ static HChar const* advance_to_comma ( HChar const* c ) {
 
 #define N_DEMANGLED 256
 
-void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
+void VG_(redir_notify_new_DebugInfo)( const DebugInfo* newdi )
 {
    Bool         ok, isWrap;
    Int          i, nsyms, becTag, becPrio;
@@ -750,7 +750,7 @@ void generate_and_add_actives (
         Spec*    specs, 
         TopSpec* parent_spec,
 	/* seginfo and the owning TopSpec */
-        DebugInfo* di,
+        const DebugInfo* di,
         TopSpec* parent_sym 
      )
 {
@@ -1017,7 +1017,7 @@ static void maybe_add_active ( Active act )
    simple -- just get rid of all actives derived from it, and free up
    the associated list elements. */
 
-void VG_(redir_notify_delete_DebugInfo)( DebugInfo* delsi )
+void VG_(redir_notify_delete_DebugInfo)( const DebugInfo* delsi )
 {
    TopSpec* ts;
    TopSpec* tsPrev;
@@ -1575,7 +1575,7 @@ void handle_maybe_load_notifier( const HChar* soname,
    symbols that satisfy any --require-text-symbol= specifications that
    apply to it, and abort the run with an error message if not.
 */
-static void handle_require_text_symbols ( DebugInfo* di )
+static void handle_require_text_symbols ( const DebugInfo* di )
 {
    /* First thing to do is figure out which, if any,
       --require-text-symbol specification strings apply to this
@@ -1690,7 +1690,7 @@ static void handle_require_text_symbols ( DebugInfo* di )
 /*--- SANITY/DEBUG                                         ---*/
 /*------------------------------------------------------------*/
 
-static void show_spec ( const HChar* left, Spec* spec )
+static void show_spec ( const HChar* left, const Spec* spec )
 {
    VG_(message)( Vg_DebugMsg, 
                  "%s%25s %30s %s-> (%04d.%d) 0x%08llx\n",
@@ -1701,7 +1701,7 @@ static void show_spec ( const HChar* left, Spec* spec )
                  (ULong)spec->to_addr );
 }
 
-static void show_active ( const HChar* left, Active* act )
+static void show_active ( const HChar* left, const Active* act )
 {
    Bool ok;
    HChar name1[64] = "";

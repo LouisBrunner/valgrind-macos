@@ -214,7 +214,8 @@ extern Addr VG_(get_tocptr) ( Addr guest_code_addr );
    platforms, a symbol is deemed to be found only if it has a nonzero
    TOC pointer.  */
 extern
-Bool VG_(lookup_symbol_SLOW)(const HChar* sopatt, HChar* name, SymAVMAs* avmas);
+Bool VG_(lookup_symbol_SLOW)(const HChar* sopatt, const HChar* name,
+                             SymAVMAs* avmas);
 
 #endif   // __PUB_CORE_DEBUGINFO_H
 

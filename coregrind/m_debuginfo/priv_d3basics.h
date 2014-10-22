@@ -613,7 +613,7 @@ typedef
    GExpr;
 
 /* Show a so-called guarded expression */
-void ML_(pp_GX) ( GExpr* gx );
+void ML_(pp_GX) ( const GExpr* gx );
 
 /* Evaluation of a DWARF3 expression (and hence of a GExpr) may
    require knowing a suitably contextualising set of values for the
@@ -653,7 +653,7 @@ void ML_(pp_GXResult) ( GXResult res );
    NULL but the frame base is still needed, then evaluation of gx as a
    whole will fail. */
 GXResult ML_(evaluate_GX)( GExpr* gx, GExpr* fbGX,
-                           RegSummary* regs, const DebugInfo* di );
+                           const RegSummary* regs, const DebugInfo* di );
 
 /* This is a subsidiary of ML_(evaluate_GX), which just evaluates a
    single standard DWARF3 expression.  Conventions w.r.t regs and fbGX
@@ -663,7 +663,7 @@ GXResult ML_(evaluate_GX)( GExpr* gx, GExpr* fbGX,
    ML_(evaluate_GX) and ML_(evaluate_Dwarf3_Expr) are mutually
    recursive. */
 GXResult ML_(evaluate_Dwarf3_Expr) ( UChar* expr, UWord exprszB, 
-                                     GExpr* fbGX, RegSummary* regs,
+                                     GExpr* fbGX, const RegSummary* regs,
                                      const DebugInfo* di,
                                      Bool push_initial_zero );
 

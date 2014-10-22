@@ -187,7 +187,7 @@ DebugInfo* alloc_DebugInfo( const HChar* filename )
    di->fsm.filename = ML_(dinfo_strdup)("di.debuginfo.aDI.2", filename);
    di->fsm.maps     = VG_(newXA)(
                          ML_(dinfo_zalloc), "di.debuginfo.aDI.3",
-                         ML_(dinfo_free), sizeof(struct _DebugInfoMapping));
+                         ML_(dinfo_free), sizeof(DebugInfoMapping));
 
    /* Everything else -- pointers, sizes, arrays -- is zeroed by
       ML_(dinfo_zalloc).  Now set up the debugging-output flags. */
@@ -402,15 +402,15 @@ static Bool ranges_overlap (Addr s1, SizeT len1, Addr s2, SizeT len2 )
 
 
 /* Do the basic mappings of the two DebugInfos overlap in any way? */
-static Bool do_DebugInfos_overlap ( DebugInfo* di1, DebugInfo* di2 )
+static Bool do_DebugInfos_overlap ( const DebugInfo* di1, const DebugInfo* di2 )
 {
    Word i, j;
    vg_assert(di1);
    vg_assert(di2);
    for (i = 0; i < VG_(sizeXA)(di1->fsm.maps); i++) {
-      struct _DebugInfoMapping* map1 = VG_(indexXA)(di1->fsm.maps, i);
+      const DebugInfoMapping* map1 = VG_(indexXA)(di1->fsm.maps, i);
       for (j = 0; j < VG_(sizeXA)(di2->fsm.maps); j++) {
-         struct _DebugInfoMapping* map2 = VG_(indexXA)(di2->fsm.maps, j);
+         const DebugInfoMapping* map2 = VG_(indexXA)(di2->fsm.maps, j);
          if (ranges_overlap(map1->avma, map1->size, map2->avma, map2->size))
             return True;
       }
@@ -467,7 +467,7 @@ static void discard_DebugInfos_which_overlap_with ( DebugInfo* diRef )
 /* Find the existing DebugInfo for |filename| or if not found, create
    one.  In the latter case |filename| is strdup'd into VG_AR_DINFO,
    and the new DebugInfo is added to debugInfo_list. */
-static DebugInfo* find_or_create_DebugInfo_for ( HChar* filename )
+static DebugInfo* find_or_create_DebugInfo_for ( const HChar* filename )
 {
    DebugInfo* di;
    vg_assert(filename);
@@ -490,7 +490,7 @@ static DebugInfo* find_or_create_DebugInfo_for ( HChar* filename )
    Check that the invariants stated in
    "Comment_on_IMPORTANT_CFSI_REPRESENTATIONAL_INVARIANTS" in
    priv_storage.h are observed. */
-static void check_CFSI_related_invariants ( DebugInfo* di )
+static void check_CFSI_related_invariants ( const DebugInfo* di )
 {
    DebugInfo* di2 = NULL;
    Bool has_nonempty_rx = False;
@@ -503,7 +503,7 @@ static void check_CFSI_related_invariants ( DebugInfo* di )
    vg_assert(di->fsm.have_rx_map);
    vg_assert(di->fsm.have_rw_map);
    for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
-      struct _DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
+      const DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
       /* We are interested in r-x mappings only */
       if (!map->rx)
          continue;
@@ -522,7 +522,7 @@ static void check_CFSI_related_invariants ( DebugInfo* di )
          if (di2 == di)
             continue;
          for (j = 0; j < VG_(sizeXA)(di2->fsm.maps); j++) {
-            struct _DebugInfoMapping* map2 = VG_(indexXA)(di2->fsm.maps, j);
+            const DebugInfoMapping* map2 = VG_(indexXA)(di2->fsm.maps, j);
             if (!map2->rx || map2->size == 0)
                continue;
             vg_assert(!ranges_overlap(map->avma,  map->size,
@@ -601,8 +601,8 @@ void VG_(di_initialise) ( void )
 #if defined(VGO_linux)  ||  defined(VGO_darwin)
 
 /* Helper (indirect) for di_notify_ACHIEVE_ACCEPT_STATE */
-static Bool overlaps_DebugInfoMappings ( struct _DebugInfoMapping* map1,
-                                         struct _DebugInfoMapping* map2 )
+static Bool overlaps_DebugInfoMappings ( const DebugInfoMapping* map1,
+                                         const DebugInfoMapping* map2 )
 {
    vg_assert(map1 && map2 && map1 != map2);
    vg_assert(map1->size != 0 && map2->size != 0);
@@ -614,15 +614,14 @@ static Bool overlaps_DebugInfoMappings ( struct _DebugInfoMapping* map1,
 
 /* Helper (indirect) for di_notify_ACHIEVE_ACCEPT_STATE */
 static void show_DebugInfoMappings 
-               ( struct _DebugInfo* di,
-                 /*MOD*/XArray* maps /* XArray<struct _DebugInfoMapping> */ )
+               ( const DebugInfo* di,
+                 /*MOD*/XArray* maps /* XArray<DebugInfoMapping> */ )
 {
    Word i, n;
    vg_assert(maps);
    n = VG_(sizeXA)(maps);
    for (i = 0; i < n; i++) {
-      struct _DebugInfoMapping* map
-         = (struct _DebugInfoMapping*) VG_(indexXA)(maps, i);
+      const DebugInfoMapping* map = VG_(indexXA)(maps, i);
       TRACE_SYMTAB("  [%ld]    avma 0x%-16llx    size %-8lu    "
                    "foff %-8lld    %s %s %s\n",
                    i, (ULong)map->avma, map->size, (Long)map->foff,
@@ -640,26 +639,26 @@ static void show_DebugInfoMappings
    function returns (rather than asserts) that |maps| is overlap
    free. */
 static void truncate_DebugInfoMapping_overlaps
-               ( struct _DebugInfo* di,
-                 /*MOD*/XArray* maps /* XArray<struct _DebugInfoMapping> */ )
+               ( const DebugInfo* di,
+                 /*MOD*/XArray* maps /* XArray<DebugInfoMapping> */ )
 {
    TRACE_SYMTAB("Un-de-overlapped _DebugInfoMappings:\n");
    show_DebugInfoMappings(di, maps);
    TRACE_SYMTAB("\n");
 
    Word i, j, n;
-   struct _DebugInfoMapping *map_i, *map_j;
+   DebugInfoMapping *map_i, *map_j;
 
    n = VG_(sizeXA)(maps);
    for (i = 0; i < n; i++) {
 
-      map_i = (struct _DebugInfoMapping*) VG_(indexXA)(maps, i);
+      map_i = VG_(indexXA)(maps, i);
       if (map_i->size == 0)
         continue; // Hmm, mutancy.  Shouldn't happen.
 
       for (j = i+1; j < n; j++) {
 
-         map_j = (struct _DebugInfoMapping*) VG_(indexXA)(maps, j);
+         map_j = VG_(indexXA)(maps, j);
          if (map_j->size == 0)
            continue; // Hmm, mutancy.  Shouldn't happen.
 
@@ -679,17 +678,17 @@ static void truncate_DebugInfoMapping_overlaps
       }
    }
 
-   TRACE_SYMTAB("De-overlapped _DebugInfoMappings:\n");
+   TRACE_SYMTAB("De-overlapped DebugInfoMappings:\n");
    show_DebugInfoMappings(di, maps);
    TRACE_SYMTAB("\n");
    TRACE_SYMTAB("Checking that there are no remaining overlaps.\n");
 
    for (i = 0; i < n; i++) {
-      map_i = (struct _DebugInfoMapping*) VG_(indexXA)(maps, i);
+      map_i = VG_(indexXA)(maps, i);
       if (map_i->size == 0)
         continue;
       for (j = i+1; j < n; j++) {
-         map_j = (struct _DebugInfoMapping*) VG_(indexXA)(maps, j);
+         map_j = VG_(indexXA)(maps, j);
          if (map_j->size == 0)
            continue;
          Bool overlap
@@ -1035,7 +1034,7 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
                   "noting details in DebugInfo* at %p\n", di);
 
    /* Note the details about the mapping. */
-   struct _DebugInfoMapping map;
+   DebugInfoMapping map;
    map.avma = a;
    map.size = seg->end + 1 - seg->start;
    map.foff = seg->offset;
@@ -1134,7 +1133,7 @@ void VG_(di_notify_vm_protect)( Addr a, SizeT len, UInt prot )
    if (debug)
       VG_(printf)("di_notify_vm_protect-3: looking for existing DebugInfo*\n");
    DebugInfo* di;
-   struct _DebugInfoMapping *map = NULL;
+   DebugInfoMapping *map = NULL;
    Word i;
    for (di = debugInfo_list; di; di = di->next) {
       vg_assert(di->fsm.filename);
@@ -1148,7 +1147,7 @@ void VG_(di_notify_vm_protect)( Addr a, SizeT len, UInt prot )
          continue; /* need to have a rw- mapping */
       /* Try to find a mapping matching the memory area. */
       for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
-         map = (struct _DebugInfoMapping*)VG_(indexXA)(di->fsm.maps, i);
+         map = VG_(indexXA)(di->fsm.maps, i);
          if (map->ro && map->avma == a && map->size == len)
             break;
          map = NULL;
@@ -1174,7 +1173,7 @@ void VG_(di_notify_vm_protect)( Addr a, SizeT len, UInt prot )
    di->fsm.have_ro_map = False;
    /* See if there are any more ro mappings */
    for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
-      map = (struct _DebugInfoMapping*)VG_(indexXA)(di->fsm.maps, i);
+      map = VG_(indexXA)(di->fsm.maps, i);
       if (map->ro) {
          di->fsm.have_ro_map = True;
          break;
@@ -1444,8 +1443,7 @@ void VG_(di_discard_ALL_debuginfo)( void )
 }
 
 
-struct _DebugInfoMapping* ML_(find_rx_mapping) ( struct _DebugInfo* di,
-                                                 Addr lo, Addr hi )
+DebugInfoMapping* ML_(find_rx_mapping) ( DebugInfo* di, Addr lo, Addr hi )
 {
    Word i;
    vg_assert(lo <= hi); 
@@ -1457,7 +1455,7 @@ struct _DebugInfoMapping* ML_(find_rx_mapping) ( struct _DebugInfo* di,
       return di->last_rx_map;
 
    for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
-      struct _DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
+      DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
       if (   map->rx && map->size > 0
           && lo >= map->avma && hi < map->avma + map->size) {
          di->last_rx_map = map;
@@ -1487,12 +1485,12 @@ struct _InlIPCursor {
                          // level.
 };
 
-static Bool is_top(InlIPCursor *iipc)
+static Bool is_top(const InlIPCursor *iipc)
 {
    return !iipc || iipc->cur_inltab == -1;
 }
 
-static Bool is_bottom(InlIPCursor *iipc)
+static Bool is_bottom(const InlIPCursor *iipc)
 {
    return !iipc || iipc->next_inltab == -1;
 }
@@ -2101,11 +2099,12 @@ Bool VG_(get_filename_linenum) ( Addr a,
    Therefore specify "*" to search all the objects.  On TOC-afflicted
    platforms, a symbol is deemed to be found only if it has a nonzero
    TOC pointer.  */
-Bool VG_(lookup_symbol_SLOW)(const HChar* sopatt, HChar* name, SymAVMAs* avmas)
+Bool VG_(lookup_symbol_SLOW)(const HChar* sopatt, const HChar* name,
+                             SymAVMAs* avmas)
 {
    Bool     require_pToc = False;
    Int      i;
-   DebugInfo* si;
+   const DebugInfo* si;
    Bool     debug = False;
 #  if defined(VG_PLAT_USES_PPCTOC)
    require_pToc = True;
@@ -3178,11 +3177,11 @@ static Bool data_address_is_in_var ( /*OUT*/PtrdiffT* offset,
 static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
                              /*MOD*/XArray* /* of HChar */ dn2,
                              Addr     data_addr,
-                             DebugInfo* di,
-                             DiVariable* var,
+                             const DebugInfo* di,
+                             const DiVariable* var,
                              PtrdiffT var_offset,
                              PtrdiffT residual_offset,
-                             XArray* /*HChar*/ described,
+                             const XArray* /*HChar*/ described,
                              Int      frameNo, 
                              ThreadId tid )
 {

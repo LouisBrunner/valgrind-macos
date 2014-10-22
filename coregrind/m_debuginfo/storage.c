@@ -62,7 +62,7 @@
 /* Show a non-fatal debug info reading error.  Use vg_panic if
    terminal.  'serious' errors are shown regardless of the
    verbosity setting. */
-void ML_(symerr) ( struct _DebugInfo* di, Bool serious, const HChar* msg )
+void ML_(symerr) ( const DebugInfo* di, Bool serious, const HChar* msg )
 {
    /* XML mode hides everything :-( */
    if (VG_(clo_xml))
@@ -92,7 +92,7 @@ void ML_(symerr) ( struct _DebugInfo* di, Bool serious, const HChar* msg )
 
 
 /* Print a symbol. */
-void ML_(ppSym) ( Int idx, DiSym* sym )
+void ML_(ppSym) ( Int idx, const DiSym* sym )
 {
    const HChar** sec_names = sym->sec_names;
    vg_assert(sym->pri_name);
@@ -115,9 +115,9 @@ void ML_(ppSym) ( Int idx, DiSym* sym )
 }
 
 /* Print a call-frame-info summary. */
-void ML_(ppDiCfSI) ( XArray* /* of CfiExpr */ exprs,
+void ML_(ppDiCfSI) ( const XArray* /* of CfiExpr */ exprs,
                      Addr base, UInt len,
-                     DiCfSI_m* si_m )
+                     const DiCfSI_m* si_m )
 {
 #  define SHOW_HOW(_how, _off)                   \
       do {                                       \
@@ -268,7 +268,7 @@ UInt ML_(addFnDn) (struct _DebugInfo* di,
    return fndn_ix;
 }
 
-const HChar* ML_(fndn_ix2filename) (struct _DebugInfo* di,
+const HChar* ML_(fndn_ix2filename) (const DebugInfo* di,
                                     UInt fndn_ix)
 {
    FnDn *fndn;
@@ -280,7 +280,7 @@ const HChar* ML_(fndn_ix2filename) (struct _DebugInfo* di,
    }
 }
 
-const HChar* ML_(fndn_ix2dirname) (struct _DebugInfo* di,
+const HChar* ML_(fndn_ix2dirname) (const DebugInfo* di,
                                    UInt fndn_ix)
 {
    FnDn *fndn;
@@ -343,7 +343,7 @@ void ML_(addSym) ( struct _DebugInfo* di, DiSym* sym )
    vg_assert(di->symtab_used <= di->symtab_size);
 }
 
-UInt ML_(fndn_ix) (struct _DebugInfo* di, Word locno)
+UInt ML_(fndn_ix) (const DebugInfo* di, Word locno)
 {
    UInt fndn_ix;
 
@@ -656,7 +656,7 @@ void ML_(addInlInfo) ( struct _DebugInfo* di,
    addInl ( di, &inl );
 }
 
-DiCfSI_m* ML_(get_cfsi_m) (struct _DebugInfo* di, UInt pos)
+DiCfSI_m* ML_(get_cfsi_m) (const DebugInfo* di, UInt pos)
 {
    UInt cfsi_m_ix;
 
@@ -682,8 +682,8 @@ void ML_(addDiCfSI) ( struct _DebugInfo* di,
    UInt    new_sz;
    DiCfSI* new_tab;
    SSizeT  delta;
-   struct _DebugInfoMapping* map;
-   struct _DebugInfoMapping* map2;
+   DebugInfoMapping* map;
+   DebugInfoMapping* map2;
 
    if (debug) {
       VG_(printf)("adding DiCfSI: ");
@@ -916,7 +916,7 @@ static void ppCfiReg ( CfiReg reg )
    }
 }
 
-void ML_(ppCfiExpr)( XArray* src, Int ix )
+void ML_(ppCfiExpr)( const XArray* src, Int ix )
 {
    /* VG_(indexXA) checks for invalid src/ix values, so we can
       use it indiscriminately. */
@@ -1416,7 +1416,7 @@ static Int compare_DiSym ( const void* va, const void* vb )
    preferred.
  */
 static
-Bool preferName ( DebugInfo* di,
+Bool preferName ( const DebugInfo* di,
                   const HChar* a_name, const HChar* b_name,
                   Addr sym_avma/*exposition only*/ )
 {
@@ -1556,7 +1556,8 @@ Bool preferName ( DebugInfo* di,
 
 /* Add the names in FROM to the names in TO. */
 static
-void add_DiSym_names_to_from ( DebugInfo* di, DiSym* to, DiSym* from )
+void add_DiSym_names_to_from ( const DebugInfo* di, DiSym* to,
+                               const DiSym* from )
 {
    vg_assert(to->pri_name);
    vg_assert(from->pri_name);
@@ -2035,7 +2036,7 @@ static Int compare_DiCfSI ( const void* va, const void* vb )
    return 0;
 }
 
-static void get_cfsi_rd_stats ( struct _DebugInfo* di,
+static void get_cfsi_rd_stats ( const DebugInfo* di,
                                 UWord *n_mergeables, UWord *n_holes )
 {
    Word i;
@@ -2265,7 +2266,7 @@ void ML_(canonicaliseTables) ( struct _DebugInfo* di )
 /* Find a symbol-table index containing the specified pointer, or -1
    if not found.  Binary search.  */
 
-Word ML_(search_one_symtab) ( struct _DebugInfo* di, Addr ptr,
+Word ML_(search_one_symtab) ( const DebugInfo* di, Addr ptr,
                               Bool match_anywhere_in_sym,
                               Bool findText )
 {
@@ -2298,7 +2299,7 @@ Word ML_(search_one_symtab) ( struct _DebugInfo* di, Addr ptr,
 /* Find a location-table index containing the specified pointer, or -1
    if not found.  Binary search.  */
 
-Word ML_(search_one_loctab) ( struct _DebugInfo* di, Addr ptr )
+Word ML_(search_one_loctab) ( const DebugInfo* di, Addr ptr )
 {
    Addr a_mid_lo, a_mid_hi;
    Word mid, 
@@ -2322,7 +2323,7 @@ Word ML_(search_one_loctab) ( struct _DebugInfo* di, Addr ptr )
 /* Find a CFI-table index containing the specified pointer, or -1
    if not found.  Binary search.  */
 
-Word ML_(search_one_cfitab) ( struct _DebugInfo* di, Addr ptr )
+Word ML_(search_one_cfitab) ( const DebugInfo* di, Addr ptr )
 {
    Word mid, 
         lo = 0, 
@@ -2352,7 +2353,7 @@ Word ML_(search_one_cfitab) ( struct _DebugInfo* di, Addr ptr )
 /* Find a FPO-table index containing the specified pointer, or -1
    if not found.  Binary search.  */
 
-Word ML_(search_one_fpotab) ( struct _DebugInfo* di, Addr ptr )
+Word ML_(search_one_fpotab) ( const DebugInfo* di, Addr ptr )
 {
    Addr const addr = ptr - di->fpo_base_avma;
    Addr a_mid_lo, a_mid_hi;

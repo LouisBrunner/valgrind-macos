@@ -74,8 +74,8 @@ Bool   VG_(clo_trace_children) = False;
 const HChar* VG_(clo_trace_children_skip) = NULL;
 const HChar* VG_(clo_trace_children_skip_by_arg) = NULL;
 Bool   VG_(clo_child_silent_after_fork) = False;
-HChar* VG_(clo_log_fname_expanded) = NULL;
-HChar* VG_(clo_xml_fname_expanded) = NULL;
+const HChar* VG_(clo_log_fname_expanded) = NULL;
+const HChar* VG_(clo_xml_fname_expanded) = NULL;
 Bool   VG_(clo_time_stamp)     = False;
 Int    VG_(clo_input_fd)       = 0; /* stdin */
 Bool   VG_(clo_default_supp)   = True;
@@ -289,8 +289,8 @@ static HChar const* consume_field ( HChar const* c ) {
    of the executable.  'child_argv' must not include the name of the
    executable itself; iow child_argv[0] must be the first arg, if any,
    for the child. */
-Bool VG_(should_we_trace_this_child) ( HChar* child_exe_name,
-                                       HChar** child_argv )
+Bool VG_(should_we_trace_this_child) ( const HChar* child_exe_name,
+                                       const HChar** child_argv )
 {
    // child_exe_name is pulled out of the guest's space.  We
    // should be at least marginally cautious with it, lest it

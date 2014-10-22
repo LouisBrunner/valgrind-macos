@@ -68,14 +68,14 @@ void VG_(bindRangeMap) ( RangeMap* rm,
    entire key space.  This is fast: O(log N) in the number of
    ranges. */
 void VG_(lookupRangeMap) ( /*OUT*/UWord* key_min, /*OUT*/UWord* key_max,
-                           /*OUT*/UWord* val, RangeMap* rm, UWord key );
+                           /*OUT*/UWord* val, const RangeMap* rm, UWord key );
 
 /* How many elements are there in the map? */
-Word VG_(sizeRangeMap) ( RangeMap* rm );
+Word VG_(sizeRangeMap) ( const RangeMap* rm );
 
 /* Get the i'th component */
 void VG_(indexRangeMap) ( /*OUT*/UWord* key_min, /*OUT*/UWord* key_max,
-                          /*OUT*/UWord* val, RangeMap* rm, Word ix );
+                          /*OUT*/UWord* val, const RangeMap* rm, Word ix );
 
 #endif   // __PUB_TOOL_RANGEMAP_H
 

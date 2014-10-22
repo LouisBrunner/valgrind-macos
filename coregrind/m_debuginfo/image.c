@@ -104,7 +104,7 @@ static void write_UInt_le ( /*OUT*/UChar* dst, UInt n )
    }
 }
 
-static UInt read_UInt_le ( UChar* src )
+static UInt read_UInt_le ( const UChar* src )
 {
    UInt r = 0;
    Int i;
@@ -124,7 +124,7 @@ static void write_ULong_le ( /*OUT*/UChar* dst, ULong n )
    }
 }
 
-static ULong read_ULong_le ( UChar* src )
+static ULong read_ULong_le ( const UChar* src )
 {
    ULong r = 0;
    Int i;
@@ -168,7 +168,7 @@ static Int my_read ( Int fd, UChar* buf, Int len )
    fd has been set in blocking mode.  If it returns with the number of
    bytes written < len, it means that either fd was closed, or there was
    an error on it. */
-static Int my_write ( Int fd, UChar* buf, Int len )
+static Int my_write ( Int fd, const UChar* buf, Int len )
 {
    Int nWritten = 0;
    while (1) {
@@ -212,7 +212,7 @@ static void give_up__image_overrun(void)
    return the frame it sends back.  Caller owns the resulting frame
    and must free it.  A NULL return means the transaction failed for
    some reason. */
-static Frame* do_transaction ( Int sd, Frame* req )
+static Frame* do_transaction ( Int sd, const Frame* req )
 {
    if (0) VG_(printf)("CLIENT: send %c%c%c%c\n",
                       req->data[0], req->data[1], req->data[2], req->data[3]);
@@ -387,7 +387,7 @@ static DiOffT block_round_down ( DiOffT i )
 }
 
 /* Is this offset inside this CEnt? */
-static inline Bool is_in_CEnt ( CEnt* cent, DiOffT off )
+static inline Bool is_in_CEnt ( const CEnt* cent, DiOffT off )
 {
    /* This assertion is checked by set_CEnt, so checking it here has
       no benefit, whereas skipping it does remove it from the hottest
@@ -766,13 +766,13 @@ void ML_(img_done)(DiImage* img)
    ML_(dinfo_free)(img);
 }
 
-DiOffT ML_(img_size)(DiImage* img)
+DiOffT ML_(img_size)(const DiImage* img)
 {
    vg_assert(img);
    return img->size;
 }
 
-inline Bool ML_(img_valid)(DiImage* img, DiOffT offset, SizeT size)
+inline Bool ML_(img_valid)(const DiImage* img, DiOffT offset, SizeT size)
 {
    vg_assert(img);
    vg_assert(offset != DiOffT_INVALID);
@@ -784,7 +784,7 @@ inline Bool ML_(img_valid)(DiImage* img, DiOffT offset, SizeT size)
    image, which normally means the image is corrupted somehow, or the
    caller is buggy.  Recovering is too complex, and we have
    probably-corrupt debuginfo, so just give up. */
-static void ensure_valid(DiImage* img, DiOffT offset, SizeT size,
+static void ensure_valid(const DiImage* img, DiOffT offset, SizeT size,
                          const HChar* caller)
 {
    if (LIKELY(ML_(img_valid)(img, offset, size)))

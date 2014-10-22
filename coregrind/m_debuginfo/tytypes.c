@@ -48,7 +48,7 @@
 /* Does this TyEnt denote a type, as opposed to some other kind of
    thing? */
 
-Bool ML_(TyEnt__is_type)( TyEnt* te )
+Bool ML_(TyEnt__is_type)( const TyEnt* te )
 {
    switch (te->tag) {
       case Te_EMPTY: case Te_INDIR: case Te_UNKNOWN: 
@@ -67,7 +67,7 @@ Bool ML_(TyEnt__is_type)( TyEnt* te )
 
 /* Print a TyEnt, debug-style. */
 
-static void pp_XArray_of_cuOffs ( XArray* xa )
+static void pp_XArray_of_cuOffs ( const XArray* xa )
 {
    Word i;
    VG_(printf)("{");
@@ -80,7 +80,7 @@ static void pp_XArray_of_cuOffs ( XArray* xa )
    VG_(printf)("}");
 }
 
-void ML_(pp_TyEnt)( TyEnt* te )
+void ML_(pp_TyEnt)( const TyEnt* te )
 {
    VG_(printf)("0x%05lx  ", te->cuOff);
    switch (te->tag) {
@@ -198,7 +198,7 @@ void ML_(pp_TyEnt)( TyEnt* te )
 
 /* Print a whole XArray of TyEnts, debug-style */
 
-void ML_(pp_TyEnts)( XArray* tyents, const HChar* who )
+void ML_(pp_TyEnts)( const XArray* tyents, const HChar* who )
 {
    Word i, n;
    VG_(printf)("------ %s ------\n", who);
@@ -214,7 +214,7 @@ void ML_(pp_TyEnts)( XArray* tyents, const HChar* who )
 
 /* Print a TyEnt, C style, chasing stuff as necessary. */
 
-static void pp_TyBound_C_ishly ( XArray* tyents, UWord cuOff )
+static void pp_TyBound_C_ishly ( const XArray* tyents, UWord cuOff )
 {
    TyEnt* ent = ML_(TyEnts__index_by_cuOff)( tyents, NULL, cuOff );
    if (!ent) {
@@ -235,7 +235,7 @@ static void pp_TyBound_C_ishly ( XArray* tyents, UWord cuOff )
       ML_(pp_TyEnt)( ent );
 }
 
-void ML_(pp_TyEnt_C_ishly)( XArray* /* of TyEnt */ tyents,
+void ML_(pp_TyEnt_C_ishly)( const XArray* /* of TyEnt */ tyents,
                             UWord cuOff )
 {
    TyEnt* ent = ML_(TyEnts__index_by_cuOff)( tyents, NULL, cuOff );
@@ -337,7 +337,7 @@ void ML_(TyEntIndexCache__invalidate) ( TyEntIndexCache* cache )
    }
 }
 
-TyEnt* ML_(TyEnts__index_by_cuOff) ( XArray* /* of TyEnt */ ents,
+TyEnt* ML_(TyEnts__index_by_cuOff) ( const XArray* /* of TyEnt */ ents,
                                      TyEntIndexCache* cache,
                                      UWord cuOff_to_find )
 {
@@ -448,7 +448,7 @@ static inline Word Int__cmp ( Int a, Int b ) {
    if (a > b) return 1;
    return 0;
 }
-static Word XArray_of_UWord__cmp ( XArray* a, XArray* b ) {
+static Word XArray_of_UWord__cmp ( const XArray* a, const XArray* b ) {
    Word i, r;
    Word aN = VG_(sizeXA)( a );
    Word bN = VG_(sizeXA)( b );
@@ -461,7 +461,7 @@ static Word XArray_of_UWord__cmp ( XArray* a, XArray* b ) {
    }
    return 0;
 }
-static Word Bytevector__cmp ( UChar* a, UChar* b, Word n ) {
+static Word Bytevector__cmp ( const UChar* a, const UChar* b, Word n ) {
    Word i, r;
    vg_assert(n >= 0);
    for (i = 0; i < n; i++) {
@@ -667,7 +667,7 @@ static MaybeULong mul_MaybeULong ( MaybeULong mul1, MaybeULong mul2 ) {
    return mul1;
 }
 
-MaybeULong ML_(sizeOfType)( XArray* /* of TyEnt */ tyents,
+MaybeULong ML_(sizeOfType)( const XArray* /* of TyEnt */ tyents,
                             UWord cuOff )
 {
    Word       i;
@@ -746,7 +746,7 @@ static void copy_UWord_into_XA ( XArray* /* of HChar */ xa,
 }
 
 XArray* /*HChar*/ ML_(describe_type)( /*OUT*/PtrdiffT* residual_offset,
-                                      XArray* /* of TyEnt */ tyents,
+                                      const XArray* /* of TyEnt */ tyents,
                                       UWord ty_cuOff, 
                                       PtrdiffT offset )
 {

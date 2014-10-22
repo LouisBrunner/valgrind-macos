@@ -50,7 +50,8 @@ extern Bool VG_(resolve_filename) ( Int fd, HChar** buf );
 extern Long VG_(fsize) ( Int fd );
 
 /* Lookup an extended attribute for a file */
-extern SysRes VG_(getxattr) ( const HChar* file_name, const HChar* attr_name, Addr attr_value, SizeT attr_value_len );
+extern SysRes VG_(getxattr) ( const HChar* file_name, const HChar* attr_name,
+                              Addr attr_value, SizeT attr_value_len );
 
 /* Is the file a directory? */
 extern Bool VG_(is_dir) ( const HChar* f );

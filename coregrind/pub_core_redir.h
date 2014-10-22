@@ -63,11 +63,11 @@
 //--------------------------------------------------------------------
 
 /* Notify the module of a new DebugInfo (called from m_debuginfo). */
-extern void VG_(redir_notify_new_DebugInfo)( DebugInfo* );
+extern void VG_(redir_notify_new_DebugInfo)( const DebugInfo* );
 
 /* Notify the module of the disappearance of a DebugInfo (also called
    from m_debuginfo). */
-extern void VG_(redir_notify_delete_DebugInfo)( DebugInfo* );
+extern void VG_(redir_notify_delete_DebugInfo)( const DebugInfo* );
 
 /* Initialise the module, and load initial "hardwired" redirects. */
 extern void VG_(redir_initialise)( void );

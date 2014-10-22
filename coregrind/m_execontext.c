@@ -121,7 +121,7 @@ static ULong ec_cmpAlls;
 /*--- Exported functions.                                  ---*/
 /*------------------------------------------------------------*/
 
-static ExeContext* record_ExeContext_wrk2 ( Addr* ips, UInt n_ips ); /*fwds*/
+static ExeContext* record_ExeContext_wrk2 ( const Addr* ips, UInt n_ips );
 
 /* Initialise this subsystem. */
 static void init_ExeContext_storage ( void )
@@ -203,7 +203,8 @@ void VG_(pp_ExeContext) ( ExeContext* ec )
 
 
 /* Compare two ExeContexts.  Number of callers considered depends on res. */
-Bool VG_(eq_ExeContext) ( VgRes res, ExeContext* e1, ExeContext* e2 )
+Bool VG_(eq_ExeContext) ( VgRes res, const ExeContext* e1,
+                          const ExeContext* e2 )
 {
    Int i;
 
@@ -266,7 +267,7 @@ static inline UWord ROLW ( UWord w, Int n )
    return w;
 }
 
-static UWord calc_hash ( Addr* ips, UInt n_ips, UWord htab_sz )
+static UWord calc_hash ( const Addr* ips, UInt n_ips, UWord htab_sz )
 {
    UInt  i;
    UWord hash = 0;
@@ -351,7 +352,7 @@ static ExeContext* record_ExeContext_wrk ( ThreadId tid, Word first_ip_delta,
    holds a proposed trace.  Find or allocate a suitable ExeContext.
    Note that callers must have done init_ExeContext_storage() before
    getting to this point. */
-static ExeContext* record_ExeContext_wrk2 ( Addr* ips, UInt n_ips )
+static ExeContext* record_ExeContext_wrk2 ( const Addr* ips, UInt n_ips )
 {
    Int         i;
    Bool        same;
@@ -467,12 +468,12 @@ StackTrace VG_(get_ExeContext_StackTrace) ( ExeContext* e ) {
    return e->ips;
 }  
 
-UInt VG_(get_ECU_from_ExeContext)( ExeContext* e ) {
+UInt VG_(get_ECU_from_ExeContext)( const ExeContext* e ) {
    vg_assert(VG_(is_plausible_ECU)(e->ecu));
    return e->ecu;
 }
 
-Int VG_(get_ExeContext_n_ips)( ExeContext* e ) {
+Int VG_(get_ExeContext_n_ips)( const ExeContext* e ) {
    vg_assert(e->n_ips >= 1);
    return e->n_ips;
 }
@@ -492,7 +493,7 @@ ExeContext* VG_(get_ExeContext_from_ECU)( UInt ecu )
    return NULL;
 }
 
-ExeContext* VG_(make_ExeContext_from_StackTrace)( Addr* ips, UInt n_ips )
+ExeContext* VG_(make_ExeContext_from_StackTrace)( const Addr* ips, UInt n_ips )
 {
    init_ExeContext_storage();
    return record_ExeContext_wrk2(ips, n_ips);

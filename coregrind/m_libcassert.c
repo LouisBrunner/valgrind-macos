@@ -298,7 +298,7 @@ void VG_(client_exit)( Int status )
 static void show_sched_status_wrk ( Bool host_stacktrace,
                                     Bool stack_usage,
                                     Bool exited_threads,
-                                    UnwindStartRegs* startRegsIN)
+                                    const UnwindStartRegs* startRegsIN)
 {
    Int i; 
    if (host_stacktrace) {
@@ -385,7 +385,7 @@ void VG_(show_sched_status) ( Bool host_stacktrace,
 
 __attribute__ ((noreturn))
 static void report_and_quit ( const HChar* report,
-                              UnwindStartRegs* startRegsIN )
+                              const UnwindStartRegs* startRegsIN )
 {
    show_sched_status_wrk (True,  // host_stacktrace
                           False, // stack_usage
@@ -458,7 +458,7 @@ void VG_(assert_fail) ( Bool isCore, const HChar* expr, const HChar* file,
 
 __attribute__ ((noreturn))
 static void panic ( const HChar* name, const HChar* report, const HChar* str,
-                    UnwindStartRegs* startRegs )
+                    const UnwindStartRegs* startRegs )
 {
    if (VG_(clo_xml))
       VG_(printf_xml)("</valgrindoutput>\n");
@@ -466,7 +466,7 @@ static void panic ( const HChar* name, const HChar* report, const HChar* str,
    report_and_quit(report, startRegs);
 }
 
-void VG_(core_panic_at) ( const HChar* str, UnwindStartRegs* startRegs )
+void VG_(core_panic_at) ( const HChar* str, const UnwindStartRegs* startRegs )
 {
    panic("valgrind", VG_BUGS_TO, str, startRegs);
 }

@@ -469,7 +469,7 @@ static void TTEntry__init ( TTEntry* tte )
    VG_(memset)(tte, 0, sizeof(*tte));
 }
 
-static UWord InEdgeArr__size ( InEdgeArr* iea )
+static UWord InEdgeArr__size ( const InEdgeArr* iea )
 {
    if (iea->var) {
       vg_assert(iea->n_fixed == 0);
@@ -546,7 +546,7 @@ void InEdgeArr__add ( InEdgeArr* iea, InEdge* ie )
    }
 }
 
-static UWord OutEdgeArr__size ( OutEdgeArr* oea )
+static UWord OutEdgeArr__size ( const OutEdgeArr* oea )
 {
    if (oea->var) {
       vg_assert(oea->n_fixed == 0);
@@ -680,8 +680,8 @@ Bool find_TTEntry_from_hcode( /*OUT*/UInt* from_sNo,
       if (UNLIKELY(sno == -1))
          return False; /* run out of sectors to search */
 
-      Sector* sec = &sectors[sno];
-      XArray* /* of HostExtent */ host_extents = sec->host_extents;
+      const Sector* sec = &sectors[sno];
+      const XArray* /* of HostExtent */ host_extents = sec->host_extents;
       vg_assert(host_extents);
 
       HostExtent key;
@@ -722,15 +722,15 @@ Bool find_TTEntry_from_hcode( /*OUT*/UInt* from_sNo,
 /* Figure out whether or not hcode is jitted code present in the main
    code cache (but not in the no-redir cache).  Used for sanity
    checking. */
-static Bool is_in_the_main_TC ( void* hcode )
+static Bool is_in_the_main_TC ( const void* hcode )
 {
    Int i, sno;
    for (i = 0; i < n_sectors; i++) {
       sno = sector_search_order[i];
       if (sno == -1)
          break; /* run out of sectors to search */
-      if ((UChar*)hcode >= (UChar*)sectors[sno].tc
-          && (UChar*)hcode <= (UChar*)sectors[sno].tc_next
+      if ((const UChar*)hcode >= (const UChar*)sectors[sno].tc
+          && (const UChar*)hcode <= (const UChar*)sectors[sno].tc_next
                               + sizeof(ULong) - 1)
          return True;
    }
@@ -963,8 +963,9 @@ static Int range_to_eclass ( Addr64 start, UInt len )
 
 static 
 Int vexGuestExtents_to_eclasses ( /*OUT*/Int* eclasses,
-                                  VexGuestExtents* vge )
+                                  const VexGuestExtents* vge )
 {
+
 #  define SWAP(_lv1,_lv2) \
       do { Int t = _lv1; _lv1 = _lv2; _lv2 = t; } while (0)
 
@@ -1084,7 +1085,7 @@ void upd_eclasses_after_add ( /*MOD*/Sector* sec, Int tteno )
 /* Check the eclass info in 'sec' to ensure it is consistent.  Returns
    True if OK, False if something's not right.  Expensive. */
 
-static Bool sanity_check_eclasses_in_sector ( Sector* sec )
+static Bool sanity_check_eclasses_in_sector ( const Sector* sec )
 {
 #  define BAD(_str) do { whassup = (_str); goto bad; } while (0)
 
@@ -1296,7 +1297,7 @@ static Bool sanity_check_all_sectors ( void )
 /*--- Add/find translations                                 ---*/
 /*-------------------------------------------------------------*/
 
-static UInt vge_osize ( VexGuestExtents* vge )
+static UInt vge_osize ( const VexGuestExtents* vge )
 {
    UInt i, n = 0;
    for (i = 0; i < vge->n_used; i++)
@@ -1511,7 +1512,7 @@ static void initialiseSector ( Int sno )
    pre: youngest_sector points to a valid (although possibly full)
    sector.
 */
-void VG_(add_to_transtab)( VexGuestExtents* vge,
+void VG_(add_to_transtab)( const VexGuestExtents* vge,
                            Addr64           entry,
                            AddrH            code,
                            UInt             code_len,
@@ -1769,7 +1770,7 @@ Bool overlap1 ( Addr64 s1, ULong r1, Addr64 s2, ULong r2 )
 }
 
 static inline
-Bool overlaps ( Addr64 start, ULong range, VexGuestExtents* vge )
+Bool overlaps ( Addr64 start, ULong range, const VexGuestExtents* vge )
 {
    if (overlap1(start, range, vge->base[0], (UInt)vge->len[0]))
       return True;
@@ -2104,7 +2105,7 @@ static Bool sanity_check_redir_tt_tc ( void )
 /* Add an UNREDIRECTED translation of vge to TT/TC.  The translation
    is temporarily in code[0 .. code_len-1].
 */
-void VG_(add_to_unredir_transtab)( VexGuestExtents* vge,
+void VG_(add_to_unredir_transtab)( const VexGuestExtents* vge,
                                    Addr64           entry,
                                    AddrH            code,
                                    UInt             code_len )
@@ -2318,7 +2319,7 @@ void VG_(print_tt_tc_stats) ( void )
 /*--- Printing out of profiling results.                   ---*/
 /*------------------------------------------------------------*/
 
-static ULong score ( TTEntry* tte )
+static ULong score ( const TTEntry* tte )
 {
    return ((ULong)tte->weight) * ((ULong)tte->count);
 }

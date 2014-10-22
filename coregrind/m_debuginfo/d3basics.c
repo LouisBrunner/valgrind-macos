@@ -343,7 +343,7 @@ const HChar* ML_(pp_DW_AT) ( DW_AT attr )
 
 /* FIXME: duplicated in readdwarf.c */
 static 
-ULong read_leb128 ( UChar* data, Int* length_return, Int sign )
+ULong read_leb128 ( const UChar* data, Int* length_return, Int sign )
 {
   ULong  result = 0;
   UInt   num_read = 0;
@@ -397,7 +397,7 @@ static Long read_leb128S( UChar **data )
 
 /* FIXME: duplicates logic in readdwarf.c: copy_convert_CfiExpr_tree
    and {FP,SP}_REG decls */
-static Bool get_Dwarf_Reg( /*OUT*/Addr* a, Word regno, RegSummary* regs )
+static Bool get_Dwarf_Reg( /*OUT*/Addr* a, Word regno, const RegSummary* regs )
 {
    vg_assert(regs);
 #  if defined(VGP_x86_linux) || defined(VGP_x86_darwin)
@@ -474,7 +474,7 @@ static Bool bias_address( Addr* a, const DebugInfo* di )
 /* Evaluate a standard DWARF3 expression.  See detailed description in
    priv_d3basics.h.  Doesn't handle DW_OP_piece/DW_OP_bit_piece yet.  */
 GXResult ML_(evaluate_Dwarf3_Expr) ( UChar* expr, UWord exprszB, 
-                                     GExpr* fbGX, RegSummary* regs,
+                                     GExpr* fbGX, const RegSummary* regs,
                                      const DebugInfo* di,
                                      Bool push_initial_zero )
 {
@@ -943,7 +943,7 @@ GXResult ML_(evaluate_Dwarf3_Expr) ( UChar* expr, UWord exprszB,
 /* Evaluate a so-called Guarded (DWARF3) expression.  See detailed
    description in priv_d3basics.h. */
 GXResult ML_(evaluate_GX)( GExpr* gx, GExpr* fbGX,
-                           RegSummary* regs, const DebugInfo* di )
+                           const RegSummary* regs, const DebugInfo* di )
 {
    GXResult res;
    Addr     aMin, aMax;
@@ -1191,11 +1191,12 @@ void ML_(pp_GXResult) ( GXResult res )
 }
 
 
-void ML_(pp_GX) ( GExpr* gx ) {
+void ML_(pp_GX) ( const GExpr* gx )
+{
    Addr   aMin, aMax;
    UChar  uc;
    UShort nbytes;
-   UChar* p = &gx->payload[0];
+   const UChar* p = &gx->payload[0];
    uc = *p++;
    VG_(printf)("GX(%s){", uc == 0 ? "final" : "Breqd" );
    vg_assert(uc == 0 || uc == 1);

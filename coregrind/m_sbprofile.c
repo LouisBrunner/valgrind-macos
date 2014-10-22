@@ -46,7 +46,7 @@
 static UInt n_profiles = 0;
 
 static 
-void show_SB_profile ( SBProfEntry tops[], UInt n_tops,
+void show_SB_profile ( const SBProfEntry tops[], UInt n_tops,
                        ULong score_total, ULong ecs_done )
 {
    ULong score_cumul, score_cumul_saved, score_here;

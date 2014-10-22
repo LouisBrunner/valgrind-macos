@@ -439,7 +439,7 @@ extern Int ML_(CfiExpr_Binop) ( XArray* dst, CfiBinop op, Int ixL, Int ixR );
 extern Int ML_(CfiExpr_CfiReg)( XArray* dst, CfiReg reg );
 extern Int ML_(CfiExpr_DwReg) ( XArray* dst, Int reg );
 
-extern void ML_(ppCfiExpr)( XArray* src, Int ix );
+extern void ML_(ppCfiExpr)( const XArray* src, Int ix );
 
 /* ---------------- FPO INFO (Windows PE) -------------- */
 
@@ -532,19 +532,19 @@ ML_(cmp_for_DiAddrRange_range) ( const void* keyV, const void* elemV );
    relocation, which only appears to be the case for 32 bit objects.
 */
 
-struct _DebugInfoMapping
+typedef struct
 {
    Addr  avma; /* these fields record the file offset, length */
    SizeT size; /* and map address of each mapping             */
    OffT  foff;
    Bool  rx, rw, ro;  /* memory access flags for this mapping */
-};
+} DebugInfoMapping;
 
 struct _DebugInfoFSM
 {
    HChar*  filename;  /* in mallocville (VG_AR_DINFO)               */
    HChar*  dbgname;   /* in mallocville (VG_AR_DINFO)               */
-   XArray* maps;      /* XArray of _DebugInfoMapping structs        */
+   XArray* maps;      /* XArray of DebugInfoMapping structs         */
    Bool  have_rx_map; /* did we see a r?x mapping yet for the file? */
    Bool  have_rw_map; /* did we see a rw? mapping yet for the file? */
    Bool  have_ro_map; /* did we see a r-- mapping yet for the file? */
@@ -975,7 +975,7 @@ struct _DebugInfo {
    /* Cached last rx mapping matched and returned by ML_(find_rx_mapping).
       This helps performance a lot during ML_(addLineInfo) etc., which can
       easily be invoked hundreds of thousands of times. */
-   struct _DebugInfoMapping* last_rx_map;
+   DebugInfoMapping* last_rx_map;
 };
 
 /* --------------------- functions --------------------- */
@@ -997,17 +997,17 @@ extern UInt ML_(addFnDn) (struct _DebugInfo* di,
 
 /* Returns the filename of the fndn pair identified by fndn_ix.
    Returns "???" if fndn_ix is 0. */
-extern const HChar* ML_(fndn_ix2filename) (struct _DebugInfo* di,
+extern const HChar* ML_(fndn_ix2filename) (const DebugInfo* di,
                                            UInt fndn_ix);
 
 /* Returns the dirname of the fndn pair identified by fndn_ix.
    Returns "" if fndn_ix is 0 or fndn->dirname is NULL. */
-extern const HChar* ML_(fndn_ix2dirname) (struct _DebugInfo* di,
+extern const HChar* ML_(fndn_ix2dirname) (const DebugInfo* di,
                                           UInt fndn_ix);
 
 /* Returns the fndn_ix for the LineInfo locno in di->loctab.
    0 if filename/dirname are unknown. */
-extern UInt ML_(fndn_ix) (struct _DebugInfo* di, Word locno);
+extern UInt ML_(fndn_ix) (const DebugInfo* di, Word locno);
 
 /* Add a line-number record to a DebugInfo.
    fndn_ix is an index in di->fndnpool, allocated using  ML_(addFnDn).
@@ -1041,7 +1041,7 @@ extern void ML_(addDiCfSI) ( struct _DebugInfo* di,
 /* Given a position in the di->cfsi_base/cfsi_m_ix arrays, return
    the corresponding cfsi_m*. Return NULL if the position corresponds
    to a cfsi hole. */
-DiCfSI_m* ML_(get_cfsi_m) (struct _DebugInfo* di, UInt pos);
+DiCfSI_m* ML_(get_cfsi_m) (const DebugInfo* di, UInt pos);
 
 /* Add a string to the string table of a DebugInfo.  If len==-1,
    ML_(addStr) will itself measure the length of the string. */
@@ -1083,28 +1083,28 @@ extern void ML_(finish_CFSI_arrays) ( struct _DebugInfo* di );
 
 /* Find a symbol-table index containing the specified pointer, or -1
    if not found.  Binary search.  */
-extern Word ML_(search_one_symtab) ( struct _DebugInfo* di, Addr ptr,
+extern Word ML_(search_one_symtab) ( const DebugInfo* di, Addr ptr,
                                      Bool match_anywhere_in_sym,
                                      Bool findText );
 
 /* Find a location-table index containing the specified pointer, or -1
    if not found.  Binary search.  */
-extern Word ML_(search_one_loctab) ( struct _DebugInfo* di, Addr ptr );
+extern Word ML_(search_one_loctab) ( const DebugInfo* di, Addr ptr );
 
 /* Find a CFI-table index containing the specified pointer, or -1 if
    not found.  Binary search.  */
-extern Word ML_(search_one_cfitab) ( struct _DebugInfo* di, Addr ptr );
+extern Word ML_(search_one_cfitab) ( const DebugInfo* di, Addr ptr );
 
 /* Find a FPO-table index containing the specified pointer, or -1
    if not found.  Binary search.  */
-extern Word ML_(search_one_fpotab) ( struct _DebugInfo* di, Addr ptr );
+extern Word ML_(search_one_fpotab) ( const DebugInfo* di, Addr ptr );
 
 /* Helper function for the most often needed searching for an rx
    mapping containing the specified address range.  The range must
    fall entirely within the mapping to be considered to be within it.
    Asserts if lo > hi; caller must ensure this doesn't happen. */
-extern struct _DebugInfoMapping* ML_(find_rx_mapping) ( struct _DebugInfo* di,
-                                                        Addr lo, Addr hi );
+extern DebugInfoMapping* ML_(find_rx_mapping) ( DebugInfo* di,
+                                                Addr lo, Addr hi );
 
 /* ------ Misc ------ */
 
@@ -1112,15 +1112,15 @@ extern struct _DebugInfoMapping* ML_(find_rx_mapping) ( struct _DebugInfo* di,
    terminal.  'serious' errors are always shown, not 'serious' ones
    are shown only at verbosity level 2 and above. */
 extern 
-void ML_(symerr) ( struct _DebugInfo* di, Bool serious, const HChar* msg );
+void ML_(symerr) ( const DebugInfo* di, Bool serious, const HChar* msg );
 
 /* Print a symbol. */
-extern void ML_(ppSym) ( Int idx, DiSym* sym );
+extern void ML_(ppSym) ( Int idx, const DiSym* sym );
 
 /* Print a call-frame-info summary. */
-extern void ML_(ppDiCfSI) ( XArray* /* of CfiExpr */ exprs,
+extern void ML_(ppDiCfSI) ( const XArray* /* of CfiExpr */ exprs,
                             Addr base, UInt len,
-                            DiCfSI_m* si_m );
+                            const DiCfSI_m* si_m );
 
 
 #define TRACE_SYMTAB_ENABLED (di->trace_symtab)

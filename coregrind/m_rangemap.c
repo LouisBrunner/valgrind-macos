@@ -57,9 +57,9 @@ struct _RangeMap {
 
 /* fwds */
 static void preen (/*MOD*/RangeMap* rm);
-static Word find ( RangeMap* rm, UWord key );
+static Word find ( const RangeMap* rm, UWord key );
 static void split_at ( /*MOD*/RangeMap* rm, UWord key );
-static void show ( RangeMap* rm );
+static void show ( const RangeMap* rm );
 
 
 RangeMap* VG_(newRangeMap) ( void*(*alloc_fn)(const HChar*,SizeT), 
@@ -114,7 +114,7 @@ void VG_(bindRangeMap) ( RangeMap* rm,
 }
 
 void VG_(lookupRangeMap) ( /*OUT*/UWord* key_min, /*OUT*/UWord* key_max,
-                           /*OUT*/UWord* val, RangeMap* rm, UWord key )
+                           /*OUT*/UWord* val, const RangeMap* rm, UWord key )
 {
    Word   i   = find(rm, key);
    Range* rng = (Range*)VG_(indexXA)(rm->ranges, i);
@@ -123,14 +123,14 @@ void VG_(lookupRangeMap) ( /*OUT*/UWord* key_min, /*OUT*/UWord* key_max,
    *val     = rng->val;
 }
 
-Word VG_(sizeRangeMap) ( RangeMap* rm )
+Word VG_(sizeRangeMap) ( const RangeMap* rm )
 {
    vg_assert(rm && rm->ranges);
    return VG_(sizeXA)(rm->ranges);
 }
 
 void VG_(indexRangeMap) ( /*OUT*/UWord* key_min, /*OUT*/UWord* key_max,
-                          /*OUT*/UWord* val, RangeMap* rm, Word ix )
+                          /*OUT*/UWord* val, const RangeMap* rm, Word ix )
 {
    vg_assert(rm && rm->ranges);
    Range* rng = (Range*)VG_(indexXA)(rm->ranges, ix);
@@ -158,7 +158,7 @@ static void preen (/*MOD*/RangeMap* rm)
    }
 }
 
-static Word find ( RangeMap* rm, UWord key )
+static Word find ( const RangeMap* rm, UWord key )
 {
    XArray* ranges = rm->ranges;
    Word    lo     = 0;
@@ -198,7 +198,7 @@ static void split_at ( /*MOD*/RangeMap* rm, UWord key )
 }
 
 __attribute__((unused))
-static void show ( RangeMap* rm )
+static void show ( const RangeMap* rm )
 {
    Word i;
    VG_(printf)("<< %ld entries:\n", VG_(sizeXA)(rm->ranges) );

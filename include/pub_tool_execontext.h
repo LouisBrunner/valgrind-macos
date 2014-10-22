@@ -81,7 +81,8 @@ extern void VG_(apply_ExeContext)( void(*action)(UInt n, Addr ip),
 //   Vg_LowRes:  2
 //   Vg_MedRes:  4
 //   Vg_HighRes: all
-extern Bool VG_(eq_ExeContext) ( VgRes res, ExeContext* e1, ExeContext* e2 );
+extern Bool VG_(eq_ExeContext) ( VgRes res, const ExeContext* e1,
+                                 const ExeContext* e2 );
 
 // Print an ExeContext.
 extern void VG_(pp_ExeContext) ( ExeContext* ec );
@@ -90,10 +91,10 @@ extern void VG_(pp_ExeContext) ( ExeContext* ec );
 // (the "ExeContext Unique").  Guaranteed to be nonzero and to be a
 // multiple of four (iow, the lowest two bits are guaranteed to
 // be zero, so that callers can store other information there.
-extern UInt VG_(get_ECU_from_ExeContext)( ExeContext* e );
+extern UInt VG_(get_ECU_from_ExeContext)( const ExeContext* e );
 
 // How many entries (frames) in this ExeContext?
-extern Int VG_(get_ExeContext_n_ips)( ExeContext* e );
+extern Int VG_(get_ExeContext_n_ips)( const ExeContext* e );
 
 // Find the ExeContext that has the given ECU, if any.
 // NOTE: very slow.  Do not call often.
@@ -110,7 +111,7 @@ static inline Bool VG_(is_plausible_ECU)( UInt ecu ) {
 }
 
 // Make an ExeContext containing exactly the specified stack frames.
-ExeContext* VG_(make_ExeContext_from_StackTrace)( Addr* ips, UInt n_ips );
+ExeContext* VG_(make_ExeContext_from_StackTrace)( const Addr* ips, UInt n_ips );
 
 // Returns the "null" exe context. The null execontext is an artificial
 // exe context, with a stack trace made of one Addr (the NULL address).

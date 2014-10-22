@@ -176,7 +176,7 @@ typedef
    }
    Cursor;
 
-static inline Bool is_sane_Cursor ( Cursor* c ) {
+static inline Bool is_sane_Cursor ( const Cursor* c ) {
    if (!c)                return False;
    if (!c->barf)          return False;
    if (!c->barfstr)       return False;
@@ -204,12 +204,12 @@ static void init_Cursor ( /*OUT*/Cursor* c,
    vg_assert(is_sane_Cursor(c));
 }
 
-static Bool is_at_end_Cursor ( Cursor* c ) {
+static Bool is_at_end_Cursor ( const Cursor* c ) {
    vg_assert(is_sane_Cursor(c));
    return c->sli_next >= c->sli.ioff + c->sli.szB;
 }
 
-static inline ULong get_position_of_Cursor ( Cursor* c ) {
+static inline ULong get_position_of_Cursor ( const Cursor* c ) {
    vg_assert(is_sane_Cursor(c));
    return c->sli_next - c->sli.ioff;
 }
@@ -222,7 +222,7 @@ static inline void advance_position_of_Cursor ( Cursor* c, ULong delta ) {
    vg_assert(is_sane_Cursor(c));
 }
 
-static /*signed*/Long get_remaining_length_Cursor ( Cursor* c ) {
+static /*signed*/Long get_remaining_length_Cursor ( const Cursor* c ) {
    vg_assert(is_sane_Cursor(c));
    return c->sli.ioff + c->sli.szB - c->sli_next;
 }
@@ -495,7 +495,7 @@ typedef
    a contiguous whole, so that DIEs coming from .debug_types are numbered
    starting at the end of .debug_info and DIEs coming from alternate
    .debug_info are numbered starting at the end of .debug_types.  */
-static UWord cook_die( CUConst* cc, UWord die )
+static UWord cook_die( const CUConst* cc, UWord die )
 {
    if (cc->is_type_unit)
       die += cc->types_cuOff_bias;
@@ -508,7 +508,7 @@ static UWord cook_die( CUConst* cc, UWord die )
    DW_FORM_ref_sig8 reference are already cooked.  Also, handle
    DW_FORM_GNU_ref_alt from within primary .debug_info or .debug_types
    as reference to alternate .debug_info.  */
-static UWord cook_die_using_form( CUConst *cc, UWord die, DW_FORM form)
+static UWord cook_die_using_form( const CUConst *cc, UWord die, DW_FORM form)
 {
    if (form == DW_FORM_ref_sig8)
       return die;
@@ -520,7 +520,7 @@ static UWord cook_die_using_form( CUConst *cc, UWord die, DW_FORM form)
 /* Return the uncooked offset of DIE and set *TYPE_FLAG to true if the DIE
    came from the .debug_types section and *ALT_FLAG to true if the DIE
    came from alternate .debug_info section.  */
-static UWord uncook_die( CUConst *cc, UWord die, /*OUT*/Bool *type_flag,
+static UWord uncook_die( const CUConst *cc, UWord die, /*OUT*/Bool *type_flag,
                          Bool *alt_flag )
 {
    *alt_flag = False;
@@ -585,7 +585,7 @@ static UWord uncook_die( CUConst *cc, UWord die, /*OUT*/Bool *type_flag,
 
 
 /* Apply a text bias to a GX. */
-static void bias_GX ( /*MOD*/GExpr* gx, struct _DebugInfo* di )
+static void bias_GX ( /*MOD*/GExpr* gx, const DebugInfo* di )
 {
    UShort nbytes;
    UChar* p = &gx->payload[0];
@@ -651,7 +651,7 @@ static GExpr* make_singleton_GX ( DiCursor block, ULong nbytes )
 }
 
 __attribute__((noinline))
-static GExpr* make_general_GX ( CUConst* cc,
+static GExpr* make_general_GX ( const CUConst* cc,
                                 Bool     td3,
                                 ULong    debug_loc_offset,
                                 Addr     svma_of_referencing_CU )
@@ -830,10 +830,10 @@ static XArray* unitary_range_list ( Addr aMin, Addr aMax )
    caller must deallocate it. */
 __attribute__((noinline))
 static XArray* /* of AddrRange */
-       get_range_list ( CUConst* cc,
-                        Bool     td3,
-                        UWord    debug_ranges_offset,
-                        Addr     svma_of_referencing_CU )
+get_range_list ( const CUConst* cc,
+                 Bool     td3,
+                 UWord    debug_ranges_offset,
+                 Addr     svma_of_referencing_CU )
 {
    Addr      base;
    Cursor    ranges;
@@ -885,7 +885,7 @@ static XArray* /* of AddrRange */
 }
 
 #define VARSZ_FORM 0xffffffff
-static UInt get_Form_szB (CUConst* cc, DW_FORM form );
+static UInt get_Form_szB (const CUConst* cc, DW_FORM form );
 
 /* Initialises the hash table of abbreviations.
    We do a single scan of the abbv slice to parse and
@@ -979,7 +979,7 @@ static void init_ht_abbvs (CUConst* cc,
    #undef SZ_G_ABBV
 }
 
-static g_abbv* get_abbv (CUConst* cc, ULong abbv_code)
+static g_abbv* get_abbv (const CUConst* cc, ULong abbv_code)
 {
    g_abbv *abbv;
 
@@ -1130,7 +1130,7 @@ typedef
    at a DiCursor.*/
 static
 void get_Form_contents ( /*OUT*/FormContents* cts,
-                         CUConst* cc, Cursor* c,
+                         const CUConst* cc, Cursor* c,
                          Bool td3, DW_FORM form )
 {
    VG_(bzero_inline)(cts, sizeof(*cts));
@@ -1461,7 +1461,7 @@ static inline UInt sizeof_Dwarfish_UWord (Bool is_dw64)
 /* If the form is a fixed length form, return the nr of bytes for this form.
    If the form is a variable length form, return VARSZ_FORM. */
 static
-UInt get_Form_szB (CUConst* cc, DW_FORM form )
+UInt get_Form_szB (const CUConst* cc, DW_FORM form )
 {
    // !!! keep switch in sync with get_Form_contents : the nr of bytes
    // read from a cursor by get_Form_contents must be returned by
@@ -1536,8 +1536,8 @@ UInt get_Form_szB (CUConst* cc, DW_FORM form )
 static
 void skip_DIE (UWord  *sibling,
                Cursor* c_die,
-               g_abbv *abbv,
-               CUConst* cc)
+               const g_abbv *abbv,
+               const CUConst* cc)
 {
    UInt nf_i;
    FormContents cts;
@@ -1636,7 +1636,8 @@ typedef
    }
    D3VarParser;
 
-static void varstack_show ( D3VarParser* parser, const HChar* str ) {
+static void varstack_show ( const D3VarParser* parser, const HChar* str )
+{
    Word i, j;
    VG_(printf)("  varstack (%s) {\n", str);
    for (i = 0; i <= parser->sp; i++) {
@@ -1690,7 +1691,7 @@ void varstack_preen ( D3VarParser* parser, Bool td3, Int level )
       varstack_show( parser, "after preen" );
 }
 
-static void varstack_push ( CUConst* cc,
+static void varstack_push ( const CUConst* cc,
                             D3VarParser* parser,
                             Bool td3,
                             XArray* ranges, Int level,
@@ -1731,7 +1732,7 @@ static void varstack_push ( CUConst* cc,
    in both cases bundle the expression or location list into a
    so-called GExpr (guarded expression). */
 __attribute__((noinline))
-static GExpr* get_GX ( CUConst* cc, Bool td3, const FormContents* cts )
+static GExpr* get_GX ( const CUConst* cc, Bool td3, const FormContents* cts )
 {
    GExpr* gexpr = NULL;
    if (cts->szB < 0) {
@@ -1761,7 +1762,7 @@ static GExpr* get_GX ( CUConst* cc, Bool td3, const FormContents* cts )
    whatever that means, according to the DWARF3 spec.
    FIXME??? readdwarf3.c/readdwarf.c have a lot of duplicated code */
 static
-XArray* read_dirname_xa (struct _DebugInfo* di, const HChar *compdir,
+XArray* read_dirname_xa (DebugInfo* di, const HChar *compdir,
                          Cursor *c,
                          Bool td3 )
 {
@@ -1839,7 +1840,7 @@ XArray* read_dirname_xa (struct _DebugInfo* di, const HChar *compdir,
 static 
 void read_filename_table( /*MOD*/XArray* /* of UInt* */ fndn_ix_Table,
                           const HChar* compdir,
-                          CUConst* cc, ULong debug_line_offset,
+                          const CUConst* cc, ULong debug_line_offset,
                           Bool td3 )
 {
    Bool   is_dw64;
@@ -1847,10 +1848,10 @@ void read_filename_table( /*MOD*/XArray* /* of UInt* */ fndn_ix_Table,
    Word   i;
    UShort version;
    UChar  opcode_base;
-   const  HChar* str;
+   const HChar* str;
    XArray* dirname_xa;   /* xarray of HChar* dirname */
    ULong  dir_xa_ix;     /* Index in dirname_xa, as read from dwarf info. */
-   HChar* dirname;
+   const HChar* dirname;
    UInt   fndn_ix;
 
    vg_assert(fndn_ix_Table && cc && cc->barf);
@@ -1962,8 +1963,8 @@ static void trace_DIE(
    UWord posn,
    Int level,
    UWord saved_die_c_offset,
-   g_abbv *abbv,
-   CUConst* cc)
+   const g_abbv *abbv,
+   const CUConst* cc)
 {
    Cursor c;
    FormContents cts;
@@ -2020,8 +2021,8 @@ static void dump_bad_die_and_barf(
    Int level,
    Cursor* c_die,
    UWord saved_die_c_offset,
-   g_abbv *abbv,
-   CUConst* cc)
+   const g_abbv *abbv,
+   const CUConst* cc)
 {
    trace_DIE (dtag, posn, level, saved_die_c_offset, abbv, cc);
    VG_(printf)("%s:\n", whichparser);
@@ -2045,7 +2046,7 @@ static void parse_var_DIE (
    UWord posn,
    Int level,
    Cursor* c_die,
-   g_abbv *abbv,
+   const g_abbv *abbv,
    CUConst* cc,
    Bool td3
 )
@@ -2324,7 +2325,7 @@ static void parse_var_DIE (
             stack. */
          GExpr*   fbGX = NULL;
          Word     i, nRanges;
-         XArray*  /* of AddrRange */ xa;
+         const XArray*  /* of AddrRange */ xa;
          TempVar* tv;
          /* Stack can't be empty; we put a dummy entry on it for the
             entire address range before starting with the DIEs for
@@ -2549,10 +2550,10 @@ typedef
    table is kept, while we must handle all abbreviations in all CUs
    referenced by an absori (being a reference to an alt CU, or a previous
    or following CU). */
-static const HChar* get_inlFnName (Int absori, CUConst* cc, Bool td3)
+static const HChar* get_inlFnName (Int absori, const CUConst* cc, Bool td3)
 {
    Cursor c;
-   g_abbv *abbv;
+   const g_abbv *abbv;
    ULong  atag, abbv_code;
    UInt   has_children;
    UWord  posn;
@@ -2660,7 +2661,7 @@ static Bool parse_inl_DIE (
    UWord posn,
    Int level,
    Cursor* c_die,
-   g_abbv *abbv,
+   const g_abbv *abbv,
    CUConst* cc,
    Bool td3
 )
@@ -2861,7 +2862,8 @@ typedef
    }
    D3TypeParser;
 
-static void typestack_show ( D3TypeParser* parser, const HChar* str ) {
+static void typestack_show ( const D3TypeParser* parser, const HChar* str )
+{
    Word i;
    VG_(printf)("  typestack (%s) {\n", str);
    for (i = 0; i <= parser->sp; i++) {
@@ -2896,12 +2898,13 @@ void typestack_preen ( D3TypeParser* parser, Bool td3, Int level )
       typestack_show( parser, "after preen" );
 }
 
-static Bool typestack_is_empty ( D3TypeParser* parser ) {
+static Bool typestack_is_empty ( const D3TypeParser* parser )
+{
    vg_assert(parser->sp >= -1 && parser->sp < N_D3_TYPE_STACK);
    return parser->sp == -1;
 }
 
-static void typestack_push ( CUConst* cc,
+static void typestack_push ( const CUConst* cc,
                              D3TypeParser* parser,
                              Bool td3,
                              TyEnt* parentE, Int level ) {
@@ -2933,7 +2936,7 @@ static void typestack_push ( CUConst* cc,
 }
 
 /* True if the subrange type being parsed gives the bounds of an array. */
-static Bool subrange_type_denotes_array_bounds ( D3TypeParser* parser,
+static Bool subrange_type_denotes_array_bounds ( const D3TypeParser* parser,
                                                  DW_TAG dtag ) {
    vg_assert(dtag == DW_TAG_subrange_type);
    /* For most languages, a subrange_type dtag always gives the 
@@ -2983,8 +2986,8 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
                              UWord posn,
                              Int level,
                              Cursor* c_die,
-                             g_abbv *abbv,
-                             CUConst* cc,
+                             const g_abbv *abbv,
+                             const CUConst* cc,
                              Bool td3 )
 {
    FormContents cts;
@@ -4116,7 +4119,7 @@ static void read_DIE (
    Cursor* c, Bool td3, CUConst* cc, Int level
 )
 {
-   g_abbv *abbv;
+   const g_abbv *abbv;
    ULong  atag, abbv_code;
    UWord  posn;
    UInt   has_children;
@@ -4250,7 +4253,7 @@ static void read_DIE (
 
 }
 
-static void trace_debug_loc (struct _DebugInfo* di,
+static void trace_debug_loc (const DebugInfo* di,
                              __attribute__((noreturn)) void (*barf)( const HChar* ),
                              DiSlice escn_debug_loc)
 {
@@ -4317,7 +4320,7 @@ static void trace_debug_loc (struct _DebugInfo* di,
 #endif
 }
 
-static void trace_debug_ranges (struct _DebugInfo* di,
+static void trace_debug_ranges (const DebugInfo* di,
                                 __attribute__((noreturn)) void (*barf)( const HChar* ),
                                 DiSlice escn_debug_ranges)
 {
@@ -4371,7 +4374,7 @@ static void trace_debug_ranges (struct _DebugInfo* di,
    }
 }
 
-static void trace_debug_abbrev (struct _DebugInfo* di,
+static void trace_debug_abbrev (const DebugInfo* di,
                                 __attribute__((noreturn)) void (*barf)( const HChar* ),
                                 DiSlice escn_debug_abbv)
 {
@@ -4413,7 +4416,7 @@ static void trace_debug_abbrev (struct _DebugInfo* di,
 
 static
 void new_dwarf3_reader_wrk ( 
-   struct _DebugInfo* di,
+   DebugInfo* di,
    __attribute__((noreturn)) void (*barf)( const HChar* ),
    DiSlice escn_debug_info,      DiSlice escn_debug_types,
    DiSlice escn_debug_abbv,      DiSlice escn_debug_line,
@@ -5135,7 +5138,7 @@ static __attribute__((noreturn)) void barf ( const HChar* reason ) {
 
 void 
 ML_(new_dwarf3_reader) (
-   struct _DebugInfo* di,
+   DebugInfo* di,
    DiSlice escn_debug_info,      DiSlice escn_debug_types,
    DiSlice escn_debug_abbv,      DiSlice escn_debug_line,
    DiSlice escn_debug_str,       DiSlice escn_debug_ranges,

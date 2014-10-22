@@ -190,14 +190,14 @@ extern void VG_(clear_addrinfo) ( AddrInfo* ai);
 
 /* Prints the AddrInfo ai describing a.
    Note that an ai with tag Addr_Undescribed will cause an assert.*/
-extern void VG_(pp_addrinfo) ( Addr a, AddrInfo* ai );
+extern void VG_(pp_addrinfo) ( Addr a, const AddrInfo* ai );
 
 /* Same as VG_(pp_addrinfo) but provides some memcheck specific behaviour:
    * maybe_gcc indicates Addr a was just below the stack ptr when the error
      with a was encountered.
    * the message for Unknown tag is slightly different, as memcheck
      has a recently freed list. */
-extern void VG_(pp_addrinfo_mc) ( Addr a, AddrInfo* ai, Bool maybe_gcc );
+extern void VG_(pp_addrinfo_mc) ( Addr a, const AddrInfo* ai, Bool maybe_gcc );
 
 #endif   // __PUB_TOOL_ADDRINFO_H
 

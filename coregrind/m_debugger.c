@@ -47,7 +47,7 @@
 #define WIFSTOPPED(status) (((status) & 0xff) == 0x7f)
 #define WSTOPSIG(status) (((status) & 0xff00) >> 8)
 
-static Int ptrace_setregs(Int pid, VexGuestArchState* vex)
+static Int ptrace_setregs(Int pid, const VexGuestArchState* vex)
 {
 #if defined(VGP_x86_linux)
    struct vki_user_regs_struct regs;

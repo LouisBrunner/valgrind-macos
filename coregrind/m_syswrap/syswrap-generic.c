@@ -2735,7 +2735,7 @@ PRE(sys_execve)
    // Decide whether or not we want to follow along
    { // Make 'child_argv' be a pointer to the child's arg vector
      // (skipping the exe name)
-     HChar** child_argv = (HChar**)ARG2;
+     const HChar** child_argv = (const HChar**)ARG2;
      if (child_argv && child_argv[0] == NULL)
         child_argv = NULL;
      trace_this_child = VG_(should_we_trace_this_child)( (HChar*)ARG1, child_argv );

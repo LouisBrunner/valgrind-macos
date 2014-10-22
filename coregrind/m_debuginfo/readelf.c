@@ -109,9 +109,9 @@
 /* Identify an ELF object file by peering at the first few bytes of
    it. */
 
-Bool ML_(is_elf_object_file)( void* image, SizeT n_image, Bool rel_ok )
+Bool ML_(is_elf_object_file)( const void* image, SizeT n_image, Bool rel_ok )
 {
-   ElfXX_Ehdr* ehdr = (ElfXX_Ehdr*)image;
+   const ElfXX_Ehdr* ehdr = image;
    Int ok = 1;
 
    if (n_image < sizeof(ElfXX_Ehdr))
@@ -158,7 +158,7 @@ static Bool is_elf_object_file_by_DiImage( DiImage* img, Bool rel_ok )
 static
 void show_raw_elf_symbol ( DiImage* strtab_img,
                            Int i, 
-                           ElfXX_Sym* sym,
+                           const ElfXX_Sym* sym,
                            DiOffT sym_name_ioff, Addr sym_svma,
                            Bool ppc64_linux_format )
 {
@@ -224,12 +224,12 @@ static
 Bool get_elf_symbol_info ( 
         /* INPUTS */
         struct _DebugInfo* di, /* containing DebugInfo */
-        ElfXX_Sym* sym,        /* ELF symbol */
+        const ElfXX_Sym* sym,        /* ELF symbol */
         DiOffT     sym_name_ioff, /* name, may be absent (DiOffT_INVALID) */
-        DiSlice*   escn_strtab,   /* holds the name */
+        const DiSlice*   escn_strtab,   /* holds the name */
         Addr       sym_svma,   /* address as stated in the object file */
         Bool       symtab_in_debug, /* symbol table is in the debug file */
-        DiSlice*   escn_opd,   /* the .opd (ppc64be-linux only) */
+        const DiSlice*   escn_opd,   /* the .opd (ppc64be-linux only) */
         PtrdiffT   opd_bias,   /* for biasing AVMAs found in .opd */
         /* OUTPUTS */
         DiOffT* sym_name_out_ioff, /* name (in strtab) we should record */
@@ -745,7 +745,7 @@ void read_elf_symtab__normal(
      )
 {
    if (escn_strtab->img == NULL || escn_symtab->img == NULL) {
-      HChar buf[80];
+      HChar buf[80];  // FIXME: allocate dynamically
       vg_assert(VG_(strlen)(tab_name) < 40);
       VG_(sprintf)(buf, "   object doesn't have a %s", tab_name);
       ML_(symerr)(di, False, buf);
@@ -845,7 +845,7 @@ typedef
    }
    TempSym;
 
-static Word cmp_TempSymKey ( TempSymKey* key1, TempSym* elem2 )
+static Word cmp_TempSymKey ( const TempSymKey* key1, const TempSym* elem2 )
 {
    /* Stay sane ... */
    vg_assert(key1->img == elem2->key.img);
@@ -876,7 +876,7 @@ void read_elf_symtab__ppc64be_linux(
    TempSym    *prev;
 
    if (escn_strtab->img == NULL || escn_symtab->img == NULL) {
-      HChar buf[80];
+      HChar buf[80];  // FIXME: allocate dynamically
       vg_assert(VG_(strlen)(tab_name) < 40);
       VG_(sprintf)(buf, "   object doesn't have a %s", tab_name);
       ML_(symerr)(di, False, buf);
@@ -1316,7 +1316,7 @@ DiImage* find_debug_file( struct _DebugInfo* di,
    hacky and dangerous way: check only the --extra-debuginfo-path and
    the --debuginfo-server.  And don't do a consistency check. */
 static
-DiImage* find_debug_file_ad_hoc( struct _DebugInfo* di,
+DiImage* find_debug_file_ad_hoc( const DebugInfo* di,
                                  const HChar* objpath )
 {
    const HChar* extrapath  = VG_(clo_extra_debuginfo_path);
@@ -1522,7 +1522,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       Bool has_nonempty_rx = False;
       Bool has_nonempty_rw = False;
       for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
-         struct _DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
+         DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
          if (!map->rx && !map->rw)
             continue;
          if (map->rx && map->size > 0)
@@ -1598,13 +1598,13 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    TRACE_SYMTAB("shdr:    ioff %llu nent %ld ent_szB %ld\n",
                shdr_mioff, shdr_mnent, shdr_ment_szB);
    for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
-      struct _DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
+      const DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
       if (map->rx)
          TRACE_SYMTAB("rx_map:  avma %#lx   size %lu  foff %lu\n",
                       map->avma, map->size, map->foff);
    }
    for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
-      struct _DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
+      const DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
       if (map->rw)
          TRACE_SYMTAB("rw_map:  avma %#lx   size %lu  foff %lu\n",
                       map->avma, map->size, map->foff);
@@ -1688,7 +1688,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             if (a_phdr.p_memsz > 0) {
                Bool loaded = False;
                for (j = 0; j < VG_(sizeXA)(di->fsm.maps); j++) {
-                  struct _DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, j);
+                  const DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, j);
                   if (   (map->rx || map->rw)
                       && map->size > 0 /* stay sane */
                       && a_phdr.p_offset >= map->foff
@@ -1805,27 +1805,27 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    TRACE_SYMTAB("\n");
    TRACE_SYMTAB("------ Examining the section headers ------\n");
    for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
-      struct _DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
+      const DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
       if (map->rx)
          TRACE_SYMTAB("rx: at %#lx are mapped foffsets %ld .. %ld\n",
                       map->avma, map->foff, map->foff + map->size - 1 );
    }
    TRACE_SYMTAB("rx: contains these svma regions:\n");
    for (i = 0; i < VG_(sizeXA)(svma_ranges); i++) {
-      RangeAndBias* reg = VG_(indexXA)(svma_ranges, i);
+      const RangeAndBias* reg = VG_(indexXA)(svma_ranges, i);
       if (reg->exec)
          TRACE_SYMTAB("  svmas %#lx .. %#lx with bias %#lx\n",
                       reg->svma_base, reg->svma_limit - 1, reg->bias );
    }
    for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
-      struct _DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
+      const DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
       if (map->rw)
          TRACE_SYMTAB("rw: at %#lx are mapped foffsets %ld .. %ld\n",
                       map->avma, map->foff, map->foff + map->size - 1 );
    }
    TRACE_SYMTAB("rw: contains these svma regions:\n");
    for (i = 0; i < VG_(sizeXA)(svma_ranges); i++) {
-      RangeAndBias* reg = VG_(indexXA)(svma_ranges, i);
+      const RangeAndBias* reg = VG_(indexXA)(svma_ranges, i);
       if (!reg->exec)
          TRACE_SYMTAB("  svmas %#lx .. %#lx with bias %#lx\n",
                       reg->svma_base, reg->svma_limit - 1, reg->bias );
@@ -2577,7 +2577,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                            sizeof(a_phdr));
             if (a_phdr.p_type == PT_LOAD) {
                for (j = 0; j < VG_(sizeXA)(di->fsm.maps); j++) {
-                  struct _DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, j);
+                  const DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, j);
                   if (   a_phdr.p_offset >= map->foff
                       && a_phdr.p_offset <  map->foff + map->size
                       && a_phdr.p_offset + a_phdr.p_filesz

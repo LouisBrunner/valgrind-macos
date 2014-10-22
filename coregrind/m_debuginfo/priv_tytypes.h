@@ -145,16 +145,16 @@ typedef
 
 /* Does this TyEnt denote a type, as opposed to some other kind of
    thing? */
-Bool ML_(TyEnt__is_type)( TyEnt* );
+Bool ML_(TyEnt__is_type)( const TyEnt* );
 
 /* Print a TyEnt, debug-style. */
-void ML_(pp_TyEnt)( TyEnt* );
+void ML_(pp_TyEnt)( const TyEnt* );
 
 /* Print a whole XArray of TyEnts, debug-style */
-void ML_(pp_TyEnts)( XArray* tyents, const HChar* who );
+void ML_(pp_TyEnts)( const XArray* tyents, const HChar* who );
 
 /* Print a TyEnt, C style, chasing stuff as necessary. */
-void ML_(pp_TyEnt_C_ishly)( XArray* /* of TyEnt */ tyents,
+void ML_(pp_TyEnt_C_ishly)( const XArray* /* of TyEnt */ tyents,
                             UWord cuOff );
 
 /* Generates a total ordering on TyEnts based only on their .cuOff
@@ -173,13 +173,13 @@ void ML_(TyEnt__make_EMPTY) ( TyEnt* te );
 /* How big is this type?  If .b in the returned struct is False, the
    size is unknown. */
 
-MaybeULong ML_(sizeOfType)( XArray* /* of TyEnt */ tyents,
+MaybeULong ML_(sizeOfType)( const XArray* /* of TyEnt */ tyents,
                             UWord cuOff );
 
 /* Describe where in the type 'offset' falls.  Caller must
    deallocate the resulting XArray. */
 XArray* /*UChar*/ ML_(describe_type)( /*OUT*/PtrdiffT* residual_offset,
-                                      XArray* /* of TyEnt */ tyents,
+                                      const XArray* /* of TyEnt */ tyents,
                                       UWord ty_cuOff, 
                                       PtrdiffT offset );
 
@@ -213,7 +213,7 @@ void ML_(TyEntIndexCache__invalidate) ( TyEntIndexCache* cache );
    the entry which has .cuOff field as specified.  Returns NULL if not
    found.  Asserts if more than one entry has the specified .cuOff
    value. */
-TyEnt* ML_(TyEnts__index_by_cuOff) ( XArray* /* of TyEnt */ ents,
+TyEnt* ML_(TyEnts__index_by_cuOff) ( const XArray* /* of TyEnt */ ents,
                                      TyEntIndexCache* cache,
                                      UWord cuOff_to_find );
 

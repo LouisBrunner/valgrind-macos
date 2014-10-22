@@ -96,7 +96,7 @@ static UInt n_supp_contexts = 0;
 
 
 /* forwards ... */
-static Supp* is_suppressible_error ( Error* err );
+static Supp* is_suppressible_error ( const Error* err );
 
 static ThreadId last_tid_printed = 1;
 
@@ -291,7 +291,7 @@ Bool VG_(showing_core_errors)(void)
 
 /* Compare errors, to detect duplicates. 
 */
-static Bool eq_Error ( VgRes res, Error* e1, Error* e2 )
+static Bool eq_Error ( VgRes res, const Error* e1, const Error* e2 )
 {
    if (e1->ekind != e2->ekind) 
       return False;
@@ -360,7 +360,7 @@ static void printSuppForIp_nonXML(UInt n, Addr ip, void* textV)
 
 /* Generate a suppression for an error, either in text or XML mode.
 */
-static void gen_suppression(Error* err)
+static void gen_suppression(const Error* err)
 {
    const HChar* name;
    ExeContext* ec;
@@ -521,7 +521,7 @@ Bool VG_(is_action_requested) ( const HChar* action, Bool* clo )
    Note this should not be called in XML mode! 
 */
 static 
-void do_actions_on_error(Error* err, Bool allow_db_attach)
+void do_actions_on_error(const Error* err, Bool allow_db_attach)
 {
    Bool still_noisy = True;
 
@@ -585,7 +585,7 @@ void do_actions_on_error(Error* err, Bool allow_db_attach)
      attach (and detach), and optionally prints a suppression; both
      of these may require user input.
 */
-static void pp_Error ( Error* err, Bool allow_db_attach, Bool xml )
+static void pp_Error ( const Error* err, Bool allow_db_attach, Bool xml )
 {
    /* If this fails, you probably specified your tool's method
       dictionary incorrectly. */
@@ -1173,7 +1173,7 @@ static Bool get_nbnc_line ( Int fd, HChar** bufpp, SizeT* nBufp, Int* lineno )
 }
 
 // True if buf starts with fun: or obj: or is ...
-static Bool is_location_line (HChar* buf)
+static Bool is_location_line (const HChar* buf)
 {
    return VG_(strncmp)(buf, "fun:", 4) == 0
       || VG_(strncmp)(buf, "obj:", 4) == 0
@@ -1213,7 +1213,7 @@ static Bool is_simple_str (const HChar *s)
    after the descriptor (fun: or obj:) part.
    Returns False if failed.
 */
-static Bool setLocationTy ( SuppLoc* p, HChar *buf )
+static Bool setLocationTy ( SuppLoc* p, const HChar *buf )
 {
    if (VG_(strncmp)(buf, "fun:", 4) == 0) {
       p->name = VG_(strdup)("errormgr.sLTy.1", buf+4);
@@ -1240,7 +1240,7 @@ static Bool setLocationTy ( SuppLoc* p, HChar *buf )
 
 
 /* Look for "tool" in a string like "tool1,tool2,tool3" */
-static Bool tool_name_present(const HChar *name, HChar *names)
+static Bool tool_name_present(const HChar *name, const HChar *names)
 {
    Bool  found;
    HChar *s = NULL;   /* Shut gcc up */
@@ -1569,7 +1569,7 @@ typedef
    }
    IPtoFunOrObjCompleter;
 
-static void pp_ip2fo (IPtoFunOrObjCompleter* ip2fo)
+static void pp_ip2fo (const IPtoFunOrObjCompleter* ip2fo)
 {
   Int i, j;
   Int o;
@@ -1597,7 +1597,7 @@ static void pp_ip2fo (IPtoFunOrObjCompleter* ip2fo)
 /* free the memory in ip2fo.
    At debuglog 4, su (or NULL) will be used to show the matching
    (or non matching) with ip2fo. */
-static void clearIPtoFunOrObjCompleter ( Supp  *su, 
+static void clearIPtoFunOrObjCompleter ( const Supp  *su, 
                                          IPtoFunOrObjCompleter* ip2fo)
 {
    if (DEBUG_ERRORMGR || VG_(debugLog_getLevel)() >= 4) {
@@ -1847,7 +1847,8 @@ static Bool supp_pattEQinp ( const void* supplocV, const void* addrV,
 
 /////////////////////////////////////////////////////
 
-static Bool supp_matches_callers(IPtoFunOrObjCompleter* ip2fo, Supp* su)
+static Bool supp_matches_callers(IPtoFunOrObjCompleter* ip2fo,
+                                 const Supp* su)
 {
    /* Unwrap the args and set up the correct parameterisation of
       VG_(generic_match), using supploc_IsStar, supploc_IsQuery and
@@ -1880,7 +1881,7 @@ static Bool supp_matches_callers(IPtoFunOrObjCompleter* ip2fo, Supp* su)
 /////////////////////////////////////////////////////
 
 static
-Bool supp_matches_error(Supp* su, Error* err)
+Bool supp_matches_error(const Supp* su, const Error* err)
 {
    switch (su->skind) {
       //(example code, see comment on CoreSuppKind above)
@@ -1905,7 +1906,7 @@ Bool supp_matches_error(Supp* su, Error* err)
    error?  If so, return a pointer to the Supp record, otherwise NULL.
    Tries to minimise the number of symbol searches since they are expensive.  
 */
-static Supp* is_suppressible_error ( Error* err )
+static Supp* is_suppressible_error ( const Error* err )
 {
    Supp* su;
    Supp* su_prev;

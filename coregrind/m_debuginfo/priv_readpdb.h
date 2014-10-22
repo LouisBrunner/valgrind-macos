@@ -47,14 +47,14 @@ extern Bool ML_(read_pdb_debug_info)(
                PtrdiffT   obj_bias,
                void*      pdbimage,
                SizeT      n_pdbimage,
-               HChar*     pdbname,
+               const HChar* pdbname,
                ULong      pdbmtime
             );
 
 /* Finds the name of the PDB file that's embedded with the specified
    PE file, or NULL on failure.  Caller deallocates with
    ML_(dinfo_free). */
-HChar* ML_(find_name_of_pdb_file)( HChar* pename );
+HChar* ML_(find_name_of_pdb_file)( const HChar* pename );
 
 
 #endif /* ndef __PRIV_READPDB_H */

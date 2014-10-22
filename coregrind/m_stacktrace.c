@@ -139,7 +139,7 @@ static UInt fp_CF_verif_generation = 0;
 UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
                                /*OUT*/Addr* ips, UInt max_n_ips,
                                /*OUT*/Addr* sps, /*OUT*/Addr* fps,
-                               UnwindStartRegs* startRegs,
+                               const UnwindStartRegs* startRegs,
                                Addr fp_max_orig )
 {
    const Bool do_stats = False; // compute and output some stats regularly.
@@ -457,7 +457,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
                                /*OUT*/Addr* ips, UInt max_n_ips,
                                /*OUT*/Addr* sps, /*OUT*/Addr* fps,
-                               UnwindStartRegs* startRegs,
+                               const UnwindStartRegs* startRegs,
                                Addr fp_max_orig )
 {
    Bool  debug = False;
@@ -628,7 +628,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
                                /*OUT*/Addr* ips, UInt max_n_ips,
                                /*OUT*/Addr* sps, /*OUT*/Addr* fps,
-                               UnwindStartRegs* startRegs,
+                               const UnwindStartRegs* startRegs,
                                Addr fp_max_orig )
 {
    Bool  lr_is_first_RA = False;
@@ -898,7 +898,7 @@ static Bool looks_like_RA ( Addr ra )
 UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
                                /*OUT*/Addr* ips, UInt max_n_ips,
                                /*OUT*/Addr* sps, /*OUT*/Addr* fps,
-                               UnwindStartRegs* startRegs,
+                               const UnwindStartRegs* startRegs,
                                Addr fp_max_orig )
 {
    Bool  debug = False;
@@ -1044,7 +1044,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
                                /*OUT*/Addr* ips, UInt max_n_ips,
                                /*OUT*/Addr* sps, /*OUT*/Addr* fps,
-                               UnwindStartRegs* startRegs,
+                               const UnwindStartRegs* startRegs,
                                Addr fp_max_orig )
 {
    Bool  debug = False;
@@ -1140,7 +1140,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
                                /*OUT*/Addr* ips, UInt max_n_ips,
                                /*OUT*/Addr* sps, /*OUT*/Addr* fps,
-                               UnwindStartRegs* startRegs,
+                               const UnwindStartRegs* startRegs,
                                Addr fp_max_orig )
 {
    Bool  debug = False;
@@ -1223,7 +1223,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
                                /*OUT*/Addr* ips, UInt max_n_ips,
                                /*OUT*/Addr* sps, /*OUT*/Addr* fps,
-                               UnwindStartRegs* startRegs,
+                               const UnwindStartRegs* startRegs,
                                Addr fp_max_orig )
 {
    Bool  debug = False;

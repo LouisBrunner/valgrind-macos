@@ -116,8 +116,8 @@ extern Bool  VG_(clo_child_silent_after_fork);
 
 /* If the user specified --log-file=STR and/or --xml-file=STR, these
    hold STR after expansion of the %p and %q templates. */
-extern HChar* VG_(clo_log_fname_expanded);
-extern HChar* VG_(clo_xml_fname_expanded);
+extern const HChar* VG_(clo_log_fname_expanded);
+extern const HChar* VG_(clo_xml_fname_expanded);
 
 /* Add timestamps to log messages?  default: NO */
 extern Bool  VG_(clo_time_stamp);
@@ -351,8 +351,8 @@ extern Bool VG_(clo_dsymutil);
    of the executable.  'child_argv' must not include the name of the
    executable itself; iow child_argv[0] must be the first arg, if any,
    for the child. */
-extern Bool VG_(should_we_trace_this_child) ( HChar* child_exe_name,
-                                              HChar** child_argv );
+extern Bool VG_(should_we_trace_this_child) ( const HChar* child_exe_name,
+                                              const HChar** child_argv );
 
 /* Whether illegal instructions should be reported/diagnosed.
    Can be explicitly set through --sigill-diagnostics otherwise

@@ -64,7 +64,7 @@
 __attribute__ ((__noreturn__))
 extern void  VG_(core_panic)      ( const HChar* str );
 __attribute__ ((__noreturn__))
-extern void  VG_(core_panic_at)   ( const HChar* str, UnwindStartRegs* );
+extern void  VG_(core_panic_at)   ( const HChar* str, const UnwindStartRegs* );
 
 /* Exits with status as client exit code. */
 extern void VG_(client_exit)( Int status );

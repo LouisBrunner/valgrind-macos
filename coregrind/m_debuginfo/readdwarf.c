@@ -339,7 +339,7 @@ void process_extended_line_op( struct _DebugInfo* di,
  */
 static 
 void read_dwarf2_lineblock ( struct _DebugInfo* di,
-                             UnitInfo* ui, 
+                             const UnitInfo* ui, 
                              DiCursor  theBlock, /* IMAGE */
                              Int       noLargerThan )
 {
@@ -1898,7 +1898,7 @@ typedef
    }
    RegRule;
 
-static void ppRegRule ( XArray* exprs, RegRule* rrule )
+static void ppRegRule ( XArray* exprs, const RegRule* rrule )
 {
    vg_assert(exprs);
    switch (rrule->tag) {
@@ -1952,12 +1952,12 @@ typedef
    }
    UnwindContext;
 
-static void ppUnwindContext ( UnwindContext* ctx )
+static void ppUnwindContext ( const UnwindContext* ctx )
 {
    Int j, i;
    VG_(printf)("0x%llx: ", (ULong)ctx->loc);
    for (j = 0; j <= ctx->state_sp; j++) {
-      struct UnwindContextState* ctxs = &ctx->state[j];
+      const struct UnwindContextState* ctxs = &ctx->state[j];
       VG_(printf)("%s[%d]={ ", j > 0 ? " " : "", j);
       if (ctxs->cfa_is_regoff) {
          VG_(printf)("%d(r%d) ", ctxs->cfa_off, ctxs->cfa_reg);
@@ -2033,9 +2033,8 @@ typedef
 
 /* Forward */
 static 
-Int copy_convert_CfiExpr_tree ( XArray*        dst,
-                                UnwindContext* srcuc, 
-                                Int            nd );
+Int copy_convert_CfiExpr_tree ( XArray* dst, const UnwindContext* srcuc, 
+                                Int nd );
 
 /* Summarise ctx into si, if possible.  Returns True if successful.
    This is taken to be just after ctx's loc advances; hence the
@@ -2046,11 +2045,11 @@ static Bool summarise_context(/*OUT*/Addr* base,
                               /*OUT*/UInt* len,
                               /*OUT*/DiCfSI_m* si_m,
                                Addr loc_start,
-	                       UnwindContext* ctx,
-                               struct _DebugInfo* debuginfo )
+	                       const UnwindContext* ctx,
+                               DebugInfo* debuginfo )
 {
    Int why = 0;
-   struct UnwindContextState* ctxs;
+   const struct UnwindContextState* ctxs;
 
    *base = 0;
    *len = 0;
@@ -2420,7 +2419,7 @@ static Bool summarise_context(/*OUT*/Addr* base,
    there is no equivalent register, return -1.  This has the
    undesirable side effect of de-dagifying the input; oh well. */
 static Int copy_convert_CfiExpr_tree ( XArray*        dstxa,
-                                       UnwindContext* srcuc, 
+                                       const UnwindContext* srcuc, 
                                        Int            srcix )
 {
    CfiExpr* src;
@@ -2500,9 +2499,9 @@ static Int copy_convert_CfiExpr_tree ( XArray*        dstxa,
 }
 
 
-static void ppUnwindContext_summary ( UnwindContext* ctx )
+static void ppUnwindContext_summary ( const UnwindContext* ctx )
 {
-   struct UnwindContextState* ctxs = &ctx->state[ctx->state_sp];
+   const struct UnwindContextState* ctxs = &ctx->state[ctx->state_sp];
 
    VG_(printf)("0x%llx-1: ", (ULong)ctx->loc);
 
@@ -2573,7 +2572,7 @@ static UInt size_of_encoded_Addr ( UChar encoding )
    }
 }
 
-static Addr step_encoded_Addr ( AddressDecodingInfo* adi,
+static Addr step_encoded_Addr ( const AddressDecodingInfo* adi,
                                 /*MOD*/DiCursor* data )
 {
    /* Regarding the handling of DW_EH_PE_absptr.  DWARF3 says this
@@ -2662,7 +2661,7 @@ static Addr step_encoded_Addr ( AddressDecodingInfo* adi,
    ctx->exprs of the root node.  Or fail in which case return -1. */
 /* IMPORTANT: when adding expression forms here, also remember to
    add suitable evaluation code in evalCfiExpr in debuginfo.c. */
-static Int dwarfexpr_to_dag ( UnwindContext* ctx, 
+static Int dwarfexpr_to_dag ( const UnwindContext* ctx, 
                               DiCursor expr, Int exprlen, 
                               Bool push_cfa_at_start,
                               Bool ddump_frames )
@@ -2697,7 +2696,7 @@ static Int dwarfexpr_to_dag ( UnwindContext* ctx,
 
    Int sp; /* # of top element: valid is -1 .. N_EXPR_STACK-1 */
    Int stack[N_EXPR_STACK];  /* indices into ctx->exprs */
-   struct UnwindContextState* ctxs = &ctx->state[ctx->state_sp];
+   const struct UnwindContextState* ctxs = &ctx->state[ctx->state_sp];
 
    XArray*  dst   = ctx->exprs;
    DiCursor limit = ML_(cur_plus)(expr, exprlen);
@@ -2921,9 +2920,9 @@ static Int dwarfexpr_to_dag ( UnwindContext* ctx,
 */
 static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx, 
                                 DiCursor instrIN,
-                                UnwindContext* restore_ctx,
-                                AddressDecodingInfo* adi,
-                                struct _DebugInfo* di )
+                                const UnwindContext* restore_ctx,
+                                const AddressDecodingInfo* adi,
+                                const DebugInfo* di )
 {
    Int      off, reg, reg2, len, j;
    UInt     delta;
@@ -3329,7 +3328,7 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
    readelf --debug-dump=frames would. */
 
 static Int show_CF_instruction ( DiCursor instrIN,
-                                 AddressDecodingInfo* adi,
+                                 const AddressDecodingInfo* adi,
                                  Int code_a_f, Int data_a_f )
 {
    Int      off, coff, reg, reg2, len;
@@ -3535,7 +3534,7 @@ static Int show_CF_instruction ( DiCursor instrIN,
 
 /* Show the instructions in instrs[0 .. ilen-1]. */
 static void show_CF_instructions ( DiCursor instrs, Int ilen,
-                                   AddressDecodingInfo* adi,
+                                   const AddressDecodingInfo* adi,
                                    Int code_a_f, Int data_a_f )
 {
    Int i = 0;
@@ -3551,12 +3550,12 @@ static void show_CF_instructions ( DiCursor instrs, Int ilen,
    reached, or until there is a failure.  Return True iff success. 
 */
 static 
-Bool run_CF_instructions ( struct _DebugInfo* di,
+Bool run_CF_instructions ( DebugInfo* di,
                            Bool record,
                            UnwindContext* ctx, DiCursor instrs, Int ilen,
                            UWord fde_arange,
-                           UnwindContext* restore_ctx,
-                           AddressDecodingInfo* adi )
+                           const UnwindContext* restore_ctx,
+                           const AddressDecodingInfo* adi )
 {
    Addr base;
    UInt len;

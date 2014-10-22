@@ -78,7 +78,7 @@ extern void VG_(init_tt_tc)       ( void );
 #endif
 
 extern
-void VG_(add_to_transtab)( VexGuestExtents* vge,
+void VG_(add_to_transtab)( const VexGuestExtents* vge,
                            Addr64           entry,
                            AddrH            code,
                            UInt             code_len,
@@ -109,7 +109,7 @@ extern UInt VG_(get_bbs_translated) ( void );
    table. */
 
 extern
-void VG_(add_to_unredir_transtab)( VexGuestExtents* vge,
+void VG_(add_to_unredir_transtab)( const VexGuestExtents* vge,
                                    Addr64           entry,
                                    AddrH            code,
                                    UInt             code_len );

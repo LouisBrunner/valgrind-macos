@@ -82,10 +82,7 @@ static struct sched_lock *create_sched_lock(void)
    // The futex syscall requires that a futex takes four bytes.
    vg_assert(sizeof(p->futex[0]) == 4);
 
-   p->head = 0;
-   p->tail = 0;
-   VG_(memset)((void*)p->futex, 0, sizeof(p->futex));
-   p->owner = 0;
+   VG_(memset)(p, 0, sizeof(*p));
 
    INNER_REQUEST(ANNOTATE_RWLOCK_CREATE(p));
    INNER_REQUEST(ANNOTATE_BENIGN_RACE_SIZED(&p->futex, sizeof(p->futex), ""));

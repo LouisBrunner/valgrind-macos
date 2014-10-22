@@ -339,6 +339,16 @@ static inline Bool sr_EQ ( SysRes sr1, SysRes sr2 ) {
 #define PRINTF_CHECK(x, y)
 #endif
 
+// Macro to "cast" away constness (from type const T to type T) without
+// GCC complaining about it. This macro should be used RARELY. 
+// x is expected to have type const T
+#define CONST_CAST(T,x)    \
+   ({                      \
+      union {              \
+         const T in;      \
+         T out;           \
+      } var = { .in = x }; var.out;  \
+   })
 
 #endif /* __PUB_TOOL_BASICS_H */
 

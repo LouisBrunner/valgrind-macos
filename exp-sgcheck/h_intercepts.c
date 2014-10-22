@@ -54,7 +54,7 @@
       const HChar* last = NULL; \
       while (True) { \
          if (*p == ch) last = p; \
-         if (*p == 0) return (HChar *)last;     \
+         if (*p == 0) return CONST_CAST(HChar *,last);    \
          p++; \
       } \
    }
@@ -78,7 +78,7 @@ STRRCHR(VG_Z_DYLD,          rindex)
       HChar  ch = (HChar)c ; \
       const HChar* p  = s;   \
       while (True) { \
-         if (*p == ch) return (HChar *)p; \
+         if (*p == ch) return CONST_CAST(HChar *,p);       \
          if (*p == 0) return NULL; \
          p++; \
       } \
@@ -215,9 +215,9 @@ STRCMP(VG_Z_LD64_SO_1,            strcmp)
    { \
       SizeT i; \
       UChar c0 = (UChar)c; \
-      const UChar* p = (const UChar*)s; \
+      const UChar* p = s; \
       for (i = 0; i < n; i++) \
-         if (p[i] == c0) return (void*)(&p[i]); \
+         if (p[i] == c0) return CONST_CAST(void *,&p[i]);  \
       return NULL; \
    }
 
@@ -331,7 +331,7 @@ STPCPY(VG_Z_LD_LINUX_X86_64_SO_2, stpcpy)
       UChar c = (UChar)c_in; \
       const UChar* char_ptr = s; \
       while (1) { \
-        if (*char_ptr == c) return (void *)char_ptr;    \
+         if (*char_ptr == c) return CONST_CAST(void *,char_ptr);   \
          char_ptr++; \
       } \
    }
@@ -356,7 +356,7 @@ GLIBC232_RAWMEMCHR(VG_Z_LIBC_SONAME, __GI___rawmemchr)
       while (n[nlen]) nlen++; \
       \
       /* if n is the empty string, match immediately. */ \
-      if (nlen == 0) return (HChar *)h;                  \
+      if (nlen == 0) return CONST_CAST(HChar *,h);         \
       \
       /* assert(nlen >= 1); */ \
       HChar n0 = n[0]; \
@@ -373,7 +373,7 @@ GLIBC232_RAWMEMCHR(VG_Z_LIBC_SONAME, __GI___rawmemchr)
          } \
          /* assert(i >= 0 && i <= nlen); */ \
          if (i == nlen) \
-           return (HChar *)h;                   \
+            return CONST_CAST(HChar *,h);          \
          \
          h++; \
       } \
@@ -408,7 +408,7 @@ STRSTR(VG_Z_LIBC_SONAME,          strstr)
             break; \
          for (i = 0; i < nacc; i++) { \
             if (sc == accept[i]) \
-              return (HChar *)s; \
+               return CONST_CAST(HChar *,s);       \
          } \
          s++; \
       } \

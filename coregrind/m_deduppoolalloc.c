@@ -252,7 +252,7 @@ void* VG_(allocEltDedupPA) (DedupPoolAlloc *ddpa, SizeT eltSzB, const void *elt)
    ht_elt.key = VG_(adler32) (ht_elt.key, elt, eltSzB);
 
    ht_elt.eltSzB = eltSzB;
-   ht_elt.elt = (void *)elt;
+   ht_elt.elt = CONST_CAST(void *,elt);
 
    ht_ins = VG_(HT_gen_lookup) (ddpa->ht_elements, &ht_elt, cmp_pool_elt);
    if (ht_ins)

@@ -1181,8 +1181,8 @@ static void add_hardwired_spec (const  HChar* sopatt, const HChar* fnpatt,
    vg_assert(topSpecs->next == NULL);
    vg_assert(topSpecs->seginfo == NULL);
    /* FIXED PARTS */
-   spec->from_sopatt = (HChar *)sopatt;
-   spec->from_fnpatt = (HChar *)fnpatt;
+   spec->from_sopatt = CONST_CAST(HChar *,sopatt);
+   spec->from_fnpatt = CONST_CAST(HChar *,fnpatt);
    spec->to_addr     = to_addr;
    spec->isWrap      = False;
    spec->mandatory   = mandatory;

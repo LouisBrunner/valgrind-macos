@@ -179,7 +179,7 @@ static inline void my_exit ( int x )
       const HChar* last = NULL; \
       while (True) { \
          if (*p == ch) last = p; \
-         if (*p == 0) return (HChar *)last;     \
+         if (*p == 0) return CONST_CAST(HChar *,last);    \
          p++; \
       } \
    }
@@ -220,7 +220,7 @@ static inline void my_exit ( int x )
       HChar  ch = (HChar)c ; \
       const HChar* p  = s;   \
       while (True) { \
-         if (*p == ch) return (HChar *)p; \
+         if (*p == ch) return CONST_CAST(HChar *,p);  \
          if (*p == 0) return NULL; \
          p++; \
       } \
@@ -785,9 +785,9 @@ static inline void my_exit ( int x )
    { \
       SizeT i; \
       UChar c0 = (UChar)c; \
-      UChar* p = (UChar*)s; \
+      const UChar* p = s; \
       for (i = 0; i < n; i++) \
-         if (p[i] == c0) return (void*)(&p[i]); \
+         if (p[i] == c0) return CONST_CAST(void *,&p[i]); \
       return NULL; \
    }
 
@@ -814,9 +814,9 @@ static inline void my_exit ( int x )
    { \
       SizeT i; \
       UChar c0 = (UChar)c; \
-      UChar* p = (UChar*)s; \
+      const UChar* p = s; \
       for (i = 0; i < n; i++) \
-         if (p[n-1-i] == c0) return (void*)(&p[n-1-i]); \
+         if (p[n-1-i] == c0) return CONST_CAST(void *,&p[n-1-i]); \
       return NULL; \
    }
 
@@ -1208,11 +1208,11 @@ static inline void my_exit ( int x )
    char* VG_REPLACE_FUNCTION_EZU(20250,soname,fnname) \
             (const char* s, int c_in) \
    { \
-      UChar  c        = (UChar) c_in; \
-      UChar* char_ptr = (UChar *)s; \
+      HChar c = (HChar) c_in; \
+      const HChar* char_ptr = s; \
       while (1) { \
-         if (*char_ptr == 0) return (HChar *)char_ptr;   \
-         if (*char_ptr == c) return (HChar *)char_ptr;   \
+         if (*char_ptr == 0) return CONST_CAST(HChar *,char_ptr);  \
+         if (*char_ptr == c) return CONST_CAST(HChar *,char_ptr);  \
          char_ptr++; \
       } \
    }
@@ -1237,7 +1237,7 @@ static inline void my_exit ( int x )
       UChar c = (UChar) c_in; \
       const UChar* char_ptr = s; \
       while (1) { \
-         if (*char_ptr == c) return (void *)char_ptr;  \
+         if (*char_ptr == c) return CONST_CAST(void *,char_ptr); \
          char_ptr++; \
       } \
    }
@@ -1429,7 +1429,7 @@ static inline void my_exit ( int x )
       while (n[nlen]) nlen++; \
       \
       /* if n is the empty string, match immediately. */ \
-      if (nlen == 0) return (HChar *)h;                  \
+      if (nlen == 0) return CONST_CAST(HChar *,h);         \
       \
       /* assert(nlen >= 1); */ \
       HChar n0 = n[0]; \
@@ -1446,7 +1446,7 @@ static inline void my_exit ( int x )
          } \
          /* assert(i >= 0 && i <= nlen); */ \
          if (i == nlen) \
-           return (HChar *)h;                   \
+           return CONST_CAST(HChar *,h);          \
          \
          h++; \
       } \
@@ -1488,7 +1488,7 @@ static inline void my_exit ( int x )
             break; \
          for (i = 0; i < nacc; i++) { \
             if (sc == accept[i]) \
-              return (HChar *)s; \
+              return CONST_CAST(HChar *,s);       \
          } \
          s++; \
       } \
@@ -1608,7 +1608,7 @@ static inline void my_exit ( int x )
       while (n[nlen]) nlen++; \
       \
       /* if n is the empty string, match immediately. */ \
-      if (nlen == 0) return (HChar *)h;                  \
+      if (nlen == 0) return CONST_CAST(HChar *,h);       \
       \
       /* assert(nlen >= 1); */ \
       UChar n0 = tolower(n[0]);                 \
@@ -1625,7 +1625,7 @@ static inline void my_exit ( int x )
          } \
          /* assert(i >= 0 && i <= nlen); */ \
          if (i == nlen) \
-           return (HChar *)h;                   \
+           return CONST_CAST(HChar *,h);    \
          \
          h++; \
       } \
@@ -1742,9 +1742,9 @@ static inline void my_exit ( int x )
    Int* VG_REPLACE_FUNCTION_EZU(20400,soname,fnname) ( const Int* s, Int c ); \
    Int* VG_REPLACE_FUNCTION_EZU(20400,soname,fnname) ( const Int* s, Int c ) \
    { \
-      Int* p  = (Int*)s; \
+      const Int* p = s; \
       while (True) { \
-         if (*p == c) return p; \
+         if (*p == c) return CONST_CAST(Int *,p);  \
          if (*p == 0) return NULL; \
          p++; \
       } \
@@ -1763,11 +1763,11 @@ static inline void my_exit ( int x )
    Int* VG_REPLACE_FUNCTION_EZU(20410,soname,fnname)( const Int* s, Int c ); \
    Int* VG_REPLACE_FUNCTION_EZU(20410,soname,fnname)( const Int* s, Int c ) \
    { \
-      Int* p    = (Int*) s; \
-      Int* last = NULL; \
+      const Int* p = s; \
+      const Int* last = NULL; \
       while (True) { \
          if (*p == c) last = p; \
-         if (*p == 0) return last; \
+         if (*p == 0) return CONST_CAST(Int *,last);  \
          p++; \
       } \
    }

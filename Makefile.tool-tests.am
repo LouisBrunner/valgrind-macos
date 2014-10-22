@@ -39,6 +39,10 @@ CFLAGS   += -Wno-string-plus-int         # drd/tests/annotate_ignore_rw.c
 CXXFLAGS += -Wno-unused-private-field    # drd/tests/tsan_unittest.cpp
 endif
 
+# Compile testcases without -Wcast-qual
+CFLAGS   += -Wno-cast-qual
+CXXFLAGS += -Wno-cast-qual
+
 check-local: build-noinst_DSYMS
 
 clean-local: clean-noinst_DSYMS

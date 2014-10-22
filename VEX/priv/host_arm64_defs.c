@@ -1235,6 +1235,14 @@ ARM64Instr* ARM64Instr_VImmQ (HReg rQ, UShort imm) {
    i->tag               = ARM64in_VImmQ;
    i->ARM64in.VImmQ.rQ  = rQ;
    i->ARM64in.VImmQ.imm = imm;
+   /* Check that this is something that can actually be emitted. */
+   switch (imm) {
+      case 0x0000: case 0x0001: case 0x0003:
+      case 0x000F: case 0x003F: case 0x00FF: case 0xFFFF:
+         break;
+      default:
+         vassert(0);
+   }
    return i;
 }
 ARM64Instr* ARM64Instr_VDfromX ( HReg rD, HReg rX ) {
@@ -4925,41 +4933,38 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
       case ARM64in_VImmQ: {
          UInt   rQ  = qregNo(i->ARM64in.VImmQ.rQ);
          UShort imm = i->ARM64in.VImmQ.imm;
-         if (imm == 0x0000) {
-            /* movi rQ.4s, #0x0 == 0x4F 0x00 0x04 000 rQ */
-            vassert(rQ < 32);
-            *p++ = 0x4F000400 | rQ;
-            goto done;
-         }
-         if (imm == 0x0001) {
-            /* movi rD, #0xFF == 0x2F 0x00 0xE4 001 rD */
-            vassert(rQ < 32);
-            *p++ = 0x2F00E420 | rQ;
-            goto done;
-         }
-         if (imm == 0x0003) {
-            /* movi rD, #0xFFFF == 0x2F 0x00 0xE4 011 rD */
-            vassert(rQ < 32);
-            *p++ = 0x2F00E460 | rQ;
-            goto done;
-         }
-         if (imm == 0x000F) {
-            /* movi rD, #0xFFFFFFFF == 0x2F 0x00 0xE5 111 rD */
-            vassert(rQ < 32);
-            *p++ = 0x2F00E5E0 | rQ;
-            goto done;
-         }
-         if (imm == 0x00FF) {
-            /* movi rD, #0xFFFFFFFFFFFFFFFF == 0x2F 0x07 0xE7 111 rD */
-            vassert(rQ < 32);
-            *p++ = 0x2F07E7E0 | rQ;
-            goto done;
-         }
-         if (imm == 0xFFFF) {
-            /* mvni rQ.4s, #0x0 == 0x6F 0x00 0x04 000 rQ */
-            vassert(rQ < 32);
-            *p++ = 0x6F000400 | rQ;
-            goto done;
+         vassert(rQ < 32);
+         switch (imm) {
+            case 0x0000:
+               // movi rQ.4s, #0x0 == 0x4F 0x00 0x04 000 rQ
+               *p++ = 0x4F000400 | rQ;
+               goto done;
+            case 0x0001:
+               // movi rQ, #0xFF == 0x2F 0x00 0xE4 001 rQ
+               *p++ = 0x2F00E420 | rQ;
+               goto done;
+            case 0x0003:
+               // movi rQ, #0xFFFF == 0x2F 0x00 0xE4 011 rQ
+               *p++ = 0x2F00E460 | rQ;
+               goto done;
+            case 0x000F:
+               // movi rQ, #0xFFFFFFFF == 0x2F 0x00 0xE5 111 rQ
+               *p++ = 0x2F00E5E0 | rQ;
+               goto done;
+            case 0x003F:
+               // movi rQ, #0xFFFFFFFFFFFF == 0x2F 0x01 0xE7 111 rQ
+               *p++ = 0x2F01E7E0 | rQ;
+               goto done;
+            case 0x00FF:
+               // movi rQ, #0xFFFFFFFFFFFFFFFF == 0x2F 0x07 0xE7 111 rQ
+               *p++ = 0x2F07E7E0 | rQ;
+               goto done;
+            case 0xFFFF:
+               // mvni rQ.4s, #0x0 == 0x6F 0x00 0x04 000 rQ
+               *p++ = 0x6F000400 | rQ;
+               goto done;
+            default:
+               break;
          }
          goto bad; /* no other handled cases right now */
       }

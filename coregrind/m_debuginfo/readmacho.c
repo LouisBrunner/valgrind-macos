@@ -305,7 +305,7 @@ void read_symtab( /*OUT*/XArray* /* DiSym */ syms,
    DiSym  disym;
 
    // "start_according_to_valgrind"
-   static HChar* s_a_t_v = NULL; /* do not make non-static */
+   static const HChar* s_a_t_v = NULL; /* do not make non-static */
 
    for (i = 0; i < symtab_count; i++) {
       struct NLIST nl;

@@ -1229,15 +1229,15 @@ static inline void my_exit ( int x )
 
 /* Find the first occurrence of C in S.  */
 #define GLIBC232_RAWMEMCHR(soname, fnname) \
-   char* VG_REPLACE_FUNCTION_EZU(20260,soname,fnname) \
-            (const char* s, int c_in); \
-   char* VG_REPLACE_FUNCTION_EZU(20260,soname,fnname) \
-            (const char* s, int c_in) \
+   void* VG_REPLACE_FUNCTION_EZU(20260,soname,fnname) \
+            (const void* s, int c_in); \
+   void* VG_REPLACE_FUNCTION_EZU(20260,soname,fnname) \
+            (const void* s, int c_in) \
    { \
-      UChar  c        = (UChar) c_in; \
-      UChar* char_ptr = (UChar *)s; \
+      UChar c = (UChar) c_in; \
+      const UChar* char_ptr = s; \
       while (1) { \
-        if (*char_ptr == c) return (HChar *)char_ptr;   \
+         if (*char_ptr == c) return (void *)char_ptr;  \
          char_ptr++; \
       } \
    }

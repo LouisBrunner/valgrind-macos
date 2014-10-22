@@ -1211,7 +1211,7 @@ static ULong DEBUG_SnarfCodeView(
 {
    Int    i, length;
    DiSym  vsym;
-   HChar* nmstr;
+   const  HChar* nmstr;
    HChar  symname[4096 /*WIN32_PATH_MAX*/];
 
    Bool  debug = di->trace_symtab;
@@ -1566,8 +1566,8 @@ static ULong DEBUG_SnarfLinetab(
 
    this_seg = 0;
    for (i = 0; i < nfile; i++) {
-      HChar *fnmstr;
-      HChar *dirstr;
+      const HChar *fnmstr;
+      const HChar *dirstr;
       UInt  fnmdirstr_ix;
 
       /*
@@ -1715,7 +1715,7 @@ static ULong codeview_dump_linetab2(
 
    while ((HChar*)lbh < linetab + size) {
 
-      HChar *filename, *dirname;
+      const HChar *filename, *dirname;
       UInt filedirname_ix;
       Addr svma_s, svma_e;
       if (lbh->header != 0x000000f2) {

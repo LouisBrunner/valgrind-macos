@@ -807,7 +807,7 @@ void read_elf_symtab__normal(
                          i,
                          disym.avmas.main,
                          (Int)disym.size,
-                         (HChar*)disym.pri_name
+                         disym.pri_name
             );
 	    if (GET_LOCAL_EP_AVMA(disym.avmas) != 0) {
                TRACE_SYMTAB("               local entry point %#010lx\n",
@@ -1042,7 +1042,7 @@ void read_elf_symtab__ppc64be_linux(
                      disym.avmas.main,
                      GET_TOCPTR_AVMA(disym.avmas),
                      (Int)   disym.size,
-                     (HChar*)disym.pri_name
+                     disym.pri_name
                );
       }
       i++;

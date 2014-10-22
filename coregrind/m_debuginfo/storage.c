@@ -94,7 +94,7 @@ void ML_(symerr) ( struct _DebugInfo* di, Bool serious, const HChar* msg )
 /* Print a symbol. */
 void ML_(ppSym) ( Int idx, DiSym* sym )
 {
-   HChar** sec_names = sym->sec_names;
+   const HChar** sec_names = sym->sec_names;
    vg_assert(sym->pri_name);
    if (sec_names)
       vg_assert(sec_names);
@@ -233,10 +233,8 @@ void ML_(ppDiCfSI) ( XArray* /* of CfiExpr */ exprs,
    a chunking memory allocator rather than reallocating, so the
    pointers are stable.
 */
-HChar* ML_(addStr) ( struct _DebugInfo* di, const HChar* str, Int len )
+const HChar* ML_(addStr) ( DebugInfo* di, const HChar* str, Int len )
 {
-   HChar* p;
-
    if (len == -1) {
       len = VG_(strlen)(str);
    } else {
@@ -248,8 +246,7 @@ HChar* ML_(addStr) ( struct _DebugInfo* di, const HChar* str, Int len )
                                     ML_(dinfo_zalloc),
                                     "di.storage.addStr.1",
                                     ML_(dinfo_free));
-   p = VG_(allocEltDedupPA) (di->strpool, len+1, str);
-   return p;
+   return VG_(allocEltDedupPA) (di->strpool, len+1, str);
 }
 
 UInt ML_(addFnDn) (struct _DebugInfo* di,
@@ -301,13 +298,13 @@ const HChar* ML_(fndn_ix2dirname) (struct _DebugInfo* di,
 /* Add a string to the string table of a DebugInfo, by copying the
    string from the given DiCursor.  Measures the length of the string
    itself. */
-HChar* ML_(addStrFromCursor)( struct _DebugInfo* di, DiCursor c )
+const HChar* ML_(addStrFromCursor)( DebugInfo* di, DiCursor c )
 {
    /* This is a less-than-stellar implementation, but it should
       work. */
    vg_assert(ML_(cur_is_valid)(c));
    HChar* str = ML_(cur_read_strdup)(c, "di.addStrFromCursor.1");
-   HChar* res = ML_(addStr)(di, str, -1);
+   const HChar* res = ML_(addStr)(di, str, -1);
    ML_(dinfo_free)(str);
    return res;
 }
@@ -1145,7 +1142,7 @@ void ML_(addVar)( struct _DebugInfo* di,
                   Int    level,
                   Addr   aMin,
                   Addr   aMax,
-                  HChar* name, /* in di's .strpool */
+                  const  HChar* name, /* in di's .strpool */
                   UWord  typeR, /* a cuOff */
                   GExpr* gexpr,
                   GExpr* fbGX,
@@ -1419,8 +1416,8 @@ static Int compare_DiSym ( const void* va, const void* vb )
    preferred.
  */
 static
-Bool preferName ( struct _DebugInfo* di,
-                  HChar* a_name, HChar* b_name,
+Bool preferName ( DebugInfo* di,
+                  const HChar* a_name, const HChar* b_name,
                   Addr sym_avma/*exposition only*/ )
 {
    Word cmp;
@@ -1481,7 +1478,7 @@ Bool preferName ( struct _DebugInfo* di,
    {
       Bool blankA = True;
       Bool blankB = True;
-      HChar *s;
+      const HChar *s;
       s = a_name;
       while (*s) {
          if (!VG_(isspace)(*s++)) {
@@ -1565,8 +1562,8 @@ void add_DiSym_names_to_from ( DebugInfo* di, DiSym* to, DiSym* from )
    vg_assert(from->pri_name);
    /* Figure out how many names there will be in the new combined
       secondary vector. */
-   HChar** to_sec   = to->sec_names;
-   HChar** from_sec = from->sec_names;
+   const HChar** to_sec   = to->sec_names;
+   const HChar** from_sec = from->sec_names;
    Word n_new_sec = 1;
    if (from_sec) {
       while (*from_sec) {
@@ -1584,8 +1581,8 @@ void add_DiSym_names_to_from ( DebugInfo* di, DiSym* to, DiSym* from )
       TRACE_SYMTAB("merge: -> %ld\n", n_new_sec);
    /* Create the new sec and copy stuff into it, putting the new
       entries at the end. */
-   HChar** new_sec = ML_(dinfo_zalloc)( "di.storage.aDntf.1",
-                                        (n_new_sec+1) * sizeof(HChar*) );
+   const HChar** new_sec = ML_(dinfo_zalloc)( "di.storage.aDntf.1",
+                                              (n_new_sec+1) * sizeof(HChar*) );
    from_sec = from->sec_names;
    to_sec   = to->sec_names;
    Word i = 0;
@@ -1616,7 +1613,7 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
 {
    Word  i, j, n_truncated;
    Addr  sta1, sta2, end1, end2, toc1, toc2;
-   HChar *pri1, *pri2, **sec1, **sec2;
+   const HChar *pri1, *pri2, **sec1, **sec2;
    Bool  ist1, ist2, isf1, isf2;
 
 #  define SWAP(ty,aa,bb) \
@@ -1742,7 +1739,7 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
          if (end1 > end2) { 
             sta1 = end2 + 1;
             SWAP(Addr,sta1,sta2); SWAP(Addr,end1,end2); SWAP(Addr,toc1,toc2);
-            SWAP(HChar*,pri1,pri2); SWAP(HChar**,sec1,sec2);
+            SWAP(const HChar*,pri1,pri2); SWAP(const HChar**,sec1,sec2);
             SWAP(Bool,ist1,ist2); SWAP(Bool,isf1,isf2);
          } else 
          if (end1 < end2) {
@@ -1813,7 +1810,7 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
       show the user. */
    for (i = 0; i < ((Word)di->symtab_used)-1; i++) {
       DiSym*  sym = &di->symtab[i];
-      HChar** sec = sym->sec_names;
+      const HChar** sec = sym->sec_names;
       if (!sec)
          continue;
       /* Slow but simple.  Copy all the cands into a temp array,
@@ -1821,8 +1818,8 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
       Word n_tmp = 1;
       while (*sec) { n_tmp++; sec++; }
       j = 0;
-      HChar** tmp = ML_(dinfo_zalloc)( "di.storage.cS.1",
-                                       (n_tmp+1) * sizeof(HChar*) );
+      const HChar** tmp = ML_(dinfo_zalloc)( "di.storage.cS.1",
+                                             (n_tmp+1) * sizeof(HChar*) );
       tmp[j++] = sym->pri_name;
       sec = sym->sec_names;
       while (*sec) { tmp[j++] = *sec; sec++; }
@@ -1840,7 +1837,7 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
       vg_assert(best >= 0 && best < n_tmp);
       /* Copy back */
       sym->pri_name = tmp[best];
-      HChar** cursor = sym->sec_names;
+      const HChar** cursor = sym->sec_names;
       for (j = 0; j < n_tmp; j++) {
          if (j == best)
             continue;

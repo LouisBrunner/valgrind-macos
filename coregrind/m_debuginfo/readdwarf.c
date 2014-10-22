@@ -71,7 +71,7 @@ static UInt safe_fndn_ix (XArray* fndn_ix_xa, Int xa_ix)
 /* if xa_ix is a valid index in dirname_xa,
     return the element (i.e. the HChar*).
    If xa_ix is invalid, return NULL. */
-static HChar* safe_dirname_ix (XArray* dirname_xa, Int xa_ix)
+static const HChar* safe_dirname_ix (XArray* dirname_xa, Int xa_ix)
 {
    if (xa_ix < 0) return NULL;
    if (xa_ix >= VG_(sizeXA) (dirname_xa)) return NULL;
@@ -348,8 +348,8 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
    Bool           is64;
    XArray*        fndn_ix_xa; /* xarray of UInt fndn_ix */
    UInt           fndn_ix;
-   XArray*        dirname_xa;   /* xarray of HChar* dirname */
-   HChar*         dirname;
+   XArray*        dirname_xa;   /* xarray of const HChar* dirname */
+   const HChar*   dirname;
 
    DiCursor       external = theBlock;
    DiCursor       data = theBlock;

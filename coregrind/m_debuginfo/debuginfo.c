@@ -2119,14 +2119,14 @@ Bool VG_(lookup_symbol_SLOW)(const HChar* sopatt, HChar* name, SymAVMAs* avmas)
          continue;
       }
       for (i = 0; i < si->symtab_used; i++) {
-         HChar* pri_name = si->symtab[i].pri_name;
+         const HChar* pri_name = si->symtab[i].pri_name;
          vg_assert(pri_name);
          if (0==VG_(strcmp)(name, pri_name)
              && (require_pToc ? GET_TOCPTR_AVMA(si->symtab[i].avmas) : True)) {
             *avmas = si->symtab[i].avmas;
             return True;
          }
-         HChar** sec_names = si->symtab[i].sec_names;
+         const HChar** sec_names = si->symtab[i].sec_names;
          if (sec_names) {
             vg_assert(sec_names[0]);
             while (*sec_names) {
@@ -4249,8 +4249,8 @@ void VG_(DebugInfo_syms_getidx) ( const DebugInfo *si,
                                         Int idx,
                                   /*OUT*/SymAVMAs* avmas,
                                   /*OUT*/UInt*     size,
-                                  /*OUT*/HChar**   pri_name,
-                                  /*OUT*/HChar***  sec_names,
+                                  /*OUT*/const HChar**   pri_name,
+                                  /*OUT*/const HChar***  sec_names,
                                   /*OUT*/Bool*     isText,
                                   /*OUT*/Bool*     isIFunc )
 {
@@ -4258,7 +4258,7 @@ void VG_(DebugInfo_syms_getidx) ( const DebugInfo *si,
    if (avmas)     *avmas     = si->symtab[idx].avmas;
    if (size)      *size      = si->symtab[idx].size;
    if (pri_name)  *pri_name  = si->symtab[idx].pri_name;
-   if (sec_names) *sec_names = (HChar **)si->symtab[idx].sec_names; // FIXME
+   if (sec_names) *sec_names = si->symtab[idx].sec_names;
    if (isText)    *isText    = si->symtab[idx].isText;
    if (isIFunc)   *isIFunc   = si->symtab[idx].isIFunc;
 }

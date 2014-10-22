@@ -73,8 +73,8 @@ typedef
       SymAVMAs avmas;    /* Symbol Actual VMAs: lowest address of entity,
                             + platform specific fields, to access with
                             the macros defined in pub_core_debuginfo.h */
-      HChar*  pri_name;  /* primary name, never NULL */
-      HChar** sec_names; /* NULL, or a NULL term'd array of other names */
+      const HChar*  pri_name;  /* primary name, never NULL */
+      const HChar** sec_names; /* NULL, or a NULL term'd array of other names */
       // XXX: this could be shrunk (on 32-bit platforms) by using 30
       // bits for the size and 1 bit each for isText and isIFunc.  If you
       // do this, make sure that all assignments to the latter two use
@@ -476,7 +476,7 @@ typedef
 
 typedef
    struct {
-      HChar* name;  /* in DebugInfo.strpool */
+      const  HChar* name;  /* in DebugInfo.strpool */
       UWord  typeR; /* a cuOff */
       GExpr* gexpr; /* on DebugInfo.gexprs list */
       GExpr* fbGX;  /* SHARED. */
@@ -1045,18 +1045,18 @@ DiCfSI_m* ML_(get_cfsi_m) (struct _DebugInfo* di, UInt pos);
 
 /* Add a string to the string table of a DebugInfo.  If len==-1,
    ML_(addStr) will itself measure the length of the string. */
-extern HChar* ML_(addStr) ( struct _DebugInfo* di, const HChar* str, Int len );
+extern const HChar* ML_(addStr) ( DebugInfo* di, const HChar* str, Int len );
 
 /* Add a string to the string table of a DebugInfo, by copying the
    string from the given DiCursor.  Measures the length of the string
    itself. */
-extern HChar* ML_(addStrFromCursor)( struct _DebugInfo* di, DiCursor c );
+extern const HChar* ML_(addStrFromCursor)( DebugInfo* di, DiCursor c );
 
 extern void ML_(addVar)( struct _DebugInfo* di,
                          Int    level,
                          Addr   aMin,
                          Addr   aMax,
-                         HChar* name,
+                         const  HChar* name,
                          UWord  typeR, /* a cuOff */
                          GExpr* gexpr,
                          GExpr* fbGX, /* SHARED. */

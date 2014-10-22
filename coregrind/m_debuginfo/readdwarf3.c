@@ -1571,7 +1571,7 @@ void skip_DIE (UWord  *sibling,
 
 typedef
    struct _TempVar {
-      HChar*  name; /* in DebugInfo's .strpool */
+      const HChar*  name; /* in DebugInfo's .strpool */
       /* Represent ranges economically.  nRanges is the number of
          ranges.  Cases:
          0: .rngOneMin .rngOneMax .manyRanges are all zero
@@ -1838,7 +1838,7 @@ XArray* read_dirname_xa (struct _DebugInfo* di, const HChar *compdir,
 
 static 
 void read_filename_table( /*MOD*/XArray* /* of UInt* */ fndn_ix_Table,
-                          HChar* compdir,
+                          const HChar* compdir,
                           CUConst* cc, ULong debug_line_offset,
                           Bool td3 )
 {
@@ -1847,7 +1847,7 @@ void read_filename_table( /*MOD*/XArray* /* of UInt* */ fndn_ix_Table,
    Word   i;
    UShort version;
    UChar  opcode_base;
-   HChar* str;
+   const  HChar* str;
    XArray* dirname_xa;   /* xarray of HChar* dirname */
    ULong  dir_xa_ix;     /* Index in dirname_xa, as read from dwarf info. */
    HChar* dirname;
@@ -2067,7 +2067,7 @@ static void parse_var_DIE (
       Addr ip_lo    = 0;
       Addr ip_hi1   = 0;
       Addr rangeoff = 0;
-      HChar *compdir = NULL;
+      const HChar *compdir = NULL;
       nf_i = 0;
       while (True) {
          DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
@@ -2248,7 +2248,7 @@ static void parse_var_DIE (
    }
 
    if (dtag == DW_TAG_variable || dtag == DW_TAG_formal_parameter) {
-      HChar* name        = NULL;
+      const  HChar* name = NULL;
       UWord  typeR       = D3_INVALID_CUOFF;
       Bool   global      = False;
       GExpr* gexpr       = NULL;
@@ -2549,7 +2549,7 @@ typedef
    table is kept, while we must handle all abbreviations in all CUs
    referenced by an absori (being a reference to an alt CU, or a previous
    or following CU). */
-static HChar* get_inlFnName (Int absori, CUConst* cc, Bool td3)
+static const HChar* get_inlFnName (Int absori, CUConst* cc, Bool td3)
 {
    Cursor c;
    g_abbv *abbv;
@@ -2557,7 +2557,7 @@ static HChar* get_inlFnName (Int absori, CUConst* cc, Bool td3)
    UInt   has_children;
    UWord  posn;
    Bool type_flag, alt_flag;
-   HChar *ret = NULL;
+   const HChar *ret = NULL;
    FormContents cts;
    UInt nf_i;
 
@@ -2675,7 +2675,7 @@ static Bool parse_inl_DIE (
    if (dtag == DW_TAG_compile_unit || dtag == DW_TAG_partial_unit) {
       Bool have_lo    = False;
       Addr ip_lo    = 0;
-      HChar *compdir = NULL;
+      const HChar *compdir = NULL;
 
       nf_i = 0;
       while (True) {
@@ -2789,7 +2789,8 @@ static Bool parse_inl_DIE (
          /* This inlined call is several address ranges. */
          XArray *ranges;
          Word j;
-         HChar *inlfnname = get_inlFnName (inlinedfn_abstract_origin, cc, td3);
+         const HChar *inlfnname =
+            get_inlFnName (inlinedfn_abstract_origin, cc, td3);
 
          /* Ranges are biased for the inline info using the same logic
             as what is used for biasing ranges for the var info, for which

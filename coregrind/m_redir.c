@@ -311,7 +311,7 @@ static void   show_redir_state ( const HChar* who );
 static void   show_active ( const HChar* left, Active* act );
 
 static void   handle_maybe_load_notifier( const HChar* soname, 
-                                                HChar* symbol, Addr addr );
+                                          const HChar* symbol, Addr addr );
 
 static void   handle_require_text_symbols ( DebugInfo* );
 
@@ -334,8 +334,9 @@ void generate_and_add_actives (
    NULL terminated array, for easy iteration.  Caller must pass also
    the address of a 2-entry array which can be used in the common case
    to avoid dynamic allocation. */
-static HChar** alloc_symname_array ( HChar* pri_name, HChar** sec_names,
-                                     HChar** twoslots )
+static const HChar** alloc_symname_array ( const HChar* pri_name,
+                                           const HChar** sec_names,
+                                           const HChar** twoslots )
 {
    /* Special-case the common case: only one name.  We expect the
       caller to supply a stack-allocated 2-entry array for this. */
@@ -346,10 +347,10 @@ static HChar** alloc_symname_array ( HChar* pri_name, HChar** sec_names,
    }
    /* Else must use dynamic allocation.  Figure out size .. */
    Word    n_req = 1;
-   HChar** pp    = sec_names;
+   const HChar** pp = sec_names;
    while (*pp) { n_req++; pp++; }
    /* .. allocate and copy in. */
-   HChar** arr = dinfo_zalloc( "redir.asa.1", (n_req+1) * sizeof(HChar*) );
+   const HChar** arr = dinfo_zalloc("redir.asa.1", (n_req+1) * sizeof(HChar*));
    Word    i   = 0;
    arr[i++] = pri_name;
    pp = sec_names;
@@ -361,7 +362,7 @@ static HChar** alloc_symname_array ( HChar* pri_name, HChar** sec_names,
 
 
 /* Free the array allocated by alloc_symname_array, if any. */
-static void free_symname_array ( HChar** names, HChar** twoslots )
+static void free_symname_array ( const HChar** names, const HChar** twoslots )
 {
    if (names != twoslots)
       dinfo_free(names);
@@ -395,8 +396,8 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
    Spec*        spec;
    TopSpec*     ts;
    TopSpec*     newts;
-   HChar*       sym_name_pri;
-   HChar**      sym_names_sec;
+   const HChar*  sym_name_pri;
+   const HChar** sym_names_sec;
    SymAVMAs     sym_avmas;
    HChar        demangled_sopatt[N_DEMANGLED];
    HChar        demangled_fnpatt[N_DEMANGLED];
@@ -511,10 +512,10 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
                                   NULL, &sym_name_pri, &sym_names_sec,
                                   &isText, NULL );
       /* Set up to conveniently iterate over all names for this symbol. */
-      HChar*  twoslots[2];
-      HChar** names_init = alloc_symname_array(sym_name_pri, sym_names_sec,
-                                               &twoslots[0]);
-      HChar** names;
+      const HChar*  twoslots[2];
+      const HChar** names_init =
+         alloc_symname_array(sym_name_pri, sym_names_sec, &twoslots[0]);
+      const HChar** names;
       for (names = names_init; *names; names++) {
          ok = VG_(maybe_Z_demangle)( *names,
                                      demangled_sopatt, N_DEMANGLED,
@@ -621,10 +622,10 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
          VG_(DebugInfo_syms_getidx)( newdi, i, &sym_avmas,
                                      NULL, &sym_name_pri, &sym_names_sec,
                                      &isText, NULL );
-         HChar*  twoslots[2];
-         HChar** names_init = alloc_symname_array(sym_name_pri, sym_names_sec,
-                                                  &twoslots[0]);
-         HChar** names;
+         const HChar*  twoslots[2];
+         const HChar** names_init =
+            alloc_symname_array(sym_name_pri, sym_names_sec, &twoslots[0]);
+         const HChar** names;
          for (names = names_init; *names; names++) {
             ok = isText
                  && VG_(maybe_Z_demangle)( 
@@ -758,8 +759,8 @@ void generate_and_add_actives (
    Active  act;
    Int     nsyms, i;
    SymAVMAs  sym_avmas;
-   HChar*  sym_name_pri;
-   HChar** sym_names_sec;
+   const HChar*  sym_name_pri;
+   const HChar** sym_names_sec;
 
    /* First figure out which of the specs match the seginfo's soname.
       Also clear the 'done' bits, so that after the main loop below
@@ -783,10 +784,10 @@ void generate_and_add_actives (
       VG_(DebugInfo_syms_getidx)( di, i, &sym_avmas,
                                   NULL, &sym_name_pri, &sym_names_sec,
                                   &isText, &isIFunc );
-      HChar*  twoslots[2];
-      HChar** names_init = alloc_symname_array(sym_name_pri, sym_names_sec,
-                                               &twoslots[0]);
-      HChar** names;
+      const HChar*  twoslots[2];
+      const HChar** names_init =
+         alloc_symname_array(sym_name_pri, sym_names_sec, &twoslots[0]);
+      const HChar** names;
       for (names = names_init; *names; names++) {
 
          /* ignore data symbols */
@@ -1533,7 +1534,7 @@ static Bool is_plausible_guest_addr(Addr a)
 
 static 
 void handle_maybe_load_notifier( const HChar* soname, 
-                                       HChar* symbol, Addr addr )
+                                 const HChar* symbol, Addr addr )
 {
 #  if defined(VGP_x86_linux)
    /* x86-linux only: if we see _dl_sysinfo_int80, note its address.
@@ -1634,15 +1635,15 @@ static void handle_require_text_symbols ( DebugInfo* di )
       Int    nsyms  = VG_(DebugInfo_syms_howmany)(di);
       for (j = 0; j < nsyms; j++) {
          Bool    isText        = False;
-         HChar*  sym_name_pri  = NULL;
-         HChar** sym_names_sec = NULL;
+         const HChar*  sym_name_pri  = NULL;
+         const HChar** sym_names_sec = NULL;
          VG_(DebugInfo_syms_getidx)( di, j, NULL,
                                      NULL, &sym_name_pri, &sym_names_sec,
                                      &isText, NULL );
-         HChar*  twoslots[2];
-         HChar** names_init = alloc_symname_array(sym_name_pri, sym_names_sec,
-                                                  &twoslots[0]);
-         HChar** names;
+         const HChar*  twoslots[2];
+         const HChar** names_init =
+            alloc_symname_array(sym_name_pri, sym_names_sec, &twoslots[0]);
+         const HChar** names;
          for (names = names_init; *names; names++) {
             /* ignore data symbols */
             if (0) VG_(printf)("QQQ %s\n", *names);

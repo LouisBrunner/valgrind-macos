@@ -197,8 +197,8 @@ void VG_(DebugInfo_syms_getidx)  ( const DebugInfo *di,
                                    Int idx,
                                    /*OUT*/SymAVMAs* ad,
                                    /*OUT*/UInt*     size,
-                                   /*OUT*/HChar**   pri_name,
-                                   /*OUT*/HChar***  sec_names,
+                                   /*OUT*/const HChar**   pri_name,
+                                   /*OUT*/const HChar***  sec_names,
                                    /*OUT*/Bool*     isText,
                                    /*OUT*/Bool*     isIFunc );
 /* ppc64-linux only: find the TOC pointer (R2 value) that should be in

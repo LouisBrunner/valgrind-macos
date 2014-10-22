@@ -95,8 +95,8 @@ extern DedupPoolAlloc* VG_(newDedupPA) ( SizeT  poolSzB,
 
 /* Allocates a new element from ddpa with eltSzB bytes to store elt.
    This function never returns NULL. */
-extern void* VG_(allocEltDedupPA) (DedupPoolAlloc *ddpa,
-                                   SizeT eltSzB, const void *elt);
+extern const void* VG_(allocEltDedupPA) (DedupPoolAlloc *ddpa,
+                                         SizeT eltSzB, const void *elt);
 
 /* Allocates a new (fixed size) element from ddpa. Returns the
    unique number identifying this element. This function never returns NULL. */

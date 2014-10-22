@@ -76,7 +76,7 @@ typedef
       struct _ht_node *next; // Read/Write by hashtable (pub_tool_hashtable.h)
       UWord   key;           // Read by hashtable (pub_tool_hashtable.h)
       SizeT   eltSzB;
-      void    *elt;
+      const void *elt;
    }
    ht_node;
 
@@ -231,7 +231,8 @@ void VG_(freezeDedupPA) (DedupPoolAlloc *ddpa,
    ddpa->ht_node_pa = NULL;
 }
 
-void* VG_(allocEltDedupPA) (DedupPoolAlloc *ddpa, SizeT eltSzB, const void *elt)
+const void* VG_(allocEltDedupPA) (DedupPoolAlloc *ddpa, SizeT eltSzB,
+                                  const void *elt)
 {
    ht_node ht_elt;
    void* elt_ins;
@@ -252,7 +253,7 @@ void* VG_(allocEltDedupPA) (DedupPoolAlloc *ddpa, SizeT eltSzB, const void *elt)
    ht_elt.key = VG_(adler32) (ht_elt.key, elt, eltSzB);
 
    ht_elt.eltSzB = eltSzB;
-   ht_elt.elt = CONST_CAST(void *,elt);
+   ht_elt.elt = elt;
 
    ht_ins = VG_(HT_gen_lookup) (ddpa->ht_elements, &ht_elt, cmp_pool_elt);
    if (ht_ins)
@@ -298,7 +299,7 @@ UInt VG_(allocFixedEltDedupPA) (DedupPoolAlloc *ddpa,
       ddpa->fixedSzb = eltSzB;
    }
    vg_assert (ddpa->fixedSzb == eltSzB);
-   void *dedup_elt = VG_(allocEltDedupPA) (ddpa, eltSzB, elt);
+   const void *dedup_elt = VG_(allocEltDedupPA) (ddpa, eltSzB, elt);
    return elt2nr (ddpa, dedup_elt);
 }
 

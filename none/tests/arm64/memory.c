@@ -110,11 +110,14 @@ static ULong randULong ( void )
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
+//                                                            //
+// test_memory_old                                            //
+//                                                            //
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
 
-static __attribute((noinline)) void test_memory ( void )
+static __attribute((noinline)) void test_memory_old ( void )
 {
 printf("Integer loads\n");
 
@@ -286,13 +289,15 @@ TESTINST2_hide2("ldarb w21, [x22]", AREA_MID, x21,x22,0);
 
 ////////////////////////////////////////////////////////////////
 printf("STL{R,RH,RB} (entirely MISSING)\n");
-
-} /* end of test_memory() */
+} /* end of test_memory_old() */
 
 
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
+//                                                            //
+// test_memory_new                                            //
+//                                                            //
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
@@ -393,7 +398,8 @@ static void show_block_xor ( UChar* block1, UChar* block2, Int n )
   free(area); \
   }
 
-static __attribute__((noinline)) void test_memory2 ( void )
+
+static __attribute__((noinline)) void test_memory_new ( void )
 {
 ////////////////////////////////////////////////////////////////
 printf("LDR,STR (immediate, uimm12)");
@@ -432,10 +438,10 @@ MEM_TEST("stp w13, w23, [x5, #-40]!",  0, 0);
 MEM_TEST("stp w13, w23, [x5, #-40]",   0, 0);
 
 ////////////////////////////////////////////////////////////////
-printf("LDR (literal, int reg) (DONE ABOVE)\n");
+printf("LDR (literal, int reg) (done above by test_memory_old)\n");
 
 ////////////////////////////////////////////////////////////////
-printf("{LD,ST}R (integer register) (entirely MISSING)\n");
+printf("{LD,ST}R (integer register)\n");
 MEM_TEST("str x13, [x5, x6]",          12, -4);
 MEM_TEST("str x13, [x5, x6, lsl #3]",  12, -4);
 MEM_TEST("str x13, [x5, w6, uxtw]",    12,  4);
@@ -497,7 +503,7 @@ MEM_TEST("ldrsb x13, [x5, #72]", -16, 4);
 MEM_TEST("ldrsb w13, [x5, #56]", -16, 4);
 
 ////////////////////////////////////////////////////////////////
-printf("LDRS{B,H,W} (simm9, upd) (upd check is MISSING)\n");
+printf("LDRS{B,H,W} (simm9, upd)\n");
 MEM_TEST("ldrsw x13, [x5, #-24]!", -16, 4);
 MEM_TEST("ldrsh x13, [x5, #-20]!", -16, 4);
 MEM_TEST("ldrsh w13, [x5, #-44]!", -16, 4);
@@ -521,34 +527,44 @@ MEM_TEST("ldrsb w13, [x5, #-56]", -16, 4);
 ////////////////////////////////////////////////////////////////
 printf("LDP,STP (immediate, simm7) (FP&VEC)\n");
 
-MEM_TEST("stp q17, q18, [x5, 32]",  -16, 4);
-MEM_TEST("stp q17, q18, [x5, 32]!", -16, 4);
-MEM_TEST("stp q17, q18, [x5], 32",  -16, 4);
+MEM_TEST("stp q17, q18, [x5, 16]",  -15, 4);
+MEM_TEST("stp q19, q18, [x5, 32]!", -11, 4);
+MEM_TEST("stp q20, q17, [x5], -48",  -7, 4);
 
-MEM_TEST("stp d17, d18, [x5, 32]",  -16, 4);
-MEM_TEST("stp d17, d18, [x5, 32]!", -16, 4);
-MEM_TEST("stp d17, d18, [x5], 32",  -16, 4);
+MEM_TEST("stp d18, d17, [x5, 16]",  -15, 4);
+MEM_TEST("stp d17, d19, [x5, 32]!", -11, 4);
+MEM_TEST("stp d20, d18, [x5], -48",  -7, 4);
 
-//MEM_TEST("stp s17, s18, [x5, 32]",  -16, 4);
-//MEM_TEST("stp s17, s18, [x5, 32]!", -16, 4);
-//MEM_TEST("stp s17, s18, [x5], 32",  -16, 4);
+MEM_TEST("stp s17, s18, [x5, 16]",  -15, 4);
+MEM_TEST("stp s19, s18, [x5, 32]!", -11, 4);
+MEM_TEST("stp s20, s17, [x5], -48", -7, 4);
 
-MEM_TEST("ldp q17, q18, [x5, 32]",  -16, 4);
-MEM_TEST("ldp q17, q18, [x5, 32]!", -16, 4);
-MEM_TEST("ldp q17, q18, [x5], 32",  -16, 4);
+MEM_TEST("ldp q17, q18, [x5, 16]",  -15, 4);
+MEM_TEST("ldp q18, q19, [x5, 32]!", -11, 4);
+MEM_TEST("ldp q19, q20, [x5], -48",  -7, 4);
 
-MEM_TEST("ldp d17, d18, [x5, 32]",  -16, 4);
-MEM_TEST("ldp d17, d18, [x5, 32]!", -16, 4);
-MEM_TEST("ldp d17, d18, [x5], 32",  -16, 4);
+MEM_TEST("ldp d20, d17, [x5, 16]",  -15, 4);
+MEM_TEST("ldp d17, d18, [x5, 32]!", -11, 4);
+MEM_TEST("ldp d18, d19, [x5], -48", -7, 4);
 
-//MEM_TEST("ldp s17, s18, [x5, 32]",  -16, 4);
-//MEM_TEST("ldp s17, s18, [x5, 32]!", -16, 4);
-//MEM_TEST("ldp s17, s18, [x5], 32",  -16, 4);
+MEM_TEST("ldp s19, s20, [x5, 16]",  -15, 4);
+MEM_TEST("ldp s20, s17, [x5, 32]!", -11, 4);
+MEM_TEST("ldp s17, s18, [x5], -48", -7, 4);
+
+////////////////////////////////////////////////////////////////
+printf("LDNP,STNP (immediate, simm7) (FP&VEC, w/ nontemporal hint)\n");
+
+MEM_TEST("stnp q18, q17, [x5, 16]",  -15, 4);
+MEM_TEST("stnp d20, d19, [x5, 40]",  -15, 4);
+MEM_TEST("stnp s19, s18, [x5, 68]",  -15, 4);
+
+MEM_TEST("ldnp q18, q17, [x5, 16]",  -15, 4);
+MEM_TEST("ldnp d17, d20, [x5, 40]",  -15, 4);
+MEM_TEST("ldnp s20, s19, [x5, 68]",  -15, 4);
 
 ////////////////////////////////////////////////////////////////
 printf("{LD,ST}R (vector register)\n");
 
-#if 0
 MEM_TEST("str q17, [x5, x6]",          12, -4);
 MEM_TEST("str q17, [x5, x6, lsl #4]",  12, -4);
 MEM_TEST("str q17, [x5, w6, uxtw]",    12,  4);
@@ -561,7 +577,6 @@ MEM_TEST("ldr q17, [x5, w6, uxtw]",    12,  4);
 MEM_TEST("ldr q17, [x5, w6, uxtw #4]", 12,  4);
 MEM_TEST("ldr q17, [x5, w6, sxtw]",    12,  4);
 MEM_TEST("ldr q17, [x5, w6, sxtw #4]", 12,  -4);
-#endif
 
 MEM_TEST("str d17, [x5, x6]",          12, -4);
 MEM_TEST("str d17, [x5, x6, lsl #3]",  12, -4);
@@ -653,103 +668,536 @@ MEM_TEST("ldrsb w13, [x5,w6,uxtw #0]", 12, 4);
 MEM_TEST("ldrsb w13, [x5,w6,sxtw #0]", 12, 4);
 MEM_TEST("ldrsb w13, [x5,w6,sxtw #0]",  12, -4);
 
-
 ////////////////////////////////////////////////////////////////
 printf("LDR/STR (immediate, SIMD&FP, unsigned offset)\n");
+
 MEM_TEST("str q17, [x5, #-32]", 16, 0);
 MEM_TEST("str d17, [x5, #-32]", 16, 0);
 MEM_TEST("str s17, [x5, #-32]", 16, 0);
-//MEM_TEST("str h17, [x5, #-32]", 16, 0);
-//MEM_TEST("str b17, [x5, #-32]", 16, 0);
+MEM_TEST("str h17, [x5, #-32]", 16, 0);
+MEM_TEST("str b17, [x5, #-32]", 16, 0);
 MEM_TEST("ldr q17, [x5, #-32]", 16, 0);
 MEM_TEST("ldr d17, [x5, #-32]", 16, 0);
 MEM_TEST("ldr s17, [x5, #-32]", 16, 0);
-//MEM_TEST("ldr h17, [x5, #-32]", 16, 0);
-//MEM_TEST("ldr b17, [x5, #-32]", 16, 0);
+MEM_TEST("ldr h17, [x5, #-32]", 16, 0);
+MEM_TEST("ldr b17, [x5, #-32]", 16, 0);
 
 ////////////////////////////////////////////////////////////////
 printf("LDR/STR (immediate, SIMD&FP, pre/post index)\n");
+
 MEM_TEST("str q17, [x5], #-32", 16, 0);
 MEM_TEST("str d17, [x5], #-32", 16, 0);
 MEM_TEST("str s17, [x5], #-32", 16, 0);
-//MEM_TEST("str h17, [x5], #-32", 16, 0);
-//MEM_TEST("str b17, [x5], #-32", 16, 0);
+MEM_TEST("str h17, [x5], #-32", 16, 0);
+MEM_TEST("str b17, [x5], #-32", 16, 0);
 MEM_TEST("ldr q17, [x5], #-32", 16, 0);
 MEM_TEST("ldr d17, [x5], #-32", 16, 0);
 MEM_TEST("ldr s17, [x5], #-32", 16, 0);
-//MEM_TEST("ldr h17, [x5], #-32", 16, 0);
-//MEM_TEST("ldr b17, [x5], #-32", 16, 0);
+MEM_TEST("ldr h17, [x5], #-32", 16, 0);
+MEM_TEST("ldr b17, [x5], #-32", 16, 0);
 
 MEM_TEST("str q17, [x5, #-32]!", 16, 0);
 MEM_TEST("str d17, [x5, #-32]!", 16, 0);
 MEM_TEST("str s17, [x5, #-32]!", 16, 0);
-//MEM_TEST("str h17, [x5, #-32]!", 16, 0);
-//MEM_TEST("str b17, [x5, #-32]!", 16, 0);
+MEM_TEST("str h17, [x5, #-32]!", 16, 0);
+MEM_TEST("str b17, [x5, #-32]!", 16, 0);
 MEM_TEST("ldr q17, [x5, #-32]!", 16, 0);
 MEM_TEST("ldr d17, [x5, #-32]!", 16, 0);
 MEM_TEST("ldr s17, [x5, #-32]!", 16, 0);
-//MEM_TEST("ldr h17, [x5, #-32]!", 16, 0);
-//MEM_TEST("ldr b17, [x5, #-32]!", 16, 0);
-
+MEM_TEST("ldr h17, [x5, #-32]!", 16, 0);
+MEM_TEST("ldr b17, [x5, #-32]!", 16, 0);
 
 ////////////////////////////////////////////////////////////////
 printf("LDUR/STUR (unscaled offset, SIMD&FP)\n");
+
 MEM_TEST("str q17, [x5, #-13]", 16, 0);
 MEM_TEST("str d17, [x5, #-13]", 16, 0);
 MEM_TEST("str s17, [x5, #-13]", 16, 0);
-//MEM_TEST("str h17, [x5, #-13]", 16, 0);
-//MEM_TEST("str b17, [x5, #-13]", 16, 0);
+MEM_TEST("str h17, [x5, #-13]", 16, 0);
+MEM_TEST("str b17, [x5, #-13]", 16, 0);
 MEM_TEST("ldr q17, [x5, #-13]", 16, 0);
 MEM_TEST("ldr d17, [x5, #-13]", 16, 0);
 MEM_TEST("ldr s17, [x5, #-13]", 16, 0);
-//MEM_TEST("ldr h17, [x5, #-13]", 16, 0);
-//MEM_TEST("ldr b17, [x5, #-13]", 16, 0);
+MEM_TEST("ldr h17, [x5, #-13]", 16, 0);
+MEM_TEST("ldr b17, [x5, #-13]", 16, 0);
 
 ////////////////////////////////////////////////////////////////
 printf("LDR (literal, SIMD&FP) (entirely MISSING)\n");
 
-////////////////////////////////////////////////////////////////
-printf("LD1/ST1 (single structure, no offset)\n");
-MEM_TEST("st1 {v17.2d},  [x5]", 3, 0)
-MEM_TEST("st1 {v17.4s},  [x5]", 5, 0)
-MEM_TEST("st1 {v17.8h},  [x5]", 7, 0)
-MEM_TEST("st1 {v17.16b}, [x5]", 13, 0)
-MEM_TEST("st1 {v17.1d},  [x5]", 3, 0)
-MEM_TEST("st1 {v17.2s},  [x5]", 5, 0)
-MEM_TEST("st1 {v17.4h},  [x5]", 7, 0)
-MEM_TEST("st1 {v17.8b},  [x5]", 13, 0)
-
-MEM_TEST("ld1 {v17.2d},  [x5]", 3, 0)
-MEM_TEST("ld1 {v17.4s},  [x5]", 5, 0)
-MEM_TEST("ld1 {v17.8h},  [x5]", 7, 0)
-MEM_TEST("ld1 {v17.16b}, [x5]", 13, 0)
-MEM_TEST("ld1 {v17.1d},  [x5]", 3, 0)
-MEM_TEST("ld1 {v17.2s},  [x5]", 5, 0)
-MEM_TEST("ld1 {v17.4h},  [x5]", 7, 0)
-MEM_TEST("ld1 {v17.8b},  [x5]", 13, 0)
+MEM_TEST("xyzzy10: ldr s17, xyzzy10 - 8", 0, 0)
+MEM_TEST("xyzzy11: ldr d17, xyzzy11 + 8", 0, 0)
+MEM_TEST("xyzzy12: ldr q17, xyzzy12 + 4", 0, 0)
 
 ////////////////////////////////////////////////////////////////
-printf("LD1/ST1 (single structure, post index)\n");
-MEM_TEST("st1 {v17.2d},  [x5], #16", 3, 0)
-MEM_TEST("st1 {v17.4s},  [x5], #16", 5, 0)
-MEM_TEST("st1 {v17.8h},  [x5], #16", 7, 0)
-MEM_TEST("st1 {v17.16b}, [x5], #16", 13, 0)
-MEM_TEST("st1 {v17.1d},  [x5], #8", 3, 0)
-MEM_TEST("st1 {v17.2s},  [x5], #8", 5, 0)
-MEM_TEST("st1 {v17.4h},  [x5], #8", 7, 0)
-MEM_TEST("st1 {v17.8b},  [x5], #8", 13, 0)
+printf("LD1/ST1 (multiple 1-elem structs to/from 1 reg\n");
 
-MEM_TEST("ld1 {v17.2d},  [x5], #16", 3, 0)
-MEM_TEST("ld1 {v17.4s},  [x5], #16", 5, 0)
-MEM_TEST("ld1 {v17.8h},  [x5], #16", 7, 0)
-MEM_TEST("ld1 {v17.16b}, [x5], #16", 13, 0)
-MEM_TEST("ld1 {v17.1d},  [x5], #8", 3, 0)
-MEM_TEST("ld1 {v17.2s},  [x5], #8", 5, 0)
-MEM_TEST("ld1 {v17.4h},  [x5], #8", 7, 0)
-MEM_TEST("ld1 {v17.8b},  [x5], #8", 13, 0)
+MEM_TEST("st1 {v18.2d}, [x5]",       17, 7)
+MEM_TEST("st1 {v18.2d}, [x5], #16",  9, 9)
+MEM_TEST("st1 {v18.2d}, [x5], x6",   -13, -5)
+
+MEM_TEST("st1 {v18.1d}, [x5]",       17, 7)
+MEM_TEST("st1 {v18.1d}, [x5], #8",   9, 9)
+MEM_TEST("st1 {v18.1d}, [x5], x6",   -13, -5)
+
+MEM_TEST("st1 {v18.4s}, [x5]",       17, 7)
+MEM_TEST("st1 {v18.4s}, [x5], #16",  9, 9)
+MEM_TEST("st1 {v18.4s}, [x5], x6",   -13, -5)
+
+MEM_TEST("st1 {v18.2s}, [x5]",       17, 7)
+MEM_TEST("st1 {v18.2s}, [x5], #8",   9, 9)
+MEM_TEST("st1 {v18.2s}, [x5], x6",   -13, -5)
+
+MEM_TEST("st1 {v18.8h}, [x5]",       17, 7)
+MEM_TEST("st1 {v18.8h}, [x5], #16",  9, 9)
+MEM_TEST("st1 {v18.8h}, [x5], x6",   -13, -5)
+
+MEM_TEST("st1 {v18.4h}, [x5]",       17, 7)
+MEM_TEST("st1 {v18.4h}, [x5], #8",   9, 9)
+MEM_TEST("st1 {v18.4h}, [x5], x6",   -13, -5)
+
+MEM_TEST("st1 {v18.16b}, [x5]",      17, 7)
+MEM_TEST("st1 {v18.16b}, [x5], #16", 9, 9)
+MEM_TEST("st1 {v18.16b}, [x5], x6",  -13, -5)
+
+MEM_TEST("st1 {v18.8b}, [x5]",       17, 7)
+MEM_TEST("st1 {v18.8b}, [x5], #8",   9, 9)
+MEM_TEST("st1 {v18.8b}, [x5], x6",   -13, -5)
+
+MEM_TEST("ld1 {v18.2d}, [x5]",       17, 7)
+MEM_TEST("ld1 {v18.2d}, [x5], #16",  9, 9)
+MEM_TEST("ld1 {v18.2d}, [x5], x6",   -13, -5)
+
+MEM_TEST("ld1 {v18.1d}, [x5]",       17, 7)
+MEM_TEST("ld1 {v18.1d}, [x5], #8",   9, 9)
+MEM_TEST("ld1 {v18.1d}, [x5], x6",   -13, -5)
+
+MEM_TEST("ld1 {v18.4s}, [x5]",       17, 7)
+MEM_TEST("ld1 {v18.4s}, [x5], #16",  9, 9)
+MEM_TEST("ld1 {v18.4s}, [x5], x6",   -13, -5)
+
+MEM_TEST("ld1 {v18.2s}, [x5]",       17, 7)
+MEM_TEST("ld1 {v18.2s}, [x5], #8",   9, 9)
+MEM_TEST("ld1 {v18.2s}, [x5], x6",   -13, -5)
+
+MEM_TEST("ld1 {v18.8h}, [x5]",       17, 7)
+MEM_TEST("ld1 {v18.8h}, [x5], #16",  9, 9)
+MEM_TEST("ld1 {v18.8h}, [x5], x6",   -13, -5)
+
+MEM_TEST("ld1 {v18.4h}, [x5]",       17, 7)
+MEM_TEST("ld1 {v18.4h}, [x5], #8",   9, 9)
+MEM_TEST("ld1 {v18.4h}, [x5], x6",   -13, -5)
+
+MEM_TEST("ld1 {v18.16b}, [x5]",      17, 7)
+MEM_TEST("ld1 {v18.16b}, [x5], #16", 9, 9)
+MEM_TEST("ld1 {v18.16b}, [x5], x6",  -13, -5)
+
+MEM_TEST("ld1 {v18.8b}, [x5]",       17, 7)
+MEM_TEST("ld1 {v18.8b}, [x5], #8",   9, 9)
+MEM_TEST("ld1 {v18.8b}, [x5], x6",   -13, -5)
+
+////////////////////////////////////////////////////////////////
+printf("LD2/ST2 (multiple 2-elem structs to/from 2 regs\n");
+
+MEM_TEST("st2 {v18.2d, v19.2d}, [x5]",         17, 7)
+MEM_TEST("st2 {v18.2d, v19.2d}, [x5], #32",    9, 9)
+MEM_TEST("st2 {v18.2d, v19.2d}, [x5], x6",     -13, -5)
+
+/* no 1d case */
+
+MEM_TEST("st2 {v18.4s, v19.4s}, [x5]",         17, 7)
+MEM_TEST("st2 {v18.4s, v19.4s}, [x5], #32",    9, 9)
+MEM_TEST("st2 {v18.4s, v19.4s}, [x5], x6",     -13, -5)
+
+MEM_TEST("st2 {v18.2s, v19.2s}, [x5]",         17, 7)
+MEM_TEST("st2 {v18.2s, v19.2s}, [x5], #16",    9, 9)
+MEM_TEST("st2 {v18.2s, v19.2s}, [x5], x6",     -13, -5)
+
+MEM_TEST("st2 {v18.8h, v19.8h}, [x5]",         17, 7)
+MEM_TEST("st2 {v18.8h, v19.8h}, [x5], #32",    9, 9)
+MEM_TEST("st2 {v18.8h, v19.8h}, [x5], x6",     -13, -5)
+
+MEM_TEST("st2 {v18.4h, v19.4h}, [x5]",         17, 7)
+MEM_TEST("st2 {v18.4h, v19.4h}, [x5], #16",    9, 9)
+MEM_TEST("st2 {v18.4h, v19.4h}, [x5], x6",     -13, -5)
+
+MEM_TEST("st2 {v18.16b, v19.16b}, [x5]",       17, 7)
+MEM_TEST("st2 {v18.16b, v19.16b}, [x5], #32",  9, 9)
+MEM_TEST("st2 {v18.16b, v19.16b}, [x5], x6",   -13, -5)
+
+MEM_TEST("st2 {v18.8b, v19.8b}, [x5]",         17, 7)
+MEM_TEST("st2 {v18.8b, v19.8b}, [x5], #16",    9, 9)
+MEM_TEST("st2 {v18.8b, v19.8b}, [x5], x6",     -13, -5)
+
+MEM_TEST("ld2 {v18.2d, v19.2d}, [x5]",         17, 7)
+MEM_TEST("ld2 {v18.2d, v19.2d}, [x5], #32",    9, 9)
+MEM_TEST("ld2 {v18.2d, v19.2d}, [x5], x6",     -13, -5)
+
+/* no 1d case */
+
+MEM_TEST("ld2 {v18.4s, v19.4s}, [x5]",         17, 7)
+MEM_TEST("ld2 {v18.4s, v19.4s}, [x5], #32",    9, 9)
+MEM_TEST("ld2 {v18.4s, v19.4s}, [x5], x6",     -13, -5)
+
+MEM_TEST("ld2 {v18.2s, v19.2s}, [x5]",         17, 7)
+MEM_TEST("ld2 {v18.2s, v19.2s}, [x5], #16",    9, 9)
+MEM_TEST("ld2 {v18.2s, v19.2s}, [x5], x6",     -13, -5)
+
+MEM_TEST("ld2 {v18.8h, v19.8h}, [x5]",         17, 7)
+MEM_TEST("ld2 {v18.8h, v19.8h}, [x5], #32",    9, 9)
+MEM_TEST("ld2 {v18.8h, v19.8h}, [x5], x6",     -13, -5)
+
+MEM_TEST("ld2 {v18.4h, v19.4h}, [x5]",         17, 7)
+MEM_TEST("ld2 {v18.4h, v19.4h}, [x5], #16",    9, 9)
+MEM_TEST("ld2 {v18.4h, v19.4h}, [x5], x6",     -13, -5)
+
+MEM_TEST("ld2 {v18.16b, v19.16b}, [x5]",       17, 7)
+MEM_TEST("ld2 {v18.16b, v19.16b}, [x5], #32",  9, 9)
+MEM_TEST("ld2 {v18.16b, v19.16b}, [x5], x6",   -13, -5)
+
+MEM_TEST("ld2 {v18.8b, v19.8b}, [x5]",         17, 7)
+MEM_TEST("ld2 {v18.8b, v19.8b}, [x5], #16",    9, 9)
+MEM_TEST("ld2 {v18.8b, v19.8b}, [x5], x6",     -13, -5)
+
+////////////////////////////////////////////////////////////////
+printf("LD3/ST3 (multiple 3-elem structs to/from 3 regs\n");
+
+MEM_TEST("st3 {v17.2d, v18.2d, v19.2d}, [x5]",       17,  7)
+MEM_TEST("st3 {v17.2d, v18.2d, v19.2d}, [x5], #48",  9,   9)
+MEM_TEST("st3 {v17.2d, v18.2d, v19.2d}, [x5], x6",   -13, -5)
+
+/* no 1d case */
+
+MEM_TEST("st3 {v17.4s, v18.4s, v19.4s}, [x5]",          17, 7)
+MEM_TEST("st3 {v17.4s, v18.4s, v19.4s}, [x5], #48",     9, 9)
+MEM_TEST("st3 {v17.4s, v18.4s, v19.4s}, [x5], x6",      -13, -5)
+
+MEM_TEST("st3 {v17.2s, v18.2s, v19.2s}, [x5]",          17, 7)
+MEM_TEST("st3 {v17.2s, v18.2s, v19.2s}, [x5], #24",     9, 9)
+MEM_TEST("st3 {v17.2s, v18.2s, v19.2s}, [x5], x6",      -13, -5)
+
+MEM_TEST("st3 {v17.8h, v18.8h, v19.8h}, [x5]",          17, 7)
+MEM_TEST("st3 {v17.8h, v18.8h, v19.8h}, [x5], #48",     9, 9)
+MEM_TEST("st3 {v17.8h, v18.8h, v19.8h}, [x5], x6",      -13, -5)
+
+MEM_TEST("st3 {v17.4h, v18.4h, v19.4h}, [x5]",          17, 7)
+MEM_TEST("st3 {v17.4h, v18.4h, v19.4h}, [x5], #24",     9, 9)
+MEM_TEST("st3 {v17.4h, v18.4h, v19.4h}, [x5], x6",      -13, -5)
+
+MEM_TEST("st3 {v17.16b, v18.16b, v19.16b}, [x5]",       17, 7)
+MEM_TEST("st3 {v17.16b, v18.16b, v19.16b}, [x5], #48",  9, 9)
+MEM_TEST("st3 {v17.16b, v18.16b, v19.16b}, [x5], x6",   -13, -5)
+
+MEM_TEST("st3 {v17.8b, v18.8b, v19.8b}, [x5]",          17, 7)
+MEM_TEST("st3 {v17.8b, v18.8b, v19.8b}, [x5], #24",     9, 9)
+MEM_TEST("st3 {v17.8b, v18.8b, v19.8b}, [x5], x6",      -13, -5)
+
+MEM_TEST("ld3 {v17.2d, v18.2d, v19.2d}, [x5]",       17,  7)
+MEM_TEST("ld3 {v17.2d, v18.2d, v19.2d}, [x5], #48",  9,   9)
+MEM_TEST("ld3 {v17.2d, v18.2d, v19.2d}, [x5], x6",   -13, -5)
+
+/* no 1d case */
+
+MEM_TEST("ld3 {v17.4s, v18.4s, v19.4s}, [x5]",          17, 7)
+MEM_TEST("ld3 {v17.4s, v18.4s, v19.4s}, [x5], #48",     9, 9)
+MEM_TEST("ld3 {v17.4s, v18.4s, v19.4s}, [x5], x6",      -13, -5)
+
+MEM_TEST("ld3 {v17.2s, v18.2s, v19.2s}, [x5]",          17, 7)
+MEM_TEST("ld3 {v17.2s, v18.2s, v19.2s}, [x5], #24",     9, 9)
+MEM_TEST("ld3 {v17.2s, v18.2s, v19.2s}, [x5], x6",      -13, -5)
+
+MEM_TEST("ld3 {v17.8h, v18.8h, v19.8h}, [x5]",          17, 7)
+MEM_TEST("ld3 {v17.8h, v18.8h, v19.8h}, [x5], #48",     9, 9)
+MEM_TEST("ld3 {v17.8h, v18.8h, v19.8h}, [x5], x6",      -13, -5)
+
+MEM_TEST("ld3 {v17.4h, v18.4h, v19.4h}, [x5]",          17, 7)
+MEM_TEST("ld3 {v17.4h, v18.4h, v19.4h}, [x5], #24",     9, 9)
+MEM_TEST("ld3 {v17.4h, v18.4h, v19.4h}, [x5], x6",      -13, -5)
+
+MEM_TEST("ld3 {v17.16b, v18.16b, v19.16b}, [x5]",       17, 7)
+MEM_TEST("ld3 {v17.16b, v18.16b, v19.16b}, [x5], #48",  9, 9)
+MEM_TEST("ld3 {v17.16b, v18.16b, v19.16b}, [x5], x6",   -13, -5)
+
+MEM_TEST("ld3 {v17.8b, v18.8b, v19.8b}, [x5]",          17, 7)
+MEM_TEST("ld3 {v17.8b, v18.8b, v19.8b}, [x5], #24",     9, 9)
+MEM_TEST("ld3 {v17.8b, v18.8b, v19.8b}, [x5], x6",      -13, -5)
+
+////////////////////////////////////////////////////////////////
+printf("LD4/ST4 (multiple 4-elem structs to/from 4 regs\n");
+
+MEM_TEST("st4 {v17.2d, v18.2d, v19.2d, v20.2d}, [x5]",           17, 7)
+MEM_TEST("st4 {v17.2d, v18.2d, v19.2d, v20.2d}, [x5], #64",      9, 9)
+MEM_TEST("st4 {v17.2d, v18.2d, v19.2d, v20.2d}, [x5], x6",       -13, -5)
+
+/* no 1d case */
+
+MEM_TEST("st4 {v17.4s, v18.4s, v19.4s, v20.4s}, [x5]",           17, 7)
+MEM_TEST("st4 {v17.4s, v18.4s, v19.4s, v20.4s}, [x5], #64",      9, 9)
+MEM_TEST("st4 {v17.4s, v18.4s, v19.4s, v20.4s}, [x5], x6",       -13, -5)
+
+MEM_TEST("st4 {v17.2s, v18.2s, v19.2s, v20.2s}, [x5]",           17, 7)
+MEM_TEST("st4 {v17.2s, v18.2s, v19.2s, v20.2s}, [x5], #32",      9, 9)
+MEM_TEST("st4 {v17.2s, v18.2s, v19.2s, v20.2s}, [x5], x6",       -13, -5)
+
+MEM_TEST("st4 {v17.8h, v18.8h, v19.8h, v20.8h}, [x5]",           17, 7)
+MEM_TEST("st4 {v17.8h, v18.8h, v19.8h, v20.8h}, [x5], #64",      9, 9)
+MEM_TEST("st4 {v17.8h, v18.8h, v19.8h, v20.8h}, [x5], x6",       -13, -5)
+
+MEM_TEST("st4 {v17.4h, v18.4h, v19.4h, v20.4h}, [x5]",           17, 7)
+MEM_TEST("st4 {v17.4h, v18.4h, v19.4h, v20.4h}, [x5], #32",      9, 9)
+MEM_TEST("st4 {v17.4h, v18.4h, v19.4h, v20.4h}, [x5], x6",       -13, -5)
+
+MEM_TEST("st4 {v17.16b, v18.16b, v19.16b, v20.16b}, [x5]",       17, 7)
+MEM_TEST("st4 {v17.16b, v18.16b, v19.16b, v20.16b}, [x5], #64",  9, 9)
+MEM_TEST("st4 {v17.16b, v18.16b, v19.16b, v20.16b}, [x5], x6",   -13, -5)
+
+MEM_TEST("st4 {v17.8b, v18.8b, v19.8b, v20.8b}, [x5]",           17, 7)
+MEM_TEST("st4 {v17.8b, v18.8b, v19.8b, v20.8b}, [x5], #32",      9, 9)
+MEM_TEST("st4 {v17.8b, v18.8b, v19.8b, v20.8b}, [x5], x6",       -13, -5)
+
+MEM_TEST("ld4 {v17.2d, v18.2d, v19.2d, v20.2d}, [x5]",           17, 7)
+MEM_TEST("ld4 {v17.2d, v18.2d, v19.2d, v20.2d}, [x5], #64",      9, 9)
+MEM_TEST("ld4 {v17.2d, v18.2d, v19.2d, v20.2d}, [x5], x6",       -13, -5)
+
+/* no 1d case */
+
+MEM_TEST("ld4 {v17.4s, v18.4s, v19.4s, v20.4s}, [x5]",           17, 7)
+MEM_TEST("ld4 {v17.4s, v18.4s, v19.4s, v20.4s}, [x5], #64",      9, 9)
+MEM_TEST("ld4 {v17.4s, v18.4s, v19.4s, v20.4s}, [x5], x6",       -13, -5)
+
+MEM_TEST("ld4 {v17.2s, v18.2s, v19.2s, v20.2s}, [x5]",           17, 7)
+MEM_TEST("ld4 {v17.2s, v18.2s, v19.2s, v20.2s}, [x5], #32",      9, 9)
+MEM_TEST("ld4 {v17.2s, v18.2s, v19.2s, v20.2s}, [x5], x6",       -13, -5)
+
+MEM_TEST("ld4 {v17.8h, v18.8h, v19.8h, v20.8h}, [x5]",           17, 7)
+MEM_TEST("ld4 {v17.8h, v18.8h, v19.8h, v20.8h}, [x5], #64",      9, 9)
+MEM_TEST("ld4 {v17.8h, v18.8h, v19.8h, v20.8h}, [x5], x6",       -13, -5)
+
+MEM_TEST("ld4 {v17.4h, v18.4h, v19.4h, v20.4h}, [x5]",           17, 7)
+MEM_TEST("ld4 {v17.4h, v18.4h, v19.4h, v20.4h}, [x5], #32",      9, 9)
+MEM_TEST("ld4 {v17.4h, v18.4h, v19.4h, v20.4h}, [x5], x6",       -13, -5)
+
+MEM_TEST("ld4 {v17.16b, v18.16b, v19.16b, v20.16b}, [x5]",       17, 7)
+MEM_TEST("ld4 {v17.16b, v18.16b, v19.16b, v20.16b}, [x5], #64",  9, 9)
+MEM_TEST("ld4 {v17.16b, v18.16b, v19.16b, v20.16b}, [x5], x6",   -13, -5)
+
+MEM_TEST("ld4 {v17.8b, v18.8b, v19.8b, v20.8b}, [x5]",           17, 7)
+MEM_TEST("ld4 {v17.8b, v18.8b, v19.8b, v20.8b}, [x5], #32",      9, 9)
+MEM_TEST("ld4 {v17.8b, v18.8b, v19.8b, v20.8b}, [x5], x6",       -13, -5)
+
+////////////////////////////////////////////////////////////////
+printf("LD1/ST1 (multiple 1-elem structs to/from 2/3/4 regs\n");
+
+//MEM_TEST("st1 {v19.2d, v20.2d},                     [x5]", 17, 7)
+//MEM_TEST("st1 {v19.2d, v20.2d},                     [x5], #32", 9, 9)
+//MEM_TEST("st1 {v19.2d, v20.2d},                     [x5], x6", -13, -5)
+//
+//MEM_TEST("st1 {v17.2d, v18.2d, v19.2d},             [x5]", 17, 7)
+//MEM_TEST("st1 {v17.2d, v18.2d, v19.2d},             [x5], #48", 9, 9)
+//MEM_TEST("st1 {v17.2d, v18.2d, v19.2d},             [x5], x6", -13, -5)
+//
+//MEM_TEST("st1 {v17.2d, v18.2d, v19.2d, v20.2d},     [x5]", 17, 7)
+//MEM_TEST("st1 {v17.2d, v18.2d, v19.2d, v20.2d},     [x5], #64", 9, 9)
+//MEM_TEST("st1 {v17.2d, v18.2d, v19.2d, v20.2d},     [x5], x6", -13, -5)
+//
+//
+//MEM_TEST("st1 {v19.1d, v20.1d},                     [x5]", 17, 7)
+//MEM_TEST("st1 {v19.1d, v20.1d},                     [x5], #16", 9, 9)
+//MEM_TEST("st1 {v19.1d, v20.1d},                     [x5], x6", -13, -5)
+//
+//MEM_TEST("st1 {v17.1d, v18.1d, v19.1d},             [x5]", 17, 7)
+//MEM_TEST("st1 {v17.1d, v18.1d, v19.1d},             [x5], #24", 9, 9)
+//MEM_TEST("st1 {v17.1d, v18.1d, v19.1d},             [x5], x6", -13, -5)
+//
+//MEM_TEST("st1 {v17.1d, v18.1d, v19.1d, v20.1d},     [x5]", 17, 7)
+//MEM_TEST("st1 {v17.1d, v18.1d, v19.1d, v20.1d},     [x5], #32", 9, 9)
+//MEM_TEST("st1 {v17.1d, v18.1d, v19.1d, v20.1d},     [x5], x6", -13, -5)
+//
+//
+//MEM_TEST("st1 {v19.4s, v20.4s},                     [x5]", 17, 7)
+//MEM_TEST("st1 {v19.4s, v20.4s},                     [x5], #32", 9, 9)
+//MEM_TEST("st1 {v19.4s, v20.4s},                     [x5], x6", -13, -5)
+//
+//MEM_TEST("st1 {v17.4s, v18.4s, v19.4s},             [x5]", 17, 7)
+//MEM_TEST("st1 {v17.4s, v18.4s, v19.4s},             [x5], #48", 9, 9)
+//MEM_TEST("st1 {v17.4s, v18.4s, v19.4s},             [x5], x6", -13, -5)
+//
+//MEM_TEST("st1 {v17.4s, v18.4s, v19.4s, v20.4s},     [x5]", 17, 7)
+//MEM_TEST("st1 {v17.4s, v18.4s, v19.4s, v20.4s},     [x5], #64", 9, 9)
+//MEM_TEST("st1 {v17.4s, v18.4s, v19.4s, v20.4s},     [x5], x6", -13, -5)
+//
+//
+//MEM_TEST("st1 {v19.2s, v20.2s},                     [x5]", 17, 7)
+//MEM_TEST("st1 {v19.2s, v20.2s},                     [x5], #16", 9, 9)
+//MEM_TEST("st1 {v19.2s, v20.2s},                     [x5], x6", -13, -5)
+//
+//MEM_TEST("st1 {v17.2s, v18.2s, v19.2s},             [x5]", 17, 7)
+//MEM_TEST("st1 {v17.2s, v18.2s, v19.2s},             [x5], #24", 9, 9)
+//MEM_TEST("st1 {v17.2s, v18.2s, v19.2s},             [x5], x6", -13, -5)
+//
+//MEM_TEST("st1 {v17.2s, v18.2s, v19.2s, v20.2s},     [x5]", 17, 7)
+//MEM_TEST("st1 {v17.2s, v18.2s, v19.2s, v20.2s},     [x5], #32", 9, 9)
+//MEM_TEST("st1 {v17.2s, v18.2s, v19.2s, v20.2s},     [x5], x6", -13, -5)
+//
+//
+//MEM_TEST("st1 {v19.8h, v20.8h},                     [x5]", 17, 7)
+//MEM_TEST("st1 {v19.8h, v20.8h},                     [x5], #32", 9, 9)
+//MEM_TEST("st1 {v19.8h, v20.8h},                     [x5], x6", -13, -5)
+//
+//MEM_TEST("st1 {v17.8h, v18.8h, v19.8h},             [x5]", 17, 7)
+//MEM_TEST("st1 {v17.8h, v18.8h, v19.8h},             [x5], #48", 9, 9)
+//MEM_TEST("st1 {v17.8h, v18.8h, v19.8h},             [x5], x6", -13, -5)
+//
+//MEM_TEST("st1 {v17.8h, v18.8h, v19.8h, v20.8h},     [x5]", 17, 7)
+//MEM_TEST("st1 {v17.8h, v18.8h, v19.8h, v20.8h},     [x5], #64", 9, 9)
+//MEM_TEST("st1 {v17.8h, v18.8h, v19.8h, v20.8h},     [x5], x6", -13, -5)
+//
+//
+//MEM_TEST("st1 {v19.4h, v20.4h},                     [x5]", 17, 7)
+//MEM_TEST("st1 {v19.4h, v20.4h},                     [x5], #16", 9, 9)
+//MEM_TEST("st1 {v19.4h, v20.4h},                     [x5], x6", -13, -5)
+//
+//MEM_TEST("st1 {v17.4h, v18.4h, v19.4h},             [x5]", 17, 7)
+//MEM_TEST("st1 {v17.4h, v18.4h, v19.4h},             [x5], #24", 9, 9)
+//MEM_TEST("st1 {v17.4h, v18.4h, v19.4h},             [x5], x6", -13, -5)
+//
+//MEM_TEST("st1 {v17.4h, v18.4h, v19.4h, v20.4h},     [x5]", 17, 7)
+//MEM_TEST("st1 {v17.4h, v18.4h, v19.4h, v20.4h},     [x5], #32", 9, 9)
+//MEM_TEST("st1 {v17.4h, v18.4h, v19.4h, v20.4h},     [x5], x6", -13, -5)
+
+
+MEM_TEST("st1 {v19.16b, v20.16b},                   [x5]", 17, 7)
+MEM_TEST("st1 {v19.16b, v20.16b},                   [x5], #32", 9, 9)
+//MEM_TEST("st1 {v19.16b, v20.16b},                   [x5], x6", -13, -5)
+
+MEM_TEST("st1 {v17.16b, v18.16b, v19.16b},          [x5]", 17, 7)
+//MEM_TEST("st1 {v17.16b, v18.16b, v19.16b},          [x5], #48", 9, 9)
+//MEM_TEST("st1 {v17.16b, v18.16b, v19.16b},          [x5], x6", -13, -5)
+//
+//MEM_TEST("st1 {v17.16b, v18.16b, v19.16b, v20.16b}, [x5]", 17, 7)
+//MEM_TEST("st1 {v17.16b, v18.16b, v19.16b, v20.16b}, [x5], #64", 9, 9)
+//MEM_TEST("st1 {v17.16b, v18.16b, v19.16b, v20.16b}, [x5], x6", -13, -5)
+//
+//
+//MEM_TEST("st1 {v19.8b, v20.8b},                     [x5]", 17, 7)
+//MEM_TEST("st1 {v19.8b, v20.8b},                     [x5], #16", 9, 9)
+//MEM_TEST("st1 {v19.8b, v20.8b},                     [x5], x6", -13, -5)
+//
+//MEM_TEST("st1 {v17.8b, v18.8b, v19.8b},             [x5]", 17, 7)
+//MEM_TEST("st1 {v17.8b, v18.8b, v19.8b},             [x5], #24", 9, 9)
+//MEM_TEST("st1 {v17.8b, v18.8b, v19.8b},             [x5], x6", -13, -5)
+//
+//MEM_TEST("st1 {v17.8b, v18.8b, v19.8b, v20.8b},     [x5]", 17, 7)
+//MEM_TEST("st1 {v17.8b, v18.8b, v19.8b, v20.8b},     [x5], #32", 9, 9)
+//MEM_TEST("st1 {v17.8b, v18.8b, v19.8b, v20.8b},     [x5], x6", -13, -5)
+//
+//
+//MEM_TEST("ld1 {v19.2d, v20.2d},                     [x5]", 17, 7)
+//MEM_TEST("ld1 {v19.2d, v20.2d},                     [x5], #32", 9, 9)
+//MEM_TEST("ld1 {v19.2d, v20.2d},                     [x5], x6", -13, -5)
+//
+//MEM_TEST("ld1 {v17.2d, v18.2d, v19.2d},             [x5]", 17, 7)
+//MEM_TEST("ld1 {v17.2d, v18.2d, v19.2d},             [x5], #48", 9, 9)
+//MEM_TEST("ld1 {v17.2d, v18.2d, v19.2d},             [x5], x6", -13, -5)
+//
+//MEM_TEST("ld1 {v17.2d, v18.2d, v19.2d, v20.2d},     [x5]", 17, 7)
+//MEM_TEST("ld1 {v17.2d, v18.2d, v19.2d, v20.2d},     [x5], #64", 9, 9)
+//MEM_TEST("ld1 {v17.2d, v18.2d, v19.2d, v20.2d},     [x5], x6", -13, -5)
+//
+//
+//MEM_TEST("ld1 {v19.1d, v20.1d},                     [x5]", 17, 7)
+//MEM_TEST("ld1 {v19.1d, v20.1d},                     [x5], #16", 9, 9)
+//MEM_TEST("ld1 {v19.1d, v20.1d},                     [x5], x6", -13, -5)
+//
+//MEM_TEST("ld1 {v17.1d, v18.1d, v19.1d},             [x5]", 17, 7)
+//MEM_TEST("ld1 {v17.1d, v18.1d, v19.1d},             [x5], #24", 9, 9)
+//MEM_TEST("ld1 {v17.1d, v18.1d, v19.1d},             [x5], x6", -13, -5)
+//
+//MEM_TEST("ld1 {v17.1d, v18.1d, v19.1d, v20.1d},     [x5]", 17, 7)
+//MEM_TEST("ld1 {v17.1d, v18.1d, v19.1d, v20.1d},     [x5], #32", 9, 9)
+//MEM_TEST("ld1 {v17.1d, v18.1d, v19.1d, v20.1d},     [x5], x6", -13, -5)
+//
+//
+//MEM_TEST("ld1 {v19.4s, v20.4s},                     [x5]", 17, 7)
+//MEM_TEST("ld1 {v19.4s, v20.4s},                     [x5], #32", 9, 9)
+//MEM_TEST("ld1 {v19.4s, v20.4s},                     [x5], x6", -13, -5)
+//
+//MEM_TEST("ld1 {v17.4s, v18.4s, v19.4s},             [x5]", 17, 7)
+//MEM_TEST("ld1 {v17.4s, v18.4s, v19.4s},             [x5], #48", 9, 9)
+//MEM_TEST("ld1 {v17.4s, v18.4s, v19.4s},             [x5], x6", -13, -5)
+//
+//MEM_TEST("ld1 {v17.4s, v18.4s, v19.4s, v20.4s},     [x5]", 17, 7)
+//MEM_TEST("ld1 {v17.4s, v18.4s, v19.4s, v20.4s},     [x5], #64", 9, 9)
+//MEM_TEST("ld1 {v17.4s, v18.4s, v19.4s, v20.4s},     [x5], x6", -13, -5)
+//
+//
+//MEM_TEST("ld1 {v19.2s, v20.2s},                     [x5]", 17, 7)
+//MEM_TEST("ld1 {v19.2s, v20.2s},                     [x5], #16", 9, 9)
+//MEM_TEST("ld1 {v19.2s, v20.2s},                     [x5], x6", -13, -5)
+//
+//MEM_TEST("ld1 {v17.2s, v18.2s, v19.2s},             [x5]", 17, 7)
+//MEM_TEST("ld1 {v17.2s, v18.2s, v19.2s},             [x5], #24", 9, 9)
+//MEM_TEST("ld1 {v17.2s, v18.2s, v19.2s},             [x5], x6", -13, -5)
+//
+//MEM_TEST("ld1 {v17.2s, v18.2s, v19.2s, v20.2s},     [x5]", 17, 7)
+//MEM_TEST("ld1 {v17.2s, v18.2s, v19.2s, v20.2s},     [x5], #32", 9, 9)
+//MEM_TEST("ld1 {v17.2s, v18.2s, v19.2s, v20.2s},     [x5], x6", -13, -5)
+//
+//
+//MEM_TEST("ld1 {v19.8h, v20.8h},                     [x5]", 17, 7)
+//MEM_TEST("ld1 {v19.8h, v20.8h},                     [x5], #32", 9, 9)
+//MEM_TEST("ld1 {v19.8h, v20.8h},                     [x5], x6", -13, -5)
+//
+//MEM_TEST("ld1 {v17.8h, v18.8h, v19.8h},             [x5]", 17, 7)
+//MEM_TEST("ld1 {v17.8h, v18.8h, v19.8h},             [x5], #48", 9, 9)
+//MEM_TEST("ld1 {v17.8h, v18.8h, v19.8h},             [x5], x6", -13, -5)
+//
+//MEM_TEST("ld1 {v17.8h, v18.8h, v19.8h, v20.8h},     [x5]", 17, 7)
+//MEM_TEST("ld1 {v17.8h, v18.8h, v19.8h, v20.8h},     [x5], #64", 9, 9)
+//MEM_TEST("ld1 {v17.8h, v18.8h, v19.8h, v20.8h},     [x5], x6", -13, -5)
+//
+//
+//MEM_TEST("ld1 {v19.4h, v20.4h},                     [x5]", 17, 7)
+//MEM_TEST("ld1 {v19.4h, v20.4h},                     [x5], #16", 9, 9)
+//MEM_TEST("ld1 {v19.4h, v20.4h},                     [x5], x6", -13, -5)
+//
+//MEM_TEST("ld1 {v17.4h, v18.4h, v19.4h},             [x5]", 17, 7)
+//MEM_TEST("ld1 {v17.4h, v18.4h, v19.4h},             [x5], #24", 9, 9)
+//MEM_TEST("ld1 {v17.4h, v18.4h, v19.4h},             [x5], x6", -13, -5)
+//
+//MEM_TEST("ld1 {v17.4h, v18.4h, v19.4h, v20.4h},     [x5]", 17, 7)
+//MEM_TEST("ld1 {v17.4h, v18.4h, v19.4h, v20.4h},     [x5], #32", 9, 9)
+//MEM_TEST("ld1 {v17.4h, v18.4h, v19.4h, v20.4h},     [x5], x6", -13, -5)
+
+
+MEM_TEST("ld1 {v19.16b, v20.16b},                   [x5]", 17, 7)
+MEM_TEST("ld1 {v19.16b, v20.16b},                   [x5], #32", 9, 9)
+//MEM_TEST("ld1 {v19.16b, v20.16b},                   [x5], x6", -13, -5)
+
+MEM_TEST("ld1 {v17.16b, v18.16b, v19.16b},          [x5]", 17, 7)
+//MEM_TEST("ld1 {v17.16b, v18.16b, v19.16b},          [x5], #48", 9, 9)
+//MEM_TEST("ld1 {v17.16b, v18.16b, v19.16b},          [x5], x6", -13, -5)
+//
+//MEM_TEST("ld1 {v17.16b, v18.16b, v19.16b, v20.16b}, [x5]", 17, 7)
+//MEM_TEST("ld1 {v17.16b, v18.16b, v19.16b, v20.16b}, [x5], #64", 9, 9)
+//MEM_TEST("ld1 {v17.16b, v18.16b, v19.16b, v20.16b}, [x5], x6", -13, -5)
+//
+//
+//MEM_TEST("ld1 {v19.8b, v20.8b},                     [x5]", 17, 7)
+//MEM_TEST("ld1 {v19.8b, v20.8b},                     [x5], #16", 9, 9)
+//MEM_TEST("ld1 {v19.8b, v20.8b},                     [x5], x6", -13, -5)
+//
+//MEM_TEST("ld1 {v17.8b, v18.8b, v19.8b},             [x5]", 17, 7)
+//MEM_TEST("ld1 {v17.8b, v18.8b, v19.8b},             [x5], #24", 9, 9)
+//MEM_TEST("ld1 {v17.8b, v18.8b, v19.8b},             [x5], x6", -13, -5)
+//
+//MEM_TEST("ld1 {v17.8b, v18.8b, v19.8b, v20.8b},     [x5]", 17, 7)
+//MEM_TEST("ld1 {v17.8b, v18.8b, v19.8b, v20.8b},     [x5], #32", 9, 9)
+//MEM_TEST("ld1 {v17.8b, v18.8b, v19.8b, v20.8b},     [x5], x6", -13, -5)
+
 
 ////////////////////////////////////////////////////////////////
 printf("LD1R (single structure, replicate)\n");
+
 MEM_TEST("ld1r {v17.2d},  [x5]", 3, -5)
 MEM_TEST("ld1r {v17.1d},  [x5]", 3, -4)
 MEM_TEST("ld1r {v17.4s},  [x5]", 3, -3)
@@ -777,49 +1225,374 @@ MEM_TEST("ld1r {v17.4h},  [x5], x6", 3, 1)
 MEM_TEST("ld1r {v17.16b}, [x5], x6", 3, 2)
 MEM_TEST("ld1r {v17.8b},  [x5], x6", 3, 3)
 
-////////////////////////////////////////////////////////////////
-printf("LD2/ST2 (multiple 2-elem structs to/from 2/regs, post index)"
-       " (VERY INCOMPLETE)\n");
-
-MEM_TEST("ld2 {v17.2d, v18.2d}, [x5], #32", 3, 0)
-MEM_TEST("st2 {v17.2d, v18.2d}, [x5], #32", 7, 0)
-
-MEM_TEST("ld2 {v17.4s, v18.4s}, [x5], #32", 13, 0)
-MEM_TEST("st2 {v17.4s, v18.4s}, [x5], #32", 17, 0)
-
 
 ////////////////////////////////////////////////////////////////
-printf("LD1/ST1 (multiple 1-elem structs to/from 2 regs, no offset)"
-        " (VERY INCOMPLETE)\n");
+printf("LD2R (single structure, replicate)\n");
 
-MEM_TEST("ld1 {v17.16b, v18.16b}, [x5]", 3, 0)
-MEM_TEST("st1 {v17.16b, v18.16b}, [x5]", 7, 0)
+//MEM_TEST("ld2r {v17.2d , v18.2d },  [x5]", 3, -5)
+//MEM_TEST("ld2r {v18.1d , v19.1d },  [x5]", 3, -4)
+//MEM_TEST("ld2r {v19.4s , v20.4s },  [x5]", 3, -3)
+//MEM_TEST("ld2r {v17.2s , v18.2s },  [x5]", 3, -2)
+//MEM_TEST("ld2r {v18.8h , v19.8h },  [x5]", 3, -1)
+//MEM_TEST("ld2r {v19.4h , v20.4h },  [x5]", 3, 1)
+//MEM_TEST("ld2r {v17.16b, v18.16b},  [x5]", 3, 2)
+//MEM_TEST("ld2r {v18.8b , v19.8b },  [x5]", 3, 3)
+//
+//MEM_TEST("ld2r {v19.2d , v20.2d },  [x5], #16", 3, -5)
+//MEM_TEST("ld2r {v17.1d , v18.1d },  [x5], #16", 3, -4)
+//MEM_TEST("ld2r {v18.4s , v19.4s },  [x5], #8", 3, -3)
+//MEM_TEST("ld2r {v19.2s , v20.2s },  [x5], #8", 3, -2)
+//MEM_TEST("ld2r {v17.8h , v18.8h },  [x5], #4", 3, -1)
+//MEM_TEST("ld2r {v18.4h , v19.4h },  [x5], #4", 3, 1)
+//MEM_TEST("ld2r {v19.16b, v20.16b},  [x5], #2", 3, 2)
+//MEM_TEST("ld2r {v17.8b , v18.8b },  [x5], #2", 3, 3)
+//
+//MEM_TEST("ld2r {v18.2d , v19.2d },  [x5], x6", 3, -5)
+//MEM_TEST("ld2r {v19.1d , v20.1d },  [x5], x6", 3, -4)
+//MEM_TEST("ld2r {v17.4s , v18.4s },  [x5], x6", 3, -3)
+//MEM_TEST("ld2r {v18.2s , v19.2s },  [x5], x6", 3, -2)
+//MEM_TEST("ld2r {v19.8h , v20.8h },  [x5], x6", 3, -1)
+//MEM_TEST("ld2r {v17.4h , v18.4h },  [x5], x6", 3, 1)
+//MEM_TEST("ld2r {v18.16b, v19.16b},  [x5], x6", 3, 2)
+//MEM_TEST("ld2r {v19.8b , v20.8b },  [x5], x6", 3, 3)
+
+
+//////////////////////////////////////////////////////////////////
+//printf("LD3R (single structure, replicate)\n");
+
+//MEM_TEST("ld3r {v17.2d , v18.2d , v19.2d },  [x5]", 3, -5)
+//MEM_TEST("ld3r {v18.1d , v19.1d , v20.1d },  [x5]", 3, -4)
+//MEM_TEST("ld3r {v17.4s , v18.4s , v19.4s },  [x5]", 3, -3)
+//MEM_TEST("ld3r {v18.2s , v19.2s , v20.2s },  [x5]", 3, -2)
+//MEM_TEST("ld3r {v17.8h , v18.8h , v19.8h },  [x5]", 3, -5)
+//MEM_TEST("ld3r {v18.4h , v19.4h , v20.4h },  [x5]", 3, -4)
+//MEM_TEST("ld3r {v17.16b, v18.16b, v19.16b},  [x5]", 3, -3)
+//MEM_TEST("ld3r {v18.8b , v19.8b , v20.8b },  [x5]", 3, -2)
+//
+//MEM_TEST("ld3r {v17.2d , v18.2d , v19.2d },  [x5], #24", 3, -5)
+//MEM_TEST("ld3r {v18.1d , v19.1d , v20.1d },  [x5], #24", 3, -4)
+//MEM_TEST("ld3r {v17.4s , v18.4s , v19.4s },  [x5], #12", 3, -3)
+//MEM_TEST("ld3r {v18.2s , v19.2s , v20.2s },  [x5], #12", 3, -2)
+//MEM_TEST("ld3r {v17.8h , v18.8h , v19.8h },  [x5], #6", 3, -5)
+//MEM_TEST("ld3r {v18.4h , v19.4h , v20.4h },  [x5], #6", 3, -4)
+//MEM_TEST("ld3r {v17.16b, v18.16b, v19.16b},  [x5], #3", 3, -3)
+//MEM_TEST("ld3r {v18.8b , v19.8b , v20.8b },  [x5], #3", 3, -2)
+//
+//MEM_TEST("ld3r {v17.2d , v18.2d , v19.2d },  [x5], x6", 3, -5)
+//MEM_TEST("ld3r {v18.1d , v19.1d , v20.1d },  [x5], x6", 3, -4)
+//MEM_TEST("ld3r {v17.4s , v18.4s , v19.4s },  [x5], x6", 3, -3)
+//MEM_TEST("ld3r {v18.2s , v19.2s , v20.2s },  [x5], x6", 3, -2)
+//MEM_TEST("ld3r {v17.8h , v18.8h , v19.8h },  [x5], x6", 3, -5)
+//MEM_TEST("ld3r {v18.4h , v19.4h , v20.4h },  [x5], x6", 3, -4)
+//MEM_TEST("ld3r {v17.16b, v18.16b, v19.16b},  [x5], x6", 3, -3)
+//MEM_TEST("ld3r {v18.8b , v19.8b , v20.8b },  [x5], x6", 3, -2)
 
 
 ////////////////////////////////////////////////////////////////
-printf("LD1/ST1 (multiple 1-elem structs to/from 2 regs, post index)"
-        " (VERY INCOMPLETE)\n");
+printf("LD4R (single structure, replicate)\n");
 
-MEM_TEST("ld1 {v17.16b, v18.16b}, [x5], #32", 3, 0)
-MEM_TEST("st1 {v17.16b, v18.16b}, [x5], #32", 7, 0)
+//MEM_TEST("ld4r {v17.2d , v18.2d , v19.2d , v20.2d },  [x5]", 3, -5)
+//MEM_TEST("ld4r {v17.1d , v18.1d , v19.1d , v20.1d },  [x5]", 3, -4)
+//MEM_TEST("ld4r {v17.4s , v18.4s , v19.4s , v20.4s },  [x5]", 3, -3)
+//MEM_TEST("ld4r {v17.2s , v18.2s , v19.2s , v20.2s },  [x5]", 3, -2)
+//MEM_TEST("ld4r {v17.8h , v18.8h , v19.8h , v20.8h },  [x5]", 3, -5)
+//MEM_TEST("ld4r {v17.4h , v18.4h , v19.4h , v20.4h },  [x5]", 3, -4)
+//MEM_TEST("ld4r {v17.16b, v18.16b, v19.16b, v20.16b},  [x5]", 3, -3)
+//MEM_TEST("ld4r {v17.8b , v18.8b , v19.8b , v20.8b },  [x5]", 3, -2)
+//
+//MEM_TEST("ld4r {v17.2d , v18.2d , v19.2d , v20.2d },  [x5], #32", 3, -5)
+//MEM_TEST("ld4r {v17.1d , v18.1d , v19.1d , v20.1d },  [x5], #32", 3, -4)
+//MEM_TEST("ld4r {v17.4s , v18.4s , v19.4s , v20.4s },  [x5], #16", 3, -3)
+//MEM_TEST("ld4r {v17.2s , v18.2s , v19.2s , v20.2s },  [x5], #16", 3, -2)
+//MEM_TEST("ld4r {v17.8h , v18.8h , v19.8h , v20.8h },  [x5], #8", 3, -5)
+//MEM_TEST("ld4r {v17.4h , v18.4h , v19.4h , v20.4h },  [x5], #8", 3, -4)
+//MEM_TEST("ld4r {v17.16b, v18.16b, v19.16b, v20.16b},  [x5], #4", 3, -3)
+//MEM_TEST("ld4r {v17.8b , v18.8b , v19.8b , v20.8b },  [x5], #4", 3, -2)
+//
+//MEM_TEST("ld4r {v17.2d , v18.2d , v19.2d , v20.2d },  [x5], x6", 3, -5)
+//MEM_TEST("ld4r {v17.1d , v18.1d , v19.1d , v20.1d },  [x5], x6", 3, -4)
+//MEM_TEST("ld4r {v17.4s , v18.4s , v19.4s , v20.4s },  [x5], x6", 3, -3)
+//MEM_TEST("ld4r {v17.2s , v18.2s , v19.2s , v20.2s },  [x5], x6", 3, -2)
+//MEM_TEST("ld4r {v17.8h , v18.8h , v19.8h , v20.8h },  [x5], x6", 3, -5)
+//MEM_TEST("ld4r {v17.4h , v18.4h , v19.4h , v20.4h },  [x5], x6", 3, -4)
+//MEM_TEST("ld4r {v17.16b, v18.16b, v19.16b, v20.16b},  [x5], x6", 3, -3)
+//MEM_TEST("ld4r {v17.8b , v18.8b , v19.8b , v20.8b },  [x5], x6", 3, -2)
 
 
 ////////////////////////////////////////////////////////////////
-printf("LD1/ST1 (multiple 1-elem structs to/from 3 regs, no offset)"
-        " (VERY INCOMPLETE)\n");
+printf("LD1/ST1 (single 1-elem struct to/from one lane of 1 reg\n");
 
-MEM_TEST("ld1 {v17.16b, v18.16b, v19.16b}, [x5]", 3, 0)
-MEM_TEST("st1 {v17.16b, v18.16b, v19.16b}, [x5]", 7, 0)
+//MEM_TEST("st1 {v19.d}[0], [x5]",       17,  7)
+//MEM_TEST("st1 {v19.d}[0], [x5], #8",   -9, 12)
+//MEM_TEST("st1 {v19.d}[0], [x5], x6",   9, 13)
+//
+//MEM_TEST("st1 {v19.d}[1], [x5]",       17,  7)
+//MEM_TEST("st1 {v19.d}[1], [x5], #8",   -9, 12)
+//MEM_TEST("st1 {v19.d}[1], [x5], x6",   9, 13)
+//
+//MEM_TEST("st1 {v19.s}[0], [x5]",       17,  7)
+//MEM_TEST("st1 {v19.s}[0], [x5], #4",   -9, 12)
+//MEM_TEST("st1 {v19.s}[0], [x5], x6",   9, 13)
+//
+//MEM_TEST("st1 {v19.s}[3], [x5]",       17,  7)
+//MEM_TEST("st1 {v19.s}[3], [x5], #4",   -9, 12)
+//MEM_TEST("st1 {v19.s}[3], [x5], x6",   9, 13)
+//
+//MEM_TEST("st1 {v19.h}[0], [x5]",       17,  7)
+//MEM_TEST("st1 {v19.h}[0], [x5], #2",   -9, 12)
+//MEM_TEST("st1 {v19.h}[0], [x5], x6",   9, 13)
+//
+//MEM_TEST("st1 {v19.h}[6], [x5]",       17,  7)
+//MEM_TEST("st1 {v19.h}[6], [x5], #2",   -9, 12)
+//MEM_TEST("st1 {v19.h}[6], [x5], x6",   9, 13)
+//
+//MEM_TEST("st1 {v19.b}[0], [x5]",       17,  7)
+//MEM_TEST("st1 {v19.b}[0], [x5], #1",   -9, 12)
+//MEM_TEST("st1 {v19.b}[0], [x5], x6",   9, 13)
+//
+//MEM_TEST("st1 {v19.b}[13], [x5]",      17,  7)
+//MEM_TEST("st1 {v19.b}[13], [x5], #1",  -9, 12)
+//MEM_TEST("st1 {v19.b}[13], [x5], x6",  9, 13)
+//
+//
+//MEM_TEST("ld1 {v19.d}[0], [x5]",       17,  7)
+//MEM_TEST("ld1 {v19.d}[0], [x5], #8",   -9, 12)
+//MEM_TEST("ld1 {v19.d}[0], [x5], x6",   9, 13)
+//
+//MEM_TEST("ld1 {v19.d}[1], [x5]",       17,  7)
+//MEM_TEST("ld1 {v19.d}[1], [x5], #8",   -9, 12)
+//MEM_TEST("ld1 {v19.d}[1], [x5], x6",   9, 13)
+//
+//MEM_TEST("ld1 {v19.s}[0], [x5]",       17,  7)
+//MEM_TEST("ld1 {v19.s}[0], [x5], #4",   -9, 12)
+//MEM_TEST("ld1 {v19.s}[0], [x5], x6",   9, 13)
+//
+//MEM_TEST("ld1 {v19.s}[3], [x5]",       17,  7)
+//MEM_TEST("ld1 {v19.s}[3], [x5], #4",   -9, 12)
+//MEM_TEST("ld1 {v19.s}[3], [x5], x6",   9, 13)
+//
+//MEM_TEST("ld1 {v19.h}[0], [x5]",       17,  7)
+//MEM_TEST("ld1 {v19.h}[0], [x5], #2",   -9, 12)
+//MEM_TEST("ld1 {v19.h}[0], [x5], x6",   9, 13)
+//
+//MEM_TEST("ld1 {v19.h}[6], [x5]",       17,  7)
+//MEM_TEST("ld1 {v19.h}[6], [x5], #2",   -9, 12)
+//MEM_TEST("ld1 {v19.h}[6], [x5], x6",   9, 13)
+//
+//MEM_TEST("ld1 {v19.b}[0], [x5]",       17,  7)
+//MEM_TEST("ld1 {v19.b}[0], [x5], #1",   -9, 12)
+//MEM_TEST("ld1 {v19.b}[0], [x5], x6",   9, 13)
+//
+//MEM_TEST("ld1 {v19.b}[13], [x5]",      17,  7)
+//MEM_TEST("ld1 {v19.b}[13], [x5], #1",  -9, 12)
+//MEM_TEST("ld1 {v19.b}[13], [x5], x6",  9, 13)
 
 
 ////////////////////////////////////////////////////////////////
-printf("LD3/ST3 (multiple 3-elem structs to/from 3/regs, post index)"
-       " (VERY INCOMPLETE)\n");
+printf("LD2/ST2 (single 2-elem struct to/from one lane of 2 regs\n");
 
-MEM_TEST("ld3 {v17.2d, v18.2d, v19.2d}, [x5], #48", 13, 0)
-MEM_TEST("st3 {v17.2d, v18.2d, v19.2d}, [x5], #48", 17, 0)
+//MEM_TEST("st2 {v18.d, v19.d}[0], [x5]",       17,  7)
+//MEM_TEST("st2 {v18.d, v19.d}[0], [x5], #16",  -9, 12)
+//MEM_TEST("st2 {v18.d, v19.d}[0], [x5], x6",   9, 13)
+//
+//MEM_TEST("st2 {v18.d, v19.d}[1], [x5]",       17,  7)
+//MEM_TEST("st2 {v18.d, v19.d}[1], [x5], #16",  -9, 12)
+//MEM_TEST("st2 {v18.d, v19.d}[1], [x5], x6",   9, 13)
+//
+//MEM_TEST("st2 {v18.s, v19.s}[0], [x5]",       17,  7)
+//MEM_TEST("st2 {v18.s, v19.s}[0], [x5], #8",   -9, 12)
+//MEM_TEST("st2 {v18.s, v19.s}[0], [x5], x6",   9, 13)
+//
+//MEM_TEST("st2 {v18.s, v19.s}[3], [x5]",       17,  7)
+//MEM_TEST("st2 {v18.s, v19.s}[3], [x5], #8",   -9, 12)
+//MEM_TEST("st2 {v18.s, v19.s}[3], [x5], x6",   9, 13)
+//
+//MEM_TEST("st2 {v18.h, v19.h}[0], [x5]",       17,  7)
+//MEM_TEST("st2 {v18.h, v19.h}[0], [x5], #4",   -9, 12)
+//MEM_TEST("st2 {v18.h, v19.h}[0], [x5], x6",   9, 13)
+//
+//MEM_TEST("st2 {v18.h, v19.h}[6], [x5]",       17,  7)
+//MEM_TEST("st2 {v18.h, v19.h}[6], [x5], #4",   -9, 12)
+//MEM_TEST("st2 {v18.h, v19.h}[6], [x5], x6",   9, 13)
+//
+//MEM_TEST("st2 {v18.b, v19.b}[0], [x5]",       17,  7)
+//MEM_TEST("st2 {v18.b, v19.b}[0], [x5], #2",   -9, 12)
+//MEM_TEST("st2 {v18.b, v19.b}[0], [x5], x6",   9, 13)
+//
+//MEM_TEST("st2 {v18.b, v19.b}[13], [x5]",      17,  7)
+//MEM_TEST("st2 {v18.b, v19.b}[13], [x5], #2",  -9, 12)
+//MEM_TEST("st2 {v18.b, v19.b}[13], [x5], x6",  9, 13)
+//
+//
+//MEM_TEST("ld2 {v18.d, v19.d}[0], [x5]",       17,  7)
+//MEM_TEST("ld2 {v18.d, v19.d}[0], [x5], #16",  -9, 12)
+//MEM_TEST("ld2 {v18.d, v19.d}[0], [x5], x6",   9, 13)
+//
+//MEM_TEST("ld2 {v18.d, v19.d}[1], [x5]",       17,  7)
+//MEM_TEST("ld2 {v18.d, v19.d}[1], [x5], #16",  -9, 12)
+//MEM_TEST("ld2 {v18.d, v19.d}[1], [x5], x6",   9, 13)
+//
+//MEM_TEST("ld2 {v18.s, v19.s}[0], [x5]",       17,  7)
+//MEM_TEST("ld2 {v18.s, v19.s}[0], [x5], #8",   -9, 12)
+//MEM_TEST("ld2 {v18.s, v19.s}[0], [x5], x6",   9, 13)
+//
+//MEM_TEST("ld2 {v18.s, v19.s}[3], [x5]",       17,  7)
+//MEM_TEST("ld2 {v18.s, v19.s}[3], [x5], #8",   -9, 12)
+//MEM_TEST("ld2 {v18.s, v19.s}[3], [x5], x6",   9, 13)
+//
+//MEM_TEST("ld2 {v18.h, v19.h}[0], [x5]",       17,  7)
+//MEM_TEST("ld2 {v18.h, v19.h}[0], [x5], #4",   -9, 12)
+//MEM_TEST("ld2 {v18.h, v19.h}[0], [x5], x6",   9, 13)
+//
+//MEM_TEST("ld2 {v18.h, v19.h}[6], [x5]",       17,  7)
+//MEM_TEST("ld2 {v18.h, v19.h}[6], [x5], #4",   -9, 12)
+//MEM_TEST("ld2 {v18.h, v19.h}[6], [x5], x6",   9, 13)
+//
+//MEM_TEST("ld2 {v18.b, v19.b}[0], [x5]",       17,  7)
+//MEM_TEST("ld2 {v18.b, v19.b}[0], [x5], #2",   -9, 12)
+//MEM_TEST("ld2 {v18.b, v19.b}[0], [x5], x6",   9, 13)
+//
+//MEM_TEST("ld2 {v18.b, v19.b}[13], [x5]",      17,  7)
+//MEM_TEST("ld2 {v18.b, v19.b}[13], [x5], #2",  -9, 12)
+//MEM_TEST("ld2 {v18.b, v19.b}[13], [x5], x6",  9, 13)
 
 
+////////////////////////////////////////////////////////////////
+printf("LD3/ST3 (single 3-elem struct to/from one lane of 3 regs\n");
+
+//MEM_TEST("st3 {v17.d, v18.d, v19.d}[0], [x5]",       17,  7)
+//MEM_TEST("st3 {v17.d, v18.d, v19.d}[0], [x5], #24",  -9, 12)
+//MEM_TEST("st3 {v17.d, v18.d, v19.d}[0], [x5], x6",   9, 13)
+//
+//MEM_TEST("st3 {v17.d, v18.d, v19.d}[1], [x5]",       17,  7)
+//MEM_TEST("st3 {v17.d, v18.d, v19.d}[1], [x5], #24",  -9, 12)
+//MEM_TEST("st3 {v17.d, v18.d, v19.d}[1], [x5], x6",   9, 13)
+//
+//MEM_TEST("st3 {v17.s, v18.s, v19.s}[0], [x5]",       17,  7)
+//MEM_TEST("st3 {v17.s, v18.s, v19.s}[0], [x5], #12",  -9, 12)
+//MEM_TEST("st3 {v17.s, v18.s, v19.s}[0], [x5], x6",   9, 13)
+//
+//MEM_TEST("st3 {v17.s, v18.s, v19.s}[3], [x5]",       17,  7)
+//MEM_TEST("st3 {v17.s, v18.s, v19.s}[3], [x5], #12",  -9, 12)
+//MEM_TEST("st3 {v17.s, v18.s, v19.s}[3], [x5], x6",   9, 13)
+//
+//MEM_TEST("st3 {v17.h, v18.h, v19.h}[0], [x5]",       17,  7)
+//MEM_TEST("st3 {v17.h, v18.h, v19.h}[0], [x5], #6",   -9, 12)
+//MEM_TEST("st3 {v17.h, v18.h, v19.h}[0], [x5], x6",   9, 13)
+//
+//MEM_TEST("st3 {v17.h, v18.h, v19.h}[6], [x5]",       17,  7)
+//MEM_TEST("st3 {v17.h, v18.h, v19.h}[6], [x5], #6",   -9, 12)
+//MEM_TEST("st3 {v17.h, v18.h, v19.h}[6], [x5], x6",   9, 13)
+//
+//MEM_TEST("st3 {v17.b, v18.b, v19.b}[0], [x5]",       17,  7)
+//MEM_TEST("st3 {v17.b, v18.b, v19.b}[0], [x5], #3",   -9, 12)
+//MEM_TEST("st3 {v17.b, v18.b, v19.b}[0], [x5], x6",   9, 13)
+//
+//MEM_TEST("st3 {v17.b, v18.b, v19.b}[13], [x5]",      17,  7)
+//MEM_TEST("st3 {v17.b, v18.b, v19.b}[13], [x5], #3",  -9, 12)
+//MEM_TEST("st3 {v17.b, v18.b, v19.b}[13], [x5], x6",  9, 13)
+//
+//
+//MEM_TEST("ld3 {v17.d, v18.d, v19.d}[0], [x5]",       17,  7)
+//MEM_TEST("ld3 {v17.d, v18.d, v19.d}[0], [x5], #24",  -9, 12)
+//MEM_TEST("ld3 {v17.d, v18.d, v19.d}[0], [x5], x6",   9, 13)
+//
+//MEM_TEST("ld3 {v17.d, v18.d, v19.d}[1], [x5]",       17,  7)
+//MEM_TEST("ld3 {v17.d, v18.d, v19.d}[1], [x5], #24",  -9, 12)
+//MEM_TEST("ld3 {v17.d, v18.d, v19.d}[1], [x5], x6",   9, 13)
+//
+//MEM_TEST("ld3 {v17.s, v18.s, v19.s}[0], [x5]",       17,  7)
+//MEM_TEST("ld3 {v17.s, v18.s, v19.s}[0], [x5], #12",  -9, 12)
+//MEM_TEST("ld3 {v17.s, v18.s, v19.s}[0], [x5], x6",   9, 13)
+//
+//MEM_TEST("ld3 {v17.s, v18.s, v19.s}[3], [x5]",       17,  7)
+//MEM_TEST("ld3 {v17.s, v18.s, v19.s}[3], [x5], #12",  -9, 12)
+//MEM_TEST("ld3 {v17.s, v18.s, v19.s}[3], [x5], x6",   9, 13)
+//
+//MEM_TEST("ld3 {v17.h, v18.h, v19.h}[0], [x5]",       17,  7)
+//MEM_TEST("ld3 {v17.h, v18.h, v19.h}[0], [x5], #6",   -9, 12)
+//MEM_TEST("ld3 {v17.h, v18.h, v19.h}[0], [x5], x6",   9, 13)
+//
+//MEM_TEST("ld3 {v17.h, v18.h, v19.h}[6], [x5]",       17,  7)
+//MEM_TEST("ld3 {v17.h, v18.h, v19.h}[6], [x5], #6",   -9, 12)
+//MEM_TEST("ld3 {v17.h, v18.h, v19.h}[6], [x5], x6",   9, 13)
+//
+//MEM_TEST("ld3 {v17.b, v18.b, v19.b}[0], [x5]",       17,  7)
+//MEM_TEST("ld3 {v17.b, v18.b, v19.b}[0], [x5], #3",   -9, 12)
+//MEM_TEST("ld3 {v17.b, v18.b, v19.b}[0], [x5], x6",   9, 13)
+//
+//MEM_TEST("ld3 {v17.b, v18.b, v19.b}[13], [x5]",      17,  7)
+//MEM_TEST("ld3 {v17.b, v18.b, v19.b}[13], [x5], #3",  -9, 12)
+//MEM_TEST("ld3 {v17.b, v18.b, v19.b}[13], [x5], x6",  9, 13)
+
+
+////////////////////////////////////////////////////////////////
+printf("LD4/ST4 (single 4-elem struct to/from one lane of 4 regs\n");
+
+//MEM_TEST("st4 {v17.d, v18.d, v19.d, v20.d}[0], [x5]",       17,  7)
+//MEM_TEST("st4 {v17.d, v18.d, v19.d, v20.d}[0], [x5], #32",  -9, 12)
+//MEM_TEST("st4 {v17.d, v18.d, v19.d, v20.d}[0], [x5], x6",   9, 13)
+//
+//MEM_TEST("st4 {v17.d, v18.d, v19.d, v20.d}[1], [x5]",       17,  7)
+//MEM_TEST("st4 {v17.d, v18.d, v19.d, v20.d}[1], [x5], #32",  -9, 12)
+//MEM_TEST("st4 {v17.d, v18.d, v19.d, v20.d}[1], [x5], x6",   9, 13)
+//
+//MEM_TEST("st4 {v17.s, v18.s, v19.s, v20.s}[0], [x5]",       17,  7)
+//MEM_TEST("st4 {v17.s, v18.s, v19.s, v20.s}[0], [x5], #16",  -9, 12)
+//MEM_TEST("st4 {v17.s, v18.s, v19.s, v20.s}[0], [x5], x6",   9, 13)
+//
+//MEM_TEST("st4 {v17.s, v18.s, v19.s, v20.s}[3], [x5]",       17,  7)
+//MEM_TEST("st4 {v17.s, v18.s, v19.s, v20.s}[3], [x5], #16",  -9, 12)
+//MEM_TEST("st4 {v17.s, v18.s, v19.s, v20.s}[3], [x5], x6",   9, 13)
+//
+//MEM_TEST("st4 {v17.h, v18.h, v19.h, v20.h}[0], [x5]",       17,  7)
+//MEM_TEST("st4 {v17.h, v18.h, v19.h, v20.h}[0], [x5], #8",   -9, 12)
+//MEM_TEST("st4 {v17.h, v18.h, v19.h, v20.h}[0], [x5], x6",   9, 13)
+//
+//MEM_TEST("st4 {v17.h, v18.h, v19.h, v20.h}[6], [x5]",       17,  7)
+//MEM_TEST("st4 {v17.h, v18.h, v19.h, v20.h}[6], [x5], #8",   -9, 12)
+//MEM_TEST("st4 {v17.h, v18.h, v19.h, v20.h}[6], [x5], x6",   9, 13)
+//
+//MEM_TEST("st4 {v17.b, v18.b, v19.b, v20.b}[0], [x5]",       17,  7)
+//MEM_TEST("st4 {v17.b, v18.b, v19.b, v20.b}[0], [x5], #4",   -9, 12)
+//MEM_TEST("st4 {v17.b, v18.b, v19.b, v20.b}[0], [x5], x6",   9, 13)
+//
+//MEM_TEST("st4 {v17.b, v18.b, v19.b, v20.b}[13], [x5]",      17,  7)
+//MEM_TEST("st4 {v17.b, v18.b, v19.b, v20.b}[13], [x5], #4",  -9, 12)
+//MEM_TEST("st4 {v17.b, v18.b, v19.b, v20.b}[13], [x5], x6",  9, 13)
+//
+//
+//MEM_TEST("ld4 {v17.d, v18.d, v19.d, v20.d}[0], [x5]",       17,  7)
+//MEM_TEST("ld4 {v17.d, v18.d, v19.d, v20.d}[0], [x5], #32",  -9, 12)
+//MEM_TEST("ld4 {v17.d, v18.d, v19.d, v20.d}[0], [x5], x6",   9, 13)
+//
+//MEM_TEST("ld4 {v17.d, v18.d, v19.d, v20.d}[1], [x5]",       17,  7)
+//MEM_TEST("ld4 {v17.d, v18.d, v19.d, v20.d}[1], [x5], #32",  -9, 12)
+//MEM_TEST("ld4 {v17.d, v18.d, v19.d, v20.d}[1], [x5], x6",   9, 13)
+//
+//MEM_TEST("ld4 {v17.s, v18.s, v19.s, v20.s}[0], [x5]",       17,  7)
+//MEM_TEST("ld4 {v17.s, v18.s, v19.s, v20.s}[0], [x5], #16",  -9, 12)
+//MEM_TEST("ld4 {v17.s, v18.s, v19.s, v20.s}[0], [x5], x6",   9, 13)
+//
+//MEM_TEST("ld4 {v17.s, v18.s, v19.s, v20.s}[3], [x5]",       17,  7)
+//MEM_TEST("ld4 {v17.s, v18.s, v19.s, v20.s}[3], [x5], #16",  -9, 12)
+//MEM_TEST("ld4 {v17.s, v18.s, v19.s, v20.s}[3], [x5], x6",   9, 13)
+//
+//MEM_TEST("ld4 {v17.h, v18.h, v19.h, v20.h}[0], [x5]",       17,  7)
+//MEM_TEST("ld4 {v17.h, v18.h, v19.h, v20.h}[0], [x5], #8",   -9, 12)
+//MEM_TEST("ld4 {v17.h, v18.h, v19.h, v20.h}[0], [x5], x6",   9, 13)
+//
+//MEM_TEST("ld4 {v17.h, v18.h, v19.h, v20.h}[6], [x5]",       17,  7)
+//MEM_TEST("ld4 {v17.h, v18.h, v19.h, v20.h}[6], [x5], #8",   -9, 12)
+//MEM_TEST("ld4 {v17.h, v18.h, v19.h, v20.h}[6], [x5], x6",   9, 13)
+//
+//MEM_TEST("ld4 {v17.b, v18.b, v19.b, v20.b}[0], [x5]",       17,  7)
+//MEM_TEST("ld4 {v17.b, v18.b, v19.b, v20.b}[0], [x5], #4",   -9, 12)
+//MEM_TEST("ld4 {v17.b, v18.b, v19.b, v20.b}[0], [x5], x6",   9, 13)
+//
+//MEM_TEST("ld4 {v17.b, v18.b, v19.b, v20.b}[13], [x5]",      17,  7)
+//MEM_TEST("ld4 {v17.b, v18.b, v19.b, v20.b}[13], [x5], #4",  -9, 12)
+//MEM_TEST("ld4 {v17.b, v18.b, v19.b, v20.b}[13], [x5], x6",  9, 13)
 
 } /* end of test_memory2() */
 
@@ -832,7 +1605,7 @@ MEM_TEST("st3 {v17.2d, v18.2d, v19.2d}, [x5], #48", 17, 0)
 
 int main ( void )
 {
-  if (1) test_memory();
-  if (1) test_memory2();
+  if (1) test_memory_old();
+  if (1) test_memory_new();
   return 0;
 }

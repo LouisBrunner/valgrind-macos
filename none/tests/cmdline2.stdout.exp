@@ -121,6 +121,8 @@ usage: valgrind [options] prog-and-args
                   NOTE: stack scanning is only available on arm-linux.
     --unw-stack-scan-frames=<number>   Max number of frames that can be
                   recovered by stack scanning [5]
+    --resync-filter=no|yes|verbose [yes on MacOS, no on other OSes]
+              attempt to avoid expensive address-space-resync operations
 
   user options for Nulgrind:
     (none)

@@ -208,6 +208,8 @@ static void usage_NORETURN ( Bool debug_help )
 "                  NOTE: stack scanning is only available on arm-linux.\n"
 "    --unw-stack-scan-frames=<number>   Max number of frames that can be\n"
 "                  recovered by stack scanning [5]\n"
+"    --resync-filter=no|yes|verbose [yes on MacOS, no on other OSes]\n"
+"              attempt to avoid expensive address-space-resync operations\n"
 "\n";
 
    const HChar usage2[] = 

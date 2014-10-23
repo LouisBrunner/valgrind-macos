@@ -807,6 +807,13 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
       else if VG_BINT_CLO(arg, "--unw-stack-scan-frames",
                           VG_(clo_unw_stack_scan_frames), 0, 32) {}
 
+      else if VG_XACT_CLO(arg, "--resync-filter=no",
+                               VG_(clo_resync_filter), 0) {}
+      else if VG_XACT_CLO(arg, "--resync-filter=yes",
+                               VG_(clo_resync_filter), 1) {}
+      else if VG_XACT_CLO(arg, "--resync-filter=verbose",
+                               VG_(clo_resync_filter), 2) {}
+
       else if ( ! VG_(needs).command_line_options
              || ! VG_TDICT_CALL(tool_process_cmd_line_option, arg) ) {
          VG_(fmsg_bad_option)(arg, "");
@@ -869,6 +876,14 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
          "Can't use --gen-suppressions= with %s\n"
          "because it doesn't generate errors.\n", VG_(details).name);
    }
+
+#  if !defined(VGO_darwin)
+   if (VG_(clo_resync_filter) != 0) {
+      VG_(fmsg_bad_option)("--resync-filter=yes or =verbose", 
+                           "--resync-filter= is only available on MacOS X.\n");
+      /*NOTREACHED*/
+   }
+#  endif
 
    /* If XML output is requested, check that the tool actually
       supports it. */

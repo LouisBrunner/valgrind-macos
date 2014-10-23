@@ -1404,6 +1404,11 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
    vg_assert(tid >= 1 && tid < VG_N_THREADS);
    vg_assert(VG_(is_running_thread)(tid));
 
+#  if !defined(VGO_darwin)
+   // Resync filtering is meaningless on non-Darwin targets.
+   vg_assert(VG_(clo_resync_filter) == 0);
+#  endif
+
    tst = VG_(get_ThreadState)(tid);
 
    /* BEGIN ensure root thread's stack is suitably mapped */

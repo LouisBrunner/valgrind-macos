@@ -372,6 +372,12 @@ extern UInt VG_(clo_unw_stack_scan_thresh);
    low by default.  Default: 5 */
 extern UInt VG_(clo_unw_stack_scan_frames);
 
+/* Controls the resync-filter on MacOS.  Has no effect on Linux.
+   0=disabled [default on Linux]   "no"
+   1=enabled  [default on MacOS]   "yes"
+   2=enabled and verbose.          "verbose" */
+extern UInt VG_(clo_resync_filter);
+
 #endif   // __PUB_CORE_OPTIONS_H
 
 /*--------------------------------------------------------------------*/

@@ -51,7 +51,7 @@ extern const UInt ML_(mdep_trap_table_size);
 
 void VG_(show_open_ports)(void);
 
-Bool ML_(sync_mappings)(const HChar *when, const HChar *where, Int num);
+Bool ML_(sync_mappings)(const HChar *when, const HChar *where, UWord num);
 
 // Unix syscalls.  
 // GEN = it uses the generic wrapper

@@ -612,9 +612,132 @@ void VG_(show_open_ports)(void)
    sync_mappings
    ------------------------------------------------------------------ */
 
-Bool ML_(sync_mappings)(const HChar *when, const HChar *where, Int num)
+typedef
+   enum { CheckAlways=1, CheckEvery20, CheckNever }
+   CheckHowOften;
+
+static const HChar* show_CheckHowOften ( CheckHowOften cho ) {
+   switch (cho) {
+      case CheckAlways:   return "Always ";
+      case CheckEvery20:  return "Every20";
+      case CheckNever:    return "Never  ";
+      default: vg_assert(0);
+   }
+}
+
+/* Statistics for one particular resync-call set of arguments,
+   as specified by key1, key2 and key3. */
+typedef
+   struct {
+      CheckHowOften cho;
+      const HChar*  key1;
+      const HChar*  key2;
+      UWord         key3;
+      ULong         n_checks;
+      ULong         n_mappings_added;
+      ULong         n_mappings_removed;
+   }
+   SyncStats;
+
+static Bool cmp_eqkeys_SyncStats ( SyncStats* ss1, SyncStats* ss2 ) {
+   return ss1->key3 == ss2->key3
+          && 0 == VG_(strcmp)(ss1->key1, ss2->key1)
+          && 0 == VG_(strcmp)(ss1->key2, ss2->key2);
+}
+
+/* The filter data. */
+#define N_SYNCSTATS 1000
+static Int       syncstats_used = 0;
+static SyncStats syncstats[N_SYNCSTATS];
+
+/* Statistics overall, for the filter. */
+static ULong n_syncsRequested = 0; // Total number requested
+static ULong n_syncsPerformed = 0; // Number carried out (the rest skipped)
+
+
+static
+void update_syncstats ( CheckHowOften cho,
+                        const HChar* key1, const HChar* key2,
+                        UWord key3,
+                        UInt n_mappings_added, UInt n_mappings_removed )
 {
-   // Usually the number of segments added/removed in a single calls is very
+   SyncStats dummy = { CheckAlways, key1, key2, key3, 0, 0, 0 };
+   Int i;
+   for (i = 0; i < syncstats_used; i++) {
+      if (cmp_eqkeys_SyncStats(&syncstats[i], &dummy))
+         break;
+   }
+   vg_assert(i >= 0 && i <= syncstats_used);
+   if (i == syncstats_used) {
+      // alloc new
+      vg_assert(syncstats_used < N_SYNCSTATS);
+      syncstats_used++;
+      syncstats[i] = dummy;
+      syncstats[i].cho = cho;
+   }
+   vg_assert(cmp_eqkeys_SyncStats(&syncstats[i], &dummy));
+   syncstats[i].n_checks++;
+   syncstats[i].n_mappings_added   += (ULong)n_mappings_added;
+   syncstats[i].n_mappings_removed += (ULong)n_mappings_removed;
+   // reorder
+   static UInt reorder_ctr = 0;
+   if (i > 0 && 0 == (1 & reorder_ctr++)) {
+      SyncStats tmp = syncstats[i-1];
+      syncstats[i-1] = syncstats[i];
+      syncstats[i] = tmp;
+   }
+}
+
+
+static void maybe_show_syncstats ( void )
+{
+   Int i;
+
+   // display
+   if (0 == (n_syncsRequested & 0xFF)) {
+      VG_(printf)("Resync filter: %'llu requested, %'llu performed (%llu%%)\n",
+                  n_syncsRequested, n_syncsPerformed,
+                  (100 * n_syncsPerformed) / 
+                     (n_syncsRequested == 0 ? 1 : n_syncsRequested));
+      for (i = 0; i < syncstats_used; i++) {
+         if (i >= 40) break; // just show the top 40
+         VG_(printf)("  [%3d] (%s) upd %6llu  diff %4llu+,%3llu-"
+                     "  %s %s 0x%08llx\n",
+                     i, show_CheckHowOften(syncstats[i].cho),
+                     syncstats[i].n_checks, 
+                     syncstats[i].n_mappings_added,
+                     syncstats[i].n_mappings_removed,
+                     syncstats[i].key1, syncstats[i].key2,
+                     (ULong)syncstats[i].key3);
+      }
+      if (i < syncstats_used) {
+        VG_(printf)("  and %d more entries not shown.\n", syncstats_used - i);
+      }
+      VG_(printf)("\n");
+   }
+}
+
+
+Bool ML_(sync_mappings)(const HChar* when, const HChar* where, UWord num)
+{
+   // If VG(clo_resync_filter) == 0, the filter is disabled, and
+   //   we must always honour the resync request.
+   //
+   // If VG(clo_resync_filter) == 1, the filter is enabled,
+   //   so we try to avoid doing the sync if possible, but keep
+   //   quiet.
+   //
+   // If VG(clo_resync_filter) == 2, the filter is enabled,
+   //   so we try to avoid doing the sync if possible, and also
+   //   periodically show stats, so that the filter can be updated.
+   //   (by hand).
+
+   if (VG_(clo_resync_filter) >= 2)
+      maybe_show_syncstats();
+
+   n_syncsRequested++;
+
+   // Usually the number of segments added/removed in a single call is very
    // small e.g. 1.  But it sometimes gets up to at least 100 or so (eg. for
    // Quicktime).  So we use a repeat-with-bigger-buffers-until-success model,
    // because we can't do dynamic allocation within VG_(get_changed_segments),
@@ -625,10 +748,137 @@ Bool ML_(sync_mappings)(const HChar *when, const HChar *where, Int num)
    Int         i;
    Bool        ok;
 
-   if (VG_(clo_trace_syscalls)) {
+   // -------------- BEGIN resync-filter-kludge --------------
+   //
+   // Some kludges to try and avoid the worst case cost hit of doing
+   // zillions of resyncs (huge).  The idea is that many of the most
+   // common resyncs never appear to cause a delta, so we just ignore
+   // them (CheckNever).  Then, a bunch of them also happen a lot, but
+   // only very occasionally cause a delta.  We resync after 20 of those
+   // (CheckEvery20).  Finally, the rest form a long tail, so we always
+   // resync after those (CheckAlways).
+   //
+   // Assume this is kernel-version and word-size specific, so develop
+   // filters accordingly.  This might be overly conservative --
+   // I don't know.
+
+#  define STREQ(_s1, _s2) (0 == VG_(strcmp)((_s1),(_s2)))
+   Bool when_in    = STREQ(when,  "in");
+   Bool when_after = STREQ(when,  "after");
+   Bool where_mmr  = STREQ(where, "mach_msg_receive");
+   Bool where_mmrU = STREQ(where, "mach_msg_receive-UNHANDLED");
+   Bool where_iuct = STREQ(where, "iokit_user_client_trap");
+   Bool where_MwcN = STREQ(where, "ML_(wqthread_continue_NORETURN)");
+   Bool where_woQR = STREQ(where, "workq_ops(QUEUE_REQTHREADS)");
+   Bool where_woTR = STREQ(where, "workq_ops(THREAD_RETURN)");
+   Bool where_ke64 = STREQ(where, "kevent64");
+#  undef STREQ
+
+   vg_assert(
+      1 >= ( (where_mmr ? 1 : 0) + (where_mmrU ? 1 : 0) 
+             + (where_iuct ? 1 : 0) + (where_MwcN ? 1 : 0)
+             + (where_woQR ? 1 : 0) + (where_woTR ? 1 : 0)
+             + (where_ke64 ? 1 : 0)
+   ));
+   // merely to stop gcc complaining of non-use in the case where
+   // there's no filter:
+   vg_assert(when_in    == True || when_in    == False);
+   vg_assert(when_after == True || when_after == False);
+
+   CheckHowOften check = CheckAlways;
+
+#  if DARWIN_VERS == DARWIN_10_9 && VG_WORDSIZE == 8
+   /* ------ BEGIN filter for 64-bit 10.9.x ------ */
+   if (when_after && where_mmr) {
+      // "after mach_msg_receive <number>"
+      switch (num) {
+         case 0x00000000: // upd 12414 diff 36+,0-
+            check = CheckEvery20;
+            break;
+         default:
+            break;
+      }
+   }
+   else
+   if (when_after && where_mmrU) {
+      // "after mach_msg_receive-UNHANDLED <number>"
+      switch (num) {
+         case 0x00000000: // upd 16687 diff 73+,0-
+         case 0x00000001: // upd 5106 diff 89+,0-
+         case 0x00000002: // upd 1609 diff 1+,0-
+         case 0x00000003: // upd 1987 diff 6+,0-
+         // case 0x00000b95: // upd 2894 diff 57+,1- <==dangerous
+         case 0x000072d9: // upd 2616 diff 11+,0- 
+         case 0x000072cb: // upd 2616 diff 9+,0-
+         case 0x000074d5: // upd 172 diff 0+,0-
+            check = CheckEvery20;
+            break;
+         default:
+            break;
+      }
+   }
+   else
+   if (when_in && where_MwcN && num == 0x00000000) {
+      // in ML_(wqthread_continue_NORETURN) 0x00000000
+      // upd 4346 diff 0+,0- 
+      check = CheckEvery20;
+   }
+   else
+   if (when_after && where_woQR && num == 0x00000000) {
+      // after workq_ops(QUEUE_REQTHREADS) 0x00000000
+      // upd 14434 diff 102+,0-
+      check = CheckEvery20;
+   }
+   else
+   if (when_after && where_woTR && num == 0x00000000) {
+      // after workq_ops(THREAD_RETURN) 0x00000000
+      // upd 14434 diff 102+,0-
+      check = CheckEvery20;
+   }
+   else
+   if (when_after && where_ke64 && num == 0x00000000) {
+      // after kevent64 0x00000000
+      // upd 1736 diff 78+,0- 
+      check = CheckEvery20;
+   }
+   /* ------- END filter for 64-bit 10.9.x ------- */
+#  endif /* DARWIN_VERS == DARWIN_10_9 && VG_WORDSIZE == 8 */
+
+   /* Regardless of what the filter says, force a sync every 1 time in
+      1000, to stop things getting too far out of sync. */
+   {
+     static UInt ctr1k = 0;
+     ctr1k++;
+     if ((ctr1k % 1000) == 0)
+        check = CheckAlways;
+   }
+
+   /* If the filter is disabled, we must always check. */
+   if (VG_(clo_resync_filter) == 0)
+      check = CheckAlways;
+
+   switch (check) {
+      case CheckAlways:
+         break;
+      case CheckEvery20: {
+         // only resync once every 20th time
+         static UInt ctr10 = 0;
+         ctr10++;
+         if ((ctr10 % 20) != 0) return False;
+         break;
+      }
+      case CheckNever:
+         return False;
+      default:
+         vg_assert(0);
+   }
+   //
+   // --------------- END resync-filter-kludge ---------------
+
+   if (0 || VG_(clo_trace_syscalls)) {
        VG_(debugLog)(0, "syswrap-darwin",
-                     "sync_mappings(\"%s\", \"%s\", %d)\n", 
-                     when, where, num);
+                     "sync_mappings (%s) (\"%s\", \"%s\", 0x%llx)\n", 
+                     show_CheckHowOften(check), when, where, (ULong)num);
    }
 
    // 16 is enough for most cases, but small enough that overflow happens
@@ -637,20 +887,25 @@ Bool ML_(sync_mappings)(const HChar *when, const HChar *where, Int num)
    ok = False;
    while (!ok) {
       VG_(free)(css);   // css is NULL on first iteration;  that's ok.
-      css = VG_(calloc)("sys_wrap.sync_mappings", css_size, sizeof(ChangedSeg));
+      css = VG_(calloc)("sys_wrap.sync_mappings",
+                        css_size, sizeof(ChangedSeg));
       ok = VG_(get_changed_segments)(when, where, css, css_size, &css_used);
       css_size *= 2;
    } 
+
+   UInt css_added = 0, css_removed = 0;
 
    // Now add/remove them.
    for (i = 0; i < css_used; i++) {
       ChangedSeg* cs = &css[i];
       if (cs->is_added) {
+         css_added++;
          ML_(notify_core_and_tool_of_mmap)(
                cs->start, cs->end - cs->start + 1,
                cs->prot, VKI_MAP_PRIVATE, 0, cs->offset);
          // should this call VG_(di_notify_mmap) also?
       } else {
+         css_removed++;
          ML_(notify_core_and_tool_of_munmap)(
                cs->start, cs->end - cs->start + 1);
       }
@@ -668,6 +923,14 @@ Bool ML_(sync_mappings)(const HChar *when, const HChar *where, Int num)
    }
 
    VG_(free)(css);
+
+   if (0)
+      VG_(debugLog)(0, "syswrap-darwin", "SYNC: %d  %s  %s\n",
+                    css_used, when, where);
+
+   // Update the stats, so we can derive the filter above.
+   n_syncsPerformed++;
+   update_syncstats(check, when, where, num, css_added, css_removed);
 
    return css_used > 0;
 }
@@ -7128,14 +7391,14 @@ PRE(bootstrap_look_up)
 
 POST(mach_msg_receive)
 {
-   // mach_msg_header_t *mh = (mach_msg_header_t *)ARG1;
+   mach_msg_header_t *mh = (mach_msg_header_t *)ARG1;
 
    // GrP fixme don't know of anything interesting here currently
    // import_complex_message handles everything
    // PRINT("UNHANDLED reply %d", mh->msgh_id);
 
    // Assume the call may have mapped or unmapped memory
-   ML_(sync_mappings)("after", "mach_msg_receive", 0);
+   ML_(sync_mappings)("after", "mach_msg_receive", mh->msgh_id);
 }
 
 PRE(mach_msg_receive)
@@ -7698,7 +7961,8 @@ POST(mach_msg)
 
 POST(mach_msg_unhandled)
 {
-   ML_(sync_mappings)("after", "mach_msg_receive (unhandled)", 0);
+   mach_msg_header_t *mh = (mach_msg_header_t *)ARG1;
+   ML_(sync_mappings)("after", "mach_msg_receive-UNHANDLED", mh->msgh_id);
 }
 
 POST(mach_msg_unhandled_check)

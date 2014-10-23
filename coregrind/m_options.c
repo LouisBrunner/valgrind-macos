@@ -129,6 +129,12 @@ Bool   VG_(clo_sigill_diag)    = True;
 UInt   VG_(clo_unw_stack_scan_thresh) = 0; /* disabled by default */
 UInt   VG_(clo_unw_stack_scan_frames) = 5;
 
+#if defined(VGO_darwin)
+UInt VG_(clo_resync_filter) = 1; /* enabled, but quiet */
+#else
+UInt VG_(clo_resync_filter) = 0; /* disabled */
+#endif
+
 
 /*====================================================================*/
 /*=== File expansion                                               ===*/

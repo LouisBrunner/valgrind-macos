@@ -590,9 +590,11 @@ find_separate_debug_file (const HChar *executable_name)
 
 /* Given a DiSlice covering the entire Mach-O thin image, find the
    DiSlice for the specified (segname, sectname) pairing, if
-   possible. */
+   possible.  Also return the section's .addr field in *svma if
+   svma is non-NULL. */
 static DiSlice getsectdata ( DiSlice img,
-                             const HChar *segname, const HChar *sectname )
+                             const HChar *segname, const HChar *sectname,
+                             /*OUT*/Addr* svma )
 {
    DiCursor cur = ML_(cur_from_sli)(img);
 
@@ -618,6 +620,7 @@ static DiSlice getsectdata ( DiSlice img,
                   DiSlice res = img;
                   res.ioff = sect.offset;
                   res.szB = sect.size;
+                  if (svma) *svma = (Addr)sect.addr;
                   return res;
                }
             }
@@ -1091,20 +1094,36 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
       on to reading stuff out of it. */
 
   read_the_dwarf:
-   if (ML_(sli_is_valid)(msli) && msli.szB > 0) {
+   if (ML_(sli_is_valid)(dsli) && dsli.szB > 0) {
       // "_mscn" is "mach-o section"
       DiSlice debug_info_mscn
-         = getsectdata(dsli, "__DWARF", "__debug_info");
+         = getsectdata(dsli, "__DWARF", "__debug_info", NULL);
       DiSlice debug_abbv_mscn
-         = getsectdata(dsli, "__DWARF", "__debug_abbrev");
+         = getsectdata(dsli, "__DWARF", "__debug_abbrev", NULL);
       DiSlice debug_line_mscn
-         = getsectdata(dsli, "__DWARF", "__debug_line");
+         = getsectdata(dsli, "__DWARF", "__debug_line", NULL);
       DiSlice debug_str_mscn
-         = getsectdata(dsli, "__DWARF", "__debug_str");
+         = getsectdata(dsli, "__DWARF", "__debug_str", NULL);
       DiSlice debug_ranges_mscn
-         = getsectdata(dsli, "__DWARF", "__debug_ranges");
+         = getsectdata(dsli, "__DWARF", "__debug_ranges", NULL);
       DiSlice debug_loc_mscn
-         = getsectdata(dsli, "__DWARF", "__debug_loc");
+         = getsectdata(dsli, "__DWARF", "__debug_loc", NULL);
+
+      /* It appears (jrs, 2014-oct-19) that section "__eh_frame" in
+         segment "__TEXT" appears in both the main and dsym files, but
+         only the main one gives the right results.  Since it's in the
+         __TEXT segment, we calculate the __eh_frame avma using its
+         svma and the text bias, and that sounds reasonable. */
+      Addr eh_frame_svma = 0;
+      DiSlice eh_frame_mscn
+         = getsectdata(msli, "__TEXT", "__eh_frame", &eh_frame_svma);
+
+      if (ML_(sli_is_valid)(eh_frame_mscn)) {
+         vg_assert(di->text_bias == di->text_debug_bias);
+         ML_(read_callframe_info_dwarf3)(di, eh_frame_mscn,
+                                         eh_frame_svma + di->text_bias,
+                                         True/*is_ehframe*/);
+      }
    
       if (ML_(sli_is_valid)(debug_info_mscn)) {
          if (VG_(clo_verbosity) > 1) {

@@ -703,8 +703,8 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
    Bool     have_uuid    = False;
    UChar    uuid[16];
    Word     i;
-   struct _DebugInfoMapping* rx_map = NULL;
-   struct _DebugInfoMapping* rw_map = NULL;
+   const DebugInfoMapping* rx_map = NULL;
+   const DebugInfoMapping* rw_map = NULL;
 
    /* mmap the object file to look for di->soname and di->text_bias 
       and uuid and nlist */
@@ -715,7 +715,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
    vg_assert(di->fsm.have_rw_map);
 
    for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
-      struct _DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
+      const DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
       if (map->rx && !rx_map)
          rx_map = map;
       if (map->rw && !rw_map)

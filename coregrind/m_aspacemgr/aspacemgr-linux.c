@@ -501,7 +501,7 @@ static void show_len_concisely ( /*OUT*/HChar* buf, Addr start, Addr end )
 /* Show full details of an NSegment */
 
 static void __attribute__ ((unused))
-            show_nsegment_full ( Int logLevel, Int segNo, NSegment* seg )
+            show_nsegment_full ( Int logLevel, Int segNo, const NSegment* seg )
 {
    HChar len_buf[20];
    const HChar* name = "(none)";
@@ -531,7 +531,7 @@ static void __attribute__ ((unused))
 
 /* Show an NSegment in a user-friendly-ish way. */
 
-static void show_nsegment ( Int logLevel, Int segNo, NSegment* seg )
+static void show_nsegment ( Int logLevel, Int segNo, const NSegment* seg )
 {
    HChar len_buf[20];
    show_len_concisely(len_buf, seg->start, seg->end);
@@ -689,7 +689,7 @@ Int VG_(am_get_segment_starts)( Addr* starts, Int nStarts )
 
 /* Check representational invariants for NSegments. */
 
-static Bool sane_NSegment ( NSegment* s )
+static Bool sane_NSegment ( const NSegment* s )
 {
    if (s == NULL) return False;
 
@@ -742,7 +742,7 @@ static Bool sane_NSegment ( NSegment* s )
    modified, and True is returned.  Otherwise s1 is unchanged and
    False is returned. */
 
-static Bool maybe_merge_nsegments ( NSegment* s1, NSegment* s2 )
+static Bool maybe_merge_nsegments ( NSegment* s1, const NSegment* s2 )
 {
    if (s1->kind != s2->kind) 
       return False;
@@ -1485,7 +1485,7 @@ void split_nsegments_lo_and_hi ( Addr sLo, Addr sHi,
    This deals with all the tricky cases of splitting up segments as
    needed. */
 
-static void add_segment ( NSegment* seg )
+static void add_segment ( const NSegment* seg )
 {
    Int  i, iLo, iHi, delta;
    Bool segment_is_sane;
@@ -1755,8 +1755,8 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
 
 /* Query aspacem to ask where a mapping should go. */
 
-Addr VG_(am_get_advisory) ( MapRequest*  req, 
-                            Bool         forClient, 
+Addr VG_(am_get_advisory) ( const MapRequest*  req, 
+                            Bool  forClient, 
                             /*OUT*/Bool* ok )
 {
    /* This function implements allocation policy.

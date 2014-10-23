@@ -1898,7 +1898,7 @@ typedef
    }
    RegRule;
 
-static void ppRegRule ( XArray* exprs, const RegRule* rrule )
+static void ppRegRule ( const XArray* exprs, const RegRule* rrule )
 {
    vg_assert(exprs);
    switch (rrule->tag) {

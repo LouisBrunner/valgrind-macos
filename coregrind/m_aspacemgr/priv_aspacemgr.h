@@ -110,7 +110,7 @@ extern SysRes ML_(am_do_relocate_nooverlap_mapping_NO_NOTIFY)(
 extern SysRes ML_(am_open)  ( const HChar* pathname, Int flags, Int mode );
 extern void   ML_(am_close) ( Int fd );
 extern Int    ML_(am_read)  ( Int fd, void* buf, Int count);
-extern Int    ML_(am_readlink) ( HChar* path, HChar* buf, UInt bufsiz );
+extern Int    ML_(am_readlink) ( const HChar* path, HChar* buf, UInt bufsiz );
 extern Int    ML_(am_fcntl) ( Int fd, Int cmd, Addr arg );
 
 /* Get the dev, inode and mode info for a file descriptor, if

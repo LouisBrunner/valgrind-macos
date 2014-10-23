@@ -377,7 +377,7 @@ ULong read_leb128 ( const UChar* data, Int* length_return, Int sign )
  * value is returned and the given pointer is
  * moved past end of leb128 data */
 /* FIXME: duplicated in readdwarf.c */
-static ULong read_leb128U( UChar **data )
+static ULong read_leb128U( const UChar **data )
 {
   Int len;
   ULong val = read_leb128( *data, &len, 0 );
@@ -387,7 +387,7 @@ static ULong read_leb128U( UChar **data )
 
 /* Same for signed data */
 /* FIXME: duplicated in readdwarf.c */
-static Long read_leb128S( UChar **data )
+static Long read_leb128S( const UChar **data )
 {
    Int len;
    ULong val = read_leb128( *data, &len, 1 );
@@ -473,8 +473,8 @@ static Bool bias_address( Addr* a, const DebugInfo* di )
 
 /* Evaluate a standard DWARF3 expression.  See detailed description in
    priv_d3basics.h.  Doesn't handle DW_OP_piece/DW_OP_bit_piece yet.  */
-GXResult ML_(evaluate_Dwarf3_Expr) ( UChar* expr, UWord exprszB, 
-                                     GExpr* fbGX, const RegSummary* regs,
+GXResult ML_(evaluate_Dwarf3_Expr) ( const UChar* expr, UWord exprszB, 
+                                     const GExpr* fbGX, const RegSummary* regs,
                                      const DebugInfo* di,
                                      Bool push_initial_zero )
 {
@@ -506,7 +506,7 @@ GXResult ML_(evaluate_Dwarf3_Expr) ( UChar* expr, UWord exprszB,
       } while (0)
 
    UChar    opcode;
-   UChar*   limit;
+   const UChar* limit;
    Int      sp; /* # of top element: valid is -1 .. N_EXPR_STACK-1 */
    Addr     stack[N_EXPR_STACK]; /* stack of addresses, as per D3 spec */
    GXResult fbval, res;
@@ -728,7 +728,7 @@ GXResult ML_(evaluate_Dwarf3_Expr) ( UChar* expr, UWord exprszB,
             PUSH(uw1);
             break;
          case DW_OP_const1s:
-	    uw1 = *(Char *)expr;
+	    uw1 = *(const Char *)expr;
 	    expr++;
 	    PUSH(uw1);
             break;
@@ -942,7 +942,7 @@ GXResult ML_(evaluate_Dwarf3_Expr) ( UChar* expr, UWord exprszB,
 
 /* Evaluate a so-called Guarded (DWARF3) expression.  See detailed
    description in priv_d3basics.h. */
-GXResult ML_(evaluate_GX)( GExpr* gx, GExpr* fbGX,
+GXResult ML_(evaluate_GX)( const GExpr* gx, const GExpr* fbGX,
                            const RegSummary* regs, const DebugInfo* di )
 {
    GXResult res;
@@ -950,7 +950,7 @@ GXResult ML_(evaluate_GX)( GExpr* gx, GExpr* fbGX,
    UChar    uc;
    UShort   nbytes;
    UWord    nGuards = 0;
-   UChar* p = &gx->payload[0];
+   const UChar* p = &gx->payload[0];
    uc = *p++; /*biasMe*/
    vg_assert(uc == 0 || uc == 1);
    /* in fact it's senseless to evaluate if the guards need biasing.
@@ -1014,7 +1014,7 @@ GXResult ML_(evaluate_GX)( GExpr* gx, GExpr* fbGX,
    Really it ought to be pulled out and turned into a general
    constant- expression evaluator.
 */
-GXResult ML_(evaluate_trivial_GX)( GExpr* gx, const DebugInfo* di )
+GXResult ML_(evaluate_trivial_GX)( const GExpr* gx, const DebugInfo* di )
 {
    GXResult   res;
    Addr       aMin, aMax;
@@ -1024,7 +1024,7 @@ GXResult ML_(evaluate_trivial_GX)( GExpr* gx, const DebugInfo* di )
    MaybeULong *mul, *mul2;
 
    const HChar*  badness = NULL;
-   UChar*  p       = &gx->payload[0]; /* must remain unsigned */
+   const UChar*  p       = &gx->payload[0]; /* must remain unsigned */
    XArray* results = VG_(newXA)( ML_(dinfo_zalloc), "di.d3basics.etG.1",
                                  ML_(dinfo_free),
                                  sizeof(MaybeULong) );

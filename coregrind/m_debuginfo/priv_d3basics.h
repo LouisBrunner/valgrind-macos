@@ -652,7 +652,7 @@ void ML_(pp_GXResult) ( GXResult res );
    computed, then fbGX can provide an expression for it.  If fbGX is
    NULL but the frame base is still needed, then evaluation of gx as a
    whole will fail. */
-GXResult ML_(evaluate_GX)( GExpr* gx, GExpr* fbGX,
+GXResult ML_(evaluate_GX)( const GExpr* gx, const GExpr* fbGX,
                            const RegSummary* regs, const DebugInfo* di );
 
 /* This is a subsidiary of ML_(evaluate_GX), which just evaluates a
@@ -662,8 +662,8 @@ GXResult ML_(evaluate_GX)( GExpr* gx, GExpr* fbGX,
    This is needed for computing structure field offsets.  Note that
    ML_(evaluate_GX) and ML_(evaluate_Dwarf3_Expr) are mutually
    recursive. */
-GXResult ML_(evaluate_Dwarf3_Expr) ( UChar* expr, UWord exprszB, 
-                                     GExpr* fbGX, const RegSummary* regs,
+GXResult ML_(evaluate_Dwarf3_Expr) ( const UChar* expr, UWord exprszB, 
+                                     const GExpr* fbGX, const RegSummary* regs,
                                      const DebugInfo* di,
                                      Bool push_initial_zero );
 
@@ -674,7 +674,7 @@ GXResult ML_(evaluate_Dwarf3_Expr) ( UChar* expr, UWord exprszB,
    location is denoted, a frame base expression is required, or the
    expression is not manifestly a constant.  The range of addresses
    covered by the guard is also ignored. */
-GXResult ML_(evaluate_trivial_GX)( GExpr* gx, const DebugInfo* di );
+GXResult ML_(evaluate_trivial_GX)( const GExpr* gx, const DebugInfo* di );
 
 /* Compute call frame address (CFA) for IP/SP/FP.  */
 Addr ML_(get_CFA) ( Addr ip, Addr sp, Addr fp,

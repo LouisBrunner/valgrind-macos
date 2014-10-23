@@ -311,7 +311,8 @@ static Frame* mk_Frame_asciiz ( const HChar* tag, const HChar* str )
    return f;
 }
 
-static Bool parse_Frame_le64 ( Frame* fr, const HChar* tag, /*OUT*/ULong* n1 )
+static Bool parse_Frame_le64 ( const Frame* fr, const HChar* tag,
+                               /*OUT*/ULong* n1 )
 {
    vg_assert(VG_(strlen)(tag) == 4);
    if (!fr || !fr->data) return False;
@@ -322,7 +323,7 @@ static Bool parse_Frame_le64 ( Frame* fr, const HChar* tag, /*OUT*/ULong* n1 )
    return True;
 }
 
-static Bool parse_Frame_le64_le64 ( Frame* fr, const HChar* tag,
+static Bool parse_Frame_le64_le64 ( const Frame* fr, const HChar* tag,
                                     /*OUT*/ULong* n1, /*OUT*/ULong* n2 )
 {
    vg_assert(VG_(strlen)(tag) == 4);
@@ -335,7 +336,7 @@ static Bool parse_Frame_le64_le64 ( Frame* fr, const HChar* tag,
    return True;
 }
 
-static Bool parse_Frame_asciiz ( Frame* fr, const HChar* tag,
+static Bool parse_Frame_asciiz ( const Frame* fr, const HChar* tag,
                                  /*OUT*/UChar** str )
 {
    vg_assert(VG_(strlen)(tag) == 4);
@@ -362,7 +363,7 @@ static Bool parse_Frame_asciiz ( Frame* fr, const HChar* tag,
 }
 
 static Bool parse_Frame_le64_le64_le64_bytes (
-               Frame* fr, const HChar* tag,
+               const Frame* fr, const HChar* tag,
                /*OUT*/ULong* n1, /*OUT*/ULong* n2, /*OUT*/ULong* n3,
                /*OUT*/UChar** data, /*OUT*/ULong* n_data 
             )
@@ -426,7 +427,7 @@ static void move_CEnt_to_top ( DiImage* img, UInt entNo )
    the given offset.  It is this function that brings data into the
    cache, either by reading the local file or pulling it from the
    remote server. */
-static void set_CEnt ( DiImage* img, UInt entNo, DiOffT off )
+static void set_CEnt ( const DiImage* img, UInt entNo, DiOffT off )
 {
    SizeT len;
    DiOffT off_orig = off;
@@ -825,7 +826,7 @@ SizeT ML_(img_get_some)(/*OUT*/void* dst,
    dstU[0] = get(img, offset);
    /* Now just read as many bytes as we can (or need) directly out of
       entry zero, without bothering to call |get| each time. */
-   CEnt* ce = img->ces[0];
+   const CEnt* ce = img->ces[0];
    vg_assert(ce && ce->used >= 1);
    vg_assert(is_in_CEnt(ce, offset));
    SizeT nToCopy = size - 1;

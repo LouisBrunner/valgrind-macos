@@ -920,7 +920,7 @@ void ML_(ppCfiExpr)( const XArray* src, Int ix )
 {
    /* VG_(indexXA) checks for invalid src/ix values, so we can
       use it indiscriminately. */
-   CfiExpr* e = (CfiExpr*) VG_(indexXA)( src, ix );
+   const CfiExpr* e = VG_(indexXA)( src, ix );
    switch (e->tag) {
       case Cex_Undef: 
          VG_(printf)("Undef"); 
@@ -1144,8 +1144,8 @@ void ML_(addVar)( struct _DebugInfo* di,
                   Addr   aMax,
                   const  HChar* name, /* in di's .strpool */
                   UWord  typeR, /* a cuOff */
-                  GExpr* gexpr,
-                  GExpr* fbGX,
+                  const GExpr* gexpr,
+                  const GExpr* fbGX,
                   UInt   fndn_ix, /* where decl'd - may be zero.
                                      index in in di's .fndnpool */
                   Int    lineNo, /* where decl'd - may be zero */

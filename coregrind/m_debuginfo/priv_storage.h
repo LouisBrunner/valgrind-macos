@@ -478,8 +478,8 @@ typedef
    struct {
       const  HChar* name;  /* in DebugInfo.strpool */
       UWord  typeR; /* a cuOff */
-      GExpr* gexpr; /* on DebugInfo.gexprs list */
-      GExpr* fbGX;  /* SHARED. */
+      const GExpr* gexpr; /* on DebugInfo.gexprs list */
+      const GExpr* fbGX;  /* SHARED. */
       UInt   fndn_ix; /* where declared; may be zero. index
                          in DebugInfo.fndnpool */
       Int    lineNo;   /* where declared; may be zero. */
@@ -1058,8 +1058,8 @@ extern void ML_(addVar)( struct _DebugInfo* di,
                          Addr   aMax,
                          const  HChar* name,
                          UWord  typeR, /* a cuOff */
-                         GExpr* gexpr,
-                         GExpr* fbGX, /* SHARED. */
+                         const GExpr* gexpr,
+                         const GExpr* fbGX, /* SHARED. */
                          UInt   fndn_ix, /* where decl'd - may be zero */
                          Int    lineNo, /* where decl'd - may be zero */
                          Bool   show );

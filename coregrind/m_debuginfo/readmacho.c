@@ -675,7 +675,7 @@ static Bool check_uuid_matches ( DiSlice sli, UChar* uuid )
 /* Heuristic kludge: return True if this looks like an installed
    standard library; hence we shouldn't consider automagically running
    dsymutil on it. */
-static Bool is_systemish_library_name ( HChar* name )
+static Bool is_systemish_library_name ( const HChar* name )
 {
    vg_assert(name);
    if (0 == VG_(strncasecmp)(name, "/usr/", 5)

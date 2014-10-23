@@ -232,7 +232,7 @@ static /*signed*/Long get_remaining_length_Cursor ( const Cursor* c ) {
 //   return &c->region_start_img[ c->region_next ];
 //}
 
-static DiCursor get_DiCursor_from_Cursor ( Cursor* c ) {
+static DiCursor get_DiCursor_from_Cursor ( const Cursor* c ) {
    return mk_DiCursor(c->sli.img, c->sli_next);
 }
 
@@ -774,7 +774,8 @@ typedef
 
 /* Generate an arbitrary structural total ordering on
    XArray* of AddrRange. */
-static Word cmp__XArrays_of_AddrRange ( XArray* rngs1, XArray* rngs2 )
+static Word cmp__XArrays_of_AddrRange ( const XArray* rngs1,
+                                        const XArray* rngs2 )
 {
    Word n1, n2, i;
    vg_assert(rngs1 && rngs2);
@@ -2907,7 +2908,8 @@ static Bool typestack_is_empty ( const D3TypeParser* parser )
 static void typestack_push ( const CUConst* cc,
                              D3TypeParser* parser,
                              Bool td3,
-                             TyEnt* parentE, Int level ) {
+                             TyEnt* parentE, Int level )
+{
    if (0)
    TRACE_D3("BBBBAAAA typestack_push[newsp=%d]: %d  %05lx\n",
             parser->sp+1, level, parentE->cuOff);
@@ -3780,7 +3782,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
 /*------------------------------------------------------------*/
 
 static UWord chase_cuOff ( Bool* changed,
-                           XArray* /* of TyEnt */ ents,
+                           const XArray* /* of TyEnt */ ents,
                            TyEntIndexCache* ents_cache,
                            UWord cuOff )
 {
@@ -3806,7 +3808,7 @@ static UWord chase_cuOff ( Bool* changed,
 
 static
 void chase_cuOffs_in_XArray ( Bool* changed,
-                              XArray* /* of TyEnt */ ents,
+                              const XArray* /* of TyEnt */ ents,
                               TyEntIndexCache* ents_cache,
                               /*MOD*/XArray* /* of UWord */ cuOffs )
 {
@@ -3822,7 +3824,7 @@ void chase_cuOffs_in_XArray ( Bool* changed,
    *changed = b2;
 }
 
-static Bool TyEnt__subst_R_fields ( XArray* /* of TyEnt */ ents,
+static Bool TyEnt__subst_R_fields ( const XArray* /* of TyEnt */ ents,
                                     TyEntIndexCache* ents_cache,
                                     /*MOD*/TyEnt* te )
 {

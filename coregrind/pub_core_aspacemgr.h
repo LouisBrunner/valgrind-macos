@@ -149,7 +149,7 @@ typedef
    set to False, it means aspacem has vetoed the mapping, and so the
    caller should not proceed with it. */
 extern Addr VG_(am_get_advisory)
-   ( MapRequest* req, Bool forClient, /*OUT*/Bool* ok );
+   ( const MapRequest* req, Bool forClient, /*OUT*/Bool* ok );
 
 /* Convenience wrapper for VG_(am_get_advisory) for client floating or
    fixed requests.  If start is zero, a floating request is issued; if
@@ -365,7 +365,8 @@ extern VgStack* VG_(am_alloc_VgStack)( /*OUT*/Addr* initial_sp );
 /* Figure out how many bytes of the stack's active area have not been
    used.  Used for estimating if we are close to overflowing it.  If
    the free area is larger than 'limit', just return 'limit'. */
-extern SizeT VG_(am_get_VgStack_unused_szB)( VgStack* stack, SizeT limit ); 
+extern SizeT VG_(am_get_VgStack_unused_szB)( const VgStack* stack,
+                                             SizeT limit ); 
 
 // DDD: this is ugly
 #if defined(VGO_darwin)

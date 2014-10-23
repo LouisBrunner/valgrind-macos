@@ -1970,7 +1970,7 @@ Bool VG_(get_objname) ( Addr a, HChar* buf, Int nbuf )
 {
    DebugInfo* di;
    const NSegment *seg;
-   HChar* filename;
+   const HChar* filename;
    vg_assert(nbuf > 0);
    /* Look in the debugInfo_list to find the name.  In most cases we
       expect this to produce a result. */
@@ -2164,7 +2164,8 @@ static Int putStr ( Int n, Int n_buf, HChar* buf, const HChar* str )
 /* Same as putStr, but escaping chars for XML output, and
    also not adding more than count chars to n_buf. */
 
-static Int putStrEsc ( Int n, Int n_buf, Int count, HChar* buf, HChar* str ) 
+static Int putStrEsc ( Int n, Int n_buf, Int count, HChar* buf,
+                       const HChar* str ) 
 {
    HChar alt[2];
    vg_assert(n_buf > 0);
@@ -2423,7 +2424,7 @@ HChar* VG_(describe_IP)(Addr eip, HChar* buf, Int n_buf, InlIPCursor *iipc)
    a CfiExpr into one convenient struct. */
 typedef
    struct {
-      D3UnwindRegs* uregs;
+      const D3UnwindRegs* uregs;
       Addr          min_accessible;
       Addr          max_accessible;
    }
@@ -2434,12 +2435,12 @@ typedef
    caller must set it to True before calling. */
 __attribute__((noinline))
 static
-UWord evalCfiExpr ( XArray* exprs, Int ix, 
-                    CfiExprEvalContext* eec, Bool* ok )
+UWord evalCfiExpr ( const XArray* exprs, Int ix, 
+                    const CfiExprEvalContext* eec, Bool* ok )
 {
    UWord w, wL, wR;
    Addr  a;
-   CfiExpr* e;
+   const CfiExpr* e;
    vg_assert(sizeof(Addr) == sizeof(UWord));
    e = VG_(indexXA)( exprs, ix );
    switch (e->tag) {
@@ -2688,9 +2689,9 @@ static inline CFSI_m_CacheEnt* cfsi_m_cache__find ( Addr ip )
 
 
 inline
-static Addr compute_cfa ( D3UnwindRegs* uregs,
+static Addr compute_cfa ( const D3UnwindRegs* uregs,
                           Addr min_accessible, Addr max_accessible,
-                          DebugInfo* di, DiCfSI_m* cfsi_m )
+                          const DebugInfo* di, const DiCfSI_m* cfsi_m )
 {
    CfiExprEvalContext eec;
    Addr               cfa;
@@ -2968,7 +2969,7 @@ Bool VG_(use_FPO_info) ( /*MOD*/Addr* ipP,
                          Addr max_accessible )
 {
    Word       i;
-   DebugInfo* di;
+   const DebugInfo* di;
    FPO_DATA*  fpo = NULL;
    Addr       spHere;
 
@@ -3108,10 +3109,10 @@ static void zterm_XA ( XArray* dst )
    regs, which supplies ip,sp,fp values, will be NULL for global
    variables, and non-NULL for local variables. */
 static Bool data_address_is_in_var ( /*OUT*/PtrdiffT* offset,
-                                     XArray* /* TyEnt */ tyents,
-                                     DiVariable*   var,
-                                     RegSummary*   regs,
-                                     Addr          data_addr,
+                                     const XArray* /* TyEnt */ tyents,
+                                     const DiVariable*   var,
+                                     const RegSummary*   regs,
+                                     Addr  data_addr,
                                      const DebugInfo* di )
 {
    MaybeULong mul;
@@ -3790,8 +3791,8 @@ Bool VG_(get_data_description)(
 
 static 
 void analyse_deps ( /*MOD*/XArray* /* of FrameBlock */ blocks,
-                    XArray* /* TyEnt */ tyents,
-                    Addr ip, const DebugInfo* di, DiVariable* var,
+                    const XArray* /* TyEnt */ tyents,
+                    Addr ip, const DebugInfo* di, const DiVariable* var,
                     Bool arrays_only )
 {
    GXResult   res_sp_6k, res_sp_7k, res_fp_6k, res_fp_7k;

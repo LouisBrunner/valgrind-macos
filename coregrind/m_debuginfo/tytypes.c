@@ -204,7 +204,7 @@ void ML_(pp_TyEnts)( const XArray* tyents, const HChar* who )
    VG_(printf)("------ %s ------\n", who);
    n = VG_(sizeXA)( tyents );
    for (i = 0; i < n; i++) {
-      TyEnt* tyent = (TyEnt*)VG_(indexXA)( tyents, i );
+      const TyEnt* tyent = VG_(indexXA)( tyents, i );
       VG_(printf)("   [%5ld]  ", i);
       ML_(pp_TyEnt)( tyent );
       VG_(printf)("\n");

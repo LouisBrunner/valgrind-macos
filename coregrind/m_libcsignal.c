@@ -133,7 +133,7 @@ Int VG_(sigismember) ( const vki_sigset_t* set, Int signum )
 }
 
 /* Add all signals in src to dst. */
-void VG_(sigaddset_from_set)( vki_sigset_t* dst, vki_sigset_t* src )
+void VG_(sigaddset_from_set)( vki_sigset_t* dst, const vki_sigset_t* src )
 {
    Int i;
    vg_assert(dst != NULL && src != NULL);
@@ -142,7 +142,7 @@ void VG_(sigaddset_from_set)( vki_sigset_t* dst, vki_sigset_t* src )
 }
 
 /* Remove all signals in src from dst. */
-void VG_(sigdelset_from_set)( vki_sigset_t* dst, vki_sigset_t* src )
+void VG_(sigdelset_from_set)( vki_sigset_t* dst, const vki_sigset_t* src )
 {
    Int i;
    vg_assert(dst != NULL && src != NULL);
@@ -151,7 +151,7 @@ void VG_(sigdelset_from_set)( vki_sigset_t* dst, vki_sigset_t* src )
 }
 
 /* dst = dst `intersect` src. */
-void VG_(sigintersectset)( vki_sigset_t* dst, vki_sigset_t* src )
+void VG_(sigintersectset)( vki_sigset_t* dst, const vki_sigset_t* src )
 {
    Int i;
    vg_assert(dst != NULL && src != NULL);
@@ -160,7 +160,7 @@ void VG_(sigintersectset)( vki_sigset_t* dst, vki_sigset_t* src )
 }
 
 /* dst = ~src */
-void VG_(sigcomplementset)( vki_sigset_t* dst, vki_sigset_t* src )
+void VG_(sigcomplementset)( vki_sigset_t* dst, const vki_sigset_t* src )
 {
    Int i;
    vg_assert(dst != NULL && src != NULL);
@@ -280,7 +280,7 @@ Int VG_(sigaction) ( Int signum,
 
 /* See explanation in pub_core_libcsignal.h. */
 void 
-VG_(convert_sigaction_fromK_to_toK)( vki_sigaction_fromK_t* fromK,
+VG_(convert_sigaction_fromK_to_toK)( const vki_sigaction_fromK_t* fromK,
                                      /*OUT*/vki_sigaction_toK_t* toK )
 {
 #  if defined(VGO_linux)

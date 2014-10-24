@@ -1736,25 +1736,8 @@ AC_MSG_RESULT([-Wextra])
 CFLAGS=$safe_CFLAGS
 
 # does this compiler support -Wcast-qual ?
-AC_MSG_CHECKING([if gcc accepts -Wcast-qual])
-
-safe_CFLAGS=$CFLAGS
-CFLAGS="-Wcast-qual"
-
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
-  return 0;
-]])], [
-cast_qual=yes
-AC_MSG_RESULT([yes])
-], [
-cast_qual=no
-AC_MSG_RESULT([no])
-])
-CFLAGS=$safe_CFLAGS
-
-AM_CONDITIONAL(HAS_CAST_QUAL_WARNING, test x$cast_qual = xyes)
-
-if test x$cast_qual = xyes; then
+AC_GCC_WARNING_COND([cast-qual], [HAS_CAST_QUAL_WARNING])
+if test $has_warning_flag = yes; then
   CFLAGS="$CFLAGS -Wcast-qual"
   CXXFLAGS="$CXXFLAGS -Wcast-qual"
 fi

@@ -87,15 +87,13 @@ struct thread_info {
    Int bbtrace_fd;          /* file descriptor */
 };
 
-#define FUNCTION_NAME_LENGTH 20
-
 struct BB_info {
    Addr       BB_addr;           /* used as key, must be first           */
    Int        n_instrs;          /* instructions in the basic block      */
    Int        block_num;         /* unique block identifier              */
    Int        *inst_counter;     /* times entered * num_instructions     */
    Bool       is_entry;          /* is this block a function entry point */
-   HChar      fn_name[FUNCTION_NAME_LENGTH];  /* Function block is in    */
+   const HChar *fn_name;         /* Function block is in                 */
 };
 
 
@@ -403,8 +401,9 @@ static IRSB* bbv_instrument ( VgCallbackClosure* closure,
       bbInfo->block_num=block_num;
       block_num++;
          /* get function name and entry point information */
-      bbInfo->is_entry=VG_(get_fnname_if_entry)(origAddr, bbInfo->fn_name,
-                                                FUNCTION_NAME_LENGTH);
+      const HChar *fn_name;
+      bbInfo->is_entry=VG_(get_fnname_if_entry)(origAddr, &fn_name);
+      bbInfo->fn_name =VG_(strdup)("bbv_strings", fn_name);
          /* insert structure into table */
       VG_(OSetGen_Insert)( instr_info_table, bbInfo );
    }

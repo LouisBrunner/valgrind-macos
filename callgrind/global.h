@@ -691,7 +691,7 @@ void CLG_(init_eventsets)(void);
 
 /* from main.c */
 Bool CLG_(get_debug_info)(Addr, HChar filename[FILENAME_LEN],
-			 HChar fn_name[FN_NAME_LEN], UInt*, DebugInfo**);
+			 const HChar **fn_name, UInt*, DebugInfo**);
 void CLG_(collectBlockInfo)(IRSB* bbIn, UInt*, UInt*, Bool*);
 void CLG_(set_instrument_state)(const HChar*,Bool);
 void CLG_(dump_profile)(const HChar* trigger,Bool only_current_thread);

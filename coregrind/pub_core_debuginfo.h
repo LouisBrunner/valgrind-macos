@@ -86,14 +86,14 @@ extern void VG_(di_discard_ALL_debuginfo)( void );
  * It should only be used in cases where the names of interest will have
  * particular (ie. non-mangled) forms, or the mangled form is acceptable. */
 extern
-Bool VG_(get_fnname_raw) ( Addr a, HChar* buf, Int nbuf );
+Bool VG_(get_fnname_raw) ( Addr a, const HChar** buf );
 
 /* Like VG_(get_fnname), but without C++ demangling.  (But it does
  Z-demangling and below-main renaming.)
  iipc argument: same usage as in VG_(describe_IP) in pub_tool_debuginfo.h. */
 extern
-Bool VG_(get_fnname_no_cxx_demangle) ( Addr a, HChar* buf, Int nbuf,
-                                       InlIPCursor* iipc );
+Bool VG_(get_fnname_no_cxx_demangle) ( Addr a, const HChar** buf,
+                                       const InlIPCursor* iipc );
 
 /* mips-linux only: find the offset of current address. This is needed for 
    stack unwinding for MIPS.

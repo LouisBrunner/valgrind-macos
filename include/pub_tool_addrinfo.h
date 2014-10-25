@@ -153,10 +153,10 @@ struct _AddrInfo {
          ExeContext* freed_at;      // might be null_ExeContext.
       } Block;
 
-      // In a global .data symbol.  This holds the first 127 chars of
+      // In a global .data symbol.  This holds
       // the variable's name (zero terminated), plus a (memory) offset.
       struct {
-         HChar    name[128];
+         HChar   *name;
          PtrdiffT offset;
       } DataSym;
 

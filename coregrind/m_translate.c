@@ -1448,13 +1448,9 @@ Bool VG_(translate) ( ThreadId tid,
    if ((kind == T_Redir_Wrap || kind == T_Redir_Replace)
        && (VG_(clo_verbosity) >= 2 || VG_(clo_trace_redir))) {
       Bool ok;
-      HChar name1[512] = "";
-      HChar name2[512] = "";
-      name1[0] = name2[0] = 0;
-      ok = VG_(get_fnname_w_offset)(nraddr, name1, sizeof(name1));
-      if (!ok) VG_(strcpy)(name1, "???");
-      ok = VG_(get_fnname_w_offset)(addr, name2, sizeof(name2));
-      if (!ok) VG_(strcpy)(name2, "???");
+      const HChar *buf;
+      const HChar *name2;
+
       /* Try also to get the soname (not the filename) of the "from"
          object.  This makes it much easier to debug redirection
          problems. */
@@ -1465,6 +1461,15 @@ Bool VG_(translate) ( ThreadId tid,
          if (t)
             nraddr_soname = t;
       }
+
+      ok = VG_(get_fnname_w_offset)(nraddr, &buf);
+      if (!ok) buf = "???";
+      // Stash away name1
+      HChar name1[VG_(strlen)(buf) + 1];
+      VG_(strcpy)(name1, buf);
+      ok = VG_(get_fnname_w_offset)(addr, &name2);
+      if (!ok) name2 = "???";
+
       VG_(message)(Vg_DebugMsg, 
                    "REDIR: 0x%llx (%s:%s) redirected to 0x%llx (%s)\n",
                    nraddr, nraddr_soname, name1,
@@ -1477,8 +1482,6 @@ Bool VG_(translate) ( ThreadId tid,
 
    /* If doing any code printing, print a basic block start marker */
    if (VG_(clo_trace_flags) || debugging_translation) {
-      HChar fnname[512] = "UNKNOWN_FUNCTION";
-      VG_(get_fnname_w_offset)(addr, fnname, 512);
       const HChar* objname = "UNKNOWN_OBJECT";
       OffT         objoff  = 0;
       DebugInfo*   di      = VG_(find_DebugInfo)( addr );
@@ -1487,6 +1490,10 @@ Bool VG_(translate) ( ThreadId tid,
          objoff  = addr - VG_(DebugInfo_get_text_bias)(di);
       }
       vg_assert(objname);
+ 
+      const HChar *fnname;
+      Bool ok = VG_(get_fnname_w_offset)(addr, &fnname);
+      if (!ok) fnname = "UNKNOWN_FUNCTION";
       VG_(printf)(
          "==== SB %d (evchecks %lld) [tid %d] 0x%llx %s %s+0x%llx\n",
          VG_(get_bbs_translated)(), bbs_done, (Int)tid, addr,

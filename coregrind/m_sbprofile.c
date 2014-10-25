@@ -51,7 +51,6 @@ void show_SB_profile ( const SBProfEntry tops[], UInt n_tops,
 {
    ULong score_cumul, score_cumul_saved, score_here;
    HChar buf_cumul[10], buf_here[10];
-   HChar name[64];
    Int   r; /* must be signed */
 
    HChar ecs_txt[50];
@@ -84,9 +83,10 @@ void show_SB_profile ( const SBProfEntry tops[], UInt n_tops,
          continue;
       if (tops[r].score == 0)
          continue;
-      name[0] = 0;
-      VG_(get_fnname_w_offset)(tops[r].addr, name, 64);
-      name[63] = 0;
+
+      const HChar *name;
+      VG_(get_fnname_w_offset)(tops[r].addr, &name);
+
       score_here = tops[r].score;
       score_cumul += score_here;
       VG_(percentify)(score_cumul, score_total, 2, 6, buf_cumul);
@@ -116,9 +116,10 @@ void show_SB_profile ( const SBProfEntry tops[], UInt n_tops,
             continue;
          if (tops[r].score == 0)
             continue;
-         name[0] = 0;
-         VG_(get_fnname_w_offset)(tops[r].addr, name, 64);
-         name[63] = 0;
+
+         const HChar *name;
+         VG_(get_fnname_w_offset)(tops[r].addr, &name);
+
          score_here = tops[r].score;
          score_cumul += score_here;
          VG_(percentify)(score_cumul, score_total, 2, 6, buf_cumul);
@@ -145,9 +146,10 @@ void show_SB_profile ( const SBProfEntry tops[], UInt n_tops,
             continue;
          if (tops[r].score == 0)
             continue;
-         name[0] = 0;
-         VG_(get_fnname_w_offset)(tops[r].addr, name, 64);
-         name[63] = 0;
+
+         const HChar *name;
+         VG_(get_fnname_w_offset)(tops[r].addr, &name);
+
          score_here = tops[r].score;
          VG_(percentify)(score_cumul, score_total, 2, 6, buf_cumul);
          VG_(percentify)(score_here,  score_total, 2, 6, buf_here);

@@ -330,7 +330,7 @@ file_node* CLG_(get_file_node)(obj_node* curr_obj_node,
 static void resize_fn_array(void);
 
 static __inline__ 
-fn_node* new_fn_node(HChar fnname[FILENAME_LEN],
+fn_node* new_fn_node(const HChar *fnname,
 		     file_node* file, fn_node* next)
 {
     fn_node* fn = (fn_node*) CLG_MALLOC("cl.fn.nfnnd.1",
@@ -374,7 +374,7 @@ fn_node* new_fn_node(HChar fnname[FILENAME_LEN],
  */
 static
 fn_node* get_fn_node_infile(file_node* curr_file_node,
-			    HChar fnname[FN_NAME_LEN])
+			    const HChar *fnname)
 {
     fn_node* curr_fn_node;
     UInt     fnname_hash;
@@ -404,7 +404,7 @@ fn_node* get_fn_node_infile(file_node* curr_file_node,
 static __inline__
 fn_node* get_fn_node_inseg(DebugInfo* di,
 			   HChar filename[FILENAME_LEN],
-			   HChar fnname[FN_NAME_LEN])
+			   const HChar *fnname)
 {
   obj_node  *obj  = CLG_(get_obj_node)(di);
   file_node *file = CLG_(get_file_node)(obj, filename);
@@ -416,7 +416,7 @@ fn_node* get_fn_node_inseg(DebugInfo* di,
 
 Bool CLG_(get_debug_info)(Addr instr_addr,
 			 HChar file[FILENAME_LEN],
-			 HChar fn_name[FN_NAME_LEN], UInt* line_num,
+			 const HChar **fn_name, UInt* line_num,
 			 DebugInfo** pDebugInfo)
 {
   Bool found_file_line, found_fn, found_dirname, result = True;
@@ -436,8 +436,7 @@ Bool CLG_(get_debug_info)(Addr instr_addr,
 					       dir, FILENAME_LEN,
 					       &found_dirname,
 					       &line);
-   found_fn = VG_(get_fnname)(instr_addr,
-			      fn_name, FN_NAME_LEN);
+   found_fn = VG_(get_fnname)(instr_addr, fn_name);
 
    if (found_dirname) {
        // +1 for the '/'.
@@ -450,7 +449,7 @@ Bool CLG_(get_debug_info)(Addr instr_addr,
    if (!found_file_line && !found_fn) {
      CLG_(stat).no_debug_BBs++;
      VG_(strcpy)(file, "???");
-     VG_(strcpy)(fn_name,  "???");
+     *fn_name = "???";
      if (line_num) *line_num=0;
      result = False;
 
@@ -460,7 +459,7 @@ Bool CLG_(get_debug_info)(Addr instr_addr,
 
    } else if ( found_file_line && !found_fn) {
      CLG_(stat).file_line_debug_BBs++;
-     VG_(strcpy)(fn_name,  "???");
+     *fn_name = "???";
      if (line_num) *line_num=line;
 
    } else  /*(!found_file_line &&  found_fn)*/ {
@@ -474,7 +473,7 @@ Bool CLG_(get_debug_info)(Addr instr_addr,
 	    !pDebugInfo   ? "-" :
 	    (*pDebugInfo) ? VG_(DebugInfo_get_filename)(*pDebugInfo) :
 	    "(None)",
-	    fn_name);
+	    *fn_name);
 
   return result;
 }
@@ -488,7 +487,8 @@ static BB* exit_bb = 0;
  */
 fn_node* CLG_(get_fn_node)(BB* bb)
 {
-    HChar      filename[FILENAME_LEN], fnname[FN_NAME_LEN];
+    HChar      filename[FILENAME_LEN];
+    const HChar *fnname;
     DebugInfo* di;
     UInt       line_num;
     fn_node*   fn;
@@ -502,26 +502,27 @@ fn_node* CLG_(get_fn_node)(BB* bb)
      * the BB according to debug information
      */
     CLG_(get_debug_info)(bb_addr(bb),
-			filename, fnname, &line_num, &di);
+			filename, &fnname, &line_num, &di);
 
     if (0 == VG_(strcmp)(fnname, "???")) {
 	int p;
-
+        static HChar buf[32];  // for sure large enough
 	/* Use address as found in library */
 	if (sizeof(Addr) == 4)
-	    p = VG_(sprintf)(fnname, "%#08lx", bb->offset);
+	    p = VG_(sprintf)(buf, "%#08lx", bb->offset);
 	else 	    
 	    // 64bit address
-	    p = VG_(sprintf)(fnname, "%#016lx", bb->offset);
+	    p = VG_(sprintf)(buf, "%#016lx", bb->offset);
 
-	VG_(sprintf)(fnname+p, "%s", 
+	VG_(sprintf)(buf + p, "%s", 
 		     (bb->sect_kind == Vg_SectData) ? " [Data]" :
 		     (bb->sect_kind == Vg_SectBSS)  ? " [BSS]"  :
 		     (bb->sect_kind == Vg_SectGOT)  ? " [GOT]"  :
 		     (bb->sect_kind == Vg_SectPLT)  ? " [PLT]"  : "");
+        fnname = buf;
     }
     else {
-      if (VG_(get_fnname_if_entry)(bb_addr(bb), fnname, FN_NAME_LEN))
+      if (VG_(get_fnname_if_entry)(bb_addr(bb), &fnname))
 	bb->is_entry = 1;
     }
 
@@ -532,7 +533,7 @@ fn_node* CLG_(get_fn_node)(BB* bb)
     if (0 == VG_(strcmp)(fnname, "vgPlain___libc_freeres_wrapper")
 	&& exit_bb) {
       CLG_(get_debug_info)(bb_addr(exit_bb),
-			  filename, fnname, &line_num, &di);
+			  filename, &fnname, &line_num, &di);
 	
 	CLG_DEBUG(1, "__libc_freeres_wrapper renamed to _exit\n");
     }
@@ -543,7 +544,7 @@ fn_node* CLG_(get_fn_node)(BB* bb)
 	(bb_addr(bb) >= runtime_resolve_addr) &&
 	(bb_addr(bb) < runtime_resolve_addr + runtime_resolve_length)) {
 	/* BB in runtime_resolve found by code check; use this name */
-	VG_(sprintf)(fnname, "_dl_runtime_resolve");
+      fnname = "_dl_runtime_resolve";
     }
 
     /* get fn_node struct for this function */

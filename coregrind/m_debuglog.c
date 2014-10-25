@@ -890,20 +890,18 @@ VG_(debugLog_vprintf) (
          }
 
 //         case 'y': { /* %y - print symbol */
-//            HChar buf[100];
-//            HChar *cp = buf;
 //            Addr a = va_arg(vargs, Addr);
 //
-//            if (flags & VG_MSG_PAREN)
-//               *cp++ = '(';
-//            if (VG_(get_fnname_w_offset)(a, cp, sizeof(buf)-4)) {
-//               if (flags & VG_MSG_PAREN) {
-//                  cp += VG_(strlen)(cp);
-//                  *cp++ = ')';
-//                  *cp = '\0';
+//            HChar *name;
+// 	      if (VG_(get_fnname_w_offset)(a, &name)) {
+//               HChar buf[1 + VG_strlen(name) + 1 + 1];
+// 	         if (flags & VG_MSG_PAREN) {
+//                  VG_(sprintf)(str, "(%s)", name):
+// 	         } else {
+//                  VG_(sprintf)(str, "%s", name):
 //               }
-//               ret += myvprintf_str(send, send_arg2, flags, width, buf, 0);
-//            }
+// 	         ret += myvprintf_str(send, flags, width, buf, 0);
+// 	      }
 //            break;
 //         }
          default:

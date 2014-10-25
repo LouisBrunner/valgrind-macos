@@ -355,7 +355,7 @@ static void init_ignore_fns(void)
 }
 
 // Determines if the named function is a member of the XArray.
-static Bool is_member_fn(XArray* fns, const HChar* fnname)
+static Bool is_member_fn(const XArray* fns, const HChar* fnname)
 {
    HChar** fn_ptr;
    Int i;
@@ -817,9 +817,9 @@ static void sanity_check_SXTree(SXPt* sxpt)
 // Determine if the given IP belongs to a function that should be ignored.
 static Bool fn_should_be_ignored(Addr ip)
 {
-   static HChar buf[BUF_LEN];
+   const HChar *buf;
    return
-      ( VG_(get_fnname)(ip, buf, BUF_LEN) && is_member_fn(ignore_fns, buf)
+      ( VG_(get_fnname)(ip, &buf) && is_member_fn(ignore_fns, buf)
       ? True : False );
 }
 
@@ -832,7 +832,6 @@ static Bool fn_should_be_ignored(Addr ip)
 static
 Int get_IPs( ThreadId tid, Bool exclude_first_entry, Addr ips[])
 {
-   static HChar buf[BUF_LEN];
    Int n_ips, i, n_alloc_fns_removed;
    Int overestimate;
    Bool redo;
@@ -871,7 +870,8 @@ Int get_IPs( ThreadId tid, Bool exclude_first_entry, Addr ips[])
       // because VG_(get_fnname) is expensive.
       n_alloc_fns_removed = ( exclude_first_entry ? 1 : 0 );
       for (i = n_alloc_fns_removed; i < n_ips; i++) {
-         if (VG_(get_fnname)(ips[i], buf, BUF_LEN)) {
+         const HChar *buf;
+         if (VG_(get_fnname)(ips[i], &buf)) {
             if (is_member_fn(alloc_fns, buf)) {
                n_alloc_fns_removed++;
             } else {

@@ -386,8 +386,6 @@ static HChar const* advance_to_comma ( HChar const* c ) {
    topspecs list, and (2) figure out what new binding are now active,
    and, as a result, add them to the actives mapping. */
 
-#define N_DEMANGLED 256
-
 void VG_(redir_notify_new_DebugInfo)( const DebugInfo* newdi )
 {
    Bool         ok, isWrap;
@@ -399,8 +397,8 @@ void VG_(redir_notify_new_DebugInfo)( const DebugInfo* newdi )
    const HChar*  sym_name_pri;
    const HChar** sym_names_sec;
    SymAVMAs     sym_avmas;
-   HChar        demangled_sopatt[N_DEMANGLED];
-   HChar        demangled_fnpatt[N_DEMANGLED];
+   const HChar* demangled_sopatt;
+   const HChar* demangled_fnpatt;
    Bool         check_ppcTOCs = False;
    Bool         isText;
    const HChar* newdi_soname;
@@ -518,8 +516,8 @@ void VG_(redir_notify_new_DebugInfo)( const DebugInfo* newdi )
       const HChar** names;
       for (names = names_init; *names; names++) {
          ok = VG_(maybe_Z_demangle)( *names,
-                                     demangled_sopatt, N_DEMANGLED,
-                                     demangled_fnpatt, N_DEMANGLED,
+                                     &demangled_sopatt,
+                                     &demangled_fnpatt,
                                      &isWrap, &becTag, &becPrio );
          /* ignore data symbols */
          if (!isText) {
@@ -552,6 +550,7 @@ void VG_(redir_notify_new_DebugInfo)( const DebugInfo* newdi )
             continue;
          }
 
+         HChar *replaced_sopatt = NULL;
          if (0 == VG_(strncmp) (demangled_sopatt, 
                                 VG_SO_SYN_PREFIX, VG_SO_SYN_PREFIX_LEN)) {
             /* This is a redirection for handling lib so synonyms. If we
@@ -577,8 +576,11 @@ void VG_(redir_notify_new_DebugInfo)( const DebugInfo* newdi )
                   // Found the demangle_sopatt synonym => replace it
                   first = last + 1;
                   last = advance_to_comma(first);
-                  VG_(strncpy)(demangled_sopatt, first, last - first);
-                  demangled_sopatt[last - first] = '\0';
+                  replaced_sopatt = dinfo_zalloc("redir.rnnD.5",
+                                                 last - first + 1);
+                  VG_(strncpy)(replaced_sopatt, first, last - first);
+                  replaced_sopatt[last - first] = '\0';
+                  demangled_sopatt = replaced_sopatt;
                   break;
                }
 
@@ -588,8 +590,7 @@ void VG_(redir_notify_new_DebugInfo)( const DebugInfo* newdi )
             }
             
             // If we have not replaced the sopatt, then skip the redir.
-            if (0 == VG_(strncmp) (demangled_sopatt, 
-                                   VG_SO_SYN_PREFIX, VG_SO_SYN_PREFIX_LEN))
+            if (replaced_sopatt == NULL)
                continue;
          }
 
@@ -629,8 +630,8 @@ void VG_(redir_notify_new_DebugInfo)( const DebugInfo* newdi )
          for (names = names_init; *names; names++) {
             ok = isText
                  && VG_(maybe_Z_demangle)( 
-                       *names, demangled_sopatt, N_DEMANGLED,
-                       demangled_fnpatt, N_DEMANGLED, &isWrap, NULL, NULL );
+                       *names, &demangled_sopatt,
+                       &demangled_fnpatt, &isWrap, NULL, NULL );
             if (!ok)
                /* not a redirect.  Ignore. */
                continue;
@@ -710,8 +711,6 @@ void VG_(redir_notify_new_DebugInfo)( const DebugInfo* newdi )
       specifications we might have. */
    handle_require_text_symbols(newdi);
 }
-
-#undef N_DEMANGLED
 
 /* Add a new target for an indirect function. Adds a new redirection
    for the indirection function with address old_from that redirects
@@ -1704,13 +1703,17 @@ static void show_spec ( const HChar* left, const Spec* spec )
 static void show_active ( const HChar* left, const Active* act )
 {
    Bool ok;
-   HChar name1[64] = "";
-   HChar name2[64] = "";
-   name1[0] = name2[0] = 0;
-   ok = VG_(get_fnname_w_offset)(act->from_addr, name1, 64);
-   if (!ok) VG_(strcpy)(name1, "???");
-   ok = VG_(get_fnname_w_offset)(act->to_addr, name2, 64);
-   if (!ok) VG_(strcpy)(name2, "???");
+   const HChar *buf;
+ 
+   ok = VG_(get_fnname_w_offset)(act->from_addr, &buf);
+   if (!ok) buf = "???";
+   // Stash away name1
+   HChar name1[VG_(strlen)(buf) + 1];
+   VG_(strcpy)(name1, buf);
+
+   const HChar *name2;
+   ok = VG_(get_fnname_w_offset)(act->to_addr, &name2);
+   if (!ok) name2 = "???";
 
    VG_(message)(Vg_DebugMsg, "%s0x%08llx (%20s) %s-> (%04d.%d) 0x%08llx %s\n", 
                              left, 

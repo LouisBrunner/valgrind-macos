@@ -140,15 +140,21 @@ static void call_gdbserver ( ThreadId tid , CallReason reason);
    oldest result. */
 static HChar* sym (Addr addr, Bool is_code)
 {
-   static HChar buf[2][200];
+   static HChar *buf[2];
    static int w = 0;
    PtrdiffT offset;
    if (w == 2) w = 0;
-   buf[w][0] = '\0';
+
    if (is_code) {
-      VG_(describe_IP) (addr, buf[w], 200, NULL);
+      HChar name[200];
+      VG_(describe_IP) (addr, name, 200, NULL);  // FIXME: get rid of name
+      if (buf[w]) VG_(free)(buf[w]);
+      buf[w] = VG_(strdup)("gdbserver sym", name);
    } else {
-      VG_(get_datasym_and_offset) (addr, buf[w], 200, &offset);
+      const HChar *name;
+      VG_(get_datasym_and_offset) (addr, &name, &offset);
+      if (buf[w]) VG_(free)(buf[w]);
+      buf[w] = VG_(strdup)("gdbserver sym", name);
    }
    return buf[w++];
 }

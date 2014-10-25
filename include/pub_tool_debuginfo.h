@@ -40,14 +40,14 @@
 /* Get the file/function/line number of the instruction at address
    'a'.  For these four, if debug info for the address is found, it
    copies the info into the buffer/UInt and returns True.  If not, it
-   returns False and nothing is copied.  VG_(get_fnname) always
+   returns False.  VG_(get_fnname) always
    demangles C++ function names.  VG_(get_fnname_w_offset) is the
    same, except it appends "+N" to symbol names to indicate offsets.  */
 extern Bool VG_(get_filename) ( Addr a, HChar* filename, Int n_filename );
-extern Bool VG_(get_fnname)   ( Addr a, HChar* fnname,   Int n_fnname   );
+extern Bool VG_(get_fnname)   ( Addr a, const HChar** fnname );
 extern Bool VG_(get_linenum)  ( Addr a, UInt* linenum );
 extern Bool VG_(get_fnname_w_offset)
-                              ( Addr a, HChar* fnname,   Int n_fnname   );
+                              ( Addr a, const HChar** fnname );
 
 /* This one is the most general.  It gives filename, line number and
    optionally directory name.  filename and linenum may not be NULL.
@@ -74,7 +74,7 @@ extern Bool VG_(get_filename_linenum)
    a particular function.  Nb: if an executable/shared object is stripped
    of its symbols, this function will not be able to recognise function
    entry points within it. */
-extern Bool VG_(get_fnname_if_entry) ( Addr a, HChar* fnname, Int n_fnname );
+extern Bool VG_(get_fnname_if_entry) ( Addr a, const HChar** fnname );
 
 typedef
    enum {
@@ -84,7 +84,7 @@ typedef
    } Vg_FnNameKind;           //   Such names are often filtered.
 
 /* Indicates what kind of fnname it is. */
-extern Vg_FnNameKind VG_(get_fnname_kind) ( HChar* name );
+extern Vg_FnNameKind VG_(get_fnname_kind) ( const HChar* name );
 
 /* Like VG_(get_fnname_kind), but takes a code address. */
 extern Vg_FnNameKind VG_(get_fnname_kind_from_IP) ( Addr ip );
@@ -94,7 +94,7 @@ extern Vg_FnNameKind VG_(get_fnname_kind_from_IP) ( Addr ip );
    which is guaranteed to be zero terminated.  Also data_addr's offset
    from the symbol start is put into *offset. */
 extern Bool VG_(get_datasym_and_offset)( Addr data_addr,
-                                         /*OUT*/HChar* dname, Int n_dname,
+                                         /*OUT*/const HChar** dname,
                                          /*OUT*/PtrdiffT* offset );
 
 /* Try to form some description of DATA_ADDR by looking at the DWARF3
@@ -118,7 +118,7 @@ Bool VG_(get_data_description)(
 
 /* Succeeds if the address is within a shared object or the main executable.
    It doesn't matter if debug info is present or not. */
-extern Bool VG_(get_objname)  ( Addr a, HChar* objname, Int n_objname );
+extern Bool VG_(get_objname)  ( Addr a, const HChar** objname );
 
 
 /* Cursor allowing to describe inlined function calls at an IP,

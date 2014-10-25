@@ -1729,11 +1729,18 @@ static void search_all_loctabs ( Addr ptr, /*OUT*/DebugInfo** pdi,
    C++ demangling, regardless of VG_(clo_demangle) -- probably because the
    call has come from VG_(get_fnname_raw)().  findText
    indicates whether we're looking for a text symbol or a data symbol
-   -- caller must choose one kind or the other. */
+   -- caller must choose one kind or the other.
+   Note: the string returned in *BUF is persistent as long as 
+   (1) the DebugInfo it belongs to is not discarded
+   (2) the segment containing the address is not merged with another segment
+   (3) the demangler is not invoked again
+   In other words: if in doubt, save it away.
+   Also, the returned string is owned by "somebody else". Callers must
+   not free it or modify it. */
 static
 Bool get_sym_name ( Bool do_cxx_demangling, Bool do_z_demangling,
                     Bool do_below_main_renaming,
-                    Addr a, HChar* buf, Int nbuf,
+                    Addr a, const HChar** buf,
                     Bool match_anywhere_in_sym, Bool show_offset,
                     Bool findText, /*OUT*/PtrdiffT* offsetP )
 {
@@ -1742,12 +1749,14 @@ Bool get_sym_name ( Bool do_cxx_demangling, Bool do_z_demangling,
    PtrdiffT   offset;
 
    search_all_symtabs ( a, &di, &sno, match_anywhere_in_sym, findText );
-   if (di == NULL) 
+   if (di == NULL) {
+      *buf = "";
       return False;
+   }
 
    vg_assert(di->symtab[sno].pri_name);
    VG_(demangle) ( do_cxx_demangling, do_z_demangling,
-                   di->symtab[sno].pri_name, buf, nbuf );
+                   di->symtab[sno].pri_name, buf );
 
    /* Do the below-main hack */
    // To reduce the endless nuisance of multiple different names 
@@ -1755,31 +1764,31 @@ Bool get_sym_name ( Bool do_cxx_demangling, Bool do_z_demangling,
    // known incarnations of said into a single name, "(below main)", if
    // --show-below-main=yes.
    if ( do_below_main_renaming && ! VG_(clo_show_below_main) &&
-        Vg_FnNameBelowMain == VG_(get_fnname_kind)(buf) )
+        Vg_FnNameBelowMain == VG_(get_fnname_kind)(*buf) )
    {
-      VG_(strncpy_safely)(buf, "(below main)", nbuf);
+     *buf = "(below main)";
    }
    offset = a - di->symtab[sno].avmas.main;
    if (offsetP) *offsetP = offset;
 
    if (show_offset && offset != 0) {
-      HChar    buf2[12];
-      HChar*   symend = buf + VG_(strlen)(buf);
-      HChar*   end = buf + nbuf;
-      Int      len;
+      static HChar *bufwo;      // buf with offset
+      static SizeT  bufwo_szB;
+      SizeT  need, len;
 
-      len = VG_(sprintf)(buf2, "%c%ld",
-			 offset < 0 ? '-' : '+',
-			 offset < 0 ? -offset : offset);
-      vg_assert(len < (Int)sizeof(buf2));
-
-      if (len < (end - symend)) {
-	 HChar *cp = buf2;
-	 VG_(memcpy)(symend, cp, len+1);
+      len = VG_(strlen)(*buf);
+      need = len + 1 + 19 + 1;
+      if (need > bufwo_szB) {
+        bufwo = ML_(dinfo_realloc)("get_sym_size", bufwo, need);
+        bufwo_szB = need;
       }
-   }
 
-   buf[nbuf-1] = 0; /* paranoia */
+      VG_(strcpy)(bufwo, *buf);
+      VG_(sprintf)(bufwo + len, "%c%ld",
+                   offset < 0 ? '-' : '+',
+                   offset < 0 ? -offset : offset);
+      *buf = bufwo;
+   }
 
    return True;
 }
@@ -1806,12 +1815,14 @@ Addr VG_(get_tocptr) ( Addr guest_code_addr )
 }
 
 /* This is available to tools... always demangle C++ names,
-   match anywhere in function, but don't show offsets. */
-Bool VG_(get_fnname) ( Addr a, HChar* buf, Int nbuf )
+   match anywhere in function, but don't show offsets.
+   NOTE: See important comment about the persistence and memory ownership
+   of the return string at function get_sym_name */
+Bool VG_(get_fnname) ( Addr a, const HChar** buf )
 {
    return get_sym_name ( /*C++-demangle*/True, /*Z-demangle*/True,
                          /*below-main-renaming*/True,
-                         a, buf, nbuf,
+                         a, buf,
                          /*match_anywhere_in_fun*/True, 
                          /*show offset?*/False,
                          /*text syms only*/True,
@@ -1819,12 +1830,14 @@ Bool VG_(get_fnname) ( Addr a, HChar* buf, Int nbuf )
 }
 
 /* This is available to tools... always demangle C++ names,
-   match anywhere in function, and show offset if nonzero. */
-Bool VG_(get_fnname_w_offset) ( Addr a, HChar* buf, Int nbuf )
+   match anywhere in function, and show offset if nonzero.
+   NOTE: See important comment about the persistence and memory ownership
+   of the return string at function get_sym_name */
+Bool VG_(get_fnname_w_offset) ( Addr a, const HChar** buf )
 {
    return get_sym_name ( /*C++-demangle*/True, /*Z-demangle*/True,
                          /*below-main-renaming*/True,
-                         a, buf, nbuf,
+                         a, buf,
                          /*match_anywhere_in_fun*/True, 
                          /*show offset?*/True,
                          /*text syms only*/True,
@@ -1833,12 +1846,14 @@ Bool VG_(get_fnname_w_offset) ( Addr a, HChar* buf, Int nbuf )
 
 /* This is available to tools... always demangle C++ names,
    only succeed if 'a' matches first instruction of function,
-   and don't show offsets. */
-Bool VG_(get_fnname_if_entry) ( Addr a, HChar* buf, Int nbuf )
+   and don't show offsets.
+   NOTE: See important comment about the persistence and memory ownership
+   of the return string at function get_sym_name */
+Bool VG_(get_fnname_if_entry) ( Addr a, const HChar** buf )
 {
    return get_sym_name ( /*C++-demangle*/True, /*Z-demangle*/True,
                          /*below-main-renaming*/True,
-                         a, buf, nbuf,
+                         a, buf,
                          /*match_anywhere_in_fun*/False, 
                          /*show offset?*/False,
                          /*text syms only*/True,
@@ -1847,12 +1862,14 @@ Bool VG_(get_fnname_if_entry) ( Addr a, HChar* buf, Int nbuf )
 
 /* This is only available to core... don't C++-demangle, don't Z-demangle,
    don't rename below-main, match anywhere in function, and don't show
-   offsets. */
-Bool VG_(get_fnname_raw) ( Addr a, HChar* buf, Int nbuf )
+   offsets.
+   NOTE: See important comment about the persistence and memory ownership
+   of the return string at function get_sym_name */
+Bool VG_(get_fnname_raw) ( Addr a, const HChar** buf )
 {
    return get_sym_name ( /*C++-demangle*/False, /*Z-demangle*/False,
                          /*below-main-renaming*/False,
-                         a, buf, nbuf,
+                         a, buf,
                          /*match_anywhere_in_fun*/True, 
                          /*show offset?*/False,
                          /*text syms only*/True,
@@ -1861,15 +1878,17 @@ Bool VG_(get_fnname_raw) ( Addr a, HChar* buf, Int nbuf )
 
 /* This is only available to core... don't demangle C++ names, but do
    do Z-demangling and below-main-renaming, match anywhere in function, and
-   don't show offsets. */
-Bool VG_(get_fnname_no_cxx_demangle) ( Addr a, HChar* buf, Int nbuf,
-                                       InlIPCursor* iipc )
+   don't show offsets.
+   NOTE: See important comment about the persistence and memory ownership
+   of the return string at function get_sym_name */
+Bool VG_(get_fnname_no_cxx_demangle) ( Addr a, const HChar** buf,
+                                       const InlIPCursor* iipc )
 {
    if (is_bottom(iipc)) {
       // At the bottom (towards main), we describe the fn at eip.
       return get_sym_name ( /*C++-demangle*/False, /*Z-demangle*/True,
                             /*below-main-renaming*/True,
-                            a, buf, nbuf,
+                            a, buf,
                             /*match_anywhere_in_fun*/True, 
                             /*show offset?*/False,
                             /*text syms only*/True,
@@ -1880,7 +1899,7 @@ Bool VG_(get_fnname_no_cxx_demangle) ( Addr a, HChar* buf, Int nbuf,
          : NULL;
       vg_assert (next_inl);
       // The function we are in is called by next_inl.
-      VG_(snprintf)(buf, nbuf, "%s", next_inl->inlinedfn);
+      *buf = next_inl->inlinedfn;
       return True;
    }
 }
@@ -1891,17 +1910,17 @@ Bool VG_(get_fnname_no_cxx_demangle) ( Addr a, HChar* buf, Int nbuf,
 Bool VG_(get_inst_offset_in_function)( Addr a,
                                        /*OUT*/PtrdiffT* offset )
 {
-   HChar fnname[64];
+   const HChar *fnname;
    return get_sym_name ( /*C++-demangle*/False, /*Z-demangle*/False,
                          /*below-main-renaming*/False,
-                         a, fnname, 64,
+                         a, &fnname,
                          /*match_anywhere_in_sym*/True, 
                          /*show offset?*/False,
                          /*text syms only*/True,
                          offset );
 }
 
-Vg_FnNameKind VG_(get_fnname_kind) ( HChar* name )
+Vg_FnNameKind VG_(get_fnname_kind) ( const HChar* name )
 {
    if (VG_STREQ("main", name)) {
       return Vg_FnNameMain;
@@ -1926,14 +1945,12 @@ Vg_FnNameKind VG_(get_fnname_kind) ( HChar* name )
 
 Vg_FnNameKind VG_(get_fnname_kind_from_IP) ( Addr ip )
 {
-   // We don't need a big buffer;  all the special names are small.
-   #define BUFLEN 50
-   HChar buf[50];
+   const HChar *buf;
 
    // We don't demangle, because it's faster not to, and the special names
    // we're looking for won't be mangled.
-   if (VG_(get_fnname_raw) ( ip, buf, BUFLEN )) {
-      buf[BUFLEN-1] = '\0';      // paranoia
+   if (VG_(get_fnname_raw) ( ip, &buf )) {
+
       return VG_(get_fnname_kind)(buf);
    } else {
       return Vg_FnNameNormal;    // Don't know the name, treat it as normal.
@@ -1941,37 +1958,35 @@ Vg_FnNameKind VG_(get_fnname_kind_from_IP) ( Addr ip )
 }
 
 /* Looks up data_addr in the collection of data symbols, and if found
-   puts its name (or as much as will fit) into dname[0 .. n_dname-1],
-   which is guaranteed to be zero terminated.  Also data_addr's offset
-   from the symbol start is put into *offset. */
+   puts a pointer to its name into dname. The name is zero terminated.
+   Also data_addr's offset from the symbol start is put into *offset.
+   NOTE: See important comment about the persistence and memory ownership
+   of the return string at function get_sym_name */
 Bool VG_(get_datasym_and_offset)( Addr data_addr,
-                                  /*OUT*/HChar* dname, Int n_dname,
+                                  /*OUT*/const HChar** dname,
                                   /*OUT*/PtrdiffT* offset )
 {
-   Bool ok;
-   vg_assert(n_dname > 1);
-   ok = get_sym_name ( /*C++-demangle*/False, /*Z-demangle*/False,
+   return get_sym_name ( /*C++-demangle*/False, /*Z-demangle*/False,
                        /*below-main-renaming*/False,
-                       data_addr, dname, n_dname,
+                       data_addr, dname,
                        /*match_anywhere_in_sym*/True, 
                        /*show offset?*/False,
                        /*data syms only please*/False,
                        offset );
-   if (!ok)
-      return False;
-   dname[n_dname-1] = 0;
-   return True;
 }
 
 /* Map a code address to the name of a shared object file or the
-   executable.  Returns False if no idea; otherwise True.  Doesn't
-   require debug info.  Caller supplies buf and nbuf. */
-Bool VG_(get_objname) ( Addr a, HChar* buf, Int nbuf )
+   executable.  Returns False if no idea; otherwise True.
+   Note: the string returned in *BUF is persistent as long as 
+   (1) the DebugInfo it belongs to is not discarded
+   (2) the segment containing the address is not merged with another segment
+*/
+Bool VG_(get_objname) ( Addr a, const HChar** buf )
 {
    DebugInfo* di;
    const NSegment *seg;
    const HChar* filename;
-   vg_assert(nbuf > 0);
+
    /* Look in the debugInfo_list to find the name.  In most cases we
       expect this to produce a result. */
    for (di = debugInfo_list; di != NULL; di = di->next) {
@@ -1979,8 +1994,7 @@ Bool VG_(get_objname) ( Addr a, HChar* buf, Int nbuf )
           && di->text_size > 0
           && di->text_avma <= a 
           && a < di->text_avma + di->text_size) {
-         VG_(strncpy_safely)(buf, di->fsm.filename, nbuf);
-         buf[nbuf-1] = 0;
+         *buf = di->fsm.filename;
          return True;
       }
    }
@@ -1991,7 +2005,7 @@ Bool VG_(get_objname) ( Addr a, HChar* buf, Int nbuf )
       when running programs under wine. */
    if ( (seg = VG_(am_find_nsegment(a))) != NULL 
         && (filename = VG_(am_get_filename)(seg)) != NULL ) {
-      VG_(strncpy_safely)(buf, filename, nbuf);
+     *buf = filename;
       return True;
    }
    return False;
@@ -2220,11 +2234,11 @@ HChar* VG_(describe_IP)(Addr eip, HChar* buf, Int n_buf, InlIPCursor *iipc)
 
    vg_assert (!iipc || iipc->eip == eip);
 
-   static HChar buf_fn[BUF_LEN];
-   static HChar buf_obj[BUF_LEN];
+   static const HChar *buf_fn;
+   static const HChar *buf_obj;
    static HChar buf_srcloc[BUF_LEN];
    static HChar buf_dirname[BUF_LEN];
-   buf_fn[0] = buf_obj[0] = buf_srcloc[0] = buf_dirname[0] = 0;
+   buf_srcloc[0] = buf_dirname[0] = 0;
 
    Bool  know_dirinfo = False;
    Bool  know_fnname;
@@ -2234,15 +2248,15 @@ HChar* VG_(describe_IP)(Addr eip, HChar* buf, Int n_buf, InlIPCursor *iipc)
    if (is_bottom(iipc)) {
       // At the bottom (towards main), we describe the fn at eip.
       know_fnname = VG_(clo_sym_offsets)
-                    ? VG_(get_fnname_w_offset) (eip, buf_fn, BUF_LEN)
-                    : VG_(get_fnname) (eip, buf_fn, BUF_LEN);
+                    ? VG_(get_fnname_w_offset) (eip, &buf_fn)
+                    : VG_(get_fnname) (eip, &buf_fn);
    } else {
       const DiInlLoc *next_inl = iipc && iipc->next_inltab >= 0
          ? & iipc->di->inltab[iipc->next_inltab]
          : NULL;
       vg_assert (next_inl);
       // The function we are in is called by next_inl.
-      VG_(snprintf)(buf_fn, BUF_LEN, "%s", next_inl->inlinedfn);
+      buf_fn = next_inl->inlinedfn;  // FIXME: IS THIS SAFE ??
       know_fnname = True;
 
       // INLINED????
@@ -2253,7 +2267,7 @@ HChar* VG_(describe_IP)(Addr eip, HChar* buf, Int n_buf, InlIPCursor *iipc)
       // ??? Currently never showing an offset.
    }
 
-   know_objname = VG_(get_objname)(eip, buf_obj, BUF_LEN);
+   know_objname = VG_(get_objname)(eip, &buf_obj);
 
    if (is_top(iipc)) {
       // The source for the highest level is in the loctab entry.
@@ -2285,10 +2299,7 @@ HChar* VG_(describe_IP)(Addr eip, HChar* buf, Int n_buf, InlIPCursor *iipc)
       lineno = cur_inl->lineno;
       know_srcloc = True;
    }
-         
 
-   buf_fn     [ sizeof(buf_fn)-1      ]  = 0;
-   buf_obj    [ sizeof(buf_obj)-1     ]  = 0;
    buf_srcloc [ sizeof(buf_srcloc)-1  ]  = 0;
    buf_dirname[ sizeof(buf_dirname)-1 ]  = 0;
 

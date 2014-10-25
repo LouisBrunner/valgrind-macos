@@ -83,36 +83,45 @@
 
 /* This is the main, standard demangler entry point. */
 
+/* Upon return, *RESULT will point to the demangled name.
+   The memory buffer that holds the demangled name is allocated on the
+   heap and will be deallocated in the next invocation. Conceptually,
+   that buffer is owned by VG_(demangle). That means two things:
+   (1) Users of VG_(demangle) must not free that buffer.
+   (2) If the demangled name needs to be stashed away for later use,
+       the contents of the buffer needs to be copied. It is not sufficient
+       to just store the pointer as it will point to deallocated memory
+       after the next VG_(demangle) invocation. */
 void VG_(demangle) ( Bool do_cxx_demangling, Bool do_z_demangling,
-                     const HChar* orig, HChar* result, Int result_size )
+                     /* IN */  const HChar  *orig,
+                     /* OUT */ const HChar **result )
 {
-#  define N_ZBUF 4096
-   HChar* demangled = NULL;
-   HChar z_demangled[N_ZBUF];
-
    /* Possibly undo (2) */
    /* Z-Demangling was requested.  
       The fastest way to see if it's a Z-mangled name is just to attempt
       to Z-demangle it (with NULL for the soname buffer, since we're not
       interested in that). */
    if (do_z_demangling) {
-      if (VG_(maybe_Z_demangle)( orig, NULL,0,/*soname*/
-                                 z_demangled, N_ZBUF, NULL, NULL, NULL )) {
+      const HChar *z_demangled;
+
+      if (VG_(maybe_Z_demangle)( orig, NULL, /*soname*/
+                                 &z_demangled, NULL, NULL, NULL )) {
          orig = z_demangled;
       }
    }
 
    /* Possibly undo (1) */
    if (do_cxx_demangling && VG_(clo_demangle)) {
+      static HChar* demangled = NULL;
+
+      /* Free up previously demangled name */
+      if (demangled) VG_(arena_free) (VG_AR_DEMANGLE, demangled);
+
       demangled = ML_(cplus_demangle) ( orig, DMGL_ANSI | DMGL_PARAMS );
+
+      *result = (demangled == NULL) ? orig : demangled;
    } else {
-      demangled = NULL;
-   }
-   if (demangled) {
-      VG_(strncpy_safely)(result, demangled, result_size);
-      VG_(arena_free) (VG_AR_DEMANGLE, demangled);
-   } else {
-      VG_(strncpy_safely)(result, orig, result_size);
+      *result = orig;
    }
 
    // 13 Mar 2005: We used to check here that the demangler wasn't leaking
@@ -120,7 +129,6 @@ void VG_(demangle) ( Bool do_cxx_demangling, Bool do_z_demangling,
    // very rarely (ie. I've heard of it twice in 3 years), the demangler
    // does leak.  But, we can't do much about it, and it's not a disaster,
    // so we just let it slide without aborting or telling the user.
-#  undef N_ZBUF
 }
 
 
@@ -141,38 +149,48 @@ void VG_(demangle) ( Bool do_cxx_demangling, Bool do_z_demangling,
    function name part. */
 
 Bool VG_(maybe_Z_demangle) ( const HChar* sym, 
-                             /*OUT*/HChar* so, Int soLen,
-                             /*OUT*/HChar* fn, Int fnLen,
+                             /*OUT*/const HChar** so,
+                             /*OUT*/const HChar** fn,
                              /*OUT*/Bool* isWrap,
                              /*OUT*/Int*  eclassTag,
                              /*OUT*/Int*  eclassPrio )
 {
+   static HChar *sobuf;
+   static HChar *fnbuf;
+   static SizeT  buf_len = 0;
+
+   /* The length of the name after undoing Z-encoding is always smaller
+      than the mangled name. Making the soname and fnname buffers as large
+      as the demangled name is therefore always safe and overflow can never
+      occur. */
+   SizeT len = VG_(strlen)(sym) + 1;
+
+   if (buf_len < len) {
+      sobuf = VG_(arena_realloc)(VG_AR_DEMANGLE, "Z-demangle", sobuf, len);
+      fnbuf = VG_(arena_realloc)(VG_AR_DEMANGLE, "Z-demangle", fnbuf, len);
+      buf_len = len;
+   }
+   sobuf[0] = fnbuf[0] = '\0';
+
+   if (so) 
+     *so = sobuf;
+   *fn = fnbuf;
+
 #  define EMITSO(ch)                           \
       do {                                     \
          if (so) {                             \
-            if (soi >= soLen) {                \
-               so[soLen-1] = 0; oflow = True;  \
-            } else {                           \
-               so[soi++] = ch; so[soi] = 0;    \
-            }                                  \
+            sobuf[soi++] = ch; sobuf[soi] = 0; \
          }                                     \
       } while (0)
 #  define EMITFN(ch)                           \
       do {                                     \
-         if (fni >= fnLen) {                   \
-            fn[fnLen-1] = 0; oflow = True;     \
-         } else {                              \
-            fn[fni++] = ch; fn[fni] = 0;       \
-         }                                     \
+         fnbuf[fni++] = ch; fnbuf[fni] = 0;    \
       } while (0)
 
-   Bool error, oflow, valid, fn_is_encoded, is_VG_Z_prefixed;
+   Bool error, valid, fn_is_encoded, is_VG_Z_prefixed;
    Int  soi, fni, i;
 
-   vg_assert(soLen > 0 || (soLen == 0 && so == NULL));
-   vg_assert(fnLen > 0);
    error = False;
-   oflow = False;
    soi = 0;
    fni = 0;
 
@@ -327,12 +345,6 @@ Bool VG_(maybe_Z_demangle) ( const HChar* sym,
       /* Something's wrong.  Give up. */
       VG_(message)(Vg_UserMsg,
                    "m_demangle: error Z-demangling: %s\n", sym);
-      return False;
-   }
-   if (oflow) {
-      /* It didn't fit.  Give up. */
-      VG_(message)(Vg_UserMsg,
-                   "m_demangle: oflow Z-demangling: %s\n", sym);
       return False;
    }
 

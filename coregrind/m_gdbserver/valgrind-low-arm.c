@@ -144,13 +144,13 @@ Addr thumb_pc (Addr pc)
 
    // pc aligned on 4 bytes. We need to use debug info.
    {
-      HChar fnname[200]; // ??? max size
+      const HChar *fnname;
       SymAVMAs avmas;
       // If this is a thumb instruction, we need to ask
       // the debug info with the bit0 set
       // (why can't debug info do that for us ???)
       // (why if this is a 4 bytes thumb instruction ???)
-      if (VG_(get_fnname_raw) (pc | 1, fnname, 200)) {
+      if (VG_(get_fnname_raw) (pc | 1, &fnname)) {
          if (VG_(lookup_symbol_SLOW)( "*", fnname, &avmas )) {
             dlog (1, "fnname %s lookupsym %p => %p %s.\n",
                   fnname, C2v(avmas.main), C2v(pc),

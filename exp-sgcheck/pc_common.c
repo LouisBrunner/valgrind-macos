@@ -134,7 +134,7 @@ typedef
             Seg*     vseg;
             XArray*  descr1; /* XArray* of HChar */
             XArray*  descr2; /* XArray* of HChar */
-            HChar    datasym[96];
+            const HChar* datasym;
             PtrdiffT datasymoff;
          } Heap;
          struct {
@@ -657,9 +657,8 @@ UInt pc_update_Error_extra ( const Error* err )
       case XE_Heap: {
          Bool have_descr;
 
-         tl_assert(sizeof(xe->XE.Heap.datasym) > 0);
          xe->XE.Heap.datasymoff = 0;
-         xe->XE.Heap.datasym[0] = 0;
+         xe->XE.Heap.datasym    = NULL;
 
          tl_assert(!xe->XE.Heap.descr1);
          tl_assert(!xe->XE.Heap.descr2);
@@ -671,7 +670,6 @@ UInt pc_update_Error_extra ( const Error* err )
             = VG_(newXA)( VG_(malloc), "pc.update_extra.Heap.descr1",
                           VG_(free), sizeof(HChar) );
 
-         VG_(memset)(&xe->XE.Heap.datasym, 0, sizeof(xe->XE.Heap.datasym));
          xe->XE.Heap.datasymoff = 0;
 
          have_descr
@@ -699,13 +697,13 @@ UInt pc_update_Error_extra ( const Error* err )
          /* If Dwarf3 info produced nothing useful, see at least if
             we can fish something useful out of the ELF symbol info. */
          if (!have_descr) {
+            const HChar *name;
             if (VG_(get_datasym_and_offset)(
-                   xe->XE.Heap.addr, &xe->XE.Heap.datasym[0],
-                   sizeof(xe->XE.Heap.datasym)-1,
+                   xe->XE.Heap.addr, &name,
                    &xe->XE.Heap.datasymoff )
                ) {
-               tl_assert(xe->XE.Heap.datasym[sizeof(xe->XE.Heap.datasym)-1] 
-                         == 0);
+              xe->XE.Heap.datasym =
+                 VG_(strdup)("pc.update_extra.Heap.datasym", name);
             }
          }
          break;

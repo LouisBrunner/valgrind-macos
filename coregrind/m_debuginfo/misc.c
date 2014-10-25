@@ -68,6 +68,12 @@ void* ML_(dinfo_memdup) ( const HChar* cc, const void* str, SizeT nStr ) {
    return dst;
 }
 
+void* ML_(dinfo_realloc) ( const HChar* cc, void* ptr, SizeT new_size ) {
+   void* dst = VG_(arena_realloc)( VG_AR_DINFO, cc, ptr, new_size );
+   vg_assert(dst);
+   return dst;
+}
+
 static inline Bool host_is_little_endian ( void ) {
    UInt x = 0x76543210;
    UChar* p = (UChar*)(&x);

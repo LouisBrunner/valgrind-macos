@@ -660,7 +660,6 @@ IRSB* lk_instrument ( VgCallbackClosure* closure,
    IRDirty*   di;
    Int        i;
    IRSB*      sbOut;
-   HChar      fnname[100];
    IRTypeEnv* tyenv = sbIn->tyenv;
    Addr       iaddr = 0, dst;
    UInt       ilen = 0;
@@ -750,8 +749,9 @@ IRSB* lk_instrument ( VgCallbackClosure* closure,
                 */
                tl_assert(clo_fnname);
                tl_assert(clo_fnname[0]);
+               const HChar *fnname;
                if (VG_(get_fnname_if_entry)(st->Ist.IMark.addr, 
-                                            fnname, sizeof(fnname))
+                                            &fnname)
                    && 0 == VG_(strcmp)(fnname, clo_fnname)) {
                   di = unsafeIRDirty_0_N( 
                           0, "add_one_func_call", 

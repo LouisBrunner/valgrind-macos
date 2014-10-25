@@ -1926,10 +1926,10 @@ void shadowStack_new_frame ( ThreadId tid,
 
    if (0)
    { Word d = callee->depth;
-     HChar fnname[80];
+     const HChar *fnname;
      Bool ok;
      Addr ip = ip_post_call_insn;
-     ok = VG_(get_fnname_w_offset)( ip, fnname, sizeof(fnname) );
+     ok = VG_(get_fnname_w_offset)( ip, &fnname );
      while (d > 0) {
         VG_(printf)(" ");
         d--;

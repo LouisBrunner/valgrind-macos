@@ -448,14 +448,7 @@ Bool get_debug_pos(BBCC* bbcc, Addr addr, AddrPos* p)
 	    VG_(strcpy)(file, "???");
 	    p->line = 0;
 	}
-	if (found_dirname) {
-	    // +1 for the '/'.
-	    CLG_ASSERT(VG_(strlen)(dir) + VG_(strlen)(file) + 1 < FILENAME_LEN);
-	    VG_(strcat)(dir, "/");     // Append '/'
-	    VG_(strcat)(dir, file);    // Append file to dir
-	    VG_(strcpy)(file, dir);    // Move dir+file to file
-	}
-	p->file    = CLG_(get_file_node)(bbcc->bb->obj, file);
+	p->file    = CLG_(get_file_node)(bbcc->bb->obj, dir, file);
 
 	debug_cache_info[cachepos] = found_file_line;
 	debug_cache_addr[cachepos] = addr;

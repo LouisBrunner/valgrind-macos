@@ -374,6 +374,7 @@ void CLG_(print_bbcc_cost)(int s, BBCC* bbcc)
 void CLG_(print_addr)(Addr addr)
 {
     HChar fl_buf[FILENAME_LEN];
+    HChar dir_buf[FILENAME_LEN];
     const HChar *fn_buf;
     const HChar* obj_name;
     DebugInfo* di;
@@ -384,7 +385,7 @@ void CLG_(print_addr)(Addr addr)
 	return;
     }
 
-    CLG_(get_debug_info)(addr, fl_buf, &fn_buf, &ln, &di);
+    CLG_(get_debug_info)(addr, dir_buf, fl_buf, &fn_buf, &ln, &di);
 
     if (VG_(strcmp)(fn_buf,"???")==0)
 	VG_(printf)("%#lx", addr);
@@ -403,8 +404,12 @@ void CLG_(print_addr)(Addr addr)
       }
     }
 
-    if (ln>0)
-    	VG_(printf)(" (%s:%u)", fl_buf,ln);
+    if (ln>0) {
+       if (dir_buf[0])
+          VG_(printf)(" (%s/%s:%u)", dir_buf, fl_buf, ln);
+       else
+          VG_(printf)(" (%s:%u)", fl_buf, ln);
+    }
 }
 
 void CLG_(print_addr_ln)(Addr addr)

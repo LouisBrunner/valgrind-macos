@@ -126,10 +126,6 @@ extern Bool VG_(parse_enum_set) ( const HChar *tokens,
                                   const HChar *input,
                                   UInt *enum_set);
 
-/* Like strncpy(), but if 'src' is longer than 'ndest' inserts a '\0' as the
-   last character. */
-extern void  VG_(strncpy_safely) ( HChar* dest, const HChar* src, SizeT ndest );
-
 /* ---------------------------------------------------------------------
    mem* functions
    ------------------------------------------------------------------ */

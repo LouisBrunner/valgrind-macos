@@ -2031,8 +2031,10 @@ DebugInfo* VG_(find_DebugInfo) ( Addr a )
    return NULL;
 }
 
-/* Map a code address to a filename.  Returns True if successful.  */
-Bool VG_(get_filename)( Addr a, HChar* filename, Int n_filename )
+/* Map a code address to a filename.  Returns True if successful. The
+   returned string is persistent as long as the DebugInfo to which it
+   belongs is not discarded. */
+Bool VG_(get_filename)( Addr a, const HChar** filename )
 {
    DebugInfo* si;
    Word       locno;
@@ -2042,9 +2044,7 @@ Bool VG_(get_filename)( Addr a, HChar* filename, Int n_filename )
    if (si == NULL) 
       return False;
    fndn_ix = ML_(fndn_ix) (si, locno);
-   VG_(strncpy_safely)(filename,
-                       ML_(fndn_ix2filename) (si, fndn_ix),
-                       n_filename);
+   *filename = ML_(fndn_ix2filename) (si, fndn_ix);
    return True;
 }
 
@@ -2065,8 +2065,8 @@ Bool VG_(get_linenum)( Addr a, UInt* lineno )
    See prototype for detailed description of behaviour.
 */
 Bool VG_(get_filename_linenum) ( Addr a, 
-                                 /*OUT*/HChar* filename, Int n_filename,
-                                 /*OUT*/HChar* dirname,  Int n_dirname,
+                                 /*OUT*/const HChar** filename,
+                                 /*OUT*/const HChar** dirname,
                                  /*OUT*/Bool* dirname_available,
                                  /*OUT*/UInt* lineno )
 {
@@ -2082,24 +2082,20 @@ Bool VG_(get_filename_linenum) ( Addr a,
    if (si == NULL) {
       if (dirname_available) {
          *dirname_available = False;
-         *dirname = 0;
+         *dirname = "";
       }
+      *filename = "";      // this used to be not initialised....
       return False;
    }
 
    fndn_ix = ML_(fndn_ix)(si, locno);
-   VG_(strncpy_safely)(filename,
-                       ML_(fndn_ix2filename) (si, fndn_ix),
-                       n_filename);
+   *filename = ML_(fndn_ix2filename) (si, fndn_ix);
    *lineno = si->loctab[locno].lineno;
 
    if (dirname) {
       /* caller wants directory info too .. */
-      vg_assert(n_dirname > 0);
-      VG_(strncpy_safely)(dirname,
-                          ML_(fndn_ix2dirname) (si, fndn_ix),
-                          n_dirname);
-      *dirname_available = *dirname != 0;
+      *dirname = ML_(fndn_ix2dirname) (si, fndn_ix);
+      *dirname_available = (*dirname)[0] != '\0';
    }
 
    return True;
@@ -2236,9 +2232,8 @@ HChar* VG_(describe_IP)(Addr eip, HChar* buf, Int n_buf, InlIPCursor *iipc)
 
    static const HChar *buf_fn;
    static const HChar *buf_obj;
-   static HChar buf_srcloc[BUF_LEN];
-   static HChar buf_dirname[BUF_LEN];
-   buf_srcloc[0] = buf_dirname[0] = 0;
+   static const HChar *buf_srcloc;
+   static const HChar *buf_dirname;
 
    Bool  know_dirinfo = False;
    Bool  know_fnname;
@@ -2273,8 +2268,8 @@ HChar* VG_(describe_IP)(Addr eip, HChar* buf, Int n_buf, InlIPCursor *iipc)
       // The source for the highest level is in the loctab entry.
       know_srcloc  = VG_(get_filename_linenum)(
                         eip, 
-                        buf_srcloc,  BUF_LEN, 
-                        buf_dirname, BUF_LEN, &know_dirinfo,
+                        &buf_srcloc, 
+                        &buf_dirname, &know_dirinfo,
                         &lineno 
                      );
    } else {
@@ -2286,22 +2281,19 @@ HChar* VG_(describe_IP)(Addr eip, HChar* buf, Int n_buf, InlIPCursor *iipc)
       know_dirinfo = False;
       // The fndn_ix and lineno for the caller of the inlined fn is in cur_inl.
       if (cur_inl->fndn_ix == 0) {
-         VG_(snprintf) (buf_srcloc, BUF_LEN, "???");
+         buf_srcloc = "???";
       } else {
          FnDn *fndn = VG_(indexEltNumber) (iipc->di->fndnpool,
                                            cur_inl->fndn_ix);
          if (fndn->dirname) {
-            VG_(snprintf) (buf_dirname, BUF_LEN, "%s", fndn->dirname);
+            buf_dirname = fndn->dirname;
             know_dirinfo = True;
          }
-         VG_(snprintf) (buf_srcloc, BUF_LEN, "%s", fndn->filename);
+         buf_srcloc = fndn->filename;
       }
       lineno = cur_inl->lineno;
       know_srcloc = True;
    }
-
-   buf_srcloc [ sizeof(buf_srcloc)-1  ]  = 0;
-   buf_dirname[ sizeof(buf_dirname)-1 ]  = 0;
 
    if (VG_(clo_xml)) {
 
@@ -2374,7 +2366,7 @@ HChar* VG_(describe_IP)(Addr eip, HChar* buf, Int n_buf, InlIPCursor *iipc)
       if (know_srcloc) {
          APPEND(" (");
          // Get the directory name, if any, possibly pruned, into dirname.
-         HChar* dirname = NULL;
+         const HChar* dirname = NULL;
          if (VG_(sizeXA)(VG_(clo_fullpath_after)) > 0) {
             Int i;
             dirname = buf_dirname;

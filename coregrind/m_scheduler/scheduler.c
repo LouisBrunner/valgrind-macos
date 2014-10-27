@@ -1997,25 +1997,25 @@ void do_client_request ( ThreadId tid )
 
       case VG_USERREQ__MAP_IP_TO_SRCLOC: {
          Addr   ip    = arg[1];
-         HChar* buf64 = (HChar*)arg[2];
+         HChar* buf64 = (HChar*)arg[2];  // points to a HChar [64] array
+         const HChar *buf;  // points to a string of unknown size
 
          VG_(memset)(buf64, 0, 64);
          UInt linenum = 0;
          Bool ok = VG_(get_filename_linenum)(
-                      ip, &buf64[0], 50, NULL, 0, NULL, &linenum
+                      ip, &buf, NULL, NULL, &linenum
                    );
          if (ok) {
-            /* Find the terminating zero in the first 50 bytes. */
+            /* For backward compatibility truncate the filename to
+               49 characters. */
+            VG_(strncpy)(buf64, buf, 50);
+            buf64[49] = '\0';
             UInt i;
             for (i = 0; i < 50; i++) {
                if (buf64[i] == 0)
                   break;
             }
-            /* We must find a zero somewhere in 0 .. 49.  Else
-               VG_(get_filename_linenum) is not properly zero
-               terminating. */
-            vg_assert(i < 50);
-            VG_(sprintf)(&buf64[i], ":%u", linenum);
+            VG_(sprintf)(buf64+i, ":%u", linenum);  // safe
          } else {
             buf64[0] = 0;
          }

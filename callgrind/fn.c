@@ -424,8 +424,8 @@ fn_node* get_fn_node_inseg(DebugInfo* di,
 
 
 Bool CLG_(get_debug_info)(Addr instr_addr,
-                          HChar dir[FILENAME_LEN],
-                          HChar file[FILENAME_LEN],
+                          const HChar **dir,
+                          const HChar **file,
                           const HChar **fn_name, UInt* line_num,
                           DebugInfo** pDebugInfo)
 {
@@ -441,15 +441,15 @@ Bool CLG_(get_debug_info)(Addr instr_addr,
    }
 
    found_file_line = VG_(get_filename_linenum)(instr_addr,
-					       file, FILENAME_LEN,
-					       dir, FILENAME_LEN,
+					       file,
+					       dir,
 					       &found_dirname,
 					       &line);
    found_fn = VG_(get_fnname)(instr_addr, fn_name);
 
    if (!found_file_line && !found_fn) {
      CLG_(stat).no_debug_BBs++;
-     VG_(strcpy)(file, "???");
+     *file = "???";
      *fn_name = "???";
      if (line_num) *line_num=0;
      result = False;
@@ -465,7 +465,7 @@ Bool CLG_(get_debug_info)(Addr instr_addr,
 
    } else  /*(!found_file_line &&  found_fn)*/ {
      CLG_(stat).fn_name_debug_BBs++;
-     VG_(strcpy)(file, "???");
+     *file = "???";
      if (line_num) *line_num=0;
    }
 
@@ -488,9 +488,7 @@ static BB* exit_bb = 0;
  */
 fn_node* CLG_(get_fn_node)(BB* bb)
 {
-    HChar      filename[FILENAME_LEN];
-    HChar      dirname[FILENAME_LEN];
-    const HChar *fnname;
+    const HChar *fnname, *filename, *dirname;
     DebugInfo* di;
     UInt       line_num;
     fn_node*   fn;
@@ -504,7 +502,7 @@ fn_node* CLG_(get_fn_node)(BB* bb)
      * the BB according to debug information
      */
     CLG_(get_debug_info)(bb_addr(bb),
-                         dirname, filename, &fnname, &line_num, &di);
+                         &dirname, &filename, &fnname, &line_num, &di);
 
     if (0 == VG_(strcmp)(fnname, "???")) {
 	int p;
@@ -535,7 +533,7 @@ fn_node* CLG_(get_fn_node)(BB* bb)
     if (0 == VG_(strcmp)(fnname, "vgPlain___libc_freeres_wrapper")
 	&& exit_bb) {
       CLG_(get_debug_info)(bb_addr(exit_bb),
-                           dirname, filename, &fnname, &line_num, &di);
+                           &dirname, &filename, &fnname, &line_num, &di);
 	
 	CLG_DEBUG(1, "__libc_freeres_wrapper renamed to _exit\n");
     }

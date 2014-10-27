@@ -690,8 +690,8 @@ void CLG_(print_debug_usage)(void);
 void CLG_(init_eventsets)(void);
 
 /* from main.c */
-Bool CLG_(get_debug_info)(Addr, HChar dirname[FILENAME_LEN],
-                          HChar filename[FILENAME_LEN],
+Bool CLG_(get_debug_info)(Addr, const HChar **dirname,
+                          const HChar **filename,
                           const HChar **fn_name, UInt*, DebugInfo**);
 void CLG_(collectBlockInfo)(IRSB* bbIn, UInt*, UInt*, Bool*);
 void CLG_(set_instrument_state)(const HChar*,Bool);

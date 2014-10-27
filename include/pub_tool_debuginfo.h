@@ -43,7 +43,7 @@
    returns False.  VG_(get_fnname) always
    demangles C++ function names.  VG_(get_fnname_w_offset) is the
    same, except it appends "+N" to symbol names to indicate offsets.  */
-extern Bool VG_(get_filename) ( Addr a, HChar* filename, Int n_filename );
+extern Bool VG_(get_filename) ( Addr a, const HChar** filename );
 extern Bool VG_(get_fnname)   ( Addr a, const HChar** fnname );
 extern Bool VG_(get_linenum)  ( Addr a, UInt* linenum );
 extern Bool VG_(get_fnname_w_offset)
@@ -53,17 +53,21 @@ extern Bool VG_(get_fnname_w_offset)
    optionally directory name.  filename and linenum may not be NULL.
    dirname may be NULL, meaning that the caller does not want
    directory name info, in which case dirname_available must also be
-   NULL.  If dirname is non-null, directory info is written to it, if
+   NULL.  If dirname is non-null, directory info is written to *dirname, if
    it is available; if not available, '\0' is written to the first
    byte.  In either case *dirname_available is set to indicate whether
    or not directory information was available.
+
+   The character strings returned in *filename and *dirname are not
+   persistent. They will be freed when the DebugInfo they belong to
+   is discarded.
 
    Returned value indicates whether any filename/line info could be
    found. */
 extern Bool VG_(get_filename_linenum)
                               ( Addr a, 
-                                /*OUT*/HChar* filename, Int n_filename,
-                                /*OUT*/HChar* dirname,  Int n_dirname,
+                                /*OUT*/const HChar** filename,
+                                /*OUT*/const HChar** dirname,
                                 /*OUT*/Bool* dirname_available,
                                 /*OUT*/UInt* linenum );
 

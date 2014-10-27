@@ -381,10 +381,9 @@ static void pp_addrinfo_WRK ( Addr a, const AddrInfo* ai, Bool mc,
                     tnr_else_tid (ai->Addr.Stack.tinfo), 
                     xpost );
          if (ai->Addr.Stack.frameNo != -1 && ai->Addr.Stack.IP != 0) {
-#define     FLEN                256
             const HChar *fn;
             Bool  hasfn;
-            HChar file[FLEN];
+            const HChar *file;
             Bool  hasfile;
             UInt linenum;
             Bool haslinenum;
@@ -397,24 +396,21 @@ static void pp_addrinfo_WRK ( Addr a, const AddrInfo* ai, Bool mc,
             else
                haslinenum = False;
 
-            hasfile = VG_(get_filename)(ai->Addr.Stack.IP, file, FLEN);
-            if (hasfile && haslinenum) {
-               HChar strlinenum[10];
-               VG_(snprintf) (strlinenum, 10, ":%d", linenum);
-               VG_(strncat) (file, strlinenum, 
-                             FLEN - VG_(strlen)(file) - 1);
-            }
+            hasfile = VG_(get_filename)(ai->Addr.Stack.IP, &file);
+
+            HChar strlinenum[16] = "";   // large enough
+            if (hasfile && haslinenum)
+               VG_(sprintf)(strlinenum, "%d", linenum);
 
             hasfn = VG_(get_fnname)(ai->Addr.Stack.IP, &fn);
 
             if (hasfn || hasfile)
-               VG_(emit)( "%sin frame #%d, created by %s (%s)%s\n",
+               VG_(emit)( "%sin frame #%d, created by %s (%s:%s)%s\n",
                           xpre,
                           ai->Addr.Stack.frameNo, 
                           hasfn ? fn : "???", 
-                          hasfile ? file : "???", 
+                          hasfile ? file : "???", strlinenum,
                           xpost );
-#undef      FLEN
          }
          switch (ai->Addr.Stack.stackPos) {
             case StackPos_stacked: break; // nothing more to say

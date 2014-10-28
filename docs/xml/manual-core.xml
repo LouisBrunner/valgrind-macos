@@ -2690,7 +2690,7 @@ subject to the following constraints:</para>
    that, on x86 and amd64, essentially all instructions are supported,
    up to and including AVX and AES in 64-bit mode and SSSE3 in 32-bit
    mode.  32-bit mode does in fact support the bare minimum SSE4
-   instructions to needed to run programs on MacOSX 10.6 on 32-bit
+   instructions needed to run programs on MacOSX 10.6 on 32-bit
    targets.
    </para>
   </listitem>

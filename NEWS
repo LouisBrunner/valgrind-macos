@@ -50,6 +50,7 @@ where XXXXXX is the bug number as listed below.
 339855 arm64 unhandled getsid/setsid syscalls
 339858 arm64 dmb sy not implemented
 340115 Fix none/tests/cmdline[1|2] tests on systems which define TMPDIR
+340430 Fix some grammatical weirdness in the manual.
 n-i-bz Old STABS code is still being compiled, but never used. Remove it.
 n-i-bz Fix compilation on distros with glibc < 2.5
 

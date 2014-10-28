@@ -1913,8 +1913,8 @@ static UInt VTS__cmpLEQ ( VTS* a, VTS* b );
    Returns -1, 0 or 1. */
 static Word VTS__cmp_structural ( VTS* a, VTS* b );
 
-/* Debugging only.  Display the given VTS in the buffer. */
-static void VTS__show ( HChar* buf, Int nBuf, VTS* vts );
+/* Debugging only.  Display the given VTS. */
+static void VTS__show ( const VTS* vts );
 
 /* Debugging only.  Return vts[index], so to speak. */
 static ULong VTS__indexAt_SLOW ( VTS* vts, Thr* idx );
@@ -2378,35 +2378,20 @@ Word VTS__cmp_structural ( VTS* a, VTS* b )
 }
 
 
-/* Debugging only.  Display the given VTS in the buffer.
+/* Debugging only.  Display the given VTS.
 */
-void VTS__show ( HChar* buf, Int nBuf, VTS* vts )
+static void VTS__show ( const VTS* vts )
 {
-   ScalarTS* st;
-   HChar     unit[64];
    Word      i, n;
-   Int       avail = nBuf;
    tl_assert(vts && vts->ts);
-   tl_assert(nBuf > 16);
-   buf[0] = '[';
-   buf[1] = 0;
+
+   VG_(printf)("[");
    n =  vts->usedTS;
    for (i = 0; i < n; i++) {
-      tl_assert(avail >= 40);
-      st = &vts->ts[i];
-      VG_(memset)(unit, 0, sizeof(unit));
-      VG_(sprintf)(unit, i < n-1 ? "%u:%llu " : "%u:%llu",
-                         st->thrid, (ULong)st->tym);
-      if (avail < VG_(strlen)(unit) + 40/*let's say*/) {
-         VG_(strcat)(buf, " ...]");
-         buf[nBuf-1] = 0;
-         return;
-      }
-      VG_(strcat)(buf, unit);
-      avail -= VG_(strlen)(unit);
+      const ScalarTS *st = &vts->ts[i];
+      VG_(printf)(i < n-1 ? "%u:%llu " : "%u:%llu", st->thrid, (ULong)st->tym);
    }
-   VG_(strcat)(buf, "]");
-   buf[nBuf-1] = 0;
+   VG_(printf)("]");
 }
 
 
@@ -3202,11 +3187,8 @@ static VTS* VtsID__to_VTS ( VtsID vi ) {
 }
 
 static void VtsID__pp ( VtsID vi ) {
-   HChar buf[100];
    VTS* vts = VtsID__to_VTS(vi);
-   VTS__show( buf, sizeof(buf)-1, vts );
-   buf[sizeof(buf)-1] = 0;
-   VG_(printf)("%s", buf);
+   VTS__show( vts );
 }
 
 /* compute partial ordering relation of vi1 and vi2. */

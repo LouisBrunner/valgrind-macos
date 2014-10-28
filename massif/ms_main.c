@@ -2334,8 +2334,7 @@ static void write_snapshots_to_file(const HChar* massif_out_file,
    FP("%s", VG_(args_the_exename));
    for (i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) {
       HChar* arg = * (HChar**) VG_(indexXA)( VG_(args_for_client), i );
-      if (arg)
-         FP(" %s", arg);
+      FP(" %s", arg);
    }
    FP("\n");
 

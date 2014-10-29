@@ -1425,7 +1425,6 @@ AC_DEFINE([HAVE_EVENTFD_READ], 1,
 AC_MSG_RESULT([no])
 ])
 
-
 # Check whether compiler can process #include <thread> without errors
 # clang 3.3 cannot process <thread> from e.g.
 # gcc (Ubuntu/Linaro 4.6.3-1ubuntu5) 4.6.3
@@ -2667,6 +2666,48 @@ CFLAGS=$safe_CFLAGS
 
 AM_CONDITIONAL([HAVE_OPENMP], [test x$ac_have_openmp = xyes])
 
+
+# Check for __builtin_popcount
+AC_MSG_CHECKING([for __builtin_popcount()])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+]], [[
+  __builtin_popcount(2);
+  return 0;
+]])], [
+AC_MSG_RESULT([yes])
+AC_DEFINE([HAVE_BUILTIN_POPCOUT], 1,
+          [Define to 1 if compiler provides __builtin_popcount().])
+], [
+AC_MSG_RESULT([no])
+])
+
+# Check for __builtin_clz
+AC_MSG_CHECKING([for __builtin_clz()])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+]], [[
+  __builtin_clz(2);
+  return 0;
+]])], [
+AC_MSG_RESULT([yes])
+AC_DEFINE([HAVE_BUILTIN_CLZ], 1,
+          [Define to 1 if compiler provides __builtin_clz().])
+], [
+AC_MSG_RESULT([no])
+])
+
+# Check for __builtin_ctz
+AC_MSG_CHECKING([for __builtin_ctz()])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+]], [[
+  __builtin_ctz(2);
+  return 0;
+]])], [
+AC_MSG_RESULT([yes])
+AC_DEFINE([HAVE_BUILTIN_CTZ], 1,
+          [Define to 1 if compiler provides __builtin_ctz().])
+], [
+AC_MSG_RESULT([no])
+])
 
 # does this compiler have built-in functions for atomic memory access for the
 # primary target ?

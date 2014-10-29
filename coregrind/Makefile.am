@@ -213,6 +213,7 @@ noinst_HEADERS = \
 	pub_core_wordfm.h	\
 	pub_core_xarray.h	\
 	m_aspacemgr/priv_aspacemgr.h \
+	m_compiler.c \
 	m_debuginfo/priv_misc.h	\
 	m_debuginfo/priv_storage.h	\
 	m_debuginfo/priv_tytypes.h      \

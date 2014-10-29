@@ -73,6 +73,7 @@ endif
 # This is very uggerly.  Need to sed out both "xyzzyN" and
 # "xyzzy$N" since gcc on different targets emits the constants
 # differently -- with a leading $ on x86/amd64 but none on ppc32/64.
+# ICC also emits the constants differently with a leading # #define
 pub/libvex_guest_offsets.h: auxprogs/genoffsets.c \
 			    pub/libvex_basictypes.h \
 			    pub/libvex_guest_x86.h \
@@ -91,7 +92,8 @@ pub/libvex_guest_offsets.h: auxprogs/genoffsets.c \
 	      $(AM_CFLAGS_@VGCONF_PLATFORM_PRI_CAPS@) \
 				-O -S -o auxprogs/genoffsets.s \
 					 $(srcdir)/auxprogs/genoffsets.c
-	grep xyzzy auxprogs/genoffsets.s | grep "^#define" \
+	grep xyzzy auxprogs/genoffsets.s | grep "^[# ]*#define" \
+	   | sed "s/# #define/#define/g" \
 	   | sed "s/xyzzy\\$$//g" \
 	   | sed "s/xyzzy#//g" \
 	   | sed "s/xyzzy//g" \

@@ -131,6 +131,9 @@ then
     is_clang="clang"
     # Don't use -dumpversion with clang: it will always produce "4.2.1".
     gcc_version=`${CC} --version | $SED -n -e 's/.*clang version \([0-9.]*\).*$/\1/p'`
+elif test "x`${CC} --version | $SED -n -e 's/icc.+\(ICC\).*/\1/p'`" = "ICC" ; then
+    is_clang="icc"
+    gcc_version=`${CC} --version | $SED -n -e 's/icc.+\(ICC\).+([0-9.]+).*$/\1/p'`
 else
     is_clang="notclang"
     gcc_version=`${CC} -dumpversion 2>/dev/null`
@@ -140,6 +143,7 @@ else
 fi
 ]
 AM_CONDITIONAL(COMPILER_IS_CLANG, test $is_clang = clang -o $is_clang = applellvm)
+AM_CONDITIONAL(COMPILER_IS_ICC, test $is_clang = icc)
 
 if test $is_clang = clang -o $is_clang = applellvm ; then
     CFLAGS="$CFLAGS -Wno-tautological-compare -Wno-cast-align -Wno-self-assign"
@@ -152,6 +156,9 @@ case "${is_clang}-${gcc_version}" in
      applellvm-5.1|applellvm-6.0*)
 	AC_MSG_RESULT([ok (Apple LLVM version ${gcc_version})])
 	;;
+     icc-1[3-9]*)
+	AC_MSG_RESULT([ok (ICC version ${gcc_version})])
+	;;
      notclang-[[3-9]].*|notclang-[[1-9][0-9]]*)
 	AC_MSG_RESULT([ok (${gcc_version})])
 	;;
@@ -160,7 +167,7 @@ case "${is_clang}-${gcc_version}" in
 	;;
      *)
 	AC_MSG_RESULT([no (${gcc_version})])
-	AC_MSG_ERROR([please use gcc >= 3.0 or clang >= 2.9])
+	AC_MSG_ERROR([please use gcc >= 3.0 or clang >= 2.9 or icc >= 13.0])
 	;;
 esac
 
@@ -2200,6 +2207,7 @@ AC_MSG_CHECKING([if x86/amd64 assembler speaks BMI1 and BMI2])
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   do { unsigned int h, l;
+   __asm__ __volatile__( "mulx %rax,%rcx,%r8" );
    __asm__ __volatile__(
       "andn %2, %1, %0" : "=r" (h) : "r" (0x1234567), "r" (0x7654321) );
    __asm__ __volatile__(

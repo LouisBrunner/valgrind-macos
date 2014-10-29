@@ -38,6 +38,7 @@
 
 #include "config.h"
 #include "pub_core_basics.h"
+#include "pub_core_libcbase.h"
 
 #ifndef HAVE_BUILTIN_POPCOUT
 
@@ -135,6 +136,24 @@ __builtin_ctzll(ULong x)
       x >>= 1;
    }
    return count;
+}
+#endif
+
+
+#ifdef __INTEL_COMPILER
+
+/* Provide certain functions Intel's ICC compiler expects to be defined. */
+
+void *
+_intel_fast_memcpy(void *dest, const void *src, SizeT sz)
+{
+   return VG_(memcpy)( dest, src, sz );
+}
+
+void *
+_intel_fast_memset(void *dest, int value, SizeT num)
+{
+   return VG_(memset)( dest, value, num );    
 }
 #endif
 

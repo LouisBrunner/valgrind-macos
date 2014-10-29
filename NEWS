@@ -38,7 +38,7 @@ where XXXXXX is the bug number as listed below.
 
 339442 OS X 10.9 testsuite build failure: threadname.c:6:10:
        fatal error: 'sys/prctl.h' file not found
-
+339542 Support compilation with Intel's ICC compiler
 339688 Mac-specific ASM does not support .version directive (cpuid,
        tronical and pushfpopf tests)
 

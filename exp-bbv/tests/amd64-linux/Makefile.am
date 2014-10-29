@@ -3,7 +3,7 @@ include $(top_srcdir)/Makefile.tool-tests.am
 dist_noinst_SCRIPTS = filter_stderr
 
 check_PROGRAMS = \
-	million rep_prefix ll fldcw_check complex_rep clone_test
+	million rep_prefix fldcw_check complex_rep clone_test
 
 EXTRA_DIST = \
 	   clone_test.stderr.exp \
@@ -30,7 +30,13 @@ LDFLAGS += -nostartfiles -nodefaultlibs
 clone_test_SOURCES = clone_test.S
 complex_rep_SOURCES = complex_rep.S
 fldcw_check_SOURCES = fldcw_check.S
-ll_SOURCES = ll.S
 million_SOURCES = million.S
 rep_prefix_SOURCES = rep_prefix.S
 
+# To compile the ll testcase, the compiler needs to support -Xassembler
+# ICC does not do that
+if !COMPILER_IS_ICC
+AM_CCASFLAGS   += -Xassembler -I$(top_srcdir)/exp-bbv/tests
+check_PROGRAMS += ll
+ll_SOURCES      = ll.S
+endif

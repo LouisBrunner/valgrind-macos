@@ -6358,6 +6358,22 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
+   /* ------------------ PRFM (immediate) ------------------ */
+   /* 31           21    9 4
+      11 111 00110 imm12 n t   PRFM pfrop=Rt, [Xn|SP, #pimm]
+   */
+   if (INSN(31,22) == BITS10(1,1,1,1,1,0,0,1,1,0)) {
+      UInt imm12 = INSN(21,10);
+      UInt nn    = INSN(9,5);
+      UInt tt    = INSN(4,0);
+      /* Generating any IR here is pointless, except for documentation
+         purposes, as it will get optimised away later. */
+      IRTemp ea = newTemp(Ity_I64);
+      assign(ea, binop(Iop_Add64, getIReg64orSP(nn), mkU64(imm12 * 8)));
+      DIP("prfm prfop=%u, [%s, #%u]\n", tt, nameIReg64orSP(nn), imm12 * 8);
+      return True;
+   }
+
    vex_printf("ARM64 front end: load_store\n");
    return False;
 #  undef INSN

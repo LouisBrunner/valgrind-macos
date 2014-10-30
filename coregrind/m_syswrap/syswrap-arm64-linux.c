@@ -922,6 +922,7 @@ static SyscallTableEntry syscall_main_table[] = {
 
    LINX_(__NR_utimensat,         sys_utimensat),         // 88
    GENX_(__NR_fsync,             sys_fsync),             // 82
+   GENX_(__NR_fdatasync,         sys_fdatasync),         // 83
    LINXY(__NR_timerfd_create,    sys_timerfd_create),    // 85
    LINXY(__NR_timerfd_settime,   sys_timerfd_settime),   // 86
    LINXY(__NR_timerfd_gettime,   sys_timerfd_gettime),   // 87
@@ -1177,7 +1178,6 @@ static SyscallTableEntry syscall_main_table[] = {
 //ZZ    GENX_(__NR_flock,             sys_flock),          // 143
 //ZZ    GENX_(__NR_msync,             sys_msync),          // 144
 //ZZ 
-//ZZ    GENX_(__NR_fdatasync,         sys_fdatasync),      // 148
 //ZZ    LINXY(__NR__sysctl,           sys_sysctl),         // 149
 //ZZ 
 //ZZ    GENX_(__NR_munlock,           sys_munlock),        // 151

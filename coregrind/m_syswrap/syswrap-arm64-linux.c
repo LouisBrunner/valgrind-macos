@@ -880,6 +880,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_inotify_add_watch, sys_inotify_add_watch), // 27
    LINX_(__NR_inotify_rm_watch,  sys_inotify_rm_watch),  // 28
    LINXY(__NR_ioctl,             sys_ioctl),             // 29
+   LINX_(__NR_mknodat,           sys_mknodat),           // 33
    LINX_(__NR_mkdirat,           sys_mkdirat),           // 34
    LINX_(__NR_unlinkat,          sys_unlinkat),          // 35
    LINX_(__NR_symlinkat,         sys_symlinkat),         // 36
@@ -896,7 +897,10 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_fallocate,         sys_fallocate),         // 47
    LINX_(__NR_faccessat,         sys_faccessat),         // 48
    GENX_(__NR_chdir,             sys_chdir),             // 49
+   GENX_(__NR_fchdir,            sys_fchdir),            // 50
+   GENX_(__NR_chroot,            sys_chroot),            // 51
    LINX_(__NR_fchmodat,          sys_fchmodat),          // 53
+   LINX_(__NR_fchownat,          sys_fchownat),          // 54
    LINXY(__NR_openat,            sys_openat),            // 56
    GENXY(__NR_close,             sys_close),             // 57
    LINXY(__NR_pipe2,             sys_pipe2),             // 59
@@ -1093,7 +1097,6 @@ static SyscallTableEntry syscall_main_table[] = {
 //ZZ //   GENX_(__NR_ulimit,            sys_ni_syscall),     // 58
 //ZZ //zz    //   (__NR_oldolduname,       sys_olduname),       // 59 Linux -- obsolete
 //ZZ //zz 
-//ZZ    GENX_(__NR_chroot,            sys_chroot),         // 61
 //ZZ //zz    //   (__NR_ustat,             sys_ustat)           // 62 SVr4 -- deprecated
 //ZZ    GENXY(__NR_dup2,              sys_dup2),           // 63
 //ZZ    GENX_(__NR_getppid,           sys_getppid),        // 64
@@ -1165,7 +1168,6 @@ static SyscallTableEntry syscall_main_table[] = {
 //ZZ //zz    // Nb: get_kernel_syms() was removed 2.4-->2.6
 //ZZ //   GENX_(__NR_get_kernel_syms,   sys_ni_syscall),     // 130
 //ZZ    GENX_(__NR_getpgid,           sys_getpgid),        // 132
-//ZZ    GENX_(__NR_fchdir,            sys_fchdir),         // 133
 //ZZ //zz    //   (__NR_bdflush,           sys_bdflush),        // 134 */Linux
 //ZZ //zz 
 //ZZ //zz    //   (__NR_sysfs,             sys_sysfs),          // 135 SVr4
@@ -1329,8 +1331,6 @@ static SyscallTableEntry syscall_main_table[] = {
 //ZZ    LINX_(__NR_inotify_init,    sys_inotify_init),   // 291
 //ZZ //   LINX_(__NR_migrate_pages,    sys_migrate_pages),    // 294
 //ZZ 
-//ZZ    LINX_(__NR_mknodat,       sys_mknodat),          // 297
-//ZZ    LINX_(__NR_fchownat,       sys_fchownat),         // 298
 //ZZ    LINX_(__NR_futimesat,    sys_futimesat),        // 326 on arm
 //ZZ 
 //ZZ    PLAXY(__NR_fstatat64,    sys_fstatat64),        // 300

@@ -11458,6 +11458,41 @@ Bool dis_AdvSIMD_vector_x_indexed_elem(/*MB_OUT*/DisResult* dres, UInt insn)
    vassert(size < 4);
    vassert(bitH < 2 && bitM < 2 && bitL < 2);
 
+   if (bitU == 0 && size >= X10
+       && (opcode == BITS4(0,0,0,1) || opcode == BITS4(0,1,0,1))) {
+      /* -------- 0,1x,0001 FMLA 2d_2d_d[], 4s_4s_s[], 2s_2s_s[] -------- */
+      /* -------- 0,1x,0101 FMLS 2d_2d_d[], 4s_4s_s[], 2s_2s_s[] -------- */
+      if (bitQ == 0 && size == X11) return False; // implied 1d case
+      Bool isD   = (size & 1) == 1;
+      Bool isSUB = opcode == BITS4(0,1,0,1);
+      UInt index;
+      if      (!isD)             index = (bitH << 1) | bitL;
+      else if (isD && bitL == 0) index = bitH;
+      else return False; // sz:L == x11 => unallocated encoding
+      vassert(index < (isD ? 2 : 4));
+      IRType ity   = isD ? Ity_F64 : Ity_F32;
+      IRTemp elem  = newTemp(ity);
+      UInt   mm    = (bitM << 4) | mmLO4;
+      assign(elem, getQRegLane(mm, index, ity));
+      IRTemp dupd  = math_DUP_TO_V128(elem, ity);
+      IROp   opADD = isD ? Iop_Add64Fx2 : Iop_Add32Fx4;
+      IROp   opSUB = isD ? Iop_Sub64Fx2 : Iop_Sub32Fx4;
+      IROp   opMUL = isD ? Iop_Mul64Fx2 : Iop_Mul32Fx4;
+      IRTemp rm    = mk_get_IR_rounding_mode();
+      IRTemp t1    = newTempV128();
+      IRTemp t2    = newTempV128();
+      // FIXME: double rounding; use FMA primops instead
+      assign(t1, triop(opMUL, mkexpr(rm), getQReg128(nn), mkexpr(dupd)));
+      assign(t2, triop(isSUB ? opSUB : opADD,
+                       mkexpr(rm), getQReg128(dd), mkexpr(t1)));
+      putQReg128(dd, math_MAYBE_ZERO_HI64(bitQ, t2));
+      const HChar* arr = bitQ == 0 ? "2s" : (isD ? "2d" : "4s");
+      DIP("%s %s.%s, %s.%s, %s.%c[%u]\n", isSUB ? "fmls" : "fmla",
+          nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(mm),
+          isD ? 'd' : 's', index);
+      return True;
+   }
+
    if (bitU == 0 && size >= X10 && opcode == BITS4(1,0,0,1)) {
       /* -------- 0,1x,1001 FMUL 2d_2d_d[], 4s_4s_s[], 2s_2s_s[] -------- */
       if (bitQ == 0 && size == X11) return False; // implied 1d case

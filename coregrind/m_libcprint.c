@@ -1,3 +1,4 @@
+/* -*- mode: C; c-basic-offset: 3; -*- */
 
 /*--------------------------------------------------------------------*/
 /*--- Libc printing.                                 m_libcprint.c ---*/
@@ -37,6 +38,7 @@
 #include "pub_core_libcfile.h"   // VG_(write)(), VG_(write_socket)()
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"   // VG_(getpid)(), VG_(read_millisecond_timer()
+#include "pub_core_mallocfree.h" // VG_(malloc)
 #include "pub_core_options.h"
 #include "pub_core_clreq.h"      // For RUNNING_ON_VALGRIND
 
@@ -293,6 +295,72 @@ void VG_(vcbprintf)( void(*char_sink)(HChar, void* opaque),
              ( char_sink, opaque, format, vargs );
 }
 
+
+/* --------- fprintf ---------- */
+
+/* This is like [v]fprintf, except it writes to a file handle using
+   VG_(write). */
+
+#define VGFILE_BUFSIZE  8192
+
+struct _VgFile {
+   HChar buf[VGFILE_BUFSIZE];
+   UInt  num_chars;   // number of characters in buf
+   Int   fd;          // file descriptor to write to
+};
+
+
+static void add_to__vgfile ( HChar c, void *p )
+{
+   VgFile *fp = p;
+
+   fp->buf[fp->num_chars++] = c;
+
+   if (fp->num_chars == VGFILE_BUFSIZE) {
+      VG_(write)(fp->fd, fp->buf, fp->num_chars);
+      fp->num_chars = 0;
+   }
+}
+
+VgFile *VG_(fopen)(const HChar *name, Int flags, Int mode)
+{
+   SysRes res = VG_(open)(name, flags, mode);
+
+   if (sr_isError(res))
+      return NULL;
+
+   VgFile *fp = VG_(malloc)("fopen", sizeof(VgFile));
+
+   fp->fd = sr_Res(res);
+   fp->num_chars = 0;
+
+   return fp;
+}
+
+
+UInt VG_(vfprintf) ( VgFile *fp, const HChar *format, va_list vargs )
+{
+   return VG_(debugLog_vprintf)(add_to__vgfile, fp, format, vargs);
+}
+
+UInt VG_(fprintf) ( VgFile *fp, const HChar *format, ... )
+{
+   UInt ret;
+   va_list vargs;
+   va_start(vargs,format);
+   ret = VG_(vfprintf)(fp, format, vargs);
+   va_end(vargs);
+   return ret;
+}
+
+void VG_(fclose)( VgFile *fp )
+{
+   // Flush the buffer.
+   if (fp->num_chars)
+      VG_(write)(fp->fd, fp->buf, fp->num_chars);
+
+   VG_(free)(fp);
+}
 
 /* ---------------------------------------------------------------------
    percentify()
@@ -623,4 +691,3 @@ void VG_(err_config_error) ( const HChar* format, ... )
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
-

@@ -2111,15 +2111,7 @@ IRSB* ms_instrument ( VgCallbackClosure* closure,
 //--- Writing snapshots                                    ---//
 //------------------------------------------------------------//
 
-HChar FP_buf[BUF_LEN];
-
-// XXX: implement f{,n}printf in m_libcprint.c eventually, and use it here.
-// Then change Cachegrind to use it too.
-#define FP(format, args...) ({ \
-   VG_(snprintf)(FP_buf, BUF_LEN, format, ##args); \
-   FP_buf[BUF_LEN-1] = '\0';  /* Make sure the string is terminated. */ \
-   VG_(write)(fd, (void*)FP_buf, VG_(strlen)(FP_buf)); \
-})
+#define FP(format, args...) ({ VG_(fprintf)(fp, format, ##args); })
 
 // Nb: uses a static buffer, each call trashes the last string returned.
 static const HChar* make_perc(double x)
@@ -2133,9 +2125,9 @@ static const HChar* make_perc(double x)
    return mbuf;
 }
 
-static void pp_snapshot_SXPt(Int fd, SXPt* sxpt, Int depth, HChar* depth_str,
-                            Int depth_str_len,
-                            SizeT snapshot_heap_szB, SizeT snapshot_total_szB)
+static void pp_snapshot_SXPt(VgFile *fp, SXPt* sxpt, Int depth,
+                             HChar* depth_str, Int depth_str_len,
+                             SizeT snapshot_heap_szB, SizeT snapshot_total_szB)
 {
    Int   i, j, n_insig_children_sxpts;
    SXPt* child = NULL;
@@ -2207,13 +2199,16 @@ static void pp_snapshot_SXPt(Int fd, SXPt* sxpt, Int depth, HChar* depth_str,
       // name always has the same length, which makes truncation
       // deterministic and thus makes testing easier.
       tl_assert(j <= 18);
+      // FIXME: this whole code block will go away, once VG_(describe_IP)
+      // FIXME: has been fixed; I'm keeping it for now so testcases won't fail
+      HChar FP_buf[BUF_LEN];
       VG_(snprintf)(FP_buf, BUF_LEN, "%s\n", ip_desc);
       FP_buf[BUF_LEN-18+j-5] = '.';    // "..." at the end make the
       FP_buf[BUF_LEN-18+j-4] = '.';    //   truncation more obvious.
       FP_buf[BUF_LEN-18+j-3] = '.';
       FP_buf[BUF_LEN-18+j-2] = '\n';   // The last char is '\n'.
       FP_buf[BUF_LEN-18+j-1] = '\0';   // The string is terminated.
-      VG_(write)(fd, (void*)FP_buf, VG_(strlen)(FP_buf));
+      VG_(fprintf)(fp, "%s", FP_buf);
 
       // Indent.
       tl_assert(depth+1 < depth_str_len-1);    // -1 for end NUL char
@@ -2240,7 +2235,7 @@ static void pp_snapshot_SXPt(Int fd, SXPt* sxpt, Int depth, HChar* depth_str,
          // Ok, print the child.  NB: contents of ip_desc_array will be
          // trashed by this recursive call.  Doesn't matter currently,
          // but worth noting.
-         pp_snapshot_SXPt(fd, child, depth+1, depth_str, depth_str_len,
+         pp_snapshot_SXPt(fp, child, depth+1, depth_str, depth_str_len,
             snapshot_heap_szB, snapshot_total_szB);
       }
 
@@ -2265,7 +2260,7 @@ static void pp_snapshot_SXPt(Int fd, SXPt* sxpt, Int depth, HChar* depth_str,
    }
 }
 
-static void pp_snapshot(Int fd, Snapshot* snapshot, Int snapshot_n)
+static void pp_snapshot(VgFile *fp, Snapshot* snapshot, Int snapshot_n)
 {
    sanity_check_snapshot(snapshot);
 
@@ -2287,7 +2282,7 @@ static void pp_snapshot(Int fd, Snapshot* snapshot, Int snapshot_n)
       depth_str[0] = '\0';   // Initialise depth_str to "".
 
       FP("heap_tree=%s\n", ( Peak == snapshot->kind ? "peak" : "detailed" ));
-      pp_snapshot_SXPt(fd, snapshot->alloc_sxpt, 0, depth_str,
+      pp_snapshot_SXPt(fp, snapshot->alloc_sxpt, 0, depth_str,
                        depth_str_len, snapshot->heap_szB,
                        snapshot_total_szB);
 
@@ -2302,19 +2297,17 @@ static void write_snapshots_to_file(const HChar* massif_out_file,
                                     Snapshot snapshots_array[], 
                                     Int nr_elements)
 {
-   Int i, fd;
-   SysRes sres;
+   Int i;
+   VgFile *fp;
 
-   sres = VG_(open)(massif_out_file, VKI_O_CREAT|VKI_O_TRUNC|VKI_O_WRONLY,
-                                     VKI_S_IRUSR|VKI_S_IWUSR);
-   if (sr_isError(sres)) {
+   fp = VG_(fopen)(massif_out_file, VKI_O_CREAT|VKI_O_TRUNC|VKI_O_WRONLY,
+                                    VKI_S_IRUSR|VKI_S_IWUSR);
+   if (fp == NULL) {
       // If the file can't be opened for whatever reason (conflict
       // between multiple cachegrinded processes?), give up now.
       VG_(umsg)("error: can't open output file '%s'\n", massif_out_file );
       VG_(umsg)("       ... so profiling results will be missing.\n");
       return;
-   } else {
-      fd = sr_Res(sres);
    }
 
    // Print massif-specific options that were used.
@@ -2342,9 +2335,9 @@ static void write_snapshots_to_file(const HChar* massif_out_file,
 
    for (i = 0; i < nr_elements; i++) {
       Snapshot* snapshot = & snapshots_array[i];
-      pp_snapshot(fd, snapshot, i);     // Detailed snapshot!
+      pp_snapshot(fp, snapshot, i);     // Detailed snapshot!
    }
-   VG_(close) (fd);
+   VG_(fclose) (fp);
 }
 
 static void write_snapshots_array_to_file(void)

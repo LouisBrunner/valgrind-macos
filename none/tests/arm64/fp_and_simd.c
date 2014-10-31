@@ -1205,6 +1205,20 @@ GEN_ONEINT_ONEVEC_TEST(fmov_w_s,  "fmov w15,      s7", 15, 7)
 GEN_ONEINT_ONEVEC_TEST(fmov_x_d,  "fmov x15,      d7", 15, 7)
 GEN_ONEINT_ONEVEC_TEST(fmov_x_d1, "fmov x15, v7.d[1]", 15, 7)
 
+GEN_THREEVEC_TEST(fmla_2d_2d_d0, "fmla v2.2d, v11.2d, v29.d[0]", 2, 11, 29)
+GEN_THREEVEC_TEST(fmla_2d_2d_d1, "fmla v2.2d, v11.2d, v29.d[1]", 2, 11, 29)
+GEN_THREEVEC_TEST(fmla_4s_4s_s0, "fmla v2.4s, v11.4s, v29.s[0]", 2, 11, 29)
+GEN_THREEVEC_TEST(fmla_4s_4s_s3, "fmla v2.4s, v11.4s, v29.s[3]", 2, 11, 29)
+GEN_THREEVEC_TEST(fmla_2s_2s_s0, "fmla v2.2s, v11.2s, v29.s[0]", 2, 11, 29)
+GEN_THREEVEC_TEST(fmla_2s_2s_s3, "fmla v2.2s, v11.2s, v29.s[3]", 2, 11, 29)
+
+GEN_THREEVEC_TEST(fmls_2d_2d_d0, "fmls v2.2d, v11.2d, v29.d[0]", 2, 11, 29)
+GEN_THREEVEC_TEST(fmls_2d_2d_d1, "fmls v2.2d, v11.2d, v29.d[1]", 2, 11, 29)
+GEN_THREEVEC_TEST(fmls_4s_4s_s0, "fmls v2.4s, v11.4s, v29.s[0]", 2, 11, 29)
+GEN_THREEVEC_TEST(fmls_4s_4s_s3, "fmls v2.4s, v11.4s, v29.s[3]", 2, 11, 29)
+GEN_THREEVEC_TEST(fmls_2s_2s_s0, "fmls v2.2s, v11.2s, v29.s[0]", 2, 11, 29)
+GEN_THREEVEC_TEST(fmls_2s_2s_s3, "fmls v2.2s, v11.2s, v29.s[3]", 2, 11, 29)
+
 GEN_TWOVEC_TEST(fmov_2d_imm_01, "fmov v22.2d, #0.125", 22, 23)
 GEN_TWOVEC_TEST(fmov_2d_imm_02, "fmov v22.2d, #-4.0",  22, 23)
 GEN_TWOVEC_TEST(fmov_2d_imm_03, "fmov v22.2d, #1.0",   22, 23)
@@ -3144,6 +3158,18 @@ int main ( void )
 
    // fmla      2d_2d_d[],4s_4s_s[],2s_2s_s[]
    // fmls      2d_2d_d[],4s_4s_s[],2s_2s_s[]
+   if (1) test_fmla_2d_2d_d0(TyDF);
+   if (1) test_fmla_2d_2d_d1(TyDF);
+   if (1) test_fmla_4s_4s_s0(TySF);
+   if (1) test_fmla_4s_4s_s3(TySF);
+   if (1) test_fmla_2s_2s_s0(TySF);
+   if (1) test_fmla_2s_2s_s3(TySF);
+   if (1) test_fmls_2d_2d_d0(TyDF);
+   if (1) test_fmls_2d_2d_d1(TyDF);
+   if (1) test_fmls_4s_4s_s0(TySF);
+   if (1) test_fmls_4s_4s_s3(TySF);
+   if (1) test_fmls_2s_2s_s0(TySF);
+   if (1) test_fmls_2s_2s_s3(TySF);
 
    // fmov      2d,4s,2s #imm (part of the MOVI/MVNI/ORR/BIC imm group)
    // INCOMPLETE

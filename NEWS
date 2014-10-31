@@ -27,34 +27,46 @@ To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
 
-338731 ppc: Fix testuite build for toolchains not supporting -maltivec
-339020 ppc64: memcheck/tests/ppc64/power_ISA2_05 failing in nightly build
-339156 gdbsrv not called for fatal signal
-339442 Fix testsuite build failure on OS X 10.9
-339645 Use correct tag names in sys_getdents/64 wrappers
-339182 ppc64: AvSplat ought to load destination vector register with 16/16
-       bytes stored prior
-339433 ppc64 lxvw4x instruction uses four 32-byte loads
-
-339442 OS X 10.9 testsuite build failure: threadname.c:6:10:
-       fatal error: 'sys/prctl.h' file not found
-339542 Support compilation with Intel's ICC compiler
-339688 Mac-specific ASM does not support .version directive (cpuid,
-       tronical and pushfpopf tests)
-
-339706 Fix false positive for ioctl(TIOCSIG) on linux
-339721 assertion 'check_sibling == sibling' failed in readdwarf3.c ...
-339789 Fix none/tests/execve test on Mac OS X 10.9
-339808 Fix none/tests/rlimit64_nofile test on Mac OS X 10.9
-339853 arm64 times syscall unknown
-339855 arm64 unhandled getsid/setsid syscalls
-339858 arm64 dmb sy not implemented
-340115 Fix none/tests/cmdline[1|2] tests on systems which define TMPDIR
-340430 Fix some grammatical weirdness in the manual.
-n-i-bz Old STABS code is still being compiled, but never used. Remove it.
-n-i-bz Fix compilation on distros with glibc < 2.5
-n-i-bz Provide implementations of certain compiler builtins to support
-       compilers who may not provide those
+335440  arm64: ld1 (single structure) is not implemented
+335713  arm64: unhanded instruction: prfm (immediate)
+338731  ppc: Fix testuite build for toolchains not supporting -maltivec
+339020  ppc64: memcheck/tests/ppc64/power_ISA2_05 failing in nightly build
+339156  gdbsrv not called for fatal signal
+339442  Fix testsuite build failure on OS X 10.9
+339645  Use correct tag names in sys_getdents/64 wrappers
+339182  ppc64: AvSplat ought to load destination vector register with 16/16
+        bytes stored prior
+339433  ppc64 lxvw4x instruction uses four 32-byte loads
+339442  OS X 10.9 testsuite build failure: threadname.c:6:10:
+        fatal error: 'sys/prctl.h' file not found
+339542  Support compilation with Intel's ICC compiler
+339688  Mac-specific ASM does not support .version directive (cpuid,
+        tronical and pushfpopf tests)
+339706  Fix false positive for ioctl(TIOCSIG) on linux
+339721  assertion 'check_sibling == sibling' failed in readdwarf3.c ...
+339789  Fix none/tests/execve test on Mac OS X 10.9
+339808  Fix none/tests/rlimit64_nofile test on Mac OS X 10.9
+339853  arm64 times syscall unknown
+339855  arm64 unhandled getsid/setsid syscalls
+339858  arm64 dmb sy not implemented
+339926  Unhandled instruction 0x1E674001 (frintx) on aarm64
+339927  Unhandled instruction 0x9E7100C6 (fcvtmu) on aarch64
+339938  disInstr(arm64): unhandled instruction 0x4F8010A4 (fmla)
+        == 339950
+339940  unhandled syscall: 83 (sys_fdatasync) + patch
+340028  unhandled syscalls for arm64 (msync, pread64, setreuid and setregid)
+340033  arm64: unhandled instruction for dmb ishld and some other
+        isb-dmb-dsb variants...
+340036  arm64: Unhandled instruction ld4 (multiple structures, no offset)
+340115  Fix none/tests/cmdline[1|2] tests on systems which define TMPDIR
+340236  4 unhandled syscalls on aarch64/arm64: mknodat (33), fchdir
+        (50), chroot (51), fchownat (54)
+340430  Fix some grammatical weirdness in the manual.
+340509  arm64: unhandled instruction fcvtas
+n-i-bz  Provide implementations of certain compiler builtins to support
+        compilers who may not provide those
+n-i-bz  Old STABS code is still being compiled, but never used. Remove it.
+n-i-bz  Fix compilation on distros with glibc < 2.5
 
 
 Release 3.10.0 (10 September 2014)

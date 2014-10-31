@@ -6763,29 +6763,25 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
    }
 
    /* ------------------ ISB, DMB, DSB ------------------ */
-   if (INSN(31,0) == 0xD5033FDF) {
+   /* 31          21            11  7 6  4
+      11010 10100 0 00 011 0011 CRm 1 01 11111  DMB opt
+      11010 10100 0 00 011 0011 CRm 1 00 11111  DSB opt
+      11010 10100 0 00 011 0011 CRm 1 10 11111  ISB opt
+   */
+   if (INSN(31,22) == BITS10(1,1,0,1,0,1,0,1,0,0)
+       && INSN(21,12) == BITS10(0,0,0,0,1,1,0,0,1,1)
+       && INSN(7,7) == 1
+       && INSN(6,5) <= BITS2(1,0) && INSN(4,0) == BITS5(1,1,1,1,1)) {
+      UInt opc = INSN(6,5);
+      UInt CRm = INSN(11,8);
+      vassert(opc <= 2 && CRm <= 15);
       stmt(IRStmt_MBE(Imbe_Fence));
-      DIP("isb\n");
-      return True;
-   }
-   if (INSN(31,0) == 0xD5033FBF) {
-      stmt(IRStmt_MBE(Imbe_Fence));
-      DIP("dmb sy\n");
-      return True;
-   }
-   if (INSN(31,0) == 0xD5033BBF) {
-      stmt(IRStmt_MBE(Imbe_Fence));
-      DIP("dmb ish\n");
-      return True;
-   }
-   if (INSN(31,0) == 0xD5033ABF) {
-      stmt(IRStmt_MBE(Imbe_Fence));
-      DIP("dmb ishst\n");
-      return True;
-   }
-   if (INSN(31,0) == 0xD5033B9F) {
-      stmt(IRStmt_MBE(Imbe_Fence));
-      DIP("dsb ish\n");
+      const HChar* opNames[3] 
+         = { "dsb", "dmb", "isb" };
+      const HChar* howNames[16]
+         = { "#0", "oshld", "oshst", "osh", "#4", "nshld", "nshst", "nsh",
+             "#8", "ishld", "ishst", "ish", "#12", "ld", "st", "sy" };
+      DIP("%s %s\n", opNames[opc], howNames[CRm]);
       return True;
    }
 

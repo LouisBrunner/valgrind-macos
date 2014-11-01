@@ -2214,6 +2214,33 @@ ML_(generic_PRE_sys_mmap) ( ThreadId tid,
                                        arg5, arg6);
    }
 
+   /* Yet another refinement : sometimes valgrind chooses an address
+      which is not acceptable by the kernel. This at least happens
+      when mmap-ing huge pages, using the flag MAP_HUGETLB.
+      valgrind aspacem does not know about huge pages, and modifying
+      it to handle huge pages is not straightforward (e.g. need
+      to understand special file system mount options).
+      So, let's just redo an mmap, without giving any constraint to
+      the kernel. If that succeeds, check with aspacem that the returned
+      address is acceptable (i.e. is free).
+      This will give a similar effect as if the user would have
+      specified a MAP_FIXED at that address.
+      The aspacem state will be correctly updated afterwards.
+      We however cannot do this last refinement when the user asked
+      for a fixed mapping, as the user asked a specific address. */
+   if (sr_isError(sres) && !(arg4 & VKI_MAP_FIXED)) {
+      advised = 0; 
+      /* try mmap with NULL address and without VKI_MAP_FIXED
+         to let the kernel decide. */
+      sres = VG_(am_do_mmap_NO_NOTIFY)(advised, arg2, arg3,
+                                       arg4,
+                                       arg5, arg6);
+      if (!sr_isError(sres)) {
+         vg_assert(VG_(am_covered_by_single_free_segment)((Addr)sr_Res(sres),
+                                                           arg2));
+      }
+   }
+
    if (!sr_isError(sres)) {
       ULong di_handle;
       /* Notify aspacem. */

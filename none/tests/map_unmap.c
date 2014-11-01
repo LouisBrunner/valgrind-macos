@@ -10,7 +10,7 @@
       echo 20 > /proc/sys/vm/nr_hugepages
   Once this is done, uncomment the below, and recompile.
 */
-// #define TEST_MAP_HUGETLB 1
+//#define TEST_MAP_HUGETLB 1
 
 /* Similarly, testing SHM_HUGETLB huge pages is disabled by default.
    To have shmget/shmat big pages working, do (as root)
@@ -18,13 +18,12 @@
    where 500 is the groupid of the user that runs this test
   Once this is done, uncomment the below, and recompile.
 */
-// #define TEST_SHM_HUGETLB 1
+//#define TEST_SHM_HUGETLB 1
+
+// Size to use for huge pages
+#define HUGESZ (4 * 1024 * 1024)
 
 #ifdef TEST_MAP_HUGETLB
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <sys/stat.h>
-
 /* Ensure this compiles on pre 2.6 systems, or on glibc missing MAP_HUGETLB */
 #ifndef MAP_HUGETLB
 /* The below works for me on an f12/x86 linux */
@@ -34,6 +33,9 @@
 #endif /* TEST_MAP_HUGETLB */
 
 #ifdef TEST_SHM_HUGETLB
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <sys/stat.h>
 #ifndef SHM_HUGETLB
 #define SHM_HUGETLB 04000
 #endif
@@ -114,7 +116,6 @@ int main()
 	}
 
 #ifdef  TEST_MAP_HUGETLB
-#define HUGESZ (4 * 1024 * 1024)
         {
            void *expect3;
            expect3 = domap(HUGESZ, MAP_HUGETLB);

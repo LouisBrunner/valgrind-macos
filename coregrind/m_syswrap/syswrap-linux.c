@@ -3593,6 +3593,15 @@ PRE(sys_ipc)
    case VKI_SHMGET:
       PRE_REG_READ4(int, "ipc",
                     vki_uint, call, int, first, int, second, int, third);
+      if (ARG4 & VKI_SHM_HUGETLB) {
+         static Bool warning_given = False;
+         ARG4 &= ~VKI_SHM_HUGETLB;
+         if (!warning_given) {
+            warning_given = True;
+            VG_(umsg)(
+               "WARNING: valgrind ignores shmget(shmflg) SHM_HUGETLB\n");
+         }
+      }
       break;
    case VKI_SHMCTL: /* IPCOP_shmctl */
       PRE_REG_READ5(int, "ipc",
@@ -3795,6 +3804,15 @@ PRE(sys_shmget)
 {
    PRINT("sys_shmget ( %ld, %ld, %ld )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "shmget", vki_key_t, key, vki_size_t, size, int, shmflg);
+   if (ARG3 & VKI_SHM_HUGETLB) {
+      static Bool warning_given = False;
+      ARG3 &= ~VKI_SHM_HUGETLB;
+      if (!warning_given) {
+         warning_given = True;
+         VG_(umsg)(
+            "WARNING: valgrind ignores shmget(shmflg) SHM_HUGETLB\n");
+      }
+   }
 }
 
 PRE(wrap_sys_shmat)

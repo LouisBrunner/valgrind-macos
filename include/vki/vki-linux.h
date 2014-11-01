@@ -1160,6 +1160,9 @@ struct vki_ipc_perm
 
 #define VKI_IPC_64  0x0100  /* New version (support 32-bit UIDs, bigger
 			       message sizes, etc. */
+// From /usr/include/bits/shm.h
+# define VKI_SHM_HUGETLB   04000
+
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/sem.h

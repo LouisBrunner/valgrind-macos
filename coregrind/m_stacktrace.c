@@ -1449,14 +1449,10 @@ UInt VG_(get_StackTrace) ( ThreadId tid,
 
 static void printIpDesc(UInt n, Addr ip, void* uu_opaque)
 {
-   #define BUF_LEN   4096
-   
-   static HChar buf[BUF_LEN];
-
    InlIPCursor *iipc = VG_(new_IIPC)(ip);
 
    do {
-      VG_(describe_IP)(ip, buf, BUF_LEN, iipc);
+      const HChar *buf = VG_(describe_IP)(ip, iipc);
       if (VG_(clo_xml)) {
          VG_(printf_xml)("    %s\n", buf);
       } else {

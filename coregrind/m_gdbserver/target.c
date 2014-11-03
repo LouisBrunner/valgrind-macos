@@ -176,11 +176,9 @@ void gdbserver_process_exit_encountered (unsigned char status, Int code)
 }
 
 static
-char* sym (Addr addr)
+const HChar* sym (Addr addr)
 {
-   static char buf[200];
-   VG_(describe_IP) (addr, buf, 200, NULL);
-   return buf;
+   return VG_(describe_IP) (addr, NULL);
 }
 
 ThreadId vgdb_interrupted_tid = 0;

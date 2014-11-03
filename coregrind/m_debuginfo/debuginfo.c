@@ -1,4 +1,4 @@
-
+/* -*- mode: C; c-basic-offset: 3; -*- */
 
 /*--------------------------------------------------------------------*/
 /*--- Top level management of symbols and debugging information.   ---*/
@@ -2154,86 +2154,75 @@ Bool VG_(lookup_symbol_SLOW)(const HChar* sopatt, const HChar* name,
 }
 
 
-/* VG_(describe_IP): print into buf info on code address, function
-   name and filename. */
+/* VG_(describe_IP): return info on code address, function name and
+   filename. The returned string is allocated in a static buffer and will
+   be overwritten in the next invocation. */
 
-/* Copy str into buf starting at n, but not going past buf[n_buf-1]
-   and always ensuring that buf is zero-terminated. */
-
-static Int putStr ( Int n, Int n_buf, HChar* buf, const HChar* str ) 
+/* Copy str into *buf starting at n, ensuring that buf is zero-terminated.
+   Return the index of the terminating null character. */
+static SizeT 
+putStr( SizeT n, HChar** buf, SizeT *bufsiz, const HChar* str ) 
 {
-   vg_assert(n_buf > 0);
-   vg_assert(n >= 0 && n < n_buf);
-   for (; n < n_buf-1 && *str != 0; n++,str++)
-      buf[n] = *str;
-   vg_assert(n >= 0 && n < n_buf);
-   buf[n] = '\0';
-   return n;
+   SizeT slen = VG_(strlen)(str);
+   SizeT need = n + slen + 1;
+
+   if (need > *bufsiz) {
+      if (need < 256) need = 256;
+      *bufsiz = need;
+      *buf = ML_(dinfo_realloc)("putStr", *buf, *bufsiz);
+   }
+
+   VG_(strcpy)(*buf + n, str);
+
+   return n + slen;
 }
 
-/* Same as putStr, but escaping chars for XML output, and
-   also not adding more than count chars to n_buf. */
-
-static Int putStrEsc ( Int n, Int n_buf, Int count, HChar* buf,
-                       const HChar* str ) 
+/* Same as putStr, but escaping chars for XML output. */
+static SizeT 
+putStrEsc( SizeT n, HChar** buf, SizeT *bufsiz, const HChar* str )
 {
    HChar alt[2];
-   vg_assert(n_buf > 0);
-   vg_assert(count >= 0 && count < n_buf);
-   vg_assert(n >= 0 && n < n_buf);
+
    for (; *str != 0; str++) {
-      vg_assert(count >= 0);
-      if (count <= 0)
-         goto done;
       switch (*str) {
          case '&': 
-            if (count < 5) goto done;
-            n = putStr( n, n_buf, buf, "&amp;"); 
-            count -= 5;
+            n = putStr( n, buf, bufsiz, "&amp;"); 
             break;
          case '<': 
-            if (count < 4) goto done;
-            n = putStr( n, n_buf, buf, "&lt;"); 
-            count -= 4;
+            n = putStr( n, buf, bufsiz, "&lt;"); 
             break;
          case '>': 
-            if (count < 4) goto done;
-            n = putStr( n, n_buf, buf, "&gt;"); 
-            count -= 4;
+            n = putStr( n, buf, bufsiz, "&gt;"); 
             break;
          default:
-            if (count < 1) goto done;
             alt[0] = *str;
             alt[1] = 0;
-            n = putStr( n, n_buf, buf, alt );
-            count -= 1;
+            n = putStr( n, buf, bufsiz, alt );
             break;
       }
    }
-  done:
-   vg_assert(count >= 0); /* should not go -ve in loop */
-   vg_assert(n >= 0 && n < n_buf);
    return n;
 }
 
-HChar* VG_(describe_IP)(Addr eip, HChar* buf, Int n_buf, InlIPCursor *iipc)
+const HChar* VG_(describe_IP)(Addr eip, const InlIPCursor *iipc)
 {
+   static HChar *buf = NULL;
+   static SizeT bufsiz = 0;
 #  define APPEND(_str) \
-      n = putStr(n, n_buf, buf, _str)
-#  define APPEND_ESC(_count,_str) \
-      n = putStrEsc(n, n_buf, (_count), buf, (_str))
-#  define BUF_LEN    4096
+      n = putStr(n, &buf, &bufsiz, _str)
+#  define APPEND_ESC(_str) \
+      n = putStrEsc(n, &buf, &bufsiz, _str)
 
    UInt  lineno; 
-   HChar ibuf[50];
-   Int   n = 0;
+   HChar ibuf[50];   // large enough
+   SizeT n = 0;
 
    vg_assert (!iipc || iipc->eip == eip);
 
-   static const HChar *buf_fn;
-   static const HChar *buf_obj;
-   static const HChar *buf_srcloc;
-   static const HChar *buf_dirname;
+   const HChar *buf_fn;
+   const HChar *buf_obj;
+   const HChar *buf_srcloc;
+   const HChar *buf_dirname;
 
    Bool  know_dirinfo = False;
    Bool  know_fnname;
@@ -2251,7 +2240,7 @@ HChar* VG_(describe_IP)(Addr eip, HChar* buf, Int n_buf, InlIPCursor *iipc)
          : NULL;
       vg_assert (next_inl);
       // The function we are in is called by next_inl.
-      buf_fn = next_inl->inlinedfn;  // FIXME: IS THIS SAFE ??
+      buf_fn = next_inl->inlinedfn;
       know_fnname = True;
 
       // INLINED????
@@ -2302,11 +2291,7 @@ HChar* VG_(describe_IP)(Addr eip, HChar* buf, Int n_buf, InlIPCursor *iipc)
       const HChar* maybe_newline2 = human_readable ? "\n    "   : "";
 
       /* Print in XML format, dumping in as much info as we know.
-         Ensure all tags are balanced even if the individual strings
-         are too long.  Allocate 1/10 of BUF_LEN to the object name,
-         6/10s to the function name, 1/10 to the directory name and
-         1/10 to the file name, leaving 1/10 for all the fixed-length
-         stuff. */
+         Ensure all tags are balanced. */
       APPEND("<frame>");
       VG_(sprintf)(ibuf,"<ip>0x%llX</ip>", (ULong)eip);
       APPEND(maybe_newline);
@@ -2314,25 +2299,25 @@ HChar* VG_(describe_IP)(Addr eip, HChar* buf, Int n_buf, InlIPCursor *iipc)
       if (know_objname) {
          APPEND(maybe_newline);
          APPEND("<obj>");
-         APPEND_ESC(1*BUF_LEN/10, buf_obj);
+         APPEND_ESC(buf_obj);
          APPEND("</obj>");
       }
       if (know_fnname) {
          APPEND(maybe_newline);
          APPEND("<fn>");
-         APPEND_ESC(6*BUF_LEN/10, buf_fn);
+         APPEND_ESC(buf_fn);
          APPEND("</fn>");
       }
       if (know_srcloc) {
          if (know_dirinfo) {
             APPEND(maybe_newline);
             APPEND("<dir>");
-            APPEND_ESC(1*BUF_LEN/10, buf_dirname);
+            APPEND_ESC(buf_dirname);
             APPEND("</dir>");
          }
          APPEND(maybe_newline);
          APPEND("<file>");
-         APPEND_ESC(1*BUF_LEN/10, buf_srcloc);
+         APPEND_ESC(buf_srcloc);
          APPEND("</file>");
          APPEND(maybe_newline);
          APPEND("<line>");
@@ -2412,7 +2397,6 @@ HChar* VG_(describe_IP)(Addr eip, HChar* buf, Int n_buf, InlIPCursor *iipc)
 
 #  undef APPEND
 #  undef APPEND_ESC
-#  undef BUF_LEN
 }
 
 

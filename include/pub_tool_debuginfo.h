@@ -129,28 +129,29 @@ extern Bool VG_(get_objname)  ( Addr a, const HChar** objname );
    by doing successive calls to VG_(describe_IP). */
 typedef  struct _InlIPCursor InlIPCursor;
 
-/* Puts into 'buf' info about the code address %eip:  the address, function
+/* Returns info about the code address %eip:  the address, function
    name (if known) and filename/line number (if known), like this:
 
       0x4001BF05: realloc (vg_replace_malloc.c:339)
-
-   'n_buf' gives length of 'buf'.  Returns 'buf'.
 
    eip can possibly corresponds to inlined function call(s).
    To describe eip and the inlined function calls, the following must
    be done:
        InlIPCursor *iipc = VG_(new_IIPC)(eip);
        do {
-          VG_(describe_IP)(eip, buf, n_buf, iipc);
+          buf = VG_(describe_IP)(eip, iipc);
           ... use buf ...
        } while (VG_(next_IIPC)(iipc));
        VG_(delete_IIPC)(iipc);
 
    To only describe eip, without the inlined calls at eip, give a NULL iipc:
-       VG_(describe_IP)(eip, buf, n_buf, NULL);   
+       buf = VG_(describe_IP)(eip, NULL);   
+
+   Note, that the returned string is allocated in a static buffer local to
+   VG_(describe_IP). That buffer will be overwritten with every invocation.
+   Therefore, callers need to possibly stash away the string.
 */
-extern HChar* VG_(describe_IP)(Addr eip, HChar* buf, Int n_buf,
-                               InlIPCursor* iipc);
+extern const HChar* VG_(describe_IP)(Addr eip, const InlIPCursor* iipc);
 
 /* Builds a IIPC (Inlined IP Cursor) to describe eip and all the inlined calls
    at eip. Such a cursor must be deleted after use using VG_(delete_IIPC). */

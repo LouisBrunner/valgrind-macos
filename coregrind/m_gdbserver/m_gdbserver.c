@@ -146,8 +146,8 @@ static HChar* sym (Addr addr, Bool is_code)
    if (w == 2) w = 0;
 
    if (is_code) {
-      HChar name[200];
-      VG_(describe_IP) (addr, name, 200, NULL);  // FIXME: get rid of name
+      const HChar *name;
+      name = VG_(describe_IP) (addr, NULL);
       if (buf[w]) VG_(free)(buf[w]);
       buf[w] = VG_(strdup)("gdbserver sym", name);
    } else {

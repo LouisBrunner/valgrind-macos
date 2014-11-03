@@ -1,5 +1,5 @@
 
-/* Check that very long function names are safely truncated in 
+/* Check that very long function names are NOT truncated in 
    memcheck's XML output. */
 
 

@@ -4389,10 +4389,11 @@ PRE(sys_openat)
    PRE_MEM_RASCIIZ( "openat(filename)", ARG2 );
 
    /* For absolute filenames, dfd is ignored.  If dfd is AT_FDCWD,
-      filename is relative to cwd.  */
+      filename is relative to cwd.  When comparing dfd against AT_FDCWD,
+      be sure only to compare the bottom 32 bits. */
    if (ML_(safe_to_deref)( (void*)ARG2, 1 )
        && *(Char *)ARG2 != '/'
-       && ARG1 != VKI_AT_FDCWD
+       && ((Int)ARG1) != ((Int)VKI_AT_FDCWD)
        && !ML_(fd_allowed)(ARG1, "openat", tid, False))
       SET_STATUS_Failure( VKI_EBADF );
 

@@ -751,6 +751,11 @@ void install_handlers(void)
       to cleanup.  */
    if (sigaction (SIGALRM, &action, &oldaction) != 0)
       XERROR (errno, "vgdb error sigaction SIGALRM\n");
+
+   /* unmask all signals, in case the process that launched vgdb
+      masked some. */
+   if (sigprocmask (SIG_SETMASK, &action.sa_mask, NULL) != 0)
+      XERROR (errno, "vgdb error sigprocmask");
 }
 
 /* close the FIFOs provided connections, terminate the invoker thread.  */

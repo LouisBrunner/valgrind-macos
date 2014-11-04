@@ -160,8 +160,10 @@ static UInt note_size(const struct note *n)
                             + VG_ROUNDUP(n->note.n_descsz, 4);
 }
 
-#if !defined(VGPV_arm_linux_android) && !defined(VGPV_x86_linux_android) \
-    && !defined(VGPV_mips32_linux_android)
+#if !defined(VGPV_arm_linux_android) \
+    && !defined(VGPV_x86_linux_android) \
+    && !defined(VGPV_mips32_linux_android) \
+    && !defined(VGPV_arm64_linux_android)
 static void add_note(struct note **list, const HChar *name, UInt type,
                      const void *data, UInt datasz)
 {
@@ -559,14 +561,18 @@ void dump_one_thread(struct note **notelist, const vki_siginfo_t *si, ThreadId t
 #     endif
 
       fill_fpu(&VG_(threads)[tid], &fpu);
-#     if !defined(VGPV_arm_linux_android) && !defined(VGPV_x86_linux_android) \
-         && !defined(VGPV_mips32_linux_android)
+#     if !defined(VGPV_arm_linux_android) \
+         && !defined(VGPV_x86_linux_android) \
+         && !defined(VGPV_mips32_linux_android) \
+         && !defined(VGPV_arm64_linux_android)
       add_note(notelist, "CORE", NT_FPREGSET, &fpu, sizeof(fpu));
 #     endif
 
       fill_prstatus(&VG_(threads)[tid], &prstatus, si);
-#     if !defined(VGPV_arm_linux_android) && !defined(VGPV_x86_linux_android) \
-         && !defined(VGPV_mips32_linux_android)
+#     if !defined(VGPV_arm_linux_android) \
+         && !defined(VGPV_x86_linux_android) \
+         && !defined(VGPV_mips32_linux_android) \
+         && !defined(VGPV_arm64_linux_android)
       add_note(notelist, "CORE", NT_PRSTATUS, &prstatus, sizeof(prstatus));
 #     endif
 }
@@ -668,8 +674,10 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, ULong max_size)
    dump_one_thread(&notelist, si, tid);
 
    fill_prpsinfo(&VG_(threads)[tid], &prpsinfo);
-#  if !defined(VGPV_arm_linux_android) && !defined(VGPV_x86_linux_android) \
-      && !defined(VGPV_mips32_linux_android)
+#  if !defined(VGPV_arm_linux_android) \
+      && !defined(VGPV_x86_linux_android) \
+      && !defined(VGPV_mips32_linux_android) \
+      && !defined(VGPV_arm64_linux_android)
    add_note(&notelist, "CORE", NT_PRPSINFO, &prpsinfo, sizeof(prpsinfo));
 #  endif
 

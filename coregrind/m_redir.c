@@ -1409,11 +1409,13 @@ void VG_(redir_initialise) ( void )
          (Addr)&VG_(arm64_linux_REDIR_FOR_strcmp),
          NULL 
       );
-      //add_hardwired_spec(
-      //   "ld-linux.so.3", "memcpy",
-      //   (Addr)&VG_(arm_linux_REDIR_FOR_memcpy),
-      //   complain_about_stripped_glibc_ldso
-      //);
+#     if defined(VGPV_arm64_linux_android)
+      add_hardwired_spec(
+         "NONE", "__dl_strlen", // in /system/bin/linker64
+         (Addr)&VG_(arm64_linux_REDIR_FOR_strlen),
+         NULL
+      );
+#     endif
    }
 
 #  elif defined(VGP_x86_darwin)

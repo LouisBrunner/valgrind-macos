@@ -239,7 +239,8 @@ static const char *select_platform(const char *clientname)
          } else if (header[EI_DATA] == ELFDATA2MSB) {
 #           if !defined(VGPV_arm_linux_android) \
                && !defined(VGPV_x86_linux_android) \
-               && !defined(VGPV_mips32_linux_android)
+               && !defined(VGPV_mips32_linux_android) \
+               && !defined(VGPV_arm64_linux_android)
             if (ehdr->e_machine == EM_PPC64 &&
                 (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
                  ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {

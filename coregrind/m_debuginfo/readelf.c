@@ -185,8 +185,8 @@ void show_raw_elf_symbol ( DiImage* strtab_img,
    HChar* sym_name = NULL;
    if (sym->st_name)
       sym_name = ML_(img_strdup)(strtab_img, "di.sres.1", sym_name_ioff);
-   VG_(printf)(": svma %#010lx, %ssz %4ld  %s\n",
-               sym_svma, space, sym->st_size + 0UL,
+   VG_(printf)(": svma %#010lx, %ssz %4llu  %s\n",
+               sym_svma, space, (ULong)(sym->st_size + 0UL),
                (sym_name ? sym_name : "NONAME") ); 
    if (sym_name)
       ML_(dinfo_free)(sym_name);
@@ -420,7 +420,10 @@ Bool get_elf_symbol_info (
       in /system/bin/linker:  __dl_strcmp __dl_strlen
    */
    if (*sym_size_out == 0) {
-#     if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)
+#     if defined(VGPV_arm_linux_android) \
+         || defined(VGPV_x86_linux_android) \
+         || defined(VGPV_mips32_linux_android) \
+         || defined(VGPV_arm64_linux_android)
       *sym_size_out = 2048;
 #     else
       if (TRACE_SYMTAB_ENABLED) {

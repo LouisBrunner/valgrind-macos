@@ -899,8 +899,10 @@ static SyscallTableEntry syscall_main_table[] = {
    GENX_(__NR_chdir,             sys_chdir),             // 49
    GENX_(__NR_fchdir,            sys_fchdir),            // 50
    GENX_(__NR_chroot,            sys_chroot),            // 51
+   GENX_(__NR_fchmod,            sys_fchmod),            // 52
    LINX_(__NR_fchmodat,          sys_fchmodat),          // 53
    LINX_(__NR_fchownat,          sys_fchownat),          // 54
+   GENX_(__NR_fchown,            sys_fchown),            // 55
    LINXY(__NR_openat,            sys_openat),            // 56
    GENXY(__NR_close,             sys_close),             // 57
    LINXY(__NR_pipe2,             sys_pipe2),             // 59
@@ -1129,7 +1131,6 @@ static SyscallTableEntry syscall_main_table[] = {
 //ZZ    GENXY(__NR_munmap,            sys_munmap),         // 91
 //ZZ    GENX_(__NR_truncate,          sys_truncate),       // 92
 //ZZ    GENX_(__NR_ftruncate,         sys_ftruncate),      // 93
-//ZZ    GENX_(__NR_fchmod,            sys_fchmod),         // 94
 //ZZ 
 //ZZ    LINX_(__NR_fchown,            sys_fchown16),       // 95
 //ZZ //   GENX_(__NR_profil,            sys_ni_syscall),     // 98
@@ -1237,7 +1238,6 @@ static SyscallTableEntry syscall_main_table[] = {
 //ZZ 
 //ZZ    GENXY(__NR_getgroups32,       sys_getgroups),      // 205
 //ZZ    GENX_(__NR_setgroups32,       sys_setgroups),      // 206
-//ZZ    GENX_(__NR_fchown32,          sys_fchown),         // 207
 //ZZ    LINX_(__NR_setresuid32,       sys_setresuid),      // 208
 //ZZ    LINXY(__NR_getresuid32,       sys_getresuid),      // 209
 //ZZ 

@@ -199,20 +199,25 @@ static void print_obj(HChar* buf, obj_node* obj)
 #endif
 }
 
-static void print_file(HChar* buf, file_node* file)
+static void print_file(Int fd, const char *prefix, file_node* file)
 {
+    // 32 for file->number + peripheral characters
+    HChar buf[VG_(strlen)(prefix) + VG_(strlen)(file->name) + 32];
+
     if (CLG_(clo).compress_strings) {
 	CLG_ASSERT(file_dumped != 0);
 	if (file_dumped[file->number])
-	    VG_(sprintf)(buf, "(%d)\n", file->number);
+            VG_(sprintf)(buf, "%s(%d)\n", prefix, file->number);
 	else {
-	    VG_(sprintf)(buf, "(%d) %s\n",
+            VG_(sprintf)(buf, "%s(%d) %s\n", prefix,
 			 file->number, file->name);
 	    file_dumped[file->number] = True;
 	}
     }
     else
-	VG_(sprintf)(buf, "%s\n", file->name);
+        VG_(sprintf)(buf, "%s%s\n", prefix, file->name);
+
+    my_fwrite(fd, buf, VG_(strlen)(buf));
 }
 
 /*
@@ -369,9 +374,7 @@ static Bool print_fn_pos(int fd, FnPos* last, BBCC* bbcc)
     }
 
     if (last->file != bbcc->cxt->fn[0]->file) {
-	VG_(sprintf)(outbuf, "fl=");
-	print_file(outbuf+3, bbcc->cxt->fn[0]->file);
-	my_fwrite(fd, outbuf, VG_(strlen)(outbuf));
+        print_file(fd, "fl=", bbcc->cxt->fn[0]->file);
 	last->file = bbcc->cxt->fn[0]->file;
 	res = True;
     }
@@ -509,11 +512,9 @@ static void fprint_apos(Int fd, AddrPos* curr, AddrPos* last, file_node* func_fi
 
 	/* if we switch back to orig file, use fe=... */
 	if (curr->file == func_file)
-	    VG_(sprintf)(outbuf, "fe=");
+            print_file(fd, "fe=", curr->file);
 	else
-	    VG_(sprintf)(outbuf, "fi=");
-	print_file(outbuf+3, curr->file);
-	my_fwrite(fd, outbuf, VG_(strlen)(outbuf));
+            print_file(fd, "fi=", curr->file);
     }
 
     if (CLG_(clo).dump_bbs) {
@@ -669,9 +670,7 @@ static void fprint_jcc(Int fd, jCC* jcc, AddrPos* curr, AddrPos* last, ULong eco
 	 * which change the stack, and thus context
 	 */
 	if (last->file != target.file) {
-	    VG_(sprintf)(outbuf, "jfi=");
-	    print_file(outbuf+4, target.file);
-	    my_fwrite(fd, outbuf, VG_(strlen)(outbuf));
+            print_file(fd, "jfi=", target.file);
 	}
 	
 	if (jcc->from->cxt != jcc->to->cxt) {
@@ -715,9 +714,7 @@ static void fprint_jcc(Int fd, jCC* jcc, AddrPos* curr, AddrPos* last, ULong eco
 
     /* file of called position different to current file? */
     if (last->file != file) {
-	VG_(sprintf)(outbuf, "cfi=");
-	print_file(outbuf+4, file);
-	my_fwrite(fd, outbuf, VG_(strlen)(outbuf));
+        print_file(fd, "cfi=", file);
     }
 
     if (CLG_(clo).mangle_names)
@@ -1507,9 +1504,7 @@ static void print_bbccs_of_thread(thread_info* ti)
       
       if (ccSum[currSum].p.file != lastFnPos.cxt->fn[0]->file) {
 	/* switch back to file of function */
-	VG_(sprintf)(print_buf, "fe=");
-	print_file(print_buf+3, lastFnPos.cxt->fn[0]->file);
-	my_fwrite(print_fd, print_buf, VG_(strlen)(print_buf));
+	print_file(print_fd, "fe=", lastFnPos.cxt->fn[0]->file);
       }
       my_fwrite(print_fd, "\n", 1);
     }

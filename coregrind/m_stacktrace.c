@@ -824,7 +824,7 @@ static Bool in_same_fn ( Addr a1, Addr a2 )
       HChar buf_a1_copy[VG_(strlen)(buf_a1) + 1];
       VG_(strcpy)(buf_a1_copy, buf_a1);
       if (VG_(get_fnname_raw) (a2, &buf_a2))
-         if (VG_(strcmp)(buf_a1_copy1, buf_a2))
+         if (VG_(strcmp)(buf_a1_copy, buf_a2))
             return True;
    }
    return False;

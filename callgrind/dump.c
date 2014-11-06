@@ -597,9 +597,10 @@ void fprint_pos(Int fd, AddrPos* curr, AddrPos* last)
 static
 void fprint_cost(int fd, EventMapping* es, ULong* cost)
 {
-  int p = CLG_(sprint_mappingcost)(outbuf, es, cost);
-  VG_(sprintf)(outbuf+p, "\n");
+  HChar *mcost = CLG_(mappingcost_as_string)(es, cost);
+  VG_(sprintf)(outbuf, "%s\n", mcost);
   my_fwrite(fd, outbuf, VG_(strlen)(outbuf));
+  CLG_FREE(mcost);
   return;
 }
 
@@ -1220,12 +1221,10 @@ BBCC** prepare_dump(void)
 static void fprint_cost_ln(int fd, const HChar* prefix,
 			   EventMapping* em, ULong* cost)
 {
-    int p;
-
-    p = VG_(sprintf)(outbuf, "%s", prefix);
-    p += CLG_(sprint_mappingcost)(outbuf + p, em, cost);
-    VG_(sprintf)(outbuf + p, "\n");
+    HChar *mcost = CLG_(mappingcost_as_string)(em, cost);
+    VG_(sprintf)(outbuf, "%s%s\n", prefix, mcost);
     my_fwrite(fd, outbuf, VG_(strlen)(outbuf));
+    CLG_FREE(mcost);
 }
 
 static ULong bbs_done = 0;
@@ -1402,10 +1401,10 @@ static int new_dumpfile(HChar buf[BUF_LEN], int tid, const HChar* trigger)
    my_fwrite(fd, buf, VG_(strlen)(buf));
 
    /* "events:" line */
-   i = VG_(sprintf)(buf, "events: ");
-   CLG_(sprint_eventmapping)(buf+i, CLG_(dumpmap));
+   HChar *evmap = CLG_(eventmapping_as_string)(CLG_(dumpmap));
+   VG_(sprintf)(buf, "events: %s\n", evmap);
+   VG_(free)(evmap);
    my_fwrite(fd, buf, VG_(strlen)(buf));
-   my_fwrite(fd, "\n", 1);
 
    /* summary lines */
    sum = CLG_(get_eventset_cost)( CLG_(sets).full );

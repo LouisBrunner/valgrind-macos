@@ -3751,6 +3751,28 @@ __fixunsdfdi(double a)
 #endif
 
 
+/*====================================================================*/
+/*=== Dummy _voucher_mach_msg_set for OSX 10.10                    ===*/
+/*====================================================================*/
+
+#if defined(VGO_darwin) && DARWIN_VERS == DARWIN_10_10
+
+/* Builds on MacOSX 10.10 seem to need this for some reason. */
+/* extern boolean_t voucher_mach_msg_set(mach_msg_header_t *msg) 
+                    __attribute__((weak_import));
+   I haven't a clue what the return value means, so just return 0.
+   Looks like none of the generated uses in the tree look at the 
+   return value anyway.
+*/
+UWord voucher_mach_msg_set ( UWord arg1 );
+UWord voucher_mach_msg_set ( UWord arg1 )
+{
+   return 0;
+}
+
+#endif
+
+
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

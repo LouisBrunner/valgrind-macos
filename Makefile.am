@@ -45,7 +45,7 @@ SUPP_FILES = \
 	exp-sgcheck.supp \
 	darwin9.supp darwin9-drd.supp \
 	darwin10.supp darwin10-drd.supp \
-	darwin11.supp darwin12.supp darwin13.supp \
+	darwin11.supp darwin12.supp darwin13.supp darwin14.supp \
 	bionic.supp
 DEFAULT_SUPP_FILES = @DEFAULT_SUPP@
 

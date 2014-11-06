@@ -1,0 +1,269 @@
+
+# Suppressions for Darwin 14.x / Mac OS X 10.10 Yosemite
+
+############################################
+## Leaks.  For other stuff see below.
+
+#{
+#   OSX1010:1-Leak
+#   Memcheck:Leak
+#   match-leak-kinds: possible
+#   fun:malloc_zone_?alloc
+#   ...
+#   fun:_read_images
+#}
+#
+#{
+#   OSX1010:2-Leak
+#   Memcheck:Leak
+#   match-leak-kinds: definite
+#   fun:?alloc
+#   ...
+#   fun:_ZN4dyld24initializeMainExecutableEv
+#}
+#
+#{
+#   OSX1010:3-Leak
+#   Memcheck:Leak
+#   match-leak-kinds: definite
+#   fun:malloc_zone_?alloc
+#   fun:recursive_mutex_init
+#   fun:_objc_init
+#   fun:_os_object_init
+#   fun:libSystem_initializer
+#   ...
+#}
+#
+#{
+#   OSX1010:4-Leak
+#   Memcheck:Leak
+#   match-leak-kinds: reachable
+#   fun:malloc_zone_?alloc
+#   ...
+#   fun:dyld_register_image_state_change_handler
+#   ...
+#}
+#
+#{
+#   OSX1010:5-Leak
+#   Memcheck:Leak
+#   match-leak-kinds: reachable
+#   fun:?alloc
+#   ...
+#   fun:dyld_register_image_state_change_handler
+#   ...
+#}
+#
+#{
+#   OSX1010:6-Leak
+#   Memcheck:Leak
+#   match-leak-kinds: reachable
+#   fun:malloc_zone_?alloc
+#   ...
+#   fun:map_images_nolock
+#   fun:map_images
+#   ...
+#}
+#
+#{
+#   OSX1010:7-Leak
+#   Memcheck:Leak
+#   match-leak-kinds: possible
+#   fun:malloc_zone_?alloc
+#   ...
+#   fun:map_images_nolock
+#   fun:map_images
+#   ...
+#}
+#
+#{
+#   OSX1010:8-Leak
+#   Memcheck:Leak
+#   match-leak-kinds: indirect
+#   fun:?alloc
+#   ...
+#   fun:libSystem_initializer
+#   ...
+#}
+#
+#{
+#   OSX1010:9-Leak
+#   Memcheck:Leak
+#   match-leak-kinds: reachable
+#   fun:malloc_zone_?alloc
+#   ...
+#   fun:libSystem_initializer
+#   ...
+#}
+#
+#{
+#   OSX1010:10-Leak
+#   Memcheck:Leak
+#   match-leak-kinds: reachable
+#   fun:?alloc
+#   ...
+#   fun:libSystem_initializer
+#   ...
+#}
+#
+#{
+#   OSX1010:11-Leak
+#   Memcheck:Leak
+#   match-leak-kinds: definite
+#   fun:malloc
+#   fun:currentlocale
+#}
+#
+#{
+#   OSX1010:12-Leak
+#   Memcheck:Leak
+#   match-leak-kinds: possible
+#   fun:malloc
+#   fun:tzsetwall_basic
+#   fun:_st_tzset_basic
+#}
+
+############################################
+## Non-leak errors
+
+#{
+#   OSX1010:AppKit-1
+#   Memcheck:Cond
+#   obj:*AppKit.framework*AppKit*
+#   obj:*AppKit.framework*AppKit*
+#   obj:*AppKit.framework*AppKit*
+#}
+#
+#{
+#   OSX1010:AppKit-2
+#   Memcheck:Cond
+#   obj:*AppKit.framework*AppKit*
+#   obj:*AppKit.framework*AppKit*
+#   obj:*libdispatch.dylib*
+#}
+#
+#{
+#   OSX1010:AppKit-3
+#   Memcheck:Cond
+#   obj:*AppKit.framework*AppKit*
+#   obj:*libdispatch.dylib*
+#   obj:*libdispatch.dylib*
+#}
+#
+#{
+#   OSX1010:ColorSync-1
+#   Memcheck:Cond
+#   obj:*ColorSync.framework*ColorSync*
+#   obj:*ColorSync.framework*ColorSync*
+#   obj:*ColorSync.framework*ColorSync*
+#}
+#
+#{
+#   OSX1010:ColorSync-2
+#   Memcheck:Value8
+#   obj:*ColorSync.framework*ColorSync*
+#   obj:*ColorSync.framework*ColorSync*
+#   obj:*ColorSync.framework*ColorSync*
+#}
+#
+#{
+#   OSX1010:CoreGraphics-1
+#   Memcheck:Cond
+#   obj:*CoreGraphics.framework*CoreGraphics*
+#   obj:*CoreGraphics.framework*CoreGraphics*
+#   obj:*CoreGraphics.framework*CoreGraphics*
+#}
+#
+#{
+#   OSX1010:CoreGraphics-2
+#   Memcheck:Value8
+#   obj:*CoreGraphics.framework*CoreGraphics*
+#   obj:*CoreGraphics.framework*CoreGraphics*
+#   obj:*CoreGraphics.framework*CoreGraphics*
+#}
+#
+#{
+#   OSX1010:CoreGraphics-3
+#   Memcheck:Cond
+#   obj:*CoreGraphics.framework*CoreGraphics*
+#   obj:*CoreGraphics.framework*libRIP*
+#   obj:*CoreGraphics.framework*libRIP*
+#}
+#
+#{
+#   OSX1010:CoreGraphics-4
+#   Memcheck:Cond
+#   obj:*CoreGraphics.framework*CoreGraphics*
+#   obj:*CoreGraphics.framework*CoreGraphics*
+#   obj:*CoreGraphics.framework*libRIP*
+#}
+#
+#{
+#   OSX1010:CoreGraphics-5
+#   Memcheck:Cond
+#   obj:*CoreGraphics.framework*CoreGraphics*
+#   obj:*libdispatch.dylib*
+#   obj:*libdispatch.dylib*
+#}
+#
+#{
+#   OSX1010:dyld-2
+#   Memcheck:Cond
+#   obj:/usr/lib/dyld
+#   obj:/usr/lib/dyld
+#   obj:/usr/lib/dyld
+#}
+#
+#{
+#   OSX1010:HIServices-1
+#   Memcheck:Cond
+#   obj:*HIServices.framework*HIServices*
+#   obj:*HIToolbox.framework*HIToolbox*
+#   obj:*HIToolbox.framework*HIToolbox*
+#}
+#
+#{  
+#   OSX1010:LaunchServices-1
+#   Memcheck:Cond
+#   obj:*LaunchServices.framework*LaunchServices*
+#   obj:*AppKit.framework*AppKit*
+#   obj:*AppKit.framework*AppKit*
+#}
+#
+#{
+#   OSX1010:QuartzCore-1
+#   Memcheck:Cond
+#   obj:*QuartzCore.framework*QuartzCore
+#   obj:*QuartzCore.framework*QuartzCore
+#   obj:*QuartzCore.framework*QuartzCore
+#}
+#
+#{
+#   OSX1010:vImage-1
+#   Memcheck:Cond
+#   obj:*vImage.framework*vImage*
+#   obj:*vImage.framework*vImage*
+#   obj:*CoreGraphics.framework*CoreGraphics*
+#}
+#
+#{
+#   OSX1010:zlib-C
+#   Memcheck:Cond
+#   obj:/usr/lib/libz.*dylib
+#   obj:/usr/lib/libz.*dylib
+#}
+#
+#{
+#   OSX1010:zlib-8
+#   Memcheck:Value8
+#   obj:/usr/lib/libz.*dylib
+#   obj:/usr/lib/libz.*dylib
+#}
+#
+#{
+#   OSX1010:32bit:_libxpc_initializer
+#   Memcheck:Cond
+#   fun:_libxpc_initializer
+#   fun:libSystem_initializer
+#   fun:*ImageLoaderMachO*doModInitFunctions*
+#}

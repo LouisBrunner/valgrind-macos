@@ -1525,9 +1525,8 @@ static void dump_state_of_thread_togdb(thread_info* ti)
 /* Dump current state */
 static void dump_state_togdb(void)
 {
-    static HChar buf[512];
     thread_info** th;
-    int t, p;
+    int t;
     Int orig_tid = CLG_(current_tid);
 
     VG_(gdb_printf)("instrumentation: %s\n",
@@ -1550,12 +1549,12 @@ static void dump_state_togdb(void)
 		
     /* threads */
     th = CLG_(get_threads)();
-    p = VG_(sprintf)(buf, "threads:");
+    VG_(gdb_printf)("threads:");
     for(t=1;t<VG_N_THREADS;t++) {
 	if (!th[t]) continue;
-	p += VG_(sprintf)(buf+p, " %d", t);
+	VG_(gdb_printf)(" %d", t);
     }
-    VG_(gdb_printf)("%s\n", buf);
+    VG_(gdb_printf)("\n");
     VG_(gdb_printf)("current-tid: %d\n", orig_tid);
     CLG_(forall_threads)(dump_state_of_thread_togdb);
 }

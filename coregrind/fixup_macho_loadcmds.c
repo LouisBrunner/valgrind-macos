@@ -6,9 +6,17 @@
 */
 
 /* What does this program do?  In short it postprocesses tool
-   executables on MacOSX, after linking using /usr/bin/ld.  This is so
-   as to work around a bug in the linker on Xcode 4.0.0 and Xcode
-   4.0.1.  Xcode versions prior to 4.0.0 are unaffected.
+   executables on MacOSX, after linking using /usr/bin/ld.
+
+   This is to deal with two separate and entirely unrelated problems.
+   Problem (1) is a bug in the linker in Xcode 4.0.0.  Problem (2) is
+   much newer and concerns linking 64-bit tool executables for
+   Yosemite (10.10).
+
+   --- Problem (1) ------------------------------------------------
+
+   This is a bug in the linker on Xcode 4.0.0 and Xcode 4.0.1.  Xcode
+   versions prior to 4.0.0 are unaffected.
 
    The tracking bug is https://bugs.kde.org/show_bug.cgi?id=267997
 
@@ -70,6 +78,16 @@
    information that would have been in the missing __UNIXSTACK entry.
    I tried this by hand (with a binary editor) earlier and got
    something that worked.
+
+   --- Problem (2) ------------------------------------------------
+
+   On MacOSX 10.10 (Yosemite), the kernel requires all valid
+   executables to have a __PAGEZERO section with SVMA of zero and size
+   of at least one page.  However, our tool executables have a
+   __PAGEZERO section with SVMA set to the requested Valgrind load
+   address (typically 0x1'3800'0000).  And the kernel won't start
+   those.  So we take the opportunity to "fix" this by setting the
+   SVMA to zero.  Seems to work and have no obvious bad side effects.
 */
 
 #define DEBUGPRINTING 0
@@ -82,7 +100,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
-
 
 #undef PLAT_x86_darwin
 #undef PLAT_amd64_darwin
@@ -99,6 +116,14 @@
 #include <mach-o/nlist.h>
 #include <mach-o/fat.h>
 #include <mach/i386/thread_status.h>
+
+/* Get hold of DARWIN_VERS, and check it has a sane value. */
+#include "config.h"
+#if DARWIN_VERS != DARWIN_10_5 && DARWIN_VERS != DARWIN_10_6 \
+    && DARWIN_VERS != DARWIN_10_7 && DARWIN_VERS != DARWIN_10_8 \
+    && DARWIN_VERS != DARWIN_10_9 && DARWIN_VERS != DARWIN_10_10
+#  error "Unknown DARWIN_VERS value.  This file only compiles on Darwin."
+#endif
 
 
 typedef  unsigned char   UChar;
@@ -375,6 +400,7 @@ void modify_macho_loadcmds ( HChar* filename,
    Bool  have_rsp = False;
    struct segment_command_64* seg__unixstack = NULL;
    struct segment_command_64* seg__linkedit  = NULL;
+   struct segment_command_64* seg__pagezero  = NULL;
 
    /* Loop over the load commands and fill in the above 4 variables. */
 
@@ -413,6 +439,7 @@ void modify_macho_loadcmds ( HChar* filename,
                   printf("LC_UNIXTHREAD");
                break;
             default:
+               if (DEBUGPRINTING)
                   printf("???");
                fail("unexpected load command in Mach header");
             break;
@@ -450,6 +477,8 @@ void modify_macho_loadcmds ( HChar* filename,
                seg__linkedit = seg;
             if (0 == strcmp(seg->segname, "__UNIXSTACK"))
                seg__unixstack = seg;
+            if (0 == strcmp(seg->segname, "__PAGEZERO"))
+               seg__pagezero = seg;
          }
 
       }
@@ -495,7 +524,7 @@ void modify_macho_loadcmds ( HChar* filename,
       /* looks ok */
       fprintf(stderr, "fixup_macho_loadcmds:   "
               "acceptable __UNIXSTACK present; no modifications.\n" );
-      goto out;
+      goto maybe_mash_pagezero;
    }
 
    if (seg__linkedit) {
@@ -516,7 +545,7 @@ void modify_macho_loadcmds ( HChar* filename,
       seg->maxprot  = 7;
       seg->initprot = 3;
       /* success */
-      goto out;
+      goto maybe_mash_pagezero;
    }
 
    /* out of options */
@@ -524,7 +553,20 @@ void modify_macho_loadcmds ( HChar* filename,
         "out of options.");
    /* NOTREACHED */
 
-  out:
+  maybe_mash_pagezero:
+   /* Deal with Problem (2) as documented above. */
+#  if DARWIN_VERS == DARWIN_10_10
+   assert(size == 64);
+   if (!seg__pagezero) {
+      fail("Can't find __PAGEZERO to modify; can't continue.");
+   }
+   fprintf(stderr, "fixup_macho_loadcmds:   "
+           "changing __PAGEZERO.vmaddr from %p to 0x0.\n",
+           (void*)seg__pagezero->vmaddr);
+   seg__pagezero->vmaddr = 0;
+#  endif
+
+  out:   
    if (ii.img)
       unmap_image(&ii);
 }

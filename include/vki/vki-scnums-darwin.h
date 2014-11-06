@@ -505,7 +505,13 @@
 #define	__NR_sem_wait       VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(271)
 #define	__NR_sem_trywait    VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(272)
 #define	__NR_sem_post       VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(273)
+
+#if DARWIN_VERS < DARWIN_10_10
 #define	__NR_sem_getvalue   VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(274)
+#elif DARWIN_VERS == DARWIN_10_10
+#define	__NR_sysctlbyname   VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(274)
+#endif
+
 #define	__NR_sem_init       VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(275)
 #define	__NR_sem_destroy    VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(276)
 #define	__NR_open_extended  VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(277)
@@ -675,7 +681,7 @@
 #define __NR_fsgetpath              VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(427)
 #define __NR_audit_session_self     VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(428)
 #define __NR_audit_session_join     VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(429)
-#endif
+#endif /* DARWIN_VERS >= DARWIN_10_6 */
 #if DARWIN_VERS >= DARWIN_10_9
 #define __NR_fileport_makeport      VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(430)
 #define __NR_fileport_makefd        VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(431)
@@ -703,6 +709,10 @@
 #define __NR_memorystatus_get_level VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(453)
 #define __NR_system_override        VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(454)
 #define __NR_vfs_purge              VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(455)
+#endif /* DARWIN_VERS >= DARWIN_10_9 */
+
+#if DARWIN_VERS == DARWIN_10_10
+#define __NR_bsdthread_ctl          VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(478)
 #endif
 
 #if DARWIN_VERS < DARWIN_10_6
@@ -713,6 +723,8 @@
 #define	__NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(430)
 #elif DARWIN_VERS == DARWIN_10_9
 #define	__NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(456)
+#elif DARWIN_VERS == DARWIN_10_10
+#define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(490)
 #else
 #error unknown darwin version
 #endif

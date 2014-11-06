@@ -8919,6 +8919,31 @@ PRE(kernelrpc_mach_port_unguard_trap)
 
 
 /* ---------------------------------------------------------------------
+   Added for OSX 10.10 (Yosemite)
+   ------------------------------------------------------------------ */
+
+#if DARWIN_VERS >= DARWIN_10_10
+
+PRE(bsdthread_ctl)
+{
+   // int bsdthread_ctl(user_addr_t cmd, user_addr_t arg1, 
+   //                   user_addr_t arg2, user_addr_t arg3)
+   PRINT("bsdthread_ctl(FIXME)(%lx,%lx,%lx,%lx)", ARG1, ARG2, ARG3, ARG4);
+}
+
+PRE(sysctlbyname)
+{
+   // int sysctlbyname(const char *name, size_t namelen, void *old,
+   //                  size_t *oldlenp, void *new, size_t newlen)
+  PRINT("sysctlbyname(FIXME)(%lx(%s),%ld, %lx,%lx, %lx,%lx",
+	ARG1, ARG1 ? (const HChar*)ARG1 : "(null)",
+	ARG2, ARG3, ARG4, ARG5, ARG6);
+}
+
+#endif /* DARWIN_VERS >= DARWIN_10_10 */
+
+
+/* ---------------------------------------------------------------------
    syscall tables
    ------------------------------------------------------------------ */
 
@@ -9234,7 +9259,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACX_(__NR_sem_wait,    sem_wait), 
    MACX_(__NR_sem_trywait, sem_trywait), 
    MACX_(__NR_sem_post,    sem_post), 
-// _____(__NR_sem_getvalue), 
+   // 274 seems to have been repurposed for 10.10.  Was sem_getvalue,
+   //     has become sysctlbyname.  See below.
    MACXY(__NR_sem_init,    sem_init), 
    MACX_(__NR_sem_destroy, sem_destroy), 
    MACX_(__NR_open_extended,  open_extended),    // 277
@@ -9426,7 +9452,10 @@ const SyscallTableEntry ML_(syscall_table)[] = {
     MACX_(__NR_connectx, connectx),
     MACX_(__NR_disconnectx, disconnectx),
 #endif
-
+#if DARWIN_VERS >= DARWIN_10_10
+   MACX_(__NR_bsdthread_ctl, bsdthread_ctl),
+   MACX_(__NR_sysctlbyname,  sysctlbyname),
+#endif
 // _____(__NR_MAXSYSCALL)
    MACX_(__NR_DARWIN_FAKE_SIGRETURN, FAKE_SIGRETURN)
 };

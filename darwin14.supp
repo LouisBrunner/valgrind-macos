@@ -245,21 +245,21 @@
 #   obj:*vImage.framework*vImage*
 #   obj:*CoreGraphics.framework*CoreGraphics*
 #}
-#
-#{
-#   OSX1010:zlib-C
-#   Memcheck:Cond
-#   obj:/usr/lib/libz.*dylib
-#   obj:/usr/lib/libz.*dylib
-#}
-#
-#{
-#   OSX1010:zlib-8
-#   Memcheck:Value8
-#   obj:/usr/lib/libz.*dylib
-#   obj:/usr/lib/libz.*dylib
-#}
-#
+
+{
+   OSX1010:zlib-C
+   Memcheck:Cond
+   obj:/usr/lib/libz.*dylib
+   obj:/usr/lib/libz.*dylib
+}
+
+{
+   OSX1010:zlib-8
+   Memcheck:Value8
+   obj:/usr/lib/libz.*dylib
+   obj:/usr/lib/libz.*dylib
+}
+
 #{
 #   OSX1010:32bit:_libxpc_initializer
 #   Memcheck:Cond

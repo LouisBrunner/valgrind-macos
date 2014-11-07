@@ -93,11 +93,11 @@ extern Int   VG_(clo_gen_suppressions);
 extern Int   VG_(clo_sanity_level);
 /* Automatically attempt to demangle C++ names?  default: YES */
 extern Bool  VG_(clo_demangle);
-/* Simulate child processes? default: NO */
 /* Soname synonyms : a string containing a list of pairs
    xxxxx=yyyyy separated by commas.
    E.g. --soname-synonyms=somalloc=libtcmalloc*.so*,solibtruc=NONE */
 extern const HChar* VG_(clo_soname_synonyms);
+/* Valgrind-ise child processes (follow execve)? default : NO */
 extern Bool  VG_(clo_trace_children);
 /* String containing comma-separated patterns for executable names
    that should not be traced into even when --trace-children=yes */

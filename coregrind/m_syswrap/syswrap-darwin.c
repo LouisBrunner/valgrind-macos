@@ -8924,20 +8924,30 @@ PRE(kernelrpc_mach_port_unguard_trap)
 
 #if DARWIN_VERS >= DARWIN_10_10
 
+PRE(sysctlbyname)
+{
+   // int sysctlbyname(const char *name, size_t namelen, void *old,
+   //                  size_t *oldlenp, void *new, size_t newlen)
+   PRINT("sysctlbyname(FIXME)(%lx(%s),%ld, %lx,%lx, %lx,%lx)",
+         ARG1, ARG1 ? (const HChar*)ARG1 : "(null)",
+         ARG2, ARG3, ARG4, ARG5, ARG6);
+}
+
+PRE(getattrlistbulk)
+{
+   // int getattrlistbulk(int dirfd, struct attrlist *alist,
+   //                     void *attributeBuffer, size_t bufferSize,
+   //                     uint64_t options);
+   // Presumably the last arg is value-pair in the 32 bit case.
+   PRINT("getattrlistbulk(FIXME)(%ld, %lx, %lx, %lu, %lu)",
+         ARG1, ARG2, ARG3, ARG4, ARG5);
+}
+
 PRE(bsdthread_ctl)
 {
    // int bsdthread_ctl(user_addr_t cmd, user_addr_t arg1, 
    //                   user_addr_t arg2, user_addr_t arg3)
    PRINT("bsdthread_ctl(FIXME)(%lx,%lx,%lx,%lx)", ARG1, ARG2, ARG3, ARG4);
-}
-
-PRE(sysctlbyname)
-{
-   // int sysctlbyname(const char *name, size_t namelen, void *old,
-   //                  size_t *oldlenp, void *new, size_t newlen)
-  PRINT("sysctlbyname(FIXME)(%lx(%s),%ld, %lx,%lx, %lx,%lx",
-	ARG1, ARG1 ? (const HChar*)ARG1 : "(null)",
-	ARG2, ARG3, ARG4, ARG5, ARG6);
 }
 
 #endif /* DARWIN_VERS >= DARWIN_10_10 */
@@ -9453,8 +9463,9 @@ const SyscallTableEntry ML_(syscall_table)[] = {
     MACX_(__NR_disconnectx, disconnectx),
 #endif
 #if DARWIN_VERS >= DARWIN_10_10
-   MACX_(__NR_bsdthread_ctl, bsdthread_ctl),
-   MACX_(__NR_sysctlbyname,  sysctlbyname),
+   MACX_(__NR_sysctlbyname,    sysctlbyname),      // 274
+   MACX_(__NR_getattrlistbulk, getattrlistbulk),   // 461
+   MACX_(__NR_bsdthread_ctl,   bsdthread_ctl),     // 478
 #endif
 // _____(__NR_MAXSYSCALL)
    MACX_(__NR_DARWIN_FAKE_SIGRETURN, FAKE_SIGRETURN)

@@ -427,7 +427,7 @@ static inline void my_exit ( int x )
 
 #elif defined(VGO_darwin)
  STRLEN(VG_Z_LIBC_SONAME, strlen)
-# if DARWIN_VERS == DARWIN_10_9
+# if DARWIN_VERS == DARWIN_10_9 || DARWIN_VERS == DARWIN_10_10
   STRLEN(libsystemZucZddylib, strlen)
 # endif
 #endif
@@ -501,7 +501,7 @@ static inline void my_exit ( int x )
 
 #elif defined(VGO_darwin)
  STRNCPY(VG_Z_LIBC_SONAME, strncpy)
-# if DARWIN_VERS == DARWIN_10_9
+# if DARWIN_VERS == DARWIN_10_9 || DARWIN_VERS == DARWIN_10_10
   STRNCPY(libsystemZucZddylib, strncpy)
 # endif
 
@@ -773,7 +773,7 @@ static inline void my_exit ( int x )
 
 #elif defined(VGO_darwin)
  STRCMP(VG_Z_LIBC_SONAME, strcmp)
-# if DARWIN_VERS == DARWIN_10_9
+# if DARWIN_VERS == DARWIN_10_9 || DARWIN_VERS == DARWIN_10_10
   STRCMP(libsystemZuplatformZddylib, _platform_strcmp)
 # endif
 
@@ -804,6 +804,10 @@ static inline void my_exit ( int x )
 # if DARWIN_VERS == DARWIN_10_9
   MEMCHR(VG_Z_DYLD,                   memchr)
   MEMCHR(libsystemZuplatformZddylib, _platform_memchr)
+# endif
+# if DARWIN_VERS == DARWIN_10_10
+  /* _platform_memchr$VARIANT$Generic */
+  MEMCHR(libsystemZuplatformZddylib, _platform_memchr$VARIANT$Generic)
 # endif
 
 #endif
@@ -982,7 +986,7 @@ static inline void my_exit ( int x )
  MEMCMP(VG_Z_LD_SO_1,     bcmp)
 
 #elif defined(VGO_darwin)
-# if DARWIN_VERS == DARWIN_10_9
+# if DARWIN_VERS == DARWIN_10_9 || DARWIN_VERS == DARWIN_10_10
   MEMCMP(libsystemZuplatformZddylib, _platform_memcmp)
 # endif
 
@@ -1123,8 +1127,8 @@ static inline void my_exit ( int x )
 # endif
  MEMMOVE(VG_Z_LIBC_SONAME,  memmoveZDVARIANTZDsse3x) /* memmove$VARIANT$sse3x */
  MEMMOVE(VG_Z_LIBC_SONAME,  memmoveZDVARIANTZDsse42) /* memmove$VARIANT$sse42 */
-# if DARWIN_VERS == DARWIN_10_9
-  /* _platform_memmove$VARIANT$Nehalem */
+# if DARWIN_VERS == DARWIN_10_9 || DARWIN_VERS == DARWIN_10_10
+  /* _platform_memmove$VARIANT$Ivybridge */
   MEMMOVE(libsystemZuplatformZddylib, ZuplatformZumemmoveZDVARIANTZDIvybridge)
 # endif
 #endif

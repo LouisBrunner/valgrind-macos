@@ -2224,7 +2224,7 @@ const HChar* VG_(describe_IP)(Addr eip, const InlIPCursor *iipc)
    const HChar *buf_srcloc;
    const HChar *buf_dirname;
 
-   Bool  know_dirinfo = False;
+   Bool  know_dirinfo;
    Bool  know_fnname;
    Bool  know_objname;
    Bool  know_srcloc;
@@ -2268,6 +2268,7 @@ const HChar* VG_(describe_IP)(Addr eip, const InlIPCursor *iipc)
       vg_assert (cur_inl);
 
       know_dirinfo = False;
+      buf_dirname  = "";
       // The fndn_ix and lineno for the caller of the inlined fn is in cur_inl.
       if (cur_inl->fndn_ix == 0) {
          buf_srcloc = "???";
@@ -2352,7 +2353,7 @@ const HChar* VG_(describe_IP)(Addr eip, const InlIPCursor *iipc)
          APPEND(" (");
          // Get the directory name, if any, possibly pruned, into dirname.
          const HChar* dirname = NULL;
-         if (VG_(sizeXA)(VG_(clo_fullpath_after)) > 0) {
+         if (know_dirinfo && VG_(sizeXA)(VG_(clo_fullpath_after)) > 0) {
             Int i;
             dirname = buf_dirname;
             // Remove leading prefixes from the dirname.

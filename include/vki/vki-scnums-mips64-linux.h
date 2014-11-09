@@ -348,6 +348,9 @@
 #define __NR_sched_setattr          (__NR_Linux + 309)
 #define __NR_sched_getattr          (__NR_Linux + 310)
 #define __NR_renameat2              (__NR_Linux + 311)
+#define __NR_seccomp                (__NR_Linux + 312)
+#define __NR_getrandom              (__NR_Linux + 313)
+#define __NR_memfd_create           (__NR_Linux + 314)
 
 #endif /* __VKI_SCNUMS_MIPS64_LINUX_H */
 

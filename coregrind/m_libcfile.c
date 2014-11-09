@@ -760,13 +760,13 @@ SizeT VG_(mkstemp_fullname_bufsz) ( SizeT part_of_name_len )
 
 Int VG_(mkstemp) ( const HChar* part_of_name, /*OUT*/HChar* fullname )
 {
-   HChar  buf[VG_(mkstemp_fullname_bufsz)(VG_(strlen)(part_of_name))];
-   Int    n, tries, fd;
+   Int    n, tries;
    UInt   seed;
    SysRes sres;
    const HChar *tmpdir;
 
    vg_assert(part_of_name);
+   vg_assert(fullname);
    n = VG_(strlen)(part_of_name);
    vg_assert(n > 0 && n < 100);
 
@@ -779,23 +779,20 @@ Int VG_(mkstemp) ( const HChar* part_of_name, /*OUT*/HChar* fullname )
    while (True) {
       if (tries++ > 10) 
          return -1;
-      VG_(sprintf)( buf, mkstemp_format,
+      VG_(sprintf)( fullname, mkstemp_format,
                     tmpdir, part_of_name, VG_(random)( &seed ));
       if (0)
-         VG_(printf)("VG_(mkstemp): trying: %s\n", buf);
+         VG_(printf)("VG_(mkstemp): trying: %s\n", fullname);
 
-      sres = VG_(open)(buf,
+      sres = VG_(open)(fullname,
                        VKI_O_CREAT|VKI_O_RDWR|VKI_O_EXCL|VKI_O_TRUNC,
                        VKI_S_IRUSR|VKI_S_IWUSR);
       if (sr_isError(sres)) {
-         VG_(umsg)("VG_(mkstemp): failed to create temp file: %s\n", buf);
+         VG_(umsg)("VG_(mkstemp): failed to create temp file: %s\n", fullname);
          continue;
       }
       /* VG_(safe_fd) doesn't return if it fails. */
-      fd = VG_(safe_fd)( sr_Res(sres) );
-      if (fullname)
-         VG_(strcpy)( fullname, buf );
-      return fd;
+      return VG_(safe_fd)( sr_Res(sres) );
    }
    /* NOTREACHED */
 }

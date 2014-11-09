@@ -2415,7 +2415,8 @@ HChar* ML_(find_name_of_pdb_file)( const HChar* pename )
    /* This is a giant kludge, of the kind "you did WTF?!?", but it
       works. */
    Bool   do_cleanup = False;
-   HChar  tmpname[VG_(mkstemp_fullname_bufsz)(50-1)], tmpnameroot[50];
+   HChar  tmpnameroot[50];     // large enough
+   HChar  tmpname[VG_(mkstemp_fullname_bufsz)(sizeof tmpnameroot - 1)];
    Int    fd, r;
    HChar* res = NULL;
 
@@ -2429,7 +2430,7 @@ HChar* ML_(find_name_of_pdb_file)( const HChar* pename )
    fd = VG_(mkstemp)( tmpnameroot, tmpname );
    if (fd == -1) {
       VG_(message)(Vg_UserMsg,
-                   "Find PDB file: Can't create /tmp file %s\n", tmpname);
+                   "Find PDB file: Can't create temporary file %s\n", tmpname);
       goto out;
    }
    do_cleanup = True;

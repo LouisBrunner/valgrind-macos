@@ -809,11 +809,6 @@ static void sanity_check_SXTree(SXPt* sxpt)
 #define MAX_OVERESTIMATE   50
 #define MAX_IPS            (MAX_DEPTH + MAX_OVERESTIMATE)
 
-// This is used for various buffers which can hold function names/IP
-// description.  Some C++ names can get really long so 1024 isn't big
-// enough.
-#define BUF_LEN   2048
-
 // Determine if the given IP belongs to a function that should be ignored.
 static Bool fn_should_be_ignored(Addr ip)
 {

@@ -1236,8 +1236,6 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_pwritev,           sys_pwritev),          // 321
    LINXY(__NR_rt_tgsigqueueinfo, sys_rt_tgsigqueueinfo),// 322
 
-   LINX_(__NR_clock_adjtime,     sys_clock_adjtime),    // 347
-
    LINXY(__NR_socket,            sys_socket),           // 326
    LINX_(__NR_bind,              sys_bind),             // 327
    LINX_(__NR_connect,           sys_connect),          // 328
@@ -1255,8 +1253,12 @@ static SyscallTableEntry syscall_table[] = {
 
    LINXY(__NR_accept4,           sys_accept4),          // 344
 
+   LINX_(__NR_clock_adjtime,     sys_clock_adjtime),    // 347
+
    LINXY(__NR_process_vm_readv,  sys_process_vm_readv), // 351
-   LINX_(__NR_process_vm_writev, sys_process_vm_writev) // 352
+   LINX_(__NR_process_vm_writev, sys_process_vm_writev),// 352
+
+   LINXY(__NR_getrandom,         sys_getrandom)         // 359
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry) ( UInt sysno )

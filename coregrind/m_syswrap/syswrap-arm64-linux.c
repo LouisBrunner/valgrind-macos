@@ -1034,6 +1034,7 @@ static SyscallTableEntry syscall_main_table[] = {
 
    LINXY(__NR_process_vm_readv,  sys_process_vm_readv),  // 270
    LINX_(__NR_process_vm_writev, sys_process_vm_writev), // 271
+   LINXY(__NR_getrandom,         sys_getrandom),         // 278
 
 // The numbers below are bogus.  (See comment further down.)
 // When pulling entries above this line, change the numbers

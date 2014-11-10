@@ -3004,6 +3004,19 @@ POST(sys_move_pages)
    POST_MEM_WRITE(ARG5, ARG2 * sizeof(int));
 }
 
+PRE(sys_getrandom)
+{
+   PRINT("sys_getrandom ( %#lx, %ld, %ld )" , ARG1,ARG2,ARG3);
+   PRE_REG_READ3(int, "getrandom",
+                 char *, buf, vki_size_t, count, unsigned int, flags);
+   PRE_MEM_WRITE( "getrandom(cpu)", ARG1, ARG2 );
+}
+
+POST(sys_getrandom)
+{
+   POST_MEM_WRITE( ARG1, ARG2 );
+}
+
 /* ---------------------------------------------------------------------
    utime wrapper
    ------------------------------------------------------------------ */

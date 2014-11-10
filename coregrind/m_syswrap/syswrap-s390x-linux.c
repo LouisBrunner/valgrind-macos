@@ -1043,12 +1043,16 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_process_vm_readv, sys_process_vm_readv),                // 340
    LINX_(__NR_process_vm_writev, sys_process_vm_writev),              // 341
 // ?????(__NR_s390_runtime_instr, ),                                  // 342
-   LINX_(__NR_kcmp, sys_kcmp)                                         // 343
+   LINX_(__NR_kcmp, sys_kcmp),                                        // 343
 // ?????(__NR_finit_module, ),                                        // 344
 
 // ?????(__NR_sched_setattr, ),                                       // 345
 // ?????(__NR_sched_getattr, ),                                       // 346
 // ?????(__NR_renameat2, ),                                           // 347
+// ?????(__NR_seccomp, ),                                             // 348
+   LINXY(__NR_getrandom, sys_getrandom)                               // 349
+
+// ?????(__NR_memfd_create, ),                                        // 350
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry) ( UInt sysno )

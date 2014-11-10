@@ -2772,6 +2772,9 @@ static void scan_attrlist(ThreadId tid, struct vki_attrlist *attrList,
 #if DARWIN_VERS >= DARWIN_10_6
       { ATTR_CMN_FULLPATH,        -1 }, 
 #endif
+#if DARWIN_VERS >= DARWIN_10_8
+      { ATTR_CMN_ADDEDTIME,       -1 }, 
+#endif
       { 0,                        0 }
    };
    static const attrspec volattr[] = {

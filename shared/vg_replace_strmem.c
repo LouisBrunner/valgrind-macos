@@ -580,7 +580,7 @@ static inline void my_exit ( int x )
 
 #elif defined(VGO_darwin)
  STRNCMP(VG_Z_LIBC_SONAME,        strncmp)
-# if DARWIN_VERS == DARWIN_10_9
+# if DARWIN_VERS == DARWIN_10_9 || DARWIN_VERS == DARWIN_10_10
   STRNCMP(libsystemZuplatformZddylib, _platform_strncmp)
 # endif
 

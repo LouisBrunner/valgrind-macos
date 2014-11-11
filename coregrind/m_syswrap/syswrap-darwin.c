@@ -7753,7 +7753,19 @@ PRE(mach_msg)
 
       // GrP fixme handle sender-specified message trailer
       // (but is this only for too-secure processes?)
+      // JRS 11 Nov 2014: this assertion is OK for <= 10.9 but fails on 10.10
+#     if DARWIN_VERS == DARWIN_10_10
+      static UInt ctr = 0;
+      if (! (mh->msgh_bits & MACH_SEND_TRAILER)) {
+         ctr++;
+         if (-1 != VG_(log2)(ctr)) {
+            VG_(printf)("UNKNOWN mach_msg unhandled "
+                        "MACH_SEND_TRAILER option (shown %u times)\n", ctr);
+         }
+      }
+#     else
       vg_assert(! (mh->msgh_bits & MACH_SEND_TRAILER));
+#     endif
 
       MACH_REMOTE = mh->msgh_remote_port;
       MACH_MSGH_ID = mh->msgh_id;

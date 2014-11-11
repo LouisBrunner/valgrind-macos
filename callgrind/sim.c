@@ -1434,12 +1434,11 @@ void cachesim_clear(void)
 }
 
 
-static void cachesim_getdesc(HChar* buf)
+static void cachesim_dump_desc(VgFile *fp)
 {
-  Int p;
-  p = VG_(sprintf)(buf, "\ndesc: I1 cache: %s\n", I1.desc_line);
-  p += VG_(sprintf)(buf+p, "desc: D1 cache: %s\n", D1.desc_line);
-  VG_(sprintf)(buf+p, "desc: LL cache: %s\n", LL.desc_line);
+  VG_(fprintf)(fp, "\ndesc: I1 cache: %s\n", I1.desc_line);
+  VG_(fprintf)(fp, "desc: D1 cache: %s\n", D1.desc_line);
+  VG_(fprintf)(fp, "desc: LL cache: %s\n", LL.desc_line);
 }
 
 static
@@ -1781,7 +1780,7 @@ struct cachesim_if CLG_(cachesim) = {
   .parse_opt     = cachesim_parse_opt,
   .post_clo_init = cachesim_post_clo_init,
   .clear         = cachesim_clear,
-  .getdesc       = cachesim_getdesc,
+  .dump_desc     = cachesim_dump_desc,
   .printstat     = cachesim_printstat,
   .add_icost     = cachesim_add_icost,
   .finish        = cachesim_finish,

@@ -128,11 +128,6 @@ struct _CommandLineOptions {
 #define MIN_LINE_SIZE   16
 
 /* Size of various buffers used for storing strings */
-#define FILENAME_LEN                    VKI_PATH_MAX
-#define FN_NAME_LEN                    4096 /* for C++ code :-) */
-#define OBJ_NAME_LEN                    256
-#define COSTS_LEN                       512 /* at least 17x 64bit values */
-#define BUF_LEN                         512
 #define RESULTS_BUF_LEN                 256
 
 
@@ -635,7 +630,7 @@ struct cachesim_if
     Bool (*parse_opt)(const HChar* arg);
     void (*post_clo_init)(void);
     void (*clear)(void);
-    void (*getdesc)(HChar* buf);
+    void (*dump_desc)(VgFile *fp);
     void (*printstat)(Int,Int,Int);
     void (*add_icost)(SimCost, BBCC*, InstrInfo*, ULong);
     void (*finish)(void);

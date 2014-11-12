@@ -599,7 +599,7 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
                nextpos = startpos + VG_(strlen)(startpos);
             if (startpos != nextpos) {
                VG_(clo_error_markers)[m] 
-                  = VG_(malloc)("", nextpos - startpos + 1);
+                  = VG_(malloc)("main.mpclo.2", nextpos - startpos + 1);
                VG_(memcpy)(VG_(clo_error_markers)[m], startpos, 
                            nextpos - startpos);
                VG_(clo_error_markers)[m][nextpos - startpos] = '\0';

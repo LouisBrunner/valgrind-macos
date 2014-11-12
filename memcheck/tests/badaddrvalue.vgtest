@@ -1,2 +1,2 @@
 prog: badaddrvalue
-vgopts: -q
+vgopts: -q --error-markers=[[[,]]]

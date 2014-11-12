@@ -127,6 +127,8 @@ static void usage_NORETURN ( Bool debug_help )
 "    --num-callers=<number>    show <number> callers in stack traces [12]\n"
 "    --error-limit=no|yes      stop showing new errors if too many? [yes]\n"
 "    --error-exitcode=<number> exit code to return if errors found [0=disable]\n"
+"    --error-markers=<begin>,<end> add lines with begin/end markers before/after\n"
+"                              each error output in plain text mode [none]\n"
 "    --show-below-main=no|yes  continue stack traces below main() [no]\n"
 "    --default-suppressions=yes|no\n"
 "                              load default suppressions [yes]\n"
@@ -580,6 +582,31 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
       else if VG_STR_CLO (arg, "--soname-synonyms",VG_(clo_soname_synonyms)) {}
       else if VG_BOOL_CLO(arg, "--error-limit",    VG_(clo_error_limit)) {}
       else if VG_INT_CLO (arg, "--error-exitcode", VG_(clo_error_exitcode)) {}
+      else if VG_STR_CLO (arg, "--error-markers",  tmp_str) {
+         Int m;
+         const HChar *startpos = tmp_str;
+         const HChar *nextpos;
+         for (m = 0; 
+              m < sizeof(VG_(clo_error_markers))
+                 /sizeof(VG_(clo_error_markers)[0]);
+              m++) {
+            /* Release previous value if clo given multiple times. */
+            VG_(free)(VG_(clo_error_markers)[m]);
+            VG_(clo_error_markers)[m] = NULL;
+
+            nextpos = VG_(strchr)(startpos, ',');
+            if (!nextpos)
+               nextpos = startpos + VG_(strlen)(startpos);
+            if (startpos != nextpos) {
+               VG_(clo_error_markers)[m] 
+                  = VG_(malloc)("", nextpos - startpos + 1);
+               VG_(memcpy)(VG_(clo_error_markers)[m], startpos, 
+                           nextpos - startpos);
+               VG_(clo_error_markers)[m][nextpos - startpos] = '\0';
+            }
+            startpos = *nextpos ? nextpos + 1 : nextpos;
+         }
+      }
       else if VG_BOOL_CLO(arg, "--show-emwarns",   VG_(clo_show_emwarns)) {}
 
       else if VG_BOOL_CLO(arg, "--run-libc-freeres", VG_(clo_run_libc_freeres)) {}

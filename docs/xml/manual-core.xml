@@ -1160,6 +1160,23 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
     </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.error-markers" xreflabel="--error-markers">
+    <term>
+      <option><![CDATA[--error-markers=<begin>,<end> [default: none]]]></option>
+    </term>
+    <listitem>
+      <para>When errors are output as plain text (i.e. XML not used),
+      <option>--error-markers</option> instructs to output a line
+      containing the <option>begin</option> (<option>end</option>)
+      string before (after) each error. </para>
+      <para> Such marker lines facilitate searching for errors and/or
+      extracting errors in an output file that contain valgrind errors mixed
+      with the program output. </para>
+      <para> Note that empty markers are accepted. So, only using a begin
+      (or an end) marker is possible.</para>
+    </listitem>
+  </varlistentry>
+
   <varlistentry id="opt.sigill-diagnostics" xreflabel="--sigill-diagnostics">
     <term>
       <option><![CDATA[--sigill-diagnostics=<yes|no> [default: yes] ]]></option>

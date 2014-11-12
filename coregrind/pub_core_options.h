@@ -46,6 +46,12 @@ extern Bool  VG_(clo_error_limit);
    way. */
 extern Int   VG_(clo_error_exitcode);
 
+/* Markers used to mark the begin/end of an error, when errors are
+   printed in textual (non xml) format.
+   [0] is the error begin marker, [1] is the error end marker.
+   default: no markers. */
+extern HChar *VG_(clo_error_markers)[2];
+
 typedef 
    enum { 
       Vg_VgdbNo,   // Do not activate gdbserver.

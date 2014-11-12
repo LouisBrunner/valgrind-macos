@@ -14,6 +14,11 @@ Release 3.11.0 is under development, not yet released.
 
 * ==================== OTHER CHANGES ====================
 
+* Option --error-markers=<begin>,<end> can be used to mark
+  the begin/end of errors in textual output mode, to facilitate
+  searching/extracting errors in output files mixing valgrind
+  errors with program output.
+
 * ==================== FIXED BUGS ====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"

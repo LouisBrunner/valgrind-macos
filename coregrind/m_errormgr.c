@@ -626,6 +626,8 @@ static void pp_Error ( const Error* err, Bool allow_db_attach, Bool xml )
 
    } else {
 
+      if (VG_(clo_error_markers)[0])
+         VG_(umsg)("%s\n", VG_(clo_error_markers)[0]);
       VG_TDICT_CALL( tool_before_pp_Error, err );
 
       if (VG_(tdict).tool_show_ThreadIDs_for_errors
@@ -641,6 +643,8 @@ static void pp_Error ( const Error* err, Bool allow_db_attach, Bool xml )
    
       VG_TDICT_CALL( tool_pp_Error, err );
       VG_(umsg)("\n");
+      if (VG_(clo_error_markers)[1])
+         VG_(umsg)("%s\n", VG_(clo_error_markers)[1]);
 
       do_actions_on_error(err, allow_db_attach);
    }

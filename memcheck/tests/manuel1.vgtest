@@ -1,2 +1,2 @@
 prog: manuel1
-vgopts: -q
+vgopts: -q --error-markers=[[[

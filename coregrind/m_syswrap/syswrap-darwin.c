@@ -788,7 +788,7 @@ Bool ML_(sync_mappings)(const HChar* when, const HChar* where, UWord num)
    CheckHowOften check = CheckAlways;
 
 #  if DARWIN_VERS == DARWIN_10_9 && VG_WORDSIZE == 8
-   /* ------ BEGIN filter for 64-bit 10.9.x ------ */
+   /* ---------- BEGIN filter for 64-bit 10.9.x ---------- */
    if (when_after && where_mmr) {
       // "after mach_msg_receive <number>"
       switch (num) {
@@ -841,8 +841,67 @@ Bool ML_(sync_mappings)(const HChar* when, const HChar* where, UWord num)
       // upd 1736 diff 78+,0- 
       check = CheckEvery20;
    }
-   /* ------- END filter for 64-bit 10.9.x ------- */
+   /* ----------- END filter for 64-bit 10.9.x ----------- */
 #  endif /* DARWIN_VERS == DARWIN_10_9 && VG_WORDSIZE == 8 */
+
+#  if DARWIN_VERS == DARWIN_10_10 && VG_WORDSIZE == 8
+   /* ---------- BEGIN filter for 64-bit 10.10.x ---------- */
+   if (when_after && where_mmr) {
+      // "after mach_msg_receive <number>"
+      switch (num) {
+         case 0x00000000: // upd 2380 diff 23+,0-
+            check = CheckEvery20;
+            break;
+         default:
+            break;
+      }
+   }
+   else
+   if (when_after && where_mmrU) {
+      // "after mach_msg_receive-UNHANDLED <number>"
+      switch (num) {
+         case 0x00000000: // upd 2370 diff 93+,1-  <==dangerous
+         case 0x0000004f: // upd  212 diff 2+,0-
+         case 0x0000157f: // upd  201 diff 2+,0-
+         case 0x0000157d: // upd  197 diff 1+,0-        
+         case 0x0000333d: // upd  112 diff 0+,0-
+         case 0x0000333f: // upd  223 diff 10+,0-
+         case 0x000072ae: // upd  193 diff 10+,0-
+         case 0x000072ec: // upd  319 diff 7+,0-
+         case 0x77303074: // upd  113 diff 3+,0-
+         case 0x10000000: // upd  314 diff 6+,0-
+            check = CheckEvery20;
+            break;
+         default:
+            break;
+      }
+   }
+   else
+   if (when_in && where_MwcN && num == 0x00000000) {
+      // in ML_(wqthread_continue_NORETURN) 0x00000000
+      // upd 1110 diff 37+,0-
+      check = CheckEvery20;
+   }
+   else
+   if (when_after && where_woQR && num == 0x00000000) {
+      // after workq_ops(QUEUE_REQTHREADS) 0x00000000
+      // upd 1099 diff 37+,0-
+      check = CheckEvery20;
+   }
+   else
+   if (when_after && where_woTR && num == 0x00000000) {
+      // after workq_ops(THREAD_RETURN) 0x00000000
+      // 1239 diff 53+,0-
+      check = CheckEvery20;
+   }
+   else
+   if (when_after && where_ke64 && num == 0x00000000) {
+      // after kevent64 0x00000000
+      // upd 1463 diff 15+,0-
+      check = CheckEvery20;
+   }
+   /* ----------- END filter for 64-bit 10.10.x ----------- */
+#  endif /* DARWIN_VERS == DARWIN_10_10 && VG_WORDSIZE == 8 */
 
    /* Regardless of what the filter says, force a sync every 1 time in
       1000, to stop things getting too far out of sync. */
@@ -1501,7 +1560,7 @@ PRE(fcntl)
 
    default:
       PRINT("fcntl ( %ld, %ld [??] )", ARG1, ARG2);
-      VG_(printf)("UNKNOWN fcntl %ld!", ARG2);
+      VG_(printf)("UNKNOWN fcntl %ld!\n", ARG2);
       break;
    }
 }
@@ -1921,7 +1980,8 @@ POST(workq_ops)
 
 PRE(__mac_syscall)
 {
-   PRINT("__mac_syscall( %#lx, %ld, %#lx )", ARG1, ARG2, ARG3);
+   PRINT("__mac_syscall( %#lx(%s), %ld, %#lx )",
+         ARG1, (HChar*)ARG1, ARG2, ARG3);
    PRE_REG_READ3(int,"__mac_syscall", char *,"policy", 
                  int,"call", void *,"arg");
 
@@ -3972,100 +4032,122 @@ POST(mmap)
 }
 
 
-PRE(__sysctl)
+/* This function holds common elements of PRE(__sysctl) and
+   PRE(sysctlbyname). */
+static void common_PRE_sysctl (
+               /*IMPLICIT ARGS*/
+               ThreadId tid, /*OUT*/SyscallStatus* status, /*OUT*/UWord* flags,
+               /*!IMPLICIT ARGS*/
+               Bool is_kern_dot_userstack,
+               UWord oldp, UWord oldlenp,
+               UWord newp, UWord newlen )
 {
-   PRINT( "__sysctl ( %#lx, %ld, %#lx, %#lx, %#lx, %ld )", 
-          ARG1, ARG2, ARG3, ARG4, ARG5, ARG6 );
-
-   PRE_REG_READ6(int, "__sysctl", int*, name, unsigned int, namelen, 
-                 void*, oldp, vki_size_t *, oldlenp, 
-                 void*, newp, vki_size_t *, newlenp);
-
-   PRE_MEM_READ("sysctl(name)", ARG1, ARG2);  // reads name[0..namelen-1]
-   if (ARG4) {
-      // writes *ARG4
-      PRE_MEM_WRITE("sysctl(oldlenp)", ARG4, sizeof(size_t));
-      if (ARG3) {
-         // also reads *ARG4, and writes as much as ARG3[0..ARG4-1]
-         PRE_MEM_READ("sysctl(oldlenp)", ARG4, sizeof(size_t));
-         PRE_MEM_WRITE("sysctl(oldp)", ARG3, *(size_t *)ARG4);
+   if (oldlenp) {
+      // writes *oldlenp
+      PRE_MEM_WRITE("sysctl(oldlenp)", oldlenp, sizeof(size_t));
+      if (oldp) {
+         // also reads *oldlenp, and writes up to oldp[0..(*oldlenp)-1]
+         PRE_MEM_READ("sysctl(oldlenp)", oldlenp, sizeof(size_t));
+         PRE_MEM_WRITE("sysctl(oldp)", oldp, *(size_t*)oldlenp);
       }
    }
-   if (ARG5) {
-      PRE_MEM_READ("sysctl(newp)", ARG5, ARG6);
-   }
-
-   if (VG_(clo_trace_syscalls)) {
-      unsigned int i;
-      int *name = (int *)ARG1;
-      VG_(printf)(" mib: [ ");
-      for (i = 0; i < ARG2; i++) {
-         VG_(printf)("%d ", name[i]);
-      }
-      VG_(printf)("]");
+   if (newp) {
+      PRE_MEM_READ("sysctl(newp)", newp, newlen);
    }
 
    // GrP fixme intercept KERN_PROCARGS and KERN_PROC_PID for our pid
    // (executable path and arguments and environment
-
-   {
-      // Intercept sysctl(kern.usrstack). The kernel's reply would be
-      // Valgrind's stack, not the client's stack.
-      // GrP fixme kern_usrstack64
-      if (ARG1  &&  ARG2 == 2  &&  
-          ((int *)ARG1)[0] == VKI_CTL_KERN  &&  
-#if VG_WORDSIZE == 4
-          ((int *)ARG1)[1] == VKI_KERN_USRSTACK32
-#else
-          ((int *)ARG1)[1] == VKI_KERN_USRSTACK64
-#endif
-          )
-      {
-         if (ARG5/*newp*/  ||  ARG6/*newlen*/) {
-            SET_STATUS_Failure(VKI_EPERM); // USRSTACK is read-only
-         } else {
-            Addr *oldp = (Addr *)ARG3;
-            size_t *oldlenp = (size_t *)ARG4;
-            if (oldlenp) {
-               // According to some searches on the net, it looks like USRSTACK
-               // gives the address of the byte following the highest byte of the stack
-               // As VG_(clstk_end) is the address of the highest addressable byte, we
-               // add +1.
-               Addr stack_end = VG_(clstk_end)+1;
-               size_t oldlen = *oldlenp;
-               // always return actual size
-               *oldlenp = sizeof(Addr);
-               if (oldp  &&  oldlen >= sizeof(Addr)) {
-                  // oldp is big enough
-                  // copy value and return 0
-                  *oldp = stack_end;
-                  SET_STATUS_Success(0);
-               } else {
-                  // oldp isn't big enough
-                  // copy as much as possible and return ENOMEM
-                  if (oldp) VG_(memcpy)(oldp, &stack_end, oldlen);
-                  SET_STATUS_Failure(VKI_ENOMEM);
-               }
+        
+   if (is_kern_dot_userstack) {
+      // Intercept sysctl(kern.usrstack). The kernel's reply
+      // would be Valgrind's stack, not the client's stack.
+      // GrP fixme kern_usrstack64 */
+      if (newp || newlen) {
+         SET_STATUS_Failure(VKI_EPERM); // USRSTACK is read-only */
+      } else {
+         Addr* t_oldp = (Addr*)oldp;
+         size_t* t_oldlenp = (size_t*)oldlenp;
+         if (t_oldlenp) {
+            // According to some searches on the net, it looks like
+            // USRSTACK gives the address of the byte following the
+            // highest byte of the stack.  As VG_(clstk_end) is the
+            // address of the highest addressable byte, we add 1.
+            Addr stack_end = VG_(clstk_end)+1;
+            size_t oldlen = *t_oldlenp;
+            // always return actual size
+            *t_oldlenp = sizeof(Addr);
+            if (t_oldp && oldlen >= sizeof(Addr)) {
+               // oldp is big enough.  copy value and return 0
+               *t_oldp = stack_end;
+               SET_STATUS_Success(0);
+            } else {
+               // oldp isn't big enough.  copy as much as possible
+               // and return ENOMEM
+               if (t_oldp) VG_(memcpy)(t_oldp, &stack_end, oldlen);
+               SET_STATUS_Failure(VKI_ENOMEM);
             }
          }
       }
    }
 
-   if (!SUCCESS  &&  !FAILURE) {
+   if (!SUCCESS && !FAILURE) {
       // Don't set SfPostOnFail if we've already handled it locally.
       *flags |= SfPostOnFail;
    }
 }
 
+
+PRE(__sysctl)
+{
+   UWord name    = ARG1;
+   UWord namelen = ARG2;
+   UWord oldp    = ARG3;
+   UWord oldlenp = ARG4;
+   UWord newp    = ARG5;
+   UWord newlen  = ARG6;
+
+   PRINT( "__sysctl ( %#lx, %ld, %#lx, %#lx, %#lx, %ld )", 
+          name, namelen, oldp, oldlenp, newp, newlen );
+
+   PRE_REG_READ6(int, "__sysctl", int*, name, unsigned int, namelen, 
+                 void*, oldp, vki_size_t *, oldlenp, 
+                 void*, newp, vki_size_t *, newlenp);
+
+   PRE_MEM_READ("sysctl(name)", name, namelen);  // reads name[0..namelen-1]
+
+   if (VG_(clo_trace_syscalls)) {
+      UInt i;
+      Int* t_name = (Int*)name;
+      VG_(printf)(" mib: [ ");
+      for (i = 0; i < namelen; i++) {
+         VG_(printf)("%d ", t_name[i]);
+      }
+      VG_(printf)("]");
+   }
+
+   Int vKI_KERN_USRSTACKXX
+      = VG_WORDSIZE == 4 ? VKI_KERN_USRSTACK32 : VKI_KERN_USRSTACK64; 
+   Bool is_kern_dot_userstack
+      = name && namelen == 2
+        && ((Int*)name)[0] == VKI_CTL_KERN
+        && ((Int*)name)[1] == vKI_KERN_USRSTACKXX;
+
+   common_PRE_sysctl( /*IMPLICIT ARGS*/tid,status,flags,/*!IMPLICIT_ARGS*/
+                      is_kern_dot_userstack, oldp, oldlenp, newp, newlen );
+}
+
 POST(__sysctl)
 {
-   if (SUCCESS  ||  ERR == VKI_ENOMEM) {
+   UWord oldp    = ARG3;
+   UWord oldlenp = ARG4;
+
+   if (SUCCESS || ERR == VKI_ENOMEM) {
       // sysctl can write truncated data and return VKI_ENOMEM
-      if (ARG4) {
-         POST_MEM_WRITE(ARG4, sizeof(size_t));
+      if (oldlenp) {
+         POST_MEM_WRITE(oldlenp, sizeof(size_t));
       }
-      if (ARG3  &&  ARG4) {
-         POST_MEM_WRITE(ARG3, *(size_t *)ARG4);
+      if (oldp && oldlenp) {
+         POST_MEM_WRITE(oldp, *(size_t*)oldlenp);
       }
    }
 }
@@ -8939,13 +9021,70 @@ PRE(kernelrpc_mach_port_unguard_trap)
 
 #if DARWIN_VERS >= DARWIN_10_10
 
+PRE(necp_match_policy)
+{
+   // int necp_match_policy(uint8_t *parameters, size_t parameters_size,
+   //                       struct necp_aggregate_result *returned_result)
+   PRINT("necp_match_policy(FIXME)(%lx,%ld, %lx)", ARG1, ARG2, ARG3);
+   PRE_REG_READ3(int, "necp_match_policy", uint8_t*, parameters,
+                 size_t, parameters_size, struct necp_aggregate_result*,
+                 returned_result);
+   PRE_MEM_READ("necp_match_policy(returned_result)", ARG1, ARG2);
+}
+POST(necp_match_policy)
+{
+   POST_MEM_WRITE(ARG3, sizeof(struct vki_necp_aggregate_result));
+}
+
 PRE(sysctlbyname)
 {
-   // int sysctlbyname(const char *name, size_t namelen, void *old,
-   //                  size_t *oldlenp, void *new, size_t newlen)
-   PRINT("sysctlbyname(FIXME)(%lx(%s),%ld, %lx,%lx, %lx,%lx)",
-         ARG1, ARG1 ? (const HChar*)ARG1 : "(null)",
-         ARG2, ARG3, ARG4, ARG5, ARG6);
+   UWord name    = ARG1;
+   UWord namelen = ARG2;
+   UWord oldp    = ARG3;
+   UWord oldlenp = ARG4;
+   UWord newp    = ARG5;
+   UWord newlen  = ARG6;
+
+   PRINT( "sysctlbyname ( %#lx,%ld, %#lx,%#lx, %#lx,%ld )", 
+          name, namelen, oldp, oldlenp, newp, newlen );
+
+   PRE_REG_READ6(int, "sysctlbyname", char*, name, size_t, namelen,
+                 void*, oldp, vki_size_t *, oldlenp, 
+                 void*, newp, vki_size_t *, newlenp);
+
+   // reads name[0..namelen-1]
+   PRE_MEM_READ("sysctlbyname(name)", name, namelen);
+
+   if (VG_(clo_trace_syscalls)) {
+      UInt i;
+      const HChar* t_name = (const HChar*)name;
+      VG_(printf)(" name: ");
+      for (i = 0; i < namelen; i++) {
+         VG_(printf)("%c", t_name[i]);
+      }
+      VG_(printf)(" ");
+   }
+  
+   Bool is_kern_dot_userstack
+      = False;
+
+   common_PRE_sysctl( /*IMPLICIT ARGS*/tid,status,flags,/*!IMPLICIT_ARGS*/
+                      is_kern_dot_userstack, oldp, oldlenp, newp, newlen );
+}
+POST(sysctlbyname)
+{
+   UWord oldp    = ARG3;
+   UWord oldlenp = ARG4;
+
+   if (SUCCESS || ERR == VKI_ENOMEM) {
+      // sysctl can write truncated data and return VKI_ENOMEM
+      if (oldlenp) {
+         POST_MEM_WRITE(oldlenp, sizeof(size_t));
+      }
+      if (oldp && oldlenp) {
+         POST_MEM_WRITE(oldp, *(size_t*)oldlenp);
+      }
+   }
 }
 
 PRE(getattrlistbulk)
@@ -8954,8 +9093,23 @@ PRE(getattrlistbulk)
    //                     void *attributeBuffer, size_t bufferSize,
    //                     uint64_t options);
    // Presumably the last arg is value-pair in the 32 bit case.
-   PRINT("getattrlistbulk(FIXME)(%ld, %lx, %lx, %lu, %lu)",
+   PRINT("getattrlistbulk(FIXME)(%ld, %lx, %lx,%lu, %lu)",
          ARG1, ARG2, ARG3, ARG4, ARG5);
+   PRE_REG_READ5(int, "getattrlistbulk", int, dirfd, void*, list,
+                 void*, attributeBuffer, size_t, bufferSize,
+                 uint32_t, options_lo32);
+   PRE_MEM_READ("getattrlistbulk(alist)", ARG2, sizeof(struct vki_attrlist));
+   PRE_MEM_WRITE("getattrlistbulk(attributeBuffer)", ARG3, ARG4);
+}
+POST(getattrlistbulk)
+{
+   // FIXME: this isn't right.  It seems as if what is returned is a
+   // set of variable-length records -- see complication in
+   // POST(getattrlist).  For now, just paint the entire result buffer
+   // as defined.  Sigh.
+   vg_assert(SUCCESS);
+   if (ARG3 && /* "at least one output element was written" */RES > 0)
+      POST_MEM_WRITE(ARG3, ARG4);
 }
 
 PRE(bsdthread_ctl)
@@ -8963,6 +9117,8 @@ PRE(bsdthread_ctl)
    // int bsdthread_ctl(user_addr_t cmd, user_addr_t arg1, 
    //                   user_addr_t arg2, user_addr_t arg3)
    PRINT("bsdthread_ctl(FIXME)(%lx,%lx,%lx,%lx)", ARG1, ARG2, ARG3, ARG4);
+   PRE_REG_READ4(int, "bsdthreadctl",
+                 void*, cmd, void*, arg1, void*, arg2, void*, arg3);
 }
 
 #endif /* DARWIN_VERS >= DARWIN_10_10 */
@@ -9478,9 +9634,10 @@ const SyscallTableEntry ML_(syscall_table)[] = {
     MACX_(__NR_disconnectx, disconnectx),
 #endif
 #if DARWIN_VERS >= DARWIN_10_10
-   MACX_(__NR_sysctlbyname,    sysctlbyname),      // 274
-   MACX_(__NR_getattrlistbulk, getattrlistbulk),   // 461
-   MACX_(__NR_bsdthread_ctl,   bsdthread_ctl),     // 478
+   MACXY(__NR_sysctlbyname,        sysctlbyname),       // 274
+   MACXY(__NR_necp_match_policy,   necp_match_policy),  // 460
+   MACXY(__NR_getattrlistbulk,     getattrlistbulk),    // 461
+   MACX_(__NR_bsdthread_ctl,       bsdthread_ctl),      // 478
 #endif
 // _____(__NR_MAXSYSCALL)
    MACX_(__NR_DARWIN_FAKE_SIGRETURN, FAKE_SIGRETURN)

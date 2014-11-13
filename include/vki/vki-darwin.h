@@ -1062,4 +1062,20 @@ struct ByteRangeLockPB2
 //#define vki_errno_t
 typedef int vki_errno_t;
 
+
+/* necp stuff.  This doesn't appear to exist in any user space include
+   file. */
+#if DARWIN_VERS == DARWIN_10_10
+struct vki_necp_aggregate_result {
+   vki_u_int32_t field1;
+   unsigned int  field2;
+   vki_u_int32_t field3;
+   vki_u_int32_t field4;
+   vki_uuid_t    field5;
+   u_int32_t     field6;
+   u_int32_t     field7;
+};
+#endif /* DARWIN_VERS == DARWIN_10_10 */
+
+
 #endif

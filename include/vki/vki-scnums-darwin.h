@@ -712,6 +712,7 @@
 #endif /* DARWIN_VERS >= DARWIN_10_9 */
 
 #if DARWIN_VERS == DARWIN_10_10
+#define __NR_necp_match_policy      VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(460)
 #define __NR_getattrlistbulk        VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(461)
 #define __NR_bsdthread_ctl          VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(478)
 #endif

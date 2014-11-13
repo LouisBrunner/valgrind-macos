@@ -534,7 +534,7 @@ DECL_TEMPLATE(darwin, disconnectx);              // 448
 // NYI sfi_pidctl      // 457
 // NYI coalition       // 458
 // NYI coalition_info  // 459
-// NYI necp_match_policy  // 460
+DECL_TEMPLATE(darwin, necp_match_policy);        // 460
 DECL_TEMPLATE(darwin, getattrlistbulk);          // 461
 // 462
 // NYI openat          // 463

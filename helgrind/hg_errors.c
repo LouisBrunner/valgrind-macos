@@ -464,7 +464,7 @@ void HG_(record_error_Race) ( Thread* thr,
       linked routine, into the table (or whatever) when it is called
       for the first time. */
    {
-     VgSectKind sect = VG_(DebugInfo_sect_kind)( NULL, 0, data_addr );
+     VgSectKind sect = VG_(DebugInfo_sect_kind)( NULL, data_addr );
      if (0) VG_(printf)("XXXXXXXXX RACE on %#lx %s\n",
                         data_addr, VG_(pp_SectKind)(sect));
      /* SectPLT is required on ???-linux */

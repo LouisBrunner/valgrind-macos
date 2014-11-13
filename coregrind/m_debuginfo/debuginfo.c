@@ -4274,12 +4274,11 @@ const HChar* VG_(pp_SectKind)( VgSectKind kind )
 }
 
 /* Given an address 'a', make a guess of which section of which object
-   it comes from.  If name is non-NULL, then the last n_name-1
-   characters of the object's name is put in name[0 .. n_name-2], and
-   name[n_name-1] is set to zero (guaranteed zero terminated). */
-
-VgSectKind VG_(DebugInfo_sect_kind)( /*OUT*/HChar* name, SizeT n_name, 
-                                     Addr a)
+   it comes from.  If name is non-NULL, then the object's name is put
+   in *name. The returned name, if any, should be saved away, if there is
+   a chance that a debug-info will be discarded and the name is being
+   used later on. */
+VgSectKind VG_(DebugInfo_sect_kind)( /*OUT*/const HChar** name, Addr a)
 {
    DebugInfo* di;
    VgSectKind res = Vg_SectUnknown;
@@ -4357,29 +4356,11 @@ VgSectKind VG_(DebugInfo_sect_kind)( /*OUT*/HChar* name, SizeT n_name,
               || (di != NULL && res != Vg_SectUnknown) );
 
    if (name) {
-
-      vg_assert(n_name >= 8);
-
       if (di && di->fsm.filename) {
-         Int i, j;
-         Int fnlen = VG_(strlen)(di->fsm.filename);
-         Int start_at = 1 + fnlen - n_name;
-         if (start_at < 0) start_at = 0;
-         vg_assert(start_at < fnlen);
-         i = start_at; j = 0;
-         while (True) {
-            vg_assert(j >= 0 && j < n_name);
-            vg_assert(i >= 0 && i <= fnlen);
-            name[j] = di->fsm.filename[i];
-            if (di->fsm.filename[i] == 0) break;
-            i++; j++;
-         }
-         vg_assert(i == fnlen);
+         *name = di->fsm.filename;
       } else {
-         VG_(snprintf)(name, n_name, "%s", "???");
+         *name = "???";
       }
-
-      name[n_name-1] = 0;
    }
 
    return res;

@@ -624,7 +624,7 @@ IRSB* DRD_(instrument)(VgCallbackClosure* const closure,
          /* relocated in another way than by later binutils versions. The  */
          /* linker e.g. does not generate .got.plt sections on CentOS 3.0. */
       case Ist_IMark:
-         instrument = VG_(DebugInfo_sect_kind)(NULL, 0, st->Ist.IMark.addr)
+         instrument = VG_(DebugInfo_sect_kind)(NULL, st->Ist.IMark.addr)
             != Vg_SectPLT;
          addStmtToIRSB(bb, st);
          break;

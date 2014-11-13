@@ -169,7 +169,7 @@ struct _AddrInfo {
       // Could only narrow it down to be the PLT/GOT/etc of a given
       // object.  Better than nothing, perhaps.
       struct {
-         HChar      objname[128];
+         HChar      *objname;
          VgSectKind kind;
       } SectKind;
 

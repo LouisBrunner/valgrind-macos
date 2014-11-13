@@ -141,7 +141,7 @@ static BB* new_bb(obj_node* obj, PtrdiffT offset,
    bb->jmp         = (CJmpInfo*) &(bb->instr[instr_count]);
    bb->instr_len   = 0;
    bb->cost_count  = 0;
-   bb->sect_kind   = VG_(DebugInfo_sect_kind)(NULL, 0, offset + obj->offset);
+   bb->sect_kind   = VG_(DebugInfo_sect_kind)(NULL, offset + obj->offset);
    bb->fn          = 0;
    bb->line        = 0;
    bb->is_entry    = 0;

@@ -447,7 +447,7 @@ static void DRD_(suppress_relocation_conflicts)(const Addr a, const SizeT len)
           VG_(strcmp)(VG_(DebugInfo_get_soname)(di), "libpthread.so.0") == 0) {
 	 if (trace_sectsuppr)
 	    VG_(dmsg)("Suppressing .bss @ 0x%lx size %ld\n", avma, size);
-         tl_assert(VG_(DebugInfo_sect_kind)(NULL, 0, avma) == Vg_SectBSS);
+         tl_assert(VG_(DebugInfo_sect_kind)(NULL, avma) == Vg_SectBSS);
          DRD_(start_suppression)(avma, avma + size, ".bss");
       }
 
@@ -457,7 +457,7 @@ static void DRD_(suppress_relocation_conflicts)(const Addr a, const SizeT len)
       if (size > 0) {
 	 if (trace_sectsuppr)
 	    VG_(dmsg)("Suppressing .plt @ 0x%lx size %ld\n", avma, size);
-         tl_assert(VG_(DebugInfo_sect_kind)(NULL, 0, avma) == Vg_SectPLT);
+         tl_assert(VG_(DebugInfo_sect_kind)(NULL, avma) == Vg_SectPLT);
          DRD_(start_suppression)(avma, avma + size, ".plt");
       }
 
@@ -467,7 +467,7 @@ static void DRD_(suppress_relocation_conflicts)(const Addr a, const SizeT len)
       if (size > 0) {
 	 if (trace_sectsuppr)
 	    VG_(dmsg)("Suppressing .got.plt @ 0x%lx size %ld\n", avma, size);
-         tl_assert(VG_(DebugInfo_sect_kind)(NULL, 0, avma) == Vg_SectGOTPLT);
+         tl_assert(VG_(DebugInfo_sect_kind)(NULL, avma) == Vg_SectGOTPLT);
          DRD_(start_suppression)(avma, avma + size, ".gotplt");
       }
 
@@ -477,7 +477,7 @@ static void DRD_(suppress_relocation_conflicts)(const Addr a, const SizeT len)
       if (size > 0) {
 	 if (trace_sectsuppr)
 	    VG_(dmsg)("Suppressing .got @ 0x%lx size %ld\n", avma, size);
-         tl_assert(VG_(DebugInfo_sect_kind)(NULL, 0, avma) == Vg_SectGOT);
+         tl_assert(VG_(DebugInfo_sect_kind)(NULL, avma) == Vg_SectGOT);
          DRD_(start_suppression)(avma, avma + size, ".got");
       }
    }

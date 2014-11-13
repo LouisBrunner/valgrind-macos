@@ -203,17 +203,12 @@ void VG_(describe_addr) ( Addr a, /*OUT*/AddrInfo* ai )
    }
 
    /* -- last ditch attempt at classification -- */
-   vg_assert( sizeof(ai->Addr.SectKind.objname) > 4 );
-   VG_(memset)( &ai->Addr.SectKind.objname, 
-                0, sizeof(ai->Addr.SectKind.objname));
-   VG_(strcpy)( ai->Addr.SectKind.objname, "???" );
-   sect = VG_(DebugInfo_sect_kind)( &ai->Addr.SectKind.objname[0],
-                                    sizeof(ai->Addr.SectKind.objname)-1, a);
+   sect = VG_(DebugInfo_sect_kind)( &name, a);
+   ai->Addr.SectKind.objname = VG_(strdup)("mc.da.dsname", name);
+
    if (sect != Vg_SectUnknown) {
       ai->tag = Addr_SectKind;
       ai->Addr.SectKind.kind = sect;
-      vg_assert( ai->Addr.SectKind.objname
-                    [ sizeof(ai->Addr.SectKind.objname)-1 ] == 0);
       return;
    }
 
@@ -305,6 +300,7 @@ void VG_(clear_addrinfo) ( AddrInfo* ai)
          break;
 
       case Addr_SectKind:
+         VG_(free)(ai->Addr.SectKind.objname);
          break;
 
       default:

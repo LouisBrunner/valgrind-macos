@@ -221,11 +221,10 @@ void drd_report_data_race(const Error* const err,
       if (xml)
          print_err_detail("  </allocation_context>\n");
    } else {
-      HChar sect_name[64];
+      const HChar *sect_name;
       VgSectKind sect_kind;
 
-      sect_kind = VG_(DebugInfo_sect_kind)(sect_name, sizeof(sect_name),
-                                           dri->addr);
+      sect_kind = VG_(DebugInfo_sect_kind)(&sect_name, dri->addr);
       if (sect_kind != Vg_SectUnknown) {
          print_err_detail("%sAllocation context: %ps section of %ps%s\n",
                           auxwhat_prefix, VG_(pp_SectKind)(sect_kind),

@@ -126,22 +126,62 @@
 ############################################
 ## Non-leak errors
 
-#{
-#   OSX1010:AppKit-1
-#   Memcheck:Cond
-#   obj:*AppKit.framework*AppKit*
-#   obj:*AppKit.framework*AppKit*
-#   obj:*AppKit.framework*AppKit*
-#}
-#
-#{
-#   OSX1010:AppKit-2
-#   Memcheck:Cond
-#   obj:*AppKit.framework*AppKit*
-#   obj:*AppKit.framework*AppKit*
-#   obj:*libdispatch.dylib*
-#}
-#
+##{
+##   OSX1010:CoreFoundation-1
+##   Memcheck:Cond
+##   obj:*CoreFoundation.framework*CoreFoundation*
+##   obj:*CoreFoundation.framework*CoreFoundation*
+##   obj:*CoreFoundation.framework*CoreFoundation*
+##}
+
+{
+   OSX1010:CoreFoundation-2
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*libdispatch.dylib*
+   obj:*libdispatch.dylib*
+}
+
+{
+   OSX1010:CoreFoundation-3
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*Foundation.framework*Foundation*
+}
+
+##{
+##   OSX1010:CoreFoundation-4
+##   Memcheck:Cond
+##   obj:*CoreFoundation.framework*CoreFoundation*
+##   obj:*CoreFoundation.framework*CoreFoundation*
+##   obj:*CoreServicesInternal.framework*CoreServicesInternal*
+##}
+
+{
+   OSX1010:CoreFoundation-5
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*HIServices.framework*HIServices*
+}
+
+{
+   OSX1010:AppKit-1
+   Memcheck:Cond
+   obj:*AppKit.framework*AppKit*
+   obj:*AppKit.framework*AppKit*
+   obj:*AppKit.framework*AppKit*
+}
+
+{
+   OSX1010:AppKit-2
+   Memcheck:Cond
+   obj:*AppKit.framework*AppKit*
+   obj:*AppKit.framework*AppKit*
+   obj:*libdispatch.dylib*
+}
+
 #{
 #   OSX1010:AppKit-3
 #   Memcheck:Cond
@@ -149,7 +189,47 @@
 #   obj:*libdispatch.dylib*
 #   obj:*libdispatch.dylib*
 #}
-#
+
+##{
+##   OSX1010:AppKit-4
+##   Memcheck:Cond
+##   obj:*AppKit.framework*AppKit*
+##   obj:*AppKit.framework*AppKit*
+##   obj:*CoreFoundation.framework*CoreFoundation*
+##}
+
+{
+   OSX1010:AppKit-5
+   Memcheck:Cond
+   obj:*AppKit.framework*AppKit*
+   obj:*AppKit.framework*AppKit*
+   obj:*Foundation.framework*Foundation*
+}
+
+{
+   OSX1010:AppKit-6
+   Memcheck:Cond
+   obj:*AppKit.framework*AppKit*
+   obj:*Foundation.framework*Foundation*
+   obj:*AppKit.framework*AppKit*
+}
+
+{
+   OSX1010:AppKit-7
+   Memcheck:Cond
+   obj:*AppKit.framework*AppKit*
+   obj:*libdispatch.dylib*
+   obj:*libdispatch.dylib*
+}
+
+{
+   OSX1010:AppKit-8
+   Memcheck:Cond
+   obj:*AppKit.framework*AppKit*
+   obj:*Foundation.framework*Foundation*
+   obj:*Foundation.framework*Foundation*
+}
+
 #{
 #   OSX1010:ColorSync-1
 #   Memcheck:Cond
@@ -165,15 +245,15 @@
 #   obj:*ColorSync.framework*ColorSync*
 #   obj:*ColorSync.framework*ColorSync*
 #}
-#
-#{
-#   OSX1010:CoreGraphics-1
-#   Memcheck:Cond
-#   obj:*CoreGraphics.framework*CoreGraphics*
-#   obj:*CoreGraphics.framework*CoreGraphics*
-#   obj:*CoreGraphics.framework*CoreGraphics*
-#}
-#
+
+{
+   OSX1010:CoreGraphics-1
+   Memcheck:Cond
+   obj:*CoreGraphics.framework*CoreGraphics*
+   obj:*CoreGraphics.framework*CoreGraphics*
+   obj:*CoreGraphics.framework*CoreGraphics*
+}
+
 #{
 #   OSX1010:CoreGraphics-2
 #   Memcheck:Value8
@@ -197,15 +277,23 @@
 #   obj:*CoreGraphics.framework*CoreGraphics*
 #   obj:*CoreGraphics.framework*libRIP*
 #}
-#
-#{
-#   OSX1010:CoreGraphics-5
-#   Memcheck:Cond
-#   obj:*CoreGraphics.framework*CoreGraphics*
-#   obj:*libdispatch.dylib*
-#   obj:*libdispatch.dylib*
-#}
-#
+
+{
+   OSX1010:CoreGraphics-5
+   Memcheck:Cond
+   obj:*CoreGraphics.framework*CoreGraphics*
+   obj:*libdispatch.dylib*
+   obj:*libdispatch.dylib*
+}
+
+{
+   OSX1010:CoreGraphics-6
+   Memcheck:Cond
+   obj:*CoreGraphics.framework*CoreGraphics*
+   obj:*CoreGraphics.framework*CoreGraphics*
+   obj:*Carbon.framework*HIToolbox*
+}
+
 #{
 #   OSX1010:dyld-2
 #   Memcheck:Cond
@@ -213,31 +301,31 @@
 #   obj:/usr/lib/dyld
 #   obj:/usr/lib/dyld
 #}
-#
-#{
-#   OSX1010:HIServices-1
-#   Memcheck:Cond
-#   obj:*HIServices.framework*HIServices*
-#   obj:*HIToolbox.framework*HIToolbox*
-#   obj:*HIToolbox.framework*HIToolbox*
-#}
-#
-#{  
-#   OSX1010:LaunchServices-1
-#   Memcheck:Cond
-#   obj:*LaunchServices.framework*LaunchServices*
-#   obj:*AppKit.framework*AppKit*
-#   obj:*AppKit.framework*AppKit*
-#}
-#
-#{
-#   OSX1010:QuartzCore-1
-#   Memcheck:Cond
-#   obj:*QuartzCore.framework*QuartzCore
-#   obj:*QuartzCore.framework*QuartzCore
-#   obj:*QuartzCore.framework*QuartzCore
-#}
-#
+
+{
+   OSX1010:HIServices-1
+   Memcheck:Cond
+   obj:*HIServices.framework*HIServices*
+   obj:*HIToolbox.framework*HIToolbox*
+   obj:*HIToolbox.framework*HIToolbox*
+}
+
+{
+   OSX1010:LaunchServices-1
+   Memcheck:Cond
+   obj:*LaunchServices.framework*LaunchServices*
+   obj:*AppKit.framework*AppKit*
+   obj:*AppKit.framework*AppKit*
+}
+
+{
+   OSX1010:QuartzCore-1
+   Memcheck:Cond
+   obj:*QuartzCore.framework*QuartzCore
+   obj:*QuartzCore.framework*QuartzCore
+   obj:*QuartzCore.framework*QuartzCore
+}
+
 #{
 #   OSX1010:vImage-1
 #   Memcheck:Cond
@@ -267,3 +355,99 @@
 #   fun:libSystem_initializer
 #   fun:*ImageLoaderMachO*doModInitFunctions*
 #}
+
+{
+   OSX1010:dyld-1
+   Memcheck:Cond
+   fun:*ImageLoader*weakBind*
+   fun:*ImageLoader*link*
+   fun:*dyld*link*
+}
+
+{
+   OSX1010:libsystem_kernel-1
+   Memcheck:Cond
+   obj:*libsystem_kernel*dylib*
+   obj:*libsystem_kernel*dylib*
+   obj:*CoreFoundation.framework*CoreFoundation*
+}
+
+{
+   OSX1010:CoreServicesInternal-1
+   Memcheck:Cond
+   obj:*CoreServicesInternal.framework*CoreServicesInternal*
+   obj:*CoreServices.framework*LaunchServices*
+   obj:*CoreServices.framework*LaunchServices*
+}
+
+{
+   OSX1010:CoreServicesInternal-2
+   Memcheck:Cond
+   obj:*CoreServicesInternal.framework*CoreServicesInternal*
+   obj:*CoreServicesInternal.framework*CoreServicesInternal*
+   obj:*CoreServicesInternal.framework*CoreServicesInternal*
+}
+
+{
+   OSX1010:CoreServicesInternal-3
+   Memcheck:Cond
+   obj:*CoreServicesInternal.framework*CoreServicesInternal*
+   obj:*CoreServicesInternal.framework*CoreServicesInternal*
+   obj:*CoreFoundation.framework*CoreFoundation*
+}
+
+{
+   OSX1010:CoreServices-1
+   Memcheck:Cond
+   obj:*CoreServices.framework*LaunchServices*
+   obj:*CoreServices.framework*LaunchServices*
+   obj:*CoreServices.framework*LaunchServices*
+}
+
+##{
+##   OSX1010:libsystem_pthread-1
+##   Memcheck:Cond
+##   obj:*libsystem_pthread*dylib*
+##   obj:*ImageIO.framework*ImageIO*
+##   obj:*ImageIO.framework*ImageIO*
+##}
+
+{
+   OSX1010:ApplicationServices-1
+   Memcheck:Cond
+   obj:*ApplicationServices.framework*ATS*
+   obj:*libsystem_pthread*dylib*
+   obj:*libsystem_platform*dylib*
+}
+
+{
+   OSX1010:HIToolbox-1
+   Memcheck:Cond
+   obj:*HIToolbox.framework*HIToolbox*
+   obj:*HIToolbox.framework*HIToolbox*
+   obj:*HIToolbox.framework*HIToolbox*
+}
+
+{
+   OSX1010:RawCamera-1
+   Memcheck:Cond
+   obj:*RawCamera.bundle*RawCamera*
+   obj:*libdispatch.dylib*
+   obj:*libdispatch.dylib*
+}
+
+##{
+##   OSX1010:CoreImage-1
+##   Memcheck:Cond
+##   obj:*CoreImage.framework*CoreImage*
+##   obj:*CoreImage.framework*CoreImage*
+##   obj:*CoreImage.framework*CoreImage*
+##}
+
+##{
+##   OSX1010:strncpy-1
+##   Memcheck:Cond
+##   fun:strncpy
+##   obj:*CoreServicesInternal.framework*CoreServicesInternal
+##   obj:*CoreServicesInternal.framework*CoreServicesInternal
+##}

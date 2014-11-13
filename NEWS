@@ -73,6 +73,7 @@ where XXXXXX is the bug number as listed below.
 340630  arm64: fchmod (52) and fchown (55) syscalls not recognized
 340632  arm64: unhandled instruction fcvtas
 340788  warning: unhandled syscall: 318 (getrandom)
+340922  arm64: unhandled getgroups/setgroups syscalls
 n-i-bz  Provide implementations of certain compiler builtins to support
         compilers who may not provide those
 n-i-bz  Old STABS code is still being compiled, but never used. Remove it.

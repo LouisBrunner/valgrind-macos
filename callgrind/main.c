@@ -1776,7 +1776,7 @@ static
 void branchsim_printstat(int l1, int l2, int l3)
 {
     static HChar buf1[128], buf2[128], buf3[128];
-    static HChar fmt[128];
+    static HChar fmt[128];    // large enough
     FullCost total;
     ULong Bc_total_b, Bc_total_mp, Bi_total_b, Bi_total_mp;
     ULong B_total_b, B_total_mp;

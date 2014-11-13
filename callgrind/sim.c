@@ -76,7 +76,7 @@ typedef struct {
    int          line_size_bits;
    int          tag_shift;
    UWord        tag_mask;
-   HChar        desc_line[128];
+   HChar        desc_line[128];    // large enough
    UWord*       tags;
 
   /* for cache use */

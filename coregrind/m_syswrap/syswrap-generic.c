@@ -585,7 +585,8 @@ void record_fd_close(Int fd)
    some such thing) or that we don't know the filename.  If the fd is
    already open, then we're probably doing a dup2() to an existing fd,
    so just overwrite the existing one. */
-void ML_(record_fd_open_with_given_name)(ThreadId tid, Int fd, char *pathname)
+void ML_(record_fd_open_with_given_name)(ThreadId tid, Int fd,
+                                         const HChar *pathname)
 {
    OpenFd *i;
 
@@ -621,8 +622,8 @@ void ML_(record_fd_open_with_given_name)(ThreadId tid, Int fd, char *pathname)
 // Record opening of an fd, and find its name.
 void ML_(record_fd_open_named)(ThreadId tid, Int fd)
 {
-   HChar* buf;
-   HChar* name;
+   const HChar* buf;
+   const HChar* name;
    if (VG_(resolve_filename)(fd, &buf))
       name = buf;
    else

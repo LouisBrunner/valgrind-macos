@@ -76,7 +76,7 @@ Int VG_(safe_fd)(Int oldfd)
    filename will be overwritten with the next invocation so callers
    need to copy the filename if needed. *result is NULL if the filename
    cannot be deduced. */
-Bool VG_(resolve_filename) ( Int fd, HChar** result )
+Bool VG_(resolve_filename) ( Int fd, const HChar** result )
 {
 #  if defined(VGO_linux)
    static HChar *buf = NULL;

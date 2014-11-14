@@ -1227,7 +1227,7 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
    obj_mtime = stat_buf.mtime;
 
    /* and get its name into exename. */
-   HChar *exe;
+   const HChar *exe;
    if (! VG_(resolve_filename)(fd_obj, &exe))
       return; /*  failed */
    sz_exename = VG_(strlen)(exe);

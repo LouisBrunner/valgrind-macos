@@ -537,7 +537,7 @@ static void find_ppc_dcbz_sz(VexArchInfo *arch_info)
 static UInt VG_(get_machine_model)(void)
 {
    static struct model_map {
-      HChar name[5];
+      const HChar name[5];
       UInt  id;
    } model_map[] = {
       { "2064", VEX_S390X_MODEL_Z900 },
@@ -1263,7 +1263,7 @@ Bool VG_(machine_get_hwcaps)( void )
                              ".short 0x0057" : : : "r0", "r1", "cc", "memory");
      }
 
-     /* Check availability og STFLE. If available store facility bits
+     /* Check availability of STFLE. If available store facility bits
         in hoststfle. */
      ULong hoststfle[S390_NUM_FACILITY_DW];
 

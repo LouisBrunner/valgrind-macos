@@ -1106,18 +1106,18 @@ static Int get_char ( Int fd, HChar* out_buf )
    static HChar buf[256];
    static Int buf_size = 0;
    static Int buf_used = 0;
-   vg_assert(buf_size >= 0 && buf_size <= 256);
+   vg_assert(buf_size >= 0 && buf_size <= sizeof buf);
    vg_assert(buf_used >= 0 && buf_used <= buf_size);
    if (buf_used == buf_size) {
-      r = VG_(read)(fd, buf, 256);
+      r = VG_(read)(fd, buf, sizeof buf);
       if (r < 0) return r; /* read failed */
-      vg_assert(r >= 0 && r <= 256);
+      vg_assert(r >= 0 && r <= sizeof buf);
       buf_size = r;
       buf_used = 0;
    }
    if (buf_size == 0)
      return 0; /* eof */
-   vg_assert(buf_size >= 0 && buf_size <= 256);
+   vg_assert(buf_size >= 0 && buf_size <= sizeof buf);
    vg_assert(buf_used >= 0 && buf_used < buf_size);
    *out_buf = buf[buf_used];
    buf_used++;

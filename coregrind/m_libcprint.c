@@ -424,9 +424,11 @@ void VG_(percentify)(ULong n, ULong m, UInt d, Int n_buf, HChar buf[])
    millisecond timer having been set to zero by an initial read in
    m_main during startup. */
 
-void VG_(elapsed_wallclock_time) ( /*OUT*/HChar* buf )
+void VG_(elapsed_wallclock_time) ( /*OUT*/HChar* buf, SizeT bufsize )
 {
    UInt t, ms, s, mins, hours, days;
+
+   vg_assert(bufsize > 20);
 
    t  = VG_(read_millisecond_timer)(); /* milliseconds */
 
@@ -534,9 +536,7 @@ static void add_to__vmessage_buf ( HChar c, void *p )
          b->buf[b->buf_used++] = ch;
 
          if (VG_(clo_time_stamp)) {
-            VG_(memset)(tmp, 0, sizeof(tmp));
-            VG_(elapsed_wallclock_time)(tmp);
-            tmp[sizeof(tmp)-1] = 0;
+            VG_(elapsed_wallclock_time)(tmp, sizeof tmp);
             for (i = 0; tmp[i]; i++)
                b->buf[b->buf_used++] = tmp[i];
          }

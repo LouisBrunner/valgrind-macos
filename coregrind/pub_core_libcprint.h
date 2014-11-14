@@ -48,11 +48,13 @@ typedef
 extern OutputSink VG_(log_output_sink);
 extern OutputSink VG_(xml_output_sink);
 
-/* Get the elapsed wallclock time since startup into buf, which must
-   16 chars long.  This is unchecked.  It also relies on the
+/* Get the elapsed wallclock time since startup into buf which has size
+   bufsize. The function will assert if bufsize is not large enough.
+   Upon return, buf will contain the zero-terminated wallclock time as
+   a string. The function also relies on the
    millisecond timer having been set to zero by an initial read in
    m_main during startup. */
-void VG_(elapsed_wallclock_time) ( /*OUT*/HChar* buf );
+void VG_(elapsed_wallclock_time) ( /*OUT*/HChar* buf, SizeT bufsize );
 
 /* Call this if the executable is missing.  This function prints an
    error message, then shuts down the entire system. */

@@ -2208,7 +2208,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
 
    if (VG_(clo_xml)) {
       HChar buf[50];
-      VG_(elapsed_wallclock_time)(buf);
+      VG_(elapsed_wallclock_time)(buf, sizeof buf);
       VG_(printf_xml)( "<status>\n"
                        "  <state>RUNNING</state>\n"
                        "  <time>%pS</time>\n"
@@ -2545,7 +2545,7 @@ void shutdown_actions_NORETURN( ThreadId tid,
 
    if (VG_(clo_xml)) {
       HChar buf[50];
-      VG_(elapsed_wallclock_time)(buf);
+      VG_(elapsed_wallclock_time)(buf, sizeof buf);
       VG_(printf_xml)( "<status>\n"
                               "  <state>FINISHED</state>\n"
                               "  <time>%pS</time>\n"

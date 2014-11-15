@@ -3067,6 +3067,17 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       }
    }
 
+   if (e->tag == Iex_ITE) {
+      /* ITE(ccexpr, iftrue, iffalse) */
+      ARM64CondCode cc;
+      HReg r1  = iselDblExpr(env, e->Iex.ITE.iftrue);
+      HReg r0  = iselDblExpr(env, e->Iex.ITE.iffalse);
+      HReg dst = newVRegD(env);
+      cc = iselCondCode(env, e->Iex.ITE.cond);
+      addInstr(env, ARM64Instr_VFCSel(dst, r1, r0, cc, True/*64-bit*/));
+      return dst;
+   }
+
    ppIRExpr(e);
    vpanic("iselDblExpr_wrk");
 }
@@ -3220,6 +3231,17 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
          addInstr(env, ARM64Instr_VBinS(sglop, dst, argL, argR));
          return dst;
       }
+   }
+
+   if (e->tag == Iex_ITE) {
+      /* ITE(ccexpr, iftrue, iffalse) */
+      ARM64CondCode cc;
+      HReg r1  = iselFltExpr(env, e->Iex.ITE.iftrue);
+      HReg r0  = iselFltExpr(env, e->Iex.ITE.iffalse);
+      HReg dst = newVRegD(env);
+      cc = iselCondCode(env, e->Iex.ITE.cond);
+      addInstr(env, ARM64Instr_VFCSel(dst, r1, r0, cc, False/*!64-bit*/));
+      return dst;
    }
 
    ppIRExpr(e);

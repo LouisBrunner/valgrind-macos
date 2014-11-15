@@ -1112,6 +1112,17 @@ ARM64Instr* ARM64Instr_VCmpS ( HReg argL, HReg argR ) {
    i->ARM64in.VCmpS.argR = argR;
    return i;
 }
+ARM64Instr* ARM64Instr_VFCSel ( HReg dst, HReg argL, HReg argR,
+                                ARM64CondCode cond, Bool isD ) {
+   ARM64Instr* i          = LibVEX_Alloc(sizeof(ARM64Instr));
+   i->tag                 = ARM64in_VFCSel;
+   i->ARM64in.VFCSel.dst  = dst;
+   i->ARM64in.VFCSel.argL = argL;
+   i->ARM64in.VFCSel.argR = argR;
+   i->ARM64in.VFCSel.cond = cond;
+   i->ARM64in.VFCSel.isD  = isD;
+   return i;
+}
 ARM64Instr* ARM64Instr_FPCR ( Bool toFPCR, HReg iReg ) {
    ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
    i->tag                 = ARM64in_FPCR;
@@ -1646,6 +1657,18 @@ void ppARM64Instr ( const ARM64Instr* i ) {
          vex_printf(", ");
          ppHRegARM64asSreg(i->ARM64in.VCmpS.argR);
          return;
+      case ARM64in_VFCSel: {
+         void (*ppHRegARM64fp)(HReg)
+            = (i->ARM64in.VFCSel.isD ? ppHRegARM64 : ppHRegARM64asSreg);
+         vex_printf("fcsel  ");
+         ppHRegARM64fp(i->ARM64in.VFCSel.dst);
+         vex_printf(", ");
+         ppHRegARM64fp(i->ARM64in.VFCSel.argL);
+         vex_printf(", ");
+         ppHRegARM64fp(i->ARM64in.VFCSel.argR);
+         vex_printf(", %s", showARM64CondCode(i->ARM64in.VFCSel.cond));
+         return;
+      }
       case ARM64in_FPCR:
          if (i->ARM64in.FPCR.toFPCR) {
             vex_printf("msr    fpcr, ");
@@ -2028,6 +2051,11 @@ void getRegUsage_ARM64Instr ( HRegUsage* u, const ARM64Instr* i, Bool mode64 )
          addHRegUse(u, HRmRead, i->ARM64in.VCmpS.argL);
          addHRegUse(u, HRmRead, i->ARM64in.VCmpS.argR);
          return;
+      case ARM64in_VFCSel:
+         addHRegUse(u, HRmRead, i->ARM64in.VFCSel.argL);
+         addHRegUse(u, HRmRead, i->ARM64in.VFCSel.argR);
+         addHRegUse(u, HRmWrite, i->ARM64in.VFCSel.dst);
+         return;
       case ARM64in_FPCR:
          if (i->ARM64in.FPCR.toFPCR)
             addHRegUse(u, HRmRead, i->ARM64in.FPCR.iReg);
@@ -2255,6 +2283,11 @@ void mapRegs_ARM64Instr ( HRegRemap* m, ARM64Instr* i, Bool mode64 )
       case ARM64in_VCmpS:
          i->ARM64in.VCmpS.argL = lookupHRegRemap(m, i->ARM64in.VCmpS.argL);
          i->ARM64in.VCmpS.argR = lookupHRegRemap(m, i->ARM64in.VCmpS.argR);
+         return;
+      case ARM64in_VFCSel:
+         i->ARM64in.VFCSel.argL = lookupHRegRemap(m, i->ARM64in.VFCSel.argL);
+         i->ARM64in.VFCSel.argR = lookupHRegRemap(m, i->ARM64in.VFCSel.argR);
+         i->ARM64in.VFCSel.dst  = lookupHRegRemap(m, i->ARM64in.VFCSel.dst);
          return;
       case ARM64in_FPCR:
          i->ARM64in.FPCR.iReg = lookupHRegRemap(m, i->ARM64in.FPCR.iReg);
@@ -3957,6 +3990,21 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
          UInt sM = dregNo(i->ARM64in.VCmpS.argR);
          *p++ = X_3_8_5_6_5_5(X000, X11110001, sM, X001000, sN, X00000);
          goto done;
+      }
+      case ARM64in_VFCSel: {
+         /* 31        23 21 20 15   11 9 5
+            000 11110 00 1  m  cond 11 n d  FCSEL Sd,Sn,Sm,cond
+            000 11110 01 1  m  cond 11 n d  FCSEL Dd,Dn,Dm,cond
+         */
+         Bool isD  = i->ARM64in.VFCSel.isD;
+         UInt dd   = dregNo(i->ARM64in.VFCSel.dst);
+         UInt nn   = dregNo(i->ARM64in.VFCSel.argL);
+         UInt mm   = dregNo(i->ARM64in.VFCSel.argR);
+         UInt cond = (UInt)i->ARM64in.VFCSel.cond;
+         vassert(cond < 16);
+         *p++ = X_3_8_5_6_5_5(X000, isD ? X11110011 : X11110001,
+                              mm, (cond << 2) | X000011, nn, dd);
+         goto done; 
       }
       case ARM64in_FPCR: {
          Bool toFPCR = i->ARM64in.FPCR.toFPCR;

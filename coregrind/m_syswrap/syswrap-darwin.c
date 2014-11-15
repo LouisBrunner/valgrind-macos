@@ -57,6 +57,7 @@
 #include "pub_core_syscall.h"
 #include "pub_core_syswrap.h"
 #include "pub_core_tooliface.h"
+#include "pub_core_wordfm.h"
 
 #include "priv_types_n_macros.h"
 #include "priv_syswrap-generic.h"   /* for decls of generic wrappers */
@@ -327,6 +328,63 @@ void start_thread_NORETURN ( Word arg )
 void VG_(cleanup_thread) ( ThreadArchState* arch )
 {
 }  
+
+
+/* ---------------------------------------------------------------------
+   Message reporting, with duplicate removal
+   ------------------------------------------------------------------ */
+
+static WordFM* decaying_string_table = NULL; /* HChar* -> UWord */
+
+static Word decaying_string_table_cmp ( UWord s1, UWord s2 ) {
+   return (Word)VG_(strcmp)( (HChar*)s1, (HChar*)s2 );
+}
+
+static void log_decaying ( const HChar* format, ... ) PRINTF_CHECK(1, 2);
+static void log_decaying ( const HChar* format, ... )
+{
+   // get the message into a stack-allocated string.
+   HChar buf[256];
+   VG_(memset)(buf, 0, sizeof(buf));
+   va_list vargs;
+   va_start(vargs,format);
+   (void) VG_(vsnprintf)(buf, sizeof(buf), format, vargs);
+   va_end(vargs);
+   buf[sizeof(buf)-1] = 0;
+
+   // Now see if it already exists in the table of strings that we have.
+   if (!decaying_string_table) {
+      decaying_string_table
+         = VG_(newFM)( VG_(malloc), "syswrap-darwin.pd.1",
+                       VG_(free), decaying_string_table_cmp );
+   }
+
+   const HChar* key = NULL;
+   UWord        val = 0;
+   if (!VG_(lookupFM)(decaying_string_table,
+                      (UWord*)&key, &val, (UWord)&buf[0])) {
+      // We haven't seen this string before, so strdup it and add
+      // it to the table.
+      vg_assert(key == NULL && val == 0);
+      key = VG_(strdup)("syswrap-darwin.pd.2", buf);
+      VG_(addToFM)(decaying_string_table, (UWord)key, (UWord)0);
+   }
+
+   vg_assert(key != NULL && key != &buf[0]);
+
+   // So, finally, |key| is in the tree, and |val| is what it is
+   // currently associated with.  Increment that counter.
+   val++;
+   Bool b = VG_(addToFM)(decaying_string_table, (UWord)key, (UWord)val);
+   vg_assert(b);
+   
+   if (-1 != VG_(log2)( (UInt)val )) {
+      if (val == 1)
+         VG_(dmsg)("%s\n", key);
+      else
+         VG_(dmsg)("%s (repeated %lu times)\n", key, val);
+   }
+}
 
 
 /* ---------------------------------------------------------------------
@@ -862,10 +920,13 @@ Bool ML_(sync_mappings)(const HChar* when, const HChar* where, UWord num)
       switch (num) {
          case 0x00000000: // upd 2370 diff 93+,1-  <==dangerous
          case 0x0000004f: // upd  212 diff 2+,0-
+         case 0x00000b95: // upd  9826 diff 163+,1-  diff scale, dangerous
+         case 0x00000ba5: // upd  304 diff 0+,0-
          case 0x0000157f: // upd  201 diff 2+,0-
          case 0x0000157d: // upd  197 diff 1+,0-        
          case 0x0000333d: // upd  112 diff 0+,0-
          case 0x0000333f: // upd  223 diff 10+,0-
+         case 0x000072cd: // upd  8286 diff 98+,0-   diff scale
          case 0x000072ae: // upd  193 diff 10+,0-
          case 0x000072ec: // upd  319 diff 7+,0-
          case 0x77303074: // upd  113 diff 3+,0-
@@ -1560,7 +1621,7 @@ PRE(fcntl)
 
    default:
       PRINT("fcntl ( %ld, %ld [??] )", ARG1, ARG2);
-      VG_(printf)("UNKNOWN fcntl %ld!\n", ARG2);
+      log_decaying("UNKNOWN fcntl %ld!", ARG2);
       break;
    }
 }
@@ -2068,12 +2129,7 @@ PRE(__pthread_sigmask)
    // GrP fixme
    // JRS: arguments are identical to sigprocmask 
    // (how, sigset_t*, sigset_t*).  Perhaps behave identically?
-   static Bool warned;
-   if (!warned) {
-      VG_(printf)("UNKNOWN __pthread_sigmask is unsupported. "
-                  "This warning will not be repeated.\n");
-      warned = True;
-   }
+   log_decaying("UNKNOWN __pthread_sigmask is unsupported.");
    SET_STATUS_Success( 0 );
 }
 
@@ -7548,9 +7604,9 @@ PRE(mach_msg_host)
 
    default:
       // unknown message to host self
-      VG_(printf)("UNKNOWN host message [id %d, to %s, reply 0x%x]\n", 
-                  mh->msgh_id, name_for_port(mh->msgh_request_port), 
-                  mh->msgh_reply_port);
+      log_decaying("UNKNOWN host message [id %d, to %s, reply 0x%x]", 
+                   mh->msgh_id, name_for_port(mh->msgh_request_port), 
+                   mh->msgh_reply_port);
       return;
    }
 } 
@@ -7726,9 +7782,9 @@ PRE(mach_msg_task)
 
    default:
       // unknown message to task self
-      VG_(printf)("UNKNOWN task message [id %d, to %s, reply 0x%x]\n",
-                  mh->msgh_id, name_for_port(mh->msgh_remote_port),
-                  mh->msgh_reply_port);
+      log_decaying("UNKNOWN task message [id %d, to %s, reply 0x%x]",
+                   mh->msgh_id, name_for_port(mh->msgh_remote_port),
+                   mh->msgh_reply_port);
       return;
    }
 } 
@@ -7837,14 +7893,7 @@ PRE(mach_msg)
       // (but is this only for too-secure processes?)
       // JRS 11 Nov 2014: this assertion is OK for <= 10.9 but fails on 10.10
 #     if DARWIN_VERS == DARWIN_10_10
-      static UInt ctr = 0;
-      if (! (mh->msgh_bits & MACH_SEND_TRAILER)) {
-         ctr++;
-         if (-1 != VG_(log2)(ctr)) {
-            VG_(printf)("UNKNOWN mach_msg unhandled "
-                        "MACH_SEND_TRAILER option (shown %u times)\n", ctr);
-         }
-      }
+      log_decaying("UNKNOWN mach_msg unhandled MACH_SEND_TRAILER option");
 #     else
       vg_assert(! (mh->msgh_bits & MACH_SEND_TRAILER));
 #     endif

@@ -269,14 +269,14 @@
 #   obj:*CoreGraphics.framework*libRIP*
 #   obj:*CoreGraphics.framework*libRIP*
 #}
-#
-#{
-#   OSX1010:CoreGraphics-4
-#   Memcheck:Cond
-#   obj:*CoreGraphics.framework*CoreGraphics*
-#   obj:*CoreGraphics.framework*CoreGraphics*
-#   obj:*CoreGraphics.framework*libRIP*
-#}
+
+{
+   OSX1010:CoreGraphics-4
+   Memcheck:Cond
+   obj:*CoreGraphics.framework*CoreGraphics*
+   obj:*CoreGraphics.framework*CoreGraphics*
+   obj:*CoreGraphics.framework*libRIP*
+}
 
 {
    OSX1010:CoreGraphics-5
@@ -451,3 +451,81 @@
 ##   obj:*CoreServicesInternal.framework*CoreServicesInternal
 ##   obj:*CoreServicesInternal.framework*CoreServicesInternal
 ##}
+
+{
+   OSX1010:pthread_rwlock_init
+   Memcheck:Cond
+   fun:pthread_rwlock_init
+   obj:*ImageIO.framework*ImageIO*
+   obj:*ImageIO.framework*ImageIO*
+}
+
+{
+   OSX1010:CFBasicHash
+   Memcheck:Value8
+   fun:*CFBasicHash*
+   fun:*CF*
+   fun:*CF*
+}
+
+{
+   OSX1010:AppleIntelHD4000GraphicsGLDriver-1
+   Memcheck:Addr8
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+}
+
+{
+   OSX1010:AppleIntelHD4000GraphicsGLDriver-2
+   Memcheck:Addr4
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+}
+
+{
+   OSX1010:AppleIntelHD4000GraphicsGLDriver-3-Addr8
+   Memcheck:Addr8
+   fun:*platform_memmove*
+   fun:*glrWriteTextureData*
+   obj:*GLEngine.bundle*GLEngine*
+}
+{
+   OSX1010:AppleIntelHD4000GraphicsGLDriver-3-Addr2
+   Memcheck:Addr2
+   fun:*platform_memmove*
+   fun:*glrWriteTextureData*
+   obj:*GLEngine.bundle*GLEngine*
+}
+
+{
+   OSX1010:AppleIntelHD4000GraphicsGLDriver-4
+   Memcheck:Addr8
+   fun:*platform_bzero*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+}
+
+{
+   OSX1010:AppleIntelHD4000GraphicsGLDriver-5
+   Memcheck:Addr4
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*GLEngine.bundle*GLEngine*
+}
+
+{
+   OSX1010:AppleIntelHD4000GraphicsGLDriver-6
+   Memcheck:Addr8
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*GLEngine.bundle*GLEngine*
+}
+
+{
+   OSX1010:AppleIntelHD4000GraphicsGLDriver-7
+   Memcheck:Addr8
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*GLEngine.bundle*GLEngine*
+}

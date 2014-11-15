@@ -23,7 +23,7 @@ typedef  unsigned char           Bool;
 #define ITERS 1
 
 typedef
-  enum { TySF=1234, TyDF, TyB, TyH, TyS, TyD, TyNONE }
+  enum { TyHF=1234, TySF, TyDF, TyB, TyH, TyS, TyD, TyNONE }
   LaneTy;
 
 union _V128 {
@@ -2437,74 +2437,243 @@ GEN_THREEVEC_TEST(frsqrts_2s_2s_2s, "frsqrts v2.2s, v11.2s, v29.2s", 2, 11, 29)
 
 // ======================== CONV ========================
 
-// fcvt      s_h,d_h,h_s,d_s,h_d,s_d (fp convert, scalar)
+GEN_TWOVEC_TEST(fcvt_s_h, "fcvt s7, h16", 7, 16)
+GEN_TWOVEC_TEST(fcvt_d_h, "fcvt d7, h16", 7, 16)
+GEN_TWOVEC_TEST(fcvt_h_s, "fcvt h7, s16", 7, 16)
+GEN_TWOVEC_TEST(fcvt_d_s, "fcvt d7, s16", 7, 16)
+GEN_TWOVEC_TEST(fcvt_h_d, "fcvt h7, d16", 7, 16)
+GEN_TWOVEC_TEST(fcvt_s_d, "fcvt s7, d16", 7, 16)
 
-// fcvtl{2}  4s/4h, 4s/8h, 2d/2s, 2d/4s (float convert to longer form)
+GEN_TWOVEC_TEST(fcvtl_4s_4h, "fcvtl  v11.4s, v29.4h", 11, 29)
+GEN_TWOVEC_TEST(fcvtl_4s_8h, "fcvtl2 v11.4s, v29.8h", 11, 29)
+GEN_TWOVEC_TEST(fcvtl_2d_2s, "fcvtl  v11.2d, v29.2s", 11, 29)
+GEN_TWOVEC_TEST(fcvtl_2d_4s, "fcvtl2 v11.2d, v29.4s", 11, 29)
 
-// fcvtn{2}  4h/4s, 8h/4s, 2s/2d, 4s/2d (float convert to narrower form)
-// INCOMPLETE
+GEN_TWOVEC_TEST(fcvtn_4h_4s, "fcvtn  v22.4h, v23.4s", 22, 23)
+GEN_TWOVEC_TEST(fcvtn_8h_4s, "fcvtn2 v22.8h, v23.4s", 22, 23)
 GEN_TWOVEC_TEST(fcvtn_2s_2d, "fcvtn  v22.2s, v23.2d", 22, 23)
 GEN_TWOVEC_TEST(fcvtn_4s_2d, "fcvtn2 v22.4s, v23.2d", 22, 23)
 
-// fcvtas    d,s  (fcvt to signed int,   nearest, ties away)
-// fcvtau    d,s  (fcvt to unsigned int, nearest, ties away)
-// fcvtas    2d,4s,2s
-// fcvtau    2d,4s,2s
-// fcvtas    w_s,x_s,w_d,x_d
-// fcvtau    w_s,x_s,w_d,x_d
+GEN_TWOVEC_TEST(fcvtas_d_d,   "fcvtas d10, d21",       10, 21)
+GEN_TWOVEC_TEST(fcvtau_d_d,   "fcvtau d21, d10",       21, 10)
+GEN_TWOVEC_TEST(fcvtas_s_s,   "fcvtas s10, s21",       10, 21)
+GEN_TWOVEC_TEST(fcvtau_s_s,   "fcvtau s21, s10",       21, 10)
+GEN_TWOVEC_TEST(fcvtas_2d_2d, "fcvtas v10.2d, v21.2d", 10, 21)
+GEN_TWOVEC_TEST(fcvtau_2d_2d, "fcvtau v10.2d, v21.2d", 10, 21)
+GEN_TWOVEC_TEST(fcvtas_4s_4s, "fcvtas v10.4s, v21.4s", 10, 21)
+GEN_TWOVEC_TEST(fcvtau_4s_4s, "fcvtau v10.4s, v21.4s", 10, 21)
+GEN_TWOVEC_TEST(fcvtas_2s_2s, "fcvtas v10.2s, v21.2s", 10, 21)
+GEN_TWOVEC_TEST(fcvtau_2s_2s, "fcvtau v10.2s, v21.2s", 10, 21)
+GEN_ONEINT_ONEVEC_TEST(fcvtas_w_s, "fcvtas w21, s10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtau_w_s, "fcvtau w21, s10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtas_x_s, "fcvtas x21, s10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtau_x_s, "fcvtau x21, s10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtas_w_d, "fcvtas w21, d10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtau_w_d, "fcvtau w21, d10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtas_x_d, "fcvtas x21, d10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtau_x_d, "fcvtau x21, d10", 21, 10)
 
-// fcvtms    d,s  (fcvt to signed int,   minus inf)
-// fcvtmu    d,s  (fcvt to unsigned int, minus inf)
-// fcvtms    2d,4s,2s
-// fcvtmu    2d,4s,2s
-// fcvtms    w_s,x_s,w_d,x_d
-// fcvtmu    w_s,x_s,w_d,x_d
+GEN_TWOVEC_TEST(fcvtms_d_d,   "fcvtms d10, d21",       10, 21)
+GEN_TWOVEC_TEST(fcvtmu_d_d,   "fcvtmu d21, d10",       21, 10)
+GEN_TWOVEC_TEST(fcvtms_s_s,   "fcvtms s10, s21",       10, 21)
+GEN_TWOVEC_TEST(fcvtmu_s_s,   "fcvtmu s21, s10",       21, 10)
+GEN_TWOVEC_TEST(fcvtms_2d_2d, "fcvtms v10.2d, v21.2d", 10, 21)
+GEN_TWOVEC_TEST(fcvtmu_2d_2d, "fcvtmu v10.2d, v21.2d", 10, 21)
+GEN_TWOVEC_TEST(fcvtms_4s_4s, "fcvtms v10.4s, v21.4s", 10, 21)
+GEN_TWOVEC_TEST(fcvtmu_4s_4s, "fcvtmu v10.4s, v21.4s", 10, 21)
+GEN_TWOVEC_TEST(fcvtms_2s_2s, "fcvtms v10.2s, v21.2s", 10, 21)
+GEN_TWOVEC_TEST(fcvtmu_2s_2s, "fcvtmu v10.2s, v21.2s", 10, 21)
+GEN_ONEINT_ONEVEC_TEST(fcvtms_w_s, "fcvtms w21, s10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtmu_w_s, "fcvtmu w21, s10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtms_x_s, "fcvtms x21, s10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtmu_x_s, "fcvtmu x21, s10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtms_w_d, "fcvtms w21, d10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtmu_w_d, "fcvtmu w21, d10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtms_x_d, "fcvtms x21, d10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtmu_x_d, "fcvtmu x21, d10", 21, 10)
 
-// fcvtns    d,s  (fcvt to signed int,   nearest)
-// fcvtnu    d,s  (fcvt to unsigned int, nearest)
-// fcvtns    2d,4s,2s
-// fcvtnu    2d,4s,2s
-// fcvtns    w_s,x_s,w_d,x_d
-// fcvtnu    w_s,x_s,w_d,x_d
+GEN_TWOVEC_TEST(fcvtns_d_d,   "fcvtns d10, d21",       10, 21)
+GEN_TWOVEC_TEST(fcvtnu_d_d,   "fcvtnu d21, d10",       21, 10)
+GEN_TWOVEC_TEST(fcvtns_s_s,   "fcvtns s10, s21",       10, 21)
+GEN_TWOVEC_TEST(fcvtnu_s_s,   "fcvtnu s21, s10",       21, 10)
+GEN_TWOVEC_TEST(fcvtns_2d_2d, "fcvtns v10.2d, v21.2d", 10, 21)
+GEN_TWOVEC_TEST(fcvtnu_2d_2d, "fcvtnu v10.2d, v21.2d", 10, 21)
+GEN_TWOVEC_TEST(fcvtns_4s_4s, "fcvtns v10.4s, v21.4s", 10, 21)
+GEN_TWOVEC_TEST(fcvtnu_4s_4s, "fcvtnu v10.4s, v21.4s", 10, 21)
+GEN_TWOVEC_TEST(fcvtns_2s_2s, "fcvtns v10.2s, v21.2s", 10, 21)
+GEN_TWOVEC_TEST(fcvtnu_2s_2s, "fcvtnu v10.2s, v21.2s", 10, 21)
+GEN_ONEINT_ONEVEC_TEST(fcvtns_w_s, "fcvtns w21, s10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtnu_w_s, "fcvtnu w21, s10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtns_x_s, "fcvtns x21, s10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtnu_x_s, "fcvtnu x21, s10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtns_w_d, "fcvtns w21, d10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtnu_w_d, "fcvtnu w21, d10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtns_x_d, "fcvtns x21, d10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtnu_x_d, "fcvtnu x21, d10", 21, 10)
 
-// fcvtps    d,s  (fcvt to signed int,   plus inf)
-// fcvtpu    d,s  (fcvt to unsigned int, plus inf)
-// fcvtps    2d,4s,2s
-// fcvtpu    2d,4s,2s
-// fcvtps    w_s,x_s,w_d,x_d
-// fcvtpu    w_s,x_s,w_d,x_d
+GEN_TWOVEC_TEST(fcvtps_d_d,   "fcvtps d10, d21",       10, 21)
+GEN_TWOVEC_TEST(fcvtpu_d_d,   "fcvtpu d21, d10",       21, 10)
+GEN_TWOVEC_TEST(fcvtps_s_s,   "fcvtps s10, s21",       10, 21)
+GEN_TWOVEC_TEST(fcvtpu_s_s,   "fcvtpu s21, s10",       21, 10)
+GEN_TWOVEC_TEST(fcvtps_2d_2d, "fcvtps v10.2d, v21.2d", 10, 21)
+GEN_TWOVEC_TEST(fcvtpu_2d_2d, "fcvtpu v10.2d, v21.2d", 10, 21)
+GEN_TWOVEC_TEST(fcvtps_4s_4s, "fcvtps v10.4s, v21.4s", 10, 21)
+GEN_TWOVEC_TEST(fcvtpu_4s_4s, "fcvtpu v10.4s, v21.4s", 10, 21)
+GEN_TWOVEC_TEST(fcvtps_2s_2s, "fcvtps v10.2s, v21.2s", 10, 21)
+GEN_TWOVEC_TEST(fcvtpu_2s_2s, "fcvtpu v10.2s, v21.2s", 10, 21)
+GEN_ONEINT_ONEVEC_TEST(fcvtps_w_s, "fcvtps w21, s10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtpu_w_s, "fcvtpu w21, s10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtps_x_s, "fcvtps x21, s10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtpu_x_s, "fcvtpu x21, s10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtps_w_d, "fcvtps w21, d10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtpu_w_d, "fcvtpu w21, d10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtps_x_d, "fcvtps x21, d10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtpu_x_d, "fcvtpu x21, d10", 21, 10)
 
-// fcvtzs    d,s (fcvt to signed integer,   to zero)
-// fcvtzu    d,s (fcvt to unsigned integer, to zero)
-// fcvtzs    2d,4s,2s
-// fcvtzu    2d,4s,2s
-// fcvtzs    w_s,x_s,w_d,x_d
-// fcvtzu    w_s,x_s,w_d,x_d
+GEN_TWOVEC_TEST(fcvtzs_d_d,   "fcvtzs d10, d21",       10, 21)
+GEN_TWOVEC_TEST(fcvtzu_d_d,   "fcvtzu d21, d10",       21, 10)
+GEN_TWOVEC_TEST(fcvtzs_s_s,   "fcvtzs s10, s21",       10, 21)
+GEN_TWOVEC_TEST(fcvtzu_s_s,   "fcvtzu s21, s10",       21, 10)
+GEN_TWOVEC_TEST(fcvtzs_2d_2d, "fcvtzs v10.2d, v21.2d", 10, 21)
+GEN_TWOVEC_TEST(fcvtzu_2d_2d, "fcvtzu v10.2d, v21.2d", 10, 21)
+GEN_TWOVEC_TEST(fcvtzs_4s_4s, "fcvtzs v10.4s, v21.4s", 10, 21)
+GEN_TWOVEC_TEST(fcvtzu_4s_4s, "fcvtzu v10.4s, v21.4s", 10, 21)
+GEN_TWOVEC_TEST(fcvtzs_2s_2s, "fcvtzs v10.2s, v21.2s", 10, 21)
+GEN_TWOVEC_TEST(fcvtzu_2s_2s, "fcvtzu v10.2s, v21.2s", 10, 21)
+GEN_ONEINT_ONEVEC_TEST(fcvtzs_w_s, "fcvtzs w21, s10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtzu_w_s, "fcvtzu w21, s10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtzs_x_s, "fcvtzs x21, s10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtzu_x_s, "fcvtzu x21, s10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtzs_w_d, "fcvtzs w21, d10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtzu_w_d, "fcvtzu w21, d10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtzs_x_d, "fcvtzs x21, d10", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtzu_x_d, "fcvtzu x21, d10", 21, 10)
 
-// fcvtzs    d,s (fcvt to signed fixedpt,   to zero) (w/ #fbits)
-// fcvtzu    d,s (fcvt to unsigned fixedpt, to zero) (w/ #fbits)
-// fcvtzs    2d,4s,2s
-// fcvtzu    2d,4s,2s
-// fcvtzs    w_s,x_s,w_d,x_d (fcvt to signed fixedpt,   to zero) (w/ #fbits)
-// fcvtzu    w_s,x_s,w_d,x_d (fcvt to unsigned fixedpt, to zero) (w/ #fbits)
+GEN_TWOVEC_TEST(fcvtzs_d_d_fbits1,    "fcvtzs d10, d21, #1",   10, 21)
+GEN_TWOVEC_TEST(fcvtzs_d_d_fbits32,   "fcvtzs d10, d21, #32",  10, 21)
+GEN_TWOVEC_TEST(fcvtzs_d_d_fbits64,   "fcvtzs d10, d21, #64",  10, 21)
+GEN_TWOVEC_TEST(fcvtzu_d_d_fbits1,    "fcvtzu d10, d21, #1",   10, 21)
+GEN_TWOVEC_TEST(fcvtzu_d_d_fbits32,   "fcvtzu d10, d21, #32",  10, 21)
+GEN_TWOVEC_TEST(fcvtzu_d_d_fbits64,   "fcvtzu d10, d21, #64",  10, 21)
+GEN_TWOVEC_TEST(fcvtzs_s_s_fbits1,    "fcvtzs s10, s21, #1",   10, 21)
+GEN_TWOVEC_TEST(fcvtzs_s_s_fbits16,   "fcvtzs s10, s21, #16",  10, 21)
+GEN_TWOVEC_TEST(fcvtzs_s_s_fbits32,   "fcvtzs s10, s21, #32",  10, 21)
+GEN_TWOVEC_TEST(fcvtzu_s_s_fbits1,    "fcvtzu s10, s21, #1",   10, 21)
+GEN_TWOVEC_TEST(fcvtzu_s_s_fbits16,   "fcvtzu s10, s21, #16",  10, 21)
+GEN_TWOVEC_TEST(fcvtzu_s_s_fbits32,   "fcvtzu s10, s21, #32",  10, 21)
+GEN_TWOVEC_TEST(fcvtzs_2d_2d_fbits1,  "fcvtzs v10.2d, v21.2d, #1",  10, 21)
+GEN_TWOVEC_TEST(fcvtzs_2d_2d_fbits32, "fcvtzs v10.2d, v21.2d, #32", 10, 21)
+GEN_TWOVEC_TEST(fcvtzs_2d_2d_fbits64, "fcvtzs v10.2d, v21.2d, #64", 10, 21)
+GEN_TWOVEC_TEST(fcvtzu_2d_2d_fbits1,  "fcvtzu v10.2d, v21.2d, #1",  10, 21)
+GEN_TWOVEC_TEST(fcvtzu_2d_2d_fbits32, "fcvtzu v10.2d, v21.2d, #32", 10, 21)
+GEN_TWOVEC_TEST(fcvtzu_2d_2d_fbits64, "fcvtzu v10.2d, v21.2d, #64", 10, 21)
+GEN_TWOVEC_TEST(fcvtzs_4s_4s_fbits1,  "fcvtzs v10.4s, v21.4s, #1",  10, 21)
+GEN_TWOVEC_TEST(fcvtzs_4s_4s_fbits16, "fcvtzs v10.4s, v21.4s, #16", 10, 21)
+GEN_TWOVEC_TEST(fcvtzs_4s_4s_fbits32, "fcvtzs v10.4s, v21.4s, #32", 10, 21)
+GEN_TWOVEC_TEST(fcvtzu_4s_4s_fbits1,  "fcvtzu v10.4s, v21.4s, #1",  10, 21)
+GEN_TWOVEC_TEST(fcvtzu_4s_4s_fbits16, "fcvtzu v10.4s, v21.4s, #16", 10, 21)
+GEN_TWOVEC_TEST(fcvtzu_4s_4s_fbits32, "fcvtzu v10.4s, v21.4s, #32", 10, 21)
+GEN_TWOVEC_TEST(fcvtzs_2s_2s_fbits1,  "fcvtzs v10.2s, v21.2s, #1",  10, 21)
+GEN_TWOVEC_TEST(fcvtzs_2s_2s_fbits16, "fcvtzs v10.2s, v21.2s, #16", 10, 21)
+GEN_TWOVEC_TEST(fcvtzs_2s_2s_fbits32, "fcvtzs v10.2s, v21.2s, #32", 10, 21)
+GEN_TWOVEC_TEST(fcvtzu_2s_2s_fbits1,  "fcvtzu v10.2s, v21.2s, #1",  10, 21)
+GEN_TWOVEC_TEST(fcvtzu_2s_2s_fbits16, "fcvtzu v10.2s, v21.2s, #16", 10, 21)
+GEN_TWOVEC_TEST(fcvtzu_2s_2s_fbits32, "fcvtzu v10.2s, v21.2s, #32", 10, 21)
+GEN_ONEINT_ONEVEC_TEST(fcvtzs_w_s_fbits1,  "fcvtzs w21, s10, #1",  21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtzs_w_s_fbits16, "fcvtzs w21, s10, #16", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtzs_w_s_fbits32, "fcvtzs w21, s10, #32", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtzu_w_s_fbits1,  "fcvtzu w21, s10, #1",  21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtzu_w_s_fbits16, "fcvtzu w21, s10, #16", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtzu_w_s_fbits32, "fcvtzu w21, s10, #32", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtzs_x_s_fbits1,  "fcvtzs x21, s10, #1",  21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtzs_x_s_fbits32, "fcvtzs x21, s10, #32", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtzs_x_s_fbits64, "fcvtzs x21, s10, #64", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtzu_x_s_fbits1,  "fcvtzu x21, s10, #1",  21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtzu_x_s_fbits32, "fcvtzu x21, s10, #32", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtzu_x_s_fbits64, "fcvtzu x21, s10, #64", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtzs_w_d_fbits1,  "fcvtzs w21, d10, #1",  21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtzs_w_d_fbits16, "fcvtzs w21, d10, #16", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtzs_w_d_fbits32, "fcvtzs w21, d10, #32", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtzu_w_d_fbits1,  "fcvtzu w21, d10, #1",  21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtzu_w_d_fbits16, "fcvtzu w21, d10, #16", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtzu_w_d_fbits32, "fcvtzu w21, d10, #32", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtzs_x_d_fbits1,  "fcvtzs x21, d10, #1",  21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtzs_x_d_fbits32, "fcvtzs x21, d10, #32", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtzs_x_d_fbits64, "fcvtzs x21, d10, #64", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtzu_x_d_fbits1,  "fcvtzu x21, d10, #1",  21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtzu_x_d_fbits32, "fcvtzu x21, d10, #32", 21, 10)
+GEN_ONEINT_ONEVEC_TEST(fcvtzu_x_d_fbits64, "fcvtzu x21, d10, #64", 21, 10)
 
-// fcvtxn    s_d (fcvt to lower prec narrow, rounding to odd)
-// fcvtxn    2s_2d,4s_2d
+GEN_TWOVEC_TEST(fcvtxn_s_d,   "fcvtxn s10, d21", 10, 21)
+GEN_TWOVEC_TEST(fcvtxn_2s_2d, "fcvtxn  v10.2s, v21.2d", 10, 21)
+GEN_TWOVEC_TEST(fcvtxn_4s_2d, "fcvtxn2 v10.4s, v21.2d", 10, 21)
 
-// scvtf     d,s        _#fbits
-// ucvtf     d,s        _#fbits
+GEN_TWOVEC_TEST(scvtf_d_d_fbits1,    "scvtf d10, d21      , #1",  10, 21)
+GEN_TWOVEC_TEST(scvtf_d_d_fbits32,   "scvtf d10, d21      , #32", 10, 21)
+GEN_TWOVEC_TEST(scvtf_d_d_fbits64,   "scvtf d10, d21      , #64", 10, 21)
+GEN_TWOVEC_TEST(ucvtf_d_d_fbits1,    "ucvtf d21, d10      , #1",  21, 10)
+GEN_TWOVEC_TEST(ucvtf_d_d_fbits32,   "ucvtf d21, d10      , #32", 21, 10)
+GEN_TWOVEC_TEST(ucvtf_d_d_fbits64,   "ucvtf d21, d10      , #64", 21, 10)
+GEN_TWOVEC_TEST(scvtf_s_s_fbits1,    "scvtf s10, s21      , #1",  10, 21)
+GEN_TWOVEC_TEST(scvtf_s_s_fbits16,   "scvtf s10, s21      , #16", 10, 21)
+GEN_TWOVEC_TEST(scvtf_s_s_fbits32,   "scvtf s10, s21      , #32", 10, 21)
+GEN_TWOVEC_TEST(ucvtf_s_s_fbits1,    "ucvtf s21, s10      , #1",  21, 10)
+GEN_TWOVEC_TEST(ucvtf_s_s_fbits16,   "ucvtf s21, s10      , #16", 21, 10)
+GEN_TWOVEC_TEST(ucvtf_s_s_fbits32,   "ucvtf s21, s10      , #32", 21, 10)
+GEN_TWOVEC_TEST(scvtf_2d_2d_fbits1,  "scvtf v10.2d, v21.2d, #1",  10, 21)
+GEN_TWOVEC_TEST(scvtf_2d_2d_fbits32, "scvtf v10.2d, v21.2d, #32", 10, 21)
+GEN_TWOVEC_TEST(scvtf_2d_2d_fbits64, "scvtf v10.2d, v21.2d, #64", 10, 21)
+GEN_TWOVEC_TEST(ucvtf_2d_2d_fbits1,  "ucvtf v10.2d, v21.2d, #1",  10, 21)
+GEN_TWOVEC_TEST(ucvtf_2d_2d_fbits32, "ucvtf v10.2d, v21.2d, #32", 10, 21)
+GEN_TWOVEC_TEST(ucvtf_2d_2d_fbits64, "ucvtf v10.2d, v21.2d, #64", 10, 21)
+GEN_TWOVEC_TEST(scvtf_4s_4s_fbits1,  "scvtf v10.4s, v21.4s, #1",  10, 21)
+GEN_TWOVEC_TEST(scvtf_4s_4s_fbits16, "scvtf v10.4s, v21.4s, #16", 10, 21)
+GEN_TWOVEC_TEST(scvtf_4s_4s_fbits32, "scvtf v10.4s, v21.4s, #32", 10, 21)
+GEN_TWOVEC_TEST(ucvtf_4s_4s_fbits1,  "ucvtf v10.4s, v21.4s, #1",  10, 21)
+GEN_TWOVEC_TEST(ucvtf_4s_4s_fbits16, "ucvtf v10.4s, v21.4s, #16", 10, 21)
+GEN_TWOVEC_TEST(ucvtf_4s_4s_fbits32, "ucvtf v10.4s, v21.4s, #32", 10, 21)
+GEN_TWOVEC_TEST(scvtf_2s_2s_fbits1,  "scvtf v10.2s, v21.2s, #1",  10, 21)
+GEN_TWOVEC_TEST(scvtf_2s_2s_fbits16, "scvtf v10.2s, v21.2s, #16", 10, 21)
+GEN_TWOVEC_TEST(scvtf_2s_2s_fbits32, "scvtf v10.2s, v21.2s, #32", 10, 21)
+GEN_TWOVEC_TEST(ucvtf_2s_2s_fbits1,  "ucvtf v10.2s, v21.2s, #1",  10, 21)
+GEN_TWOVEC_TEST(ucvtf_2s_2s_fbits16, "ucvtf v10.2s, v21.2s, #16", 10, 21)
+GEN_TWOVEC_TEST(ucvtf_2s_2s_fbits32, "ucvtf v10.2s, v21.2s, #32", 10, 21)
 
-// scvtf     2d,4s,2s   _#fbits
-// ucvtf     2d,4s,2s   _#fbits
+GEN_TWOVEC_TEST(scvtf_d_d,   "scvtf d10, d21",       10, 21)
+GEN_TWOVEC_TEST(ucvtf_d_d,   "ucvtf d21, d10",       21, 10)
+GEN_TWOVEC_TEST(scvtf_s_s,   "scvtf s10, s21",       10, 21)
+GEN_TWOVEC_TEST(ucvtf_s_s,   "ucvtf s21, s10",       21, 10)
+GEN_TWOVEC_TEST(scvtf_2d_2d, "scvtf v10.2d, v21.2d", 10, 21)
+GEN_TWOVEC_TEST(ucvtf_2d_2d, "ucvtf v10.2d, v21.2d", 10, 21)
+GEN_TWOVEC_TEST(scvtf_4s_4s, "scvtf v10.4s, v21.4s", 10, 21)
+GEN_TWOVEC_TEST(ucvtf_4s_4s, "ucvtf v10.4s, v21.4s", 10, 21)
+GEN_TWOVEC_TEST(scvtf_2s_2s, "scvtf v10.2s, v21.2s", 10, 21)
+GEN_TWOVEC_TEST(ucvtf_2s_2s, "ucvtf v10.2s, v21.2s", 10, 21)
 
-// scvtf     d,s
-// ucvtf     d,s
-
-// scvtf     2d,4s,2s
-// ucvtf     2d,4s,2s
-
-// scvtf     s_w, d_w, s_x, d_x,   _#fbits
-// ucvtf     s_w, d_w, s_x, d_x,   _#fbits
+GEN_ONEINT_ONEVEC_TEST(scvtf_s_w_fbits1,  "scvtf s7, w15, #1",  15, 7)
+GEN_ONEINT_ONEVEC_TEST(scvtf_s_w_fbits16, "scvtf s7, w15, #16", 15, 7)
+GEN_ONEINT_ONEVEC_TEST(scvtf_s_w_fbits32, "scvtf s7, w15, #32", 15, 7)
+GEN_ONEINT_ONEVEC_TEST(scvtf_d_w_fbits1,  "scvtf d7, w15, #1",  15, 7)
+GEN_ONEINT_ONEVEC_TEST(scvtf_d_w_fbits16, "scvtf d7, w15, #16", 15, 7)
+GEN_ONEINT_ONEVEC_TEST(scvtf_d_w_fbits32, "scvtf d7, w15, #32", 15, 7)
+GEN_ONEINT_ONEVEC_TEST(scvtf_s_x_fbits1,  "scvtf s7, x15, #1",  15, 7)
+GEN_ONEINT_ONEVEC_TEST(scvtf_s_x_fbits32, "scvtf s7, x15, #32", 15, 7)
+GEN_ONEINT_ONEVEC_TEST(scvtf_s_x_fbits64, "scvtf s7, x15, #64", 15, 7)
+GEN_ONEINT_ONEVEC_TEST(scvtf_d_x_fbits1,  "scvtf d7, x15, #1",  15, 7)
+GEN_ONEINT_ONEVEC_TEST(scvtf_d_x_fbits32, "scvtf d7, x15, #32", 15, 7)
+GEN_ONEINT_ONEVEC_TEST(scvtf_d_x_fbits64, "scvtf d7, x15, #64", 15, 7)
+GEN_ONEINT_ONEVEC_TEST(ucvtf_s_w_fbits1,  "ucvtf s7, w15, #1",  15, 7)
+GEN_ONEINT_ONEVEC_TEST(ucvtf_s_w_fbits16, "ucvtf s7, w15, #16", 15, 7)
+GEN_ONEINT_ONEVEC_TEST(ucvtf_s_w_fbits32, "ucvtf s7, w15, #32", 15, 7)
+GEN_ONEINT_ONEVEC_TEST(ucvtf_d_w_fbits1,  "ucvtf d7, w15, #1",  15, 7)
+GEN_ONEINT_ONEVEC_TEST(ucvtf_d_w_fbits16, "ucvtf d7, w15, #16", 15, 7)
+GEN_ONEINT_ONEVEC_TEST(ucvtf_d_w_fbits32, "ucvtf d7, w15, #32", 15, 7)
+GEN_ONEINT_ONEVEC_TEST(ucvtf_s_x_fbits1,  "ucvtf s7, x15, #1",  15, 7)
+GEN_ONEINT_ONEVEC_TEST(ucvtf_s_x_fbits32, "ucvtf s7, x15, #32", 15, 7)
+GEN_ONEINT_ONEVEC_TEST(ucvtf_s_x_fbits64, "ucvtf s7, x15, #64", 15, 7)
+GEN_ONEINT_ONEVEC_TEST(ucvtf_d_x_fbits1,  "ucvtf d7, x15, #1",  15, 7)
+GEN_ONEINT_ONEVEC_TEST(ucvtf_d_x_fbits32, "ucvtf d7, x15, #32", 15, 7)
+GEN_ONEINT_ONEVEC_TEST(ucvtf_d_x_fbits64, "ucvtf d7, x15, #64", 15, 7)
 
 GEN_ONEINT_ONEVEC_TEST(scvtf_s_w, "scvtf s7, w15", 15, 7)
 GEN_ONEINT_ONEVEC_TEST(scvtf_d_w, "scvtf d7, w15", 15, 7)
@@ -4357,6 +4526,34 @@ GEN_UNARY_TEST(xtn2, 8h, 4s)
 GEN_UNARY_TEST(xtn,  8b, 8h)
 GEN_UNARY_TEST(xtn2, 16b, 8h)
 
+// ======================== MEM ========================
+
+// All the SIMD and FP memory tests are in none/tests/arm64/memory.c.
+
+// ======================== CRYPTO ========================
+
+// These tests are believed to be correct but are disabled because
+// GNU assembler (GNU Binutils) 2.24.0.20140311 Linaro 2014.03
+// cannot be persuaded to accept those instructions (AFAICT).
+
+//GEN_TWOVEC_TEST(aesd_16b_16b,    "aesd v6.16b,  v27.16b",  6, 27)
+//GEN_TWOVEC_TEST(aese_16b_16b,    "aese v6.16b,  v27.16b",  6, 27)
+//GEN_TWOVEC_TEST(aesimc_16b_16b,  "aesimc v6.16b,  v27.16b",  6, 27)
+//GEN_TWOVEC_TEST(aesmc_16b_16b,   "aesmc v6.16b,  v27.16b",  6, 27)
+//
+//GEN_THREEVEC_TEST(sha1c_q_s_4s,     "sha1c q29, s28, v27.4s", 29,28,27)
+//GEN_TWOVEC_TEST(sha1h_s_s,          "sha1h s6,  s27",  6, 27)
+//GEN_THREEVEC_TEST(sha1m_q_s_4s,     "sha1m q29, s28, v27.4s", 29,28,27)
+//GEN_THREEVEC_TEST(sha1p_q_s_4s,     "sha1p q29, s28, v27.4s", 29,28,27)
+//GEN_THREEVEC_TEST(sha1su0_4s_4s_4s, "sha1su0 v29.4s, v28.4s, v27.4s", 29,28,27)
+//GEN_TWOVEC_TEST(sha1su1_4s_4s,      "sha1su1 v6.4s,  v27.4s",  6, 27)
+//
+//GEN_THREEVEC_TEST(sha256h2_q_q_4s,  "sha256h2 q29, q28, v27.4s", 29,28,27)
+//GEN_THREEVEC_TEST(sha256h_q_q_4s,   "sha256h q29, q28, v27.4s", 29,28,27)
+//GEN_TWOVEC_TEST(sha256su0_4s_4s,    "sha256su0 v6.4s,  v27.4s",  6, 27)
+//GEN_THREEVEC_TEST(sha256su1_4s_4s_4s, "sha256su1 v29.4s, v28.4s, v27.4s", 
+//                                      29,28,27)
+
 
 /* ---------------------------------------------------------------- */
 /* -- main()                                                     -- */
@@ -4531,10 +4728,10 @@ int main ( void )
    if (0) DO50( test_FCMPE_S_S() );
 
    // fcsel     d,s (fp cond select)
-   if (0) DO50( test_FCSEL_D_D_D_EQ() );
-   if (0) DO50( test_FCSEL_D_D_D_NE() );
-   if (0) DO50( test_FCSEL_S_S_S_EQ() );
-   if (0) DO50( test_FCSEL_S_S_S_NE() );
+   if (1) DO50( test_FCSEL_D_D_D_EQ() );
+   if (1) DO50( test_FCSEL_D_D_D_NE() );
+   if (1) DO50( test_FCSEL_S_S_S_EQ() );
+   if (1) DO50( test_FCSEL_S_S_S_NE() );
 
    // fdiv      d,s
    // fdiv      2d,4s,2s
@@ -4832,13 +5029,24 @@ int main ( void )
    // ======================== CONV ========================
 
    // fcvt      s_h,d_h,h_s,d_s,h_d,s_d (fp convert, scalar)
+   if (0) test_fcvt_s_h(TyHF);
+   if (0) test_fcvt_d_h(TyHF);
+   if (0) test_fcvt_h_s(TySF);
+   if (0) test_fcvt_d_s(TySF);
+   if (0) test_fcvt_h_d(TyDF);
+   if (0) test_fcvt_s_d(TyDF);
 
    // fcvtl{2}  4s/4h, 4s/8h, 2d/2s, 2d/4s (float convert to longer form)
+   if (0) test_fcvtl_4s_4h(TyHF);
+   if (0) test_fcvtl_4s_8h(TyHF);
+   if (0) test_fcvtl_2d_2s(TySF);
+   if (0) test_fcvtl_2d_4s(TySF);
 
    // fcvtn{2}  4h/4s, 8h/4s, 2s/2d, 4s/2d (float convert to narrower form)
-   // INCOMPLETE
-   if (1) test_fcvtn_2s_2d(TyDF);
-   if (1) test_fcvtn_4s_2d(TyDF);
+   if (0) test_fcvtn_4h_4s(TySF);
+   if (0) test_fcvtn_8h_4s(TySF);
+   if (0) test_fcvtn_2s_2d(TyDF);
+   if (0) test_fcvtn_4s_2d(TyDF);
 
    // fcvtas    d,s  (fcvt to signed int,   nearest, ties away)
    // fcvtau    d,s  (fcvt to unsigned int, nearest, ties away)
@@ -4846,6 +5054,24 @@ int main ( void )
    // fcvtau    2d,4s,2s
    // fcvtas    w_s,x_s,w_d,x_d
    // fcvtau    w_s,x_s,w_d,x_d
+   if (0) test_fcvtas_d_d(TyDF);
+   if (0) test_fcvtau_d_d(TyDF);
+   if (0) test_fcvtas_s_s(TySF);
+   if (0) test_fcvtau_s_s(TySF);
+   if (0) test_fcvtas_2d_2d(TyDF);
+   if (0) test_fcvtau_2d_2d(TyDF);
+   if (0) test_fcvtas_4s_4s(TySF);
+   if (0) test_fcvtau_4s_4s(TySF);
+   if (0) test_fcvtas_2s_2s(TySF);
+   if (0) test_fcvtau_2s_2s(TySF);
+   if (0) test_fcvtas_w_s(TySF);
+   if (0) test_fcvtau_w_s(TySF);
+   if (0) test_fcvtas_x_s(TySF);
+   if (0) test_fcvtau_x_s(TySF);
+   if (0) test_fcvtas_w_d(TyDF);
+   if (0) test_fcvtau_w_d(TyDF);
+   if (0) test_fcvtas_x_d(TyDF);
+   if (0) test_fcvtau_x_d(TyDF);
 
    // fcvtms    d,s  (fcvt to signed int,   minus inf)
    // fcvtmu    d,s  (fcvt to unsigned int, minus inf)
@@ -4853,6 +5079,24 @@ int main ( void )
    // fcvtmu    2d,4s,2s
    // fcvtms    w_s,x_s,w_d,x_d
    // fcvtmu    w_s,x_s,w_d,x_d
+   if (0) test_fcvtms_d_d(TyDF);
+   if (0) test_fcvtmu_d_d(TyDF);
+   if (0) test_fcvtms_s_s(TySF);
+   if (0) test_fcvtmu_s_s(TySF);
+   if (0) test_fcvtms_2d_2d(TyDF);
+   if (0) test_fcvtmu_2d_2d(TyDF);
+   if (0) test_fcvtms_4s_4s(TySF);
+   if (0) test_fcvtmu_4s_4s(TySF);
+   if (0) test_fcvtms_2s_2s(TySF);
+   if (0) test_fcvtmu_2s_2s(TySF);
+   if (0) test_fcvtms_w_s(TySF);
+   if (0) test_fcvtmu_w_s(TySF);
+   if (0) test_fcvtms_x_s(TySF);
+   if (0) test_fcvtmu_x_s(TySF);
+   if (0) test_fcvtms_w_d(TyDF);
+   if (0) test_fcvtmu_w_d(TyDF);
+   if (0) test_fcvtms_x_d(TyDF);
+   if (0) test_fcvtmu_x_d(TyDF);
 
    // fcvtns    d,s  (fcvt to signed int,   nearest)
    // fcvtnu    d,s  (fcvt to unsigned int, nearest)
@@ -4860,6 +5104,24 @@ int main ( void )
    // fcvtnu    2d,4s,2s
    // fcvtns    w_s,x_s,w_d,x_d
    // fcvtnu    w_s,x_s,w_d,x_d
+   if (0) test_fcvtns_d_d(TyDF);
+   if (0) test_fcvtnu_d_d(TyDF);
+   if (0) test_fcvtns_s_s(TySF);
+   if (0) test_fcvtnu_s_s(TySF);
+   if (0) test_fcvtns_2d_2d(TyDF);
+   if (0) test_fcvtnu_2d_2d(TyDF);
+   if (0) test_fcvtns_4s_4s(TySF);
+   if (0) test_fcvtnu_4s_4s(TySF);
+   if (0) test_fcvtns_2s_2s(TySF);
+   if (0) test_fcvtnu_2s_2s(TySF);
+   if (0) test_fcvtns_w_s(TySF);
+   if (0) test_fcvtnu_w_s(TySF);
+   if (0) test_fcvtns_x_s(TySF);
+   if (0) test_fcvtnu_x_s(TySF);
+   if (0) test_fcvtns_w_d(TyDF);
+   if (0) test_fcvtnu_w_d(TyDF);
+   if (0) test_fcvtns_x_d(TyDF);
+   if (0) test_fcvtnu_x_d(TyDF);
 
    // fcvtps    d,s  (fcvt to signed int,   plus inf)
    // fcvtpu    d,s  (fcvt to unsigned int, plus inf)
@@ -4867,6 +5129,24 @@ int main ( void )
    // fcvtpu    2d,4s,2s
    // fcvtps    w_s,x_s,w_d,x_d
    // fcvtpu    w_s,x_s,w_d,x_d
+   if (0) test_fcvtps_d_d(TyDF);
+   if (0) test_fcvtpu_d_d(TyDF);
+   if (0) test_fcvtps_s_s(TySF);
+   if (0) test_fcvtpu_s_s(TySF);
+   if (0) test_fcvtps_2d_2d(TyDF);
+   if (0) test_fcvtpu_2d_2d(TyDF);
+   if (0) test_fcvtps_4s_4s(TySF);
+   if (0) test_fcvtpu_4s_4s(TySF);
+   if (0) test_fcvtps_2s_2s(TySF);
+   if (0) test_fcvtpu_2s_2s(TySF);
+   if (0) test_fcvtps_w_s(TySF);
+   if (0) test_fcvtpu_w_s(TySF);
+   if (0) test_fcvtps_x_s(TySF);
+   if (0) test_fcvtpu_x_s(TySF);
+   if (0) test_fcvtps_w_d(TyDF);
+   if (0) test_fcvtpu_w_d(TyDF);
+   if (0) test_fcvtps_x_d(TyDF);
+   if (0) test_fcvtpu_x_d(TyDF);
 
    // fcvtzs    d,s (fcvt to signed integer,   to zero)
    // fcvtzu    d,s (fcvt to unsigned integer, to zero)
@@ -4874,31 +5154,168 @@ int main ( void )
    // fcvtzu    2d,4s,2s
    // fcvtzs    w_s,x_s,w_d,x_d
    // fcvtzu    w_s,x_s,w_d,x_d
+   if (0) test_fcvtzs_d_d(TyDF);
+   if (0) test_fcvtzu_d_d(TyDF);
+   if (0) test_fcvtzs_s_s(TySF);
+   if (0) test_fcvtzu_s_s(TySF);
+   if (0) test_fcvtzs_2d_2d(TyDF);
+   if (0) test_fcvtzu_2d_2d(TyDF);
+   if (0) test_fcvtzs_4s_4s(TySF);
+   if (0) test_fcvtzu_4s_4s(TySF);
+   if (0) test_fcvtzs_2s_2s(TySF);
+   if (0) test_fcvtzu_2s_2s(TySF);
+   if (0) test_fcvtzs_w_s(TySF);
+   if (0) test_fcvtzu_w_s(TySF);
+   if (0) test_fcvtzs_x_s(TySF);
+   if (0) test_fcvtzu_x_s(TySF);
+   if (0) test_fcvtzs_w_d(TyDF);
+   if (0) test_fcvtzu_w_d(TyDF);
+   if (0) test_fcvtzs_x_d(TyDF);
+   if (0) test_fcvtzu_x_d(TyDF);
 
    // fcvtzs    d,s (fcvt to signed fixedpt,   to zero) (w/ #fbits)
    // fcvtzu    d,s (fcvt to unsigned fixedpt, to zero) (w/ #fbits)
-   // fcvtzs    2d,4s,2s
-   // fcvtzu    2d,4s,2s
+   // fcvtzs    2d,4s,2s (fcvt to signed fixedpt,   to zero) (w/ #fbits)
+   // fcvtzu    2d,4s,2s (fcvt to unsigned fixedpt, to zero) (w/ #fbits)
    // fcvtzs    w_s,x_s,w_d,x_d (fcvt to signed fixedpt,   to zero) (w/ #fbits)
    // fcvtzu    w_s,x_s,w_d,x_d (fcvt to unsigned fixedpt, to zero) (w/ #fbits)
+   if (0) test_fcvtzs_d_d_fbits1(TyDF);
+   if (0) test_fcvtzs_d_d_fbits32(TyDF);
+   if (0) test_fcvtzs_d_d_fbits64(TyDF);
+   if (0) test_fcvtzu_d_d_fbits1(TyDF);
+   if (0) test_fcvtzu_d_d_fbits32(TyDF);
+   if (0) test_fcvtzu_d_d_fbits64(TyDF);
+   if (0) test_fcvtzs_s_s_fbits1(TySF);
+   if (0) test_fcvtzs_s_s_fbits16(TySF);
+   if (0) test_fcvtzs_s_s_fbits32(TySF);
+   if (0) test_fcvtzu_s_s_fbits1(TySF);
+   if (0) test_fcvtzu_s_s_fbits16(TySF);
+   if (0) test_fcvtzu_s_s_fbits32(TySF);
+   if (0) test_fcvtzs_2d_2d_fbits1(TyDF);
+   if (0) test_fcvtzs_2d_2d_fbits32(TyDF);
+   if (0) test_fcvtzs_2d_2d_fbits64(TyDF);
+   if (0) test_fcvtzu_2d_2d_fbits1(TyDF);
+   if (0) test_fcvtzu_2d_2d_fbits32(TyDF);
+   if (0) test_fcvtzu_2d_2d_fbits64(TyDF);
+   if (0) test_fcvtzs_4s_4s_fbits1(TySF);
+   if (0) test_fcvtzs_4s_4s_fbits16(TySF);
+   if (0) test_fcvtzs_4s_4s_fbits32(TySF);
+   if (0) test_fcvtzu_4s_4s_fbits1(TySF);
+   if (0) test_fcvtzu_4s_4s_fbits16(TySF);
+   if (0) test_fcvtzu_4s_4s_fbits32(TySF);
+   if (0) test_fcvtzs_2s_2s_fbits1(TySF);
+   if (0) test_fcvtzs_2s_2s_fbits16(TySF);
+   if (0) test_fcvtzs_2s_2s_fbits32(TySF);
+   if (0) test_fcvtzu_2s_2s_fbits1(TySF);
+   if (0) test_fcvtzu_2s_2s_fbits16(TySF);
+   if (0) test_fcvtzu_2s_2s_fbits32(TySF);
+   if (0) test_fcvtzs_w_s_fbits1(TySF);
+   if (0) test_fcvtzs_w_s_fbits16(TySF);
+   if (0) test_fcvtzs_w_s_fbits32(TySF);
+   if (0) test_fcvtzu_w_s_fbits1(TySF);
+   if (0) test_fcvtzu_w_s_fbits16(TySF);
+   if (0) test_fcvtzu_w_s_fbits32(TySF);
+   if (0) test_fcvtzs_x_s_fbits1(TySF);
+   if (0) test_fcvtzs_x_s_fbits32(TySF);
+   if (0) test_fcvtzs_x_s_fbits64(TySF);
+   if (0) test_fcvtzu_x_s_fbits1(TySF);
+   if (0) test_fcvtzu_x_s_fbits32(TySF);
+   if (0) test_fcvtzu_x_s_fbits64(TySF);
+   if (0) test_fcvtzs_w_d_fbits1(TyDF);
+   if (0) test_fcvtzs_w_d_fbits16(TyDF);
+   if (0) test_fcvtzs_w_d_fbits32(TyDF);
+   if (0) test_fcvtzu_w_d_fbits1(TyDF);
+   if (0) test_fcvtzu_w_d_fbits16(TyDF);
+   if (0) test_fcvtzu_w_d_fbits32(TyDF);
+   if (0) test_fcvtzs_x_d_fbits1(TyDF);
+   if (0) test_fcvtzs_x_d_fbits32(TyDF);
+   if (0) test_fcvtzs_x_d_fbits64(TyDF);
+   if (0) test_fcvtzu_x_d_fbits1(TyDF);
+   if (0) test_fcvtzu_x_d_fbits32(TyDF);
+   if (0) test_fcvtzu_x_d_fbits64(TyDF);
 
    // fcvtxn    s_d (fcvt to lower prec narrow, rounding to odd)
    // fcvtxn    2s_2d,4s_2d
+   if (0) test_fcvtxn_s_d(TyDF);
+   if (0) test_fcvtxn_2s_2d(TyDF);
+   if (0) test_fcvtxn_4s_2d(TyDF);
 
    // scvtf     d,s        _#fbits
    // ucvtf     d,s        _#fbits
-
    // scvtf     2d,4s,2s   _#fbits
    // ucvtf     2d,4s,2s   _#fbits
+   if (0) test_scvtf_d_d_fbits1(TyD);
+   if (0) test_scvtf_d_d_fbits32(TyD);
+   if (0) test_scvtf_d_d_fbits64(TyD);
+   if (0) test_ucvtf_d_d_fbits1(TyD);
+   if (0) test_ucvtf_d_d_fbits32(TyD);
+   if (0) test_ucvtf_d_d_fbits64(TyD);
+   if (0) test_scvtf_s_s_fbits1(TyS);
+   if (0) test_scvtf_s_s_fbits16(TyS);
+   if (0) test_scvtf_s_s_fbits32(TyS);
+   if (0) test_ucvtf_s_s_fbits1(TyS);
+   if (0) test_ucvtf_s_s_fbits16(TyS);
+   if (0) test_ucvtf_s_s_fbits32(TyS);
+   if (0) test_scvtf_2d_2d_fbits1(TyD);
+   if (0) test_scvtf_2d_2d_fbits32(TyD);
+   if (0) test_scvtf_2d_2d_fbits64(TyD);
+   if (0) test_ucvtf_2d_2d_fbits1(TyD);
+   if (0) test_ucvtf_2d_2d_fbits32(TyD);
+   if (0) test_ucvtf_2d_2d_fbits64(TyD);
+   if (0) test_scvtf_4s_4s_fbits1(TyS);
+   if (0) test_scvtf_4s_4s_fbits16(TyS);
+   if (0) test_scvtf_4s_4s_fbits32(TyS);
+   if (0) test_ucvtf_4s_4s_fbits1(TyS);
+   if (0) test_ucvtf_4s_4s_fbits16(TyS);
+   if (0) test_ucvtf_4s_4s_fbits32(TyS);
+   if (0) test_scvtf_2s_2s_fbits1(TyS);
+   if (0) test_scvtf_2s_2s_fbits16(TyS);
+   if (0) test_scvtf_2s_2s_fbits32(TyS);
+   if (0) test_ucvtf_2s_2s_fbits1(TyS);
+   if (0) test_ucvtf_2s_2s_fbits16(TyS);
+   if (0) test_ucvtf_2s_2s_fbits32(TyS);
 
    // scvtf     d,s
    // ucvtf     d,s
-
    // scvtf     2d,4s,2s
    // ucvtf     2d,4s,2s
+   if (0) test_scvtf_d_d(TyD);
+   if (0) test_ucvtf_d_d(TyD);
+   if (0) test_scvtf_s_s(TyS);
+   if (0) test_ucvtf_s_s(TyS);
+   if (0) test_scvtf_2d_2d(TyD);
+   if (0) test_ucvtf_2d_2d(TyD);
+   if (0) test_scvtf_4s_4s(TyS);
+   if (0) test_ucvtf_4s_4s(TyS);
+   if (0) test_scvtf_2s_2s(TyS);
+   if (0) test_ucvtf_2s_2s(TyS);
 
    // scvtf     s_w, d_w, s_x, d_x,   _#fbits
    // ucvtf     s_w, d_w, s_x, d_x,   _#fbits
+   if (0) test_scvtf_s_w_fbits1(TyS);
+   if (0) test_scvtf_s_w_fbits16(TyS);
+   if (0) test_scvtf_s_w_fbits32(TyS);
+   if (0) test_scvtf_d_w_fbits1(TyS);
+   if (0) test_scvtf_d_w_fbits16(TyS);
+   if (0) test_scvtf_d_w_fbits32(TyS);
+   if (0) test_scvtf_s_x_fbits1(TyD);
+   if (0) test_scvtf_s_x_fbits32(TyD);
+   if (0) test_scvtf_s_x_fbits64(TyD);
+   if (0) test_scvtf_d_x_fbits1(TyD);
+   if (0) test_scvtf_d_x_fbits32(TyD);
+   if (0) test_scvtf_d_x_fbits64(TyD);
+   if (0) test_ucvtf_s_w_fbits1(TyS);
+   if (0) test_ucvtf_s_w_fbits16(TyS);
+   if (0) test_ucvtf_s_w_fbits32(TyS);
+   if (0) test_ucvtf_d_w_fbits1(TyS);
+   if (0) test_ucvtf_d_w_fbits16(TyS);
+   if (0) test_ucvtf_d_w_fbits32(TyS);
+   if (0) test_ucvtf_s_x_fbits1(TyD);
+   if (0) test_ucvtf_s_x_fbits32(TyD);
+   if (0) test_ucvtf_s_x_fbits64(TyD);
+   if (0) test_ucvtf_d_x_fbits1(TyD);
+   if (0) test_ucvtf_d_x_fbits32(TyD);
+   if (0) test_ucvtf_d_x_fbits64(TyD);
 
    // scvtf     s_w, d_w, s_x, d_x
    // ucvtf     s_w, d_w, s_x, d_x
@@ -6913,6 +7330,8 @@ int main ( void )
 
    // ======================== MEM ========================
 
+   // All the SIMD and FP memory tests are in none/tests/arm64/memory.c.
+
    // ld1  (multiple 1-element structures to 1/2/3/4 regs)
    // ld1  (single 1-element structure to one lane of 1 reg)
    // ld1r (single 1-element structure and rep to all lanes of 1 reg)
@@ -6975,10 +7394,18 @@ int main ( void )
 
    // ======================== CRYPTO ========================
 
+   // These tests are believed to be correct but are disabled because
+   // GNU assembler (GNU Binutils) 2.24.0.20140311 Linaro 2014.03
+   // cannot be persuaded to accept those instructions (AFAICT).
+
    // aesd       16b (aes single round decryption)
    // aese       16b (aes single round encryption)
    // aesimc     16b (aes inverse mix columns)
    // aesmc      16b (aes mix columns)
+   //if (0) test_aesd_16b_16b(TyNONE);
+   //if (0) test_aese_16b_16b(TyNONE);
+   //if (0) test_aesimc_16b_16b(TyNONE);
+   //if (0) test_aesmc_16b_16b(TyNONE);
 
    // sha1c      q_s_4s
    // sha1h      s_s
@@ -6986,11 +7413,21 @@ int main ( void )
    // sha1p      q_s_4s
    // sha1su0    4s_4s_4s
    // sha1su1    4s_4s
+   //if (0) test_sha1c_q_s_4s(TyNONE);
+   //if (0) test_sha1h_s_s(TyNONE);
+   //if (0) test_sha1m_q_s_4s(TyNONE);
+   //if (0) test_sha1p_q_s_4s(TyNONE);
+   //if (0) test_sha1su0_4s_4s_4s(TyNONE);
+   //if (0) test_sha1su1_4s_4s(TyNONE);
 
    // sha256h2   q_q_4s
    // sha256h    q_q_4s
    // sha256su0  4s_4s
    // sha256su1  4s_4s_4s
+   //if (0) test_sha256h2_q_q_4s(TyNONE);
+   //if (0) test_sha256h_q_q_4s(TyNONE);
+   //if (0) test_sha256su0_4s_4s(TyNONE);
+   //if (0) test_sha256su1_4s_4s_4s(TyNONE);
 
    return 0;
 }

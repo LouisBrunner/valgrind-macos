@@ -45,9 +45,6 @@
 //     - "start/stop logging" (eg. quickly skip boring bits)
 // - Add ability to draw multiple graphs, eg. heap-only, stack-only, total.
 //   Give each graph a title.  (try to do it generically!)
-// - allow truncation of long fnnames if the exact line number is
-//   identified?  [hmm, could make getting the name of alloc-fns more
-//   difficult] [could dump full names to file, truncate in ms_print]
 // - make --show-below-main=no work
 // - Options like --alloc-fn='operator new(unsigned, std::nothrow_t const&)'
 //   don't work in a .valgrindrc file or in $VALGRIND_OPTS. 
@@ -1194,7 +1191,7 @@ static UInt cull_snapshots(void)
       tl_assert(-1 != min_j);    // Check we found a minimum.
       min_snapshot = & snapshots[ min_j ];
       if (VG_(clo_verbosity) > 1) {
-         HChar buf[64];
+         HChar buf[64];   // large enough
          VG_(snprintf)(buf, 64, " %3d (t-span = %lld)", i, min_timespan);
          VERB_snapshot(2, buf, min_j);
       }
@@ -2145,7 +2142,7 @@ static void pp_snapshot_SXPt(VgFile *fp, SXPt* sxpt, Int depth,
          } else {
             // XXX: --alloc-fns?
 
-            // Nick thinks this case cannot happen. ip_desc_array would be
+            // Nick thinks this case cannot happen. ip_desc would be
             // conceptually uninitialised here. Therefore:
             tl_assert2(0, "pp_snapshot_SXPt: unexpected");
          }
@@ -2187,7 +2184,7 @@ static void pp_snapshot_SXPt(VgFile *fp, SXPt* sxpt, Int depth,
       // Truncation at the beginning of the string would have been preferable.
       // Think several nested namespaces in C++....
       // Anyhow, we spit out the full-length string now.
-      VG_(fprintf)(fp, "%s\n", ip_desc);
+      FP("%s\n", ip_desc);
 
       // Indent.
       tl_assert(depth+1 < depth_str_len-1);    // -1 for end NUL char

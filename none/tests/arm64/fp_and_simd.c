@@ -4585,9 +4585,9 @@ int main ( void )
    // fsqrt     2d,4s,2s
    if (1) test_fsqrt_d_d(TyDF);
    if (1) test_fsqrt_s_s(TySF);
-   if (0) test_fsqrt_2d_2d(TySF);
-   if (0) test_fsqrt_4s_4s(TyDF);
-   if (0) test_fsqrt_2s_2s(TySF);
+   if (0) test_fsqrt_2d_2d(TySF); // need to change primop type
+   if (0) test_fsqrt_4s_4s(TyDF); // ditto
+   if (0) test_fsqrt_2s_2s(TySF); // ditto
 
    // fadd      d,s
    // fsub      d,s
@@ -4615,11 +4615,11 @@ int main ( void )
 
    // faddp     d,s (floating add pair)
    // faddp     2d,4s,2s
-   if (0) test_faddp_d_2d(TyDF);
-   if (0) test_faddp_s_2s(TySF);
-   if (0) test_faddp_2d_2d_2d(TySF);
-   if (0) test_faddp_4s_4s_4s(TyDF);
-   if (0) test_faddp_2s_2s_2s(TySF);
+   if (1) test_faddp_d_2d(TyDF);
+   if (1) test_faddp_s_2s(TySF);
+   if (1) test_faddp_2d_2d_2d(TySF);
+   if (1) test_faddp_4s_4s_4s(TyDF);
+   if (1) test_faddp_2s_2s_2s(TySF);
 
    // fccmp     d,s (floating point conditional quiet compare)
    // fccmpe    d,s (floating point conditional signaling compare)
@@ -4762,14 +4762,14 @@ int main ( void )
    // fmin      d,s
    // fmaxnm    d,s ("max number")
    // fminnm    d,s
-   if (0) test_fmax_d_d_d(TyDF);
-   if (0) test_fmax_s_s_s(TySF);
-   if (0) test_fmin_d_d_d(TyDF);
-   if (0) test_fmin_s_s_s(TySF);
-   if (0) test_fmaxnm_d_d_d(TyDF);
-   if (0) test_fmaxnm_s_s_s(TySF);
-   if (0) test_fminnm_d_d_d(TyDF);
-   if (0) test_fminnm_s_s_s(TySF);
+   if (1) test_fmax_d_d_d(TyDF);
+   if (1) test_fmax_s_s_s(TySF);
+   if (1) test_fmin_d_d_d(TyDF);
+   if (1) test_fmin_s_s_s(TySF);
+   if (1) test_fmaxnm_d_d_d(TyDF);
+   if (1) test_fmaxnm_s_s_s(TySF);
+   if (1) test_fminnm_d_d_d(TyDF);
+   if (1) test_fminnm_s_s_s(TySF);
 
    // fmax      2d,4s,2s
    // fmin      2d,4s,2s

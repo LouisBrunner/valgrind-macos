@@ -29,48 +29,21 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-//ZZ /* XXXX thumb to check:
-//ZZ    that all cases where putIRegT writes r15, we generate a jump.
-//ZZ 
-//ZZ    All uses of newTemp assign to an IRTemp and not a UInt
-//ZZ 
-//ZZ    For all thumb loads and stores, including VFP ones, new-ITSTATE is
-//ZZ    backed out before the memory op, and restored afterwards.  This
-//ZZ    needs to happen even after we go uncond.  (and for sure it doesn't
-//ZZ    happen for VFP loads/stores right now).
-//ZZ 
-//ZZ    VFP on thumb: check that we exclude all r13/r15 cases that we
-//ZZ    should.
-//ZZ 
-//ZZ    XXXX thumb to do: improve the ITSTATE-zeroing optimisation by
-//ZZ    taking into account the number of insns guarded by an IT.
-//ZZ 
-//ZZ    remove the nasty hack, in the spechelper, of looking for Or32(...,
-//ZZ    0xE0) in as the first arg to armg_calculate_condition, and instead
-//ZZ    use Slice44 as specified in comments in the spechelper.
-//ZZ 
-//ZZ    add specialisations for armg_calculate_flag_c and _v, as they
-//ZZ    are moderately often needed in Thumb code.
-//ZZ 
-//ZZ    Correctness: ITSTATE handling in Thumb SVCs is wrong.
-//ZZ 
-//ZZ    Correctness (obscure): in m_transtab, when invalidating code
-//ZZ    address ranges, invalidate up to 18 bytes after the end of the
-//ZZ    range.  This is because the ITSTATE optimisation at the top of
-//ZZ    _THUMB_WRK below analyses up to 18 bytes before the start of any
-//ZZ    given instruction, and so might depend on the invalidated area.
-//ZZ */
-//ZZ 
-//ZZ /* Limitations, etc
-//ZZ 
-//ZZ    - pretty dodgy exception semantics for {LD,ST}Mxx and {LD,ST}RD.
-//ZZ      These instructions are non-restartable in the case where the
-//ZZ      transfer(s) fault.
-//ZZ 
-//ZZ    - SWP: the restart jump back is Ijk_Boring; it should be
-//ZZ      Ijk_NoRedir but that's expensive.  See comments on casLE() in
-//ZZ      guest_x86_toIR.c.
-//ZZ */
+/* KNOWN LIMITATIONS 2014-Nov-16
+
+   * Correctness: FMAXNM, FMINNM are implemented the same as FMAX/FMIN.
+
+     Also FP comparison "unordered" .. is implemented as normal FP
+     comparison.
+
+     Both should be fixed.  They behave incorrectly in the presence of
+     NaNs.
+
+   * Floating multiply-add (etc) insns.  Are split into a multiply and 
+     an add, and so suffer double rounding and hence sometimes the
+     least significant mantissa bit is incorrect.  Fix: use the IR
+     multiply-add IROps instead.
+*/
 
 /* "Special" instructions.
 
@@ -989,6 +962,26 @@ static IROp mkVecQSHLNSATSU ( UInt size ) {
    return ops[size];
 }
 
+static IROp mkVecADDF ( UInt size ) {
+   const IROp ops[4]
+      = { Iop_INVALID, Iop_INVALID, Iop_Add32Fx4, Iop_Add64Fx2 };
+   vassert(size < 4);
+   return ops[size];
+}
+
+static IROp mkVecMAXF ( UInt size ) {
+   const IROp ops[4]
+      = { Iop_INVALID, Iop_INVALID, Iop_Max32Fx4, Iop_Max64Fx2 };
+   vassert(size < 4);
+   return ops[size];
+}
+
+static IROp mkVecMINF ( UInt size ) {
+   const IROp ops[4]
+      = { Iop_INVALID, Iop_INVALID, Iop_Min32Fx4, Iop_Min64Fx2 };
+   vassert(size < 4);
+   return ops[size];
+}
 
 /* Generate IR to create 'arg rotated right by imm', for sane values
    of 'ty' and 'imm'. */
@@ -8039,6 +8032,55 @@ void updateQCFLAGwithDifference ( IRTemp qres, IRTemp nres )
 }
 
 
+/* Generate IR to rearrange two vector values in a way which is useful
+   for doing S/D add-pair etc operations.  There are 3 cases:
+
+   2d:  [m1 m0] [n1 n0]  -->  [m1 n1] [m0 n0]
+
+   4s:  [m3 m2 m1 m0] [n3 n2 n1 n0]  -->  [m3 m1 n3 n1] [m2 m0 n2 n0]
+
+   2s:  [m2 m2 m1 m0] [n3 n2 n1 n0]  -->  [0 0 m1 n1] [0 0 m0 n0]
+
+   The cases are distinguished as follows:
+   isD == True,  bitQ == 1  =>  2d
+   isD == False, bitQ == 1  =>  4s
+   isD == False, bitQ == 0  =>  2s
+*/
+static
+void math_REARRANGE_FOR_FLOATING_PAIRWISE (
+        /*OUT*/IRTemp* rearrL, /*OUT*/IRTemp* rearrR,
+        IRTemp vecM, IRTemp vecN, Bool isD, UInt bitQ
+     )
+{
+   vassert(rearrL && *rearrL == IRTemp_INVALID);
+   vassert(rearrR && *rearrR == IRTemp_INVALID);
+   *rearrL = newTempV128();
+   *rearrR = newTempV128();
+   if (isD) {
+      // 2d case
+      vassert(bitQ == 1);
+      assign(*rearrL, binop(Iop_InterleaveHI64x2, mkexpr(vecM), mkexpr(vecN)));
+      assign(*rearrR, binop(Iop_InterleaveLO64x2, mkexpr(vecM), mkexpr(vecN)));
+   }
+   else if (!isD && bitQ == 1) {
+      // 4s case
+      assign(*rearrL, binop(Iop_CatOddLanes32x4,  mkexpr(vecM), mkexpr(vecN)));
+      assign(*rearrR, binop(Iop_CatEvenLanes32x4, mkexpr(vecM), mkexpr(vecN)));
+   } else {
+      // 2s case
+      vassert(!isD && bitQ == 0);
+      IRTemp m1n1m0n0 = newTempV128();
+      IRTemp m0n0m1n1 = newTempV128();
+      assign(m1n1m0n0, binop(Iop_InterleaveLO32x4,
+                             mkexpr(vecM), mkexpr(vecN)));
+      assign(m0n0m1n1, triop(Iop_SliceV128,
+                             mkexpr(m1n1m0n0), mkexpr(m1n1m0n0), mkU8(8)));
+      assign(*rearrL, unop(Iop_ZeroHI64ofV128, mkexpr(m1n1m0n0)));
+      assign(*rearrR, unop(Iop_ZeroHI64ofV128, mkexpr(m0n0m1n1)));
+   }
+}
+
+
 /*------------------------------------------------------------*/
 /*--- SIMD and FP instructions                             ---*/
 /*------------------------------------------------------------*/
@@ -8928,6 +8970,26 @@ Bool dis_AdvSIMD_scalar_pairwise(/*MB_OUT*/DisResult* dres, UInt insn)
       putQReg128(dd, unop(Iop_ZeroHI64ofV128,
                           binop(Iop_Add64x2, mkexpr(xy), mkexpr(xx))));
       DIP("addp d%u, %s.2d\n", dd, nameQReg128(nn));
+      return True;
+   }
+
+   if (bitU == 1 && sz <= X01 && opcode == BITS5(0,1,1,0,1)) {
+      /* -------- 1,00,01101 ADDP s_2s -------- */
+      /* -------- 1,01,01101 ADDP d_2d -------- */
+      Bool   isD   = sz == X01;
+      IROp   opZHI = mkVecZEROHIxxOFV128(isD ? 3 : 2);
+      IROp   opADD = mkVecADDF(isD ? 3 : 2);
+      IRTemp src   = newTempV128();
+      IRTemp argL  = newTempV128();
+      IRTemp argR  = newTempV128();
+      assign(src, getQReg128(nn));
+      assign(argL, unop(opZHI, mkexpr(src)));
+      assign(argR, unop(opZHI, triop(Iop_SliceV128, mkexpr(src), mkexpr(src), 
+                                                    mkU8(isD ? 8 : 4))));
+      putQReg128(dd, unop(opZHI,
+                          triop(opADD, mkexpr(mk_get_IR_rounding_mode()),
+                                              mkexpr(argL), mkexpr(argR))));
+      DIP(isD ? "faddp d%u, v%u.2d\n" : "faddp s%u, v%u.2s\n", dd, nn);
       return True;
    }
 
@@ -11000,6 +11062,30 @@ Bool dis_AdvSIMD_three_same(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
+   if (bitU == 1 && size <= X01 && opcode == BITS5(1,1,0,1,0)) {
+      /* -------- 1,0x,11010 FADDP 2d_2d_2d, 4s_4s_4s, 2s_2s_2s -------- */
+      Bool isD = size == X01;
+      if (bitQ == 0 && isD) return False; // implied 1d case
+      IRTemp srcN = newTempV128();
+      IRTemp srcM = newTempV128();
+      IRTemp preL = IRTemp_INVALID;
+      IRTemp preR = IRTemp_INVALID;
+      assign(srcN, getQReg128(nn));
+      assign(srcM, getQReg128(mm));
+      math_REARRANGE_FOR_FLOATING_PAIRWISE(&preL, &preR,
+                                           srcM, srcN, isD, bitQ);
+      putQReg128(
+         dd, math_MAYBE_ZERO_HI64_fromE(
+                bitQ,
+                triop(mkVecADDF(isD ? 3 : 2),
+                      mkexpr(mk_get_IR_rounding_mode()),
+                      mkexpr(preL), mkexpr(preR))));
+      const HChar* arr = bitQ == 0 ? "2s" : (isD ? "2d" : "4s");
+      DIP("%s %s.%s, %s.%s, %s.%s\n", "faddp",
+          nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(mm), arr);
+      return True;
+   }
+
    if (bitU == 1 && size <= X01 && opcode == BITS5(1,1,1,1,1)) {
       /* -------- 1,0x,11111 FDIV 2d_2d_2d, 4s_4s_4s, 2s_2s_2s -------- */
       Bool isD = (size & 1) == 1;
@@ -12047,6 +12133,7 @@ Bool dis_AdvSIMD_fp_data_proc_2_source(/*MB_OUT*/DisResult* dres, UInt insn)
    /* 31  28    23 21 20 15     11 9 4
       000 11110 ty 1  m  opcode 10 n d
       The first 3 bits are really "M 0 S", but M and S are always zero.
+      Decode fields: ty, opcode
    */
 #  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
    if (INSN(31,24) != BITS8(0,0,0,1,1,1,1,0)
@@ -12059,27 +12146,38 @@ Bool dis_AdvSIMD_fp_data_proc_2_source(/*MB_OUT*/DisResult* dres, UInt insn)
    UInt nn     = INSN(9,5);
    UInt dd     = INSN(4,0);
 
-   if (ty <= X01 && opcode <= BITS4(0,0,1,1)) {
+   if (ty <= X01 && opcode <= BITS4(0,1,1,1)) {
       /* ------- 0x,0000: FMUL d_d, s_s ------- */
       /* ------- 0x,0001: FDIV d_d, s_s ------- */
       /* ------- 0x,0010: FADD d_d, s_s ------- */
       /* ------- 0x,0011: FSUB d_d, s_s ------- */
+      /* ------- 0x,0100: FMAX d_d, s_s ------- */
+      /* ------- 0x,0101: FMIN d_d, s_s ------- */
+      /* ------- 0x,0110: FMAXNM d_d, s_s ------- (FIXME KLUDGED) */
+      /* ------- 0x,0111: FMINNM d_d, s_s ------- (FIXME KLUDGED) */
       IRType ity = ty == X00 ? Ity_F32 : Ity_F64;
       IROp   iop = Iop_INVALID;
       const HChar* nm = "???";
       switch (opcode) {
-         case BITS4(0,0,0,0): nm = "fmul";  iop = mkMULF(ity); break;
-         case BITS4(0,0,0,1): nm = "fdiv";  iop = mkDIVF(ity); break;
-         case BITS4(0,0,1,0): nm = "fadd";  iop = mkADDF(ity); break;
-         case BITS4(0,0,1,1): nm = "fsub";  iop = mkSUBF(ity); break;
+         case BITS4(0,0,0,0): nm = "fmul"; iop = mkMULF(ity); break;
+         case BITS4(0,0,0,1): nm = "fdiv"; iop = mkDIVF(ity); break;
+         case BITS4(0,0,1,0): nm = "fadd"; iop = mkADDF(ity); break;
+         case BITS4(0,0,1,1): nm = "fsub"; iop = mkSUBF(ity); break;
+         case BITS4(0,1,0,0): nm = "fmax"; iop = mkVecMAXF(ty+2); break;
+         case BITS4(0,1,0,1): nm = "fmin"; iop = mkVecMINF(ty+2); break;
+         case BITS4(0,1,1,0): nm = "fmaxnm"; iop = mkVecMAXF(ty+2); break; //!!
+         case BITS4(0,1,1,1): nm = "fminnm"; iop = mkVecMINF(ty+2); break; //!!
          default: vassert(0);
       }
-      IRExpr* resE = triop(iop, mkexpr(mk_get_IR_rounding_mode()),
-                           getQRegLO(nn, ity), getQRegLO(mm, ity));
-      IRTemp  res  = newTemp(ity);
-      assign(res, resE);
-      putQReg128(dd, mkV128(0));
-      putQRegLO(dd, mkexpr(res));
+      if (opcode <= BITS4(0,0,1,1)) {
+         // This is really not good code.  TODO: avoid width-changing
+         putQReg128(dd, mkV128(0));
+         putQRegLO(dd, triop(iop, mkexpr(mk_get_IR_rounding_mode()),
+                                  getQRegLO(nn, ity), getQRegLO(mm, ity)));
+      } else {
+         putQReg128(dd, unop(mkVecZEROHIxxOFV128(ty+2),
+                             binop(iop, getQReg128(nn), getQReg128(mm))));
+      }
       DIP("%s %s, %s, %s\n",
           nm, nameQRegLO(dd, ity), nameQRegLO(nn, ity), nameQRegLO(mm, ity));
       return True;
@@ -12330,6 +12428,7 @@ Bool dis_AdvSIMD_fp_to_from_int_conv(/*MB_OUT*/DisResult* dres, UInt insn)
           || (iop == Iop_F64toI32S && irrm == Irrm_ZERO)   /* FCVTZS Wd,Dn */
           || (iop == Iop_F64toI32S && irrm == Irrm_NegINF) /* FCVTMS Wd,Dn */
           || (iop == Iop_F64toI32S && irrm == Irrm_PosINF) /* FCVTPS Wd,Dn */
+          || (iop == Iop_F64toI32S && irrm == Irrm_NEAREST)/* FCVT{A,N}S W,D */
           /* F64toI32U */
           || (iop == Iop_F64toI32U && irrm == Irrm_ZERO)   /* FCVTZU Wd,Dn */
           || (iop == Iop_F64toI32U && irrm == Irrm_NegINF) /* FCVTMU Wd,Dn */
@@ -12338,7 +12437,7 @@ Bool dis_AdvSIMD_fp_to_from_int_conv(/*MB_OUT*/DisResult* dres, UInt insn)
           || (iop == Iop_F64toI64S && irrm == Irrm_ZERO)   /* FCVTZS Xd,Dn */
           || (iop == Iop_F64toI64S && irrm == Irrm_NegINF) /* FCVTMS Xd,Dn */
           || (iop == Iop_F64toI64S && irrm == Irrm_PosINF) /* FCVTPS Xd,Dn */
-          || (iop == Iop_F64toI64S && irrm == Irrm_NEAREST) /* FCVT{A,N}S Xd,Dn */
+          || (iop == Iop_F64toI64S && irrm == Irrm_NEAREST)/* FCVT{A,N}S X,D */
           /* F64toI64U */
           || (iop == Iop_F64toI64U && irrm == Irrm_ZERO)   /* FCVTZU Xd,Dn */
           || (iop == Iop_F64toI64U && irrm == Irrm_NegINF) /* FCVTMU Xd,Dn */

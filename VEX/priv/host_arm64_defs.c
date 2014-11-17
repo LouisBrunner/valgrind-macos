@@ -589,6 +589,10 @@ static void showARM64VecBinOp(/*OUT*/const HChar** nm,
       case ARM64vecb_FSUB32x4:     *nm = "fsub  ";    *ar = "4s";   return;
       case ARM64vecb_FMUL32x4:     *nm = "fmul  ";    *ar = "4s";   return;
       case ARM64vecb_FDIV32x4:     *nm = "fdiv  ";    *ar = "4s";   return;
+      case ARM64vecb_FMAX64x2:     *nm = "fmax  ";    *ar = "2d";   return;
+      case ARM64vecb_FMAX32x4:     *nm = "fmax  ";    *ar = "4s";   return;
+      case ARM64vecb_FMIN64x2:     *nm = "fmin  ";    *ar = "2d";   return;
+      case ARM64vecb_FMIN32x4:     *nm = "fmin  ";    *ar = "4s";   return;
       case ARM64vecb_UMAX32x4:     *nm = "umax  ";    *ar = "4s";   return;
       case ARM64vecb_UMAX16x8:     *nm = "umax  ";    *ar = "8h";   return;
       case ARM64vecb_UMAX8x16:     *nm = "umax  ";    *ar = "16b";  return;
@@ -4054,6 +4058,11 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
             011 01110 01 1 m  111111 n d   FDIV Vd.2d, Vn.2d, Vm.2d
             011 01110 00 1 m  111111 n d   FDIV Vd.4s, Vn.4s, Vm.4s
 
+            010 01110 01 1 m  111101 n d   FMAX Vd.2d, Vn.2d, Vm.2d
+            010 01110 00 1 m  111101 n d   FMAX Vd.4s, Vn.4s, Vm.4s
+            010 01110 11 1 m  111101 n d   FMIN Vd.2d, Vn.2d, Vm.2d
+            010 01110 10 1 m  111101 n d   FMIN Vd.4s, Vn.4s, Vm.4s
+
             011 01110 10 1 m  011001 n d   UMAX Vd.4s,  Vn.4s,  Vm.4s
             011 01110 01 1 m  011001 n d   UMAX Vd.8h,  Vn.8h,  Vm.8h
             011 01110 00 1 m  011001 n d   UMAX Vd.16b, Vn.16b, Vm.16b
@@ -4228,6 +4237,19 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
                break;
             case ARM64vecb_FDIV32x4:
                *p++ = X_3_8_5_6_5_5(X011, X01110001, vM, X111111, vN, vD);
+               break;
+
+            case ARM64vecb_FMAX64x2:
+               *p++ = X_3_8_5_6_5_5(X010, X01110011, vM, X111101, vN, vD);
+               break;
+            case ARM64vecb_FMAX32x4:
+               *p++ = X_3_8_5_6_5_5(X010, X01110001, vM, X111101, vN, vD);
+               break;
+            case ARM64vecb_FMIN64x2:
+               *p++ = X_3_8_5_6_5_5(X010, X01110111, vM, X111101, vN, vD);
+               break;
+            case ARM64vecb_FMIN32x4:
+               *p++ = X_3_8_5_6_5_5(X010, X01110101, vM, X111101, vN, vD);
                break;
 
             case ARM64vecb_UMAX32x4:

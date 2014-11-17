@@ -2405,6 +2405,8 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_Rsh32Sx4: case Iop_Rsh64Sx2:
          case Iop_Rsh8Ux16: case Iop_Rsh16Ux8:
          case Iop_Rsh32Ux4: case Iop_Rsh64Ux2:
+         case Iop_Max64Fx2: case Iop_Max32Fx4:
+         case Iop_Min64Fx2: case Iop_Min32Fx4:
          {
             HReg res  = newVRegV(env);
             HReg argL = iselV128Expr(env, e->Iex.Binop.arg1);
@@ -2522,6 +2524,10 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
                case Iop_Rsh16Ux8:       op = ARM64vecb_URSHL16x8; break;
                case Iop_Rsh32Ux4:       op = ARM64vecb_URSHL32x4; break;
                case Iop_Rsh64Ux2:       op = ARM64vecb_URSHL64x2; break;
+               case Iop_Max64Fx2:       op = ARM64vecb_FMAX64x2; break;
+               case Iop_Max32Fx4:       op = ARM64vecb_FMAX32x4; break;
+               case Iop_Min64Fx2:       op = ARM64vecb_FMIN64x2; break;
+               case Iop_Min32Fx4:       op = ARM64vecb_FMIN32x4; break;
                default: vassert(0);
             }
             if (sw) {

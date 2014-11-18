@@ -72,6 +72,7 @@ EXTRA_DIST = \
 	brk2.stderr.exp brk2.vgtest \
 	buflen_check.stderr.exp buflen_check.vgtest \
 		buflen_check.stderr.exp-kfail \
+	bug155125.stderr.exp bug155125.vgtest \
 	bug287260.stderr.exp bug287260.vgtest \
 	calloc-overflow.stderr.exp calloc-overflow.vgtest\
 	client-msg.stderr.exp client-msg.vgtest \
@@ -291,6 +292,7 @@ check_PROGRAMS = \
 	big_blocks_freed_list \
 	brk2 \
 	buflen_check \
+	bug155125 \
 	bug287260 \
 	calloc-overflow \
 	client-msg \

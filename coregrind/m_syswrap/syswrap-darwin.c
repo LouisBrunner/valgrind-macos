@@ -3870,12 +3870,21 @@ PRE(getdirentries64)
    PRINT("getdirentries64(%ld, %#lx, %lu, %#lx)", ARG1, ARG2, ARG3, ARG4);
    PRE_REG_READ4(vki_ssize_t, "getdirentries", 
                  int,fd, char *,buf, vki_size_t,nbytes, vki_off_t *,basep);
-   PRE_MEM_WRITE("getdirentries(position)", ARG4, sizeof(vki_off_t));
-   PRE_MEM_WRITE("getdirentries(buf)", ARG2, ARG3);
+   /* JRS 18-Nov-2014: it appears that sometimes |basep| doesn't point
+      to valid memory and the kernel doesn't modify it.  I can't
+      determine the conditions under which that happens.  But it
+      causes Memcheck to complain, confusingly.  So disable this check
+      for the time being.
+
+      PRE_MEM_WRITE("getdirentries64(position)", ARG4, sizeof(vki_off_t));
+   */
+   PRE_MEM_WRITE("getdirentries64(buf)", ARG2, ARG3);
 }
 POST(getdirentries64) 
 {
-   POST_MEM_WRITE(ARG4, sizeof(vki_off_t));
+   /* Disabled; see coments in the PRE wrapper.
+      POST_MEM_WRITE(ARG4, sizeof(vki_off_t));
+   */
    // GrP fixme be specific about d_name? (fixme copied from 32 bit version)
    POST_MEM_WRITE(ARG2, RES);
 }

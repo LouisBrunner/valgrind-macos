@@ -806,6 +806,7 @@ static inline void my_exit ( int x )
   MEMCHR(libsystemZuplatformZddylib, _platform_memchr)
 # endif
 # if DARWIN_VERS == DARWIN_10_10
+  MEMCHR(VG_Z_DYLD,                   memchr)
   /* _platform_memchr$VARIANT$Generic */
   MEMCHR(libsystemZuplatformZddylib, _platform_memchr$VARIANT$Generic)
 # endif

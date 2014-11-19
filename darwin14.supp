@@ -150,13 +150,13 @@
    obj:*Foundation.framework*Foundation*
 }
 
-##{
-##   OSX1010:CoreFoundation-4
-##   Memcheck:Cond
-##   obj:*CoreFoundation.framework*CoreFoundation*
-##   obj:*CoreFoundation.framework*CoreFoundation*
-##   obj:*CoreServicesInternal.framework*CoreServicesInternal*
-##}
+{
+   OSX1010:CoreFoundation-4
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*SystemConfiguration.framework*SystemConfiguration*
+}
 
 {
    OSX1010:CoreFoundation-5
@@ -164,6 +164,69 @@
    obj:*CoreFoundation.framework*CoreFoundation*
    obj:*CoreFoundation.framework*CoreFoundation*
    obj:*HIServices.framework*HIServices*
+}
+
+{
+   OSX1010:CoreFoundation-6
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*SystemConfiguration.framework*SystemConfiguration*
+   obj:*SystemConfiguration.framework*SystemConfiguration*
+}
+
+{
+   OSX1010:CoreFoundation-7
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*SystemConfiguration.framework*SystemConfiguration*
+   obj:*CoreFoundation.framework*CoreFoundation*
+}
+
+{
+   OSX1010:CoreFoundation-8
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*IOKit.framework*IOKit*
+}
+
+{
+   OSX1010:CoreFoundation-9
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*Foundation.framework*Foundation*
+   obj:*AppKit.framework*AppKit*
+}
+
+{
+   OSX1010:CoreFoundation-10
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*HIToolbox.framework*HIToolbox*
+   obj:*HIToolbox.framework*HIToolbox*
+}
+
+{
+   OSX1010:CoreFoundation-11
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*AE.framework*AE*
+   obj:*AE.framework*AE*
+}
+
+{
+   OSX1010:CoreFoundation-12
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*HIToolbox.framework*HIToolbox*
+}
+
+{
+   OSX1010:CoreFoundation-13
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*AE.framework*AE*
 }
 
 {
@@ -230,14 +293,14 @@
    obj:*Foundation.framework*Foundation*
 }
 
-#{
-#   OSX1010:ColorSync-1
-#   Memcheck:Cond
-#   obj:*ColorSync.framework*ColorSync*
-#   obj:*ColorSync.framework*ColorSync*
-#   obj:*ColorSync.framework*ColorSync*
-#}
-#
+{
+   OSX1010:ColorSync-1
+   Memcheck:Cond
+   obj:*ColorSync.framework*ColorSync*
+   obj:*ColorSync.framework*ColorSync*
+   obj:*ColorSync.framework*ColorSync*
+}
+
 #{
 #   OSX1010:ColorSync-2
 #   Memcheck:Value8
@@ -251,7 +314,6 @@
    Memcheck:Cond
    obj:*CoreGraphics.framework*CoreGraphics*
    obj:*CoreGraphics.framework*CoreGraphics*
-   obj:*CoreGraphics.framework*CoreGraphics*
 }
 
 #{
@@ -261,22 +323,22 @@
 #   obj:*CoreGraphics.framework*CoreGraphics*
 #   obj:*CoreGraphics.framework*CoreGraphics*
 #}
-#
-#{
-#   OSX1010:CoreGraphics-3
-#   Memcheck:Cond
-#   obj:*CoreGraphics.framework*CoreGraphics*
-#   obj:*CoreGraphics.framework*libRIP*
-#   obj:*CoreGraphics.framework*libRIP*
-#}
 
 {
-   OSX1010:CoreGraphics-4
+   OSX1010:CoreGraphics-3
    Memcheck:Cond
    obj:*CoreGraphics.framework*CoreGraphics*
-   obj:*CoreGraphics.framework*CoreGraphics*
+   obj:*CoreGraphics.framework*libRIP*
    obj:*CoreGraphics.framework*libRIP*
 }
+
+#{
+#   OSX1010:CoreGraphics-4
+#   Memcheck:Cond
+#   obj:*CoreGraphics.framework*CoreGraphics*
+#   obj:*CoreGraphics.framework*CoreGraphics*
+#   obj:*CoreGraphics.framework*libRIP*
+#}
 
 {
    OSX1010:CoreGraphics-5
@@ -286,20 +348,12 @@
    obj:*libdispatch.dylib*
 }
 
-{
-   OSX1010:CoreGraphics-6
-   Memcheck:Cond
-   obj:*CoreGraphics.framework*CoreGraphics*
-   obj:*CoreGraphics.framework*CoreGraphics*
-   obj:*Carbon.framework*HIToolbox*
-}
-
 #{
-#   OSX1010:dyld-2
+#   OSX1010:CoreGraphics-6
 #   Memcheck:Cond
-#   obj:/usr/lib/dyld
-#   obj:/usr/lib/dyld
-#   obj:/usr/lib/dyld
+#   obj:*CoreGraphics.framework*CoreGraphics*
+#   obj:*CoreGraphics.framework*CoreGraphics*
+#   obj:*HIToolbox.framework*HIToolbox*
 #}
 
 {
@@ -316,6 +370,14 @@
    obj:*LaunchServices.framework*LaunchServices*
    obj:*AppKit.framework*AppKit*
    obj:*AppKit.framework*AppKit*
+}
+
+{
+   OSX1010:LaunchServices-2
+   Memcheck:Cond
+   obj:*LaunchServices.framework*LaunchServices*
+   obj:*libdispatch.dylib*
+   obj:*libdispatch.dylib*
 }
 
 {
@@ -465,21 +527,34 @@
    Memcheck:Value8
    fun:*CFBasicHash*
    fun:*CF*
-   fun:*CF*
 }
 
 {
-   OSX1010:AppleIntelHD4000GraphicsGLDriver-1
+   OSX1010:AppleIntelHD4000GraphicsGLDriver-1-Addr8
    Memcheck:Addr8
    obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
    obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
    obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
 }
-
 {
-   OSX1010:AppleIntelHD4000GraphicsGLDriver-2
+   OSX1010:AppleIntelHD4000GraphicsGLDriver-1-Addr8
    Memcheck:Addr4
    obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+}
+
+{
+   OSX1010:AppleIntelHD4000GraphicsGLDriver-2-Addr8
+   Memcheck:Addr8
+   fun:*platform_memmove*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+}
+{
+   OSX1010:AppleIntelHD4000GraphicsGLDriver-2-Addr2
+   Memcheck:Addr2
+   fun:*platform_memmove*
    obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
    obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
 }
@@ -488,14 +563,21 @@
    OSX1010:AppleIntelHD4000GraphicsGLDriver-3-Addr8
    Memcheck:Addr8
    fun:*platform_memmove*
-   fun:*glrWriteTextureData*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
    obj:*GLEngine.bundle*GLEngine*
 }
 {
    OSX1010:AppleIntelHD4000GraphicsGLDriver-3-Addr2
    Memcheck:Addr2
    fun:*platform_memmove*
-   fun:*glrWriteTextureData*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*GLEngine.bundle*GLEngine*
+}
+{
+   OSX1010:AppleIntelHD4000GraphicsGLDriver-3-Addr1
+   Memcheck:Addr1
+   fun:*platform_memmove*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
    obj:*GLEngine.bundle*GLEngine*
 }
 
@@ -508,15 +590,15 @@
 }
 
 {
-   OSX1010:AppleIntelHD4000GraphicsGLDriver-5
-   Memcheck:Addr4
+   OSX1010:AppleIntelHD4000GraphicsGLDriver-6-Addr8
+   Memcheck:Addr8
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
    obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
    obj:*GLEngine.bundle*GLEngine*
 }
-
 {
-   OSX1010:AppleIntelHD4000GraphicsGLDriver-6
-   Memcheck:Addr8
+   OSX1010:AppleIntelHD4000GraphicsGLDriver-6-Addr4
+   Memcheck:Addr4
    obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
    obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
    obj:*GLEngine.bundle*GLEngine*
@@ -524,8 +606,40 @@
 
 {
    OSX1010:AppleIntelHD4000GraphicsGLDriver-7
-   Memcheck:Addr8
-   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   Memcheck:Addr4
    obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
    obj:*GLEngine.bundle*GLEngine*
+}
+
+{
+   OSX1010:OSAtomicAdd32
+   Memcheck:Addr4
+   fun:*OSAtomicAdd32*
+   obj:*IOAccelerator.framework*IOAccelerator*
+   obj:*GPUSupport.framework*GPUSupportMercury*
+}
+
+{
+   OSX1010:IOAccelerator-1
+   Memcheck:Addr4
+   obj:*IOAccelerator.framework*IOAccelerator*
+   obj:*GPUSupport.framework*GPUSupportMercury*
+}
+
+{
+   OSX1010:mach_msg_trap-1
+   Memcheck:Param
+   msg->desc.port.name
+   fun:mach_msg_trap
+   obj:*libsystem_kernel.dylib*
+   obj:*SystemConfiguration.framework*SystemConfiguration*
+}
+
+{
+   OSX1010:mach_msg_trap-2
+   Memcheck:Param
+   msg->desc.port.name
+   fun:mach_msg_trap
+   obj:*SystemConfiguration.framework*SystemConfiguration*
+   obj:*SystemConfiguration.framework*SystemConfiguration*
 }

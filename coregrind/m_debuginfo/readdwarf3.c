@@ -385,11 +385,11 @@ static ULong get_Initial_Length ( /*OUT*/Bool* is64,
 typedef
    struct _name_form {
       ULong at_name;  // Dwarf Attribute name
-      ULong at_form;  // Dward Attribute form
+      ULong at_form;  // Dwarf Attribute form
       UInt  skip_szB; // Nr of bytes skippable from here ...
       UInt  next_nf;  // ... to reach this attr/form index in the g_abbv.nf
    } name_form;
-/* skip_szB and n_nf are used to optimise the skipping of uninteresting DIEs.
+/* skip_szB and next_nf are used to optimise the skipping of uninteresting DIEs.
    Each name_form maintains how many (fixed) nr of bytes can be skipped from
    the beginning of this form till the next attr/form to look at.
    The next form to look can be:

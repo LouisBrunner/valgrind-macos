@@ -389,7 +389,7 @@ valgrind_do_client_request_expr(uintptr_t _zzq_default, uintptr_t _zzq_request,
 
 typedef
    struct { 
-      unsigned long long int nraddr; /* where's the code? */
+      unsigned long int nraddr; /* where's the code? */
    }
    OrigFn;
 
@@ -401,14 +401,14 @@ typedef
         _zzq_default, _zzq_request,                               \
         _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5)    \
     __extension__                                                 \
-    ({ volatile unsigned long long int _zzq_args[6];              \
-    volatile unsigned long long int _zzq_result;                  \
-    _zzq_args[0] = (unsigned long long int)(_zzq_request);        \
-    _zzq_args[1] = (unsigned long long int)(_zzq_arg1);           \
-    _zzq_args[2] = (unsigned long long int)(_zzq_arg2);           \
-    _zzq_args[3] = (unsigned long long int)(_zzq_arg3);           \
-    _zzq_args[4] = (unsigned long long int)(_zzq_arg4);           \
-    _zzq_args[5] = (unsigned long long int)(_zzq_arg5);           \
+    ({ volatile unsigned long int _zzq_args[6];                   \
+    volatile unsigned long int _zzq_result;                       \
+    _zzq_args[0] = (unsigned long int)(_zzq_request);             \
+    _zzq_args[1] = (unsigned long int)(_zzq_arg1);                \
+    _zzq_args[2] = (unsigned long int)(_zzq_arg2);                \
+    _zzq_args[3] = (unsigned long int)(_zzq_arg3);                \
+    _zzq_args[4] = (unsigned long int)(_zzq_arg4);                \
+    _zzq_args[5] = (unsigned long int)(_zzq_arg5);                \
     __asm__ volatile(__SPECIAL_INSTRUCTION_PREAMBLE               \
                      /* %RDX = client_request ( %RAX ) */         \
                      "xchgq %%rbx,%%rbx"                          \
@@ -421,7 +421,7 @@ typedef
 
 #define VALGRIND_GET_NR_CONTEXT(_zzq_rlval)                       \
   { volatile OrigFn* _zzq_orig = &(_zzq_rlval);                   \
-    volatile unsigned long long int __addr;                       \
+    volatile unsigned long int __addr;                            \
     __asm__ volatile(__SPECIAL_INSTRUCTION_PREAMBLE               \
                      /* %RAX = guest_NRADDR */                    \
                      "xchgq %%rcx,%%rcx"                          \
@@ -530,8 +530,8 @@ typedef
 
 typedef
    struct { 
-      unsigned long long int nraddr; /* where's the code? */
-      unsigned long long int r2;  /* what tocptr do we need? */
+      unsigned long int nraddr; /* where's the code? */
+      unsigned long int r2;  /* what tocptr do we need? */
    }
    OrigFn;
 
@@ -544,15 +544,15 @@ typedef
         _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5)    \
                                                                   \
   __extension__                                                   \
-  ({         unsigned long long int  _zzq_args[6];                \
-             unsigned long long int  _zzq_result;                 \
-             unsigned long long int* _zzq_ptr;                    \
-    _zzq_args[0] = (unsigned long long int)(_zzq_request);        \
-    _zzq_args[1] = (unsigned long long int)(_zzq_arg1);           \
-    _zzq_args[2] = (unsigned long long int)(_zzq_arg2);           \
-    _zzq_args[3] = (unsigned long long int)(_zzq_arg3);           \
-    _zzq_args[4] = (unsigned long long int)(_zzq_arg4);           \
-    _zzq_args[5] = (unsigned long long int)(_zzq_arg5);           \
+  ({         unsigned long int  _zzq_args[6];                     \
+             unsigned long int  _zzq_result;                      \
+             unsigned long int* _zzq_ptr;                         \
+    _zzq_args[0] = (unsigned long int)(_zzq_request);             \
+    _zzq_args[1] = (unsigned long int)(_zzq_arg1);                \
+    _zzq_args[2] = (unsigned long int)(_zzq_arg2);                \
+    _zzq_args[3] = (unsigned long int)(_zzq_arg3);                \
+    _zzq_args[4] = (unsigned long int)(_zzq_arg4);                \
+    _zzq_args[5] = (unsigned long int)(_zzq_arg5);                \
     _zzq_ptr = _zzq_args;                                         \
     __asm__ volatile("mr 3,%1\n\t" /*default*/                    \
                      "mr 4,%2\n\t" /*ptr*/                        \
@@ -568,7 +568,7 @@ typedef
 
 #define VALGRIND_GET_NR_CONTEXT(_zzq_rlval)                       \
   { volatile OrigFn* _zzq_orig = &(_zzq_rlval);                   \
-    unsigned long long int __addr;                                \
+    unsigned long int __addr;                                     \
     __asm__ volatile(__SPECIAL_INSTRUCTION_PREAMBLE               \
                      /* %R3 = guest_NRADDR */                     \
                      "or 2,2,2\n\t"                               \
@@ -607,8 +607,8 @@ typedef
 
 typedef
    struct {
-      unsigned long long int nraddr; /* where's the code? */
-      unsigned long long int r2;     /* what tocptr do we need? */
+      unsigned long int nraddr; /* where's the code? */
+      unsigned long int r2;     /* what tocptr do we need? */
    }
    OrigFn;
 
@@ -621,15 +621,15 @@ typedef
         _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5)    \
                                                                   \
   __extension__                                                   \
-  ({         unsigned long long int  _zzq_args[6];                \
-             unsigned long long int  _zzq_result;                 \
-             unsigned long long int* _zzq_ptr;                    \
-    _zzq_args[0] = (unsigned long long int)(_zzq_request);        \
-    _zzq_args[1] = (unsigned long long int)(_zzq_arg1);           \
-    _zzq_args[2] = (unsigned long long int)(_zzq_arg2);           \
-    _zzq_args[3] = (unsigned long long int)(_zzq_arg3);           \
-    _zzq_args[4] = (unsigned long long int)(_zzq_arg4);           \
-    _zzq_args[5] = (unsigned long long int)(_zzq_arg5);           \
+  ({         unsigned long int  _zzq_args[6];                     \
+             unsigned long int  _zzq_result;                      \
+             unsigned long int* _zzq_ptr;                         \
+    _zzq_args[0] = (unsigned long int)(_zzq_request);             \
+    _zzq_args[1] = (unsigned long int)(_zzq_arg1);                \
+    _zzq_args[2] = (unsigned long int)(_zzq_arg2);                \
+    _zzq_args[3] = (unsigned long int)(_zzq_arg3);                \
+    _zzq_args[4] = (unsigned long int)(_zzq_arg4);                \
+    _zzq_args[5] = (unsigned long int)(_zzq_arg5);                \
     _zzq_ptr = _zzq_args;                                         \
     __asm__ volatile("mr 3,%1\n\t" /*default*/                    \
                      "mr 4,%2\n\t" /*ptr*/                        \
@@ -645,7 +645,7 @@ typedef
 
 #define VALGRIND_GET_NR_CONTEXT(_zzq_rlval)                       \
   { volatile OrigFn* _zzq_orig = &(_zzq_rlval);                   \
-    unsigned long long int __addr;                                \
+    unsigned long int __addr;                                     \
     __asm__ volatile(__SPECIAL_INSTRUCTION_PREAMBLE               \
                      /* %R3 = guest_NRADDR */                     \
                      "or 2,2,2\n\t"                               \
@@ -754,7 +754,7 @@ typedef
 
 typedef
    struct { 
-      unsigned long long int nraddr; /* where's the code? */
+      unsigned long int nraddr; /* where's the code? */
    }
    OrigFn;
 
@@ -767,14 +767,14 @@ typedef
         _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5)    \
                                                                   \
   __extension__                                                   \
-  ({volatile unsigned long long int  _zzq_args[6];                \
-    volatile unsigned long long int  _zzq_result;                 \
-    _zzq_args[0] = (unsigned long long int)(_zzq_request);        \
-    _zzq_args[1] = (unsigned long long int)(_zzq_arg1);           \
-    _zzq_args[2] = (unsigned long long int)(_zzq_arg2);           \
-    _zzq_args[3] = (unsigned long long int)(_zzq_arg3);           \
-    _zzq_args[4] = (unsigned long long int)(_zzq_arg4);           \
-    _zzq_args[5] = (unsigned long long int)(_zzq_arg5);           \
+  ({volatile unsigned long int  _zzq_args[6];                     \
+    volatile unsigned long int  _zzq_result;                      \
+    _zzq_args[0] = (unsigned long int)(_zzq_request);             \
+    _zzq_args[1] = (unsigned long int)(_zzq_arg1);                \
+    _zzq_args[2] = (unsigned long int)(_zzq_arg2);                \
+    _zzq_args[3] = (unsigned long int)(_zzq_arg3);                \
+    _zzq_args[4] = (unsigned long int)(_zzq_arg4);                \
+    _zzq_args[5] = (unsigned long int)(_zzq_arg5);                \
     __asm__ volatile("mov x3, %1\n\t" /*default*/                 \
                      "mov x4, %2\n\t" /*ptr*/                     \
                      __SPECIAL_INSTRUCTION_PREAMBLE               \
@@ -789,7 +789,7 @@ typedef
 
 #define VALGRIND_GET_NR_CONTEXT(_zzq_rlval)                       \
   { volatile OrigFn* _zzq_orig = &(_zzq_rlval);                   \
-    unsigned long long int __addr;                                \
+    unsigned long int __addr;                                     \
     __asm__ volatile(__SPECIAL_INSTRUCTION_PREAMBLE               \
                      /* X3 = guest_NRADDR */                      \
                      "orr x11, x11, x11\n\t"                      \
@@ -822,7 +822,7 @@ typedef
 
 typedef
   struct {
-     unsigned long long int nraddr; /* where's the code? */
+     unsigned long int nraddr; /* where's the code? */
   }
   OrigFn;
 
@@ -845,14 +845,14 @@ typedef
        _zzq_default, _zzq_request,                               \
        _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5)    \
   __extension__                                                  \
- ({volatile unsigned long long int _zzq_args[6];                 \
-   volatile unsigned long long int _zzq_result;                  \
-   _zzq_args[0] = (unsigned long long int)(_zzq_request);        \
-   _zzq_args[1] = (unsigned long long int)(_zzq_arg1);           \
-   _zzq_args[2] = (unsigned long long int)(_zzq_arg2);           \
-   _zzq_args[3] = (unsigned long long int)(_zzq_arg3);           \
-   _zzq_args[4] = (unsigned long long int)(_zzq_arg4);           \
-   _zzq_args[5] = (unsigned long long int)(_zzq_arg5);           \
+ ({volatile unsigned long int _zzq_args[6];                      \
+   volatile unsigned long int _zzq_result;                       \
+   _zzq_args[0] = (unsigned long int)(_zzq_request);             \
+   _zzq_args[1] = (unsigned long int)(_zzq_arg1);                \
+   _zzq_args[2] = (unsigned long int)(_zzq_arg2);                \
+   _zzq_args[3] = (unsigned long int)(_zzq_arg3);                \
+   _zzq_args[4] = (unsigned long int)(_zzq_arg4);                \
+   _zzq_args[5] = (unsigned long int)(_zzq_arg5);                \
    __asm__ volatile(/* r2 = args */                              \
                     "lgr 2,%1\n\t"                               \
                     /* r3 = default */                           \
@@ -870,7 +870,7 @@ typedef
 
 #define VALGRIND_GET_NR_CONTEXT(_zzq_rlval)                      \
  { volatile OrigFn* _zzq_orig = &(_zzq_rlval);                   \
-   volatile unsigned long long int __addr;                       \
+   volatile unsigned long int __addr;                            \
    __asm__ volatile(__SPECIAL_INSTRUCTION_PREAMBLE               \
                     __GET_NR_CONTEXT_CODE                        \
                     "lgr %0, 3\n\t"                              \
@@ -972,7 +972,7 @@ typedef
 
 typedef
    struct {
-      unsigned long long nraddr; /* where's the code? */
+      unsigned long nraddr; /* where's the code? */
    }
    OrigFn;
 
@@ -988,14 +988,14 @@ typedef
        _zzq_default, _zzq_request,                                  \
        _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5)       \
   __extension__                                                     \
-  ({ volatile unsigned long long int _zzq_args[6];                  \
-    volatile unsigned long long int _zzq_result;                    \
-    _zzq_args[0] = (unsigned long long int)(_zzq_request);          \
-    _zzq_args[1] = (unsigned long long int)(_zzq_arg1);             \
-    _zzq_args[2] = (unsigned long long int)(_zzq_arg2);             \
-    _zzq_args[3] = (unsigned long long int)(_zzq_arg3);             \
-    _zzq_args[4] = (unsigned long long int)(_zzq_arg4);             \
-    _zzq_args[5] = (unsigned long long int)(_zzq_arg5);             \
+  ({ volatile unsigned long int _zzq_args[6];                       \
+    volatile unsigned long int _zzq_result;                         \
+    _zzq_args[0] = (unsigned long int)(_zzq_request);               \
+    _zzq_args[1] = (unsigned long int)(_zzq_arg1);                  \
+    _zzq_args[2] = (unsigned long int)(_zzq_arg2);                  \
+    _zzq_args[3] = (unsigned long int)(_zzq_arg3);                  \
+    _zzq_args[4] = (unsigned long int)(_zzq_arg4);                  \
+    _zzq_args[5] = (unsigned long int)(_zzq_arg5);                  \
         __asm__ volatile("move $11, %1\n\t" /*default*/             \
                          "move $12, %2\n\t" /*ptr*/                 \
                          __SPECIAL_INSTRUCTION_PREAMBLE             \
@@ -1010,7 +1010,7 @@ typedef
 
 #define VALGRIND_GET_NR_CONTEXT(_zzq_rlval)                         \
   { volatile OrigFn* _zzq_orig = &(_zzq_rlval);                     \
-    volatile unsigned long long int __addr;                         \
+    volatile unsigned long int __addr;                              \
     __asm__ volatile(__SPECIAL_INSTRUCTION_PREAMBLE                 \
                      /* $11 = guest_NRADDR */                       \
                      "or $14, $14, $14\n\t"                         \

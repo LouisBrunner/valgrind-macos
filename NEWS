@@ -33,6 +33,7 @@ To see details of a given bug, visit
 where XXXXXX is the bug number as listed below.
 
 155125  avoid cutting away file:lineno after long function name
+211926  Avoid compilation warnings in valgrind.h with -pedantic
 333051  mmap of huge pages fails due to incorrect alignment
 335440  arm64: ld1 (single structure) is not implemented
 335713  arm64: unhanded instruction: prfm (immediate)

@@ -4,12 +4,14 @@ include $(top_srcdir)/Makefile.tool-tests.am
 dist_noinst_SCRIPTS = filter_stderr
 
 EXTRA_DIST = \
+        cvtf_imm.stdout.exp cvtf_imm.stderr.exp cvtf_imm.vgtest \
 	fp_and_simd.stdout.exp fp_and_simd.stderr.exp fp_and_simd.vgtest \
 	integer.stdout.exp integer.stderr.exp integer.vgtest \
 	memory.stdout.exp memory.stderr.exp memory.vgtest
 
 check_PROGRAMS = \
 	allexec \
+        cvtf_imm \
 	fp_and_simd \
 	integer \
 	memory

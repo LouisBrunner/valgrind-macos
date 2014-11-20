@@ -131,8 +131,7 @@ install:
 
 scratch: clean all
 
-vex: libvex.a test_main.o
-	$(CC) $(CCFLAGS) -o vex test_main.o libvex.a
+vex: libvex.a
 
 libvex.a: $(LIB_OBJS)
 	rm -f libvex.a
@@ -206,15 +205,14 @@ TAG-arm64-linux:
 
 
 clean:
-	rm -f $(LIB_OBJS) *.a vex test_main.o TAG-* \
+	rm -f $(LIB_OBJS) *.a TAG-* \
 		pub/libvex_guest_offsets.h \
 		auxprogs/genoffsets.s
 
 minidist:
 	rm -f vex--minidist-2005MMDD.tar
 	tar cf vex--minidist-2005MMDD.tar $(PUB_HEADERS) $(PRIV_HEADERS) \
-		test_main.c test_main.h				\
-		Makefile					\
+		Makefile-gcc					\
 		`echo $(LIB_OBJS) | sed "s/\.o/\.c/g"`
 	@echo 
 	@echo minidist done, size follows:
@@ -240,10 +238,6 @@ pub/libvex_guest_offsets.h:
 
 ALL_HEADERS  = $(PUB_HEADERS) $(PRIV_HEADERS)
 ALL_INCLUDES = $(PUB_INCLUDES) $(PRIV_INCLUDES)
-
-test_main.o: $(PUB_HEADERS) test_main.c test_main.h
-	$(CC) $(CCFLAGS) $(PUB_INCLUDES) -o test_main.o \
-					 -c test_main.c
 
 priv/ir_defs.o: $(ALL_HEADERS) priv/ir_defs.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/ir_defs.o \

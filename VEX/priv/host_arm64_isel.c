@@ -2965,6 +2965,16 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
          addInstr(env, ARM64Instr_VDfromX(dst, src));
          return dst;
       }
+      if (con->tag == Ico_F64) {
+         HReg src = newVRegI(env);
+         HReg dst = newVRegD(env);
+         union { Double d64; ULong u64; } u;
+         vassert(sizeof(u) == 8);
+         u.d64 = con->Ico.F64;
+         addInstr(env, ARM64Instr_Imm64(src, u.u64));
+         addInstr(env, ARM64Instr_VDfromX(dst, src));
+         return dst;
+      }
    }
 
    if (e->tag == Iex_Load && e->Iex.Load.end == Iend_LE) {
@@ -3131,6 +3141,16 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
          HReg src = newVRegI(env);
          HReg dst = newVRegD(env);
          addInstr(env, ARM64Instr_Imm64(src, 0));
+         addInstr(env, ARM64Instr_VDfromX(dst, src));
+         return dst;
+      }
+      if (con->tag == Ico_F32) {
+         HReg src = newVRegI(env);
+         HReg dst = newVRegD(env);
+         union { Float f32; UInt u32; } u;
+         vassert(sizeof(u) == 4);
+         u.f32 = con->Ico.F32;
+         addInstr(env, ARM64Instr_Imm64(src, (ULong)u.u32));
          addInstr(env, ARM64Instr_VDfromX(dst, src));
          return dst;
       }

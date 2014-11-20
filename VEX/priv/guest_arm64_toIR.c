@@ -8081,6 +8081,16 @@ void math_REARRANGE_FOR_FLOATING_PAIRWISE (
 }
 
 
+/* Returns 2.0 ^ (-n) for n in 1 .. 64 */
+static Double two_to_the_minus ( Int n )
+{
+   if (n == 1) return 0.5;
+   vassert(n >= 2 && n <= 64);
+   Int half = n / 2;
+   return two_to_the_minus(half) * two_to_the_minus(n - half);
+}
+
+
 /*------------------------------------------------------------*/
 /*--- SIMD and FP instructions                             ---*/
 /*------------------------------------------------------------*/
@@ -12320,9 +12330,78 @@ Bool dis_AdvSIMD_fp_immediate(/*MB_OUT*/DisResult* dres, UInt insn)
 
 
 static
-Bool dis_AdvSIMD_fp_to_fixedp_conv(/*MB_OUT*/DisResult* dres, UInt insn)
+Bool dis_AdvSIMD_fp_to_from_fixedp_conv(/*MB_OUT*/DisResult* dres, UInt insn)
 {
 #  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
+   /* 31 30 29 28    23   21 20    18     15    9 4
+      sf  0  0 11110 type 0  rmode opcode scale n d
+      The first 3 bits are really "sf 0 S", but S is always zero.
+      Decode fields: sf,type,rmode,opcode
+   */
+#  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
+   if (INSN(30,29) != BITS2(0,0)
+       || INSN(28,24) != BITS5(1,1,1,1,0)
+       || INSN(21,21) != 0) {
+      return False;
+   }
+   UInt bitSF = INSN(31,31);
+   UInt ty    = INSN(23,22); // type
+   UInt rm    = INSN(20,19); // rmode
+   UInt op    = INSN(18,16); // opcode
+   UInt sc    = INSN(15,10); // scale
+   UInt nn    = INSN(9,5);
+   UInt dd    = INSN(4,0);
+
+   // op = 010, 011
+   /* -------------- {S,U}CVTF (scalar, fixedpt) -------------- */
+   /* (ix) sf  S 28    ty   rm op  15    9 4
+      0    0 0 0 11110 00 0 00 010 scale n d  SCVTF Sd, Wn, #fbits
+      1    0 0 0 11110 01 0 00 010 scale n d  SCVTF Dd, Wn, #fbits
+      2    1 0 0 11110 00 0 00 010 scale n d  SCVTF Sd, Xn, #fbits
+      3    1 0 0 11110 01 0 00 010 scale n d  SCVTF Dd, Xn, #fbits
+
+      4    0 0 0 11110 00 0 00 011 scale n d  UCVTF Sd, Wn, #fbits
+      5    0 0 0 11110 01 0 00 011 scale n d  UCVTF Dd, Wn, #fbits
+      6    1 0 0 11110 00 0 00 011 scale n d  UCVTF Sd, Xn, #fbits
+      7    1 0 0 11110 01 0 00 011 scale n d  UCVTF Dd, Xn, #fbits
+
+      These are signed/unsigned conversion from integer registers to
+      FP registers, all 4 32/64-bit combinations, rounded per FPCR,
+      scaled per |scale|.
+   */
+   if (ty <= X01 && rm == X00 
+       && (op == BITS3(0,1,0) || op == BITS3(0,1,1))
+       && (bitSF == 1 || ((sc >> 5) & 1) == 1)) {
+      Bool isI64 = bitSF == 1;
+      Bool isF64 = (ty & 1) == 1;
+      Bool isU   = (op & 1) == 1;
+      UInt ix    = (isU ? 4 : 0) | (isI64 ? 2 : 0) | (isF64 ? 1 : 0);
+
+      Int fbits = 64 - sc;
+      vassert(fbits >= 1 && fbits <= (isI64 ? 64 : 32));      
+
+      Double  scale  = two_to_the_minus(fbits);
+      IRExpr* scaleE = isF64 ? IRExpr_Const(IRConst_F64(scale))
+                             : IRExpr_Const(IRConst_F32( (Float)scale ));
+      IROp    opMUL  = isF64 ? Iop_MulF64 : Iop_MulF32;
+
+      const IROp ops[8]
+        = { Iop_I32StoF32, Iop_I32StoF64, Iop_I64StoF32, Iop_I64StoF64,
+            Iop_I32UtoF32, Iop_I32UtoF64, Iop_I64UtoF32, Iop_I64UtoF64 };
+      IRExpr* src = getIRegOrZR(isI64, nn);
+      IRExpr* res = (isF64 && !isI64) 
+                       ? unop(ops[ix], src)
+                       : binop(ops[ix],
+                               mkexpr(mk_get_IR_rounding_mode()), src);
+      putQReg128(dd, mkV128(0));
+      putQRegLO(dd, triop(opMUL, mkU32(Irrm_NEAREST), res, scaleE));
+
+      DIP("%ccvtf %s, %s, #%d\n",
+          isU ? 'u' : 's', nameQRegLO(dd, isF64 ? Ity_F64 : Ity_F32), 
+          nameIRegOrZR(isI64, nn), fbits);
+      return True;
+   }
+
    return False;
 #  undef INSN
 }
@@ -12488,7 +12567,8 @@ Bool dis_AdvSIMD_fp_to_from_int_conv(/*MB_OUT*/DisResult* dres, UInt insn)
       IRExpr* src = getIRegOrZR(isI64, nn);
       IRExpr* res = (isF64 && !isI64) 
                        ? unop(ops[ix], src)
-                       : binop(ops[ix], mkexpr(mk_get_IR_rounding_mode()), src);
+                       : binop(ops[ix],
+                               mkexpr(mk_get_IR_rounding_mode()), src);
       putQReg128(dd, mkV128(0));
       putQRegLO(dd, res);
       DIP("%ccvtf %s, %s\n",
@@ -12631,7 +12711,7 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_fp_immediate(dres, insn);
    if (UNLIKELY(ok)) return True;
-   ok = dis_AdvSIMD_fp_to_fixedp_conv(dres, insn);
+   ok = dis_AdvSIMD_fp_to_from_fixedp_conv(dres, insn);
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_fp_to_from_int_conv(dres, insn);
    if (UNLIKELY(ok)) return True;

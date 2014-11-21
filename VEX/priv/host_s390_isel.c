@@ -486,11 +486,8 @@ doHelperCall(/*OUT*/UInt *stackAdjustAfterCall,
 
    /* The return type can be I{64,32,16,8} or V{128,256}.  In the
       latter two cases, it is expected that |args| will contain the
-      special node IRExpr_VECRET(), in which case this routine
-      generates code to allocate space on the stack for the vector
-      return value.  Since we are not passing any scalars on the
-      stack, it is enough to preallocate the return space before
-      marshalling any arguments, in this case.
+      special node IRExpr_VECRET(). For s390, however, V128 and V256 return
+      values do not occur as we generally do not support vector types.
 
       |args| may also contain IRExpr_BBPTR(), in which case the value
       in the guest state pointer register is passed as the
@@ -534,39 +531,16 @@ doHelperCall(/*OUT*/UInt *stackAdjustAfterCall,
    if (arg_errors)
       vpanic("cannot continue due to errors in argument passing");
 
-   /* If this fails, the IR is ill-formed */
+   /* If these fail, the IR is ill-formed */
    vassert(nBBPTRs == 0 || nBBPTRs == 1);
-
-   /* If we have a VECRET, allocate space on the stack for the return
-      value, and record the stack pointer after that. */
-   HReg r_vecRetAddr = INVALID_HREG;
-   if (nVECRETs == 1) {
-      /* we do not handle vector types yet */
-      vassert(0);
-      HReg sp = make_gpr(S390_REGNO_STACK_POINTER);
-      vassert(retTy == Ity_V128 || retTy == Ity_V256);
-      vassert(retTy != Ity_V256); // we don't handle that yet (if ever)
-      r_vecRetAddr = newVRegI(env);
-      addInstr(env, s390_insn_alu(4, S390_ALU_SUB, sp, s390_opnd_imm(16)));
-      addInstr(env, s390_insn_move(sizeof(ULong), r_vecRetAddr, sp));
-
-   } else {
-      // If either of these fail, the IR is ill-formed
-      vassert(retTy != Ity_V128 && retTy != Ity_V256);
-      vassert(nVECRETs == 0);
-   }
+   vassert(nVECRETs == 0);
 
    argreg = 0;
 
    /* Compute the function arguments into a temporary register each */
    for (i = 0; i < n_args; i++) {
       IRExpr *arg = args[i];
-      if(UNLIKELY(arg->tag == Iex_VECRET)) {
-         /* we do not handle vector types yet */
-         vassert(0);
-         addInstr(env, s390_insn_move(sizeof(ULong), tmpregs[argreg],
-                                      r_vecRetAddr));
-      } else if (UNLIKELY(arg->tag == Iex_BBPTR)) {
+      if (UNLIKELY(arg->tag == Iex_BBPTR)) {
          /* If we need the guest state pointer put it in a temporary arg reg */
          tmpregs[argreg] = newVRegI(env);
          addInstr(env, s390_insn_move(sizeof(ULong), tmpregs[argreg],
@@ -613,21 +587,12 @@ doHelperCall(/*OUT*/UInt *stackAdjustAfterCall,
    case Ity_I64: case Ity_I32: case Ity_I16: case Ity_I8:
       *retloc = mk_RetLoc_simple(RLPri_Int);
       break;
-   case Ity_V128:
-      /* we do not handle vector types yet */
-      vassert(0);
-      *retloc = mk_RetLoc_spRel(RLPri_V128SpRel, 0);
-      *stackAdjustAfterCall = 16;
-      break;
-   case Ity_V256:
-      /* we do not handle vector types yet */
-      vassert(0);
-      *retloc = mk_RetLoc_spRel(RLPri_V256SpRel, 0);
-      *stackAdjustAfterCall = 32;
-      break;
    default:
       /* IR can denote other possible return types, but we don't
          handle those here. */
+      vex_printf("calling %s: return type is ", callee->name);
+      ppIRType(retTy);
+      vex_printf("; an integer type is required\n");
       vassert(0);
    }
 
@@ -3809,34 +3774,6 @@ no_memcpy_put:
          addInstr(env, s390_insn_move(sizeof(ULong), dst, ret));
 
          return;
-      }
-      if (retty == Ity_V128) {
-         /* we do not handle vector types yet */
-         vassert(0);
-         HReg sp = make_gpr(S390_REGNO_STACK_POINTER);
-         s390_amode *am;
-
-         dst = lookupIRTemp(env, d->tmp);
-         doHelperCall(&addToSp, &rloc, env, d->guard,  d->cee, retty,
-                      d->args);
-         vassert(is_sane_RetLoc(rloc));
-         vassert(rloc.pri == RLPri_V128SpRel);
-         vassert(addToSp >= 16);
-
-         /* rloc.spOff should be zero for s390 */
-         /* cannot use fits_unsigned_12bit(rloc.spOff), so doing
-            it explicitly */
-         vassert((rloc.spOff & 0xFFF) == rloc.spOff);
-         am = s390_amode_b12(rloc.spOff, sp);
-         // JRS 2013-Aug-08: is this correct?  Looks like we're loading
-         // only 64 bits from memory, when in fact we should be loading 128.
-         addInstr(env, s390_insn_load(8, dst, am));
-         addInstr(env, s390_insn_alu(4, S390_ALU_ADD, sp,
-                                     s390_opnd_imm(addToSp)));
-         return;
-      } else {/* if (retty == Ity_V256) */
-         /* we do not handle vector types yet */
-         vassert(0);
       }
       break;
    }

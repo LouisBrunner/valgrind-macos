@@ -57,118 +57,122 @@ Commits on the trunk that should be considered for merging to 3.10.1
   (consider): backwards-compatibility-special-sequence-on-ppc32
   https://bugs.kde.org/show_bug.cgi?id=278808#c6
 
+(re 3.10.1)
+[14:54] <tomhughes> probably a good idea to put getrandom in as things like openssl will use that on a recent kernel
+[14:55] <tomhughes> or rather they'll just try and use it and fallback on ENOSYS
+
 ==================
 
 New bugs reported in 3.10.0
 
-338731  ppc testsuite does not build in case compiler does not
-        support -maltivec
-
-249435  Analyzing wine programs with callgrind triggers a crash
-
 211529  valgrind doesn't show proper call stacks for programs compiled
         by newer versions of visual c++
-
-339020  ppc64:  memcheck/tests/ppc64/power_ISA2_05 failing in nightly build
-
-339156  gdbsrv not called for fatal signal
 
 339160  Running signal handler with alternate stack allocated on current 
         stack crashes callgrind
 
-339163  Valgrind 3.10.0 fails to mmap() hugepages because it requests
-        4K alignment
-
-339182  POWER AvSplat ought to load destination vector register
-        with 16/16 bytes stored prior.
-
 339215  Valgrind 3.10.0 contain 2013 in copyrights notice
+        Should fix
 
 339218  AVX2 binaries compiled with the Intel compiler fail to
         run under Valgrind 3.10.0
+        FIXME: should we enable this now?
 
 339288  support Cavium Octeon MIPS specific BBIT*32 instructions
 
 339330  Feature request: Add support for C++11's std::atomic
-
-339336  PPC64 store quad instruction (stq) is not supposed to
-        change the address register contents
+        Helgrind
 
 339405  Adds ability to invoke a script in order to determine a
         log-file name for a child being forked
+        Has plausible patch, should take
 
 339416  unhandled instruction bytes 0xC5 0xF1 0xEF 0xC9
+        (possible AVX on 32-bit, can't tell)
 
 339424  Full support of KVM ioctl
-
-339433  power lxvw4x instruction uses 4 32 byte loads
+        In progress
 
 339499  memcheck does not always detect access beyond mmaped page
 
-339537  two threads hang in pthread_spin_lock and pthread_spin_unlock
-
 339542  Experiences with compiling valgrind with ICC
+        -> 3.11
 
 339563  The DVB demux DMX_STOP ioctl doesn't have a wrapper
-
-339566  valgrind reports memory leaks at glibc's getdelim()
+        -> 3.11
 
 339596  vex amd64->IR: 0x8F 0xE8 0x78 0xCD 0xC1 0x4 0xC5 0xF9
+        XOP/FMA -- should take
 
 339605  vgpreload_helgrind-arm-linux.so is not liked to libc.so 
         and can't find sched_yield, pthread_self and so on
+        recent Android
 
 339636  Use fxsave64 and fxrstor64 mnemonics instead of rex64 prefix
-
-339645  linux_dirent has no place in syswrap-generic.c
-
-339677  L3 cache size is not supported
-
-339706  [PATCH] add TIOCSIG annotation on linux
-
-339721  assertion failed in m_debuginfo/readdwarf3.c when parsing
-        .debug_info for memcheck/tests/dw4
+        Should apply
 
 339744  warning: evaluate_Dwarf3_Expr: unhandled DW_OP_ 0xf2
+        no action so far
 
-339745  Valgrind crash when check Marmalade app
+339745  Valgrind crash when check Marmalade app (OSX 10.?)
+        magic_delta on 32-bit; may be easy to fix
 
 339755  Valgrind on Mac 10.9 should suppress setenv() mem leak
+        Still needed?
 
 339762  missing replacement alias for glibc __strchr_sse42, __strcpy_sse2,
         __strcpy_ssse3
 
 339778  Linux/TileGx platform support to Valgrind
+        Should action
 
 339780  [PATCH] Valgrind on Mac 10.9 should suppress pthread_rwlock_init()
-
-339789] [PATCH] Fix none/tests/execve test on Mac OS X 10.9
-
-339808] [PATCH] Fix none/tests/rlimit64_nofile test on Mac OS X 10.9
+        I suspect this is now redundant following recent work on Yosemite
 
 339820  vex amd64->IR: 0x66 0xF 0x3A 0x63 0xA 0x42 0x74 0x9
         (pcmpistrix  $0x42, (%rdx), %xmm1)
+        Should fix
 
 339861  Remove Elf32_Nhdr definition for Android
 
 339862  v6intThumb.c does not compile when -pie options is specified
+        should possible takes; causes build failures on newer Android
 
-339945  XXX Patch: replace #if !defined (VGPV_*_linux_android) with
+339945  Patch: replace #if !defined (VGPV_*_linux_android) with
         #ifndef AT_FPUCW  (probably WONTFIX)
 
 340021  sgcheck tool does not work properly on ARM
         == 296166
 
-340252  OS X Yosemite
 340320  replacement malloc command line options (--trace-malloc
         and --alignment) are invisible
 
 340392  Incorrect "Conditional jump..." message
-
-340446  disInstr(arm): unhandled instruction: 0xEEA00B88
-        Probably fixed already; queried reporter
+        Optimised code a la Clang
 
 340469  vex amd64->IR: unhandled instruction bytes: 0x66 0xA7
-        Segment overrides, probable WONTFIX
+        Not clear what's going on here
 
-Thu Oct 30 14:47:49 CET 2014
+340571  x86/Linux should no longer claim "almost complete"
+
+340632  arm64: unhandled instruction fcvtas
+
+340722  Resolve "UNKNOWN attrlist flags 0:0x10000000"
+
+340777  Illegal instruction on mips (ar71xx)
+
+340807  disInstr(arm): unhandled instruction: 0xEE989B20
+
+340849  unsupported AVX instruction on 32 bit
+        we should WONTFIX this
+
+340854  valgrind-di-server: allow specification of multiple paths
+        has patch
+
+340905  hg_main.c:291 (lockN_acquire_reader): Assertion 'lk->kind
+        == LK_rdwr' failed.
+        against 3.8.1
+
+341036  dumping core and Assertion 'sizeof(*regs) == sizeof(prs->pr_reg)
+
+Sat Nov 22 11:33:21 CET 2014

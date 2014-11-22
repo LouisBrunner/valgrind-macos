@@ -127,6 +127,7 @@ typedef struct {
 /* Forward declarations */
 static HReg          s390_isel_int_expr(ISelEnv *, IRExpr *);
 static s390_amode   *s390_isel_amode(ISelEnv *, IRExpr *);
+static s390_amode   *s390_isel_amode_b12_b20(ISelEnv *, IRExpr *);
 static s390_cc_t     s390_isel_cc(ISelEnv *, IRExpr *);
 static s390_opnd_RMI s390_isel_int_expr_RMI(ISelEnv *, IRExpr *);
 static void          s390_isel_int128_expr(HReg *, HReg *, ISelEnv *, IRExpr *);
@@ -286,9 +287,11 @@ ulong_fits_signed_8bit(ULong val)
 }
 
 /* EXPR is an expression that is used as an address. Return an s390_amode
-   for it. */
+   for it. If select_b12_b20_only is true the returned amode must be either
+   S390_AMODE_B12 or S390_AMODE_B20. */
 static s390_amode *
-s390_isel_amode_wrk(ISelEnv *env, IRExpr *expr)
+s390_isel_amode_wrk(ISelEnv *env, IRExpr *expr,
+                    Bool select_b12_b20_only __attribute__((unused)))
 {
    if (expr->tag == Iex_Binop && expr->Iex.Binop.op == Iop_Add64) {
       IRExpr *arg1 = expr->Iex.Binop.arg1;
@@ -331,10 +334,42 @@ s390_isel_amode(ISelEnv *env, IRExpr *expr)
    /* Address computation should yield a 64-bit value */
    vassert(typeOfIRExpr(env->type_env, expr) == Ity_I64);
 
-   am = s390_isel_amode_wrk(env, expr);
+   am = s390_isel_amode_wrk(env, expr, /* B12, B20 only */ False);
 
    /* Check post-condition */
    vassert(s390_amode_is_sane(am));
+
+   return am;
+}
+
+
+/* Sometimes we must compile an expression into an amode that is either
+   S390_AMODE_B12 or S390_AMODE_B20. An example is the compare-and-swap
+   opcode. These opcodes do not have a variant hat accepts an addressing
+   mode with an index register.
+   Now, in theory we could, when emitting the compare-and-swap insn,
+   hack a, say, BX12 amode into a B12 amode like so:
+
+      r0 = b       # save away base register
+      b  = b + x   # add index register to base register
+      cas(b,d,...) # emit compare-and-swap using b12 amode
+      b  = r0      # restore base register
+
+   Unfortunately, emitting the compare-and-swap insn already utilises r0
+   under the covers, so the trick above is off limits, sadly. */
+static s390_amode *
+s390_isel_amode_b12_b20(ISelEnv *env, IRExpr *expr)
+{
+   s390_amode *am;
+
+   /* Address computation should yield a 64-bit value */
+   vassert(typeOfIRExpr(env->type_env, expr) == Ity_I64);
+
+   am = s390_isel_amode_wrk(env, expr, /* B12, B20 only */ True);
+
+   /* Check post-condition */
+   vassert(s390_amode_is_sane(am) &&
+           (am->tag == S390_AMODE_B12 || am->tag == S390_AMODE_B20));
 
    return am;
 }
@@ -3781,7 +3816,7 @@ no_memcpy_put:
    case Ist_CAS:
       if (stmt->Ist.CAS.details->oldHi == IRTemp_INVALID) {
          IRCAS *cas = stmt->Ist.CAS.details;
-         s390_amode *op2 = s390_isel_amode(env, cas->addr);
+         s390_amode *op2 = s390_isel_amode_b12_b20(env, cas->addr);
          HReg op3 = s390_isel_int_expr(env, cas->dataLo);  /* new value */
          HReg op1 = s390_isel_int_expr(env, cas->expdLo);  /* expected value */
          HReg old = lookupIRTemp(env, cas->oldLo);
@@ -3794,7 +3829,7 @@ no_memcpy_put:
          return;
       } else {
          IRCAS *cas = stmt->Ist.CAS.details;
-         s390_amode *op2 = s390_isel_amode(env,  cas->addr);
+         s390_amode *op2 = s390_isel_amode_b12_b20(env, cas->addr);
          HReg r8, r9, r10, r11, r1;
          HReg op3_high = s390_isel_int_expr(env, cas->dataHi);  /* new value */
          HReg op3_low  = s390_isel_int_expr(env, cas->dataLo);  /* new value */

@@ -12171,9 +12171,11 @@ Bool dis_AdvSIMD_fp_data_proc_2_source(/*MB_OUT*/DisResult* dres, UInt insn)
       }
       if (opcode <= BITS4(0,0,1,1)) {
          // This is really not good code.  TODO: avoid width-changing
+         IRTemp res = newTemp(ity);
+         assign(res, triop(iop, mkexpr(mk_get_IR_rounding_mode()),
+                                getQRegLO(nn, ity), getQRegLO(mm, ity)));
          putQReg128(dd, mkV128(0));
-         putQRegLO(dd, triop(iop, mkexpr(mk_get_IR_rounding_mode()),
-                                  getQRegLO(nn, ity), getQRegLO(mm, ity)));
+         putQRegLO(dd, mkexpr(res));
       } else {
          putQReg128(dd, unop(mkVecZEROHIxxOFV128(ty+2),
                              binop(iop, getQReg128(nn), getQReg128(mm))));

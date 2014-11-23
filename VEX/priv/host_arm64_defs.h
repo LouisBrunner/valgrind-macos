@@ -491,6 +491,7 @@ typedef
       ARM64in_VBinS,
       ARM64in_VCmpD,
       ARM64in_VCmpS,
+      ARM64in_VFCSel,
       ARM64in_FPCR,
       ARM64in_FPSR,
       /* ARM64in_V*V: vector ops on vector registers */
@@ -743,6 +744,15 @@ typedef
             HReg argL;
             HReg argR;
          } VCmpS;
+         /* 32- or 64-bit FP conditional select */
+         struct {
+            HReg          dst;
+            HReg          argL;
+            HReg          argR;
+            ARM64CondCode cond;
+            Bool          isD;
+         }
+         VFCSel;
          /* Move a 32-bit value to/from the FPCR */
          struct {
             Bool toFPCR;
@@ -889,6 +899,8 @@ extern ARM64Instr* ARM64Instr_VBinD   ( ARM64FpBinOp op, HReg, HReg, HReg );
 extern ARM64Instr* ARM64Instr_VBinS   ( ARM64FpBinOp op, HReg, HReg, HReg );
 extern ARM64Instr* ARM64Instr_VCmpD   ( HReg argL, HReg argR );
 extern ARM64Instr* ARM64Instr_VCmpS   ( HReg argL, HReg argR );
+extern ARM64Instr* ARM64Instr_VFCSel  ( HReg dst, HReg argL, HReg argR,
+                                        ARM64CondCode cond, Bool isD );
 extern ARM64Instr* ARM64Instr_FPCR    ( Bool toFPCR, HReg iReg );
 extern ARM64Instr* ARM64Instr_FPSR    ( Bool toFPSR, HReg iReg );
 extern ARM64Instr* ARM64Instr_VBinV   ( ARM64VecBinOp op, HReg, HReg, HReg );

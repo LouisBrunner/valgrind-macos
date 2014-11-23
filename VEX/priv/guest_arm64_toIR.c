@@ -11844,7 +11844,40 @@ Bool dis_AdvSIMD_fp_conditional_compare(/*MB_OUT*/DisResult* dres, UInt insn)
 static
 Bool dis_AdvSIMD_fp_conditional_select(/*MB_OUT*/DisResult* dres, UInt insn)
 {
+   /* 31        23 21 20 15   11 9 5
+      000 11110 ty 1  m  cond 11 n d
+      The first 3 bits are really "M 0 S", but M and S are always zero.
+      Decode fields: ty  
+   */
 #  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
+   if (INSN(31,24) != BITS8(0,0,0,1,1,1,1,0) || INSN(21,21) != 1
+       || INSN(11,10) != BITS2(1,1)) {
+      return False;
+   }
+   UInt ty   = INSN(23,22);
+   UInt mm   = INSN(20,16);
+   UInt cond = INSN(15,12);
+   UInt nn   = INSN(9,5);
+   UInt dd   = INSN(4,0);
+   if (ty <= X01) {
+      /* -------- 00: FCSEL s_s -------- */
+      /* -------- 00: FCSEL d_d -------- */
+      IRType ity = ty == X01 ? Ity_F64 : Ity_F32;
+      IRTemp srcT = newTemp(ity);
+      IRTemp srcF = newTemp(ity);
+      IRTemp res  = newTemp(ity);
+      assign(srcT, getQRegLO(nn, ity));
+      assign(srcF, getQRegLO(mm, ity));
+      assign(res, IRExpr_ITE(
+                     unop(Iop_64to1, mk_arm64g_calculate_condition(cond)),
+                     mkexpr(srcT), mkexpr(srcF)));
+      putQReg128(dd, mkV128(0x0000));
+      putQRegLO(dd, mkexpr(res));
+      DIP("fcsel %s, %s, %s, %s\n",
+          nameQRegLO(dd, ity), nameQRegLO(nn, ity), nameQRegLO(mm, ity),
+          nameCC(cond));
+      return True;
+   }
    return False;
 #  undef INSN
 }

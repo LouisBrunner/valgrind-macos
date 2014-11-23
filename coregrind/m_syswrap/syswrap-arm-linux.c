@@ -1088,7 +1088,6 @@ static SyscallTableEntry syscall_main_table[] = {
 
    LINX_(__NR_tgkill,            sys_tgkill),         // 270 */Linux
    GENX_(__NR_utimes,            sys_utimes),         // 271
-//   LINX_(__NR_fadvise64_64,      sys_fadvise64_64),   // 272 */(Linux?)
    GENX_(__NR_vserver,           sys_ni_syscall),     // 273
    LINX_(__NR_mbind,             sys_mbind),          // 274 ?/?
 
@@ -1188,6 +1187,8 @@ static SyscallTableEntry syscall_main_table[] = {
    // verbatim from syswrap-x86-linux.c and they certainly do not
    // correspond to what's in include/vki/vki-scnums-arm-linux.h.
    // From here onwards, please ensure the numbers are correct.
+
+   LINX_(__NR_arm_fadvise64_64,  sys_fadvise64_64),     // 270 */(Linux?)
 
    LINX_(__NR_pselect6,          sys_pselect6),         // 335
    LINXY(__NR_ppoll,             sys_ppoll),            // 336

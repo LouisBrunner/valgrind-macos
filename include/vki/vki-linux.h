@@ -2955,6 +2955,10 @@ struct vki_getcpu_cache {
 #define VKI_FIOQSIZE 0x5460     /* Value differs on some platforms */
 #endif
 
+#ifndef VKI_TIOCSIG
+#define VKI_TIOCSIG _VKI_IOW('T', 0x36, int) /* Value differs on some platforms */
+#endif
+
 //----------------------------------------------------------------------
 // From kernel/common/include/linux/ashmem.h
 //----------------------------------------------------------------------

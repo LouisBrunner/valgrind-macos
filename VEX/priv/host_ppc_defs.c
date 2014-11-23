@@ -1426,6 +1426,14 @@ PPCInstr* PPCInstr_AvSel ( HReg ctl, HReg dst, HReg srcL, HReg srcR ) {
    i->Pin.AvSel.srcR = srcR;
    return i;
 }
+PPCInstr* PPCInstr_AvSh ( Bool shLeft, HReg dst, PPCAMode* addr ) {
+   PPCInstr*  i       = LibVEX_Alloc(sizeof(PPCInstr));
+   i->tag             = Pin_AvSh;
+   i->Pin.AvSh.shLeft = shLeft;
+   i->Pin.AvSh.dst    = dst;
+   i->Pin.AvSh.addr   = addr;
+   return i;
+}
 PPCInstr* PPCInstr_AvShlDbl ( UChar shift, HReg dst,
                               HReg srcL, HReg srcR ) {
    PPCInstr* i           = LibVEX_Alloc(sizeof(PPCInstr));
@@ -2008,6 +2016,30 @@ void ppPPCInstr ( PPCInstr* i, Bool mode64 )
       ppHRegPPC(i->Pin.AvSel.ctl);
       return;
 
+   case Pin_AvSh:
+      /* This only generates the following instructions with RA
+       * register number set to 0.
+       */
+      if (i->Pin.AvSh.addr->tag == Pam_IR) {
+         ppLoadImm(hregPPC_GPR30(mode64),
+                   i->Pin.AvSh.addr->Pam.IR.index, mode64);
+         vex_printf(" ; ");
+      }
+
+      if (i->Pin.AvSh.shLeft)
+         vex_printf("lvsl ");
+      else
+         vex_printf("lvsr ");
+
+      ppHRegPPC(i->Pin.AvSh.dst);
+      if (i->Pin.AvSh.addr->tag == Pam_IR)
+         vex_printf("%%r30");
+      else
+         ppHRegPPC(i->Pin.AvSh.addr->Pam.RR.index);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.AvSh.addr->Pam.RR.base);
+      return;
+
    case Pin_AvShlDbl:
       vex_printf("vsldoi ");
       ppHRegPPC(i->Pin.AvShlDbl.dst);
@@ -2517,6 +2549,12 @@ void getRegUsage_PPCInstr ( HRegUsage* u, PPCInstr* i, Bool mode64 )
       addHRegUse(u, HRmRead,  i->Pin.AvSel.srcL);
       addHRegUse(u, HRmRead,  i->Pin.AvSel.srcR);
       return;
+   case Pin_AvSh:
+      addHRegUse(u, HRmWrite, i->Pin.AvSh.dst);
+      if (i->Pin.AvSh.addr->tag == Pam_IR)
+         addHRegUse(u, HRmWrite, hregPPC_GPR30(mode64));
+      addRegUsage_PPCAMode(u, i->Pin.AvSh.addr);
+      return;
    case Pin_AvShlDbl:
       addHRegUse(u, HRmWrite, i->Pin.AvShlDbl.dst);
       addHRegUse(u, HRmRead,  i->Pin.AvShlDbl.srcL);
@@ -2845,6 +2883,10 @@ void mapRegs_PPCInstr ( HRegRemap* m, PPCInstr* i, Bool mode64 )
       mapReg(m, &i->Pin.AvSel.srcL);
       mapReg(m, &i->Pin.AvSel.srcR);
       mapReg(m, &i->Pin.AvSel.ctl);
+      return;
+   case Pin_AvSh:
+      mapReg(m, &i->Pin.AvSh.dst);
+      mapRegs_PPCAMode(m, i->Pin.AvSh.addr);
       return;
    case Pin_AvShlDbl:
       mapReg(m, &i->Pin.AvShlDbl.dst);
@@ -3706,6 +3748,19 @@ static UChar* mkFormVX ( UChar* p, UInt opc1, UInt r1, UInt r2,
    vassert(r3   < 0x20);
    vassert(opc2 < 0x800);
    theInstr = ((opc1<<26) | (r1<<21) | (r2<<16) | (r3<<11) | opc2);
+   return emit32(p, theInstr, endness_host);
+}
+
+static UChar* mkFormVXI ( UChar* p, UInt opc1, UInt r1, UInt r2,
+                          UInt r3, UInt opc2, VexEndness endness_host )
+{
+   UInt theInstr;
+   vassert(opc1 < 0x40);
+   vassert(r1   < 0x20);
+   vassert(r2   < 0x20);
+   vassert(r3   < 0x20);
+   vassert(opc2 < 0x27);
+   theInstr = ((opc1<<26) | (r1<<21) | (r2<<16) | (r3<<11) | opc2<<1);
    return emit32(p, theInstr, endness_host);
 }
 
@@ -5211,6 +5266,30 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       UInt v_srcL = vregNo(i->Pin.AvSel.srcL);
       UInt v_srcR = vregNo(i->Pin.AvSel.srcR);
       p = mkFormVA( p, 4, v_dst, v_srcL, v_srcR, v_ctl, 42, endness_host );
+      goto done;
+   }
+
+   case Pin_AvSh: {  // vsl or vsr
+      UInt v_dst  = vregNo(i->Pin.AvSh.dst);
+      Bool  idxd = toBool(i->Pin.AvSh.addr->tag == Pam_RR);
+      UInt r_idx, r_base;
+
+      r_base = iregNo(i->Pin.AvSh.addr->Pam.RR.base, mode64);
+
+      if (!idxd) {
+         r_idx = 30; // XXX: Using r30 as temp
+         p = mkLoadImm(p, r_idx,
+                       i->Pin.AvSh.addr->Pam.IR.index, mode64, endness_host);
+      } else {
+         r_idx  = iregNo(i->Pin.AvSh.addr->Pam.RR.index, mode64);
+      }
+
+      if (i->Pin.AvSh.shLeft)
+         //vsl VRT,RA,RB
+         p = mkFormVXI( p, 31, v_dst, r_idx, r_base, 6, endness_host );
+      else
+         //vsr VRT,RA,RB
+         p = mkFormVXI( p, 31, v_dst, r_idx, r_base, 38, endness_host );
       goto done;
    }
 

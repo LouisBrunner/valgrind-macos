@@ -522,6 +522,7 @@ typedef
 
       Pin_AvPerm,     /* AV permute (shuffle) */
       Pin_AvSel,      /* AV select */
+      Pin_AvSh,       /* AV shift left or right */
       Pin_AvShlDbl,   /* AV shift-left double by imm */
       Pin_AvSplat,    /* One elem repeated throughout dst */
       Pin_AvLdVSCR,   /* mtvscr */
@@ -855,6 +856,11 @@ typedef
             HReg ctl;
          } AvSel;
          struct {
+            Bool  shLeft;
+            HReg  dst;
+            PPCAMode* addr;
+         } AvSh;
+         struct {
             UChar shift;
             HReg  dst;
             HReg  srcL;
@@ -1077,6 +1083,7 @@ extern PPCInstr* PPCInstr_AvBin32Fx4 ( PPCAvFpOp op, HReg dst, HReg srcL, HReg s
 extern PPCInstr* PPCInstr_AvUn32Fx4  ( PPCAvFpOp op, HReg dst, HReg src );
 extern PPCInstr* PPCInstr_AvPerm     ( HReg dst, HReg srcL, HReg srcR, HReg ctl );
 extern PPCInstr* PPCInstr_AvSel      ( HReg ctl, HReg dst, HReg srcL, HReg srcR );
+extern PPCInstr* PPCInstr_AvSh       ( Bool shLeft, HReg dst, PPCAMode* am_addr );
 extern PPCInstr* PPCInstr_AvShlDbl   ( UChar shift, HReg dst, HReg srcL, HReg srcR );
 extern PPCInstr* PPCInstr_AvSplat    ( UChar sz, HReg dst, PPCVI5s* src );
 extern PPCInstr* PPCInstr_AvCMov     ( PPCCondCode, HReg dst, HReg src );

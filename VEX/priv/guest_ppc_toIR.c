@@ -15319,26 +15319,27 @@ dis_vx_load ( UInt theInstr )
    }
    case 0x30C:
    {
-      IRExpr * t3, *t2, *t1, *t0;
-      UInt ea_off = 0;
-      IRExpr* irx_addr;
+      IRExpr *t0;
 
       DIP("lxvw4x %d,r%u,r%u\n", (UInt)XT, rA_addr, rB_addr);
-      t3 = load( Ity_I32,  mkexpr( EA ) );
-      ea_off += 4;
-      irx_addr = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( EA ),
-                        ty == Ity_I64 ? mkU64( ea_off ) : mkU32( ea_off ) );
-      t2 = load( Ity_I32, irx_addr );
-      ea_off += 4;
-      irx_addr = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( EA ),
-                        ty == Ity_I64 ? mkU64( ea_off ) : mkU32( ea_off ) );
-      t1 = load( Ity_I32, irx_addr );
-      ea_off += 4;
-      irx_addr = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( EA ),
-                        ty == Ity_I64 ? mkU64( ea_off ) : mkU32( ea_off ) );
-      t0 = load( Ity_I32, irx_addr );
-      putVSReg( XT, binop( Iop_64HLtoV128, binop( Iop_32HLto64, t3, t2 ),
-                           binop( Iop_32HLto64, t1, t0 ) ) );
+
+      /* The load will result in the data being in BE order. */
+      if (host_endness == VexEndnessLE) {
+         IRExpr *t0_BE;
+         IRTemp perm_LE = newTemp(Ity_V128);
+
+         t0_BE = load( Ity_V128, mkexpr( EA ) );
+
+         /*  Permute the data to LE format */
+         assign( perm_LE, binop( Iop_64HLtoV128, mkU64(0x0c0d0e0f08090a0b),
+                                 mkU64(0x0405060700010203)));
+
+         t0 = binop( Iop_Perm8x16, t0_BE, mkexpr(perm_LE) );
+      } else {
+         t0 = load( Ity_V128, mkexpr( EA ) );
+      }
+
+      putVSReg( XT, t0 );
       break;
    }
    default:

@@ -64,8 +64,9 @@
 
 #include <sys/procfs.h>
 
-#if defined(VGA_s390x)
-/* RHEL 5 uses glibc 2.3.4 which does not define PTRACE_GETSIGINFO */
+// glibc versions prior to 2.5 do not define PTRACE_GETSIGINFO on
+// the platforms we support.
+#if !((__GLIBC__ > 2) || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 5))
 #   ifndef PTRACE_GETSIGINFO
 #   define PTRACE_GETSIGINFO 0x4202
 #   endif

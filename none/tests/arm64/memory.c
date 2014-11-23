@@ -987,212 +987,212 @@ MEM_TEST("ld4 {v17.8b, v18.8b, v19.8b, v20.8b}, [x5], x6",       -13, -5)
 ////////////////////////////////////////////////////////////////
 printf("LD1/ST1 (multiple 1-elem structs to/from 2/3/4 regs\n");
 
-//MEM_TEST("st1 {v19.2d, v20.2d},                     [x5]", 17, 7)
-//MEM_TEST("st1 {v19.2d, v20.2d},                     [x5], #32", 9, 9)
-//MEM_TEST("st1 {v19.2d, v20.2d},                     [x5], x6", -13, -5)
-//
-//MEM_TEST("st1 {v17.2d, v18.2d, v19.2d},             [x5]", 17, 7)
-//MEM_TEST("st1 {v17.2d, v18.2d, v19.2d},             [x5], #48", 9, 9)
-//MEM_TEST("st1 {v17.2d, v18.2d, v19.2d},             [x5], x6", -13, -5)
-//
-//MEM_TEST("st1 {v17.2d, v18.2d, v19.2d, v20.2d},     [x5]", 17, 7)
-//MEM_TEST("st1 {v17.2d, v18.2d, v19.2d, v20.2d},     [x5], #64", 9, 9)
-//MEM_TEST("st1 {v17.2d, v18.2d, v19.2d, v20.2d},     [x5], x6", -13, -5)
-//
-//
-//MEM_TEST("st1 {v19.1d, v20.1d},                     [x5]", 17, 7)
-//MEM_TEST("st1 {v19.1d, v20.1d},                     [x5], #16", 9, 9)
-//MEM_TEST("st1 {v19.1d, v20.1d},                     [x5], x6", -13, -5)
-//
-//MEM_TEST("st1 {v17.1d, v18.1d, v19.1d},             [x5]", 17, 7)
-//MEM_TEST("st1 {v17.1d, v18.1d, v19.1d},             [x5], #24", 9, 9)
-//MEM_TEST("st1 {v17.1d, v18.1d, v19.1d},             [x5], x6", -13, -5)
-//
-//MEM_TEST("st1 {v17.1d, v18.1d, v19.1d, v20.1d},     [x5]", 17, 7)
-//MEM_TEST("st1 {v17.1d, v18.1d, v19.1d, v20.1d},     [x5], #32", 9, 9)
-//MEM_TEST("st1 {v17.1d, v18.1d, v19.1d, v20.1d},     [x5], x6", -13, -5)
-//
-//
-//MEM_TEST("st1 {v19.4s, v20.4s},                     [x5]", 17, 7)
-//MEM_TEST("st1 {v19.4s, v20.4s},                     [x5], #32", 9, 9)
-//MEM_TEST("st1 {v19.4s, v20.4s},                     [x5], x6", -13, -5)
-//
-//MEM_TEST("st1 {v17.4s, v18.4s, v19.4s},             [x5]", 17, 7)
-//MEM_TEST("st1 {v17.4s, v18.4s, v19.4s},             [x5], #48", 9, 9)
-//MEM_TEST("st1 {v17.4s, v18.4s, v19.4s},             [x5], x6", -13, -5)
-//
-//MEM_TEST("st1 {v17.4s, v18.4s, v19.4s, v20.4s},     [x5]", 17, 7)
-//MEM_TEST("st1 {v17.4s, v18.4s, v19.4s, v20.4s},     [x5], #64", 9, 9)
-//MEM_TEST("st1 {v17.4s, v18.4s, v19.4s, v20.4s},     [x5], x6", -13, -5)
-//
-//
-//MEM_TEST("st1 {v19.2s, v20.2s},                     [x5]", 17, 7)
-//MEM_TEST("st1 {v19.2s, v20.2s},                     [x5], #16", 9, 9)
-//MEM_TEST("st1 {v19.2s, v20.2s},                     [x5], x6", -13, -5)
-//
-//MEM_TEST("st1 {v17.2s, v18.2s, v19.2s},             [x5]", 17, 7)
-//MEM_TEST("st1 {v17.2s, v18.2s, v19.2s},             [x5], #24", 9, 9)
-//MEM_TEST("st1 {v17.2s, v18.2s, v19.2s},             [x5], x6", -13, -5)
-//
-//MEM_TEST("st1 {v17.2s, v18.2s, v19.2s, v20.2s},     [x5]", 17, 7)
-//MEM_TEST("st1 {v17.2s, v18.2s, v19.2s, v20.2s},     [x5], #32", 9, 9)
-//MEM_TEST("st1 {v17.2s, v18.2s, v19.2s, v20.2s},     [x5], x6", -13, -5)
-//
-//
-//MEM_TEST("st1 {v19.8h, v20.8h},                     [x5]", 17, 7)
-//MEM_TEST("st1 {v19.8h, v20.8h},                     [x5], #32", 9, 9)
-//MEM_TEST("st1 {v19.8h, v20.8h},                     [x5], x6", -13, -5)
-//
-//MEM_TEST("st1 {v17.8h, v18.8h, v19.8h},             [x5]", 17, 7)
-//MEM_TEST("st1 {v17.8h, v18.8h, v19.8h},             [x5], #48", 9, 9)
-//MEM_TEST("st1 {v17.8h, v18.8h, v19.8h},             [x5], x6", -13, -5)
-//
-//MEM_TEST("st1 {v17.8h, v18.8h, v19.8h, v20.8h},     [x5]", 17, 7)
-//MEM_TEST("st1 {v17.8h, v18.8h, v19.8h, v20.8h},     [x5], #64", 9, 9)
-//MEM_TEST("st1 {v17.8h, v18.8h, v19.8h, v20.8h},     [x5], x6", -13, -5)
-//
-//
-//MEM_TEST("st1 {v19.4h, v20.4h},                     [x5]", 17, 7)
-//MEM_TEST("st1 {v19.4h, v20.4h},                     [x5], #16", 9, 9)
-//MEM_TEST("st1 {v19.4h, v20.4h},                     [x5], x6", -13, -5)
-//
-//MEM_TEST("st1 {v17.4h, v18.4h, v19.4h},             [x5]", 17, 7)
-//MEM_TEST("st1 {v17.4h, v18.4h, v19.4h},             [x5], #24", 9, 9)
-//MEM_TEST("st1 {v17.4h, v18.4h, v19.4h},             [x5], x6", -13, -5)
-//
-//MEM_TEST("st1 {v17.4h, v18.4h, v19.4h, v20.4h},     [x5]", 17, 7)
-//MEM_TEST("st1 {v17.4h, v18.4h, v19.4h, v20.4h},     [x5], #32", 9, 9)
-//MEM_TEST("st1 {v17.4h, v18.4h, v19.4h, v20.4h},     [x5], x6", -13, -5)
+MEM_TEST("st1 {v19.2d, v20.2d},                     [x5]", 17, 7)
+MEM_TEST("st1 {v19.2d, v20.2d},                     [x5], #32", 9, 9)
+MEM_TEST("st1 {v19.2d, v20.2d},                     [x5], x6", -13, -5)
+
+MEM_TEST("st1 {v17.2d, v18.2d, v19.2d},             [x5]", 17, 7)
+MEM_TEST("st1 {v17.2d, v18.2d, v19.2d},             [x5], #48", 9, 9)
+MEM_TEST("st1 {v17.2d, v18.2d, v19.2d},             [x5], x6", -13, -5)
+
+MEM_TEST("st1 {v17.2d, v18.2d, v19.2d, v20.2d},     [x5]", 17, 7)
+MEM_TEST("st1 {v17.2d, v18.2d, v19.2d, v20.2d},     [x5], #64", 9, 9)
+MEM_TEST("st1 {v17.2d, v18.2d, v19.2d, v20.2d},     [x5], x6", -13, -5)
+
+
+MEM_TEST("st1 {v19.1d, v20.1d},                     [x5]", 17, 7)
+MEM_TEST("st1 {v19.1d, v20.1d},                     [x5], #16", 9, 9)
+MEM_TEST("st1 {v19.1d, v20.1d},                     [x5], x6", -13, -5)
+
+MEM_TEST("st1 {v17.1d, v18.1d, v19.1d},             [x5]", 17, 7)
+MEM_TEST("st1 {v17.1d, v18.1d, v19.1d},             [x5], #24", 9, 9)
+MEM_TEST("st1 {v17.1d, v18.1d, v19.1d},             [x5], x6", -13, -5)
+
+MEM_TEST("st1 {v17.1d, v18.1d, v19.1d, v20.1d},     [x5]", 17, 7)
+MEM_TEST("st1 {v17.1d, v18.1d, v19.1d, v20.1d},     [x5], #32", 9, 9)
+MEM_TEST("st1 {v17.1d, v18.1d, v19.1d, v20.1d},     [x5], x6", -13, -5)
+
+
+MEM_TEST("st1 {v19.4s, v20.4s},                     [x5]", 17, 7)
+MEM_TEST("st1 {v19.4s, v20.4s},                     [x5], #32", 9, 9)
+MEM_TEST("st1 {v19.4s, v20.4s},                     [x5], x6", -13, -5)
+
+MEM_TEST("st1 {v17.4s, v18.4s, v19.4s},             [x5]", 17, 7)
+MEM_TEST("st1 {v17.4s, v18.4s, v19.4s},             [x5], #48", 9, 9)
+MEM_TEST("st1 {v17.4s, v18.4s, v19.4s},             [x5], x6", -13, -5)
+
+MEM_TEST("st1 {v17.4s, v18.4s, v19.4s, v20.4s},     [x5]", 17, 7)
+MEM_TEST("st1 {v17.4s, v18.4s, v19.4s, v20.4s},     [x5], #64", 9, 9)
+MEM_TEST("st1 {v17.4s, v18.4s, v19.4s, v20.4s},     [x5], x6", -13, -5)
+
+
+MEM_TEST("st1 {v19.2s, v20.2s},                     [x5]", 17, 7)
+MEM_TEST("st1 {v19.2s, v20.2s},                     [x5], #16", 9, 9)
+MEM_TEST("st1 {v19.2s, v20.2s},                     [x5], x6", -13, -5)
+
+MEM_TEST("st1 {v17.2s, v18.2s, v19.2s},             [x5]", 17, 7)
+MEM_TEST("st1 {v17.2s, v18.2s, v19.2s},             [x5], #24", 9, 9)
+MEM_TEST("st1 {v17.2s, v18.2s, v19.2s},             [x5], x6", -13, -5)
+
+MEM_TEST("st1 {v17.2s, v18.2s, v19.2s, v20.2s},     [x5]", 17, 7)
+MEM_TEST("st1 {v17.2s, v18.2s, v19.2s, v20.2s},     [x5], #32", 9, 9)
+MEM_TEST("st1 {v17.2s, v18.2s, v19.2s, v20.2s},     [x5], x6", -13, -5)
+
+
+MEM_TEST("st1 {v19.8h, v20.8h},                     [x5]", 17, 7)
+MEM_TEST("st1 {v19.8h, v20.8h},                     [x5], #32", 9, 9)
+MEM_TEST("st1 {v19.8h, v20.8h},                     [x5], x6", -13, -5)
+
+MEM_TEST("st1 {v17.8h, v18.8h, v19.8h},             [x5]", 17, 7)
+MEM_TEST("st1 {v17.8h, v18.8h, v19.8h},             [x5], #48", 9, 9)
+MEM_TEST("st1 {v17.8h, v18.8h, v19.8h},             [x5], x6", -13, -5)
+
+MEM_TEST("st1 {v17.8h, v18.8h, v19.8h, v20.8h},     [x5]", 17, 7)
+MEM_TEST("st1 {v17.8h, v18.8h, v19.8h, v20.8h},     [x5], #64", 9, 9)
+MEM_TEST("st1 {v17.8h, v18.8h, v19.8h, v20.8h},     [x5], x6", -13, -5)
+
+
+MEM_TEST("st1 {v19.4h, v20.4h},                     [x5]", 17, 7)
+MEM_TEST("st1 {v19.4h, v20.4h},                     [x5], #16", 9, 9)
+MEM_TEST("st1 {v19.4h, v20.4h},                     [x5], x6", -13, -5)
+
+MEM_TEST("st1 {v17.4h, v18.4h, v19.4h},             [x5]", 17, 7)
+MEM_TEST("st1 {v17.4h, v18.4h, v19.4h},             [x5], #24", 9, 9)
+MEM_TEST("st1 {v17.4h, v18.4h, v19.4h},             [x5], x6", -13, -5)
+
+MEM_TEST("st1 {v17.4h, v18.4h, v19.4h, v20.4h},     [x5]", 17, 7)
+MEM_TEST("st1 {v17.4h, v18.4h, v19.4h, v20.4h},     [x5], #32", 9, 9)
+MEM_TEST("st1 {v17.4h, v18.4h, v19.4h, v20.4h},     [x5], x6", -13, -5)
 
 
 MEM_TEST("st1 {v19.16b, v20.16b},                   [x5]", 17, 7)
 MEM_TEST("st1 {v19.16b, v20.16b},                   [x5], #32", 9, 9)
-//MEM_TEST("st1 {v19.16b, v20.16b},                   [x5], x6", -13, -5)
+MEM_TEST("st1 {v19.16b, v20.16b},                   [x5], x6", -13, -5)
 
 MEM_TEST("st1 {v17.16b, v18.16b, v19.16b},          [x5]", 17, 7)
-//MEM_TEST("st1 {v17.16b, v18.16b, v19.16b},          [x5], #48", 9, 9)
-//MEM_TEST("st1 {v17.16b, v18.16b, v19.16b},          [x5], x6", -13, -5)
-//
-//MEM_TEST("st1 {v17.16b, v18.16b, v19.16b, v20.16b}, [x5]", 17, 7)
-//MEM_TEST("st1 {v17.16b, v18.16b, v19.16b, v20.16b}, [x5], #64", 9, 9)
-//MEM_TEST("st1 {v17.16b, v18.16b, v19.16b, v20.16b}, [x5], x6", -13, -5)
-//
-//
-//MEM_TEST("st1 {v19.8b, v20.8b},                     [x5]", 17, 7)
-//MEM_TEST("st1 {v19.8b, v20.8b},                     [x5], #16", 9, 9)
-//MEM_TEST("st1 {v19.8b, v20.8b},                     [x5], x6", -13, -5)
-//
-//MEM_TEST("st1 {v17.8b, v18.8b, v19.8b},             [x5]", 17, 7)
-//MEM_TEST("st1 {v17.8b, v18.8b, v19.8b},             [x5], #24", 9, 9)
-//MEM_TEST("st1 {v17.8b, v18.8b, v19.8b},             [x5], x6", -13, -5)
-//
-//MEM_TEST("st1 {v17.8b, v18.8b, v19.8b, v20.8b},     [x5]", 17, 7)
-//MEM_TEST("st1 {v17.8b, v18.8b, v19.8b, v20.8b},     [x5], #32", 9, 9)
-//MEM_TEST("st1 {v17.8b, v18.8b, v19.8b, v20.8b},     [x5], x6", -13, -5)
-//
-//
-//MEM_TEST("ld1 {v19.2d, v20.2d},                     [x5]", 17, 7)
-//MEM_TEST("ld1 {v19.2d, v20.2d},                     [x5], #32", 9, 9)
-//MEM_TEST("ld1 {v19.2d, v20.2d},                     [x5], x6", -13, -5)
-//
-//MEM_TEST("ld1 {v17.2d, v18.2d, v19.2d},             [x5]", 17, 7)
-//MEM_TEST("ld1 {v17.2d, v18.2d, v19.2d},             [x5], #48", 9, 9)
-//MEM_TEST("ld1 {v17.2d, v18.2d, v19.2d},             [x5], x6", -13, -5)
-//
-//MEM_TEST("ld1 {v17.2d, v18.2d, v19.2d, v20.2d},     [x5]", 17, 7)
-//MEM_TEST("ld1 {v17.2d, v18.2d, v19.2d, v20.2d},     [x5], #64", 9, 9)
-//MEM_TEST("ld1 {v17.2d, v18.2d, v19.2d, v20.2d},     [x5], x6", -13, -5)
-//
-//
-//MEM_TEST("ld1 {v19.1d, v20.1d},                     [x5]", 17, 7)
-//MEM_TEST("ld1 {v19.1d, v20.1d},                     [x5], #16", 9, 9)
-//MEM_TEST("ld1 {v19.1d, v20.1d},                     [x5], x6", -13, -5)
-//
-//MEM_TEST("ld1 {v17.1d, v18.1d, v19.1d},             [x5]", 17, 7)
-//MEM_TEST("ld1 {v17.1d, v18.1d, v19.1d},             [x5], #24", 9, 9)
-//MEM_TEST("ld1 {v17.1d, v18.1d, v19.1d},             [x5], x6", -13, -5)
-//
-//MEM_TEST("ld1 {v17.1d, v18.1d, v19.1d, v20.1d},     [x5]", 17, 7)
-//MEM_TEST("ld1 {v17.1d, v18.1d, v19.1d, v20.1d},     [x5], #32", 9, 9)
-//MEM_TEST("ld1 {v17.1d, v18.1d, v19.1d, v20.1d},     [x5], x6", -13, -5)
-//
-//
-//MEM_TEST("ld1 {v19.4s, v20.4s},                     [x5]", 17, 7)
-//MEM_TEST("ld1 {v19.4s, v20.4s},                     [x5], #32", 9, 9)
-//MEM_TEST("ld1 {v19.4s, v20.4s},                     [x5], x6", -13, -5)
-//
-//MEM_TEST("ld1 {v17.4s, v18.4s, v19.4s},             [x5]", 17, 7)
-//MEM_TEST("ld1 {v17.4s, v18.4s, v19.4s},             [x5], #48", 9, 9)
-//MEM_TEST("ld1 {v17.4s, v18.4s, v19.4s},             [x5], x6", -13, -5)
-//
-//MEM_TEST("ld1 {v17.4s, v18.4s, v19.4s, v20.4s},     [x5]", 17, 7)
-//MEM_TEST("ld1 {v17.4s, v18.4s, v19.4s, v20.4s},     [x5], #64", 9, 9)
-//MEM_TEST("ld1 {v17.4s, v18.4s, v19.4s, v20.4s},     [x5], x6", -13, -5)
-//
-//
-//MEM_TEST("ld1 {v19.2s, v20.2s},                     [x5]", 17, 7)
-//MEM_TEST("ld1 {v19.2s, v20.2s},                     [x5], #16", 9, 9)
-//MEM_TEST("ld1 {v19.2s, v20.2s},                     [x5], x6", -13, -5)
-//
-//MEM_TEST("ld1 {v17.2s, v18.2s, v19.2s},             [x5]", 17, 7)
-//MEM_TEST("ld1 {v17.2s, v18.2s, v19.2s},             [x5], #24", 9, 9)
-//MEM_TEST("ld1 {v17.2s, v18.2s, v19.2s},             [x5], x6", -13, -5)
-//
-//MEM_TEST("ld1 {v17.2s, v18.2s, v19.2s, v20.2s},     [x5]", 17, 7)
-//MEM_TEST("ld1 {v17.2s, v18.2s, v19.2s, v20.2s},     [x5], #32", 9, 9)
-//MEM_TEST("ld1 {v17.2s, v18.2s, v19.2s, v20.2s},     [x5], x6", -13, -5)
-//
-//
-//MEM_TEST("ld1 {v19.8h, v20.8h},                     [x5]", 17, 7)
-//MEM_TEST("ld1 {v19.8h, v20.8h},                     [x5], #32", 9, 9)
-//MEM_TEST("ld1 {v19.8h, v20.8h},                     [x5], x6", -13, -5)
-//
-//MEM_TEST("ld1 {v17.8h, v18.8h, v19.8h},             [x5]", 17, 7)
-//MEM_TEST("ld1 {v17.8h, v18.8h, v19.8h},             [x5], #48", 9, 9)
-//MEM_TEST("ld1 {v17.8h, v18.8h, v19.8h},             [x5], x6", -13, -5)
-//
-//MEM_TEST("ld1 {v17.8h, v18.8h, v19.8h, v20.8h},     [x5]", 17, 7)
-//MEM_TEST("ld1 {v17.8h, v18.8h, v19.8h, v20.8h},     [x5], #64", 9, 9)
-//MEM_TEST("ld1 {v17.8h, v18.8h, v19.8h, v20.8h},     [x5], x6", -13, -5)
-//
-//
-//MEM_TEST("ld1 {v19.4h, v20.4h},                     [x5]", 17, 7)
-//MEM_TEST("ld1 {v19.4h, v20.4h},                     [x5], #16", 9, 9)
-//MEM_TEST("ld1 {v19.4h, v20.4h},                     [x5], x6", -13, -5)
-//
-//MEM_TEST("ld1 {v17.4h, v18.4h, v19.4h},             [x5]", 17, 7)
-//MEM_TEST("ld1 {v17.4h, v18.4h, v19.4h},             [x5], #24", 9, 9)
-//MEM_TEST("ld1 {v17.4h, v18.4h, v19.4h},             [x5], x6", -13, -5)
-//
-//MEM_TEST("ld1 {v17.4h, v18.4h, v19.4h, v20.4h},     [x5]", 17, 7)
-//MEM_TEST("ld1 {v17.4h, v18.4h, v19.4h, v20.4h},     [x5], #32", 9, 9)
-//MEM_TEST("ld1 {v17.4h, v18.4h, v19.4h, v20.4h},     [x5], x6", -13, -5)
+MEM_TEST("st1 {v17.16b, v18.16b, v19.16b},          [x5], #48", 9, 9)
+MEM_TEST("st1 {v17.16b, v18.16b, v19.16b},          [x5], x6", -13, -5)
+
+MEM_TEST("st1 {v17.16b, v18.16b, v19.16b, v20.16b}, [x5]", 17, 7)
+MEM_TEST("st1 {v17.16b, v18.16b, v19.16b, v20.16b}, [x5], #64", 9, 9)
+MEM_TEST("st1 {v17.16b, v18.16b, v19.16b, v20.16b}, [x5], x6", -13, -5)
+
+
+MEM_TEST("st1 {v19.8b, v20.8b},                     [x5]", 17, 7)
+MEM_TEST("st1 {v19.8b, v20.8b},                     [x5], #16", 9, 9)
+MEM_TEST("st1 {v19.8b, v20.8b},                     [x5], x6", -13, -5)
+
+MEM_TEST("st1 {v17.8b, v18.8b, v19.8b},             [x5]", 17, 7)
+MEM_TEST("st1 {v17.8b, v18.8b, v19.8b},             [x5], #24", 9, 9)
+MEM_TEST("st1 {v17.8b, v18.8b, v19.8b},             [x5], x6", -13, -5)
+
+MEM_TEST("st1 {v17.8b, v18.8b, v19.8b, v20.8b},     [x5]", 17, 7)
+MEM_TEST("st1 {v17.8b, v18.8b, v19.8b, v20.8b},     [x5], #32", 9, 9)
+MEM_TEST("st1 {v17.8b, v18.8b, v19.8b, v20.8b},     [x5], x6", -13, -5)
+
+
+MEM_TEST("ld1 {v19.2d, v20.2d},                     [x5]", 17, 7)
+MEM_TEST("ld1 {v19.2d, v20.2d},                     [x5], #32", 9, 9)
+MEM_TEST("ld1 {v19.2d, v20.2d},                     [x5], x6", -13, -5)
+
+MEM_TEST("ld1 {v17.2d, v18.2d, v19.2d},             [x5]", 17, 7)
+MEM_TEST("ld1 {v17.2d, v18.2d, v19.2d},             [x5], #48", 9, 9)
+MEM_TEST("ld1 {v17.2d, v18.2d, v19.2d},             [x5], x6", -13, -5)
+
+MEM_TEST("ld1 {v17.2d, v18.2d, v19.2d, v20.2d},     [x5]", 17, 7)
+MEM_TEST("ld1 {v17.2d, v18.2d, v19.2d, v20.2d},     [x5], #64", 9, 9)
+MEM_TEST("ld1 {v17.2d, v18.2d, v19.2d, v20.2d},     [x5], x6", -13, -5)
+
+
+MEM_TEST("ld1 {v19.1d, v20.1d},                     [x5]", 17, 7)
+MEM_TEST("ld1 {v19.1d, v20.1d},                     [x5], #16", 9, 9)
+MEM_TEST("ld1 {v19.1d, v20.1d},                     [x5], x6", -13, -5)
+
+MEM_TEST("ld1 {v17.1d, v18.1d, v19.1d},             [x5]", 17, 7)
+MEM_TEST("ld1 {v17.1d, v18.1d, v19.1d},             [x5], #24", 9, 9)
+MEM_TEST("ld1 {v17.1d, v18.1d, v19.1d},             [x5], x6", -13, -5)
+
+MEM_TEST("ld1 {v17.1d, v18.1d, v19.1d, v20.1d},     [x5]", 17, 7)
+MEM_TEST("ld1 {v17.1d, v18.1d, v19.1d, v20.1d},     [x5], #32", 9, 9)
+MEM_TEST("ld1 {v17.1d, v18.1d, v19.1d, v20.1d},     [x5], x6", -13, -5)
+
+
+MEM_TEST("ld1 {v19.4s, v20.4s},                     [x5]", 17, 7)
+MEM_TEST("ld1 {v19.4s, v20.4s},                     [x5], #32", 9, 9)
+MEM_TEST("ld1 {v19.4s, v20.4s},                     [x5], x6", -13, -5)
+
+MEM_TEST("ld1 {v17.4s, v18.4s, v19.4s},             [x5]", 17, 7)
+MEM_TEST("ld1 {v17.4s, v18.4s, v19.4s},             [x5], #48", 9, 9)
+MEM_TEST("ld1 {v17.4s, v18.4s, v19.4s},             [x5], x6", -13, -5)
+
+MEM_TEST("ld1 {v17.4s, v18.4s, v19.4s, v20.4s},     [x5]", 17, 7)
+MEM_TEST("ld1 {v17.4s, v18.4s, v19.4s, v20.4s},     [x5], #64", 9, 9)
+MEM_TEST("ld1 {v17.4s, v18.4s, v19.4s, v20.4s},     [x5], x6", -13, -5)
+
+
+MEM_TEST("ld1 {v19.2s, v20.2s},                     [x5]", 17, 7)
+MEM_TEST("ld1 {v19.2s, v20.2s},                     [x5], #16", 9, 9)
+MEM_TEST("ld1 {v19.2s, v20.2s},                     [x5], x6", -13, -5)
+
+MEM_TEST("ld1 {v17.2s, v18.2s, v19.2s},             [x5]", 17, 7)
+MEM_TEST("ld1 {v17.2s, v18.2s, v19.2s},             [x5], #24", 9, 9)
+MEM_TEST("ld1 {v17.2s, v18.2s, v19.2s},             [x5], x6", -13, -5)
+
+MEM_TEST("ld1 {v17.2s, v18.2s, v19.2s, v20.2s},     [x5]", 17, 7)
+MEM_TEST("ld1 {v17.2s, v18.2s, v19.2s, v20.2s},     [x5], #32", 9, 9)
+MEM_TEST("ld1 {v17.2s, v18.2s, v19.2s, v20.2s},     [x5], x6", -13, -5)
+
+
+MEM_TEST("ld1 {v19.8h, v20.8h},                     [x5]", 17, 7)
+MEM_TEST("ld1 {v19.8h, v20.8h},                     [x5], #32", 9, 9)
+MEM_TEST("ld1 {v19.8h, v20.8h},                     [x5], x6", -13, -5)
+
+MEM_TEST("ld1 {v17.8h, v18.8h, v19.8h},             [x5]", 17, 7)
+MEM_TEST("ld1 {v17.8h, v18.8h, v19.8h},             [x5], #48", 9, 9)
+MEM_TEST("ld1 {v17.8h, v18.8h, v19.8h},             [x5], x6", -13, -5)
+
+MEM_TEST("ld1 {v17.8h, v18.8h, v19.8h, v20.8h},     [x5]", 17, 7)
+MEM_TEST("ld1 {v17.8h, v18.8h, v19.8h, v20.8h},     [x5], #64", 9, 9)
+MEM_TEST("ld1 {v17.8h, v18.8h, v19.8h, v20.8h},     [x5], x6", -13, -5)
+
+
+MEM_TEST("ld1 {v19.4h, v20.4h},                     [x5]", 17, 7)
+MEM_TEST("ld1 {v19.4h, v20.4h},                     [x5], #16", 9, 9)
+MEM_TEST("ld1 {v19.4h, v20.4h},                     [x5], x6", -13, -5)
+
+MEM_TEST("ld1 {v17.4h, v18.4h, v19.4h},             [x5]", 17, 7)
+MEM_TEST("ld1 {v17.4h, v18.4h, v19.4h},             [x5], #24", 9, 9)
+MEM_TEST("ld1 {v17.4h, v18.4h, v19.4h},             [x5], x6", -13, -5)
+
+MEM_TEST("ld1 {v17.4h, v18.4h, v19.4h, v20.4h},     [x5]", 17, 7)
+MEM_TEST("ld1 {v17.4h, v18.4h, v19.4h, v20.4h},     [x5], #32", 9, 9)
+MEM_TEST("ld1 {v17.4h, v18.4h, v19.4h, v20.4h},     [x5], x6", -13, -5)
 
 
 MEM_TEST("ld1 {v19.16b, v20.16b},                   [x5]", 17, 7)
 MEM_TEST("ld1 {v19.16b, v20.16b},                   [x5], #32", 9, 9)
-//MEM_TEST("ld1 {v19.16b, v20.16b},                   [x5], x6", -13, -5)
+MEM_TEST("ld1 {v19.16b, v20.16b},                   [x5], x6", -13, -5)
 
 MEM_TEST("ld1 {v17.16b, v18.16b, v19.16b},          [x5]", 17, 7)
-//MEM_TEST("ld1 {v17.16b, v18.16b, v19.16b},          [x5], #48", 9, 9)
-//MEM_TEST("ld1 {v17.16b, v18.16b, v19.16b},          [x5], x6", -13, -5)
-//
-//MEM_TEST("ld1 {v17.16b, v18.16b, v19.16b, v20.16b}, [x5]", 17, 7)
-//MEM_TEST("ld1 {v17.16b, v18.16b, v19.16b, v20.16b}, [x5], #64", 9, 9)
-//MEM_TEST("ld1 {v17.16b, v18.16b, v19.16b, v20.16b}, [x5], x6", -13, -5)
-//
-//
-//MEM_TEST("ld1 {v19.8b, v20.8b},                     [x5]", 17, 7)
-//MEM_TEST("ld1 {v19.8b, v20.8b},                     [x5], #16", 9, 9)
-//MEM_TEST("ld1 {v19.8b, v20.8b},                     [x5], x6", -13, -5)
-//
-//MEM_TEST("ld1 {v17.8b, v18.8b, v19.8b},             [x5]", 17, 7)
-//MEM_TEST("ld1 {v17.8b, v18.8b, v19.8b},             [x5], #24", 9, 9)
-//MEM_TEST("ld1 {v17.8b, v18.8b, v19.8b},             [x5], x6", -13, -5)
-//
-//MEM_TEST("ld1 {v17.8b, v18.8b, v19.8b, v20.8b},     [x5]", 17, 7)
-//MEM_TEST("ld1 {v17.8b, v18.8b, v19.8b, v20.8b},     [x5], #32", 9, 9)
-//MEM_TEST("ld1 {v17.8b, v18.8b, v19.8b, v20.8b},     [x5], x6", -13, -5)
+MEM_TEST("ld1 {v17.16b, v18.16b, v19.16b},          [x5], #48", 9, 9)
+MEM_TEST("ld1 {v17.16b, v18.16b, v19.16b},          [x5], x6", -13, -5)
+
+MEM_TEST("ld1 {v17.16b, v18.16b, v19.16b, v20.16b}, [x5]", 17, 7)
+MEM_TEST("ld1 {v17.16b, v18.16b, v19.16b, v20.16b}, [x5], #64", 9, 9)
+MEM_TEST("ld1 {v17.16b, v18.16b, v19.16b, v20.16b}, [x5], x6", -13, -5)
+
+
+MEM_TEST("ld1 {v19.8b, v20.8b},                     [x5]", 17, 7)
+MEM_TEST("ld1 {v19.8b, v20.8b},                     [x5], #16", 9, 9)
+MEM_TEST("ld1 {v19.8b, v20.8b},                     [x5], x6", -13, -5)
+
+MEM_TEST("ld1 {v17.8b, v18.8b, v19.8b},             [x5]", 17, 7)
+MEM_TEST("ld1 {v17.8b, v18.8b, v19.8b},             [x5], #24", 9, 9)
+MEM_TEST("ld1 {v17.8b, v18.8b, v19.8b},             [x5], x6", -13, -5)
+
+MEM_TEST("ld1 {v17.8b, v18.8b, v19.8b, v20.8b},     [x5]", 17, 7)
+MEM_TEST("ld1 {v17.8b, v18.8b, v19.8b, v20.8b},     [x5], #32", 9, 9)
+MEM_TEST("ld1 {v17.8b, v18.8b, v19.8b, v20.8b},     [x5], x6", -13, -5)
 
 
 ////////////////////////////////////////////////////////////////
@@ -1229,370 +1229,370 @@ MEM_TEST("ld1r {v17.8b},  [x5], x6", 3, 3)
 ////////////////////////////////////////////////////////////////
 printf("LD2R (single structure, replicate)\n");
 
-//MEM_TEST("ld2r {v17.2d , v18.2d },  [x5]", 3, -5)
-//MEM_TEST("ld2r {v18.1d , v19.1d },  [x5]", 3, -4)
-//MEM_TEST("ld2r {v19.4s , v20.4s },  [x5]", 3, -3)
-//MEM_TEST("ld2r {v17.2s , v18.2s },  [x5]", 3, -2)
-//MEM_TEST("ld2r {v18.8h , v19.8h },  [x5]", 3, -1)
-//MEM_TEST("ld2r {v19.4h , v20.4h },  [x5]", 3, 1)
-//MEM_TEST("ld2r {v17.16b, v18.16b},  [x5]", 3, 2)
-//MEM_TEST("ld2r {v18.8b , v19.8b },  [x5]", 3, 3)
-//
-//MEM_TEST("ld2r {v19.2d , v20.2d },  [x5], #16", 3, -5)
-//MEM_TEST("ld2r {v17.1d , v18.1d },  [x5], #16", 3, -4)
-//MEM_TEST("ld2r {v18.4s , v19.4s },  [x5], #8", 3, -3)
-//MEM_TEST("ld2r {v19.2s , v20.2s },  [x5], #8", 3, -2)
-//MEM_TEST("ld2r {v17.8h , v18.8h },  [x5], #4", 3, -1)
-//MEM_TEST("ld2r {v18.4h , v19.4h },  [x5], #4", 3, 1)
-//MEM_TEST("ld2r {v19.16b, v20.16b},  [x5], #2", 3, 2)
-//MEM_TEST("ld2r {v17.8b , v18.8b },  [x5], #2", 3, 3)
-//
-//MEM_TEST("ld2r {v18.2d , v19.2d },  [x5], x6", 3, -5)
-//MEM_TEST("ld2r {v19.1d , v20.1d },  [x5], x6", 3, -4)
-//MEM_TEST("ld2r {v17.4s , v18.4s },  [x5], x6", 3, -3)
-//MEM_TEST("ld2r {v18.2s , v19.2s },  [x5], x6", 3, -2)
-//MEM_TEST("ld2r {v19.8h , v20.8h },  [x5], x6", 3, -1)
-//MEM_TEST("ld2r {v17.4h , v18.4h },  [x5], x6", 3, 1)
-//MEM_TEST("ld2r {v18.16b, v19.16b},  [x5], x6", 3, 2)
-//MEM_TEST("ld2r {v19.8b , v20.8b },  [x5], x6", 3, 3)
+MEM_TEST("ld2r {v17.2d , v18.2d },  [x5]", 3, -5)
+MEM_TEST("ld2r {v18.1d , v19.1d },  [x5]", 3, -4)
+MEM_TEST("ld2r {v19.4s , v20.4s },  [x5]", 3, -3)
+MEM_TEST("ld2r {v17.2s , v18.2s },  [x5]", 3, -2)
+MEM_TEST("ld2r {v18.8h , v19.8h },  [x5]", 3, -1)
+MEM_TEST("ld2r {v19.4h , v20.4h },  [x5]", 3, 1)
+MEM_TEST("ld2r {v17.16b, v18.16b},  [x5]", 3, 2)
+MEM_TEST("ld2r {v18.8b , v19.8b },  [x5]", 3, 3)
+
+MEM_TEST("ld2r {v19.2d , v20.2d },  [x5], #16", 3, -5)
+MEM_TEST("ld2r {v17.1d , v18.1d },  [x5], #16", 3, -4)
+MEM_TEST("ld2r {v18.4s , v19.4s },  [x5], #8", 3, -3)
+MEM_TEST("ld2r {v19.2s , v20.2s },  [x5], #8", 3, -2)
+MEM_TEST("ld2r {v17.8h , v18.8h },  [x5], #4", 3, -1)
+MEM_TEST("ld2r {v18.4h , v19.4h },  [x5], #4", 3, 1)
+MEM_TEST("ld2r {v19.16b, v20.16b},  [x5], #2", 3, 2)
+MEM_TEST("ld2r {v17.8b , v18.8b },  [x5], #2", 3, 3)
+
+MEM_TEST("ld2r {v18.2d , v19.2d },  [x5], x6", 3, -5)
+MEM_TEST("ld2r {v19.1d , v20.1d },  [x5], x6", 3, -4)
+MEM_TEST("ld2r {v17.4s , v18.4s },  [x5], x6", 3, -3)
+MEM_TEST("ld2r {v18.2s , v19.2s },  [x5], x6", 3, -2)
+MEM_TEST("ld2r {v19.8h , v20.8h },  [x5], x6", 3, -1)
+MEM_TEST("ld2r {v17.4h , v18.4h },  [x5], x6", 3, 1)
+MEM_TEST("ld2r {v18.16b, v19.16b},  [x5], x6", 3, 2)
+MEM_TEST("ld2r {v19.8b , v20.8b },  [x5], x6", 3, 3)
 
 
 //////////////////////////////////////////////////////////////////
-//printf("LD3R (single structure, replicate)\n");
+printf("LD3R (single structure, replicate)\n");
 
-//MEM_TEST("ld3r {v17.2d , v18.2d , v19.2d },  [x5]", 3, -5)
-//MEM_TEST("ld3r {v18.1d , v19.1d , v20.1d },  [x5]", 3, -4)
-//MEM_TEST("ld3r {v17.4s , v18.4s , v19.4s },  [x5]", 3, -3)
-//MEM_TEST("ld3r {v18.2s , v19.2s , v20.2s },  [x5]", 3, -2)
-//MEM_TEST("ld3r {v17.8h , v18.8h , v19.8h },  [x5]", 3, -5)
-//MEM_TEST("ld3r {v18.4h , v19.4h , v20.4h },  [x5]", 3, -4)
-//MEM_TEST("ld3r {v17.16b, v18.16b, v19.16b},  [x5]", 3, -3)
-//MEM_TEST("ld3r {v18.8b , v19.8b , v20.8b },  [x5]", 3, -2)
-//
-//MEM_TEST("ld3r {v17.2d , v18.2d , v19.2d },  [x5], #24", 3, -5)
-//MEM_TEST("ld3r {v18.1d , v19.1d , v20.1d },  [x5], #24", 3, -4)
-//MEM_TEST("ld3r {v17.4s , v18.4s , v19.4s },  [x5], #12", 3, -3)
-//MEM_TEST("ld3r {v18.2s , v19.2s , v20.2s },  [x5], #12", 3, -2)
-//MEM_TEST("ld3r {v17.8h , v18.8h , v19.8h },  [x5], #6", 3, -5)
-//MEM_TEST("ld3r {v18.4h , v19.4h , v20.4h },  [x5], #6", 3, -4)
-//MEM_TEST("ld3r {v17.16b, v18.16b, v19.16b},  [x5], #3", 3, -3)
-//MEM_TEST("ld3r {v18.8b , v19.8b , v20.8b },  [x5], #3", 3, -2)
-//
-//MEM_TEST("ld3r {v17.2d , v18.2d , v19.2d },  [x5], x6", 3, -5)
-//MEM_TEST("ld3r {v18.1d , v19.1d , v20.1d },  [x5], x6", 3, -4)
-//MEM_TEST("ld3r {v17.4s , v18.4s , v19.4s },  [x5], x6", 3, -3)
-//MEM_TEST("ld3r {v18.2s , v19.2s , v20.2s },  [x5], x6", 3, -2)
-//MEM_TEST("ld3r {v17.8h , v18.8h , v19.8h },  [x5], x6", 3, -5)
-//MEM_TEST("ld3r {v18.4h , v19.4h , v20.4h },  [x5], x6", 3, -4)
-//MEM_TEST("ld3r {v17.16b, v18.16b, v19.16b},  [x5], x6", 3, -3)
-//MEM_TEST("ld3r {v18.8b , v19.8b , v20.8b },  [x5], x6", 3, -2)
+MEM_TEST("ld3r {v17.2d , v18.2d , v19.2d },  [x5]", 3, -5)
+MEM_TEST("ld3r {v18.1d , v19.1d , v20.1d },  [x5]", 3, -4)
+MEM_TEST("ld3r {v17.4s , v18.4s , v19.4s },  [x5]", 3, -3)
+MEM_TEST("ld3r {v18.2s , v19.2s , v20.2s },  [x5]", 3, -2)
+MEM_TEST("ld3r {v17.8h , v18.8h , v19.8h },  [x5]", 3, -5)
+MEM_TEST("ld3r {v18.4h , v19.4h , v20.4h },  [x5]", 3, -4)
+MEM_TEST("ld3r {v17.16b, v18.16b, v19.16b},  [x5]", 3, -3)
+MEM_TEST("ld3r {v18.8b , v19.8b , v20.8b },  [x5]", 3, -2)
+
+MEM_TEST("ld3r {v17.2d , v18.2d , v19.2d },  [x5], #24", 3, -5)
+MEM_TEST("ld3r {v18.1d , v19.1d , v20.1d },  [x5], #24", 3, -4)
+MEM_TEST("ld3r {v17.4s , v18.4s , v19.4s },  [x5], #12", 3, -3)
+MEM_TEST("ld3r {v18.2s , v19.2s , v20.2s },  [x5], #12", 3, -2)
+MEM_TEST("ld3r {v17.8h , v18.8h , v19.8h },  [x5], #6", 3, -5)
+MEM_TEST("ld3r {v18.4h , v19.4h , v20.4h },  [x5], #6", 3, -4)
+MEM_TEST("ld3r {v17.16b, v18.16b, v19.16b},  [x5], #3", 3, -3)
+MEM_TEST("ld3r {v18.8b , v19.8b , v20.8b },  [x5], #3", 3, -2)
+
+MEM_TEST("ld3r {v17.2d , v18.2d , v19.2d },  [x5], x6", 3, -5)
+MEM_TEST("ld3r {v18.1d , v19.1d , v20.1d },  [x5], x6", 3, -4)
+MEM_TEST("ld3r {v17.4s , v18.4s , v19.4s },  [x5], x6", 3, -3)
+MEM_TEST("ld3r {v18.2s , v19.2s , v20.2s },  [x5], x6", 3, -2)
+MEM_TEST("ld3r {v17.8h , v18.8h , v19.8h },  [x5], x6", 3, -5)
+MEM_TEST("ld3r {v18.4h , v19.4h , v20.4h },  [x5], x6", 3, -4)
+MEM_TEST("ld3r {v17.16b, v18.16b, v19.16b},  [x5], x6", 3, -3)
+MEM_TEST("ld3r {v18.8b , v19.8b , v20.8b },  [x5], x6", 3, -2)
 
 
 ////////////////////////////////////////////////////////////////
 printf("LD4R (single structure, replicate)\n");
 
-//MEM_TEST("ld4r {v17.2d , v18.2d , v19.2d , v20.2d },  [x5]", 3, -5)
-//MEM_TEST("ld4r {v17.1d , v18.1d , v19.1d , v20.1d },  [x5]", 3, -4)
-//MEM_TEST("ld4r {v17.4s , v18.4s , v19.4s , v20.4s },  [x5]", 3, -3)
-//MEM_TEST("ld4r {v17.2s , v18.2s , v19.2s , v20.2s },  [x5]", 3, -2)
-//MEM_TEST("ld4r {v17.8h , v18.8h , v19.8h , v20.8h },  [x5]", 3, -5)
-//MEM_TEST("ld4r {v17.4h , v18.4h , v19.4h , v20.4h },  [x5]", 3, -4)
-//MEM_TEST("ld4r {v17.16b, v18.16b, v19.16b, v20.16b},  [x5]", 3, -3)
-//MEM_TEST("ld4r {v17.8b , v18.8b , v19.8b , v20.8b },  [x5]", 3, -2)
-//
-//MEM_TEST("ld4r {v17.2d , v18.2d , v19.2d , v20.2d },  [x5], #32", 3, -5)
-//MEM_TEST("ld4r {v17.1d , v18.1d , v19.1d , v20.1d },  [x5], #32", 3, -4)
-//MEM_TEST("ld4r {v17.4s , v18.4s , v19.4s , v20.4s },  [x5], #16", 3, -3)
-//MEM_TEST("ld4r {v17.2s , v18.2s , v19.2s , v20.2s },  [x5], #16", 3, -2)
-//MEM_TEST("ld4r {v17.8h , v18.8h , v19.8h , v20.8h },  [x5], #8", 3, -5)
-//MEM_TEST("ld4r {v17.4h , v18.4h , v19.4h , v20.4h },  [x5], #8", 3, -4)
-//MEM_TEST("ld4r {v17.16b, v18.16b, v19.16b, v20.16b},  [x5], #4", 3, -3)
-//MEM_TEST("ld4r {v17.8b , v18.8b , v19.8b , v20.8b },  [x5], #4", 3, -2)
-//
-//MEM_TEST("ld4r {v17.2d , v18.2d , v19.2d , v20.2d },  [x5], x6", 3, -5)
-//MEM_TEST("ld4r {v17.1d , v18.1d , v19.1d , v20.1d },  [x5], x6", 3, -4)
-//MEM_TEST("ld4r {v17.4s , v18.4s , v19.4s , v20.4s },  [x5], x6", 3, -3)
-//MEM_TEST("ld4r {v17.2s , v18.2s , v19.2s , v20.2s },  [x5], x6", 3, -2)
-//MEM_TEST("ld4r {v17.8h , v18.8h , v19.8h , v20.8h },  [x5], x6", 3, -5)
-//MEM_TEST("ld4r {v17.4h , v18.4h , v19.4h , v20.4h },  [x5], x6", 3, -4)
-//MEM_TEST("ld4r {v17.16b, v18.16b, v19.16b, v20.16b},  [x5], x6", 3, -3)
-//MEM_TEST("ld4r {v17.8b , v18.8b , v19.8b , v20.8b },  [x5], x6", 3, -2)
+MEM_TEST("ld4r {v17.2d , v18.2d , v19.2d , v20.2d },  [x5]", 3, -5)
+MEM_TEST("ld4r {v17.1d , v18.1d , v19.1d , v20.1d },  [x5]", 3, -4)
+MEM_TEST("ld4r {v17.4s , v18.4s , v19.4s , v20.4s },  [x5]", 3, -3)
+MEM_TEST("ld4r {v17.2s , v18.2s , v19.2s , v20.2s },  [x5]", 3, -2)
+MEM_TEST("ld4r {v17.8h , v18.8h , v19.8h , v20.8h },  [x5]", 3, -5)
+MEM_TEST("ld4r {v17.4h , v18.4h , v19.4h , v20.4h },  [x5]", 3, -4)
+MEM_TEST("ld4r {v17.16b, v18.16b, v19.16b, v20.16b},  [x5]", 3, -3)
+MEM_TEST("ld4r {v17.8b , v18.8b , v19.8b , v20.8b },  [x5]", 3, -2)
+
+MEM_TEST("ld4r {v17.2d , v18.2d , v19.2d , v20.2d },  [x5], #32", 3, -5)
+MEM_TEST("ld4r {v17.1d , v18.1d , v19.1d , v20.1d },  [x5], #32", 3, -4)
+MEM_TEST("ld4r {v17.4s , v18.4s , v19.4s , v20.4s },  [x5], #16", 3, -3)
+MEM_TEST("ld4r {v17.2s , v18.2s , v19.2s , v20.2s },  [x5], #16", 3, -2)
+MEM_TEST("ld4r {v17.8h , v18.8h , v19.8h , v20.8h },  [x5], #8", 3, -5)
+MEM_TEST("ld4r {v17.4h , v18.4h , v19.4h , v20.4h },  [x5], #8", 3, -4)
+MEM_TEST("ld4r {v17.16b, v18.16b, v19.16b, v20.16b},  [x5], #4", 3, -3)
+MEM_TEST("ld4r {v17.8b , v18.8b , v19.8b , v20.8b },  [x5], #4", 3, -2)
+
+MEM_TEST("ld4r {v17.2d , v18.2d , v19.2d , v20.2d },  [x5], x6", 3, -5)
+MEM_TEST("ld4r {v17.1d , v18.1d , v19.1d , v20.1d },  [x5], x6", 3, -4)
+MEM_TEST("ld4r {v17.4s , v18.4s , v19.4s , v20.4s },  [x5], x6", 3, -3)
+MEM_TEST("ld4r {v17.2s , v18.2s , v19.2s , v20.2s },  [x5], x6", 3, -2)
+MEM_TEST("ld4r {v17.8h , v18.8h , v19.8h , v20.8h },  [x5], x6", 3, -5)
+MEM_TEST("ld4r {v17.4h , v18.4h , v19.4h , v20.4h },  [x5], x6", 3, -4)
+MEM_TEST("ld4r {v17.16b, v18.16b, v19.16b, v20.16b},  [x5], x6", 3, -3)
+MEM_TEST("ld4r {v17.8b , v18.8b , v19.8b , v20.8b },  [x5], x6", 3, -2)
 
 
 ////////////////////////////////////////////////////////////////
 printf("LD1/ST1 (single 1-elem struct to/from one lane of 1 reg\n");
 
-//MEM_TEST("st1 {v19.d}[0], [x5]",       17,  7)
-//MEM_TEST("st1 {v19.d}[0], [x5], #8",   -9, 12)
-//MEM_TEST("st1 {v19.d}[0], [x5], x6",   9, 13)
-//
-//MEM_TEST("st1 {v19.d}[1], [x5]",       17,  7)
-//MEM_TEST("st1 {v19.d}[1], [x5], #8",   -9, 12)
-//MEM_TEST("st1 {v19.d}[1], [x5], x6",   9, 13)
-//
-//MEM_TEST("st1 {v19.s}[0], [x5]",       17,  7)
-//MEM_TEST("st1 {v19.s}[0], [x5], #4",   -9, 12)
-//MEM_TEST("st1 {v19.s}[0], [x5], x6",   9, 13)
-//
-//MEM_TEST("st1 {v19.s}[3], [x5]",       17,  7)
-//MEM_TEST("st1 {v19.s}[3], [x5], #4",   -9, 12)
-//MEM_TEST("st1 {v19.s}[3], [x5], x6",   9, 13)
-//
-//MEM_TEST("st1 {v19.h}[0], [x5]",       17,  7)
-//MEM_TEST("st1 {v19.h}[0], [x5], #2",   -9, 12)
-//MEM_TEST("st1 {v19.h}[0], [x5], x6",   9, 13)
-//
-//MEM_TEST("st1 {v19.h}[6], [x5]",       17,  7)
-//MEM_TEST("st1 {v19.h}[6], [x5], #2",   -9, 12)
-//MEM_TEST("st1 {v19.h}[6], [x5], x6",   9, 13)
-//
-//MEM_TEST("st1 {v19.b}[0], [x5]",       17,  7)
-//MEM_TEST("st1 {v19.b}[0], [x5], #1",   -9, 12)
-//MEM_TEST("st1 {v19.b}[0], [x5], x6",   9, 13)
-//
-//MEM_TEST("st1 {v19.b}[13], [x5]",      17,  7)
-//MEM_TEST("st1 {v19.b}[13], [x5], #1",  -9, 12)
-//MEM_TEST("st1 {v19.b}[13], [x5], x6",  9, 13)
-//
-//
-//MEM_TEST("ld1 {v19.d}[0], [x5]",       17,  7)
-//MEM_TEST("ld1 {v19.d}[0], [x5], #8",   -9, 12)
-//MEM_TEST("ld1 {v19.d}[0], [x5], x6",   9, 13)
-//
-//MEM_TEST("ld1 {v19.d}[1], [x5]",       17,  7)
-//MEM_TEST("ld1 {v19.d}[1], [x5], #8",   -9, 12)
-//MEM_TEST("ld1 {v19.d}[1], [x5], x6",   9, 13)
-//
-//MEM_TEST("ld1 {v19.s}[0], [x5]",       17,  7)
-//MEM_TEST("ld1 {v19.s}[0], [x5], #4",   -9, 12)
-//MEM_TEST("ld1 {v19.s}[0], [x5], x6",   9, 13)
-//
-//MEM_TEST("ld1 {v19.s}[3], [x5]",       17,  7)
-//MEM_TEST("ld1 {v19.s}[3], [x5], #4",   -9, 12)
-//MEM_TEST("ld1 {v19.s}[3], [x5], x6",   9, 13)
-//
-//MEM_TEST("ld1 {v19.h}[0], [x5]",       17,  7)
-//MEM_TEST("ld1 {v19.h}[0], [x5], #2",   -9, 12)
-//MEM_TEST("ld1 {v19.h}[0], [x5], x6",   9, 13)
-//
-//MEM_TEST("ld1 {v19.h}[6], [x5]",       17,  7)
-//MEM_TEST("ld1 {v19.h}[6], [x5], #2",   -9, 12)
-//MEM_TEST("ld1 {v19.h}[6], [x5], x6",   9, 13)
-//
-//MEM_TEST("ld1 {v19.b}[0], [x5]",       17,  7)
-//MEM_TEST("ld1 {v19.b}[0], [x5], #1",   -9, 12)
-//MEM_TEST("ld1 {v19.b}[0], [x5], x6",   9, 13)
-//
-//MEM_TEST("ld1 {v19.b}[13], [x5]",      17,  7)
-//MEM_TEST("ld1 {v19.b}[13], [x5], #1",  -9, 12)
-//MEM_TEST("ld1 {v19.b}[13], [x5], x6",  9, 13)
+MEM_TEST("st1 {v19.d}[0], [x5]",       17,  7)
+MEM_TEST("st1 {v19.d}[0], [x5], #8",   -9, 12)
+MEM_TEST("st1 {v19.d}[0], [x5], x6",   9, 13)
+
+MEM_TEST("st1 {v19.d}[1], [x5]",       17,  7)
+MEM_TEST("st1 {v19.d}[1], [x5], #8",   -9, 12)
+MEM_TEST("st1 {v19.d}[1], [x5], x6",   9, 13)
+
+MEM_TEST("st1 {v19.s}[0], [x5]",       17,  7)
+MEM_TEST("st1 {v19.s}[0], [x5], #4",   -9, 12)
+MEM_TEST("st1 {v19.s}[0], [x5], x6",   9, 13)
+
+MEM_TEST("st1 {v19.s}[3], [x5]",       17,  7)
+MEM_TEST("st1 {v19.s}[3], [x5], #4",   -9, 12)
+MEM_TEST("st1 {v19.s}[3], [x5], x6",   9, 13)
+
+MEM_TEST("st1 {v19.h}[0], [x5]",       17,  7)
+MEM_TEST("st1 {v19.h}[0], [x5], #2",   -9, 12)
+MEM_TEST("st1 {v19.h}[0], [x5], x6",   9, 13)
+
+MEM_TEST("st1 {v19.h}[6], [x5]",       17,  7)
+MEM_TEST("st1 {v19.h}[6], [x5], #2",   -9, 12)
+MEM_TEST("st1 {v19.h}[6], [x5], x6",   9, 13)
+
+MEM_TEST("st1 {v19.b}[0], [x5]",       17,  7)
+MEM_TEST("st1 {v19.b}[0], [x5], #1",   -9, 12)
+MEM_TEST("st1 {v19.b}[0], [x5], x6",   9, 13)
+
+MEM_TEST("st1 {v19.b}[13], [x5]",      17,  7)
+MEM_TEST("st1 {v19.b}[13], [x5], #1",  -9, 12)
+MEM_TEST("st1 {v19.b}[13], [x5], x6",  9, 13)
+
+
+MEM_TEST("ld1 {v19.d}[0], [x5]",       17,  7)
+MEM_TEST("ld1 {v19.d}[0], [x5], #8",   -9, 12)
+MEM_TEST("ld1 {v19.d}[0], [x5], x6",   9, 13)
+
+MEM_TEST("ld1 {v19.d}[1], [x5]",       17,  7)
+MEM_TEST("ld1 {v19.d}[1], [x5], #8",   -9, 12)
+MEM_TEST("ld1 {v19.d}[1], [x5], x6",   9, 13)
+
+MEM_TEST("ld1 {v19.s}[0], [x5]",       17,  7)
+MEM_TEST("ld1 {v19.s}[0], [x5], #4",   -9, 12)
+MEM_TEST("ld1 {v19.s}[0], [x5], x6",   9, 13)
+
+MEM_TEST("ld1 {v19.s}[3], [x5]",       17,  7)
+MEM_TEST("ld1 {v19.s}[3], [x5], #4",   -9, 12)
+MEM_TEST("ld1 {v19.s}[3], [x5], x6",   9, 13)
+
+MEM_TEST("ld1 {v19.h}[0], [x5]",       17,  7)
+MEM_TEST("ld1 {v19.h}[0], [x5], #2",   -9, 12)
+MEM_TEST("ld1 {v19.h}[0], [x5], x6",   9, 13)
+
+MEM_TEST("ld1 {v19.h}[6], [x5]",       17,  7)
+MEM_TEST("ld1 {v19.h}[6], [x5], #2",   -9, 12)
+MEM_TEST("ld1 {v19.h}[6], [x5], x6",   9, 13)
+
+MEM_TEST("ld1 {v19.b}[0], [x5]",       17,  7)
+MEM_TEST("ld1 {v19.b}[0], [x5], #1",   -9, 12)
+MEM_TEST("ld1 {v19.b}[0], [x5], x6",   9, 13)
+
+MEM_TEST("ld1 {v19.b}[13], [x5]",      17,  7)
+MEM_TEST("ld1 {v19.b}[13], [x5], #1",  -9, 12)
+MEM_TEST("ld1 {v19.b}[13], [x5], x6",  9, 13)
 
 
 ////////////////////////////////////////////////////////////////
 printf("LD2/ST2 (single 2-elem struct to/from one lane of 2 regs\n");
 
-//MEM_TEST("st2 {v18.d, v19.d}[0], [x5]",       17,  7)
-//MEM_TEST("st2 {v18.d, v19.d}[0], [x5], #16",  -9, 12)
-//MEM_TEST("st2 {v18.d, v19.d}[0], [x5], x6",   9, 13)
-//
-//MEM_TEST("st2 {v18.d, v19.d}[1], [x5]",       17,  7)
-//MEM_TEST("st2 {v18.d, v19.d}[1], [x5], #16",  -9, 12)
-//MEM_TEST("st2 {v18.d, v19.d}[1], [x5], x6",   9, 13)
-//
-//MEM_TEST("st2 {v18.s, v19.s}[0], [x5]",       17,  7)
-//MEM_TEST("st2 {v18.s, v19.s}[0], [x5], #8",   -9, 12)
-//MEM_TEST("st2 {v18.s, v19.s}[0], [x5], x6",   9, 13)
-//
-//MEM_TEST("st2 {v18.s, v19.s}[3], [x5]",       17,  7)
-//MEM_TEST("st2 {v18.s, v19.s}[3], [x5], #8",   -9, 12)
-//MEM_TEST("st2 {v18.s, v19.s}[3], [x5], x6",   9, 13)
-//
-//MEM_TEST("st2 {v18.h, v19.h}[0], [x5]",       17,  7)
-//MEM_TEST("st2 {v18.h, v19.h}[0], [x5], #4",   -9, 12)
-//MEM_TEST("st2 {v18.h, v19.h}[0], [x5], x6",   9, 13)
-//
-//MEM_TEST("st2 {v18.h, v19.h}[6], [x5]",       17,  7)
-//MEM_TEST("st2 {v18.h, v19.h}[6], [x5], #4",   -9, 12)
-//MEM_TEST("st2 {v18.h, v19.h}[6], [x5], x6",   9, 13)
-//
-//MEM_TEST("st2 {v18.b, v19.b}[0], [x5]",       17,  7)
-//MEM_TEST("st2 {v18.b, v19.b}[0], [x5], #2",   -9, 12)
-//MEM_TEST("st2 {v18.b, v19.b}[0], [x5], x6",   9, 13)
-//
-//MEM_TEST("st2 {v18.b, v19.b}[13], [x5]",      17,  7)
-//MEM_TEST("st2 {v18.b, v19.b}[13], [x5], #2",  -9, 12)
-//MEM_TEST("st2 {v18.b, v19.b}[13], [x5], x6",  9, 13)
-//
-//
-//MEM_TEST("ld2 {v18.d, v19.d}[0], [x5]",       17,  7)
-//MEM_TEST("ld2 {v18.d, v19.d}[0], [x5], #16",  -9, 12)
-//MEM_TEST("ld2 {v18.d, v19.d}[0], [x5], x6",   9, 13)
-//
-//MEM_TEST("ld2 {v18.d, v19.d}[1], [x5]",       17,  7)
-//MEM_TEST("ld2 {v18.d, v19.d}[1], [x5], #16",  -9, 12)
-//MEM_TEST("ld2 {v18.d, v19.d}[1], [x5], x6",   9, 13)
-//
-//MEM_TEST("ld2 {v18.s, v19.s}[0], [x5]",       17,  7)
-//MEM_TEST("ld2 {v18.s, v19.s}[0], [x5], #8",   -9, 12)
-//MEM_TEST("ld2 {v18.s, v19.s}[0], [x5], x6",   9, 13)
-//
-//MEM_TEST("ld2 {v18.s, v19.s}[3], [x5]",       17,  7)
-//MEM_TEST("ld2 {v18.s, v19.s}[3], [x5], #8",   -9, 12)
-//MEM_TEST("ld2 {v18.s, v19.s}[3], [x5], x6",   9, 13)
-//
-//MEM_TEST("ld2 {v18.h, v19.h}[0], [x5]",       17,  7)
-//MEM_TEST("ld2 {v18.h, v19.h}[0], [x5], #4",   -9, 12)
-//MEM_TEST("ld2 {v18.h, v19.h}[0], [x5], x6",   9, 13)
-//
-//MEM_TEST("ld2 {v18.h, v19.h}[6], [x5]",       17,  7)
-//MEM_TEST("ld2 {v18.h, v19.h}[6], [x5], #4",   -9, 12)
-//MEM_TEST("ld2 {v18.h, v19.h}[6], [x5], x6",   9, 13)
-//
-//MEM_TEST("ld2 {v18.b, v19.b}[0], [x5]",       17,  7)
-//MEM_TEST("ld2 {v18.b, v19.b}[0], [x5], #2",   -9, 12)
-//MEM_TEST("ld2 {v18.b, v19.b}[0], [x5], x6",   9, 13)
-//
-//MEM_TEST("ld2 {v18.b, v19.b}[13], [x5]",      17,  7)
-//MEM_TEST("ld2 {v18.b, v19.b}[13], [x5], #2",  -9, 12)
-//MEM_TEST("ld2 {v18.b, v19.b}[13], [x5], x6",  9, 13)
+MEM_TEST("st2 {v18.d, v19.d}[0], [x5]",       17,  7)
+MEM_TEST("st2 {v18.d, v19.d}[0], [x5], #16",  -9, 12)
+MEM_TEST("st2 {v18.d, v19.d}[0], [x5], x6",   9, 13)
+
+MEM_TEST("st2 {v18.d, v19.d}[1], [x5]",       17,  7)
+MEM_TEST("st2 {v18.d, v19.d}[1], [x5], #16",  -9, 12)
+MEM_TEST("st2 {v18.d, v19.d}[1], [x5], x6",   9, 13)
+
+MEM_TEST("st2 {v18.s, v19.s}[0], [x5]",       17,  7)
+MEM_TEST("st2 {v18.s, v19.s}[0], [x5], #8",   -9, 12)
+MEM_TEST("st2 {v18.s, v19.s}[0], [x5], x6",   9, 13)
+
+MEM_TEST("st2 {v18.s, v19.s}[3], [x5]",       17,  7)
+MEM_TEST("st2 {v18.s, v19.s}[3], [x5], #8",   -9, 12)
+MEM_TEST("st2 {v18.s, v19.s}[3], [x5], x6",   9, 13)
+
+MEM_TEST("st2 {v18.h, v19.h}[0], [x5]",       17,  7)
+MEM_TEST("st2 {v18.h, v19.h}[0], [x5], #4",   -9, 12)
+MEM_TEST("st2 {v18.h, v19.h}[0], [x5], x6",   9, 13)
+
+MEM_TEST("st2 {v18.h, v19.h}[6], [x5]",       17,  7)
+MEM_TEST("st2 {v18.h, v19.h}[6], [x5], #4",   -9, 12)
+MEM_TEST("st2 {v18.h, v19.h}[6], [x5], x6",   9, 13)
+
+MEM_TEST("st2 {v18.b, v19.b}[0], [x5]",       17,  7)
+MEM_TEST("st2 {v18.b, v19.b}[0], [x5], #2",   -9, 12)
+MEM_TEST("st2 {v18.b, v19.b}[0], [x5], x6",   9, 13)
+
+MEM_TEST("st2 {v18.b, v19.b}[13], [x5]",      17,  7)
+MEM_TEST("st2 {v18.b, v19.b}[13], [x5], #2",  -9, 12)
+MEM_TEST("st2 {v18.b, v19.b}[13], [x5], x6",  9, 13)
+
+
+MEM_TEST("ld2 {v18.d, v19.d}[0], [x5]",       17,  7)
+MEM_TEST("ld2 {v18.d, v19.d}[0], [x5], #16",  -9, 12)
+MEM_TEST("ld2 {v18.d, v19.d}[0], [x5], x6",   9, 13)
+
+MEM_TEST("ld2 {v18.d, v19.d}[1], [x5]",       17,  7)
+MEM_TEST("ld2 {v18.d, v19.d}[1], [x5], #16",  -9, 12)
+MEM_TEST("ld2 {v18.d, v19.d}[1], [x5], x6",   9, 13)
+
+MEM_TEST("ld2 {v18.s, v19.s}[0], [x5]",       17,  7)
+MEM_TEST("ld2 {v18.s, v19.s}[0], [x5], #8",   -9, 12)
+MEM_TEST("ld2 {v18.s, v19.s}[0], [x5], x6",   9, 13)
+
+MEM_TEST("ld2 {v18.s, v19.s}[3], [x5]",       17,  7)
+MEM_TEST("ld2 {v18.s, v19.s}[3], [x5], #8",   -9, 12)
+MEM_TEST("ld2 {v18.s, v19.s}[3], [x5], x6",   9, 13)
+
+MEM_TEST("ld2 {v18.h, v19.h}[0], [x5]",       17,  7)
+MEM_TEST("ld2 {v18.h, v19.h}[0], [x5], #4",   -9, 12)
+MEM_TEST("ld2 {v18.h, v19.h}[0], [x5], x6",   9, 13)
+
+MEM_TEST("ld2 {v18.h, v19.h}[6], [x5]",       17,  7)
+MEM_TEST("ld2 {v18.h, v19.h}[6], [x5], #4",   -9, 12)
+MEM_TEST("ld2 {v18.h, v19.h}[6], [x5], x6",   9, 13)
+
+MEM_TEST("ld2 {v18.b, v19.b}[0], [x5]",       17,  7)
+MEM_TEST("ld2 {v18.b, v19.b}[0], [x5], #2",   -9, 12)
+MEM_TEST("ld2 {v18.b, v19.b}[0], [x5], x6",   9, 13)
+
+MEM_TEST("ld2 {v18.b, v19.b}[13], [x5]",      17,  7)
+MEM_TEST("ld2 {v18.b, v19.b}[13], [x5], #2",  -9, 12)
+MEM_TEST("ld2 {v18.b, v19.b}[13], [x5], x6",  9, 13)
 
 
 ////////////////////////////////////////////////////////////////
 printf("LD3/ST3 (single 3-elem struct to/from one lane of 3 regs\n");
 
-//MEM_TEST("st3 {v17.d, v18.d, v19.d}[0], [x5]",       17,  7)
-//MEM_TEST("st3 {v17.d, v18.d, v19.d}[0], [x5], #24",  -9, 12)
-//MEM_TEST("st3 {v17.d, v18.d, v19.d}[0], [x5], x6",   9, 13)
-//
-//MEM_TEST("st3 {v17.d, v18.d, v19.d}[1], [x5]",       17,  7)
-//MEM_TEST("st3 {v17.d, v18.d, v19.d}[1], [x5], #24",  -9, 12)
-//MEM_TEST("st3 {v17.d, v18.d, v19.d}[1], [x5], x6",   9, 13)
-//
-//MEM_TEST("st3 {v17.s, v18.s, v19.s}[0], [x5]",       17,  7)
-//MEM_TEST("st3 {v17.s, v18.s, v19.s}[0], [x5], #12",  -9, 12)
-//MEM_TEST("st3 {v17.s, v18.s, v19.s}[0], [x5], x6",   9, 13)
-//
-//MEM_TEST("st3 {v17.s, v18.s, v19.s}[3], [x5]",       17,  7)
-//MEM_TEST("st3 {v17.s, v18.s, v19.s}[3], [x5], #12",  -9, 12)
-//MEM_TEST("st3 {v17.s, v18.s, v19.s}[3], [x5], x6",   9, 13)
-//
-//MEM_TEST("st3 {v17.h, v18.h, v19.h}[0], [x5]",       17,  7)
-//MEM_TEST("st3 {v17.h, v18.h, v19.h}[0], [x5], #6",   -9, 12)
-//MEM_TEST("st3 {v17.h, v18.h, v19.h}[0], [x5], x6",   9, 13)
-//
-//MEM_TEST("st3 {v17.h, v18.h, v19.h}[6], [x5]",       17,  7)
-//MEM_TEST("st3 {v17.h, v18.h, v19.h}[6], [x5], #6",   -9, 12)
-//MEM_TEST("st3 {v17.h, v18.h, v19.h}[6], [x5], x6",   9, 13)
-//
-//MEM_TEST("st3 {v17.b, v18.b, v19.b}[0], [x5]",       17,  7)
-//MEM_TEST("st3 {v17.b, v18.b, v19.b}[0], [x5], #3",   -9, 12)
-//MEM_TEST("st3 {v17.b, v18.b, v19.b}[0], [x5], x6",   9, 13)
-//
-//MEM_TEST("st3 {v17.b, v18.b, v19.b}[13], [x5]",      17,  7)
-//MEM_TEST("st3 {v17.b, v18.b, v19.b}[13], [x5], #3",  -9, 12)
-//MEM_TEST("st3 {v17.b, v18.b, v19.b}[13], [x5], x6",  9, 13)
-//
-//
-//MEM_TEST("ld3 {v17.d, v18.d, v19.d}[0], [x5]",       17,  7)
-//MEM_TEST("ld3 {v17.d, v18.d, v19.d}[0], [x5], #24",  -9, 12)
-//MEM_TEST("ld3 {v17.d, v18.d, v19.d}[0], [x5], x6",   9, 13)
-//
-//MEM_TEST("ld3 {v17.d, v18.d, v19.d}[1], [x5]",       17,  7)
-//MEM_TEST("ld3 {v17.d, v18.d, v19.d}[1], [x5], #24",  -9, 12)
-//MEM_TEST("ld3 {v17.d, v18.d, v19.d}[1], [x5], x6",   9, 13)
-//
-//MEM_TEST("ld3 {v17.s, v18.s, v19.s}[0], [x5]",       17,  7)
-//MEM_TEST("ld3 {v17.s, v18.s, v19.s}[0], [x5], #12",  -9, 12)
-//MEM_TEST("ld3 {v17.s, v18.s, v19.s}[0], [x5], x6",   9, 13)
-//
-//MEM_TEST("ld3 {v17.s, v18.s, v19.s}[3], [x5]",       17,  7)
-//MEM_TEST("ld3 {v17.s, v18.s, v19.s}[3], [x5], #12",  -9, 12)
-//MEM_TEST("ld3 {v17.s, v18.s, v19.s}[3], [x5], x6",   9, 13)
-//
-//MEM_TEST("ld3 {v17.h, v18.h, v19.h}[0], [x5]",       17,  7)
-//MEM_TEST("ld3 {v17.h, v18.h, v19.h}[0], [x5], #6",   -9, 12)
-//MEM_TEST("ld3 {v17.h, v18.h, v19.h}[0], [x5], x6",   9, 13)
-//
-//MEM_TEST("ld3 {v17.h, v18.h, v19.h}[6], [x5]",       17,  7)
-//MEM_TEST("ld3 {v17.h, v18.h, v19.h}[6], [x5], #6",   -9, 12)
-//MEM_TEST("ld3 {v17.h, v18.h, v19.h}[6], [x5], x6",   9, 13)
-//
-//MEM_TEST("ld3 {v17.b, v18.b, v19.b}[0], [x5]",       17,  7)
-//MEM_TEST("ld3 {v17.b, v18.b, v19.b}[0], [x5], #3",   -9, 12)
-//MEM_TEST("ld3 {v17.b, v18.b, v19.b}[0], [x5], x6",   9, 13)
-//
-//MEM_TEST("ld3 {v17.b, v18.b, v19.b}[13], [x5]",      17,  7)
-//MEM_TEST("ld3 {v17.b, v18.b, v19.b}[13], [x5], #3",  -9, 12)
-//MEM_TEST("ld3 {v17.b, v18.b, v19.b}[13], [x5], x6",  9, 13)
+MEM_TEST("st3 {v17.d, v18.d, v19.d}[0], [x5]",       17,  7)
+MEM_TEST("st3 {v17.d, v18.d, v19.d}[0], [x5], #24",  -9, 12)
+MEM_TEST("st3 {v17.d, v18.d, v19.d}[0], [x5], x6",   9, 13)
+
+MEM_TEST("st3 {v17.d, v18.d, v19.d}[1], [x5]",       17,  7)
+MEM_TEST("st3 {v17.d, v18.d, v19.d}[1], [x5], #24",  -9, 12)
+MEM_TEST("st3 {v17.d, v18.d, v19.d}[1], [x5], x6",   9, 13)
+
+MEM_TEST("st3 {v17.s, v18.s, v19.s}[0], [x5]",       17,  7)
+MEM_TEST("st3 {v17.s, v18.s, v19.s}[0], [x5], #12",  -9, 12)
+MEM_TEST("st3 {v17.s, v18.s, v19.s}[0], [x5], x6",   9, 13)
+
+MEM_TEST("st3 {v17.s, v18.s, v19.s}[3], [x5]",       17,  7)
+MEM_TEST("st3 {v17.s, v18.s, v19.s}[3], [x5], #12",  -9, 12)
+MEM_TEST("st3 {v17.s, v18.s, v19.s}[3], [x5], x6",   9, 13)
+
+MEM_TEST("st3 {v17.h, v18.h, v19.h}[0], [x5]",       17,  7)
+MEM_TEST("st3 {v17.h, v18.h, v19.h}[0], [x5], #6",   -9, 12)
+MEM_TEST("st3 {v17.h, v18.h, v19.h}[0], [x5], x6",   9, 13)
+
+MEM_TEST("st3 {v17.h, v18.h, v19.h}[6], [x5]",       17,  7)
+MEM_TEST("st3 {v17.h, v18.h, v19.h}[6], [x5], #6",   -9, 12)
+MEM_TEST("st3 {v17.h, v18.h, v19.h}[6], [x5], x6",   9, 13)
+
+MEM_TEST("st3 {v17.b, v18.b, v19.b}[0], [x5]",       17,  7)
+MEM_TEST("st3 {v17.b, v18.b, v19.b}[0], [x5], #3",   -9, 12)
+MEM_TEST("st3 {v17.b, v18.b, v19.b}[0], [x5], x6",   9, 13)
+
+MEM_TEST("st3 {v17.b, v18.b, v19.b}[13], [x5]",      17,  7)
+MEM_TEST("st3 {v17.b, v18.b, v19.b}[13], [x5], #3",  -9, 12)
+MEM_TEST("st3 {v17.b, v18.b, v19.b}[13], [x5], x6",  9, 13)
+
+
+MEM_TEST("ld3 {v17.d, v18.d, v19.d}[0], [x5]",       17,  7)
+MEM_TEST("ld3 {v17.d, v18.d, v19.d}[0], [x5], #24",  -9, 12)
+MEM_TEST("ld3 {v17.d, v18.d, v19.d}[0], [x5], x6",   9, 13)
+
+MEM_TEST("ld3 {v17.d, v18.d, v19.d}[1], [x5]",       17,  7)
+MEM_TEST("ld3 {v17.d, v18.d, v19.d}[1], [x5], #24",  -9, 12)
+MEM_TEST("ld3 {v17.d, v18.d, v19.d}[1], [x5], x6",   9, 13)
+
+MEM_TEST("ld3 {v17.s, v18.s, v19.s}[0], [x5]",       17,  7)
+MEM_TEST("ld3 {v17.s, v18.s, v19.s}[0], [x5], #12",  -9, 12)
+MEM_TEST("ld3 {v17.s, v18.s, v19.s}[0], [x5], x6",   9, 13)
+
+MEM_TEST("ld3 {v17.s, v18.s, v19.s}[3], [x5]",       17,  7)
+MEM_TEST("ld3 {v17.s, v18.s, v19.s}[3], [x5], #12",  -9, 12)
+MEM_TEST("ld3 {v17.s, v18.s, v19.s}[3], [x5], x6",   9, 13)
+
+MEM_TEST("ld3 {v17.h, v18.h, v19.h}[0], [x5]",       17,  7)
+MEM_TEST("ld3 {v17.h, v18.h, v19.h}[0], [x5], #6",   -9, 12)
+MEM_TEST("ld3 {v17.h, v18.h, v19.h}[0], [x5], x6",   9, 13)
+
+MEM_TEST("ld3 {v17.h, v18.h, v19.h}[6], [x5]",       17,  7)
+MEM_TEST("ld3 {v17.h, v18.h, v19.h}[6], [x5], #6",   -9, 12)
+MEM_TEST("ld3 {v17.h, v18.h, v19.h}[6], [x5], x6",   9, 13)
+
+MEM_TEST("ld3 {v17.b, v18.b, v19.b}[0], [x5]",       17,  7)
+MEM_TEST("ld3 {v17.b, v18.b, v19.b}[0], [x5], #3",   -9, 12)
+MEM_TEST("ld3 {v17.b, v18.b, v19.b}[0], [x5], x6",   9, 13)
+
+MEM_TEST("ld3 {v17.b, v18.b, v19.b}[13], [x5]",      17,  7)
+MEM_TEST("ld3 {v17.b, v18.b, v19.b}[13], [x5], #3",  -9, 12)
+MEM_TEST("ld3 {v17.b, v18.b, v19.b}[13], [x5], x6",  9, 13)
 
 
 ////////////////////////////////////////////////////////////////
 printf("LD4/ST4 (single 4-elem struct to/from one lane of 4 regs\n");
 
-//MEM_TEST("st4 {v17.d, v18.d, v19.d, v20.d}[0], [x5]",       17,  7)
-//MEM_TEST("st4 {v17.d, v18.d, v19.d, v20.d}[0], [x5], #32",  -9, 12)
-//MEM_TEST("st4 {v17.d, v18.d, v19.d, v20.d}[0], [x5], x6",   9, 13)
-//
-//MEM_TEST("st4 {v17.d, v18.d, v19.d, v20.d}[1], [x5]",       17,  7)
-//MEM_TEST("st4 {v17.d, v18.d, v19.d, v20.d}[1], [x5], #32",  -9, 12)
-//MEM_TEST("st4 {v17.d, v18.d, v19.d, v20.d}[1], [x5], x6",   9, 13)
-//
-//MEM_TEST("st4 {v17.s, v18.s, v19.s, v20.s}[0], [x5]",       17,  7)
-//MEM_TEST("st4 {v17.s, v18.s, v19.s, v20.s}[0], [x5], #16",  -9, 12)
-//MEM_TEST("st4 {v17.s, v18.s, v19.s, v20.s}[0], [x5], x6",   9, 13)
-//
-//MEM_TEST("st4 {v17.s, v18.s, v19.s, v20.s}[3], [x5]",       17,  7)
-//MEM_TEST("st4 {v17.s, v18.s, v19.s, v20.s}[3], [x5], #16",  -9, 12)
-//MEM_TEST("st4 {v17.s, v18.s, v19.s, v20.s}[3], [x5], x6",   9, 13)
-//
-//MEM_TEST("st4 {v17.h, v18.h, v19.h, v20.h}[0], [x5]",       17,  7)
-//MEM_TEST("st4 {v17.h, v18.h, v19.h, v20.h}[0], [x5], #8",   -9, 12)
-//MEM_TEST("st4 {v17.h, v18.h, v19.h, v20.h}[0], [x5], x6",   9, 13)
-//
-//MEM_TEST("st4 {v17.h, v18.h, v19.h, v20.h}[6], [x5]",       17,  7)
-//MEM_TEST("st4 {v17.h, v18.h, v19.h, v20.h}[6], [x5], #8",   -9, 12)
-//MEM_TEST("st4 {v17.h, v18.h, v19.h, v20.h}[6], [x5], x6",   9, 13)
-//
-//MEM_TEST("st4 {v17.b, v18.b, v19.b, v20.b}[0], [x5]",       17,  7)
-//MEM_TEST("st4 {v17.b, v18.b, v19.b, v20.b}[0], [x5], #4",   -9, 12)
-//MEM_TEST("st4 {v17.b, v18.b, v19.b, v20.b}[0], [x5], x6",   9, 13)
-//
-//MEM_TEST("st4 {v17.b, v18.b, v19.b, v20.b}[13], [x5]",      17,  7)
-//MEM_TEST("st4 {v17.b, v18.b, v19.b, v20.b}[13], [x5], #4",  -9, 12)
-//MEM_TEST("st4 {v17.b, v18.b, v19.b, v20.b}[13], [x5], x6",  9, 13)
-//
-//
-//MEM_TEST("ld4 {v17.d, v18.d, v19.d, v20.d}[0], [x5]",       17,  7)
-//MEM_TEST("ld4 {v17.d, v18.d, v19.d, v20.d}[0], [x5], #32",  -9, 12)
-//MEM_TEST("ld4 {v17.d, v18.d, v19.d, v20.d}[0], [x5], x6",   9, 13)
-//
-//MEM_TEST("ld4 {v17.d, v18.d, v19.d, v20.d}[1], [x5]",       17,  7)
-//MEM_TEST("ld4 {v17.d, v18.d, v19.d, v20.d}[1], [x5], #32",  -9, 12)
-//MEM_TEST("ld4 {v17.d, v18.d, v19.d, v20.d}[1], [x5], x6",   9, 13)
-//
-//MEM_TEST("ld4 {v17.s, v18.s, v19.s, v20.s}[0], [x5]",       17,  7)
-//MEM_TEST("ld4 {v17.s, v18.s, v19.s, v20.s}[0], [x5], #16",  -9, 12)
-//MEM_TEST("ld4 {v17.s, v18.s, v19.s, v20.s}[0], [x5], x6",   9, 13)
-//
-//MEM_TEST("ld4 {v17.s, v18.s, v19.s, v20.s}[3], [x5]",       17,  7)
-//MEM_TEST("ld4 {v17.s, v18.s, v19.s, v20.s}[3], [x5], #16",  -9, 12)
-//MEM_TEST("ld4 {v17.s, v18.s, v19.s, v20.s}[3], [x5], x6",   9, 13)
-//
-//MEM_TEST("ld4 {v17.h, v18.h, v19.h, v20.h}[0], [x5]",       17,  7)
-//MEM_TEST("ld4 {v17.h, v18.h, v19.h, v20.h}[0], [x5], #8",   -9, 12)
-//MEM_TEST("ld4 {v17.h, v18.h, v19.h, v20.h}[0], [x5], x6",   9, 13)
-//
-//MEM_TEST("ld4 {v17.h, v18.h, v19.h, v20.h}[6], [x5]",       17,  7)
-//MEM_TEST("ld4 {v17.h, v18.h, v19.h, v20.h}[6], [x5], #8",   -9, 12)
-//MEM_TEST("ld4 {v17.h, v18.h, v19.h, v20.h}[6], [x5], x6",   9, 13)
-//
-//MEM_TEST("ld4 {v17.b, v18.b, v19.b, v20.b}[0], [x5]",       17,  7)
-//MEM_TEST("ld4 {v17.b, v18.b, v19.b, v20.b}[0], [x5], #4",   -9, 12)
-//MEM_TEST("ld4 {v17.b, v18.b, v19.b, v20.b}[0], [x5], x6",   9, 13)
-//
-//MEM_TEST("ld4 {v17.b, v18.b, v19.b, v20.b}[13], [x5]",      17,  7)
-//MEM_TEST("ld4 {v17.b, v18.b, v19.b, v20.b}[13], [x5], #4",  -9, 12)
-//MEM_TEST("ld4 {v17.b, v18.b, v19.b, v20.b}[13], [x5], x6",  9, 13)
+MEM_TEST("st4 {v17.d, v18.d, v19.d, v20.d}[0], [x5]",       17,  7)
+MEM_TEST("st4 {v17.d, v18.d, v19.d, v20.d}[0], [x5], #32",  -9, 12)
+MEM_TEST("st4 {v17.d, v18.d, v19.d, v20.d}[0], [x5], x6",   9, 13)
+
+MEM_TEST("st4 {v17.d, v18.d, v19.d, v20.d}[1], [x5]",       17,  7)
+MEM_TEST("st4 {v17.d, v18.d, v19.d, v20.d}[1], [x5], #32",  -9, 12)
+MEM_TEST("st4 {v17.d, v18.d, v19.d, v20.d}[1], [x5], x6",   9, 13)
+
+MEM_TEST("st4 {v17.s, v18.s, v19.s, v20.s}[0], [x5]",       17,  7)
+MEM_TEST("st4 {v17.s, v18.s, v19.s, v20.s}[0], [x5], #16",  -9, 12)
+MEM_TEST("st4 {v17.s, v18.s, v19.s, v20.s}[0], [x5], x6",   9, 13)
+
+MEM_TEST("st4 {v17.s, v18.s, v19.s, v20.s}[3], [x5]",       17,  7)
+MEM_TEST("st4 {v17.s, v18.s, v19.s, v20.s}[3], [x5], #16",  -9, 12)
+MEM_TEST("st4 {v17.s, v18.s, v19.s, v20.s}[3], [x5], x6",   9, 13)
+
+MEM_TEST("st4 {v17.h, v18.h, v19.h, v20.h}[0], [x5]",       17,  7)
+MEM_TEST("st4 {v17.h, v18.h, v19.h, v20.h}[0], [x5], #8",   -9, 12)
+MEM_TEST("st4 {v17.h, v18.h, v19.h, v20.h}[0], [x5], x6",   9, 13)
+
+MEM_TEST("st4 {v17.h, v18.h, v19.h, v20.h}[6], [x5]",       17,  7)
+MEM_TEST("st4 {v17.h, v18.h, v19.h, v20.h}[6], [x5], #8",   -9, 12)
+MEM_TEST("st4 {v17.h, v18.h, v19.h, v20.h}[6], [x5], x6",   9, 13)
+
+MEM_TEST("st4 {v17.b, v18.b, v19.b, v20.b}[0], [x5]",       17,  7)
+MEM_TEST("st4 {v17.b, v18.b, v19.b, v20.b}[0], [x5], #4",   -9, 12)
+MEM_TEST("st4 {v17.b, v18.b, v19.b, v20.b}[0], [x5], x6",   9, 13)
+
+MEM_TEST("st4 {v17.b, v18.b, v19.b, v20.b}[13], [x5]",      17,  7)
+MEM_TEST("st4 {v17.b, v18.b, v19.b, v20.b}[13], [x5], #4",  -9, 12)
+MEM_TEST("st4 {v17.b, v18.b, v19.b, v20.b}[13], [x5], x6",  9, 13)
+
+
+MEM_TEST("ld4 {v17.d, v18.d, v19.d, v20.d}[0], [x5]",       17,  7)
+MEM_TEST("ld4 {v17.d, v18.d, v19.d, v20.d}[0], [x5], #32",  -9, 12)
+MEM_TEST("ld4 {v17.d, v18.d, v19.d, v20.d}[0], [x5], x6",   9, 13)
+
+MEM_TEST("ld4 {v17.d, v18.d, v19.d, v20.d}[1], [x5]",       17,  7)
+MEM_TEST("ld4 {v17.d, v18.d, v19.d, v20.d}[1], [x5], #32",  -9, 12)
+MEM_TEST("ld4 {v17.d, v18.d, v19.d, v20.d}[1], [x5], x6",   9, 13)
+
+MEM_TEST("ld4 {v17.s, v18.s, v19.s, v20.s}[0], [x5]",       17,  7)
+MEM_TEST("ld4 {v17.s, v18.s, v19.s, v20.s}[0], [x5], #16",  -9, 12)
+MEM_TEST("ld4 {v17.s, v18.s, v19.s, v20.s}[0], [x5], x6",   9, 13)
+
+MEM_TEST("ld4 {v17.s, v18.s, v19.s, v20.s}[3], [x5]",       17,  7)
+MEM_TEST("ld4 {v17.s, v18.s, v19.s, v20.s}[3], [x5], #16",  -9, 12)
+MEM_TEST("ld4 {v17.s, v18.s, v19.s, v20.s}[3], [x5], x6",   9, 13)
+
+MEM_TEST("ld4 {v17.h, v18.h, v19.h, v20.h}[0], [x5]",       17,  7)
+MEM_TEST("ld4 {v17.h, v18.h, v19.h, v20.h}[0], [x5], #8",   -9, 12)
+MEM_TEST("ld4 {v17.h, v18.h, v19.h, v20.h}[0], [x5], x6",   9, 13)
+
+MEM_TEST("ld4 {v17.h, v18.h, v19.h, v20.h}[6], [x5]",       17,  7)
+MEM_TEST("ld4 {v17.h, v18.h, v19.h, v20.h}[6], [x5], #8",   -9, 12)
+MEM_TEST("ld4 {v17.h, v18.h, v19.h, v20.h}[6], [x5], x6",   9, 13)
+
+MEM_TEST("ld4 {v17.b, v18.b, v19.b, v20.b}[0], [x5]",       17,  7)
+MEM_TEST("ld4 {v17.b, v18.b, v19.b, v20.b}[0], [x5], #4",   -9, 12)
+MEM_TEST("ld4 {v17.b, v18.b, v19.b, v20.b}[0], [x5], x6",   9, 13)
+
+MEM_TEST("ld4 {v17.b, v18.b, v19.b, v20.b}[13], [x5]",      17,  7)
+MEM_TEST("ld4 {v17.b, v18.b, v19.b, v20.b}[13], [x5], #4",  -9, 12)
+MEM_TEST("ld4 {v17.b, v18.b, v19.b, v20.b}[13], [x5], x6",  9, 13)
 
 } /* end of test_memory2() */
 

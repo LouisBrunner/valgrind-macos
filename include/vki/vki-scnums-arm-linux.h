@@ -414,6 +414,14 @@
 #define __NR_setns			375
 #define __NR_process_vm_readv		376
 #define __NR_process_vm_writev		377
+#define __NR_kcmp                       378
+#define __NR_finit_module               379
+#define __NR_sched_setattr              380
+#define __NR_sched_getattr              381
+#define __NR_renameat2                  382
+#define __NR_seccomp                    383
+#define __NR_getrandom                  384
+#define __NR_memfd_create               385
 
 
 

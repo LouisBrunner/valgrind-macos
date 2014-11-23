@@ -387,6 +387,14 @@
 #define __NR_setns		350
 #define __NR_process_vm_readv	351
 #define __NR_process_vm_writev	352
+#define __NR_finit_module	353
+#define __NR_kcmp		354
+#define __NR_sched_setattr	355
+#define __NR_sched_getattr	356
+#define __NR_renameat2		357
+#define __NR_seccomp		358
+#define __NR_getrandom		359
+#define __NR_memfd_create	360
 
 #endif /* __VKI_SCNUMS_PPC64_LINUX_H */
 

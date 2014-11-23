@@ -12189,6 +12189,7 @@ Bool dis_AdvSIMD_fp_to_from_int_conv(/*MB_OUT*/DisResult* dres, UInt insn)
    /* 31 30 29 28    23   21 20    18     15     9 4
       sf  0  0 11110 type 1  rmode opcode 000000 n d
       The first 3 bits are really "sf 0 S", but S is always zero.
+      Decode fields: sf,type,rmode,opcode
    */
 #  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
    if (INSN(30,29) != BITS2(0,0)
@@ -12205,7 +12206,7 @@ Bool dis_AdvSIMD_fp_to_from_int_conv(/*MB_OUT*/DisResult* dres, UInt insn)
    UInt dd    = INSN(4,0);
 
    // op = 000, 001
-   /* -------- FCVT{N,P,M,Z}{S,U} (scalar, integer) -------- */
+   /* -------- FCVT{N,P,M,Z,A}{S,U} (scalar, integer) -------- */
    /*    30       23   20 18  15     9 4
       sf 00 11110 0x 1 00 000 000000 n d  FCVTNS Rd, Fn (round to
       sf 00 11110 0x 1 00 001 000000 n d  FCVTNU Rd, Fn  nearest)
@@ -12213,23 +12214,38 @@ Bool dis_AdvSIMD_fp_to_from_int_conv(/*MB_OUT*/DisResult* dres, UInt insn)
       ---------------- 10 --------------  FCVTM-------- (round to -inf)
       ---------------- 11 --------------  FCVTZ-------- (round to zero)
 
+      ---------------- 00 100 ----------  FCVTAS------- (nearest, ties away)
+      ---------------- 00 101 ----------  FCVTAU------- (nearest, ties away)
+
       Rd is Xd when sf==1, Wd when sf==0
       Fn is Dn when x==1, Sn when x==0
       20:19 carry the rounding mode, using the same encoding as FPCR
    */
-   if (ty <= X01 && (op == BITS3(0,0,0) || op == BITS3(0,0,1))) {
+   if (ty <= X01
+       && (   ((op == BITS3(0,0,0) || op == BITS3(0,0,1)) && True)
+           || ((op == BITS3(1,0,0) || op == BITS3(1,0,1)) && rm == BITS2(0,0))
+          )
+      ) {
       Bool isI64 = bitSF == 1;
       Bool isF64 = (ty & 1) == 1;
       Bool isU   = (op & 1) == 1;
       /* Decide on the IR rounding mode to use. */
       IRRoundingMode irrm = 8; /*impossible*/
       HChar ch = '?';
-      switch (rm) {
-         case BITS2(0,0): ch = 'n'; irrm = Irrm_NEAREST; break;
-         case BITS2(0,1): ch = 'p'; irrm = Irrm_PosINF; break;
-         case BITS2(1,0): ch = 'm'; irrm = Irrm_NegINF; break;
-         case BITS2(1,1): ch = 'z'; irrm = Irrm_ZERO; break;
-         default: vassert(0);
+      if (op == BITS3(0,0,0) || op == BITS3(0,0,1)) {
+         switch (rm) {
+            case BITS2(0,0): ch = 'n'; irrm = Irrm_NEAREST; break;
+            case BITS2(0,1): ch = 'p'; irrm = Irrm_PosINF; break;
+            case BITS2(1,0): ch = 'm'; irrm = Irrm_NegINF; break;
+            case BITS2(1,1): ch = 'z'; irrm = Irrm_ZERO; break;
+            default: vassert(0);
+         }
+      } else {
+         vassert(op == BITS3(1,0,0) || op == BITS3(1,0,1));
+         switch (rm) {
+            case BITS2(0,0): ch = 'a'; irrm = Irrm_NEAREST; break;
+            default: vassert(0);
+         }
       }
       vassert(irrm != 8);
       /* Decide on the conversion primop, based on the source size,
@@ -12254,9 +12270,11 @@ Bool dis_AdvSIMD_fp_to_from_int_conv(/*MB_OUT*/DisResult* dres, UInt insn)
              (iop == Iop_F32toI32S && irrm == Irrm_ZERO)   /* FCVTZS Wd,Sn */
           || (iop == Iop_F32toI32S && irrm == Irrm_NegINF) /* FCVTMS Wd,Sn */
           || (iop == Iop_F32toI32S && irrm == Irrm_PosINF) /* FCVTPS Wd,Sn */
+          || (iop == Iop_F32toI32S && irrm == Irrm_NEAREST)/* FCVT{A,N}S W,S */
           /* F32toI32U */
           || (iop == Iop_F32toI32U && irrm == Irrm_ZERO)   /* FCVTZU Wd,Sn */
           || (iop == Iop_F32toI32U && irrm == Irrm_NegINF) /* FCVTMU Wd,Sn */
+          || (iop == Iop_F32toI32U && irrm == Irrm_NEAREST)/* FCVT{A,N}U W,S */
           /* F32toI64S */
           || (iop == Iop_F32toI64S && irrm == Irrm_ZERO)   /* FCVTZS Xd,Sn */
           /* F32toI64U */

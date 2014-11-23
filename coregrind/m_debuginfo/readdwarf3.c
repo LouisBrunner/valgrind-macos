@@ -1373,11 +1373,29 @@ void get_Form_contents ( /*OUT*/FormContents* cts,
             TRACE_D3("%x ", (UInt)u8);
             work >>= 8;
          }
-         /* Due to the way that the hash table is constructed, the
-            resulting DIE offset here is already "cooked".  See
-            cook_die_using_form.  */
-         cts->u.val = lookup_signatured_type (cc->signature_types, signature,
-                                              c->barf);
+
+         /* cc->signature_types is only built/initialised when
+            VG_(clo_read_var_info) is set. In this case,
+            the DW_FORM_ref_sig8 can be looked up.
+            But we can also arrive here when only reading inline info
+            and VG_(clo_trace_symtab) is set. In such a case,
+            we cannot lookup the DW_FORM_ref_sig8, we rather assign
+            a dummy value. This is a kludge, but otherwise,
+            the 'dwarf inline info reader' tracing would have to
+            do type processing/reading. It is better to avoid
+            adding significant 'real' processing only due to tracing. */
+         if (VG_(clo_read_var_info)) {
+            /* Due to the way that the hash table is constructed, the
+               resulting DIE offset here is already "cooked".  See
+               cook_die_using_form.  */
+            cts->u.val = lookup_signatured_type (cc->signature_types, signature,
+                                                 c->barf);
+         } else {
+            vg_assert (td3);
+            vg_assert (VG_(clo_read_inline_info));
+            TRACE_D3("<not dereferencing signature type>");
+            cts->u.val = 0; /* Assign a dummy/rubbish value */
+         }
          cts->szB   = sizeof(UWord);
          break;
       }
@@ -1500,7 +1518,7 @@ UInt get_Form_szB (CUConst* cc, DW_FORM form )
       case DW_FORM_block:
          return VARSZ_FORM;
       case DW_FORM_ref_sig8:
-         return 8 + 8;
+         return 8;
       case DW_FORM_indirect:
          return VARSZ_FORM;
       case DW_FORM_GNU_ref_alt:

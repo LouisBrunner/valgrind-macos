@@ -12319,6 +12319,7 @@ Bool dis_AdvSIMD_fp_to_from_int_conv(/*MB_OUT*/DisResult* dres, UInt insn)
           /* F32toI32U */
           || (iop == Iop_F32toI32U && irrm == Irrm_ZERO)   /* FCVTZU Wd,Sn */
           || (iop == Iop_F32toI32U && irrm == Irrm_NegINF) /* FCVTMU Wd,Sn */
+          || (iop == Iop_F32toI32U && irrm == Irrm_PosINF) /* FCVTPU Wd,Sn */
           || (iop == Iop_F32toI32U && irrm == Irrm_NEAREST)/* FCVT{A,N}U W,S */
           /* F32toI64S */
           || (iop == Iop_F32toI64S && irrm == Irrm_ZERO)   /* FCVTZS Xd,Sn */

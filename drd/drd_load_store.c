@@ -633,7 +633,9 @@ IRSB* DRD_(instrument)(VgCallbackClosure* const closure,
          switch (st->Ist.MBE.event)
          {
          case Imbe_Fence:
-            break; /* not interesting */
+            break; /* not interesting to DRD */
+         case Imbe_CancelReservation:
+            break; /* not interesting to DRD */
          default:
             tl_assert(0);
          }

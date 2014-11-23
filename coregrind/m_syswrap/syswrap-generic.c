@@ -3242,7 +3242,7 @@ PRE(sys_getdents)
    *flags |= SfMayBlock;
    PRINT("sys_getdents ( %ld, %#lx, %ld )", ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "getdents",
-                 unsigned int, fd, struct linux_dirent *, dirp,
+                 unsigned int, fd, struct vki_dirent *, dirp,
                  unsigned int, count);
    PRE_MEM_WRITE( "getdents(dirp)", ARG2, ARG3 );
 }
@@ -3259,7 +3259,7 @@ PRE(sys_getdents64)
    *flags |= SfMayBlock;
    PRINT("sys_getdents64 ( %ld, %#lx, %ld )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "getdents64",
-                 unsigned int, fd, struct linux_dirent64 *, dirp,
+                 unsigned int, fd, struct vki_dirent64 *, dirp,
                  unsigned int, count);
    PRE_MEM_WRITE( "getdents64(dirp)", ARG2, ARG3 );
 }

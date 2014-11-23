@@ -18782,10 +18782,26 @@ DisResult disInstr_PPC_WRK (
       UInt word2 = mode64 ? 0x78006800 : 0x5400683E;
       UInt word3 = mode64 ? 0x7800E802 : 0x5400E83E;
       UInt word4 = mode64 ? 0x78009802 : 0x5400983E;
+      Bool is_special_preamble = False;
       if (getUIntPPCendianly(code+ 0) == word1 &&
           getUIntPPCendianly(code+ 4) == word2 &&
           getUIntPPCendianly(code+ 8) == word3 &&
           getUIntPPCendianly(code+12) == word4) {
+         is_special_preamble = True;
+      } else if (! mode64 &&
+                 getUIntPPCendianly(code+ 0) == 0x54001800 &&
+                 getUIntPPCendianly(code+ 4) == 0x54006800 &&
+                 getUIntPPCendianly(code+ 8) == 0x5400E800 &&
+                 getUIntPPCendianly(code+12) == 0x54009800) {
+         static Bool reported = False;
+         if (!reported) {
+            vex_printf("disInstr(ppc): old ppc32 instruction magic detected. Code might clobber r0.\n");
+            vex_printf("disInstr(ppc): source needs to be recompiled against latest valgrind.h.\n");
+            reported = True;
+         }
+         is_special_preamble = True;
+      }
+      if (is_special_preamble) {
          /* Got a "Special" instruction preamble.  Which one is it? */
          if (getUIntPPCendianly(code+16) == 0x7C210B78 /* or 1,1,1 */) {
             /* %R3 = client_request ( %R4 ) */

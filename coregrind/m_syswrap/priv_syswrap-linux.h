@@ -283,6 +283,9 @@ DECL_TEMPLATE(linux, sys_process_vm_writev);
 DECL_TEMPLATE(linux, sys_fanotify_init);
 DECL_TEMPLATE(linux, sys_fanotify_mark);
 
+// Linux-specific (new in Linux 3.17)
+DECL_TEMPLATE(linux, sys_getrandom);
+
 /* ---------------------------------------------------------------------
    Wrappers for sockets and ipc-ery.  These are split into standalone
    procedures because x86-linux hides them inside multiplexors

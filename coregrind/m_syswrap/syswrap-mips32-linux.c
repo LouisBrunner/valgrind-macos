@@ -1116,7 +1116,9 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY (__NR_clock_adjtime,          sys_clock_adjtime),           // 341
    //..
    LINXY (__NR_process_vm_readv,       sys_process_vm_readv),        // 345
-   LINX_ (__NR_process_vm_writev,      sys_process_vm_writev)        // 346
+   LINX_ (__NR_process_vm_writev,      sys_process_vm_writev),       // 346
+   //..
+   LINXY(__NR_getrandom,               sys_getrandom)                // 353
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry) (UInt sysno)

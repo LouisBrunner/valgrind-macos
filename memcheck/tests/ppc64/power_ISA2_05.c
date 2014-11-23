@@ -97,18 +97,18 @@ void test_double_pair_instrs()
    }
 
    __asm__ volatile ("lfdp 10, %0"::"m" (dbl_pair[0]));
-   __asm__ volatile ("fmr %0, 10":"=f" (FRT1));
-   __asm__ volatile ("fmr %0, 11":"=f" (FRT2));
-   printf("lfdp (%f, %f) => F_hi=%f, F_lo=%f\n",
+   __asm__ volatile ("fmr %0, 10":"=d" (FRT1));
+   __asm__ volatile ("fmr %0, 11":"=d" (FRT2));
+   printf("lfdp (%lf, %lf) => F_hi=%lf, F_lo=%lf\n",
           dbl_pair[0].hi, dbl_pair[0].lo, FRT1, FRT2);
 
 
    FRT1 = 2.2048;
    FRT2 = -4.1024;
-   __asm__ volatile ("fmr 10, %0"::"f" (FRT1));
-   __asm__ volatile ("fmr 11, %0"::"f" (FRT2));
+   __asm__ volatile ("fmr 10, %0"::"d" (FRT1));
+   __asm__ volatile ("fmr 11, %0"::"d" (FRT2));
    __asm__ volatile ("stfdp 10, %0"::"m" (dbl_pair[1]));
-   printf("stfdp (%f, %f) => F_hi=%f, F_lo=%f\n",
+   printf("stfdp (%lf, %lf) => F_hi=%lf, F_lo=%lf\n",
           FRT1, FRT2, dbl_pair[1].hi, dbl_pair[1].lo);
 
    FRT1 = 0.0;
@@ -118,9 +118,9 @@ void test_double_pair_instrs()
    __asm__ volatile ("ori 20, %0, 0"::"r" (base));
    __asm__ volatile ("ori 21, %0, 0"::"r" (offset));
    __asm__ volatile ("lfdpx 10, 20, 21");
-   __asm__ volatile ("fmr %0, 10":"=f" (FRT1));
-   __asm__ volatile ("fmr %0, 11":"=f" (FRT2));
-   printf("lfdpx (%f, %f) => F_hi=%f, F_lo=%f\n",
+   __asm__ volatile ("fmr %0, 10":"=d" (FRT1));
+   __asm__ volatile ("fmr %0, 11":"=d" (FRT2));
+   printf("lfdpx (%lf, %lf) => F_hi=%lf, F_lo=%lf\n",
           dbl_pair[1].hi, dbl_pair[1].lo, FRT1, FRT2);
 
    FRT1 = 8.2048;
@@ -129,10 +129,10 @@ void test_double_pair_instrs()
    offset = (unsigned long) &dbl_pair[2] - base;
    __asm__ volatile ("ori 20, %0, 0"::"r" (base));
    __asm__ volatile ("ori 21, %0, 0"::"r" (offset));
-   __asm__ volatile ("fmr %0, 10":"=f" (FRT1));
-   __asm__ volatile ("fmr %0, 11":"=f" (FRT2));
+   __asm__ volatile ("fmr 10, %0 "::"d" (FRT1));
+   __asm__ volatile ("fmr 11, %0 "::"d" (FRT2));
    __asm__ volatile ("stfdpx 10, 20, 21");
-   printf("stfdpx (%f, %f) => F_hi=%f, F_lo=%f\n",
+   printf("stfdpx (%lf, %lf) => F_hi=%lf, F_lo=%lf\n",
           FRT1, FRT2, dbl_pair[2].hi, dbl_pair[2].lo);
 #endif
 }

@@ -671,11 +671,10 @@ static void* dh_realloc ( ThreadId tid, void* p_old, SizeT new_szB )
 
 static SizeT dh_malloc_usable_size ( ThreadId tid, void* p )
 {                                                            
-   tl_assert(0);
-//zz   HP_Chunk* hc = VG_(HT_lookup)( malloc_list, (UWord)p );
-//zz
-//zz   return ( hc ? hc->req_szB + hc->slop_szB : 0 );
+   Block* bk = find_Block_containing( (Addr)p );
+   return bk ? bk->req_szB : 0;
 }                                                            
+
 
 //------------------------------------------------------------//
 //--- memory references                                    ---//

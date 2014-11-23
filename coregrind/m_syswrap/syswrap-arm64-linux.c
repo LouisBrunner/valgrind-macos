@@ -968,6 +968,8 @@ static SyscallTableEntry syscall_main_table[] = {
    GENX_(__NR_getpgid,           sys_getpgid),           // 155
    GENX_(__NR_getsid,            sys_getsid),            // 156
    GENX_(__NR_setsid,            sys_setsid),            // 157
+   GENXY(__NR_getgroups,         sys_getgroups),         // 158
+   GENX_(__NR_setgroups,         sys_setgroups),         // 159
    GENXY(__NR_uname,             sys_newuname),          // 160
    GENXY(__NR_getrlimit,         sys_old_getrlimit),     // 163
    GENX_(__NR_setrlimit,         sys_setrlimit),         // 164
@@ -1237,8 +1239,6 @@ static SyscallTableEntry syscall_main_table[] = {
 //ZZ    GENX_(__NR_setreuid32,        sys_setreuid),       // 203
 //ZZ    GENX_(__NR_setregid32,        sys_setregid),       // 204
 //ZZ 
-//ZZ    GENXY(__NR_getgroups32,       sys_getgroups),      // 205
-//ZZ    GENX_(__NR_setgroups32,       sys_setgroups),      // 206
 //ZZ    LINX_(__NR_setresuid32,       sys_setresuid),      // 208
 //ZZ    LINXY(__NR_getresuid32,       sys_getresuid),      // 209
 //ZZ 

@@ -11921,7 +11921,7 @@ Bool dis_AdvSIMD_fp_data_proc_1_source(/*MB_OUT*/DisResult* dres, UInt insn)
             011 zero      (FRINTZ)
             000 tieeven
             100 tieaway   (FRINTA) -- !! FIXME KLUDGED !!
-            110 per FPCR + "exact = TRUE"
+            110 per FPCR + "exact = TRUE" (FRINTX)
             101 unallocated
       */
       Bool    isD   = (ty & 1) == 1;
@@ -11935,6 +11935,10 @@ Bool dis_AdvSIMD_fp_data_proc_1_source(/*MB_OUT*/DisResult* dres, UInt insn)
          case BITS3(0,0,1): ch = 'p'; irrmE = mkU32(Irrm_PosINF); break;
          // The following is a kludge.  Should be: Irrm_NEAREST_TIE_AWAY_0
          case BITS3(1,0,0): ch = 'a'; irrmE = mkU32(Irrm_NEAREST); break;
+         // I am unsure about the following, due to the "integral exact"
+         // description in the manual.  What does it mean?
+         case BITS3(1,1,0):
+            ch = 'x'; irrmE = mkexpr(mk_get_IR_rounding_mode()); break;
          default: break;
       }
       if (irrmE) {

@@ -28661,6 +28661,7 @@ Long dis_ESC_0F38__VEX (
          IRTemp t8   = newTemp(Ity_I8);
          if (epartIsReg(modrm)) {
             UInt rE = eregOfRexRM(pfx, modrm);
+            delta++;
             DIP("vpbroadcastb %s,%s\n", nameXMMReg(rE), nameXMMReg(rG));
             assign(t8, unop(Iop_32to8, getXMMRegLane32(rE, 0)));
          } else {
@@ -28687,6 +28688,7 @@ Long dis_ESC_0F38__VEX (
          IRTemp t8   = newTemp(Ity_I8);
          if (epartIsReg(modrm)) {
             UInt rE = eregOfRexRM(pfx, modrm);
+            delta++;
             DIP("vpbroadcastb %s,%s\n", nameXMMReg(rE), nameYMMReg(rG));
             assign(t8, unop(Iop_32to8, getXMMRegLane32(rE, 0)));
          } else {
@@ -28717,6 +28719,7 @@ Long dis_ESC_0F38__VEX (
          IRTemp t16  = newTemp(Ity_I16);
          if (epartIsReg(modrm)) {
             UInt rE = eregOfRexRM(pfx, modrm);
+            delta++;
             DIP("vpbroadcastw %s,%s\n", nameXMMReg(rE), nameXMMReg(rG));
             assign(t16, unop(Iop_32to16, getXMMRegLane32(rE, 0)));
          } else {
@@ -28741,6 +28744,7 @@ Long dis_ESC_0F38__VEX (
          IRTemp t16  = newTemp(Ity_I16);
          if (epartIsReg(modrm)) {
             UInt rE = eregOfRexRM(pfx, modrm);
+            delta++;
             DIP("vpbroadcastw %s,%s\n", nameXMMReg(rE), nameYMMReg(rG));
             assign(t16, unop(Iop_32to16, getXMMRegLane32(rE, 0)));
          } else {

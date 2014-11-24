@@ -427,10 +427,8 @@ SysRes do_mremap( Addr old_addr, SizeT old_len,
    SSizeT needL = new_len - old_len;
 
    vg_assert(needL > 0);
-   if (needA == 0)
-      goto eINVAL; 
-      /* VG_(am_get_advisory_client_simple) interprets zero to mean
-         non-fixed, which is not what we want */
+   vg_assert(needA > 0);
+
    advised = VG_(am_get_advisory_client_simple)( needA, needL, &ok );
    if (ok) {
       /* Fixes bug #129866. */
@@ -482,10 +480,9 @@ SysRes do_mremap( Addr old_addr, SizeT old_len,
    {
    Addr  needA = old_addr + old_len;
    SizeT needL = new_len - old_len;
-   if (needA == 0) 
-      goto eINVAL;
-      /* VG_(am_get_advisory_client_simple) interprets zero to mean
-         non-fixed, which is not what we want */
+
+   vg_assert(needA > 0);
+
    advised = VG_(am_get_advisory_client_simple)( needA, needL, &ok );
    if (ok) {
       /* Fixes bug #129866. */

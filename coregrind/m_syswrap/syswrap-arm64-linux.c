@@ -880,6 +880,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_inotify_add_watch, sys_inotify_add_watch), // 27
    LINX_(__NR_inotify_rm_watch,  sys_inotify_rm_watch),  // 28
    LINXY(__NR_ioctl,             sys_ioctl),             // 29
+   GENX_(__NR_flock,             sys_flock),             // 32
    LINX_(__NR_mknodat,           sys_mknodat),           // 33
    LINX_(__NR_mkdirat,           sys_mkdirat),           // 34
    LINX_(__NR_unlinkat,          sys_unlinkat),          // 35
@@ -1183,7 +1184,6 @@ static SyscallTableEntry syscall_main_table[] = {
 //ZZ    LINXY(__NR__llseek,           sys_llseek),         // 140
 //ZZ    GENXY(__NR_getdents,          sys_getdents),       // 141
 //ZZ    GENX_(__NR__newselect,        sys_select),         // 142
-//ZZ    GENX_(__NR_flock,             sys_flock),          // 143
 //ZZ 
 //ZZ    LINXY(__NR__sysctl,           sys_sysctl),         // 149
 //ZZ 

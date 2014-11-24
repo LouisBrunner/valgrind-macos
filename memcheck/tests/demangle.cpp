@@ -16,7 +16,7 @@ class magic {
 public:
   T xyzzy(T *p)
   {
-    return (new abc::def<int,typeof(this)>)->xyzzy(p, 0);
+    return (new abc::def<int,typeof(*this)>)->xyzzy(p, 0);
   }
 };
 

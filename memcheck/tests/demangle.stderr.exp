@@ -1,6 +1,6 @@
 
 Conditional jump or move depends on uninitialised value(s)
-   at 0x........: abc::def<int, magic<int>* const>::xyzzy(int*, magic<int>* const*) (demangle.cpp:9)
+   at 0x........: abc::def<int, magic<int> >::xyzzy(int*, magic<int>*) (demangle.cpp:9)
    by 0x........: magic<int>::xyzzy(int*) (demangle.cpp:19)
    by 0x........: main (demangle.cpp:27)
 

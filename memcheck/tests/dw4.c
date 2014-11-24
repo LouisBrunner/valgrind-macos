@@ -10,7 +10,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
+#include "tests/sys_mman.h"
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include "memcheck/memcheck.h"
 
 /* Cause memcheck to complain about the address "a" and so to print
@@ -45,10 +50,37 @@ int main ( void )
 {
   struct s1 local;
   struct s1* onheap = malloc(sizeof (struct s1));
+  void *p, *q;
+  int fd;
+  int n;
+  char filename[256];
+
   assert(onheap);
   croak(&onheap->i);
 
   croak( &S2[0].i );
   croak( &local.i );
+
+  /* Describe anonymous mmap-ed */
+  p = mmap( 0, 16 * 1024, PROT_READ|PROT_WRITE,
+            MAP_PRIVATE|MAP_ANONYMOUS, -1, 0 );
+  assert(p != MAP_FAILED);
+  croak( p);
+
+  /* Describe file mmap-ed */
+  snprintf(filename, sizeof(filename), "./valgrind-dw4-test.%d",
+           getpid());
+
+  unlink(filename);
+
+  fd = open(filename, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+  assert (fd > 0);
+  n = write(fd, filename, strlen(filename));
+  assert (n > 8);
+  q = mmap(NULL, 100, PROT_READ|PROT_WRITE, MAP_PRIVATE, fd, 0);
+  assert (q != MAP_FAILED);
+  croak( q);
+  unlink(filename);
+
   return 0;
 }

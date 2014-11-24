@@ -44,6 +44,7 @@
 #include "pub_tool_threadstate.h"
 #include "pub_tool_debuginfo.h"     // VG_(get_dataname_and_offset)
 #include "pub_tool_xarray.h"
+#include "pub_tool_aspacemgr.h"
 #include "pub_tool_addrinfo.h"
 
 #include "mc_include.h"
@@ -1085,6 +1086,7 @@ void MC_(pp_describe_addr) ( Addr a )
    ai.tag = Addr_Undescribed;
    describe_addr (a, &ai);
    VG_(pp_addrinfo_mc) (a, &ai, /* maybe_gcc */ False);
+   VG_(clear_addrinfo) (&ai);
 }
 
 /* Fill in *origin_ec as specified by otag, or NULL it out if otag

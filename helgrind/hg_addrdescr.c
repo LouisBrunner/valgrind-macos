@@ -37,6 +37,7 @@
 #include "pub_tool_execontext.h"
 #include "pub_tool_debuginfo.h"
 #include "pub_tool_threadstate.h"
+#include "pub_tool_aspacemgr.h"
 #include "pub_tool_addrinfo.h"
 
 #include "hg_basics.h"

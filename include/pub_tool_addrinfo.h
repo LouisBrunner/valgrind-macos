@@ -71,7 +71,8 @@ typedef
       Addr_Stack,       // on a thread's stack       
       Addr_DataSym,     // in a global data sym
       Addr_Variable,    // variable described by the debug info
-      Addr_SectKind     // last-ditch classification attempt
+      Addr_SectKind,    // Section from a mmap-ed object file
+      Addr_SegmentKind  // Client segment (mapped memory)
    }
    AddrTag;
 
@@ -172,6 +173,14 @@ struct _AddrInfo {
          HChar      *objname;
          VgSectKind kind;
       } SectKind;
+
+      struct {
+         SegKind segkind;   // SkAnonC, SkFileC or SkShmC.
+         HChar   *filename; // NULL if segkind != SkFileC
+         Bool    hasR;
+         Bool    hasW;
+         Bool    hasX;
+      } SegmentKind;
 
       // Classification yielded nothing useful.
       struct { } Unknown;

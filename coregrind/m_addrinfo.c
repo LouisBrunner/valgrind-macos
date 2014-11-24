@@ -36,6 +36,7 @@
 #include "pub_core_xarray.h"
 #include "pub_core_debuginfo.h"
 #include "pub_core_execontext.h"
+#include "pub_core_aspacemgr.h"
 #include "pub_core_addrinfo.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_machine.h"
@@ -258,6 +259,30 @@ void VG_(describe_addr) ( Addr a, /*OUT*/AddrInfo* ai )
       }
    }
 
+   /* -- and yet another last ditch attempt at classification -- */
+   /* Try to find a segment belonging to the client. */
+   {
+      const NSegment *seg = VG_(am_find_nsegment) (a);
+      if (seg != NULL 
+          && (seg->kind == SkAnonC 
+              || seg->kind == SkFileC
+              || seg->kind == SkShmC)) {
+         ai->tag = Addr_SegmentKind;
+         ai->Addr.SegmentKind.segkind = seg->kind;
+         ai->Addr.SegmentKind.filename = NULL;
+         if (seg->kind == SkFileC)
+            ai->Addr.SegmentKind.filename = VG_(am_get_filename) (seg);
+         if (ai->Addr.SegmentKind.filename != NULL)
+            ai->Addr.SegmentKind.filename 
+               = VG_(strdup)("mc.da.skfname",
+                             ai->Addr.SegmentKind.filename);
+         ai->Addr.SegmentKind.hasR = seg->hasR;
+         ai->Addr.SegmentKind.hasW = seg->hasW;
+         ai->Addr.SegmentKind.hasX = seg->hasX;
+         return;
+      }
+   }
+
    /* -- Clueless ... -- */
    ai->tag = Addr_Unknown;
    return;
@@ -303,6 +328,10 @@ void VG_(clear_addrinfo) ( AddrInfo* ai)
          VG_(free)(ai->Addr.SectKind.objname);
          break;
 
+      case Addr_SegmentKind:
+         VG_(free)(ai->Addr.SegmentKind.filename);
+         break;
+
       default:
          VG_(core_panic)("VG_(clear_addrinfo)");
    }
@@ -341,6 +370,16 @@ static UInt tnr_else_tid (ThreadInfo tinfo)
       return tinfo.tnr;
    else
       return tinfo.tid;
+}
+
+static const HChar* pp_SegKind ( SegKind sk )
+{
+   switch (sk) {
+      case SkAnonC: return "anonymous";
+      case SkFileC: return "mapped file";
+      case SkShmC:  return "shared memory";
+      default:      vg_assert(0);
+   }
 }
 
 static void pp_addrinfo_WRK ( Addr a, const AddrInfo* ai, Bool mc,
@@ -545,6 +584,22 @@ static void pp_addrinfo_WRK ( Addr a, const AddrInfo* ai, Bool mc,
                pp a dummy stacktrace made of this single address. */
             VG_(pp_StackTrace)( &a, 1 );
          }
+         break;
+
+      case Addr_SegmentKind:
+         VG_(emit)( "%sAddress 0x%llx is in "
+                    "a %s%s%s %s%s%pS segment%s\n",
+                    xpre,
+                    (ULong)a,
+                    ai->Addr.SegmentKind.hasR ? "r" : "-",
+                    ai->Addr.SegmentKind.hasW ? "w" : "-",
+                    ai->Addr.SegmentKind.hasX ? "x" : "-",
+                    pp_SegKind(ai->Addr.SegmentKind.segkind),
+                    ai->Addr.SegmentKind.filename ? 
+                    " " : "",
+                    ai->Addr.SegmentKind.filename ? 
+                    ai->Addr.SegmentKind.filename : "",
+                    xpost );
          break;
 
       default:

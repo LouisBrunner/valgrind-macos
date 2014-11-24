@@ -54,7 +54,7 @@ Illegal memory pool address
 Illegal memory pool address
    at 0x........: test (mempool2.c:150)
    by 0x........: main (mempool2.c:196)
- Address 0x........ is not stack'd, malloc'd or (recently) free'd
+ Address 0x........ is in a rwx anonymous segment
 
 
 ------ double free in malloc-backed pool ------
@@ -74,7 +74,7 @@ Illegal memory pool address
 Illegal memory pool address
    at 0x........: test (mempool2.c:159)
    by 0x........: main (mempool2.c:196)
- Address 0x........ is not stack'd, malloc'd or (recently) free'd
+ Address 0x........ is in a rwx anonymous segment
 
 
 ------ 2 invalid access in 'no no-access superblock' ---

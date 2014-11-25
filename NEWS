@@ -55,7 +55,6 @@ where XXXXXX is the bug number as listed below.
         change the address register contents
 339433  ppc64 lxvw4x instruction uses four 32-byte loads
 339442  Fix testsuite build failure on OS X 10.9
-339542  Support compilation with Intel's ICC compiler
 339645  Use correct tag names in sys_getdents/64 wrappers
 339688  Mac-specific ASM does not support .version directive (cpuid,
         tronical and pushfpopf tests)
@@ -84,6 +83,7 @@ where XXXXXX is the bug number as listed below.
 340632  arm64: unhandled instruction fcvtas
 340725  AVX2: Incorrect decoding of vpbroadcast{b,w} reg,reg forms
 340788  warning: unhandled syscall: 318 (getrandom)
+340807  disInstr(arm): unhandled instruction: 0xEE989B20
 340856  disInstr(arm64): unhandled instruction 0x1E634C45 (fcsel)
 340922  arm64: unhandled getgroups/setgroups syscalls
 n-i-bz  Provide implementations of certain compiler builtins to support

@@ -11,7 +11,7 @@ Bugs that didn't make 3.10.0, that might be considered for 3.10.1
 327427  ifunc crash when symbols are discarded
 330321  debuginfo readers complain about DT_AT_signature
 
-330147  libmpiwrap PMPI_Get_count
+330147  libmpiwrap PMPI_Get_count (should take; simple fix)
 326487  child of debugged process exits without becoming zombie
 338781  OSX: unable to read debug info
 
@@ -21,45 +21,6 @@ arm64 critical regtest fails:
   memcheck/tests/linux/stack_changes asserts
   sigaltstack.stderr.out segfaults -- host seems broken too
      recursive signal delivery (!)
-
-==================
-
-Commits on the trunk that should be considered for merging to 3.10.1
-(write here :-)
-
-(mjw comments from 30 Sept 2014)
-
-  there are some mips fixes that might be interesting, but I don't
-  have a mips setup atm.
-
-  There were patches for the PTRACE_GETSIGINFO issue, which would be
-  nice to get thing to build out of the box on some older setups
-
-  silly, but ugly: Add missing ]] to terminate CDATA. (r14561).
-
-  r14559 maybe (Fix wrong checking of ARG2 of getrlimit).
-
-  Nice to have (but ask Philippe) #339156/r14556. 
-
-  Maybe r14549 (DRD/arm, ask Bart?). 
-
-  ppc/ stfdpx #339020/r14545
-
-  The lxvw4x would be nice, but I think the fix is not correct yet
-  (see endian issue I reported today)
-
-  Bug 339182 Vex r2960
-
-  Bug 339336 Vex r2957
-
-  Check Vex r2953 (are those real bugs or just cleanup?)
-
-  (consider): backwards-compatibility-special-sequence-on-ppc32
-  https://bugs.kde.org/show_bug.cgi?id=278808#c6
-
-(re 3.10.1)
-[14:54] <tomhughes> probably a good idea to put getrandom in as things like openssl will use that on a recent kernel
-[14:55] <tomhughes> or rather they'll just try and use it and fallback on ENOSYS
 
 ==================
 
@@ -155,13 +116,9 @@ New bugs reported in 3.10.0
 
 340571  x86/Linux should no longer claim "almost complete"
 
-340632  arm64: unhandled instruction fcvtas
-
 340722  Resolve "UNKNOWN attrlist flags 0:0x10000000"
 
 340777  Illegal instruction on mips (ar71xx)
-
-340807  disInstr(arm): unhandled instruction: 0xEE989B20
 
 340849  unsupported AVX instruction on 32 bit
         we should WONTFIX this

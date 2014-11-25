@@ -1,0 +1,208 @@
+
+A record of merges from trunk to 3.10.1.  "NO_MERGE" identifies commits
+that were initially considered as candidates but later rejected.
+
+
+//339336  PPC64 store quad instruction (stq) is not supposed to
+//        change the address register contents
+//2957
+3001, ok
+
+//339182  ppc64: AvSplat ought to load destination vector register with 16/16
+//        bytes stored prior
+//2960
+3002, ok
+
+//339020  ppc64: memcheck/tests/ppc64/power_ISA2_05 failing in nightly build
+//14545
+14745, ok
+
+//14549  DRD: Handle Imbe_CancelReservation properly (clrex on ARM)
+14746, ok
+
+NO_MERGE
+339156  ??? gdbsrv not called for fatal signal
+14556 (should this be merged?)
+
+//14561  Add missing ]] to terminate CDATA.
+14747, ok
+
+//14565  Glibc versions prior to 2.5 do not define PTRACE_GETSIGINFO
+//       (check w/ Florian)
+14748, ok
+
+//339433  ppc64 lxvw4x instruction uses four 32-byte loads
+//2962, 2966, 2967, 2973
+3003, ok
+
+NO_MERGE
+2971   ??? mips: use putDReg/getDReg for ceil.l.d
+
+NO_MERGE
+2972   ??? mips: add a missing break
+
+//339858  arm64 dmb sy not implemented
+//2975 (subsequently overwritten by 2986)
+3004, ok
+
+//339645  Use correct tag names in sys_getdents/64 wrappers
+//14599
+14749, ok
+
+//339721  assertion 'check_sibling == sibling' failed in readdwarf3.c ...
+//14603,14610
+14750, ok
+
+//339853  arm64 times syscall unknown
+//14616
+14751, ok
+
+//14618  Handle (by ignoring) Imbe_CancelReservation. (hg)
+14752, ok
+
+//339855  arm64 unhandled getsid/setsid syscalls
+//14617
+14753, ok
+
+//14631  Enable sys_fadvise64_64 on arm32.
+14754, ok
+
+//339706  Fix false positive for ioctl(TIOCSIG) on linux
+//14646 (just the fix)
+14755, ok
+
+//340036  arm64: Unhandled instruction ld4 (multiple structures, no offset)
+//2976
+3005, ok
+
+//335440  arm64: ld1 (single structure) is not implemented
+//2979   Complete arm64 load/store insns
+3006, ok
+
+//14653  Add test cases for all known arm64 load/store instructions.
+14756, ok
+
+//14667  Enable test cases for arm64 load/store insns
+14757, ok
+
+//339926  Unhandled instruction 0x1E674001 (frintx) on aarm64
+//2981
+3007, ok
+
+//339927  Unhandled instruction 0x9E7100C6 (fcvtmu) on aarch64
+//2982
+3008, ok
+
+//339938  disInstr(arm64): unhandled instruction 0x4F8010A4 (fmla)
+//        == 339950
+//2983
+3009, ok
+
+//340509  arm64: unhandled instruction fcvtas
+//2984
+3010, ok
+
+//335713  arm64: unhanded instruction: prfm (immediate)
+//2985
+3011, ok
+
+//340033  arm64: unhandled instruction for dmb ishld and some other
+//        isb-dmb-dsb variants...
+//2986
+3012, ok
+
+//339940  arm64: unhandled syscall: 83 (sys_fdatasync) + patch
+//14675
+14759, ok
+
+//340028  unhandled syscalls for arm64 (msync, pread64, setreuid and setregid)
+//14676
+14760, ok
+
+//340236  4 unhandled syscalls on aarch64/arm64: mknodat (33), fchdir
+//        (50), chroot (51), fchownat (54)
+//14677
+14761, ok
+
+//340632  arm64: unhandled instruction fcvtas
+//2987
+3013, ok
+
+//340725  AVX2: Incorrect decoding of vpbroadcast{b,w} reg,reg forms
+//2988
+3014, ok
+
+//14679  Add test cases for arm64 FMLA etc
+14762, ok
+
+//14681  arm64  Rearrange the test case generators [..]
+14763, ok
+
+//14684  arm64  Add tests for all SIMD FP instructions [..]
+14764, ok
+
+//340630  arm64: fchmod (52) and fchown (55) syscalls not recognized
+//14686
+14765, ok
+
+//14689  PRE(sys_openat): when checking whether ARG1 == VKI_AT_FDCWD [..]
+14766, ok
+
+NO_MERGE
+14691  ??? Unmask all signals in vgdb [..]
+
+//14705  Update system call lists.
+14767, ok
+
+//340788  warning: unhandled syscall: 318 (getrandom)
+//14709
+14768, ok
+
+//2990   Add detection of old ppc32 magic instructions from bug 278808.
+3015, ok
+
+//340856  disInstr(arm64): unhandled instruction 0x1E634C45 (fcsel)
+//2991
+3016, ok
+
+//340922  arm64: unhandled getgroups/setgroups syscalls
+//14716
+14769, ok
+
+//14721  Implement missing heap-intercept function "dh_malloc_usable_size".
+14770, ok
+
+//14728 Add test cases for all remaining AArch64 ARMv8 SIMD and FP instructions.
+14771, ok
+
+//2992   arm64: Implement "fcvtpu w, s".  n-i-bz.
+3017, ok
+
+//2993   arm64: implement ADDP etc
+3018, ok
+
+//14730  arm64: enable test cases for 2993
+14772, ok
+
+//2994   fix stupid bug introduced in 2993
+3019, ok
+
+//340807  disInstr(arm): unhandled instruction: 0xEE989B20
+//2995, 14736.
+3020 ok, 14758 ok
+
+14738  arm64: Add test cases for {S,U}CVTF fixedpt-to-fp.
+NO_MERGE
+
+//14739  arm64: Update mysteriously out-of-date fp_and_simd.stdout.exp.
+14773, ok
+
+//2996   arm64: Implement {S,U}CVTF (scalar, fixedpt).
+3021, ok
+
+//14740  isBogusAtom: handle missing case Ico_F32.
+//(needed by 3021)
+14774, ok
+
+//2997   arm64: enable FCVT{A,N}S X,S.
+3022, ok

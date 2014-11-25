@@ -89,10 +89,10 @@ runcmd "Untarring                     " \
        "rm -rf gsl-1.6-patched && tar xzf $GSL_FILE" && \
 \
 runcmd "Configuring                   " \
-       "(cd gsl-1.6-patched && CC=$GSL_CC CFLAGS=\"$GSL_CFLAGS\" ./configure)" && \
+       "(cd gsl-1.6-patched && CC=$GSL_CC CFLAGS=\"$GSL_CFLAGS\" ./configure --build=aarch64-unknown-linux-gnu)" && \
 \
 runcmd "Building                      " \
-       "(cd gsl-1.6-patched && make -j4 && make -k check)"
+       "(cd gsl-1.6-patched && make -j6 && make -k check)"
 
 echo -n "   Collecting reference results  "
 rm -f out-REF

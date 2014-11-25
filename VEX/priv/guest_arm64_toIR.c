@@ -12163,9 +12163,11 @@ Bool dis_AdvSIMD_fp_data_proc_1_source(/*MB_OUT*/DisResult* dres, UInt insn)
          // The following is a kludge.  Should be: Irrm_NEAREST_TIE_AWAY_0
          case BITS3(1,0,0): ch = 'a'; irrmE = mkU32(Irrm_NEAREST); break;
          // I am unsure about the following, due to the "integral exact"
-         // description in the manual.  What does it mean?
+         // description in the manual.  What does it mean? (frintx, that is)
          case BITS3(1,1,0):
             ch = 'x'; irrmE = mkexpr(mk_get_IR_rounding_mode()); break;
+         case BITS3(1,1,1):
+            ch = 'i'; irrmE = mkexpr(mk_get_IR_rounding_mode()); break;
          default: break;
       }
       if (irrmE) {

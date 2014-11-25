@@ -60,7 +60,7 @@ n-i-bz  arm64: implement ADDP and various others
 n-i-bz  arm64: Implement {S,U}CVTF (scalar, fixedpt).
 n-i-bz  arm64: enable FCVT{A,N}S X,S.
 
-(3.10.1: 25 November 2014, vex rXXXX, valgrind rXXXXX)
+(3.10.1: 25 November 2014, vex r3026, valgrind r14785)
 
 
 

@@ -3367,14 +3367,15 @@ Bool dis_ARM64_data_processing_register(/*MB_OUT*/DisResult* dres,
       return True;
    }
 
-   /* -------------------- LSLV/LSRV/ASRV -------------------- */   
+   /* ------------------ LSLV/LSRV/ASRV/RORV ------------------ */   
    /*    30 28        20 15   11 9 4
       sf 00 1101 0110 m  0010 00 n d   LSLV Rd,Rn,Rm
       sf 00 1101 0110 m  0010 01 n d   LSRV Rd,Rn,Rm
       sf 00 1101 0110 m  0010 10 n d   ASRV Rd,Rn,Rm
+      sf 00 1101 0110 m  0010 11 n d   RORV Rd,Rn,Rm
    */
    if (INSN(30,21) == BITS10(0,0,1,1,0,1,0,1,1,0)
-       && INSN(15,12) == BITS4(0,0,1,0) && INSN(11,10) < BITS2(1,1)) {
+       && INSN(15,12) == BITS4(0,0,1,0)) {
       Bool   is64 = INSN(31,31) == 1;
       UInt   mm   = INSN(20,16);
       UInt   op   = INSN(11,10);
@@ -3382,24 +3383,45 @@ Bool dis_ARM64_data_processing_register(/*MB_OUT*/DisResult* dres,
       UInt   dd   = INSN(4,0);
       IRType ty   = is64 ? Ity_I64 : Ity_I32;
       IRTemp srcL = newTemp(ty);
-      IRTemp srcR = newTemp(Ity_I8);
+      IRTemp srcR = newTemp(Ity_I64);
       IRTemp res  = newTemp(ty);
       IROp   iop  = Iop_INVALID;
       assign(srcL, getIRegOrZR(is64, nn));
-      assign(srcR,
-             unop(Iop_64to8,
-                  binop(Iop_And64,
-                        getIReg64orZR(mm), mkU64(is64 ? 63 : 31))));
-      switch (op) {
-         case BITS2(0,0): iop = mkSHL(ty); break;
-         case BITS2(0,1): iop = mkSHR(ty); break;
-         case BITS2(1,0): iop = mkSAR(ty); break;
-         default: vassert(0);
+      assign(srcR, binop(Iop_And64, getIReg64orZR(mm),
+                                    mkU64(is64 ? 63 : 31)));
+      if (op < 3) {
+         // LSLV, LSRV, ASRV
+         switch (op) {
+            case BITS2(0,0): iop = mkSHL(ty); break;
+            case BITS2(0,1): iop = mkSHR(ty); break;
+            case BITS2(1,0): iop = mkSAR(ty); break;
+            default: vassert(0);
+         }
+         assign(res, binop(iop, mkexpr(srcL),
+                                unop(Iop_64to8, mkexpr(srcR))));
+      } else {
+         // RORV
+         IROp opSHL = mkSHL(ty);
+         IROp opSHR = mkSHR(ty);
+         IROp opOR  = mkOR(ty);
+         IRExpr* width = mkU64(is64 ? 64: 32);
+         assign(
+            res,
+            IRExpr_ITE(
+               binop(Iop_CmpEQ64, mkexpr(srcR), mkU64(0)),
+               mkexpr(srcL),
+               binop(opOR,
+                     binop(opSHL,
+                           mkexpr(srcL),
+                           unop(Iop_64to8, binop(Iop_Sub64, width,
+                                                            mkexpr(srcR)))),
+                     binop(opSHR,
+                           mkexpr(srcL), unop(Iop_64to8, mkexpr(srcR))))
+         ));
       }
-      assign(res, binop(iop, mkexpr(srcL), mkexpr(srcR)));
       putIRegOrZR(is64, dd, mkexpr(res));
-      vassert(op < 3);
-      const HChar* names[3] = { "lslv", "lsrv", "asrv" };
+      vassert(op < 4);
+      const HChar* names[4] = { "lslv", "lsrv", "asrv", "rorv" };
       DIP("%s %s, %s, %s\n",
           names[op], nameIRegOrZR(is64,dd),
                      nameIRegOrZR(is64,nn), nameIRegOrZR(is64,mm));

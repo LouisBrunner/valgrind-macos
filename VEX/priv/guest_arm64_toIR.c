@@ -3331,26 +3331,40 @@ Bool dis_ARM64_data_processing_register(/*MB_OUT*/DisResult* dres,
       UInt   nn    = INSN(9,5);
       UInt   dd    = INSN(4,0);
       IRTemp src   = newTemp(Ity_I64);
+      IRTemp srcZ  = newTemp(Ity_I64);
       IRTemp dst   = newTemp(Ity_I64);
-      if (!isCLS) { // CLS not yet supported
-         if (is64) {
-            assign(src, getIReg64orZR(nn));
-            assign(dst, IRExpr_ITE(binop(Iop_CmpEQ64, mkexpr(src), mkU64(0)),
-                                   mkU64(64),
-                                   unop(Iop_Clz64, mkexpr(src))));
-            putIReg64orZR(dd, mkexpr(dst));
-         } else {
-            assign(src, binop(Iop_Shl64,
-                              unop(Iop_32Uto64, getIReg32orZR(nn)), mkU8(32)));
-            assign(dst, IRExpr_ITE(binop(Iop_CmpEQ64, mkexpr(src), mkU64(0)),
-                                   mkU64(32),
-                                   unop(Iop_Clz64, mkexpr(src))));
-            putIReg32orZR(dd, unop(Iop_64to32, mkexpr(dst)));
-         }
-         DIP("cl%c %s, %s\n",
-             isCLS ? 's' : 'z', nameIRegOrZR(is64, dd), nameIRegOrZR(is64, nn));
-         return True;
+      /* Get the argument, widened out to 64 bit */
+      if (is64) {
+         assign(src, getIReg64orZR(nn));
+      } else {
+         assign(src, binop(Iop_Shl64,
+                           unop(Iop_32Uto64, getIReg32orZR(nn)), mkU8(32)));
       }
+      /* If this is CLS, mash the arg around accordingly */
+      if (isCLS) {
+         IRExpr* one = mkU8(1);
+         assign(srcZ,
+         binop(Iop_Xor64,
+               binop(Iop_Shl64, mkexpr(src), one),
+               binop(Iop_Shl64, binop(Iop_Shr64, mkexpr(src), one), one)));
+      } else {
+         assign(srcZ, mkexpr(src));
+      }
+      /* And compute CLZ. */
+      if (is64) {
+         assign(dst, IRExpr_ITE(binop(Iop_CmpEQ64, mkexpr(srcZ), mkU64(0)),
+                                mkU64(isCLS ? 63 : 64),
+                                unop(Iop_Clz64, mkexpr(srcZ))));
+         putIReg64orZR(dd, mkexpr(dst));
+      } else {
+         assign(dst, IRExpr_ITE(binop(Iop_CmpEQ64, mkexpr(srcZ), mkU64(0)),
+                                mkU64(isCLS ? 31 : 32),
+                                unop(Iop_Clz64, mkexpr(srcZ))));
+         putIReg32orZR(dd, unop(Iop_64to32, mkexpr(dst)));
+      }
+      DIP("cl%c %s, %s\n", isCLS ? 's' : 'z',
+          nameIRegOrZR(is64, dd), nameIRegOrZR(is64, nn));
+      return True;
    }
 
    /* -------------------- LSLV/LSRV/ASRV -------------------- */   

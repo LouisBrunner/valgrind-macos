@@ -1908,7 +1908,7 @@ cls w17, w22 :: rd 000000000000001c rn fffffffffffffffa, cin 0, nzcv 00000000
 cls w17, w22 :: rd 000000000000001b rn fffffffffffffff0, cin 0, nzcv 00000000     
 cls w17, w22 :: rd 000000000000001f rn 0000000000000000, cin 0, nzcv 00000000     
 cls w17, w22 :: rd 0000000000000006 rn 0070ffff01ffffff, cin 0, nzcv 00000000     
-LSLV/LSRV/ASRV
+LSLV/LSRV/ASRV/RORV
 lslv x21,x20,x19 :: rd 2a8227efa64a2800 rm 4b154113f7d32514, rn cce230caafbf9cc9, cin 0, nzcv 00000000     
 lslv x21,x20,x19 :: rd 75655c8753c4c000 rm 33d5d595721d4f13, rn f4509311f443a7ce, cin 0, nzcv 00000000     
 lslv x21,x20,x19 :: rd de6954cbc1700000 rm 4a3c6de6954cbc17, rn 111b21e39fbd7254, cin 0, nzcv 00000000     
@@ -1930,6 +1930,21 @@ asrv x21,x20,x19 :: rd ffffffffffeed719 rm fbb5c64ed1b044c6, rn 33ca4c4fb3960326
 asrv x21,x20,x19 :: rd 000000000adf164e rm 2b7c5939d7c0f528, rn b73870a5a6630162, cin 0, nzcv 00000000     
 asrv x21,x20,x19 :: rd 0017f20c8c562e6d rm 02fe41918ac5cdba, rn 48e0815289728f05, cin 0, nzcv 00000000     
 asrv x21,x20,x19 :: rd ffffffffffffed82 rm b60a8f381f187bae, rn 008c208cc413ff72, cin 0, nzcv 00000000     
+rorv x21,x20,x19 :: rd 8a258aa089fbe992 rm 4b154113f7d32514, rn cce230caafbf9cc9, cin 0, nzcv 00000000     
+rorv x21,x20,x19 :: rd 3c4ccf575655c875 rm 33d5d595721d4f13, rn f4509311f443a7ce, cin 0, nzcv 00000000     
+rorv x21,x20,x19 :: rd cbc174a3c6de6954 rm 4a3c6de6954cbc17, rn 111b21e39fbd7254, cin 0, nzcv 00000000     
+rorv x21,x20,x19 :: rd 3b46c1131beed719 rm fbb5c64ed1b044c6, rn 33ca4c4fb3960326, cin 0, nzcv 00000000     
+rorv x21,x20,x19 :: rd 75f03d4a0adf164e rm 2b7c5939d7c0f528, rn b73870a5a6630162, cin 0, nzcv 00000000     
+rorv x21,x20,x19 :: rd d017f20c8c562e6d rm 02fe41918ac5cdba, rn 48e0815289728f05, cin 0, nzcv 00000000     
+rorv x21,x20,x19 :: rd a3ce07c61eebad82 rm b60a8f381f187bae, rn 008c208cc413ff72, cin 0, nzcv 00000000     
+rorv x21,x20,x19 :: rd b60a8f381f187bae rm b60a8f381f187bae, rn 008c208cc413ff00, cin 0, nzcv 00000000     
+rorv x21,x20,x19 :: rd 5b05479c0f8c3dd7 rm b60a8f381f187bae, rn 008c208cc413ff01, cin 0, nzcv 00000000     
+rorv x21,x20,x19 :: rd ad82a3ce07c61eeb rm b60a8f381f187bae, rn 008c208cc413ff02, cin 0, nzcv 00000000     
+rorv x21,x20,x19 :: rd b05479c0f8c3dd75 rm b60a8f381f187bae, rn 008c208cc413ff3d, cin 0, nzcv 00000000     
+rorv x21,x20,x19 :: rd d82a3ce07c61eeba rm b60a8f381f187bae, rn 008c208cc413ff3e, cin 0, nzcv 00000000     
+rorv x21,x20,x19 :: rd 6c151e703e30f75d rm b60a8f381f187bae, rn 008c208cc413ff3f, cin 0, nzcv 00000000     
+rorv x21,x20,x19 :: rd b60a8f381f187bae rm b60a8f381f187bae, rn 008c208cc413ff40, cin 0, nzcv 00000000     
+rorv x21,x20,x19 :: rd 5b05479c0f8c3dd7 rm b60a8f381f187bae, rn 008c208cc413ff41, cin 0, nzcv 00000000     
 lslv w21,w20,w19 :: rd 00000000a64a2800 rm 4b154113f7d32514, rn cce230caafbf9cc9, cin 0, nzcv 00000000     
 lslv w21,w20,w19 :: rd 0000000053c4c000 rm 33d5d595721d4f13, rn f4509311f443a7ce, cin 0, nzcv 00000000     
 lslv w21,w20,w19 :: rd 00000000c1700000 rm 4a3c6de6954cbc17, rn 111b21e39fbd7254, cin 0, nzcv 00000000     
@@ -1951,6 +1966,21 @@ asrv w21,w20,w19 :: rd 00000000ff46c113 rm fbb5c64ed1b044c6, rn 33ca4c4fb3960326
 asrv w21,w20,w19 :: rd 00000000f5f03d4a rm 2b7c5939d7c0f528, rn b73870a5a6630162, cin 0, nzcv 00000000     
 asrv w21,w20,w19 :: rd 00000000fc562e6d rm 02fe41918ac5cdba, rn 48e0815289728f05, cin 0, nzcv 00000000     
 asrv w21,w20,w19 :: rd 00000000000007c6 rm b60a8f381f187bae, rn 008c208cc413ff72, cin 0, nzcv 00000000     
+rorv w21,w20,w19 :: rd 000000008a7be992 rm 4b154113f7d32514, rn cce230caafbf9cc9, cin 0, nzcv 00000000     
+rorv w21,w20,w19 :: rd 000000003c4dc875 rm 33d5d595721d4f13, rn f4509311f443a7ce, cin 0, nzcv 00000000     
+rorv w21,w20,w19 :: rd 00000000cbc17954 rm 4a3c6de6954cbc17, rn 111b21e39fbd7254, cin 0, nzcv 00000000     
+rorv w21,w20,w19 :: rd 000000001b46c113 rm fbb5c64ed1b044c6, rn 33ca4c4fb3960326, cin 0, nzcv 00000000     
+rorv w21,w20,w19 :: rd 0000000035f03d4a rm 2b7c5939d7c0f528, rn b73870a5a6630162, cin 0, nzcv 00000000     
+rorv w21,w20,w19 :: rd 00000000d4562e6d rm 02fe41918ac5cdba, rn 48e0815289728f05, cin 0, nzcv 00000000     
+rorv w21,w20,w19 :: rd 000000001eeb87c6 rm b60a8f381f187bae, rn 008c208cc413ff72, cin 0, nzcv 00000000     
+rorv w21,w20,w19 :: rd 000000001f187bae rm b60a8f381f187bae, rn 008c208cc413ff00, cin 0, nzcv 00000000     
+rorv w21,w20,w19 :: rd 000000000f8c3dd7 rm b60a8f381f187bae, rn 008c208cc413ff01, cin 0, nzcv 00000000     
+rorv w21,w20,w19 :: rd 0000000087c61eeb rm b60a8f381f187bae, rn 008c208cc413ff02, cin 0, nzcv 00000000     
+rorv w21,w20,w19 :: rd 00000000f8c3dd70 rm b60a8f381f187bae, rn 008c208cc413ff1d, cin 0, nzcv 00000000     
+rorv w21,w20,w19 :: rd 000000007c61eeb8 rm b60a8f381f187bae, rn 008c208cc413ff1e, cin 0, nzcv 00000000     
+rorv w21,w20,w19 :: rd 000000003e30f75c rm b60a8f381f187bae, rn 008c208cc413ff1f, cin 0, nzcv 00000000     
+rorv w21,w20,w19 :: rd 000000001f187bae rm b60a8f381f187bae, rn 008c208cc413ff20, cin 0, nzcv 00000000     
+rorv w21,w20,w19 :: rd 000000000f8c3dd7 rm b60a8f381f187bae, rn 008c208cc413ff21, cin 0, nzcv 00000000     
 SDIV/UDIV
 sdiv x21,x20,x19 :: rd ffffffffffffffff rm 4b154113f7d32514, rn cce230caafbf9cc9, cin 0, nzcv 00000000     
 sdiv x21,x20,x19 :: rd fffffffffffffffc rm 33d5d595721d4f13, rn f4509311f443a7ce, cin 0, nzcv 00000000     

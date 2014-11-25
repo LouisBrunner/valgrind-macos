@@ -10535,7 +10535,7 @@ TESTINST2("cls w17, w22", 0x0070FFFF01FFFFFFULL, x17, x22, 0);
 
 
 ////////////////////////////////////////////////////////////////
-printf("LSLV/LSRV/ASRV\n");
+printf("LSLV/LSRV/ASRV/RORV\n");
 
 TESTINST3("lslv x21,x20,x19", 0x4b154113f7d32514, 0xcce230caafbf9cc9, x21,x20,x19, 0);
 TESTINST3("lslv x21,x20,x19", 0x33d5d595721d4f13, 0xf4509311f443a7ce, x21,x20,x19, 0);
@@ -10561,6 +10561,21 @@ TESTINST3("asrv x21,x20,x19", 0x2b7c5939d7c0f528, 0xb73870a5a6630162, x21,x20,x1
 TESTINST3("asrv x21,x20,x19", 0x02fe41918ac5cdba, 0x48e0815289728f05, x21,x20,x19, 0);
 TESTINST3("asrv x21,x20,x19", 0xb60a8f381f187bae, 0x008c208cc413ff72, x21,x20,x19, 0);
 
+TESTINST3("rorv x21,x20,x19", 0x4b154113f7d32514, 0xcce230caafbf9cc9, x21,x20,x19, 0);
+TESTINST3("rorv x21,x20,x19", 0x33d5d595721d4f13, 0xf4509311f443a7ce, x21,x20,x19, 0);
+TESTINST3("rorv x21,x20,x19", 0x4a3c6de6954cbc17, 0x111b21e39fbd7254, x21,x20,x19, 0);
+TESTINST3("rorv x21,x20,x19", 0xfbb5c64ed1b044c6, 0x33ca4c4fb3960326, x21,x20,x19, 0);
+TESTINST3("rorv x21,x20,x19", 0x2b7c5939d7c0f528, 0xb73870a5a6630162, x21,x20,x19, 0);
+TESTINST3("rorv x21,x20,x19", 0x02fe41918ac5cdba, 0x48e0815289728f05, x21,x20,x19, 0);
+TESTINST3("rorv x21,x20,x19", 0xb60a8f381f187bae, 0x008c208cc413ff72, x21,x20,x19, 0);
+TESTINST3("rorv x21,x20,x19", 0xb60a8f381f187bae, 0x008c208cc413ff00, x21,x20,x19, 0);
+TESTINST3("rorv x21,x20,x19", 0xb60a8f381f187bae, 0x008c208cc413ff01, x21,x20,x19, 0);
+TESTINST3("rorv x21,x20,x19", 0xb60a8f381f187bae, 0x008c208cc413ff02, x21,x20,x19, 0);
+TESTINST3("rorv x21,x20,x19", 0xb60a8f381f187bae, 0x008c208cc413ff3d, x21,x20,x19, 0);
+TESTINST3("rorv x21,x20,x19", 0xb60a8f381f187bae, 0x008c208cc413ff3e, x21,x20,x19, 0);
+TESTINST3("rorv x21,x20,x19", 0xb60a8f381f187bae, 0x008c208cc413ff3f, x21,x20,x19, 0);
+TESTINST3("rorv x21,x20,x19", 0xb60a8f381f187bae, 0x008c208cc413ff40, x21,x20,x19, 0);
+TESTINST3("rorv x21,x20,x19", 0xb60a8f381f187bae, 0x008c208cc413ff41, x21,x20,x19, 0);
 
 TESTINST3("lslv w21,w20,w19", 0x4b154113f7d32514, 0xcce230caafbf9cc9, x21,x20,x19, 0);
 TESTINST3("lslv w21,w20,w19", 0x33d5d595721d4f13, 0xf4509311f443a7ce, x21,x20,x19, 0);
@@ -10585,6 +10600,22 @@ TESTINST3("asrv w21,w20,w19", 0xfbb5c64ed1b044c6, 0x33ca4c4fb3960326, x21,x20,x1
 TESTINST3("asrv w21,w20,w19", 0x2b7c5939d7c0f528, 0xb73870a5a6630162, x21,x20,x19, 0);
 TESTINST3("asrv w21,w20,w19", 0x02fe41918ac5cdba, 0x48e0815289728f05, x21,x20,x19, 0);
 TESTINST3("asrv w21,w20,w19", 0xb60a8f381f187bae, 0x008c208cc413ff72, x21,x20,x19, 0);
+
+TESTINST3("rorv w21,w20,w19", 0x4b154113f7d32514, 0xcce230caafbf9cc9, x21,x20,x19, 0);
+TESTINST3("rorv w21,w20,w19", 0x33d5d595721d4f13, 0xf4509311f443a7ce, x21,x20,x19, 0);
+TESTINST3("rorv w21,w20,w19", 0x4a3c6de6954cbc17, 0x111b21e39fbd7254, x21,x20,x19, 0);
+TESTINST3("rorv w21,w20,w19", 0xfbb5c64ed1b044c6, 0x33ca4c4fb3960326, x21,x20,x19, 0);
+TESTINST3("rorv w21,w20,w19", 0x2b7c5939d7c0f528, 0xb73870a5a6630162, x21,x20,x19, 0);
+TESTINST3("rorv w21,w20,w19", 0x02fe41918ac5cdba, 0x48e0815289728f05, x21,x20,x19, 0);
+TESTINST3("rorv w21,w20,w19", 0xb60a8f381f187bae, 0x008c208cc413ff72, x21,x20,x19, 0);
+TESTINST3("rorv w21,w20,w19", 0xb60a8f381f187bae, 0x008c208cc413ff00, x21,x20,x19, 0);
+TESTINST3("rorv w21,w20,w19", 0xb60a8f381f187bae, 0x008c208cc413ff01, x21,x20,x19, 0);
+TESTINST3("rorv w21,w20,w19", 0xb60a8f381f187bae, 0x008c208cc413ff02, x21,x20,x19, 0);
+TESTINST3("rorv w21,w20,w19", 0xb60a8f381f187bae, 0x008c208cc413ff1d, x21,x20,x19, 0);
+TESTINST3("rorv w21,w20,w19", 0xb60a8f381f187bae, 0x008c208cc413ff1e, x21,x20,x19, 0);
+TESTINST3("rorv w21,w20,w19", 0xb60a8f381f187bae, 0x008c208cc413ff1f, x21,x20,x19, 0);
+TESTINST3("rorv w21,w20,w19", 0xb60a8f381f187bae, 0x008c208cc413ff20, x21,x20,x19, 0);
+TESTINST3("rorv w21,w20,w19", 0xb60a8f381f187bae, 0x008c208cc413ff21, x21,x20,x19, 0);
 
 
 ////////////////////////////////////////////////////////////////

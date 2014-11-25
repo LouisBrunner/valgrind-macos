@@ -6784,6 +6784,21 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       return True;
    }
 
+   /* -------------------- BRK -------------------- */
+   /* 31        23  20    4
+      1101 0100 001 imm16 00000  BRK #imm16
+   */
+   if (INSN(31,24) == BITS8(1,1,0,1,0,1,0,0)
+       && INSN(23,21) == BITS3(0,0,1) && INSN(4,0) == BITS5(0,0,0,0,0)) {
+      UInt imm16 = INSN(20,5);
+      /* Request SIGTRAP and then restart of this insn. */
+      putPC(mkU64(guest_PC_curr_instr + 0));
+      dres->whatNext    = Dis_StopHere;
+      dres->jk_StopHere = Ijk_SigTRAP;
+      DIP("brk #%u\n", imm16);
+      return True;
+   }
+
   //fail:
    vex_printf("ARM64 front end: branch_etc\n");
    return False;

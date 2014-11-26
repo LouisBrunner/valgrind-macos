@@ -1,2 +1,4 @@
 TEST bbit0: PASS
 TEST bbit1: PASS
+TEST bbit032: PASS
+TEST bbit132: PASS

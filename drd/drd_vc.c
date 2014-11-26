@@ -58,6 +58,9 @@ void DRD_(vc_init)(VectorClock* const vc,
       VG_(memcpy)(vc->vc, vcelem, size * sizeof(vcelem[0]));
       vc->size = size;
    }
+#ifdef ENABLE_DRD_CONSISTENCY_CHECKS
+   DRD_(vc_check)(vc);
+#endif
 }
 
 /** Reset vc to the empty vector clock. */
@@ -295,11 +298,11 @@ HChar* DRD_(vc_aprint)(const VectorClock* const vc)
 void DRD_(vc_check)(const VectorClock* const vc)
 {
    unsigned i;
+
    tl_assert(vc->size <= vc->capacity);
+
    for (i = 1; i < vc->size; i++)
-   {
       tl_assert(vc->vc[i-1].threadid < vc->vc[i].threadid);
-   }
 }
 
 /**

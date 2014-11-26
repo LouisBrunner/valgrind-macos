@@ -775,7 +775,8 @@ static Bool branch_or_jump(const UChar * addr)
    }
 
    /* Cavium Specific instructions. */
-   if (opcode == 0x32 || opcode == 0x3A) {  /* BBIT0, BBIT1 */
+   if (opcode == 0x32 || opcode == 0x3A || opcode == 0x36 || opcode == 0x3E) {
+       /* BBIT0, BBIT1, BBIT032, BBIT132 */
       return True;
    }
 
@@ -17110,6 +17111,27 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          goto decode_failure;
       }
 
+   case 0x36:  /* Branch on Bit Clear Plus 32 - BBIT032; Cavium OCTEON */
+      /* Cavium Specific instructions. */
+      if (VEX_MIPS_COMP_ID(archinfo->hwcaps) == VEX_PRID_COMP_CAVIUM) {
+         DIP("bbit032 r%d, 0x%x, %x", rs, rt, imm);
+         t0 = newTemp(Ity_I64);
+         t1 = newTemp(Ity_I8);  /* Shift. */
+         t2 = newTemp(Ity_I64);
+         assign(t0, mkU64(0x1));
+         assign(t1, binop(Iop_Add8, mkU8(rt), mkU8(32)));
+         assign(t2, binop(Iop_Shl64, mkexpr(t0), mkexpr(t1)));
+         dis_branch(False, binop(Iop_CmpEQ64,
+                                 binop(Iop_And64,
+                                       mkexpr(t2),
+                                       getIReg(rs)),
+                                 mkU64(0x0)),
+                    imm, &bstmt);
+         break;
+      } else {
+         goto decode_failure;
+      }
+
    case 0x3A:  /* Branch on Bit Set - BBIT1; Cavium OCTEON */
       /* Cavium Specific instructions. */
       if (VEX_MIPS_COMP_ID(archinfo->hwcaps) == VEX_PRID_COMP_CAVIUM) {
@@ -17123,6 +17145,27 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                        mkexpr(t1),
                                        mkNarrowTo32(ty, getIReg(rs))),
                                  mkU32(0x0)),
+                    imm, &bstmt);
+         break;
+      } else {
+         goto decode_failure;
+      }
+
+   case 0x3E:  /* Branch on Bit Set Plus 32 - BBIT132; Cavium OCTEON */
+      /* Cavium Specific instructions. */
+      if (VEX_MIPS_COMP_ID(archinfo->hwcaps) == VEX_PRID_COMP_CAVIUM) {
+         DIP("bbit132 r%d, 0x%x, %x", rs, rt, imm);
+         t0 = newTemp(Ity_I64);
+         t1 = newTemp(Ity_I8);  /* Shift. */
+         t2 = newTemp(Ity_I64);
+         assign(t0, mkU64(0x1));
+         assign(t1, binop(Iop_Add8, mkU8(rt), mkU8(32)));
+         assign(t2, binop(Iop_Shl64, mkexpr(t0), mkexpr(t1)));
+         dis_branch(False, binop(Iop_CmpNE64,
+                                 binop(Iop_And64,
+                                       mkexpr(t2),
+                                       getIReg(rs)),
+                                 mkU64(0x0)),
                     imm, &bstmt);
          break;
       } else {

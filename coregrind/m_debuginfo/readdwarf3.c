@@ -3032,7 +3032,8 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
             case DW_LANG_C89: case DW_LANG_C:
             case DW_LANG_C_plus_plus: case DW_LANG_ObjC:
             case DW_LANG_ObjC_plus_plus: case DW_LANG_UPC:
-            case DW_LANG_Upc: case DW_LANG_C99:
+            case DW_LANG_Upc: case DW_LANG_C99: case DW_LANG_C11:
+            case DW_LANG_C_plus_plus_11: case DW_LANG_C_plus_plus_14:
                parser->language = 'C'; break;
             case DW_LANG_Fortran77: case DW_LANG_Fortran90:
             case DW_LANG_Fortran95:
@@ -3043,7 +3044,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
             case DW_LANG_Cobol85: case DW_LANG_Pascal83:
             case DW_LANG_Modula2: case DW_LANG_Java:
             case DW_LANG_PLI:
-            case DW_LANG_D: case DW_LANG_Python:
+            case DW_LANG_D: case DW_LANG_Python: case DW_LANG_Go:
             case DW_LANG_Mips_Assembler:
                parser->language = '?'; break;
             default:

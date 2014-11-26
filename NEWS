@@ -86,6 +86,7 @@ where XXXXXX is the bug number as listed below.
 340807  disInstr(arm): unhandled instruction: 0xEE989B20
 340856  disInstr(arm64): unhandled instruction 0x1E634C45 (fcsel)
 340922  arm64: unhandled getgroups/setgroups syscalls
+341238  Recognize GCC5/DWARFv5 DW_LANG constants (Go, C11, C++11, C++14)
 n-i-bz  Provide implementations of certain compiler builtins to support
         compilers who may not provide those
 n-i-bz  Old STABS code is still being compiled, but never used. Remove it.

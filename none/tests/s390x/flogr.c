@@ -25,7 +25,7 @@ flogr1(unsigned long input, unsigned long *bitpos, unsigned long *modval,
                   "stg   2, %[bitpos]\n\t"
                   "stg   3, %[modval]\n\t"
                   : [bitpos]"=m"(*bitpos), [modval]"=m"(*modval),
-                    [psw]"=d"(psw)
+                    [psw]"=&d"(psw)
                   : [val] "d"(value)
                   : "2", "3", "cc");
 
@@ -49,7 +49,7 @@ flogr2(unsigned long input, unsigned long *bitpos, unsigned long *modval,
                   "stg   2, %[bitpos]\n\t"
                   "stg   3, %[modval]\n\t"
                   : [bitpos]"=m"(*bitpos), [modval]"=m"(*modval),
-                    [psw]"=d"(psw), [val] "+d"(value)
+                    [psw]"=&d"(psw), [val] "+d"(value)
                   :
                   : "3", "cc");
 
@@ -73,7 +73,7 @@ flogr3(unsigned long input, unsigned long *bitpos, unsigned long *modval,
                   "stg   2, %[bitpos]\n\t"
                   "stg   3, %[modval]\n\t"
                   : [bitpos]"=m"(*bitpos), [modval]"=m"(*modval),
-                    [psw]"=d"(psw), [val] "+d"(value)
+                    [psw]"=&d"(psw), [val] "+d"(value)
                   :
                   : "2", "cc");
 

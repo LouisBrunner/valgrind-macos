@@ -105,7 +105,8 @@
       Long n = VG_(strtoll10)( val, &s ); \
       (qq_var) = n; \
       /* Check for non-numeralness, or overflow. */ \
-      if ('\0' != s[0] || (qq_var) != n) VG_(fmsg_bad_option)(qq_arg, ""); \
+      if ('\0' != s[0] || (qq_var) != n) VG_(fmsg_bad_option)(qq_arg, \
+                                  "Invalid integer value '%s'\n", val); \
       True; \
      }) \
     )
@@ -123,7 +124,8 @@
       /* for all the other macros in this file. */ \
       /* Check for non-numeralness, or overflow. */ \
       /* Nb: it will overflow if qq_var is unsigned and qq_val is negative! */ \
-      if ('\0' != s[0] || (qq_var) != n) VG_(fmsg_bad_option)(qq_arg, ""); \
+      if ('\0' != s[0] || (qq_var) != n) VG_(fmsg_bad_option)(qq_arg, \
+                                  "Invalid integer value '%s'\n", val); \
       /* Check bounds. */ \
       if ((qq_var) < (qq_lo) || (qq_var) > (qq_hi)) { \
          VG_(fmsg_bad_option)(qq_arg, \
@@ -153,7 +155,8 @@
       double n = VG_(strtod)( val, &s ); \
       (qq_var) = n; \
       /* Check for non-numeralness */ \
-      if ('\0' != s[0]) VG_(fmsg_bad_option)(qq_arg, ""); \
+      if ('\0' != s[0]) VG_(fmsg_bad_option)(qq_arg, \
+                            "Invalid floating point value '%s'\n",val); \
       True; \
      }) \
     )

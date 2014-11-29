@@ -624,8 +624,8 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
          else if (VG_(strcmp)(tmp_str, "no") == 0)
             VG_(clo_fair_sched) = disable_fair_sched;
          else
-            VG_(fmsg_bad_option)(arg, "");
-
+            VG_(fmsg_bad_option)(arg,
+               "Bad argument, should be 'yes', 'try' or 'no'\n");
       }
       else if VG_BOOL_CLO(arg, "--trace-sched",      VG_(clo_trace_sched)) {}
       else if VG_BOOL_CLO(arg, "--trace-signals",    VG_(clo_trace_signals)) {}
@@ -845,7 +845,7 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
 
       else if ( ! VG_(needs).command_line_options
              || ! VG_TDICT_CALL(tool_process_cmd_line_option, arg) ) {
-         VG_(fmsg_bad_option)(arg, "");
+         VG_(fmsg_unknown_option)(arg);
       }
    }
 
@@ -961,7 +961,8 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
          chaos.  No big deal; dump_error is a flag for debugging V
          itself. */
       if (VG_(clo_dump_error) > 0) {
-         VG_(fmsg_bad_option)("--xml=yes together with --dump-error", "");
+         VG_(fmsg_bad_option)("--xml=yes",
+            "Cannot be used together with --dump-error");
       }
 
       /* Disable error limits (this might be a bad idea!) */

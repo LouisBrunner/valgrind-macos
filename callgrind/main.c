@@ -1860,7 +1860,6 @@ void clg_print_stats(void)
 		CLG_(stat).bb_retranslations);
    VG_(message)(Vg_DebugMsg, "Distinct instrs:   %d\n",
 		CLG_(stat).distinct_instrs);
-   VG_(message)(Vg_DebugMsg, "");
 
    VG_(message)(Vg_DebugMsg, "LRU Contxt Misses: %d\n",
 		CLG_(stat).cxt_lru_misses);

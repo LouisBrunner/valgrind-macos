@@ -636,6 +636,14 @@ void VG_(fmsg_bad_option) ( const HChar* opt, const HChar* format, ... )
    VG_(exit)(1);
 }
 
+void VG_(fmsg_unknown_option) ( const HChar* opt)
+{
+   revert_to_stderr();
+   VG_(message) (Vg_FailMsg, "Unknown option: %s\n", opt);
+   VG_(message) (Vg_FailMsg, "Use --help for more information or consult the user manual.\n");
+   VG_(exit)(1);
+}
+
 UInt VG_(umsg) ( const HChar* format, ... )
 {
    UInt count;

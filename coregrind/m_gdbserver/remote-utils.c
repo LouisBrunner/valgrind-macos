@@ -395,7 +395,7 @@ void remote_open (const HChar *name)
       o = VG_(open) (shared_mem, VKI_O_CREAT|VKI_O_RDWR, 0600);
       if (sr_isError (o)) {
          sr_perror(o, "cannot create shared_mem file %s\n", shared_mem);
-         fatal("");
+         fatal("Cannot recover from previous error. Good-bye.");
       } else {
          shared_mem_fd = sr_Res(o);
       }
@@ -412,7 +412,7 @@ void remote_open (const HChar *name)
          if (sr_isError(res)) {
             sr_perror(res, "error VG_(am_shared_mmap_file_float_valgrind) %s\n",
                       shared_mem);
-            fatal("");
+            fatal("Cannot recover from previous error. Good-bye.");
          }  
          addr_shared = sr_Res (res);
       }

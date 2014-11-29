@@ -150,12 +150,13 @@ HChar* VG_(expand_file_name)(const HChar* option_name, const HChar* format)
    const HChar *base_dir;
    Int len, i = 0, j = 0;
    HChar* out;
+   const HChar *message = NULL;
 
    base_dir = VG_(get_startup_wd)();
 
    if (VG_STREQ(format, "")) {
       // Empty name, bad.
-      VG_(fmsg)("%s: filename is empty", option_name);
+      message = "No filename given\n";
       goto bad;
    }
    
@@ -164,13 +165,11 @@ HChar* VG_(expand_file_name)(const HChar* option_name, const HChar* format)
    // that we don't allow a legitimate filename beginning with '~' but that
    // seems very unlikely.
    if (format[0] == '~') {
-      VG_(fmsg)(
-         "%s: filename begins with '~'\n"
+      message = 
+         "Filename begins with '~'\n"
          "You probably expected the shell to expand the '~', but it\n"
          "didn't.  The rules for '~'-expansion vary from shell to shell.\n"
-         "You might have more luck using $HOME instead.\n",
-         option_name
-      );
+         "You might have more luck using $HOME instead.\n";
       goto bad;
    }
 
@@ -212,7 +211,7 @@ HChar* VG_(expand_file_name)(const HChar* option_name, const HChar* format)
                Int begin_qualname = ++i;
                while (True) {
                   if (0 == format[i]) {
-                     VG_(fmsg)("%s: malformed %%q specifier\n", option_name);
+                     message = "Missing '}' in %q specifier\n";
                      goto bad;
                   } else if ('}' == format[i]) {
                      Int qualname_len = i - begin_qualname;
@@ -222,8 +221,14 @@ HChar* VG_(expand_file_name)(const HChar* option_name, const HChar* format)
                      qualname[qualname_len] = '\0';
                      qual = VG_(getenv)(qualname);
                      if (NULL == qual) {
-                        VG_(fmsg)("%s: environment variable %s is not set\n",
-                                  option_name, qualname);
+                        // This memory will leak, But we don't care because
+                        // VG_(fmsg_bad_option) will terminate the process.
+                        HChar *str = VG_(malloc)("options.efn.3",
+                                                 100 + qualname_len);
+                        VG_(sprintf)(str,
+                                     "Environment variable '%s' is not set\n",
+                                     qualname);
+                        message = str;
                         goto bad;
                      }
                      i++;
@@ -234,14 +239,13 @@ HChar* VG_(expand_file_name)(const HChar* option_name, const HChar* format)
                ENSURE_THIS_MUCH_SPACE(VG_(strlen)(qual));
                j += VG_(sprintf)(&out[j], "%s", qual);
             } else {
-               VG_(fmsg)("%s: expected '{' after '%%q'\n", option_name);
+               message = "Expected '{' after '%q'\n";
                goto bad;
             }
          } 
          else {
             // Something else, abort.
-            VG_(fmsg)("%s: expected 'p' or 'q' or '%%' after '%%'\n",
-                      option_name);
+            message = "Expected 'p' or 'q' or '%' after '%'\n";
             goto bad;
          }
       }
@@ -264,13 +268,11 @@ HChar* VG_(expand_file_name)(const HChar* option_name, const HChar* format)
    return out;
 
   bad: {
-   HChar* opt =    // 2:  1 for the '=', 1 for the NUL.
-      VG_(malloc)( "options.efn.3",
-                   VG_(strlen)(option_name) + VG_(strlen)(format) + 2 );
-   VG_(strcpy)(opt, option_name);
-   VG_(strcat)(opt, "=");
-   VG_(strcat)(opt, format);
-   VG_(fmsg_bad_option)(opt, "");
+   vg_assert(message != NULL);
+   // 2:  1 for the '=', 1 for the NUL.
+   HChar opt[VG_(strlen)(option_name) + VG_(strlen)(format) + 2];
+   VG_(sprintf)(opt, "%s=%s", option_name, format);
+   VG_(fmsg_bad_option)(opt, "%s", message);
   }
 }
 

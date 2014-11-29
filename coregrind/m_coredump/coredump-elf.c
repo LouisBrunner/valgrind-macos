@@ -599,9 +599,8 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, ULong max_size)
 
    if (VG_(clo_log_fname_expanded) != NULL) {
       coreext = ".core";
-      basename = VG_(expand_file_name)(
-                    "--log-file (while creating core filename)",
-                    VG_(clo_log_fname_expanded));
+      basename = VG_(expand_file_name)("--log-file",
+                                       VG_(clo_log_fname_expanded));
    }
 
    vg_assert(coreext);

@@ -525,11 +525,11 @@ PRE(sys_clone)
 
    default:
       /* should we just ENOSYS? */
-      VG_(message)(Vg_UserMsg, "Unsupported clone() flags: 0x%lx", ARG2);
-      VG_(message)(Vg_UserMsg, "");
-      VG_(message)(Vg_UserMsg, "The only supported clone() uses are:");
-      VG_(message)(Vg_UserMsg, " - via a threads library (NPTL)");
-      VG_(message)(Vg_UserMsg, " - via the implementation of fork or vfork");
+      VG_(message)(Vg_UserMsg, "Unsupported clone() flags: 0x%lx\n", ARG2);
+      VG_(message)(Vg_UserMsg, "\n");
+      VG_(message)(Vg_UserMsg, "The only supported clone() uses are:\n");
+      VG_(message)(Vg_UserMsg, " - via a threads library (NPTL)\n");
+      VG_(message)(Vg_UserMsg, " - via the implementation of fork or vfork\n");
       VG_(unimplemented)
          ("Valgrind does not support general clone().");
    }

@@ -55,7 +55,7 @@ static void drd_segment_push(struct semaphore_info* p, Segment* sg)
    tl_assert(sg);
    n = VG_(addToXA)(p->last_sem_post_seg, &sg);
 #if 0
-   VG_(message)(Vg_DebugMsg, "0x%lx push: added at position %ld/%ld",
+   VG_(message)(Vg_DebugMsg, "0x%lx push: added at position %ld/%ld\n",
                 p->a1, n, VG_(sizeXA)(p->last_sem_post_seg));
 #endif
    tl_assert(*(Segment**)VG_(indexXA)(p->last_sem_post_seg, n) == sg);
@@ -69,7 +69,7 @@ static Segment* drd_segment_pop(struct semaphore_info* p)
 
    sz = VG_(sizeXA)(p->last_sem_post_seg);
 #if 0
-   VG_(message)(Vg_DebugMsg, "0x%lx pop:  removed from position %ld/%ld",
+   VG_(message)(Vg_DebugMsg, "0x%lx pop:  removed from position %ld/%ld\n",
                 p->a1, sz - 1, sz);
 #endif
    sg = 0;

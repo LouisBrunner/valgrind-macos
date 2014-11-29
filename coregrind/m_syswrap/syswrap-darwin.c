@@ -647,22 +647,23 @@ void VG_(show_open_ports)(void)
    OpenPort *i;
    
    VG_(message)(Vg_UserMsg, 
-                "MACH PORTS: %d open at exit.", allocated_port_count);
+                "MACH PORTS: %d open at exit.\n", allocated_port_count);
 
    for (i = allocated_ports; i; i = i->next) {
       if (i->name) {
-         VG_(message)(Vg_UserMsg, "Open Mach port 0x%x: %s", i->port, i->name);
+         VG_(message)(Vg_UserMsg, "Open Mach port 0x%x: %s\n", i->port,
+                      i->name);
       } else {
-         VG_(message)(Vg_UserMsg, "Open Mach port 0x%x", i->port);
+         VG_(message)(Vg_UserMsg, "Open Mach port 0x%x\n", i->port);
       }
 
       if (i->where) {
          VG_(pp_ExeContext)(i->where);
-         VG_(message)(Vg_UserMsg, "");
+         VG_(message)(Vg_UserMsg, "\n");
       }
    }
 
-   VG_(message)(Vg_UserMsg, "");
+   VG_(message)(Vg_UserMsg, "\n");
 }
 
 
@@ -3997,7 +3998,7 @@ PRE(auditon)
       break;
 
    default:
-      VG_(message)(Vg_UserMsg, "UNKNOWN auditon cmd %ld", ARG1);
+      VG_(message)(Vg_UserMsg, "UNKNOWN auditon cmd %ld\n", ARG1);
       break;
    }
 }

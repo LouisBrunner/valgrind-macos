@@ -105,9 +105,19 @@ AM_CFLAGS_BASE = \
 	-Wpointer-arith \
 	-Wstrict-prototypes \
 	-Wmissing-declarations \
-	@FLAG_W_NO_TAUTOLOGICAL_COMPARE@ \
+	-Wno-long-long \
+	@FLAG_W_CAST_QUAL@ \
+	@FLAG_W_WRITE_STRINGS@ \
+	@FLAG_W_FORMAT@ \
+	@FLAG_W_FORMAT_SECURITY@ \
+	@FLAG_FNO_STACK_PROTECTOR@ \
 	-fno-strict-aliasing \
 	-fno-builtin
+
+if COMPILER_IS_CLANG
+AM_CFLAGS_BASE += -Wno-cast-align -Wno-self-assign \
+                  -Wno-tautological-compare
+endif
 
 # These flags are used for building the preload shared objects (PSOs).
 # The aim is to give reasonable performance but also to have good

@@ -18,8 +18,10 @@ endif
 
 # Nb: Tools need to augment these flags with an arch-selection option, such
 # as $(AM_FLAG_M3264_PRI).
-AM_CFLAGS   = -Winline -Wall -Wshadow -g
-AM_CXXFLAGS = -Winline -Wall -Wshadow -g
+AM_CFLAGS   = -Winline -Wall -Wshadow -Wno-long-long -g \
+              @FLAG_FNO_STACK_PROTECTOR@
+AM_CXXFLAGS = -Winline -Wall -Wshadow -Wno-long-long -g \
+              @FLAG_FNO_STACK_PROTECTOR@
 # Include AM_CPPFLAGS in AM_CCASFLAGS to allow for older versions of
 # automake;  see comments in Makefile.all.am for more detail.
 AM_CCASFLAGS = $(AM_CPPFLAGS)
@@ -28,20 +30,16 @@ if VGCONF_OS_IS_DARWIN
 noinst_DSYMS = $(check_PROGRAMS)
 endif
 
-if HAS_WRITE_STRINGS_WARNING
-CFLAGS += -Wno-write-strings
-endif
-
 if COMPILER_IS_CLANG
-CFLAGS   += -Wno-format-extra-args       # perf/tinycc.c
-CFLAGS   += -Wno-literal-range           # none/tests/amd64/fxtract.c
-CFLAGS   += -Wno-string-plus-int         # drd/tests/annotate_ignore_rw.c
-CXXFLAGS += -Wno-unused-private-field    # drd/tests/tsan_unittest.cpp
+AM_CFLAGS   += -Wno-format-extra-args       # perf/tinycc.c
+AM_CFLAGS   += -Wno-literal-range           # none/tests/amd64/fxtract.c
+AM_CFLAGS   += -Wno-tautological-constant-out-of-range-compare # ...../aes.c
+AM_CFLAGS   += -Wno-self-assign             # memcheck/tests/unit_libcbase.c
+AM_CFLAGS   += -Wno-string-plus-int         # drd/tests/annotate_ignore_rw.c
+AM_CFLAGS   += -Wno-uninitialized           # clang 3.4.2 and earlier
+AM_CFLAGS   += -Wno-unused-value            # clang 3.0.0
+AM_CXXFLAGS += -Wno-unused-private-field    # drd/tests/tsan_unittest.cpp
 endif
-
-# Compile testcases without -Wcast-qual
-CFLAGS   += -Wno-cast-qual
-CXXFLAGS += -Wno-cast-qual
 
 check-local: build-noinst_DSYMS
 

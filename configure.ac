@@ -16,10 +16,15 @@ AM_INIT_AUTOMAKE([foreign subdir-objects])
 AM_MAINTAINER_MODE
 
 #----------------------------------------------------------------------------
+# Do NOT modify these flags here. Except in feature tests in which case
+# the original values must be properly restored.
+#----------------------------------------------------------------------------
+CFLAGS="$CFLAGS"
+CXXFLAGS="$CXXFLAGS"
+
+#----------------------------------------------------------------------------
 # Checks for various programs.
 #----------------------------------------------------------------------------
-CFLAGS="-Wno-long-long $CFLAGS"
-CXXFLAGS="-Wno-long-long $CXXFLAGS"
 
 AC_PROG_LN_S
 AC_PROG_CC
@@ -144,11 +149,6 @@ fi
 ]
 AM_CONDITIONAL(COMPILER_IS_CLANG, test $is_clang = clang -o $is_clang = applellvm)
 AM_CONDITIONAL(COMPILER_IS_ICC, test $is_clang = icc)
-
-if test $is_clang = clang -o $is_clang = applellvm ; then
-    CFLAGS="$CFLAGS -Wno-tautological-compare -Wno-cast-align -Wno-self-assign"
-    CXXFLAGS="$CXXFLAGS -Wno-tautological-compare -Wno-cast-align -Wno-self-assign"
-fi
 
 # Note: m4 arguments are quoted with [ and ] so square brackets in shell
 # statements have to be quoted.
@@ -1686,11 +1686,6 @@ AC_DEFUN([AC_GCC_WARNING_COND],[
 ])
 
 AC_GCC_WARNING_COND([pointer-sign], [HAS_POINTER_SIGN_WARNING])
-AC_GCC_WARNING_COND([write-strings], [HAS_WRITE_STRINGS_WARNING])
-if test $has_warning_flag = yes; then
-  CFLAGS="$CFLAGS -Wwrite-strings"
-  CXXFLAGS="$CXXFLAGS -Wwrite-strings"
-fi
 
 # Convenience function to check whether GCC supports a particular
 # warning option. Similar to AC_GCC_WARNING_COND, but does a
@@ -1712,14 +1707,31 @@ AC_DEFUN([AC_GCC_WARNING_SUBST_NO],[
   CFLAGS=$safe_CFLAGS
 ])
 
+# Convenience function. Like AC_GCC_WARNING_SUBST_NO, except it substitutes
+# -W$1  (instead of -Wno-$1).
+AC_DEFUN([AC_GCC_WARNING_SUBST],[
+  AC_MSG_CHECKING([if gcc accepts -W$1])
+  safe_CFLAGS=$CFLAGS
+  CFLAGS="-W$1"
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[;]])], [
+  AC_SUBST([$2], [-W$1])
+  AC_MSG_RESULT([yes])], [
+  AC_SUBST([$2], [])
+  AC_MSG_RESULT([no])])
+  CFLAGS=$safe_CFLAGS
+])
+
 AC_GCC_WARNING_SUBST_NO([empty-body], [FLAG_W_NO_EMPTY_BODY])
 AC_GCC_WARNING_SUBST_NO([format-zero-length], [FLAG_W_NO_FORMAT_ZERO_LENGTH])
-AC_GCC_WARNING_SUBST_NO([tautological-compare], [FLAG_W_NO_TAUTOLOGICAL_COMPARE])
 AC_GCC_WARNING_SUBST_NO([nonnull], [FLAG_W_NO_NONNULL])
 AC_GCC_WARNING_SUBST_NO([overflow], [FLAG_W_NO_OVERFLOW])
 AC_GCC_WARNING_SUBST_NO([uninitialized], [FLAG_W_NO_UNINITIALIZED])
 AC_GCC_WARNING_SUBST_NO([unused-function], [FLAG_W_NO_UNUSED_FUNCTION])
 AC_GCC_WARNING_SUBST_NO([static-local-in-inline], [FLAG_W_NO_STATIC_LOCAL_IN_INLINE])
+AC_GCC_WARNING_SUBST([write-strings], [FLAG_W_WRITE_STRINGS])
+AC_GCC_WARNING_SUBST([format], [FLAG_W_FORMAT])
+AC_GCC_WARNING_SUBST([format-security], [FLAG_W_FORMAT_SECURITY])
+AC_GCC_WARNING_SUBST([cast-qual], [FLAG_W_CAST_QUAL])
 
 
 # does this compiler support -Wextra or the older -W ?
@@ -1748,14 +1760,6 @@ AC_MSG_RESULT([-Wextra])
 ])
 CFLAGS=$safe_CFLAGS
 
-# does this compiler support -Wcast-qual ?
-AC_GCC_WARNING_COND([cast-qual], [HAS_CAST_QUAL_WARNING])
-if test $has_warning_flag = yes; then
-  CFLAGS="$CFLAGS -Wcast-qual"
-  CXXFLAGS="$CXXFLAGS -Wcast-qual"
-fi
-
-
 # does this compiler support -fno-stack-protector ?
 AC_MSG_CHECKING([if gcc accepts -fno-stack-protector])
 
@@ -1776,12 +1780,6 @@ AC_MSG_RESULT([no])
 CFLAGS=$safe_CFLAGS
 
 AC_SUBST(FLAG_FNO_STACK_PROTECTOR)
-
-if test x$no_stack_protector = xyes; then
-  CFLAGS="$CFLAGS -fno-stack-protector"
-  CXXFLAGS="$CXXFLAGS -fno-stack-protector"
-fi
-
 
 # does this compiler support --param inline-unit-growth=... ?
 

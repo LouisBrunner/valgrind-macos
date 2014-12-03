@@ -33,13 +33,13 @@ SOURCES = \
 	valgrind.c
 
 vbit_test_SOURCES      = $(SOURCES)
-vbit_test_CPPFLAGS     = $(AM_CPPFLAGS) \
+vbit_test_CPPFLAGS     = $(AM_CPPFLAGS_PRI) \
                          -I$(top_srcdir)/include  \
                          -I$(top_srcdir)/memcheck \
                          -I$(top_srcdir)/VEX/pub
-vbit_test_CFLAGS       = $(AM_CFLAGS) -std=c99
+vbit_test_CFLAGS       = $(AM_CFLAGS_PRI) -std=c99
 vbit_test_DEPENDENCIES = 
 vbit_test_LDADD        = 
-vbit_test_LDFLAGS      = 
+vbit_test_LDFLAGS      = $(AM_CFLAGS_PRI) -std=c99
 vbit_test_LINK = $(LINK) 
 	$(LINK) $(vbit_test_CFLAGS) $(vbit_test_LDFLAGS)

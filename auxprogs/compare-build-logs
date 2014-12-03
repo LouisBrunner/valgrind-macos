@@ -1,0 +1,196 @@
+#!/usr/bin/env perl
+
+# Lame script to compare two build logs.
+#
+# The script intercepts directory changes and compiler invocations and
+# compares the compiler invocations for equality. Equality is defined
+# as "same options in both invocations ignoring order". So we only test
+# a necessary condition.
+#
+# Both builds must be configured with the same --prefix. Otherwise,
+# the value of -DVG_LIBDIR= will differ. They also need to use the same
+# compiler.
+
+use Getopt::Long;
+use strict;
+use warnings;
+
+my $prog_name = "compare-build-logs";
+
+my $usage=<<EOF;
+USAGE
+
+  $prog_name   log1 log2
+
+    [--gcc]            intercept GCC invocations (this is default)
+
+    [--clang]          intercept clang invocations
+
+    [-v]               verbose mode
+
+    log-file1
+
+    log-file2
+EOF
+
+my $compiler = "gcc";
+my $verbose  = 0;
+
+GetOptions( "gcc"   => sub { $compiler = "gcc" },
+            "clang" => sub { $compiler = "clang" },
+            "v" => sub { $verbose = 1 },
+            ) || die $usage;
+
+my $num_arg = $#ARGV + 1;
+
+if ($num_arg != 2) {
+    die $usage;
+}
+
+my $log1  = $ARGV[0];
+my $log2  = $ARGV[1];
+
+# Hashes:  relative filename -> compiler invocation
+my %cmd1 = read_log_file($log1);
+my %cmd2 = read_log_file($log2);
+
+# Compare the log files
+
+foreach my $file (keys %cmd1) {
+    if (! $cmd2{$file}) {
+        print "*** $file missing in $log2\n";
+    } else {
+        compare_invocations($file, $cmd1{$file }, $cmd2{$file});
+    }
+}
+foreach my $file (keys %cmd2) {
+    if (! $cmd1{$file}) {
+        print "*** $file missing in $log1\n";
+    }
+}
+
+exit 0;
+
+# Compare two lines |c1| and |c2| which are compiler invocations for |file|.
+# Basically, we look at a compiler invocation as a sequence of blank-separated
+# options.
+sub compare_invocations {
+    my ($file, $c1, $c2) = @_;
+    my ($found1, $found2);
+#    print "COMPARE $file\n";
+
+# Remove stuff that has embedded spaces
+
+# Remove: `test -f 'whatever.c' || echo './'`
+    $c1 =~ s|(`[^`]*`)||;
+    $found1 = $1;
+    $c2 =~ s|(`[^`]*`)||;
+    $found2 = $1;
+    if ($found1 && $found2) {
+        die if ($found1 ne $found2);
+    }
+
+# Remove: -o whatever
+    $c1 =~ s|-o[ ][ ]*([^ ][^ ]*)||;
+    $found1 = $1;
+    $c2 =~ s|-o[ ][ ]*([^ ][^ ]*)||;
+    $found2 = $1;
+    if ($found1 && $found2) {
+        die if ($found1 ne $found2);
+    }
+
+# The remaining lines are considered to be blank-separated options and file
+# names. They should be identical in both invocations (but in any order).
+    my %o1 = ();
+    my %o2 = ();
+    foreach my $k (split /\s+/,$c1) {
+        $o1{$k} = 1;
+    }
+    foreach my $k (split /\s+/,$c2) {
+        $o2{$k} = 1;
+    }
+#    foreach my $zz (keys %o1) {
+#        print "$zz\n";
+#    }
+    foreach my $k (keys %o1) {
+        if (! $o2{$k}) {
+            print "*** '$k' is missing in compilation of '$file' in $log2\n";
+        }
+    }
+    foreach my $k (keys %o2) {
+        if (! $o1{$k}) {
+            print "*** '$k' is missing in compilation of '$file' in $log1\n";
+        }
+    }
+}
+
+# Read a compiler log file.
+# Return hash: relative (to build root) file name -> compiler invocation
+sub read_log_file
+{
+    my ($log) = @_;
+    my $dir = "";
+    my $root = "";
+    my %cmd = ();
+
+    print "...reading $log\n" if ($verbose);
+    
+    open(LOG, "$log") || die "cannot open $log\n";
+    while (my $line = <LOG>) {
+        chomp $line;
+        if ($line =~ /^make/) {
+            if ($line =~ /Entering directory/) {
+                $dir = $line;
+                $dir =~ s/^.*`//;
+                $dir =~ s/'.*//;
+                if ($root eq "") {
+                    $root = $dir;
+                    # Append a slash if not present
+                    $root = "$root/" if (! ($root =~ /\/$/));
+                    print "...build root is $root\n" if ($verbose);
+                }
+#                print "DIR = $dir\n";
+                next;
+            }
+        }
+        if ($line =~ /^\s*[^\s]*$compiler\s/) {
+            # If line ends in \ read continuation line.
+            while ($line =~ /\\$/) {
+                my $next = <LOG>;
+                chomp($next);
+                $line =~ s/\\$//;
+                $line .= $next;
+            }
+
+            my $file = extract_file($line);
+            $file = "$dir/$file";     # make absolute
+            $file =~ s/$root//;       # remove build root
+#            print "FILE $file\n";
+            $cmd{"$file"} = $line;
+        }
+    }
+    close(LOG);
+
+    my $num_invocations = int(keys %cmd);
+
+    if ($num_invocations == 0) {
+        print "*** File $log does not contain any compiler invocations\n";
+    } else {
+        print "...found $num_invocations invocations\n" if ($verbose);
+    }
+    return %cmd;
+}
+
+# Extract a file name from the command line. Assume there is a -o filename
+# present. If not, issue a warning.
+#
+sub extract_file {
+    my($line) = @_;
+# Look for -o executable
+    if ($line =~ /-o[ ][ ]*([^ ][^ ]*)/) {
+        return $1;
+    } else {
+        print "*** Could not extract file name from $line\n";
+        return "UNKNOWN";
+    }
+}

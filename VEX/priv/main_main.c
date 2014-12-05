@@ -1196,6 +1196,8 @@ const HChar* LibVEX_EmNote_string ( VexEmNote ew )
         return "Instruction stckf is not supported on this host";
      case EmFail_S390X_ecag:
         return "Instruction ecag is not supported on this host";
+     case EmFail_S390X_pfpo:
+        return "Instruction pfpo is not supported on this host";
      case EmFail_S390X_fpext:
         return "Encountered an instruction that requires the floating "
                "point extension facility.\n"

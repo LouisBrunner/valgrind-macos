@@ -7160,7 +7160,6 @@ get_rounding_mode_from_gr0(void)
    IRExpr *s390rm;
    IRExpr *irrm;
 
-   vassert(s390_host_has_pfpo);
    /* The dfp/bfp rounding mode is stored in bits [60:63] of GR 0
       when PFPO insn is called. So, extract the bits at [60:63] */
    assign(rm_bits, binop(Iop_And32, get_gpr_w1(0), mkU32(0xf)));
@@ -7254,7 +7253,10 @@ s390_irgen_PFPO(void)
    IRTemp dst18 = newTemp(Ity_F128);
    IRExpr *irrm;
 
-   vassert(s390_host_has_pfpo);
+   if (! s390_host_has_pfpo) {
+      emulation_failure(EmFail_S390X_pfpo);
+      goto done;
+   }
 
    assign(gr0, get_gpr_w1(0));
    /* get function code */
@@ -7433,6 +7435,7 @@ s390_irgen_PFPO(void)
    s390_cc_thunk_put1d128Z(S390_CC_OP_PFPO_128, src18, gr0);
    next_insn_if(binop(Iop_CmpEQ32, mkexpr(fn), mkU32(S390_PFPO_D128_TO_F128)));
 
+ done:
    return "pfpo";
 }
 

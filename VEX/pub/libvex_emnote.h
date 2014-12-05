@@ -103,6 +103,9 @@ typedef
       /* ecag insn is not supported on this host */
       EmFail_S390X_ecag,
 
+      /* pfpo insn is not supported on this host */
+      EmFail_S390X_pfpo,
+
       /* insn needs floating point extension facility which is not
          available on this host */
       EmFail_S390X_fpext,

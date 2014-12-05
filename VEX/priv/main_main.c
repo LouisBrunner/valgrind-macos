@@ -1184,7 +1184,7 @@ const HChar* LibVEX_EmNote_string ( VexEmNote ew )
         return "PPC64 function redirection stack underflow";
      case EmWarn_S390X_fpext_rounding:
         return "The specified rounding mode cannot be supported. That\n"
-               "  feature requires the floating point extension facility.\n"
+               "  feature requires the floating point extension facility\n"
                "  which is not available on this host. Continuing using\n"
                "  the rounding mode from FPC. Results may differ!";
      case EmWarn_S390X_invalid_rounding:
@@ -1201,10 +1201,10 @@ const HChar* LibVEX_EmNote_string ( VexEmNote ew )
                "point extension facility.\n"
                "  That facility is not available on this host";
      case EmFail_S390X_invalid_PFPO_rounding_mode:
-        return "The rounding mode specified in GPR 0 for PFPO instruction"
+        return "The rounding mode in GPR 0 for the PFPO instruction"
                " is invalid";
      case EmFail_S390X_invalid_PFPO_function:
-        return "The function code specified in GPR 0 for PFPO instruction"
+        return "The function code in GPR 0 for the PFPO instruction"
                " is invalid";
      default: 
         vpanic("LibVEX_EmNote_string: unknown warning");

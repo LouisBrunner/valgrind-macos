@@ -1,19 +1,19 @@
 
 Emulation warning: unsupported action:
   The specified rounding mode cannot be supported. That
-  feature requires the floating point extension facility.
+  feature requires the floating point extension facility
   which is not available on this host. Continuing using
   the rounding mode from FPC. Results may differ!
    at 0x........: main (fpext_warn.c:10)
 Emulation warning: unsupported action:
   The specified rounding mode cannot be supported. That
-  feature requires the floating point extension facility.
+  feature requires the floating point extension facility
   which is not available on this host. Continuing using
   the rounding mode from FPC. Results may differ!
    at 0x........: main (fpext_warn.c:10)
 Emulation warning: unsupported action:
   The specified rounding mode cannot be supported. That
-  feature requires the floating point extension facility.
+  feature requires the floating point extension facility
   which is not available on this host. Continuing using
   the rounding mode from FPC. Results may differ!
    at 0x........: main (fpext_warn.c:10)

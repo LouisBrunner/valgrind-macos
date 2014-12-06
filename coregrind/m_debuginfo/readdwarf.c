@@ -3635,9 +3635,8 @@ static void init_CIE ( CIE* cie )
    cie->saw_z_augmentation = False;
 }
 
-#define N_CIEs 8000
-static CIE the_CIEs[N_CIEs];
-
+static CIE *the_CIEs = NULL;
+static SizeT N_CIEs = 0;
 
 /* Read, summarise and store CFA unwind info from .eh_frame and
    .debug_frame sections.  is_ehframe tells us which kind we are
@@ -3776,14 +3775,14 @@ void ML_(read_callframe_info_dwarf3)
 
          /* --------- CIE --------- */
 	 if (di->trace_cfi) 
-            VG_(printf)("------ new CIE (#%d of 0 .. %d) ------\n", 
-                        n_CIEs, N_CIEs - 1);
+            VG_(printf)("------ new CIE #%d ------\n", n_CIEs);
 
 	 /* Allocate a new CIE record. */
-         vg_assert(n_CIEs >= 0 && n_CIEs <= N_CIEs);
+         vg_assert(n_CIEs >= 0);
          if (n_CIEs == N_CIEs) {
-            how = "N_CIEs is too low.  Increase and recompile.";
-            goto bad;
+            N_CIEs += 1000;
+            the_CIEs = ML_(dinfo_realloc)("di.rcid3.2", the_CIEs,
+                                          N_CIEs * sizeof the_CIEs[0]);
          }
 
          this_CIE = n_CIEs;

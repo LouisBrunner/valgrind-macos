@@ -1811,7 +1811,7 @@ s390_calculate_cond(ULong mask, ULong op, ULong dep1, ULong dep2, ULong ndep)
 
 
 static inline Bool
-isC64(IRExpr *expr)
+isC64(const IRExpr *expr)
 {
    return expr->tag == Iex_Const && expr->Iex.Const.con->tag == Ico_U64;
 }

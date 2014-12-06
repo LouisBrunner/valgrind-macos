@@ -2907,6 +2907,8 @@ s390_emit_MVI(UChar *p, UChar i2, UChar b1, UShort d1)
 static UChar *
 s390_emit_MVHHI(UChar *p, UChar b1, UShort d1, UShort i2)
 {
+   vassert(s390_host_has_gie);
+
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC3(MNM, UDXB, INT), "mvhhi", d1, 0, b1, i2);
 
@@ -2917,6 +2919,8 @@ s390_emit_MVHHI(UChar *p, UChar b1, UShort d1, UShort i2)
 static UChar *
 s390_emit_MVHI(UChar *p, UChar b1, UShort d1, UShort i2)
 {
+   vassert(s390_host_has_gie);
+
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC3(MNM, UDXB, INT), "mvhi", d1, 0, b1, i2);
 
@@ -2927,6 +2931,8 @@ s390_emit_MVHI(UChar *p, UChar b1, UShort d1, UShort i2)
 static UChar *
 s390_emit_MVGHI(UChar *p, UChar b1, UShort d1, UShort i2)
 {
+   vassert(s390_host_has_gie);
+
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC3(MNM, UDXB, INT), "mvghi", d1, 0, b1, i2);
 
@@ -6300,6 +6306,8 @@ s390_insn_madd(UChar size, s390_amode *dst, UChar delta, ULong value)
    /* This insn will be mapped to an ASI or AGSI so we can only allow base
       register plus 12-bit / 20-bit displacement. */
    vassert(dst->tag == S390_AMODE_B12 || dst->tag == S390_AMODE_B20);
+   /* ASI and AGSI require the GIE facility */
+   vassert(s390_host_has_gie);
 
    insn->tag  = S390_INSN_MADD;
    insn->size = size;

@@ -1605,8 +1605,6 @@ typedef
    }
    TempVar;
 
-#define N_D3_VAR_STACK 48
-
 typedef
    struct {
       /* Contains the range stack: a stack of address ranges, one
@@ -1626,16 +1624,39 @@ typedef
       */
       Int     sp; /* [sp] is innermost active entry; sp==-1 for empty
                      stack */
-      XArray* ranges[N_D3_VAR_STACK]; /* XArray of AddrRange */
-      Int     level[N_D3_VAR_STACK];  /* D3 DIE levels */
-      Bool    isFunc[N_D3_VAR_STACK]; /* from DW_AT_subprogram? */
-      GExpr*  fbGX[N_D3_VAR_STACK];   /* if isFunc, contains the FB
-                                         expr, else NULL */
+      Int     stack_size;
+      XArray **ranges; /* XArray of AddrRange */
+      Int     *level;  /* D3 DIE levels */
+      Bool    *isFunc; /* from DW_AT_subprogram? */
+      GExpr  **fbGX;   /* if isFunc, contains the FB expr, else NULL */
       /* The fndn_ix file name/dirname table.  Is a mapping from dwarf
          integer index to the index in di->fndnpool. */
       XArray* /* of UInt* */ fndn_ix_Table;
    }
    D3VarParser;
+
+/* Completely initialise a variable parser object */
+static void
+var_parser_init ( D3VarParser *parser )
+{
+   parser->sp = -1;
+   parser->stack_size = 0;
+   parser->ranges = NULL;
+   parser->level  = NULL;
+   parser->isFunc = NULL;
+   parser->fbGX = NULL;
+   parser->fndn_ix_Table = NULL;
+}
+
+/* Release any memory hanging off a variable parser object */
+static void
+var_parser_release ( D3VarParser *parser )
+{
+   ML_(dinfo_free)( parser->ranges );
+   ML_(dinfo_free)( parser->level );
+   ML_(dinfo_free)( parser->isFunc );
+   ML_(dinfo_free)( parser->fbGX );
+}
 
 static void varstack_show ( const D3VarParser* parser, const HChar* str )
 {
@@ -1670,7 +1691,7 @@ static
 void varstack_preen ( D3VarParser* parser, Bool td3, Int level )
 {
    Bool changed = False;
-   vg_assert(parser->sp < N_D3_VAR_STACK);
+   vg_assert(parser->sp < parser->stack_size);
    while (True) {
       vg_assert(parser->sp >= -1);
       if (parser->sp == -1) break;
@@ -1681,10 +1702,6 @@ void varstack_preen ( D3VarParser* parser, Bool td3, Int level )
       /* Who allocated this xa?  get_range_list() or
          unitary_range_list(). */
       VG_(deleteXA)( parser->ranges[parser->sp] );
-      parser->ranges[parser->sp] = NULL;
-      parser->level[parser->sp]  = 0;
-      parser->isFunc[parser->sp] = False;
-      parser->fbGX[parser->sp]   = NULL;
       parser->sp--;
       changed = True;
    }
@@ -1706,17 +1723,25 @@ static void varstack_push ( const CUConst* cc,
    varstack_preen(parser, /*td3*/False, level-1);
 
    vg_assert(parser->sp >= -1);
-   vg_assert(parser->sp < N_D3_VAR_STACK);
-   if (parser->sp == N_D3_VAR_STACK-1)
-      cc->barf("varstack_push: N_D3_VAR_STACK is too low; "
-               "increase and recompile");
+   vg_assert(parser->sp < parser->stack_size);
+   if (parser->sp == parser->stack_size - 1) {
+      parser->stack_size += 48;
+      parser->ranges =
+         ML_(dinfo_realloc)("di.readdwarf3.varpush.1", parser->ranges,
+                            parser->stack_size * sizeof parser->ranges[0]);
+      parser->level =
+         ML_(dinfo_realloc)("di.readdwarf3.varpush.2", parser->level,
+                            parser->stack_size * sizeof parser->level[0]);
+      parser->isFunc =
+         ML_(dinfo_realloc)("di.readdwarf3.varpush.3", parser->isFunc,
+                            parser->stack_size * sizeof parser->isFunc[0]);
+      parser->fbGX =
+         ML_(dinfo_realloc)("di.readdwarf3.varpush.4", parser->fbGX,
+                            parser->stack_size * sizeof parser->fbGX[0]);
+   }
    if (parser->sp >= 0)
       vg_assert(parser->level[parser->sp] < level);
    parser->sp++;
-   vg_assert(parser->ranges[parser->sp] == NULL);
-   vg_assert(parser->level[parser->sp]  == 0);
-   vg_assert(parser->isFunc[parser->sp] == False);
-   vg_assert(parser->fbGX[parser->sp]   == NULL);
    vg_assert(ranges != NULL);
    if (!isFunc) vg_assert(fbGX == NULL);
    parser->ranges[parser->sp] = ranges;
@@ -2839,8 +2864,6 @@ static Bool parse_inl_DIE (
 /*---                                                      ---*/
 /*------------------------------------------------------------*/
 
-#define N_D3_TYPE_STACK 16
-
 typedef
    struct {
       /* What source language?  'A'=Ada83/95,
@@ -2852,16 +2875,35 @@ typedef
       /* A stack of types which are currently under construction */
       Int   sp; /* [sp] is innermost active entry; sp==-1 for empty
                    stack */
+      Int   stack_size;
       /* Note that the TyEnts in qparentE are temporary copies of the
          ones accumulating in the main tyent array.  So it is not safe
          to free up anything on them when popping them off the stack
          (iow, it isn't safe to use TyEnt__make_EMPTY on them).  Just
          memset them to zero when done. */
-      TyEnt qparentE[N_D3_TYPE_STACK]; /* parent TyEnts */
-      Int   qlevel[N_D3_TYPE_STACK];
-
+      TyEnt *qparentE; /* parent TyEnts */
+      Int   *qlevel;
    }
    D3TypeParser;
+
+/* Completely initialise a type parser object */
+static void
+type_parser_init ( D3TypeParser *parser )
+{
+   parser->sp = -1;
+   parser->language = '?';
+   parser->stack_size = 0;
+   parser->qparentE = NULL;
+   parser->qlevel   = NULL;
+}
+
+/* Release any memory hanging off a type parser object */
+static void
+type_parser_release ( D3TypeParser *parser )
+{
+   ML_(dinfo_free)( parser->qparentE );
+   ML_(dinfo_free)( parser->qlevel );
+}
 
 static void typestack_show ( const D3TypeParser* parser, const HChar* str )
 {
@@ -2880,7 +2922,7 @@ static
 void typestack_preen ( D3TypeParser* parser, Bool td3, Int level )
 {
    Bool changed = False;
-   vg_assert(parser->sp < N_D3_TYPE_STACK);
+   vg_assert(parser->sp < parser->stack_size);
    while (True) {
       vg_assert(parser->sp >= -1);
       if (parser->sp == -1) break;
@@ -2888,10 +2930,6 @@ void typestack_preen ( D3TypeParser* parser, Bool td3, Int level )
       if (0) 
          TRACE_D3("BBBBAAAA typestack_pop [newsp=%d]\n", parser->sp-1);
       vg_assert(ML_(TyEnt__is_type)(&parser->qparentE[parser->sp]));
-      VG_(memset)(&parser->qparentE[parser->sp], 0, sizeof(TyEnt));
-      parser->qparentE[parser->sp].cuOff = D3_INVALID_CUOFF;
-      parser->qparentE[parser->sp].tag = Te_EMPTY;
-      parser->qlevel[parser->sp] = 0;
       parser->sp--;
       changed = True;
    }
@@ -2901,14 +2939,14 @@ void typestack_preen ( D3TypeParser* parser, Bool td3, Int level )
 
 static Bool typestack_is_empty ( const D3TypeParser* parser )
 {
-   vg_assert(parser->sp >= -1 && parser->sp < N_D3_TYPE_STACK);
+   vg_assert(parser->sp >= -1 && parser->sp < parser->stack_size);
    return parser->sp == -1;
 }
 
 static void typestack_push ( const CUConst* cc,
                              D3TypeParser* parser,
                              Bool td3,
-                             TyEnt* parentE, Int level )
+                             const TyEnt* parentE, Int level )
 {
    if (0)
    TRACE_D3("BBBBAAAA typestack_push[newsp=%d]: %d  %05lx\n",
@@ -2919,15 +2957,19 @@ static void typestack_push ( const CUConst* cc,
    typestack_preen(parser, /*td3*/False, level-1);
 
    vg_assert(parser->sp >= -1);
-   vg_assert(parser->sp < N_D3_TYPE_STACK);
-   if (parser->sp == N_D3_TYPE_STACK-1)
-      cc->barf("typestack_push: N_D3_TYPE_STACK is too low; "
-               "increase and recompile");
+   vg_assert(parser->sp < parser->stack_size);
+   if (parser->sp == parser->stack_size - 1) {
+      parser->stack_size += 16;
+      parser->qparentE =
+         ML_(dinfo_realloc)("di.readdwarf3.typush.1", parser->qparentE,
+                            parser->stack_size * sizeof parser->qparentE[0]);
+      parser->qlevel =
+         ML_(dinfo_realloc)("di.readdwarf3.typush.2", parser->qlevel,
+                            parser->stack_size * sizeof parser->qlevel[0]);
+   }
    if (parser->sp >= 0)
       vg_assert(parser->qlevel[parser->sp] < level);
    parser->sp++;
-   vg_assert(parser->qparentE[parser->sp].tag == Te_EMPTY);
-   vg_assert(parser->qlevel[parser->sp]  == 0);
    vg_assert(parentE);
    vg_assert(ML_(TyEnt__is_type)(parentE));
    vg_assert(parentE->cuOff != D3_INVALID_CUOFF);
@@ -4458,9 +4500,7 @@ void new_dwarf3_reader_wrk (
 
    /* Zero out all parsers. Parsers will really be initialised
       according to VG_(clo_read_*_info). */
-   VG_(memset)( &varparser, 0, sizeof(varparser) );
    VG_(memset)( &inlparser, 0, sizeof(inlparser) );
-   VG_(memset)( &typarser, 0, sizeof(typarser) );
 
    if (VG_(clo_read_var_info)) {
       /* We'll park the harvested type information in here.  Also create
@@ -4513,14 +4553,9 @@ void new_dwarf3_reader_wrk (
          types.  It'll be discarded as soon as we've completed the CU,
          since the resulting information is tipped in to 'tyents' as it
          is generated. */
-      typarser.sp = -1;
-      typarser.language = '?';
-      for (i = 0; i < N_D3_TYPE_STACK; i++) {
-         typarser.qparentE[i].tag   = Te_EMPTY;
-         typarser.qparentE[i].cuOff = D3_INVALID_CUOFF;
-      }
+      type_parser_init(&typarser);
 
-      varparser.sp = -1;
+      var_parser_init(&varparser);
 
       signature_types = VG_(HT_construct) ("signature_types");
    }
@@ -4648,15 +4683,8 @@ void new_dwarf3_reader_wrk (
          if (VG_(clo_read_var_info)) {
             /* Check the varparser's stack is in a sane state. */
             vg_assert(varparser.sp == -1);
-            for (i = 0; i < N_D3_VAR_STACK; i++) {
-               vg_assert(varparser.ranges[i] == NULL);
-               vg_assert(varparser.level[i] == 0);
-            }
-            for (i = 0; i < N_D3_TYPE_STACK; i++) {
-               vg_assert(typarser.qparentE[i].cuOff == D3_INVALID_CUOFF);
-               vg_assert(typarser.qparentE[i].tag   == Te_EMPTY);
-               vg_assert(typarser.qlevel[i] == 0);
-            }
+            /* Check the typarser's stack is in a sane state. */
+            vg_assert(typarser.sp == -1);
          }
 
          cu_start_offset = get_position_of_Cursor( &info );
@@ -5116,6 +5144,12 @@ void new_dwarf3_reader_wrk (
       /* record the GExprs in di so they can be freed later */
       vg_assert(!di->admin_gexprs);
       di->admin_gexprs = gexprs;
+   }
+
+   // Free up dynamically allocated memory
+   if (VG_(clo_read_var_info)) {
+      type_parser_release(&typarser);
+      var_parser_release(&varparser);
    }
 }
 

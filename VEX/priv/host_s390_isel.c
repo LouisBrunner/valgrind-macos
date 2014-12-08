@@ -4060,9 +4060,6 @@ iselSB_S390(IRSB *bb, VexArch arch_host, const VexArchInfo *archinfo_host,
    ISelEnv *env;
    UInt     hwcaps_host = archinfo_host->hwcaps;
 
-   /* KLUDGE: export hwcaps. */
-   s390_host_hwcaps = hwcaps_host;
-
    /* Do some sanity checks */
    vassert((VEX_HWCAPS_S390X(hwcaps_host) & ~(VEX_HWCAPS_S390X_ALL)) == 0);
 

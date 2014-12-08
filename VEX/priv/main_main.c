@@ -369,6 +369,8 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
 
       case VexArchS390X:
          mode64      = True;
+         /* KLUDGE: export hwcaps. */
+         s390_host_hwcaps = vta->archinfo_host.hwcaps;
          getAllocableRegs_S390 ( &n_available_real_regs,
                                  &available_real_regs, mode64 );
          isMove       = (__typeof__(isMove)) isMove_S390Instr;

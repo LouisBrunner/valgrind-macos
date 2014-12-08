@@ -2,8 +2,8 @@
 Requirements
 ------------
 - You need GCC 3.4 or later to compile the s390 port.
-- To run valgrind a z10 machine or any later model is needed.
-  Older machine models down to and including z900 may work but have
+- To run valgrind a z10 machine or any later model is recommended.
+  Older machine models down to and including z990 may work but have
   not been tested extensively.
 
 
@@ -26,8 +26,8 @@ Hardware facilities
 -------------------
 Valgrind does not require that the host machine has the same hardware
 facilities as the machine for which the client program was compiled.
-This is convenient. The JIT compiler will translate the client instructions
-according to the facilities available on the host.
+This is convenient. If possible, the JIT compiler will translate the
+client instructions according to the facilities available on the host.
 This means, though, that probing for hardware facilities by issuing
 instructions from that facility and observing whether SIGILL is thrown
 may not work. As a consequence, programs that attempt to do so may

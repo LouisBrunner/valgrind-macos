@@ -1774,7 +1774,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
         VG_(printf)("   * AMD Athlon64/Opteron\n");
         VG_(printf)("   * ARM (armv7)\n");
         VG_(printf)("   * PowerPC (most; ppc405 and above)\n");
-        VG_(printf)("   * System z (64bit only - s390x; z900 and above)\n");
+        VG_(printf)("   * System z (64bit only - s390x; z990 and above)\n");
         VG_(printf)("\n");
         VG_(exit)(1);
      }

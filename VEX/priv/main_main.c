@@ -1578,6 +1578,13 @@ static const HChar* show_hwcaps ( VexArch arch, UInt hwcaps )
 
 static Bool are_valid_hwcaps ( VexArch arch, UInt hwcaps )
 {
+   if (arch == VexArchS390X) {
+     if (! s390_host_has_ldisp) {
+        vpanic("Host does not have long displacement facility.\n"
+               "   Cannot continue. Good-bye.\n");
+     }
+     return True;
+   }
    return show_hwcaps(arch,hwcaps) != NULL;
 }
 

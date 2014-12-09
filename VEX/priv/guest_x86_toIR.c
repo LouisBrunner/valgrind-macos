@@ -11777,11 +11777,7 @@ DisResult disInstr_X86_WRK (
 
    /* Skip parts of the decoder which don't apply given the stated
       guest subarchitecture. */
-   /* if (0 == (archinfo->hwcaps & VEX_HWCAPS_X86_SSE3)) */
-   /* In fact this is highly bogus; we accept SSE3 insns even on a
-      SSE2-only guest since they turn into IR which can be re-emitted
-      successfully on an SSE2 host. */
-   if (0 == (archinfo->hwcaps & VEX_HWCAPS_X86_SSE2))
+   if (0 == (archinfo->hwcaps & VEX_HWCAPS_X86_SSE3))
       goto after_sse_decoders; /* no SSE3 capabilities */
 
    insn = &guest_code[delta];

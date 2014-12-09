@@ -713,7 +713,7 @@ Bool VG_(machine_get_hwcaps)( void )
    LibVEX_default_VexArchInfo(&vai);
 
 #if defined(VGA_x86)
-   { Bool have_sse1, have_sse2, have_cx8, have_lzcnt, have_mmxext;
+   { Bool have_sse1, have_sse2, have_sse3, have_cx8, have_lzcnt, have_mmxext;
      UInt eax, ebx, ecx, edx, max_extended;
      HChar vstr[13];
      vstr[0] = 0;
@@ -742,6 +742,7 @@ Bool VG_(machine_get_hwcaps)( void )
 
      have_sse1 = (edx & (1<<25)) != 0; /* True => have sse insns */
      have_sse2 = (edx & (1<<26)) != 0; /* True => have sse2 insns */
+     have_sse3 = (ecx & (1<<0)) != 0;  /* True => have sse3 insns */
 
      /* cmpxchg8b is a minimum requirement now; if we don't have it we
         must simply give up.  But all CPUs since Pentium-I have it, so
@@ -775,7 +776,16 @@ Bool VG_(machine_get_hwcaps)( void )
 
      va = VexArchX86;
      vai.endness = VexEndnessLE;
-     if (have_sse2 && have_sse1 && have_mmxext) {
+
+     if (have_sse3 && have_sse2 && have_sse1 && have_mmxext) {
+        vai.hwcaps  = VEX_HWCAPS_X86_MMXEXT;
+        vai.hwcaps |= VEX_HWCAPS_X86_SSE1;
+        vai.hwcaps |= VEX_HWCAPS_X86_SSE2;
+        vai.hwcaps |= VEX_HWCAPS_X86_SSE3;
+        if (have_lzcnt)
+           vai.hwcaps |= VEX_HWCAPS_X86_LZCNT;
+        VG_(machine_x86_have_mxcsr) = 1;
+     } else if (have_sse2 && have_sse1 && have_mmxext) {
         vai.hwcaps  = VEX_HWCAPS_X86_MMXEXT;
         vai.hwcaps |= VEX_HWCAPS_X86_SSE1;
         vai.hwcaps |= VEX_HWCAPS_X86_SSE2;

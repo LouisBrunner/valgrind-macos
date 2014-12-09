@@ -3845,10 +3845,19 @@ extern void amd64g_dirtyhelper_AESKEYGENASSIST (
    V128* argL = (V128*)( ((UChar*)gst) + gstOffL );
    V128* argR = (V128*)( ((UChar*)gst) + gstOffR );
 
-   argR->w32[3] = RotWord (SubWord (argL->w32[3])) ^ imm8;
-   argR->w32[2] = SubWord (argL->w32[3]);
-   argR->w32[1] = RotWord (SubWord (argL->w32[1])) ^ imm8;
-   argR->w32[0] = SubWord (argL->w32[1]);
+   // We have to create the result in a temporary in the
+   // case where the src and dst regs are the same.  See #341698.
+   V128 tmp;
+
+   tmp.w32[3] = RotWord (SubWord (argL->w32[3])) ^ imm8;
+   tmp.w32[2] = SubWord (argL->w32[3]);
+   tmp.w32[1] = RotWord (SubWord (argL->w32[1])) ^ imm8;
+   tmp.w32[0] = SubWord (argL->w32[1]);
+
+   argR->w32[3] = tmp.w32[3];
+   argR->w32[2] = tmp.w32[2];
+   argR->w32[1] = tmp.w32[1];
+   argR->w32[0] = tmp.w32[0];
 }
 
 

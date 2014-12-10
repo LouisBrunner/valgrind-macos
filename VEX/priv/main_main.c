@@ -1581,8 +1581,6 @@ static void check_hwcaps ( VexArch arch, UInt hwcaps )
       }
 
       case VexArchAMD64: {
-            invalid_hwcaps(arch, hwcaps,
-                           "Support for AVX2 requires AVX capabilities\n");
          /* SSE3 and CX16 are orthogonal and > baseline, although we really
             don't expect to come across anything which can do SSE3 but can't
             do CX16.  Still, we can handle that case.  LZCNT is similarly

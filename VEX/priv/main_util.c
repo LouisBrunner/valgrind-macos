@@ -263,6 +263,7 @@ void vex_assert_fail ( const HChar* expr,
    (*vex_failure_exit)();
 }
 
+/* To be used in assert-like (i.e. should never ever happen) situations */
 __attribute__ ((noreturn))
 void vpanic ( const HChar* str )
 {
@@ -543,11 +544,9 @@ static void add_to_myprintf_buf ( HChar c )
    }
 }
 
-UInt vex_printf ( const HChar* format, ... )
+static UInt vex_vprintf ( const HChar* format, va_list vargs )
 {
    UInt ret;
-   va_list vargs;
-   va_start(vargs,format);
    
    n_myprintf_buf = 0;
    myprintf_buf[n_myprintf_buf] = 0;      
@@ -557,11 +556,33 @@ UInt vex_printf ( const HChar* format, ... )
       (*vex_log_bytes)( myprintf_buf, n_myprintf_buf );
    }
 
+   return ret;
+}
+
+UInt vex_printf ( const HChar* format, ... )
+{
+   UInt ret;
+   va_list vargs;
+   va_start(vargs, format);
+   ret = vex_vprintf(format, vargs);
    va_end(vargs);
 
    return ret;
 }
 
+/* Use this function to communicate to users that a (legitimate) situation
+   occured that we cannot handle (yet). */
+__attribute__ ((noreturn))
+void vfatal ( const HChar* format, ... )
+{
+   va_list vargs;
+   va_start(vargs, format);
+   vex_vprintf( format, vargs );
+   va_end(vargs);
+   vex_printf("Cannot continue. Good-bye\n\n");
+
+   (*vex_failure_exit)();
+}
 
 /* A general replacement for sprintf(). */
 

@@ -62,6 +62,9 @@ extern void vex_assert_fail ( const HChar* expr, const HChar* file,
 __attribute__ ((__noreturn__))
 extern void vpanic ( const HChar* str );
 
+__attribute__ ((__noreturn__)) __attribute__ ((format (printf, 1, 2)))
+extern void vfatal ( const HChar* format, ... );
+
 
 /* Printing */
 

@@ -2260,7 +2260,10 @@ AM_CONDITIONAL(BUILD_FMA_TESTS, test x$ac_have_as_fma = xyes)
 AC_MSG_CHECKING([if amd64 assembler knows the MPX instructions])
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
-  asm ("bndmov %bnd0,(%rsp)")
+  do {
+    asm ("bndmov %bnd0,(%rsp)");
+    asm ("bndldx 3(%rbx,%rdx), %bnd2");
+  } while (0)
 ]])], [
 ac_have_as_mpx=yes
 AC_MSG_RESULT([yes])

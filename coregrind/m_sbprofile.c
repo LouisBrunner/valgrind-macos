@@ -50,7 +50,6 @@ void show_SB_profile ( const SBProfEntry tops[], UInt n_tops,
                        ULong score_total, ULong ecs_done )
 {
    ULong score_cumul, score_cumul_saved, score_here;
-   HChar buf_cumul[10], buf_here[10];
    Int   r; /* must be signed */
 
    HChar ecs_txt[50];
@@ -89,12 +88,18 @@ void show_SB_profile ( const SBProfEntry tops[], UInt n_tops,
 
       score_here = tops[r].score;
       score_cumul += score_here;
-      VG_(percentify)(score_cumul, score_total, 2, 6, buf_cumul);
-      VG_(percentify)(score_here,  score_total, 2, 6, buf_here);
-      VG_(printf)("%3d: (%9lld %s)   %9lld %s      0x%llx %s\n",
+
+      /* Careful: do not divide by zero. score_total == 0 implies
+         score_cumul == 0 and also score_here == 0. */
+      Double percent_cumul =
+         score_total == 0 ? 100.0 : score_cumul * 100.0 / score_total;
+      Double percent_here =
+         score_total == 0 ? 100.0 : score_here * 100.0 / score_total;
+        
+      VG_(printf)("%3d: (%9lld %5.2f%%)   %9lld %5.2f%%      0x%llx %s\n",
                   r,
-                  score_cumul, buf_cumul,
-                  score_here,  buf_here, tops[r].addr, name );
+                  score_cumul, percent_cumul,
+                  score_here,  percent_here, tops[r].addr, name);
    }
    score_cumul_saved = score_cumul;
 
@@ -122,15 +127,21 @@ void show_SB_profile ( const SBProfEntry tops[], UInt n_tops,
 
          score_here = tops[r].score;
          score_cumul += score_here;
-         VG_(percentify)(score_cumul, score_total, 2, 6, buf_cumul);
-         VG_(percentify)(score_here,  score_total, 2, 6, buf_here);
+
+         /* Careful: do not divide by zero. score_total == 0 implies
+            score_cumul == 0 and also score_here == 0. */
+         Double percent_cumul =
+           score_total == 0 ? 100.0 : score_cumul * 100.0 / score_total;
+         Double percent_here =
+           score_total == 0 ? 100.0 : score_here * 100.0 / score_total;
+
          VG_(printf)("\n");
          VG_(printf)("=-=-=-=-=-=-=-=-=-=-=-=-=-= begin SB rank %d "
                      "=-=-=-=-=-=-=-=-=-=-=-=-=-=\n\n", r);
-         VG_(printf)("%3d: (%9lld %s)   %9lld %s      0x%llx %s\n",
+         VG_(printf)("%3d: (%9lld %5.2f%%)   %9lld %5.2f%%      0x%llx %s\n",
                      r,
-                     score_cumul, buf_cumul,
-                     score_here,  buf_here, tops[r].addr, name );
+                     score_cumul, percent_cumul,
+                     score_here,  percent_here, tops[r].addr, name );
          VG_(printf)("\n");
          VG_(discard_translations)(tops[r].addr, 1, "bb profile");
          VG_(translate)(0, tops[r].addr, True, VG_(clo_profyle_flags), 0, True);
@@ -151,12 +162,18 @@ void show_SB_profile ( const SBProfEntry tops[], UInt n_tops,
          VG_(get_fnname_w_offset)(tops[r].addr, &name);
 
          score_here = tops[r].score;
-         VG_(percentify)(score_cumul, score_total, 2, 6, buf_cumul);
-         VG_(percentify)(score_here,  score_total, 2, 6, buf_here);
-         VG_(printf)("%3d: (%9lld %s)   %9lld %s      0x%llx %s\n",
+
+         /* Careful: do not divide by zero. score_total == 0 implies
+            score_cumul == 0 and also score_here == 0. */
+         Double percent_cumul =
+           score_total == 0 ? 100.0 : score_cumul * 100.0 / score_total;
+         Double percent_here =
+           score_total == 0 ? 100.0 : score_here * 100.0 / score_total;
+
+         VG_(printf)("%3d: (%9lld %5.2f%%)   %9lld %5.2f%%      0x%llx %s\n",
                      r,
-                     score_cumul, buf_cumul,
-                     score_here,  buf_here, tops[r].addr, name );
+                     score_cumul, percent_cumul,
+                     score_here,  percent_here, tops[r].addr, name );
          score_cumul -= score_here;
       }
       VG_(printf)("rank  ---cumulative---      -----self-----\n");

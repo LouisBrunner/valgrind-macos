@@ -362,58 +362,6 @@ void VG_(fclose)( VgFile *fp )
    VG_(free)(fp);
 }
 
-/* ---------------------------------------------------------------------
-   percentify()
-   ------------------------------------------------------------------ */
-
-// Percentify n/m with d decimal places.  Includes the '%' symbol at the end.
-// Right justifies in 'buf'.
-void VG_(percentify)(ULong n, ULong m, UInt d, Int n_buf, HChar buf[]) 
-{
-   Int i, len, space;
-   ULong p1;
-   HChar fmt[32];   // large enough
-
-   if (m == 0) {
-      // Have to generate the format string in order to be flexible about
-      // the width of the field.
-      VG_(sprintf)(fmt, "%%%ds", n_buf);
-      // fmt is now "%<n_buf>s" where <d> is 1,2,3...
-      VG_(sprintf)(buf, fmt, "--%");
-      return;
-   }
-   
-   p1 = (100*n) / m;
-    
-   if (d == 0) {
-      VG_(sprintf)(buf, "%llu%%", p1);  // FIXME: unsafe
-   } else {
-      ULong p2;
-      UInt  ex;
-      switch (d) {
-      case 1: ex = 10;    break;
-      case 2: ex = 100;   break;
-      case 3: ex = 1000;  break;
-      default: VG_(core_panic)("Currently can only handle 3 decimal places");
-      }
-      p2 = ((100*n*ex) / m) % ex;
-      // Have to generate the format string in order to be flexible about
-      // the width of the post-decimal-point part.
-      VG_(sprintf)(fmt, "%%llu.%%0%ullu%%%%", d);
-      // fmt is now "%llu.%0<d>llu%%" where <d> is 1,2,3...
-      VG_(sprintf)(buf, fmt, p1, p2);   // FIXME: unsafe
-   }
-
-   len = VG_(strlen)(buf);
-   space = n_buf - len;
-   if (space < 0) space = 0;     /* Allow for v. small field_width */
-   i = len;
-
-   /* Right justify in field */
-   for (     ; i >= 0;    i--)  buf[i + space] = buf[i];
-   for (i = 0; i < space; i++)  buf[i] = ' ';
-}
-
 
 /* ---------------------------------------------------------------------
    elapsed_wallclock_time()

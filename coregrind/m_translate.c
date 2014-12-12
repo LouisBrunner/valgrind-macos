@@ -73,23 +73,25 @@ static UInt n_SP_updates_generic_unknown = 0;
 
 void VG_(print_translation_stats) ( void )
 {
-   HChar buf[7];
    UInt n_SP_updates = n_SP_updates_fast + n_SP_updates_generic_known
                                          + n_SP_updates_generic_unknown;
-   VG_(percentify)(n_SP_updates_fast, n_SP_updates, 1, 6, buf);
+   if (n_SP_updates == 0) {
+      VG_(message)(Vg_DebugMsg, "translate: no SP updates identified\n");
+      return;
+   }
    VG_(message)(Vg_DebugMsg,
-      "translate:            fast SP updates identified: %'u (%s)\n",
-      n_SP_updates_fast, buf );
+      "translate:            fast SP updates identified: %'u (%3.1f%%)\n",
+      n_SP_updates_fast, n_SP_updates_fast * 100.0 / n_SP_updates );
 
-   VG_(percentify)(n_SP_updates_generic_known, n_SP_updates, 1, 6, buf);
    VG_(message)(Vg_DebugMsg,
-      "translate:   generic_known SP updates identified: %'u (%s)\n",
-      n_SP_updates_generic_known, buf );
+      "translate:   generic_known SP updates identified: %'u (%3.1f%%)\n",
+      n_SP_updates_generic_known,
+      n_SP_updates_generic_known * 100.0 / n_SP_updates );
 
-   VG_(percentify)(n_SP_updates_generic_unknown, n_SP_updates, 1, 6, buf);
    VG_(message)(Vg_DebugMsg,
-      "translate: generic_unknown SP updates identified: %'u (%s)\n",
-      n_SP_updates_generic_unknown, buf );
+      "translate: generic_unknown SP updates identified: %'u (%3.1f%%)\n",
+      n_SP_updates_generic_unknown,
+      n_SP_updates_generic_unknown * 100.0 / n_SP_updates );
 }
 
 /*------------------------------------------------------------*/

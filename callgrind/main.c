@@ -1775,7 +1775,6 @@ static UInt ULong_width(ULong n)
 static
 void branchsim_printstat(int l1, int l2, int l3)
 {
-    static HChar buf1[128], buf2[128], buf3[128];
     static HChar fmt[128];    // large enough
     FullCost total;
     ULong Bc_total_b, Bc_total_mp, Bi_total_b, Bi_total_mp;
@@ -1803,11 +1802,10 @@ void branchsim_printstat(int l1, int l2, int l3)
     VG_(umsg)(fmt, "Mispredicts:  ",
               B_total_mp, Bc_total_mp, Bi_total_mp);
 
-    VG_(percentify)(B_total_mp,  B_total_b,  1, l1+1, buf1);
-    VG_(percentify)(Bc_total_mp, Bc_total_b, 1, l2+1, buf2);
-    VG_(percentify)(Bi_total_mp, Bi_total_b, 1, l3+1, buf3);
-
-    VG_(umsg)("Mispred rate:  %s (%s     + %s   )\n", buf1, buf2,buf3);
+    VG_(umsg)("Mispred rate:  %*.1f%% (%*.1f%%     + %*.1f%%   )\n",
+              l1, B_total_mp  * 100.0 / B_total_b,
+              l2, Bc_total_mp * 100.0 / Bc_total_b,
+              l3, Bi_total_mp * 100.0 / Bi_total_b);
 }
 
 static

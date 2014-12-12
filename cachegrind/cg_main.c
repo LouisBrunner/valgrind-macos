@@ -1563,7 +1563,6 @@ static UInt ULong_width(ULong n)
 
 static void cg_fini(Int exitcode)
 {
-   static HChar buf1[128], buf2[128], buf3[128], buf4[123];  // FIXME
    static HChar fmt[128];   // OK; large enough
 
    CacheCC  D_total;
@@ -1599,11 +1598,10 @@ static void cg_fini(Int exitcode)
       VG_(umsg)(fmt, "LLi misses:   ", Ir_total.mL);
 
       if (0 == Ir_total.a) Ir_total.a = 1;
-      VG_(percentify)(Ir_total.m1, Ir_total.a, 2, l1+1, buf1);
-      VG_(umsg)("I1  miss rate: %s\n", buf1);
-
-      VG_(percentify)(Ir_total.mL, Ir_total.a, 2, l1+1, buf1);
-      VG_(umsg)("LLi miss rate: %s\n", buf1);
+      VG_(umsg)("I1  miss rate: %*.2f%%\n", l1,
+                Ir_total.m1 * 100.0 / Ir_total.a);
+      VG_(umsg)("LLi miss rate: %*.2f%%\n", l1,
+                Ir_total.mL * 100.0 / Ir_total.a);
       VG_(umsg)("\n");
 
       /* D cache results.  Use the D_refs.rd and D_refs.wr values to
@@ -1626,15 +1624,14 @@ static void cg_fini(Int exitcode)
       if (0 == D_total.a)  D_total.a = 1;
       if (0 == Dr_total.a) Dr_total.a = 1;
       if (0 == Dw_total.a) Dw_total.a = 1;
-      VG_(percentify)( D_total.m1,  D_total.a, 1, l1+1, buf1);
-      VG_(percentify)(Dr_total.m1, Dr_total.a, 1, l2+1, buf2);
-      VG_(percentify)(Dw_total.m1, Dw_total.a, 1, l3+1, buf3);
-      VG_(umsg)("D1  miss rate: %s (%s     + %s  )\n", buf1, buf2,buf3);
-
-      VG_(percentify)( D_total.mL,  D_total.a, 1, l1+1, buf1);
-      VG_(percentify)(Dr_total.mL, Dr_total.a, 1, l2+1, buf2);
-      VG_(percentify)(Dw_total.mL, Dw_total.a, 1, l3+1, buf3);
-      VG_(umsg)("LLd miss rate: %s (%s     + %s  )\n", buf1, buf2,buf3);
+      VG_(umsg)("D1  miss rate: %*.1f%% (%*.1f%%     + %*.1f%%  )\n",
+                l1, D_total.m1  * 100.0 / D_total.a,
+                l2, Dr_total.m1 * 100.0 / Dr_total.a,
+                l3, Dw_total.m1 * 100.0 / Dw_total.a);
+      VG_(umsg)("LLd miss rate: %*.1f%% (%*.1f%%     + %*.1f%%  )\n",
+                l1, D_total.mL  * 100.0 / D_total.a,
+                l2, Dr_total.mL * 100.0 / Dr_total.a,
+                l3, Dw_total.mL * 100.0 / Dw_total.a);
       VG_(umsg)("\n");
 
       /* LL overall results */
@@ -1651,10 +1648,10 @@ static void cg_fini(Int exitcode)
       VG_(umsg)(fmt, "LL misses:    ",
                      LL_total_m, LL_total_mr, LL_total_mw);
 
-      VG_(percentify)(LL_total_m,  (Ir_total.a + D_total.a),  1, l1+1, buf1);
-      VG_(percentify)(LL_total_mr, (Ir_total.a + Dr_total.a), 1, l2+1, buf2);
-      VG_(percentify)(LL_total_mw, Dw_total.a,                1, l3+1, buf3);
-      VG_(umsg)("LL miss rate:  %s (%s     + %s  )\n", buf1, buf2,buf3);
+      VG_(umsg)("LL miss rate:  %*.1f%% (%*.1f%%     + %*.1f%%  )\n",
+                l1, LL_total_m  * 100.0 / (Ir_total.a + D_total.a),
+                l2, LL_total_mr * 100.0 / (Ir_total.a + Dr_total.a),
+                l3, LL_total_mw * 100.0 / Dw_total.a);
    }
 
    /* If branch profiling is enabled, show branch overall results. */
@@ -1675,11 +1672,10 @@ static void cg_fini(Int exitcode)
       VG_(umsg)(fmt, "Mispredicts:  ",
                      B_total.mp, Bc_total.mp, Bi_total.mp);
 
-      VG_(percentify)(B_total.mp,  B_total.b,  1, l1+1, buf1);
-      VG_(percentify)(Bc_total.mp, Bc_total.b, 1, l2+1, buf2);
-      VG_(percentify)(Bi_total.mp, Bi_total.b, 1, l3+1, buf3);
-
-      VG_(umsg)("Mispred rate:  %s (%s     + %s   )\n", buf1, buf2,buf3);
+      VG_(umsg)("Mispred rate:  %*.1f%% (%*.1f%%     + %*.1f%%   )\n",
+                l1, B_total.mp  * 100.0 / B_total.b,
+                l2, Bc_total.mp * 100.0 / Bc_total.b,
+                l3, Bi_total.mp * 100.0 / Bi_total.b);
    }
 
    // Various stats
@@ -1695,18 +1691,14 @@ static void cg_fini(Int exitcode)
       VG_(dmsg)("cachegrind: distinct instrs Gen: %d\n", distinct_instrsGen);
       VG_(dmsg)("cachegrind: debug lookups      : %d\n", debug_lookups);
       
-      VG_(percentify)(full_debugs,      debug_lookups, 1, 6, buf1);
-      VG_(percentify)(file_line_debugs, debug_lookups, 1, 6, buf2);
-      VG_(percentify)(fn_debugs,        debug_lookups, 1, 6, buf3);
-      VG_(percentify)(no_debugs,        debug_lookups, 1, 6, buf4);
-      VG_(dmsg)("cachegrind: with full      info:%s (%d)\n", 
-                buf1, full_debugs);
-      VG_(dmsg)("cachegrind: with file/line info:%s (%d)\n", 
-                buf2, file_line_debugs);
-      VG_(dmsg)("cachegrind: with fn name   info:%s (%d)\n", 
-                buf3, fn_debugs);
-      VG_(dmsg)("cachegrind: with zero      info:%s (%d)\n", 
-                buf4, no_debugs);
+      VG_(dmsg)("cachegrind: with full      info:%6.1f%% (%d)\n", 
+                full_debugs * 100.0 / debug_lookups, full_debugs);
+      VG_(dmsg)("cachegrind: with file/line info:%6.1f%% (%d)\n", 
+                file_line_debugs * 100.0 / debug_lookups, file_line_debugs);
+      VG_(dmsg)("cachegrind: with fn name   info:%6.1f%% (%d)\n", 
+                fn_debugs * 100.0 / debug_lookups, fn_debugs);
+      VG_(dmsg)("cachegrind: with zero      info:%6.1f%% (%d)\n", 
+                no_debugs * 100.0 / debug_lookups, no_debugs);
 
       VG_(dmsg)("cachegrind: string table size: %lu\n",
                 VG_(OSetGen_Size)(stringTable));

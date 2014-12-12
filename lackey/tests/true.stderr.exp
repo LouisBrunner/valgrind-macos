@@ -4,7 +4,7 @@ Counted ... calls to main()
 
 Jccs:
   total:         ...
-  taken:         ... ( ...%)
+  taken:         ... (...%)
 
 Executed:
   SBs entered:   ...

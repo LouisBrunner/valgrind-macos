@@ -965,11 +965,9 @@ static void gcSecVBitTable(void)
    VG_(OSetGen_Destroy)(secVBitTable);
    secVBitTable = secVBitTable2;
 
-   if (VG_(clo_verbosity) > 1) {
-      HChar percbuf[7];
-      VG_(percentify)(n_survivors, n_nodes, 1, 6, percbuf);
-      VG_(message)(Vg_DebugMsg, "memcheck GC: %d nodes, %d survivors (%s)\n",
-                   n_nodes, n_survivors, percbuf);
+   if (VG_(clo_verbosity) > 1 && n_nodes != 0) {
+      VG_(message)(Vg_DebugMsg, "memcheck GC: %d nodes, %d survivors (%.1f%%)\n",
+                   n_nodes, n_survivors, n_survivors * 100.0 / n_nodes);
    }
 
    // Increase table size if necessary.

@@ -175,6 +175,7 @@ EXTRA_DIST = \
 	threadederrno.vgtest \
 	timestamp.stderr.exp timestamp.vgtest \
 	tls.vgtest tls.stderr.exp tls.stdout.exp  \
+	unit_debuglog.stderr.exp unit_debuglog.vgtest \
 	vgprintf.stderr.exp vgprintf.vgtest \
 	process_vm_readv_writev.stderr.exp process_vm_readv_writev.vgtest
 
@@ -211,6 +212,7 @@ check_PROGRAMS = \
 	tls \
 	tls.so \
 	tls2.so \
+	unit_debuglog \
 	valgrind_cpp_test \
 	vgprintf \
 	coolo_sigaction \

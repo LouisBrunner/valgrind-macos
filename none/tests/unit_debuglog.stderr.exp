@@ -1,0 +1,107 @@
+...testing value 0
+|%f|	printf =   |0.000000|	wrote  10 chars
+|%f|	debuglog = |0.000000|	wrote  10 chars
+|%2f|	printf =   |0.000000|	wrote  10 chars
+|%2f|	debuglog = |0.000000|	wrote  10 chars
+|%9f|	printf =   | 0.000000|	wrote  11 chars
+|%9f|	debuglog = | 0.000000|	wrote  11 chars
+|%8.0f|	printf =   |       0|	wrote  10 chars
+|%8.0f|	debuglog = |       0|	wrote  10 chars
+|%8.1f|	printf =   |     0.0|	wrote  10 chars
+|%8.1f|	debuglog = |     0.0|	wrote  10 chars
+|%8.2f|	printf =   |    0.00|	wrote  10 chars
+|%8.2f|	debuglog = |    0.00|	wrote  10 chars
+
+...testing value 3.7  (with rounding)
+|%f|	printf =   |3.700000|	wrote  10 chars
+|%f|	debuglog = |3.700000|	wrote  10 chars
+|%4f|	printf =   |3.700000|	wrote  10 chars
+|%4f|	debuglog = |3.700000|	wrote  10 chars
+|%9f|	printf =   | 3.700000|	wrote  11 chars
+|%9f|	debuglog = | 3.700000|	wrote  11 chars
+|%4.0f|	printf =   |   4|	wrote   6 chars
+|%4.0f|	debuglog = |   4|	wrote   6 chars
+|%4.1f|	printf =   | 3.7|	wrote   6 chars
+|%4.1f|	debuglog = | 3.7|	wrote   6 chars
+|%4.2f|	printf =   |3.70|	wrote   6 chars
+|%4.2f|	debuglog = |3.70|	wrote   6 chars
+
+...testing value 123.01
+|%f|	printf =   |123.010000|	wrote  12 chars
+|%f|	debuglog = |123.010000|	wrote  12 chars
+|%4f|	printf =   |123.010000|	wrote  12 chars
+|%4f|	debuglog = |123.010000|	wrote  12 chars
+|%9f|	printf =   |123.010000|	wrote  12 chars
+|%9f|	debuglog = |123.010000|	wrote  12 chars
+|%8.0f|	printf =   |     123|	wrote  10 chars
+|%8.0f|	debuglog = |     123|	wrote  10 chars
+|%8.1f|	printf =   |   123.0|	wrote  10 chars
+|%8.1f|	debuglog = |   123.0|	wrote  10 chars
+|%8.2f|	printf =   |  123.01|	wrote  10 chars
+|%8.2f|	debuglog = |  123.01|	wrote  10 chars
+|%8.3f|	printf =   | 123.010|	wrote  10 chars
+|%8.3f|	debuglog = | 123.010|	wrote  10 chars
+
+...testing value 3.0019  (with rounding)
+|%f|	printf =   |3.001900|	wrote  10 chars
+|%f|	debuglog = |3.001900|	wrote  10 chars
+|%10f|	printf =   |  3.001900|	wrote  12 chars
+|%10f|	debuglog = |  3.001900|	wrote  12 chars
+|%10.0f|	printf =   |         3|	wrote  12 chars
+|%10.0f|	debuglog = |         3|	wrote  12 chars
+|%10.3f|	printf =   |     3.002|	wrote  12 chars
+|%10.3f|	debuglog = |     3.002|	wrote  12 chars
+|%10.4f|	printf =   |    3.0019|	wrote  12 chars
+|%10.4f|	debuglog = |    3.0019|	wrote  12 chars
+|%.4f|	printf =   |3.0019|	wrote   8 chars
+|%.4f|	debuglog = |3.0019|	wrote   8 chars
+|%.9f|	printf =   |3.001900000|	wrote  13 chars
+|%.9f|	debuglog = |3.001900000|	wrote  13 chars
+
+...testing value -123.456 (with rounding)
+|%f|	printf =   |-123.456000|	wrote  13 chars
+|%f|	debuglog = |-123.456000|	wrote  13 chars
+|%10f|	printf =   |-123.456000|	wrote  13 chars
+|%10f|	debuglog = |-123.456000|	wrote  13 chars
+|%10.0f|	printf =   |      -123|	wrote  12 chars
+|%10.0f|	debuglog = |      -123|	wrote  12 chars
+|%10.1f|	printf =   |    -123.5|	wrote  12 chars
+|%10.1f|	debuglog = |    -123.5|	wrote  12 chars
+|%10.2f|	printf =   |   -123.46|	wrote  12 chars
+|%10.2f|	debuglog = |   -123.46|	wrote  12 chars
+|%10.3f|	printf =   |  -123.456|	wrote  12 chars
+|%10.3f|	debuglog = |  -123.456|	wrote  12 chars
+|%10.4f|	printf =   | -123.4560|	wrote  12 chars
+|%10.4f|	debuglog = | -123.4560|	wrote  12 chars
+|%10.5f|	printf =   |-123.45600|	wrote  12 chars
+|%10.5f|	debuglog = |-123.45600|	wrote  12 chars
+|%.4f|	printf =   |-123.4560|	wrote  11 chars
+|%.4f|	debuglog = |-123.4560|	wrote  11 chars
+
+...testing value = -123.456 width = '*'
+|%*f|	printf =   |-123.456000|	wrote  13 chars
+|%*f|	debuglog = |-123.456000|	wrote  13 chars
+|%*f|	printf =   |-123.456000|	wrote  13 chars
+|%*f|	debuglog = |-123.456000|	wrote  13 chars
+|%*f.1|	printf =   |-123.456000.1|	wrote  15 chars
+|%*f.1|	debuglog = |-123.456000.1|	wrote  15 chars
+
+...testing precision = '*'
+|%.*f|	printf =   |-123.4560000000|	wrote  17 chars
+|%.*f|	debuglog = |-123.4560000000|	wrote  17 chars
+|%.*f|	printf =   |-123.46|	wrote   9 chars
+|%.*f|	debuglog = |-123.46|	wrote   9 chars
+|%10.*f|	printf =   |   -123.46|	wrote  12 chars
+|%10.*f|	debuglog = |   -123.46|	wrote  12 chars
+
+...testing width/precision = '*'
+|%*.*f|	printf =   |          -123.45600|	wrote  22 chars
+|%*.*f|	debuglog = |          -123.45600|	wrote  22 chars
+|%*.*f|	printf =   |-123.4560|	wrote  11 chars
+|%*.*f|	debuglog = |-123.4560|	wrote  11 chars
+
+...testing left justification
+|%10f|	printf =   |  3.141500|	wrote  12 chars
+|%10f|	debuglog = |  3.141500|	wrote  12 chars
+|%-10f|	printf =   |3.141500  |	wrote  12 chars
+|%-10f|	debuglog = |3.141500  |	wrote  12 chars

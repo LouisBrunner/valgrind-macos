@@ -52,7 +52,7 @@ Number of snapshots: 10
 | |   
 | ->05.00% (4,000B) 0x........: main (thresholds.c:54)
 | | 
-| ->01.50% (1,200B) in 2 places, all below massif's threshold (05.00%)
+| ->01.50% (1,200B) in 2 places, all below massif's threshold (5.00%)
 |   
 ->20.00% (16,000B) 0x........: main (thresholds.c:55)
 | 
@@ -60,7 +60,7 @@ Number of snapshots: 10
 | ->09.00% (7,200B) 0x........: a7550 (thresholds.c:39)
 | | ->09.00% (7,200B) 0x........: main (thresholds.c:52)
 | |   
-| ->04.00% (3,200B) in 2 places, all below massif's threshold (05.00%)
+| ->04.00% (3,200B) in 2 places, all below massif's threshold (5.00%)
 |   
-->00.50% (400B) in 1 place, below massif's threshold (05.00%)
+->00.50% (400B) in 1 place, below massif's threshold (5.00%)
   

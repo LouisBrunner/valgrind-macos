@@ -70,7 +70,7 @@ Number of snapshots: 24
 87.28% (16,688B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
 ->83.68% (16,000B) 0x........: main (insig.c:8)
 | 
-->01.34% (256B) in 16 places, all below massif's threshold (00.99%)
+->01.34% (256B) in 16 places, all below massif's threshold (0.99%)
 | 
 ->01.26% (240B) 0x........: main (insig.c:9)
 | 

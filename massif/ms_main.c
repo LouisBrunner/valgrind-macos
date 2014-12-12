@@ -2105,18 +2105,6 @@ IRSB* ms_instrument ( VgCallbackClosure* closure,
 
 #define FP(format, args...) ({ VG_(fprintf)(fp, format, ##args); })
 
-// Nb: uses a static buffer, each call trashes the last string returned.
-static const HChar* make_perc(double x)
-{
-   static HChar mbuf[32];
-
-   VG_(percentify)((ULong)(x * 100), 10000, 2, 6, mbuf);
-   // XXX: this is bogus if the denominator was zero -- resulting string is
-   // something like "0 --%")
-   if (' ' == mbuf[0]) mbuf[0] = '0';
-   return mbuf;
-}
-
 static void pp_snapshot_SXPt(VgFile *fp, SXPt* sxpt, Int depth,
                              HChar* depth_str, Int depth_str_len,
                              SizeT snapshot_heap_szB, SizeT snapshot_total_szB)
@@ -2225,9 +2213,8 @@ static void pp_snapshot_SXPt(VgFile *fp, SXPt* sxpt, Int depth,
 
     case InsigSXPt: {
       const HChar* s = ( 1 == sxpt->Insig.n_xpts ? "," : "s, all" );
-      FP("%sn0: %lu in %d place%s below massif's threshold (%s)\n",
-         depth_str, sxpt->szB, sxpt->Insig.n_xpts, s,
-         make_perc(clo_threshold));
+      FP("%sn0: %lu in %d place%s below massif's threshold (%.2f%%)\n",
+         depth_str, sxpt->szB, sxpt->Insig.n_xpts, s, clo_threshold);
       break;
     }
 

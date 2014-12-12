@@ -997,10 +997,6 @@ IRSB* lk_instrument ( VgCallbackClosure* closure,
 
 static void lk_fini(Int exitcode)
 {
-   HChar percentify_buf[5]; /* Two digits, '%' and 0. */
-   const int percentify_size = sizeof(percentify_buf) - 1;
-   const int percentify_decs = 0;
-   
    tl_assert(clo_fnname);
    tl_assert(clo_fnname[0]);
 
@@ -1014,10 +1010,8 @@ static void lk_fini(Int exitcode)
       VG_(umsg)("\n");
       VG_(umsg)("Jccs:\n");
       VG_(umsg)("  total:         %'llu\n", total_Jccs);
-      VG_(percentify)(taken_Jccs, (total_Jccs ? total_Jccs : 1),
-         percentify_decs, percentify_size, percentify_buf);
-      VG_(umsg)("  taken:         %'llu (%s)\n",
-         taken_Jccs, percentify_buf);
+      VG_(umsg)("  taken:         %'llu (%.0f%%)\n",
+                taken_Jccs, taken_Jccs * 100.0 / total_Jccs ?: 1);
       
       VG_(umsg)("\n");
       VG_(umsg)("Executed:\n");

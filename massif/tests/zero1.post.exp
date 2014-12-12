@@ -46,7 +46,7 @@ Number of snapshots: 21
   8              0                0                0             0            0
   9              0                0                0             0            0
 00.00% (0B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
-->00.00% (0B) in 5 places, all below massif's threshold (01.00%)
+->00.00% (0B) in 5 places, all below massif's threshold (1.00%)
   
 --------------------------------------------------------------------------------
   n        time(B)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
@@ -62,7 +62,7 @@ Number of snapshots: 21
  18              0                0                0             0            0
  19              0                0                0             0            0
 00.00% (0B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
-->00.00% (0B) in 10 places, all below massif's threshold (01.00%)
+->00.00% (0B) in 10 places, all below massif's threshold (1.00%)
   
 --------------------------------------------------------------------------------
   n        time(B)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)

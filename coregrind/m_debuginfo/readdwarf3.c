@@ -2018,7 +2018,7 @@ static void trace_DIE(
       DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
       nf_i++;
       if (attr == 0 && form == 0) break;
-      VG_(printf)("     %18s: ", ML_(pp_DW_AT)(attr));
+      VG_(printf)("     %-18s: ", ML_(pp_DW_AT)(attr));
       /* Get the form contents, so as to print them */
       get_Form_contents( &cts, cc, &c, True, form );
       if (attr == DW_AT_sibling && cts.szB > 0) {
@@ -4451,7 +4451,7 @@ static void trace_debug_abbrev (const DebugInfo* di,
                ULong at_name = get_ULEB128( &abbv );
                ULong at_form = get_ULEB128( &abbv );
                if (at_name == 0 && at_form == 0) break;
-               TRACE_D3("    %18s %s\n", 
+               TRACE_D3("    %-18s %s\n", 
                         ML_(pp_DW_AT)(at_name), ML_(pp_DW_FORM)(at_form));
             }
          }

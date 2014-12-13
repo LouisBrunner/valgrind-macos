@@ -227,7 +227,7 @@ Bool VG_(string_match) ( const HChar* patt, const HChar* input )
 //{
 //   Test* t;
 //   for (t = tests; t->patt; t++) {
-//     printf("%10s %6s  %s\n",
+//     printf("%-10s %-6s  %s\n",
 //            t->patt, t->input, 
 //            match_string_all((UChar*)t->patt,(UChar*)t->input,True) 
 //            == t->xres

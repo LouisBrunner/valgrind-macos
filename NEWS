@@ -39,6 +39,7 @@ To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
 
+116002  VG_(printf): Problems with justification of strings and integers
 155125  avoid cutting away file:lineno after long function name
 211926  Avoid compilation warnings in valgrind.h with -pedantic
 269360  s390x: Fix addressing mode selection for compare-and-swap

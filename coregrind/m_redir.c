@@ -1694,7 +1694,7 @@ static void handle_require_text_symbols ( const DebugInfo* di )
 static void show_spec ( const HChar* left, const Spec* spec )
 {
    VG_(message)( Vg_DebugMsg, 
-                 "%s%25s %30s %s-> (%04d.%d) 0x%08llx\n",
+                 "%s%-25s %-30s %s-> (%04d.%d) 0x%08llx\n",
                  left,
                  spec->from_sopatt, spec->from_fnpatt,
                  spec->isWrap ? "W" : "R",
@@ -1717,7 +1717,7 @@ static void show_active ( const HChar* left, const Active* act )
    ok = VG_(get_fnname_w_offset)(act->to_addr, &name2);
    if (!ok) name2 = "???";
 
-   VG_(message)(Vg_DebugMsg, "%s0x%08llx (%20s) %s-> (%04d.%d) 0x%08llx %s\n", 
+   VG_(message)(Vg_DebugMsg, "%s0x%08llx (%-20s) %s-> (%04d.%d) 0x%08llx %s\n", 
                              left, 
                              (ULong)act->from_addr, name1,
                              act->isWrap ? "W" : "R",

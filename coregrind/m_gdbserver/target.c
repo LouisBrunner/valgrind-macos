@@ -116,7 +116,7 @@ struct reg* build_shadow_arch (struct reg *reg_defs, int n) {
          new_regs[i*n + r].offset = i*reg_set_len + reg_defs[r].offset;
          new_regs[i*n + r].size = reg_defs[r].size;
          dlog(1,
-              "%10s Nr %d offset(bit) %d offset(byte) %d  size(bit) %d\n",
+              "%-10s Nr %d offset(bit) %d offset(byte) %d  size(bit) %d\n",
               new_regs[i*n + r].name, i*n + r, new_regs[i*n + r].offset,
               (new_regs[i*n + r].offset) / 8, new_regs[i*n + r].size);
       }  

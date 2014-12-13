@@ -105,3 +105,25 @@
 |%10f|	debuglog = |  3.141500|	wrote  12 chars
 |%-10f|	printf =   |3.141500  |	wrote  12 chars
 |%-10f|	debuglog = |3.141500  |	wrote  12 chars
+
+...testing strings
+|%s|	printf =   |abcd|	wrote   6 chars
+|%s|	debuglog = |abcd|	wrote   6 chars
+|%9s|	printf =   |     abcd|	wrote  11 chars
+|%9s|	debuglog = |     abcd|	wrote  11 chars
+|%-9s|	printf =   |abcd     |	wrote  11 chars
+|%-9s|	debuglog = |abcd     |	wrote  11 chars
+|%*s|	printf =   |  abcd|	wrote   8 chars
+|%*s|	debuglog = |  abcd|	wrote   8 chars
+
+...testing integers
+|%lld|	printf =   |-1004005|	wrote  10 chars
+|%lld|	debuglog = |-1004005|	wrote  10 chars
+|%15lld|	printf =   |       -1004005|	wrote  17 chars
+|%15lld|	debuglog = |       -1004005|	wrote  17 chars
+|%-15lld|	printf =   |-1004005       |	wrote  17 chars
+|%-15lld|	debuglog = |-1004005       |	wrote  17 chars
+|%100lld|	printf =   |                                                                                            -1004005|	wrote 102 chars
+|%100lld|	debuglog = |                                                                                            -1004005|	wrote 102 chars
+|%*lld|	printf =   |     -1004005|	wrote  15 chars
+|%*lld|	debuglog = |     -1004005|	wrote  15 chars

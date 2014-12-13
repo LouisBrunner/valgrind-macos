@@ -589,7 +589,7 @@ UInt myvprintf_str ( void(*send)(HChar,void*),
    }
 
    extra = width - len;
-   if (flags & VG_MSG_LJUSTIFY) {
+   if (! (flags & VG_MSG_LJUSTIFY)) {
       ret += extra;
       for (i = 0; i < extra; i++)
          send(' ', send_arg2);
@@ -597,7 +597,7 @@ UInt myvprintf_str ( void(*send)(HChar,void*),
    ret += len;
    for (i = 0; i < len; i++)
       send(MAYBE_TOUPPER(str[i]), send_arg2);
-   if (!(flags & VG_MSG_LJUSTIFY)) {
+   if (flags & VG_MSG_LJUSTIFY) {
       ret += extra;
       for (i = 0; i < extra; i++)
          send(' ', send_arg2);
@@ -658,7 +658,10 @@ UInt myvprintf_int64 ( void(*send)(HChar,void*),
                        Bool capitalised,
                        ULong p )
 {
-   HChar  buf[40];
+   /* To print an ULong base 2 needs 64 characters. If commas are requested,
+      add 21. Plus 1 for a possible sign plus 1 for \0. Makes 87 -- so let's
+      say 90. The size of BUF needs to be max(90, WIDTH + 1) */
+   HChar  buf[width + 1 > 90 ? width + 1 : 90];
    Int    ind = 0;
    Int    i, nc = 0;
    Bool   neg = False;
@@ -693,11 +696,6 @@ UInt myvprintf_int64 ( void(*send)(HChar,void*),
 
    if (width > 0 && !(flags & VG_MSG_LJUSTIFY)) {
       for(; ind < width; ind++) {
-         /* vg_assert(ind < 39); */
-         if (ind > 39) {
-            buf[39] = 0;
-            break;
-         }
          buf[ind] = (flags & VG_MSG_ZJUSTIFY) ? '0': ' ';
       }
    }

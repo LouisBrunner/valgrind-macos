@@ -18,7 +18,7 @@
 
 void run(const char *format, ...)
 {
-  int n, num_stars, i1, i2;
+  int n, num_stars;
   const char *p;
   printf_buf buf;
   va_list vargs;
@@ -30,20 +30,7 @@ void run(const char *format, ...)
 
   va_start(vargs, format);
   fprintf(stderr, "%s\tprintf =   ", format);
-  switch (num_stars) {
-  case 0:
-    n = fprintf(stderr, format, va_arg(vargs, Double));
-    break;
-  case 1:
-    i1 = va_arg(vargs, int);
-    n = fprintf(stderr, format, i1, va_arg(vargs, Double));
-    break;
-  case 2:
-    i1 = va_arg(vargs, int);
-    i2 = va_arg(vargs, int);
-    n = fprintf(stderr, format, i1, i2, va_arg(vargs, Double));
-    break;
-  }
+  n = vfprintf(stderr, format, vargs);
   fprintf(stderr, "\twrote %3d chars\n", n);
   va_end(vargs);
 
@@ -58,7 +45,6 @@ void run(const char *format, ...)
   emit(buf.buf, strlen(buf.buf));
   fprintf(stderr, "\twrote %3d chars\n", n);
 }
-
 
 int main(int argc, char *argv[])
 {
@@ -138,11 +124,30 @@ int main(int argc, char *argv[])
   run("|%*.*f|", 20, 5, value);
   run("|%*.*f|", 1, 4, value);
 
-
   fprintf(stderr, "\n");
   fprintf(stderr, "...testing left justification\n");
   value = 3.1415;
   run("|%10f|", value);
   run("|%-10f|", value);
+
+  fprintf(stderr, "\n");
+  fprintf(stderr, "...testing strings\n");
+  const char *str = "abcd";
+  run("|%s|", str);
+  run("|%9s|", str);
+  run("|%-9s|", str);
+  run("|%*s|", 6, str);
+  
+  fprintf(stderr, "\n");
+  fprintf(stderr, "...testing integers\n");
+  long long ival = -1004005;
+  run("|%lld|", ival);
+  //  runint("|%'lld|", ival);     // locale specific (LC_NUMERIC)
+  run("|%15lld|", ival);
+  run("|%-15lld|", ival);
+  //  runint("|%'-15lld|", ival);  // locale specific (LC_NUMERIC)
+  run("|%100lld|", ival);
+  run("|%*lld|", 13, ival);
+
   return 0;
 }

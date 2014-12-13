@@ -388,7 +388,7 @@ static void print_details ( void )
    VG_(umsg)("   Type        Loads       Stores       AluOps\n");
    VG_(umsg)("   -------------------------------------------\n");
    for (typeIx = 0; typeIx < N_TYPES; typeIx++) {
-      VG_(umsg)("   %4s %'12llu %'12llu %'12llu\n",
+      VG_(umsg)("   %-4s %'12llu %'12llu %'12llu\n",
                 nameOfTypeIndex( typeIx ),
                 detailCounts[OpLoad ][typeIx],
                 detailCounts[OpStore][typeIx],

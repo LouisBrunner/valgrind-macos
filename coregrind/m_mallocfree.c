@@ -626,7 +626,7 @@ void VG_(print_all_arena_stats) ( void )
    for (i = 0; i < VG_N_ARENAS; i++) {
       Arena* a = arenaId_to_ArenaP(i);
       VG_(message)(Vg_DebugMsg,
-                   "%8s: %8lu/%8lu  max/curr mmap'd, "
+                   "%-8s: %8lu/%8lu  max/curr mmap'd, "
                    "%llu/%llu unsplit/split sb unmmap'd,  "
                    "%8lu/%8lu max/curr,  "
                    "%10llu/%10llu totalloc-blocks/bytes,"
@@ -1358,7 +1358,7 @@ static void sanity_check_malloc_arena ( ArenaId aid )
 
    if (VG_(clo_verbosity) > 2) 
       VG_(message)(Vg_DebugMsg,
-                   "%8s: %2d sbs, %5d bs, %2d/%-2d free bs, "
+                   "%-8s: %2d sbs, %5d bs, %2d/%-2d free bs, "
                    "%7ld mmap, %7ld loan\n",
                    a->name,
                    superblockctr,

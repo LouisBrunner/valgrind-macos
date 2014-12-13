@@ -388,7 +388,7 @@ typedef
    ExtabData;
 
 static void ppExtabData ( const ExtabData* etd ) {
-   VG_(printf)("ExtabData{%12s 0x%08x}", showExtabCmd(etd->cmd), etd->data);
+   VG_(printf)("ExtabData{%-12s 0x%08x}", showExtabCmd(etd->cmd), etd->data);
 }
 
 

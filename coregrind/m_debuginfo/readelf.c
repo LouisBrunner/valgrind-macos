@@ -2383,7 +2383,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                nobits         = a_shdr.sh_type == SHT_NOBITS; \
                vg_assert(_sec_escn.img  != NULL); \
                vg_assert(_sec_escn.ioff != DiOffT_INVALID); \
-               TRACE_SYMTAB( "%18s:  ioff %llu .. %llu\n", \
+               TRACE_SYMTAB( "%-18s:  ioff %llu .. %llu\n", \
                              _sec_name, (ULong)_sec_escn.ioff, \
                              ((ULong)_sec_escn.ioff) + _sec_escn.szB - 1); \
                /* SHT_NOBITS sections have zero size in the file. */ \
@@ -2677,7 +2677,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                   nobits         = a_shdr.sh_type == SHT_NOBITS; \
                   vg_assert(_sec_escn.img  != NULL); \
                   vg_assert(_sec_escn.ioff != DiOffT_INVALID); \
-                  TRACE_SYMTAB( "%18s: dioff %llu .. %llu\n", \
+                  TRACE_SYMTAB( "%-18s: dioff %llu .. %llu\n", \
                                 _sec_name, \
                                 (ULong)_sec_escn.ioff, \
                                 ((ULong)_sec_escn.ioff) + _sec_escn.szB - 1); \
@@ -2820,7 +2820,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                   _sec_escn.szB  = a_shdr.sh_size; \
                   vg_assert(_sec_escn.img  != NULL); \
                   vg_assert(_sec_escn.ioff != DiOffT_INVALID); \
-                  TRACE_SYMTAB( "%18s: aioff %llu .. %llu\n", \
+                  TRACE_SYMTAB( "%-18s: aioff %llu .. %llu\n", \
                                 _sec_name, \
                                 (ULong)_sec_escn.ioff, \
                                 ((ULong)_sec_escn.ioff) + _sec_escn.szB - 1); \

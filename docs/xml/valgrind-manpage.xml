@@ -267,8 +267,8 @@ ms_print(1),
 <refsect1 id="author">
 <title>Author</title>
 
-<para>The Valgrind developers.</para>
-
+<para>See the AUTHORS file in the valgrind distribution for a
+comprehensive list of authors.</para>
 <para>This manpage was written by Andres Roldan &lt;aroldan@debian.org&gt;
 and the Valgrind developers.</para>
 

@@ -127,9 +127,6 @@ struct _CommandLineOptions {
 /* Minimum cache line size allowed */
 #define MIN_LINE_SIZE   16
 
-/* Size of various buffers used for storing strings */
-#define RESULTS_BUF_LEN                 256
-
 
 /*------------------------------------------------------------*/
 /*--- Statistics                                           ---*/

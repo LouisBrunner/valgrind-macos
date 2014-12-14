@@ -1484,64 +1484,12 @@ static Bool cachesim_parse_opt(const HChar* arg)
   return True;
 }
 
-/* Adds commas to ULong, right justifying in a field field_width wide, returns
- * the string in buf. */
-static
-Int commify(ULong n, int field_width, HChar* buf)
-{
-   int len, n_commas, i, j, new_len, space;
-
-   VG_(sprintf)(buf, "%llu", n);
-   len = VG_(strlen)(buf);
-   n_commas = (len - 1) / 3;
-   new_len = len + n_commas;
-   space = field_width - new_len;
-
-   /* Allow for printing a number in a field_width smaller than it's size */
-   if (space < 0) space = 0;    
-
-   /* Make j = -1 because we copy the '\0' before doing the numbers in groups
-    * of three. */
-   for (j = -1, i = len ; i >= 0; i--) {
-      buf[i + n_commas + space] = buf[i];
-
-      if ((i>0) && (3 == ++j)) {
-         j = 0;
-         n_commas--;
-         buf[i + n_commas + space] = ',';
-      }
-   }
-   /* Right justify in field. */
-   for (i = 0; i < space; i++)  buf[i] = ' ';
-   return new_len;
-}
-
-static
-void percentify(Int n, Int ex, Int field_width, HChar buf[]) 
-{
-   int i, len, space;
-    
-   VG_(sprintf)(buf, "%d.%d%%", n / ex, n % ex);
-   len = VG_(strlen)(buf);
-   space = field_width - len;
-   if (space < 0) space = 0;     /* Allow for v. small field_width */
-   i = len;
-
-   /* Right justify in field */
-   for (     ; i >= 0;    i--)  buf[i + space] = buf[i];
-   for (i = 0; i < space; i++)  buf[i] = ' ';
-}
-
 static
 void cachesim_printstat(Int l1, Int l2, Int l3)
 {
   FullCost total = CLG_(total_cost), D_total = 0;
   ULong LL_total_m, LL_total_mr, LL_total_mw,
     LL_total, LL_total_r, LL_total_w;
-  HChar buf1[RESULTS_BUF_LEN], 
-    buf2[RESULTS_BUF_LEN], 
-    buf3[RESULTS_BUF_LEN];
-  Int p;
 
   if ((VG_(clo_verbosity) >1) && clo_simulate_hwpref) {
     VG_(message)(Vg_DebugMsg, "Prefetch Up:       %llu\n", 
@@ -1551,24 +1499,21 @@ void cachesim_printstat(Int l1, Int l2, Int l3)
     VG_(message)(Vg_DebugMsg, "\n");
   }
 
-  commify(total[fullOffset(EG_IR) +1], l1, buf1);
-  VG_(message)(Vg_UserMsg, "I1  misses:    %s\n", buf1);
+  VG_(message)(Vg_UserMsg, "I1  misses:    %'*llu\n", l1,
+               total[fullOffset(EG_IR) +1]);
 
-  commify(total[fullOffset(EG_IR) +2], l1, buf1);
-  VG_(message)(Vg_UserMsg, "LLi misses:    %s\n", buf1);
-
-  p = 100;
+  VG_(message)(Vg_UserMsg, "LLi misses:    %'*llu\n", l1,
+               total[fullOffset(EG_IR) +2]);
 
   if (0 == total[fullOffset(EG_IR)])
     total[fullOffset(EG_IR)] = 1;
 
-  percentify(total[fullOffset(EG_IR)+1] * 100 * p /
-	     total[fullOffset(EG_IR)], p, l1+1, buf1);
-  VG_(message)(Vg_UserMsg, "I1  miss rate: %s\n", buf1);
+  VG_(message)(Vg_UserMsg, "I1  miss rate: %*.2f%%\n", l1,
+               total[fullOffset(EG_IR)+1] * 100.0 / total[fullOffset(EG_IR)]);
        
-  percentify(total[fullOffset(EG_IR)+2] * 100 * p /
-	     total[fullOffset(EG_IR)], p, l1+1, buf1);
-  VG_(message)(Vg_UserMsg, "LLi miss rate: %s\n", buf1);
+  VG_(message)(Vg_UserMsg, "LLi miss rate: %*.2f%%\n", l1,
+               total[fullOffset(EG_IR)+2] * 100.0 / total[fullOffset(EG_IR)]);
+
   VG_(message)(Vg_UserMsg, "\n");
    
   /* D cache results.
@@ -1581,45 +1526,34 @@ void cachesim_printstat(Int l1, Int l2, Int l3)
   CLG_(copy_cost)( CLG_(get_event_set)(EG_DR), D_total, total + fullOffset(EG_DR) );
   CLG_(add_cost) ( CLG_(get_event_set)(EG_DW), D_total, total + fullOffset(EG_DW) );
 
-  commify( D_total[0], l1, buf1);
-  commify(total[fullOffset(EG_DR)], l2,  buf2);
-  commify(total[fullOffset(EG_DW)], l3,  buf3);
-  VG_(message)(Vg_UserMsg, "D   refs:      %s  (%s rd + %s wr)\n",
-	       buf1,  buf2,  buf3);
+  VG_(message)(Vg_UserMsg, "D   refs:      %'*llu  (%'*llu rd + %'*llu wr)\n",
+               l1, D_total[0],
+               l2, total[fullOffset(EG_DR)],
+               l3, total[fullOffset(EG_DW)]);
 
-  commify( D_total[1], l1, buf1);
-  commify(total[fullOffset(EG_DR)+1], l2, buf2);
-  commify(total[fullOffset(EG_DW)+1], l3, buf3);
-  VG_(message)(Vg_UserMsg, "D1  misses:    %s  (%s rd + %s wr)\n",
-	       buf1, buf2, buf3);
+  VG_(message)(Vg_UserMsg, "D1  misses:    %'*llu  (%'*llu rd + %'*llu wr)\n",
+               l1, D_total[1],
+               l2, total[fullOffset(EG_DR)+1],
+               l3, total[fullOffset(EG_DW)+1]);
 
-  commify( D_total[2], l1, buf1);
-  commify(total[fullOffset(EG_DR)+2], l2, buf2);
-  commify(total[fullOffset(EG_DW)+2], l3, buf3);
-  VG_(message)(Vg_UserMsg, "LLd misses:    %s  (%s rd + %s wr)\n",
-	       buf1, buf2, buf3);
+  VG_(message)(Vg_UserMsg, "LLd misses:    %'*llu  (%'*llu rd + %'*llu wr)\n",
+               l1, D_total[2],
+               l2, total[fullOffset(EG_DR)+2],
+               l3, total[fullOffset(EG_DW)+2]);
 
-  p = 10;
-  
   if (0 == D_total[0])   D_total[0] = 1;
   if (0 == total[fullOffset(EG_DR)]) total[fullOffset(EG_DR)] = 1;
   if (0 == total[fullOffset(EG_DW)]) total[fullOffset(EG_DW)] = 1;
   
-  percentify( D_total[1] * 100 * p / D_total[0],  p, l1+1, buf1);
-  percentify(total[fullOffset(EG_DR)+1] * 100 * p /
-	     total[fullOffset(EG_DR)], p, l2+1, buf2);
-  percentify(total[fullOffset(EG_DW)+1] * 100 * p /
-	     total[fullOffset(EG_DW)], p, l3+1, buf3);
-  VG_(message)(Vg_UserMsg, "D1  miss rate: %s (%s   + %s  )\n", 
-               buf1, buf2,buf3);
+  VG_(message)(Vg_UserMsg, "D1  miss rate: %*.1f%% (%*.1f%%   + %*.1f%%  )\n", 
+           l1, D_total[1] * 100.0 / D_total[0],
+           l2, total[fullOffset(EG_DR)+1] * 100.0 / total[fullOffset(EG_DR)],
+           l3, total[fullOffset(EG_DW)+1] * 100.0 / total[fullOffset(EG_DW)]);
   
-  percentify( D_total[2] * 100 * p / D_total[0],  p, l1+1, buf1);
-  percentify(total[fullOffset(EG_DR)+2] * 100 * p /
-	     total[fullOffset(EG_DR)], p, l2+1, buf2);
-  percentify(total[fullOffset(EG_DW)+2] * 100 * p /
-	     total[fullOffset(EG_DW)], p, l3+1, buf3);
-  VG_(message)(Vg_UserMsg, "LLd miss rate: %s (%s   + %s  )\n", 
-               buf1, buf2,buf3);
+  VG_(message)(Vg_UserMsg, "LLd miss rate: %*.1f%% (%*.1f%%   + %*.1f%%  )\n", 
+           l1, D_total[2] * 100.0 / D_total[0],
+           l2, total[fullOffset(EG_DR)+2] * 100.0 / total[fullOffset(EG_DR)],
+           l3, total[fullOffset(EG_DW)+2] * 100.0 / total[fullOffset(EG_DW)]);
   VG_(message)(Vg_UserMsg, "\n");
 
 
@@ -1634,11 +1568,8 @@ void cachesim_printstat(Int l1, Int l2, Int l3)
     total[fullOffset(EG_DR) +1] +
     total[fullOffset(EG_IR) +1];
   LL_total_w = total[fullOffset(EG_DW) +1];
-  commify(LL_total,   l1, buf1);
-  commify(LL_total_r, l2, buf2);
-  commify(LL_total_w, l3, buf3);
-  VG_(message)(Vg_UserMsg, "LL refs:       %s  (%s rd + %s wr)\n",
-	       buf1, buf2, buf3);
+  VG_(message)(Vg_UserMsg, "LL refs:       %'*llu  (%'*llu rd + %'*llu wr)\n",
+               l1, LL_total, l2, LL_total_r, l3, LL_total_w);
   
   LL_total_m  =
     total[fullOffset(EG_DR) +2] +
@@ -1648,21 +1579,13 @@ void cachesim_printstat(Int l1, Int l2, Int l3)
     total[fullOffset(EG_DR) +2] +
     total[fullOffset(EG_IR) +2];
   LL_total_mw = total[fullOffset(EG_DW) +2];
-  commify(LL_total_m,  l1, buf1);
-  commify(LL_total_mr, l2, buf2);
-  commify(LL_total_mw, l3, buf3);
-  VG_(message)(Vg_UserMsg, "LL misses:     %s  (%s rd + %s wr)\n",
-	       buf1, buf2, buf3);
+  VG_(message)(Vg_UserMsg, "LL misses:     %'*llu  (%'*llu rd + %'*llu wr)\n",
+               l1, LL_total_m, l2, LL_total_mr, l3, LL_total_mw);
   
-  percentify(LL_total_m  * 100 * p /
-	     (total[fullOffset(EG_IR)] + D_total[0]),  p, l1+1, buf1);
-  percentify(LL_total_mr * 100 * p /
-	     (total[fullOffset(EG_IR)] + total[fullOffset(EG_DR)]),
-	     p, l2+1, buf2);
-  percentify(LL_total_mw * 100 * p /
-	     total[fullOffset(EG_DW)], p, l3+1, buf3);
-  VG_(message)(Vg_UserMsg, "LL miss rate:  %s (%s   + %s  )\n",
-	       buf1, buf2,buf3);
+  VG_(message)(Vg_UserMsg, "LL miss rate:  %*.1f%% (%*.1f%%   + %*.1f%%  )\n",
+          l1, LL_total_m  * 100.0 / (total[fullOffset(EG_IR)] + D_total[0]),
+          l2, LL_total_mr * 100.0 / (total[fullOffset(EG_IR)] + total[fullOffset(EG_DR)]),
+          l3, LL_total_mw * 100.0 / total[fullOffset(EG_DW)]);
 }
 
 

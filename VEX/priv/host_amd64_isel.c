@@ -4850,7 +4850,7 @@ static void iselNext ( ISelEnv* env,
 
 /* Translate an entire SB to amd64 code. */
 
-HInstrArray* iselSB_AMD64 ( IRSB* bb,
+HInstrArray* iselSB_AMD64 ( const IRSB* bb,
                             VexArch      arch_host,
                             const VexArchInfo* archinfo_host,
                             const VexAbiInfo*  vbi/*UNUSED*/,

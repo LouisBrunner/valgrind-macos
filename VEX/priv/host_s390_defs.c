@@ -399,7 +399,7 @@ s390_amode_map_regs(HRegRemap *m, s390_amode *am)
 
 
 void
-ppS390AMode(s390_amode *am)
+ppS390AMode(const s390_amode *am)
 {
    vex_printf("%s", s390_amode_as_string(am));
 }

@@ -4152,7 +4152,7 @@ static void iselNext ( ISelEnv* env,
 /*---------------------------------------------------------*/
 
 /* Translate an entire BB to mips code. */
-HInstrArray *iselSB_MIPS ( IRSB* bb,
+HInstrArray *iselSB_MIPS ( const IRSB* bb,
                            VexArch arch_host,
                            const VexArchInfo* archinfo_host,
                            const VexAbiInfo* vbi,

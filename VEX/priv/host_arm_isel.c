@@ -6312,7 +6312,7 @@ static void iselNext ( ISelEnv* env,
 
 /* Translate an entire SB to arm code. */
 
-HInstrArray* iselSB_ARM ( IRSB* bb,
+HInstrArray* iselSB_ARM ( const IRSB* bb,
                           VexArch      arch_host,
                           const VexArchInfo* archinfo_host,
                           const VexAbiInfo*  vbi/*UNUSED*/,

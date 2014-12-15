@@ -6093,7 +6093,7 @@ static void iselNext ( ISelEnv* env,
 /*---------------------------------------------------------*/
 
 /* Translate an entire SB to ppc code. */
-HInstrArray* iselSB_PPC ( IRSB* bb, 
+HInstrArray* iselSB_PPC ( const IRSB* bb,
                           VexArch      arch_host,
                           const VexArchInfo* archinfo_host,
                           const VexAbiInfo*  vbi,

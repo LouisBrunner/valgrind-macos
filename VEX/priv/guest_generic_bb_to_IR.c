@@ -189,8 +189,8 @@ IRSB* bb_to_IR (
          /*IN*/ VexEndness       host_endness,
          /*IN*/ Bool             sigill_diag,
          /*IN*/ VexArch          arch_guest,
-         /*IN*/ VexArchInfo*     archinfo_guest,
-         /*IN*/ VexAbiInfo*      abiinfo_both,
+         /*IN*/ const VexArchInfo* archinfo_guest,
+         /*IN*/ const VexAbiInfo*  abiinfo_both,
          /*IN*/ IRType           guest_word_type,
          /*IN*/ UInt             (*needs_self_check)(void*,const VexGuestExtents*),
          /*IN*/ Bool             (*preamble_function)(void*,IRSB*),
@@ -527,9 +527,8 @@ IRSB* bb_to_IR (
       UInt     host_word_szB = sizeof(HWord);
       IRType   host_word_type = Ity_INVALID;
 
-      VexGuestExtents vge_tmp = *vge;
       UInt extents_needing_check
-         = needs_self_check(callback_opaque, &vge_tmp);
+         = needs_self_check(callback_opaque, vge);
 
       if (host_word_szB == 4) host_word_type = Ity_I32;
       if (host_word_szB == 8) host_word_type = Ity_I64;

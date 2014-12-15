@@ -1039,7 +1039,7 @@ extern void genReload_ARM ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
                             HReg rreg, Int offset, Bool );
 
 extern void getAllocableRegs_ARM ( Int*, HReg** );
-extern HInstrArray* iselSB_ARM   ( IRSB*, 
+extern HInstrArray* iselSB_ARM   ( const IRSB*, 
                                    VexArch,
                                    const VexArchInfo*,
                                    const VexAbiInfo*,

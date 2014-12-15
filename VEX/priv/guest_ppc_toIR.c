@@ -1,5 +1,4 @@
 
-
 /*--------------------------------------------------------------------*/
 /*--- begin                                       guest_ppc_toIR.c ---*/
 /*--------------------------------------------------------------------*/
@@ -226,7 +225,7 @@ static Bool mode64 = False;
 // most platforms it's the identity function.  Unfortunately, on
 // ppc64-linux it isn't (sigh) and ditto for ppc32-aix5 and
 // ppc64-aix5.
-static void* fnptr_to_fnentry( VexAbiInfo* vbi, void* f )
+static void* fnptr_to_fnentry( const VexAbiInfo* vbi, void* f )
 {
    if (vbi->host_ppc_calls_use_fndescrs) {
       /* f is a pointer to a 3-word function descriptor, of which the
@@ -1764,7 +1763,7 @@ static void gen_SIGBUS_if_misaligned ( IRTemp addr, UChar align )
    ppc32 doesn't have this "feature" (how fortunate for it).  nia is
    the address of the next instruction to be executed.
 */
-static void make_redzone_AbiHint ( VexAbiInfo* vbi, 
+static void make_redzone_AbiHint ( const VexAbiInfo* vbi, 
                                    IRTemp nia, const HChar* who )
 {
    Int szB = vbi->guest_stack_redzone_size;
@@ -5156,7 +5155,7 @@ static Bool dis_int_load ( UInt theInstr )
 /*
   Integer Store Instructions
 */
-static Bool dis_int_store ( UInt theInstr, VexAbiInfo* vbi )
+static Bool dis_int_store ( UInt theInstr, const VexAbiInfo* vbi )
 {
    /* D-Form, X-Form, DS-Form */
    UChar opc1    = ifieldOPC(theInstr);
@@ -5685,7 +5684,7 @@ static IRExpr* /* :: Ity_I32 */ branch_cond_ok( UInt BO, UInt BI )
   Integer Branch Instructions
 */
 static Bool dis_branch ( UInt theInstr, 
-                         VexAbiInfo* vbi,
+                         const VexAbiInfo* vbi,
                          /*OUT*/DisResult* dres,
                          Bool (*resteerOkFn)(void*,Addr64),
                          void* callback_opaque )
@@ -6191,7 +6190,7 @@ static Bool dis_trap ( UInt theInstr,
   System Linkage Instructions
 */
 static Bool dis_syslink ( UInt theInstr, 
-                          VexAbiInfo* abiinfo, DisResult* dres )
+                          const VexAbiInfo* abiinfo, DisResult* dres )
 {
    IRType ty = mode64 ? Ity_I64 : Ity_I32;
 
@@ -6879,7 +6878,7 @@ static Bool dis_int_ldst_rev ( UInt theInstr )
 /*
   Processor Control Instructions
 */
-static Bool dis_proc_ctl ( VexAbiInfo* vbi, UInt theInstr )
+static Bool dis_proc_ctl ( const VexAbiInfo* vbi, UInt theInstr )
 {
    UChar opc1     = ifieldOPC(theInstr);
    
@@ -7282,7 +7281,7 @@ static Bool dis_proc_ctl ( VexAbiInfo* vbi, UInt theInstr )
 */
 static Bool dis_cache_manage ( UInt         theInstr, 
                                DisResult*   dres,
-                               VexArchInfo* guest_archinfo )
+                               const VexArchInfo* guest_archinfo )
 {
    /* X-Form */
    UChar opc1    = ifieldOPC(theInstr);
@@ -15580,7 +15579,7 @@ dis_vx_permute_misc( UInt theInstr, UInt opc2 )
 /*
   AltiVec Load Instructions
 */
-static Bool dis_av_load ( VexAbiInfo* vbi, UInt theInstr )
+static Bool dis_av_load ( const VexAbiInfo* vbi, UInt theInstr )
 {
    /* X-Form */
    UChar opc1     = ifieldOPC(theInstr);
@@ -18297,7 +18296,7 @@ static Bool dis_av_fp_convert ( UInt theInstr )
 }
 
 static Bool dis_transactional_memory ( UInt theInstr, UInt nextInstr,
-                                       VexAbiInfo* vbi,
+                                       const VexAbiInfo* vbi,
                                        /*OUT*/DisResult* dres,
                                        Bool (*resteerOkFn)(void*,Addr64),
                                        void* callback_opaque )
@@ -18706,8 +18705,8 @@ DisResult disInstr_PPC_WRK (
              Bool         resteerCisOk,
              void*        callback_opaque,
              Long         delta64,
-             VexArchInfo* archinfo,
-             VexAbiInfo*  abiinfo,
+             const VexArchInfo* archinfo,
+             const VexAbiInfo*  abiinfo,
              Bool         sigill_diag
           )
 {
@@ -20190,8 +20189,8 @@ DisResult disInstr_PPC ( IRSB*        irsb_IN,
                          Long         delta,
                          Addr64       guest_IP,
                          VexArch      guest_arch,
-                         VexArchInfo* archinfo,
-                         VexAbiInfo*  abiinfo,
+                         const VexArchInfo* archinfo,
+                         const VexAbiInfo*  abiinfo,
                          VexEndness   host_endness_IN,
                          Bool         sigill_diag_IN )
 {

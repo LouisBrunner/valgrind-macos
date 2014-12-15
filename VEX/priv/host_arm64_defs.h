@@ -949,7 +949,7 @@ extern void genReload_ARM64 ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
                               HReg rreg, Int offset, Bool );
 
 extern void getAllocableRegs_ARM64 ( Int*, HReg** );
-extern HInstrArray* iselSB_ARM64 ( IRSB*, 
+extern HInstrArray* iselSB_ARM64 ( const IRSB*, 
                                    VexArch,
                                    const VexArchInfo*,
                                    const VexAbiInfo*,

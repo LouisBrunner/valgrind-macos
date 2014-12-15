@@ -6415,7 +6415,7 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn)
 
 static
 Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
-                          VexArchInfo* archinfo)
+                          const VexArchInfo* archinfo)
 {
 #  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
 
@@ -12791,8 +12791,8 @@ Bool disInstr_ARM64_WRK (
         Bool         resteerCisOk,
         void*        callback_opaque,
         const UChar* guest_instr,
-        VexArchInfo* archinfo,
-        VexAbiInfo*  abiinfo
+        const VexArchInfo* archinfo,
+        const VexAbiInfo*  abiinfo
      )
 {
    // A macro to fish bits out of 'insn'.
@@ -12973,8 +12973,8 @@ DisResult disInstr_ARM64 ( IRSB*        irsb_IN,
                            Long         delta_IN,
                            Addr64       guest_IP,
                            VexArch      guest_arch,
-                           VexArchInfo* archinfo,
-                           VexAbiInfo*  abiinfo,
+                           const VexArchInfo* archinfo,
+                           const VexAbiInfo*  abiinfo,
                            VexEndness   host_endness_IN,
                            Bool         sigill_diag_IN )
 {

@@ -12012,8 +12012,8 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                      Bool         resteerCisOk,
                                      void*        callback_opaque,
                                      Long         delta64,
-                                     VexArchInfo* archinfo,
-                                     VexAbiInfo*  abiinfo,
+                                     const VexArchInfo* archinfo,
+                                     const VexAbiInfo*  abiinfo,
                                      Bool         sigill_diag )
 {
    IRTemp t0, t1 = 0, t2, t3, t4, t5, t6, t7;
@@ -17289,8 +17289,8 @@ DisResult disInstr_MIPS( IRSB*        irsb_IN,
                          Long         delta,
                          Addr64       guest_IP,
                          VexArch      guest_arch,
-                         VexArchInfo* archinfo,
-                         VexAbiInfo*  abiinfo,
+                         const VexArchInfo* archinfo,
+                         const VexAbiInfo*  abiinfo,
                          VexEndness   host_endness_IN,
                          Bool         sigill_diag_IN )
 {

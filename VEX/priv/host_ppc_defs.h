@@ -1157,7 +1157,7 @@ extern void genReload_PPC ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
                             HReg rreg, Int offsetB, Bool mode64 );
 
 extern void         getAllocableRegs_PPC ( Int*, HReg**, Bool mode64 );
-extern HInstrArray* iselSB_PPC           ( IRSB*, 
+extern HInstrArray* iselSB_PPC           ( const IRSB*,
                                            VexArch,
                                            const VexArchInfo*,
                                            const VexAbiInfo*,

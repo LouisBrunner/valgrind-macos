@@ -769,7 +769,7 @@ extern void genReload_AMD64 ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
                               HReg rreg, Int offset, Bool );
 
 extern void         getAllocableRegs_AMD64 ( Int*, HReg** );
-extern HInstrArray* iselSB_AMD64           ( IRSB*, 
+extern HInstrArray* iselSB_AMD64           ( const IRSB*, 
                                              VexArch,
                                              const VexArchInfo*,
                                              const VexAbiInfo*,

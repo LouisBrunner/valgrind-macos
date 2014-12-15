@@ -219,7 +219,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
    HInstr*      (*directReload) ( HInstr*, HReg, Short );
    void         (*ppInstr)      ( const HInstr*, Bool );
    void         (*ppReg)        ( HReg );
-   HInstrArray* (*iselSB)       ( IRSB*, VexArch, const VexArchInfo*,
+   HInstrArray* (*iselSB)       ( const IRSB*, VexArch, const VexArchInfo*,
                                   const VexAbiInfo*, Int, Int, Bool, Bool,
                                   Addr64 );
    Int          (*emit)         ( /*MB_MOD*/Bool*,

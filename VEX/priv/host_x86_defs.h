@@ -731,7 +731,7 @@ extern void genReload_X86 ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
 extern X86Instr*    directReload_X86     ( X86Instr* i, 
                                            HReg vreg, Short spill_off );
 extern void         getAllocableRegs_X86 ( Int*, HReg** );
-extern HInstrArray* iselSB_X86           ( IRSB*, 
+extern HInstrArray* iselSB_X86           ( const IRSB*,
                                            VexArch,
                                            const VexArchInfo*,
                                            const VexAbiInfo*,

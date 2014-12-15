@@ -727,7 +727,7 @@ extern void genReload_MIPS( /*OUT*/ HInstr ** i1, /*OUT*/ HInstr ** i2,
                             HReg rreg, Int offset, Bool);
 
 extern void        getAllocableRegs_MIPS (Int *, HReg **, Bool mode64);
-extern HInstrArray *iselSB_MIPS          ( IRSB*,
+extern HInstrArray *iselSB_MIPS          ( const IRSB*,
                                            VexArch,
                                            const VexArchInfo*,
                                            const VexAbiInfo*,

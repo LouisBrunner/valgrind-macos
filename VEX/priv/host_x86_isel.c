@@ -4409,7 +4409,7 @@ static void iselNext ( ISelEnv* env,
 
 /* Translate an entire SB to x86 code. */
 
-HInstrArray* iselSB_X86 ( IRSB* bb,
+HInstrArray* iselSB_X86 ( const IRSB* bb,
                           VexArch      arch_host,
                           const VexArchInfo* archinfo_host,
                           const VexAbiInfo*  vbi/*UNUSED*/,

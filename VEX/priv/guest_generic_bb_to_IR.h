@@ -147,10 +147,10 @@ typedef
 
       /* Info about the guest architecture */
       /*IN*/  VexArch      guest_arch,
-      /*IN*/  VexArchInfo* archinfo,
+      /*IN*/  const VexArchInfo* archinfo,
 
       /* ABI info for both guest and host */
-      /*IN*/  VexAbiInfo*  abiinfo,
+      /*IN*/  const VexAbiInfo*  abiinfo,
 
       /* The endianness of the host */
       /*IN*/  VexEndness   host_endness,
@@ -179,8 +179,8 @@ IRSB* bb_to_IR (
          /*IN*/ VexEndness       host_endness,
          /*IN*/ Bool             sigill_diag,
          /*IN*/ VexArch          arch_guest,
-         /*IN*/ VexArchInfo*     archinfo_guest,
-         /*IN*/ VexAbiInfo*      abiinfo_both,
+         /*IN*/ const VexArchInfo* archinfo_guest,
+         /*IN*/ const VexAbiInfo*  abiinfo_both,
          /*IN*/ IRType           guest_word_type,
          /*IN*/ UInt             (*needs_self_check)(void*,const VexGuestExtents*),
          /*IN*/ Bool             (*preamble_function)(void*,IRSB*),

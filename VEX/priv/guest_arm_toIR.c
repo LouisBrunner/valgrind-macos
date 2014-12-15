@@ -14435,7 +14435,7 @@ static Bool decode_CP10_CP11_instruction (
    here, since they are all in NV space.
 */
 static Bool decode_NV_instruction ( /*MOD*/DisResult* dres,
-                                    VexArchInfo* archinfo,
+                                    const VexArchInfo* archinfo,
                                     UInt insn )
 {
 #  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
@@ -14591,8 +14591,8 @@ DisResult disInstr_ARM_WRK (
              Bool         resteerCisOk,
              void*        callback_opaque,
              const UChar* guest_instr,
-             VexArchInfo* archinfo,
-             VexAbiInfo*  abiinfo,
+             const VexArchInfo* archinfo,
+             const VexAbiInfo*  abiinfo,
              Bool         sigill_diag
           )
 {
@@ -17423,8 +17423,8 @@ DisResult disInstr_THUMB_WRK (
              Bool         resteerCisOk,
              void*        callback_opaque,
              const UChar* guest_instr,
-             VexArchInfo* archinfo,
-             VexAbiInfo*  abiinfo,
+             const VexArchInfo* archinfo,
+             const VexAbiInfo*  abiinfo,
              Bool         sigill_diag
           )
 {
@@ -22022,8 +22022,8 @@ DisResult disInstr_ARM ( IRSB*        irsb_IN,
                          Long         delta_ENCODED,
                          Addr64       guest_IP_ENCODED,
                          VexArch      guest_arch,
-                         VexArchInfo* archinfo,
-                         VexAbiInfo*  abiinfo,
+                         const VexArchInfo* archinfo,
+                         const VexAbiInfo*  abiinfo,
                          VexEndness   host_endness_IN,
                          Bool         sigill_diag_IN )
 {

@@ -16665,8 +16665,8 @@ disInstr_S390(IRSB        *irsb_IN,
               Long         delta,
               Addr64       guest_IP,
               VexArch      guest_arch,
-              VexArchInfo *archinfo,
-              VexAbiInfo  *abiinfo,
+              const VexArchInfo *archinfo,
+              const VexAbiInfo  *abiinfo,
               VexEndness   host_endness,
               Bool         sigill_diag_IN)
 {

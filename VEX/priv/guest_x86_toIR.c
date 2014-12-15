@@ -6310,7 +6310,7 @@ static const HChar* nameBtOp ( BtOp op )
 
 
 static
-UInt dis_bt_G_E ( VexAbiInfo* vbi,
+UInt dis_bt_G_E ( const VexAbiInfo* vbi,
                   UChar sorb, Bool locked, Int sz, Int delta, BtOp op )
 {
    HChar  dis_buf[50];
@@ -8065,8 +8065,8 @@ DisResult disInstr_X86_WRK (
              Bool         resteerCisOk,
              void*        callback_opaque,
              Long         delta64,
-             VexArchInfo* archinfo,
-             VexAbiInfo*  vbi,
+             const VexArchInfo* archinfo,
+             const VexAbiInfo*  vbi,
              Bool         sigill_diag
           )
 {
@@ -15415,8 +15415,8 @@ DisResult disInstr_X86 ( IRSB*        irsb_IN,
                          Long         delta,
                          Addr64       guest_IP,
                          VexArch      guest_arch,
-                         VexArchInfo* archinfo,
-                         VexAbiInfo*  abiinfo,
+                         const VexArchInfo* archinfo,
+                         const VexAbiInfo*  abiinfo,
                          VexEndness   host_endness_IN,
                          Bool         sigill_diag_IN )
 {

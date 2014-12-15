@@ -918,10 +918,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
                 vta->disp_cp_xassisted );
       if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM)) {
          for (k = 0; k < j; k++)
-            if (insn_bytes[k] < 16)
-               vex_printf("0%x ",  (UInt)insn_bytes[k]);
-            else
-               vex_printf("%x ", (UInt)insn_bytes[k]);
+            vex_printf("%02x ", (UInt)insn_bytes[k]);
          vex_printf("\n\n");
       }
       if (UNLIKELY(out_used + j > vta->host_bytes_size)) {
@@ -942,7 +939,6 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
         }
         out_used += j;
       }
-      vassert(out_used <= vta->host_bytes_size);
    }
    *(vta->host_bytes_used) = out_used;
 

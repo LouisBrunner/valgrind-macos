@@ -1264,8 +1264,8 @@ void LibVEX_default_VexAbiInfo ( /*OUT*/VexAbiInfo* vbi )
 {
    vex_bzero(vbi, sizeof(*vbi));
    vbi->guest_stack_redzone_size       = 0;
-   vbi->guest_amd64_assume_fs_is_zero  = False;
-   vbi->guest_amd64_assume_gs_is_0x60  = False;
+   vbi->guest_amd64_assume_fs_is_const = False;
+   vbi->guest_amd64_assume_gs_is_const = False;
    vbi->guest_ppc_zap_RZ_at_blr        = False;
    vbi->guest_ppc_zap_RZ_at_bl         = NULL;
    vbi->host_ppc_calls_use_fndescrs    = False;

@@ -3901,9 +3901,10 @@ void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state )
    vex_state->guest_IDFLAG  = 0;
    vex_state->guest_ACFLAG  = 0;
 
-   /* HACK: represent the offset associated with %fs==0. This
-      assumes that %fs is only ever zero. */
-   vex_state->guest_FS_ZERO = 0;
+   /* HACK: represent the offset associated with a constant %fs. 
+      Typically, on linux, this assumes that %fs is only ever zero (main
+      thread) or 0x63. */
+   vex_state->guest_FS_CONST = 0;
 
    vex_state->guest_RIP = 0;
 
@@ -3945,7 +3946,7 @@ void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state )
 
    vex_state->guest_NRADDR   = 0;
    vex_state->guest_SC_CLASS = 0;
-   vex_state->guest_GS_0x60  = 0;
+   vex_state->guest_GS_CONST = 0;
 
    vex_state->guest_IP_AT_SYSCALL = 0;
    vex_state->pad1 = 0;
@@ -4031,7 +4032,7 @@ VexGuestLayout
 		 /*  2 */ ALWAYSDEFD(guest_DFLAG),
                  /*  3 */ ALWAYSDEFD(guest_IDFLAG),
                  /*  4 */ ALWAYSDEFD(guest_RIP),
-                 /*  5 */ ALWAYSDEFD(guest_FS_ZERO),
+                 /*  5 */ ALWAYSDEFD(guest_FS_CONST),
                  /*  6 */ ALWAYSDEFD(guest_FTOP),
                  /*  7 */ ALWAYSDEFD(guest_FPTAG),
                  /*  8 */ ALWAYSDEFD(guest_FPROUND),

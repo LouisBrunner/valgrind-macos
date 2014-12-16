@@ -316,14 +316,14 @@ void LibVEX_default_VexArchInfo ( /*OUT*/VexArchInfo* vai );
       guest is amd64-linux                ==> 128
       guest is other                      ==> inapplicable
 
-   guest_amd64_assume_fs_is_zero
+   guest_amd64_assume_fs_is_const
       guest is amd64-linux                ==> True
       guest is amd64-darwin               ==> False
       guest is other                      ==> inapplicable
 
-   guest_amd64_assume_gs_is_0x60
+   guest_amd64_assume_gs_is_const
       guest is amd64-darwin               ==> True
-      guest is amd64-linux                ==> False
+      guest is amd64-linux                ==> True
       guest is other                      ==> inapplicable
 
    guest_ppc_zap_RZ_at_blr
@@ -350,13 +350,13 @@ typedef
 
       /* AMD64 GUESTS only: should we translate %fs-prefixed
          instructions using the assumption that %fs always contains
-         zero? */
-      Bool guest_amd64_assume_fs_is_zero;
+         the same value? (typically zero on linux) */
+      Bool guest_amd64_assume_fs_is_const;
 
       /* AMD64 GUESTS only: should we translate %gs-prefixed
          instructions using the assumption that %gs always contains
-         0x60? */
-      Bool guest_amd64_assume_gs_is_0x60;
+         the same value? (typically 0x60 on darwin)? */
+      Bool guest_amd64_assume_gs_is_const;
 
       /* PPC GUESTS only: should we zap the stack red zone at a 'blr'
          (function return) ? */

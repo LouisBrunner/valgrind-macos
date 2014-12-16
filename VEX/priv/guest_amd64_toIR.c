@@ -395,8 +395,8 @@ static void unimplemented ( const HChar* str )
 
 #define OFFB_RIP       offsetof(VexGuestAMD64State,guest_RIP)
 
-#define OFFB_FS_ZERO   offsetof(VexGuestAMD64State,guest_FS_ZERO)
-#define OFFB_GS_0x60   offsetof(VexGuestAMD64State,guest_GS_0x60)
+#define OFFB_FS_CONST  offsetof(VexGuestAMD64State,guest_FS_CONST)
+#define OFFB_GS_CONST  offsetof(VexGuestAMD64State,guest_GS_CONST)
 
 #define OFFB_CC_OP     offsetof(VexGuestAMD64State,guest_CC_OP)
 #define OFFB_CC_DEP1   offsetof(VexGuestAMD64State,guest_CC_DEP1)
@@ -2323,26 +2323,26 @@ static
 IRExpr* handleAddrOverrides ( const VexAbiInfo* vbi, 
                               Prefix pfx, IRExpr* virtual )
 {
+   /* Note that the below are hacks that relies on the assumption
+      that %fs or %gs are constant.
+      Typically, %fs is always 0x63 on linux (in the main thread, it
+      stays at value 0), %gs always 0x60 on Darwin, ... */
    /* --- segment overrides --- */
    if (pfx & PFX_FS) {
-      if (vbi->guest_amd64_assume_fs_is_zero) {
-         /* Note that this is a linux-kernel specific hack that relies
-            on the assumption that %fs is always zero. */
-         /* return virtual + guest_FS_ZERO. */
+      if (vbi->guest_amd64_assume_fs_is_const) {
+         /* return virtual + guest_FS_CONST. */
          virtual = binop(Iop_Add64, virtual,
-                                    IRExpr_Get(OFFB_FS_ZERO, Ity_I64));
+                                    IRExpr_Get(OFFB_FS_CONST, Ity_I64));
       } else {
          unimplemented("amd64 %fs segment override");
       }
    }
 
    if (pfx & PFX_GS) {
-      if (vbi->guest_amd64_assume_gs_is_0x60) {
-         /* Note that this is a darwin-kernel specific hack that relies
-            on the assumption that %gs is always 0x60. */
-         /* return virtual + guest_GS_0x60. */
+      if (vbi->guest_amd64_assume_gs_is_const) {
+         /* return virtual + guest_GS_CONST. */
          virtual = binop(Iop_Add64, virtual,
-                                    IRExpr_Get(OFFB_GS_0x60, Ity_I64));
+                                    IRExpr_Get(OFFB_GS_CONST, Ity_I64));
       } else {
          unimplemented("amd64 %gs segment override");
       }
@@ -31388,11 +31388,11 @@ DisResult disInstr_AMD64_WRK (
 
    /* We have a %fs prefix.  Reject it if there's no evidence in 'vbi'
       that we should accept it. */
-   if ((pfx & PFX_FS) && !vbi->guest_amd64_assume_fs_is_zero)
+   if ((pfx & PFX_FS) && !vbi->guest_amd64_assume_fs_is_const)
       goto decode_failure;
 
    /* Ditto for %gs prefixes. */
-   if ((pfx & PFX_GS) && !vbi->guest_amd64_assume_gs_is_0x60)
+   if ((pfx & PFX_GS) && !vbi->guest_amd64_assume_gs_is_const)
       goto decode_failure;
 
    /* Set up sz. */

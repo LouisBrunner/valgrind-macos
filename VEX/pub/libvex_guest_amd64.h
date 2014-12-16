@@ -90,10 +90,11 @@ typedef
          all the old x87 FPU gunk
          segment registers */
 
-      /* HACK to make tls on amd64-linux work.  %fs only ever seems to
-         hold zero, and so guest_FS_ZERO holds the 64-bit offset
-         associated with a %fs value of zero. */
-      /* 200 */ ULong guest_FS_ZERO;
+      /* HACK to e.g. make tls on amd64-linux work.  %fs only ever seems to
+         hold a constant value (zero on linux main thread, 0x63 in other
+         threads), and so guest_FS_CONST holds
+         the 64-bit offset associated with this constant %fs value. */
+      /* 200 */ ULong guest_FS_CONST;
 
       /* YMM registers.  Note that these must be allocated
          consecutively in order that the SSE4.2 PCMP{E,I}STR{I,M}
@@ -152,11 +153,12 @@ typedef
       /* Used for Darwin syscall dispatching. */
       ULong guest_SC_CLASS;
 
-      /* HACK to make tls on darwin work.  %gs only ever seems to
-         hold 0x60, and so guest_GS_0x60 holds the 64-bit offset
-         associated with a %gs value of 0x60.  (A direct analogue
-         of the %fs-zero hack for amd64-linux). */
-      ULong guest_GS_0x60;
+      /* HACK to make e.g. tls on darwin work, wine on linux work, ...
+         %gs only ever seems to hold a constant value (e.g. 0x60 on darwin,
+         0x6b on linux), and so guest_GS_CONST holds the 64-bit offset
+         associated with this constant %gs value.  (A direct analogue
+         of the %fs-const hack for amd64-linux). */
+      ULong guest_GS_CONST;
 
       /* Needed for Darwin (but mandated for all guest architectures):
          RIP at the last syscall insn (int 0x80/81/82, sysenter,

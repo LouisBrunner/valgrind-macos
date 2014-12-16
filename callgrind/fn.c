@@ -429,7 +429,7 @@ Bool CLG_(get_debug_info)(Addr instr_addr,
                           const HChar **fn_name, UInt* line_num,
                           DebugInfo** pDebugInfo)
 {
-  Bool found_file_line, found_fn, found_dirname, result = True;
+  Bool found_file_line, found_fn, result = True;
   UInt line;
   
   CLG_DEBUG(6, "  + get_debug_info(%#lx)\n", instr_addr);
@@ -443,7 +443,6 @@ Bool CLG_(get_debug_info)(Addr instr_addr,
    found_file_line = VG_(get_filename_linenum)(instr_addr,
 					       file,
 					       dir,
-					       &found_dirname,
 					       &line);
    found_fn = VG_(get_fnname)(instr_addr, fn_name);
 

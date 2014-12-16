@@ -210,10 +210,9 @@ static HChar* get_perm_string(const HChar* s)
 static void get_debug_info(Addr instr_addr, const HChar **dir,
                            const HChar **file, const HChar **fn, UInt* line)
 {
-   Bool found_dirname;
    Bool found_file_line = VG_(get_filename_linenum)(
                              instr_addr, 
-                             file, dir, &found_dirname,
+                             file, dir,
                              line
                           );
    Bool found_fn        = VG_(get_fnname)(instr_addr, fn);

@@ -2003,7 +2003,7 @@ void do_client_request ( ThreadId tid )
          VG_(memset)(buf64, 0, 64);
          UInt linenum = 0;
          Bool ok = VG_(get_filename_linenum)(
-                      ip, &buf, NULL, NULL, &linenum
+                      ip, &buf, NULL, &linenum
                    );
          if (ok) {
             /* For backward compatibility truncate the filename to

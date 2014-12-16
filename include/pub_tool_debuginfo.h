@@ -52,11 +52,10 @@ extern Bool VG_(get_fnname_w_offset)
 /* This one is the most general.  It gives filename, line number and
    optionally directory name.  filename and linenum may not be NULL.
    dirname may be NULL, meaning that the caller does not want
-   directory name info, in which case dirname_available must also be
-   NULL.  If dirname is non-null, directory info is written to *dirname, if
+   directory name info.
+   If dirname is non-null, directory info is written to *dirname, if
    it is available; if not available, '\0' is written to the first
-   byte.  In either case *dirname_available is set to indicate whether
-   or not directory information was available.
+   byte.
 
    The character strings returned in *filename and *dirname are not
    persistent. They will be freed when the DebugInfo they belong to
@@ -68,7 +67,6 @@ extern Bool VG_(get_filename_linenum)
                               ( Addr a, 
                                 /*OUT*/const HChar** filename,
                                 /*OUT*/const HChar** dirname,
-                                /*OUT*/Bool* dirname_available,
                                 /*OUT*/UInt* linenum );
 
 /* Succeeds only if we find from debug info that 'a' is the address of the

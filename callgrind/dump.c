@@ -363,7 +363,7 @@ static /* __inline__ */
 Bool get_debug_pos(BBCC* bbcc, Addr addr, AddrPos* p)
 {
     const HChar *file, *dir;
-    Bool found_file_line, found_dirname;
+    Bool found_file_line;
 
     int cachepos = addr % DEBUG_CACHE_SIZE;
     
@@ -376,7 +376,6 @@ Bool get_debug_pos(BBCC* bbcc, Addr addr, AddrPos* p)
 	found_file_line = VG_(get_filename_linenum)(addr,
 						    &file,
 						    &dir,
-						    &found_dirname,
 						    &(p->line));
 	if (!found_file_line) {
             file = "???";

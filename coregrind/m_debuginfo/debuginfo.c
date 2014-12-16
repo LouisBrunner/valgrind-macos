@@ -2067,21 +2067,15 @@ Bool VG_(get_linenum)( Addr a, UInt* lineno )
 Bool VG_(get_filename_linenum) ( Addr a, 
                                  /*OUT*/const HChar** filename,
                                  /*OUT*/const HChar** dirname,
-                                 /*OUT*/Bool* dirname_available,
                                  /*OUT*/UInt* lineno )
 {
    DebugInfo* si;
    Word       locno;
    UInt       fndn_ix;
 
-   vg_assert( (dirname == NULL && dirname_available == NULL)
-              ||
-              (dirname != NULL && dirname_available != NULL) );
-
    search_all_loctabs ( a, &si, &locno );
    if (si == NULL) {
-      if (dirname_available) {
-         *dirname_available = False;
+      if (dirname) {
          *dirname = "";
       }
       *filename = "";      // this used to be not initialised....
@@ -2095,7 +2089,6 @@ Bool VG_(get_filename_linenum) ( Addr a,
    if (dirname) {
       /* caller wants directory info too .. */
       *dirname = ML_(fndn_ix2dirname) (si, fndn_ix);
-      *dirname_available = (*dirname)[0] != '\0';
    }
 
    return True;
@@ -2258,9 +2251,10 @@ const HChar* VG_(describe_IP)(Addr eip, const InlIPCursor *iipc)
       know_srcloc  = VG_(get_filename_linenum)(
                         eip, 
                         &buf_srcloc, 
-                        &buf_dirname, &know_dirinfo,
+                        &buf_dirname,
                         &lineno 
                      );
+      know_dirinfo = buf_dirname[0] != '\0';
    } else {
       const DiInlLoc *cur_inl = iipc && iipc->cur_inltab >= 0
          ? & iipc->di->inltab[iipc->cur_inltab]

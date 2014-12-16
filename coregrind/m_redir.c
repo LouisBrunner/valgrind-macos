@@ -1181,6 +1181,10 @@ static void add_hardwired_spec (const  HChar* sopatt, const HChar* fnpatt,
    vg_assert(topSpecs->next == NULL);
    vg_assert(topSpecs->seginfo == NULL);
    /* FIXED PARTS */
+   /* Note, that these CONST_CAST will not cause a problem, in the sense
+      that VG_(redir_notify_delete_DebugInfo) will delete them. The reason
+      is that the TopSpec here has seginfo == NULL and such a TopSpec will
+      never be freed. See the asserts at the beginning of said function. */
    spec->from_sopatt = CONST_CAST(HChar *,sopatt);
    spec->from_fnpatt = CONST_CAST(HChar *,fnpatt);
    spec->to_addr     = to_addr;

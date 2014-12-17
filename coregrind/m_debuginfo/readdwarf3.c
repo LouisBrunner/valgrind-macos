@@ -1794,14 +1794,14 @@ XArray* read_dirname_xa (DebugInfo* di, const HChar *compdir,
 {
    XArray*        dirname_xa;   /* xarray of HChar* dirname */
    const HChar*   dirname;
-   UInt           compdir_len = 0;
+   UInt           compdir_len;
 
    dirname_xa = VG_(newXA) (ML_(dinfo_zalloc), "di.rdxa.1", ML_(dinfo_free),
                             sizeof(HChar*) );
 
    if (compdir == NULL) {
       dirname = ".";
-      compdir_len = 0;
+      compdir_len = 1;
    } else {
       dirname = compdir;
       compdir_len = VG_(strlen)(compdir);
@@ -1813,32 +1813,31 @@ XArray* read_dirname_xa (DebugInfo* di, const HChar *compdir,
 
    while (peek_UChar(c) != 0) {
 
-#     define NBUF 4096
-      static HChar buf[NBUF];
       DiCursor cur = get_AsciiZ(c);
       HChar* data_str = ML_(cur_read_strdup)( cur, "dirname_xa.1" );
       TRACE_D3("  %s\n", data_str);
 
       /* If data_str[0] is '/', then 'data' is an absolute path and we
-         don't mess with it.  Otherwise, if we can, construct the
+         don't mess with it.  Otherwise, construct the
          path 'compdir' ++ "/" ++ 'data'. */
 
       if (data_str[0] != '/' 
           /* not an absolute path */
           && compdir
           /* actually got something sensible for compdir */
-          && compdir_len
-             + VG_(strlen)(data_str) + 5/*paranoia*/ < NBUF
-          /* it's short enough to concatenate */) 
+          && compdir_len)
       {
-         buf[0] = 0;
-         VG_(strcat)(buf, compdir);
+         SizeT  len = compdir_len + 1 + VG_(strlen)(data_str);
+         HChar *buf = ML_(dinfo_zalloc)("dirname_xa.2", len + 1);
+
+         VG_(strcpy)(buf, compdir);
          VG_(strcat)(buf, "/");
          VG_(strcat)(buf, data_str);
-         vg_assert(VG_(strlen)(buf) < NBUF);
-         dirname = ML_(addStr)(di,buf,-1);
+
+         dirname = ML_(addStr)(di, buf, len);
          VG_(addToXA) (dirname_xa, &dirname);
          if (0) VG_(printf)("rel path  %s\n", buf);
+         ML_(dinfo_free)(buf);
       } else {
          /* just use 'data'. */
          dirname = ML_(addStr)(di,data_str,-1);
@@ -1847,8 +1846,6 @@ XArray* read_dirname_xa (DebugInfo* di, const HChar *compdir,
       }
 
       ML_(dinfo_free)(data_str);
-
-#     undef NBUF
    }
 
    TRACE_D3 ("\n");

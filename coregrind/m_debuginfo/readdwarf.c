@@ -518,35 +518,33 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
 
    while (ML_(cur_read_UChar)(data) != 0) {
 
-#     define NBUF 4096
-      static HChar buf[NBUF];
-
       HChar* data_str = ML_(cur_read_strdup)(data, "di.rd2l.1");
       if (di->ddump_line)
          VG_(printf)("  %s\n", data_str);
 
       /* If data[0] is '/', then 'data' is an absolute path and we
-         don't mess with it.  Otherwise, if we can, construct the
+         don't mess with it.  Otherwise, construct the
          path 'ui->compdir' ++ "/" ++ 'data'. */
 
       if (data_str[0] != '/' 
           /* not an absolute path */
           && ML_(cur_is_valid)(ui->compdir)
           /* actually got something sensible for compdir */
-          && ML_(cur_strlen)(ui->compdir)
-             + VG_(strlen)(data_str) + 5/*paranoia*/ < NBUF
-          /* it's short enough to concatenate */) 
+          && ML_(cur_strlen)(ui->compdir))
       {
-         buf[0] = 0;
          HChar* compdir_str = ML_(cur_read_strdup)(ui->compdir, "di.rd2l.1b");
-         VG_(strcat)(buf, compdir_str);
+         SizeT  len = VG_(strlen)(compdir_str) + 1 + VG_(strlen)(data_str);
+         HChar *buf = ML_(dinfo_zalloc)("di.rd2l.1c", len + 1);
+
+         VG_(strcpy)(buf, compdir_str);
          VG_(strcat)(buf, "/");
          VG_(strcat)(buf, data_str);
-         vg_assert(VG_(strlen)(buf) < NBUF);
-         dirname = ML_(addStr)(di,buf,-1);
+
+         dirname = ML_(addStr)(di, buf, len);
          VG_(addToXA) (dirname_xa, &dirname);
          if (0) VG_(printf)("rel path  %s\n", buf);
          ML_(dinfo_free)(compdir_str);
+         ML_(dinfo_free)(buf);
       } else {
          /* just use 'data'. */
          dirname = ML_(addStr)(di,data_str,-1);
@@ -556,8 +554,6 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
 
       data = ML_(cur_plus)(data, VG_(strlen)(data_str) + 1);
       ML_(dinfo_free)(data_str);
-
-#     undef NBUF
    }
 
    if (di->ddump_line)

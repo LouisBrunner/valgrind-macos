@@ -250,7 +250,7 @@ static SysRes do_clone ( ThreadId ptid,
    ctst->arch.vex.guest_r2 = 0;
 
    if (sp != 0)
-      ctst->arch.vex.guest_r15 = sp;
+      ctst->arch.vex.guest_SP = sp;
 
    ctst->os_state.parent = ptid;
 

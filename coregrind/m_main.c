@@ -2666,9 +2666,6 @@ void shutdown_actions_NORETURN( ThreadId tid,
 static void final_tidyup(ThreadId tid)
 {
 #if !defined(VGO_darwin)
-#  if defined(VGP_ppc64be_linux)
-   Addr r2;
-#  endif
    Addr __libc_freeres_wrapper = VG_(client___libc_freeres_wrapper);
 
    vg_assert(VG_(is_running_thread)(tid));
@@ -2679,7 +2676,7 @@ static void final_tidyup(ThreadId tid)
       return;			/* can't/won't do it */
 
 #  if defined(VGP_ppc64be_linux)
-   r2 = VG_(get_tocptr)( __libc_freeres_wrapper );
+   Addr r2 = VG_(get_tocptr)( __libc_freeres_wrapper );
    if (r2 == 0) {
       VG_(message)(Vg_UserMsg, 
                    "Caught __NR_exit, but can't run __libc_freeres()\n");

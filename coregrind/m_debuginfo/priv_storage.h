@@ -1108,8 +1108,8 @@ extern DebugInfoMapping* ML_(find_rx_mapping) ( DebugInfo* di,
 
 /* ------ Misc ------ */
 
-/* Show a non-fatal debug info reading error.  Use vg_panic if
-   terminal.  'serious' errors are always shown, not 'serious' ones
+/* Show a non-fatal debug info reading error.  Use VG_(core_panic) for
+   fatal errors.  'serious' errors are always shown, not 'serious' ones
    are shown only at verbosity level 2 and above. */
 extern 
 void ML_(symerr) ( const DebugInfo* di, Bool serious, const HChar* msg );

@@ -59,8 +59,8 @@
 /*--- Misc (printing, errors)                              ---*/
 /*------------------------------------------------------------*/
 
-/* Show a non-fatal debug info reading error.  Use vg_panic if
-   terminal.  'serious' errors are shown regardless of the
+/* Show a non-fatal debug info reading error.  Use VG_(core_panic) for
+   fatal errors.  'serious' errors are shown regardless of the
    verbosity setting. */
 void ML_(symerr) ( const DebugInfo* di, Bool serious, const HChar* msg )
 {

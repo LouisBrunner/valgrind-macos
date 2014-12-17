@@ -1585,10 +1585,11 @@ Bool VG_(translate) ( ThreadId tid,
    vex_abiinfo.guest_stack_redzone_size = VG_STACK_REDZONE_SZB;
 
 #  if defined(VGP_amd64_linux)
-   vex_abiinfo.guest_amd64_assume_fs_is_zero  = True;
+   vex_abiinfo.guest_amd64_assume_fs_is_const = True;
+   vex_abiinfo.guest_amd64_assume_gs_is_const = True;
 #  endif
 #  if defined(VGP_amd64_darwin)
-   vex_abiinfo.guest_amd64_assume_gs_is_0x60  = True;
+   vex_abiinfo.guest_amd64_assume_gs_is_const = True;
 #  endif
 #  if defined(VGP_ppc32_linux)
    vex_abiinfo.guest_ppc_zap_RZ_at_blr        = False;

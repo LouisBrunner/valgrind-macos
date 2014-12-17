@@ -198,7 +198,7 @@ void transfer_register (ThreadId tid, int abs_regno, void * buf,
    case 20: *mod = False; break; //GDBTD VG_(transfer) (&amd64->guest_DS, buf, dir, size, mod);
    case 21: *mod = False; break; //GDBTD VG_(transfer) (&amd64->guest_ES, buf, dir, size, mod);
    case 22: *mod = False; break; //GDBTD VG_(transfer) (&amd64->guest_FS, buf, dir, size, mod);
-   case 23: VG_(transfer) (&amd64->guest_GS_0x60, buf, dir, size, mod); break;
+   case 23: VG_(transfer) (&amd64->guest_GS_CONST, buf, dir, size, mod); break;
    case 24:
    case 25:
    case 26:
@@ -349,7 +349,7 @@ const char* target_xml (Bool shadow_mode)
 static CORE_ADDR** target_get_dtv (ThreadState *tst)
 {
    VexGuestAMD64State* amd64 = (VexGuestAMD64State*)&tst->arch.vex;
-   return (CORE_ADDR**)((CORE_ADDR)amd64->guest_FS_ZERO + 0x8);
+   return (CORE_ADDR**)((CORE_ADDR)amd64->guest_FS_CONST + 0x8);
 }
 
 static struct valgrind_target_ops low_target = {

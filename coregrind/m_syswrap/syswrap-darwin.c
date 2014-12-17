@@ -8636,7 +8636,7 @@ PRE(thread_fast_set_cthread_self)
    {
       ThreadState *tst = VG_(get_ThreadState)(tid);
       tst->os_state.pthread = ARG1;
-      tst->arch.vex.guest_GS_0x60 = ARG1;
+      tst->arch.vex.guest_GS_CONST = ARG1;
       // SET_STATUS_Success(0x60);
       // see comments on x86 case just above
       SET_STATUS_from_SysRes(

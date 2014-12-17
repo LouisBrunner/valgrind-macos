@@ -275,7 +275,7 @@ static SysRes do_clone ( ThreadId ptid,
    if (flags & VKI_CLONE_SETTLS) {
       if (debug)
 	 VG_(printf)("clone child has SETTLS: tls at %#lx\n", tlsaddr);
-      ctst->arch.vex.guest_FS_ZERO = tlsaddr;
+      ctst->arch.vex.guest_FS_CONST = tlsaddr;
    }
 
    flags &= ~VKI_CLONE_SETTLS;
@@ -506,21 +506,31 @@ PRE(sys_arch_prctl)
    /* "do" the syscall ourselves; the kernel never sees it */
    if (ARG1 == VKI_ARCH_SET_FS) {
       tst = VG_(get_ThreadState)(tid);
-      tst->arch.vex.guest_FS_ZERO = ARG2;
+      tst->arch.vex.guest_FS_CONST = ARG2;
    }
    else if (ARG1 == VKI_ARCH_GET_FS) {
       PRE_MEM_WRITE("arch_prctl(addr)", ARG2, sizeof(unsigned long));
       tst = VG_(get_ThreadState)(tid);
-      *(unsigned long *)ARG2 = tst->arch.vex.guest_FS_ZERO;
+      *(unsigned long *)ARG2 = tst->arch.vex.guest_FS_CONST;
+      POST_MEM_WRITE(ARG2, sizeof(unsigned long));
+   }
+   else if (ARG1 == VKI_ARCH_SET_GS) {
+      tst = VG_(get_ThreadState)(tid);
+      tst->arch.vex.guest_GS_CONST = ARG2;
+   }
+   else if (ARG1 == VKI_ARCH_GET_GS) {
+      PRE_MEM_WRITE("arch_prctl(addr)", ARG2, sizeof(unsigned long));
+      tst = VG_(get_ThreadState)(tid);
+      *(unsigned long *)ARG2 = tst->arch.vex.guest_GS_CONST;
       POST_MEM_WRITE(ARG2, sizeof(unsigned long));
    }
    else {
-      VG_(core_panic)("Unsupported arch_prtctl option");
+      VG_(core_panic)("Unsupported arch_prctl option");
    }
 
    /* Note; the Status writeback to guest state that happens after
-      this wrapper returns does not change guest_FS_ZERO; hence that
-      direct assignment to the guest state is safe here. */
+      this wrapper returns does not change guest_FS_CONST or guest_GS_CONST;
+      hence that direct assignment to the guest state is safe here. */
    SET_STATUS_Success( 0 );
 }
 

@@ -1858,7 +1858,7 @@ SizeT get_shm_size ( Int shmid )
 #ifdef __NR_shmctl
 #  ifdef VKI_IPC_64
    struct vki_shmid64_ds buf;
-#    ifdef VGP_amd64_linux
+#    if defined(VGP_amd64_linux) || defined(VGP_arm64_linux)
      /* See bug 222545 comment 7 */
      SysRes __res = VG_(do_syscall3)(__NR_shmctl, shmid, 
                                      VKI_IPC_STAT, (UWord)&buf);

@@ -1115,6 +1115,9 @@ get_irop(IROp op)
             if (rc != 0) return NULL;
          }
          break;
+         /* Other */
+         default:
+            break;
          }
          return p->s390x ? p : NULL;
 #endif

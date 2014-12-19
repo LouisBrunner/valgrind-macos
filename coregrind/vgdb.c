@@ -1066,33 +1066,39 @@ void standalone_send_commands(int pid,
 static
 void report_pid (int pid, Bool on_stdout)
 {
-   char cmdline_file[100];
-   char cmdline[1000];
-   int fd;
-   int i, sz;
+   char cmdline_file[50];   // large enough
+   int fd, i;
+   FILE *out = on_stdout ? stdout : stderr;
 
    sprintf(cmdline_file, "/proc/%d/cmdline", pid);
    fd = open (cmdline_file, O_RDONLY);
    if (fd == -1) {
       DEBUG(1, "error opening cmdline file %s %s\n", 
             cmdline_file, strerror(errno));
-      sprintf(cmdline, "(could not open process command line)");
+      XERROR(errno, "could not open process command line for pid %d\n", pid);
    } else {
-      sz = read(fd, cmdline, 1000);
-      for (i = 0; i < sz; i++)
-         if (cmdline[i] == 0)
-            cmdline[i] = ' ';
-      if (sz >= 0)
-         cmdline[sz] = 0;
-      else {
-         DEBUG(1, "error reading cmdline file %s %s\n", 
-               cmdline_file, strerror(errno));
-         sprintf(cmdline, "(could not read process command line)");
+      char cmdline[100];
+      ssize_t sz;
+
+      fprintf(out, "use --pid=%d for ", pid);
+      while ((sz = read(fd, cmdline, sizeof cmdline - 1)) != 0) {
+         if (sz == -1) {
+            DEBUG(1, "error reading cmdline file %s %s\n", 
+                  cmdline_file, strerror(errno));
+            XERROR(errno, "could not read process command line for pid %d\n",
+                   pid);
+         } else {
+            for (i = 0; i < sz; i++)
+               if (cmdline[i] == 0)
+                  cmdline[i] = ' ';
+            cmdline[sz] = 0;
+            fprintf(out, "%s", cmdline);
+         }
       }
+      fprintf(out, "\n");
       close (fd);
    }  
-   fprintf((on_stdout ? stdout : stderr), "use --pid=%d for %s\n", pid, cmdline);
-   fflush((on_stdout ? stdout : stderr));
+   fflush(out);
 }
 
 static

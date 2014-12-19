@@ -1089,7 +1089,7 @@ static void sprintf_Byte ( /*OUT*/HChar* dst, UChar byte ) {
 static Bool is_sane_Descr_and_Tree ( UShort descr, SVal* tree ) {
    Word  i;
    UChar validbits = descr_to_validbits(descr);
-   HChar buf[128], buf2[128];
+   HChar buf[128], buf2[128];    // large enough
    if (validbits == 0)
       goto bad;
    for (i = 0; i < 8; i++) {

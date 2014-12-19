@@ -1656,8 +1656,9 @@ Bool CLG_(handle_client_request)(ThreadId tid, UWord *args, UWord *ret)
 
    case VG_USERREQ__DUMP_STATS_AT:
      {
-       HChar buf[512];
-       VG_(sprintf)(buf,"Client Request: %s", (HChar*)args[1]);
+       const HChar *arg = (HChar*)args[1];
+       HChar buf[30 + VG_(strlen)(arg)];    // large enough
+       VG_(sprintf)(buf,"Client Request: %s", arg);
        CLG_(dump_profile)(buf, True);
        *ret = 0;                 /* meaningless */
      }

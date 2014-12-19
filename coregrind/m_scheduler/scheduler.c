@@ -267,8 +267,7 @@ void VG_(acquire_BigLock)(ThreadId tid, const HChar* who)
 
 #if 0
    if (VG_(clo_trace_sched)) {
-      HChar buf[100];
-      vg_assert(VG_(strlen)(who) <= 100-50);
+      HChar buf[VG_(strlen)(who) + 30];
       VG_(sprintf)(buf, "waiting for lock (%s)", who);
       print_sched_event(tid, buf);
    }
@@ -298,8 +297,7 @@ void VG_(acquire_BigLock)(ThreadId tid, const HChar* who)
    }
 
    if (VG_(clo_trace_sched)) {
-      HChar buf[150];
-      vg_assert(VG_(strlen)(who) <= 150-50);
+      HChar buf[VG_(strlen)(who) + 30];
       VG_(sprintf)(buf, " acquired lock (%s)", who);
       print_sched_event(tid, buf);
    }
@@ -328,10 +326,9 @@ void VG_(release_BigLock)(ThreadId tid, ThreadStatus sleepstate,
    VG_(running_tid) = VG_INVALID_THREADID;
 
    if (VG_(clo_trace_sched)) {
-      HChar buf[200];
-      vg_assert(VG_(strlen)(who) <= 200-100);
-      VG_(sprintf)(buf, "releasing lock (%s) -> %s",
-                        who, VG_(name_of_ThreadStatus)(sleepstate));
+      const HChar *status = VG_(name_of_ThreadStatus)(sleepstate);
+      HChar buf[VG_(strlen)(who) + VG_(strlen)(status) + 30];
+      VG_(sprintf)(buf, "releasing lock (%s) -> %s", who, status);
       print_sched_event(tid, buf);
    }
 

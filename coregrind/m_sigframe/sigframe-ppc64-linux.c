@@ -114,7 +114,7 @@ struct rt_sigframe {
    void*                 puc;
    vki_siginfo_t         info;
    struct vg_sig_private priv;
-   UChar                 abigap[288];
+   UChar                 abigap[288];   // unused
 };
 
 #define SET_SIGNAL_LR(zztst, zzval)                          \

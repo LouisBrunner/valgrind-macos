@@ -107,7 +107,7 @@ struct nonrt_sigframe {
    struct vki_sigcontext sigcontext;
    struct vki_mcontext mcontext;
    struct vg_sig_private priv;
-   unsigned char abigap[224];
+   unsigned char abigap[224];    // unused
 };
 
 /* Structure put on stack for signal handlers with SA_SIGINFO set. */
@@ -116,7 +116,7 @@ struct rt_sigframe {
    vki_siginfo_t siginfo;
    struct vki_ucontext ucontext;
    struct vg_sig_private priv;
-   unsigned char abigap[224];
+   unsigned char abigap[224];    // unused
 };
 
 #define SET_SIGNAL_LR(zztst, zzval)                          \

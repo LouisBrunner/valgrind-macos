@@ -1116,7 +1116,7 @@ Bool VG_(am_do_sync_check) ( const HChar* fn,
 
 #     if 0
       {
-         HChar buf[100];
+         HChar buf[100];   // large enough
          VG_(am_show_nsegments)(0,"post syncheck failure");
          VG_(sprintf)(buf, "/bin/cat /proc/%d/maps", VG_(getpid)());
          VG_(system)(buf);

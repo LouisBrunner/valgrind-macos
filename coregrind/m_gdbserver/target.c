@@ -43,7 +43,7 @@ static struct valgrind_target_ops the_low_target;
 static
 char *image_ptid(unsigned long ptid)
 {
-  static char result[100];
+  static char result[50];    // large enough
   VG_(sprintf) (result, "id %ld", ptid);
   return result;
 }

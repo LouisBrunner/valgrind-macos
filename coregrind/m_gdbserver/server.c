@@ -720,7 +720,6 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
       unsigned long gdb_id;
       struct thread_info *ti;
       ThreadState *tst;
-      char status[100];
       
       gdb_id = strtoul (&arg_own_buf[17], NULL, 16);
       ti = gdb_id_to_thread (gdb_id);
@@ -728,6 +727,13 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
          tst = (ThreadState *) inferior_target_data (ti);
          /* Additional info is the tid, the thread status and the thread's
             name, if any. */
+         SizeT len = strlen(VG_(name_of_ThreadStatus)(tst->status)) + 20;
+         if (tst->thread_name) len += strlen(tst->thread_name);
+         /* As the string will be hexified and copied into own_buf we need
+            to limit the length to avoid buffer overflow. */
+         if (len * 2 > (PBUFSIZ + POVERHSIZ))
+            len = (PBUFSIZ + POVERHSIZ) / 2;
+         char status[len];
          if (tst->thread_name) {
             VG_(snprintf) (status, sizeof(status), "tid %d %s %s",
                            tst->tid, 

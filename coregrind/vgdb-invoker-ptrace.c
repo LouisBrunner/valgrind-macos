@@ -226,7 +226,7 @@ HChar* name_of_ThreadStatus ( ThreadStatus status )
 static 
 char *status_image (int status)
 {
-   static char result[256];
+   static char result[256];  // large enough
    int sz = 0;
 #define APPEND(...) sz += snprintf (result+sz, 256 - sz - 1, __VA_ARGS__)
   

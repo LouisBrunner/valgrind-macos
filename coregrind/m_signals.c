@@ -1400,7 +1400,7 @@ void push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo,
 
 const HChar *VG_(signame)(Int sigNo)
 {
-   static HChar buf[20];
+   static HChar buf[20];  // large enough
 
    switch(sigNo) {
       case VKI_SIGHUP:    return "SIGHUP";

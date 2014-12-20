@@ -720,7 +720,7 @@ HChar *inet6_to_name(struct vki_sockaddr_in6 *sa, UInt len, HChar *name)
    } else if (sa->sin6_port == 0) {
       VG_(sprintf)(name, "<unbound>");
    } else {
-      char addr[128];
+      HChar addr[100];    // large enough
       inet6_format(addr, (void *)&(sa->sin6_addr));
       VG_(sprintf)(name, "[%s]:%u", addr, VG_(ntohs)(sa->sin6_port));
    }
@@ -748,8 +748,8 @@ getsockdetails(Int fd)
    if(VG_(getsockname)(fd, (struct vki_sockaddr *)&(laddr.a), &llen) != -1) {
       switch(laddr.a.sa_family) {
       case VKI_AF_INET: {
-         static char lname[32];
-         static char pname[32];
+         HChar lname[32];   // large enough
+         HChar pname[32];   // large enough
          struct vki_sockaddr_in paddr;
          Int plen = sizeof(struct vki_sockaddr_in);
 
@@ -764,8 +764,8 @@ getsockdetails(Int fd)
          return;
          }
       case VKI_AF_INET6: {
-         static char lname[128];
-         static char pname[128];
+         HChar lname[128];  // large enough
+         HChar pname[128];  // large enough
          struct vki_sockaddr_in6 paddr;
          Int plen = sizeof(struct vki_sockaddr_in6);
 
@@ -3812,7 +3812,7 @@ PRE(sys_open)
       fake file we cooked up at startup (in m_main).  Also, seek the
       cloned fd back to the start. */
    {
-      HChar  name[30];
+      HChar  name[30];   // large enough
       HChar* arg1s = (HChar*) ARG1;
       SysRes sres;
 
@@ -3837,7 +3837,7 @@ PRE(sys_open)
       fake file we cooked up at startup (in m_main).  Also, seek the
       cloned fd back to the start. */
    {
-      HChar  name[30];
+      HChar  name[30];   // large enough
       HChar* arg1s = (HChar*) ARG1;
       SysRes sres;
 
@@ -3985,7 +3985,7 @@ PRE(sys_readlink)
        * Handle the case where readlink is looking at /proc/self/exe or
        * /proc/<pid>/exe.
        */
-      HChar name[25];
+      HChar  name[30];   // large enough
       HChar* arg1s = (HChar*) ARG1;
       VG_(sprintf)(name, "/proc/%d/exe", VG_(getpid)());
       if (ML_(safe_to_deref)(arg1s, 1) &&

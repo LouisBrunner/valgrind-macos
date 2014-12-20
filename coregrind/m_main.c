@@ -287,8 +287,8 @@ static void usage_NORETURN ( Bool debug_help )
 "\n";
 
    const HChar* gdb_path = GDB_PATH;
-   HChar default_alignment[30];
-   HChar default_redzone_size[30];
+   HChar default_alignment[30];      // large enough
+   HChar default_redzone_size[30];   // large enough
 
    // Ensure the message goes to stdout
    VG_(log_output_sink).fd = 1;
@@ -2208,7 +2208,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    }
 
    if (VG_(clo_xml)) {
-      HChar buf[50];
+      HChar buf[50];    // large enough
       VG_(elapsed_wallclock_time)(buf, sizeof buf);
       VG_(printf_xml)( "<status>\n"
                        "  <state>RUNNING</state>\n"
@@ -2545,7 +2545,7 @@ void shutdown_actions_NORETURN( ThreadId tid,
       VG_(message)(Vg_UserMsg, "\n");
 
    if (VG_(clo_xml)) {
-      HChar buf[50];
+      HChar buf[50];    // large enough
       VG_(elapsed_wallclock_time)(buf, sizeof buf);
       VG_(printf_xml)( "<status>\n"
                               "  <state>FINISHED</state>\n"

@@ -739,8 +739,7 @@ MaybeULong ML_(sizeOfType)( const XArray* /* of TyEnt */ tyents,
 
 static void copy_UWord_into_XA ( XArray* /* of HChar */ xa,
                                  UWord uw ) {
-   HChar buf[32];
-   VG_(memset)(buf, 0, sizeof(buf));
+   HChar buf[32];     // large enough 
    VG_(sprintf)(buf, "%lu", uw);
    VG_(addBytesToXA)( xa, buf, VG_(strlen)(buf));
 }

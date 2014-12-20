@@ -52,7 +52,7 @@ void show_SB_profile ( const SBProfEntry tops[], UInt n_tops,
    ULong score_cumul, score_cumul_saved, score_here;
    Int   r; /* must be signed */
 
-   HChar ecs_txt[50];
+   HChar ecs_txt[50];    // large enough
    if (ecs_done > 0) {
       VG_(sprintf)(ecs_txt, "%'llu ecs done", ecs_done);
    } else {

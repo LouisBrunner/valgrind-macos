@@ -1091,7 +1091,7 @@ static void handle_syscall(ThreadId tid, UInt trc)
       syscall runs. */
 
    if (VG_(clo_sanity_level) >= 3) {
-      HChar buf[50];
+      HChar buf[50];    // large enough
       VG_(sprintf)(buf, "(BEFORE SYSCALL, tid %d)", tid);
       Bool ok = VG_(am_do_sync_check)(buf, __FILE__, __LINE__);
       vg_assert(ok);
@@ -1100,7 +1100,7 @@ static void handle_syscall(ThreadId tid, UInt trc)
    SCHEDSETJMP(tid, jumped, VG_(client_syscall)(tid, trc));
 
    if (VG_(clo_sanity_level) >= 3) {
-      HChar buf[50];
+      HChar buf[50];    // large enough
       VG_(sprintf)(buf, "(AFTER SYSCALL, tid %d)", tid);
       Bool ok = VG_(am_do_sync_check)(buf, __FILE__, __LINE__);
       vg_assert(ok);
@@ -1320,8 +1320,9 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
                               tid, 0/*ignored*/, False );
 
       if (VG_(clo_trace_sched) && VG_(clo_verbosity) > 2) {
-	 HChar buf[50];
-	 VG_(sprintf)(buf, "TRC: %s", name_of_sched_event(trc[0]));
+         const HChar *name = name_of_sched_event(trc[0]);
+         HChar buf[VG_(strlen)(name) + 10];    // large enough
+	 VG_(sprintf)(buf, "TRC: %s", name);
 	 print_sched_event(tid, buf);
       }
 

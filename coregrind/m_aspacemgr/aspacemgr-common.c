@@ -321,7 +321,7 @@ Bool ML_(am_resolve_filename) ( Int fd, /*OUT*/HChar* buf, Int nbuf )
 {
 #if defined(VGO_linux)
    Int i;
-   HChar tmp[64];
+   HChar tmp[64];    // large enough
    for (i = 0; i < nbuf; i++) buf[i] = 0;
    ML_(am_sprintf)(tmp, "/proc/self/fd/%d", fd);
    if (ML_(am_readlink)(tmp, buf, nbuf) > 0 && buf[0] == '/')

@@ -2264,7 +2264,7 @@ static Bool linux_kernel_2_6_22(void)
 {
    static Int result = -1;
    Int fd, read;
-   HChar release[64];
+   HChar release[64];   // large enough
    SysRes res;
 
    if (result == -1) {
@@ -2273,12 +2273,13 @@ static Bool linux_kernel_2_6_22(void)
          return False;
       fd = sr_Res(res);
       read = VG_(read)(fd, release, sizeof(release) - 1);
-      vg_assert(read >= 0);
+      if (read < 0)
+         return False;
       release[read] = 0;
       VG_(close)(fd);
       //VG_(printf)("kernel release = %s\n", release);
-      result = (VG_(strncmp)(release, "2.6.22", 6) == 0
-                && (release[6] < '0' || release[6] > '9'));
+      result = VG_(strncmp)(release, "2.6.22", 6) == 0
+               && ! VG_(isdigit)(release[6]);
    }
    vg_assert(result == 0 || result == 1);
    return result == 1;
@@ -4384,7 +4385,7 @@ POST(sys_socketpair)
 
 PRE(sys_openat)
 {
-   HChar  name[30];
+   HChar  name[30];   // large enough
    SysRes sres;
 
    if (ARG3 & VKI_O_CREAT) {
@@ -4566,7 +4567,7 @@ PRE(sys_symlinkat)
 
 PRE(sys_readlinkat)
 {
-   HChar name[25];
+   HChar name[30];       // large enough
    Word  saved = SYSNO;
 
    PRINT("sys_readlinkat ( %ld, %#lx(%s), %#lx, %llu )", ARG1,ARG2,(char*)ARG2,ARG3,(ULong)ARG4);
@@ -4826,7 +4827,7 @@ PRE(sys_process_vm_writev)
 PRE(sys_sendmmsg)
 {
    struct vki_mmsghdr *mmsg = (struct vki_mmsghdr *)ARG2;
-   HChar name[32];
+   HChar name[40];     // large enough
    UInt i;
    *flags |= SfMayBlock;
    PRINT("sys_sendmmsg ( %ld, %#lx, %ld, %ld )",ARG1,ARG2,ARG3,ARG4);
@@ -4854,7 +4855,7 @@ POST(sys_sendmmsg)
 PRE(sys_recvmmsg)
 {
    struct vki_mmsghdr *mmsg = (struct vki_mmsghdr *)ARG2;
-   HChar name[32];
+   HChar name[40];     // large enough
    UInt i;
    *flags |= SfMayBlock;
    PRINT("sys_recvmmsg ( %ld, %#lx, %ld, %ld, %#lx )",ARG1,ARG2,ARG3,ARG4,ARG5);
@@ -4875,7 +4876,7 @@ POST(sys_recvmmsg)
 {
    if (RES > 0) {
       struct vki_mmsghdr *mmsg = (struct vki_mmsghdr *)ARG2;
-      HChar name[32];
+      HChar name[32];    // large enough
       UInt i;
       for (i = 0; i < RES; i++) {
          VG_(sprintf)(name, "mmsg[%u].msg_hdr", i);

@@ -748,8 +748,7 @@ void read_elf_symtab__normal(
      )
 {
    if (escn_strtab->img == NULL || escn_symtab->img == NULL) {
-      HChar buf[80];  // FIXME: allocate dynamically
-      vg_assert(VG_(strlen)(tab_name) < 40);
+      HChar buf[VG_(strlen)(tab_name) + 40];
       VG_(sprintf)(buf, "   object doesn't have a %s", tab_name);
       ML_(symerr)(di, False, buf);
       return;
@@ -879,8 +878,7 @@ void read_elf_symtab__ppc64be_linux(
    TempSym    *prev;
 
    if (escn_strtab->img == NULL || escn_symtab->img == NULL) {
-      HChar buf[80];  // FIXME: allocate dynamically
-      vg_assert(VG_(strlen)(tab_name) < 40);
+      HChar buf[VG_(strlen)(tab_name) + 40];
       VG_(sprintf)(buf, "   object doesn't have a %s", tab_name);
       ML_(symerr)(di, False, buf);
       return;

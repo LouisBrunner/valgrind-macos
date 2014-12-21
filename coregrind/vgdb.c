@@ -1062,7 +1062,10 @@ void standalone_send_commands(int pid,
 }
 
 /* report to user the existence of a vgdb-able valgrind process 
-   with given pid */
+   with given pid.
+   Note: this function does not exit (XERROR0 if an error is encountered
+   while producing the command line for pid, as this is not critical
+   and at least on MacOS, reading cmdline is not available. */
 static
 void report_pid (int pid, Bool on_stdout)
 {
@@ -1070,30 +1073,28 @@ void report_pid (int pid, Bool on_stdout)
    int fd, i;
    FILE *out = on_stdout ? stdout : stderr;
 
+   fprintf(out, "use --pid=%d for ", pid);
+
    sprintf(cmdline_file, "/proc/%d/cmdline", pid);
    fd = open (cmdline_file, O_RDONLY);
    if (fd == -1) {
       DEBUG(1, "error opening cmdline file %s %s\n", 
             cmdline_file, strerror(errno));
-      XERROR(errno, "could not open process command line for pid %d\n", pid);
+      fprintf(out, "(could not open process command line)\n");
    } else {
       char cmdline[100];
       ssize_t sz;
-
-      fprintf(out, "use --pid=%d for ", pid);
       while ((sz = read(fd, cmdline, sizeof cmdline - 1)) != 0) {
-         if (sz == -1) {
-            DEBUG(1, "error reading cmdline file %s %s\n", 
-                  cmdline_file, strerror(errno));
-            XERROR(errno, "could not read process command line for pid %d\n",
-                   pid);
-         } else {
-            for (i = 0; i < sz; i++)
-               if (cmdline[i] == 0)
-                  cmdline[i] = ' ';
-            cmdline[sz] = 0;
-            fprintf(out, "%s", cmdline);
-         }
+         for (i = 0; i < sz; i++)
+            if (cmdline[i] == 0)
+               cmdline[i] = ' ';
+         cmdline[sz] = 0;
+         fprintf(out, "%s", cmdline);
+      }
+      if (sz == -1) {
+         DEBUG(1, "error reading cmdline file %s %s\n", 
+               cmdline_file, strerror(errno));
+         fprintf(out, "(error reading process command line)");
       }
       fprintf(out, "\n");
       close (fd);

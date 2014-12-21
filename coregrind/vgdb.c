@@ -1063,7 +1063,7 @@ void standalone_send_commands(int pid,
 
 /* report to user the existence of a vgdb-able valgrind process 
    with given pid.
-   Note: this function does not used XERROR if an error is encountered
+   Note: this function does not use XERROR if an error is encountered
    while producing the command line for pid, as this is not critical
    and at least on MacOS, reading cmdline is not available. */
 static

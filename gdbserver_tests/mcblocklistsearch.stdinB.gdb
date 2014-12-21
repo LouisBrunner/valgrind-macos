@@ -18,7 +18,7 @@ set $0xA = t
 continue
 #
 # check who points at A
-eval "monitor who_points_at 0x%x 1", $0xA
+eval "monitor who_points_at 0x%lx 1", $0xA
 # do a leak check, and then list the blocks lost
 echo full leak search \n
 monitor leak_check full reachable any

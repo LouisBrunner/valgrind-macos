@@ -130,7 +130,7 @@ void VG_(sigframe_create) ( ThreadId tid,
    frame = (struct hacky_sigframe *) rsp;
 
    /* clear it (very conservatively) (why so conservatively??) */
-   VG_(memset)(&frame->lower_guardzone, 0, 512);
+   VG_(memset)(&frame->lower_guardzone, 0, sizeof frame->lower_guardzone);
    VG_(memset)(&frame->gst,      0, sizeof(VexGuestAMD64State));
    VG_(memset)(&frame->gshadow1, 0, sizeof(VexGuestAMD64State));
    VG_(memset)(&frame->gshadow2, 0, sizeof(VexGuestAMD64State));

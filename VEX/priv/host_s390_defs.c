@@ -6456,7 +6456,7 @@ s390_sprintf(HChar *buf, const HChar *fmt, ...)
 const HChar *
 s390_insn_as_string(const s390_insn *insn)
 {
-   static HChar buf[300];
+   static HChar buf[300];  // large enough
    const HChar *op;
    HChar *p;
 

@@ -1823,7 +1823,7 @@ void do_client_request ( ThreadId tid )
    switch (req_no) {
 
       case VG_USERREQ__CLIENT_CALL0: {
-         UWord (*f)(ThreadId) = (void*)arg[1];
+         UWord (*f)(ThreadId) = (__typeof__(f))arg[1];
 	 if (f == NULL)
 	    VG_(message)(Vg_DebugMsg, "VG_USERREQ__CLIENT_CALL0: func=%p\n", f);
 	 else
@@ -1831,7 +1831,7 @@ void do_client_request ( ThreadId tid )
          break;
       }
       case VG_USERREQ__CLIENT_CALL1: {
-         UWord (*f)(ThreadId, UWord) = (void*)arg[1];
+         UWord (*f)(ThreadId, UWord) = (__typeof__(f))arg[1];
 	 if (f == NULL)
 	    VG_(message)(Vg_DebugMsg, "VG_USERREQ__CLIENT_CALL1: func=%p\n", f);
 	 else
@@ -1839,7 +1839,7 @@ void do_client_request ( ThreadId tid )
          break;
       }
       case VG_USERREQ__CLIENT_CALL2: {
-         UWord (*f)(ThreadId, UWord, UWord) = (void*)arg[1];
+         UWord (*f)(ThreadId, UWord, UWord) = (__typeof__(f))arg[1];
 	 if (f == NULL)
 	    VG_(message)(Vg_DebugMsg, "VG_USERREQ__CLIENT_CALL2: func=%p\n", f);
 	 else
@@ -1847,7 +1847,7 @@ void do_client_request ( ThreadId tid )
          break;
       }
       case VG_USERREQ__CLIENT_CALL3: {
-         UWord (*f)(ThreadId, UWord, UWord, UWord) = (void*)arg[1];
+         UWord (*f)(ThreadId, UWord, UWord, UWord) = (__typeof__(f))arg[1];
 	 if (f == NULL)
 	    VG_(message)(Vg_DebugMsg, "VG_USERREQ__CLIENT_CALL3: func=%p\n", f);
 	 else

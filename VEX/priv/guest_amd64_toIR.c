@@ -31153,7 +31153,7 @@ DisResult disInstr_AMD64_WRK (
              Bool         sigill_diag
           )
 {
-   IRTemp    t1, t2, t3, t4, t5, t6;
+   IRTemp    t1, t2;
    UChar     pre;
    Int       n, n_prefixes;
    DisResult dres;
@@ -31186,7 +31186,7 @@ DisResult disInstr_AMD64_WRK (
    vassert(guest_RIP_next_assumed == 0);
    vassert(guest_RIP_next_mustcheck == False);
 
-   t1 = t2 = t3 = t4 = t5 = t6 = IRTemp_INVALID; 
+   t1 = t2 = IRTemp_INVALID; 
 
    DIP("\t0x%llx:  ", guest_RIP_bbstart+delta);
 

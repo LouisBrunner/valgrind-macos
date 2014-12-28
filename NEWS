@@ -18,8 +18,8 @@ Release 3.11.0 is under development, not yet released.
 * ==================== OTHER CHANGES ====================
 
 * Address description logic (used by memcheck and helgrind)
-  now describes anonymous or file mmap-ed segments and
-  shared memory segments.
+  now describes addressed in anonymous segments, file mmap-ed
+  segments, shared memory segments and the brk data segment.
 
 * Option --error-markers=<begin>,<end> can be used to mark
   the begin/end of errors in textual output mode, to facilitate
@@ -94,6 +94,8 @@ where XXXXXX is the bug number as listed below.
 340856  disInstr(arm64): unhandled instruction 0x1E634C45 (fcsel)
 340922  arm64: unhandled getgroups/setgroups syscalls
 341238  Recognize GCC5/DWARFv5 DW_LANG constants (Go, C11, C++11, C++14)
+341539  VG_(describe_addr) should not describe address as belonging to client
+        segment if it is past the heap end
 341789  aarch64: shmat fails with valgrind on ARMv8
 342063  wrong format specifier for test mcblocklistsearch in gdbserver_tests
 n-i-bz  Provide implementations of certain compiler builtins to support

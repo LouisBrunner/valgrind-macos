@@ -30,6 +30,7 @@
 */
 
 #include "pub_core_basics.h"
+#include "pub_core_clientstate.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcprint.h"
@@ -263,6 +264,27 @@ void VG_(describe_addr) ( Addr a, /*OUT*/AddrInfo* ai )
    /* Try to find a segment belonging to the client. */
    {
       const NSegment *seg = VG_(am_find_nsegment) (a);
+
+      /* Special case to detect the brk data segment. */
+      if (seg != NULL
+          && seg->kind == SkAnonC
+          && VG_(brk_limit) >= seg->start
+          && VG_(brk_limit) <= seg->end+1) {
+         /* Address a is in a Anon Client segment which contains
+            VG_(brk_limit). So, this segment is the brk data segment
+            as initimg-linux.c:setup_client_dataseg maps an anonymous
+            segment followed by a reservation, with one reservation
+            page that will never be used by syswrap-generic.c:do_brk,
+            when increasing VG_(brk_limit).
+            So, the brk data segment will never be merged with the
+            next segment, and so an address in that area will
+            either be in the brk data segment, or in the unmapped
+            part of the brk data segment reservation. */
+         ai->tag = Addr_BrkSegment;
+         ai->Addr.BrkSegment.brk_limit = VG_(brk_limit);
+         return;
+      }
+
       if (seg != NULL 
           && (seg->kind == SkAnonC 
               || seg->kind == SkFileC
@@ -326,6 +348,9 @@ void VG_(clear_addrinfo) ( AddrInfo* ai)
 
       case Addr_SectKind:
          VG_(free)(ai->Addr.SectKind.objname);
+         break;
+
+      case Addr_BrkSegment:
          break;
 
       case Addr_SegmentKind:
@@ -584,6 +609,26 @@ static void pp_addrinfo_WRK ( Addr a, const AddrInfo* ai, Bool mc,
                pp a dummy stacktrace made of this single address. */
             VG_(pp_StackTrace)( &a, 1 );
          }
+         break;
+
+      case Addr_BrkSegment:
+         if (a < ai->Addr.BrkSegment.brk_limit)
+            VG_(emit)( "%sAddress 0x%llx is in the brk data segment"
+                       " 0x%llx-0x%llx%s\n",
+                       xpre,
+                       (ULong)a,
+                       (ULong)VG_(brk_base),
+                       (ULong)ai->Addr.BrkSegment.brk_limit - 1,
+                       xpost );
+         else
+            VG_(emit)( "%sAddress 0x%llx is %lu bytes after "
+                       "the brk data segment limit"
+                       " 0x%llx%s\n",
+                       xpre,
+                       (ULong)a,
+                       a - ai->Addr.BrkSegment.brk_limit,
+                       (ULong)ai->Addr.BrkSegment.brk_limit,
+                       xpost );
          break;
 
       case Addr_SegmentKind:

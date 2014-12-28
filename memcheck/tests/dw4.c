@@ -19,11 +19,11 @@
 #include "memcheck/memcheck.h"
 
 /* Cause memcheck to complain about the address "a" and so to print
-   its best guess as to what "a" actually is.  a must be
-   addressible. */
-
+   its best guess as to what "a" actually is.*/
 void croak ( void* aV )
 {
+  if(VALGRIND_CHECK_MEM_IS_ADDRESSABLE(aV,1) != 0)
+     return;
   char* a = (char*)aV;
   char* undefp = malloc(1);
   char saved = *a;
@@ -82,5 +82,15 @@ int main ( void )
   croak( q);
   unlink(filename);
 
+  /* Describe memory in or past the heap end. */
+  void *addr = sbrk(0);
+  croak(addr); // in the first brk page, after brk_limit
+  sbrk(4 * 1024); // increase brk segment
+  croak(addr); // Now, must be inside.
+  addr = (void *) ((char*)addr + 2 * 1024);
+  croak(addr); // Must still be inside.
+  sbrk(-3*1024);
+  croak(addr); // Must now be after.
+  
   return 0;
 }

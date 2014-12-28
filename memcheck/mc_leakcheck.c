@@ -953,9 +953,9 @@ void scan_all_valid_memory_catcher ( Int sigNo, Addr addr )
 //   be A, while lower level cliques will be B and C. 
 /*
            A
-         /   \                          
+         /   \
         B     C
-       / \   / \ 
+       / \   / \
       D   E F   G
 */
 // Proper handling of top and lowest level clique allows block_list of a loss

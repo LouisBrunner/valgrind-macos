@@ -453,7 +453,7 @@ void LibVEX_default_VexControl ( /*OUT*/ VexControl* vcon );
    callback that you have previously specified in a call to
    LibVEX_Translate.  The storage allocated will only stay alive until
    translation of the current basic block is complete. */
-extern void* LibVEX_Alloc ( Int nbytes );
+extern void* LibVEX_Alloc ( SizeT nbytes );
 
 /* Show Vex allocation statistics. */
 extern void LibVEX_ShowAllocStats ( void );
@@ -532,7 +532,7 @@ extern void LibVEX_Init (
    void (*failure_exit) ( void ),
 
    /* logging output function */
-   void (*log_bytes) ( HChar*, Int nbytes ),
+   void (*log_bytes) ( const HChar*, SizeT nbytes ),
 
    /* debug paranoia level */
    Int debuglevel,

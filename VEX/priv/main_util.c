@@ -203,7 +203,7 @@ void vexSetAllocModeTEMP_and_clear ( void )
    translation of the current basic block is complete.
  */
 
-void* LibVEX_Alloc ( Int nbytes )
+void* LibVEX_Alloc ( SizeT nbytes )
 {
    struct align {
       char c;
@@ -229,7 +229,7 @@ void* LibVEX_Alloc ( Int nbytes )
 #else
    HChar* curr;
    HChar* next;
-   Int    ALIGN;
+   SizeT  ALIGN;
    ALIGN  = offsetof(struct align,x) - 1;
    nbytes = (nbytes + ALIGN) & ~ALIGN;
    curr   = private_LibVEX_alloc_curr;
@@ -280,9 +280,9 @@ void vpanic ( const HChar* str )
    New code for vex_util.c should go above this point. */
 #include <stdarg.h>
 
-Int vex_strlen ( const HChar* str )
+SizeT vex_strlen ( const HChar* str )
 {
-   Int i = 0;
+   SizeT i = 0;
    while (str[i] != 0) i++;
    return i;
 }
@@ -299,9 +299,9 @@ Bool vex_streq ( const HChar* s1, const HChar* s2 )
    }
 }
 
-void vex_bzero ( void* sV, UInt n )
+void vex_bzero ( void* sV, SizeT n )
 {
-   UInt i;
+   SizeT i;
    UChar* s = (UChar*)sV;
    /* No laughing, please.  Just don't call this too often.  Thank you
       for your attention. */
@@ -379,7 +379,8 @@ UInt vprintf_wrk ( void(*sink)(HChar),
    const HChar* saved_format;
    Bool   longlong, ljustify, is_sizet;
    HChar  padchar;
-   Int    fwidth, nout, len1, len2, len3;
+   Int    fwidth, nout, len1, len3;
+   SizeT  len2;
    HChar  intbuf[100];  /* big enough for a 64-bit # in base 2 */
 
    nout = 0;
@@ -413,6 +414,7 @@ UInt vprintf_wrk ( void(*sink)(HChar),
       }
       if (*format == '*') {
          fwidth = va_arg(ap, Int);
+         vassert(fwidth >= 0);
          format++;
       } else {
          while (*format >= '0' && *format <= '9') {

@@ -50,7 +50,7 @@ __attribute__ ((noreturn))
 void (*vex_failure_exit) ( void ) = NULL;
 
 /* logging output function */
-void (*vex_log_bytes) ( HChar*, Int nbytes ) = NULL;
+void (*vex_log_bytes) ( const HChar*, SizeT nbytes ) = NULL;
 
 /* debug paranoia level */
 Int vex_debuglevel = 0;

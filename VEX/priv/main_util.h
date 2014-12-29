@@ -78,8 +78,8 @@ extern UInt vex_sprintf ( HChar* buf, const HChar *format, ... );
 /* String ops */
 
 extern Bool vex_streq ( const HChar* s1, const HChar* s2 );
-extern Int  vex_strlen ( const HChar* str );
-extern void vex_bzero ( void* s, UInt n );
+extern SizeT vex_strlen ( const HChar* str );
+extern void vex_bzero ( void* s, SizeT n );
 
 
 /* Storage management: clear the area, and allocate from it. */

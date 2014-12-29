@@ -111,7 +111,7 @@ void LibVEX_Init (
    __attribute__ ((noreturn))
    void (*failure_exit) ( void ),
    /* logging output function */
-   void (*log_bytes) ( HChar*, Int nbytes ),
+   void (*log_bytes) ( const HChar*, SizeT nbytes ),
    /* debug paranoia level */
    Int debuglevel,
    /* Control ... */

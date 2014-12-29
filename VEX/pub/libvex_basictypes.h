@@ -59,6 +59,12 @@ typedef    signed int    Int;
 typedef  unsigned long long int   ULong;
 typedef    signed long long int   Long;
 
+/* Equivalent of C's size_t type. The type is unsigned and has this
+   storage requirement:
+   32 bits on a 32-bit architecture
+   64 bits on a 64-bit architecture. */
+typedef  unsigned long SizeT;
+
 /* Always 128 bits. */
 typedef  UInt  U128[4];
 

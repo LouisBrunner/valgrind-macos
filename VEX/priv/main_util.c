@@ -377,7 +377,7 @@ UInt vprintf_wrk ( void(*sink)(HChar),
       while (0)
 
    const HChar* saved_format;
-   Bool   longlong, ljustify;
+   Bool   longlong, ljustify, is_sizet;
    HChar  padchar;
    Int    fwidth, nout, len1, len2, len3;
    HChar  intbuf[100];  /* big enough for a 64-bit # in base 2 */
@@ -397,7 +397,7 @@ UInt vprintf_wrk ( void(*sink)(HChar),
       }
 
       saved_format = format;
-      longlong = False;
+      longlong = is_sizet = False;
       ljustify = False;
       padchar = ' ';
       fwidth = 0;
@@ -424,8 +424,11 @@ UInt vprintf_wrk ( void(*sink)(HChar),
          format++;
          if (*format == 'l') {
             format++;
-           longlong = True;
+            longlong = True;
          }
+      } else if (*format == 'z') {
+         format++;
+         is_sizet = True;
       }
 
       switch (*format) {
@@ -454,6 +457,7 @@ UInt vprintf_wrk ( void(*sink)(HChar),
          }
          case 'd': {
             Long l;
+            vassert(is_sizet == False); // %zd is obscure; we don't allow it
             if (longlong) {
                l = va_arg(ap, Long);
             } else {
@@ -474,7 +478,9 @@ UInt vprintf_wrk ( void(*sink)(HChar),
             Int   base = *format == 'u' ? 10 : 16;
             Bool  hexcaps = True; /* *format == 'X'; */
             ULong l;
-            if (longlong) {
+            if (is_sizet) {
+               l = (ULong)va_arg(ap, SizeT);
+            } else if (longlong) {
                l = va_arg(ap, ULong);
             } else {
                l = (ULong)va_arg(ap, UInt);

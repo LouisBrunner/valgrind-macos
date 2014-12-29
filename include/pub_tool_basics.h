@@ -42,7 +42,7 @@
    Other headers to include
    ------------------------------------------------------------------ */
 
-// VEX defines Char, UChar, Short, UShort, Int, UInt, Long, ULong,
+// VEX defines Char, UChar, Short, UShort, Int, UInt, Long, ULong, SizeT,
 // Addr32, Addr64, HWord, HChar, Bool, False and True.
 #include "libvex_basictypes.h"
 
@@ -89,10 +89,8 @@ typedef   signed long           Word;     // 32             64
 // Addr is for holding an address.
 typedef UWord                  Addr;      // 32             64
 
-// Our equivalents of POSIX 'size_t' and 'ssize_t':
-// - size_t is an "unsigned integer type of the result of the sizeof operator".
+// Our equivalent of POSIX 'ssize_t':
 // - ssize_t is "used for a count of bytes or an error indication".
-typedef UWord                  SizeT;     // 32             64
 typedef  Word                 SSizeT;     // 32             64
 
 // Our equivalent of POSIX 'ptrdiff_t':

@@ -731,7 +731,7 @@ VG_(debugLog_vprintf) (
    Int  flags;
    Int  width, precision;
    Int  n_ls = 0;
-   Bool is_long, caps;
+   Bool is_long, is_sizet, caps;
 
    /* We assume that vargs has already been initialised by the 
       caller, using va_start, and that the caller will similarly
@@ -811,9 +811,15 @@ VG_(debugLog_vprintf) (
             }
          }
       }
-      while (format[i] == 'l') {
-         i++;
-         n_ls++;
+
+      is_sizet = False;
+      if (format[i] == 'z') {
+         is_sizet = True;
+      } else {
+         while (format[i] == 'l') {
+            i++;
+            n_ls++;
+         }
       }
 
       //   %d means print a 32-bit integer.
@@ -829,7 +835,10 @@ VG_(debugLog_vprintf) (
                ret += 2;
                send('0',send_arg2);
             }
-            if (is_long)
+            if (is_sizet)
+               ret += myvprintf_int64(send, send_arg2, flags, 8, width, False,
+                                      (ULong)(va_arg (vargs, SizeT)));
+            else if (is_long)
                ret += myvprintf_int64(send, send_arg2, flags, 8, width, False,
                                       (ULong)(va_arg (vargs, ULong)));
             else
@@ -846,7 +855,10 @@ VG_(debugLog_vprintf) (
                                       (ULong)(va_arg (vargs, Int)));
             break;
          case 'u': /* %u */
-            if (is_long)
+            if (is_sizet)
+               ret += myvprintf_int64(send, send_arg2, flags, 10, width, False,
+                                      (ULong)(va_arg (vargs, SizeT)));
+            else if (is_long)
                ret += myvprintf_int64(send, send_arg2, flags, 10, width, False,
                                       (ULong)(va_arg (vargs, ULong)));
             else
@@ -890,7 +902,10 @@ VG_(debugLog_vprintf) (
                send('0',send_arg2);
                send('x',send_arg2);
             }
-            if (is_long)
+            if (is_sizet)
+               ret += myvprintf_int64(send, send_arg2, flags, 16, width, False,
+                                      (ULong)(va_arg (vargs, SizeT)));
+            else if (is_long)
                ret += myvprintf_int64(send, send_arg2, flags, 16, width, caps,
                                       (ULong)(va_arg (vargs, ULong)));
             else

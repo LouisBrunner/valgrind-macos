@@ -40,7 +40,7 @@
 
 #include "libvex_basictypes.h"
 #include "libvex_ir.h"
-
+#include "main_util.h"          // NULL
 
 /* Patterns are simply IRExpr* trees, with IRExpr_Binder nodes at the
    leaves, indicating binding points.  Use these magic macros to
@@ -82,8 +82,6 @@ Bool matchIRExpr ( MatchInfo* mi, IRExpr* p/*attern*/, IRExpr* e/*xpr*/ );
 
 
 #endif /* ndef __VEX_IR_MATCH_H */
-
-
 
 /*---------------------------------------------------------------*/
 /*--- end                                          ir_match.h ---*/

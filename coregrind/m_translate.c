@@ -734,11 +734,12 @@ void failure_exit ( void )
 }
 
 static
-void log_bytes ( HChar* bytes, Int nbytes )
+void log_bytes ( const HChar* bytes, SizeT nbytes )
 {
-  Int i;
-  for (i = 0; i < nbytes-3; i += 4)
-     VG_(printf)("%c%c%c%c", bytes[i], bytes[i+1], bytes[i+2], bytes[i+3]);
+  SizeT i = 0;
+  if (nbytes >= 4)
+     for (; i < nbytes-3; i += 4)
+        VG_(printf)("%c%c%c%c", bytes[i], bytes[i+1], bytes[i+2], bytes[i+3]);
   for (; i < nbytes; i++) 
      VG_(printf)("%c", bytes[i]);
 }

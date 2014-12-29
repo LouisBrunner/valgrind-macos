@@ -83,7 +83,7 @@ extern void VG_(init_tt_tc)       ( void );
 extern
 void VG_(add_to_transtab)( const VexGuestExtents* vge,
                            Addr64           entry,
-                           AddrH            code,
+                           Addr             code,
                            UInt             code_len,
                            Bool             is_self_checking,
                            Int              offs_profInc,
@@ -95,7 +95,7 @@ void VG_(tt_tc_do_chaining) ( void* from__patch_addr,
                               UInt  to_tteNo,
                               Bool  to_fastEP );
 
-extern Bool VG_(search_transtab) ( /*OUT*/AddrH* res_hcode,
+extern Bool VG_(search_transtab) ( /*OUT*/Addr*  res_hcode,
                                    /*OUT*/UInt*  res_sNo,
                                    /*OUT*/UInt*  res_tteNo,
                                    Addr64        guest_addr, 
@@ -114,10 +114,10 @@ extern UInt VG_(get_bbs_translated) ( void );
 extern
 void VG_(add_to_unredir_transtab)( const VexGuestExtents* vge,
                                    Addr64           entry,
-                                   AddrH            code,
+                                   Addr             code,
                                    UInt             code_len );
 extern 
-Bool VG_(search_unredir_transtab) ( /*OUT*/AddrH* result,
+Bool VG_(search_unredir_transtab) ( /*OUT*/Addr*  result,
                                     Addr64        guest_addr );
 
 // SB profiling stuff

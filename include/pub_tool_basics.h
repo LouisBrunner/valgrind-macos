@@ -86,12 +86,8 @@
 typedef unsigned long          UWord;     // 32             64
 typedef   signed long           Word;     // 32             64
 
-// Addr is for holding an address.  AddrH was intended to be "Addr on the
-// host", for the notional case where host word size != guest word size.
-// But since the assumption that host arch == guest arch has become so
-// deeply wired in, it's a pretty pointless distinction now.
+// Addr is for holding an address.
 typedef UWord                  Addr;      // 32             64
-typedef UWord                  AddrH;     // 32             64
 
 // Our equivalents of POSIX 'size_t' and 'ssize_t':
 // - size_t is an "unsigned integer type of the result of the sizeof operator".

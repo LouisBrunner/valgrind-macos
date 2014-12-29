@@ -876,7 +876,7 @@ void run_thread_for_a_while ( /*OUT*/HWord* two_words,
       if (LIKELY(VG_(tt_fast)[cno].guest == (Addr)tst->arch.vex.VG_INSTR_PTR))
          host_code_addr = VG_(tt_fast)[cno].host;
       else {
-         AddrH res   = 0;
+         Addr res = 0;
          /* not found in VG_(tt_fast). Searching here the transtab
             improves the performance compared to returning directly
             to the scheduler. */
@@ -1128,7 +1128,7 @@ void handle_noredir_jump ( /*OUT*/HWord* two_words,
    /* Clear return area. */
    two_words[0] = two_words[1] = 0;
 
-   AddrH hcode = 0;
+   Addr  hcode = 0;
    Addr  ip    = VG_(get_IP)(tid);
 
    Bool  found = VG_(search_unredir_transtab)( &hcode, ip );

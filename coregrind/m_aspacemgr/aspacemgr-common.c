@@ -376,7 +376,7 @@ VgStack* VG_(am_alloc_VgStack)( /*OUT*/Addr* initial_sp )
    if (sr_isError(sres))
       return NULL;
 
-   stack = (VgStack*)(AddrH)sr_Res(sres);
+   stack = (VgStack*)(Addr)sr_Res(sres);
 
    aspacem_assert(VG_IS_PAGE_ALIGNED(szB));
    aspacem_assert(VG_IS_PAGE_ALIGNED(stack));

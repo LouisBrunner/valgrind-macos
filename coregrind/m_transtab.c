@@ -1389,7 +1389,7 @@ static void initialiseSector ( Int sno )
                                      8 * tc_sector_szQ );
 	 /*NOTREACHED*/
       }
-      sec->tc = (ULong*)(AddrH)sr_Res(sres);
+      sec->tc = (ULong*)(Addr)sr_Res(sres);
 
       sres = VG_(am_mmap_anon_float_valgrind)
                 ( N_TTES_PER_SECTOR * sizeof(TTEntry) );
@@ -1398,7 +1398,7 @@ static void initialiseSector ( Int sno )
                                      N_TTES_PER_SECTOR * sizeof(TTEntry) );
 	 /*NOTREACHED*/
       }
-      sec->tt = (TTEntry*)(AddrH)sr_Res(sres);
+      sec->tt = (TTEntry*)(Addr)sr_Res(sres);
 
       for (i = 0; i < N_TTES_PER_SECTOR; i++) {
          sec->tt[i].status   = Empty;
@@ -1514,7 +1514,7 @@ static void initialiseSector ( Int sno )
 */
 void VG_(add_to_transtab)( const VexGuestExtents* vge,
                            Addr64           entry,
-                           AddrH            code,
+                           Addr             code,
                            UInt             code_len,
                            Bool             is_self_checking,
                            Int              offs_profInc,
@@ -1682,7 +1682,7 @@ void VG_(add_to_transtab)( const VexGuestExtents* vge,
    requested, a successful search can also cause the fast-caches to be
    updated.  
 */
-Bool VG_(search_transtab) ( /*OUT*/AddrH* res_hcode,
+Bool VG_(search_transtab) ( /*OUT*/Addr*  res_hcode,
                             /*OUT*/UInt*  res_sNo,
                             /*OUT*/UInt*  res_tteNo,
                             Addr64        guest_addr, 
@@ -1716,7 +1716,7 @@ Bool VG_(search_transtab) ( /*OUT*/AddrH* res_hcode,
                setFastCacheEntry( 
                   guest_addr, sectors[sno].tt[k].tcptr );
             if (res_hcode)
-               *res_hcode = (AddrH)sectors[sno].tt[k].tcptr;
+               *res_hcode = (Addr)sectors[sno].tt[k].tcptr;
             if (res_sNo)
                *res_sNo = sno;
             if (res_tteNo)
@@ -2076,7 +2076,7 @@ static void init_unredir_tt_tc ( void )
                                      N_UNREDIR_TT * UNREDIR_SZB);
          /*NOTREACHED*/
       }
-      unredir_tc = (ULong *)(AddrH)sr_Res(sres);
+      unredir_tc = (ULong *)(Addr)sr_Res(sres);
    }
    unredir_tc_used = 0;
    for (i = 0; i < N_UNREDIR_TT; i++)
@@ -2107,7 +2107,7 @@ static Bool sanity_check_redir_tt_tc ( void )
 */
 void VG_(add_to_unredir_transtab)( const VexGuestExtents* vge,
                                    Addr64           entry,
-                                   AddrH            code,
+                                   Addr             code,
                                    UInt             code_len )
 {
    Int   i, j, code_szQ;
@@ -2160,7 +2160,7 @@ void VG_(add_to_unredir_transtab)( const VexGuestExtents* vge,
    vg_assert(&dstP[code_len] <= (HChar*)&unredir_tc[unredir_tc_used]);
 }
 
-Bool VG_(search_unredir_transtab) ( /*OUT*/AddrH* result,
+Bool VG_(search_unredir_transtab) ( /*OUT*/Addr*  result,
                                     Addr64        guest_addr )
 {
    Int i;
@@ -2168,7 +2168,7 @@ Bool VG_(search_unredir_transtab) ( /*OUT*/AddrH* result,
       if (!unredir_tt[i].inUse)
          continue;
       if (unredir_tt[i].vge.base[0] == guest_addr) {
-         *result = (AddrH)unredir_tt[i].hcode;
+         *result = (Addr)unredir_tt[i].hcode;
          return True;
       }
    }

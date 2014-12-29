@@ -46,6 +46,10 @@
 #define LIKELY(x)       __builtin_expect(!!(x), 1)
 #define UNLIKELY(x)     __builtin_expect(!!(x), 0)
 
+#if !defined(offsetof)
+#   define offsetof(type,memb) ((SizeT)(HWord)&((type*)0)->memb)
+#endif
+
 /* Stuff for panicking and assertion. */
 
 #define VG__STRING(__str)  #__str

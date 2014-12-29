@@ -139,36 +139,6 @@ typedef  ULong     Addr64;
 typedef  unsigned long HWord;
 
 
-/* This is so useful it should be visible absolutely everywhere. */
-#if !defined(offsetof)
-#   define offsetof(type,memb) ((SizeT)(HWord)&((type*)0)->memb)
-#endif
-/* Our definition of offsetof is giving the same result as
-   the standard/predefined offsetof. So, we use the same name.
-   We use a prefix vg_ for vg_alignof as its behaviour slightly
-   differs from the standard alignof/gcc defined __alignof__
-*/
-
-#define vg_alignof(_type) (sizeof(struct {char c;_type _t;})-sizeof(_type))
-/* vg_alignof returns a "safe" alignement.
-   "safe" is defined as the alignment chosen by the compiler in
-   a struct made of a char followed by this type.
-
-      Note that this is not necessarily the "preferred" alignment
-      for a platform. This preferred alignment is returned by the gcc
-       __alignof__ and by the standard (in recent standard) alignof.
-      Compared to __alignof__, vg_alignof gives on some platforms (e.g.
-      amd64, ppc32, ppc64) a bigger alignment for long double (16 bytes
-      instead of 8).
-      On some platforms (e.g. x86), vg_alignof gives a smaller alignment
-      than __alignof__ for long long and double (4 bytes instead of 8). 
-      If we want to have the "preferred" alignment for the basic types,
-      then either we need to depend on gcc __alignof__, or on a (too)
-      recent standard and compiler (implementing <stdalign.h>).
-*/
-
-
-
 /* We need to know the host word size in order to write Ptr_to_ULong
    and ULong_to_Ptr in a way that doesn't cause compilers to complain.
    These functions allow us to cast pointers to and from 64-bit

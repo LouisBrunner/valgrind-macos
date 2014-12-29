@@ -1126,7 +1126,7 @@ void pre_mem_read_sockaddr ( ThreadId tid,
             struct sockaddr_???? has padding bytes between its elements. */
          VG_(sprintf) ( outmsg, description, "sa_data" );
          PRE_MEM_READ( outmsg, (Addr)&sa->sa_family + sizeof(sa->sa_family),
-                       salen );
+                       salen -  sizeof(sa->sa_family));
          break;
    }
    

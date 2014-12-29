@@ -236,7 +236,7 @@ re-run, passing the <option>-v</option> option to Valgrind.  A second
     of each line of output it prints the current number of active
     connections in round brackets.</para>
 
-    <para><computeroutput>valgrind-listener</computeroutput> accepts two
+    <para><computeroutput>valgrind-listener</computeroutput> accepts three
     command-line options:</para>
     <!-- start of xi:include in the manpage -->
     <variablelist id="listener.opts.list">
@@ -246,6 +246,16 @@ re-run, passing the <option>-v</option> option to Valgrind.  A second
            <para>When the number of connected processes falls back to zero,
            exit.  Without this, it will run forever, that is, until you
            send it Control-C.</para>
+         </listitem>
+       </varlistentry>
+       <varlistentry>
+         <term><option>--max-connext=INTEGER</option></term>
+         <listitem>
+           <para>By default, the listener can connect to up to 50 processes.
+             Occasionally, that number is too small. Use this option to
+             provide a different limit. E.g.
+             <computeroutput>--max-connext=100</computeroutput>.
+           </para>
          </listitem>
        </varlistentry>
        <varlistentry>

@@ -57,9 +57,13 @@
 
 /*---------------------------------------------------------------*/
 
-/* The maximum allowable number concurrent connections. */
-#define M_CONNECTIONS 50
+/* The default allowable number of concurrent connections. */
+#define  M_CONNECTIONS_DEFAULT 50
+/* The maximum allowable number of concurrent connections. */
+#define  M_CONNECTIONS_MAX     5000
 
+/* The maximum allowable number of concurrent connections. */
+unsigned M_CONNECTIONS = 0;
 
 /*---------------------------------------------------------------*/
 
@@ -98,8 +102,8 @@ static void my_assert_fail ( const char* expr, const char* file, int line, const
 
 /* holds the fds for connections; zero if slot not in use. */
 int conn_count = 0;
-int           conn_fd[M_CONNECTIONS];
-struct pollfd conn_pollfd[M_CONNECTIONS];
+int           *conn_fd;
+struct pollfd *conn_pollfd;
 
 
 static void set_nonblocking ( int sd )
@@ -167,8 +171,8 @@ static void snooze ( void )
 }
 
 
-/* returns 0 if invalid, else port # */
-static int atoi_portno ( const char* str )
+/* returns 0 if negative, or > BOUND or invalid characters were found */
+static int atoi_with_bound ( const char* str, int bound )
 {
    int n = 0;
    while (1) {
@@ -178,9 +182,17 @@ static int atoi_portno ( const char* str )
          return 0;
       n = 10*n + (int)(*str - '0');
       str++;
-      if (n >= 65536) 
+      if (n >= bound)
          return 0;
    }
+   return n;
+}
+
+/* returns 0 if invalid, else port # */
+static int atoi_portno ( const char* str )
+{
+   int n = atoi_with_bound(str, 65536);
+
    if (n < 1024)
       return 0;
    return n;
@@ -193,18 +205,22 @@ static void usage ( void )
       "\n"
       "usage is:\n"
       "\n"
-      "   valgrind-listener [--exit-at-zero|-e] [port-number]\n"
+      "   valgrind-listener [--exit-at-zero|-e] [--max-connect=INT] [port-number]\n"
       "\n"
       "   where   --exit-at-zero or -e causes the listener to exit\n"
       "           when the number of connections falls back to zero\n"
       "           (the default is to keep listening forever)\n"
+      "\n"
+      "           --max-connect=INT can be used to increase the maximum\n"
+      "           number of connected processes (default = %d).\n"
+      "           INT must be positive and less than %d.\n"
       "\n"
       "           port-number is the default port on which to listen for\n"
       "           connections.  It must be between 1024 and 65535.\n"
       "           Current default is %d.\n"
       "\n"
       ,
-      VG_CLO_DEFAULT_LOGPORT
+      M_CONNECTIONS_DEFAULT, M_CONNECTIONS_MAX, VG_CLO_DEFAULT_LOGPORT
    );
    exit(1);
 }
@@ -247,12 +263,27 @@ int main (int argc, char** argv)
           || 0==strcmp(argv[i], "-e")) {
          exit_when_zero = 1;
       }
+      else if (0 == strncmp(argv[i], "--max-connect=", 14)) {
+         M_CONNECTIONS = atoi_with_bound(strchr(argv[i], '=') + 1, 5000);
+         if (M_CONNECTIONS <= 0 || M_CONNECTIONS > M_CONNECTIONS_MAX)
+            usage();
+      }
       else
       if (atoi_portno(argv[i]) > 0) {
          port = atoi_portno(argv[i]);
       }
       else
       usage();
+   }
+
+   if (M_CONNECTIONS == 0)   // nothing specified on command line
+      M_CONNECTIONS = M_CONNECTIONS_DEFAULT;
+
+   conn_fd     = malloc(M_CONNECTIONS * sizeof conn_fd[0]);
+   conn_pollfd = malloc(M_CONNECTIONS * sizeof conn_pollfd[0]);
+   if (conn_fd == NULL || conn_pollfd == NULL) {
+      fprintf(stderr, "Memory allocation failed; cannot continue.\n");
+      exit(1);
    }
 
    banner("started");
@@ -326,9 +357,11 @@ int main (int argc, char** argv)
                  break;
 
            if (i >= M_CONNECTIONS) {
-              fprintf(stderr, "Too many concurrent connections.  "
-                              "Increase M_CONNECTIONS and recompile.\n");
-              panic("main -- too many concurrent connections");
+              fprintf(stderr, "\n\nMore than %d concurrent connections.\n"
+                      "Restart the listener giving --max-connect=INT on the\n"
+                      "commandline to increase the limit.\n\n",
+                      M_CONNECTIONS);
+              exit(1);
            }
 
            conn_fd[i] = new_sd;

@@ -43,7 +43,7 @@
    ------------------------------------------------------------------ */
 
 // VEX defines Char, UChar, Short, UShort, Int, UInt, Long, ULong, SizeT,
-// Addr32, Addr64, HWord, HChar, Bool, False and True.
+// Addr, Addr32, Addr64, HWord, HChar, Bool, False and True.
 #include "libvex_basictypes.h"
 
 // For varargs types
@@ -85,9 +85,6 @@
 //                                           ------------   ------------
 typedef unsigned long          UWord;     // 32             64
 typedef   signed long           Word;     // 32             64
-
-// Addr is for holding an address.
-typedef UWord                  Addr;      // 32             64
 
 // Our equivalent of POSIX 'ssize_t':
 // - ssize_t is "used for a count of bytes or an error indication".

@@ -855,9 +855,8 @@ static UInt needs_self_check ( void* closureV,
    Chasing across them obviously defeats the redirect mechanism, with
    bad effects for Memcheck, Helgrind, DRD, Massif, and possibly others.
 */
-static Bool chase_into_ok ( void* closureV, Addr64 addr64 )
+static Bool chase_into_ok ( void* closureV, Addr addr )
 {
-   Addr               addr    = (Addr)addr64;
    NSegment const*    seg     = VG_(am_find_nsegment)(addr);
 
    /* Work through a list of possibilities why we might not want to
@@ -872,11 +871,8 @@ static Bool chase_into_ok ( void* closureV, Addr64 addr64 )
       goto dontchase;
 
 #  if defined(VG_PLAT_USES_PPCTOC) || defined(VGP_ppc64le_linux)
-   /* This needs to be at the start of its own block.  Don't chase. Re
-      ULong_to_Ptr, be careful to ensure we only compare 32 bits on a
-      32-bit target.*/
-   if (ULong_to_Ptr(addr64)
-       == (void*)&VG_(ppctoc_magic_redirect_return_stub))
+   /* This needs to be at the start of its own block.  Don't chase. */
+   if (addr == (Addr)&VG_(ppctoc_magic_redirect_return_stub))
       goto dontchase;
 #  endif
 
@@ -893,9 +889,9 @@ static Bool chase_into_ok ( void* closureV, Addr64 addr64 )
       Chasing into EX increases the number of EX translations from 21 to
       102666 causing a 7x runtime increase for "none" and a 3.2x runtime
       increase for memcheck. */
-   if (((UChar *)ULong_to_Ptr(addr))[0] == 0x44 ||   /* EX */
-       ((UChar *)ULong_to_Ptr(addr))[0] == 0xC6)     /* EXRL */
-     goto dontchase;
+   if (((UChar *)addr)[0] == 0x44 ||   /* EX */
+       ((UChar *)addr)[0] == 0xC6)     /* EXRL */
+      goto dontchase;
 #  endif
 
    /* well, ok then.  go on and chase. */

@@ -124,7 +124,7 @@ typedef
 
       /* Return True iff resteering to the given addr is allowed (for
          branches/calls to destinations that are known at JIT-time) */
-      /*IN*/  Bool         (*resteerOkFn) ( /*opaque*/void*, Addr64 ),
+      /*IN*/  Bool         (*resteerOkFn) ( /*opaque*/void*, Addr ),
 
       /* Should we speculatively resteer across conditional branches?
          (Experimental and not enabled by default).  The strategy is
@@ -175,7 +175,7 @@ IRSB* bb_to_IR (
          /*IN*/ DisOneInstrFn    dis_instr_fn,
          /*IN*/ const UChar*     guest_code,
          /*IN*/ Addr64           guest_IP_bbstart,
-         /*IN*/ Bool             (*chase_into_ok)(void*,Addr64),
+         /*IN*/ Bool             (*chase_into_ok)(void*,Addr),
          /*IN*/ VexEndness       host_endness,
          /*IN*/ Bool             sigill_diag,
          /*IN*/ VexArch          arch_guest,

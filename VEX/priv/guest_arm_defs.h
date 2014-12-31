@@ -43,7 +43,7 @@
    bb_to_IR.h. */
 extern
 DisResult disInstr_ARM ( IRSB*        irbb,
-                         Bool         (*resteerOkFn) ( void*, Addr64 ),
+                         Bool         (*resteerOkFn) ( void*, Addr ),
                          Bool         resteerCisOk,
                          void*        callback_opaque,
                          const UChar* guest_code,

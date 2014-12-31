@@ -132,6 +132,10 @@ static inline UInt toUInt ( Long x ) {
 typedef  UInt      Addr32;
 typedef  ULong     Addr64;
 
+/* An address: 32-bit or 64-bit wide depending on host architecture */
+typedef unsigned long Addr;
+
+
 /* Something which has the same size as void* on the host.  That is,
    it is 32 bits on a 32-bit host and 64 bits on a 64-bit host, and so
    it can safely be coerced to and from a pointer type on the host

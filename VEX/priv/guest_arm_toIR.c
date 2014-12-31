@@ -14587,7 +14587,7 @@ static Bool decode_NV_instruction ( /*MOD*/DisResult* dres,
 
 static
 DisResult disInstr_ARM_WRK (
-             Bool         (*resteerOkFn) ( /*opaque*/void*, Addr64 ),
+             Bool         (*resteerOkFn) ( /*opaque*/void*, Addr ),
              Bool         resteerCisOk,
              void*        callback_opaque,
              const UChar* guest_instr,
@@ -15551,7 +15551,7 @@ DisResult disInstr_ARM_WRK (
       if (condT == IRTemp_INVALID) {
          /* unconditional transfer to 'dst'.  See if we can simply
             continue tracing at the destination. */
-         if (resteerOkFn( callback_opaque, (Addr64)dst )) {
+         if (resteerOkFn( callback_opaque, dst )) {
             /* yes */
             dres.whatNext   = Dis_ResteerU;
             dres.continueAt = (Addr64)dst;
@@ -15574,7 +15574,7 @@ DisResult disInstr_ARM_WRK (
              && resteerCisOk
              && vex_control.guest_chase_cond
              && dst < guest_R15_curr_instr_notENC
-             && resteerOkFn( callback_opaque, (Addr64)(Addr32)dst) ) {
+             && resteerOkFn( callback_opaque, dst) ) {
             /* Speculation: assume this backward branch is taken.  So
                we need to emit a side-exit to the insn following this
                one, on the negation of the condition, and continue at
@@ -15594,8 +15594,7 @@ DisResult disInstr_ARM_WRK (
              && vex_control.guest_chase_cond
              && dst >= guest_R15_curr_instr_notENC
              && resteerOkFn( callback_opaque, 
-                             (Addr64)(Addr32)
-                                     (guest_R15_curr_instr_notENC+4)) ) {
+                             guest_R15_curr_instr_notENC+4) ) {
             /* Speculation: assume this forward branch is not taken.
                So we need to emit a side-exit to dst (the dest) and
                continue disassembling at the insn immediately
@@ -17419,7 +17418,7 @@ static const UChar it_length_table[256]; /* fwds */
 
 static   
 DisResult disInstr_THUMB_WRK (
-             Bool         (*resteerOkFn) ( /*opaque*/void*, Addr64 ),
+             Bool         (*resteerOkFn) ( /*opaque*/void*, Addr ),
              Bool         resteerCisOk,
              void*        callback_opaque,
              const UChar* guest_instr,
@@ -22015,7 +22014,7 @@ static const UChar it_length_table[256]
    is located in host memory at &guest_code[delta]. */
 
 DisResult disInstr_ARM ( IRSB*        irsb_IN,
-                         Bool         (*resteerOkFn) ( void*, Addr64 ),
+                         Bool         (*resteerOkFn) ( void*, Addr ),
                          Bool         resteerCisOk,
                          void*        callback_opaque,
                          const UChar* guest_code_IN,

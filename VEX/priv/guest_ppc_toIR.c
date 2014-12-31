@@ -5686,7 +5686,7 @@ static IRExpr* /* :: Ity_I32 */ branch_cond_ok( UInt BO, UInt BI )
 static Bool dis_branch ( UInt theInstr, 
                          const VexAbiInfo* vbi,
                          /*OUT*/DisResult* dres,
-                         Bool (*resteerOkFn)(void*,Addr64),
+                         Bool (*resteerOkFn)(void*,Addr),
                          void* callback_opaque )
 {
    UChar opc1    = ifieldOPC(theInstr);
@@ -18298,7 +18298,7 @@ static Bool dis_av_fp_convert ( UInt theInstr )
 static Bool dis_transactional_memory ( UInt theInstr, UInt nextInstr,
                                        const VexAbiInfo* vbi,
                                        /*OUT*/DisResult* dres,
-                                       Bool (*resteerOkFn)(void*,Addr64),
+                                       Bool (*resteerOkFn)(void*,Addr),
                                        void* callback_opaque )
 {
    UInt   opc2      = IFIELD( theInstr, 1, 10 );
@@ -18701,7 +18701,7 @@ static UInt get_VSX60_opc2(UInt opc2_full)
 
 static   
 DisResult disInstr_PPC_WRK ( 
-             Bool         (*resteerOkFn) ( /*opaque*/void*, Addr64 ),
+             Bool         (*resteerOkFn) ( /*opaque*/void*, Addr ),
              Bool         resteerCisOk,
              void*        callback_opaque,
              Long         delta64,
@@ -20182,7 +20182,7 @@ DisResult disInstr_PPC_WRK (
    is located in host memory at &guest_code[delta]. */
 
 DisResult disInstr_PPC ( IRSB*        irsb_IN,
-                         Bool         (*resteerOkFn) ( void*, Addr64 ),
+                         Bool         (*resteerOkFn) ( void*, Addr ),
                          Bool         resteerCisOk,
                          void*        callback_opaque,
                          const UChar* guest_code_IN,

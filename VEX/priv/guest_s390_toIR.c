@@ -71,7 +71,7 @@ static Addr64 guest_IA_next_instr;
 static DisResult *dis_res;
 
 /* Resteer function and callback data */
-static Bool (*resteer_fn)(void *, Addr64);
+static Bool (*resteer_fn)(void *, Addr);
 static void *resteer_data;
 
 /* Whether to print diagnostics for illegal instructions. */
@@ -16658,7 +16658,7 @@ disInstr_S390_WRK(const UChar *insn)
 
 DisResult
 disInstr_S390(IRSB        *irsb_IN,
-              Bool       (*resteerOkFn)(void *, Addr64),
+              Bool       (*resteerOkFn)(void *, Addr),
               Bool         resteerCisOk,
               void        *callback_opaque,
               const UChar *guest_code,

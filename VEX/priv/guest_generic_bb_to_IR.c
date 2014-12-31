@@ -97,7 +97,7 @@ VEX_REGPARM(1)
 static ULong genericg_compute_checksum_8al_12 ( HWord first_w64 );
 
 /* Small helpers */
-static Bool const_False ( void* callback_opaque, Addr64 a ) { 
+static Bool const_False ( void* callback_opaque, Addr a ) { 
    return False; 
 }
 
@@ -185,7 +185,7 @@ IRSB* bb_to_IR (
          /*IN*/ DisOneInstrFn    dis_instr_fn,
          /*IN*/ const UChar*     guest_code,
          /*IN*/ Addr64           guest_IP_bbstart,
-         /*IN*/ Bool             (*chase_into_ok)(void*,Addr64),
+         /*IN*/ Bool             (*chase_into_ok)(void*,Addr),
          /*IN*/ VexEndness       host_endness,
          /*IN*/ Bool             sigill_diag,
          /*IN*/ VexArch          arch_guest,
@@ -214,7 +214,7 @@ IRSB* bb_to_IR (
    IRConst*   guest_IP_bbstart_IRConst = NULL;
    Int        n_cond_resteers_allowed = 2;
 
-   Bool (*resteerOKfn)(void*,Addr64) = NULL;
+   Bool (*resteerOKfn)(void*,Addr) = NULL;
 
    debug_print = toBool(vex_traceflags & VEX_TRACE_FE);
 

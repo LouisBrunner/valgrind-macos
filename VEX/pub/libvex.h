@@ -609,7 +609,7 @@ typedef
 
       /* Is it OK to chase into this guest address?  May not be
 	 NULL. */
-      Bool    (*chase_into_ok) ( /*callback_opaque*/void*, Addr64 );
+      Bool    (*chase_into_ok) ( /*callback_opaque*/void*, Addr );
 
       /* OUT: which bits of guest code actually got translated */
       VexGuestExtents* guest_extents;

@@ -2064,7 +2064,7 @@ static Bool dis_instr_CCondFmt ( UInt cins )
 /*---        Branch Instructions for mips64           ---*/
 /*********************************************************/
 static Bool dis_instr_branch ( UInt theInstr, DisResult * dres,
-                               Bool(*resteerOkFn) (void *, Addr64),
+                               Bool(*resteerOkFn) (void *, Addr),
                                void *callback_opaque, IRStmt ** set )
 {
    UInt jmpKind = 0;
@@ -12008,7 +12008,7 @@ static UInt disDSPInstr_MIPS_WRK ( UInt cins )
    here. */
 
 static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
-                                                                    Addr64),
+                                                                    Addr),
                                      Bool         resteerCisOk,
                                      void*        callback_opaque,
                                      Long         delta64,
@@ -17282,7 +17282,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 /* Disassemble a single instruction into IR.  The instruction
    is located in host memory at &guest_code[delta]. */
 DisResult disInstr_MIPS( IRSB*        irsb_IN,
-                         Bool         (*resteerOkFn) ( void *, Addr64 ),
+                         Bool         (*resteerOkFn) ( void *, Addr ),
                          Bool         resteerCisOk,
                          void*        callback_opaque,
                          const UChar* guest_code_IN,

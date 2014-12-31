@@ -12787,7 +12787,7 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
 static
 Bool disInstr_ARM64_WRK (
         /*MB_OUT*/DisResult* dres,
-        Bool         (*resteerOkFn) ( /*opaque*/void*, Addr64 ),
+        Bool         (*resteerOkFn) ( /*opaque*/void*, Addr ),
         Bool         resteerCisOk,
         void*        callback_opaque,
         const UChar* guest_instr,
@@ -12966,7 +12966,7 @@ Bool disInstr_ARM64_WRK (
    is located in host memory at &guest_code[delta]. */
 
 DisResult disInstr_ARM64 ( IRSB*        irsb_IN,
-                           Bool         (*resteerOkFn) ( void*, Addr64 ),
+                           Bool         (*resteerOkFn) ( void*, Addr ),
                            Bool         resteerCisOk,
                            void*        callback_opaque,
                            const UChar* guest_code_IN,

@@ -19329,7 +19329,7 @@ static
 Long dis_ESC_NONE (
         /*MB_OUT*/DisResult* dres,
         /*MB_OUT*/Bool*      expect_CAS,
-        Bool         (*resteerOkFn) ( /*opaque*/void*, Addr64 ),
+        Bool         (*resteerOkFn) ( /*opaque*/void*, Addr ),
         Bool         resteerCisOk,
         void*        callback_opaque,
         const VexArchInfo* archinfo,
@@ -19745,7 +19745,7 @@ Long dis_ESC_NONE (
           && vex_control.guest_chase_cond
           && (Addr64)d64 != (Addr64)guest_RIP_bbstart
           && jmpDelta < 0
-          && resteerOkFn( callback_opaque, d64) ) {
+          && resteerOkFn( callback_opaque, (Addr64)d64) ) {
          /* Speculation: assume this backward branch is taken.  So we
             need to emit a side-exit to the insn following this one,
             on the negation of the condition, and continue at the
@@ -20834,7 +20834,7 @@ Long dis_ESC_NONE (
       if (haveF2(pfx)) DIP("bnd ; "); /* MPX bnd prefix. */
       d64 = (guest_RIP_bbstart+delta+sz) + getSDisp(sz,delta); 
       delta += sz;
-      if (resteerOkFn(callback_opaque,d64)) {
+      if (resteerOkFn(callback_opaque, (Addr64)d64)) {
          dres->whatNext   = Dis_ResteerU;
          dres->continueAt = d64;
       } else {
@@ -20851,7 +20851,7 @@ Long dis_ESC_NONE (
       if (haveF2(pfx)) DIP("bnd ; "); /* MPX bnd prefix. */
       d64 = (guest_RIP_bbstart+delta+1) + getSDisp8(delta); 
       delta++;
-      if (resteerOkFn(callback_opaque,d64)) {
+      if (resteerOkFn(callback_opaque, (Addr64)d64)) {
          dres->whatNext   = Dis_ResteerU;
          dres->continueAt = d64;
       } else {
@@ -21040,7 +21040,7 @@ static
 Long dis_ESC_0F (
         /*MB_OUT*/DisResult* dres,
         /*MB_OUT*/Bool*      expect_CAS,
-        Bool         (*resteerOkFn) ( /*opaque*/void*, Addr64 ),
+        Bool         (*resteerOkFn) ( /*opaque*/void*, Addr ),
         Bool         resteerCisOk,
         void*        callback_opaque,
         const VexArchInfo* archinfo,
@@ -21287,7 +21287,7 @@ Long dis_ESC_0F (
           && vex_control.guest_chase_cond
           && (Addr64)d64 != (Addr64)guest_RIP_bbstart
           && jmpDelta < 0
-          && resteerOkFn( callback_opaque, d64) ) {
+          && resteerOkFn( callback_opaque, (Addr64)d64) ) {
          /* Speculation: assume this backward branch is taken.  So
             we need to emit a side-exit to the insn following this
             one, on the negation of the condition, and continue at
@@ -22006,7 +22006,7 @@ __attribute__((noinline))
 static
 Long dis_ESC_0F38 (
         /*MB_OUT*/DisResult* dres,
-        Bool         (*resteerOkFn) ( /*opaque*/void*, Addr64 ),
+        Bool         (*resteerOkFn) ( /*opaque*/void*, Addr ),
         Bool         resteerCisOk,
         void*        callback_opaque,
         const VexArchInfo* archinfo,
@@ -22091,7 +22091,7 @@ __attribute__((noinline))
 static
 Long dis_ESC_0F3A (
         /*MB_OUT*/DisResult* dres,
-        Bool         (*resteerOkFn) ( /*opaque*/void*, Addr64 ),
+        Bool         (*resteerOkFn) ( /*opaque*/void*, Addr ),
         Bool         resteerCisOk,
         void*        callback_opaque,
         const VexArchInfo* archinfo,
@@ -23394,7 +23394,7 @@ static
 Long dis_ESC_0F__VEX (
         /*MB_OUT*/DisResult* dres,
         /*OUT*/   Bool*      uses_vvvv,
-        Bool         (*resteerOkFn) ( /*opaque*/void*, Addr64 ),
+        Bool         (*resteerOkFn) ( /*opaque*/void*, Addr ),
         Bool         resteerCisOk,
         void*        callback_opaque,
         const VexArchInfo* archinfo,
@@ -27396,7 +27396,7 @@ static
 Long dis_ESC_0F38__VEX (
         /*MB_OUT*/DisResult* dres,
         /*OUT*/   Bool*      uses_vvvv,
-        Bool         (*resteerOkFn) ( /*opaque*/void*, Addr64 ),
+        Bool         (*resteerOkFn) ( /*opaque*/void*, Addr ),
         Bool         resteerCisOk,
         void*        callback_opaque,
         const VexArchInfo* archinfo,
@@ -29557,7 +29557,7 @@ static
 Long dis_ESC_0F3A__VEX (
         /*MB_OUT*/DisResult* dres,
         /*OUT*/   Bool*      uses_vvvv,
-        Bool         (*resteerOkFn) ( /*opaque*/void*, Addr64 ),
+        Bool         (*resteerOkFn) ( /*opaque*/void*, Addr ),
         Bool         resteerCisOk,
         void*        callback_opaque,
         const VexArchInfo* archinfo,
@@ -31144,7 +31144,7 @@ Long dis_ESC_0F3A__VEX (
 static
 DisResult disInstr_AMD64_WRK ( 
              /*OUT*/Bool* expect_CAS,
-             Bool         (*resteerOkFn) ( /*opaque*/void*, Addr64 ),
+             Bool         (*resteerOkFn) ( /*opaque*/void*, Addr ),
              Bool         resteerCisOk,
              void*        callback_opaque,
              Long         delta64,
@@ -31779,7 +31779,7 @@ DisResult disInstr_AMD64_WRK (
    is located in host memory at &guest_code[delta]. */
 
 DisResult disInstr_AMD64 ( IRSB*        irsb_IN,
-                           Bool         (*resteerOkFn) ( void*, Addr64 ),
+                           Bool         (*resteerOkFn) ( void*, Addr ),
                            Bool         resteerCisOk,
                            void*        callback_opaque,
                            const UChar* guest_code_IN,

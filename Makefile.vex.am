@@ -155,7 +155,6 @@ LIBVEX_SOURCES_COMMON = \
 
 LIBVEX_CFLAGS = \
 	-Wbad-function-cast \
-	-Wcast-qual \
 	-fstrict-aliasing
 
 libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_SOURCES  = $(LIBVEX_SOURCES_COMMON)

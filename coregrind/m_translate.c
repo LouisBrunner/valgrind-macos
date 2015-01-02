@@ -202,11 +202,11 @@ static void update_SP_aliases(Long delta)
 /* Given a guest IP, get an origin tag for a 1-element stack trace,
    and wrap it up in an IR atom that can be passed as the origin-tag
    value for a stack-adjustment helper function. */
-static IRExpr* mk_ecu_Expr ( Addr64 guest_IP )
+static IRExpr* mk_ecu_Expr ( Addr guest_IP )
 {
    UInt ecu;
    ExeContext* ec
-      = VG_(make_depth_1_ExeContext_from_Addr)( (Addr)guest_IP );
+      = VG_(make_depth_1_ExeContext_from_Addr)( guest_IP );
    vg_assert(ec);
    ecu = VG_(get_ECU_from_ExeContext)( ec );
    vg_assert(VG_(is_plausible_ECU)(ecu));
@@ -280,7 +280,7 @@ IRSB* vg_SP_update_pass ( void*             closureV,
 
    /* Set up stuff for tracking the guest IP */
    Bool   curr_IP_known = False;
-   Addr64 curr_IP       = 0;
+   Addr   curr_IP       = 0;
 
    /* Set up BB */
    IRSB* bb     = emptyIRSB();

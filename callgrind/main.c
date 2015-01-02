@@ -880,7 +880,7 @@ void CLG_(collectBlockInfo)(IRSB* sbIn,
 	  if (Ist_IMark == st->tag) {
 	      inPreamble = False;
 
-	      instrAddr = (Addr)ULong_to_Ptr(st->Ist.IMark.addr);
+	      instrAddr = st->Ist.IMark.addr;
 	      instrLen  = st->Ist.IMark.len;
 
 	      (*instrs)++;
@@ -994,7 +994,7 @@ IRSB* CLG_(instrument)( VgCallbackClosure* closure,
    st = sbIn->stmts[i];
    CLG_ASSERT(Ist_IMark == st->tag);
 
-   origAddr = (Addr)st->Ist.IMark.addr + (Addr)st->Ist.IMark.delta;
+   origAddr = st->Ist.IMark.addr + st->Ist.IMark.delta;
    CLG_ASSERT(origAddr == st->Ist.IMark.addr 
                           + st->Ist.IMark.delta);  // XXX: check no overflow
 
@@ -1026,9 +1026,9 @@ IRSB* CLG_(instrument)( VgCallbackClosure* closure,
 	    break;
 
 	 case Ist_IMark: {
-            Addr64 cia   = st->Ist.IMark.addr + st->Ist.IMark.delta;
-            Int    isize = st->Ist.IMark.len;
-            CLG_ASSERT(clgs.instr_offset == (Addr)cia - origAddr);
+            Addr   cia   = st->Ist.IMark.addr + st->Ist.IMark.delta;
+            UInt   isize = st->Ist.IMark.len;
+            CLG_ASSERT(clgs.instr_offset == cia - origAddr);
 	    // If Vex fails to decode an instruction, the size will be zero.
 	    // Pretend otherwise.
 	    if (isize == 0) isize = VG_MIN_INSTR_SZB;

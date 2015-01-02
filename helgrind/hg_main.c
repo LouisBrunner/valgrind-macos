@@ -4445,13 +4445,13 @@ static void instrument_mem_access ( IRSB*   sbOut,
 /* Figure out if GA is a guest code address in the dynamic linker, and
    if so return True.  Otherwise (and in case of any doubt) return
    False.  (sidedly safe w/ False as the safe value) */
-static Bool is_in_dynamic_linker_shared_object( Addr64 ga )
+static Bool is_in_dynamic_linker_shared_object( Addr ga )
 {
    DebugInfo* dinfo;
    const HChar* soname;
    if (0) return False;
 
-   dinfo = VG_(find_DebugInfo)( (Addr)ga );
+   dinfo = VG_(find_DebugInfo)( ga );
    if (!dinfo) return False;
 
    soname = VG_(DebugInfo_get_soname)(dinfo);
@@ -4485,10 +4485,10 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
 {
    Int     i;
    IRSB*   bbOut;
-   Addr64  cia; /* address of current insn */
+   Addr    cia; /* address of current insn */
    IRStmt* st;
    Bool    inLDSO = False;
-   Addr64  inLDSOmask4K = 1; /* mismatches on first check */
+   Addr    inLDSOmask4K = 1; /* mismatches on first check */
 
    const Int goff_sp = layout->offset_SP;
 
@@ -4546,12 +4546,12 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
                Avoid flooding is_in_dynamic_linker_shared_object with
                requests by only checking at transitions between 4K
                pages. */
-            if ((cia & ~(Addr64)0xFFF) != inLDSOmask4K) {
-               if (0) VG_(printf)("NEW %#lx\n", (Addr)cia);
-               inLDSOmask4K = cia & ~(Addr64)0xFFF;
+            if ((cia & ~(Addr)0xFFF) != inLDSOmask4K) {
+               if (0) VG_(printf)("NEW %#lx\n", cia);
+               inLDSOmask4K = cia & ~(Addr)0xFFF;
                inLDSO = is_in_dynamic_linker_shared_object(cia);
             } else {
-               if (0) VG_(printf)("old %#lx\n", (Addr)cia);
+               if (0) VG_(printf)("old %#lx\n", cia);
             }
             break;
 

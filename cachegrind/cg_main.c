@@ -1045,9 +1045,10 @@ IRSB* cg_instrument ( VgCallbackClosure* closure,
                       const VexArchInfo* archinfo_host,
                       IRType gWordTy, IRType hWordTy )
 {
-   Int        i, isize;
+   Int        i;
+   UInt       isize;
    IRStmt*    st;
-   Addr64     cia; /* address of current insn */
+   Addr       cia; /* address of current insn */
    CgState    cgs;
    IRTypeEnv* tyenv = sbIn->tyenv;
    InstrInfo* curr_inode = NULL;
@@ -1242,7 +1243,7 @@ IRSB* cg_instrument ( VgCallbackClosure* closure,
                   we can pass it to the branch predictor simulation
                   functions easily. */
                Bool     inverted;
-               Addr64   nia, sea;
+               Addr     nia, sea;
                IRConst* dst;
                IRType   tyW    = hWordTy;
                IROp     widen  = tyW==Ity_I32  ? Iop_1Uto32  : Iop_1Uto64;
@@ -1257,15 +1258,13 @@ IRSB* cg_instrument ( VgCallbackClosure* closure,
                   inverted by the ir optimiser.  To do that, figure out
                   the next (fallthrough) instruction's address and the
                   side exit address and see if they are the same. */
-               nia = cia + (Addr64)isize;
-               if (tyW == Ity_I32)
-                  nia &= 0xFFFFFFFFULL;
+               nia = cia + isize;
 
                /* Side exit address */
                dst = st->Ist.Exit.dst;
                if (tyW == Ity_I32) {
                   tl_assert(dst->tag == Ico_U32);
-                  sea = (Addr64)(UInt)dst->Ico.U32;
+                  sea = dst->Ico.U32;
                } else {
                   tl_assert(tyW == Ity_I64);
                   tl_assert(dst->tag == Ico_U64);

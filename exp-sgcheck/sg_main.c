@@ -2063,7 +2063,7 @@ static void shadowStack_unwind ( ThreadId tid, Addr sp_now )
 
 struct _SGEnv {
    /* the current insn's IP */
-   Addr64 curr_IP;
+   Addr curr_IP;
    /* whether the above is actually known */
    Bool curr_IP_known;
    /* if we find a mem ref, is it the first for this insn?  Used for
@@ -2224,7 +2224,7 @@ void sg_instrument_IRStmt ( /*MOD*/struct _SGEnv * env,
 
       case Ist_IMark:
          env->curr_IP_known = True;
-         env->curr_IP       = (Addr)st->Ist.IMark.addr;
+         env->curr_IP       = st->Ist.IMark.addr;
          env->firstRef      = True;
          break;
 

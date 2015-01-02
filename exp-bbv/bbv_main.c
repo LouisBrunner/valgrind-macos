@@ -257,7 +257,7 @@ static VG_REGPARM(1) void per_instruction_BBV_fldcw(struct BB_info *bbInfo)
    /* Check if the instruction pointed to is one that needs */
    /*   special handling.  If so, set a bit in the return   */
    /*   value indicating what type.                         */
-static Int get_inst_type(Int len, Addr addr)
+static Int get_inst_type(UInt len, Addr addr)
 {
    int result=0;
 
@@ -342,7 +342,7 @@ static IRSB* bbv_instrument ( VgCallbackClosure* closure,
    IRSB     *sbOut;
    IRStmt   *st;
    struct BB_info  *bbInfo;
-   Addr64   origAddr,ourAddr;
+   Addr     origAddr,ourAddr;
    IRDirty  *di;
    IRExpr   **argv, *arg1;
    Int      regparms,opcode_type;

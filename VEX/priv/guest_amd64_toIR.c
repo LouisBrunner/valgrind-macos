@@ -31763,7 +31763,7 @@ DisResult disInstr_AMD64_WRK (
    }
 
    DIP("\n");
-   dres.len = (Int)toUInt(delta - delta_start);
+   dres.len = toUInt(delta - delta_start);
    return dres;
 }
 

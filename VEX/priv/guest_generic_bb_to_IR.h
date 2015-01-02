@@ -66,7 +66,7 @@ typedef
 
       /* The disassembled insn has this length.  Must always be
          set. */
-      Int len;
+      UInt len;
 
       /* What happens next?
          Dis_StopHere:  this insn terminates the BB; we must stop.

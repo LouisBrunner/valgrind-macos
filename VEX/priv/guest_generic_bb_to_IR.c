@@ -386,7 +386,7 @@ IRSB* bb_to_IR (
       vassert(imark);
       vassert(imark->tag == Ist_IMark);
       vassert(imark->Ist.IMark.len == 0);
-      imark->Ist.IMark.len = toUInt(dres.len);
+      imark->Ist.IMark.len = dres.len;
 
       /* Print the resulting IR, if needed. */
       if (vex_traceflags & VEX_TRACE_FE) {

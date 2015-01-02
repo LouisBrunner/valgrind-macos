@@ -13081,7 +13081,7 @@ DisResult disInstr_X86_WRK (
          if (resteerOkFn( callback_opaque, (Addr32)d32 )) {
             /* follow into the call target. */
             dres.whatNext   = Dis_ResteerU;
-            dres.continueAt = (Addr64)(Addr32)d32;
+            dres.continueAt = (Addr32)d32;
          } else {
             jmp_lit(&dres, Ijk_Call, d32);
             vassert(dres.whatNext == Dis_StopHere);
@@ -13395,7 +13395,7 @@ DisResult disInstr_X86_WRK (
       delta++;
       if (resteerOkFn( callback_opaque, (Addr32)d32) ) {
          dres.whatNext   = Dis_ResteerU;
-         dres.continueAt = (Addr64)(Addr32)d32;
+         dres.continueAt = (Addr32)d32;
       } else {
          jmp_lit(&dres, Ijk_Boring, d32);
          vassert(dres.whatNext == Dis_StopHere);
@@ -13409,7 +13409,7 @@ DisResult disInstr_X86_WRK (
       delta += sz;
       if (resteerOkFn( callback_opaque, (Addr32)d32) ) {
          dres.whatNext   = Dis_ResteerU;
-         dres.continueAt = (Addr64)(Addr32)d32;
+         dres.continueAt = (Addr32)d32;
       } else {
          jmp_lit(&dres, Ijk_Boring, d32);
          vassert(dres.whatNext == Dis_StopHere);
@@ -13456,7 +13456,7 @@ DisResult disInstr_X86_WRK (
                   IRConst_U32(guest_EIP_bbstart+delta),
                   OFFB_EIP ) );
          dres.whatNext   = Dis_ResteerC;
-         dres.continueAt = (Addr64)(Addr32)d32;
+         dres.continueAt = (Addr32)d32;
          comment = "(assumed taken)";
       }
       else
@@ -13476,7 +13476,7 @@ DisResult disInstr_X86_WRK (
                   IRConst_U32(d32),
                   OFFB_EIP ) );
          dres.whatNext   = Dis_ResteerC;
-         dres.continueAt = (Addr64)(Addr32)(guest_EIP_bbstart+delta);
+         dres.continueAt = guest_EIP_bbstart + delta;
          comment = "(assumed not taken)";
       }
       else {
@@ -15021,7 +15021,7 @@ DisResult disInstr_X86_WRK (
                      IRConst_U32(guest_EIP_bbstart+delta),
                      OFFB_EIP ) );
             dres.whatNext   = Dis_ResteerC;
-            dres.continueAt = (Addr64)(Addr32)d32;
+            dres.continueAt = (Addr32)d32;
             comment = "(assumed taken)";
          }
          else
@@ -15041,7 +15041,7 @@ DisResult disInstr_X86_WRK (
                      IRConst_U32(d32),
                      OFFB_EIP ) );
             dres.whatNext   = Dis_ResteerC;
-            dres.continueAt = (Addr64)(Addr32)(guest_EIP_bbstart+delta);
+            dres.continueAt = guest_EIP_bbstart + delta;
             comment = "(assumed not taken)";
          }
          else {

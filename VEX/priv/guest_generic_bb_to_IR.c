@@ -471,7 +471,7 @@ IRSB* bb_to_IR (
             n_resteers++;
             d_resteers++;
             if (0 && (n_resteers & 0xFF) == 0)
-            vex_printf("resteer[%d,%d] to 0x%llx (delta = %lld)\n",
+            vex_printf("resteer[%d,%d] to 0x%lx (delta = %lld)\n",
                        n_resteers, d_resteers,
                        dres.continueAt, delta);
             break;

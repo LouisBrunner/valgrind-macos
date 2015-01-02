@@ -15554,7 +15554,7 @@ DisResult disInstr_ARM_WRK (
          if (resteerOkFn( callback_opaque, dst )) {
             /* yes */
             dres.whatNext   = Dis_ResteerU;
-            dres.continueAt = (Addr64)dst;
+            dres.continueAt = dst;
          } else {
             /* no; terminate the SB at this point. */
             llPutIReg(15, mkU32(dst));
@@ -15585,7 +15585,7 @@ DisResult disInstr_ARM_WRK (
                                IRConst_U32(guest_R15_curr_instr_notENC+4),
                                OFFB_R15T ));
             dres.whatNext   = Dis_ResteerC;
-            dres.continueAt = (Addr64)(Addr32)dst;
+            dres.continueAt = (Addr32)dst;
             comment = "(assumed taken)";
          }
          else
@@ -15604,8 +15604,7 @@ DisResult disInstr_ARM_WRK (
                                IRConst_U32(dst),
                                OFFB_R15T ));
             dres.whatNext   = Dis_ResteerC;
-            dres.continueAt = (Addr64)(Addr32)
-                                      (guest_R15_curr_instr_notENC+4);
+            dres.continueAt = guest_R15_curr_instr_notENC+4;
             comment = "(assumed not taken)";
          }
          else {

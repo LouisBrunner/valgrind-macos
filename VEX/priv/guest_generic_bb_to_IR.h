@@ -88,7 +88,7 @@ typedef
 
       /* For Dis_Resteer, this is the guest address we should continue
          at.  Otherwise ignored (should be zero). */
-      Addr64 continueAt;
+      Addr   continueAt;
 
    }
 

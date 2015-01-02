@@ -1616,7 +1616,7 @@ Bool VG_(translate) ( ThreadId tid,
    vta.abiinfo_both     = vex_abiinfo;
    vta.callback_opaque  = (void*)&closure;
    vta.guest_bytes      = (UChar*)ULong_to_Ptr(addr);
-   vta.guest_bytes_addr = (Addr64)addr;
+   vta.guest_bytes_addr = addr;
    vta.chase_into_ok    = chase_into_ok;
    vta.guest_extents    = &vge;
    vta.host_bytes       = tmpbuf;

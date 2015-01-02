@@ -143,7 +143,7 @@ typedef
       /*IN*/  Long         delta,
 
       /* What is the guest IP of the insn? */
-      /*IN*/  Addr64       guest_IP,
+      /*IN*/  Addr         guest_IP,
 
       /* Info about the guest architecture */
       /*IN*/  VexArch      guest_arch,
@@ -174,7 +174,7 @@ IRSB* bb_to_IR (
          /*IN*/ void*            callback_opaque,
          /*IN*/ DisOneInstrFn    dis_instr_fn,
          /*IN*/ const UChar*     guest_code,
-         /*IN*/ Addr64           guest_IP_bbstart,
+         /*IN*/ Addr             guest_IP_bbstart,
          /*IN*/ Bool             (*chase_into_ok)(void*,Addr),
          /*IN*/ VexEndness       host_endness,
          /*IN*/ Bool             sigill_diag,

@@ -605,7 +605,7 @@ typedef
          This is the post-redirection guest address.  Not that Vex
          understands anything about redirection; that is all done on
          the Valgrind side. */
-      Addr64  guest_bytes_addr;
+      Addr    guest_bytes_addr;
 
       /* Is it OK to chase into this guest address?  May not be
 	 NULL. */

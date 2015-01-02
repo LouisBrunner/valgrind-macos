@@ -4650,7 +4650,7 @@ static Int calc_unroll_factor( IRSB* bb )
 }
 
 
-static IRSB* maybe_loop_unroll_BB ( IRSB* bb0, Addr64 my_addr )
+static IRSB* maybe_loop_unroll_BB ( IRSB* bb0, Addr my_addr )
 {
    Int      i, j, jmax, n_vars;
    Bool     xxx_known;
@@ -4810,7 +4810,7 @@ static IRSB* maybe_loop_unroll_BB ( IRSB* bb0, Addr64 my_addr )
    }
 
    if (DEBUG_IROPT) {
-      vex_printf("\nUNROLLED (%llx)\n", my_addr);
+      vex_printf("\nUNROLLED (%lx)\n", my_addr);
       ppIRSB(bb1);
       vex_printf("\n");
    }
@@ -6039,7 +6039,7 @@ IRSB* do_iropt_BB(
          IRSB* bb0,
          IRExpr* (*specHelper) (const HChar*, IRExpr**, IRStmt**, Int),
          Bool (*preciseMemExnsFn)(Int,Int),
-         Addr64 guest_addr,
+         Addr    guest_addr,
          VexArch guest_arch
       )
 {

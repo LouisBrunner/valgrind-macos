@@ -184,7 +184,7 @@ IRSB* bb_to_IR (
          /*IN*/ void*            callback_opaque,
          /*IN*/ DisOneInstrFn    dis_instr_fn,
          /*IN*/ const UChar*     guest_code,
-         /*IN*/ Addr64           guest_IP_bbstart,
+         /*IN*/ Addr             guest_IP_bbstart,
          /*IN*/ Bool             (*chase_into_ok)(void*,Addr),
          /*IN*/ VexEndness       host_endness,
          /*IN*/ Bool             sigill_diag,
@@ -210,7 +210,7 @@ IRSB* bb_to_IR (
    Int        d_resteers = 0;
    Int        selfcheck_idx = 0;
    IRSB*      irsb;
-   Addr64     guest_IP_curr_instr;
+   Addr       guest_IP_curr_instr;
    IRConst*   guest_IP_bbstart_IRConst = NULL;
    Int        n_cond_resteers_allowed = 2;
 
@@ -329,10 +329,10 @@ IRSB* bb_to_IR (
          was originally Thumb or ARM.  For more details of this
          convention, see comments on definition of guest_R15T in
          libvex_guest_arm.h. */
-      if (arch_guest == VexArchARM && (guest_IP_curr_instr & (Addr64)1)) {
+      if (arch_guest == VexArchARM && (guest_IP_curr_instr & 1)) {
          /* Thumb insn => mask out the T bit, but put it in delta */
          addStmtToIRSB( irsb,
-                        IRStmt_IMark(guest_IP_curr_instr & ~(Addr64)1,
+                        IRStmt_IMark(guest_IP_curr_instr & ~(Addr)1,
                                      0, /* len */
                                      1  /* delta */
                         )

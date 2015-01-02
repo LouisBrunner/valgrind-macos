@@ -728,8 +728,8 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          const UChar* p = vta->guest_bytes;
          UInt   sum = 0;
          UInt   guest_bytes_read = (UInt)vta->guest_extents->len[0];
-         vex_printf("GuestBytes %llx %u ", vta->guest_bytes_addr, 
-                                           guest_bytes_read );
+         vex_printf("GuestBytes %lx %u ", vta->guest_bytes_addr, 
+                                          guest_bytes_read );
          for (i = 0; i < guest_bytes_read; i++) {
             UInt b = (UInt)p[i];
             vex_printf(" %02x", b );

@@ -189,7 +189,7 @@ int main ( int argc, char** argv )
 
       vta.abiinfo_both    = vbi;
       vta.guest_bytes     = &origbuf[18];
-      vta.guest_bytes_addr = (Addr64)orig_addr;
+      vta.guest_bytes_addr = orig_addr;
       vta.callback_opaque = NULL;
       vta.chase_into_ok   = chase_into_not_ok;
       vta.guest_extents   = &vge;
@@ -223,7 +223,7 @@ int main ( int argc, char** argv )
       /* ARM/Thumb only hacks, that are needed to keep the ITstate
          analyser in the front end happy.  */
       vta.guest_bytes     = &origbuf[18 +1];
-      vta.guest_bytes_addr = (Addr64)(&origbuf[18 +1]);
+      vta.guest_bytes_addr = &origbuf[18 +1];
 #endif
 
 #if 1 /* no instrumentation */

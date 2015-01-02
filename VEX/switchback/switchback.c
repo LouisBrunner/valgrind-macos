@@ -585,7 +585,7 @@ void make_translation ( Addr64 guest_addr, Bool verbose )
    vta.arch_host        = VexArch;
    vta.archinfo_host    = vex_archinfo;
    vta.guest_bytes      = (UChar*)ULong_to_Ptr(guest_addr);
-   vta.guest_bytes_addr = (Addr64)guest_addr;
+   vta.guest_bytes_addr = guest_addr;
    vta.chase_into_ok    = chase_into_ok;
 //   vta.guest_extents    = &vge;
    vta.guest_extents    = &trans_table[trans_table_used];

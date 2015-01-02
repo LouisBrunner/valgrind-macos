@@ -742,7 +742,7 @@ void  getAllocableRegs_S390( Int *, HReg **, Bool );
 void  genSpill_S390        ( HInstr **, HInstr **, HReg , Int , Bool );
 void  genReload_S390       ( HInstr **, HInstr **, HReg , Int , Bool );
 HInstrArray *iselSB_S390   ( const IRSB *, VexArch, const VexArchInfo *,
-                             const VexAbiInfo *, Int, Int, Bool, Bool, Addr64);
+                             const VexAbiInfo *, Int, Int, Bool, Bool, Addr);
 
 /* Return the number of bytes of code needed for an event check */
 Int evCheckSzB_S390(VexEndness endness_host);

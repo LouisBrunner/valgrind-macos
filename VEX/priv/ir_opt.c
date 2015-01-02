@@ -5619,8 +5619,8 @@ static Interval stmt_modifies_guest_state ( IRSB *bb, const IRStmt *st,
    }
 }
 
-/* notstatic */ Addr64 ado_treebuild_BB ( IRSB* bb,
-                                          Bool (*preciseMemExnsFn)(Int,Int) )
+/* notstatic */ Addr ado_treebuild_BB ( IRSB* bb,
+                                        Bool (*preciseMemExnsFn)(Int,Int) )
 {
    Int      i, j, k, m;
    Bool     stmtStores, invalidateMe;
@@ -5630,7 +5630,7 @@ static Interval stmt_modifies_guest_state ( IRSB *bb, const IRStmt *st,
    ATmpInfo env[A_NENV];
 
    Bool   max_ga_known = False;
-   Addr64 max_ga       = 0;
+   Addr   max_ga       = 0;
 
    Int       n_tmps = bb->tyenv->types_used;
    UShort*   uses   = LibVEX_Alloc(n_tmps * sizeof(UShort));
@@ -5650,8 +5650,8 @@ static Interval stmt_modifies_guest_state ( IRSB *bb, const IRStmt *st,
          case Ist_NoOp:
             continue;
          case Ist_IMark: {
-            Int    len = st->Ist.IMark.len;
-            Addr64 mga = st->Ist.IMark.addr + (len < 1 ? 1 : len) - 1;
+            UInt len = st->Ist.IMark.len;
+            Addr mga = st->Ist.IMark.addr + (len < 1 ? 1 : len) - 1;
             max_ga_known = True;
             if (mga > max_ga)
                max_ga = mga;
@@ -5839,7 +5839,7 @@ static Interval stmt_modifies_guest_state ( IRSB *bb, const IRStmt *st,
    bb->next = atbSubst_Expr(env, bb->next);
    bb->stmts_used = j;
 
-   return max_ga_known ? max_ga : ~(Addr64)0;
+   return max_ga_known ? max_ga : ~(Addr)0;
 }
 
 

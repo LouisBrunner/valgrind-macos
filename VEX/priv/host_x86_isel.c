@@ -181,7 +181,7 @@ typedef
       UInt         hwcaps;
 
       Bool         chainingAllowed;
-      Addr64       max_ga;
+      Addr32       max_ga;
 
       /* These are modified as we go along. */
       HInstrArray* code;
@@ -4333,7 +4333,7 @@ static void iselNext ( ISelEnv* env,
             /* Skip the event check at the dst if this is a forwards
                edge. */
             Bool toFastEP
-               = ((Addr64)cdst->Ico.U32) > env->max_ga;
+               = ((Addr32)cdst->Ico.U32) > env->max_ga;
             if (0) vex_printf("%s", toFastEP ? "X" : ".");
             addInstr(env, X86Instr_XDirect(cdst->Ico.U32,
                                            amEIP, Xcc_ALWAYS, 
@@ -4417,7 +4417,7 @@ HInstrArray* iselSB_X86 ( const IRSB* bb,
                           Int offs_Host_EvC_FailAddr,
                           Bool chainingAllowed,
                           Bool addProfInc,
-                          Addr64 max_ga )
+                          Addr max_ga )
 {
    Int      i, j;
    HReg     hreg, hregHI;
@@ -4433,8 +4433,6 @@ HInstrArray* iselSB_X86 ( const IRSB* bb,
                      | VEX_HWCAPS_X86_SSE2
                      | VEX_HWCAPS_X86_SSE3
                      | VEX_HWCAPS_X86_LZCNT)));
-   vassert(sizeof(max_ga) == 8);
-   vassert((max_ga >> 32) == 0);
 
    /* Check that the host's endianness is as expected. */
    vassert(archinfo_host->endness == VexEndnessLE);

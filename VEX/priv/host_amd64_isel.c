@@ -4858,7 +4858,7 @@ HInstrArray* iselSB_AMD64 ( const IRSB* bb,
                             Int offs_Host_EvC_FailAddr,
                             Bool chainingAllowed,
                             Bool addProfInc,
-                            Addr64 max_ga )
+                            Addr max_ga )
 {
    Int        i, j;
    HReg       hreg, hregHI;

@@ -4051,7 +4051,7 @@ HInstrArray *
 iselSB_S390(const IRSB *bb, VexArch arch_host, const VexArchInfo *archinfo_host,
             const VexAbiInfo *vbi, Int offset_host_evcheck_counter,
             Int offset_host_evcheck_fail_addr, Bool chaining_allowed,
-            Bool add_profinc, Addr64 max_ga)
+            Bool add_profinc, Addr max_ga)
 {
    UInt     i, j;
    HReg     hreg, hregHI;

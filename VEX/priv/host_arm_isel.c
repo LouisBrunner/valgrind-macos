@@ -118,7 +118,7 @@ typedef
       UInt         hwcaps;
 
       Bool         chainingAllowed;
-      Addr64       max_ga;
+      Addr32       max_ga;
 
       /* These are modified as we go along. */
       HInstrArray* code;
@@ -6172,7 +6172,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
             /* Skip the event check at the dst if this is a forwards
                edge. */
             Bool toFastEP
-               = ((Addr32)stmt->Ist.Exit.dst->Ico.U32) > env->max_ga;
+               = stmt->Ist.Exit.dst->Ico.U32 > env->max_ga;
             if (0) vex_printf("%s", toFastEP ? "Y" : ",");
             addInstr(env, ARMInstr_XDirect(stmt->Ist.Exit.dst->Ico.U32,
                                            amR15T, cc, toFastEP));
@@ -6244,7 +6244,7 @@ static void iselNext ( ISelEnv* env,
             /* Skip the event check at the dst if this is a forwards
                edge. */
             Bool toFastEP
-               = ((Addr64)cdst->Ico.U32) > env->max_ga;
+               = cdst->Ico.U32 > env->max_ga;
             if (0) vex_printf("%s", toFastEP ? "X" : ".");
             addInstr(env, ARMInstr_XDirect(cdst->Ico.U32,
                                            amR15T, ARMcc_AL, 
@@ -6320,7 +6320,7 @@ HInstrArray* iselSB_ARM ( const IRSB* bb,
                           Int offs_Host_EvC_FailAddr,
                           Bool chainingAllowed,
                           Bool addProfInc,
-                          Addr64 max_ga )
+                          Addr max_ga )
 {
    Int       i, j;
    HReg      hreg, hregHI;

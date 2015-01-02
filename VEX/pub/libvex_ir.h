@@ -2675,8 +2675,8 @@ typedef
                          eg. ------ IMark(0x4000792, 5, 0) ------,
          */
          struct {
-            Addr64 addr;   /* instruction address */
-            Int    len;    /* instruction length */
+            Addr   addr;   /* instruction address */
+            UInt   len;    /* instruction length */
             UChar  delta;  /* addr = program counter as encoded in guest state
                                      - delta */
          } IMark;
@@ -2874,7 +2874,7 @@ typedef
 
 /* Statement constructors. */
 extern IRStmt* IRStmt_NoOp    ( void );
-extern IRStmt* IRStmt_IMark   ( Addr64 addr, Int len, UChar delta );
+extern IRStmt* IRStmt_IMark   ( Addr addr, UInt len, UChar delta );
 extern IRStmt* IRStmt_AbiHint ( IRExpr* base, Int len, IRExpr* nia );
 extern IRStmt* IRStmt_Put     ( Int off, IRExpr* data );
 extern IRStmt* IRStmt_PutI    ( IRPutI* details );

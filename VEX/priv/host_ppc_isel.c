@@ -6101,7 +6101,7 @@ HInstrArray* iselSB_PPC ( const IRSB* bb,
                           Int offs_Host_EvC_FailAddr,
                           Bool chainingAllowed,
                           Bool addProfInc,
-                          Addr64 max_ga)
+                          Addr max_ga)
 
 {
    Int       i, j;
@@ -6115,7 +6115,6 @@ HInstrArray* iselSB_PPC ( const IRSB* bb,
 
    vassert(arch_host == VexArchPPC32 || arch_host == VexArchPPC64);
    mode64 = arch_host == VexArchPPC64;
-   if (!mode64) vassert(max_ga <= 0xFFFFFFFFULL);
 
    /* do some sanity checks */
    mask32 = VEX_HWCAPS_PPC32_F | VEX_HWCAPS_PPC32_V

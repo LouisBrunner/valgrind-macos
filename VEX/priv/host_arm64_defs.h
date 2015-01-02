@@ -957,7 +957,7 @@ extern HInstrArray* iselSB_ARM64 ( const IRSB*,
                                    Int offs_Host_EvC_FailAddr,
                                    Bool chainingAllowed,
                                    Bool addProfInc,
-                                   Addr64 max_ga );
+                                   Addr max_ga );
 
 /* How big is an event check?  This is kind of a kludge because it
    depends on the offsets of host_EvC_FAILADDR and

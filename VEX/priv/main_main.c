@@ -223,7 +223,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
    void         (*ppReg)        ( HReg );
    HInstrArray* (*iselSB)       ( const IRSB*, VexArch, const VexArchInfo*,
                                   const VexAbiInfo*, Int, Int, Bool, Bool,
-                                  Addr64 );
+                                  Addr );
    Int          (*emit)         ( /*MB_MOD*/Bool*,
                                   UChar*, Int, const HInstr*, Bool, VexEndness,
                                   const void*, const void*, const void*,
@@ -244,7 +244,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
    IRType          guest_word_type;
    IRType          host_word_type;
    Bool            mode64, chainingAllowed;
-   Addr64          max_ga;
+   Addr            max_ga;
 
    guest_layout           = NULL;
    available_real_regs    = NULL;

@@ -35,8 +35,8 @@ int main(int, char**)
   for (std::vector<pthread_t>::iterator p = thread.begin(); p != thread.end();
        p++) {
     if (pthread_create(&*p, 0, thread_func, 0) != 0) {
-      fprintf(stderr, "Creation of thread %ld failed\n",
-              &*p - &*thread.begin());
+      fprintf(stderr, "Creation of thread %d failed\n",
+              (int)(&*p - &*thread.begin()));
       return 1;
     }
   }

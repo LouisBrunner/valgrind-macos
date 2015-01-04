@@ -139,9 +139,9 @@ extern ULong x86g_calculate_mmx_psadbw   ( ULong, ULong );
 
 /* --- DIRTY HELPERS --- */
 
-extern ULong x86g_dirtyhelper_loadF80le  ( UInt );
+extern ULong x86g_dirtyhelper_loadF80le  ( Addr );
 
-extern void  x86g_dirtyhelper_storeF80le ( UInt, ULong );
+extern void  x86g_dirtyhelper_storeF80le ( Addr, ULong );
 
 extern void  x86g_dirtyhelper_CPUID_sse0 ( VexGuestX86State* );
 extern void  x86g_dirtyhelper_CPUID_mmxext ( VexGuestX86State* );

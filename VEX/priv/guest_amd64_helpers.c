@@ -2051,18 +2051,18 @@ void amd64g_dirtyhelper_FINIT ( VexGuestAMD64State* gst )
 
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (reads guest memory) */
-ULong amd64g_dirtyhelper_loadF80le ( ULong addrU )
+ULong amd64g_dirtyhelper_loadF80le ( Addr addrU )
 {
    ULong f64;
-   convert_f80le_to_f64le ( (UChar*)ULong_to_Ptr(addrU), (UChar*)&f64 );
+   convert_f80le_to_f64le ( (UChar*)addrU, (UChar*)&f64 );
    return f64;
 }
 
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (writes guest memory) */
-void amd64g_dirtyhelper_storeF80le ( ULong addrU, ULong f64 )
+void amd64g_dirtyhelper_storeF80le ( Addr addrU, ULong f64 )
 {
-   convert_f64le_to_f80le( (UChar*)&f64, (UChar*)ULong_to_Ptr(addrU) );
+   convert_f64le_to_f80le( (UChar*)&f64, (UChar*)addrU );
 }
 
 

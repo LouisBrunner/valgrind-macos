@@ -1437,18 +1437,18 @@ UInt x86g_calculate_FXAM ( UInt tag, ULong dbl )
 
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (reads guest memory) */
-ULong x86g_dirtyhelper_loadF80le ( UInt addrU )
+ULong x86g_dirtyhelper_loadF80le ( Addr addrU )
 {
    ULong f64;
-   convert_f80le_to_f64le ( (UChar*)ULong_to_Ptr(addrU), (UChar*)&f64 );
+   convert_f80le_to_f64le ( (UChar*)addrU, (UChar*)&f64 );
    return f64;
 }
 
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (writes guest memory) */
-void x86g_dirtyhelper_storeF80le ( UInt addrU, ULong f64 )
+void x86g_dirtyhelper_storeF80le ( Addr addrU, ULong f64 )
 {
-   convert_f64le_to_f80le( (UChar*)&f64, (UChar*)ULong_to_Ptr(addrU) );
+   convert_f64le_to_f80le( (UChar*)&f64, (UChar*)addrU );
 }
 
 

@@ -514,7 +514,7 @@ IRSB* bb_to_IR (
       that do.
    */
    {
-      Addr64   base2check;
+      Addr     base2check;
       UInt     len2check;
       HWord    expectedhW;
       IRTemp   tistart_tmp, tilen_tmp;

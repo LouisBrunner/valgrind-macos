@@ -414,8 +414,8 @@ void switchback ( void )
 
    UInt* p = (UInt*)(&copy[off_nopstart]);
 
-   Addr64 addr_of_nop = (Addr64)p;
-   Addr64 where_to_go = gst.guest_PC;
+   Addr addr_of_nop = (Addr)p;
+   Addr where_to_go = gst.guest_PC;
    Long   diff = ((Long)where_to_go) - ((Long)addr_of_nop);
 
    if (0) {
@@ -519,12 +519,12 @@ HWord run_translation ( HWord translation )
    return trc;
 }
 
-HWord find_translation ( Addr64 guest_addr )
+HWord find_translation ( Addr guest_addr )
 {
    Int i;
    HWord __res;
    if (0)
-      printf("find translation %p ... ", ULong_to_Ptr(guest_addr));
+     printf("find translation %p ... ", (void *)(guest_addr));
    for (i = 0; i < trans_table_used; i++)
      if (trans_table[i].base[0] == guest_addr)
         break;
@@ -552,7 +552,7 @@ HWord find_translation ( Addr64 guest_addr )
 
 #define N_TRANSBUF 5000
 static UChar transbuf[N_TRANSBUF];
-void make_translation ( Addr64 guest_addr, Bool verbose )
+void make_translation ( Addr guest_addr, Bool verbose )
 {
    VexTranslateArgs   vta;
    VexTranslateResult tres;
@@ -573,7 +573,7 @@ void make_translation ( Addr64 guest_addr, Bool verbose )
 
    assert(trans_table_used < N_TRANS_TABLE);
    if (0)
-      printf("make translation %p\n", ULong_to_Ptr(guest_addr));
+     printf("make translation %p\n", (void *)guest_addr);
 
    LibVEX_default_VexArchInfo(&vex_archinfo);
    //vex_archinfo.subarch = VexSubArch;
@@ -584,7 +584,7 @@ void make_translation ( Addr64 guest_addr, Bool verbose )
    vta.archinfo_guest   = vex_archinfo;
    vta.arch_host        = VexArch;
    vta.archinfo_host    = vex_archinfo;
-   vta.guest_bytes      = (UChar*)ULong_to_Ptr(guest_addr);
+   vta.guest_bytes      = (UChar*)guest_addr;
    vta.guest_bytes_addr = guest_addr;
    vta.chase_into_ok    = chase_into_ok;
 //   vta.guest_extents    = &vge;
@@ -631,7 +631,7 @@ void make_translation ( Addr64 guest_addr, Bool verbose )
 
 
 __attribute__((unused))
-static Bool overlap ( Addr64 start, UInt len, VexGuestExtents* vge )
+static Bool overlap ( Addr start, UInt len, VexGuestExtents* vge )
 {
    Int i;
    for (i = 0; i < vge->n_used; i++) {
@@ -670,8 +670,8 @@ void log_bytes ( HChar* bytes, Int nbytes )
    serviceFn(0)). */
 static void run_simulator ( void )
 {
-   static Addr64 last_guest = 0;
-   Addr64 next_guest;
+   static Addr last_guest = 0;
+   Addr  next_guest;
    HWord next_host;
    while (1) {
       next_guest = gst.GuestPC;
@@ -679,7 +679,7 @@ static void run_simulator ( void )
       if (0)
          printf("\nnext_guest: 0x%x\n", (UInt)next_guest);
 
-      if (next_guest == Ptr_to_ULong(&serviceFn)) {
+      if (next_guest == (Addr)&serviceFn) {
 
          /* "do" the function call to serviceFn */
 #        if defined(__i386__)

@@ -159,9 +159,9 @@ extern ULong amd64g_calculate_pdep  ( ULong, ULong );
 
 /* --- DIRTY HELPERS --- */
 
-extern ULong amd64g_dirtyhelper_loadF80le  ( ULong/*addr*/ );
+extern ULong amd64g_dirtyhelper_loadF80le  ( Addr/*addr*/ );
 
-extern void  amd64g_dirtyhelper_storeF80le ( ULong/*addr*/, ULong/*data*/ );
+extern void  amd64g_dirtyhelper_storeF80le ( Addr/*addr*/, ULong/*data*/ );
 
 extern void  amd64g_dirtyhelper_CPUID_baseline ( VexGuestAMD64State* st );
 extern void  amd64g_dirtyhelper_CPUID_sse3_and_cx16 ( VexGuestAMD64State* st );

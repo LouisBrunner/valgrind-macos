@@ -366,7 +366,7 @@ typedef
          (function call) ?  Is supplied with the guest address of the
          target of the call since that may be significant.  If NULL,
          is assumed equivalent to a fn which always returns False. */
-      Bool (*guest_ppc_zap_RZ_at_bl)(Addr64);
+      Bool (*guest_ppc_zap_RZ_at_bl)(Addr);
 
       /* PPC32/PPC64 HOSTS only: does '&f' give us a pointer to a
          function descriptor on the host, or to the function code
@@ -569,12 +569,13 @@ typedef
    scheme of describing a chunk of guest code merely by its start
    address and length is inadequate.
 
-   Hopefully this struct is only 32 bytes long.  Space is important as
-   clients will have to store one of these for each translation made.
+   This struct uses 20 bytes on a 32-bit archtecture and 32 bytes on a
+   64-bit architecture.  Space is important as clients will have to store
+   one of these for each translation made.
 */
 typedef
    struct {
-      Addr64 base[3];
+      Addr   base[3];
       UShort len[3];
       UShort n_used;
    }

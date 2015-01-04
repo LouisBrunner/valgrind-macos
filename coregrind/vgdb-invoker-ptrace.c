@@ -72,23 +72,10 @@
 #   endif
 #endif
 
-#if VEX_HOST_WORDSIZE == 8
-typedef Addr64 CORE_ADDR;
-#elif VEX_HOST_WORDSIZE == 4
-typedef Addr32 CORE_ADDR;
-#else
-# error "unexpected wordsize"
-#endif
-
-#if VEX_HOST_WORDSIZE == 8
-typedef Addr64 PTRACE_XFER_TYPE;
+// 32-bit or 64-bit wide, depending on primary architecture.
+typedef Addr  CORE_ADDR;
+typedef Addr  PTRACE_XFER_TYPE;
 typedef void* PTRACE_ARG3_TYPE;
-#elif VEX_HOST_WORDSIZE == 4
-typedef Addr32 PTRACE_XFER_TYPE;
-typedef void* PTRACE_ARG3_TYPE;
-#else
-# error "unexpected wordsize"
-#endif
 
 // if > 0, pid for which registers have to be restored.
 // if == 0, means we have not yet called setregs (or have already
@@ -314,7 +301,8 @@ Bool waitstopped (pid_t pid, int signal_expected, const char *msg)
          // realloc a bigger queue, and store new signal at the end.
          // This is not very efficient but we assume not many sigs are queued.
          signal_queue_sz++;
-         signal_queue = vrealloc(signal_queue, sizeof(siginfo_t) * signal_queue_sz);
+         signal_queue = vrealloc(signal_queue, 
+                                 sizeof(siginfo_t) * signal_queue_sz);
          newsiginfo = signal_queue + (signal_queue_sz - 1);
 
          res = ptrace (PTRACE_GETSIGINFO, pid, NULL, newsiginfo);
@@ -875,7 +863,7 @@ Bool invoker_invoke_gdbserver (pid_t pid)
 #elif defined(VGA_mips64)
    sp = user_mod.regs[29];
 #else
-   I_die_here : (sp) architecture missing in vgdb.c
+   I_die_here : (sp) architecture missing in vgdb-invoker-ptrace.c
 #endif
 
 
@@ -962,7 +950,7 @@ Bool invoker_invoke_gdbserver (pid_t pid)
 #elif defined(VGA_mips64)
       assert(0); // cannot vgdb a 32 bits executable with a 64 bits exe
 #else
-      I_die_here : architecture missing in vgdb.c
+      I_die_here : architecture missing in vgdb-invoker-ptrace.c
 #endif
       }
 
@@ -1007,12 +995,12 @@ Bool invoker_invoke_gdbserver (pid_t pid)
 #elif defined(VGA_ppc32)
       assert(0); // cannot vgdb a 64 bits executable with a 32 bits exe
 #elif defined(VGA_ppc64be)
-      Addr64 func_addr;
-      Addr64 toc_addr;
+      Addr func_addr;
+      Addr toc_addr;
       int rw;
       rw = ptrace_read_memory(pid, shared64->invoke_gdbserver,
                               &func_addr,
-                              sizeof(Addr64));
+                              sizeof(Addr));
       if (rw != 0) {
          ERROR(rw, "ppc64 read func_addr\n");
          detach_from_all_threads(pid);
@@ -1020,7 +1008,7 @@ Bool invoker_invoke_gdbserver (pid_t pid)
       }
       rw = ptrace_read_memory(pid, shared64->invoke_gdbserver+8,
                               &toc_addr,
-                              sizeof(Addr64));
+                              sizeof(Addr));
       if (rw != 0) {
          ERROR(rw, "ppc64 read toc_addr\n");
          detach_from_all_threads(pid);
@@ -1067,7 +1055,7 @@ Bool invoker_invoke_gdbserver (pid_t pid)
       user_mod.regs[34] = shared64->invoke_gdbserver;
       user_mod.regs[25] = shared64->invoke_gdbserver;
 #else
-      I_die_here: architecture missing in vgdb.c
+      I_die_here: architecture missing in vgdb-invoker-ptrace.c
 #endif
    }
    else {

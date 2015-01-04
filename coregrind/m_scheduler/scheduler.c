@@ -1555,7 +1555,7 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 
       case VEX_TRC_JMP_INVALICACHE:
          VG_(discard_translations)(
-            (Addr64)VG_(threads)[tid].arch.vex.guest_CMSTART,
+            (Addr)VG_(threads)[tid].arch.vex.guest_CMSTART,
             VG_(threads)[tid].arch.vex.guest_CMLEN,
             "scheduler(VEX_TRC_JMP_INVALICACHE)"
          );

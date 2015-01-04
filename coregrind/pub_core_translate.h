@@ -40,7 +40,7 @@
 
 extern 
 Bool VG_(translate) ( ThreadId tid, 
-                      Addr64   orig_addr,
+                      Addr     orig_addr,
                       Bool     debugging_translation,
                       Int      debugging_verbosity,
                       ULong    bbs_done,

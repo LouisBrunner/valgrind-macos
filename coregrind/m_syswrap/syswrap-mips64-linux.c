@@ -387,7 +387,7 @@ PRE(sys_cacheflush)
    PRINT("cacheflush (%lx, %lx, %lx)", ARG1, ARG2, ARG3);
    PRE_REG_READ3(long, "cacheflush", unsigned long, addr,
                  int, nbytes, int, cache);
-   VG_ (discard_translations) ((Addr64) ARG1, ((ULong) ARG2),
+   VG_ (discard_translations) ((Addr)ARG1, (ULong) ARG2,
                                "PRE(sys_cacheflush)");
    SET_STATUS_Success(0);
 }

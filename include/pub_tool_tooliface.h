@@ -64,8 +64,8 @@ extern void (*VG_(tl_pre_clo_init)) ( void );
 */
 typedef 
    struct {
-      Addr64   nraddr; /* non-redirected guest address */
-      Addr64   readdr; /* redirected guest address */
+      Addr     nraddr; /* non-redirected guest address */
+      Addr     readdr; /* redirected guest address */
       ThreadId tid;    /* tid requesting translation */
    }
    VgCallbackClosure;
@@ -381,7 +381,7 @@ extern void VG_(needs_superblock_discards) (
    //   translation, and so could be covered by the "extents" of more than
    //   one call to this function.
    // Doing it the first way (as eg. Cachegrind does) is probably easier.
-   void (*discard_superblock_info)(Addr64 orig_addr, VexGuestExtents extents)
+   void (*discard_superblock_info)(Addr orig_addr, VexGuestExtents extents)
 );
 
 /* Tool defines its own command line options? */

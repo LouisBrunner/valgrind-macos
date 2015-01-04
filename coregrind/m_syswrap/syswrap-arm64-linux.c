@@ -703,7 +703,7 @@ PRE(sys_rt_sigreturn)
 //ZZ {
 //ZZ    PRINT("cacheflush (%lx, %#lx, %#lx)",ARG1,ARG2,ARG3);
 //ZZ    PRE_REG_READ3(long, "cacheflush", void*, addrlow,void*, addrhigh,int, flags);
-//ZZ    VG_(discard_translations)( (Addr64)ARG1,
+//ZZ    VG_(discard_translations)( (Addr)ARG1,
 //ZZ                               ((ULong)ARG2) - ((ULong)ARG1) + 1ULL/*paranoia*/,
 //ZZ                               "PRE(sys_cacheflush)" );
 //ZZ    SET_STATUS_Success(0);

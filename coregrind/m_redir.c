@@ -733,8 +733,8 @@ void VG_(redir_add_ifunc_target)( Addr old_from, Addr new_from )
     if (VG_(clo_trace_redir)) {
        VG_(message)( Vg_DebugMsg,
                      "Adding redirect for indirect function "
-                     "0x%llx from 0x%llx -> 0x%llx\n",
-                     (ULong)old_from, (ULong)new_from, (ULong)new.to_addr );
+                     "0x%lx from 0x%lx -> 0x%lx\n",
+                     old_from, new_from, new.to_addr );
     }
 }
 
@@ -988,9 +988,9 @@ static void maybe_add_active ( Active act )
          they get redirected to 'to'.  So discard them.  Just for
          paranoia (but, I believe, unnecessarily), discard 'to' as
          well. */
-      VG_(discard_translations)( (Addr64)act.from_addr, 1,
+      VG_(discard_translations)( act.from_addr, 1,
                                  "redir_new_DebugInfo(from_addr)");
-      VG_(discard_translations)( (Addr64)act.to_addr, 1,
+      VG_(discard_translations)( act.to_addr, 1,
                                  "redir_new_DebugInfo(to_addr)");
       if (VG_(clo_verbosity) > 2) {
          VG_(message)(Vg_UserMsg, "Adding active redirection:\n");
@@ -1074,9 +1074,9 @@ void VG_(redir_notify_delete_DebugInfo)( const DebugInfo* delsi )
          VG_(OSetWord_Insert)( tmpSet, act->from_addr );
          /* While we have our hands on both the 'from' and 'to'
             of this Active, do paranoid stuff with tt/tc. */
-         VG_(discard_translations)( (Addr64)act->from_addr, 1,
+         VG_(discard_translations)( act->from_addr, 1,
                                     "redir_del_DebugInfo(from_addr)");
-         VG_(discard_translations)( (Addr64)act->to_addr, 1,
+         VG_(discard_translations)( act->to_addr, 1,
                                     "redir_del_DebugInfo(to_addr)");
       }
    }
@@ -1698,12 +1698,12 @@ static void handle_require_text_symbols ( const DebugInfo* di )
 static void show_spec ( const HChar* left, const Spec* spec )
 {
    VG_(message)( Vg_DebugMsg, 
-                 "%s%-25s %-30s %s-> (%04d.%d) 0x%08llx\n",
+                 "%s%-25s %-30s %s-> (%04d.%d) 0x%08lx\n",
                  left,
                  spec->from_sopatt, spec->from_fnpatt,
                  spec->isWrap ? "W" : "R",
                  spec->becTag, spec->becPrio,
-                 (ULong)spec->to_addr );
+                 spec->to_addr );
 }
 
 static void show_active ( const HChar* left, const Active* act )
@@ -1721,12 +1721,12 @@ static void show_active ( const HChar* left, const Active* act )
    ok = VG_(get_fnname_w_offset)(act->to_addr, &name2);
    if (!ok) name2 = "???";
 
-   VG_(message)(Vg_DebugMsg, "%s0x%08llx (%-20s) %s-> (%04d.%d) 0x%08llx %s\n", 
+   VG_(message)(Vg_DebugMsg, "%s0x%08lx (%-20s) %s-> (%04d.%d) 0x%08lx %s\n", 
                              left, 
-                             (ULong)act->from_addr, name1,
+                             act->from_addr, name1,
                              act->isWrap ? "W" : "R",
                              act->becTag, act->becPrio,
-                             (ULong)act->to_addr, name2 );
+                             act->to_addr, name2 );
 }
 
 static void show_redir_state ( const HChar* who )

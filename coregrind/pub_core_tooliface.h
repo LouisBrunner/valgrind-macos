@@ -133,7 +133,7 @@ typedef struct {
    void  (*tool_update_extra_suppression_use) (const Error*, const Supp*);
 
    // VG_(needs).superblock_discards
-   void (*tool_discard_superblock_info)(Addr64, VexGuestExtents);
+   void (*tool_discard_superblock_info)(Addr, VexGuestExtents);
 
    // VG_(needs).command_line_options
    Bool (*tool_process_cmd_line_option)(const HChar*);

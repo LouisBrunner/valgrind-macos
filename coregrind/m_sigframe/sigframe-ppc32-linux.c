@@ -183,7 +183,7 @@ void stack_mcontext ( struct vki_mcontext *mc,
    VG_TRACK( post_mem_write,  Vg_CoreSignal, tst->tid, 
              (Addr)&mc->mc_pad, sizeof(mc->mc_pad) );
    /* invalidate any translation of this area */
-   VG_(discard_translations)( (Addr64)(Addr)&mc->mc_pad, 
+   VG_(discard_translations)( (Addr)&mc->mc_pad, 
                               sizeof(mc->mc_pad), "stack_mcontext" );   
 
    /* set the signal handler to return to the trampoline */

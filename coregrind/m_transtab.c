@@ -161,7 +161,7 @@ typedef
          from which this translation was made.  However, .entry may or
          may not be a lie, depending on whether or not we're doing
          redirection. */
-      Addr64 entry;
+      Addr entry;
 
       /* This structure describes precisely what ranges of guest code
          the translation covers, so we can decide whether or not to
@@ -642,7 +642,7 @@ Bool HostExtent__is_dead (const HostExtent* hx, const Sector* sec)
 #define LDEBUG(m) if (DEBUG_TRANSTAB)                           \
       VG_(printf) (m                                            \
                    " start 0x%p len %u sector %d ttslot %u"     \
-                   " tt.entry 0x%llu tt.tcptr 0x%p\n",          \
+                   " tt.entry 0x%lu tt.tcptr 0x%p\n",           \
                    hx->start, hx->len, (int)(sec - sectors),    \
                    hx->tteNo,                                   \
                    sec->tt[tteNo].entry, sec->tt[tteNo].tcptr)
@@ -882,7 +882,7 @@ void unchain_in_preparation_for_deletion ( VexArch arch_host,
    Int      evCheckSzB = LibVEX_evCheckSzB(arch_host, endness_host);
    TTEntry* here_tte   = index_tte(here_sNo, here_tteNo);
    if (DEBUG_TRANSTAB)
-      VG_(printf)("... QQQ tt.entry 0x%llu tt.tcptr 0x%p\n",
+      VG_(printf)("... QQQ tt.entry 0x%lu tt.tcptr 0x%p\n",
                   here_tte->entry, here_tte->tcptr);
    vg_assert(here_tte->status == InUse);
 
@@ -939,7 +939,7 @@ void unchain_in_preparation_for_deletion ( VexArch arch_host,
 
 /* Return equivalence class number for a range. */
 
-static Int range_to_eclass ( Addr64 start, UInt len )
+static Int range_to_eclass ( Addr start, UInt len )
 {
    UInt mask   = (1 << ECLASS_WIDTH) - 1;
    UInt lo     = (UInt)start;
@@ -975,7 +975,7 @@ Int vexGuestExtents_to_eclasses ( /*OUT*/Int* eclasses,
 
    n_ec = 0;
    for (i = 0; i < vge->n_used; i++) {
-      r = range_to_eclass( vge->base[i], (UInt)vge->len[i] );
+      r = range_to_eclass( vge->base[i], vge->len[i] );
       if (r == ECLASS_MISC) 
          goto bad;
       /* only add if we haven't already seen it */
@@ -1201,8 +1201,7 @@ static Bool sanity_check_eclasses_in_sector ( const Sector* sec )
    }
    if (tte->status != Empty) {
       for (k = 0; k < tte->vge.n_used; k++)
-         VG_(printf)("0x%llx %d\n", tte->vge.base[k], 
-                                    (Int)tte->vge.len[k]);
+         VG_(printf)("0x%lx %u\n", tte->vge.base[k], (UInt)tte->vge.len[k]);
    }
 #  endif
 
@@ -1312,9 +1311,9 @@ static Bool isValidSector ( Int sector )
    return True;
 }
 
-static inline UInt HASH_TT ( Addr64 key )
+static inline UInt HASH_TT ( Addr key )
 {
-   UInt kHi = (UInt)(key >> 32);
+   UInt kHi = sizeof(Addr) == 4 ? 0 : (key >> 32);
    UInt kLo = (UInt)key;
    UInt k32 = kHi ^ kLo;
    UInt ror = 7;
@@ -1323,10 +1322,10 @@ static inline UInt HASH_TT ( Addr64 key )
    return k32 % N_TTES_PER_SECTOR;
 }
 
-static void setFastCacheEntry ( Addr64 key, ULong* tcptr )
+static void setFastCacheEntry ( Addr key, ULong* tcptr )
 {
    UInt cno = (UInt)VG_TT_FAST_HASH(key);
-   VG_(tt_fast)[cno].guest = (Addr)key;
+   VG_(tt_fast)[cno].guest = key;
    VG_(tt_fast)[cno].host  = (Addr)tcptr;
    n_fast_updates++;
    /* This shouldn't fail.  It should be assured by m_translate
@@ -1513,7 +1512,7 @@ static void initialiseSector ( Int sno )
    sector.
 */
 void VG_(add_to_transtab)( const VexGuestExtents* vge,
-                           Addr64           entry,
+                           Addr             entry,
                            Addr             code,
                            UInt             code_len,
                            Bool             is_self_checking,
@@ -1535,7 +1534,7 @@ void VG_(add_to_transtab)( const VexGuestExtents* vge,
    vg_assert(n_guest_instrs < 200); /* it can be zero, tho */
 
    if (DEBUG_TRANSTAB)
-      VG_(printf)("add_to_transtab(entry = 0x%llx, len = %d) ...\n",
+      VG_(printf)("add_to_transtab(entry = 0x%lx, len = %u) ...\n",
                   entry, code_len);
 
    n_in_count++;
@@ -1685,7 +1684,7 @@ void VG_(add_to_transtab)( const VexGuestExtents* vge,
 Bool VG_(search_transtab) ( /*OUT*/Addr*  res_hcode,
                             /*OUT*/UInt*  res_sNo,
                             /*OUT*/UInt*  res_tteNo,
-                            Addr64        guest_addr, 
+                            Addr          guest_addr, 
                             Bool          upd_cache )
 {
    Int i, j, k, kstart, sno;
@@ -1753,34 +1752,34 @@ Bool VG_(search_transtab) ( /*OUT*/Addr*  res_hcode,
 /*-------------------------------------------------------------*/
 
 /* forward */
-static void unredir_discard_translations( Addr64, ULong );
+static void unredir_discard_translations( Addr, ULong );
 
 /* Stuff for deleting translations which intersect with a given
    address range.  Unfortunately, to make this run at a reasonable
    speed, it is complex. */
 
 static inline
-Bool overlap1 ( Addr64 s1, ULong r1, Addr64 s2, ULong r2 )
+Bool overlap1 ( Addr s1, ULong r1, Addr s2, ULong r2 )
 {
-   Addr64 e1 = s1 + r1 - 1ULL;
-   Addr64 e2 = s2 + r2 - 1ULL;
+   Addr e1 = s1 + r1 - 1;
+   Addr e2 = s2 + r2 - 1;
    if (e1 < s2 || e2 < s1) 
       return False;
    return True;
 }
 
 static inline
-Bool overlaps ( Addr64 start, ULong range, const VexGuestExtents* vge )
+Bool overlaps ( Addr start, ULong range, const VexGuestExtents* vge )
 {
-   if (overlap1(start, range, vge->base[0], (UInt)vge->len[0]))
+   if (overlap1(start, range, vge->base[0], vge->len[0]))
       return True;
    if (vge->n_used < 2)
       return False;
-   if (overlap1(start, range, vge->base[1], (UInt)vge->len[1]))
+   if (overlap1(start, range, vge->base[1], vge->len[1]))
       return True;
    if (vge->n_used < 3)
       return False;
-   if (overlap1(start, range, vge->base[2], (UInt)vge->len[2]))
+   if (overlap1(start, range, vge->base[2], vge->len[2]))
       return True;
    return False;
 }
@@ -1841,7 +1840,7 @@ static void delete_tte ( /*MOD*/Sector* sec, UInt secNo, Int tteno,
 
 static 
 Bool delete_translations_in_sector_eclass ( /*MOD*/Sector* sec, UInt secNo,
-                                            Addr64 guest_start, ULong range,
+                                            Addr guest_start, ULong range,
                                             Int ec,
                                             VexArch arch_host,
                                             VexEndness endness_host )
@@ -1882,7 +1881,7 @@ Bool delete_translations_in_sector_eclass ( /*MOD*/Sector* sec, UInt secNo,
 
 static 
 Bool delete_translations_in_sector ( /*MOD*/Sector* sec, UInt secNo,
-                                     Addr64 guest_start, ULong range,
+                                     Addr guest_start, ULong range,
                                      VexArch arch_host,
                                      VexEndness endness_host )
 {
@@ -1901,7 +1900,7 @@ Bool delete_translations_in_sector ( /*MOD*/Sector* sec, UInt secNo,
 } 
 
 
-void VG_(discard_translations) ( Addr64 guest_start, ULong range,
+void VG_(discard_translations) ( Addr guest_start, ULong range,
                                  const HChar* who )
 {
    Sector* sec;
@@ -1911,7 +1910,7 @@ void VG_(discard_translations) ( Addr64 guest_start, ULong range,
    vg_assert(init_done);
 
    VG_(debugLog)(2, "transtab",
-                    "discard_translations(0x%llx, %lld) req by %s\n",
+                    "discard_translations(0x%lx, %llu) req by %s\n",
                     guest_start, range, who );
 
    /* Pre-deletion sanity check */
@@ -2106,7 +2105,7 @@ static Bool sanity_check_redir_tt_tc ( void )
    is temporarily in code[0 .. code_len-1].
 */
 void VG_(add_to_unredir_transtab)( const VexGuestExtents* vge,
-                                   Addr64           entry,
+                                   Addr             entry,
                                    Addr             code,
                                    UInt             code_len )
 {
@@ -2161,21 +2160,21 @@ void VG_(add_to_unredir_transtab)( const VexGuestExtents* vge,
 }
 
 Bool VG_(search_unredir_transtab) ( /*OUT*/Addr*  result,
-                                    Addr64        guest_addr )
+                                    Addr          guest_addr )
 {
    Int i;
    for (i = 0; i < N_UNREDIR_TT; i++) {
       if (!unredir_tt[i].inUse)
          continue;
       if (unredir_tt[i].vge.base[0] == guest_addr) {
-         *result = (Addr)unredir_tt[i].hcode;
+         *result = unredir_tt[i].hcode;
          return True;
       }
    }
    return False;
 }
 
-static void unredir_discard_translations( Addr64 guest_start, ULong range )
+static void unredir_discard_translations( Addr guest_start, ULong range )
 {
    Int i;
 
@@ -2202,7 +2201,6 @@ void VG_(init_tt_tc) ( void )
 
    /* Otherwise lots of things go wrong... */
    vg_assert(sizeof(ULong) == 8);
-   vg_assert(sizeof(Addr64) == 8);
    /* check fast cache entries really are 2 words long */
    vg_assert(sizeof(Addr) == sizeof(void*));
    vg_assert(sizeof(FastCacheEntry) == 2 * sizeof(Addr));

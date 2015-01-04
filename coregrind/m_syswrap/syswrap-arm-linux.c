@@ -599,7 +599,7 @@ PRE(sys_cacheflush)
 {
    PRINT("cacheflush (%lx, %#lx, %#lx)",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "cacheflush", void*, addrlow,void*, addrhigh,int, flags);
-   VG_(discard_translations)( (Addr64)ARG1,
+   VG_(discard_translations)( (Addr)ARG1,
                               ((ULong)ARG2) - ((ULong)ARG1) + 1ULL/*paranoia*/,
                               "PRE(sys_cacheflush)" );
    SET_STATUS_Success(0);

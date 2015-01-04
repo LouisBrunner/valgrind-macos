@@ -287,7 +287,7 @@ void VG_(sigframe_create)( ThreadId tid,
             (Addr)&frame->tramp, sizeof(frame->tramp));
 
    /* invalidate any translation of this area */
-   VG_(discard_translations)( (Addr64)&frame->tramp[0], 
+   VG_(discard_translations)( (Addr)&frame->tramp[0], 
                               sizeof(frame->tramp), "stack_mcontext" );   
 
    /* set the signal handler to return to the trampoline */

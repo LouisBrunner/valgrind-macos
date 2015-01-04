@@ -1368,16 +1368,14 @@ IRSB* CLG_(instrument)( VgCallbackClosure* closure,
 // any reason at all: to free up space, because the guest code was
 // unmapped or modified, or for any arbitrary reason.
 static
-void clg_discard_superblock_info ( Addr64 orig_addr64, VexGuestExtents vge )
+void clg_discard_superblock_info ( Addr orig_addr, VexGuestExtents vge )
 {
-    Addr orig_addr = (Addr)orig_addr64;
-
     tl_assert(vge.n_used > 0);
 
    if (0)
       VG_(printf)( "discard_superblock_info: %p, %p, %llu\n",
-                   (void*)(Addr)orig_addr,
-                   (void*)(Addr)vge.base[0], (ULong)vge.len[0]);
+                   (void*)orig_addr,
+                   (void*)vge.base[0], (ULong)vge.len[0]);
 
    // Get BB info, remove from table, free BB info.  Simple!  Note that we
    // use orig_addr, not the first instruction address in vge.
@@ -1450,7 +1448,7 @@ void zero_state_cost(thread_info* t)
 
 /* Ups, this can go very wrong...
    FIXME: We should export this function or provide other means to get a handle */
-extern void VG_(discard_translations) ( Addr64 start, ULong range, const HChar* who );
+extern void VG_(discard_translations) ( Addr start, ULong range, const HChar* who );
 
 void CLG_(set_instrument_state)(const HChar* reason, Bool state)
 {
@@ -1463,7 +1461,7 @@ void CLG_(set_instrument_state)(const HChar* reason, Bool state)
   CLG_DEBUG(2, "%s: Switching instrumentation %s ...\n",
 	   reason, state ? "ON" : "OFF");
 
-  VG_(discard_translations)( (Addr64)0x1000, (ULong) ~0xfffl, "callgrind");
+  VG_(discard_translations)( (Addr)0x1000, (ULong) ~0xfffl, "callgrind");
 
   /* reset internal state: call stacks, simulator */
   CLG_(forall_threads)(unwind_thread);

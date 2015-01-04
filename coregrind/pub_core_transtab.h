@@ -82,7 +82,7 @@ extern void VG_(init_tt_tc)       ( void );
 
 extern
 void VG_(add_to_transtab)( const VexGuestExtents* vge,
-                           Addr64           entry,
+                           Addr             entry,
                            Addr             code,
                            UInt             code_len,
                            Bool             is_self_checking,
@@ -98,10 +98,10 @@ void VG_(tt_tc_do_chaining) ( void* from__patch_addr,
 extern Bool VG_(search_transtab) ( /*OUT*/Addr*  res_hcode,
                                    /*OUT*/UInt*  res_sNo,
                                    /*OUT*/UInt*  res_tteNo,
-                                   Addr64        guest_addr, 
+                                   Addr          guest_addr, 
                                    Bool          upd_cache );
 
-extern void VG_(discard_translations) ( Addr64 start, ULong range,
+extern void VG_(discard_translations) ( Addr  start, ULong range,
                                         const HChar* who );
 
 extern void VG_(print_tt_tc_stats) ( void );
@@ -113,17 +113,17 @@ extern UInt VG_(get_bbs_translated) ( void );
 
 extern
 void VG_(add_to_unredir_transtab)( const VexGuestExtents* vge,
-                                   Addr64           entry,
+                                   Addr             entry,
                                    Addr             code,
                                    UInt             code_len );
 extern 
 Bool VG_(search_unredir_transtab) ( /*OUT*/Addr*  result,
-                                    Addr64        guest_addr );
+                                    Addr          guest_addr );
 
 // SB profiling stuff
 
 typedef struct _SBProfEntry {
-   Addr64 addr;
+   Addr   addr;
    ULong  score;
 } SBProfEntry;
 

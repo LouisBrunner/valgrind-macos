@@ -696,7 +696,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    /* Deal with bogus LR values caused by function
       interception/wrapping on ppc-TOC platforms; see comment on
       similar code a few lines further down. */
-   if (ULong_to_Ptr(lr) == (void*)&VG_(ppctoc_magic_redirect_return_stub)
+   if (lr == (Addr)&VG_(ppctoc_magic_redirect_return_stub)
        && VG_(is_valid_tid)(tid_if_known)) {
       Word hsp = VG_(threads)[tid_if_known].arch.vex.guest_REDIR_SP;
       redirs_used++;

@@ -185,7 +185,7 @@ static void notify_core_of_mmap(Addr a, SizeT len, UInt prot,
    d = VG_(am_notify_client_mmap)( a, len, prot, flags, fd, offset );
 
    if (d)
-      VG_(discard_translations)( (Addr64)a, (ULong)len,
+      VG_(discard_translations)( a, (ULong)len,
                                  "notify_core_of_mmap" );
 }
 
@@ -243,7 +243,7 @@ ML_(notify_core_and_tool_of_munmap) ( Addr a, SizeT len )
    VG_TRACK( die_mem_munmap, a, len );
    VG_(di_notify_munmap)( a, len );
    if (d)
-      VG_(discard_translations)( (Addr64)a, (ULong)len, 
+      VG_(discard_translations)( a, (ULong)len, 
                                  "ML_(notify_core_and_tool_of_munmap)" );
 }
 
@@ -260,7 +260,7 @@ ML_(notify_core_and_tool_of_mprotect) ( Addr a, SizeT len, Int prot )
    VG_TRACK( change_mem_mprotect, a, len, rr, ww, xx );
    VG_(di_notify_mprotect)( a, len, prot );
    if (d)
-      VG_(discard_translations)( (Addr64)a, (ULong)len, 
+      VG_(discard_translations)( a, (ULong)len, 
                                  "ML_(notify_core_and_tool_of_mprotect)" );
 }
 
@@ -1945,7 +1945,7 @@ ML_(generic_POST_sys_shmat) ( ThreadId tid,
       VG_TRACK( new_mem_mmap, res, segmentSize, True, True, False,
                               0/*di_handle*/ );
       if (d)
-         VG_(discard_translations)( (Addr64)res, 
+         VG_(discard_translations)( (Addr)res, 
                                     (ULong)VG_PGROUNDUP(segmentSize),
                                     "ML_(generic_POST_sys_shmat)" );
    }
@@ -1977,7 +1977,7 @@ ML_(generic_POST_sys_shmdt) ( ThreadId tid, UWord res, UWord arg0 )
       s = NULL; /* s is now invalid */
       VG_TRACK( die_mem_munmap, s_start, s_len );
       if (d)
-         VG_(discard_translations)( (Addr64)s_start,
+         VG_(discard_translations)( s_start,
                                     (ULong)s_len,
                                     "ML_(generic_POST_sys_shmdt)" );
    }
@@ -3757,7 +3757,7 @@ POST(sys_munmap)
    Addr  a   = ARG1;
    SizeT len = ARG2;
 
-   ML_(notify_core_and_tool_of_munmap)( (Addr64)a, (ULong)len );
+   ML_(notify_core_and_tool_of_munmap)( a, len );
 }
 
 PRE(sys_mincore)

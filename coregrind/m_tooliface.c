@@ -219,7 +219,7 @@ NEEDS(core_errors)
 NEEDS(var_info)
 
 void VG_(needs_superblock_discards)(
-   void (*discard)(Addr64, VexGuestExtents)
+   void (*discard)(Addr, VexGuestExtents)
 )
 {
    VG_(needs).superblock_discards = True;

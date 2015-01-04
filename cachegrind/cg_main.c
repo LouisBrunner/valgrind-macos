@@ -1715,17 +1715,17 @@ static void cg_fini(Int exitcode)
 // any reason at all: to free up space, because the guest code was
 // unmapped or modified, or for any arbitrary reason.
 static
-void cg_discard_superblock_info ( Addr64 orig_addr64, VexGuestExtents vge )
+void cg_discard_superblock_info ( Addr orig_addr64, VexGuestExtents vge )
 {
    SB_info* sbInfo;
-   Addr     orig_addr = (Addr)vge.base[0];
+   Addr     orig_addr = vge.base[0];
 
    tl_assert(vge.n_used > 0);
 
    if (DEBUG_CG)
       VG_(printf)( "discard_basic_block_info: %p, %p, %llu\n", 
-                   (void*)(Addr)orig_addr,
-                   (void*)(Addr)vge.base[0], (ULong)vge.len[0]);
+                   (void*)orig_addr,
+                   (void*)vge.base[0], (ULong)vge.len[0]);
 
    // Get BB info, remove from table, free BB info.  Simple!  Note that we
    // use orig_addr, not the first instruction address in vge.

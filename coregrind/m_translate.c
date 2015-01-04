@@ -789,8 +789,8 @@ static UInt needs_self_check ( void* closureV,
 
    for (i = 0; i < vge->n_used; i++) {
       Bool  check = False;
-      Addr  addr  = (Addr)vge->base[i];
-      SizeT len   = (SizeT)vge->len[i];
+      Addr  addr  = vge->base[i];
+      SizeT len   = vge->len[i];
       NSegment const* segA = NULL;
 
 #     if defined(VGO_darwin)
@@ -1128,10 +1128,10 @@ static IRTemp gen_POP ( IRSB* bb )
    intercept the return and restore R2 and L2 to the values saved
    here. */
 
-static void gen_push_and_set_LR_R2 ( IRSB* bb, Addr64 new_R2_value )
+static void gen_push_and_set_LR_R2 ( IRSB* bb, Addr new_R2_value )
 {
 #  if defined(VGP_ppc64be_linux)
-   Addr64 bogus_RA  = (Addr64)&VG_(ppctoc_magic_redirect_return_stub);
+   Addr   bogus_RA  = (Addr)&VG_(ppctoc_magic_redirect_return_stub);
    Int    offB_GPR2 = offsetof(VexGuestPPC64State,guest_GPR2);
    Int    offB_LR   = offsetof(VexGuestPPC64State,guest_LR);
    gen_PUSH( bb, IRExpr_Get(offB_LR,   Ity_I64) );
@@ -1211,7 +1211,7 @@ Bool mk_preamble__ppctoc_magic_return_stub ( void* closureV, IRSB* bb )
 
 static void gen_push_R2_and_set_LR ( IRSB* bb )
 {
-   Addr64 bogus_RA  = (Addr64)&VG_(ppctoc_magic_redirect_return_stub);
+   Addr   bogus_RA  = (Addr)&VG_(ppctoc_magic_redirect_return_stub);
    Int    offB_GPR2 = offsetof(VexGuestPPC64State,guest_GPR2);
    Int    offB_LR   = offsetof(VexGuestPPC64State,guest_LR);
    gen_PUSH( bb, IRExpr_Get(offB_LR,   Ity_I64) );
@@ -1356,7 +1356,7 @@ Bool mk_preamble__set_NRADDR_to_nraddr ( void* closureV, IRSB* bb )
 /* --- Helpers to do with PPC related stack redzones. --- */
 
 __attribute__((unused))
-static Bool const_True ( Addr64 guest_addr )
+static Bool const_True ( Addr guest_addr )
 {
    return True;
 }
@@ -1392,13 +1392,13 @@ typedef
 */
 
 Bool VG_(translate) ( ThreadId tid, 
-                      Addr64   nraddr,
+                      Addr     nraddr,
                       Bool     debugging_translation,
                       Int      debugging_verbosity,
                       ULong    bbs_done,
                       Bool     allow_redirection )
 {
-   Addr64             addr;
+   Addr               addr;
    T_Kind             kind;
    Int                tmpbuf_used, verbosity, i;
    Bool (*preamble_fn)(void*,IRSB*);
@@ -1425,7 +1425,7 @@ Bool VG_(translate) ( ThreadId tid,
       start from.  Sets (addr,kind). */
    if (allow_redirection) {
       Bool isWrap;
-      Addr64 tmp = VG_(redir_do_lookup)( nraddr, &isWrap );
+      Addr tmp = VG_(redir_do_lookup)( nraddr, &isWrap );
       if (tmp == nraddr) {
          /* no redirection found */
          addr = nraddr;
@@ -1470,7 +1470,7 @@ Bool VG_(translate) ( ThreadId tid,
       if (!ok) name2 = "???";
 
       VG_(message)(Vg_DebugMsg, 
-                   "REDIR: 0x%llx (%s:%s) redirected to 0x%llx (%s)\n",
+                   "REDIR: 0x%lx (%s:%s) redirected to 0x%lx (%s)\n",
                    nraddr, nraddr_soname, name1,
                    addr, name2 );
    }
@@ -1494,7 +1494,7 @@ Bool VG_(translate) ( ThreadId tid,
       Bool ok = VG_(get_fnname_w_offset)(addr, &fnname);
       if (!ok) fnname = "UNKNOWN_FUNCTION";
       VG_(printf)(
-         "==== SB %d (evchecks %lld) [tid %d] 0x%llx %s %s+0x%llx\n",
+         "==== SB %d (evchecks %lld) [tid %d] 0x%lx %s %s+0x%llx\n",
          VG_(get_bbs_translated)(), bbs_done, (Int)tid, addr,
          fnname, objname, (ULong)objoff
       );
@@ -1508,7 +1508,7 @@ Bool VG_(translate) ( ThreadId tid,
    if ( (!translations_allowable_from_seg(seg, addr))
         || addr == TRANSTAB_BOGUS_GUEST_ADDR ) {
       if (VG_(clo_trace_signals))
-         VG_(message)(Vg_DebugMsg, "translations not allowed here (0x%llx)"
+         VG_(message)(Vg_DebugMsg, "translations not allowed here (0x%lx)"
                                    " - throwing SEGV\n", addr);
       /* U R busted, sonny.  Place your hands on your head and step
          away from the orig_addr. */
@@ -1518,7 +1518,7 @@ Bool VG_(translate) ( ThreadId tid,
             aren't allowed to execute code here. */
          if (debugging_translation)
             VG_(printf)("translations not allowed here (segment not executable)"
-                        "(0x%llx)\n", addr);
+                        "(0x%lx)\n", addr);
          else
             VG_(synth_fault_perms)(tid, addr);
       } else {
@@ -1526,7 +1526,7 @@ Bool VG_(translate) ( ThreadId tid,
            the middle of nowhere. */
          if (debugging_translation)
             VG_(printf)("translations not allowed here (no segment)"
-                        "(0x%llx)\n", addr);
+                        "(0x%lx)\n", addr);
          else
             VG_(synth_fault_mapping)(tid, addr);
       }
@@ -1555,8 +1555,7 @@ Bool VG_(translate) ( ThreadId tid,
 
    /* LE we setup the LR */
 #  if defined(VG_PLAT_USES_PPCTOC) || defined(VGP_ppc64le_linux)
-   if (ULong_to_Ptr(nraddr)
-       == (void*)&VG_(ppctoc_magic_redirect_return_stub)) {
+   if (nraddr == (Addr)&VG_(ppctoc_magic_redirect_return_stub)) {
       /* If entering the special return stub, this means a wrapped or
          redirected function is returning.  Make this translation one
          which restores R2 and LR from the thread's hidden redir
@@ -1615,7 +1614,7 @@ Bool VG_(translate) ( ThreadId tid,
    vta.archinfo_host    = vex_archinfo;
    vta.abiinfo_both     = vex_abiinfo;
    vta.callback_opaque  = (void*)&closure;
-   vta.guest_bytes      = (UChar*)ULong_to_Ptr(addr);
+   vta.guest_bytes      = (UChar*)addr;
    vta.guest_bytes_addr = addr;
    vta.chase_into_ok    = chase_into_ok;
    vta.guest_extents    = &vge;
@@ -1692,7 +1691,7 @@ Bool VG_(translate) ( ThreadId tid,
       from them.  Optimisation: don't re-look up vge.base[0] since seg
       should already point to it. */
 
-   vg_assert( vge.base[0] == (Addr64)addr );
+   vg_assert( vge.base[0] == addr );
    /* set 'translations taken from this segment' flag */
    VG_(am_set_segment_hasT_if_SkFileC_or_SkAnonC)( seg );
    } /* END new scope specially for 'seg' */

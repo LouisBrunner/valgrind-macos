@@ -158,8 +158,7 @@ void ML_(pp_TyEnt)( const TyEnt* te )
                         te->Te.TyStOrUn.fieldRs,
                         te->Te.TyStOrUn.name ? te->Te.TyStOrUn.name
                                              : "" );
-            if (te->Te.TyStOrUn.fieldRs)
-               pp_XArray_of_cuOffs( te->Te.TyStOrUn.fieldRs );
+            pp_XArray_of_cuOffs( te->Te.TyStOrUn.fieldRs );
          } else {
             VG_(printf)("Te_TyStOrUn(INCOMPLETE,\"%s\")",
                         te->Te.TyStOrUn.name);
@@ -619,7 +618,7 @@ void ML_(TyEnt__make_EMPTY) ( TyEnt* te )
          break;
       case Te_TyStOrUn:
          if (te->Te.TyStOrUn.name) ML_(dinfo_free)(te->Te.TyStOrUn.name);
-         if (te->Te.TyStOrUn.fieldRs) VG_(deleteXA)(te->Te.TyStOrUn.fieldRs);
+         VG_(deleteXA)(te->Te.TyStOrUn.fieldRs);
          break;
       case Te_TyEnum:
          if (te->Te.TyEnum.name) ML_(dinfo_free)(te->Te.TyEnum.name);
@@ -784,7 +783,7 @@ XArray* /*HChar*/ ML_(describe_type)( /*OUT*/PtrdiffT* residual_offset,
             PtrdiffT   offMin = 0, offMax1 = 0;
             if (!ty->Te.TyStOrUn.isStruct) goto done;
             fieldRs = ty->Te.TyStOrUn.fieldRs;
-            if (((!fieldRs) || VG_(sizeXA)(fieldRs) == 0)
+            if (VG_(sizeXA)(fieldRs) == 0
                 && (ty->Te.TyStOrUn.typeR == 0)) goto done;
             for (i = 0; i < VG_(sizeXA)( fieldRs ); i++ ) {
                fieldR = *(UWord*)VG_(indexXA)( fieldRs, i );

@@ -797,7 +797,8 @@ Bool invoker_invoke_gdbserver (pid_t pid)
 #  else
    struct user user_mod;
 #  endif
-   Addr sp;
+   Addr sp __attribute__((unused)); // Not used on all platforms.
+
    /* A specific int value is passed to invoke_gdbserver, to check
       everything goes according to the plan. */
    const int check = 0x8BADF00D; // ate bad food.

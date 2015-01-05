@@ -15330,8 +15330,8 @@ dis_vx_load ( UInt theInstr )
          t0_BE = load( Ity_V128, mkexpr( EA ) );
 
          /*  Permute the data to LE format */
-         assign( perm_LE, binop( Iop_64HLtoV128, mkU64(0x0c0d0e0f08090a0b),
-                                 mkU64(0x0405060700010203)));
+         assign( perm_LE, binop( Iop_64HLtoV128, mkU64(0x0c0d0e0f08090a0bULL),
+                                 mkU64(0x0405060700010203ULL)));
 
          t0 = binop( Iop_Perm8x16, t0_BE, mkexpr(perm_LE) );
       } else {

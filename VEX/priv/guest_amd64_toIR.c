@@ -1993,7 +1993,7 @@ AMD64Condcode positiveIse_AMD64Condcode ( AMD64Condcode  cond,
 static void helper_ADC ( Int sz,
                          IRTemp tres, IRTemp ta1, IRTemp ta2,
                          /* info about optional store: */
-                         IRTemp taddr, IRTemp texpVal, Addr32 restart_point )
+                         IRTemp taddr, IRTemp texpVal, Addr64 restart_point )
 {
    UInt    thunkOp;
    IRType  ty    = szToITy(sz);
@@ -2052,7 +2052,7 @@ static void helper_ADC ( Int sz,
 static void helper_SBB ( Int sz,
                          IRTemp tres, IRTemp ta1, IRTemp ta2,
                          /* info about optional store: */
-                         IRTemp taddr, IRTemp texpVal, Addr32 restart_point )
+                         IRTemp taddr, IRTemp texpVal, Addr64 restart_point )
 {
    UInt    thunkOp;
    IRType  ty    = szToITy(sz);

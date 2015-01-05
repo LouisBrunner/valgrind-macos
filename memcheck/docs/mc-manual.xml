@@ -739,8 +739,10 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
       <para>When enabled, search for memory leaks when the client
       program finishes.  If set to <varname>summary</varname>, it says how
       many leaks occurred.  If set to <varname>full</varname> or
-      <varname>yes</varname>, it also gives details of each individual
-      leak.</para>
+      <varname>yes</varname>, each individual leak will be shown
+      in detail and/or counted as an error, as specified by the options 
+      <option>--show-leak-kinds</option> and 
+      <option>--errors-for-leak-kinds</option>. </para>
     </listitem>
   </varlistentry>
 
@@ -773,8 +775,8 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
       <option><![CDATA[--show-leak-kinds=<set> [default: definite,possible] ]]></option>
     </term>
     <listitem>
-      <para>Specifies the leak kinds to show in a full leak search, in
-      one of the following ways: </para>
+      <para>Specifies the leak kinds to show in a <varname>full</varname>
+      leak search, in one of the following ways: </para>
 
       <itemizedlist>
         <listitem><para>a comma separated list of one or more of
@@ -798,7 +800,8 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
       <option><![CDATA[--errors-for-leak-kinds=<set> [default: definite,possible] ]]></option>
     </term>
     <listitem>
-      <para>Specifies the leak kinds to count as errors in a full leak search. The
+      <para>Specifies the leak kinds to count as errors in a
+        <varname>full</varname> leak search. The
         <option><![CDATA[<set>]]></option> is specified similarly to
         <option>--show-leak-kinds</option>
       </para>

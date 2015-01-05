@@ -136,9 +136,10 @@ then
     is_clang="clang"
     # Don't use -dumpversion with clang: it will always produce "4.2.1".
     gcc_version=`${CC} --version | $SED -n -e 's/.*clang version \([0-9.]*\).*$/\1/p'`
-elif test "x`${CC} --version | $SED -n -e 's/icc.+\(ICC\).*/\1/p'`" = "ICC" ; then
+elif test "x`${CC} --version | $SED -n -e 's/icc.*\(ICC\).*/\1/p'`" = "xICC" ; 
+then
     is_clang="icc"
-    gcc_version=`${CC} --version | $SED -n -e 's/icc.+\(ICC\).+([0-9.]+).*$/\1/p'`
+    gcc_version=`${CC} -dumpversion 2>/dev/null`
 else
     is_clang="notclang"
     gcc_version=`${CC} -dumpversion 2>/dev/null`
@@ -156,7 +157,7 @@ case "${is_clang}-${gcc_version}" in
      applellvm-5.1|applellvm-6.0*)
 	AC_MSG_RESULT([ok (Apple LLVM version ${gcc_version})])
 	;;
-     icc-1[3-9]*)
+     icc-1[[3-9]].*)
 	AC_MSG_RESULT([ok (ICC version ${gcc_version})])
 	;;
      notclang-[[3-9]].*|notclang-[[1-9][0-9]]*)

@@ -3678,7 +3678,8 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
                                            mk_RetLoc_simple(RLPri_2Int) ) );
          } else {
              ULong       target;
-             target = toUInt( Ptr_to_ULong(h_calc_BCDtoDPB ) );
+             target = mode64 ? Ptr_to_ULong(h_calc_BCDtoDPB) :
+                 toUInt( Ptr_to_ULong(h_calc_BCDtoDPB ) );
              addInstr( env, PPCInstr_Call( cc, (Addr64)target,
                                            argiregs,
                                            mk_RetLoc_simple(RLPri_2Int) ) );
@@ -3725,7 +3726,8 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
                                           mk_RetLoc_simple(RLPri_2Int) ) );
          } else {
              ULong       target;
-             target = toUInt( Ptr_to_ULong( h_calc_DPBtoBCD ) );
+             target = mode64 ? Ptr_to_ULong(h_calc_DPBtoBCD) :
+                 toUInt( Ptr_to_ULong( h_calc_DPBtoBCD ) );
              addInstr(env, PPCInstr_Call( cc, (Addr64)target, argiregs,
                                           mk_RetLoc_simple(RLPri_2Int) ) );
          }

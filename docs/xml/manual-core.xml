@@ -249,12 +249,12 @@ re-run, passing the <option>-v</option> option to Valgrind.  A second
          </listitem>
        </varlistentry>
        <varlistentry>
-         <term><option>--max-connext=INTEGER</option></term>
+         <term><option>--max-connect=INTEGER</option></term>
          <listitem>
            <para>By default, the listener can connect to up to 50 processes.
              Occasionally, that number is too small. Use this option to
              provide a different limit. E.g.
-             <computeroutput>--max-connext=100</computeroutput>.
+             <computeroutput>--max-connect=100</computeroutput>.
            </para>
          </listitem>
        </varlistentry>

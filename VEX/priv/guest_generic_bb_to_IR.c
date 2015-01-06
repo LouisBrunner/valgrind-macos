@@ -221,7 +221,7 @@ IRSB* bb_to_IR (
    /* check sanity .. */
    vassert(sizeof(HWord) == sizeof(void*));
    vassert(vex_control.guest_max_insns >= 1);
-   vassert(vex_control.guest_max_insns < 100);
+   vassert(vex_control.guest_max_insns <= 100);
    vassert(vex_control.guest_chase_thresh >= 0);
    vassert(vex_control.guest_chase_thresh < vex_control.guest_max_insns);
    vassert(guest_word_type == Ity_I32 || guest_word_type == Ity_I64);

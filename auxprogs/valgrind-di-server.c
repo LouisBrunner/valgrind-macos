@@ -109,8 +109,13 @@
 
 /*---------------------------------------------------------------*/
 
-/* The maximum allowable number concurrent connections. */
-#define M_CONNECTIONS 50
+/* The default allowable number of concurrent connections. */
+#define  M_CONNECTIONS_DEFAULT 50
+/* The maximum allowable number of concurrent connections. */
+#define  M_CONNECTIONS_MAX     5000
+
+/* The maximum allowable number of concurrent connections. */
+unsigned M_CONNECTIONS = 0;
 
 static const char* clo_serverpath = ".";
 
@@ -150,6 +155,20 @@ static void my_assert_fail ( const char* expr, const char* file, int line, const
 
 /*---------------------------------------------------------------*/
 
+/* Allocate some memory. Return iff successful. */
+static void *my_malloc(size_t amount)
+{
+  void *p = malloc(amount ?: 1);
+
+  if (p == NULL) {
+     fprintf(stderr, "Memory allocation failed; cannot continue.\n");
+     exit(1);
+  }
+  return p;
+}
+
+/*---------------------------------------------------------------*/
+
 /* Holds the state that we need to track, for each connection. */
 typedef
    struct {
@@ -173,7 +192,7 @@ typedef
 
 /* The state itself. */
 static int       conn_count = 0;
-static ConnState conn_state[M_CONNECTIONS];
+static ConnState *conn_state;
 
 /* Issues unique session ID values. */
 static ULong next_session_id = 1;
@@ -803,7 +822,7 @@ static Bool handle_transaction ( int conn_no )
       if (ok) {
          /* First, allocate a temp buf and read from the file into it. */
          /* FIXME: what if pread reads short and we have to redo it? */
-         UChar* unzBuf = malloc(req_len);
+         UChar* unzBuf = my_malloc(req_len);
          size_t nRead = pread(conn_state[conn_no].file_fd,
                               unzBuf, req_len, req_offset);
          if (nRead != req_len) {
@@ -822,7 +841,7 @@ static Bool handle_transaction ( int conn_no )
             STACK_ALLOC(wrkmem, LZO1X_1_MEM_COMPRESS);
 #           undef STACK_ALLOC
             UInt zLenMax = req_len + req_len / 4 + 1024;
-            UChar* zBuf = malloc(zLenMax);
+            UChar* zBuf = my_malloc(zLenMax);
             lzo_uint zLen = zLenMax;
             Int lzo_rc = lzo1x_1_compress(unzBuf, req_len,
                                           zBuf, &zLen, wrkmem); 
@@ -965,8 +984,8 @@ static void snooze ( void )
 }
 
 
-/* returns 0 if invalid, else port # */
-static int atoi_portno ( const char* str )
+/* returns 0 if negative, or > BOUND or invalid characters were found */
+static int atoi_with_bound ( const char* str, int bound )
 {
    int n = 0;
    while (1) {
@@ -976,9 +995,18 @@ static int atoi_portno ( const char* str )
          return 0;
       n = 10*n + (int)(*str - '0');
       str++;
-      if (n >= 65536) 
+      if (n >= bound)
          return 0;
    }
+   return n;
+}
+
+
+/* returns 0 if invalid, else port # */
+static int atoi_portno ( const char* str )
+{
+   int n = atoi_with_bound(str, 65536);
+
    if (n < 1024)
       return 0;
    return n;
@@ -997,12 +1025,16 @@ static void usage ( void )
       "           when the number of connections falls back to zero\n"
       "           (the default is to keep listening forever)\n"
       "\n"
+      "           --max-connect=INT can be used to increase the maximum\n"
+      "           number of connected processes (default = %d).\n"
+      "           INT must be positive and less than %d.\n"
+      "\n"
       "           port-number is the default port on which to listen for\n"
       "           connections.  It must be between 1024 and 65535.\n"
       "           Current default is %d.\n"
       "\n"
       ,
-      VG_CLO_DEFAULT_LOGPORT
+      M_CONNECTIONS_DEFAULT, M_CONNECTIONS_MAX, VG_CLO_DEFAULT_LOGPORT
    );
    exit(1);
 }
@@ -1045,6 +1077,11 @@ int main (int argc, char** argv)
           || 0==strcmp(argv[i], "-e")) {
          exit_when_zero = 1;
       }
+      else if (0 == strncmp(argv[i], "--max-connect=", 14)) {
+         M_CONNECTIONS = atoi_with_bound(strchr(argv[i], '=') + 1, 5000);
+         if (M_CONNECTIONS <= 0 || M_CONNECTIONS > M_CONNECTIONS_MAX)
+            usage();
+      }
       else
       if (atoi_portno(argv[i]) > 0) {
          port = atoi_portno(argv[i]);
@@ -1053,11 +1090,16 @@ int main (int argc, char** argv)
       usage();
    }
 
+   if (M_CONNECTIONS == 0)   // nothing specified on command line
+      M_CONNECTIONS = M_CONNECTIONS_DEFAULT;
+
+   conn_state = my_malloc(M_CONNECTIONS * sizeof conn_state[0]);
+
    banner("started");
    signal(SIGINT, sigint_handler);
 
    conn_count = 0;
-   memset(&conn_state, 0, sizeof(conn_state));
+   memset(conn_state, 0, M_CONNECTIONS * sizeof conn_state[0]);
 
    /* create socket */
    main_sd = socket(AF_INET, SOCK_STREAM, 0);
@@ -1128,9 +1170,11 @@ int main (int argc, char** argv)
                  break;
 
            if (i >= M_CONNECTIONS) {
-              fprintf(stderr, "Too many concurrent connections.  "
-                              "Increase M_CONNECTIONS and recompile.\n");
-              panic("main -- too many concurrent connections");
+              fprintf(stderr, "\n\nMore than %d concurrent connections.\n"
+                      "Restart the server giving --max-connect=INT on the\n"
+                      "commandline to increase the limit.\n\n",
+                      M_CONNECTIONS);
+              exit(1);
            }
 
 assert(one == 1);
@@ -1151,10 +1195,17 @@ assert(ret != -1);
       /* We've processed all new connect requests.  Listen for changes
          to the current set of fds.  This requires gathering up all
          the known conn_sd values and doing poll() on them. */
-      struct pollfd tmp_pollfd[M_CONNECTIONS];
+      static struct pollfd *tmp_pollfd;
+      if (tmp_pollfd == NULL)
+         tmp_pollfd = my_malloc(M_CONNECTIONS * sizeof tmp_pollfd[0]);
+
       /* And a parallel array which maps entries in tmp_pollfd back to
          entries in conn_state. */
-      int tmp_pollfd_to_conn_state[M_CONNECTIONS];
+      static int *tmp_pollfd_to_conn_state;
+      if (tmp_pollfd_to_conn_state == NULL)
+         tmp_pollfd_to_conn_state =
+            my_malloc(M_CONNECTIONS * sizeof tmp_pollfd_to_conn_state[0]);
+
       j = 0;
       for (i = 0; i < M_CONNECTIONS; i++) {
          if (!conn_state[i].in_use)

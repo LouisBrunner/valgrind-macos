@@ -630,7 +630,7 @@ typedef
             condition (which could be ARM64cc_AL). */
          struct {
             RetLoc        rloc;     /* where the return value will be */
-            HWord         target;
+            Addr64        target;
             ARM64CondCode cond;
             Int           nArgRegs; /* # regs carrying args: 0 .. 8 */
          } Call;
@@ -877,7 +877,7 @@ extern ARM64Instr* ARM64Instr_XAssisted ( HReg dstGA, ARM64AMode* amPC,
                                           ARM64CondCode cond, IRJumpKind jk );
 extern ARM64Instr* ARM64Instr_CSel    ( HReg dst, HReg argL, HReg argR,
                                         ARM64CondCode cond );
-extern ARM64Instr* ARM64Instr_Call    ( ARM64CondCode, HWord, Int nArgRegs,
+extern ARM64Instr* ARM64Instr_Call    ( ARM64CondCode, Addr64, Int nArgRegs,
                                         RetLoc rloc );
 extern ARM64Instr* ARM64Instr_AddToSP ( Int simm );
 extern ARM64Instr* ARM64Instr_FromSP  ( HReg dst );

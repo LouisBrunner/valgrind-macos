@@ -3443,7 +3443,7 @@ Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
                   = i->Min.XDirect.toFastEP ? disp_cp_chain_me_to_fastEP
                                               : disp_cp_chain_me_to_slowEP;
          p = mkLoadImm_EXACTLY2or6(p, /*r*/ 9,
-                                     Ptr_to_ULong(disp_cp_chain_me), mode64);
+                                   (Addr)disp_cp_chain_me, mode64);
          /* jalr $9 */
          /* nop */
          p = mkFormR(p, 0, 9, 0, 31, 0, 9);  /* p += 4 */
@@ -3496,7 +3496,7 @@ Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
          /* jalr   r9 */
          /* nop */
          p = mkLoadImm_EXACTLY2or6(p, /*r*/ 9,
-                                   Ptr_to_ULong(disp_cp_xindir), mode64);
+                                   (Addr)disp_cp_xindir, mode64);
          p = mkFormR(p, 0, 9, 0, 31, 0, 9);  /* p += 4 */
          p = mkFormR(p, 0, 0, 0, 0, 0, 0);   /* p += 4 */
 
@@ -3566,7 +3566,7 @@ Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
 
          /* move r9, VG_(disp_cp_xassisted) */
          p = mkLoadImm_EXACTLY2or6(p, /*r*/ 9,
-                          (ULong)Ptr_to_ULong(disp_cp_xassisted), mode64);
+                                   (ULong)(Addr)disp_cp_xassisted, mode64);
          /* jalr $9
              nop */
          p = mkFormR(p, 0, 9, 0, 31, 0, 9);  /* p += 4 */
@@ -4343,7 +4343,7 @@ VexInvalRange chainXDirect_MIPS ( VexEndness endness_host,
    UChar* p = (UChar*)place_to_chain;
    vassert(0 == (3 & (HWord)p));
    vassert(isLoadImm_EXACTLY2or6(p, /*r*/9,
-                                 (UInt)Ptr_to_ULong(disp_cp_chain_me_EXPECTED),
+                                 (UInt)(Addr)disp_cp_chain_me_EXPECTED,
                                  mode64));
    vassert(fetch32(p + (mode64 ? 24 : 8) + 0) == 0x120F809);
    vassert(fetch32(p + (mode64 ? 24 : 8) + 4) == 0x00000000);
@@ -4360,7 +4360,7 @@ VexInvalRange chainXDirect_MIPS ( VexEndness endness_host,
    */
 
    p = mkLoadImm_EXACTLY2or6(p, /*r*/9,
-                             Ptr_to_ULong(place_to_jump_to), mode64);
+                             (Addr)place_to_jump_to, mode64);
    p = emit32(p, 0x120F809);
    p = emit32(p, 0x00000000);
 
@@ -4391,7 +4391,7 @@ VexInvalRange unchainXDirect_MIPS ( VexEndness endness_host,
    UChar* p = (UChar*)place_to_unchain;
    vassert(0 == (3 & (HWord)p));
    vassert(isLoadImm_EXACTLY2or6(p, /*r*/ 9,
-                                 Ptr_to_ULong(place_to_jump_to_EXPECTED),
+                                 (Addr)place_to_jump_to_EXPECTED,
                                  mode64));
    vassert(fetch32(p + (mode64 ? 24 : 8) + 0) == 0x120F809);
    vassert(fetch32(p + (mode64 ? 24 : 8) + 4) == 0x00000000);
@@ -4406,7 +4406,7 @@ VexInvalRange unchainXDirect_MIPS ( VexEndness endness_host,
       The replacement has the same length as the original.
    */
    p = mkLoadImm_EXACTLY2or6(p, /*r*/ 9,
-                             Ptr_to_ULong(disp_cp_chain_me), mode64);
+                             (Addr)disp_cp_chain_me, mode64);
    p = emit32(p, 0x120F809);
    p = emit32(p, 0x00000000);
 
@@ -4450,7 +4450,7 @@ VexInvalRange patchProfInc_MIPS ( VexEndness endness_host,
    }
 
    p = mkLoadImm_EXACTLY2or6(p, /*r*/9,
-                             Ptr_to_ULong(location_of_counter), mode64);
+                             (Addr)location_of_counter, mode64);
 
    VexInvalRange vir = {(HWord)p, 8};
    return vir;

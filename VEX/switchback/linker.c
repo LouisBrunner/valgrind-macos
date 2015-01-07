@@ -1223,7 +1223,7 @@ ocGetNames_ELF ( ObjectCode* oc )
 #           else
             ad = calloc(1, stab[j].st_size);
 #           endif
-    //	    assert( Ptr_to_ULong(ad) < 0xF0000000ULL );
+    //	    assert( (Addr)ad < 0xF0000000ULL );
 
 	    if (0)
             fprintf(stderr, "COMMON symbol, size %lld name %s  allocd %p\n",

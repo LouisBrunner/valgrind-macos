@@ -4267,7 +4267,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
                = i->Pin.XDirect.toFastEP ? disp_cp_chain_me_to_fastEP 
                                          : disp_cp_chain_me_to_slowEP;
       p = mkLoadImm_EXACTLY2or5(
-             p, /*r*/30, Ptr_to_ULong(disp_cp_chain_me), mode64, endness_host);
+             p, /*r*/30, (Addr)disp_cp_chain_me, mode64, endness_host);
       /* mtctr r30 */
       p = mkFormXFX(p, /*r*/30, 9, 467, endness_host);
       /* bctrl */
@@ -4315,7 +4315,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
           );
 
       /* imm32/64 r30, VG_(disp_cp_xindir) */
-      p = mkLoadImm(p, /*r*/30, (ULong)Ptr_to_ULong(disp_cp_xindir), mode64,
+      p = mkLoadImm(p, /*r*/30, (ULong)(Addr)disp_cp_xindir, mode64,
                     endness_host);
       /* mtctr r30 */
       p = mkFormXFX(p, /*r*/30, 9, 467, endness_host);
@@ -4384,7 +4384,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
 
       /* imm32/64 r30, VG_(disp_cp_xassisted) */
       p = mkLoadImm(p, /*r*/30,
-                       (ULong)Ptr_to_ULong(disp_cp_xassisted), mode64,
+                    (ULong)(Addr)disp_cp_xassisted, mode64,
                      endness_host);
       /* mtctr r30 */
       p = mkFormXFX(p, /*r*/30, 9, 467, endness_host);
@@ -5936,7 +5936,7 @@ VexInvalRange chainXDirect_PPC ( VexEndness endness_host,
    UChar* p = (UChar*)place_to_chain;
    vassert(0 == (3 & (HWord)p));
    vassert(isLoadImm_EXACTLY2or5(p, /*r*/30,
-                                 Ptr_to_ULong(disp_cp_chain_me_EXPECTED),
+                                 (Addr)disp_cp_chain_me_EXPECTED,
                                  mode64, endness_host));
    vassert(fetch32(p + (mode64 ? 20 : 8) + 0, endness_host) == 0x7FC903A6);
    vassert(fetch32(p + (mode64 ? 20 : 8) + 4, endness_host) == 0x4E800421);
@@ -5951,7 +5951,7 @@ VexInvalRange chainXDirect_PPC ( VexEndness endness_host,
       The replacement has the same length as the original.
    */
    p = mkLoadImm_EXACTLY2or5(p, /*r*/30,
-                             Ptr_to_ULong(place_to_jump_to), mode64, 
+                             (Addr)place_to_jump_to, mode64, 
                              endness_host);
    p = emit32(p, 0x7FC903A6, endness_host);
    p = emit32(p, 0x4E800420, endness_host);
@@ -5990,7 +5990,7 @@ VexInvalRange unchainXDirect_PPC ( VexEndness endness_host,
    UChar* p = (UChar*)place_to_unchain;
    vassert(0 == (3 & (HWord)p));
    vassert(isLoadImm_EXACTLY2or5(p, /*r*/30,
-                                 Ptr_to_ULong(place_to_jump_to_EXPECTED),
+                                 (Addr)place_to_jump_to_EXPECTED,
                                  mode64, endness_host));
    vassert(fetch32(p + (mode64 ? 20 : 8) + 0, endness_host) == 0x7FC903A6);
    vassert(fetch32(p + (mode64 ? 20 : 8) + 4, endness_host) == 0x4E800420);
@@ -6005,7 +6005,7 @@ VexInvalRange unchainXDirect_PPC ( VexEndness endness_host,
       The replacement has the same length as the original.
    */
    p = mkLoadImm_EXACTLY2or5(p, /*r*/30,
-                             Ptr_to_ULong(disp_cp_chain_me), mode64, 
+                             (Addr)disp_cp_chain_me, mode64, 
                              endness_host);
    p = emit32(p, 0x7FC903A6, endness_host);
    p = emit32(p, 0x4E800421, endness_host);
@@ -6043,7 +6043,7 @@ VexInvalRange patchProfInc_PPC ( VexEndness endness_host,
       vassert(fetch32(p + 24, endness_host) == 0x3BBD0001);
       vassert(fetch32(p + 28, endness_host) == 0xFBBE0000);
       p = mkLoadImm_EXACTLY2or5(p, /*r*/30,
-                                Ptr_to_ULong(location_of_counter),
+                                (Addr)location_of_counter,
                                 True/*mode64*/, endness_host);
       len = p - (UChar*)place_to_patch;
       vassert(len == 20);
@@ -6058,7 +6058,7 @@ VexInvalRange patchProfInc_PPC ( VexEndness endness_host,
       vassert(fetch32(p + 24, endness_host) == 0x7FBD0194);
       vassert(fetch32(p + 28, endness_host) == 0x93BE0000);
       p = mkLoadImm_EXACTLY2or5(p, /*r*/30,
-                                Ptr_to_ULong(location_of_counter),
+                                (Addr)location_of_counter,
                                 False/*!mode64*/, endness_host);
       len = p - (UChar*)place_to_patch;
       vassert(len == 8);

@@ -691,7 +691,7 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
    /* Finally, generate the call itself.  This needs the *retloc value
       set in the switch above, which is why it's at the end. */
    addInstr(env,
-            AMD64Instr_Call(cc, Ptr_to_ULong(cee->addr), n_args, *retloc));
+            AMD64Instr_Call(cc, (Addr)cee->addr, n_args, *retloc));
 }
 
 

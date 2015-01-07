@@ -498,7 +498,7 @@ UInt vprintf_wrk ( void(*sink)(HChar),
          case 'p': 
          case 'P': {
             Bool hexcaps = toBool(*format == 'P');
-            ULong l = Ptr_to_ULong( va_arg(ap, void*) );
+            ULong l = (Addr)va_arg(ap, void*);
             convert_int(intbuf, l, 16/*base*/, False/*unsigned*/, hexcaps);
             len1 = len3 = 0;
             len2 = vex_strlen(intbuf)+2;

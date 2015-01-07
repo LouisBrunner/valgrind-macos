@@ -724,7 +724,7 @@ typedef
             condition (which could be ARMcc_AL). */
          struct {
             ARMCondCode cond;
-            HWord       target;
+            Addr32      target;
             Int         nArgRegs; /* # regs carrying args: 0 .. 4 */
             RetLoc      rloc;     /* where the return value will be */
          } Call;
@@ -976,7 +976,7 @@ extern ARMInstr* ARMInstr_XIndir   ( HReg dstGA, ARMAMode1* amR15T,
 extern ARMInstr* ARMInstr_XAssisted ( HReg dstGA, ARMAMode1* amR15T,
                                       ARMCondCode cond, IRJumpKind jk );
 extern ARMInstr* ARMInstr_CMov     ( ARMCondCode, HReg dst, ARMRI84* src );
-extern ARMInstr* ARMInstr_Call     ( ARMCondCode, HWord, Int nArgRegs,
+extern ARMInstr* ARMInstr_Call     ( ARMCondCode, Addr32, Int nArgRegs,
                                      RetLoc rloc );
 extern ARMInstr* ARMInstr_Mul      ( ARMMulOp op );
 extern ARMInstr* ARMInstr_LdrEX    ( Int szB );

@@ -2468,7 +2468,7 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
       const void* disp_cp_chain_me
                = i->Xin.XDirect.toFastEP ? disp_cp_chain_me_to_fastEP 
                                          : disp_cp_chain_me_to_slowEP;
-      p = emit32(p, (UInt)Ptr_to_ULong(disp_cp_chain_me));
+      p = emit32(p, (UInt)(Addr)disp_cp_chain_me);
       /* call *%edx */
       *p++ = 0xFF;
       *p++ = 0xD2;
@@ -2510,7 +2510,7 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
 
       /* movl $disp_indir, %edx */
       *p++ = 0xBA;
-      p = emit32(p, (UInt)Ptr_to_ULong(disp_cp_xindir));
+      p = emit32(p, (UInt)(Addr)disp_cp_xindir);
       /* jmp *%edx */
       *p++ = 0xFF;
       *p++ = 0xE2;
@@ -2572,7 +2572,7 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
 
       /* movl $disp_indir, %edx */
       *p++ = 0xBA;
-      p = emit32(p, (UInt)Ptr_to_ULong(disp_cp_xassisted));
+      p = emit32(p, (UInt)(Addr)disp_cp_xassisted);
       /* jmp *%edx */
       *p++ = 0xFF;
       *p++ = 0xE2;
@@ -3360,7 +3360,7 @@ VexInvalRange chainXDirect_X86 ( VexEndness endness_host,
    */
    UChar* p = (UChar*)place_to_chain;
    vassert(p[0] == 0xBA);
-   vassert(*(UInt*)(&p[1]) == (UInt)Ptr_to_ULong(disp_cp_chain_me_EXPECTED));
+   vassert(*(UInt*)(&p[1]) == (UInt)(Addr)disp_cp_chain_me_EXPECTED);
    vassert(p[5] == 0xFF);
    vassert(p[6] == 0xD2);
    /* And what we want to change it to is:
@@ -3428,7 +3428,7 @@ VexInvalRange unchainXDirect_X86 ( VexEndness endness_host,
       So it's the same length (convenient, huh).
    */
    p[0] = 0xBA;
-   *(UInt*)(&p[1]) = (UInt)Ptr_to_ULong(disp_cp_chain_me);
+   *(UInt*)(&p[1]) = (UInt)(Addr)disp_cp_chain_me;
    p[5] = 0xFF;
    p[6] = 0xD2;
    VexInvalRange vir = { (HWord)place_to_unchain, 7 };
@@ -3459,12 +3459,12 @@ VexInvalRange patchProfInc_X86 ( VexEndness endness_host,
    vassert(p[11] == 0x00);
    vassert(p[12] == 0x00);
    vassert(p[13] == 0x00);
-   UInt imm32 = (UInt)Ptr_to_ULong(location_of_counter);
+   UInt imm32 = (UInt)(Addr)location_of_counter;
    p[2] = imm32 & 0xFF; imm32 >>= 8;
    p[3] = imm32 & 0xFF; imm32 >>= 8;
    p[4] = imm32 & 0xFF; imm32 >>= 8;
    p[5] = imm32 & 0xFF; imm32 >>= 8;
-   imm32 = 4 + (UInt)Ptr_to_ULong(location_of_counter);
+   imm32 = 4 + (UInt)(Addr)location_of_counter;
    p[9]  = imm32 & 0xFF; imm32 >>= 8;
    p[10] = imm32 & 0xFF; imm32 >>= 8;
    p[11] = imm32 & 0xFF; imm32 >>= 8;

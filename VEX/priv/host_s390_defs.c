@@ -9517,7 +9517,7 @@ s390_insn_xdirect_emit(UChar *buf, const s390_insn *insn,
    buf = s390_emit_BASR(buf, 1, R0);
 
    /* --- FIRST PATCHABLE BYTE follows (must not modify %r1) --- */
-   ULong addr = Ptr_to_ULong(disp_cp_chain_me);
+   Addr64 addr = (Addr)disp_cp_chain_me;
    buf = s390_tchain_load64(buf, S390_REGNO_TCHAIN_SCRATCH, addr);
 
    /* goto *tchain_scratch */
@@ -9589,7 +9589,7 @@ s390_insn_xindir_emit(UChar *buf, const s390_insn *insn,
 
    /* load tchain_scratch, #disp_indir */
    buf = s390_tchain_load64(buf, S390_REGNO_TCHAIN_SCRATCH,
-                            Ptr_to_ULong(disp_cp_xindir));
+                            (Addr)disp_cp_xindir);
    /* goto *tchain_direct */
    buf = s390_emit_BCR(buf, S390_CC_ALWAYS, S390_REGNO_TCHAIN_SCRATCH);
 
@@ -9670,7 +9670,7 @@ s390_insn_xassisted_emit(UChar *buf, const s390_insn *insn,
 
    /* load tchain_scratch, #disp_assisted */
    buf = s390_tchain_load64(buf, S390_REGNO_TCHAIN_SCRATCH,
-                            Ptr_to_ULong(disp_cp_xassisted));
+                            (Addr)disp_cp_xassisted);
 
    /* goto *tchain_direct */
    buf = s390_emit_BCR(buf, S390_CC_ALWAYS, S390_REGNO_TCHAIN_SCRATCH);
@@ -9973,7 +9973,7 @@ patchProfInc_S390(VexEndness endness_host,
    s390_tchain_verify_load64(code_to_patch, S390_REGNO_TCHAIN_SCRATCH, 0);
 
    UChar *p = s390_tchain_patch_load64(code_to_patch,
-                                       Ptr_to_ULong(location_of_counter));
+                                       (Addr)location_of_counter);
 
    UInt len = p - (UChar *)code_to_patch;
    VexInvalRange vir = { (HWord)code_to_patch, len };
@@ -9998,7 +9998,7 @@ chainXDirect_S390(VexEndness endness_host,
    */
    const UChar *next;
    next = s390_tchain_verify_load64(place_to_chain, S390_REGNO_TCHAIN_SCRATCH,
-                                    Ptr_to_ULong(disp_cp_chain_me_EXPECTED));
+                                    (Addr)disp_cp_chain_me_EXPECTED);
    vassert(s390_insn_is_BR(next, S390_REGNO_TCHAIN_SCRATCH));
 
    /* And what we want to change it to is either:
@@ -10059,7 +10059,7 @@ chainXDirect_S390(VexEndness endness_host,
           load  tchain_scratch, #place_to_jump_to
           goto *tchain_scratch
       */
-      ULong addr = Ptr_to_ULong(place_to_jump_to);
+      Addr64 addr = (Addr)place_to_jump_to;
       p = s390_tchain_load64(p, S390_REGNO_TCHAIN_SCRATCH, addr);
       /* There is not need to emit a BCR here, as it is already there. */
    }
@@ -10111,7 +10111,7 @@ unchainXDirect_S390(VexEndness endness_host,
       const UChar *next;
 
       next = s390_tchain_verify_load64(p, S390_REGNO_TCHAIN_SCRATCH,
-                                       Ptr_to_ULong(place_to_jump_to_EXPECTED));
+                                       (Addr)place_to_jump_to_EXPECTED);
       /* Check for BR *tchain_scratch */
       vassert(s390_insn_is_BR(next, S390_REGNO_TCHAIN_SCRATCH));
    }
@@ -10130,7 +10130,7 @@ unchainXDirect_S390(VexEndness endness_host,
       address (see s390_insn_xdirect_emit).  */
    p = s390_emit_BASR(p - S390_BASR_LEN, 1, R0);
 
-   ULong addr = Ptr_to_ULong(disp_cp_chain_me);
+   Addr64 addr = (Addr)disp_cp_chain_me;
    p = s390_tchain_load64(p, S390_REGNO_TCHAIN_SCRATCH, addr);
 
    /* Emit the BCR in case the short form was used. In case of the long

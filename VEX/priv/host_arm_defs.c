@@ -1229,7 +1229,7 @@ ARMInstr* ARMInstr_CMov ( ARMCondCode cond, HReg dst, ARMRI84* src ) {
    vassert(cond != ARMcc_AL);
    return i;
 }
-ARMInstr* ARMInstr_Call ( ARMCondCode cond, HWord target, Int nArgRegs,
+ARMInstr* ARMInstr_Call ( ARMCondCode cond, Addr32 target, Int nArgRegs,
                           RetLoc rloc ) {
    ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
    i->tag                 = ARMin_Call;
@@ -1700,7 +1700,7 @@ void ppARMInstr ( const ARMInstr* i ) {
          vex_printf("call%s  ",
                     i->ARMin.Call.cond==ARMcc_AL
                        ? "" : showARMCondCode(i->ARMin.Call.cond));
-         vex_printf("0x%lx [nArgRegs=%d, ",
+         vex_printf("0x%x [nArgRegs=%d, ",
                     i->ARMin.Call.target, i->ARMin.Call.nArgRegs);
          ppRetLoc(i->ARMin.Call.rloc);
          vex_printf("]");
@@ -3242,7 +3242,7 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
                   = i->ARMin.XDirect.toFastEP ? disp_cp_chain_me_to_fastEP 
                                               : disp_cp_chain_me_to_slowEP;
          p = imm32_to_iregNo_EXACTLY2(p, /*r*/12,
-                                      (UInt)Ptr_to_ULong(disp_cp_chain_me));
+                                      (UInt)(Addr)disp_cp_chain_me);
          *p++ = 0xE12FFF3C;
          /* --- END of PATCHABLE BYTES --- */
 
@@ -3290,7 +3290,7 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
          /* movt r12, hi16(VG_(disp_cp_xindir)) */
          /* bx   r12  (A1) */
          p = imm32_to_iregNo(p, /*r*/12,
-                             (UInt)Ptr_to_ULong(disp_cp_xindir));
+                             (UInt)(Addr)disp_cp_xindir);
          *p++ = 0xE12FFF1C;
 
          /* Fix up the conditional jump, if there was one. */
@@ -3355,7 +3355,7 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
          /* movt r12, hi16(VG_(disp_cp_xassisted)) */
          /* bx   r12  (A1) */
          p = imm32_to_iregNo(p, /*r*/12,
-                             (UInt)Ptr_to_ULong(disp_cp_xassisted));
+                             (UInt)(Addr)disp_cp_xassisted);
          *p++ = 0xE12FFF1C;
 
          /* Fix up the conditional jump, if there was one. */
@@ -4721,7 +4721,7 @@ VexInvalRange chainXDirect_ARM ( VexEndness endness_host,
    UInt* p = (UInt*)place_to_chain;
    vassert(0 == (3 & (HWord)p));
    vassert(is_imm32_to_iregNo_EXACTLY2(
-              p, /*r*/12, (UInt)Ptr_to_ULong(disp_cp_chain_me_EXPECTED)));
+              p, /*r*/12, (UInt)(Addr)disp_cp_chain_me_EXPECTED));
    vassert(p[2] == 0xE12FFF3C);
    /* And what we want to change it to is either:
         (general case)
@@ -4775,7 +4775,7 @@ VexInvalRange chainXDirect_ARM ( VexEndness endness_host,
       p[2] = 0xFF000000;
    } else {
       (void)imm32_to_iregNo_EXACTLY2(
-               p, /*r*/12, (UInt)Ptr_to_ULong(place_to_jump_to));
+               p, /*r*/12, (UInt)(Addr)place_to_jump_to);
       p[2] = 0xE12FFF1C;
    }
 
@@ -4814,7 +4814,7 @@ VexInvalRange unchainXDirect_ARM ( VexEndness endness_host,
 
    Bool valid = False;
    if (is_imm32_to_iregNo_EXACTLY2(
-          p, /*r*/12, (UInt)Ptr_to_ULong(place_to_jump_to_EXPECTED))
+          p, /*r*/12, (UInt)(Addr)place_to_jump_to_EXPECTED)
        && p[2] == 0xE12FFF1C) {
       valid = True; /* it's the long form */
       if (0)
@@ -4841,7 +4841,7 @@ VexInvalRange unchainXDirect_ARM ( VexEndness endness_host,
         E1 2F FF 3C
    */
    (void)imm32_to_iregNo_EXACTLY2(
-            p, /*r*/12, (UInt)Ptr_to_ULong(disp_cp_chain_me));
+            p, /*r*/12, (UInt)(Addr)disp_cp_chain_me);
    p[2] = 0xE12FFF3C;
    VexInvalRange vir = {(HWord)p, 12};
    return vir;
@@ -4866,7 +4866,7 @@ VexInvalRange patchProfInc_ARM ( VexEndness endness_host,
    vassert(p[6] == 0xE2ABB000);
    vassert(p[7] == 0xE58CB004);
    imm32_to_iregNo_EXACTLY2(p, /*r*/12, 
-                            (UInt)Ptr_to_ULong(location_of_counter));
+                            (UInt)(Addr)location_of_counter);
    VexInvalRange vir = {(HWord)p, 8};
    return vir;
 }

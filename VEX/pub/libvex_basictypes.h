@@ -142,16 +142,7 @@ typedef unsigned long Addr;
    machine. */
 typedef  unsigned long HWord;
 
-
-/* We need to know the host word size in order to write Ptr_to_ULong
-   and ULong_to_Ptr in a way that doesn't cause compilers to complain.
-   These functions allow us to cast pointers to and from 64-bit
-   integers without complaints from compilers, regardless of the host
-   word size.
-
-   Also set up VEX_REGPARM.
-*/
-
+/* Set up VEX_HOST_WORDSIZE and VEX_REGPARM. */
 #undef VEX_HOST_WORDSIZE
 #undef VEX_REGPARM
 
@@ -194,27 +185,6 @@ typedef  unsigned long HWord;
 
 #else
 #   error "Vex: Fatal: Can't establish the host architecture"
-#endif
-
-
-#if VEX_HOST_WORDSIZE == 8
-   static inline ULong Ptr_to_ULong ( const void* p ) {
-      return (ULong)p;
-   }
-   static inline void* ULong_to_Ptr ( ULong n ) {
-      return (void*)n;
-   }
-#elif VEX_HOST_WORDSIZE == 4
-   static inline ULong Ptr_to_ULong ( const void* p ) {
-      UInt w = (UInt)p;
-      return (ULong)w;
-   }
-   static inline void* ULong_to_Ptr ( ULong n ) {
-      UInt w = (UInt)n;
-      return (void*)w;
-   }
-#else
-#   error "Vex: Fatal: Can't define  Ptr_to_ULong / ULong_to_Ptr"
 #endif
 
 

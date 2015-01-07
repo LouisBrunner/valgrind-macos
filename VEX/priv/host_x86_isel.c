@@ -387,7 +387,7 @@ void callHelperAndClearArgs ( ISelEnv* env, X86CondCode cc,
       parameters. */
    vassert(sizeof(void*) == 4);
 
-   addInstr(env, X86Instr_Call( cc, toUInt(Ptr_to_ULong(cee->addr)),
+   addInstr(env, X86Instr_Call( cc, (Addr)cee->addr,
                                 cee->regparms, rloc));
    if (n_arg_ws > 0)
       add_to_esp(env, 4*n_arg_ws);
@@ -1400,11 +1400,11 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             */
             HReg  xLo, xHi;
             HReg  dst = newVRegI(env);
-            HWord fn = (HWord)h_generic_calc_GetMSBs8x8;
+            Addr fn = (Addr)h_generic_calc_GetMSBs8x8;
             iselInt64Expr(&xHi, &xLo, env, e->Iex.Unop.arg);
             addInstr(env, X86Instr_Push(X86RMI_Reg(xHi)));
             addInstr(env, X86Instr_Push(X86RMI_Reg(xLo)));
-            addInstr(env, X86Instr_Call( Xcc_ALWAYS, (UInt)fn,
+            addInstr(env, X86Instr_Call( Xcc_ALWAYS, (Addr32)fn,
                                          0, mk_RetLoc_simple(RLPri_Int) ));
             add_to_esp(env, 2*4);
             addInstr(env, mk_iMOVsd_RR(hregX86_EAX(), dst));
@@ -2541,7 +2541,7 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
             iselInt64Expr(&xHi, &xLo, env, e->Iex.Binop.arg1);
             addInstr(env, X86Instr_Push(X86RMI_Reg(xHi)));
             addInstr(env, X86Instr_Push(X86RMI_Reg(xLo)));
-            addInstr(env, X86Instr_Call( Xcc_ALWAYS, (UInt)fn,
+            addInstr(env, X86Instr_Call( Xcc_ALWAYS, (Addr32)fn,
                                          0, mk_RetLoc_simple(RLPri_2Int) ));
             add_to_esp(env, 4*4);
             addInstr(env, mk_iMOVsd_RR(hregX86_EDX(), tHi));
@@ -2581,7 +2581,7 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
             iselInt64Expr(&xHi, &xLo, env, e->Iex.Binop.arg1);
             addInstr(env, X86Instr_Push(X86RMI_Reg(xHi)));
             addInstr(env, X86Instr_Push(X86RMI_Reg(xLo)));
-            addInstr(env, X86Instr_Call( Xcc_ALWAYS, (UInt)fn,
+            addInstr(env, X86Instr_Call( Xcc_ALWAYS, (Addr32)fn,
                                          0, mk_RetLoc_simple(RLPri_2Int) ));
             add_to_esp(env, 3*4);
             addInstr(env, mk_iMOVsd_RR(hregX86_EDX(), tHi));
@@ -2820,7 +2820,7 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
             iselInt64Expr(&xHi, &xLo, env, e->Iex.Unop.arg);
             addInstr(env, X86Instr_Push(X86RMI_Reg(xHi)));
             addInstr(env, X86Instr_Push(X86RMI_Reg(xLo)));
-            addInstr(env, X86Instr_Call( Xcc_ALWAYS, (UInt)fn,
+            addInstr(env, X86Instr_Call( Xcc_ALWAYS, (Addr32)fn,
                                          0, mk_RetLoc_simple(RLPri_2Int) ));
             add_to_esp(env, 2*4);
             addInstr(env, mk_iMOVsd_RR(hregX86_EDX(), tHi));

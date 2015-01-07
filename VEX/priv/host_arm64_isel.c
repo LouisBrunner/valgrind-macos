@@ -498,7 +498,7 @@ Bool doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
    HReg          tmpregs[ARM64_N_ARGREGS];
    Bool          go_fast;
    Int           n_args, i, nextArgReg;
-   ULong         target;
+   Addr64        target;
 
    vassert(ARM64_N_ARGREGS == 8);
 
@@ -784,7 +784,7 @@ Bool doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
       number into the call (we'll need to know it when doing register
       allocation, to know what regs the call reads.) */
 
-   target = (HWord)Ptr_to_ULong(cee->addr);
+   target = (Addr)cee->addr;
    addInstr(env, ARM64Instr_Call( cc, target, nextArgReg, *retloc ));
 
    return True; /* success */
@@ -1708,7 +1708,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          HReg res  = newVRegI(env);
          addInstr(env, ARM64Instr_MovI(hregARM64_X0(), regL));
          addInstr(env, ARM64Instr_MovI(hregARM64_X1(), regR));
-         addInstr(env, ARM64Instr_Call( ARM64cc_AL, (HWord)Ptr_to_ULong(fn),
+         addInstr(env, ARM64Instr_Call( ARM64cc_AL, (Addr)fn,
                                         2, mk_RetLoc_simple(RLPri_Int) ));
          addInstr(env, ARM64Instr_MovI(res, hregARM64_X0()));
          return res;

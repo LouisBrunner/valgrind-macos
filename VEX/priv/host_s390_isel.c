@@ -509,7 +509,7 @@ doHelperCall(/*OUT*/UInt *stackAdjustAfterCall,
              IRCallee *callee, IRType retTy, IRExpr **args)
 {
    UInt n_args, i, argreg, size;
-   ULong target;
+   Addr64 target;
    HReg tmpregs[S390_NUM_GPRPARMS];
    s390_cc_t cc;
 
@@ -606,7 +606,7 @@ doHelperCall(/*OUT*/UInt *stackAdjustAfterCall,
       addInstr(env, s390_insn_move(size, finalreg, tmpregs[i]));
    }
 
-   target = Ptr_to_ULong(callee->addr);
+   target = (Addr)callee->addr;
 
    /* Do final checks, set the return values, and generate the call
       instruction proper. */
@@ -630,7 +630,7 @@ doHelperCall(/*OUT*/UInt *stackAdjustAfterCall,
    }
 
    /* Finally, the call itself. */
-   addInstr(env, s390_insn_helper_call(cc, (Addr64)target, n_args,
+   addInstr(env, s390_insn_helper_call(cc, target, n_args,
                                        callee->name, *retloc));
 }
 

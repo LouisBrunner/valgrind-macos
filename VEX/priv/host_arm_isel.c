@@ -396,7 +396,7 @@ Bool doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
    HReg        tmpregs[ARM_N_ARGREGS];
    Bool        go_fast;
    Int         n_args, i, nextArgReg;
-   ULong       target;
+   Addr32      target;
 
    vassert(ARM_N_ARGREGS == 4);
 
@@ -708,7 +708,7 @@ Bool doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
       instruction, a bitmask indicating which of r0/1/2/3 carry live
       values.  But that's too much hassle. */
 
-   target = (HWord)Ptr_to_ULong(cee->addr);
+   target = (Addr)cee->addr;
    addInstr(env, ARMInstr_Call( cc, target, nextArgReg, *retloc ));
 
    return True; /* success */
@@ -1483,7 +1483,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          HReg res  = newVRegI(env);
          addInstr(env, mk_iMOVds_RR(hregARM_R0(), regL));
          addInstr(env, mk_iMOVds_RR(hregARM_R1(), regR));
-         addInstr(env, ARMInstr_Call( ARMcc_AL, (HWord)Ptr_to_ULong(fn),
+         addInstr(env, ARMInstr_Call( ARMcc_AL, (Addr)fn,
                                       2, mk_RetLoc_simple(RLPri_Int) ));
          addInstr(env, mk_iMOVds_RR(res, hregARM_R0()));
          return res;
@@ -1772,7 +1772,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          HReg arg = iselIntExpr_R(env, e->Iex.Unop.arg);
          HReg res = newVRegI(env);
          addInstr(env, mk_iMOVds_RR(hregARM_R0(), arg));
-         addInstr(env, ARMInstr_Call( ARMcc_AL, (HWord)Ptr_to_ULong(fn),
+         addInstr(env, ARMInstr_Call( ARMcc_AL, (Addr)fn,
                                       1, mk_RetLoc_simple(RLPri_Int) ));
          addInstr(env, mk_iMOVds_RR(res, hregARM_R0()));
          return res;

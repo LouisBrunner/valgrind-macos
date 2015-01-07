@@ -2765,7 +2765,7 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
       const void* disp_cp_chain_me
                = i->Ain.XDirect.toFastEP ? disp_cp_chain_me_to_fastEP 
                                          : disp_cp_chain_me_to_slowEP;
-      p = emit64(p, Ptr_to_ULong(disp_cp_chain_me));
+      p = emit64(p, (Addr)disp_cp_chain_me);
       /* call *%r11 */
       *p++ = 0x41;
       *p++ = 0xFF;
@@ -2808,18 +2808,18 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
       p = doAMode_M(p, i->Ain.XIndir.dstGA, i->Ain.XIndir.amRIP);
 
       /* get $disp_cp_xindir into %r11 */
-      if (fitsIn32Bits(Ptr_to_ULong(disp_cp_xindir))) {
+      if (fitsIn32Bits((Addr)disp_cp_xindir)) {
          /* use a shorter encoding */
          /* movl sign-extend(disp_cp_xindir), %r11 */
          *p++ = 0x49;
          *p++ = 0xC7;
          *p++ = 0xC3;
-         p = emit32(p, (UInt)Ptr_to_ULong(disp_cp_xindir));
+         p = emit32(p, (UInt)(Addr)disp_cp_xindir);
       } else {
          /* movabsq $disp_cp_xindir, %r11 */
          *p++ = 0x49;
          *p++ = 0xBB;
-         p = emit64(p, Ptr_to_ULong(disp_cp_xindir));
+         p = emit64(p, (Addr)disp_cp_xindir);
       }
 
       /* jmp *%r11 */
@@ -2884,7 +2884,7 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
       /* movabsq $disp_assisted, %r11 */
       *p++ = 0x49;
       *p++ = 0xBB;
-      p = emit64(p, Ptr_to_ULong(disp_cp_xassisted));
+      p = emit64(p, (Addr)disp_cp_xassisted);
       /* jmp *%r11 */
       *p++ = 0x41;
       *p++ = 0xFF;
@@ -3567,7 +3567,7 @@ VexInvalRange chainXDirect_AMD64 ( VexEndness endness_host,
    UChar* p = (UChar*)place_to_chain;
    vassert(p[0] == 0x49);
    vassert(p[1] == 0xBB);
-   vassert(*(ULong*)(&p[2]) == Ptr_to_ULong(disp_cp_chain_me_EXPECTED));
+   vassert(*(Addr*)(&p[2]) == (Addr)disp_cp_chain_me_EXPECTED);
    vassert(p[10] == 0x41);
    vassert(p[11] == 0xFF);
    vassert(p[12] == 0xD3);
@@ -3629,7 +3629,7 @@ VexInvalRange chainXDirect_AMD64 ( VexEndness endness_host,
       vassert(delta == 0LL || delta == -1LL);
    } else {
       /* Minimal modifications from the starting sequence. */   
-      *(ULong*)(&p[2]) = Ptr_to_ULong(place_to_jump_to);
+     *(Addr*)(&p[2]) = (Addr)place_to_jump_to;
       p[12] = 0xE3;
    }
    VexInvalRange vir = { (HWord)place_to_chain, 13 };
@@ -3664,7 +3664,7 @@ VexInvalRange unchainXDirect_AMD64 ( VexEndness endness_host,
    UChar* p     = (UChar*)place_to_unchain;
    Bool   valid = False;
    if (p[0] == 0x49 && p[1] == 0xBB
-       && *(ULong*)(&p[2]) == Ptr_to_ULong(place_to_jump_to_EXPECTED)
+       && *(Addr*)(&p[2]) == (Addr)place_to_jump_to_EXPECTED
        && p[10] == 0x41 && p[11] == 0xFF && p[12] == 0xE3) {
       /* it's the long form */
       valid = True;
@@ -3695,7 +3695,7 @@ VexInvalRange unchainXDirect_AMD64 ( VexEndness endness_host,
    */
    p[0] = 0x49;
    p[1] = 0xBB;
-   *(ULong*)(&p[2]) = Ptr_to_ULong(disp_cp_chain_me);
+   *(Addr*)(&p[2]) = (Addr)disp_cp_chain_me;
    p[10] = 0x41;
    p[11] = 0xFF;
    p[12] = 0xD3;
@@ -3726,7 +3726,7 @@ VexInvalRange patchProfInc_AMD64 ( VexEndness endness_host,
    vassert(p[10] == 0x49);
    vassert(p[11] == 0xFF);
    vassert(p[12] == 0x03);
-   ULong imm64 = (ULong)Ptr_to_ULong(location_of_counter);
+   ULong imm64 = (ULong)(Addr)location_of_counter;
    p[2] = imm64 & 0xFF; imm64 >>= 8;
    p[3] = imm64 & 0xFF; imm64 >>= 8;
    p[4] = imm64 & 0xFF; imm64 >>= 8;

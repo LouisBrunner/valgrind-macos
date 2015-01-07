@@ -1059,9 +1059,9 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
    /* Finally, generate the call itself.  This needs the *retloc value
       set in the switch above, which is why it's at the end. */
 
-   ULong target = mode64 ? Ptr_to_ULong(cee->addr)
-                         : toUInt(Ptr_to_ULong(cee->addr));
-   addInstr(env, PPCInstr_Call( cc, (Addr64)target, argiregs, *retloc ));
+   Addr64 target = mode64 ? (Addr)cee->addr
+                          : toUInt((Addr)(cee->addr));
+   addInstr(env, PPCInstr_Call( cc, target, argiregs, *retloc ));
 }
 
 
@@ -2260,7 +2260,7 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e,
 
          cc = mk_PPCCondCode( Pct_ALWAYS, Pcf_NONE );
          if (IEndianess == Iend_LE) {
-             addInstr(env, PPCInstr_Call( cc, Ptr_to_ULong(h_calc_BCDtoDPB),
+             addInstr(env, PPCInstr_Call( cc, (Addr)h_calc_BCDtoDPB,
                                           argiregs,
                                           mk_RetLoc_simple(RLPri_Int)) );
          } else {
@@ -2297,7 +2297,7 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e,
          cc = mk_PPCCondCode( Pct_ALWAYS, Pcf_NONE );
 
         if (IEndianess == Iend_LE) {
-            addInstr(env, PPCInstr_Call( cc, Ptr_to_ULong(h_calc_DPBtoBCD),
+            addInstr(env, PPCInstr_Call( cc, (Addr)h_calc_DPBtoBCD,
                                          argiregs, 
                                          mk_RetLoc_simple(RLPri_Int) ) );
 	} else {
@@ -3673,14 +3673,14 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
          cc = mk_PPCCondCode( Pct_ALWAYS, Pcf_NONE );
 
          if (IEndianess == Iend_LE) {
-             addInstr( env, PPCInstr_Call( cc, Ptr_to_ULong(h_calc_BCDtoDPB),
+             addInstr( env, PPCInstr_Call( cc, (Addr)h_calc_BCDtoDPB,
                                            argiregs,
                                            mk_RetLoc_simple(RLPri_2Int) ) );
          } else {
-             ULong       target;
-             target = mode64 ? Ptr_to_ULong(h_calc_BCDtoDPB) :
-                 toUInt( Ptr_to_ULong(h_calc_BCDtoDPB ) );
-             addInstr( env, PPCInstr_Call( cc, (Addr64)target,
+             Addr64 target;
+             target = mode64 ? (Addr)h_calc_BCDtoDPB :
+               toUInt( (Addr)h_calc_BCDtoDPB );
+             addInstr( env, PPCInstr_Call( cc, target,
                                            argiregs,
                                            mk_RetLoc_simple(RLPri_2Int) ) );
          }
@@ -3721,14 +3721,14 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
          cc = mk_PPCCondCode( Pct_ALWAYS, Pcf_NONE );
 
          if (IEndianess == Iend_LE) {
-             addInstr(env, PPCInstr_Call( cc, Ptr_to_ULong(h_calc_DPBtoBCD),
+             addInstr(env, PPCInstr_Call( cc, (Addr)h_calc_DPBtoBCD,
                                           argiregs,
                                           mk_RetLoc_simple(RLPri_2Int) ) );
          } else {
-             ULong       target;
-             target = mode64 ? Ptr_to_ULong(h_calc_DPBtoBCD) :
-                 toUInt( Ptr_to_ULong( h_calc_DPBtoBCD ) );
-             addInstr(env, PPCInstr_Call( cc, (Addr64)target, argiregs,
+             Addr64 target;
+             target = mode64 ? (Addr)h_calc_DPBtoBCD :
+               toUInt( (Addr)h_calc_DPBtoBCD );
+             addInstr(env, PPCInstr_Call( cc, target, argiregs,
                                           mk_RetLoc_simple(RLPri_2Int) ) );
          }
 

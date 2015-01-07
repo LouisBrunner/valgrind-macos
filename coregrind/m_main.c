@@ -1015,7 +1015,7 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
                                              log_fsname_unexpanded);
          sres = VG_(open)(logfilename, 
                           VKI_O_CREAT|VKI_O_WRONLY|VKI_O_TRUNC, 
-                          VKI_S_IRUSR|VKI_S_IWUSR);
+                          VKI_S_IRUSR|VKI_S_IWUSR|VKI_S_IRGRP|VKI_S_IROTH);
          if (!sr_isError(sres)) {
             tmp_log_fd = sr_Res(sres);
             VG_(clo_log_fname_expanded) = logfilename;
@@ -1074,7 +1074,7 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
                                              xml_fsname_unexpanded);
          sres = VG_(open)(xmlfilename, 
                           VKI_O_CREAT|VKI_O_WRONLY|VKI_O_TRUNC, 
-                          VKI_S_IRUSR|VKI_S_IWUSR);
+                          VKI_S_IRUSR|VKI_S_IWUSR|VKI_S_IRGRP|VKI_S_IROTH);
          if (!sr_isError(sres)) {
             tmp_xml_fd = sr_Res(sres);
             VG_(clo_xml_fname_expanded) = xmlfilename;

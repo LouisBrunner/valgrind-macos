@@ -2622,7 +2622,7 @@ void shutdown_actions_NORETURN( ThreadId tid,
 
    switch (tids_schedretcode) {
    case VgSrc_ExitThread:  /* the normal way out (Linux) */
-   case VgSrc_ExitProcess: /* the normal way out (AIX) -- still needed? */
+   case VgSrc_ExitProcess: /* the normal way out (Darwin) */
       /* Change the application return code to user's return code,
          if an error was found */
       if (VG_(clo_error_exitcode) > 0 

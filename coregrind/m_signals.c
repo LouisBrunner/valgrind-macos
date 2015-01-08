@@ -575,7 +575,7 @@ typedef struct SigQueue {
 /* ------ Macros for pulling stuff out of siginfos ------ */
 
 /* These macros allow use of uniform names when working with
-   both the Linux and AIX vki definitions. */
+   both the Linux and Darwin vki definitions. */
 #if defined(VGO_linux)
 #  define VKI_SIGINFO_si_addr  _sifields._sigfault._addr
 #  define VKI_SIGINFO_si_pid   _sifields._kill._pid

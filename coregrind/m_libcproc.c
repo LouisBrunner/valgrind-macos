@@ -666,6 +666,20 @@ UInt VG_(read_millisecond_timer) ( void )
    return (now - base) / 1000;
 }
 
+Int VG_(gettimeofday)(struct vki_timeval *tv, struct vki_timezone *tz)
+{
+   SysRes res;
+   res = VG_(do_syscall2)(__NR_gettimeofday, (UWord)tv, (UWord)tz);
+
+   if (! sr_isError(res)) return 0;
+
+   /* Make sure, argument values are determinstic upon failure */
+   if (tv) *tv = (struct vki_timeval){ .tv_sec = 0, .tv_usec = 0 };
+   if (tz) *tz = (struct vki_timezone){ .tz_minuteswest = 0, .tz_dsttime = 0 };
+
+   return -1;
+}
+
 
 /* ---------------------------------------------------------------------
    atfork()

@@ -88,6 +88,7 @@ extern Int VG_(getegid) ( void );
 // (roughly;  it gets initialised partway through Valgrind's initialisation
 // steps).
 extern UInt VG_(read_millisecond_timer) ( void );
+extern Int  VG_(gettimeofday)(struct vki_timeval *tv, struct vki_timezone *tz);
 
 /* ---------------------------------------------------------------------
    atfork

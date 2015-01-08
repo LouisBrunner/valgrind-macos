@@ -1706,10 +1706,6 @@ Bool CLG_(handle_client_request)(ThreadId tid, UWord *args, UWord *ret)
 
 /* struct timeval syscalltime[VG_N_THREADS]; */
 #if CLG_MICROSYSTIME
-#include <sys/time.h>
-#include <sys/syscall.h>
-extern Int VG_(do_syscall) ( UInt, ... );
-
 ULong syscalltime[VG_N_THREADS];
 #else
 UInt syscalltime[VG_N_THREADS];
@@ -1722,7 +1718,7 @@ void CLG_(pre_syscalltime)(ThreadId tid, UInt syscallno,
   if (CLG_(clo).collect_systime) {
 #if CLG_MICROSYSTIME
     struct vki_timeval tv_now;
-    VG_(do_syscall)(__NR_gettimeofday, (UInt)&tv_now, (UInt)NULL);
+    VG_(gettimeofday)(&tv_now, NULL);
     syscalltime[tid] = tv_now.tv_sec * 1000000ULL + tv_now.tv_usec;
 #else
     syscalltime[tid] = VG_(read_millisecond_timer)();
@@ -1741,7 +1737,7 @@ void CLG_(post_syscalltime)(ThreadId tid, UInt syscallno,
     struct vki_timeval tv_now;
     ULong diff;
     
-    VG_(do_syscall)(__NR_gettimeofday, (UInt)&tv_now, (UInt)NULL);
+    VG_(gettimeofday)(&tv_now, NULL);
     diff = (tv_now.tv_sec * 1000000ULL + tv_now.tv_usec) - syscalltime[tid];
 #else
     UInt diff = VG_(read_millisecond_timer)() - syscalltime[tid];
@@ -1750,7 +1746,8 @@ void CLG_(post_syscalltime)(ThreadId tid, UInt syscallno,
     /* offset o is for "SysCount", o+1 for "SysTime" */
     o = fullOffset(EG_SYS);
     CLG_ASSERT(o>=0);
-    CLG_DEBUG(0,"   Time (Off %d) for Syscall %d: %ull\n", o, syscallno, diff);
+    CLG_DEBUG(0,"   Time (Off %d) for Syscall %u: %llu\n", o, syscallno,
+              (ULong)diff);
     
     CLG_(current_state).cost[o] ++;
     CLG_(current_state).cost[o+1] += diff;

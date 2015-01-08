@@ -1377,9 +1377,11 @@ void clg_discard_superblock_info ( Addr orig_addr, VexGuestExtents vge )
                    (void*)orig_addr,
                    (void*)vge.base[0], (ULong)vge.len[0]);
 
-   // Get BB info, remove from table, free BB info.  Simple!  Note that we
-   // use orig_addr, not the first instruction address in vge.
-   CLG_(delete_bb)(orig_addr);
+   // Get BB info, remove from table, free BB info.  Simple!
+   // When created, the BB is keyed by the first instruction address,
+   // (not orig_addr, but eventually redirected address). Thus, we
+   // use the first instruction address in vge.
+   CLG_(delete_bb)(vge.base[0]);
 }
 
 

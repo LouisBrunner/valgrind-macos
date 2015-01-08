@@ -223,8 +223,7 @@ static Bool mode64 = False;
 // Given a pointer to a function as obtained by "& functionname" in C,
 // produce a pointer to the actual entry point for the function.  For
 // most platforms it's the identity function.  Unfortunately, on
-// ppc64-linux it isn't (sigh) and ditto for ppc32-aix5 and
-// ppc64-aix5.
+// ppc64-linux it isn't (sigh)
 static void* fnptr_to_fnentry( const VexAbiInfo* vbi, void* f )
 {
    if (vbi->host_ppc_calls_use_fndescrs) {
@@ -6202,7 +6201,7 @@ static Bool dis_syslink ( UInt theInstr,
    // sc  (System Call, PPC32 p504)
    DIP("sc\n");
 
-   /* Copy CIA into the IP_AT_SYSCALL pseudo-register, so that on AIX
+   /* Copy CIA into the IP_AT_SYSCALL pseudo-register, so that on Darwin
       Valgrind can back the guest up to this instruction if it needs
       to restart the syscall. */
    putGST( PPC_GST_IP_AT_SYSCALL, getGST( PPC_GST_CIA ) );

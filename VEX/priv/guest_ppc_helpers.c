@@ -68,7 +68,7 @@
 /* Reads a complete, consistent 64-bit TB value. */
 ULong ppcg_dirtyhelper_MFTB ( void )
 {
-#  if defined(__powerpc__) || defined(_AIX)
+#  if defined(__powerpc__)
    ULong res;
    UInt  lo, hi1, hi2;
    while (1) {
@@ -93,7 +93,7 @@ ULong ppcg_dirtyhelper_MFTB ( void )
 /* DIRTY HELPER (non-referentially transparent) */
 UInt ppc32g_dirtyhelper_MFSPR_268_269 ( UInt r269 )
 {
-#  if defined(__powerpc__) || defined(_AIX)
+#  if defined(__powerpc__)
    UInt spr;
    if (r269) {
       __asm__ __volatile__("mfspr %0,269" : "=b"(spr));
@@ -111,7 +111,7 @@ UInt ppc32g_dirtyhelper_MFSPR_268_269 ( UInt r269 )
 /* DIRTY HELPER (I'm not really sure what the side effects are) */
 UInt ppc32g_dirtyhelper_MFSPR_287 ( void )
 {
-#  if defined(__powerpc__) || defined(_AIX)
+#  if defined(__powerpc__)
    UInt spr;
    __asm__ __volatile__("mfspr %0,287" : "=b"(spr));
    return spr;

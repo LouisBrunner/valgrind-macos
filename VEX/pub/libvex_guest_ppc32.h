@@ -229,7 +229,7 @@ typedef
       /* 1216 */ UInt guest_REDIR_SP;
       /* 1220 */ UInt guest_REDIR_STACK[VEX_GUEST_PPC32_REDIR_STACK_SIZE];
 
-      /* Needed for AIX (but mandated for all guest architectures):
+      /* Needed for Darwin (but mandated for all guest architectures):
          CIA at the last SC insn.  Used when backing up to restart a
          syscall that has been interrupted by a signal. */
       /* 1348 */ UInt guest_IP_AT_SYSCALL;

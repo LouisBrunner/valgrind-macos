@@ -271,7 +271,7 @@ typedef
       /* 1376 */ ULong guest_REDIR_SP;
       /* 1384 */ ULong guest_REDIR_STACK[VEX_GUEST_PPC64_REDIR_STACK_SIZE];
 
-      /* Needed for AIX: CIA at the last SC insn.  Used when backing up
+      /* Needed for Darwin: CIA at the last SC insn.  Used when backing up
          to restart a syscall that has been interrupted by a signal. */
       /* 1640 */ ULong guest_IP_AT_SYSCALL;
 

@@ -191,6 +191,7 @@ check_PROGRAMS = \
 	fdleak_socketpair \
 	floored fork fucomip \
 	ioctl_moans \
+	manythreads \
 	mmap_fcntl_bug \
 	munmap_exe map_unaligned map_unmap mq \
 	pending \
@@ -206,6 +207,7 @@ check_PROGRAMS = \
 	syscall-restart1 syscall-restart2 \
 	syslog \
 	system \
+	thread-exits \
 	threaded-fork \
 	threadederrno \
 	timestamp \
@@ -223,21 +225,6 @@ if HAVE_NESTED_FUNCTIONS
    check_PROGRAMS += nestedfns
 endif
 
-# DDD:
-# - manythreads and thread-exits have lots of this:
-# --61831:0:aspacem  sync_check_mapping_callback: segment mismatch:
-#                    kernel's seg:
-# --61831:0:aspacem  start=0x102538000 end=0x1025b7fff prot=3 dev=0 ino=0 
-#                    offset=0 name="(none)"
-# --61831:0:aspacem  sync_check_mapping_callback: segment mismatch: V's seg:
-# --61831:0:aspacem  NSegment{    , start=0x10067a000, end=0x109a1efff,
-#                    smode=SmFixed, dev=0, ino=0, offset=0, fnIdx=-1, hasR=0,
-#                    hasW=0, hasX=0, hasT=0, mark=0, name="(none)"}
-if ! VGCONF_PLATFORMS_INCLUDE_AMD64_DARWIN
-   check_PROGRAMS += \
-	manythreads \
-	thread-exits
-endif
 # This doesn't appear to be compilable on Darwin.
 if ! VGCONF_OS_IS_DARWIN
    check_PROGRAMS += rlimit64_nofile 

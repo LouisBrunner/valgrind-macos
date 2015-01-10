@@ -767,7 +767,6 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
    Addr cls;
    Addr addr;
 
-   VG_(machine_get_VexArchInfo)( NULL, &vai );
    cls = vai.ppc_icache_line_szB;
 
    /* Stay sane .. */

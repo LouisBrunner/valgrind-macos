@@ -760,8 +760,7 @@ void VG_(tt_tc_do_chaining) ( void* from__patch_addr,
    // the slow (tcptr) entry point.
    TTEntry* to_tte    = index_tte(to_sNo, to_tteNo);
    void*    host_code = ((UChar*)to_tte->tcptr)
-                        + (to_fastEP ? LibVEX_evCheckSzB(arch_host,
-                                                         endness_host) : 0);
+                        + (to_fastEP ? LibVEX_evCheckSzB(arch_host) : 0);
 
    // stay sane -- the patch point (dst) is in this sector's code cache
    vg_assert( (UChar*)host_code >= (UChar*)sectors[to_sNo].tc );
@@ -879,7 +878,7 @@ void unchain_in_preparation_for_deletion ( VexArch arch_host,
    if (DEBUG_TRANSTAB)
       VG_(printf)("QQQ unchain_in_prep %u.%u...\n", here_sNo, here_tteNo);
    UWord    i, j, n, m;
-   Int      evCheckSzB = LibVEX_evCheckSzB(arch_host, endness_host);
+   Int      evCheckSzB = LibVEX_evCheckSzB(arch_host);
    TTEntry* here_tte   = index_tte(here_sNo, here_tteNo);
    if (DEBUG_TRANSTAB)
       VG_(printf)("... QQQ tt.entry 0x%lu tt.tcptr 0x%p\n",

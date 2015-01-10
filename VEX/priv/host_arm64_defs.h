@@ -962,7 +962,7 @@ extern HInstrArray* iselSB_ARM64 ( const IRSB*,
 /* How big is an event check?  This is kind of a kludge because it
    depends on the offsets of host_EvC_FAILADDR and
    host_EvC_COUNTER. */
-extern Int evCheckSzB_ARM64 ( VexEndness endness_host );
+extern Int evCheckSzB_ARM64 (void);
 
 /* Perform a chaining and unchaining of an XDirect jump. */
 extern VexInvalRange chainXDirect_ARM64 ( VexEndness endness_host,

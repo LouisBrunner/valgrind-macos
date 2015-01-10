@@ -745,7 +745,7 @@ HInstrArray *iselSB_S390   ( const IRSB *, VexArch, const VexArchInfo *,
                              const VexAbiInfo *, Int, Int, Bool, Bool, Addr);
 
 /* Return the number of bytes of code needed for an event check */
-Int evCheckSzB_S390(VexEndness endness_host);
+Int evCheckSzB_S390(void);
 
 /* Perform a chaining and unchaining of an XDirect jump. */
 VexInvalRange chainXDirect_S390(VexEndness endness_host,

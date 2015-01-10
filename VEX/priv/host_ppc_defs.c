@@ -5838,7 +5838,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       /* nofail: */
 
       /* Crosscheck */
-      vassert(evCheckSzB_PPC(endness_host) == (UChar*)p - (UChar*)p0);
+      vassert(evCheckSzB_PPC() == (UChar*)p - (UChar*)p0);
       goto done;
    }
 
@@ -5903,7 +5903,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
 /* How big is an event check?  See case for Pin_EvCheck in
    emit_PPCInstr just above.  That crosschecks what this returns, so
    we can tell if we're inconsistent. */
-Int evCheckSzB_PPC ( VexEndness endness_host )
+Int evCheckSzB_PPC (void)
 {
   return 28;
 }

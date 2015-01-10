@@ -768,8 +768,7 @@ VexInvalRange LibVEX_UnChain ( VexArch     arch_host,
    calculate the fast entry point address if the slow entry point
    address is known (the usual case), or vice versa. */
 extern
-Int LibVEX_evCheckSzB ( VexArch    arch_host,
-                        VexEndness endness_host );
+Int LibVEX_evCheckSzB ( VexArch arch_host );
 
 
 /* Patch the counter location into an existing ProfInc point.  The

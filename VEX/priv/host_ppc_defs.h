@@ -1170,7 +1170,7 @@ extern HInstrArray* iselSB_PPC           ( const IRSB*,
 /* How big is an event check?  This is kind of a kludge because it
    depends on the offsets of host_EvC_FAILADDR and
    host_EvC_COUNTER. */
-extern Int evCheckSzB_PPC ( VexEndness endness_host );
+extern Int evCheckSzB_PPC (void);
 
 /* Perform a chaining and unchaining of an XDirect jump. */
 extern VexInvalRange chainXDirect_PPC ( VexEndness endness_host,

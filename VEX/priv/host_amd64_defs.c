@@ -3499,7 +3499,7 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
       p = doAMode_M(p, fake(4), i->Ain.EvCheck.amFailAddr);
       vassert(p - p0 == 8); /* also ensures that 0x03 offset above is ok */
       /* And crosscheck .. */
-      vassert(evCheckSzB_AMD64(endness_host) == 8);
+      vassert(evCheckSzB_AMD64() == 8);
       goto done;
    }
 
@@ -3542,7 +3542,7 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
 /* How big is an event check?  See case for Ain_EvCheck in
    emit_AMD64Instr just above.  That crosschecks what this returns, so
    we can tell if we're inconsistent. */
-Int evCheckSzB_AMD64 ( VexEndness endness_host )
+Int evCheckSzB_AMD64 (void)
 {
    return 8;
 }

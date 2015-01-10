@@ -9734,7 +9734,7 @@ s390_insn_evcheck_emit(UChar *buf, const s390_insn *insn,
    
    /* Make sure the size of the generated code is identical to the size
       returned by evCheckSzB_S390 */
-   vassert(evCheckSzB_S390(endness_host) == code_end - code_begin);
+   vassert(evCheckSzB_S390() == code_end - code_begin);
 
    return buf;
 }
@@ -9956,7 +9956,7 @@ emit_S390Instr(Bool *is_profinc, UChar *buf, Int nbuf, const s390_insn *insn,
 /* Return the number of bytes emitted for an S390_INSN_EVCHECK.
    See s390_insn_evcheck_emit */
 Int
-evCheckSzB_S390(VexEndness endness_host)
+evCheckSzB_S390(void)
 {
    return s390_host_has_gie ? 18 : 24;
 }

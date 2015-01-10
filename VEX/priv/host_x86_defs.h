@@ -746,7 +746,7 @@ extern HInstrArray* iselSB_X86           ( const IRSB*,
    and so assumes that they are both <= 128, and so can use the short
    offset encoding.  This is all checked with assertions, so in the
    worst case we will merely assert at startup. */
-extern Int evCheckSzB_X86 ( VexEndness endness_host );
+extern Int evCheckSzB_X86 (void);
 
 /* Perform a chaining and unchaining of an XDirect jump. */
 extern VexInvalRange chainXDirect_X86 ( VexEndness endness_host,

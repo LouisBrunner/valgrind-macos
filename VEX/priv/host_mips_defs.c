@@ -4230,7 +4230,7 @@ Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
          /* nofail: */
 
          /* Crosscheck */
-         vassert(evCheckSzB_MIPS(endness_host) == (UChar*)p - (UChar*)p0);
+         vassert(evCheckSzB_MIPS() == (UChar*)p - (UChar*)p0);
          goto done;
       }
 
@@ -4316,7 +4316,7 @@ Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
 /* How big is an event check?  See case for Min_EvCheck in
    emit_MIPSInstr just above.  That crosschecks what this returns, so
    we can tell if we're inconsistent. */
-Int evCheckSzB_MIPS ( VexEndness endness_host )
+Int evCheckSzB_MIPS (void)
 {
   UInt kInstrSize = 4;
   return 7*kInstrSize;

@@ -3291,7 +3291,7 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
       p = doAMode_M(p, fake(4), i->Xin.EvCheck.amFailAddr);
       vassert(p - p0 == 8); /* also ensures that 0x03 offset above is ok */
       /* And crosscheck .. */
-      vassert(evCheckSzB_X86(endness_host) == 8);
+      vassert(evCheckSzB_X86() == 8);
       goto done;
    }
 
@@ -3336,7 +3336,7 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
 /* How big is an event check?  See case for Xin_EvCheck in
    emit_X86Instr just above.  That crosschecks what this returns, so
    we can tell if we're inconsistent. */
-Int evCheckSzB_X86 ( VexEndness endness_host )
+Int evCheckSzB_X86 (void)
 {
    return 8;
 }

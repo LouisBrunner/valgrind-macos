@@ -1080,28 +1080,27 @@ VexInvalRange LibVEX_UnChain ( VexArch     arch_host,
    }
 }
 
-Int LibVEX_evCheckSzB ( VexArch    arch_host,
-                        VexEndness endness_host )
+Int LibVEX_evCheckSzB ( VexArch    arch_host )
 {
    static Int cached = 0; /* DO NOT MAKE NON-STATIC */
    if (UNLIKELY(cached == 0)) {
       switch (arch_host) {
          case VexArchX86:
-            cached = evCheckSzB_X86(endness_host); break;
+            cached = evCheckSzB_X86(); break;
          case VexArchAMD64:
-            cached = evCheckSzB_AMD64(endness_host); break;
+            cached = evCheckSzB_AMD64(); break;
          case VexArchARM:
-            cached = evCheckSzB_ARM(endness_host); break;
+            cached = evCheckSzB_ARM(); break;
          case VexArchARM64:
-            cached = evCheckSzB_ARM64(endness_host); break;
+            cached = evCheckSzB_ARM64(); break;
          case VexArchS390X:
-            cached = evCheckSzB_S390(endness_host); break;
+            cached = evCheckSzB_S390(); break;
          case VexArchPPC32:
          case VexArchPPC64:
-            cached = evCheckSzB_PPC(endness_host); break;
+            cached = evCheckSzB_PPC(); break;
          case VexArchMIPS32:
          case VexArchMIPS64:
-            cached = evCheckSzB_MIPS(endness_host); break;
+            cached = evCheckSzB_MIPS(); break;
          default:
             vassert(0);
       }

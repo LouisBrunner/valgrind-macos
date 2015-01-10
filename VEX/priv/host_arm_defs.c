@@ -4644,7 +4644,7 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
          /* nofail: */
 
          /* Crosscheck */
-         vassert(evCheckSzB_ARM(endness_host) == (UChar*)p - (UChar*)p0);
+         vassert(evCheckSzB_ARM() == (UChar*)p - (UChar*)p0);
          goto done;
       }
 
@@ -4695,7 +4695,7 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
 /* How big is an event check?  See case for ARMin_EvCheck in
    emit_ARMInstr just above.  That crosschecks what this returns, so
    we can tell if we're inconsistent. */
-Int evCheckSzB_ARM ( VexEndness endness_host )
+Int evCheckSzB_ARM (void)
 {
    return 24;
 }

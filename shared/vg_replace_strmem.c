@@ -1363,6 +1363,7 @@ static inline void my_exit ( int x )
 
 #if defined(VGO_linux)
  GLIBC25_MEMPCPY(VG_Z_LIBC_SONAME, mempcpy)
+ GLIBC25_MEMPCPY(VG_Z_LIBC_SONAME, __GI_mempcpy)
  GLIBC25_MEMPCPY(VG_Z_LD_SO_1,     mempcpy) /* ld.so.1 */
  GLIBC25_MEMPCPY(VG_Z_LD_LINUX_SO_3, mempcpy) /* ld-linux.so.3 */
  GLIBC25_MEMPCPY(VG_Z_LD_LINUX_X86_64_SO_2, mempcpy) /* ld-linux-x86-64.so.2 */

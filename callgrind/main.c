@@ -37,6 +37,7 @@
 
 #include "pub_tool_threadstate.h"
 #include "pub_tool_gdbserver.h"
+#include "pub_tool_transtab.h"       // VG_(discard_translations_safely)
 
 #include "cg_branchpred.c"
 
@@ -1448,10 +1449,6 @@ void zero_state_cost(thread_info* t)
     CLG_(zero_cost)( CLG_(sets).full, CLG_(current_state).cost );
 }
 
-/* Ups, this can go very wrong...
-   FIXME: We should export this function or provide other means to get a handle */
-extern void VG_(discard_translations) ( Addr start, ULong range, const HChar* who );
-
 void CLG_(set_instrument_state)(const HChar* reason, Bool state)
 {
   if (CLG_(instrument_state) == state) {
@@ -1463,7 +1460,7 @@ void CLG_(set_instrument_state)(const HChar* reason, Bool state)
   CLG_DEBUG(2, "%s: Switching instrumentation %s ...\n",
 	   reason, state ? "ON" : "OFF");
 
-  VG_(discard_translations)( (Addr)0x1000, (ULong) ~0xfffl, "callgrind");
+  VG_(discard_translations_safely)( (Addr)0x1000, ~(SizeT)0xfff, "callgrind");
 
   /* reset internal state: call stacks, simulator */
   CLG_(forall_threads)(unwind_thread);

@@ -38,6 +38,7 @@
 //--------------------------------------------------------------------
 
 #include "pub_core_transtab_asm.h"
+#include "pub_tool_transtab.h"
 #include "libvex.h"                   // VexGuestExtents
 
 /* The fast-cache for tt-lookup.  Unused entries are denoted by .guest
@@ -128,6 +129,9 @@ typedef struct _SBProfEntry {
 } SBProfEntry;
 
 extern ULong VG_(get_SB_profile) ( SBProfEntry tops[], UInt n_tops );
+
+//  Exported variables
+extern Bool  VG_(ok_to_discard_translations);
 
 #endif   // __PUB_CORE_TRANSTAB_H
 

@@ -2022,6 +2022,17 @@ void VG_(discard_translations) ( Addr guest_start, ULong range,
    }
 }
 
+/* Whether or not tools may discard translations. */
+Bool  VG_(ok_to_discard_translations) = False;
+
+/* This function is exported to tools which can use it to discard
+   translations, provided it is safe to do so. */
+void VG_(discard_translations_safely) ( Addr  start, SizeT len,
+                                        const HChar* who )
+{
+   vg_assert(VG_(ok_to_discard_translations));
+   VG_(discard_translations)(start, len, who);
+}
 
 /*------------------------------------------------------------*/
 /*--- AUXILIARY: the unredirected TT/TC                    ---*/

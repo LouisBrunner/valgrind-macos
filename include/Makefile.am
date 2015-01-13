@@ -37,6 +37,7 @@ nobase_pkginclude_HEADERS = \
 	pub_tool_stacktrace.h 		\
 	pub_tool_threadstate.h 		\
 	pub_tool_tooliface.h 		\
+	pub_tool_transtab.h 		\
 	pub_tool_vki.h			\
 	pub_tool_vkiscnums.h		\
 	pub_tool_vkiscnums_asm.h	\

@@ -67,6 +67,8 @@ where XXXXXX is the bug number as listed below.
         tronical and pushfpopf tests)
 339706  Fix false positive for ioctl(TIOCSIG) on linux
 339721  assertion 'check_sibling == sibling' failed in readdwarf3.c ...
+339755  Fix known deliberate memory leak in setenv() on Mac OS X 10.9
+339780  Fix known uninitialised read in pthread_rwlock_init() on Mac OS X 10.9 
 339789  Fix none/tests/execve test on Mac OS X 10.9
 339808  Fix none/tests/rlimit64_nofile test on Mac OS X 10.9
 339853  arm64 times syscall unknown
@@ -96,6 +98,7 @@ where XXXXXX is the bug number as listed below.
 341238  Recognize GCC5/DWARFv5 DW_LANG constants (Go, C11, C++11, C++14)
 341539  VG_(describe_addr) should not describe address as belonging to client
         segment if it is past the heap end
+341613  Enable building of manythreads and thread-exits tests on Mac OS X
 341789  aarch64: shmat fails with valgrind on ARMv8
 342063  wrong format specifier for test mcblocklistsearch in gdbserver_tests
 342221  socket connect false positive uninit memory for unknown af family

@@ -145,6 +145,19 @@ __builtin_ctzll(ULong x)
 /* Provide certain functions Intel's ICC compiler expects to be defined. */
 
 void *
+__intel_ssse3_rep_memcpy(void *dest, const void *src, SizeT sz)
+{
+   return VG_(memcpy)( dest, src, sz );
+}
+
+void *
+__intel_ssse3_memcpy(void *dest, const void *src, SizeT sz)
+{
+   return VG_(memcpy)( dest, src, sz );
+}
+
+
+void *
 _intel_fast_memcpy(void *dest, const void *src, SizeT sz)
 {
    return VG_(memcpy)( dest, src, sz );
@@ -155,6 +168,7 @@ _intel_fast_memset(void *dest, int value, SizeT num)
 {
    return VG_(memset)( dest, value, num );    
 }
+
 #endif
 
 /*--------------------------------------------------------------------*/

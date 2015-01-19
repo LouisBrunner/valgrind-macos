@@ -3018,6 +3018,26 @@ POST(sys_getrandom)
    POST_MEM_WRITE( ARG1, ARG2 );
 }
 
+PRE(sys_memfd_create)
+{
+   PRINT("sys_memfd_create ( %#lx, %ld )" , ARG1,ARG2);
+   PRE_REG_READ2(int, "memfd_create",
+                 char *, uname, unsigned int, flags);
+   PRE_MEM_RASCIIZ( "memfd_create(uname)", ARG1 );
+}
+
+POST(sys_memfd_create)
+{
+   vg_assert(SUCCESS);
+   if (!ML_(fd_allowed)(RES, "memfd_create", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_nameless)(tid, RES);
+   }
+}
+
 /* ---------------------------------------------------------------------
    utime wrapper
    ------------------------------------------------------------------ */

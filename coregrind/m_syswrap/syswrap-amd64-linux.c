@@ -1078,8 +1078,8 @@ static SyscallTableEntry syscall_table[] = {
 //   LIN__(__NR_sched_getattr,     sys_ni_syscall),       // 315
 //   LIN__(__NR_renameat2,         sys_ni_syscall),       // 316
 //   LIN__(__NR_seccomp,           sys_ni_syscall),       // 317
-   LINXY(__NR_getrandom,         sys_getrandom)         // 318
-//   LIN__(__NR_memfd_create,      sys_ni_syscall),       // 319
+   LINXY(__NR_getrandom,         sys_getrandom),        // 318
+   LINXY(__NR_memfd_create,      sys_memfd_create)      // 319
 
 //   LIN__(__NR_kexec_file_load,   sys_ni_syscall),       // 320
 //   LIN__(__NR_bpf,               sys_ni_syscall)        // 321

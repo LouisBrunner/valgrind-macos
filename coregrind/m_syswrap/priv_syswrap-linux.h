@@ -285,6 +285,7 @@ DECL_TEMPLATE(linux, sys_fanotify_mark);
 
 // Linux-specific (new in Linux 3.17)
 DECL_TEMPLATE(linux, sys_getrandom);
+DECL_TEMPLATE(linux, sys_memfd_create);
 
 /* ---------------------------------------------------------------------
    Wrappers for sockets and ipc-ery.  These are split into standalone

@@ -910,7 +910,8 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY (__NR_clock_adjtime, sys_clock_adjtime),
    LINXY (__NR_process_vm_readv, sys_process_vm_readv),
    LINX_ (__NR_process_vm_writev, sys_process_vm_writev),
-   LINXY(__NR_getrandom, sys_getrandom)
+   LINXY(__NR_getrandom, sys_getrandom),
+   LINXY(__NR_memfd_create, sys_memfd_create)
 };
 
 SyscallTableEntry * ML_(get_linux_syscall_entry) ( UInt sysno )

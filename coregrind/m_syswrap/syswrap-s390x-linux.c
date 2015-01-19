@@ -1050,9 +1050,9 @@ static SyscallTableEntry syscall_table[] = {
 // ?????(__NR_sched_getattr, ),                                       // 346
 // ?????(__NR_renameat2, ),                                           // 347
 // ?????(__NR_seccomp, ),                                             // 348
-   LINXY(__NR_getrandom, sys_getrandom)                               // 349
+   LINXY(__NR_getrandom, sys_getrandom),                              // 349
 
-// ?????(__NR_memfd_create, ),                                        // 350
+   LINXY(__NR_memfd_create, sys_memfd_create)                         // 350
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry) ( UInt sysno )

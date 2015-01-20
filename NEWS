@@ -48,53 +48,20 @@ where XXXXXX is the bug number as listed below.
 333051  mmap of huge pages fails due to incorrect alignment
         == 339163
 334802  valgrind does not always explain why a given option is bad
-335440  arm64: ld1 (single structure) is not implemented
-335713  arm64: unhanded instruction: prfm (immediate)
 338731  ppc: Fix testuite build for toolchains not supporting -maltivec
 338995  shmat with hugepages (SHM_HUGETLB) fails with EINVAL
-339020  ppc64: memcheck/tests/ppc64/power_ISA2_05 failing in nightly build
 339045  Getting valgrind to compile and run on OS X Yosemite (10.10)
         == 340252
 339156  gdbsrv not called for fatal signal
-339182  ppc64: AvSplat ought to load destination vector register with 16/16
-        bytes stored prior
-339336  PPC64 store quad instruction (stq) is not supposed to
-        change the address register contents
-339433  ppc64 lxvw4x instruction uses four 32-byte loads
 339442  Fix testsuite build failure on OS X 10.9
-339645  Use correct tag names in sys_getdents/64 wrappers
 339688  Mac-specific ASM does not support .version directive (cpuid,
         tronical and pushfpopf tests)
-339706  Fix false positive for ioctl(TIOCSIG) on linux
-339721  assertion 'check_sibling == sibling' failed in readdwarf3.c ...
 339755  Fix known deliberate memory leak in setenv() on Mac OS X 10.9
 339780  Fix known uninitialised read in pthread_rwlock_init() on Mac OS X 10.9 
 339789  Fix none/tests/execve test on Mac OS X 10.9
 339808  Fix none/tests/rlimit64_nofile test on Mac OS X 10.9
-339853  arm64 times syscall unknown
-339855  arm64 unhandled getsid/setsid syscalls
-339858  arm64 dmb sy not implemented
-339926  Unhandled instruction 0x1E674001 (frintx) on aarm64
-339927  Unhandled instruction 0x9E7100C6 (fcvtmu) on aarch64
-339938  disInstr(arm64): unhandled instruction 0x4F8010A4 (fmla)
-        == 339950
-339940  unhandled syscall: 83 (sys_fdatasync) + patch
-340028  unhandled syscalls for arm64 (msync, pread64, setreuid and setregid)
-340033  arm64: unhandled instruction for dmb ishld and some other
-        isb-dmb-dsb variants...
-340036  arm64: Unhandled instruction ld4 (multiple structures, no offset)
 340115  Fix none/tests/cmdline[1|2] tests on systems which define TMPDIR
-340236  4 unhandled syscalls on aarch64/arm64: mknodat (33), fchdir
-        (50), chroot (51), fchownat (54)
 340430  Fix some grammatical weirdness in the manual.
-340509  arm64: unhandled instruction fcvtas
-340630  arm64: fchmod (52) and fchown (55) syscalls not recognized
-340632  arm64: unhandled instruction fcvtas
-340725  AVX2: Incorrect decoding of vpbroadcast{b,w} reg,reg forms
-340788  warning: unhandled syscall: 318 (getrandom)
-340807  disInstr(arm): unhandled instruction: 0xEE989B20
-340856  disInstr(arm64): unhandled instruction 0x1E634C45 (fcsel)
-340922  arm64: unhandled getgroups/setgroups syscalls
 341238  Recognize GCC5/DWARFv5 DW_LANG constants (Go, C11, C++11, C++14)
 341539  VG_(describe_addr) should not describe address as belonging to client
         segment if it is past the heap end
@@ -108,6 +75,72 @@ n-i-bz  Provide implementations of certain compiler builtins to support
         compilers who may not provide those
 n-i-bz  Old STABS code is still being compiled, but never used. Remove it.
 n-i-bz  Fix compilation on distros with glibc < 2.5
+
+
+
+Release 3.10.1 (25 November 2014)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+3.10.1 is a bug fix release.  It fixes various bugs reported in 3.10.0
+and backports fixes for all reported missing AArch64 ARMv8 instructions
+and syscalls from the trunk.  If you package or deliver 3.10.0 for others
+to use, you might want to consider upgrading to 3.10.1 instead.
+
+The following bugs have been fixed or resolved.  Note that "n-i-bz"
+stands for "not in bugzilla" -- that is, a bug that was reported to us
+but never got a bugzilla entry.  We encourage you to file bugs in
+bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather
+than mailing the developers (or mailing lists) directly -- bugs that
+are not entered into bugzilla tend to get forgotten about or ignored.
+
+To see details of a given bug, visit
+  https://bugs.kde.org/show_bug.cgi?id=XXXXXX
+where XXXXXX is the bug number as listed below.
+
+335440  arm64: ld1 (single structure) is not implemented
+335713  arm64: unhanded instruction: prfm (immediate)
+339020  ppc64: memcheck/tests/ppc64/power_ISA2_05 failing in nightly build
+339182  ppc64: AvSplat ought to load destination vector register with [..]
+339336  PPC64 store quad instruction (stq) is not supposed to change [..]
+339433  ppc64 lxvw4x instruction uses four 32-byte loads
+339645  Use correct tag names in sys_getdents/64 wrappers
+339706  Fix false positive for ioctl(TIOCSIG) on linux
+339721  assertion 'check_sibling == sibling' failed in readdwarf3.c ...
+339853  arm64 times syscall unknown
+339855  arm64 unhandled getsid/setsid syscalls
+339858  arm64 dmb sy not implemented
+339926  Unhandled instruction 0x1E674001 (frintx) on aarm64
+339927  Unhandled instruction 0x9E7100C6 (fcvtmu) on aarch64
+339938  disInstr(arm64): unhandled instruction 0x4F8010A4 (fmla)
+        == 339950
+339940  arm64: unhandled syscall: 83 (sys_fdatasync) + patch
+340033  arm64: unhandled insn dmb ishld and some other isb-dmb-dsb variants
+340028  unhandled syscalls for arm64 (msync, pread64, setreuid and setregid)
+340036  arm64: Unhandled instruction ld4 (multiple structures, no offset)
+340236  arm64: unhandled syscalls: mknodat, fchdir, chroot, fchownat
+340509  arm64: unhandled instruction fcvtas
+340630  arm64: fchmod (52) and fchown (55) syscalls not recognized
+340632  arm64: unhandled instruction fcvtas
+340725  AVX2: Incorrect decoding of vpbroadcast{b,w} reg,reg forms
+340788  warning: unhandled syscall: 318 (getrandom)
+340807  disInstr(arm): unhandled instruction: 0xEE989B20
+340856  disInstr(arm64): unhandled instruction 0x1E634C45 (fcsel)
+340922  arm64: unhandled getgroups/setgroups syscalls
+n-i-bz  DRD and Helgrind: Handle Imbe_CancelReservation (clrex on ARM)
+n-i-bz  Add missing ]] to terminate CDATA.
+n-i-bz  Glibc versions prior to 2.5 do not define PTRACE_GETSIGINFO
+n-i-bz  Enable sys_fadvise64_64 on arm32.
+n-i-bz  Add test cases for all remaining AArch64 SIMD, FP and memory insns.
+n-i-bz  Add test cases for all known arm64 load/store instructions.
+n-i-bz  PRE(sys_openat): when checking whether ARG1 == VKI_AT_FDCWD [..]
+n-i-bz  Add detection of old ppc32 magic instructions from bug 278808.
+n-i-bz  exp-dhat: Implement missing function "dh_malloc_usable_size".
+n-i-bz  arm64: Implement "fcvtpu w, s".
+n-i-bz  arm64: implement ADDP and various others
+n-i-bz  arm64: Implement {S,U}CVTF (scalar, fixedpt).
+n-i-bz  arm64: enable FCVT{A,N}S X,S.
+
+(3.10.1: 25 November 2014, vex r3026, valgrind r14785)
+
 
 
 Release 3.10.0 (10 September 2014)

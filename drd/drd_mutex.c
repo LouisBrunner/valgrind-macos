@@ -55,7 +55,7 @@ static UInt s_mutex_lock_threshold_ms;
 
 void DRD_(mutex_set_trace)(const Bool trace_mutex)
 {
-   tl_assert(!! trace_mutex == trace_mutex);
+   tl_assert((!! trace_mutex) == trace_mutex);
    s_trace_mutex = trace_mutex;
 }
 

@@ -610,7 +610,7 @@ void DRD_(thread_set_joinable)(const DrdThreadId tid, const Bool joinable)
 {
    tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
              && tid != DRD_INVALID_THREADID);
-   tl_assert(!! joinable == joinable);
+   tl_assert((!! joinable) == joinable);
    tl_assert(DRD_(g_threadinfo)[tid].pt_threadid != INVALID_POSIX_THREADID);
 
    DRD_(g_threadinfo)[tid].detached_posix_thread = ! joinable;

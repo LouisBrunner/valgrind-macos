@@ -145,7 +145,19 @@ __builtin_ctzll(ULong x)
 /* Provide certain functions Intel's ICC compiler expects to be defined. */
 
 void *
-__intel_ssse3_rep_memcpy(void *dest, const void *src, SizeT sz)
+__intel_memcpy(void *dest, const void *src, SizeT sz)
+{
+   return VG_(memcpy)( dest, src, sz );
+}
+
+void *
+__intel_mic_avx512f_memcpy(void *dest, const void *src, SizeT sz)
+{
+   return VG_(memcpy)( dest, src, sz );
+}
+
+void *
+__intel_new_memcpy(void *dest, const void *src, SizeT sz)
 {
    return VG_(memcpy)( dest, src, sz );
 }
@@ -156,11 +168,46 @@ __intel_ssse3_memcpy(void *dest, const void *src, SizeT sz)
    return VG_(memcpy)( dest, src, sz );
 }
 
+void *
+__intel_ssse3_rep_memcpy(void *dest, const void *src, SizeT sz)
+{
+   return VG_(memcpy)( dest, src, sz );
+}
 
 void *
 _intel_fast_memcpy(void *dest, const void *src, SizeT sz)
 {
    return VG_(memcpy)( dest, src, sz );
+}
+
+void *
+__intel_lrb_memcpy(void *dest, const void *src, SizeT sz)
+{
+   return VG_(memcpy)( dest, src, sz );
+}
+
+void *
+__intel_memset(void *dest, int value, SizeT num)
+{
+   return VG_(memset)( dest, value, num );    
+}
+
+void *
+__intel_new_memset(void *dest, int value, SizeT num)
+{
+   return VG_(memset)( dest, value, num );    
+}
+
+void *
+__intel_mic_avx512f_memset(void *dest, int value, SizeT num)
+{
+   return VG_(memset)( dest, value, num );    
+}
+
+void *
+__intel_lrb_memset(void *dest, int value, SizeT num)
+{
+   return VG_(memset)( dest, value, num );    
 }
 
 void *
@@ -174,4 +221,3 @@ _intel_fast_memset(void *dest, int value, SizeT num)
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
-

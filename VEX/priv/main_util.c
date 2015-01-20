@@ -51,9 +51,14 @@
    MByte/sec.  Once the size increases enough to fall out of the cache
    into memory, the rate falls by about a factor of 3. 
 */
+
+/* Allocated memory as returned by LibVEX_Alloc will be aligned on this
+   boundary. */
+#define REQ_ALIGN 8
+
 #define N_TEMPORARY_BYTES 5000000
 
-static HChar  temporary[N_TEMPORARY_BYTES] __attribute__((aligned(8)));
+static HChar  temporary[N_TEMPORARY_BYTES] __attribute__((aligned(REQ_ALIGN)));
 static HChar* temporary_first = &temporary[0];
 static HChar* temporary_curr  = &temporary[0];
 static HChar* temporary_last  = &temporary[N_TEMPORARY_BYTES-1];
@@ -62,7 +67,7 @@ static ULong  temporary_bytes_allocd_TOT = 0;
 
 #define N_PERMANENT_BYTES 10000
 
-static HChar  permanent[N_PERMANENT_BYTES] __attribute__((aligned(8)));
+static HChar  permanent[N_PERMANENT_BYTES] __attribute__((aligned(REQ_ALIGN)));
 static HChar* permanent_first = &permanent[0];
 static HChar* permanent_curr  = &permanent[0];
 static HChar* permanent_last  = &permanent[N_PERMANENT_BYTES-1];
@@ -222,6 +227,9 @@ void* LibVEX_Alloc ( SizeT nbytes )
          void (*ptf)(void);
       } x;
    };
+
+   /* Make sure the compiler does no surprise us */
+   vassert(offsetof(struct align,x) == REQ_ALIGN);
 
 #if 0
   /* Nasty debugging hack, do not use. */

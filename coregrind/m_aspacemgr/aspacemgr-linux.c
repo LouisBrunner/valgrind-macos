@@ -408,27 +408,29 @@ static Int allocate_segname ( const HChar* name )
    if (0) VG_(debugLog)(0,"aspacem","allocate_segname %s\n", name);
 
    len = VG_(strlen)(name);
-   if (len >= VG_MAX_SEGNAMELEN-1) {
+   if (len + 1 > VG_MAX_SEGNAMELEN) {
       return -1;
    }
 
    /* first see if we already have the name. */
+   Int free_slot = -1;
    for (i = 0; i < segnames_used; i++) {
-      if (!segnames[i].inUse)
+      if (!segnames[i].inUse) {
+         free_slot = i;
          continue;
+      }
       if (0 == VG_(strcmp)(name, &segnames[i].fname[0])) {
          return i;
       }
    }
 
-   /* no we don't.  So look for a free slot. */
-   for (i = 0; i < segnames_used; i++)
-      if (!segnames[i].inUse)
-         break;
-
-   if (i == segnames_used) {
+   /* no we don't. */
+   if (free_slot >= 0) {
+      /* we have a free slot; use it. */
+      i = free_slot;
+   } else {
       /* no free slots .. advance the high-water mark. */
-      if (segnames_used+1 < VG_N_SEGNAMES) {
+      if (segnames_used < VG_N_SEGNAMES) {
          i = segnames_used;
          segnames_used++;
       } else {
@@ -440,7 +442,6 @@ static Int allocate_segname ( const HChar* name )
    segnames[i].inUse = True;
    for (j = 0; j < len; j++)
       segnames[i].fname[j] = name[j];
-   aspacem_assert(len < VG_MAX_SEGNAMELEN);
    segnames[i].fname[len] = 0;
    return i;
 }
@@ -656,7 +657,7 @@ Int VG_(am_get_segment_starts)( Addr* starts, Int nStarts )
    Int i, j, nSegs;
 
    /* don't pass dumbass arguments */
-   aspacem_assert(nStarts >= 0);
+   aspacem_assert(nStarts > 0);
 
    nSegs = 0;
    for (i = 0; i < nsegments_used; i++) {

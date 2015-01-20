@@ -66,6 +66,9 @@ where XXXXXX is the bug number as listed below.
 341539  VG_(describe_addr) should not describe address as belonging to client
         segment if it is past the heap end
 341613  Enable building of manythreads and thread-exits tests on Mac OS X
+341615  Fix none/tests/darwin/access_extended test on Mac OS X
+341698  Valgrind's AESKEYGENASSIST gives wrong result in words 0 and 2
+        when dest register = source register
 341789  aarch64: shmat fails with valgrind on ARMv8
 342063  wrong format specifier for test mcblocklistsearch in gdbserver_tests
 342221  socket connect false positive uninit memory for unknown af family

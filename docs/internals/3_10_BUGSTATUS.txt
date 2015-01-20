@@ -134,46 +134,44 @@ New bugs reported in 3.10.0
 
 Sat Nov 22 11:33:21 CET 2014
 
-341238  Recognize DWARFv5 DW_LANG constants used by GCC[5]
-341258  Reflexivity of vector clocks violated
 341419  Signal handler ucontext_t not filled out correctly on OS X
 341481  MIPS64: Iop_CmpNE32 triggers false warning on MIPS64 platforms
-341494  Patch updating v4l2 API support
 341537  POST(sys_io_getevents) shouldn't check iocb or iovec
-341539  VG_(describe_addr)() should not describe address as belonging to client segment if it is past the heap end
-341613  [PATCH] OS X testsuite failures: manythreads thread-exits and reach_thread_register
-341615  [PATCH] Fix none/tests/darwin/access_extended test on Mac OS X
-341698  Valgrind's AESKEYGENASSIST gives wrong result in words 0 and 2 when dest register = source register
 341704  [patch] Remove unnecessary ifdef android for 'sh'
 341726  [patch] Remove uneccessary ifdef _android_ from launcher-linux.c
-341789  aarch64: shmat fails with valgrind on ARMv8
-341969  unhandled syscall: 314
-341997  MIPS64: Cavium OCTEON instructions - immediate operand handled incorrectly
-342008  valgrind.h needs type cast for _zzq_default to compile with clang/llvm in 64-bit mode
+341997  MIPS64: Cavium OCTEON instructions - immediate operand handled
+        incorrectly
+342008  valgrind.h needs type cast for _zzq_default to compile with
+        clang/llvm in 64-bit mode
 342009  Error with valgrind on setcap file on 32bits (only) system
-342038  Unhandled instruction 236 (vserver) on aarch64
-342040  Valgrind mishandles clone with CLONE_VFORK | CLONE_VM that clones to a different stack
-342063  wrong format specifier for test mcblocklistsearch in gdbserver_tests
-342117  Valgrind hangs after loading PDB file for MSVC compiled Firefox under Wine
+        == 335143
+342038  Unhandled system call 236 on aarch64 (mbind/get/set_mempolicy)
+342040  Valgrind mishandles clone with CLONE_VFORK | CLONE_VM that clones
+        to a different stack
+342117  Valgrind hangs after loading PDB file for MSVC compiled Firefox
+        under Wine
 342192  Unhandled instruction on OS X 10.9 in libsystem_m.dylib
-342221  socket connect  produce false positive saying access to uninitialized memory area
 342353  Allow dumping full massif output while valgrind is still running
+        Has patch
 342356  MIPS: determine page size at runtime
-342421  [PATCH] Added VKI_F_DUPFD_CLOEXEC for FreeBSD fcntl
-342423  [Feature suggestion] Log files should have the history 'execve' calls in them
+342423  [Feature suggestion] Log files should have the history 'execve'
+        calls in them
 342571  Valgrind chokes on AVX compare intrinsic with _CMP_GE_QS
 342603  [PATCH] Add I2C_SMBUS ioctl
+        Has patch; -> Tom?
 342610  disInstr(ppc): declined to decode an AltiVec insn.
 342635  OS X 10.10 (Yosemite) - missing system calls and fcntl code
+        Has patch; -> Rhys?
 342680  arm: unhanded instruction 0xF590F000: pldw [r0]
 342683  memory past the brk limit is not initially inaccessible/unaddressable
 342740  unhandled instruction bytes: 0xC4 0xE2 0xFD 0x8E 0x12 0x48 0x83 0xC2
-342780  arm + gcc 4.9 produce false positive: Use of uninitialised value of size 4 and segfault on stack extention
+342780  arm + gcc 4.9 produce false positive: Use of uninitialised value of
+        size 4 and segfault on stack extention
+        Has patch
 342783  arm: unhandled instruction 0xEEFE1ACA = "vcvt.s32.f32    s3, s3, #12"
-342795  Internal glibc __GI_mempcpy call should be intercepted
 342809  mremap fails when protection is enabled
 342841  s390x unrecognized instruction fiebra
-342988  Unrecognized instrucitons:
-343012  unhandled syscall 319 (intel drivers + cinnamon wm)
+        -> Florian?
+342988  INT 80 not recognised on amd64
 
 Tue 20 Jan 01:23:52 CET 2015

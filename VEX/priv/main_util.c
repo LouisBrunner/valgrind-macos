@@ -229,7 +229,7 @@ void* LibVEX_Alloc ( SizeT nbytes )
    };
 
    /* Make sure the compiler does no surprise us */
-   vassert(offsetof(struct align,x) == REQ_ALIGN);
+   vassert(offsetof(struct align,x) <= REQ_ALIGN);
 
 #if 0
   /* Nasty debugging hack, do not use. */

@@ -65,30 +65,18 @@ extern Addr VG_(am_startup) ( Addr sp_at_startup );
 //--------------------------------------------------------------
 // Querying current status
 
-/* Finds the segment containing 'a'.  Only returns file/anon/resvn
-   segments.  This returns a 'NSegment const *' - a pointer to
-   readonly data. */
-// Is in tool-visible header file.
-// extern NSegment const * VG_(am_find_nsegment) ( Addr a );
 
 /* Find the next segment along from 'here', if it is a file/anon/resvn
    segment. */
 extern NSegment const* VG_(am_next_nsegment) ( const NSegment* here,
                                                Bool fwds );
 
-/* Is the area [start .. start+len-1] validly accessible by the 
-   client with at least the permissions 'prot' ?  To find out
-   simply if said area merely belongs to the client, pass 
+/* Is the area [start .. start+len-1] validly accessible by
+   valgrind with at least the permissions 'prot' ?  To find out
+   simply if said area merely belongs to valgrind, pass 
    VKI_PROT_NONE as 'prot'.  Will return False if any part of the
-   area does not belong to the client or does not have at least
+   area does not belong to valgrind or does not have at least
    the stated permissions. */
-// Is in tool-visible header file.
-// extern Bool VG_(am_is_valid_for_client)
-//   ( Addr start, SizeT len, UInt prot );
-
-/* Same as VG_(am_is_valid_for_client) but for valgrind :
-   test if memory is addressable by valgrind with at least
-   the protection 'prot'. */
 extern Bool VG_(am_is_valid_for_valgrind)
    ( Addr start, SizeT len, UInt prot );
 
@@ -106,15 +94,6 @@ extern ULong VG_(am_get_anonsize_total)( void );
 
 /* Show the segment array on the debug log, at given loglevel. */
 extern void VG_(am_show_nsegments) ( Int logLevel, const HChar* who );
-
-/* Get the filename corresponding to this segment, if known and if it
-   has one.  The returned name's storage cannot be assumed to be
-   persistent, so the caller should immediately copy the name
-   elsewhere.  This may return NULL if the file name is not known or
-   for arbitrary other implementation-dependent reasons, so callers
-   need to be able to handle a NULL return value. */
-// Is in tool-visible header file.
-// extern HChar* VG_(am_get_filename)( NSegment* );
 
 /* VG_(am_get_segment_starts) is also part of this section, but its
    prototype is tool-visible, hence not in this header file. */

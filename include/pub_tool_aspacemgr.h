@@ -133,18 +133,28 @@ typedef
    order to establish a suitably-sized buffer. */
 extern Int VG_(am_get_segment_starts)( Addr* starts, Int nStarts );
 
-
-// See pub_core_aspacemgr.h for description.
+/* Finds the segment containing 'a'.  Only returns file/anon/resvn
+   segments.  This returns a 'NSegment const *' - a pointer to
+   readonly data. */
 extern NSegment const * VG_(am_find_nsegment) ( Addr a ); 
 
-// See pub_core_aspacemgr.h for description.
+/* Get the filename corresponding to this segment, if known and if it
+   has one.  The returned name's storage cannot be assumed to be
+   persistent, so the caller should immediately copy the name
+   elsewhere.  This may return NULL if the file name is not known or
+   for arbitrary other implementation-dependent reasons, so callers
+   need to be able to handle a NULL return value. */
 extern HChar* VG_(am_get_filename)( NSegment const * );
 
-// See pub_core_aspacemgr.h for description.
+/* Is the area [start .. start+len-1] validly accessible by the 
+   client with at least the permissions 'prot' ?  To find out
+   simply if said area merely belongs to the client, pass 
+   VKI_PROT_NONE as 'prot'.  Will return False if any part of the
+   area does not belong to the client or does not have at least
+   the stated permissions. */
 extern Bool VG_(am_is_valid_for_client) ( Addr start, SizeT len, 
                                           UInt prot );
 
-// See pub_core_aspacemgr.h for description.
 /* Really just a wrapper around VG_(am_mmap_anon_float_valgrind). */
 extern void* VG_(am_shadow_alloc)(SizeT size);
 

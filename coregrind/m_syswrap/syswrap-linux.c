@@ -5514,6 +5514,38 @@ PRE(sys_ioctl)
    // this category).  Nb: some of these may well belong in the
    // doesn't-use-ARG3 switch above.
    switch (ARG2 /* request */) {
+
+   case VKI_ION_IOC_ALLOC: {
+      struct vki_ion_allocation_data* data
+         = (struct vki_ion_allocation_data*)ARG3;
+      PRE_FIELD_READ ("ioctl(ION_IOC_ALLOC).len",          data->len);
+      PRE_FIELD_READ ("ioctl(ION_IOC_ALLOC).align",        data->align);
+      PRE_FIELD_READ ("ioctl(ION_IOC_ALLOC).heap_id_mask", data->heap_id_mask);
+      PRE_FIELD_READ ("ioctl(ION_IOC_ALLOC).flags",        data->flags);
+      PRE_FIELD_WRITE("ioctl(ION_IOC_ALLOC).handle",       data->handle);
+      break;
+   }
+   case VKI_ION_IOC_MAP: {
+      struct vki_ion_fd_data* data = (struct vki_ion_fd_data*)ARG3;
+      PRE_FIELD_READ ("ioctl(ION_IOC_MAP).handle", data->handle);
+      PRE_FIELD_WRITE("ioctl(ION_IOC_MAP).fd",     data->fd);
+      break;
+   }
+   case VKI_ION_IOC_IMPORT: {
+      struct vki_ion_fd_data* data = (struct vki_ion_fd_data*)ARG3;
+      PRE_FIELD_READ ("ioctl(ION_IOC_IMPORT).fd",     data->fd);
+      PRE_FIELD_WRITE("ioctl(ION_IOC_IMPORT).handle", data->handle);
+      break;
+   }
+
+   case VKI_SYNC_IOC_MERGE: {
+      struct vki_sync_merge_data* data = (struct vki_sync_merge_data*)ARG3;
+      PRE_FIELD_READ ("ioctl(SYNC_IOC_MERGE).fd2",   data->fd2);
+      PRE_MEM_RASCIIZ("ioctl(SYNC_IOC_MERGE).name",  (Addr)(&data->name[0]));
+      PRE_FIELD_WRITE("ioctl(SYNC_IOC_MERGE).fence", data->fence);
+      break;
+   }
+
    case VKI_TCSETS:
    case VKI_TCSETSW:
    case VKI_TCSETSF:
@@ -8285,25 +8317,38 @@ POST(sys_ioctl)
    /* The Linux kernel "ion" memory allocator, used on Android.  Note:
       this is pretty poor given that there's no pre-handling to check
       that writable areas are addressable. */
-   case VKI_ION_IOC_ALLOC:
-      POST_MEM_WRITE(ARG3, sizeof(struct vki_ion_allocation_data));
+   case VKI_ION_IOC_ALLOC: {
+      struct vki_ion_allocation_data* data
+         = (struct vki_ion_allocation_data*)ARG3;
+      POST_FIELD_WRITE(data->handle);
       break;
-   case VKI_ION_IOC_MAP:
-      POST_MEM_WRITE(ARG3, sizeof(struct vki_ion_fd_data));
+   }
+   case VKI_ION_IOC_MAP: {
+      struct vki_ion_fd_data* data = (struct vki_ion_fd_data*)ARG3;
+      POST_FIELD_WRITE(data->fd);
       break;
+   }
    case VKI_ION_IOC_FREE: // is this necessary?
       POST_MEM_WRITE(ARG3, sizeof(struct vki_ion_handle_data));
       break;
    case VKI_ION_IOC_SHARE:
       break;
-   case VKI_ION_IOC_IMPORT: // is this necessary?
-      POST_MEM_WRITE(ARG3, sizeof(struct vki_ion_fd_data));
+   case VKI_ION_IOC_IMPORT: {
+      struct vki_ion_fd_data* data = (struct vki_ion_fd_data*)ARG3;
+      POST_FIELD_WRITE(data->handle);
       break;
+   }
    case VKI_ION_IOC_SYNC:
       break;
    case VKI_ION_IOC_CUSTOM: // is this necessary?
       POST_MEM_WRITE(ARG3, sizeof(struct vki_ion_custom_data));
       break;
+
+   case VKI_SYNC_IOC_MERGE: {
+      struct vki_sync_merge_data* data = (struct vki_sync_merge_data*)ARG3;
+      POST_FIELD_WRITE(data->fence);
+      break;
+   }
 
    case VKI_TCSETS:
    case VKI_TCSETSW:

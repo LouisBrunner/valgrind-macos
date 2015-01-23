@@ -67,7 +67,9 @@
 
 __attribute__ ((noreturn))
 extern void   ML_(am_exit) ( Int status );
+__attribute__ ((noreturn))
 extern void   ML_(am_barf) ( const HChar* what );
+__attribute__ ((noreturn))
 extern void   ML_(am_barf_toolow) ( const HChar* what );
 
 __attribute__ ((noreturn))

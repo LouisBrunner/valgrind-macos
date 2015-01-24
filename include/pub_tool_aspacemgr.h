@@ -144,7 +144,7 @@ extern NSegment const * VG_(am_find_nsegment) ( Addr a );
    elsewhere.  This may return NULL if the file name is not known or
    for arbitrary other implementation-dependent reasons, so callers
    need to be able to handle a NULL return value. */
-extern HChar* VG_(am_get_filename)( NSegment const * );
+extern const HChar* VG_(am_get_filename)( NSegment const * );
 
 /* Is the area [start .. start+len-1] validly accessible by the 
    client with at least the permissions 'prot' ?  To find out

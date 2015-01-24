@@ -293,7 +293,8 @@ void VG_(describe_addr) ( Addr a, /*OUT*/AddrInfo* ai )
          ai->Addr.SegmentKind.segkind = seg->kind;
          ai->Addr.SegmentKind.filename = NULL;
          if (seg->kind == SkFileC)
-            ai->Addr.SegmentKind.filename = VG_(am_get_filename) (seg);
+            ai->Addr.SegmentKind.filename
+               = VG_(strdup)("mc.da.skfname", VG_(am_get_filename)(seg));
          if (ai->Addr.SegmentKind.filename != NULL)
             ai->Addr.SegmentKind.filename 
                = VG_(strdup)("mc.da.skfname",

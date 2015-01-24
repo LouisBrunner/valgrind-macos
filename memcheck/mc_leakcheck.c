@@ -1634,7 +1634,7 @@ static void scan_memory_root_set(Addr searched, SizeT szB)
       // memory by explicitly mapping /dev/zero.
       if (seg->kind == SkFileC 
           && (VKI_S_ISCHR(seg->mode) || VKI_S_ISBLK(seg->mode))) {
-         HChar* dev_name = VG_(am_get_filename)( seg );
+         const HChar* dev_name = VG_(am_get_filename)( seg );
          if (dev_name && 0 == VG_(strcmp)(dev_name, "/dev/zero")) {
             // Don't skip /dev/zero.
          } else {

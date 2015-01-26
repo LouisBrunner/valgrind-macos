@@ -7903,7 +7903,9 @@ PRE(mach_msg)
       // (but is this only for too-secure processes?)
       // JRS 11 Nov 2014: this assertion is OK for <= 10.9 but fails on 10.10
 #     if DARWIN_VERS == DARWIN_10_10
-      log_decaying("UNKNOWN mach_msg unhandled MACH_SEND_TRAILER option");
+      if (mh->msgh_bits & MACH_SEND_TRAILER) {
+         log_decaying("UNKNOWN mach_msg unhandled MACH_SEND_TRAILER option");
+      }
 #     else
       vg_assert(! (mh->msgh_bits & MACH_SEND_TRAILER));
 #     endif

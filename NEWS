@@ -56,6 +56,7 @@ where XXXXXX is the bug number as listed below.
 339442  Fix testsuite build failure on OS X 10.9
 339688  Mac-specific ASM does not support .version directive (cpuid,
         tronical and pushfpopf tests)
+339745  Valgrind crash when check Marmalade app (partial fix)
 339755  Fix known deliberate memory leak in setenv() on Mac OS X 10.9
 339780  Fix known uninitialised read in pthread_rwlock_init() on Mac OS X 10.9 
 339789  Fix none/tests/execve test on Mac OS X 10.9

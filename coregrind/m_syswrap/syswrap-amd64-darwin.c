@@ -465,10 +465,7 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
       out just the relevant parts.  Hence: */
 #  if DARWIN_VERS <= DARWIN_10_7
    Bool is_reuse = reuse != 0;
-#  elif DARWIN_VERS == DARWIN_10_8 || DARWIN_VERS == DARWIN_10_9
-   Bool is_reuse = (reuse & 0x20000 /* == WQ_FLAG_THREAD_REUSE */) != 0;
-#  elif DARWIN_VERS == DARWIN_10_10
-   // XXX FIXME is this correct?
+#  elif DARWIN_VERS == DARWIN_10_8 || DARWIN_VERS == DARWIN_10_9 || DARWIN_VERS == DARWIN_10_10
    Bool is_reuse = (reuse & 0x20000 /* == WQ_FLAG_THREAD_REUSE */) != 0;
 #  else
 #    error "Unsupported Darwin version"

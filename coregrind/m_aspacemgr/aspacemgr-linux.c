@@ -523,7 +523,7 @@ static void __attribute__ ((unused))
    VG_(debugLog)(
       logLevel, "aspacem",
       "%3d: %s %010llx-%010llx %s %c%c%c%c%c %s "
-      "d=0x%03llx i=%-7lld o=%-7lld (%d) m=%d %s\n",
+      "d=0x%03llx i=%-7lld o=%-7lld (%d) %s\n",
       segNo, show_SegKind(seg->kind),
       (ULong)seg->start, (ULong)seg->end, len_buf,
       seg->hasR ? 'r' : '-', seg->hasW ? 'w' : '-', 
@@ -531,7 +531,7 @@ static void __attribute__ ((unused))
       seg->isCH ? 'H' : '-',
       show_ShrinkMode(seg->smode),
       seg->dev, seg->ino, seg->offset, seg->fnIdx,
-      (Int)seg->mark, name
+      name
    );
 }
 
@@ -702,9 +702,6 @@ static Bool sane_NSegment ( const NSegment* s )
 
    /* No zero sized segments and no wraparounds. */
    if (s->start >= s->end) return False;
-
-   /* .mark is used for admin purposes only. */
-   if (s->mark) return False;
 
    /* require page alignment */
    if (!VG_IS_PAGE_ALIGNED(s->start)) return False;
@@ -1542,7 +1539,6 @@ static void init_nsegment ( /*OUT*/NSegment* seg )
    seg->offset   = 0;
    seg->fnIdx    = -1;
    seg->hasR = seg->hasW = seg->hasX = seg->hasT = seg->isCH = False;
-   seg->mark = False;
 }
 
 /* Make an NSegment which holds a reservation. */

@@ -1242,7 +1242,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          HReg src2 = iselIntExpr_R(env, e->Iex.Binop.arg2);
          addInstr(env, mk_iMOVsd_RR(src1, dst));
          addInstr(env, AMD64Instr_Alu32R(Aalu_CMP, AMD64RMI_Reg(src2), dst));
-         addInstr(env, AMD64Instr_CMov64(Acc_B, AMD64RM_Reg(src2), dst));
+         addInstr(env, AMD64Instr_CMov64(Acc_B, src2, dst));
          return dst;
       }
 
@@ -1862,7 +1862,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       if ((ty == Ity_I64 || ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8)
           && typeOfIRExpr(env->type_env,e->Iex.ITE.cond) == Ity_I1) {
          HReg     r1  = iselIntExpr_R(env, e->Iex.ITE.iftrue);
-         AMD64RM* r0  = iselIntExpr_RM(env, e->Iex.ITE.iffalse);
+         HReg     r0  = iselIntExpr_R(env, e->Iex.ITE.iffalse);
          HReg     dst = newVRegI(env);
          addInstr(env, mk_iMOVsd_RR(r1,dst));
          AMD64CondCode cc = iselCondCode(env, e->Iex.ITE.cond);
@@ -4650,8 +4650,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
             default: goto unhandled_cas;
          }
          addInstr(env, AMD64Instr_ACAS(am, sz));
-         addInstr(env, AMD64Instr_CMov64(
-                          Acc_NZ, AMD64RM_Reg(hregAMD64_RAX()), rOld));
+         addInstr(env, AMD64Instr_CMov64(Acc_NZ, hregAMD64_RAX(), rOld));
          return;
       } else {
          /* double CAS */
@@ -4689,12 +4688,8 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          addInstr(env, mk_iMOVsd_RR(rDataHi, hregAMD64_RCX()));
          addInstr(env, mk_iMOVsd_RR(rDataLo, hregAMD64_RBX()));
          addInstr(env, AMD64Instr_DACAS(am, sz));
-         addInstr(env,
-                  AMD64Instr_CMov64(
-                     Acc_NZ, AMD64RM_Reg(hregAMD64_RDX()), rOldHi));
-         addInstr(env,
-                  AMD64Instr_CMov64(
-                     Acc_NZ, AMD64RM_Reg(hregAMD64_RAX()), rOldLo));
+         addInstr(env, AMD64Instr_CMov64(Acc_NZ, hregAMD64_RDX(), rOldHi));
+         addInstr(env, AMD64Instr_CMov64(Acc_NZ, hregAMD64_RAX(), rOldLo));
          return;
       }
       unhandled_cas:

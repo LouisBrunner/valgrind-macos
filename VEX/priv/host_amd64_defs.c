@@ -736,7 +736,7 @@ AMD64Instr* AMD64Instr_XAssisted ( HReg dstGA, AMD64AMode* amRIP,
    return i;
 }
 
-AMD64Instr* AMD64Instr_CMov64 ( AMD64CondCode cond, AMD64RM* src, HReg dst ) {
+AMD64Instr* AMD64Instr_CMov64 ( AMD64CondCode cond, HReg src, HReg dst ) {
    AMD64Instr* i      = LibVEX_Alloc(sizeof(AMD64Instr));
    i->tag             = Ain_CMov64;
    i->Ain.CMov64.cond = cond;
@@ -1128,7 +1128,7 @@ void ppAMD64Instr ( const AMD64Instr* i, Bool mode64 )
 
       case Ain_CMov64:
          vex_printf("cmov%s ", showAMD64CondCode(i->Ain.CMov64.cond));
-         ppAMD64RM(i->Ain.CMov64.src);
+         ppHRegAMD64(i->Ain.CMov64.src);
          vex_printf(",");
          ppHRegAMD64(i->Ain.CMov64.dst);
          return;
@@ -1481,7 +1481,7 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, const AMD64Instr* i, Bool mode64 )
          addRegUsage_AMD64AMode(u, i->Ain.XAssisted.amRIP);
          return;
       case Ain_CMov64:
-         addRegUsage_AMD64RM(u, i->Ain.CMov64.src, HRmRead);
+         addHRegUse(u, HRmRead,   i->Ain.CMov64.src);
          addHRegUse(u, HRmModify, i->Ain.CMov64.dst);
          return;
       case Ain_CLoad:
@@ -1717,7 +1717,7 @@ void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i, Bool mode64 )
          mapRegs_AMD64AMode(m, i->Ain.XAssisted.amRIP);
          return;
       case Ain_CMov64:
-         mapRegs_AMD64RM(m, i->Ain.CMov64.src);
+         mapReg(m, &i->Ain.CMov64.src);
          mapReg(m, &i->Ain.CMov64.dst);
          return;
       case Ain_CLoad:
@@ -3000,21 +3000,11 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
 
    case Ain_CMov64:
       vassert(i->Ain.CMov64.cond != Acc_ALWAYS);
-      if (i->Ain.CMov64.src->tag == Arm_Reg) {
-         *p++ = rexAMode_R(i->Ain.CMov64.dst, i->Ain.CMov64.src->Arm.Reg.reg);
-         *p++ = 0x0F;
-         *p++ = toUChar(0x40 + (0xF & i->Ain.CMov64.cond));
-         p = doAMode_R(p, i->Ain.CMov64.dst, i->Ain.CMov64.src->Arm.Reg.reg);
-         goto done;
-      }
-      if (i->Ain.CMov64.src->tag == Arm_Mem) {
-         *p++ = rexAMode_M(i->Ain.CMov64.dst, i->Ain.CMov64.src->Arm.Mem.am);
-         *p++ = 0x0F;
-         *p++ = toUChar(0x40 + (0xF & i->Ain.CMov64.cond));
-         p = doAMode_M(p, i->Ain.CMov64.dst, i->Ain.CMov64.src->Arm.Mem.am);
-         goto done;
-      }
-      break;
+      *p++ = rexAMode_R(i->Ain.CMov64.dst, i->Ain.CMov64.src);
+      *p++ = 0x0F;
+      *p++ = toUChar(0x40 + (0xF & i->Ain.CMov64.cond));
+      p = doAMode_R(p, i->Ain.CMov64.dst, i->Ain.CMov64.src);
+      goto done;
 
    case Ain_CLoad: {
       vassert(i->Ain.CLoad.cond != Acc_ALWAYS);

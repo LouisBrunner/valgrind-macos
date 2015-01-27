@@ -27255,6 +27255,9 @@ static ULong dis_VMASKMOV_load ( Bool *uses_vvvv, const VexAbiInfo* vbi,
    }
    delta += alen;
 
+   for (i = 0; i < sizeof(res)/sizeof(res[0]); i++)
+      res[i] = IRTemp_INVALID;
+
    for (i = 0; i < 2 * (isYMM ? 2 : 1) * (ty == Ity_I32 ? 2 : 1); i++) {
       res[i] = newTemp(ty);
       cond = newTemp(Ity_I1);
@@ -27263,19 +27266,15 @@ static ULong dis_VMASKMOV_load ( Bool *uses_vvvv, const VexAbiInfo* vbi,
                     ty == Ity_I32 ? getYMMRegLane32( rV, i )
                                   : getYMMRegLane64( rV, i ),
                     mkU(ty, 0) ));
-      assign( res[i],
-              IRExpr_ITE(
-                 mkexpr(cond),
-                 loadLE(ty, IRExpr_ITE(
-                               mkexpr(cond),
-                               binop(Iop_Add64, mkexpr(addr),
-                                     mkU64(i*(ty == Ity_I32 ? 4 : 8))),
-                               getIReg64(R_RSP)
-                            )
-                       ),
-                 mkU(ty, 0)
-              )
-            );
+      stmt(
+         IRStmt_LoadG(
+            Iend_LE,
+            ty == Ity_I32 ? ILGop_Ident32 : ILGop_Ident64,
+            res[i], 
+            binop(Iop_Add64, mkexpr(addr), mkU64(i * (ty == Ity_I32 ? 4 : 8))),
+            ty == Ity_I32 ? mkU32(0) : mkU64(0),
+            mkexpr(cond)
+      ));
    }
    switch (ty) {
       case Ity_I32:

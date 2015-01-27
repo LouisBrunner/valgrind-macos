@@ -368,6 +368,7 @@ typedef
       Ain_XIndir,      /* indirect transfer to GA */
       Ain_XAssisted,   /* assisted transfer to GA */
       Ain_CMov64,      /* conditional move */
+      Ain_CLoad,       /* cond. load to int reg, 32 bit ZX or 64 bit only */
       Ain_MovxLQ,      /* reg-reg move, zx-ing/sx-ing top half */
       Ain_LoadEX,      /* mov{s,z}{b,w,l}q from mem to reg */
       Ain_Store,       /* store 32/16/8 bit value in memory */
@@ -505,6 +506,14 @@ typedef
             AMD64RM*      src;
             HReg          dst;
          } CMov64;
+         /* conditional load to int reg, 32 bit ZX or 64 bit only.
+            cond may not be Acc_ALWAYS. */
+         struct {
+            AMD64CondCode cond;
+            UChar         szB; /* 4 or 8 only */
+            AMD64AMode*   addr;
+            HReg          dst;
+         } CLoad;
          /* reg-reg move, sx-ing/zx-ing top half */
          struct {
             Bool syned;
@@ -710,6 +719,8 @@ extern AMD64Instr* AMD64Instr_XIndir     ( HReg dstGA, AMD64AMode* amRIP,
 extern AMD64Instr* AMD64Instr_XAssisted  ( HReg dstGA, AMD64AMode* amRIP,
                                            AMD64CondCode cond, IRJumpKind jk );
 extern AMD64Instr* AMD64Instr_CMov64     ( AMD64CondCode, AMD64RM* src, HReg dst );
+extern AMD64Instr* AMD64Instr_CLoad      ( AMD64CondCode cond, UChar szB,
+                                           AMD64AMode* addr, HReg dst );
 extern AMD64Instr* AMD64Instr_MovxLQ     ( Bool syned, HReg src, HReg dst );
 extern AMD64Instr* AMD64Instr_LoadEX     ( UChar szSmall, Bool syned,
                                            AMD64AMode* src, HReg dst );

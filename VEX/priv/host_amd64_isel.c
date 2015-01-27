@@ -4288,6 +4288,32 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
    switch (stmt->tag) {
 
+   /* --------- LOADG (guarded load) --------- */
+   case Ist_LoadG: {
+      IRLoadG* lg = stmt->Ist.LoadG.details;
+      if (lg->end != Iend_LE)
+         goto stmt_fail;
+
+      UChar szB = 0; /* invalid */
+      switch (lg->cvt) {
+         case ILGop_Ident32: szB = 4; break;
+         case ILGop_Ident64: szB = 8; break;
+         default: break;
+      }
+      if (szB == 0)
+         goto stmt_fail;
+
+      AMD64AMode* amAddr = iselIntExpr_AMode(env, lg->addr);
+      HReg rAlt  = iselIntExpr_R(env, lg->alt);
+      HReg rDst  = lookupIRTemp(env, lg->dst);
+      /* Get the alt value into the dst.  We'll do a conditional load
+         which overwrites it -- or not -- with loaded data. */
+      addInstr(env, mk_iMOVsd_RR(rAlt, rDst));
+      AMD64CondCode cc = iselCondCode(env, lg->guard);
+      addInstr(env, AMD64Instr_CLoad(cc, szB, amAddr, rDst));
+      return;
+   }
+
    /* --------- STORE --------- */
    case Ist_Store: {
       IRType    tya   = typeOfIRExpr(env->type_env, stmt->Ist.Store.addr);

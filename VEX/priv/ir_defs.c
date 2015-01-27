@@ -1456,6 +1456,7 @@ void ppIRLoadGOp ( IRLoadGOp cvt )
 {
    switch (cvt) {
       case ILGop_INVALID: vex_printf("ILGop_INVALID"); break;      
+      case ILGop_Ident64: vex_printf("Ident64"); break;      
       case ILGop_Ident32: vex_printf("Ident32"); break;      
       case ILGop_16Uto32: vex_printf("16Uto32"); break;      
       case ILGop_16Sto32: vex_printf("16Sto32"); break;      
@@ -3495,6 +3496,8 @@ void typeOfIRLoadGOp ( IRLoadGOp cvt,
                        /*OUT*/IRType* t_res, /*OUT*/IRType* t_arg )
 {
    switch (cvt) {
+      case ILGop_Ident64:
+         *t_res = Ity_I64; *t_arg = Ity_I64; break;
       case ILGop_Ident32:
          *t_res = Ity_I32; *t_arg = Ity_I32; break;
       case ILGop_16Uto32: case ILGop_16Sto32:

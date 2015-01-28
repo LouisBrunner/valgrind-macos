@@ -58,7 +58,8 @@ void randBlock ( Block* b )
    operands only %ymm6, %ymm7, %ymm8, %ymm9 and %r14.  The mem form of
    the insn may mention as operands only (%rax), %ymm7, %ymm8, %ymm9
    and %r14.  It's OK for the insn to clobber ymm0, as this is needed
-   for testing PCMPxSTRx. */
+   for testing PCMPxSTRx, and ymm6, as this is needed for testing
+   MOVMASK variants. */
 
 #define GEN_test_RandM(_name, _reg_form, _mem_form)   \
     \
@@ -101,7 +102,8 @@ void randBlock ( Block* b )
           "movq    %%r14, 128(%0)"  "\n\t" \
           : /*OUT*/  \
           : /*IN*/"r"(b) \
-          : /*TRASH*/"xmm0","xmm8","xmm7","xmm9","r14","rax","memory","cc" \
+          : /*TRASH*/"xmm6", \
+                     "xmm0","xmm8","xmm7","xmm9","r14","rax","memory","cc" \
        ); \
        showBlock("after", b); \
        printf("\n"); \
@@ -949,6 +951,26 @@ GEN_test_Monly(VPMASKMOVQ_256_LoadForm,
                "vxorpd %%ymm6, %%ymm6, %%ymm6;"
                "vpmaskmovq (%%rax,%%rax,4), %%ymm6, %%ymm9")
 
+GEN_test_Monly(VPMASKMOVD_128_StoreForm,
+               "vpmaskmovd %%xmm8, %%xmm7, (%%rax);"
+               "vxorps %%xmm6, %%xmm6, %%xmm6;"
+               "vpmaskmovd %%xmm9, %%xmm6, (%%rax,%%rax,4)")
+
+GEN_test_Monly(VPMASKMOVD_256_StoreForm,
+               "vpmaskmovd %%ymm8, %%ymm7, (%%rax);"
+               "vxorps %%ymm6, %%ymm6, %%ymm6;"
+               "vpmaskmovd %%ymm9, %%ymm6, (%%rax,%%rax,4)")
+
+GEN_test_Monly(VPMASKMOVQ_128_StoreForm,
+               "vpmaskmovq %%xmm8, %%xmm7, (%%rax);"
+               "vxorpd %%xmm6, %%xmm6, %%xmm6;"
+               "vpmaskmovq %%xmm9, %%xmm6, (%%rax,%%rax,4)")
+
+GEN_test_Monly(VPMASKMOVQ_256_StoreForm,
+               "vpmaskmovq %%ymm8, %%ymm7, (%%rax);"
+               "vxorpd %%ymm6, %%ymm6, %%ymm6;"
+               "vpmaskmovq %%ymm9, %%ymm6, (%%rax,%%rax,4)")
+
 GEN_test_Ronly(VGATHERDPS_128,
                "vpslld $25, %%xmm7, %%xmm8;"
                "vpsrld $25, %%xmm8, %%xmm8;"
@@ -1220,6 +1242,8 @@ GEN_test_Ronly(VPGATHERQQ_256_2,
      Reg form:  %ymm6,  %ymm7, %ymm8, %ymm9 and %r14.
      Mem form:  (%rax), %ymm7, %ymm8, %ymm9 and %r14.
    Imm8 etc fields are also allowed, where they make sense.
+   Both forms may use ymm0 as scratch.  Mem form may also use
+   ymm6 as scratch.
 */
 
 #define N_DEFAULT_ITERS 3
@@ -1438,6 +1462,10 @@ int main ( void )
    DO_D( VPMASKMOVD_256_LoadForm );
    DO_D( VPMASKMOVQ_128_LoadForm );
    DO_D( VPMASKMOVQ_256_LoadForm );
+   DO_D( VPMASKMOVD_128_StoreForm );
+   DO_D( VPMASKMOVD_256_StoreForm );
+   DO_D( VPMASKMOVQ_128_StoreForm );
+   DO_D( VPMASKMOVQ_256_StoreForm );
    { int i; for (i = 0; i < sizeof(randArray); i++) randArray[i] = randUChar(); }
    DO_D( VGATHERDPS_128 );
    DO_D( VGATHERDPS_256 );

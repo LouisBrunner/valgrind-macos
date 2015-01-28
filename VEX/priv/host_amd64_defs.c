@@ -753,7 +753,18 @@ AMD64Instr* AMD64Instr_CLoad ( AMD64CondCode cond, UChar szB,
    i->Ain.CLoad.szB  = szB;
    i->Ain.CLoad.addr = addr;
    i->Ain.CLoad.dst  = dst;
-   vassert(cond != Acc_ALWAYS);
+   vassert(cond != Acc_ALWAYS && (szB == 4 || szB == 8));
+   return i;
+}
+AMD64Instr* AMD64Instr_CStore ( AMD64CondCode cond, UChar szB,
+                                HReg src, AMD64AMode* addr ) {
+   AMD64Instr* i      = LibVEX_Alloc(sizeof(AMD64Instr));
+   i->tag             = Ain_CStore;
+   i->Ain.CStore.cond = cond;
+   i->Ain.CStore.szB  = szB;
+   i->Ain.CStore.src  = src;
+   i->Ain.CStore.addr = addr;
+   vassert(cond != Acc_ALWAYS && (szB == 4 || szB == 8));
    return i;
 }
 AMD64Instr* AMD64Instr_MovxLQ ( Bool syned, HReg src, HReg dst ) {
@@ -1135,13 +1146,24 @@ void ppAMD64Instr ( const AMD64Instr* i, Bool mode64 )
       case Ain_CLoad:
          vex_printf("if (%%rflags.%s) { ",
                     showAMD64CondCode(i->Ain.CLoad.cond));
-         vex_printf("mov%c (", i->Ain.CLoad.szB == 4 ? 'l' : 'q');
+         vex_printf("mov%c ", i->Ain.CLoad.szB == 4 ? 'l' : 'q');
          ppAMD64AMode(i->Ain.CLoad.addr);
-         vex_printf("), ");
+         vex_printf(", ");
          (i->Ain.CLoad.szB == 4 ? ppHRegAMD64_lo32 : ppHRegAMD64)
             (i->Ain.CLoad.dst);
          vex_printf(" }");
          return;
+      case Ain_CStore:
+         vex_printf("if (%%rflags.%s) { ",
+                    showAMD64CondCode(i->Ain.CStore.cond));
+         vex_printf("mov%c ", i->Ain.CStore.szB == 4 ? 'l' : 'q');
+         (i->Ain.CStore.szB == 4 ? ppHRegAMD64_lo32 : ppHRegAMD64)
+            (i->Ain.CStore.src);
+         vex_printf(", ");
+         ppAMD64AMode(i->Ain.CStore.addr);
+         vex_printf(" }");
+         return;
+
       case Ain_MovxLQ:
          vex_printf("mov%clq ", i->Ain.MovxLQ.syned ? 's' : 'z');
          ppHRegAMD64_lo32(i->Ain.MovxLQ.src);
@@ -1488,6 +1510,10 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, const AMD64Instr* i, Bool mode64 )
          addRegUsage_AMD64AMode(u, i->Ain.CLoad.addr);
          addHRegUse(u, HRmModify, i->Ain.CLoad.dst);
          return;
+      case Ain_CStore:
+         addRegUsage_AMD64AMode(u, i->Ain.CStore.addr);
+         addHRegUse(u, HRmRead, i->Ain.CStore.src);
+         return;
       case Ain_MovxLQ:
          addHRegUse(u, HRmRead,  i->Ain.MovxLQ.src);
          addHRegUse(u, HRmWrite, i->Ain.MovxLQ.dst);
@@ -1723,6 +1749,10 @@ void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i, Bool mode64 )
       case Ain_CLoad:
          mapRegs_AMD64AMode(m, i->Ain.CLoad.addr);
          mapReg(m, &i->Ain.CLoad.dst);
+         return;
+      case Ain_CStore:
+         mapRegs_AMD64AMode(m, i->Ain.CStore.addr);
+         mapReg(m, &i->Ain.CStore.src);
          return;
       case Ain_MovxLQ:
          mapReg(m, &i->Ain.MovxLQ.src);
@@ -3027,6 +3057,35 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
       *p++ = i->Ain.CLoad.szB == 4 ? clearWBit(rex) : rex;
       *p++ = 0x8B;
       p = doAMode_M(p, i->Ain.CLoad.dst, i->Ain.CLoad.addr);
+
+      /* Fix up the conditional branch */
+      Int delta = p - ptmp;
+      vassert(delta > 0 && delta < 40);
+      *ptmp = toUChar(delta-1);
+      goto done;
+   }
+
+   case Ain_CStore: {
+      /* AFAICS this is identical to Ain_CStore except that the opcode
+         is 0x89 instead of 0x8B. */
+      vassert(i->Ain.CStore.cond != Acc_ALWAYS);
+
+      /* Only 32- or 64-bit variants are allowed. */
+      vassert(i->Ain.CStore.szB == 4 || i->Ain.CStore.szB == 8);
+
+      /* Use ptmp for backpatching conditional jumps. */
+      ptmp = NULL;
+
+      /* jmp fwds if !condition */
+      *p++ = toUChar(0x70 + (0xF & (i->Ain.CStore.cond ^ 1)));
+      ptmp = p; /* fill in this bit later */
+      *p++ = 0; /* # of bytes to jump over; don't know how many yet. */
+
+      /* Now the store. */
+      rex = rexAMode_M(i->Ain.CStore.src, i->Ain.CStore.addr);
+      *p++ = i->Ain.CStore.szB == 4 ? clearWBit(rex) : rex;
+      *p++ = 0x89;
+      p = doAMode_M(p, i->Ain.CStore.src, i->Ain.CStore.addr);
 
       /* Fix up the conditional branch */
       Int delta = p - ptmp;

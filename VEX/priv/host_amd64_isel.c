@@ -4314,6 +4314,28 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       return;
    }
 
+   /* --------- STOREG (guarded store) --------- */
+   case Ist_StoreG: {
+      IRStoreG* sg = stmt->Ist.StoreG.details;
+      if (sg->end != Iend_LE)
+         goto stmt_fail;
+
+      UChar szB = 0; /* invalid */
+      switch (typeOfIRExpr(env->type_env, sg->data)) {
+         case Ity_I32: szB = 4; break;
+         case Ity_I64: szB = 8; break;
+         default: break;
+      }
+      if (szB == 0)
+         goto stmt_fail;
+
+      AMD64AMode*   amAddr = iselIntExpr_AMode(env, sg->addr);
+      HReg          rSrc   = iselIntExpr_R(env, sg->data);
+      AMD64CondCode cc     = iselCondCode(env, sg->guard);
+      addInstr(env, AMD64Instr_CStore(cc, szB, rSrc, amAddr));
+      return;
+   }
+
    /* --------- STORE --------- */
    case Ist_Store: {
       IRType    tya   = typeOfIRExpr(env->type_env, stmt->Ist.Store.addr);

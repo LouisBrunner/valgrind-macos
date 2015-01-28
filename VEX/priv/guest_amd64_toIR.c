@@ -27259,11 +27259,11 @@ static ULong dis_VMASKMOV ( Bool *uses_vvvv, const VexAbiInfo* vbi,
    }
 
    else if (!isLoad && isYMM) {
-      DIP("%s %s,%s,%s\n", opname, nameYMMReg(rV), nameYMMReg(rG), dis_buf );
+      DIP("%s %s,%s,%s\n", opname, nameYMMReg(rG), nameYMMReg(rV), dis_buf );
    }
    else {
       vassert(!isLoad && !isYMM);
-      DIP("%s %s,%s,%s\n", opname, nameXMMReg(rV), nameXMMReg(rG), dis_buf );
+      DIP("%s %s,%s,%s\n", opname, nameXMMReg(rG), nameXMMReg(rV), dis_buf );
    }
 
    vassert(ty == Ity_I32 || ty == Ity_I64);
@@ -28205,15 +28205,17 @@ Long dis_ESC_0F38__VEX (
       break;
 
    case 0x2C:
-      /* VMASKMOVPS m128, xmm2, xmm1 = VEX.NDS.128.66.0F38.WIG 2C /r */
+      /* VMASKMOVPS m128, xmm2, xmm1 = VEX.NDS.128.66.0F38.W0 2C /r */
       if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/
+          && 0==getRexW(pfx)/*W0*/
           && !epartIsReg(getUChar(delta))) {
          delta = dis_VMASKMOV( uses_vvvv, vbi, pfx, delta, "vmaskmovps",
                                /*!isYMM*/False, Ity_I32, /*isLoad*/True );
          goto decode_success;
       }
-      /* VMASKMOVPS m256, ymm2, ymm1 = VEX.NDS.256.66.0F38.WIG 2C /r */
+      /* VMASKMOVPS m256, ymm2, ymm1 = VEX.NDS.256.66.0F38.W0 2C /r */
       if (have66noF2noF3(pfx) && 1==getVexL(pfx)/*256*/
+          && 0==getRexW(pfx)/*W0*/
           && !epartIsReg(getUChar(delta))) {
          delta = dis_VMASKMOV( uses_vvvv, vbi, pfx, delta, "vmaskmovps",
                                /*isYMM*/True, Ity_I32, /*isLoad*/True );
@@ -28222,18 +28224,58 @@ Long dis_ESC_0F38__VEX (
       break;
 
    case 0x2D:
-      /* VMASKMOVPD m128, xmm2, xmm1 = VEX.NDS.128.66.0F38.WIG 2D /r */
+      /* VMASKMOVPD m128, xmm2, xmm1 = VEX.NDS.128.66.0F38.W0 2D /r */
       if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/
+          && 0==getRexW(pfx)/*W0*/
           && !epartIsReg(getUChar(delta))) {
          delta = dis_VMASKMOV( uses_vvvv, vbi, pfx, delta, "vmaskmovpd",
                                /*!isYMM*/False, Ity_I64, /*isLoad*/True );
          goto decode_success;
       }
-      /* VMASKMOVPD m256, ymm2, ymm1 = VEX.NDS.256.66.0F38.WIG 2D /r */
+      /* VMASKMOVPD m256, ymm2, ymm1 = VEX.NDS.256.66.0F38.W0 2D /r */
       if (have66noF2noF3(pfx) && 1==getVexL(pfx)/*256*/
+          && 0==getRexW(pfx)/*W0*/
           && !epartIsReg(getUChar(delta))) {
          delta = dis_VMASKMOV( uses_vvvv, vbi, pfx, delta, "vmaskmovpd",
                                /*isYMM*/True, Ity_I64, /*isLoad*/True );
+         goto decode_success;
+      }
+      break;
+
+   case 0x2E:
+      /* VMASKMOVPS xmm1, xmm2, m128 = VEX.NDS.128.66.0F38.W0 2E /r */
+      if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/
+          && 0==getRexW(pfx)/*W0*/
+          && !epartIsReg(getUChar(delta))) {
+         delta = dis_VMASKMOV( uses_vvvv, vbi, pfx, delta, "vmaskmovps",
+                               /*!isYMM*/False, Ity_I32, /*!isLoad*/False );
+         goto decode_success;
+      }
+      /* VMASKMOVPS ymm1, ymm2, m256 = VEX.NDS.256.66.0F38.W0 2E /r */
+      if (have66noF2noF3(pfx) && 1==getVexL(pfx)/*256*/
+          && 0==getRexW(pfx)/*W0*/
+          && !epartIsReg(getUChar(delta))) {
+         delta = dis_VMASKMOV( uses_vvvv, vbi, pfx, delta, "vmaskmovps",
+                               /*isYMM*/True, Ity_I32, /*!isLoad*/False );
+         goto decode_success;
+      }
+      break;
+
+   case 0x2F:
+      /* VMASKMOVPD xmm1, xmm2, m128 = VEX.NDS.128.66.0F38.W0 2F /r */
+      if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/
+          && 0==getRexW(pfx)/*W0*/
+          && !epartIsReg(getUChar(delta))) {
+         delta = dis_VMASKMOV( uses_vvvv, vbi, pfx, delta, "vmaskmovpd",
+                               /*!isYMM*/False, Ity_I64, /*!isLoad*/False );
+         goto decode_success;
+      }
+      /* VMASKMOVPD ymm1, ymm2, m256 = VEX.NDS.256.66.0F38.W0 2F /r */
+      if (have66noF2noF3(pfx) && 1==getVexL(pfx)/*256*/
+          && 0==getRexW(pfx)/*W0*/
+          && !epartIsReg(getUChar(delta))) {
+         delta = dis_VMASKMOV( uses_vvvv, vbi, pfx, delta, "vmaskmovpd",
+                               /*isYMM*/True, Ity_I64, /*!isLoad*/False );
          goto decode_success;
       }
       break;
@@ -28822,28 +28864,28 @@ Long dis_ESC_0F38__VEX (
       break;
 
    case 0x8E:
-      /* VPMASKMOVD xmm2, xmm1, m128 = VEX.NDS.128.66.0F38.W0 8E /r */
+      /* VPMASKMOVD xmm1, xmm2, m128 = VEX.NDS.128.66.0F38.W0 8E /r */
       if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/
           && 0==getRexW(pfx)/*W0*/ && !epartIsReg(getUChar(delta))) {
          delta = dis_VMASKMOV( uses_vvvv, vbi, pfx, delta, "vpmaskmovd",
                                /*!isYMM*/False, Ity_I32, /*!isLoad*/False );
          goto decode_success;
       }
-      /* VPMASKMOVD ymm2, ymm1, m256 = VEX.NDS.256.66.0F38.W0 8E /r */
+      /* VPMASKMOVD ymm1, ymm2, m256 = VEX.NDS.256.66.0F38.W0 8E /r */
       if (have66noF2noF3(pfx) && 1==getVexL(pfx)/*256*/
           && 0==getRexW(pfx)/*W0*/ && !epartIsReg(getUChar(delta))) {
          delta = dis_VMASKMOV( uses_vvvv, vbi, pfx, delta, "vpmaskmovd",
                                /*isYMM*/True, Ity_I32, /*!isLoad*/False );
          goto decode_success;
       }
-      /* VPMASKMOVQ xmm2, xmm1, m128 = VEX.NDS.128.66.0F38.W1 8E /r */
+      /* VPMASKMOVQ xmm1, xmm2, m128 = VEX.NDS.128.66.0F38.W1 8E /r */
       if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/
           && 1==getRexW(pfx)/*W1*/ && !epartIsReg(getUChar(delta))) {
          delta = dis_VMASKMOV( uses_vvvv, vbi, pfx, delta, "vpmaskmovq",
                                /*!isYMM*/False, Ity_I64, /*!isLoad*/False );
          goto decode_success;
       }
-      /* VPMASKMOVQ ymm2, ymm1, m256 = VEX.NDS.256.66.0F38.W1 8E /r */
+      /* VPMASKMOVQ ymm1, ymm2, m256 = VEX.NDS.256.66.0F38.W1 8E /r */
       if (have66noF2noF3(pfx) && 1==getVexL(pfx)/*256*/
           && 1==getRexW(pfx)/*W1*/ && !epartIsReg(getUChar(delta))) {
          delta = dis_VMASKMOV( uses_vvvv, vbi, pfx, delta, "vpmaskmovq",

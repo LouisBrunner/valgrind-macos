@@ -1446,10 +1446,11 @@ void ppIRStoreG ( const IRStoreG* sg )
 {
    vex_printf("if (");
    ppIRExpr(sg->guard);
-   vex_printf(") ST%s(", sg->end==Iend_LE ? "le" : "be");
+   vex_printf(") { ST%s(", sg->end==Iend_LE ? "le" : "be");
    ppIRExpr(sg->addr);
    vex_printf(") = ");
    ppIRExpr(sg->data);
+   vex_printf(" }");
 }
 
 void ppIRLoadGOp ( IRLoadGOp cvt )

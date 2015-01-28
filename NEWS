@@ -82,6 +82,11 @@ n-i-bz  Provide implementations of certain compiler builtins to support
 n-i-bz  Old STABS code is still being compiled, but never used. Remove it.
 n-i-bz  Fix compilation on distros with glibc < 2.5
 
+--
+335785  amd64->IR 0xC4 0xE2 0x75 0x2F (vmaskmovpd)
+        == 307399
+        == 343175
+
 
 
 Release 3.10.1 (25 November 2014)

@@ -175,3 +175,12 @@ Sat Nov 22 11:33:21 CET 2014
 342988  INT 80 not recognised on amd64
 
 Tue 20 Jan 01:23:52 CET 2015
+
+343069  Patch updating v4l2 API support
+343099  Linux setns syscall wrapper missing, unhandled syscall: 308
+343173  helgrind crash during stack unwind
+343219  fix GET_STARTREGS for arm
+343303  Valgrind on Mac 10.10 should suppress setenv() mem leak
+343306  OS X 10.10: UNKNOWN mach_msg unhandled MACH_SEND_TRAILER option
+343332  Unhandled instruction 0x9E310021 (fcvtmu) on aarch64
+343335  unhandled instruction 0x1E638400 (fccmp)

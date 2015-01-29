@@ -1570,8 +1570,9 @@ static void check_hwcaps ( VexArch arch, UInt hwcaps )
          for (i = 0; i < sizeof extras / sizeof extras[0]; ++i) {
             caps |= extras[i];
             if (caps == hwcaps) return;
+            /* For SSE2 or later LZCNT is optional */
             if ((caps & VEX_HWCAPS_X86_SSE2) != 0) {
-               if ((caps & VEX_HWCAPS_X86_LZCNT) != 0) return;
+               if ((caps | VEX_HWCAPS_X86_LZCNT) == hwcaps) return;
             }
          }
          invalid_hwcaps(arch, hwcaps, "Cannot handle capabilities\n");

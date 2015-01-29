@@ -2737,14 +2737,14 @@ Bool VG_(am_change_ownership_v_to_c)( Addr start, SizeT len )
    return True;
 }
 
-/* 'seg' must be NULL or have been obtained from
-   VG_(am_find_nsegment), and still valid.  If non-NULL, and if it
-   denotes a SkAnonC (anonymous client mapping) area, set the .isCH
+/* 'seg' must have been obtained from VG_(am_find_nsegment), and still valid.
+   If it denotes a SkAnonC (anonymous client mapping) area, set the .isCH
    (is-client-heap) flag for that area.  Otherwise do nothing.
    (Bizarre interface so that the same code works for both Linux and
    AIX and does not impose inefficiencies on the Linux version.) */
 void VG_(am_set_segment_isCH_if_SkAnonC)( const NSegment* seg )
 {
+   aspacem_assert(seg != NULL);
    Int i = segAddr_to_index( seg );
    aspacem_assert(i >= 0 && i < nsegments_used);
    if (nsegments[i].kind == SkAnonC) {
@@ -2759,6 +2759,7 @@ void VG_(am_set_segment_isCH_if_SkAnonC)( const NSegment* seg )
    segment. */
 void VG_(am_set_segment_hasT_if_SkFileC_or_SkAnonC)( const NSegment* seg )
 {
+   aspacem_assert(seg != NULL);
    Int i = segAddr_to_index( seg );
    aspacem_assert(i >= 0 && i < nsegments_used);
    if (nsegments[i].kind == SkAnonC || nsegments[i].kind == SkFileC) {
@@ -2850,6 +2851,7 @@ Bool VG_(am_extend_into_adjacent_reservation_client) ( const NSegment* seg,
 
    /* Find the segment array index for SEG.  If the assertion fails it
       probably means you passed in a bogus SEG. */
+   aspacem_assert(seg != NULL);
    segA = segAddr_to_index( seg );
    aspacem_assert(segA >= 0 && segA < nsegments_used);
 

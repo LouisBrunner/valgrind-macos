@@ -507,8 +507,7 @@ static void show_len_concisely ( /*OUT*/HChar* buf, Addr start, Addr end )
 
 /* Show full details of an NSegment */
 
-static void __attribute__ ((unused))
-            show_nsegment_full ( Int logLevel, Int segNo, const NSegment* seg )
+static void show_nsegment_full ( Int logLevel, Int segNo, const NSegment* seg )
 {
    HChar len_buf[20];
    const HChar* name = "(none)";

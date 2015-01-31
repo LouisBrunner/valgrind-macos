@@ -1,3 +1,4 @@
+/* -*- mode: C; c-basic-offset: 3; -*- */
 
 /*--------------------------------------------------------------------*/
 /*--- The address space manager: segment initialisation and        ---*/
@@ -290,25 +291,15 @@
 # define VG_N_SEGNAMES 6000
 #endif
 
-/* Max length of a segment file name. */
+/* Max length of a segment file name. FIXME: to be removed */
 #define VG_MAX_SEGNAMELEN 1000
 
+/* String table for segment names */
 
-typedef
-   struct {
-      Bool  inUse;
-      Bool  mark;
-      HChar fname[VG_MAX_SEGNAMELEN];
-   }
-   SegName;
-
-/* Filename table.  _used is the high water mark; an entry is only
-   valid if its index >= 0, < _used, and its .inUse field == True.
-   The .mark field is used to garbage-collect dead entries.
-*/
-static SegName segnames[VG_N_SEGNAMES];
-static Int     segnames_used = 0;
-
+/* FIXME: This is just for backward compatibility for now. To be adjusted. */
+static HChar segnames[VG_N_SEGNAMES * VG_MAX_SEGNAMELEN];
+static SizeT segnames_used = 0;  /* number of characters used */
+static UInt  num_segnames = 0;   /* number of names in string table */
 
 /* Array [0 .. nsegments_used-1] of all mappings. */
 /* Sorted by .addr field. */
@@ -390,60 +381,44 @@ static void parse_procselfmaps (
 
 /*-----------------------------------------------------------------*/
 /*---                                                           ---*/
-/*--- SegName array management.                                 ---*/
+/*--- Segment name management.                                  ---*/
 /*---                                                           ---*/
 /*-----------------------------------------------------------------*/
 
-/* Searches the filename table to find an index for the given name.
-   If none is found, an index is allocated and the name stored.  If no
-   space is available we just give up.  If the string is too long to
-   store, return -1.
+/* Searches the string table to find an index for the given name.
+   If none is found, an index is allocated and the name stored.
+   If the string is too long to store, return -1.
 */
 static Int allocate_segname ( const HChar* name )
 {
-   Int i, j, len;
+   SizeT len, l, ix;
 
    aspacem_assert(name);
 
    if (0) VG_(debugLog)(0,"aspacem","allocate_segname %s\n", name);
 
    len = VG_(strlen)(name);
-   if (len + 1 > VG_MAX_SEGNAMELEN) {
+
+   /* first see if we already have the name. */
+   for (ix = 0; ix < segnames_used; ix += l + 1) {
+      l = VG_(strlen)(segnames + ix);
+      if (l == len && VG_(strcmp)(name, segnames + ix) == 0) return ix;
+   }
+
+   /* Is there enough room in the string table? */
+   if (len + 1 > (sizeof segnames) - segnames_used) {
       return -1;
    }
 
-   /* first see if we already have the name. */
-   Int free_slot = -1;
-   for (i = 0; i < segnames_used; i++) {
-      if (!segnames[i].inUse) {
-         free_slot = i;
-         continue;
-      }
-      if (0 == VG_(strcmp)(name, &segnames[i].fname[0])) {
-         return i;
-      }
-   }
-
-   /* no we don't. */
-   if (free_slot >= 0) {
-      /* we have a free slot; use it. */
-      i = free_slot;
-   } else {
-      /* no free slots .. advance the high-water mark. */
-      if (segnames_used < VG_N_SEGNAMES) {
-         i = segnames_used;
-         segnames_used++;
-      } else {
-         ML_(am_barf_toolow)("VG_N_SEGNAMES");
-      }
-   }
+   ++num_segnames;
 
    /* copy it in */
-   segnames[i].inUse = True;
-   for (j = 0; j < len; j++)
-      segnames[i].fname[j] = name[j];
-   segnames[i].fname[len] = 0;
-   return i;
+   ix = segnames_used;
+
+   VG_(strcpy)(segnames + segnames_used, name);
+   segnames_used += len + 1;
+
+   return ix;
 }
 
 
@@ -513,9 +488,8 @@ static void show_nsegment_full ( Int logLevel, Int segNo, const NSegment* seg )
    const HChar* name = "(none)";
 
    if (seg->fnIdx >= 0 && seg->fnIdx < segnames_used
-                       && segnames[seg->fnIdx].inUse
-                       && segnames[seg->fnIdx].fname[0] != 0)
-      name = segnames[seg->fnIdx].fname;
+                       && segnames[seg->fnIdx] != 0)
+      name = segnames + seg->fnIdx;
 
    show_len_concisely(len_buf, seg->start, seg->end);
 
@@ -606,14 +580,14 @@ static void show_nsegment ( Int logLevel, Int segNo, const NSegment* seg )
 void VG_(am_show_nsegments) ( Int logLevel, const HChar* who )
 {
    Int i;
+   SizeT ix;
    VG_(debugLog)(logLevel, "aspacem",
-                 "<<< SHOW_SEGMENTS: %s (%d segments, %d segnames)\n", 
-                 who, nsegments_used, segnames_used);
-   for (i = 0; i < segnames_used; i++) {
-      if (!segnames[i].inUse)
-         continue;
+                 "<<< SHOW_SEGMENTS: %s (%d segments, %u segnames)\n", 
+                 who, nsegments_used, num_segnames);
+   i = 0;
+   for (ix = 0; ix < segnames_used; ix += VG_(strlen)(segnames + ix) + 1) {
       VG_(debugLog)(logLevel, "aspacem",
-                    "(%2d) %s\n", i, segnames[i].fname);
+                    "(%2d) %s\n", i++, segnames + ix);
    }
    for (i = 0; i < nsegments_used; i++)
      show_nsegment( logLevel, i, &nsegments[i] );
@@ -623,18 +597,13 @@ void VG_(am_show_nsegments) ( Int logLevel, const HChar* who )
 
 
 /* Get the filename corresponding to this segment, if known and if it
-   has one.  The returned name's storage cannot be assumed to be
-   persistent, so the caller should immediately copy the name
-   elsewhere. */
+   has one. */
 const HChar* VG_(am_get_filename)( NSegment const * seg )
 {
    Int i;
    aspacem_assert(seg);
    i = seg->fnIdx;
-   if (i < 0 || i >= segnames_used || !segnames[i].inUse)
-      return NULL;
-   else
-      return &segnames[i].fname[0];
+   return (i < 0) ? NULL : segnames + i;
 }
 
 /* Collect up the start addresses of all non-free, non-resvn segments.
@@ -725,8 +694,7 @@ static Bool sane_NSegment ( const NSegment* s )
          return 
             s->smode == SmFixed
             && (s->fnIdx == -1 ||
-                (s->fnIdx >= 0 && s->fnIdx < segnames_used 
-                               && segnames[s->fnIdx].inUse))
+                (s->fnIdx >= 0 && s->fnIdx < segnames_used))
             && !s->isCH;
 
       case SkResvn: 
@@ -807,7 +775,7 @@ static Bool maybe_merge_nsegments ( NSegment* s1, const NSegment* s2 )
 
 static Bool preen_nsegments ( void )
 {
-   Int i, j, r, w, nsegments_used_old = nsegments_used;
+   Int i, r, w, nsegments_used_old = nsegments_used;
 
    /* Pass 1: check the segment array covers the entire address space
       exactly once, and also that each segment is sane. */
@@ -836,27 +804,6 @@ static Bool preen_nsegments ( void )
    w++;
    aspacem_assert(w > 0 && w <= nsegments_used);
    nsegments_used = w;
-
-   /* Pass 3: free up unused string table slots */
-   /* clear mark bits */
-   for (i = 0; i < segnames_used; i++)
-      segnames[i].mark = False;
-   /* mark */
-   for (i = 0; i < nsegments_used; i++) {
-     j = nsegments[i].fnIdx;
-      aspacem_assert(j >= -1 && j < segnames_used);
-      if (j >= 0) {
-         aspacem_assert(segnames[j].inUse);
-         segnames[j].mark = True;
-      }
-   }
-   /* release */
-   for (i = 0; i < segnames_used; i++) {
-      if (segnames[i].mark == False) {
-         segnames[i].inUse = False;
-         segnames[i].fname[0] = 0;
-      }
-   }
 
    return nsegments_used != nsegments_used_old;
 }

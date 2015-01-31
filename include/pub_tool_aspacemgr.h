@@ -137,11 +137,7 @@ extern Int VG_(am_get_segment_starts)( Addr* starts, Int nStarts );
 extern NSegment const * VG_(am_find_nsegment) ( Addr a ); 
 
 /* Get the filename corresponding to this segment, if known and if it
-   has one.  The returned name's storage cannot be assumed to be
-   persistent, so the caller should immediately copy the name
-   elsewhere.  This may return NULL if the file name is not known or
-   for arbitrary other implementation-dependent reasons, so callers
-   need to be able to handle a NULL return value. */
+   has one. The function may return NULL if the file name is not known. */
 extern const HChar* VG_(am_get_filename)( NSegment const * );
 
 /* Is the area [start .. start+len-1] validly accessible by the 

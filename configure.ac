@@ -1084,6 +1084,7 @@ AM_CONDITIONAL([HAVE_GNU_STPNCPY], [test x$ac_have_gnu_stpncpy = xyes])
 
 AC_MSG_CHECKING([for PTRACE_GETREGS])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <stdlib.h>
 #include <stddef.h>
 #include <sys/ptrace.h>
 #include <sys/user.h>

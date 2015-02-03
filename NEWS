@@ -53,6 +53,7 @@ where XXXXXX is the bug number as listed below.
 339045  Getting valgrind to compile and run on OS X Yosemite (10.10)
         == 340252
 339156  gdbsrv not called for fatal signal
+339288  support Cavium Octeon MIPS specific BBIT*32 instructions
 339442  Fix testsuite build failure on OS X 10.9
 339688  Mac-specific ASM does not support .version directive (cpuid,
         tronical and pushfpopf tests)
@@ -131,6 +132,7 @@ where XXXXXX is the bug number as listed below.
 340509  arm64: unhandled instruction fcvtas
 340630  arm64: fchmod (52) and fchown (55) syscalls not recognized
 340632  arm64: unhandled instruction fcvtas
+340722  Resolve "UNKNOWN attrlist flags 0:0x10000000"
 340725  AVX2: Incorrect decoding of vpbroadcast{b,w} reg,reg forms
 340788  warning: unhandled syscall: 318 (getrandom)
 340807  disInstr(arm): unhandled instruction: 0xEE989B20

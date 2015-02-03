@@ -2,18 +2,307 @@
 Created Mon Sep 8 13:22:16 CEST 2014.  All new bugs after this point
 go in here.
 
-==================
+=== VEX/amd64 ==========================================================
 
-Bugs that didn't make 3.10.0, that might be considered for 3.10.1
+339218  AVX2 binaries compiled with the Intel compiler fail to
+        run under Valgrind 3.10.0
+        FIXME: should we enable this now?
+        == 338602
+
+338602  AVX2 bit in CPUID missing
+        need to do XSAVE, XRSTOR
+
+339596  vex amd64->IR: 0x8F 0xE8 0x78 0xCD 0xC1 0x4 0xC5 0xF9
+        XOP/FMA -- should take
+
+339820  vex amd64->IR: 0x66 0xF 0x3A 0x63 0xA 0x42 0x74 0x9
+        (pcmpistrix  $0x42, (%rdx), %xmm1)
+        Should fix.  Reported against 3.8.1 -- still valid?
+
+340469  vex amd64->IR: unhandled instruction bytes: 0x66 0xA7
+        Not clear what's going on here
+
+342571  Valgrind chokes on AVX compare intrinsic with _CMP_GE_QS
+        probably easy to fix
+
+342740  unhandled instruction bytes: 0xC4 0xE2 0xFD 0x8E 0x12 0x48 0x83 0xC2
+        vpmaskmovq %ymm2,%ymm0,(%rdx)
+        Is probably fixed now
+
+342988  INT 80 not recognised on amd64
+
+=== VEX/arm ============================================================
 
 335618  mov.w rN, pc/sp (ARM32)
+        HAS PATCH
+
+342680  arm: unhanded instruction 0xF590F000: pldw [r0]
+
+342780  arm + gcc 4.9 produce false positive: Use of uninitialised value of
+        size 4 and segfault on stack extention
+        Has patch
+
+342783  arm: unhandled instruction 0xEEFE1ACA = "vcvt.s32.f32    s3, s3, #12"
+
+=== VEX/arm64 ==========================================================
+
+343332  Unhandled instruction 0x9E310021 (fcvtmu) on aarch64
+        HAS PATCH
+
+343335  unhandled instruction 0x1E638400 (fccmp)
+
+=== VEX/x86 ============================================================
+
+339416  unhandled instruction bytes 0xC5 0xF1 0xEF 0xC9
+        (possible AVX on 32-bit, can't tell)
+
+340849  unsupported AVX instruction on 32 bit
+        we should WONTFIX this
+
+342192  Unhandled instruction on OS X 10.9 in libsystem_m.dylib
+        possibly a wontfix
+
+=== VEX/mips ===========================================================
+
+340777  Illegal instruction on mips (ar71xx)
+
+341997  MIPS64: Cavium OCTEON instructions - immediate operand handled
+        incorrectly
+
+=== VEX/ppc ============================================================
+
+342610  disInstr(ppc): declined to decode an AltiVec insn.
+
+=== VEX/s390x ==========================================================
+
+342841  s390x unrecognized instruction fiebra
+        -> Florian?
+
+=== VEX general ========================================================
+
+339778  Linux/TileGx platform support to Valgrind
+        Should action
+
+=== Syscalls/ioctls ====================================================
+
+339424  Full support of KVM ioctl
+        In progress -- maybe can be closed?
+
+339563  The DVB demux DMX_STOP ioctl doesn't have a wrapper
+        has patch
+
+341537  POST(sys_io_getevents) shouldn't check iocb or iovec
+        unclear whether really valid or not
+
+342009  Error with valgrind on setcap file on 32bits (only) system
+        == 335143
+        possibly unfixable
+
+342038  Unhandled system call 236 on aarch64 (mbind/get/set_mempolicy)
+        arm64, has patch
+
+342040  Valgrind mishandles clone with CLONE_VFORK | CLONE_VM that clones
+        to a different stack
+
+342603  [PATCH] Add I2C_SMBUS ioctl
+        Has patch; could land
+
+342809  mremap fails when protection is enabled
+
+343069  Patch updating v4l2 API support
+        Has patch; could land
+
+343099  Linux setns syscall wrapper missing, unhandled syscall: 308
+        HAS PATCH.  Check that mayBlock is enabled.
+
+=== Debuginfo reader ===================================================
 
 327427  ifunc crash when symbols are discarded
+        unclear what to do
+
 330321  debuginfo readers complain about DT_AT_signature
+        no action so far
+
+339744  warning: evaluate_Dwarf3_Expr: unhandled DW_OP_ 0xf2
+        no action so far
+
+340854  valgrind-di-server: allow specification of multiple paths
+        has patch, unclear if Right Thing To Do
+
+=== Tools/Memcheck =====================================================
+
+339499  memcheck does not always detect access beyond mmaped page
+        probably wontfix
+
+339762  missing replacement alias for glibc __strchr_sse42, __strcpy_sse2,
+        __strcpy_ssse3
+        obscure?
+
+340320  replacement malloc command line options (--trace-malloc
+        and --alignment) are invisible
+
+340392  Incorrect "Conditional jump..." message
+        Optimised code a la Clang
+        PROBABLE CANTFIXZ
+
+342683  memory past the brk limit is not initially inaccessible/unaddressable
+
+=== Tools/DRD ==========================================================
+=== Tools/Helgrind =====================================================
+
+339330  Feature request: Add support for C++11's std::atomic
+        Helgrind
+
+340905  hg_main.c:291 (lockN_acquire_reader): Assertion 'lk->kind
+        == LK_rdwr' failed.
+        against 3.8.1
+
+=== Tools/SGCheck ======================================================
+
+340021  sgcheck tool does not work properly on ARM
+        == 296166
+
+=== Tools/Massif =======================================================
+
+342353  Allow dumping full massif output while valgrind is still running
+        Has patch
+
+=== Tools/Cachegrind ===================================================
+
+=== Tools/Lackey =======================================================
+
+343385  Improve lackey's address traces
+        w/ several patches
+
+=== other/mips =========================================================
+
+341036  dumping core and Assertion 'sizeof(*regs) == sizeof(prs->pr_reg)
+        possibly a dup of 328670 ?
+
+341481  MIPS64: Iop_CmpNE32 triggers false warning on MIPS64 platforms
+        (memcheck)
+
+342356  MIPS: determine page size at runtime
+        Has patch; could possibly land?
+
+=== other/arm ==========================================================
+
+343219  fix GET_STARTREGS for arm
+        HAS PATCH; could land
+
+=== other/s390 =========================================================
+=== other/Android ======================================================
+
+339605  vgpreload_helgrind-arm-linux.so is not liked to libc.so 
+        and can't find sched_yield, pthread_self and so on
+        recent Android
+
+339861  Remove Elf32_Nhdr definition for Android
+        uh, do we want this?
+
+339862  v6intThumb.c does not compile when -pie options is specified
+        should possible takes; causes build failures on newer Android
+        Might be important
+
+339945  Patch: replace #if !defined (VGPV_*_linux_android) with
+        #ifndef AT_FPUCW  (probably WONTFIX)
+
+341704  [patch] Remove unnecessary ifdef android for 'sh'
+        do we want this?
+
+341726  [patch] Remove uneccessary ifdef _android_ from launcher-linux.c
+        do we want this?
+
+=== other/MacOS ========================================================
+
+338781  OSX: unable to read debug info
+
+339745  Valgrind crash when check Marmalade app (OSX 10.?)
+        Rhys partially fixed
+
+341419  Signal handler ucontext_t not filled out correctly on OS X
+        Has patch
+
+342635  OS X 10.10 (Yosemite) - missing system calls and fcntl code
+        Has patch; -> Rhys?
+
+343306  OS X 10.10: UNKNOWN mach_msg unhandled MACH_SEND_TRAILER option
+        Partially fixed
+
+343523  OS X mach_ports_register: UNKNOWN task message
+        [id 3403, to mach_task_self(), reply 0x30f]
+
+343525  OS X host_get_special_port: UNKNOWN host message
+        [id 412, to mach_host_self(), reply 0x........]
+
+343649  OS X host_create_mach_voucher: UNKNOWN host message
+        [id 222, to mach_host_self(), reply 0x........]
+
+343663  [OSX Yosemite 10.10.1] The memcheck tool always reports a
+        leak regardless of the simplicity of the program.
+
+=== other/Win32 =======================================================
+
+211529  valgrind doesn't show proper call stacks for programs compiled
+        by newer versions of visual c++
+
+342117  Valgrind hangs after loading PDB file for MSVC compiled Firefox
+        under Wine
+
+=== GDB server =========================================================
+=== Output =============================================================
+
+339405  Adds ability to invoke a script in order to determine a
+        log-file name for a child being forked
+        Has plausible patch, should take, but needs test case
+
+342423  Log files should have the history 'execve' calls in them
+        Wishlist
+
+=== MPI ================================================================
 
 330147  libmpiwrap PMPI_Get_count (should take; simple fix)
+
+=== Documentation ======================================================
+
+340571  x86/Linux should no longer claim "almost complete"
+
+=== Uncategorised/run ==================================================
+
 326487  child of debugged process exits without becoming zombie
-338781  OSX: unable to read debug info
+        fork can fail if it receives a signal?
+
+339160  Running signal handler with alternate stack allocated on current 
+        stack crashes callgrind
+        m_stacks.c brokenness?
+
+343173  helgrind crash during stack unwind
+        m_stacks.c: need to (de)register stack at munmap?
+
+343357  Please fix semaphore starvation when running threads-per-CPU
+        Unclear if we should do anything
+
+343715  valgrind hangs after vgdb help request
+
+=== Uncategorised/build=================================================
+
+339215  Valgrind 3.10.0 contain 2013 in copyrights notice
+        Update copyright dates!
+
+339542  Experiences with compiling valgrind with ICC
+        possibly closable now
+
+339636  Use fxsave64 and fxrstor64 mnemonics instead of rex64 prefix
+        Should apply
+
+342008  valgrind.h needs type cast for _zzq_default to compile with
+        clang/llvm in 64-bit mode
+
+343553  e500 chip now supports it? and,how about armv5
+
+========================================================================
+========================================================================
+========================================================================
 
 arm64 critical regtest fails:
   getregset.stderr.out   sys 117, ptrace
@@ -22,165 +311,8 @@ arm64 critical regtest fails:
   sigaltstack.stderr.out segfaults -- host seems broken too
      recursive signal delivery (!)
 
-==================
+========================================================================
+========================================================================
+========================================================================
 
-New bugs reported in 3.10.0
-
-211529  valgrind doesn't show proper call stacks for programs compiled
-        by newer versions of visual c++
-
-339160  Running signal handler with alternate stack allocated on current 
-        stack crashes callgrind
-
-339215  Valgrind 3.10.0 contain 2013 in copyrights notice
-        Should fix
-
-339218  AVX2 binaries compiled with the Intel compiler fail to
-        run under Valgrind 3.10.0
-        FIXME: should we enable this now?
-
-339288  support Cavium Octeon MIPS specific BBIT*32 instructions
-
-339330  Feature request: Add support for C++11's std::atomic
-        Helgrind
-
-339405  Adds ability to invoke a script in order to determine a
-        log-file name for a child being forked
-        Has plausible patch, should take
-
-339416  unhandled instruction bytes 0xC5 0xF1 0xEF 0xC9
-        (possible AVX on 32-bit, can't tell)
-
-339424  Full support of KVM ioctl
-        In progress
-
-339499  memcheck does not always detect access beyond mmaped page
-
-339542  Experiences with compiling valgrind with ICC
-        -> 3.11
-
-339563  The DVB demux DMX_STOP ioctl doesn't have a wrapper
-        -> 3.11
-
-339596  vex amd64->IR: 0x8F 0xE8 0x78 0xCD 0xC1 0x4 0xC5 0xF9
-        XOP/FMA -- should take
-
-339605  vgpreload_helgrind-arm-linux.so is not liked to libc.so 
-        and can't find sched_yield, pthread_self and so on
-        recent Android
-
-339636  Use fxsave64 and fxrstor64 mnemonics instead of rex64 prefix
-        Should apply
-
-339744  warning: evaluate_Dwarf3_Expr: unhandled DW_OP_ 0xf2
-        no action so far
-
-339745  Valgrind crash when check Marmalade app (OSX 10.?)
-        magic_delta on 32-bit; may be easy to fix
-
-339755  Valgrind on Mac 10.9 should suppress setenv() mem leak
-        Still needed?
-
-339762  missing replacement alias for glibc __strchr_sse42, __strcpy_sse2,
-        __strcpy_ssse3
-
-339778  Linux/TileGx platform support to Valgrind
-        Should action
-
-339780  [PATCH] Valgrind on Mac 10.9 should suppress pthread_rwlock_init()
-        I suspect this is now redundant following recent work on Yosemite
-
-339820  vex amd64->IR: 0x66 0xF 0x3A 0x63 0xA 0x42 0x74 0x9
-        (pcmpistrix  $0x42, (%rdx), %xmm1)
-        Should fix
-
-339861  Remove Elf32_Nhdr definition for Android
-
-339862  v6intThumb.c does not compile when -pie options is specified
-        should possible takes; causes build failures on newer Android
-
-339945  Patch: replace #if !defined (VGPV_*_linux_android) with
-        #ifndef AT_FPUCW  (probably WONTFIX)
-
-340021  sgcheck tool does not work properly on ARM
-        == 296166
-
-340320  replacement malloc command line options (--trace-malloc
-        and --alignment) are invisible
-
-340392  Incorrect "Conditional jump..." message
-        Optimised code a la Clang
-
-340469  vex amd64->IR: unhandled instruction bytes: 0x66 0xA7
-        Not clear what's going on here
-
-340571  x86/Linux should no longer claim "almost complete"
-
-340722  Resolve "UNKNOWN attrlist flags 0:0x10000000"
-
-340777  Illegal instruction on mips (ar71xx)
-
-340849  unsupported AVX instruction on 32 bit
-        we should WONTFIX this
-
-340854  valgrind-di-server: allow specification of multiple paths
-        has patch
-
-340905  hg_main.c:291 (lockN_acquire_reader): Assertion 'lk->kind
-        == LK_rdwr' failed.
-        against 3.8.1
-
-341036  dumping core and Assertion 'sizeof(*regs) == sizeof(prs->pr_reg)
-
-Sat Nov 22 11:33:21 CET 2014
-
-341419  Signal handler ucontext_t not filled out correctly on OS X
-341481  MIPS64: Iop_CmpNE32 triggers false warning on MIPS64 platforms
-341537  POST(sys_io_getevents) shouldn't check iocb or iovec
-341704  [patch] Remove unnecessary ifdef android for 'sh'
-341726  [patch] Remove uneccessary ifdef _android_ from launcher-linux.c
-341997  MIPS64: Cavium OCTEON instructions - immediate operand handled
-        incorrectly
-342008  valgrind.h needs type cast for _zzq_default to compile with
-        clang/llvm in 64-bit mode
-342009  Error with valgrind on setcap file on 32bits (only) system
-        == 335143
-342038  Unhandled system call 236 on aarch64 (mbind/get/set_mempolicy)
-342040  Valgrind mishandles clone with CLONE_VFORK | CLONE_VM that clones
-        to a different stack
-342117  Valgrind hangs after loading PDB file for MSVC compiled Firefox
-        under Wine
-342192  Unhandled instruction on OS X 10.9 in libsystem_m.dylib
-342353  Allow dumping full massif output while valgrind is still running
-        Has patch
-342356  MIPS: determine page size at runtime
-342423  [Feature suggestion] Log files should have the history 'execve'
-        calls in them
-342571  Valgrind chokes on AVX compare intrinsic with _CMP_GE_QS
-342603  [PATCH] Add I2C_SMBUS ioctl
-        Has patch; -> Tom?
-342610  disInstr(ppc): declined to decode an AltiVec insn.
-342635  OS X 10.10 (Yosemite) - missing system calls and fcntl code
-        Has patch; -> Rhys?
-342680  arm: unhanded instruction 0xF590F000: pldw [r0]
-342683  memory past the brk limit is not initially inaccessible/unaddressable
-342740  unhandled instruction bytes: 0xC4 0xE2 0xFD 0x8E 0x12 0x48 0x83 0xC2
-342780  arm + gcc 4.9 produce false positive: Use of uninitialised value of
-        size 4 and segfault on stack extention
-        Has patch
-342783  arm: unhandled instruction 0xEEFE1ACA = "vcvt.s32.f32    s3, s3, #12"
-342809  mremap fails when protection is enabled
-342841  s390x unrecognized instruction fiebra
-        -> Florian?
-342988  INT 80 not recognised on amd64
-
-Tue 20 Jan 01:23:52 CET 2015
-
-343069  Patch updating v4l2 API support
-343099  Linux setns syscall wrapper missing, unhandled syscall: 308
-343173  helgrind crash during stack unwind
-343219  fix GET_STARTREGS for arm
-343303  Valgrind on Mac 10.10 should suppress setenv() mem leak
-343306  OS X 10.10: UNKNOWN mach_msg unhandled MACH_SEND_TRAILER option
-343332  Unhandled instruction 0x9E310021 (fcvtmu) on aarch64
-343335  unhandled instruction 0x1E638400 (fccmp)
+Tue  3 Feb 00:14:18 CET 2015

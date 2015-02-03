@@ -27272,11 +27272,15 @@ static ULong dis_VMASKMOV ( Bool *uses_vvvv, const VexAbiInfo* vbi,
    Int nLanes = (isYMM ? 2 : 1) * (laneIs32 ? 4 : 2);
 
    for (i = 0; i < nLanes; i++) {
-      IRTemp cond = newTemp(Ity_I1);
-      assign( cond,
-              binop(laneIs32 ? Iop_CmpLT32S : Iop_CmpLT64S,
-                    (laneIs32 ? getYMMRegLane32 : getYMMRegLane64)( rV, i ),
-                    mkU(ty, 0) ));
+      IRExpr* shAmt = laneIs32 ? mkU8(31)    : mkU8(63);
+      IRExpr* one   = laneIs32 ? mkU32(1)    : mkU64(1);
+      IROp    opSHR = laneIs32 ? Iop_Shr32   : Iop_Shr64;
+      IROp    opEQ  = laneIs32 ? Iop_CmpEQ32 : Iop_CmpEQ64;
+      IRExpr* lane  = (laneIs32 ? getYMMRegLane32 : getYMMRegLane64)( rV, i );
+
+      IRTemp  cond = newTemp(Ity_I1);
+      assign(cond, binop(opEQ, binop(opSHR, lane, shAmt), one));
+
       IRTemp  data = newTemp(ty);
       IRExpr* ea   = binop(Iop_Add64, mkexpr(addr),
                                       mkU64(i * (laneIs32 ? 4 : 8)));

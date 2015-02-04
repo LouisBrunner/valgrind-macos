@@ -1487,13 +1487,8 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
 #  if defined(VGO_linux)
    if (tid == 1/*ROOT THREAD*/) {
       Addr     stackMin   = VG_(get_SP)(tid) - VG_STACK_REDZONE_SZB;
-      NSegment const* seg = VG_(am_find_nsegment)(stackMin);
-      if (seg && seg->kind == SkAnonC) {
-         /* stackMin is already mapped.  Nothing to do. */
-      } else {
-         (void)VG_(extend_stack)( stackMin,
-                                  tst->client_stack_szB );
-      }
+
+      VG_(extend_stack)( stackMin, tst->client_stack_szB );
    }
 #  endif
    /* END ensure root thread's stack is suitably mapped */

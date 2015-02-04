@@ -959,8 +959,8 @@ static inline void my_exit ( int x )
    int VG_REPLACE_FUNCTION_EZU(20190,soname,fnname)       \
           ( const void *s1V, const void *s2V, SizeT n )  \
    { \
-      const Addr WS = sizeof(UWord); /* 8 or 4 */ \
-      const Addr WM = WS - 1;        /* 7 or 3 */ \
+      const SizeT WS = sizeof(UWord); /* 8 or 4 */ \
+      const SizeT WM = WS - 1;        /* 7 or 3 */ \
       Addr s1A = (Addr)s1V; \
       Addr s2A = (Addr)s2V; \
       \

@@ -3681,6 +3681,8 @@ struct vki_v4l2_pix_format {
 	__vki_u32			colorspace;	/* enum vki_v4l2_colorspace */
 	__vki_u32			priv;		/* private data, depends on pixelformat */
 	__vki_u32			flags;		/* format flags (VKI_V4L2_PIX_FMT_FLAG_*) */
+	__vki_u32			ycbcr_enc;
+	__vki_u32			quantization;
 };
 
 struct vki_v4l2_fmtdesc {
@@ -4207,7 +4209,9 @@ struct vki_v4l2_pix_format_mplane {
 	struct vki_v4l2_plane_pix_format	plane_fmt[VKI_VIDEO_MAX_PLANES];
 	__vki_u8				num_planes;
 	__vki_u8				flags;
-	__vki_u8				reserved[10];
+	__vki_u8				ycbcr_enc;
+	__vki_u8				quantization;
+	__vki_u8				reserved[8];
 } __attribute__ ((packed));
 
 struct vki_v4l2_sdr_format {
@@ -4435,7 +4439,9 @@ struct vki_v4l2_mbus_framefmt {
 	__vki_u32			code;
 	__vki_u32			field;
 	__vki_u32			colorspace;
-	__vki_u32			reserved[7];
+	__vki_u16			ycbcr_enc;
+	__vki_u16			quantization;
+	__vki_u32			reserved[6];
 };
 
 struct vki_v4l2_subdev_format {

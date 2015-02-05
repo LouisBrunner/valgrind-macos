@@ -659,15 +659,14 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
                                VG_(clo_merge_recursive_frames), 0,
                                VG_DEEPEST_BACKTRACE) {}
 
-      else if VG_XACT_CLO(arg, "--smc-check=none",  VG_(clo_smc_check),
-                                                    Vg_SmcNone);
-      else if VG_XACT_CLO(arg, "--smc-check=stack", VG_(clo_smc_check),
-                                                    Vg_SmcStack);
-      else if VG_XACT_CLO(arg, "--smc-check=all",   VG_(clo_smc_check),
-                                                    Vg_SmcAll);
+      else if VG_XACT_CLO(arg, "--smc-check=none", 
+                          VG_(clo_smc_check), Vg_SmcNone) {}
+      else if VG_XACT_CLO(arg, "--smc-check=stack",
+                          VG_(clo_smc_check), Vg_SmcStack) {}
+      else if VG_XACT_CLO(arg, "--smc-check=all",
+                          VG_(clo_smc_check), Vg_SmcAll) {}
       else if VG_XACT_CLO(arg, "--smc-check=all-non-file",
-                                                    VG_(clo_smc_check),
-                                                    Vg_SmcAllNonFile);
+                          VG_(clo_smc_check), Vg_SmcAllNonFile) {}
 
       else if VG_USETX_CLO (arg, "--kernel-variant",
                             "bproc,"
@@ -687,22 +686,24 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
                        VG_(clo_vex_control).iropt_verbosity, 0, 10) {}
       else if VG_BINT_CLO(arg, "--vex-iropt-level",
                        VG_(clo_vex_control).iropt_level, 0, 2) {}
+
       else if VG_XACT_CLO(arg, 
                        "--vex-iropt-register-updates=sp-at-mem-access",
                        VG_(clo_vex_control).iropt_register_updates,
-                       VexRegUpdSpAtMemAccess);
+                       VexRegUpdSpAtMemAccess) {}
       else if VG_XACT_CLO(arg, 
                        "--vex-iropt-register-updates=unwindregs-at-mem-access",
                        VG_(clo_vex_control).iropt_register_updates,
-                       VexRegUpdUnwindregsAtMemAccess);
+                       VexRegUpdUnwindregsAtMemAccess) {}
       else if VG_XACT_CLO(arg, 
                        "--vex-iropt-register-updates=allregs-at-mem-access",
                        VG_(clo_vex_control).iropt_register_updates,
-                       VexRegUpdAllregsAtMemAccess);
+                       VexRegUpdAllregsAtMemAccess) {}
       else if VG_XACT_CLO(arg, 
                        "--vex-iropt-register-updates=allregs-at-each-insn",
                        VG_(clo_vex_control).iropt_register_updates,
-                       VexRegUpdAllregsAtEachInsn);
+                       VexRegUpdAllregsAtEachInsn) {}
+
       else if VG_BINT_CLO(arg, "--vex-iropt-unroll-thresh",
                        VG_(clo_vex_control).iropt_unroll_thresh, 0, 400) {}
       else if VG_BINT_CLO(arg, "--vex-guest-max-insns",
@@ -745,7 +746,7 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
                               VG_(clo_xml_user_comment)) {}
 
       else if VG_BOOL_CLO(arg, "--default-suppressions",
-                          VG_(clo_default_supp)) { }
+                          VG_(clo_default_supp)) {}
 
       else if VG_STR_CLO(arg, "--suppressions", tmp_str) {
          VG_(addToXA)(VG_(clo_suppressions), &tmp_str);

@@ -479,6 +479,22 @@ static void show_len_concisely ( /*OUT*/HChar* buf, Addr start, Addr end )
    ML_(am_sprintf)(buf, fmt, len);
 }
 
+/* Returns a sequence number for the fnIdx position in segnames.
+   Used in aspacemgr debug output to associate a segment with
+   the list of segments output at the beginning. */
+static Int fnIdx_seqnr(Int fnIdx)
+{
+   SizeT ix;
+   Int seqnr = -1;
+
+   for (ix = 0; ix < segnames_used; ix += VG_(strlen)(segnames + ix) + 1) {
+      seqnr++;
+      if (ix == fnIdx)
+         return seqnr;
+   }
+
+   return -1;
+}
 
 /* Show full details of an NSegment */
 
@@ -496,14 +512,15 @@ static void show_nsegment_full ( Int logLevel, Int segNo, const NSegment* seg )
    VG_(debugLog)(
       logLevel, "aspacem",
       "%3d: %s %010llx-%010llx %s %c%c%c%c%c %s "
-      "d=0x%03llx i=%-7lld o=%-7lld (%d) %s\n",
+      "d=0x%03llx i=%-7lld o=%-7lld (%d,%d) %s\n",
       segNo, show_SegKind(seg->kind),
       (ULong)seg->start, (ULong)seg->end, len_buf,
       seg->hasR ? 'r' : '-', seg->hasW ? 'w' : '-', 
       seg->hasX ? 'x' : '-', seg->hasT ? 'T' : '-',
       seg->isCH ? 'H' : '-',
       show_ShrinkMode(seg->smode),
-      seg->dev, seg->ino, seg->offset, seg->fnIdx,
+      seg->dev, seg->ino, seg->offset,
+      fnIdx_seqnr(seg->fnIdx), seg->fnIdx,
       name
    );
 }
@@ -543,13 +560,14 @@ static void show_nsegment ( Int logLevel, Int segNo, const NSegment* seg )
          VG_(debugLog)(
             logLevel, "aspacem",
             "%3d: %s %010llx-%010llx %s %c%c%c%c%c d=0x%03llx "
-            "i=%-7lld o=%-7lld (%d)\n",
+            "i=%-7lld o=%-7lld (%d,%d)\n",
             segNo, show_SegKind(seg->kind),
             (ULong)seg->start, (ULong)seg->end, len_buf,
             seg->hasR ? 'r' : '-', seg->hasW ? 'w' : '-', 
             seg->hasX ? 'x' : '-', seg->hasT ? 'T' : '-', 
             seg->isCH ? 'H' : '-',
-            seg->dev, seg->ino, seg->offset, seg->fnIdx
+            seg->dev, seg->ino, seg->offset,
+            fnIdx_seqnr(seg->fnIdx), seg->fnIdx
          );
          break;
 
@@ -587,7 +605,7 @@ void VG_(am_show_nsegments) ( Int logLevel, const HChar* who )
    i = 0;
    for (ix = 0; ix < segnames_used; ix += VG_(strlen)(segnames + ix) + 1) {
       VG_(debugLog)(logLevel, "aspacem",
-                    "(%2d) %s\n", i++, segnames + ix);
+                    "(%d,%lu) %s\n", i++, ix, segnames + ix);
    }
    for (i = 0; i < nsegments_used; i++)
      show_nsegment( logLevel, i, &nsegments[i] );

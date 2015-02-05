@@ -67,9 +67,14 @@
 /*--- Stats                                                ---*/
 /*------------------------------------------------------------*/
 
-static UInt n_SP_updates_fast            = 0;
-static UInt n_SP_updates_generic_known   = 0;
-static UInt n_SP_updates_generic_unknown = 0;
+static ULong n_SP_updates_fast            = 0;
+static ULong n_SP_updates_generic_known   = 0;
+static ULong n_SP_updates_generic_unknown = 0;
+
+static ULong n_PX_VexRegUpdSpAtMemAccess         = 0;
+static ULong n_PX_VexRegUpdUnwindregsAtMemAccess = 0;
+static ULong n_PX_VexRegUpdAllregsAtMemAccess    = 0;
+static ULong n_PX_VexRegUpdAllregsAtEachInsn     = 0;
 
 void VG_(print_translation_stats) ( void )
 {
@@ -77,21 +82,24 @@ void VG_(print_translation_stats) ( void )
                                          + n_SP_updates_generic_unknown;
    if (n_SP_updates == 0) {
       VG_(message)(Vg_DebugMsg, "translate: no SP updates identified\n");
-      return;
+   } else {
+      VG_(message)(Vg_DebugMsg,
+         "translate:            fast SP updates identified: %'llu (%3.1f%%)\n",
+         n_SP_updates_fast, n_SP_updates_fast * 100.0 / n_SP_updates );
+
+      VG_(message)(Vg_DebugMsg,
+         "translate:   generic_known SP updates identified: %'llu (%3.1f%%)\n",
+         n_SP_updates_generic_known,
+         n_SP_updates_generic_known * 100.0 / n_SP_updates );
+
+      VG_(message)(Vg_DebugMsg,
+         "translate: generic_unknown SP updates identified: %'llu (%3.1f%%)\n",
+         n_SP_updates_generic_unknown,
+         n_SP_updates_generic_unknown * 100.0 / n_SP_updates );
    }
-   VG_(message)(Vg_DebugMsg,
-      "translate:            fast SP updates identified: %'u (%3.1f%%)\n",
-      n_SP_updates_fast, n_SP_updates_fast * 100.0 / n_SP_updates );
 
    VG_(message)(Vg_DebugMsg,
-      "translate:   generic_known SP updates identified: %'u (%3.1f%%)\n",
-      n_SP_updates_generic_known,
-      n_SP_updates_generic_known * 100.0 / n_SP_updates );
-
-   VG_(message)(Vg_DebugMsg,
-      "translate: generic_unknown SP updates identified: %'u (%3.1f%%)\n",
-      n_SP_updates_generic_unknown,
-      n_SP_updates_generic_unknown * 100.0 / n_SP_updates );
+                "translate: PX: SPonly %'llu,  UnwRegs %'llu,  AllRegs %'llu,  AllRegsAllInsns %'llu\n", n_PX_VexRegUpdSpAtMemAccess, n_PX_VexRegUpdUnwindregsAtMemAccess, n_PX_VexRegUpdAllregsAtMemAccess, n_PX_VexRegUpdAllregsAtEachInsn);
 }
 
 /*------------------------------------------------------------*/
@@ -779,6 +787,7 @@ static Bool translations_allowable_from_seg ( NSegment const* seg, Addr addr )
    return convention. */
 
 static UInt needs_self_check ( void* closureV,
+                               /*MAYBE_MOD*/VexRegisterUpdates* pxControl,
                                const VexGuestExtents* vge )
 {
    VgCallbackClosure* closure = (VgCallbackClosure*)closureV;
@@ -786,6 +795,20 @@ static UInt needs_self_check ( void* closureV,
 
    vg_assert(vge->n_used >= 1 && vge->n_used <= 3);
    bitset = 0;
+
+   /* Will we need to do a second pass in order to compute a
+      revised *pxControl value? */
+   Bool pxStatusMightChange 
+      = /* "the user actually set it" */
+        VG_(clo_px_file_backed) != VexRegUpd_INVALID
+        /* "and they set it to something other than the default. */
+        && *pxControl != VG_(clo_px_file_backed);
+
+   /* First, compute |bitset|, which specifies which extent(s) need a
+      self check.  Whilst we're at it, note any NSegments that we get,
+      so as to reduce the number of calls required to
+      VG_(am_find_nsegment) in a possible second pass. */
+   const NSegment const* segs[3] = { NULL, NULL, NULL };
 
    for (i = 0; i < vge->n_used; i++) {
       Bool  check = False;
@@ -844,6 +867,62 @@ static UInt needs_self_check ( void* closureV,
 
       if (check)
          bitset |= (1 << i);
+
+      if (pxStatusMightChange && segA) {
+         vg_assert(i < sizeof(segs)/sizeof(segs[0]));
+         segs[i] = segA;
+      }
+   }
+
+   /* Now, possibly do a second pass, to see if the PX status might
+      change.  This can happen if the user specified value via
+      --px-file-backed= which is different from the default PX value
+      specified via --vex-iropt-register-updates (also known by the
+      shorter alias --px-default). */
+   if (pxStatusMightChange) {
+
+      Bool allFileBacked = True;
+      for (i = 0; i < vge->n_used; i++) {
+         Addr  addr  = vge->base[i];
+         SizeT len   = vge->len[i];
+         NSegment const* segA = segs[i];
+         if (!segA) {
+            /* If we don't have a cached value for |segA|, compute it now. */
+            segA = VG_(am_find_nsegment)(addr);
+         }
+         vg_assert(segA); /* Can this ever fail? */
+         if (segA && segA->kind == SkFileC && segA->start <= addr
+             && (len == 0 || addr + len <= segA->end + 1)) {
+            /* in a file-mapped segment */
+         } else {
+            /* not in a file-mapped segment, or we can't figure out
+               where it is */
+            allFileBacked = False;
+            break;
+         }
+      }
+
+      /* So, finally, if all the extents are in file backed segments, perform
+         the user-specified PX change. */
+      if (allFileBacked) {
+         *pxControl = VG_(clo_px_file_backed);
+      }
+
+   }
+
+   /* Update running PX stats, as it is difficult without these to
+      check that the system is behaving as expected. */
+   switch (*pxControl) {
+      case VexRegUpdSpAtMemAccess:
+         n_PX_VexRegUpdSpAtMemAccess++; break;
+      case VexRegUpdUnwindregsAtMemAccess:
+         n_PX_VexRegUpdUnwindregsAtMemAccess++; break;
+      case VexRegUpdAllregsAtMemAccess:
+         n_PX_VexRegUpdAllregsAtMemAccess++; break;
+      case VexRegUpdAllregsAtEachInsn:
+         n_PX_VexRegUpdAllregsAtEachInsn++; break;
+      default:
+         vg_assert(0);
    }
 
    return bitset;

@@ -246,26 +246,34 @@ static void usage_NORETURN ( Bool debug_help )
 "  Vex options for all Valgrind tools:\n"
 "    --vex-iropt-verbosity=<0..9>           [0]\n"
 "    --vex-iropt-level=<0..2>               [2]\n"
-"    --vex-iropt-register-updates=sp-at-mem-access\n"
-"                                |unwindregs-at-mem-access\n"
-"                                |allregs-at-mem-access\n"
-"                                |allregs-at-each-insn  [unwindregs-at-mem-access]\n"
 "    --vex-iropt-unroll-thresh=<0..400>     [120]\n"
 "    --vex-guest-max-insns=<1..100>         [50]\n"
 "    --vex-guest-chase-thresh=<0..99>       [10]\n"
 "    --vex-guest-chase-cond=no|yes          [no]\n"
-"    --trace-flags and --profile-flags values (omit the middle space):\n"
-"       1000 0000   show conversion into IR\n"
-"       0100 0000   show after initial opt\n"
-"       0010 0000   show after instrumentation\n"
-"       0001 0000   show after second opt\n"
-"       0000 1000   show after tree building\n"
-"       0000 0100   show selecting insns\n"
-"       0000 0010   show after reg-alloc\n"
-"       0000 0001   show final assembly\n"
-"       0000 0000   show summary profile only\n"
-"      (Nb: you need --trace-notbelow and/or --trace-notabove\n"
-"           with --trace-flags for full details)\n"
+"    Precise exception control.  Possible values for 'mode' are as follows\n"
+"      and specify the minimum set of registers guaranteed to be correct\n"
+"      immediately prior to memory access instructions:\n"
+"         sp-at-mem-access          stack pointer only\n"
+"         unwindregs-at-mem-access  registers needed for stack unwinding\n"
+"         allregs-at-mem-access     all registers\n"
+"         allregs-at-each-insn      all registers are always correct\n"
+"      Default value for all 3 following flags is [unwindregs-at-mem-access].\n"
+"      --vex-iropt-register-updates=mode   setting to use by default\n"
+"      --px-default=mode      synonym for --vex-iropt-register-updates\n"
+"      --px-file-backed=mode  optional setting for file-backed (non-JIT) code\n"
+"    Tracing and profile control:\n"
+"      --trace-flags and --profile-flags values (omit the middle space):\n"
+"         1000 0000   show conversion into IR\n"
+"         0100 0000   show after initial opt\n"
+"         0010 0000   show after instrumentation\n"
+"         0001 0000   show after second opt\n"
+"         0000 1000   show after tree building\n"
+"         0000 0100   show selecting insns\n"
+"         0000 0010   show after reg-alloc\n"
+"         0000 0001   show final assembly\n"
+"         0000 0000   show summary profile only\n"
+"        (Nb: you need --trace-notbelow and/or --trace-notabove\n"
+"             with --trace-flags for full details)\n"
 "\n"
 "  debugging options for Valgrind tools that report errors\n"
 "    --dump-error=<number>     show translation for basic block associated\n"
@@ -469,12 +477,21 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
    VG_(clo_req_tsyms) = VG_(newXA)(VG_(malloc), "main.mpclo.6",
                                    VG_(free), sizeof(HChar *));
 
+   /* Constants for parsing PX control flags. */
+   const HChar* pxStrings[5]
+      = { "sp-at-mem-access",      "unwindregs-at-mem-access",
+          "allregs-at-mem-access", "allregs-at-each-insn", NULL };
+   const VexRegisterUpdates pxVals[5]
+      = { VexRegUpdSpAtMemAccess,      VexRegUpdUnwindregsAtMemAccess,
+          VexRegUpdAllregsAtMemAccess, VexRegUpdAllregsAtEachInsn, 0/*inval*/ };
+
    /* BEGIN command-line processing loop */
 
    for (i = 0; i < VG_(sizeXA)( VG_(args_for_valgrind) ); i++) {
 
       HChar* arg   = * (HChar**) VG_(indexXA)( VG_(args_for_valgrind), i );
       HChar* colon = arg;
+      UInt   ix    = 0;
 
       // Look for a colon in the option name.
       while (*colon && *colon != ':' && *colon != '=')
@@ -564,7 +581,8 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
       else if VG_XACT_CLO(arg, "--vgdb=full",      VG_(clo_vgdb), Vg_VgdbFull) {
          /* automatically updates register values at each insn
             with --vgdb=full */
-         VG_(clo_vex_control).iropt_register_updates 
+         VG_(clo_vex_control).iropt_register_updates_default
+            = VG_(clo_px_file_backed)
             = VexRegUpdAllregsAtEachInsn;
       }
       else if VG_INT_CLO (arg, "--vgdb-poll",      VG_(clo_vgdb_poll)) {}
@@ -687,22 +705,29 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
       else if VG_BINT_CLO(arg, "--vex-iropt-level",
                        VG_(clo_vex_control).iropt_level, 0, 2) {}
 
-      else if VG_XACT_CLO(arg, 
-                       "--vex-iropt-register-updates=sp-at-mem-access",
-                       VG_(clo_vex_control).iropt_register_updates,
-                       VexRegUpdSpAtMemAccess) {}
-      else if VG_XACT_CLO(arg, 
-                       "--vex-iropt-register-updates=unwindregs-at-mem-access",
-                       VG_(clo_vex_control).iropt_register_updates,
-                       VexRegUpdUnwindregsAtMemAccess) {}
-      else if VG_XACT_CLO(arg, 
-                       "--vex-iropt-register-updates=allregs-at-mem-access",
-                       VG_(clo_vex_control).iropt_register_updates,
-                       VexRegUpdAllregsAtMemAccess) {}
-      else if VG_XACT_CLO(arg, 
-                       "--vex-iropt-register-updates=allregs-at-each-insn",
-                       VG_(clo_vex_control).iropt_register_updates,
-                       VexRegUpdAllregsAtEachInsn) {}
+      else if VG_STRINDEX_CLO(arg, "--vex-iropt-register-updates",
+                                   pxStrings, ix) {
+         vg_assert(ix < 4);
+         vg_assert(pxVals[ix] >= VexRegUpdSpAtMemAccess);
+         vg_assert(pxVals[ix] <= VexRegUpdAllregsAtEachInsn);
+         VG_(clo_vex_control).iropt_register_updates_default = pxVals[ix];
+      }
+      else if VG_STRINDEX_CLO(arg, "--px-default", pxStrings, ix) {
+         // NB: --px-default is an alias for the hard-to-remember
+         // --vex-iropt-register-updates, hence the same logic.
+         vg_assert(ix < 4);
+         vg_assert(pxVals[ix] >= VexRegUpdSpAtMemAccess);
+         vg_assert(pxVals[ix] <= VexRegUpdAllregsAtEachInsn);
+         VG_(clo_vex_control).iropt_register_updates_default = pxVals[ix];
+      }
+      else if VG_STRINDEX_CLO(arg, "--px-file-backed", pxStrings, ix) {
+         // Whereas --px-file-backed isn't
+         // the same flag as --vex-iropt-register-updates.
+         vg_assert(ix < 4);
+         vg_assert(pxVals[ix] >= VexRegUpdSpAtMemAccess);
+         vg_assert(pxVals[ix] <= VexRegUpdAllregsAtEachInsn);
+         VG_(clo_px_file_backed) = pxVals[ix];
+      }
 
       else if VG_BINT_CLO(arg, "--vex-iropt-unroll-thresh",
                        VG_(clo_vex_control).iropt_unroll_thresh, 0, 400) {}
@@ -1855,7 +1880,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
 #  endif
    // END HACK
 
-   // Set default vex control params
+   // Set default vex control params.
    LibVEX_default_VexControl(& VG_(clo_vex_control));
 
    //--------------------------------------------------------------

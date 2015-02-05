@@ -43,7 +43,10 @@
 
 
 /* Define, and set defaults. */
+
 VexControl VG_(clo_vex_control);
+VexRegisterUpdates VG_(clo_px_file_backed) = VexRegUpd_INVALID;
+
 Bool   VG_(clo_error_limit)    = True;
 Int    VG_(clo_error_exitcode) = 0;
 HChar *VG_(clo_error_markers)[2] = {NULL, NULL};

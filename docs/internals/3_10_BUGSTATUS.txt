@@ -25,10 +25,6 @@ go in here.
 342571  Valgrind chokes on AVX compare intrinsic with _CMP_GE_QS
         probably easy to fix
 
-342740  unhandled instruction bytes: 0xC4 0xE2 0xFD 0x8E 0x12 0x48 0x83 0xC2
-        vpmaskmovq %ymm2,%ymm0,(%rdx)
-        Is probably fixed now
-
 342988  INT 80 not recognised on amd64
 
 === VEX/arm ============================================================
@@ -45,9 +41,6 @@ go in here.
 342783  arm: unhandled instruction 0xEEFE1ACA = "vcvt.s32.f32    s3, s3, #12"
 
 === VEX/arm64 ==========================================================
-
-343332  Unhandled instruction 0x9E310021 (fcvtmu) on aarch64
-        HAS PATCH
 
 343335  unhandled instruction 0x1E638400 (fccmp)
 
@@ -98,19 +91,10 @@ go in here.
         == 335143
         possibly unfixable
 
-342038  Unhandled system call 236 on aarch64 (mbind/get/set_mempolicy)
-        arm64, has patch
-
 342040  Valgrind mishandles clone with CLONE_VFORK | CLONE_VM that clones
         to a different stack
 
-342603  [PATCH] Add I2C_SMBUS ioctl
-        Has patch; could land
-
 342809  mremap fails when protection is enabled
-
-343069  Patch updating v4l2 API support
-        Has patch; could land
 
 343099  Linux setns syscall wrapper missing, unhandled syscall: 308
         HAS PATCH.  Check that mayBlock is enabled.
@@ -138,12 +122,9 @@ go in here.
         __strcpy_ssse3
         obscure?
 
-340320  replacement malloc command line options (--trace-malloc
-        and --alignment) are invisible
-
 340392  Incorrect "Conditional jump..." message
         Optimised code a la Clang
-        PROBABLE CANTFIXZ
+        PROBABLE CANTFIX
 
 342683  memory past the brk limit is not initially inaccessible/unaddressable
 

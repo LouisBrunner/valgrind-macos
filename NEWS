@@ -48,6 +48,10 @@ where XXXXXX is the bug number as listed below.
 333051  mmap of huge pages fails due to incorrect alignment
         == 339163
 334802  valgrind does not always explain why a given option is bad
+335785  amd64->IR 0xC4 0xE2 0x75 0x2F (vmaskmovpd)
+        == 307399
+        == 343175
+        == 342740
 338731  ppc: Fix testuite build for toolchains not supporting -maltivec
 338995  shmat with hugepages (SHM_HUGETLB) fails with EINVAL
 339045  Getting valgrind to compile and run on OS X Yosemite (10.10)
@@ -72,23 +76,22 @@ where XXXXXX is the bug number as listed below.
 341698  Valgrind's AESKEYGENASSIST gives wrong result in words 0 and 2
         when dest register = source register
 341789  aarch64: shmat fails with valgrind on ARMv8
+342038  Unhandled syscalls on aarch64 (mbind/get/set_mempolicy)
 342063  wrong format specifier for test mcblocklistsearch in gdbserver_tests
 342221  socket connect false positive uninit memory for unknown af family
+342603  Add I2C_SMBUS ioctl support
 342795  Internal glibc __GI_mempcpy call should be intercepted
 343012  Unhandled syscall 319 (memfd_create)
+343069  Patch updating v4l2 API support
 343303  Fix known deliberate memory leak in setenv() on Mac OS X 10.10
-343306  OS X 10.10: UNKNOWN mach_msg unhandled MACH_SEND_TRAILER option (partial fix)
+343306  OS X 10.10: UNKNOWN mach_msg unhandled MACH_SEND_TRAILER option
+343332  Unhandled instruction 0x9E310021 (fcvtmu) on aarch64
 343802  s390x: Fix false positives "conditional jump or move depends on
         unitialised value(s)"
 n-i-bz  Provide implementations of certain compiler builtins to support
         compilers who may not provide those
 n-i-bz  Old STABS code is still being compiled, but never used. Remove it.
 n-i-bz  Fix compilation on distros with glibc < 2.5
-
---
-335785  amd64->IR 0xC4 0xE2 0x75 0x2F (vmaskmovpd)
-        == 307399
-        == 343175
 
 
 

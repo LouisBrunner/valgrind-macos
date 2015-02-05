@@ -2598,16 +2598,48 @@ struct vki_usbdevfs_setuppacket {
 // From linux-2.6.20.1/include/linux/i2c.h
 //----------------------------------------------------------------------
 
-#define VKI_I2C_SLAVE		0x0703	/* Change slave address			*/
-					/* Attn.: Slave address is 7 or 10 bits */
-#define VKI_I2C_SLAVE_FORCE	0x0706	/* Change slave address			*/
-					/* Attn.: Slave address is 7 or 10 bits */
-					/* This changes the address, even if it */
-					/* is already taken!			*/
-#define VKI_I2C_TENBIT		0x0704	/* 0 for 7 bit addrs, != 0 for 10 bit	*/
-#define VKI_I2C_FUNCS		0x0705	/* Get the adapter functionality */
-#define VKI_I2C_RDWR		0x0707	/* Combined R/W transfer (one STOP only) */
-#define VKI_I2C_PEC		0x0708	/* != 0 for SMBus PEC                   */
+#define VKI_I2C_SMBUS_QUICK             0
+#define VKI_I2C_SMBUS_BYTE              1
+#define VKI_I2C_SMBUS_BYTE_DATA         2
+#define VKI_I2C_SMBUS_WORD_DATA         3
+#define VKI_I2C_SMBUS_PROC_CALL         4
+#define VKI_I2C_SMBUS_BLOCK_DATA        5
+#define VKI_I2C_SMBUS_I2C_BLOCK_BROKEN  6
+#define VKI_I2C_SMBUS_BLOCK_PROC_CALL   7           /* SMBus 2.0 */
+#define VKI_I2C_SMBUS_I2C_BLOCK_DATA    8
+
+/* smbus_access read or write markers */
+#define VKI_I2C_SMBUS_READ  1
+#define VKI_I2C_SMBUS_WRITE 0
+
+#define VKI_I2C_SLAVE        0x0703  /* Change slave address                 */
+                                     /* Attn.: Slave address is 7 or 10 bits */
+#define VKI_I2C_SLAVE_FORCE  0x0706  /* Change slave address                 */
+                                     /* Attn.: Slave address is 7 or 10 bits */
+                                     /* This changes the address, even if it */
+                                     /* is already taken!                    */
+#define VKI_I2C_TENBIT       0x0704  /* 0 for 7 bit addrs, != 0 for 10 bit   */
+#define VKI_I2C_FUNCS        0x0705  /* Get the adapter functionality */
+#define VKI_I2C_RDWR         0x0707  /* Combined R/W transfer (one STOP only) */
+#define VKI_I2C_PEC          0x0708  /* != 0 for SMBus PEC                   */
+#define VKI_I2C_SMBUS        0x0720  /* SMBus transfer */
+
+#define VKI_I2C_SMBUS_BLOCK_MAX  32  /* As specified in SMBus standard */
+union vki_i2c_smbus_data {
+        __vki_u8 byte;
+        __vki_u16 word;
+        __vki_u8 block[VKI_I2C_SMBUS_BLOCK_MAX + 2];
+                 /* block[0] is used for length */
+                 /* and one more for PEC */
+};
+
+/* This is the structure as used in the I2C_SMBUS ioctl call */
+struct vki_i2c_smbus_ioctl_data {
+        __vki_u8 read_write;
+        __vki_u8 command;
+        __vki_u32 size;
+        union vki_i2c_smbus_data __user *data;
+};
 
 struct vki_i2c_msg {
 	__vki_u16 addr;		/* slave address			*/

@@ -1958,7 +1958,10 @@ guest_s390x_spechelper(const HChar *function_name, IRExpr **args,
             return unop(Iop_1Uto32, binop(Iop_CmpNE64, cc_dep1, mkU64(0)));
          }
          if (cond == 4 || cond == 4 + 1) {
-            return unop(Iop_1Uto32, binop(Iop_CmpLT64S, cc_dep1, mkU64(0)));
+             /* Special case cc_dep < 0. Only check the MSB to avoid bogus
+               memcheck complaints due to gcc magic. Fixes 343802
+             */
+            return unop(Iop_64to32, binop(Iop_Shr64, cc_dep1, mkU8(63)));
          }
          if (cond == 8 + 4 || cond == 8 + 4 + 1) {
             return unop(Iop_1Uto32, binop(Iop_CmpLE64S, cc_dep1, mkU64(0)));

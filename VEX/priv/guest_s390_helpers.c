@@ -152,7 +152,9 @@ LibVEX_GuestS390X_initialise(VexGuestS390XState *state)
    .. maxoff requires precise memory exceptions.  If in doubt return
    True (but this generates significantly slower code).  */
 Bool
-guest_s390x_state_requires_precise_mem_exns(Int minoff, Int maxoff)
+guest_s390x_state_requires_precise_mem_exns (
+   Int minoff, Int maxoff, VexRegisterUpdates pxControl
+)
 {
    Int lr_min = S390X_GUEST_OFFSET(guest_LR);
    Int lr_max = lr_min + 8 - 1;
@@ -165,7 +167,7 @@ guest_s390x_state_requires_precise_mem_exns(Int minoff, Int maxoff)
 
    if (maxoff < sp_min || minoff > sp_max) {
       /* No overlap with SP */
-      if (vex_control.iropt_register_updates == VexRegUpdSpAtMemAccess)
+      if (pxControl == VexRegUpdSpAtMemAccess)
          return False; // We only need to check stack pointer.
    } else {
       return True;

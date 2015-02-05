@@ -68,9 +68,13 @@ extern IRExpr *guest_mips64_spechelper ( const HChar * function_name,
 /* Describes to the optimser which part of the guest state require
    precise memory exceptions.  This is logically part of the guest
    state description. */
-extern Bool guest_mips32_state_requires_precise_mem_exns ( Int, Int );
+extern
+Bool guest_mips32_state_requires_precise_mem_exns ( Int, Int,
+                                                    VexRegisterUpdates );
 
-extern Bool guest_mips64_state_requires_precise_mem_exns ( Int, Int );
+extern
+Bool guest_mips64_state_requires_precise_mem_exns ( Int, Int,
+                                                    VexRegisterUpdates );
 
 extern VexGuestLayout mips32Guest_layout;
 extern VexGuestLayout mips64Guest_layout;

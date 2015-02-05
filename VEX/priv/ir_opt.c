@@ -716,7 +716,8 @@ static void redundant_get_removal_BB ( IRSB* bb )
 static void handle_gets_Stmt ( 
                HashHW* env, 
                IRStmt* st,
-               Bool (*preciseMemExnsFn)(Int,Int)
+               Bool (*preciseMemExnsFn)(Int,Int,VexRegisterUpdates),
+               VexRegisterUpdates pxControl
             )
 {
    Int     j;
@@ -828,7 +829,7 @@ static void handle_gets_Stmt (
          of the environment corresponding to guest state that may not
          be reordered with respect to memory references.  That means
          at least the stack pointer. */
-      switch (vex_control.iropt_register_updates) {
+      switch (pxControl) {
          case VexRegUpdAllregsAtMemAccess:
             /* Precise exceptions required at mem access.
                Flush all guest state. */
@@ -849,13 +850,14 @@ static void handle_gets_Stmt (
                   preciseMemExnsFn. */
                HWord k_lo = (env->key[j] >> 16) & 0xFFFF;
                HWord k_hi = env->key[j] & 0xFFFF;
-               if (preciseMemExnsFn( k_lo, k_hi ))
+               if (preciseMemExnsFn( k_lo, k_hi, pxControl ))
                   env->inuse[j] = False;
             }
             break;
          case VexRegUpdAllregsAtEachInsn:
             // VexRegUpdAllregsAtEachInsn cannot happen here.
             // fall through
+         case VexRegUpd_INVALID:
          default:
             vassert(0);
       }
@@ -882,7 +884,8 @@ static void handle_gets_Stmt (
 
 static void redundant_put_removal_BB ( 
                IRSB* bb,
-               Bool (*preciseMemExnsFn)(Int,Int)
+               Bool (*preciseMemExnsFn)(Int,Int,VexRegisterUpdates),
+               VexRegisterUpdates pxControl
             )
 {
    Int     i, j;
@@ -890,7 +893,7 @@ static void redundant_put_removal_BB (
    IRStmt* st;
    UInt    key = 0; /* keep gcc -O happy */
 
-   vassert(vex_control.iropt_register_updates < VexRegUpdAllregsAtEachInsn);
+   vassert(pxControl < VexRegUpdAllregsAtEachInsn);
 
    HashHW* env = newHHW();
 
@@ -982,7 +985,7 @@ static void redundant_put_removal_BB (
          of the guest state is no longer a write, but a read.  Also
          deals with implicit reads of guest state needed to maintain
          precise exceptions. */
-      handle_gets_Stmt( env, st, preciseMemExnsFn );
+      handle_gets_Stmt( env, st, preciseMemExnsFn, pxControl );
    }
 }
 
@@ -4392,13 +4395,13 @@ void do_redundant_GetI_elimination ( IRSB* bb )
    bb is modified in-place. */
 
 static
-void do_redundant_PutI_elimination ( IRSB* bb )
+void do_redundant_PutI_elimination ( IRSB* bb, VexRegisterUpdates pxControl )
 {
    Int    i, j;
    Bool   delete;
    IRStmt *st, *stj;
 
-   vassert(vex_control.iropt_register_updates < VexRegUpdAllregsAtEachInsn);
+   vassert(pxControl < VexRegUpdAllregsAtEachInsn);
 
    for (i = 0; i < bb->stmts_used; i++) {
       st = bb->stmts[i];
@@ -5524,9 +5527,12 @@ static Bool dirty_helper_stores ( const IRDirty *d )
 }
 
 inline
-static Interval dirty_helper_puts ( const IRDirty *d,
-                                    Bool (*preciseMemExnsFn)(Int, Int),
-                                    Bool *requiresPreciseMemExns )
+static Interval dirty_helper_puts (
+                   const IRDirty *d,
+                   Bool (*preciseMemExnsFn)(Int,Int,VexRegisterUpdates),
+                   VexRegisterUpdates pxControl,
+                   /*OUT*/Bool *requiresPreciseMemExns
+                )
 {
    Int i;
    Interval interval;
@@ -5558,7 +5564,8 @@ static Interval dirty_helper_puts ( const IRDirty *d,
          Int repeatLen = d->fxState[i].repeatLen;
 
          if (preciseMemExnsFn(offset,
-                              offset + nRepeats * repeatLen + size - 1)) {
+                              offset + nRepeats * repeatLen + size - 1,
+                              pxControl)) {
             *requiresPreciseMemExns = True;
          }
          update_interval(&interval, offset,
@@ -5569,11 +5576,15 @@ static Interval dirty_helper_puts ( const IRDirty *d,
    return interval;
 }
 
-/* Return an interval if st modifies the guest state. Via requiresPreciseMemExns
-   return whether or not that modification requires precise exceptions. */
-static Interval stmt_modifies_guest_state ( IRSB *bb, const IRStmt *st,
-                                            Bool (*preciseMemExnsFn)(Int,Int),
-                                            Bool *requiresPreciseMemExns )
+/* Return an interval if st modifies the guest state.  Via
+   requiresPreciseMemExns return whether or not that modification
+   requires precise exceptions. */
+static Interval stmt_modifies_guest_state ( 
+                   IRSB *bb, const IRStmt *st,
+                   Bool (*preciseMemExnsFn)(Int,Int,VexRegisterUpdates),
+                   VexRegisterUpdates pxControl,
+                   /*OUT*/Bool *requiresPreciseMemExns
+                )
 {
    Interval interval;
 
@@ -5582,7 +5593,8 @@ static Interval stmt_modifies_guest_state ( IRSB *bb, const IRStmt *st,
       Int offset = st->Ist.Put.offset;
       Int size = sizeofIRType(typeOfIRExpr(bb->tyenv, st->Ist.Put.data));
 
-      *requiresPreciseMemExns = preciseMemExnsFn(offset, offset + size - 1);
+      *requiresPreciseMemExns
+         = preciseMemExnsFn(offset, offset + size - 1, pxControl);
       interval.present = True;
       interval.low  = offset;
       interval.high = offset + size - 1;
@@ -5598,8 +5610,9 @@ static Interval stmt_modifies_guest_state ( IRSB *bb, const IRStmt *st,
          are no holes. This is to avoid a loop. The assumption is conservative
          in the sense that we might report that precise memory exceptions are
          needed when in fact they are not. */
-      *requiresPreciseMemExns = 
-         preciseMemExnsFn(offset, offset + descr->nElems * size - 1);
+      *requiresPreciseMemExns
+         = preciseMemExnsFn(offset, offset + descr->nElems * size - 1,
+                            pxControl);
       interval.present = True;
       interval.low  = offset;
       interval.high = offset + descr->nElems * size - 1;
@@ -5607,7 +5620,8 @@ static Interval stmt_modifies_guest_state ( IRSB *bb, const IRStmt *st,
    }
 
    case Ist_Dirty:
-      return dirty_helper_puts(st->Ist.Dirty.details, preciseMemExnsFn,
+      return dirty_helper_puts(st->Ist.Dirty.details,
+                               preciseMemExnsFn, pxControl,
                                requiresPreciseMemExns);
 
    default:
@@ -5619,8 +5633,11 @@ static Interval stmt_modifies_guest_state ( IRSB *bb, const IRStmt *st,
    }
 }
 
-/* notstatic */ Addr ado_treebuild_BB ( IRSB* bb,
-                                        Bool (*preciseMemExnsFn)(Int,Int) )
+/* notstatic */ Addr ado_treebuild_BB (
+                        IRSB* bb,
+                        Bool (*preciseMemExnsFn)(Int,Int,VexRegisterUpdates),
+                        VexRegisterUpdates pxControl
+                     )
 {
    Int      i, j, k, m;
    Bool     stmtStores, invalidateMe;
@@ -5759,8 +5776,10 @@ static Interval stmt_modifies_guest_state ( IRSB *bb, const IRStmt *st,
          consideration does, or might do (sidely safe @ True). */
 
       Bool putRequiresPreciseMemExns;
-      putInterval = stmt_modifies_guest_state( bb, st, preciseMemExnsFn,
-                                               &putRequiresPreciseMemExns);
+      putInterval = stmt_modifies_guest_state(
+                       bb, st, preciseMemExnsFn, pxControl,
+                       &putRequiresPreciseMemExns
+                    );
 
       /* be True if this stmt writes memory or might do (==> we don't
          want to reorder other loads or stores relative to it).  Also,
@@ -5860,7 +5879,8 @@ static
 IRSB* cheap_transformations ( 
          IRSB* bb,
          IRExpr* (*specHelper) (const HChar*, IRExpr**, IRStmt**, Int),
-         Bool (*preciseMemExnsFn)(Int,Int)
+         Bool (*preciseMemExnsFn)(Int,Int,VexRegisterUpdates),
+         VexRegisterUpdates pxControl
       )
 {
    redundant_get_removal_BB ( bb );
@@ -5869,8 +5889,8 @@ IRSB* cheap_transformations (
       ppIRSB(bb);
    }
 
-   if (vex_control.iropt_register_updates < VexRegUpdAllregsAtEachInsn) {
-      redundant_put_removal_BB ( bb, preciseMemExnsFn );
+   if (pxControl < VexRegUpdAllregsAtEachInsn) {
+      redundant_put_removal_BB ( bb, preciseMemExnsFn, pxControl );
    }
    if (iropt_verbose) {
       vex_printf("\n========= REDUNDANT PUT\n\n" );
@@ -5904,13 +5924,13 @@ IRSB* cheap_transformations (
    optimising as much as possible in the presence of GetI and PutI.  */
 
 static
-IRSB* expensive_transformations( IRSB* bb )
+IRSB* expensive_transformations( IRSB* bb, VexRegisterUpdates pxControl )
 {
    (void)do_cse_BB( bb );
    collapse_AddSub_chains_BB( bb );
    do_redundant_GetI_elimination( bb );
-   if (vex_control.iropt_register_updates < VexRegUpdAllregsAtEachInsn) {
-      do_redundant_PutI_elimination( bb );
+   if (pxControl < VexRegUpdAllregsAtEachInsn) {
+      do_redundant_PutI_elimination( bb, pxControl );
    }
    do_deadcode_BB( bb );
    return bb;
@@ -6038,7 +6058,8 @@ static void considerExpensives ( /*OUT*/Bool* hasGetIorPutI,
 IRSB* do_iropt_BB(
          IRSB* bb0,
          IRExpr* (*specHelper) (const HChar*, IRExpr**, IRStmt**, Int),
-         Bool (*preciseMemExnsFn)(Int,Int),
+         Bool (*preciseMemExnsFn)(Int,Int,VexRegisterUpdates),
+         VexRegisterUpdates pxControl,
          Addr    guest_addr,
          VexArch guest_arch
       )
@@ -6070,15 +6091,15 @@ IRSB* do_iropt_BB(
       If needed, do expensive transformations and then another cheap
       cleanup pass. */
 
-   bb = cheap_transformations( bb, specHelper, preciseMemExnsFn );
+   bb = cheap_transformations( bb, specHelper, preciseMemExnsFn, pxControl );
 
    if (guest_arch == VexArchARM) {
       /* Translating Thumb2 code produces a lot of chaff.  We have to
          work extra hard to get rid of it. */
       bb = cprop_BB(bb);
       bb = spec_helpers_BB ( bb, specHelper );
-      if (vex_control.iropt_register_updates < VexRegUpdAllregsAtEachInsn) {
-         redundant_put_removal_BB ( bb, preciseMemExnsFn );
+      if (pxControl < VexRegUpdAllregsAtEachInsn) {
+         redundant_put_removal_BB ( bb, preciseMemExnsFn, pxControl );
       }
       do_cse_BB( bb );
       do_deadcode_BB( bb );
@@ -6105,12 +6126,14 @@ IRSB* do_iropt_BB(
          n_expensive++;
          if (DEBUG_IROPT)
             vex_printf("***** EXPENSIVE %d %d\n", n_total, n_expensive);
-         bb = expensive_transformations( bb );
-         bb = cheap_transformations( bb, specHelper, preciseMemExnsFn );
+         bb = expensive_transformations( bb, pxControl );
+         bb = cheap_transformations( bb, specHelper,
+                                     preciseMemExnsFn, pxControl );
          /* Potentially common up GetIs */
          cses = do_cse_BB( bb );
          if (cses)
-            bb = cheap_transformations( bb, specHelper, preciseMemExnsFn );
+            bb = cheap_transformations( bb, specHelper,
+                                        preciseMemExnsFn, pxControl );
       }
 
       /* Now have a go at unrolling simple (single-BB) loops.  If
@@ -6118,10 +6141,12 @@ IRSB* do_iropt_BB(
 
       bb2 = maybe_loop_unroll_BB( bb, guest_addr );
       if (bb2) {
-         bb = cheap_transformations( bb2, specHelper, preciseMemExnsFn );
+         bb = cheap_transformations( bb2, specHelper,
+                                     preciseMemExnsFn, pxControl );
          if (hasGetIorPutI) {
-            bb = expensive_transformations( bb );
-            bb = cheap_transformations( bb, specHelper, preciseMemExnsFn );
+            bb = expensive_transformations( bb, pxControl );
+            bb = cheap_transformations( bb, specHelper,
+                                        preciseMemExnsFn, pxControl );
          } else {
             /* at least do CSE and dead code removal */
             do_cse_BB( bb );

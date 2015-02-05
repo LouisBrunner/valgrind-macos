@@ -1047,8 +1047,9 @@ void LibVEX_GuestARM_initialise ( /*OUT*/VexGuestARMState* vex_state )
 
    Only R13(sp) is needed in mode VexRegUpdSpAtMemAccess.   
 */
-Bool guest_arm_state_requires_precise_mem_exns ( Int minoff, 
-                                                 Int maxoff)
+Bool guest_arm_state_requires_precise_mem_exns (
+        Int minoff, Int maxoff, VexRegisterUpdates pxControl
+     )
 {
    Int sp_min = offsetof(VexGuestARMState, guest_R13);
    Int sp_max = sp_min + 4 - 1;
@@ -1057,7 +1058,7 @@ Bool guest_arm_state_requires_precise_mem_exns ( Int minoff,
 
    if (maxoff < sp_min || minoff > sp_max) {
       /* no overlap with sp */
-      if (vex_control.iropt_register_updates == VexRegUpdSpAtMemAccess)
+      if (pxControl == VexRegUpdSpAtMemAccess)
          return False; // We only need to check stack pointer.
    } else {
       return True;

@@ -386,25 +386,37 @@ void LibVEX_default_VexAbiInfo ( /*OUT*/VexAbiInfo* vbi );
 
 
 /* VexRegisterUpdates specifies when to ensure that the guest state is
-   up to date.
+   up to date, in order of increasing accuracy but increasing expense.
 
-   VexRegUpdSpAtMemAccess : all registers are updated at superblock
-   exits, SP is up to date at memory exception points. The SP is described
-   by the arch specific functions guest_<arch>_state_requires_precise_mem_exns.
+     VexRegUpdSpAtMemAccess: all registers are updated at superblock
+     exits, and SP is also up to date at memory exception points.  The
+     SP is described by the arch specific functions
+     guest_<arch>_state_requires_precise_mem_exns.
 
-   VexRegUpdUnwindregsAtMemAccess : registers needed to make a stack trace are
-   up to date at memory exception points.  Typically, these are PC/SP/FP. The
-   minimal registers are described by the arch specific functions
-   guest_<arch>_state_requires_precise_mem_exns.
+     VexRegUpdUnwindregsAtMemAccess: registers needed to make a stack
+     trace are up to date at memory exception points.  Typically,
+     these are PC/SP/FP.  The minimal registers are described by the
+     arch specific functions guest_<arch>_state_requires_precise_mem_exns.
+     This is what Valgrind sets as the default.
 
-   VexRegUpdAllregsAtMemAccess : all registers up to date at memory exception
-   points.
+     VexRegUpdAllregsAtMemAccess: all registers up to date at memory
+     exception points.  This is what normally might be considered as
+     providing "precise exceptions for memory", but does not
+     necessarily provide precise register values at any other kind of
+     exception.
 
-   VexRegUpdAllregsAtEachInsn : all registers up to date at each instruction. */
-typedef enum { VexRegUpdSpAtMemAccess=0x700,
-               VexRegUpdUnwindregsAtMemAccess,
-               VexRegUpdAllregsAtMemAccess,
-               VexRegUpdAllregsAtEachInsn } VexRegisterUpdates;
+     VexRegUpdAllregsAtEachInsn: all registers up to date at each
+     instruction. 
+*/
+typedef
+   enum {
+      VexRegUpd_INVALID=0x700,
+      VexRegUpdSpAtMemAccess,
+      VexRegUpdUnwindregsAtMemAccess,
+      VexRegUpdAllregsAtMemAccess,
+      VexRegUpdAllregsAtEachInsn
+   }
+   VexRegisterUpdates;
 
 /* Control of Vex's optimiser. */
 
@@ -415,8 +427,14 @@ typedef
       /* Control aggressiveness of iropt.  0 = no opt, 1 = simple
          opts, 2 (default) = max optimisation. */
       Int iropt_level;
-      /* Controls when registers are updated in guest state. */
-      VexRegisterUpdates iropt_register_updates;
+      /* Controls when registers are updated in guest state.  Note
+         that this is the default value.  The VEX client can override
+         this on a per-IRSB basis if it wants.  bb_to_IR() will query
+         the client to ask if it wants a different setting for the
+         block under construction, and that new setting is transported
+         back to LibVEX_Translate, which feeds it to iropt via the
+         various do_iropt_BB calls. */
+      VexRegisterUpdates iropt_register_updates_default;
       /* How aggressive should iropt be in unrolling loops?  Higher
          numbers make it more enthusiastic about loop unrolling.
          Default=120.  A setting of zero disables unrolling.  */
@@ -642,8 +660,19 @@ typedef
          if any, a self check is required for.  Must not be NULL.
          The returned value is a bitmask with a 1 in position i indicating
          that the i'th extent needs a check.  Since there can be at most
-         3 extents, the returned values must be between 0 and 7. */
+         3 extents, the returned values must be between 0 and 7.
+
+         This call also gives the VEX client the opportunity to change
+         the precision of register update preservation as performed by
+         the IR optimiser.  Before the call, VEX will set *pxControl
+         to hold the default register-update status value as specified
+         by VexControl::iropt_register_updates_default as passed to
+         LibVEX_Init at library initialisation time.  The client (in
+         this callback) can if it wants, inspect the value and change
+         it to something different, and that value will be used for
+         subsequent IR optimisation of the block. */
       UInt (*needs_self_check)( /*callback_opaque*/void*,
+                                /*MAYBE_MOD*/VexRegisterUpdates* pxControl,
                                 const VexGuestExtents* );
 
       /* IN: optionally, a callback which allows the caller to add its

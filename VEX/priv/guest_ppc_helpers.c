@@ -711,8 +711,9 @@ void LibVEX_GuestPPC64_initialise ( /*OUT*/VexGuestPPC64State* vex_state )
 
    Only R1 is needed in mode VexRegUpdSpAtMemAccess.   
 */
-Bool guest_ppc32_state_requires_precise_mem_exns ( Int minoff, 
-                                                   Int maxoff )
+Bool guest_ppc32_state_requires_precise_mem_exns (
+        Int minoff, Int maxoff, VexRegisterUpdates pxControl
+     )
 {
    Int lr_min  = offsetof(VexGuestPPC32State, guest_LR);
    Int lr_max  = lr_min + 4 - 1;
@@ -723,7 +724,7 @@ Bool guest_ppc32_state_requires_precise_mem_exns ( Int minoff,
 
    if (maxoff < r1_min || minoff > r1_max) {
       /* no overlap with R1 */
-      if (vex_control.iropt_register_updates == VexRegUpdSpAtMemAccess)
+      if (pxControl == VexRegUpdSpAtMemAccess)
          return False; // We only need to check stack pointer.
    } else {
       return True;
@@ -744,8 +745,9 @@ Bool guest_ppc32_state_requires_precise_mem_exns ( Int minoff,
    return False;
 }
 
-Bool guest_ppc64_state_requires_precise_mem_exns ( Int minoff, 
-                                                   Int maxoff )
+Bool guest_ppc64_state_requires_precise_mem_exns (
+        Int minoff, Int maxoff, VexRegisterUpdates pxControl
+     )
 {
    /* Given that R2 is a Big Deal in the ELF ppc64 ABI, it seems
       prudent to be conservative with it, even though thus far there
@@ -762,7 +764,7 @@ Bool guest_ppc64_state_requires_precise_mem_exns ( Int minoff,
 
    if (maxoff < r1_min || minoff > r1_max) {
       /* no overlap with R1 */
-      if (vex_control.iropt_register_updates == VexRegUpdSpAtMemAccess)
+      if (pxControl == VexRegUpdSpAtMemAccess)
          return False; // We only need to check stack pointer.
    } else {
       return True;

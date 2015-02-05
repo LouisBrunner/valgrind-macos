@@ -165,12 +165,13 @@ typedef
    Top-level BB to IR conversion fn.
    --------------------------------------------------------------- */
 
-/* See detailed comment in bb_to_IR.c. */
+/* See detailed comment in guest_generic_bb_to_IR.c. */
 extern
 IRSB* bb_to_IR ( 
          /*OUT*/VexGuestExtents* vge,
          /*OUT*/UInt*            n_sc_extents,
          /*OUT*/UInt*            n_guest_instrs, /* stats only */
+         /*MOD*/VexRegisterUpdates* pxControl,
          /*IN*/ void*            callback_opaque,
          /*IN*/ DisOneInstrFn    dis_instr_fn,
          /*IN*/ const UChar*     guest_code,
@@ -182,7 +183,9 @@ IRSB* bb_to_IR (
          /*IN*/ const VexArchInfo* archinfo_guest,
          /*IN*/ const VexAbiInfo*  abiinfo_both,
          /*IN*/ IRType           guest_word_type,
-         /*IN*/ UInt             (*needs_self_check)(void*,const VexGuestExtents*),
+         /*IN*/ UInt             (*needs_self_check)
+                                    (void*, /*MB_MOD*/VexRegisterUpdates*,
+                                            const VexGuestExtents*),
          /*IN*/ Bool             (*preamble_function)(void*,IRSB*),
          /*IN*/ Int              offB_GUEST_CMSTART,
          /*IN*/ Int              offB_GUEST_CMLEN,

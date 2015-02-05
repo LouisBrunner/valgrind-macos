@@ -74,7 +74,8 @@ IRExpr* guest_x86_spechelper ( const HChar* function_name,
    precise memory exceptions.  This is logically part of the guest
    state description. */
 extern 
-Bool guest_x86_state_requires_precise_mem_exns ( Int, Int );
+Bool guest_x86_state_requires_precise_mem_exns ( Int, Int,
+                                                 VexRegisterUpdates );
 
 extern
 VexGuestLayout x86guest_layout;

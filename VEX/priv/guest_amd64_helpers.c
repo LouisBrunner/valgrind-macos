@@ -3988,8 +3988,9 @@ void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state )
 
    Only %RSP is needed in mode VexRegUpdSpAtMemAccess.   
 */
-Bool guest_amd64_state_requires_precise_mem_exns ( Int minoff,
-                                                   Int maxoff)
+Bool guest_amd64_state_requires_precise_mem_exns (
+        Int minoff, Int maxoff, VexRegisterUpdates pxControl
+     )
 {
    Int rbp_min = offsetof(VexGuestAMD64State, guest_RBP);
    Int rbp_max = rbp_min + 8 - 1;
@@ -4000,7 +4001,7 @@ Bool guest_amd64_state_requires_precise_mem_exns ( Int minoff,
 
    if (maxoff < rsp_min || minoff > rsp_max) {
       /* no overlap with rsp */
-      if (vex_control.iropt_register_updates == VexRegUpdSpAtMemAccess)
+      if (pxControl == VexRegUpdSpAtMemAccess)
          return False; // We only need to check stack pointer.
    } else {
       return True;

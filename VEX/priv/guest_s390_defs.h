@@ -60,10 +60,11 @@ IRExpr* guest_s390x_spechelper ( const HChar *function_name,
                                  Int n_precedingStmts);
 
 
-/* Describes to the optimser which part of the guest state require
+/* Describes to the optimiser which part of the guest state require
    precise memory exceptions.  This is logically part of the guest
    state description. */
-Bool guest_s390x_state_requires_precise_mem_exns ( Int, Int );
+Bool guest_s390x_state_requires_precise_mem_exns ( Int, Int,
+                                                   VexRegisterUpdates );
 
 extern VexGuestLayout s390xGuest_layout;
 

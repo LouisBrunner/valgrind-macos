@@ -1317,8 +1317,9 @@ void LibVEX_GuestARM64_initialise ( /*OUT*/VexGuestARM64State* vex_state )
    We enforce precise exns for guest SP, PC, 29(FP), 30(LR).
    That might be overkill (for 29 and 30); I don't know.
 */
-Bool guest_arm64_state_requires_precise_mem_exns ( Int minoff, 
-                                                   Int maxoff)
+Bool guest_arm64_state_requires_precise_mem_exns (
+        Int minoff, Int maxoff, VexRegisterUpdates pxControl
+     )
 {
    Int xsp_min = offsetof(VexGuestARM64State, guest_XSP);
    Int xsp_max = xsp_min + 8 - 1;
@@ -1327,7 +1328,7 @@ Bool guest_arm64_state_requires_precise_mem_exns ( Int minoff,
 
    if (maxoff < xsp_min || minoff > xsp_max) {
       /* no overlap with xsp */
-      if (vex_control.iropt_register_updates == VexRegUpdSpAtMemAccess)
+      if (pxControl == VexRegUpdSpAtMemAccess)
          return False; // We only need to check stack pointer.
    } else {
       return True;

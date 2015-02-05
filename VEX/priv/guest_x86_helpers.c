@@ -2778,8 +2778,9 @@ void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state )
 
    Only %ESP is needed in mode VexRegUpdSpAtMemAccess.   
 */
-Bool guest_x86_state_requires_precise_mem_exns ( Int minoff, 
-                                                 Int maxoff)
+Bool guest_x86_state_requires_precise_mem_exns (
+        Int minoff, Int maxoff, VexRegisterUpdates pxControl
+     )
 {
    Int ebp_min = offsetof(VexGuestX86State, guest_EBP);
    Int ebp_max = ebp_min + 4 - 1;
@@ -2790,7 +2791,7 @@ Bool guest_x86_state_requires_precise_mem_exns ( Int minoff,
 
    if (maxoff < esp_min || minoff > esp_max) {
       /* no overlap with esp */
-      if (vex_control.iropt_register_updates == VexRegUpdSpAtMemAccess)
+      if (pxControl == VexRegUpdSpAtMemAccess)
          return False; // We only need to check stack pointer.
    } else {
       return True;

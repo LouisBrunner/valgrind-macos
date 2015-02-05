@@ -287,7 +287,9 @@ void LibVEX_GuestMIPS64_initialise ( /*OUT*/ VexGuestMIPS64State * vex_state )
 
    Only SP is needed in mode VexRegUpdSpAtMemAccess.
 */
-Bool guest_mips32_state_requires_precise_mem_exns(Int minoff, Int maxoff)
+Bool guest_mips32_state_requires_precise_mem_exns (
+        Int minoff, Int maxoff, VexRegisterUpdates pxControl
+     )
 {
    Int sp_min = offsetof(VexGuestMIPS32State, guest_r29);
    Int sp_max = sp_min + 4 - 1;
@@ -296,7 +298,7 @@ Bool guest_mips32_state_requires_precise_mem_exns(Int minoff, Int maxoff)
 
    if (maxoff < sp_min || minoff > sp_max) {
       /* no overlap with sp */
-      if (vex_control.iropt_register_updates == VexRegUpdSpAtMemAccess)
+      if (pxControl == VexRegUpdSpAtMemAccess)
          return False;  /* We only need to check stack pointer. */
    } else {
       return True;
@@ -322,7 +324,9 @@ Bool guest_mips32_state_requires_precise_mem_exns(Int minoff, Int maxoff)
    return False;
 }
 
-Bool guest_mips64_state_requires_precise_mem_exns ( Int minoff, Int maxoff )
+Bool guest_mips64_state_requires_precise_mem_exns (
+        Int minoff, Int maxoff, VexRegisterUpdates pxControl
+     )
 {
    Int sp_min = offsetof(VexGuestMIPS64State, guest_r29);
    Int sp_max = sp_min + 8 - 1;
@@ -331,7 +335,7 @@ Bool guest_mips64_state_requires_precise_mem_exns ( Int minoff, Int maxoff )
 
    if ( maxoff < sp_min || minoff > sp_max ) {
       /* no overlap with sp */
-      if (vex_control.iropt_register_updates == VexRegUpdSpAtMemAccess)
+      if (pxControl == VexRegUpdSpAtMemAccess)
          return False;  /* We only need to check stack pointer. */
    } else {
       return True;

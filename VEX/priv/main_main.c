@@ -94,13 +94,13 @@ static  Int sdiv32 (  Int x,  Int y ) { return x/y; }
 void LibVEX_default_VexControl ( /*OUT*/ VexControl* vcon )
 {
    vex_bzero(vcon, sizeof(*vcon));
-   vcon->iropt_verbosity            = 0;
-   vcon->iropt_level                = 2;
-   vcon->iropt_register_updates     = VexRegUpdUnwindregsAtMemAccess;
-   vcon->iropt_unroll_thresh        = 120;
-   vcon->guest_max_insns            = 60;
-   vcon->guest_chase_thresh         = 10;
-   vcon->guest_chase_cond           = False;
+   vcon->iropt_verbosity                = 0;
+   vcon->iropt_level                    = 2;
+   vcon->iropt_register_updates_default = VexRegUpdUnwindregsAtMemAccess;
+   vcon->iropt_unroll_thresh            = 120;
+   vcon->guest_max_insns                = 60;
+   vcon->guest_chase_thresh             = 10;
+   vcon->guest_chase_cond               = False;
 }
 
 
@@ -229,7 +229,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
                                   const void*, const void*, const void*,
                                   const void* );
    IRExpr*      (*specHelper)   ( const HChar*, IRExpr**, IRStmt**, Int );
-   Bool         (*preciseMemExnsFn) ( Int, Int );
+   Bool         (*preciseMemExnsFn) ( Int, Int, VexRegisterUpdates );
 
    DisOneInstrFn disInstrFn;
 
@@ -683,9 +683,14 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
                    " Front end "
                    "------------------------\n\n");
 
+   VexRegisterUpdates pxControl = vex_control.iropt_register_updates_default;
+   vassert(pxControl >= VexRegUpdSpAtMemAccess
+           && pxControl <= VexRegUpdAllregsAtEachInsn);
+
    irsb = bb_to_IR ( vta->guest_extents,
                      &res.n_sc_extents,
                      &res.n_guest_instrs,
+                     &pxControl,
                      vta->callback_opaque,
                      disInstrFn,
                      vta->guest_bytes, 
@@ -719,6 +724,10 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
       vassert(vta->guest_extents->len[i] < 10000); /* sanity */
    }
 
+   /* bb_to_IR() could have caused pxControl to change. */
+   vassert(pxControl >= VexRegUpdSpAtMemAccess
+           && pxControl <= VexRegUpdAllregsAtEachInsn);
+
    /* If debugging, show the raw guest bytes for this bb. */
    if (0 || (vex_traceflags & VEX_TRACE_FE)) {
       if (vta->guest_extents->n_used > 1) {
@@ -746,7 +755,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
    vexAllocSanityCheck();
 
    /* Clean it up, hopefully a lot. */
-   irsb = do_iropt_BB ( irsb, specHelper, preciseMemExnsFn, 
+   irsb = do_iropt_BB ( irsb, specHelper, preciseMemExnsFn, pxControl,
                               vta->guest_bytes_addr,
                               vta->arch_guest );
    sanityCheckIRSB( irsb, "after initial iropt", 
@@ -811,7 +820,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
 
    /* Turn it into virtual-registerised code.  Build trees -- this
       also throws away any dead bindings. */
-   max_ga = ado_treebuild_BB( irsb, preciseMemExnsFn );
+   max_ga = ado_treebuild_BB( irsb, preciseMemExnsFn, pxControl );
 
    if (vta->finaltidy) {
       irsb = vta->finaltidy(irsb);

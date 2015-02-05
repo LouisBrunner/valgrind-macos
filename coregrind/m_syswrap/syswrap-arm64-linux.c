@@ -1032,6 +1032,9 @@ static SyscallTableEntry syscall_main_table[] = {
    GENX_(__NR_mlock,             sys_mlock),             // 228
    GENX_(__NR_mlockall,          sys_mlockall),          // 230
    GENX_(__NR_madvise,           sys_madvise),           // 233
+   LINX_(__NR_mbind,             sys_mbind),             // 235
+   LINXY(__NR_get_mempolicy,     sys_get_mempolicy),     // 236
+   LINX_(__NR_set_mempolicy,     sys_set_mempolicy),     // 237
    GENXY(__NR_wait4,             sys_wait4),             // 260
 
    LINXY(__NR_process_vm_readv,  sys_process_vm_readv),  // 270

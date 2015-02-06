@@ -2534,12 +2534,13 @@ static ULong step_le_u_encoded_literal ( DiCursor* data, UInt size )
 
 static Long step_le_s_encoded_literal ( DiCursor* data, UInt size )
 {
-   Long s64 = step_le_u_encoded_literal( data, size );
+   ULong u64 = step_le_u_encoded_literal( data, size );
+   Long s64;
    switch (size) {
       case 8:  break;
-      case 4:  s64 <<= 32; s64 >>= 32; break;
-      case 2:  s64 <<= 48; s64 >>= 48; break;
-      case 1:  s64 <<= 56; s64 >>= 56; break;
+      case 4:  s64 = u64 << 32; s64 >>= 32; break;
+      case 2:  s64 = u64 << 48; s64 >>= 48; break;
+      case 1:  s64 = u64 << 56; s64 >>= 56; break;
       default: vg_assert(0); /*NOTREACHED*/ return 0;
    }
    return s64;

@@ -40,4 +40,4 @@ vbit_test_CPPFLAGS     = $(AM_CPPFLAGS_PRI) \
 vbit_test_CFLAGS       = $(AM_CFLAGS_PRI) -std=c99
 vbit_test_DEPENDENCIES = 
 vbit_test_LDADD        = 
-vbit_test_LDFLAGS      = $(AM_CFLAGS_PRI) -std=c99
+vbit_test_LDFLAGS      = $(AM_CFLAGS_PRI) -std=c99 -static-libubsan

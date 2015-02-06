@@ -554,7 +554,7 @@ static Bool getplatformoffset (SizeT *result)
    static Bool getplatformoffset_called = False;
 
    static Bool lm_modid_offset_found = False;
-   static SizeT lm_modid_offset = 1<<31; // Rubbish initial value.
+   static SizeT lm_modid_offset = 1u << 31; // Rubbish initial value.
    // lm_modid_offset is a magic offset, retrieved using an external program.
 
    if (!getplatformoffset_called) {

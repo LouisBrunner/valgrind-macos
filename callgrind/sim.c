@@ -183,8 +183,8 @@ static void cachesim_initcache(cache_t config, cache_t2* c)
    c->sets           = (c->size / c->line_size) / c->assoc;
    c->sets_min_1     = c->sets - 1;
    c->line_size_bits = VG_(log2)(c->line_size);
-   c->tag_shift      = c->line_size_bits + VG_(log2)(c->sets);
-   c->tag_mask       = ~((1<<c->tag_shift)-1);
+   c->tag_shift     = c->line_size_bits + VG_(log2)(c->sets);
+   c->tag_mask       = ~((1u<<c->tag_shift)-1);
 
    /* Can bits in tag entries be used for flags?
     * Should be always true as MIN_LINE_SIZE >= 16 */
@@ -650,7 +650,7 @@ void cacheuse_initcache(cache_t2* c)
     else {
 	int bytes_per_bit = c->line_size/32;
 	start_mask = 1;
-	end_mask   = 1 << 31;
+	end_mask   = 1u << 31;
 	for(i=0;i<c->line_size;i++) {
 	    c->line_start_mask[i] = start_val;
 	    c->line_end_mask[c->line_size-i-1] = end_val;

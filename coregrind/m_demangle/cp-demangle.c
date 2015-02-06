@@ -4071,8 +4071,8 @@ cplus_demangle_print_callback (int options,
 
   {
 #ifdef CP_DYNAMIC_ARRAYS
-    __extension__ struct d_saved_scope scopes[dpi.num_saved_scopes];
-    __extension__ struct d_print_template temps[dpi.num_copy_templates];
+    __extension__ struct d_saved_scope scopes[dpi.num_saved_scopes ?: 1];
+    __extension__ struct d_print_template temps[dpi.num_copy_templates ?: 1];
 
     dpi.saved_scopes = scopes;
     dpi.copy_templates = temps;

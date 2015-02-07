@@ -992,6 +992,10 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_mq_timedreceive,   sys_mq_timedreceive),   // 183
    LINX_(__NR_mq_notify,         sys_mq_notify),         // 184
    LINXY(__NR_mq_getsetattr,     sys_mq_getsetattr),     // 185
+   LINX_(__NR_msgget,            sys_msgget),            // 186
+   LINXY(__NR_msgctl,            sys_msgctl),            // 187
+   LINXY(__NR_msgrcv,            sys_msgrcv),            // 188
+   LINX_(__NR_msgsnd,            sys_msgsnd),            // 189
    LINX_(__NR_semget,            sys_semget),            // 190
    LINXY(__NR_semctl,            sys_semctl),            // 191
    LINX_(__NR_semtimedop,        sys_semtimedop),        // 192
@@ -1323,10 +1327,6 @@ static SyscallTableEntry syscall_main_table[] = {
 //ZZ    LINXY(__NR_recvfrom,          sys_recvfrom),       // 292
 //ZZ    LINX_(__NR_semget,            sys_semget),         // 299
 //ZZ    LINXY(__NR_semctl,            sys_semctl),         // 300
-//ZZ    LINX_(__NR_msgget,            sys_msgget),         
-//ZZ    LINX_(__NR_msgsnd,            sys_msgsnd),          
-//ZZ    LINXY(__NR_msgrcv,            sys_msgrcv),         
-//ZZ    LINXY(__NR_msgctl,            sys_msgctl),         // 304
 //ZZ 
 //ZZ    LINX_(__NR_request_key,       sys_request_key),    // 287
 //ZZ //   LINX_(__NR_ioprio_set,        sys_ioprio_set),     // 289

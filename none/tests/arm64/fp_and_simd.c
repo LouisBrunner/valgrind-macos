@@ -1402,15 +1402,15 @@ void test_SMAXV ( void )
      printf("\n"); \
   }
 
-//======== FCMEQ_D_D ========//
+//======== FCMEQ_D_D_D ========//
 
-#define GEN_test_FCMEQ_D_D \
-  __attribute__((noinline)) static void test_FCMEQ_D_D ( void ) \
+#define GEN_test_FCMEQ_D_D_D \
+  __attribute__((noinline)) static void test_FCMEQ_D_D_D ( void ) \
   { \
      V128 block[4]; \
      randBlock_Doubles(&block[0], 3); \
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
-     showBlock("FCMEQ_D_D before", &block[0], 4); \
+     showBlock("FCMEQ_D_D_D before", &block[0], 4); \
      __asm__ __volatile__( \
         "ldr x9,  [%0, 48];  msr nzcv, x9; " \
         "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
@@ -1419,19 +1419,19 @@ void test_SMAXV ( void )
         "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
-     showBlock("FCMEQ_D_D after", &block[0], 4); \
+     showBlock("FCMEQ_D_D_D after", &block[0], 4); \
      printf("\n"); \
   }
 
-//======== FCMEQ_S_S ========//
+//======== FCMEQ_S_S_S ========//
 
-#define GEN_test_FCMEQ_S_S \
-  __attribute__((noinline)) static void test_FCMEQ_S_S ( void ) \
+#define GEN_test_FCMEQ_S_S_S \
+  __attribute__((noinline)) static void test_FCMEQ_S_S_S ( void ) \
   { \
      V128 block[4]; \
      randBlock_Floats(&block[0], 3); \
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
-     showBlock("FCMEQ_S_S before", &block[0], 4); \
+     showBlock("FCMEQ_S_S_S before", &block[0], 4); \
      __asm__ __volatile__( \
         "ldr x9,  [%0, 48];  msr nzcv, x9; " \
         "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
@@ -1440,19 +1440,19 @@ void test_SMAXV ( void )
         "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
-     showBlock("FCMEQ_S_S after", &block[0], 4); \
+     showBlock("FCMEQ_S_S_S after", &block[0], 4); \
      printf("\n"); \
   }
 
-//======== FCMGE_D_D ========//
+//======== FCMGE_D_D_D ========//
 
-#define GEN_test_FCMGE_D_D \
-  __attribute__((noinline)) static void test_FCMGE_D_D ( void ) \
+#define GEN_test_FCMGE_D_D_D \
+  __attribute__((noinline)) static void test_FCMGE_D_D_D ( void ) \
   { \
      V128 block[4]; \
      randBlock_Doubles(&block[0], 3); \
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
-     showBlock("FCMGE_D_D before", &block[0], 4); \
+     showBlock("FCMGE_D_D_D before", &block[0], 4); \
      __asm__ __volatile__( \
         "ldr x9,  [%0, 48];  msr nzcv, x9; " \
         "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
@@ -1461,19 +1461,19 @@ void test_SMAXV ( void )
         "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
-     showBlock("FCMGE_D_D after", &block[0], 4); \
+     showBlock("FCMGE_D_D_D after", &block[0], 4); \
      printf("\n"); \
   }
 
-//======== FCMGE_S_S ========//
+//======== FCMGE_S_S_S ========//
 
-#define GEN_test_FCMGE_S_S \
-  __attribute__((noinline)) static void test_FCMGE_S_S ( void ) \
+#define GEN_test_FCMGE_S_S_S \
+  __attribute__((noinline)) static void test_FCMGE_S_S_S ( void ) \
   { \
      V128 block[4]; \
      randBlock_Floats(&block[0], 3); \
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
-     showBlock("FCMGE_S_S before", &block[0], 4); \
+     showBlock("FCMGE_S_S_S before", &block[0], 4); \
      __asm__ __volatile__( \
         "ldr x9,  [%0, 48];  msr nzcv, x9; " \
         "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
@@ -1482,19 +1482,19 @@ void test_SMAXV ( void )
         "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
-     showBlock("FCMGE_S_S after", &block[0], 4); \
+     showBlock("FCMGE_S_S_S after", &block[0], 4); \
      printf("\n"); \
   }
 
-//======== FCMGT_D_D ========//
+//======== FCMGT_D_D_D ========//
 
-#define GEN_test_FCMGT_D_D \
-  __attribute__((noinline)) static void test_FCMGT_D_D ( void ) \
+#define GEN_test_FCMGT_D_D_D \
+  __attribute__((noinline)) static void test_FCMGT_D_D_D ( void ) \
   { \
      V128 block[4]; \
      randBlock_Doubles(&block[0], 3); \
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
-     showBlock("FCMGT_D_D before", &block[0], 4); \
+     showBlock("FCMGT_D_D_D before", &block[0], 4); \
      __asm__ __volatile__( \
         "ldr x9,  [%0, 48];  msr nzcv, x9; " \
         "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
@@ -1503,19 +1503,19 @@ void test_SMAXV ( void )
         "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
-     showBlock("FCMGT_D_D after", &block[0], 4); \
+     showBlock("FCMGT_D_D_D after", &block[0], 4); \
      printf("\n"); \
   }
 
-//======== FCMGT_S_S ========//
+//======== FCMGT_S_S_S ========//
 
-#define GEN_test_FCMGT_S_S \
-  __attribute__((noinline)) static void test_FCMGT_S_S ( void ) \
+#define GEN_test_FCMGT_S_S_S \
+  __attribute__((noinline)) static void test_FCMGT_S_S_S ( void ) \
   { \
      V128 block[4]; \
      randBlock_Floats(&block[0], 3); \
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
-     showBlock("FCMGT_S_S before", &block[0], 4); \
+     showBlock("FCMGT_S_S_S before", &block[0], 4); \
      __asm__ __volatile__( \
         "ldr x9,  [%0, 48];  msr nzcv, x9; " \
         "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
@@ -1524,19 +1524,19 @@ void test_SMAXV ( void )
         "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
-     showBlock("FCMGT_S_S after", &block[0], 4); \
+     showBlock("FCMGT_S_S_S after", &block[0], 4); \
      printf("\n"); \
   }
 
-//======== FACGT_D_D ========//
+//======== FACGT_D_D_D ========//
 
-#define GEN_test_FACGT_D_D \
-  __attribute__((noinline)) static void test_FACGT_D_D ( void ) \
+#define GEN_test_FACGT_D_D_D \
+  __attribute__((noinline)) static void test_FACGT_D_D_D ( void ) \
   { \
      V128 block[4]; \
      randBlock_Doubles(&block[0], 3); \
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
-     showBlock("FACGT_D_D before", &block[0], 4); \
+     showBlock("FACGT_D_D_D before", &block[0], 4); \
      __asm__ __volatile__( \
         "ldr x9,  [%0, 48];  msr nzcv, x9; " \
         "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
@@ -1545,19 +1545,19 @@ void test_SMAXV ( void )
         "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
-     showBlock("FACGT_D_D after", &block[0], 4); \
+     showBlock("FACGT_D_D_D after", &block[0], 4); \
      printf("\n"); \
   }
 
-//======== FACGT_S_S ========//
+//======== FACGT_S_S_S ========//
 
-#define GEN_test_FACGT_S_S \
-  __attribute__((noinline)) static void test_FACGT_S_S ( void ) \
+#define GEN_test_FACGT_S_S_S \
+  __attribute__((noinline)) static void test_FACGT_S_S_S ( void ) \
   { \
      V128 block[4]; \
      randBlock_Floats(&block[0], 3); \
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
-     showBlock("FACGT_S_S before", &block[0], 4); \
+     showBlock("FACGT_S_S_S before", &block[0], 4); \
      __asm__ __volatile__( \
         "ldr x9,  [%0, 48];  msr nzcv, x9; " \
         "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
@@ -1566,19 +1566,19 @@ void test_SMAXV ( void )
         "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
-     showBlock("FACGT_S_S after", &block[0], 4); \
+     showBlock("FACGT_S_S_S after", &block[0], 4); \
      printf("\n"); \
   }
 
-//======== FACGE_D_D ========//
+//======== FACGE_D_D_D ========//
 
-#define GEN_test_FACGE_D_D \
-  __attribute__((noinline)) static void test_FACGE_D_D ( void ) \
+#define GEN_test_FACGE_D_D_D \
+  __attribute__((noinline)) static void test_FACGE_D_D_D ( void ) \
   { \
      V128 block[4]; \
      randBlock_Doubles(&block[0], 3); \
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
-     showBlock("FACGE_D_D before", &block[0], 4); \
+     showBlock("FACGE_D_D_D before", &block[0], 4); \
      __asm__ __volatile__( \
         "ldr x9,  [%0, 48];  msr nzcv, x9; " \
         "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
@@ -1587,19 +1587,19 @@ void test_SMAXV ( void )
         "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
-     showBlock("FACGE_D_D after", &block[0], 4); \
+     showBlock("FACGE_D_D_D after", &block[0], 4); \
      printf("\n"); \
   }
 
-//======== FACGE_S_S ========//
+//======== FACGE_S_S_S ========//
 
-#define GEN_test_FACGE_S_S \
-  __attribute__((noinline)) static void test_FACGE_S_S ( void ) \
+#define GEN_test_FACGE_S_S_S \
+  __attribute__((noinline)) static void test_FACGE_S_S_S ( void ) \
   { \
      V128 block[4]; \
      randBlock_Floats(&block[0], 3); \
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
-     showBlock("FACGE_S_S before", &block[0], 4); \
+     showBlock("FACGE_S_S_S before", &block[0], 4); \
      __asm__ __volatile__( \
         "ldr x9,  [%0, 48];  msr nzcv, x9; " \
         "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
@@ -1608,19 +1608,19 @@ void test_SMAXV ( void )
         "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
-     showBlock("FACGE_S_S after", &block[0], 4); \
+     showBlock("FACGE_S_S_S after", &block[0], 4); \
      printf("\n"); \
   }
 
-//======== FCMEQ_Z_D ========//
+//======== FCMEQ_D_D_Z ========//
 
-#define GEN_test_FCMEQ_Z_D \
-  __attribute__((noinline)) static void test_FCMEQ_Z_D ( void ) \
+#define GEN_test_FCMEQ_D_D_Z \
+  __attribute__((noinline)) static void test_FCMEQ_D_D_Z ( void ) \
   { \
      V128 block[4]; \
      randBlock_Doubles(&block[0], 3); \
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
-     showBlock("FCMEQ_Z_D before", &block[0], 4); \
+     showBlock("FCMEQ_D_D_Z before", &block[0], 4); \
      __asm__ __volatile__( \
         "ldr x9,  [%0, 48];  msr nzcv, x9; " \
         "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
@@ -1629,19 +1629,19 @@ void test_SMAXV ( void )
         "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
-     showBlock("FCMEQ_Z_D after", &block[0], 4); \
+     showBlock("FCMEQ_D_D_Z after", &block[0], 4); \
      printf("\n"); \
   }
 
-//======== FCMEQ_Z_S ========//
+//======== FCMEQ_S_S_Z ========//
 
-#define GEN_test_FCMEQ_Z_S \
-  __attribute__((noinline)) static void test_FCMEQ_Z_S ( void ) \
+#define GEN_test_FCMEQ_S_S_Z \
+  __attribute__((noinline)) static void test_FCMEQ_S_S_Z ( void ) \
   { \
      V128 block[4]; \
      randBlock_Floats(&block[0], 3); \
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
-     showBlock("FCMEQ_Z_S before", &block[0], 4); \
+     showBlock("FCMEQ_S_S_Z before", &block[0], 4); \
      __asm__ __volatile__( \
         "ldr x9,  [%0, 48];  msr nzcv, x9; " \
         "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
@@ -1650,19 +1650,19 @@ void test_SMAXV ( void )
         "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
-     showBlock("FCMEQ_Z_S after", &block[0], 4); \
+     showBlock("FCMEQ_S_S_Z after", &block[0], 4); \
      printf("\n"); \
   }
 
-//======== FCMGE_Z_D ========//
+//======== FCMGE_D_D_Z ========//
 
-#define GEN_test_FCMGE_Z_D \
-  __attribute__((noinline)) static void test_FCMGE_Z_D ( void ) \
+#define GEN_test_FCMGE_D_D_Z \
+  __attribute__((noinline)) static void test_FCMGE_D_D_Z ( void ) \
   { \
      V128 block[4]; \
      randBlock_Doubles(&block[0], 3); \
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
-     showBlock("FCMGE_Z_D before", &block[0], 4); \
+     showBlock("FCMGE_D_D_Z before", &block[0], 4); \
      __asm__ __volatile__( \
         "ldr x9,  [%0, 48];  msr nzcv, x9; " \
         "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
@@ -1671,19 +1671,19 @@ void test_SMAXV ( void )
         "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
-     showBlock("FCMGE_Z_D after", &block[0], 4); \
+     showBlock("FCMGE_D_D_Z after", &block[0], 4); \
      printf("\n"); \
   }
 
-//======== FCMGE_Z_S ========//
+//======== FCMGE_S_S_Z ========//
 
-#define GEN_test_FCMGE_Z_S \
-  __attribute__((noinline)) static void test_FCMGE_Z_S ( void ) \
+#define GEN_test_FCMGE_S_S_Z \
+  __attribute__((noinline)) static void test_FCMGE_S_S_Z ( void ) \
   { \
      V128 block[4]; \
      randBlock_Floats(&block[0], 3); \
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
-     showBlock("FCMGE_Z_S before", &block[0], 4); \
+     showBlock("FCMGE_S_S_Z before", &block[0], 4); \
      __asm__ __volatile__( \
         "ldr x9,  [%0, 48];  msr nzcv, x9; " \
         "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
@@ -1692,19 +1692,19 @@ void test_SMAXV ( void )
         "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
-     showBlock("FCMGE_Z_S after", &block[0], 4); \
+     showBlock("FCMGE_S_S_Z after", &block[0], 4); \
      printf("\n"); \
   }
 
-//======== FCMGT_Z_D ========//
+//======== FCMGT_D_D_Z ========//
 
-#define GEN_test_FCMGT_Z_D \
-  __attribute__((noinline)) static void test_FCMGT_Z_D ( void ) \
+#define GEN_test_FCMGT_D_D_Z \
+  __attribute__((noinline)) static void test_FCMGT_D_D_Z ( void ) \
   { \
      V128 block[4]; \
      randBlock_Doubles(&block[0], 3); \
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
-     showBlock("FCMGT_Z_D before", &block[0], 4); \
+     showBlock("FCMGT_D_D_Z before", &block[0], 4); \
      __asm__ __volatile__( \
         "ldr x9,  [%0, 48];  msr nzcv, x9; " \
         "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
@@ -1713,19 +1713,19 @@ void test_SMAXV ( void )
         "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
-     showBlock("FCMGT_Z_D after", &block[0], 4); \
+     showBlock("FCMGT_D_D_Z after", &block[0], 4); \
      printf("\n"); \
   }
 
-//======== FCMGT_Z_S ========//
+//======== FCMGT_S_S_Z ========//
 
-#define GEN_test_FCMGT_Z_S \
-  __attribute__((noinline)) static void test_FCMGT_Z_S ( void ) \
+#define GEN_test_FCMGT_S_S_Z \
+  __attribute__((noinline)) static void test_FCMGT_S_S_Z ( void ) \
   { \
      V128 block[4]; \
      randBlock_Floats(&block[0], 3); \
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
-     showBlock("FCMGT_Z_S before", &block[0], 4); \
+     showBlock("FCMGT_S_S_Z before", &block[0], 4); \
      __asm__ __volatile__( \
         "ldr x9,  [%0, 48];  msr nzcv, x9; " \
         "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
@@ -1734,19 +1734,19 @@ void test_SMAXV ( void )
         "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
-     showBlock("FCMGT_Z_S after", &block[0], 4); \
+     showBlock("FCMGT_S_S_Z after", &block[0], 4); \
      printf("\n"); \
   }
 
-//======== FCMLE_Z_D ========//
+//======== FCMLE_D_D_Z ========//
 
-#define GEN_test_FCMLE_Z_D \
-  __attribute__((noinline)) static void test_FCMLE_Z_D ( void ) \
+#define GEN_test_FCMLE_D_D_Z \
+  __attribute__((noinline)) static void test_FCMLE_D_D_Z ( void ) \
   { \
      V128 block[4]; \
      randBlock_Doubles(&block[0], 3); \
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
-     showBlock("FCMLE_Z_D before", &block[0], 4); \
+     showBlock("FCMLE_D_D_Z before", &block[0], 4); \
      __asm__ __volatile__( \
         "ldr x9,  [%0, 48];  msr nzcv, x9; " \
         "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
@@ -1755,19 +1755,19 @@ void test_SMAXV ( void )
         "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
-     showBlock("FCMLE_Z_D after", &block[0], 4); \
+     showBlock("FCMLE_D_D_Z after", &block[0], 4); \
      printf("\n"); \
   }
 
-//======== FCMLE_Z_S ========//
+//======== FCMLE_S_S_Z ========//
 
-#define GEN_test_FCMLE_Z_S \
-  __attribute__((noinline)) static void test_FCMLE_Z_S ( void ) \
+#define GEN_test_FCMLE_S_S_Z \
+  __attribute__((noinline)) static void test_FCMLE_S_S_Z ( void ) \
   { \
      V128 block[4]; \
      randBlock_Floats(&block[0], 3); \
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
-     showBlock("FCMLE_Z_S before", &block[0], 4); \
+     showBlock("FCMLE_S_S_Z before", &block[0], 4); \
      __asm__ __volatile__( \
         "ldr x9,  [%0, 48];  msr nzcv, x9; " \
         "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
@@ -1776,19 +1776,19 @@ void test_SMAXV ( void )
         "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
-     showBlock("FCMLE_Z_S after", &block[0], 4); \
+     showBlock("FCMLE_S_S_Z after", &block[0], 4); \
      printf("\n"); \
   }
 
-//======== FCMLT_Z_D ========//
+//======== FCMLT_D_D_Z ========//
 
-#define GEN_test_FCMLT_Z_D \
-  __attribute__((noinline)) static void test_FCMLT_Z_D ( void ) \
+#define GEN_test_FCMLT_D_D_Z \
+  __attribute__((noinline)) static void test_FCMLT_D_D_Z ( void ) \
   { \
      V128 block[4]; \
      randBlock_Doubles(&block[0], 3); \
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
-     showBlock("FCMLT_Z_D before", &block[0], 4); \
+     showBlock("FCMLT_D_D_Z before", &block[0], 4); \
      __asm__ __volatile__( \
         "ldr x9,  [%0, 48];  msr nzcv, x9; " \
         "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
@@ -1797,19 +1797,19 @@ void test_SMAXV ( void )
         "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
-     showBlock("FCMLT_Z_D after", &block[0], 4); \
+     showBlock("FCMLT_D_D_Z after", &block[0], 4); \
      printf("\n"); \
   }
 
-//======== FCMLT_Z_S ========//
+//======== FCMLT_S_S_Z ========//
 
-#define GEN_test_FCMLT_Z_S \
-  __attribute__((noinline)) static void test_FCMLT_Z_S ( void ) \
+#define GEN_test_FCMLT_S_S_Z \
+  __attribute__((noinline)) static void test_FCMLT_S_S_Z ( void ) \
   { \
      V128 block[4]; \
      randBlock_Floats(&block[0], 3); \
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
-     showBlock("FCMLT_Z_S before", &block[0], 4); \
+     showBlock("FCMLT_S_S_Z before", &block[0], 4); \
      __asm__ __volatile__( \
         "ldr x9,  [%0, 48];  msr nzcv, x9; " \
         "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
@@ -1818,7 +1818,7 @@ void test_SMAXV ( void )
         "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
-     showBlock("FCMLT_Z_S after", &block[0], 4); \
+     showBlock("FCMLT_S_S_Z after", &block[0], 4); \
      printf("\n"); \
   }
 
@@ -1906,15 +1906,15 @@ void test_SMAXV ( void )
      printf("\n"); \
   }
 
-//======== FCMP_Z_D ========//
+//======== FCMP_D_Z ========//
 
-#define GEN_test_FCMP_Z_D \
-  __attribute__((noinline)) static void test_FCMP_Z_D ( void ) \
+#define GEN_test_FCMP_D_Z \
+  __attribute__((noinline)) static void test_FCMP_D_Z ( void ) \
   { \
      V128 block[4]; \
      randBlock_Doubles(&block[0], 3); \
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
-     showBlock("FCMP_Z_D before", &block[0], 4); \
+     showBlock("FCMP_D_Z before", &block[0], 4); \
      __asm__ __volatile__( \
         "ldr x9,  [%0, 48];  msr nzcv, x9; " \
         "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
@@ -1923,19 +1923,19 @@ void test_SMAXV ( void )
         "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
-     showBlock("FCMP_Z_D after", &block[0], 4); \
+     showBlock("FCMP_D_Z after", &block[0], 4); \
      printf("\n"); \
   }
 
-//======== FCMP_Z_S ========//
+//======== FCMP_S_Z ========//
 
-#define GEN_test_FCMP_Z_S \
-  __attribute__((noinline)) static void test_FCMP_Z_S ( void ) \
+#define GEN_test_FCMP_S_Z \
+  __attribute__((noinline)) static void test_FCMP_S_Z ( void ) \
   { \
      V128 block[4]; \
      randBlock_Floats(&block[0], 3); \
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
-     showBlock("FCMP_Z_S before", &block[0], 4); \
+     showBlock("FCMP_S_Z before", &block[0], 4); \
      __asm__ __volatile__( \
         "ldr x9,  [%0, 48];  msr nzcv, x9; " \
         "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
@@ -1944,19 +1944,19 @@ void test_SMAXV ( void )
         "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
-     showBlock("FCMP_Z_S after", &block[0], 4); \
+     showBlock("FCMP_S_Z after", &block[0], 4); \
      printf("\n"); \
   }
 
-//======== FCMPE_Z_D ========//
+//======== FCMPE_D_Z ========//
 
-#define GEN_test_FCMPE_Z_D \
-  __attribute__((noinline)) static void test_FCMPE_Z_D ( void ) \
+#define GEN_test_FCMPE_D_Z \
+  __attribute__((noinline)) static void test_FCMPE_D_Z ( void ) \
   { \
      V128 block[4]; \
      randBlock_Doubles(&block[0], 3); \
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
-     showBlock("FCMPE_Z_D before", &block[0], 4); \
+     showBlock("FCMPE_D_Z before", &block[0], 4); \
      __asm__ __volatile__( \
         "ldr x9,  [%0, 48];  msr nzcv, x9; " \
         "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
@@ -1965,19 +1965,19 @@ void test_SMAXV ( void )
         "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
-     showBlock("FCMPE_Z_D after", &block[0], 4); \
+     showBlock("FCMPE_D_Z after", &block[0], 4); \
      printf("\n"); \
   }
 
-//======== FCMPE_Z_S ========//
+//======== FCMPE_S_Z ========//
 
-#define GEN_test_FCMPE_Z_S \
-  __attribute__((noinline)) static void test_FCMPE_Z_S ( void ) \
+#define GEN_test_FCMPE_S_Z \
+  __attribute__((noinline)) static void test_FCMPE_S_Z ( void ) \
   { \
      V128 block[4]; \
      randBlock_Floats(&block[0], 3); \
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
-     showBlock("FCMPE_Z_S before", &block[0], 4); \
+     showBlock("FCMPE_S_Z before", &block[0], 4); \
      __asm__ __volatile__( \
         "ldr x9,  [%0, 48];  msr nzcv, x9; " \
         "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
@@ -1986,7 +1986,7 @@ void test_SMAXV ( void )
         "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
-     showBlock("FCMPE_Z_S after", &block[0], 4); \
+     showBlock("FCMPE_S_Z after", &block[0], 4); \
      printf("\n"); \
   }
 
@@ -2140,16 +2140,16 @@ GEN_test_FCCMPE_S_S_0xF_NE
 GEN_test_FCCMPE_S_S_0x0_EQ
 GEN_test_FCCMPE_S_S_0x0_NE
 
-GEN_test_FCMEQ_D_D
-GEN_test_FCMEQ_S_S
-GEN_test_FCMGE_D_D
-GEN_test_FCMGE_S_S
-GEN_test_FCMGT_D_D
-GEN_test_FCMGT_S_S
-GEN_test_FACGT_D_D
-GEN_test_FACGT_S_S
-GEN_test_FACGE_D_D
-GEN_test_FACGE_S_S
+GEN_test_FCMEQ_D_D_D
+GEN_test_FCMEQ_S_S_S
+GEN_test_FCMGE_D_D_D
+GEN_test_FCMGE_S_S_S
+GEN_test_FCMGT_D_D_D
+GEN_test_FCMGT_S_S_S
+GEN_test_FACGT_D_D_D
+GEN_test_FACGT_S_S_S
+GEN_test_FACGE_D_D_D
+GEN_test_FACGE_S_S_S
 
 GEN_THREEVEC_TEST(fcmeq_2d_2d_2d, "fcmeq v2.2d, v23.2d, v11.2d", 2, 23, 11)
 GEN_THREEVEC_TEST(fcmeq_4s_4s_4s, "fcmeq v2.4s, v23.4s, v11.4s", 2, 23, 11)
@@ -2167,16 +2167,16 @@ GEN_THREEVEC_TEST(facgt_2d_2d_2d, "facgt v2.2d, v23.2d, v11.2d", 2, 23, 11)
 GEN_THREEVEC_TEST(facgt_4s_4s_4s, "facgt v2.4s, v23.4s, v11.4s", 2, 23, 11)
 GEN_THREEVEC_TEST(facgt_2s_2s_2s, "facgt v2.2s, v23.2s, v11.2s", 2, 23, 11)
 
-GEN_test_FCMEQ_Z_D
-GEN_test_FCMEQ_Z_S
-GEN_test_FCMGE_Z_D
-GEN_test_FCMGE_Z_S
-GEN_test_FCMGT_Z_D
-GEN_test_FCMGT_Z_S
-GEN_test_FCMLE_Z_D
-GEN_test_FCMLE_Z_S
-GEN_test_FCMLT_Z_D
-GEN_test_FCMLT_Z_S
+GEN_test_FCMEQ_D_D_Z
+GEN_test_FCMEQ_S_S_Z
+GEN_test_FCMGE_D_D_Z
+GEN_test_FCMGE_S_S_Z
+GEN_test_FCMGT_D_D_Z
+GEN_test_FCMGT_S_S_Z
+GEN_test_FCMLE_D_D_Z
+GEN_test_FCMLE_S_S_Z
+GEN_test_FCMLT_D_D_Z
+GEN_test_FCMLT_S_S_Z
 
 GEN_TWOVEC_TEST(fcmeq_z_2d_2d, "fcmeq v2.2d, v23.2d, #0", 2, 23)
 GEN_TWOVEC_TEST(fcmeq_z_4s_4s, "fcmeq v2.4s, v23.4s, #0", 2, 23)
@@ -2194,10 +2194,10 @@ GEN_TWOVEC_TEST(fcmlt_z_2d_2d, "fcmlt v2.2d, v23.2d, #0", 2, 23)
 GEN_TWOVEC_TEST(fcmlt_z_4s_4s, "fcmlt v2.4s, v23.4s, #0", 2, 23)
 GEN_TWOVEC_TEST(fcmlt_z_2s_2s, "fcmlt v2.2s, v23.2s, #0", 2, 23)
 
-GEN_test_FCMP_Z_D
-GEN_test_FCMP_Z_S
-GEN_test_FCMPE_Z_D
-GEN_test_FCMPE_Z_S
+GEN_test_FCMP_D_Z
+GEN_test_FCMP_S_Z
+GEN_test_FCMPE_D_Z
+GEN_test_FCMPE_S_Z
 GEN_test_FCMP_D_D
 GEN_test_FCMP_S_S
 GEN_test_FCMPE_D_D
@@ -4623,38 +4623,38 @@ int main ( void )
 
    // fccmp     d,s (floating point conditional quiet compare)
    // fccmpe    d,s (floating point conditional signaling compare)
-   if (0) DO50( test_FCCMP_D_D_0xF_EQ() );
-   if (0) DO50( test_FCCMP_D_D_0xF_NE() );
-   if (0) DO50( test_FCCMP_D_D_0x0_EQ() );
-   if (0) DO50( test_FCCMP_D_D_0x0_NE() );
-   if (0) DO50( test_FCCMP_S_S_0xF_EQ() );
-   if (0) DO50( test_FCCMP_S_S_0xF_NE() );
-   if (0) DO50( test_FCCMP_S_S_0x0_EQ() );
-   if (0) DO50( test_FCCMP_S_S_0x0_NE() );
-   if (0) DO50( test_FCCMPE_D_D_0xF_EQ() );
-   if (0) DO50( test_FCCMPE_D_D_0xF_NE() );
-   if (0) DO50( test_FCCMPE_D_D_0x0_EQ() );
-   if (0) DO50( test_FCCMPE_D_D_0x0_NE() );
-   if (0) DO50( test_FCCMPE_S_S_0xF_EQ() );
-   if (0) DO50( test_FCCMPE_S_S_0xF_NE() );
-   if (0) DO50( test_FCCMPE_S_S_0x0_EQ() );
-   if (0) DO50( test_FCCMPE_S_S_0x0_NE() );
+   if (1) DO50( test_FCCMP_D_D_0xF_EQ() );
+   if (1) DO50( test_FCCMP_D_D_0xF_NE() );
+   if (1) DO50( test_FCCMP_D_D_0x0_EQ() );
+   if (1) DO50( test_FCCMP_D_D_0x0_NE() );
+   if (1) DO50( test_FCCMP_S_S_0xF_EQ() );
+   if (1) DO50( test_FCCMP_S_S_0xF_NE() );
+   if (1) DO50( test_FCCMP_S_S_0x0_EQ() );
+   if (1) DO50( test_FCCMP_S_S_0x0_NE() );
+   if (1) DO50( test_FCCMPE_D_D_0xF_EQ() );
+   if (1) DO50( test_FCCMPE_D_D_0xF_NE() );
+   if (1) DO50( test_FCCMPE_D_D_0x0_EQ() );
+   if (1) DO50( test_FCCMPE_D_D_0x0_NE() );
+   if (1) DO50( test_FCCMPE_S_S_0xF_EQ() );
+   if (1) DO50( test_FCCMPE_S_S_0xF_NE() );
+   if (1) DO50( test_FCCMPE_S_S_0x0_EQ() );
+   if (1) DO50( test_FCCMPE_S_S_0x0_NE() );
 
    // fcmeq     d,s
    // fcmge     d,s
    // fcmgt     d,s
    // facgt     d,s  (floating abs compare GE)
    // facge     d,s  (floating abs compare GE)
-   if (0) DO50( test_FCMEQ_D_D() );
-   if (0) DO50( test_FCMEQ_S_S() );
-   if (0) DO50( test_FCMGE_D_D() );
-   if (0) DO50( test_FCMGE_S_S() );
-   if (0) DO50( test_FCMGT_D_D() );
-   if (0) DO50( test_FCMGT_S_S() );
-   if (0) DO50( test_FACGT_D_D() );
-   if (0) DO50( test_FACGT_S_S() );
-   if (0) DO50( test_FACGE_D_D() );
-   if (0) DO50( test_FACGE_S_S() );
+   if (1) DO50( test_FCMEQ_D_D_D() );
+   if (1) DO50( test_FCMEQ_S_S_S() );
+   if (1) DO50( test_FCMGE_D_D_D() );
+   if (1) DO50( test_FCMGE_S_S_S() );
+   if (1) DO50( test_FCMGT_D_D_D() );
+   if (1) DO50( test_FCMGT_S_S_S() );
+   if (1) DO50( test_FACGT_D_D_D() );
+   if (1) DO50( test_FACGT_S_S_S() );
+   if (1) DO50( test_FACGE_D_D_D() );
+   if (1) DO50( test_FACGE_S_S_S() );
 
    // fcmeq     2d,4s,2s
    // fcmge     2d,4s,2s
@@ -4682,50 +4682,50 @@ int main ( void )
    // fcmgt_z   d,s
    // fcmle_z   d,s
    // fcmlt_z   d,s
-   if (0) DO50( test_FCMEQ_Z_D() );
-   if (0) DO50( test_FCMEQ_Z_S() );
-   if (0) DO50( test_FCMGE_Z_D() );
-   if (0) DO50( test_FCMGE_Z_S() );
-   if (0) DO50( test_FCMGT_Z_D() );
-   if (0) DO50( test_FCMGT_Z_S() );
-   if (0) DO50( test_FCMLE_Z_D() );
-   if (0) DO50( test_FCMLE_Z_S() );
-   if (0) DO50( test_FCMLT_Z_D() );
-   if (0) DO50( test_FCMLT_Z_S() );
+   if (1) DO50( test_FCMEQ_D_D_Z() );
+   if (1) DO50( test_FCMEQ_S_S_Z() );
+   if (1) DO50( test_FCMGE_D_D_Z() );
+   if (1) DO50( test_FCMGE_S_S_Z() );
+   if (1) DO50( test_FCMGT_D_D_Z() );
+   if (1) DO50( test_FCMGT_S_S_Z() );
+   if (1) DO50( test_FCMLE_D_D_Z() );
+   if (1) DO50( test_FCMLE_S_S_Z() );
+   if (1) DO50( test_FCMLT_D_D_Z() );
+   if (1) DO50( test_FCMLT_S_S_Z() );
 
    // fcmeq_z   2d,4s,2s
    // fcmge_z   2d,4s,2s
    // fcmgt_z   2d,4s,2s
    // fcmle_z   2d,4s,2s
    // fcmlt_z   2d,4s,2s
-   if (0) test_fcmeq_z_2d_2d(TyDF);
-   if (0) test_fcmeq_z_4s_4s(TySF);
-   if (0) test_fcmeq_z_2s_2s(TySF);
-   if (0) test_fcmge_z_2d_2d(TyDF);
-   if (0) test_fcmge_z_4s_4s(TySF);
-   if (0) test_fcmge_z_2s_2s(TySF);
-   if (0) test_fcmgt_z_2d_2d(TyDF);
-   if (0) test_fcmgt_z_4s_4s(TySF);
-   if (0) test_fcmgt_z_2s_2s(TySF);
-   if (0) test_fcmle_z_2d_2d(TyDF);
-   if (0) test_fcmle_z_4s_4s(TySF);
-   if (0) test_fcmle_z_2s_2s(TySF);
-   if (0) test_fcmlt_z_2d_2d(TyDF);
-   if (0) test_fcmlt_z_4s_4s(TySF);
-   if (0) test_fcmlt_z_2s_2s(TySF);
+   if (1) test_fcmeq_z_2d_2d(TyDF);
+   if (1) test_fcmeq_z_4s_4s(TySF);
+   if (1) test_fcmeq_z_2s_2s(TySF);
+   if (1) test_fcmge_z_2d_2d(TyDF);
+   if (1) test_fcmge_z_4s_4s(TySF);
+   if (1) test_fcmge_z_2s_2s(TySF);
+   if (1) test_fcmgt_z_2d_2d(TyDF);
+   if (1) test_fcmgt_z_4s_4s(TySF);
+   if (1) test_fcmgt_z_2s_2s(TySF);
+   if (1) test_fcmle_z_2d_2d(TyDF);
+   if (1) test_fcmle_z_4s_4s(TySF);
+   if (1) test_fcmle_z_2s_2s(TySF);
+   if (1) test_fcmlt_z_2d_2d(TyDF);
+   if (1) test_fcmlt_z_4s_4s(TySF);
+   if (1) test_fcmlt_z_2s_2s(TySF);
 
    // fcmp_z    d,s
    // fcmpe_z   d,s
    // fcmp      d,s (floating point quiet, set flags)
    // fcmpe     d,s (floating point signaling, set flags)
-   if (0) DO50( test_FCMP_Z_D() );
-   if (0) DO50( test_FCMP_Z_S() );
-   if (0) DO50( test_FCMPE_Z_D() );
-   if (0) DO50( test_FCMPE_Z_S() );
-   if (0) DO50( test_FCMP_D_D() );
-   if (0) DO50( test_FCMP_S_S() );
-   if (0) DO50( test_FCMPE_D_D() );
-   if (0) DO50( test_FCMPE_S_S() );
+   if (1) DO50( test_FCMP_D_Z() );
+   if (1) DO50( test_FCMP_S_Z() );
+   if (1) DO50( test_FCMPE_D_Z() );
+   if (1) DO50( test_FCMPE_S_Z() );
+   if (1) DO50( test_FCMP_D_D() );
+   if (1) DO50( test_FCMP_S_S() );
+   if (1) DO50( test_FCMPE_D_D() );
+   if (1) DO50( test_FCMPE_S_S() );
 
    // fcsel     d,s (fp cond select)
    if (1) DO50( test_FCSEL_D_D_D_EQ() );

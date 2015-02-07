@@ -9579,6 +9579,57 @@ Bool dis_AdvSIMD_scalar_three_same(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
+   if (size <= X01 && opcode == BITS5(1,1,1,0,0)) {
+      /* -------- 0,0x,11100 FCMEQ d_d_d, s_s_s -------- */
+      /* -------- 1,0x,11100 FCMGE d_d_d, s_s_s -------- */
+      Bool   isD   = size == X01;
+      IRType ity   = isD ? Ity_F64 : Ity_F32;
+      Bool   isGE  = bitU == 1;
+      IROp   opCMP = isGE ? (isD ? Iop_CmpLE64Fx2 : Iop_CmpLE32Fx4)
+                          : (isD ? Iop_CmpEQ64Fx2 : Iop_CmpEQ32Fx4);
+      IRTemp res   = newTempV128();
+      assign(res, isGE ? binop(opCMP, getQReg128(mm), getQReg128(nn)) // swapd
+                       : binop(opCMP, getQReg128(nn), getQReg128(mm)));
+      putQReg128(dd, mkexpr(math_ZERO_ALL_EXCEPT_LOWEST_LANE(isD ? X11 : X10,
+                                                             mkexpr(res))));
+      DIP("%s %s, %s, %s\n", isGE ? "fcmge" : "fcmeq",
+          nameQRegLO(dd, ity), nameQRegLO(nn, ity), nameQRegLO(mm, ity));
+      return True;
+   }
+
+   if (bitU == 1 && size >= X10 && opcode == BITS5(1,1,1,0,0)) {
+      /* -------- 1,1x,11100 FCMGT d_d_d, s_s_s -------- */
+      Bool   isD   = size == X11;
+      IRType ity   = isD ? Ity_F64 : Ity_F32;
+      IROp   opCMP = isD ? Iop_CmpLT64Fx2 : Iop_CmpLT32Fx4;
+      IRTemp res   = newTempV128();
+      assign(res, binop(opCMP, getQReg128(mm), getQReg128(nn))); // swapd
+      putQReg128(dd, mkexpr(math_ZERO_ALL_EXCEPT_LOWEST_LANE(isD ? X11 : X10,
+                                                             mkexpr(res))));
+      DIP("%s %s, %s, %s\n", "fcmgt",
+          nameQRegLO(dd, ity), nameQRegLO(nn, ity), nameQRegLO(mm, ity));
+      return True;
+   }
+
+   if (bitU == 1 && opcode == BITS5(1,1,1,0,1)) {
+      /* -------- 1,0x,11101 FACGE d_d_d, s_s_s -------- */
+      /* -------- 1,1x,11101 FACGT d_d_d, s_s_s -------- */
+      Bool   isD   = (size & 1) == 1;
+      IRType ity   = isD ? Ity_F64 : Ity_F32;
+      Bool   isGT  = (size & 2) == 2;
+      IROp   opCMP = isGT ? (isD ? Iop_CmpLT64Fx2 : Iop_CmpLT32Fx4)
+                          : (isD ? Iop_CmpLE64Fx2 : Iop_CmpLE32Fx4);
+      IROp   opABS = isD ? Iop_Abs64Fx2 : Iop_Abs32Fx4;
+      IRTemp res   = newTempV128();
+      assign(res, binop(opCMP, unop(opABS, getQReg128(mm)),
+                               unop(opABS, getQReg128(nn)))); // swapd
+      putQReg128(dd, mkexpr(math_ZERO_ALL_EXCEPT_LOWEST_LANE(isD ? X11 : X10,
+                                                             mkexpr(res))));
+      DIP("%s %s, %s, %s\n", isGT ? "facgt" : "facge",
+          nameQRegLO(dd, ity), nameQRegLO(nn, ity), nameQRegLO(mm, ity));
+      return True;
+   }
+
    return False;
 #  undef INSN
 }
@@ -9697,6 +9748,48 @@ Bool dis_AdvSIMD_scalar_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
       putQReg128(dd, unop(Iop_ZeroHI64ofV128,
                           binop(Iop_Sub64x2, mkV128(0x0000), getQReg128(nn))));
       DIP("neg d%u, d%u\n", dd, nn);
+      return True;
+   }
+
+   UInt ix = 0; /*INVALID*/
+   if (size >= X10) {
+      switch (opcode) {
+         case BITS5(0,1,1,0,0): ix = (bitU == 1) ? 4 : 1; break;
+         case BITS5(0,1,1,0,1): ix = (bitU == 1) ? 5 : 2; break;
+         case BITS5(0,1,1,1,0): if (bitU == 0) ix = 3; break;
+         default: break;
+      }
+   }
+   if (ix > 0) {
+      /* -------- 0,1x,01100 FCMGT d_d_#0.0, s_s_#0.0 (ix 1) -------- */
+      /* -------- 0,1x,01101 FCMEQ d_d_#0.0, s_s_#0.0 (ix 2) -------- */
+      /* -------- 0,1x,01110 FCMLT d_d_#0.0, s_s_#0.0 (ix 3) -------- */
+      /* -------- 1,1x,01100 FCMGE d_d_#0.0, s_s_#0.0 (ix 4) -------- */
+      /* -------- 1,1x,01101 FCMLE d_d_#0.0, s_s_#0.0 (ix 5) -------- */
+      Bool   isD     = size == X11;
+      IRType ity     = isD ? Ity_F64 : Ity_F32;
+      IROp   opCmpEQ = isD ? Iop_CmpEQ64Fx2 : Iop_CmpEQ32Fx4;
+      IROp   opCmpLE = isD ? Iop_CmpLE64Fx2 : Iop_CmpLE32Fx4;
+      IROp   opCmpLT = isD ? Iop_CmpLT64Fx2 : Iop_CmpLT32Fx4;
+      IROp   opCmp   = Iop_INVALID;
+      Bool   swap    = False;
+      const HChar* nm = "??";
+      switch (ix) {
+         case 1: nm = "fcmgt"; opCmp = opCmpLT; swap = True; break;
+         case 2: nm = "fcmeq"; opCmp = opCmpEQ; break;
+         case 3: nm = "fcmlt"; opCmp = opCmpLT; break;
+         case 4: nm = "fcmge"; opCmp = opCmpLE; swap = True; break;
+         case 5: nm = "fcmle"; opCmp = opCmpLE; break;
+         default: vassert(0);
+      }
+      IRExpr* zero = mkV128(0x0000);
+      IRTemp res = newTempV128();
+      assign(res, swap ? binop(opCmp, zero, getQReg128(nn))
+                       : binop(opCmp, getQReg128(nn), zero));
+      putQReg128(dd, mkexpr(math_ZERO_ALL_EXCEPT_LOWEST_LANE(isD ? X11 : X10,
+                                                             mkexpr(res))));
+
+      DIP("%s %s, %s, #0.0\n", nm, nameQRegLO(dd, ity), nameQRegLO(nn, ity));
       return True;
    }
 
@@ -11428,6 +11521,48 @@ Bool dis_AdvSIMD_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
+   UInt ix = 0; /*INVALID*/
+   if (size >= X10) {
+      switch (opcode) {
+         case BITS5(0,1,1,0,0): ix = (bitU == 1) ? 4 : 1; break;
+         case BITS5(0,1,1,0,1): ix = (bitU == 1) ? 5 : 2; break;
+         case BITS5(0,1,1,1,0): if (bitU == 0) ix = 3; break;
+         default: break;
+      }
+   }
+   if (ix > 0) {
+      /* -------- 0,1x,01100 FCMGT 2d_2d,4s_4s,2s_2s _#0.0 (ix 1) -------- */
+      /* -------- 0,1x,01101 FCMEQ 2d_2d,4s_4s,2s_2s _#0.0 (ix 2) -------- */
+      /* -------- 0,1x,01110 FCMLT 2d_2d,4s_4s,2s_2s _#0.0 (ix 3) -------- */
+      /* -------- 1,1x,01100 FCMGE 2d_2d,4s_4s,2s_2s _#0.0 (ix 4) -------- */
+      /* -------- 1,1x,01101 FCMLE 2d_2d,4s_4s,2s_2s _#0.0 (ix 5) -------- */
+      if (bitQ == 0 && size == X11) return False; // implied 1d case
+      Bool   isD     = size == X11;
+      IROp   opCmpEQ = isD ? Iop_CmpEQ64Fx2 : Iop_CmpEQ32Fx4;
+      IROp   opCmpLE = isD ? Iop_CmpLE64Fx2 : Iop_CmpLE32Fx4;
+      IROp   opCmpLT = isD ? Iop_CmpLT64Fx2 : Iop_CmpLT32Fx4;
+      IROp   opCmp   = Iop_INVALID;
+      Bool   swap    = False;
+      const HChar* nm = "??";
+      switch (ix) {
+         case 1: nm = "fcmgt"; opCmp = opCmpLT; swap = True; break;
+         case 2: nm = "fcmeq"; opCmp = opCmpEQ; break;
+         case 3: nm = "fcmlt"; opCmp = opCmpLT; break;
+         case 4: nm = "fcmge"; opCmp = opCmpLE; swap = True; break;
+         case 5: nm = "fcmle"; opCmp = opCmpLE; break;
+         default: vassert(0);
+      }
+      IRExpr* zero = mkV128(0x0000);
+      IRTemp res = newTempV128();
+      assign(res, swap ? binop(opCmp, zero, getQReg128(nn))
+                       : binop(opCmp, getQReg128(nn), zero));
+      putQReg128(dd, math_MAYBE_ZERO_HI64(bitQ, res));
+      const HChar* arr = bitQ == 0 ? "2s" : (size == X11 ? "2d" : "4s");
+      DIP("%s %s.%s, %s.%s, #0.0\n", nm,
+          nameQReg128(dd), arr, nameQReg128(nn), arr);
+      return True;
+   }
+
    if (size >= X10 && opcode == BITS5(0,1,1,1,1)) {
       /* -------- 0,1x,01111: FABS 2d_2d, 4s_4s, 2s_2s -------- */
       /* -------- 1,1x,01111: FNEG 2d_2d, 4s_4s, 2s_2s -------- */
@@ -11982,7 +12117,63 @@ Bool dis_AdvSIMD_fp_compare(/*MB_OUT*/DisResult* dres, UInt insn)
 static
 Bool dis_AdvSIMD_fp_conditional_compare(/*MB_OUT*/DisResult* dres, UInt insn)
 {
+   /* 31  28    23 21 20 15   11 9 4  3
+      000 11110 ty 1  m  cond 01 n op nzcv
+      The first 3 bits are really "M 0 S", but M and S are always zero.
+      Decode fields are: ty,op
+   */
 #  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
+   if (INSN(31,24) != BITS8(0,0,0,1,1,1,1,0)
+       || INSN(21,21) != 1 || INSN(11,10) != BITS2(0,1)) {
+      return False;
+   }
+   UInt ty   = INSN(23,22);
+   UInt mm   = INSN(20,16);
+   UInt cond = INSN(15,12);
+   UInt nn   = INSN(9,5);
+   UInt op   = INSN(4,4);
+   UInt nzcv = INSN(3,0);
+   vassert(ty < 4 && op <= 1);
+
+   if (ty <= BITS2(0,1)) {
+      /* -------- 00,0 FCCMP  s_s -------- */
+      /* -------- 00,1 FCCMPE s_s -------- */
+      /* -------- 01,0 FCCMP  d_d -------- */
+      /* -------- 01,1 FCCMPE d_d -------- */
+
+      /* FCCMPE generates Invalid Operation exn if either arg is any kind
+         of NaN.  FCCMP generates Invalid Operation exn if either arg is a
+         signalling NaN.  We ignore this detail here and produce the same
+         IR for both.
+      */
+      Bool   isD    = (ty & 1) == 1;
+      Bool   isCMPE = op == 1;
+      IRType ity    = isD ? Ity_F64 : Ity_F32;
+      IRTemp argL   = newTemp(ity);
+      IRTemp argR   = newTemp(ity);
+      IRTemp irRes  = newTemp(Ity_I32);
+      assign(argL,  getQRegLO(nn, ity));
+      assign(argR,  getQRegLO(mm, ity));
+      assign(irRes, binop(isD ? Iop_CmpF64 : Iop_CmpF32,
+                          mkexpr(argL), mkexpr(argR)));
+      IRTemp condT = newTemp(Ity_I1);
+      assign(condT, unop(Iop_64to1, mk_arm64g_calculate_condition(cond)));
+      IRTemp nzcvT = mk_convert_IRCmpF64Result_to_NZCV(irRes);
+
+      IRTemp nzcvT_28x0 = newTemp(Ity_I64);
+      assign(nzcvT_28x0, binop(Iop_Shl64, mkexpr(nzcvT), mkU8(28)));
+
+      IRExpr* nzcvF_28x0 = mkU64(((ULong)nzcv) << 28);
+
+      IRTemp nzcv_28x0 = newTemp(Ity_I64);
+      assign(nzcv_28x0, IRExpr_ITE(mkexpr(condT),
+                                   mkexpr(nzcvT_28x0), nzcvF_28x0));
+      setFlags_COPY(nzcv_28x0);
+      DIP("fccmp%s %s, %s, #%u, %s\n", isCMPE ? "e" : "",
+          nameQRegLO(nn, ity), nameQRegLO(mm, ity), nzcv, nameCC(cond));
+      return True;
+   }
+
    return False;
 #  undef INSN
 }

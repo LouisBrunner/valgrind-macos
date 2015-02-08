@@ -39,6 +39,8 @@
      Both should be fixed.  They behave incorrectly in the presence of
      NaNs.
 
+     FMULX is treated the same as FMUL.  That's also not correct.
+
    * Floating multiply-add (etc) insns.  Are split into a multiply and 
      an add, and so suffer double rounding and hence sometimes the
      least significant mantissa bit is incorrect.  Fix: use the IR
@@ -9627,6 +9629,21 @@ Bool dis_AdvSIMD_scalar_three_same(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
+   if (bitU == 0 && size <= X01 && opcode == BITS5(1,1,0,1,1)) {
+      /* -------- 0,0x,11011 FMULX d_d_d, s_s_s -------- */
+      // KLUDGE: FMULX is treated the same way as FMUL.  That can't be right.
+      IRType ity = size == X01 ? Ity_F64 : Ity_F32;
+      IRTemp res = newTemp(ity);
+      assign(res, triop(mkMULF(ity),
+                        mkexpr(mk_get_IR_rounding_mode()),
+                        getQRegLO(nn,ity), getQRegLO(mm,ity)));
+      putQReg128(dd, mkV128(0x0000));
+      putQRegLO(dd, mkexpr(res));
+      DIP("fmulx %s, %s, %s\n",
+          nameQRegLO(dd, ity), nameQRegLO(nn, ity), nameQRegLO(mm, ity));
+      return True;
+   }
+
    if (size <= X01 && opcode == BITS5(1,1,1,0,0)) {
       /* -------- 0,0x,11100 FCMEQ d_d_d, s_s_s -------- */
       /* -------- 1,0x,11100 FCMGE d_d_d, s_s_s -------- */
@@ -9909,6 +9926,70 @@ Bool dis_AdvSIMD_scalar_x_indexed_element(/*MB_OUT*/DisResult* dres, UInt insn)
    UInt dd     = INSN(4,0);
    vassert(size < 4);
    vassert(bitH < 2 && bitM < 2 && bitL < 2);
+
+   if (bitU == 0 && size >= X10
+       && (opcode == BITS4(0,0,0,1) || opcode == BITS4(0,1,0,1))) {
+      /* -------- 0,1x,0001 FMLA d_d_d[], s_s_s[] -------- */
+      /* -------- 0,1x,0101 FMLS d_d_d[], s_s_s[] -------- */
+      Bool isD   = (size & 1) == 1;
+      Bool isSUB = opcode == BITS4(0,1,0,1);
+      UInt index;
+      if      (!isD)             index = (bitH << 1) | bitL;
+      else if (isD && bitL == 0) index = bitH;
+      else return False; // sz:L == x11 => unallocated encoding
+      vassert(index < (isD ? 2 : 4));
+      IRType ity   = isD ? Ity_F64 : Ity_F32;
+      IRTemp elem  = newTemp(ity);
+      UInt   mm    = (bitM << 4) | mmLO4;
+      assign(elem, getQRegLane(mm, index, ity));
+      IRTemp dupd  = math_DUP_TO_V128(elem, ity);
+      IROp   opADD = isD ? Iop_Add64Fx2 : Iop_Add32Fx4;
+      IROp   opSUB = isD ? Iop_Sub64Fx2 : Iop_Sub32Fx4;
+      IROp   opMUL = isD ? Iop_Mul64Fx2 : Iop_Mul32Fx4;
+      IRTemp rm    = mk_get_IR_rounding_mode();
+      IRTemp t1    = newTempV128();
+      IRTemp t2    = newTempV128();
+      // FIXME: double rounding; use FMA primops instead
+      assign(t1, triop(opMUL, mkexpr(rm), getQReg128(nn), mkexpr(dupd)));
+      assign(t2, triop(isSUB ? opSUB : opADD,
+                       mkexpr(rm), getQReg128(dd), mkexpr(t1)));
+      putQReg128(dd,
+                 mkexpr(math_ZERO_ALL_EXCEPT_LOWEST_LANE(isD ? 3 : 2,
+                                                         mkexpr(t2))));
+      const HChar c = isD ? 'd' : 's';
+      DIP("%s %c%u, %c%u, %s.%c[%u]\n", isSUB ? "fmls" : "fmla",
+          c, dd, c, nn, nameQReg128(mm), c, index);
+      return True;
+   }
+
+   if (size >= X10 && opcode == BITS4(1,0,0,1)) {
+      /* -------- 0,1x,1001 FMUL  d_d_d[], s_s_s[] -------- */
+      /* -------- 1,1x,1001 FMULX d_d_d[], s_s_s[] -------- */
+      Bool isD    = (size & 1) == 1;
+      Bool isMULX = bitU == 1;
+      UInt index;
+      if      (!isD)             index = (bitH << 1) | bitL;
+      else if (isD && bitL == 0) index = bitH;
+      else return False; // sz:L == x11 => unallocated encoding
+      vassert(index < (isD ? 2 : 4));
+      IRType ity   = isD ? Ity_F64 : Ity_F32;
+      IRTemp elem  = newTemp(ity);
+      UInt   mm    = (bitM << 4) | mmLO4;
+      assign(elem, getQRegLane(mm, index, ity));
+      IRTemp dupd  = math_DUP_TO_V128(elem, ity);
+      IROp   opMUL = isD ? Iop_Mul64Fx2 : Iop_Mul32Fx4;
+      IRTemp rm    = mk_get_IR_rounding_mode();
+      IRTemp t1    = newTempV128();
+      // KLUDGE: FMULX is treated the same way as FMUL.  That can't be right.
+      assign(t1, triop(opMUL, mkexpr(rm), getQReg128(nn), mkexpr(dupd)));
+      putQReg128(dd,
+                 mkexpr(math_ZERO_ALL_EXCEPT_LOWEST_LANE(isD ? 3 : 2,
+                                                         mkexpr(t1))));
+      const HChar c = isD ? 'd' : 's';
+      DIP("%s %c%u, %c%u, %s.%c[%u]\n", isMULX ? "fmulx" : "fmul",
+          c, dd, c, nn, nameQReg128(mm), c, index);
+      return True;
+   }
 
    if (bitU == 0 
        && (opcode == BITS4(1,0,1,1)
@@ -11220,9 +11301,12 @@ Bool dis_AdvSIMD_three_same(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
-   if (bitU == 1 && size <= X01 && opcode == BITS5(1,1,0,1,1)) {
-      /* -------- 1,0x,11011 FMUL 2d_2d_2d, 4s_4s_4s, 2s_2s_2s -------- */
-      Bool isD = (size & 1) == 1;
+   if (size <= X01 && opcode == BITS5(1,1,0,1,1)) {
+      /* -------- 0,0x,11011 FMULX 2d_2d_2d, 4s_4s_4s, 2s_2s_2s -------- */
+      /* -------- 1,0x,11011 FMUL  2d_2d_2d, 4s_4s_4s, 2s_2s_2s -------- */
+      // KLUDGE: FMULX is treated the same way as FMUL.  That can't be right.
+      Bool isD    = (size & 1) == 1;
+      Bool isMULX = bitU == 0;
       if (bitQ == 0 && isD) return False; // implied 1d case
       IRTemp rm = mk_get_IR_rounding_mode();
       IRTemp t1 = newTempV128();
@@ -11230,7 +11314,7 @@ Bool dis_AdvSIMD_three_same(/*MB_OUT*/DisResult* dres, UInt insn)
                        mkexpr(rm), getQReg128(nn), getQReg128(mm)));
       putQReg128(dd, math_MAYBE_ZERO_HI64(bitQ, t1));
       const HChar* arr = bitQ == 0 ? "2s" : (isD ? "2d" : "4s");
-      DIP("fmul %s.%s, %s.%s, %s.%s\n",
+      DIP("%s %s.%s, %s.%s, %s.%s\n", isMULX ? "fmulx" : "fmul",
           nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(mm), arr);
       return True;
    }
@@ -11888,10 +11972,12 @@ Bool dis_AdvSIMD_vector_x_indexed_elem(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
-   if (bitU == 0 && size >= X10 && opcode == BITS4(1,0,0,1)) {
-      /* -------- 0,1x,1001 FMUL 2d_2d_d[], 4s_4s_s[], 2s_2s_s[] -------- */
+   if (size >= X10 && opcode == BITS4(1,0,0,1)) {
+      /* -------- 0,1x,1001 FMUL  2d_2d_d[], 4s_4s_s[], 2s_2s_s[] -------- */
+      /* -------- 1,1x,1001 FMULX 2d_2d_d[], 4s_4s_s[], 2s_2s_s[] -------- */
       if (bitQ == 0 && size == X11) return False; // implied 1d case
-      Bool isD = (size & 1) == 1;
+      Bool isD    = (size & 1) == 1;
+      Bool isMULX = bitU == 1;
       UInt index;
       if      (!isD)             index = (bitH << 1) | bitL;
       else if (isD && bitL == 0) index = bitH;
@@ -11902,13 +11988,15 @@ Bool dis_AdvSIMD_vector_x_indexed_elem(/*MB_OUT*/DisResult* dres, UInt insn)
       UInt   mm   = (bitM << 4) | mmLO4;
       assign(elem, getQRegLane(mm, index, ity));
       IRTemp dupd = math_DUP_TO_V128(elem, ity);
+      // KLUDGE: FMULX is treated the same way as FMUL.  That can't be right.
       IRTemp res  = newTempV128();
       assign(res, triop(isD ? Iop_Mul64Fx2 : Iop_Mul32Fx4,
                         mkexpr(mk_get_IR_rounding_mode()),
                         getQReg128(nn), mkexpr(dupd)));
       putQReg128(dd, math_MAYBE_ZERO_HI64(bitQ, res));
       const HChar* arr = bitQ == 0 ? "2s" : (isD ? "2d" : "4s");
-      DIP("fmul %s.%s, %s.%s, %s.%c[%u]\n", nameQReg128(dd), arr,
+      DIP("%s %s.%s, %s.%s, %s.%c[%u]\n", 
+          isMULX ? "fmulx" : "fmul", nameQReg128(dd), arr,
           nameQReg128(nn), arr, nameQReg128(mm), isD ? 'd' : 's', index);
       return True;
    }

@@ -4745,14 +4745,14 @@ int main ( void )
    // fnmadd    d,s
    // fmsub     d,s
    // fnmsub    d,s
-   if (0) test_fmadd_d_d_d_d(TyDF);
-   if (0) test_fmadd_s_s_s_s(TySF);
-   if (0) test_fnmadd_d_d_d_d(TyDF);
-   if (0) test_fnmadd_s_s_s_s(TySF);
-   if (0) test_fmsub_d_d_d_d(TyDF);
-   if (0) test_fmsub_s_s_s_s(TySF);
-   if (0) test_fnmsub_d_d_d_d(TyDF);
-   if (0) test_fnmsub_s_s_s_s(TySF);
+   if (1) test_fmadd_d_d_d_d(TyDF);
+   if (1) test_fmadd_s_s_s_s(TySF);
+   if (1) test_fnmadd_d_d_d_d(TyDF);
+   if (1) test_fnmadd_s_s_s_s(TySF);
+   if (1) test_fmsub_d_d_d_d(TyDF);
+   if (1) test_fmsub_s_s_s_s(TySF);
+   if (1) test_fnmsub_d_d_d_d(TyDF);
+   if (1) test_fnmsub_s_s_s_s(TySF);
 
    // fnmul     d,s
    if (1) test_fnmul_d_d_d(TyDF);
@@ -4775,60 +4775,60 @@ int main ( void )
    // fmin      2d,4s,2s
    // fmaxnm    2d,4s,2s
    // fminnm    2d,4s,2s
-   if (0) test_fmax_2d_2d_2d(TyDF);
-   if (0) test_fmax_4s_4s_4s(TySF);
-   if (0) test_fmax_2s_2s_2s(TySF);
-   if (0) test_fmin_2d_2d_2d(TyDF);
-   if (0) test_fmin_4s_4s_4s(TySF);
-   if (0) test_fmin_2s_2s_2s(TySF);
-   if (0) test_fmaxnm_2d_2d_2d(TyDF);
-   if (0) test_fmaxnm_4s_4s_4s(TySF);
-   if (0) test_fmaxnm_2s_2s_2s(TySF);
-   if (0) test_fminnm_2d_2d_2d(TyDF);
-   if (0) test_fminnm_4s_4s_4s(TySF);
-   if (0) test_fminnm_2s_2s_2s(TySF);
+   if (1) test_fmax_2d_2d_2d(TyDF);
+   if (1) test_fmax_4s_4s_4s(TySF);
+   if (1) test_fmax_2s_2s_2s(TySF);
+   if (1) test_fmin_2d_2d_2d(TyDF);
+   if (1) test_fmin_4s_4s_4s(TySF);
+   if (1) test_fmin_2s_2s_2s(TySF);
+   if (1) test_fmaxnm_2d_2d_2d(TyDF);
+   if (1) test_fmaxnm_4s_4s_4s(TySF);
+   if (1) test_fmaxnm_2s_2s_2s(TySF);
+   if (1) test_fminnm_2d_2d_2d(TyDF);
+   if (1) test_fminnm_4s_4s_4s(TySF);
+   if (1) test_fminnm_2s_2s_2s(TySF);
 
    // fmaxnmp   d_2d,s_2s ("max number pairwise")
    // fminnmp   d_2d,s_2s
-   if (0) test_fmaxnmp_d_2d(TyDF);
-   if (0) test_fmaxnmp_s_2s(TySF);
-   if (0) test_fminnmp_d_2d(TyDF);
-   if (0) test_fminnmp_s_2s(TySF);
+   if (1) test_fmaxnmp_d_2d(TyDF);
+   if (1) test_fmaxnmp_s_2s(TySF);
+   if (1) test_fminnmp_d_2d(TyDF);
+   if (1) test_fminnmp_s_2s(TySF);
 
    // fmaxnmp   2d,4s,2s
    // fminnmp   2d,4s,2s
-   if (0) test_fmaxnmp_2d_2d_2d(TyDF);
-   if (0) test_fmaxnmp_4s_4s_4s(TySF);
-   if (0) test_fmaxnmp_2s_2s_2s(TySF);
-   if (0) test_fminnmp_2d_2d_2d(TyDF);
-   if (0) test_fminnmp_4s_4s_4s(TySF);
-   if (0) test_fminnmp_2s_2s_2s(TySF);
+   if (1) test_fmaxnmp_2d_2d_2d(TyDF);
+   if (1) test_fmaxnmp_4s_4s_4s(TySF);
+   if (1) test_fmaxnmp_2s_2s_2s(TySF);
+   if (1) test_fminnmp_2d_2d_2d(TyDF);
+   if (1) test_fminnmp_4s_4s_4s(TySF);
+   if (1) test_fminnmp_2s_2s_2s(TySF);
 
    // fmaxnmv   s_4s (maxnum across vector)
    // fminnmv   s_4s
-   if (0) test_fmaxnmv_s_4s(TySF);
-   if (0) test_fminnmv_s_4s(TySF);
+   if (1) test_fmaxnmv_s_4s(TySF);
+   if (1) test_fminnmv_s_4s(TySF);
 
    // fmaxp     d_2d,s_2s (max of a pair)
    // fminp     d_2d,s_2s (max of a pair)
-   if (0) test_fmaxp_d_2d(TyDF);
-   if (0) test_fmaxp_s_2s(TySF);
-   if (0) test_fminp_d_2d(TyDF);
-   if (0) test_fminp_s_2s(TySF);
+   if (1) test_fmaxp_d_2d(TyDF);
+   if (1) test_fmaxp_s_2s(TySF);
+   if (1) test_fminp_d_2d(TyDF);
+   if (1) test_fminp_s_2s(TySF);
 
    // fmaxp     2d,4s,2s  (max pairwise)
    // fminp     2d,4s,2s
-   if (0) test_fmaxp_2d_2d_2d(TyDF);
-   if (0) test_fmaxp_4s_4s_4s(TySF);
-   if (0) test_fmaxp_2s_2s_2s(TySF);
-   if (0) test_fminp_2d_2d_2d(TyDF);
-   if (0) test_fminp_4s_4s_4s(TySF);
-   if (0) test_fminp_2s_2s_2s(TySF);
+   if (1) test_fmaxp_2d_2d_2d(TyDF);
+   if (1) test_fmaxp_4s_4s_4s(TySF);
+   if (1) test_fmaxp_2s_2s_2s(TySF);
+   if (1) test_fminp_2d_2d_2d(TyDF);
+   if (1) test_fminp_4s_4s_4s(TySF);
+   if (1) test_fminp_2s_2s_2s(TySF);
 
    // fmaxv     s_4s (max across vector)
    // fminv     s_4s
-   if (0) test_fmaxv_s_4s(TySF);
-   if (0) test_fminv_s_4s(TySF);
+   if (1) test_fmaxv_s_4s(TySF);
+   if (1) test_fminv_s_4s(TySF);
 
    // fmla      2d,4s,2s
    // fmls      2d,4s,2s

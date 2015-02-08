@@ -4841,14 +4841,14 @@ int main ( void )
 
    // fmla      d_d_d[],s_s_s[] (by element)
    // fmls      d_d_d[],s_s_s[] (by element)
-   if (0) test_fmla_d_d_d0(TyDF);
-   if (0) test_fmla_d_d_d1(TyDF);
-   if (0) test_fmla_s_s_s0(TySF);
-   if (0) test_fmla_s_s_s3(TySF);
-   if (0) test_fmls_d_d_d0(TyDF);
-   if (0) test_fmls_d_d_d1(TyDF);
-   if (0) test_fmls_s_s_s0(TySF);
-   if (0) test_fmls_s_s_s3(TySF);
+   if (1) test_fmla_d_d_d0(TyDF);
+   if (1) test_fmla_d_d_d1(TyDF);
+   if (1) test_fmla_s_s_s0(TySF);
+   if (1) test_fmla_s_s_s3(TySF);
+   if (1) test_fmls_d_d_d0(TyDF);
+   if (1) test_fmls_d_d_d1(TyDF);
+   if (1) test_fmls_s_s_s0(TySF);
+   if (1) test_fmls_s_s_s3(TySF);
 
    // fmla      2d_2d_d[],4s_4s_s[],2s_2s_s[]
    // fmls      2d_2d_d[],4s_4s_s[],2s_2s_s[]
@@ -4897,10 +4897,10 @@ int main ( void )
    if (1) test_fmov_s_imm_03(TyNONE);
 
    // fmul      d_d_d[],s_s_s[]
-   if (0) test_fmul_d_d_d0(TyDF);
-   if (0) test_fmul_d_d_d1(TyDF);
-   if (0) test_fmul_s_s_s0(TySF);
-   if (0) test_fmul_s_s_s3(TySF);
+   if (1) test_fmul_d_d_d0(TyDF);
+   if (1) test_fmul_d_d_d1(TyDF);
+   if (1) test_fmul_s_s_s0(TySF);
+   if (1) test_fmul_s_s_s3(TySF);
 
    // fmul      2d_2d_d[],4s_4s_s[],2s_2s_s[]
    if (1) test_fmul_2d_2d_d0(TyDF);
@@ -4920,24 +4920,24 @@ int main ( void )
 
    // fmulx     d_d_d[],s_s_s[]
    // fmulx     2d_2d_d[],4s_4s_s[],2s_2s_s[]
-   if (0) test_fmulx_d_d_d0(TyDF);
-   if (0) test_fmulx_d_d_d1(TyDF);
-   if (0) test_fmulx_s_s_s0(TySF);
-   if (0) test_fmulx_s_s_s3(TySF);
-   if (0) test_fmulx_2d_2d_d0(TyDF);
-   if (0) test_fmulx_2d_2d_d1(TyDF);
-   if (0) test_fmulx_4s_4s_s0(TySF);
-   if (0) test_fmulx_4s_4s_s3(TySF);
-   if (0) test_fmulx_2s_2s_s0(TySF);
-   if (0) test_fmulx_2s_2s_s3(TySF);
+   if (1) test_fmulx_d_d_d0(TyDF);
+   if (1) test_fmulx_d_d_d1(TyDF);
+   if (1) test_fmulx_s_s_s0(TySF);
+   if (1) test_fmulx_s_s_s3(TySF);
+   if (1) test_fmulx_2d_2d_d0(TyDF);
+   if (1) test_fmulx_2d_2d_d1(TyDF);
+   if (1) test_fmulx_4s_4s_s0(TySF);
+   if (1) test_fmulx_4s_4s_s3(TySF);
+   if (1) test_fmulx_2s_2s_s0(TySF);
+   if (1) test_fmulx_2s_2s_s3(TySF);
 
    // fmulx     d,s
    // fmulx     2d,4s,2s
-   if (0) test_fmulx_d_d_d(TyDF);
-   if (0) test_fmulx_s_s_s(TySF);
-   if (0) test_fmulx_2d_2d_2d(TyDF);
-   if (0) test_fmulx_4s_4s_4s(TySF);
-   if (0) test_fmulx_2s_2s_2s(TySF);
+   if (1) test_fmulx_d_d_d(TyDF);
+   if (1) test_fmulx_s_s_s(TySF);
+   if (1) test_fmulx_2d_2d_2d(TyDF);
+   if (1) test_fmulx_4s_4s_4s(TySF);
+   if (1) test_fmulx_2s_2s_2s(TySF);
 
    // frecpe    d,s (recip estimate)
    // frecpe    2d,4s,2s

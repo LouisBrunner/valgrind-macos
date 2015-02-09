@@ -3075,7 +3075,8 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
             case DW_LANG_C_plus_plus_11: case DW_LANG_C_plus_plus_14:
                parser->language = 'C'; break;
             case DW_LANG_Fortran77: case DW_LANG_Fortran90:
-            case DW_LANG_Fortran95:
+            case DW_LANG_Fortran95: case DW_LANG_Fortran03:
+            case DW_LANG_Fortran08:
                parser->language = 'F'; break;
             case DW_LANG_Ada83: case DW_LANG_Ada95: 
                parser->language = 'A'; break;

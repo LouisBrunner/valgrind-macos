@@ -171,6 +171,8 @@ typedef enum dwarf_source_language
     DW_LANG_C_plus_plus_11 = 0x001a,
     DW_LANG_C11 = 0x001d,
     DW_LANG_C_plus_plus_14 = 0x0021,
+    DW_LANG_Fortran03 = 0x0022,
+    DW_LANG_Fortran08 = 0x0023,
     /* MIPS.  */
     DW_LANG_Mips_Assembler = 0x8001,
     /* UPC.  */

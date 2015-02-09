@@ -628,6 +628,10 @@ Int VG_(check_executable)(/*OUT*/Bool* is_setuid,
       return sr_Err(res);
    }
 
+   if ( VKI_S_ISDIR (st.mode) ) {
+      return VKI_EACCES;
+   }
+
    if ( (st.mode & (VKI_S_ISUID | VKI_S_ISGID)) && !allow_setuid ) {
       if (is_setuid)
          *is_setuid = True;

@@ -91,6 +91,7 @@ where XXXXXX is the bug number as listed below.
 343733  Unhandled syscall 187 (msgctl and related) on aarch64
 343802  s390x: Fix false positives "conditional jump or move depends on
         unitialised value(s)"
+343967  Don't warn about setuid/setgid/setcap executable for directories
 n-i-bz  Provide implementations of certain compiler builtins to support
         compilers who may not provide those
 n-i-bz  Old STABS code is still being compiled, but never used. Remove it.

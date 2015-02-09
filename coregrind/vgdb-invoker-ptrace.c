@@ -194,7 +194,8 @@ typedef struct {
    Int lwpid;
 }
 VgdbThreadState;
-static VgdbThreadState vgdb_threads[VG_N_THREADS];
+static VgdbThreadState *vgdb_threads;
+static int vg_n_threads;
 
 static const
 HChar* name_of_ThreadStatus ( ThreadStatus status )
@@ -393,12 +394,14 @@ Bool acquire_and_suspend_threads (pid_t pid)
 
    if (shared32 != NULL) {
       vgt = shared32->threads;
+      vg_n_threads = shared32->vg_n_threads;
       sz_tst = shared32->sizeof_ThreadState;
       off_status = shared32->offset_status;
       off_lwpid = shared32->offset_lwpid;
    }
    else if (shared64 != NULL) {
       vgt = shared64->threads;
+      vg_n_threads = shared64->vg_n_threads;
       sz_tst = shared64->sizeof_ThreadState;
       off_status = shared64->offset_status;
       off_lwpid = shared64->offset_lwpid;
@@ -406,8 +409,11 @@ Bool acquire_and_suspend_threads (pid_t pid)
       assert (0);
    }
 
+   vgdb_threads = vmalloc(vg_n_threads * sizeof vgdb_threads[0]);
+
    /* note: the entry 0 is unused */
-   for (i = 1; i < VG_N_THREADS; i++) {
+   DEBUG(1, "examining thread entries from tid 1 to tid %d\n", vg_n_threads-1);
+   for (i = 1; i < vg_n_threads; i++) {
       vgt += sz_tst;
       rw = ptrace_read_memory(pid, vgt+off_status,
                               &(vgdb_threads[i].status),
@@ -474,7 +480,7 @@ void detach_from_all_threads (pid_t pid)
    Bool pid_found = False;
 
    /* detach from all the threads  */
-   for (i = 1; i < VG_N_THREADS; i++) {
+   for (i = 1; i < vg_n_threads; i++) {
       if (vgdb_threads[i].status != VgTs_Empty) {
          if (vgdb_threads[i].status == VgTs_Init
              && vgdb_threads[i].lwpid == 0) {
@@ -499,6 +505,8 @@ void detach_from_all_threads (pid_t pid)
          }
       }
    }
+
+   free (vgdb_threads);
 
    if (!pid_found && pid) {
       /* No threads are live. Process is busy stopping.

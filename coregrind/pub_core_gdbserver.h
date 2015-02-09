@@ -190,6 +190,7 @@ typedef
       // address of VG_(threads) and various sizes
       // and offset needed by vgdb.
       Addr32 threads;
+      int vg_n_threads;
       int sizeof_ThreadState;
       int offset_status;
       int offset_lwpid;
@@ -208,6 +209,7 @@ typedef
       Addr64 invoke_gdbserver;
 
       Addr64 threads;
+      int vg_n_threads;
       int sizeof_ThreadState;
       int offset_status;
       int offset_lwpid;

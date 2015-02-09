@@ -311,7 +311,7 @@ void remote_open (const HChar *name)
    int len;
    VgdbShared vgdbinit = 
       {0, 0, (Addr) VG_(invoke_gdbserver),
-       (Addr) VG_(threads), sizeof(ThreadState), 
+       (Addr) VG_(threads), VG_N_THREADS, sizeof(ThreadState), 
        offsetof(ThreadState, status),
        offsetof(ThreadState, os_state) + offsetof(ThreadOSstate, lwpid),
        0};

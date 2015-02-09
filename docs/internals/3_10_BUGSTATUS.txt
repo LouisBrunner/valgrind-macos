@@ -42,8 +42,6 @@ go in here.
 
 === VEX/arm64 ==========================================================
 
-343335  unhandled instruction 0x1E638400 (fccmp)
-
 === VEX/x86 ============================================================
 
 339416  unhandled instruction bytes 0xC5 0xF1 0xEF 0xC9

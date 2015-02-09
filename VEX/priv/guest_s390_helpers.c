@@ -1566,7 +1566,7 @@ s390_calculate_cc(ULong cc_op, ULong cc_dep1, ULong cc_dep2, ULong cc_ndep)
 
    case S390_CC_OP_TEST_UNDER_MASK_16: {
       /* Create a TMLL insn with the mask as given by cc_dep2 */
-      UInt insn  = (0xA701 << 16) | cc_dep2;
+      UInt insn  = (0xA701u << 16) | cc_dep2;
       UInt value = cc_dep1;
 
       __asm__ volatile (

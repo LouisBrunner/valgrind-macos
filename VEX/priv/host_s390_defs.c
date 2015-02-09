@@ -185,7 +185,8 @@ s390_hreg_guest_state_pointer(void)
 static __inline__ Bool
 fits_signed_20bit(Int value)
 {
-   return ((value << 12) >> 12) == value;
+   UInt uval = value;
+   return ((Int)(uval << 12) >> 12) == value;
 }
 
 
@@ -4725,36 +4726,36 @@ s390_emit_LOCG(UChar *p, UChar r1, UChar m3, UChar b2, UShort dl2, UChar dh2)
 static __inline__ Bool
 uint_fits_signed_16bit(UInt val)
 {
-   Int v = val & 0xFFFFu;
+   UInt v = val & 0xFFFFu;
 
    /* sign extend */
-   v = (v << 16) >> 16;
+   v = (Int)(v << 16) >> 16;
 
-   return val == (UInt)v;
+   return val == v;
 }
 
 
 static __inline__ Bool
 ulong_fits_signed_16bit(ULong val)
 {
-   Long v = val & 0xFFFFu;
+   ULong v = val & 0xFFFFu;
 
    /* sign extend */
-   v = (v << 48) >> 48;
+   v = (Long)(v << 48) >> 48;
 
-   return val == (ULong)v;
+   return val == v;
 }
 
 
 static __inline__ Bool
 ulong_fits_signed_32bit(ULong val)
 {
-   Long v = val & 0xFFFFFFFFu;
+   ULong v = val & 0xFFFFFFFFu;
 
    /* sign extend */
-   v = (v << 32) >> 32;
+   v = (Long)(v << 32) >> 32;
 
-   return val == (ULong)v;
+   return val == v;
 }
 
 

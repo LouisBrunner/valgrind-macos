@@ -94,15 +94,6 @@ typedef enum {
 /*--- Helpers for constructing IR.                         ---*/
 /*------------------------------------------------------------*/
 
-/* Sign extend a value with the given number of bits. This is a
-   macro because it allows us to overload the type of the value.
-   Note that VALUE must have a signed type! */
-#undef sign_extend
-#define sign_extend(value,num_bits) \
-(((value) << (sizeof(__typeof__(value)) * 8 - (num_bits))) >> \
- (sizeof(__typeof__(value)) * 8 - (num_bits)))
-
-
 /* Add a statement to the current irsb. */
 static __inline__ void
 stmt(IRStmt *st)

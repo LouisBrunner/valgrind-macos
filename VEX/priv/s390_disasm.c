@@ -246,7 +246,7 @@ static HChar *
 dxb_operand(HChar *p, UInt d, UInt x, UInt b, Bool displacement_is_signed)
 {
    if (displacement_is_signed) {
-      Int displ = ((Int)d << 12) >> 12;  /* sign extend */
+      Int displ = (Int)(d << 12) >> 12;  /* sign extend */
 
       p += vex_sprintf(p, "%d", displ);
    } else {
@@ -399,15 +399,15 @@ s390_disasm(UInt command, ...)
          break;
 
       case S390_ARG_PCREL: {
-         Int offset = (Int)(va_arg(args, UInt));
+         Long offset = va_arg(args, Int);
 
          /* Convert # halfwords to # bytes */
          offset <<= 1;
 
          if (offset < 0) {
-            p += vex_sprintf(p, ".%d", offset);
+            p += vex_sprintf(p, ".%lld", offset);
          } else {
-            p += vex_sprintf(p, ".+%u", offset);
+            p += vex_sprintf(p, ".+%lld", offset);
          }
          break;
       }

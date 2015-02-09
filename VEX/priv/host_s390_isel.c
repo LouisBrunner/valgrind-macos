@@ -268,22 +268,22 @@ ulong_fits_unsigned_12bit(ULong val)
 static __inline__ Bool
 ulong_fits_signed_20bit(ULong val)
 {
-   Long v = val & 0xFFFFFu;
+   ULong v = val & 0xFFFFFu;
 
-   v = (v << 44) >> 44;  /* sign extend */
+   v = (Long)(v << 44) >> 44;  /* sign extend */
 
-   return val == (ULong)v;
+   return val == v;
 }
 
 
 static __inline__ Bool
 ulong_fits_signed_8bit(ULong val)
 {
-   Long v = val & 0xFFu;
+   ULong v = val & 0xFFu;
 
-   v = (v << 56) >> 56;  /* sign extend */
+   v = (Long)(v << 56) >> 56;  /* sign extend */
 
-   return val == (ULong)v;
+   return val == v;
 }
 
 /* EXPR is an expression that is used as an address. Return an s390_amode
@@ -463,13 +463,13 @@ s390_expr_is_const_zero(IRExpr *expr)
 static ULong
 get_const_value_as_ulong(const IRConst *con)
 {
-   Long value;
+   ULong value;
 
    switch (con->tag) {
-   case Ico_U1:  value = con->Ico.U1;  return (ULong) ((value << 63) >> 63);
-   case Ico_U8:  value = con->Ico.U8;  return (ULong) ((value << 56) >> 56);
-   case Ico_U16: value = con->Ico.U16; return (ULong) ((value << 48) >> 48);
-   case Ico_U32: value = con->Ico.U32; return (ULong) ((value << 32) >> 32);
+   case Ico_U1:  value = con->Ico.U1;  return ((Long)(value << 63) >> 63);
+   case Ico_U8:  value = con->Ico.U8;  return ((Long)(value << 56) >> 56);
+   case Ico_U16: value = con->Ico.U16; return ((Long)(value << 48) >> 48);
+   case Ico_U32: value = con->Ico.U32; return ((Long)(value << 32) >> 32);
    case Ico_U64: return con->Ico.U64;
    default:
       vpanic("get_const_value_as_ulong");

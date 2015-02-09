@@ -45,6 +45,9 @@
      an add, and so suffer double rounding and hence sometimes the
      least significant mantissa bit is incorrect.  Fix: use the IR
      multiply-add IROps instead.
+
+   * FRINTA, FRINTN are kludged .. they just round to nearest.  No special
+     handling for the "ties" case.  FRINTX might be dubious too.
 */
 
 /* "Special" instructions.
@@ -8872,7 +8875,9 @@ Bool dis_AdvSIMD_modified_immediate(/*MB_OUT*/DisResult* dres, UInt insn)
       case BITS5(0,1,1,1,0):
          ok = True; isMOV = True; break;
 
-      /* FMOV (vector, immediate, single precision) */
+      /* -------- x,0,1111 FMOV (vector, immediate, F32) -------- */
+      case BITS5(0,1,1,1,1): // 0:1111
+         ok = True; isFMOV = True; break;
 
       /* -------- x,1,0000 MVNI 32-bit shifted imm -------- */
       /* -------- x,1,0010 MVNI 32-bit shifted imm  -------- */
@@ -8910,7 +8915,7 @@ Bool dis_AdvSIMD_modified_immediate(/*MB_OUT*/DisResult* dres, UInt insn)
       case BITS5(1,1,1,1,0):
          ok = True; isMOV = True; break;
 
-      /* -------- 1,1,1111 FMOV (vector, immediate) -------- */
+      /* -------- 1,1,1111 FMOV (vector, immediate, F64) -------- */
       case BITS5(1,1,1,1,1): // 1:1111
          ok = bitQ == 1; isFMOV = True; break;
 
@@ -11852,6 +11857,79 @@ Bool dis_AdvSIMD_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
+
+   ix = 0;
+   if (opcode == BITS5(1,1,0,0,0) || opcode == BITS5(1,1,0,0,1)) {
+      ix = 1 + ((((bitU & 1) << 2) | ((size & 2) << 0)) | ((opcode & 1) << 0));
+      // = 1 + bitU[0]:size[1]:opcode[0]
+      vassert(ix >= 1 && ix <= 8);
+      if (ix == 7) ix = 0;
+   }
+   if (ix > 0) {
+      /* -------- 0,0x,11000 FRINTN 2d_2d, 4s_4s, 2s_2s (1) -------- */
+      /* -------- 0,0x,11001 FRINTM 2d_2d, 4s_4s, 2s_2s (2) -------- */
+      /* -------- 0,1x,11000 FRINTP 2d_2d, 4s_4s, 2s_2s (3) -------- */
+      /* -------- 0,1x,11001 FRINTZ 2d_2d, 4s_4s, 2s_2s (4) -------- */
+      /* -------- 1,0x,11000 FRINTA 2d_2d, 4s_4s, 2s_2s (5) -------- */
+      /* -------- 1,0x,11001 FRINTX 2d_2d, 4s_4s, 2s_2s (6) -------- */
+      /* -------- 1,1x,11000 (apparently unassigned)    (7) -------- */
+      /* -------- 1,1x,11001 FRINTI 2d_2d, 4s_4s, 2s_2s (8) -------- */
+      /* rm plan:
+         FRINTN: tieeven -- !! FIXME KLUDGED !!
+         FRINTM: -inf
+         FRINTP: +inf
+         FRINTZ: zero
+         FRINTA: tieaway -- !! FIXME KLUDGED !!
+         FRINTX: per FPCR + "exact = TRUE"
+         FRINTI: per FPCR
+      */
+      Bool isD = (size & 1) == 1;
+      if (bitQ == 0 && isD) return False; // implied 1d case
+
+      IRTemp irrmRM = mk_get_IR_rounding_mode();
+
+      UChar ch = '?';
+      IRTemp irrm = newTemp(Ity_I32);
+      switch (ix) {
+         case 1: ch = 'n'; assign(irrm, mkU32(Irrm_NEAREST)); break;
+         case 2: ch = 'm'; assign(irrm, mkU32(Irrm_NegINF)); break;
+         case 3: ch = 'p'; assign(irrm, mkU32(Irrm_PosINF)); break;
+         case 4: ch = 'z'; assign(irrm, mkU32(Irrm_ZERO)); break; 
+         // The following is a kludge.  Should be: Irrm_NEAREST_TIE_AWAY_0
+         case 5: ch = 'a'; assign(irrm, mkU32(Irrm_NEAREST)); break;
+         // I am unsure about the following, due to the "integral exact"
+         // description in the manual.  What does it mean? (frintx, that is)
+         case 6: ch = 'x'; assign(irrm, mkexpr(irrmRM)); break;
+         case 8: ch = 'i'; assign(irrm, mkexpr(irrmRM)); break; 
+         default: vassert(0);
+      }
+
+      IRTemp src = newTempV128();
+      assign(src, getQReg128(nn));
+
+      IROp opRND = isD ? Iop_RoundF64toInt : Iop_RoundF32toInt;
+      if (isD) {
+         for (UInt i = 0; i < 2; i++) {
+            putQRegLane(dd, i, binop(opRND, mkexpr(irrm),
+                                            getQRegLane(nn, i, Ity_F64)));
+         }
+      } else {
+         UInt n = bitQ==1 ? 4 : 2;
+         for (UInt i = 0; i < n; i++) {
+            putQRegLane(dd, i, binop(opRND, mkexpr(irrm),
+                                            getQRegLane(nn, i, Ity_F32)));
+         }
+         if (bitQ == 0)
+            putQRegLane(dd, 1, mkU64(0)); // zero out lanes 2 and 3
+      }
+      const HChar* arr = nameArr_Q_SZ(bitQ, size);
+      DIP("frint%c %s.%s, %s.%s\n", ch,
+          nameQReg128(dd), arr, nameQReg128(nn), arr);
+      return True;
+   }
+
+
+
    if (size == X10 && opcode == BITS5(1,1,1,0,0)) {
       /* -------- 0,10,11100: URECPE  4s_4s, 2s_2s -------- */
       /* -------- 1,10,11100: URSQRTE 4s_4s, 2s_2s -------- */
@@ -12526,7 +12604,7 @@ Bool dis_AdvSIMD_fp_data_proc_1_source(/*MB_OUT*/DisResult* dres, UInt insn)
             001 +inf      (FRINTP)
             010 -inf      (FRINTM)
             011 zero      (FRINTZ)
-            000 tieeven
+            000 tieeven   (FRINTN) -- !! FIXME KLUDGED !!
             100 tieaway   (FRINTA) -- !! FIXME KLUDGED !!
             110 per FPCR + "exact = TRUE" (FRINTX)
             101 unallocated
@@ -12548,6 +12626,9 @@ Bool dis_AdvSIMD_fp_data_proc_1_source(/*MB_OUT*/DisResult* dres, UInt insn)
             ch = 'x'; irrmE = mkexpr(mk_get_IR_rounding_mode()); break;
          case BITS3(1,1,1):
             ch = 'i'; irrmE = mkexpr(mk_get_IR_rounding_mode()); break;
+         // The following is a kludge.  There's no Irrm_ value to represent
+         // this ("to nearest, with ties to even")
+         case BITS3(0,0,0): ch = 'n'; irrmE = mkU32(Irrm_NEAREST); break;
          default: break;
       }
       if (irrmE) {

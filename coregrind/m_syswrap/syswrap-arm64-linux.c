@@ -1040,6 +1040,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_mbind,             sys_mbind),             // 235
    LINXY(__NR_get_mempolicy,     sys_get_mempolicy),     // 236
    LINX_(__NR_set_mempolicy,     sys_set_mempolicy),     // 237
+   LINXY(__NR_accept4,           sys_accept4),           // 242
    GENXY(__NR_wait4,             sys_wait4),             // 260
 
    LINXY(__NR_process_vm_readv,  sys_process_vm_readv),  // 270
@@ -1378,8 +1379,6 @@ static SyscallTableEntry syscall_main_table[] = {
 //ZZ    LINX_(__NR_pwritev,           sys_pwritev),          // 362
 //ZZ    LINXY(__NR_rt_tgsigqueueinfo, sys_rt_tgsigqueueinfo),// 363
 //ZZ    LINXY(__NR_perf_event_open,   sys_perf_event_open),  // 364
-//ZZ 
-//ZZ    LINXY(__NR_accept4,           sys_accept4),          // 366
 //ZZ 
 //ZZ    LINXY(__NR_name_to_handle_at, sys_name_to_handle_at),// 370
 //ZZ    LINXY(__NR_open_by_handle_at, sys_open_by_handle_at),// 371

@@ -3734,7 +3734,7 @@ typedef
 #if defined(PLAT_arm_linux)
 
 /* These regs are trashed by the hidden call. */
-#define __CALLER_SAVED_REGS "r0", "r1", "r2", "r3","r4","r14"
+#define __CALLER_SAVED_REGS "r0", "r1", "r2", "r3","r4", "r12", "r14"
 
 /* Macros to save and align the stack before making a function
    call and restore it afterwards as gcc may not keep the stack

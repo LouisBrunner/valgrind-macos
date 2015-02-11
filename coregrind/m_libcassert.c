@@ -134,8 +134,8 @@
            : /* trash */ "memory"                         \
         );                                                \
         (srP)->r_pc = block[0] - 8;                       \
-        (srP)->r_sp = block[1];                           \
-        (srP)->misc.ARM.r14 = block[2];                   \
+        (srP)->misc.ARM.r14 = block[1];                   \
+        (srP)->r_sp = block[2];                           \
         (srP)->misc.ARM.r12 = block[3];                   \
         (srP)->misc.ARM.r11 = block[4];                   \
         (srP)->misc.ARM.r7  = block[5];                   \

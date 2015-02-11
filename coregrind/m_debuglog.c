@@ -244,12 +244,14 @@ static UInt local_sys_write_stderr ( const HChar* buf, Int n )
       "mov  r0, #2\n\t"        /* stderr */
       "ldr  r1, [%0]\n\t"      /* buf */
       "ldr  r2, [%0, #4]\n\t"  /* n */
+      "push {r6,r7}\n\t"
       "mov  r7, #"VG_STRINGIFY(__NR_write)"\n\t"
       "svc  0x0\n"          /* write() */
+      "pop  {r6,r7}\n\t"
       "str  r0, [%0]\n\t"
       :
       : "r" (block)
-      : "r0","r1","r2","r7"
+      : "r0","r1","r2"
    );
    if (block[0] < 0)
       block[0] = -1;
@@ -260,12 +262,14 @@ static UInt local_sys_getpid ( void )
 {
    UInt __res;
    __asm__ volatile (
-      "mov  r7, #"VG_STRINGIFY(__NR_getpid)"\n"
-      "svc  0x0\n"      /* getpid() */
-      "mov  %0, r0\n"
+      "push {r6,r7}\n\t"
+      "mov  r7, #"VG_STRINGIFY(__NR_getpid)"\n\t"
+      "svc  0x0\n\t"      /* getpid() */
+      "pop  {r6,r7}\n\t"
+      "mov  %0, r0\n\t"
       : "=r" (__res)
       :
-      : "r0", "r7" );
+      : "r0" );
    return __res;
 }
 

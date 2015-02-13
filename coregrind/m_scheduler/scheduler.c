@@ -691,8 +691,8 @@ void VG_(scheduler_init_phase2) ( ThreadId tid_main,
    layout requirements.  See libvex.h for details, but in short the
    requirements are: There must be no holes in between the primary
    guest state, its two copies, and the spill area.  In short, all 4
-   areas must have a 16-aligned size and be 16-aligned, and placed
-   back-to-back. */
+   areas must be aligned on the LibVEX_GUEST_STATE_ALIGN boundary and 
+   be placed back-to-back without holes in between. */
 static void do_pre_run_checks ( volatile ThreadState* tst )
 {
    Addr a_vex     = (Addr) & tst->arch.vex;
@@ -712,15 +712,15 @@ static void do_pre_run_checks ( volatile ThreadState* tst )
                (void*)a_vexsh2, sz_vexsh2,
                (void*)a_spill, sz_spill );
 
-   vg_assert(VG_IS_16_ALIGNED(sz_vex));
-   vg_assert(VG_IS_16_ALIGNED(sz_vexsh1));
-   vg_assert(VG_IS_16_ALIGNED(sz_vexsh2));
-   vg_assert(VG_IS_16_ALIGNED(sz_spill));
+   vg_assert(sz_vex    % LibVEX_GUEST_STATE_ALIGN == 0);
+   vg_assert(sz_vexsh1 % LibVEX_GUEST_STATE_ALIGN == 0);
+   vg_assert(sz_vexsh2 % LibVEX_GUEST_STATE_ALIGN == 0);
+   vg_assert(sz_spill  % LibVEX_GUEST_STATE_ALIGN == 0);
 
-   vg_assert(VG_IS_16_ALIGNED(a_vex));
-   vg_assert(VG_IS_16_ALIGNED(a_vexsh1));
-   vg_assert(VG_IS_16_ALIGNED(a_vexsh2));
-   vg_assert(VG_IS_16_ALIGNED(a_spill));
+   vg_assert(a_vex    % LibVEX_GUEST_STATE_ALIGN == 0);
+   vg_assert(a_vexsh1 % LibVEX_GUEST_STATE_ALIGN == 0);
+   vg_assert(a_vexsh2 % LibVEX_GUEST_STATE_ALIGN == 0);
+   vg_assert(a_spill  % LibVEX_GUEST_STATE_ALIGN == 0);
 
    /* Check that the guest state and its two shadows have the same
       size, and that there are no holes in between.  The latter is

@@ -92,9 +92,9 @@ typedef
 
       /* Note that for code generation reasons, we require that the
          guest state area, its two shadows, and the spill area, are
-         16-aligned and have 16-aligned sizes, and there are no holes
-         in between.  This is checked by do_pre_run_checks() in
-         scheduler.c. */
+         aligned on LibVEX_GUEST_STATE_ALIGN and have sizes, such that
+         there are no holes in between. This is checked by do_pre_run_checks()
+         in scheduler.c. */
 
       /* Saved machine context. */
       VexGuestArchState vex __attribute__((aligned(LibVEX_GUEST_STATE_ALIGN)));

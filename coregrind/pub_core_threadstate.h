@@ -97,14 +97,17 @@ typedef
          scheduler.c. */
 
       /* Saved machine context. */
-      VexGuestArchState vex __attribute__((aligned(16)));
+      VexGuestArchState vex __attribute__((aligned(LibVEX_GUEST_STATE_ALIGN)));
 
       /* Saved shadow context (2 copies). */
-      VexGuestArchState vex_shadow1 __attribute__((aligned(16)));
-      VexGuestArchState vex_shadow2 __attribute__((aligned(16)));
+      VexGuestArchState vex_shadow1
+                        __attribute__((aligned(LibVEX_GUEST_STATE_ALIGN)));
+      VexGuestArchState vex_shadow2 
+                        __attribute__((aligned(LibVEX_GUEST_STATE_ALIGN)));
 
       /* Spill area. */
-      UChar vex_spill[LibVEX_N_SPILL_BYTES] __attribute__((aligned(16)));
+      UChar vex_spill[LibVEX_N_SPILL_BYTES]
+            __attribute__((aligned(LibVEX_GUEST_STATE_ALIGN)));
 
       /* --- END vex-mandated guest state --- */
    } 

@@ -44,7 +44,8 @@
 
 ThreadId VG_(running_tid) = VG_INVALID_THREADID;
 
-ThreadState VG_(threads)[VG_N_THREADS] __attribute__((aligned(16)));
+ThreadState VG_(threads)[VG_N_THREADS]
+            __attribute__((aligned(LibVEX_GUEST_STATE_ALIGN)));
 
 /*------------------------------------------------------------*/
 /*--- Operations.                                          ---*/

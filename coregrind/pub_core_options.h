@@ -295,6 +295,10 @@ extern Word VG_(clo_max_stackframe);
    be? */
 extern Word VG_(clo_main_stacksize);
 
+/* The maximum number of threads we support. */
+#define MAX_THREADS_DEFAULT 500
+extern UInt VG_(clo_max_threads);
+
 /* If the same IP is found twice in a backtrace in a sequence of max
    VG_(clo_merge_recursive_frames) frames, then the recursive call
    is merged in the backtrace.

@@ -1038,11 +1038,11 @@ static ULong stats__qcache_probes  = 0;
    * a shadow stack of StackFrames, which is a double-linked list
    * an stack block interval tree
 */
-static  struct _StackFrame*          shadowStacks[VG_N_THREADS];
+static  struct _StackFrame**         shadowStacks;
 
-static  WordFM* /* StackTreeNode */  siTrees[VG_N_THREADS];
+static  WordFM** /* StackTreeNode */ siTrees;
 
-static  QCache                       qcaches[VG_N_THREADS];
+static  QCache*                      qcaches;
 
 
 /* Additionally, there is one global variable interval tree
@@ -1062,9 +1062,16 @@ static void invalidate_all_QCaches ( void )
 static void ourGlobals_init ( void )
 {
    Word i;
+
+   shadowStacks = sg_malloc( "di.sg_main.oGi.2",
+                             VG_N_THREADS * sizeof shadowStacks[0] );
+   siTrees = sg_malloc( "di.sg_main.oGi.3", VG_N_THREADS * sizeof siTrees[0] );
+   qcaches = sg_malloc( "di.sg_main.oGi.4", VG_N_THREADS * sizeof qcaches[0] );
+
    for (i = 0; i < VG_N_THREADS; i++) {
       shadowStacks[i] = NULL;
       siTrees[i] = NULL;
+      qcaches[i] = (QCache){};
    }
    invalidate_all_QCaches();
    giTree = VG_(newFM)( sg_malloc, "di.sg_main.oGi.1", sg_free, 

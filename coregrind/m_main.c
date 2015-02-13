@@ -212,6 +212,8 @@ static void usage_NORETURN ( Bool debug_help )
 "                  recovered by stack scanning [5]\n"
 "    --resync-filter=no|yes|verbose [yes on MacOS, no on other OSes]\n"
 "              attempt to avoid expensive address-space-resync operations\n"
+"    --max-threads=<number>    maximum number of threads that valgrind can\n"
+"                              handle [%d]\n"
 "\n";
 
    const HChar usage2[] = 
@@ -317,7 +319,8 @@ static void usage_NORETURN ( Bool debug_help )
                default_redzone_size       /* char* */,
                VG_(clo_vgdb_poll)         /* int */,
                VG_(vgdb_prefix_default)() /* char* */,
-               N_SECTORS_DEFAULT          /* int */
+               N_SECTORS_DEFAULT          /* int */,
+               MAX_THREADS_DEFAULT        /* int */
                ); 
    if (VG_(details).name) {
       VG_(printf)("  user options for %s:\n", VG_(details).name);
@@ -394,6 +397,9 @@ static void early_process_cmd_line_options ( /*OUT*/Int* need_help,
       else if VG_INT_CLO(str, "--max-stackframe", VG_(clo_max_stackframe)) {}
       else if VG_INT_CLO(str, "--main-stacksize", VG_(clo_main_stacksize)) {}
 
+      // Set up VG_(clo_max_threads); needed for VG_(tl_pre_clo_init)
+      else if VG_INT_CLO(str, "--max-threads", VG_(clo_max_threads)) {}
+
       // Set up VG_(clo_sim_hints). This is needed a.o. for an inner
       // running in an outer, to have "no-inner-prefix" enabled
       // as early as possible.
@@ -403,6 +409,9 @@ static void early_process_cmd_line_options ( /*OUT*/Int* need_help,
                             "no-nptl-pthread-stackcache",
                             VG_(clo_sim_hints)) {}
    }
+
+   /* For convenience */
+   VG_N_THREADS = VG_(clo_max_threads);
 }
 
 /* The main processing for command line options.  See comments above
@@ -539,6 +548,7 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
       else if VG_STREQ(     arg, "-d")                   {}
       else if VG_STREQN(17, arg, "--max-stackframe=")    {}
       else if VG_STREQN(17, arg, "--main-stacksize=")    {}
+      else if VG_STREQN(14, arg, "--max-threads=")       {}
       else if VG_STREQN(12, arg, "--sim-hints=")         {}
       else if VG_STREQN(15, arg, "--profile-heap=")      {}
       else if VG_STREQN(20, arg, "--core-redzone-size=") {}

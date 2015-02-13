@@ -61,7 +61,7 @@ static exec_stack current_states;
 /* current running thread */
 ThreadId CLG_(current_tid);
 
-static thread_info* thread[VG_N_THREADS];
+static thread_info** thread;
 
 thread_info** CLG_(get_threads)()
 {
@@ -75,7 +75,10 @@ thread_info* CLG_(get_current_thread)()
 
 void CLG_(init_threads)()
 {
-    Int i;
+    UInt i;
+
+    thread = CLG_MALLOC("cl.threads.it.1", VG_N_THREADS * sizeof thread[0]);
+
     for(i=0;i<VG_N_THREADS;i++)
 	thread[i] = 0;
     CLG_(current_tid) = VG_INVALID_THREADID;

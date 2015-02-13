@@ -26,6 +26,10 @@ Release 3.11.0 is under development, not yet released.
   searching/extracting errors in output files mixing valgrind
   errors with program output.
 
+* New Option --max-threads=<number> can be used to increase the
+  number of threads valgrind can handle. The default is 500 threads
+  which should be more than enough for most applications.
+
 * ==================== FIXED BUGS ====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"

@@ -49,6 +49,7 @@
 #include "pub_core_signals.h"       // For VG_SIGVGKILL, VG_(poll_signals)
 #include "pub_core_syscall.h"
 #include "pub_core_machine.h"
+#include "pub_core_mallocfree.h"
 #include "pub_core_syswrap.h"
 
 #include "priv_types_n_macros.h"
@@ -1364,13 +1365,13 @@ typedef
    }
    SyscallInfo;
 
-SyscallInfo syscallInfo[VG_N_THREADS];
-
+SyscallInfo *syscallInfo;
 
 /* The scheduler needs to be able to zero out these records after a
    fork, hence this is exported from m_syswrap. */
 void VG_(clear_syscallInfo) ( Int tid )
 {
+   vg_assert(syscallInfo);
    vg_assert(tid >= 0 && tid < VG_N_THREADS);
    VG_(memset)( & syscallInfo[tid], 0, sizeof( syscallInfo[tid] ));
    syscallInfo[tid].status.what = SsIdle;
@@ -1383,6 +1384,9 @@ static void ensure_initialised ( void )
    if (init_done) 
       return;
    init_done = True;
+
+   syscallInfo = VG_(malloc)("scinfo", VG_N_THREADS * sizeof syscallInfo[0]);
+
    for (i = 0; i < VG_N_THREADS; i++) {
       VG_(clear_syscallInfo)( i );
    }

@@ -33,12 +33,8 @@
 
 #include "pub_tool_basics.h"   // ThreadID
 
-/* The maximum number of pthreads that we support.  This is
-   deliberately not very high since our implementation of some of the
-   scheduler algorithms is surely O(N) in the number of threads, since
-   that's simple, at least.  And (in practice) we hope that most
-   programs do not need many threads. */
-#define VG_N_THREADS 500
+/* The maximum number of pthreads that we support. */
+extern UInt VG_N_THREADS;
 
 /* Special magic value for an invalid ThreadId.  It corresponds to
    LinuxThreads using zero as the initial value for

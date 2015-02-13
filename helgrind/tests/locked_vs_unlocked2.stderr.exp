@@ -16,13 +16,13 @@ Thread #x was created
 
  Lock at 0x........ was first observed
    at 0x........: pthread_mutex_init (hg_intercepts.c:...)
-   by 0x........: main (locked_vs_unlocked2.c:58)
- Address 0x........ is 0 bytes inside data symbol "mx2a"
+   by 0x........: main (locked_vs_unlocked2.c:59)
+ Address 0x........ is 0 bytes inside data symbol "mx2b"
 
  Lock at 0x........ was first observed
    at 0x........: pthread_mutex_init (hg_intercepts.c:...)
-   by 0x........: main (locked_vs_unlocked2.c:59)
- Address 0x........ is 0 bytes inside data symbol "mx2b"
+   by 0x........: main (locked_vs_unlocked2.c:58)
+ Address 0x........ is 0 bytes inside data symbol "mx2a"
 
  Lock at 0x........ was first observed
    at 0x........: pthread_mutex_init (hg_intercepts.c:...)

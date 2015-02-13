@@ -1703,9 +1703,9 @@ Bool CLG_(handle_client_request)(ThreadId tid, UWord *args, UWord *ret)
 
 /* struct timeval syscalltime[VG_N_THREADS]; */
 #if CLG_MICROSYSTIME
-ULong syscalltime[VG_N_THREADS];
+ULong *syscalltime;
 #else
-UInt syscalltime[VG_N_THREADS];
+UInt *syscalltime;
 #endif
 
 static
@@ -2071,6 +2071,12 @@ void CLG_(pre_clo_init)(void)
     VG_(track_post_deliver_signal)( & CLG_(post_signal) );
 
     CLG_(set_clo_defaults)();
+
+    syscalltime = CLG_MALLOC("cl.main.pci.1",
+                             VG_N_THREADS * sizeof syscalltime[0]);
+    for (UInt i = 0; i < VG_N_THREADS; ++i) {
+       syscalltime[i] = 0;
+    }
 }
 
 VG_DETERMINE_INTERFACE_VERSION(CLG_(pre_clo_init))

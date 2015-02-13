@@ -247,9 +247,9 @@ ThreadId VG_(alloc_ThreadState) ( void )
          return i;
       }
    }
-   VG_(printf)("vg_alloc_ThreadState: no free slots available\n");
-   VG_(printf)("Increase VG_N_THREADS, rebuild and try again.\n");
-   VG_(core_panic)("VG_N_THREADS is too low");
+   VG_(printf)("Use --max-threads=INT to specify a larger number of threads\n"
+               "and rerun valgrind\n");
+   VG_(core_panic)("Max number of threads is too low");
    /*NOTREACHED*/
 }
 

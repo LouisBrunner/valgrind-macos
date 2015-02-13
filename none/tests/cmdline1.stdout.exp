@@ -125,6 +125,8 @@ usage: valgrind [options] prog-and-args
                   recovered by stack scanning [5]
     --resync-filter=no|yes|verbose [yes on MacOS, no on other OSes]
               attempt to avoid expensive address-space-resync operations
+    --max-threads=<number>    maximum number of threads that valgrind can
+                              handle [500]
 
   user options for Nulgrind:
     (none)

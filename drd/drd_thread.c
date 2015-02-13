@@ -65,7 +65,7 @@ static ULong    s_conflict_set_bitmap_creation_count;
 static ULong    s_conflict_set_bitmap2_creation_count;
 static ThreadId s_vg_running_tid  = VG_INVALID_THREADID;
 DrdThreadId     DRD_(g_drd_running_tid) = DRD_INVALID_THREADID;
-ThreadInfo      DRD_(g_threadinfo)[DRD_N_THREADS];
+ThreadInfo*     DRD_(g_threadinfo);
 struct bitmap*  DRD_(g_conflict_set);
 Bool DRD_(verify_conflict_set);
 static Bool     s_trace_context_switches = False;
@@ -142,6 +142,12 @@ void DRD_(thread_set_join_list_vol)(const int jlv)
 
 void DRD_(thread_init)(void)
 {
+   DRD_(g_threadinfo) = VG_(malloc)("drd.main.ti.1",
+                                DRD_N_THREADS * sizeof DRD_(g_threadinfo)[0]);
+   for (UInt i = 0; i < DRD_N_THREADS; ++i) {
+      static ThreadInfo initval;
+      DRD_(g_threadinfo)[i] = initval;
+   }
 }
 
 /**
@@ -152,7 +158,7 @@ void DRD_(thread_init)(void)
  */
 DrdThreadId DRD_(VgThreadIdToDrdThreadId)(const ThreadId tid)
 {
-   int i;
+   UInt i;
 
    if (tid == VG_INVALID_THREADID)
       return DRD_INVALID_THREADID;
@@ -172,7 +178,7 @@ DrdThreadId DRD_(VgThreadIdToDrdThreadId)(const ThreadId tid)
 /** Allocate a new DRD thread ID for the specified Valgrind thread ID. */
 static DrdThreadId DRD_(VgThreadIdToNewDrdThreadId)(const ThreadId tid)
 {
-   int i;
+   UInt i;
 
    tl_assert(DRD_(VgThreadIdToDrdThreadId)(tid) == DRD_INVALID_THREADID);
 
@@ -218,7 +224,7 @@ static DrdThreadId DRD_(VgThreadIdToNewDrdThreadId)(const ThreadId tid)
 /** Convert a POSIX thread ID into a DRD thread ID. */
 DrdThreadId DRD_(PtThreadIdToDrdThreadId)(const PThreadId tid)
 {
-   int i;
+   UInt i;
 
    if (tid != INVALID_POSIX_THREADID)
    {
@@ -336,7 +342,7 @@ DrdThreadId DRD_(thread_post_create)(const ThreadId vg_created)
 
 static void DRD_(thread_delayed_delete)(const DrdThreadId tid)
 {
-   int j;
+   UInt j;
 
    DRD_(g_threadinfo)[tid].vg_thread_exists = False;
    DRD_(g_threadinfo)[tid].posix_thread_exists = False;
@@ -476,9 +482,9 @@ void DRD_(thread_set_on_alt_stack)(const DrdThreadId tid,
 
 Int DRD_(thread_get_threads_on_alt_stack)(void)
 {
-   int i, n = 0;
+   int n = 0;
 
-   for (i = 1; i < DRD_N_THREADS; i++)
+   for (UInt i = 1; i < DRD_N_THREADS; i++)
       n += DRD_(g_threadinfo)[i].on_alt_stack;
    return n;
 }

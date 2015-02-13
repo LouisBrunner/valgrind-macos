@@ -32,6 +32,7 @@
 #include "pub_core_vki.h"
 #include "pub_core_libcsetjmp.h"    // to keep _threadstate.h happy
 #include "pub_core_threadstate.h"
+#include "pub_core_mallocfree.h"    // VG_(malloc)
 #include "pub_core_libcassert.h"
 #include "pub_core_inner.h"
 #if defined(ENABLE_INNER_CLIENT_REQUEST)
@@ -44,8 +45,8 @@
 
 ThreadId VG_(running_tid) = VG_INVALID_THREADID;
 
-ThreadState VG_(threads)[VG_N_THREADS]
-            __attribute__((aligned(LibVEX_GUEST_STATE_ALIGN)));
+ThreadState *VG_(threads);
+UInt VG_N_THREADS;
 
 /*------------------------------------------------------------*/
 /*--- Operations.                                          ---*/
@@ -54,6 +55,14 @@ ThreadState VG_(threads)[VG_N_THREADS]
 void VG_(init_Threads)(void)
 {
    ThreadId tid;
+   UChar *addr, *aligned_addr;
+
+   addr = VG_(malloc)("init_Threads",
+          VG_N_THREADS * sizeof VG_(threads)[0] + LibVEX_GUEST_STATE_ALIGN - 1);
+
+   // Align
+   aligned_addr = addr + (Addr)addr % LibVEX_GUEST_STATE_ALIGN;
+   VG_(threads) = (ThreadState *)aligned_addr;
 
    for (tid = 1; tid < VG_N_THREADS; tid++) {
       INNER_REQUEST(

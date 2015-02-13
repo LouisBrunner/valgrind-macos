@@ -362,7 +362,7 @@ ThreadState;
 /* A statically allocated array of threads.  NOTE: [0] is
    never used, to simplify the simulation of initialisers for
    LinuxThreads. */
-extern ThreadState VG_(threads)[VG_N_THREADS];
+extern ThreadState *VG_(threads);
 
 // The running thread.  m_scheduler should be the only other module
 // to write to this.

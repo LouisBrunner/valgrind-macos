@@ -480,7 +480,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          offB_HOST_EvC_COUNTER  = offsetof(VexGuestX86State,host_EvC_COUNTER);
          offB_HOST_EvC_FAILADDR = offsetof(VexGuestX86State,host_EvC_FAILADDR);
          vassert(vta->archinfo_guest.endness == VexEndnessLE);
-         vassert(0 == sizeof(VexGuestX86State) % 16);
+         vassert(0 == sizeof(VexGuestX86State) % LibVEX_GUEST_STATE_ALIGN);
          vassert(sizeof( ((VexGuestX86State*)0)->guest_CMSTART) == 4);
          vassert(sizeof( ((VexGuestX86State*)0)->guest_CMLEN  ) == 4);
          vassert(sizeof( ((VexGuestX86State*)0)->guest_NRADDR ) == 4);
@@ -500,7 +500,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          offB_HOST_EvC_COUNTER  = offsetof(VexGuestAMD64State,host_EvC_COUNTER);
          offB_HOST_EvC_FAILADDR = offsetof(VexGuestAMD64State,host_EvC_FAILADDR);
          vassert(vta->archinfo_guest.endness == VexEndnessLE);
-         vassert(0 == sizeof(VexGuestAMD64State) % 16);
+         vassert(0 == sizeof(VexGuestAMD64State) % LibVEX_GUEST_STATE_ALIGN);
          vassert(sizeof( ((VexGuestAMD64State*)0)->guest_CMSTART ) == 8);
          vassert(sizeof( ((VexGuestAMD64State*)0)->guest_CMLEN   ) == 8);
          vassert(sizeof( ((VexGuestAMD64State*)0)->guest_NRADDR  ) == 8);
@@ -520,7 +520,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          offB_HOST_EvC_COUNTER  = offsetof(VexGuestPPC32State,host_EvC_COUNTER);
          offB_HOST_EvC_FAILADDR = offsetof(VexGuestPPC32State,host_EvC_FAILADDR);
          vassert(vta->archinfo_guest.endness == VexEndnessBE);
-         vassert(0 == sizeof(VexGuestPPC32State) % 16);
+         vassert(0 == sizeof(VexGuestPPC32State) % LibVEX_GUEST_STATE_ALIGN);
          vassert(sizeof( ((VexGuestPPC32State*)0)->guest_CMSTART ) == 4);
          vassert(sizeof( ((VexGuestPPC32State*)0)->guest_CMLEN   ) == 4);
          vassert(sizeof( ((VexGuestPPC32State*)0)->guest_NRADDR  ) == 4);
@@ -541,7 +541,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          offB_HOST_EvC_FAILADDR = offsetof(VexGuestPPC64State,host_EvC_FAILADDR);
          vassert(vta->archinfo_guest.endness == VexEndnessBE ||
                  vta->archinfo_guest.endness == VexEndnessLE );
-         vassert(0 == sizeof(VexGuestPPC64State) % 16);
+         vassert(0 == sizeof(VexGuestPPC64State) % LibVEX_GUEST_STATE_ALIGN);
          vassert(sizeof( ((VexGuestPPC64State*)0)->guest_CMSTART    ) == 8);
          vassert(sizeof( ((VexGuestPPC64State*)0)->guest_CMLEN      ) == 8);
          vassert(sizeof( ((VexGuestPPC64State*)0)->guest_NRADDR     ) == 8);
@@ -562,7 +562,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          offB_HOST_EvC_COUNTER  = offsetof(VexGuestS390XState,host_EvC_COUNTER);
          offB_HOST_EvC_FAILADDR = offsetof(VexGuestS390XState,host_EvC_FAILADDR);
          vassert(vta->archinfo_guest.endness == VexEndnessBE);
-         vassert(0 == sizeof(VexGuestS390XState) % 16);
+         vassert(0 == sizeof(VexGuestS390XState) % LibVEX_GUEST_STATE_ALIGN);
          vassert(sizeof( ((VexGuestS390XState*)0)->guest_CMSTART    ) == 8);
          vassert(sizeof( ((VexGuestS390XState*)0)->guest_CMLEN      ) == 8);
          vassert(sizeof( ((VexGuestS390XState*)0)->guest_NRADDR     ) == 8);
@@ -582,7 +582,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          offB_HOST_EvC_COUNTER  = offsetof(VexGuestARMState,host_EvC_COUNTER);
          offB_HOST_EvC_FAILADDR = offsetof(VexGuestARMState,host_EvC_FAILADDR);
          vassert(vta->archinfo_guest.endness == VexEndnessLE);
-         vassert(0 == sizeof(VexGuestARMState) % 16);
+         vassert(0 == sizeof(VexGuestARMState) % LibVEX_GUEST_STATE_ALIGN);
          vassert(sizeof( ((VexGuestARMState*)0)->guest_CMSTART) == 4);
          vassert(sizeof( ((VexGuestARMState*)0)->guest_CMLEN  ) == 4);
          vassert(sizeof( ((VexGuestARMState*)0)->guest_NRADDR ) == 4);
@@ -602,7 +602,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          offB_HOST_EvC_COUNTER  = offsetof(VexGuestARM64State,host_EvC_COUNTER);
          offB_HOST_EvC_FAILADDR = offsetof(VexGuestARM64State,host_EvC_FAILADDR);
          vassert(vta->archinfo_guest.endness == VexEndnessLE);
-         vassert(0 == sizeof(VexGuestARM64State) % 16);
+         vassert(0 == sizeof(VexGuestARM64State) % LibVEX_GUEST_STATE_ALIGN);
          vassert(sizeof( ((VexGuestARM64State*)0)->guest_CMSTART) == 8);
          vassert(sizeof( ((VexGuestARM64State*)0)->guest_CMLEN  ) == 8);
          vassert(sizeof( ((VexGuestARM64State*)0)->guest_NRADDR ) == 8);
@@ -623,7 +623,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          offB_HOST_EvC_FAILADDR = offsetof(VexGuestMIPS32State,host_EvC_FAILADDR);
          vassert(vta->archinfo_guest.endness == VexEndnessLE
                  || vta->archinfo_guest.endness == VexEndnessBE);
-         vassert(0 == sizeof(VexGuestMIPS32State) % 16);
+         vassert(0 == sizeof(VexGuestMIPS32State) % LibVEX_GUEST_STATE_ALIGN);
          vassert(sizeof( ((VexGuestMIPS32State*)0)->guest_CMSTART) == 4);
          vassert(sizeof( ((VexGuestMIPS32State*)0)->guest_CMLEN  ) == 4);
          vassert(sizeof( ((VexGuestMIPS32State*)0)->guest_NRADDR ) == 4);
@@ -644,7 +644,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          offB_HOST_EvC_FAILADDR = offsetof(VexGuestMIPS64State,host_EvC_FAILADDR);
          vassert(vta->archinfo_guest.endness == VexEndnessLE
                  || vta->archinfo_guest.endness == VexEndnessBE);
-         vassert(0 == sizeof(VexGuestMIPS64State) % 16);
+         vassert(0 == sizeof(VexGuestMIPS64State) % LibVEX_GUEST_STATE_ALIGN);
          vassert(sizeof( ((VexGuestMIPS64State*)0)->guest_CMSTART) == 8);
          vassert(sizeof( ((VexGuestMIPS64State*)0)->guest_CMLEN  ) == 8);
          vassert(sizeof( ((VexGuestMIPS64State*)0)->guest_NRADDR ) == 8);

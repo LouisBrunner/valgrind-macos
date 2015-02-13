@@ -399,8 +399,8 @@ HInstrArray* doRegisterAllocation (
       not at each insn processed. */
    Bool do_sanity_check;
 
-   vassert(0 == (guest_sizeB % 16));
-   vassert(0 == (LibVEX_N_SPILL_BYTES % 16));
+   vassert(0 == (guest_sizeB % LibVEX_GUEST_STATE_ALIGN));
+   vassert(0 == (LibVEX_N_SPILL_BYTES % LibVEX_GUEST_STATE_ALIGN));
    vassert(0 == (N_SPILL64S % 2));
 
    /* The live range numbers are signed shorts, and so limiting the

@@ -531,6 +531,8 @@ typedef
 
 #define LibVEX_N_SPILL_BYTES 4096
 
+/* The size of the guest state must be a multiple of this number. */
+#define LibVEX_GUEST_STATE_ALIGN 16
 
 /*-------------------------------------------------------*/
 /*--- Initialisation of the library                   ---*/

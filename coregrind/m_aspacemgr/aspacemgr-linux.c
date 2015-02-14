@@ -1202,19 +1202,12 @@ NSegment const * VG_(am_find_nsegment) ( Addr a )
 }
 
 
-/* Given a pointer to a seg, tries to figure out which one it is in
-   nsegments[..].  Very paranoid. */
+/* Map segment pointer to segment index. */
 static Int segAddr_to_index ( const NSegment* seg )
 {
-   Int i;
-   if (seg < &nsegments[0] || seg >= &nsegments[nsegments_used])
-      return -1;
-   i = ((const UChar*)seg - (const UChar*)(&nsegments[0])) / sizeof(NSegment);
-   if (i < 0 || i >= nsegments_used)
-      return -1;
-   if (seg == &nsegments[i])
-      return i;
-   return -1;
+   aspacem_assert(seg >= &nsegments[0] && seg < &nsegments[nsegments_used]);
+
+   return seg - &nsegments[0];
 }
 
 
@@ -1223,8 +1216,7 @@ static Int segAddr_to_index ( const NSegment* seg )
 NSegment const * VG_(am_next_nsegment) ( const NSegment* here, Bool fwds )
 {
    Int i = segAddr_to_index(here);
-   if (i < 0 || i >= nsegments_used)
-      return NULL;
+
    if (fwds) {
       i++;
       if (i >= nsegments_used)
@@ -2710,7 +2702,6 @@ void VG_(am_set_segment_isCH_if_SkAnonC)( const NSegment* seg )
 {
    aspacem_assert(seg != NULL);
    Int i = segAddr_to_index( seg );
-   aspacem_assert(i >= 0 && i < nsegments_used);
    if (nsegments[i].kind == SkAnonC) {
       nsegments[i].isCH = True;
    } else {
@@ -2725,7 +2716,6 @@ void VG_(am_set_segment_hasT_if_SkFileC_or_SkAnonC)( const NSegment* seg )
 {
    aspacem_assert(seg != NULL);
    Int i = segAddr_to_index( seg );
-   aspacem_assert(i >= 0 && i < nsegments_used);
    if (nsegments[i].kind == SkAnonC || nsegments[i].kind == SkFileC) {
       nsegments[i].hasT = True;
    }
@@ -2817,7 +2807,6 @@ Bool VG_(am_extend_into_adjacent_reservation_client) ( const NSegment* seg,
       probably means you passed in a bogus SEG. */
    aspacem_assert(seg != NULL);
    segA = segAddr_to_index( seg );
-   aspacem_assert(segA >= 0 && segA < nsegments_used);
 
    if (nsegments[segA].kind != SkAnonC)
       return False;

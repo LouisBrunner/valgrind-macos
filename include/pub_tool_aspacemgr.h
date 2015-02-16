@@ -71,7 +71,6 @@ typedef
 
      kind == SkFile{C,V}:
         // smode==SmFixed
-        moveLo == moveHi == NotMovable, maxlen == 0
         // there is an associated file
         // segment may have permissions
 
@@ -86,9 +85,9 @@ typedef
         // there's no associated file:
         dev==ino==foff = 0, fnidx == -1
         // segment has no permissions
-        hasR==hasW==hasX==anyTranslated == False
+        hasR==hasW==hasX == False
 
-     Also: anyTranslated==True is only allowed in SkFileV and SkAnonV
+     Also: hasT==True is only allowed in SkFileC and SkAnonC
            (viz, not allowed to make translations from non-client areas)
 */
 typedef

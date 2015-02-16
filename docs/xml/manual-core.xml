@@ -1683,6 +1683,19 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
     </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.max-threads" xreflabel="--max-threads">
+    <term>
+      <option><![CDATA[--max-threads=<number> [default: 500] ]]></option>
+    </term>
+    <listitem>
+      <para>By default, Valgrind can handle to up to 500 threads.
+      Occasionally, that number is too small. Use this option to
+      provide a different limit. E.g.
+      <computeroutput>--max-threads=3000</computeroutput>.
+      </para>
+    </listitem>
+  </varlistentry>
+
 </variablelist>
 <!-- end of xi:include in the manpage -->
 

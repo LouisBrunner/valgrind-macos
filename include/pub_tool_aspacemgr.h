@@ -87,7 +87,7 @@ typedef
         // segment has no permissions
         hasR==hasW==hasX == False
 
-     Also: hasT==True is only allowed in SkFileC and SkAnonC
+     Also: hasT==True is only allowed in SkFileC, SkAnonC, and SkShmC
            (viz, not allowed to make translations from non-client areas)
 */
 typedef

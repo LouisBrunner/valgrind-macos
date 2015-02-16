@@ -1772,14 +1772,14 @@ Bool VG_(translate) ( ThreadId tid,
 
    vg_assert( vge.base[0] == addr );
    /* set 'translations taken from this segment' flag */
-   VG_(am_set_segment_hasT_if_SkFileC_or_SkAnonC)( seg );
+   VG_(am_set_segment_hasT_if_client_segment)( seg );
    } /* END new scope specially for 'seg' */
 
    for (i = 1; i < vge.n_used; i++) {
       NSegment const* seg 
          = VG_(am_find_nsegment)( vge.base[i] );
       /* set 'translations taken from this segment' flag */
-      VG_(am_set_segment_hasT_if_SkFileC_or_SkAnonC)( seg );
+      VG_(am_set_segment_hasT_if_client_segment)( seg );
    }
 
    /* Copy data at trans_addr into the translation cache. */

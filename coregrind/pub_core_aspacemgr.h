@@ -254,9 +254,9 @@ extern Bool VG_(am_change_ownership_v_to_c)( Addr start, SizeT len );
 extern void VG_(am_set_segment_isCH_if_SkAnonC)( const NSegment* seg );
 
 /* Same idea as VG_(am_set_segment_isCH_if_SkAnonC), except set the
-   segment's hasT bit (has-cached-code) if this is SkFileC or SkAnonC
-   segment. */
-extern void VG_(am_set_segment_hasT_if_SkFileC_or_SkAnonC)( const NSegment* );
+   segment's hasT bit (has-cached-code) if this is a client segment,
+   i.e. SkFileC, SkAnonC, or SkShmC. */
+extern void VG_(am_set_segment_hasT_if_client_segment)( const NSegment* );
 
 /* --- --- --- reservations --- --- --- */
 

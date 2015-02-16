@@ -2710,13 +2710,14 @@ void VG_(am_set_segment_isCH_if_SkAnonC)( const NSegment* seg )
 }
 
 /* Same idea as VG_(am_set_segment_isCH_if_SkAnonC), except set the
-   segment's hasT bit (has-cached-code) if this is SkFileC or SkAnonC
-   segment. */
-void VG_(am_set_segment_hasT_if_SkFileC_or_SkAnonC)( const NSegment* seg )
+   segment's hasT bit (has-cached-code) if this is a client segment,
+   i.e. SkFileC, SkAnonC, or SkShmC. */
+void VG_(am_set_segment_hasT_if_client_segment)( const NSegment* seg )
 {
    aspacem_assert(seg != NULL);
    Int i = segAddr_to_index( seg );
-   if (nsegments[i].kind == SkAnonC || nsegments[i].kind == SkFileC) {
+   if (nsegments[i].kind == SkAnonC || nsegments[i].kind == SkFileC ||
+       nsegments[i].kind == SkShmC) {
       nsegments[i].hasT = True;
    }
 }

@@ -1185,10 +1185,7 @@ inline static Int find_nsegment_idx ( Addr a )
 }
 
 
-
-/* Finds the segment containing 'a'.  Only returns file/anon/resvn
-   segments.  This returns a 'NSegment const *' - a pointer to 
-   readonly data. */
+/* Finds the segment containing 'a'.  Only returns non-SkFree segments. */
 NSegment const * VG_(am_find_nsegment) ( Addr a )
 {
    Int i = find_nsegment_idx(a);
@@ -1211,8 +1208,7 @@ static Int segAddr_to_index ( const NSegment* seg )
 }
 
 
-/* Find the next segment along from 'here', if it is a file/anon/resvn
-   segment. */
+/* Find the next segment along from 'here', if it is a non-SkFree segment. */
 NSegment const * VG_(am_next_nsegment) ( const NSegment* here, Bool fwds )
 {
    Int i = segAddr_to_index(here);
@@ -1226,14 +1222,10 @@ NSegment const * VG_(am_next_nsegment) ( const NSegment* here, Bool fwds )
       if (i < 0)
          return NULL;
    }
-   switch (nsegments[i].kind) {
-      case SkFileC: case SkFileV: case SkShmC:
-      case SkAnonC: case SkAnonV: case SkResvn:
-         return &nsegments[i];
-      default:
-         break;
-   }
-   return NULL;
+   if (nsegments[i].kind == SkFree) 
+      return NULL;
+   else
+      return &nsegments[i];
 }
 
 

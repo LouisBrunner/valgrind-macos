@@ -1248,7 +1248,8 @@ ULong VG_(am_get_anonsize_total)( void )
 
 /* Test if a piece of memory is addressable by client or by valgrind with at
    least the "prot" protection permissions by examining the underlying
-   segments.  If client && freeOk is True then SkFree areas are also allowed.
+   segments.  If client && freeOk is True then SkFree and SkResvn areas are
+   also allowed.
 */
 static
 Bool is_valid_for( Bool client, Addr start, SizeT len, UInt prot, Bool freeOk )

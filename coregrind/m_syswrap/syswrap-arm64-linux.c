@@ -1040,7 +1040,10 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_mbind,             sys_mbind),             // 235
    LINXY(__NR_get_mempolicy,     sys_get_mempolicy),     // 236
    LINX_(__NR_set_mempolicy,     sys_set_mempolicy),     // 237
+
+   LINXY(__NR_recvmmsg,          sys_recvmmsg),          // 243
    LINXY(__NR_accept4,           sys_accept4),           // 242
+
    GENXY(__NR_wait4,             sys_wait4),             // 260
 
    LINXY(__NR_sendmmsg,          sys_sendmmsg),          // 269

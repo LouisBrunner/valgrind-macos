@@ -887,6 +887,9 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_linkat,            sys_linkat),            // 37
    LINX_(__NR_renameat,		 sys_renameat),          // 38
 
+   LINX_(__NR_umount2,            sys_umount),           // 39
+   LINX_(__NR_mount,              sys_mount),            // 40
+
    // FIXME IS THIS CORRECT?  it may well not be.
    GENXY(__NR3264_statfs,        sys_statfs),            // 43
    GENXY(__NR3264_fstatfs,       sys_fstatfs),           // 44
@@ -1075,7 +1078,6 @@ static SyscallTableEntry syscall_main_table[] = {
 //ZZ    LINX_(__NR_lseek,             sys_lseek),          // 19
 //ZZ 
 //ZZ    GENX_(__NR_getpid,            sys_getpid),         // 20
-//ZZ    LINX_(__NR_mount,             sys_mount),          // 21
 //ZZ    LINX_(__NR_umount,            sys_oldumount),      // 22
 //ZZ    LINX_(__NR_setuid,            sys_setuid16),       // 23 ## P
 //ZZ    LINX_(__NR_getuid,            sys_getuid16),       // 24 ## P
@@ -1107,7 +1109,6 @@ static SyscallTableEntry syscall_main_table[] = {
 //ZZ 
 //ZZ    LINX_(__NR_getegid,           sys_getegid16),      // 50
 //ZZ    GENX_(__NR_acct,              sys_acct),           // 51
-//ZZ    LINX_(__NR_umount2,           sys_umount),         // 52
 //ZZ //   GENX_(__NR_lock,              sys_ni_syscall),     // 53
 //ZZ 
 //ZZ    LINXY(__NR_fcntl,             sys_fcntl),          // 55

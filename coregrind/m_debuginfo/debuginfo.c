@@ -1411,10 +1411,8 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
 
      if (VG_(clo_verbosity) > 0) {
         VG_(message)(Vg_UserMsg, "LOAD_PDB_DEBUGINFO: done:    "
-                                 "%lu syms, %lu src locs, "
-                                 "%lu src locs, %lu fpo recs\n",
-                     di->symtab_used, di->loctab_used, 
-                     di->inltab_used, di->fpo_size);
+                                 "%lu syms, %lu src locs, %lu fpo recs\n",
+                     di->symtab_used, di->loctab_used, di->fpo_size);
      }
    }
 

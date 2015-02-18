@@ -1508,7 +1508,15 @@ void init_cmdbuf(void)
   for (i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) {
      const HChar *arg = *(HChar**)VG_(indexXA)( VG_(args_for_client), i );
      size += 1;   // separator ' '
-     size += VG_(strlen)(arg);
+     // escape NL in arguments to not break dump format
+     for(j=0; arg[j]; j++)
+       switch(arg[j]) {
+       case '\n':
+       case '\\':
+	 size++; // fall through
+       default:
+	 size++;
+       }
   }
 
   cmdbuf = CLG_MALLOC("cl.dump.ic.1", size + 1);  // +1 for '\0'
@@ -1520,7 +1528,19 @@ void init_cmdbuf(void)
      const HChar *arg = * (HChar**) VG_(indexXA)( VG_(args_for_client), i );
      cmdbuf[size++] = ' ';
      for(j=0; arg[j]; j++)
-        cmdbuf[size++] = arg[j];
+       switch(arg[j]) {
+       case '\n':
+	 cmdbuf[size++] = '\\';
+	 cmdbuf[size++] = 'n';
+	 break;
+       case '\\':
+	 cmdbuf[size++] = '\\';
+	 cmdbuf[size++] = '\\';
+	 break;
+       default:
+	 cmdbuf[size++] = arg[j];
+	 break;
+       }
   }
   cmdbuf[size] = '\0';
 }

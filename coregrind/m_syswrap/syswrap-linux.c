@@ -1015,6 +1015,9 @@ PRE(sys_prctl)
    case VKI_PR_SET_ENDIAN:
       PRE_REG_READ2(int, "prctl", int, option, int, value);
       break;
+   case VKI_PR_SET_PTRACER:
+      PRE_REG_READ2(int, "prctl", int, option, int, ptracer_process_ID);
+      break;
    default:
       PRE_REG_READ5(long, "prctl",
                     int, option, unsigned long, arg2, unsigned long, arg3,

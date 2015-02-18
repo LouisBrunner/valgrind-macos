@@ -2506,6 +2506,7 @@ struct vki_vt_consize {
 # define VKI_PR_ENDIAN_BIG		0
 # define VKI_PR_ENDIAN_LITTLE	1	/* True little endian mode */
 # define VKI_PR_ENDIAN_PPC_LITTLE	2	/* "PowerPC" pseudo little endian */
+#define VKI_PR_SET_PTRACER 0x59616d61
 
 //----------------------------------------------------------------------
 // From linux-2.6.19/include/linux/usbdevice_fs.h

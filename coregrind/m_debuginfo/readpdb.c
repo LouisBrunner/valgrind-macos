@@ -957,10 +957,12 @@ struct pdb_reader
       struct {
          struct PDB_JG_HEADER* header;
          struct PDB_JG_TOC* toc;
+         struct PDB_JG_ROOT* root;
       } jg;
       struct {
          struct PDB_DS_HEADER* header;
          struct PDB_DS_TOC* toc;
+         struct PDB_DS_ROOT* root;
       } ds;
    } u;
 };
@@ -1713,7 +1715,6 @@ static ULong codeview_dump_linetab2(
 
    while ((const HChar*)lbh < linetab + size) {
 
-      const HChar *filename, *dirname;
       UInt filedirname_ix;
       Addr svma_s, svma_e;
       if (lbh->header != 0x000000f2) {
@@ -1736,17 +1737,23 @@ static ULong codeview_dump_linetab2(
                   fd->md5[ 8], fd->md5[ 9], fd->md5[10], fd->md5[11],
                   fd->md5[12], fd->md5[13], fd->md5[14], fd->md5[15] );
       /* FIXME: should check that string is within strimage + strsize */
+      const HChar* filename = NULL; // in ML_(addStr) space
+      const HChar* dirname  = NULL; // in ML_(addStr) space
       if (strimage) {
-         dirname  = strimage + fd->offset;
-         filename = VG_(strrchr)(dirname, '\\');
-         if (filename == NULL) {
-            filename = ML_(addStr)(di, dirname, -1);
+         const HChar* strI = strimage + fd->offset;
+         /* Copy |strI| into mutable storage, temporarily, so we can put a zero
+            byte in place of the last pathname separator. */
+         HChar* strM  = ML_(dinfo_strdup)("di.readpe.cdl2.1", strI);
+         HChar* fname = VG_(strrchr)(strM, '\\');
+         if (fname == NULL) {
+            filename = ML_(addStr)(di, strM, -1);
             dirname  = NULL;
          } else {
-            dirname  = ML_(addStr)(di, dirname, VG_(strlen)(dirname) 
-                                                - VG_(strlen)(filename));
-            filename = ML_(addStr)(di, filename+1, -1);
+            *fname++ = '\0';
+            filename = ML_(addStr)(di, fname, -1);
+            dirname  = ML_(addStr)(di, strM, -1);
          }
+         ML_(dinfo_free)(strM);
       } else {
          filename = ML_(addStr)(di, "???", -1);
          dirname  = NULL;
@@ -1823,6 +1830,65 @@ static Int cmp_FPO_DATA_for_canonicalisation ( const void* f1V,
    return 0; /* identical in both start and length */
 }
 
+static unsigned get_stream_by_name(const struct pdb_reader* pdb, const char* name)
+{
+    const DWORD* pdw;
+    const DWORD* ok_bits;
+    DWORD        cbstr, count;
+    DWORD        string_idx, stream_idx;
+    unsigned     i;
+    const char*  str;
+
+    if (pdb->read_file == pdb_jg_read_file)
+    {
+        str = pdb->u.jg.root->names;
+        cbstr = pdb->u.jg.root->cbNames;
+    }
+    else
+    {
+        str = pdb->u.ds.root->names;
+        cbstr = pdb->u.ds.root->cbNames;
+    }
+
+    pdw = (const DWORD*)(str + cbstr);
+    pdw++; /* number of ok entries */
+    count = *pdw++;
+
+    /* bitfield: first dword is len (in dword), then data */
+    ok_bits = pdw;
+    pdw += *ok_bits++ + 1;
+    if (*pdw++ != 0)
+    {
+        VG_(printf)("unexpected value\n");
+        return -1;
+    }
+
+    for (i = 0; i < count; i++)
+    {
+        if (ok_bits[i / 32] & (1 << (i % 32)))
+        {
+            string_idx = *pdw++;
+            stream_idx = *pdw++;
+            if (!VG_(strcmp)(name, &str[string_idx])) return stream_idx;
+        }
+    }
+    return -1;
+}
+ 
+
+static void *read_string_table(const struct pdb_reader* pdb)
+{
+    unsigned    stream_idx;
+    void*       ret;
+
+    stream_idx = get_stream_by_name(pdb, "/names");
+    if (stream_idx == -1) return NULL;
+    ret = pdb->read_file(pdb, stream_idx,0);
+    if (ret && *(const DWORD*)ret == 0xeffeeffe) return ret;
+    VG_(printf)("wrong header %x expecting 0xeffeeffe\n", *(const DWORD*)ret);
+    ML_(dinfo_free)( ret );
+    return NULL;
+}
 
 /* JRS fixme: compare with version in current Wine sources */
 static void pdb_dump( const struct pdb_reader* pdb,
@@ -1852,19 +1918,12 @@ static void pdb_dump( const struct pdb_reader* pdb,
    /* establish filesimage and filessize.  These are only needed for
       reading linetab2 tables, as far as I can deduce from the Wine
       sources. */
-   char* filesimage = pdb->read_file( pdb, 12, 0);   /* FIXME: really fixed ??? */
-   UInt  filessize  = 0;
-   if (filesimage) {
-      if (*(const DWORD*)filesimage == 0xeffeeffe) {
-         filessize = *(const DWORD*)(filesimage + 8);
-      } else {
-         if (0)
-            VG_(printf)("wrong header %x expecting 0xeffeeffe\n",
-                        *(const DWORD*)filesimage);
-         ML_(dinfo_free)(filesimage);
-         filesimage = NULL;
-      }
-   }
+   char* filesimage;
+   DWORD filessize;
+   if (!(filesimage = read_string_table(pdb)))
+      VG_(printf)("string table not found\n");
+   else
+      filessize = *(const DWORD*)(filesimage + 8);
 
    /* Since we just use the FPO data without reformatting, at least
       do a basic sanity check on the struct layout. */
@@ -2132,6 +2191,7 @@ static void pdb_dump( const struct pdb_reader* pdb,
           * the line number information, and it's not clear yet when
           * to call for linetab2...
           */
+      if(0) VG_(printf)("Reading lines for %s\n", file_name );
          n_line2s_read
             += codeview_dump_linetab2(
                   di, pe_avma, sectp_avma,
@@ -2358,24 +2418,30 @@ Bool ML_(read_pdb_debug_info)(
       struct PDB_DS_ROOT* root;
       pdb_ds_init( &reader, pdbimage, n_pdbimage );
       root = reader.read_file( &reader, 1, 0 );
+      reader.u.ds.root = root;
       if (root) {
          pdb_check_root_version_and_timestamp(
             pdbname, pdbmtime, root->version, root->TimeDateStamp );
-         ML_(dinfo_free)( root );
       }
       pdb_dump( &reader, di, obj_avma, obj_bias, sectp_avma );
+      if (root) {
+         ML_(dinfo_free)( root );
+      }
    }
    else
    if (0==VG_(strncmp)((char const *)&signature, "JG\0\0", 4)) {
       struct PDB_JG_ROOT* root;
       pdb_jg_init( &reader, pdbimage, n_pdbimage );
       root = reader.read_file( &reader, 1, 0 );
+      reader.u.jg.root = root;	
       if (root) {
          pdb_check_root_version_and_timestamp(
             pdbname, pdbmtime, root->version, root->TimeDateStamp);
-         ML_(dinfo_free)( root );
       }
       pdb_dump( &reader, di, obj_avma, obj_bias, sectp_avma );
+      if (root) {
+         ML_(dinfo_free)( root );
+      }
    }
 
    if (1) {

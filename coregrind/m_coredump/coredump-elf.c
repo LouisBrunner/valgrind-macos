@@ -635,8 +635,9 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, ULong max_size)
 	 return;		/* can't create file */
    }
 
-   /* Get the segments */
-   seg_starts = VG_(get_segment_starts)(&n_seg_starts);
+   /* Get the client segments */
+   seg_starts = VG_(get_segment_starts)(SkFileC | SkAnonC | SkShmC,
+                                        &n_seg_starts);
 
    /* First, count how many memory segments to dump */
    num_phdrs = 1;		/* start with notes */

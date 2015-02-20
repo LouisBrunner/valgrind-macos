@@ -36,16 +36,17 @@
 //--------------------------------------------------------------
 // Definition of address-space segments
 
-/* Describes segment kinds. */
+/* Describes segment kinds. Enumerators are one-hot encoded so they
+   can be or'ed together. */
 typedef
    enum {
-      SkFree,   // unmapped space
-      SkAnonC,  // anonymous mapping belonging to the client
-      SkAnonV,  // anonymous mapping belonging to valgrind
-      SkFileC,  // file mapping belonging to the client
-      SkFileV,  // file mapping belonging to valgrind
-      SkShmC,   // shared memory segment belonging to the client
-      SkResvn   // reservation
+      SkFree  = 0x01,  // unmapped space
+      SkAnonC = 0x02,  // anonymous mapping belonging to the client
+      SkAnonV = 0x04,  // anonymous mapping belonging to valgrind
+      SkFileC = 0x08,  // file mapping belonging to the client
+      SkFileV = 0x10,  // file mapping belonging to valgrind
+      SkShmC  = 0x20,  // shared memory segment belonging to the client
+      SkResvn = 0x40   // reservation
    }
    SegKind;
 
@@ -115,7 +116,8 @@ typedef
    NSegment;
 
 
-/* Collect up the start addresses of all non-free, non-resvn segments.
+/* Collect up the start addresses of segments whose kind matches one of
+   the kinds specified in kind_mask.
    The interface is a bit strange in order to avoid potential
    segment-creation races caused by dynamic allocation of the result
    buffer *starts.
@@ -128,7 +130,8 @@ typedef
 
    Correct use of this function may mean calling it multiple times in
    order to establish a suitably-sized buffer. */
-extern Int VG_(am_get_segment_starts)( Addr* starts, Int nStarts );
+extern Int VG_(am_get_segment_starts)( UInt kind_mask, Addr* starts,
+                                       Int nStarts );
 
 /* Finds the segment containing 'a'.  Only returns file/anon/resvn
    segments.  This returns a 'NSegment const *' - a pointer to

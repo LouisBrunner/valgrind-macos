@@ -37,7 +37,9 @@
 // addresses.  The vector is dynamically allocated and should be freed
 // by the caller when done.  REQUIRES m_mallocfree to be running.
 // Writes the number of addresses required into *n_acquired.
-extern Addr* VG_(get_segment_starts) ( /*OUT*/Int* n_acquired );
+// Only those segments are considered whose kind matches any of the kinds
+// given in KIND_MASK.
+extern Addr* VG_(get_segment_starts)( UInt kind_mask, /*OUT*/Int* n_acquired );
 
 #endif   // __PUB_TOOL_ASPACEHL_H
 

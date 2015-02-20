@@ -38,7 +38,9 @@
 // addresses.  The vector is dynamically allocated and should be freed
 // by the caller when done.  REQUIRES m_mallocfree to be running.
 // Writes the number of addresses required into *n_acquired.
-Addr* VG_(get_segment_starts) ( /*OUT*/Int* n_acquired )
+// Only those segments are considered whose kind matches any of the kinds
+// given in KIND_MASK.
+Addr* VG_(get_segment_starts) ( UInt kind_mask, /*OUT*/Int* n_acquired )
 {
    Addr* starts;
    Int   n_starts, r = 0;
@@ -46,7 +48,7 @@ Addr* VG_(get_segment_starts) ( /*OUT*/Int* n_acquired )
    n_starts = 1;
    while (True) {
       starts = VG_(malloc)( "main.gss.1", n_starts * sizeof(Addr) );
-      r = VG_(am_get_segment_starts)( starts, n_starts );
+      r = VG_(am_get_segment_starts)( kind_mask, starts, n_starts );
       if (r >= 0)
          break;
       VG_(free)(starts);

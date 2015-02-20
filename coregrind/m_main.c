@@ -2185,7 +2185,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
      Int   n_seg_starts;
      Addr_n_ULong anu;
 
-     seg_starts = VG_(get_segment_starts)( &n_seg_starts );
+     seg_starts = VG_(get_segment_starts)( SkFileC | SkFileV, &n_seg_starts );
      vg_assert(seg_starts && n_seg_starts >= 0);
 
      /* show them all to the debug info reader.  allow_SkFileV has to
@@ -2207,7 +2207,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
 #  elif defined(VGO_darwin)
    { Addr* seg_starts;
      Int   n_seg_starts;
-     seg_starts = VG_(get_segment_starts)( &n_seg_starts );
+     seg_starts = VG_(get_segment_starts)( SkFileC, &n_seg_starts );
      vg_assert(seg_starts && n_seg_starts >= 0);
 
      /* show them all to the debug info reader.  
@@ -2291,38 +2291,20 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
      vg_assert(VG_(running_tid) == VG_INVALID_THREADID);
      VG_(running_tid) = tid_main;
 
-     seg_starts = VG_(get_segment_starts)( &n_seg_starts );
+     seg_starts = VG_(get_segment_starts)( SkFileC | SkAnonC | SkShmC,
+                                           &n_seg_starts );
      vg_assert(seg_starts && n_seg_starts >= 0);
 
-     /* show interesting ones to the tool */
+     /* Show client segments to the tool */
      for (i = 0; i < n_seg_starts; i++) {
         Word j, n;
         NSegment const* seg 
            = VG_(am_find_nsegment)( seg_starts[i] );
         vg_assert(seg);
-        if (seg->kind == SkFileC || seg->kind == SkAnonC) {
-          /* This next assertion is tricky.  If it is placed
-             immediately before this 'if', it very occasionally fails.
-             Why?  Because previous iterations of the loop may have
-             caused tools (via the new_mem_startup calls) to do
-             dynamic memory allocation, and that may affect the mapped
-             segments; in particular it may cause segment merging to
-             happen.  Hence we cannot assume that seg_starts[i], which
-             reflects the state of the world before we started this
-             loop, is the same as seg->start, as the latter reflects
-             the state of the world (viz, mappings) at this particular
-             iteration of the loop.
-
-             Why does moving it inside the 'if' make it safe?  Because
-             any dynamic memory allocation done by the tools will
-             affect only the state of Valgrind-owned segments, not of
-             Client-owned segments.  And the 'if' guards against that
-             -- we only get in here for Client-owned segments.
-
-             In other words: the loop may change the state of
-             Valgrind-owned segments as it proceeds.  But it should
-             not cause the Client-owned segments to change. */
-           vg_assert(seg->start == seg_starts[i]);
+        vg_assert(seg->kind == SkFileC || seg->kind == SkAnonC ||
+                  seg->kind == SkShmC);
+        vg_assert(seg->start == seg_starts[i]);
+        {
            VG_(debugLog)(2, "main", 
                             "tell tool about %010lx-%010lx %c%c%c\n",
                              seg->start, seg->end,

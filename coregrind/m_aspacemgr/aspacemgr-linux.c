@@ -624,7 +624,8 @@ const HChar* VG_(am_get_filename)( NSegment const * seg )
    return (i < 0) ? NULL : segnames + i;
 }
 
-/* Collect up the start addresses of all non-free, non-resvn segments.
+/* Collect up the start addresses of segments whose kind matches one of
+   the kinds specified in kind_mask.
    The interface is a bit strange in order to avoid potential
    segment-creation races caused by dynamic allocation of the result
    buffer *starts.
@@ -638,7 +639,7 @@ const HChar* VG_(am_get_filename)( NSegment const * seg )
    Correct use of this function may mean calling it multiple times in
    order to establish a suitably-sized buffer. */
 
-Int VG_(am_get_segment_starts)( Addr* starts, Int nStarts )
+Int VG_(am_get_segment_starts)( UInt kind_mask, Addr* starts, Int nStarts )
 {
    Int i, j, nSegs;
 
@@ -647,9 +648,8 @@ Int VG_(am_get_segment_starts)( Addr* starts, Int nStarts )
 
    nSegs = 0;
    for (i = 0; i < nsegments_used; i++) {
-      if (nsegments[i].kind == SkFree || nsegments[i].kind == SkResvn)
-         continue;
-      nSegs++;
+      if ((nsegments[i].kind & kind_mask) != 0)
+         nSegs++;
    }
 
    if (nSegs > nStarts) {
@@ -663,10 +663,8 @@ Int VG_(am_get_segment_starts)( Addr* starts, Int nStarts )
 
    j = 0;
    for (i = 0; i < nsegments_used; i++) {
-      if (nsegments[i].kind == SkFree || nsegments[i].kind == SkResvn)
-         continue;
-      starts[j] = nsegments[i].start;
-      j++;
+      if ((nsegments[i].kind & kind_mask) != 0)
+         starts[j++] = nsegments[i].start;
    }
 
    aspacem_assert(j == nSegs); /* this should not fail */

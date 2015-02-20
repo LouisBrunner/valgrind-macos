@@ -1632,7 +1632,7 @@ static void scan_memory_root_set(Addr searched, SizeT szB)
       if (seg->isCH)                                    continue;
 
       // Don't poke around in device segments as this may cause
-      // hangs.  Exclude /dev/zero just in case someone allocated
+      // hangs.  Include /dev/zero just in case someone allocated
       // memory by explicitly mapping /dev/zero.
       if (seg->kind == SkFileC 
           && (VKI_S_ISCHR(seg->mode) || VKI_S_ISBLK(seg->mode))) {

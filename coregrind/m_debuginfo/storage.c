@@ -1636,15 +1636,16 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
 
   cleanup_more:
  
-   /* If two symbols have identical address ranges, and agree on
-      .isText and .isIFunc, merge them into a single entry, but
-      preserve both names, so we end up knowing all the names for that
-      particular address range. */
+   /* BEGIN Detect and "fix" identical address ranges. */
    while (1) {
       Word r, w, n_merged;
       n_merged = 0;
       w = 0;
-      /* A pass merging entries together */
+      /* A pass merging entries together in the case where they agree
+         on .isText -- that is, either: both are .isText or both are
+         not .isText.  They are merged into a single entry, but both
+         sets of names are preserved, so we end up knowing all the
+         names for that particular address range.*/
       for (r = 1; r < di->symtab_used; r++) {
          vg_assert(w < r);
          if (   di->symtab[w].avmas.main == di->symtab[r].avmas.main
@@ -1675,6 +1676,46 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
             w = r;
          }
       }
+
+      /* A second pass merging entries together where one .isText but
+         the other isn't.  In such cases, just ignore the non-.isText
+         one (a heuristic hack.) */
+      for (r = 1; r < di->symtab_used; r++) {
+         /* Either of the symbols might already have been zapped by
+            the previous pass, so we first have to check that. */
+         if (di->symtab[r-1].pri_name == NULL) continue;
+         if (di->symtab[r-0].pri_name == NULL) continue;
+         /* ok, they are both still valid.  Identical address ranges? */
+         if (di->symtab[r-1].avmas.main != di->symtab[r-0].avmas.main) continue;
+         if (di->symtab[r-1].size       != di->symtab[r-0].size) continue;
+         /* Identical address ranges.  They must disagree on .isText
+            since if they agreed, the previous pass would have merged
+            them. */
+         if (di->symtab[r-1].isText && di->symtab[r-0].isText) vg_assert(0);
+         if (!di->symtab[r-1].isText && !di->symtab[r-0].isText) vg_assert(0);
+         Word to_zap  = di->symtab[r-1].isText ? (r-0) : (r-1);
+         Word to_keep = di->symtab[r-1].isText ? (r-1) : (r-0);
+         vg_assert(!di->symtab[to_zap].isText);
+         vg_assert(di->symtab[to_keep].isText);
+         /* Add to_zap's names to to_keep if to_zap has secondary names 
+            or to_zap's and to_keep's primary names differ. */
+         if (di->symtab[to_zap].sec_names 
+             || (0 != VG_(strcmp)(di->symtab[to_zap].pri_name,
+                                  di->symtab[to_keep].pri_name))) {
+            add_DiSym_names_to_from(di, &di->symtab[to_keep],
+                                        &di->symtab[to_zap]);
+         }
+         /* Mark to_zap as not-in use in the same way as in the
+            previous loop. */
+         di->symtab[to_zap].pri_name = NULL;
+         if (di->symtab[to_zap].sec_names) {
+            ML_(dinfo_free)(di->symtab[to_zap].sec_names);
+            di->symtab[to_zap].sec_names = NULL;
+         }
+         VG_(memset)(&di->symtab[to_zap], 0, sizeof(DiSym));
+         n_merged++;
+      }
+
       TRACE_SYMTAB( "canonicaliseSymtab: %ld symbols merged\n", n_merged);
       if (n_merged == 0)
          break;
@@ -1691,9 +1732,10 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
       }
       vg_assert(w + n_merged == di->symtab_used);
       di->symtab_used = w;
-   }
+   } /* while (1) */
+   /* END Detect and "fix" identical address ranges. */
 
-   /* Detect and "fix" overlapping address ranges. */
+   /* BEGIN Detect and "fix" overlapping address ranges. */
    n_truncated = 0;
 
    for (i = 0; i < ((Word)di->symtab_used) -1; i++) {
@@ -1781,6 +1823,7 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
       }
       n_truncated++;
    }
+   /* END Detect and "fix" overlapping address ranges. */
 
    if (n_truncated > 0) goto cleanup_more;
 

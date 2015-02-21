@@ -711,10 +711,14 @@
 #define __NR_vfs_purge              VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(455)
 #endif /* DARWIN_VERS >= DARWIN_10_9 */
 
-#if DARWIN_VERS == DARWIN_10_10
+#if DARWIN_VERS >= DARWIN_10_10
 #define __NR_necp_match_policy      VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(460)
 #define __NR_getattrlistbulk        VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(461)
 #define __NR_bsdthread_ctl          VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(478)
+#define __NR_guarded_open_dprotected_np VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(484)
+#define __NR_guarded_write_np       VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(485)
+#define __NR_guarded_pwrite_np      VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(486)
+#define __NR_guarded_writev_np      VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(487)
 #endif
 
 #if DARWIN_VERS < DARWIN_10_6

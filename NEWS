@@ -84,6 +84,7 @@ where XXXXXX is the bug number as listed below.
 342063  wrong format specifier for test mcblocklistsearch in gdbserver_tests
 342221  socket connect false positive uninit memory for unknown af family
 342603  Add I2C_SMBUS ioctl support
+342635  OS X 10.10 (Yosemite) - missing system calls and fcntl code
 342795  Internal glibc __GI_mempcpy call should be intercepted
 343012  Unhandled syscall 319 (memfd_create)
 343069  Patch updating v4l2 API support

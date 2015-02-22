@@ -5781,6 +5781,46 @@ POST(task_policy_set)
    }
 }
 
+
+PRE(mach_ports_register)
+{
+#pragma pack(4)
+    typedef struct {
+       mach_msg_header_t Head;
+       /* start of the kernel processed data */
+       mach_msg_body_t msgh_body;
+       mach_msg_ool_ports_descriptor_t init_port_set;
+       /* end of the kernel processed data */
+       NDR_record_t NDR;
+       mach_msg_type_number_t init_port_setCnt;
+    } Request;
+#pragma pack()
+    
+    // Request *req = (Request *)ARG1;
+    
+    PRINT("mach_ports_register(%s)", name_for_port(MACH_REMOTE));
+    
+    AFTER = POST_FN(mach_ports_register);
+}
+
+POST(mach_ports_register)
+{
+#pragma pack(4)
+    typedef struct {
+       mach_msg_header_t Head;
+       NDR_record_t NDR;
+       kern_return_t RetCode;
+    } Reply;
+#pragma pack()
+    
+    Reply *reply = (Reply *)ARG1;
+    if (!reply->RetCode) {
+    } else {
+        PRINT("mig return %d", reply->RetCode);
+    }
+}
+
+
 PRE(mach_ports_lookup)
 {
 #pragma pack(4)
@@ -7695,6 +7735,9 @@ PRE(mach_msg_task)
 
    case 3402:
       CALL_PRE(task_threads);
+      return;
+   case 3403:
+      CALL_PRE(mach_ports_register);
       return;
    case 3404:
       CALL_PRE(mach_ports_lookup);

@@ -593,6 +593,7 @@ DECL_TEMPLATE(darwin, task_get_exception_ports);
 DECL_TEMPLATE(darwin, semaphore_create);
 DECL_TEMPLATE(darwin, semaphore_destroy);
 DECL_TEMPLATE(darwin, task_policy_set);
+DECL_TEMPLATE(darwin, mach_ports_register);
 DECL_TEMPLATE(darwin, mach_ports_lookup);
 DECL_TEMPLATE(darwin, task_threads);
 DECL_TEMPLATE(darwin, task_suspend);

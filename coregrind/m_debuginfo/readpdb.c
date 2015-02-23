@@ -1915,13 +1915,12 @@ static void pdb_dump( const struct pdb_reader* pdb,
    /* establish filesimage and filessize.  These are only needed for
       reading linetab2 tables, as far as I can deduce from the Wine
       sources. */
-   char* filesimage;
-   DWORD filessize;
-   if (!(filesimage = read_string_table(pdb))) {
-      VG_(umsg)("LOAD_PDB_DEBUGINFO: pdb_dump: string table not found\n");
-   }
-   else {
+   DWORD filessize  = 0;
+   char* filesimage = read_string_table(pdb);
+   if (filesimage) {
       filessize = *(const DWORD*)(filesimage + 8);
+   } else {
+      VG_(umsg)("LOAD_PDB_DEBUGINFO: pdb_dump: string table not found\n");
    }
 
    /* Since we just use the FPO data without reformatting, at least
@@ -2190,7 +2189,7 @@ static void pdb_dump( const struct pdb_reader* pdb,
           * the line number information, and it's not clear yet when
           * to call for linetab2...
           */
-      if(0) VG_(printf)("Reading lines for %s\n", file_name );
+         if (0) VG_(printf)("Reading lines for %s\n", file_name );
          n_line2s_read
             += codeview_dump_linetab2(
                   di, pe_avma, sectp_avma,

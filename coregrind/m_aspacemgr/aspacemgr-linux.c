@@ -685,7 +685,7 @@ static Bool sane_NSegment ( const NSegment* s )
    if (s == NULL) return False;
 
    /* No zero sized segments and no wraparounds. */
-   if (s->start >= s->end) return False;
+   if (s->start >= s->end + 1) return False;
 
    /* require page alignment */
    if (!VG_IS_PAGE_ALIGNED(s->start)) return False;

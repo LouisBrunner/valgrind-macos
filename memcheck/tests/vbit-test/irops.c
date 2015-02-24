@@ -255,6 +255,8 @@ static irop_t irops[] = {
   { DEFOP(Iop_RoundF64toF64_ZERO,    UNDEF_ALL), .s390x = 0, .amd64 = 0, .x86 = 0, .arm = 0, .ppc64 = 1, .ppc32 = 1, .mips32 = 0, .mips64 = 1 },
   { DEFOP(Iop_TruncF64asF32, UNDEF_ALL), .s390x = 0, .amd64 = 0, .x86 = 0, .arm = 0, .ppc64 = 1, .ppc32 = 1, .mips32 = 0, .mips64 = 1 }, // mips asserts
   { DEFOP(Iop_RoundF64toF32, UNDEF_ALL), .s390x = 0, .amd64 = 0, .x86 = 0, .arm = 0, .ppc64 = 1, .ppc32 = 1, .mips32 = 0, .mips64 = 0 },
+  { DEFOP(Iop_RecpExpF64, UNDEF_UNKNOWN), },
+  { DEFOP(Iop_RecpExpF32, UNDEF_UNKNOWN), },
 
   /* ------------------ 32-bit SIMD Integer ------------------ */
   { DEFOP(Iop_QAdd32S, UNDEF_UNKNOWN), },
@@ -616,6 +618,10 @@ static irop_t irops[] = {
   { DEFOP(Iop_Abs64Fx2, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Sqrt64Fx2, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Neg64Fx2, UNDEF_UNKNOWN), },
+  { DEFOP(Iop_RecipEst64Fx2, UNDEF_UNKNOWN), },
+  { DEFOP(Iop_RecipStep64Fx2, UNDEF_UNKNOWN), },
+  { DEFOP(Iop_RSqrtEst64Fx2, UNDEF_UNKNOWN), },
+  { DEFOP(Iop_RSqrtStep64Fx2, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Add64F0x2, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Sub64F0x2, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Mul64F0x2, UNDEF_UNKNOWN), },
@@ -1042,6 +1048,11 @@ static irop_t irops[] = {
   { DEFOP(Iop_PwBitMtxXpose64x2, UNDEF_UNKNOWN), },
 };
 
+/* Force compile time failure in case libvex_ir.h::IROp was updated
+   and the irops array is out of synch */
+extern int ensure_complete[
+   (sizeof irops / sizeof *irops == Iop_LAST - Iop_INVALID - 1) ? 1 : -1
+                          ];
 
 /* Return a descriptor for OP, iff it exists and it is implemented
    for the current architecture. */

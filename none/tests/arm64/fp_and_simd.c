@@ -4941,23 +4941,23 @@ int main ( void )
 
    // frecpe    d,s (recip estimate)
    // frecpe    2d,4s,2s
-   if (0) test_frecpe_d_d(TyDF);
-   if (0) test_frecpe_s_s(TySF);
-   if (0) test_frecpe_2d_2d(TyDF);
-   if (0) test_frecpe_4s_4s(TySF);
-   if (0) test_frecpe_2s_2s(TySF);
+   if (1) test_frecpe_d_d(TyDF);
+   if (1) test_frecpe_s_s(TySF);
+   if (1) test_frecpe_2d_2d(TyDF);
+   if (1) test_frecpe_4s_4s(TySF);
+   if (1) test_frecpe_2s_2s(TySF);
 
    // frecps    d,s (recip step)
    // frecps    2d,4s,2s
-   if (0) test_frecps_d_d_d(TyDF);
-   if (0) test_frecps_s_s_s(TySF);
-   if (0) test_frecps_2d_2d_2d(TyDF);
-   if (0) test_frecps_4s_4s_4s(TySF);
-   if (0) test_frecps_2s_2s_2s(TySF);
+   if (1) test_frecps_d_d_d(TyDF);
+   if (1) test_frecps_s_s_s(TySF);
+   if (1) test_frecps_2d_2d_2d(TyDF);
+   if (1) test_frecps_4s_4s_4s(TySF);
+   if (1) test_frecps_2s_2s_2s(TySF);
 
    // frecpx    d,s (recip exponent)
-   if (0) test_frecpx_d_d(TyDF);
-   if (0) test_frecpx_s_s(TySF);
+   if (1) test_frecpx_d_d(TyDF);
+   if (1) test_frecpx_s_s(TySF);
 
    // frinta    d,s
    // frinti    d,s
@@ -5012,19 +5012,19 @@ int main ( void )
 
    // frsqrte   d,s (est)
    // frsqrte   2d,4s,2s
-   if (0) test_frsqrte_d_d(TyDF);
-   if (0) test_frsqrte_s_s(TySF);
-   if (0) test_frsqrte_2d_2d(TyDF);
-   if (0) test_frsqrte_4s_4s(TySF);
-   if (0) test_frsqrte_2s_2s(TySF);
+   if (1) test_frsqrte_d_d(TyDF);
+   if (1) test_frsqrte_s_s(TySF);
+   if (1) test_frsqrte_2d_2d(TyDF);
+   if (1) test_frsqrte_4s_4s(TySF);
+   if (1) test_frsqrte_2s_2s(TySF);
 
    // frsqrts   d,s (step)
    // frsqrts   2d,4s,2s
-   if (0) test_frsqrts_d_d_d(TyDF);
-   if (0) test_frsqrts_s_s_s(TySF);
-   if (0) test_frsqrts_2d_2d_2d(TyDF);
-   if (0) test_frsqrts_4s_4s_4s(TySF);
-   if (0) test_frsqrts_2s_2s_2s(TySF);
+   if (1) test_frsqrts_d_d_d(TyDF);
+   if (1) test_frsqrts_s_s_s(TySF);
+   if (1) test_frsqrts_2d_2d_2d(TyDF);
+   if (1) test_frsqrts_4s_4s_4s(TySF);
+   if (1) test_frsqrts_2s_2s_2s(TySF);
 
    // ======================== CONV ========================
 

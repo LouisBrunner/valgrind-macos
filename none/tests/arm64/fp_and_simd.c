@@ -5032,9 +5032,9 @@ int main ( void )
    if (0) test_fcvt_s_h(TyHF);
    if (0) test_fcvt_d_h(TyHF);
    if (0) test_fcvt_h_s(TySF);
-   if (0) test_fcvt_d_s(TySF);
+   if (1) test_fcvt_d_s(TySF);
    if (0) test_fcvt_h_d(TyDF);
-   if (0) test_fcvt_s_d(TyDF);
+   if (1) test_fcvt_s_d(TyDF);
 
    // fcvtl{2}  4s/4h, 4s/8h, 2d/2s, 2d/4s (float convert to longer form)
    if (0) test_fcvtl_4s_4h(TyHF);
@@ -5045,8 +5045,8 @@ int main ( void )
    // fcvtn{2}  4h/4s, 8h/4s, 2s/2d, 4s/2d (float convert to narrower form)
    if (0) test_fcvtn_4h_4s(TySF);
    if (0) test_fcvtn_8h_4s(TySF);
-   if (0) test_fcvtn_2s_2d(TyDF);
-   if (0) test_fcvtn_4s_2d(TyDF);
+   if (1) test_fcvtn_2s_2d(TyDF);
+   if (1) test_fcvtn_4s_2d(TyDF);
 
    // fcvtas    d,s  (fcvt to signed int,   nearest, ties away)
    // fcvtau    d,s  (fcvt to unsigned int, nearest, ties away)
@@ -5064,14 +5064,14 @@ int main ( void )
    if (0) test_fcvtau_4s_4s(TySF);
    if (0) test_fcvtas_2s_2s(TySF);
    if (0) test_fcvtau_2s_2s(TySF);
-   if (0) test_fcvtas_w_s(TySF);
-   if (0) test_fcvtau_w_s(TySF);
-   if (0) test_fcvtas_x_s(TySF);
-   if (0) test_fcvtau_x_s(TySF);
-   if (0) test_fcvtas_w_d(TyDF);
-   if (0) test_fcvtau_w_d(TyDF);
-   if (0) test_fcvtas_x_d(TyDF);
-   if (0) test_fcvtau_x_d(TyDF);
+   if (1) test_fcvtas_w_s(TySF);
+   if (1) test_fcvtau_w_s(TySF);
+   if (1) test_fcvtas_x_s(TySF);
+   if (1) test_fcvtau_x_s(TySF);
+   if (1) test_fcvtas_w_d(TyDF);
+   if (1) test_fcvtau_w_d(TyDF);
+   if (1) test_fcvtas_x_d(TyDF);
+   if (1) test_fcvtau_x_d(TyDF);
 
    // fcvtms    d,s  (fcvt to signed int,   minus inf)
    // fcvtmu    d,s  (fcvt to unsigned int, minus inf)
@@ -5089,14 +5089,14 @@ int main ( void )
    if (0) test_fcvtmu_4s_4s(TySF);
    if (0) test_fcvtms_2s_2s(TySF);
    if (0) test_fcvtmu_2s_2s(TySF);
-   if (0) test_fcvtms_w_s(TySF);
-   if (0) test_fcvtmu_w_s(TySF);
-   if (0) test_fcvtms_x_s(TySF);
-   if (0) test_fcvtmu_x_s(TySF);
-   if (0) test_fcvtms_w_d(TyDF);
-   if (0) test_fcvtmu_w_d(TyDF);
-   if (0) test_fcvtms_x_d(TyDF);
-   if (0) test_fcvtmu_x_d(TyDF);
+   if (1) test_fcvtms_w_s(TySF);
+   if (1) test_fcvtmu_w_s(TySF);
+   if (1) test_fcvtms_x_s(TySF);
+   if (1) test_fcvtmu_x_s(TySF);
+   if (1) test_fcvtms_w_d(TyDF);
+   if (1) test_fcvtmu_w_d(TyDF);
+   if (1) test_fcvtms_x_d(TyDF);
+   if (1) test_fcvtmu_x_d(TyDF);
 
    // fcvtns    d,s  (fcvt to signed int,   nearest)
    // fcvtnu    d,s  (fcvt to unsigned int, nearest)
@@ -5114,14 +5114,14 @@ int main ( void )
    if (0) test_fcvtnu_4s_4s(TySF);
    if (0) test_fcvtns_2s_2s(TySF);
    if (0) test_fcvtnu_2s_2s(TySF);
-   if (0) test_fcvtns_w_s(TySF);
-   if (0) test_fcvtnu_w_s(TySF);
-   if (0) test_fcvtns_x_s(TySF);
-   if (0) test_fcvtnu_x_s(TySF);
-   if (0) test_fcvtns_w_d(TyDF);
-   if (0) test_fcvtnu_w_d(TyDF);
-   if (0) test_fcvtns_x_d(TyDF);
-   if (0) test_fcvtnu_x_d(TyDF);
+   if (1) test_fcvtns_w_s(TySF);
+   if (1) test_fcvtnu_w_s(TySF);
+   if (1) test_fcvtns_x_s(TySF);
+   if (1) test_fcvtnu_x_s(TySF);
+   if (1) test_fcvtns_w_d(TyDF);
+   if (1) test_fcvtnu_w_d(TyDF);
+   if (1) test_fcvtns_x_d(TyDF);
+   if (1) test_fcvtnu_x_d(TyDF);
 
    // fcvtps    d,s  (fcvt to signed int,   plus inf)
    // fcvtpu    d,s  (fcvt to unsigned int, plus inf)
@@ -5139,14 +5139,14 @@ int main ( void )
    if (0) test_fcvtpu_4s_4s(TySF);
    if (0) test_fcvtps_2s_2s(TySF);
    if (0) test_fcvtpu_2s_2s(TySF);
-   if (0) test_fcvtps_w_s(TySF);
-   if (0) test_fcvtpu_w_s(TySF);
-   if (0) test_fcvtps_x_s(TySF);
-   if (0) test_fcvtpu_x_s(TySF);
-   if (0) test_fcvtps_w_d(TyDF);
-   if (0) test_fcvtpu_w_d(TyDF);
-   if (0) test_fcvtps_x_d(TyDF);
-   if (0) test_fcvtpu_x_d(TyDF);
+   if (1) test_fcvtps_w_s(TySF);
+   if (1) test_fcvtpu_w_s(TySF);
+   if (1) test_fcvtps_x_s(TySF);
+   if (1) test_fcvtpu_x_s(TySF);
+   if (1) test_fcvtps_w_d(TyDF);
+   if (1) test_fcvtpu_w_d(TyDF);
+   if (1) test_fcvtps_x_d(TyDF);
+   if (1) test_fcvtpu_x_d(TyDF);
 
    // fcvtzs    d,s (fcvt to signed integer,   to zero)
    // fcvtzu    d,s (fcvt to unsigned integer, to zero)
@@ -5164,14 +5164,14 @@ int main ( void )
    if (0) test_fcvtzu_4s_4s(TySF);
    if (0) test_fcvtzs_2s_2s(TySF);
    if (0) test_fcvtzu_2s_2s(TySF);
-   if (0) test_fcvtzs_w_s(TySF);
-   if (0) test_fcvtzu_w_s(TySF);
-   if (0) test_fcvtzs_x_s(TySF);
-   if (0) test_fcvtzu_x_s(TySF);
-   if (0) test_fcvtzs_w_d(TyDF);
-   if (0) test_fcvtzu_w_d(TyDF);
-   if (0) test_fcvtzs_x_d(TyDF);
-   if (0) test_fcvtzu_x_d(TyDF);
+   if (1) test_fcvtzs_w_s(TySF);
+   if (1) test_fcvtzu_w_s(TySF);
+   if (1) test_fcvtzs_x_s(TySF);
+   if (1) test_fcvtzu_x_s(TySF);
+   if (1) test_fcvtzs_w_d(TyDF);
+   if (1) test_fcvtzu_w_d(TyDF);
+   if (1) test_fcvtzs_x_d(TyDF);
+   if (1) test_fcvtzu_x_d(TyDF);
 
    // fcvtzs    d,s (fcvt to signed fixedpt,   to zero) (w/ #fbits)
    // fcvtzu    d,s (fcvt to unsigned fixedpt, to zero) (w/ #fbits)
@@ -5283,39 +5283,39 @@ int main ( void )
    if (0) test_ucvtf_d_d(TyD);
    if (0) test_scvtf_s_s(TyS);
    if (0) test_ucvtf_s_s(TyS);
-   if (0) test_scvtf_2d_2d(TyD);
-   if (0) test_ucvtf_2d_2d(TyD);
-   if (0) test_scvtf_4s_4s(TyS);
-   if (0) test_ucvtf_4s_4s(TyS);
-   if (0) test_scvtf_2s_2s(TyS);
-   if (0) test_ucvtf_2s_2s(TyS);
+   if (1) test_scvtf_2d_2d(TyD);
+   if (1) test_ucvtf_2d_2d(TyD);
+   if (1) test_scvtf_4s_4s(TyS);
+   if (1) test_ucvtf_4s_4s(TyS);
+   if (1) test_scvtf_2s_2s(TyS);
+   if (1) test_ucvtf_2s_2s(TyS);
 
    // scvtf     s_w, d_w, s_x, d_x,   _#fbits
    // ucvtf     s_w, d_w, s_x, d_x,   _#fbits
-   if (0) test_scvtf_s_w_fbits1(TyS);
-   if (0) test_scvtf_s_w_fbits16(TyS);
-   if (0) test_scvtf_s_w_fbits32(TyS);
-   if (0) test_scvtf_d_w_fbits1(TyS);
-   if (0) test_scvtf_d_w_fbits16(TyS);
-   if (0) test_scvtf_d_w_fbits32(TyS);
-   if (0) test_scvtf_s_x_fbits1(TyD);
-   if (0) test_scvtf_s_x_fbits32(TyD);
-   if (0) test_scvtf_s_x_fbits64(TyD);
-   if (0) test_scvtf_d_x_fbits1(TyD);
-   if (0) test_scvtf_d_x_fbits32(TyD);
-   if (0) test_scvtf_d_x_fbits64(TyD);
-   if (0) test_ucvtf_s_w_fbits1(TyS);
-   if (0) test_ucvtf_s_w_fbits16(TyS);
-   if (0) test_ucvtf_s_w_fbits32(TyS);
-   if (0) test_ucvtf_d_w_fbits1(TyS);
-   if (0) test_ucvtf_d_w_fbits16(TyS);
-   if (0) test_ucvtf_d_w_fbits32(TyS);
-   if (0) test_ucvtf_s_x_fbits1(TyD);
-   if (0) test_ucvtf_s_x_fbits32(TyD);
-   if (0) test_ucvtf_s_x_fbits64(TyD);
-   if (0) test_ucvtf_d_x_fbits1(TyD);
-   if (0) test_ucvtf_d_x_fbits32(TyD);
-   if (0) test_ucvtf_d_x_fbits64(TyD);
+   if (1) test_scvtf_s_w_fbits1(TyS);
+   if (1) test_scvtf_s_w_fbits16(TyS);
+   if (1) test_scvtf_s_w_fbits32(TyS);
+   if (1) test_scvtf_d_w_fbits1(TyS);
+   if (1) test_scvtf_d_w_fbits16(TyS);
+   if (1) test_scvtf_d_w_fbits32(TyS);
+   if (1) test_scvtf_s_x_fbits1(TyD);
+   if (1) test_scvtf_s_x_fbits32(TyD);
+   if (1) test_scvtf_s_x_fbits64(TyD);
+   if (1) test_scvtf_d_x_fbits1(TyD);
+   if (1) test_scvtf_d_x_fbits32(TyD);
+   if (1) test_scvtf_d_x_fbits64(TyD);
+   if (1) test_ucvtf_s_w_fbits1(TyS);
+   if (1) test_ucvtf_s_w_fbits16(TyS);
+   if (1) test_ucvtf_s_w_fbits32(TyS);
+   if (1) test_ucvtf_d_w_fbits1(TyS);
+   if (1) test_ucvtf_d_w_fbits16(TyS);
+   if (1) test_ucvtf_d_w_fbits32(TyS);
+   if (1) test_ucvtf_s_x_fbits1(TyD);
+   if (1) test_ucvtf_s_x_fbits32(TyD);
+   if (1) test_ucvtf_s_x_fbits64(TyD);
+   if (1) test_ucvtf_d_x_fbits1(TyD);
+   if (1) test_ucvtf_d_x_fbits32(TyD);
+   if (1) test_ucvtf_d_x_fbits64(TyD);
 
    // scvtf     s_w, d_w, s_x, d_x
    // ucvtf     s_w, d_w, s_x, d_x

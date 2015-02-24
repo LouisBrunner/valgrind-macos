@@ -754,6 +754,11 @@ typedef
       /* NB: pretty much the same as Iop_F64toF32, except no change 
          of type. */
 
+      /* --- guest arm64 specifics, not mandated by 754. --- */
+
+      Iop_RecpExpF64,  /* FRECPX d  :: IRRoundingMode(I32) x F64 -> F64 */
+      Iop_RecpExpF32,  /* FRECPX s  :: IRRoundingMode(I32) x F32 -> F32 */
+
       /* ------------------ 32-bit SIMD Integer ------------------ */
 
       /* 32x1 saturating add/sub (ok, well, not really SIMD :) */
@@ -1284,8 +1289,8 @@ typedef
       Iop_Neg32Fx4,
 
       /* Vector Reciprocal Estimate finds an approximate reciprocal of each
-      element in the operand vector, and places the results in the destination
-      vector.  */
+         element in the operand vector, and places the results in the
+         destination vector.  */
       Iop_RecipEst32Fx4,
 
       /* Vector Reciprocal Step computes (2.0 - arg1 * arg2).
@@ -1347,6 +1352,12 @@ typedef
       Iop_Abs64Fx2,
       Iop_Sqrt64Fx2,
       Iop_Neg64Fx2,
+
+      /* see 32Fx4 variants for description */
+      Iop_RecipEst64Fx2,    // unary
+      Iop_RecipStep64Fx2,   // binary
+      Iop_RSqrtEst64Fx2,    // unary
+      Iop_RSqrtStep64Fx2,   // binary
 
       /* --- 64x2 lowest-lane-only scalar FP --- */
 

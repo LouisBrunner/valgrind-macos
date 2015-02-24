@@ -301,6 +301,7 @@ typedef
       ARM64fpu_ABS,
       ARM64fpu_SQRT,
       ARM64fpu_RINT,
+      ARM64fpu_RECPX,
       ARM64fpu_INVALID
    }
    ARM64FpUnaryOp;
@@ -383,6 +384,8 @@ typedef
       ARM64vecb_SRSHL16x8,   ARM64vecb_SRSHL8x16, 
       ARM64vecb_URSHL64x2,   ARM64vecb_URSHL32x4,
       ARM64vecb_URSHL16x8,   ARM64vecb_URSHL8x16, 
+      ARM64vecb_FRECPS64x2,  ARM64vecb_FRECPS32x4,
+      ARM64vecb_FRSQRTS64x2, ARM64vecb_FRSQRTS32x4,
       ARM64vecb_INVALID
    }
    ARM64VecBinOp;
@@ -413,6 +416,8 @@ typedef
       ARM64vecu_REV6416B,     ARM64vecu_REV648H,      ARM64vecu_REV644S,
       ARM64vecu_URECPE32x4,
       ARM64vecu_URSQRTE32x4,
+      ARM64vecu_FRECPE64x2,   ARM64vecu_FRECPE32x4,
+      ARM64vecu_FRSQRTE64x2,  ARM64vecu_FRSQRTE32x4,
       ARM64vecu_INVALID
    }
    ARM64VecUnaryOp;

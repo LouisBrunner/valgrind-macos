@@ -559,10 +559,11 @@ static const HChar* showARM64FpBinOp ( ARM64FpBinOp op ) {
 
 static const HChar* showARM64FpUnaryOp ( ARM64FpUnaryOp op ) {
    switch (op) {
-      case ARM64fpu_NEG:  return "neg  ";
-      case ARM64fpu_ABS:  return "abs  ";
-      case ARM64fpu_SQRT: return "sqrt ";
-      case ARM64fpu_RINT: return "rinti";
+      case ARM64fpu_NEG:   return "neg  ";
+      case ARM64fpu_ABS:   return "abs  ";
+      case ARM64fpu_SQRT:  return "sqrt ";
+      case ARM64fpu_RINT:  return "rinti";
+      case ARM64fpu_RECPX: return "recpx";
       default: vpanic("showARM64FpUnaryOp");
    }
 }
@@ -687,22 +688,26 @@ static void showARM64VecBinOp(/*OUT*/const HChar** nm,
       case ARM64vecb_UQRSHL32x4:   *nm = "uqrshl";    *ar = "4s";   return;
       case ARM64vecb_UQRSHL16x8:   *nm = "uqrshl";    *ar = "8h";   return;
       case ARM64vecb_UQRSHL8x16:   *nm = "uqrshl";    *ar = "16b";  return;
-      case ARM64vecb_SSHL64x2:     *nm = "sshl";      *ar = "2d";   return;
-      case ARM64vecb_SSHL32x4:     *nm = "sshl";      *ar = "4s";   return;
-      case ARM64vecb_SSHL16x8:     *nm = "sshl";      *ar = "8h";   return;
-      case ARM64vecb_SSHL8x16:     *nm = "sshl";      *ar = "16b";  return;
-      case ARM64vecb_USHL64x2:     *nm = "ushl";      *ar = "2d";   return;
-      case ARM64vecb_USHL32x4:     *nm = "ushl";      *ar = "4s";   return;
-      case ARM64vecb_USHL16x8:     *nm = "ushl";      *ar = "8h";   return;
-      case ARM64vecb_USHL8x16:     *nm = "ushl";      *ar = "16b";  return;
-      case ARM64vecb_SRSHL64x2:    *nm = "srshl";     *ar = "2d";   return;
-      case ARM64vecb_SRSHL32x4:    *nm = "srshl";     *ar = "4s";   return;
-      case ARM64vecb_SRSHL16x8:    *nm = "srshl";     *ar = "8h";   return;
-      case ARM64vecb_SRSHL8x16:    *nm = "srshl";     *ar = "16b";  return;
-      case ARM64vecb_URSHL64x2:    *nm = "urshl";     *ar = "2d";   return;
-      case ARM64vecb_URSHL32x4:    *nm = "urshl";     *ar = "4s";   return;
-      case ARM64vecb_URSHL16x8:    *nm = "urshl";     *ar = "8h";   return;
-      case ARM64vecb_URSHL8x16:    *nm = "urshl";     *ar = "16b";  return;
+      case ARM64vecb_SSHL64x2:     *nm = "sshl  ";    *ar = "2d";   return;
+      case ARM64vecb_SSHL32x4:     *nm = "sshl  ";    *ar = "4s";   return;
+      case ARM64vecb_SSHL16x8:     *nm = "sshl  ";    *ar = "8h";   return;
+      case ARM64vecb_SSHL8x16:     *nm = "sshl  ";    *ar = "16b";  return;
+      case ARM64vecb_USHL64x2:     *nm = "ushl  ";    *ar = "2d";   return;
+      case ARM64vecb_USHL32x4:     *nm = "ushl  ";    *ar = "4s";   return;
+      case ARM64vecb_USHL16x8:     *nm = "ushl  ";    *ar = "8h";   return;
+      case ARM64vecb_USHL8x16:     *nm = "ushl  ";    *ar = "16b";  return;
+      case ARM64vecb_SRSHL64x2:    *nm = "srshl ";    *ar = "2d";   return;
+      case ARM64vecb_SRSHL32x4:    *nm = "srshl ";    *ar = "4s";   return;
+      case ARM64vecb_SRSHL16x8:    *nm = "srshl ";    *ar = "8h";   return;
+      case ARM64vecb_SRSHL8x16:    *nm = "srshl ";    *ar = "16b";  return;
+      case ARM64vecb_URSHL64x2:    *nm = "urshl ";    *ar = "2d";   return;
+      case ARM64vecb_URSHL32x4:    *nm = "urshl ";    *ar = "4s";   return;
+      case ARM64vecb_URSHL16x8:    *nm = "urshl ";    *ar = "8h";   return;
+      case ARM64vecb_URSHL8x16:    *nm = "urshl ";    *ar = "16b";  return;
+      case ARM64vecb_FRECPS64x2:   *nm = "frecps";    *ar = "2d";   return;
+      case ARM64vecb_FRECPS32x4:   *nm = "frecps";    *ar = "4s";   return;
+      case ARM64vecb_FRSQRTS64x2:  *nm = "frsqrts";   *ar = "2d";   return;
+      case ARM64vecb_FRSQRTS32x4:  *nm = "frsqrts";   *ar = "4s";   return;
       default: vpanic("showARM64VecBinOp");
    }
 }
@@ -752,6 +757,10 @@ static void showARM64VecUnaryOp(/*OUT*/const HChar** nm,
       case ARM64vecu_REV644S:     *nm = "rev64";   *ar = "4s";  return;
       case ARM64vecu_URECPE32x4:  *nm = "urecpe";  *ar = "4s";  return;
       case ARM64vecu_URSQRTE32x4: *nm = "ursqrte"; *ar = "4s";  return;
+      case ARM64vecu_FRECPE64x2:  *nm = "frecpe";  *ar = "2d";  return;
+      case ARM64vecu_FRECPE32x4:  *nm = "frecpe";  *ar = "4s";  return;
+      case ARM64vecu_FRSQRTE64x2: *nm = "frsqrte"; *ar = "2d";  return;
+      case ARM64vecu_FRSQRTE32x4: *nm = "frsqrte"; *ar = "4s";  return;
       default: vpanic("showARM64VecUnaryOp");
    }
 }
@@ -2601,6 +2610,7 @@ static inline UChar qregNo ( HReg r )
 #define X110010  BITS8(0,0, 1,1,0,0,1,0)
 #define X110100  BITS8(0,0, 1,1,0,1,0,0)
 #define X110101  BITS8(0,0, 1,1,0,1,0,1)
+#define X110110  BITS8(0,0, 1,1,0,1,1,0)
 #define X110111  BITS8(0,0, 1,1,0,1,1,1)
 #define X111000  BITS8(0,0, 1,1,1,0,0,0)
 #define X111001  BITS8(0,0, 1,1,1,0,0,1)
@@ -2642,6 +2652,8 @@ static inline UChar qregNo ( HReg r )
 #define X11011110  BITS8(1,1,0,1,1,1,1,0)
 #define X11110001  BITS8(1,1,1,1,0,0,0,1)
 #define X11110011  BITS8(1,1,1,1,0,0,1,1)
+#define X11110101  BITS8(1,1,1,1,0,1,0,1)
+#define X11110111  BITS8(1,1,1,1,0,1,1,1)
 
 
 /* --- 4 fields --- */
@@ -3878,7 +3890,7 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
             000,11110 01 1,0000 0,0 10000 n d  FMOV Dd, Dn (not handled)
             ------------------- 0,1 ---------  FABS ------
             ------------------- 1,0 ---------  FNEG ------
-            ------------------- 1,1 ---------  FQSRT -----
+            ------------------- 1,1 ---------  FSQRT -----
          */
          UInt dD  = dregNo(i->ARM64in.VUnaryD.dst);
          UInt dN  = dregNo(i->ARM64in.VUnaryD.src);
@@ -3902,6 +3914,13 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
            *p++ = X_3_8_5_6_5_5(X000, X11110011, X00111, X110000, dN, dD);
            goto done;
          }
+         /* 
+            010, 11110 11 1,0000 1,1111 10 n d  FRECPX Dd, Dm
+         */
+         if (i->ARM64in.VUnaryD.op == ARM64fpu_RECPX) {
+           *p++ = X_3_8_5_6_5_5(X010, X11110111, X00001, X111110, dN, dD);
+           goto done;
+         }
          goto bad;
       }
       case ARM64in_VUnaryS: {
@@ -3909,7 +3928,7 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
             000,11110 00 1,0000 0,0 10000 n d  FMOV Sd, Sn (not handled)
             ------------------- 0,1 ---------  FABS ------
             ------------------- 1,0 ---------  FNEG ------
-            ------------------- 1,1 ---------  FQSRT -----
+            ------------------- 1,1 ---------  FSQRT -----
          */
          UInt sD  = dregNo(i->ARM64in.VUnaryS.dst);
          UInt sN  = dregNo(i->ARM64in.VUnaryS.src);
@@ -3931,6 +3950,13 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
          */
          if (i->ARM64in.VUnaryS.op == ARM64fpu_RINT) {
            *p++ = X_3_8_5_6_5_5(X000, X11110001, X00111, X110000, sN, sD);
+           goto done;
+         }
+         /* 
+            010, 11110 10 1,0000 1,1111 10 n d  FRECPX Sd, Sm
+         */
+         if (i->ARM64in.VUnaryS.op == ARM64fpu_RECPX) {
+           *p++ = X_3_8_5_6_5_5(X010, X11110101, X00001, X111110, sN, sD);
            goto done;
          }
          goto bad;
@@ -4176,6 +4202,11 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
             010 01110 sz 1 m  010101 n d   SRSHL@sz  Vd, Vn, Vm
             011 01110 sz 1 m  010001 n d   USHL@sz   Vd, Vn, Vm
             011 01110 sz 1 m  010101 n d   URSHL@sz  Vd, Vn, Vm
+
+            010 01110 01 1 m  111111 n d   FRECPS  Vd.2d, Vn.2d, Vm.2d
+            010 01110 00 1 m  111111 n d   FRECPS  Vd.4s, Vn.4s, Vm.4s
+            010 01110 11 1 m  111111 n d   FRSQRTS Vd.2d, Vn.2d, Vm.2d
+            010 01110 10 1 m  111111 n d   FRSQRTS Vd.4s, Vn.4s, Vm.4s
          */
          UInt vD = qregNo(i->ARM64in.VBinV.dst);
          UInt vN = qregNo(i->ARM64in.VBinV.argL);
@@ -4616,6 +4647,19 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
                *p++ = X_3_8_5_6_5_5(X011, X01110001, vM, X010101, vN, vD);
                break;
 
+            case ARM64vecb_FRECPS64x2:
+               *p++ = X_3_8_5_6_5_5(X010, X01110011, vM, X111111, vN, vD);
+               break;
+            case ARM64vecb_FRECPS32x4:
+               *p++ = X_3_8_5_6_5_5(X010, X01110001, vM, X111111, vN, vD);
+               break;
+            case ARM64vecb_FRSQRTS64x2:
+               *p++ = X_3_8_5_6_5_5(X010, X01110111, vM, X111111, vN, vD);
+               break;
+            case ARM64vecb_FRSQRTS32x4:
+               *p++ = X_3_8_5_6_5_5(X010, X01110101, vM, X111111, vN, vD);
+               break;
+
             default:
                goto bad;
          }
@@ -4692,6 +4736,12 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
 
             010 01110 10 1 00001 110010 n d  URECPE Vd.4s, Vn.4s
             011 01110 10 1 00001 110010 n d  URSQRTE Vd.4s, Vn.4s
+
+            010 01110 11 1 00001 110110 n d  FRECPE Vd.2d, Vn.2d
+            010 01110 10 1 00001 110110 n d  FRECPE Vd.4s, Vn.4s
+
+            011 01110 11 1 00001 110110 n d  FRECPE Vd.2d, Vn.2d
+            011 01110 10 1 00001 110110 n d  FRECPE Vd.4s, Vn.4s
          */
          UInt vD = qregNo(i->ARM64in.VUnaryV.dst);
          UInt vN = qregNo(i->ARM64in.VUnaryV.arg);
@@ -4770,6 +4820,18 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
                break;
             case ARM64vecu_URSQRTE32x4:
                *p++ = X_3_8_5_6_5_5(X011, X01110101, X00001, X110010, vN, vD);
+               break;
+            case ARM64vecu_FRECPE64x2:
+               *p++ = X_3_8_5_6_5_5(X010, X01110111, X00001, X110110, vN, vD);
+               break;
+            case ARM64vecu_FRECPE32x4:
+               *p++ = X_3_8_5_6_5_5(X010, X01110101, X00001, X110110, vN, vD);
+               break;
+            case ARM64vecu_FRSQRTE64x2:
+               *p++ = X_3_8_5_6_5_5(X011, X01110111, X00001, X110110, vN, vD);
+               break;
+            case ARM64vecu_FRSQRTE32x4:
+               *p++ = X_3_8_5_6_5_5(X011, X01110101, X00001, X110110, vN, vD);
                break;
             default:
                goto bad;

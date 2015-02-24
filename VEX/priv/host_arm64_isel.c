@@ -366,7 +366,7 @@ static Bool isZeroU64 ( IRExpr* e ) {
 /* Set the FP rounding mode: 'mode' is an I32-typed expression
    denoting a value in the range 0 .. 3, indicating a round mode
    encoded as per type IRRoundingMode -- the first four values only
-   (Irrm_NEAREST, Irrm_NegINF, Irrm_PosINF, Irrm_ZERO).  Set the PPC
+   (Irrm_NEAREST, Irrm_NegINF, Irrm_PosINF, Irrm_ZERO).  Set the ARM64
    FSCR to have the same rounding.
 
    For speed & simplicity, we're setting the *entire* FPCR here.
@@ -2244,9 +2244,12 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_Reverse32sIn64_x2:
          case Iop_RecipEst32Ux4:
          case Iop_RSqrtEst32Ux4:
+         case Iop_RecipEst64Fx2: case Iop_RecipEst32Fx4:
+         case Iop_RSqrtEst64Fx2: case Iop_RSqrtEst32Fx4:
          {
-            HReg res = newVRegV(env);
-            HReg arg = iselV128Expr(env, e->Iex.Unop.arg);
+            HReg res   = newVRegV(env);
+            HReg arg   = iselV128Expr(env, e->Iex.Unop.arg);
+            Bool setRM = False;
             ARM64VecUnaryOp op = ARM64vecu_INVALID;
             switch (e->Iex.Unop.op) {
                case Iop_NotV128:           op = ARM64vecu_NOT;         break;
@@ -2274,7 +2277,22 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
                case Iop_Reverse32sIn64_x2: op = ARM64vecu_REV644S;     break;
                case Iop_RecipEst32Ux4:     op = ARM64vecu_URECPE32x4;  break;
                case Iop_RSqrtEst32Ux4:     op = ARM64vecu_URSQRTE32x4; break;
+               case Iop_RecipEst64Fx2:     setRM = True;
+                                           op = ARM64vecu_FRECPE64x2;  break;
+               case Iop_RecipEst32Fx4:     setRM = True;
+                                           op = ARM64vecu_FRECPE32x4;  break;
+               case Iop_RSqrtEst64Fx2:     setRM = True;
+                                           op = ARM64vecu_FRSQRTE64x2; break;
+               case Iop_RSqrtEst32Fx4:     setRM = True;
+                                           op = ARM64vecu_FRSQRTE32x4; break;
                default: vassert(0);
+            }
+            if (setRM) {
+               // This is a bit of a kludge.  We should do rm properly for
+               // these recip-est insns, but that would require changing the
+               // primop's type to take an rmode.
+               set_FPCR_rounding_mode(env, IRExpr_Const(
+                                              IRConst_U32(Irrm_NEAREST)));
             }
             addInstr(env, ARM64Instr_VUnaryV(op, res, arg));
             return res;
@@ -2407,11 +2425,14 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_Rsh32Ux4: case Iop_Rsh64Ux2:
          case Iop_Max64Fx2: case Iop_Max32Fx4:
          case Iop_Min64Fx2: case Iop_Min32Fx4:
+         case Iop_RecipStep64Fx2: case Iop_RecipStep32Fx4:
+         case Iop_RSqrtStep64Fx2: case Iop_RSqrtStep32Fx4:
          {
-            HReg res  = newVRegV(env);
-            HReg argL = iselV128Expr(env, e->Iex.Binop.arg1);
-            HReg argR = iselV128Expr(env, e->Iex.Binop.arg2);
-            Bool sw   = False;
+            HReg res   = newVRegV(env);
+            HReg argL  = iselV128Expr(env, e->Iex.Binop.arg1);
+            HReg argR  = iselV128Expr(env, e->Iex.Binop.arg2);
+            Bool sw    = False;
+            Bool setRM = False;
             ARM64VecBinOp op = ARM64vecb_INVALID;
             switch (e->Iex.Binop.op) {
                case Iop_AndV128:    op = ARM64vecb_AND; break;
@@ -2528,7 +2549,22 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
                case Iop_Max32Fx4:       op = ARM64vecb_FMAX32x4; break;
                case Iop_Min64Fx2:       op = ARM64vecb_FMIN64x2; break;
                case Iop_Min32Fx4:       op = ARM64vecb_FMIN32x4; break;
+               case Iop_RecipStep64Fx2: setRM = True;
+                                        op = ARM64vecb_FRECPS64x2; break;
+               case Iop_RecipStep32Fx4: setRM = True;
+                                        op = ARM64vecb_FRECPS32x4; break;
+               case Iop_RSqrtStep64Fx2: setRM = True;
+                                        op = ARM64vecb_FRSQRTS64x2; break;
+               case Iop_RSqrtStep32Fx4: setRM = True;
+                                        op = ARM64vecb_FRSQRTS32x4; break;
                default: vassert(0);
+            }
+            if (setRM) {
+               // This is a bit of a kludge.  We should do rm properly for
+               // these recip-step insns, but that would require changing the
+               // primop's type to take an rmode.
+               set_FPCR_rounding_mode(env, IRExpr_Const(
+                                              IRConst_U32(Irrm_NEAREST)));
             }
             if (sw) {
                addInstr(env, ARM64Instr_VBinV(op, res, argR, argL));
@@ -3034,18 +3070,20 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
 
    if (e->tag == Iex_Binop) {
       switch (e->Iex.Binop.op) {
-         case Iop_RoundF64toInt: {
+         case Iop_RoundF64toInt:
+         case Iop_SqrtF64:
+         case Iop_RecpExpF64: {
             HReg src = iselDblExpr(env, e->Iex.Binop.arg2);
             HReg dst = newVRegD(env);
             set_FPCR_rounding_mode(env, e->Iex.Binop.arg1);
-            addInstr(env, ARM64Instr_VUnaryD(ARM64fpu_RINT, dst, src));
-            return dst;
-         }
-         case Iop_SqrtF64: {
-            HReg src = iselDblExpr(env, e->Iex.Binop.arg2);
-            HReg dst = newVRegD(env);
-            set_FPCR_rounding_mode(env, e->Iex.Binop.arg1);
-            addInstr(env, ARM64Instr_VUnaryD(ARM64fpu_SQRT, dst, src));
+            ARM64FpUnaryOp op = ARM64fpu_INVALID;
+            switch (e->Iex.Binop.op) {
+               case Iop_RoundF64toInt: op = ARM64fpu_RINT;  break;
+               case Iop_SqrtF64:       op = ARM64fpu_SQRT;  break;
+               case Iop_RecpExpF64:    op = ARM64fpu_RECPX; break;
+               default: vassert(0);
+            }
+            addInstr(env, ARM64Instr_VUnaryD(op, dst, src));
             return dst;
          }
          case Iop_I64StoF64:
@@ -3195,18 +3233,20 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
 
    if (e->tag == Iex_Binop) {
       switch (e->Iex.Binop.op) {
-         case Iop_RoundF32toInt: {
+         case Iop_RoundF32toInt:
+         case Iop_SqrtF32:
+         case Iop_RecpExpF32: {
             HReg src = iselFltExpr(env, e->Iex.Binop.arg2);
             HReg dst = newVRegD(env);
             set_FPCR_rounding_mode(env, e->Iex.Binop.arg1);
-            addInstr(env, ARM64Instr_VUnaryS(ARM64fpu_RINT, dst, src));
-            return dst;
-         }
-         case Iop_SqrtF32: {
-            HReg src = iselFltExpr(env, e->Iex.Binop.arg2);
-            HReg dst = newVRegD(env);
-            set_FPCR_rounding_mode(env, e->Iex.Binop.arg1);
-            addInstr(env, ARM64Instr_VUnaryS(ARM64fpu_SQRT, dst, src));
+            ARM64FpUnaryOp op = ARM64fpu_INVALID;
+            switch (e->Iex.Binop.op) {
+               case Iop_RoundF32toInt: op = ARM64fpu_RINT;  break;
+               case Iop_SqrtF32:       op = ARM64fpu_SQRT;  break;
+               case Iop_RecpExpF32:    op = ARM64fpu_RECPX; break;
+               default: vassert(0);
+            }
+            addInstr(env, ARM64Instr_VUnaryS(op, dst, src));
             return dst;
          }
          case Iop_F64toF32: {

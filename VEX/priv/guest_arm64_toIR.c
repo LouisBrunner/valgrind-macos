@@ -9700,6 +9700,23 @@ Bool dis_AdvSIMD_scalar_three_same(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
+   if (bitU == 0 && opcode == BITS5(1,1,1,1,1)) {
+      /* -------- 0,0x,11111: FRECPS  d_d_d, s_s_s -------- */
+      /* -------- 0,1x,11111: FRSQRTS d_d_d, s_s_s -------- */
+      Bool isSQRT = (size & 2) == 2;
+      Bool isD    = (size & 1) == 1;
+      IROp op     = isSQRT ? (isD ? Iop_RSqrtStep64Fx2 : Iop_RSqrtStep32Fx4)
+                           : (isD ? Iop_RecipStep64Fx2 : Iop_RecipStep32Fx4);
+      IRTemp res = newTempV128();
+      assign(res, binop(op, getQReg128(nn), getQReg128(mm)));
+      putQReg128(dd, mkexpr(math_ZERO_ALL_EXCEPT_LOWEST_LANE(isD ? X11 : X10,
+                                                             mkexpr(res))));
+      HChar c = isD ? 'd' : 's';
+      DIP("%s %c%u, %c%u, %c%u\n", isSQRT ? "frsqrts" : "frecps",
+          c, dd, c, nn, c, mm);
+      return True;
+   }
+
    return False;
 #  undef INSN
 }
@@ -9900,7 +9917,37 @@ Bool dis_AdvSIMD_scalar_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
-#  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
+   if (size >= X10 && opcode == BITS5(1,1,1,0,1)) {
+      /* -------- 0,1x,11101: FRECPE  d_d, s_s -------- */
+      /* -------- 1,1x,11101: FRSQRTE d_d, s_s -------- */
+      Bool isSQRT = bitU == 1;
+      Bool isD    = (size & 1) == 1;
+      IROp op     = isSQRT ? (isD ? Iop_RSqrtEst64Fx2 : Iop_RSqrtEst32Fx4)
+                           : (isD ? Iop_RecipEst64Fx2 : Iop_RecipEst32Fx4);
+      IRTemp resV = newTempV128();
+      assign(resV, unop(op, getQReg128(nn)));
+      putQReg128(dd, mkexpr(math_ZERO_ALL_EXCEPT_LOWEST_LANE(isD ? X11 : X10,
+                                                             mkexpr(resV))));
+      HChar c = isD ? 'd' : 's';
+      DIP("%s %c%u, %c%u\n", isSQRT ? "frsqrte" : "frecpe", c, dd, c, nn);
+      return True;
+   }
+
+   if (bitU == 0 && size >= X10 && opcode == BITS5(1,1,1,1,1)) {
+      /* -------- 0,1x,11111: FRECPX  d_d, s_s -------- */
+      Bool   isD = (size & 1) == 1;
+      IRType ty  = isD ? Ity_F64 : Ity_F32;
+      IROp   op  = isD ? Iop_RecpExpF64 : Iop_RecpExpF32;
+      IRTemp res = newTemp(ty);
+      IRTemp rm  = mk_get_IR_rounding_mode();
+      assign(res, binop(op, mkexpr(rm), getQRegLane(nn, 0, ty)));
+      putQReg128(dd, mkV128(0x0000));
+      putQRegLane(dd, 0, mkexpr(res));
+      HChar c = isD ? 'd' : 's';
+      DIP("%s %c%u, %c%u\n", "frecpx", c, dd, c, nn);
+      return True;
+   }
+
    return False;
 #  undef INSN
 }
@@ -11449,6 +11496,23 @@ Bool dis_AdvSIMD_three_same(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
+   if (bitU == 0 && opcode == BITS5(1,1,1,1,1)) {
+      /* -------- 0,0x,11111: FRECPS  2d_2d_2d, 4s_4s_4s, 2s_2s_2s -------- */
+      /* -------- 0,1x,11111: FRSQRTS 2d_2d_2d, 4s_4s_4s, 2s_2s_2s -------- */
+      Bool isSQRT = (size & 2) == 2;
+      Bool isD    = (size & 1) == 1;
+      if (bitQ == 0 && isD) return False; // implied 1d case
+      IROp op     = isSQRT ? (isD ? Iop_RSqrtStep64Fx2 : Iop_RSqrtStep32Fx4)
+                           : (isD ? Iop_RecipStep64Fx2 : Iop_RecipStep32Fx4);
+      IRTemp res = newTempV128();
+      assign(res, binop(op, getQReg128(nn), getQReg128(mm)));
+      putQReg128(dd, math_MAYBE_ZERO_HI64(bitQ, res));
+      const HChar* arr = bitQ == 0 ? "2s" : (isD ? "2d" : "4s");
+      DIP("%s %s.%s, %s.%s, %s.%s\n", isSQRT ? "frsqrts" : "frecps",
+          nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(mm), arr);
+      return True;
+   }
+
    return False;
 #  undef INSN
 }
@@ -11857,7 +11921,6 @@ Bool dis_AdvSIMD_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
-
    ix = 0;
    if (opcode == BITS5(1,1,0,0,0) || opcode == BITS5(1,1,0,0,1)) {
       ix = 1 + ((((bitU & 1) << 2) | ((size & 2) << 0)) | ((opcode & 1) << 0));
@@ -11928,8 +11991,6 @@ Bool dis_AdvSIMD_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
-
-
    if (size == X10 && opcode == BITS5(1,1,1,0,0)) {
       /* -------- 0,10,11100: URECPE  4s_4s, 2s_2s -------- */
       /* -------- 1,10,11100: URSQRTE 4s_4s, 2s_2s -------- */
@@ -11981,6 +12042,23 @@ Bool dis_AdvSIMD_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
          return True;
       }
       /* else fall through */
+   }
+
+   if (size >= X10 && opcode == BITS5(1,1,1,0,1)) {
+      /* -------- 0,1x,11101: FRECPE  2d_2d, 4s_4s, 2s_2s -------- */
+      /* -------- 1,1x,11101: FRSQRTE 2d_2d, 4s_4s, 2s_2s -------- */
+      Bool isSQRT = bitU == 1;
+      Bool isD    = (size & 1) == 1;
+      IROp op     = isSQRT ? (isD ? Iop_RSqrtEst64Fx2 : Iop_RSqrtEst32Fx4)
+                           : (isD ? Iop_RecipEst64Fx2 : Iop_RecipEst32Fx4);
+      if (bitQ == 0 && isD) return False; // implied 1d case
+      IRTemp resV = newTempV128();
+      assign(resV, unop(op, getQReg128(nn)));
+      putQReg128(dd, math_MAYBE_ZERO_HI64(bitQ, resV));
+      const HChar* arr = bitQ == 0 ? "2s" : (size == X11 ? "2d" : "4s");
+      DIP("%s %s.%s, %s.%s\n", isSQRT ? "frsqrte" : "frecpe",
+          nameQReg128(dd), arr, nameQReg128(nn), arr);
+      return True;
    }
 
    return False;

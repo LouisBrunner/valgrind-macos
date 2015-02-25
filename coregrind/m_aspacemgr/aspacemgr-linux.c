@@ -2892,38 +2892,38 @@ Bool VG_(am_extend_into_adjacent_reservation_client) ( const NSegment* seg,
 
 #if HAVE_MREMAP
 
-/* Let SEG be a client mapping (anonymous or file).  This fn extends
-   the mapping forwards only by DELTA bytes, and trashes whatever was
-   in the new area.  Fails if SEG is not a single client mapping or if
-   the new area is not accessible to the client.  Fails if DELTA is
-   not page aligned.  *seg is invalid after a successful return.  If
-   *need_discard is True after a successful return, the caller should
-   immediately discard translations from the new area. */
-
-Bool VG_(am_extend_map_client)( /*OUT*/Bool* need_discard,
-                                const NSegment* seg, SizeT delta )
+/* This function grows a client mapping in place into an adjacent free segment.
+   ADDR is the client mapping's start address and DELTA, which must be page
+   aligned, is the growth amount. The function returns a pointer to the
+   resized segment. The function is used in support of mremap. */
+const NSegment *VG_(am_extend_map_client)( Addr addr, SizeT delta )
 {
    Addr     xStart;
    SysRes   sres;
-   NSegment seg_copy = *seg;
-   SizeT    seg_old_len = seg->end + 1 - seg->start;
 
    if (0)
       VG_(am_show_nsegments)(0, "VG_(am_extend_map_client) BEFORE");
 
-   if (seg->kind != SkFileC && seg->kind != SkAnonC)
-      return False;
+   /* Get the client segment */
+   Int ix = find_nsegment_idx(addr);
+   aspacem_assert(ix >= 0 && ix < nsegments_used);
 
-   if (delta == 0 || !VG_IS_PAGE_ALIGNED(delta)) 
-      return False;
+   NSegment *seg = nsegments + ix;
+
+   aspacem_assert(seg->kind == SkFileC || seg->kind == SkAnonC);
+   aspacem_assert(delta > 0 && VG_IS_PAGE_ALIGNED(delta)) ;
 
    xStart = seg->end+1;
-   if (xStart + delta < delta)
-      return False;
+   aspacem_assert(xStart + delta >= delta);   // no wrap-around
 
-   if (!VG_(am_is_valid_for_client_or_free_or_resvn)( xStart, delta, 
-                                                      VKI_PROT_NONE ))
-      return False;
+   /* The segment following the client segment must be a free segment and
+      it must be large enough to cover the additional memory. */
+   NSegment *segf = seg + 1;
+   aspacem_assert(segf->kind == SkFree);
+   aspacem_assert(segf->start == xStart);
+   aspacem_assert(xStart + delta - 1 <= segf->end);
+
+   SizeT seg_old_len = seg->end + 1 - seg->start;
 
    AM_SANITY_CHECK;
    sres = ML_(am_do_extend_mapping_NO_NOTIFY)( seg->start, 
@@ -2931,14 +2931,13 @@ Bool VG_(am_extend_map_client)( /*OUT*/Bool* need_discard,
                                                seg_old_len + delta );
    if (sr_isError(sres)) {
       AM_SANITY_CHECK;
-      return False;
+      return NULL;
    } else {
       /* the area must not have moved */
       aspacem_assert(sr_Res(sres) == seg->start);
    }
 
-   *need_discard = any_Ts_in_range( seg_copy.end+1, delta );
-
+   NSegment seg_copy = *seg;
    seg_copy.end += delta;
    add_segment( &seg_copy );
 
@@ -2946,7 +2945,7 @@ Bool VG_(am_extend_map_client)( /*OUT*/Bool* need_discard,
       VG_(am_show_nsegments)(0, "VG_(am_extend_map_client) AFTER");
 
    AM_SANITY_CHECK;
-   return True;
+   return nsegments + find_nsegment_idx(addr);
 }
 
 

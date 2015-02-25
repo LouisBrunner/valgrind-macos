@@ -286,15 +286,11 @@ extern Bool VG_(am_extend_into_adjacent_reservation_client)
 
 /* --- --- --- resizing/move a mapping --- --- --- */
 
-/* Let SEG be a client mapping (anonymous or file).  This fn extends
-   the mapping forwards only by DELTA bytes, and trashes whatever was
-   in the new area.  Fails if SEG is not a single client mapping or if
-   the new area is not accessible to the client.  Fails if DELTA is
-   not page aligned.  *seg is invalid after a successful return.  If
-   *need_discard is True after a successful return, the caller should
-   immediately discard translations from the new area. */
-extern Bool VG_(am_extend_map_client)( /*OUT*/Bool* need_discard,
-                                       const NSegment* seg, SizeT delta );
+/* This function grows a client mapping in place into an adjacent free segment.
+   ADDR is the client mapping's start address and DELTA, which must be page
+   aligned, is the growth amount. The function returns a pointer to the
+   resized segment. The function is used in support of mremap. */
+extern const NSegment *VG_(am_extend_map_client)( Addr addr, SizeT delta );
 
 /* Remap the old address range to the new address range.  Fails if any
    parameter is not page aligned, if the either size is zero, if any

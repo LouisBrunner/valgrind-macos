@@ -435,14 +435,12 @@ SysRes do_mremap( Addr old_addr, SizeT old_len,
       ok = VG_(am_covered_by_single_free_segment) ( needA, needL );
    }
    if (ok && advised == needA) {
-      ok = VG_(am_extend_map_client)( &d, old_seg, needL );
-      if (ok) {
+      const NSegment *new_seg = VG_(am_extend_map_client)( old_addr, needL );
+      if (new_seg) {
          VG_TRACK( new_mem_mmap, needA, needL, 
-                                 old_seg->hasR, 
-                                 old_seg->hasW, old_seg->hasX,
+                                 new_seg->hasR, 
+                                 new_seg->hasW, new_seg->hasX,
                                  0/*di_handle*/ );
-         if (d) 
-            VG_(discard_translations)( needA, needL, "do_remap(3)" );
          return VG_(mk_SysRes_Success)( old_addr );
       }
    }
@@ -490,14 +488,13 @@ SysRes do_mremap( Addr old_addr, SizeT old_len,
    }
    if (!ok || advised != needA)
       goto eNOMEM;
-   ok = VG_(am_extend_map_client)( &d, old_seg, needL );
-   if (!ok)
+   const NSegment *new_seg = VG_(am_extend_map_client)( old_addr, needL );
+   if (!new_seg)
       goto eNOMEM;
    VG_TRACK( new_mem_mmap, needA, needL, 
-                           old_seg->hasR, old_seg->hasW, old_seg->hasX,
+                           new_seg->hasR, new_seg->hasW, new_seg->hasX,
                            0/*di_handle*/ );
-   if (d)
-      VG_(discard_translations)( needA, needL, "do_remap(6)" );
+
    return VG_(mk_SysRes_Success)( old_addr );
    }
    /*NOTREACHED*/ vg_assert(0);

@@ -596,6 +596,8 @@ typedef struct vki_sigevent {
 #define VKI_SYS_SENDMSG		16	/* sys_sendmsg(2)		*/
 #define VKI_SYS_RECVMSG		17	/* sys_recvmsg(2)		*/
 #define VKI_SYS_ACCEPT4		18	/* sys_accept4(2)		*/
+#define VKI_SYS_RECVMMSG	19	/* sys_recvmmsg(2)              */
+#define VKI_SYS_SENDMMSG	20	/* sys_sendmmsg(2)              */
 
 #ifndef ARCH_HAS_SOCKET_TYPES
 enum vki_sock_type {

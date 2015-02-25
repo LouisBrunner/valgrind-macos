@@ -4066,6 +4066,20 @@ PRE(sys_socketcall)
       ML_(generic_PRE_sys_recvmsg)( tid, "msg", (struct vki_msghdr *)ARG2_1 );
       break;
 
+   case VKI_SYS_RECVMMSG:
+      /* int recvmmsg(int s, struct mmsghdr *mmsg, int vlen, int flags,
+                      struct timespec *timeout); */
+      PRE_MEM_READ_ef("socketcall.recvmmsg(args)", ARG2, 5*sizeof(Addr) );
+      ML_(linux_PRE_sys_recvmmsg)( tid, ARG2_0, ARG2_1, ARG2_2, ARG2_3,
+                                   ARG2_4 );
+      break;
+
+   case VKI_SYS_SENDMMSG:
+      /* int sendmmsg(int s, struct mmsghdr *mmsg, int vlen, int flags); */
+      PRE_MEM_READ_ef("socketcall.sendmmsg(args)", ARG2, 4*sizeof(Addr) );
+      ML_(linux_PRE_sys_sendmmsg)( tid, ARG2_0, ARG2_1, ARG2_2, ARG2_3 );
+      break;
+
    default:
       VG_(message)(Vg_DebugMsg,"Warning: unhandled socketcall 0x%lx\n",ARG1);
       SET_STATUS_Failure( VKI_EINVAL );
@@ -4169,6 +4183,15 @@ POST(sys_socketcall)
 
    case VKI_SYS_RECVMSG:
       ML_(generic_POST_sys_recvmsg)( tid, "msg", (struct vki_msghdr *)ARG2_1, RES );
+      break;
+
+   case VKI_SYS_RECVMMSG:
+      ML_(linux_POST_sys_recvmmsg)( tid, RES,
+                                    ARG2_0, ARG2_1, ARG2_2, ARG2_3, ARG2_4 );
+      break;
+
+   case VKI_SYS_SENDMMSG:
+      ML_(linux_POST_sys_sendmmsg)( tid, RES, ARG2_0, ARG2_1, ARG2_2, ARG2_3 );
       break;
 
    default:
@@ -4849,64 +4872,31 @@ PRE(sys_process_vm_writev)
 
 PRE(sys_sendmmsg)
 {
-   struct vki_mmsghdr *mmsg = (struct vki_mmsghdr *)ARG2;
-   HChar name[40];     // large enough
-   UInt i;
    *flags |= SfMayBlock;
    PRINT("sys_sendmmsg ( %ld, %#lx, %ld, %ld )",ARG1,ARG2,ARG3,ARG4);
    PRE_REG_READ4(long, "sendmmsg",
                  int, s, const struct mmsghdr *, mmsg, int, vlen, int, flags);
-   for (i = 0; i < ARG3; i++) {
-      VG_(sprintf)(name, "mmsg[%u].msg_hdr", i);
-      ML_(generic_PRE_sys_sendmsg)(tid, name, &mmsg[i].msg_hdr);
-      VG_(sprintf)(name, "sendmmsg(mmsg[%u].msg_len)", i);
-      PRE_MEM_WRITE( name, (Addr)&mmsg[i].msg_len, sizeof(mmsg[i].msg_len) );
-   }
+   ML_(linux_PRE_sys_sendmmsg)(tid, ARG1,ARG2,ARG3,ARG4);
 }
 
 POST(sys_sendmmsg)
 {
-   if (RES > 0) {
-      struct vki_mmsghdr *mmsg = (struct vki_mmsghdr *)ARG2;
-      UInt i;
-      for (i = 0; i < RES; i++) {
-         POST_MEM_WRITE( (Addr)&mmsg[i].msg_len, sizeof(mmsg[i].msg_len) );
-      }
-   }
+   ML_(linux_POST_sys_sendmmsg) (tid, RES, ARG1,ARG2,ARG3,ARG4);
 }
 
 PRE(sys_recvmmsg)
 {
-   struct vki_mmsghdr *mmsg = (struct vki_mmsghdr *)ARG2;
-   HChar name[40];     // large enough
-   UInt i;
    *flags |= SfMayBlock;
    PRINT("sys_recvmmsg ( %ld, %#lx, %ld, %ld, %#lx )",ARG1,ARG2,ARG3,ARG4,ARG5);
    PRE_REG_READ5(long, "recvmmsg",
                  int, s, struct mmsghdr *, mmsg, int, vlen,
                  int, flags, struct timespec *, timeout);
-   for (i = 0; i < ARG3; i++) {
-      VG_(sprintf)(name, "mmsg[%u].msg_hdr", i);
-      ML_(generic_PRE_sys_recvmsg)(tid, name, &mmsg[i].msg_hdr);
-      VG_(sprintf)(name, "recvmmsg(mmsg[%u].msg_len)", i);
-      PRE_MEM_WRITE( name, (Addr)&mmsg[i].msg_len, sizeof(mmsg[i].msg_len) );
-   }
-   if (ARG5)
-      PRE_MEM_READ( "recvmmsg(timeout)", ARG5, sizeof(struct vki_timespec) );
+   ML_(linux_PRE_sys_recvmmsg)(tid, ARG1,ARG2,ARG3,ARG4,ARG5);
 }
 
 POST(sys_recvmmsg)
 {
-   if (RES > 0) {
-      struct vki_mmsghdr *mmsg = (struct vki_mmsghdr *)ARG2;
-      HChar name[32];    // large enough
-      UInt i;
-      for (i = 0; i < RES; i++) {
-         VG_(sprintf)(name, "mmsg[%u].msg_hdr", i);
-         ML_(generic_POST_sys_recvmsg)(tid, name, &mmsg[i].msg_hdr, mmsg[i].msg_len);
-         POST_MEM_WRITE( (Addr)&mmsg[i].msg_len, sizeof(mmsg[i].msg_len) );
-      }
-   }
+   ML_(linux_POST_sys_recvmmsg) (tid, RES, ARG1,ARG2,ARG3,ARG4,ARG5);
 }
 
 /* ---------------------------------------------------------------------
@@ -10270,6 +10260,69 @@ ML_(linux_PRE_sys_setsockopt) ( ThreadId tid,
          PRE_MEM_READ( "socketcall.setsockopt(optval)",
                        arg3, /* optval */
                        arg4  /* optlen */ );
+      }
+   }
+}
+
+void
+ML_(linux_PRE_sys_recvmmsg) ( ThreadId tid,
+                              UWord arg1, UWord arg2, UWord arg3,
+                              UWord arg4, UWord arg5 )
+{
+   struct vki_mmsghdr *mmsg = (struct vki_mmsghdr *)arg2;
+   HChar name[40];     // large enough
+   UInt i;
+   for (i = 0; i < arg3; i++) {
+      VG_(sprintf)(name, "mmsg[%u].msg_hdr", i);
+      ML_(generic_PRE_sys_recvmsg)(tid, name, &mmsg[i].msg_hdr);
+      VG_(sprintf)(name, "recvmmsg(mmsg[%u].msg_len)", i);
+      PRE_MEM_WRITE( name, (Addr)&mmsg[i].msg_len, sizeof(mmsg[i].msg_len) );
+   }
+   if (arg5)
+      PRE_MEM_READ( "recvmmsg(timeout)", arg5, sizeof(struct vki_timespec) );
+}
+
+void
+ML_(linux_POST_sys_recvmmsg) (ThreadId tid, UWord res,
+                              UWord arg1, UWord arg2, UWord arg3,
+                              UWord arg4, UWord arg5 )
+{
+   if (res > 0) {
+      struct vki_mmsghdr *mmsg = (struct vki_mmsghdr *)arg2;
+      HChar name[32];    // large enough
+      UInt i;
+      for (i = 0; i < res; i++) {
+         VG_(sprintf)(name, "mmsg[%u].msg_hdr", i);
+         ML_(generic_POST_sys_recvmsg)(tid, name, &mmsg[i].msg_hdr, mmsg[i].msg_len);
+         POST_MEM_WRITE( (Addr)&mmsg[i].msg_len, sizeof(mmsg[i].msg_len) );
+      }
+   }
+}
+
+void
+ML_(linux_PRE_sys_sendmmsg) ( ThreadId tid,
+                              UWord arg1, UWord arg2, UWord arg3, UWord arg4 )
+{
+   struct vki_mmsghdr *mmsg = (struct vki_mmsghdr *)arg2;
+   HChar name[40];     // large enough
+   UInt i;
+   for (i = 0; i < arg3; i++) {
+      VG_(sprintf)(name, "mmsg[%u].msg_hdr", i);
+      ML_(generic_PRE_sys_sendmsg)(tid, name, &mmsg[i].msg_hdr);
+      VG_(sprintf)(name, "sendmmsg(mmsg[%u].msg_len)", i);
+      PRE_MEM_WRITE( name, (Addr)&mmsg[i].msg_len, sizeof(mmsg[i].msg_len) );
+   }
+}
+
+void
+ML_(linux_POST_sys_sendmmsg) (ThreadId tid, UWord res,
+                              UWord arg1, UWord arg2, UWord arg3, UWord arg4 )
+{
+   if (res > 0) {
+      struct vki_mmsghdr *mmsg = (struct vki_mmsghdr *)arg2;
+      UInt i;
+      for (i = 0; i < res; i++) {
+         POST_MEM_WRITE( (Addr)&mmsg[i].msg_len, sizeof(mmsg[i].msg_len) );
       }
    }
 }

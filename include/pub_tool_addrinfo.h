@@ -32,6 +32,7 @@
 #define __PUB_TOOL_ADDRINFO_H
 
 #include "pub_tool_basics.h"   // VG_ macro
+#include "pub_tool_aspacemgr.h"  // SegKind
 
 /*====================================================================*/
 /*=== Obtaining information about an address                       ===*/

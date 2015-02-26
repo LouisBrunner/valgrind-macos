@@ -26,6 +26,7 @@
 #include "pub_core_vkiscnums.h"
 #include "pub_core_libcsignal.h"
 #include "pub_core_options.h"
+#include "pub_core_aspacemgr.h"
 
 #include "server.h"
 

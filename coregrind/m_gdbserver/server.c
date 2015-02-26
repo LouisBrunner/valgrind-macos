@@ -33,6 +33,7 @@
 #include "pub_core_transtab.h"
 #include "pub_core_debuginfo.h"
 #include "pub_core_addrinfo.h"
+#include "pub_core_aspacemgr.h"
 
 unsigned long cont_thread;
 unsigned long general_thread;

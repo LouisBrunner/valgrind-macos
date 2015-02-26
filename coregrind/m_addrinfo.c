@@ -37,7 +37,6 @@
 #include "pub_core_xarray.h"
 #include "pub_core_debuginfo.h"
 #include "pub_core_execontext.h"
-#include "pub_core_aspacemgr.h"
 #include "pub_core_addrinfo.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_machine.h"

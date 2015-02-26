@@ -2777,8 +2777,8 @@ Bool VG_(am_create_reservation) ( Addr start, SizeT length,
 }
 
 
-/* Let SEG be an anonymous client mapping.  This fn extends the
-   mapping by DELTA bytes, taking the space from a reservation section
+/* ADDR is the start address of an anonymous client mapping.  This fn extends
+   the mapping by DELTA bytes, taking the space from a reservation section
    which must be adjacent.  If DELTA is positive, the segment is
    extended forwards in the address space, and the reservation must be
    the next one along.  If DELTA is negative, the segment is extended
@@ -2786,25 +2786,20 @@ Bool VG_(am_create_reservation) ( Addr start, SizeT length,
    previous one.  DELTA must be page aligned.  abs(DELTA) must not
    exceed the size of the reservation segment minus one page, that is,
    the reservation segment after the operation must be at least one
-   page long. */
+   page long. The function returns a pointer to the resized segment. */
 
-Bool VG_(am_extend_into_adjacent_reservation_client) ( const NSegment* seg, 
-                                                       SSizeT    delta )
+const NSegment *VG_(am_extend_into_adjacent_reservation_client)( Addr addr, 
+                                                                 SSizeT delta )
 {
    Int    segA, segR;
    UInt   prot;
    SysRes sres;
 
-   /* Find the segment array index for SEG.  If the assertion fails it
-      probably means you passed in a bogus SEG. */
-   aspacem_assert(seg != NULL);
-   segA = segAddr_to_index( seg );
-
-   if (nsegments[segA].kind != SkAnonC)
-      return False;
+   segA = find_nsegment_idx(addr);
+   aspacem_assert(nsegments[segA].kind == SkAnonC);
 
    if (delta == 0)
-      return True;
+      return nsegments + segA;
 
    prot =   (nsegments[segA].hasR ? VKI_PROT_READ : 0)
           | (nsegments[segA].hasW ? VKI_PROT_WRITE : 0)
@@ -2822,7 +2817,7 @@ Bool VG_(am_extend_into_adjacent_reservation_client) ( const NSegment* seg,
           || nsegments[segR].start != nsegments[segA].end + 1
           || delta + VKI_PAGE_SIZE 
                 > (nsegments[segR].end - nsegments[segR].start + 1))
-        return False;
+        return NULL;
         
       /* Extend the kernel's mapping. */
       // DDD: #warning GrP fixme MAP_FIXED can clobber memory!
@@ -2833,11 +2828,11 @@ Bool VG_(am_extend_into_adjacent_reservation_client) ( const NSegment* seg,
                 0, 0 
              );
       if (sr_isError(sres))
-         return False; /* kernel bug if this happens? */
+         return NULL; /* kernel bug if this happens? */
       if (sr_Res(sres) != nsegments[segR].start) {
          /* kernel bug if this happens? */
         (void)ML_(am_do_munmap_NO_NOTIFY)( sr_Res(sres), delta );
-        return False;
+        return NULL;
       }
 
       /* Ok, success with the kernel.  Update our structures. */
@@ -2858,7 +2853,7 @@ Bool VG_(am_extend_into_adjacent_reservation_client) ( const NSegment* seg,
           || nsegments[segR].end + 1 != nsegments[segA].start
           || delta + VKI_PAGE_SIZE 
                 > (nsegments[segR].end - nsegments[segR].start + 1))
-        return False;
+        return NULL;
         
       /* Extend the kernel's mapping. */
       // DDD: #warning GrP fixme MAP_FIXED can clobber memory!
@@ -2869,11 +2864,11 @@ Bool VG_(am_extend_into_adjacent_reservation_client) ( const NSegment* seg,
                 0, 0 
              );
       if (sr_isError(sres))
-         return False; /* kernel bug if this happens? */
+         return NULL; /* kernel bug if this happens? */
       if (sr_Res(sres) != nsegments[segA].start-delta) {
          /* kernel bug if this happens? */
         (void)ML_(am_do_munmap_NO_NOTIFY)( sr_Res(sres), delta );
-        return False;
+        return NULL;
       }
 
       /* Ok, success with the kernel.  Update our structures. */
@@ -2884,7 +2879,7 @@ Bool VG_(am_extend_into_adjacent_reservation_client) ( const NSegment* seg,
    }
 
    AM_SANITY_CHECK;
-   return True;
+   return nsegments + segA;
 }
 
 

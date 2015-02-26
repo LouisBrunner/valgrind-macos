@@ -1190,7 +1190,6 @@ static Addr do_brk ( Addr newbrk )
    NSegment const* rseg;
    Addr newbrkP;
    SizeT delta;
-   Bool ok;
    Bool debug = False;
 
    if (debug)
@@ -1266,8 +1265,8 @@ static Addr do_brk ( Addr newbrk )
    vg_assert(delta > 0);
    vg_assert(VG_IS_PAGE_ALIGNED(delta));
    
-   ok = VG_(am_extend_into_adjacent_reservation_client)( aseg, delta );
-   if (!ok) goto bad;
+   if (! VG_(am_extend_into_adjacent_reservation_client)( aseg->start, delta ))
+      goto bad;
 
    VG_(brk_limit) = newbrk;
    return newbrk;

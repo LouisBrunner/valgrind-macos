@@ -2280,7 +2280,7 @@ Bool VG_(extend_stack)(Addr addr, UInt maxsize)
                     "extending a stack base 0x%llx down by %lld\n",
                     (ULong)seg_next->start, (ULong)udelta);
    if (! VG_(am_extend_into_adjacent_reservation_client)
-            ( seg_next, -(SSizeT)udelta )) {
+            ( seg_next->start, -(SSizeT)udelta )) {
       VG_(debugLog)(1, "signals", "extending a stack base: FAILED\n");
       return False;
    }

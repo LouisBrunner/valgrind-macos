@@ -3357,6 +3357,35 @@ static Bool eqIRCallee ( IRCallee* cee1, IRCallee* cee2 )
    return eq;
 }
 
+/* Convert an atomic IRExpr* to a TmpOrConst. */
+static void irExpr_to_TmpOrConst ( /*OUT*/TmpOrConst* tc, IRExpr* e )
+{
+   switch (e->tag) {
+      case Iex_RdTmp:
+         tc->tag   = TCt;
+         tc->u.tmp = e->Iex.RdTmp.tmp;
+         break;
+      case Iex_Const:
+         tc->tag   = TCc;
+         tc->u.con = e->Iex.Const.con;
+         break;
+      default:
+         /* Getting here is a serious error.  It means that the
+            presented arg isn't an IR atom, as it should be. */
+         vpanic("irExpr_to_TmpOrConst");
+   }
+}
+
+/* Convert a TmpOrConst to an atomic IRExpr*. */
+static IRExpr* tmpOrConst_to_IRExpr ( TmpOrConst* tc )
+{
+   switch (tc->tag) {
+      case TCc: return IRExpr_Const(tc->u.con);
+      case TCt: return IRExpr_RdTmp(tc->u.tmp);
+      default:  vpanic("tmpOrConst_to_IRExpr");
+   }
+}
+
 /* Convert a NULL terminated IRExpr* vector to an array of
    TmpOrConsts, and a length. */
 static void irExprVec_to_TmpOrConsts ( /*OUT*/TmpOrConst** outs,
@@ -3371,21 +3400,9 @@ static void irExprVec_to_TmpOrConsts ( /*OUT*/TmpOrConst** outs,
    *nOuts = n;
    /* and now copy .. */
    for (i = 0; i < n; i++) {
-      IRExpr*       arg = ins[i];
+      IRExpr*     arg = ins[i];
       TmpOrConst* dst = &(*outs)[i];
-      if (arg->tag == Iex_RdTmp) {
-         dst->tag   = TCt;
-         dst->u.tmp = arg->Iex.RdTmp.tmp;
-      }
-      else if (arg->tag == Iex_Const) {
-         dst->tag   = TCc;
-         dst->u.con = arg->Iex.Const.con;
-      }
-      else {
-         /* Failure of this is serious; it means that the presented arg
-            isn't an IR atom, as it should be. */
-         vpanic("irExprVec_to_TmpOrConsts");
-      }
+      irExpr_to_TmpOrConst(dst, arg);
    }
 }
 
@@ -3589,14 +3606,7 @@ static IRExpr* availExpr_to_IRExpr ( AvailExpr* ae )
          IRExpr** vec = LibVEX_Alloc((n+1) * sizeof(IRExpr*));
          vec[n] = NULL;
          for (i = 0; i < n; i++) {
-            TmpOrConst* tc = &ae->u.CCall.args[i];
-            if (tc->tag == TCc) {
-               vec[i] = IRExpr_Const(tc->u.con);
-            }
-            else if (tc->tag == TCt) {
-               vec[i] = IRExpr_RdTmp(tc->u.tmp);
-            }
-            else vpanic("availExpr_to_IRExpr:CCall-arg");
+            vec[i] = tmpOrConst_to_IRExpr(&ae->u.CCall.args[i]);
          }
          return IRExpr_CCall(ae->u.CCall.cee,
                              ae->u.CCall.retty,
@@ -3616,6 +3626,16 @@ static IRTemp subst_AvailExpr_Temp ( HashHW* env, IRTemp tmp )
       return (IRTemp)res;
    else
       return tmp;
+}
+
+inline
+static void subst_AvailExpr_TmpOrConst ( /*MB_MOD*/TmpOrConst* tc,
+                                          HashHW* env )
+{
+   /* env :: IRTemp -> IRTemp */
+   if (tc->tag == TCt) {
+      tc->u.tmp = subst_AvailExpr_Temp( env, tc->u.tmp );
+   }
 }
 
 static void subst_AvailExpr ( HashHW* env, AvailExpr* ae )
@@ -3659,10 +3679,7 @@ static void subst_AvailExpr ( HashHW* env, AvailExpr* ae )
       case CCall: {
          Int i, n = ae->u.CCall.nArgs;;
          for (i = 0; i < n; i++) {
-            TmpOrConst* tc = &ae->u.CCall.args[i];
-            if (tc->tag == TCt) {
-               tc->u.tmp = subst_AvailExpr_Temp( env, tc->u.tmp );
-            }
+            subst_AvailExpr_TmpOrConst(&ae->u.CCall.args[i], env);
          }
          break;
       }

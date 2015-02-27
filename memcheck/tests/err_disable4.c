@@ -26,7 +26,12 @@
 #include "../include/valgrind.h"
 
 char* block = NULL;
+#  if !defined(VGO_darwin)
 sem_t sem;
+#  else
+sem_t *sem;
+static const char *semname = "Semaphore1";
+#  endif
 
 __attribute__((noinline)) void usechar ( char c )
 {
@@ -45,7 +50,11 @@ void* child_fn_1 ( void* arg )
 {
    // Disable error reporting, then wait to exit
    VALGRIND_DISABLE_ERROR_REPORTING;
+#  if !defined(VGO_darwin)
    int r = sem_wait(&sem);  assert(!r);
+#  else
+   int r = sem_wait(sem);  assert(!r);
+#  endif
    return NULL;
 }
 
@@ -53,7 +62,11 @@ void* child_fn_2 ( void* arg )
 {
    // make an error, then wait to exit
    err();
+#  if !defined(VGO_darwin)
    int r = sem_wait(&sem);  assert(!r);
+#  else
+   int r = sem_wait(sem);  assert(!r);
+#  endif
    return NULL;
 }
 
@@ -73,7 +86,11 @@ int main ( void )
           NTHREADS);
 
   // set up the semaphore
+#  if !defined(VGO_darwin)
   r = sem_init(&sem, 0, 0);  assert(!r);
+#  else
+  sem = sem_open(semname, O_CREAT, 0777, 0);  assert(!(sem == SEM_FAILED));
+#  endif
 
   pthread_attr_t attr;
   r = pthread_attr_init(&attr); assert(!r);
@@ -87,7 +104,11 @@ int main ( void )
 
   // let them all exit
   for (i = 0; i < NTHREADS; i++) {
+#  if !defined(VGO_darwin)
      r = sem_post(&sem);  assert(!r);
+#  else
+     r = sem_post(sem);  assert(!r);
+#  endif
   }
 
   // join
@@ -110,7 +131,11 @@ int main ( void )
 
   // let them all exit
   for (i = 0; i < NTHREADS; i++) {
+#  if !defined(VGO_darwin)
      r = sem_post(&sem);  assert(!r);
+#  else
+     r = sem_post(sem);  assert(!r);
+#  endif
   }
 
   // join

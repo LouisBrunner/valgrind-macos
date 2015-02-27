@@ -3409,7 +3409,7 @@ static void irExprVec_to_TmpOrConsts ( /*OUT*/TmpOrConst** outs,
 typedef
    struct {
       enum { Ut, Btt, Btc, Bct, Cf64i, Ittt, Itct, Ittc, Itcc, GetIt,
-             CCall
+             CCall, Load
       } tag;
       union {
          /* unop(tmp) */
@@ -3476,6 +3476,12 @@ typedef
             Int         nArgs;
             IRType      retty;
          } CCall;
+         /* Load(end,ty,addr) */
+         struct {
+            IREndness  end;
+            IRType     ty;
+            TmpOrConst addr;
+         } Load;
       } u;
    }
    AvailExpr;
@@ -3543,7 +3549,14 @@ static Bool eq_AvailExpr ( AvailExpr* a1, AvailExpr* a2 )
          if (eq) vassert(a1->u.CCall.retty == a2->u.CCall.retty);
          return eq;  
       }
-      default: vpanic("eq_AvailExpr");
+      case Load: {
+         Bool eq = toBool(a1->u.Load.end == a2->u.Load.end
+                          && a1->u.Load.ty == a2->u.Load.ty
+                          && eqTmpOrConst(&a1->u.Load.addr, &a2->u.Load.addr));
+         return eq;
+      }
+      default:
+         vpanic("eq_AvailExpr");
    }
 }
 
@@ -3612,6 +3625,9 @@ static IRExpr* availExpr_to_IRExpr ( AvailExpr* ae )
                              ae->u.CCall.retty,
                              vec);
       }
+      case Load:
+         return IRExpr_Load(ae->u.Load.end, ae->u.Load.ty,
+                            tmpOrConst_to_IRExpr(&ae->u.Load.addr));
       default:
          vpanic("availExpr_to_IRExpr");
    }
@@ -3683,12 +3699,15 @@ static void subst_AvailExpr ( HashHW* env, AvailExpr* ae )
          }
          break;
       }
+      case Load:
+         subst_AvailExpr_TmpOrConst(&ae->u.Load.addr, env);
+         break;
       default: 
          vpanic("subst_AvailExpr");
    }
 }
 
-static AvailExpr* irExpr_to_AvailExpr ( IRExpr* e )
+static AvailExpr* irExpr_to_AvailExpr ( IRExpr* e, Bool allowLoadsToBeCSEd )
 {
    AvailExpr* ae;
 
@@ -3807,6 +3826,22 @@ static AvailExpr* irExpr_to_AvailExpr ( IRExpr* e )
                                  );
          return ae;
 
+      case Iex_Load:
+         /* If the caller of do_cse_BB has requested that loads also
+            be CSEd, convert them into AvailExprs.  If not, we'll just
+            return NULL here, and the load never becomes considered
+            "available", which effectively disables CSEing of them, as
+            desired. */
+         if (allowLoadsToBeCSEd) {
+            ae = LibVEX_Alloc(sizeof(AvailExpr));
+            ae->tag        = Load;
+            ae->u.Load.end = e->Iex.Load.end;
+            ae->u.Load.ty  = e->Iex.Load.ty;
+            irExpr_to_TmpOrConst(&ae->u.Load.addr, e->Iex.Load.addr);
+            return ae;
+         }
+         break;
+
       default:
          break;
    }
@@ -3816,9 +3851,12 @@ static AvailExpr* irExpr_to_AvailExpr ( IRExpr* e )
 
 
 /* The BB is modified in-place.  Returns True if any changes were
-   made. */
+   made.  The caller can choose whether or not loads should be CSEd.
+   In the normal course of things we don't do that, since CSEing loads
+   is something of a dodgy proposition if the guest program is doing
+   some screwy stuff to do with races and spinloops. */
 
-static Bool do_cse_BB ( IRSB* bb )
+static Bool do_cse_BB ( IRSB* bb, Bool allowLoadsToBeCSEd )
 {
    Int        i, j, paranoia;
    IRTemp     t, q;
@@ -3856,7 +3894,7 @@ static Bool do_cse_BB ( IRSB* bb )
       /* ------ BEGIN invalidate aenv bindings ------ */
       /* This is critical: remove from aenv any E' -> .. bindings
          which might be invalidated by this statement.  The only
-         vulnerable kind of bindings are the GetI kind.
+         vulnerable kind of bindings are the GetI and Load kinds.
             Dirty call - dump (paranoia level -> 2) 
             Store      - dump (ditto) 
             Put, PutI  - dump unless no-overlap is proven (.. -> 1)
@@ -3882,13 +3920,21 @@ static Bool do_cse_BB ( IRSB* bb )
             if (!aenv->inuse[j])
                continue;
             ae = (AvailExpr*)aenv->key[j];
-            if (ae->tag != GetIt) 
+            if (ae->tag != GetIt && ae->tag != Load) 
                continue;
             invalidate = False;
             if (paranoia >= 2) {
                invalidate = True;
             } else {
                vassert(paranoia == 1);
+               if (ae->tag == Load) {
+                  /* Loads can be invalidated by anything that could
+                     possibly touch memory.  But in that case we
+                     should have |paranoia| == 2 and we won't get
+                     here.  So there's nothing to do; we don't have to
+                     invalidate the load. */
+               }
+               else
                if (st->tag == Ist_Put) {
                   if (getAliasingRelation_IC(
                          ae->u.GetIt.descr, 
@@ -3929,7 +3975,7 @@ static Bool do_cse_BB ( IRSB* bb )
          continue;
 
       t = st->Ist.WrTmp.tmp;
-      eprime = irExpr_to_AvailExpr(st->Ist.WrTmp.data);
+      eprime = irExpr_to_AvailExpr(st->Ist.WrTmp.data, allowLoadsToBeCSEd);
       /* ignore if not of AvailExpr form */
       if (!eprime)
          continue;
@@ -5954,7 +6000,7 @@ IRSB* cheap_transformations (
 static
 IRSB* expensive_transformations( IRSB* bb, VexRegisterUpdates pxControl )
 {
-   (void)do_cse_BB( bb );
+   (void)do_cse_BB( bb, False/*!allowLoadsToBeCSEd*/ );
    collapse_AddSub_chains_BB( bb );
    do_redundant_GetI_elimination( bb );
    if (pxControl < VexRegUpdAllregsAtEachInsn) {
@@ -6129,7 +6175,7 @@ IRSB* do_iropt_BB(
       if (pxControl < VexRegUpdAllregsAtEachInsn) {
          redundant_put_removal_BB ( bb, preciseMemExnsFn, pxControl );
       }
-      do_cse_BB( bb );
+      do_cse_BB( bb, False/*!allowLoadsToBeCSEd*/ );
       do_deadcode_BB( bb );
    }
 
@@ -6145,7 +6191,7 @@ IRSB* do_iropt_BB(
             rounding modes.  Don't bother if hasGetIorPutI since that
             case leads into the expensive transformations, which do
             CSE anyway. */
-         (void)do_cse_BB( bb );
+         (void)do_cse_BB( bb, False/*!allowLoadsToBeCSEd*/ );
          do_deadcode_BB( bb );
       }
 
@@ -6158,7 +6204,7 @@ IRSB* do_iropt_BB(
          bb = cheap_transformations( bb, specHelper,
                                      preciseMemExnsFn, pxControl );
          /* Potentially common up GetIs */
-         cses = do_cse_BB( bb );
+         cses = do_cse_BB( bb, False/*!allowLoadsToBeCSEd*/ );
          if (cses)
             bb = cheap_transformations( bb, specHelper,
                                         preciseMemExnsFn, pxControl );
@@ -6177,7 +6223,7 @@ IRSB* do_iropt_BB(
                                         preciseMemExnsFn, pxControl );
          } else {
             /* at least do CSE and dead code removal */
-            do_cse_BB( bb );
+            do_cse_BB( bb, False/*!allowLoadsToBeCSEd*/ );
             do_deadcode_BB( bb );
          }
          if (0) vex_printf("vex iropt: unrolled a loop\n");

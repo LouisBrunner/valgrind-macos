@@ -2292,6 +2292,17 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
                   //   e2 = e->Iex.Binop.arg2;
                   //   break;
                   //}
+               } else {
+                  /* Xor8/16/32/64(0,t) ==> t */
+                  if (isZeroU(e->Iex.Binop.arg1)) {
+                     e2 = e->Iex.Binop.arg2;
+                     break;
+                  }
+                  /* Xor8/16/32/64(t,0) ==> t */
+                  if (isZeroU(e->Iex.Binop.arg2)) {
+                     e2 = e->Iex.Binop.arg1;
+                     break;
+                  }
                }
                break;
 

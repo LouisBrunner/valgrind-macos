@@ -808,7 +808,7 @@ static UInt needs_self_check ( void* closureV,
       self check.  Whilst we're at it, note any NSegments that we get,
       so as to reduce the number of calls required to
       VG_(am_find_nsegment) in a possible second pass. */
-   const NSegment const* segs[3] = { NULL, NULL, NULL };
+   const NSegment *segs[3] = { NULL, NULL, NULL };
 
    for (i = 0; i < vge->n_used; i++) {
       Bool  check = False;

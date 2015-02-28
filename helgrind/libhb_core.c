@@ -2383,7 +2383,7 @@ Word VTS__cmp_structural ( VTS* a, VTS* b )
 static void VTS__show ( const VTS* vts )
 {
    Word      i, n;
-   tl_assert(vts && vts->ts);
+   tl_assert(vts);
 
    VG_(printf)("[");
    n =  vts->usedTS;
@@ -2402,7 +2402,7 @@ ULong VTS__indexAt_SLOW ( VTS* vts, Thr* idx )
    UWord i, n;
    ThrID idx_thrid = Thr__to_ThrID(idx);
    stats__vts__indexat_slow++;
-   tl_assert(vts && vts->ts);
+   tl_assert(vts);
    n = vts->usedTS;
    for (i = 0; i < n; i++) {
       ScalarTS* st = &vts->ts[i];

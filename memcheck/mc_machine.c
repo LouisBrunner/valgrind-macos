@@ -47,11 +47,13 @@
 
 #define MC_SIZEOF_GUEST_STATE  sizeof(VexGuestArchState)
 
-
+__attribute__((unused))
 static inline Bool host_is_big_endian ( void ) {
    UInt x = 0x11223344;
    return 0x1122 == *(UShort*)(&x);
 }
+
+__attribute__((unused))
 static inline Bool host_is_little_endian ( void ) {
    UInt x = 0x11223344;
    return 0x3344 == *(UShort*)(&x);

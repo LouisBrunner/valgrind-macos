@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include <unistd.h>
 
 char base[] ="0123456789012345678901234567890123456789";
 
@@ -51,9 +51,9 @@ stmg_wrap(void)
 int main(void)
 {
    stmg_no_wrap();
-   printf("\n");
+   write(1, "\n", 1);
    stmg_wrap();
-   printf("\n");
+   write(1, "\n", 1);
 
    return 0;
 }

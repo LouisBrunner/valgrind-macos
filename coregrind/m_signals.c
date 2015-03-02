@@ -2260,6 +2260,10 @@ Bool VG_(extend_stack)(Addr addr, UInt maxsize)
       = seg ? VG_(am_next_nsegment)( seg, True/*fwds*/ )
             : NULL;
 
+   /* TODO: the test "seg->kind == SkAnonC" is really inadequate,
+      because although it tests whether the segment is mapped
+      _somehow_, it doesn't check that it has the right permissions
+      (r,w, maybe x) ?  */
    if (seg && seg->kind == SkAnonC)
       /* addr is already mapped.  Nothing to do. */
       return True;

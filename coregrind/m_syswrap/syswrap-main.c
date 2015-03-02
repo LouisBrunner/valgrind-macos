@@ -1464,27 +1464,14 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
       possible valid address for stack (sp - redzone), to ensure the
       pages all the way down to that address, are mapped.  Because
       this is a potentially expensive and frequent operation, we
-      filter in two ways:
+      do the following:
 
-      First, only the main thread (tid=1) has a growdown stack.  So
+      Only the main thread (tid=1) has a growdown stack.  So
       ignore all others.  It is conceivable, although highly unlikely,
       that the main thread exits, and later another thread is
       allocated tid=1, but that's harmless, I believe;
       VG_(extend_stack) will do nothing when applied to a non-root
       thread.
-
-      Secondly, first call VG_(am_find_nsegment) directly, to see if
-      the page holding (sp - redzone) is mapped correctly.  If so, do
-      nothing.  This is almost always the case.  VG_(extend_stack)
-      calls VG_(am_find_nsegment) twice, so this optimisation -- and
-      that's all it is -- more or less halves the number of calls to
-      VG_(am_find_nsegment) required.
-
-      TODO: the test "seg->kind == SkAnonC" is really inadequate,
-      because although it tests whether the segment is mapped
-      _somehow_, it doesn't check that it has the right permissions
-      (r,w, maybe x) ?  We could test that here, but it will also be
-      necessary to fix the corresponding test in VG_(extend_stack).
 
       All this guff is of course Linux-specific.  Hence the ifdef.
    */

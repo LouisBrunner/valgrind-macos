@@ -2789,11 +2789,14 @@ Bool VG_(am_create_reservation) ( Addr start, SizeT length,
    page long. The function returns a pointer to the resized segment. */
 
 const NSegment *VG_(am_extend_into_adjacent_reservation_client)( Addr addr, 
-                                                                 SSizeT delta )
+                                                                 SSizeT delta,
+                                                                 Bool *overflow)
 {
    Int    segA, segR;
    UInt   prot;
    SysRes sres;
+
+   *overflow = False;
 
    segA = find_nsegment_idx(addr);
    aspacem_assert(nsegments[segA].kind == SkAnonC);
@@ -2813,11 +2816,14 @@ const NSegment *VG_(am_extend_into_adjacent_reservation_client)( Addr addr,
       segR = segA+1;
       if (segR >= nsegments_used
           || nsegments[segR].kind != SkResvn
-          || nsegments[segR].smode != SmLower
-          || nsegments[segR].start != nsegments[segA].end + 1
-          || delta + VKI_PAGE_SIZE 
-                > (nsegments[segR].end - nsegments[segR].start + 1))
-        return NULL;
+          || nsegments[segR].smode != SmLower)
+         return NULL;
+
+      if (delta + VKI_PAGE_SIZE 
+                > (nsegments[segR].end - nsegments[segR].start + 1)) {
+         *overflow = True;
+         return NULL;
+      }
         
       /* Extend the kernel's mapping. */
       // DDD: #warning GrP fixme MAP_FIXED can clobber memory!
@@ -2849,11 +2855,14 @@ const NSegment *VG_(am_extend_into_adjacent_reservation_client)( Addr addr,
       segR = segA-1;
       if (segR < 0
           || nsegments[segR].kind != SkResvn
-          || nsegments[segR].smode != SmUpper
-          || nsegments[segR].end + 1 != nsegments[segA].start
-          || delta + VKI_PAGE_SIZE 
-                > (nsegments[segR].end - nsegments[segR].start + 1))
-        return NULL;
+          || nsegments[segR].smode != SmUpper)
+         return NULL;
+
+      if (delta + VKI_PAGE_SIZE 
+                > (nsegments[segR].end - nsegments[segR].start + 1)) {
+         *overflow = True;
+         return NULL;
+      }
         
       /* Extend the kernel's mapping. */
       // DDD: #warning GrP fixme MAP_FIXED can clobber memory!
@@ -2875,7 +2884,6 @@ const NSegment *VG_(am_extend_into_adjacent_reservation_client)( Addr addr,
       nsegments[segR].end -= delta;
       nsegments[segA].start -= delta;
       aspacem_assert(nsegments[segR].start <= nsegments[segR].end);
-
    }
 
    AM_SANITY_CHECK;

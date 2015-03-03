@@ -1479,7 +1479,16 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
    if (tid == 1/*ROOT THREAD*/) {
       Addr     stackMin   = VG_(get_SP)(tid) - VG_STACK_REDZONE_SZB;
 
-      VG_(extend_stack)( stackMin, tst->client_stack_szB );
+      /* Note, that the stack pointer can be bogus at this point. This is
+         extremely rare. A legitimate testcase that exercises this is 
+         none/tests/s390x/stmg.c:  The stack pointer happens to be in the
+         reservation segment near the end of the addressable memory and
+         there is no SkAnonC segment above.
+
+         We could do slightly better here by not extending the stack for
+         system calls that do not access user space memory. That's busy
+         work with very little gain... */
+      VG_(extend_stack)( tid, stackMin );   // may fail
    }
 #  endif
    /* END ensure root thread's stack is suitably mapped */

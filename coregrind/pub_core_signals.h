@@ -81,7 +81,7 @@ extern void VG_(synth_sigbus)       (ThreadId tid);
 extern void VG_(synth_sigfpe)       (ThreadId tid, UInt code);
 
 /* Extend the stack to cover addr, if possible */
-extern Bool VG_(extend_stack)(Addr addr, UInt maxsize);
+extern Bool VG_(extend_stack)(ThreadId tid, Addr addr);
 
 /* Forces the client's signal handler to SIG_DFL - generally just
    before using that signal to kill the process. */

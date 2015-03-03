@@ -282,7 +282,7 @@ extern Bool VG_(am_create_reservation)
    the reservation segment after the operation must be at least one
    page long. The function returns a pointer to the resized segment. */
 extern const NSegment *VG_(am_extend_into_adjacent_reservation_client) 
-   ( Addr addr, SSizeT delta );
+   ( Addr addr, SSizeT delta, /*OUT*/Bool *overflow );
 
 /* --- --- --- resizing/move a mapping --- --- --- */
 

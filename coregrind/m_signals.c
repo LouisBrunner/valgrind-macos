@@ -1,3 +1,4 @@
+/* -*- mode: C; c-basic-offset: 3; -*- */
 
 /*--------------------------------------------------------------------*/
 /*--- Implementation of POSIX signals.                 m_signals.c ---*/
@@ -1715,7 +1716,7 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
          if (tid == 1) {           // main thread
             Addr esp  = VG_(get_SP)(tid);
             Addr base = VG_PGROUNDDN(esp - VG_STACK_REDZONE_SZB);
-            if (VG_(extend_stack)(base, VG_(threads)[tid].client_stack_szB)) {
+            if (VG_(extend_stack)(tid, base)) {
                if (VG_(clo_trace_signals))
                   VG_(dmsg)("       -> extended stack base to %#lx\n",
                             VG_PGROUNDDN(esp));
@@ -2238,54 +2239,54 @@ void async_signalhandler ( Int sigNo,
                    "while outside of scheduler");
 }
 
-/* Extend the stack to cover addr.  maxsize is the limit the stack can grow to.
+/* Extend the stack of thread #tid to cover addr.
 
    Returns True on success, False on failure.
 
    Succeeds without doing anything if addr is already within a segment.
 
    Failure could be caused by:
-   - addr not below a growable segment
-   - new stack size would exceed maxsize
+   - addr not below a growable segment or in a free segment
+   - new stack size would exceed the stack limit for the given thread
    - mmap failed for some other reason
- */
-Bool VG_(extend_stack)(Addr addr, UInt maxsize)
+*/
+Bool VG_(extend_stack)(ThreadId tid, Addr addr)
 {
    SizeT udelta;
 
-   /* Find the next Segment above addr */
-   NSegment const* seg
-      = VG_(am_find_nsegment)(addr);
-   NSegment const* seg_next 
-      = seg ? VG_(am_next_nsegment)( seg, True/*fwds*/ )
-            : NULL;
+   /* Get the segment containing addr. */
+   const NSegment* seg = VG_(am_find_nsegment)(addr);
+   if (seg == NULL) return False;   // addr in a SkFree segment
 
    /* TODO: the test "seg->kind == SkAnonC" is really inadequate,
       because although it tests whether the segment is mapped
       _somehow_, it doesn't check that it has the right permissions
       (r,w, maybe x) ?  */
-   if (seg && seg->kind == SkAnonC)
+   if (seg->kind == SkAnonC)
       /* addr is already mapped.  Nothing to do. */
       return True;
 
-   /* Check that the requested new base is in a shrink-down
-      reservation section which abuts an anonymous mapping that
-      belongs to the client. */
-   if ( ! (seg
-           && seg->kind == SkResvn
-           && seg->smode == SmUpper
-           && seg_next
-           && seg_next->kind == SkAnonC
-           && seg->end+1 == seg_next->start))
-      return False;
+   /* Find the next Segment above addr. This will return NULL if ADDR
+      is bogus -- which it may be. See comment at the call site in function
+      VG_(client_syscall) */
+   const NSegment* seg_next = VG_(am_next_nsegment)( seg, True/*fwds*/ );
+   if (seg_next == NULL || seg_next->kind != SkAnonC) return False;
 
    udelta = VG_PGROUNDUP(seg_next->start - addr);
+
    VG_(debugLog)(1, "signals", 
                     "extending a stack base 0x%llx down by %lld\n",
                     (ULong)seg_next->start, (ULong)udelta);
+   Bool overflow;
    if (! VG_(am_extend_into_adjacent_reservation_client)
-            ( seg_next->start, -(SSizeT)udelta )) {
-      VG_(debugLog)(1, "signals", "extending a stack base: FAILED\n");
+       ( seg_next->start, -(SSizeT)udelta, &overflow )) {
+      Addr new_stack_base = seg_next->start - udelta;
+      if (overflow)
+         VG_(umsg)("Stack overflow in thread #%d: can't grow stack to %#lx\n",
+                   tid, new_stack_base);
+      else
+         VG_(umsg)("Cannot map memory to grow the stack for thread #%d "
+                   "to %#lx\n", tid, new_stack_base);
       return False;
    }
 
@@ -2407,7 +2408,6 @@ static Bool extend_stack_if_appropriate(ThreadId tid, vki_siginfo_t* info)
    Addr fault;
    Addr esp;
    NSegment const* seg;
-   NSegment const* seg_next;
 
    if (info->si_signo != VKI_SIGSEGV)
       return False;
@@ -2415,8 +2415,6 @@ static Bool extend_stack_if_appropriate(ThreadId tid, vki_siginfo_t* info)
    fault    = (Addr)info->VKI_SIGINFO_si_addr;
    esp      = VG_(get_SP)(tid);
    seg      = VG_(am_find_nsegment)(fault);
-   seg_next = seg ? VG_(am_next_nsegment)( seg, True/*fwds*/ )
-                  : NULL;
 
    if (VG_(clo_trace_signals)) {
       if (seg == NULL)
@@ -2431,11 +2429,6 @@ static Bool extend_stack_if_appropriate(ThreadId tid, vki_siginfo_t* info)
 
    if (info->si_code == VKI_SEGV_MAPERR
        && seg
-       && seg->kind == SkResvn
-       && seg->smode == SmUpper
-       && seg_next
-       && seg_next->kind == SkAnonC
-       && seg->end+1 == seg_next->start
        && fault >= fault_mask(esp - VG_STACK_REDZONE_SZB)) {
       /* If the fault address is above esp but below the current known
          stack segment base, and it was a fault because there was
@@ -2443,14 +2436,12 @@ static Bool extend_stack_if_appropriate(ThreadId tid, vki_siginfo_t* info)
          then extend the stack segment. 
        */
       Addr base = VG_PGROUNDDN(esp - VG_STACK_REDZONE_SZB);
-      if (VG_(extend_stack)(base, VG_(threads)[tid].client_stack_szB)) {
+      if (VG_(extend_stack)(tid, base)) {
          if (VG_(clo_trace_signals))
             VG_(dmsg)("       -> extended stack base to %#lx\n",
                       VG_PGROUNDDN(fault));
          return True;
       } else {
-         VG_(umsg)("Stack overflow in thread %d: can't grow stack to %#lx\n",
-                   tid, fault);
          return False;
       }
    } else {

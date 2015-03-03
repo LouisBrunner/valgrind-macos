@@ -1254,7 +1254,9 @@ static Addr do_brk ( Addr newbrk )
    vg_assert(delta > 0);
    vg_assert(VG_IS_PAGE_ALIGNED(delta));
    
-   if (! VG_(am_extend_into_adjacent_reservation_client)( aseg->start, delta ))
+   Bool overflow;  // ignored here
+   if (! VG_(am_extend_into_adjacent_reservation_client)( aseg->start, delta,
+                                                          &overflow))
       goto bad;
 
    VG_(brk_limit) = newbrk;

@@ -83,10 +83,9 @@ static Bool extend ( ThreadState *tst, Addr addr, SizeT size )
   ThreadId        tid = tst->tid;
   NSegment const* stackseg = NULL;
 
-  if (VG_(extend_stack)(addr, tst->client_stack_szB))
-    {
-      stackseg = VG_(am_find_nsegment)(addr);
-   }
+  if (VG_(extend_stack)(tid, addr)) {
+     stackseg = VG_(am_find_nsegment)(addr);
+  }
 
    if (stackseg == NULL || !stackseg->hasR || !stackseg->hasW)
      {

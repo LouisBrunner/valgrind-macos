@@ -33,6 +33,7 @@
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_mallocfree.h"
+#include "pub_core_aspacemgr.h"
 #include "pub_core_options.h"
 #include "pub_core_stacks.h"
 #include "pub_core_tooliface.h"
@@ -202,7 +203,7 @@ UWord VG_(register_stack)(Addr start, Addr end)
       current_stack = i;
    }
 
-   VG_(debugLog)(2, "stacks", "register [%p-%p] as stack %lu\n",
+   VG_(debugLog)(2, "stacks", "register [start-end] [%p-%p] as stack %lu\n",
                     (void*)start, (void*)end, i->id);
 
    return i->id;
@@ -269,10 +270,55 @@ void VG_(change_stack)(UWord id, Addr start, Addr end)
 void VG_(stack_limits)(Addr SP, Addr *start, Addr *end )
 {
    Stack* stack = find_stack_by_addr(SP);
+   NSegment const *stackseg = VG_(am_find_nsegment) (SP);
 
    if (stack) {
       *start = stack->start;
       *end = stack->end;
+   }
+
+   /* SP is assumed to be in a RW segment.
+      If no such segment is found, assume we have no valid
+      stack for SP, and set *start and *end to 0.
+      Otherwise, possibly reduce the stack limits to the boundaries of the
+      RW segment containing SP. */
+   if (stackseg == NULL) {
+      VG_(debugLog)(2, "stacks", 
+                    "no addressable segment for SP %p\n", 
+                    (void*)SP);
+      *start = 0;
+      *end = 0;
+   } else if (!stackseg->hasR || !stackseg->hasW) {
+      VG_(debugLog)(2, "stacks", 
+                    "segment for SP %p is not Readable and/or not Writable\n",
+                    (void*)SP);
+      *start = 0;
+      *end = 0;
+   } else {
+      if (*start < stackseg->start) {
+         VG_(debugLog)(2, "stacks", 
+                       "segment for SP %p changed stack start limit"
+                       " from %p to %p\n",
+                       (void*)SP, (void*)*start, (void*)stackseg->start);
+         *start = stackseg->start;
+      }
+      if (*end > stackseg->end) {
+         VG_(debugLog)(2, "stacks", 
+                       "segment for SP %p changed stack end limit"
+                       " from %p to %p\n",
+                       (void*)SP, (void*)*end, (void*)stackseg->end);
+         *end = stackseg->end;
+      }
+
+      /* If reducing start and/or end to the SP segment gives an
+         empty range, return 'empty' limits */
+      if (*start > *end) {
+         VG_(debugLog)(2, "stacks", 
+                       "stack for SP %p start %p after end %p\n",
+                       (void*)SP, (void*)*start, (void*)end);
+         *start = 0;
+         *end = 0;
+      }
    }
 }
 

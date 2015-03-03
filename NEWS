@@ -88,6 +88,7 @@ where XXXXXX is the bug number as listed below.
 342795  Internal glibc __GI_mempcpy call should be intercepted
 343012  Unhandled syscall 319 (memfd_create)
 343069  Patch updating v4l2 API support
+343173  helgrind crash during stack unwind
 343303  Fix known deliberate memory leak in setenv() on Mac OS X 10.10
 343306  OS X 10.10: UNKNOWN mach_msg unhandled MACH_SEND_TRAILER option
 343332  Unhandled instruction 0x9E310021 (fcvtmu) on aarch64

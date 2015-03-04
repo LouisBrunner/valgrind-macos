@@ -1373,51 +1373,70 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       if (e->Iex.Binop.op == Iop_GetElem8x8
           || e->Iex.Binop.op == Iop_GetElem16x4
           || e->Iex.Binop.op == Iop_GetElem32x2) {
-         HReg res = newVRegI(env);
-         HReg arg = iselNeon64Expr(env, e->Iex.Binop.arg1);
-         UInt index, size;
-         if (e->Iex.Binop.arg2->tag != Iex_Const ||
-             typeOfIRExpr(env->type_env, e->Iex.Binop.arg2) != Ity_I8) {
-            vpanic("ARM target supports GetElem with constant "
-                   "second argument only\n");
+         if (env->hwcaps & VEX_HWCAPS_ARM_NEON) {
+            HReg res = newVRegI(env);
+            HReg arg = iselNeon64Expr(env, e->Iex.Binop.arg1);
+            UInt index, size;
+            if (e->Iex.Binop.arg2->tag != Iex_Const ||
+                typeOfIRExpr(env->type_env, e->Iex.Binop.arg2) != Ity_I8) {
+               vpanic("ARM target supports GetElem with constant "
+                      "second argument only (neon)\n");
+            }
+            index = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
+            switch (e->Iex.Binop.op) {
+               case Iop_GetElem8x8: vassert(index < 8); size = 0; break;
+               case Iop_GetElem16x4: vassert(index < 4); size = 1; break;
+               case Iop_GetElem32x2: vassert(index < 2); size = 2; break;
+               default: vassert(0);
+            }
+            addInstr(env, ARMInstr_NUnaryS(ARMneon_GETELEMS,
+                                           mkARMNRS(ARMNRS_Reg, res, 0),
+                                           mkARMNRS(ARMNRS_Scalar, arg, index),
+                                           size, False));
+            return res;
          }
-         index = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
-         switch (e->Iex.Binop.op) {
-            case Iop_GetElem8x8: vassert(index < 8); size = 0; break;
-            case Iop_GetElem16x4: vassert(index < 4); size = 1; break;
-            case Iop_GetElem32x2: vassert(index < 2); size = 2; break;
-            default: vassert(0);
+      }
+
+      if (e->Iex.Binop.op == Iop_GetElem32x2
+          && e->Iex.Binop.arg2->tag == Iex_Const
+          && !(env->hwcaps & VEX_HWCAPS_ARM_NEON)) {
+         /* We may have to do GetElem32x2 on a non-NEON capable
+            target. */
+         IRConst* con = e->Iex.Binop.arg2->Iex.Const.con;
+         vassert(con->tag == Ico_U8); /* else IR is ill-typed */
+         UInt index = con->Ico.U8;
+         if (index >= 0 && index <= 1) {
+            HReg rHi, rLo;
+            iselInt64Expr(&rHi, &rLo, env, e->Iex.Binop.arg1);
+            return index == 0 ? rLo : rHi;
          }
-         addInstr(env, ARMInstr_NUnaryS(ARMneon_GETELEMS,
-                                        mkARMNRS(ARMNRS_Reg, res, 0),
-                                        mkARMNRS(ARMNRS_Scalar, arg, index),
-                                        size, False));
-         return res;
       }
 
       if (e->Iex.Binop.op == Iop_GetElem8x16
           || e->Iex.Binop.op == Iop_GetElem16x8
           || e->Iex.Binop.op == Iop_GetElem32x4) {
-         HReg res = newVRegI(env);
-         HReg arg = iselNeonExpr(env, e->Iex.Binop.arg1);
-         UInt index, size;
-         if (e->Iex.Binop.arg2->tag != Iex_Const ||
-             typeOfIRExpr(env->type_env, e->Iex.Binop.arg2) != Ity_I8) {
-            vpanic("ARM target supports GetElem with constant "
-                   "second argument only\n");
+         if (env->hwcaps & VEX_HWCAPS_ARM_NEON) {
+            HReg res = newVRegI(env);
+            HReg arg = iselNeonExpr(env, e->Iex.Binop.arg1);
+            UInt index, size;
+            if (e->Iex.Binop.arg2->tag != Iex_Const ||
+                typeOfIRExpr(env->type_env, e->Iex.Binop.arg2) != Ity_I8) {
+               vpanic("ARM target supports GetElem with constant "
+                      "second argument only (neon)\n");
+            }
+            index = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
+            switch (e->Iex.Binop.op) {
+               case Iop_GetElem8x16: vassert(index < 16); size = 0; break;
+               case Iop_GetElem16x8: vassert(index < 8); size = 1; break;
+               case Iop_GetElem32x4: vassert(index < 4); size = 2; break;
+               default: vassert(0);
+            }
+            addInstr(env, ARMInstr_NUnaryS(ARMneon_GETELEMS,
+                                           mkARMNRS(ARMNRS_Reg, res, 0),
+                                           mkARMNRS(ARMNRS_Scalar, arg, index),
+                                           size, True));
+            return res;
          }
-         index = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
-         switch (e->Iex.Binop.op) {
-            case Iop_GetElem8x16: vassert(index < 16); size = 0; break;
-            case Iop_GetElem16x8: vassert(index < 8); size = 1; break;
-            case Iop_GetElem32x4: vassert(index < 4); size = 2; break;
-            default: vassert(0);
-         }
-         addInstr(env, ARMInstr_NUnaryS(ARMneon_GETELEMS,
-                                        mkARMNRS(ARMNRS_Reg, res, 0),
-                                        mkARMNRS(ARMNRS_Scalar, arg, index),
-                                        size, True));
-         return res;
       }
 
       /* All cases involving host-side helper calls. */
@@ -2165,7 +2184,9 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
 
 static HReg iselNeon64Expr ( ISelEnv* env, IRExpr* e )
 {
-   HReg r = iselNeon64Expr_wrk( env, e );
+   HReg r;
+   vassert(env->hwcaps & VEX_HWCAPS_ARM_NEON);
+   r = iselNeon64Expr_wrk( env, e );
    vassert(hregClass(r) == HRcFlt64);
    vassert(hregIsVirtual(r));
    return r;
@@ -3773,9 +3794,12 @@ static HReg iselNeon64Expr_wrk ( ISelEnv* env, IRExpr* e )
    vpanic("iselNeon64Expr");
 }
 
+
 static HReg iselNeonExpr ( ISelEnv* env, IRExpr* e )
 {
-   HReg r = iselNeonExpr_wrk( env, e );
+   HReg r;
+   vassert(env->hwcaps & VEX_HWCAPS_ARM_NEON);
+   r = iselNeonExpr_wrk( env, e );
    vassert(hregClass(r) == HRcVec128);
    vassert(hregIsVirtual(r));
    return r;

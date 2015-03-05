@@ -8345,7 +8345,7 @@ POST(sys_ioctl)
    /* END undocumented ioctls for PowerVR SGX 540 (the GPU on Nexus S) */
 
    /* BEGIN undocumented ioctls for Qualcomm Adreno 3xx */
-   if (KernelVariantiS(KernelVariant_android_gpu_sgx5xx,
+   if (KernelVariantiS(KernelVariant_android_gpu_adreno3xx,
                        VG_(clo_kernel_variant))) {
      if (ARG2 == 0xC00C0902) {
          POST_MEM_WRITE(ARG3, 24); // 16 is not enough

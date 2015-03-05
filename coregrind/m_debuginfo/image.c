@@ -46,8 +46,10 @@
 
 #include "minilzo.h"
 
+/* These values (1024 entries of 8192 bytes each) gives a cache
+   size of 8MB. */
 #define CACHE_ENTRY_SIZE_BITS (12+1)
-#define CACHE_N_ENTRIES       32
+#define CACHE_N_ENTRIES       1024
 
 #define CACHE_ENTRY_SIZE      (1 << CACHE_ENTRY_SIZE_BITS)
 
@@ -394,7 +396,17 @@ static inline Bool is_in_CEnt ( const CEnt* cent, DiOffT off )
       no benefit, whereas skipping it does remove it from the hottest
       path. */
    /* vg_assert(cent->used > 0 && cent->used <= CACHE_ENTRY_SIZE); */
-   return cent->off <= off && off < cent->off + cent->used;
+   /* What we want to return is:
+        cent->off <= off && off < cent->off + cent->used;
+      This is however a very hot path, so here's alternative that uses
+      only one conditional branch, using the following transformation,
+      where all quantities are unsigned:
+              x >= LO && x < LO+N
+         -->  x-LO >= 0 && x-LO < LO+N-LO
+         -->  x-LO >= 0 && x-LO < N
+         -->  x-LO < N
+   */
+   return off - cent->off < cent->used;
 }
 
 /* Allocate a new CEnt, connect it to |img|, and return its index. */
@@ -456,7 +468,7 @@ static void set_CEnt ( const DiImage* img, UInt entNo, DiOffT off )
       UInt delay = now - t_last;
       t_last = now;
       nread += len;
-      VG_(printf)("XXXXXXXX (tot %lld) read %ld offset %lld  %u\n", 
+      VG_(printf)("XXXXXXXX (tot %'lld)  read %'ld  offset %'lld  delay %'u\n", 
                   nread, len, off, delay);
    }
 

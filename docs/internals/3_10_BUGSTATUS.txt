@@ -166,9 +166,6 @@ go in here.
 
 === other/arm ==========================================================
 
-343219  fix GET_STARTREGS for arm
-        HAS PATCH; could land
-
 === other/s390 =========================================================
 === other/Android ======================================================
 
@@ -295,3 +292,5 @@ arm64 critical regtest fails:
 ========================================================================
 
 Tue  3 Feb 00:14:18 CET 2015
+
+Check: space recovery in aspacemgr segnames array re-implemented?

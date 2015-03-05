@@ -1425,7 +1425,7 @@ static void initialiseSector ( Int sno )
       /* Sector has been used before.  Dump the old contents. */
       VG_(debugLog)(1,"transtab", "recycle sector %d\n", sno);
       if (VG_(clo_stats))
-         VG_(dmsg)("transtab: " "recycle sector %d\n", sno);
+         VG_(dmsg)("transtab: " "recycle  sector %d\n", sno);
 
       vg_assert(sec->tt != NULL);
       vg_assert(sec->tc_next != NULL);
@@ -1574,7 +1574,7 @@ void VG_(add_to_transtab)( const VexGuestExtents* vge,
                       y, tt_loading_pct, tc_loading_pct);
       if (VG_(clo_stats)) {
          VG_(dmsg)("transtab: "
-                   "declare sector %d full "
+                   "declare  sector %d full "
                    "(TT loading %2d%%, TC loading %2d%%)\n",
                    y, tt_loading_pct, tc_loading_pct);
       }

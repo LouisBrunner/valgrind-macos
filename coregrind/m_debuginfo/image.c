@@ -405,6 +405,12 @@ static inline Bool is_in_CEnt ( const CEnt* cent, DiOffT off )
          -->  x-LO >= 0 && x-LO < LO+N-LO
          -->  x-LO >= 0 && x-LO < N
          -->  x-LO < N
+      This is however only valid when the original bounds, that is, LO
+      .. LO+N-1, do not wrap around the end of the address space.  That
+      is, we require that LO <= LO+N-1.  But that's OK .. we don't
+      expect wraparounds in CEnts or for that matter any object
+      allocated from C-land.  See Hacker's Delight, Chapter 4.1,
+      "Checking Bounds of Integers", for more details.
    */
    return off - cent->off < cent->used;
 }

@@ -103,6 +103,9 @@ where XXXXXX is the bug number as listed below.
 343967  Don't warn about setuid/setgid/setcap executable for directories
 343978  Recognize DWARF5/GCC5 DW_LANG_Fortran 2003 and 2008 constants
 344007  accept4 syscall unhandled on arm64 (242) and ppc64 (344)
+344033  Helgrind on ARM32 loses track of mutex lockedness state in
+        pthread_cond_wait
+344054  www - update info for Solaris/illumos
 344235  Remove duplicate include of pub_core_aspacemgr.h
 344279  syscall sendmmsg on arm64 (269) and ppc32/64 (349) unhandled
 344295  syscall recvmmsg on arm64 (243) and ppc32/64 (343) unhandled

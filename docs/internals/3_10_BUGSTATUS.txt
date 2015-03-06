@@ -40,6 +40,10 @@ go in here.
 
 342783  arm: unhandled instruction 0xEEFE1ACA = "vcvt.s32.f32    s3, s3, #12"
 
+344802  disInstr(arm): unhandled instruction: 0xEC510F1E
+        maybe easy fix?
+        but doesn't run natively either
+
 === VEX/arm64 ==========================================================
 
 === VEX/x86 ============================================================
@@ -294,3 +298,40 @@ arm64 critical regtest fails:
 Tue  3 Feb 00:14:18 CET 2015
 
 Check: space recovery in aspacemgr segnames array re-implemented?
+
+343902  --vgdb=yes doesn't break when --xml=yes is used
+no action yet
+
+344019  new tool: trackptr to track pointer usage
+na
+
+344052  Cost of dynamically loaded library is not properly linked to
+        source code lines if the library is unloaded before exit
+
+344139  vex x86->IR: 0x36 0x8A 0x18 0x22 (and many other examples)
+stack segment overrides
+
+344337  OS X 10.10 unhandled syscall
+
+344382  Memcheck has high false error rates on MSVC2013 compiled, optimised, code
+in progress
+
+344401  x32 ABI support
+
+344416  'make regtest' does not work cleanly on OS X
+
+344512  unhandled syscal: unix:349
+
+344524  store conditional of guest applications always fail (Octeon3(MIPS)
+
+344543  --leak-check=full memleak errors from system libraries in OS X 10.10.2
+
+344547  vex x86->IR: 0xC5 0xF8 0x77 0xE9
+avx
+
+344559  garbage collection of unused segment names in address space manager
+
+344560  Stack traces missing penultimate frame
+has plausible patch
+
+Thu  5 Mar 18:08:27 CET 2015

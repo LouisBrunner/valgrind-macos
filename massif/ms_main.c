@@ -37,10 +37,7 @@
 //   - preset column widths for stats are not generic
 //   - preset column headers are not generic
 //   - "Massif arguments:" line is not generic
-// - do snapshots on client requests
-//   - (Michael Meeks): have an interactive way to request a dump
-//     (callgrind_control-style)
-//     - "profile now"
+// - do snapshots on some specific client requests
 //     - "show me the extra allocations since the last snapshot"
 //     - "start/stop logging" (eg. quickly skip boring bits)
 // - Add ability to draw multiple graphs, eg. heap-only, stack-only, total.
@@ -1956,8 +1953,11 @@ static void print_monitor_help ( void )
    VG_(gdb_printf) ("massif monitor commands:\n");
    VG_(gdb_printf) ("  snapshot [<filename>]\n");
    VG_(gdb_printf) ("  detailed_snapshot [<filename>]\n");
-   VG_(gdb_printf) ("       takes a snapshot (or a detailed snapshot)\n");
-   VG_(gdb_printf) ("       and saves it in <filename>\n");
+   VG_(gdb_printf) ("      takes a snapshot (or a detailed snapshot)\n");
+   VG_(gdb_printf) ("      and saves it in <filename>\n");
+   VG_(gdb_printf) ("             default <filename> is massif.vgdb.out\n");
+   VG_(gdb_printf) ("  all_snapshots [<filename>]\n");
+   VG_(gdb_printf) ("      saves all snapshot(s) taken so far in <filename>\n");
    VG_(gdb_printf) ("             default <filename> is massif.vgdb.out\n");
    VG_(gdb_printf) ("\n");
 }
@@ -2337,6 +2337,20 @@ static void handle_snapshot_monitor_command (const HChar *filename,
    delete_snapshot(&snapshot);
 }
 
+static void handle_all_snapshots_monitor_command (const HChar *filename)
+{
+   if (!clo_pages_as_heap && !have_started_executing_code) {
+      // See comments of variable have_started_executing_code.
+      VG_(gdb_printf) 
+         ("error: cannot take snapshot before execution has started\n");
+      return;
+   }
+
+   write_snapshots_to_file ((filename == NULL) ? 
+                            "massif.vgdb.out" : filename,
+                            snapshots, next_snapshot_i);
+}
+
 static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
 {
    HChar* wcmd;
@@ -2346,7 +2360,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
    VG_(strcpy) (s, req);
 
    wcmd = VG_(strtok_r) (s, " ", &ssaveptr);
-   switch (VG_(keyword_id) ("help snapshot detailed_snapshot", 
+   switch (VG_(keyword_id) ("help snapshot detailed_snapshot all_snapshots", 
                             wcmd, kwd_report_duplicated_matches)) {
    case -2: /* multiple matches */
       return True;
@@ -2365,6 +2379,12 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
       HChar* filename;
       filename = VG_(strtok_r) (NULL, " ", &ssaveptr);
       handle_snapshot_monitor_command (filename, True /* detailed */);
+      return True;
+   }
+   case  3: { /* all_snapshots */
+      HChar* filename;
+      filename = VG_(strtok_r) (NULL, " ", &ssaveptr);
+      handle_all_snapshots_monitor_command (filename);
       return True;
    }
    default: 

@@ -877,6 +877,12 @@ gdbserver (see <xref linkend="manual-core-adv.gdbserver-commandhandling"/>).
     &lt;filename&gt; (default massif.vgdb.out).
     </para>
   </listitem>
+  <listitem>
+    <para><varname>all_snapshots [&lt;filename&gt;]</varname>
+    requests to take all captured snapshots so far and save them in the given
+    &lt;filename&gt; (default massif.vgdb.out).
+    </para>
+  </listitem>
 </itemizedlist>
 </sect1>
 

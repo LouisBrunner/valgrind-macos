@@ -16,6 +16,7 @@ monitor help
 # test non detailed and detailed snapshot
 monitor snapshot
 monitor detailed_snapshot
+monitor all_snapshots
 #
 #
 monitor v.kill

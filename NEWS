@@ -11,6 +11,10 @@ Release 3.11.0 is under development, not yet released.
 
 * Memcheck:
 
+* Massif:
+  New monitor command 'all_snapshots <filename>' that dumps all snapshots
+  taken so far.
+
 * Helgrind:
 
 * Callgrind:
@@ -84,6 +88,7 @@ where XXXXXX is the bug number as listed below.
 342038  Unhandled syscalls on aarch64 (mbind/get/set_mempolicy)
 342063  wrong format specifier for test mcblocklistsearch in gdbserver_tests
 342221  socket connect false positive uninit memory for unknown af family
+342353  Allow dumping full massif output while valgrind is still running
 342603  Add I2C_SMBUS ioctl support
 342635  OS X 10.10 (Yosemite) - missing system calls and fcntl code
 342795  Internal glibc __GI_mempcpy call should be intercepted

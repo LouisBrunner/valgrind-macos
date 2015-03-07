@@ -17,8 +17,11 @@ general valgrind monitor commands:
 massif monitor commands:
   snapshot [<filename>]
   detailed_snapshot [<filename>]
-       takes a snapshot (or a detailed snapshot)
-       and saves it in <filename>
+      takes a snapshot (or a detailed snapshot)
+      and saves it in <filename>
+             default <filename> is massif.vgdb.out
+  all_snapshots [<filename>]
+      saves all snapshot(s) taken so far in <filename>
              default <filename> is massif.vgdb.out
 monitor command request to kill this process
 Remote connection closed

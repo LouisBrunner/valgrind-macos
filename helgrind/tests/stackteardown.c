@@ -93,8 +93,13 @@ int main ( void )
    pthread_t child;
 
    r = pthread_attr_init(&attr); assert(!r);
+# if !defined(VGO_darwin)
    stack = mmap(NULL, sz, PROT_READ|PROT_WRITE,  MAP_PRIVATE | MAP_ANONYMOUS,
                 -1, 0);
+# else
+   stack = mmap(NULL, sz, PROT_READ|PROT_WRITE,  MAP_PRIVATE | MAP_ANON,
+                -1, 0);
+# endif
    assert(stack != (void *)-1);
    r = pthread_attr_setstack(&attr, stack, sz);
    r = pthread_create(&child, &attr, child_fn, NULL); assert(!r);

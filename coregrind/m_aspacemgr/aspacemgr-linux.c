@@ -2568,6 +2568,23 @@ SysRes VG_(am_shared_mmap_file_float_valgrind)
                                                   fd, offset );
 }
 
+/* Convenience wrapper around VG_(am_mmap_anon_float_client) which also
+   marks the segment as containing the client heap. This is for the benefit
+   of the leak checker which needs to be able to identify such segments
+   so as not to use them as sources of roots during leak checks. */
+SysRes VG_(am_mmap_client_heap) ( SizeT length, Int prot )
+{
+   SysRes res = VG_(am_mmap_anon_float_client)(length, prot);
+
+   if (! sr_isError(res)) {
+      Addr addr = sr_Res(res);
+      Int ix = find_nsegment_idx(addr);
+
+      nsegments[ix].isCH = True;
+   }
+   return res;
+}
+
 /* --- --- munmap helper --- --- */
 
 static 
@@ -2684,33 +2701,15 @@ Bool VG_(am_change_ownership_v_to_c)( Addr start, SizeT len )
    return True;
 }
 
-/* 'seg' must have been obtained from VG_(am_find_nsegment), and still valid.
-   If it denotes a SkAnonC (anonymous client mapping) area, set the .isCH
-   (is-client-heap) flag for that area.  Otherwise do nothing.
-   (Bizarre interface so that the same code works for both Linux and
-   AIX and does not impose inefficiencies on the Linux version.) */
-void VG_(am_set_segment_isCH_if_SkAnonC)( const NSegment* seg )
+/* Set the 'hasT' bit on the segment containing ADDR indicating that
+   translations have or may have been taken from this segment. ADDR is
+   expected to belong to a client segment. */
+void VG_(am_set_segment_hasT)( Addr addr )
 {
-   aspacem_assert(seg != NULL);
-   Int i = segAddr_to_index( seg );
-   if (nsegments[i].kind == SkAnonC) {
-      nsegments[i].isCH = True;
-   } else {
-      aspacem_assert(nsegments[i].isCH == False);
-   }
-}
-
-/* Same idea as VG_(am_set_segment_isCH_if_SkAnonC), except set the
-   segment's hasT bit (has-cached-code) if this is a client segment,
-   i.e. SkFileC, SkAnonC, or SkShmC. */
-void VG_(am_set_segment_hasT_if_client_segment)( const NSegment* seg )
-{
-   aspacem_assert(seg != NULL);
-   Int i = segAddr_to_index( seg );
-   if (nsegments[i].kind == SkAnonC || nsegments[i].kind == SkFileC ||
-       nsegments[i].kind == SkShmC) {
-      nsegments[i].hasT = True;
-   }
+   Int i = find_nsegment_idx(addr);
+   SegKind kind = nsegments[i].kind;
+   aspacem_assert(kind == SkAnonC || kind == SkFileC || kind == SkShmC);
+   nsegments[i].hasT = True;
 }
 
 

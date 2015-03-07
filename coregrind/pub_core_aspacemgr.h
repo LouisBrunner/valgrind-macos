@@ -231,6 +231,10 @@ extern SysRes VG_(am_mmap_file_float_valgrind)
 extern SysRes VG_(am_shared_mmap_file_float_valgrind)
    ( SizeT length, UInt prot, Int fd, Off64T offset );
 
+/* Convenience wrapper around VG_(am_mmap_anon_float_client) which also
+   marks the segment as containing the client heap. */
+extern SysRes VG_(am_mmap_client_heap) ( SizeT length, Int prot );
+
 /* Unmap the given address range and update the segment array
    accordingly.  This fails if the range isn't valid for the client.
    If *need_discard is True after a successful return, the caller
@@ -245,18 +249,10 @@ extern SysRes VG_(am_munmap_client)( /*OUT*/Bool* need_discard,
   suitable segment. */
 extern Bool VG_(am_change_ownership_v_to_c)( Addr start, SizeT len );
 
-/* 'seg' must be NULL or have been obtained from
-   VG_(am_find_nsegment), and still valid.  If non-NULL, and if it
-   denotes a SkAnonC (anonymous client mapping) area, set the .isCH
-   (is-client-heap) flag for that area.  Otherwise do nothing.
-   (Bizarre interface so that the same code works for both Linux and
-   AIX and does not impose inefficiencies on the Linux version.) */
-extern void VG_(am_set_segment_isCH_if_SkAnonC)( const NSegment* seg );
-
-/* Same idea as VG_(am_set_segment_isCH_if_SkAnonC), except set the
-   segment's hasT bit (has-cached-code) if this is a client segment,
-   i.e. SkFileC, SkAnonC, or SkShmC. */
-extern void VG_(am_set_segment_hasT_if_client_segment)( const NSegment* );
+/* Set the 'hasT' bit on the segment containing ADDR indicating that
+   translations have or may have been taken from this segment. ADDR is
+   expected to belong to a client segment. */
+extern void VG_(am_set_segment_hasT)( Addr addr );
 
 /* --- --- --- reservations --- --- --- */
 

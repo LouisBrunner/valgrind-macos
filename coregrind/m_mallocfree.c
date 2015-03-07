@@ -853,15 +853,11 @@ Superblock* newSuperblock ( Arena* a, SizeT cszB )
 
    if (a->clientmem) {
       // client allocation -- return 0 to client if it fails
-      sres = VG_(am_mmap_anon_float_client)
+      sres = VG_(am_mmap_client_heap)
          ( cszB, VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC );
       if (sr_isError(sres))
          return 0;
       sb = (Superblock*)(Addr)sr_Res(sres);
-      // Mark this segment as containing client heap.  The leak
-      // checker needs to be able to identify such segments so as not
-      // to use them as sources of roots during leak checks.
-      VG_(am_set_segment_isCH_if_SkAnonC)( VG_(am_find_nsegment)( (Addr)sb ) );
    } else {
       // non-client allocation -- abort if it fails
       sres = VG_(am_mmap_anon_float_valgrind)( cszB );

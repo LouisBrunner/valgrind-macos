@@ -1765,21 +1765,12 @@ Bool VG_(translate) ( ThreadId tid,
    vg_assert(tres.n_sc_extents >= 0 && tres.n_sc_extents <= 3);
    vg_assert(tmpbuf_used <= N_TMPBUF);
    vg_assert(tmpbuf_used > 0);
-
-   /* Tell aspacem of all segments that have had translations taken
-      from them.  Optimisation: don't re-look up vge.base[0] since seg
-      should already point to it. */
-
-   vg_assert( vge.base[0] == addr );
-   /* set 'translations taken from this segment' flag */
-   VG_(am_set_segment_hasT_if_client_segment)( seg );
    } /* END new scope specially for 'seg' */
 
-   for (i = 1; i < vge.n_used; i++) {
-      NSegment const* seg 
-         = VG_(am_find_nsegment)( vge.base[i] );
-      /* set 'translations taken from this segment' flag */
-      VG_(am_set_segment_hasT_if_client_segment)( seg );
+   /* Tell aspacem of all segments that have had translations taken
+      from them. */
+   for (i = 0; i < vge.n_used; i++) {
+      VG_(am_set_segment_hasT)( vge.base[i] );
    }
 
    /* Copy data at trans_addr into the translation cache. */

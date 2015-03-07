@@ -50,6 +50,9 @@ extern void VG_(post_syscall)   ( ThreadId tid );
 /* Clear this module's private state for thread 'tid' */
 extern void VG_(clear_syscallInfo) ( Int tid );
 
+// Returns True if the given thread is currently in a system call
+extern Bool VG_(is_in_syscall) ( Int tid );
+
 // Fix up a thread's state when syscall is interrupted by a signal.
 extern void VG_(fixup_guest_state_after_syscall_interrupted)(
                ThreadId tid,

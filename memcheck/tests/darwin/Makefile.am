@@ -7,6 +7,7 @@ noinst_HEADERS = scalar.h
 
 EXTRA_DIST = \
 	aio.stderr.exp aio.vgtest \
+	deep_badparam.stderr.exp deep_badparam.stdout.exp deep_badparam.vgtest \
 	env.stderr.exp env.vgtest \
 	pth-supp.stderr.exp pth-supp.vgtest \
 	scalar.stderr.exp scalar.vgtest \
@@ -16,6 +17,7 @@ EXTRA_DIST = \
 
 check_PROGRAMS = \
 	aio \
+	deep_badparam \
 	env \
 	pth-supp \
 	scalar \

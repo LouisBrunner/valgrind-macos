@@ -515,6 +515,23 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    if (fps) fps[0] = uregs.xbp;
    i = 1;
 
+#  if defined(VGO_darwin)
+   if (VG_(is_valid_tid)(tid_if_known) &&
+      VG_(is_in_syscall)(tid_if_known) &&
+      i < max_n_ips) {
+      /* On Darwin, all the system call stubs have no function
+       * prolog.  So instead of top of the stack being a new
+       * frame comprising a saved BP and a return address, we
+       * just have the return address in the caller's frame.
+       * Adjust for this by recording the return address.
+       */
+      ips[i] = *(Addr *)uregs.xsp - 1;
+      if (sps) sps[i] = uregs.xsp;
+      if (fps) fps[i] = uregs.xbp;
+      i++;
+   }
+#  endif
+       
    /* Loop unwinding the stack. Note that the IP value we get on
     * each pass (whether from CFI info or a stack frame) is a
     * return address so is actually after the calling instruction

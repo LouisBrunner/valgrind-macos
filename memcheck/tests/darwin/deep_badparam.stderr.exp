@@ -1,0 +1,12 @@
+Syscall param write(buf) points to uninitialised byte(s)
+   ...
+   by 0x........: func_six (in ./deep_badparam)
+   by 0x........: func_five (in ./deep_badparam)
+   by 0x........: func_four (in ./deep_badparam)
+   by 0x........: func_three (in ./deep_badparam)
+   by 0x........: func_two (in ./deep_badparam)
+   by 0x........: func_one (in ./deep_badparam)
+   by 0x........: main (in ./deep_badparam)
+ Address 0x........ is on thread 1's stack
+ in frame #1, created by func_six (???:)
+

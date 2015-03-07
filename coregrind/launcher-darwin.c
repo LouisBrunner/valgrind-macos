@@ -291,7 +291,7 @@ int main(int argc, char** argv, char** envp)
       asprintf(&vgpreload_core, "%s/vgpreload_core-%s-darwin.so", valgrind_lib, valid_archs[i].valgrind_name);
       if (access(vgpreload_core, R_OK|X_OK) != 0) {
          VG_(debugLog)(1, "launcher", "arch '%s' IS NOT installed\n", valid_archs[i].valgrind_name);
-         bzero(&valid_archs[i], sizeof(valid_archs[i]));
+         memset(&valid_archs[i], 0, sizeof(valid_archs[i]));
       } else {
          VG_(debugLog)(1, "launcher", "arch '%s' IS installed\n", valid_archs[i].valgrind_name);
       }

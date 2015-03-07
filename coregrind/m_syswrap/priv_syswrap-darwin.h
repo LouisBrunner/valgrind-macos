@@ -416,8 +416,8 @@ DECL_TEMPLATE(darwin, getdirentries64);         // 344
 DECL_TEMPLATE(darwin, statfs64);                // 345
 DECL_TEMPLATE(darwin, fstatfs64);               // 346
 DECL_TEMPLATE(darwin, getfsstat64);             // 347
-// NYI __pthread_chdir 348
-// NYI __pthread_fchdir 349
+DECL_TEMPLATE(darwin, __pthread_chdir);         // 348
+DECL_TEMPLATE(darwin, __pthread_fchdir);        // 349
 // NYI audit 350
 DECL_TEMPLATE(darwin, auditon);                 // 351
 // 352

@@ -2186,6 +2186,22 @@ PRE(__disable_threadsignal)
 }
 
 
+PRE(__pthread_chdir)
+{
+    PRINT("__pthread_chdir ( %#lx(%s) )", ARG1, (char*)ARG1);
+    PRE_REG_READ1(long, "__pthread_chdir", const char *, path);
+    PRE_MEM_RASCIIZ( "__pthread_chdir(path)", ARG1 );
+}
+
+
+
+PRE(__pthread_fchdir)
+{
+    PRINT("__pthread_fchdir ( %ld )", ARG1);
+    PRE_REG_READ1(long, "__pthread_fchdir", unsigned int, fd);
+}
+
+
 PRE(kdebug_trace)
 {
    PRINT("kdebug_trace(%ld, %ld, %ld, %ld, %ld, %ld)", 
@@ -9671,8 +9687,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACXY(__NR_statfs64,    statfs64), 
    MACXY(__NR_fstatfs64,   fstatfs64), 
    MACXY(__NR_getfsstat64, getfsstat64), 
-// _____(__NR___pthread_chdir), 
-// _____(__NR___pthread_fchdir), 
+   MACX_(__NR___pthread_chdir,  __pthread_chdir),
+   MACX_(__NR___pthread_fchdir, __pthread_fchdir),
 // _____(__NR_audit), 
    MACXY(__NR_auditon,     auditon), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(352)),   // ???

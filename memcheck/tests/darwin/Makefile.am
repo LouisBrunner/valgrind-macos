@@ -10,6 +10,7 @@ EXTRA_DIST = \
 	deep_badparam.stderr.exp deep_badparam.stdout.exp deep_badparam.vgtest \
 	env.stderr.exp env.vgtest \
 	pth-supp.stderr.exp pth-supp.vgtest \
+	pth-undocumented.stderr.exp pth-undocumented.stdout.exp pth-undocumented.vgtest \
 	scalar.stderr.exp scalar.vgtest \
 	scalar_fork.stderr.exp scalar_fork.vgtest \
 	scalar_nocancel.stderr.exp scalar_nocancel.vgtest \
@@ -20,6 +21,7 @@ check_PROGRAMS = \
 	deep_badparam \
 	env \
 	pth-supp \
+	pth-undocumented \
 	scalar \
 	scalar_fork \
 	scalar_nocancel \

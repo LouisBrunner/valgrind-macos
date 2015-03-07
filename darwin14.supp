@@ -438,6 +438,13 @@
 }
 
 {
+   OSX1010:dyld-2
+   Memcheck:Cond
+   fun:exit
+   obj:*libdyld*dylib*
+}
+
+{
    OSX1010:libsystem_kernel-1
    Memcheck:Cond
    obj:*libsystem_kernel*dylib*

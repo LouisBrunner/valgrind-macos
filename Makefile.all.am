@@ -111,6 +111,7 @@ AM_CFLAGS_BASE = \
 	@FLAG_W_FORMAT@ \
 	@FLAG_W_FORMAT_SECURITY@ \
 	@FLAG_FNO_STACK_PROTECTOR@ \
+	@FLAG_FSANITIZE@ \
 	-fno-strict-aliasing \
 	-fno-builtin
 

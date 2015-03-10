@@ -827,6 +827,16 @@ else
     VALT_LOAD_ADDRESS_SEC=$valt_load_address_sec_norml
 fi
 
+#----------------------------------------------------------------------------
+# Undefined behaviour sanitiser
+#----------------------------------------------------------------------------
+# Check whether we should build with the undefined beahviour sanitiser.
+
+AC_CACHE_CHECK([for using the undefined behaviour sanitiser], vg_cv_ubsan,
+   [AC_ARG_ENABLE(ubsan, 
+      [  --enable-ubsan          enables the undefined behaviour sanitiser],
+      [vg_cv_ubsan=$enableval],
+      [vg_cv_ubsan=no])])
 
 #----------------------------------------------------------------------------
 # Define MIPS_PAGE_SHIFT (--with-pagesize)
@@ -1777,6 +1787,28 @@ CFLAGS=$safe_CFLAGS
 
 AC_SUBST(FLAG_FNO_STACK_PROTECTOR)
 
+
+# Does this compiler support -fsanitize=undefined?
+# Only checked for if --enable-ubsan was given.
+if test "x${vg_cv_ubsan}" = "xyes"; then
+AC_MSG_CHECKING([if gcc accepts -fsanitize=undefined])
+safe_CFLAGS=$CFLAGS
+CFLAGS="-fsanitize=undefined"
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  return 0;
+]])], [
+FLAG_FSANITIZE="-fsanitize=undefined"
+LIB_UBSAN="-static-libubsan"
+AC_MSG_RESULT([yes])
+], [
+FLAG_FSANITIZE=""
+LIB_UBSAN=""
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+AC_SUBST(FLAG_FSANITIZE)
+AC_SUBST(LIB_UBSAN)
+fi
 # does this compiler support --param inline-unit-growth=... ?
 
 AC_MSG_CHECKING([if gcc accepts --param inline-unit-growth])

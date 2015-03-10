@@ -133,7 +133,7 @@ n-i-bz  Provide implementations of certain compiler builtins to support
 n-i-bz  Old STABS code is still being compiled, but never used. Remove it.
 n-i-bz  Fix compilation on distros with glibc < 2.5
 n-i-bz  (vex 3098) Avoid generation of Neon insns on non-Neon hosts
-
+343597  ppc64le: incorrect use of offseof macro
 
 
 Release 3.10.1 (25 November 2014)

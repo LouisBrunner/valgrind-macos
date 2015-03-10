@@ -692,13 +692,19 @@ void ML_(addDiCfSI) ( struct _DebugInfo* di,
 
    /* sanity */
    vg_assert(len > 0);
-   /* If this fails, the implication is you have a single procedure
+   /* Issue a warning if LEN is unexpectedly large (exceeds 5 million).
+      The implication is you have a single procedure 
       with more than 5 million bytes of code.  Which is pretty
       unlikely.  Either that, or the debuginfo reader is somehow
       broken.  5 million is of course arbitrary; but it's big enough
       to be bigger than the size of any plausible piece of code that
-      would fall within a single procedure. */
-   vg_assert(len < 5000000);
+      would fall within a single procedure. But occasionally it does
+      happen (c.f. BZ #339542). */
+   if (len >= 5000000)
+      VG_(message)(Vg_DebugMsg,
+                   "warning: DiCfSI %#lx .. %#lx is huge; length = %u (%s)\n",
+                   base, base + len - 1, len, di->soname);
+   vg_assert(len < 500000000);
 
    vg_assert(di->fsm.have_rx_map && di->fsm.have_rw_map);
    /* Find mapping where at least one end of the CFSI falls into. */

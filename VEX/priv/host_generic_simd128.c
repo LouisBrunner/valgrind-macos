@@ -44,7 +44,7 @@
 
 static inline UInt mul32 ( Int xx, Int yy )
 {
-   Int t = ((Int)xx) * ((Int)yy);
+   Long t = ((Long)xx) * ((Long)yy);
    return toUInt(t);
 }
 

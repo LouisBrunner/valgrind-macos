@@ -474,17 +474,17 @@ static void unimplemented ( const HChar* str )
 
 static ULong extend_s_8to64 ( UChar x )
 {
-   return (ULong)((((Long)x) << 56) >> 56);
+   return (ULong)((Long)(((ULong)x) << 56) >> 56);
 }
 
 static ULong extend_s_16to64 ( UShort x )
 {
-   return (ULong)((((Long)x) << 48) >> 48);
+   return (ULong)((Long)(((ULong)x) << 48) >> 48);
 }
 
 static ULong extend_s_32to64 ( UInt x )
 {
-   return (ULong)((((Long)x) << 32) >> 32);
+   return (ULong)((Long)(((ULong)x) << 32) >> 32);
 }
 
 /* Figure out whether the mod and rm parts of a modRM byte refer to a

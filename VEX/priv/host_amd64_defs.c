@@ -2059,16 +2059,15 @@ static UChar* emit64 ( UChar* p, ULong w64 )
 static Bool fits8bits ( UInt w32 )
 {
    Int i32 = (Int)w32;
-   return toBool(i32 == ((i32 << 24) >> 24));
+   return toBool(i32 == ((Int)(w32 << 24) >> 24));
 }
 /* Can the lower 32 bits be signedly widened to produce the whole
    64-bit value?  In other words, are the top 33 bits either all 0 or
    all 1 ? */
 static Bool fitsIn32Bits ( ULong x )
 {
-   Long y0 = (Long)x;
-   Long y1 = y0;
-   y1 <<= 32;
+   Long y1;
+   y1 = x << 32;
    y1 >>=/*s*/ 32;
    return toBool(x == y1);
 }

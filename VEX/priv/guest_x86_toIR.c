@@ -326,12 +326,12 @@ static IRTemp newTemp ( IRType ty )
 
 static UInt extend_s_8to32( UInt x )
 {
-   return (UInt)((((Int)x) << 24) >> 24);
+   return (UInt)((Int)(x << 24) >> 24);
 }
 
 static UInt extend_s_16to32 ( UInt x )
 {
-   return (UInt)((((Int)x) << 16) >> 16);
+  return (UInt)((Int)(x << 16) >> 16);
 }
 
 /* Fetch a byte from the guest insn stream. */

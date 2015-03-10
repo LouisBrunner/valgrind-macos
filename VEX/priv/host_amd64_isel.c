@@ -283,9 +283,8 @@ static Bool sane_AMode ( AMD64AMode* am )
    all 1 ? */
 static Bool fitsIn32Bits ( ULong x )
 {
-   Long y0 = (Long)x;
-   Long y1 = y0;
-   y1 <<= 32;
+   Long y1;
+   y1 = x << 32;
    y1 >>=/*s*/ 32;
    return toBool(x == y1);
 }
@@ -348,7 +347,7 @@ static void push_uimm64( ISelEnv* env, ULong uimm64 )
    /* If uimm64 can be expressed as the sign extension of its
       lower 32 bits, we can do it the easy way. */
    Long simm64 = (Long)uimm64;
-   if ( simm64 == ((simm64 << 32) >> 32) ) {
+   if ( simm64 == ((Long)(uimm64 << 32) >> 32) ) {
       addInstr( env, AMD64Instr_Push(AMD64RMI_Imm( (UInt)uimm64 )) );
    } else {
       HReg tmp = newVRegI(env);

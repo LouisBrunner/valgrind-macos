@@ -1414,17 +1414,17 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
             break;
 
          case Iop_8Sto32: {
-            /* signed */ Int s32 = e->Iex.Unop.arg->Iex.Const.con->Ico.U8;
-            s32 <<= 24;
-            s32 >>= 24;
-            e2 = IRExpr_Const(IRConst_U32((UInt)s32));
+            UInt u32 = e->Iex.Unop.arg->Iex.Const.con->Ico.U8;
+            u32 <<= 24;
+            u32 = (Int)u32 >> 24;   /* signed shift */
+            e2 = IRExpr_Const(IRConst_U32(u32));
             break;
          }
          case Iop_16Sto32: {
-            /* signed */ Int s32 = e->Iex.Unop.arg->Iex.Const.con->Ico.U16;
-            s32 <<= 16;
-            s32 >>= 16;
-            e2 = IRExpr_Const(IRConst_U32( (UInt)s32) );
+            UInt u32 = e->Iex.Unop.arg->Iex.Const.con->Ico.U16;
+            u32 <<= 16;
+            u32 = (Int)u32 >> 16;   /* signed shift */
+            e2 = IRExpr_Const(IRConst_U32(u32));
             break;
          }
          case Iop_8Uto64:
@@ -1440,10 +1440,10 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
                     0xFF & e->Iex.Unop.arg->Iex.Const.con->Ico.U8));
             break;
          case Iop_8Sto16: {
-            /* signed */ Short s16 = e->Iex.Unop.arg->Iex.Const.con->Ico.U8;
-            s16 <<= 8;
-            s16 >>= 8;
-            e2 = IRExpr_Const(IRConst_U16( (UShort)s16) );
+            UShort u16 = e->Iex.Unop.arg->Iex.Const.con->Ico.U8;
+            u16 <<= 8;
+            u16 = (Short)u16 >> 8;  /* signed shift */
+            e2 = IRExpr_Const(IRConst_U16(u16));
             break;
          }
          case Iop_8Uto16:
@@ -1529,17 +1529,17 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
                     & e->Iex.Unop.arg->Iex.Const.con->Ico.U32));
             break;
          case Iop_16Sto64: {
-            /* signed */ Long s64 = e->Iex.Unop.arg->Iex.Const.con->Ico.U16;
-            s64 <<= 48;
-            s64 >>= 48;
-            e2 = IRExpr_Const(IRConst_U64((ULong)s64));
+            ULong u64 = e->Iex.Unop.arg->Iex.Const.con->Ico.U16;
+            u64 <<= 48;
+            u64 = (Long)u64 >> 48;   /* signed shift */
+            e2 = IRExpr_Const(IRConst_U64(u64));
             break;
          }
          case Iop_32Sto64: {
-            /* signed */ Long s64 = e->Iex.Unop.arg->Iex.Const.con->Ico.U32;
-            s64 <<= 32;
-            s64 >>= 32;
-            e2 = IRExpr_Const(IRConst_U64((ULong)s64));
+            ULong u64 = e->Iex.Unop.arg->Iex.Const.con->Ico.U32;
+            u64 <<= 32;
+            u64 = (Long)u64 >> 32;   /* signed shift */
+            e2 = IRExpr_Const(IRConst_U64(u64));
             break;
          }
 

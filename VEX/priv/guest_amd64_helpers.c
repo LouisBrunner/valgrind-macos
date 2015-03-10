@@ -151,7 +151,7 @@ static const UChar parity_table[256] = {
 static inline Long lshift ( Long x, Int n )
 {
    if (n >= 0)
-      return x << n;
+      return (ULong)x << n;
    else
       return x >> (-n);
 }
@@ -190,8 +190,8 @@ static inline ULong idULong ( ULong x )
 #define ACTIONS_ADD(DATA_BITS,DATA_UTYPE)			\
 {								\
    PREAMBLE(DATA_BITS);						\
-   { Long cf, pf, af, zf, sf, of;				\
-     Long argL, argR, res;					\
+   { ULong cf, pf, af, zf, sf, of;				\
+     ULong argL, argR, res;					\
      argL = CC_DEP1;						\
      argR = CC_DEP2;						\
      res  = argL + argR;					\
@@ -211,8 +211,8 @@ static inline ULong idULong ( ULong x )
 #define ACTIONS_SUB(DATA_BITS,DATA_UTYPE)			\
 {								\
    PREAMBLE(DATA_BITS);						\
-   { Long cf, pf, af, zf, sf, of;				\
-     Long argL, argR, res;					\
+   { ULong cf, pf, af, zf, sf, of;				\
+     ULong argL, argR, res;					\
      argL = CC_DEP1;						\
      argR = CC_DEP2;						\
      res  = argL - argR;					\
@@ -232,8 +232,8 @@ static inline ULong idULong ( ULong x )
 #define ACTIONS_ADC(DATA_BITS,DATA_UTYPE)			\
 {								\
    PREAMBLE(DATA_BITS);						\
-   { Long cf, pf, af, zf, sf, of;				\
-     Long argL, argR, oldC, res;		 		\
+   { ULong cf, pf, af, zf, sf, of;				\
+     ULong argL, argR, oldC, res;		 		\
      oldC = CC_NDEP & AMD64G_CC_MASK_C;				\
      argL = CC_DEP1;						\
      argR = CC_DEP2 ^ oldC;	       				\
@@ -257,8 +257,8 @@ static inline ULong idULong ( ULong x )
 #define ACTIONS_SBB(DATA_BITS,DATA_UTYPE)			\
 {								\
    PREAMBLE(DATA_BITS);						\
-   { Long cf, pf, af, zf, sf, of;				\
-     Long argL, argR, oldC, res;	       			\
+   { ULong cf, pf, af, zf, sf, of;				\
+     ULong argL, argR, oldC, res;	       			\
      oldC = CC_NDEP & AMD64G_CC_MASK_C;				\
      argL = CC_DEP1;						\
      argR = CC_DEP2 ^ oldC;	       				\
@@ -282,7 +282,7 @@ static inline ULong idULong ( ULong x )
 #define ACTIONS_LOGIC(DATA_BITS,DATA_UTYPE)			\
 {								\
    PREAMBLE(DATA_BITS);						\
-   { Long cf, pf, af, zf, sf, of;				\
+   { ULong cf, pf, af, zf, sf, of;				\
      cf = 0;							\
      pf = parity_table[(UChar)CC_DEP1];				\
      af = 0;							\
@@ -298,8 +298,8 @@ static inline ULong idULong ( ULong x )
 #define ACTIONS_INC(DATA_BITS,DATA_UTYPE)			\
 {								\
    PREAMBLE(DATA_BITS);						\
-   { Long cf, pf, af, zf, sf, of;				\
-     Long argL, argR, res;					\
+   { ULong cf, pf, af, zf, sf, of;				\
+     ULong argL, argR, res;					\
      res  = CC_DEP1;						\
      argL = res - 1;						\
      argR = 1;							\
@@ -318,8 +318,8 @@ static inline ULong idULong ( ULong x )
 #define ACTIONS_DEC(DATA_BITS,DATA_UTYPE)			\
 {								\
    PREAMBLE(DATA_BITS);						\
-   { Long cf, pf, af, zf, sf, of;				\
-     Long argL, argR, res;					\
+   { ULong cf, pf, af, zf, sf, of;				\
+     ULong argL, argR, res;					\
      res  = CC_DEP1;						\
      argL = res + 1;						\
      argR = 1;							\
@@ -339,7 +339,7 @@ static inline ULong idULong ( ULong x )
 #define ACTIONS_SHL(DATA_BITS,DATA_UTYPE)			\
 {								\
    PREAMBLE(DATA_BITS);						\
-   { Long cf, pf, af, zf, sf, of;				\
+   { ULong cf, pf, af, zf, sf, of;				\
      cf = (CC_DEP2 >> (DATA_BITS - 1)) & AMD64G_CC_MASK_C;	\
      pf = parity_table[(UChar)CC_DEP1];				\
      af = 0; /* undefined */					\
@@ -357,7 +357,7 @@ static inline ULong idULong ( ULong x )
 #define ACTIONS_SHR(DATA_BITS,DATA_UTYPE)			\
 {								\
    PREAMBLE(DATA_BITS);  					\
-   { Long cf, pf, af, zf, sf, of;				\
+   { ULong cf, pf, af, zf, sf, of;				\
      cf = CC_DEP2 & 1;						\
      pf = parity_table[(UChar)CC_DEP1];				\
      af = 0; /* undefined */					\
@@ -377,7 +377,7 @@ static inline ULong idULong ( ULong x )
 #define ACTIONS_ROL(DATA_BITS,DATA_UTYPE)			\
 {								\
    PREAMBLE(DATA_BITS);						\
-   { Long fl 							\
+   { ULong fl 							\
         = (CC_NDEP & ~(AMD64G_CC_MASK_O | AMD64G_CC_MASK_C))	\
           | (AMD64G_CC_MASK_C & CC_DEP1)			\
           | (AMD64G_CC_MASK_O & (lshift(CC_DEP1,  		\
@@ -394,7 +394,7 @@ static inline ULong idULong ( ULong x )
 #define ACTIONS_ROR(DATA_BITS,DATA_UTYPE)			\
 {								\
    PREAMBLE(DATA_BITS);						\
-   { Long fl 							\
+   { ULong fl 							\
         = (CC_NDEP & ~(AMD64G_CC_MASK_O | AMD64G_CC_MASK_C))	\
           | (AMD64G_CC_MASK_C & (CC_DEP1 >> (DATA_BITS-1)))	\
           | (AMD64G_CC_MASK_O & (lshift(CC_DEP1, 		\
@@ -410,7 +410,7 @@ static inline ULong idULong ( ULong x )
                                 DATA_U2TYPE, NARROWto2U)        \
 {                                                               \
    PREAMBLE(DATA_BITS);                                         \
-   { Long cf, pf, af, zf, sf, of;                               \
+   { ULong cf, pf, af, zf, sf, of;                              \
      DATA_UTYPE  hi;                                            \
      DATA_UTYPE  lo                                             \
         = NARROWtoU( ((DATA_UTYPE)CC_DEP1)                      \
@@ -436,7 +436,7 @@ static inline ULong idULong ( ULong x )
                                 DATA_S2TYPE, NARROWto2S)        \
 {                                                               \
    PREAMBLE(DATA_BITS);                                         \
-   { Long cf, pf, af, zf, sf, of;                               \
+   { ULong cf, pf, af, zf, sf, of;                              \
      DATA_STYPE  hi;                                            \
      DATA_STYPE  lo                                             \
         = NARROWtoS( ((DATA_STYPE)CC_DEP1)                      \
@@ -461,7 +461,7 @@ static inline ULong idULong ( ULong x )
 #define ACTIONS_UMULQ                                           \
 {                                                               \
    PREAMBLE(64);                                                \
-   { Long cf, pf, af, zf, sf, of;                               \
+   { ULong cf, pf, af, zf, sf, of;                              \
      ULong lo, hi;                                              \
      mullU64( (ULong)CC_DEP1, (ULong)CC_DEP2, &hi, &lo );       \
      cf = (hi != 0);                                            \
@@ -479,7 +479,7 @@ static inline ULong idULong ( ULong x )
 #define ACTIONS_SMULQ                                           \
 {                                                               \
    PREAMBLE(64);                                                \
-   { Long cf, pf, af, zf, sf, of;                               \
+   { ULong cf, pf, af, zf, sf, of;                              \
      Long lo, hi;                                               \
      mullS64( (Long)CC_DEP1, (Long)CC_DEP2, &hi, &lo );         \
      cf = (hi != (lo >>/*s*/ (64-1)));                          \
@@ -497,7 +497,7 @@ static inline ULong idULong ( ULong x )
 #define ACTIONS_ANDN(DATA_BITS,DATA_UTYPE)			\
 {								\
    PREAMBLE(DATA_BITS);						\
-   { Long cf, pf, af, zf, sf, of;				\
+   { ULong cf, pf, af, zf, sf, of;				\
      cf = 0;							\
      pf = 0;							\
      af = 0;							\
@@ -513,7 +513,7 @@ static inline ULong idULong ( ULong x )
 #define ACTIONS_BLSI(DATA_BITS,DATA_UTYPE)			\
 {								\
    PREAMBLE(DATA_BITS);						\
-   { Long cf, pf, af, zf, sf, of;				\
+   { ULong cf, pf, af, zf, sf, of;				\
      cf = ((DATA_UTYPE)CC_DEP2 != 0);				\
      pf = 0;							\
      af = 0;							\
@@ -545,7 +545,7 @@ static inline ULong idULong ( ULong x )
 #define ACTIONS_BLSR(DATA_BITS,DATA_UTYPE)			\
 {								\
    PREAMBLE(DATA_BITS);						\
-   { Long cf, pf, af, zf, sf, of;				\
+   { ULong cf, pf, af, zf, sf, of;				\
      cf = ((DATA_UTYPE)CC_DEP2 == 0);				\
      pf = 0;							\
      af = 0;							\

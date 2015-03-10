@@ -1894,7 +1894,7 @@ static UChar* emit32 ( UChar* p, UInt w32 )
 static Bool fits8bits ( UInt w32 )
 {
    Int i32 = (Int)w32;
-   return toBool(i32 == ((i32 << 24) >> 24));
+   return toBool(i32 == ((Int)(w32 << 24) >> 24));
 }
 
 

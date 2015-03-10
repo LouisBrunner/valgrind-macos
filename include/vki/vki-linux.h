@@ -2508,6 +2508,9 @@ struct vki_vt_consize {
 # define VKI_PR_ENDIAN_BIG		0
 # define VKI_PR_ENDIAN_LITTLE	1	/* True little endian mode */
 # define VKI_PR_ENDIAN_PPC_LITTLE	2	/* "PowerPC" pseudo little endian */
+
+#define VKI_PR_SET_SECCOMP 22
+
 #define VKI_PR_SET_PTRACER 0x59616d61
 
 //----------------------------------------------------------------------
@@ -4600,6 +4603,12 @@ enum vki_kcmp_type {
 
    VKI_KCMP_TYPES
 };
+
+//----------------------------------------------------------------------
+// From linux-3.19-rc5/include/uapi/linux/seccomp.h
+//----------------------------------------------------------------------
+
+#define VKI_SECCOMP_MODE_FILTER 2
 
 #endif // __VKI_LINUX_H
 

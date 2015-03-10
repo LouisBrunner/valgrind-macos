@@ -1018,6 +1018,21 @@ PRE(sys_prctl)
    case VKI_PR_SET_PTRACER:
       PRE_REG_READ2(int, "prctl", int, option, int, ptracer_process_ID);
       break;
+   case VKI_PR_SET_SECCOMP:
+      /* This is a bit feeble in that it uses |option| before checking
+         it, but at least both sides of the conditional check it. */
+      if (ARG2 == VKI_SECCOMP_MODE_FILTER) {
+         PRE_REG_READ3(int, "prctl", int, option, int, mode, char*, filter);
+         if (ARG3) {
+            /* Should check that ARG3 points at a valid struct sock_fprog.
+               Sounds complex; hence be lame. */
+            PRE_MEM_READ( "prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER, filter)",
+                          ARG3, 1 );
+         }
+      } else {
+         PRE_REG_READ2(int, "prctl", int, option, int, mode);
+      }
+      break;
    default:
       PRE_REG_READ5(long, "prctl",
                     int, option, unsigned long, arg2, unsigned long, arg3,

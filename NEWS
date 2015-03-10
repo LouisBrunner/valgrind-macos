@@ -34,6 +34,9 @@ Release 3.11.0 is under development, not yet released.
   number of threads valgrind can handle. The default is 500 threads
   which should be more than enough for most applications.
 
+* Valgrind can be built with Intel's ICC compiler. The required
+  compiler version is 14.0 or later.
+
 * ==================== FIXED BUGS ====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"
@@ -68,6 +71,7 @@ where XXXXXX is the bug number as listed below.
 339156  gdbsrv not called for fatal signal
 339288  support Cavium Octeon MIPS specific BBIT*32 instructions
 339442  Fix testsuite build failure on OS X 10.9
+339542  Enable compilation with Intel's ICC compiler
 339688  Mac-specific ASM does not support .version directive (cpuid,
         tronical and pushfpopf tests)
 339745  Valgrind crash when check Marmalade app (partial fix)

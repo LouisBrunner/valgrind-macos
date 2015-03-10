@@ -57,6 +57,8 @@ First of all:
 - Consider upgrading the C++ demangler.
   auxprogs/update-demangler   helps with that
 
+- Contact Gregory Czajkowski ( gregczajkowski@yahoo.com ) and ask him
+  to build (make && make check) valgrind with ICC.
 
 For each release candidate (should do release candidates for feature
 releases, bug-fix-only releases might not need one):

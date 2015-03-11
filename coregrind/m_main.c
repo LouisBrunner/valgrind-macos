@@ -356,6 +356,7 @@ static void usage_NORETURN ( Bool debug_help )
    - set VG_(clo_max_stackframe) (--max-stackframe=)
    - set VG_(clo_main_stacksize) (--main-stacksize=)
    - set VG_(clo_sim_hints) (--sim-hints=)
+   - set VG_(clo_max_threads) (--max-threads)
 
    That's all it does.  The main command line processing is done below
    by main_process_cmd_line_options.  Note that

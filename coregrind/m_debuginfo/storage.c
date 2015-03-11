@@ -704,7 +704,6 @@ void ML_(addDiCfSI) ( struct _DebugInfo* di,
       VG_(message)(Vg_DebugMsg,
                    "warning: DiCfSI %#lx .. %#lx is huge; length = %u (%s)\n",
                    base, base + len - 1, len, di->soname);
-   vg_assert(len < 500000000);
 
    vg_assert(di->fsm.have_rx_map && di->fsm.have_rw_map);
    /* Find mapping where at least one end of the CFSI falls into. */

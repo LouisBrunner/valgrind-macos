@@ -354,7 +354,9 @@ Bool ML_(am_resolve_filename) ( Int fd, /*OUT*/HChar* buf, Int nbuf )
 /*---                                                           ---*/
 /*-----------------------------------------------------------------*/
 struct _VgStack {
-   HChar bytes[0];
+   HChar bytes[1];
+   // We use a fake size of 1. A bigger size is allocated
+   // by VG_(am_alloc_VgStack).
 };
 
 /* Allocate and initialise a VgStack (anonymous valgrind space).

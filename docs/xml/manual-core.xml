@@ -2249,8 +2249,33 @@ need to use them.</para>
       provided <computeroutput>address</computeroutput> must be page
       aligned and must be equal or bigger to 0x1000 (4KB). To find the
       default value on your platform, do something such as
-      <computeroutput>valgrind -d -d date 2&gt;&amp;1 | grep -i minaddr</computeroutput>. Values lower than 0x10000 (64KB) are known to create problems
+      <computeroutput>valgrind -d -d date 2&gt;&amp;1 | grep -i minaddr</computeroutput>.
+      Values lower than 0x10000 (64KB) are known to create problems
       on some distributions.
+      </para>
+   </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.valgrind-stacksize" xreflabel="----valgrind-stacksize">
+    <term>
+      <option><![CDATA[--valgrind-stacksize=<number> [default: 1MB] ]]></option>
+    </term>
+    <listitem>
+      <para>For each thread, Valgrind needs its own 'private' stack.
+      The default size for these stacks is largely dimensioned, and so
+      should be sufficient in most cases.  In case the size is too small,
+      Valgrind will segfault. Before segfaulting, a warning might be produced
+      by Valgrind when approaching the limit.
+      </para>
+      <para>
+      Use the option <option>--valgrind-stacksize</option> if such an (unlikely)
+      warning is produced, or Valgrind dies due to a segmentation violation.
+      Such segmentation violations have been seen when demangling huge C++
+      symbols.
+      </para>
+      <para>If your application uses many threads and needs a lot of memory, you can
+      gain some memory by reducing the size of these Valgrind stacks using
+      the option <option>--valgrind-stacksize</option>.
       </para>
    </listitem>
   </varlistentry>

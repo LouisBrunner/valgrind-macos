@@ -365,10 +365,10 @@ static void show_sched_status_wrk ( Bool host_stacktrace,
       }
       if (stack_usage && stack != 0)
           VG_(printf)("valgrind stack top usage: %ld of %ld\n",
-                      VG_STACK_ACTIVE_SZB 
+                      VG_(clo_valgrind_stacksize)
                       - VG_(am_get_VgStack_unused_szB)(stack,
-                                                       VG_STACK_ACTIVE_SZB),
-                      (SizeT) VG_STACK_ACTIVE_SZB);
+                                                       VG_(clo_valgrind_stacksize)),
+                      (SizeT) VG_(clo_valgrind_stacksize));
    }
    VG_(printf)("\n");
 }

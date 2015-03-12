@@ -1,5 +1,6 @@
 prog: err_disable4
-vgopts: -q --num-callers=3
+vgopts: -q --num-callers=3 --valgrind-stacksize=131072
+## 131072 is the minimum value needed on ppc64 (2 pages of 64K)
 stderr_filter: ../../helgrind/tests/filter_stderr
 ## This is so as to get rid of the "Thread #" lines, which
 ## otherwise perturb the output due to differences in 

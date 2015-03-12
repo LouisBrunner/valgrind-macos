@@ -195,6 +195,10 @@ static void usage_NORETURN ( Bool debug_help )
 "    --num-transtab-sectors=<number> size of translated code cache [%d]\n"
 "           more sectors may increase performance, but use more memory.\n"
 "    --aspace-minaddr=0xPP     avoid mapping memory below 0xPP [guessed]\n"
+"    --valgrind-stacksize=<number> size of valgrind (host) thread's stack\n"
+"                               (in bytes) ["
+                                VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB) 
+                                                "]\n"
 "    --show-emwarns=no|yes     show warnings about emulation limits? [no]\n"
 "    --require-text-symbol=:sonamepattern:symbolpattern    abort run if the\n"
 "                              stated shared object doesn't have the stated\n"
@@ -555,6 +559,12 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
       else if VG_STREQN(20, arg, "--core-redzone-size=") {}
       else if VG_STREQN(15, arg, "--redzone-size=")      {}
       else if VG_STREQN(17, arg, "--aspace-minaddr=")    {}
+
+      else if VG_BINT_CLO(arg, "--valgrind-stacksize",
+                          VG_(clo_valgrind_stacksize), 
+                          2*VKI_PAGE_SIZE, 10*VG_DEFAULT_STACK_ACTIVE_SZB)
+                            {VG_(clo_valgrind_stacksize) 
+                                  = VG_PGROUNDUP(VG_(clo_valgrind_stacksize));}
 
       /* Obsolete options. Report an error and exit */
       else if VG_STREQN(34, arg, "--vex-iropt-precise-memory-exns=no") {
@@ -1551,7 +1561,9 @@ static void setup_file_descriptors(void)
    marked global even though it isn't, because assembly code below
    needs to reference the name. */
 
-/*static*/ VgStack VG_(interim_stack);
+/*static*/ struct {
+   HChar bytes [VG_STACK_GUARD_SZB + VG_DEFAULT_STACK_ACTIVE_SZB + VG_STACK_GUARD_SZB];
+} VG_(interim_stack);
 
 /* These are the structures used to hold info for creating the initial
    client image.
@@ -2506,7 +2518,6 @@ void shutdown_actions_NORETURN( ThreadId tid,
    VG_(am_show_nsegments)(1,"Memory layout at client shutdown");
 
    vg_assert(VG_(is_running_thread)(tid));
-
    vg_assert(tids_schedretcode == VgSrc_ExitThread
 	     || tids_schedretcode == VgSrc_ExitProcess
              || tids_schedretcode == VgSrc_FatalSig );
@@ -2863,7 +2874,7 @@ asm("\n"
     /* set up the new stack in %eax */
     "\tmovl  $vgPlain_interim_stack, %eax\n"
     "\taddl  $"VG_STRINGIFY(VG_STACK_GUARD_SZB)", %eax\n"
-    "\taddl  $"VG_STRINGIFY(VG_STACK_ACTIVE_SZB)", %eax\n"
+    "\taddl  $"VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)", %eax\n"
     "\tsubl  $16, %eax\n"
     "\tandl  $~15, %eax\n"
     /* install it, and collect the original one */
@@ -2883,7 +2894,7 @@ asm("\n"
     /* set up the new stack in %rdi */
     "\tmovq  $vgPlain_interim_stack, %rdi\n"
     "\taddq  $"VG_STRINGIFY(VG_STACK_GUARD_SZB)", %rdi\n"
-    "\taddq  $"VG_STRINGIFY(VG_STACK_ACTIVE_SZB)", %rdi\n"
+    "\taddq  $"VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)", %rdi\n"
     "\tandq  $~15, %rdi\n"
     /* install it, and collect the original one */
     "\txchgq %rdi, %rsp\n"
@@ -2903,13 +2914,13 @@ asm("\n"
     "\tla  16,vgPlain_interim_stack@l(16)\n"
     "\tlis    17,("VG_STRINGIFY(VG_STACK_GUARD_SZB)" >> 16)\n"
     "\tori 17,17,("VG_STRINGIFY(VG_STACK_GUARD_SZB)" & 0xFFFF)\n"
-    "\tlis    18,("VG_STRINGIFY(VG_STACK_ACTIVE_SZB)" >> 16)\n"
-    "\tori 18,18,("VG_STRINGIFY(VG_STACK_ACTIVE_SZB)" & 0xFFFF)\n"
+    "\tlis    18,("VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)" >> 16)\n"
+    "\tori 18,18,("VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)" & 0xFFFF)\n"
     "\tadd 16,17,16\n"
     "\tadd 16,18,16\n"
     "\trlwinm 16,16,0,0,27\n"
     /* now r16 = &vgPlain_interim_stack + VG_STACK_GUARD_SZB +
-       VG_STACK_ACTIVE_SZB rounded down to the nearest 16-byte
+       VG_DEFAULT_STACK_ACTIVE_SZB rounded down to the nearest 16-byte
        boundary.  And r1 is the original SP.  Set the SP to r16 and
        call _start_in_C_linux, passing it the initial SP. */
     "\tmr 3,1\n"
@@ -2942,13 +2953,13 @@ asm("\n"
     "\tlis    17,("VG_STRINGIFY(VG_STACK_GUARD_SZB)" >> 16)\n"
     "\tori 17,17,("VG_STRINGIFY(VG_STACK_GUARD_SZB)" & 0xFFFF)\n"
     "\txor 18,18,18\n"
-    "\tlis    18,("VG_STRINGIFY(VG_STACK_ACTIVE_SZB)" >> 16)\n"
-    "\tori 18,18,("VG_STRINGIFY(VG_STACK_ACTIVE_SZB)" & 0xFFFF)\n"
+    "\tlis    18,("VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)" >> 16)\n"
+    "\tori 18,18,("VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)" & 0xFFFF)\n"
     "\tadd 16,17,16\n"
     "\tadd 16,18,16\n"
     "\trldicr 16,16,0,59\n"
     /* now r16 = &vgPlain_interim_stack + VG_STACK_GUARD_SZB +
-       VG_STACK_ACTIVE_SZB rounded down to the nearest 16-byte
+       VG_DEFAULT_STACK_ACTIVE_SZB rounded down to the nearest 16-byte
        boundary.  And r1 is the original SP.  Set the SP to r16 and
        call _start_in_C_linux, passing it the initial SP. */
     "\tmr 3,1\n"
@@ -2988,13 +2999,13 @@ asm("\n"
     "\tlis    17,("VG_STRINGIFY(VG_STACK_GUARD_SZB)" >> 16)\n"
     "\tori 17,17,("VG_STRINGIFY(VG_STACK_GUARD_SZB)" & 0xFFFF)\n"
     "\txor 18,18,18\n"
-    "\tlis    18,("VG_STRINGIFY(VG_STACK_ACTIVE_SZB)" >> 16)\n"
-    "\tori 18,18,("VG_STRINGIFY(VG_STACK_ACTIVE_SZB)" & 0xFFFF)\n"
+    "\tlis    18,("VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)" >> 16)\n"
+    "\tori 18,18,("VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)" & 0xFFFF)\n"
     "\tadd 16,17,16\n"
     "\tadd 16,18,16\n"
     "\trldicr 16,16,0,59\n"
     /* now r16 = &vgPlain_interim_stack + VG_STACK_GUARD_SZB +
-       VG_STACK_ACTIVE_SZB rounded down to the nearest 16-byte
+       VG_DEFAULT_STACK_ACTIVE_SZB rounded down to the nearest 16-byte
        boundary.  And r1 is the original SP.  Set the SP to r16 and
        call _start_in_C_linux, passing it the initial SP. */
     "\tmr 3,1\n"
@@ -3047,7 +3058,7 @@ asm("\n\t"
     /* trigger execution of an invalid opcode -> halt machine */
     "j      .+2\n\t"
     "1:   .quad "VG_STRINGIFY(VG_STACK_GUARD_SZB)"\n\t"
-    "2:   .quad "VG_STRINGIFY(VG_STACK_ACTIVE_SZB)"\n\t"
+    "2:   .quad "VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)"\n\t"
     ".previous\n"
 );
 #elif defined(VGP_arm_linux)
@@ -3070,7 +3081,7 @@ asm("\n"
     "\tb _start_in_C_linux\n"
     "\t.word vgPlain_interim_stack\n"
     "\t.word "VG_STRINGIFY(VG_STACK_GUARD_SZB)"\n"
-    "\t.word "VG_STRINGIFY(VG_STACK_ACTIVE_SZB)"\n"
+    "\t.word "VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)"\n"
 );
 #elif defined(VGP_arm64_linux)
 asm("\n"
@@ -3086,9 +3097,9 @@ asm("\n"
     "\tmovk x1, (("VG_STRINGIFY(VG_STACK_GUARD_SZB)") >> 16) & 0xFFFF,"
                 " lsl 16\n"
     "\tadd  x0, x0, x1\n"
-    // The next 2 assume that VG_STACK_ACTIVE_SZB fits in 32 bits
-    "\tmov  x1, (("VG_STRINGIFY(VG_STACK_ACTIVE_SZB)") >> 0) & 0xFFFF\n"
-    "\tmovk x1, (("VG_STRINGIFY(VG_STACK_ACTIVE_SZB)") >> 16) & 0xFFFF,"
+    // The next 2 assume that VG_DEFAULT_STACK_ACTIVE_SZB fits in 32 bits
+    "\tmov  x1, (("VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)") >> 0) & 0xFFFF\n"
+    "\tmovk x1, (("VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)") >> 16) & 0xFFFF,"
                 " lsl 16\n"
     "\tadd  x0, x0, x1\n"
     "\tand  x0, x0, -16\n"
@@ -3120,14 +3131,14 @@ asm("\n"
 
 
     "\tli    $10, "VG_STRINGIFY(VG_STACK_GUARD_SZB)"\n"
-    "\tli    $11, "VG_STRINGIFY(VG_STACK_ACTIVE_SZB)"\n"
+    "\tli    $11, "VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)"\n"
     
     "\taddu     $9, $9, $10\n"
     "\taddu     $9, $9, $11\n"
     "\tli       $12, 0xFFFFFFF0\n"
     "\tand      $9, $9, $12\n"
     /* now t1/$9 = &vgPlain_interim_stack + VG_STACK_GUARD_SZB +
-       VG_STACK_ACTIVE_SZB rounded down to the nearest 16-byte
+       VG_DEFAULT_STACK_ACTIVE_SZB rounded down to the nearest 16-byte
        boundary.  And $29 is the original SP.  Set the SP to t1 and
        call _start_in_C, passing it the initial SP. */
        
@@ -3156,14 +3167,14 @@ asm(
     "\tdaddiu $9, %lo(vgPlain_interim_stack)\n"
 
     "\tli     $10, "VG_STRINGIFY(VG_STACK_GUARD_SZB)"\n"
-    "\tli     $11, "VG_STRINGIFY(VG_STACK_ACTIVE_SZB)"\n"
+    "\tli     $11, "VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)"\n"
 
     "\tdaddu  $9, $9, $10\n"
     "\tdaddu  $9, $9, $11\n"
     "\tli     $12, 0xFFFFFF00\n"
     "\tand    $9, $9, $12\n"
     /* now t1/$9 = &vgPlain_interim_stack + VG_STACK_GUARD_SZB +
-       VG_STACK_ACTIVE_SZB rounded down to the nearest 16-byte
+       VG_DEFAULT_STACK_ACTIVE_SZB rounded down to the nearest 16-byte
        boundary.  And $29 is the original SP.  Set the SP to t1 and
        call _start_in_C, passing it the initial SP. */
 
@@ -3285,7 +3296,7 @@ asm("\n"
     /* set up the new stack in %eax */
     "\tmovl  $_vgPlain_interim_stack, %eax\n"
     "\taddl  $"VG_STRINGIFY(VG_STACK_GUARD_SZB)", %eax\n"
-    "\taddl  $"VG_STRINGIFY(VG_STACK_ACTIVE_SZB)", %eax\n"
+    "\taddl  $"VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)", %eax\n"
     "\tsubl  $16, %eax\n"
     "\tandl  $~15, %eax\n"
     /* install it, and collect the original one */
@@ -3306,7 +3317,7 @@ asm("\n"
     /* set up the new stack in %rdi */
     "\tmovabsq $_vgPlain_interim_stack, %rdi\n"
     "\taddq    $"VG_STRINGIFY(VG_STACK_GUARD_SZB)", %rdi\n"
-    "\taddq    $"VG_STRINGIFY(VG_STACK_ACTIVE_SZB)", %rdi\n"
+    "\taddq    $"VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)", %rdi\n"
     "\tandq    $~15, %rdi\n"
     /* install it, and collect the original one */
     "\txchgq %rdi, %rsp\n"

@@ -108,6 +108,8 @@ usage: valgrind [options] prog-and-args
     --num-transtab-sectors=<number> size of translated code cache [16]
            more sectors may increase performance, but use more memory.
     --aspace-minaddr=0xPP     avoid mapping memory below 0xPP [guessed]
+    --valgrind-stacksize=<number> size of valgrind (host) thread's stack
+                               (in bytes) [1048576]
     --show-emwarns=no|yes     show warnings about emulation limits? [no]
     --require-text-symbol=:sonamepattern:symbolpattern    abort run if the
                               stated shared object doesn't have the stated

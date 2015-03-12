@@ -305,24 +305,23 @@ extern Bool VG_(am_relocate_nooverlap_client)( /*OUT*/Bool* need_discard,
 // stacks.  The address space manager provides and suitably
 // protects such stacks.
 
+// VG_DEFAULT_STACK_ACTIVE_SZB is the default size of a Valgrind stack.
+// The effectively used size is controlled by the command line options
+// --valgrind-stack-size=xxxx (which must be page aligned).
+// Note that m_main.c needs an interim stack (just to startup), before
+// any command line option can be processed. This interim stack
+// (declared in m_main.c) will use the size VG_DEFAULT_STACK_ACTIVE_SZB.
 #if defined(VGP_ppc32_linux) \
     || defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)	\
     || defined(VGP_mips32_linux) || defined(VGP_mips64_linux) \
     || defined(VGP_arm64_linux)
 # define VG_STACK_GUARD_SZB  65536  // 1 or 16 pages
-# define VG_STACK_ACTIVE_SZB (4096 * 256) // 1Mb
 #else
 # define VG_STACK_GUARD_SZB  8192   // 2 pages
-# define VG_STACK_ACTIVE_SZB (4096 * 256) // 1Mb
 #endif
+# define VG_DEFAULT_STACK_ACTIVE_SZB 1048576 // (4096 * 256) = 1Mb 
 
-typedef
-   struct {
-      HChar bytes[VG_STACK_GUARD_SZB 
-                  + VG_STACK_ACTIVE_SZB 
-                  + VG_STACK_GUARD_SZB];
-   }
-   VgStack;
+typedef struct _VgStack VgStack;
 
 
 /* Allocate and initialise a VgStack (anonymous valgrind space).

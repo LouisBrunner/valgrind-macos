@@ -314,6 +314,10 @@ extern UInt VG_(clo_num_transtab_sectors);
    VG_(clo_aspacem_minAddr). */
 extern Addr VG_(clo_aspacem_minAddr);
 
+/* How large the Valgrind thread stacks should be. 
+   Will be rounded up to a page.. */
+extern Word VG_(clo_valgrind_stacksize);
+
 /* Delay startup to allow GDB to be attached?  Default: NO */
 extern Bool VG_(clo_wait_for_gdb);
 

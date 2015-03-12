@@ -2236,7 +2236,9 @@ void VG_(sanity_check_general) ( Bool force_expensive )
 	 if (remains < limit)
 	    VG_(message)(Vg_DebugMsg, 
                          "WARNING: Thread %d is within %ld bytes "
-                         "of running out of stack!\n",
+                         "of running out of valgrind stack!\n"
+                         "Valgrind stack size can be increased "
+                         "using --valgrind-stacksize=....\n",
 		         tid, remains);
       }
    }

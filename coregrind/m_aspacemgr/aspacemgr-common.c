@@ -353,6 +353,9 @@ Bool ML_(am_resolve_filename) ( Int fd, /*OUT*/HChar* buf, Int nbuf )
 /*--- Manage stacks for Valgrind itself.                        ---*/
 /*---                                                           ---*/
 /*-----------------------------------------------------------------*/
+struct _VgStack {
+   HChar bytes[0];
+};
 
 /* Allocate and initialise a VgStack (anonymous valgrind space).
    Protect the stack active area and the guard areas appropriately.
@@ -370,7 +373,7 @@ VgStack* VG_(am_alloc_VgStack)( /*OUT*/Addr* initial_sp )
 
    /* Allocate the stack. */
    szB = VG_STACK_GUARD_SZB 
-         + VG_STACK_ACTIVE_SZB + VG_STACK_GUARD_SZB;
+         + VG_(clo_valgrind_stacksize) + VG_STACK_GUARD_SZB;
 
    sres = VG_(am_mmap_anon_float_valgrind)( szB );
    if (sr_isError(sres))
@@ -393,12 +396,12 @@ VgStack* VG_(am_alloc_VgStack)( /*OUT*/Addr* initial_sp )
    );
 
    sres = local_do_mprotect_NO_NOTIFY( 
-             (Addr) &stack->bytes[VG_STACK_GUARD_SZB + VG_STACK_ACTIVE_SZB], 
+             (Addr) &stack->bytes[VG_STACK_GUARD_SZB + VG_(clo_valgrind_stacksize)], 
              VG_STACK_GUARD_SZB, VKI_PROT_NONE 
           );
    if (sr_isError(sres)) goto protect_failed;
    VG_(am_notify_mprotect)( 
-      (Addr) &stack->bytes[VG_STACK_GUARD_SZB + VG_STACK_ACTIVE_SZB],
+      (Addr) &stack->bytes[VG_STACK_GUARD_SZB + VG_(clo_valgrind_stacksize)],
       VG_STACK_GUARD_SZB, VKI_PROT_NONE 
    );
 
@@ -406,14 +409,15 @@ VgStack* VG_(am_alloc_VgStack)( /*OUT*/Addr* initial_sp )
       tell how much got used. */
 
    p = (UInt*)&stack->bytes[VG_STACK_GUARD_SZB];
-   for (i = 0; i < VG_STACK_ACTIVE_SZB/sizeof(UInt); i++)
+   for (i = 0; i < VG_(clo_valgrind_stacksize)/sizeof(UInt); i++)
       p[i] = 0xDEADBEEF;
 
-   *initial_sp = (Addr)&stack->bytes[VG_STACK_GUARD_SZB + VG_STACK_ACTIVE_SZB];
+   *initial_sp = (Addr)&stack->bytes[VG_STACK_GUARD_SZB + VG_(clo_valgrind_stacksize)];
    *initial_sp -= 8;
    *initial_sp &= ~((Addr)0x1F); /* 32-align it */
 
-   VG_(debugLog)( 1,"aspacem","allocated thread stack at 0x%llx size %d\n",
+   VG_(debugLog)( 1,"aspacem",
+                  "allocated valgrind thread stack at 0x%llx size %d\n",
                   (ULong)(Addr)stack, szB);
    ML_(am_do_sanity_check)();
    return stack;
@@ -436,7 +440,7 @@ SizeT VG_(am_get_VgStack_unused_szB)( const VgStack* stack, SizeT limit )
    const UInt* p;
 
    p = (const UInt*)&stack->bytes[VG_STACK_GUARD_SZB];
-   for (i = 0; i < VG_STACK_ACTIVE_SZB/sizeof(UInt); i++) {
+   for (i = 0; i < VG_(clo_valgrind_stacksize)/sizeof(UInt); i++) {
       if (p[i] != 0xDEADBEEF)
          break;
       if (i * sizeof(UInt) >= limit)

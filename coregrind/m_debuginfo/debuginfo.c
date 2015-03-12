@@ -1724,7 +1724,7 @@ static void search_all_loctabs ( Addr ptr, /*OUT*/DebugInfo** pdi,
 
 /* The whole point of this whole big deal: map a code address to a
    plausible symbol name.  Returns False if no idea; otherwise True.
-   Caller supplies buf and nbuf.  If do_cxx_demangling is False, don't do
+   Caller supplies buf.  If do_cxx_demangling is False, don't do
    C++ demangling, regardless of VG_(clo_demangle) -- probably because the
    call has come from VG_(get_fnname_raw)().  findText
    indicates whether we're looking for a text symbol or a data symbol
@@ -1850,13 +1850,19 @@ Bool VG_(get_fnname_w_offset) ( Addr a, const HChar** buf )
    of the return string at function get_sym_name */
 Bool VG_(get_fnname_if_entry) ( Addr a, const HChar** buf )
 {
-   return get_sym_name ( /*C++-demangle*/True, /*Z-demangle*/True,
+   const HChar *tmp;
+   Bool res;
+
+   res =  get_sym_name ( /*C++-demangle*/True, /*Z-demangle*/True,
                          /*below-main-renaming*/True,
-                         a, buf,
+                         a, &tmp,
                          /*match_anywhere_in_fun*/False, 
                          /*show offset?*/False,
                          /*text syms only*/True,
                          /*offsetP*/NULL );
+   if (res)
+      *buf = tmp;
+   return res;
 }
 
 /* This is only available to core... don't C++-demangle, don't Z-demangle,

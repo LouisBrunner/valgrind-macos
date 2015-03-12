@@ -58,7 +58,7 @@ void failure_exit ( void )
 }
 
 static
-void log_bytes ( HChar* bytes, Int nbytes )
+void log_bytes ( const HChar* bytes, SizeT nbytes )
 {
    fwrite ( bytes, 1, nbytes, stdout );
 }
@@ -84,10 +84,11 @@ IRSB* mc_instrument ( void* closureV,
                       IRType gWordTy, IRType hWordTy );
 #endif
 
-static Bool chase_into_not_ok ( void* opaque, Addr64 dst ) {
+static Bool chase_into_not_ok ( void* opaque, Addr dst ) {
    return False;
 }
-static UInt needs_self_check ( void* opaque, VexGuestExtents* vge ) {
+static UInt needs_self_check ( void *closureV, VexRegisterUpdates *pxControl,
+                               const VexGuestExtents *vge ) {
    return 0;
 }
 
@@ -223,7 +224,7 @@ int main ( int argc, char** argv )
       /* ARM/Thumb only hacks, that are needed to keep the ITstate
          analyser in the front end happy.  */
       vta.guest_bytes     = &origbuf[18 +1];
-      vta.guest_bytes_addr = &origbuf[18 +1];
+      vta.guest_bytes_addr = (Addr) &origbuf[18 +1];
 #endif
 
 #if 1 /* no instrumentation */
@@ -1949,13 +1950,12 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
          return unary64F0x2(mce, vatom);
 
       case Iop_Sqrt32Fx4:
-      case Iop_RSqrt32Fx4:
-      case Iop_Recip32Fx4:
+      case Iop_RecipEst32Fx4:
          return unary32Fx4(mce, vatom);
 
       case Iop_Sqrt32F0x4:
-      case Iop_RSqrt32F0x4:
-      case Iop_Recip32F0x4:
+      case Iop_RSqrtEst32F0x4:
+      case Iop_RecipEst32F0x4:
          return unary32F0x4(mce, vatom);
 
       case Iop_32UtoV128:

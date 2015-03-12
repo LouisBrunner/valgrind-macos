@@ -413,6 +413,7 @@ static ULong n_in_sc_count = 0;
 /* Number/osize of translations discarded due to lack of space. */
 static ULong n_dump_count = 0;
 static ULong n_dump_osize = 0;
+static ULong n_sectors_recycled = 0;
 
 /* Number/osize of translations discarded due to requests to do so. */
 static ULong n_disc_count = 0;
@@ -1377,8 +1378,7 @@ static void initialiseSector ( Int sno )
       }
       vg_assert(sec->host_extents == NULL);
 
-      VG_(debugLog)(1,"transtab", "allocate sector %d\n", sno);
-      if (VG_(clo_stats))
+      if (VG_(clo_stats) || VG_(debugLog_getLevel)() >= 1)
          VG_(dmsg)("transtab: " "allocate sector %d\n", sno);
 
       sres = VG_(am_mmap_anon_float_valgrind)( 8 * tc_sector_szQ );
@@ -1423,9 +1423,9 @@ static void initialiseSector ( Int sno )
    } else {
 
       /* Sector has been used before.  Dump the old contents. */
-      VG_(debugLog)(1,"transtab", "recycle sector %d\n", sno);
-      if (VG_(clo_stats))
+      if (VG_(clo_stats) || VG_(debugLog_getLevel)() >= 1)
          VG_(dmsg)("transtab: " "recycle  sector %d\n", sno);
+      n_sectors_recycled++;
 
       vg_assert(sec->tt != NULL);
       vg_assert(sec->tc_next != NULL);
@@ -1568,15 +1568,12 @@ void VG_(add_to_transtab)( const VexGuestExtents* vge,
                            / N_TTES_PER_SECTOR;
       Int tc_loading_pct = (100 * (tc_sector_szQ - tcAvailQ)) 
                            / tc_sector_szQ;
-      VG_(debugLog)(1,"transtab", 
-                      "declare sector %d full "
-                      "(TT loading %2d%%, TC loading %2d%%)\n",
-                      y, tt_loading_pct, tc_loading_pct);
-      if (VG_(clo_stats)) {
+      if (VG_(clo_stats) || VG_(debugLog_getLevel)() >= 1) {
          VG_(dmsg)("transtab: "
                    "declare  sector %d full "
-                   "(TT loading %2d%%, TC loading %2d%%)\n",
-                   y, tt_loading_pct, tc_loading_pct);
+                   "(TT loading %2d%%, TC loading %2d%%, avg tce size %d)\n",
+                   y, tt_loading_pct, tc_loading_pct,
+                   8 * (tc_sector_szQ - tcAvailQ)/sectors[y].tt_n_inuse);
       }
       youngest_sector++;
       if (youngest_sector >= n_sectors)
@@ -2300,13 +2297,16 @@ void VG_(print_tt_tc_stats) ( void )
 
    VG_(message)(Vg_DebugMsg,
                 " transtab: new        %'lld "
-                "(%'llu -> %'llu; ratio %'llu:10) [%'llu scs]\n",
+                "(%'llu -> %'llu; ratio %'llu:10) [%'llu scs] "
+                "avg tce size %d\n",
                 n_in_count, n_in_osize, n_in_tsize,
                 safe_idiv(10*n_in_tsize, n_in_osize),
-                n_in_sc_count);
+                n_in_sc_count,
+                n_in_tsize / n_in_count);
    VG_(message)(Vg_DebugMsg,
-                " transtab: dumped     %'llu (%'llu -> ?" "?)\n",
-                n_dump_count, n_dump_osize );
+                " transtab: dumped     %'llu (%'llu -> ?" "?) "
+                "(sectors recycled %'llu)\n",
+                n_dump_count, n_dump_osize, n_sectors_recycled );
    VG_(message)(Vg_DebugMsg,
                 " transtab: discarded  %'llu (%'llu -> ?" "?)\n",
                 n_disc_count, n_disc_osize );

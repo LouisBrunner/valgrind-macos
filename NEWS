@@ -30,9 +30,14 @@ Release 3.11.0 is under development, not yet released.
   searching/extracting errors in output files mixing valgrind
   errors with program output.
 
-* New Option --max-threads=<number> can be used to increase the
+* New Option --max-threads=<number> can be used to change the
   number of threads valgrind can handle. The default is 500 threads
   which should be more than enough for most applications.
+
+* New Option --valgrind-stacksize=<number> can be used to change
+  the size of the private thread stacks used by Valgrind.
+  Useful to reduce memory use or increase the stack size if Valgrind
+  segfaults due to stack exhausted.
 
 * Valgrind can be built with Intel's ICC compiler. The required
   compiler version is 14.0 or later.

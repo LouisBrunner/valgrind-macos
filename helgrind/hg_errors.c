@@ -184,6 +184,18 @@ static Lock* mk_LockP_from_LockN ( Lock* lkn,
    return lkp;
 }
 
+static Int sort_by_guestaddr(const void* n1, const void* n2)
+{
+   const Lock* l1 = *(const Lock *const *)n1;
+   const Lock* l2 = *(const Lock *const *)n2;
+
+   Addr a1 = l1 == Lock_INVALID ? 0 : l1->guestaddr;
+   Addr a2 = l2 == Lock_INVALID ? 0 : l2->guestaddr;
+   if (a1 < a2) return -1;
+   if (a1 > a2) return 1;
+   return 0;
+}
+
 /* Expand a WordSet of LockN*'s into a NULL-terminated vector of
    LockP*'s.  Any LockN's that can't be converted into a LockP
    (because they have been freed, see comment on mk_LockP_from_LockN)
@@ -215,6 +227,10 @@ Lock** enumerate_WordSet_into_LockP_vector( WordSetU* univ_lsets,
       lockPs[i] = mk_LockP_from_LockN( (Lock*)lockNs[i],
                                        allowed_to_be_invalid );
    }
+   /* Sort the locks by increasing Lock::guestaddr to avoid jitters
+      in the output. */
+   VG_(ssort)(lockPs, nLockNs, sizeof lockPs[0], sort_by_guestaddr);
+
    return lockPs;
 }
 

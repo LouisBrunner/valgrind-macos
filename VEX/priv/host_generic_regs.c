@@ -192,10 +192,10 @@ HReg lookupHRegRemap ( HRegRemap* map, HReg orig )
 
 HInstrArray* newHInstrArray ( void )
 {
-   HInstrArray* ha = LibVEX_Alloc(sizeof(HInstrArray));
+   HInstrArray* ha = LibVEX_Alloc_inline(sizeof(HInstrArray));
    ha->arr_size = 4;
    ha->arr_used = 0;
-   ha->arr      = LibVEX_Alloc(ha->arr_size * sizeof(HInstr*));
+   ha->arr      = LibVEX_Alloc_inline(ha->arr_size * sizeof(HInstr*));
    ha->n_vregs  = 0;
    return ha;
 }
@@ -208,7 +208,7 @@ void addHInstr ( HInstrArray* ha, HInstr* instr )
       ha->arr_used++;
    } else {
       Int      i;
-      HInstr** arr2 = LibVEX_Alloc(ha->arr_size * 2 * sizeof(HInstr*));
+      HInstr** arr2 = LibVEX_Alloc_inline(ha->arr_size * 2 * sizeof(HInstr*));
       for (i = 0; i < ha->arr_size; i++)
          arr2[i] = ha->arr[i];
       ha->arr_size *= 2;

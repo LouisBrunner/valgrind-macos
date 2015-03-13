@@ -200,7 +200,7 @@ void getAllocableRegs_PPC ( Int* nregs, HReg** arr, Bool mode64 )
       *nregs = (32-9) + (32-24) + (32-24);
    else
       *nregs = (32-7) + (32-24) + (32-24);
-   *arr = LibVEX_Alloc(*nregs * sizeof(HReg));
+   *arr = LibVEX_Alloc_inline(*nregs * sizeof(HReg));
    // GPR0 = scratch reg where poss. - some ops interpret as value zero
    // GPR1 = stack pointer
    // GPR2 = TOC pointer
@@ -317,7 +317,7 @@ PPCCondTest invertCondTest ( PPCCondTest ct )
 /* --------- PPCAMode: memory address expressions. --------- */
 
 PPCAMode* PPCAMode_IR ( Int idx, HReg base ) {
-   PPCAMode* am = LibVEX_Alloc(sizeof(PPCAMode));
+   PPCAMode* am = LibVEX_Alloc_inline(sizeof(PPCAMode));
    vassert(idx >= -0x8000 && idx < 0x8000);
    am->tag = Pam_IR;
    am->Pam.IR.base = base;
@@ -325,7 +325,7 @@ PPCAMode* PPCAMode_IR ( Int idx, HReg base ) {
    return am;
 }
 PPCAMode* PPCAMode_RR ( HReg idx, HReg base ) {
-   PPCAMode* am = LibVEX_Alloc(sizeof(PPCAMode));
+   PPCAMode* am = LibVEX_Alloc_inline(sizeof(PPCAMode));
    am->tag = Pam_RR;
    am->Pam.RR.base = base;
    am->Pam.RR.index = idx;
@@ -394,7 +394,7 @@ static void mapRegs_PPCAMode ( HRegRemap* m, PPCAMode* am ) {
 /* --------- Operand, which can be a reg or a u16/s16. --------- */
 
 PPCRH* PPCRH_Imm ( Bool syned, UShort imm16 ) {
-   PPCRH* op         = LibVEX_Alloc(sizeof(PPCRH));
+   PPCRH* op         = LibVEX_Alloc_inline(sizeof(PPCRH));
    op->tag           = Prh_Imm;
    op->Prh.Imm.syned = syned;
    op->Prh.Imm.imm16 = imm16;
@@ -406,7 +406,7 @@ PPCRH* PPCRH_Imm ( Bool syned, UShort imm16 ) {
    return op;
 }
 PPCRH* PPCRH_Reg ( HReg reg ) {
-   PPCRH* op       = LibVEX_Alloc(sizeof(PPCRH));
+   PPCRH* op       = LibVEX_Alloc_inline(sizeof(PPCRH));
    op->tag         = Prh_Reg;
    op->Prh.Reg.reg = reg;
    return op;
@@ -459,13 +459,13 @@ static void mapRegs_PPCRH ( HRegRemap* m, PPCRH* op ) {
 /* --------- Operand, which can be a reg or a u32/64. --------- */
 
 PPCRI* PPCRI_Imm ( ULong imm64 ) {
-   PPCRI* op   = LibVEX_Alloc(sizeof(PPCRI));
+   PPCRI* op   = LibVEX_Alloc_inline(sizeof(PPCRI));
    op->tag     = Pri_Imm;
    op->Pri.Imm = imm64;
    return op;
 }
 PPCRI* PPCRI_Reg ( HReg reg ) {
-   PPCRI* op   = LibVEX_Alloc(sizeof(PPCRI));
+   PPCRI* op   = LibVEX_Alloc_inline(sizeof(PPCRI));
    op->tag     = Pri_Reg;
    op->Pri.Reg = reg;
    return op;
@@ -515,14 +515,14 @@ static void mapRegs_PPCRI ( HRegRemap* m, PPCRI* dst ) {
 /* --------- Operand, which can be a vector reg or a simm5. --------- */
 
 PPCVI5s* PPCVI5s_Imm ( Char simm5 ) {
-   PPCVI5s* op   = LibVEX_Alloc(sizeof(PPCVI5s));
+   PPCVI5s* op   = LibVEX_Alloc_inline(sizeof(PPCVI5s));
    op->tag       = Pvi_Imm;
    op->Pvi.Imm5s = simm5;
    vassert(simm5 >= -16 && simm5 <= 15);
    return op;
 }
 PPCVI5s* PPCVI5s_Reg ( HReg reg ) {
-   PPCVI5s* op = LibVEX_Alloc(sizeof(PPCVI5s));
+   PPCVI5s* op = LibVEX_Alloc_inline(sizeof(PPCVI5s));
    op->tag     = Pvi_Reg;
    op->Pvi.Reg = reg;
    vassert(hregClass(reg) == HRcVec128);
@@ -782,7 +782,7 @@ const HChar* showPPCAvFpOp ( PPCAvFpOp op ) {
 
 PPCInstr* PPCInstr_LI ( HReg dst, ULong imm64, Bool mode64 )
 {
-   PPCInstr* i     = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i     = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag          = Pin_LI;
    i->Pin.LI.dst   = dst;
    i->Pin.LI.imm64 = imm64;
@@ -792,7 +792,7 @@ PPCInstr* PPCInstr_LI ( HReg dst, ULong imm64, Bool mode64 )
 }
 PPCInstr* PPCInstr_Alu ( PPCAluOp op, HReg dst, 
                          HReg srcL, PPCRH* srcR ) {
-   PPCInstr* i     = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i     = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag          = Pin_Alu;
    i->Pin.Alu.op   = op;
    i->Pin.Alu.dst  = dst;
@@ -802,7 +802,7 @@ PPCInstr* PPCInstr_Alu ( PPCAluOp op, HReg dst,
 }
 PPCInstr* PPCInstr_Shft ( PPCShftOp op, Bool sz32, 
                           HReg dst, HReg srcL, PPCRH* srcR ) {
-   PPCInstr* i      = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i      = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag           = Pin_Shft;
    i->Pin.Shft.op   = op;
    i->Pin.Shft.sz32 = sz32;
@@ -813,7 +813,7 @@ PPCInstr* PPCInstr_Shft ( PPCShftOp op, Bool sz32,
 }
 PPCInstr* PPCInstr_AddSubC ( Bool isAdd, Bool setC,
                              HReg dst, HReg srcL, HReg srcR ) {
-   PPCInstr* i          = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i          = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag               = Pin_AddSubC;
    i->Pin.AddSubC.isAdd = isAdd;
    i->Pin.AddSubC.setC  = setC;
@@ -824,7 +824,7 @@ PPCInstr* PPCInstr_AddSubC ( Bool isAdd, Bool setC,
 }
 PPCInstr* PPCInstr_Cmp ( Bool syned, Bool sz32, 
                          UInt crfD, HReg srcL, PPCRH* srcR ) {
-   PPCInstr* i      = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i      = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag           = Pin_Cmp;
    i->Pin.Cmp.syned = syned;
    i->Pin.Cmp.sz32  = sz32;
@@ -834,7 +834,7 @@ PPCInstr* PPCInstr_Cmp ( Bool syned, Bool sz32,
    return i;
 }
 PPCInstr* PPCInstr_Unary ( PPCUnaryOp op, HReg dst, HReg src ) {
-   PPCInstr* i      = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i      = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag           = Pin_Unary;
    i->Pin.Unary.op  = op;
    i->Pin.Unary.dst = dst;
@@ -843,7 +843,7 @@ PPCInstr* PPCInstr_Unary ( PPCUnaryOp op, HReg dst, HReg src ) {
 }
 PPCInstr* PPCInstr_MulL ( Bool syned, Bool hi, Bool sz32, 
                           HReg dst, HReg srcL, HReg srcR ) {
-   PPCInstr* i       = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i       = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag            = Pin_MulL;
    i->Pin.MulL.syned = syned;
    i->Pin.MulL.hi    = hi;
@@ -858,7 +858,7 @@ PPCInstr* PPCInstr_MulL ( Bool syned, Bool hi, Bool sz32,
 }
 PPCInstr* PPCInstr_Div ( Bool extended, Bool syned, Bool sz32,
                          HReg dst, HReg srcL, HReg srcR ) {
-   PPCInstr* i      = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i      = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag           = Pin_Div;
    i->Pin.Div.extended = extended;
    i->Pin.Div.syned = syned;
@@ -871,7 +871,7 @@ PPCInstr* PPCInstr_Div ( Bool extended, Bool syned, Bool sz32,
 PPCInstr* PPCInstr_Call ( PPCCondCode cond, 
                           Addr64 target, UInt argiregs, RetLoc rloc ) {
    UInt mask;
-   PPCInstr* i          = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i          = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag               = Pin_Call;
    i->Pin.Call.cond     = cond;
    i->Pin.Call.target   = target;
@@ -885,7 +885,7 @@ PPCInstr* PPCInstr_Call ( PPCCondCode cond,
 }
 PPCInstr* PPCInstr_XDirect ( Addr64 dstGA, PPCAMode* amCIA,
                              PPCCondCode cond, Bool toFastEP ) {
-   PPCInstr* i             = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i             = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag                  = Pin_XDirect;
    i->Pin.XDirect.dstGA    = dstGA;
    i->Pin.XDirect.amCIA    = amCIA;
@@ -895,7 +895,7 @@ PPCInstr* PPCInstr_XDirect ( Addr64 dstGA, PPCAMode* amCIA,
 }
 PPCInstr* PPCInstr_XIndir ( HReg dstGA, PPCAMode* amCIA,
                             PPCCondCode cond ) {
-   PPCInstr* i         = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i         = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag              = Pin_XIndir;
    i->Pin.XIndir.dstGA = dstGA;
    i->Pin.XIndir.amCIA = amCIA;
@@ -904,7 +904,7 @@ PPCInstr* PPCInstr_XIndir ( HReg dstGA, PPCAMode* amCIA,
 }
 PPCInstr* PPCInstr_XAssisted ( HReg dstGA, PPCAMode* amCIA,
                                PPCCondCode cond, IRJumpKind jk ) {
-   PPCInstr* i            = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i            = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag                 = Pin_XAssisted;
    i->Pin.XAssisted.dstGA = dstGA;
    i->Pin.XAssisted.amCIA = amCIA;
@@ -914,7 +914,7 @@ PPCInstr* PPCInstr_XAssisted ( HReg dstGA, PPCAMode* amCIA,
 }
 PPCInstr* PPCInstr_CMov  ( PPCCondCode cond, 
                            HReg dst, PPCRI* src ) {
-   PPCInstr* i      = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i      = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag           = Pin_CMov;
    i->Pin.CMov.cond = cond;
    i->Pin.CMov.src  = src;
@@ -924,7 +924,7 @@ PPCInstr* PPCInstr_CMov  ( PPCCondCode cond,
 }
 PPCInstr* PPCInstr_Load ( UChar sz,
                           HReg dst, PPCAMode* src, Bool mode64 ) {
-   PPCInstr* i       = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i       = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag            = Pin_Load;
    i->Pin.Load.sz    = sz;
    i->Pin.Load.src   = src;
@@ -936,7 +936,7 @@ PPCInstr* PPCInstr_Load ( UChar sz,
 PPCInstr* PPCInstr_LoadL ( UChar sz,
                            HReg dst, HReg src, Bool mode64 )
 {
-   PPCInstr* i       = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i       = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag            = Pin_LoadL;
    i->Pin.LoadL.sz   = sz;
    i->Pin.LoadL.src  = src;
@@ -947,7 +947,7 @@ PPCInstr* PPCInstr_LoadL ( UChar sz,
 }
 PPCInstr* PPCInstr_Store ( UChar sz, PPCAMode* dst, HReg src,
                            Bool mode64 ) {
-   PPCInstr* i      = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i      = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag           = Pin_Store;
    i->Pin.Store.sz  = sz;
    i->Pin.Store.src = src;
@@ -957,7 +957,7 @@ PPCInstr* PPCInstr_Store ( UChar sz, PPCAMode* dst, HReg src,
    return i;
 }
 PPCInstr* PPCInstr_StoreC ( UChar sz, HReg dst, HReg src, Bool mode64 ) {
-   PPCInstr* i       = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i       = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag            = Pin_StoreC;
    i->Pin.StoreC.sz  = sz;
    i->Pin.StoreC.src = src;
@@ -967,7 +967,7 @@ PPCInstr* PPCInstr_StoreC ( UChar sz, HReg dst, HReg src, Bool mode64 ) {
    return i;
 }
 PPCInstr* PPCInstr_Set ( PPCCondCode cond, HReg dst ) {
-   PPCInstr* i     = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i     = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag          = Pin_Set;
    i->Pin.Set.cond = cond;
    i->Pin.Set.dst  = dst;
@@ -975,20 +975,20 @@ PPCInstr* PPCInstr_Set ( PPCCondCode cond, HReg dst ) {
 }
 PPCInstr* PPCInstr_MfCR ( HReg dst )
 {
-   PPCInstr* i     = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i     = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag          = Pin_MfCR;
    i->Pin.MfCR.dst = dst;
    return i;
 }
 PPCInstr* PPCInstr_MFence ( void )
 {
-   PPCInstr* i = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag      = Pin_MFence;
    return i;
 }
 
 PPCInstr* PPCInstr_FpUnary ( PPCFpOp op, HReg dst, HReg src ) {
-   PPCInstr* i        = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i        = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag             = Pin_FpUnary;
    i->Pin.FpUnary.op  = op;
    i->Pin.FpUnary.dst = dst;
@@ -997,7 +997,7 @@ PPCInstr* PPCInstr_FpUnary ( PPCFpOp op, HReg dst, HReg src ) {
 }
 PPCInstr* PPCInstr_FpBinary ( PPCFpOp op, HReg dst,
                               HReg srcL, HReg srcR ) {
-   PPCInstr* i          = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i          = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag               = Pin_FpBinary;
    i->Pin.FpBinary.op   = op;
    i->Pin.FpBinary.dst  = dst;
@@ -1008,7 +1008,7 @@ PPCInstr* PPCInstr_FpBinary ( PPCFpOp op, HReg dst,
 PPCInstr* PPCInstr_FpMulAcc ( PPCFpOp op, HReg dst, HReg srcML, 
                                           HReg srcMR, HReg srcAcc )
 {
-   PPCInstr* i            = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i            = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag                 = Pin_FpMulAcc;
    i->Pin.FpMulAcc.op     = op;
    i->Pin.FpMulAcc.dst    = dst;
@@ -1019,7 +1019,7 @@ PPCInstr* PPCInstr_FpMulAcc ( PPCFpOp op, HReg dst, HReg srcML,
 }
 PPCInstr* PPCInstr_FpLdSt ( Bool isLoad, UChar sz,
                             HReg reg, PPCAMode* addr ) {
-   PPCInstr* i          = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i          = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag               = Pin_FpLdSt;
    i->Pin.FpLdSt.isLoad = isLoad;
    i->Pin.FpLdSt.sz     = sz;
@@ -1030,21 +1030,21 @@ PPCInstr* PPCInstr_FpLdSt ( Bool isLoad, UChar sz,
 }
 PPCInstr* PPCInstr_FpSTFIW ( HReg addr, HReg data )
 {
-   PPCInstr* i         = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i         = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag              = Pin_FpSTFIW;
    i->Pin.FpSTFIW.addr = addr;
    i->Pin.FpSTFIW.data = data;
    return i;
 }
 PPCInstr* PPCInstr_FpRSP ( HReg dst, HReg src ) {
-   PPCInstr* i      = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i      = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag           = Pin_FpRSP;
    i->Pin.FpRSP.dst = dst;
    i->Pin.FpRSP.src = src;
    return i;
 }
 PPCInstr* PPCInstr_Dfp64Unary(PPCFpOp op, HReg dst, HReg src) {
-   PPCInstr* i = LibVEX_Alloc( sizeof(PPCInstr) );
+   PPCInstr* i = LibVEX_Alloc_inline( sizeof(PPCInstr) );
    i->tag = Pin_Dfp64Unary;
    i->Pin.Dfp64Unary.op = op;
    i->Pin.Dfp64Unary.dst = dst;
@@ -1052,7 +1052,7 @@ PPCInstr* PPCInstr_Dfp64Unary(PPCFpOp op, HReg dst, HReg src) {
    return i;
 }
 PPCInstr* PPCInstr_Dfp64Binary(PPCFpOp op, HReg dst, HReg srcL, HReg srcR) {
-   PPCInstr* i = LibVEX_Alloc( sizeof(PPCInstr) );
+   PPCInstr* i = LibVEX_Alloc_inline( sizeof(PPCInstr) );
    i->tag = Pin_Dfp64Binary;
    i->Pin.Dfp64Binary.op = op;
    i->Pin.Dfp64Binary.dst = dst;
@@ -1061,7 +1061,7 @@ PPCInstr* PPCInstr_Dfp64Binary(PPCFpOp op, HReg dst, HReg srcL, HReg srcR) {
    return i;
 }
 PPCInstr* PPCInstr_DfpShift ( PPCFpOp op, HReg dst, HReg src, PPCRI* shift ) {
-   PPCInstr* i            = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i            = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag                 = Pin_DfpShift;
    i->Pin.DfpShift.op     = op;
    i->Pin.DfpShift.shift  = shift;
@@ -1071,7 +1071,7 @@ PPCInstr* PPCInstr_DfpShift ( PPCFpOp op, HReg dst, HReg src, PPCRI* shift ) {
 }
 PPCInstr* PPCInstr_Dfp128Unary(PPCFpOp op, HReg dst_hi, HReg dst_lo,
                                 HReg src_hi, HReg src_lo) {
-   PPCInstr* i = LibVEX_Alloc( sizeof(PPCInstr) );
+   PPCInstr* i = LibVEX_Alloc_inline( sizeof(PPCInstr) );
    i->tag = Pin_Dfp128Unary;
    i->Pin.Dfp128Unary.op = op;
    i->Pin.Dfp128Unary.dst_hi = dst_hi;
@@ -1083,7 +1083,7 @@ PPCInstr* PPCInstr_Dfp128Unary(PPCFpOp op, HReg dst_hi, HReg dst_lo,
 PPCInstr* PPCInstr_Dfp128Binary(PPCFpOp op, HReg dst_hi, HReg dst_lo,
                                 HReg srcR_hi, HReg srcR_lo) {
    /* dst is used to pass the srcL argument and return the result */
-   PPCInstr* i = LibVEX_Alloc( sizeof(PPCInstr) );
+   PPCInstr* i = LibVEX_Alloc_inline( sizeof(PPCInstr) );
    i->tag = Pin_Dfp128Binary;
    i->Pin.Dfp128Binary.op = op;
    i->Pin.Dfp128Binary.dst_hi = dst_hi;
@@ -1095,7 +1095,7 @@ PPCInstr* PPCInstr_Dfp128Binary(PPCFpOp op, HReg dst_hi, HReg dst_lo,
 PPCInstr* PPCInstr_DfpShift128 ( PPCFpOp op, HReg dst_hi, HReg dst_lo, 
                                  HReg src_hi, HReg src_lo,
                                  PPCRI* shift ) {
-   PPCInstr* i               = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i               = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag                    = Pin_DfpShift128;
    i->Pin.DfpShift128.op     = op;
    i->Pin.DfpShift128.shift  = shift;
@@ -1106,7 +1106,7 @@ PPCInstr* PPCInstr_DfpShift128 ( PPCFpOp op, HReg dst_hi, HReg dst_lo,
    return i;
 }
 PPCInstr* PPCInstr_DfpRound ( HReg dst, HReg src, PPCRI* r_rmc ) {
-   PPCInstr* i           = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i           = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag                = Pin_DfpRound;
    i->Pin.DfpRound.dst   = dst;
    i->Pin.DfpRound.src   = src;
@@ -1115,7 +1115,7 @@ PPCInstr* PPCInstr_DfpRound ( HReg dst, HReg src, PPCRI* r_rmc ) {
 }
 PPCInstr* PPCInstr_DfpRound128 ( HReg dst_hi, HReg dst_lo, HReg src_hi, 
                                  HReg src_lo, PPCRI* r_rmc ) {
-   PPCInstr* i               = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i               = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag                    = Pin_DfpRound128;
    i->Pin.DfpRound128.dst_hi = dst_hi;
    i->Pin.DfpRound128.dst_lo = dst_lo;
@@ -1126,7 +1126,7 @@ PPCInstr* PPCInstr_DfpRound128 ( HReg dst_hi, HReg dst_lo, HReg src_hi,
 }
 PPCInstr* PPCInstr_DfpQuantize ( PPCFpOp op, HReg dst, HReg srcL, HReg srcR,
                                  PPCRI* rmc ) {
-   PPCInstr* i             = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i             = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag                  = Pin_DfpQuantize;
    i->Pin.DfpQuantize.op   = op;
    i->Pin.DfpQuantize.dst  = dst;
@@ -1138,7 +1138,7 @@ PPCInstr* PPCInstr_DfpQuantize ( PPCFpOp op, HReg dst, HReg srcL, HReg srcR,
 PPCInstr* PPCInstr_DfpQuantize128 ( PPCFpOp op, HReg dst_hi, HReg dst_lo,
                                     HReg src_hi, HReg src_lo, PPCRI* rmc ) {
    /* dst is used to pass left operand in and return result */
-   PPCInstr* i                  = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i                  = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag                       = Pin_DfpQuantize128;
    i->Pin.DfpQuantize128.op     = op;
    i->Pin.DfpQuantize128.dst_hi = dst_hi;
@@ -1150,7 +1150,7 @@ PPCInstr* PPCInstr_DfpQuantize128 ( PPCFpOp op, HReg dst_hi, HReg dst_lo,
 }
 PPCInstr* PPCInstr_DfpD128toD64 ( PPCFpOp op, HReg dst,
                                   HReg src_hi, HReg src_lo ) {
-   PPCInstr* i                = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i                = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag                     = Pin_DfpD128toD64;
    i->Pin.DfpD128toD64.op     = op;
    i->Pin.DfpD128toD64.src_hi = src_hi;
@@ -1160,7 +1160,7 @@ PPCInstr* PPCInstr_DfpD128toD64 ( PPCFpOp op, HReg dst,
 }
 PPCInstr* PPCInstr_DfpI64StoD128 ( PPCFpOp op, HReg dst_hi,
                                    HReg dst_lo, HReg src ) {
-   PPCInstr* i                 = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i                 = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag                      = Pin_DfpI64StoD128;
    i->Pin.DfpI64StoD128.op     = op;
    i->Pin.DfpI64StoD128.src    = src;
@@ -1171,7 +1171,7 @@ PPCInstr* PPCInstr_DfpI64StoD128 ( PPCFpOp op, HReg dst_hi,
 PPCInstr* PPCInstr_ExtractExpD128 ( PPCFpOp op, HReg dst,
                                     HReg src_hi, HReg src_lo ) {
    /* dst is used to pass the srcL argument */                             
-   PPCInstr* i                  = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i                  = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag                       = Pin_ExtractExpD128;
    i->Pin.ExtractExpD128.op     = op;
    i->Pin.ExtractExpD128.dst    = dst;
@@ -1182,7 +1182,7 @@ PPCInstr* PPCInstr_ExtractExpD128 ( PPCFpOp op, HReg dst,
 PPCInstr* PPCInstr_InsertExpD128 ( PPCFpOp op, HReg dst_hi, HReg dst_lo,   
                                    HReg srcL, HReg srcR_hi, HReg srcR_lo ) {
    /* dst is used to pass the srcL argument */                             
-   PPCInstr* i                  = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i                  = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag                       = Pin_InsertExpD128;
    i->Pin.InsertExpD128.op      = op;
    i->Pin.InsertExpD128.dst_hi  = dst_hi;
@@ -1193,7 +1193,7 @@ PPCInstr* PPCInstr_InsertExpD128 ( PPCFpOp op, HReg dst_hi, HReg dst_lo,
    return i;
 }
 PPCInstr* PPCInstr_Dfp64Cmp (/* UInt crfD,*/ HReg dst, HReg srcL, HReg srcR ) {
-   PPCInstr* i          = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i          = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag               = Pin_Dfp64Cmp;
    i->Pin.Dfp64Cmp.dst = dst;
    i->Pin.Dfp64Cmp.srcL = srcL;
@@ -1202,7 +1202,7 @@ PPCInstr* PPCInstr_Dfp64Cmp (/* UInt crfD,*/ HReg dst, HReg srcL, HReg srcR ) {
 }
 PPCInstr* PPCInstr_Dfp128Cmp ( HReg dst, HReg srcL_hi, HReg srcL_lo,
                                HReg srcR_hi, HReg srcR_lo ) {
-   PPCInstr* i               = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i               = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag                    = Pin_Dfp128Cmp;
    i->Pin.Dfp128Cmp.dst      = dst;
    i->Pin.Dfp128Cmp.srcL_hi  = srcL_hi;
@@ -1213,14 +1213,14 @@ PPCInstr* PPCInstr_Dfp128Cmp ( HReg dst, HReg srcL_hi, HReg srcL_lo,
 }
 PPCInstr* PPCInstr_EvCheck ( PPCAMode* amCounter,
                              PPCAMode* amFailAddr ) {
-   PPCInstr* i               = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i               = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag                    = Pin_EvCheck;
    i->Pin.EvCheck.amCounter  = amCounter;
    i->Pin.EvCheck.amFailAddr = amFailAddr;
    return i;
 }
 PPCInstr* PPCInstr_ProfInc ( void ) {
-   PPCInstr* i = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag      = Pin_ProfInc;
    return i;
 }
@@ -1275,7 +1275,7 @@ PPCInstr* PPCInstr_FpCftI ( Bool fromI, Bool int32, Bool syned,
       default:
          vpanic("PPCInstr_FpCftI(ppc_host)");
    }
-   PPCInstr* i         = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i         = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag              = Pin_FpCftI;
    i->Pin.FpCftI.fromI = fromI;
    i->Pin.FpCftI.int32 = int32;
@@ -1286,7 +1286,7 @@ PPCInstr* PPCInstr_FpCftI ( Bool fromI, Bool int32, Bool syned,
    return i;
 }
 PPCInstr* PPCInstr_FpCMov ( PPCCondCode cond, HReg dst, HReg src ) {
-   PPCInstr* i        = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i        = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag             = Pin_FpCMov;
    i->Pin.FpCMov.cond = cond;
    i->Pin.FpCMov.dst  = dst;
@@ -1295,14 +1295,14 @@ PPCInstr* PPCInstr_FpCMov ( PPCCondCode cond, HReg dst, HReg src ) {
    return i;
 }
 PPCInstr* PPCInstr_FpLdFPSCR ( HReg src, Bool dfp_rm ) {
-   PPCInstr* i          = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i          = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag               = Pin_FpLdFPSCR;
    i->Pin.FpLdFPSCR.src = src;
    i->Pin.FpLdFPSCR.dfp_rm = dfp_rm ? 1 : 0;
    return i;
 }
 PPCInstr* PPCInstr_FpCmp ( HReg dst, HReg srcL, HReg srcR ) {
-   PPCInstr* i       = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i       = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag            = Pin_FpCmp;
    i->Pin.FpCmp.dst  = dst;
    i->Pin.FpCmp.srcL = srcL;
@@ -1312,7 +1312,7 @@ PPCInstr* PPCInstr_FpCmp ( HReg dst, HReg srcL, HReg srcR ) {
 
 /* Read/Write Link Register */
 PPCInstr* PPCInstr_RdWrLR ( Bool wrLR, HReg gpr ) {
-   PPCInstr* i        = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i        = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag             = Pin_RdWrLR;
    i->Pin.RdWrLR.wrLR = wrLR;
    i->Pin.RdWrLR.gpr  = gpr;
@@ -1322,7 +1322,7 @@ PPCInstr* PPCInstr_RdWrLR ( Bool wrLR, HReg gpr ) {
 /* AltiVec */
 PPCInstr* PPCInstr_AvLdSt ( Bool isLoad, UChar sz,
                             HReg reg, PPCAMode* addr ) {
-   PPCInstr* i          = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i          = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag               = Pin_AvLdSt;
    i->Pin.AvLdSt.isLoad = isLoad;
    i->Pin.AvLdSt.sz     = sz;
@@ -1331,7 +1331,7 @@ PPCInstr* PPCInstr_AvLdSt ( Bool isLoad, UChar sz,
    return i;
 }
 PPCInstr* PPCInstr_AvUnary ( PPCAvOp op, HReg dst, HReg src ) {
-   PPCInstr* i        = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i        = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag             = Pin_AvUnary;
    i->Pin.AvUnary.op  = op;
    i->Pin.AvUnary.dst = dst;
@@ -1340,7 +1340,7 @@ PPCInstr* PPCInstr_AvUnary ( PPCAvOp op, HReg dst, HReg src ) {
 }
 PPCInstr* PPCInstr_AvBinary ( PPCAvOp op, HReg dst,
                               HReg srcL, HReg srcR ) {
-   PPCInstr* i          = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i          = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag               = Pin_AvBinary;
    i->Pin.AvBinary.op   = op;
    i->Pin.AvBinary.dst  = dst;
@@ -1350,7 +1350,7 @@ PPCInstr* PPCInstr_AvBinary ( PPCAvOp op, HReg dst,
 }
 PPCInstr* PPCInstr_AvBin8x16 ( PPCAvOp op, HReg dst,
                                HReg srcL, HReg srcR ) {
-   PPCInstr* i           = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i           = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag                = Pin_AvBin8x16;
    i->Pin.AvBin8x16.op   = op;
    i->Pin.AvBin8x16.dst  = dst;
@@ -1360,7 +1360,7 @@ PPCInstr* PPCInstr_AvBin8x16 ( PPCAvOp op, HReg dst,
 }
 PPCInstr* PPCInstr_AvBin16x8 ( PPCAvOp op, HReg dst,
                                HReg srcL, HReg srcR ) {
-   PPCInstr* i           = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i           = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag                = Pin_AvBin16x8;
    i->Pin.AvBin16x8.op   = op;
    i->Pin.AvBin16x8.dst  = dst;
@@ -1370,7 +1370,7 @@ PPCInstr* PPCInstr_AvBin16x8 ( PPCAvOp op, HReg dst,
 }
 PPCInstr* PPCInstr_AvBin32x4 ( PPCAvOp op, HReg dst,
                                HReg srcL, HReg srcR ) {
-   PPCInstr* i           = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i           = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag                = Pin_AvBin32x4;
    i->Pin.AvBin32x4.op   = op;
    i->Pin.AvBin32x4.dst  = dst;
@@ -1380,7 +1380,7 @@ PPCInstr* PPCInstr_AvBin32x4 ( PPCAvOp op, HReg dst,
 }
 PPCInstr* PPCInstr_AvBin64x2 ( PPCAvOp op, HReg dst,
                                HReg srcL, HReg srcR ) {
-   PPCInstr* i           = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i           = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag                = Pin_AvBin64x2;
    i->Pin.AvBin64x2.op   = op;
    i->Pin.AvBin64x2.dst  = dst;
@@ -1391,7 +1391,7 @@ PPCInstr* PPCInstr_AvBin64x2 ( PPCAvOp op, HReg dst,
 
 PPCInstr* PPCInstr_AvBin32Fx4 ( PPCAvFpOp op, HReg dst,
                                 HReg srcL, HReg srcR ) {
-   PPCInstr* i            = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i            = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag                 = Pin_AvBin32Fx4;
    i->Pin.AvBin32Fx4.op   = op;
    i->Pin.AvBin32Fx4.dst  = dst;
@@ -1400,7 +1400,7 @@ PPCInstr* PPCInstr_AvBin32Fx4 ( PPCAvFpOp op, HReg dst,
    return i;
 }
 PPCInstr* PPCInstr_AvUn32Fx4 ( PPCAvFpOp op, HReg dst, HReg src ) {
-   PPCInstr* i          = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i          = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag               = Pin_AvUn32Fx4;
    i->Pin.AvUn32Fx4.op  = op;
    i->Pin.AvUn32Fx4.dst = dst;
@@ -1408,7 +1408,7 @@ PPCInstr* PPCInstr_AvUn32Fx4 ( PPCAvFpOp op, HReg dst, HReg src ) {
    return i;
 }
 PPCInstr* PPCInstr_AvPerm ( HReg dst, HReg srcL, HReg srcR, HReg ctl ) {
-   PPCInstr* i        = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i        = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag             = Pin_AvPerm;
    i->Pin.AvPerm.dst  = dst;
    i->Pin.AvPerm.srcL = srcL;
@@ -1418,7 +1418,7 @@ PPCInstr* PPCInstr_AvPerm ( HReg dst, HReg srcL, HReg srcR, HReg ctl ) {
 }
 
 PPCInstr* PPCInstr_AvSel ( HReg ctl, HReg dst, HReg srcL, HReg srcR ) {
-   PPCInstr* i       = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i       = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag            = Pin_AvSel;
    i->Pin.AvSel.ctl  = ctl;
    i->Pin.AvSel.dst  = dst;
@@ -1427,7 +1427,7 @@ PPCInstr* PPCInstr_AvSel ( HReg ctl, HReg dst, HReg srcL, HReg srcR ) {
    return i;
 }
 PPCInstr* PPCInstr_AvSh ( Bool shLeft, HReg dst, PPCAMode* addr ) {
-   PPCInstr*  i       = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr*  i       = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag             = Pin_AvSh;
    i->Pin.AvSh.shLeft = shLeft;
    i->Pin.AvSh.dst    = dst;
@@ -1436,7 +1436,7 @@ PPCInstr* PPCInstr_AvSh ( Bool shLeft, HReg dst, PPCAMode* addr ) {
 }
 PPCInstr* PPCInstr_AvShlDbl ( UChar shift, HReg dst,
                               HReg srcL, HReg srcR ) {
-   PPCInstr* i           = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i           = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag                = Pin_AvShlDbl;
    i->Pin.AvShlDbl.shift = shift;
    i->Pin.AvShlDbl.dst   = dst;
@@ -1445,7 +1445,7 @@ PPCInstr* PPCInstr_AvShlDbl ( UChar shift, HReg dst,
    return i;
 }
 PPCInstr* PPCInstr_AvSplat ( UChar sz, HReg dst, PPCVI5s* src ) {
-   PPCInstr* i        = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i        = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag             = Pin_AvSplat;
    i->Pin.AvSplat.sz  = sz;
    i->Pin.AvSplat.dst = dst;
@@ -1453,7 +1453,7 @@ PPCInstr* PPCInstr_AvSplat ( UChar sz, HReg dst, PPCVI5s* src ) {
    return i;
 }
 PPCInstr* PPCInstr_AvCMov ( PPCCondCode cond, HReg dst, HReg src ) {
-   PPCInstr* i        = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i        = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag             = Pin_AvCMov;
    i->Pin.AvCMov.cond = cond;
    i->Pin.AvCMov.dst  = dst;
@@ -1462,13 +1462,13 @@ PPCInstr* PPCInstr_AvCMov ( PPCCondCode cond, HReg dst, HReg src ) {
    return i;
 }
 PPCInstr* PPCInstr_AvLdVSCR ( HReg src ) {
-   PPCInstr* i         = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i         = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag              = Pin_AvLdVSCR;
    i->Pin.AvLdVSCR.src = src;
    return i;
 }
 PPCInstr* PPCInstr_AvCipherV128Unary ( PPCAvOp op, HReg dst, HReg src ) {
-   PPCInstr* i              = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i              = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag                   = Pin_AvCipherV128Unary;
    i->Pin.AvCipherV128Unary.op   = op;
    i->Pin.AvCipherV128Unary.dst  = dst;
@@ -1477,7 +1477,7 @@ PPCInstr* PPCInstr_AvCipherV128Unary ( PPCAvOp op, HReg dst, HReg src ) {
 }
 PPCInstr* PPCInstr_AvCipherV128Binary ( PPCAvOp op, HReg dst,
                                         HReg srcL, HReg srcR ) {
-   PPCInstr* i              = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i              = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag                   = Pin_AvCipherV128Binary;
    i->Pin.AvCipherV128Binary.op   = op;
    i->Pin.AvCipherV128Binary.dst  = dst;
@@ -1487,7 +1487,7 @@ PPCInstr* PPCInstr_AvCipherV128Binary ( PPCAvOp op, HReg dst,
 }
 PPCInstr* PPCInstr_AvHashV128Binary ( PPCAvOp op, HReg dst,
                                       HReg src, PPCRI* s_field ) {
-   PPCInstr* i              = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i              = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag                   = Pin_AvHashV128Binary;
    i->Pin.AvHashV128Binary.op  = op;
    i->Pin.AvHashV128Binary.dst = dst;
@@ -1497,7 +1497,7 @@ PPCInstr* PPCInstr_AvHashV128Binary ( PPCAvOp op, HReg dst,
 }
 PPCInstr* PPCInstr_AvBCDV128Trinary ( PPCAvOp op, HReg dst,
                                       HReg src1, HReg src2, PPCRI* ps ) {
-   PPCInstr* i = LibVEX_Alloc(sizeof(PPCInstr));
+   PPCInstr* i = LibVEX_Alloc_inline(sizeof(PPCInstr));
    i->tag      = Pin_AvBCDV128Trinary;
    i->Pin.AvBCDV128Trinary.op   = op;
    i->Pin.AvBCDV128Trinary.dst  = dst;

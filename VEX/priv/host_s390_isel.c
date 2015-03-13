@@ -4065,7 +4065,7 @@ iselSB_S390(const IRSB *bb, VexArch arch_host, const VexArchInfo *archinfo_host,
    vassert(archinfo_host->endness == VexEndnessBE);
 
    /* Make up an initial environment to use. */
-   env = LibVEX_Alloc(sizeof(ISelEnv));
+   env = LibVEX_Alloc_inline(sizeof(ISelEnv));
    env->vreg_ctr = 0;
 
    /* Set up output code array. */
@@ -4087,8 +4087,8 @@ iselSB_S390(const IRSB *bb, VexArch arch_host, const VexArchInfo *archinfo_host,
    vassert(bb->tyenv->types_used >= 0);
 
    env->n_vregmap = bb->tyenv->types_used;
-   env->vregmap   = LibVEX_Alloc(env->n_vregmap * sizeof(HReg));
-   env->vregmapHI = LibVEX_Alloc(env->n_vregmap * sizeof(HReg));
+   env->vregmap   = LibVEX_Alloc_inline(env->n_vregmap * sizeof(HReg));
+   env->vregmapHI = LibVEX_Alloc_inline(env->n_vregmap * sizeof(HReg));
 
    env->previous_bfp_rounding_mode = NULL;
    env->previous_dfp_rounding_mode = NULL;

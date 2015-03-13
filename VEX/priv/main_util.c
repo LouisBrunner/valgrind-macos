@@ -52,10 +52,6 @@
    into memory, the rate falls by about a factor of 3. 
 */
 
-/* Allocated memory as returned by LibVEX_Alloc will be aligned on this
-   boundary. */
-#define REQ_ALIGN 8
-
 #define N_TEMPORARY_BYTES 5000000
 
 static HChar  temporary[N_TEMPORARY_BYTES] __attribute__((aligned(REQ_ALIGN)));
@@ -72,9 +68,9 @@ static HChar* permanent_first = &permanent[0];
 static HChar* permanent_curr  = &permanent[0];
 static HChar* permanent_last  = &permanent[N_PERMANENT_BYTES-1];
 
-static HChar* private_LibVEX_alloc_first = &temporary[0];
-static HChar* private_LibVEX_alloc_curr  = &temporary[0];
-static HChar* private_LibVEX_alloc_last  = &temporary[N_TEMPORARY_BYTES-1];
+HChar* private_LibVEX_alloc_first = &temporary[0];
+HChar* private_LibVEX_alloc_curr  = &temporary[0];
+HChar* private_LibVEX_alloc_last  = &temporary[N_TEMPORARY_BYTES-1];
 
 
 static VexAllocMode mode = VexAllocModeTEMP;
@@ -160,7 +156,7 @@ VexAllocMode vexGetAllocMode ( void )
 }
 
 __attribute__((noreturn))
-static void private_LibVEX_alloc_OOM(void)
+void private_LibVEX_alloc_OOM(void)
 {
    const HChar* pool = "???";
    if (private_LibVEX_alloc_first == &temporary[0]) pool = "TEMP";
@@ -201,54 +197,6 @@ void vexSetAllocModeTEMP_and_clear ( void )
 
 /* Exported to library client. */
 
-/* Allocate in Vex's temporary allocation area.  Be careful with this.
-   You can only call it inside an instrumentation or optimisation
-   callback that you have previously specified in a call to
-   LibVEX_Translate.  The storage allocated will only stay alive until
-   translation of the current basic block is complete.
- */
-
-void* LibVEX_Alloc ( SizeT nbytes )
-{
-   struct align {
-      char c;
-      union {
-         char c;
-         short s;
-         int i;
-         long l;
-         long long ll;
-         float f;
-         double d;
-         /* long double is currently not used and would increase alignment
-            unnecessarily. */
-         /* long double ld; */
-         void *pto;
-         void (*ptf)(void);
-      } x;
-   };
-
-   /* Make sure the compiler does no surprise us */
-   vassert(offsetof(struct align,x) <= REQ_ALIGN);
-
-#if 0
-  /* Nasty debugging hack, do not use. */
-  return malloc(nbytes);
-#else
-   HChar* curr;
-   HChar* next;
-   SizeT  ALIGN;
-   ALIGN  = offsetof(struct align,x) - 1;
-   nbytes = (nbytes + ALIGN) & ~ALIGN;
-   curr   = private_LibVEX_alloc_curr;
-   next   = curr + nbytes;
-   if (next >= private_LibVEX_alloc_last)
-      private_LibVEX_alloc_OOM();
-   private_LibVEX_alloc_curr = next;
-   return curr;
-#endif
-}
-
 void LibVEX_ShowAllocStats ( void )
 {
    vex_printf("vex storage: T total %lld bytes allocated\n",
@@ -257,6 +205,10 @@ void LibVEX_ShowAllocStats ( void )
               (Long)(permanent_curr - permanent_first) );
 }
 
+void *LibVEX_Alloc ( SizeT nbytes )
+{
+   return LibVEX_Alloc_inline(nbytes);
+}
 
 /*---------------------------------------------------------*/
 /*--- Bombing out                                       ---*/

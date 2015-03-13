@@ -105,6 +105,62 @@ extern void         vexAllocSanityCheck ( void );
 
 extern void vexSetAllocModeTEMP_and_clear ( void );
 
+/* Allocate in Vex's temporary allocation area.  Be careful with this.
+   You can only call it inside an instrumentation or optimisation
+   callback that you have previously specified in a call to
+   LibVEX_Translate.  The storage allocated will only stay alive until
+   translation of the current basic block is complete.
+ */
+extern HChar* private_LibVEX_alloc_first;
+extern HChar* private_LibVEX_alloc_curr;
+extern HChar* private_LibVEX_alloc_last;
+extern void   private_LibVEX_alloc_OOM(void) __attribute__((noreturn));
+
+/* Allocated memory as returned by LibVEX_Alloc will be aligned on this
+   boundary. */
+#define REQ_ALIGN 8
+
+static inline void* LibVEX_Alloc_inline ( SizeT nbytes )
+{
+   struct align {
+      char c;
+      union {
+         char c;
+         short s;
+         int i;
+         long l;
+         long long ll;
+         float f;
+         double d;
+         /* long double is currently not used and would increase alignment
+            unnecessarily. */
+         /* long double ld; */
+         void *pto;
+         void (*ptf)(void);
+      } x;
+   };
+
+   /* Make sure the compiler does no surprise us */
+   vassert(offsetof(struct align,x) <= REQ_ALIGN);
+
+#if 0
+  /* Nasty debugging hack, do not use. */
+  return malloc(nbytes);
+#else
+   HChar* curr;
+   HChar* next;
+   SizeT  ALIGN;
+   ALIGN  = offsetof(struct align,x) - 1;
+   nbytes = (nbytes + ALIGN) & ~ALIGN;
+   curr   = private_LibVEX_alloc_curr;
+   next   = curr + nbytes;
+   if (next >= private_LibVEX_alloc_last)
+      private_LibVEX_alloc_OOM();
+   private_LibVEX_alloc_curr = next;
+   return curr;
+#endif
+}
+
 #endif /* ndef __VEX_MAIN_UTIL_H */
 
 /*---------------------------------------------------------------*/

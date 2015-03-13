@@ -6365,7 +6365,7 @@ HInstrArray* iselSB_ARM ( const IRSB* bb,
    arm_hwcaps = hwcaps_host; // JRS 2012 Mar 31: FIXME (RM)
 
    /* Make up an initial environment to use. */
-   env = LibVEX_Alloc(sizeof(ISelEnv));
+   env = LibVEX_Alloc_inline(sizeof(ISelEnv));
    env->vreg_ctr = 0;
 
    /* Set up output code array. */
@@ -6377,8 +6377,8 @@ HInstrArray* iselSB_ARM ( const IRSB* bb,
    /* Make up an IRTemp -> virtual HReg mapping.  This doesn't
       change as we go along. */
    env->n_vregmap = bb->tyenv->types_used;
-   env->vregmap   = LibVEX_Alloc(env->n_vregmap * sizeof(HReg));
-   env->vregmapHI = LibVEX_Alloc(env->n_vregmap * sizeof(HReg));
+   env->vregmap   = LibVEX_Alloc_inline(env->n_vregmap * sizeof(HReg));
+   env->vregmapHI = LibVEX_Alloc_inline(env->n_vregmap * sizeof(HReg));
 
    /* and finally ... */
    env->chainingAllowed = chainingAllowed;

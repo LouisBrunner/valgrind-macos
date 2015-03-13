@@ -6144,7 +6144,7 @@ HInstrArray* iselSB_PPC ( const IRSB* bb,
      IEndianess = Iend_LE;
 
    /* Make up an initial environment to use. */
-   env = LibVEX_Alloc(sizeof(ISelEnv));
+   env = LibVEX_Alloc_inline(sizeof(ISelEnv));
    env->vreg_ctr = 0;
 
    /* Are we being ppc32 or ppc64? */
@@ -6163,14 +6163,14 @@ HInstrArray* iselSB_PPC ( const IRSB* bb,
     * for supporting I128 in 32-bit mode
     */
    env->n_vregmap = bb->tyenv->types_used;
-   env->vregmapLo    = LibVEX_Alloc(env->n_vregmap * sizeof(HReg));
-   env->vregmapMedLo = LibVEX_Alloc(env->n_vregmap * sizeof(HReg));
+   env->vregmapLo    = LibVEX_Alloc_inline(env->n_vregmap * sizeof(HReg));
+   env->vregmapMedLo = LibVEX_Alloc_inline(env->n_vregmap * sizeof(HReg));
    if (mode64) {
       env->vregmapMedHi = NULL;
       env->vregmapHi    = NULL;
    } else {
-      env->vregmapMedHi = LibVEX_Alloc(env->n_vregmap * sizeof(HReg));
-      env->vregmapHi    = LibVEX_Alloc(env->n_vregmap * sizeof(HReg));
+      env->vregmapMedHi = LibVEX_Alloc_inline(env->n_vregmap * sizeof(HReg));
+      env->vregmapHi    = LibVEX_Alloc_inline(env->n_vregmap * sizeof(HReg));
    }
 
    /* and finally ... */

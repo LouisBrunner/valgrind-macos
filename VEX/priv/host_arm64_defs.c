@@ -124,7 +124,7 @@ void getAllocableRegs_ARM64 ( Int* nregs, HReg** arr )
 {
    Int i = 0;
    *nregs = 26;
-   *arr = LibVEX_Alloc(*nregs * sizeof(HReg));
+   *arr = LibVEX_Alloc_inline(*nregs * sizeof(HReg));
 
    // callee saves ones (22 to 28) are listed first, since we prefer
    // them if they're available
@@ -222,7 +222,7 @@ static const HChar* showARM64CondCode ( ARM64CondCode cond ) {
 /* --------- Memory address expressions (amodes). --------- */
 
 ARM64AMode* ARM64AMode_RI9  ( HReg reg, Int simm9 ) {
-   ARM64AMode* am        = LibVEX_Alloc(sizeof(ARM64AMode));
+   ARM64AMode* am        = LibVEX_Alloc_inline(sizeof(ARM64AMode));
    am->tag               = ARM64am_RI9;
    am->ARM64am.RI9.reg   = reg;
    am->ARM64am.RI9.simm9 = simm9;
@@ -231,7 +231,7 @@ ARM64AMode* ARM64AMode_RI9  ( HReg reg, Int simm9 ) {
 }
 
 ARM64AMode* ARM64AMode_RI12 ( HReg reg, Int uimm12, UChar szB ) {
-   ARM64AMode* am          = LibVEX_Alloc(sizeof(ARM64AMode));
+   ARM64AMode* am          = LibVEX_Alloc_inline(sizeof(ARM64AMode));
    am->tag                 = ARM64am_RI12;
    am->ARM64am.RI12.reg    = reg;
    am->ARM64am.RI12.uimm12 = uimm12;
@@ -245,7 +245,7 @@ ARM64AMode* ARM64AMode_RI12 ( HReg reg, Int uimm12, UChar szB ) {
 }
 
 ARM64AMode* ARM64AMode_RR ( HReg base, HReg index ) {
-   ARM64AMode* am       = LibVEX_Alloc(sizeof(ARM64AMode));
+   ARM64AMode* am       = LibVEX_Alloc_inline(sizeof(ARM64AMode));
    am->tag              = ARM64am_RR;
    am->ARM64am.RR.base  = base;
    am->ARM64am.RR.index = index;
@@ -315,7 +315,7 @@ static void mapRegs_ARM64AMode ( HRegRemap* m, ARM64AMode* am ) {
 /* --------- Reg or uimm12<<{0,12} operands --------- */
 
 ARM64RIA* ARM64RIA_I12 ( UShort imm12, UChar shift ) {
-   ARM64RIA* riA           = LibVEX_Alloc(sizeof(ARM64RIA));
+   ARM64RIA* riA           = LibVEX_Alloc_inline(sizeof(ARM64RIA));
    riA->tag                = ARM64riA_I12;
    riA->ARM64riA.I12.imm12 = imm12;
    riA->ARM64riA.I12.shift = shift;
@@ -324,7 +324,7 @@ ARM64RIA* ARM64RIA_I12 ( UShort imm12, UChar shift ) {
    return riA;
 }
 ARM64RIA* ARM64RIA_R ( HReg reg ) {
-   ARM64RIA* riA       = LibVEX_Alloc(sizeof(ARM64RIA));
+   ARM64RIA* riA       = LibVEX_Alloc_inline(sizeof(ARM64RIA));
    riA->tag            = ARM64riA_R;
    riA->ARM64riA.R.reg = reg;
    return riA;
@@ -372,7 +372,7 @@ static void mapRegs_ARM64RIA ( HRegRemap* m, ARM64RIA* riA ) {
 /* --------- Reg or "bitfield" (logic immediate) operands --------- */
 
 ARM64RIL* ARM64RIL_I13 ( UChar bitN, UChar immR, UChar immS ) {
-   ARM64RIL* riL          = LibVEX_Alloc(sizeof(ARM64RIL));
+   ARM64RIL* riL          = LibVEX_Alloc_inline(sizeof(ARM64RIL));
    riL->tag               = ARM64riL_I13;
    riL->ARM64riL.I13.bitN = bitN;
    riL->ARM64riL.I13.immR = immR;
@@ -383,7 +383,7 @@ ARM64RIL* ARM64RIL_I13 ( UChar bitN, UChar immR, UChar immS ) {
    return riL;
 }
 ARM64RIL* ARM64RIL_R ( HReg reg ) {
-   ARM64RIL* riL       = LibVEX_Alloc(sizeof(ARM64RIL));
+   ARM64RIL* riL       = LibVEX_Alloc_inline(sizeof(ARM64RIL));
    riL->tag            = ARM64riL_R;
    riL->ARM64riL.R.reg = reg;
    return riL;
@@ -433,14 +433,14 @@ static void mapRegs_ARM64RIL ( HRegRemap* m, ARM64RIL* riL ) {
 /* --------------- Reg or uimm6 operands --------------- */
 
 ARM64RI6* ARM64RI6_I6 ( UInt imm6 ) {
-   ARM64RI6* ri6         = LibVEX_Alloc(sizeof(ARM64RI6));
+   ARM64RI6* ri6         = LibVEX_Alloc_inline(sizeof(ARM64RI6));
    ri6->tag              = ARM64ri6_I6;
    ri6->ARM64ri6.I6.imm6 = imm6;
    vassert(imm6 > 0 && imm6 < 64);
    return ri6;
 }
 ARM64RI6* ARM64RI6_R ( HReg reg ) {
-   ARM64RI6* ri6       = LibVEX_Alloc(sizeof(ARM64RI6));
+   ARM64RI6* ri6       = LibVEX_Alloc_inline(sizeof(ARM64RI6));
    ri6->tag            = ARM64ri6_R;
    ri6->ARM64ri6.R.reg = reg;
    return ri6;
@@ -828,7 +828,7 @@ static const HChar* showARM64VecNarrowOp(ARM64VecNarrowOp op) {
 
 ARM64Instr* ARM64Instr_Arith ( HReg dst,
                                HReg argL, ARM64RIA* argR, Bool isAdd ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                 = ARM64in_Arith;
    i->ARM64in.Arith.dst   = dst;
    i->ARM64in.Arith.argL  = argL;
@@ -837,7 +837,7 @@ ARM64Instr* ARM64Instr_Arith ( HReg dst,
    return i;
 }
 ARM64Instr* ARM64Instr_Cmp ( HReg argL, ARM64RIA* argR, Bool is64 ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag              = ARM64in_Cmp;
    i->ARM64in.Cmp.argL = argL;
    i->ARM64in.Cmp.argR = argR;
@@ -846,7 +846,7 @@ ARM64Instr* ARM64Instr_Cmp ( HReg argL, ARM64RIA* argR, Bool is64 ) {
 }
 ARM64Instr* ARM64Instr_Logic ( HReg dst,
                                HReg argL, ARM64RIL* argR, ARM64LogicOp op ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                 = ARM64in_Logic;
    i->ARM64in.Logic.dst   = dst;
    i->ARM64in.Logic.argL  = argL;
@@ -855,7 +855,7 @@ ARM64Instr* ARM64Instr_Logic ( HReg dst,
    return i;
 }
 ARM64Instr* ARM64Instr_Test ( HReg argL, ARM64RIL* argR ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag               = ARM64in_Test;
    i->ARM64in.Test.argL = argL;
    i->ARM64in.Test.argR = argR;
@@ -863,7 +863,7 @@ ARM64Instr* ARM64Instr_Test ( HReg argL, ARM64RIL* argR ) {
 }
 ARM64Instr* ARM64Instr_Shift ( HReg dst,
                                HReg argL, ARM64RI6* argR, ARM64ShiftOp op ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                = ARM64in_Shift;
    i->ARM64in.Shift.dst  = dst;
    i->ARM64in.Shift.argL = argL;
@@ -872,7 +872,7 @@ ARM64Instr* ARM64Instr_Shift ( HReg dst,
    return i;
 }
 ARM64Instr* ARM64Instr_Unary ( HReg dst, HReg src, ARM64UnaryOp op ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag               = ARM64in_Unary;
    i->ARM64in.Unary.dst = dst;
    i->ARM64in.Unary.src = src;
@@ -880,7 +880,7 @@ ARM64Instr* ARM64Instr_Unary ( HReg dst, HReg src, ARM64UnaryOp op ) {
    return i;
 }
 ARM64Instr* ARM64Instr_MovI ( HReg dst, HReg src ) {
-   ARM64Instr* i      = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i      = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag             = ARM64in_MovI;
    i->ARM64in.MovI.dst = dst;
    i->ARM64in.MovI.src = src;
@@ -889,14 +889,14 @@ ARM64Instr* ARM64Instr_MovI ( HReg dst, HReg src ) {
    return i;
 }
 ARM64Instr* ARM64Instr_Imm64 ( HReg dst, ULong imm64 ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                 = ARM64in_Imm64;
    i->ARM64in.Imm64.dst   = dst;
    i->ARM64in.Imm64.imm64 = imm64;
    return i;
 }
 ARM64Instr* ARM64Instr_LdSt64 ( Bool isLoad, HReg rD, ARM64AMode* amode ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                   = ARM64in_LdSt64;
    i->ARM64in.LdSt64.isLoad = isLoad;
    i->ARM64in.LdSt64.rD     = rD;
@@ -904,7 +904,7 @@ ARM64Instr* ARM64Instr_LdSt64 ( Bool isLoad, HReg rD, ARM64AMode* amode ) {
    return i;
 }
 ARM64Instr* ARM64Instr_LdSt32 ( Bool isLoad, HReg rD, ARM64AMode* amode ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                   = ARM64in_LdSt32;
    i->ARM64in.LdSt32.isLoad = isLoad;
    i->ARM64in.LdSt32.rD     = rD;
@@ -912,7 +912,7 @@ ARM64Instr* ARM64Instr_LdSt32 ( Bool isLoad, HReg rD, ARM64AMode* amode ) {
    return i;
 }
 ARM64Instr* ARM64Instr_LdSt16 ( Bool isLoad, HReg rD, ARM64AMode* amode ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                   = ARM64in_LdSt16;
    i->ARM64in.LdSt16.isLoad = isLoad;
    i->ARM64in.LdSt16.rD     = rD;
@@ -920,7 +920,7 @@ ARM64Instr* ARM64Instr_LdSt16 ( Bool isLoad, HReg rD, ARM64AMode* amode ) {
    return i;
 }
 ARM64Instr* ARM64Instr_LdSt8 ( Bool isLoad, HReg rD, ARM64AMode* amode ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                  = ARM64in_LdSt8;
    i->ARM64in.LdSt8.isLoad = isLoad;
    i->ARM64in.LdSt8.rD     = rD;
@@ -929,7 +929,7 @@ ARM64Instr* ARM64Instr_LdSt8 ( Bool isLoad, HReg rD, ARM64AMode* amode ) {
 }
 ARM64Instr* ARM64Instr_XDirect ( Addr64 dstGA, ARM64AMode* amPC,
                                  ARM64CondCode cond, Bool toFastEP ) {
-   ARM64Instr* i               = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i               = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                      = ARM64in_XDirect;
    i->ARM64in.XDirect.dstGA    = dstGA;
    i->ARM64in.XDirect.amPC     = amPC;
@@ -939,7 +939,7 @@ ARM64Instr* ARM64Instr_XDirect ( Addr64 dstGA, ARM64AMode* amPC,
 }
 ARM64Instr* ARM64Instr_XIndir ( HReg dstGA, ARM64AMode* amPC,
                                 ARM64CondCode cond ) {
-   ARM64Instr* i           = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i           = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                  = ARM64in_XIndir;
    i->ARM64in.XIndir.dstGA = dstGA;
    i->ARM64in.XIndir.amPC  = amPC;
@@ -948,7 +948,7 @@ ARM64Instr* ARM64Instr_XIndir ( HReg dstGA, ARM64AMode* amPC,
 }
 ARM64Instr* ARM64Instr_XAssisted ( HReg dstGA, ARM64AMode* amPC,
                                    ARM64CondCode cond, IRJumpKind jk ) {
-   ARM64Instr* i              = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i              = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                     = ARM64in_XAssisted;
    i->ARM64in.XAssisted.dstGA = dstGA;
    i->ARM64in.XAssisted.amPC  = amPC;
@@ -958,7 +958,7 @@ ARM64Instr* ARM64Instr_XAssisted ( HReg dstGA, ARM64AMode* amPC,
 }
 ARM64Instr* ARM64Instr_CSel ( HReg dst, HReg argL, HReg argR,
                               ARM64CondCode cond ) {
-   ARM64Instr* i        = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i        = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag               = ARM64in_CSel;
    i->ARM64in.CSel.dst  = dst;
    i->ARM64in.CSel.argL = argL;
@@ -968,7 +968,7 @@ ARM64Instr* ARM64Instr_CSel ( HReg dst, HReg argL, HReg argR,
 }
 ARM64Instr* ARM64Instr_Call ( ARM64CondCode cond, Addr64 target, Int nArgRegs,
                               RetLoc rloc ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                   = ARM64in_Call;
    i->ARM64in.Call.cond     = cond;
    i->ARM64in.Call.target   = target;
@@ -978,7 +978,7 @@ ARM64Instr* ARM64Instr_Call ( ARM64CondCode cond, Addr64 target, Int nArgRegs,
    return i;
 }
 extern ARM64Instr* ARM64Instr_AddToSP ( Int simm ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                  = ARM64in_AddToSP;
    i->ARM64in.AddToSP.simm = simm;
    vassert(-4096 < simm && simm < 4096);
@@ -986,14 +986,14 @@ extern ARM64Instr* ARM64Instr_AddToSP ( Int simm ) {
    return i;
 }
 extern ARM64Instr* ARM64Instr_FromSP  ( HReg dst ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                = ARM64in_FromSP;
    i->ARM64in.FromSP.dst = dst;
    return i;
 }
 ARM64Instr* ARM64Instr_Mul ( HReg dst, HReg argL, HReg argR,
                              ARM64MulOp op ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag              = ARM64in_Mul;
    i->ARM64in.Mul.dst  = dst;
    i->ARM64in.Mul.argL = argL;
@@ -1002,26 +1002,26 @@ ARM64Instr* ARM64Instr_Mul ( HReg dst, HReg argL, HReg argR,
    return i;
 }
 ARM64Instr* ARM64Instr_LdrEX ( Int szB ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag               = ARM64in_LdrEX;
    i->ARM64in.LdrEX.szB = szB;
    vassert(szB == 8 || szB == 4 || szB == 2 || szB == 1);
    return i;
 }
 ARM64Instr* ARM64Instr_StrEX ( Int szB ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag               = ARM64in_StrEX;
    i->ARM64in.StrEX.szB = szB;
    vassert(szB == 8 || szB == 4 || szB == 2 || szB == 1);
    return i;
 }
 ARM64Instr* ARM64Instr_MFence ( void ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag        = ARM64in_MFence;
    return i;
 }
 ARM64Instr* ARM64Instr_VLdStS ( Bool isLoad, HReg sD, HReg rN, UInt uimm12 ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                  = ARM64in_VLdStS;
    i->ARM64in.VLdStS.isLoad = isLoad;
    i->ARM64in.VLdStS.sD     = sD;
@@ -1031,7 +1031,7 @@ ARM64Instr* ARM64Instr_VLdStS ( Bool isLoad, HReg sD, HReg rN, UInt uimm12 ) {
    return i;
 }
 ARM64Instr* ARM64Instr_VLdStD ( Bool isLoad, HReg dD, HReg rN, UInt uimm12 ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                  = ARM64in_VLdStD;
    i->ARM64in.VLdStD.isLoad = isLoad;
    i->ARM64in.VLdStD.dD     = dD;
@@ -1041,7 +1041,7 @@ ARM64Instr* ARM64Instr_VLdStD ( Bool isLoad, HReg dD, HReg rN, UInt uimm12 ) {
    return i;
 }
 ARM64Instr* ARM64Instr_VLdStQ ( Bool isLoad, HReg rQ, HReg rN ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                   = ARM64in_VLdStQ;
    i->ARM64in.VLdStQ.isLoad = isLoad;
    i->ARM64in.VLdStQ.rQ     = rQ;
@@ -1049,7 +1049,7 @@ ARM64Instr* ARM64Instr_VLdStQ ( Bool isLoad, HReg rQ, HReg rN ) {
    return i;
 }
 ARM64Instr* ARM64Instr_VCvtI2F ( ARM64CvtOp how, HReg rD, HReg rS ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                 = ARM64in_VCvtI2F;
    i->ARM64in.VCvtI2F.how = how;
    i->ARM64in.VCvtI2F.rD  = rD;
@@ -1058,7 +1058,7 @@ ARM64Instr* ARM64Instr_VCvtI2F ( ARM64CvtOp how, HReg rD, HReg rS ) {
 }
 ARM64Instr* ARM64Instr_VCvtF2I ( ARM64CvtOp how, HReg rD, HReg rS,
                                  UChar armRM ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                   = ARM64in_VCvtF2I;
    i->ARM64in.VCvtF2I.how   = how;
    i->ARM64in.VCvtF2I.rD    = rD;
@@ -1068,7 +1068,7 @@ ARM64Instr* ARM64Instr_VCvtF2I ( ARM64CvtOp how, HReg rD, HReg rS,
    return i;
 }
 ARM64Instr* ARM64Instr_VCvtSD ( Bool sToD, HReg dst, HReg src ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag               = ARM64in_VCvtSD;
    i->ARM64in.VCvtSD.sToD = sToD;
    i->ARM64in.VCvtSD.dst  = dst;
@@ -1076,7 +1076,7 @@ ARM64Instr* ARM64Instr_VCvtSD ( Bool sToD, HReg dst, HReg src ) {
    return i;
 }
 ARM64Instr* ARM64Instr_VUnaryD ( ARM64FpUnaryOp op, HReg dst, HReg src ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                 = ARM64in_VUnaryD;
    i->ARM64in.VUnaryD.op  = op;
    i->ARM64in.VUnaryD.dst = dst;
@@ -1084,7 +1084,7 @@ ARM64Instr* ARM64Instr_VUnaryD ( ARM64FpUnaryOp op, HReg dst, HReg src ) {
    return i;
 }
 ARM64Instr* ARM64Instr_VUnaryS ( ARM64FpUnaryOp op, HReg dst, HReg src ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                 = ARM64in_VUnaryS;
    i->ARM64in.VUnaryS.op  = op;
    i->ARM64in.VUnaryS.dst = dst;
@@ -1093,7 +1093,7 @@ ARM64Instr* ARM64Instr_VUnaryS ( ARM64FpUnaryOp op, HReg dst, HReg src ) {
 }
 ARM64Instr* ARM64Instr_VBinD ( ARM64FpBinOp op,
                                HReg dst, HReg argL, HReg argR ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                = ARM64in_VBinD;
    i->ARM64in.VBinD.op   = op;
    i->ARM64in.VBinD.dst  = dst;
@@ -1103,7 +1103,7 @@ ARM64Instr* ARM64Instr_VBinD ( ARM64FpBinOp op,
 }
 ARM64Instr* ARM64Instr_VBinS ( ARM64FpBinOp op,
                                HReg dst, HReg argL, HReg argR ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                = ARM64in_VBinS;
    i->ARM64in.VBinS.op   = op;
    i->ARM64in.VBinS.dst  = dst;
@@ -1112,14 +1112,14 @@ ARM64Instr* ARM64Instr_VBinS ( ARM64FpBinOp op,
    return i;
 }
 ARM64Instr* ARM64Instr_VCmpD ( HReg argL, HReg argR ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                = ARM64in_VCmpD;
    i->ARM64in.VCmpD.argL = argL;
    i->ARM64in.VCmpD.argR = argR;
    return i;
 }
 ARM64Instr* ARM64Instr_VCmpS ( HReg argL, HReg argR ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                = ARM64in_VCmpS;
    i->ARM64in.VCmpS.argL = argL;
    i->ARM64in.VCmpS.argR = argR;
@@ -1127,7 +1127,7 @@ ARM64Instr* ARM64Instr_VCmpS ( HReg argL, HReg argR ) {
 }
 ARM64Instr* ARM64Instr_VFCSel ( HReg dst, HReg argL, HReg argR,
                                 ARM64CondCode cond, Bool isD ) {
-   ARM64Instr* i          = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i          = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                 = ARM64in_VFCSel;
    i->ARM64in.VFCSel.dst  = dst;
    i->ARM64in.VFCSel.argL = argL;
@@ -1137,14 +1137,14 @@ ARM64Instr* ARM64Instr_VFCSel ( HReg dst, HReg argL, HReg argR,
    return i;
 }
 ARM64Instr* ARM64Instr_FPCR ( Bool toFPCR, HReg iReg ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                 = ARM64in_FPCR;
    i->ARM64in.FPCR.toFPCR = toFPCR;
    i->ARM64in.FPCR.iReg   = iReg;
    return i;
 }
 ARM64Instr* ARM64Instr_FPSR ( Bool toFPSR, HReg iReg ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                 = ARM64in_FPSR;
    i->ARM64in.FPSR.toFPSR = toFPSR;
    i->ARM64in.FPSR.iReg   = iReg;
@@ -1152,7 +1152,7 @@ ARM64Instr* ARM64Instr_FPSR ( Bool toFPSR, HReg iReg ) {
 }
 ARM64Instr* ARM64Instr_VBinV ( ARM64VecBinOp op,
                                HReg dst, HReg argL, HReg argR ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                = ARM64in_VBinV;
    i->ARM64in.VBinV.op   = op;
    i->ARM64in.VBinV.dst  = dst;
@@ -1161,7 +1161,7 @@ ARM64Instr* ARM64Instr_VBinV ( ARM64VecBinOp op,
    return i;
 }
 ARM64Instr* ARM64Instr_VModifyV ( ARM64VecModifyOp op, HReg mod, HReg arg ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                  = ARM64in_VModifyV;
    i->ARM64in.VModifyV.op  = op;
    i->ARM64in.VModifyV.mod = mod;
@@ -1169,7 +1169,7 @@ ARM64Instr* ARM64Instr_VModifyV ( ARM64VecModifyOp op, HReg mod, HReg arg ) {
    return i;
 }
 ARM64Instr* ARM64Instr_VUnaryV ( ARM64VecUnaryOp op, HReg dst, HReg arg ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                 = ARM64in_VUnaryV;
    i->ARM64in.VUnaryV.op  = op;
    i->ARM64in.VUnaryV.dst = dst;
@@ -1178,7 +1178,7 @@ ARM64Instr* ARM64Instr_VUnaryV ( ARM64VecUnaryOp op, HReg dst, HReg arg ) {
 }
 ARM64Instr* ARM64Instr_VNarrowV ( ARM64VecNarrowOp op,
                                   UInt dszBlg2, HReg dst, HReg src ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                      = ARM64in_VNarrowV;
    i->ARM64in.VNarrowV.op      = op;
    i->ARM64in.VNarrowV.dszBlg2 = dszBlg2;
@@ -1189,7 +1189,7 @@ ARM64Instr* ARM64Instr_VNarrowV ( ARM64VecNarrowOp op,
 }
 ARM64Instr* ARM64Instr_VShiftImmV ( ARM64VecShiftImmOp op,
                                     HReg dst, HReg src, UInt amt ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                    = ARM64in_VShiftImmV;
    i->ARM64in.VShiftImmV.op  = op;
    i->ARM64in.VShiftImmV.dst = dst;
@@ -1245,7 +1245,7 @@ ARM64Instr* ARM64Instr_VShiftImmV ( ARM64VecShiftImmOp op,
    return i;
 }
 ARM64Instr* ARM64Instr_VExtV ( HReg dst, HReg srcLo, HReg srcHi, UInt amtB ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                 = ARM64in_VExtV;
    i->ARM64in.VExtV.dst   = dst;
    i->ARM64in.VExtV.srcLo = srcLo;
@@ -1255,7 +1255,7 @@ ARM64Instr* ARM64Instr_VExtV ( HReg dst, HReg srcLo, HReg srcHi, UInt amtB ) {
    return i;
 }
 ARM64Instr* ARM64Instr_VImmQ (HReg rQ, UShort imm) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag               = ARM64in_VImmQ;
    i->ARM64in.VImmQ.rQ  = rQ;
    i->ARM64in.VImmQ.imm = imm;
@@ -1270,21 +1270,21 @@ ARM64Instr* ARM64Instr_VImmQ (HReg rQ, UShort imm) {
    return i;
 }
 ARM64Instr* ARM64Instr_VDfromX ( HReg rD, HReg rX ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                = ARM64in_VDfromX;
    i->ARM64in.VDfromX.rD = rD;
    i->ARM64in.VDfromX.rX = rX;
    return i;
 }
 ARM64Instr* ARM64Instr_VQfromX ( HReg rQ, HReg rXlo ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                  = ARM64in_VQfromX;
    i->ARM64in.VQfromX.rQ   = rQ;
    i->ARM64in.VQfromX.rXlo = rXlo;
    return i;
 }
 ARM64Instr* ARM64Instr_VQfromXX ( HReg rQ, HReg rXhi, HReg rXlo ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                   = ARM64in_VQfromXX;
    i->ARM64in.VQfromXX.rQ   = rQ;
    i->ARM64in.VQfromXX.rXhi = rXhi;
@@ -1292,7 +1292,7 @@ ARM64Instr* ARM64Instr_VQfromXX ( HReg rQ, HReg rXhi, HReg rXlo ) {
    return i;
 }
 ARM64Instr* ARM64Instr_VXfromQ ( HReg rX, HReg rQ, UInt laneNo ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                    = ARM64in_VXfromQ;
    i->ARM64in.VXfromQ.rX     = rX;
    i->ARM64in.VXfromQ.rQ     = rQ;
@@ -1301,7 +1301,7 @@ ARM64Instr* ARM64Instr_VXfromQ ( HReg rX, HReg rQ, UInt laneNo ) {
    return i;
 }
 ARM64Instr* ARM64Instr_VXfromDorS ( HReg rX, HReg rDorS, Bool fromD ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                      = ARM64in_VXfromDorS;
    i->ARM64in.VXfromDorS.rX    = rX;
    i->ARM64in.VXfromDorS.rDorS = rDorS;
@@ -1309,7 +1309,7 @@ ARM64Instr* ARM64Instr_VXfromDorS ( HReg rX, HReg rDorS, Bool fromD ) {
    return i;
 }
 ARM64Instr* ARM64Instr_VMov ( UInt szB, HReg dst, HReg src ) {
-   ARM64Instr* i       = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i       = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag              = ARM64in_VMov;
    i->ARM64in.VMov.szB = szB;
    i->ARM64in.VMov.dst = dst;
@@ -1330,14 +1330,14 @@ ARM64Instr* ARM64Instr_VMov ( UInt szB, HReg dst, HReg src ) {
 }
 ARM64Instr* ARM64Instr_EvCheck ( ARM64AMode* amCounter,
                                  ARM64AMode* amFailAddr ) {
-   ARM64Instr* i                 = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i                 = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                        = ARM64in_EvCheck;
    i->ARM64in.EvCheck.amCounter  = amCounter;
    i->ARM64in.EvCheck.amFailAddr = amFailAddr;
    return i;
 }
 ARM64Instr* ARM64Instr_ProfInc ( void ) {
-   ARM64Instr* i = LibVEX_Alloc(sizeof(ARM64Instr));
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag        = ARM64in_ProfInc;
    return i;
 }

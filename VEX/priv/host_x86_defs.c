@@ -105,7 +105,7 @@ HReg hregX86_XMM7 ( void ) { return mkHReg(7, HRcVec128, False); }
 void getAllocableRegs_X86 ( Int* nregs, HReg** arr )
 {
    *nregs = 20;
-   *arr = LibVEX_Alloc(*nregs * sizeof(HReg));
+   *arr = LibVEX_Alloc_inline(*nregs * sizeof(HReg));
    (*arr)[0] = hregX86_EAX();
    (*arr)[1] = hregX86_EBX();
    (*arr)[2] = hregX86_ECX();
@@ -159,14 +159,14 @@ const HChar* showX86CondCode ( X86CondCode cond )
 /* --------- X86AMode: memory address expressions. --------- */
 
 X86AMode* X86AMode_IR ( UInt imm32, HReg reg ) {
-   X86AMode* am = LibVEX_Alloc(sizeof(X86AMode));
+   X86AMode* am = LibVEX_Alloc_inline(sizeof(X86AMode));
    am->tag = Xam_IR;
    am->Xam.IR.imm = imm32;
    am->Xam.IR.reg = reg;
    return am;
 }
 X86AMode* X86AMode_IRRS ( UInt imm32, HReg base, HReg indEx, Int shift ) {
-   X86AMode* am = LibVEX_Alloc(sizeof(X86AMode));
+   X86AMode* am = LibVEX_Alloc_inline(sizeof(X86AMode));
    am->tag = Xam_IRRS;
    am->Xam.IRRS.imm = imm32;
    am->Xam.IRRS.base = base;
@@ -241,19 +241,19 @@ static void mapRegs_X86AMode ( HRegRemap* m, X86AMode* am ) {
 /* --------- Operand, which can be reg, immediate or memory. --------- */
 
 X86RMI* X86RMI_Imm ( UInt imm32 ) {
-   X86RMI* op         = LibVEX_Alloc(sizeof(X86RMI));
+   X86RMI* op         = LibVEX_Alloc_inline(sizeof(X86RMI));
    op->tag            = Xrmi_Imm;
    op->Xrmi.Imm.imm32 = imm32;
    return op;
 }
 X86RMI* X86RMI_Reg ( HReg reg ) {
-   X86RMI* op       = LibVEX_Alloc(sizeof(X86RMI));
+   X86RMI* op       = LibVEX_Alloc_inline(sizeof(X86RMI));
    op->tag          = Xrmi_Reg;
    op->Xrmi.Reg.reg = reg;
    return op;
 }
 X86RMI* X86RMI_Mem ( X86AMode* am ) {
-   X86RMI* op      = LibVEX_Alloc(sizeof(X86RMI));
+   X86RMI* op      = LibVEX_Alloc_inline(sizeof(X86RMI));
    op->tag         = Xrmi_Mem;
    op->Xrmi.Mem.am = am;
    return op;
@@ -312,13 +312,13 @@ static void mapRegs_X86RMI ( HRegRemap* m, X86RMI* op ) {
 /* --------- Operand, which can be reg or immediate only. --------- */
 
 X86RI* X86RI_Imm ( UInt imm32 ) {
-   X86RI* op         = LibVEX_Alloc(sizeof(X86RI));
+   X86RI* op         = LibVEX_Alloc_inline(sizeof(X86RI));
    op->tag           = Xri_Imm;
    op->Xri.Imm.imm32 = imm32;
    return op;
 }
 X86RI* X86RI_Reg ( HReg reg ) {
-   X86RI* op       = LibVEX_Alloc(sizeof(X86RI));
+   X86RI* op       = LibVEX_Alloc_inline(sizeof(X86RI));
    op->tag         = Xri_Reg;
    op->Xri.Reg.reg = reg;
    return op;
@@ -368,13 +368,13 @@ static void mapRegs_X86RI ( HRegRemap* m, X86RI* op ) {
 /* --------- Operand, which can be reg or memory only. --------- */
 
 X86RM* X86RM_Reg ( HReg reg ) {
-   X86RM* op       = LibVEX_Alloc(sizeof(X86RM));
+   X86RM* op       = LibVEX_Alloc_inline(sizeof(X86RM));
    op->tag         = Xrm_Reg;
    op->Xrm.Reg.reg = reg;
    return op;
 }
 X86RM* X86RM_Mem ( X86AMode* am ) {
-   X86RM* op      = LibVEX_Alloc(sizeof(X86RM));
+   X86RM* op      = LibVEX_Alloc_inline(sizeof(X86RM));
    op->tag        = Xrm_Mem;
    op->Xrm.Mem.am = am;
    return op;
@@ -563,7 +563,7 @@ const HChar* showX86SseOp ( X86SseOp op ) {
 }
 
 X86Instr* X86Instr_Alu32R ( X86AluOp op, X86RMI* src, HReg dst ) {
-   X86Instr* i       = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i       = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag            = Xin_Alu32R;
    i->Xin.Alu32R.op  = op;
    i->Xin.Alu32R.src = src;
@@ -571,7 +571,7 @@ X86Instr* X86Instr_Alu32R ( X86AluOp op, X86RMI* src, HReg dst ) {
    return i;
 }
 X86Instr* X86Instr_Alu32M ( X86AluOp op, X86RI* src, X86AMode* dst ) {
-   X86Instr* i       = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i       = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag            = Xin_Alu32M;
    i->Xin.Alu32M.op  = op;
    i->Xin.Alu32M.src = src;
@@ -580,7 +580,7 @@ X86Instr* X86Instr_Alu32M ( X86AluOp op, X86RI* src, X86AMode* dst ) {
    return i;
 }
 X86Instr* X86Instr_Sh32 ( X86ShiftOp op, UInt src, HReg dst ) {
-   X86Instr* i     = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i     = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag          = Xin_Sh32;
    i->Xin.Sh32.op  = op;
    i->Xin.Sh32.src = src;
@@ -588,42 +588,42 @@ X86Instr* X86Instr_Sh32 ( X86ShiftOp op, UInt src, HReg dst ) {
    return i;
 }
 X86Instr* X86Instr_Test32 ( UInt imm32, X86RM* dst ) {
-   X86Instr* i         = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i         = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag              = Xin_Test32;
    i->Xin.Test32.imm32 = imm32;
    i->Xin.Test32.dst   = dst;
    return i;
 }
 X86Instr* X86Instr_Unary32 ( X86UnaryOp op, HReg dst ) {
-   X86Instr* i        = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i        = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag             = Xin_Unary32;
    i->Xin.Unary32.op  = op;
    i->Xin.Unary32.dst = dst;
    return i;
 }
 X86Instr* X86Instr_Lea32 ( X86AMode* am, HReg dst ) {
-   X86Instr* i        = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i        = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag             = Xin_Lea32;
    i->Xin.Lea32.am    = am;
    i->Xin.Lea32.dst   = dst;
    return i;
 }
 X86Instr* X86Instr_MulL ( Bool syned, X86RM* src ) {
-   X86Instr* i        = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i        = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag             = Xin_MulL;
    i->Xin.MulL.syned  = syned;
    i->Xin.MulL.src    = src;
    return i;
 }
 X86Instr* X86Instr_Div ( Bool syned, X86RM* src ) {
-   X86Instr* i      = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i      = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag           = Xin_Div;
    i->Xin.Div.syned = syned;
    i->Xin.Div.src   = src;
    return i;
 }
 X86Instr* X86Instr_Sh3232  ( X86ShiftOp op, UInt amt, HReg src, HReg dst ) {
-   X86Instr* i       = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i       = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag            = Xin_Sh3232;
    i->Xin.Sh3232.op  = op;
    i->Xin.Sh3232.amt = amt;
@@ -633,14 +633,14 @@ X86Instr* X86Instr_Sh3232  ( X86ShiftOp op, UInt amt, HReg src, HReg dst ) {
    return i;
 }
 X86Instr* X86Instr_Push( X86RMI* src ) {
-   X86Instr* i     = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i     = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag          = Xin_Push;
    i->Xin.Push.src = src;
    return i;
 }
 X86Instr* X86Instr_Call ( X86CondCode cond, Addr32 target, Int regparms,
                           RetLoc rloc ) {
-   X86Instr* i          = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i          = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag               = Xin_Call;
    i->Xin.Call.cond     = cond;
    i->Xin.Call.target   = target;
@@ -652,7 +652,7 @@ X86Instr* X86Instr_Call ( X86CondCode cond, Addr32 target, Int regparms,
 }
 X86Instr* X86Instr_XDirect ( Addr32 dstGA, X86AMode* amEIP,
                              X86CondCode cond, Bool toFastEP ) {
-   X86Instr* i             = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i             = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag                  = Xin_XDirect;
    i->Xin.XDirect.dstGA    = dstGA;
    i->Xin.XDirect.amEIP    = amEIP;
@@ -662,7 +662,7 @@ X86Instr* X86Instr_XDirect ( Addr32 dstGA, X86AMode* amEIP,
 }
 X86Instr* X86Instr_XIndir ( HReg dstGA, X86AMode* amEIP,
                             X86CondCode cond ) {
-   X86Instr* i         = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i         = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag              = Xin_XIndir;
    i->Xin.XIndir.dstGA = dstGA;
    i->Xin.XIndir.amEIP = amEIP;
@@ -671,7 +671,7 @@ X86Instr* X86Instr_XIndir ( HReg dstGA, X86AMode* amEIP,
 }
 X86Instr* X86Instr_XAssisted ( HReg dstGA, X86AMode* amEIP,
                                X86CondCode cond, IRJumpKind jk ) {
-   X86Instr* i            = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i            = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag                 = Xin_XAssisted;
    i->Xin.XAssisted.dstGA = dstGA;
    i->Xin.XAssisted.amEIP = amEIP;
@@ -680,7 +680,7 @@ X86Instr* X86Instr_XAssisted ( HReg dstGA, X86AMode* amEIP,
    return i;
 }
 X86Instr* X86Instr_CMov32  ( X86CondCode cond, X86RM* src, HReg dst ) {
-   X86Instr* i        = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i        = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag             = Xin_CMov32;
    i->Xin.CMov32.cond = cond;
    i->Xin.CMov32.src  = src;
@@ -690,7 +690,7 @@ X86Instr* X86Instr_CMov32  ( X86CondCode cond, X86RM* src, HReg dst ) {
 }
 X86Instr* X86Instr_LoadEX ( UChar szSmall, Bool syned,
                             X86AMode* src, HReg dst ) {
-   X86Instr* i           = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i           = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag                = Xin_LoadEX;
    i->Xin.LoadEX.szSmall = szSmall;
    i->Xin.LoadEX.syned   = syned;
@@ -700,7 +700,7 @@ X86Instr* X86Instr_LoadEX ( UChar szSmall, Bool syned,
    return i;
 }
 X86Instr* X86Instr_Store ( UChar sz, HReg src, X86AMode* dst ) {
-   X86Instr* i      = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i      = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag           = Xin_Store;
    i->Xin.Store.sz  = sz;
    i->Xin.Store.src = src;
@@ -709,14 +709,14 @@ X86Instr* X86Instr_Store ( UChar sz, HReg src, X86AMode* dst ) {
    return i;
 }
 X86Instr* X86Instr_Set32 ( X86CondCode cond, HReg dst ) {
-   X86Instr* i       = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i       = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag            = Xin_Set32;
    i->Xin.Set32.cond = cond;
    i->Xin.Set32.dst  = dst;
    return i;
 }
 X86Instr* X86Instr_Bsfr32 ( Bool isFwds, HReg src, HReg dst ) {
-   X86Instr* i          = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i          = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag               = Xin_Bsfr32;
    i->Xin.Bsfr32.isFwds = isFwds;
    i->Xin.Bsfr32.src    = src;
@@ -724,7 +724,7 @@ X86Instr* X86Instr_Bsfr32 ( Bool isFwds, HReg src, HReg dst ) {
    return i;
 }
 X86Instr* X86Instr_MFence ( UInt hwcaps ) {
-   X86Instr* i          = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i          = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag               = Xin_MFence;
    i->Xin.MFence.hwcaps = hwcaps;
    vassert(0 == (hwcaps & ~(VEX_HWCAPS_X86_MMXEXT
@@ -735,7 +735,7 @@ X86Instr* X86Instr_MFence ( UInt hwcaps ) {
    return i;
 }
 X86Instr* X86Instr_ACAS ( X86AMode* addr, UChar sz ) {
-   X86Instr* i      = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i      = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag           = Xin_ACAS;
    i->Xin.ACAS.addr = addr;
    i->Xin.ACAS.sz   = sz;
@@ -743,14 +743,14 @@ X86Instr* X86Instr_ACAS ( X86AMode* addr, UChar sz ) {
    return i;
 }
 X86Instr* X86Instr_DACAS ( X86AMode* addr ) {
-   X86Instr* i       = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i       = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag            = Xin_DACAS;
    i->Xin.DACAS.addr = addr;
    return i;
 }
 
 X86Instr* X86Instr_FpUnary ( X86FpOp op, HReg src, HReg dst ) {
-   X86Instr* i        = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i        = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag             = Xin_FpUnary;
    i->Xin.FpUnary.op  = op;
    i->Xin.FpUnary.src = src;
@@ -758,7 +758,7 @@ X86Instr* X86Instr_FpUnary ( X86FpOp op, HReg src, HReg dst ) {
    return i;
 }
 X86Instr* X86Instr_FpBinary ( X86FpOp op, HReg srcL, HReg srcR, HReg dst ) {
-   X86Instr* i          = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i          = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag               = Xin_FpBinary;
    i->Xin.FpBinary.op   = op;
    i->Xin.FpBinary.srcL = srcL;
@@ -767,7 +767,7 @@ X86Instr* X86Instr_FpBinary ( X86FpOp op, HReg srcL, HReg srcR, HReg dst ) {
    return i;
 }
 X86Instr* X86Instr_FpLdSt ( Bool isLoad, UChar sz, HReg reg, X86AMode* addr ) {
-   X86Instr* i          = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i          = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag               = Xin_FpLdSt;
    i->Xin.FpLdSt.isLoad = isLoad;
    i->Xin.FpLdSt.sz     = sz;
@@ -778,7 +778,7 @@ X86Instr* X86Instr_FpLdSt ( Bool isLoad, UChar sz, HReg reg, X86AMode* addr ) {
 }
 X86Instr* X86Instr_FpLdStI ( Bool isLoad, UChar sz,  
                              HReg reg, X86AMode* addr ) {
-   X86Instr* i           = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i           = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag                = Xin_FpLdStI;
    i->Xin.FpLdStI.isLoad = isLoad;
    i->Xin.FpLdStI.sz     = sz;
@@ -788,14 +788,14 @@ X86Instr* X86Instr_FpLdStI ( Bool isLoad, UChar sz,
    return i;
 }
 X86Instr* X86Instr_Fp64to32 ( HReg src, HReg dst ) {
-   X86Instr* i         = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i         = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag              = Xin_Fp64to32;
    i->Xin.Fp64to32.src = src;
    i->Xin.Fp64to32.dst = dst;
    return i;
 }
 X86Instr* X86Instr_FpCMov ( X86CondCode cond, HReg src, HReg dst ) {
-   X86Instr* i        = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i        = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag             = Xin_FpCMov;
    i->Xin.FpCMov.cond = cond;
    i->Xin.FpCMov.src  = src;
@@ -804,18 +804,18 @@ X86Instr* X86Instr_FpCMov ( X86CondCode cond, HReg src, HReg dst ) {
    return i;
 }
 X86Instr* X86Instr_FpLdCW ( X86AMode* addr ) {
-   X86Instr* i          = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i          = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag               = Xin_FpLdCW;
    i->Xin.FpLdCW.addr   = addr;
    return i;
 }
 X86Instr* X86Instr_FpStSW_AX ( void ) {
-   X86Instr* i = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag      = Xin_FpStSW_AX;
    return i;
 }
 X86Instr* X86Instr_FpCmp ( HReg srcL, HReg srcR, HReg dst ) {
-   X86Instr* i       = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i       = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag            = Xin_FpCmp;
    i->Xin.FpCmp.srcL = srcL;
    i->Xin.FpCmp.srcR = srcR;
@@ -823,7 +823,7 @@ X86Instr* X86Instr_FpCmp ( HReg srcL, HReg srcR, HReg dst ) {
    return i;
 }
 X86Instr* X86Instr_SseConst ( UShort con, HReg dst ) {
-   X86Instr* i            = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i            = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag                 = Xin_SseConst;
    i->Xin.SseConst.con    = con;
    i->Xin.SseConst.dst    = dst;
@@ -831,7 +831,7 @@ X86Instr* X86Instr_SseConst ( UShort con, HReg dst ) {
    return i;
 }
 X86Instr* X86Instr_SseLdSt ( Bool isLoad, HReg reg, X86AMode* addr ) {
-   X86Instr* i           = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i           = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag                = Xin_SseLdSt;
    i->Xin.SseLdSt.isLoad = isLoad;
    i->Xin.SseLdSt.reg    = reg;
@@ -840,7 +840,7 @@ X86Instr* X86Instr_SseLdSt ( Bool isLoad, HReg reg, X86AMode* addr ) {
 }
 X86Instr* X86Instr_SseLdzLO  ( Int sz, HReg reg, X86AMode* addr )
 {
-   X86Instr* i           = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i           = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag                = Xin_SseLdzLO;
    i->Xin.SseLdzLO.sz    = toUChar(sz);
    i->Xin.SseLdzLO.reg   = reg;
@@ -849,7 +849,7 @@ X86Instr* X86Instr_SseLdzLO  ( Int sz, HReg reg, X86AMode* addr )
    return i;
 }
 X86Instr* X86Instr_Sse32Fx4 ( X86SseOp op, HReg src, HReg dst ) {
-   X86Instr* i         = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i         = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag              = Xin_Sse32Fx4;
    i->Xin.Sse32Fx4.op  = op;
    i->Xin.Sse32Fx4.src = src;
@@ -858,7 +858,7 @@ X86Instr* X86Instr_Sse32Fx4 ( X86SseOp op, HReg src, HReg dst ) {
    return i;
 }
 X86Instr* X86Instr_Sse32FLo ( X86SseOp op, HReg src, HReg dst ) {
-   X86Instr* i         = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i         = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag              = Xin_Sse32FLo;
    i->Xin.Sse32FLo.op  = op;
    i->Xin.Sse32FLo.src = src;
@@ -867,7 +867,7 @@ X86Instr* X86Instr_Sse32FLo ( X86SseOp op, HReg src, HReg dst ) {
    return i;
 }
 X86Instr* X86Instr_Sse64Fx2 ( X86SseOp op, HReg src, HReg dst ) {
-   X86Instr* i         = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i         = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag              = Xin_Sse64Fx2;
    i->Xin.Sse64Fx2.op  = op;
    i->Xin.Sse64Fx2.src = src;
@@ -876,7 +876,7 @@ X86Instr* X86Instr_Sse64Fx2 ( X86SseOp op, HReg src, HReg dst ) {
    return i;
 }
 X86Instr* X86Instr_Sse64FLo ( X86SseOp op, HReg src, HReg dst ) {
-   X86Instr* i         = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i         = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag              = Xin_Sse64FLo;
    i->Xin.Sse64FLo.op  = op;
    i->Xin.Sse64FLo.src = src;
@@ -885,7 +885,7 @@ X86Instr* X86Instr_Sse64FLo ( X86SseOp op, HReg src, HReg dst ) {
    return i;
 }
 X86Instr* X86Instr_SseReRg ( X86SseOp op, HReg re, HReg rg ) {
-   X86Instr* i        = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i        = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag             = Xin_SseReRg;
    i->Xin.SseReRg.op  = op;
    i->Xin.SseReRg.src = re;
@@ -893,7 +893,7 @@ X86Instr* X86Instr_SseReRg ( X86SseOp op, HReg re, HReg rg ) {
    return i;
 }
 X86Instr* X86Instr_SseCMov ( X86CondCode cond, HReg src, HReg dst ) {
-   X86Instr* i         = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i         = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag              = Xin_SseCMov;
    i->Xin.SseCMov.cond = cond;
    i->Xin.SseCMov.src  = src;
@@ -902,7 +902,7 @@ X86Instr* X86Instr_SseCMov ( X86CondCode cond, HReg src, HReg dst ) {
    return i;
 }
 X86Instr* X86Instr_SseShuf ( Int order, HReg src, HReg dst ) {
-   X86Instr* i          = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i          = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag               = Xin_SseShuf;
    i->Xin.SseShuf.order = order;
    i->Xin.SseShuf.src   = src;
@@ -912,14 +912,14 @@ X86Instr* X86Instr_SseShuf ( Int order, HReg src, HReg dst ) {
 }
 X86Instr* X86Instr_EvCheck ( X86AMode* amCounter,
                              X86AMode* amFailAddr ) {
-   X86Instr* i               = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i               = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag                    = Xin_EvCheck;
    i->Xin.EvCheck.amCounter  = amCounter;
    i->Xin.EvCheck.amFailAddr = amFailAddr;
    return i;
 }
 X86Instr* X86Instr_ProfInc ( void ) {
-   X86Instr* i = LibVEX_Alloc(sizeof(X86Instr));
+   X86Instr* i = LibVEX_Alloc_inline(sizeof(X86Instr));
    i->tag      = Xin_ProfInc;
    return i;
 }

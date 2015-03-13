@@ -4185,7 +4185,7 @@ HInstrArray *iselSB_MIPS ( const IRSB* bb,
 #endif
 
    /* Make up an initial environment to use. */
-   env = LibVEX_Alloc(sizeof(ISelEnv));
+   env = LibVEX_Alloc_inline(sizeof(ISelEnv));
    env->vreg_ctr = 0;
    env->mode64 = mode64;
    env->fp_mode64 = fp_mode64;
@@ -4199,8 +4199,8 @@ HInstrArray *iselSB_MIPS ( const IRSB* bb,
    /* Make up an IRTemp -> virtual HReg mapping.  This doesn't
       change as we go along. */
    env->n_vregmap = bb->tyenv->types_used;
-   env->vregmap = LibVEX_Alloc(env->n_vregmap * sizeof(HReg));
-   env->vregmapHI = LibVEX_Alloc(env->n_vregmap * sizeof(HReg));
+   env->vregmap = LibVEX_Alloc_inline(env->n_vregmap * sizeof(HReg));
+   env->vregmapHI = LibVEX_Alloc_inline(env->n_vregmap * sizeof(HReg));
 
    /* and finally ... */
    env->hwcaps          = hwcaps_host;

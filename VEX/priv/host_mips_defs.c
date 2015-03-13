@@ -568,7 +568,7 @@ void getAllocableRegs_MIPS(Int * nregs, HReg ** arr, Bool mode64)
    else
       *nregs = 28;
    UInt i = 0;
-   *arr = LibVEX_Alloc(*nregs * sizeof(HReg));
+   *arr = LibVEX_Alloc_inline(*nregs * sizeof(HReg));
 
    /* ZERO = constant 0
       AT = assembler temporary
@@ -871,7 +871,7 @@ const HChar* showMIPSMoveCondOp ( MIPSMoveCondOp op )
 
 MIPSAMode *MIPSAMode_IR(Int idx, HReg base)
 {
-   MIPSAMode *am = LibVEX_Alloc(sizeof(MIPSAMode));
+   MIPSAMode *am = LibVEX_Alloc_inline(sizeof(MIPSAMode));
    am->tag = Mam_IR;
    am->Mam.IR.base = base;
    am->Mam.IR.index = idx;
@@ -881,7 +881,7 @@ MIPSAMode *MIPSAMode_IR(Int idx, HReg base)
 
 MIPSAMode *MIPSAMode_RR(HReg idx, HReg base)
 {
-   MIPSAMode *am = LibVEX_Alloc(sizeof(MIPSAMode));
+   MIPSAMode *am = LibVEX_Alloc_inline(sizeof(MIPSAMode));
    am->tag = Mam_RR;
    am->Mam.RR.base = base;
    am->Mam.RR.index = idx;
@@ -1004,7 +1004,7 @@ static void mapRegs_MIPSAMode(HRegRemap * m, MIPSAMode * am)
 
 MIPSRH *MIPSRH_Imm(Bool syned, UShort imm16)
 {
-   MIPSRH *op = LibVEX_Alloc(sizeof(MIPSRH));
+   MIPSRH *op = LibVEX_Alloc_inline(sizeof(MIPSRH));
    op->tag = Mrh_Imm;
    op->Mrh.Imm.syned = syned;
    op->Mrh.Imm.imm16 = imm16;
@@ -1018,7 +1018,7 @@ MIPSRH *MIPSRH_Imm(Bool syned, UShort imm16)
 
 MIPSRH *MIPSRH_Reg(HReg reg)
 {
-   MIPSRH *op = LibVEX_Alloc(sizeof(MIPSRH));
+   MIPSRH *op = LibVEX_Alloc_inline(sizeof(MIPSRH));
    op->tag = Mrh_Reg;
    op->Mrh.Reg.reg = reg;
    return op;
@@ -1180,7 +1180,7 @@ const HChar *showMIPSMaccOp(MIPSMaccOp op, Bool variable)
 
 MIPSInstr *MIPSInstr_LI(HReg dst, ULong imm)
 {
-   MIPSInstr *i = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr *i = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag = Min_LI;
    i->Min.LI.dst = dst;
    i->Min.LI.imm = imm;
@@ -1189,7 +1189,7 @@ MIPSInstr *MIPSInstr_LI(HReg dst, ULong imm)
 
 MIPSInstr *MIPSInstr_Alu(MIPSAluOp op, HReg dst, HReg srcL, MIPSRH * srcR)
 {
-   MIPSInstr *i = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr *i = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag = Min_Alu;
    i->Min.Alu.op = op;
    i->Min.Alu.dst = dst;
@@ -1201,7 +1201,7 @@ MIPSInstr *MIPSInstr_Alu(MIPSAluOp op, HReg dst, HReg srcL, MIPSRH * srcR)
 MIPSInstr *MIPSInstr_Shft(MIPSShftOp op, Bool sz32, HReg dst, HReg srcL,
                           MIPSRH * srcR)
 {
-   MIPSInstr *i = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr *i = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag = Min_Shft;
    i->Min.Shft.op = op;
    i->Min.Shft.sz32 = sz32;
@@ -1213,7 +1213,7 @@ MIPSInstr *MIPSInstr_Shft(MIPSShftOp op, Bool sz32, HReg dst, HReg srcL,
 
 MIPSInstr *MIPSInstr_Unary(MIPSUnaryOp op, HReg dst, HReg src)
 {
-   MIPSInstr *i = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr *i = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag = Min_Unary;
    i->Min.Unary.op = op;
    i->Min.Unary.dst = dst;
@@ -1224,7 +1224,7 @@ MIPSInstr *MIPSInstr_Unary(MIPSUnaryOp op, HReg dst, HReg src)
 MIPSInstr *MIPSInstr_Cmp(Bool syned, Bool sz32, HReg dst, HReg srcL, HReg srcR,
                          MIPSCondCode cond)
 {
-   MIPSInstr *i = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr *i = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag = Min_Cmp;
    i->Min.Cmp.syned = syned;
    i->Min.Cmp.sz32 = sz32;
@@ -1239,7 +1239,7 @@ MIPSInstr *MIPSInstr_Cmp(Bool syned, Bool sz32, HReg dst, HReg srcL, HReg srcR,
 MIPSInstr *MIPSInstr_Mul(Bool syned, Bool wid, Bool sz32, HReg dst, HReg srcL,
                          HReg srcR)
 {
-   MIPSInstr *i = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr *i = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag = Min_Mul;
    i->Min.Mul.syned = syned;
    i->Min.Mul.widening = wid; /* widen=True else False */
@@ -1253,7 +1253,7 @@ MIPSInstr *MIPSInstr_Mul(Bool syned, Bool wid, Bool sz32, HReg dst, HReg srcL,
 /* msub */
 MIPSInstr *MIPSInstr_Msub(Bool syned, HReg srcL, HReg srcR)
 {
-   MIPSInstr *i = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr *i = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag = Min_Macc;
 
    i->Min.Macc.op = Macc_SUB;
@@ -1266,7 +1266,7 @@ MIPSInstr *MIPSInstr_Msub(Bool syned, HReg srcL, HReg srcR)
 /* madd */
 MIPSInstr *MIPSInstr_Madd(Bool syned, HReg srcL, HReg srcR)
 {
-   MIPSInstr *i = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr *i = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag = Min_Macc;
 
    i->Min.Macc.op = Macc_ADD;
@@ -1279,7 +1279,7 @@ MIPSInstr *MIPSInstr_Madd(Bool syned, HReg srcL, HReg srcR)
 /* div */
 MIPSInstr *MIPSInstr_Div(Bool syned, Bool sz32, HReg srcL, HReg srcR)
 {
-   MIPSInstr *i = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr *i = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag = Min_Div;
    i->Min.Div.syned = syned;
    i->Min.Div.sz32 = sz32; /* True = 32 bits */
@@ -1292,7 +1292,7 @@ MIPSInstr *MIPSInstr_Call ( MIPSCondCode cond, Addr64 target, UInt argiregs,
                             HReg src, RetLoc rloc )
 {
    UInt mask;
-   MIPSInstr *i = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr *i = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag = Min_Call;
    i->Min.Call.cond = cond;
    i->Min.Call.target = target;
@@ -1311,7 +1311,7 @@ MIPSInstr *MIPSInstr_CallAlways ( MIPSCondCode cond, Addr64 target,
                                   UInt argiregs, RetLoc rloc )
 {
    UInt mask;
-   MIPSInstr *i = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr *i = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag = Min_Call;
    i->Min.Call.cond = cond;
    i->Min.Call.target = target;
@@ -1327,7 +1327,7 @@ MIPSInstr *MIPSInstr_CallAlways ( MIPSCondCode cond, Addr64 target,
 
 MIPSInstr *MIPSInstr_XDirect ( Addr64 dstGA, MIPSAMode* amPC,
                                MIPSCondCode cond, Bool toFastEP ) {
-   MIPSInstr* i               = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr* i               = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag                     = Min_XDirect;
    i->Min.XDirect.dstGA       = dstGA;
    i->Min.XDirect.amPC        = amPC;
@@ -1338,7 +1338,7 @@ MIPSInstr *MIPSInstr_XDirect ( Addr64 dstGA, MIPSAMode* amPC,
 
 MIPSInstr *MIPSInstr_XIndir ( HReg dstGA, MIPSAMode* amPC,
                               MIPSCondCode cond ) {
-   MIPSInstr* i            = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr* i            = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag                  = Min_XIndir;
    i->Min.XIndir.dstGA     = dstGA;
    i->Min.XIndir.amPC      = amPC;
@@ -1348,7 +1348,7 @@ MIPSInstr *MIPSInstr_XIndir ( HReg dstGA, MIPSAMode* amPC,
 
 MIPSInstr *MIPSInstr_XAssisted ( HReg dstGA, MIPSAMode* amPC,
                                  MIPSCondCode cond, IRJumpKind jk ) {
-   MIPSInstr* i               = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr* i               = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag                     = Min_XAssisted;
    i->Min.XAssisted.dstGA     = dstGA;
    i->Min.XAssisted.amPC      = amPC;
@@ -1359,7 +1359,7 @@ MIPSInstr *MIPSInstr_XAssisted ( HReg dstGA, MIPSAMode* amPC,
 
 MIPSInstr *MIPSInstr_Load(UChar sz, HReg dst, MIPSAMode * src, Bool mode64)
 {
-   MIPSInstr *i = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr *i = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag = Min_Load;
    i->Min.Load.sz = sz;
    i->Min.Load.src = src;
@@ -1373,7 +1373,7 @@ MIPSInstr *MIPSInstr_Load(UChar sz, HReg dst, MIPSAMode * src, Bool mode64)
 
 MIPSInstr *MIPSInstr_Store(UChar sz, MIPSAMode * dst, HReg src, Bool mode64)
 {
-   MIPSInstr *i = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr *i = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag = Min_Store;
    i->Min.Store.sz = sz;
    i->Min.Store.src = src;
@@ -1387,7 +1387,7 @@ MIPSInstr *MIPSInstr_Store(UChar sz, MIPSAMode * dst, HReg src, Bool mode64)
 
 MIPSInstr *MIPSInstr_LoadL(UChar sz, HReg dst, MIPSAMode * src, Bool mode64)
 {
-   MIPSInstr *i = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr *i = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag = Min_LoadL;
    i->Min.LoadL.sz  = sz;
    i->Min.LoadL.src = src;
@@ -1402,7 +1402,7 @@ MIPSInstr *MIPSInstr_LoadL(UChar sz, HReg dst, MIPSAMode * src, Bool mode64)
 MIPSInstr *MIPSInstr_Cas(UChar sz, HReg old, HReg addr,
                          HReg expd, HReg data, Bool mode64)
 {
-   MIPSInstr *i    = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr *i    = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag          = Min_Cas;
    i->Min.Cas.sz   = sz;
    i->Min.Cas.old  = old;
@@ -1418,7 +1418,7 @@ MIPSInstr *MIPSInstr_Cas(UChar sz, HReg old, HReg addr,
 
 MIPSInstr *MIPSInstr_StoreC(UChar sz, MIPSAMode * dst, HReg src, Bool mode64)
 {
-   MIPSInstr *i = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr *i = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag = Min_StoreC;
    i->Min.StoreC.sz  = sz;
    i->Min.StoreC.src = src;
@@ -1432,7 +1432,7 @@ MIPSInstr *MIPSInstr_StoreC(UChar sz, MIPSAMode * dst, HReg src, Bool mode64)
 
 MIPSInstr *MIPSInstr_Mthi(HReg src)
 {
-   MIPSInstr *i = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr *i = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag = Min_Mthi;
    i->Min.MtHL.src = src;
    return i;
@@ -1440,7 +1440,7 @@ MIPSInstr *MIPSInstr_Mthi(HReg src)
 
 MIPSInstr *MIPSInstr_Mtlo(HReg src)
 {
-   MIPSInstr *i = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr *i = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag = Min_Mtlo;
    i->Min.MtHL.src = src;
    return i;
@@ -1448,7 +1448,7 @@ MIPSInstr *MIPSInstr_Mtlo(HReg src)
 
 MIPSInstr *MIPSInstr_Mfhi(HReg dst)
 {
-   MIPSInstr *i = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr *i = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag = Min_Mfhi;
    i->Min.MfHL.dst = dst;
    return i;
@@ -1456,7 +1456,7 @@ MIPSInstr *MIPSInstr_Mfhi(HReg dst)
 
 MIPSInstr *MIPSInstr_Mflo(HReg dst)
 {
-   MIPSInstr *i = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr *i = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag = Min_Mflo;
    i->Min.MfHL.dst = dst;
    return i;
@@ -1465,7 +1465,7 @@ MIPSInstr *MIPSInstr_Mflo(HReg dst)
 /* Read/Write Link Register */
 MIPSInstr *MIPSInstr_RdWrLR(Bool wrLR, HReg gpr)
 {
-   MIPSInstr *i = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr *i = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag = Min_RdWrLR;
    i->Min.RdWrLR.wrLR = wrLR;
    i->Min.RdWrLR.gpr = gpr;
@@ -1474,7 +1474,7 @@ MIPSInstr *MIPSInstr_RdWrLR(Bool wrLR, HReg gpr)
 
 MIPSInstr *MIPSInstr_FpLdSt(Bool isLoad, UChar sz, HReg reg, MIPSAMode * addr)
 {
-   MIPSInstr *i = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr *i = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag = Min_FpLdSt;
    i->Min.FpLdSt.isLoad = isLoad;
    i->Min.FpLdSt.sz = sz;
@@ -1486,7 +1486,7 @@ MIPSInstr *MIPSInstr_FpLdSt(Bool isLoad, UChar sz, HReg reg, MIPSAMode * addr)
 
 MIPSInstr *MIPSInstr_FpUnary(MIPSFpOp op, HReg dst, HReg src)
 {
-   MIPSInstr *i = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr *i = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag = Min_FpUnary;
    i->Min.FpUnary.op = op;
    i->Min.FpUnary.dst = dst;
@@ -1496,7 +1496,7 @@ MIPSInstr *MIPSInstr_FpUnary(MIPSFpOp op, HReg dst, HReg src)
 
 MIPSInstr *MIPSInstr_FpBinary(MIPSFpOp op, HReg dst, HReg srcL, HReg srcR)
 {
-   MIPSInstr *i = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr *i = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag = Min_FpBinary;
    i->Min.FpBinary.op = op;
    i->Min.FpBinary.dst = dst;
@@ -1508,7 +1508,7 @@ MIPSInstr *MIPSInstr_FpBinary(MIPSFpOp op, HReg dst, HReg srcL, HReg srcR)
 MIPSInstr *MIPSInstr_FpTernary ( MIPSFpOp op, HReg dst, HReg src1, HReg src2,
                                  HReg src3 )
 {
-   MIPSInstr *i = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr *i = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag = Min_FpTernary;
    i->Min.FpTernary.op = op;
    i->Min.FpTernary.dst = dst;
@@ -1520,7 +1520,7 @@ MIPSInstr *MIPSInstr_FpTernary ( MIPSFpOp op, HReg dst, HReg src1, HReg src2,
 
 MIPSInstr *MIPSInstr_FpConvert(MIPSFpOp op, HReg dst, HReg src)
 {
-   MIPSInstr *i = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr *i = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag = Min_FpConvert;
    i->Min.FpConvert.op = op;
    i->Min.FpConvert.dst = dst;
@@ -1531,7 +1531,7 @@ MIPSInstr *MIPSInstr_FpConvert(MIPSFpOp op, HReg dst, HReg src)
 
 MIPSInstr *MIPSInstr_FpCompare(MIPSFpOp op, HReg dst, HReg srcL, HReg srcR)
 {
-   MIPSInstr *i = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr *i = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag = Min_FpCompare;
    i->Min.FpCompare.op = op;
    i->Min.FpCompare.dst = dst;
@@ -1542,7 +1542,7 @@ MIPSInstr *MIPSInstr_FpCompare(MIPSFpOp op, HReg dst, HReg srcL, HReg srcR)
 
 MIPSInstr *MIPSInstr_MtFCSR(HReg src)
 {
-   MIPSInstr *i = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr *i = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag = Min_MtFCSR;
    i->Min.MtFCSR.src = src;
    return i;
@@ -1550,7 +1550,7 @@ MIPSInstr *MIPSInstr_MtFCSR(HReg src)
 
 MIPSInstr *MIPSInstr_MfFCSR(HReg dst)
 {
-   MIPSInstr *i = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr *i = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag = Min_MfFCSR;
    i->Min.MfFCSR.dst = dst;
    return i;
@@ -1558,7 +1558,7 @@ MIPSInstr *MIPSInstr_MfFCSR(HReg dst)
 
 MIPSInstr *MIPSInstr_FpGpMove ( MIPSFpGpMoveOp op, HReg dst, HReg src )
 {
-   MIPSInstr *i        = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr *i        = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag              = Min_FpGpMove;
    i->Min.FpGpMove.op  = op;
    i->Min.FpGpMove.dst = dst;
@@ -1569,7 +1569,7 @@ MIPSInstr *MIPSInstr_FpGpMove ( MIPSFpGpMoveOp op, HReg dst, HReg src )
 MIPSInstr *MIPSInstr_MoveCond ( MIPSMoveCondOp op, HReg dst, HReg src,
                                 HReg cond )
 {
-   MIPSInstr *i        = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr *i        = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag              = Min_MoveCond;
    i->Min.MoveCond.op  = op;
    i->Min.MoveCond.dst = dst;
@@ -1580,7 +1580,7 @@ MIPSInstr *MIPSInstr_MoveCond ( MIPSMoveCondOp op, HReg dst, HReg src,
 
 MIPSInstr *MIPSInstr_EvCheck ( MIPSAMode* amCounter,
                             MIPSAMode* amFailAddr ) {
-   MIPSInstr* i                 = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr* i                 = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag                       = Min_EvCheck;
    i->Min.EvCheck.amCounter     = amCounter;
    i->Min.EvCheck.amFailAddr    = amFailAddr;
@@ -1588,7 +1588,7 @@ MIPSInstr *MIPSInstr_EvCheck ( MIPSAMode* amCounter,
 }
 
 MIPSInstr* MIPSInstr_ProfInc ( void ) {
-   MIPSInstr* i = LibVEX_Alloc(sizeof(MIPSInstr));
+   MIPSInstr* i = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag       = Min_ProfInc;
    return i;
 }

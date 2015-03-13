@@ -123,7 +123,7 @@ void getAllocableRegs_ARM ( Int* nregs, HReg** arr )
 {
    Int i = 0;
    *nregs = 26;
-   *arr = LibVEX_Alloc(*nregs * sizeof(HReg));
+   *arr = LibVEX_Alloc_inline(*nregs * sizeof(HReg));
    // callee saves ones are listed first, since we prefer them
    // if they're available
    (*arr)[i++] = hregARM_R4();
@@ -217,7 +217,7 @@ const HChar* showARMCondCode ( ARMCondCode cond ) {
 /* --------- Mem AModes: Addressing Mode 1 --------- */
 
 ARMAMode1* ARMAMode1_RI  ( HReg reg, Int simm13 ) {
-   ARMAMode1* am        = LibVEX_Alloc(sizeof(ARMAMode1));
+   ARMAMode1* am        = LibVEX_Alloc_inline(sizeof(ARMAMode1));
    am->tag              = ARMam1_RI;
    am->ARMam1.RI.reg    = reg;
    am->ARMam1.RI.simm13 = simm13;
@@ -225,7 +225,7 @@ ARMAMode1* ARMAMode1_RI  ( HReg reg, Int simm13 ) {
    return am;
 }
 ARMAMode1* ARMAMode1_RRS ( HReg base, HReg index, UInt shift ) {
-   ARMAMode1* am        = LibVEX_Alloc(sizeof(ARMAMode1));
+   ARMAMode1* am        = LibVEX_Alloc_inline(sizeof(ARMAMode1));
    am->tag              = ARMam1_RRS;
    am->ARMam1.RRS.base  = base;
    am->ARMam1.RRS.index = index;
@@ -285,7 +285,7 @@ static void mapRegs_ARMAMode1 ( HRegRemap* m, ARMAMode1* am ) {
 /* --------- Mem AModes: Addressing Mode 2 --------- */
 
 ARMAMode2* ARMAMode2_RI ( HReg reg, Int simm9 ) {
-   ARMAMode2* am       = LibVEX_Alloc(sizeof(ARMAMode2));
+   ARMAMode2* am       = LibVEX_Alloc_inline(sizeof(ARMAMode2));
    am->tag             = ARMam2_RI;
    am->ARMam2.RI.reg   = reg;
    am->ARMam2.RI.simm9 = simm9;
@@ -293,7 +293,7 @@ ARMAMode2* ARMAMode2_RI ( HReg reg, Int simm9 ) {
    return am;
 }
 ARMAMode2* ARMAMode2_RR ( HReg base, HReg index ) {
-   ARMAMode2* am       = LibVEX_Alloc(sizeof(ARMAMode2));
+   ARMAMode2* am       = LibVEX_Alloc_inline(sizeof(ARMAMode2));
    am->tag             = ARMam2_RR;
    am->ARMam2.RR.base  = base;
    am->ARMam2.RR.index = index;
@@ -351,7 +351,7 @@ static void mapRegs_ARMAMode2 ( HRegRemap* m, ARMAMode2* am ) {
 /* --------- Mem AModes: Addressing Mode VFP --------- */
 
 ARMAModeV* mkARMAModeV ( HReg reg, Int simm11 ) {
-   ARMAModeV* am = LibVEX_Alloc(sizeof(ARMAModeV));
+   ARMAModeV* am = LibVEX_Alloc_inline(sizeof(ARMAModeV));
    vassert(simm11 >= -1020 && simm11 <= 1020);
    vassert(0 == (simm11 & 3));
    am->reg    = reg;
@@ -377,7 +377,7 @@ static void mapRegs_ARMAModeV ( HRegRemap* m, ARMAModeV* am ) {
 /* --------- Mem AModes: Addressing Mode Neon ------- */
 
 ARMAModeN *mkARMAModeN_RR ( HReg rN, HReg rM ) {
-   ARMAModeN* am = LibVEX_Alloc(sizeof(ARMAModeN));
+   ARMAModeN* am = LibVEX_Alloc_inline(sizeof(ARMAModeN));
    am->tag = ARMamN_RR;
    am->ARMamN.RR.rN = rN;
    am->ARMamN.RR.rM = rM;
@@ -385,7 +385,7 @@ ARMAModeN *mkARMAModeN_RR ( HReg rN, HReg rM ) {
 }
 
 ARMAModeN *mkARMAModeN_R ( HReg rN ) {
-   ARMAModeN* am = LibVEX_Alloc(sizeof(ARMAModeN));
+   ARMAModeN* am = LibVEX_Alloc_inline(sizeof(ARMAModeN));
    am->tag = ARMamN_R;
    am->ARMamN.R.rN = rN;
    return am;
@@ -435,7 +435,7 @@ static UInt ROR32 ( UInt x, UInt sh ) {
 }
 
 ARMRI84* ARMRI84_I84 ( UShort imm8, UShort imm4 ) {
-   ARMRI84* ri84          = LibVEX_Alloc(sizeof(ARMRI84));
+   ARMRI84* ri84          = LibVEX_Alloc_inline(sizeof(ARMRI84));
    ri84->tag              = ARMri84_I84;
    ri84->ARMri84.I84.imm8 = imm8;
    ri84->ARMri84.I84.imm4 = imm4;
@@ -444,7 +444,7 @@ ARMRI84* ARMRI84_I84 ( UShort imm8, UShort imm4 ) {
    return ri84;
 }
 ARMRI84* ARMRI84_R ( HReg reg ) {
-   ARMRI84* ri84       = LibVEX_Alloc(sizeof(ARMRI84));
+   ARMRI84* ri84       = LibVEX_Alloc_inline(sizeof(ARMRI84));
    ri84->tag           = ARMri84_R;
    ri84->ARMri84.R.reg = reg;
    return ri84;
@@ -492,14 +492,14 @@ static void mapRegs_ARMRI84 ( HRegRemap* m, ARMRI84* ri84 ) {
 /* --------- Reg or imm5 operands --------- */
 
 ARMRI5* ARMRI5_I5 ( UInt imm5 ) {
-   ARMRI5* ri5         = LibVEX_Alloc(sizeof(ARMRI5));
+   ARMRI5* ri5         = LibVEX_Alloc_inline(sizeof(ARMRI5));
    ri5->tag            = ARMri5_I5;
    ri5->ARMri5.I5.imm5 = imm5;
    vassert(imm5 > 0 && imm5 <= 31); // zero is not allowed
    return ri5;
 }
 ARMRI5* ARMRI5_R ( HReg reg ) {
-   ARMRI5* ri5       = LibVEX_Alloc(sizeof(ARMRI5));
+   ARMRI5* ri5       = LibVEX_Alloc_inline(sizeof(ARMRI5));
    ri5->tag          = ARMri5_R;
    ri5->ARMri5.R.reg = reg;
    return ri5;
@@ -545,7 +545,7 @@ static void mapRegs_ARMRI5 ( HRegRemap* m, ARMRI5* ri5 ) {
 /* -------- Neon Immediate operatnd --------- */
 
 ARMNImm* ARMNImm_TI ( UInt type, UInt imm8 ) {
-   ARMNImm* i = LibVEX_Alloc(sizeof(ARMNImm));
+   ARMNImm* i = LibVEX_Alloc_inline(sizeof(ARMNImm));
    i->type = type;
    i->imm8 = imm8;
    return i;
@@ -659,7 +659,7 @@ void ppARMNImm (ARMNImm* i) {
 
 ARMNRS* mkARMNRS(ARMNRS_tag tag, HReg reg, UInt index)
 {
-   ARMNRS *p = LibVEX_Alloc(sizeof(ARMNRS));
+   ARMNRS *p = LibVEX_Alloc_inline(sizeof(ARMNRS));
    p->tag = tag;
    p->reg = reg;
    p->index = index;
@@ -1099,7 +1099,7 @@ static const HChar* showARMNeonDataSize ( const ARMInstr* i )
 
 ARMInstr* ARMInstr_Alu ( ARMAluOp op,
                          HReg dst, HReg argL, ARMRI84* argR ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag            = ARMin_Alu;
    i->ARMin.Alu.op   = op;
    i->ARMin.Alu.dst  = dst;
@@ -1109,7 +1109,7 @@ ARMInstr* ARMInstr_Alu ( ARMAluOp op,
 }
 ARMInstr* ARMInstr_Shift  ( ARMShiftOp op,
                             HReg dst, HReg argL, ARMRI5* argR ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag              = ARMin_Shift;
    i->ARMin.Shift.op   = op;
    i->ARMin.Shift.dst  = dst;
@@ -1118,7 +1118,7 @@ ARMInstr* ARMInstr_Shift  ( ARMShiftOp op,
    return i;
 }
 ARMInstr* ARMInstr_Unary ( ARMUnaryOp op, HReg dst, HReg src ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag             = ARMin_Unary;
    i->ARMin.Unary.op  = op;
    i->ARMin.Unary.dst = dst;
@@ -1126,7 +1126,7 @@ ARMInstr* ARMInstr_Unary ( ARMUnaryOp op, HReg dst, HReg src ) {
    return i;
 }
 ARMInstr* ARMInstr_CmpOrTst ( Bool isCmp, HReg argL, ARMRI84* argR ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag                  = ARMin_CmpOrTst;
    i->ARMin.CmpOrTst.isCmp = isCmp;
    i->ARMin.CmpOrTst.argL  = argL;
@@ -1134,14 +1134,14 @@ ARMInstr* ARMInstr_CmpOrTst ( Bool isCmp, HReg argL, ARMRI84* argR ) {
    return i;
 }
 ARMInstr* ARMInstr_Mov ( HReg dst, ARMRI84* src ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag           = ARMin_Mov;
    i->ARMin.Mov.dst = dst;
    i->ARMin.Mov.src = src;
    return i;
 }
 ARMInstr* ARMInstr_Imm32  ( HReg dst, UInt imm32 ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag               = ARMin_Imm32;
    i->ARMin.Imm32.dst   = dst;
    i->ARMin.Imm32.imm32 = imm32;
@@ -1149,7 +1149,7 @@ ARMInstr* ARMInstr_Imm32  ( HReg dst, UInt imm32 ) {
 }
 ARMInstr* ARMInstr_LdSt32 ( ARMCondCode cc,
                             Bool isLoad, HReg rD, ARMAMode1* amode ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag                 = ARMin_LdSt32;
    i->ARMin.LdSt32.cc     = cc;
    i->ARMin.LdSt32.isLoad = isLoad;
@@ -1161,7 +1161,7 @@ ARMInstr* ARMInstr_LdSt32 ( ARMCondCode cc,
 ARMInstr* ARMInstr_LdSt16 ( ARMCondCode cc,
                             Bool isLoad, Bool signedLoad,
                             HReg rD, ARMAMode2* amode ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag                     = ARMin_LdSt16;
    i->ARMin.LdSt16.cc         = cc;
    i->ARMin.LdSt16.isLoad     = isLoad;
@@ -1173,7 +1173,7 @@ ARMInstr* ARMInstr_LdSt16 ( ARMCondCode cc,
 }
 ARMInstr* ARMInstr_LdSt8U ( ARMCondCode cc,
                             Bool isLoad, HReg rD, ARMAMode1* amode ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag                 = ARMin_LdSt8U;
    i->ARMin.LdSt8U.cc     = cc;
    i->ARMin.LdSt8U.isLoad = isLoad;
@@ -1183,7 +1183,7 @@ ARMInstr* ARMInstr_LdSt8U ( ARMCondCode cc,
    return i;
 }
 ARMInstr* ARMInstr_Ld8S ( ARMCondCode cc, HReg rD, ARMAMode2* amode ) {
-   ARMInstr* i         = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i         = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag              = ARMin_Ld8S;
    i->ARMin.Ld8S.cc    = cc;
    i->ARMin.Ld8S.rD    = rD;
@@ -1193,7 +1193,7 @@ ARMInstr* ARMInstr_Ld8S ( ARMCondCode cc, HReg rD, ARMAMode2* amode ) {
 }
 ARMInstr* ARMInstr_XDirect ( Addr32 dstGA, ARMAMode1* amR15T,
                              ARMCondCode cond, Bool toFastEP ) {
-   ARMInstr* i               = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i               = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag                    = ARMin_XDirect;
    i->ARMin.XDirect.dstGA    = dstGA;
    i->ARMin.XDirect.amR15T   = amR15T;
@@ -1203,7 +1203,7 @@ ARMInstr* ARMInstr_XDirect ( Addr32 dstGA, ARMAMode1* amR15T,
 }
 ARMInstr* ARMInstr_XIndir ( HReg dstGA, ARMAMode1* amR15T,
                             ARMCondCode cond ) {
-   ARMInstr* i            = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i            = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag                 = ARMin_XIndir;
    i->ARMin.XIndir.dstGA  = dstGA;
    i->ARMin.XIndir.amR15T = amR15T;
@@ -1212,7 +1212,7 @@ ARMInstr* ARMInstr_XIndir ( HReg dstGA, ARMAMode1* amR15T,
 }
 ARMInstr* ARMInstr_XAssisted ( HReg dstGA, ARMAMode1* amR15T,
                                ARMCondCode cond, IRJumpKind jk ) {
-   ARMInstr* i               = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i               = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag                    = ARMin_XAssisted;
    i->ARMin.XAssisted.dstGA  = dstGA;
    i->ARMin.XAssisted.amR15T = amR15T;
@@ -1221,7 +1221,7 @@ ARMInstr* ARMInstr_XAssisted ( HReg dstGA, ARMAMode1* amR15T,
    return i;
 }
 ARMInstr* ARMInstr_CMov ( ARMCondCode cond, HReg dst, ARMRI84* src ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag             = ARMin_CMov;
    i->ARMin.CMov.cond = cond;
    i->ARMin.CMov.dst  = dst;
@@ -1231,7 +1231,7 @@ ARMInstr* ARMInstr_CMov ( ARMCondCode cond, HReg dst, ARMRI84* src ) {
 }
 ARMInstr* ARMInstr_Call ( ARMCondCode cond, Addr32 target, Int nArgRegs,
                           RetLoc rloc ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag                 = ARMin_Call;
    i->ARMin.Call.cond     = cond;
    i->ARMin.Call.target   = target;
@@ -1241,27 +1241,27 @@ ARMInstr* ARMInstr_Call ( ARMCondCode cond, Addr32 target, Int nArgRegs,
    return i;
 }
 ARMInstr* ARMInstr_Mul ( ARMMulOp op ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag          = ARMin_Mul;
    i->ARMin.Mul.op = op;
    return i;
 }
 ARMInstr* ARMInstr_LdrEX ( Int szB ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag             = ARMin_LdrEX;
    i->ARMin.LdrEX.szB = szB;
    vassert(szB == 8 || szB == 4 || szB == 2 || szB == 1);
    return i;
 }
 ARMInstr* ARMInstr_StrEX ( Int szB ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag             = ARMin_StrEX;
    i->ARMin.StrEX.szB = szB;
    vassert(szB == 8 || szB == 4 || szB == 2 || szB == 1);
    return i;
 }
 ARMInstr* ARMInstr_VLdStD ( Bool isLoad, HReg dD, ARMAModeV* am ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag                 = ARMin_VLdStD;
    i->ARMin.VLdStD.isLoad = isLoad;
    i->ARMin.VLdStD.dD     = dD;
@@ -1269,7 +1269,7 @@ ARMInstr* ARMInstr_VLdStD ( Bool isLoad, HReg dD, ARMAModeV* am ) {
    return i;
 }
 ARMInstr* ARMInstr_VLdStS ( Bool isLoad, HReg fD, ARMAModeV* am ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag                 = ARMin_VLdStS;
    i->ARMin.VLdStS.isLoad = isLoad;
    i->ARMin.VLdStS.fD     = fD;
@@ -1277,7 +1277,7 @@ ARMInstr* ARMInstr_VLdStS ( Bool isLoad, HReg fD, ARMAModeV* am ) {
    return i;
 }
 ARMInstr* ARMInstr_VAluD ( ARMVfpOp op, HReg dst, HReg argL, HReg argR ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag              = ARMin_VAluD;
    i->ARMin.VAluD.op   = op;
    i->ARMin.VAluD.dst  = dst;
@@ -1286,7 +1286,7 @@ ARMInstr* ARMInstr_VAluD ( ARMVfpOp op, HReg dst, HReg argL, HReg argR ) {
    return i;
 }
 ARMInstr* ARMInstr_VAluS ( ARMVfpOp op, HReg dst, HReg argL, HReg argR ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag              = ARMin_VAluS;
    i->ARMin.VAluS.op   = op;
    i->ARMin.VAluS.dst  = dst;
@@ -1295,7 +1295,7 @@ ARMInstr* ARMInstr_VAluS ( ARMVfpOp op, HReg dst, HReg argL, HReg argR ) {
    return i;
 }
 ARMInstr* ARMInstr_VUnaryD ( ARMVfpUnaryOp op, HReg dst, HReg src ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag               = ARMin_VUnaryD;
    i->ARMin.VUnaryD.op  = op;
    i->ARMin.VUnaryD.dst = dst;
@@ -1303,7 +1303,7 @@ ARMInstr* ARMInstr_VUnaryD ( ARMVfpUnaryOp op, HReg dst, HReg src ) {
    return i;
 }
 ARMInstr* ARMInstr_VUnaryS ( ARMVfpUnaryOp op, HReg dst, HReg src ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag               = ARMin_VUnaryS;
    i->ARMin.VUnaryS.op  = op;
    i->ARMin.VUnaryS.dst = dst;
@@ -1311,14 +1311,14 @@ ARMInstr* ARMInstr_VUnaryS ( ARMVfpUnaryOp op, HReg dst, HReg src ) {
    return i;
 }
 ARMInstr* ARMInstr_VCmpD ( HReg argL, HReg argR ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag              = ARMin_VCmpD;
    i->ARMin.VCmpD.argL = argL;
    i->ARMin.VCmpD.argR = argR;
    return i;
 }
 ARMInstr* ARMInstr_VCMovD ( ARMCondCode cond, HReg dst, HReg src ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag               = ARMin_VCMovD;
    i->ARMin.VCMovD.cond = cond;
    i->ARMin.VCMovD.dst  = dst;
@@ -1327,7 +1327,7 @@ ARMInstr* ARMInstr_VCMovD ( ARMCondCode cond, HReg dst, HReg src ) {
    return i;
 }
 ARMInstr* ARMInstr_VCMovS ( ARMCondCode cond, HReg dst, HReg src ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag               = ARMin_VCMovS;
    i->ARMin.VCMovS.cond = cond;
    i->ARMin.VCMovS.dst  = dst;
@@ -1336,7 +1336,7 @@ ARMInstr* ARMInstr_VCMovS ( ARMCondCode cond, HReg dst, HReg src ) {
    return i;
 }
 ARMInstr* ARMInstr_VCvtSD ( Bool sToD, HReg dst, HReg src ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag               = ARMin_VCvtSD;
    i->ARMin.VCvtSD.sToD = sToD;
    i->ARMin.VCvtSD.dst  = dst;
@@ -1344,7 +1344,7 @@ ARMInstr* ARMInstr_VCvtSD ( Bool sToD, HReg dst, HReg src ) {
    return i;
 }
 ARMInstr* ARMInstr_VXferD ( Bool toD, HReg dD, HReg rHi, HReg rLo ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag              = ARMin_VXferD;
    i->ARMin.VXferD.toD = toD;
    i->ARMin.VXferD.dD  = dD;
@@ -1353,7 +1353,7 @@ ARMInstr* ARMInstr_VXferD ( Bool toD, HReg dD, HReg rHi, HReg rLo ) {
    return i;
 }
 ARMInstr* ARMInstr_VXferS ( Bool toS, HReg fD, HReg rLo ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag              = ARMin_VXferS;
    i->ARMin.VXferS.toS = toS;
    i->ARMin.VXferS.fD  = fD;
@@ -1362,7 +1362,7 @@ ARMInstr* ARMInstr_VXferS ( Bool toS, HReg fD, HReg rLo ) {
 }
 ARMInstr* ARMInstr_VCvtID ( Bool iToD, Bool syned,
                             HReg dst, HReg src ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag                = ARMin_VCvtID;
    i->ARMin.VCvtID.iToD  = iToD;
    i->ARMin.VCvtID.syned = syned;
@@ -1371,25 +1371,25 @@ ARMInstr* ARMInstr_VCvtID ( Bool iToD, Bool syned,
    return i;
 }
 ARMInstr* ARMInstr_FPSCR ( Bool toFPSCR, HReg iReg ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag                 = ARMin_FPSCR;
    i->ARMin.FPSCR.toFPSCR = toFPSCR;
    i->ARMin.FPSCR.iReg    = iReg;
    return i;
 }
 ARMInstr* ARMInstr_MFence ( void ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag      = ARMin_MFence;
    return i;
 }
 ARMInstr* ARMInstr_CLREX( void ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag      = ARMin_CLREX;
    return i;
 }
 
 ARMInstr* ARMInstr_NLdStQ ( Bool isLoad, HReg dQ, ARMAModeN *amode ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag                  = ARMin_NLdStQ;
    i->ARMin.NLdStQ.isLoad  = isLoad;
    i->ARMin.NLdStQ.dQ      = dQ;
@@ -1398,7 +1398,7 @@ ARMInstr* ARMInstr_NLdStQ ( Bool isLoad, HReg dQ, ARMAModeN *amode ) {
 }
 
 ARMInstr* ARMInstr_NLdStD ( Bool isLoad, HReg dD, ARMAModeN *amode ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag                  = ARMin_NLdStD;
    i->ARMin.NLdStD.isLoad  = isLoad;
    i->ARMin.NLdStD.dD      = dD;
@@ -1408,7 +1408,7 @@ ARMInstr* ARMInstr_NLdStD ( Bool isLoad, HReg dD, ARMAModeN *amode ) {
 
 ARMInstr* ARMInstr_NUnary ( ARMNeonUnOp op, HReg dQ, HReg nQ,
                             UInt size, Bool Q ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag                = ARMin_NUnary;
    i->ARMin.NUnary.op   = op;
    i->ARMin.NUnary.src  = nQ;
@@ -1420,7 +1420,7 @@ ARMInstr* ARMInstr_NUnary ( ARMNeonUnOp op, HReg dQ, HReg nQ,
 
 ARMInstr* ARMInstr_NUnaryS ( ARMNeonUnOpS op, ARMNRS* dst, ARMNRS* src,
                              UInt size, Bool Q ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag                = ARMin_NUnaryS;
    i->ARMin.NUnaryS.op   = op;
    i->ARMin.NUnaryS.src  = src;
@@ -1432,7 +1432,7 @@ ARMInstr* ARMInstr_NUnaryS ( ARMNeonUnOpS op, ARMNRS* dst, ARMNRS* src,
 
 ARMInstr* ARMInstr_NDual ( ARMNeonDualOp op, HReg nQ, HReg mQ,
                            UInt size, Bool Q ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag                = ARMin_NDual;
    i->ARMin.NDual.op   = op;
    i->ARMin.NDual.arg1 = nQ;
@@ -1445,7 +1445,7 @@ ARMInstr* ARMInstr_NDual ( ARMNeonDualOp op, HReg nQ, HReg mQ,
 ARMInstr* ARMInstr_NBinary ( ARMNeonBinOp op,
                              HReg dst, HReg argL, HReg argR,
                              UInt size, Bool Q ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag                = ARMin_NBinary;
    i->ARMin.NBinary.op   = op;
    i->ARMin.NBinary.argL = argL;
@@ -1457,7 +1457,7 @@ ARMInstr* ARMInstr_NBinary ( ARMNeonBinOp op,
 }
 
 ARMInstr* ARMInstr_NeonImm (HReg dst, ARMNImm* imm ) {
-   ARMInstr *i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr *i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag         = ARMin_NeonImm;
    i->ARMin.NeonImm.dst = dst;
    i->ARMin.NeonImm.imm = imm;
@@ -1465,7 +1465,7 @@ ARMInstr* ARMInstr_NeonImm (HReg dst, ARMNImm* imm ) {
 }
 
 ARMInstr* ARMInstr_NCMovQ ( ARMCondCode cond, HReg dst, HReg src ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag               = ARMin_NCMovQ;
    i->ARMin.NCMovQ.cond = cond;
    i->ARMin.NCMovQ.dst  = dst;
@@ -1477,7 +1477,7 @@ ARMInstr* ARMInstr_NCMovQ ( ARMCondCode cond, HReg dst, HReg src ) {
 ARMInstr* ARMInstr_NShift ( ARMNeonShiftOp op,
                             HReg dst, HReg argL, HReg argR,
                             UInt size, Bool Q ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag                = ARMin_NShift;
    i->ARMin.NShift.op   = op;
    i->ARMin.NShift.argL = argL;
@@ -1490,7 +1490,7 @@ ARMInstr* ARMInstr_NShift ( ARMNeonShiftOp op,
 
 ARMInstr* ARMInstr_NShl64 ( HReg dst, HReg src, UInt amt )
 {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag              = ARMin_NShl64;
    i->ARMin.NShl64.dst = dst;
    i->ARMin.NShl64.src = src;
@@ -1517,7 +1517,7 @@ static Bool fitsIn8x4 ( UInt* u8, UInt* u4, UInt u )
 
 ARMInstr* ARMInstr_Add32 ( HReg rD, HReg rN, UInt imm32 ) {
    UInt u8, u4;
-   ARMInstr *i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr *i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    /* Try to generate single ADD if possible */
    if (fitsIn8x4(&u8, &u4, imm32)) {
       i->tag            = ARMin_Alu;
@@ -1536,7 +1536,7 @@ ARMInstr* ARMInstr_Add32 ( HReg rD, HReg rN, UInt imm32 ) {
 
 ARMInstr* ARMInstr_EvCheck ( ARMAMode1* amCounter,
                              ARMAMode1* amFailAddr ) {
-   ARMInstr* i                 = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i                 = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag                      = ARMin_EvCheck;
    i->ARMin.EvCheck.amCounter  = amCounter;
    i->ARMin.EvCheck.amFailAddr = amFailAddr;
@@ -1544,7 +1544,7 @@ ARMInstr* ARMInstr_EvCheck ( ARMAMode1* amCounter,
 }
 
 ARMInstr* ARMInstr_ProfInc ( void ) {
-   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag      = ARMin_ProfInc;
    return i;
 }

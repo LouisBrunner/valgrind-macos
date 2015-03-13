@@ -225,7 +225,7 @@ static void ensureRRLRspace ( RRegLR** info, Int* size, Int used )
    if (0)
       vex_printf("ensureRRISpace: %d -> %d\n", *size, 2 * *size);
    vassert(used == *size);
-   arr2 = LibVEX_Alloc(2 * *size * sizeof(RRegLR));
+   arr2 = LibVEX_Alloc_inline(2 * *size * sizeof(RRegLR));
    for (k = 0; k < *size; k++)
       arr2[k] = (*info)[k];
    *size *= 2;
@@ -463,8 +463,8 @@ HInstrArray* doRegisterAllocation (
    /* If this is not so, vreg_state entries will overflow. */
    vassert(n_vregs < 32767);
 
-   rreg_state = LibVEX_Alloc(n_rregs * sizeof(RRegState));
-   vreg_state = LibVEX_Alloc(n_vregs * sizeof(Short));
+   rreg_state = LibVEX_Alloc_inline(n_rregs * sizeof(RRegState));
+   vreg_state = LibVEX_Alloc_inline(n_vregs * sizeof(Short));
 
    for (j = 0; j < n_rregs; j++) {
       rreg_state[j].rreg          = available_real_regs[j];
@@ -492,7 +492,7 @@ HInstrArray* doRegisterAllocation (
 
    vreg_lrs = NULL;
    if (n_vregs > 0)
-      vreg_lrs = LibVEX_Alloc(sizeof(VRegLR) * n_vregs);
+      vreg_lrs = LibVEX_Alloc_inline(sizeof(VRegLR) * n_vregs);
 
    for (j = 0; j < n_vregs; j++) {
       vreg_lrs[j].live_after     = INVALID_INSTRNO;
@@ -512,14 +512,14 @@ HInstrArray* doRegisterAllocation (
 
    rreg_lrs_used = 0;
    rreg_lrs_size = 4;
-   rreg_lrs_la = LibVEX_Alloc(rreg_lrs_size * sizeof(RRegLR));
+   rreg_lrs_la = LibVEX_Alloc_inline(rreg_lrs_size * sizeof(RRegLR));
    rreg_lrs_db = NULL; /* we'll create this later */
 
    /* We'll need to track live range start/end points seperately for
       each rreg.  Sigh. */
    vassert(n_available_real_regs > 0);
-   rreg_live_after  = LibVEX_Alloc(n_available_real_regs * sizeof(Int));
-   rreg_dead_before = LibVEX_Alloc(n_available_real_regs * sizeof(Int));
+   rreg_live_after  = LibVEX_Alloc_inline(n_available_real_regs * sizeof(Int));
+   rreg_dead_before = LibVEX_Alloc_inline(n_available_real_regs * sizeof(Int));
 
    for (j = 0; j < n_available_real_regs; j++) {
       rreg_live_after[j] = 
@@ -745,7 +745,7 @@ HInstrArray* doRegisterAllocation (
 
    /* Finally, copy the _la variant into the _db variant and
       sort both by their respective fields. */
-   rreg_lrs_db = LibVEX_Alloc(rreg_lrs_used * sizeof(RRegLR));
+   rreg_lrs_db = LibVEX_Alloc_inline(rreg_lrs_used * sizeof(RRegLR));
    for (j = 0; j < rreg_lrs_used; j++)
       rreg_lrs_db[j] = rreg_lrs_la[j];
 

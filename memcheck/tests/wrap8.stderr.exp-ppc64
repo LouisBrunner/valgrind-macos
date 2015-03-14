@@ -1,0 +1,15 @@
+Emulation fatal error -- Valgrind cannot continue:
+  PPC64 function redirection stack overflow
+   ...
+   by 0x........: pre (wrap8.c:116)
+   by 0x........: fact2 (wrap8.c:77)
+   by 0x........: fact1 (wrap8.c:49)
+   by 0x........: fact1 (wrap8.c:65)
+   by 0x........: fact2 (wrap8.c:54)
+   by 0x........: fact2 (wrap8.c:79)
+   by 0x........: fact1 (wrap8.c:49)
+   by 0x........: fact1 (wrap8.c:65)
+   by 0x........: fact2 (wrap8.c:54)
+
+Valgrind has to exit now.  Sorry.
+

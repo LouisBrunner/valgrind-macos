@@ -810,6 +810,7 @@ static SyscallTableEntry syscall_table[] = {
    GENX_(__NR_getuid,            sys_getuid),             //  24
 
 // _____(__NR_stime,             sys_stime),              //  25
+// When ptrace is supported, memcheck/tests/linux/getregset should be enabled
 // _____(__NR_ptrace,            sys_ptrace),             //  26
    GENX_(__NR_alarm,             sys_alarm),              //  27
 // _____(__NR_oldfstat,          sys_oldfstat),           //  28

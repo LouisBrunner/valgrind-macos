@@ -44,6 +44,9 @@
 #     This valgrind must be configured with --enable-inner.
 #   --outer-tool: tool to use by the outer valgrind (default memcheck).
 #   --outer-args: use this as outer tool args.
+#   --loop-till-fail: loops on the test(s) till one fail, then exit
+#              This is useful to obtain detailed trace or --keep-unfiltered
+#              output of a non deterministic test failure
 #
 # The easiest way is to run all tests in valgrind/ with (assuming you installed
 # in $PREFIX):
@@ -126,7 +129,8 @@ use strict;
 my $usage="\n"
      . "Usage:\n"
      . "   vg_regtest [--all, --valgrind, --valgrind-lib, --keep-unfiltered\n"
-     . "                 --outer-valgrind, --outer-tool, --outer-args]\n"
+     . "                 --outer-valgrind, --outer-tool, --outer-args\n"
+     . "                 --loop-till-fail]\n"
      . "   Use EXTRA_REGTEST_OPTS to supply extra args for all tests\n"
      . "\n";
 
@@ -170,6 +174,7 @@ my $outer_args;
 
 my $valgrind_lib = "$tests_dir/.in_place";
 my $keepunfiltered = 0;
+my $looptillfail = 0;
 
 # default filter is the one named "filter_stderr" in the test's directory
 my $default_stderr_filter = "filter_stderr";
@@ -226,6 +231,8 @@ sub process_command_line()
                 $valgrind_lib = $1;
             } elsif ($arg =~ /^--keep-unfiltered$/) {
                 $keepunfiltered = 1;
+            } elsif ($arg =~ /^--loop-till-fail$/) {
+                $looptillfail = 1;
             } else {
                 die $usage;
             }
@@ -403,6 +410,10 @@ sub do_diffs($$$$)
     print "*** $name failed ($mid) ***\n";
     push(@failures, sprintf("%-40s ($mid)", "$fullname"));
     $num_failures{$mid}++;
+    if ($looptillfail == 1) {
+       print "Failure encountered, stopping to loop\n";
+       exit 1
+    }
 }
 
 sub do_one_test($$) 
@@ -654,24 +665,29 @@ if ($ENV{"EXTRA_REGTEST_OPTS"}) {
 }
 
 my @fs = process_command_line();
-foreach my $f (@fs) {
-    if (-d $f) {
-        test_one_dir($f, "");
-    } else { 
-        # Allow the .vgtest suffix to be given or omitted
-        if ($f =~ /.vgtest$/ && -r $f) {
-            # do nothing
-        } elsif (-r "$f.vgtest") {
-            $f = "$f.vgtest";
-        } else {
-            die "`$f' neither a directory nor a readable test file/name\n"
+while (1) { # we will exit after one loop, unless looptillfail
+    foreach my $f (@fs) {
+        if (-d $f) {
+            test_one_dir($f, "");
+        } else { 
+            # Allow the .vgtest suffix to be given or omitted
+            if ($f =~ /.vgtest$/ && -r $f) {
+                # do nothing
+            } elsif (-r "$f.vgtest") {
+                $f = "$f.vgtest";
+            } else {
+                die "`$f' neither a directory nor a readable test file/name\n"
+            }
+            my $dir  = `dirname  $f`;   chomp $dir;
+            my $file = `basename $f`;   chomp $file;
+            chdir($dir) or die "Could not change into $dir\n";
+            do_one_test($dir, $file);
         }
-        my $dir  = `dirname  $f`;   chomp $dir;
-        my $file = `basename $f`;   chomp $file;
-        chdir($dir) or die "Could not change into $dir\n";
-        do_one_test($dir, $file);
+        chdir($tests_dir);
     }
-    chdir($tests_dir);
+    if ($looptillfail == 0) {
+        last;
+    }
 }
 summarise_results();
 

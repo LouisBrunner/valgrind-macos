@@ -59,6 +59,10 @@ UInt VG_(clo_num_transtab_sectors) = N_SECTORS_DEFAULT;
    Will be set by VG_(init_tt_tc) to VG_(clo_num_transtab_sectors). */
 static UInt n_sectors = 0;
 
+/* Average size of a transtab code entry. 0 means to use the tool
+   provided default. */
+UInt VG_(clo_avg_transtab_entry_size) = 0;
+
 /*------------------ CONSTANTS ------------------*/
 /* Number of TC entries in each sector.  This needs to be a prime
    number to work properly, it must be <= 65535 (so that a TT index
@@ -2223,7 +2227,10 @@ void VG_(init_tt_tc) ( void )
                    "(startup of code management)\n");
 
    /* Figure out how big each tc area should be.  */
-   avg_codeszQ   = (VG_(details).avg_translation_sizeB + 7) / 8;
+   if (VG_(clo_avg_transtab_entry_size) == 0)
+      avg_codeszQ   = (VG_(details).avg_translation_sizeB + 7) / 8;
+   else
+      avg_codeszQ   = (VG_(clo_avg_transtab_entry_size) + 7) / 8;
    tc_sector_szQ = N_TTES_PER_SECTOR_USABLE * (1 + avg_codeszQ);
 
    /* Ensure the calculated value is not way crazy. */
@@ -2253,6 +2260,13 @@ void VG_(init_tt_tc) ( void )
 
    if (VG_(clo_verbosity) > 2 || VG_(clo_stats)
        || VG_(debugLog_getLevel) () >= 2) {
+      VG_(message)(Vg_DebugMsg,
+         "TT/TC: cache: %s--avg-transtab-entry-size=%d, " 
+         "%stool provided default %d\n",
+         VG_(clo_avg_transtab_entry_size) == 0 ? "ignoring " : "using ",
+         VG_(clo_avg_transtab_entry_size),
+         VG_(clo_avg_transtab_entry_size) == 0 ? "using " : "ignoring ",
+         VG_(details).avg_translation_sizeB);
       VG_(message)(Vg_DebugMsg,
          "TT/TC: cache: %d sectors of %d bytes each = %d total\n", 
           n_sectors, 8 * tc_sector_szQ,

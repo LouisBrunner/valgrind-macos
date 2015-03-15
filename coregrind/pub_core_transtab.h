@@ -56,7 +56,8 @@ extern __attribute__((aligned(16)))
 #define TRANSTAB_BOGUS_GUEST_ADDR ((Addr)1)
 
 
-/* Initialises the TC, using VG_(clo_num_transtab_sectors).
+/* Initialises the TC, using VG_(clo_num_transtab_sectors)
+   and VG_(clo_avg_transtab_entry_size).
    VG_(clo_num_transtab_sectors) must be >= MIN_N_SECTORS
    and <= MAX_N_SECTORS. */
 extern void VG_(init_tt_tc)       ( void );

@@ -310,6 +310,10 @@ extern Int VG_(clo_merge_recursive_frames);
 /* Max number of sectors that will be used by the translation code cache. */
 extern UInt VG_(clo_num_transtab_sectors);
 
+/* Average size of a transtab code entry. 0 means to use the tool
+   provided default. */
+extern UInt VG_(clo_avg_transtab_entry_size);
+
 /* Only client requested fixed mapping can be done below 
    VG_(clo_aspacem_minAddr). */
 extern Addr VG_(clo_aspacem_minAddr);

@@ -2208,7 +2208,7 @@ need to use them.</para>
     </term>
     <listitem>
       <para>Valgrind translates and instruments your program's machine
-      code in small fragments. The translations are stored in a
+      code in small fragments (basic blocks). The translations are stored in a
       translation cache that is divided into a number of sections
       (sectors). If the cache is full, the sector containing the
       oldest translations is emptied and reused. If these old
@@ -2219,10 +2219,33 @@ need to use them.</para>
       performance by reducing the number of re-translations needed.
       Sectors are allocated on demand.  Once allocated, a sector can
       never be freed, and occupies considerable space, depending on the tool
+      and the value of <option>--avg-transtab-entry-size</option>
       (about 40 MB per sector for Memcheck).  Use the
       option <option>--stats=yes</option> to obtain precise
       information about the memory used by a sector and the allocation
       and recycling of sectors.</para>
+   </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.avg-transtab-entry-size" xreflabel="--avg-transtab-entry-size">
+    <term>
+      <option><![CDATA[--avg-transtab-entry-size=<number> [default: 0,
+      meaning use tool provided default] ]]></option>
+    </term>
+    <listitem>
+      <para>Average size of translated basic block. This average size
+      is used to dimension the size of a sector.
+      Each tool provides a default value to be used.
+      If this default value is too small, the translation sectors
+      will become full too quickly. If this default value is too big,
+      a significant part of the translation sector memory will be unused.
+      Note that the average size of a basic block translation depends
+      on the tool, and might depend on tool options. For example,
+      the memcheck option <option>--track-origins=yes</option>
+      increases the size of the basic block translations.
+      Use <option>--avg-transtab-entry-size</option> to tune the size of the
+      sectors, either to gain memory or to avoid too many retranslations.
+      </para>
    </listitem>
   </varlistentry>
 

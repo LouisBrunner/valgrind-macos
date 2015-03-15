@@ -194,6 +194,8 @@ static void usage_NORETURN ( Bool debug_help )
 "           program counters in max <number> frames) [0]\n"
 "    --num-transtab-sectors=<number> size of translated code cache [%d]\n"
 "           more sectors may increase performance, but use more memory.\n"
+"    --avg-transtab-entry-size=<number> avg size in bytes of a translated\n"
+"           basic block [0, meaning use tool provided default]\n"
 "    --aspace-minaddr=0xPP     avoid mapping memory below 0xPP [guessed]\n"
 "    --valgrind-stacksize=<number> size of valgrind (host) thread's stack\n"
 "                               (in bytes) ["
@@ -694,6 +696,9 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
       else if VG_BINT_CLO(arg, "--num-transtab-sectors",
                                VG_(clo_num_transtab_sectors),
                                MIN_N_SECTORS, MAX_N_SECTORS) {}
+      else if VG_BINT_CLO(arg, "--avg-transtab-entry-size",
+                               VG_(clo_avg_transtab_entry_size),
+                               50, 5000) {}
       else if VG_BINT_CLO(arg, "--merge-recursive-frames",
                                VG_(clo_merge_recursive_frames), 0,
                                VG_DEEPEST_BACKTRACE) {}

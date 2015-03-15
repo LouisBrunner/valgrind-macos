@@ -107,6 +107,8 @@ usage: valgrind [options] prog-and-args
            program counters in max <number> frames) [0]
     --num-transtab-sectors=<number> size of translated code cache [16]
            more sectors may increase performance, but use more memory.
+    --avg-transtab-entry-size=<number> avg size in bytes of a translated
+           basic block [0, meaning use tool provided default]
     --aspace-minaddr=0xPP     avoid mapping memory below 0xPP [guessed]
     --valgrind-stacksize=<number> size of valgrind (host) thread's stack
                                (in bytes) [1048576]

@@ -39,6 +39,10 @@ Release 3.11.0 is under development, not yet released.
   Useful to reduce memory use or increase the stack size if Valgrind
   segfaults due to stack exhausted.
 
+* New Option --avg-transtab-entry-size=<number> can be used to tune
+  the size of the translation table sectors, either to gain memory
+  or to avoid too many retranslations.
+
 * Valgrind can be built with Intel's ICC compiler. The required
   compiler version is 14.0 or later.
 

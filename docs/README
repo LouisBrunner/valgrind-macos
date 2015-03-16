@@ -76,47 +76,56 @@ could just build the docs from XML when doing 'make install', which
 would be simpler.
 
 
-The XML Toolchain
-------------------
-I spent some time on the docbook-apps list in order to ascertain
-the most-useful / widely-available / least-fragile / advanced
-toolchain.  Basically, everything has problems of one sort or
-another, so I ended up going with what I felt was the
-least-problematical of the various options.
-
-The maintainer is responsible for ensure the following tools are
-present on his system:
-- xmllint:    using libxml version 20620
-- xsltproc:   Using libxml 20620, libxslt 10114 and libexslt 812
-                (Nb:be sure to use a version based on libxml2 
-                version 2.6.11 or later.  There was a bug in 
-	              xml:base processing in versions before that.)
-- pdfxmltex:  pdfeTeX 3.141592-1.21a-2.2 (Web2C 7.5.4)
-- pdftops:    version 3.00
-- DocBook:    version 4.2
-- bzip2       
-
-A big problem is latency.  Norman Walsh is constantly updating
-DocBook, but the tools tend to lag behind somewhat.  It is
-important that the versions get on with each other.  If you
-decide to upgrade something, then it is your responsibility to
-ascertain whether things still work nicely - this *cannot* be
-assumed.
-
-Print output: if make expires with an error, cat output.
-If you see something like this:
-  ! TeX capacity exceeded, sorry [pool size=436070]
-
-then look at this:
-  http://lists.debian.org/debian-doc/2003/12/msg00020.html
-and modify your texmf files accordingly.
+Notes on building PDF / PS documents
+------------------------------------
+Below are random notes and recollections about how to build PDF / PS
+documents from the XML source at various times on various Linux distros.
 
 
+Notes [Mar 2015]
+----------------
+On Ubuntu 14.04.2 LTS the following is known to work:
 
-Catalog/Stylesheet Location
----------------------------
-/etc/xml/ seems to have become the standard place for catalogs
-in recent distros.
+Required packages:
+texlive
+dblatex
+xsltproc
+xmltex
+docbook-xml
+docbook-xsl
+
+Additional the following lines need to be changed in
+/usr/share/texlive/texmf-dist/tex/latex/oberdiek/epstopdf-base.sty
+around line 450  from
+
+
+\ifETE@prepend
+  \expandafter\PrependGraphicsExtensions
+\else
+  \expandafter\AppendGraphicsExtensions
+\fi
+{.eps}
+
+
+to
+
+
+%% \ifETE@prepend
+%%   \expandafter\PrependGraphicsExtensions
+%% \else
+%%   \expandafter\AppendGraphicsExtensions
+%% \fi
+%% {.eps}
+
+This hack was devised by Mark Wielaard. 
+
+
+Notes [Aug. 2012]
+-----------------
+On Ubuntu 10.04 there was a new capacity-related failure whilst
+building the print docs in the run up to the 3.8.0 release.  This was
+fixed by editing /etc/texmf/texmf.cnf and changing pool_size to
+2000000.
 
 
 Notes [May 2009]
@@ -138,14 +147,6 @@ if it can't find this one:
     /usr/share/xml/docbook/stylesheet/nwalsh/manpages/docbook.xsl
 
 I haven't succeeded in building the print docs.
-
-
-Notes [Aug. 2012]
------------------
-On Ubuntu 10.04 there was a new capacity-related failure whilst
-building the print docs in the run up to the 3.8.0 release.  This was
-fixed by editing /etc/texmf/texmf.cnf and changing pool_size to
-2000000.
 
 
 Notes [Mar. 2007]

@@ -28,10 +28,11 @@ will also attempt to build the documentation.
 
 If you only want to test whether the generated tarball is complete and runs
 regression tests successfully, building documentation is not needed.
-Edit docs/Makefile.am, search for BUILD_ALL_DOCS and follow instructions there.
+
+  make dist BUILD_ALL_DOCS=no
 
 If you insist on building documentation some embarrassing instructions
-can be found in docs/internals/howto_build_documentation.
+can be found in docs/README.
 
 
 Running the regression tests

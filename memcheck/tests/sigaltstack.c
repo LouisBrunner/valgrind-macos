@@ -14,7 +14,7 @@ int main(int argv, char** argc) {
   int res, i;
   stack_t sigstk;
   struct sigaction act;
-  static const int size = SIGSTKSZ*2;
+  static const int size = SIGSTKSZ*4;
   // We give EXEC permissions because this won't work on ppc32 unless you
   // ask for an alt stack with EXEC permissions,
   // since signal returning requires execution of code on the stack.      

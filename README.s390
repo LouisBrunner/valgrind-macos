@@ -11,6 +11,8 @@ Limitations
 -----------
 - 31-bit client programs are not supported.
 - Hexadecimal floating point is not supported.
+- Transactional memory is not supported.
+- Instructions operating on vector registers are not supported.
 - memcheck, cachegrind, drd, helgrind, massif, lackey, and none are
   supported. 
 - On machine models predating z10, cachegrind will assume a z10 cache
@@ -45,6 +47,6 @@ Reading Material
 (1) Linux for zSeries ELF ABI Supplement
     http://refspecs.linuxfoundation.org/ELF/zSeries/index.html
 (2) z/Architecture Principles of Operation
-    http://publibfi.boulder.ibm.com/epubs/pdf/dz9zr009.pdf
+    http://publibfi.boulder.ibm.com/epubs/pdf/dz9zr010.pdf
 (3) z/Architecture Reference Summary
-    http://publibfi.boulder.ibm.com/epubs/pdf/dz9zs007.pdf
+    http://publibfi.boulder.ibm.com/epubs/pdf/dz9zs008.pdf

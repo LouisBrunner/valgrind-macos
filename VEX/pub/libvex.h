@@ -139,7 +139,8 @@ typedef
 #define VEX_S390X_MODEL_Z114     9
 #define VEX_S390X_MODEL_ZEC12    10
 #define VEX_S390X_MODEL_ZBC12    11
-#define VEX_S390X_MODEL_UNKNOWN  12     /* always last in list */
+#define VEX_S390X_MODEL_Z13      12
+#define VEX_S390X_MODEL_UNKNOWN  13     /* always last in list */
 #define VEX_S390X_MODEL_MASK     0x3F
 
 #define VEX_HWCAPS_S390X_LDISP (1<<6)   /* Long-displacement facility */

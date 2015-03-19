@@ -1,0 +1,19 @@
+subject="$1"
+summary="$2"
+diffs="$3"
+
+# Note this drops the mail as file to be picked up by another script
+# that will actually sent it (this machine cannot directly sent email).
+MAILFILE="$HOME/valgrind-results/$(date +%d-%b-%Y.%R)"
+
+echo "Subject: $subject" >> $MAILFILE
+echo "To: valgrind-testresults@lists.sourceforge.net" >> $MAILFILE
+echo "Bcc: valgrind@wildebeest.org" >> $MAILFILE
+echo "  " >> $MAILFILE
+cat "$summary"  >> $MAILFILE
+echo "  " >> $MAILFILE
+cat "$diffs"  >> $MAILFILE
+
+MAILLATEST="$HOME/valgrind-results/latest"
+rm -f $MAILLATEST
+ln -s $MAILFILE $MAILLATEST

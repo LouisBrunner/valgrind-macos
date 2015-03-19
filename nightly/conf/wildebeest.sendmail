@@ -1,0 +1,16 @@
+subject="$1"
+summary="$2"
+diffs="$3"
+
+MAILFILE="/usr/local/build/valgrind/results/$(date +%d-%b-%Y.%R)"
+
+echo "Subject: $subject" > $MAILFILE
+echo "To: valgrind-testresults@lists.sourceforge.net" >> $MAILFILE
+echo "Bcc: valgrind@wildebeest.org" >> $MAILFILE
+echo >> $MAILFILE
+
+cat "$summary"  >> $MAILFILE
+echo "  " >> $MAILFILE
+cat "$diffs"  >> $MAILFILE
+
+/usr/sbin/sendmail -t -i -fmark@builder.wildebeest.org < $MAILFILE

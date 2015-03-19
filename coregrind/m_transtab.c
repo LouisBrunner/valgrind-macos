@@ -64,12 +64,18 @@ static UInt n_sectors = 0;
 UInt VG_(clo_avg_transtab_entry_size) = 0;
 
 /*------------------ CONSTANTS ------------------*/
-/* Number of TC entries in each sector.  This needs to be a prime
-   number to work properly, it must be <= 65535 (so that a TT index
-   fits in a UShort, leaving room for 0xFFFF(EC2TTE_DELETED) to denote
-   'deleted') and it is strongly recommended not to change this.
+/* Number of entries in hash table of each sector.  This needs to be a prime
+   number to work properly, it must be <= 65535 (so that a TTE index
+   fits in a UShort, leaving room for 0xFFFF(EC2TTE_DELETED, HTT_DELETED)
+   to denote 'deleted') and  0xFFFE (HTT_EMPTY) to denote 'Empty' in the
+   hash table.
+   It is strongly recommended not to change this.
    65521 is the largest prime <= 65535. */
-#define N_TTES_PER_SECTOR /*10007*/ /*30011*/ /*40009*/ 65521
+#define N_HTTES_PER_SECTOR /*10007*/ /*30011*/ /*40009*/ 65521
+
+#define EC2TTE_DELETED  0xFFFF /* 16-bit special value */
+#define HTT_DELETED     EC2TTE_DELETED
+#define HTT_EMPTY       0XFFFE
 
 /* Because each sector contains a hash table of TTEntries, we need to
    specify the maximum allowable loading, after which the sector is
@@ -77,8 +83,8 @@ UInt VG_(clo_avg_transtab_entry_size) = 0;
 #define SECTOR_TT_LIMIT_PERCENT 65
 
 /* The sector is deemed full when this many entries are in it. */
-#define N_TTES_PER_SECTOR_USABLE \
-           ((N_TTES_PER_SECTOR * SECTOR_TT_LIMIT_PERCENT) / 100)
+#define N_TTES_PER_SECTOR \
+           ((N_HTTES_PER_SECTOR * SECTOR_TT_LIMIT_PERCENT) / 100)
 
 /* Equivalence classes for fast address range deletion.  There are 1 +
    2^ECLASS_WIDTH bins.  The highest one, ECLASS_MISC, describes an
@@ -89,7 +95,6 @@ UInt VG_(clo_avg_transtab_entry_size) = 0;
 #define ECLASS_MISC  (1 << ECLASS_WIDTH)
 #define ECLASS_N     (1 + ECLASS_MISC)
 
-#define EC2TTE_DELETED  0xFFFF /* 16-bit special value */
 
 
 /*------------------ TYPES ------------------*/
@@ -139,14 +144,19 @@ typedef
    auxiliary info too.  */
 typedef
    struct {
-      /* Profiling only: the count and weight (arbitrary meaning) for
-         this translation.  Weight is a property of the translation
-         itself and computed once when the translation is created.
-         Count is an entry count for the translation and is
-         incremented by 1 every time the translation is used, if we
-         are profiling. */
-      ULong    count;
-      UShort   weight;
+      union {
+         struct {
+            /* Profiling only: the count and weight (arbitrary meaning) for
+               this translation.  Weight is a property of the translation
+               itself and computed once when the translation is created.
+               Count is an entry count for the translation and is
+               incremented by 1 every time the translation is used, if we
+               are profiling. */
+            ULong    count;
+            UShort   weight;
+         } prof; // if status == InUse
+         UInt next_empty_tte; // if status != InUse
+      } usage;
 
       /* Status of the slot.  Note, we need to be able to do lazy
          deletion, hence the Deleted state. */
@@ -300,7 +310,7 @@ typedef
 /* Finally, a sector itself.  Each sector contains an array of
    TCEntries, which hold code, and an array of TTEntries, containing
    all required administrative info.  Profiling is supported using the
-   TTEntry .count and .weight fields, if required.
+   TTEntry usage.prof.count and usage.prof.weight fields, if required.
 
    If the sector is not in use, all three pointers are NULL and
    tt_n_inuse is zero.  
@@ -313,6 +323,11 @@ typedef
          its load limit (SECTOR_TT_LIMIT_PERCENT). */
       ULong* tc;
 
+      /* An hash table, mapping guest address to an entry in the tt array.
+         htt is a fixed size, always containing
+         exactly N_HTTES_PER_SECTOR entries. */
+      UInt htt[N_HTTES_PER_SECTOR];
+
       /* The TTEntry array.  This is a fixed size, always containing
          exactly N_TTES_PER_SECTOR entries. */
       TTEntry* tt;
@@ -322,6 +337,9 @@ typedef
 
       /* The count of tt entries with state InUse. */
       Int tt_n_inuse;
+
+      /* A list of Empty/Deleted entries, chained by tte->next_empty_tte */
+      UInt empty_tt_list;
 
       /* Expandable arrays of tt indices for each of the ECLASS_N
          address range equivalence classes.  These hold indices into
@@ -702,7 +720,7 @@ Bool find_TTEntry_from_hcode( /*OUT*/UInt* from_sNo,
          HostExtent* hx = VG_(indexXA)(host_extents, firstW);
          UInt tteNo = hx->tteNo;
          /* Do some additional sanity checks. */
-         vg_assert(tteNo <= N_TTES_PER_SECTOR);
+         vg_assert(tteNo < N_TTES_PER_SECTOR);
 
          /* if this hx entry corresponds to dead host code, we must
             tell this code has not been found, as it cannot be patched. */
@@ -1100,7 +1118,7 @@ static Bool sanity_check_eclasses_in_sector ( const Sector* sec )
    ULong*   tce;
 
    /* Basic checks on this sector */
-   if (sec->tt_n_inuse < 0 || sec->tt_n_inuse > N_TTES_PER_SECTOR_USABLE)
+   if (sec->tt_n_inuse < 0 || sec->tt_n_inuse > N_TTES_PER_SECTOR)
       BAD("invalid sec->tt_n_inuse");
    tce = sec->tc_next;
    if (tce < &sec->tc[0] || tce > &sec->tc[tc_sector_szQ])
@@ -1163,7 +1181,7 @@ static Bool sanity_check_eclasses_in_sector ( const Sector* sec )
       scan through them and check the TTEntryies they point at point
       back. */
 
-   for (i = 0; i < N_TTES_PER_SECTOR_USABLE; i++) {
+   for (i = 0; i < N_TTES_PER_SECTOR; i++) {
 
       tte = &sec->tt[i];
       if (tte->status == Empty || tte->status == Deleted) {
@@ -1323,7 +1341,7 @@ static inline UInt HASH_TT ( Addr key )
    UInt ror = 7;
    if (ror > 0)
       k32 = (k32 >> ror) | (k32 << (32-ror));
-   return k32 % N_TTES_PER_SECTOR;
+   return k32 % N_HTTES_PER_SECTOR;
 }
 
 static void setFastCacheEntry ( Addr key, ULong* tcptr )
@@ -1354,6 +1372,25 @@ static void invalidateFastCache ( void )
 
    vg_assert(j == VG_TT_FAST_SIZE);
    n_fast_flushes++;
+}
+
+
+static UInt get_empty_tt_slot(UInt sNo)
+{
+   UInt i;
+
+   i = sectors[sNo].empty_tt_list;
+   sectors[sNo].empty_tt_list = sectors[sNo].tt[i].usage.next_empty_tte;
+
+   vg_assert (i >= 0 && i < N_TTES_PER_SECTOR);
+
+   return i;
+}
+
+static void add_in_empty_tt_list (UInt sNo, UInt tteno)
+{
+   sectors[sNo].tt[tteno].usage.next_empty_tte = sectors[sNo].empty_tt_list;
+   sectors[sNo].empty_tt_list = tteno;
 }
 
 static void initialiseSector ( Int sno )
@@ -1401,11 +1438,14 @@ static void initialiseSector ( Int sno )
 	 /*NOTREACHED*/
       }
       sec->tt = (TTEntry*)(Addr)sr_Res(sres);
-
+      sec->empty_tt_list = HTT_EMPTY;
       for (i = 0; i < N_TTES_PER_SECTOR; i++) {
          sec->tt[i].status   = Empty;
          sec->tt[i].n_tte2ec = 0;
+         add_in_empty_tt_list(sno, i);
       }
+      for (i = 0; i < N_HTTES_PER_SECTOR; i++)
+         sec->htt[i] = HTT_EMPTY;
 
       /* Set up the host_extents array. */
       sec->host_extents
@@ -1444,6 +1484,7 @@ static void initialiseSector ( Int sno )
       /* Visit each just-about-to-be-abandoned translation. */
       if (DEBUG_TRANSTAB) VG_(printf)("QQQ unlink-entire-sector: %d START\n",
                                       sno);
+      sec->empty_tt_list = HTT_EMPTY;
       for (i = 0; i < N_TTES_PER_SECTOR; i++) {
          if (sec->tt[i].status == InUse) {
             vg_assert(sec->tt[i].n_tte2ec >= 1);
@@ -1462,7 +1503,11 @@ static void initialiseSector ( Int sno )
          }
          sec->tt[i].status   = Empty;
          sec->tt[i].n_tte2ec = 0;
+         add_in_empty_tt_list(sno, i);
       }
+      for (i = 0; i < N_HTTES_PER_SECTOR; i++)
+         sec->htt[i] = HTT_EMPTY;
+
       if (DEBUG_TRANSTAB) VG_(printf)("QQQ unlink-entire-sector: %d END\n",
                                       sno);
 
@@ -1506,7 +1551,6 @@ static void initialiseSector ( Int sno )
      vg_assert(sane);
    }
 }
-
 
 /* Add a translation of vge to TT/TC.  The translation is temporarily
    in code[0 .. code_len-1].
@@ -1562,14 +1606,14 @@ void VG_(add_to_transtab)( const VexGuestExtents* vge,
    vg_assert(tcAvailQ <= tc_sector_szQ);
 
    if (tcAvailQ < reqdQ 
-       || sectors[y].tt_n_inuse >= N_TTES_PER_SECTOR_USABLE) {
+       || sectors[y].tt_n_inuse >= N_TTES_PER_SECTOR) {
       /* No.  So move on to the next sector.  Either it's never been
          used before, in which case it will get its tt/tc allocated
          now, or it has been used before, in which case it is set to be
          empty, hence throwing out the oldest sector. */
       vg_assert(tc_sector_szQ > 0);
       Int tt_loading_pct = (100 * sectors[y].tt_n_inuse) 
-                           / N_TTES_PER_SECTOR;
+                           / N_HTTES_PER_SECTOR;
       Int tc_loading_pct = (100 * (tc_sector_szQ - tcAvailQ)) 
                            / tc_sector_szQ;
       if (VG_(clo_stats) || VG_(debugLog_getLevel)() >= 1) {
@@ -1592,7 +1636,7 @@ void VG_(add_to_transtab)( const VexGuestExtents* vge,
    vg_assert(tcAvailQ >= 0);
    vg_assert(tcAvailQ <= tc_sector_szQ);
    vg_assert(tcAvailQ >= reqdQ);
-   vg_assert(sectors[y].tt_n_inuse < N_TTES_PER_SECTOR_USABLE);
+   vg_assert(sectors[y].tt_n_inuse < N_TTES_PER_SECTOR);
    vg_assert(sectors[y].tt_n_inuse >= 0);
  
    /* Copy into tc. */
@@ -1613,24 +1657,28 @@ void VG_(add_to_transtab)( const VexGuestExtents* vge,
 
    /* Find an empty tt slot, and use it.  There must be such a slot
       since tt is never allowed to get completely full. */
-   i = HASH_TT(entry);
-   vg_assert(i >= 0 && i < N_TTES_PER_SECTOR);
-   while (True) {
-      if (sectors[y].tt[i].status == Empty
-          || sectors[y].tt[i].status == Deleted)
-         break;
-      i++;
-      if (i >= N_TTES_PER_SECTOR)
-         i = 0;
-   }
-
+   i = get_empty_tt_slot(y);
    TTEntry__init(&sectors[y].tt[i]);
    sectors[y].tt[i].status = InUse;
    sectors[y].tt[i].tcptr  = tcptr;
-   sectors[y].tt[i].count  = 0;
-   sectors[y].tt[i].weight = n_guest_instrs == 0 ? 1 : n_guest_instrs;
+   sectors[y].tt[i].usage.prof.count  = 0;
+   sectors[y].tt[i].usage.prof.weight = 
+      n_guest_instrs == 0 ? 1 : n_guest_instrs;
    sectors[y].tt[i].vge    = *vge;
    sectors[y].tt[i].entry  = entry;
+
+   // Point an htt entry to the tt slot
+   UInt htti = HASH_TT(entry);
+   vg_assert(htti >= 0 && htti < N_HTTES_PER_SECTOR);
+   while (True) {
+      if (sectors[y].htt[htti] == HTT_EMPTY
+          || sectors[y].htt[htti] == HTT_DELETED)
+         break;
+      htti++;
+      if (htti >= N_HTTES_PER_SECTOR)
+         htti = 0;
+   }
+   sectors[y].htt[htti] = i;
 
    /* Patch in the profile counter location, if necessary. */
    if (offs_profInc != -1) {
@@ -1643,7 +1691,7 @@ void VG_(add_to_transtab)( const VexGuestExtents* vge,
       VexInvalRange vir
          = LibVEX_PatchProfInc( arch_host, endness_host,
                                 dstP + offs_profInc,
-                                &sectors[y].tt[i].count );
+                                &sectors[y].tt[i].usage.prof.count );
       VG_(invalidate_icache)( (void*)vir.start, vir.len );
    }
 
@@ -1688,6 +1736,7 @@ Bool VG_(search_transtab) ( /*OUT*/Addr*  res_hcode,
                             Bool          upd_cache )
 {
    Int i, j, k, kstart, sno;
+   UInt tti;
 
    vg_assert(init_done);
    /* Find the initial probe point just once.  It will be the same in
@@ -1695,7 +1744,7 @@ Bool VG_(search_transtab) ( /*OUT*/Addr*  res_hcode,
    n_full_lookups++;
    k      = -1;
    kstart = HASH_TT(guest_addr);
-   vg_assert(kstart >= 0 && kstart < N_TTES_PER_SECTOR);
+   vg_assert(kstart >= 0 && kstart < N_HTTES_PER_SECTOR);
 
    /* Search in all the sectors,using sector_search_order[] as a
       heuristic guide as to what order to visit the sectors. */
@@ -1706,20 +1755,21 @@ Bool VG_(search_transtab) ( /*OUT*/Addr*  res_hcode,
          return False; /* run out of sectors to search */
 
       k = kstart;
-      for (j = 0; j < N_TTES_PER_SECTOR; j++) {
+      for (j = 0; j < N_HTTES_PER_SECTOR; j++) {
          n_lookup_probes++;
-         if (sectors[sno].tt[k].status == InUse
-             && sectors[sno].tt[k].entry == guest_addr) {
+         tti = sectors[sno].htt[k];
+         if (tti < N_TTES_PER_SECTOR
+             && sectors[sno].tt[tti].entry == guest_addr) {
             /* found it */
             if (upd_cache)
                setFastCacheEntry( 
-                  guest_addr, sectors[sno].tt[k].tcptr );
+                  guest_addr, sectors[sno].tt[tti].tcptr );
             if (res_hcode)
-               *res_hcode = (Addr)sectors[sno].tt[k].tcptr;
+               *res_hcode = (Addr)sectors[sno].tt[tti].tcptr;
             if (res_sNo)
                *res_sNo = sno;
             if (res_tteNo)
-               *res_tteNo = k;
+               *res_tteNo = tti;
             /* pull this one one step closer to the front.  For large
                apps this more or less halves the number of required
                probes. */
@@ -1730,10 +1780,11 @@ Bool VG_(search_transtab) ( /*OUT*/Addr*  res_hcode,
             }
             return True;
          }
-         if (sectors[sno].tt[k].status == Empty)
+         // tti is HTT_EMPTY or HTT_DELETED or not the entry of guest_addr
+         if (sectors[sno].htt[k] == HTT_EMPTY)
             break; /* not found in this sector */
          k++;
-         if (k == N_TTES_PER_SECTOR)
+         if (k == N_HTTES_PER_SECTOR)
             k = 0;
       }
 
@@ -1818,8 +1869,25 @@ static void delete_tte ( /*MOD*/Sector* sec, UInt secNo, Int tteno,
    }
 
    /* Now fix up this TTEntry. */
+   /* Mark the entry as deleted in htt.
+      Note: we could avoid the below hash table search by
+      adding a reference from tte to its hash position in tt. */
+   UInt kstart = HASH_TT(tte->entry);
+   UInt k = kstart;
+   UInt j;
+   vg_assert(kstart >= 0 && kstart < N_HTTES_PER_SECTOR);
+   for (j = 0; j < N_HTTES_PER_SECTOR; j++) {
+      if (sec->htt[k] == tteno)
+         break;
+      k++;
+      if (k == N_HTTES_PER_SECTOR)
+         k = 0;
+   }
+   vg_assert(j < N_HTTES_PER_SECTOR);
+   sec->htt[k]   = HTT_DELETED;
    tte->status   = Deleted;
    tte->n_tte2ec = 0;
+   add_in_empty_tt_list(secNo, tteno);
 
    /* Stats .. */
    sec->tt_n_inuse--;
@@ -2231,11 +2299,11 @@ void VG_(init_tt_tc) ( void )
       avg_codeszQ   = (VG_(details).avg_translation_sizeB + 7) / 8;
    else
       avg_codeszQ   = (VG_(clo_avg_transtab_entry_size) + 7) / 8;
-   tc_sector_szQ = N_TTES_PER_SECTOR_USABLE * (1 + avg_codeszQ);
+   tc_sector_szQ = N_TTES_PER_SECTOR * (1 + avg_codeszQ);
 
    /* Ensure the calculated value is not way crazy. */
-   vg_assert(tc_sector_szQ >= 2 * N_TTES_PER_SECTOR_USABLE);
-   vg_assert(tc_sector_szQ <= 100 * N_TTES_PER_SECTOR_USABLE);
+   vg_assert(tc_sector_szQ >= 2 * N_TTES_PER_SECTOR);
+   vg_assert(tc_sector_szQ <= 100 * N_TTES_PER_SECTOR);
 
    n_sectors = VG_(clo_num_transtab_sectors);
    vg_assert(n_sectors >= MIN_N_SECTORS);
@@ -2268,20 +2336,24 @@ void VG_(init_tt_tc) ( void )
          VG_(clo_avg_transtab_entry_size) == 0 ? "using " : "ignoring ",
          VG_(details).avg_translation_sizeB);
       VG_(message)(Vg_DebugMsg,
-         "TT/TC: cache: %d sectors of %d bytes each = %d total\n", 
+         "TT/TC: cache: %d sectors of %d bytes each = %d total TC\n", 
           n_sectors, 8 * tc_sector_szQ,
           n_sectors * 8 * tc_sector_szQ );
       VG_(message)(Vg_DebugMsg,
-         "TT/TC: table: %d tables  of %d bytes each = %d total\n",
-          n_sectors, (int)(N_TTES_PER_SECTOR * sizeof(TTEntry)),
+         "TT/TC: table: %d tables[%d]  of %d bytes each = %d total TT\n",
+          n_sectors, N_TTES_PER_SECTOR,
+          (int)(N_TTES_PER_SECTOR * sizeof(TTEntry)),
           (int)(n_sectors * N_TTES_PER_SECTOR * sizeof(TTEntry)));
       VG_(message)(Vg_DebugMsg,
-         "TT/TC: table: %d entries each = %d total entries"
-                       " max occupancy %d (%d%%)\n",
-         N_TTES_PER_SECTOR,
-         n_sectors * N_TTES_PER_SECTOR,
-         n_sectors * N_TTES_PER_SECTOR_USABLE, 
-         SECTOR_TT_LIMIT_PERCENT );
+         "TT/TC: table: %d tt entries each = %d total tt entries\n",
+         N_TTES_PER_SECTOR, n_sectors * N_TTES_PER_SECTOR);
+      VG_(message)(Vg_DebugMsg,
+         "TT/TC: table: %d htt[%d] of %d bytes each = %d total HTT"
+                       " (htt[%d] %d%% max occup)\n",
+         n_sectors, N_HTTES_PER_SECTOR, 
+         (int)(N_HTTES_PER_SECTOR * sizeof(UInt)),
+         (int)(n_sectors * N_HTTES_PER_SECTOR * sizeof(UInt)),
+         N_HTTES_PER_SECTOR, SECTOR_TT_LIMIT_PERCENT);
    }
 }
 
@@ -2343,7 +2415,7 @@ void VG_(print_tt_tc_stats) ( void )
 
 static ULong score ( const TTEntry* tte )
 {
-   return ((ULong)tte->weight) * ((ULong)tte->count);
+   return ((ULong)tte->usage.prof.weight) * ((ULong)tte->usage.prof.count);
 }
 
 ULong VG_(get_SB_profile) ( SBProfEntry tops[], UInt n_tops )
@@ -2405,7 +2477,7 @@ ULong VG_(get_SB_profile) ( SBProfEntry tops[], UInt n_tops )
       for (i = 0; i < N_TTES_PER_SECTOR; i++) {
          if (sectors[sno].tt[i].status != InUse)
             continue;
-         sectors[sno].tt[i].count = 0;
+         sectors[sno].tt[i].usage.prof.count = 0;
       }
    }
 

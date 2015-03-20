@@ -31,6 +31,7 @@ EXTRA_DIST = \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \
 	ecag.stdout.exp-z10ec ecag.stdout.exp-z196 ecag.stdout.exp-zec12 \
+	ecag.stdout.exp-z13 \
 	op00.stderr.exp1 op00.stderr.exp2 op00.vgtest \
 	fpext_fail.vgtest fpext_fail.stderr.exp fpext_fail.stdout.exp \
 	test.h opcodes.h add.h  and.h  div.h  insert.h dfp_utils.h \

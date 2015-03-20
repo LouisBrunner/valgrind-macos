@@ -382,7 +382,10 @@ typedef
       Creg_ARM_R14,
       Creg_ARM_R7,
       Creg_ARM64_X30,
-      Creg_S390_R14,
+      Creg_S390_IA,
+      Creg_S390_SP,
+      Creg_S390_FP,
+      Creg_S390_LR,
       Creg_MIPS_RA
    }
    CfiReg;

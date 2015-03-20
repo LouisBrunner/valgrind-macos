@@ -2325,7 +2325,7 @@ static Bool summarise_context(/*OUT*/Addr* base,
                                              sizeof(CfiExpr) );
       si_m->ra_how = CFIR_EXPR;
       si_m->ra_off = ML_(CfiExpr_CfiReg)( debuginfo->cfsi_exprs,
-                                          Creg_S390_R14);
+                                          Creg_S390_LR);
    }
 
    /* knock out some obviously stupid cases */
@@ -2467,11 +2467,11 @@ static Int copy_convert_CfiExpr_tree ( XArray*        dstxa,
            return ML_(CfiExpr_CfiReg)( dstxa, Creg_ARM_R15 ); /* correct? */
 #        elif defined(VGA_s390x)
          if (dwreg == SP_REG)
-            return ML_(CfiExpr_CfiReg)( dstxa, Creg_IA_SP );
+            return ML_(CfiExpr_CfiReg)( dstxa, Creg_S390_SP );
          if (dwreg == FP_REG)
-            return ML_(CfiExpr_CfiReg)( dstxa, Creg_IA_BP );
+            return ML_(CfiExpr_CfiReg)( dstxa, Creg_S390_FP );
          if (dwreg == srcuc->ra_reg)
-            return ML_(CfiExpr_CfiReg)( dstxa, Creg_IA_IP ); /* correct? */
+            return ML_(CfiExpr_CfiReg)( dstxa, Creg_S390_IA );
 #        elif defined(VGA_mips32) || defined(VGA_mips64)
          if (dwreg == SP_REG)
             return ML_(CfiExpr_CfiReg)( dstxa, Creg_IA_SP );

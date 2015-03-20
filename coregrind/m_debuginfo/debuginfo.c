@@ -2475,10 +2475,10 @@ UWord evalCfiExpr ( const XArray* exprs, Int ix,
             case Creg_ARM_R12: return eec->uregs->r12;
             case Creg_ARM_R7:  return eec->uregs->r7;
 #           elif defined(VGA_s390x)
-            case Creg_IA_IP: return eec->uregs->ia;
-            case Creg_IA_SP: return eec->uregs->sp;
-            case Creg_IA_BP: return eec->uregs->fp;
-            case Creg_S390_R14: return eec->uregs->lr;
+            case Creg_S390_IA: return eec->uregs->ia;
+            case Creg_S390_SP: return eec->uregs->sp;
+            case Creg_S390_FP: return eec->uregs->fp;
+            case Creg_S390_LR: return eec->uregs->lr;
 #           elif defined(VGA_mips32) || defined(VGA_mips64)
             case Creg_IA_IP: return eec->uregs->pc;
             case Creg_IA_SP: return eec->uregs->sp;

@@ -819,6 +819,7 @@ VG_(debugLog_vprintf) (
       is_sizet = False;
       if (format[i] == 'z') {
          is_sizet = True;
+         ++i;
       } else {
          while (format[i] == 'l') {
             i++;

@@ -1,6 +1,7 @@
 #! /bin/sh
 
-# vg_replace_strmem.c [r]index and [__GI_]str[r]chr are the same.
+# vg_replace_strmem.c [r]index and [_platform_]str[r]chr are the same.
 ./filter_stderr "$@" |
 sed -e "s/: strchr (vg_replace_strmem.c:/: index (vg_replace_strmem.c:/;
+        s/: _platform_strchr (vg_replace_strmem.c:/: index (vg_replace_strmem.c:/;
         s/: strrchr (vg_replace_strmem.c:/: rindex (vg_replace_strmem.c:/"

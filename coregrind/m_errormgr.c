@@ -525,9 +525,6 @@ void do_actions_on_error(const Error* err, Bool allow_db_attach)
 {
    Bool still_noisy = True;
 
-   /* Should be assured by caller */
-   vg_assert( ! VG_(clo_xml) );
-
    /* if user wants to debug from a certain error nr, then wait for gdb/vgdb */
    if (VG_(clo_vgdb) != Vg_VgdbNo
        && allow_db_attach 
@@ -581,9 +578,8 @@ void do_actions_on_error(const Error* err, Bool allow_db_attach)
 
    * prints the tool-specific parts of the message
 
-   * calls do_actions_on_error.  This optionally does a debugger
-     attach (and detach), and optionally prints a suppression; both
-     of these may require user input.
+   * calls do_actions_on_error.  This optionally does a gdbserver call
+     and optionally prints a suppression; both of these may require user input.
 */
 static void pp_Error ( const Error* err, Bool allow_db_attach, Bool xml )
 {
@@ -593,8 +589,6 @@ static void pp_Error ( const Error* err, Bool allow_db_attach, Bool xml )
 
    if (xml) {
 
-      /* Note, allow_db_attach is ignored in here. */
- 
       /* Ensure that suppression generation is either completely
          enabled or completely disabled; either way, we won't require
          any user input.  m_main.process_cmd_line_options should
@@ -646,8 +640,9 @@ static void pp_Error ( const Error* err, Bool allow_db_attach, Bool xml )
       if (VG_(clo_error_markers)[1])
          VG_(umsg)("%s\n", VG_(clo_error_markers)[1]);
 
-      do_actions_on_error(err, allow_db_attach);
    }
+
+   do_actions_on_error(err, allow_db_attach);
 }
 
 

@@ -308,7 +308,8 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
          (*sink_wanted_at_return).fd = initial_valgrind_sink.fd;
          command_output_to_log = False;
          VG_(gdb_printf)
-            ("valgrind output will go to log, interactive output will go to gdb\n");
+            ("valgrind output will go to log, "
+             "interactive output will go to gdb\n");
          break;
       case 6: /* hostvisibility */
          wcmd = strtok_r (NULL, " ", &ssaveptr);
@@ -428,12 +429,13 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
             GDB equivalent command of 'v.info location' is 'info symbol'. */
          Addr address;
          SizeT dummy_sz = 0x1234;
-         if (VG_(strtok_get_address_and_size) (&address, &dummy_sz, &ssaveptr)) {
+         if (VG_(strtok_get_address_and_size) (&address, 
+                                               &dummy_sz, &ssaveptr)) {
             // If tool provides location information, use that.
             if (VG_(needs).info_location) {
                VG_TDICT_CALL(tool_info_location, address);
             } 
-            // If tool does not provide location information, use the common one.
+            // If tool does not provide location info, use the common one.
             // Also use the common to compare with tool when debug log is set.
             if (!VG_(needs).info_location || VG_(debugLog_getLevel)() > 0 ) {
                AddrInfo ai;
@@ -544,6 +546,9 @@ int handle_gdb_monitor_command (char *mon)
    // one we have when entering. It can however be changed by the standard
    // valgrind command handling.
    OutputSink sink_wanted_at_return = VG_(log_output_sink);
+   // When using gdbserver, we temporarily disable xml output.
+   Bool save_clo_xml = VG_(clo_xml);
+   VG_(clo_xml) = False;
 
    if (!initial_valgrind_sink_saved) {
       /* first time we enter here, we save the valgrind default log sink */
@@ -580,6 +585,8 @@ int handle_gdb_monitor_command (char *mon)
 
    /* restore or set the desired output */
    VG_(log_output_sink).fd = sink_wanted_at_return.fd;
+   VG_(clo_xml) = save_clo_xml;
+
    if (ret | tool_ret)
       return 1;
    else

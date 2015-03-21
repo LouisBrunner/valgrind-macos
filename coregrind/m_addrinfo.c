@@ -205,10 +205,9 @@ void VG_(describe_addr) ( Addr a, /*OUT*/AddrInfo* ai )
 
    /* -- last ditch attempt at classification -- */
    sect = VG_(DebugInfo_sect_kind)( &name, a);
-   ai->Addr.SectKind.objname = VG_(strdup)("mc.da.dsname", name);
-
    if (sect != Vg_SectUnknown) {
       ai->tag = Addr_SectKind;
+      ai->Addr.SectKind.objname = VG_(strdup)("mc.da.dsname", name);
       ai->Addr.SectKind.kind = sect;
       return;
    }

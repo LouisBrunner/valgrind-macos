@@ -4070,6 +4070,7 @@ cplus_demangle_print_callback (int options,
   d_print_init (&dpi, callback, opaque, dc);
 
   {
+#if 0 /* in valgrind */
 #ifdef CP_DYNAMIC_ARRAYS
     __extension__ struct d_saved_scope scopes[dpi.num_saved_scopes ?: 1];
     __extension__ struct d_print_template temps[dpi.num_copy_templates ?: 1];
@@ -4082,13 +4083,28 @@ cplus_demangle_print_callback (int options,
     dpi.copy_templates = alloca (dpi.num_copy_templates
 				 * sizeof (*dpi.copy_templates));
 #endif
-
+#else
+    /* Allocate memory dynamically to avoid VLAs as valgrind stack
+       is a scarce resource */
+    dpi.saved_scopes = xmalloc(dpi.num_saved_scopes
+			       * sizeof (*dpi.saved_scopes));
+    dpi.copy_templates = xmalloc (dpi.num_copy_templates
+                                  * sizeof (*dpi.copy_templates));
+#endif /* ! in valgrind */
     d_print_comp (&dpi, options, dc);
   }
 
   d_print_flush (&dpi);
 
-  return ! d_print_saw_error (&dpi);
+  int status = ! d_print_saw_error (&dpi);
+
+#if 0 /* in valgrind */
+#else
+  free (dpi.saved_scopes);
+  free (dpi.copy_templates);
+#endif  /* in valgrind */
+
+  return status;
 }
 
 /* Turn components into a human readable string.  OPTIONS is the
@@ -5863,6 +5879,7 @@ d_demangle_callback (const char *mangled, int options,
   cplus_demangle_init_info (mangled, options, strlen (mangled), &di);
 
   {
+#if 0 /* in valgrind */
 #ifdef CP_DYNAMIC_ARRAYS
     __extension__ struct demangle_component comps[di.num_comps];
     __extension__ struct demangle_component *subs[di.num_subs];
@@ -5873,6 +5890,12 @@ d_demangle_callback (const char *mangled, int options,
     di.comps = alloca (di.num_comps * sizeof (*di.comps));
     di.subs = alloca (di.num_subs * sizeof (*di.subs));
 #endif
+#else
+    /* Allocate memory dynamically to avoid VLAs as valgrind stack
+       is a scarce resource */
+    di.comps = xmalloc (di.num_comps * sizeof (*di.comps));
+    di.subs = xmalloc (di.num_subs * sizeof (*di.subs));
+#endif /* ! in valgrind */
 
     switch (type)
       {
@@ -5912,6 +5935,12 @@ d_demangle_callback (const char *mangled, int options,
              ? cplus_demangle_print_callback (options, dc, callback, opaque)
              : 0;
   }
+
+#if 0 /* in valgrind */
+#else
+  free (di.comps);
+  free (di.subs);
+#endif  /* in valgrind */
 
   return status;
 }
@@ -6144,6 +6173,7 @@ is_ctor_or_dtor (const char *mangled,
   cplus_demangle_init_info (mangled, DMGL_GNU_V3, strlen (mangled), &di);
 
   {
+#if 0 /* in valgrind */
 #ifdef CP_DYNAMIC_ARRAYS
     __extension__ struct demangle_component comps[di.num_comps];
     __extension__ struct demangle_component *subs[di.num_subs];
@@ -6154,7 +6184,12 @@ is_ctor_or_dtor (const char *mangled,
     di.comps = alloca (di.num_comps * sizeof (*di.comps));
     di.subs = alloca (di.num_subs * sizeof (*di.subs));
 #endif
-
+#else
+    /* Allocate memory dynamically to avoid VLAs as valgrind stack
+       is a scarce resource */
+    di.comps = xmalloc (di.num_comps * sizeof (*di.comps));
+    di.subs = xmalloc (di.num_subs * sizeof (*di.subs));
+#endif /* ! in valgrind */
     dc = cplus_demangle_mangled_name (&di, 1);
 
     /* Note that because we did not pass DMGL_PARAMS, we don't expect
@@ -6195,6 +6230,12 @@ is_ctor_or_dtor (const char *mangled,
 	  }
       }
   }
+
+#if 0 /* in valgrind */
+#else
+  free (di.comps);
+  free (di.subs);
+#endif  /* in valgrind */
 
   return ret;
 }

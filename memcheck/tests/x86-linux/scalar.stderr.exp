@@ -4070,7 +4070,7 @@ Syscall param process_vm_writev(rvec) points to unaddressable byte(s)
 -----------------------------------------------------
 9999:                9999 1e
 -----------------------------------------------------
-WARNING: unhandled syscall: 9999
+WARNING: unhandled x86-linux syscall: 9999
 You may be able to write your own handler.
 Read the file README_MISSING_SYSCALL_OR_IOCTL.
 Nevertheless we consider this a bug.  Please report

@@ -1291,8 +1291,8 @@ void bad_before ( ThreadId              tid,
                   /*OUT*/SyscallStatus* status,
                   /*OUT*/UWord*         flags )
 {
-   VG_(dmsg)("WARNING: unhandled syscall: %s\n",
-      VG_SYSNUM_STRING(args->sysno));
+   VG_(dmsg)("WARNING: unhandled %s syscall: %s\n",
+      VG_PLATFORM, VG_SYSNUM_STRING(args->sysno));
    if (VG_(clo_verbosity) > 1) {
       VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
    }

@@ -57,7 +57,7 @@
 UInt VG_(clo_num_transtab_sectors) = N_SECTORS_DEFAULT;
 /* Nr of sectors.
    Will be set by VG_(init_tt_tc) to VG_(clo_num_transtab_sectors). */
-static UInt n_sectors = 0;
+static SECno n_sectors = 0;
 
 /* Average size of a transtab code entry. 0 means to use the tool
    provided default. */
@@ -76,6 +76,9 @@ UInt VG_(clo_avg_transtab_entry_size) = 0;
 #define EC2TTE_DELETED  0xFFFF /* 16-bit special value */
 #define HTT_DELETED     EC2TTE_DELETED
 #define HTT_EMPTY       0XFFFE
+
+// HTTno is the Sector->htt hash table index. Must be the same type as TTEno.
+typedef UShort HTTno;
 
 /* Because each sector contains a hash table of TTEntries, we need to
    specify the maximum allowable loading, after which the sector is
@@ -102,10 +105,10 @@ UInt VG_(clo_avg_transtab_entry_size) = 0;
 /* In edges ("to-me") in the graph created by chaining. */
 typedef
    struct {
-      UInt from_sNo;   /* sector number */
-      UInt from_tteNo; /* TTE number in given sector */
-      UInt from_offs;  /* code offset from TCEntry::tcptr where the patch is */
-      Bool to_fastEP;  /* Is the patch to a fast or slow entry point? */
+      SECno from_sNo;   /* sector number */
+      TTEno from_tteNo; /* TTE number in given sector */
+      UInt  from_offs;  /* code offset from TCEntry::tcptr where the patch is */
+      Bool  to_fastEP;  /* Is the patch to a fast or slow entry point? */
    }
    InEdge;
 
@@ -113,9 +116,9 @@ typedef
 /* Out edges ("from-me") in the graph created by chaining. */
 typedef
    struct {
-      UInt to_sNo;    /* sector number */
-      UInt to_tteNo;  /* TTE number in given sector */
-      UInt from_offs; /* code offset in owning translation where patch is */
+      SECno to_sNo;    /* sector number */
+      TTEno to_tteNo;  /* TTE number in given sector */
+      UInt  from_offs; /* code offset in owning translation where patch is */
    }
    OutEdge;
 
@@ -155,7 +158,7 @@ typedef
             ULong    count;
             UShort   weight;
          } prof; // if status == InUse
-         UInt next_empty_tte; // if status != InUse
+         TTEno next_empty_tte; // if status != InUse
       } usage;
 
       /* Status of the slot.  Note, we need to be able to do lazy
@@ -303,7 +306,7 @@ typedef
    struct {
       UChar* start;
       UInt   len;
-      UInt   tteNo;
+      TTEno  tteNo;
    }
    HostExtent;
 
@@ -323,10 +326,10 @@ typedef
          its load limit (SECTOR_TT_LIMIT_PERCENT). */
       ULong* tc;
 
-      /* An hash table, mapping guest address to an entry in the tt array.
+      /* An hash table, mapping guest address to an index in the tt array.
          htt is a fixed size, always containing
          exactly N_HTTES_PER_SECTOR entries. */
-      UInt htt[N_HTTES_PER_SECTOR];
+      TTEno* htt;
 
       /* The TTEntry array.  This is a fixed size, always containing
          exactly N_TTES_PER_SECTOR entries. */
@@ -339,7 +342,7 @@ typedef
       Int tt_n_inuse;
 
       /* A list of Empty/Deleted entries, chained by tte->next_empty_tte */
-      UInt empty_tt_list;
+      TTEno empty_tt_list;
 
       /* Expandable arrays of tt indices for each of the ECLASS_N
          address range equivalence classes.  These hold indices into
@@ -347,7 +350,7 @@ typedef
          back here. */
       Int     ec2tte_size[ECLASS_N];
       Int     ec2tte_used[ECLASS_N];
-      UShort* ec2tte[ECLASS_N];
+      TTEno*  ec2tte[ECLASS_N];
 
       /* The host extents.  The [start, +len) ranges are constructed
          in strictly non-overlapping order, so we can binary search
@@ -368,11 +371,11 @@ typedef
    endlessly. 
 
    When running, youngest sector should be between >= 0 and <
-   N_TC_SECTORS.  The initial -1 value indicates the TT/TC system is
+   N_TC_SECTORS.  The initial  value indicates the TT/TC system is
    not yet initialised. 
 */
 static Sector sectors[MAX_N_SECTORS];
-static Int    youngest_sector = -1;
+static Int    youngest_sector = INV_SNO;
 
 /* The number of ULongs in each TCEntry area.  This is computed once
    at startup and does not change. */
@@ -382,8 +385,8 @@ static Int    tc_sector_szQ = 0;
 /* A list of sector numbers, in the order which they should be
    searched to find translations.  This is an optimisation to be used
    when searching for translations and should not affect
-   correctness.  -1 denotes "no entry". */
-static Int sector_search_order[MAX_N_SECTORS];
+   correctness.  INV_SNO denotes "no entry". */
+static SECno sector_search_order[MAX_N_SECTORS];
 
 
 /* Fast helper for the TC.  A direct-mapped cache which holds a set of
@@ -461,7 +464,7 @@ static void ttaux_free ( void* p )
 /*--- Chaining support                                      ---*/
 /*-------------------------------------------------------------*/
 
-static inline TTEntry* index_tte ( UInt sNo, UInt tteNo )
+static inline TTEntry* index_tte ( SECno sNo, TTEno tteNo )
 {
    vg_assert(sNo < n_sectors);
    vg_assert(tteNo < N_TTES_PER_SECTOR);
@@ -474,7 +477,7 @@ static inline TTEntry* index_tte ( UInt sNo, UInt tteNo )
 
 static void InEdge__init ( InEdge* ie )
 {
-   ie->from_sNo   = -1; /* invalid */
+   ie->from_sNo   = INV_SNO; /* invalid */
    ie->from_tteNo = 0;
    ie->from_offs  = 0;
    ie->to_fastEP  = False;
@@ -482,7 +485,7 @@ static void InEdge__init ( InEdge* ie )
 
 static void OutEdge__init ( OutEdge* oe )
 {
-   oe->to_sNo    = -1; /* invalid */
+   oe->to_sNo    = INV_SNO; /* invalid */
    oe->to_tteNo  = 0;
    oe->from_offs = 0;
 }
@@ -661,7 +664,7 @@ Int HostExtent__cmpOrd ( const void* v1, const void* v2 )
 static
 Bool HostExtent__is_dead (const HostExtent* hx, const Sector* sec)
 {
-   const UInt tteNo = hx->tteNo;
+   const TTEno tteNo = hx->tteNo;
 #define LDEBUG(m) if (DEBUG_TRANSTAB)                           \
       VG_(printf) (m                                            \
                    " start 0x%p len %u sector %d ttslot %u"     \
@@ -691,16 +694,16 @@ Bool HostExtent__is_dead (const HostExtent* hx, const Sector* sec)
 }
 
 static __attribute__((noinline))
-Bool find_TTEntry_from_hcode( /*OUT*/UInt* from_sNo,
-                              /*OUT*/UInt* from_tteNo,
+Bool find_TTEntry_from_hcode( /*OUT*/SECno* from_sNo,
+                              /*OUT*/TTEno* from_tteNo,
                               void* hcode )
 {
-   Int i;
+   SECno i;
 
    /* Search order logic copied from VG_(search_transtab). */
    for (i = 0; i < n_sectors; i++) {
-      Int sno = sector_search_order[i];
-      if (UNLIKELY(sno == -1))
+      SECno sno = sector_search_order[i];
+      if (UNLIKELY(sno == INV_SNO))
          return False; /* run out of sectors to search */
 
       const Sector* sec = &sectors[sno];
@@ -718,7 +721,7 @@ Bool find_TTEntry_from_hcode( /*OUT*/UInt* from_sNo,
       vg_assert(firstW == lastW); // always true, even if not found
       if (found) {
          HostExtent* hx = VG_(indexXA)(host_extents, firstW);
-         UInt tteNo = hx->tteNo;
+         TTEno tteNo = hx->tteNo;
          /* Do some additional sanity checks. */
          vg_assert(tteNo < N_TTES_PER_SECTOR);
 
@@ -734,7 +737,7 @@ Bool find_TTEntry_from_hcode( /*OUT*/UInt* from_sNo,
          vg_assert((UChar*)sec->tt[tteNo].tcptr <= (UChar*)hcode);
          /* Looks plausible */
          *from_sNo   = sno;
-         *from_tteNo = (UInt)tteNo;
+         *from_tteNo = tteNo;
          return True;
       }
    }
@@ -747,10 +750,10 @@ Bool find_TTEntry_from_hcode( /*OUT*/UInt* from_sNo,
    checking. */
 static Bool is_in_the_main_TC ( const void* hcode )
 {
-   Int i, sno;
+   SECno i, sno;
    for (i = 0; i < n_sectors; i++) {
       sno = sector_search_order[i];
-      if (sno == -1)
+      if (sno == INV_SNO)
          break; /* run out of sectors to search */
       if ((const UChar*)hcode >= (const UChar*)sectors[sno].tc
           && (const UChar*)hcode <= (const UChar*)sectors[sno].tc_next
@@ -765,8 +768,8 @@ static Bool is_in_the_main_TC ( const void* hcode )
    can undo it later, if required.
 */
 void VG_(tt_tc_do_chaining) ( void* from__patch_addr,
-                              UInt  to_sNo,
-                              UInt  to_tteNo,
+                              SECno to_sNo,
+                              TTEno to_tteNo,
                               Bool  to_fastEP )
 {
    /* Get the CPU info established at startup. */
@@ -793,8 +796,8 @@ void VG_(tt_tc_do_chaining) ( void* from__patch_addr,
    /* Find the TTEntry for the from__ code.  This isn't simple since
       we only know the patch address, which is going to be somewhere
       inside the from_ block. */
-   UInt from_sNo   = (UInt)-1;
-   UInt from_tteNo = (UInt)-1;
+   SECno from_sNo   = INV_SNO;
+   TTEno from_tteNo = INV_TTE;
    Bool from_found
       = find_TTEntry_from_hcode( &from_sNo, &from_tteNo,
                                  from__patch_addr );
@@ -896,7 +899,7 @@ static void unchain_one ( VexArch arch_host, VexEndness endness_host,
 static
 void unchain_in_preparation_for_deletion ( VexArch arch_host,
                                            VexEndness endness_host,
-                                           UInt here_sNo, UInt here_tteNo )
+                                           SECno here_sNo, TTEno here_tteNo )
 {
    if (DEBUG_TRANSTAB)
       VG_(printf)("QQQ unchain_in_prep %u.%u...\n", here_sNo, here_tteNo);
@@ -1044,10 +1047,10 @@ Int vexGuestExtents_to_eclasses ( /*OUT*/Int* eclasses,
    this sector.  Returns used location in eclass array. */
 
 static 
-UInt addEClassNo ( /*MOD*/Sector* sec, Int ec, UShort tteno )
+UInt addEClassNo ( /*MOD*/Sector* sec, Int ec, TTEno tteno )
 {
    Int    old_sz, new_sz, i, r;
-   UShort *old_ar, *new_ar;
+   TTEno  *old_ar, *new_ar;
 
    vg_assert(ec >= 0 && ec < ECLASS_N);
    vg_assert(tteno < N_TTES_PER_SECTOR);
@@ -1062,7 +1065,7 @@ UInt addEClassNo ( /*MOD*/Sector* sec, Int ec, UShort tteno )
       old_ar = sec->ec2tte[ec];
       new_sz = old_sz==0 ? 8 : old_sz<64 ? 2*old_sz : (3*old_sz)/2;
       new_ar = ttaux_malloc("transtab.aECN.1",
-                            new_sz * sizeof(UShort));
+                            new_sz * sizeof(TTEno));
       for (i = 0; i < old_sz; i++)
          new_ar[i] = old_ar[i];
       if (old_ar)
@@ -1085,7 +1088,7 @@ UInt addEClassNo ( /*MOD*/Sector* sec, Int ec, UShort tteno )
    eclass entries to 'sec'. */
 
 static 
-void upd_eclasses_after_add ( /*MOD*/Sector* sec, Int tteno )
+void upd_eclasses_after_add ( /*MOD*/Sector* sec, TTEno tteno )
 {
    Int i, r, eclasses[3];
    TTEntry* tte;
@@ -1099,7 +1102,7 @@ void upd_eclasses_after_add ( /*MOD*/Sector* sec, Int tteno )
 
    for (i = 0; i < r; i++) {
       tte->tte2ec_ec[i] = eclasses[i];
-      tte->tte2ec_ix[i] = addEClassNo( sec, eclasses[i], (UShort)tteno );
+      tte->tte2ec_ix[i] = addEClassNo( sec, eclasses[i], tteno );
    }
 }
 
@@ -1114,7 +1117,7 @@ static Bool sanity_check_eclasses_in_sector ( const Sector* sec )
    const HChar* whassup = NULL;
    Int      i, j, k, n, ec_num, ec_idx;
    TTEntry* tte;
-   UShort   tteno;
+   TTEno    tteno;
    ULong*   tce;
 
    /* Basic checks on this sector */
@@ -1181,9 +1184,9 @@ static Bool sanity_check_eclasses_in_sector ( const Sector* sec )
       scan through them and check the TTEntryies they point at point
       back. */
 
-   for (i = 0; i < N_TTES_PER_SECTOR; i++) {
+   for (tteno = 0; tteno < N_TTES_PER_SECTOR; tteno++) {
 
-      tte = &sec->tt[i];
+      tte = &sec->tt[tteno];
       if (tte->status == Empty || tte->status == Deleted) {
          if (tte->n_tte2ec != 0)
             BAD("tte->n_eclasses nonzero for unused tte");
@@ -1202,7 +1205,7 @@ static Bool sanity_check_eclasses_in_sector ( const Sector* sec )
          ec_idx = tte->tte2ec_ix[j];
          if (ec_idx < 0 || ec_idx >= sec->ec2tte_used[ec_num])
             BAD("tte->ec_idx[..] out of range(2)");
-         if (sec->ec2tte[ec_num][ec_idx] != i)
+         if (sec->ec2tte[ec_num][ec_idx] != tteno)
             BAD("ec2tte does not point back to tte");
       }
    }
@@ -1240,25 +1243,26 @@ static Bool sanity_check_redir_tt_tc ( void );
 
 static Bool sanity_check_sector_search_order ( void )
 {
-   Int i, j, nListed;
+   SECno i, j, nListed;
    /* assert the array is the right size */
    vg_assert(MAX_N_SECTORS == (sizeof(sector_search_order) 
                                / sizeof(sector_search_order[0])));
-   /* Check it's of the form  valid_sector_numbers ++ [-1, -1, ..] */
+   /* Check it's of the form  valid_sector_numbers ++ [INV_SNO, INV_SNO, ..] */
    for (i = 0; i < n_sectors; i++) {
-      if (sector_search_order[i] < 0 || sector_search_order[i] >= n_sectors)
+      if (sector_search_order[i] == INV_SNO 
+          || sector_search_order[i] >= n_sectors)
          break;
    }
    nListed = i;
    for (/* */; i < n_sectors; i++) {
-      if (sector_search_order[i] != -1)
+      if (sector_search_order[i] != INV_SNO)
          break;
    }
    if (i != n_sectors)
       return False;
    /* Check each sector number only appears once */
    for (i = 0; i < n_sectors; i++) {
-      if (sector_search_order[i] == -1)
+      if (sector_search_order[i] == INV_SNO)
          continue;
       for (j = i+1; j < n_sectors; j++) {
          if (sector_search_order[j] == sector_search_order[i])
@@ -1278,7 +1282,7 @@ static Bool sanity_check_sector_search_order ( void )
 
 static Bool sanity_check_all_sectors ( void )
 {
-   Int     sno;
+   SECno   sno;
    Bool    sane;
    Sector* sec;
    for (sno = 0; sno < n_sectors; sno++) {
@@ -1299,7 +1303,8 @@ static Bool sanity_check_all_sectors ( void )
       }
       if (nr_not_dead_hx != sec->tt_n_inuse) {
          VG_(debugLog)(0, "transtab",
-                       "nr_not_dead_hx %d sanity fail (expected == in use %d)\n",
+                       "nr_not_dead_hx %d sanity fail "
+                       "(expected == in use %d)\n",
                        nr_not_dead_hx, sec->tt_n_inuse);
          return False;
       }
@@ -1326,14 +1331,14 @@ static UInt vge_osize ( const VexGuestExtents* vge )
    return n;
 }
 
-static Bool isValidSector ( Int sector )
+static Bool isValidSector ( SECno sector )
 {
-   if (sector < 0 || sector >= n_sectors)
+   if (sector == INV_SNO || sector >= n_sectors)
       return False;
    return True;
 }
 
-static inline UInt HASH_TT ( Addr key )
+static inline HTTno HASH_TT ( Addr key )
 {
    UInt kHi = sizeof(Addr) == 4 ? 0 : (key >> 32);
    UInt kLo = (UInt)key;
@@ -1341,7 +1346,7 @@ static inline UInt HASH_TT ( Addr key )
    UInt ror = 7;
    if (ror > 0)
       k32 = (k32 >> ror) | (k32 << (32-ror));
-   return k32 % N_HTTES_PER_SECTOR;
+   return (HTTno)(k32 % N_HTTES_PER_SECTOR);
 }
 
 static void setFastCacheEntry ( Addr key, ULong* tcptr )
@@ -1375,9 +1380,9 @@ static void invalidateFastCache ( void )
 }
 
 
-static UInt get_empty_tt_slot(UInt sNo)
+static TTEno get_empty_tt_slot(SECno sNo)
 {
-   UInt i;
+   TTEno i;
 
    i = sectors[sNo].empty_tt_list;
    sectors[sNo].empty_tt_list = sectors[sNo].tt[i].usage.next_empty_tte;
@@ -1387,15 +1392,15 @@ static UInt get_empty_tt_slot(UInt sNo)
    return i;
 }
 
-static void add_in_empty_tt_list (UInt sNo, UInt tteno)
+static void add_in_empty_tt_list (SECno sNo, TTEno tteno)
 {
    sectors[sNo].tt[tteno].usage.next_empty_tte = sectors[sNo].empty_tt_list;
    sectors[sNo].empty_tt_list = tteno;
 }
 
-static void initialiseSector ( Int sno )
+static void initialiseSector ( SECno sno )
 {
-   Int     i;
+   UInt i;
    SysRes  sres;
    Sector* sec;
    vg_assert(isValidSector(sno));
@@ -1439,13 +1444,22 @@ static void initialiseSector ( Int sno )
       }
       sec->tt = (TTEntry*)(Addr)sr_Res(sres);
       sec->empty_tt_list = HTT_EMPTY;
-      for (i = 0; i < N_TTES_PER_SECTOR; i++) {
-         sec->tt[i].status   = Empty;
-         sec->tt[i].n_tte2ec = 0;
-         add_in_empty_tt_list(sno, i);
+      for (TTEno ei = 0; ei < N_TTES_PER_SECTOR; ei++) {
+         sec->tt[ei].status   = Empty;
+         sec->tt[ei].n_tte2ec = 0;
+         add_in_empty_tt_list(sno, ei);
       }
-      for (i = 0; i < N_HTTES_PER_SECTOR; i++)
-         sec->htt[i] = HTT_EMPTY;
+
+      sres = VG_(am_mmap_anon_float_valgrind)
+                ( N_HTTES_PER_SECTOR * sizeof(TTEno) );
+      if (sr_isError(sres)) {
+         VG_(out_of_memory_NORETURN)("initialiseSector(HTT)", 
+                                     N_HTTES_PER_SECTOR * sizeof(TTEno) );
+	 /*NOTREACHED*/
+      }
+      sec->htt = (TTEno*)(Addr)sr_Res(sres);
+      for (HTTno hi = 0; hi < N_HTTES_PER_SECTOR; hi++)
+         sec->htt[hi] = HTT_EMPTY;
 
       /* Set up the host_extents array. */
       sec->host_extents
@@ -1455,7 +1469,7 @@ static void initialiseSector ( Int sno )
 
       /* Add an entry in the sector_search_order */
       for (i = 0; i < n_sectors; i++) {
-         if (sector_search_order[i] == -1)
+         if (sector_search_order[i] == INV_SNO)
             break;
       }
       vg_assert(i >= 0 && i < n_sectors);
@@ -1485,28 +1499,28 @@ static void initialiseSector ( Int sno )
       if (DEBUG_TRANSTAB) VG_(printf)("QQQ unlink-entire-sector: %d START\n",
                                       sno);
       sec->empty_tt_list = HTT_EMPTY;
-      for (i = 0; i < N_TTES_PER_SECTOR; i++) {
-         if (sec->tt[i].status == InUse) {
-            vg_assert(sec->tt[i].n_tte2ec >= 1);
-            vg_assert(sec->tt[i].n_tte2ec <= 3);
-            n_dump_osize += vge_osize(&sec->tt[i].vge);
+      for (TTEno ei = 0; ei < N_TTES_PER_SECTOR; ei++) {
+         if (sec->tt[ei].status == InUse) {
+            vg_assert(sec->tt[ei].n_tte2ec >= 1);
+            vg_assert(sec->tt[ei].n_tte2ec <= 3);
+            n_dump_osize += vge_osize(&sec->tt[ei].vge);
             /* Tell the tool too. */
             if (VG_(needs).superblock_discards) {
                VG_TDICT_CALL( tool_discard_superblock_info,
-                              sec->tt[i].entry,
-                              sec->tt[i].vge );
+                              sec->tt[ei].entry,
+                              sec->tt[ei].vge );
             }
             unchain_in_preparation_for_deletion(arch_host,
-                                                endness_host, sno, i);
+                                                endness_host, sno, ei);
          } else {
-            vg_assert(sec->tt[i].n_tte2ec == 0);
+            vg_assert(sec->tt[ei].n_tte2ec == 0);
          }
-         sec->tt[i].status   = Empty;
-         sec->tt[i].n_tte2ec = 0;
-         add_in_empty_tt_list(sno, i);
+         sec->tt[ei].status   = Empty;
+         sec->tt[ei].n_tte2ec = 0;
+         add_in_empty_tt_list(sno, ei);
       }
-      for (i = 0; i < N_HTTES_PER_SECTOR; i++)
-         sec->htt[i] = HTT_EMPTY;
+      for (HTTno hi = 0; hi < N_HTTES_PER_SECTOR; hi++)
+         sec->htt[hi] = HTT_EMPTY;
 
       if (DEBUG_TRANSTAB) VG_(printf)("QQQ unlink-entire-sector: %d END\n",
                                       sno);
@@ -1532,11 +1546,12 @@ static void initialiseSector ( Int sno )
 
       /* Sanity check: ensure it is already in
          sector_search_order[]. */
-      for (i = 0; i < n_sectors; i++) {
-         if (sector_search_order[i] == sno)
+      SECno ix;
+      for (ix = 0; ix < n_sectors; ix++) {
+         if (sector_search_order[ix] == sno)
             break;
       }
-      vg_assert(i >= 0 && i < n_sectors);
+      vg_assert(ix >= 0 && ix < n_sectors);
 
       if (VG_(clo_verbosity) > 2)
          VG_(message)(Vg_DebugMsg, "TT/TC: recycle sector %d\n", sno);
@@ -1566,7 +1581,7 @@ void VG_(add_to_transtab)( const VexGuestExtents* vge,
                            Int              offs_profInc,
                            UInt             n_guest_instrs )
 {
-   Int    tcAvailQ, reqdQ, y, i;
+   Int    tcAvailQ, reqdQ, y;
    ULong  *tcptr, *tcptr2;
    UChar* srcP;
    UChar* dstP;
@@ -1657,18 +1672,18 @@ void VG_(add_to_transtab)( const VexGuestExtents* vge,
 
    /* Find an empty tt slot, and use it.  There must be such a slot
       since tt is never allowed to get completely full. */
-   i = get_empty_tt_slot(y);
-   TTEntry__init(&sectors[y].tt[i]);
-   sectors[y].tt[i].status = InUse;
-   sectors[y].tt[i].tcptr  = tcptr;
-   sectors[y].tt[i].usage.prof.count  = 0;
-   sectors[y].tt[i].usage.prof.weight = 
+   TTEno tteix = get_empty_tt_slot(y);
+   TTEntry__init(&sectors[y].tt[tteix]);
+   sectors[y].tt[tteix].status = InUse;
+   sectors[y].tt[tteix].tcptr  = tcptr;
+   sectors[y].tt[tteix].usage.prof.count  = 0;
+   sectors[y].tt[tteix].usage.prof.weight = 
       n_guest_instrs == 0 ? 1 : n_guest_instrs;
-   sectors[y].tt[i].vge    = *vge;
-   sectors[y].tt[i].entry  = entry;
+   sectors[y].tt[tteix].vge    = *vge;
+   sectors[y].tt[tteix].entry  = entry;
 
    // Point an htt entry to the tt slot
-   UInt htti = HASH_TT(entry);
+   HTTno htti = HASH_TT(entry);
    vg_assert(htti >= 0 && htti < N_HTTES_PER_SECTOR);
    while (True) {
       if (sectors[y].htt[htti] == HTT_EMPTY
@@ -1678,7 +1693,7 @@ void VG_(add_to_transtab)( const VexGuestExtents* vge,
       if (htti >= N_HTTES_PER_SECTOR)
          htti = 0;
    }
-   sectors[y].htt[htti] = i;
+   sectors[y].htt[htti] = tteix;
 
    /* Patch in the profile counter location, if necessary. */
    if (offs_profInc != -1) {
@@ -1691,7 +1706,7 @@ void VG_(add_to_transtab)( const VexGuestExtents* vge,
       VexInvalRange vir
          = LibVEX_PatchProfInc( arch_host, endness_host,
                                 dstP + offs_profInc,
-                                &sectors[y].tt[i].usage.prof.count );
+                                &sectors[y].tt[tteix].usage.prof.count );
       VG_(invalidate_icache)( (void*)vir.start, vir.len );
    }
 
@@ -1702,7 +1717,7 @@ void VG_(add_to_transtab)( const VexGuestExtents* vge,
    { HostExtent hx;
      hx.start = (UChar*)tcptr;
      hx.len   = code_len;
-     hx.tteNo = i;
+     hx.tteNo = tteix;
      vg_assert(hx.len > 0); /* bsearch fails w/ zero length entries */
      XArray* hx_array = sectors[y].host_extents;
      vg_assert(hx_array);
@@ -1714,35 +1729,35 @@ void VG_(add_to_transtab)( const VexGuestExtents* vge,
      VG_(addToXA)(hx_array, &hx);
      if (DEBUG_TRANSTAB)
         VG_(printf)("... hx.start 0x%p hx.len %u sector %d ttslot %d\n",
-                    hx.start, hx.len, y, i);
+                    hx.start, hx.len, y, tteix);
    }
 
    /* Update the fast-cache. */
    setFastCacheEntry( entry, tcptr );
 
    /* Note the eclass numbers for this translation. */
-   upd_eclasses_after_add( &sectors[y], i );
+   upd_eclasses_after_add( &sectors[y], tteix );
 }
 
 
 /* Search for the translation of the given guest address.  If
    requested, a successful search can also cause the fast-caches to be
-   updated.  
+   updated.
 */
 Bool VG_(search_transtab) ( /*OUT*/Addr*  res_hcode,
-                            /*OUT*/UInt*  res_sNo,
-                            /*OUT*/UInt*  res_tteNo,
+                            /*OUT*/SECno* res_sNo,
+                            /*OUT*/TTEno* res_tteNo,
                             Addr          guest_addr, 
                             Bool          upd_cache )
 {
-   Int i, j, k, kstart, sno;
-   UInt tti;
+   SECno i, sno;
+   HTTno j, k, kstart;
+   TTEno tti;
 
    vg_assert(init_done);
    /* Find the initial probe point just once.  It will be the same in
       all sectors and avoids multiple expensive % operations. */
    n_full_lookups++;
-   k      = -1;
    kstart = HASH_TT(guest_addr);
    vg_assert(kstart >= 0 && kstart < N_HTTES_PER_SECTOR);
 
@@ -1751,7 +1766,7 @@ Bool VG_(search_transtab) ( /*OUT*/Addr*  res_hcode,
    for (i = 0; i < n_sectors; i++) {
 
       sno = sector_search_order[i];
-      if (UNLIKELY(sno == -1))
+      if (UNLIKELY(sno == INV_SNO))
          return False; /* run out of sectors to search */
 
       k = kstart;
@@ -1838,7 +1853,7 @@ Bool overlaps ( Addr start, ULong range, const VexGuestExtents* vge )
 
 /* Delete a tt entry, and update all the eclass data accordingly. */
 
-static void delete_tte ( /*MOD*/Sector* sec, UInt secNo, Int tteno,
+static void delete_tte ( /*MOD*/Sector* sec, SECno secNo, TTEno tteno,
                          VexArch arch_host, VexEndness endness_host )
 {
    Int      i, ec_num, ec_idx;
@@ -1863,7 +1878,7 @@ static void delete_tte ( /*MOD*/Sector* sec, UInt secNo, Int tteno,
       vg_assert(ec_idx >= 0);
       vg_assert(ec_idx < sec->ec2tte_used[ec_num]);
       /* Assert that the two links point at each other. */
-      vg_assert(sec->ec2tte[ec_num][ec_idx] == (UShort)tteno);
+      vg_assert(sec->ec2tte[ec_num][ec_idx] == tteno);
       /* "delete" the pointer back to here. */
       sec->ec2tte[ec_num][ec_idx] = EC2TTE_DELETED;
    }
@@ -1872,10 +1887,9 @@ static void delete_tte ( /*MOD*/Sector* sec, UInt secNo, Int tteno,
    /* Mark the entry as deleted in htt.
       Note: we could avoid the below hash table search by
       adding a reference from tte to its hash position in tt. */
-   UInt kstart = HASH_TT(tte->entry);
-   UInt k = kstart;
-   UInt j;
-   vg_assert(kstart >= 0 && kstart < N_HTTES_PER_SECTOR);
+   HTTno j;
+   HTTno k = HASH_TT(tte->entry);
+   vg_assert(k >= 0 && k < N_HTTES_PER_SECTOR);
    for (j = 0; j < N_HTTES_PER_SECTOR; j++) {
       if (sec->htt[k] == tteno)
          break;
@@ -1907,14 +1921,14 @@ static void delete_tte ( /*MOD*/Sector* sec, UInt secNo, Int tteno,
    only consider translations in the specified eclass. */
 
 static 
-Bool delete_translations_in_sector_eclass ( /*MOD*/Sector* sec, UInt secNo,
+Bool delete_translations_in_sector_eclass ( /*MOD*/Sector* sec, SECno secNo,
                                             Addr guest_start, ULong range,
                                             Int ec,
                                             VexArch arch_host,
                                             VexEndness endness_host )
 {
    Int      i;
-   UShort   tteno;
+   TTEno    tteno;
    Bool     anyDeld = False;
    TTEntry* tte;
 
@@ -1935,7 +1949,7 @@ Bool delete_translations_in_sector_eclass ( /*MOD*/Sector* sec, UInt secNo,
 
       if (overlaps( guest_start, range, &tte->vge )) {
          anyDeld = True;
-         delete_tte( sec, secNo, (Int)tteno, arch_host, endness_host );
+         delete_tte( sec, secNo, tteno, arch_host, endness_host );
       }
 
    }
@@ -1948,13 +1962,13 @@ Bool delete_translations_in_sector_eclass ( /*MOD*/Sector* sec, UInt secNo,
    slow way, by inspecting all translations in sec. */
 
 static 
-Bool delete_translations_in_sector ( /*MOD*/Sector* sec, UInt secNo,
+Bool delete_translations_in_sector ( /*MOD*/Sector* sec, SECno secNo,
                                      Addr guest_start, ULong range,
                                      VexArch arch_host,
                                      VexEndness endness_host )
 {
-   Int  i;
-   Bool anyDeld = False;
+   TTEno i;
+   Bool  anyDeld = False;
 
    for (i = 0; i < N_TTES_PER_SECTOR; i++) {
       if (sec->tt[i].status == InUse
@@ -1972,7 +1986,8 @@ void VG_(discard_translations) ( Addr guest_start, ULong range,
                                  const HChar* who )
 {
    Sector* sec;
-   Int     sno, ec;
+   SECno   sno;
+   Int     ec;
    Bool    anyDeleted = False;
 
    vg_assert(init_done);
@@ -2071,7 +2086,7 @@ void VG_(discard_translations) ( Addr guest_start, ULong range,
 
    /* Post-deletion sanity check */
    if (VG_(clo_sanity_level >= 4)) {
-      Int      i;
+      TTEno    i;
       TTEntry* tte;
       Bool     sane = sanity_check_all_sectors();
       vg_assert(sane);
@@ -2280,11 +2295,18 @@ void VG_(init_tt_tc) ( void )
 
    /* Otherwise lots of things go wrong... */
    vg_assert(sizeof(ULong) == 8);
+   vg_assert(sizeof(TTEno) == sizeof(HTTno));
+   vg_assert(sizeof(TTEno) == 2);
+   vg_assert(N_TTES_PER_SECTOR <= N_HTTES_PER_SECTOR);
+   vg_assert(N_HTTES_PER_SECTOR < INV_TTE);
+   vg_assert(N_HTTES_PER_SECTOR < EC2TTE_DELETED);
+   vg_assert(N_HTTES_PER_SECTOR < HTT_EMPTY);
    /* check fast cache entries really are 2 words long */
    vg_assert(sizeof(Addr) == sizeof(void*));
    vg_assert(sizeof(FastCacheEntry) == 2 * sizeof(Addr));
    /* check fast cache entries are packed back-to-back with no spaces */
-   vg_assert(sizeof( VG_(tt_fast) ) == VG_TT_FAST_SIZE * sizeof(FastCacheEntry));
+   vg_assert(sizeof( VG_(tt_fast) ) 
+             == VG_TT_FAST_SIZE * sizeof(FastCacheEntry));
    /* check fast cache is aligned as we requested.  Not fatal if it
       isn't, but we might as well make sure. */
    vg_assert(VG_IS_16_ALIGNED( ((Addr) & VG_(tt_fast)[0]) ));
@@ -2318,7 +2340,7 @@ void VG_(init_tt_tc) ( void )
    /* Initialise the sector_search_order hint table, including the
       entries we aren't going to use. */
    for (i = 0; i < MAX_N_SECTORS; i++)
-      sector_search_order[i] = -1;
+      sector_search_order[i] = INV_SNO;
 
    /* Initialise the fast cache. */
    invalidateFastCache();
@@ -2351,8 +2373,8 @@ void VG_(init_tt_tc) ( void )
          "TT/TC: table: %d htt[%d] of %d bytes each = %d total HTT"
                        " (htt[%d] %d%% max occup)\n",
          n_sectors, N_HTTES_PER_SECTOR, 
-         (int)(N_HTTES_PER_SECTOR * sizeof(UInt)),
-         (int)(n_sectors * N_HTTES_PER_SECTOR * sizeof(UInt)),
+         (int)(N_HTTES_PER_SECTOR * sizeof(TTEno)),
+         (int)(n_sectors * N_HTTES_PER_SECTOR * sizeof(TTEno)),
          N_HTTES_PER_SECTOR, SECTOR_TT_LIMIT_PERCENT);
    }
 }
@@ -2420,15 +2442,17 @@ static ULong score ( const TTEntry* tte )
 
 ULong VG_(get_SB_profile) ( SBProfEntry tops[], UInt n_tops )
 {
-   Int   sno, i, r, s;
+   SECno sno;
+   Int   r, s;
    ULong score_total;
+   TTEno i;
 
    /* First, compute the total weighted count, and find the top N
       ttes.  tops contains pointers to the most-used n_tops blocks, in
       descending order (viz, tops[0] is the highest scorer). */
-   for (i = 0; i < n_tops; i++) {
-      tops[i].addr  = 0;
-      tops[i].score = 0;
+   for (s = 0; s < n_tops; s++) {
+      tops[s].addr  = 0;
+      tops[s].score = 0;
    }
 
    score_total = 0;

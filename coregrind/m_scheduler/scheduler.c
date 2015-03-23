@@ -1048,8 +1048,8 @@ void handle_chain_me ( ThreadId tid, void* place_to_chain, Bool toFastEP )
 {
    Bool found          = False;
    Addr ip             = VG_(get_IP)(tid);
-   UInt to_sNo         = (UInt)-1;
-   UInt to_tteNo       = (UInt)-1;
+   SECno to_sNo         = INV_SNO;
+   TTEno to_tteNo       = INV_TTE;
 
    found = VG_(search_transtab)( NULL, &to_sNo, &to_tteNo,
                                  ip, False/*dont_upd_fast_cache*/ );
@@ -1070,8 +1070,8 @@ void handle_chain_me ( ThreadId tid, void* place_to_chain, Bool toFastEP )
       }
    }
    vg_assert(found);
-   vg_assert(to_sNo != -1);
-   vg_assert(to_tteNo != -1);
+   vg_assert(to_sNo != INV_SNO);
+   vg_assert(to_tteNo != INV_TTE);
 
    /* So, finally we know where to patch through to.  Do the patching
       and update the various admin tables that allow it to be undone

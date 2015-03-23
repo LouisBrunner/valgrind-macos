@@ -2239,14 +2239,16 @@ void async_signalhandler ( Int sigNo,
                    "while outside of scheduler");
 }
 
-/* Extend the stack of thread #tid to cover addr.
+/* Extend the stack of thread #tid to cover addr. It is expected that
+   addr either points into an already mapped anonymous segment or into a
+   reservation segment abutting the stack segment. Everything else is a bug.
 
    Returns True on success, False on failure.
 
    Succeeds without doing anything if addr is already within a segment.
 
    Failure could be caused by:
-   - addr not below a growable segment or in a free segment
+   - addr not below a growable segment
    - new stack size would exceed the stack limit for the given thread
    - mmap failed for some other reason
 */
@@ -2256,7 +2258,7 @@ Bool VG_(extend_stack)(ThreadId tid, Addr addr)
 
    /* Get the segment containing addr. */
    const NSegment* seg = VG_(am_find_nsegment)(addr);
-   if (seg == NULL) return False;   // addr in a SkFree segment
+   vg_assert(seg != NULL);
 
    /* TODO: the test "seg->kind == SkAnonC" is really inadequate,
       because although it tests whether the segment is mapped
@@ -2266,11 +2268,8 @@ Bool VG_(extend_stack)(ThreadId tid, Addr addr)
       /* addr is already mapped.  Nothing to do. */
       return True;
 
-   /* Find the next Segment above addr. This will return NULL if ADDR
-      is bogus -- which it may be. See comment at the call site in function
-      VG_(client_syscall) */
    const NSegment* seg_next = VG_(am_next_nsegment)( seg, True/*fwds*/ );
-   if (seg_next == NULL || seg_next->kind != SkAnonC) return False;
+   vg_assert(seg_next != NULL);
 
    udelta = VG_PGROUNDUP(seg_next->start - addr);
 

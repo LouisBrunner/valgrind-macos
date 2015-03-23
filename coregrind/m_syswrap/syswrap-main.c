@@ -1485,16 +1485,22 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
    if (tid == 1/*ROOT THREAD*/) {
       Addr     stackMin   = VG_(get_SP)(tid) - VG_STACK_REDZONE_SZB;
 
-      /* Note, that the stack pointer can be bogus at this point. This is
-         extremely rare. A legitimate testcase that exercises this is 
-         none/tests/s390x/stmg.c:  The stack pointer happens to be in the
-         reservation segment near the end of the addressable memory and
-         there is no SkAnonC segment above.
+      /* The precise thing to do here would be to extend the stack only
+         if the system call can be proven to access unmapped user stack
+         memory. That is an enormous amount of work even if a proper
+         spec of system calls was available. 
 
-         We could do slightly better here by not extending the stack for
-         system calls that do not access user space memory. That's busy
-         work with very little gain... */
-      VG_(extend_stack)( tid, stackMin );   // may fail
+         In the case where the system call does not access user memory
+         the stack pointer here can have any value. A legitimate testcase
+         that exercises this is none/tests/s390x/stmg.c:
+         The stack pointer happens to be in the reservation segment near
+         the end of the addressable memory and there is no SkAnonC segment
+         above.
+
+         So the approximation we're taking here is to extend the stack only
+         if the client stack pointer does not look bogus. */
+      if (! VG_(am_is_bogus_client_stack_pointer)(stackMin))
+         VG_(extend_stack)( tid, stackMin );
    }
 #  endif
    /* END ensure root thread's stack is suitably mapped */

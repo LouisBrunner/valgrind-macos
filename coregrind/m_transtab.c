@@ -2410,7 +2410,7 @@ void VG_(print_tt_tc_stats) ( void )
                 n_in_count, n_in_osize, n_in_tsize,
                 safe_idiv(10*n_in_tsize, n_in_osize),
                 n_in_sc_count,
-                (int) (n_in_tsize / n_in_count));
+                (int) (n_in_tsize / (n_in_count ? n_in_count : 1)));
    VG_(message)(Vg_DebugMsg,
                 " transtab: dumped     %'llu (%'llu -> ?" "?) "
                 "(sectors recycled %'llu)\n",

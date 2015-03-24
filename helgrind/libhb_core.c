@@ -6232,6 +6232,34 @@ void libhb_shutdown ( Bool show_stats )
                    VG_(sizeFM)( vts_set ) );
 
       VG_(printf)("%s","\n");
+      {
+         UInt live = 0;
+         UInt llexit_done = 0;
+         UInt joinedwith_done = 0;
+         UInt llexit_and_joinedwith_done = 0;
+
+         Thread* hgthread = get_admin_threads();
+         tl_assert(hgthread);
+         while (hgthread) {
+            Thr* hbthr = hgthread->hbthr;
+            tl_assert(hbthr);
+            if (hbthr->llexit_done && hbthr->joinedwith_done)
+               llexit_and_joinedwith_done++;
+            else if (hbthr->llexit_done)
+               llexit_done++;
+            else if (hbthr->joinedwith_done)
+               joinedwith_done++;
+            else
+               live++;
+            hgthread = hgthread->admin;
+         }
+         VG_(printf)("   libhb: threads live: %d exit_and_joinedwith %d"
+                     " exit %d joinedwith %d\n",
+                     live, llexit_and_joinedwith_done,
+                     llexit_done, joinedwith_done);
+      }
+
+      VG_(printf)("%s","\n");
       VG_(printf)( "   libhb: ctxt__rcdec: 1=%lu(%lu eq), 2=%lu, 3=%lu\n",
                    stats__ctxt_rcdec1, stats__ctxt_rcdec1_eq,
                    stats__ctxt_rcdec2,

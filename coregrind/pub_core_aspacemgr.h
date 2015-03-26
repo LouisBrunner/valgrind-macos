@@ -61,6 +61,10 @@
    suggested end address (highest addressable byte) for the client's stack. */
 extern Addr VG_(am_startup) ( Addr sp_at_startup );
 
+/* Check whether ADDR is OK to be used as aspacem_minAddr. If not, *ERRMSG
+   will be set to identify what's wrong. ERRMSG may be NULL. */
+extern Bool VG_(am_is_valid_for_aspacem_minAddr)( Addr addr,
+                                                  const HChar **errmsg );
 
 //--------------------------------------------------------------
 // Querying current status

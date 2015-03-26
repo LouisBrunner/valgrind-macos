@@ -1666,21 +1666,13 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
       if VG_BINT_CLO(argv[i], "--redzone-size", VG_(clo_redzone_size),
                      0, MAX_CLO_REDZONE_SZB) {}
       if VG_STR_CLO(argv[i], "--aspace-minaddr", tmp_str) {
-#        if VG_WORDSIZE == 4
-         const Addr max = (Addr) 0x40000000; // 1Gb
-#        else
-         const Addr max = (Addr) 0x200000000; // 8Gb
-#        endif
          Bool ok = VG_(parse_Addr) (&tmp_str, &VG_(clo_aspacem_minAddr));
          if (!ok)
             VG_(fmsg_bad_option)(argv[i], "Invalid address\n");
-
-         if (!VG_IS_PAGE_ALIGNED(VG_(clo_aspacem_minAddr))
-             || VG_(clo_aspacem_minAddr) < (Addr) 0x1000
-             || VG_(clo_aspacem_minAddr) > max) // 1Gb
-            VG_(fmsg_bad_option)(argv[i], 
-                                 "Must be a page aligned address between "
-                                 "0x1000 and 0x%lx\n", max);
+         const HChar *errmsg;
+         if (!VG_(am_is_valid_for_aspacem_minAddr)(VG_(clo_aspacem_minAddr),
+                                                   &errmsg))
+            VG_(fmsg_bad_option)(argv[i], "%s\n", errmsg);
       }
    }
 

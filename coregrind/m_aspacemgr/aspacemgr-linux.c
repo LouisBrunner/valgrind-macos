@@ -1603,6 +1603,30 @@ static void read_maps_callback ( Addr addr, SizeT len, UInt prot,
    add_segment( &seg );
 }
 
+Bool
+VG_(am_is_valid_for_aspacem_minAddr)( Addr addr, const HChar **errmsg )
+{
+   const Addr min = 0x1000;      // 1 page   FIXME: VKI_PAGE_SIZE ?
+#if VG_WORDSIZE == 4
+   const Addr max = 0x40000000;  // 1Gb
+#else
+   const Addr max = 0x200000000; // 8Gb
+#endif
+   Bool ok = VG_IS_PAGE_ALIGNED(addr) && addr >= min && addr <= max;
+
+   if (errmsg) {
+      *errmsg = "";
+      if (! ok) {
+         const HChar fmt[] = "Must be a page aligned address between "
+                             "0x%lx and 0x%lx";
+         static HChar buf[sizeof fmt + 2 * 16];   // large enough
+         ML_(am_sprintf)(buf, fmt, min, max);
+         *errmsg = buf;
+      }
+   }
+   return ok;
+}
+
 /* See description in pub_core_aspacemgr.h */
 Addr VG_(am_startup) ( Addr sp_at_startup )
 {

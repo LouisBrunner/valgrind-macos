@@ -56,13 +56,13 @@ static Bool mode64 = False;
 static Bool fp_mode64 = False;
 
 /* GPR register class for mips32/64 */
-#define HRcGPR(__mode64) (__mode64 ? HRcInt64 : HRcInt32)
+#define HRcGPR(_mode64) ((_mode64) ? HRcInt64 : HRcInt32)
 
 /* FPR register class for mips32/64 */
-#define HRcFPR(__mode64) (__mode64 ? HRcFlt64 : HRcFlt32)
+#define HRcFPR(_mode64) ((_mode64) ? HRcFlt64 : HRcFlt32)
 
 /* guest_COND offset */
-#define COND_OFFSET(__mode64) (__mode64 ? 612 : 448)
+#define COND_OFFSET(_mode64) ((_mode64) ? 612 : 448)
 
 /*---------------------------------------------------------*/
 /*--- ISelEnv                                           ---*/
@@ -168,23 +168,24 @@ static void addInstr(ISelEnv * env, MIPSInstr * instr)
 
 static HReg newVRegI(ISelEnv * env)
 {
-   HReg reg = mkHReg(env->vreg_ctr, HRcGPR(env->mode64),
-                     True /*virtual reg */ );
+   HReg reg = mkHReg(True/*virtual reg*/,
+                     HRcGPR(env->mode64), 0/*enc*/, env->vreg_ctr);
    env->vreg_ctr++;
    return reg;
 }
 
 static HReg newVRegD(ISelEnv * env)
 {
-   HReg reg = mkHReg(env->vreg_ctr, HRcFlt64, True /*virtual reg */ );
+   HReg reg = mkHReg(True/*virtual reg*/,
+                     HRcFlt64, 0/*enc*/, env->vreg_ctr);
    env->vreg_ctr++;
    return reg;
 }
 
 static HReg newVRegF(ISelEnv * env)
 {
-   HReg reg = mkHReg(env->vreg_ctr, HRcFPR(env->fp_mode64),
-                     True /*virtual reg */ );
+   HReg reg = mkHReg(True/*virtual reg*/,
+                     HRcFPR(env->mode64), 0/*enc*/, env->vreg_ctr);
    env->vreg_ctr++;
    return reg;
 }
@@ -4219,36 +4220,36 @@ HInstrArray *iselSB_MIPS ( const IRSB* bb,
          case Ity_I16:
          case Ity_I32:
             if (mode64) {
-               hreg = mkHReg(j++, HRcInt64, True);
+               hreg = mkHReg(True, HRcInt64, 0, j++);
                break;
             } else {
-               hreg = mkHReg(j++, HRcInt32, True);
+               hreg = mkHReg(True, HRcInt32, 0, j++);
                break;
             }
          case Ity_I64:
             if (mode64) {
-               hreg = mkHReg(j++, HRcInt64, True);
+               hreg = mkHReg(True, HRcInt64, 0, j++);
                break;
             } else {
-               hreg = mkHReg(j++, HRcInt32, True);
-               hregHI = mkHReg(j++, HRcInt32, True);
+               hreg   = mkHReg(True, HRcInt32, 0, j++);
+               hregHI = mkHReg(True, HRcInt32, 0, j++);
                break;
             }
          case Ity_I128:
             vassert(mode64);
-            hreg = mkHReg(j++, HRcInt64, True);
-            hregHI = mkHReg(j++, HRcInt64, True);
+            hreg   = mkHReg(True, HRcInt64, 0, j++);
+            hregHI = mkHReg(True, HRcInt64, 0, j++);
             break;
          case Ity_F32:
             if (mode64) {
-               hreg = mkHReg(j++, HRcFlt64, True);
+               hreg = mkHReg(True, HRcFlt64, 0, j++);
                break;
             } else {
-               hreg = mkHReg(j++, HRcFlt32, True);
+               hreg = mkHReg(True, HRcFlt32, 0, j++);
                break;
             }
          case Ity_F64:
-            hreg = mkHReg(j++, HRcFlt64, True);
+            hreg = mkHReg(True, HRcFlt64, 0, j++);
             break;
          default:
             ppIRType(bb->tyenv->types[i]);

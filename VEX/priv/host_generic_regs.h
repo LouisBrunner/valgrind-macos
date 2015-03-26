@@ -45,36 +45,49 @@
 
 /* Host registers.  Stuff to represent:
 
-   - The register number
+   - The register index.  This is a zero-based, sequential index that
+     facilitates indexing into arrays or virtual or real registers.
+     Virtual and real registers both have indices starting at zero.
+     Interpreting a real register index requires having the host's
+     RRegUniverse to hand.
+
+   - The register's hardware encoding.  This applies only for real
+     registers and should be zero for virtual registers.  This is the
+     number as used in a target architecture encoding.
+
    - The register class
+
    - Whether or not the register is a virtual reg.
 
-   Registers are a 32-bit Int, thusly:
+   Registers are sized so as to fit into 32 bits.
 
-     bits 31-28  are the register class.
-     bits 27-23  are 0000b for real register, 0001b for virtual register
-     bits 23-0   register number
-
-   Note (importantly) that by arranging that the class field is never
-   0000b, any valid register looks like an extremely large int -- at
-   least 2^28 -- and so there is little chance of confusing it with an
-   integer array index in the register allocator.
-
-   Note further that since the class field is never 1111b, no valid
-   register can have the value INVALID_HREG.
+   Note that since the class field is never 1111b, no valid register
+   can have the value INVALID_HREG.
 
    There are currently 6 register classes:
 
      int32 int64 float32 float64 simd64 simd128
 */
 
-typedef
-   struct {
-      UInt reg;
-   }
-   HReg;
+/* Registers are represented as 32 bit integers, with the following layout:
 
-/* When extending this, do not use any value > 14 or < 0. */
+   31     30..27  26..20  19..0
+   isV:1  rc:4    enc:7   ix:20
+
+   where
+      UInt      ix:20;   // Zero based index
+      UInt      enc:7;   // Hardware encoding number
+      HRegClass rc:4;    // the register's HRegClass
+      Bool      isV:1;   // is it a virtual register?
+
+   The obvious thing to do here would be to use bitfields.  But gcc
+   seems to have problems constant folding calls to mkHReg() with all
+   4 parameters constant to a 32 bit number, when using bitfields.
+   Hence the use of the traditional shift-and-mask by-hand bitfields
+   instead.
+*/
+typedef  struct { UInt u32; }  HReg;
+
 /* HRegClass describes host register classes which the instruction
    selectors can speak about.  We would not expect all of them to be
    available on any specific host.  For example on x86, the available
@@ -93,7 +106,9 @@ typedef
       HRcVec128    128 bits
 
    If you add another regclass, you must remember to update
-   host_generic_reg_alloc2.c accordingly.
+   host_generic_reg_alloc2.c accordingly.  
+
+   When adding entries to enum HRegClass, do not use any value > 14 or < 1.
 */
 typedef
    enum { 
@@ -113,44 +128,127 @@ extern void ppHRegClass ( HRegClass );
 /* Print an HReg in a generic (non-target-specific) way. */
 extern void ppHReg ( HReg );
 
-/* Construct/destruct. */
-static inline HReg mkHReg ( UInt regno, HRegClass rc, Bool virtual ) {
-   UInt r24 = regno & 0x00FFFFFF;
-   /* This is critical.  The register number field may only
-      occupy 24 bits. */
-   if (r24 != regno)
-      vpanic("mkHReg: regno exceeds 2^24");
+/* Construct.  The goal here is that compiler can fold this down to a
+   constant in the case where the four arguments are constants, which
+   is often the case. */
+static inline HReg mkHReg ( Bool virtual, HRegClass rc, UInt enc, UInt ix )
+{
+   vassert(ix <= 0xFFFFF);
+   vassert(enc <= 0x7F);
+   vassert(((UInt)rc) <= 0xF);
+   vassert(((UInt)virtual) <= 1);
+   if (virtual) vassert(enc == 0);
    HReg r;
-   r.reg = regno | (((UInt)rc) << 28) | (virtual ? (1<<24) : 0);
+   r.u32 = ((((UInt)virtual) & 1)       << 31)  |
+           ((((UInt)rc)      & 0xF)     << 27)  |
+           ((((UInt)enc)     & 0x7F)    << 20)  |
+           ((((UInt)ix)      & 0xFFFFF) << 0);
    return r;
 }
 
-static inline HRegClass hregClass ( HReg r ) {
-   UInt rc = r.reg;
-   rc = (rc >> 28) & 0x0F;
+static inline HRegClass hregClass ( HReg r )
+{
+   HRegClass rc = (HRegClass)((r.u32 >> 27) & 0xF);
    vassert(rc >= HRcInt32 && rc <= HRcVec128);
-   return (HRegClass)rc;
+   return rc;
 }
 
-static inline UInt hregNumber ( HReg r ) {
-   return r.reg & 0x00FFFFFF;
+static inline UInt hregIndex ( HReg r )
+{
+   return r.u32 & 0xFFFFF;
 }
 
-static inline Bool hregIsVirtual ( HReg r ) {
-   return toBool(r.reg & (1<<24));
+static inline UInt hregEncoding ( HReg r )
+{
+   return (r.u32 >> 20) & 0x7F;
+}
+
+static inline Bool hregIsVirtual ( HReg r )
+{
+   return toBool((r.u32 >> 31) & 1);
 }
 
 static inline Bool sameHReg ( HReg r1, HReg r2 )
 {
-   return toBool(r1.reg == r2.reg);
+   return toBool(r1.u32 == r2.u32);
 }
 
-static const HReg INVALID_HREG = { 0xFFFFFFFF };
+static const HReg INVALID_HREG = { .u32 = 0xFFFFFFFF };
 
 static inline Bool hregIsInvalid ( HReg r )
 {
    return sameHReg(r, INVALID_HREG);
 }
+
+
+/*---------------------------------------------------------*/
+/*--- Real register Universes.                          ---*/
+/*---------------------------------------------------------*/
+
+/* A "Real Register Universe" is a read-only structure that contains
+   all information about real registers on a given host.  It serves
+   several purposes:
+
+   * defines the mapping from real register indices to the registers
+     themselves
+
+   * defines the size of the initial section of that mapping that is
+     available to the register allocator for use, so that the register
+     allocator can treat the registers under its control as a zero
+     based, contiguous array.  This is important for its efficiency.
+
+   * gives meaning to RRegSets, which otherwise would merely be a
+     bunch of bits.
+
+   This is a big structure, but it's readonly, and we expect to
+   allocate only one instance for each run of Valgrind.  It is sized
+   so as to be able to deal with up to 64 real registers.  AFAICS none
+   of the back ends actually mention more than 64, despite the fact
+   that many of the host architectures have more than 64 registers
+   when all classes are taken into consideration.
+*/
+
+#define N_RREGUNIVERSE_REGS 64
+
+typedef
+   struct {
+      /* Total number of registers in this universe .. */
+      UInt size;
+      /* .. of which the first |allocable| are available to regalloc. */
+      UInt allocable;
+      /* The registers themselves.  All must be real registers, and
+         all must have their index number (.s.ix) equal to the array
+         index here, since this is the only place where we map index
+         numbers to actual registers. */
+      HReg regs[N_RREGUNIVERSE_REGS];
+   }
+   RRegUniverse;
+
+/* Nominally initialise (zero out) an RRegUniverse. */
+void RRegUniverse__init ( /*OUT*/RRegUniverse* );
+
+/* Check an RRegUniverse is valid, and assert if not.*/
+void RRegUniverse__check_is_sane ( const RRegUniverse* );
+
+/* Print an RRegUniverse, for debugging. */
+void RRegUniverse__show ( const RRegUniverse* );
+
+
+/*---------------------------------------------------------*/
+/*--- Real register sets.                               ---*/
+/*---------------------------------------------------------*/
+
+/* Represents sets of real registers.  |bitset| is interpreted in the
+   context of |univ|.  That is, each bit index |i| in |bitset|
+   corresponds to the register |univ->regs[i]|.  This relies
+   entirely on the fact that N_RREGUNIVERSE_REGS <= 64. */
+typedef
+   struct {
+      ULong         bitset;
+      RRegUniverse* univ;
+   }
+   RRegSet;
+
 
 /*---------------------------------------------------------*/
 /*--- Recording register usage (for reg-alloc)          ---*/
@@ -161,24 +259,36 @@ typedef
    HRegMode;
 
 
-/* A struct for recording the usage of registers in instructions.
-   This can get quite large, but we don't expect to allocate them
-   dynamically, so there's no problem. 
+/* This isn't entirely general, and is specialised towards being fast,
+   for the reg-alloc.  It represents real registers using a bitmask
+   and can also represent up to four virtual registers, in an
+   unordered array.  This is based on the observation that no
+   instruction that we generate can mention more than four registers
+   at once. 
 */
-#define N_HREG_USAGE 25
+#define N_HREGUSAGE_VREGS 5
 
 typedef
    struct {
-      HReg     hreg[N_HREG_USAGE];
-      HRegMode mode[N_HREG_USAGE];
-      Int      n_used;
+      /* The real registers.  The associated universe is not stored
+         here -- callers will have to pass it around separately, as
+         needed. */
+      ULong    rRead;     /* real regs that are read */
+      ULong    rWritten;  /* real regs that are written */
+      /* The virtual registers. */
+      HReg     vRegs[N_HREGUSAGE_VREGS];
+      HRegMode vMode[N_HREGUSAGE_VREGS];
+      UInt     n_vRegs;
    }
    HRegUsage;
 
-extern void ppHRegUsage ( HRegUsage* );
+extern void ppHRegUsage ( const RRegUniverse*, HRegUsage* );
 
-static inline void initHRegUsage ( HRegUsage* tab ) {
-   tab->n_used = 0;
+static inline void initHRegUsage ( HRegUsage* tab )
+{
+   tab->rRead    = 0;
+   tab->rWritten = 0;
+   tab->n_vRegs  = 0;
 }
 
 /* Add a register to a usage table.  Combine incoming read uses with
@@ -187,6 +297,7 @@ static inline void initHRegUsage ( HRegUsage* tab ) {
 */
 extern void addHRegUse ( HRegUsage*, HRegMode, HReg );
 
+extern Bool HRegUsage__contains ( const HRegUsage*, HReg );
 
 
 /*---------------------------------------------------------*/
@@ -211,9 +322,13 @@ typedef
    HRegRemap;
 
 extern void ppHRegRemap     ( HRegRemap* );
-extern void initHRegRemap   ( HRegRemap* );
 extern void addToHRegRemap  ( HRegRemap*, HReg, HReg );
 extern HReg lookupHRegRemap ( HRegRemap*, HReg );
+
+static inline void initHRegRemap ( HRegRemap* map )
+{
+   map->n_used = 0;
+}
 
 
 /*---------------------------------------------------------*/
@@ -242,7 +357,21 @@ typedef
    HInstrArray;
 
 extern HInstrArray* newHInstrArray ( void );
-extern void         addHInstr ( HInstrArray*, HInstr* );
+
+/* Never call this directly.  It's the slow and incomplete path for
+   addHInstr. */
+__attribute__((noinline))
+extern void addHInstr_SLOW ( HInstrArray*, HInstr* );
+
+static inline void addHInstr ( HInstrArray* ha, HInstr* instr )
+{
+   if (LIKELY(ha->arr_used < ha->arr_size)) {
+      ha->arr[ha->arr_used] = instr;
+      ha->arr_used++;
+   } else {
+      addHInstr_SLOW(ha, instr);
+   }
+}
 
 
 /*---------------------------------------------------------*/
@@ -319,10 +448,10 @@ HInstrArray* doRegisterAllocation (
    /* Incoming virtual-registerised code. */ 
    HInstrArray* instrs_in,
 
-   /* An array listing all the real registers the allocator may use,
-      in no particular order. */
-   HReg* available_real_regs,
-   Int   n_available_real_regs,
+   /* The real-register universe to use.  This contains facts about
+      real registers, one of which is the set of registers available
+      for allocation. */
+   const RRegUniverse* univ,
 
    /* Return True iff the given insn is a reg-reg move, in which
       case also return the src and dst regs. */

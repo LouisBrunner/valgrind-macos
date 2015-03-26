@@ -215,26 +215,31 @@ lookupIRTemp128(HReg *hi, HReg *lo, ISelEnv *env, IRTemp tmp)
 }
 
 
-/* Allocate a new integer register */
-static HReg
+/* Allocate a new virtual integer register */
+static __inline__ HReg
+mkVRegI(UInt ix)
+{
+   return mkHReg(/*virtual*/True, HRcInt64, /*encoding*/0, ix);
+}
+
+static __inline__ HReg
 newVRegI(ISelEnv *env)
 {
-   HReg reg = mkHReg(env->vreg_ctr, HRcInt64, True /* virtual */ );
-   env->vreg_ctr++;
-
-   return reg;
+   return mkVRegI(env->vreg_ctr++);
 }
 
 
-/* Allocate a new floating point register */
-static HReg
+/* Allocate a new virtual floating point register */
+static __inline__ HReg
+mkVRegF(UInt ix)
+{
+   return mkHReg(/*virtual*/True, HRcFlt64, /*encoding*/0, ix);
+}
+
+static __inline__ HReg
 newVRegF(ISelEnv *env)
 {
-   HReg reg = mkHReg(env->vreg_ctr, HRcFlt64, True /* virtual */ );
-
-   env->vreg_ctr++;
-
-   return reg;
+   return mkVRegF(env->vreg_ctr++);
 }
 
 
@@ -242,7 +247,7 @@ newVRegF(ISelEnv *env)
 static __inline__ HReg
 make_gpr(UInt regno)
 {
-   return mkHReg(regno, HRcInt64, False /* virtual */ );
+   return s390_hreg_gpr(regno);
 }
 
 
@@ -250,7 +255,7 @@ make_gpr(UInt regno)
 static __inline__ HReg
 make_fpr(UInt regno)
 {
-   return mkHReg(regno, HRcFlt64, False /* virtual */ );
+   return s390_hreg_fpr(regno);
 }
 
 
@@ -4109,29 +4114,26 @@ iselSB_S390(const IRSB *bb, VexArch arch_host, const VexArchInfo *archinfo_host,
       case Ity_I8:
       case Ity_I16:
       case Ity_I32:
-         hreg = mkHReg(j++, HRcInt64, True);
-         break;
-
       case Ity_I64:
-         hreg   = mkHReg(j++, HRcInt64, True);
+         hreg = mkVRegI(j++);
          break;
 
       case Ity_I128:
-         hreg   = mkHReg(j++, HRcInt64, True);
-         hregHI = mkHReg(j++, HRcInt64, True);
+         hreg   = mkVRegI(j++);
+         hregHI = mkVRegI(j++);
          break;
 
       case Ity_F32:
       case Ity_F64:
       case Ity_D32:
       case Ity_D64:
-         hreg = mkHReg(j++, HRcFlt64, True);
+         hreg = mkVRegF(j++);
          break;
 
       case Ity_F128:
       case Ity_D128:
-         hreg   = mkHReg(j++, HRcFlt64, True);
-         hregHI = mkHReg(j++, HRcFlt64, True);
+         hreg   = mkVRegF(j++);
+         hregHI = mkVRegF(j++);
          break;
 
       case Ity_V128: /* fall through */

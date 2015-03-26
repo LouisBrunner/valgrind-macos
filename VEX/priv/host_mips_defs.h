@@ -35,133 +35,105 @@
 #include "libvex.h"             /* VexArch */
 #include "host_generic_regs.h"  /* HReg */
 
-/* Num registers used for function calls */
-#if defined(VGP_mips32_linux)
-/* a0, a1, a2, a3 */
-#define MIPS_N_REGPARMS 4
-#else
-/* a0, a1, a2, a3, a4, a5, a6, a7 */
-#define MIPS_N_REGPARMS 8
-#endif
+
 /* --------- Registers. --------- */
 
-/* The usual HReg abstraction.
-   There are 32 general purpose regs.
-*/
+#define ST_IN static inline
 
-extern void ppHRegMIPS(HReg, Bool);
+#define GPR(_mode64, _enc, _ix64, _ix32) \
+  mkHReg(False,  (_mode64) ? HRcInt64 : HRcInt32, \
+         (_enc), (_mode64) ? (_ix64) : (_ix32))
 
-extern HReg hregMIPS_GPR0(Bool mode64);  /* scratch reg / zero reg */
-extern HReg hregMIPS_GPR1(Bool mode64);
-extern HReg hregMIPS_GPR2(Bool mode64);
-extern HReg hregMIPS_GPR3(Bool mode64);
-extern HReg hregMIPS_GPR4(Bool mode64);
-extern HReg hregMIPS_GPR5(Bool mode64);
-extern HReg hregMIPS_GPR6(Bool mode64);
-extern HReg hregMIPS_GPR7(Bool mode64);
-extern HReg hregMIPS_GPR8(Bool mode64);
-extern HReg hregMIPS_GPR9(Bool mode64);
-extern HReg hregMIPS_GPR10(Bool mode64);
-extern HReg hregMIPS_GPR11(Bool mode64);
-extern HReg hregMIPS_GPR12(Bool mode64);
-extern HReg hregMIPS_GPR13(Bool mode64);
-extern HReg hregMIPS_GPR14(Bool mode64);
-extern HReg hregMIPS_GPR15(Bool mode64);
-extern HReg hregMIPS_GPR16(Bool mode64);
-extern HReg hregMIPS_GPR17(Bool mode64);
-extern HReg hregMIPS_GPR18(Bool mode64);
-extern HReg hregMIPS_GPR19(Bool mode64);
-extern HReg hregMIPS_GPR20(Bool mode64);
-extern HReg hregMIPS_GPR21(Bool mode64);
-extern HReg hregMIPS_GPR22(Bool mode64);
-extern HReg hregMIPS_GPR23(Bool mode64);  /* GuestStatePtr */
-extern HReg hregMIPS_GPR24(Bool mode64);
-extern HReg hregMIPS_GPR25(Bool mode64);
-extern HReg hregMIPS_GPR26(Bool mode64);
-extern HReg hregMIPS_GPR27(Bool mode64);
-extern HReg hregMIPS_GPR28(Bool mode64);
-extern HReg hregMIPS_GPR29(Bool mode64);
-extern HReg hregMIPS_GPR30(Bool mode64);
-extern HReg hregMIPS_GPR31(Bool mode64);
-extern HReg hregMIPS_PC(Bool mode64);
+#define FR(_mode64, _enc, _ix64, _ix32) \
+  mkHReg(False,  (_mode64) ? HRcFlt64 : HRcFlt32, \
+         (_enc), (_mode64) ? (_ix64) : (_ix32))
 
-extern HReg hregMIPS_HI(Bool mode64);
-extern HReg hregMIPS_LO(Bool mode64);
+#define DR(_mode64, _enc, _ix64, _ix32) \
+  mkHReg(False,  HRcFlt64, \
+         (_enc), (_mode64) ? (_ix64) : (_ix32))
 
-extern HReg hregMIPS_F0(Bool mode64);
-extern HReg hregMIPS_F1(Bool mode64);
-extern HReg hregMIPS_F2(Bool mode64);
-extern HReg hregMIPS_F3(Bool mode64);
-extern HReg hregMIPS_F4(Bool mode64);
-extern HReg hregMIPS_F5(Bool mode64);
-extern HReg hregMIPS_F6(Bool mode64);
-extern HReg hregMIPS_F7(Bool mode64);
-extern HReg hregMIPS_F8(Bool mode64);
-extern HReg hregMIPS_F9(Bool mode64);
-extern HReg hregMIPS_F10(Bool mode64);
-extern HReg hregMIPS_F11(Bool mode64);
-extern HReg hregMIPS_F12(Bool mode64);
-extern HReg hregMIPS_F13(Bool mode64);
-extern HReg hregMIPS_F14(Bool mode64);
-extern HReg hregMIPS_F15(Bool mode64);
-extern HReg hregMIPS_F16(Bool mode64);
-extern HReg hregMIPS_F17(Bool mode64);
-extern HReg hregMIPS_F18(Bool mode64);
-extern HReg hregMIPS_F19(Bool mode64);
-extern HReg hregMIPS_F20(Bool mode64);
-extern HReg hregMIPS_F21(Bool mode64);
-extern HReg hregMIPS_F22(Bool mode64);
-extern HReg hregMIPS_F23(Bool mode64);
-extern HReg hregMIPS_F24(Bool mode64);
-extern HReg hregMIPS_F25(Bool mode64);
-extern HReg hregMIPS_F26(Bool mode64);
-extern HReg hregMIPS_F27(Bool mode64);
-extern HReg hregMIPS_F28(Bool mode64);
-extern HReg hregMIPS_F29(Bool mode64);
-extern HReg hregMIPS_F30(Bool mode64);
-extern HReg hregMIPS_F31(Bool mode64);
-extern HReg hregMIPS_FIR(void);
-extern HReg hregMIPS_FCCR(void);
-extern HReg hregMIPS_FEXR(void);
-extern HReg hregMIPS_FENR(void);
-extern HReg hregMIPS_FCSR(void);
-extern HReg hregMIPS_COND(void);
+ST_IN HReg hregMIPS_GPR16 ( Bool mode64 ) { return GPR(mode64, 16,  0,  0); }
+ST_IN HReg hregMIPS_GPR17 ( Bool mode64 ) { return GPR(mode64, 17,  1,  1); }
+ST_IN HReg hregMIPS_GPR18 ( Bool mode64 ) { return GPR(mode64, 18,  2,  2); }
+ST_IN HReg hregMIPS_GPR19 ( Bool mode64 ) { return GPR(mode64, 19,  3,  3); }
+ST_IN HReg hregMIPS_GPR20 ( Bool mode64 ) { return GPR(mode64, 20,  4,  4); }
+ST_IN HReg hregMIPS_GPR21 ( Bool mode64 ) { return GPR(mode64, 21,  5,  5); }
+ST_IN HReg hregMIPS_GPR22 ( Bool mode64 ) { return GPR(mode64, 22,  6,  6); }
 
-extern HReg hregMIPS_D0(void);
-extern HReg hregMIPS_D1(void);
-extern HReg hregMIPS_D2(void);
-extern HReg hregMIPS_D3(void);
-extern HReg hregMIPS_D4(void);
-extern HReg hregMIPS_D5(void);
-extern HReg hregMIPS_D6(void);
-extern HReg hregMIPS_D7(void);
-extern HReg hregMIPS_D8(void);
-extern HReg hregMIPS_D9(void);
-extern HReg hregMIPS_D10(void);
-extern HReg hregMIPS_D11(void);
-extern HReg hregMIPS_D12(void);
-extern HReg hregMIPS_D13(void);
-extern HReg hregMIPS_D14(void);
-extern HReg hregMIPS_D15(void);
+ST_IN HReg hregMIPS_GPR12 ( Bool mode64 ) { return GPR(mode64, 12,  7,  7); }
+ST_IN HReg hregMIPS_GPR13 ( Bool mode64 ) { return GPR(mode64, 13,  8,  8); }
+ST_IN HReg hregMIPS_GPR14 ( Bool mode64 ) { return GPR(mode64, 14,  9,  9); }
+ST_IN HReg hregMIPS_GPR15 ( Bool mode64 ) { return GPR(mode64, 15, 10, 10); }
+ST_IN HReg hregMIPS_GPR24 ( Bool mode64 ) { return GPR(mode64, 24, 11, 11); }
+
+ST_IN HReg hregMIPS_F16   ( Bool mode64 ) { return FR (mode64, 16, 12, 12); }
+ST_IN HReg hregMIPS_F18   ( Bool mode64 ) { return FR (mode64, 18, 13, 13); }
+ST_IN HReg hregMIPS_F20   ( Bool mode64 ) { return FR (mode64, 20, 14, 14); }
+ST_IN HReg hregMIPS_F22   ( Bool mode64 ) { return FR (mode64, 22, 15, 15); }
+ST_IN HReg hregMIPS_F24   ( Bool mode64 ) { return FR (mode64, 24, 16, 16); }
+ST_IN HReg hregMIPS_F26   ( Bool mode64 ) { return FR (mode64, 26, 17, 17); }
+ST_IN HReg hregMIPS_F28   ( Bool mode64 ) { return FR (mode64, 28, 18, 18); }
+ST_IN HReg hregMIPS_F30   ( Bool mode64 ) { return FR (mode64, 30, 19, 19); }
+
+// DRs are only allocatable in 32-bit mode, so the 64-bit index numbering
+// doesn't advance here.
+ST_IN HReg hregMIPS_D0    ( Bool mode64 ) { vassert(!mode64);
+                                            return DR (mode64,  0,  0, 20); }
+ST_IN HReg hregMIPS_D1    ( Bool mode64 ) { vassert(!mode64);
+                                            return DR (mode64,  2,  0, 21); }
+ST_IN HReg hregMIPS_D2    ( Bool mode64 ) { vassert(!mode64);
+                                            return DR (mode64,  4,  0, 22); }
+ST_IN HReg hregMIPS_D3    ( Bool mode64 ) { vassert(!mode64);
+                                            return DR (mode64,  6,  0, 23); }
+ST_IN HReg hregMIPS_D4    ( Bool mode64 ) { vassert(!mode64);
+                                            return DR (mode64,  8,  0, 24); }
+ST_IN HReg hregMIPS_D5    ( Bool mode64 ) { vassert(!mode64);
+                                            return DR (mode64, 10,  0, 25); }
+ST_IN HReg hregMIPS_D6    ( Bool mode64 ) { vassert(!mode64);
+                                            return DR (mode64, 12,  0, 26); }
+ST_IN HReg hregMIPS_D7    ( Bool mode64 ) { vassert(!mode64);
+                                            return DR (mode64, 14,  0, 27); }
+
+ST_IN HReg hregMIPS_HI    ( Bool mode64 ) { return FR (mode64, 33, 20, 28); }
+ST_IN HReg hregMIPS_LO    ( Bool mode64 ) { return FR (mode64, 34, 21, 29); }
+
+ST_IN HReg hregMIPS_GPR0  ( Bool mode64 ) { return GPR(mode64,  0, 22, 30); }
+ST_IN HReg hregMIPS_GPR1  ( Bool mode64 ) { return GPR(mode64,  1, 23, 31); }
+ST_IN HReg hregMIPS_GPR2  ( Bool mode64 ) { return GPR(mode64,  2, 24, 32); }
+ST_IN HReg hregMIPS_GPR3  ( Bool mode64 ) { return GPR(mode64,  3, 25, 33); }
+ST_IN HReg hregMIPS_GPR4  ( Bool mode64 ) { return GPR(mode64,  4, 26, 34); }
+ST_IN HReg hregMIPS_GPR5  ( Bool mode64 ) { return GPR(mode64,  5, 27, 35); }
+ST_IN HReg hregMIPS_GPR6  ( Bool mode64 ) { return GPR(mode64,  6, 28, 36); }
+ST_IN HReg hregMIPS_GPR7  ( Bool mode64 ) { return GPR(mode64,  7, 29, 37); }
+ST_IN HReg hregMIPS_GPR8  ( Bool mode64 ) { return GPR(mode64,  8, 30, 38); }
+ST_IN HReg hregMIPS_GPR9  ( Bool mode64 ) { return GPR(mode64,  9, 31, 39); }
+ST_IN HReg hregMIPS_GPR10 ( Bool mode64 ) { return GPR(mode64, 10, 32, 40); }
+ST_IN HReg hregMIPS_GPR11 ( Bool mode64 ) { return GPR(mode64, 11, 33, 41); }
+ST_IN HReg hregMIPS_GPR23 ( Bool mode64 ) { return GPR(mode64, 23, 34, 42); }
+ST_IN HReg hregMIPS_GPR25 ( Bool mode64 ) { return GPR(mode64, 25, 35, 43); }
+ST_IN HReg hregMIPS_GPR29 ( Bool mode64 ) { return GPR(mode64, 29, 36, 44); }
+ST_IN HReg hregMIPS_GPR31 ( Bool mode64 ) { return GPR(mode64, 31, 37, 45); }
+
+#undef ST_IN
+#undef GPR
+#undef FR
+#undef DR
 
 #define GuestStatePointer(_mode64)     hregMIPS_GPR23(_mode64)
-
 #define StackFramePointer(_mode64)     hregMIPS_GPR30(_mode64)
-#define LinkRegister(_mode64)          hregMIPS_GPR31(_mode64)
 #define StackPointer(_mode64)          hregMIPS_GPR29(_mode64)
-#define FCSR()                         hregMIPS_FCSR()
-#define COND()                         hregMIPS_COND()
 
-#define HIRegister(_mode64)        hregMIPS_HI(_mode64)
-#define LORegister(_mode64)        hregMIPS_LO(_mode64)
-
-#if defined(VGP_mips64_linux)
-/* a0, a1, a2, a3, a4, a5, a6, a7 */
-#define MIPS_N_ARGREGS 8
-#elif defined(VGP_mips32_linux)
-/* a0, a1, a2, a3 */
-#define MIPS_N_ARGREGS 4
+/* Num registers used for function calls */
+#if defined(VGP_mips32_linux)
+  /* a0, a1, a2, a3 */
+# define MIPS_N_REGPARMS 4
+#else
+  /* a0, a1, a2, a3, a4, a5, a6, a7 */
+# define MIPS_N_REGPARMS 8
 #endif
+
+extern void ppHRegMIPS ( HReg, Bool );
+
 
 /* --------- Condition codes, Intel encoding. --------- */
 typedef enum {
@@ -726,7 +698,8 @@ extern void genSpill_MIPS ( /*OUT*/ HInstr ** i1, /*OUT*/ HInstr ** i2,
 extern void genReload_MIPS( /*OUT*/ HInstr ** i1, /*OUT*/ HInstr ** i2,
                             HReg rreg, Int offset, Bool);
 
-extern void        getAllocableRegs_MIPS (Int *, HReg **, Bool mode64);
+extern const RRegUniverse* getRRegUniverse_MIPS ( Bool mode64 );
+
 extern HInstrArray *iselSB_MIPS          ( const IRSB*,
                                            VexArch,
                                            const VexArchInfo*,

@@ -40,120 +40,89 @@
 #include "libvex.h"                      // VexArch
 #include "host_generic_regs.h"           // HReg
 
-/* Num registers used for function calls */
-#define PPC_N_REGPARMS 8
-
 
 /* --------- Registers. --------- */
 
-/* The usual HReg abstraction.  There are 32 real int regs,
-   32 real float regs, and 32 real vector regs. 
-*/
+#define ST_IN static inline
 
-extern void ppHRegPPC ( HReg );
+#define GPR(_mode64, _enc, _ix64, _ix32) \
+  mkHReg(False,  (_mode64) ? HRcInt64 : HRcInt32, \
+         (_enc), (_mode64) ? (_ix64) : (_ix32))
 
-extern HReg hregPPC_GPR0  ( Bool mode64 ); // scratch reg / zero reg
-extern HReg hregPPC_GPR1  ( Bool mode64 ); // Stack Frame Pointer
-extern HReg hregPPC_GPR2  ( Bool mode64 ); // not used: TOC pointer
-extern HReg hregPPC_GPR3  ( Bool mode64 );
-extern HReg hregPPC_GPR4  ( Bool mode64 );
-extern HReg hregPPC_GPR5  ( Bool mode64 );
-extern HReg hregPPC_GPR6  ( Bool mode64 );
-extern HReg hregPPC_GPR7  ( Bool mode64 );
-extern HReg hregPPC_GPR8  ( Bool mode64 );
-extern HReg hregPPC_GPR9  ( Bool mode64 );
-extern HReg hregPPC_GPR10 ( Bool mode64 );
-extern HReg hregPPC_GPR11 ( Bool mode64 );
-extern HReg hregPPC_GPR12 ( Bool mode64 );
-extern HReg hregPPC_GPR13 ( Bool mode64 );
-extern HReg hregPPC_GPR14 ( Bool mode64 );
-extern HReg hregPPC_GPR15 ( Bool mode64 );
-extern HReg hregPPC_GPR16 ( Bool mode64 );
-extern HReg hregPPC_GPR17 ( Bool mode64 );
-extern HReg hregPPC_GPR18 ( Bool mode64 );
-extern HReg hregPPC_GPR19 ( Bool mode64 );
-extern HReg hregPPC_GPR20 ( Bool mode64 );
-extern HReg hregPPC_GPR21 ( Bool mode64 );
-extern HReg hregPPC_GPR22 ( Bool mode64 );
-extern HReg hregPPC_GPR23 ( Bool mode64 );
-extern HReg hregPPC_GPR24 ( Bool mode64 );
-extern HReg hregPPC_GPR25 ( Bool mode64 );
-extern HReg hregPPC_GPR26 ( Bool mode64 );
-extern HReg hregPPC_GPR27 ( Bool mode64 );
-extern HReg hregPPC_GPR28 ( Bool mode64 );
-extern HReg hregPPC_GPR29 ( Bool mode64 ); // reserved for dispatcher
-extern HReg hregPPC_GPR30 ( Bool mode64 ); // used as VMX spill temp
-extern HReg hregPPC_GPR31 ( Bool mode64 ); // GuestStatePtr (callee-saved)
+#define FPR(_mode64, _enc, _ix64, _ix32) \
+  mkHReg(False,  HRcFlt64, \
+         (_enc), (_mode64) ? (_ix64) : (_ix32))
 
-extern HReg hregPPC_FPR0  ( void );
-extern HReg hregPPC_FPR1  ( void );
-extern HReg hregPPC_FPR2  ( void );
-extern HReg hregPPC_FPR3  ( void );
-extern HReg hregPPC_FPR4  ( void );
-extern HReg hregPPC_FPR5  ( void );
-extern HReg hregPPC_FPR6  ( void );
-extern HReg hregPPC_FPR7  ( void );
-extern HReg hregPPC_FPR8  ( void );
-extern HReg hregPPC_FPR9  ( void );
-extern HReg hregPPC_FPR10 ( void );
-extern HReg hregPPC_FPR11 ( void );
-extern HReg hregPPC_FPR12 ( void );
-extern HReg hregPPC_FPR13 ( void );
-extern HReg hregPPC_FPR14 ( void );
-extern HReg hregPPC_FPR15 ( void );
-extern HReg hregPPC_FPR16 ( void );
-extern HReg hregPPC_FPR17 ( void );
-extern HReg hregPPC_FPR18 ( void );
-extern HReg hregPPC_FPR19 ( void );
-extern HReg hregPPC_FPR20 ( void );
-extern HReg hregPPC_FPR21 ( void );
-extern HReg hregPPC_FPR22 ( void );
-extern HReg hregPPC_FPR23 ( void );
-extern HReg hregPPC_FPR24 ( void );
-extern HReg hregPPC_FPR25 ( void );
-extern HReg hregPPC_FPR26 ( void );
-extern HReg hregPPC_FPR27 ( void );
-extern HReg hregPPC_FPR28 ( void );
-extern HReg hregPPC_FPR29 ( void );
-extern HReg hregPPC_FPR30 ( void );
-extern HReg hregPPC_FPR31 ( void );
+#define VR(_mode64, _enc, _ix64, _ix32) \
+  mkHReg(False,  HRcVec128, \
+         (_enc), (_mode64) ? (_ix64) : (_ix32))
 
-extern HReg hregPPC_VR0  ( void );
-extern HReg hregPPC_VR1  ( void );
-extern HReg hregPPC_VR2  ( void );
-extern HReg hregPPC_VR3  ( void );
-extern HReg hregPPC_VR4  ( void );
-extern HReg hregPPC_VR5  ( void );
-extern HReg hregPPC_VR6  ( void );
-extern HReg hregPPC_VR7  ( void );
-extern HReg hregPPC_VR8  ( void );
-extern HReg hregPPC_VR9  ( void );
-extern HReg hregPPC_VR10 ( void );
-extern HReg hregPPC_VR11 ( void );
-extern HReg hregPPC_VR12 ( void );
-extern HReg hregPPC_VR13 ( void );
-extern HReg hregPPC_VR14 ( void );
-extern HReg hregPPC_VR15 ( void );
-extern HReg hregPPC_VR16 ( void );
-extern HReg hregPPC_VR17 ( void );
-extern HReg hregPPC_VR18 ( void );
-extern HReg hregPPC_VR19 ( void );
-extern HReg hregPPC_VR20 ( void );
-extern HReg hregPPC_VR21 ( void );
-extern HReg hregPPC_VR22 ( void );
-extern HReg hregPPC_VR23 ( void );
-extern HReg hregPPC_VR24 ( void );
-extern HReg hregPPC_VR25 ( void );
-extern HReg hregPPC_VR26 ( void );
-extern HReg hregPPC_VR27 ( void );
-extern HReg hregPPC_VR28 ( void );
-extern HReg hregPPC_VR29 ( void );
-extern HReg hregPPC_VR30 ( void );
-extern HReg hregPPC_VR31 ( void );
+ST_IN HReg hregPPC_GPR3  ( Bool mode64 ) { return GPR(mode64,  3,   0,  0); }
+ST_IN HReg hregPPC_GPR4  ( Bool mode64 ) { return GPR(mode64,  4,   1,  1); }
+ST_IN HReg hregPPC_GPR5  ( Bool mode64 ) { return GPR(mode64,  5,   2,  2); }
+ST_IN HReg hregPPC_GPR6  ( Bool mode64 ) { return GPR(mode64,  6,   3,  3); }
+ST_IN HReg hregPPC_GPR7  ( Bool mode64 ) { return GPR(mode64,  7,   4,  4); }
+ST_IN HReg hregPPC_GPR8  ( Bool mode64 ) { return GPR(mode64,  8,   5,  5); }
+ST_IN HReg hregPPC_GPR9  ( Bool mode64 ) { return GPR(mode64,  9,   6,  6); }
+ST_IN HReg hregPPC_GPR10 ( Bool mode64 ) { return GPR(mode64, 10,   7,  7); }
+
+// r11 and r12 are only allocatable in 32-bit mode.  Hence the 64-bit
+// index numbering doesn't advance for these two.
+ST_IN HReg hregPPC_GPR11 ( Bool mode64 ) { return GPR(mode64, 11,   0,  8); }
+ST_IN HReg hregPPC_GPR12 ( Bool mode64 ) { return GPR(mode64, 12,   0,  9); }
+
+ST_IN HReg hregPPC_GPR14 ( Bool mode64 ) { return GPR(mode64, 14,   8, 10); }
+ST_IN HReg hregPPC_GPR15 ( Bool mode64 ) { return GPR(mode64, 15,   9, 11); }
+ST_IN HReg hregPPC_GPR16 ( Bool mode64 ) { return GPR(mode64, 16,  10, 12); }
+ST_IN HReg hregPPC_GPR17 ( Bool mode64 ) { return GPR(mode64, 17,  11, 13); }
+ST_IN HReg hregPPC_GPR18 ( Bool mode64 ) { return GPR(mode64, 18,  12, 14); }
+ST_IN HReg hregPPC_GPR19 ( Bool mode64 ) { return GPR(mode64, 19,  13, 15); }
+ST_IN HReg hregPPC_GPR20 ( Bool mode64 ) { return GPR(mode64, 20,  14, 16); }
+ST_IN HReg hregPPC_GPR21 ( Bool mode64 ) { return GPR(mode64, 21,  15, 17); }
+ST_IN HReg hregPPC_GPR22 ( Bool mode64 ) { return GPR(mode64, 22,  16, 18); }
+ST_IN HReg hregPPC_GPR23 ( Bool mode64 ) { return GPR(mode64, 23,  17, 19); }
+ST_IN HReg hregPPC_GPR24 ( Bool mode64 ) { return GPR(mode64, 24,  18, 20); }
+ST_IN HReg hregPPC_GPR25 ( Bool mode64 ) { return GPR(mode64, 25,  19, 21); }
+ST_IN HReg hregPPC_GPR26 ( Bool mode64 ) { return GPR(mode64, 26,  20, 22); }
+ST_IN HReg hregPPC_GPR27 ( Bool mode64 ) { return GPR(mode64, 27,  21, 23); }
+ST_IN HReg hregPPC_GPR28 ( Bool mode64 ) { return GPR(mode64, 28,  22, 24); }
+
+ST_IN HReg hregPPC_FPR14 ( Bool mode64 ) { return FPR(mode64, 14,  23, 25); }
+ST_IN HReg hregPPC_FPR15 ( Bool mode64 ) { return FPR(mode64, 15,  24, 26); }
+ST_IN HReg hregPPC_FPR16 ( Bool mode64 ) { return FPR(mode64, 16,  25, 27); }
+ST_IN HReg hregPPC_FPR17 ( Bool mode64 ) { return FPR(mode64, 17,  26, 28); }
+ST_IN HReg hregPPC_FPR18 ( Bool mode64 ) { return FPR(mode64, 18,  27, 29); }
+ST_IN HReg hregPPC_FPR19 ( Bool mode64 ) { return FPR(mode64, 19,  28, 30); }
+ST_IN HReg hregPPC_FPR20 ( Bool mode64 ) { return FPR(mode64, 20,  29, 31); }
+ST_IN HReg hregPPC_FPR21 ( Bool mode64 ) { return FPR(mode64, 21,  30, 32); }
+
+ST_IN HReg hregPPC_VR20  ( Bool mode64 ) { return VR (mode64, 20,  31, 33); }
+ST_IN HReg hregPPC_VR21  ( Bool mode64 ) { return VR (mode64, 21,  32, 34); }
+ST_IN HReg hregPPC_VR22  ( Bool mode64 ) { return VR (mode64, 22,  33, 35); }
+ST_IN HReg hregPPC_VR23  ( Bool mode64 ) { return VR (mode64, 23,  34, 36); }
+ST_IN HReg hregPPC_VR24  ( Bool mode64 ) { return VR (mode64, 24,  35, 37); }
+ST_IN HReg hregPPC_VR25  ( Bool mode64 ) { return VR (mode64, 25,  36, 38); }
+ST_IN HReg hregPPC_VR26  ( Bool mode64 ) { return VR (mode64, 26,  37, 39); }
+ST_IN HReg hregPPC_VR27  ( Bool mode64 ) { return VR (mode64, 27,  38, 40); }
+
+ST_IN HReg hregPPC_GPR1  ( Bool mode64 ) { return GPR(mode64,  1,  39, 41); }
+ST_IN HReg hregPPC_GPR29 ( Bool mode64 ) { return GPR(mode64, 29,  40, 42); }
+ST_IN HReg hregPPC_GPR30 ( Bool mode64 ) { return GPR(mode64, 30,  41, 43); }
+ST_IN HReg hregPPC_GPR31 ( Bool mode64 ) { return GPR(mode64, 31,  42, 44); }
+ST_IN HReg hregPPC_VR29  ( Bool mode64 ) { return VR (mode64, 29,  43, 45); }
+
+#undef ST_IN
+#undef GPR
+#undef FPR
+#undef VR
 
 #define StackFramePtr(_mode64) hregPPC_GPR1(_mode64)
 #define GuestStatePtr(_mode64) hregPPC_GPR31(_mode64)
 
+/* Num registers used for function calls */
+#define PPC_N_REGPARMS 8
+
+extern void ppHRegPPC ( HReg );
 
 
 /* --------- Condition codes --------- */
@@ -1156,7 +1125,8 @@ extern void genSpill_PPC  ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
 extern void genReload_PPC ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
                             HReg rreg, Int offsetB, Bool mode64 );
 
-extern void         getAllocableRegs_PPC ( Int*, HReg**, Bool mode64 );
+extern const RRegUniverse* getRRegUniverse_PPC ( Bool mode64 );
+
 extern HInstrArray* iselSB_PPC           ( const IRSB*,
                                            VexArch,
                                            const VexArchInfo*,

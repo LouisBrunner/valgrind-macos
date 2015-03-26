@@ -184,6 +184,13 @@ void LibVEX_Init (
       vassert(sizeof(IRStmt) == 32);
    }
 
+   /* Ditto */
+   vassert(sizeof(HReg) == 4);
+   /* If N_RREGUNIVERSE_REGS ever exceeds 64, the bitset fields in
+      RRegSet and HRegUsage will need to be changed to something
+      better than ULong. */
+   vassert(N_RREGUNIVERSE_REGS == 64);
+
    /* Check that signed integer division on the host rounds towards
       zero.  If not, h_calc_sdiv32_w_arm_semantics() won't work
       correctly. */
@@ -211,8 +218,6 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
    /* This the bundle of functions we need to do the back-end stuff
       (insn selection, reg-alloc, assembly) whilst being insulated
       from the target instruction set. */
-   HReg* available_real_regs;
-   Int   n_available_real_regs;
    Bool         (*isMove)       ( const HInstr*, HReg*, HReg* );
    void         (*getRegUsage)  ( HRegUsage*, const HInstr*, Bool );
    void         (*mapRegs)      ( HRegRemap*, HInstr*, Bool );
@@ -231,6 +236,8 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
    IRExpr*      (*specHelper)   ( const HChar*, IRExpr**, IRStmt**, Int );
    Bool         (*preciseMemExnsFn) ( Int, Int, VexRegisterUpdates );
 
+   const RRegUniverse* rRegUniv = NULL;
+
    DisOneInstrFn disInstrFn;
 
    VexGuestLayout* guest_layout;
@@ -247,8 +254,6 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
    Addr            max_ga;
 
    guest_layout           = NULL;
-   available_real_regs    = NULL;
-   n_available_real_regs  = 0;
    isMove                 = NULL;
    getRegUsage            = NULL;
    mapRegs                = NULL;
@@ -298,8 +303,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
 
       case VexArchX86:
          mode64       = False;
-         getAllocableRegs_X86 ( &n_available_real_regs,
-                                &available_real_regs );
+         rRegUniv     = getRRegUniverse_X86();
          isMove       = (__typeof__(isMove)) isMove_X86Instr;
          getRegUsage  = (__typeof__(getRegUsage)) getRegUsage_X86Instr;
          mapRegs      = (__typeof__(mapRegs)) mapRegs_X86Instr;
@@ -310,14 +314,13 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          ppReg        = (__typeof__(ppReg)) ppHRegX86;
          iselSB       = iselSB_X86;
          emit         = (__typeof__(emit)) emit_X86Instr;
-         host_word_type    = Ity_I32;
+         host_word_type = Ity_I32;
          vassert(vta->archinfo_host.endness == VexEndnessLE);
          break;
 
       case VexArchAMD64:
-         mode64      = True;
-         getAllocableRegs_AMD64 ( &n_available_real_regs,
-                                  &available_real_regs );
+         mode64       = True;
+         rRegUniv     = getRRegUniverse_AMD64();
          isMove       = (__typeof__(isMove)) isMove_AMD64Instr;
          getRegUsage  = (__typeof__(getRegUsage)) getRegUsage_AMD64Instr;
          mapRegs      = (__typeof__(mapRegs)) mapRegs_AMD64Instr;
@@ -327,14 +330,13 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          ppReg        = (__typeof__(ppReg)) ppHRegAMD64;
          iselSB       = iselSB_AMD64;
          emit         = (__typeof__(emit)) emit_AMD64Instr;
-         host_word_type    = Ity_I64;
+         host_word_type = Ity_I64;
          vassert(vta->archinfo_host.endness == VexEndnessLE);
          break;
 
       case VexArchPPC32:
-         mode64      = False;
-         getAllocableRegs_PPC ( &n_available_real_regs,
-                                &available_real_regs, mode64 );
+         mode64       = False;
+         rRegUniv     = getRRegUniverse_PPC(mode64);
          isMove       = (__typeof__(isMove)) isMove_PPCInstr;
          getRegUsage  = (__typeof__(getRegUsage)) getRegUsage_PPCInstr;
          mapRegs      = (__typeof__(mapRegs)) mapRegs_PPCInstr;
@@ -344,14 +346,13 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          ppReg        = (__typeof__(ppReg)) ppHRegPPC;
          iselSB       = iselSB_PPC;
          emit         = (__typeof__(emit)) emit_PPCInstr;
-         host_word_type    = Ity_I32;
+         host_word_type = Ity_I32;
          vassert(vta->archinfo_host.endness == VexEndnessBE);
          break;
 
       case VexArchPPC64:
-         mode64      = True;
-         getAllocableRegs_PPC ( &n_available_real_regs,
-                                &available_real_regs, mode64 );
+         mode64       = True;
+         rRegUniv     = getRRegUniverse_PPC(mode64);
          isMove       = (__typeof__(isMove)) isMove_PPCInstr;
          getRegUsage  = (__typeof__(getRegUsage)) getRegUsage_PPCInstr;
          mapRegs      = (__typeof__(mapRegs)) mapRegs_PPCInstr;
@@ -361,17 +362,16 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          ppReg        = (__typeof__(ppReg)) ppHRegPPC;
          iselSB       = iselSB_PPC;
          emit         = (__typeof__(emit)) emit_PPCInstr;
-         host_word_type    = Ity_I64;
+         host_word_type = Ity_I64;
          vassert(vta->archinfo_host.endness == VexEndnessBE ||
                  vta->archinfo_host.endness == VexEndnessLE );
          break;
 
       case VexArchS390X:
-         mode64      = True;
+         mode64       = True;
          /* KLUDGE: export hwcaps. */
          s390_host_hwcaps = vta->archinfo_host.hwcaps;
-         getAllocableRegs_S390 ( &n_available_real_regs,
-                                 &available_real_regs, mode64 );
+         rRegUniv     = getRRegUniverse_S390();
          isMove       = (__typeof__(isMove)) isMove_S390Instr;
          getRegUsage  = (__typeof__(getRegUsage)) getRegUsage_S390Instr;
          mapRegs      = (__typeof__(mapRegs)) mapRegs_S390Instr;
@@ -382,14 +382,13 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          ppReg        = (__typeof__(ppReg)) ppHRegS390;
          iselSB       = iselSB_S390;
          emit         = (__typeof__(emit)) emit_S390Instr;
-         host_word_type    = Ity_I64;
+         host_word_type = Ity_I64;
          vassert(vta->archinfo_host.endness == VexEndnessBE);
          break;
 
       case VexArchARM:
-         mode64      = False;
-         getAllocableRegs_ARM ( &n_available_real_regs,
-                                &available_real_regs );
+         mode64       = False;
+         rRegUniv     = getRRegUniverse_ARM();
          isMove       = (__typeof__(isMove)) isMove_ARMInstr;
          getRegUsage  = (__typeof__(getRegUsage)) getRegUsage_ARMInstr;
          mapRegs      = (__typeof__(mapRegs)) mapRegs_ARMInstr;
@@ -399,14 +398,13 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          ppReg        = (__typeof__(ppReg)) ppHRegARM;
          iselSB       = iselSB_ARM;
          emit         = (__typeof__(emit)) emit_ARMInstr;
-         host_word_type    = Ity_I32;
+         host_word_type = Ity_I32;
          vassert(vta->archinfo_host.endness == VexEndnessLE);
          break;
 
       case VexArchARM64:
-         mode64      = True;
-         getAllocableRegs_ARM64 ( &n_available_real_regs,
-                                  &available_real_regs );
+         mode64       = True;
+         rRegUniv     = getRRegUniverse_ARM64();
          isMove       = (__typeof__(isMove)) isMove_ARM64Instr;
          getRegUsage  = (__typeof__(getRegUsage)) getRegUsage_ARM64Instr;
          mapRegs      = (__typeof__(mapRegs)) mapRegs_ARM64Instr;
@@ -416,14 +414,13 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          ppReg        = (__typeof__(ppReg)) ppHRegARM64;
          iselSB       = iselSB_ARM64;
          emit         = (__typeof__(emit)) emit_ARM64Instr;
-         host_word_type    = Ity_I64;
+         host_word_type = Ity_I64;
          vassert(vta->archinfo_host.endness == VexEndnessLE);
          break;
 
       case VexArchMIPS32:
-         mode64      = False;
-         getAllocableRegs_MIPS ( &n_available_real_regs,
-                                &available_real_regs, mode64 );
+         mode64       = False;
+         rRegUniv     = getRRegUniverse_MIPS(mode64);
          isMove       = (__typeof__(isMove)) isMove_MIPSInstr;
          getRegUsage  = (__typeof__(getRegUsage)) getRegUsage_MIPSInstr;
          mapRegs      = (__typeof__(mapRegs)) mapRegs_MIPSInstr;
@@ -433,15 +430,14 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          ppReg        = (__typeof__(ppReg)) ppHRegMIPS;
          iselSB       = iselSB_MIPS;
          emit         = (__typeof__(emit)) emit_MIPSInstr;
-         host_word_type    = Ity_I32;
+         host_word_type = Ity_I32;
          vassert(vta->archinfo_host.endness == VexEndnessLE
                  || vta->archinfo_host.endness == VexEndnessBE);
          break;
 
       case VexArchMIPS64:
-         mode64      = True;
-         getAllocableRegs_MIPS ( &n_available_real_regs,
-                                 &available_real_regs, mode64 );
+         mode64       = True;
+         rRegUniv     = getRRegUniverse_MIPS(mode64);
          isMove       = (__typeof__(isMove)) isMove_MIPSInstr;
          getRegUsage  = (__typeof__(getRegUsage)) getRegUsage_MIPSInstr;
          mapRegs      = (__typeof__(mapRegs)) mapRegs_MIPSInstr;
@@ -451,7 +447,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          ppReg        = (__typeof__(ppReg)) ppHRegMIPS;
          iselSB       = iselSB_MIPS;
          emit         = (__typeof__(emit)) emit_MIPSInstr;
-         host_word_type    = Ity_I64;
+         host_word_type = Ity_I64;
          vassert(vta->archinfo_host.endness == VexEndnessLE
                  || vta->archinfo_host.endness == VexEndnessBE);
          break;
@@ -877,8 +873,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
    }
 
    /* Register allocate. */
-   rcode = doRegisterAllocation ( vcode, available_real_regs,
-                                  n_available_real_regs,
+   rcode = doRegisterAllocation ( vcode, rRegUniv,
                                   isMove, getRegUsage, mapRegs, 
                                   genSpill, genReload, directReload, 
                                   guest_sizeB,

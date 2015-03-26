@@ -45,7 +45,7 @@
 #include "host_ppc_defs.h"
 
 /* GPR register class for ppc32/64 */
-#define HRcGPR(__mode64) (__mode64 ? HRcInt64 : HRcInt32)
+#define HRcGPR(_mode64) ((_mode64) ? HRcInt64 : HRcInt32)
 
 
 /*---------------------------------------------------------*/
@@ -340,23 +340,23 @@ static void addInstr ( ISelEnv* env, PPCInstr* instr )
 }
 
 static HReg newVRegI ( ISelEnv* env )
-{   
-   HReg reg = mkHReg(env->vreg_ctr, HRcGPR(env->mode64),
-                     True/*virtual reg*/);
+{
+   HReg reg
+      = mkHReg(True/*vreg*/, HRcGPR(env->mode64), 0/*enc*/, env->vreg_ctr);
    env->vreg_ctr++;
    return reg;
 }
 
 static HReg newVRegF ( ISelEnv* env )
 {
-   HReg reg = mkHReg(env->vreg_ctr, HRcFlt64, True/*virtual reg*/);
+   HReg reg = mkHReg(True/*vreg*/, HRcFlt64, 0/*enc*/, env->vreg_ctr);
    env->vreg_ctr++;
    return reg;
 }
 
 static HReg newVRegV ( ISelEnv* env )
 {
-   HReg reg = mkHReg(env->vreg_ctr, HRcVec128, True/*virtual reg*/);
+   HReg reg = mkHReg(True/*vreg*/, HRcVec128, 0/*enc*/, env->vreg_ctr);
    env->vreg_ctr++;
    return reg;
 }
@@ -6190,29 +6190,46 @@ HInstrArray* iselSB_PPC ( const IRSB* bb,
       case Ity_I8:
       case Ity_I16:
       case Ity_I32:
-         if (mode64) { hregLo    = mkHReg(j++, HRcInt64,  True); break;
-         } else {      hregLo    = mkHReg(j++, HRcInt32,  True); break;
+         if (mode64) {
+            hregLo = mkHReg(True, HRcInt64, 0, j++);
+         } else {
+            hregLo = mkHReg(True, HRcInt32, 0, j++);
          }
+         break;
       case Ity_I64:  
-         if (mode64) { hregLo    = mkHReg(j++, HRcInt64,  True); break;
-         } else {      hregLo    = mkHReg(j++, HRcInt32,  True);
-         hregMedLo = mkHReg(j++, HRcInt32,  True); break;
+         if (mode64) {
+            hregLo    = mkHReg(True, HRcInt64, 0, j++);
+         } else {
+            hregLo    = mkHReg(True, HRcInt32, 0, j++);
+            hregMedLo = mkHReg(True, HRcInt32, 0, j++);
          }
+         break;
       case Ity_I128:
-         if (mode64) { hregLo    = mkHReg(j++, HRcInt64,  True);
-         hregMedLo = mkHReg(j++, HRcInt64,  True); break;
-         } else {      hregLo    = mkHReg(j++, HRcInt32,  True);
-         hregMedLo = mkHReg(j++, HRcInt32,  True);
-         hregMedHi = mkHReg(j++, HRcInt32,  True);
-         hregHi    = mkHReg(j++, HRcInt32,  True); break;
+         if (mode64) {
+            hregLo    = mkHReg(True, HRcInt64, 0, j++);
+            hregMedLo = mkHReg(True, HRcInt64, 0, j++);
+         } else {
+            hregLo    = mkHReg(True, HRcInt32, 0, j++);
+            hregMedLo = mkHReg(True, HRcInt32, 0, j++);
+            hregMedHi = mkHReg(True, HRcInt32, 0, j++);
+            hregHi    = mkHReg(True, HRcInt32, 0, j++);
          }
+         break;
       case Ity_F32:
-      case Ity_F64:    hregLo    = mkHReg(j++, HRcFlt64,  True); break;
-      case Ity_V128:   hregLo    = mkHReg(j++, HRcVec128, True); break;
+      case Ity_F64:
+         hregLo = mkHReg(True, HRcFlt64, 0, j++);
+         break;
+      case Ity_V128:
+         hregLo = mkHReg(True, HRcVec128, 0, j++);
+         break;
       case Ity_D32:
-      case Ity_D64:    hregLo    = mkHReg(j++, HRcFlt64,  True); break;
-      case Ity_D128:   hregLo    = mkHReg(j++, HRcFlt64,  True);
-      hregMedLo = mkHReg(j++, HRcFlt64,  True); break;
+      case Ity_D64:
+         hregLo = mkHReg(True, HRcFlt64, 0, j++);
+         break;
+      case Ity_D128:
+         hregLo    = mkHReg(True, HRcFlt64, 0, j++);
+         hregMedLo = mkHReg(True, HRcFlt64, 0, j++);
+         break;
       default:
          ppIRType(bb->tyenv->types[i]);
          vpanic("iselBB(ppc): IRTemp type");

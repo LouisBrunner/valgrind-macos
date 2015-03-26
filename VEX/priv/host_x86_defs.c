@@ -44,6 +44,57 @@
 
 /* --------- Registers. --------- */
 
+const RRegUniverse* getRRegUniverse_X86 ( void )
+{
+   /* The real-register universe is a big constant, so we just want to
+      initialise it once. */
+   static RRegUniverse rRegUniverse_X86;
+   static Bool         rRegUniverse_X86_initted = False;
+
+   /* Handy shorthand, nothing more */
+   RRegUniverse* ru = &rRegUniverse_X86;
+
+   /* This isn't thread-safe.  Sigh. */
+   if (LIKELY(rRegUniverse_X86_initted))
+      return ru;
+
+   RRegUniverse__init(ru);
+
+   /* Add the registers.  The initial segment of this array must be
+      those available for allocation by reg-alloc, and those that
+      follow are not available for allocation. */
+   ru->regs[ru->size++] = hregX86_EAX();
+   ru->regs[ru->size++] = hregX86_EBX();
+   ru->regs[ru->size++] = hregX86_ECX();
+   ru->regs[ru->size++] = hregX86_EDX();
+   ru->regs[ru->size++] = hregX86_ESI();
+   ru->regs[ru->size++] = hregX86_EDI();
+   ru->regs[ru->size++] = hregX86_FAKE0();
+   ru->regs[ru->size++] = hregX86_FAKE1();
+   ru->regs[ru->size++] = hregX86_FAKE2();
+   ru->regs[ru->size++] = hregX86_FAKE3();
+   ru->regs[ru->size++] = hregX86_FAKE4();
+   ru->regs[ru->size++] = hregX86_FAKE5();
+   ru->regs[ru->size++] = hregX86_XMM0();
+   ru->regs[ru->size++] = hregX86_XMM1();
+   ru->regs[ru->size++] = hregX86_XMM2();
+   ru->regs[ru->size++] = hregX86_XMM3();
+   ru->regs[ru->size++] = hregX86_XMM4();
+   ru->regs[ru->size++] = hregX86_XMM5();
+   ru->regs[ru->size++] = hregX86_XMM6();
+   ru->regs[ru->size++] = hregX86_XMM7();
+   ru->allocable = ru->size;
+   /* And other regs, not available to the allocator. */
+   ru->regs[ru->size++] = hregX86_ESP();
+   ru->regs[ru->size++] = hregX86_EBP();
+
+   rRegUniverse_X86_initted = True;
+
+   RRegUniverse__check_is_sane(ru);
+   return ru;
+}
+
+
 void ppHRegX86 ( HReg reg ) 
 {
    Int r;
@@ -57,75 +108,23 @@ void ppHRegX86 ( HReg reg )
    /* But specific for real regs. */
    switch (hregClass(reg)) {
       case HRcInt32:
-         r = hregNumber(reg);
+         r = hregEncoding(reg);
          vassert(r >= 0 && r < 8);
          vex_printf("%s", ireg32_names[r]);
          return;
       case HRcFlt64:
-         r = hregNumber(reg);
+         r = hregEncoding(reg);
          vassert(r >= 0 && r < 6);
          vex_printf("%%fake%d", r);
          return;
       case HRcVec128:
-         r = hregNumber(reg);
+         r = hregEncoding(reg);
          vassert(r >= 0 && r < 8);
          vex_printf("%%xmm%d", r);
          return;
       default:
          vpanic("ppHRegX86");
    }
-}
-
-HReg hregX86_EAX ( void ) { return mkHReg(0, HRcInt32, False); }
-HReg hregX86_ECX ( void ) { return mkHReg(1, HRcInt32, False); }
-HReg hregX86_EDX ( void ) { return mkHReg(2, HRcInt32, False); }
-HReg hregX86_EBX ( void ) { return mkHReg(3, HRcInt32, False); }
-HReg hregX86_ESP ( void ) { return mkHReg(4, HRcInt32, False); }
-HReg hregX86_EBP ( void ) { return mkHReg(5, HRcInt32, False); }
-HReg hregX86_ESI ( void ) { return mkHReg(6, HRcInt32, False); }
-HReg hregX86_EDI ( void ) { return mkHReg(7, HRcInt32, False); }
-
-HReg hregX86_FAKE0 ( void ) { return mkHReg(0, HRcFlt64, False); }
-HReg hregX86_FAKE1 ( void ) { return mkHReg(1, HRcFlt64, False); }
-HReg hregX86_FAKE2 ( void ) { return mkHReg(2, HRcFlt64, False); }
-HReg hregX86_FAKE3 ( void ) { return mkHReg(3, HRcFlt64, False); }
-HReg hregX86_FAKE4 ( void ) { return mkHReg(4, HRcFlt64, False); }
-HReg hregX86_FAKE5 ( void ) { return mkHReg(5, HRcFlt64, False); }
-
-HReg hregX86_XMM0 ( void ) { return mkHReg(0, HRcVec128, False); }
-HReg hregX86_XMM1 ( void ) { return mkHReg(1, HRcVec128, False); }
-HReg hregX86_XMM2 ( void ) { return mkHReg(2, HRcVec128, False); }
-HReg hregX86_XMM3 ( void ) { return mkHReg(3, HRcVec128, False); }
-HReg hregX86_XMM4 ( void ) { return mkHReg(4, HRcVec128, False); }
-HReg hregX86_XMM5 ( void ) { return mkHReg(5, HRcVec128, False); }
-HReg hregX86_XMM6 ( void ) { return mkHReg(6, HRcVec128, False); }
-HReg hregX86_XMM7 ( void ) { return mkHReg(7, HRcVec128, False); }
-
-
-void getAllocableRegs_X86 ( Int* nregs, HReg** arr )
-{
-   *nregs = 20;
-   *arr = LibVEX_Alloc_inline(*nregs * sizeof(HReg));
-   (*arr)[0] = hregX86_EAX();
-   (*arr)[1] = hregX86_EBX();
-   (*arr)[2] = hregX86_ECX();
-   (*arr)[3] = hregX86_EDX();
-   (*arr)[4] = hregX86_ESI();
-   (*arr)[5] = hregX86_EDI();
-   (*arr)[6] = hregX86_FAKE0();
-   (*arr)[7] = hregX86_FAKE1();
-   (*arr)[8] = hregX86_FAKE2();
-   (*arr)[9] = hregX86_FAKE3();
-   (*arr)[10] = hregX86_FAKE4();
-   (*arr)[11] = hregX86_FAKE5();
-   (*arr)[12] = hregX86_XMM0();
-   (*arr)[13] = hregX86_XMM1();
-   (*arr)[14] = hregX86_XMM2();
-   (*arr)[15] = hregX86_XMM3();
-   (*arr)[16] = hregX86_XMM4();
-   (*arr)[17] = hregX86_XMM5();
-   (*arr)[18] = hregX86_XMM6();
-   (*arr)[19] = hregX86_XMM7();
 }
 
 
@@ -1832,52 +1831,48 @@ X86Instr* directReload_X86( X86Instr* i, HReg vreg, Short spill_off )
 
 /* --------- The x86 assembler (bleh.) --------- */
 
-static UChar iregNo ( HReg r )
+inline static UInt iregEnc ( HReg r )
 {
    UInt n;
    vassert(hregClass(r) == HRcInt32);
    vassert(!hregIsVirtual(r));
-   n = hregNumber(r);
+   n = hregEncoding(r);
    vassert(n <= 7);
-   return toUChar(n);
+   return n;
 }
 
-static UInt fregNo ( HReg r )
+inline static UInt fregEnc ( HReg r )
 {
    UInt n;
    vassert(hregClass(r) == HRcFlt64);
    vassert(!hregIsVirtual(r));
-   n = hregNumber(r);
+   n = hregEncoding(r);
    vassert(n <= 5);
    return n;
 }
 
-static UInt vregNo ( HReg r )
+inline static UInt vregEnc ( HReg r )
 {
    UInt n;
    vassert(hregClass(r) == HRcVec128);
    vassert(!hregIsVirtual(r));
-   n = hregNumber(r);
+   n = hregEncoding(r);
    vassert(n <= 7);
    return n;
 }
 
-static UChar mkModRegRM ( UInt mod, UInt reg, UInt regmem )
+inline static UChar mkModRegRM ( UInt mod, UInt reg, UInt regmem )
 {
    vassert(mod < 4);
    vassert((reg|regmem) < 8);
-   return toUChar( ((mod & 3) << 6) 
-                   | ((reg & 7) << 3) 
-                   | (regmem & 7) );
+   return (UChar)( ((mod & 3) << 6) | ((reg & 7) << 3) | (regmem & 7) );
 }
 
-static UChar mkSIB ( UInt shift, UInt regindex, UInt regbase )
+inline static UChar mkSIB ( UInt shift, UInt regindex, UInt regbase )
 {
    vassert(shift < 4);
    vassert((regindex|regbase) < 8);
-   return toUChar( ((shift & 3) << 6) 
-                   | ((regindex & 7) << 3) 
-                   | (regbase & 7) );
+   return (UChar)( ((shift & 3) << 6) | ((regindex & 7) << 3) | (regbase & 7) );
 }
 
 static UChar* emit32 ( UChar* p, UInt w32 )
@@ -1921,29 +1916,29 @@ static Bool fits8bits ( UInt w32 )
                |  index != ESP
                =  10 greg 100, scale index base, d32
 */
-static UChar* doAMode_M ( UChar* p, HReg greg, X86AMode* am ) 
+static UChar* doAMode_M__wrk ( UChar* p, UInt gregEnc, X86AMode* am )
 {
    if (am->tag == Xam_IR) {
       if (am->Xam.IR.imm == 0 
           && ! sameHReg(am->Xam.IR.reg, hregX86_ESP())
           && ! sameHReg(am->Xam.IR.reg, hregX86_EBP()) ) {
-         *p++ = mkModRegRM(0, iregNo(greg), iregNo(am->Xam.IR.reg));
+         *p++ = mkModRegRM(0, gregEnc, iregEnc(am->Xam.IR.reg));
          return p;
       }
       if (fits8bits(am->Xam.IR.imm)
           && ! sameHReg(am->Xam.IR.reg, hregX86_ESP())) {
-         *p++ = mkModRegRM(1, iregNo(greg), iregNo(am->Xam.IR.reg));
+         *p++ = mkModRegRM(1, gregEnc, iregEnc(am->Xam.IR.reg));
          *p++ = toUChar(am->Xam.IR.imm & 0xFF);
          return p;
       }
       if (! sameHReg(am->Xam.IR.reg, hregX86_ESP())) {
-         *p++ = mkModRegRM(2, iregNo(greg), iregNo(am->Xam.IR.reg));
+         *p++ = mkModRegRM(2, gregEnc, iregEnc(am->Xam.IR.reg));
          p = emit32(p, am->Xam.IR.imm);
          return p;
       }
       if (sameHReg(am->Xam.IR.reg, hregX86_ESP())
           && fits8bits(am->Xam.IR.imm)) {
- 	 *p++ = mkModRegRM(1, iregNo(greg), 4);
+ 	 *p++ = mkModRegRM(1, gregEnc, 4);
          *p++ = 0x24;
          *p++ = toUChar(am->Xam.IR.imm & 0xFF);
          return p;
@@ -1955,16 +1950,16 @@ static UChar* doAMode_M ( UChar* p, HReg greg, X86AMode* am )
    if (am->tag == Xam_IRRS) {
       if (fits8bits(am->Xam.IRRS.imm)
           && ! sameHReg(am->Xam.IRRS.index, hregX86_ESP())) {
-         *p++ = mkModRegRM(1, iregNo(greg), 4);
-         *p++ = mkSIB(am->Xam.IRRS.shift, iregNo(am->Xam.IRRS.index),
-                                          iregNo(am->Xam.IRRS.base));
+         *p++ = mkModRegRM(1, gregEnc, 4);
+         *p++ = mkSIB(am->Xam.IRRS.shift, iregEnc(am->Xam.IRRS.index),
+                                          iregEnc(am->Xam.IRRS.base));
          *p++ = toUChar(am->Xam.IRRS.imm & 0xFF);
          return p;
       }
       if (! sameHReg(am->Xam.IRRS.index, hregX86_ESP())) {
-         *p++ = mkModRegRM(2, iregNo(greg), 4);
-         *p++ = mkSIB(am->Xam.IRRS.shift, iregNo(am->Xam.IRRS.index),
-                                          iregNo(am->Xam.IRRS.base));
+         *p++ = mkModRegRM(2, gregEnc, 4);
+         *p++ = mkSIB(am->Xam.IRRS.shift, iregEnc(am->Xam.IRRS.index),
+                                          iregEnc(am->Xam.IRRS.base));
          p = emit32(p, am->Xam.IRRS.imm);
          return p;
       }
@@ -1976,12 +1971,40 @@ static UChar* doAMode_M ( UChar* p, HReg greg, X86AMode* am )
    /*NOTREACHED*/
 }
 
+static UChar* doAMode_M ( UChar* p, HReg greg, X86AMode* am )
+{
+   return doAMode_M__wrk(p, iregEnc(greg), am);
+}
+
+static UChar* doAMode_M_enc ( UChar* p, UInt gregEnc, X86AMode* am )
+{
+   vassert(gregEnc < 8);
+   return doAMode_M__wrk(p, gregEnc, am);
+}
+
 
 /* Emit a mod-reg-rm byte when the rm bit denotes a reg. */
-static UChar* doAMode_R ( UChar* p, HReg greg, HReg ereg ) 
+inline static UChar* doAMode_R__wrk ( UChar* p, UInt gregEnc, UInt eregEnc ) 
 {
-   *p++ = mkModRegRM(3, iregNo(greg), iregNo(ereg));
+   *p++ = mkModRegRM(3, gregEnc, eregEnc);
    return p;
+}
+
+static UChar* doAMode_R ( UChar* p, HReg greg, HReg ereg )
+{
+   return doAMode_R__wrk(p, iregEnc(greg), iregEnc(ereg));
+}
+
+static UChar* doAMode_R_enc_reg ( UChar* p, UInt gregEnc, HReg ereg )
+{
+   vassert(gregEnc < 8);
+   return doAMode_R__wrk(p, gregEnc, iregEnc(ereg));
+}
+
+static UChar* doAMode_R_enc_enc ( UChar* p, UInt gregEnc, UInt eregEnc )
+{
+   vassert( (gregEnc|eregEnc) < 8);
+   return doAMode_R__wrk(p, gregEnc, eregEnc);
 }
 
 
@@ -2049,7 +2072,6 @@ static UChar* do_fop1_st ( UChar* p, X86FpOp op )
 /* Emit f<op> %st(i), 1 <= i <= 5 */
 static UChar* do_fop2_st ( UChar* p, X86FpOp op, Int i )
 {
-#  define fake(_n) mkHReg((_n), HRcInt32, False)
    Int subopc;
    switch (op) {
       case Xfp_ADD: subopc = 0; break;
@@ -2059,9 +2081,8 @@ static UChar* do_fop2_st ( UChar* p, X86FpOp op, Int i )
       default: vpanic("do_fop2_st: unknown op");
    }
    *p++ = 0xD8;
-   p    = doAMode_R(p, fake(subopc), fake(i));
+   p    = doAMode_R_enc_enc(p, subopc, i);
    return p;
-#  undef fake
 }
 
 /* Push a 32-bit word on the stack.  The word depends on tags[3:0];
@@ -2116,11 +2137,6 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
    vassert(nbuf >= 32);
    vassert(mode64 == False);
 
-   /* Wrap an integer as a int register, for use assembling
-      GrpN insns, in which the greg field is used as a sub-opcode
-      and does not really contain a register. */
-#  define fake(_n) mkHReg((_n), HRcInt32, False)
-
    /* vex_printf("asm  ");ppX86Instr(i, mode64); vex_printf("\n"); */
 
    switch (i->tag) {
@@ -2130,7 +2146,7 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
       if (i->Xin.Alu32R.op == Xalu_MOV) {
          switch (i->Xin.Alu32R.src->tag) {
             case Xrmi_Imm:
-               *p++ = toUChar(0xB8 + iregNo(i->Xin.Alu32R.dst));
+               *p++ = toUChar(0xB8 + iregEnc(i->Xin.Alu32R.dst));
                p = emit32(p, i->Xin.Alu32R.src->Xrmi.Imm.imm32);
                goto done;
             case Xrmi_Reg:
@@ -2207,11 +2223,11 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
             } else
             if (fits8bits(i->Xin.Alu32R.src->Xrmi.Imm.imm32)) {
                *p++ = 0x83; 
-               p    = doAMode_R(p, fake(subopc_imm), i->Xin.Alu32R.dst);
+               p    = doAMode_R_enc_reg(p, subopc_imm, i->Xin.Alu32R.dst);
                *p++ = toUChar(0xFF & i->Xin.Alu32R.src->Xrmi.Imm.imm32);
             } else {
                *p++ = 0x81; 
-               p    = doAMode_R(p, fake(subopc_imm), i->Xin.Alu32R.dst);
+               p    = doAMode_R_enc_reg(p, subopc_imm, i->Xin.Alu32R.dst);
                p    = emit32(p, i->Xin.Alu32R.src->Xrmi.Imm.imm32);
             }
             goto done;
@@ -2241,7 +2257,7 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
                goto done;
             case Xri_Imm:
                *p++ = 0xC7;
-               p = doAMode_M(p, fake(0), i->Xin.Alu32M.dst);
+               p = doAMode_M_enc(p, 0, i->Xin.Alu32M.dst);
                p = emit32(p, i->Xin.Alu32M.src->Xri.Imm.imm32);
                goto done;
             default: 
@@ -2266,12 +2282,12 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
          case Xri_Imm:
             if (fits8bits(i->Xin.Alu32M.src->Xri.Imm.imm32)) {
                *p++ = 0x83;
-               p    = doAMode_M(p, fake(subopc_imm), i->Xin.Alu32M.dst);
+               p    = doAMode_M_enc(p, subopc_imm, i->Xin.Alu32M.dst);
                *p++ = toUChar(0xFF & i->Xin.Alu32M.src->Xri.Imm.imm32);
                goto done;
             } else {
                *p++ = 0x81;
-               p    = doAMode_M(p, fake(subopc_imm), i->Xin.Alu32M.dst);
+               p    = doAMode_M_enc(p, subopc_imm, i->Xin.Alu32M.dst);
                p    = emit32(p, i->Xin.Alu32M.src->Xri.Imm.imm32);
                goto done;
             }
@@ -2290,10 +2306,10 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
       }
       if (i->Xin.Sh32.src == 0) {
          *p++ = toUChar(opc_cl);
-         p = doAMode_R(p, fake(subopc), i->Xin.Sh32.dst);
+         p = doAMode_R_enc_reg(p, subopc, i->Xin.Sh32.dst);
       } else {
          *p++ = toUChar(opc_imm);
-         p = doAMode_R(p, fake(subopc), i->Xin.Sh32.dst);
+         p = doAMode_R_enc_reg(p, subopc, i->Xin.Sh32.dst);
          *p++ = (UChar)(i->Xin.Sh32.src);
       }
       goto done;
@@ -2302,13 +2318,13 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
       if (i->Xin.Test32.dst->tag == Xrm_Reg) {
          /* testl $imm32, %reg */
          *p++ = 0xF7;
-         p = doAMode_R(p, fake(0), i->Xin.Test32.dst->Xrm.Reg.reg);
+         p = doAMode_R_enc_reg(p, 0, i->Xin.Test32.dst->Xrm.Reg.reg);
          p = emit32(p, i->Xin.Test32.imm32);
          goto done;
       } else {
          /* testl $imm32, amode */
          *p++ = 0xF7;
-         p = doAMode_M(p, fake(0), i->Xin.Test32.dst->Xrm.Mem.am);
+         p = doAMode_M_enc(p, 0, i->Xin.Test32.dst->Xrm.Mem.am);
          p = emit32(p, i->Xin.Test32.imm32);
          goto done;
       }
@@ -2316,12 +2332,12 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
    case Xin_Unary32:
       if (i->Xin.Unary32.op == Xun_NOT) {
          *p++ = 0xF7;
-         p = doAMode_R(p, fake(2), i->Xin.Unary32.dst);
+         p = doAMode_R_enc_reg(p, 2, i->Xin.Unary32.dst);
          goto done;
       }
       if (i->Xin.Unary32.op == Xun_NEG) {
          *p++ = 0xF7;
-         p = doAMode_R(p, fake(3), i->Xin.Unary32.dst);
+         p = doAMode_R_enc_reg(p, 3, i->Xin.Unary32.dst);
          goto done;
       }
       break;
@@ -2336,12 +2352,10 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
       *p++ = 0xF7;
       switch (i->Xin.MulL.src->tag)  {
          case Xrm_Mem:
-            p = doAMode_M(p, fake(subopc),
-                             i->Xin.MulL.src->Xrm.Mem.am);
+            p = doAMode_M_enc(p, subopc, i->Xin.MulL.src->Xrm.Mem.am);
             goto done;
          case Xrm_Reg:
-            p = doAMode_R(p, fake(subopc), 
-                             i->Xin.MulL.src->Xrm.Reg.reg);
+            p = doAMode_R_enc_reg(p, subopc, i->Xin.MulL.src->Xrm.Reg.reg);
             goto done;
          default:
             goto bad;
@@ -2353,12 +2367,10 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
       *p++ = 0xF7;
       switch (i->Xin.Div.src->tag)  {
          case Xrm_Mem:
-            p = doAMode_M(p, fake(subopc),
-                             i->Xin.Div.src->Xrm.Mem.am);
+            p = doAMode_M_enc(p, subopc, i->Xin.Div.src->Xrm.Mem.am);
             goto done;
          case Xrm_Reg:
-            p = doAMode_R(p, fake(subopc), 
-                             i->Xin.Div.src->Xrm.Reg.reg);
+            p = doAMode_R_enc_reg(p, subopc, i->Xin.Div.src->Xrm.Reg.reg);
             goto done;
          default:
             goto bad;
@@ -2384,14 +2396,14 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
       switch (i->Xin.Push.src->tag) {
          case Xrmi_Mem: 
             *p++ = 0xFF;
-            p = doAMode_M(p, fake(6), i->Xin.Push.src->Xrmi.Mem.am);
+            p = doAMode_M_enc(p, 6, i->Xin.Push.src->Xrmi.Mem.am);
             goto done;
          case Xrmi_Imm:
             *p++ = 0x68;
             p = emit32(p, i->Xin.Push.src->Xrmi.Imm.imm32);
             goto done;
          case Xrmi_Reg:
-            *p++ = toUChar(0x50 + iregNo(i->Xin.Push.src->Xrmi.Reg.reg));
+            *p++ = toUChar(0x50 + iregEnc(i->Xin.Push.src->Xrmi.Reg.reg));
             goto done;
         default: 
             goto bad;
@@ -2411,10 +2423,10 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
       /* See detailed comment for Xin_Call in getRegUsage_X86Instr above
          for explanation of this. */
       switch (i->Xin.Call.regparms) {
-         case 0: irno = iregNo(hregX86_EAX()); break;
-         case 1: irno = iregNo(hregX86_EDX()); break;
-         case 2: irno = iregNo(hregX86_ECX()); break;
-         case 3: irno = iregNo(hregX86_EDI()); break;
+         case 0: irno = iregEnc(hregX86_EAX()); break;
+         case 1: irno = iregEnc(hregX86_EDX()); break;
+         case 2: irno = iregEnc(hregX86_ECX()); break;
+         case 3: irno = iregEnc(hregX86_EDI()); break;
          default: vpanic(" emit_X86Instr:call:regparms");
       }
       /* jump over the following two insns if the condition does not
@@ -2455,7 +2467,7 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
       /* Update the guest EIP. */
       /* movl $dstGA, amEIP */
       *p++ = 0xC7;
-      p    = doAMode_M(p, fake(0), i->Xin.XDirect.amEIP);
+      p    = doAMode_M_enc(p, 0, i->Xin.XDirect.amEIP);
       p    = emit32(p, i->Xin.XDirect.dstGA);
 
       /* --- FIRST PATCHABLE BYTE follows --- */
@@ -2668,26 +2680,26 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
          Sigh.  So start off my moving $0 into the dest. */
 
       /* Do we need to swap in %eax? */
-      if (iregNo(i->Xin.Set32.dst) >= 4) {
+      if (iregEnc(i->Xin.Set32.dst) >= 4) {
          /* xchg %eax, %dst */
-         *p++ = toUChar(0x90 + iregNo(i->Xin.Set32.dst));
+         *p++ = toUChar(0x90 + iregEnc(i->Xin.Set32.dst));
          /* movl $0, %eax */
-         *p++ =toUChar(0xB8 + iregNo(hregX86_EAX()));
+         *p++ =toUChar(0xB8 + iregEnc(hregX86_EAX()));
          p = emit32(p, 0);
          /* setb lo8(%eax) */
          *p++ = 0x0F; 
          *p++ = toUChar(0x90 + (0xF & i->Xin.Set32.cond));
-         p = doAMode_R(p, fake(0), hregX86_EAX());
+         p = doAMode_R_enc_reg(p, 0, hregX86_EAX());
          /* xchg %eax, %dst */
-         *p++ = toUChar(0x90 + iregNo(i->Xin.Set32.dst));
+         *p++ = toUChar(0x90 + iregEnc(i->Xin.Set32.dst));
       } else {
          /* movl $0, %dst */
-         *p++ = toUChar(0xB8 + iregNo(i->Xin.Set32.dst));
+         *p++ = toUChar(0xB8 + iregEnc(i->Xin.Set32.dst));
          p = emit32(p, 0);
          /* setb lo8(%dst) */
          *p++ = 0x0F; 
          *p++ = toUChar(0x90 + (0xF & i->Xin.Set32.cond));
-         p = doAMode_R(p, fake(0), i->Xin.Set32.dst);
+         p = doAMode_R_enc_reg(p, 0, i->Xin.Set32.dst);
       }
       goto done;
 
@@ -2754,7 +2766,7 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
          aren't encoded in the insn. */
       *p++ = 0x0F;
       *p++ = 0xC7;
-      p = doAMode_M(p, fake(1), i->Xin.DACAS.addr);
+      p = doAMode_M_enc(p, 1, i->Xin.DACAS.addr);
       goto done;
 
    case Xin_Store:
@@ -2770,7 +2782,7 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
       if (i->Xin.Store.sz == 1) {
          /* We have to do complex dodging and weaving if src is not
             the low 8 bits of %eax/%ebx/%ecx/%edx. */
-         if (iregNo(i->Xin.Store.src) < 4) {
+         if (iregEnc(i->Xin.Store.src) < 4) {
             /* we're OK, can do it directly */
             *p++ = 0x88;
             p = doAMode_M(p, i->Xin.Store.src, i->Xin.Store.dst);
@@ -2785,22 +2797,13 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
             HReg swap = INVALID_HREG;
             HReg  eax = hregX86_EAX(), ebx = hregX86_EBX(), 
                   ecx = hregX86_ECX(), edx = hregX86_EDX();
-            Bool a_ok = True, b_ok = True, c_ok = True, d_ok = True;
             HRegUsage u;
-            Int j;
             initHRegUsage(&u);
-            addRegUsage_X86AMode(&u,  i->Xin.Store.dst);
-            for (j = 0; j < u.n_used; j++) {
-               HReg r = u.hreg[j];
-               if (sameHReg(r, eax)) a_ok = False;
-               if (sameHReg(r, ebx)) b_ok = False;
-               if (sameHReg(r, ecx)) c_ok = False;
-               if (sameHReg(r, edx)) d_ok = False;
-            }
-            if (a_ok) swap = eax;
-            if (b_ok) swap = ebx;
-            if (c_ok) swap = ecx;
-            if (d_ok) swap = edx;
+            addRegUsage_X86AMode(&u, i->Xin.Store.dst);
+            /**/ if (! HRegUsage__contains(&u, eax)) { swap = eax; }
+            else if (! HRegUsage__contains(&u, ebx)) { swap = ebx; }
+            else if (! HRegUsage__contains(&u, ecx)) { swap = ecx; }
+            else if (! HRegUsage__contains(&u, edx)) { swap = edx; }
             vassert(! hregIsInvalid(swap));
             /* xchgl %source, %swap. Could do better if swap is %eax. */
             *p++ = 0x87;
@@ -2821,9 +2824,9 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
          --> ffree %st7 ; fld %st(src) ; fop %st(0) ; fstp %st(1+dst)
       */
       p = do_ffree_st7(p);
-      p = do_fld_st(p, 0+hregNumber(i->Xin.FpUnary.src));
+      p = do_fld_st(p, 0+fregEnc(i->Xin.FpUnary.src));
       p = do_fop1_st(p, i->Xin.FpUnary.op);
-      p = do_fstp_st(p, 1+hregNumber(i->Xin.FpUnary.dst));
+      p = do_fstp_st(p, 1+fregEnc(i->Xin.FpUnary.dst));
       goto done;
 
    case Xin_FpBinary:
@@ -2833,12 +2836,12 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
          /* ffree %st7 ; fld %st(srcL) ; 
             ffree %st7 ; fld %st(srcR+1) ; fyl2x{p1} ; fstp(1+dst) */
          p = do_ffree_st7(p);
-         p = do_fld_st(p, 0+hregNumber(i->Xin.FpBinary.srcL));
+         p = do_fld_st(p, 0+fregEnc(i->Xin.FpBinary.srcL));
          p = do_ffree_st7(p);
-         p = do_fld_st(p, 1+hregNumber(i->Xin.FpBinary.srcR));
+         p = do_fld_st(p, 1+fregEnc(i->Xin.FpBinary.srcR));
          *p++ = 0xD9; 
          *p++ = toUChar(i->Xin.FpBinary.op==Xfp_YL2X ? 0xF1 : 0xF9);
-         p = do_fstp_st(p, 1+hregNumber(i->Xin.FpBinary.dst));
+         p = do_fstp_st(p, 1+fregEnc(i->Xin.FpBinary.dst));
          goto done;
       }
       if (i->Xin.FpBinary.op == Xfp_ATAN) {
@@ -2846,11 +2849,11 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
          /* ffree %st7 ; fld %st(srcL) ; 
             ffree %st7 ; fld %st(srcR+1) ; fpatan ; fstp(1+dst) */
          p = do_ffree_st7(p);
-         p = do_fld_st(p, 0+hregNumber(i->Xin.FpBinary.srcL));
+         p = do_fld_st(p, 0+fregEnc(i->Xin.FpBinary.srcL));
          p = do_ffree_st7(p);
-         p = do_fld_st(p, 1+hregNumber(i->Xin.FpBinary.srcR));
+         p = do_fld_st(p, 1+fregEnc(i->Xin.FpBinary.srcR));
          *p++ = 0xD9; *p++ = 0xF3;
-         p = do_fstp_st(p, 1+hregNumber(i->Xin.FpBinary.dst));
+         p = do_fstp_st(p, 1+fregEnc(i->Xin.FpBinary.dst));
          goto done;
       }
       if (i->Xin.FpBinary.op == Xfp_PREM
@@ -2861,9 +2864,9 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
             ffree %st7 ; fld %st(srcL+1) ; fprem/fprem1/fscale ; fstp(2+dst) ; 
             fincstp ; ffree %st7 */
          p = do_ffree_st7(p);
-         p = do_fld_st(p, 0+hregNumber(i->Xin.FpBinary.srcR));
+         p = do_fld_st(p, 0+fregEnc(i->Xin.FpBinary.srcR));
          p = do_ffree_st7(p);
-         p = do_fld_st(p, 1+hregNumber(i->Xin.FpBinary.srcL));
+         p = do_fld_st(p, 1+fregEnc(i->Xin.FpBinary.srcL));
          *p++ = 0xD9;
          switch (i->Xin.FpBinary.op) {
             case Xfp_PREM: *p++ = 0xF8; break;
@@ -2871,7 +2874,7 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
             case Xfp_SCALE: *p++ =  0xFD; break;
             default: vpanic("emitX86Instr(FpBinary,PREM/PREM1/SCALE)");
          }
-         p = do_fstp_st(p, 2+hregNumber(i->Xin.FpBinary.dst));
+         p = do_fstp_st(p, 2+fregEnc(i->Xin.FpBinary.dst));
          *p++ = 0xD9; *p++ = 0xF7;
          p = do_ffree_st7(p);
          goto done;
@@ -2881,10 +2884,10 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
          --> ffree %st7 ; fld %st(srcL) ; fop %st(1+srcR) ; fstp %st(1+dst)
       */
       p = do_ffree_st7(p);
-      p = do_fld_st(p, 0+hregNumber(i->Xin.FpBinary.srcL));
+      p = do_fld_st(p, 0+fregEnc(i->Xin.FpBinary.srcL));
       p = do_fop2_st(p, i->Xin.FpBinary.op, 
-                        1+hregNumber(i->Xin.FpBinary.srcR));
-      p = do_fstp_st(p, 1+hregNumber(i->Xin.FpBinary.dst));
+                        1+fregEnc(i->Xin.FpBinary.srcR));
+      p = do_fstp_st(p, 1+fregEnc(i->Xin.FpBinary.dst));
       goto done;
 
    case Xin_FpLdSt:
@@ -2896,39 +2899,39 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
          switch (i->Xin.FpLdSt.sz) {
             case 4:
                *p++ = 0xD9;
-               p = doAMode_M(p, fake(0)/*subopcode*/, i->Xin.FpLdSt.addr);
+               p = doAMode_M_enc(p, 0/*subopcode*/, i->Xin.FpLdSt.addr);
                break;
             case 8:
                *p++ = 0xDD;
-               p = doAMode_M(p, fake(0)/*subopcode*/, i->Xin.FpLdSt.addr);
+               p = doAMode_M_enc(p, 0/*subopcode*/, i->Xin.FpLdSt.addr);
                break;
             case 10:
                *p++ = 0xDB;
-               p = doAMode_M(p, fake(5)/*subopcode*/, i->Xin.FpLdSt.addr);
+               p = doAMode_M_enc(p, 5/*subopcode*/, i->Xin.FpLdSt.addr);
                break;
             default:
                vpanic("emitX86Instr(FpLdSt,load)");
          }
-         p = do_fstp_st(p, 1+hregNumber(i->Xin.FpLdSt.reg));
+         p = do_fstp_st(p, 1+fregEnc(i->Xin.FpLdSt.reg));
          goto done;
       } else {
          /* Store from %fakeN into memory.
             --> ffree %st(7) ; fld st(N) ; fstp{l|s} amode
 	 */
          p = do_ffree_st7(p);
-         p = do_fld_st(p, 0+hregNumber(i->Xin.FpLdSt.reg));
+         p = do_fld_st(p, 0+fregEnc(i->Xin.FpLdSt.reg));
          switch (i->Xin.FpLdSt.sz) {
             case 4:
                *p++ = 0xD9;
-               p = doAMode_M(p, fake(3)/*subopcode*/, i->Xin.FpLdSt.addr);
+               p = doAMode_M_enc(p, 3/*subopcode*/, i->Xin.FpLdSt.addr);
                break;
             case 8:
                *p++ = 0xDD;
-               p = doAMode_M(p, fake(3)/*subopcode*/, i->Xin.FpLdSt.addr);
+               p = doAMode_M_enc(p, 3/*subopcode*/, i->Xin.FpLdSt.addr);
                break;
             case 10:
                *p++ = 0xDB;
-               p = doAMode_M(p, fake(7)/*subopcode*/, i->Xin.FpLdSt.addr);
+               p = doAMode_M_enc(p, 7/*subopcode*/, i->Xin.FpLdSt.addr);
                break;
             default:
                vpanic("emitX86Instr(FpLdSt,store)");
@@ -2950,8 +2953,8 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
          }
          p = do_ffree_st7(p);
          *p++ = toUChar(opc);
-         p = doAMode_M(p, fake(subopc_imm)/*subopcode*/, i->Xin.FpLdStI.addr);
-         p = do_fstp_st(p, 1+hregNumber(i->Xin.FpLdStI.reg));
+         p = doAMode_M_enc(p, subopc_imm/*subopcode*/, i->Xin.FpLdStI.addr);
+         p = do_fstp_st(p, 1+fregEnc(i->Xin.FpLdStI.reg));
          goto done;
       } else {
          /* Store from %fakeN into memory, converting to an int.
@@ -2964,9 +2967,9 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
             default: vpanic("emitX86Instr(Xin_FpLdStI-store)");
          }
          p = do_ffree_st7(p);
-         p = do_fld_st(p, 0+hregNumber(i->Xin.FpLdStI.reg));
+         p = do_fld_st(p, 0+fregEnc(i->Xin.FpLdStI.reg));
          *p++ = toUChar(opc);
-         p = doAMode_M(p, fake(subopc_imm)/*subopcode*/, i->Xin.FpLdStI.addr);
+         p = doAMode_M_enc(p, subopc_imm/*subopcode*/, i->Xin.FpLdStI.addr);
          goto done;
       }
       break;
@@ -2974,7 +2977,7 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
    case Xin_Fp64to32:
       /* ffree %st7 ; fld %st(src) */
       p = do_ffree_st7(p);
-      p = do_fld_st(p, 0+fregNo(i->Xin.Fp64to32.src));
+      p = do_fld_st(p, 0+fregEnc(i->Xin.Fp64to32.src));
       /* subl $4, %esp */
       *p++ = 0x83; *p++ = 0xEC; *p++ = 0x04;
       /* fstps (%esp) */
@@ -2984,7 +2987,7 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
       /* addl $4, %esp */
       *p++ = 0x83; *p++ = 0xC4; *p++ = 0x04;
       /* fstp %st(1+dst) */
-      p = do_fstp_st(p, 1+fregNo(i->Xin.Fp64to32.dst));
+      p = do_fstp_st(p, 1+fregEnc(i->Xin.Fp64to32.dst));
       goto done;
 
    case Xin_FpCMov:
@@ -2995,8 +2998,8 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
 
       /* ffree %st7 ; fld %st(src) ; fstp %st(1+dst) */
       p = do_ffree_st7(p);
-      p = do_fld_st(p, 0+fregNo(i->Xin.FpCMov.src));
-      p = do_fstp_st(p, 1+fregNo(i->Xin.FpCMov.dst));
+      p = do_fld_st(p, 0+fregEnc(i->Xin.FpCMov.src));
+      p = do_fstp_st(p, 1+fregEnc(i->Xin.FpCMov.dst));
 
       /* Fill in the jump offset. */
       *(ptmp-1) = toUChar(p - ptmp);
@@ -3004,7 +3007,7 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
 
    case Xin_FpLdCW:
       *p++ = 0xD9;
-      p = doAMode_M(p, fake(5)/*subopcode*/, i->Xin.FpLdCW.addr);
+      p = doAMode_M_enc(p, 5/*subopcode*/, i->Xin.FpLdCW.addr);
       goto done;
 
    case Xin_FpStSW_AX:
@@ -3021,10 +3024,10 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
       /* ffree %st7 */
       p = do_ffree_st7(p);
       /* fpush %fL */
-      p = do_fld_st(p, 0+fregNo(i->Xin.FpCmp.srcL));
+      p = do_fld_st(p, 0+fregEnc(i->Xin.FpCmp.srcL));
       /* fucomp %(fR+1) */
       *p++ = 0xDD;
-      *p++ = toUChar(0xE8 + (7 & (1+fregNo(i->Xin.FpCmp.srcR))));
+      *p++ = toUChar(0xE8 + (7 & (1+fregEnc(i->Xin.FpCmp.srcR))));
       /* fnstsw %ax */
       *p++ = 0xDF;
       *p++ = 0xE0;
@@ -3042,7 +3045,7 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
       /* movl (%esp), %xmm-dst */
       *p++ = 0x0F;
       *p++ = 0x10;
-      *p++ = toUChar(0x04 + 8 * (7 & vregNo(i->Xin.SseConst.dst)));
+      *p++ = toUChar(0x04 + 8 * (7 & vregEnc(i->Xin.SseConst.dst)));
       *p++ = 0x24;
       /* addl $16, %esp */
       *p++ = 0x83;
@@ -3054,7 +3057,7 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
    case Xin_SseLdSt:
       *p++ = 0x0F; 
       *p++ = toUChar(i->Xin.SseLdSt.isLoad ? 0x10 : 0x11);
-      p = doAMode_M(p, fake(vregNo(i->Xin.SseLdSt.reg)), i->Xin.SseLdSt.addr);
+      p = doAMode_M_enc(p, vregEnc(i->Xin.SseLdSt.reg), i->Xin.SseLdSt.addr);
       goto done;
 
    case Xin_SseLdzLO:
@@ -3063,8 +3066,7 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
       *p++ = toUChar(i->Xin.SseLdzLO.sz==4 ? 0xF3 : 0xF2);
       *p++ = 0x0F; 
       *p++ = 0x10; 
-      p = doAMode_M(p, fake(vregNo(i->Xin.SseLdzLO.reg)), 
-                       i->Xin.SseLdzLO.addr);
+      p = doAMode_M_enc(p, vregEnc(i->Xin.SseLdzLO.reg), i->Xin.SseLdzLO.addr);
       goto done;
 
    case Xin_Sse32Fx4:
@@ -3086,8 +3088,8 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
          case Xsse_CMPUNF: *p++ = 0xC2; xtra = 0x103; break;
          default: goto bad;
       }
-      p = doAMode_R(p, fake(vregNo(i->Xin.Sse32Fx4.dst)),
-                       fake(vregNo(i->Xin.Sse32Fx4.src)) );
+      p = doAMode_R_enc_enc(p, vregEnc(i->Xin.Sse32Fx4.dst),
+                               vregEnc(i->Xin.Sse32Fx4.src) );
       if (xtra & 0x100)
          *p++ = toUChar(xtra & 0xFF);
       goto done;
@@ -3112,8 +3114,8 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
          case Xsse_CMPUNF: *p++ = 0xC2; xtra = 0x103; break;
          default: goto bad;
       }
-      p = doAMode_R(p, fake(vregNo(i->Xin.Sse64Fx2.dst)),
-                       fake(vregNo(i->Xin.Sse64Fx2.src)) );
+      p = doAMode_R_enc_enc(p, vregEnc(i->Xin.Sse64Fx2.dst),
+                               vregEnc(i->Xin.Sse64Fx2.src) );
       if (xtra & 0x100)
          *p++ = toUChar(xtra & 0xFF);
       goto done;
@@ -3138,8 +3140,8 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
          case Xsse_CMPUNF: *p++ = 0xC2; xtra = 0x103; break;
          default: goto bad;
       }
-      p = doAMode_R(p, fake(vregNo(i->Xin.Sse32FLo.dst)),
-                       fake(vregNo(i->Xin.Sse32FLo.src)) );
+      p = doAMode_R_enc_enc(p, vregEnc(i->Xin.Sse32FLo.dst),
+                               vregEnc(i->Xin.Sse32FLo.src) );
       if (xtra & 0x100)
          *p++ = toUChar(xtra & 0xFF);
       goto done;
@@ -3164,8 +3166,8 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
          case Xsse_CMPUNF: *p++ = 0xC2; xtra = 0x103; break;
          default: goto bad;
       }
-      p = doAMode_R(p, fake(vregNo(i->Xin.Sse64FLo.dst)),
-                       fake(vregNo(i->Xin.Sse64FLo.src)) );
+      p = doAMode_R_enc_enc(p, vregEnc(i->Xin.Sse64FLo.dst),
+                               vregEnc(i->Xin.Sse64FLo.src) );
       if (xtra & 0x100)
          *p++ = toUChar(xtra & 0xFF);
       goto done;
@@ -3229,8 +3231,8 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
          case Xsse_UNPCKLQ:  XX(0x66); XX(0x0F); XX(0x6C); break;
          default: goto bad;
       }
-      p = doAMode_R(p, fake(vregNo(i->Xin.SseReRg.dst)),
-                       fake(vregNo(i->Xin.SseReRg.src)) );
+      p = doAMode_R_enc_enc(p, vregEnc(i->Xin.SseReRg.dst),
+                               vregEnc(i->Xin.SseReRg.src) );
 #     undef XX
       goto done;
 
@@ -3243,8 +3245,8 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
       /* movaps %src, %dst */
       *p++ = 0x0F; 
       *p++ = 0x28; 
-      p = doAMode_R(p, fake(vregNo(i->Xin.SseCMov.dst)),
-                       fake(vregNo(i->Xin.SseCMov.src)) );
+      p = doAMode_R_enc_enc(p, vregEnc(i->Xin.SseCMov.dst),
+                               vregEnc(i->Xin.SseCMov.src) );
 
       /* Fill in the jump offset. */
       *(ptmp-1) = toUChar(p - ptmp);
@@ -3254,8 +3256,8 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
       *p++ = 0x66; 
       *p++ = 0x0F; 
       *p++ = 0x70; 
-      p = doAMode_R(p, fake(vregNo(i->Xin.SseShuf.dst)),
-                       fake(vregNo(i->Xin.SseShuf.src)) );
+      p = doAMode_R_enc_enc(p, vregEnc(i->Xin.SseShuf.dst),
+                               vregEnc(i->Xin.SseShuf.src) );
       *p++ = (UChar)(i->Xin.SseShuf.order);
       goto done;
 
@@ -3275,11 +3277,11 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
          js/jns avoids that, though. */
       UChar* p0 = p;
       /* ---  decl 8(%ebp) --- */
-      /* "fake(1)" because + there's no register in this encoding;
+      /* "1" because + there's no register in this encoding;
          instead the register + field is used as a sub opcode.  The
-         encoding for "decl r/m32" + is FF /1, hence the fake(1). */
+         encoding for "decl r/m32" + is FF /1, hence the "1". */
       *p++ = 0xFF;
-      p = doAMode_M(p, fake(1), i->Xin.EvCheck.amCounter);
+      p = doAMode_M_enc(p, 1, i->Xin.EvCheck.amCounter);
       vassert(p - p0 == 3);
       /* --- jns nofail --- */
       *p++ = 0x79;
@@ -3288,7 +3290,7 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
       /* --- jmp* 0(%ebp) --- */
       /* The encoding is FF /4. */
       *p++ = 0xFF;
-      p = doAMode_M(p, fake(4), i->Xin.EvCheck.amFailAddr);
+      p = doAMode_M_enc(p, 4, i->Xin.EvCheck.amFailAddr);
       vassert(p - p0 == 8); /* also ensures that 0x03 offset above is ok */
       /* And crosscheck .. */
       vassert(evCheckSzB_X86() == 8);
@@ -3328,8 +3330,6 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
   done:
    vassert(p - &buf[0] <= 32);
    return p - &buf[0];
-
-#  undef fake
 }
 
 

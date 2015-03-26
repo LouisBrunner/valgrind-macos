@@ -38,47 +38,43 @@
 
 /* --------- Registers. --------- */
 
-/* The usual HReg abstraction.
-    There are 31 general purpose regs.
-*/
+#define ST_IN static inline
+ST_IN HReg hregARM64_X22 ( void ) { return mkHReg(False, HRcInt64,  22,  0); }
+ST_IN HReg hregARM64_X23 ( void ) { return mkHReg(False, HRcInt64,  23,  1); }
+ST_IN HReg hregARM64_X24 ( void ) { return mkHReg(False, HRcInt64,  24,  2); }
+ST_IN HReg hregARM64_X25 ( void ) { return mkHReg(False, HRcInt64,  25,  3); }
+ST_IN HReg hregARM64_X26 ( void ) { return mkHReg(False, HRcInt64,  26,  4); }
+ST_IN HReg hregARM64_X27 ( void ) { return mkHReg(False, HRcInt64,  27,  5); }
+ST_IN HReg hregARM64_X28 ( void ) { return mkHReg(False, HRcInt64,  28,  6); }
+
+ST_IN HReg hregARM64_X0  ( void ) { return mkHReg(False, HRcInt64,  0,   7); }
+ST_IN HReg hregARM64_X1  ( void ) { return mkHReg(False, HRcInt64,  1,   8); }
+ST_IN HReg hregARM64_X2  ( void ) { return mkHReg(False, HRcInt64,  2,   9); }
+ST_IN HReg hregARM64_X3  ( void ) { return mkHReg(False, HRcInt64,  3,  10); }
+ST_IN HReg hregARM64_X4  ( void ) { return mkHReg(False, HRcInt64,  4,  11); }
+ST_IN HReg hregARM64_X5  ( void ) { return mkHReg(False, HRcInt64,  5,  12); }
+ST_IN HReg hregARM64_X6  ( void ) { return mkHReg(False, HRcInt64,  6,  13); }
+ST_IN HReg hregARM64_X7  ( void ) { return mkHReg(False, HRcInt64,  7,  14); }
+
+ST_IN HReg hregARM64_Q16 ( void ) { return mkHReg(False, HRcVec128, 16, 15); }
+ST_IN HReg hregARM64_Q17 ( void ) { return mkHReg(False, HRcVec128, 17, 16); }
+ST_IN HReg hregARM64_Q18 ( void ) { return mkHReg(False, HRcVec128, 18, 17); }
+ST_IN HReg hregARM64_Q19 ( void ) { return mkHReg(False, HRcVec128, 19, 18); }
+ST_IN HReg hregARM64_Q20 ( void ) { return mkHReg(False, HRcVec128, 20, 19); }
+
+ST_IN HReg hregARM64_D8  ( void ) { return mkHReg(False, HRcFlt64,  8,  20); }
+ST_IN HReg hregARM64_D9  ( void ) { return mkHReg(False, HRcFlt64,  9,  21); }
+ST_IN HReg hregARM64_D10 ( void ) { return mkHReg(False, HRcFlt64,  10, 22); }
+ST_IN HReg hregARM64_D11 ( void ) { return mkHReg(False, HRcFlt64,  11, 23); }
+ST_IN HReg hregARM64_D12 ( void ) { return mkHReg(False, HRcFlt64,  12, 24); }
+ST_IN HReg hregARM64_D13 ( void ) { return mkHReg(False, HRcFlt64,  13, 25); }
+
+ST_IN HReg hregARM64_X8  ( void ) { return mkHReg(False, HRcInt64,  8,  26); }
+ST_IN HReg hregARM64_X9  ( void ) { return mkHReg(False, HRcInt64,  9,  27); }
+ST_IN HReg hregARM64_X21 ( void ) { return mkHReg(False, HRcInt64, 21,  28); }
+#undef ST_IN
 
 extern void ppHRegARM64 ( HReg );
-
-extern HReg hregARM64_X0  ( void );
-extern HReg hregARM64_X1  ( void );
-extern HReg hregARM64_X2  ( void );
-extern HReg hregARM64_X3  ( void );
-extern HReg hregARM64_X4  ( void );
-extern HReg hregARM64_X5  ( void );
-extern HReg hregARM64_X6  ( void );
-extern HReg hregARM64_X7  ( void );
-extern HReg hregARM64_X8  ( void );
-extern HReg hregARM64_X9  ( void );
-extern HReg hregARM64_X10 ( void );
-extern HReg hregARM64_X11 ( void );
-extern HReg hregARM64_X12 ( void );
-extern HReg hregARM64_X13 ( void );
-extern HReg hregARM64_X14 ( void );
-extern HReg hregARM64_X15 ( void );
-extern HReg hregARM64_X21 ( void );
-extern HReg hregARM64_X22 ( void );
-extern HReg hregARM64_X23 ( void );
-extern HReg hregARM64_X24 ( void );
-extern HReg hregARM64_X25 ( void );
-extern HReg hregARM64_X26 ( void );
-extern HReg hregARM64_X27 ( void );
-extern HReg hregARM64_X28 ( void );
-extern HReg hregARM64_D8  ( void );
-extern HReg hregARM64_D9  ( void );
-extern HReg hregARM64_D10 ( void );
-extern HReg hregARM64_D11 ( void );
-extern HReg hregARM64_D12 ( void );
-extern HReg hregARM64_D13 ( void );
-extern HReg hregARM64_Q16 ( void );
-extern HReg hregARM64_Q17 ( void );
-extern HReg hregARM64_Q18 ( void );
-extern HReg hregARM64_Q19 ( void );
-extern HReg hregARM64_Q20 ( void );
 
 /* Number of registers used arg passing in function calls */
 #define ARM64_N_ARGREGS 8   /* x0 .. x7 */
@@ -953,7 +949,8 @@ extern void genSpill_ARM64  ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
 extern void genReload_ARM64 ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
                               HReg rreg, Int offset, Bool );
 
-extern void getAllocableRegs_ARM64 ( Int*, HReg** );
+extern const RRegUniverse* getRRegUniverse_ARM64 ( void );
+
 extern HInstrArray* iselSB_ARM64 ( const IRSB*, 
                                    VexArch,
                                    const VexArchInfo*,

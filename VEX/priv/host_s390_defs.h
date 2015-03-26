@@ -40,6 +40,8 @@
 
 /* --------- Registers --------- */
 const HChar *s390_hreg_as_string(HReg);
+HReg s390_hreg_gpr(UInt regno);
+HReg s390_hreg_fpr(UInt regno);
 
 /* Dedicated registers */
 HReg s390_hreg_guest_state_pointer(void);
@@ -738,7 +740,7 @@ Bool  isMove_S390Instr     ( const s390_insn *, HReg *, HReg * );
 Int   emit_S390Instr       ( Bool *, UChar *, Int, const s390_insn *, Bool,
                              VexEndness, const void *, const void *,
                              const void *, const void *);
-void  getAllocableRegs_S390( Int *, HReg **, Bool );
+const RRegUniverse *getRRegUniverse_S390( void );
 void  genSpill_S390        ( HInstr **, HInstr **, HReg , Int , Bool );
 void  genReload_S390       ( HInstr **, HInstr **, HReg , Int , Bool );
 HInstrArray *iselSB_S390   ( const IRSB *, VexArch, const VexArchInfo *,

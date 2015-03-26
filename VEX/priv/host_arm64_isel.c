@@ -157,21 +157,21 @@ static void addInstr ( ISelEnv* env, ARM64Instr* instr )
 
 static HReg newVRegI ( ISelEnv* env )
 {
-   HReg reg = mkHReg(env->vreg_ctr, HRcInt64, True/*virtual reg*/);
+   HReg reg = mkHReg(True/*virtual reg*/, HRcInt64, 0, env->vreg_ctr);
    env->vreg_ctr++;
    return reg;
 }
 
 static HReg newVRegD ( ISelEnv* env )
 {
-   HReg reg = mkHReg(env->vreg_ctr, HRcFlt64, True/*virtual reg*/);
+   HReg reg = mkHReg(True/*virtual reg*/, HRcFlt64, 0, env->vreg_ctr);
    env->vreg_ctr++;
    return reg;
 }
 
 static HReg newVRegV ( ISelEnv* env )
 {
-   HReg reg = mkHReg(env->vreg_ctr, HRcVec128, True/*virtual reg*/);
+   HReg reg = mkHReg(True/*virtual reg*/, HRcVec128, 0, env->vreg_ctr);
    env->vreg_ctr++;
    return reg;
 }
@@ -3959,22 +3959,22 @@ HInstrArray* iselSB_ARM64 ( const IRSB* bb,
       switch (bb->tyenv->types[i]) {
          case Ity_I1:
          case Ity_I8: case Ity_I16: case Ity_I32: case Ity_I64:
-            hreg = mkHReg(j++, HRcInt64, True);
+            hreg = mkHReg(True, HRcInt64, 0, j++);
             break;
          case Ity_I128:
-            hreg   = mkHReg(j++, HRcInt64, True);
-            hregHI = mkHReg(j++, HRcInt64, True);
+            hreg   = mkHReg(True, HRcInt64, 0, j++);
+            hregHI = mkHReg(True, HRcInt64, 0, j++);
             break;
          case Ity_F32: // we'll use HRcFlt64 regs for F32 too
          case Ity_F64:
-            hreg = mkHReg(j++, HRcFlt64, True);
+            hreg = mkHReg(True, HRcFlt64, 0, j++);
             break;
          case Ity_V128:
-            hreg = mkHReg(j++, HRcVec128, True);
+            hreg = mkHReg(True, HRcVec128, 0, j++);
             break;
          case Ity_V256:
-            hreg   = mkHReg(j++, HRcVec128, True);
-            hregHI = mkHReg(j++, HRcVec128, True);
+            hreg   = mkHReg(True, HRcVec128, 0, j++);
+            hregHI = mkHReg(True, HRcVec128, 0, j++);
             break;
          default:
             ppIRType(bb->tyenv->types[i]);

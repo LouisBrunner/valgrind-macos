@@ -66,6 +66,32 @@ static UInt s390_tchain_load64_len(void);
 /*--- Registers                                            ---*/
 /*------------------------------------------------------------*/
 
+/* A mapping from register number to register index */
+static Int gpr_index[16];  // GPR regno -> register index
+static Int fpr_index[16];  // FPR regno -> register index
+
+HReg
+s390_hreg_gpr(UInt regno)
+{
+   Int ix = gpr_index[regno];
+   vassert(ix >= 0);
+   return mkHReg(/*virtual*/False, HRcInt64, regno, ix);
+}
+
+HReg
+s390_hreg_fpr(UInt regno)
+{
+   Int ix = fpr_index[regno];
+   vassert(ix >= 0);
+   return mkHReg(/*virtual*/False, HRcFlt64, regno, ix);
+}
+
+static __inline__ UInt
+hregNumber(HReg reg)
+{
+   return hregEncoding(reg);
+}
+
 /* Decompile the given register into a static buffer and return it */
 const HChar *
 s390_hreg_as_string(HReg reg)
@@ -110,74 +136,11 @@ s390_hreg_as_string(HReg reg)
 }
 
 
-/* Tell the register allocator which registers can be allocated. */
-static void
-s390_hreg_get_allocable(Int *nregs, HReg **arr)
-{
-   UInt i;
-
-   /* Total number of allocable registers (all classes) */
-   *nregs =  16 /* GPRs */
-      -  1 /* r0 */
-      -  1 /* r12 scratch register for translation chaining support */
-      -  1 /* r13 guest state pointer */
-      -  1 /* r14 link register */
-      -  1 /* r15 stack pointer */
-      + 16 /* FPRs */
-      ;
-
-   *arr = LibVEX_Alloc_inline(*nregs * sizeof(HReg));
-
-   i = 0;
-
-   /* GPR0 is not available because it is interpreted as 0, when used
-      as a base or index register. */
-   (*arr)[i++] = mkHReg(1,  HRcInt64, False);
-   (*arr)[i++] = mkHReg(2,  HRcInt64, False);
-   (*arr)[i++] = mkHReg(3,  HRcInt64, False);
-   (*arr)[i++] = mkHReg(4,  HRcInt64, False);
-   (*arr)[i++] = mkHReg(5,  HRcInt64, False);
-   (*arr)[i++] = mkHReg(6,  HRcInt64, False);
-   (*arr)[i++] = mkHReg(7,  HRcInt64, False);
-   (*arr)[i++] = mkHReg(8,  HRcInt64, False);
-   (*arr)[i++] = mkHReg(9,  HRcInt64, False);
-   /* GPR10 and GPR11 are used for instructions that use register pairs.
-      Otherwise, they are available to the allocator */
-   (*arr)[i++] = mkHReg(10, HRcInt64, False);
-   (*arr)[i++] = mkHReg(11, HRcInt64, False);
-   /* GPR12 is not available because it us used as a scratch register
-      in translation chaining. */
-   /* GPR13 is not available because it is used as guest state pointer */
-   /* GPR14 is not available because it is used as link register */
-   /* GPR15 is not available because it is used as stack pointer */
-
-   /* Add the available real (non-virtual) FPRs */
-   (*arr)[i++] = mkHReg(0,  HRcFlt64, False);
-   (*arr)[i++] = mkHReg(1,  HRcFlt64, False);
-   (*arr)[i++] = mkHReg(2,  HRcFlt64, False);
-   (*arr)[i++] = mkHReg(3,  HRcFlt64, False);
-   (*arr)[i++] = mkHReg(4,  HRcFlt64, False);
-   (*arr)[i++] = mkHReg(5,  HRcFlt64, False);
-   (*arr)[i++] = mkHReg(6,  HRcFlt64, False);
-   (*arr)[i++] = mkHReg(7,  HRcFlt64, False);
-   (*arr)[i++] = mkHReg(8,  HRcFlt64, False);
-   (*arr)[i++] = mkHReg(9,  HRcFlt64, False);
-   (*arr)[i++] = mkHReg(10, HRcFlt64, False);
-   (*arr)[i++] = mkHReg(11, HRcFlt64, False);
-   (*arr)[i++] = mkHReg(12, HRcFlt64, False);
-   (*arr)[i++] = mkHReg(13, HRcFlt64, False);
-   (*arr)[i++] = mkHReg(14, HRcFlt64, False);
-   (*arr)[i++] = mkHReg(15, HRcFlt64, False);
-   /* FPR12 - FPR15 are also used as register pairs for 128-bit
-      floating point operations */
-}
-
-
 /* Return the real register that holds the guest state pointer */
 HReg
 s390_hreg_guest_state_pointer(void)
 {
-   return mkHReg(S390_REGNO_GUEST_STATE_POINTER, HRcInt64, False);
+   return s390_hreg_gpr(S390_REGNO_GUEST_STATE_POINTER);
 }
 
 
@@ -212,7 +175,7 @@ s390_amode_b12(Int d, HReg b)
    am->tag = S390_AMODE_B12;
    am->d = d;
    am->b = b;
-   am->x = mkHReg(0, HRcInt64, False);  /* hregNumber(am->x) == 0 */
+   am->x = s390_hreg_gpr(0);  /* hregNumber(am->x) == 0 */
 
    return am;
 }
@@ -229,7 +192,7 @@ s390_amode_b20(Int d, HReg b)
    am->tag = S390_AMODE_B20;
    am->d = d;
    am->b = b;
-   am->x = mkHReg(0, HRcInt64, False);  /* hregNumber(am->x) == 0 */
+   am->x = s390_hreg_gpr(0);  /* hregNumber(am->x) == 0 */
 
    return am;
 }
@@ -421,13 +384,65 @@ ppHRegS390(HReg reg)
 /*--- Helpers for register allocation                      ---*/
 /*------------------------------------------------------------*/
 
-/* Called once per translation. */
-void
-getAllocableRegs_S390(Int *nregs, HReg **arr, Bool mode64)
+/* Initialise and return the "register universe", i.e. a list of
+   all hardware registers. Called once. */
+const RRegUniverse *
+getRRegUniverse_S390(void)
 {
-   s390_hreg_get_allocable(nregs, arr);
-}
+   static RRegUniverse all_regs;
+   static Bool initialised = False;
+   RRegUniverse *ru = &all_regs;
+   
+   if (LIKELY(initialised))
+      return ru;
 
+   RRegUniverse__init(ru);
+
+   /* Assign invalid values to the gpr/fpr_index */
+   for (UInt i = 0; i < sizeof gpr_index / sizeof gpr_index[0]; ++i)
+      gpr_index[i] = -1;
+   for (UInt i = 0; i < sizeof fpr_index / sizeof fpr_index[0]; ++i)
+      fpr_index[i] = -1;
+
+   /* Add the registers that are available to the register allocator.
+      GPRs:  registers 1..11 are available
+      FPRs:  registers 0..15 are available
+             FPR12 - FPR15 are also used as register pairs for 128-bit
+             floating point operations
+   */
+   UInt regno;
+   for (regno = 1; regno <= 11; ++regno) {
+      gpr_index[regno] = ru->size;
+      ru->regs[ru->size++] = s390_hreg_gpr(regno);
+   }
+   for (regno = 0; regno <= 15; ++regno) {
+      fpr_index[regno] = ru->size;
+      ru->regs[ru->size++] = s390_hreg_fpr(regno);
+   }
+   ru->allocable = ru->size;
+
+   /* Add the registers that are not available for allocation.
+      r0  -- cannot be used as a base or index register
+      r12 -- scratch register for translation chaining support
+      r13 -- guest state pointer
+      r14 -- link register
+      r15 -- stack pointer
+   */
+   UInt other[] = { 0, 12, 13, 14, 15 };
+   for (UInt i = 0; i < sizeof other / sizeof other[0]; ++i) {
+      gpr_index[other[i]] = ru->size;
+      ru->regs[ru->size++] = s390_hreg_gpr(other[i]);
+   }
+
+   /* Sanity checking */
+   for (UInt i = 0; i < sizeof gpr_index / sizeof gpr_index[0]; ++i)
+      vassert(gpr_index[i] >= 0);
+   for (UInt i = 0; i < sizeof fpr_index / sizeof fpr_index[0]; ++i)
+      vassert(fpr_index[i] >= 0);
+                 
+   initialised = True;
+   return ru;
+}
 
 /* Tell the register allocator how the given instruction uses the registers
    it refers to. */
@@ -649,19 +664,18 @@ s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *insn)
          volatile registers are: r0 - r5. Valgrind's register allocator
          does not know about r0, so we can leave that out */
       for (i = 1; i <= 5; ++i) {
-         addHRegUse(u, HRmWrite, mkHReg(i, HRcInt64, False));
+         addHRegUse(u, HRmWrite, s390_hreg_gpr(i));
       }
 
       /* Ditto for floating point registers. f0 - f7 are volatile */
       for (i = 0; i <= 7; ++i) {
-         addHRegUse(u, HRmWrite, mkHReg(i, HRcFlt64, False));
+         addHRegUse(u, HRmWrite, s390_hreg_fpr(i));
       }
 
       /* The registers that are used for passing arguments will be read.
          Not all of them may, but in general we need to assume that. */
       for (i = 0; i < insn->variant.helper_call.details->num_args; ++i) {
-         addHRegUse(u, HRmRead, mkHReg(s390_gprno_from_arg_index(i),
-                                       HRcInt64, False));
+         addHRegUse(u, HRmRead, s390_hreg_gpr(s390_gprno_from_arg_index(i)));
       }
 
       /* s390_insn_helper_call_emit also reads / writes the link register

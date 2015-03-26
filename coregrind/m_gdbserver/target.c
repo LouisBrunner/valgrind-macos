@@ -339,7 +339,7 @@ void fetch_register (int regno)
       if (mod && VG_(debugLog_getLevel)() > 1) {
          char bufimage [2*size + 1];
          heximage (bufimage, buf, size);
-         dlog(2, "fetched register %d size %d name %s value %s tid %d status %s\n", 
+         dlog(3, "fetched register %d size %d name %s value %s tid %d status %s\n", 
               regno, size, the_low_target.reg_defs[regno].name, bufimage, 
               tid, VG_(name_of_ThreadStatus) (tst->status));
       }
@@ -449,7 +449,7 @@ Bool hostvisibility = False;
 int valgrind_read_memory (CORE_ADDR memaddr, unsigned char *myaddr, int len)
 {
    const void *sourceaddr = C2v (memaddr);
-   dlog(2, "reading memory %p size %d\n", sourceaddr, len);
+   dlog(3, "reading memory %p size %d\n", sourceaddr, len);
    if (VG_(am_is_valid_for_client) ((Addr) sourceaddr, 
                                     len, VKI_PROT_READ)
        || (hostvisibility 
@@ -463,11 +463,12 @@ int valgrind_read_memory (CORE_ADDR memaddr, unsigned char *myaddr, int len)
    }
 }
 
-int valgrind_write_memory (CORE_ADDR memaddr, const unsigned char *myaddr, int len)
+int valgrind_write_memory (CORE_ADDR memaddr, 
+                           const unsigned char *myaddr, int len)
 {
    Bool is_valid_client_memory;
    void *targetaddr = C2v (memaddr);
-   dlog(2, "writing memory %p size %d\n", targetaddr, len);
+   dlog(3, "writing memory %p size %d\n", targetaddr, len);
    is_valid_client_memory 
       = VG_(am_is_valid_for_client) ((Addr)targetaddr, len, VKI_PROT_WRITE);
    if (is_valid_client_memory

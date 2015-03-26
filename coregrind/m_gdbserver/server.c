@@ -618,7 +618,7 @@ void handle_set (char *arg_own_buf, int *new_packet_len_p)
          if (to == NULL) to = end;
          decode_address (&sig, from, to - from);
          pass_signals[(int)sig] = 1;
-         dlog(1, "pass_signal gdb_nr %d %s\n",
+         dlog(3, "pass_signal gdb_nr %d %s\n",
               (int)sig, target_signal_to_name(sig));
          from = to;
          if (*from == ';') from++;

@@ -852,16 +852,16 @@ int putpkt_binary (char *buf, int cnt)
       }
 
       if (noack_mode)
-         dlog(1, "putpkt (\"%s\"); [no ack]\n", buf2);
+         dlog(3, "putpkt (\"%s\"); [no ack]\n", buf2);
       else
-         dlog(1,"putpkt (\"%s\"); [looking for ack]\n", buf2);
+         dlog(3,"putpkt (\"%s\"); [looking for ack]\n", buf2);
 
       if (noack_mode)
          break;
 
       cc = readchar (1);
       if (cc > 0)
-         dlog(1, "[received '%c' (0x%x)]\n", cc, cc);
+         dlog(3, "[received '%c' (0x%x)]\n", cc, cc);
 
       if (cc <= 0) {
          if (cc == 0)
@@ -997,7 +997,7 @@ int getpkt (char *buf)
          c = readchar (0);
          if (c == '$')
 	    break;
-         dlog(1, "[getpkt: discarding char '%c']\n", c);
+         dlog(3, "[getpkt: discarding char '%c']\n", c);
          if (c < 0)
 	    return -1;
       }
@@ -1029,16 +1029,16 @@ int getpkt (char *buf)
    }
 
    if (noack_mode)
-      dlog(1, "getpkt (\"%s\");  [no ack] \n", buf);
+      dlog(3, "getpkt (\"%s\");  [no ack] \n", buf);
    else
-      dlog(1, "getpkt (\"%s\");  [sending ack] \n", buf);
+      dlog(3, "getpkt (\"%s\");  [sending ack] \n", buf);
 
    if (!noack_mode) {
       if (!ensure_write_remote_desc()) {
          dlog(1, "getpkt(write ack) no write_remote_desc");
       }
       VG_(write) (write_remote_desc, "+", 1);
-      dlog(1, "[sent ack]\n");
+      dlog(3, "[sent ack]\n");
    }
 
    return bp - buf;

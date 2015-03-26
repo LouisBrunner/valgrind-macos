@@ -2384,9 +2384,9 @@ void VG_(init_tt_tc) ( void )
 /*--- Printing out statistics.                             ---*/
 /*------------------------------------------------------------*/
 
-static ULong safe_idiv( ULong a, ULong b )
+static Double safe_idiv( ULong a, ULong b )
 {
-   return (b == 0 ? 0 : a / b);
+   return (b == 0 ? 0 : (Double)a / (Double)b);
 }
 
 UInt VG_(get_bbs_translated) ( void )
@@ -2405,10 +2405,10 @@ void VG_(print_tt_tc_stats) ( void )
 
    VG_(message)(Vg_DebugMsg,
                 " transtab: new        %'lld "
-                "(%'llu -> %'llu; ratio %'llu:10) [%'llu scs] "
+                "(%'llu -> %'llu; ratio %3.1f) [%'llu scs] "
                 "avg tce size %d\n",
                 n_in_count, n_in_osize, n_in_tsize,
-                safe_idiv(10*n_in_tsize, n_in_osize),
+                safe_idiv(n_in_tsize, n_in_osize),
                 n_in_sc_count,
                 (int) (n_in_tsize / (n_in_count ? n_in_count : 1)));
    VG_(message)(Vg_DebugMsg,

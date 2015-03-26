@@ -159,11 +159,13 @@ static void init_ExeContext_storage ( void )
 /* Print stats. */
 void VG_(print_ExeContext_stats) ( Bool with_stacktraces )
 {
+   Int i;
+   ULong total_n_ips;
+   ExeContext* ec;
+
    init_ExeContext_storage();
 
    if (with_stacktraces) {
-      Int i;
-      ExeContext* ec;
       VG_(message)(Vg_DebugMsg, "   exectx: Printing contexts stacktraces\n");
       for (i = 0; i < ec_htab_size; i++) {
          for (ec = ec_htab[i]; ec; ec = ec->chain) {
@@ -176,10 +178,17 @@ void VG_(print_ExeContext_stats) ( Bool with_stacktraces )
                    "   exectx: Printed %'llu contexts stacktraces\n",
                    ec_totstored);
    }
-
+   
+   total_n_ips = 0;
+   for (i = 0; i < ec_htab_size; i++) {
+      for (ec = ec_htab[i]; ec; ec = ec->chain)
+         total_n_ips += ec->n_ips;
+   }
    VG_(message)(Vg_DebugMsg, 
-      "   exectx: %'lu lists, %'llu contexts (avg %'llu per list)\n",
-      ec_htab_size, ec_totstored, ec_totstored / (ULong)ec_htab_size
+      "   exectx: %'lu lists, %'llu contexts (avg %3.2f per list)"
+      " (avg %3.2f IP per context)\n",
+      ec_htab_size, ec_totstored, (Double)ec_totstored / (Double)ec_htab_size,
+      (Double)total_n_ips / (Double)ec_htab_size
    );
    VG_(message)(Vg_DebugMsg, 
       "   exectx: %'llu searches, %'llu full compares (%'llu per 1000)\n",

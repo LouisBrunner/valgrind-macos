@@ -204,7 +204,7 @@ static inline void my_exit ( int x )
  //STRRCHR(VG_Z_DYLD,          strrchr)
  //STRRCHR(VG_Z_DYLD,          rindex)
  STRRCHR(VG_Z_LIBC_SONAME, strrchr)
-# if DARWIN_VERS == DARWIN_10_9
+# if DARWIN_VERS == DARWIN_10_9 || DARWIN_VERS == DARWIN_10_10
   STRRCHR(libsystemZucZddylib, strrchr)
 # endif
 
@@ -244,6 +244,10 @@ static inline void my_exit ( int x )
  STRCHR(VG_Z_LIBC_SONAME, strchr)
 # if DARWIN_VERS == DARWIN_10_9
   STRCHR(libsystemZuplatformZddylib, _platform_strchr)
+# endif
+# if DARWIN_VERS == DARWIN_10_10
+  /* _platform_strchr$VARIANT$Generic */
+  STRCHR(libsystemZuplatformZddylib, _platform_strchr$VARIANT$Generic)
 # endif
 #endif
 

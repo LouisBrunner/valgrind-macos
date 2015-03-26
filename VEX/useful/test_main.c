@@ -103,7 +103,7 @@ int main ( int argc, char** argv )
    VexTranslateResult tres;
    VexControl vcon;
    VexGuestExtents vge;
-   VexArchInfo vai_x86, vai_amd64, vai_ppc32, vai_arm;
+   VexArchInfo vai_x86, vai_amd64, vai_ppc32, vai_arm, vai_mips32, vai_mips64;
    VexAbiInfo vbi;
    VexTranslateArgs vta;
 
@@ -170,11 +170,13 @@ int main ( int argc, char** argv )
 
       /* FIXME: put sensible values into the .hwcaps fields */
       LibVEX_default_VexArchInfo(&vai_x86);
-      vai_x86.hwcaps = VEX_HWCAPS_X86_SSE1
+      vai_x86.hwcaps = VEX_HWCAPS_X86_MMXEXT | VEX_HWCAPS_X86_SSE1
                        | VEX_HWCAPS_X86_SSE2 | VEX_HWCAPS_X86_SSE3;
+      vai_x86.endness = VexEndnessLE;
 
       LibVEX_default_VexArchInfo(&vai_amd64);
       vai_amd64.hwcaps = 0;
+      vai_amd64.endness = VexEndnessLE;
 
       LibVEX_default_VexArchInfo(&vai_ppc32);
       vai_ppc32.hwcaps = 0;
@@ -182,6 +184,13 @@ int main ( int argc, char** argv )
 
       LibVEX_default_VexArchInfo(&vai_arm);
       vai_arm.hwcaps = VEX_HWCAPS_ARM_VFP3 | VEX_HWCAPS_ARM_NEON | 7;
+
+      LibVEX_default_VexArchInfo(&vai_mips32);
+      vai_mips32.endness = VexEndnessLE;
+      vai_mips32.hwcaps = VEX_PRID_COMP_MIPS;
+
+      LibVEX_default_VexArchInfo(&vai_mips64);
+      vai_mips64.endness = VexEndnessLE;
 
       LibVEX_default_VexAbiInfo(&vbi);
       vbi.guest_stack_redzone_size = 128;
@@ -216,7 +225,19 @@ int main ( int argc, char** argv )
       vta.arch_host      = VexArchX86;
       vta.archinfo_host  = vai_x86;
 #endif
-#if 1 /* arm -> arm */
+#if 1 /* x86 -> mips32 */
+      vta.arch_guest     = VexArchX86;
+      vta.archinfo_guest = vai_x86;
+      vta.arch_host      = VexArchMIPS32;
+      vta.archinfo_host  = vai_mips32;
+#endif
+#if 0 /* amd64 -> mips64 */
+      vta.arch_guest     = VexArchAMD64;
+      vta.archinfo_guest = vai_amd64;
+      vta.arch_host      = VexArchMIPS64;
+      vta.archinfo_host  = vai_mips64;
+#endif
+#if 0 /* arm -> arm */
       vta.arch_guest     = VexArchARM;
       vta.archinfo_guest = vai_arm;
       vta.arch_host      = VexArchARM;

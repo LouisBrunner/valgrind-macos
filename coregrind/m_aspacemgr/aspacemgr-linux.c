@@ -1606,7 +1606,7 @@ static void read_maps_callback ( Addr addr, SizeT len, UInt prot,
 Bool
 VG_(am_is_valid_for_aspacem_minAddr)( Addr addr, const HChar **errmsg )
 {
-   const Addr min = 0x1000;      // 1 page   FIXME: VKI_PAGE_SIZE ?
+   const Addr min = VKI_PAGE_SIZE;
 #if VG_WORDSIZE == 4
    const Addr max = 0x40000000;  // 1Gb
 #else

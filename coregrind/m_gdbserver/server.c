@@ -331,7 +331,12 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
          if (hostvisibility) {
             const DebugInfo *tooldi 
                = VG_(find_DebugInfo) ((Addr)handle_gdb_valgrind_command);
-            const NSegment *toolseg 
+            /* Normally, we should always find the tooldi. In case we
+               do not, suggest a 'likely somewhat working' address: */
+            const Addr tool_text_start
+               = tooldi ?
+               VG_(DebugInfo_get_text_avma) (tooldi) : 0x38000000;
+            const NSegment *toolseg
                = tooldi ?
                  VG_(am_find_nsegment) (VG_(DebugInfo_get_text_avma) (tooldi))
                  : NULL;
@@ -342,7 +347,7 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
                 "add-symbol-file %s %p\n", 
                 toolseg ? VG_(am_get_filename)(toolseg)
                 : "<toolfile> <address> e.g.",
-                toolseg ? (void*)toolseg->start : (void*)0x38000000);
+                (void*)tool_text_start);
          } else
             VG_(gdb_printf)
                ("Disabled access to Valgrind memory/status by GDB\n");

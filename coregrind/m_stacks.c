@@ -277,48 +277,71 @@ void VG_(stack_limits)(Addr SP, Addr *start, Addr *end )
       *end = stack->end;
    }
 
-   /* SP is assumed to be in a RW segment.
+   /* SP is assumed to be in a RW segment or in the SkResvn segment of an
+      extensible stack (normally, only the main thread has an extensible
+      stack segment).
       If no such segment is found, assume we have no valid
       stack for SP, and set *start and *end to 0.
-      Otherwise, possibly reduce the stack limits to the boundaries of the
-      RW segment containing SP. */
+      Otherwise, possibly reduce the stack limits using the boundaries of
+      the RW segment/SkResvn segments containing SP. */
    if (stackseg == NULL) {
       VG_(debugLog)(2, "stacks", 
                     "no addressable segment for SP %p\n", 
                     (void*)SP);
       *start = 0;
       *end = 0;
-   } else if (!stackseg->hasR || !stackseg->hasW) {
+      return;
+   } 
+
+   if ((!stackseg->hasR || !stackseg->hasW)
+       && (stackseg->kind != SkResvn || stackseg->smode != SmUpper)) {
       VG_(debugLog)(2, "stacks", 
-                    "segment for SP %p is not Readable and/or not Writable\n",
+                    "segment for SP %p is not RW or not a SmUpper Resvn\n",
                     (void*)SP);
       *start = 0;
       *end = 0;
-   } else {
-      if (*start < stackseg->start) {
-         VG_(debugLog)(2, "stacks", 
-                       "segment for SP %p changed stack start limit"
-                       " from %p to %p\n",
-                       (void*)SP, (void*)*start, (void*)stackseg->start);
-         *start = stackseg->start;
-      }
-      if (*end > stackseg->end) {
-         VG_(debugLog)(2, "stacks", 
-                       "segment for SP %p changed stack end limit"
-                       " from %p to %p\n",
-                       (void*)SP, (void*)*end, (void*)stackseg->end);
-         *end = stackseg->end;
-      }
+      return;
+   } 
 
-      /* If reducing start and/or end to the SP segment gives an
-         empty range, return 'empty' limits */
-      if (*start > *end) {
+   // SP is in a RW segment, or in the SkResvn of an extensible stack.
+   if (*start < stackseg->start) {
+      VG_(debugLog)(2, "stacks", 
+                    "segment for SP %p changed stack start limit"
+                    " from %p to %p\n",
+                    (void*)SP, (void*)*start, (void*)stackseg->start);
+      *start = stackseg->start;
+   }
+
+   if (stackseg->kind == SkResvn) {
+      stackseg = VG_(am_next_nsegment)(stackseg, /*forward*/ True);
+      if (!stackseg || !stackseg->hasR || !stackseg->hasW
+          || stackseg->kind != SkAnonC) {
          VG_(debugLog)(2, "stacks", 
-                       "stack for SP %p start %p after end %p\n",
-                       (void*)SP, (void*)*start, (void*)end);
+                       "Next forward segment for SP %p Resvn segment"
+                       " is not RW or not AnonC\n",
+                       (void*)SP);
          *start = 0;
          *end = 0;
+         return;
       }
+   }
+
+   if (*end > stackseg->end) {
+      VG_(debugLog)(2, "stacks", 
+                    "segment for SP %p changed stack end limit"
+                    " from %p to %p\n",
+                    (void*)SP, (void*)*end, (void*)stackseg->end);
+      *end = stackseg->end;
+   }
+
+   /* If reducing start and/or end to the SP segment gives an
+      empty range, return 'empty' limits */
+   if (*start > *end) {
+      VG_(debugLog)(2, "stacks", 
+                    "stack for SP %p start %p after end %p\n",
+                    (void*)SP, (void*)*start, (void*)end);
+      *start = 0;
+      *end = 0;
    }
 }
 

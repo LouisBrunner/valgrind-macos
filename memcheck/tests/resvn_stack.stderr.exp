@@ -1,0 +1,5 @@
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: big (resvn_stack.c:12)
+   by 0x........: main (resvn_stack.c:21)
+
+Accessing fresh stack

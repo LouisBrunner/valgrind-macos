@@ -214,6 +214,7 @@ EXTRA_DIST = \
 	realloc2.stderr.exp realloc2.vgtest \
 	realloc3.stderr.exp realloc3.vgtest \
 	recursive-merge.stderr.exp recursive-merge.vgtest \
+	resvn_stack.stderr.exp resvn_stack.vgtest \
 	sbfragment.stdout.exp sbfragment.stderr.exp sbfragment.vgtest \
 	sem.stderr.exp sem.vgtest \
 	sendmsg.stderr.exp sendmsg.vgtest \
@@ -340,6 +341,7 @@ check_PROGRAMS = \
 	post-syscall \
 	realloc1 realloc2 realloc3 \
 	recursive-merge \
+	resvn_stack \
 	sbfragment \
 	sendmsg \
 	sh-mem sh-mem-random \

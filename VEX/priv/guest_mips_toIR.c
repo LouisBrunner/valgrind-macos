@@ -2239,7 +2239,10 @@ static Bool dis_instr_CVM ( UInt theInstr )
    UChar  regRs    = get_rs(theInstr);
    UChar  regRt    = get_rt(theInstr);
    UChar  regRd    = get_rd(theInstr);
-   UInt   imm      = get_imm(theInstr);
+   /* MIPS trap instructions extract code from theInstr[15:6].
+      Cavium OCTEON instructions SNEI, SEQI extract immediate operands
+      from the same bit field [15:6]. */
+   UInt   imm      = get_code(theInstr);
    UChar  lenM1    = get_msb(theInstr);
    UChar  p        = get_lsb(theInstr);
    IRType ty       = mode64? Ity_I64 : Ity_I32;

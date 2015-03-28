@@ -50,13 +50,14 @@
 #   define offsetof(type,memb) ((SizeT)(HWord)&((type*)0)->memb)
 #endif
 
-/* Stuff for panicking and assertion. */
+// Poor man's static assert
+#define STATIC_ASSERT(x)  extern int vex__unused_array[(x) ? 1 : -1]
 
-#define VG__STRING(__str)  #__str
+/* Stuff for panicking and assertion. */
 
 #define vassert(expr)                                           \
   ((void) (LIKELY(expr) ? 0 :                                   \
-           (vex_assert_fail (VG__STRING(expr),                  \
+           (vex_assert_fail (#expr,                             \
                              __FILE__, __LINE__,                \
                              __PRETTY_FUNCTION__), 0)))
 

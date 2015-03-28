@@ -1818,16 +1818,18 @@ static void scalarts_limitations_fail_NORETURN ( Bool due_to_nThrs )
 }
 
 
-/* The dead thread (ThrID, actually) table.  A thread may only be
+/* The dead thread (ThrID, actually) tables.  A thread may only be
    listed here if we have been notified thereof by libhb_async_exit.
    New entries are added at the end.  The order isn't important, but
-   the ThrID values must be unique.  This table lists the identity of
-   all threads that have ever died -- none are ever removed.  We keep
-   this table so as to be able to prune entries from VTSs.  We don't
-   actually need to keep the set of threads that have ever died --
+   the ThrID values must be unique.
+   verydead_thread_table_not_pruned lists the identity of the threads
+   that died since the previous round of pruning.
+   Once pruning is done, these ThrID are added in verydead_thread_table.
+   We don't actually need to keep the set of threads that have ever died --
    only the threads that have died since the previous round of
    pruning.  But it's useful for sanity check purposes to keep the
    entire set, so we do. */
+static XArray* /* of ThrID */ verydead_thread_table_not_pruned = NULL;
 static XArray* /* of ThrID */ verydead_thread_table = NULL;
 
 /* Arbitrary total ordering on ThrIDs. */
@@ -1839,16 +1841,40 @@ static Int cmp__ThrID ( const void* v1, const void* v2 ) {
    return 0;
 }
 
-static void verydead_thread_table_init ( void )
+static void verydead_thread_tables_init ( void )
 {
    tl_assert(!verydead_thread_table);
+   tl_assert(!verydead_thread_table_not_pruned);
    verydead_thread_table
      = VG_(newXA)( HG_(zalloc),
                    "libhb.verydead_thread_table_init.1",
                    HG_(free), sizeof(ThrID) );
    VG_(setCmpFnXA)(verydead_thread_table, cmp__ThrID);
+   verydead_thread_table_not_pruned
+     = VG_(newXA)( HG_(zalloc),
+                   "libhb.verydead_thread_table_init.2",
+                   HG_(free), sizeof(ThrID) );
+   VG_(setCmpFnXA)(verydead_thread_table_not_pruned, cmp__ThrID);
 }
 
+static void verydead_thread_table_sort_and_check (XArray* thrids)
+{
+   UWord i;
+
+   VG_(sortXA)( thrids );
+   /* Sanity check: check for unique .sts.thr values. */
+   UWord nBT = VG_(sizeXA)( thrids );
+   if (nBT > 0) {
+      ThrID thrid1, thrid2;
+      thrid2 = *(ThrID*)VG_(indexXA)( thrids, 0 );
+      for (i = 1; i < nBT; i++) {
+         thrid1 = thrid2;
+         thrid2 = *(ThrID*)VG_(indexXA)( thrids, i );
+         tl_assert(thrid1 < thrid2);
+      }
+   }
+   /* Ok, so the dead thread table thrids has unique and in-order keys. */
+}
 
 /* A VTS contains .ts, its vector clock, and also .id, a field to hold
    a backlink for the caller's convenience.  Since we have no idea
@@ -2424,7 +2450,7 @@ static void VTS__declare_thread_very_dead ( Thr* thr )
 
    ThrID nyu;
    nyu = Thr__to_ThrID(thr);
-   VG_(addToXA)( verydead_thread_table, &nyu );
+   VG_(addToXA)( verydead_thread_table_not_pruned, &nyu );
 
    /* We can only get here if we're assured that we'll never again
       need to look at this thread's ::viR or ::viW.  Set them to
@@ -2819,26 +2845,16 @@ static void vts_tab__do_GC ( Bool show_stats )
       quit at this point if it is not to be done. */
    if (!do_pruning)
       return;
+   /* No need to do pruning if no thread died since the last pruning as
+      no VtsTE can be pruned. */
+   if (VG_(sizeXA)( verydead_thread_table_not_pruned) == 0)
+      return;
 
    /* ---------- BEGIN VTS PRUNING ---------- */
-   /* We begin by sorting the backing table on its .thr values, so as
-      to (1) check they are unique [else something has gone wrong,
-      since it means we must have seen some Thr* exiting more than
-      once, which can't happen], and (2) so that we can quickly look
+   /* Sort and check the very dead threads that died since the last pruning.
+      Sorting is used for the check and so that we can quickly look
       up the dead-thread entries as we work through the VTSs. */
-   VG_(sortXA)( verydead_thread_table );
-   /* Sanity check: check for unique .sts.thr values. */
-   UWord nBT = VG_(sizeXA)( verydead_thread_table );
-   if (nBT > 0) {
-      ThrID thrid1, thrid2;
-      thrid2 = *(ThrID*)VG_(indexXA)( verydead_thread_table, 0 );
-      for (i = 1; i < nBT; i++) {
-         thrid1 = thrid2;
-         thrid2 = *(ThrID*)VG_(indexXA)( verydead_thread_table, i );
-         tl_assert(thrid1 < thrid2);
-      }
-   }
-   /* Ok, so the dead thread table has unique and in-order keys. */
+   verydead_thread_table_sort_and_check (verydead_thread_table_not_pruned);
 
    /* We will run through the old table, and create a new table and
       set, at the same time setting the .remap entries in the old
@@ -2897,7 +2913,7 @@ static void vts_tab__do_GC ( Bool show_stats )
       nBeforePruning++;
       nSTSsBefore += old_vts->usedTS;
       VTS* new_vts = VTS__subtract("libhb.vts_tab__do_GC.new_vts",
-                                   old_vts, verydead_thread_table);
+                                   old_vts, verydead_thread_table_not_pruned);
       tl_assert(new_vts->sizeTS == new_vts->usedTS);
       tl_assert(*(ULong*)(&new_vts->ts[new_vts->usedTS])
                 == 0x0ddC0ffeeBadF00dULL);
@@ -2956,6 +2972,21 @@ static void vts_tab__do_GC ( Bool show_stats )
       old_te->remap = new_vts->id;
 
    } /* for (i = 0; i < nTab; i++) */
+
+   /* Move very dead thread from verydead_thread_table_not_pruned to
+      verydead_thread_table. Sort and check verydead_thread_table
+      to verify a thread was reported very dead only once. */
+   {
+      UWord nBT = VG_(sizeXA)( verydead_thread_table_not_pruned);
+
+      for (i = 0; i < nBT; i++) {
+         ThrID thrid = 
+            *(ThrID*)VG_(indexXA)( verydead_thread_table_not_pruned, i );
+         VG_(addToXA)( verydead_thread_table, &thrid );
+      }
+      verydead_thread_table_sort_and_check (verydead_thread_table);
+      VG_(dropHeadXA) (verydead_thread_table_not_pruned, nBT);
+   }
 
    /* At this point, we have:
       * the old VTS table, with its .remap entries set,
@@ -3109,11 +3140,6 @@ static void vts_tab__do_GC ( Bool show_stats )
          nAfterPruning, nSTSsAfter / (nAfterPruning ? nAfterPruning : 1)
       );
    }
-   if (0)
-   VG_(printf)("VTQ: before pruning %lu (avg sz %lu), "
-               "after pruning %lu (avg sz %lu)\n",
-               nBeforePruning, nSTSsBefore / nBeforePruning,
-               nAfterPruning, nSTSsAfter / nAfterPruning);
    /* ---------- END VTS PRUNING ---------- */
 }
 
@@ -6080,7 +6106,7 @@ Thr* libhb_init (
       VTS singleton, tick and join operations. */
    temp_max_sized_VTS = VTS__new( "libhb.libhb_init.1", ThrID_MAX_VALID );
    temp_max_sized_VTS->id = VtsID_INVALID;
-   verydead_thread_table_init();
+   verydead_thread_tables_init();
    vts_set_init();
    vts_tab_init();
    event_map_init();
@@ -6257,6 +6283,13 @@ void libhb_shutdown ( Bool show_stats )
                      " exit %d joinedwith %d\n",
                      live, llexit_and_joinedwith_done,
                      llexit_done, joinedwith_done);
+         VG_(printf)("   libhb: %d verydead_threads, "
+                     "%d verydead_threads_not_pruned\n",
+                     (int) VG_(sizeXA)( verydead_thread_table),
+                     (int) VG_(sizeXA)( verydead_thread_table_not_pruned));
+         tl_assert (VG_(sizeXA)( verydead_thread_table)
+                    + VG_(sizeXA)( verydead_thread_table_not_pruned)
+                    == llexit_and_joinedwith_done);
       }
 
       VG_(printf)("%s","\n");

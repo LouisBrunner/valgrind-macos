@@ -254,6 +254,7 @@ cins32 $t1, $t2, 2 , 9 :: rt 0x42400000000 rs 0x89b8fd09, p 0x00000002, lenm1 0x
 cins32 $t1, $t2, 2 , 9 :: rt 0xf5400000000 rs 0x9abc8bd5, p 0x00000002, lenm1 0x00000009
 cins32 $t1, $t2, 2 , 9 :: rt 0x2c400000000 rs 0xafb010b1, p 0x00000002, lenm1 0x00000009
 cins32 $t1, $t2, 2 , 9 :: rt 0x9b400000000 rs 0xbcb4666d, p 0x00000002, lenm1 0x00000009
+snei $t1, $t2 ,9  :: rt 0x0 rs 0x9,imm 0x00000009
 snei $t1, $t2 ,9  :: rt 0x1 rs 0x0,imm 0x00000009
 snei $t1, $t2 ,9  :: rt 0x1 rs 0x4c11db7,imm 0x00000009
 snei $t1, $t2 ,9  :: rt 0x1 rs 0x9823b6e,imm 0x00000009
@@ -4606,6 +4607,7 @@ sne $t1, $t2 ,$t3  :: rd 0x1 rs 0xbcb4666d, rt 0x89b8fd09
 sne $t1, $t2 ,$t3  :: rd 0x1 rs 0xbcb4666d, rt 0x9abc8bd5
 sne $t1, $t2 ,$t3  :: rd 0x1 rs 0xbcb4666d, rt 0xafb010b1
 sne $t1, $t2 ,$t3  :: rd 0x0 rs 0xbcb4666d, rt 0xbcb4666d
+seqi $t1, $t2 ,9  :: rt 0x1 rs 0x9,imm 0x00000009
 seqi $t1, $t2 ,9  :: rt 0x0 rs 0x0,imm 0x00000009
 seqi $t1, $t2 ,9  :: rt 0x0 rs 0x130476dc,imm 0x00000009
 seqi $t1, $t2 ,9  :: rt 0x0 rs 0x2608edb8,imm 0x00000009

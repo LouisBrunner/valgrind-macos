@@ -98,7 +98,7 @@ const int reg_val[256] = {
         printf("%s :: rd 0x%lx rs 0x%x, rt 0x%x\n",       \
         instruction, out, RSVal, RTval);                  \
 }
-#define TESTINST3(instruction, RSVal, RT, RS,imm)      \
+#define TESTINST3(instruction, RSVal, RT, RS, imm)     \
 {                                                      \
    unsigned long out;                                  \
    __asm__ volatile(                                   \
@@ -127,35 +127,35 @@ int main()
       switch(op) {
          case EXTS: {  /* To extract and sign-extend a bit field that starts
                           from the lower 32 bits of a register. */
-            for(i = 0; i <= 255; i+=4)
+            for (i = 0; i <= 255; i+=4)
                TESTINST1("exts $t1, $t2, 1, 7", reg_val[i], t1, t2, 1, 7);
             break;
          }
 
          case EXTS32: { /* To extract and sign-extend a bit field that starts
                            from the upper 32 bits of a register. */
-            for(i = 0; i <= 255; i+=4)
+            for (i = 0; i <= 255; i+=4)
                TESTINST1("exts32 $t1, $t2, 1 , 7",  reg_val[i], t1, t2, 1, 7);
             break;
          }
 
          case CINS:{  /* To insert a bit field that starts in the lower 32 bits
                          of a register. */
-            for(i = 0; i <= 255; i+=4)
+            for (i = 0; i <= 255; i+=4)
                TESTINST1("cins $t1, $t2, 2 , 9",  reg_val[i], t1, t2, 2, 9);
             break;
          }
 
          case CINS32: { /* To insert a bit field that starts in the upper
                            32 bits of a register. */
-            for(i =0; i <= 255; i+=4)
+            for (i =0; i <= 255; i+=4)
                TESTINST1("cins32 $t1, $t2, 2 , 9", reg_val[i], t1, t2, 2, 9);
             break;
          }
 
          case SEQ: {  /* To record the result of an equals comparison. */
-            for(i = 0; i <= 255; i+=4)
-               for(j = 0; j <= 255; j+=4)
+            for (i = 0; i <= 255; i+=4)
+               for (j = 0; j <= 255; j+=4)
                   TESTINST2("seq $t1, $t2 ,$t3 ", reg_val[i], reg_val[j],
                                                   t1, t2, t3);
             break;
@@ -163,14 +163,18 @@ int main()
 
          case SEQI: {  /* To record the result of an equals comparison
                           with a constant. */
-            for(i = 0; i <= 255; i+=4)
+            /* First, make sure at least one testcase has source value (rs)
+               that equals the immediate value to validate the true case. */
+            const int immvalue = 9;
+            TESTINST3("seqi $t1, $t2 ,9 ", immvalue, t1, t2, immvalue);
+            for (i = 0; i <= 255; i+=4)
                TESTINST3("seqi $t1, $t2 ,9 ",  reg_val[i], t1, t2, 9);
             break;
          }
 
          case SNE: {  /* To record the result of a not equals comparison. */
-            for(i = 0; i <= 255; i+=4)
-               for(j = 0; j<= 255; j+=4)
+            for (i = 0; i <= 255; i+=4)
+               for (j = 0; j<= 255; j+=4)
                   TESTINST2("sne $t1, $t2 ,$t3 ", reg_val[i], reg_val[j],
                                                   t1, t2, t3);
             break;
@@ -178,15 +182,19 @@ int main()
 
          case SNEI: {  /* To record the result of a not equals comparison
                           with a constant. */
-            for(i = 0; i <= 255; i+=1)
+            /* First, make sure at least one testcase has source value (rs)
+               that equals the immediate value to validate the false case. */
+            const int immvalue = 9;
+            TESTINST3("snei $t1, $t2 ,9 ", immvalue, t1, t2, immvalue);
+            for (i = 0; i <= 255; i+=1)
                TESTINST3("snei $t1, $t2 ,9 ", reg_val[i], t1, t2, 9);
             break;
          }
 
          case DMUL: {  /* To multiply 64-bit signed integers and
                           write the result to a GPR. */
-            for(i = 0; i <= 255; i+=4)
-               for(j = 0; j <= 255; j+=8)
+            for (i = 0; i <= 255; i+=4)
+               for (j = 0; j <= 255; j+=8)
                   TESTINST2("dmul $t1, $t2 ,$t3 ", reg_val[i], reg_val[j],
                                                    t1, t2, t3);
             break;

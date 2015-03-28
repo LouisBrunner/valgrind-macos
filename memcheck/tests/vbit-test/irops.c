@@ -2,6 +2,7 @@
 
 #include <stdio.h>    // fprintf
 #include <stdlib.h>   // exit
+#include "pub_tool_basics.h"   // STATIC_ASSERT
 #include "vtest.h"
 
 #define DEFOP(op,ukind) op, #op, ukind
@@ -1050,9 +1051,8 @@ static irop_t irops[] = {
 
 /* Force compile time failure in case libvex_ir.h::IROp was updated
    and the irops array is out of synch */
-extern int ensure_complete[
-   (sizeof irops / sizeof *irops == Iop_LAST - Iop_INVALID - 1) ? 1 : -1
-                          ];
+STATIC_ASSERT \
+      (sizeof irops / sizeof *irops == Iop_LAST - Iop_INVALID - 1);
 
 /* Return a descriptor for OP, iff it exists and it is implemented
    for the current architecture. */

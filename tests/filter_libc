@@ -9,9 +9,11 @@ while (<>)
     s/ __GI___/ __/;
     s/ __([a-z]*)_nocancel / $1 /;
 
-    # "libSystem*" occurs on Darwin.
+    # "lib[S|s]ystem*" occurs on Darwin.
     s/\(in \/.*(libc|libSystem).*\)$/(in \/...libc...)/;
     s/\(within \/.*(libc|libSystem).*\)$/(within \/...libc...)/;
+    s/\(in \/.*(libc|libsystem).*\)$/(in \/...libc...)/;
+    s/\(within \/.*(libc|libsystem).*\)$/(within \/...libc...)/;
 
     # Filter out dynamic loader
     s/ \(in \/.*ld-.*so\)$//;

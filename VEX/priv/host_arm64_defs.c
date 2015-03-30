@@ -176,6 +176,11 @@ static void ppHRegARM64asSreg ( HReg reg ) {
    vex_printf("(S-reg)");
 }
 
+static void ppHRegARM64asHreg ( HReg reg ) {
+   ppHRegARM64(reg);
+   vex_printf("(H-reg)");
+}
+
 
 /* --------- Condition codes, ARM64 encoding. --------- */
 
@@ -1003,9 +1008,19 @@ ARM64Instr* ARM64Instr_MFence ( void ) {
    i->tag        = ARM64in_MFence;
    return i;
 }
+ARM64Instr* ARM64Instr_VLdStH ( Bool isLoad, HReg sD, HReg rN, UInt uimm12 ) {
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
+   i->tag                   = ARM64in_VLdStH;
+   i->ARM64in.VLdStH.isLoad = isLoad;
+   i->ARM64in.VLdStH.hD     = sD;
+   i->ARM64in.VLdStH.rN     = rN;
+   i->ARM64in.VLdStH.uimm12 = uimm12;
+   vassert(uimm12 < 8192 && 0 == (uimm12 & 1));
+   return i;
+}
 ARM64Instr* ARM64Instr_VLdStS ( Bool isLoad, HReg sD, HReg rN, UInt uimm12 ) {
    ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
-   i->tag                  = ARM64in_VLdStS;
+   i->tag                   = ARM64in_VLdStS;
    i->ARM64in.VLdStS.isLoad = isLoad;
    i->ARM64in.VLdStS.sD     = sD;
    i->ARM64in.VLdStS.rN     = rN;
@@ -1015,7 +1030,7 @@ ARM64Instr* ARM64Instr_VLdStS ( Bool isLoad, HReg sD, HReg rN, UInt uimm12 ) {
 }
 ARM64Instr* ARM64Instr_VLdStD ( Bool isLoad, HReg dD, HReg rN, UInt uimm12 ) {
    ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
-   i->tag                  = ARM64in_VLdStD;
+   i->tag                   = ARM64in_VLdStD;
    i->ARM64in.VLdStD.isLoad = isLoad;
    i->ARM64in.VLdStD.dD     = dD;
    i->ARM64in.VLdStD.rN     = rN;
@@ -1052,10 +1067,26 @@ ARM64Instr* ARM64Instr_VCvtF2I ( ARM64CvtOp how, HReg rD, HReg rS,
 }
 ARM64Instr* ARM64Instr_VCvtSD ( Bool sToD, HReg dst, HReg src ) {
    ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
-   i->tag               = ARM64in_VCvtSD;
+   i->tag                 = ARM64in_VCvtSD;
    i->ARM64in.VCvtSD.sToD = sToD;
    i->ARM64in.VCvtSD.dst  = dst;
    i->ARM64in.VCvtSD.src  = src;
+   return i;
+}
+ARM64Instr* ARM64Instr_VCvtHS ( Bool hToS, HReg dst, HReg src ) {
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
+   i->tag                 = ARM64in_VCvtHS;
+   i->ARM64in.VCvtHS.hToS = hToS;
+   i->ARM64in.VCvtHS.dst  = dst;
+   i->ARM64in.VCvtHS.src  = src;
+   return i;
+}
+ARM64Instr* ARM64Instr_VCvtHD ( Bool hToD, HReg dst, HReg src ) {
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
+   i->tag                 = ARM64in_VCvtHD;
+   i->ARM64in.VCvtHD.hToD = hToD;
+   i->ARM64in.VCvtHD.dst  = dst;
+   i->ARM64in.VCvtHD.src  = src;
    return i;
 }
 ARM64Instr* ARM64Instr_VUnaryD ( ARM64FpUnaryOp op, HReg dst, HReg src ) {
@@ -1534,6 +1565,21 @@ void ppARM64Instr ( const ARM64Instr* i ) {
       case ARM64in_MFence:
          vex_printf("(mfence) dsb sy; dmb sy; isb");
          return;
+      case ARM64in_VLdStH:
+         if (i->ARM64in.VLdStH.isLoad) {
+            vex_printf("ldr    ");
+            ppHRegARM64asHreg(i->ARM64in.VLdStH.hD);
+            vex_printf(", %u(", i->ARM64in.VLdStH.uimm12);
+            ppHRegARM64(i->ARM64in.VLdStH.rN);
+            vex_printf(")");
+         } else {
+            vex_printf("str    ");
+            vex_printf("%u(", i->ARM64in.VLdStH.uimm12);
+            ppHRegARM64(i->ARM64in.VLdStH.rN);
+            vex_printf("), ");
+            ppHRegARM64asHreg(i->ARM64in.VLdStH.hD);
+         }
+         return;
       case ARM64in_VLdStS:
          if (i->ARM64in.VLdStS.isLoad) {
             vex_printf("ldr    ");
@@ -1611,6 +1657,30 @@ void ppARM64Instr ( const ARM64Instr* i ) {
             ppHRegARM64asSreg(i->ARM64in.VCvtSD.dst);
             vex_printf(", ");
             ppHRegARM64(i->ARM64in.VCvtSD.src);
+         }
+         return;
+      case ARM64in_VCvtHS:
+         vex_printf("fcvt%s ", i->ARM64in.VCvtHS.hToS ? "h2s" : "s2h");
+         if (i->ARM64in.VCvtHS.hToS) {
+            ppHRegARM64asSreg(i->ARM64in.VCvtHS.dst);
+            vex_printf(", ");
+            ppHRegARM64asHreg(i->ARM64in.VCvtHS.src);
+         } else {
+            ppHRegARM64asHreg(i->ARM64in.VCvtHS.dst);
+            vex_printf(", ");
+            ppHRegARM64asSreg(i->ARM64in.VCvtHS.src);
+         }
+         return;
+      case ARM64in_VCvtHD:
+         vex_printf("fcvt%s ", i->ARM64in.VCvtHD.hToD ? "h2d" : "d2h");
+         if (i->ARM64in.VCvtHD.hToD) {
+            ppHRegARM64(i->ARM64in.VCvtHD.dst);
+            vex_printf(", ");
+            ppHRegARM64asHreg(i->ARM64in.VCvtHD.src);
+         } else {
+            ppHRegARM64asHreg(i->ARM64in.VCvtHD.dst);
+            vex_printf(", ");
+            ppHRegARM64(i->ARM64in.VCvtHD.src);
          }
          return;
       case ARM64in_VUnaryD:
@@ -1986,6 +2056,14 @@ void getRegUsage_ARM64Instr ( HRegUsage* u, const ARM64Instr* i, Bool mode64 )
          return;
       case ARM64in_MFence:
          return;
+      case ARM64in_VLdStH:
+         addHRegUse(u, HRmRead, i->ARM64in.VLdStH.rN);
+         if (i->ARM64in.VLdStH.isLoad) {
+            addHRegUse(u, HRmWrite, i->ARM64in.VLdStH.hD);
+         } else {
+            addHRegUse(u, HRmRead, i->ARM64in.VLdStH.hD);
+         }
+         return;
       case ARM64in_VLdStS:
          addHRegUse(u, HRmRead, i->ARM64in.VLdStS.rN);
          if (i->ARM64in.VLdStS.isLoad) {
@@ -2020,6 +2098,14 @@ void getRegUsage_ARM64Instr ( HRegUsage* u, const ARM64Instr* i, Bool mode64 )
       case ARM64in_VCvtSD:
          addHRegUse(u, HRmWrite, i->ARM64in.VCvtSD.dst);
          addHRegUse(u, HRmRead,  i->ARM64in.VCvtSD.src);
+         return;
+      case ARM64in_VCvtHS:
+         addHRegUse(u, HRmWrite, i->ARM64in.VCvtHS.dst);
+         addHRegUse(u, HRmRead,  i->ARM64in.VCvtHS.src);
+         return;
+      case ARM64in_VCvtHD:
+         addHRegUse(u, HRmWrite, i->ARM64in.VCvtHD.dst);
+         addHRegUse(u, HRmRead,  i->ARM64in.VCvtHD.src);
          return;
       case ARM64in_VUnaryD:
          addHRegUse(u, HRmWrite, i->ARM64in.VUnaryD.dst);
@@ -2230,6 +2316,10 @@ void mapRegs_ARM64Instr ( HRegRemap* m, ARM64Instr* i, Bool mode64 )
          return;
       case ARM64in_MFence:
          return;
+      case ARM64in_VLdStH:
+         i->ARM64in.VLdStH.hD = lookupHRegRemap(m, i->ARM64in.VLdStH.hD);
+         i->ARM64in.VLdStH.rN = lookupHRegRemap(m, i->ARM64in.VLdStH.rN);
+         return;
       case ARM64in_VLdStS:
          i->ARM64in.VLdStS.sD = lookupHRegRemap(m, i->ARM64in.VLdStS.sD);
          i->ARM64in.VLdStS.rN = lookupHRegRemap(m, i->ARM64in.VLdStS.rN);
@@ -2253,6 +2343,14 @@ void mapRegs_ARM64Instr ( HRegRemap* m, ARM64Instr* i, Bool mode64 )
       case ARM64in_VCvtSD:
          i->ARM64in.VCvtSD.dst = lookupHRegRemap(m, i->ARM64in.VCvtSD.dst);
          i->ARM64in.VCvtSD.src = lookupHRegRemap(m, i->ARM64in.VCvtSD.src);
+         return;
+      case ARM64in_VCvtHS:
+         i->ARM64in.VCvtHS.dst = lookupHRegRemap(m, i->ARM64in.VCvtHS.dst);
+         i->ARM64in.VCvtHS.src = lookupHRegRemap(m, i->ARM64in.VCvtHS.src);
+         return;
+      case ARM64in_VCvtHD:
+         i->ARM64in.VCvtHD.dst = lookupHRegRemap(m, i->ARM64in.VCvtHD.dst);
+         i->ARM64in.VCvtHD.src = lookupHRegRemap(m, i->ARM64in.VCvtHD.src);
          return;
       case ARM64in_VUnaryD:
          i->ARM64in.VUnaryD.dst = lookupHRegRemap(m, i->ARM64in.VUnaryD.dst);
@@ -2633,6 +2731,7 @@ static inline UInt qregEnc ( HReg r )
 #define X11011000  BITS8(1,1,0,1,1,0,0,0)
 #define X11011010  BITS8(1,1,0,1,1,0,1,0)
 #define X11011110  BITS8(1,1,0,1,1,1,1,0)
+#define X11100010  BITS8(1,1,1,0,0,0,1,0)
 #define X11110001  BITS8(1,1,1,1,0,0,0,1)
 #define X11110011  BITS8(1,1,1,1,0,0,1,1)
 #define X11110101  BITS8(1,1,1,1,0,1,0,1)
@@ -3702,6 +3801,23 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
       //   *p++ = 0xD5033F5F; /* clrex */
       //   goto done;
       //}
+      case ARM64in_VLdStH: {
+         /* 01 111101 01 imm12 n t   LDR Ht, [Xn|SP, #imm12 * 2]
+            01 111101 00 imm12 n t   STR Ht, [Xn|SP, #imm12 * 2]
+         */
+         UInt hD     = dregEnc(i->ARM64in.VLdStH.hD);
+         UInt rN     = iregEnc(i->ARM64in.VLdStH.rN);
+         UInt uimm12 = i->ARM64in.VLdStH.uimm12;
+         Bool isLD   = i->ARM64in.VLdStH.isLoad;
+         vassert(uimm12 < 8192 && 0 == (uimm12 & 1));
+         uimm12 >>= 1;
+         vassert(uimm12 < (1<<12));
+         vassert(hD < 32);
+         vassert(rN < 31);
+         *p++ = X_2_6_2_12_5_5(X01, X111101, isLD ? X01 : X00,
+                               uimm12, rN, hD);
+         goto done;
+      }
       case ARM64in_VLdStS: {
          /* 10 111101 01 imm12 n t   LDR St, [Xn|SP, #imm12 * 4]
             10 111101 00 imm12 n t   STR St, [Xn|SP, #imm12 * 4]
@@ -3852,7 +3968,7 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
          goto done;
       }
       case ARM64in_VCvtSD: {
-         /* 31        23 21     16  14    9 4
+         /* 31         23 21    16  14    9 4
             000,11110, 00 10001 0,1 10000 n d   FCVT Dd, Sn (S->D)
             ---------- 01 ----- 0,0 ---------   FCVT Sd, Dn (D->S)
             Rounding, when dst is smaller than src, is per the FPCR.
@@ -3863,6 +3979,36 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
             *p++ = X_3_5_8_6_5_5(X000, X11110, X00100010, X110000, nn, dd);
          } else {
             *p++ = X_3_5_8_6_5_5(X000, X11110, X01100010, X010000, nn, dd);
+         }
+         goto done;
+      }
+      case ARM64in_VCvtHS: {
+         /* 31         23 21    16  14    9 4
+            000,11110, 11 10001 0,0 10000 n d   FCVT Sd, Hn (H->S)
+            ---------- 00 ----- 1,1 ---------   FCVT Hd, Sn (S->H)
+            Rounding, when dst is smaller than src, is per the FPCR.
+         */
+         UInt dd = dregEnc(i->ARM64in.VCvtHS.dst);
+         UInt nn = dregEnc(i->ARM64in.VCvtHS.src);
+         if (i->ARM64in.VCvtHS.hToS) {
+            *p++ = X_3_5_8_6_5_5(X000, X11110, X11100010, X010000, nn, dd);
+         } else {
+            *p++ = X_3_5_8_6_5_5(X000, X11110, X00100011, X110000, nn, dd);
+         }
+         goto done;
+      }
+      case ARM64in_VCvtHD: {
+         /* 31         23 21    16  14    9 4
+            000,11110, 11 10001 0,1 10000 n d   FCVT Dd, Hn (H->D)
+            ---------- 01 ----- 1,1 ---------   FCVT Hd, Dn (D->H)
+            Rounding, when dst is smaller than src, is per the FPCR.
+         */
+         UInt dd = dregEnc(i->ARM64in.VCvtHD.dst);
+         UInt nn = dregEnc(i->ARM64in.VCvtHD.src);
+         if (i->ARM64in.VCvtHD.hToD) {
+            *p++ = X_3_5_8_6_5_5(X000, X11110, X11100010, X110000, nn, dd);
+         } else {
+            *p++ = X_3_5_8_6_5_5(X000, X11110, X01100011, X110000, nn, dd);
          }
          goto done;
       }

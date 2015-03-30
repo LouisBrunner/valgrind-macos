@@ -1416,7 +1416,7 @@ static Int offsetQRegLane ( UInt qregNo, IRType laneTy, UInt laneNo )
    UInt laneSzB = 0;
    switch (laneTy) {
       case Ity_I8:                 laneSzB = 1;  break;
-      case Ity_I16:                laneSzB = 2;  break;
+      case Ity_F16: case Ity_I16:  laneSzB = 2;  break;
       case Ity_F32: case Ity_I32:  laneSzB = 4;  break;
       case Ity_F64: case Ity_I64:  laneSzB = 8;  break;
       case Ity_V128:               laneSzB = 16; break;
@@ -1436,7 +1436,7 @@ static void putQRegLO ( UInt qregNo, IRExpr* e )
    Int    off = offsetQRegLane(qregNo, ty, 0);
    switch (ty) {
       case Ity_I8:  case Ity_I16: case Ity_I32: case Ity_I64:
-      case Ity_F32: case Ity_F64: case Ity_V128:
+      case Ity_F16: case Ity_F32: case Ity_F64: case Ity_V128:
          break;
       default:
          vassert(0); // Other cases are probably invalid
@@ -1450,7 +1450,7 @@ static IRExpr* getQRegLO ( UInt qregNo, IRType ty )
    Int off = offsetQRegLane(qregNo, ty, 0);
    switch (ty) {
       case Ity_I8:
-      case Ity_I16:
+      case Ity_F16: case Ity_I16:
       case Ity_I32: case Ity_I64:
       case Ity_F32: case Ity_F64: case Ity_V128:
          break;
@@ -1537,7 +1537,7 @@ static void putQRegLane ( UInt qregNo, UInt laneNo, IRExpr* e )
    switch (laneTy) {
       case Ity_F64: case Ity_I64:
       case Ity_I32: case Ity_F32:
-      case Ity_I16:
+      case Ity_I16: case Ity_F16:
       case Ity_I8:
          break;
       default:
@@ -1552,7 +1552,7 @@ static IRExpr* getQRegLane ( UInt qregNo, UInt laneNo, IRType laneTy )
    Int off = offsetQRegLane(qregNo, laneTy, laneNo);
    switch (laneTy) {
       case Ity_I64: case Ity_I32: case Ity_I16: case Ity_I8:
-      case Ity_F64: case Ity_F32:
+      case Ity_F64: case Ity_F32: case Ity_F16:
          break;
       default:
          vassert(0); // Other cases are ATC
@@ -9917,6 +9917,58 @@ Bool dis_AdvSIMD_scalar_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
+   ix = 0; /*INVALID*/
+   switch (opcode) {
+      case BITS5(1,1,0,1,0): ix = ((size & 2) == 2) ? 4 : 1; break;
+      case BITS5(1,1,0,1,1): ix = ((size & 2) == 2) ? 5 : 2; break;
+      case BITS5(1,1,1,0,0): if ((size & 2) == 0) ix = 3; break;
+      default: break;
+   }
+   if (ix > 0) {
+      /* -------- 0,0x,11010 FCVTNS d_d, s_s (ix 1) -------- */
+      /* -------- 0,0x,11011 FCVTMS d_d, s_s (ix 2) -------- */
+      /* -------- 0,0x,11100 FCVTAS d_d, s_s (ix 3) -------- */
+      /* -------- 0,1x,11010 FCVTPS d_d, s_s (ix 4) -------- */
+      /* -------- 0,1x,11011 FCVTZS d_d, s_s (ix 5) -------- */
+      /* -------- 1,0x,11010 FCVTNS d_d, s_s (ix 1) -------- */
+      /* -------- 1,0x,11011 FCVTMS d_d, s_s (ix 2) -------- */
+      /* -------- 1,0x,11100 FCVTAS d_d, s_s (ix 3) -------- */
+      /* -------- 1,1x,11010 FCVTPS d_d, s_s (ix 4) -------- */
+      /* -------- 1,1x,11011 FCVTZS d_d, s_s (ix 5) -------- */
+      Bool           is64 = (size & 1) == 1;
+      IRType         tyF  = is64 ? Ity_F64 : Ity_F32;
+      IRType         tyI  = is64 ? Ity_I64 : Ity_I32;
+      IRRoundingMode irrm = 8; /*impossible*/
+      HChar          ch   = '?';
+      switch (ix) {
+         case 1: ch = 'n'; irrm = Irrm_NEAREST; break;
+         case 2: ch = 'm'; irrm = Irrm_NegINF;  break;
+         case 3: ch = 'a'; irrm = Irrm_NEAREST; break; /* kludge? */
+         case 4: ch = 'p'; irrm = Irrm_PosINF;  break;
+         case 5: ch = 'z'; irrm = Irrm_ZERO;    break;
+         default: vassert(0);
+      }
+      IROp cvt = Iop_INVALID;
+      if (bitU == 1) {
+         cvt = is64 ? Iop_F64toI64U : Iop_F32toI32U;
+      } else {
+         cvt = is64 ? Iop_F64toI64S : Iop_F32toI32S;
+      }
+      IRTemp src = newTemp(tyF);
+      IRTemp res = newTemp(tyI);
+      assign(src, getQRegLane(nn, 0, tyF));
+      assign(res, binop(cvt, mkU32(irrm), mkexpr(src)));
+      putQRegLane(dd, 0, mkexpr(res)); /* bits 31-0 or 63-0 */
+      if (!is64) {
+         putQRegLane(dd, 1, mkU32(0)); /* bits 63-32 */
+      }
+      putQRegLane(dd, 1, mkU64(0));    /* bits 127-64 */
+      HChar sOrD = is64 ? 'd' : 's';
+      DIP("fcvt%c%c %c%u, %c%u\n", ch, bitU == 1 ? 'u' : 's',
+          sOrD, dd, sOrD, nn);
+      return True;
+   }
+
    if (size >= X10 && opcode == BITS5(1,1,1,0,1)) {
       /* -------- 0,1x,11101: FRECPE  d_d, s_s -------- */
       /* -------- 1,1x,11101: FRSQRTE d_d, s_s -------- */
@@ -11906,18 +11958,48 @@ Bool dis_AdvSIMD_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
-   if (bitU == 0 && size == X01 && opcode == BITS5(1,0,1,1,0)) {
-      /* -------- 0,01,10110: FCVTN 2s/4s_2d -------- */
-      IRTemp  rm    = mk_get_IR_rounding_mode();
-      IRExpr* srcLo = getQRegLane(nn, 0, Ity_F64);
-      IRExpr* srcHi = getQRegLane(nn, 1, Ity_F64);
-      putQRegLane(dd, 2 * bitQ + 0, binop(Iop_F64toF32, mkexpr(rm), srcLo));
-      putQRegLane(dd, 2 * bitQ + 1, binop(Iop_F64toF32, mkexpr(rm), srcHi));
+   if (bitU == 0 && size <= X01 && opcode == BITS5(1,0,1,1,0)) {
+      /* -------- 0,0x,10110: FCVTN 4h/8h_4s, 2s/4s_2d -------- */
+      UInt   nLanes = size == X00 ? 4 : 2;
+      IRType srcTy  = size == X00 ? Ity_F32 : Ity_F64;
+      IROp   opCvt  = size == X00 ? Iop_F32toF16 : Iop_F64toF32;
+      IRTemp rm     = mk_get_IR_rounding_mode();
+      IRTemp src[nLanes];
+      for (UInt i = 0; i < nLanes; i++) {
+         src[i] = newTemp(srcTy);
+         assign(src[i], getQRegLane(nn, i, srcTy));
+      }
+      for (UInt i = 0; i < nLanes; i++) {
+         putQRegLane(dd, nLanes * bitQ + i,
+                         binop(opCvt, mkexpr(rm), mkexpr(src[i])));
+      }
       if (bitQ == 0) {
          putQRegLane(dd, 1, mkU64(0));
       }
-      DIP("fcvtn%s %s.%s, %s.2d\n", bitQ ? "2" : "",
-          nameQReg128(dd), bitQ ? "4s" : "2s", nameQReg128(nn));
+      const HChar* arrNarrow = nameArr_Q_SZ(bitQ, 1+size);
+      const HChar* arrWide   = nameArr_Q_SZ(1,    1+size+1);
+      DIP("fcvtn%s %s.%s, %s.%s\n", bitQ ? "2" : "",
+          nameQReg128(dd), arrNarrow, nameQReg128(nn), arrWide);
+      return True;
+   }
+
+   if (bitU == 0 && size <= X01 && opcode == BITS5(1,0,1,1,1)) {
+      /* -------- 0,0x,10110: FCVTL 4s_4h/8h, 2d_2s/4s -------- */
+      UInt   nLanes = size == X00 ? 4 : 2;
+      IRType srcTy  = size == X00 ? Ity_F16 : Ity_F32;
+      IROp   opCvt  = size == X00 ? Iop_F16toF32 : Iop_F32toF64;
+      IRTemp src[nLanes];
+      for (UInt i = 0; i < nLanes; i++) {
+         src[i] = newTemp(srcTy);
+         assign(src[i], getQRegLane(nn, nLanes * bitQ + i, srcTy));
+      }
+      for (UInt i = 0; i < nLanes; i++) {
+         putQRegLane(dd, i, unop(opCvt, mkexpr(src[i])));
+      }
+      const HChar* arrNarrow = nameArr_Q_SZ(bitQ, 1+size);
+      const HChar* arrWide   = nameArr_Q_SZ(1,    1+size+1);
+      DIP("fcvtl%s %s.%s, %s.%s\n", bitQ ? "2" : "",
+          nameQReg128(dd), arrWide, nameQReg128(nn), arrNarrow);
       return True;
    }
 
@@ -12628,36 +12710,67 @@ Bool dis_AdvSIMD_fp_data_proc_1_source(/*MB_OUT*/DisResult* dres, UInt insn)
       /* -------- 01,000111: FCVT h_d -------- */
       /* -------- 01,000100: FCVT s_d -------- */
       /* 31        23 21    16 14    9 4
-         000 11110 11 10001 00 10000 n d   FCVT Sd, Hn (unimp)
-         --------- 11 ----- 01 ---------   FCVT Dd, Hn (unimp)
-         --------- 00 ----- 11 ---------   FCVT Hd, Sn (unimp)
+         000 11110 11 10001 00 10000 n d   FCVT Sd, Hn
+         --------- 11 ----- 01 ---------   FCVT Dd, Hn
+         --------- 00 ----- 11 ---------   FCVT Hd, Sn
          --------- 00 ----- 01 ---------   FCVT Dd, Sn
-         --------- 01 ----- 11 ---------   FCVT Hd, Dn (unimp)
+         --------- 01 ----- 11 ---------   FCVT Hd, Dn
          --------- 01 ----- 00 ---------   FCVT Sd, Dn
          Rounding, when dst is smaller than src, is per the FPCR.
       */
       UInt b2322 = ty;
       UInt b1615 = opcode & BITS2(1,1);
-      if (b2322 == BITS2(0,0) && b1615 == BITS2(0,1)) {
-         /* Convert S to D */
-         IRTemp res = newTemp(Ity_F64);
-         assign(res, unop(Iop_F32toF64, getQRegLO(nn, Ity_F32)));
-         putQReg128(dd, mkV128(0x0000));
-         putQRegLO(dd, mkexpr(res));
-         DIP("fcvt %s, %s\n",
-             nameQRegLO(dd, Ity_F64), nameQRegLO(nn, Ity_F32));
-         return True;
-      }
-      if (b2322 == BITS2(0,1) && b1615 == BITS2(0,0)) {
-         /* Convert D to S */
-         IRTemp res = newTemp(Ity_F32);
-         assign(res, binop(Iop_F64toF32, mkexpr(mk_get_IR_rounding_mode()),
-                                         getQRegLO(nn, Ity_F64)));
-         putQReg128(dd, mkV128(0x0000));
-         putQRegLO(dd, mkexpr(res));
-         DIP("fcvt %s, %s\n",
-             nameQRegLO(dd, Ity_F32), nameQRegLO(nn, Ity_F64));
-         return True;
+      switch ((b2322 << 2) | b1615) {
+         case BITS4(0,0,0,1):   // S -> D
+         case BITS4(1,1,0,1): { // H -> D
+            Bool   srcIsH = b2322 == BITS2(1,1);
+            IRType srcTy  = srcIsH ? Ity_F16 : Ity_F32;
+            IRTemp res    = newTemp(Ity_F64);
+            assign(res, unop(srcIsH ? Iop_F16toF64 : Iop_F32toF64,
+                             getQRegLO(nn, srcTy)));
+            putQReg128(dd, mkV128(0x0000));
+            putQRegLO(dd, mkexpr(res));
+            DIP("fcvt %s, %s\n",
+                nameQRegLO(dd, Ity_F64), nameQRegLO(nn, srcTy));
+            return True;
+         }
+         case BITS4(0,1,0,0):   // D -> S
+         case BITS4(0,1,1,1): { // D -> H
+            Bool   dstIsH = b1615 == BITS2(1,1);
+            IRType dstTy  = dstIsH ? Ity_F16 : Ity_F32;
+            IRTemp res    = newTemp(dstTy);
+            assign(res, binop(dstIsH ? Iop_F64toF16 : Iop_F64toF32,
+                              mkexpr(mk_get_IR_rounding_mode()),
+                              getQRegLO(nn, Ity_F64)));
+            putQReg128(dd, mkV128(0x0000));
+            putQRegLO(dd, mkexpr(res));
+            DIP("fcvt %s, %s\n",
+                nameQRegLO(dd, dstTy), nameQRegLO(nn, Ity_F64));
+            return True;
+         }
+         case BITS4(0,0,1,1):   // S -> H
+         case BITS4(1,1,0,0): { // H -> S
+            Bool   toH   = b1615 == BITS2(1,1);
+            IRType srcTy = toH ? Ity_F32 : Ity_F16;
+            IRType dstTy = toH ? Ity_F16 : Ity_F32;
+            IRTemp res = newTemp(dstTy);
+            if (toH) {
+               assign(res, binop(Iop_F32toF16,
+                                 mkexpr(mk_get_IR_rounding_mode()),
+                                 getQRegLO(nn, srcTy)));
+
+            } else {
+               assign(res, unop(Iop_F16toF32,
+                                getQRegLO(nn, srcTy)));
+            }
+            putQReg128(dd, mkV128(0x0000));
+            putQRegLO(dd, mkexpr(res));
+            DIP("fcvt %s, %s\n",
+                nameQRegLO(dd, dstTy), nameQRegLO(nn, srcTy));
+            return True;
+         }
+         default:
+            break;
       }
       /* else unhandled */
       return False;
@@ -13029,7 +13142,6 @@ Bool dis_AdvSIMD_fp_to_from_int_conv(/*MB_OUT*/DisResult* dres, UInt insn)
       ---------------- 01 --------------  FCVTP-------- (round to +inf)
       ---------------- 10 --------------  FCVTM-------- (round to -inf)
       ---------------- 11 --------------  FCVTZ-------- (round to zero)
-
       ---------------- 00 100 ----------  FCVTAS------- (nearest, ties away)
       ---------------- 00 101 ----------  FCVTAU------- (nearest, ties away)
 

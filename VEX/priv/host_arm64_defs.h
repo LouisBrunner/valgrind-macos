@@ -482,12 +482,15 @@ typedef
       ARM64in_StrEX,
       ARM64in_MFence,
       /* ARM64in_V*: scalar ops involving vector registers */
-      ARM64in_VLdStS,   /* 32-bit FP load/store, with imm offset  */
-      ARM64in_VLdStD,   /* 64-bit FP load/store, with imm offset  */
-      ARM64in_VLdStQ,
+      ARM64in_VLdStH,   /* ld/st to/from low 16 bits of vec reg, imm offset */
+      ARM64in_VLdStS,   /* ld/st to/from low 32 bits of vec reg, imm offset */
+      ARM64in_VLdStD,   /* ld/st to/from low 64 bits of vec reg, imm offset */
+      ARM64in_VLdStQ,   /* ld/st to/from all 128 bits of vec reg, no offset */
       ARM64in_VCvtI2F,
       ARM64in_VCvtF2I,
-      ARM64in_VCvtSD,
+      ARM64in_VCvtSD,   /* scalar 32 bit FP <--> 64 bit FP */
+      ARM64in_VCvtHS,   /* scalar 16 bit FP <--> 32 bit FP */
+      ARM64in_VCvtHD,   /* scalar 16 bit FP <--> 64 bit FP */
       ARM64in_VUnaryD,
       ARM64in_VUnaryS,
       ARM64in_VBinD,
@@ -670,21 +673,28 @@ typedef
          struct {
          } MFence;
          /* --- INSTRUCTIONS INVOLVING VECTOR REGISTERS --- */
-         /* 32-bit Fp load/store */
+         /* ld/st to/from low 16 bits of vec reg, imm offset */
+         struct {
+            Bool isLoad;
+            HReg hD;
+            HReg rN;
+            UInt uimm12;  /* 0 .. 8190 inclusive, 0 % 2 */
+         } VLdStH;
+         /* ld/st to/from low 32 bits of vec reg, imm offset */
          struct {
             Bool isLoad;
             HReg sD;
             HReg rN;
             UInt uimm12;  /* 0 .. 16380 inclusive, 0 % 4 */
          } VLdStS;
-         /* 64-bit Fp load/store */
+         /* ld/st to/from low 64 bits of vec reg, imm offset */
          struct {
             Bool isLoad;
             HReg dD;
             HReg rN;
             UInt uimm12;  /* 0 .. 32760 inclusive, 0 % 8 */
          } VLdStD;
-         /* 128-bit Vector load/store. */
+         /* ld/st to/from all 128 bits of vec reg, no offset */
          struct {
             Bool isLoad;
             HReg rQ; // data
@@ -704,13 +714,24 @@ typedef
             UChar      armRM; // ARM encoded RM:
                               // 00=nearest, 01=+inf, 10=-inf, 11=zero
          } VCvtF2I;
-         /* Convert between 32-bit and 64-bit FP values (both
-            ways). (FCVT) */
+         /* Convert between 32-bit and 64-bit FP values (both ways). (FCVT) */
          struct {
             Bool sToD; /* True: F32->F64.  False: F64->F32 */
             HReg dst;
             HReg src;
          } VCvtSD;
+         /* Convert between 16-bit and 32-bit FP values (both ways). (FCVT) */
+         struct {
+            Bool hToS; /* True: F16->F32.  False: F32->F16 */
+            HReg dst;
+            HReg src;
+         } VCvtHS;
+         /* Convert between 16-bit and 64-bit FP values (both ways). (FCVT) */
+         struct {
+            Bool hToD; /* True: F16->F64.  False: F64->F16 */
+            HReg dst;
+            HReg src;
+         } VCvtHD;
          /* 64-bit FP unary */
          struct {
             ARM64FpUnaryOp op;
@@ -887,6 +908,8 @@ extern ARM64Instr* ARM64Instr_Mul     ( HReg dst, HReg argL, HReg argR,
 extern ARM64Instr* ARM64Instr_LdrEX   ( Int szB );
 extern ARM64Instr* ARM64Instr_StrEX   ( Int szB );
 extern ARM64Instr* ARM64Instr_MFence  ( void );
+extern ARM64Instr* ARM64Instr_VLdStH  ( Bool isLoad, HReg sD, HReg rN,
+                                        UInt uimm12 /* 0 .. 8190, 0 % 2 */ );
 extern ARM64Instr* ARM64Instr_VLdStS  ( Bool isLoad, HReg sD, HReg rN,
                                         UInt uimm12 /* 0 .. 16380, 0 % 4 */ );
 extern ARM64Instr* ARM64Instr_VLdStD  ( Bool isLoad, HReg dD, HReg rN,
@@ -896,6 +919,8 @@ extern ARM64Instr* ARM64Instr_VCvtI2F ( ARM64CvtOp how, HReg rD, HReg rS );
 extern ARM64Instr* ARM64Instr_VCvtF2I ( ARM64CvtOp how, HReg rD, HReg rS,
                                         UChar armRM );
 extern ARM64Instr* ARM64Instr_VCvtSD  ( Bool sToD, HReg dst, HReg src );
+extern ARM64Instr* ARM64Instr_VCvtHS  ( Bool hToS, HReg dst, HReg src );
+extern ARM64Instr* ARM64Instr_VCvtHD  ( Bool hToD, HReg dst, HReg src );
 extern ARM64Instr* ARM64Instr_VUnaryD ( ARM64FpUnaryOp op, HReg dst, HReg src );
 extern ARM64Instr* ARM64Instr_VUnaryS ( ARM64FpUnaryOp op, HReg dst, HReg src );
 extern ARM64Instr* ARM64Instr_VBinD   ( ARM64FpBinOp op, HReg, HReg, HReg );

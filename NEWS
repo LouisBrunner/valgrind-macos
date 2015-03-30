@@ -22,7 +22,7 @@ Release 3.11.0 is under development, not yet released.
 * ==================== OTHER CHANGES ====================
 
 * Address description logic (used by memcheck and helgrind)
-  now describes addressed in anonymous segments, file mmap-ed
+  now describes addresses in anonymous segments, file mmap-ed
   segments, shared memory segments and the brk data segment.
 
 * Option --error-markers=<begin>,<end> can be used to mark

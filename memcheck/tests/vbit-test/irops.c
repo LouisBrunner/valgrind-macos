@@ -259,6 +259,12 @@ static irop_t irops[] = {
   { DEFOP(Iop_RecpExpF64, UNDEF_UNKNOWN), },
   { DEFOP(Iop_RecpExpF32, UNDEF_UNKNOWN), },
 
+  /* ------------------ 16-bit scalar FP --------------------- */
+  { DEFOP(Iop_F16toF64, UNDEF_UNKNOWN), },
+  { DEFOP(Iop_F64toF16, UNDEF_UNKNOWN), },
+  { DEFOP(Iop_F16toF32, UNDEF_UNKNOWN), },
+  { DEFOP(Iop_F32toF16, UNDEF_UNKNOWN), },
+
   /* ------------------ 32-bit SIMD Integer ------------------ */
   { DEFOP(Iop_QAdd32S, UNDEF_UNKNOWN), },
   { DEFOP(Iop_QSub32S, UNDEF_UNKNOWN), },

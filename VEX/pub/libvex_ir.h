@@ -225,6 +225,7 @@ typedef
       Ity_I32, 
       Ity_I64,
       Ity_I128,  /* 128-bit scalar */
+      Ity_F16,   /* 16 bit float */
       Ity_F32,   /* IEEE 754 float */
       Ity_F64,   /* IEEE 754 double */
       Ity_D32,   /* 32-bit Decimal floating point */
@@ -758,6 +759,14 @@ typedef
 
       Iop_RecpExpF64,  /* FRECPX d  :: IRRoundingMode(I32) x F64 -> F64 */
       Iop_RecpExpF32,  /* FRECPX s  :: IRRoundingMode(I32) x F32 -> F32 */
+
+      /* ------------------ 16-bit scalar FP ------------------ */
+
+      Iop_F16toF64,  /*                       F16 -> F64 */
+      Iop_F64toF16,  /* IRRoundingMode(I32) x F64 -> F16 */
+
+      Iop_F16toF32,  /*                       F16 -> F32 */
+      Iop_F32toF16,  /* IRRoundingMode(I32) x F32 -> F16 */
 
       /* ------------------ 32-bit SIMD Integer ------------------ */
 

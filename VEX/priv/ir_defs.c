@@ -54,6 +54,7 @@ void ppIRType ( IRType ty )
       case Ity_I32:     vex_printf( "I32");  break;
       case Ity_I64:     vex_printf( "I64");  break;
       case Ity_I128:    vex_printf( "I128"); break;
+      case Ity_F16:     vex_printf( "F16");  break;
       case Ity_F32:     vex_printf( "F32");  break;
       case Ity_F64:     vex_printf( "F64");  break;
       case Ity_F128:    vex_printf( "F128"); break;
@@ -339,6 +340,11 @@ void ppIROp ( IROp op )
 
       case Iop_RecpExpF64: vex_printf("RecpExpF64"); return;
       case Iop_RecpExpF32: vex_printf("RecpExpF32"); return;
+
+      case Iop_F16toF64: vex_printf("F16toF64"); return;
+      case Iop_F64toF16: vex_printf("F64toF16"); return;
+      case Iop_F16toF32: vex_printf("F16toF32"); return;
+      case Iop_F32toF16: vex_printf("F32toF16"); return;
 
       case Iop_QAdd32S: vex_printf("QAdd32S"); return;
       case Iop_QSub32S: vex_printf("QSub32S"); return; 
@@ -2802,7 +2808,12 @@ void typeOfPrimop ( IROp op,
       case Iop_I64StoF32: BINARY(ity_RMode,Ity_I64, Ity_F32);
 
       case Iop_F32toF64: UNARY(Ity_F32, Ity_F64);
+      case Iop_F16toF64: UNARY(Ity_F16, Ity_F64);
+      case Iop_F16toF32: UNARY(Ity_F16, Ity_F32);
+
       case Iop_F64toF32: BINARY(ity_RMode,Ity_F64, Ity_F32);
+      case Iop_F64toF16: BINARY(ity_RMode,Ity_F64, Ity_F16);
+      case Iop_F32toF16: BINARY(ity_RMode,Ity_F32, Ity_F16);
 
       case Iop_ReinterpI64asF64: UNARY(Ity_I64, Ity_F64);
       case Iop_ReinterpF64asI64: UNARY(Ity_F64, Ity_I64);
@@ -3577,7 +3588,7 @@ Bool isPlausibleIRType ( IRType ty )
       case Ity_INVALID: case Ity_I1:
       case Ity_I8: case Ity_I16: case Ity_I32: 
       case Ity_I64: case Ity_I128:
-      case Ity_F32: case Ity_F64: case Ity_F128:
+      case Ity_F16: case Ity_F32: case Ity_F64: case Ity_F128:
       case Ity_D32: case Ity_D64: case Ity_D128:
       case Ity_V128: case Ity_V256:
          return True;
@@ -4615,6 +4626,7 @@ Int sizeofIRType ( IRType ty )
       case Ity_I32:  return 4;
       case Ity_I64:  return 8;
       case Ity_I128: return 16;
+      case Ity_F16:  return 2;
       case Ity_F32:  return 4;
       case Ity_F64:  return 8;
       case Ity_F128: return 16;

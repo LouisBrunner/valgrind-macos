@@ -9935,9 +9935,9 @@ Bool dis_AdvSIMD_scalar_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
       /* -------- 1,0x,11100 FCVTAS d_d, s_s (ix 3) -------- */
       /* -------- 1,1x,11010 FCVTPS d_d, s_s (ix 4) -------- */
       /* -------- 1,1x,11011 FCVTZS d_d, s_s (ix 5) -------- */
-      Bool           is64 = (size & 1) == 1;
-      IRType         tyF  = is64 ? Ity_F64 : Ity_F32;
-      IRType         tyI  = is64 ? Ity_I64 : Ity_I32;
+      Bool           isD  = (size & 1) == 1;
+      IRType         tyF  = isD ? Ity_F64 : Ity_F32;
+      IRType         tyI  = isD ? Ity_I64 : Ity_I32;
       IRRoundingMode irrm = 8; /*impossible*/
       HChar          ch   = '?';
       switch (ix) {
@@ -9950,20 +9950,20 @@ Bool dis_AdvSIMD_scalar_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
       }
       IROp cvt = Iop_INVALID;
       if (bitU == 1) {
-         cvt = is64 ? Iop_F64toI64U : Iop_F32toI32U;
+         cvt = isD ? Iop_F64toI64U : Iop_F32toI32U;
       } else {
-         cvt = is64 ? Iop_F64toI64S : Iop_F32toI32S;
+         cvt = isD ? Iop_F64toI64S : Iop_F32toI32S;
       }
       IRTemp src = newTemp(tyF);
       IRTemp res = newTemp(tyI);
       assign(src, getQRegLane(nn, 0, tyF));
       assign(res, binop(cvt, mkU32(irrm), mkexpr(src)));
       putQRegLane(dd, 0, mkexpr(res)); /* bits 31-0 or 63-0 */
-      if (!is64) {
+      if (!isD) {
          putQRegLane(dd, 1, mkU32(0)); /* bits 63-32 */
       }
       putQRegLane(dd, 1, mkU64(0));    /* bits 127-64 */
-      HChar sOrD = is64 ? 'd' : 's';
+      HChar sOrD = isD ? 'd' : 's';
       DIP("fcvt%c%c %c%u, %c%u\n", ch, bitU == 1 ? 'u' : 's',
           sOrD, dd, sOrD, nn);
       return True;
@@ -12049,9 +12049,6 @@ Bool dis_AdvSIMD_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
          default: vassert(0);
       }
 
-      IRTemp src = newTempV128();
-      assign(src, getQReg128(nn));
-
       IROp opRND = isD ? Iop_RoundF64toInt : Iop_RoundF32toInt;
       if (isD) {
          for (UInt i = 0; i < 2; i++) {
@@ -12069,6 +12066,63 @@ Bool dis_AdvSIMD_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
       }
       const HChar* arr = nameArr_Q_SZ(bitQ, size);
       DIP("frint%c %s.%s, %s.%s\n", ch,
+          nameQReg128(dd), arr, nameQReg128(nn), arr);
+      return True;
+   }
+
+   ix = 0; /*INVALID*/
+   switch (opcode) {
+      case BITS5(1,1,0,1,0): ix = ((size & 2) == 2) ? 4 : 1; break;
+      case BITS5(1,1,0,1,1): ix = ((size & 2) == 2) ? 5 : 2; break;
+      case BITS5(1,1,1,0,0): if ((size & 2) == 0) ix = 3; break;
+      default: break;
+   }
+   if (ix > 0) {
+      /* -------- 0,0x,11010 FCVTNS 2d_2d, 4s_4s, 2s_2s (ix 1) -------- */
+      /* -------- 0,0x,11011 FCVTMS 2d_2d, 4s_4s, 2s_2s (ix 2) -------- */
+      /* -------- 0,0x,11100 FCVTAS 2d_2d, 4s_4s, 2s_2s (ix 3) -------- */
+      /* -------- 0,1x,11010 FCVTPS 2d_2d, 4s_4s, 2s_2s (ix 4) -------- */
+      /* -------- 0,1x,11011 FCVTZS 2d_2d, 4s_4s, 2s_2s (ix 5) -------- */
+      /* -------- 1,0x,11010 FCVTNS 2d_2d, 4s_4s, 2s_2s (ix 1) -------- */
+      /* -------- 1,0x,11011 FCVTMS 2d_2d, 4s_4s, 2s_2s (ix 2) -------- */
+      /* -------- 1,0x,11100 FCVTAS 2d_2d, 4s_4s, 2s_2s (ix 3) -------- */
+      /* -------- 1,1x,11010 FCVTPS 2d_2d, 4s_4s, 2s_2s (ix 4) -------- */
+      /* -------- 1,1x,11011 FCVTZS 2d_2d, 4s_4s, 2s_2s (ix 5) -------- */
+      Bool isD = (size & 1) == 1;
+      if (bitQ == 0 && isD) return False; // implied 1d case
+
+      IRRoundingMode irrm = 8; /*impossible*/
+      HChar          ch   = '?';
+      switch (ix) {
+         case 1: ch = 'n'; irrm = Irrm_NEAREST; break;
+         case 2: ch = 'm'; irrm = Irrm_NegINF;  break;
+         case 3: ch = 'a'; irrm = Irrm_NEAREST; break; /* kludge? */
+         case 4: ch = 'p'; irrm = Irrm_PosINF;  break;
+         case 5: ch = 'z'; irrm = Irrm_ZERO;    break;
+         default: vassert(0);
+      }
+      IROp cvt = Iop_INVALID;
+      if (bitU == 1) {
+         cvt = isD ? Iop_F64toI64U : Iop_F32toI32U;
+      } else {
+         cvt = isD ? Iop_F64toI64S : Iop_F32toI32S;
+      }
+      if (isD) {
+         for (UInt i = 0; i < 2; i++) {
+            putQRegLane(dd, i, binop(cvt, mkU32(irrm),
+                                            getQRegLane(nn, i, Ity_F64)));
+         }
+      } else {
+         UInt n = bitQ==1 ? 4 : 2;
+         for (UInt i = 0; i < n; i++) {
+            putQRegLane(dd, i, binop(cvt, mkU32(irrm),
+                                            getQRegLane(nn, i, Ity_F32)));
+         }
+         if (bitQ == 0)
+            putQRegLane(dd, 1, mkU64(0)); // zero out lanes 2 and 3
+      }
+      const HChar* arr = nameArr_Q_SZ(bitQ, size);
+      DIP("fcvt%c%c %s.%s, %s.%s\n", ch, bitU == 1 ? 'u' : 's',
           nameQReg128(dd), arr, nameQReg128(nn), arr);
       return True;
    }

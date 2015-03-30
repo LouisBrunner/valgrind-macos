@@ -5029,22 +5029,22 @@ int main ( void )
    // ======================== CONV ========================
 
    // fcvt      s_h,d_h,h_s,d_s,h_d,s_d (fp convert, scalar)
-   if (0) test_fcvt_s_h(TyHF);
-   if (0) test_fcvt_d_h(TyHF);
-   if (0) test_fcvt_h_s(TySF);
+   if (1) test_fcvt_s_h(TyHF);
+   if (1) test_fcvt_d_h(TyHF);
+   if (1) test_fcvt_h_s(TySF);
    if (1) test_fcvt_d_s(TySF);
-   if (0) test_fcvt_h_d(TyDF);
+   if (1) test_fcvt_h_d(TyDF);
    if (1) test_fcvt_s_d(TyDF);
 
    // fcvtl{2}  4s/4h, 4s/8h, 2d/2s, 2d/4s (float convert to longer form)
-   if (0) test_fcvtl_4s_4h(TyHF);
-   if (0) test_fcvtl_4s_8h(TyHF);
-   if (0) test_fcvtl_2d_2s(TySF);
-   if (0) test_fcvtl_2d_4s(TySF);
+   if (1) test_fcvtl_4s_4h(TyHF);
+   if (1) test_fcvtl_4s_8h(TyHF);
+   if (1) test_fcvtl_2d_2s(TySF);
+   if (1) test_fcvtl_2d_4s(TySF);
 
    // fcvtn{2}  4h/4s, 8h/4s, 2s/2d, 4s/2d (float convert to narrower form)
-   if (0) test_fcvtn_4h_4s(TySF);
-   if (0) test_fcvtn_8h_4s(TySF);
+   if (1) test_fcvtn_4h_4s(TySF);
+   if (1) test_fcvtn_8h_4s(TySF);
    if (1) test_fcvtn_2s_2d(TyDF);
    if (1) test_fcvtn_4s_2d(TyDF);
 
@@ -5054,10 +5054,10 @@ int main ( void )
    // fcvtau    2d,4s,2s
    // fcvtas    w_s,x_s,w_d,x_d
    // fcvtau    w_s,x_s,w_d,x_d
-   if (0) test_fcvtas_d_d(TyDF);
-   if (0) test_fcvtau_d_d(TyDF);
-   if (0) test_fcvtas_s_s(TySF);
-   if (0) test_fcvtau_s_s(TySF);
+   if (1) test_fcvtas_d_d(TyDF);
+   if (1) test_fcvtau_d_d(TyDF);
+   if (1) test_fcvtas_s_s(TySF);
+   if (1) test_fcvtau_s_s(TySF);
    if (0) test_fcvtas_2d_2d(TyDF);
    if (0) test_fcvtau_2d_2d(TyDF);
    if (0) test_fcvtas_4s_4s(TySF);
@@ -5079,10 +5079,10 @@ int main ( void )
    // fcvtmu    2d,4s,2s
    // fcvtms    w_s,x_s,w_d,x_d
    // fcvtmu    w_s,x_s,w_d,x_d
-   if (0) test_fcvtms_d_d(TyDF);
-   if (0) test_fcvtmu_d_d(TyDF);
-   if (0) test_fcvtms_s_s(TySF);
-   if (0) test_fcvtmu_s_s(TySF);
+   if (1) test_fcvtms_d_d(TyDF);
+   if (1) test_fcvtmu_d_d(TyDF);
+   if (1) test_fcvtms_s_s(TySF);
+   if (1) test_fcvtmu_s_s(TySF);
    if (0) test_fcvtms_2d_2d(TyDF);
    if (0) test_fcvtmu_2d_2d(TyDF);
    if (0) test_fcvtms_4s_4s(TySF);
@@ -5104,10 +5104,10 @@ int main ( void )
    // fcvtnu    2d,4s,2s
    // fcvtns    w_s,x_s,w_d,x_d
    // fcvtnu    w_s,x_s,w_d,x_d
-   if (0) test_fcvtns_d_d(TyDF);
-   if (0) test_fcvtnu_d_d(TyDF);
-   if (0) test_fcvtns_s_s(TySF);
-   if (0) test_fcvtnu_s_s(TySF);
+   if (1) test_fcvtns_d_d(TyDF);
+   if (1) test_fcvtnu_d_d(TyDF);
+   if (1) test_fcvtns_s_s(TySF);
+   if (1) test_fcvtnu_s_s(TySF);
    if (0) test_fcvtns_2d_2d(TyDF);
    if (0) test_fcvtnu_2d_2d(TyDF);
    if (0) test_fcvtns_4s_4s(TySF);
@@ -5129,10 +5129,10 @@ int main ( void )
    // fcvtpu    2d,4s,2s
    // fcvtps    w_s,x_s,w_d,x_d
    // fcvtpu    w_s,x_s,w_d,x_d
-   if (0) test_fcvtps_d_d(TyDF);
-   if (0) test_fcvtpu_d_d(TyDF);
-   if (0) test_fcvtps_s_s(TySF);
-   if (0) test_fcvtpu_s_s(TySF);
+   if (1) test_fcvtps_d_d(TyDF);
+   if (1) test_fcvtpu_d_d(TyDF);
+   if (1) test_fcvtps_s_s(TySF);
+   if (1) test_fcvtpu_s_s(TySF);
    if (0) test_fcvtps_2d_2d(TyDF);
    if (0) test_fcvtpu_2d_2d(TyDF);
    if (0) test_fcvtps_4s_4s(TySF);
@@ -5154,10 +5154,10 @@ int main ( void )
    // fcvtzu    2d,4s,2s
    // fcvtzs    w_s,x_s,w_d,x_d
    // fcvtzu    w_s,x_s,w_d,x_d
-   if (0) test_fcvtzs_d_d(TyDF);
-   if (0) test_fcvtzu_d_d(TyDF);
-   if (0) test_fcvtzs_s_s(TySF);
-   if (0) test_fcvtzu_s_s(TySF);
+   if (1) test_fcvtzs_d_d(TyDF);
+   if (1) test_fcvtzu_d_d(TyDF);
+   if (1) test_fcvtzs_s_s(TySF);
+   if (1) test_fcvtzu_s_s(TySF);
    if (0) test_fcvtzs_2d_2d(TyDF);
    if (0) test_fcvtzu_2d_2d(TyDF);
    if (0) test_fcvtzs_4s_4s(TySF);

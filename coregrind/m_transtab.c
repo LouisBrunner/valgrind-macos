@@ -92,13 +92,15 @@ typedef UShort HTTno;
 /* Equivalence classes for fast address range deletion.  There are 1 +
    2^ECLASS_WIDTH bins.  The highest one, ECLASS_MISC, describes an
    address range which does not fall cleanly within any specific bin.
-   Note that ECLASS_SHIFT + ECLASS_WIDTH must be < 32. */
+   Note that ECLASS_SHIFT + ECLASS_WIDTH must be < 32.
+   ECLASS_N must fit in a EclassNo. */
 #define ECLASS_SHIFT 11
 #define ECLASS_WIDTH 8
 #define ECLASS_MISC  (1 << ECLASS_WIDTH)
 #define ECLASS_N     (1 + ECLASS_MISC)
+STATIC_ASSERT(ECLASS_SHIFT + ECLASS_WIDTH < 32);
 
-
+typedef UShort EClassNo;
 
 /*------------------ TYPES ------------------*/
 
@@ -107,8 +109,9 @@ typedef
    struct {
       SECno from_sNo;   /* sector number */
       TTEno from_tteNo; /* TTE number in given sector */
-      UInt  from_offs;  /* code offset from TCEntry::tcptr where the patch is */
-      Bool  to_fastEP;  /* Is the patch to a fast or slow entry point? */
+      UInt  from_offs: (sizeof(UInt)*8)-1;  /* code offset from TCEntry::tcptr
+                                               where the patch is */
+      Bool  to_fastEP:1; /* Is the patch to a fast or slow entry point? */
    }
    InEdge;
 
@@ -126,18 +129,24 @@ typedef
 #define N_FIXED_IN_EDGE_ARR 3
 typedef
    struct {
-      UInt     n_fixed; /* 0 .. N_FIXED_IN_EDGE_ARR */
-      InEdge   fixed[N_FIXED_IN_EDGE_ARR];
-      XArray*  var; /* XArray* of InEdgeArr */
+      Bool     has_var:1; /* True if var is used (then n_fixed must be 0) */
+      UInt     n_fixed: (sizeof(UInt)*8)-1; /* 0 .. N_FIXED_IN_EDGE_ARR */
+      union {
+         InEdge   fixed[N_FIXED_IN_EDGE_ARR];      /* if !has_var */ 
+         XArray*  var; /* XArray* of InEdgeArr */  /* if  has_var */
+      } edges;
    }
    InEdgeArr;
 
 #define N_FIXED_OUT_EDGE_ARR 2
 typedef
    struct {
-      UInt    n_fixed; /* 0 .. N_FIXED_OUT_EDGE_ARR */
-      OutEdge fixed[N_FIXED_OUT_EDGE_ARR];
-      XArray* var; /* XArray* of OutEdgeArr */
+      Bool    has_var:1; /* True if var is used (then n_fixed must be 0) */
+      UInt    n_fixed: (sizeof(UInt)*8)-1; /* 0 .. N_FIXED_OUT_EDGE_ARR */
+      union {
+         OutEdge fixed[N_FIXED_OUT_EDGE_ARR];      /* if !has_var */ 
+         XArray* var; /* XArray* of OutEdgeArr */  /* if  has_var */
+      } edges;
    }
    OutEdgeArr;
 
@@ -193,8 +202,8 @@ typedef
          The eclass info is similar to, and derived from, this entry's
          'vge' field, but it is not the same */
       UShort n_tte2ec;      // # tte2ec pointers (1 to 3)
-      UShort tte2ec_ec[3];  // for each, the eclass #
-      UInt   tte2ec_ix[3];  // and the index within the eclass.
+      EClassNo tte2ec_ec[3];  // for each, the eclass #
+      UInt     tte2ec_ix[3];  // and the index within the eclass.
       // for i in 0 .. n_tte2ec-1
       //    sec->ec2tte[ tte2ec_ec[i] ][ tte2ec_ix[i] ] 
       // should be the index 
@@ -497,9 +506,9 @@ static void TTEntry__init ( TTEntry* tte )
 
 static UWord InEdgeArr__size ( const InEdgeArr* iea )
 {
-   if (iea->var) {
+   if (iea->has_var) {
       vg_assert(iea->n_fixed == 0);
-      return VG_(sizeXA)(iea->var);
+      return VG_(sizeXA)(iea->edges.var);
    } else {
       vg_assert(iea->n_fixed <= N_FIXED_IN_EDGE_ARR);
       return iea->n_fixed;
@@ -508,10 +517,11 @@ static UWord InEdgeArr__size ( const InEdgeArr* iea )
 
 static void InEdgeArr__makeEmpty ( InEdgeArr* iea )
 {
-   if (iea->var) {
+   if (iea->has_var) {
       vg_assert(iea->n_fixed == 0);
-      VG_(deleteXA)(iea->var);
-      iea->var = NULL;
+      VG_(deleteXA)(iea->edges.var);
+      iea->edges.var = NULL;
+      iea->has_var = False;
    } else {
       vg_assert(iea->n_fixed <= N_FIXED_IN_EDGE_ARR);
       iea->n_fixed = 0;
@@ -521,25 +531,25 @@ static void InEdgeArr__makeEmpty ( InEdgeArr* iea )
 static
 InEdge* InEdgeArr__index ( InEdgeArr* iea, UWord i )
 {
-   if (iea->var) {
+   if (iea->has_var) {
       vg_assert(iea->n_fixed == 0);
-      return (InEdge*)VG_(indexXA)(iea->var, i);
+      return (InEdge*)VG_(indexXA)(iea->edges.var, i);
    } else {
       vg_assert(i < iea->n_fixed);
-      return &iea->fixed[i];
+      return &iea->edges.fixed[i];
    }
 }
 
 static
 void InEdgeArr__deleteIndex ( InEdgeArr* iea, UWord i )
 {
-   if (iea->var) {
+   if (iea->has_var) {
       vg_assert(iea->n_fixed == 0);
-      VG_(removeIndexXA)(iea->var, i);
+      VG_(removeIndexXA)(iea->edges.var, i);
    } else {
       vg_assert(i < iea->n_fixed);
       for (; i+1 < iea->n_fixed; i++) {
-         iea->fixed[i] = iea->fixed[i+1];
+         iea->edges.fixed[i] = iea->edges.fixed[i+1];
       }
       iea->n_fixed--;
    }
@@ -548,35 +558,37 @@ void InEdgeArr__deleteIndex ( InEdgeArr* iea, UWord i )
 static
 void InEdgeArr__add ( InEdgeArr* iea, InEdge* ie )
 {
-   if (iea->var) {
+   if (iea->has_var) {
       vg_assert(iea->n_fixed == 0);
-      VG_(addToXA)(iea->var, ie);
+      VG_(addToXA)(iea->edges.var, ie);
    } else {
       vg_assert(iea->n_fixed <= N_FIXED_IN_EDGE_ARR);
       if (iea->n_fixed == N_FIXED_IN_EDGE_ARR) {
          /* The fixed array is full, so we have to initialise an
             XArray and copy the fixed array into it. */
-         iea->var = VG_(newXA)(ttaux_malloc, "transtab.IEA__add",
-                               ttaux_free,
-                               sizeof(InEdge));
+         XArray *var = VG_(newXA)(ttaux_malloc, "transtab.IEA__add",
+                                  ttaux_free,
+                                  sizeof(InEdge));
          UWord i;
          for (i = 0; i < iea->n_fixed; i++) {
-            VG_(addToXA)(iea->var, &iea->fixed[i]);
+            VG_(addToXA)(var, &iea->edges.fixed[i]);
          }
-         VG_(addToXA)(iea->var, ie);
+         VG_(addToXA)(var, ie);
          iea->n_fixed = 0;
+         iea->has_var = True;
+         iea->edges.var = var;
       } else {
          /* Just add to the fixed array. */
-         iea->fixed[iea->n_fixed++] = *ie;
+         iea->edges.fixed[iea->n_fixed++] = *ie;
       }
    }
 }
 
 static UWord OutEdgeArr__size ( const OutEdgeArr* oea )
 {
-   if (oea->var) {
+   if (oea->has_var) {
       vg_assert(oea->n_fixed == 0);
-      return VG_(sizeXA)(oea->var);
+      return VG_(sizeXA)(oea->edges.var);
    } else {
       vg_assert(oea->n_fixed <= N_FIXED_OUT_EDGE_ARR);
       return oea->n_fixed;
@@ -585,10 +597,11 @@ static UWord OutEdgeArr__size ( const OutEdgeArr* oea )
 
 static void OutEdgeArr__makeEmpty ( OutEdgeArr* oea )
 {
-   if (oea->var) {
+   if (oea->has_var) {
       vg_assert(oea->n_fixed == 0);
-      VG_(deleteXA)(oea->var);
-      oea->var = NULL;
+      VG_(deleteXA)(oea->edges.var);
+      oea->edges.var = NULL;
+      oea->has_var = False;
    } else {
       vg_assert(oea->n_fixed <= N_FIXED_OUT_EDGE_ARR);
       oea->n_fixed = 0;
@@ -598,25 +611,25 @@ static void OutEdgeArr__makeEmpty ( OutEdgeArr* oea )
 static
 OutEdge* OutEdgeArr__index ( OutEdgeArr* oea, UWord i )
 {
-   if (oea->var) {
+   if (oea->has_var) {
       vg_assert(oea->n_fixed == 0);
-      return (OutEdge*)VG_(indexXA)(oea->var, i);
+      return (OutEdge*)VG_(indexXA)(oea->edges.var, i);
    } else {
       vg_assert(i < oea->n_fixed);
-      return &oea->fixed[i];
+      return &oea->edges.fixed[i];
    }
 }
 
 static
 void OutEdgeArr__deleteIndex ( OutEdgeArr* oea, UWord i )
 {
-   if (oea->var) {
+   if (oea->has_var) {
       vg_assert(oea->n_fixed == 0);
-      VG_(removeIndexXA)(oea->var, i);
+      VG_(removeIndexXA)(oea->edges.var, i);
    } else {
       vg_assert(i < oea->n_fixed);
       for (; i+1 < oea->n_fixed; i++) {
-         oea->fixed[i] = oea->fixed[i+1];
+         oea->edges.fixed[i] = oea->edges.fixed[i+1];
       }
       oea->n_fixed--;
    }
@@ -625,26 +638,28 @@ void OutEdgeArr__deleteIndex ( OutEdgeArr* oea, UWord i )
 static
 void OutEdgeArr__add ( OutEdgeArr* oea, OutEdge* oe )
 {
-   if (oea->var) {
+   if (oea->has_var) {
       vg_assert(oea->n_fixed == 0);
-      VG_(addToXA)(oea->var, oe);
+      VG_(addToXA)(oea->edges.var, oe);
    } else {
       vg_assert(oea->n_fixed <= N_FIXED_OUT_EDGE_ARR);
       if (oea->n_fixed == N_FIXED_OUT_EDGE_ARR) {
          /* The fixed array is full, so we have to initialise an
             XArray and copy the fixed array into it. */
-         oea->var = VG_(newXA)(ttaux_malloc, "transtab.OEA__add",
-                               ttaux_free,
-                               sizeof(OutEdge));
+         XArray *var = VG_(newXA)(ttaux_malloc, "transtab.OEA__add",
+                                  ttaux_free,
+                                  sizeof(OutEdge));
          UWord i;
          for (i = 0; i < oea->n_fixed; i++) {
-            VG_(addToXA)(oea->var, &oea->fixed[i]);
+            VG_(addToXA)(var, &oea->edges.fixed[i]);
          }
-         VG_(addToXA)(oea->var, oe);
+         VG_(addToXA)(var, oe);
          oea->n_fixed = 0;
+         oea->has_var = True;
+         oea->edges.var = var;
       } else {
          /* Just add to the fixed array. */
-         oea->fixed[oea->n_fixed++] = *oe;
+         oea->edges.fixed[oea->n_fixed++] = *oe;
       }
    }
 }
@@ -964,7 +979,7 @@ void unchain_in_preparation_for_deletion ( VexArch arch_host,
 
 /* Return equivalence class number for a range. */
 
-static Int range_to_eclass ( Addr start, UInt len )
+static EClassNo range_to_eclass ( Addr start, UInt len )
 {
    UInt mask   = (1 << ECLASS_WIDTH) - 1;
    UInt lo     = (UInt)start;
@@ -987,14 +1002,15 @@ static Int range_to_eclass ( Addr start, UInt len )
 */
 
 static 
-Int vexGuestExtents_to_eclasses ( /*OUT*/Int* eclasses,
+Int vexGuestExtents_to_eclasses ( /*OUT*/EClassNo* eclasses,
                                   const VexGuestExtents* vge )
 {
 
 #  define SWAP(_lv1,_lv2) \
       do { Int t = _lv1; _lv1 = _lv2; _lv2 = t; } while (0)
 
-   Int i, j, n_ec, r;
+   Int i, j, n_ec;
+   EClassNo r;
 
    vg_assert(vge->n_used >= 1 && vge->n_used <= 3);
 
@@ -1047,7 +1063,7 @@ Int vexGuestExtents_to_eclasses ( /*OUT*/Int* eclasses,
    this sector.  Returns used location in eclass array. */
 
 static 
-UInt addEClassNo ( /*MOD*/Sector* sec, Int ec, TTEno tteno )
+UInt addEClassNo ( /*MOD*/Sector* sec, EClassNo ec, TTEno tteno )
 {
    Int    old_sz, new_sz, i, r;
    TTEno  *old_ar, *new_ar;
@@ -1090,7 +1106,8 @@ UInt addEClassNo ( /*MOD*/Sector* sec, Int ec, TTEno tteno )
 static 
 void upd_eclasses_after_add ( /*MOD*/Sector* sec, TTEno tteno )
 {
-   Int i, r, eclasses[3];
+   Int i, r;
+   EClassNo eclasses[3];
    TTEntry* tte;
    vg_assert(tteno >= 0 && tteno < N_TTES_PER_SECTOR);
 
@@ -1115,7 +1132,9 @@ static Bool sanity_check_eclasses_in_sector ( const Sector* sec )
 #  define BAD(_str) do { whassup = (_str); goto bad; } while (0)
 
    const HChar* whassup = NULL;
-   Int      i, j, k, n, ec_num, ec_idx;
+   Int      j, k, n, ec_idx;
+   EClassNo i;
+   EClassNo ec_num;
    TTEntry* tte;
    TTEno    tteno;
    ULong*   tce;
@@ -1417,10 +1436,10 @@ static void initialiseSector ( SECno sno )
       vg_assert(sec->tt == NULL);
       vg_assert(sec->tc_next == NULL);
       vg_assert(sec->tt_n_inuse == 0);
-      for (i = 0; i < ECLASS_N; i++) {
-         vg_assert(sec->ec2tte_size[i] == 0);
-         vg_assert(sec->ec2tte_used[i] == 0);
-         vg_assert(sec->ec2tte[i] == NULL);
+      for (EClassNo e = 0; e < ECLASS_N; e++) {
+         vg_assert(sec->ec2tte_size[e] == 0);
+         vg_assert(sec->ec2tte_used[e] == 0);
+         vg_assert(sec->ec2tte[e] == NULL);
       }
       vg_assert(sec->host_extents == NULL);
 
@@ -1526,16 +1545,16 @@ static void initialiseSector ( SECno sno )
                                       sno);
 
       /* Free up the eclass structures. */
-      for (i = 0; i < ECLASS_N; i++) {
-         if (sec->ec2tte_size[i] == 0) {
-            vg_assert(sec->ec2tte_used[i] == 0);
-            vg_assert(sec->ec2tte[i] == NULL);
+      for (EClassNo e = 0; e < ECLASS_N; i++) {
+         if (sec->ec2tte_size[e] == 0) {
+            vg_assert(sec->ec2tte_used[e] == 0);
+            vg_assert(sec->ec2tte[e] == NULL);
          } else {
-            vg_assert(sec->ec2tte[i] != NULL);
-            ttaux_free(sec->ec2tte[i]);
-            sec->ec2tte[i] = NULL;
-            sec->ec2tte_size[i] = 0;
-            sec->ec2tte_used[i] = 0;
+            vg_assert(sec->ec2tte[e] != NULL);
+            ttaux_free(sec->ec2tte[e]);
+            sec->ec2tte[e] = NULL;
+            sec->ec2tte_size[e] = 0;
+            sec->ec2tte_used[e] = 0;
          }
       }
 
@@ -1856,7 +1875,8 @@ Bool overlaps ( Addr start, ULong range, const VexGuestExtents* vge )
 static void delete_tte ( /*MOD*/Sector* sec, SECno secNo, TTEno tteno,
                          VexArch arch_host, VexEndness endness_host )
 {
-   Int      i, ec_num, ec_idx;
+   Int      i, ec_idx;
+   EClassNo ec_num;
    TTEntry* tte;
 
    /* sec and secNo are mutually redundant; cross-check. */
@@ -1872,7 +1892,7 @@ static void delete_tte ( /*MOD*/Sector* sec, SECno secNo, TTEno tteno,
 
    /* Deal with the ec-to-tte links first. */
    for (i = 0; i < tte->n_tte2ec; i++) {
-      ec_num = (Int)tte->tte2ec_ec[i];
+      ec_num = tte->tte2ec_ec[i];
       ec_idx = tte->tte2ec_ix[i];
       vg_assert(ec_num >= 0 && ec_num < ECLASS_N);
       vg_assert(ec_idx >= 0);
@@ -1923,7 +1943,7 @@ static void delete_tte ( /*MOD*/Sector* sec, SECno secNo, TTEno tteno,
 static 
 Bool delete_translations_in_sector_eclass ( /*MOD*/Sector* sec, SECno secNo,
                                             Addr guest_start, ULong range,
-                                            Int ec,
+                                            EClassNo ec,
                                             VexArch arch_host,
                                             VexEndness endness_host )
 {
@@ -1987,7 +2007,7 @@ void VG_(discard_translations) ( Addr guest_start, ULong range,
 {
    Sector* sec;
    SECno   sno;
-   Int     ec;
+   EClassNo ec;
    Bool    anyDeleted = False;
 
    vg_assert(init_done);
@@ -2420,11 +2440,10 @@ void VG_(print_tt_tc_stats) ( void )
                 n_disc_count, n_disc_osize );
 
    if (DEBUG_TRANSTAB) {
-      Int i;
       VG_(printf)("\n");
-      for (i = 0; i < ECLASS_N; i++) {
-         VG_(printf)(" %4d", sectors[0].ec2tte_used[i]);
-         if (i % 16 == 15)
+      for (EClassNo e = 0; e < ECLASS_N; e++) {
+         VG_(printf)(" %4d", sectors[0].ec2tte_used[e]);
+         if (e % 16 == 15)
             VG_(printf)("\n");
       }
       VG_(printf)("\n\n");

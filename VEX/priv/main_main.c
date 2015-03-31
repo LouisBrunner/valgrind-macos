@@ -70,6 +70,90 @@
 
 #include "host_generic_simd128.h"
 
+/* For each architecture <arch>, we define 2 macros:
+   <arch>FN that has as argument a pointer (typically to a function
+            or the return value of a function).
+   <arch>ST that has as argument a statement.
+   If main_main.c is compiled for <arch>, then these macros just expand
+   their arg.
+   Otherwise, the macros expand to respectively NULL and vassert(0).
+   These macros are used to avoid introducing dependencies to object
+   files not needed for the (only) architecture we are compiling for. 
+
+   To still compile the below for all supported architectures, define
+   VEXMULTIARCH. This is used by the file multiarch_main_main.c */
+
+#if defined(VGA_x86) || defined(VEXMULTIARCH)
+#define X86FN(f) f
+#define X86ST(f) f
+#else
+#define X86FN(f) NULL
+#define X86ST(f) vassert(0)
+#endif
+
+#if defined(VGA_amd64) || defined(VEXMULTIARCH)
+#define AMD64FN(f) f
+#define AMD64ST(f) f
+#else
+#define AMD64FN(f) NULL
+#define AMD64ST(f) vassert(0)
+#endif
+
+#if defined(VGA_ppc32) || defined(VEXMULTIARCH)
+#define PPC32FN(f) f
+#define PPC32ST(f) f
+#else
+#define PPC32FN(f) NULL
+#define PPC32ST(f) vassert(0)
+#endif
+
+#if defined(VGA_ppc64be) || defined(VGA_ppc64le) || defined(VEXMULTIARCH)
+#define PPC64FN(f) f
+#define PPC64ST(f) f
+#else
+#define PPC64FN(f) NULL
+#define PPC64ST(f) vassert(0)
+#endif
+
+#if defined(VGA_s390x) || defined(VEXMULTIARCH)
+#define S390FN(f) f
+#define S390ST(f) f
+#else
+#define S390FN(f) NULL
+#define S390ST(f) vassert(0)
+#endif
+
+#if defined(VGA_arm) || defined(VEXMULTIARCH)
+#define ARMFN(f) f
+#define ARMST(f) f
+#else
+#define ARMFN(f) NULL
+#define ARMST(f) vassert(0)
+#endif
+
+#if defined(VGA_arm64) || defined(VEXMULTIARCH)
+#define ARM64FN(f) f
+#define ARM64ST(f) f
+#else
+#define ARM64FN(f) NULL
+#define ARM64ST(f) vassert(0)
+#endif
+
+#if defined(VGA_mips32) || defined(VEXMULTIARCH)
+#define MIPS32FN(f) f
+#define MIPS32ST(f) f
+#else
+#define MIPS32FN(f) NULL
+#define MIPS32ST(f) vassert(0)
+#endif
+
+#if defined(VGA_mips64) || defined(VEXMULTIARCH)
+#define MIPS64FN(f) f
+#define MIPS64ST(f) f
+#else
+#define MIPS64FN(f) NULL
+#define MIPS64ST(f) vassert(0)
+#endif
 
 /* This file contains the top level interface to the library. */
 
@@ -210,6 +294,15 @@ void LibVEX_Init (
 
 
 /* --------- Make a translation. --------- */
+/* KLUDGE: S390 need to know the hwcaps of the host when generating
+   code. But that info is not passed to emit_S390Instr. Only mode64 is
+   being passed. So, ideally, we want this passed as an argument, too.
+   Until then, we use a global variable. This variable is set as a side
+   effect of LibVEX_Translate. The variable is defined here rather than
+   in host_s390_defs.c to avoid having main_main.c dragging S390
+   object files in non VEXMULTIARCH. */
+UInt s390_host_hwcaps;
+
 
 /* Exported to library client. */
 
@@ -303,65 +396,69 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
 
       case VexArchX86:
          mode64       = False;
-         rRegUniv     = getRRegUniverse_X86();
-         isMove       = (__typeof__(isMove)) isMove_X86Instr;
-         getRegUsage  = (__typeof__(getRegUsage)) getRegUsage_X86Instr;
-         mapRegs      = (__typeof__(mapRegs)) mapRegs_X86Instr;
-         genSpill     = (__typeof__(genSpill)) genSpill_X86;
-         genReload    = (__typeof__(genReload)) genReload_X86;
-         directReload = (__typeof__(directReload)) directReload_X86;
-         ppInstr      = (__typeof__(ppInstr)) ppX86Instr;
-         ppReg        = (__typeof__(ppReg)) ppHRegX86;
-         iselSB       = iselSB_X86;
-         emit         = (__typeof__(emit)) emit_X86Instr;
+         rRegUniv     = X86FN(getRRegUniverse_X86());
+         isMove       = (__typeof__(isMove)) X86FN(isMove_X86Instr);
+         getRegUsage  
+            = (__typeof__(getRegUsage)) X86FN(getRegUsage_X86Instr);
+         mapRegs      = (__typeof__(mapRegs)) X86FN(mapRegs_X86Instr);
+         genSpill     = (__typeof__(genSpill)) X86FN(genSpill_X86);
+         genReload    = (__typeof__(genReload)) X86FN(genReload_X86);
+         directReload = (__typeof__(directReload)) X86FN(directReload_X86);
+         ppInstr      = (__typeof__(ppInstr)) X86FN(ppX86Instr);
+         ppReg        = (__typeof__(ppReg)) X86FN(ppHRegX86);
+         iselSB       = X86FN(iselSB_X86);
+         emit         = (__typeof__(emit)) X86FN(emit_X86Instr);
          host_word_type = Ity_I32;
          vassert(vta->archinfo_host.endness == VexEndnessLE);
          break;
 
       case VexArchAMD64:
          mode64       = True;
-         rRegUniv     = getRRegUniverse_AMD64();
-         isMove       = (__typeof__(isMove)) isMove_AMD64Instr;
-         getRegUsage  = (__typeof__(getRegUsage)) getRegUsage_AMD64Instr;
-         mapRegs      = (__typeof__(mapRegs)) mapRegs_AMD64Instr;
-         genSpill     = (__typeof__(genSpill)) genSpill_AMD64;
-         genReload    = (__typeof__(genReload)) genReload_AMD64;
-         ppInstr      = (__typeof__(ppInstr)) ppAMD64Instr;
-         ppReg        = (__typeof__(ppReg)) ppHRegAMD64;
-         iselSB       = iselSB_AMD64;
-         emit         = (__typeof__(emit)) emit_AMD64Instr;
+         rRegUniv     = AMD64FN(getRRegUniverse_AMD64());
+         isMove       = (__typeof__(isMove)) AMD64FN(isMove_AMD64Instr);
+         getRegUsage  
+            = (__typeof__(getRegUsage)) AMD64FN(getRegUsage_AMD64Instr);
+         mapRegs      = (__typeof__(mapRegs)) AMD64FN(mapRegs_AMD64Instr);
+         genSpill     = (__typeof__(genSpill)) AMD64FN(genSpill_AMD64);
+         genReload    = (__typeof__(genReload)) AMD64FN(genReload_AMD64);
+         ppInstr      = (__typeof__(ppInstr)) AMD64FN(ppAMD64Instr);
+         ppReg        = (__typeof__(ppReg)) AMD64FN(ppHRegAMD64);
+         iselSB       = AMD64FN(iselSB_AMD64);
+         emit         = (__typeof__(emit)) AMD64FN(emit_AMD64Instr);
          host_word_type = Ity_I64;
          vassert(vta->archinfo_host.endness == VexEndnessLE);
          break;
 
       case VexArchPPC32:
          mode64       = False;
-         rRegUniv     = getRRegUniverse_PPC(mode64);
-         isMove       = (__typeof__(isMove)) isMove_PPCInstr;
-         getRegUsage  = (__typeof__(getRegUsage)) getRegUsage_PPCInstr;
-         mapRegs      = (__typeof__(mapRegs)) mapRegs_PPCInstr;
-         genSpill     = (__typeof__(genSpill)) genSpill_PPC;
-         genReload    = (__typeof__(genReload)) genReload_PPC;
-         ppInstr      = (__typeof__(ppInstr)) ppPPCInstr;
-         ppReg        = (__typeof__(ppReg)) ppHRegPPC;
-         iselSB       = iselSB_PPC;
-         emit         = (__typeof__(emit)) emit_PPCInstr;
+         rRegUniv     = PPC32FN(getRRegUniverse_PPC(mode64));
+         isMove       = (__typeof__(isMove)) PPC32FN(isMove_PPCInstr);
+         getRegUsage  
+            = (__typeof__(getRegUsage)) PPC32FN(getRegUsage_PPCInstr);
+         mapRegs      = (__typeof__(mapRegs)) PPC32FN(mapRegs_PPCInstr);
+         genSpill     = (__typeof__(genSpill)) PPC32FN(genSpill_PPC);
+         genReload    = (__typeof__(genReload)) PPC32FN(genReload_PPC);
+         ppInstr      = (__typeof__(ppInstr)) PPC32FN(ppPPCInstr);
+         ppReg        = (__typeof__(ppReg)) PPC32FN(ppHRegPPC);
+         iselSB       = PPC32FN(iselSB_PPC);
+         emit         = (__typeof__(emit)) PPC32FN(emit_PPCInstr);
          host_word_type = Ity_I32;
          vassert(vta->archinfo_host.endness == VexEndnessBE);
          break;
 
       case VexArchPPC64:
          mode64       = True;
-         rRegUniv     = getRRegUniverse_PPC(mode64);
-         isMove       = (__typeof__(isMove)) isMove_PPCInstr;
-         getRegUsage  = (__typeof__(getRegUsage)) getRegUsage_PPCInstr;
-         mapRegs      = (__typeof__(mapRegs)) mapRegs_PPCInstr;
-         genSpill     = (__typeof__(genSpill)) genSpill_PPC;
-         genReload    = (__typeof__(genReload)) genReload_PPC;
-         ppInstr      = (__typeof__(ppInstr)) ppPPCInstr;
-         ppReg        = (__typeof__(ppReg)) ppHRegPPC;
-         iselSB       = iselSB_PPC;
-         emit         = (__typeof__(emit)) emit_PPCInstr;
+         rRegUniv     = PPC64FN(getRRegUniverse_PPC(mode64));
+         isMove       = (__typeof__(isMove)) PPC64FN(isMove_PPCInstr);
+         getRegUsage  
+            = (__typeof__(getRegUsage)) PPC64FN(getRegUsage_PPCInstr);
+         mapRegs      = (__typeof__(mapRegs)) PPC64FN(mapRegs_PPCInstr);
+         genSpill     = (__typeof__(genSpill)) PPC64FN(genSpill_PPC);
+         genReload    = (__typeof__(genReload)) PPC64FN(genReload_PPC);
+         ppInstr      = (__typeof__(ppInstr)) PPC64FN(ppPPCInstr);
+         ppReg        = (__typeof__(ppReg)) PPC64FN(ppHRegPPC);
+         iselSB       = PPC64FN(iselSB_PPC);
+         emit         = (__typeof__(emit)) PPC64FN(emit_PPCInstr);
          host_word_type = Ity_I64;
          vassert(vta->archinfo_host.endness == VexEndnessBE ||
                  vta->archinfo_host.endness == VexEndnessLE );
@@ -371,65 +468,69 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          mode64       = True;
          /* KLUDGE: export hwcaps. */
          s390_host_hwcaps = vta->archinfo_host.hwcaps;
-         rRegUniv     = getRRegUniverse_S390();
-         isMove       = (__typeof__(isMove)) isMove_S390Instr;
-         getRegUsage  = (__typeof__(getRegUsage)) getRegUsage_S390Instr;
-         mapRegs      = (__typeof__(mapRegs)) mapRegs_S390Instr;
-         genSpill     = (__typeof__(genSpill)) genSpill_S390;
-         genReload    = (__typeof__(genReload)) genReload_S390;
+         rRegUniv     = S390FN(getRRegUniverse_S390());
+         isMove       = (__typeof__(isMove)) S390FN(isMove_S390Instr);
+         getRegUsage  
+            = (__typeof__(getRegUsage)) S390FN(getRegUsage_S390Instr);
+         mapRegs      = (__typeof__(mapRegs)) S390FN(mapRegs_S390Instr);
+         genSpill     = (__typeof__(genSpill)) S390FN(genSpill_S390);
+         genReload    = (__typeof__(genReload)) S390FN(genReload_S390);
          // fixs390: consider implementing directReload_S390
-         ppInstr      = (__typeof__(ppInstr)) ppS390Instr;
-         ppReg        = (__typeof__(ppReg)) ppHRegS390;
-         iselSB       = iselSB_S390;
-         emit         = (__typeof__(emit)) emit_S390Instr;
+         ppInstr      = (__typeof__(ppInstr)) S390FN(ppS390Instr);
+         ppReg        = (__typeof__(ppReg)) S390FN(ppHRegS390);
+         iselSB       = S390FN(iselSB_S390);
+         emit         = (__typeof__(emit)) S390FN(emit_S390Instr);
          host_word_type = Ity_I64;
          vassert(vta->archinfo_host.endness == VexEndnessBE);
          break;
 
       case VexArchARM:
          mode64       = False;
-         rRegUniv     = getRRegUniverse_ARM();
-         isMove       = (__typeof__(isMove)) isMove_ARMInstr;
-         getRegUsage  = (__typeof__(getRegUsage)) getRegUsage_ARMInstr;
-         mapRegs      = (__typeof__(mapRegs)) mapRegs_ARMInstr;
-         genSpill     = (__typeof__(genSpill)) genSpill_ARM;
-         genReload    = (__typeof__(genReload)) genReload_ARM;
-         ppInstr      = (__typeof__(ppInstr)) ppARMInstr;
-         ppReg        = (__typeof__(ppReg)) ppHRegARM;
-         iselSB       = iselSB_ARM;
-         emit         = (__typeof__(emit)) emit_ARMInstr;
+         rRegUniv     = ARMFN(getRRegUniverse_ARM());
+         isMove       = (__typeof__(isMove)) ARMFN(isMove_ARMInstr);
+         getRegUsage  
+            = (__typeof__(getRegUsage)) ARMFN(getRegUsage_ARMInstr);
+         mapRegs      = (__typeof__(mapRegs)) ARMFN(mapRegs_ARMInstr);
+         genSpill     = (__typeof__(genSpill)) ARMFN(genSpill_ARM);
+         genReload    = (__typeof__(genReload)) ARMFN(genReload_ARM);
+         ppInstr      = (__typeof__(ppInstr)) ARMFN(ppARMInstr);
+         ppReg        = (__typeof__(ppReg)) ARMFN(ppHRegARM);
+         iselSB       = ARMFN(iselSB_ARM);
+         emit         = (__typeof__(emit)) ARMFN(emit_ARMInstr);
          host_word_type = Ity_I32;
          vassert(vta->archinfo_host.endness == VexEndnessLE);
          break;
 
       case VexArchARM64:
          mode64       = True;
-         rRegUniv     = getRRegUniverse_ARM64();
-         isMove       = (__typeof__(isMove)) isMove_ARM64Instr;
-         getRegUsage  = (__typeof__(getRegUsage)) getRegUsage_ARM64Instr;
-         mapRegs      = (__typeof__(mapRegs)) mapRegs_ARM64Instr;
-         genSpill     = (__typeof__(genSpill)) genSpill_ARM64;
-         genReload    = (__typeof__(genReload)) genReload_ARM64;
-         ppInstr      = (__typeof__(ppInstr)) ppARM64Instr;
-         ppReg        = (__typeof__(ppReg)) ppHRegARM64;
-         iselSB       = iselSB_ARM64;
-         emit         = (__typeof__(emit)) emit_ARM64Instr;
+         rRegUniv     = ARM64FN(getRRegUniverse_ARM64());
+         isMove       = (__typeof__(isMove)) ARM64FN(isMove_ARM64Instr);
+         getRegUsage  
+            = (__typeof__(getRegUsage)) ARM64FN(getRegUsage_ARM64Instr);
+         mapRegs      = (__typeof__(mapRegs)) ARM64FN(mapRegs_ARM64Instr);
+         genSpill     = (__typeof__(genSpill)) ARM64FN(genSpill_ARM64);
+         genReload    = (__typeof__(genReload)) ARM64FN(genReload_ARM64);
+         ppInstr      = (__typeof__(ppInstr)) ARM64FN(ppARM64Instr);
+         ppReg        = (__typeof__(ppReg)) ARM64FN(ppHRegARM64);
+         iselSB       = ARM64FN(iselSB_ARM64);
+         emit         = (__typeof__(emit)) ARM64FN(emit_ARM64Instr);
          host_word_type = Ity_I64;
          vassert(vta->archinfo_host.endness == VexEndnessLE);
          break;
 
       case VexArchMIPS32:
          mode64       = False;
-         rRegUniv     = getRRegUniverse_MIPS(mode64);
-         isMove       = (__typeof__(isMove)) isMove_MIPSInstr;
-         getRegUsage  = (__typeof__(getRegUsage)) getRegUsage_MIPSInstr;
-         mapRegs      = (__typeof__(mapRegs)) mapRegs_MIPSInstr;
-         genSpill     = (__typeof__(genSpill)) genSpill_MIPS;
-         genReload    = (__typeof__(genReload)) genReload_MIPS;
-         ppInstr      = (__typeof__(ppInstr)) ppMIPSInstr;
-         ppReg        = (__typeof__(ppReg)) ppHRegMIPS;
-         iselSB       = iselSB_MIPS;
-         emit         = (__typeof__(emit)) emit_MIPSInstr;
+         rRegUniv     = MIPS32FN(getRRegUniverse_MIPS(mode64));
+         isMove       = (__typeof__(isMove)) MIPS32FN(isMove_MIPSInstr);
+         getRegUsage  
+            = (__typeof__(getRegUsage)) MIPS32FN(getRegUsage_MIPSInstr);
+         mapRegs      = (__typeof__(mapRegs)) MIPS32FN(mapRegs_MIPSInstr);
+         genSpill     = (__typeof__(genSpill)) MIPS32FN(genSpill_MIPS);
+         genReload    = (__typeof__(genReload)) MIPS32FN(genReload_MIPS);
+         ppInstr      = (__typeof__(ppInstr)) MIPS32FN(ppMIPSInstr);
+         ppReg        = (__typeof__(ppReg)) MIPS32FN(ppHRegMIPS);
+         iselSB       = MIPS32FN(iselSB_MIPS);
+         emit         = (__typeof__(emit)) MIPS32FN(emit_MIPSInstr);
          host_word_type = Ity_I32;
          vassert(vta->archinfo_host.endness == VexEndnessLE
                  || vta->archinfo_host.endness == VexEndnessBE);
@@ -437,16 +538,17 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
 
       case VexArchMIPS64:
          mode64       = True;
-         rRegUniv     = getRRegUniverse_MIPS(mode64);
-         isMove       = (__typeof__(isMove)) isMove_MIPSInstr;
-         getRegUsage  = (__typeof__(getRegUsage)) getRegUsage_MIPSInstr;
-         mapRegs      = (__typeof__(mapRegs)) mapRegs_MIPSInstr;
-         genSpill     = (__typeof__(genSpill)) genSpill_MIPS;
-         genReload    = (__typeof__(genReload)) genReload_MIPS;
-         ppInstr      = (__typeof__(ppInstr)) ppMIPSInstr;
-         ppReg        = (__typeof__(ppReg)) ppHRegMIPS;
-         iselSB       = iselSB_MIPS;
-         emit         = (__typeof__(emit)) emit_MIPSInstr;
+         rRegUniv     = MIPS64FN(getRRegUniverse_MIPS(mode64));
+         isMove       = (__typeof__(isMove)) MIPS64FN(isMove_MIPSInstr);
+         getRegUsage  
+            = (__typeof__(getRegUsage)) MIPS64FN(getRegUsage_MIPSInstr);
+         mapRegs      = (__typeof__(mapRegs)) MIPS64FN(mapRegs_MIPSInstr);
+         genSpill     = (__typeof__(genSpill)) MIPS64FN(genSpill_MIPS);
+         genReload    = (__typeof__(genReload)) MIPS64FN(genReload_MIPS);
+         ppInstr      = (__typeof__(ppInstr)) MIPS64FN(ppMIPSInstr);
+         ppReg        = (__typeof__(ppReg)) MIPS64FN(ppHRegMIPS);
+         iselSB       = MIPS64FN(iselSB_MIPS);
+         emit         = (__typeof__(emit)) MIPS64FN(emit_MIPSInstr);
          host_word_type = Ity_I64;
          vassert(vta->archinfo_host.endness == VexEndnessLE
                  || vta->archinfo_host.endness == VexEndnessBE);
@@ -463,12 +565,13 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
    switch (vta->arch_guest) {
 
       case VexArchX86:
-         preciseMemExnsFn       = guest_x86_state_requires_precise_mem_exns;
-         disInstrFn             = disInstr_X86;
-         specHelper             = guest_x86_spechelper;
+         preciseMemExnsFn       
+            = X86FN(guest_x86_state_requires_precise_mem_exns);
+         disInstrFn             = X86FN(disInstr_X86);
+         specHelper             = X86FN(guest_x86_spechelper);
          guest_sizeB            = sizeof(VexGuestX86State);
          guest_word_type        = Ity_I32;
-         guest_layout           = &x86guest_layout;
+         guest_layout           = X86FN(&x86guest_layout);
          offB_CMSTART           = offsetof(VexGuestX86State,guest_CMSTART);
          offB_CMLEN             = offsetof(VexGuestX86State,guest_CMLEN);
          offB_GUEST_IP          = offsetof(VexGuestX86State,guest_EIP);
@@ -483,12 +586,13 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          break;
 
       case VexArchAMD64:
-         preciseMemExnsFn       = guest_amd64_state_requires_precise_mem_exns;
-         disInstrFn             = disInstr_AMD64;
-         specHelper             = guest_amd64_spechelper;
+         preciseMemExnsFn       
+            = AMD64FN(guest_amd64_state_requires_precise_mem_exns);
+         disInstrFn             = AMD64FN(disInstr_AMD64);
+         specHelper             = AMD64FN(guest_amd64_spechelper);
          guest_sizeB            = sizeof(VexGuestAMD64State);
          guest_word_type        = Ity_I64;
-         guest_layout           = &amd64guest_layout;
+         guest_layout           = AMD64FN(&amd64guest_layout);
          offB_CMSTART           = offsetof(VexGuestAMD64State,guest_CMSTART);
          offB_CMLEN             = offsetof(VexGuestAMD64State,guest_CMLEN);
          offB_GUEST_IP          = offsetof(VexGuestAMD64State,guest_RIP);
@@ -503,12 +607,13 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          break;
 
       case VexArchPPC32:
-         preciseMemExnsFn       = guest_ppc32_state_requires_precise_mem_exns;
-         disInstrFn             = disInstr_PPC;
-         specHelper             = guest_ppc32_spechelper;
+         preciseMemExnsFn       
+            = PPC32FN(guest_ppc32_state_requires_precise_mem_exns);
+         disInstrFn             = PPC32FN(disInstr_PPC);
+         specHelper             = PPC32FN(guest_ppc32_spechelper);
          guest_sizeB            = sizeof(VexGuestPPC32State);
          guest_word_type        = Ity_I32;
-         guest_layout           = &ppc32Guest_layout;
+         guest_layout           = PPC32FN(&ppc32Guest_layout);
          offB_CMSTART           = offsetof(VexGuestPPC32State,guest_CMSTART);
          offB_CMLEN             = offsetof(VexGuestPPC32State,guest_CMLEN);
          offB_GUEST_IP          = offsetof(VexGuestPPC32State,guest_CIA);
@@ -523,12 +628,13 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          break;
 
       case VexArchPPC64:
-         preciseMemExnsFn       = guest_ppc64_state_requires_precise_mem_exns;
-         disInstrFn             = disInstr_PPC;
-         specHelper             = guest_ppc64_spechelper;
+         preciseMemExnsFn       
+            = PPC64FN(guest_ppc64_state_requires_precise_mem_exns);
+         disInstrFn             = PPC64FN(disInstr_PPC);
+         specHelper             = PPC64FN(guest_ppc64_spechelper);
          guest_sizeB            = sizeof(VexGuestPPC64State);
          guest_word_type        = Ity_I64;
-         guest_layout           = &ppc64Guest_layout;
+         guest_layout           = PPC64FN(&ppc64Guest_layout);
          offB_CMSTART           = offsetof(VexGuestPPC64State,guest_CMSTART);
          offB_CMLEN             = offsetof(VexGuestPPC64State,guest_CMLEN);
          offB_GUEST_IP          = offsetof(VexGuestPPC64State,guest_CIA);
@@ -545,12 +651,13 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          break;
 
       case VexArchS390X:
-         preciseMemExnsFn = guest_s390x_state_requires_precise_mem_exns;
-         disInstrFn       = disInstr_S390;
-         specHelper       = guest_s390x_spechelper;
+         preciseMemExnsFn 
+            = S390FN(guest_s390x_state_requires_precise_mem_exns);
+         disInstrFn       = S390FN(disInstr_S390);
+         specHelper       = S390FN(guest_s390x_spechelper);
          guest_sizeB      = sizeof(VexGuestS390XState);
          guest_word_type  = Ity_I64;
-         guest_layout     = &s390xGuest_layout;
+         guest_layout     = S390FN(&s390xGuest_layout);
          offB_CMSTART     = offsetof(VexGuestS390XState,guest_CMSTART);
          offB_CMLEN       = offsetof(VexGuestS390XState,guest_CMLEN);
          offB_GUEST_IP          = offsetof(VexGuestS390XState,guest_IA);
@@ -565,12 +672,13 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          break;
 
       case VexArchARM:
-         preciseMemExnsFn       = guest_arm_state_requires_precise_mem_exns;
-         disInstrFn             = disInstr_ARM;
-         specHelper             = guest_arm_spechelper;
+         preciseMemExnsFn       
+            = ARMFN(guest_arm_state_requires_precise_mem_exns);
+         disInstrFn             = ARMFN(disInstr_ARM);
+         specHelper             = ARMFN(guest_arm_spechelper);
          guest_sizeB            = sizeof(VexGuestARMState);
          guest_word_type        = Ity_I32;
-         guest_layout           = &armGuest_layout;
+         guest_layout           = ARMFN(&armGuest_layout);
          offB_CMSTART           = offsetof(VexGuestARMState,guest_CMSTART);
          offB_CMLEN             = offsetof(VexGuestARMState,guest_CMLEN);
          offB_GUEST_IP          = offsetof(VexGuestARMState,guest_R15T);
@@ -585,12 +693,13 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          break;
 
       case VexArchARM64:
-         preciseMemExnsFn     = guest_arm64_state_requires_precise_mem_exns;
-         disInstrFn           = disInstr_ARM64;
-         specHelper           = guest_arm64_spechelper;
+         preciseMemExnsFn     
+            = ARM64FN(guest_arm64_state_requires_precise_mem_exns);
+         disInstrFn           = ARM64FN(disInstr_ARM64);
+         specHelper           = ARM64FN(guest_arm64_spechelper);
          guest_sizeB          = sizeof(VexGuestARM64State);
          guest_word_type      = Ity_I64;
-         guest_layout         = &arm64Guest_layout;
+         guest_layout         = ARM64FN(&arm64Guest_layout);
          offB_CMSTART         = offsetof(VexGuestARM64State,guest_CMSTART);
          offB_CMLEN           = offsetof(VexGuestARM64State,guest_CMLEN);
          offB_GUEST_IP        = offsetof(VexGuestARM64State,guest_PC);
@@ -605,12 +714,13 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          break;
 
       case VexArchMIPS32:
-         preciseMemExnsFn       = guest_mips32_state_requires_precise_mem_exns;
-         disInstrFn             = disInstr_MIPS;
-         specHelper             = guest_mips32_spechelper;
+         preciseMemExnsFn       
+            = MIPS32FN(guest_mips32_state_requires_precise_mem_exns);
+         disInstrFn             = MIPS32FN(disInstr_MIPS);
+         specHelper             = MIPS32FN(guest_mips32_spechelper);
          guest_sizeB            = sizeof(VexGuestMIPS32State);
          guest_word_type        = Ity_I32;
-         guest_layout           = &mips32Guest_layout;
+         guest_layout           = MIPS32FN(&mips32Guest_layout);
          offB_CMSTART           = offsetof(VexGuestMIPS32State,guest_CMSTART);
          offB_CMLEN             = offsetof(VexGuestMIPS32State,guest_CMLEN);
          offB_GUEST_IP          = offsetof(VexGuestMIPS32State,guest_PC);
@@ -626,12 +736,13 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          break;
 
       case VexArchMIPS64:
-         preciseMemExnsFn       = guest_mips64_state_requires_precise_mem_exns;
-         disInstrFn             = disInstr_MIPS;
-         specHelper             = guest_mips64_spechelper;
+         preciseMemExnsFn       
+            = MIPS64FN(guest_mips64_state_requires_precise_mem_exns);
+         disInstrFn             = MIPS64FN(disInstr_MIPS);
+         specHelper             = MIPS64FN(guest_mips64_spechelper);
          guest_sizeB            = sizeof(VexGuestMIPS64State);
          guest_word_type        = Ity_I64;
-         guest_layout           = &mips64Guest_layout;
+         guest_layout           = MIPS64FN(&mips64Guest_layout);
          offB_CMSTART           = offsetof(VexGuestMIPS64State,guest_CMSTART);
          offB_CMLEN             = offsetof(VexGuestMIPS64State,guest_CMLEN);
          offB_GUEST_IP          = offsetof(VexGuestMIPS64State,guest_PC);
@@ -978,50 +1089,50 @@ VexInvalRange LibVEX_Chain ( VexArch     arch_host,
 {
    switch (arch_host) {
       case VexArchX86:
-         return chainXDirect_X86(endness_host,
-                                 place_to_chain,
-                                 disp_cp_chain_me_EXPECTED,
-                                 place_to_jump_to);
+         X86ST(return chainXDirect_X86(endness_host,
+                                       place_to_chain,
+                                       disp_cp_chain_me_EXPECTED,
+                                       place_to_jump_to));
       case VexArchAMD64:
-         return chainXDirect_AMD64(endness_host,
-                                   place_to_chain,
-                                   disp_cp_chain_me_EXPECTED,
-                                   place_to_jump_to);
+         AMD64ST(return chainXDirect_AMD64(endness_host,
+                                           place_to_chain,
+                                           disp_cp_chain_me_EXPECTED,
+                                           place_to_jump_to));
       case VexArchARM:
-         return chainXDirect_ARM(endness_host,
-                                 place_to_chain,
-                                 disp_cp_chain_me_EXPECTED,
-                                 place_to_jump_to);
+         ARMST(return chainXDirect_ARM(endness_host,
+                                       place_to_chain,
+                                       disp_cp_chain_me_EXPECTED,
+                                       place_to_jump_to));
       case VexArchARM64:
-         return chainXDirect_ARM64(endness_host,
-                                   place_to_chain,
-                                   disp_cp_chain_me_EXPECTED,
-                                   place_to_jump_to);
+         ARM64ST(return chainXDirect_ARM64(endness_host,
+                                           place_to_chain,
+                                           disp_cp_chain_me_EXPECTED,
+                                           place_to_jump_to));
       case VexArchS390X:
-         return chainXDirect_S390(endness_host,
-                                  place_to_chain,
-                                  disp_cp_chain_me_EXPECTED,
-                                  place_to_jump_to);
+         S390ST(return chainXDirect_S390(endness_host,
+                                         place_to_chain,
+                                         disp_cp_chain_me_EXPECTED,
+                                         place_to_jump_to));
       case VexArchPPC32:
-         return chainXDirect_PPC(endness_host,
-                                 place_to_chain,
-                                 disp_cp_chain_me_EXPECTED,
-                                 place_to_jump_to, False/*!mode64*/);
+         PPC32ST(return chainXDirect_PPC(endness_host,
+                                         place_to_chain,
+                                         disp_cp_chain_me_EXPECTED,
+                                         place_to_jump_to, False/*!mode64*/));
       case VexArchPPC64:
-         return chainXDirect_PPC(endness_host,
-                                 place_to_chain,
-                                 disp_cp_chain_me_EXPECTED,
-                                 place_to_jump_to, True/*mode64*/);
+         PPC64ST(return chainXDirect_PPC(endness_host,
+                                         place_to_chain,
+                                         disp_cp_chain_me_EXPECTED,
+                                         place_to_jump_to, True/*mode64*/));
       case VexArchMIPS32:
-         return chainXDirect_MIPS(endness_host,
-                                  place_to_chain,
-                                  disp_cp_chain_me_EXPECTED,
-                                  place_to_jump_to, False/*!mode64*/);
+         MIPS32ST(return chainXDirect_MIPS(endness_host,
+                                           place_to_chain,
+                                           disp_cp_chain_me_EXPECTED,
+                                           place_to_jump_to, False/*!mode64*/));
       case VexArchMIPS64:
-         return chainXDirect_MIPS(endness_host,
-                                  place_to_chain,
-                                  disp_cp_chain_me_EXPECTED,
-                                  place_to_jump_to, True/*!mode64*/);
+         MIPS64ST(return chainXDirect_MIPS(endness_host,
+                                           place_to_chain,
+                                           disp_cp_chain_me_EXPECTED,
+                                           place_to_jump_to, True/*!mode64*/));
       default:
          vassert(0);
    }
@@ -1035,50 +1146,50 @@ VexInvalRange LibVEX_UnChain ( VexArch     arch_host,
 {
    switch (arch_host) {
       case VexArchX86:
-         return unchainXDirect_X86(endness_host,
-                                   place_to_unchain,
-                                   place_to_jump_to_EXPECTED,
-                                   disp_cp_chain_me);
+         X86ST(return unchainXDirect_X86(endness_host,
+                                         place_to_unchain,
+                                         place_to_jump_to_EXPECTED,
+                                         disp_cp_chain_me));
       case VexArchAMD64:
-         return unchainXDirect_AMD64(endness_host,
-                                     place_to_unchain,
-                                     place_to_jump_to_EXPECTED,
-                                     disp_cp_chain_me);
+         AMD64ST(return unchainXDirect_AMD64(endness_host,
+                                             place_to_unchain,
+                                             place_to_jump_to_EXPECTED,
+                                             disp_cp_chain_me));
       case VexArchARM:
-         return unchainXDirect_ARM(endness_host,
-                                   place_to_unchain,
-                                   place_to_jump_to_EXPECTED,
-                                   disp_cp_chain_me);
+         ARMST(return unchainXDirect_ARM(endness_host,
+                                         place_to_unchain,
+                                         place_to_jump_to_EXPECTED,
+                                         disp_cp_chain_me));
       case VexArchARM64:
-         return unchainXDirect_ARM64(endness_host,
-                                     place_to_unchain,
-                                     place_to_jump_to_EXPECTED,
-                                     disp_cp_chain_me);
+         ARM64ST(return unchainXDirect_ARM64(endness_host,
+                                             place_to_unchain,
+                                             place_to_jump_to_EXPECTED,
+                                             disp_cp_chain_me));
       case VexArchS390X:
-         return unchainXDirect_S390(endness_host,
-                                    place_to_unchain,
-                                    place_to_jump_to_EXPECTED,
-                                    disp_cp_chain_me);
+         S390ST(return unchainXDirect_S390(endness_host,
+                                           place_to_unchain,
+                                           place_to_jump_to_EXPECTED,
+                                           disp_cp_chain_me));
       case VexArchPPC32:
-         return unchainXDirect_PPC(endness_host,
-                                   place_to_unchain,
-                                   place_to_jump_to_EXPECTED,
-                                   disp_cp_chain_me, False/*!mode64*/);
+         PPC32ST(return unchainXDirect_PPC(endness_host,
+                                           place_to_unchain,
+                                           place_to_jump_to_EXPECTED,
+                                           disp_cp_chain_me, False/*!mode64*/));
       case VexArchPPC64:
-         return unchainXDirect_PPC(endness_host,
-                                   place_to_unchain,
-                                   place_to_jump_to_EXPECTED,
-                                   disp_cp_chain_me, True/*mode64*/);
+         PPC64ST(return unchainXDirect_PPC(endness_host,
+                                           place_to_unchain,
+                                           place_to_jump_to_EXPECTED,
+                                           disp_cp_chain_me, True/*mode64*/));
       case VexArchMIPS32:
-         return unchainXDirect_MIPS(endness_host,
-                                    place_to_unchain,
-                                    place_to_jump_to_EXPECTED,
-                                    disp_cp_chain_me, False/*!mode64*/);
+         MIPS32ST(return unchainXDirect_MIPS(endness_host,
+                                             place_to_unchain,
+                                             place_to_jump_to_EXPECTED,
+                                             disp_cp_chain_me, False/*!mode64*/));
       case VexArchMIPS64:
-         return unchainXDirect_MIPS(endness_host,
-                                    place_to_unchain,
-                                    place_to_jump_to_EXPECTED,
-                                    disp_cp_chain_me, True/*!mode64*/);
+         MIPS64ST(return unchainXDirect_MIPS(endness_host,
+                                             place_to_unchain,
+                                             place_to_jump_to_EXPECTED,
+                                             disp_cp_chain_me, True/*!mode64*/));
       default:
          vassert(0);
    }
@@ -1090,21 +1201,23 @@ Int LibVEX_evCheckSzB ( VexArch    arch_host )
    if (UNLIKELY(cached == 0)) {
       switch (arch_host) {
          case VexArchX86:
-            cached = evCheckSzB_X86(); break;
+            X86ST(cached = evCheckSzB_X86()); break;
          case VexArchAMD64:
-            cached = evCheckSzB_AMD64(); break;
+            AMD64ST(cached = evCheckSzB_AMD64()); break;
          case VexArchARM:
-            cached = evCheckSzB_ARM(); break;
+            ARMST(cached = evCheckSzB_ARM()); break;
          case VexArchARM64:
-            cached = evCheckSzB_ARM64(); break;
+            ARM64ST(cached = evCheckSzB_ARM64()); break;
          case VexArchS390X:
-            cached = evCheckSzB_S390(); break;
+            S390ST(cached = evCheckSzB_S390()); break;
          case VexArchPPC32:
+            PPC32ST(cached = evCheckSzB_PPC()); break;
          case VexArchPPC64:
-            cached = evCheckSzB_PPC(); break;
+            PPC64ST(cached = evCheckSzB_PPC()); break;
          case VexArchMIPS32:
+            MIPS32ST(cached = evCheckSzB_MIPS()); break;
          case VexArchMIPS64:
-            cached = evCheckSzB_MIPS(); break;
+            MIPS64ST(cached = evCheckSzB_MIPS()); break;
          default:
             vassert(0);
       }
@@ -1119,32 +1232,32 @@ VexInvalRange LibVEX_PatchProfInc ( VexArch    arch_host,
 {
    switch (arch_host) {
       case VexArchX86:
-         return patchProfInc_X86(endness_host, place_to_patch,
-                                 location_of_counter);
+         X86ST(return patchProfInc_X86(endness_host, place_to_patch,
+                                       location_of_counter));
       case VexArchAMD64:
-         return patchProfInc_AMD64(endness_host, place_to_patch,
-                                   location_of_counter);
+         AMD64ST(return patchProfInc_AMD64(endness_host, place_to_patch,
+                                           location_of_counter));
       case VexArchARM:
-         return patchProfInc_ARM(endness_host, place_to_patch,
-                                 location_of_counter);
+         ARMST(return patchProfInc_ARM(endness_host, place_to_patch,
+                                       location_of_counter));
       case VexArchARM64:
-         return patchProfInc_ARM64(endness_host, place_to_patch,
-                                   location_of_counter);
+         ARM64ST(return patchProfInc_ARM64(endness_host, place_to_patch,
+                                           location_of_counter));
       case VexArchS390X:
-         return patchProfInc_S390(endness_host, place_to_patch,
-                                  location_of_counter);
+         S390ST(return patchProfInc_S390(endness_host, place_to_patch,
+                                         location_of_counter));
       case VexArchPPC32:
-         return patchProfInc_PPC(endness_host, place_to_patch,
-                                 location_of_counter, False/*!mode64*/);
+         PPC32ST(return patchProfInc_PPC(endness_host, place_to_patch,
+                                         location_of_counter, False/*!mode64*/));
       case VexArchPPC64:
-         return patchProfInc_PPC(endness_host, place_to_patch,
-                                 location_of_counter, True/*mode64*/);
+         PPC64ST(return patchProfInc_PPC(endness_host, place_to_patch,
+                                         location_of_counter, True/*mode64*/));
       case VexArchMIPS32:
-         return patchProfInc_MIPS(endness_host, place_to_patch,
-                                  location_of_counter, False/*!mode64*/);
+         MIPS32ST(return patchProfInc_MIPS(endness_host, place_to_patch,
+                                           location_of_counter, False/*!mode64*/));
       case VexArchMIPS64:
-         return patchProfInc_MIPS(endness_host, place_to_patch,
-                                  location_of_counter, True/*!mode64*/);
+         MIPS64ST(return patchProfInc_MIPS(endness_host, place_to_patch,
+                                           location_of_counter, True/*!mode64*/));
       default:
          vassert(0);
    }

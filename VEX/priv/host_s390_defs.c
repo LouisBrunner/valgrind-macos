@@ -44,14 +44,6 @@
 #include "guest_s390_defs.h"    /* S390X_GUEST_OFFSET */
 #include <stdarg.h>
 
-/* KLUDGE: We need to know the hwcaps of the host when generating
-   code. But that info is not passed to emit_S390Instr. Only mode64 is
-   being passed. So, ideally, we want this passed as an argument, too.
-   Until then, we use a global variable. This variable is set as a side
-   effect of LibVEX_Translate. */
-UInt s390_host_hwcaps;
-
-
 /*------------------------------------------------------------*/
 /*--- Forward declarations                                 ---*/
 /*------------------------------------------------------------*/

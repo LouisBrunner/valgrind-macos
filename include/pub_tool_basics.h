@@ -199,7 +199,8 @@ static inline UWord sr_Err ( SysRes sr ) {
    return sr._isError ? sr._val : 0;
 }
 static inline Bool sr_EQ ( SysRes sr1, SysRes sr2 ) {
-   return sr1._val == sr2._val 
+   return sr1._val == sr2._val
+       && sr1._valEx == sr2._valEx
        && sr1._isError == sr2._isError;
 }
 

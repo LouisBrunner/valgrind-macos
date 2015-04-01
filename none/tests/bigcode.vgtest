@@ -1,0 +1,8 @@
+# this test exercises m_transtab.c sector recycling
+# and sanity check when recycling sectors. To ensure we recycle
+# sectors, we put a small number of sectors.
+# use --stats=yes if you want to verify that the below still
+# recycles a (already used) sector.
+prog: ../../perf/bigcode
+args: 1
+vgopts: --num-transtab-sectors=2 --sanity-level=4

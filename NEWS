@@ -65,6 +65,7 @@ where XXXXXX is the bug number as listed below.
 201435  Fix Darwin: -v does not show kernel version
 211926  Avoid compilation warnings in valgrind.h with -pedantic
 226609  Crediting upstream authors in man page
+231257  Valgrind omits path when executing script from shebang line
 269360  s390x: Fix addressing mode selection for compare-and-swap
 333051  mmap of huge pages fails due to incorrect alignment
         == 339163

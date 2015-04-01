@@ -1545,7 +1545,7 @@ static void initialiseSector ( SECno sno )
                                       sno);
 
       /* Free up the eclass structures. */
-      for (EClassNo e = 0; e < ECLASS_N; i++) {
+      for (EClassNo e = 0; e < ECLASS_N; e++) {
          if (sec->ec2tte_size[e] == 0) {
             vg_assert(sec->ec2tte_used[e] == 0);
             vg_assert(sec->ec2tte[e] == NULL);

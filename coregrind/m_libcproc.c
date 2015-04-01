@@ -387,6 +387,18 @@ Int VG_(system) ( const HChar* cmd )
    }
 }
 
+Int VG_(sysctl)(Int *name, UInt namelen, void *oldp, SizeT *oldlenp, void *newp, SizeT newlen)
+{
+   SysRes res;
+#  if defined(VGO_darwin)
+   res = VG_(do_syscall6)(__NR___sysctl,
+                           name, namelen, oldp, oldlenp, newp, newlen);
+#  else
+   res = VG_(mk_SysRes_Error)(VKI_ENOSYS);
+#  endif
+   return sr_isError(res) ? -1 : sr_Res(res);
+}
+
 /* ---------------------------------------------------------------------
    Resource limits
    ------------------------------------------------------------------ */

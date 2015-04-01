@@ -1444,7 +1444,9 @@ static void print_preamble ( Bool logging_to_fd,
       VG_(umsg)("\n");
 
    if (VG_(clo_verbosity) > 1) {
+# if !defined(VGO_darwin)
       SysRes fd;
+# endif
       VexArch vex_arch;
       VexArchInfo vex_archinfo;
       if (!logging_to_fd)
@@ -1456,6 +1458,7 @@ static void print_preamble ( Bool logging_to_fd,
                      * (HChar**) VG_(indexXA)( VG_(args_for_valgrind), i ));
       }
 
+# if !defined(VGO_darwin)
       VG_(message)(Vg_DebugMsg, "Contents of /proc/version:\n");
       fd = VG_(open) ( "/proc/version", VKI_O_RDONLY, 0 );
       if (sr_isError(fd)) {
@@ -1477,6 +1480,18 @@ static void print_preamble ( Bool logging_to_fd,
          VG_(message)(Vg_DebugMsg, "\n");
          VG_(close)(fdno);
       }
+# else
+      VG_(message)(Vg_DebugMsg, "Output from sysctl({CTL_KERN,KERN_VERSION}):\n");
+      /* Note: preferable to use sysctlbyname("kern.version", kernelVersion, &len, NULL, 0)
+         however that syscall is OS X 10.10+ only. */
+      Int mib[] = {CTL_KERN, KERN_VERSION};
+      SizeT len;
+      VG_(sysctl)(mib, sizeof(mib)/sizeof(Int), NULL, &len, NULL, 0);
+      HChar *kernelVersion = VG_(malloc)("main.pp.1", len);
+      VG_(sysctl)(mib, sizeof(mib)/sizeof(Int), kernelVersion, &len, NULL, 0);
+      VG_(message)(Vg_DebugMsg, "  %s\n", kernelVersion);
+      VG_(free)( kernelVersion );
+# endif
 
       VG_(machine_get_VexArchInfo)( &vex_arch, &vex_archinfo );
       VG_(message)(

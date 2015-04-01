@@ -62,6 +62,7 @@ where XXXXXX is the bug number as listed below.
 116002  VG_(printf): Problems with justification of strings and integers
 155125  avoid cutting away file:lineno after long function name
 197259  Unsupported arch_prtctl PR_SET_GS option
+201435  Fix Darwin: -v does not show kernel version
 211926  Avoid compilation warnings in valgrind.h with -pedantic
 226609  Crediting upstream authors in man page
 269360  s390x: Fix addressing mode selection for compare-and-swap

@@ -1,0 +1,7 @@
+#
+# This test used to write 
+#   ./shell_valid4
+# to stdout which is not what happens when executed natively.
+#
+prog: shell_valid4
+vgopts: -q

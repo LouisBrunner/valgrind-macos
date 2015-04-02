@@ -55,7 +55,7 @@ Bool VG_(match_script)(const void *hdr, Int len)
    // Find interpreter name, make sure it's an absolute path (starts with
    // '/') and has at least one more char.  First, skip over any space
    // between the #! and the start of the interpreter name
-   while (interp < end && VG_(isspace)(*interp)) interp++;
+   while (interp < end && (*interp == ' ' || *interp == '\t')) interp++;
 
    // overrun?
    if (interp >= end)   return False;  // can't find start of interp name

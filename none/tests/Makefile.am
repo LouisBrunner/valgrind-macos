@@ -159,6 +159,7 @@ EXTRA_DIST = \
 	shell_valid1 shell_valid1.vgtest shell_valid1.stderr.exp \
 	shell_valid2 shell_valid2.vgtest shell_valid2.stderr.exp \
 	shell_valid3 shell_valid3.vgtest shell_valid3.stderr.exp \
+	shell_valid4 shell_valid4.vgtest shell_valid4.stderr.exp shell_valid4.stdout.exp \
 	shell_zerolength shell_zerolength.vgtest shell_zerolength.stderr.exp \
 	    shell_zerolength.stderr.exp-dash \
 	sha1_test.stderr.exp sha1_test.vgtest \

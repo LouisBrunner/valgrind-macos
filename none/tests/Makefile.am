@@ -71,6 +71,7 @@ EXTRA_DIST = \
 	bigcode.vgtest bigcode.stderr.exp bigcode.stdout.exp \
 	bitfield1.stderr.exp bitfield1.vgtest \
 	bug129866.vgtest bug129866.stderr.exp bug129866.stdout.exp \
+	bug231357.vgtest bug231357.stderr.exp bug231357.stdout.exp \
 	closeall.stderr.exp closeall.vgtest \
 	cmdline0.stderr.exp cmdline0.stdout.exp cmdline0.vgtest \
 	cmdline1.stderr.exp cmdline1.stdout.exp cmdline1.vgtest \

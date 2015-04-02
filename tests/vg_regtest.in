@@ -59,7 +59,9 @@
 #
 # Each test is defined in a file <test>.vgtest, containing one or more of the
 # following lines, in any order:
-#   - prog:   <prog to run>                         (compulsory)
+#   - prog:   <prog to run>
+#   - prog-asis: <prog to run>
+#   - env: <environment variable for prog>          (default: none)
 #   - args:   <args for prog>                       (default: none)
 #   - vgopts: <Valgrind options>                    (default: none;
 #                                                    multiple are allowed)
@@ -80,10 +82,15 @@
 #   - post: <post-test check command>               (default: none)
 #   - cleanup: <post-test cleanup cmd>              (default: none)
 #
+# One of prog or prog-asis must be specified.
 # If prog or probB is a relative path, it will be prefix with the test directory.
+# prog-asis will be taken as is, i.e. not prefixed with the test directory.
 # Note that filters are necessary for stderr results to filter out things that
 # always change, eg. process id numbers.
 # Note that if a progB is specified, it is started in background (before prog).
+#
+# There can be more than one env: declaration. Here is an example:
+#   env: PATH=/opt/bin:$PATH
 #
 # Expected stdout (filtered) is kept in <test>.stdout.exp* (can be more
 # than one expected output).  It can be missing if it would be empty.  Expected
@@ -154,6 +161,7 @@ my $stdinB;             # Input file for progB
 my $prereq;             # prerequisite test to satisfy before running test
 my $post;               # check command after running test
 my $cleanup;            # cleanup command to run
+my @env = ();           # environment variable to set prior calling $prog
 
 my @failures;           # List of failed tests
 
@@ -302,6 +310,8 @@ sub read_vgtest_file($)
             $vgopts = $vgopts . " " . $addvgopts;   # Nb: Make sure there's a space!
         } elsif ($line =~ /^\s*prog:\s*(.*)$/) {
             $prog = validate_program(".", $1, 0, 0);
+        } elsif ($line =~ /^\s*prog-asis:\s*(.*)$/) {
+            $prog = $1;
         } elsif ($line =~ /^\s*args:\s*(.*)$/) {
             $args = $1;
         } elsif ($line =~ /^\s*stdout_filter:\s*(.*)$/) {
@@ -332,6 +342,8 @@ sub read_vgtest_file($)
             $post = $1;
         } elsif ($line =~ /^\s*cleanup:\s*(.*)$/) {
             $cleanup = $1;
+        } elsif ($line =~ /^\s*env:\s*(.*)$/) {
+            push @env,$1;
         } else {
             die "Bad line in $f: $line\n";
         }
@@ -466,13 +478,19 @@ sub do_one_test($$)
     } else {
         printf("%-16s valgrind $extraopts $vgopts $prog $args\n", "$name:");
     }
- 
+
+    # Collect environment variables, if any.
+    my $envvars = "";
+    foreach my $e (@env) {
+        $envvars = "$envvars $e";
+    }
+
     # Pass the appropriate --tool option for the directory (can be overridden
     # by an "args:" line, though).
     my $tool=determine_tool();
     if (defined $outer_valgrind ) {
         # in an outer-inner setup, only set VALGRIND_LIB_INNER
-        mysystem(   "VALGRIND_LIB_INNER=$valgrind_lib "
+        mysystem(   "$envvars VALGRIND_LIB_INNER=$valgrind_lib "
                   . "$outer_valgrind "
                   . "--tool=" . $outer_tool . " "
                   . "$outer_args "
@@ -484,7 +502,7 @@ sub do_one_test($$)
     } else {
         # Set both VALGRIND_LIB and VALGRIND_LIB_INNER in case this Valgrind
         # was configured with --enable-inner.
-        mysystem(   "VALGRIND_LIB=$valgrind_lib VALGRIND_LIB_INNER=$valgrind_lib "
+        mysystem(   "$envvars VALGRIND_LIB=$valgrind_lib VALGRIND_LIB_INNER=$valgrind_lib "
                   . "$valgrind --command-line-only=yes --memcheck:leak-check=no "
                   . "--tool=$tool $extraopts $vgopts "
                   . "$prog $args > $name.stdout.out 2> $name.stderr.out");

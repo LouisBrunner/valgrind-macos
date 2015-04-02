@@ -1,0 +1,5 @@
+prereq: rm -rf /tmp/bruhaha && mkdir /tmp/bruhaha && echo '#!/bin/echo' > /tmp/bruhaha/test.sh && chmod +x /tmp/bruhaha/test.sh 
+env: PATH=/tmp/bruhaha:$PATH
+prog-asis: test.sh
+vgopts: -q
+cleanup: rm -rf /tmp/bruhaha

@@ -1,3 +1,5 @@
+prereq: rm -rf ./x86 && mkdir x86
 prog: shell
 stderr_filter: filter_shell_output
 vgopts: -q
+cleanup: rm -rf x86

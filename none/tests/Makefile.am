@@ -2,6 +2,7 @@
 include $(top_srcdir)/Makefile.tool-tests.am
 
 SUBDIRS = .
+SUBDIRS += scripts
 
 # Arch-specific tests.
 if VGCONF_ARCHS_INCLUDE_X86
@@ -46,16 +47,14 @@ SUBDIRS += x86-linux
 endif
 
 DIST_SUBDIRS = x86 amd64 ppc32 ppc64 arm arm64 s390x mips32 mips64 \
-               linux darwin x86-linux .
+               linux darwin x86-linux scripts .
 
 dist_noinst_SCRIPTS = \
 	filter_cmdline0 \
 	filter_cmdline1 \
 	filter_fdleak \
 	filter_ioctl_moans \
-	filter_linenos \
 	filter_none_discards \
-	filter_shell_output \
 	filter_stderr \
 	filter_timestamp \
 	allexec_prepare_prereq
@@ -71,7 +70,6 @@ EXTRA_DIST = \
 	bigcode.vgtest bigcode.stderr.exp bigcode.stdout.exp \
 	bitfield1.stderr.exp bitfield1.vgtest \
 	bug129866.vgtest bug129866.stderr.exp bug129866.stdout.exp \
-	bug231357.vgtest bug231357.stderr.exp bug231357.stdout.exp \
 	closeall.stderr.exp closeall.vgtest \
 	cmdline0.stderr.exp cmdline0.stdout.exp cmdline0.vgtest \
 	cmdline1.stderr.exp cmdline1.stdout.exp cmdline1.vgtest \
@@ -150,19 +148,6 @@ EXTRA_DIST = \
 	selfrun.stderr.exp selfrun.stdout.exp selfrun.vgtest \
 	sem.stderr.exp sem.stdout.exp sem.vgtest \
 	semlimit.stderr.exp semlimit.stdout.exp semlimit.vgtest \
-	shell shell.vgtest shell.stderr.exp shell.stderr.exp-dash \
-	    shell.stdout.exp shell.stderr.exp-dash2 \
-	shell_badinterp shell_badinterp.vgtest shell_badinterp.stderr.exp \
-	shell_binaryfile shell_binaryfile.vgtest shell_binaryfile.stderr.exp \
-	shell_dir.vgtest shell_dir.stderr.exp \
-	shell_nonexec.vgtest shell_nonexec.stderr.exp \
-	shell_nosuchfile.vgtest shell_nosuchfile.stderr.exp \
-	shell_valid1 shell_valid1.vgtest shell_valid1.stderr.exp \
-	shell_valid2 shell_valid2.vgtest shell_valid2.stderr.exp \
-	shell_valid3 shell_valid3.vgtest shell_valid3.stderr.exp \
-	shell_valid4 shell_valid4.vgtest shell_valid4.stderr.exp shell_valid4.stdout.exp \
-	shell_zerolength shell_zerolength.vgtest shell_zerolength.stderr.exp \
-	    shell_zerolength.stderr.exp-dash \
 	sha1_test.stderr.exp sha1_test.vgtest \
 	shortpush.stderr.exp shortpush.vgtest \
 	shorts.stderr.exp shorts.vgtest \

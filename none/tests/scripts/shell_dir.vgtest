@@ -1,0 +1,4 @@
+prereq: rm -rf ./x86 && mkdir x86
+prog: x86/
+vgopts: -q
+cleanup: rm -rf ./x86

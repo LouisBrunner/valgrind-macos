@@ -2998,6 +2998,7 @@ AC_CONFIG_FILES([
    lackey/tests/Makefile
    none/Makefile
    none/tests/Makefile
+   none/tests/scripts/Makefile
    none/tests/amd64/Makefile
    none/tests/ppc32/Makefile
    none/tests/ppc64/Makefile

@@ -1,1 +1,2 @@
 prog: shell_binaryfile
+vgopts: -q

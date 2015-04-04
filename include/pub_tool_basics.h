@@ -369,7 +369,8 @@ static inline Bool sr_EQ ( SysRes sr1, SysRes sr2 ) {
    })
 
 // Poor man's static assert
-#define STATIC_ASSERT(x)  extern int VG_(VG_(VG_(unused)))[(x) ? 1 : -1]
+#define STATIC_ASSERT(x)  extern int VG_(VG_(VG_(unused)))[(x) ? 1 : -1] \
+                                     __attribute__((unused))
 
 #endif /* __PUB_TOOL_BASICS_H */
 

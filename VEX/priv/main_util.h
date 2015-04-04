@@ -51,7 +51,8 @@
 #endif
 
 // Poor man's static assert
-#define STATIC_ASSERT(x)  extern int vex__unused_array[(x) ? 1 : -1]
+#define STATIC_ASSERT(x)  extern int vex__unused_array[(x) ? 1 : -1] \
+                                     __attribute__((unused))
 
 /* Stuff for panicking and assertion. */
 

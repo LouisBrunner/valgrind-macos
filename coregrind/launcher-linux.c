@@ -1,3 +1,4 @@
+/* -*- mode: C; c-basic-offset: 3; -*- */
 
 /*--------------------------------------------------------------------*/
 /*--- Launching valgrind                              m_launcher.c ---*/
@@ -156,24 +157,39 @@ static const char *select_platform(const char *clientname)
 
    if (header[0] == '#' && header[1] == '!') {
       int i = 2;
-      char *interp = (char *)header + 2;
 
+      STATIC_ASSERT(VKI_BINPRM_BUF_SIZE < sizeof header);
+      if (n_bytes > VKI_BINPRM_BUF_SIZE)
+         n_bytes = VKI_BINPRM_BUF_SIZE - 1;
+      header[n_bytes] = '\0';
+      char *eol = strchr(header, '\n');
+      if (eol != NULL)
+         *eol = '\0';
+ 
       // Skip whitespace.
-      while (1) {
-         if (i == n_bytes) return NULL;
-         if (' ' != header[i] && '\t' != header[i]) break;
+      while  (header[i] == ' '|| header[i] == '\t')
          i++;
-      }
 
       // Get the interpreter name.
-      interp = &header[i];
-      while (1) {
-         if (i == n_bytes) break;
-         if (isspace(header[i])) break;
-         i++;
+      const char *interp = header + i;
+
+      if (header[i] == '\0') {
+         // No interpreter was found; fall back to default shell
+#  if defined(VGPV_arm_linux_android) \
+      || defined(VGPV_x86_linux_android) \
+      || defined(VGPV_mips32_linux_android) \
+      || defined(VGPV_arm64_linux_android)
+         interp = "/system/bin/sh";
+#  else
+         interp = "/bin/sh";
+#  endif
+      } else {
+         while (header[i]) {
+            if (header[i] == ' ' || header[i] == '\t') break;
+            i++;
+         }
+         header[i] = '\0';
       }
-      if (i == n_bytes) return NULL;
-      header[i] = '\0';
 
       platform = select_platform(interp);
 

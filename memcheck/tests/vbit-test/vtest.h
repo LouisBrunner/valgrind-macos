@@ -72,6 +72,7 @@ typedef struct {
    unsigned    ppc32  : 1;
    unsigned    ppc64  : 1;
    unsigned    arm    : 1;
+   unsigned    arm64  : 1;
    unsigned    x86    : 1;
    unsigned    mips32 : 1;
    unsigned    mips64 : 1;

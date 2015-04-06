@@ -381,6 +381,7 @@ static IRType shadowTypeV ( IRType ty )
       case Ity_I32: 
       case Ity_I64: 
       case Ity_I128: return ty;
+      case Ity_F16:  return Ity_I16;
       case Ity_F32:  return Ity_I32;
       case Ity_D32:  return Ity_I32;
       case Ity_F64:  return Ity_I64;
@@ -3801,6 +3802,11 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          /* First arg is I32 (rounding mode), second is F32/I32 (data). */
          return mkLazy2(mce, Ity_I32, vatom1, vatom2);
 
+      case Iop_F64toF16:
+      case Iop_F32toF16:
+         /* First arg is I32 (rounding mode), second is F64/F32 (data). */
+         return mkLazy2(mce, Ity_I16, vatom1, vatom2);
+
       case Iop_F128toI32S: /* IRRoundingMode(I32) x F128 -> signed I32  */
       case Iop_F128toI32U: /* IRRoundingMode(I32) x F128 -> unsigned I32  */
       case Iop_F128toF32:  /* IRRoundingMode(I32) x F128 -> F32         */
@@ -4335,6 +4341,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_I64UtoD128: /* unsigned I64 -> D128 */
          return mkPCastTo(mce, Ity_I128, vatom);
 
+      case Iop_F16toF64:
       case Iop_F32toF64: 
       case Iop_I32StoF64:
       case Iop_I32UtoF64:
@@ -4364,6 +4371,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_TruncF64asF32:
       case Iop_NegF32:
       case Iop_AbsF32:
+      case Iop_F16toF32: 
          return mkPCastTo(mce, Ity_I32, vatom);
 
       case Iop_Ctz32:

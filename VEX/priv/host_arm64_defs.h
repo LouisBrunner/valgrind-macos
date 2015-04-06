@@ -414,6 +414,7 @@ typedef
       ARM64vecu_URSQRTE32x4,
       ARM64vecu_FRECPE64x2,   ARM64vecu_FRECPE32x4,
       ARM64vecu_FRSQRTE64x2,  ARM64vecu_FRSQRTE32x4,
+      ARM64vecu_FSQRT64x2,    ARM64vecu_FSQRT32x4,
       ARM64vecu_INVALID
    }
    ARM64VecUnaryOp;

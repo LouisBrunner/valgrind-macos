@@ -1294,8 +1294,10 @@ typedef
 
       /* unary */
       Iop_Abs32Fx4,
-      Iop_Sqrt32Fx4,
       Iop_Neg32Fx4,
+
+      /* binary :: IRRoundingMode(I32) x V128 -> V128 */
+      Iop_Sqrt32Fx4,
 
       /* Vector Reciprocal Estimate finds an approximate reciprocal of each
          element in the operand vector, and places the results in the
@@ -1359,8 +1361,10 @@ typedef
 
       /* unary */
       Iop_Abs64Fx2,
-      Iop_Sqrt64Fx2,
       Iop_Neg64Fx2,
+
+      /* binary :: IRRoundingMode(I32) x V128 -> V128 */
+      Iop_Sqrt64Fx2,
 
       /* see 32Fx4 variants for description */
       Iop_RecipEst64Fx2,    // unary

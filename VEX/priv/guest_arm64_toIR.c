@@ -12437,6 +12437,21 @@ Bool dis_AdvSIMD_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
+   if (bitU == 1 && size >= X10 && opcode == BITS5(1,1,1,1,1)) {
+      /* -------- 1,1x,11111: FSQRT 2d_2d, 4s_4s, 2s_2s -------- */
+      Bool isD = (size & 1) == 1;
+      IROp op  = isD ? Iop_Sqrt64Fx2 : Iop_Sqrt32Fx4;
+      if (bitQ == 0 && isD) return False; // implied 1d case
+      IRTemp resV = newTempV128();
+      assign(resV, binop(op, mkexpr(mk_get_IR_rounding_mode()),
+                             getQReg128(nn)));
+      putQReg128(dd, math_MAYBE_ZERO_HI64(bitQ, resV));
+      const HChar* arr = bitQ == 0 ? "2s" : (size == X11 ? "2d" : "4s");
+      DIP("%s %s.%s, %s.%s\n", "fsqrt",
+          nameQReg128(dd), arr, nameQReg128(nn), arr);
+      return True;
+   }
+
    return False;
 #  undef INSN
 }

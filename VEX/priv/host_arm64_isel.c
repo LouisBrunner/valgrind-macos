@@ -2363,6 +2363,17 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
 
    if (e->tag == Iex_Binop) {
       switch (e->Iex.Binop.op) {
+         case Iop_Sqrt32Fx4:
+         case Iop_Sqrt64Fx2: {
+            HReg arg = iselV128Expr(env, e->Iex.Binop.arg2);
+            HReg res = newVRegV(env);
+            set_FPCR_rounding_mode(env, e->Iex.Binop.arg1);
+            ARM64VecUnaryOp op 
+               = e->Iex.Binop.op == Iop_Sqrt32Fx4
+                    ? ARM64vecu_FSQRT32x4 : ARM64vecu_FSQRT64x2;
+            addInstr(env, ARM64Instr_VUnaryV(op, res, arg));
+            return res;
+         }
          case Iop_64HLtoV128: {
             HReg res  = newVRegV(env);
             HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);

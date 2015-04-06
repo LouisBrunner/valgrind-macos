@@ -2859,6 +2859,10 @@ void typeOfPrimop ( IROp op,
       case Iop_RSqrtEst32Ux4:
          UNARY(Ity_V128, Ity_V128);
 
+      case Iop_Sqrt64Fx2:
+      case Iop_Sqrt32Fx4:
+         BINARY(ity_RMode,Ity_V128, Ity_V128);
+
       case Iop_64HLtoV128:
          BINARY(Ity_I64,Ity_I64, Ity_V128);
 
@@ -3019,8 +3023,8 @@ void typeOfPrimop ( IROp op,
       case Iop_RecipEst64Fx2: case Iop_RSqrtEst64Fx2:
       case Iop_RecipEst32Ux4:
       case Iop_RSqrtEst32F0x4:
-      case Iop_Sqrt32Fx4:  case Iop_Sqrt32F0x4:
-      case Iop_Sqrt64Fx2:  case Iop_Sqrt64F0x2:
+      case Iop_Sqrt32F0x4:
+      case Iop_Sqrt64F0x2:
       case Iop_CmpNEZ8x16: case Iop_CmpNEZ16x8:
       case Iop_CmpNEZ32x4: case Iop_CmpNEZ64x2:
       case Iop_Cnt8x16:

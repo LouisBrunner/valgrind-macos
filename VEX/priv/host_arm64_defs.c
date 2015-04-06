@@ -749,6 +749,8 @@ static void showARM64VecUnaryOp(/*OUT*/const HChar** nm,
       case ARM64vecu_FRECPE32x4:  *nm = "frecpe";  *ar = "4s";  return;
       case ARM64vecu_FRSQRTE64x2: *nm = "frsqrte"; *ar = "2d";  return;
       case ARM64vecu_FRSQRTE32x4: *nm = "frsqrte"; *ar = "4s";  return;
+      case ARM64vecu_FSQRT64x2:   *nm = "fsqrt";   *ar = "2d";  return;
+      case ARM64vecu_FSQRT32x4:   *nm = "fsqrt";   *ar = "4s";  return;
       default: vpanic("showARM64VecUnaryOp");
    }
 }
@@ -4869,6 +4871,9 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
 
             011 01110 11 1 00001 110110 n d  FRECPE Vd.2d, Vn.2d
             011 01110 10 1 00001 110110 n d  FRECPE Vd.4s, Vn.4s
+
+            011 01110 11 1 00001 111110 n d  FSQRT Vd.2d, Vn.2d
+            011 01110 10 1 00001 111110 n d  FSQRT Vd.4s, Vn.4s
          */
          UInt vD = qregEnc(i->ARM64in.VUnaryV.dst);
          UInt vN = qregEnc(i->ARM64in.VUnaryV.arg);
@@ -4959,6 +4964,12 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
                break;
             case ARM64vecu_FRSQRTE32x4:
                *p++ = X_3_8_5_6_5_5(X011, X01110101, X00001, X110110, vN, vD);
+               break;
+            case ARM64vecu_FSQRT64x2:
+               *p++ = X_3_8_5_6_5_5(X011, X01110111, X00001, X111110, vN, vD);
+               break;
+            case ARM64vecu_FSQRT32x4:
+               *p++ = X_3_8_5_6_5_5(X011, X01110101, X00001, X111110, vN, vD);
                break;
             default:
                goto bad;

@@ -4585,9 +4585,9 @@ int main ( void )
    // fsqrt     2d,4s,2s
    if (1) test_fsqrt_d_d(TyDF);
    if (1) test_fsqrt_s_s(TySF);
-   if (0) test_fsqrt_2d_2d(TySF); // need to change primop type
-   if (0) test_fsqrt_4s_4s(TyDF); // ditto
-   if (0) test_fsqrt_2s_2s(TySF); // ditto
+   if (1) test_fsqrt_2d_2d(TySF); // need to change primop type
+   if (1) test_fsqrt_4s_4s(TyDF); // ditto
+   if (1) test_fsqrt_2s_2s(TySF); // ditto
 
    // fadd      d,s
    // fsub      d,s

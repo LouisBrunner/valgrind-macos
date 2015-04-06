@@ -140,6 +140,7 @@ where XXXXXX is the bug number as listed below.
         obvious and non-obvious issues
 344512  Fix unhandled syscall: unix:348 (__pthread_chdir) and unhandled 
         syscall: unix:349 (__pthread_fchdir) on OS X
+344559  Garbage collection of unused segment names in address space manager
 344560  Fix stack traces missing penultimate frame on OS X
 344621  Fix memcheck/tests/err_disable4 test on OS X
 344686  Fix suppression for pthread_rwlock_init on OS X 10.10

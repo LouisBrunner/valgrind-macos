@@ -280,27 +280,6 @@
 # define VG_N_SEGMENTS 30000
 #endif
 
-/* Max number of segment file names we can track.  These are big (1002
-   bytes) so on Android limit the space usage to ~1MB. */
-#if defined(VGPV_arm_linux_android) \
-    || defined(VGPV_x86_linux_android) \
-    || defined(VGPV_mips32_linux_android) \
-    || defined(VGPV_arm64_linux_android)
-# define VG_N_SEGNAMES 1000
-#else
-# define VG_N_SEGNAMES 6000
-#endif
-
-/* Max length of a segment file name. FIXME: to be removed */
-#define VG_MAX_SEGNAMELEN 1000
-
-/* String table for segment names */
-
-/* FIXME: This is just for backward compatibility for now. To be adjusted. */
-static HChar segnames[VG_N_SEGNAMES * VG_MAX_SEGNAMELEN];
-static SizeT segnames_used = 0;  /* number of characters used */
-static UInt  num_segnames = 0;   /* number of names in string table */
-
 /* Array [0 .. nsegments_used-1] of all mappings. */
 /* Sorted by .addr field. */
 /* I: len may not be zero. */
@@ -379,48 +358,6 @@ static void parse_procselfmaps (
 #endif
 
 
-/*-----------------------------------------------------------------*/
-/*---                                                           ---*/
-/*--- Segment name management.                                  ---*/
-/*---                                                           ---*/
-/*-----------------------------------------------------------------*/
-
-/* Searches the string table to find an index for the given name.
-   If none is found, an index is allocated and the name stored.
-   If the string is too long to store, return -1.
-*/
-static Int allocate_segname ( const HChar* name )
-{
-   SizeT len, l, ix;
-
-   aspacem_assert(name);
-
-   if (0) VG_(debugLog)(0,"aspacem","allocate_segname %s\n", name);
-
-   len = VG_(strlen)(name);
-
-   /* first see if we already have the name. */
-   for (ix = 0; ix < segnames_used; ix += l + 1) {
-      l = VG_(strlen)(segnames + ix);
-      if (l == len && VG_(strcmp)(name, segnames + ix) == 0) return ix;
-   }
-
-   /* Is there enough room in the string table? */
-   if (len + 1 > (sizeof segnames) - segnames_used) {
-      return -1;
-   }
-
-   ++num_segnames;
-
-   /* copy it in */
-   ix = segnames_used;
-
-   VG_(strcpy)(segnames + segnames_used, name);
-   segnames_used += len + 1;
-
-   return ix;
-}
-
 
 /*-----------------------------------------------------------------*/
 /*---                                                           ---*/
@@ -479,33 +416,15 @@ static void show_len_concisely ( /*OUT*/HChar* buf, Addr start, Addr end )
    ML_(am_sprintf)(buf, fmt, len);
 }
 
-/* Returns a sequence number for the fnIdx position in segnames.
-   Used in aspacemgr debug output to associate a segment with
-   the list of segments output at the beginning. */
-static Int fnIdx_seqnr(Int fnIdx)
-{
-   SizeT ix;
-   Int seqnr = -1;
-
-   for (ix = 0; ix < segnames_used; ix += VG_(strlen)(segnames + ix) + 1) {
-      seqnr++;
-      if (ix == fnIdx)
-         return seqnr;
-   }
-
-   return -1;
-}
-
 /* Show full details of an NSegment */
 
 static void show_nsegment_full ( Int logLevel, Int segNo, const NSegment* seg )
 {
    HChar len_buf[20];
-   const HChar* name = "(none)";
+   const HChar* name = VG_(am_get_segname)( seg->fnIdx );
 
-   if (seg->fnIdx >= 0 && seg->fnIdx < segnames_used
-                       && segnames[seg->fnIdx] != 0)
-      name = segnames + seg->fnIdx;
+   if (name == NULL)
+      name = "(none)";
 
    show_len_concisely(len_buf, seg->start, seg->end);
 
@@ -520,7 +439,7 @@ static void show_nsegment_full ( Int logLevel, Int segNo, const NSegment* seg )
       seg->isCH ? 'H' : '-',
       show_ShrinkMode(seg->smode),
       seg->dev, seg->ino, seg->offset,
-      fnIdx_seqnr(seg->fnIdx), seg->fnIdx,
+      VG_(am_segname_get_seqnr)(seg->fnIdx), seg->fnIdx,
       name
    );
 }
@@ -567,7 +486,7 @@ static void show_nsegment ( Int logLevel, Int segNo, const NSegment* seg )
             seg->hasX ? 'x' : '-', seg->hasT ? 'T' : '-', 
             seg->isCH ? 'H' : '-',
             seg->dev, seg->ino, seg->offset,
-            fnIdx_seqnr(seg->fnIdx), seg->fnIdx
+            VG_(am_segname_get_seqnr)(seg->fnIdx), seg->fnIdx
          );
          break;
 
@@ -598,15 +517,10 @@ static void show_nsegment ( Int logLevel, Int segNo, const NSegment* seg )
 void VG_(am_show_nsegments) ( Int logLevel, const HChar* who )
 {
    Int i;
-   SizeT ix;
    VG_(debugLog)(logLevel, "aspacem",
-                 "<<< SHOW_SEGMENTS: %s (%d segments, %u segnames)\n", 
-                 who, nsegments_used, num_segnames);
-   i = 0;
-   for (ix = 0; ix < segnames_used; ix += VG_(strlen)(segnames + ix) + 1) {
-      VG_(debugLog)(logLevel, "aspacem",
-                    "(%d,%lu) %s\n", i++, ix, segnames + ix);
-   }
+                 "<<< SHOW_SEGMENTS: %s (%d segments)\n", 
+                 who, nsegments_used);
+   VG_(am_show_segnames)( logLevel, who);
    for (i = 0; i < nsegments_used; i++)
      show_nsegment( logLevel, i, &nsegments[i] );
    VG_(debugLog)(logLevel, "aspacem",
@@ -618,10 +532,8 @@ void VG_(am_show_nsegments) ( Int logLevel, const HChar* who )
    has one. */
 const HChar* VG_(am_get_filename)( NSegment const * seg )
 {
-   Int i;
    aspacem_assert(seg);
-   i = seg->fnIdx;
-   return (i < 0) ? NULL : segnames + i;
+   return VG_(am_get_segname)( seg->fnIdx );
 }
 
 /* Collect up the start addresses of segments whose kind matches one of
@@ -709,8 +621,7 @@ static Bool sane_NSegment ( const NSegment* s )
       case SkFileC: case SkFileV:
          return 
             s->smode == SmFixed
-            && (s->fnIdx == -1 ||
-                (s->fnIdx >= 0 && s->fnIdx < segnames_used))
+            && VG_(am_sane_segname)(s->fnIdx)
             && !s->isCH;
 
       case SkResvn: 
@@ -764,6 +675,7 @@ static Bool maybe_merge_nsegments ( NSegment* s1, const NSegment* s2 )
                               + ((ULong)s2->start) - ((ULong)s1->start) ) {
             s1->end = s2->end;
             s1->hasT |= s2->hasT;
+            VG_(am_dec_refcount)(s1->fnIdx);
             return True;
          }
          break;
@@ -1441,6 +1353,8 @@ static void split_nsegment_at ( Addr a )
       nsegments[i+1].offset 
          += ((ULong)nsegments[i+1].start) - ((ULong)nsegments[i].start);
 
+   VG_(am_inc_refcount)(nsegments[i].fnIdx);
+
    aspacem_assert(sane_NSegment(&nsegments[i]));
    aspacem_assert(sane_NSegment(&nsegments[i+1]));
 }
@@ -1500,7 +1414,11 @@ static void add_segment ( const NSegment* seg )
 
    /* Now iLo .. iHi inclusive is the range of segment indices which
       seg will replace.  If we're replacing more than one segment,
-      slide those above the range down to fill the hole. */
+      slide those above the range down to fill the hole. Before doing
+      that decrement the reference counters for the segments names of
+      the replaced segments. */
+   for (i = iLo; i <= iHi; ++i)
+      VG_(am_dec_refcount)(nsegments[i].fnIdx);
    delta = iHi - iLo;
    aspacem_assert(delta >= 0);
    if (delta > 0) {
@@ -1597,7 +1515,7 @@ static void read_maps_callback ( Addr addr, SizeT len, UInt prot,
 #  endif // defined(VGP_arm_linux)
 
    if (filename)
-      seg.fnIdx = allocate_segname( filename );
+      seg.fnIdx = VG_(am_allocate_segname)( filename );
 
    if (0) show_nsegment( 2,0, &seg );
    add_segment( &seg );
@@ -1637,6 +1555,9 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
    aspacem_assert(sizeof(Addr)   == sizeof(void*));
    aspacem_assert(sizeof(SizeT)  == sizeof(void*));
    aspacem_assert(sizeof(SSizeT) == sizeof(void*));
+
+   /* Initialise the string table for segment names. */
+   VG_(am_segnames_init)();
 
    /* Check that we can store the largest imaginable dev, ino and
       offset numbers in an NSegment. */
@@ -2080,7 +2001,7 @@ VG_(am_notify_client_mmap)( Addr a, SizeT len, UInt prot, UInt flags,
          seg.mode = mode;
       }
       if (ML_(am_resolve_filename)(fd, buf, VKI_PATH_MAX)) {
-         seg.fnIdx = allocate_segname( buf );
+         seg.fnIdx = VG_(am_allocate_segname)( buf );
       }
    }
    add_segment( &seg );
@@ -2302,9 +2223,9 @@ SysRes VG_(am_mmap_named_file_fixed_client)
       seg.mode = mode;
    }
    if (name) {
-      seg.fnIdx = allocate_segname( name );
+      seg.fnIdx = VG_(am_allocate_segname)( name );
    } else if (ML_(am_resolve_filename)(fd, buf, VKI_PATH_MAX)) {
-      seg.fnIdx = allocate_segname( buf );
+      seg.fnIdx = VG_(am_allocate_segname)( buf );
    }
    add_segment( &seg );
 
@@ -2609,7 +2530,7 @@ static SysRes VG_(am_mmap_file_float_valgrind_flags) ( SizeT length, UInt prot,
       seg.mode = mode;
    }
    if (ML_(am_resolve_filename)(fd, buf, VKI_PATH_MAX)) {
-      seg.fnIdx = allocate_segname( buf );
+      seg.fnIdx = VG_(am_allocate_segname)( buf );
    }
    add_segment( &seg );
 

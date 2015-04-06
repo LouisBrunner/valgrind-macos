@@ -48,6 +48,9 @@
 
    * FRINTA, FRINTN are kludged .. they just round to nearest.  No special
      handling for the "ties" case.  FRINTX might be dubious too.
+
+   * Ditto FCVTXN.  No idea what "round to odd" means.  This implementation
+     just rounds to nearest.
 */
 
 /* "Special" instructions.
@@ -8148,6 +8151,16 @@ static Double two_to_the_minus ( Int n )
 }
 
 
+/* Returns 2.0 ^ n for n in 1 .. 64 */
+static Double two_to_the_plus ( Int n )
+{
+   if (n == 1) return 2.0;
+   vassert(n >= 2 && n <= 64);
+   Int half = n / 2;
+   return two_to_the_plus(half) * two_to_the_plus(n - half);
+}
+
+
 /*------------------------------------------------------------*/
 /*--- SIMD and FP instructions                             ---*/
 /*------------------------------------------------------------*/
@@ -9340,6 +9353,83 @@ Bool dis_AdvSIMD_scalar_shift_by_imm(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
+   if (immh >= BITS4(0,1,0,0) && opcode == BITS5(1,1,1,0,0)) {
+      /* -------- 0,!=00xx,11100 SCVTF d_d_imm, s_s_imm -------- */
+      /* -------- 1,!=00xx,11100 UCVTF d_d_imm, s_s_imm -------- */
+      UInt size  = 0;
+      UInt fbits = 0;
+      Bool ok    = getLaneInfo_IMMH_IMMB(&fbits, &size, immh, immb);
+      /* The following holds because immh is never zero. */
+      vassert(ok);
+      /* The following holds because immh >= 0100. */
+      vassert(size == X10 || size == X11);
+      Bool isD = size == X11;
+      Bool isU = bitU == 1;
+      vassert(fbits >= 1 && fbits <= (isD ? 64 : 32));
+      Double  scale  = two_to_the_minus(fbits);
+      IRExpr* scaleE = isD ? IRExpr_Const(IRConst_F64(scale))
+                             : IRExpr_Const(IRConst_F32( (Float)scale ));
+      IROp    opMUL  = isD ? Iop_MulF64 : Iop_MulF32;
+      IROp    opCVT  = isU ? (isD ? Iop_I64UtoF64 : Iop_I32UtoF32)
+                           : (isD ? Iop_I64StoF64 : Iop_I32StoF32);
+      IRType tyF = isD ? Ity_F64 : Ity_F32;
+      IRType tyI = isD ? Ity_I64 : Ity_I32;
+      IRTemp src = newTemp(tyI);
+      IRTemp res = newTemp(tyF);
+      IRTemp rm  = mk_get_IR_rounding_mode();
+      assign(src, getQRegLane(nn, 0, tyI));
+      assign(res, triop(opMUL, mkexpr(rm),
+                               binop(opCVT, mkexpr(rm), mkexpr(src)), scaleE));
+      putQRegLane(dd, 0, mkexpr(res));
+      if (!isD) {
+         putQRegLane(dd, 1, mkU32(0));
+      }
+      putQRegLane(dd, 1, mkU64(0));
+      const HChar ch = isD ? 'd' : 's';
+      DIP("%s %c%u, %c%u, #%u\n", isU ? "ucvtf" : "scvtf",
+          ch, dd, ch, nn, fbits);
+      return True;
+   }
+
+   if (immh >= BITS4(0,1,0,0) && opcode == BITS5(1,1,1,1,1)) {
+      /* -------- 0,!=00xx,11111 FCVTZS d_d_imm, s_s_imm -------- */
+      /* -------- 1,!=00xx,11111 FCVTZU d_d_imm, s_s_imm -------- */
+      UInt size  = 0;
+      UInt fbits = 0;
+      Bool ok    = getLaneInfo_IMMH_IMMB(&fbits, &size, immh, immb);
+      /* The following holds because immh is never zero. */
+      vassert(ok);
+      /* The following holds because immh >= 0100. */
+      vassert(size == X10 || size == X11);
+      Bool isD = size == X11;
+      Bool isU = bitU == 1;
+      vassert(fbits >= 1 && fbits <= (isD ? 64 : 32));
+      Double  scale  = two_to_the_plus(fbits);
+      IRExpr* scaleE = isD ? IRExpr_Const(IRConst_F64(scale))
+                           : IRExpr_Const(IRConst_F32( (Float)scale ));
+      IROp    opMUL  = isD ? Iop_MulF64 : Iop_MulF32;
+      IROp    opCVT  = isU ? (isD ? Iop_F64toI64U : Iop_F32toI32U)
+                           : (isD ? Iop_F64toI64S : Iop_F32toI32S);
+      IRType tyF = isD ? Ity_F64 : Ity_F32;
+      IRType tyI = isD ? Ity_I64 : Ity_I32;
+      IRTemp src = newTemp(tyF);
+      IRTemp res = newTemp(tyI);
+      IRTemp rm  = newTemp(Ity_I32);
+      assign(src, getQRegLane(nn, 0, tyF));
+      assign(rm,  mkU32(Irrm_ZERO));
+      assign(res, binop(opCVT, mkexpr(rm), 
+                               triop(opMUL, mkexpr(rm), mkexpr(src), scaleE)));
+      putQRegLane(dd, 0, mkexpr(res));
+      if (!isD) {
+         putQRegLane(dd, 1, mkU32(0));
+      }
+      putQRegLane(dd, 1, mkU64(0));
+      const HChar ch = isD ? 'd' : 's';
+      DIP("%s %c%u, %c%u, #%u\n", isU ? "fcvtzu" : "fcvtzs",
+          ch, dd, ch, nn, fbits);
+      return True;
+   }
+
 #  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
    return False;
 #  undef INSN
@@ -9917,6 +10007,19 @@ Bool dis_AdvSIMD_scalar_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
+   if (opcode == BITS5(1,0,1,1,0) && bitU == 1 && size == X01) {
+      /* -------- 1,01,10110 FCVTXN s_d -------- */
+      /* Using Irrm_NEAREST here isn't right.  The docs say "round to
+         odd" but I don't know what that really means. */
+      putQRegLO(dd,
+                binop(Iop_F64toF32, mkU32(Irrm_NEAREST),
+                                    getQRegLO(nn, Ity_F64)));
+      putQRegLane(dd, 1, mkU32(0));
+      putQRegLane(dd, 1, mkU64(0));
+      DIP("fcvtxn s%u, d%u\n", dd, nn);
+      return True;
+   }
+
    ix = 0; /*INVALID*/
    switch (opcode) {
       case BITS5(1,1,0,1,0): ix = ((size & 2) == 2) ? 4 : 1; break;
@@ -9966,6 +10069,25 @@ Bool dis_AdvSIMD_scalar_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
       HChar sOrD = isD ? 'd' : 's';
       DIP("fcvt%c%c %c%u, %c%u\n", ch, bitU == 1 ? 'u' : 's',
           sOrD, dd, sOrD, nn);
+      return True;
+   }
+
+   if (size <= X01 && opcode == BITS5(1,1,1,0,1)) {
+      /* -------- 0,0x,11101: SCVTF d_d, s_s -------- */
+      /* -------- 1,0x,11101: UCVTF d_d, s_s -------- */
+      Bool   isU = bitU == 1;
+      Bool   isD = (size & 1) == 1;
+      IRType tyI = isD ? Ity_I64 : Ity_I32;
+      IROp   iop = isU ? (isD ? Iop_I64UtoF64 : Iop_I32UtoF32)
+                       : (isD ? Iop_I64StoF64 : Iop_I32StoF32);
+      IRTemp rm  = mk_get_IR_rounding_mode();
+      putQRegLO(dd, binop(iop, mkexpr(rm), getQRegLO(nn, tyI)));
+      if (!isD) {
+         putQRegLane(dd, 1, mkU32(0)); /* bits 63-32 */
+      }
+      putQRegLane(dd, 1, mkU64(0));    /* bits 127-64 */
+      HChar c = isD ? 'd' : 's';
+      DIP("%ccvtf %c%u, %c%u\n", isU ? 'u' : 's', c, dd, c, nn);
       return True;
    }
 
@@ -10582,6 +10704,99 @@ Bool dis_AdvSIMD_shift_by_immediate(/*MB_OUT*/DisResult* dres, UInt insn)
          return True;
       }
       return False;
+   }
+
+   if (opcode == BITS5(1,1,1,0,0)) {
+      /* -------- 0,11100 SCVTF {2d_2d,4s_4s,2s_2s}_imm -------- */
+      /* -------- 1,11100 UCVTF {2d_2d,4s_4s,2s_2s}_imm -------- */
+      /* If immh is of the form 00xx, the insn is invalid. */
+      if (immh < BITS4(0,1,0,0)) return False;
+      UInt size  = 0;
+      UInt fbits = 0;
+      Bool ok    = getLaneInfo_IMMH_IMMB(&fbits, &size, immh, immb);
+      /* The following holds because immh is never zero. */
+      vassert(ok);
+      /* The following holds because immh >= 0100. */
+      vassert(size == X10 || size == X11);
+      Bool isD = size == X11;
+      Bool isU = bitU == 1;
+      Bool isQ = bitQ == 1;
+      if (isD && !isQ) return False; /* reject .1d case */
+      vassert(fbits >= 1 && fbits <= (isD ? 64 : 32));
+      Double  scale  = two_to_the_minus(fbits);
+      IRExpr* scaleE = isD ? IRExpr_Const(IRConst_F64(scale))
+                           : IRExpr_Const(IRConst_F32( (Float)scale ));
+      IROp    opMUL  = isD ? Iop_MulF64 : Iop_MulF32;
+      IROp    opCVT  = isU ? (isD ? Iop_I64UtoF64 : Iop_I32UtoF32)
+                           : (isD ? Iop_I64StoF64 : Iop_I32StoF32);
+      IRType tyF = isD ? Ity_F64 : Ity_F32;
+      IRType tyI = isD ? Ity_I64 : Ity_I32;
+      UInt nLanes = (isQ ? 2 : 1) * (isD ? 1 : 2);
+      vassert(nLanes == 2 || nLanes == 4);
+      for (UInt i = 0; i < nLanes; i++) {
+         IRTemp src = newTemp(tyI);
+         IRTemp res = newTemp(tyF);
+         IRTemp rm  = mk_get_IR_rounding_mode();
+         assign(src, getQRegLane(nn, i, tyI));
+         assign(res, triop(opMUL, mkexpr(rm),
+                                  binop(opCVT, mkexpr(rm), mkexpr(src)),
+                                  scaleE));
+         putQRegLane(dd, i, mkexpr(res));
+      }
+      if (!isQ) {
+         putQRegLane(dd, 1, mkU64(0));
+      }
+      const HChar* arr = nameArr_Q_SZ(bitQ, size);
+      DIP("%s %s.%s, %s.%s, #%u\n", isU ? "ucvtf" : "scvtf",
+          nameQReg128(dd), arr, nameQReg128(nn), arr, fbits);
+      return True;
+   }
+
+   if (opcode == BITS5(1,1,1,1,1)) {
+      /* -------- 0,11111 FCVTZS {2d_2d,4s_4s,2s_2s}_imm -------- */
+      /* -------- 1,11111 FCVTZU {2d_2d,4s_4s,2s_2s}_imm -------- */
+      /* If immh is of the form 00xx, the insn is invalid. */
+      if (immh < BITS4(0,1,0,0)) return False;
+      UInt size  = 0;
+      UInt fbits = 0;
+      Bool ok    = getLaneInfo_IMMH_IMMB(&fbits, &size, immh, immb);
+      /* The following holds because immh is never zero. */
+      vassert(ok);
+      /* The following holds because immh >= 0100. */
+      vassert(size == X10 || size == X11);
+      Bool isD = size == X11;
+      Bool isU = bitU == 1;
+      Bool isQ = bitQ == 1;
+      if (isD && !isQ) return False; /* reject .1d case */
+      vassert(fbits >= 1 && fbits <= (isD ? 64 : 32));
+      Double  scale  = two_to_the_plus(fbits);
+      IRExpr* scaleE = isD ? IRExpr_Const(IRConst_F64(scale))
+                           : IRExpr_Const(IRConst_F32( (Float)scale ));
+      IROp    opMUL  = isD ? Iop_MulF64 : Iop_MulF32;
+      IROp    opCVT  = isU ? (isD ? Iop_F64toI64U : Iop_F32toI32U)
+                           : (isD ? Iop_F64toI64S : Iop_F32toI32S);
+      IRType tyF = isD ? Ity_F64 : Ity_F32;
+      IRType tyI = isD ? Ity_I64 : Ity_I32;
+      UInt nLanes = (isQ ? 2 : 1) * (isD ? 1 : 2);
+      vassert(nLanes == 2 || nLanes == 4);
+      for (UInt i = 0; i < nLanes; i++) {
+         IRTemp src = newTemp(tyF);
+         IRTemp res = newTemp(tyI);
+         IRTemp rm  = newTemp(Ity_I32);
+         assign(src, getQRegLane(nn, i, tyF));
+         assign(rm,  mkU32(Irrm_ZERO));
+         assign(res, binop(opCVT, mkexpr(rm), 
+                                  triop(opMUL, mkexpr(rm),
+                                               mkexpr(src), scaleE)));
+         putQRegLane(dd, i, mkexpr(res));
+      }
+      if (!isQ) {
+         putQRegLane(dd, 1, mkU64(0));
+      }
+      const HChar* arr = nameArr_Q_SZ(bitQ, size);
+      DIP("%s %s.%s, %s.%s, #%u\n", isU ? "fcvtzu" : "fcvtzs",
+          nameQReg128(dd), arr, nameQReg128(nn), arr, fbits);
+      return True;
    }
 
 #  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
@@ -11983,8 +12198,33 @@ Bool dis_AdvSIMD_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
+   if (bitU == 1 && size == X01 && opcode == BITS5(1,0,1,1,0)) {
+      /* -------- 1,01,10110: FCVTXN 2s/4s_2d -------- */
+      /* Using Irrm_NEAREST here isn't right.  The docs say "round to
+         odd" but I don't know what that really means. */
+      IRType srcTy = Ity_F64;
+      IROp   opCvt = Iop_F64toF32;
+      IRTemp src[2];
+      for (UInt i = 0; i < 2; i++) {
+         src[i] = newTemp(srcTy);
+         assign(src[i], getQRegLane(nn, i, srcTy));
+      }
+      for (UInt i = 0; i < 2; i++) {
+         putQRegLane(dd, 2 * bitQ + i,
+                         binop(opCvt, mkU32(Irrm_NEAREST), mkexpr(src[i])));
+      }
+      if (bitQ == 0) {
+         putQRegLane(dd, 1, mkU64(0));
+      }
+      const HChar* arrNarrow = nameArr_Q_SZ(bitQ, 1+size);
+      const HChar* arrWide   = nameArr_Q_SZ(1,    1+size+1);
+      DIP("fcvtxn%s %s.%s, %s.%s\n", bitQ ? "2" : "",
+          nameQReg128(dd), arrNarrow, nameQReg128(nn), arrWide);
+      return True;
+   }
+
    if (bitU == 0 && size <= X01 && opcode == BITS5(1,0,1,1,1)) {
-      /* -------- 0,0x,10110: FCVTL 4s_4h/8h, 2d_2s/4s -------- */
+      /* -------- 0,0x,10111: FCVTL 4s_4h/8h, 2d_2s/4s -------- */
       UInt   nLanes = size == X00 ? 4 : 2;
       IRType srcTy  = size == X00 ? Ity_F16 : Ity_F32;
       IROp   opCvt  = size == X00 ? Iop_F16toF32 : Iop_F32toF64;
@@ -13111,9 +13351,52 @@ Bool dis_AdvSIMD_fp_to_from_fixedp_conv(/*MB_OUT*/DisResult* dres, UInt insn)
    UInt nn    = INSN(9,5);
    UInt dd    = INSN(4,0);
 
-   // op = 010, 011
-   /* -------------- {S,U}CVTF (scalar, fixedpt) -------------- */
-   /* (ix) sf  S 28    ty   rm op  15    9 4
+   if (ty <= X01 && rm == X11 
+       && (op == BITS3(0,0,0) || op == BITS3(0,0,1))) {
+      /* -------- (ix) sf ty rm opc -------- */
+      /* -------- 0    0  00 11 000: FCVTZS w_s_#fbits -------- */
+      /* -------- 1    0  01 11 000: FCVTZS w_d_#fbits -------- */
+      /* -------- 2    1  00 11 000: FCVTZS x_s_#fbits -------- */
+      /* -------- 3    1  01 11 000: FCVTZS x_d_#fbits -------- */
+
+      /* -------- 4    0  00 11 001: FCVTZU w_s_#fbits -------- */
+      /* -------- 5    0  01 11 001: FCVTZU w_d_#fbits -------- */
+      /* -------- 6    1  00 11 001: FCVTZU x_s_#fbits -------- */
+      /* -------- 7    1  01 11 001: FCVTZU x_d_#fbits -------- */
+      Bool isI64 = bitSF == 1;
+      Bool isF64 = (ty & 1) == 1;
+      Bool isU   = (op & 1) == 1;
+      UInt ix    = (isU ? 4 : 0) | (isI64 ? 2 : 0) | (isF64 ? 1 : 0);
+
+      Int fbits = 64 - sc;
+      vassert(fbits >= 1 && fbits <= (isI64 ? 64 : 32));      
+
+      Double  scale  = two_to_the_plus(fbits);
+      IRExpr* scaleE = isF64 ? IRExpr_Const(IRConst_F64(scale))
+                             : IRExpr_Const(IRConst_F32( (Float)scale ));
+      IROp    opMUL  = isF64 ? Iop_MulF64 : Iop_MulF32;
+
+      const IROp ops[8]
+        = { Iop_F32toI32S, Iop_F64toI32S, Iop_F32toI64S, Iop_F64toI64S,
+            Iop_F32toI32U, Iop_F64toI32U, Iop_F32toI64U, Iop_F64toI64U };
+      IRTemp irrm = newTemp(Ity_I32);
+      assign(irrm, mkU32(Irrm_ZERO));
+
+      IRExpr* src = getQRegLO(nn, isF64 ? Ity_F64 : Ity_F32);
+      IRExpr* res = binop(ops[ix], mkexpr(irrm),
+                                   triop(opMUL, mkexpr(irrm), src, scaleE));
+      putIRegOrZR(isI64, dd, res);
+
+      DIP("fcvtz%c %s, %s, #%d\n",
+          isU ? 'u' : 's', nameIRegOrZR(isI64, dd),
+          nameQRegLO(nn, isF64 ? Ity_F64 : Ity_F32), fbits);
+      return True;
+   }
+
+   /* ------ sf,ty,rm,opc ------ */
+   /* ------ x,0x,00,010  SCVTF s/d, w/x, #fbits  ------ */
+   /* ------ x,0x,00,011  UCVTF s/d, w/x, #fbits  ------ */
+   /* (ix) sf  S 28    ty   rm opc 15    9 4
       0    0 0 0 11110 00 0 00 010 scale n d  SCVTF Sd, Wn, #fbits
       1    0 0 0 11110 01 0 00 010 scale n d  SCVTF Dd, Wn, #fbits
       2    1 0 0 11110 00 0 00 010 scale n d  SCVTF Sd, Xn, #fbits

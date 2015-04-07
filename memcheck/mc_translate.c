@@ -2391,6 +2391,35 @@ IRAtom* binary32Fx8_w_rm ( MCEnv* mce, IRAtom* vRM,
    return t1;
 }
 
+/* --- 64Fx2 unary FP ops, with rounding mode --- */
+
+static
+IRAtom* unary64Fx2_w_rm ( MCEnv* mce, IRAtom* vRM, IRAtom* vatomX )
+{
+   /* Same scheme as binary64Fx2_w_rm. */
+   // "do" the vector arg
+   IRAtom* t1 = unary64Fx2(mce, vatomX);
+   // PCast the RM, and widen it to 128 bits
+   IRAtom* t2 = mkPCastTo(mce, Ity_V128, vRM);
+   // Roll it into the result
+   t1 = mkUifUV128(mce, t1, t2);
+   return t1;
+}
+
+/* --- ... and ... 32Fx4 versions of the same --- */
+
+static
+IRAtom* unary32Fx4_w_rm ( MCEnv* mce, IRAtom* vRM, IRAtom* vatomX )
+{
+   /* Same scheme as unary32Fx4_w_rm. */
+   IRAtom* t1 = unary32Fx4(mce, vatomX);
+   // PCast the RM, and widen it to 128 bits
+   IRAtom* t2 = mkPCastTo(mce, Ity_V128, vRM);
+   // Roll it into the result
+   t1 = mkUifUV128(mce, t1, t2);
+   return t1;
+}
+
 
 /* --- --- Vector saturated narrowing --- --- */
 
@@ -3174,6 +3203,11 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
                 );
 
       /* V128-bit SIMD */
+
+      case Iop_Sqrt32Fx4:
+         return unary32Fx4_w_rm(mce, vatom1, vatom2);
+      case Iop_Sqrt64Fx2:
+         return unary64Fx2_w_rm(mce, vatom1, vatom2);
 
       case Iop_ShrN8x16:
       case Iop_ShrN16x8:
@@ -4251,7 +4285,6 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
    tl_assert(isOriginalAtom(mce,atom));
    switch (op) {
 
-      case Iop_Sqrt64Fx2:
       case Iop_Abs64Fx2:
       case Iop_Neg64Fx2:
       case Iop_RSqrtEst64Fx2:
@@ -4269,7 +4302,6 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_Sqrt64Fx4:
          return unary64Fx4(mce, vatom);
 
-      case Iop_Sqrt32Fx4:
       case Iop_RecipEst32Fx4:
       case Iop_I32UtoFx4:
       case Iop_I32StoFx4:

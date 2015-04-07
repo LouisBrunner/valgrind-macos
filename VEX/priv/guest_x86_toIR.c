@@ -7134,17 +7134,26 @@ static UInt dis_SSE_E_to_G_unary_all (
    Int     alen;
    IRTemp  addr;
    UChar   rm = getIByte(delta);
+   // Sqrt32Fx4 and Sqrt64Fx2 take a rounding mode, which is faked
+   // up in the usual way.
+   Bool needsIRRM = op == Iop_Sqrt32Fx4 || op == Iop_Sqrt64Fx2;
    if (epartIsReg(rm)) {
-      putXMMReg( gregOfRM(rm), 
-                 unop(op, getXMMReg(eregOfRM(rm))) );
+      IRExpr* src = getXMMReg(eregOfRM(rm));
+      /* XXXROUNDINGFIXME */
+      IRExpr* res = needsIRRM ? binop(op, get_FAKE_roundingmode(), src)
+                              : unop(op, src);
+      putXMMReg( gregOfRM(rm), res );
       DIP("%s %s,%s\n", opname,
                         nameXMMReg(eregOfRM(rm)),
                         nameXMMReg(gregOfRM(rm)) );
       return delta+1;
    } else {
       addr = disAMode ( &alen, sorb, delta, dis_buf );
-      putXMMReg( gregOfRM(rm), 
-                 unop(op, loadLE(Ity_V128, mkexpr(addr))) );
+      IRExpr* src = loadLE(Ity_V128, mkexpr(addr));
+      /* XXXROUNDINGFIXME */
+      IRExpr* res = needsIRRM ? binop(op, get_FAKE_roundingmode(), src)
+                              : unop(op, src);
+      putXMMReg( gregOfRM(rm), res );
       DIP("%s %s,%s\n", opname,
                         dis_buf,
                         nameXMMReg(gregOfRM(rm)) );

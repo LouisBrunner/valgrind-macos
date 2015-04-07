@@ -8850,17 +8850,26 @@ static ULong dis_SSE_E_to_G_unary_all (
    Int     alen;
    IRTemp  addr;
    UChar   rm = getUChar(delta);
+   // Sqrt32Fx4 and Sqrt64Fx2 take a rounding mode, which is faked
+   // up in the usual way.
+   Bool needsIRRM = op == Iop_Sqrt32Fx4 || op == Iop_Sqrt64Fx2;
    if (epartIsReg(rm)) {
-      putXMMReg( gregOfRexRM(pfx,rm), 
-                 unop(op, getXMMReg(eregOfRexRM(pfx,rm))) );
+      IRExpr* src = getXMMReg(eregOfRexRM(pfx,rm));
+      /* XXXROUNDINGFIXME */
+      IRExpr* res = needsIRRM ? binop(op, get_FAKE_roundingmode(), src)
+                              : unop(op, src);
+      putXMMReg( gregOfRexRM(pfx,rm), res );
       DIP("%s %s,%s\n", opname,
                         nameXMMReg(eregOfRexRM(pfx,rm)),
                         nameXMMReg(gregOfRexRM(pfx,rm)) );
       return delta+1;
    } else {
       addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
-      putXMMReg( gregOfRexRM(pfx,rm), 
-                 unop(op, loadLE(Ity_V128, mkexpr(addr))) );
+      IRExpr* src = loadLE(Ity_V128, mkexpr(addr));
+      /* XXXROUNDINGFIXME */
+      IRExpr* res = needsIRRM ? binop(op, get_FAKE_roundingmode(), src)
+                              : unop(op, src);
+      putXMMReg( gregOfRexRM(pfx,rm), res );
       DIP("%s %s,%s\n", opname,
                         dis_buf,
                         nameXMMReg(gregOfRexRM(pfx,rm)) );
@@ -23046,7 +23055,13 @@ Long dis_AVX128_E_to_G_unary_all ( /*OUT*/Bool* uses_vvvv,
       delta += alen;
       DIP("%s %s,%s\n", opname, dis_buf, nameXMMReg(rG));
    }
-   putYMMRegLoAndZU( rG, unop(op, mkexpr(arg)) );
+   // Sqrt32Fx4 and Sqrt64Fx2 take a rounding mode, which is faked
+   // up in the usual way.
+   Bool needsIRRM = op == Iop_Sqrt32Fx4 || op == Iop_Sqrt64Fx2;
+   /* XXXROUNDINGFIXME */
+   IRExpr* res = needsIRRM ? binop(op, get_FAKE_roundingmode(), mkexpr(arg))
+                           : unop(op, mkexpr(arg));
+   putYMMRegLoAndZU( rG, res );
    *uses_vvvv = False;
    return delta;
 }

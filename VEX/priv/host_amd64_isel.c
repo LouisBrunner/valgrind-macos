@@ -3227,21 +3227,11 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 
       case Iop_RecipEst32Fx4: op = Asse_RCPF;   goto do_32Fx4_unary;
       case Iop_RSqrtEst32Fx4: op = Asse_RSQRTF; goto do_32Fx4_unary;
-      case Iop_Sqrt32Fx4:     op = Asse_SQRTF;  goto do_32Fx4_unary;
       do_32Fx4_unary:
       {
          HReg arg = iselVecExpr(env, e->Iex.Unop.arg);
          HReg dst = newVRegV(env);
          addInstr(env, AMD64Instr_Sse32Fx4(op, arg, dst));
-         return dst;
-      }
-
-      case Iop_Sqrt64Fx2:  op = Asse_SQRTF;  goto do_64Fx2_unary;
-      do_64Fx2_unary:
-      {
-         HReg arg = iselVecExpr(env, e->Iex.Unop.arg);
-         HReg dst = newVRegV(env);
-         addInstr(env, AMD64Instr_Sse64Fx2(op, arg, dst));
          return dst;
       }
 
@@ -3312,6 +3302,19 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 
    if (e->tag == Iex_Binop) {
    switch (e->Iex.Binop.op) {
+
+      case Iop_Sqrt64Fx2:
+      case Iop_Sqrt32Fx4: {
+         /* :: (rmode, vec) -> vec */
+         HReg arg = iselVecExpr(env, e->Iex.Binop.arg2);
+         HReg dst = newVRegV(env);
+         /* XXXROUNDINGFIXME */
+         /* set roundingmode here */
+         addInstr(env, (e->Iex.Binop.op == Iop_Sqrt64Fx2 
+                           ? AMD64Instr_Sse64Fx2 : AMD64Instr_Sse32Fx4)
+                       (Asse_SQRTF, arg, dst));
+         return dst;
+      }
 
       /* FIXME: could we generate MOVQ here? */
       case Iop_SetV128lo64: {

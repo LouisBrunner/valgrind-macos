@@ -770,7 +770,7 @@ static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
                                           const HChar* filename )
 {
    Int  iLo, iHi, i;
-   Bool sloppyXcheck;
+   Bool sloppyXcheck, sloppyRcheck;
 
    /* If a problem has already been detected, don't continue comparing
       segments, so as to avoid flooding the output with error
@@ -812,6 +812,14 @@ static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
    sloppyXcheck = True;
 #  else
    sloppyXcheck = False;
+#  endif
+
+   /* Some kernels on s390 provide 'r' permission even when it was not
+      explicitly requested. It seems that 'x' permission implies 'r'. */
+#  if defined(VGA_s390x)
+   sloppyRcheck = True;
+#  else
+   sloppyRcheck = False;
 #  endif
 
    /* NSegments iLo .. iHi inclusive should agree with the presented
@@ -866,6 +874,11 @@ static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
          of what we were expecting. */
       if (sloppyXcheck && (prot & VKI_PROT_EXEC) != 0) {
          seg_prot |= VKI_PROT_EXEC;
+      }
+
+      if (sloppyRcheck && (prot & (VKI_PROT_EXEC | VKI_PROT_READ)) ==
+          (VKI_PROT_EXEC | VKI_PROT_READ)) {
+         seg_prot |= VKI_PROT_READ;
       }
 
       same = same

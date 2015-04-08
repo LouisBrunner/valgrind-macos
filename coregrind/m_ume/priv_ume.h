@@ -34,19 +34,19 @@
 
 #include "pub_core_ume.h"   // ExeInfo
 
-extern int VG_(do_exec_inner)(const HChar *exe, ExeInfo *info);
+extern Int VG_(do_exec_inner)(const HChar *exe, ExeInfo *info);
 
 #if defined(VGO_linux)
-extern Bool VG_(match_ELF) ( const void *hdr, Int len );
+extern Bool VG_(match_ELF) ( const void *hdr, SizeT len );
 extern Int  VG_(load_ELF)  ( Int fd, const HChar *name, ExeInfo *info );
 #elif defined(VGO_darwin)
-extern Bool VG_(match_macho) ( const void *hdr, Int len );
+extern Bool VG_(match_macho) ( const void *hdr, SizeT len );
 extern Int  VG_(load_macho)  ( Int fd, const HChar *name, ExeInfo *info );
 #else
 #  error Unknown OS
 #endif
 
-extern Bool VG_(match_script) ( const void *hdr, Int len );
+extern Bool VG_(match_script) ( const void *hdr, SizeT len );
 extern Int  VG_(load_script)  ( Int fd, const HChar *name, ExeInfo *info );
 
 

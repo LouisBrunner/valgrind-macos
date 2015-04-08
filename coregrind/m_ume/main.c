@@ -46,7 +46,7 @@
 
 
 typedef struct {
-   Bool (*match_fn)(const void *hdr, Int len);
+   Bool (*match_fn)(const void *hdr, SizeT len);
    Int  (*load_fn)(Int fd, const HChar *name, ExeInfo *info);
 } ExeHandler;
 
@@ -70,7 +70,7 @@ VG_(pre_exec_check)(const HChar* exe_name, Int* out_fd, Bool allow_setuid)
    Int fd, ret, i;
    SysRes res;
    Char  buf[4096];
-   SizeT bufsz = 4096, fsz;
+   SizeT bufsz = sizeof buf, fsz;
    Bool is_setuid = False;
 
    // Check it's readable
@@ -132,8 +132,8 @@ VG_(pre_exec_check)(const HChar* exe_name, Int* out_fd, Bool allow_setuid)
 // returns: 0 = success, non-0 is failure
 //
 // We can execute only binaries (ELF, etc) or scripts that begin with "#!".
-// (Not, for example, scripts that don't begin with "#!";  see the
-// VG_(do_exec)() invocation from m_main.c for how that's handled.)
+// (Not, for example, scripts that don't begin with "#!";  see 
+// do_exec_shell_followup for how that's handled.)
 Int VG_(do_exec_inner)(const HChar* exe, ExeInfo* info)
 {
    SysRes res;
@@ -241,10 +241,17 @@ static Int do_exec_shell_followup(Int ret, const HChar* exe_name, ExeInfo* info)
    } else if (0 != ret) {
       // Something else went wrong.  Try to make the error more specific,
       // and then print a message and abort.
-   
-      // Was it a directory?
+      Int exit_code = 126;    // 126 == NOEXEC (bash)
+
       res = VG_(stat)(exe_name, &st);
-      if (!sr_isError(res) && VKI_S_ISDIR(st.mode)) {
+
+      // Does the file exist ?
+      if (sr_isError(res) && sr_Err(res) == VKI_ENOENT) {
+         VG_(fmsg)("%s: %s\n", exe_name, VG_(strerror)(ret));
+         exit_code = 127;     // 127 == NOTFOUND (bash)
+
+      // Was it a directory?
+      } else if (!sr_isError(res) && VKI_S_ISDIR(st.mode)) {
          VG_(fmsg)("%s: is a directory\n", exe_name);
       
       // Was it not executable?
@@ -260,9 +267,7 @@ static Int do_exec_shell_followup(Int ret, const HChar* exe_name, ExeInfo* info)
       } else {
          VG_(fmsg)("%s: %s\n", exe_name, VG_(strerror)(ret));
       }
-      // 126 means NOEXEC;  I think this is Posix, and that in some cases we
-      // should be returning 127, meaning NOTFOUND.  Oh well.
-      VG_(exit)(126);
+      VG_(exit)(exit_code);
    }
    return ret;
 }
@@ -270,8 +275,8 @@ static Int do_exec_shell_followup(Int ret, const HChar* exe_name, ExeInfo* info)
 
 // This emulates the kernel's exec().  If it fails, it then emulates the
 // shell's handling of the situation.
-// See ume.h for an indication of which entries of 'info' are inputs, which
-// are outputs, and which are both.
+// See pub_core_ume.h for an indication of which entries of 'info' are
+// inputs, which are outputs, and which are both.
 /* returns: 0 = success, non-0 is failure */
 Int VG_(do_exec)(const HChar* exe_name, ExeInfo* info)
 {

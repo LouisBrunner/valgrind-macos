@@ -813,7 +813,7 @@ load_mach_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
 }
 
 
-Bool VG_(match_macho)(const void *hdr, Int len)
+Bool VG_(match_macho)(const void *hdr, SizeT len)
 {
    const vki_uint32_t *magic = hdr;
 

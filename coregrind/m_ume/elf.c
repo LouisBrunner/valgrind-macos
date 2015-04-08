@@ -244,7 +244,7 @@ ESZ(Addr) mapelf(struct elfinfo *e, ESZ(Addr) base)
    return elfbrk;
 }
 
-Bool VG_(match_ELF)(const void *hdr, Int len)
+Bool VG_(match_ELF)(const void *hdr, SizeT len)
 {
    const ESZ(Ehdr) *e = hdr;
    return (len > sizeof(*e)) && VG_(memcmp)(&e->e_ident[0], ELFMAG, SELFMAG) == 0;

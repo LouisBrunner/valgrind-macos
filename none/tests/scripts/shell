@@ -31,10 +31,10 @@ echo "Execute a valid script with a #! line"
 ./shell_valid1
 
 echo "Execute a valid script without a #! line"
-./shell_valid2
+./shell_nointerp1
 
 echo "Execute a valid script with #! but no interpname"
-./shell_valid3
+./shell_nointerp2
 
 echo "Execute a zero-length file"
 ./shell_zerolength

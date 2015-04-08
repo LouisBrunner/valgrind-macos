@@ -1,0 +1,2 @@
+prog: shell_nointerp3
+vgopts: -q

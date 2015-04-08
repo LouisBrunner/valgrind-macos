@@ -13,11 +13,15 @@ EXTRA_DIST = \
 	shell_badinterp shell_badinterp.vgtest shell_badinterp.stderr.exp \
 	shell_binaryfile shell_binaryfile.vgtest shell_binaryfile.stderr.exp \
 	shell_dir.vgtest shell_dir.stderr.exp \
+	shell_nointerp1 shell_nointerp1.vgtest shell_nointerp1.stderr.exp \
+	shell_nointerp1.stdout.exp \
+	shell_nointerp2 shell_nointerp2.vgtest shell_nointerp2.stderr.exp \
+	shell_nointerp2.stdout.exp \
+	shell_nointerp3 shell_nointerp3.vgtest shell_nointerp3.stderr.exp \
+	shell_nointerp3.stdout.exp \
 	shell_nonexec.vgtest shell_nonexec.stderr.exp \
 	shell_nosuchfile.vgtest shell_nosuchfile.stderr.exp \
 	shell_valid1 shell_valid1.vgtest shell_valid1.stderr.exp \
-	shell_valid2 shell_valid2.vgtest shell_valid2.stderr.exp \
-	shell_valid3 shell_valid3.vgtest shell_valid3.stderr.exp \
 	shell_valid4 shell_valid4.vgtest shell_valid4.stderr.exp \
 	shell_valid4.stdout.exp \
 	shell_zerolength shell_zerolength.vgtest shell_zerolength.stderr.exp \

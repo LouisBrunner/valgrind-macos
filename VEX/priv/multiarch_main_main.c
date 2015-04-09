@@ -56,7 +56,7 @@
      -lvexmultiarch-amd64-linux *before* -lvex-amd64-linux
    i.e;
      gcc -o t1multi t1.o \
-        -LInst/lib/valgrind -lvexmultiarch-x86-linux -lvex-amd64-linux -lgcc
+        -LInst/lib/valgrind -lvexmultiarch-amd64-linux -lvex-amd64-linux -lgcc
 
    t1single will only be able to translate from amd64 to amd64.
    t1multi will be able to translate from any arch supported by VEX

@@ -33,6 +33,7 @@
 #define __PUB_CORE_INITIMG_H
 
 #include "pub_core_basics.h"      // Addr
+#include "libvex.h"
 
 //--------------------------------------------------------------------
 // PURPOSE: Map the client executable into memory, then set up its
@@ -50,7 +51,8 @@ typedef  struct _IIFinaliseImageInfo  IIFinaliseImageInfo;
    structure, which is gathered in an OS-specific way at startup.
    This returns an IIFinaliseImageInfo structure: */
 extern 
-IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo );
+IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo,
+                                          const VexArchInfo* vex_archinfo );
 
 /* Just before starting the client, we may need to make final
    adjustments to its initial image.  Also we need to set up the VEX

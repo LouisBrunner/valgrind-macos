@@ -1822,9 +1822,12 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    //--------------------------------------------------------------
    // Figure out what sort of CPU we're on, and whether it is 
    // able to run V.
+   /* The vex_archinfo structure is passed down later to the client
+    * to verify the HW info settings are consistent.
+    */
+   VexArchInfo vex_archinfo;
    VG_(debugLog)(1, "main", "Get hardware capabilities ...\n");
    { VexArch     vex_arch;
-     VexArchInfo vex_archinfo;
      Bool ok = VG_(machine_get_hwcaps)();
      if (!ok) {
         VG_(printf)("\n");
@@ -1952,7 +1955,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
 #     endif
 
       /* NOTE: this call reads VG_(clo_main_stacksize). */
-      the_iifii = VG_(ii_create_image)( the_iicii );
+      the_iifii = VG_(ii_create_image)( the_iicii, &vex_archinfo );
    }
 
    //==============================================================

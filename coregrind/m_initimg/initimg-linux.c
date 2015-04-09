@@ -246,6 +246,10 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
 /*=== Setting up the client's stack                                ===*/
 /*====================================================================*/
 
+#ifndef AT_DCACHEBSIZE
+#define AT_DCACHEBSIZE		19
+#endif /* AT_DCACHEBSIZE */
+
 #ifndef AT_ICACHEBSIZE
 #define AT_ICACHEBSIZE		20
 #endif /* AT_ICACHEBSIZE */
@@ -261,6 +265,10 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
 #ifndef AT_RANDOM
 #define AT_RANDOM		25
 #endif /* AT_RANDOM */
+
+#ifndef AT_HWCAP2
+#define AT_HWCAP2		26
+#endif /* AT_HWCAP2 */
 
 #ifndef AT_EXECFN
 #define AT_EXECFN		31
@@ -377,8 +385,14 @@ Addr setup_client_stack( void*  init_sp,
                          const ExeInfo* info,
                          UInt** client_auxv,
                          Addr   clstack_end,
-                         SizeT  clstack_max_size )
+                         SizeT  clstack_max_size,
+                         const VexArchInfo* vex_archinfo )
 {
+  /* The HW configuration setting (hwcaps) of the target can be
+   * checked against the Vex settings of the host platform as given
+   * by the values in vex_archinfo.
+   */
+
    SysRes res;
    HChar **cpp;
    HChar *strtab;		/* string table */
@@ -690,8 +704,44 @@ Addr setup_client_stack( void*  init_sp,
             }
 #           endif
             break;
+#        if defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
+         case AT_HWCAP2:
+            /* The HWCAP2 value has the entry arch_2_07 which indicates the
+             * processor is a Power 8 or beyond.  The Valgrind vai.hwcaps
+             * value (coregrind/m_machine.c) has the VEX_HWCAPS_PPC64_ISA2_07
+             * flag set so Valgrind knows about Power8.  Need to pass the
+             * HWCAP2 value along so the user level programs can detect that
+             * the processor supports ISA 2.07 and beyond.
+             */
+            /*  Power Architecture 64-Bit ELF V2 ABI Specification
+                July 21, 2014, version 1.0, Page 124
+                www-03.ibm.com/technologyconnect/tgcm/TGCMServlet.wss?alias=OpenPOWER&linkid=1n0000
+
+                AT_HWCAP2
+                The a_val member of this entry is a bit map of hardware
+                capabilities. Some bit mask values include:
+
+                PPC_FEATURE2_ARCH_2_07        0x80000000
+                PPC_FEATURE2_HAS_HTM          0x40000000
+                PPC_FEATURE2_HAS_DSCR         0x20000000
+                PPC_FEATURE2_HAS_EBB          0x10000000
+                PPC_FEATURE2_HAS_ISEL         0x08000000
+                PPC_FEATURE2_HAS_TAR          0x04000000
+                PPC_FEATURE2_HAS_VCRYPTO      0x02000000
+            */
+
+	    if ((auxv->u.a_val & ~(0x80000000ULL)) != 0) {
+                /* Verify if PPC_FEATURE2_ARCH_2_07 is set in HWCAP2
+                 * that arch_2_07 is also set in VEX HWCAPS
+                 */
+		vg_assert((vex_archinfo->hwcaps & VEX_HWCAPS_PPC64_ISA2_07) == VEX_HWCAPS_PPC64_ISA2_07);
+	      }
+
+            break;
+#           endif
 
          case AT_ICACHEBSIZE:
+         case AT_DCACHEBSIZE:
          case AT_UCACHEBSIZE:
 #           if defined(VGP_ppc32_linux)
             /* acquire cache info */
@@ -852,7 +902,8 @@ static void setup_client_dataseg ( SizeT max_size )
 /*====================================================================*/
 
 /* Create the client's initial memory image. */
-IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo iicii )
+IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo iicii,
+                                          const VexArchInfo* vex_archinfo )
 {
    ExeInfo info;
    HChar** env = NULL;
@@ -913,7 +964,8 @@ IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo iicii )
       iifii.initial_client_SP
          = setup_client_stack( init_sp, env, 
                                &info, &iifii.client_auxv, 
-                               iicii.clstack_end, iifii.clstack_max_size );
+                               iicii.clstack_end, iifii.clstack_max_size,
+                               vex_archinfo );
 
       VG_(free)(env);
 

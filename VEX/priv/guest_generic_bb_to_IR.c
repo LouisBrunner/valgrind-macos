@@ -374,7 +374,7 @@ IRSB* bb_to_IR (
               || dres.whatNext == Dis_ResteerU
               || dres.whatNext == Dis_ResteerC);
       /* ... disassembled insn length is sane ... */
-      vassert(dres.len >= 0 && dres.len <= 20);
+      vassert(dres.len >= 0 && dres.len <= 24);
       /* ... continueAt is zero if no resteer requested ... */
       if (dres.whatNext != Dis_ResteerU && dres.whatNext != Dis_ResteerC)
          vassert(dres.continueAt == 0);

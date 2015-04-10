@@ -60,7 +60,8 @@ typedef
       VexArchPPC64,
       VexArchS390X,
       VexArchMIPS32,
-      VexArchMIPS64
+      VexArchMIPS64,
+      VexArchTILEGX
    }
    VexArch;
 
@@ -172,6 +173,9 @@ typedef
 
 #define VEX_HWCAPS_S390X(x)  ((x) & ~VEX_S390X_MODEL_MASK)
 #define VEX_S390X_MODEL(x)   ((x) &  VEX_S390X_MODEL_MASK)
+
+/* Tilegx: baseline capability is TILEGX36 */
+#define VEX_HWCAPS_TILEGX_BASE (1<<16)  /* TILEGX Baseline */
 
 /* arm: baseline capability is ARMv4 */
 /* Bits 5:0 - architecture level (e.g. 5 for v5, 6 for v6 etc) */

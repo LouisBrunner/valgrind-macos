@@ -4179,7 +4179,7 @@ void tcStmt ( const IRSB* bb, const IRStmt* stmt, IRType gWordTy )
       case Ist_IMark:
          /* Somewhat heuristic, but rule out totally implausible
             instruction sizes and deltas. */
-         if (stmt->Ist.IMark.len > 20)
+         if (stmt->Ist.IMark.len > 24)
             sanityCheckFail(bb,stmt,"IRStmt.IMark.len: implausible");
          if (stmt->Ist.IMark.delta > 1)
             sanityCheckFail(bb,stmt,"IRStmt.IMark.delta: implausible");

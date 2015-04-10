@@ -518,7 +518,7 @@ void detach_from_all_threads (pid_t pid)
    }
 }
 
-#  if defined(VGA_arm64)
+#  if defined(VGA_arm64) || defined(VGA_tilegx)
 /* arm64 is extra special, old glibc defined kernel user_pt_regs, but
    newer glibc instead define user_regs_struct. */
 #    ifdef HAVE_SYS_USER_REGS
@@ -794,7 +794,7 @@ Bool invoker_invoke_gdbserver (pid_t pid)
 {
    long res;
    Bool stopped;
-#  if defined(VGA_arm64)
+#  if defined(VGA_arm64) || defined(VGA_tilegx)
 /* arm64 is extra special, old glibc defined kernel user_pt_regs, but
    newer glibc instead define user_regs_struct. */
 #    ifdef HAVE_SYS_USER_REGS
@@ -871,6 +871,8 @@ Bool invoker_invoke_gdbserver (pid_t pid)
    sp = p[29];
 #elif defined(VGA_mips64)
    sp = user_mod.regs[29];
+#elif defined(VGA_tilegx)
+   sp = user_mod.sp;
 #else
    I_die_here : (sp) architecture missing in vgdb-invoker-ptrace.c
 #endif
@@ -956,7 +958,7 @@ Bool invoker_invoke_gdbserver (pid_t pid)
       /* make stack space for args */
       p[29] = sp - 32;
 
-#elif defined(VGA_mips64)
+#elif defined(VGA_mips64) || defined(VGA_tilegx)
       assert(0); // cannot vgdb a 32 bits executable with a 64 bits exe
 #else
       I_die_here : architecture missing in vgdb-invoker-ptrace.c
@@ -1063,6 +1065,12 @@ Bool invoker_invoke_gdbserver (pid_t pid)
       user_mod.regs[31] = bad_return;
       user_mod.regs[34] = shared64->invoke_gdbserver;
       user_mod.regs[25] = shared64->invoke_gdbserver;
+#elif defined(VGA_tilegx)
+      /* put check arg in register r0 */
+      user_mod.regs[0] = check;
+      /* put NULL return address in lr */
+      user_mod.lr = bad_return;
+      user_mod.pc = shared64->invoke_gdbserver;
 #else
       I_die_here: architecture missing in vgdb-invoker-ptrace.c
 #endif

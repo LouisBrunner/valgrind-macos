@@ -297,6 +297,15 @@ static void run_a_thread_NORETURN ( Word tidW )
          : "r" (VgTs_Empty), "n" (__NR_exit), "m" (tst->os_state.exitcode)
          : "cc", "memory" , "v0", "a0"
       );
+#elif defined(VGP_tilegx_linux)
+      asm volatile (
+         "st4    %0,  %1\n"      /* set tst->status = VgTs_Empty */
+         "moveli r10, %2\n"      /* set r10 = __NR_exit */
+         "move   r0,  %3\n"      /* set  r0 = tst->os_state.exitcode */
+         "swint1\n"              /* exit(tst->os_state.exitcode) */
+         : "=m" (tst->status)
+         : "r" (VgTs_Empty), "n" (__NR_exit), "r" (tst->os_state.exitcode)
+         : "r0", "r1", "r2", "r3", "r4", "r5");
 #else
 # error Unknown platform
 #endif
@@ -446,7 +455,7 @@ SysRes ML_(do_fork_clone) ( ThreadId tid, UInt flags,
    res = VG_(do_syscall5)( __NR_clone, flags, 
                            (UWord)NULL, (UWord)parent_tidptr, 
                            (UWord)NULL, (UWord)child_tidptr );
-#elif defined(VGP_amd64_linux)
+#elif defined(VGP_amd64_linux) || defined(VGP_tilegx_linux)
    /* note that the last two arguments are the opposite way round to x86 and
       ppc32 as the amd64 kernel expects the arguments in a different order */
    res = VG_(do_syscall5)( __NR_clone, flags, 
@@ -5223,7 +5232,8 @@ POST(sys_lookup_dcookie)
 }
 #endif
 
-#if defined(VGP_amd64_linux) || defined(VGP_s390x_linux)
+#if defined(VGP_amd64_linux) || defined(VGP_s390x_linux)        \
+      || defined(VGP_tilegx_linux)
 PRE(sys_lookup_dcookie)
 {
    *flags |= SfMayBlock;

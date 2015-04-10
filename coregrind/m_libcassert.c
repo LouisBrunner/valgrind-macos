@@ -225,6 +225,29 @@
         (srP)->misc.MIPS64.r31 = (ULong)ra;               \
         (srP)->misc.MIPS64.r28 = (ULong)gp;               \
       }
+#elif defined(VGP_tilegx_linux)
+#  define GET_STARTREGS(srP)                              \
+      { UInt pc, sp, fp, ra;                              \
+        __asm__ __volatile__(                             \
+          "move r8, lr \n"                                \
+          "jal 0f \n"                                     \
+          "0:\n"                                          \
+          "move %0, lr \n"                                \
+          "move lr, r8 \n"      /* put old lr back*/      \
+          "move %1, sp \n"                                \
+          "move %2, r52 \n"                               \
+          "move %3, lr \n"                                \
+          : "=r" (pc),                                    \
+            "=r" (sp),                                    \
+            "=r" (fp),                                    \
+            "=r" (ra)                                     \
+          : /* reads none */                              \
+          : "%r8" /* trashed */ );                        \
+        (srP)->r_pc = (ULong)pc - 8;                      \
+        (srP)->r_sp = (ULong)sp;                          \
+        (srP)->misc.TILEGX.r52 = (ULong)fp;               \
+        (srP)->misc.TILEGX.r55 = (ULong)ra;               \
+      }
 #else
 #  error Unknown platform
 #endif

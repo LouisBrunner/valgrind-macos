@@ -4,7 +4,7 @@ prog: gone
 args: return
 vgopts: --tool=none --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-nlgone-return
 stderr_filter: filter_stderr
-prereq: test -e gdb
+prereq: test -e gdb && ! ../tests/arch_test tilegx
 progB: gdb
 argsB: --quiet -l 60 --nx ./gone
 stdinB: nlgone_return.stdinB.gdb

@@ -32,6 +32,9 @@ endif
 if VGCONF_ARCHS_INCLUDE_MIPS64
 SUBDIRS += mips64
 endif
+if VGCONF_ARCHS_INCLUDE_TILEGX
+SUBDIRS += tilegx
+endif
 
 # OS-specific tests
 if VGCONF_OS_IS_LINUX
@@ -46,7 +49,7 @@ if VGCONF_PLATFORMS_INCLUDE_X86_LINUX
 SUBDIRS += x86-linux
 endif
 
-DIST_SUBDIRS = x86 amd64 ppc32 ppc64 arm arm64 s390x mips32 mips64 \
+DIST_SUBDIRS = x86 amd64 ppc32 ppc64 arm arm64 s390x mips32 mips64 tilegx \
                linux darwin x86-linux scripts .
 
 dist_noinst_SCRIPTS = \
@@ -66,7 +69,8 @@ EXTRA_DIST = \
 	allexec64.stdout.exp allexec64.stderr.exp allexec64.vgtest\
 	ansi.stderr.exp ansi.vgtest \
 	args.stderr.exp args.stdout.exp args.vgtest \
-	async-sigs.stderr.exp async-sigs.stderr.exp-mips32 async-sigs.vgtest \
+	async-sigs.stderr.exp async-sigs.stderr.exp-mips32 \
+	async-sigs.vgtest \
 	bigcode.vgtest bigcode.stderr.exp bigcode.stdout.exp \
 	bitfield1.stderr.exp bitfield1.vgtest \
 	bug129866.vgtest bug129866.stderr.exp bug129866.stdout.exp \

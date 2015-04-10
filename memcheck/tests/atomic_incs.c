@@ -233,6 +233,20 @@ __attribute__((noinline)) void atomic_add_8bit ( char* p, int n )
       );
    } while (block[2] != 1);
 #endif
+#elif defined(VGA_tilegx)
+   int i;
+   unsigned int *p4 = (unsigned int *)(((unsigned long long)p + 3) & (~3ULL));
+   unsigned int  mask = (0xff) << ((int)p & 3);
+   unsigned int  add = (n & 0xff) << ((int)p & 3);
+   unsigned int x, new;
+
+   while(1) {
+      x = *p4;
+      new = (x & (~mask)) | ((x + add) & mask);
+      __insn_mtspr(0x2780, x);
+      if ( __insn_cmpexch4(p4, new) == x)
+         break;
+   }
 #else
 # error "Unsupported arch"
 #endif
@@ -449,6 +463,20 @@ __attribute__((noinline)) void atomic_add_16bit ( short* p, int n )
       );
    } while (block[2] != 1);
 #endif
+#elif defined(VGA_tilegx)
+   int i;
+   unsigned int *p4 = (unsigned int *)(((unsigned long long)p + 3) & (~3ULL));
+   unsigned int  mask = (0xffff) << ((int)p & 3);
+   unsigned int  add = (n & 0xffff) << ((int)p & 3);
+   unsigned int x, new;
+
+   while(1) {
+      x = *p4;
+      new = (x & (~mask)) | ((x + add) & mask);
+      __insn_mtspr(0x2780, x);
+      if ( __insn_cmpexch4(p4, new) == x)
+         break;
+   }
 #else
 # error "Unsupported arch"
 #endif
@@ -604,6 +632,8 @@ __attribute__((noinline)) void atomic_add_32bit ( int* p, int n )
          : /*trash*/ "memory", "t0", "t1", "t2", "t3"
       );
    } while (block[2] != 1);
+#elif defined(VGA_tilegx)
+    __insn_fetchadd4(p, n);
 #else
 # error "Unsupported arch"
 #endif
@@ -705,6 +735,8 @@ __attribute__((noinline)) void atomic_add_64bit ( long long int* p, int n )
          : /*trash*/ "memory", "t0", "t1", "t2", "t3"
       );
    } while (block[2] != 1);
+#elif defined(VGA_tilegx)
+    __insn_fetchadd(p, n);
 #else
 # error "Unsupported arch"
 #endif

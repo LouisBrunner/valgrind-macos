@@ -333,6 +333,19 @@ typedef
       Int   fp_off;
    }
    DiCfSI_m;
+#elif defined(VGA_tilegx)
+typedef
+   struct {
+      UChar cfa_how; /* a CFIC_IA value */
+      UChar ra_how;  /* a CFIR_ value */
+      UChar sp_how;  /* a CFIR_ value */
+      UChar fp_how;  /* a CFIR_ value */
+      Int   cfa_off;
+      Int   ra_off;
+      Int   sp_off;
+      Int   fp_off;
+   }
+   DiCfSI_m;
 #else
 #  error "Unknown arch"
 #endif
@@ -386,7 +399,11 @@ typedef
       Creg_S390_SP,
       Creg_S390_FP,
       Creg_S390_LR,
-      Creg_MIPS_RA
+      Creg_MIPS_RA,
+      Creg_TILEGX_IP,
+      Creg_TILEGX_SP,
+      Creg_TILEGX_BP,
+      Creg_TILEGX_LR
    }
    CfiReg;
 

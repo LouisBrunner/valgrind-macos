@@ -567,8 +567,21 @@ typedef struct SigQueue {
         (srP)->misc.MIPS64.r31 = (uc)->uc_mcontext.sc_regs[31]; \
         (srP)->misc.MIPS64.r28 = (uc)->uc_mcontext.sc_regs[28]; \
       }
-
-#else 
+#elif defined(VGP_tilegx_linux)
+#  define VG_UCONTEXT_INSTR_PTR(uc)       ((uc)->uc_mcontext.pc)
+#  define VG_UCONTEXT_STACK_PTR(uc)       ((uc)->uc_mcontext.sp)
+#  define VG_UCONTEXT_FRAME_PTR(uc)       ((uc)->uc_mcontext.gregs[52])
+#  define VG_UCONTEXT_SYSCALL_NUM(uc)     ((uc)->uc_mcontext.gregs[10])
+#  define VG_UCONTEXT_SYSCALL_SYSRES(uc)                            \
+      /* Convert the value in uc_mcontext.rax into a SysRes. */     \
+      VG_(mk_SysRes_amd64_linux)((uc)->uc_mcontext.gregs[0])
+#  define VG_UCONTEXT_TO_UnwindStartRegs(srP, uc)              \
+      { (srP)->r_pc = (uc)->uc_mcontext.pc;                    \
+        (srP)->r_sp = (uc)->uc_mcontext.sp;                    \
+        (srP)->misc.TILEGX.r52 = (uc)->uc_mcontext.gregs[52];  \
+        (srP)->misc.TILEGX.r55 = (uc)->uc_mcontext.lr;         \
+      }
+#else
 #  error Unknown platform
 #endif
 
@@ -940,6 +953,14 @@ extern void my_sigreturn(void);
    "my_sigreturn:\n" \
    "   li $2, " #name "\n" \
    "   syscall\n" \
+   ".previous\n"
+
+#elif defined(VGP_tilegx_linux)
+#  define _MY_SIGRETURN(name) \
+   ".text\n" \
+   "my_sigreturn:\n" \
+   " moveli r10 ," #name "\n" \
+   " swint1\n" \
    ".previous\n"
 
 #else

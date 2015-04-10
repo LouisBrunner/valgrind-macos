@@ -77,6 +77,10 @@ static void pc_pre_clo_init(void)
    VG_(printf)("SGCheck doesn't work on MIPS yet, sorry.\n");
    VG_(exit)(1);
 #endif
+#if defined(VGA_tilegx)
+   VG_(printf)("SGCheck doesn't work on TileGx yet, sorry.\n");
+   VG_(exit)(1);
+#endif
 
    // Can't change the name until we change the names in suppressions
    // too.

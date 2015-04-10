@@ -85,6 +85,18 @@ SysRes VG_(mk_SysRes_amd64_linux) ( Long val ) {
    return res;
 }
 
+SysRes VG_(mk_SysRes_tilegx_linux) ( Long val ) {
+  SysRes res;
+  res._valEx   = 0; /* unused except on mips-linux */
+  res._isError = val >= -4095 && val <= -1;
+  if (res._isError) {
+    res._val = (ULong)(-val);
+  } else {
+    res._val = (ULong)val;
+  }
+  return res;
+}
+
 /* PPC uses the CR7.SO bit to flag an error (CR0 in IBM-speak) */
 /* Note this must be in the bottom bit of the second arg */
 SysRes VG_(mk_SysRes_ppc32_linux) ( UInt val, UInt cr0so ) {
@@ -733,6 +745,27 @@ asm (
 ".previous\n"
 );
 
+#elif defined(VGP_tilegx_linux)
+extern UWord do_syscall_WRK (
+          UWord syscall_no, 
+          UWord a1, UWord a2, UWord a3,
+          UWord a4, UWord a5, UWord a6
+       );
+asm(
+    ".text\n"
+    "do_syscall_WRK:\n"
+    "move  r10, r0\n"
+    "move  r0,  r1\n"
+    "move  r1,  r2\n"
+    "move  r2,  r3\n"
+    "move  r3,  r4\n"
+    "move  r4,  r5\n"
+    "move  r5,  r6\n"
+    "swint1\n"
+    "jrp   lr\n"
+    ".previous\n"
+    );
+
 #else
 #  error Unknown platform
 #endif
@@ -860,6 +893,11 @@ SysRes VG_(do_syscall) ( UWord sysno, UWord a1, UWord a2, UWord a3,
    ULong V1 = (ULong)v1_a3[0];
    ULong A3 = (ULong)v1_a3[1];
    return VG_(mk_SysRes_mips64_linux)( V0, V1, A3 );
+
+#  elif defined(VGP_tilegx_linux)
+   UWord val = do_syscall_WRK(sysno,a1,a2,a3,a4,a5,a6);
+
+   return VG_(mk_SysRes_tilegx_linux)( val );
 
 #else
 #  error Unknown platform

@@ -33,12 +33,18 @@ EXTRA_DIST = \
 	peak.post.exp peak.stderr.exp peak.vgtest \
 	peak2.post.exp peak2.stderr.exp peak2.vgtest \
 	realloc.post.exp realloc.stderr.exp realloc.vgtest \
-	thresholds_0_0.post.exp   thresholds_0_0.stderr.exp   thresholds_0_0.vgtest \
-	thresholds_0_10.post.exp  thresholds_0_10.stderr.exp  thresholds_0_10.vgtest \
-	thresholds_10_0.post.exp  thresholds_10_0.stderr.exp  thresholds_10_0.vgtest \
-	thresholds_5_0.post.exp   thresholds_5_0.stderr.exp   thresholds_5_0.vgtest \
-	thresholds_5_10.post.exp  thresholds_5_10.stderr.exp  thresholds_5_10.vgtest \
-	thresholds_10_10.post.exp thresholds_10_10.stderr.exp thresholds_10_10.vgtest \
+	thresholds_0_0.post.exp \
+	thresholds_0_0.stderr.exp   thresholds_0_0.vgtest \
+	thresholds_0_10.post.exp    thresholds_0_10.stderr.exp \
+	thresholds_0_10.vgtest \
+	thresholds_10_0.post.exp \
+	thresholds_10_0.stderr.exp  thresholds_10_0.vgtest \
+	thresholds_5_0.post.exp  \
+	thresholds_5_0.stderr.exp   thresholds_5_0.vgtest \
+	thresholds_5_10.post.exp \
+	thresholds_5_10.stderr.exp  thresholds_5_10.vgtest \
+	thresholds_10_10.post.exp \
+	thresholds_10_10.stderr.exp thresholds_10_10.vgtest \
 	zero1.post.exp zero1.stderr.exp zero1.vgtest \
 	zero2.post.exp zero2.stderr.exp zero2.vgtest
 

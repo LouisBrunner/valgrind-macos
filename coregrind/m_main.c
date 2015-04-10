@@ -2152,7 +2152,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
 #     if defined(VGP_x86_linux)
       iters = 10;
 #     elif defined(VGP_amd64_linux) || defined(VGP_ppc64be_linux) \
-         || defined(VGP_ppc64le_linux)
+         || defined(VGP_ppc64le_linux) || defined(VGP_tilegx_linux)
       iters = 10;
 #     elif defined(VGP_ppc32_linux)
       iters = 5;
@@ -3205,6 +3205,45 @@ asm(
     "\tjalr   $25\n"
     "\tnop\n"
 ".previous\n"
+);
+#elif defined(VGP_tilegx_linux)
+asm("\n"
+    ".text\n"
+    "\t.align 8\n"
+    "\t.globl _start\n"
+    "\t.type _start,@function\n"
+    "_start:\n"
+
+    "\tjal 1f\n"
+    "1:\n"
+
+    /* --FIXME, bundle them :) */
+    /* r19 <- Addr(interim_stack) */
+    "\tmoveli r19, hw2_last(vgPlain_interim_stack)\n"
+    "\tshl16insli r19, r19, hw1(vgPlain_interim_stack)\n"
+    "\tshl16insli r19, r19, hw0(vgPlain_interim_stack)\n"
+
+    "\tmoveli r20, hw1("VG_STRINGIFY(VG_STACK_GUARD_SZB)")\n"
+    "\tshl16insli r20, r20, hw0("VG_STRINGIFY(VG_STACK_GUARD_SZB)")\n"
+    "\tmoveli r21, hw1("VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)")\n"
+    "\tshl16insli r21, r21, hw0("VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)")\n"
+    "\tadd     r19, r19, r20\n"
+    "\tadd     r19, r19, r21\n"
+
+    "\tmovei    r12, 0x0F\n"
+    "\tnor      r12, zero, r12\n"
+
+    "\tand      r19, r19, r12\n"
+
+    /* now r19 = &vgPlain_interim_stack + VG_STACK_GUARD_SZB +
+       VG_STACK_ACTIVE_SZB rounded down to the nearest 16-byte
+       boundary.  And $54 is the original SP.  Set the SP to r0 and
+       call _start_in_C, passing it the initial SP. */
+
+    "\tmove    r0,  r54\n"    // r0  <- $sp (_start_in_C first arg)
+    "\tmove    r54, r19\n"    // $sp <- r19 (new sp)
+
+    "\tjal  _start_in_C_linux\n"
 );
 #else
 #  error "Unknown linux platform"

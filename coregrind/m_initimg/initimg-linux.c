@@ -1173,6 +1173,21 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
    arch->vex.guest_PC = iifii.initial_client_IP;
    arch->vex.guest_r31 = iifii.initial_client_SP;
 
+#  elif defined(VGP_tilegx_linux)
+   vg_assert(0 == sizeof(VexGuestTILEGXState) % 8);
+   vg_assert(0 == sizeof(VexGuestTILEGXState) % VexGuestTILEGXStateAlignment);
+
+   /* Zero out the initial state. */
+   LibVEX_GuestTILEGX_initialise(&arch->vex);
+
+   /* Zero out the shadow areas. */
+   VG_(memset)(&arch->vex_shadow1, 0, sizeof(VexGuestTILEGXState));
+   VG_(memset)(&arch->vex_shadow2, 0, sizeof(VexGuestTILEGXState));
+
+   /* Put essential stuff into the new state. */
+   arch->vex.guest_r54 = iifii.initial_client_SP;
+   arch->vex.guest_pc  = iifii.initial_client_IP;
+
 #  else
 #    error Unknown platform
 #  endif

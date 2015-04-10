@@ -955,6 +955,9 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
 #  elif defined(VGP_s390x_linux)
    is_rx_map = seg->hasR && seg->hasX && !seg->hasW;
    is_rw_map = seg->hasR && seg->hasW;
+#  elif defined(VGA_tilegx)
+   is_rx_map = seg->hasR && seg->hasX; // && !seg->hasW;
+   is_rw_map = seg->hasR && seg->hasW; // && !seg->hasX;
 #  else
 #    error "Unknown platform"
 #  endif
@@ -2488,6 +2491,11 @@ UWord evalCfiExpr ( const XArray* exprs, Int ix,
                || defined(VGA_ppc64le)
 #           elif defined(VGP_arm64_linux)
             case Creg_ARM64_X30: return eec->uregs->x30;
+#           elif defined(VGA_tilegx)
+            case Creg_TILEGX_IP: return eec->uregs->pc;
+            case Creg_TILEGX_SP: return eec->uregs->sp;
+            case Creg_TILEGX_BP: return eec->uregs->fp;
+            case Creg_TILEGX_LR: return eec->uregs->lr;
 #           else
 #             error "Unsupported arch"
 #           endif
@@ -2743,6 +2751,16 @@ static Addr compute_cfa ( const D3UnwindRegs* uregs,
       case CFIC_ARM64_X29REL: 
          cfa = cfsi_m->cfa_off + uregs->x29;
          break;
+#     elif defined(VGA_tilegx)
+      case CFIC_IA_SPREL:
+         cfa = cfsi_m->cfa_off + uregs->sp;
+         break;
+      case CFIR_SAME:
+         cfa = uregs->fp;
+         break;
+      case CFIC_IA_BPREL:
+         cfa = cfsi_m->cfa_off + uregs->fp;
+         break;
 #     else
 #       error "Unsupported arch"
 #     endif
@@ -2797,7 +2815,7 @@ Addr ML_(get_CFA) ( Addr ip, Addr sp, Addr fp,
      return compute_cfa(&uregs,
                         min_accessible,  max_accessible, ce->di, ce->cfsi_m);
    }
-#elif defined(VGA_mips32) || defined(VGA_mips64)
+#elif defined(VGA_mips32) || defined(VGA_mips64) || defined(VGA_tilegx)
    { D3UnwindRegs uregs;
      uregs.pc = ip;
      uregs.sp = sp;
@@ -2845,6 +2863,8 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
    ipHere = uregsHere->pc;
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
 #  elif defined(VGP_arm64_linux)
+   ipHere = uregsHere->pc;
+#  elif defined(VGA_tilegx)
    ipHere = uregsHere->pc;
 #  else
 #    error "Unknown arch"
@@ -2931,6 +2951,10 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
    COMPUTE(uregsPrev.sp,  uregsHere->sp,  cfsi_m->sp_how,  cfsi_m->sp_off);
    COMPUTE(uregsPrev.x30, uregsHere->x30, cfsi_m->x30_how, cfsi_m->x30_off);
    COMPUTE(uregsPrev.x29, uregsHere->x29, cfsi_m->x29_how, cfsi_m->x29_off);
+#  elif defined(VGA_tilegx)
+   COMPUTE(uregsPrev.pc, uregsHere->pc, cfsi_m->ra_how, cfsi_m->ra_off);
+   COMPUTE(uregsPrev.sp, uregsHere->sp, cfsi_m->sp_how, cfsi_m->sp_off);
+   COMPUTE(uregsPrev.fp, uregsHere->fp, cfsi_m->fp_how, cfsi_m->fp_off);
 #  else
 #    error "Unknown arch"
 #  endif

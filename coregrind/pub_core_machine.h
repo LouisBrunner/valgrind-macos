@@ -108,6 +108,14 @@
 #  define VG_ELF_MACHINE      EM_MIPS
 #  define VG_ELF_CLASS        ELFCLASS64
 #  undef  VG_PLAT_USES_PPCTOC
+#elif defined(VGP_tilegx_linux)
+#  define VG_ELF_DATA2XXX     ELFDATA2LSB
+   #ifndef EM_TILEGX
+   #define EM_TILEGX 191
+   #endif
+#  define VG_ELF_MACHINE      EM_TILEGX
+#  define VG_ELF_CLASS        ELFCLASS64
+#  undef  VG_PLAT_USES_PPCTOC
 #else
 #  error Unknown platform
 #endif
@@ -149,6 +157,10 @@
 #  define VG_INSTR_PTR        guest_PC
 #  define VG_STACK_PTR        guest_r29
 #  define VG_FRAME_PTR        guest_r30
+#elif defined(VGA_tilegx)
+#  define VG_INSTR_PTR        guest_pc
+#  define VG_STACK_PTR        guest_r54
+#  define VG_FRAME_PTR        guest_r52
 #else
 #  error Unknown arch
 #endif

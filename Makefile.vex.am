@@ -26,6 +26,7 @@ pkginclude_HEADERS = \
 	pub/libvex_guest_s390x.h \
 	pub/libvex_guest_mips32.h \
 	pub/libvex_guest_mips64.h \
+	pub/libvex_guest_tilegx.h \
 	pub/libvex_s390x_common.h \
 	pub/libvex_ir.h \
 	pub/libvex_trc_values.h
@@ -44,6 +45,7 @@ noinst_HEADERS = \
 	priv/guest_arm64_defs.h \
 	priv/guest_s390_defs.h \
 	priv/guest_mips_defs.h \
+	priv/guest_tilegx_defs.h \
 	priv/host_generic_regs.h \
 	priv/host_generic_simd64.h \
 	priv/host_generic_simd128.h \
@@ -57,7 +59,8 @@ noinst_HEADERS = \
 	priv/host_s390_defs.h \
 	priv/s390_disasm.h \
 	priv/s390_defs.h \
-	priv/host_mips_defs.h
+	priv/host_mips_defs.h \
+	priv/tilegx_disasm.h
 
 BUILT_SOURCES = pub/libvex_guest_offsets.h
 CLEANFILES    = pub/libvex_guest_offsets.h
@@ -82,7 +85,8 @@ pub/libvex_guest_offsets.h: auxprogs/genoffsets.c \
 			    pub/libvex_guest_arm64.h \
 			    pub/libvex_guest_s390x.h \
 			    pub/libvex_guest_mips32.h \
-			    pub/libvex_guest_mips64.h
+			    pub/libvex_guest_mips64.h \
+			    pub/libvex_guest_tilegx.h
 	rm -f auxprogs/genoffsets.s
 	$(mkdir_p) auxprogs pub
 	$(CC) $(CFLAGS_FOR_GENOFFSETS) \
@@ -137,6 +141,8 @@ LIBVEX_SOURCES_COMMON = \
 	priv/guest_s390_toIR.c \
 	priv/guest_mips_helpers.c \
 	priv/guest_mips_toIR.c \
+	priv/guest_tilegx_helpers.c \
+	priv/guest_tilegx_toIR.c \
 	priv/host_generic_regs.c \
 	priv/host_generic_simd64.c \
 	priv/host_generic_simd128.c \
@@ -157,7 +163,10 @@ LIBVEX_SOURCES_COMMON = \
 	priv/host_s390_isel.c \
 	priv/s390_disasm.c \
 	priv/host_mips_defs.c \
-	priv/host_mips_isel.c
+	priv/host_mips_isel.c \
+	priv/host_tilegx_defs.c \
+	priv/host_tilegx_isel.c \
+	priv/tilegx_disasm.c
 
 LIBVEXMULTIARCH_SOURCES = priv/multiarch_main_main.c
 

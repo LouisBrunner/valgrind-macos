@@ -48,6 +48,11 @@
 #define MC_SIZEOF_GUEST_STATE  sizeof(VexGuestArchState)
 
 __attribute__((unused))
+#if defined(VGA_tilegx)
+# include "libvex_guest_tilegx.h"
+# define MC_SIZEOF_GUEST_STATE sizeof(VexGuestTILEGXState)
+#endif
+
 static inline Bool host_is_big_endian ( void ) {
    UInt x = 0x11223344;
    return 0x1122 == *(UShort*)(&x);
@@ -1229,6 +1234,38 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
 #  undef GOF
 #  undef SZB
 
+   /* --------------------- tilegx --------------------- */
+#  elif defined(VGA_tilegx)
+
+#  define GOF(_fieldname) \
+      (offsetof(VexGuestTILEGXState,guest_##_fieldname))
+#  define SZB(_fieldname) \
+      (sizeof(((VexGuestTILEGXState*)0)->guest_##_fieldname))
+
+   Int  o     = offset;
+   Int  sz    = szB;
+   Bool is1248 = sz == 8 || sz == 4 || sz == 2 || sz == 1;
+
+   tl_assert(sz > 0);
+   tl_assert(host_is_little_endian());
+
+   if (o >= GOF(r0) && is1248 && o <= (GOF(r63) + 8 - sz))
+      return GOF(r0) + ((o-GOF(r0)) & -8) ;
+
+   if (o == GOF(pc)  && sz == 8) return o;
+   if (o == GOF(EMNOTE)  && sz == 8) return o;
+   if (o == GOF(CMSTART)  && sz == 8) return o;
+   if (o == GOF(CMLEN)  && sz == 8) return o;
+   if (o == GOF(NRADDR)  && sz == 8) return o;
+   if (o == GOF(cmpexch) && sz == 8) return o;
+   if (o == GOF(zero)  && sz == 8) return o;
+
+   VG_(printf)("MC_(get_otrack_shadow_offset)(tilegx)(off=%d,sz=%d)\n",
+               offset,szB);
+   tl_assert(0);
+#  undef GOF
+#  undef SZB
+
 #  else
 #    error "FIXME: not implemented for this architecture"
 #  endif
@@ -1343,6 +1380,14 @@ IRType MC_(get_otrack_reg_array_equiv_int_type) ( IRRegArray* arr )
    ppIRRegArray(arr);
    VG_(printf)("\n");
    tl_assert(0);
+
+   /* --------------------- tilegx --------------------- */
+#  elif defined(VGA_tilegx)
+   VG_(printf)("get_reg_array_equiv_int_type(tilegx): unhandled: ");
+   ppIRRegArray(arr);
+   VG_(printf)("\n");
+   tl_assert(0);
+
 #  else
 #    error "FIXME: not implemented for this architecture"
 #  endif

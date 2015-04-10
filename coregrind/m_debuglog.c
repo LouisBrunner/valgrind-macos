@@ -508,6 +508,51 @@ static UInt local_sys_getpid ( void )
       : "$2" );
    return (UInt)(__res);
 }
+#elif defined(VGP_tilegx_linux)
+static UInt local_sys_write_stderr ( const HChar* buf, Int n )
+{
+   volatile Long block[2];
+   block[0] = (Long)buf;
+   block[1] = n;
+   ULong __res = 0;
+   __asm__ volatile (
+      "movei  r0,  2    \n\t"    /* stderr */
+      "move   r1,  %1   \n\t"    /* buf */
+      "move   r2,  %2   \n\t"    /* n */
+      "move   r3,  zero \n\t"
+      "moveli r10, %3   \n\t"    /* set r10 = __NR_write */
+      "swint1           \n\t"    /* write() */
+      "nop              \n\t"
+      "move   %0, r0    \n\t"    /* save return into block[0] */
+      : "=r"(__res)
+      : "r" (block[0]), "r"(block[1]), "n" (__NR_write)
+      : "r0", "r1", "r2", "r3", "r4", "r5");
+   if (__res < 0)
+      __res = -1;
+   return (UInt)__res;
+}
+
+static UInt local_sys_getpid ( void )
+{
+   UInt __res, __err;
+   __res = 0;
+   __err = 0;
+   __asm__ volatile (
+      "moveli r10, %2\n\t"    /* set r10 = __NR_getpid */
+      "swint1\n\t"            /* getpid() */
+      "nop\n\t"
+      "move  %0, r0\n"
+      "move  %1, r1\n"
+      : "=r" (__res), "=r"(__err)
+      : "n" (__NR_getpid)
+      : "r0", "r1", "r2", "r3", "r4",
+        "r5", "r6", "r7", "r8", "r9",
+        "r10", "r11", "r12", "r13", "r14",
+        "r15", "r16", "r17", "r18", "r19",
+        "r20", "r21", "r22", "r23", "r24",
+        "r25", "r26", "r27", "r28", "r29");
+  return __res;
+}
 
 #else
 # error Unknown platform

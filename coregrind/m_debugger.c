@@ -386,6 +386,69 @@ static Int ptrace_setregs(Int pid, const VexGuestArchState* vex)
    regs.MIPS_r31     = vex->guest_r31;
    return VG_(ptrace)(VKI_PTRACE_SETREGS, pid, NULL, &regs);
 
+#elif defined(VGP_tilegx_linux)
+   struct vki_user_regs_struct regs;
+   VG_(memset)(&regs, 0, sizeof(regs));
+   regs.TILEGX_r0     = vex->guest_r0;
+   regs.TILEGX_r1     = vex->guest_r1;
+   regs.TILEGX_r2     = vex->guest_r2;
+   regs.TILEGX_r3     = vex->guest_r3;
+   regs.TILEGX_r4     = vex->guest_r4;
+   regs.TILEGX_r5     = vex->guest_r5;
+   regs.TILEGX_r6     = vex->guest_r6;
+   regs.TILEGX_r7     = vex->guest_r7;
+   regs.TILEGX_r8     = vex->guest_r8;
+   regs.TILEGX_r9     = vex->guest_r9;
+   regs.TILEGX_r10     = vex->guest_r10;
+   regs.TILEGX_r11     = vex->guest_r11;
+   regs.TILEGX_r12     = vex->guest_r12;
+   regs.TILEGX_r13     = vex->guest_r13;
+   regs.TILEGX_r14     = vex->guest_r14;
+   regs.TILEGX_r15     = vex->guest_r15;
+   regs.TILEGX_r16     = vex->guest_r16;
+   regs.TILEGX_r17     = vex->guest_r17;
+   regs.TILEGX_r18     = vex->guest_r18;
+   regs.TILEGX_r19     = vex->guest_r19;
+   regs.TILEGX_r20     = vex->guest_r20;
+   regs.TILEGX_r21     = vex->guest_r21;
+   regs.TILEGX_r22     = vex->guest_r22;
+   regs.TILEGX_r23     = vex->guest_r23;
+   regs.TILEGX_r24     = vex->guest_r24;
+   regs.TILEGX_r25     = vex->guest_r25;
+   regs.TILEGX_r26     = vex->guest_r26;
+   regs.TILEGX_r27     = vex->guest_r27;
+   regs.TILEGX_r28     = vex->guest_r28;
+   regs.TILEGX_r29     = vex->guest_r29;
+   regs.TILEGX_r30     = vex->guest_r30;
+   regs.TILEGX_r31     = vex->guest_r31;
+   regs.TILEGX_r32     = vex->guest_r32;
+   regs.TILEGX_r33     = vex->guest_r33;
+   regs.TILEGX_r34     = vex->guest_r34;
+   regs.TILEGX_r35     = vex->guest_r35;
+   regs.TILEGX_r36     = vex->guest_r36;
+   regs.TILEGX_r37     = vex->guest_r37;
+   regs.TILEGX_r38     = vex->guest_r38;
+   regs.TILEGX_r39     = vex->guest_r39;
+   regs.TILEGX_r40     = vex->guest_r40;
+   regs.TILEGX_r41     = vex->guest_r41;
+   regs.TILEGX_r42     = vex->guest_r42;
+   regs.TILEGX_r43     = vex->guest_r43;
+   regs.TILEGX_r44     = vex->guest_r44;
+   regs.TILEGX_r45     = vex->guest_r45;
+   regs.TILEGX_r46     = vex->guest_r46;
+   regs.TILEGX_r47     = vex->guest_r47;
+   regs.TILEGX_r48     = vex->guest_r48;
+   regs.TILEGX_r49     = vex->guest_r49;
+   regs.TILEGX_r50     = vex->guest_r50;
+   regs.TILEGX_r51     = vex->guest_r51;
+   regs.TILEGX_r52     = vex->guest_r52;
+   regs.TILEGX_r53     = vex->guest_r53;
+   regs.TILEGX_r54     = vex->guest_r54;
+   regs.TILEGX_r55     = vex->guest_r55;
+   regs.TILEGX_pc     =  vex->guest_pc;
+
+   return VG_(ptrace)(VKI_PTRACE_SETREGS, pid, NULL, &regs);
+
 #else
 #  error Unknown arch
 #endif

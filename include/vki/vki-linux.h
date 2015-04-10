@@ -97,6 +97,8 @@
 #  include "vki-posixtypes-mips32-linux.h"
 #elif defined(VGA_mips64)
 #  include "vki-posixtypes-mips64-linux.h"
+#elif defined(VGA_tilegx)
+#  include "vki-posixtypes-tilegx-linux.h"
 #else
 #  error Unknown platform
 #endif
@@ -223,6 +225,8 @@ typedef unsigned int	        vki_uint;
 #  include "vki-mips32-linux.h"
 #elif defined(VGA_mips64)
 #  include "vki-mips64-linux.h"
+#elif defined(VGA_tilegx)
+#  include "vki-tilegx-linux.h"
 #else
 #  error Unknown platform
 #endif

@@ -65,6 +65,10 @@
 #define EM_PPC64 21  // ditto
 #endif
 
+#ifndef EM_TILEGX
+#define EM_TILEGX 191
+#endif
+
 /* Report fatal errors */
 __attribute__((noreturn))
 static void barf ( const char *format, ... )
@@ -243,6 +247,10 @@ static const char *select_platform(const char *clientname)
                 (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
                  ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
                platform = "mips64-linux";
+            } else if (ehdr->e_machine == EM_TILEGX &&
+                (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
+                 ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
+               platform = "tilegx-linux";
             } else if (ehdr->e_machine == EM_AARCH64 &&
                 (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
                  ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
@@ -349,6 +357,7 @@ int main(int argc, char** argv, char** envp)
        (0==strcmp(VG_PLATFORM,"arm-linux"))    ||
        (0==strcmp(VG_PLATFORM,"arm64-linux"))  ||
        (0==strcmp(VG_PLATFORM,"s390x-linux"))  ||
+       (0==strcmp(VG_PLATFORM,"tilegx-linux")) ||
        (0==strcmp(VG_PLATFORM,"mips32-linux")) ||
        (0==strcmp(VG_PLATFORM,"mips64-linux")))
       default_platform = VG_PLATFORM;

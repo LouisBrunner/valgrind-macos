@@ -76,6 +76,7 @@ typedef struct {
    unsigned    x86    : 1;
    unsigned    mips32 : 1;
    unsigned    mips64 : 1;
+   unsigned    tilegx : 1;
 } irop_t;
 
 

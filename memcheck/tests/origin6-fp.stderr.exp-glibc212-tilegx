@@ -1,0 +1,76 @@
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: __divdf3 (in /u/zliu/WS1/valgrind/valgrind-latest/memcheck/tests/origin6-fp)
+   by 0x........: do3x3smooth (origin6-fp.c:47)
+   by 0x........: main (origin6-fp.c:89)
+ Uninitialised value was created by a client request
+   at 0x........: setup_arr (origin6-fp.c:75)
+   by 0x........: main (origin6-fp.c:87)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: __divdf3 (in /u/zliu/WS1/valgrind/valgrind-latest/memcheck/tests/origin6-fp)
+   by 0x........: do3x3smooth (origin6-fp.c:47)
+   by 0x........: main (origin6-fp.c:89)
+ Uninitialised value was created by a client request
+   at 0x........: setup_arr (origin6-fp.c:75)
+   by 0x........: main (origin6-fp.c:87)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: __divdf3 (in /u/zliu/WS1/valgrind/valgrind-latest/memcheck/tests/origin6-fp)
+   by 0x........: do3x3smooth (origin6-fp.c:47)
+   by 0x........: main (origin6-fp.c:89)
+ Uninitialised value was created by a client request
+   at 0x........: setup_arr (origin6-fp.c:75)
+   by 0x........: main (origin6-fp.c:87)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: __float_estimateDiv128To64 (in /u/zliu/WS1/valgrind/valgrind-latest/memcheck/tests/origin6-fp)
+   by 0x........: __divdf3 (in /u/zliu/WS1/valgrind/valgrind-latest/memcheck/tests/origin6-fp)
+   by 0x........: do3x3smooth (origin6-fp.c:47)
+   by 0x........: main (origin6-fp.c:89)
+ Uninitialised value was created by a client request
+   at 0x........: setup_arr (origin6-fp.c:75)
+   by 0x........: main (origin6-fp.c:87)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: __float_estimateDiv128To64 (in /u/zliu/WS1/valgrind/valgrind-latest/memcheck/tests/origin6-fp)
+   by 0x........: __divdf3 (in /u/zliu/WS1/valgrind/valgrind-latest/memcheck/tests/origin6-fp)
+   by 0x........: do3x3smooth (origin6-fp.c:47)
+   by 0x........: main (origin6-fp.c:89)
+ Uninitialised value was created by a client request
+   at 0x........: setup_arr (origin6-fp.c:75)
+   by 0x........: main (origin6-fp.c:87)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: __float_estimateDiv128To64 (in /u/zliu/WS1/valgrind/valgrind-latest/memcheck/tests/origin6-fp)
+   by 0x........: __divdf3 (in /u/zliu/WS1/valgrind/valgrind-latest/memcheck/tests/origin6-fp)
+   by 0x........: do3x3smooth (origin6-fp.c:47)
+   by 0x........: main (origin6-fp.c:89)
+ Uninitialised value was created by a client request
+   at 0x........: setup_arr (origin6-fp.c:75)
+   by 0x........: main (origin6-fp.c:87)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: __float_estimateDiv128To64 (in /u/zliu/WS1/valgrind/valgrind-latest/memcheck/tests/origin6-fp)
+   by 0x........: __divdf3 (in /u/zliu/WS1/valgrind/valgrind-latest/memcheck/tests/origin6-fp)
+   by 0x........: do3x3smooth (origin6-fp.c:47)
+   by 0x........: main (origin6-fp.c:89)
+ Uninitialised value was created by a client request
+   at 0x........: setup_arr (origin6-fp.c:75)
+   by 0x........: main (origin6-fp.c:87)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: __divdf3 (in /u/zliu/WS1/valgrind/valgrind-latest/memcheck/tests/origin6-fp)
+   by 0x........: do3x3smooth (origin6-fp.c:47)
+   by 0x........: main (origin6-fp.c:89)
+ Uninitialised value was created by a client request
+   at 0x........: setup_arr (origin6-fp.c:75)
+   by 0x........: main (origin6-fp.c:87)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: __float_roundAndPackFloat64 (in /u/zliu/WS1/valgrind/valgrind-latest/memcheck/tests/origin6-fp)
+   by 0x........: main (origin6-fp.c:89)
+ Uninitialised value was created by a client request
+   at 0x........: setup_arr (origin6-fp.c:75)
+   by 0x........: main (origin6-fp.c:87)
+
+Test succeeded.

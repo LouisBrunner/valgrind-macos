@@ -1329,10 +1329,81 @@ VG_(trampoline_stuff_end):
 #	undef UD2_1024
 #	undef UD2_PAGE
 
+#else
+#if defined(VGP_tilegx_linux)
+
+#	define UD2_16     ill ; ill
+#	define UD2_64     UD2_16   ; UD2_16   ; UD2_16   ; UD2_16
+#	define UD2_256    UD2_64   ; UD2_64   ; UD2_64   ; UD2_64
+#	define UD2_1024   UD2_256  ; UD2_256  ; UD2_256  ; UD2_256
+#	define UD2_4K     UD2_1024 ; UD2_1024 ; UD2_1024 ; UD2_1024
+#	define UD2_16K    UD2_4K   ; UD2_4K   ; UD2_4K   ; UD2_4K
+#	define UD2_PAGE   UD2_16K  ; UD2_16K  ; UD2_16K  ; UD2_16K
+	/* a leading page of unexecutable code */
+	UD2_PAGE
+
+.global VG_(trampoline_stuff_start)
+VG_(trampoline_stuff_start):
+
+.global VG_(tilegx_linux_SUBST_FOR_rt_sigreturn)
+VG_(tilegx_linux_SUBST_FOR_rt_sigreturn):
+        /* This is a very specific sequence which GDB uses to
+           recognize signal handler frames. */
+        moveli  r10, __NR_rt_sigreturn
+        swint1
+        ill
+
+.global VG_(tilegx_linux_REDIR_FOR_vgettimeofday)
+.type   VG_(tilegx_linux_REDIR_FOR_vgettimeofday), @function
+VG_(tilegx_linux_REDIR_FOR_vgettimeofday):
+        moveli  r10, __NR_gettimeofday
+        swint1
+        jrp lr
+.size VG_(tilegx_linux_REDIR_FOR_vgettimeofday), .-VG_(tilegx_linux_REDIR_FOR_vgettimeofday)
+	
+.global VG_(tilegx_linux_REDIR_FOR_vtime)
+.type   VG_(tilegx_linux_REDIR_FOR_vtime), @function
+VG_(tilegx_linux_REDIR_FOR_vtime):
+        moveli  r10, __NR_gettimeofday
+        swint1
+        jrp lr
+.size VG_(tilegx_linux_REDIR_FOR_vtime), .-VG_(tilegx_linux_REDIR_FOR_vtime)
+
+.global VG_(tilegx_linux_REDIR_FOR_strlen)
+.type   VG_(tilegx_linux_REDIR_FOR_strlen), @function
+VG_(tilegx_linux_REDIR_FOR_strlen):
+        {
+         movei   r1, 0
+         beqz    r0, 2f
+        }
+1:      {
+         addi     r1, r1, 1
+         ld1s_add r2, r0, 1
+        }
+        bnezt   r2, 1b
+        addi    r1, r1, -1
+2:      move    r0, r1
+        jrp     lr
+.size VG_(tilegx_linux_REDIR_FOR_strlen), .-VG_(tilegx_linux_REDIR_FOR_strlen)
+
+.global VG_(trampoline_stuff_end)
+VG_(trampoline_stuff_end):
+
+	/* and a trailing page of unexecutable code */
+	UD2_PAGE
+
+#	undef UD2_16
+#	undef UD2_64
+#	undef UD2_256
+#	undef UD2_1024
+#	undef UD2_4K
+#	undef UD2_16K
+#	undef UD2_PAGE
 /*---------------- unknown ----------------*/
 #else
 #  error Unknown platform
 
+#endif
 #endif
 #endif
 #endif

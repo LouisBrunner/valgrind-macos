@@ -1491,6 +1491,15 @@ void VG_(redir_initialise) ( void )
       );
    }
 
+#  elif defined(VGP_tilegx_linux)
+   if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
+
+      add_hardwired_spec(
+         "ld.so.1", "strlen",
+         (Addr)&VG_(tilegx_linux_REDIR_FOR_strlen), NULL
+      );
+   }
+
 #  else
 #    error Unknown platform
 #  endif

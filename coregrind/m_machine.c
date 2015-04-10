@@ -127,6 +127,13 @@ void VG_(get_UnwindStartRegs) ( /*OUT*/UnwindStartRegs* regs,
       = VG_(threads)[tid].arch.vex.guest_r31;
    regs->misc.MIPS64.r28
       = VG_(threads)[tid].arch.vex.guest_r28;
+#  elif defined(VGA_tilegx)
+   regs->r_pc = VG_(threads)[tid].arch.vex.guest_pc;
+   regs->r_sp = VG_(threads)[tid].arch.vex.guest_r54;
+   regs->misc.TILEGX.r52
+      = VG_(threads)[tid].arch.vex.guest_r52;
+   regs->misc.TILEGX.r55
+      = VG_(threads)[tid].arch.vex.guest_r55;
 #  else
 #    error "Unknown arch"
 #  endif
@@ -344,6 +351,63 @@ static void apply_to_GPs_of_tid(ThreadId tid, void (*f)(ThreadId,
    (*f)(tid, "x28", vex->guest_X28);
    (*f)(tid, "x29", vex->guest_X29);
    (*f)(tid, "x30", vex->guest_X30);
+#elif defined(VGA_tilegx)
+   (*f)(tid, "r0",  vex->guest_r0 );
+   (*f)(tid, "r1",  vex->guest_r1 );
+   (*f)(tid, "r2",  vex->guest_r2 );
+   (*f)(tid, "r3",  vex->guest_r3 );
+   (*f)(tid, "r4",  vex->guest_r4 );
+   (*f)(tid, "r5",  vex->guest_r5 );
+   (*f)(tid, "r6",  vex->guest_r6 );
+   (*f)(tid, "r7",  vex->guest_r7 );
+   (*f)(tid, "r8",  vex->guest_r8 );
+   (*f)(tid, "r9",  vex->guest_r9 );
+   (*f)(tid, "r10", vex->guest_r10);
+   (*f)(tid, "r11", vex->guest_r11);
+   (*f)(tid, "r12", vex->guest_r12);
+   (*f)(tid, "r13", vex->guest_r13);
+   (*f)(tid, "r14", vex->guest_r14);
+   (*f)(tid, "r15", vex->guest_r15);
+   (*f)(tid, "r16", vex->guest_r16);
+   (*f)(tid, "r17", vex->guest_r17);
+   (*f)(tid, "r18", vex->guest_r18);
+   (*f)(tid, "r19", vex->guest_r19);
+   (*f)(tid, "r20", vex->guest_r20);
+   (*f)(tid, "r21", vex->guest_r21);
+   (*f)(tid, "r22", vex->guest_r22);
+   (*f)(tid, "r23", vex->guest_r23);
+   (*f)(tid, "r24", vex->guest_r24);
+   (*f)(tid, "r25", vex->guest_r25);
+   (*f)(tid, "r26", vex->guest_r26);
+   (*f)(tid, "r27", vex->guest_r27);
+   (*f)(tid, "r28", vex->guest_r28);
+   (*f)(tid, "r29", vex->guest_r29);
+   (*f)(tid, "r30", vex->guest_r30);
+   (*f)(tid, "r31", vex->guest_r31);
+   (*f)(tid, "r32", vex->guest_r32);
+   (*f)(tid, "r33", vex->guest_r33);
+   (*f)(tid, "r34", vex->guest_r34);
+   (*f)(tid, "r35", vex->guest_r35);
+   (*f)(tid, "r36", vex->guest_r36);
+   (*f)(tid, "r37", vex->guest_r37);
+   (*f)(tid, "r38", vex->guest_r38);
+   (*f)(tid, "r39", vex->guest_r39);
+   (*f)(tid, "r40", vex->guest_r40);
+   (*f)(tid, "r41", vex->guest_r41);
+   (*f)(tid, "r42", vex->guest_r42);
+   (*f)(tid, "r43", vex->guest_r43);
+   (*f)(tid, "r44", vex->guest_r44);
+   (*f)(tid, "r45", vex->guest_r45);
+   (*f)(tid, "r46", vex->guest_r46);
+   (*f)(tid, "r47", vex->guest_r47);
+   (*f)(tid, "r48", vex->guest_r48);
+   (*f)(tid, "r49", vex->guest_r49);
+   (*f)(tid, "r50", vex->guest_r50);
+   (*f)(tid, "r51", vex->guest_r51);
+   (*f)(tid, "r52", vex->guest_r52);
+   (*f)(tid, "r53", vex->guest_r53);
+   (*f)(tid, "r54", vex->guest_r54);
+   (*f)(tid, "r55", vex->guest_r55);
 #else
 #  error Unknown arch
 #endif
@@ -1615,6 +1679,17 @@ Bool VG_(machine_get_hwcaps)( void )
      return True;
    }
 
+#elif defined(VGA_tilegx)
+   {
+     va = VexArchTILEGX;
+     vai.hwcaps = VEX_HWCAPS_TILEGX_BASE;
+     vai.endness = VexEndnessLE;
+
+     VG_(machine_get_cache_info)(&vai);
+
+     return True;
+   }
+
 #else
 #  error "Unknown arch"
 #endif
@@ -1748,6 +1823,9 @@ Int VG_(machine_get_size_of_largest_guest_register) ( void )
 #  elif defined(VGA_mips64)
    return 8;
 
+#  elif defined(VGA_tilegx)
+   return 8;
+
 #  else
 #    error "Unknown arch"
 #  endif
@@ -1762,7 +1840,8 @@ void* VG_(fnptr_to_fnentry)( void* f )
       || defined(VGP_arm_linux) || defined(VGO_darwin)          \
       || defined(VGP_ppc32_linux) || defined(VGP_ppc64le_linux) \
       || defined(VGP_s390x_linux) || defined(VGP_mips32_linux) \
-      || defined(VGP_mips64_linux) || defined(VGP_arm64_linux)
+      || defined(VGP_mips64_linux) || defined(VGP_arm64_linux) \
+      || defined(VGP_tilegx_linux)
    return f;
 #  elif defined(VGP_ppc64be_linux)
    /* ppc64-linux uses the AIX scheme, in which f is a pointer to a

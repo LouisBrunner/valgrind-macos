@@ -63,6 +63,9 @@
 #elif defined(VGP_x86_darwin) || defined(VGP_amd64_darwin)
 #  include "vki/vki-scnums-darwin.h"
 
+#elif defined(VGP_tilegx_linux)
+#  include "vki/vki-scnums-tilegx-linux.h"
+
 #else
 #  error Unknown platform
 #endif

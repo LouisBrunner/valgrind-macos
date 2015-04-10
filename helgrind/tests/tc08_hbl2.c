@@ -33,6 +33,7 @@
 #undef PLAT_s390x_linux
 #undef PLAT_mips32_linux
 #undef PLAT_mips64_linux
+#undef PLAT_tilegx_linux
 
 #if defined(__APPLE__) && defined(__i386__)
 #  define PLAT_x86_darwin 1
@@ -58,6 +59,8 @@
 #else
 #  define PLAT_mips32_linux 1
 #endif
+#elif defined(__linux__) && defined(__tilegx__)
+#  define PLAT_tilegx_linux 1
 #endif
 
 
@@ -123,6 +126,12 @@
       : /*out*/ : /*in*/ "r"(&(_lval))              \
       : /*trash*/ "t0", "t1", "memory"              \
         )
+#elif defined(PLAT_tilegx_linux)
+#  define INC(_lval,_lqual)                     \
+  if (sizeof(_lval) == 4)                       \
+    __insn_fetchadd(&(_lval), 1);               \
+  else if(sizeof(_lval) == 8)                   \
+    __insn_fetchadd(&(_lval), 1)
 #else
 #  error "Fix Me for this platform"
 #endif

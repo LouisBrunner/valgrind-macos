@@ -8,7 +8,7 @@ avoid having to endlessly re-look up this info in ABI documents.
 x86-linux
 ~~~~~~~~~
 
-Reg        Callee      Arg   
+Reg        Callee      Arg
 Name       Saves?      Reg?     Comment              Vex-uses?
 --------------------------------------------------------------
 eax        n           n        int[31:0] retreg     y
@@ -31,7 +31,7 @@ registers are EAX, EDX, and ECX respectively.
 amd64-linux
 ~~~~~~~~~~~
 
-Reg        Callee      Arg    
+Reg        Callee      Arg
 Name       Saves?      Reg?     Comment              Vex-uses?
 -------------------------------------------------------------------
 rax        n           n        int[63:0] retreg
@@ -58,7 +58,7 @@ fs                              thread ptr
 ppc32-linux
 ~~~~~~~~~~~
 
-Reg        Callee      Arg    
+Reg        Callee      Arg
 Name       Saves?      Reg?     Comment              Vex-uses?
 -------------------------------------------------------------------
 r0         n           n        sometimes RAZ
@@ -95,7 +95,7 @@ fpscr
 
 ppc64-linux
 ~~~~~~~~~~~
-Reg        Callee      Arg    
+Reg        Callee      Arg
 Name       Saves?      Reg?     Comment              Vex-uses?
 -------------------------------------------------------------------
 r13        n           n        thread ptr
@@ -142,7 +142,7 @@ Name       Saves?     Reg?       Comment              Vex-uses?
 ---------------------------------------------------------------
 r0                    int#0      ret#0 (??)
 r1                    int#1      ret#1 (??)
-r2-7                  int#2..7 
+r2-7                  int#2..7
 r8                              "Indirect res loc reg" ProfInc scratch
 r9                              "Temporary regs"      chaining scratch
 r10-15                          "Temporary regs"      avail
@@ -214,7 +214,7 @@ selection when register pairs are required.
 ppc32-aix5
 ~~~~~~~~~~
 
-Reg        Callee      Arg    
+Reg        Callee      Arg
 Name       Saves?      Reg?     Comment              Vex-uses?
 -------------------------------------------------------------------
 r0         n           n        sometimes RAZ
@@ -237,7 +237,7 @@ r30        y                                altivec spill temporary
 r31        y                                         & guest state
 f0         n
 f1         n           fp#1     fp retreg
-f2-13      n           fp#2-13  
+f2-13      n           fp#2-13
 f14-31     y                                         y (14-21)
 v0-v19     ?
 v20-31     y                                         y (20-27,29)
@@ -246,3 +246,68 @@ lr         y                    return address
 ctr        n
 xer        n
 fpscr
+
+
+TileGx-linux
+~~~~~~~~~~~~
+
+Reg       Callee     Arg
+Name      Saves?     Reg?        Comment             Vex-uses?
+---------------------------------------------------------------------
+r0        n          int#1
+r1        n          int#2
+r2        n          int#3
+r3        n          int#4
+r4        n          int#5
+r5        n          int#6
+r6        n          int#7
+r7        n          int#8
+r8        n          int#9
+r9        n          int#10
+r10       n                      syscall#            y
+r11       n                                          Next Guest State
+r12       n                                          y
+r13       n                                          y
+r14       n                                          y
+r15       n                                          y
+r16       n                                          y
+r17       n                                          y
+r18       n                                          y
+r19       n                                          y
+r20       n                                          y
+r21       n                                          y
+r22       n                                          y
+r23       n                                          y
+r24       n                                          y
+r25       n                                          y
+r26       n                                          y
+r27       n                                          y
+r28       n                                          y
+r29       n                                          y
+r30       y                                          y
+r31       y                                          y
+r32       y                                          y
+r33       y                                          y
+r34       y                                          y
+r35       y                                          y
+r36       y                                          y
+r37       y                                          y
+r38       y                                          y
+r39       y                                          y
+r40       y                                          y
+r41       y                                          y
+r42       y                                          y
+r43       y                                          y
+r44       y                                          y
+r45       y                                          y
+r46       y                                          y
+r47       y                                          y
+r48       y                                          y
+r49       y                                          y
+r50       y                                          Guest State
+r51       y                                          used for memory Load/Store
+r52       y                      frame
+r53       y                      tls
+r54       y                      stock
+r55       y                      return address
+r63       n                      zero

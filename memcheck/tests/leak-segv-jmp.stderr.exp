@@ -14,8 +14,8 @@ To see them, rerun with: --leak-check=full --show-leak-kinds=all
 expecting a leak
 1,000 bytes in 1 blocks are definitely lost in loss record ... of ...
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: f (leak-segv-jmp.c:199)
-   by 0x........: main (leak-segv-jmp.c:262)
+   by 0x........: f (leak-segv-jmp.c:223)
+   by 0x........: main (leak-segv-jmp.c:286)
 
 LEAK SUMMARY:
    definitely lost: 1,000 bytes in 1 blocks
@@ -30,8 +30,8 @@ mprotect result 0
 expecting a leak again
 1,000 bytes in 1 blocks are definitely lost in loss record ... of ...
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: f (leak-segv-jmp.c:199)
-   by 0x........: main (leak-segv-jmp.c:262)
+   by 0x........: f (leak-segv-jmp.c:223)
+   by 0x........: main (leak-segv-jmp.c:286)
 
 LEAK SUMMARY:
    definitely lost: 1,000 bytes in 1 blocks
@@ -46,8 +46,8 @@ full mprotect result 0
 expecting a leak again after full mprotect
 1,000 bytes in 1 blocks are definitely lost in loss record ... of ...
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: f (leak-segv-jmp.c:199)
-   by 0x........: main (leak-segv-jmp.c:262)
+   by 0x........: f (leak-segv-jmp.c:223)
+   by 0x........: main (leak-segv-jmp.c:286)
 
 LEAK SUMMARY:
    definitely lost: 1,000 bytes in 1 blocks

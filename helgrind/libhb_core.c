@@ -4491,7 +4491,7 @@ static void event_map__check_reference_counts ( Bool before )
 }
 
 __attribute__((noinline))
-static void event_map_maybe_GC ( void )
+static void event_map_GC ( void )
 {
    OldRef* oldref;
    UWord   keyW, valW, retained, maxGen;
@@ -4501,9 +4501,6 @@ static void event_map_maybe_GC ( void )
    UWord* genMap      = NULL;
    UWord  genMap_min  = 0;
    UWord  genMap_size = 0;
-
-   if (LIKELY(oldrefTreeN < HG_(clo_conflict_cache_size)))
-      return;
 
    if (0)
       VG_(printf)("libhb: event_map GC at size %lu\n", oldrefTreeN);
@@ -6585,7 +6582,9 @@ void libhb_copy_shadow_state ( Thr* thr, Addr src, Addr dst, SizeT len )
 
 void libhb_maybe_GC ( void )
 {
-   event_map_maybe_GC();
+   if (UNLIKELY(oldrefTreeN >= HG_(clo_conflict_cache_size)))
+      event_map_GC();
+
    /* If there are still freelist entries available, no need for a
       GC. */
    if (vts_tab_freelist != VtsID_INVALID)

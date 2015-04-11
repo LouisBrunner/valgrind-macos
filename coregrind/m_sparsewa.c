@@ -274,7 +274,7 @@ void VG_(deleteSWA) ( SparseWA* swa )
 
 
 Bool VG_(lookupSWA) ( const SparseWA* swa,
-                      /*OUT*/UWord* keyP, /*OUT*/UWord* valP,
+                      /*OUT*/UWord* valP,
                       UWord key )
 {
    Int     i;
@@ -302,7 +302,6 @@ Bool VG_(lookupSWA) ( const SparseWA* swa,
    vg_assert(level0->nInUse > 0);
    ix = key & 0xFF;
    if (swa_bitarray_read(level0->inUse, ix) == 0) return False;
-   *keyP = key; /* this is stupid.  only here to make it look like WordFM */
    *valP = level0->words[ix];
    return True;
 }
@@ -366,7 +365,7 @@ Bool VG_(addToSWA) ( SparseWA* swa, UWord key, UWord val )
 
 
 Bool VG_(delFromSWA) ( SparseWA* swa,
-                       /*OUT*/UWord* oldK, /*OUT*/UWord* oldV, UWord key )
+                       /*OUT*/UWord* oldV, UWord key )
 {
    Int     i;
    UWord   ix;
@@ -403,7 +402,6 @@ Bool VG_(delFromSWA) ( SparseWA* swa,
    if (swa_bitarray_read_then_clear(level0->inUse, ix) == 0)
       return False;
 
-   *oldK = key; /* this is silly */
    *oldV = level0->words[ix];
 
    level0->nInUse--;

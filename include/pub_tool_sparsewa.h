@@ -63,21 +63,17 @@ void VG_(deleteSWA) ( SparseWA* swa );
 // overwritten.  Returned Bool is True iff a previous binding existed.
 Bool VG_(addToSWA) ( SparseWA* swa, UWord key, UWord val );
 
-// Delete key from swa, returning associated key and val if found.
-// Note: returning associated key is stupid (it can only be the
-// key you just specified).  This behaviour is retained to make it
-// easier to migrate from WordFM.  Returned Bool is True iff
-// the key was actually bound in the mapping.
+// Delete key from swa, returning val if found.
+// Returned Bool is True iff the key was actually bound in the mapping.
 Bool VG_(delFromSWA) ( SparseWA* swa,
-                       /*OUT*/UWord* oldK, /*OUT*/UWord* oldV,
+                       /*OUT*/UWord* oldV,
                        UWord key );
 
 // Indexes swa at 'key' (or, if you like, looks up 'key' in the
-// mapping), and returns the associated value, if any, in *valP.  For
-// compatibility with WordFM, 'key' is also returned in *keyP.  Returned
-// Bool is True iff a binding for 'key' actually existed.
+// mapping), and returns the associated value, if any, in *valP.
+// Returned Bool is True iff a binding for 'key' actually existed.
 Bool VG_(lookupSWA) ( const SparseWA* swa,
-                      /*OUT*/UWord* keyP, /*OUT*/UWord* valP,
+                      /*OUT*/UWord* valP,
                       UWord key );
 
 // Set up 'swa' for iteration.

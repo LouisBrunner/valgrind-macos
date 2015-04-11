@@ -4149,7 +4149,7 @@ static void event_map_bind ( Addr a, SizeT szB, Bool isW, Thr* thr )
    OldRef* ref;
    RCEC*   rcec;
    Word    i, j;
-   UWord   keyW, valW;
+   UWord   valW;
    Bool    b;
 
    tl_assert(thr);
@@ -4173,14 +4173,13 @@ static void event_map_bind ( Addr a, SizeT szB, Bool isW, Thr* thr )
 
    /* Look in the map to see if we already have a record for this
       address. */
-   b = VG_(lookupSWA)( oldrefTree, &keyW, &valW, a );
+   b = VG_(lookupSWA)( oldrefTree, &valW, a );
 
    if (b) {
 
       /* We already have a record for this address.  We now need to
          see if we have a stack trace pertaining to this (thrid, R/W,
          size) triple. */
-      tl_assert(keyW == a);
       ref = (OldRef*)valW;
       tl_assert(ref->magic == OldRef_MAGIC);
 
@@ -4287,7 +4286,7 @@ Bool libhb_event_map_lookup ( /*OUT*/ExeContext** resEC,
 {
    Word    i, j;
    OldRef* ref;
-   UWord   keyW, valW;
+   UWord   valW;
    Bool    b;
 
    ThrID     cand_thrid;
@@ -4319,12 +4318,11 @@ Bool libhb_event_map_lookup ( /*OUT*/ExeContext** resEC,
       cand_a = toCheck[j];
       //      VG_(printf)("test %ld %p\n", j, cand_a);
 
-      b = VG_(lookupSWA)( oldrefTree, &keyW, &valW, cand_a );
+      b = VG_(lookupSWA)( oldrefTree, &valW, cand_a );
       if (!b)
          continue;
 
       ref = (OldRef*)valW;
-      tl_assert(keyW == cand_a);
       tl_assert(ref->magic == OldRef_MAGIC);
       tl_assert(ref->accs[0].thrid != 0); /* first slot must always be used */
 
@@ -4705,9 +4703,8 @@ static void event_map_GC ( void )
    for (i = 0; i < n2del; i++) {
       Bool  b;
       Addr  ga2del = *(Addr*)VG_(indexXA)( refs2del, i );
-      b = VG_(delFromSWA)( oldrefTree, &keyW, &valW, ga2del );
+      b = VG_(delFromSWA)( oldrefTree, &valW, ga2del );
       tl_assert(b);
-      tl_assert(keyW == ga2del);
       oldref = (OldRef*)valW;
       for (j = 0; j < N_OLDREF_ACCS; j++) {
          ThrID aThrID = oldref->accs[j].thrid;

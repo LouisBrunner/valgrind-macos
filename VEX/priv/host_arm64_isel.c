@@ -3849,6 +3849,12 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
    case Ist_IMark:
        return;
 
+   /* --------- ABI HINT --------- */
+   /* These have no meaning (denotation in the IR) and so we ignore
+      them ... if any actually made it this far. */
+   case Ist_AbiHint:
+       return;
+
    /* --------- NO-OP --------- */
    case Ist_NoOp:
        return;

@@ -2070,7 +2070,18 @@ static UChar *emit32(UChar * p, UInt w32)
    *p++ = toUChar((w32 >> 8) & 0x000000FF);
    *p++ = toUChar((w32 >> 16) & 0x000000FF);
    *p++ = toUChar((w32 >> 24) & 0x000000FF);
-#elif defined (_MIPSEB)
+/* HACK !!!!
+   MIPS endianess is decided at compile time using gcc defined
+   symbols _MIPSEL or _MIPSEB. When compiling libvex in a cross-arch
+   setup, then none of these is defined. We just choose here by default
+   mips Big Endian to allow libvexmultiarch_test to work when using
+   a mips host architecture.
+   A cleaner way would be to either have mips using 'dynamic endness'
+   (like ppc64be or le, decided at runtime) or at least defining
+   by default _MIPSEB when compiling on a non mips system.
+#elif defined (_MIPSEB).
+*/
+#else
    *p++ = toUChar((w32 >> 24) & 0x000000FF);
    *p++ = toUChar((w32 >> 16) & 0x000000FF);
    *p++ = toUChar((w32 >> 8) & 0x000000FF);

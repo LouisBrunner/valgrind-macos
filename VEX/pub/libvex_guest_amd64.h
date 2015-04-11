@@ -124,6 +124,7 @@ typedef
          delicately-balanced PutI/GetI optimisation machinery.
          Therefore best to leave it as a UInt. */
       UInt  guest_FTOP;
+      UInt  pad1;
       ULong guest_FPREG[8];
       UChar guest_FPTAG[8];
       ULong guest_FPROUND;
@@ -131,6 +132,7 @@ typedef
 
       /* Emulation notes */
       UInt  guest_EMNOTE;
+      UInt  pad2;
 
       /* Translation-invalidation area description.  Not used on amd64
          (there is no invalidate-icache insn), but needed so as to
@@ -167,7 +169,7 @@ typedef
       ULong guest_IP_AT_SYSCALL;
 
       /* Padding to make it have an 16-aligned size */
-      ULong pad1;
+      ULong pad3;
    }
    VexGuestAMD64State;
 

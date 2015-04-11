@@ -1,0 +1,4 @@
+vgopts: -q
+prog: libvex_test
+stdout_filter: ../../gdbserver_tests/filter_make_empty
+

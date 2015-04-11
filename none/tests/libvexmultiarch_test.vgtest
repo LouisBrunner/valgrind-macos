@@ -1,0 +1,7 @@
+vgopts: -q
+prog: libvexmultiarch_test
+# below args means:
+#     multiarch endness_may_differ   word_size_may_differ
+args: 1         0                    0
+stdout_filter: ../../gdbserver_tests/filter_make_empty
+

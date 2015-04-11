@@ -109,6 +109,8 @@ EXTRA_DIST = \
 	gxx304.stderr.exp gxx304.vgtest \
 	ifunc.stderr.exp ifunc.stdout.exp ifunc.vgtest \
 	ioctl_moans.stderr.exp ioctl_moans.vgtest \
+	libvex_test.stderr.exp libvex_test.vgtest \
+	libvexmultiarch_test.stderr.exp libvexmultiarch_test.vgtest \
 	manythreads.stdout.exp manythreads.stderr.exp manythreads.vgtest \
 	map_unaligned.stderr.exp map_unaligned.vgtest \
 	map_unmap.stderr.exp map_unmap.stdout.exp map_unmap.vgtest \
@@ -183,6 +185,8 @@ check_PROGRAMS = \
 	fdleak_socketpair \
 	floored fork fucomip \
 	ioctl_moans \
+	libvex_test \
+	libvexmultiarch_test \
 	manythreads \
 	mmap_fcntl_bug \
 	munmap_exe map_unaligned map_unmap mq \
@@ -240,6 +244,11 @@ else
  nestedfns_CFLAGS	= $(AM_CFLAGS)
  mq_LDADD		= -lrt
 endif
+libvex_test_LDADD       = ../../VEX/libvex-@VGCONF_ARCH_PRI@-@VGCONF_OS@.a
+libvexmultiarch_test_LDADD = \
+	../../VEX/libvexmultiarch-@VGCONF_ARCH_PRI@-@VGCONF_OS@.a \
+	../../VEX/libvex-@VGCONF_ARCH_PRI@-@VGCONF_OS@.a
+libvexmultiarch_test_SOURCES = libvex_test.c
 pth_atfork1_LDADD	= -lpthread
 pth_blockedsig_LDADD	= -lpthread
 pth_cancel1_CFLAGS	= $(AM_CFLAGS) -Wno-shadow

@@ -46,15 +46,6 @@
   { offsetof(VexGuestTILEGXState, field),               \
       (sizeof ((VexGuestTILEGXState*)0)->field) }
 
-/* generalised left-shifter */
-static inline UInt lshift ( UInt x, Int n )
-{
-  if (n >= 0)
-    return x << n;
-  else
-    return x >> (-n);
-}
-
 IRExpr *guest_tilegx_spechelper ( const HChar * function_name, IRExpr ** args,
                                   IRStmt ** precedingStmts, Int n_precedingStmts)
 {

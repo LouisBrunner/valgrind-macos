@@ -1,0 +1,5 @@
+# r14974 introduced a bug which cause code to hang due to
+# an infinite signal-delivery loop.
+# Can only be reproduced on an x86 box running a 32-bit kernel.
+prog: hang
+vgopts: -q

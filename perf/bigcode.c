@@ -15,10 +15,12 @@
 #if defined(__mips__)
 #include <asm/cachectl.h>
 #include <sys/syscall.h>
+#elif defined(__tilegx__)
+#include <asm/cachectl.h>
 #endif
 #include "tests/sys_mman.h"
 
-#define FN_SIZE   996      // Must be big enough to hold the compiled f()
+#define FN_SIZE   1024     // Must be big enough to hold the compiled f()
 #define N_LOOPS   20000    // Should be divisible by four
 #define RATIO     4        // Ratio of code sizes between the two modes
 
@@ -71,6 +73,8 @@ int main(int argc, char* argv[])
 
 #if defined(__mips__)
    syscall(__NR_cacheflush, a, FN_SIZE * n_fns, ICACHE);
+#elif defined(__tilegx__)
+   cacheflush(a, FN_SIZE * n_fns, ICACHE);
 #endif
 
    for (h = 0; h < n_reps; h += 1) {

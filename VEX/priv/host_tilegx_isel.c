@@ -480,26 +480,36 @@ static HReg iselWordExpr_R_wrk ( ISelEnv * env, IRExpr * e )
 
     switch (e->Iex.Binop.op) {
 
+    case Iop_Add8:
+    case Iop_Add16:
     case Iop_Add32:
     case Iop_Add64:
       aluOp = GXalu_ADD;
       break;
 
+    case Iop_Sub8:
+    case Iop_Sub16:
     case Iop_Sub32:
     case Iop_Sub64:
       aluOp = GXalu_SUB;
       break;
 
+    case Iop_And8:
+    case Iop_And16:
     case Iop_And32:
     case Iop_And64:
       aluOp = GXalu_AND;
       break;
 
+    case Iop_Or8:
+    case Iop_Or16:
     case Iop_Or32:
     case Iop_Or64:
       aluOp = GXalu_OR;
       break;
 
+    case Iop_Xor8:
+    case Iop_Xor16:
     case Iop_Xor32:
     case Iop_Xor64:
       aluOp = GXalu_XOR;

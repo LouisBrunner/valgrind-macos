@@ -765,8 +765,8 @@ TILEGXInstr *TILEGXInstr_Bf ( TILEGXBfOp op, HReg dst, HReg src,
   return i;
 }
 
-extern TILEGXInstr *TILEGXInstr_Acas ( TILEGXAcasOp op, HReg old,
-                                       HReg addr, HReg exp, HReg new, UInt sz )
+TILEGXInstr *TILEGXInstr_Acas ( TILEGXAcasOp op, HReg old,
+                                HReg addr, HReg exp, HReg new, UInt sz )
 {
   TILEGXInstr *i = LibVEX_Alloc(sizeof(TILEGXInstr));
   i->tag = GXin_Acas;

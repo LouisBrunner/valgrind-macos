@@ -406,7 +406,8 @@
  * starting with this value.
  */
 #define __NR_arch_specific_syscall 244
-#define __NR_set_dataplane 246 
+#define __NR_cacheflush 245
+#define __NR_set_dataplane 246
 #define __NR_wait4 260
 #define __NR_prlimit64 261
 #define __NR_fanotify_init 262

@@ -474,43 +474,44 @@ SysRes sys_set_tls ( ThreadId tid, Addr tlsptr )
    aren't visible outside this file, but that requires even more macro
    magic. */
 
-DECL_TEMPLATE(tilegx_linux, sys_clone);
-DECL_TEMPLATE(tilegx_linux, sys_rt_sigreturn);
-DECL_TEMPLATE(tilegx_linux, sys_socket);
-DECL_TEMPLATE(tilegx_linux, sys_setsockopt);
-DECL_TEMPLATE(tilegx_linux, sys_getsockopt);
-DECL_TEMPLATE(tilegx_linux, sys_connect);
-DECL_TEMPLATE(tilegx_linux, sys_accept);
-DECL_TEMPLATE(tilegx_linux, sys_accept4);
-DECL_TEMPLATE(tilegx_linux, sys_sendto);
-DECL_TEMPLATE(tilegx_linux, sys_recvfrom);
-DECL_TEMPLATE(tilegx_linux, sys_sendmsg);
-DECL_TEMPLATE(tilegx_linux, sys_recvmsg);
-DECL_TEMPLATE(tilegx_linux, sys_shutdown);
-DECL_TEMPLATE(tilegx_linux, sys_bind);
-DECL_TEMPLATE(tilegx_linux, sys_listen);
-DECL_TEMPLATE(tilegx_linux, sys_getsockname);
-DECL_TEMPLATE(tilegx_linux, sys_getpeername);
-DECL_TEMPLATE(tilegx_linux, sys_socketpair);
-DECL_TEMPLATE(tilegx_linux, sys_semget);
-DECL_TEMPLATE(tilegx_linux, sys_semop);
-DECL_TEMPLATE(tilegx_linux, sys_semtimedop);
-DECL_TEMPLATE(tilegx_linux, sys_semctl);
-DECL_TEMPLATE(tilegx_linux, sys_msgget);
-DECL_TEMPLATE(tilegx_linux, sys_msgrcv);
-DECL_TEMPLATE(tilegx_linux, sys_msgsnd);
-DECL_TEMPLATE(tilegx_linux, sys_msgctl);
-DECL_TEMPLATE(tilegx_linux, sys_shmget);
-DECL_TEMPLATE(tilegx_linux, wrap_sys_shmat);
-DECL_TEMPLATE(tilegx_linux, sys_shmdt);
-DECL_TEMPLATE(tilegx_linux, sys_shmdt);
-DECL_TEMPLATE(tilegx_linux, sys_shmctl);
-DECL_TEMPLATE(tilegx_linux, sys_arch_prctl);
-DECL_TEMPLATE(tilegx_linux, sys_ptrace);
-DECL_TEMPLATE(tilegx_linux, sys_fadvise64);
-DECL_TEMPLATE(tilegx_linux, sys_mmap);
-DECL_TEMPLATE(tilegx_linux, sys_syscall184);
-DECL_TEMPLATE(tilegx_linux, sys_set_dataplane);
+DECL_TEMPLATE (tilegx_linux, sys_clone);
+DECL_TEMPLATE (tilegx_linux, sys_rt_sigreturn);
+DECL_TEMPLATE (tilegx_linux, sys_socket);
+DECL_TEMPLATE (tilegx_linux, sys_setsockopt);
+DECL_TEMPLATE (tilegx_linux, sys_getsockopt);
+DECL_TEMPLATE (tilegx_linux, sys_connect);
+DECL_TEMPLATE (tilegx_linux, sys_accept);
+DECL_TEMPLATE (tilegx_linux, sys_accept4);
+DECL_TEMPLATE (tilegx_linux, sys_sendto);
+DECL_TEMPLATE (tilegx_linux, sys_recvfrom);
+DECL_TEMPLATE (tilegx_linux, sys_sendmsg);
+DECL_TEMPLATE (tilegx_linux, sys_recvmsg);
+DECL_TEMPLATE (tilegx_linux, sys_shutdown);
+DECL_TEMPLATE (tilegx_linux, sys_bind);
+DECL_TEMPLATE (tilegx_linux, sys_listen);
+DECL_TEMPLATE (tilegx_linux, sys_getsockname);
+DECL_TEMPLATE (tilegx_linux, sys_getpeername);
+DECL_TEMPLATE (tilegx_linux, sys_socketpair);
+DECL_TEMPLATE (tilegx_linux, sys_semget);
+DECL_TEMPLATE (tilegx_linux, sys_semop);
+DECL_TEMPLATE (tilegx_linux, sys_semtimedop);
+DECL_TEMPLATE (tilegx_linux, sys_semctl);
+DECL_TEMPLATE (tilegx_linux, sys_msgget);
+DECL_TEMPLATE (tilegx_linux, sys_msgrcv);
+DECL_TEMPLATE (tilegx_linux, sys_msgsnd);
+DECL_TEMPLATE (tilegx_linux, sys_msgctl);
+DECL_TEMPLATE (tilegx_linux, sys_shmget);
+DECL_TEMPLATE (tilegx_linux, wrap_sys_shmat);
+DECL_TEMPLATE (tilegx_linux, sys_shmdt);
+DECL_TEMPLATE (tilegx_linux, sys_shmdt);
+DECL_TEMPLATE (tilegx_linux, sys_shmctl);
+DECL_TEMPLATE (tilegx_linux, sys_arch_prctl);
+DECL_TEMPLATE (tilegx_linux, sys_ptrace);
+DECL_TEMPLATE (tilegx_linux, sys_fadvise64);
+DECL_TEMPLATE (tilegx_linux, sys_mmap);
+DECL_TEMPLATE (tilegx_linux, sys_syscall184);
+DECL_TEMPLATE (tilegx_linux, sys_cacheflush);
+DECL_TEMPLATE (tilegx_linux, sys_set_dataplane);
 
 PRE(sys_clone)
 {
@@ -1106,6 +1107,15 @@ PRE(sys_mmap)
 /* ---------------------------------------------------------------
    PRE/POST wrappers for TILEGX/Linux-variant specific syscalls
    ------------------------------------------------------------ */
+PRE(sys_cacheflush)
+{
+   PRINT("cacheflush (%lx, %lx, %lx)", ARG1, ARG2, ARG3);
+   PRE_REG_READ3(long, "cacheflush", unsigned long, addr,
+                 int, nbytes, int, cache);
+   VG_ (discard_translations) ((Addr)ARG1, (ULong) ARG2,
+                               "PRE(sys_cacheflush)");
+   SET_STATUS_Success(0);
+}
 
 PRE(sys_set_dataplane)
 {
@@ -1368,6 +1378,7 @@ static SyscallTableEntry syscall_table[] = {
 
   PLAXY(__NR_accept4,           sys_accept4),              // 242
 
+  PLAX_(__NR_cacheflush,        sys_cacheflush),           // 245
   PLAX_(__NR_set_dataplane,     sys_set_dataplane),        // 246
 
   GENXY(__NR_wait4,             sys_wait4),                // 260

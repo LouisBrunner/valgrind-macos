@@ -1348,11 +1348,10 @@ static UInt iregNo ( HReg r )
 
 static UChar *doAMode_IR ( UChar * p, UInt opc1, UInt rSD, TILEGXAMode * am )
 {
-  UInt rA; //, idx;
+  UInt rA;
   vassert(am->tag == GXam_IR);
 
   rA = iregNo(am->GXam.IR.base);
-  //idx = am->GXam.IR.index;
 
   if (opc1 == TILEGX_OPC_ST1 || opc1 == TILEGX_OPC_ST2 ||
       opc1 == TILEGX_OPC_ST4 || opc1 == TILEGX_OPC_ST) {
@@ -1381,19 +1380,29 @@ static UChar *doAMode_IR ( UChar * p, UInt opc1, UInt rSD, TILEGXAMode * am )
   return p;
 }
 
-/* Generate a machine-word sized load or store. Simplified version of
-   the GXin_Load and GXin_Store cases below. */
+/* Generate a machine-word sized load or store using exact 2 bundles.
+   Simplified version of the GXin_Load and GXin_Store cases below. */
 static UChar* do_load_or_store_machine_word ( UChar* p, Bool isLoad, UInt reg,
                                               TILEGXAMode* am )
 {
+  UInt rA = iregNo(am->GXam.IR.base);
+
   if (am->tag != GXam_IR)
     vpanic(__func__);
 
-  if (isLoad) /* load */
-    p = doAMode_IR(p, TILEGX_OPC_LD, reg, am);
-  else /* store */
-    p = doAMode_IR(p, TILEGX_OPC_ST, reg, am);
-
+  if (isLoad) /* load */ {
+     /* r51 is reserved scratch registers. */
+     p = mkInsnBin(p, mkTileGxInsn(TILEGX_OPC_ADDLI, 3,
+				   51, rA, am->GXam.IR.index));
+     /* load from address in r51 to rSD. */
+     p = mkInsnBin(p, mkTileGxInsn(TILEGX_OPC_LD, 2, reg, 51));
+  } else /* store */ {
+     /* r51 is reserved scratch registers. */
+     p = mkInsnBin(p, mkTileGxInsn(TILEGX_OPC_ADDLI, 3,
+				   51, rA, am->GXam.IR.index));
+     /* store rSD to address in r51 */
+     p = mkInsnBin(p, mkTileGxInsn(TILEGX_OPC_ST, 2, 51, reg));
+  }
   return p;
 }
 

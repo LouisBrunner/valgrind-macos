@@ -42,7 +42,6 @@
 #include "guest_tilegx_defs.h"
 #include "tilegx_disasm.h"
 
-#if __tilegx__
 /*------------------------------------------------------------*/
 /*--- Globals                                              ---*/
 /*------------------------------------------------------------*/
@@ -237,7 +236,7 @@ static IRExpr *narrowTo ( IRType dst_ty, IRExpr * e )
   ((_n == 32) ?                                                         \
    unop(Iop_32Sto64, _e) :                                              \
    ((_n == 16) ?                                                        \
-    (Iop_16Sto64, _e) :                                                 \
+    unop(Iop_16Sto64, _e) :						\
     (binop(Iop_Sar64, binop(Iop_Shl64, _e, mkU8(63 - (_n))), mkU8(63 - (_n))))))
 
 static IRStmt* dis_branch ( IRExpr* guard, ULong imm )
@@ -276,7 +275,7 @@ static DisResult disInstr_TILEGX_WRK ( Bool(*resteerOkFn) (void *, Addr),
 {
   struct tilegx_decoded_instruction
     decoded[TILEGX_MAX_INSTRUCTIONS_PER_BUNDLE];
-  ULong  cins, opcode, rd, ra, rb, imm;
+  ULong  cins, opcode = -1, rd, ra, rb, imm = 0;
   ULong  opd[4];
   ULong  opd_src_map, opd_dst_map, opd_imm_map;
   Int    use_dirty_helper;
@@ -286,9 +285,8 @@ static DisResult disInstr_TILEGX_WRK ( Bool(*resteerOkFn) (void *, Addr),
   ULong  rd_wb_reg[6];
   /* Tilegx is a VLIW processor, we have to commit register write after read.*/
   Int    rd_wb_index;
-  Int    n, nr_insn;
+  Int    n = 0, nr_insn;
   DisResult dres;
-  Int    stmts_used;
 
   /* The running delta */
   Long delta = delta64;
@@ -311,7 +309,7 @@ static DisResult disInstr_TILEGX_WRK ( Bool(*resteerOkFn) (void *, Addr),
   dres.jk_StopHere = Ijk_INVALID;
 
   /* Verify the code addr is 8-byte aligned. */
-  vassert((((ULong)code) & 7) == 0);
+  vassert((((Addr)code) & 7) == 0);
 
   /* Get the instruction bundle. */
   cins = *((ULong *)(Addr) code);
@@ -393,19 +391,16 @@ static DisResult disInstr_TILEGX_WRK ( Bool(*resteerOkFn) (void *, Addr),
 
   /* To decode the given instruction bundle. */
   nr_insn = parse_insn_tilegx((tilegx_bundle_bits)cins,
-                              (ULong)code,
+                              (ULong)(Addr)code,
                               decoded);
 
   if (vex_traceflags & VEX_TRACE_FE)
-    decode_and_display(&cins, 1, (ULong)code);
+    decode_and_display(&cins, 1, (ULong)(Addr)code);
 
   /* Init. rb_wb_index */
   rd_wb_index = 0;
 
   steering_pc = -1ULL;
-
-  // Save the current stmts_used in case we need rollback.
-  stmts_used = irsb->stmts_used;
 
   for (n = 0; n < nr_insn; n++) {
     opcode = decoded[n].opcode->mnemonic;
@@ -1392,13 +1387,17 @@ static DisResult disInstr_TILEGX_WRK ( Bool(*resteerOkFn) (void *, Addr),
       use_dirty_helper = 1;
       break;
     case 151:  /* "mfspr" */
-      if (imm == 0x2780) // Get Cmpexch value
-        MARK_REG_WB(rd, getIReg(70));
-      else if (imm == 0x2580) // Get EX_CONTEXT_0_0
-        MARK_REG_WB(rd, getIReg(576/8));
-      else if (imm == 0x2581) // Get EX_CONTEXT_0_1
-        MARK_REG_WB(rd, getIReg(584/8));
-      else
+      t2 = newTemp(Ity_I64);
+      if (imm == 0x2780) { // Get Cmpexch value
+	 assign(t2, getIReg(70));
+	 MARK_REG_WB(rd, t2);
+      } else if (imm == 0x2580) { // Get EX_CONTEXT_0_0
+         assign(t2, getIReg(576 / 8));
+         MARK_REG_WB(rd, t2);
+      } else if (imm == 0x2581) { // Get EX_CONTEXT_0_1
+         assign(t2, getIReg(584 / 8));
+         MARK_REG_WB(rd, t2);
+      } else
         use_dirty_helper = 1;
       break;
     case 152:  /* "mm" */
@@ -2469,7 +2468,6 @@ static DisResult disInstr_TILEGX_WRK ( Bool(*resteerOkFn) (void *, Addr),
 
   return dres;
 }
-#endif
 
 /*------------------------------------------------------------*/
 /*--- Top-level fn                                         ---*/
@@ -2494,7 +2492,6 @@ disInstr_TILEGX ( IRSB* irsb_IN,
 {
   DisResult dres;
 
-#if  __tilegx__
   /* Set globals (see top of this file) */
   vassert(guest_arch == VexArchTILEGX);
 
@@ -2507,9 +2504,7 @@ disInstr_TILEGX ( IRSB* irsb_IN,
   dres = disInstr_TILEGX_WRK(resteerOkFn, resteerCisOk,
                              callback_opaque,
                              delta, archinfo, abiinfo, sigill_diag_IN);
-#else
-  dres.whatNext = Dis_StopHere;
-#endif
+
   return dres;
 }
 

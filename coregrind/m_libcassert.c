@@ -227,7 +227,7 @@
       }
 #elif defined(VGP_tilegx_linux)
 #  define GET_STARTREGS(srP)                              \
-      { UInt pc, sp, fp, ra;                              \
+      { ULong pc, sp, fp, ra;                              \
         __asm__ __volatile__(                             \
           "move r8, lr \n"                                \
           "jal 0f \n"                                     \

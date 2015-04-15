@@ -508,13 +508,15 @@ static UInt local_sys_getpid ( void )
       : "$2" );
    return (UInt)(__res);
 }
+
 #elif defined(VGP_tilegx_linux)
+
 static UInt local_sys_write_stderr ( const HChar* buf, Int n )
 {
    volatile Long block[2];
    block[0] = (Long)buf;
    block[1] = n;
-   ULong __res = 0;
+   Long __res = 0;
    __asm__ volatile (
       "movei  r0,  2    \n\t"    /* stderr */
       "move   r1,  %1   \n\t"    /* buf */

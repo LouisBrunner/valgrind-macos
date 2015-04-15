@@ -168,13 +168,13 @@ extern UWord do_syscall_WRK (
 {
    UWord out;
    __asm__ __volatile__ (
-                 "move r10, r0\n\t"
-                 "move r0,  r1\n\t"
-                 "move r1,  r2\n\t"
-                 "move r2,  r3\n\t"
-                 "move r3,  r4\n\t"
-                 "move r4,  r5\n\t"
-                 "move r5,  r6\n\t"
+                 "move r10, %1\n\t"
+                 "move r0,  %2\n\t"
+                 "move r1,  %3\n\t"
+                 "move r2,  %4\n\t"
+                 "move r3,  %5\n\t"
+                 "move r4,  %6\n\t"
+                 "move r5,  %7\n\t"
                  "swint1      \n\t"
                  "move %0,  r0\n\t"
                  : /*out*/ "=r" (out)

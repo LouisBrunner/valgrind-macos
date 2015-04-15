@@ -241,14 +241,6 @@ int main(int argc, char **argv)
             show_vta("skipped (word size differs)", &vta);
             continue;
          }
-         // Special condition for VexArchTILEGX that is not yet ready
-         // to run in multiarch as an host for different guest.
-         if (va == VexArchTILEGX
-             && guest_arch != VexArchTILEGX
-             && multiarch != va) {
-            show_vta("skipped (TILEGX host and guest != TILEGX)", &vta);
-            continue;
-         }
          if (multiarch > VexArch_INVALID
              && multiarch != va) {
             show_vta("skipped (!= specific requested arch)", &vta);

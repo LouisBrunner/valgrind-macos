@@ -17854,18 +17854,11 @@ static Bool dis_av_quad ( UInt theInstr )
                                              mkexpr( vA ),
                                              mkexpr( idx ) ) ),
                                mkU8( 127 ) ) ) );
-         if (host_endness == VexEndnessLE)
-            res = binop( Iop_OrV128,
-                         res,
-                         binop( Iop_ShlV128,
-                                mkexpr( perm_bit ),
-                                mkU8( i + 64) ) );
-         else
-            res = binop( Iop_OrV128,
-                         res,
-                         binop( Iop_ShlV128,
-                                mkexpr( perm_bit ),
-                                mkU8( i ) ) );
+         res = binop( Iop_OrV128,
+                      res,
+                      binop( Iop_ShlV128,
+                             mkexpr( perm_bit ),
+                             mkU8( i + 64 ) ) );
          vB_expr = binop( Iop_ShrV128, vB_expr, mkU8( 8 ) );
       }
       putVReg( vRT_addr, res);

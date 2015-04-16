@@ -15250,7 +15250,12 @@ dis_vx_load ( UInt theInstr )
    {
       IRExpr * exp;
       DIP("lxsiwzx %d,r%u,r%u\n", (UInt)XT, rA_addr, rB_addr);
-      exp = unop( Iop_64HIto32, load( Ity_I64, mkexpr( EA ) ) );
+
+      if (host_endness == VexEndnessLE)
+         exp = unop( Iop_64to32, load( Ity_I64, mkexpr( EA ) ) );
+      else
+         exp = unop( Iop_64HIto32, load( Ity_I64, mkexpr( EA ) ) );
+
       putVSReg( XT, binop( Iop_64HLtoV128,
                            unop( Iop_32Uto64, exp),
                            mkU64(0) ) );
@@ -15260,7 +15265,12 @@ dis_vx_load ( UInt theInstr )
    {
       IRExpr * exp;
       DIP("lxsiwax %d,r%u,r%u\n", (UInt)XT, rA_addr, rB_addr);
-      exp = unop( Iop_64HIto32, load( Ity_I64, mkexpr( EA ) ) );
+
+      if (host_endness == VexEndnessLE)
+         exp = unop( Iop_64to32, load( Ity_I64, mkexpr( EA ) ) );
+      else
+         exp = unop( Iop_64HIto32, load( Ity_I64, mkexpr( EA ) ) );
+
       putVSReg( XT, binop( Iop_64HLtoV128,
                            unop( Iop_32Sto64, exp),
                            mkU64(0) ) );
@@ -17844,11 +17854,18 @@ static Bool dis_av_quad ( UInt theInstr )
                                              mkexpr( vA ),
                                              mkexpr( idx ) ) ),
                                mkU8( 127 ) ) ) );
-         res = binop( Iop_OrV128,
-                      res,
-                      binop( Iop_ShlV128,
-                             mkexpr( perm_bit ),
-                             mkU8( i ) ) );
+         if (host_endness == VexEndnessLE)
+            res = binop( Iop_OrV128,
+                         res,
+                         binop( Iop_ShlV128,
+                                mkexpr( perm_bit ),
+                                mkU8( i + 64) ) );
+         else
+            res = binop( Iop_OrV128,
+                         res,
+                         binop( Iop_ShlV128,
+                                mkexpr( perm_bit ),
+                                mkU8( i ) ) );
          vB_expr = binop( Iop_ShrV128, vB_expr, mkU8( 8 ) );
       }
       putVReg( vRT_addr, res);

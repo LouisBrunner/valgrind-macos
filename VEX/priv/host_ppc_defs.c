@@ -861,7 +861,7 @@ PPCInstr* PPCInstr_LoadL ( UChar sz,
    i->Pin.LoadL.sz   = sz;
    i->Pin.LoadL.src  = src;
    i->Pin.LoadL.dst  = dst;
-   vassert(sz == 4 || sz == 8);
+   vassert(sz == 1 || sz == 2 || sz == 4 || sz == 8);
    if (sz == 8) vassert(mode64);
    return i;
 }
@@ -882,7 +882,7 @@ PPCInstr* PPCInstr_StoreC ( UChar sz, HReg dst, HReg src, Bool mode64 ) {
    i->Pin.StoreC.sz  = sz;
    i->Pin.StoreC.src = src;
    i->Pin.StoreC.dst = dst;
-   vassert(sz == 4 || sz == 8);
+   vassert(sz == 1 || sz == 2 || sz == 4 || sz == 8);
    if (sz == 8) vassert(mode64);
    return i;
 }
@@ -1644,12 +1644,15 @@ void ppPPCInstr ( const PPCInstr* i, Bool mode64 )
       ppPPCAMode(i->Pin.Load.src);
       return;
    }
-   case Pin_LoadL:
-      vex_printf("l%carx ", i->Pin.LoadL.sz==4 ? 'w' : 'd');
+   case Pin_LoadL: {
+      UChar sz = i->Pin.LoadL.sz;
+      HChar c_sz = sz==1 ? 'b' : sz==2 ? 'h' : sz==4 ? 'w' : 'd';
+      vex_printf("l%carx ", c_sz);
       ppHRegPPC(i->Pin.LoadL.dst);
       vex_printf(",%%r0,");
       ppHRegPPC(i->Pin.LoadL.src);
       return;
+   }
    case Pin_Store: {
       UChar sz = i->Pin.Store.sz;
       Bool idxd = toBool(i->Pin.Store.dst->tag == Pam_RR);
@@ -1660,12 +1663,15 @@ void ppPPCInstr ( const PPCInstr* i, Bool mode64 )
       ppPPCAMode(i->Pin.Store.dst);
       return;
    }
-   case Pin_StoreC:
-      vex_printf("st%ccx. ", i->Pin.StoreC.sz==4 ? 'w' : 'd');
+   case Pin_StoreC: {
+      UChar sz = i->Pin.StoreC.sz;
+      HChar c_sz = sz==1 ? 'b' : sz==2 ? 'h' : sz==4 ? 'w' : 'd';
+      vex_printf("st%ccx. ", c_sz);
       ppHRegPPC(i->Pin.StoreC.src);
       vex_printf(",%%r0,");
       ppHRegPPC(i->Pin.StoreC.dst);
       return;
+   }
    case Pin_Set: {
       PPCCondCode cc = i->Pin.Set.cond;
       vex_printf("set (%s),", showPPCCondCode(cc));
@@ -4399,6 +4405,16 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
    }
 
    case Pin_LoadL: {
+      if (i->Pin.LoadL.sz == 1) {
+         p = mkFormX(p, 31, iregEnc(i->Pin.LoadL.dst, mode64),
+                     0, iregEnc(i->Pin.LoadL.src, mode64), 52, 0, endness_host);
+         goto done;
+      }
+      if (i->Pin.LoadL.sz == 2) {
+         p = mkFormX(p, 31, iregEnc(i->Pin.LoadL.dst, mode64),
+                     0, iregEnc(i->Pin.LoadL.src, mode64), 116, 0, endness_host);
+         goto done;
+      }
       if (i->Pin.LoadL.sz == 4) {
          p = mkFormX(p, 31, iregEnc(i->Pin.LoadL.dst, mode64),
                      0, iregEnc(i->Pin.LoadL.src, mode64), 20, 0, endness_host);
@@ -4495,6 +4511,17 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
    }
 
    case Pin_StoreC: {
+      if (i->Pin.StoreC.sz == 1) {
+         p = mkFormX(p, 31, iregEnc(i->Pin.StoreC.src, mode64),
+                     0, iregEnc(i->Pin.StoreC.dst, mode64), 694, 1, endness_host);
+         goto done;
+      }
+      if (i->Pin.StoreC.sz == 2) {
+         p = mkFormX(p, 31, iregEnc(i->Pin.StoreC.src, mode64),
+                     0, iregEnc(i->Pin.StoreC.dst, mode64), 726, 1, endness_host);
+         goto done;
+      }
+
       if (i->Pin.StoreC.sz == 4) {
          p = mkFormX(p, 31, iregEnc(i->Pin.StoreC.src, mode64),
                      0, iregEnc(i->Pin.StoreC.dst, mode64), 150, 1, endness_host);

@@ -5754,6 +5754,14 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt, IREndness IEndianess )
          /* LL */
          HReg r_addr = iselWordExpr_R( env, stmt->Ist.LLSC.addr, IEndianess );
          HReg r_dst  = lookupIRTemp(env, res);
+         if (tyRes == Ity_I8) {
+            addInstr(env, PPCInstr_LoadL( 1, r_dst, r_addr, mode64 ));
+            return;
+         }
+         if (tyRes == Ity_I16) {
+            addInstr(env, PPCInstr_LoadL( 2, r_dst, r_addr, mode64 ));
+            return;
+         }
          if (tyRes == Ity_I32) {
             addInstr(env, PPCInstr_LoadL( 4, r_dst, r_addr, mode64 ));
             return;
@@ -5773,8 +5781,20 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt, IREndness IEndianess )
          IRType tyData = typeOfIRExpr(env->type_env,
                                       stmt->Ist.LLSC.storedata);
          vassert(tyRes == Ity_I1);
-         if (tyData == Ity_I32 || (tyData == Ity_I64 && mode64)) {
-            addInstr(env, PPCInstr_StoreC( tyData==Ity_I32 ? 4 : 8,
+         if (tyData == Ity_I8 || tyData == Ity_I16 || tyData == Ity_I32 ||
+            (tyData == Ity_I64 && mode64)) {
+            int size = 0;
+
+            if (tyData == Ity_I64)
+               size = 8;
+            else if (tyData == Ity_I32)
+               size = 4;
+            else if (tyData == Ity_I16)
+               size = 2;
+            else if (tyData == Ity_I8)
+               size = 1;
+
+            addInstr(env, PPCInstr_StoreC( size,
                                            r_a, r_src, mode64 ));
             addInstr(env, PPCInstr_MfCR( r_tmp ));
             addInstr(env, PPCInstr_Shft(

@@ -1729,7 +1729,7 @@ static IRExpr* addr_align( IRExpr* addr, UChar align )
    restart of the current insn. */
 static void gen_SIGBUS_if_misaligned ( IRTemp addr, UChar align )
 {
-   vassert(align == 4 || align == 8 || align == 16);
+   vassert(align == 2 || align == 4 || align == 8 || align == 16);
    if (mode64) {
       vassert(typeOfIRTemp(irsb->tyenv, addr) == Ity_I64);
       stmt(
@@ -6292,6 +6292,41 @@ static Bool dis_memsync ( UInt theInstr )
          break;
       }
 
+      case 0x034: { // lbarx (Load Word and Reserve Indexed)
+         IRTemp res;
+         /* According to the PowerPC ISA version 2.05, b0 (called EH
+            in the documentation) is merely a hint bit to the
+            hardware, I think as to whether or not contention is
+            likely.  So we can just ignore it. */
+         DIP("lbarx r%u,r%u,r%u,EH=%u\n", rD_addr, rA_addr, rB_addr, (UInt)b0);
+
+         // and actually do the load
+         res = newTemp(Ity_I8);
+         stmt( stmt_load(res, mkexpr(EA), NULL/*this is a load*/) );
+
+         putIReg( rD_addr, mkWidenFrom8(ty, mkexpr(res), False) );
+         break;
+     }
+
+      case 0x074: { // lharx (Load Word and Reserve Indexed)
+         IRTemp res;
+         /* According to the PowerPC ISA version 2.05, b0 (called EH
+            in the documentation) is merely a hint bit to the
+            hardware, I think as to whether or not contention is
+            likely.  So we can just ignore it. */
+         DIP("lharx r%u,r%u,r%u,EH=%u\n", rD_addr, rA_addr, rB_addr, (UInt)b0);
+
+         // trap if misaligned
+         gen_SIGBUS_if_misaligned( EA, 2 );
+
+         // and actually do the load
+         res = newTemp(Ity_I16);
+         stmt( stmt_load(res, mkexpr(EA), NULL/*this is a load*/) );
+
+         putIReg( rD_addr, mkWidenFrom16(ty, mkexpr(res), False) );
+         break;
+      }
+
       case 0x096: { 
          // stwcx. (Store Word Conditional Indexed, PPC32 p532)
          // Note this has to handle stwcx. in both 32- and 64-bit modes,
@@ -6321,6 +6356,71 @@ static Bool dis_memsync ( UInt theInstr )
 
          /* Note:
             If resaddr != lwarx_resaddr, CR0[EQ] is undefined, and
+            whether rS is stored is dependent on that value. */
+         /* So I guess we can just ignore this case? */
+         break;
+      }
+
+      case 0x2B6: {
+         // stbcx. (Store Byte Conditional Indexed)
+         // Note this has to handle stbcx. in both 32- and 64-bit modes,
+         // so isn't quite as straightforward as it might otherwise be.
+         IRTemp rS = newTemp(Ity_I8);
+         IRTemp resSC;
+         if (b0 != 1) {
+            vex_printf("dis_memsync(ppc)(stbcx.,b0)\n");
+            return False;
+         }
+         DIP("stbcx. r%u,r%u,r%u\n", rS_addr, rA_addr, rB_addr);
+
+         // Get the data to be stored, and narrow to 32 bits if necessary
+         assign( rS, mkNarrowTo8(ty, getIReg(rS_addr)) );
+
+         // Do the store, and get success/failure bit into resSC
+         resSC = newTemp(Ity_I1);
+         stmt( stmt_load( resSC, mkexpr(EA), mkexpr(rS)) );
+
+         // Set CR0[LT GT EQ S0] = 0b000 || XER[SO]  on failure
+         // Set CR0[LT GT EQ S0] = 0b001 || XER[SO]  on success
+         putCR321(0, binop(Iop_Shl8, unop(Iop_1Uto8, mkexpr(resSC)), mkU8(1)));
+         putCR0(0, getXER_SO());
+
+         /* Note:
+            If resaddr != lbarx_resaddr, CR0[EQ] is undefined, and
+            whether rS is stored is dependent on that value. */
+         /* So I guess we can just ignore this case? */
+         break;
+      }
+
+      case 0x2D6: {
+         // sthcx. (Store Word Conditional Indexed, PPC32 p532)
+         // Note this has to handle sthcx. in both 32- and 64-bit modes,
+         // so isn't quite as straightforward as it might otherwise be.
+         IRTemp rS = newTemp(Ity_I16);
+         IRTemp resSC;
+         if (b0 != 1) {
+            vex_printf("dis_memsync(ppc)(stwcx.,b0)\n");
+            return False;
+         }
+         DIP("sthcx. r%u,r%u,r%u\n", rS_addr, rA_addr, rB_addr);
+
+         // trap if misaligned
+         gen_SIGBUS_if_misaligned( EA, 2 );
+
+         // Get the data to be stored, and narrow to 16 bits if necessary
+         assign( rS, mkNarrowTo16(ty, getIReg(rS_addr)) );
+
+         // Do the store, and get success/failure bit into resSC
+         resSC = newTemp(Ity_I1);
+         stmt( stmt_load( resSC, mkexpr(EA), mkexpr(rS)) );
+
+         // Set CR0[LT GT EQ S0] = 0b000 || XER[SO]  on failure
+         // Set CR0[LT GT EQ S0] = 0b001 || XER[SO]  on success
+         putCR321(0, binop(Iop_Shl8, unop(Iop_1Uto8, mkexpr(resSC)), mkU8(1)));
+         putCR0(0, getXER_SO());
+
+         /* Note:
+            If resaddr != lharx_resaddr, CR0[EQ] is undefined, and
             whether rS is stored is dependent on that value. */
          /* So I guess we can just ignore this case? */
          break;
@@ -19668,6 +19768,12 @@ DisResult disInstr_PPC_WRK (
       }
 
       /* Memory Synchronization Instructions */
+      case 0x034: case 0x074:             // lbarx, lharx
+      case 0x2B6: case 0x2D6:             // stbcx, sthcx
+         if (!allow_isa_2_07) goto decode_noP8;
+         if (dis_memsync( theInstr )) goto decode_success;
+         goto decode_failure;
+
       case 0x356: case 0x014: case 0x096: // eieio, lwarx, stwcx.
       case 0x256:                         // sync
          if (dis_memsync( theInstr )) goto decode_success;

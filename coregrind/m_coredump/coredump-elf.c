@@ -358,8 +358,8 @@ static void fill_prstatus(const ThreadState *tst,
    regs->orig_gpr3 = arch->vex.guest_GPR3;
    regs->ctr = arch->vex.guest_CTR;
    regs->link = arch->vex.guest_LR;
-   regs->xer = LibVEX_GuestPPC64_get_XER( (const VexGuestPPC64State*) &(arch->vex) );
-   regs->ccr = LibVEX_GuestPPC64_get_CR( (const  VexGuestPPC64State*) &(arch->vex) );
+   regs->xer = LibVEX_GuestPPC64_get_XER( &(arch->vex) );
+   regs->ccr = LibVEX_GuestPPC64_get_CR( &(arch->vex) );
    /* regs->mq = 0; */
    regs->trap = 0;
    regs->dar = 0; /* should be fault address? */

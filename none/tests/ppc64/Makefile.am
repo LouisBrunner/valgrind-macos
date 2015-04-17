@@ -28,7 +28,8 @@ EXTRA_DIST = \
 	test_dfp5.stderr.exp test_dfp5.stdout.exp test_dfp5.vgtest \
 	jm_vec_isa_2_07.stderr.exp jm_vec_isa_2_07.stdout.exp jm_vec_isa_2_07.vgtest \
 	jm_fp_isa_2_07.stderr.exp jm_fp_isa_2_07.stdout.exp jm_fp_isa_2_07.vgtest \
-	jm_int_isa_2_07.stderr.exp jm_int_isa_2_07.stdout.exp jm_int_isa_2_07.vgtest \
+	jm_int_isa_2_07.stderr.exp jm_int_isa_2_07.vgtest \
+	jm_int_isa_2_07.stdout.exp  jm_int_isa_2_07.stdout.exp-LE \
 	test_isa_2_07_part2.stderr.exp test_isa_2_07_part2.stdout.exp test_isa_2_07_part2.vgtest \
 	test_tm.stderr.exp test_tm.stdout.exp test_tm.vgtest \
 	test_touch_tm.stderr.exp test_touch_tm.stdout.exp test_touch_tm.vgtest \

@@ -301,8 +301,31 @@ static test_t tests_ildq_ops_two_i16[] = {
     { NULL,                   NULL,          },
 };
 
-
+#ifdef HAS_ISA_2_07
 Word_t * mem_resv;
+static void test_stbcx(void)
+{
+  /* Have to do the lbarx to the memory address to create the reservation
+   * or the store will not occur.
+   */
+  __asm__ __volatile__ ("lbarx  %0, %1, %2" : :"r" (r14), "r" (r16),"r" (r17));
+  r14 = (HWord_t) 0xABEFCD0145236789ULL;
+  r15 = (HWord_t) 0x1155337744226688ULL;
+  __asm__ __volatile__ ("stbcx. %0, %1, %2" : :"r" (r14), "r" (r16),"r" (r17));
+}
+
+static void test_sthcx(void)
+{
+  /* Have to do the lharx to the memory address to create the reservation
+   * or the store will not occur.
+   */
+  __asm__ __volatile__ ("lharx  %0, %1, %2" : :"r" (r14), "r" (r16),"r" (r17));
+  r14 = (HWord_t) 0xABEFCD0145236789ULL;
+  r15 = (HWord_t) 0x1155337744226688ULL;
+  __asm__ __volatile__ ("sthcx. %0, %1, %2" : :"r" (r14), "r" (r16),"r" (r17));
+}
+#endif
+
 static void test_stqcx(void)
 {
   /* Have to do the lqarx to the memory address to create the reservation
@@ -315,16 +338,34 @@ static void test_stqcx(void)
 }
 
 static test_t tests_stq_ops_three[] = {
+#ifdef HAS_ISA_2_07
+    { &test_stbcx           , "stbcx.", },
+    { &test_sthcx           , "sthcx.", },
+#endif
     { &test_stqcx           , "stqcx.", },
     { NULL,                   NULL,           },
 };
 
+#ifdef HAS_ISA_2_07
+static void test_lbarx(void)
+{
+  __asm__ __volatile__ ("lbarx  %0, %1, %2, 0" : :"r" (r14), "r" (r16),"r" (r17));
+}
+static void test_lharx(void)
+{
+  __asm__ __volatile__ ("lharx  %0, %1, %2, 0" : :"r" (r14), "r" (r16),"r" (r17));
+}
+#endif
 static void test_lqarx(void)
 {
   __asm__ __volatile__ ("lqarx  %0, %1, %2, 0" : :"r" (r14), "r" (r16),"r" (r17));
 }
 
 static test_t tests_ldq_ops_three[] = {
+#ifdef HAS_ISA_2_07
+    { &test_lbarx           , "lbarx", },
+    { &test_lharx           , "lharx", },
+#endif
     { &test_lqarx           , "lqarx", },
     { NULL,                   NULL,           },
 };

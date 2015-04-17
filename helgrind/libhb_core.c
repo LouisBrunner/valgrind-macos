@@ -4738,6 +4738,7 @@ static void event_map_GC ( void )
             free_RCEC(p);
             p = *pp;
             tl_assert(stats__ctxt_tab_curr > 0);
+            stats__ctxt_rcdec_discards++;
             stats__ctxt_tab_curr--;
          } else {
             pp = &p->next;
@@ -6293,9 +6294,10 @@ void libhb_shutdown ( Bool show_stats )
                    stats__ctxt_rcdec3 );
       VG_(printf)( "   libhb: ctxt__rcdec: calls %lu, discards %lu\n",
                    stats__ctxt_rcdec_calls, stats__ctxt_rcdec_discards);
-      VG_(printf)( "   libhb: contextTab: %lu slots, %lu max ents\n",
+      VG_(printf)( "   libhb: contextTab: %lu slots, %lu cur ents,"
+                   " %lu max ents\n",
                    (UWord)N_RCEC_TAB,
-                   stats__ctxt_tab_curr );
+                   stats__ctxt_tab_curr, stats__ctxt_tab_max );
       VG_(printf)( "   libhb: contextTab: %lu queries, %lu cmps\n",
                    stats__ctxt_tab_qs,
                    stats__ctxt_tab_cmps );

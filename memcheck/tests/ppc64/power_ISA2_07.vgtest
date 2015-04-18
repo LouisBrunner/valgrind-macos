@@ -1,0 +1,3 @@
+prereq: ../../../tests/check_isa-2_07_cap
+prog: power_ISA2_07
+vgopts:

@@ -49,7 +49,7 @@
 #include "pub_core_tooliface.h"
 #include "pub_core_trampoline.h"
 #include "pub_core_transtab.h"      // VG_(discard_translations)
-
+#include "priv_sigframe.h"
 
 /* This module creates and removes signal frames for signal deliveries
    on ppc32-linux.
@@ -502,48 +502,6 @@ void stack_mcontext ( struct vki_mcontext *mc,
 //..                   Vg_CoreSignal, zztid, VG_O_STACK_PTR, sizeof(Addr))
 */
 
-/* Extend the stack segment downwards if needed so as to ensure the
-   new signal frames are mapped to something.  Return a Bool
-   indicating whether or not the operation was successful.
-*/
-static Bool extend ( ThreadState *tst, Addr addr, SizeT size )
-{
-   ThreadId        tid = tst->tid;
-   NSegment const* stackseg = NULL;
-
-   if (VG_(extend_stack)(tid, addr)) {
-      stackseg = VG_(am_find_nsegment)(addr);
-      if (0 && stackseg)
-	 VG_(printf)("frame=%#lx seg=%#lx-%#lx\n",
-		     addr, stackseg->start, stackseg->end);
-   }
-
-   if (stackseg == NULL || !stackseg->hasR || !stackseg->hasW) {
-      VG_(message)(
-         Vg_UserMsg,
-         "Can't extend stack to %#lx during signal delivery for thread %d:\n",
-         addr, tid);
-      if (stackseg == NULL)
-         VG_(message)(Vg_UserMsg, "  no stack segment\n");
-      else
-         VG_(message)(Vg_UserMsg, "  too small or bad protection modes\n");
-
-      /* set SIGSEGV to default handler */
-      VG_(set_default_handler)(VKI_SIGSEGV);
-      VG_(synth_fault_mapping)(tid, addr);
-
-      /* The whole process should be about to die, since the default
-	 action of SIGSEGV to kill the whole process. */
-      return False;
-   }
-
-   /* For tracking memory events, indicate the entire frame has been
-      allocated. */
-   VG_TRACK( new_mem_stack_signal, addr - VG_STACK_REDZONE_SZB,
-             size + VG_STACK_REDZONE_SZB, tid );
-
-   return True;
-}
 
 //.. /* Build the Valgrind-specific part of a signal frame. */
 //.. 
@@ -692,7 +650,7 @@ void VG_(sigframe_create)( ThreadId tid,
 
    tst = VG_(get_ThreadState)(tid);
 
-   if (!extend(tst, sp, sp_top_of_frame - sp))
+   if (! ML_(sf_extend_stack)(tst, sp, sp_top_of_frame - sp))
       return;
 
    vg_assert(VG_IS_16_ALIGNED(sp));

@@ -243,6 +243,7 @@ noinst_HEADERS = \
 	m_scheduler/priv_sema.h \
 	m_scheduler/priv_sched-lock.h \
 	m_scheduler/priv_sched-lock-impl.h \
+	m_sigframe/priv_sigframe.h \
 	m_syswrap/priv_types_n_macros.h \
 	m_syswrap/priv_syswrap-generic.h \
 	m_syswrap/priv_syswrap-linux.h \
@@ -377,6 +378,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_scheduler/sema.c \
 	m_scheduler/sched-lock.c \
 	m_scheduler/sched-lock-generic.c \
+	m_sigframe/sigframe-common.c \
 	m_sigframe/sigframe-x86-linux.c \
 	m_sigframe/sigframe-amd64-linux.c \
 	m_sigframe/sigframe-ppc32-linux.c \

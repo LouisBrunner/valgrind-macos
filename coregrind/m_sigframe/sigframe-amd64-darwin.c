@@ -82,19 +82,6 @@ struct hacky_sigframe {
 };
 
 
-/* Extend the stack segment downwards if needed so as to ensure the
-   new signal frames are mapped to something.  Return a Bool
-   indicating whether or not the operation was successful.
-*/
-static Bool extend ( ThreadState *tst, Addr addr, SizeT size )
-{
-   ThreadId tid = tst->tid;
-   VG_TRACK( new_mem_stack_signal, addr - VG_STACK_REDZONE_SZB,
-             size + VG_STACK_REDZONE_SZB, tid );
-   return True;
-}
-
-
 /* Create a signal frame for thread 'tid'.  Make a 3-arg frame
    regardless of whether the client originally requested a 1-arg
    version (no SA_SIGINFO) or a 3-arg one (SA_SIGINFO) since in the
@@ -122,7 +109,7 @@ void VG_(sigframe_create) ( ThreadId tid,
                 entry to a function. */
 
    tst = VG_(get_ThreadState)(tid);
-   if (!extend(tst, rsp, sp_top_of_frame - rsp))
+   if (! ML_(sf_extend_stack)(tst, rsp, sp_top_of_frame - rsp))
       return;
 
    vg_assert(VG_IS_16_ALIGNED(rsp+8));

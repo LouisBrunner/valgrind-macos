@@ -45,6 +45,7 @@
 #include "pub_core_signals.h"
 #include "pub_core_tooliface.h"
 #include "pub_core_trampoline.h"
+#include "priv_sigframe.h"
 
 #if defined(VGA_s390x)
 
@@ -258,49 +259,6 @@ static void restore_sigregs(ThreadState *tst, _vki_sigregs *sigregs)
    tst->arch.vex.guest_IA = sigregs->regs.psw.addr;
 }
 
-/* Extend the stack segment downwards if needed so as to ensure the
-   new signal frames are mapped to something.  Return a Bool
-   indicating whether or not the operation was successful.
-*/
-static Bool extend ( ThreadState *tst, Addr addr, SizeT size )
-{
-   ThreadId        tid = tst->tid;
-   NSegment const* stackseg = NULL;
-
-   if (VG_(extend_stack)(tid, addr)) {
-      stackseg = VG_(am_find_nsegment)(addr);
-      if (0 && stackseg)
-	 VG_(printf)("frame=%#lx seg=%#lx-%#lx\n",
-		     addr, stackseg->start, stackseg->end);
-   }
-
-   if (stackseg == NULL || !stackseg->hasR || !stackseg->hasW) {
-      VG_(message)(
-         Vg_UserMsg,
-         "Can't extend stack to %#lx during signal delivery for thread %d:\n",
-         addr, tid);
-      if (stackseg == NULL)
-         VG_(message)(Vg_UserMsg, "  no stack segment\n");
-      else
-         VG_(message)(Vg_UserMsg, "  too small or bad protection modes\n");
-
-      /* set SIGSEGV to default handler */
-      VG_(set_default_handler)(VKI_SIGSEGV);
-      VG_(synth_fault_mapping)(tid, addr);
-
-      /* The whole process should be about to die, since the default
-	 action of SIGSEGV to kill the whole process. */
-      return False;
-   }
-
-   /* For tracking memory events, indicate the entire frame has been
-      allocated. */
-   VG_TRACK( new_mem_stack_signal, addr - VG_STACK_REDZONE_SZB,
-             size + VG_STACK_REDZONE_SZB, tid );
-
-   return True;
-}
-
 
 /* Build the Valgrind-specific part of a signal frame. */
 
@@ -340,7 +298,7 @@ static Addr build_sigframe(ThreadState *tst,
    sp -= sizeof(*frame);
    frame = (struct sigframe *)sp;
 
-   if (!extend(tst, sp, sizeof(*frame)))
+   if (! ML_(sf_extend_stack)(tst, sp, sizeof(*frame)))
       return sp_top_of_frame;
 
    /* retcode, sigNo, sc, sregs fields are to be written */
@@ -400,7 +358,7 @@ static Addr build_rt_sigframe(ThreadState *tst,
    sp -= sizeof(*frame);
    frame = (struct rt_sigframe *)sp;
 
-   if (!extend(tst, sp, sizeof(*frame)))
+   if (! ML_(sf_extend_stack)(tst, sp, sizeof(*frame)))
       return sp_top_of_frame;
 
    /* retcode, sigNo, sc, sregs fields are to be written */

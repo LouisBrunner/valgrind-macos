@@ -50,7 +50,7 @@
 #include "pub_core_signals.h"
 #include "pub_core_tooliface.h"
 #include "pub_core_trampoline.h"
-#include "pub_core_transtab.h"      // VG_(discard_translations)
+#include "priv_sigframe.h"
 
 
 /* This uses the hack of dumping the vex guest state along with both
@@ -81,44 +81,6 @@ struct rt_sigframe {
    struct sigframe sig;
 };
 
-static Bool extend ( ThreadState *tst, Addr addr, SizeT size )
-{
-   ThreadId        tid = tst->tid;
-   NSegment const* stackseg = NULL;
-
-   if (VG_(extend_stack)(tid, addr)) {
-      stackseg = VG_(am_find_nsegment)(addr);
-      if (0 && stackseg)
-    VG_(printf)("frame=%#lx seg=%#lx-%#lx\n",
-           addr, stackseg->start, stackseg->end);
-   }
-
-   if (stackseg == NULL || !stackseg->hasR || !stackseg->hasW) {
-      VG_(message)(
-         Vg_UserMsg,
-         "Can't extend stack to %#lx during signal delivery for thread %d:",
-         addr, tid);
-      if (stackseg == NULL)
-         VG_(message)(Vg_UserMsg, "  no stack segment");
-      else
-         VG_(message)(Vg_UserMsg, "  too small or bad protection modes");
-
-      /* set SIGSEGV to default handler */
-      VG_(set_default_handler)(VKI_SIGSEGV);
-      VG_(synth_fault_mapping)(tid, addr);
-
-      /* The whole process should be about to die, since the default
-    action of SIGSEGV to kill the whole process. */
-      return False;
-   }
-
-   /* For tracking memory events, indicate the entire frame has been
-      allocated. */
-   VG_TRACK( new_mem_stack_signal, addr - VG_STACK_REDZONE_SZB,
-             size + VG_STACK_REDZONE_SZB, tid );
-
-   return True;
-}
 
 static void synth_ucontext( ThreadId tid, const vki_siginfo_t *si,
                     UWord trapno, UWord err, const vki_sigset_t *set, 
@@ -223,7 +185,7 @@ void VG_(sigframe_create)( ThreadId tid,
    sp -= size;
    sp = VG_ROUNDDN(sp, 16);
 
-   if(!extend(tst, sp, size))
+   if(! ML_(sf_extend_stack)(tst, sp, size))
       I_die_here; // XXX Incorrect behavior
 
 

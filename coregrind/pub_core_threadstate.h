@@ -42,7 +42,7 @@
 #include "pub_tool_threadstate.h"
 #include "pub_core_libcsetjmp.h"   // VG_MINIMAL_JMP_BUF
 #include "pub_core_vki.h"          // vki_sigset_t
-#include "pub_core_guest.h"        // VexGuestAMD64State etc.
+#include "pub_core_guest.h"        // VexGuestArchState
 #include "libvex.h"                // LibVEX_N_SPILL_BYTES
 
 

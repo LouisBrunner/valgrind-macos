@@ -2628,7 +2628,7 @@ void shutdown_actions_NORETURN( ThreadId tid,
    VG_(sanity_check_general)( True /*include expensive checks*/ );
 
    if (VG_(clo_stats))
-      VG_(print_all_stats)(VG_(clo_verbosity) > 2, /* Memory stats */
+      VG_(print_all_stats)(VG_(clo_verbosity) >= 1, /* Memory stats */
                            False /* tool prints stats in the tool fini */);
 
    /* Show a profile of the heap(s) at shutdown.  Optionally, first

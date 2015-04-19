@@ -4175,6 +4175,7 @@ PRE(sys_setuid)
 
 PRE(sys_newstat)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_newstat ( %#lx(%s), %#lx )", ARG1,(char*)ARG1,ARG2);
    PRE_REG_READ2(long, "stat", char *, file_name, struct stat *, buf);
    PRE_MEM_RASCIIZ( "stat(file_name)", ARG1 );
@@ -4188,6 +4189,7 @@ POST(sys_newstat)
 
 PRE(sys_statfs)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_statfs ( %#lx(%s), %#lx )",ARG1,(char*)ARG1,ARG2);
    PRE_REG_READ2(long, "statfs", const char *, path, struct statfs *, buf);
    PRE_MEM_RASCIIZ( "statfs(path)", ARG1 );

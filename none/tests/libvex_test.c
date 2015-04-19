@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <endian.h>
 #include "../../VEX/pub/libvex.h"
 
 Bool return_false(void*cb, Addr ad)
@@ -33,6 +34,49 @@ static void log_bytes (const HChar* chars, SizeT nbytes )
    printf("%*s", (int)nbytes, chars);
 }
 
+// Returns the endness of the system we are running on.
+// We use that as the endness of arch that supports both
+// little and big endian.
+static VexEndness running_endness (void)
+{
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+   return VexEndnessLE;
+#elif __BYTE_ORDER == __BIG_ENDIAN
+   return VexEndnessBE;
+#else
+   fprintf(stderr, "cannot determine endianess\n");
+   exit(1);
+#endif
+}
+
+// noinline, as this function is also the one we decode.
+__attribute__((noinline)) static void get_guest_arch(VexArch    *ga)
+{
+#if defined(VGA_x86)
+   *ga = VexArchX86;
+#elif defined(VGA_amd64)
+   *ga = VexArchAMD64;
+#elif defined(VGA_arm)
+   *ga = VexArchARM;
+#elif defined(VGA_arm64)
+   *ga = VexArchARM64;
+#elif defined(VGA_ppc32)
+   *ga = VexArchPPC32;
+#elif defined(VGA_ppc64be) || defined(VGA_ppc64le) 
+   *ga = VexArchPPC64;
+#elif defined(VGA_s390x)
+   *ga = VexArchS390X;
+#elif defined(VGA_mips32)
+   *ga = VexArchMIPS32;
+#elif defined(VGA_mips64)
+   *ga = VexArchMIPS64;
+#elif defined(VGA_tilegx)
+   *ga = VexArchTILEGX;
+#else
+   missing arch;
+#endif
+}
+
 static VexEndness arch_endness (VexArch va) {
    switch (va) {
    case VexArch_INVALID: failure_exit();
@@ -41,10 +85,29 @@ static VexEndness arch_endness (VexArch va) {
    case VexArchARM:    return VexEndnessLE;
    case VexArchARM64:  return VexEndnessLE;
    case VexArchPPC32:  return VexEndnessBE;
-   case VexArchPPC64:  return VexEndnessBE;
+   case VexArchPPC64:
+      /* ppc64 supports BE or LE at run time. So, on a LE system,
+         returns LE, on a BE system, return BE. */
+      return running_endness();
    case VexArchS390X:  return VexEndnessBE;
-   case VexArchMIPS32: return VexEndnessBE;
-   case VexArchMIPS64: return VexEndnessBE;
+   case VexArchMIPS32:
+   case VexArchMIPS64:
+      /* mips32/64 supports BE or LE, but at compile time.
+         If mips64 is compiled on a non mips system, the VEX lib
+         is missing bit and pieces of code related to endianess.
+         The mandatory code for this test is then compiled as BE.
+         So, if this test runs on a mips system, returns the
+         running endianess. Otherwise, returns BE as this one
+         has the more chances to work. */
+      {
+         VexArch ga;
+         get_guest_arch( &ga);
+
+         if (ga == VexArchMIPS64 || ga == VexArchMIPS32)
+            return running_endness();
+         else
+            return VexEndnessBE;
+      }
    case VexArchTILEGX: return VexEndnessLE;
    default: failure_exit();
    }
@@ -84,34 +147,6 @@ static Bool mode64 (VexArch va) {
    case VexArchTILEGX: return True;
    default: failure_exit();
    }
-}
-
-// noinline, as this function is also the one we decode.
-__attribute__((noinline)) void get_guest_arch(VexArch    *ga)
-{
-#if defined(VGA_x86)
-   *ga = VexArchX86;
-#elif defined(VGA_amd64)
-   *ga = VexArchAMD64;
-#elif defined(VGA_arm)
-   *ga = VexArchARM;
-#elif defined(VGA_arm64)
-   *ga = VexArchARM64;
-#elif defined(VGA_ppc32)
-   *ga = VexArchPPC32;
-#elif defined(VGA_ppc64be) || defined(VGA_ppc64le) 
-   *ga = VexArchPPC64;
-#elif defined(VGA_s390x)
-   *ga = VexArchS390X;
-#elif defined(VGA_mips32)
-   *ga = VexArchMIPS32;
-#elif defined(VGA_mips64)
-   *ga = VexArchMIPS64;
-#elif defined(VGA_tilegx)
-   *ga = VexArchTILEGX;
-#else
-   missing arch;
-#endif
 }
 
 static void show_vta(char *msg, VexTranslateArgs *vta)

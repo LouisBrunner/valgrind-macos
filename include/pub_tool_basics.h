@@ -192,9 +192,6 @@ static inline UWord sr_Res ( SysRes sr ) {
 static inline UWord sr_ResEx ( SysRes sr ) {
    return sr._isError ? 0 : sr._valEx;
 }
-static inline UWord sr_ResHI ( SysRes sr ) {
-   return 0;
-}
 static inline UWord sr_Err ( SysRes sr ) {
    return sr._isError ? sr._val : 0;
 }

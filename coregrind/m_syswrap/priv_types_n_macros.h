@@ -331,11 +331,13 @@ static inline UWord getRES ( SyscallStatus* st ) {
    return sr_Res(st->sres);
 }
 
+#if defined(VGO_darwin)
 static inline UWord getRESHI ( SyscallStatus* st ) {
    vg_assert(st->what == SsComplete);
    vg_assert(!sr_isError(st->sres));
    return sr_ResHI(st->sres);
 }
+#endif
 
 static inline UWord getERR ( SyscallStatus* st ) {
    vg_assert(st->what == SsComplete);

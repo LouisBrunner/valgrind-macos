@@ -643,6 +643,44 @@ void VG_(err_config_error) ( const HChar* format, ... )
    VG_(exit)(1);
 }
 
+/* ---------------------------------------------------------------------
+   VG_(sr_as_string)()
+   ------------------------------------------------------------------ */
+
+/* Return a textual representation of a SysRes value in a statically
+   allocated buffer. The buffer will be overwritten with the next 
+   invocation. */
+#if defined(VGO_linux)
+// FIXME: Does this function need to be adjusted for MIPS's _valEx ?
+const HChar *VG_(sr_as_string) ( SysRes sr )
+{
+   static HChar buf[7+1+2+16+1+1];   // large enough
+
+   if (sr_isError(sr))
+      VG_(sprintf)(buf, "Failure(0x%lx)", sr_Err(sr));
+   else
+      VG_(sprintf)(buf, "Success(0x%lx)", sr_Res(sr));
+   return buf;
+}
+
+#elif defined(VGO_darwin)
+
+const HChar *VG_(sr_as_string) ( SysRes sr )
+{
+   static HChar buf[7+1+2+16+1+2+16+1+1];   // large enough
+
+   if (sr_isError(sr))
+      VG_(sprintf)(buf, "Failure(0x%lx)", sr_Err(sr));
+   else
+      VG_(sprintf)(buf, "Success(0x%lx:0x%lx)", sr_ResHI(sr), sr_Res(sr));
+   return buf;
+}
+
+#else
+
+#error unknown OS
+
+#endif
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

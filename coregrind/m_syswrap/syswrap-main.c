@@ -1669,9 +1669,7 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
       if (sci->flags & SfNoWriteResult) {
          PRINT(" --> [pre-success] NoWriteResult");
       } else {
-         PRINT(" --> [pre-success] Success(0x%llx:0x%llx)",
-               (ULong)sr_ResHI(sci->status.sres),
-               (ULong)sr_Res(sci->status.sres));
+         PRINT(" --> [pre-success] %s", VG_(sr_as_string)(sci->status.sres));
       }                                      
       /* In this case the allowable flags are to ask for a signal-poll
          and/or a yield after the call.  Changing the args isn't
@@ -1684,7 +1682,7 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
    else
    if (sci->status.what == SsComplete && sr_isError(sci->status.sres)) {
       /* The pre-handler decided to fail syscall itself. */
-      PRINT(" --> [pre-fail] Failure(0x%llx)", (ULong)sr_Err(sci->status.sres));
+      PRINT(" --> [pre-fail] %s", VG_(sr_as_string)(sci->status.sres));
       /* In this case, the pre-handler is also allowed to ask for the
          post-handler to be run anyway.  Changing the args is not
          allowed. */
@@ -1769,18 +1767,9 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
 
          /* Be decorative, if required. */
          if (VG_(clo_trace_syscalls)) {
-            Bool failed = sr_isError(sci->status.sres);
-            if (failed) {
-               PRINT("SYSCALL[%d,%d](%s) ... [async] --> Failure(0x%llx)",
-                     VG_(getpid)(), tid, VG_SYSNUM_STRING(sysno),
-                     (ULong)sr_Err(sci->status.sres));
-            } else {
-               PRINT("SYSCALL[%d,%d](%s) ... [async] --> "
-                     "Success(0x%llx:0x%llx)",
-                     VG_(getpid)(), tid, VG_SYSNUM_STRING(sysno),
-                     (ULong)sr_ResHI(sci->status.sres),
-                     (ULong)sr_Res(sci->status.sres) );
-            }
+            PRINT("SYSCALL[%d,%d](%s) ... [async] --> %s",
+                  VG_(getpid)(), tid, VG_SYSNUM_STRING(sysno),
+                  VG_(sr_as_string)(sci->status.sres));
          }
 
       } else {
@@ -1800,15 +1789,7 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
 
          /* Be decorative, if required. */
          if (VG_(clo_trace_syscalls)) {
-            Bool failed = sr_isError(sci->status.sres);
-            if (failed) {
-               PRINT("[sync] --> Failure(0x%llx)",
-                     (ULong)sr_Err(sci->status.sres) );
-            } else {
-               PRINT("[sync] --> Success(0x%llx:0x%llx)",
-                     (ULong)sr_ResHI(sci->status.sres),
-                     (ULong)sr_Res(sci->status.sres) );
-            }
+           PRINT("[sync] --> %s", VG_(sr_as_string)(sci->status.sres));
          }
       }
    }

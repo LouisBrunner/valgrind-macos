@@ -154,6 +154,9 @@ extern UInt VG_(dmsg)( const HChar* format, ... ) PRINTF_CHECK(1, 2);
 /* Flush any output cached by previous calls to VG_(message) et al. */
 extern void VG_(message_flush) ( void );
 
+/* Return a SysRes value as a character string. */
+extern const HChar *VG_(sr_as_string) ( SysRes sr );
+
 #endif   // __PUB_TOOL_LIBCPRINT_H
 
 /*--------------------------------------------------------------------*/

@@ -574,7 +574,7 @@ typedef struct SigQueue {
 #  define VG_UCONTEXT_SYSCALL_NUM(uc)     ((uc)->uc_mcontext.gregs[10])
 #  define VG_UCONTEXT_SYSCALL_SYSRES(uc)                            \
       /* Convert the value in uc_mcontext.rax into a SysRes. */     \
-      VG_(mk_SysRes_amd64_linux)((uc)->uc_mcontext.gregs[0])
+      VG_(mk_SysRes_tilegx_linux)((uc)->uc_mcontext.gregs[0])
 #  define VG_UCONTEXT_TO_UnwindStartRegs(srP, uc)              \
       { (srP)->r_pc = (uc)->uc_mcontext.pc;                    \
         (srP)->r_sp = (uc)->uc_mcontext.sp;                    \

@@ -62,7 +62,6 @@
 
 SysRes VG_(mk_SysRes_x86_linux) ( Int val ) {
    SysRes res;
-   res._valEx   = 0; /* unused except on mips-linux */
    res._isError = val >= -4095 && val <= -1;
    if (res._isError) {
       res._val = (UInt)(-val);
@@ -75,7 +74,6 @@ SysRes VG_(mk_SysRes_x86_linux) ( Int val ) {
 /* Similarly .. */
 SysRes VG_(mk_SysRes_amd64_linux) ( Long val ) {
    SysRes res;
-   res._valEx   = 0; /* unused except on mips-linux */
    res._isError = val >= -4095 && val <= -1;
    if (res._isError) {
       res._val = (ULong)(-val);
@@ -87,7 +85,6 @@ SysRes VG_(mk_SysRes_amd64_linux) ( Long val ) {
 
 SysRes VG_(mk_SysRes_tilegx_linux) ( Long val ) {
   SysRes res;
-  res._valEx   = 0; /* unused except on mips-linux */
   res._isError = val >= -4095 && val <= -1;
   if (res._isError) {
     res._val = (ULong)(-val);
@@ -101,7 +98,6 @@ SysRes VG_(mk_SysRes_tilegx_linux) ( Long val ) {
 /* Note this must be in the bottom bit of the second arg */
 SysRes VG_(mk_SysRes_ppc32_linux) ( UInt val, UInt cr0so ) {
    SysRes res;
-   res._valEx   = 0; /* unused except on mips-linux */
    res._isError = (cr0so & 1) != 0;
    res._val     = val;
    return res;
@@ -110,7 +106,6 @@ SysRes VG_(mk_SysRes_ppc32_linux) ( UInt val, UInt cr0so ) {
 /* As per ppc32 version, cr0.so must be in l.s.b. of 2nd arg */
 SysRes VG_(mk_SysRes_ppc64_linux) ( ULong val, ULong cr0so ) {
    SysRes res;
-   res._valEx   = 0; /* unused except on mips-linux */
    res._isError = (cr0so & 1) != 0;
    res._val     = val;
    return res;
@@ -118,7 +113,6 @@ SysRes VG_(mk_SysRes_ppc64_linux) ( ULong val, ULong cr0so ) {
 
 SysRes VG_(mk_SysRes_s390x_linux) ( Long val ) {
    SysRes res;
-   res._valEx   = 0; /* unused except on mips-linux */
    res._isError = val >= -4095 && val <= -1;
    if (res._isError) {
       res._val = -val;
@@ -130,7 +124,6 @@ SysRes VG_(mk_SysRes_s390x_linux) ( Long val ) {
 
 SysRes VG_(mk_SysRes_arm_linux) ( Int val ) {
    SysRes res;
-   res._valEx   = 0; /* unused except on mips-linux */
    res._isError = val >= -4095 && val <= -1;
    if (res._isError) {
       res._val = (UInt)(-val);
@@ -142,7 +135,6 @@ SysRes VG_(mk_SysRes_arm_linux) ( Int val ) {
 
 SysRes VG_(mk_SysRes_arm64_linux) ( Long val ) {
    SysRes res;
-   res._valEx   = 0; /* unused except on mips-linux */
    res._isError = val >= -4095 && val <= -1;
    if (res._isError) {
       res._val = (ULong)(-val);
@@ -152,6 +144,7 @@ SysRes VG_(mk_SysRes_arm64_linux) ( Long val ) {
    return res;
 }
 
+#if defined(VGA_mips64) || defined(VGA_mips32)
 /* MIPS uses a3 != 0 to flag an error */
 SysRes VG_(mk_SysRes_mips32_linux) ( UWord v0, UWord v1, UWord a3 ) {
    SysRes res;
@@ -169,11 +162,14 @@ SysRes VG_(mk_SysRes_mips64_linux) ( ULong v0, ULong v1, ULong a3 ) {
    res._valEx   = v1;
    return res;
 }
+#endif
 
 /* Generic constructors. */
 SysRes VG_(mk_SysRes_Error) ( UWord err ) {
    SysRes r;
-   r._valEx   = 0; /* unused except on mips-linux */
+#if defined(VGA_mips64) || defined(VGA_mips32)
+   r._valEx   = 0;
+#endif
    r._isError = True;
    r._val     = err;
    return r;
@@ -181,7 +177,9 @@ SysRes VG_(mk_SysRes_Error) ( UWord err ) {
 
 SysRes VG_(mk_SysRes_Success) ( UWord res ) {
    SysRes r;
-   r._valEx   = 0; /* unused except on mips-linux */
+#if defined(VGA_mips64) || defined(VGA_mips32)
+   r._valEx   = 0;
+#endif
    r._isError = False;
    r._val     = res;
    return r;

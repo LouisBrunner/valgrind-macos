@@ -153,9 +153,11 @@ typedef UInt ThreadId;
 #if defined(VGO_linux)
 typedef
    struct {
-      UWord _val;
-      UWord _valEx;   // only used on mips-linux
       Bool  _isError;
+      UWord _val;
+#if defined(VGA_mips64) || defined(VGA_mips32)
+      UWord _valEx;
+#endif
    }
    SysRes;
 #elif defined(VGO_darwin)
@@ -189,15 +191,17 @@ static inline Bool sr_isError ( SysRes sr ) {
 static inline UWord sr_Res ( SysRes sr ) {
    return sr._isError ? 0 : sr._val;
 }
+#if defined(VGA_mips64) || defined(VGA_mips32)
 static inline UWord sr_ResEx ( SysRes sr ) {
    return sr._isError ? 0 : sr._valEx;
 }
+#endif
 static inline UWord sr_Err ( SysRes sr ) {
    return sr._isError ? sr._val : 0;
 }
+// FIXME: this function needs to be fixed for MIPS
 static inline Bool sr_EQ ( SysRes sr1, SysRes sr2 ) {
    return sr1._val == sr2._val
-       && sr1._valEx == sr2._valEx
        && sr1._isError == sr2._isError;
 }
 

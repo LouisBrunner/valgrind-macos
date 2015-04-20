@@ -3818,8 +3818,6 @@ static void SVal__rcdec ( SVal s ) {
 //                                                     //
 /////////////////////////////////////////////////////////
 
-#define EVENT_MAP_GC_DISCARD_FRACTION  0.5
-
 /* This is in two parts:
 
    1. A hash table of RCECs.  This is a set of reference-counted stack
@@ -3832,8 +3830,9 @@ static void SVal__rcdec ( SVal s ) {
    2. A SparseWA of OldRefs.  These store information about each old
       ref that we need to record.  It is indexed by address of the
       location for which the information is recorded.  For LRU
-      purposes, each OldRef also contains a generation number,
-      indicating when it was most recently accessed.
+      purposes, each OldRef in the SparseWA is also on a doubly
+      linked list maintaining the order in which the OldRef were most
+      recently accessed.
 
       The important part of an OldRef is, however, its accs[] array.
       This is an array of N_OLDREF_ACCS which binds (thread, R/W,
@@ -3843,9 +3842,8 @@ static void SVal__rcdec ( SVal s ) {
       falls off the end, that's too bad -- we will lose info about
       that triple's access to this location.
 
-      When the SparseWA becomes too big, we can throw away the OldRefs
-      whose generation numbers are below some threshold; hence doing
-      approximate LRU discarding.  For each discarded OldRef we must
+      We allocate a maximum of VG_(clo_conflict_cache_size) OldRef.
+      Then we do exact LRU discarding.  For each discarded OldRef we must
       of course decrement the reference count on the all RCECs it
       refers to, in order that entries from (1) eventually get
       discarded too.
@@ -3903,8 +3901,22 @@ typedef
    }
    RCEC;
 
+//////////// BEGIN RCEC pool allocator
+static PoolAlloc* rcec_pool_allocator;
+static RCEC* alloc_RCEC ( void ) {
+   return VG_(allocEltPA) ( rcec_pool_allocator );
+}
+
+static void free_RCEC ( RCEC* rcec ) {
+   tl_assert(rcec->magic == RCEC_MAGIC);
+   VG_(freeEltPA)( rcec_pool_allocator, rcec );
+}
+//////////// END RCEC pool allocator
+
 static RCEC** contextTab = NULL; /* hash table of RCEC*s */
 
+/* Count of allocated RCEC having ref count > 0 */
+static UWord RCEC_referenced = 0;
 
 /* Gives an arbitrary total order on RCEC .frames fields */
 static Word RCEC__cmp_by_frames ( RCEC* ec1, RCEC* ec2 ) {
@@ -3928,27 +3940,17 @@ static void ctxt__rcdec ( RCEC* ec )
    tl_assert(ec && ec->magic == RCEC_MAGIC);
    tl_assert(ec->rc > 0);
    ec->rc--;
+   if (ec->rc == 0) 
+      RCEC_referenced--;
 }
 
 static void ctxt__rcinc ( RCEC* ec )
 {
    tl_assert(ec && ec->magic == RCEC_MAGIC);
+   if (ec->rc == 0) 
+      RCEC_referenced++;
    ec->rc++;
 }
-
-
-//////////// BEGIN RCEC pool allocator
-static PoolAlloc* rcec_pool_allocator;
-
-static RCEC* alloc_RCEC ( void ) {
-   return VG_(allocEltPA) ( rcec_pool_allocator );
-}
-
-static void free_RCEC ( RCEC* rcec ) {
-   tl_assert(rcec->magic == RCEC_MAGIC);
-   VG_(freeEltPA)( rcec_pool_allocator, rcec );
-}
-//////////// END RCEC pool allocator
 
 
 /* Find 'ec' in the RCEC list whose head pointer lives at 'headp' and
@@ -4072,9 +4074,6 @@ static RCEC* get_RCEC ( Thr* thr )
 ///  A SparseWA guest-addr -> OldRef, that refers to (1)
 ///
 
-// (UInt) `echo "Old Reference Information" | md5sum`
-#define OldRef_MAGIC 0x30b1f075UL
-
 /* Records an access: a thread, a context (size & writeness) and the
    number of held locks. The size (1,2,4,8) is encoded as 00 = 1, 01 =
    2, 10 = 4, 11 = 8. 
@@ -4092,34 +4091,98 @@ typedef
 #define N_OLDREF_ACCS 5
 
 typedef
-   struct {
-      UWord magic;  /* sanity check only */
-      UWord gen;    /* when most recently accessed */
-                    /* or free list when not in use */
+   struct OldRef {
+      struct OldRef *prev; // to refs older than this one
+      struct OldRef *next; // to refs newer that this one
+      Addr ga; // Address for which we record up to N_OLDREF_ACCS accesses.
       /* unused slots in this array have .thrid == 0, which is invalid */
       Thr_n_RCEC accs[N_OLDREF_ACCS];
    }
    OldRef;
-
+/* We need ga in OldRef in order to remove OldRef from the sparsewa
+   by key (i.e. ga) when re-using the lru OldRef. */
 
 //////////// BEGIN OldRef pool allocator
 static PoolAlloc* oldref_pool_allocator;
-
-static OldRef* alloc_OldRef ( void ) {
-   return VG_(allocEltPA) ( oldref_pool_allocator );
-}
-
-static void free_OldRef ( OldRef* r ) {
-   tl_assert(r->magic == OldRef_MAGIC);
-   VG_(freeEltPA)( oldref_pool_allocator, r );
-}
+// Note: We only allocate elements in this pool allocator, we never free them.
+// We stop allocating elements at VG_(clo_conflict_cache_size).
 //////////// END OldRef pool allocator
 
+static OldRef mru; 
+static OldRef lru; 
+// A double linked list, chaining all OldREf in a mru/lru order.
+// mru/lru are sentinel nodes.
+// Whenever an oldref is re-used, its position is changed as the most recently
+// used (i.e. pointed to by mru.prev).
+// When a new oldref is needed, it is allocated from the pool
+//  if we have not yet reached --conflict-cache-size.
+// Otherwise, if all oldref have already been allocated,
+// the least recently used (i.e. pointed to by lru.next) is re-used.
+// When an OldRef is used, it is moved as the most recently used entry
+// (i.e. pointed to by mru.prev).
+
+// Removes r from the double linked list
+// Note: we do not need to test for special cases such as
+// NULL next or prev pointers, because we have sentinel nodes
+// at both sides of the list. So, a node is always forward and
+// backward linked.
+static inline void OldRef_unchain(OldRef *r)
+{
+   r->next->prev = r->prev;
+   r->prev->next = r->next;
+}
+
+// Insert new as the newest OldRef
+// Similarly to OldRef_unchain, no need to test for NULL
+// pointers, as e.g. mru.prev is always guaranteed to point
+// to a non NULL node (lru when the list is empty).
+static inline void OldRef_newest(OldRef *new)
+{
+   new->next = &mru;
+   new->prev = mru.prev;
+   mru.prev = new;
+   new->prev->next = new;
+}
 
 static SparseWA* oldrefTree     = NULL; /* SparseWA* OldRef* */
-static UWord     oldrefGen      = 0;    /* current LRU generation # */
 static UWord     oldrefTreeN    = 0;    /* # elems in oldrefTree */
-static UWord     oldrefGenIncAt = 0;    /* inc gen # when size hits this */
+/* Note: the nr of ref in the oldrefTree will always be equal to
+   the nr of elements that were allocated from the OldRef pool allocator
+   as we never free an OldRef : we just re-use them. */
+
+
+/* allocates a new OldRef or re-use the lru one if all allowed OldRef
+   have already been allocated. */
+static OldRef* alloc_or_reuse_OldRef ( void )
+{
+   if (oldrefTreeN < HG_(clo_conflict_cache_size)) {
+      oldrefTreeN++;
+      return VG_(allocEltPA) ( oldref_pool_allocator );
+   } else {
+      Bool  b;
+      UWord valW;
+      OldRef *oldref = lru.next;
+
+      OldRef_unchain(oldref);
+      b = VG_(delFromSWA)( oldrefTree, &valW, oldref->ga );
+      tl_assert(b);
+      tl_assert (oldref == (OldRef*)valW);
+
+      for (UInt i = 0; i < N_OLDREF_ACCS; i++) {
+         ThrID aThrID = oldref->accs[i].thrid;
+         RCEC* aRef   = oldref->accs[i].rcec;
+         if (aRef) {
+            tl_assert(aThrID != 0);
+            stats__ctxt_rcdec3++;
+            ctxt__rcdec( aRef );
+         } else {
+            tl_assert(aThrID == 0);
+         }
+      }
+      return oldref;
+   }
+}
+
 
 inline static UInt min_UInt ( UInt a, UInt b ) {
    return a < b ? a : b;
@@ -4181,7 +4244,8 @@ static void event_map_bind ( Addr a, SizeT szB, Bool isW, Thr* thr )
          see if we have a stack trace pertaining to this (thrid, R/W,
          size) triple. */
       ref = (OldRef*)valW;
-      tl_assert(ref->magic == OldRef_MAGIC);
+
+      tl_assert (ref->ga == a);
 
       for (i = 0; i < N_OLDREF_ACCS; i++) {
          if (ref->accs[i].thrid != thrid)
@@ -4236,21 +4300,14 @@ static void event_map_bind ( Addr a, SizeT szB, Bool isW, Thr* thr )
          /* tl_assert(thrid != 0); */ /* There's a dominating assert above. */
       }
 
-      ref->gen = oldrefGen;
+      OldRef_unchain(ref);
+      OldRef_newest(ref);
 
    } else {
 
       /* We don't have a record for this address.  Create a new one. */
-      if (oldrefTreeN >= oldrefGenIncAt) {
-         oldrefGen++;
-         oldrefGenIncAt = oldrefTreeN + 50000;
-         if (0) VG_(printf)("oldrefTree: new gen %lu at size %lu\n",
-                            oldrefGen, oldrefTreeN );
-      }
-
-      ref = alloc_OldRef();
-      ref->magic = OldRef_MAGIC;
-      ref->gen   = oldrefGen;
+      ref = alloc_or_reuse_OldRef();
+      ref->ga = a;
       ref->accs[0].thrid      = thrid;
       ref->accs[0].szLg2B     = szLg2B;
       ref->accs[0].isW        = (UInt)(isW & 1);
@@ -4270,8 +4327,7 @@ static void event_map_bind ( Addr a, SizeT szB, Bool isW, Thr* thr )
          ref->accs[j].locksHeldW = 0;
       }
       VG_(addToSWA)( oldrefTree, a, (UWord)ref );
-      oldrefTreeN++;
-
+      OldRef_newest (ref);
    }
 }
 
@@ -4323,7 +4379,6 @@ Bool libhb_event_map_lookup ( /*OUT*/ExeContext** resEC,
          continue;
 
       ref = (OldRef*)valW;
-      tl_assert(ref->magic == OldRef_MAGIC);
       tl_assert(ref->accs[0].thrid != 0); /* first slot must always be used */
 
       cand_thrid      = 0; /* invalid; see comments in event_map_bind */
@@ -4429,12 +4484,22 @@ static void event_map_init ( void )
                    HG_(free)
                 );
 
-   oldrefGen = 0;
-   oldrefGenIncAt = 0;
    oldrefTreeN = 0;
+   mru.prev = &lru;
+   mru.next = NULL;
+   lru.prev = NULL;
+   lru.next = &mru;
+   for (i = 0; i < N_OLDREF_ACCS; i++) {
+      mru.accs[i] = (Thr_n_RCEC) {.rcec = NULL, 
+                                  .locksHeldW = 0, 
+                                  .thrid = 0, 
+                                  .szLg2B = 0, 
+                                  .isW = 0};
+      lru.accs[i] = mru.accs[i];
+   }
 }
 
-static void event_map__check_reference_counts ( Bool before )
+static void event_map__check_reference_counts ( void )
 {
    RCEC*   rcec;
    OldRef* oldref;
@@ -4452,8 +4517,6 @@ static void event_map__check_reference_counts ( Bool before )
          nEnts++;
          tl_assert(rcec);
          tl_assert(rcec->magic == RCEC_MAGIC);
-         if (!before)
-            tl_assert(rcec->rc > 0);
          rcec->rcX = 0;
       }
    }
@@ -4466,7 +4529,6 @@ static void event_map__check_reference_counts ( Bool before )
    VG_(initIterSWA)( oldrefTree );
    while (VG_(nextIterSWA)( oldrefTree, &keyW, &valW )) {
       oldref = (OldRef*)valW;
-      tl_assert(oldref->magic == OldRef_MAGIC);
       for (i = 0; i < N_OLDREF_ACCS; i++) {
          ThrID aThrID = oldref->accs[i].thrid;
          RCEC* aRef   = oldref->accs[i].rcec;
@@ -4489,244 +4551,22 @@ static void event_map__check_reference_counts ( Bool before )
 }
 
 __attribute__((noinline))
-static void event_map_GC ( void )
+static void do_RCEC_GC ( void )
 {
-   OldRef* oldref;
-   UWord   keyW, valW, retained, maxGen;
-   XArray* refs2del;
-   Word    i, j, n2del;
+   UInt i;
 
-   UWord* genMap      = NULL;
-   UWord  genMap_min  = 0;
-   UWord  genMap_size = 0;
-
-   if (0)
-      VG_(printf)("libhb: event_map GC at size %lu\n", oldrefTreeN);
-
-   /* Check for sane command line params.  Limit values must match
-      those in hg_process_cmd_line_option. */
-   tl_assert( HG_(clo_conflict_cache_size) >= 10*1000 );
-   tl_assert( HG_(clo_conflict_cache_size) <= 30*1000*1000 );
-
-   /* Check our counting is sane (expensive) */
-   if (CHECK_CEM)
-      tl_assert(oldrefTreeN == VG_(sizeSWA)( oldrefTree ));
-
-   /* Check the reference counts (expensive) */
-   if (CHECK_CEM)
-      event_map__check_reference_counts( True/*before*/ );
-
-   /* Compute the distribution of generation values in the ref tree.
-      There are likely only to be a few different generation numbers
-      in the whole tree, but we don't know what they are.  Hence use a
-      dynamically resized array of counters.  The array is genMap[0
-      .. genMap_size-1], where genMap[0] is the count for the
-      generation number genMap_min, genMap[1] is the count for
-      genMap_min+1, etc.  If a new number is seen outside the range
-      [genMap_min .. genMap_min + genMap_size - 1] then the array is
-      copied into a larger array, and genMap_min and genMap_size are
-      adjusted accordingly. */
-
-   /* genMap :: generation-number -> count-of-nodes-with-that-number */
-
-   VG_(initIterSWA)( oldrefTree );
-   while ( VG_(nextIterSWA)( oldrefTree, &keyW, &valW )) {
-
-       UWord ea, key;
-       oldref = (OldRef*)valW;
-       key = oldref->gen;
-
-      /* BEGIN find 'ea', which is the index in genMap holding the
-         count for generation number 'key'. */
-      if (UNLIKELY(genMap == NULL)) {
-         /* deal with the first key to be seen, so that the following
-            cases don't need to handle the complexity of a NULL count
-            array. */
-         genMap_min  = key;
-         genMap_size = 1;
-         genMap = HG_(zalloc)( "libhb.emmG.1a",
-                                genMap_size * sizeof(UWord) );
-         ea = 0;
-         if (0) VG_(printf)("(%lu) case 1 [%lu .. %lu]\n",
-                            key, genMap_min, genMap_min+genMap_size- 1 );
-      }
-      else
-      if (LIKELY(key >= genMap_min && key < genMap_min + genMap_size)) {
-         /* this is the expected (almost-always-happens) case: 'key'
-            is already mapped in the array. */
-         ea = key - genMap_min;
-      }
-      else
-      if (key < genMap_min) {
-         /* 'key' appears before the start of the current array.
-            Extend the current array by allocating a larger one and
-            copying the current one to the upper end of it. */
-         Word   more;
-         UWord* map2;
-         more = genMap_min - key;
-         tl_assert(more > 0);
-         map2 = HG_(zalloc)( "libhb.emmG.1b",
-                             (genMap_size + more) * sizeof(UWord) );
-         VG_(memcpy)( &map2[more], genMap, genMap_size * sizeof(UWord) );
-         HG_(free)( genMap );
-         genMap = map2;
-         genMap_size += more;
-         genMap_min -= more;
-         ea = 0;
-         tl_assert(genMap_min == key);
-         if (0) VG_(printf)("(%lu) case 2 [%lu .. %lu]\n",
-                            key, genMap_min,  genMap_min+genMap_size- 1 );
-      }
-      else {
-         /* 'key' appears after the end of the current array.  Extend
-            the current array by allocating a larger one and copying
-            the current one to the lower end of it. */
-         Word   more;
-         UWord* map2;
-         tl_assert(key >= genMap_min + genMap_size);
-         more = key - (genMap_min + genMap_size) + 1;
-         tl_assert(more > 0);
-         map2 = HG_(zalloc)( "libhb.emmG.1c",
-                             (genMap_size + more) * sizeof(UWord) );
-         VG_(memcpy)( &map2[0], genMap, genMap_size * sizeof(UWord) );
-         HG_(free)( genMap );
-         genMap = map2;
-         genMap_size += more;
-         ea = genMap_size - 1;;
-         tl_assert(genMap_min + genMap_size - 1 == key);
-         if (0) VG_(printf)("(%lu) case 3 [%lu .. %lu]\n",
-                            key, genMap_min, genMap_min+genMap_size- 1 );
-      }
-      /* END find 'ea' from 'key' */
-
-      tl_assert(ea >= 0 && ea < genMap_size);
-      /* and the whole point of this elaborate computation of 'ea' is .. */
-      genMap[ea]++;
+   if (VG_(clo_stats)) {
+      static UInt ctr = 1;
+      VG_(message)(Vg_DebugMsg,
+                  "libhb: RCEC GC: #%u  %lu slots,"
+                   " %lu cur ents(ref'd %lu),"
+                   " %lu max ents\n",
+                   ctr++,
+                   (UWord)N_RCEC_TAB,
+                   stats__ctxt_tab_curr, RCEC_referenced,
+                   stats__ctxt_tab_max );
    }
-
-   tl_assert(genMap);
-   tl_assert(genMap_size > 0);
-
-   /* Sanity check what we just computed */
-   { UWord sum = 0;
-     for (i = 0; i < genMap_size; i++) {
-        if (0) VG_(printf)("  xxx: gen %ld has %lu\n",
-                           i + genMap_min, genMap[i] );
-        sum += genMap[i];
-     }
-     tl_assert(sum == oldrefTreeN);
-   }
-
-   /* Figure out how many generations to throw away */
-   retained = oldrefTreeN;
-   maxGen = 0;
-
-   for (i = 0; i < genMap_size; i++) {
-      keyW = i + genMap_min;
-      valW = genMap[i];
-      tl_assert(keyW > 0); /* can't allow a generation # 0 */
-      if (0) VG_(printf)("  XXX: gen %lu has %lu\n", keyW, valW );
-      tl_assert(keyW >= maxGen);
-      tl_assert(retained >= valW);
-      if (retained - valW
-          > (UWord)(HG_(clo_conflict_cache_size) 
-                    * EVENT_MAP_GC_DISCARD_FRACTION)) {
-         retained -= valW;
-         maxGen = keyW;
-      } else {
-         break;
-      }
-   }
-
-   HG_(free)(genMap);
-
-   tl_assert(retained >= 0 && retained <= oldrefTreeN);
-
-   /* Now make up a big list of the oldrefTree entries we want to
-      delete.  We can't simultaneously traverse the tree and delete
-      stuff from it, so first we need to copy them off somewhere
-      else. (sigh) */
-   refs2del = VG_(newXA)( HG_(zalloc), "libhb.emmG.2",
-                          HG_(free), sizeof(Addr) );
-
-   if (retained < oldrefTreeN) {
-
-      /* This is the normal (expected) case.  We discard any ref whose
-         generation number <= maxGen. */
-      VG_(initIterSWA)( oldrefTree );
-      while (VG_(nextIterSWA)( oldrefTree, &keyW, &valW )) {
-         oldref = (OldRef*)valW;
-         tl_assert(oldref->magic == OldRef_MAGIC);
-         if (oldref->gen <= maxGen) {
-            VG_(addToXA)( refs2del, &keyW );
-         }
-      }
-      if (VG_(clo_stats)) {
-         VG_(message)(Vg_DebugMsg,
-            "libhb: EvM GC: delete generations %lu and below, "
-            "retaining %lu entries\n",
-            maxGen, retained );
-      }
-
-   } else {
-
-      static UInt rand_seed = 0; /* leave as static */
-
-      /* Degenerate case: there's only one generation in the entire
-         tree, so we need to have some other way of deciding which
-         refs to throw away.  Just throw out half of them randomly. */
-      tl_assert(retained == oldrefTreeN);
-      VG_(initIterSWA)( oldrefTree );
-      while (VG_(nextIterSWA)( oldrefTree, &keyW, &valW )) {
-         UInt n;
-         oldref = (OldRef*)valW;
-         tl_assert(oldref->magic == OldRef_MAGIC);
-         n = VG_(random)( &rand_seed );
-         if ((n & 0xFFF) < 0x800) {
-            VG_(addToXA)( refs2del, &keyW );
-            retained--;
-         }
-      }
-      if (VG_(clo_stats)) {
-         VG_(message)(Vg_DebugMsg,
-            "libhb: EvM GC: randomly delete half the entries, "
-            "retaining %lu entries\n",
-            retained );
-      }
-
-   }
-
-   n2del = VG_(sizeXA)( refs2del );
-   tl_assert(n2del == (Word)(oldrefTreeN - retained));
-
-   if (0) VG_(printf)("%s","deleting entries\n");
-   for (i = 0; i < n2del; i++) {
-      Bool  b;
-      Addr  ga2del = *(Addr*)VG_(indexXA)( refs2del, i );
-      b = VG_(delFromSWA)( oldrefTree, &valW, ga2del );
-      tl_assert(b);
-      oldref = (OldRef*)valW;
-      for (j = 0; j < N_OLDREF_ACCS; j++) {
-         ThrID aThrID = oldref->accs[j].thrid;
-         RCEC* aRef   = oldref->accs[j].rcec;
-         if (aRef) {
-            tl_assert(aThrID != 0);
-            stats__ctxt_rcdec3++;
-            ctxt__rcdec( aRef );
-         } else {
-            tl_assert(aThrID == 0);
-         }
-      }
-
-      free_OldRef( oldref );
-   }
-
-   VG_(deleteXA)( refs2del );
-
-   tl_assert( VG_(sizeSWA)( oldrefTree ) == retained );
-
-   oldrefTreeN = retained;
-   oldrefGenIncAt = oldrefTreeN; /* start new gen right away */
+   tl_assert (stats__ctxt_tab_curr > RCEC_referenced);
 
    /* Throw away all RCECs with zero reference counts */
    for (i = 0; i < N_RCEC_TAB; i++) {
@@ -4747,16 +4587,8 @@ static void event_map_GC ( void )
       }
    }
 
-   /* Check the reference counts (expensive) */
-   if (CHECK_CEM)
-      event_map__check_reference_counts( False/*after*/ );
-
-   //if (0)
-   //VG_(printf)("XXXX final sizes: oldrefTree %ld, contextTree %ld\n\n",
-   //            VG_(OSetGen_Size)(oldrefTree), VG_(OSetGen_Size)(contextTree));
-
+   tl_assert (stats__ctxt_tab_curr == RCEC_referenced);
 }
-
 
 /////////////////////////////////////////////////////////
 //                                                     //
@@ -6294,10 +6126,12 @@ void libhb_shutdown ( Bool show_stats )
                    stats__ctxt_rcdec3 );
       VG_(printf)( "   libhb: ctxt__rcdec: calls %lu, discards %lu\n",
                    stats__ctxt_rcdec_calls, stats__ctxt_rcdec_discards);
-      VG_(printf)( "   libhb: contextTab: %lu slots, %lu cur ents,"
+      VG_(printf)( "   libhb: contextTab: %lu slots,"
+                   " %lu cur ents(ref'd %lu),"
                    " %lu max ents\n",
                    (UWord)N_RCEC_TAB,
-                   stats__ctxt_tab_curr, stats__ctxt_tab_max );
+                   stats__ctxt_tab_curr, RCEC_referenced,
+                   stats__ctxt_tab_max );
       VG_(printf)( "   libhb: contextTab: %lu queries, %lu cmps\n",
                    stats__ctxt_tab_qs,
                    stats__ctxt_tab_cmps );
@@ -6581,8 +6415,16 @@ void libhb_copy_shadow_state ( Thr* thr, Addr src, Addr dst, SizeT len )
 
 void libhb_maybe_GC ( void )
 {
-   if (UNLIKELY(oldrefTreeN >= HG_(clo_conflict_cache_size)))
-      event_map_GC();
+   /* GC the unreferenced (zero rc) RCECs when
+        (1) reaching a significant nr of RCECs (to avoid scanning a contextTab
+            with mostly NULL ptr)
+    and (2) reaching at least the max nr of RCEC (as we have in any case
+            at least that amount of RCEC in the pool allocator)
+    and (3) the nr of referenced RCECs is less than 75% than total nr RCECs. */
+   if (UNLIKELY(stats__ctxt_tab_curr > N_RCEC_TAB/2
+                && stats__ctxt_tab_curr >= stats__ctxt_tab_max
+                && stats__ctxt_tab_curr * 0.75 > RCEC_referenced))
+      do_RCEC_GC();
 
    /* If there are still freelist entries available, no need for a
       GC. */
@@ -6593,6 +6435,10 @@ void libhb_maybe_GC ( void )
    if (VG_(sizeXA)( vts_tab ) < vts_next_GC_at)
       return;
    vts_tab__do_GC( False/*don't show stats*/ );
+
+   /* Check the reference counts (expensive) */
+   if (CHECK_CEM)
+      event_map__check_reference_counts();
 }
 
 

@@ -5125,10 +5125,17 @@ static Bool dis_int_load ( UInt theInstr )
        */
       // trap if EA misaligned on 16 byte address
       if (mode64) {
-         assign(high, load(ty, mkexpr( EA ) ) );
-         assign(low, load(ty, binop( Iop_Add64,
-                                     mkexpr( EA ),
-                                     mkU64( 8 ) ) ) );
+         if (host_endness == VexEndnessBE) {
+            assign(high, load(ty, mkexpr( EA ) ) );
+            assign(low, load(ty, binop( Iop_Add64,
+                                        mkexpr( EA ),
+                                        mkU64( 8 ) ) ) );
+	 } else {
+            assign(low, load(ty, mkexpr( EA ) ) );
+            assign(high, load(ty, binop( Iop_Add64,
+                                         mkexpr( EA ),
+                                         mkU64( 8 ) ) ) );
+	 }
       } else {
          assign(high, load(ty, binop( Iop_Add32,
                                       mkexpr( EA ),
@@ -5336,11 +5343,20 @@ static Bool dis_int_store ( UInt theInstr, const VexAbiInfo* vbi )
          DIP("stq r%u,%d(r%u)\n", rS_addr, simm16, rA_addr);
 
          if (mode64) {
-            /* upper 64-bits */
-            assign( EA_hi, ea_rAor0_simm( rA_addr, simm16 ) );
+            if (host_endness == VexEndnessBE) {
 
-            /* lower 64-bits */
-            assign( EA_lo, ea_rAor0_simm( rA_addr, simm16+8 ) );
+               /* upper 64-bits */
+               assign( EA_hi, ea_rAor0_simm( rA_addr, simm16 ) );
+
+               /* lower 64-bits */
+               assign( EA_lo, ea_rAor0_simm( rA_addr, simm16+8 ) );
+	    } else {
+               /* upper 64-bits */
+               assign( EA_hi, ea_rAor0_simm( rA_addr, simm16+8 ) );
+
+               /* lower 64-bits */
+               assign( EA_lo, ea_rAor0_simm( rA_addr, simm16 ) );
+	    }
          } else {
             /* upper half of upper 64-bits */
             assign( EA_hi, ea_rAor0_simm( rA_addr, simm16+4 ) );
@@ -6535,11 +6551,19 @@ static Bool dis_memsync ( UInt theInstr )
 
          // and actually do the load
          if (mode64) {
-            stmt( stmt_load( res_hi,
-                             mkexpr(EA), NULL/*this is a load*/) );
-            stmt( stmt_load( res_lo,
-                             binop(Iop_Add64, mkexpr(EA), mkU64(8) ),
-                             NULL/*this is a load*/) );
+            if (host_endness == VexEndnessBE) {
+               stmt( stmt_load( res_hi,
+                                mkexpr(EA), NULL/*this is a load*/) );
+               stmt( stmt_load( res_lo,
+                                binop(Iop_Add64, mkexpr(EA), mkU64(8) ),
+                                NULL/*this is a load*/) );
+	    } else {
+               stmt( stmt_load( res_lo,
+                                mkexpr(EA), NULL/*this is a load*/) );
+               stmt( stmt_load( res_hi,
+                                binop(Iop_Add64, mkexpr(EA), mkU64(8) ),
+                                NULL/*this is a load*/) );
+            }
          } else {
             stmt( stmt_load( res_hi,
                              binop( Iop_Add32, mkexpr(EA), mkU32(4) ),
@@ -6575,8 +6599,15 @@ static Bool dis_memsync ( UInt theInstr )
          resSC = newTemp(Ity_I1);
 
          if (mode64) {
-            stmt( stmt_load( resSC, mkexpr(EA), mkexpr(rS_hi) ) );
-            store( binop( Iop_Add64, mkexpr(EA), mkU64(8) ), mkexpr(rS_lo) );
+            if (host_endness == VexEndnessBE) {
+               stmt( stmt_load( resSC, mkexpr(EA), mkexpr(rS_hi) ) );
+               store( binop( Iop_Add64, mkexpr(EA), mkU64(8) ),
+                      mkexpr(rS_lo) );
+	    } else {
+               stmt( stmt_load( resSC, mkexpr(EA), mkexpr(rS_lo) ) );
+               store( binop( Iop_Add64, mkexpr(EA), mkU64(8) ),
+                      mkexpr(rS_hi) );
+	    }
          } else {
             stmt( stmt_load( resSC, binop( Iop_Add32,
                                            mkexpr(EA),

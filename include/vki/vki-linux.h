@@ -3658,6 +3658,26 @@ struct vki_getinfo_fid2path {
 
 #define VKI_OBD_IOC_FID2PATH \
            _VKI_IOWR ('f', 150, VKI_OBD_IOC_DATA_TYPE)
+#define VKI_LL_IOC_PATH2FID \
+           _VKI_IOR ('f', 173, long)
+
+//----------------------------------------------------------------------
+// From lustre/include/lustre/lustre_idl.h
+//----------------------------------------------------------------------
+
+struct vki_getparent {
+    struct vki_lu_fid   gp_fid;
+    __vki_u32       gp_linkno;
+    __vki_u32       gp_name_size;
+    char            gp_name[0];
+} __attribute__((packed));
+
+//----------------------------------------------------------------------
+// From Lustre's lustre/include/lustre/lustre_user.h
+//----------------------------------------------------------------------
+#define VKI_LL_IOC_GETPARENT \
+           _VKI_IOWR('f', 249, struct vki_getparent)
+
 
 struct vki_v4l2_rect {
 	__vki_s32   left;

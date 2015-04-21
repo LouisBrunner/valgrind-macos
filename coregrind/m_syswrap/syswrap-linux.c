@@ -7321,11 +7321,28 @@ PRE(sys_ioctl)
       break;
 #endif
 
-   /* To do: figure out which software layer extends the sign of 'request' */
-   case VKI_OBD_IOC_FID2PATH:
-      PRE_MEM_READ("VKI_OBD_IOC_FID2PATH(args)", ARG3,
-                   sizeof(struct vki_getinfo_fid2path));
+   /* Lustre */
+   case VKI_OBD_IOC_FID2PATH: {
+      struct vki_getinfo_fid2path *gf = (struct vki_getinfo_fid2path *)ARG3;
+      PRE_MEM_READ("VKI_OBD_IOC_FID2PATH(args)", ARG3, sizeof(struct vki_getinfo_fid2path));
+      PRE_FIELD_WRITE("VKI_OBD_IOC_FID2PATH(args).gf_recno", gf->gf_recno);
+      PRE_FIELD_WRITE("VKI_OBD_IOC_FID2PATH(args).gf_linkno", gf->gf_linkno);
+      PRE_MEM_WRITE("VKI_OBD_IOC_FID2PATH(args)", (Addr)gf->gf_path, gf->gf_pathlen);
       break;
+   }
+
+   case VKI_LL_IOC_PATH2FID:
+      PRE_MEM_WRITE("ioctl(VKI_LL_IOC_PATH2FID)", ARG3, sizeof(struct vki_lu_fid));
+      break;
+
+   case VKI_LL_IOC_GETPARENT: {
+      struct vki_getparent *gp = (struct vki_getparent *)ARG3;
+      PRE_FIELD_READ("ioctl(VKI_LL_IOC_GETPARENT).gp_linkno", gp->gp_linkno);
+      PRE_FIELD_READ("ioctl(VKI_LL_IOC_GETPARENT).gp_name_size", gp->gp_name_size);
+      PRE_FIELD_WRITE("ioctl(VKI_LL_IOC_GETPARENT).gp_fid", gp->gp_fid);
+      PRE_MEM_WRITE("ioctl(VKI_LL_IOC_GETPARENT).gp_name", (Addr)gp->gp_name, gp->gp_name_size);
+      break;
+   }
 
    /* V4L2 */
    case VKI_V4L2_QUERYCAP: {
@@ -9636,12 +9653,25 @@ POST(sys_ioctl)
       break;
 #endif
 
-   /* To do: figure out which software layer extends the sign of 'request' */
+   /* Lustre */
    case VKI_OBD_IOC_FID2PATH: {
        struct vki_getinfo_fid2path *args = (void *)(ARG3);
-       POST_MEM_WRITE((Addr)args->gf_path, args->gf_pathlen);
+       POST_FIELD_WRITE(args->gf_recno);
+       POST_FIELD_WRITE(args->gf_linkno);
+       POST_MEM_WRITE((Addr)args->gf_path, VG_(strlen)(args->gf_path)+1);
+       break;
       }
+
+   case VKI_LL_IOC_PATH2FID:
+       POST_MEM_WRITE(ARG3, sizeof(struct vki_lu_fid));
       break;
+
+   case VKI_LL_IOC_GETPARENT: {
+       struct vki_getparent *gp = (struct vki_getparent *)ARG3;
+       POST_FIELD_WRITE(gp->gp_fid);
+       POST_MEM_WRITE((Addr)gp->gp_name, VG_(strlen)(gp->gp_name)+1);
+       break;
+   }
 
    /* V4L2 */
    case VKI_V4L2_S_FMT:

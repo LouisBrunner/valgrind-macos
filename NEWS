@@ -16,6 +16,8 @@ Release 3.11.0 is under development, not yet released.
   taken so far.
 
 * Helgrind:
+  Memory and speed improvement for --history-level=full for big applications
+  accessing a lot of memory with many different stacktraces.
 
 * Callgrind:
 

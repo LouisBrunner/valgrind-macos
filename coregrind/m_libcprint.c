@@ -647,9 +647,6 @@ void VG_(err_config_error) ( const HChar* format, ... )
    VG_(sr_as_string)()
    ------------------------------------------------------------------ */
 
-/* Return a textual representation of a SysRes value in a statically
-   allocated buffer. The buffer will be overwritten with the next 
-   invocation. */
 #if defined(VGO_linux)
 // FIXME: Does this function need to be adjusted for MIPS's _valEx ?
 const HChar *VG_(sr_as_string) ( SysRes sr )

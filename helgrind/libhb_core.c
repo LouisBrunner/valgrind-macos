@@ -6416,13 +6416,19 @@ void libhb_copy_shadow_state ( Thr* thr, Addr src, Addr dst, SizeT len )
 void libhb_maybe_GC ( void )
 {
    /* GC the unreferenced (zero rc) RCECs when
-        (1) reaching a significant nr of RCECs (to avoid scanning a contextTab
-            with mostly NULL ptr)
-    and (2) reaching at least the max nr of RCEC (as we have in any case
-            at least that amount of RCEC in the pool allocator)
-    and (3) the nr of referenced RCECs is less than 75% than total nr RCECs. */
+         (1) reaching a significant nr of RCECs (to avoid scanning a contextTab
+             with mostly NULL ptr)
+     and (2) approaching the max nr of RCEC (as we have in any case
+             at least that amount of RCEC in the pool allocator)
+             Note: the margin allows to avoid a small but constant increase
+             of the max nr of RCEC due to the fact that libhb_maybe_GC is
+             not called when the current nr of RCEC exactly reaches the max.
+     and (3) the nr of referenced RCECs is less than 75% than total nr RCECs.
+     Avoid growing too much the nr of RCEC keeps the memory use low,
+     and avoids to have too many elements in the (fixed) contextTab hashtable.
+   */
    if (UNLIKELY(stats__ctxt_tab_curr > N_RCEC_TAB/2
-                && stats__ctxt_tab_curr >= stats__ctxt_tab_max
+                && stats__ctxt_tab_curr + 1000 >= stats__ctxt_tab_max
                 && stats__ctxt_tab_curr * 0.75 > RCEC_referenced))
       do_RCEC_GC();
 

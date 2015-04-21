@@ -155,6 +155,10 @@ n-i-bz  Provide implementations of certain compiler builtins to support
 n-i-bz  Old STABS code is still being compiled, but never used. Remove it.
 n-i-bz  Fix compilation on distros with glibc < 2.5
 n-i-bz  (vex 3098) Avoid generation of Neon insns on non-Neon hosts
+345695  Add support for the auxvex entries AT_DCHCEBSIZE and AT_HWCAP2
+        entries on ppc.
+346267  Fix compiler warning about casting arguments, ppc64.
+346324  Add support for the ppc instructions lbarx, lharx, stbcs, sthcs
 
 
 Release 3.10.1 (25 November 2014)

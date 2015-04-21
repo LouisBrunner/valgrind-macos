@@ -6120,6 +6120,33 @@ void libhb_shutdown ( Bool show_stats )
       }
 
       VG_(printf)("%s","\n");
+      {
+         UWord OldRef_accs_n[N_OLDREF_ACCS+1];
+         UInt accs_n;
+         UWord OldRef_n;
+         UInt i;
+
+         OldRef_n = 0;
+         for (i = 0; i <= N_OLDREF_ACCS; i++)
+            OldRef_accs_n[i] = 0;
+
+         for (OldRef* o = mru.prev; o != &lru; o = o->prev) {
+            OldRef_n++;
+            accs_n = 0;
+            for (i = 0; i < N_OLDREF_ACCS; i++) {
+               if (o->accs[i].thrid != 0)
+                  accs_n++;
+            }
+            OldRef_accs_n[accs_n]++;
+         }
+
+         tl_assert(OldRef_n == oldrefTreeN);
+         VG_(printf)( "   libhb: oldrefTreeN %lu ", oldrefTreeN);
+         VG_(printf)( "( ");
+         for (i = 0; i <= N_OLDREF_ACCS; i++)
+            VG_(printf)( "accs[%d]=%lu ", i, OldRef_accs_n[i]);
+         VG_(printf)( ")\n");
+      }
       VG_(printf)( "   libhb: ctxt__rcdec: 1=%lu(%lu eq), 2=%lu, 3=%lu\n",
                    stats__ctxt_rcdec1, stats__ctxt_rcdec1_eq,
                    stats__ctxt_rcdec2,

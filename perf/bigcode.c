@@ -20,7 +20,8 @@
 #endif
 #include "tests/sys_mman.h"
 
-#define FN_SIZE   1024     // Must be big enough to hold the compiled f()
+#define FN_SIZE   1280     // Must be big enough to hold the compiled f()
+                           // and any literal pool that might be used
 #define N_LOOPS   20000    // Should be divisible by four
 #define RATIO     4        // Ratio of code sizes between the two modes
 

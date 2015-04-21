@@ -700,6 +700,14 @@ IRExpr* guest_arm_spechelper ( const HChar* function_name,
 
       /*---------------- COPY ----------------*/
 
+      /* --- 0,1 --- */
+      if (isU32(cond_n_op, (ARMCondEQ << 4) | ARMG_CC_OP_COPY)) {
+         /* EQ after COPY --> (cc_dep1 >> ARMG_CC_SHIFT_Z) & 1 */
+         return binop(Iop_And32,
+                      binop(Iop_Shr32, cc_dep1,
+                            mkU8(ARMG_CC_SHIFT_Z)),
+                      mkU32(1));
+      }
       if (isU32(cond_n_op, (ARMCondNE << 4) | ARMG_CC_OP_COPY)) {
          /* NE after COPY --> ((cc_dep1 >> ARMG_CC_SHIFT_Z) ^ 1) & 1 */
          return binop(Iop_And32,
@@ -708,6 +716,48 @@ IRExpr* guest_arm_spechelper ( const HChar* function_name,
                                              mkU8(ARMG_CC_SHIFT_Z)),
                             mkU32(1)),
                       mkU32(1));
+      }
+
+      /* --- 4,5 --- */
+      if (isU32(cond_n_op, (ARMCondMI << 4) | ARMG_CC_OP_COPY)) {
+         /* MI after COPY --> (cc_dep1 >> ARMG_CC_SHIFT_N) & 1 */
+         return binop(Iop_And32,
+                      binop(Iop_Shr32, cc_dep1,
+                            mkU8(ARMG_CC_SHIFT_N)),
+                      mkU32(1));
+      }
+      if (isU32(cond_n_op, (ARMCondPL << 4) | ARMG_CC_OP_COPY)) {
+         /* PL after COPY --> ((cc_dep1 >> ARMG_CC_SHIFT_N) ^ 1) & 1 */
+         return binop(Iop_And32,
+                      binop(Iop_Xor32,
+                            binop(Iop_Shr32, cc_dep1,
+                                             mkU8(ARMG_CC_SHIFT_N)),
+                            mkU32(1)),
+                      mkU32(1));
+      }
+
+      /* --- 12,13 --- */
+      if (isU32(cond_n_op, (ARMCondGT << 4) | ARMG_CC_OP_COPY)) {
+         /* GT after COPY --> ((z | (n^v)) & 1) ^ 1 */
+         IRExpr* n = binop(Iop_Shr32, cc_dep1, mkU8(ARMG_CC_SHIFT_N));
+         IRExpr* v = binop(Iop_Shr32, cc_dep1, mkU8(ARMG_CC_SHIFT_V));
+         IRExpr* z = binop(Iop_Shr32, cc_dep1, mkU8(ARMG_CC_SHIFT_Z));
+         return binop(Iop_Xor32,
+                      binop(Iop_And32, 
+                            binop(Iop_Or32, z, binop(Iop_Xor32, n, v)),
+                            mkU32(1)),
+                      mkU32(1));
+      }
+      if (isU32(cond_n_op, (ARMCondLE << 4) | ARMG_CC_OP_COPY)) {
+         /* LE after COPY --> ((z | (n^v)) & 1) ^ 0 */
+         IRExpr* n = binop(Iop_Shr32, cc_dep1, mkU8(ARMG_CC_SHIFT_N));
+         IRExpr* v = binop(Iop_Shr32, cc_dep1, mkU8(ARMG_CC_SHIFT_V));
+         IRExpr* z = binop(Iop_Shr32, cc_dep1, mkU8(ARMG_CC_SHIFT_Z));
+         return binop(Iop_Xor32,
+                      binop(Iop_And32, 
+                            binop(Iop_Or32, z, binop(Iop_Xor32, n, v)),
+                            mkU32(1)),
+                      mkU32(0));
       }
 
       /*----------------- AL -----------------*/

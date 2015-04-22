@@ -286,6 +286,7 @@ static void* fnptr_to_fnentry( const VexAbiInfo* vbi, void* f )
 #define OFFB_NRADDR_GPR2 offsetofPPCGuestState(guest_NRADDR_GPR2)
 #define OFFB_TFHAR       offsetofPPCGuestState(guest_TFHAR)
 #define OFFB_TEXASR      offsetofPPCGuestState(guest_TEXASR)
+#define OFFB_TEXASRU     offsetofPPCGuestState(guest_TEXASRU)
 #define OFFB_TFIAR       offsetofPPCGuestState(guest_TFIAR)
 
 
@@ -436,6 +437,7 @@ typedef enum {
     PPC_GST_TFHAR,  // Transactional Failure Handler Address Register
     PPC_GST_TFIAR,  // Transactional Failure Instruction Address Register
     PPC_GST_TEXASR, // Transactional EXception And Summary Register
+    PPC_GST_TEXASRU, // Transactional EXception And Summary Register Upper
     PPC_GST_MAX
 } PPC_GST;
 
@@ -2739,6 +2741,9 @@ static IRExpr* /* :: Ity_I32/64 */ getGST ( PPC_GST reg )
    case PPC_GST_TEXASR:
       return IRExpr_Get( OFFB_TEXASR, ty );
 
+   case PPC_GST_TEXASRU:
+      return IRExpr_Get( OFFB_TEXASRU, ty );
+
    case PPC_GST_TFIAR:
       return IRExpr_Get( OFFB_TFIAR, ty );
 
@@ -2907,6 +2912,12 @@ static void putGST ( PPC_GST reg, IRExpr* src )
       vassert( ty_src == Ity_I64 );
       stmt( IRStmt_Put( OFFB_TEXASR, src ) );
       break;
+
+   case PPC_GST_TEXASRU:
+      vassert( ty_src == Ity_I32 );
+      stmt( IRStmt_Put( OFFB_TEXASRU, src ) );
+      break;
+
    case PPC_GST_TFIAR:
       vassert( ty_src == Ity_I64 );
       stmt( IRStmt_Put( OFFB_TFIAR, src ) );
@@ -3337,9 +3348,10 @@ static ULong generate_TMreason( UInt failure_code,
 static void storeTMfailure( Addr64 err_address, ULong tm_reason,
                             Addr64 handler_address )
 {
-   putGST( PPC_GST_TFIAR,  mkU64( err_address ) );
-   putGST( PPC_GST_TEXASR, mkU64( tm_reason ) );
-   putGST( PPC_GST_TFHAR,  mkU64( handler_address ) );
+   putGST( PPC_GST_TFIAR,   mkU64( err_address ) );
+   putGST( PPC_GST_TEXASR,  mkU64( tm_reason ) );
+   putGST( PPC_GST_TEXASRU, mkU32( 0 ) );
+   putGST( PPC_GST_TFHAR,   mkU64( handler_address ) );
 }
 
 /*------------------------------------------------------------*/
@@ -7114,6 +7126,10 @@ static Bool dis_proc_ctl ( const VexAbiInfo* vbi, UInt theInstr )
       case 0x82:  // 130
          DIP("mfspr r%u (TEXASR)\n", rD_addr);
          putIReg( rD_addr, getGST( PPC_GST_TEXASR) );
+         break;
+      case 0x83:  // 131
+         DIP("mfspr r%u (TEXASRU)\n", rD_addr);
+         putIReg( rD_addr, getGST( PPC_GST_TEXASRU) );
          break;
       case 0x100: 
          DIP("mfvrsave r%u\n", rD_addr);

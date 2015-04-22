@@ -93,9 +93,9 @@ typedef unsigned char Bool;
  * BF is the condition register bit field which can range from 0-7.  But for
  * testing purposes, we only use BF values of '0' and '5'.
  */
-static void _test_dtstdc(int BF, int DCM, dfp_val_t val1, dfp_val_t x1 __attribute__((unused)))
+static void _test_dtstdc(int BF, int DCM, dfp_val_t *val1, dfp_val_t *x1 __attribute__((unused)))
 {
-   _Decimal64 f14 = val1.dec_val;
+   _Decimal64 f14 = val1->dec_val;
    if (DCM < 0 || DCM > 5 || !(BF == 0 || BF == 5)) {
       fprintf(stderr, "Invalid inputs to asm test: a=%d, b=%d\n", BF, DCM);
       return;
@@ -142,9 +142,9 @@ static void _test_dtstdc(int BF, int DCM, dfp_val_t val1, dfp_val_t x1 __attribu
    }
 }
 
-static void _test_dtstdcq(int BF, int DCM, dfp_val_t val1, dfp_val_t x1 __attribute__((unused)))
+static void _test_dtstdcq(int BF, int DCM, dfp_val_t *val1, dfp_val_t *x1 __attribute__((unused)))
 {
-   _Decimal128 f14 = val1.dec_val128;
+   _Decimal128 f14 = val1->dec_val128;
    if (DCM < 0 || DCM > 5 || !(BF == 0 || BF == 5)) {
       fprintf(stderr, "Invalid inputs to asm test: a=%d, b=%d\n", BF, DCM);
       return;
@@ -197,9 +197,9 @@ static void _test_dtstdcq(int BF, int DCM, dfp_val_t val1, dfp_val_t x1 __attrib
  * BF is the condition register bit field which can range from 0-7.  But for
  * testing purposes, we only use BF values of '0' and '5'.
  */
-static void _test_dtstdg(int BF, int DGM, dfp_val_t val1, dfp_val_t x1 __attribute__((unused)))
+static void _test_dtstdg(int BF, int DGM, dfp_val_t *val1, dfp_val_t *x1 __attribute__((unused)))
 {
-   _Decimal64 f14 = val1.dec_val;
+   _Decimal64 f14 = val1->dec_val;
    if (DGM < 0 || DGM > 5 || !(BF == 0 || BF == 5)) {
       fprintf(stderr, "Invalid inputs to asm test: a=%d, b=%d\n", BF, DGM);
       return;
@@ -246,9 +246,9 @@ static void _test_dtstdg(int BF, int DGM, dfp_val_t val1, dfp_val_t x1 __attribu
    }
 }
 
-static void _test_dtstdgq(int BF, int DGM, dfp_val_t val1, dfp_val_t x1 __attribute__((unused)))
+static void _test_dtstdgq(int BF, int DGM, dfp_val_t *val1, dfp_val_t *x1 __attribute__((unused)))
 {
-   _Decimal128 f14 = val1.dec_val128;
+   _Decimal128 f14 = val1->dec_val128;
    if (DGM < 0 || DGM > 5 || !(BF == 0 || BF == 5)) {
       fprintf(stderr, "Invalid inputs to asm test: a=%d, b=%d\n", BF, DGM);
       return;
@@ -300,10 +300,10 @@ static void _test_dtstdgq(int BF, int DGM, dfp_val_t val1, dfp_val_t x1 __attrib
  * from 0-7, but for testing purposes, we only use BF values of '4' and '7'.
  */
 static void
-_test_dtstex(int BF, int x __attribute__((unused)), dfp_val_t val1, dfp_val_t val2)
+_test_dtstex(int BF, int x __attribute__((unused)), dfp_val_t *val1, dfp_val_t *val2)
 {
-   _Decimal64 f14 = val1.dec_val;
-   _Decimal64 f16 = val2.dec_val;
+   _Decimal64 f14 = val1->dec_val;
+   _Decimal64 f16 = val2->dec_val;
    if (!(BF == 4 || BF == 7)) {
       fprintf(stderr, "Invalid input to asm test: a=%d\n", BF);
       return;
@@ -320,10 +320,10 @@ _test_dtstex(int BF, int x __attribute__((unused)), dfp_val_t val1, dfp_val_t va
    }
 }
 
-static void _test_dtstexq(int BF, int x __attribute__((unused)), dfp_val_t val1, dfp_val_t val2)
+static void _test_dtstexq(int BF, int x __attribute__((unused)), dfp_val_t *val1, dfp_val_t *val2)
 {
-   _Decimal128 f14 = val1.dec_val128;
-   _Decimal128 f16 = val2.dec_val128;
+   _Decimal128 f14 = val1->dec_val128;
+   _Decimal128 f16 = val2->dec_val128;
    if (!(BF == 4 || BF == 7)) {
       fprintf(stderr, "Invalid input to asm test: a=%d\n", BF);
       return;
@@ -342,7 +342,7 @@ static void _test_dtstexq(int BF, int x __attribute__((unused)), dfp_val_t val1,
 
 
 
-typedef void (*test_func_t)(int a, int b,  dfp_val_t val1,  dfp_val_t val2);
+typedef void (*test_funcp_t)(int a, int b,  dfp_val_t *val1,  dfp_val_t *val2);
 typedef void (*test_driver_func_t)(void);
 typedef struct test_table
 {
@@ -454,7 +454,7 @@ typedef enum {
 
 typedef struct dfp_test
 {
-   test_func_t test_func;
+   test_funcp_t test_func;
    const char * name;
    dfp_test_args_t * targs;
    int num_tests;
@@ -464,7 +464,7 @@ typedef struct dfp_test
 
 typedef struct dfp_one_arg_test
 {
-   test_func_t test_func;
+   test_funcp_t test_func;
    const char * name;
    precision_type_t precision;
    const char * op;
@@ -483,7 +483,7 @@ dfp_ClassAndGroupTest_tests[] = {
 
 static void test_dfp_ClassAndGroupTest_ops(void)
 {
-   test_func_t func;
+   test_funcp_t func;
    dfp_val_t test_val, dummy;
 
    int k = 0;
@@ -509,7 +509,13 @@ again:
             unsigned int flags;
             SET_FPSCR_ZERO;
             SET_CR_XER_ZERO;
-            (*func)(BF, data_class_OR_group, test_val, dummy);
+
+	    /* There is an ABI change in how 128 bit arguments are aligned 
+             * with GCC 5.0.  The compiler generates a "note" about this
+             * starting with GCC 4.8.  To avoid generating the "note", pass
+             * the address of the 128-bit arguments rather then the value.
+	     */
+            (*func)(BF, data_class_OR_group, &test_val, &dummy);
             GET_CR(flags);
 
             condreg = ((flags >> (4 * (7-BF)))) & 0xf;
@@ -547,7 +553,7 @@ dfp_ExpTest_tests[] = {
 static void test_dfp_ExpTest_ops(void)
 {
    dfp_val_t test_val1, test_val2;
-   test_func_t func;
+   test_funcp_t func;
    int k = 0;
 
    while ((func = dfp_ExpTest_tests[k].test_func)) {
@@ -577,7 +583,12 @@ again:
 
          SET_FPSCR_ZERO;
          SET_CR_XER_ZERO;
-         (*func)(BF, 0, test_val1, test_val2);
+         /* There is an ABI change in how 128 bit arguments are aligned 
+          * with GCC 5.0.  The compiler generates a "note" about this
+          * starting with GCC 4.8.  To avoid generating the "note", pass
+          * the address of the 128-bit arguments rather then the value.
+          */
+         (*func)(BF, 0, &test_val1, &test_val2);
          GET_CR(flags);
 
          condreg = ((flags >> (4 * (7-BF)))) & 0xf;

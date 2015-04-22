@@ -164,6 +164,8 @@ n-i-bz  (vex 3098) Avoid generation of Neon insns on non-Neon hosts
 346416  Add support for LL_IOC_PATH2FID and LL_IOC_GETPARENT Lustre ioctls
 n-i-bz  Enable rt_sigpending syscall on ppc64 linux.
 346474  Added support for accessing the PPC64 TEXASRU register
+346487  Change PPC64 function calls with 128-bit values to use a pointer so
+        the compiler will not generate a note about an ABI change.
 
 
 Release 3.10.1 (25 November 2014)

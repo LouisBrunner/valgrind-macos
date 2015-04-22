@@ -93,9 +93,9 @@ typedef uint64_t HWord_t;
 enum BF_vals { BF_val1 = 0, BF_val2 = 1, BF_val3 =6};
 
 // The assembly-level instructions being tested
-static void _test_dtstsf(unsigned int BF, unsigned int ref_sig, dfp_val_t valB)
+static void _test_dtstsf(unsigned int BF, unsigned int ref_sig, dfp_val_t *valB)
 {
-   _Decimal64 f16 = valB.dec_val;
+   _Decimal64 f16 = valB->dec_val;
    register HWord_t r14 __asm__ ("r14");
    double f14;
    r14 = (HWord_t)&ref_sig;
@@ -117,9 +117,9 @@ static void _test_dtstsf(unsigned int BF, unsigned int ref_sig, dfp_val_t valB)
    }
 }
 
-static void _test_dtstsfq(unsigned int BF, unsigned int ref_sig, dfp_val_t valB)
+static void _test_dtstsfq(unsigned int BF, unsigned int ref_sig, dfp_val_t *valB)
 {
-   _Decimal128 f16 = valB.dec_val128;
+   _Decimal128 f16 = valB->dec_val128;
    register HWord_t r14 __asm__ ("r14");
    double f14;
    r14 = (HWord_t)&ref_sig;
@@ -141,11 +141,11 @@ static void _test_dtstsfq(unsigned int BF, unsigned int ref_sig, dfp_val_t valB)
    }
 }
 
-static dfp_val_t _test_ddedpd(unsigned int SP, dfp_val_t valB)
+static dfp_val_t _test_ddedpd(unsigned int SP, dfp_val_t *valB)
 {
    _Decimal64 ret = 0;
    dfp_val_t result;
-   _Decimal64 f16 = valB.dec_val;
+   _Decimal64 f16 = valB->dec_val;
    switch (SP) {
       case 0:
          __asm__ __volatile__ ("ddedpd. 0, %0, %1" : "=f" (ret) : "f" (f16));
@@ -168,11 +168,11 @@ static dfp_val_t _test_ddedpd(unsigned int SP, dfp_val_t valB)
 }
 
 
-static dfp_val_t _test_ddedpdq(unsigned int SP, dfp_val_t valB)
+static dfp_val_t _test_ddedpdq(unsigned int SP, dfp_val_t *valB)
 {
    _Decimal128 ret = 0;
    dfp_val_t result;
-   _Decimal128 f16 = valB.dec_val128;
+   _Decimal128 f16 = valB->dec_val128;
    switch (SP) {
       case 0:
          __asm__ __volatile__ ("ddedpdq 0, %0, %1" : "=f" (ret) : "f" (f16));
@@ -194,11 +194,11 @@ static dfp_val_t _test_ddedpdq(unsigned int SP, dfp_val_t valB)
    return result;
 }
 
-static dfp_val_t _test_denbcd(unsigned int S, dfp_val_t valB)
+static dfp_val_t _test_denbcd(unsigned int S, dfp_val_t *valB)
 {
    _Decimal64 ret = 0;
    dfp_val_t result;
-   _Decimal64 f16 = valB.dec_val;
+   _Decimal64 f16 = valB->dec_val;
    switch (S) {
       case 0:
          __asm__ __volatile__ ("denbcd. 0, %0, %1" : "=f" (ret) : "f" (f16));
@@ -215,11 +215,11 @@ static dfp_val_t _test_denbcd(unsigned int S, dfp_val_t valB)
 }
 
 
-static dfp_val_t _test_denbcdq(unsigned int S, dfp_val_t valB)
+static dfp_val_t _test_denbcdq(unsigned int S, dfp_val_t *valB)
 {
    _Decimal128 ret = 0;
    dfp_val_t result;
-   _Decimal128 f16 = valB.dec_val128;
+   _Decimal128 f16 = valB->dec_val128;
    switch (S) {
       case 0:
          __asm__ __volatile__ ("denbcdq 0, %0, %1" : "=f" (ret) : "f" (f16));
@@ -236,8 +236,8 @@ static dfp_val_t _test_denbcdq(unsigned int S, dfp_val_t valB)
 }
 
 
-typedef void (*test_func_t)(unsigned int imm, unsigned int imm2,  dfp_val_t valB);
-typedef dfp_val_t (*test_func_bcd_t)(unsigned int imm, dfp_val_t valB);
+typedef void (*test_funcp_t)(unsigned int imm, unsigned int imm2,  dfp_val_t *valB);
+typedef dfp_val_t (*test_func_bcdp_t)(unsigned int imm, dfp_val_t *valB);
 typedef void (*test_driver_func_t)(void);
 typedef struct test_table
 {
@@ -384,7 +384,7 @@ typedef enum {
 
 typedef struct dfp_one_arg_test
 {
-   test_func_t test_func;
+   test_funcp_t test_func;
    const char * name;
    precision_type_t precision;
    const char * op;
@@ -392,7 +392,7 @@ typedef struct dfp_one_arg_test
 
 typedef struct dfp_one_arg_bcd_test
 {
-   test_func_bcd_t test_func;
+   test_func_bcdp_t test_func;
    const char * name;
    precision_type_t precision;
    const char * op;
@@ -407,7 +407,7 @@ dfp_test_dfp_ddedpd_tests[] = {
 
 static void test_dfp_ddedpd_ops(void)
 {
-   test_func_bcd_t func;
+   test_func_bcdp_t func;
    dfp_val_t test_val;
 
    int k = 0;
@@ -428,7 +428,13 @@ static void test_dfp_ddedpd_ops(void)
 
          for (SP = 0; SP < 4; SP++) {
             dfp_val_t result;
-            result = (*func)(SP, test_val);
+
+	    /* There is an ABI change in how 128 bit arguments are aligned 
+             * with GCC 5.0.  The compiler generates a "note" about this
+             * starting with GCC 4.8.  To avoid generating the "note", pass
+             * the address of the 128-bit arguments rather then the value.
+	     */
+            result = (*func)(SP, &test_val);
             printf("%s (SP=%d) %s", test_def.name, SP, test_def.op);
             if (test_def.precision == LONG_TEST) {
                printf("%016llx ==> %016llx\n", test_val.u64_val, result.u64_val);
@@ -453,7 +459,7 @@ dfp_test_dfp_denbcd_tests[] = {
 
 static void test_dfp_denbcd_ops(void)
 {
-   test_func_bcd_t func;
+   test_func_bcdp_t func;
    dfp_val_t test_val;
    int num_test_vals;
 
@@ -490,7 +496,12 @@ static void test_dfp_denbcd_ops(void)
                test_val.u128.vall = bcd128_vals[(i * 2) + 1];
             }
 
-            result = (*func)(S, test_val);
+	    /* There is an API change in how 128 bit arguments are aligned 
+             * with GCC 5.0.  The compiler generates a "note" about this
+             * starting with GCC 4.8.  To avoid generating the "note", pass
+             * the address of the 128-bit arguments rather then the value.
+	     */
+            result = (*func)(S, &test_val);
             printf("%s (S=%d) %s", test_def.name, S, test_def.op);
             if (test_def.precision == LONG_TEST) {
                printf("%016llx ==> %016llx\n", test_val.u64_val, result.u64_val);
@@ -516,7 +527,7 @@ dfp_test_significance_tests[] = {
 
 static void test_dfp_test_significance_ops(void)
 {
-   test_func_t func;
+   test_funcp_t func;
    dfp_val_t test_valB;
    int k = 0;
    unsigned int BF_vals[] = {BF_val1, BF_val2, BF_val3};
@@ -545,7 +556,12 @@ static void test_dfp_test_significance_ops(void)
                BF = BF_vals[bf_idx];
                SET_FPSCR_ZERO;
                SET_CR_XER_ZERO;
-               (*func)(BF, reference_sig, test_valB);
+               /* There is an ABI change in how 128 bit arguments are aligned 
+                * with GCC 5.0.  The compiler generates a "note" about this
+                * starting with GCC 4.9.  To avoid generating the "note", pass
+                * the address of the 128-bit arguments rather then the value.
+                */
+               (*func)(BF, reference_sig, &test_valB);
                GET_CR(flags);
 
                condreg = ((flags >> (4 * (7-BF)))) & 0xf;

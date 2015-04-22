@@ -161,6 +161,7 @@ n-i-bz  (vex 3098) Avoid generation of Neon insns on non-Neon hosts
         entries on ppc.
 346267  Fix compiler warning about casting arguments, ppc64.
 346324  Add support for the ppc instructions lbarx, lharx, stbcs, sthcs
+346416  Add support for LL_IOC_PATH2FID and LL_IOC_GETPARENT Lustre ioctls
 
 
 Release 3.10.1 (25 November 2014)

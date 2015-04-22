@@ -1314,7 +1314,7 @@ Bool VG_(am_is_bogus_client_stack_pointer)( Addr addr )
       /* If the abutting segment towards lower addresses is an SkResvn
          segment, then ADDR is a stack pointer into mapped memory. */
       const NSegment *next = VG_(am_next_nsegment)(seg, /*forward*/ False);
-      if (next == NULL || next->kind != SkResvn || seg->smode != SmUpper)
+      if (next == NULL || next->kind != SkResvn || next->smode != SmUpper)
          return True;
 
       /* OK; looks like a stack segment */

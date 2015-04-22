@@ -163,6 +163,7 @@ n-i-bz  (vex 3098) Avoid generation of Neon insns on non-Neon hosts
 346324  Add support for the ppc instructions lbarx, lharx, stbcs, sthcs
 346416  Add support for LL_IOC_PATH2FID and LL_IOC_GETPARENT Lustre ioctls
 n-i-bz  Enable rt_sigpending syscall on ppc64 linux.
+346474  Added support for accessing the PPC64 TEXASRU register
 
 
 Release 3.10.1 (25 November 2014)

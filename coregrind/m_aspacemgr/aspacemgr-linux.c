@@ -1282,12 +1282,12 @@ static Bool any_Ts_in_range ( Addr start, SizeT len )
 }
 
 
-/* Check whether ADDR looks like a bogus stack pointer. Non-bogosity is
-   defined as follows: ADDR is not bogus if
-   (1) it points into an already mapped stack segment, OR
-   (2) it points into a reservation segment into which an abutting SkAnonC
+/* Check whether ADDR looks like an address or address-to-be located in an
+   extensible client stack segment. Return true if 
+   (1) ADDR is located in an already mapped stack segment, OR
+   (2) ADDR is located in a reservation segment into which an abutting SkAnonC
        segment can be extended. */
-Bool VG_(am_is_bogus_client_stack_pointer)( Addr addr )
+Bool VG_(am_addr_is_in_extensible_client_stack)( Addr addr )
 {
    const NSegment *seg = nsegments + find_nsegment_idx(addr);
 
@@ -1297,17 +1297,17 @@ Bool VG_(am_is_bogus_client_stack_pointer)( Addr addr )
    case SkFileV:
    case SkFileC:
    case SkShmC:
-      return True;
+      return False;
 
    case SkResvn: {
-      if (seg->smode != SmUpper) return True;
+      if (seg->smode != SmUpper) return False;
       /* If the the abutting segment towards higher addresses is an SkAnonC
          segment, then ADDR is a future stack pointer. */
       const NSegment *next = VG_(am_next_nsegment)(seg, /*forward*/ True);
-      if (next == NULL || next->kind != SkAnonC) return True;
+      if (next == NULL || next->kind != SkAnonC) return False;
 
       /* OK; looks like a stack segment */
-      return False;
+      return True;
    }
 
    case SkAnonC: {
@@ -1315,10 +1315,10 @@ Bool VG_(am_is_bogus_client_stack_pointer)( Addr addr )
          segment, then ADDR is a stack pointer into mapped memory. */
       const NSegment *next = VG_(am_next_nsegment)(seg, /*forward*/ False);
       if (next == NULL || next->kind != SkResvn || next->smode != SmUpper)
-         return True;
+         return False;
 
       /* OK; looks like a stack segment */
-      return False;
+      return True;
    }
 
    default:

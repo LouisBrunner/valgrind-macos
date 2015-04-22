@@ -1550,7 +1550,7 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
 
          So the approximation we're taking here is to extend the stack only
          if the client stack pointer does not look bogus. */
-      if (! VG_(am_is_bogus_client_stack_pointer)(stackMin))
+      if (VG_(am_addr_is_in_extensible_client_stack)(stackMin))
          VG_(extend_stack)( tid, stackMin );
    }
 #  endif

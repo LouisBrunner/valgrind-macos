@@ -45,12 +45,15 @@ SUBDIRS += darwin
 endif
 
 # Platform-specific tests
+if VGCONF_PLATFORMS_INCLUDE_AMD64_LINUX
+SUBDIRS += amd64-linux
+endif
 if VGCONF_PLATFORMS_INCLUDE_X86_LINUX
 SUBDIRS += x86-linux
 endif
 
 DIST_SUBDIRS = x86 amd64 ppc32 ppc64 arm arm64 s390x mips32 mips64 tilegx \
-               linux darwin x86-linux scripts .
+               linux darwin amd64-linux x86-linux scripts .
 
 dist_noinst_SCRIPTS = \
 	filter_cmdline0 \

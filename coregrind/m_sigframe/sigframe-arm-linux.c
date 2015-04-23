@@ -185,7 +185,7 @@ void VG_(sigframe_create)( ThreadId tid,
    sp -= size;
    sp = VG_ROUNDDN(sp, 16);
 
-   if(! ML_(sf_extend_stack)(tst, sp, size))
+   if (! ML_(sf_maybe_extend_stack)(tst, sp, size, flags))
       I_die_here; // XXX Incorrect behavior
 
 

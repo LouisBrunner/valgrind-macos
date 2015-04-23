@@ -1,0 +1,20 @@
+#! /bin/sh
+
+dir=`dirname $0`
+
+# Remove ==pid== and **pid** strings 
+perl -p -e 's/(==|\*\*)[0-9]{1,7}\1 //' |
+
+perl -p -e 's/0x[0-9A-Fa-f]+/0x......../g' |
+
+# Older bash versions print abnormal termination messages on the stderr
+# of the bash process. Newer bash versions redirect such messages properly.
+# Suppress any redirected abnormal termination messages. You can find the
+# complete list of messages in the bash source file siglist.c.
+perl -n -e 'print if !/^(Segmentation fault|Alarm clock|Aborted|Bus error)( \(core dumped\))?$/' |
+
+# Remove the size in "The main thread stack size..." message.
+sed "s/The main thread stack size used in this run was [0-9]*/The main thread stack size used in this run was .../"
+
+# NOTE: it is essential for the bug345887 testcase that the stderr
+#       filtering does *not* remove lines beginning with --

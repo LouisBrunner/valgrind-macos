@@ -298,7 +298,7 @@ static Addr build_sigframe(ThreadState *tst,
    sp -= sizeof(*frame);
    frame = (struct sigframe *)sp;
 
-   if (! ML_(sf_extend_stack)(tst, sp, sizeof(*frame)))
+   if (! ML_(sf_maybe_extend_stack)(tst, sp, sizeof(*frame), flags))
       return sp_top_of_frame;
 
    /* retcode, sigNo, sc, sregs fields are to be written */
@@ -358,7 +358,7 @@ static Addr build_rt_sigframe(ThreadState *tst,
    sp -= sizeof(*frame);
    frame = (struct rt_sigframe *)sp;
 
-   if (! ML_(sf_extend_stack)(tst, sp, sizeof(*frame)))
+   if (! ML_(sf_maybe_extend_stack)(tst, sp, sizeof(*frame), flags))
       return sp_top_of_frame;
 
    /* retcode, sigNo, sc, sregs fields are to be written */

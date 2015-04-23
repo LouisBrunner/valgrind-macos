@@ -434,7 +434,7 @@ static Addr build_sigframe(ThreadState *tst,
    esp = VG_ROUNDDN(esp, 16);
    frame = (struct sigframe *)esp;
 
-   if (! ML_(sf_extend_stack)(tst, esp, sizeof(*frame)))
+   if (! ML_(sf_maybe_extend_stack)(tst, esp, sizeof(*frame), flags))
       return esp_top_of_frame;
 
    /* retaddr, sigNo, siguContext fields are to be written */
@@ -491,7 +491,7 @@ static Addr build_rt_sigframe(ThreadState *tst,
    esp = VG_ROUNDDN(esp, 16);
    frame = (struct rt_sigframe *)esp;
 
-   if (! ML_(sf_extend_stack)(tst, esp, sizeof(*frame)))
+   if (! ML_(sf_maybe_extend_stack)(tst, esp, sizeof(*frame), flags))
       return esp_top_of_frame;
 
    /* retaddr, sigNo, pSiginfo, puContext fields are to be written */

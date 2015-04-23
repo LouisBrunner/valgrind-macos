@@ -37,7 +37,8 @@
 
 /* --------------- Implemented in sigframe-common.c ---------------*/
 
-Bool ML_(sf_extend_stack)( const ThreadState *tst, Addr addr, SizeT size );
+Bool ML_(sf_maybe_extend_stack)( const ThreadState *tst, Addr addr,
+                                 SizeT size, UInt flags );
 
 #endif   // __PRIV_SIGFRAME_H
 

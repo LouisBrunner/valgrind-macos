@@ -109,7 +109,7 @@ void VG_(sigframe_create) ( ThreadId tid,
                 entry to a function. */
 
    tst = VG_(get_ThreadState)(tid);
-   if (! ML_(sf_extend_stack)(tst, rsp, sp_top_of_frame - rsp))
+   if (! ML_(sf_maybe_extend_stack)(tst, rsp, sp_top_of_frame - rsp, flags))
       return;
 
    vg_assert(VG_IS_16_ALIGNED(rsp+8));

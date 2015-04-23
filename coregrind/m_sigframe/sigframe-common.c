@@ -54,16 +54,31 @@ static void track_frame_memory ( Addr addr, SizeT size, ThreadId tid )
 /* Extend the stack segment downwards if needed so as to ensure the
    new signal frames are mapped to something.  Return a Bool
    indicating whether or not the operation was successful. */
-Bool ML_(sf_extend_stack) ( const ThreadState *tst, Addr addr, SizeT size )
+Bool ML_(sf_maybe_extend_stack) ( const ThreadState *tst, Addr addr,
+                                  SizeT size, UInt flags )
 {
    ThreadId        tid = tst->tid;
    const NSegment *stackseg = NULL;
 
-   if (VG_(extend_stack)(tid, addr)) {
+   if (flags & VKI_SA_ONSTACK) {
+      /* If the sigframe is allocated on an alternate stack, then we cannot
+         extend that stack. Nothing to do here. */
       stackseg = VG_(am_find_nsegment)(addr);
-      if (0 && stackseg)
-	 VG_(printf)("frame=%#lx seg=%#lx-%#lx\n",
-		     addr, stackseg->start, stackseg->end);
+   } else if (VG_(am_addr_is_in_extensible_client_stack)(addr)) {
+      if (VG_(extend_stack)(tid, addr)) {
+         stackseg = VG_(am_find_nsegment)(addr);
+         if (0 && stackseg)
+            VG_(printf)("frame=%#lx seg=%#lx-%#lx\n",
+                        addr, stackseg->start, stackseg->end);
+      }
+   } else if ((stackseg = VG_(am_find_nsegment)(addr)) &&
+              VG_(am_is_valid_for_client)(addr, 1,
+                                          VKI_PROT_READ | VKI_PROT_WRITE)) {
+      /* We come here for explicitly defined pthread-stacks which can be
+         located in any client segment. */
+   } else {
+      /* Something unexpected */
+      stackseg = NULL;
    }
 
    if (stackseg == NULL || !stackseg->hasR || !stackseg->hasW) {

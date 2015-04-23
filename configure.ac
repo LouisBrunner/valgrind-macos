@@ -3033,6 +3033,7 @@ AC_CONFIG_FILES([
    none/tests/tilegx/Makefile
    none/tests/linux/Makefile
    none/tests/darwin/Makefile
+   none/tests/amd64-linux/Makefile
    none/tests/x86-linux/Makefile
    exp-sgcheck/Makefile
    exp-sgcheck/tests/Makefile

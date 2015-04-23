@@ -412,7 +412,7 @@ static Addr build_rt_sigframe(ThreadState *tst,
    rsp = VG_ROUNDDN(rsp, 16) - 8;
    frame = (struct rt_sigframe *)rsp;
 
-   if (! ML_(sf_extend_stack)(tst, rsp, sizeof(*frame)))
+   if (! ML_(sf_maybe_extend_stack)(tst, rsp, sizeof(*frame), flags))
       return rsp_top_of_frame;
 
    /* retaddr, siginfo, uContext fields are to be written */

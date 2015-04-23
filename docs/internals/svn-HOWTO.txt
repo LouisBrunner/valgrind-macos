@@ -1,0 +1,38 @@
+-----------------------------------------------------------------------------
+Various guidelines/recommended usage for valgrind SVN
+-----------------------------------------------------------------------------
+
+Update the ignore property
+==========================
+For various type of files, the ignore property of the directory
+containing these files is to be updated.
+
+* Here is an example for a new test case:
+  $ svn stat
+  ?       memcheck/tests/ppc32/power_ISA2_07
+  ?       memcheck/tests/ppc64/power_ISA2_07
+
+  Grrr.....
+
+  $ cd memcheck/tests/ppc32
+  $ svn propget svn:ignore . > ignore-me
+  ...edit ignore-me, add executable to the list...
+  $ svn propset svn:ignore . -F ignore-me
+  $ rm ignore-me
+  $ svn commit
+
+  This is best done when a new testcase is added.
+
+* When adding a directory, look at the ignore property of a similar
+  directory for inspiration e.g.
+  $ svn propget svn:ignore auxprogs
+  .deps
+  getoff-amd64-darwin
+  getoff-x86-darwin
+  ...
+  libmpiwrap-x86-darwin.so.dSYM
+  Makefile
+  Makefile.in
+  valgrind-di-server
+  valgrind-listener
+

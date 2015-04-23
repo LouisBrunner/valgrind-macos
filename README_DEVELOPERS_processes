@@ -12,6 +12,9 @@ more in details afterwards.
 * Major release production: 
   See docs/internals/release-HOWTO.txt (currently a bit out of date)
 
+* Various guidelines/recommended usage for valgrind SVN
+  See docs/internals/svn-HOWTO.txt
+
 * Minor/correction release production: TBD
 
 

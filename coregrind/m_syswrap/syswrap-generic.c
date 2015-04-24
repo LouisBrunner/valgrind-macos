@@ -79,7 +79,8 @@ void ML_(guess_and_register_stack) (Addr sp, ThreadState* tst)
       assume that sp starts near its highest possible value, and can
       only go down to the start of the mmaped segment. */
    seg = VG_(am_find_nsegment)(sp);
-   if (seg && seg->kind != SkResvn) {
+   if (seg &&
+       VG_(am_is_valid_for_client)(sp, 1, VKI_PROT_READ | VKI_PROT_WRITE)) {
       tst->client_stack_highest_byte = (Addr)VG_PGROUNDUP(sp)-1;
       tst->client_stack_szB = tst->client_stack_highest_byte - seg->start + 1;
 

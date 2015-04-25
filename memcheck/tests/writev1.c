@@ -80,7 +80,7 @@ int main(void)
                 	fprintf(stderr, "expected errno = EINVAL, got %d\n", errno);
  	}
 	else 
-        	fprintf(stderr, "Error writev returned a positive value\n");
+        	fprintf(stderr, "Error readv returned a positive value\n");
 
         unlink(f_name);
         

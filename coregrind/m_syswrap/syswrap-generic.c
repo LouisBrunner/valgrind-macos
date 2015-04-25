@@ -4006,7 +4006,8 @@ PRE(sys_readv)
    if (!ML_(fd_allowed)(ARG1, "readv", tid, False)) {
       SET_STATUS_Failure( VKI_EBADF );
    } else {
-      PRE_MEM_READ( "readv(vector)", ARG2, ARG3 * sizeof(struct vki_iovec) );
+      if ((Int)ARG3 >= 0)
+         PRE_MEM_READ( "readv(vector)", ARG2, ARG3 * sizeof(struct vki_iovec) );
 
       if (ARG2 != 0) {
          /* ToDo: don't do any of the following if the vector is invalid */
@@ -4335,8 +4336,9 @@ PRE(sys_writev)
    if (!ML_(fd_allowed)(ARG1, "writev", tid, False)) {
       SET_STATUS_Failure( VKI_EBADF );
    } else {
-      PRE_MEM_READ( "writev(vector)", 
-		     ARG2, ARG3 * sizeof(struct vki_iovec) );
+      if ((Int)ARG3 >= 0)
+         PRE_MEM_READ( "writev(vector)", 
+                       ARG2, ARG3 * sizeof(struct vki_iovec) );
       if (ARG2 != 0) {
          /* ToDo: don't do any of the following if the vector is invalid */
          vec = (struct vki_iovec *)ARG2;

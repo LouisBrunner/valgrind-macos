@@ -27,8 +27,8 @@ Uninitialised byte(s) found during client check request
    by 0x........: main (dw4.c:82)
  Address 0x........ is in a rw- mapped file valgrind-dw4-test.PID segment
 
-Uninitialised byte(s) found during client check request
-   at 0x........: croak (dw4.c:32)
+Unaddressable byte(s) found during client check request
+   at 0x........: croak (dw4.c:25)
    by 0x........: main (dw4.c:87)
  Address 0x........ is 0 bytes after the brk data segment limit 0x........
 

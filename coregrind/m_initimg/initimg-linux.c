@@ -1143,7 +1143,12 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
    VG_TRACK(post_reg_write, Vg_CoreStartup, /*tid*/1, VG_O_STACK_PTR, 8);
    VG_TRACK(post_reg_write, Vg_CoreStartup, /*tid*/1, VG_O_FPC_REG,   4);
    VG_TRACK(post_reg_write, Vg_CoreStartup, /*tid*/1, VG_O_INSTR_PTR, 8);
-   return;
+
+   /* At the end of this function there is code to mark all guest state
+      registers as defined. For s390 that would be wrong, because the ABI
+      says that all registers except SP, IA, and FPC are undefined upon
+      process startup. */
+#define PRECISE_GUEST_REG_DEFINEDNESS_AT_STARTUP 1
 
 #  elif defined(VGP_mips32_linux)
    vg_assert(0 == sizeof(VexGuestMIPS32State) % 16);
@@ -1192,9 +1197,20 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
 #    error Unknown platform
 #  endif
 
+#  if !defined(PRECISE_GUEST_REG_DEFINEDNESS_AT_STARTUP)
    /* Tell the tool that we just wrote to the registers. */
    VG_TRACK( post_reg_write, Vg_CoreStartup, /*tid*/1, /*offset*/0,
              sizeof(VexGuestArchState));
+#  endif
+
+   /* Tell the tool about the client data segment and then kill it which will
+      make it inaccessible/unaddressable. */
+   const NSegment *seg = VG_(am_find_nsegment)(VG_(brk_base));
+   vg_assert(seg);
+   vg_assert(seg->kind == SkAnonC);
+   VG_TRACK(new_mem_brk, VG_(brk_base), seg->end + 1 - VG_(brk_base),
+            1/*tid*/);
+   VG_TRACK(die_mem_brk, VG_(brk_base), seg->end + 1 - VG_(brk_base));
 }
 
 #endif // defined(VGO_linux)

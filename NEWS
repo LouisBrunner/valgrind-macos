@@ -108,6 +108,7 @@ where XXXXXX is the bug number as listed below.
 342353  Allow dumping full massif output while valgrind is still running
 342603  Add I2C_SMBUS ioctl support
 342635  OS X 10.10 (Yosemite) - missing system calls and fcntl code
+342683  Mark memory past the initial brk limit as unaddressable
 342795  Internal glibc __GI_mempcpy call should be intercepted
 343012  Unhandled syscall 319 (memfd_create)
 343069  Patch updating v4l2 API support

@@ -911,10 +911,10 @@ void alloc_F_for_writing ( /*MOD*/SecMap* sm, /*OUT*/Word* fixp ) {
          *fixp = (Word)i;
          return;
       }
-    }
+   }
 
-    /*NOTREACHED*/
-    tl_assert(0);
+   /*NOTREACHED*/
+   tl_assert(0);
 }
 
 
@@ -6159,6 +6159,40 @@ void libhb_shutdown ( Bool show_stats )
                    (UWord)N_RCEC_TAB,
                    stats__ctxt_tab_curr, RCEC_referenced,
                    stats__ctxt_tab_max );
+      {
+#        define  MAXCHAIN 10
+         UInt chains[MAXCHAIN+1]; // [MAXCHAIN] gets all chains >= MAXCHAIN
+         UInt non0chain = 0;
+         UInt n;
+         UInt i;
+         RCEC *p;
+
+         for (i = 0; i <= MAXCHAIN; i++) chains[i] = 0;
+         for (i = 0; i < N_RCEC_TAB; i++) {
+            n = 0;
+            for (p = contextTab[i]; p; p = p->next)
+               n++;
+            if (n < MAXCHAIN)
+               chains[n]++;
+            else
+               chains[MAXCHAIN]++;
+            if (n > 0)
+               non0chain++;
+         }
+         VG_(printf)( "   libhb: contextTab chain of [length]=nchain."
+                      " Avg chain len %3.1f\n"
+                      "        ",
+                      (Double)stats__ctxt_tab_curr
+                      / (Double)(non0chain ? non0chain : 1));
+         for (i = 0; i <= MAXCHAIN; i++) {
+            if (chains[i] != 0)
+                VG_(printf)( "[%d%s]=%d ",
+                             i, i == MAXCHAIN ? "+" : "",
+                             chains[i]);
+         }
+         VG_(printf)( "\n");
+#        undef MAXCHAIN
+      }
       VG_(printf)( "   libhb: contextTab: %lu queries, %lu cmps\n",
                    stats__ctxt_tab_qs,
                    stats__ctxt_tab_cmps );

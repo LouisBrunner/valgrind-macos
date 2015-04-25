@@ -320,8 +320,11 @@ void VG_(HT_print_stats) ( const VgHashTable *table, HT_Cmp_t cmp )
       ncno += cno_occurences[i];
    }
    VG_(message)(Vg_DebugMsg, 
-                "total nr of unique   chains: %6d, keys %6d, elts %6d\n",
-                ncno, nkey, nelt);
+                "total nr of unique   slots: %6d, keys %6d, elts %6d."
+                " Avg chain len %3.1f\n",
+                ncno, nkey, nelt,
+                (Double)nelt/(Double)(ncno == cno_occurences[0] ?
+                                      1 : ncno - cno_occurences[0]));
 }
 
 

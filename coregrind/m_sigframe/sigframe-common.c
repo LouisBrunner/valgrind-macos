@@ -109,7 +109,8 @@ Bool ML_(sf_maybe_extend_stack) ( const ThreadState *tst, Addr addr,
 /* Extend the stack segment downwards if needed so as to ensure the
    new signal frames are mapped to something.  Return a Bool
    indicating whether or not the operation was successful. */
-Bool ML_(sf_extend_stack) ( const ThreadState *tst, Addr addr, SizeT size )
+Bool ML_(sf_maybe_extend_stack) ( const ThreadState *tst, Addr addr,
+                                  SizeT size, UInt flags )
 {
    /* Tell the tool about the new memory */
    track_frame_memory(addr, size, tst->tid);

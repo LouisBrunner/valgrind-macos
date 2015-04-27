@@ -802,7 +802,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          offB_HOST_EvC_FAILADDR = offsetof(VexGuestTILEGXState,host_EvC_FAILADDR);
          vassert(vta->archinfo_guest.endness == VexEndnessLE);
          vassert(0 ==
-                 sizeof(VexGuestTILEGXState) % VexGuestTILEGXStateAlignment);
+                 sizeof(VexGuestTILEGXState) % LibVEX_GUEST_STATE_ALIGN);
          vassert(sizeof( ((VexGuestTILEGXState*)0)->guest_CMSTART    ) == 8);
          vassert(sizeof( ((VexGuestTILEGXState*)0)->guest_CMLEN      ) == 8);
          vassert(sizeof( ((VexGuestTILEGXState*)0)->guest_NRADDR     ) == 8);

@@ -127,7 +127,6 @@ struct {
 
 } VexGuestTILEGXState;
 
-#define VexGuestTILEGXStateAlignment  16
 #define OFFSET_tilegx_r(_N)  (8 * (_N))
 
 /*---------------------------------------------------------------*/

@@ -1179,8 +1179,7 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
    arch->vex.guest_r31 = iifii.initial_client_SP;
 
 #  elif defined(VGP_tilegx_linux)
-   vg_assert(0 == sizeof(VexGuestTILEGXState) % 8);
-   vg_assert(0 == sizeof(VexGuestTILEGXState) % VexGuestTILEGXStateAlignment);
+   vg_assert(0 == sizeof(VexGuestTILEGXState) % 16);
 
    /* Zero out the initial state. */
    LibVEX_GuestTILEGX_initialise(&arch->vex);

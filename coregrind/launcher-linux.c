@@ -341,14 +341,11 @@ int main(int argc, char** argv, char** envp)
    }
 
    /* Select a platform to use if we can't decide that by looking at
-      the executable (eg because it's a shell script).  Note that the
-      default_platform is not necessarily either the primary or
-      secondary build target.  Instead it's chosen to maximise the
-      chances that /bin/sh will work on it.  Hence for a primary
-      target of ppc64-linux we still choose ppc32-linux as the default
-      target, because on most ppc64-linux setups, the basic /bin,
-      /usr/bin, etc, stuff is built in 32-bit mode, not 64-bit
-      mode. */
+      the executable (eg because it's a shell script).  VG_PLATFORM is the
+      default_platform. Its value is defined in coregrind/Makefile.am and
+      typically it is the primary build target. Unless the primary build
+      target is not built is not built in which case VG_PLATFORM is the
+      secondary build target. */
    if ((0==strcmp(VG_PLATFORM,"x86-linux"))    ||
        (0==strcmp(VG_PLATFORM,"amd64-linux"))  ||
        (0==strcmp(VG_PLATFORM,"ppc32-linux"))  ||

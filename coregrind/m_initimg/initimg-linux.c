@@ -1021,7 +1021,7 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
       all other registers zeroed. */
 
 #  if defined(VGP_x86_linux)
-   vg_assert(0 == sizeof(VexGuestX86State) % 16);
+   vg_assert(0 == sizeof(VexGuestX86State) % LibVEX_GUEST_STATE_ALIGN);
 
    /* Zero out the initial state, and set up the simulated FPU in a
       sane way. */
@@ -1043,7 +1043,7 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
    asm volatile("movw %%es, %0" : : "m" (arch->vex.guest_ES));
 
 #  elif defined(VGP_amd64_linux)
-   vg_assert(0 == sizeof(VexGuestAMD64State) % 16);
+   vg_assert(0 == sizeof(VexGuestAMD64State) % LibVEX_GUEST_STATE_ALIGN);
 
    /* Zero out the initial state, and set up the simulated FPU in a
       sane way. */
@@ -1058,7 +1058,7 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
    arch->vex.guest_RIP = iifii.initial_client_IP;
 
 #  elif defined(VGP_ppc32_linux)
-   vg_assert(0 == sizeof(VexGuestPPC32State) % 16);
+   vg_assert(0 == sizeof(VexGuestPPC32State) % LibVEX_GUEST_STATE_ALIGN);
 
    /* Zero out the initial state, and set up the simulated FPU in a
       sane way. */
@@ -1073,7 +1073,7 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
    arch->vex.guest_CIA  = iifii.initial_client_IP;
 
 #  elif defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
-   vg_assert(0 == sizeof(VexGuestPPC64State) % 16);
+   vg_assert(0 == sizeof(VexGuestPPC64State) % LibVEX_GUEST_STATE_ALIGN);
 
    /* Zero out the initial state, and set up the simulated FPU in a
       sane way. */
@@ -1119,7 +1119,7 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
    arch->vex.guest_PC  = iifii.initial_client_IP;
 
 #  elif defined(VGP_s390x_linux)
-   vg_assert(0 == sizeof(VexGuestS390XState) % 16);
+   vg_assert(0 == sizeof(VexGuestS390XState) % LibVEX_GUEST_STATE_ALIGN);
 
    /* Zero out the initial state. This also sets the guest_fpc to 0, which
       is also done by the kernel for the fpc during execve. */
@@ -1151,7 +1151,7 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
 #define PRECISE_GUEST_REG_DEFINEDNESS_AT_STARTUP 1
 
 #  elif defined(VGP_mips32_linux)
-   vg_assert(0 == sizeof(VexGuestMIPS32State) % 16);
+   vg_assert(0 == sizeof(VexGuestMIPS32State) % LibVEX_GUEST_STATE_ALIGN);
    /* Zero out the initial state, and set up the simulated FPU in a
       sane way. */
    LibVEX_GuestMIPS32_initialise(&arch->vex);
@@ -1165,7 +1165,7 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
    arch->vex.guest_r31 = iifii.initial_client_SP;
 
 #   elif defined(VGP_mips64_linux)
-   vg_assert(0 == sizeof(VexGuestMIPS64State) % 16);
+   vg_assert(0 == sizeof(VexGuestMIPS64State) % LibVEX_GUEST_STATE_ALIGN);
    /* Zero out the initial state, and set up the simulated FPU in a
       sane way. */
    LibVEX_GuestMIPS64_initialise(&arch->vex);
@@ -1179,7 +1179,7 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
    arch->vex.guest_r31 = iifii.initial_client_SP;
 
 #  elif defined(VGP_tilegx_linux)
-   vg_assert(0 == sizeof(VexGuestTILEGXState) % 16);
+   vg_assert(0 == sizeof(VexGuestTILEGXState) % LibVEX_GUEST_STATE_ALIGN);
 
    /* Zero out the initial state. */
    LibVEX_GuestTILEGX_initialise(&arch->vex);

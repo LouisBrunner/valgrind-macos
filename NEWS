@@ -62,22 +62,15 @@ To see details of a given bug, visit
 where XXXXXX is the bug number as listed below.
 
 116002  VG_(printf): Problems with justification of strings and integers
-126028  ppc32: Unhandled instruction mtfsb1
-131797  ppc32: Unhandled instruction twlle
-150526  ppc32: Unhandled instruction 0x7D29571E
 155125  avoid cutting away file:lineno after long function name
-184711  ppc: Unhandled instruction mfpvr
 197259  Unsupported arch_prtctl PR_SET_GS option
 201152  ppc64: Assertion in ppc32g_dirtyhelper_MFSPR_268_269
 201435  Fix Darwin: -v does not show kernel version
-210028  ppc32: Unhandled instruction vmhraddshs
-        = 338095
 211256  Fixed an outdated comment regarding the default platform.
 211926  Avoid compilation warnings in valgrind.h with -pedantic
 226609  Crediting upstream authors in man page
 231257  Valgrind omits path when executing script from shebang line
 269360  s390x: Fix addressing mode selection for compare-and-swap
-275814  ppc: Unhandled instructions 0x7D295F1E and 0x7D295F5E and vmhaddshs
 333051  mmap of huge pages fails due to incorrect alignment
         == 339163
 334802  valgrind does not always explain why a given option is bad

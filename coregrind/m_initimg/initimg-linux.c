@@ -566,7 +566,7 @@ Addr setup_client_stack( void*  init_sp,
         VG_(printf)("valgrind: "
                     "This may be the result of a very large --main-stacksize=\n");
         VG_(printf)("valgrind: setting.  Cannot continue.  Sorry.\n\n");
-        VG_(exit)(0);
+        VG_(exit)(1);
      }
 
      vg_assert(ok);

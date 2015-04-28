@@ -152,25 +152,28 @@ where XXXXXX is the bug number as listed below.
 344702  Fix missing libobjc suppressions on OS X 10.10
 344939  Fix memcheck/tests/xml1 on OS X 10.10
 345016  helgrind/tests/locked_vs_unlocked2 is failing sometimes
+345079  Fix build problems in VEX/useful/test_main.c
+345215  Performance improvements for the register allocator
 345394  Fix memcheck/tests/strchr on OS X
 345637  Fix memcheck/tests/sendmsg on OS X
+345695  Add POWERPC support for AT_DCACHESIZE and HWCAP2
 345887  Fix an assertion in the address space manager
+346267  Compiler warnings for PPC64 code on call to LibVEX_GuestPPC64_get_XER()
+        and LibVEX_GuestPPC64_get_CR()
+346270  Regression tests none/tests/jm_vec/isa_2_07 and
+        none/tests/test_isa_2_07_part2 have failures on PPC64 little endian
 346307  fuse filesystem syscall deadlocks
-346801  Fix build error on OS X
+346324  PPC64 missing support for lbarx, lharx, stbcx and sthcx instructions
+346416  Add support for LL_IOC_PATH2FID and LL_IOC_GETPARENT Lustre ioctls
+346474  PPC64 Power 8, spr TEXASRU register not supported
+346487  Compiler generates "note" about a future ABI change for PPC64
+346801  Fix link error on OS X: _vgModuleLocal_sf_maybe_extend_stack
 n-i-bz  Provide implementations of certain compiler builtins to support
         compilers who may not provide those
 n-i-bz  Old STABS code is still being compiled, but never used. Remove it.
 n-i-bz  Fix compilation on distros with glibc < 2.5
 n-i-bz  (vex 3098) Avoid generation of Neon insns on non-Neon hosts
-345695  Add support for the auxvex entries AT_DCHCEBSIZE and AT_HWCAP2
-        entries on ppc.
-346267  Fix compiler warning about casting arguments, ppc64.
-346324  Add support for the ppc instructions lbarx, lharx, stbcs, sthcs
-346416  Add support for LL_IOC_PATH2FID and LL_IOC_GETPARENT Lustre ioctls
 n-i-bz  Enable rt_sigpending syscall on ppc64 linux.
-346474  Added support for accessing the PPC64 TEXASRU register
-346487  Change PPC64 function calls with 128-bit values to use a pointer so
-        the compiler will not generate a note about an ABI change.
 
 
 Release 3.10.1 (25 November 2014)

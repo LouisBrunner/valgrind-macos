@@ -299,11 +299,8 @@ Tue  3 Feb 00:14:18 CET 2015
 
 Check: space recovery in aspacemgr segnames array re-implemented?
 
-343902  --vgdb=yes doesn't break when --xml=yes is used
-no action yet
-
 344019  new tool: trackptr to track pointer usage
-na
+no action so far
 
 344052  Cost of dynamically loaded library is not properly linked to
         source code lines if the library is unloaded before exit
@@ -313,25 +310,115 @@ stack segment overrides
 
 344337  OS X 10.10 unhandled syscall
 
-344382  Memcheck has high false error rates on MSVC2013 compiled, optimised, code
-in progress
+344382 Memcheck has high false error rates on MSVC2013 compiled,
+       optimised, code in progress
+fixed, but preffed off
 
 344401  x32 ABI support
+no action
 
 344416  'make regtest' does not work cleanly on OS X
+meta-bug
 
 344512  unhandled syscal: unix:349
 
 344524  store conditional of guest applications always fail (Octeon3(MIPS)
+discussed, partial fix available
 
 344543  --leak-check=full memleak errors from system libraries in OS X 10.10.2
+can possibly close
 
 344547  vex x86->IR: 0xC5 0xF8 0x77 0xE9
-avx
-
-344559  garbage collection of unused segment names in address space manager
+avx on x86
 
 344560  Stack traces missing penultimate frame
 has plausible patch
 
 Thu  5 Mar 18:08:27 CET 2015
+
+344886  V should not try to extend a sigaltstack
+unclear what the situation is
+
+344936  unhandled syscall: unix:473 (readlinkat) on OS X 10.10
+
+345077  linux syscall execveat support (linux 3.19)
+has patch
+
+345121  helgrind/tests/hg05_race2 fails intermittently
+
+345126  Incorrect handling of VIDIOC_G_AUDIO and G_AUDOUT
+has patch
+
+345177  arm64: prfm (reg) not implemented
+
+345248  add support for Solaris OS in valgrind
+
+345261  Unsupported instruction 0xC5 0xFB 0x10 0x44 (vmovsd
+        0x8(%esp),%xmm0)
+avx on x86
+
+345307  Please suppress warning about "still reachable" memory
+        when using libstdc++ from gcc 5
+
+345338  TIOCGSERIAL and TIOCSSERIAL ioctl support on Linux
+has patch
+
+345414  I get the following when I ran valgrind  WARNING:
+        unhandled syscall: 317
+sys_seccomp
+
+345751  OS X: Incorrect result for operator Iop_Add32 and Iop_Add64
+due to mce.useLLVMworkarounds = True
+
+345753  OS X: sanityCheckFail: exiting due to bad IR for Iop_AddF64
+IR type error; should look at it
+
+345763  MIPS N32 ABI support
+various patches, no upstream action so far
+
+345811  annotate also FP for memcheck dirty helpers
+has patch, should commit
+
+345824  aspacem segment mismatch on OS X: seen with none/tests/bigcode
+but also for s390-linux; confusing
+
+345921  Add TileGX instruction set test in non/tests/tilegx/
+
+345928  amd64: callstack only contains current function for small stacks
+has patch, but needs further investigation
+
+345929  Crash when running with `--gen-suppressions=yes` after
+        entering 'y' to confirm
+probable easy fix
+
+345975  Artificial functions in backtrace
+more Dwarf complexity
+
+345984  disInstr(arm): unhandled instruction: 0xEE193F1E
+
+345985  disInstr(arm): unhandled instruction: 0xF2200150
+
+345987  MIPS64: Implement cavium LHX instruction
+has patches
+
+346023  valgrind crashes when run over mono program
+roundsd, sse 4.1, x86
+
+346031  MIPS: Implement support for the CvmCount register (rhwr %0, 31)
+has patch
+
+346185  Fix typo saving altivec register v24
+has patch
+
+346411  MIPS: SysRes::_valEx handling is incorrect
+
+346476  vex amd64->IR: 0xC5 0xFD 0xC2 0xC1 0x10 0xC5 0xFD 0x29
+
+346562  MIPS64: lwl/lwr instructions are performing 64bit loads
+        and causing spurious "invalid read of size 8" warnings
+has patch
+
+346665  valgrind: the 'impossible' happened: LibVEX called failure_exit().
+armv6 probable failure
+
+Tue 28 Apr 13:48:40 CEST 2015

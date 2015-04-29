@@ -157,6 +157,7 @@ ML_(do_syscall_for_client_WRK):
    VG_(fixup_guest_state_after_syscall_interrupted) can do the
    right thing */
 
+.align 3
 .globl ML_(blksys_setup)
 .globl ML_(blksys_restart)
 .globl ML_(blksys_complete)

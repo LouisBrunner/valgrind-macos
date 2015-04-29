@@ -1185,7 +1185,7 @@ void ML_(buf_and_len_post_check) ( ThreadId tid, SysRes res,
 /* Set the new data segment end to NEWBRK.  If this succeeds, return
    NEWBRK, else return the current data segment end. */
 
-static Addr do_brk ( Addr newbrk )
+static Addr do_brk ( Addr newbrk, ThreadId tid )
 {
    NSegment const* aseg;
    Addr newbrkP;
@@ -1254,10 +1254,17 @@ static Addr do_brk ( Addr newbrk )
    vg_assert(delta > 0);
    vg_assert(VG_IS_PAGE_ALIGNED(delta));
    
-   Bool overflow;  // ignored here
+   Bool overflow;
    if (! VG_(am_extend_into_adjacent_reservation_client)( aseg->start, delta,
-                                                          &overflow))
+                                                          &overflow)) {
+      if (overflow)
+         VG_(umsg)("brk segment overflow in thread #%d: can't grow to %#lx\n",
+                   tid, newbrkP);
+      else
+         VG_(umsg)("Cannot map memory to grow brk segment in thread #%d "
+                   "to %#lx\n", tid, newbrkP);
       goto bad;
+   }
 
    VG_(brk_limit) = newbrk;
    return newbrk;
@@ -2997,7 +3004,7 @@ PRE(sys_brk)
    PRINT("sys_brk ( %#lx )", ARG1);
    PRE_REG_READ1(unsigned long, "brk", unsigned long, end_data_segment);
 
-   brk_new = do_brk(ARG1);
+   brk_new = do_brk(ARG1, tid);
    SET_STATUS_Success( brk_new );
 
    if (brk_new == ARG1) {

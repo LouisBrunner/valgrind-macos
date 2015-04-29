@@ -5,6 +5,8 @@ dist_noinst_SCRIPTS = filter_stderr
 
 EXTRA_DIST = \
 	blockfault.stderr.exp blockfault.vgtest \
+	brk-overflow1.stderr.exp brk-overflow1.vgtest \
+	brk-overflow2.stderr.exp brk-overflow2.vgtest \
 	mremap.stderr.exp mremap.stderr.exp-glibc27 mremap.stdout.exp \
 	    mremap.vgtest \
 	mremap2.stderr.exp mremap2.stdout.exp mremap2.vgtest \
@@ -14,6 +16,8 @@ EXTRA_DIST = \
 
 check_PROGRAMS = \
 	blockfault \
+	brk-overflow1 \
+	brk-overflow2 \
 	mremap \
 	mremap2 \
 	mremap3 \

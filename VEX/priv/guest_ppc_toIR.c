@@ -19158,16 +19158,14 @@ DisResult disInstr_PPC_WRK (
                goto decode_success;
          case 0x82:   // dcmpo, DFP comparison ordered instruction
          case 0x282:  // dcmpu, DFP comparison unordered instruction
-            if (!allow_DFP)
-               goto decode_failure;
+            if (!allow_DFP) goto decode_noDFP;
             if (dis_dfp_compare( theInstr ) )
                goto decode_success;
             goto decode_failure;
          case 0x102: // dctdp  - DFP convert to DFP long
          case 0x302: // drsp   - DFP round to dfp short
          case 0x122: // dctfix - DFP convert to fixed
-            if (!allow_DFP)
-               goto decode_failure;
+            if (!allow_DFP) goto decode_noDFP;
             if (dis_dfp_fmt_conv( theInstr ))
                goto decode_success;
             goto decode_failure;
@@ -19178,22 +19176,19 @@ DisResult disInstr_PPC_WRK (
                goto decode_success;
             goto decode_failure;
          case 0x2A2: // dtstsf - DFP number of significant digits
-            if (!allow_DFP)
-               goto decode_failure;
+            if (!allow_DFP) goto decode_noDFP;
             if (dis_dfp_significant_digits(theInstr))
                goto decode_success;
             goto decode_failure;
          case 0x142: // ddedpd   DFP Decode DPD to BCD
          case 0x342: // denbcd   DFP Encode BCD to DPD
-            if (!allow_DFP)
-               goto decode_failure;
+            if (!allow_DFP) goto decode_noDFP;
             if (dis_dfp_bcd(theInstr))
                goto decode_success;
             goto decode_failure;
          case 0x162:  // dxex - Extract exponent 
          case 0x362:  // diex - Insert exponent
-            if (!allow_DFP)
-               goto decode_failure;
+            if (!allow_DFP) goto decode_noDFP;
             if (dis_dfp_extract_insert( theInstr ) )
                goto decode_success;
             goto decode_failure;
@@ -19213,15 +19208,13 @@ DisResult disInstr_PPC_WRK (
       switch (opc2) {
       case 0x42: // dscli, DFP shift left
       case 0x62: // dscri, DFP shift right
-         if (!allow_DFP)
-            goto decode_failure;
+         if (!allow_DFP) goto decode_noDFP;
          if (dis_dfp_shift( theInstr ))
             goto decode_success;
          goto decode_failure;
       case 0xc2:  // dtstdc, DFP test data class
       case 0xe2:  // dtstdg, DFP test data group
-         if (!allow_DFP)
-            goto decode_failure;
+         if (!allow_DFP) goto decode_noDFP;
          if (dis_dfp_class_test( theInstr ))
             goto decode_success;
          goto decode_failure;
@@ -19232,21 +19225,18 @@ DisResult disInstr_PPC_WRK (
       case 0x3:   // dqua  - DFP Quantize
       case 0x23:  // drrnd - DFP Reround
       case 0x43:  // dquai - DFP Quantize immediate
-         if (!allow_DFP)
-            goto decode_failure;
+         if (!allow_DFP) goto decode_noDFP;
          if (dis_dfp_quantize_sig_rrnd( theInstr ) )
             goto decode_success;
          goto decode_failure;
       case 0xA2: // dtstex - DFP Test exponent
-         if (!allow_DFP)
-            goto decode_failure;
+         if (!allow_DFP) goto decode_noDFP;
          if (dis_dfp_exponent_test( theInstr ) )
             goto decode_success;
          goto decode_failure;
       case 0x63: // drintx - Round to an integer value
       case 0xE3: // drintn - Round to an integer value
-         if (!allow_DFP)
-            goto decode_failure;
+         if (!allow_DFP) goto decode_noDFP;
          if (dis_dfp_round( theInstr ) ) {
             goto decode_success;
          }
@@ -19480,16 +19470,14 @@ DisResult disInstr_PPC_WRK (
          goto decode_failure;
       case 0x162:  // dxexq - DFP Extract exponent
       case 0x362:  // diexq - DFP Insert exponent
-         if (!allow_DFP)
-            goto decode_failure;
+         if (!allow_DFP) goto decode_noDFP;
          if (dis_dfp_extract_insertq( theInstr ))
             goto decode_success;
          goto decode_failure;
 
       case 0x82:   // dcmpoq, DFP comparison ordered instruction
       case 0x282:  // dcmpuq, DFP comparison unordered instruction
-         if (!allow_DFP)
-            goto decode_failure;
+         if (!allow_DFP) goto decode_noDFP;
          if (dis_dfp_compare( theInstr ) )
             goto decode_success;
          goto decode_failure;
@@ -19498,23 +19486,20 @@ DisResult disInstr_PPC_WRK (
       case 0x302: // drdpq   - DFP round to dfp Long
       case 0x122: // dctfixq - DFP convert to fixed quad
       case 0x322: // dcffixq - DFP convert from fixed quad
-         if (!allow_DFP)
-            goto decode_failure;
+         if (!allow_DFP) goto decode_noDFP;
          if (dis_dfp_fmt_convq( theInstr ))
             goto decode_success;
          goto decode_failure;
 
       case 0x2A2: // dtstsfq - DFP number of significant digits
-         if (!allow_DFP)
-            goto decode_failure;
+         if (!allow_DFP) goto decode_noDFP;
          if (dis_dfp_significant_digits(theInstr))
             goto decode_success;
          goto decode_failure;
 
       case 0x142: // ddedpdq   DFP Decode DPD to BCD
       case 0x342: // denbcdq   DFP Encode BCD to DPD
-         if (!allow_DFP)
-            goto decode_failure;
+         if (!allow_DFP) goto decode_noDFP;
          if (dis_dfp_bcdq(theInstr))
             goto decode_success;
          goto decode_failure;
@@ -19589,15 +19574,13 @@ DisResult disInstr_PPC_WRK (
       switch (opc2) {
       case 0x42: // dscli, DFP shift left
       case 0x62: // dscri, DFP shift right
-         if (!allow_DFP)
-            goto decode_failure;
+         if (!allow_DFP) goto decode_noDFP;
          if (dis_dfp_shiftq( theInstr ))
             goto decode_success;
          goto decode_failure;
       case 0xc2:  // dtstdc, DFP test data class
       case 0xe2:  // dtstdg, DFP test data group
-         if (!allow_DFP)
-            goto decode_failure;
+         if (!allow_DFP) goto decode_noDFP;
          if (dis_dfp_class_test( theInstr ))
             goto decode_success;
          goto decode_failure;
@@ -19610,8 +19593,7 @@ DisResult disInstr_PPC_WRK (
       case 0x3:   // dquaq  - DFP Quantize Quad
       case 0x23:  // drrndq - DFP Reround Quad
       case 0x43:  // dquaiq - DFP Quantize immediate Quad
-         if (!allow_DFP)
-            goto decode_failure;
+         if (!allow_DFP) goto decode_noDFP;
          if (dis_dfp_quantize_sig_rrndq( theInstr ))
             goto decode_success;
          goto decode_failure;
@@ -19621,8 +19603,7 @@ DisResult disInstr_PPC_WRK (
          goto decode_failure;
       case 0x63:  // drintxq - DFP Round to an integer value
       case 0xE3:  // drintnq - DFP Round to an integer value
-         if (!allow_DFP)
-            goto decode_failure;
+         if (!allow_DFP) goto decode_noDFP;
          if (dis_dfp_roundq( theInstr ))
             goto decode_success;
          goto decode_failure;
@@ -20252,36 +20233,55 @@ DisResult disInstr_PPC_WRK (
 
    decode_noF:
       vassert(!allow_F);
-      vex_printf("disInstr(ppc): declined to decode an FP insn.\n");
-      goto decode_failure;
+      vex_printf("disInstr(ppc): found the Floating Point instruction 0x%x that\n"
+		 "can't be handled by Valgrind on this host.  This instruction\n"
+		 "requires a host that supports Floating Point instructions.\n",
+		 theInstr);
+      goto not_supported;
    decode_noV:
       vassert(!allow_V);
-      vex_printf("disInstr(ppc): declined to decode an AltiVec insn.\n");
-      goto decode_failure;
+      vex_printf("disInstr(ppc): found an AltiVec or an e500 instruction 0x%x\n"
+		 "that can't be handled by Valgrind.  If this instruction is an\n"
+		 "Altivec instruction, Valgrind must be run on a host that supports"
+		 "AltiVec instructions.  If the application was compiled for e500, then\n"
+		 "unfortunately Valgrind does not yet support e500 instructions.\n",
+		 theInstr);
+      goto not_supported;
    decode_noVX:
       vassert(!allow_VX);
-      vex_printf("disInstr(ppc): declined to decode a Power ISA 2.06 insn.\n");
-      goto decode_failure;
+      vex_printf("disInstr(ppc): found the instruction 0x%x that is defined in the\n"
+		 "Power ISA 2.06 ABI but can't be handled by Valgrind on this host.\n"
+		 "This instruction \nrequires a host that supports the ISA 2.06 ABI.\n",
+		 theInstr);
+      goto not_supported;
    decode_noFX:
       vassert(!allow_FX);
-      vex_printf("disInstr(ppc): "
-                 "declined to decode a GeneralPurpose-Optional insn.\n");
-      goto decode_failure;
+      vex_printf("disInstr(ppc): found the General Purpose-Optional instruction 0x%x\n"
+		 "that can't be handled by Valgrind on this host. This instruction\n"
+		 "requires a host that supports the General Purpose-Optional instructions.\n",
+		 theInstr);
+      goto not_supported;
    decode_noGX:
       vassert(!allow_GX);
-      vex_printf("disInstr(ppc): "
-                 "declined to decode a Graphics-Optional insn.\n");
-      goto decode_failure;
+      vex_printf("disInstr(ppc): found the Graphics-Optional instruction 0x%x\n"
+		 "that can't be handled by Valgrind on this host. This instruction\n"
+		 "requires a host that supports the Graphic-Optional instructions.\n",
+		 theInstr);
+      goto not_supported;
    decode_noDFP:
       vassert(!allow_DFP);
-      vex_printf("disInstr(ppc): "
-               "declined to decode a Decimal Floating Point insn.\n");
-      goto decode_failure;
+      vex_printf("disInstr(ppc): found the decimal floating point (DFP) instruction 0x%x\n"
+		 "that can't be handled by Valgrind on this host.  This instruction\n"
+		 "requires a host that supports DFP instructions.\n",
+		 theInstr);
+      goto not_supported;
    decode_noP8:
       vassert(!allow_isa_2_07);
-      vex_printf("disInstr(ppc): "
-               "declined to decode a Power 8 insn.\n");
-      goto decode_failure;
+      vex_printf("disInstr(ppc): found the Power 8 instruction 0x%x that can't be handled\n"
+		 "by Valgrind on this host.  This instruction requires a host that\n"
+		 "supports Power 8 instructions.\n",
+		 theInstr);
+      goto not_supported;
 
 
    decode_failure:
@@ -20294,6 +20294,7 @@ DisResult disInstr_PPC_WRK (
                  opc1, opc1, opc2, opc2);
    }
 
+   not_supported:
    /* Tell the dispatcher that this insn cannot be decoded, and so has
       not been executed, and (is currently) the next to be executed.
       CIA should be up-to-date since it made so at the start of each

@@ -421,7 +421,7 @@ static void show_len_concisely ( /*OUT*/HChar* buf, Addr start, Addr end )
 static void show_nsegment_full ( Int logLevel, Int segNo, const NSegment* seg )
 {
    HChar len_buf[20];
-   const HChar* name = VG_(am_get_segname)( seg->fnIdx );
+   const HChar* name = ML_(am_get_segname)( seg->fnIdx );
 
    if (name == NULL)
       name = "(none)";
@@ -439,7 +439,7 @@ static void show_nsegment_full ( Int logLevel, Int segNo, const NSegment* seg )
       seg->isCH ? 'H' : '-',
       show_ShrinkMode(seg->smode),
       seg->dev, seg->ino, seg->offset,
-      VG_(am_segname_get_seqnr)(seg->fnIdx), seg->fnIdx,
+      ML_(am_segname_get_seqnr)(seg->fnIdx), seg->fnIdx,
       name
    );
 }
@@ -486,7 +486,7 @@ static void show_nsegment ( Int logLevel, Int segNo, const NSegment* seg )
             seg->hasX ? 'x' : '-', seg->hasT ? 'T' : '-', 
             seg->isCH ? 'H' : '-',
             seg->dev, seg->ino, seg->offset,
-            VG_(am_segname_get_seqnr)(seg->fnIdx), seg->fnIdx
+            ML_(am_segname_get_seqnr)(seg->fnIdx), seg->fnIdx
          );
          break;
 
@@ -520,7 +520,7 @@ void VG_(am_show_nsegments) ( Int logLevel, const HChar* who )
    VG_(debugLog)(logLevel, "aspacem",
                  "<<< SHOW_SEGMENTS: %s (%d segments)\n", 
                  who, nsegments_used);
-   VG_(am_show_segnames)( logLevel, who);
+   ML_(am_show_segnames)( logLevel, who);
    for (i = 0; i < nsegments_used; i++)
      show_nsegment( logLevel, i, &nsegments[i] );
    VG_(debugLog)(logLevel, "aspacem",
@@ -533,7 +533,7 @@ void VG_(am_show_nsegments) ( Int logLevel, const HChar* who )
 const HChar* VG_(am_get_filename)( NSegment const * seg )
 {
    aspacem_assert(seg);
-   return VG_(am_get_segname)( seg->fnIdx );
+   return ML_(am_get_segname)( seg->fnIdx );
 }
 
 /* Collect up the start addresses of segments whose kind matches one of
@@ -621,7 +621,7 @@ static Bool sane_NSegment ( const NSegment* s )
       case SkFileC: case SkFileV:
          return 
             s->smode == SmFixed
-            && VG_(am_sane_segname)(s->fnIdx)
+            && ML_(am_sane_segname)(s->fnIdx)
             && !s->isCH;
 
       case SkResvn: 
@@ -675,7 +675,7 @@ static Bool maybe_merge_nsegments ( NSegment* s1, const NSegment* s2 )
                               + ((ULong)s2->start) - ((ULong)s1->start) ) {
             s1->end = s2->end;
             s1->hasT |= s2->hasT;
-            VG_(am_dec_refcount)(s1->fnIdx);
+            ML_(am_dec_refcount)(s1->fnIdx);
             return True;
          }
          break;
@@ -1366,7 +1366,7 @@ static void split_nsegment_at ( Addr a )
       nsegments[i+1].offset 
          += ((ULong)nsegments[i+1].start) - ((ULong)nsegments[i].start);
 
-   VG_(am_inc_refcount)(nsegments[i].fnIdx);
+   ML_(am_inc_refcount)(nsegments[i].fnIdx);
 
    aspacem_assert(sane_NSegment(&nsegments[i]));
    aspacem_assert(sane_NSegment(&nsegments[i+1]));
@@ -1431,7 +1431,7 @@ static void add_segment ( const NSegment* seg )
       that decrement the reference counters for the segments names of
       the replaced segments. */
    for (i = iLo; i <= iHi; ++i)
-      VG_(am_dec_refcount)(nsegments[i].fnIdx);
+      ML_(am_dec_refcount)(nsegments[i].fnIdx);
    delta = iHi - iLo;
    aspacem_assert(delta >= 0);
    if (delta > 0) {
@@ -1528,7 +1528,7 @@ static void read_maps_callback ( Addr addr, SizeT len, UInt prot,
 #  endif // defined(VGP_arm_linux)
 
    if (filename)
-      seg.fnIdx = VG_(am_allocate_segname)( filename );
+      seg.fnIdx = ML_(am_allocate_segname)( filename );
 
    if (0) show_nsegment( 2,0, &seg );
    add_segment( &seg );
@@ -1570,7 +1570,7 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
    aspacem_assert(sizeof(SSizeT) == sizeof(void*));
 
    /* Initialise the string table for segment names. */
-   VG_(am_segnames_init)();
+   ML_(am_segnames_init)();
 
    /* Check that we can store the largest imaginable dev, ino and
       offset numbers in an NSegment. */
@@ -2014,7 +2014,7 @@ VG_(am_notify_client_mmap)( Addr a, SizeT len, UInt prot, UInt flags,
          seg.mode = mode;
       }
       if (ML_(am_resolve_filename)(fd, buf, VKI_PATH_MAX)) {
-         seg.fnIdx = VG_(am_allocate_segname)( buf );
+         seg.fnIdx = ML_(am_allocate_segname)( buf );
       }
    }
    add_segment( &seg );
@@ -2236,9 +2236,9 @@ SysRes VG_(am_mmap_named_file_fixed_client)
       seg.mode = mode;
    }
    if (name) {
-      seg.fnIdx = VG_(am_allocate_segname)( name );
+      seg.fnIdx = ML_(am_allocate_segname)( name );
    } else if (ML_(am_resolve_filename)(fd, buf, VKI_PATH_MAX)) {
-      seg.fnIdx = VG_(am_allocate_segname)( buf );
+      seg.fnIdx = ML_(am_allocate_segname)( buf );
    }
    add_segment( &seg );
 
@@ -2543,7 +2543,7 @@ static SysRes VG_(am_mmap_file_float_valgrind_flags) ( SizeT length, UInt prot,
       seg.mode = mode;
    }
    if (ML_(am_resolve_filename)(fd, buf, VKI_PATH_MAX)) {
-      seg.fnIdx = VG_(am_allocate_segname)( buf );
+      seg.fnIdx = ML_(am_allocate_segname)( buf );
    }
    add_segment( &seg );
 

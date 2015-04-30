@@ -272,7 +272,7 @@ put_sentinel(UInt ix)
    If none is found, an index is allocated and the name stored.
    If running ouf of memory, return -1. */
 Int
-VG_(am_allocate_segname)(const HChar *name)
+ML_(am_allocate_segname)(const HChar *name)
 {
    UInt len, ix, size, next_freeslot;
 
@@ -349,7 +349,7 @@ VG_(am_allocate_segname)(const HChar *name)
 
 /* Debugging output */
 void
-VG_(am_show_segnames)(Int logLevel, const HChar *prefix)
+ML_(am_show_segnames)(Int logLevel, const HChar *prefix)
 {
    UInt size, ix, i;
 
@@ -378,7 +378,7 @@ VG_(am_show_segnames)(Int logLevel, const HChar *prefix)
    Used in aspacemgr debug output to associate a segment with
    a segment name. */
 Int
-VG_(am_segname_get_seqnr)(Int fnIdx)
+ML_(am_segname_get_seqnr)(Int fnIdx)
 {
    SizeT ix, size;
    Int seqnr = -1;
@@ -399,7 +399,7 @@ VG_(am_segname_get_seqnr)(Int fnIdx)
 /* Initialise the string table for segment names. It contains an empty
    string which is not referenced. */
 void
-VG_(am_segnames_init)(void)
+ML_(am_segnames_init)(void)
 {
    aspacem_assert(sizeof segnames >= overhead);
 
@@ -409,7 +409,7 @@ VG_(am_segnames_init)(void)
 
 /* Increase reference count of segment name identified by IX. */
 void
-VG_(am_inc_refcount)(Int ix)
+ML_(am_inc_refcount)(Int ix)
 {
    if (ix != -1)
       inc_refcount(ix);
@@ -417,20 +417,20 @@ VG_(am_inc_refcount)(Int ix)
 
 /* Decrease reference count of segment name identified by IX. */
 void
-VG_(am_dec_refcount)(Int ix)
+ML_(am_dec_refcount)(Int ix)
 {
    if (ix != -1)
       dec_refcount(ix);
 }
 
 Bool
-VG_(am_sane_segname)(Int ix)
+ML_(am_sane_segname)(Int ix)
 {
    return ix == -1 || (ix >= overhead && ix < segnames_used);
 }
 
 const HChar *
-VG_(am_get_segname)(Int ix)
+ML_(am_get_segname)(Int ix)
 {
    return (ix == -1) ? NULL : segnames + ix;
 }

@@ -132,27 +132,27 @@ extern void ML_(am_do_sanity_check)( void );
 
 
 /* ------ Implemented in aspacemgr-segnames.c ------ */
-void VG_(am_segnames_init)(void);
-void VG_(am_show_segnames)(Int logLevel, const HChar *prefix);
+void ML_(am_segnames_init)(void);
+void ML_(am_show_segnames)(Int logLevel, const HChar *prefix);
 
 /* Put NAME into the string table of segment names. Return index for
    future reference. A return value of -1 indicates that the segment name
    could not be stored. Basically an out-of-memory situation. */
-Int VG_(am_allocate_segname)(const HChar *name);
+Int ML_(am_allocate_segname)(const HChar *name);
 
 /* Increment / decrement the reference counter for this segment name. */
-void VG_(am_inc_refcount)(Int);
-void VG_(am_dec_refcount)(Int);
+void ML_(am_inc_refcount)(Int);
+void ML_(am_dec_refcount)(Int);
 
 /* Check whether the segname index is sane. */
-Bool VG_(am_sane_segname)(Int fnIdx);
+Bool ML_(am_sane_segname)(Int fnIdx);
 
 /* Return the segment name for the given index. Maybe return NULL, if the
    segment does not have a name. */
-const HChar *VG_(am_get_segname)(Int fnIdx);
+const HChar *ML_(am_get_segname)(Int fnIdx);
 
 /* Return the sequence number of the segment name */
-Int VG_(am_segname_get_seqnr)(Int fnIdx);
+Int ML_(am_segname_get_seqnr)(Int fnIdx);
 
 #endif   // __PRIV_ASPACEMGR_H
 

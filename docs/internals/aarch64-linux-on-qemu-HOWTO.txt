@@ -1,0 +1,102 @@
+
+How to install and configure a QEMU aarch64-linux installation.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Last updated 30 April 2015
+
+This gives a fairly usable, and not entirely slow, arm64-linux
+install.  It has the advantage that the idle loop works right and so
+when the guest becomes idle, qemu uses only very little host cpu, so
+you can leave the guest idling for long periods without bad
+performance effects on the host.
+
+More or less following
+https://gmplib.org/~tege/qemu.html, section 14 (for arm64)
+
+Build qemu-2.2.1 with --target-list including aarch64-softmmu
+
+mkdir Arm64-2
+cd Arm64-2
+
+wget http://d-i.debian.org/daily-images/arm64/daily/netboot/debian-installer/arm64/linux
+
+wget http://d-i.debian.org/daily-images/arm64/daily/netboot/debian-installer/arm64/initrd.gz
+
+# Note.  6G is easily enough to install debian and do a build of Valgrind.
+# If you envisage needing more space, now is the time to choose a larger
+# number.
+
+/path/to/Qemu221/bin/qemu-img create disk6G.img 6G
+
+/path/to/Qemu221/bin/qemu-system-aarch64 \
+  -M virt -cpu cortex-a57 -m 256             \ 
+  -drive file=disk6G.img,if=none,id=blk -device virtio-blk-device,drive=blk \
+  -net user,hostfwd=tcp::5555-:22 -device virtio-net-device,vlan=0 \
+  -kernel linux                                                 \
+  -initrd initrd.gz                                             \
+  -append "console=ttyAMA0 --"                                  \
+  -nographic
+
+Do an install, be as vanilla as possible, allow it to create a user
+"username", and do not ask it to install any extra software.  But,
+when you get to here
+
+  ┌───────────────────┤ [!!] Finish the installation ├────────────────────┐
+  │                                                                       │
+ ┌│                         Installation complete                         │
+ ││ Installation is complete, so it is time to boot into your new system. │
+ ││ Make sure to remove the installation media (CD-ROM, floppies), so     │
+ ││ that you boot into the new system rather than restarting the          │
+ ││ installation.                                                         │
+ ││                                                                       │
+ └│     <Go Back>                                          <Continue>     │
+  │                                                                       │
+  └───────────────────────────────────────────────────────────────────────┘
+
+do "Go Back"
+then in the next menu "Execute a shell", "Continue"
+
+This gives you a root shell in the new VM.  In that shell:
+
+  mount -t proc proc /target/proc
+  mount --rbind /sys /target/sys
+  mount --rbind /dev /target/dev
+  chroot /target bash
+  /etc/init.d/ssh start
+  mv /boot/initrd.img-3.16.0-4-arm64 /boot/initrd.img-3.16.0-4-arm64 
+  echo virtio-mmio >>/etc/initramfs-tools/modules
+  /usr/sbin/update-initramfs -c -k 3.16.0-4-arm64
+
+Then on the host, copy out the files that the above created.
+
+cd Arm64-2
+ssh -p 5555 username@localhost \
+   "tar -c -f - --exclude=lost+found /boot" | tar xf -
+
+Now back in the VM, we can finish the installation.
+
+  exit
+  exit
+  Select "Finish the installation"
+  Continue
+
+When it reboots, kill qemu from another shell, else it will try to reinstall.
+
+Now start the installation:
+
+/path/to/Qemu221/bin/qemu-system-aarch64 -M virt \
+  -cpu cortex-a57 -m 1024 -drive file=disk6G.img,if=none,id=blk \
+  -device virtio-blk-device,drive=blk -net user,hostfwd=tcp::5555-:22 \
+  -device virtio-net-device,vlan=0 -kernel boot/vmlinuz-3.16.0-4-arm64 \
+  -initrd boot/initrd.img-3.16.0-4-arm64 \
+  -append "root=/dev/vda2 rw console=ttyAMA0 --" -nographic
+
+Now you can ssh into the VM and install stuff as usual:
+
+ssh -XC -p 5555 username@localhost
+
+  (on the guest)
+  become root
+  apt-get install make gcc g++ automake autoconf emacs subversion gdb
+
+Hack on, etc.

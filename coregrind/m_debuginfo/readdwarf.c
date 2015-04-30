@@ -3311,7 +3311,7 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
             VG_(printf)("  DW_CFA_def_cfa_expression (");
          /* Convert the expression into a dag rooted at ctx->exprs index j,
             or fail. */
-         j = dwarfexpr_to_dag ( ctx, expr, len, True/*push CFA at start*/, 
+         j = dwarfexpr_to_dag ( ctx, expr, len, False/*!push CFA at start*/, 
                                 di->ddump_frames);
          if (di->ddump_frames)
             VG_(printf)(")\n");

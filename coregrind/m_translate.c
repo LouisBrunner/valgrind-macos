@@ -53,7 +53,6 @@
 #include "pub_core_dispatch.h" // VG_(run_innerloop__dispatch_{un}profiled)
                                // VG_(run_a_noredir_translation__return_point)
 
-#include "pub_core_libcsetjmp.h"   // to keep _threadstate.h happy
 #include "pub_core_threadstate.h"  // VexGuestArchState
 #include "pub_core_trampoline.h"   // VG_(ppctoc_magic_redirect_return_stub)
 

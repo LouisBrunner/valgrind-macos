@@ -34,20 +34,20 @@ static unsigned char **mb;
 static void *memrw_fn(void *v)
 {
    int loops, m, b;
-   int write;
+   int dowrite;
    int differs = 0;
    unsigned char prev = 0;
 
    for (loops = 0; loops < nr_loops; loops++) {
-      // printf("loop %d write %d\n", loops, write);
+      // printf("loop %d dowrite %d\n", loops, dowrite);
       // Note: in case of multiple threads, we will have
       // to add lock/unlock somewhere in the below, maybe to lock
       // the MB we are reading or writing.
       for (m = 0; m < nr_mb_ws; m++) {
          for (b = 0; b < 1024 * 1024; b++) {
-            write = b % 5 == 0;
+            dowrite = b % 5 == 0;
             // Do some write or read operations.
-            if (write) {
+            if (dowrite) {
                if (mb[m][b] < 255)
                   mb[m][b] += differs;
                else

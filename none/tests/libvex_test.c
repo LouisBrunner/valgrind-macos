@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+# if !defined(VGO_darwin)
 #include <endian.h>
+# else
+#include <machine/endian.h>
+# endif
 #include "../../VEX/pub/libvex.h"
 
 Bool return_false(void*cb, Addr ad)

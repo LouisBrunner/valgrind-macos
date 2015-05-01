@@ -2541,19 +2541,23 @@ static void VtsID__invalidate_caches ( void ); /* fwds */
    If .vts == NULL, then this entry is not in use, so:
    - .rc == 0
    - this entry is on the freelist (unfortunately, does not imply
-     any constraints on value for .freelink)
+     any constraints on value for u.freelink)
    If .vts != NULL, then this entry is in use:
    - .vts is findable in vts_set
    - .vts->id == this entry number
    - no specific value for .rc (even 0 is OK)
-   - this entry is not on freelist, so .freelink == VtsID_INVALID
+   - this entry is not on freelist, so u.freelink == VtsID_INVALID
 */
 typedef
    struct {
       VTS*  vts;      /* vts, in vts_set */
       UWord rc;       /* reference count - enough for entire aspace */
-      VtsID freelink; /* chain for free entries, VtsID_INVALID at end */
-      VtsID remap;    /* used only during pruning */
+      union {
+         VtsID freelink; /* chain for free entries, VtsID_INVALID at end */
+         VtsID remap;    /* used only during pruning, for used entries */
+      } u; 
+      /* u.freelink only used when vts == NULL,
+         u.remap only used when vts != NULL, during pruning. */
    }
    VtsTE;
 
@@ -2583,8 +2587,8 @@ static void add_to_free_list ( VtsID ii )
    VtsTE* ie = VG_(indexXA)( vts_tab, ii );
    tl_assert(ie->vts == NULL);
    tl_assert(ie->rc == 0);
-   tl_assert(ie->freelink == VtsID_INVALID);
-   ie->freelink = vts_tab_freelist;
+   tl_assert(ie->u.freelink == VtsID_INVALID);
+   ie->u.freelink = vts_tab_freelist;
    vts_tab_freelist = ii;
 }
 
@@ -2600,7 +2604,7 @@ static VtsID get_from_free_list ( void )
    ie = VG_(indexXA)( vts_tab, ii );
    tl_assert(ie->vts == NULL);
    tl_assert(ie->rc == 0);
-   vts_tab_freelist = ie->freelink;
+   vts_tab_freelist = ie->u.freelink;
    return ii;
 }
 
@@ -2615,8 +2619,7 @@ static VtsID get_new_VtsID ( void )
       return ii;
    te.vts = NULL;
    te.rc = 0;
-   te.freelink = VtsID_INVALID;
-   te.remap    = VtsID_INVALID;
+   te.u.freelink = VtsID_INVALID;
    ii = (VtsID)VG_(addToXA)( vts_tab, &te );
    return ii;
 }
@@ -2669,7 +2672,7 @@ static VtsID vts_tab__find__or__clone_and_add ( VTS* cand )
       VtsTE* ie = VG_(indexXA)( vts_tab, ii );
       ie->vts = in_tab;
       ie->rc = 0;
-      ie->freelink = VtsID_INVALID;
+      ie->u.freelink = VtsID_INVALID;
       in_tab->id = ii;
       return ii;
    }
@@ -2717,7 +2720,7 @@ void remap_VtsID ( /*MOD*/XArray* /* of VtsTE */ old_tab,
    old_id = *ii;
    old_te = VG_(indexXA)( old_tab, old_id );
    old_te->rc--;
-   new_id = old_te->remap;
+   new_id = old_te->u.remap;
    new_te = VG_(indexXA)( new_tab, new_id );
    new_te->rc++;
    *ii = new_id;
@@ -2793,7 +2796,7 @@ static void vts_tab__do_GC ( Bool show_stats )
       VTS__delete(te->vts);
       te->vts = NULL;
       /* and finally put this entry on the free list */
-      tl_assert(te->freelink == VtsID_INVALID); /* can't already be on it */
+      tl_assert(te->u.freelink == VtsID_INVALID); /* can't already be on it */
       add_to_free_list( i );
       nFreed++;
    }
@@ -2857,10 +2860,10 @@ static void vts_tab__do_GC ( Bool show_stats )
    verydead_thread_table_sort_and_check (verydead_thread_table_not_pruned);
 
    /* We will run through the old table, and create a new table and
-      set, at the same time setting the .remap entries in the old
+      set, at the same time setting the u.remap entries in the old
       table to point to the new entries.  Then, visit every VtsID in
       the system, and replace all of them with new ones, using the
-      .remap entries in the old table.  Finally, we can delete the old
+      u.remap entries in the old table.  Finally, we can delete the old
       table and set. */
 
    XArray* /* of VtsTE */ new_tab
@@ -2898,13 +2901,13 @@ static void vts_tab__do_GC ( Bool show_stats )
       /* For each old VTS .. */
       VtsTE* old_te  = VG_(indexXA)( vts_tab, i );
       VTS*   old_vts = old_te->vts;
-      tl_assert(old_te->remap == VtsID_INVALID);
 
       /* Skip it if not in use */
       if (old_te->rc == 0) {
          tl_assert(old_vts == NULL);
          continue;
       }
+      tl_assert(old_te->u.remap == VtsID_INVALID);
       tl_assert(old_vts != NULL);
       tl_assert(old_vts->id == i);
       tl_assert(old_vts->ts != NULL);
@@ -2960,8 +2963,7 @@ static void vts_tab__do_GC ( Bool show_stats )
          VtsTE new_te;
          new_te.vts      = new_vts;
          new_te.rc       = 0;
-         new_te.freelink = VtsID_INVALID;
-         new_te.remap    = VtsID_INVALID;
+         new_te.u.freelink = VtsID_INVALID;
          Word j = VG_(addToXA)( new_tab, &new_te );
          tl_assert(j <= i);
          tl_assert(j == new_VtsID_ctr - 1);
@@ -2969,7 +2971,7 @@ static void vts_tab__do_GC ( Bool show_stats )
          nAfterPruning++;
          nSTSsAfter += new_vts->usedTS;
       }
-      old_te->remap = new_vts->id;
+      old_te->u.remap = new_vts->id;
 
    } /* for (i = 0; i < nTab; i++) */
 
@@ -2989,12 +2991,12 @@ static void vts_tab__do_GC ( Bool show_stats )
    }
 
    /* At this point, we have:
-      * the old VTS table, with its .remap entries set,
+      * the old VTS table, with its u.remap entries set,
         and with all .vts == NULL.
       * the old VTS tree should be empty, since it and the old VTSs
         it contained have been incrementally deleted was we worked
         through the old table.
-      * the new VTS table, with all .rc == 0, all .freelink and .remap
+      * the new VTS table, with all .rc == 0, all u.freelink and u.remap
         == VtsID_INVALID. 
       * the new VTS tree.
    */
@@ -3009,7 +3011,7 @@ static void vts_tab__do_GC ( Bool show_stats )
       Nowhere else, AFAICS.  Not in the zsm cache, because that just
       got invalidated.
 
-      Using the .remap fields in vts_tab, map each old VtsID to a new
+      Using the u.remap fields in vts_tab, map each old VtsID to a new
       VtsID.  For each old VtsID, dec its rc; and for each new one,
       inc it.  This sets up the new refcounts, and it also gives a
       cheap sanity check of the old ones: all old refcounts should be
@@ -3080,8 +3082,7 @@ static void vts_tab__do_GC ( Bool show_stats )
       VtsTE* te = VG_(indexXA)( vts_tab, i );
       tl_assert(te->vts == NULL);
       /* This is the assert proper.  Note we're also asserting
-         zeroness for old entries which are unmapped (hence have
-         .remap == VtsID_INVALID).  That's OK. */
+         zeroness for old entries which are unmapped.  That's OK. */
       tl_assert(te->rc == 0);
    }
 
@@ -3123,8 +3124,8 @@ static void vts_tab__do_GC ( Bool show_stats )
       tl_assert(te->vts);
       tl_assert(te->vts->id == i);
       tl_assert(te->rc > 0); /* 'cos we just GC'd */
-      tl_assert(te->freelink == VtsID_INVALID); /* in use */
-      tl_assert(te->remap == VtsID_INVALID); /* not relevant */
+      tl_assert(te->u.freelink == VtsID_INVALID); /* in use */
+      /* value of te->u.remap  not relevant */
    }
 
    /* And we're done.  Bwahahaha. Ha. Ha. Ha. */
@@ -6075,6 +6076,7 @@ void libhb_shutdown ( Bool show_stats )
                    stats__vts_set__focaa, stats__vts_set__focaa_a );
       VG_(printf)( "   libhb: VTSops: indexAt_SLOW %'lu\n",
                    stats__vts__indexat_slow );
+      show_vts_stats ("libhb stats");
 
       VG_(printf)("%s","\n");
       VG_(printf)(

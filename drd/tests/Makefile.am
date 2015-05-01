@@ -373,7 +373,6 @@ check_PROGRAMS =      \
   sem_as_mutex        \
   sem_open            \
   sigalrm             \
-  thread_name         \
   threaded-fork       \
   trylock             \
   unit_bitmap         \
@@ -417,7 +416,7 @@ endif
 
 if HAVE_PTHREAD_BARRIER
 check_PROGRAMS += matinv pth_barrier pth_barrier_race pth_barrier_reinit \
-	pth_barrier_thr_cr
+	pth_barrier_thr_cr thread_name
 endif
 
 if HAVE_PTHREAD_CREATE_GLIBC_2_0

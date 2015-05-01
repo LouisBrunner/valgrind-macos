@@ -815,8 +815,9 @@ static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
 #  endif
 
    /* Some kernels on s390 provide 'r' permission even when it was not
-      explicitly requested. It seems that 'x' permission implies 'r'. */
-#  if defined(VGA_s390x)
+      explicitly requested. It seems that 'x' permission implies 'r'. 
+      This behaviour also occurs on OS X. */
+#  if defined(VGA_s390x) || defined(VGO_darwin)
    sloppyRcheck = True;
 #  else
    sloppyRcheck = False;

@@ -157,6 +157,7 @@ where XXXXXX is the bug number as listed below.
 345394  Fix memcheck/tests/strchr on OS X
 345637  Fix memcheck/tests/sendmsg on OS X
 345695  Add POWERPC support for AT_DCACHESIZE and HWCAP2
+345824  Fix aspacem segment mismatch: seen with none/tests/bigcode
 345887  Fix an assertion in the address space manager
 346267  Compiler warnings for PPC64 code on call to LibVEX_GuestPPC64_get_XER()
         and LibVEX_GuestPPC64_get_CR()

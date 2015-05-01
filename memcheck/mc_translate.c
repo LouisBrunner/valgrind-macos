@@ -6303,6 +6303,7 @@ IRSB* MC_(instrument) ( VgCallbackClosure* closure,
 
    mce.tmpMap = VG_(newXA)( VG_(malloc), "mc.MC_(instrument).1", VG_(free),
                             sizeof(TempMapEnt));
+   VG_(hintSizeXA) (mce.tmpMap, sb_in->tyenv->types_used);
    for (i = 0; i < sb_in->tyenv->types_used; i++) {
       TempMapEnt ent;
       ent.kind    = Orig;

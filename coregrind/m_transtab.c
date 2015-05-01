@@ -569,6 +569,7 @@ void InEdgeArr__add ( InEdgeArr* iea, InEdge* ie )
          XArray *var = VG_(newXA)(ttaux_malloc, "transtab.IEA__add",
                                   ttaux_free,
                                   sizeof(InEdge));
+         VG_(hintSizeXA) (var, iea->n_fixed + 1);
          UWord i;
          for (i = 0; i < iea->n_fixed; i++) {
             VG_(addToXA)(var, &iea->edges.fixed[i]);
@@ -649,6 +650,7 @@ void OutEdgeArr__add ( OutEdgeArr* oea, OutEdge* oe )
          XArray *var = VG_(newXA)(ttaux_malloc, "transtab.OEA__add",
                                   ttaux_free,
                                   sizeof(OutEdge));
+         VG_(hintSizeXA) (var, oea->n_fixed+1);
          UWord i;
          for (i = 0; i < oea->n_fixed; i++) {
             VG_(addToXA)(var, &oea->edges.fixed[i]);

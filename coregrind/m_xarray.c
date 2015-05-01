@@ -133,6 +133,24 @@ inline void* VG_(indexXA) ( const XArray* xa, Word n )
    return ((char*)xa->arr) + n * xa->elemSzB;
 }
 
+void VG_(hintSizeXA) ( XArray* xa, Word n)
+{
+   /* Currently, we support giving a size hint only just after the
+      call to VG_(newXA). So, we could instead have done
+      a function VG_(newXA_with_SizeHint). The separate VG_(hintSizeXA)
+      function is however chosen as we might one day accept to
+      give a size hint after having added elements. That could be useful
+      for reducing the size of an xarray to just the size currently needed
+      or to give a size hint when it is known that a lot more elements
+      are needed or when the final nr of elements is known. */
+   vg_assert(xa);
+   vg_assert(xa->usedsizeE == 0);
+   vg_assert(xa->totsizeE == 0);
+   vg_assert(!xa->arr);
+   xa->arr = xa->alloc_fn(xa->cc, n * xa->elemSzB);
+   xa->totsizeE = n;
+}
+
 static inline void ensureSpaceXA ( XArray* xa )
 {
    if (xa->usedsizeE == xa->totsizeE) {

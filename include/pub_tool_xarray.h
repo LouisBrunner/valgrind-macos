@@ -104,6 +104,13 @@ extern Bool VG_(lookupXA_UNSAFE) ( const XArray* xao, const void* key,
 /* How elements are there in this XArray now? */
 extern Word VG_(sizeXA) ( const XArray* );
 
+/* If you know how many elements an XArray will have, you can
+   optimise memory usage and number of reallocation needed
+   to insert these elements. The call to VG_(hintSizeXA) must be
+   done just after the call to VG_(newXA), before any element
+   has been inserted. */
+extern void VG_(hintSizeXA) ( XArray*, Word);
+
 /* Index into the XArray.  Checks bounds and bombs if the index is
    invalid.  What this returns is the address of the specified element
    in the array, not (of course) the element itself.  Note that the

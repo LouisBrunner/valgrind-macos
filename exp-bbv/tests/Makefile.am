@@ -5,7 +5,9 @@ SUBDIRS = .
 
 # Platform-specific tests
 if VGCONF_ARCHS_INCLUDE_X86
+if !VGCONF_OS_IS_DARWIN
 SUBDIRS += x86
+endif
 endif
 if VGCONF_PLATFORMS_INCLUDE_X86_LINUX
 SUBDIRS += x86-linux

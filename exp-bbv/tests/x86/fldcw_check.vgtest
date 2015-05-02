@@ -1,3 +1,4 @@
+prereq: test -e fldcw_check
 prog: fldcw_check
 vgopts: --interval-size=10000 --bb-out-file=fldcw_check.out.bb
 cleanup: rm fldcw_check.out.bb

@@ -157,7 +157,9 @@ void VG_(print_all_stats) (Bool memory_stats, Bool tool_stats)
       VG_(message)(Vg_DebugMsg, 
          "------ Valgrind's internal memory use stats follow ------\n" );
       VG_(sanity_check_malloc_all)();
-      VG_(message)(Vg_DebugMsg, "------\n" );
+       VG_(message)(Vg_DebugMsg,
+                    "------ %llu bytes have already been mmap-ed ANONYMOUS.\n",
+                    VG_(am_get_anonsize_total)());
       VG_(print_all_arena_stats)();
       if (VG_(clo_profile_heap))
          VG_(print_arena_cc_analysis) ();

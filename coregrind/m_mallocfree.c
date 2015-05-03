@@ -758,7 +758,7 @@ void VG_(out_of_memory_NORETURN) ( const HChar* who, SizeT szB )
       "\n"
       "    Valgrind's memory management: out of memory:\n"
       "       %s's request for %llu bytes failed.\n"
-      "       %llu bytes have already been allocated.\n"
+      "       %llu bytes have already been mmap-ed ANONYMOUS.\n"
       "    Valgrind cannot continue.  Sorry.\n\n"
       "    There are several possible reasons for this.\n"
       "    - You have some kind of memory limit in place.  Look at the\n"

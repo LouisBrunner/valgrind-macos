@@ -3420,11 +3420,6 @@ static void univ_laog_do_GC ( void ) {
                                         * sizeof(Bool) );
    // univ_laog_seen[*] set to 0 (False) by zalloc.
 
-   if (VG_(clo_stats))
-      VG_(message)(Vg_DebugMsg,
-                   "univ_laog_do_GC enter cardinality %'10d\n",
-                   (Int)univ_laog_cardinality);
-
    VG_(initIterFM)( laog );
    links = NULL;
    while (VG_(nextIterFM)( laog, NULL, (UWord*)&links )) {
@@ -3482,8 +3477,8 @@ static void univ_laog_do_GC ( void ) {
    if (VG_(clo_stats))
       VG_(message)
          (Vg_DebugMsg,
-          "univ_laog_do_GC exit seen %'8d next gc at cardinality %'10d\n",
-          (Int)seen, next_gc_univ_laog);
+          "univ_laog_do_GC cardinality entered %d exit %d next gc at %d\n",
+          (Int)univ_laog_cardinality, (Int)seen, next_gc_univ_laog);
 }
 
 

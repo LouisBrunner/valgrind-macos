@@ -237,6 +237,13 @@
    fun:*ImageLoaderMachO*doModInitFunctions*
 }
 
+# See https://bugs.kde.org/show_bug.cgi?id=196528
+{
+   macos-__pthread_rwlock_init-see-our-bug-196528
+   Memcheck:Cond
+   fun:pthread_rwlock_init
+}
+
 #########################################################
 ## Leaks (apparently) in even hello-world style programs
 

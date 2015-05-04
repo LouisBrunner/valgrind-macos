@@ -386,7 +386,7 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
          VG_(gdbserver_status_output)();
          break;
       case  4: /* memory */
-         VG_(printf) ("%llu bytes have already been allocated.\n",
+         VG_(printf) ("%llu bytes have already been mmap-ed ANONYMOUS.\n",
                       VG_(am_get_anonsize_total)());
          VG_(print_all_arena_stats) ();
          if (VG_(clo_profile_heap))

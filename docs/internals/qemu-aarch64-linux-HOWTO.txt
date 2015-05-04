@@ -63,7 +63,7 @@ This gives you a root shell in the new VM.  In that shell:
   mount --rbind /dev /target/dev
   chroot /target bash
   /etc/init.d/ssh start
-  mv /boot/initrd.img-3.16.0-4-arm64 /boot/initrd.img-3.16.0-4-arm64 
+  mv /boot/initrd.img-3.16.0-4-arm64 /boot/initrd.img-3.16.0-4-arm64.old
   echo virtio-mmio >>/etc/initramfs-tools/modules
   /usr/sbin/update-initramfs -c -k 3.16.0-4-arm64
 

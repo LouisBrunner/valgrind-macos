@@ -1,0 +1,111 @@
+
+How to install and configure a QEMU mips64-linux installation.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Last updated 04 May 2015
+
+This gives an apparently stable, but extremely slow, mips64-linux
+install.  It has the advantage that the idle loop works right and so
+when the guest becomes idle, qemu uses only very little host cpu, so
+you can leave the guest idling for long periods without bad
+performance effects on the host.
+
+More or less following
+https://gmplib.org/~tege/qemu.html section 8 (for mips64)
+
+Build qemu-2.2.1 with --target-list including mips64-softmmu
+
+mkdir Mips64-1
+cd Mips64-1
+
+wget ftp://ftp.sunet.se/pub/Linux/distributions/debian/dists/wheezy/main/installer-mips/current/images/malta/netboot/vmlinux-3.2.0-4-4kc-malta
+
+wget ftp://ftp.sunet.se/pub/Linux/distributions/debian/dists/wheezy/main/installer-mips/current/images/malta/netboot/initrd.gz
+
+md5sum initrd.gz vmlinux-3.2.0-4-4kc-malta
+  71f05a4aaf24671fa72e903abd76a448  initrd.gz
+  307fc61d36cb370ea2b697d587af45a6  vmlinux-3.2.0-4-4kc-malta
+
+# Note.  4G is easily enough to install debian and do a build of Valgrind.
+# If you envisage needing more space, now is the time to choose a larger
+# number.
+
+/path/to/Qemu221/bin/qemu-img create disk4G.img 4G
+
+/path/to/Qemu221/bin/qemu-system-mips64 \
+  -M malta -cpu 5Kc -m 256 -hda disk4G.img \
+  -net nic,macaddr=52:54:00:fa:ce:08 -net user,hostfwd=tcp::5555-:22 \
+  -kernel vmlinux-3.2.0-4-4kc-malta -initrd initrd.img-3.2.0-4-4kc-malta \
+  -append "root=/dev/sda1 console=ttyS0 --" -nographic
+
+Do an install, be as vanilla as possible, allow it to create a user
+"username", and do not ask it to install any extra software.  But,
+when you get to here
+
+  ┌───────────────────┤ [!!] Finish the installation ├────────────────────┐
+  │                                                                       │
+ ┌│                         Installation complete                         │
+ ││ Installation is complete, so it is time to boot into your new system. │
+ ││ Make sure to remove the installation media (CD-ROM, floppies), so     │
+ ││ that you boot into the new system rather than restarting the          │
+ ││ installation.                                                         │
+ ││                                                                       │
+ └│     <Go Back>                                          <Continue>     │
+  │                                                                       │
+  └───────────────────────────────────────────────────────────────────────┘
+
+do "Go Back"
+then in the next menu "Execute a shell", "Continue"
+
+This gives you a root shell in the new VM.  In that shell:
+
+  mount -t proc proc /target/proc
+  mount --rbind /sys /target/sys
+  mount --rbind /dev /target/dev
+  chroot /target bash
+  /etc/init.d/ssh start
+  ls /boot
+    System.map-3.2.0-4-5kc-malta  initrd.img-3.2.0-4-5kc-malta
+    config-3.2.0-4-5kc-malta      vmlinux-3.2.0-4-5kc-malta
+
+Then on the host, copy out the vmlinux and initrd:
+
+ssh -p 5555 username@localhost \
+  "tar -c -f - --exclude=lost+found /boot" | tar xf -
+
+  exit
+  exit
+  Select "Finish the installation"
+  Continue
+
+When it reboots, kill qemu from another shell, else it will try to reinstall.
+
+Now start the installation:
+
+/path/to/Qemu221/bin/qemu-system-mips64 \
+  -M malta -cpu 5Kc -m 256 -hda disk4G.img -net nic,macaddr=52:54:00:fa:ce:08 \
+  -net user,hostfwd=tcp::5555-:22 -kernel boot/vmlinux-3.2.0-4-5kc-malta \
+  -initrd boot/initrd.img-3.2.0-4-5kc-malta \
+  -append "root=/dev/sda1 console=ttyS0" -nographic
+
+System seems to have 256MB memory no matter how much you request.
+
+This is basically a 32 bit system at this point.  To get something
+that can build 64 bit executables, it is necessary to install
+gcc-multilib and g++-multilib.
+
+Now you can ssh into the VM and install stuff as usual:
+
+ssh -XC -p 5555 username@localhost
+
+  (on the guest)
+  become root
+
+  apt-get install make g++ gcc subversion emacs gdb automake autoconf
+  apt-get gcc-multilib g++-multilib
+
+Configuring V on the guest:
+
+  ./autogen.sh
+  CFLAGS="-mips64 -mabi=64" CXXFLAGS="-mips64 -mabi=64" \
+    ./configure --prefix=`pwd`/Inst

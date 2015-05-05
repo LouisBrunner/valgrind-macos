@@ -1220,10 +1220,7 @@ static Addr do_brk ( Addr newbrk, ThreadId tid )
          and that segment is writable. */
       NSegment const * seg2;
 
-      if (VG_(brk_limit) > VG_(brk_base))
-         seg2 = VG_(am_find_nsegment)( VG_(brk_limit)-1 );
-      else
-         seg2 = VG_(am_find_nsegment)( VG_(brk_limit) );
+      seg2 = VG_(am_find_nsegment)( VG_(brk_limit) - 1 );
       vg_assert(seg2);
 
       if (seg == seg2 && seg->hasW)

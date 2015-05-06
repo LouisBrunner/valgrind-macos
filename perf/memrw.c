@@ -106,10 +106,12 @@ int main (int argc, char *argv[])
 
    nr_thr = 1;
 
-   printf ("total program memory -t %d MB"
-           " working set -w %d MB\n",
-           (nr_b * sz_b) / (1024*1024),
-           (nr_b_ws * sz_b) / (1024*1024));
+   printf ("total program memory -t %llu MB"
+           " working set -w %llu MB\n",
+           ((unsigned long long)nr_b * sz_b) 
+             / (unsigned long long) (1024*1024),
+           ((unsigned long long)nr_b_ws * sz_b) 
+             / (unsigned long long)(1024*1024));
    printf (" working set R or W -l %d times"
            " repeat the whole stuff -r %d times\n",
            nr_loops,

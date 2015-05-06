@@ -1,4 +1,4 @@
 vgopts: -q --suppressions=supp_unknown.supp
 prog: badjump
-cleanup: rm -f vgcore.pid*
+cleanup: rm -f vgcore.*
 stderr_filter_args: badjump.c

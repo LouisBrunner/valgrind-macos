@@ -35,7 +35,7 @@ int main(void)
 
    if (setjmp(myjmpbuf) == 0) {
       // Jump to zero; will cause seg fault
-#if defined(__powerpc64__)
+#if defined(__powerpc64__) && (_CALL_ELF != 2)
       unsigned long int fn[3];
       fn[0] = 0;
       fn[1] = 0;

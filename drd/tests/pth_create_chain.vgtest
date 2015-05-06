@@ -1,2 +1,2 @@
-prereq: ./supported_libpthread && [ `uname -m` != ppc ] && [ `uname -m` != ppc64 ]
+prereq: ./supported_libpthread && [ `uname -m` != ppc ] && [ `uname -m` != ppc64 ] && [ `uname -m` != ppc64le ]
 prog: pth_create_chain 100

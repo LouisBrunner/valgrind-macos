@@ -1,0 +1,14 @@
+#!/bin/sh
+
+# Helper script to indicate if we are ppc64 LE.
+# Note: The ELFV2 ABI (for ppc64le) specifically does not
+# support the 32-bit environment.
+
+UNAME_M="$(uname -m)"
+
+if [ $UNAME_M != "ppc64le" ]; then
+	exit 1
+else
+	exit 0
+fi
+

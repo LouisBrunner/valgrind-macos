@@ -708,7 +708,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    redirs_used      = 0;
 #  endif
 
-#  if defined(VG_PLAT_USES_PPCTOC)
+#  if defined(VG_PLAT_USES_PPCTOC) || defined (VGP_ppc64le_linux)
    /* Deal with bogus LR values caused by function
       interception/wrapping on ppc-TOC platforms; see comment on
       similar code a few lines further down. */

@@ -1042,6 +1042,8 @@ static SyscallTableEntry syscall_main_table[] = {
 
    GENXY(__NR_wait4,             sys_wait4),             // 260
 
+   LINX_(__NR_syncfs,            sys_syncfs),            // 267
+
    LINXY(__NR_sendmmsg,          sys_sendmmsg),          // 269
    LINXY(__NR_process_vm_readv,  sys_process_vm_readv),  // 270
    LINX_(__NR_process_vm_writev, sys_process_vm_writev), // 271

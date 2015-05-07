@@ -1155,7 +1155,7 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_accept4,           sys_accept4),          // 344
 
    LINXY(__NR_clock_adjtime,     sys_clock_adjtime),    // 347
-
+   LINX_(__NR_syncfs,            sys_syncfs),           // 348
    LINXY(__NR_sendmmsg,          sys_sendmmsg),         // 349
 
    LINXY(__NR_process_vm_readv,  sys_process_vm_readv), // 351

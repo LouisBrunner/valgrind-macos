@@ -287,6 +287,8 @@ DECL_TEMPLATE(linux, sys_fanotify_mark);
 DECL_TEMPLATE(linux, sys_getrandom);
 DECL_TEMPLATE(linux, sys_memfd_create);
 
+DECL_TEMPLATE(linux, sys_syncfs);
+
 /* ---------------------------------------------------------------------
    Wrappers for sockets and ipc-ery.  These are split into standalone
    procedures because x86-linux hides them inside multiplexors

@@ -1112,6 +1112,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY (__NR_prlimit64,              sys_prlimit64),               // 338
    //..
    LINXY (__NR_clock_adjtime,          sys_clock_adjtime),           // 341
+   LINX_ (__NR_syncfs,                 sys_syncfs),                  // 342
    //..
    LINXY (__NR_process_vm_readv,       sys_process_vm_readv),        // 345
    LINX_ (__NR_process_vm_writev,      sys_process_vm_writev),       // 346

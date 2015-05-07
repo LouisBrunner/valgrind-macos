@@ -3064,6 +3064,13 @@ POST(sys_memfd_create)
    }
 }
 
+PRE(sys_syncfs)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_syncfs ( %ld )", ARG1);
+   PRE_REG_READ1(long, "syncfs", unsigned int, fd);
+}
+
 /* ---------------------------------------------------------------------
    utime wrapper
    ------------------------------------------------------------------ */

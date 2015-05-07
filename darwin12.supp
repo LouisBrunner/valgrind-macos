@@ -350,6 +350,108 @@
    fun:_objc_init
 }
 
+{
+   OSX108:leak-14
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc_zone_?alloc
+   ...
+   fun:dyld_register_image_state_change_handler
+   ...
+}
+
+{
+   OSX108:leak-15
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:?alloc
+   ...
+   fun:dyld_register_image_state_change_handler
+   ...
+}
+
+{
+   OSX108:leak-16
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc_zone_?alloc
+   ...
+   fun:map_images_nolock
+   fun:map_images
+   ...
+}
+
+{
+   OSX108:leak-17
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc_zone_?alloc
+   ...
+   fun:map_images_nolock
+   fun:map_images
+   ...
+}
+
+{
+   OSX108:leak-18
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc_zone_?alloc
+   ...
+   fun:libSystem_initializer
+   ...
+}
+
+{
+   OSX108:leak-19
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:?alloc
+   ...
+   fun:libSystem_initializer
+   ...
+}
+
+{
+   OSX108:leak-20
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc_zone_?alloc
+   ...
+   fun:libSystem_initializer
+   ...
+}
+
+{
+   OSX108:leak-21
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:?alloc
+   ...
+   fun:libSystem_initializer
+   ...
+}
+
+{
+   OSX108:leak-22
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:?alloc
+   ...
+   fun:_libxpc_initializer
+   ...
+}
+
+{
+   OSX108:leak-23
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:realloc
+   fun:new_sem_from_pool
+   ...
+}
+
 ##----------------------------------------------------------------------##
 # Memcheck
 ##----------------------------------------------------------------------##

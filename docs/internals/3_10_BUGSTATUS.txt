@@ -422,3 +422,13 @@ has patch
 armv6 probable failure
 
 Tue 28 Apr 13:48:40 CEST 2015
+
+346912  callgrind bails out on vpmaskmovd instruction
+
+347198  vex x86->IR: unhandled instruction bytes: 0x66 0xF 0x3A 0x63
+
+347233  Fix memcheck/tests/strchr on OS X 10.10 (Haswell)
+
+347322  Power PC regression test cleanup
+
+Fri  8 May 11:52:14 CEST 2015

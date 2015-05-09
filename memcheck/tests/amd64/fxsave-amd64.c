@@ -17,7 +17,11 @@ const unsigned int vecZ[4]
 __attribute__((noinline))
 void do_fxsave ( void* p, int rexw ) {
    if (rexw) {
+#if defined(VGO_linux)
+      asm __volatile__("fxsave64 (%0)" : : "r" (p) : "memory" );
+#else
       asm __volatile__("rex64/fxsave (%0)" : : "r" (p) : "memory" );
+#endif
    } else {
       asm __volatile__("fxsave (%0)" : : "r" (p) : "memory" );
    }
@@ -26,7 +30,11 @@ void do_fxsave ( void* p, int rexw ) {
 __attribute__((noinline))
 void do_fxrstor ( void* p, int rexw ) {
    if (rexw) {
+#if defined(VGO_linux)
+      asm __volatile__("fxrstor64 (%0)" : : "r" (p) : "memory" );
+#else
       asm __volatile__("rex64/fxrstor (%0)" : : "r" (p) : "memory" );
+#endif
    } else {
       asm __volatile__("fxrstor (%0)" : : "r" (p) : "memory" );
    }

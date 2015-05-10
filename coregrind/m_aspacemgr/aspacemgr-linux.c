@@ -1172,11 +1172,11 @@ ULong VG_(am_get_anonsize_total)( void )
 
 /* Test if a piece of memory is addressable by client or by valgrind with at
    least the "prot" protection permissions by examining the underlying
-   segments.  If client && freeOk is True then SkFree and SkResvn areas are
-   also allowed.
+   segments. The KINDS argument specifies the allowed segments ADDR may
+   belong to in order to be considered "valid".
 */
 static
-Bool is_valid_for( Bool client, Addr start, SizeT len, UInt prot, Bool freeOk )
+Bool is_valid_for( UInt kinds, Addr start, SizeT len, UInt prot )
 {
    Int  i, iLo, iHi;
    Bool needR, needW, needX;
@@ -1204,34 +1204,17 @@ Bool is_valid_for( Bool client, Addr start, SizeT len, UInt prot, Bool freeOk )
       iHi = find_nsegment_idx(start + len - 1);
    }
 
-   if (client) {
-      for (i = iLo; i <= iHi; i++) {
-         if ( (nsegments[i].kind == SkFileC 
-               || nsegments[i].kind == SkAnonC
-               || nsegments[i].kind == SkShmC
-               || (nsegments[i].kind == SkFree  && freeOk)
-               || (nsegments[i].kind == SkResvn && freeOk))
-              && (needR ? nsegments[i].hasR : True)
-              && (needW ? nsegments[i].hasW : True)
-              && (needX ? nsegments[i].hasX : True) ) {
-            /* ok */
-         } else {
-            return False;
-         }
-      }
-   } else {
-      for (i = iLo; i <= iHi; i++) {
-         if ( (nsegments[i].kind == SkFileV 
-               || nsegments[i].kind == SkAnonV)
-              && (needR ? nsegments[i].hasR : True)
-              && (needW ? nsegments[i].hasW : True)
-              && (needX ? nsegments[i].hasX : True) ) {
-            /* ok */
-         } else {
-            return False;
-         }
+   for (i = iLo; i <= iHi; i++) {
+      if ( (nsegments[i].kind & kinds) != 0
+           && (needR ? nsegments[i].hasR : True)
+           && (needW ? nsegments[i].hasW : True)
+           && (needX ? nsegments[i].hasX : True) ) {
+         /* ok */
+      } else {
+         return False;
       }
    }
+
    return True;
 }
 
@@ -1241,8 +1224,9 @@ Bool is_valid_for( Bool client, Addr start, SizeT len, UInt prot, Bool freeOk )
 Bool VG_(am_is_valid_for_client)( Addr start, SizeT len, 
                                   UInt prot )
 {
-   return is_valid_for(/* client */ True,
-                       start, len, prot, False/*free not OK*/ );
+   const UInt kinds = SkFileC | SkAnonC | SkShmC;
+
+   return is_valid_for(kinds, start, len, prot);
 }
 
 /* Variant of VG_(am_is_valid_for_client) which allows free areas to
@@ -1252,15 +1236,17 @@ Bool VG_(am_is_valid_for_client)( Addr start, SizeT len,
 Bool VG_(am_is_valid_for_client_or_free_or_resvn)
    ( Addr start, SizeT len, UInt prot )
 {
-   return is_valid_for(/* client */ True,
-                        start, len, prot, True/*free is OK*/ );
+   const UInt kinds = SkFileC | SkAnonC | SkShmC | SkFree | SkResvn;
+
+   return is_valid_for(kinds, start, len, prot);
 }
 
 
 Bool VG_(am_is_valid_for_valgrind) ( Addr start, SizeT len, UInt prot )
 {
-   return is_valid_for(/* client */ False,
-                        start, len, prot, False/*irrelevant*/ );
+   const UInt kinds = SkFileV | SkAnonV;
+
+   return is_valid_for(kinds, start, len, prot);
 }
 
 

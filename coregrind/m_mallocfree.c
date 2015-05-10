@@ -625,9 +625,9 @@ void VG_(print_all_arena_stats) ( void )
    for (i = 0; i < VG_N_ARENAS; i++) {
       Arena* a = arenaId_to_ArenaP(i);
       VG_(message)(Vg_DebugMsg,
-                   "%-8s: %8lu/%8lu  max/curr mmap'd, "
+                   "%-8s: %'13lu/%'13lu max/curr mmap'd, "
                    "%llu/%llu unsplit/split sb unmmap'd,  "
-                   "%8lu/%8lu max/curr,  "
+                   "%'13lu/%'13lu max/curr,  "
                    "%10llu/%10llu totalloc-blocks/bytes,"
                    "  %10llu searches %lu rzB\n",
                    a->name,
@@ -758,7 +758,7 @@ void VG_(out_of_memory_NORETURN) ( const HChar* who, SizeT szB )
       "\n"
       "    Valgrind's memory management: out of memory:\n"
       "       %s's request for %llu bytes failed.\n"
-      "       %llu bytes have already been mmap-ed ANONYMOUS.\n"
+      "       %'13llu bytes have already been mmap-ed ANONYMOUS.\n"
       "    Valgrind cannot continue.  Sorry.\n\n"
       "    There are several possible reasons for this.\n"
       "    - You have some kind of memory limit in place.  Look at the\n"

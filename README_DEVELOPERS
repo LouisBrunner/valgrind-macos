@@ -250,6 +250,7 @@ Do *not* use vg-in-place.
 
  To compare the performance of multiple Valgrind versions, do :
     perl perf/vg_perf --outer-valgrind=../outer/.../bin/valgrind \
+      --outer-tool=callgrind \
       --vg=../inner_xxxx --vg=../inner_yyyy perf
   (where inner_xxxx and inner_yyyy are the toplevel directories of
   the versions to compare).

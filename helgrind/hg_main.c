@@ -1813,7 +1813,28 @@ void evh__die_mem_heap ( Addr a, SizeT len ) {
          guarantee that the reference happens before the free. */
       shadow_mem_cwrite_range(thr, a, len);
    }
-   shadow_mem_make_NoAccess_NoFX( thr, a, len );
+   shadow_mem_make_NoAccess_AHAE( thr, a, len );
+   /* We used to call instead
+          shadow_mem_make_NoAccess_NoFX( thr, a, len );
+      A non-buggy application will not access anymore
+      the freed memory, and so marking no access is in theory useless.
+      Not marking freed memory would avoid the overhead for applications
+      doing mostly malloc/free, as the freed memory should then be recycled
+      very quickly after marking.
+      We rather mark it noaccess for the following reasons:
+        * accessibility bits then always correctly represents the memory
+          status (e.g. for the client request VALGRIND_HG_GET_ABITS).
+        * the overhead is reasonable (about 5 seconds per Gb in 1000 bytes
+          blocks, on a ppc64le, for a unrealistic workload of an application
+          doing only malloc/free).
+        * marking no access allows to GC the SecMap, which might improve
+          performance and/or memory usage.
+        * we might detect more applications bugs when memory is marked
+          noaccess.
+      If needed, we could support here an option --free-is-noaccess=yes|no
+      to avoid marking freed memory as no access if some applications
+      would need to avoid the marking noaccess overhead. */
+
    if (len >= SCE_BIGRANGE_T && (HG_(clo_sanity_flags) & SCE_BIGRANGE))
       all__sanity_check("evh__pre_mem_read-post");
 }
@@ -4883,6 +4904,20 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
          if (args[2] > 0) { /* length */
             evh__new_mem(args[1], args[2]);
          }
+         break;
+
+      case _VG_USERREQ__HG_GET_ABITS:
+         if (0) VG_(printf)("HG_GET_ABITS(%#lx,%#lx,%ld)\n",
+                            args[1], args[2], args[3]);
+         UChar *zzabit = (UChar *) args[2];
+         if (zzabit == NULL 
+             || VG_(am_is_valid_for_client)((Addr)zzabit, (SizeT)args[3],
+                                            VKI_PROT_READ|VKI_PROT_WRITE))
+            *ret = (UWord) libhb_srange_get_abits ((Addr)   args[1],
+                                                   (UChar*) args[2],
+                                                   (SizeT)  args[3]);
+         else
+            *ret = -1;
          break;
 
       /* --- --- Client requests for Helgrind's use only --- --- */

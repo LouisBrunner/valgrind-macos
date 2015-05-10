@@ -49,6 +49,7 @@ EXTRA_DIST = \
 	pth_spinlock.vgtest pth_spinlock.stdout.exp pth_spinlock.stderr.exp \
 	rwlock_race.vgtest rwlock_race.stdout.exp rwlock_race.stderr.exp \
 	rwlock_test.vgtest rwlock_test.stdout.exp rwlock_test.stderr.exp \
+	shmem_abits.vgtest shmem_abits.stdout.exp shmem_abits.stderr.exp \
 	stackteardown.vgtest stackteardown.stdout.exp stackteardown.stderr.exp \
 	t2t_laog.vgtest t2t_laog.stdout.exp t2t_laog.stderr.exp \
 	tc01_simple_race.vgtest tc01_simple_race.stdout.exp \
@@ -125,6 +126,7 @@ check_PROGRAMS = \
 	locked_vs_unlocked2 \
 	locked_vs_unlocked3 \
 	pth_destroy_cond \
+	shmem_abits \
 	stackteardown \
 	t2t \
 	tc01_simple_race \

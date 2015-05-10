@@ -401,6 +401,7 @@ SO* admin_SO;
 static void zsm_init ( void(*rcinc)(SVal), void(*rcdec)(SVal) );
 
 static void zsm_sset_range  ( Addr, SizeT, SVal );
+static void zsm_sset_range_SMALL ( Addr a, SizeT len, SVal svNew );
 static void zsm_scopy_range ( Addr, Addr, SizeT );
 static void zsm_flush_cache ( void );
 
@@ -412,7 +413,19 @@ static void zsm_flush_cache ( void );
 /* Round a down to the next multiple of N.  N must be a power of 2 */
 #define ROUNDDN(a, N)   ((a) & ~(N-1))
 
-
+/* True if a belongs in range [start, start + szB[
+   (i.e. start + szB is excluded). */
+static inline Bool address_in_range (Addr a, Addr start,  SizeT szB)
+{
+   /* Checking start <= a && a < start + szB.
+      As start and a are unsigned addresses, the condition can
+      be simplified. */
+   if (CHECK_ZSM)
+      tl_assert ((a - start < szB)
+                 == (start <= a
+                     &&       a < start + szB));
+   return a - start < szB;
+}
 
 /* ------ User-supplied RC functions ------ */
 static void(*rcinc)(SVal) = NULL;
@@ -517,6 +530,9 @@ typedef
 
 #define SecMap_MAGIC   0x571e58cbU
 
+// (UInt) `echo "Free SecMap" | md5sum`
+#define SecMap_free_MAGIC 0x5a977f30U
+
 __attribute__((unused))
 static inline Bool is_sane_SecMap ( SecMap* sm ) {
    return sm != NULL && sm->magic == SecMap_MAGIC;
@@ -558,18 +574,20 @@ static Cache   cache_shmem;
 static UWord stats__secmaps_search       = 0; // # SM finds
 static UWord stats__secmaps_search_slow  = 0; // # SM lookupFMs
 static UWord stats__secmaps_allocd       = 0; // # SecMaps issued
+static UWord stats__secmaps_in_map_shmem = 0; // # SecMaps 'live'
+static UWord stats__secmaps_scanGC       = 0; // # nr of scan GC done.
+static UWord stats__secmaps_scanGCed     = 0; // # SecMaps GC-ed via scan
+static UWord stats__secmaps_ssetGCed     = 0; // # SecMaps GC-ed via setnoaccess
 static UWord stats__secmap_ga_space_covered = 0; // # ga bytes covered
 static UWord stats__secmap_linesZ_allocd = 0; // # LineZ's issued
 static UWord stats__secmap_linesZ_bytes  = 0; // .. using this much storage
 static UWord stats__secmap_linesF_allocd = 0; // # LineF's issued
 static UWord stats__secmap_linesF_bytes  = 0; //  .. using this much storage
-static UWord stats__secmap_iterator_steppings = 0; // # calls to stepSMIter
 static UWord stats__cache_Z_fetches      = 0; // # Z lines fetched
 static UWord stats__cache_Z_wbacks       = 0; // # Z lines written back
 static UWord stats__cache_F_fetches      = 0; // # F lines fetched
 static UWord stats__cache_F_wbacks       = 0; // # F lines written back
-static UWord stats__cache_invals         = 0; // # cache invals
-static UWord stats__cache_flushes        = 0; // # cache flushes
+static UWord stats__cache_flushes_invals = 0; // # cache flushes and invals
 static UWord stats__cache_totrefs        = 0; // # total accesses
 static UWord stats__cache_totmisses      = 0; // # misses
 static ULong stats__cache_make_New_arange = 0; // total arange made New
@@ -599,6 +617,7 @@ static UWord stats__vts__tick            = 0; // # calls to VTS__tick
 static UWord stats__vts__join            = 0; // # calls to VTS__join
 static UWord stats__vts__cmpLEQ          = 0; // # calls to VTS__cmpLEQ
 static UWord stats__vts__cmp_structural  = 0; // # calls to VTS__cmp_structural
+static UWord stats__vts_tab_GC           = 0; // # nr of vts_tab GC
 
 // # calls to VTS__cmp_structural w/ slow case
 static UWord stats__vts__cmp_structural_slow = 0;
@@ -657,10 +676,59 @@ static void* shmem__bigchunk_alloc ( SizeT n )
    return shmem__bigchunk_next - n;
 }
 
-static SecMap* shmem__alloc_SecMap ( void )
+/* SecMap changed to be fully SVal_NOACCESS are inserted in a list of
+   recycled SecMap. When a new SecMap is needed, a recycled SecMap
+   will be used in preference to allocating a new SecMap. */
+/* We make a linked list of SecMap. LinesF pointer is re-used to
+   implement the link list. */
+static SecMap *SecMap_freelist = NULL;
+static UWord SecMap_freelist_length(void)
+{
+   SecMap *sm;
+   UWord n = 0;
+
+   sm = SecMap_freelist;
+   while (sm) {
+     n++;
+     sm = (SecMap*)sm->linesF;
+   }
+   return n;
+}
+
+static void push_SecMap_on_freelist(SecMap* sm)
+{
+   if (0) VG_(message)(Vg_DebugMsg, "%p push\n", sm);
+   sm->magic = SecMap_free_MAGIC;
+   sm->linesF = (LineF*)SecMap_freelist;
+   SecMap_freelist = sm;
+}
+/* Returns a free SecMap if there is one.
+   Otherwise, returns NULL. */
+static SecMap *pop_SecMap_from_freelist(void)
+{
+   SecMap *sm;
+
+   sm = SecMap_freelist;
+   if (sm) {
+      tl_assert (sm->magic == SecMap_free_MAGIC);
+      SecMap_freelist = (SecMap*)sm->linesF;
+      if (0) VG_(message)(Vg_DebugMsg, "%p pop\n", sm);
+   }
+   return sm;
+}
+
+static SecMap* shmem__alloc_or_recycle_SecMap ( void )
 {
    Word    i, j;
-   SecMap* sm = shmem__bigchunk_alloc( sizeof(SecMap) );
+   SecMap* sm = pop_SecMap_from_freelist();
+
+   if (!sm) {
+      sm = shmem__bigchunk_alloc( sizeof(SecMap) );
+      stats__secmaps_allocd++;
+      stats__secmap_ga_space_covered += N_SECMAP_ARANGE;
+      stats__secmap_linesZ_allocd += N_SECMAP_ZLINES;
+      stats__secmap_linesZ_bytes += N_SECMAP_ZLINES * sizeof(LineZ);
+   }
    if (0) VG_(printf)("alloc_SecMap %p\n",sm);
    tl_assert(sm);
    sm->magic = SecMap_MAGIC;
@@ -674,10 +742,6 @@ static SecMap* shmem__alloc_SecMap ( void )
    }
    sm->linesF      = NULL;
    sm->linesF_size = 0;
-   stats__secmaps_allocd++;
-   stats__secmap_ga_space_covered += N_SECMAP_ARANGE;
-   stats__secmap_linesZ_allocd += N_SECMAP_ZLINES;
-   stats__secmap_linesZ_bytes += N_SECMAP_ZLINES * sizeof(LineZ);
    return sm;
 }
 
@@ -719,17 +783,120 @@ static SecMap* shmem__find_SecMap ( Addr ga )
    return sm;
 }
 
+/* Scan the SecMap and count the SecMap that can be GC-ed.
+   If really, really does the GC of the SecMap. */
+/* NOT TO BE CALLED FROM WITHIN libzsm. */
+static UWord next_SecMap_GC_at = 1000;
+__attribute__((noinline))
+static UWord shmem__SecMap_do_GC(Bool really)
+{
+   UWord secmapW = 0;
+   Addr  gaKey;
+   UWord examined = 0;
+   UWord ok_GCed = 0;
+
+   /* First invalidate the smCache */
+   smCache[0].gaKey = 1;
+   smCache[1].gaKey = 1;
+   smCache[2].gaKey = 1;
+   STATIC_ASSERT (3 == sizeof(smCache)/sizeof(smCache[0]));
+
+   VG_(initIterFM)( map_shmem );
+   while (VG_(nextIterFM)( map_shmem, &gaKey, &secmapW )) {
+      UWord   i;
+      UWord   j;
+      SecMap* sm = (SecMap*)secmapW;
+      tl_assert(sm->magic == SecMap_MAGIC);
+      Bool ok_to_GC = True;
+
+      examined++;
+
+      /* Deal with the LineZs */
+      for (i = 0; i < N_SECMAP_ZLINES && ok_to_GC; i++) {
+         LineZ* lineZ = &sm->linesZ[i];
+         ok_to_GC = lineZ->dict[0] == SVal_INVALID
+           || (lineZ->dict[0] == SVal_NOACCESS
+               && !SVal__isC (lineZ->dict[1])
+               && !SVal__isC (lineZ->dict[2])
+               && !SVal__isC (lineZ->dict[3]));
+      }
+      /* Deal with the LineFs */
+      for (i = 0; i < sm->linesF_size && ok_to_GC; i++) {
+         LineF* lineF = &sm->linesF[i];
+         if (!lineF->inUse)
+            continue;
+         for (j = 0; j < N_LINE_ARANGE && ok_to_GC; j++)
+            ok_to_GC = lineF->w64s[j] == SVal_NOACCESS;
+      }
+      if (ok_to_GC)
+         ok_GCed++;
+      if (ok_to_GC && really) {
+        SecMap *fm_sm;
+        Addr fm_gaKey;
+        /* We cannot remove a SecMap from map_shmem while iterating.
+           So, stop iteration, remove from map_shmem, recreate the iteration
+           on the next SecMap. */
+        VG_(doneIterFM) ( map_shmem );
+        /* No need to rcdec linesZ or linesF, these are all SVal_NOACCESS or
+           not in use. We just need to free the linesF. */
+        if (sm->linesF_size > 0) {
+          HG_(free)(sm->linesF);
+          stats__secmap_linesF_allocd -= sm->linesF_size;
+          stats__secmap_linesF_bytes  -= sm->linesF_size * sizeof(LineF);
+        }
+        if (!VG_(delFromFM)(map_shmem, &fm_gaKey, (UWord*)&fm_sm, gaKey))
+          tl_assert (0);
+        stats__secmaps_in_map_shmem--;
+        tl_assert (gaKey == fm_gaKey);
+        tl_assert (sm == fm_sm);
+        stats__secmaps_scanGCed++;
+        push_SecMap_on_freelist (sm);
+        VG_(initIterAtFM) (map_shmem, gaKey + N_SECMAP_ARANGE);
+      }
+   }
+   VG_(doneIterFM)( map_shmem );
+
+   if (really) {
+      stats__secmaps_scanGC++;
+      /* Next GC when we approach the max allocated */
+      next_SecMap_GC_at = stats__secmaps_allocd - 1000;
+      /* Unless we GCed less than 10%. We then allow to alloc 10%
+         more before GCing. This avoids doing a lot of costly GC
+         for the worst case : the 'growing phase' of an application
+         that allocates a lot of memory.
+         Worst can can be reproduced e.g. by
+             perf/memrw -t 30000000 -b 1000 -r 1 -l 1 
+         that allocates around 30Gb of memory. */
+      if (ok_GCed < stats__secmaps_allocd/10)
+         next_SecMap_GC_at = stats__secmaps_allocd + stats__secmaps_allocd/10;
+
+   }
+
+   if (VG_(clo_stats) && really) {
+      VG_(message)(Vg_DebugMsg,
+                  "libhb: SecMap GC: #%lu scanned %lu, GCed %lu,"
+                   " next GC at %lu\n",
+                   stats__secmaps_scanGC, examined, ok_GCed,
+                   next_SecMap_GC_at);
+   }
+
+   return ok_GCed;
+}
+
 static SecMap* shmem__find_or_alloc_SecMap ( Addr ga )
 {
    SecMap* sm = shmem__find_SecMap ( ga );
    if (LIKELY(sm)) {
+      if (CHECK_ZSM) tl_assert(is_sane_SecMap(sm));
       return sm;
    } else {
       /* create a new one */
       Addr gaKey = shmem__round_to_SecMap_base(ga);
-      sm = shmem__alloc_SecMap();
+      sm = shmem__alloc_or_recycle_SecMap();
       tl_assert(sm);
       VG_(addToFM)( map_shmem, (UWord)gaKey, (UWord)sm );
+      stats__secmaps_in_map_shmem++;
+      if (CHECK_ZSM) tl_assert(is_sane_SecMap(sm));
       return sm;
    }
 }
@@ -1461,15 +1628,45 @@ static __attribute__((noinline)) void cacheline_fetch ( UWord wix )
    normalise_CacheLine( cl );
 }
 
-static void shmem__invalidate_scache ( void ) {
-   Word wix;
-   if (0) VG_(printf)("%s","scache inval\n");
-   tl_assert(!is_valid_scache_tag(1));
-   for (wix = 0; wix < N_WAY_NENT; wix++) {
-      cache_shmem.tags0[wix] = 1/*INVALID*/;
+/* Invalid the cachelines corresponding to the given range. */
+static void shmem__invalidate_scache_range (Addr ga, SizeT szB)
+{
+   Addr before_start  = ga;
+   Addr aligned_start = ROUNDUP(ga, N_LINE_ARANGE);
+   Addr after_start   = ROUNDDN(ga + szB, N_LINE_ARANGE);
+   UWord before_len   = aligned_start - before_start;
+   UWord after_len    = ga + szB - after_start;
+
+   /* Write-back cachelines partially set to NOACCESS */
+   if (before_len > 0) {
+      zsm_sset_range_SMALL (before_start, before_len, SVal_NOACCESS);
+      szB += N_LINE_ARANGE - before_len;
    }
-   stats__cache_invals++;
+   if (after_len > 0) {
+      zsm_sset_range_SMALL (after_start, after_len, SVal_NOACCESS);
+      szB += N_LINE_ARANGE - after_len;
+   }
+
+   /* szB must now be a multiple of cacheline size. */
+   tl_assert (0 == (szB & (N_LINE_ARANGE - 1)));
+
+   Word wix;
+
+   Word ga_ix = (ga >> N_LINE_BITS) & (N_WAY_NENT - 1);
+   Word nwix = szB / N_LINE_ARANGE;
+
+   if (nwix > N_WAY_NENT)
+      nwix = N_WAY_NENT; // no need to check several times the same entry.
+
+   for (wix = 0; wix < nwix; wix++) {
+      if (address_in_range(cache_shmem.tags0[ga_ix], ga, szB))
+         cache_shmem.tags0[ga_ix] = 1/*INVALID*/;
+      ga_ix++;
+      if (ga_ix == N_WAY_NENT)
+         ga_ix = 0;
+   }
 }
+
 
 static void shmem__flush_and_invalidate_scache ( void ) {
    Word wix;
@@ -1486,8 +1683,7 @@ static void shmem__flush_and_invalidate_scache ( void ) {
       }
       cache_shmem.tags0[wix] = 1/*INVALID*/;
    }
-   stats__cache_flushes++;
-   stats__cache_invals++;
+   stats__cache_flushes_invals++;
 }
 
 
@@ -1758,7 +1954,11 @@ static void zsm_init ( void(*p_rcinc)(SVal), void(*p_rcdec)(SVal) )
    map_shmem = VG_(newFM)( HG_(zalloc), "libhb.zsm_init.1 (map_shmem)",
                            HG_(free), 
                            NULL/*unboxed UWord cmp*/);
-   shmem__invalidate_scache();
+   /* Invalidate all cache entries. */
+   tl_assert(!is_valid_scache_tag(1));
+   for (UWord wix = 0; wix < N_WAY_NENT; wix++) {
+      cache_shmem.tags0[wix] = 1/*INVALID*/;
+   }
 
    /* a SecMap must contain an integral number of CacheLines */
    tl_assert(0 == (N_SECMAP_ARANGE % N_LINE_ARANGE));
@@ -2818,11 +3018,11 @@ static void vts_tab__do_GC ( Bool show_stats )
    }
 
    if (VG_(clo_stats)) {
-      static UInt ctr = 1;
       tl_assert(nTab > 0);
       VG_(message)(Vg_DebugMsg,
-                  "libhb: VTS GC: #%u  old size %lu  live %lu  (%2llu%%)\n",
-                  ctr++, nTab, nLive, (100ULL * (ULong)nLive) / (ULong)nTab);
+                   "libhb: VTS GC: #%lu  old size %lu  live %lu  (%2llu%%)\n",
+                   stats__vts_tab_GC, 
+                   nTab, nLive, (100ULL * (ULong)nLive) / (ULong)nTab);
    }
    /* ---------- END VTS GC ---------- */
 
@@ -6006,8 +6206,17 @@ void libhb_shutdown ( Bool show_stats )
       VG_(printf)("  linesF: %'10lu allocd (%'12lu bytes occupied)\n",
                   stats__secmap_linesF_allocd,
                   stats__secmap_linesF_bytes);
-      VG_(printf)(" secmaps: %'10lu iterator steppings\n",
-                  stats__secmap_iterator_steppings);
+      VG_(printf)(" secmaps: %'10lu in map (can be scanGCed %'5lu)"
+                  " #%lu scanGC \n",
+                  stats__secmaps_in_map_shmem,
+                  shmem__SecMap_do_GC(False /* really do GC */),
+                  stats__secmaps_scanGC);
+      tl_assert (VG_(sizeFM) (map_shmem) == stats__secmaps_in_map_shmem);
+      VG_(printf)(" secmaps: %'10lu in freelist,"
+                  " total (scanGCed %'lu, ssetGCed %'lu)\n",
+                  SecMap_freelist_length(),
+                  stats__secmaps_scanGCed,
+                  stats__secmaps_ssetGCed);
       VG_(printf)(" secmaps: %'10lu searches (%'12lu slow)\n",
                   stats__secmaps_search, stats__secmaps_search_slow);
 
@@ -6018,8 +6227,8 @@ void libhb_shutdown ( Bool show_stats )
                   stats__cache_Z_fetches, stats__cache_F_fetches );
       VG_(printf)("   cache: %'14lu Z-wback,    %'14lu F-wback\n",
                   stats__cache_Z_wbacks, stats__cache_F_wbacks );
-      VG_(printf)("   cache: %'14lu invals,     %'14lu flushes\n",
-                  stats__cache_invals, stats__cache_flushes );
+      VG_(printf)("   cache: %'14lu flushes_invals\n",
+                  stats__cache_flushes_invals );
       VG_(printf)("   cache: %'14llu arange_New  %'14llu direct-to-Zreps\n",
                   stats__cache_make_New_arange,
                   stats__cache_make_New_inZrep);
@@ -6044,17 +6253,19 @@ void libhb_shutdown ( Bool show_stats )
                   stats__cline_swrite08s );
       VG_(printf)("   cline: s rd1s %'lu, s copy1s %'lu\n",
                   stats__cline_sread08s, stats__cline_scopy08s );
-      VG_(printf)("   cline:    splits: 8to4 %'12lu    4to2 %'12lu    2to1 %'12lu\n",
-                 stats__cline_64to32splits,
-                 stats__cline_32to16splits,
-                 stats__cline_16to8splits );
-      VG_(printf)("   cline: pulldowns: 8to4 %'12lu    4to2 %'12lu    2to1 %'12lu\n",
-                 stats__cline_64to32pulldown,
-                 stats__cline_32to16pulldown,
-                 stats__cline_16to8pulldown );
+      VG_(printf)("   cline:    splits: 8to4 %'12lu    4to2 %'12lu"
+                  "    2to1 %'12lu\n",
+                  stats__cline_64to32splits, stats__cline_32to16splits,
+                  stats__cline_16to8splits );
+      VG_(printf)("   cline: pulldowns: 8to4 %'12lu    4to2 %'12lu"
+                  "    2to1 %'12lu\n",
+                  stats__cline_64to32pulldown, stats__cline_32to16pulldown,
+                  stats__cline_16to8pulldown );
       if (0)
-      VG_(printf)("   cline: sizeof(CacheLineZ) %ld, covers %ld bytes of arange\n",
-                  (Word)sizeof(LineZ), (Word)N_LINE_ARANGE);
+      VG_(printf)("   cline: sizeof(CacheLineZ) %ld,"
+                  " covers %ld bytes of arange\n",
+                  (Word)sizeof(LineZ),
+                  (Word)N_LINE_ARANGE);
 
       VG_(printf)("%s","\n");
 
@@ -6068,21 +6279,22 @@ void libhb_shutdown ( Bool show_stats )
                   stats__join2_queries, stats__join2_misses);
 
       VG_(printf)("%s","\n");
-      VG_(printf)( "   libhb: VTSops: tick %'lu,  join %'lu,  cmpLEQ %'lu\n",
-                   stats__vts__tick, stats__vts__join,  stats__vts__cmpLEQ );
-      VG_(printf)( "   libhb: VTSops: cmp_structural %'lu (%'lu slow)\n",
-                   stats__vts__cmp_structural, stats__vts__cmp_structural_slow );
-      VG_(printf)( "   libhb: VTSset: find__or__clone_and_add %'lu (%'lu allocd)\n",
+      VG_(printf)("   libhb: VTSops: tick %'lu,  join %'lu,  cmpLEQ %'lu\n",
+                  stats__vts__tick, stats__vts__join,  stats__vts__cmpLEQ );
+      VG_(printf)("   libhb: VTSops: cmp_structural %'lu (%'lu slow)\n",
+                  stats__vts__cmp_structural, stats__vts__cmp_structural_slow);
+      VG_(printf)("   libhb: VTSset: find__or__clone_and_add %'lu"
+                  " (%'lu allocd)\n",
                    stats__vts_set__focaa, stats__vts_set__focaa_a );
       VG_(printf)( "   libhb: VTSops: indexAt_SLOW %'lu\n",
                    stats__vts__indexat_slow );
-      show_vts_stats ("libhb stats");
 
       VG_(printf)("%s","\n");
       VG_(printf)(
          "   libhb: %ld entries in vts_table (approximately %lu bytes)\n",
          VG_(sizeXA)( vts_tab ), VG_(sizeXA)( vts_tab ) * sizeof(VtsTE)
       );
+      VG_(printf)("   libhb: #%lu vts_tab GC\n", stats__vts_tab_GC);
       VG_(printf)( "   libhb: %lu entries in vts_set\n",
                    VG_(sizeFM)( vts_set ) );
 
@@ -6440,22 +6652,289 @@ void libhb_srange_noaccess_NoFX ( Thr* thr, Addr a, SizeT szB )
    /* do nothing */
 }
 
+
+/* Set the lines zix_start till zix_end to NOACCESS. */
+static void zsm_secmap_line_range_noaccess (SecMap *sm,
+                                            UInt zix_start, UInt zix_end)
+{
+   for (UInt lz = zix_start; lz <= zix_end; lz++) {
+      LineZ* lineZ;
+      LineF* lineF;
+      lineZ = &sm->linesZ[lz];
+      if (lineZ->dict[0] != SVal_INVALID) {
+         rcdec_LineZ(lineZ);
+      } else {
+         UInt fix = (UInt)lineZ->dict[1];
+         tl_assert(sm->linesF);
+         tl_assert(sm->linesF_size > 0);
+         tl_assert(fix >= 0 && fix < sm->linesF_size);
+         lineF = &sm->linesF[fix];
+         rcdec_LineF(lineF);
+         lineF->inUse = False;
+      }
+      lineZ->dict[0] = SVal_NOACCESS;
+      lineZ->dict[1] = lineZ->dict[2] = lineZ->dict[3] = SVal_INVALID;
+      for (UInt i = 0; i < N_LINE_ARANGE/4; i++)
+         lineZ->ix2s[i] = 0; /* all refer to dict[0] */
+   }
+}
+
+/* Set the given range to SVal_NOACCESS in-place in the secmap.
+   a must be cacheline aligned. len must be a multiple of a cacheline
+   and must be < N_SECMAP_ARANGE. */
+static void zsm_sset_range_noaccess_in_secmap(Addr a, SizeT len)
+{
+   tl_assert (is_valid_scache_tag (a));
+   tl_assert (0 == (len & (N_LINE_ARANGE - 1)));
+   tl_assert (len < N_SECMAP_ARANGE);
+
+   SecMap *sm1 = shmem__find_SecMap (a);
+   SecMap *sm2 = shmem__find_SecMap (a + len - 1);
+   UWord zix_start = shmem__get_SecMap_offset(a          ) >> N_LINE_BITS;
+   UWord zix_end   = shmem__get_SecMap_offset(a + len - 1) >> N_LINE_BITS;
+
+   if (sm1) {
+      if (CHECK_ZSM) tl_assert(is_sane_SecMap(sm1));
+      zsm_secmap_line_range_noaccess (sm1, zix_start,
+                                      sm1 == sm2 ? zix_end : N_SECMAP_ZLINES-1);
+   }
+   if (sm2 && sm1 != sm2) {
+      if (CHECK_ZSM) tl_assert(is_sane_SecMap(sm2));
+      zsm_secmap_line_range_noaccess (sm2, 0, zix_end);
+   }
+}
+
+/* Set the given address range to SVal_NOACCESS.
+   The SecMaps fully set to SVal_NOACCESS will be pushed in SecMap_freelist. */
+static void zsm_sset_range_noaccess (Addr addr, SizeT len)
+{
+   /*
+       BPC = Before, Partial Cacheline, = addr 
+             (i.e. starting inside a cacheline/inside a SecMap)
+       BFC = Before, Full Cacheline(s), but not full SecMap
+             (i.e. starting inside a SecMap)
+       FSM = Full SecMap(s)
+             (i.e. starting a SecMap)
+       AFC = After, Full Cacheline(s), but not full SecMap
+             (i.e. first address after the full SecMap(s))
+       APC = After, Partial Cacheline, i.e. first address after the
+             full CacheLines).
+       ARE = After Range End = addr+len = first address not part of the range.
+
+       If addr     starts a Cacheline, then BPC == BFC.
+       If addr     starts a SecMap,    then BPC == BFC == FSM.
+       If addr+len starts a SecMap,    then APC == ARE == AFC
+       If addr+len starts a Cacheline, then APC == ARE
+   */
+   Addr ARE = addr + len;
+   Addr BPC = addr;
+   Addr BFC = ROUNDUP(BPC, N_LINE_ARANGE);
+   Addr FSM = ROUNDUP(BPC, N_SECMAP_ARANGE);
+   Addr AFC = ROUNDDN(ARE, N_SECMAP_ARANGE);
+   Addr APC = ROUNDDN(ARE, N_LINE_ARANGE);
+   SizeT Plen = len; // Plen will be split between the following:
+   SizeT BPClen;
+   SizeT BFClen;
+   SizeT FSMlen;
+   SizeT AFClen;
+   SizeT APClen;
+
+   /* Consumes from Plen the nr of bytes between from and to.
+      from and to must be aligned on a multiple of round.
+      The length consumed will be a multiple of round, with
+      a maximum of Plen. */
+#  define PlenCONSUME(from, to, round, consumed) \
+   do {                                          \
+   if (from < to) {                              \
+      if (to - from < Plen)                      \
+         consumed = to - from;                   \
+      else                                       \
+         consumed = ROUNDDN(Plen, round);        \
+   } else {                                      \
+      consumed = 0;                              \
+   }                                             \
+   Plen -= consumed; } while (0)
+      
+   PlenCONSUME(BPC, BFC, 1,               BPClen);
+   PlenCONSUME(BFC, FSM, N_LINE_ARANGE,   BFClen);
+   PlenCONSUME(FSM, AFC, N_SECMAP_ARANGE, FSMlen);
+   PlenCONSUME(AFC, APC, N_LINE_ARANGE,   AFClen);
+   PlenCONSUME(APC, ARE, 1,               APClen);
+
+   if (0)
+      VG_(printf) ("addr %p[%ld] ARE %p"
+                   " BPC %p[%ld] BFC %p[%ld] FSM %p[%ld]"
+                   " AFC %p[%ld] APC %p[%ld]\n",
+                   (void*)addr, len, (void*)ARE,
+                   (void*)BPC, BPClen, (void*)BFC, BFClen, (void*)FSM, FSMlen,
+                   (void*)AFC, AFClen, (void*)APC, APClen);
+
+   tl_assert (Plen == 0);
+
+   /* Set to NOACCESS pieces before and after not covered by entire SecMaps. */
+
+   /* First we set the partial cachelines. This is done through the cache. */
+   if (BPClen > 0)
+      zsm_sset_range_SMALL (BPC, BPClen, SVal_NOACCESS);
+   if (APClen > 0)
+      zsm_sset_range_SMALL (APC, APClen, SVal_NOACCESS);
+
+   /* After this, we will not use the cache anymore. We will directly work
+      in-place on the z shadow memory in SecMap(s).
+      So, we invalidate the cachelines for the whole range we are setting
+      to NOACCESS below. */
+   shmem__invalidate_scache_range (BFC, APC - BFC);
+
+   if (BFClen > 0)
+      zsm_sset_range_noaccess_in_secmap (BFC, BFClen);
+   if (AFClen > 0)
+      zsm_sset_range_noaccess_in_secmap (AFC, AFClen);
+
+   if (FSMlen > 0) {
+      /* Set to NOACCESS all the SecMaps, pushing the SecMaps to the
+         free list. */
+      Addr  sm_start = FSM;
+      while (sm_start < AFC) {
+         SecMap *sm = shmem__find_SecMap (sm_start);
+         if (sm) {
+            Addr gaKey;
+            SecMap *fm_sm;
+
+            if (CHECK_ZSM) tl_assert(is_sane_SecMap(sm));
+            for (UInt lz = 0; lz < N_SECMAP_ZLINES; lz++) {
+               if (sm->linesZ[lz].dict[0] != SVal_INVALID)
+                  rcdec_LineZ(&sm->linesZ[lz]);
+            }
+            for (UInt lf = 0; lf < sm->linesF_size; lf++) {
+               if (sm->linesF[lf].inUse)
+                  rcdec_LineF (&sm->linesF[lf]);
+            }
+            if (sm->linesF_size > 0) {
+               HG_(free)(sm->linesF);
+               stats__secmap_linesF_allocd -= sm->linesF_size;
+               stats__secmap_linesF_bytes  -= sm->linesF_size * sizeof(LineF);
+            }
+            if (!VG_(delFromFM)(map_shmem, &gaKey, (UWord*)&fm_sm, sm_start))
+               tl_assert (0);
+            stats__secmaps_in_map_shmem--;
+            tl_assert (gaKey == sm_start);
+            tl_assert (sm == fm_sm);
+            stats__secmaps_ssetGCed++;
+            push_SecMap_on_freelist (sm);
+         }
+         sm_start += N_SECMAP_ARANGE;
+      }
+      tl_assert (sm_start == AFC);
+
+      /* The above loop might have kept copies of freed SecMap in the smCache.
+         => clear them. */
+      if (address_in_range(smCache[0].gaKey, FSM, FSMlen)) {
+         smCache[0].gaKey = 1;
+         smCache[0].sm = NULL;
+      }
+      if (address_in_range(smCache[1].gaKey, FSM, FSMlen)) {
+         smCache[1].gaKey = 1;
+         smCache[1].sm = NULL;
+      }
+      if (address_in_range(smCache[2].gaKey, FSM, FSMlen)) {
+         smCache[2].gaKey = 1;
+         smCache[2].sm = NULL;
+      }
+      STATIC_ASSERT (3 == sizeof(smCache)/sizeof(SMCacheEnt));
+   }
+}
+
 void libhb_srange_noaccess_AHAE ( Thr* thr, Addr a, SizeT szB )
 {
    /* This really does put the requested range in NoAccess.  It's
       expensive though. */
    SVal sv = SVal_NOACCESS;
    tl_assert(is_sane_SVal_C(sv));
-   zsm_sset_range( a, szB, sv );
+   if (LIKELY(szB < 2 * N_LINE_ARANGE))
+      zsm_sset_range_SMALL (a, szB, SVal_NOACCESS);
+   else
+      zsm_sset_range_noaccess (a, szB);
    Filter__clear_range( thr->filter, a, szB );
 }
+
+/* Works byte at a time. Can be optimised if needed. */
+UWord libhb_srange_get_abits (Addr a, UChar *abits, SizeT len)
+{
+   UWord anr = 0; // nr of bytes addressable.
+
+   /* Get the accessibility of each byte. Pay attention to not
+      create SecMap or LineZ when checking if a byte is addressable.
+
+      Note: this is used for client request. Performance deemed not critical.
+      So for simplicity, we work byte per byte.
+      Performance could be improved  by working with full cachelines
+      or with full SecMap, when reaching a cacheline or secmap boundary. */
+   for (SizeT i = 0; i < len; i++) {
+      SVal       sv = SVal_INVALID;
+      Addr       b = a + i;
+      Addr       tag = b & ~(N_LINE_ARANGE - 1);
+      UWord      wix = (b >> N_LINE_BITS) & (N_WAY_NENT - 1);
+      UWord      cloff = get_cacheline_offset(b);
+
+      /* Note: we do not use get_cacheline(b) to avoid creating cachelines
+         and/or SecMap for non addressable bytes. */
+      if (tag == cache_shmem.tags0[wix]) {
+         CacheLine copy = cache_shmem.lyns0[wix];
+         /* We work on a copy of the cacheline, as we do not want to
+            record the client request as a real read.
+            The below is somewhat similar to zsm_sapply08__msmcread but
+            avoids side effects on the cache. */
+         UWord toff = get_tree_offset(b); /* == 0 .. 7 */
+         UWord tno  = get_treeno(b);
+         UShort descr = copy.descrs[tno];
+         if (UNLIKELY( !(descr & (TREE_DESCR_8_0 << toff)) )) {
+            SVal* tree = &copy.svals[tno << 3];
+            copy.descrs[tno] = pulldown_to_8(tree, toff, descr);
+         }
+         sv = copy.svals[cloff];
+      } else {
+         /* Byte not found in the cacheline. Search for a SecMap. */
+         SecMap *sm = shmem__find_SecMap(b);
+         LineZ *lineZ;
+         if (sm == NULL)
+            sv = SVal_NOACCESS;
+         else {
+            UWord zix = shmem__get_SecMap_offset(b) >> N_LINE_BITS;
+            lineZ = &sm->linesZ[zix];
+            if (lineZ->dict[0] == SVal_INVALID) {
+               UInt fix = (UInt)lineZ->dict[1];
+               sv = sm->linesF[fix].w64s[cloff];
+            } else {
+               UWord ix = read_twobit_array( lineZ->ix2s, cloff );
+               sv = lineZ->dict[ix];
+            }
+         }
+      }
+      
+      tl_assert (sv != SVal_INVALID);
+      if (sv == SVal_NOACCESS) {
+         if (abits)
+            abits[i] = 0x00;
+      } else {
+         if (abits)
+            abits[i] = 0xff;
+         anr++;
+      }
+   }
+
+   return anr;
+}
+
 
 void libhb_srange_untrack ( Thr* thr, Addr a, SizeT szB )
 {
    SVal sv = SVal_NOACCESS;
    tl_assert(is_sane_SVal_C(sv));
    if (0 && TRACEME(a,szB)) trace(thr,a,szB,"untrack-before");
-   zsm_sset_range( a, szB, sv );
+   if (LIKELY(szB < 2 * N_LINE_ARANGE))
+      zsm_sset_range_SMALL (a, szB, SVal_NOACCESS);
+   else
+      zsm_sset_range_noaccess (a, szB);
    Filter__clear_range( thr->filter, a, szB );
    if (0 && TRACEME(a,szB)) trace(thr,a,szB,"untrack-after ");
 }
@@ -6492,18 +6971,26 @@ void libhb_maybe_GC ( void )
    */
    if (UNLIKELY(stats__ctxt_tab_curr > N_RCEC_TAB/2
                 && stats__ctxt_tab_curr + 1000 >= stats__ctxt_tab_max
-                && stats__ctxt_tab_curr * 0.75 > RCEC_referenced))
+                && (stats__ctxt_tab_curr * 3)/4 > RCEC_referenced))
       do_RCEC_GC();
 
-   /* If there are still freelist entries available, no need for a
-      GC. */
-   if (vts_tab_freelist != VtsID_INVALID)
-      return;
-   /* So all the table entries are full, and we're having to expand
-      the table.  But did we hit the threshhold point yet? */
-   if (VG_(sizeXA)( vts_tab ) < vts_next_GC_at)
-      return;
-   vts_tab__do_GC( False/*don't show stats*/ );
+   /* If there are still no entries available (all the table entries are full),
+      and we hit the threshhold point, then do a GC */
+   Bool vts_tab_GC = vts_tab_freelist == VtsID_INVALID
+      && VG_(sizeXA)( vts_tab ) >= vts_next_GC_at;
+   if (UNLIKELY (vts_tab_GC))
+      vts_tab__do_GC( False/*don't show stats*/ );
+
+   /* scan GC the SecMaps when
+          (1) no SecMap in the freelist
+      and (2) the current nr of live secmaps exceeds the threshold. */
+   if (UNLIKELY(SecMap_freelist == NULL
+                && stats__secmaps_in_map_shmem >= next_SecMap_GC_at)) {
+      // If we did a vts tab GC, then no need to flush the cache again.
+      if (!vts_tab_GC)
+         zsm_flush_cache();
+      shmem__SecMap_do_GC(True);
+   }
 
    /* Check the reference counts (expensive) */
    if (CHECK_CEM)

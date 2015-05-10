@@ -118,8 +118,8 @@ typedef
       _VG_USERREQ__HG_CLEAN_MEMORY_HEAPBLOCK, /* Addr start_of_block */
       _VG_USERREQ__HG_PTHREAD_COND_INIT_POST,  /* pth_cond_t*, pth_cond_attr_t*/
       _VG_USERREQ__HG_GNAT_MASTER_HOOK,       /* void*d,void*m,Word ml */
-      _VG_USERREQ__HG_GNAT_MASTER_COMPLETED_HOOK /* void*s,Word ml */
-      
+      _VG_USERREQ__HG_GNAT_MASTER_COMPLETED_HOOK,/* void*s,Word ml */
+      _VG_USERREQ__HG_GET_ABITS               /* Addr a,Addr abits, ulong len */
    } Vg_TCheckClientRequest;
 
 
@@ -157,7 +157,7 @@ typedef
 
 #define DO_CREQ_W_W(_resF, _dfltF, _creqF, _ty1F,_arg1F) \
    do {                                                  \
-      long int arg1;                                     \
+      long int _arg1;                                    \
       /* assert(sizeof(_ty1F) == sizeof(long int)); */   \
       _arg1 = (long int)(_arg1F);                        \
       _qzz_res = VALGRIND_DO_CLIENT_REQUEST_EXPR(        \
@@ -193,6 +193,23 @@ typedef
                                  (_creqF),               \
                                  _arg1,_arg2,_arg3,0,0); \
    } while (0)
+
+#define DO_CREQ_W_WWW(_resF, _dfltF, _creqF, _ty1F,_arg1F, \
+                      _ty2F,_arg2F, _ty3F, _arg3F)       \
+   do {                                                  \
+      long int _qzz_res;                                 \
+      long int _arg1, _arg2, _arg3;                      \
+      /* assert(sizeof(_ty1F) == sizeof(long int)); */   \
+      _arg1 = (long int)(_arg1F);                        \
+      _arg2 = (long int)(_arg2F);                        \
+      _arg3 = (long int)(_arg3F);                        \
+      _qzz_res = VALGRIND_DO_CLIENT_REQUEST_EXPR(        \
+                                 (_dfltF),               \
+                                 (_creqF),               \
+                                 _arg1,_arg2,_arg3,0,0); \
+      _resF = _qzz_res;                                  \
+   } while (0)
+
 
 
 #define _HG_CLIENTREQ_UNIMP(_qzz_str)                    \
@@ -366,6 +383,38 @@ typedef
                  void*,(_qzz_start),                         \
                  unsigned long,(_qzz_len))
 
+
+#define VALGRIND_HG_ENABLE_CHECKING(_qzz_start, _qzz_len)    \
+   DO_CREQ_v_WW(_VG_USERREQ__HG_ARANGE_MAKE_TRACKED,         \
+                 void*,(_qzz_start),                         \
+                 unsigned long,(_qzz_len))
+
+
+/*  Checks the accessibility bits for addresses [zza..zza+zznbytes-1].
+    If zzabits array is provided, copy the accessibility bits in zzabits.
+   Return values:
+     -2   if not running on helgrind
+     -1   if any parts of zzabits is not addressable
+     >= 0 : success.
+   When success, it returns the nr of addressable bytes found.
+      So, to check that a whole range is addressable, check
+         VALGRIND_HG_GET_ABITS(addr,NULL,len) == len
+      In addition, if you want to examine the addressability of each
+      byte of the range, you need to provide a non NULL ptr as
+      second argument, pointing to an array of unsigned char
+      of length len.
+      Addressable bytes are indicated with 0xff.
+      Non-addressable bytes are indicated with 0x00.
+*/
+#define VALGRIND_HG_GET_ABITS(zza,zzabits,zznbytes)          \
+   (__extension__                                            \
+   ({long int _res;                                          \
+      DO_CREQ_W_WWW(_res, (-2)/*default*/,                   \
+                    _VG_USERREQ__HG_GET_ABITS,               \
+                    void*,(zza), void*,(zzabits),            \
+                    unsigned long,(zznbytes));               \
+      _res;                                                  \
+   }))
 
 /*----------------------------------------------------------------*/
 /*---                                                          ---*/

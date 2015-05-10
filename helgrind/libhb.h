@@ -131,6 +131,13 @@ void libhb_srange_untrack  ( Thr*, Addr, SizeT );
 void libhb_srange_noaccess_NoFX ( Thr*, Addr, SizeT ); /* IS IGNORED */
 void libhb_srange_noaccess_AHAE ( Thr*, Addr, SizeT ); /* IS NOT IGNORED */
 
+/* Counts the nr of bytes addressable in the range [a, a+len[
+   (so a+len excluded) and returns the nr of addressable bytes found.
+   If abits /= NULL, abits must point to a block of memory of length len.
+   In this array, each addressable byte will be indicated with 0xff.
+   Non-addressable bytes are indicated with 0x00. */
+UWord libhb_srange_get_abits (Addr a, /*OUT*/UChar *abits, SizeT len);
+
 /* Get and set the hgthread (pointer to corresponding Thread
    structure). */
 Thread* libhb_get_Thr_hgthread ( Thr* );

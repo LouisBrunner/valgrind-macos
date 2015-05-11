@@ -615,6 +615,7 @@ static UWord stats__vts__join            = 0; // # calls to VTS__join
 static UWord stats__vts__cmpLEQ          = 0; // # calls to VTS__cmpLEQ
 static UWord stats__vts__cmp_structural  = 0; // # calls to VTS__cmp_structural
 static UWord stats__vts_tab_GC           = 0; // # nr of vts_tab GC
+static UWord stats__vts_pruning          = 0; // # nr of vts pruning
 
 // # calls to VTS__cmp_structural w/ slow case
 static UWord stats__vts__cmp_structural_slow = 0;
@@ -2998,6 +2999,7 @@ static void vts_tab__do_GC ( Bool show_stats )
       VG_(printf)("<<GC ends, next gc at %ld>>\n", vts_next_GC_at);
    }
 
+   stats__vts_tab_GC++;
    if (VG_(clo_stats)) {
       tl_assert(nTab > 0);
       VG_(message)(Vg_DebugMsg,
@@ -3310,14 +3312,14 @@ static void vts_tab__do_GC ( Bool show_stats )
    }
 
    /* And we're done.  Bwahahaha. Ha. Ha. Ha. */
+   stats__vts_pruning++;
    if (VG_(clo_stats)) {
-      static UInt ctr = 1;
       tl_assert(nTab > 0);
       VG_(message)(
          Vg_DebugMsg,
-         "libhb: VTS PR: #%u  before %lu (avg sz %lu)  "
+         "libhb: VTS PR: #%lu  before %lu (avg sz %lu)  "
             "after %lu (avg sz %lu)\n",
-         ctr++,
+         stats__vts_pruning,
          nBeforePruning, nSTSsBefore / (nBeforePruning ? nBeforePruning : 1),
          nAfterPruning, nSTSsAfter / (nAfterPruning ? nAfterPruning : 1)
       );
@@ -6275,7 +6277,8 @@ void libhb_shutdown ( Bool show_stats )
          "   libhb: %ld entries in vts_table (approximately %lu bytes)\n",
          VG_(sizeXA)( vts_tab ), VG_(sizeXA)( vts_tab ) * sizeof(VtsTE)
       );
-      VG_(printf)("   libhb: #%lu vts_tab GC\n", stats__vts_tab_GC);
+      VG_(printf)("   libhb: #%lu vts_tab GC    #%lu vts pruning\n",
+                  stats__vts_tab_GC, stats__vts_pruning);
       VG_(printf)( "   libhb: %lu entries in vts_set\n",
                    VG_(sizeFM)( vts_set ) );
 

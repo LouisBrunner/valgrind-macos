@@ -1624,29 +1624,17 @@ static __attribute__((noinline)) void cacheline_fetch ( UWord wix )
    normalise_CacheLine( cl );
 }
 
-/* Invalid the cachelines corresponding to the given range. */
+/* Invalid the cachelines corresponding to the given range, which
+   must start and end on a cacheline boundary. */
 static void shmem__invalidate_scache_range (Addr ga, SizeT szB)
 {
-   Addr before_start  = ga;
-   Addr aligned_start = ROUNDUP(ga, N_LINE_ARANGE);
-   Addr after_start   = ROUNDDN(ga + szB, N_LINE_ARANGE);
-   UWord before_len   = aligned_start - before_start;
-   UWord after_len    = ga + szB - after_start;
-
-   /* Write-back cachelines partially set to NOACCESS */
-   if (before_len > 0) {
-      zsm_sset_range_SMALL (before_start, before_len, SVal_NOACCESS);
-      szB += N_LINE_ARANGE - before_len;
-   }
-   if (after_len > 0) {
-      zsm_sset_range_SMALL (after_start, after_len, SVal_NOACCESS);
-      szB += N_LINE_ARANGE - after_len;
-   }
-
-   /* szB must now be a multiple of cacheline size. */
-   tl_assert (0 == (szB & (N_LINE_ARANGE - 1)));
-
    Word wix;
+
+   /* ga must be on a cacheline boundary. */
+   tl_assert (is_valid_scache_tag (ga));
+   /* szB must be a multiple of cacheline size. */
+   tl_assert (0 == (szB & (N_LINE_ARANGE - 1)));
+   
 
    Word ga_ix = (ga >> N_LINE_BITS) & (N_WAY_NENT - 1);
    Word nwix = szB / N_LINE_ARANGE;

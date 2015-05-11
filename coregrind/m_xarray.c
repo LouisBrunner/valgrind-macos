@@ -127,9 +127,10 @@ void VG_(setCmpFnXA) ( XArray* xa, XACmpFn_t compar )
 
 inline void* VG_(indexXA) ( const XArray* xa, Word n )
 {
-   vg_assert(xa);
-   vg_assert(n >= 0);
-   vg_assert(n < xa->usedsizeE);
+   // vg_assert(xa);
+   // vg_assert(n >= 0); If n negative, the UWord conversion will make
+   // it bigger than usedsizeE.
+   vg_assert((UWord)n < xa->usedsizeE);
    return ((char*)xa->arr) + n * xa->elemSzB;
 }
 

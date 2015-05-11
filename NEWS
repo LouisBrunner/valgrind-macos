@@ -70,6 +70,8 @@ where XXXXXX is the bug number as listed below.
 211926  Avoid compilation warnings in valgrind.h with -pedantic
 226609  Crediting upstream authors in man page
 231257  Valgrind omits path when executing script from shebang line
+254164  OS X task_info: UNKNOWN task message [id 3405, to mach_task_self(), 
+        reply 0x........]
 269360  s390x: Fix addressing mode selection for compare-and-swap
 333051  mmap of huge pages fails due to incorrect alignment
         == 339163

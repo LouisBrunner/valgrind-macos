@@ -5774,7 +5774,7 @@ PRE(task_policy_set)
 
    Request *req = (Request *)ARG1;
 
-   PRINT("task_policy_set(%s) flacor:%d", name_for_port(MACH_REMOTE), req->flavor);
+   PRINT("task_policy_set(%s) flavor:%d", name_for_port(MACH_REMOTE), req->flavor);
 
    AFTER = POST_FN(task_policy_set);
 }

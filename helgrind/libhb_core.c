@@ -365,6 +365,8 @@ static inline Bool SVal__isC ( SVal s );
 static inline VtsID SVal__unC_Rmin ( SVal s );
 static inline VtsID SVal__unC_Wmin ( SVal s );
 static inline SVal SVal__mkC ( VtsID rmini, VtsID wmini );
+static inline void SVal__rcinc ( SVal s );
+static inline void SVal__rcdec ( SVal s );
 
 /* A double linked list of all the SO's. */
 SO* admin_SO;
@@ -383,7 +385,7 @@ SO* admin_SO;
 #define __HB_ZSM_H
 
 /* Initialise the library.  Once initialised, it will (or may) call
-   rcinc and rcdec in response to all the calls below, in order to
+   SVal__rcinc and SVal__rcdec in response to all the calls below, in order to
    allow the user to do reference counting on the SVals stored herein.
    It is important to understand, however, that due to internal
    caching, the reference counts are in general inaccurate, and can be
@@ -394,11 +396,11 @@ SO* admin_SO;
    To make the reference counting exact and therefore non-pointless,
    call zsm_flush_cache.  Immediately after it returns, the reference
    counts for all items, as deduced by the caller by observing calls
-   to rcinc and rcdec, will be correct, and so any items with a zero
-   reference count may be freed (or at least considered to be
+   to SVal__rcinc and SVal__rcdec, will be correct, and so any items with a
+   zero reference count may be freed (or at least considered to be
    unreferenced by this library).
 */
-static void zsm_init ( void(*rcinc)(SVal), void(*rcdec)(SVal) );
+static void zsm_init ( void );
 
 static void zsm_sset_range  ( Addr, SizeT, SVal );
 static void zsm_sset_range_SMALL ( Addr a, SizeT len, SVal svNew );
@@ -426,11 +428,6 @@ static inline Bool address_in_range (Addr a, Addr start,  SizeT szB)
                      &&       a < start + szB));
    return a - start < szB;
 }
-
-/* ------ User-supplied RC functions ------ */
-static void(*rcinc)(SVal) = NULL;
-static void(*rcdec)(SVal) = NULL;
-
 
 /* ------ CacheLine ------ */
 
@@ -908,30 +905,30 @@ static void rcinc_LineF ( LineF* lineF ) {
    UWord i;
    tl_assert(lineF->inUse);
    for (i = 0; i < N_LINE_ARANGE; i++)
-      rcinc(lineF->w64s[i]);
+      SVal__rcinc(lineF->w64s[i]);
 }
 
 static void rcdec_LineF ( LineF* lineF ) {
    UWord i;
    tl_assert(lineF->inUse);
    for (i = 0; i < N_LINE_ARANGE; i++)
-      rcdec(lineF->w64s[i]);
+      SVal__rcdec(lineF->w64s[i]);
 }
 
 static void rcinc_LineZ ( LineZ* lineZ ) {
    tl_assert(lineZ->dict[0] != SVal_INVALID);
-   rcinc(lineZ->dict[0]);
-   if (lineZ->dict[1] != SVal_INVALID) rcinc(lineZ->dict[1]);
-   if (lineZ->dict[2] != SVal_INVALID) rcinc(lineZ->dict[2]);
-   if (lineZ->dict[3] != SVal_INVALID) rcinc(lineZ->dict[3]);
+   SVal__rcinc(lineZ->dict[0]);
+   if (lineZ->dict[1] != SVal_INVALID) SVal__rcinc(lineZ->dict[1]);
+   if (lineZ->dict[2] != SVal_INVALID) SVal__rcinc(lineZ->dict[2]);
+   if (lineZ->dict[3] != SVal_INVALID) SVal__rcinc(lineZ->dict[3]);
 }
 
 static void rcdec_LineZ ( LineZ* lineZ ) {
    tl_assert(lineZ->dict[0] != SVal_INVALID);
-   rcdec(lineZ->dict[0]);
-   if (lineZ->dict[1] != SVal_INVALID) rcdec(lineZ->dict[1]);
-   if (lineZ->dict[2] != SVal_INVALID) rcdec(lineZ->dict[2]);
-   if (lineZ->dict[3] != SVal_INVALID) rcdec(lineZ->dict[3]);
+   SVal__rcdec(lineZ->dict[0]);
+   if (lineZ->dict[1] != SVal_INVALID) SVal__rcdec(lineZ->dict[1]);
+   if (lineZ->dict[2] != SVal_INVALID) SVal__rcdec(lineZ->dict[2]);
+   if (lineZ->dict[3] != SVal_INVALID) SVal__rcdec(lineZ->dict[3]);
 }
 
 inline
@@ -1305,10 +1302,11 @@ static UShort normalise_tree ( /*MOD*/SVal* tree )
    UShort descr;
    /* pre: incoming tree[0..7] does not have any invalid shvals, in
       particular no zeroes. */
-   if (UNLIKELY(tree[7] == SVal_INVALID || tree[6] == SVal_INVALID
-                || tree[5] == SVal_INVALID || tree[4] == SVal_INVALID
-                || tree[3] == SVal_INVALID || tree[2] == SVal_INVALID
-                || tree[1] == SVal_INVALID || tree[0] == SVal_INVALID))
+   if (CHECK_ZSM
+       && UNLIKELY(tree[7] == SVal_INVALID || tree[6] == SVal_INVALID
+                   || tree[5] == SVal_INVALID || tree[4] == SVal_INVALID
+                   || tree[3] == SVal_INVALID || tree[2] == SVal_INVALID
+                   || tree[1] == SVal_INVALID || tree[0] == SVal_INVALID))
       tl_assert(0);
    
    descr = TREE_DESCR_8_7 | TREE_DESCR_8_6 | TREE_DESCR_8_5
@@ -1616,12 +1614,10 @@ static __attribute__((noinline)) void cacheline_fetch ( UWord wix )
       stats__cache_F_fetches++;
    } else {
       for (i = 0; i < N_LINE_ARANGE; i++) {
-         SVal sv;
          UWord ix = read_twobit_array( lineZ->ix2s, i );
-         /* correct, but expensive: tl_assert(ix >= 0 && ix <= 3); */
-         sv = lineZ->dict[ix];
-         tl_assert(sv != SVal_INVALID);
-         cl->svals[i] = sv;
+         if (CHECK_ZSM) tl_assert(ix >= 0 && ix <= 3);
+         cl->svals[i] = lineZ->dict[ix];
+         if (CHECK_ZSM) tl_assert(cl->svals[i] != SVal_INVALID);
       }
       stats__cache_Z_fetches++;
    }
@@ -1943,12 +1939,9 @@ static void zsm_flush_cache ( void )
 }
 
 
-static void zsm_init ( void(*p_rcinc)(SVal), void(*p_rcdec)(SVal) )
+static void zsm_init ( void )
 {
    tl_assert( sizeof(UWord) == sizeof(Addr) );
-
-   rcinc = p_rcinc;
-   rcdec = p_rcdec;
 
    tl_assert(map_shmem == NULL);
    map_shmem = VG_(newFM)( HG_(zalloc), "libhb.zsm_init.1 (map_shmem)",
@@ -3997,7 +3990,7 @@ static inline SVal SVal__mkA ( void ) {
 }
 
 /* Direct callback from lib_zsm. */
-static void SVal__rcinc ( SVal s ) {
+static inline void SVal__rcinc ( SVal s ) {
    if (SVal__isC(s)) {
       VtsID__rcinc( SVal__unC_Rmin(s) );
       VtsID__rcinc( SVal__unC_Wmin(s) );
@@ -4005,7 +3998,7 @@ static void SVal__rcinc ( SVal s ) {
 }
 
 /* Direct callback from lib_zsm. */
-static void SVal__rcdec ( SVal s ) {
+static inline void SVal__rcdec ( SVal s ) {
    if (SVal__isC(s)) {
       VtsID__rcdec( SVal__unC_Rmin(s) );
       VtsID__rcdec( SVal__unC_Wmin(s) );
@@ -6141,7 +6134,7 @@ Thr* libhb_init (
    VtsID__invalidate_caches();
 
    // initialise shadow memory
-   zsm_init( SVal__rcinc, SVal__rcdec );
+   zsm_init( );
 
    thr = Thr__new();
    vi  = VtsID__mk_Singleton( thr, 1 );

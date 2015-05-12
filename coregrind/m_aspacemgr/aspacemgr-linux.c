@@ -2901,7 +2901,8 @@ const NSegment *VG_(am_extend_map_client)( Addr addr, SizeT delta )
 
    NSegment *seg = nsegments + ix;
 
-   aspacem_assert(seg->kind == SkFileC || seg->kind == SkAnonC);
+   aspacem_assert(seg->kind == SkFileC || seg->kind == SkAnonC ||
+                  seg->kind == SkShmC);
    aspacem_assert(delta > 0 && VG_IS_PAGE_ALIGNED(delta)) ;
 
    xStart = seg->end+1;
@@ -2979,7 +2980,8 @@ Bool VG_(am_relocate_nooverlap_client)( /*OUT*/Bool* need_discard,
    if (iLo != iHi)
       return False;
 
-   if (nsegments[iLo].kind != SkFileC && nsegments[iLo].kind != SkAnonC)
+   if (nsegments[iLo].kind != SkFileC && nsegments[iLo].kind != SkAnonC &&
+       nsegments[iLo].kind != SkShmC)
       return False;
 
    sres = ML_(am_do_relocate_nooverlap_mapping_NO_NOTIFY)

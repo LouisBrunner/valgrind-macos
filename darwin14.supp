@@ -77,15 +77,15 @@
    ...
 }
 
-#{
-#   OSX1010:8-Leak
-#   Memcheck:Leak
-#   match-leak-kinds: indirect
-#   fun:?alloc
-#   ...
-#   fun:libSystem_initializer
-#   ...
-#}
+{
+   OSX1010:8-Leak
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:?alloc
+   ...
+   fun:libSystem_initializer
+   ...
+}
 
 {
    OSX1010:9-Leak

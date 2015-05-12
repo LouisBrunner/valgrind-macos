@@ -1,12 +1,11 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/stat.h>
-
-
-extern void *mremap(void *, size_t, size_t, int, ...);
+#include <sys/mman.h>
 
 int main()
 {

@@ -11,6 +11,7 @@ EXTRA_DIST = \
 	    mremap.vgtest \
 	mremap2.stderr.exp mremap2.stdout.exp mremap2.vgtest \
 	mremap3.stderr.exp mremap3.stdout.exp mremap3.vgtest \
+	mremap4.stderr.exp mremap4.vgtest \
 	pthread-stack.stderr.exp pthread-stack.vgtest \
 	stack-overflow.stderr.exp stack-overflow.vgtest
 
@@ -21,6 +22,7 @@ check_PROGRAMS = \
 	mremap \
 	mremap2 \
 	mremap3 \
+	mremap4 \
 	pthread-stack \
 	stack-overflow
 

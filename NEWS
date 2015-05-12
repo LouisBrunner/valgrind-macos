@@ -182,6 +182,7 @@ n-i-bz  Old STABS code is still being compiled, but never used. Remove it.
 n-i-bz  Fix compilation on distros with glibc < 2.5
 n-i-bz  (vex 3098) Avoid generation of Neon insns on non-Neon hosts
 n-i-bz  Enable rt_sigpending syscall on ppc64 linux.
+n-i-bz  mremap did not work properly on shared memory
 
 
 Release 3.10.1 (25 November 2014)

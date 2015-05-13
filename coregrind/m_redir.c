@@ -1537,7 +1537,8 @@ static Bool is_plausible_guest_addr(Addr a)
 {
    NSegment const* seg = VG_(am_find_nsegment)(a);
    return seg != NULL
-          && (seg->kind == SkAnonC || seg->kind == SkFileC)
+          && (seg->kind == SkAnonC || seg->kind == SkFileC ||
+              seg->kind == SkShmC)
           && (seg->hasX || seg->hasR); /* crude x86-specific hack */
 }
 

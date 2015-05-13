@@ -22,6 +22,9 @@ while (<>)
     # libc, on some (eg. Darwin) it will be in the main executable.
     s/\(below main\) \(.+\)$/(below main)/;
 
+    # filter out the exact libc-start.c:### line number. (ppc64*)
+    s/\(libc-start.c:[0-9]*\)$/(in \/...libc...)/;
+
     # Merge the different C++ operator variations.
     s/(at.*)__builtin_new/$1...operator new.../;
     s/(at.*)operator new\(unsigned(| int| long)\)/$1...operator new.../;

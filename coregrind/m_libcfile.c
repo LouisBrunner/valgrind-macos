@@ -435,7 +435,7 @@ Int VG_(fcntl) ( Int fd, Int cmd, Addr arg )
 Int VG_(rename) ( const HChar* old_name, const HChar* new_name )
 {
 #  if defined(VGP_tilegx_linux)
-   SysRes res = VG_(do_syscall3)(__NR_renameat, AT_FDCWD,
+   SysRes res = VG_(do_syscall3)(__NR_renameat, VKI_AT_FDCWD,
                                  (UWord)old_name, (UWord)new_name);
 #  else
    SysRes res = VG_(do_syscall2)(__NR_rename, (UWord)old_name, (UWord)new_name);

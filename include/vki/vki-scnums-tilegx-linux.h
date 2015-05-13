@@ -33,8 +33,6 @@
 #ifndef __VKI_SCNUMS_TILEGX_LINUX_H
 #define __VKI_SCNUMS_TILEGX_LINUX_H
 
-#define AT_FDCWD    -100
-
 /* From tilegx linux/include/asm-generic/unistd.h */
 
 #define __NR_io_setup 0

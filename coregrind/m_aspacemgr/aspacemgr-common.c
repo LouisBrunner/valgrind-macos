@@ -247,7 +247,7 @@ SysRes ML_(am_open) ( const HChar* pathname, Int flags, Int mode )
    SysRes res = VG_(do_syscall4)(__NR_openat,
                                  VKI_AT_FDCWD, (UWord)pathname, flags, mode);
 #  elif defined(VGP_tilegx_linux)
-   SysRes res = VG_(do_syscall4)(__NR_openat, AT_FDCWD, (UWord)pathname,
+   SysRes res = VG_(do_syscall4)(__NR_openat, VKI_AT_FDCWD, (UWord)pathname,
                                  flags, mode);
 #  else
    SysRes res = VG_(do_syscall3)(__NR_open, (UWord)pathname, flags, mode);
@@ -273,8 +273,8 @@ Int ML_(am_readlink)(const HChar* path, HChar* buf, UInt bufsiz)
    res = VG_(do_syscall4)(__NR_readlinkat, VKI_AT_FDCWD,
                                            (UWord)path, (UWord)buf, bufsiz);
 #  elif defined(VGP_tilegx_linux)
-   res = VG_(do_syscall4)(__NR_readlinkat, AT_FDCWD, (UWord)path, (UWord)buf,
-                          bufsiz);
+   res = VG_(do_syscall4)(__NR_readlinkat, VKI_AT_FDCWD, (UWord)path,
+                          (UWord)buf, bufsiz);
 #  else
    res = VG_(do_syscall3)(__NR_readlink, (UWord)path, (UWord)buf, bufsiz);
 #  endif

@@ -13,3 +13,10 @@
    fun:main
 }
 
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Jump
+   obj:*
+   fun:generic_start_main.isra.0
+   fun:(below main)
+}

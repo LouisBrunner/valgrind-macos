@@ -173,6 +173,7 @@ where XXXXXX is the bug number as listed below.
 346487  Compiler generates "note" about a future ABI change for PPC64
 346801  Fix link error on OS X: _vgModuleLocal_sf_maybe_extend_stack
 347151  Fix suppression for pthread_rwlock_init on OS X 10.8
+347233  Fix memcheck/tests/strchr on OS X 10.10 (Haswell) 
 347379  valgrind --leak-check=full memleak errors from system libraries on OS X 10.8
         == 217236
 347389  unhandled syscall: 373 (Linux ARM syncfs)

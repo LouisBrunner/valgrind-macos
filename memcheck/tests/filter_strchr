@@ -5,4 +5,5 @@
 sed -e "s/: strchr (vg_replace_strmem.c:/: index (vg_replace_strmem.c:/;
         s/: _platform_strchr (vg_replace_strmem.c:/: index (vg_replace_strmem.c:/;
         s/: _platform_strchr\$VARIANT\$Generic (vg_replace_strmem.c:/: index (vg_replace_strmem.c:/;
+        s/: _platform_strchr\$VARIANT\$Haswell (vg_replace_strmem.c:/: index (vg_replace_strmem.c:/;
         s/: strrchr (vg_replace_strmem.c:/: rindex (vg_replace_strmem.c:/"

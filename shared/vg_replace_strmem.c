@@ -248,6 +248,7 @@ static inline void my_exit ( int x )
 # if DARWIN_VERS == DARWIN_10_10
   /* _platform_strchr$VARIANT$Generic */
   STRCHR(libsystemZuplatformZddylib, _platform_strchr$VARIANT$Generic)
+  STRCHR(libsystemZuplatformZddylib, _platform_strchr$VARIANT$Haswell)
 # endif
 #endif
 

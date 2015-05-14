@@ -48,6 +48,14 @@ Release 3.11.0 is under development, not yet released.
 * Valgrind can be built with Intel's ICC compiler. The required
   compiler version is 14.0 or later.
 
+* New and modified GDB server monitor features:
+
+  - With recent GDB (>= 7.9.50.20150514-cvs), the command 'target remote'
+    will automatically load the executable file of the process running
+    under Valgrind. This means you do not need to specify the executable
+    file yourself, GDB will discover it itself.
+    See GDB documentation about 'qXfer:exec-file:read' packet for more info.
+
 * ==================== FIXED BUGS ====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"

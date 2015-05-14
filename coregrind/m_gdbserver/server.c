@@ -916,6 +916,63 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
       return;
    }
 
+   if (strncmp ("qXfer:exec-file:read:", arg_own_buf, 21) == 0) {
+      unsigned char *data;
+      int n;
+      CORE_ADDR ofs;
+      unsigned int len;
+      const char *annex;
+      unsigned long pid;
+      const HChar *name;
+
+      /* Reject any annex; grab the offset and length.  */
+      if (decode_xfer_read (arg_own_buf + 21, &annex, &ofs, &len) < 0) {
+         strcpy (arg_own_buf, "E00");
+         return;
+      }
+      
+      if (strlen(annex) > 0)
+         pid = strtoul (annex, NULL, 16);
+      else
+         pid = 0;
+      if ((int)pid != VG_(getpid)() && pid != 0) {
+         VG_(sprintf) (arg_own_buf, 
+                       "E.Valgrind gdbserver pid is %d."
+                       " Cannot give info for pid %d",
+                       VG_(getpid)(), (int) pid);
+         return;
+      }
+
+      if (len > PBUFSIZ - 2)
+         len = PBUFSIZ - 2;
+      data = malloc (len);
+
+      if (!VG_(resolve_filename)(VG_(cl_exec_fd), &name)) {
+         VG_(sprintf) (arg_own_buf, 
+                       "E.Valgrind gdbserver could not"
+                       " resolve pid %d exec filename.",
+                       VG_(getpid)());
+         return;
+      }
+
+      if (ofs >= strlen(name))
+         n = -1;
+      else {
+         n = strlen(name) - ofs;
+         VG_(memcpy) (data, name, n);
+      }
+
+      if (n < 0)
+         write_enn (arg_own_buf);
+      else if (n > len)
+         *new_packet_len_p = write_qxfer_response (arg_own_buf, data, len, 1);
+      else
+         *new_packet_len_p = write_qxfer_response (arg_own_buf, data, n, 0);
+      
+      free (data);
+      
+      return;
+   }
 
    /* Protocol features query.  */
    if (strncmp ("qSupported", arg_own_buf, 10) == 0
@@ -923,7 +980,7 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
       VG_(sprintf) (arg_own_buf, "PacketSize=%x", PBUFSIZ - 1);
       /* Note: max packet size including frame and checksum, but without
          trailing null byte, which is not sent/received. */
-      
+
       strcat (arg_own_buf, ";QStartNoAckMode+");
       strcat (arg_own_buf, ";QPassSignals+");
       if (VG_(client_auxv))
@@ -942,6 +999,7 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
             not properly connect. */
          initialize_shadow_low(False);
       }
+      strcat (arg_own_buf, ";qXfer:exec-file:read+");
       return;
    }
 

@@ -369,8 +369,9 @@ static void show_sched_status_wrk ( Bool host_stacktrace,
          has exited, then valgrind_stack_base points to the stack base. */
       if (VG_(threads)[i].status == VgTs_Empty
           && (!exited_threads || stack == 0)) continue;
-      VG_(printf)("\nThread %d: status = %s\n", i, 
-                  VG_(name_of_ThreadStatus)(VG_(threads)[i].status) );
+      VG_(printf)("\nThread %d: status = %s (lwpid %d)\n", i, 
+                  VG_(name_of_ThreadStatus)(VG_(threads)[i].status),
+                  VG_(threads)[i].os_state.lwpid);
       if (VG_(threads)[i].status != VgTs_Empty)
          VG_(get_and_pp_StackTrace)( i, BACKTRACE_DEPTH );
       if (stack_usage && VG_(threads)[i].client_stack_highest_byte != 0 ) {
@@ -388,8 +389,8 @@ static void show_sched_status_wrk ( Bool host_stacktrace,
       if (stack_usage && stack != 0)
           VG_(printf)("valgrind stack top usage: %ld of %ld\n",
                       VG_(clo_valgrind_stacksize)
-                      - VG_(am_get_VgStack_unused_szB)(stack,
-                                                       VG_(clo_valgrind_stacksize)),
+                        - VG_(am_get_VgStack_unused_szB)
+                               (stack, VG_(clo_valgrind_stacksize)),
                       (SizeT) VG_(clo_valgrind_stacksize));
    }
    VG_(printf)("\n");

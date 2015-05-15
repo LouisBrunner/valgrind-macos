@@ -1647,7 +1647,7 @@ static void shmem__invalidate_scache_range (Addr ga, SizeT szB)
       if (address_in_range(cache_shmem.tags0[ga_ix], ga, szB))
          cache_shmem.tags0[ga_ix] = 1/*INVALID*/;
       ga_ix++;
-      if (ga_ix == N_WAY_NENT)
+      if (UNLIKELY(ga_ix == N_WAY_NENT))
          ga_ix = 0;
    }
 }

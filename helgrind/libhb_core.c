@@ -899,6 +899,34 @@ static SecMap* shmem__find_or_alloc_SecMap ( Addr ga )
    }
 }
 
+/* Returns the nr of linesF which are in use. Note: this is scanning
+   the secmap wordFM. So, this is to be used for statistics only. */
+__attribute__((noinline))
+static UWord shmem__SecMap_used_linesF(void)
+{
+   UWord secmapW = 0;
+   Addr  gaKey;
+   UWord inUse = 0;
+   UWord total = 0;
+
+   VG_(initIterFM)( map_shmem );
+   while (VG_(nextIterFM)( map_shmem, &gaKey, &secmapW )) {
+      UWord   i;
+      SecMap* sm = (SecMap*)secmapW;
+      tl_assert(sm->magic == SecMap_MAGIC);
+
+      for (i = 0; i < sm->linesF_size; i++) {
+         LineF* lineF = &sm->linesF[i];
+         if (lineF->inUse)
+            inUse++;
+         total++;
+      }
+   }
+   VG_(doneIterFM)( map_shmem );
+   tl_assert (stats__secmap_linesF_allocd == total);
+
+   return inUse;
+}
 
 /* ------------ LineF and LineZ related ------------ */
 
@@ -6334,9 +6362,10 @@ void libhb_shutdown ( Bool show_stats )
       VG_(printf)("  linesZ: %'10lu allocd (%'12lu bytes occupied)\n",
                   stats__secmap_linesZ_allocd,
                   stats__secmap_linesZ_bytes);
-      VG_(printf)("  linesF: %'10lu allocd (%'12lu bytes occupied)\n",
-                  stats__secmap_linesF_allocd,
-                  stats__secmap_linesF_bytes);
+      VG_(printf)("  linesF: %'10lu allocd (%'12lu bytes occupied)"
+                  " (%'10lu used)\n",
+                  stats__secmap_linesF_allocd, stats__secmap_linesF_bytes,
+                  shmem__SecMap_used_linesF());
       VG_(printf)(" secmaps: %'10lu in map (can be scanGCed %'5lu)"
                   " #%lu scanGC \n",
                   stats__secmaps_in_map_shmem,

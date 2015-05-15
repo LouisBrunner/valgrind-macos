@@ -5568,7 +5568,11 @@ static void hg_pre_clo_init ( void )
    VG_(track_die_mem_stack_signal)( evh__die_mem );
    VG_(track_die_mem_brk)         ( evh__die_mem_munmap );
    VG_(track_die_mem_munmap)      ( evh__die_mem_munmap );
-   VG_(track_die_mem_stack)       ( evh__die_mem );
+
+   /* evh__die_mem calls at the end libhb_srange_noaccess_NoFX
+      which has no effect. We do not use  VG_(track_die_mem_stack),
+      as this would be an expensive way to do nothing. */      
+   // VG_(track_die_mem_stack)       ( evh__die_mem );
 
    // FIXME: what is this for?
    VG_(track_ban_mem_stack)       (NULL);

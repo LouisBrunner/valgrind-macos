@@ -3568,9 +3568,12 @@ static void Filter__clear_8bytes_aligned ( Filter* fi, Addr a )
    }
 }
 
-static void Filter__clear_range ( Filter* fi, Addr a, UWord len )
+/* Only used to verify the fast Filter__clear_range */
+__attribute__((unused))
+static void Filter__clear_range_SLOW ( Filter* fi, Addr a, UWord len )
 {
-  //VG_(printf)("%lu ", len);
+   tl_assert (CHECK_ZSM);
+
    /* slowly do part preceding 8-alignment */
    while (UNLIKELY(!VG_IS_8_ALIGNED(a)) && LIKELY(len > 0)) {
       Filter__clear_1byte( fi, a );
@@ -3591,6 +3594,151 @@ static void Filter__clear_range ( Filter* fi, Addr a, UWord len )
    }
 }
 
+static void Filter__clear_range ( Filter* fi, Addr a, UWord len )
+{
+#  if CHECK_ZSM > 0
+   /* We check the below more complex algorithm with the simple one.
+      This check is very expensive : we do first the slow way on a
+      copy of the data, then do it the fast way. On RETURN, we check
+      the two values are equal. */
+   Filter fi_check = *fi;
+   Filter__clear_range_SLOW(&fi_check, a, len);
+#  define RETURN goto check_and_return
+#  else
+#  define RETURN return
+#  endif
+
+   Addr    begtag = FI_GET_TAG(a);       /* tag of range begin */
+
+   Addr    end = a + len - 1;
+   Addr    endtag = FI_GET_TAG(end); /* tag of range end. */
+
+   UWord rlen = len; /* remaining length to clear */
+
+   Addr    c = a; /* Current position we are clearing. */
+   UWord   clineno = FI_GET_LINENO(c); /* Current lineno we are clearing */
+   FiLine* cline; /* Current line we are clearing */
+   UWord   cloff; /* Current offset in line we are clearing, when clearing
+                     partial lines. */
+
+   UShort u16;
+
+   STATIC_ASSERT (FI_LINE_SZB == 32);
+   // Below assumes filter lines are 32 bytes
+
+   if (LIKELY(fi->tags[clineno] == begtag)) {
+      /* LIKELY for the heavy caller VG_(unknown_SP_update). */
+      /* First filter line matches begtag.
+         If c is not at the filter line begin, the below will clear
+         the filter line bytes starting from c. */
+      cline = &fi->lines[clineno];
+      cloff = (c - begtag) / 8;
+
+      /* First the byte(s) needed to reach 8-alignment */
+      if (UNLIKELY(!VG_IS_8_ALIGNED(c))) {
+         /* hiB is the nr of bytes (higher addresses) from c to reach
+            8-aligment. */
+         UWord hiB = 8 - (c & 7);
+         /* Compute 2-bit/byte mask representing hiB bytes [c..c+hiB[
+            mask is  C000 , F000, FC00, FF00, FFC0, FFF0 or FFFC for the byte
+            range    7..7   6..7  5..7  4..7  3..7  2..7    1..7 */
+         UShort mask = 0xFFFF << (16 - 2*hiB);
+
+         u16  = cline->u16s[cloff];
+         if (LIKELY(rlen >= hiB)) {
+            cline->u16s[cloff] = u16 & ~mask; /* clear all hiB from c */
+            rlen -= hiB;
+            c += hiB;
+            cloff += 1;
+         } else {
+            /* Only have the bits for rlen bytes bytes. */
+            mask = mask & ~(0xFFFF << (16 - 2*(hiB-rlen)));
+            cline->u16s[cloff] = u16 & ~mask; /* clear rlen bytes from c. */
+            RETURN;  // We have cleared all what we can.
+         }
+      }
+      /* c is now 8 aligned. Clear by 8 aligned bytes, 
+         till c is filter-line aligned */
+      while (!VG_IS_32_ALIGNED(c) && rlen >= 8) {
+         cline->u16s[cloff] = 0;
+         c += 8;
+         rlen -= 8;
+         cloff += 1;
+      }
+   } else {
+      c = begtag + FI_LINE_SZB;
+      if (c > end)
+         RETURN;   // We have cleared all what we can.
+      rlen -= c - a;
+   }
+   // We have changed c, so re-establish clineno.
+   clineno = FI_GET_LINENO(c);
+
+   if (rlen >= FI_LINE_SZB) {
+      /* Here, c is filter line-aligned. Clear all full lines that
+         overlap with the range starting at c, made of a full lines */
+      UWord nfull = rlen / FI_LINE_SZB;
+      UWord full_len = nfull * FI_LINE_SZB;
+      rlen -= full_len;
+      if (nfull > FI_NUM_LINES)
+         nfull = FI_NUM_LINES; // no need to check several times the same entry.
+
+      for (UWord n = 0; n < nfull; n++) {
+         if (UNLIKELY(address_in_range(fi->tags[clineno], c, full_len))) {
+            cline = &fi->lines[clineno];
+            cline->u16s[0] = 0;
+            cline->u16s[1] = 0;
+            cline->u16s[2] = 0;
+            cline->u16s[3] = 0;
+            STATIC_ASSERT (4 == sizeof(cline->u16s)/sizeof(cline->u16s[0]));
+         }
+         clineno++;
+         if (UNLIKELY(clineno == FI_NUM_LINES))
+            clineno = 0;
+      }
+
+      c += full_len;
+      clineno = FI_GET_LINENO(c);
+   }
+
+   if (CHECK_ZSM) {
+      tl_assert(VG_IS_8_ALIGNED(c));
+      tl_assert(clineno == FI_GET_LINENO(c));
+   }
+
+   /* Do the last filter line, if it was not cleared as a full filter line */
+   if (UNLIKELY(rlen > 0) && fi->tags[clineno] == endtag) {
+      cline = &fi->lines[clineno];
+      cloff = (c - endtag) / 8;
+      if (CHECK_ZSM) tl_assert(FI_GET_TAG(c) == endtag);
+
+      /* c is 8 aligned. Clear by 8 aligned bytes, till we have less than
+         8 bytes. */
+      while (rlen >= 8) {
+         cline->u16s[cloff] = 0;
+         c += 8;
+         rlen -= 8;
+         cloff += 1;
+      }
+      /* Then the remaining byte(s) */
+      if (rlen > 0) {
+         /* nr of bytes from c to reach end. */
+         UWord loB = rlen;
+         /* Compute mask representing loB bytes [c..c+loB[ :
+            mask is 0003, 000F, 003F, 00FF, 03FF, 0FFF or 3FFF */
+         UShort mask = 0xFFFF >> (16 - 2*loB);
+
+         u16  = cline->u16s[cloff];
+         cline->u16s[cloff] = u16 & ~mask; /* clear all loB from c */
+      }
+   }
+
+#  if CHECK_ZSM > 0
+   check_and_return:
+   tl_assert (VG_(memcmp)(&fi_check, fi, sizeof(fi_check)) == 0);
+#  endif
+#  undef RETURN
+}
 
 /* ------ Read handlers for the filter. ------ */
 
@@ -6786,7 +6934,7 @@ static void zsm_sset_range_noaccess (Addr addr, SizeT len)
 
             if (CHECK_ZSM) tl_assert(is_sane_SecMap(sm));
             for (UInt lz = 0; lz < N_SECMAP_ZLINES; lz++) {
-               if (sm->linesZ[lz].dict[0] != SVal_INVALID)
+               if (LIKELY(sm->linesZ[lz].dict[0] != SVal_INVALID))
                   rcdec_LineZ(&sm->linesZ[lz]);
             }
             for (UInt lf = 0; lf < sm->linesF_size; lf++) {

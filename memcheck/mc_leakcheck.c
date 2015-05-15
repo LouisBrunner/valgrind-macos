@@ -648,9 +648,9 @@ static Bool aligned_ptr_above_page0_is_vtable_addr(Addr ptr)
       if (pot_fn == 0)
          continue; // NULL fn pointer. Seems it can happen in vtable.
       seg = VG_(am_find_nsegment) (pot_fn);
-#if defined(VGA_ppc64be) || defined(VGA_ppc64le)
-      // ppc64 use a thunk table. So, we have one more level of indirection
-      // to follow.
+#if defined(VGA_ppc64be)
+      // ppc64BE uses a thunk table (function descriptors), so we have one
+      // more level of indirection to follow.
       if (seg == NULL
           || seg->kind != SkFileC
           || !seg->hasR

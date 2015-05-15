@@ -46,6 +46,7 @@ EXTRA_DIST = \
 	pth_destroy_cond.vgtest \
 		pth_destroy_cond.stdout.exp pth_destroy_cond.stderr.exp \
 	pth_cond_destroy_busy.vgtest pth_cond_destroy_busy.stderr.exp \
+	pth_cond_destroy_busy.stderr.exp-ppc64 \
 	pth_spinlock.vgtest pth_spinlock.stdout.exp pth_spinlock.stderr.exp \
 	rwlock_race.vgtest rwlock_race.stdout.exp rwlock_race.stderr.exp \
 	rwlock_test.vgtest rwlock_test.stdout.exp rwlock_test.stderr.exp \

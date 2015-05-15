@@ -1,0 +1,50 @@
+
+---Thread-Announcement------------------------------------------
+
+Thread #x is the program's root thread
+
+---Thread-Announcement------------------------------------------
+
+Thread #x was created
+   ...
+   by 0x........: pthread_create@* (hg_intercepts.c:...)
+   by 0x........: main (pth_cond_destroy_busy.c:45)
+
+----------------------------------------------------------------
+
+Possible data race during read of size 1 at 0x........ by thread #x
+Locks held: none
+   at 0x........: my_memcmp (hg_intercepts.c:...)
+   by 0x........: pthread_cond_destroy_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_cond_destroy@* (hg_intercepts.c:...)
+   by 0x........: main (pth_cond_destroy_busy.c:52)
+
+This conflicts with a previous write of size 4 by thread #x
+Locks held: none
+   ...
+   by 0x........: pthread_cond_wait_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_cond_wait@* (hg_intercepts.c:...)
+   by 0x........: thread_func (pth_cond_destroy_busy.c:31)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   ...
+ Address 0x........ is 4 bytes inside data symbol "s_cond"
+
+----------------------------------------------------------------
+
+Thread #x: pthread_cond_destroy: destruction of condition variable being waited upon
+   at 0x........: pthread_cond_destroy_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_cond_destroy@* (hg_intercepts.c:...)
+   by 0x........: main (pth_cond_destroy_busy.c:52)
+
+----------------------------------------------------------------
+
+Thread #x's call to pthread_cond_destroy failed
+   with error code 16 (EBUSY: Device or resource busy)
+   at 0x........: pthread_cond_destroy_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_cond_destroy@* (hg_intercepts.c:...)
+   by 0x........: main (pth_cond_destroy_busy.c:52)
+
+First pthread_cond_destroy() call returned EBUSY.
+Second pthread_cond_destroy() call returned success.
+
+ERROR SUMMARY: 6 errors from 3 contexts (suppressed: 0 from 0)

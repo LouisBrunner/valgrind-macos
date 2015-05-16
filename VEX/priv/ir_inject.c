@@ -141,7 +141,7 @@ store_aux(IRSB *irsb, IREndness endian, IRExpr *addr, IRExpr *data)
 
 /* Store a value to memory. If a value requires more than 8 bytes a series
    of 8-byte stores will be generated. */
-static void __inline__
+static __inline__ void
 store(IRSB *irsb, IREndness endian, HWord haddr, IRExpr *data)
 {
    IROp high, low;

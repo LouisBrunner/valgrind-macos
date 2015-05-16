@@ -235,7 +235,7 @@ mkite(IRExpr *condition, IRExpr *iftrue, IRExpr *iffalse)
 }
 
 /* Add a statement that stores DATA at ADDR. This is a big-endian machine. */
-static void __inline__
+static __inline__ void
 store(IRExpr *addr, IRExpr *data)
 {
    stmt(IRStmt_Store(Iend_BE, addr, data));

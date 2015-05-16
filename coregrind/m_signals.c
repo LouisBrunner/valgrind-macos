@@ -1794,7 +1794,7 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
    }
 
    if (core) {
-      const static struct vki_rlimit zero = { 0, 0 };
+      static const struct vki_rlimit zero = { 0, 0 };
 
       VG_(make_coredump)(tid, info, corelim.rlim_cur);
 

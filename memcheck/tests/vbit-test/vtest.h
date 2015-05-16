@@ -125,7 +125,7 @@ unsigned sizeof_irtype(IRType);
 void typeof_primop(IROp, IRType *t_dst, IRType *t_arg1, IRType *t_arg2, 
                    IRType *t_arg3, IRType *t_arg4);
 
-static unsigned __inline__ bitsof_irtype(IRType type)
+static __inline__ unsigned bitsof_irtype(IRType type)
 {
    return type == Ity_I1 ? 1 : sizeof_irtype(type) * 8;
 }

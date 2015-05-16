@@ -1760,7 +1760,9 @@ AC_GCC_WARNING_SUBST([write-strings], [FLAG_W_WRITE_STRINGS])
 AC_GCC_WARNING_SUBST([format], [FLAG_W_FORMAT])
 AC_GCC_WARNING_SUBST([format-security], [FLAG_W_FORMAT_SECURITY])
 AC_GCC_WARNING_SUBST([cast-qual], [FLAG_W_CAST_QUAL])
-
+AC_GCC_WARNING_SUBST([old-style-declaration], [FLAG_W_OLD_STYLE_DECLARATION])
+AC_GCC_WARNING_SUBST([ignored-qualifiers], [FLAG_W_IGNORED_QUALIFIERS])
+AC_GCC_WARNING_SUBST([missing-parameter-type], [FLAG_W_MISSING_PARAMETER_TYPE])
 
 # does this compiler support -Wextra or the older -W ?
 

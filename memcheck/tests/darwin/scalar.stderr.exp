@@ -386,6 +386,19 @@ Syscall param socketcall.getsockopt(optlen) points to unaddressable byte(s)
 (130):           old ftruncate
 -----------------------------------------------------
 -----------------------------------------------------
+x2000084(132):         __NR_mkfifo 2s 1m
+-----------------------------------------------------
+Syscall param mkfifo(mode) contains uninitialised byte(s)
+   ...
+   by 0x........: main (in ./scalar)
+
+Syscall param mkfifo(path) points to unaddressable byte(s)
+   ...
+   by 0x........: main (in ./scalar)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+-----------------------------------------------------
+-----------------------------------------------------
 (141):           old getpeername
 -----------------------------------------------------
 -----------------------------------------------------

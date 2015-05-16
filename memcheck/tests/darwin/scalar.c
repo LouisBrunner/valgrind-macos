@@ -259,7 +259,10 @@ int main(void)
    GO_UNIMP(130, "old ftruncate");
 
    // __NR_flock 131
-   // __NR_mkfifo 132
+
+   GO(__NR_mkfifo, 132, "2s 1m");
+   SY(__NR_mkfifo, x0, x0); FAIL;
+
    // __NR_sendto 133
    // __NR_shutdown 134
    // __NR_socketpair 135

@@ -3590,6 +3590,25 @@ POST(accept)
    SET_STATUS_from_SysRes(r);
 }
 
+PRE(mkfifo)
+{
+   *flags |= SfMayBlock;
+   PRINT("mkfifo ( %#lx(%s), %ld )",ARG1,(char *)ARG1,(vki_mode_t)ARG2);
+   PRE_REG_READ2(long, "mkfifo", const char *, path, vki_mode_t, mode);
+   PRE_MEM_RASCIIZ( "mkfifo(path)", ARG1 );
+}
+
+POST(mkfifo)
+{
+   vg_assert(SUCCESS);
+   if (!ML_(fd_allowed)(RES, "mkfifo", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_with_given_name)(tid, RES, (Char*)ARG1);
+   }
+}
 
 PRE(sendto)
 {
@@ -9479,7 +9498,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(129)),   // old truncate
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(130)),   // old ftruncate
    GENX_(__NR_flock,       sys_flock), 
-// _____(__NR_mkfifo), 
+   MACX_(__NR_mkfifo,      mkfifo),
    MACX_(__NR_sendto,      sendto), 
    MACX_(__NR_shutdown,    shutdown), 
    MACXY(__NR_socketpair,  socketpair), 

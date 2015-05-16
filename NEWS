@@ -76,6 +76,8 @@ where XXXXXX is the bug number as listed below.
 201435  Fix Darwin: -v does not show kernel version
 211256  Fixed an outdated comment regarding the default platform.
 211926  Avoid compilation warnings in valgrind.h with -pedantic
+212291  Fix unhandled syscall: unix:132 (mkfifo) on OS X
+        == 263119
 226609  Crediting upstream authors in man page
 231257  Valgrind omits path when executing script from shebang line
 254164  OS X task_info: UNKNOWN task message [id 3405, to mach_task_self(), 

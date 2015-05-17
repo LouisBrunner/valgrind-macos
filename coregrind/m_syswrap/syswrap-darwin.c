@@ -1101,6 +1101,8 @@ PRE(ioctl)
    switch (ARG2 /* request */) {
    case VKI_TIOCSCTTY:
    case VKI_TIOCEXCL:
+   case VKI_TIOCSBRK:
+   case VKI_TIOCCBRK:
    case VKI_TIOCPTYGRANT:
    case VKI_TIOCPTYUNLK:
    case VKI_DTRACEHIOC_REMOVE: 
@@ -1409,6 +1411,8 @@ POST(ioctl)
    case VKI_TIOCPTYGNAME:
        POST_MEM_WRITE( ARG3, 128);
        break;
+   case VKI_TIOCSBRK:           /* set break bit                 */
+   case VKI_TIOCCBRK:           /* clear break bit               */
    case VKI_TIOCPTYGRANT:
    case VKI_TIOCPTYUNLK:
        break;

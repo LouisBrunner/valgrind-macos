@@ -1007,6 +1007,11 @@ static UWord read_twobit_array ( UChar* arr, UWord ix ) {
    return (arr[bix] >> shft) & 3;
 }
 
+/* We cache one free lineF, to avoid pool allocator calls.
+   Measurement on firefox has shown that this avoids more than 90%
+   of the PA calls. */
+static LineF *free_lineF = NULL;
+
 /* Allocates a lineF for LineZ. Sets lineZ in a state indicating
    lineF has to be used. */
 static inline LineF *alloc_LineF_for_Z (LineZ *lineZ)
@@ -1015,7 +1020,12 @@ static inline LineF *alloc_LineF_for_Z (LineZ *lineZ)
 
    tl_assert(lineZ->dict[0] == SVal_INVALID);
 
-   lineF = VG_(allocEltPA) ( LineF_pool_allocator );
+   if (LIKELY(free_lineF)) {
+      lineF = free_lineF;
+      free_lineF = NULL;
+   } else {
+      lineF = VG_(allocEltPA) ( LineF_pool_allocator );
+   }
    lineZ->dict[0] = lineZ->dict[2] = lineZ->dict[3] = SVal_INVALID;
    lineZ->dict[1] = Ptr2SVal (lineF);
 
@@ -1030,7 +1040,11 @@ static inline void clear_LineF_of_Z (LineZ *lineZ)
    LineF *lineF = LineF_Ptr(lineZ);
 
    rcdec_LineF(lineF);
-   VG_(freeEltPA)( LineF_pool_allocator, lineF );
+   if (UNLIKELY(free_lineF)) {
+      VG_(freeEltPA)( LineF_pool_allocator, lineF );
+   } else {
+      free_lineF = lineF;
+   }
    lineZ->dict[0] = SVal_NOACCESS;
    lineZ->dict[1] = SVal_INVALID;
 }

@@ -37,6 +37,10 @@ int main(void)
    // __NR_fsync_nocancel 408
    // __NR_connect_nocancel 409
    // __NR_sigsuspend_nocancel 410
+
+   GO(__NR_sigsuspend_nocancel, 410, "ignore");
+   // (I don't know how to test this...)
+
    // __NR_readv_nocancel 411
    // __NR_writev_nocancel 412
    // __NR_sendto_nocancel 413

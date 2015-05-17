@@ -9824,7 +9824,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_select_nocancel,   sys_select),
    GENX_(__NR_fsync_nocancel,    sys_fsync),
    MACX_(__NR_connect_nocancel,  connect),
-// _____(__NR_sigsuspend_nocancel),
+   MACX_(__NR_sigsuspend_nocancel, sigsuspend),
    GENXY(__NR_readv_nocancel,    sys_readv),
    GENX_(__NR_writev_nocancel,   sys_writev),
    MACX_(__NR_sendto_nocancel,   sendto),

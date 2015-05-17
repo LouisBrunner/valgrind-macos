@@ -222,7 +222,8 @@ int main(void)
 
    GO_UNIMP(110, "old sigsetmask");
 
-   // __NR_sigsuspend 111
+   GO(__NR_sigsuspend, 111, "ignore");
+   // (I don't know how to test this...)
 
    GO_UNIMP(112, "old sigstack");
 

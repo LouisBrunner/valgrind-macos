@@ -91,6 +91,7 @@ where XXXXXX is the bug number as listed below.
 254164  OS X task_info: UNKNOWN task message [id 3405, to mach_task_self(), 
         reply 0x........]
 269360  s390x: Fix addressing mode selection for compare-and-swap
+319274  Fix unhandled syscall: unix:410 (sigsuspend_nocancel) on OS X
 333051  mmap of huge pages fails due to incorrect alignment
         == 339163
 334802  valgrind does not always explain why a given option is bad

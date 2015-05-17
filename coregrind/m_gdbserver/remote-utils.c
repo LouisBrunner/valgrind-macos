@@ -851,10 +851,27 @@ int putpkt_binary (char *buf, int cnt)
          return -1;
       }
 
-      if (noack_mode)
-         dlog(3, "putpkt (\"%s\"); [no ack]\n", buf2);
-      else
-         dlog(3,"putpkt (\"%s\"); [looking for ack]\n", buf2);
+      if (VG_(debugLog_getLevel)() >= 3) {
+         char *tracebuf = malloc(4 * (p - buf2) + 1); // worst case
+         char *tr = tracebuf;
+                                                    
+         for (UInt npr = 0; npr < p - buf2; npr++) {
+            UChar uc = (unsigned char)buf2[npr];
+            if (uc > 31 && uc < 127) {
+               *tr++ = uc;
+            } else {
+               *tr++ = '\\';
+               VG_(sprintf)(tr, "%03o", uc);
+               tr += 3;
+            }
+         }
+         *tr++ = 0;
+         dlog(3, "putpkt (\"%s\"); (%slen %d) %s\n", tracebuf,
+              strlen(tracebuf) == p - buf2 ? "binary " : "", 
+              p - buf2,
+              noack_mode ? "[no ack]" : "[looking for ack]");
+         free (tracebuf);
+      }
 
       if (noack_mode)
          break;

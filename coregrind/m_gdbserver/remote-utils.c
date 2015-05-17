@@ -868,7 +868,7 @@ int putpkt_binary (char *buf, int cnt)
          *tr++ = 0;
          dlog(3, "putpkt (\"%s\"); (%slen %d) %s\n", tracebuf,
               strlen(tracebuf) == p - buf2 ? "binary " : "", 
-              p - buf2,
+              (int)(p - buf2),
               noack_mode ? "[no ack]" : "[looking for ack]");
          free (tracebuf);
       }

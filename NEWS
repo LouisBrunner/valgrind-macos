@@ -23,6 +23,9 @@ Release 3.11.0 is under development, not yet released.
 
 * ==================== OTHER CHANGES ====================
 
+* When a process dies due to a signal, Valgrind now shows the signal
+  and the stacktrace at default verbosity (i.e. verbosity 1).
+
 * Address description logic (used by memcheck and helgrind)
   now describes addresses in anonymous segments, file mmap-ed
   segments, shared memory segments and the brk data segment.

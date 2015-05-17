@@ -135,5 +135,3 @@ Mutex still locked at thread exit: address 0x........, recursion count 1, owner 
    at 0x........: pthread_join (drd_pthread_intercepts.c:?)
    by 0x........: main (tc22_exit_w_lock.c:43)
 
-
-ERROR SUMMARY: 12 errors from 12 contexts (suppressed: 0 from 0)

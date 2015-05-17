@@ -2,7 +2,7 @@
 
 prog: gone
 args: abort
-vgopts: --tool=none --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-nlgone-abrt
+vgopts: -q --tool=none --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-nlgone-abrt
 stderr_filter: filter_stderr
 prereq: test -e gdb
 progB: gdb

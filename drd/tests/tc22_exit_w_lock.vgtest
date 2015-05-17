@@ -1,3 +1,3 @@
 prereq: ./supported_libpthread && [ -e ../../helgrind/tests/tc22_exit_w_lock ]
-vgopts: --num-callers=3
+vgopts: --num-callers=3 -q
 prog: ../../helgrind/tests/tc22_exit_w_lock

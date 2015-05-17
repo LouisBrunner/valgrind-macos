@@ -857,8 +857,10 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
          }
          VG_(lseek) (fd, ofs, VKI_SEEK_SET);
          len_read = VG_(read) (fd, toread, len);
-         *new_packet_len_p = write_qxfer_response (arg_own_buf, (unsigned char *)toread,
-                                                   len_read, ofs + len_read < doc_len);
+         *new_packet_len_p = write_qxfer_response (arg_own_buf,
+                                                   (unsigned char *)toread,
+                                                   len_read,
+                                                   ofs + len_read < doc_len);
          VG_(close) (fd);
          return;
       }
@@ -878,8 +880,8 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
          return;
       }
 
-      if (len > PBUFSIZ - 2)
-         len = PBUFSIZ - 2;
+      if (len > PBUFSIZ - POVERHSIZ)
+         len = PBUFSIZ - POVERHSIZ;
       data = malloc (len);
 
       {
@@ -925,12 +927,13 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
       unsigned long pid;
       const HChar *name;
 
-      /* Reject any annex; grab the offset and length.  */
+      /* grab the annex, offset and length.  */
       if (decode_xfer_read (arg_own_buf + 21, &annex, &ofs, &len) < 0) {
          strcpy (arg_own_buf, "E00");
          return;
       }
       
+      /* Reject any annex with invalid/unexpected pid */
       if (strlen(annex) > 0)
          pid = strtoul (annex, NULL, 16);
       else
@@ -974,6 +977,44 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
       return;
    }
 
+   if (strncmp ("qXfer:siginfo:read:", arg_own_buf, 19) == 0) {
+      vki_siginfo_t info;
+      int n;
+      CORE_ADDR ofs;
+      unsigned int len;
+      const char *annex;
+
+      /* Reject any annex; grab the offset and length.  */
+      if (decode_xfer_read (arg_own_buf + 19, &annex, &ofs, &len) < 0
+          || annex[0] != '\0') {
+         strcpy (arg_own_buf, "E00");
+         return;
+      }
+      
+      if (len > PBUFSIZ - POVERHSIZ)
+         len = PBUFSIZ - POVERHSIZ;
+
+      gdbserver_pending_signal_to_report(&info);
+
+      if (ofs >= sizeof(info))
+         n = -1;
+      else
+         n = sizeof(info) - ofs;
+
+      if (n < 0)
+         write_enn (arg_own_buf);
+      else if (n > len)
+         *new_packet_len_p = write_qxfer_response (arg_own_buf, 
+                                                   (unsigned char *)&info,
+                                                   len, 1);
+      else
+         *new_packet_len_p = write_qxfer_response (arg_own_buf, 
+                                                   (unsigned char *)&info,
+                                                   n, 0);
+      
+      return;
+   }
+
    /* Protocol features query.  */
    if (strncmp ("qSupported", arg_own_buf, 10) == 0
        && (arg_own_buf[10] == ':' || arg_own_buf[10] == '\0')) {
@@ -1000,6 +1041,7 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
          initialize_shadow_low(False);
       }
       strcat (arg_own_buf, ";qXfer:exec-file:read+");
+      strcat (arg_own_buf, ";qXfer:siginfo:read+");
       return;
    }
 
@@ -1097,7 +1139,7 @@ void server_main (void)
          putpkt (own_buf);
       }
 
-      /* If we our status is terminal (exit or fatal signal) get out
+      /* If our status is terminal (exit or fatal signal) get out
          as quickly as we can. We won't be able to handle any request
          anymore.  */
       if (status == 'W' || status == 'X') {

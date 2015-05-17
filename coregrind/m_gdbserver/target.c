@@ -153,17 +153,28 @@ static CORE_ADDR stop_pc;
 */
 static CORE_ADDR resume_pc;
 
-static int vki_signal_to_report;
+static vki_siginfo_t vki_signal_to_report;
+static vki_siginfo_t vki_signal_to_deliver;
 
-void gdbserver_signal_encountered (Int vki_sigNo)
+void gdbserver_signal_encountered (const vki_siginfo_t *info)
 {
-   vki_signal_to_report = vki_sigNo;
+   vki_signal_to_report = *info;
+   vki_signal_to_deliver = *info;
 }
 
-static int vki_signal_to_deliver;
-Bool gdbserver_deliver_signal (Int vki_sigNo)
+void gdbserver_pending_signal_to_report (vki_siginfo_t *info)
 {
-   return vki_sigNo == vki_signal_to_deliver;
+   *info = vki_signal_to_report;
+}
+
+Bool gdbserver_deliver_signal (vki_siginfo_t *info)
+{
+   if (info->si_signo != vki_signal_to_deliver.si_signo)
+      dlog(1, "GDB changed signal  info %d to_report %d to_deliver %d\n",
+           info->si_signo, vki_signal_to_report.si_signo,
+           vki_signal_to_deliver.si_signo);
+   *info = vki_signal_to_deliver;
+   return vki_signal_to_deliver.si_signo != 0;
 }
 
 static unsigned char exit_status_to_report;
@@ -238,7 +249,10 @@ void valgrind_resume (struct thread_resume *resume_info)
            C2v(stopped_data_address));
       VG_(set_watchpoint_stop_address) ((Addr) 0);
    }
-   vki_signal_to_deliver = resume_info->sig;
+   vki_signal_to_deliver.si_signo = resume_info->sig;
+   /* signal was reported to GDB, GDB told us to resume execution.
+      So, reset the signal to report to 0. */
+   VG_(memset) (&vki_signal_to_report, 0, sizeof(vki_signal_to_report));
    
    stepping = resume_info->step;
    resume_pc = (*the_low_target.get_pc) ();
@@ -288,12 +302,10 @@ unsigned char valgrind_wait (char *ourstatus)
       and with a signal TRAP (i.e. a breakpoint), unless there is
       a signal to report. */
    *ourstatus = 'T';
-   if (vki_signal_to_report == 0)
+   if (vki_signal_to_report.si_signo == 0)
       sig = TARGET_SIGNAL_TRAP;
-   else {
-      sig = target_signal_from_host(vki_signal_to_report);
-      vki_signal_to_report = 0;
-   }
+   else
+      sig = target_signal_from_host(vki_signal_to_report.si_signo);
    
    if (vgdb_interrupted_tid != 0)
       tst = VG_(get_ThreadState) (vgdb_interrupted_tid);

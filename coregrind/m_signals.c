@@ -694,12 +694,15 @@ static SKSS skss;
 
 /* returns True if signal is to be ignored. 
    To check this, possibly call gdbserver with tid. */
-static Bool is_sig_ign(Int sigNo, ThreadId tid)
+static Bool is_sig_ign(vki_siginfo_t *info, ThreadId tid)
 {
-   vg_assert(sigNo >= 1 && sigNo <= _VKI_NSIG);
+   vg_assert(info->si_signo >= 1 && info->si_signo <= _VKI_NSIG);
 
-   return scss.scss_per_sig[sigNo].scss_handler == VKI_SIG_IGN
-      || !VG_(gdbserver_report_signal) (sigNo, tid);
+   /* If VG_(gdbserver_report_signal) tells to report the signal,
+      then verify if this signal is not to be ignored. GDB might have
+      modified si_signo, so we check after the call to gdbserver. */
+   return !VG_(gdbserver_report_signal) (info, tid)
+      || scss.scss_per_sig[info->si_signo].scss_handler == VKI_SIG_IGN;
 }
 
 /* ---------------------------------------------------------------------
@@ -1786,7 +1789,7 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
        && VG_(dyn_vgdb_error) <= VG_(get_n_errs_shown)() + 1) {
       /* Note: we add + 1 to n_errs_shown as the fatal signal was not
          reported through error msg, and so was not counted. */
-      VG_(gdbserver_report_fatal_signal) (sigNo, tid);
+      VG_(gdbserver_report_fatal_signal) (info, tid);
    }
 
    if (VG_(is_action_requested)( "Attach to debugger", & VG_(clo_db_attach) )) {
@@ -1922,7 +1925,7 @@ static void synth_fault_common(ThreadId tid, Addr addr, Int si_code)
 
    /* Even if gdbserver indicates to ignore the signal, we must deliver it.
       So ignore the return value of VG_(gdbserver_report_signal). */
-   (void) VG_(gdbserver_report_signal) (VKI_SIGSEGV, tid);
+   (void) VG_(gdbserver_report_signal) (&info, tid);
 
    /* If they're trying to block the signal, force it to be delivered */
    if (VG_(sigismember)(&VG_(threads)[tid].sig_mask, VKI_SIGSEGV))
@@ -1962,7 +1965,7 @@ void VG_(synth_sigill)(ThreadId tid, Addr addr)
    info.si_code  = VKI_ILL_ILLOPC; /* jrs: no idea what this should be */
    info.VKI_SIGINFO_si_addr = (void*)addr;
 
-   if (VG_(gdbserver_report_signal) (VKI_SIGILL, tid)) {
+   if (VG_(gdbserver_report_signal) (&info, tid)) {
       resume_scheduler(tid);
       deliver_signal(tid, &info, NULL);
    }
@@ -1987,7 +1990,7 @@ void VG_(synth_sigbus)(ThreadId tid)
       in .si_addr.  Oh well. */
    /* info.VKI_SIGINFO_si_addr = (void*)addr; */
 
-   if (VG_(gdbserver_report_signal) (VKI_SIGBUS, tid)) {
+   if (VG_(gdbserver_report_signal) (&info, tid)) {
       resume_scheduler(tid);
       deliver_signal(tid, &info, NULL);
    }
@@ -2027,7 +2030,7 @@ void VG_(synth_sigtrap)(ThreadId tid)
 #  endif
 
    /* fixs390: do we need to do anything here for s390 ? */
-   if (VG_(gdbserver_report_signal) (VKI_SIGTRAP, tid)) {
+   if (VG_(gdbserver_report_signal) (&info, tid)) {
       resume_scheduler(tid);
       deliver_signal(tid, &info, &uc);
    }
@@ -2236,7 +2239,7 @@ void async_signalhandler ( Int sigNo,
 
    /* (2) */
    /* Set up the thread's state to deliver a signal */
-   if (!is_sig_ign(info->si_signo, tid))
+   if (!is_sig_ign(info, tid))
       deliver_signal(tid, info, uc);
 
    /* It's crucial that (1) and (2) happen in the order (1) then (2)
@@ -2508,7 +2511,7 @@ void sync_signalhandler_from_kernel ( ThreadId tid,
       }
 
       if (VG_(in_generated_code)) {
-         if (VG_(gdbserver_report_signal) (sigNo, tid)
+         if (VG_(gdbserver_report_signal) (info, tid)
              || VG_(sigismember)(&tst->sig_mask, sigNo)) {
             /* Can't continue; must longjmp back to the scheduler and thus
                enter the sighandler immediately. */
@@ -2714,7 +2717,7 @@ void VG_(poll_signals)(ThreadId tid)
       /* OK, something to do; deliver it */
       if (VG_(clo_trace_signals))
          VG_(dmsg)("Polling found signal %d for tid %d\n", sip->si_signo, tid);
-      if (!is_sig_ign(sip->si_signo, tid))
+      if (!is_sig_ign(sip, tid))
 	 deliver_signal(tid, sip, NULL);
       else if (VG_(clo_trace_signals))
          VG_(dmsg)("   signal %d ignored\n", sip->si_signo);

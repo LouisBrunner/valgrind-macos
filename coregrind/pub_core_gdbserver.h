@@ -105,14 +105,19 @@ extern void VG_(invoke_gdbserver) ( int check );
 // no gdb is connected, or gdb instructs to pass the signal.
 // Note that if the below returns True, the signal might
 // still be ignored if this is the action desired by the
-// guest program.
-extern Bool VG_(gdbserver_report_signal) (Int vki_signo, ThreadId tid);
+// guest program. Using GDB, the user can also modify the signal to be
+// reported (e.g. changing the signo to pass to the guest).
+// If this function returns True, m_signals.c should deliver the signal
+// info as modified by VG_(gdbserver_report_signal).
+// If this function returns False, no signal should be reported.
+extern Bool VG_(gdbserver_report_signal) (vki_siginfo_t *info, ThreadId tid);
 
 // If no gdb is connected yet, wait for a gdb to connect and report
 // this (supposedly) fatal signal.
 // If a gdb is already connected, this does nothing (as normally 
 // the signal was already reported to the already connected gdb).
-extern void VG_(gdbserver_report_fatal_signal) (Int vki_signo, ThreadId tid);
+extern void VG_(gdbserver_report_fatal_signal) (const vki_siginfo_t *info,
+                                                ThreadId tid);
 
 /* Entry point invoked by scheduler.c to execute the request 
    VALGRIND_CLIENT_MONITOR_COMMAND.

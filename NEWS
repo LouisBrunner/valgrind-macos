@@ -49,6 +49,13 @@ Release 3.11.0 is under development, not yet released.
   compiler version is 14.0 or later.
 
 * New and modified GDB server monitor features:
+  - When a signal is reported in GDB, you can now use the GDB convenience
+    variable $_siginfo to examine detailed signal information.
+ 
+  - Valgrind gdbserver now allows the user to change the signal
+    to deliver to the process. So, use 'signal SIGNAL' to continue execution
+    with SIGNAL instead of the signal reported to GDB. Use 'signal 0' to
+    continue without passing the signal to the process.
 
   - With recent GDB (>= 7.9.50.20150514-cvs), the command 'target remote'
     will automatically load the executable file of the process running

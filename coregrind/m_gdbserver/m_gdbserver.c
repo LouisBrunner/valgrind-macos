@@ -934,15 +934,23 @@ Bool VG_(gdbserver_activity) (ThreadId tid)
    return ret;
 }
 
-
-void VG_(gdbserver_report_fatal_signal) (Int vki_sigNo, ThreadId tid)
+static void dlog_signal (const HChar *who, const vki_siginfo_t *info,
+                         ThreadId tid)
 {
-   dlog(1, "VG core calling VG_(gdbserver_report_fatal_signal) "
+   dlog(1, "VG core calling %s "
         "vki_nr %d %s gdb_nr %d %s tid %d\n", 
-        vki_sigNo, VG_(signame)(vki_sigNo),
-        target_signal_from_host (vki_sigNo),
-        target_signal_to_name(target_signal_from_host (vki_sigNo)), 
+        who,
+        info->si_signo, VG_(signame)(info->si_signo),
+        target_signal_from_host (info->si_signo),
+        target_signal_to_name(target_signal_from_host (info->si_signo)), 
         tid);
+
+}
+
+void VG_(gdbserver_report_fatal_signal) (const vki_siginfo_t *info,
+                                         ThreadId tid)
+{
+   dlog_signal("VG_(gdbserver_report_fatal_signal)", info, tid);
 
    if (remote_connected()) {
       dlog(1, "already connected, assuming already reported\n");
@@ -952,21 +960,16 @@ void VG_(gdbserver_report_fatal_signal) (Int vki_sigNo, ThreadId tid)
    VG_(umsg)("(action on fatal signal) vgdb me ... \n");
 
    /* indicate to gdbserver that there is a signal */
-   gdbserver_signal_encountered (vki_sigNo);
+   gdbserver_signal_encountered (info);
 
    /* let gdbserver do some work, e.g. show the signal to the user */
    call_gdbserver (tid, signal_reason);
    
 }
 
-Bool VG_(gdbserver_report_signal) (Int vki_sigNo, ThreadId tid)
+Bool VG_(gdbserver_report_signal) (vki_siginfo_t *info, ThreadId tid)
 {
-   dlog(1, "VG core calling VG_(gdbserver_report_signal) "
-        "vki_nr %d %s gdb_nr %d %s tid %d\n", 
-        vki_sigNo, VG_(signame)(vki_sigNo),
-        target_signal_from_host (vki_sigNo),
-        target_signal_to_name(target_signal_from_host (vki_sigNo)), 
-        tid);
+   dlog_signal("VG_(gdbserver_report_signal)", info, tid);
 
    /* if gdbserver is currently not connected, then signal
       is to be given to the process */
@@ -977,19 +980,20 @@ Bool VG_(gdbserver_report_signal) (Int vki_sigNo, ThreadId tid)
    /* if gdb has informed gdbserver that this signal can be
       passed directly without informing gdb, then signal is
       to be given to the process. */
-   if (pass_signals[target_signal_from_host(vki_sigNo)]) {
+   if (pass_signals[target_signal_from_host(info->si_signo)]) {
       dlog(1, "pass_signals => pass\n");
       return True;
    }
    
    /* indicate to gdbserver that there is a signal */
-   gdbserver_signal_encountered (vki_sigNo);
+   gdbserver_signal_encountered (info);
 
-   /* let gdbserver do some work, e.g. show the signal to the user */
+   /* let gdbserver do some work, e.g. show the signal to the user.
+      User can also decide to ignore the signal or change the signal. */
    call_gdbserver (tid, signal_reason);
    
    /* ask gdbserver what is the final decision */
-   if (gdbserver_deliver_signal (vki_sigNo)) {
+   if (gdbserver_deliver_signal (info)) {
       dlog(1, "gdbserver deliver signal\n");
       return True;
    } else {

@@ -206,11 +206,17 @@ struct thread_info;
    A call to call_gdbserver is needed to send the resume reply to GDB.
    After this call, gdbserver_deliver_signal indicates if the signal
    is effectively to be delivered to the guest process. */
-extern void gdbserver_signal_encountered (Int vki_sigNo);
-/* between these two calls, call call_gdbserver */
+extern void gdbserver_signal_encountered (const vki_siginfo_t *info);
+/* between these two calls, call call_gdbserver.
+   Between these 2 calls the signal to report to GDB can be retrieved using
+   gdbserver_pending_signal_to_report. */
 /* If gdbserver_deliver_signal True, then gdb did not ask
    to ignore the signal, so signal can be delivered to the guest. */
-extern Bool gdbserver_deliver_signal (Int vki_sigNo);
+extern Bool gdbserver_deliver_signal (vki_siginfo_t *info);
+
+/* Signal info last provided with gdbserver_signal_encountered.
+   It is what is/will be reported to GDB. */
+extern void gdbserver_pending_signal_to_report (vki_siginfo_t /* OUT */ *info);
 
 /* Called when a process is about to go with reason ('W' or 'X') and code.
    This sets global variables that will be used to return the process

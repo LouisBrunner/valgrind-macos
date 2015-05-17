@@ -77,29 +77,52 @@
 	
 .globl ML_(do_syscall_for_client_WRK)
 ML_(do_syscall_for_client_WRK):
+	.cfi_startproc
 	/* save callee-saved regs */
 	pushq	%rbx
+	.cfi_adjust_cfa_offset 8
+	.cfi_offset %rbx, -16
 	pushq	%rbp
+	.cfi_adjust_cfa_offset 8
+	.cfi_offset %rbp, -24
 	pushq	%r12
+	.cfi_adjust_cfa_offset 8
+	.cfi_offset %r12, -32
 	pushq	%r13
+	.cfi_adjust_cfa_offset 8
+	.cfi_offset %r13, -40
 	pushq	%r14
+	.cfi_adjust_cfa_offset 8
+	.cfi_offset %r14, -48
 	pushq	%r15
+	.cfi_adjust_cfa_offset 8
+	.cfi_offset %r15, -56
 
 #define FSZ	((4+1)*4)	/* 4 args + ret addr */
 
-#define PUSH_di_si_dx_cx_8	\
-	pushq	%rdi ; 		\
-	pushq	%rsi ;		\
-	pushq	%rdx ;		\
-	pushq	%rcx ;		\
-	pushq	%r8
+#define PUSH_di_si_dx_cx_8	   \
+	pushq	%rdi ; 		   \
+	.cfi_adjust_cfa_offset 8 ; \
+	pushq	%rsi ;		   \
+	.cfi_adjust_cfa_offset 8 ; \
+	pushq	%rdx ;		   \
+	.cfi_adjust_cfa_offset 8 ; \
+	pushq	%rcx ;		   \
+	.cfi_adjust_cfa_offset 8 ; \
+	pushq	%r8 ;              \
+	.cfi_adjust_cfa_offset 8
 
-#define	POP_di_si_dx_cx_8	\
-	popq	%r8 ;		\
-	popq	%rcx ;		\
-	popq	%rdx ;		\
-	popq	%rsi ;		\
-	popq	%rdi
+#define	POP_di_si_dx_cx_8	    \
+	popq	%r8 ;		    \
+	.cfi_adjust_cfa_offset -8 ; \
+	popq	%rcx ;		    \
+	.cfi_adjust_cfa_offset -8 ; \
+	popq	%rdx ;		    \
+	.cfi_adjust_cfa_offset -8 ; \
+	popq	%rsi ;		    \
+	.cfi_adjust_cfa_offset -8 ; \
+	popq	%rdi ;              \
+	.cfi_adjust_cfa_offset -8
 
 1:	/* Even though we can't take a signal until the sigprocmask completes,
 	   start the range early.
@@ -129,6 +152,7 @@ ML_(do_syscall_for_client_WRK):
 
 	movq	%rsi, %rax	/* rax --> VexGuestAMD64State * */
 	pushq	%rdi		/* syscallno -> stack */
+	.cfi_adjust_cfa_offset 8
 	movq	OFFSET_amd64_RDI(%rax), %rdi
 	movq	OFFSET_amd64_RSI(%rax), %rsi
 	movq	OFFSET_amd64_RDX(%rax), %rdx
@@ -136,6 +160,7 @@ ML_(do_syscall_for_client_WRK):
 	movq	OFFSET_amd64_R8(%rax), %r8
 	movq	OFFSET_amd64_R9(%rax), %r9
 	popq	%rax	/* syscallno -> %rax */
+	.cfi_adjust_cfa_offset -8
 	
 	/* If rip==2, then the syscall was either just about
 	   to start, or was interrupted and the kernel was 
@@ -168,24 +193,38 @@ ML_(do_syscall_for_client_WRK):
 5:	/* now safe from signals */
 	movq	$0, %rax	/* SUCCESS */
 	popq	%r15
+	.cfi_adjust_cfa_offset -8
 	popq	%r14
+	.cfi_adjust_cfa_offset -8
 	popq	%r13
+	.cfi_adjust_cfa_offset -8
 	popq	%r12
+	.cfi_adjust_cfa_offset -8
 	popq	%rbp
+	.cfi_adjust_cfa_offset -8
 	popq	%rbx
+	.cfi_adjust_cfa_offset -8
 	ret
+	.cfi_adjust_cfa_offset 6*8
 
 7:	/* failure:	 return 0x8000 | error code */
 	negq	%rax
 	andq	$0x7FFF, %rax
 	orq	$0x8000, %rax
 	popq	%r15
+	.cfi_adjust_cfa_offset -8
 	popq	%r14
+	.cfi_adjust_cfa_offset -8
 	popq	%r13
+	.cfi_adjust_cfa_offset -8
 	popq	%r12
+	.cfi_adjust_cfa_offset -8
 	popq	%rbp
+	.cfi_adjust_cfa_offset -8
 	popq	%rbx
+	.cfi_adjust_cfa_offset -8
 	ret
+	.cfi_endproc
 #undef FSZ
 
 .section .rodata

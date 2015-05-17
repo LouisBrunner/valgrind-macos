@@ -78,11 +78,20 @@
 	
 .globl ML_(do_syscall_for_client_WRK)
 ML_(do_syscall_for_client_WRK):
+	.cfi_startproc
 	/* save callee-saved regs */
 	push	%esi
+	.cfi_adjust_cfa_offset 4
+	.cfi_offset %esi, -8
 	push	%edi
+	.cfi_adjust_cfa_offset 4
+	.cfi_offset %esi, -12
 	push	%ebx
+	.cfi_adjust_cfa_offset 4
+	.cfi_offset %esi, -16
 	push	%ebp
+	.cfi_adjust_cfa_offset 4
+	.cfi_offset %esi, -20
 #define FSZ	((4+1)*4)	/* 4 args + ret addr */
 
 1:	/* Even though we can't take a signal until the sigprocmask completes,
@@ -131,20 +140,30 @@ ML_(do_syscall_for_client_WRK):
 5:	/* now safe from signals */
 	movl	$0, %eax	/* SUCCESS */
 	popl	%ebp
+	.cfi_adjust_cfa_offset -4
 	popl	%ebx
+	.cfi_adjust_cfa_offset -4
 	popl	%edi
+	.cfi_adjust_cfa_offset -4
 	popl	%esi
+	.cfi_adjust_cfa_offset -4
 	ret
+	.cfi_adjust_cfa_offset 4*4
 
 7:	/* failure: return 0x8000 | error code */
 	negl	%eax
 	andl	$0x7FFF, %eax
 	orl	$0x8000, %eax
 	popl	%ebp
+	.cfi_adjust_cfa_offset -4
 	popl	%ebx
+	.cfi_adjust_cfa_offset -4
 	popl	%edi
+	.cfi_adjust_cfa_offset -4
 	popl	%esi
+	.cfi_adjust_cfa_offset -4
 	ret
+	.cfi_endproc
 #undef FSZ
 
 	

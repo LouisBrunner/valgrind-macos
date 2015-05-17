@@ -367,6 +367,9 @@ static inline VtsID SVal__unC_Wmin ( SVal s );
 static inline SVal SVal__mkC ( VtsID rmini, VtsID wmini );
 static inline void SVal__rcinc ( SVal s );
 static inline void SVal__rcdec ( SVal s );
+/* SVal in LineZ are used to store various pointers. */
+static inline void *SVal2Ptr (SVal s);
+static inline SVal Ptr2SVal (void* ptr);
 
 /* A double linked list of all the SO's. */
 SO* admin_SO;
@@ -464,17 +467,33 @@ typedef
       SVal  dict[4]; /* can represent up to 4 diff values in the line */
       UChar ix2s[N_LINE_ARANGE/4]; /* array of N_LINE_ARANGE 2-bit
                                       dict indexes */
-      /* if dict[0] == SVal_INVALID then dict[1] is the index of the
+      /* if dict[0] == SVal_INVALID then dict[1] is a pointer to the
          LineF to use, and dict[2..] are also SVal_INVALID. */
    }
    LineZ; /* compressed rep for a cache line */
 
+/* LineZ.dict[1] is used to store various pointers:
+   * In the first lineZ of a free SecMap, it points to the next free SecMap.
+   * In a lineZ for which we need to use a lineF, it points to the lineF. */
+
+
 typedef
    struct {
-      Bool inUse;
       SVal w64s[N_LINE_ARANGE];
    }
    LineF; /* full rep for a cache line */
+
+/* We use a pool allocator for LineF, as LineF is relatively small,
+   and we will often alloc/release such lines. */
+static PoolAlloc* LineF_pool_allocator;
+
+/* SVal in a lineZ are used to store various pointers.
+   Below are conversion functions to support that. */
+static inline LineF *LineF_Ptr (LineZ *lineZ)
+{
+   tl_assert(lineZ->dict[0] == SVal_INVALID);
+   return SVal2Ptr (lineZ->dict[1]);
+}
 
 /* Shadow memory.
    Primary map is a WordFM Addr SecMap*.  
@@ -496,32 +515,30 @@ typedef
 
 /* The data in the SecMap is held in the array of LineZs.  Each LineZ
    either carries the required data directly, in a compressed
-   representation, or it holds (in .dict[0]) an index to the LineF in
-   .linesF that holds the full representation.
+   representation, or it holds (in .dict[1]) a pointer to a LineF
+   that holds the full representation.
 
-   Currently-unused LineF's have their .inUse bit set to zero.
-   Since each in-use LineF is referred to be exactly one LineZ,
-   the number of .linesZ[] that refer to .linesF should equal
-   the number of .linesF[] that have .inUse == True.
+   As each in-use LineF is referred to by exactly one LineZ,
+   the number of .linesZ[] that refer to a lineF should equal
+   the number of used lineF.
 
    RC obligations: the RCs presented to the user include exactly
    the values in:
    * direct Z reps, that is, ones for which .dict[0] != SVal_INVALID
-   * F reps that are in use (.inUse == True)
+   * F reps that are in use
 
    Hence the following actions at the following transitions are required:
 
-   F rep: .inUse==True  -> .inUse==False        -- rcdec_LineF
-   F rep: .inUse==False -> .inUse==True         -- rcinc_LineF
+   F rep: alloc'd       -> freed                -- rcdec_LineF
+   F rep:               -> alloc'd              -- rcinc_LineF
    Z rep: .dict[0] from other to SVal_INVALID   -- rcdec_LineZ
    Z rep: .dict[0] from SVal_INVALID to other   -- rcinc_LineZ
 */
+
 typedef
    struct {
       UInt   magic;
       LineZ  linesZ[N_SECMAP_ZLINES];
-      LineF* linesF;
-      UInt   linesF_size;
    }
    SecMap;
 
@@ -578,8 +595,6 @@ static UWord stats__secmaps_ssetGCed     = 0; // # SecMaps GC-ed via setnoaccess
 static UWord stats__secmap_ga_space_covered = 0; // # ga bytes covered
 static UWord stats__secmap_linesZ_allocd = 0; // # LineZ's issued
 static UWord stats__secmap_linesZ_bytes  = 0; // .. using this much storage
-static UWord stats__secmap_linesF_allocd = 0; // # LineF's issued
-static UWord stats__secmap_linesF_bytes  = 0; //  .. using this much storage
 static UWord stats__cache_Z_fetches      = 0; // # Z lines fetched
 static UWord stats__cache_Z_wbacks       = 0; // # Z lines written back
 static UWord stats__cache_F_fetches      = 0; // # F lines fetched
@@ -677,8 +692,24 @@ static void* shmem__bigchunk_alloc ( SizeT n )
 /* SecMap changed to be fully SVal_NOACCESS are inserted in a list of
    recycled SecMap. When a new SecMap is needed, a recycled SecMap
    will be used in preference to allocating a new SecMap. */
-/* We make a linked list of SecMap. LinesF pointer is re-used to
-   implement the link list. */
+/* We make a linked list of SecMap. The first LineZ is re-used to
+   implement the linked list. */
+/* Returns the SecMap following sm in the free list.
+   NULL if sm is the last SecMap. sm must be on the free list. */
+static inline SecMap *SecMap_freelist_next ( SecMap* sm )
+{
+   tl_assert (sm);
+   tl_assert (sm->magic == SecMap_free_MAGIC);
+   return SVal2Ptr (sm->linesZ[0].dict[1]);
+}
+static inline void set_SecMap_freelist_next ( SecMap* sm, SecMap* next )
+{
+   tl_assert (sm);
+   tl_assert (sm->magic == SecMap_free_MAGIC);
+   tl_assert (next == NULL || next->magic == SecMap_free_MAGIC);
+   sm->linesZ[0].dict[1] = Ptr2SVal (next);
+}
+
 static SecMap *SecMap_freelist = NULL;
 static UWord SecMap_freelist_length(void)
 {
@@ -688,7 +719,7 @@ static UWord SecMap_freelist_length(void)
    sm = SecMap_freelist;
    while (sm) {
      n++;
-     sm = (SecMap*)sm->linesF;
+     sm = SecMap_freelist_next (sm);
    }
    return n;
 }
@@ -697,7 +728,7 @@ static void push_SecMap_on_freelist(SecMap* sm)
 {
    if (0) VG_(message)(Vg_DebugMsg, "%p push\n", sm);
    sm->magic = SecMap_free_MAGIC;
-   sm->linesF = (LineF*)SecMap_freelist;
+   set_SecMap_freelist_next(sm, SecMap_freelist);
    SecMap_freelist = sm;
 }
 /* Returns a free SecMap if there is one.
@@ -709,7 +740,7 @@ static SecMap *pop_SecMap_from_freelist(void)
    sm = SecMap_freelist;
    if (sm) {
       tl_assert (sm->magic == SecMap_free_MAGIC);
-      SecMap_freelist = (SecMap*)sm->linesF;
+      SecMap_freelist = SecMap_freelist_next (sm);
       if (0) VG_(message)(Vg_DebugMsg, "%p pop\n", sm);
    }
    return sm;
@@ -738,8 +769,6 @@ static SecMap* shmem__alloc_or_recycle_SecMap ( void )
       for (j = 0; j < N_LINE_ARANGE/4; j++)
          sm->linesZ[i].ix2s[j] = 0; /* all reference dict[0] */
    }
-   sm->linesF      = NULL;
-   sm->linesF_size = 0;
    return sm;
 }
 
@@ -803,28 +832,27 @@ static UWord shmem__SecMap_do_GC(Bool really)
    while (VG_(nextIterFM)( map_shmem, &gaKey, &secmapW )) {
       UWord   i;
       UWord   j;
+      UWord   n_linesF = 0;
       SecMap* sm = (SecMap*)secmapW;
       tl_assert(sm->magic == SecMap_MAGIC);
       Bool ok_to_GC = True;
 
       examined++;
 
-      /* Deal with the LineZs */
+      /* Deal with the LineZs and the possible LineF of a LineZ. */
       for (i = 0; i < N_SECMAP_ZLINES && ok_to_GC; i++) {
          LineZ* lineZ = &sm->linesZ[i];
-         ok_to_GC = lineZ->dict[0] == SVal_INVALID
-           || (lineZ->dict[0] == SVal_NOACCESS
+         if (lineZ->dict[0] != SVal_INVALID) {
+            ok_to_GC = lineZ->dict[0] == SVal_NOACCESS
                && !SVal__isC (lineZ->dict[1])
                && !SVal__isC (lineZ->dict[2])
-               && !SVal__isC (lineZ->dict[3]));
-      }
-      /* Deal with the LineFs */
-      for (i = 0; i < sm->linesF_size && ok_to_GC; i++) {
-         LineF* lineF = &sm->linesF[i];
-         if (!lineF->inUse)
-            continue;
-         for (j = 0; j < N_LINE_ARANGE && ok_to_GC; j++)
-            ok_to_GC = lineF->w64s[j] == SVal_NOACCESS;
+               && !SVal__isC (lineZ->dict[3]);
+         } else {
+            LineF *lineF = LineF_Ptr(lineZ);
+            n_linesF++;
+            for (j = 0; j < N_LINE_ARANGE && ok_to_GC; j++)
+               ok_to_GC = lineF->w64s[j] == SVal_NOACCESS;
+         }
       }
       if (ok_to_GC)
          ok_GCed++;
@@ -835,12 +863,16 @@ static UWord shmem__SecMap_do_GC(Bool really)
            So, stop iteration, remove from map_shmem, recreate the iteration
            on the next SecMap. */
         VG_(doneIterFM) ( map_shmem );
-        /* No need to rcdec linesZ or linesF, these are all SVal_NOACCESS or
-           not in use. We just need to free the linesF. */
-        if (sm->linesF_size > 0) {
-          HG_(free)(sm->linesF);
-          stats__secmap_linesF_allocd -= sm->linesF_size;
-          stats__secmap_linesF_bytes  -= sm->linesF_size * sizeof(LineF);
+        /* No need to rcdec linesZ or linesF, these are all SVal_NOACCESS.
+           We just need to free the lineF referenced by the linesZ. */
+        if (n_linesF > 0) {
+           for (i = 0; i < N_SECMAP_ZLINES && n_linesF > 0; i++) {
+              LineZ* lineZ = &sm->linesZ[i];
+              if (lineZ->dict[0] == SVal_INVALID) {
+                 VG_(freeEltPA)( LineF_pool_allocator, LineF_Ptr(lineZ) );
+                 n_linesF--;
+              }
+           }
         }
         if (!VG_(delFromFM)(map_shmem, &fm_gaKey, (UWord*)&fm_sm, gaKey))
           tl_assert (0);
@@ -907,7 +939,6 @@ static UWord shmem__SecMap_used_linesF(void)
    UWord secmapW = 0;
    Addr  gaKey;
    UWord inUse = 0;
-   UWord total = 0;
 
    VG_(initIterFM)( map_shmem );
    while (VG_(nextIterFM)( map_shmem, &gaKey, &secmapW )) {
@@ -915,15 +946,13 @@ static UWord shmem__SecMap_used_linesF(void)
       SecMap* sm = (SecMap*)secmapW;
       tl_assert(sm->magic == SecMap_MAGIC);
 
-      for (i = 0; i < sm->linesF_size; i++) {
-         LineF* lineF = &sm->linesF[i];
-         if (lineF->inUse)
+      for (i = 0; i < N_SECMAP_ZLINES; i++) {
+         LineZ* lineZ = &sm->linesZ[i];
+         if (lineZ->dict[0] == SVal_INVALID)
             inUse++;
-         total++;
       }
    }
    VG_(doneIterFM)( map_shmem );
-   tl_assert (stats__secmap_linesF_allocd == total);
 
    return inUse;
 }
@@ -932,14 +961,12 @@ static UWord shmem__SecMap_used_linesF(void)
 
 static void rcinc_LineF ( LineF* lineF ) {
    UWord i;
-   tl_assert(lineF->inUse);
    for (i = 0; i < N_LINE_ARANGE; i++)
       SVal__rcinc(lineF->w64s[i]);
 }
 
 static void rcdec_LineF ( LineF* lineF ) {
    UWord i;
-   tl_assert(lineF->inUse);
    for (i = 0; i < N_LINE_ARANGE; i++)
       SVal__rcdec(lineF->w64s[i]);
 }
@@ -980,6 +1007,34 @@ static UWord read_twobit_array ( UChar* arr, UWord ix ) {
    return (arr[bix] >> shft) & 3;
 }
 
+/* Allocates a lineF for LineZ. Sets lineZ in a state indicating
+   lineF has to be used. */
+static inline LineF *alloc_LineF_for_Z (LineZ *lineZ)
+{
+   LineF *lineF;
+
+   tl_assert(lineZ->dict[0] == SVal_INVALID);
+
+   lineF = VG_(allocEltPA) ( LineF_pool_allocator );
+   lineZ->dict[0] = lineZ->dict[2] = lineZ->dict[3] = SVal_INVALID;
+   lineZ->dict[1] = Ptr2SVal (lineF);
+
+   return lineF;
+}
+
+/* rcdec the LineF of lineZ, frees the lineF, and sets lineZ
+   back to its initial state SVal_NOACCESS (i.e. ready to be
+   read or written just after SecMap allocation). */
+static inline void clear_LineF_of_Z (LineZ *lineZ)
+{
+   LineF *lineF = LineF_Ptr(lineZ);
+
+   rcdec_LineF(lineF);
+   VG_(freeEltPA)( LineF_pool_allocator, lineF );
+   lineZ->dict[0] = SVal_NOACCESS;
+   lineZ->dict[1] = SVal_INVALID;
+}
+
 /* Given address 'tag', find either the Z or F line containing relevant
    data, so it can be read into the cache.
 */
@@ -998,12 +1053,7 @@ static void find_ZF_for_reading ( /*OUT*/LineZ** zp,
    lineZ = &sm->linesZ[zix];
    lineF = NULL;
    if (lineZ->dict[0] == SVal_INVALID) {
-      UInt fix = (UInt)lineZ->dict[1];
-      tl_assert(sm->linesF);
-      tl_assert(sm->linesF_size > 0);
-      tl_assert(fix >= 0 && fix < sm->linesF_size);
-      lineF = &sm->linesF[fix];
-      tl_assert(lineF->inUse);
+      lineF = LineF_Ptr (lineZ);
       lineZ = NULL;
    }
    *zp = lineZ;
@@ -1021,7 +1071,6 @@ void find_Z_for_writing ( /*OUT*/SecMap** smp,
                           /*OUT*/Word* zixp,
                           Addr tag ) {
    LineZ* lineZ;
-   LineF* lineF;
    UWord   zix;
    SecMap* sm    = shmem__find_or_alloc_SecMap(tag);
    UWord   smoff = shmem__get_SecMap_offset(tag);
@@ -1031,85 +1080,16 @@ void find_Z_for_writing ( /*OUT*/SecMap** smp,
    zix = smoff >> N_LINE_BITS;
    tl_assert(zix < N_SECMAP_ZLINES);
    lineZ = &sm->linesZ[zix];
-   lineF = NULL;
-   /* re RCs, we are freeing up this LineZ/LineF so that new data can
-      be parked in it.  Hence have to rcdec it accordingly. */
+   /* re RCs, we are rcdec_LineZ/clear_LineF_of_Z this LineZ so that new data
+      can be parked in it.  Hence have to rcdec it accordingly. */
    /* If lineZ has an associated lineF, free it up. */
-   if (lineZ->dict[0] == SVal_INVALID) {
-      UInt fix = (UInt)lineZ->dict[1];
-      tl_assert(sm->linesF);
-      tl_assert(sm->linesF_size > 0);
-      tl_assert(fix >= 0 && fix < sm->linesF_size);
-      lineF = &sm->linesF[fix];
-      tl_assert(lineF->inUse);
-      rcdec_LineF(lineF);
-      lineF->inUse = False;
-   } else {
+   if (lineZ->dict[0] == SVal_INVALID)
+      clear_LineF_of_Z(lineZ);
+   else
       rcdec_LineZ(lineZ);
-   }
    *smp  = sm;
    *zixp = zix;
 }
-
-static __attribute__((noinline))
-void alloc_F_for_writing ( /*MOD*/SecMap* sm, /*OUT*/Word* fixp ) {
-   UInt        i, new_size;
-   LineF* nyu;
-
-   if (sm->linesF) {
-      tl_assert(sm->linesF_size > 0);
-   } else {
-      tl_assert(sm->linesF_size == 0);
-   }
-
-   if (sm->linesF) {
-      for (i = 0; i < sm->linesF_size; i++) {
-         if (!sm->linesF[i].inUse) {
-            *fixp = (Word)i;
-            return;
-         }
-      }
-   }
-
-   /* No free F line found.  Expand existing array and try again. */
-   new_size = sm->linesF_size==0 ? 1 : 2 * sm->linesF_size;
-   nyu      = HG_(zalloc)( "libhb.aFfw.1 (LineF storage)",
-                           new_size * sizeof(LineF) );
-
-   stats__secmap_linesF_allocd += (new_size - sm->linesF_size);
-   stats__secmap_linesF_bytes  += (new_size - sm->linesF_size)
-                                  * sizeof(LineF);
-
-   if (0)
-   VG_(printf)("SM %p: expand F array from %d to %d\n", 
-               sm, (Int)sm->linesF_size, new_size);
-
-   for (i = 0; i < new_size; i++)
-      nyu[i].inUse = False;
-
-   if (sm->linesF) {
-      for (i = 0; i < sm->linesF_size; i++) {
-         tl_assert(sm->linesF[i].inUse);
-         nyu[i] = sm->linesF[i];
-      }
-      VG_(memset)(sm->linesF, 0, sm->linesF_size * sizeof(LineF) );
-      HG_(free)(sm->linesF);
-   }
-
-   sm->linesF      = nyu;
-   sm->linesF_size = new_size;
-
-   for (i = 0; i < sm->linesF_size; i++) {
-      if (!sm->linesF[i].inUse) {
-         *fixp = (Word)i;
-         return;
-      }
-   }
-
-   /*NOTREACHED*/
-   tl_assert(0);
-}
-
 
 /* ------------ CacheLine and implicit-tree related ------------ */
 
@@ -1578,15 +1558,8 @@ static __attribute__((noinline)) void cacheline_wback ( UWord wix )
       /* Cannot use the compressed(z) representation.  Use the full(f)
          rep instead. */
       tl_assert(i >= 0 && i < N_LINE_ARANGE);
-      alloc_F_for_writing( sm, &fix );
-      tl_assert(sm->linesF);
-      tl_assert(sm->linesF_size > 0);
-      tl_assert(fix >= 0 && fix < (Word)sm->linesF_size);
-      lineF = &sm->linesF[fix];
-      tl_assert(!lineF->inUse);
       lineZ->dict[0] = lineZ->dict[2] = lineZ->dict[3] = SVal_INVALID;
-      lineZ->dict[1] = (SVal)fix;
-      lineF->inUse = True;
+      lineF = alloc_LineF_for_Z (lineZ);
       i = 0;
       for (k = 0; k < csvalsUsed; k++) {
          if (CHECK_ZSM)
@@ -1636,7 +1609,6 @@ static __attribute__((noinline)) void cacheline_fetch ( UWord wix )
    /* expand the data into the bottom layer of the tree, then get
       cacheline_normalise to build the descriptor array. */
    if (lineF) {
-      tl_assert(lineF->inUse);
       for (i = 0; i < N_LINE_ARANGE; i++) {
          cl->svals[i] = lineF->w64s[i];
       }
@@ -1969,6 +1941,16 @@ static void zsm_init ( void )
    for (UWord wix = 0; wix < N_WAY_NENT; wix++) {
       cache_shmem.tags0[wix] = 1/*INVALID*/;
    }
+
+   LineF_pool_allocator = VG_(newPA) (
+                             sizeof(LineF),
+                             /* Nr elements/pool to fill a core arena block
+                                taking some arena overhead into account. */
+                             (4 * 1024 * 1024 - 200)/sizeof(LineF),
+                             HG_(zalloc),
+                             "libhb.LineF_storage.pool",
+                             HG_(free)
+                          );
 
    /* a SecMap must contain an integral number of CacheLines */
    tl_assert(0 == (N_SECMAP_ARANGE % N_LINE_ARANGE));
@@ -3240,18 +3222,14 @@ static void vts_tab__do_GC ( Bool show_stats )
       /* Deal with the LineZs */
       for (i = 0; i < N_SECMAP_ZLINES; i++) {
          LineZ* lineZ = &sm->linesZ[i];
-         if (lineZ->dict[0] == SVal_INVALID)
-            continue; /* not in use -- data is in F rep instead */
-         for (j = 0; j < 4; j++)
-            remap_VtsIDs_in_SVal(vts_tab, new_tab, &lineZ->dict[j]);
-      }
-      /* Deal with the LineFs */
-      for (i = 0; i < sm->linesF_size; i++) {
-         LineF* lineF = &sm->linesF[i];
-         if (!lineF->inUse)
-            continue;
-         for (j = 0; j < N_LINE_ARANGE; j++)
-            remap_VtsIDs_in_SVal(vts_tab, new_tab, &lineF->w64s[j]);
+         if (lineZ->dict[0] != SVal_INVALID) {
+            for (j = 0; j < 4; j++)
+               remap_VtsIDs_in_SVal(vts_tab, new_tab, &lineZ->dict[j]);
+         } else {
+            LineF* lineF = SVal2Ptr (lineZ->dict[1]);
+            for (j = 0; j < N_LINE_ARANGE; j++)
+               remap_VtsIDs_in_SVal(vts_tab, new_tab, &lineF->w64s[j]);
+         }
       }
    }
    VG_(doneIterFM)( map_shmem );
@@ -4170,6 +4148,17 @@ static inline void SVal__rcdec ( SVal s ) {
       VtsID__rcdec( SVal__unC_Wmin(s) );
    }
 }
+
+static inline void *SVal2Ptr (SVal s)
+{
+   return (void*)(UWord)s;
+}
+
+static inline SVal Ptr2SVal (void* ptr)
+{
+   return (SVal)(UWord)ptr;
+}
+
 
 
 /////////////////////////////////////////////////////////
@@ -6364,7 +6353,8 @@ void libhb_shutdown ( Bool show_stats )
                   stats__secmap_linesZ_bytes);
       VG_(printf)("  linesF: %'10lu allocd (%'12lu bytes occupied)"
                   " (%'10lu used)\n",
-                  stats__secmap_linesF_allocd, stats__secmap_linesF_bytes,
+                  VG_(sizePA) (LineF_pool_allocator),
+                  VG_(sizePA) (LineF_pool_allocator) * sizeof(LineF),
                   shmem__SecMap_used_linesF());
       VG_(printf)(" secmaps: %'10lu in map (can be scanGCed %'5lu)"
                   " #%lu scanGC \n",
@@ -6820,21 +6810,14 @@ static void zsm_secmap_line_range_noaccess (SecMap *sm,
 {
    for (UInt lz = zix_start; lz <= zix_end; lz++) {
       LineZ* lineZ;
-      LineF* lineF;
       lineZ = &sm->linesZ[lz];
       if (lineZ->dict[0] != SVal_INVALID) {
          rcdec_LineZ(lineZ);
+         lineZ->dict[0] = SVal_NOACCESS;
+         lineZ->dict[1] = lineZ->dict[2] = lineZ->dict[3] = SVal_INVALID;
       } else {
-         UInt fix = (UInt)lineZ->dict[1];
-         tl_assert(sm->linesF);
-         tl_assert(sm->linesF_size > 0);
-         tl_assert(fix >= 0 && fix < sm->linesF_size);
-         lineF = &sm->linesF[fix];
-         rcdec_LineF(lineF);
-         lineF->inUse = False;
+         clear_LineF_of_Z(lineZ);
       }
-      lineZ->dict[0] = SVal_NOACCESS;
-      lineZ->dict[1] = lineZ->dict[2] = lineZ->dict[3] = SVal_INVALID;
       for (UInt i = 0; i < N_LINE_ARANGE/4; i++)
          lineZ->ix2s[i] = 0; /* all refer to dict[0] */
    }
@@ -6963,17 +6946,11 @@ static void zsm_sset_range_noaccess (Addr addr, SizeT len)
 
             if (CHECK_ZSM) tl_assert(is_sane_SecMap(sm));
             for (UInt lz = 0; lz < N_SECMAP_ZLINES; lz++) {
-               if (LIKELY(sm->linesZ[lz].dict[0] != SVal_INVALID))
-                  rcdec_LineZ(&sm->linesZ[lz]);
-            }
-            for (UInt lf = 0; lf < sm->linesF_size; lf++) {
-               if (sm->linesF[lf].inUse)
-                  rcdec_LineF (&sm->linesF[lf]);
-            }
-            if (sm->linesF_size > 0) {
-               HG_(free)(sm->linesF);
-               stats__secmap_linesF_allocd -= sm->linesF_size;
-               stats__secmap_linesF_bytes  -= sm->linesF_size * sizeof(LineF);
+               LineZ *lineZ = &sm->linesZ[lz];
+               if (LIKELY(lineZ->dict[0] != SVal_INVALID))
+                  rcdec_LineZ(lineZ);
+               else
+                  clear_LineF_of_Z(lineZ);
             }
             if (!VG_(delFromFM)(map_shmem, &gaKey, (UWord*)&fm_sm, sm_start))
                tl_assert (0);
@@ -7063,8 +7040,8 @@ UWord libhb_srange_get_abits (Addr a, UChar *abits, SizeT len)
             UWord zix = shmem__get_SecMap_offset(b) >> N_LINE_BITS;
             lineZ = &sm->linesZ[zix];
             if (lineZ->dict[0] == SVal_INVALID) {
-               UInt fix = (UInt)lineZ->dict[1];
-               sv = sm->linesF[fix].w64s[cloff];
+               LineF *lineF = SVal2Ptr(lineZ->dict[1]);
+               sv = lineF->w64s[cloff];
             } else {
                UWord ix = read_twobit_array( lineZ->ix2s, cloff );
                sv = lineZ->dict[ix];

@@ -110,6 +110,12 @@ static void pal_add_new_pool ( PoolAlloc* pa )
    VG_(addToXA)( pa->pools, &pool );
 }
 
+UWord VG_(sizePA) ( PoolAlloc* pa)
+{
+   vg_assert(pa);
+   return pa->nPerPool * VG_(sizeXA) (pa->pools);
+}
+
 void* VG_(allocEltPA) ( PoolAlloc* pa)
 {
    UWord* elem;

@@ -9498,7 +9498,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(129)),   // old truncate
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(130)),   // old ftruncate
    GENX_(__NR_flock,       sys_flock), 
-   MACX_(__NR_mkfifo,      mkfifo),
+   MACXY(__NR_mkfifo,      mkfifo),
    MACX_(__NR_sendto,      sendto), 
    MACX_(__NR_shutdown,    shutdown), 
    MACXY(__NR_socketpair,  socketpair), 

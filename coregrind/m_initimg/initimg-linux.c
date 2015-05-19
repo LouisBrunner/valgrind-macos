@@ -704,10 +704,12 @@ Addr setup_client_stack( void*  init_sp,
 #           endif
             break;
 #        if defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
-         case AT_HWCAP2:
-            /* The HWCAP2 value has the entry arch_2_07 which indicates the
-             * processor is a Power 8 or beyond.  The Valgrind vai.hwcaps
-             * value (coregrind/m_machine.c) has the VEX_HWCAPS_PPC64_ISA2_07
+         case AT_HWCAP2:  {
+            Bool auxv_2_07, hw_caps_2_07;
+	    /* The HWCAP2 field may contain an arch_2_07 entry that indicates
+             * if the processor is compliant with the 2.07 ISA. (i.e. Power 8
+             * or beyond).  The Valgrind vai.hwcaps value
+             * (coregrind/m_machine.c) has the VEX_HWCAPS_PPC64_ISA2_07
              * flag set so Valgrind knows about Power8.  Need to pass the
              * HWCAP2 value along so the user level programs can detect that
              * the processor supports ISA 2.07 and beyond.
@@ -728,13 +730,15 @@ Addr setup_client_stack( void*  init_sp,
                 PPC_FEATURE2_HAS_TAR          0x04000000
                 PPC_FEATURE2_HAS_VCRYPTO      0x02000000
             */
+            auxv_2_07 = (auxv->u.a_val & 0x80000000ULL) == 0x80000000ULL;
+            hw_caps_2_07 = (vex_archinfo->hwcaps & VEX_HWCAPS_PPC64_ISA2_07)
+               == VEX_HWCAPS_PPC64_ISA2_07;
 
-	    if ((auxv->u.a_val & ~(0x80000000ULL)) != 0) {
-                /* Verify if PPC_FEATURE2_ARCH_2_07 is set in HWCAP2
-                 * that arch_2_07 is also set in VEX HWCAPS
-                 */
-		vg_assert((vex_archinfo->hwcaps & VEX_HWCAPS_PPC64_ISA2_07) == VEX_HWCAPS_PPC64_ISA2_07);
-	      }
+            /* Verify the PPC_FEATURE2_ARCH_2_07 setting in HWCAP2
+	     * matches the setting in VEX HWCAPS.
+	     */
+            vg_assert(auxv_2_07 == hw_caps_2_07);
+            }
 
             break;
 #           endif

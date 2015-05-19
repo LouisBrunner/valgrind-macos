@@ -134,6 +134,27 @@
    ...
 }
 
+{
+   OSX1010:14-Leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:?alloc
+   ...
+   fun:libSystem_atfork_child
+   ...
+}
+
+{
+   OSX1010:15-Leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:__smakebuf
+   ...
+   fun:printf
+   ...
+}
+
 ############################################
 ## Non-leak errors
 

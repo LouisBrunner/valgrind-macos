@@ -1404,9 +1404,9 @@ static void cc_analyse_alloc_arena ( ArenaId aid )
    sanity_check_malloc_arena(aid);
 
    VG_(printf)(
-      "-------- Arena \"%s\": %lu/%lu max/curr mmap'd, "
+      "-------- Arena \"%s\": %'lu/%'lu max/curr mmap'd, "
       "%llu/%llu unsplit/split sb unmmap'd, "
-      "%lu/%lu max/curr on_loan %lu rzB --------\n",
+      "%'lu/%'lu max/curr on_loan %lu rzB --------\n",
       a->name, a->stats__bytes_mmaped_max, a->stats__bytes_mmaped,
       a->stats__nreclaim_unsplit, a->stats__nreclaim_split,
       a->stats__bytes_on_loan_max, a->stats__bytes_on_loan,

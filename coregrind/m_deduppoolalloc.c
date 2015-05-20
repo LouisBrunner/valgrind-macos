@@ -177,16 +177,19 @@ static void ddpa_add_new_pool_or_grow ( DedupPoolAlloc* ddpa )
    }
 }
 
+/* Compare function for 'gen' hash table. No need to compare the key
+   in this function, as the hash table already does it for us,
+   and that in any case, if the data is equal, the keys must also be
+   equal. */
 static Word cmp_pool_elt (const void* node1, const void* node2 )
 {
    const ht_node* hnode1 = node1;
    const ht_node* hnode2 = node2;
 
-   if (hnode1->key < hnode2->key)
-      return -1;
-   else if (hnode1->key > hnode2->key)
-      return 1;
-   else if (hnode1->eltSzB == hnode2->eltSzB)
+   /* As this function is called by hashtable, that has already checked
+      for key equality, it is likely that it is the 'good' element.
+      So, we handle the equal case first. */
+   if (hnode1->eltSzB == hnode2->eltSzB)
       return VG_(memcmp) (hnode1->elt, hnode2->elt, hnode1->eltSzB);
    else if (hnode1->eltSzB < hnode2->eltSzB)
       return -1;

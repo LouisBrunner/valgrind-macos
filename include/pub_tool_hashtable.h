@@ -84,7 +84,10 @@ typedef Word  (*HT_Cmp_t) ( const void* node1, const void* node2 );
     * when comparing the rest of the node, if the node data contains holes
       between components, either the node memory should be fully initialised
       (e.g. allocated using VG_(calloc)) or each component should be compared
-       individually. */
+       individually.
+   Note that the cmp function is only called for elements that already
+   have keys that are equal. So, it is not needed for cmp to check for
+   key equality. */
 extern void* VG_(HT_gen_lookup) ( const VgHashTable *table, const void* node,
                                   HT_Cmp_t cmp );
 extern void* VG_(HT_gen_remove) ( VgHashTable *table, const void* node,

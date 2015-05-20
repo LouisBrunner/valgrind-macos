@@ -179,7 +179,7 @@ void* VG_(HT_gen_lookup) ( const VgHashTable *table, const void* node,
    VgHashNode* curr = table->chains[ CHAIN_NO(hnode->key, table) ]; // GEN!!!
 
    while (curr) {
-      if (cmp (hnode, curr) == 0) { // GEN!!!
+      if (hnode->key == curr->key && cmp (hnode, curr) == 0) { // GEN!!!
          return curr;
       }
       curr = curr->next;
@@ -222,7 +222,7 @@ void* VG_(HT_gen_remove) ( VgHashTable *table, const void* node, HT_Cmp_t cmp  )
    table->iterOK = False;
 
    while (curr) {
-      if (cmp(hnode, curr) == 0) { // GEN!!!
+      if (hnode->key == curr->key && cmp(hnode, curr) == 0) { // GEN!!!
          *prev_next_ptr = curr->next;
          table->n_elements--;
          return curr;

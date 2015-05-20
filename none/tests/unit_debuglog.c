@@ -149,5 +149,13 @@ int main(int argc, char *argv[])
   run("|%100lld|", ival);
   run("|%*lld|", 13, ival);
 
+  value = 0.99685224;
+  run("|%3.0f|", value);
+  run("|%3.1f|", value);
+  run("|%3.2f|", value);
+  run("|%3.3f|", value);
+  run("|%3.4f|", value);
+  run("|%3.5f|", value);
+
   return 0;
 }

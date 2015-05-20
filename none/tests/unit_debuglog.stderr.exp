@@ -127,3 +127,15 @@
 |%100lld|	debuglog = |                                                                                            -1004005|	wrote 102 chars
 |%*lld|	printf =   |     -1004005|	wrote  15 chars
 |%*lld|	debuglog = |     -1004005|	wrote  15 chars
+|%3.0f|	printf =   |  1|	wrote   5 chars
+|%3.0f|	debuglog = |  1|	wrote   5 chars
+|%3.1f|	printf =   |1.0|	wrote   5 chars
+|%3.1f|	debuglog = |1.0|	wrote   5 chars
+|%3.2f|	printf =   |1.00|	wrote   6 chars
+|%3.2f|	debuglog = |1.00|	wrote   6 chars
+|%3.3f|	printf =   |0.997|	wrote   7 chars
+|%3.3f|	debuglog = |0.997|	wrote   7 chars
+|%3.4f|	printf =   |0.9969|	wrote   8 chars
+|%3.4f|	debuglog = |0.9969|	wrote   8 chars
+|%3.5f|	printf =   |0.99685|	wrote   9 chars
+|%3.5f|	debuglog = |0.99685|	wrote   9 chars

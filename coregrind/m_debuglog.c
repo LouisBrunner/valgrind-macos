@@ -1006,10 +1006,17 @@ VG_(debugLog_vprintf) (
             /* Silently limit the precision to 10 digits. */
             if (precision > 10) precision = 10;
 
-            /* If fracional part is not printed (precision == 0), may have to
-               round up */
-            if (precision == 0 && frac >= 0.5)
+            /* Determine fractional part, possibly round up */
+            ULong factor = 1;
+            for (cnt = 0; cnt < precision; ++cnt)
+               factor *= 10;
+            ULong frval = frac * factor;
+            if ((frac * factor - frval) > 0.5)    // round up
+               frval += 1;
+            /* Check rounding. */
+            if (frval == factor)
                ipval += 1;
+            frval %= factor;
 
             /* Find out how many characters are needed to print the number */
 
@@ -1046,14 +1053,6 @@ VG_(debugLog_vprintf) (
                send('.', send_arg2);
                ret += 1;
 
-               // Fractional part
-               ULong factor = 1;
-               for (cnt = 0; cnt < precision; ++cnt)
-                  factor *= 10;
-               ULong frval = frac * factor;
-               if ((frac * factor - frval) > 0.5)    // round up
-                  frval += 1;
-               frval %= factor;
                ret += myvprintf_int64(send, send_arg2, VG_MSG_ZJUSTIFY, 10,
                                       precision, False, frval);
             }

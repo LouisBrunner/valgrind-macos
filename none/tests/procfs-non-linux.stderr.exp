@@ -5,6 +5,6 @@ open(): No such file or directory
 open(): No such file or directory
 readlink: No such file or directory
 readlink: No such file or directory
-readlinkat: Function not implemented
-readlinkat: Function not implemented
+readlinkat: No such file or directory
+readlinkat: No such file or directory
 

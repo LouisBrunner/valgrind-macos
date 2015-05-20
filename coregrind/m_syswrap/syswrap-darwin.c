@@ -9308,6 +9308,28 @@ POST(getattrlistbulk)
       POST_MEM_WRITE(ARG3, ARG4);
 }
 
+PRE(readlinkat)
+{
+    Word  saved = SYSNO;
+    
+    PRINT("readlinkat ( %ld, %#lx(%s), %#lx, %llu )", ARG1,ARG2,(char*)ARG2,ARG3,(ULong)ARG4);
+    PRE_REG_READ4(long, "readlinkat",
+                  int, dfd, const char *, path, char *, buf, int, bufsiz);
+    PRE_MEM_RASCIIZ( "readlinkat(path)", ARG2 );
+    PRE_MEM_WRITE( "readlinkat(buf)", ARG3,ARG4 );
+    
+    /*
+     * Refer to coregrind/m_syswrap/syswrap-linux.c
+     */
+    {
+        /* Normal case */
+        SET_STATUS_from_SysRes( VG_(do_syscall4)(saved, ARG1, ARG2, ARG3, ARG4));
+    }
+    
+    if (SUCCESS && RES > 0)
+        POST_MEM_WRITE( ARG3, RES );
+}
+
 PRE(bsdthread_ctl)
 {
    // int bsdthread_ctl(user_addr_t cmd, user_addr_t arg1, 
@@ -9863,6 +9885,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACXY(__NR_sysctlbyname,        sysctlbyname),       // 274
    MACXY(__NR_necp_match_policy,   necp_match_policy),  // 460
    MACXY(__NR_getattrlistbulk,     getattrlistbulk),    // 461
+   MACX_(__NR_readlinkat,          readlinkat),         // 473
    MACX_(__NR_bsdthread_ctl,       bsdthread_ctl),      // 478
    MACX_(__NR_guarded_open_dprotected_np, guarded_open_dprotected_np),
    MACX_(__NR_guarded_write_np, guarded_write_np),

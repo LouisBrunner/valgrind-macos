@@ -175,6 +175,7 @@ where XXXXXX is the bug number as listed below.
 344621  Fix memcheck/tests/err_disable4 test on OS X
 344686  Fix suppression for pthread_rwlock_init on OS X 10.10
 344702  Fix missing libobjc suppressions on OS X 10.10
+344936  Fix unhandled syscall: unix:473 (readlinkat) on OS X 10.10
 344939  Fix memcheck/tests/xml1 on OS X 10.10
 345016  helgrind/tests/locked_vs_unlocked2 is failing sometimes
 345079  Fix build problems in VEX/useful/test_main.c

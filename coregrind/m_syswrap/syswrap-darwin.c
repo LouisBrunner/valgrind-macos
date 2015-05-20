@@ -9414,7 +9414,11 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_dup,         sys_dup), 
    MACXY(__NR_pipe,        pipe), 
    GENX_(__NR_getegid,     sys_getegid), 
-// _____(__NR_profil), 
+#if DARWIN_VERS >= DARWIN_10_7
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(44)),    // old profil
+#else
+// _____(__NR_profil),
+#endif
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(45)),    // old ktrace
    MACXY(__NR_sigaction,   sigaction), 
    GENX_(__NR_getgid,      sys_getgid), 

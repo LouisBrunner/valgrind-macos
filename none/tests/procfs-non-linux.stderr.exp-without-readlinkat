@@ -1,0 +1,10 @@
+
+/proc/self/cmdline:
+open(): No such file or directory
+/proc/<pid>/cmdline:
+open(): No such file or directory
+readlink: No such file or directory
+readlink: No such file or directory
+readlinkat: Function not implemented
+readlinkat: Function not implemented
+

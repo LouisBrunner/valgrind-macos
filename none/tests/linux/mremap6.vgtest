@@ -1,0 +1,5 @@
+prog: mremap6
+vgopts: -q
+# This testcase used to run into an assertion. Therefore cannot use
+# the default filter because need to see lines beginning with --<pid> .....
+stderr_filter: ../../../tests/filter_addresses

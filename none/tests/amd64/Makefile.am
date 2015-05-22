@@ -88,7 +88,7 @@ EXTRA_DIST = \
 check_PROGRAMS = \
 	allexec \
 	amd64locked \
-	bug127521-64 bug132813-amd64 bug132918 \
+	bug127521-64 bug132813-amd64 bug132918 bug137714-amd64 \
 	clc \
 	cmpxchg \
 	$(INSN_TESTS) \
@@ -144,7 +144,6 @@ endif
 # DDD: these need to be made to work on Darwin like the x86/ ones were.
 if ! VGCONF_OS_IS_DARWIN
    check_PROGRAMS += \
-	bug137714-amd64 \
 	bug156404-amd64 \
 	faultstatus \
 	fcmovnu \

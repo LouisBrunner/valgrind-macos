@@ -94,7 +94,7 @@ typedef
 typedef
    struct {
       SegKind kind;
-      /* Extent (SkFree, SkAnon{C,V}, SkFile{C,V}, SkResvn) */
+      /* Extent */
       Addr    start;    // lowest address in range
       Addr    end;      // highest address in range
       /* Shrinkable? (SkResvn only) */

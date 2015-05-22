@@ -7738,9 +7738,8 @@ PRE(sys_ioctl)
    }
    case VKI_V4L2_G_AUDIO: {
       struct vki_v4l2_audio *data = (struct vki_v4l2_audio *)ARG3;
-      PRE_FIELD_READ("ioctl(VKI_V4L2_G_AUDIO).index", data->index);
-      PRE_MEM_WRITE("ioctl(VKI_V4L2_G_AUDIO)", (Addr)data->name,
-            sizeof(*data) - sizeof(data->index) - sizeof(data->reserved));
+      PRE_MEM_WRITE("ioctl(VKI_V4L2_G_AUDIO)", (Addr)data,
+            sizeof(*data) - sizeof(data->reserved));
       PRE_FIELD_READ("ioctl(VKI_V4L2_G_AUDIO).reserved", data->reserved);
       break;
    }
@@ -7808,10 +7807,9 @@ PRE(sys_ioctl)
    }
    case VKI_V4L2_G_AUDOUT: {
       struct vki_v4l2_audioout *data = (struct vki_v4l2_audioout *)ARG3;
-      PRE_FIELD_READ("ioctl(VKI_V4L2_G_AUDOUT).index", data->index);
+      PRE_MEM_WRITE("ioctl(VKI_V4L2_G_AUDOUT)", (Addr)data,
+            sizeof(*data) - sizeof(data->reserved));
       PRE_FIELD_READ("ioctl(VKI_V4L2_G_AUDOUT).reserved", data->reserved);
-      PRE_MEM_WRITE("ioctl(VKI_V4L2_G_AUDOUT)", (Addr)data->name,
-            sizeof(*data) - sizeof(data->index) - sizeof(data->reserved));
       break;
    }
    case VKI_V4L2_S_AUDOUT: {
@@ -9882,8 +9880,8 @@ POST(sys_ioctl)
    }
    case VKI_V4L2_G_AUDIO: {
       struct vki_v4l2_audio *data = (struct vki_v4l2_audio *)ARG3;
-      POST_MEM_WRITE((Addr)data->name,
-            sizeof(*data) - sizeof(data->index) - sizeof(data->reserved));
+      POST_MEM_WRITE((Addr)data,
+            sizeof(*data) - sizeof(data->reserved));
       break;
    }
    case VKI_V4L2_QUERYCTRL: {
@@ -9921,8 +9919,8 @@ POST(sys_ioctl)
    }
    case VKI_V4L2_G_AUDOUT: {
       struct vki_v4l2_audioout *data = (struct vki_v4l2_audioout *)ARG3;
-      POST_MEM_WRITE((Addr)data->name,
-            sizeof(*data) - sizeof(data->index) - sizeof(data->reserved));
+      POST_MEM_WRITE((Addr)data,
+            sizeof(*data) - sizeof(data->reserved));
       break;
    }
    case VKI_V4L2_G_MODULATOR: {

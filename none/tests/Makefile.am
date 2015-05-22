@@ -127,7 +127,9 @@ EXTRA_DIST = \
 	procfs-linux.stderr.exp-with-readlinkat \
 	procfs-linux.stderr.exp-without-readlinkat \
 	procfs-linux.vgtest \
-	procfs-non-linux.stderr.exp procfs-non-linux.vgtest \
+	procfs-non-linux.vgtest \
+	procfs-non-linux.stderr.exp-with-readlinkat \
+	procfs-non-linux.stderr.exp-without-readlinkat \
 	pth_atfork1.stderr.exp pth_atfork1.stdout.exp pth_atfork1.vgtest \
 	pth_blockedsig.stderr.exp \
 	pth_blockedsig.stdout.exp pth_blockedsig.vgtest \

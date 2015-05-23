@@ -77,6 +77,7 @@ EXTRA_DIST = \
 	bigcode.vgtest bigcode.stderr.exp bigcode.stdout.exp \
 	bitfield1.stderr.exp bitfield1.vgtest \
 	bug129866.vgtest bug129866.stderr.exp bug129866.stdout.exp \
+	bug234814.vgtest bug234814.stderr.exp bug234814.stdout.exp \
 	closeall.stderr.exp closeall.vgtest \
 	cmdline0.stderr.exp cmdline0.stdout.exp cmdline0.vgtest \
 	cmdline1.stderr.exp cmdline1.stdout.exp cmdline1.vgtest \
@@ -182,7 +183,7 @@ check_PROGRAMS = \
 	ansi args \
 	async-sigs \
 	bitfield1 \
-	bug129866 \
+	bug129866 bug234814 \
 	closeall coolo_strlen \
 	discard exec-sigmask execve faultstatus fcntl_setown \
 	fdleak_cmsg fdleak_creat fdleak_dup fdleak_dup2 \

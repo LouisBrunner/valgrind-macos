@@ -79,6 +79,7 @@ check_PROGRAMS = \
 	bug152818-x86 \
 	cmpxchg8b \
 	cpuid \
+	cse_fail \
 	fcmovnu \
 	fpu_lazy_eflags \
 	fxtract \
@@ -105,7 +106,7 @@ if BUILD_LZCNT_TESTS
  check_PROGRAMS += lzcnt32
 endif
 if !VGCONF_OS_IS_DARWIN
- check_PROGRAMS += cse_fail faultstatus
+ check_PROGRAMS += faultstatus
 endif
 if BUILD_MOVBE_TESTS
  check_PROGRAMS += movbe

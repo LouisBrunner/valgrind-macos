@@ -6526,10 +6526,13 @@ void libhb_shutdown ( Bool show_stats )
          tl_assert(OldRef_n == oldrefTreeN);
          VG_(printf)( "   libhb: oldrefTreeN %lu (%d bytes)\n", 
                       oldrefTreeN, (int)(oldrefTreeN * sizeof(OldRef)));
-         VG_(printf)( "( ");
-         for (i = 0; i <= N_OLDREF_ACCS; i++)
+         VG_(printf)( "   libhb: ( ");
+         accs_n = 0;
+         for (i = 0; i <= N_OLDREF_ACCS; i++) {
             VG_(printf)( "accs[%d]=%lu ", i, OldRef_accs_n[i]);
-         VG_(printf)( ")\n");
+            accs_n += OldRef_accs_n[i] * i;
+         }
+         VG_(printf)( ") (tot Thr_n_RCEC %d)\n", accs_n);
          VG_(printf)( "   libhb: oldref lookup found=%lu notfound=%lu\n",
                       stats__evm__lookup_found, stats__evm__lookup_notfound);
       }

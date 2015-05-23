@@ -4226,6 +4226,8 @@ static inline SVal Ptr2SVal (void* ptr)
    it's not straightforward to do.
 */
 
+static UWord stats__evm__lookup_found = 0;
+static UWord stats__evm__lookup_notfound = 0;
 
 static UWord stats__ctxt_rcdec1 = 0;
 static UWord stats__ctxt_rcdec2 = 0;
@@ -4800,6 +4802,7 @@ Bool libhb_event_map_lookup ( /*OUT*/ExeContext** resEC,
          *resSzB     = cand_szB;
          *resIsW     = cand_isW;
          *locksHeldW = cand_locksHeldW;
+         stats__evm__lookup_found++;
          return True;
       }
 
@@ -4807,6 +4810,7 @@ Bool libhb_event_map_lookup ( /*OUT*/ExeContext** resEC,
    } /* for (j = 0; j < nToCheck; j++) */
 
    /* really didn't find anything. */
+   stats__evm__lookup_notfound++;
    return False;
 }
 
@@ -6525,6 +6529,8 @@ void libhb_shutdown ( Bool show_stats )
          for (i = 0; i <= N_OLDREF_ACCS; i++)
             VG_(printf)( "accs[%d]=%lu ", i, OldRef_accs_n[i]);
          VG_(printf)( ")\n");
+         VG_(printf)( "   libhb: oldref lookup found=%lu notfound=%lu\n",
+                      stats__evm__lookup_found, stats__evm__lookup_notfound);
       }
       VG_(printf)( "   libhb: ctxt__rcdec: 1=%lu(%lu eq), 2=%lu, 3=%lu\n",
                    stats__ctxt_rcdec1, stats__ctxt_rcdec1_eq,

@@ -3597,7 +3597,7 @@ POST(accept)
 PRE(mkfifo)
 {
    *flags |= SfMayBlock;
-   PRINT("mkfifo ( %#lx(%s), %ld )",ARG1,(char *)ARG1,(vki_mode_t)ARG2);
+   PRINT("mkfifo ( %#lx(%s), %lld )",ARG1,(char *)ARG1,(ULong)ARG2);
    PRE_REG_READ2(long, "mkfifo", const char *, path, vki_mode_t, mode);
    PRE_MEM_RASCIIZ( "mkfifo(path)", ARG1 );
 }
@@ -3610,7 +3610,7 @@ POST(mkfifo)
       SET_STATUS_Failure( VKI_EMFILE );
    } else {
       if (VG_(clo_track_fds))
-         ML_(record_fd_open_with_given_name)(tid, RES, (Char*)ARG1);
+         ML_(record_fd_open_with_given_name)(tid, RES, (HChar*)ARG1);
    }
 }
 

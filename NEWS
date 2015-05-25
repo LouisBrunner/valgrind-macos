@@ -12,12 +12,29 @@ Release 3.11.0 is under development, not yet released.
 * Memcheck:
 
 * Massif:
-  New monitor command 'all_snapshots <filename>' that dumps all snapshots
-  taken so far.
+  - New monitor command 'all_snapshots <filename>' that dumps all snapshots
+    taken so far.
 
 * Helgrind:
-  Memory and speed improvement for --history-level=full for big applications
-  accessing a lot of memory with many different stacktraces.
+  - The default value for --conflict-cache-size=N has been doubled to 2000000.
+    Users that were not using the default value should preferrably also
+    double the value they give. 
+    The default was updaded due to the changes in the full history
+    implementation. Doubling the value gives in average a slightly more
+    complete history and uses similar memory (or significantly less memory
+    in the worst case) than the previous Helgrind version.
+    
+  - Significant memory improvement and moderate speed improvement for
+    --history-level=full for applications accessing a lot of memory with
+    many different stacktraces.
+
+  - The helgrind monitor command 'info locks' now accepts an optional
+    argument 'lock_addr', to only show information about the lock at the
+    given address.
+
+  - When using --history-level=full, the new helgrind monitor command
+    'accesshistory <addr> [<len>]' will show the recorded accesses for
+    <len> (or 1) bytes at <addr>.
 
 * Callgrind:
 

@@ -37,11 +37,12 @@
 #include "pub_tool_libcprint.h"
 #include "pub_tool_mallocfree.h"
 #include "pub_tool_wordfm.h"
-#include "pub_tool_sparsewa.h"
+#include "pub_tool_hashtable.h"
 #include "pub_tool_xarray.h"
 #include "pub_tool_oset.h"
 #include "pub_tool_threadstate.h"
 #include "pub_tool_aspacemgr.h"
+#include "pub_tool_stacktrace.h"
 #include "pub_tool_execontext.h"
 #include "pub_tool_errormgr.h"
 #include "pub_tool_options.h"        // VG_(clo_stats)
@@ -153,17 +154,19 @@ typedef  ULong  SVal;
    at a clock rate of 5 GHz is 162.9 days.  And that's doing nothing
    but VTS ticks, which isn't realistic.
 
-   NB1: SCALARTS_N_THRBITS must be 29 or lower.  The obvious limit is
-   32 since a ThrID is a UInt.  29 comes from the fact that
+   NB1: SCALARTS_N_THRBITS must be 27 or lower.  The obvious limit is
+   32 since a ThrID is a UInt.  27 comes from the fact that
    'Thr_n_RCEC', which records information about old accesses, packs
-   not only a ThrID but also 2+1 other bits (access size and
-   writeness) in a UInt, hence limiting size to 32-(2+1) == 29.
+   in tsw not only a ThrID but also minimum 4+1 other bits (access size
+   and writeness) in a UInt, hence limiting size to 32-(4+1) == 27.
 
    NB2: thrid values are issued upwards from 1024, and values less
    than that aren't valid.  This isn't per se necessary (any order
    will do, so long as they are unique), but it does help ensure they
    are less likely to get confused with the various other kinds of
-   small-integer thread ids drifting around (eg, TId).  See also NB5.
+   small-integer thread ids drifting around (eg, TId).
+   So, SCALARTS_N_THRBITS must be 11 or more.
+   See also NB5.
 
    NB3: this probably also relies on the fact that Thr's are never
    deallocated -- they exist forever.  Hence the 1-1 mapping from
@@ -183,7 +186,8 @@ typedef  ULong  SVal;
    ThrID == 0 to denote an empty Thr_n_RCEC record.  So ThrID == 0
    must never be a valid ThrID.  Given NB2 that's OK.
 */
-#define SCALARTS_N_THRBITS 18  /* valid range: 11 to 29 inclusive */
+#define SCALARTS_N_THRBITS 18  /* valid range: 11 to 27 inclusive,
+                                  See NB1 and NB2 above. */
 
 #define SCALARTS_N_TYMBITS (64 - SCALARTS_N_THRBITS)
 typedef
@@ -4190,51 +4194,34 @@ static inline SVal Ptr2SVal (void* ptr)
       only represent each one once.  The set is indexed/searched by
       ordering on the stack trace vectors.
 
-   2. A SparseWA of OldRefs.  These store information about each old
-      ref that we need to record.  It is indexed by address of the
+   2. A Hash table of OldRefs.  These store information about each old
+      ref that we need to record.  Hash table key is the address of the
       location for which the information is recorded.  For LRU
-      purposes, each OldRef in the SparseWA is also on a doubly
+      purposes, each OldRef in the hash table is also on a doubly
       linked list maintaining the order in which the OldRef were most
       recently accessed.
+      Each OldRef also maintains the stamp at which it was last accessed.
+      With these stamps, we can quickly check which of 2 OldRef is the
+      'newest', without having to scan the full list of LRU OldRef.
 
-      The important part of an OldRef is, however, its accs[] array.
-      This is an array of N_OLDREF_ACCS which binds (thread, R/W,
-      size) triples to RCECs.  This allows us to collect the last
-      access-traceback by up to N_OLDREF_ACCS different triples for
-      this location.  The accs[] array is a MTF-array.  If a binding
-      falls off the end, that's too bad -- we will lose info about
-      that triple's access to this location.
+      The important part of an OldRef is, however, its acc component.
+      This binds a TSW triple (thread, size, R/W) to an RCEC.
 
       We allocate a maximum of VG_(clo_conflict_cache_size) OldRef.
       Then we do exact LRU discarding.  For each discarded OldRef we must
-      of course decrement the reference count on the all RCECs it
+      of course decrement the reference count on the RCEC it
       refers to, in order that entries from (1) eventually get
       discarded too.
-
-   A major improvement in reliability of this mechanism would be to
-   have a dynamically sized OldRef.accs[] array, so no entries ever
-   fall off the end.  In investigations (Dec 08) it appears that a
-   major cause for the non-availability of conflicting-access traces
-   in race reports is caused by the fixed size of this array.  I
-   suspect for most OldRefs, only a few entries are used, but for a
-   minority of cases there is an overflow, leading to info lossage.
-   Investigations also suggest this is very workload and scheduling
-   sensitive.  Therefore a dynamic sizing would be better.
-
-   However, dynamic sizing would defeat the use of a PoolAllocator
-   for OldRef structures.  And that's important for performance.  So
-   it's not straightforward to do.
 */
 
 static UWord stats__evm__lookup_found = 0;
 static UWord stats__evm__lookup_notfound = 0;
 
-static UWord stats__ctxt_rcdec1 = 0;
-static UWord stats__ctxt_rcdec2 = 0;
-static UWord stats__ctxt_rcdec3 = 0;
+static UWord stats__ctxt_eq_tsw_eq_rcec = 0;
+static UWord stats__ctxt_eq_tsw_neq_rcec = 0;
+static UWord stats__ctxt_neq_tsw_neq_rcec = 0;
 static UWord stats__ctxt_rcdec_calls = 0;
-static UWord stats__ctxt_rcdec_discards = 0;
-static UWord stats__ctxt_rcdec1_eq = 0;
+static UWord stats__ctxt_rcec_gc_discards = 0;
 
 static UWord stats__ctxt_tab_curr = 0;
 static UWord stats__ctxt_tab_max  = 0;
@@ -4436,36 +4423,66 @@ static RCEC* get_RCEC ( Thr* thr )
 
 ///////////////////////////////////////////////////////
 //// Part (2):
-///  A SparseWA guest-addr -> OldRef, that refers to (1)
-///
+///  A hashtable guest-addr -> OldRef, that refers to (1)
+///  Note: we use the guest address as key. This means that the entries
+///  for multiple threads accessing the same address will land in the same
+///  bucket. It might be nice to have a better distribution of the
+///  OldRef in the hashtable by using ask key the guestaddress ^ tsw.
+///  The problem is that when a race is reported on a ga, we need to retrieve
+///  efficiently the accesses to ga by other threads, only using the ga.
+///  Measurements on firefox have shown that the chain length is reasonable.
 
 /* Records an access: a thread, a context (size & writeness) and the
-   number of held locks. The size (1,2,4,8) is encoded as 00 = 1, 01 =
-   2, 10 = 4, 11 = 8. 
-*/
-typedef
-   struct { 
-      RCEC*     rcec;
-      WordSetID locksHeldW;
+   number of held locks. The size (1,2,4,8) is stored as is in szB.
+   Note that szB uses more bits than needed to store a size up to 8.
+   This allows to use a TSW as a fully initialised UInt e.g. in
+   cmp_oldref_tsw. If needed, a more compact representation of szB
+   can be done (e.g. use only 4 bits, or use only 2 bits and encode the
+   size (1,2,4,8) as 00 = 1, 01 = 2, 10 = 4, 11 = 8. */
+typedef 
+   struct {
       UInt      thrid  : SCALARTS_N_THRBITS;
-      UInt      szLg2B : 2;
+      UInt      szB    : 32 - SCALARTS_N_THRBITS - 1;
       UInt      isW    : 1;
+   } TSW; // Thread+Size+Writeness
+typedef
+   struct {
+      TSW       tsw;
+      WordSetID locksHeldW;
+      RCEC*     rcec;
    }
    Thr_n_RCEC;
 
-#define N_OLDREF_ACCS 5
-
 typedef
    struct OldRef {
+      struct OldRef *ht_next; // to link hash table nodes together.
+      UWord  ga; // hash_table key, == address for which we record an access.
       struct OldRef *prev; // to refs older than this one
       struct OldRef *next; // to refs newer that this one
-      Addr ga; // Address for which we record up to N_OLDREF_ACCS accesses.
-      /* unused slots in this array have .thrid == 0, which is invalid */
-      Thr_n_RCEC accs[N_OLDREF_ACCS];
+      UWord stamp; // allows to order (by time of access) 2 OldRef
+      Thr_n_RCEC acc;
    }
    OldRef;
-/* We need ga in OldRef in order to remove OldRef from the sparsewa
-   by key (i.e. ga) when re-using the lru OldRef. */
+
+/* Returns the or->tsw as an UInt */
+static inline UInt oldref_tsw (const OldRef* or)
+{
+   return *(const UInt*)(&or->acc.tsw);
+}
+
+/* Compare the tsw component for 2 OldRef.
+   Used for OldRef hashtable (which already verifies equality of the
+   'key' part. */
+static Word cmp_oldref_tsw (const void* node1, const void* node2 )
+{
+   const UInt tsw1 = oldref_tsw(node1);
+   const UInt tsw2 = oldref_tsw(node2);
+
+   if (tsw1 < tsw2) return -1;
+   if (tsw1 > tsw2) return  1;
+   return 0;
+}
+
 
 //////////// BEGIN OldRef pool allocator
 static PoolAlloc* oldref_pool_allocator;
@@ -4509,9 +4526,10 @@ static inline void OldRef_newest(OldRef *new)
    new->prev->next = new;
 }
 
-static SparseWA* oldrefTree     = NULL; /* SparseWA* OldRef* */
-static UWord     oldrefTreeN    = 0;    /* # elems in oldrefTree */
-/* Note: the nr of ref in the oldrefTree will always be equal to
+
+static VgHashTable* oldrefHT    = NULL; /* Hash table* OldRef* */
+static UWord     oldrefHTN    = 0;    /* # elems in oldrefHT */
+/* Note: the nr of ref in the oldrefHT will always be equal to
    the nr of elements that were allocated from the OldRef pool allocator
    as we never free an OldRef : we just re-use them. */
 
@@ -4520,30 +4538,17 @@ static UWord     oldrefTreeN    = 0;    /* # elems in oldrefTree */
    have already been allocated. */
 static OldRef* alloc_or_reuse_OldRef ( void )
 {
-   if (oldrefTreeN < HG_(clo_conflict_cache_size)) {
-      oldrefTreeN++;
+   if (oldrefHTN < HG_(clo_conflict_cache_size)) {
+      oldrefHTN++;
       return VG_(allocEltPA) ( oldref_pool_allocator );
    } else {
-      Bool  b;
-      UWord valW;
+      OldRef *oldref_ht;
       OldRef *oldref = lru.next;
 
       OldRef_unchain(oldref);
-      b = VG_(delFromSWA)( oldrefTree, &valW, oldref->ga );
-      tl_assert(b);
-      tl_assert (oldref == (OldRef*)valW);
-
-      for (UInt i = 0; i < N_OLDREF_ACCS; i++) {
-         ThrID aThrID = oldref->accs[i].thrid;
-         RCEC* aRef   = oldref->accs[i].rcec;
-         if (aRef) {
-            tl_assert(aThrID != 0);
-            stats__ctxt_rcdec3++;
-            ctxt__rcdec( aRef );
-         } else {
-            tl_assert(aThrID == 0);
-         }
-      }
+      oldref_ht = VG_(HT_gen_remove) (oldrefHT, oldref, cmp_oldref_tsw);
+      tl_assert (oldref == oldref_ht);
+      ctxt__rcdec( oldref->acc.rcec );
       return oldref;
    }
 }
@@ -4560,8 +4565,8 @@ inline static UInt min_UInt ( UInt a, UInt b ) {
    some of the comparisons were done signedly instead of
    unsignedly. */
 /* Copied from exp-ptrcheck/sg_main.c */
-static Word cmp_nonempty_intervals ( Addr a1, SizeT n1,
-                                     Addr a2, SizeT n2 ) {
+static inline Word cmp_nonempty_intervals ( Addr a1, SizeT n1,
+                                            Addr a2, SizeT n2 ) {
    UWord a1w = (UWord)a1;
    UWord n1w = (UWord)n1;
    UWord a2w = (UWord)a2;
@@ -4572,13 +4577,13 @@ static Word cmp_nonempty_intervals ( Addr a1, SizeT n1,
    return 0;
 }
 
+static UWord event_map_stamp = 0; // Used to stamp each OldRef when touched.
+
 static void event_map_bind ( Addr a, SizeT szB, Bool isW, Thr* thr )
 {
+   OldRef  example;
    OldRef* ref;
    RCEC*   rcec;
-   Word    i, j;
-   UWord   valW;
-   Bool    b;
 
    tl_assert(thr);
    ThrID thrid = thr->thrid;
@@ -4587,117 +4592,63 @@ static void event_map_bind ( Addr a, SizeT szB, Bool isW, Thr* thr )
    WordSetID locksHeldW = thr->hgthread->locksetW;
 
    rcec = get_RCEC( thr );
-   ctxt__rcinc(rcec);
 
-   UInt szLg2B = 0;
-   switch (szB) {
-      /* This doesn't look particularly branch-predictor friendly. */
-      case 1:  szLg2B = 0; break;
-      case 2:  szLg2B = 1; break;
-      case 4:  szLg2B = 2; break;
-      case 8:  szLg2B = 3; break;
-      default: tl_assert(0);
-   }
+   tl_assert (szB == 4 || szB == 8 ||szB == 1 || szB == 2);
+   // Check for most frequent cases first
+   // Note: we could support a szB up to 1 << (32 - SCALARTS_N_THRBITS - 1)
 
-   /* Look in the map to see if we already have a record for this
-      address. */
-   b = VG_(lookupSWA)( oldrefTree, &valW, a );
+   /* Look in the oldrefHT to see if we already have a record for this
+      address/thr/sz/isW. */
+   example.ga = a;
+   example.acc.tsw = (TSW) {.thrid = thrid,
+                            .szB = szB,
+                            .isW = (UInt)(isW & 1)};
+   ref = VG_(HT_gen_lookup) (oldrefHT, &example, cmp_oldref_tsw);
 
-   if (b) {
-
-      /* We already have a record for this address.  We now need to
-         see if we have a stack trace pertaining to this (thrid, R/W,
+   if (ref) {
+      /* We already have a record for this address and this (thrid, R/W,
          size) triple. */
-      ref = (OldRef*)valW;
-
       tl_assert (ref->ga == a);
 
-      for (i = 0; i < N_OLDREF_ACCS; i++) {
-         if (ref->accs[i].thrid != thrid)
-            continue;
-         if (ref->accs[i].szLg2B != szLg2B)
-            continue;
-         if (ref->accs[i].isW != (UInt)(isW & 1))
-            continue;
-         /* else we have a match, so stop looking. */
-         break;
+      /* thread 'thr' has an entry.  Update its RCEC, if it differs. */
+      if (rcec == ref->acc.rcec)
+         stats__ctxt_eq_tsw_eq_rcec++;
+      else {
+         stats__ctxt_eq_tsw_neq_rcec++;
+         ctxt__rcdec( ref->acc.rcec );
+         ctxt__rcinc(rcec);
+         ref->acc.rcec       = rcec;
       }
-
-      if (i < N_OLDREF_ACCS) {
-         /* thread 'thr' has an entry at index 'i'.  Update its RCEC. */
-         if (i > 0) {
-            Thr_n_RCEC tmp = ref->accs[i-1];
-            ref->accs[i-1] = ref->accs[i];
-            ref->accs[i] = tmp;
-            i--;
-         }
-         if (rcec == ref->accs[i].rcec) stats__ctxt_rcdec1_eq++;
-         stats__ctxt_rcdec1++;
-         ctxt__rcdec( ref->accs[i].rcec );
-         tl_assert(ref->accs[i].thrid == thrid);
-         /* Update the RCEC and the W-held lockset. */
-         ref->accs[i].rcec       = rcec;
-         ref->accs[i].locksHeldW = locksHeldW;
-      } else {
-         /* No entry for this (thread, R/W, size, nWHeld) quad.
-            Shuffle all of them down one slot, and put the new entry
-            at the start of the array. */
-         if (ref->accs[N_OLDREF_ACCS-1].thrid != 0) {
-            /* the last slot is in use.  We must dec the rc on the
-               associated rcec. */
-            tl_assert(ref->accs[N_OLDREF_ACCS-1].rcec);
-            stats__ctxt_rcdec2++;
-            if (0 && 0 == (stats__ctxt_rcdec2 & 0xFFF))
-               VG_(printf)("QQQQ %lu overflows\n",stats__ctxt_rcdec2);
-            ctxt__rcdec( ref->accs[N_OLDREF_ACCS-1].rcec );
-         } else {
-            tl_assert(!ref->accs[N_OLDREF_ACCS-1].rcec);
-         }
-         for (j = N_OLDREF_ACCS-1; j >= 1; j--)
-            ref->accs[j] = ref->accs[j-1];
-         ref->accs[0].thrid      = thrid;
-         ref->accs[0].szLg2B     = szLg2B;
-         ref->accs[0].isW        = (UInt)(isW & 1);
-         ref->accs[0].locksHeldW = locksHeldW;
-         ref->accs[0].rcec       = rcec;
-         /* thrid==0 is used to signify an empty slot, so we can't
-            add zero thrid (such a ThrID is invalid anyway). */
-         /* tl_assert(thrid != 0); */ /* There's a dominating assert above. */
-      }
+      tl_assert(ref->acc.tsw.thrid == thrid);
+      /* Update the stamp, RCEC and the W-held lockset. */
+      ref->stamp = event_map_stamp;
+      ref->acc.locksHeldW = locksHeldW;
 
       OldRef_unchain(ref);
       OldRef_newest(ref);
 
    } else {
-
-      /* We don't have a record for this address.  Create a new one. */
+      /* We don't have a record for this address+triple.  Create a new one. */
+      stats__ctxt_neq_tsw_neq_rcec++;
       ref = alloc_or_reuse_OldRef();
       ref->ga = a;
-      ref->accs[0].thrid      = thrid;
-      ref->accs[0].szLg2B     = szLg2B;
-      ref->accs[0].isW        = (UInt)(isW & 1);
-      ref->accs[0].locksHeldW = locksHeldW;
-      ref->accs[0].rcec       = rcec;
+      ref->acc.tsw = (TSW) {.thrid  = thrid,
+                            .szB    = szB,
+                            .isW    = (UInt)(isW & 1)};
+      ref->stamp = event_map_stamp;
+      ref->acc.locksHeldW = locksHeldW;
+      ref->acc.rcec       = rcec;
+      ctxt__rcinc(rcec);
 
-      /* thrid==0 is used to signify an empty slot, so we can't
-         add zero thrid (such a ThrID is invalid anyway). */
-      /* tl_assert(thrid != 0); */ /* There's a dominating assert above. */
-
-      /* Clear out the rest of the entries */
-      for (j = 1; j < N_OLDREF_ACCS; j++) {
-         ref->accs[j].rcec       = NULL;
-         ref->accs[j].thrid      = 0;
-         ref->accs[j].szLg2B     = 0;
-         ref->accs[j].isW        = 0;
-         ref->accs[j].locksHeldW = 0;
-      }
-      VG_(addToSWA)( oldrefTree, a, (UWord)ref );
+      VG_(HT_add_node) ( oldrefHT, ref );
       OldRef_newest (ref);
    }
+   event_map_stamp++;
 }
 
 
-/* Extract info from the conflicting-access machinery. */
+/* Extract info from the conflicting-access machinery.
+   Returns the most recent conflicting access with thr/[a, a+szB[/isW. */
 Bool libhb_event_map_lookup ( /*OUT*/ExeContext** resEC,
                               /*OUT*/Thr**        resThr,
                               /*OUT*/SizeT*       resSzB,
@@ -4706,16 +4657,12 @@ Bool libhb_event_map_lookup ( /*OUT*/ExeContext** resEC,
                               Thr* thr, Addr a, SizeT szB, Bool isW )
 {
    Word    i, j;
-   OldRef* ref;
-   UWord   valW;
-   Bool    b;
+   OldRef *ref = NULL;
+   SizeT  ref_szB = 0;
 
-   ThrID     cand_thrid;
-   RCEC*     cand_rcec;
-   Bool      cand_isW;
-   SizeT     cand_szB;
-   WordSetID cand_locksHeldW;
-   Addr      cand_a;
+   OldRef *cand_ref;
+   SizeT  cand_ref_szB;
+   Addr   cand_a;
 
    Addr toCheck[15];
    Int  nToCheck = 0;
@@ -4739,69 +4686,63 @@ Bool libhb_event_map_lookup ( /*OUT*/ExeContext** resEC,
       cand_a = toCheck[j];
       //      VG_(printf)("test %ld %p\n", j, cand_a);
 
-      b = VG_(lookupSWA)( oldrefTree, &valW, cand_a );
-      if (!b)
-         continue;
-
-      ref = (OldRef*)valW;
-      tl_assert(ref->accs[0].thrid != 0); /* first slot must always be used */
-
-      cand_thrid      = 0; /* invalid; see comments in event_map_bind */
-      cand_rcec       = NULL;
-      cand_isW        = False;
-      cand_szB        = 0;
-      cand_locksHeldW = 0; /* always valid; see initialise_data_structures() */
-
-      for (i = 0; i < N_OLDREF_ACCS; i++) {
-         Thr_n_RCEC* cand = &ref->accs[i];
-         cand_rcec       = cand->rcec;
-         cand_thrid      = cand->thrid;
-         cand_isW        = (Bool)cand->isW;
-         cand_szB        = 1 << cand->szLg2B;
-         cand_locksHeldW = cand->locksHeldW;
-
-         if (cand_thrid == 0) 
-            /* This slot isn't in use.  Ignore it. */
+      /* Find the first HT element for this address.
+         We might have several of these. They will be linked via ht_next.
+         We however need to check various elements as the list contains
+         all elements that map to the same bucket. */
+      for (cand_ref = VG_(HT_lookup)( oldrefHT, cand_a ); 
+           cand_ref; cand_ref = cand_ref->ht_next) {
+         if (cand_ref->ga != cand_a)
+            /* OldRef for another address in this HT bucket. Ignore. */
             continue;
 
-         if (cand_thrid == thrid)
+         if (cand_ref->acc.tsw.thrid == thrid)
             /* This is an access by the same thread, but we're only
                interested in accesses from other threads.  Ignore. */
             continue;
 
-         if ((!cand_isW) && (!isW))
+         if ((!cand_ref->acc.tsw.isW) && (!isW))
             /* We don't want to report a read racing against another
                read; that's stupid.  So in this case move on. */
             continue;
 
-         if (cmp_nonempty_intervals(a, szB, cand_a, cand_szB) != 0)
+         cand_ref_szB        = cand_ref->acc.tsw.szB;
+         if (cmp_nonempty_intervals(a, szB, cand_a, cand_ref_szB) != 0)
             /* No overlap with the access we're asking about.  Ignore. */
             continue;
 
-         /* We have a match.  Stop searching. */
-         break;
+         /* We have a match. Keep this match if it is newer than
+            the previous match. Note that stamp are Unsigned Words, and
+            for long running applications, event_map_stamp might have cycled.
+            So, 'roll' each stamp using event_map_stamp to have the
+            stamps in the good order, in case event_map_stamp recycled. */
+         if (!ref 
+             || (ref->stamp - event_map_stamp) 
+                   < (cand_ref->stamp - event_map_stamp)) {
+            ref = cand_ref;
+            ref_szB = cand_ref_szB;
+         }
       }
 
-      tl_assert(i >= 0 && i <= N_OLDREF_ACCS);
-
-      if (i < N_OLDREF_ACCS) {
-         Int n, maxNFrames;
+      if (ref) {
          /* return with success */
-         tl_assert(cand_thrid);
-         tl_assert(cand_rcec);
-         tl_assert(cand_rcec->magic == RCEC_MAGIC);
-         tl_assert(cand_szB >= 1);
+         Int n, maxNFrames;
+         RCEC*     ref_rcec = ref->acc.rcec;
+         tl_assert(ref->acc.tsw.thrid);
+         tl_assert(ref_rcec);
+         tl_assert(ref_rcec->magic == RCEC_MAGIC);
+         tl_assert(ref_szB >= 1);
          /* Count how many non-zero frames we have. */
          maxNFrames = min_UInt(N_FRAMES, VG_(clo_backtrace_size));
          for (n = 0; n < maxNFrames; n++) {
-            if (0 == cand_rcec->frames[n]) break;
+            if (0 == ref_rcec->frames[n]) break;
          }
-         *resEC      = VG_(make_ExeContext_from_StackTrace)
-                          (cand_rcec->frames, n);
-         *resThr     = Thr__from_ThrID(cand_thrid);
-         *resSzB     = cand_szB;
-         *resIsW     = cand_isW;
-         *locksHeldW = cand_locksHeldW;
+         *resEC      = VG_(make_ExeContext_from_StackTrace)(ref_rcec->frames,
+                                                            n);
+         *resThr     = Thr__from_ThrID(ref->acc.tsw.thrid);
+         *resSzB     = ref_szB;
+         *resIsW     = ref->acc.tsw.isW;
+         *locksHeldW = ref->acc.locksHeldW;
          stats__evm__lookup_found++;
          return True;
       }
@@ -4812,6 +4753,36 @@ Bool libhb_event_map_lookup ( /*OUT*/ExeContext** resEC,
    /* really didn't find anything. */
    stats__evm__lookup_notfound++;
    return False;
+}
+
+
+void libhb_event_map_access_history ( Addr a, SizeT szB, Access_t fn )
+{
+   OldRef *ref = lru.next;
+   SizeT ref_szB;
+   Int n;
+      
+   while (ref != &mru) {
+      ref_szB = ref->acc.tsw.szB;
+      if (cmp_nonempty_intervals(a, szB, ref->ga, ref_szB) == 0) {
+         RCEC* ref_rcec = ref->acc.rcec;
+         for (n = 0; n < N_FRAMES; n++) {
+            if (0 == ref_rcec->frames[n]) {
+               break;
+            }
+         }
+         (*fn)(ref_rcec->frames, n,
+               Thr__from_ThrID(ref->acc.tsw.thrid),
+               ref->ga,
+               ref_szB,
+               ref->acc.tsw.isW,
+               ref->acc.locksHeldW);
+      }
+      tl_assert (ref->next == &mru
+                 || ((ref->stamp - event_map_stamp)
+                        < ref->next->stamp - event_map_stamp));
+      ref = ref->next;
+   }
 }
 
 static void event_map_init ( void )
@@ -4843,27 +4814,21 @@ static void event_map_init ( void )
                                HG_(free)
                             );
 
-   /* Oldref tree */
-   tl_assert(!oldrefTree);
-   oldrefTree = VG_(newSWA)(
-                   HG_(zalloc),
-                   "libhb.event_map_init.4 (oldref tree)", 
-                   HG_(free)
-                );
+   /* Oldref hashtable */
+   tl_assert(!oldrefHT);
+   oldrefHT = VG_(HT_construct) ("libhb.event_map_init.4 (oldref hashtable)");
 
-   oldrefTreeN = 0;
+   oldrefHTN = 0;
    mru.prev = &lru;
    mru.next = NULL;
    lru.prev = NULL;
    lru.next = &mru;
-   for (i = 0; i < N_OLDREF_ACCS; i++) {
-      mru.accs[i] = (Thr_n_RCEC) {.rcec = NULL, 
-                                  .locksHeldW = 0, 
-                                  .thrid = 0, 
-                                  .szLg2B = 0, 
-                                  .isW = 0};
-      lru.accs[i] = mru.accs[i];
-   }
+   mru.acc = (Thr_n_RCEC) {.tsw = {.thrid = 0, 
+                                   .szB = 0, 
+                                   .isW = 0},
+                           .locksHeldW = 0, 
+                           .rcec = NULL};
+   lru.acc = mru.acc;
 }
 
 static void event_map__check_reference_counts ( void )
@@ -4872,7 +4837,6 @@ static void event_map__check_reference_counts ( void )
    OldRef* oldref;
    Word    i;
    UWord   nEnts = 0;
-   UWord   keyW, valW;
 
    /* Set the 'check' reference counts to zero.  Also, optionally
       check that the real reference counts are non-zero.  We allow
@@ -4893,20 +4857,14 @@ static void event_map__check_reference_counts ( void )
    tl_assert(stats__ctxt_tab_curr <= stats__ctxt_tab_max);
 
    /* visit all the referencing points, inc check ref counts */
-   VG_(initIterSWA)( oldrefTree );
-   while (VG_(nextIterSWA)( oldrefTree, &keyW, &valW )) {
-      oldref = (OldRef*)valW;
-      for (i = 0; i < N_OLDREF_ACCS; i++) {
-         ThrID aThrID = oldref->accs[i].thrid;
-         RCEC* aRef   = oldref->accs[i].rcec;
-         if (aThrID != 0) {
-            tl_assert(aRef);
-            tl_assert(aRef->magic == RCEC_MAGIC);
-            aRef->rcX++;
-         } else {
-            tl_assert(!aRef);
-         }
-      }
+   VG_(HT_ResetIter)( oldrefHT );
+   oldref = VG_(HT_Next)( oldrefHT );
+   while (oldref) {
+      tl_assert (oldref->acc.tsw.thrid);
+      tl_assert (oldref->acc.rcec);
+      tl_assert (oldref->acc.rcec->magic == RCEC_MAGIC);
+      oldref->acc.rcec->rcX++;
+      oldref = VG_(HT_Next)( oldrefHT );
    }
 
    /* compare check ref counts with actual */
@@ -4945,7 +4903,7 @@ static void do_RCEC_GC ( void )
             free_RCEC(p);
             p = *pp;
             tl_assert(stats__ctxt_tab_curr > 0);
-            stats__ctxt_rcdec_discards++;
+            stats__ctxt_rcec_gc_discards++;
             stats__ctxt_tab_curr--;
          } else {
             pp = &p->next;
@@ -6266,27 +6224,25 @@ Thr* libhb_init (
 
    // We will have to have to store a large number of these,
    // so make sure they're the size we expect them to be.
-   tl_assert(sizeof(ScalarTS) == 8);
+   STATIC_ASSERT(sizeof(ScalarTS) == 8);
 
    /* because first 1024 unusable */
-   tl_assert(SCALARTS_N_THRBITS >= 11);
-   /* so as to fit in a UInt w/ 3 bits to spare (see defn of
-      Thr_n_RCEC). */
-   tl_assert(SCALARTS_N_THRBITS <= 29);
+   STATIC_ASSERT(SCALARTS_N_THRBITS >= 11);
+   /* so as to fit in a UInt w/ 5 bits to spare (see defn of
+      Thr_n_RCEC and TSW). */
+   STATIC_ASSERT(SCALARTS_N_THRBITS <= 27);
 
    /* Need to be sure that Thr_n_RCEC is 2 words (64-bit) or 3 words
       (32-bit).  It's not correctness-critical, but there are a lot of
       them, so it's important from a space viewpoint.  Unfortunately
       we simply can't pack it into 2 words on a 32-bit target. */
-   if (sizeof(UWord) == 8) {
-      tl_assert(sizeof(Thr_n_RCEC) == 16);
-   } else {
-      tl_assert(sizeof(Thr_n_RCEC) == 12);
-   }
+   STATIC_ASSERT(   (sizeof(UWord) == 8 && sizeof(Thr_n_RCEC) == 16)
+                 || (sizeof(UWord) == 4 && sizeof(Thr_n_RCEC) == 12));
+   STATIC_ASSERT(sizeof(TSW) == sizeof(UInt));
 
    /* Word sets really are 32 bits.  Even on a 64 bit target. */
-   tl_assert(sizeof(WordSetID) == 4);
-   tl_assert(sizeof(WordSet) == sizeof(WordSetID));
+   STATIC_ASSERT(sizeof(WordSetID) == 4);
+   STATIC_ASSERT(sizeof(WordSet) == sizeof(WordSetID));
 
    tl_assert(get_stacktrace);
    tl_assert(get_EC);
@@ -6503,45 +6459,19 @@ void libhb_shutdown ( Bool show_stats )
       }
 
       VG_(printf)("%s","\n");
-      {
-         UWord OldRef_accs_n[N_OLDREF_ACCS+1];
-         UInt accs_n;
-         UWord OldRef_n;
-         UInt i;
-
-         OldRef_n = 0;
-         for (i = 0; i <= N_OLDREF_ACCS; i++)
-            OldRef_accs_n[i] = 0;
-
-         for (OldRef* o = mru.prev; o != &lru; o = o->prev) {
-            OldRef_n++;
-            accs_n = 0;
-            for (i = 0; i < N_OLDREF_ACCS; i++) {
-               if (o->accs[i].thrid != 0)
-                  accs_n++;
-            }
-            OldRef_accs_n[accs_n]++;
-         }
-
-         tl_assert(OldRef_n == oldrefTreeN);
-         VG_(printf)( "   libhb: oldrefTreeN %lu (%d bytes)\n", 
-                      oldrefTreeN, (int)(oldrefTreeN * sizeof(OldRef)));
-         VG_(printf)( "   libhb: ( ");
-         accs_n = 0;
-         for (i = 0; i <= N_OLDREF_ACCS; i++) {
-            VG_(printf)( "accs[%d]=%lu ", i, OldRef_accs_n[i]);
-            accs_n += OldRef_accs_n[i] * i;
-         }
-         VG_(printf)( ") (tot Thr_n_RCEC %d)\n", accs_n);
-         VG_(printf)( "   libhb: oldref lookup found=%lu notfound=%lu\n",
-                      stats__evm__lookup_found, stats__evm__lookup_notfound);
-      }
-      VG_(printf)( "   libhb: ctxt__rcdec: 1=%lu(%lu eq), 2=%lu, 3=%lu\n",
-                   stats__ctxt_rcdec1, stats__ctxt_rcdec1_eq,
-                   stats__ctxt_rcdec2,
-                   stats__ctxt_rcdec3 );
-      VG_(printf)( "   libhb: ctxt__rcdec: calls %lu, discards %lu\n",
-                   stats__ctxt_rcdec_calls, stats__ctxt_rcdec_discards);
+      VG_(printf)( "   libhb: oldrefHTN %lu (%'d bytes)\n",
+                   oldrefHTN, (int)(oldrefHTN * sizeof(OldRef)));
+      tl_assert (oldrefHTN == VG_(HT_count_nodes) (oldrefHT));
+      VG_(printf)( "   libhb: oldref lookup found=%lu notfound=%lu\n",
+                   stats__evm__lookup_found, stats__evm__lookup_notfound);
+      if (VG_(clo_verbosity) > 1)
+         VG_(HT_print_stats) (oldrefHT, cmp_oldref_tsw);
+      VG_(printf)( "   libhb: oldref bind tsw/rcec "
+                   "==/==:%lu ==/!=:%lu !=/!=:%lu\n",
+                   stats__ctxt_eq_tsw_eq_rcec, stats__ctxt_eq_tsw_neq_rcec,
+                   stats__ctxt_neq_tsw_neq_rcec);
+      VG_(printf)( "   libhb: ctxt__rcdec calls %lu. rcec gc discards %lu\n",
+                   stats__ctxt_rcdec_calls, stats__ctxt_rcec_gc_discards);
       VG_(printf)( "   libhb: contextTab: %lu slots,"
                    " %lu cur ents(ref'd %lu),"
                    " %lu max ents\n",

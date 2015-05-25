@@ -159,6 +159,16 @@ Bool libhb_event_map_lookup ( /*OUT*/ExeContext** resEC,
                               /*OUT*/WordSetID*   locksHeldW,
                               Thr* thr, Addr a, SizeT szB, Bool isW );
 
+typedef void (*Access_t) (StackTrace ips, UInt n_ips,
+                          Thr*  Thr_a,
+                          Addr  ga,
+                          SizeT SzB,
+                          Bool  isW,
+                          WordSetID locksHeldW );
+/* Call fn for each recorded access history that overlaps with range [a, a+szB[.
+   fn is first called for oldest access.*/
+void libhb_event_map_access_history ( Addr a, SizeT szB, Access_t fn );
+
 /* ------ Exported from hg_main.c ------ */
 /* Yes, this is a horrible tangle.  Sigh. */
 

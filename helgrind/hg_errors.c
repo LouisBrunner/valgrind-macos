@@ -33,6 +33,7 @@
 #include "pub_tool_libcbase.h"
 #include "pub_tool_libcassert.h"
 #include "pub_tool_libcprint.h"
+#include "pub_tool_stacktrace.h"
 #include "pub_tool_execontext.h"
 #include "pub_tool_errormgr.h"
 #include "pub_tool_wordfm.h"
@@ -1267,6 +1268,47 @@ void HG_(pp_Error) ( const Error* err )
    default:
       tl_assert(0);
    } /* switch (VG_(get_error_kind)(err)) */
+}
+
+void HG_(print_access) (StackTrace ips, UInt n_ips,
+                        Thr* thr_a,
+                        Addr  ga,
+                        SizeT SzB,
+                        Bool  isW,
+                        WordSetID locksHeldW )
+{
+   Thread* threadp;
+
+   threadp = libhb_get_Thr_hgthread( thr_a );
+   tl_assert(threadp);
+   if (!threadp->announced) {
+      /* This is for interactive use. We announce the thread if needed,
+         but reset it to not announced afterwards, because we want
+         the thread to be announced on the error output/log if needed. */
+      announce_one_thread (threadp);
+      threadp->announced = False;
+   }
+
+   announce_one_thread (threadp);
+   VG_(printf) ("%s of size %d at %p by thread #%d",
+                isW ? "write" : "read",
+                (int)SzB, (void*)ga, threadp->errmsg_index);
+   if (threadp->coretid == VG_INVALID_THREADID) 
+      VG_(printf)(" tid (exited)\n");
+   else
+      VG_(printf)(" tid %d\n", threadp->coretid);
+   {
+      Lock** locksHeldW_P;
+      locksHeldW_P = enumerate_WordSet_into_LockP_vector(
+                       HG_(get_univ_lsets)(),
+                       locksHeldW,
+                       True/*allowed_to_be_invalid*/
+                    );
+      show_LockP_summary_textmode( locksHeldW_P, "" );
+      HG_(free) (locksHeldW_P);
+   }
+   VG_(pp_StackTrace) (ips, n_ips);
+   VG_(printf) ("\n");
 }
 
 const HChar* HG_(get_error_name) ( const Error* err )

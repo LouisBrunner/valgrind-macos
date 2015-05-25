@@ -75,7 +75,7 @@ Bool  HG_(clo_cmp_race_err_addrs) = False;
 
 UWord HG_(clo_history_level) = 2;
 
-UWord HG_(clo_conflict_cache_size) = 1000000;
+UWord HG_(clo_conflict_cache_size) = 2000000;
 
 Word  HG_(clo_sanity_flags) = 0;
 

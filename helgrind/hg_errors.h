@@ -62,6 +62,14 @@ void HG_(record_error_UnlockBogus)    ( Thread*, Addr );
 void HG_(record_error_PthAPIerror)    ( Thread*, const HChar*, Word,
                                         const HChar* );
 
+/* Function for printing the details about an access */
+void HG_(print_access) (StackTrace ips, UInt n_ips,
+                        Thr*  thr_a,
+                        Addr  ga,
+                        SizeT SzB,
+                        Bool  isW,
+                        WordSetID locksHeldW );
+
 /* see the implementation for meaning of these params */
 void HG_(record_error_LockOrder)      ( Thread*, Lock*, Lock*,
                                         ExeContext*, ExeContext*,

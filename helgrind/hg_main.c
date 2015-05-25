@@ -4782,7 +4782,10 @@ static void print_monitor_help ( void )
       (
 "\n"
 "helgrind monitor commands:\n"
-"  info locks              : show list of locks and their status\n"
+"  info locks [lock_addr]  : show status of lock at addr lock_addr\n"
+"           with no lock_addr, show status of all locks\n"
+"  accesshistory <addr> [<len>]   : show access history recorded\n"
+"                     for <len> (or 1) bytes at <addr>\n"
 "\n");
 }
 
@@ -4801,7 +4804,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
       starts with the same first letter(s) as an already existing
       command. This ensures a shorter abbreviation for the user. */
    switch (VG_(keyword_id) 
-           ("help info", 
+           ("help info accesshistory", 
             wcmd, kwd_report_duplicated_matches)) {
    case -2: /* multiple matches */
       return True;
@@ -4820,21 +4823,54 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
          break;
       case 0: // locks
          {
+            const HChar* wa;
+            Addr lk_addr = 0;
+            Bool lk_shown = False;
+            Bool all_locks = True;
             Int i;
             Lock* lk;
+
+            wa = VG_(strtok_r) (NULL, " ", &ssaveptr);
+            if (wa != NULL) {
+               if (VG_(parse_Addr) (&wa, &lk_addr) )
+                  all_locks = False;
+               else {
+                  VG_(gdb_printf) ("missing or malformed address\n");
+               }
+            }
             for (i = 0, lk = admin_locks;  lk;  i++, lk = lk->admin_next) {
-               pp_Lock(0, lk,
-                       True /* show_lock_addrdescr */,
-                       False /* show_internal_data */);
+               if (all_locks || lk_addr == lk->guestaddr) {
+                  pp_Lock(0, lk,
+                          True /* show_lock_addrdescr */,
+                          False /* show_internal_data */);
+                  lk_shown = True;
+               }
             }
             if (i == 0)
                VG_(gdb_printf) ("no locks\n");
+            if (!all_locks && !lk_shown)
+               VG_(gdb_printf) ("lock with address %p not found\n",
+                                (void*)lk_addr);
          }
          break;
       default:
          tl_assert(0);
       }
       return True;
+
+   case  2: /* accesshistory */
+      {
+         Addr address;
+         SizeT szB = 1;
+         if (VG_(strtok_get_address_and_size) (&address, &szB, &ssaveptr)) {
+            if (szB >= 1) 
+               libhb_event_map_access_history (address, szB, HG_(print_access));
+            else
+               VG_(gdb_printf) ("len must be >=1\n");
+         }
+         return True;
+      }
+
    default: 
       tl_assert(0);
       return False;
@@ -5267,10 +5303,8 @@ static Bool hg_process_cmd_line_option ( const HChar* arg )
    else if VG_XACT_CLO(arg, "--history-level=full",
                             HG_(clo_history_level), 2);
 
-   /* If you change the 10k/30mill limits, remember to also change
-      them in assertions at the top of event_map_maybe_GC. */
    else if VG_BINT_CLO(arg, "--conflict-cache-size",
-                       HG_(clo_conflict_cache_size), 10*1000, 30*1000*1000) {}
+                       HG_(clo_conflict_cache_size), 10*1000, 150*1000*1000) {}
 
    /* "stuvwx" --> stuvwx (binary) */
    else if VG_STR_CLO(arg, "--hg-sanity-flags", tmp_str) {
@@ -5321,7 +5355,7 @@ static void hg_print_usage ( void )
 "       full:   show both stack traces for a data race (can be very slow)\n"
 "       approx: full trace for one thread, approx for the other (faster)\n"
 "       none:   only show trace for one thread in a race (fastest)\n"
-"    --conflict-cache-size=N   size of 'full' history cache [1000000]\n"
+"    --conflict-cache-size=N   size of 'full' history cache [2000000]\n"
 "    --check-stack-refs=no|yes race-check reads and writes on the\n"
 "                              main stack and thread stacks? [yes]\n"
    );

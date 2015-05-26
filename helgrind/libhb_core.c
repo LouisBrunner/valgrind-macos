@@ -6467,10 +6467,10 @@ void libhb_shutdown ( Bool show_stats )
       if (VG_(clo_verbosity) > 1)
          VG_(HT_print_stats) (oldrefHT, cmp_oldref_tsw);
       VG_(printf)( "   libhb: oldref bind tsw/rcec "
-                   "==/==:%lu ==/!=:%lu !=/!=:%lu\n",
+                   "==/==:%'lu ==/!=:%'lu !=/!=:%'lu\n",
                    stats__ctxt_eq_tsw_eq_rcec, stats__ctxt_eq_tsw_neq_rcec,
                    stats__ctxt_neq_tsw_neq_rcec);
-      VG_(printf)( "   libhb: ctxt__rcdec calls %lu. rcec gc discards %lu\n",
+      VG_(printf)( "   libhb: ctxt__rcdec calls %'lu. rcec gc discards %'lu\n",
                    stats__ctxt_rcdec_calls, stats__ctxt_rcec_gc_discards);
       VG_(printf)( "   libhb: contextTab: %lu slots,"
                    " %lu cur ents(ref'd %lu),"

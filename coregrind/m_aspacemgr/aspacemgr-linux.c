@@ -1775,8 +1775,7 @@ Addr VG_(am_get_advisory) ( const MapRequest*  req,
    }
 
    /* Reject wraparounds */
-   if ((req->rkind==MFixed || req->rkind==MHint)
-       && req->start + req->len < req->start) {
+   if (req->start + req->len < req->start) {
       *ok = False;
       return 0;
    }

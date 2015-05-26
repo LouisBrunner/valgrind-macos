@@ -105,7 +105,7 @@
 /*--- fwdses                                               ---*/
 /*------------------------------------------------------------*/
 
-static UInt CF_info_generation = 0;
+static UInt debuginfo_generation = 0;
 static void cfsi_m_cache__invalidate ( void );
 
 
@@ -2645,12 +2645,12 @@ static CFSI_m_CacheEnt cfsi_m_cache[N_CFSI_M_CACHE];
 
 static void cfsi_m_cache__invalidate ( void ) {
    VG_(memset)(&cfsi_m_cache, 0, sizeof(cfsi_m_cache));
-   CF_info_generation++;
+   debuginfo_generation++;
 }
 
-UInt VG_(CF_info_generation) (void)
+UInt VG_(debuginfo_generation) (void)
 {
-   return CF_info_generation;
+   return debuginfo_generation;
 }
 
 static inline CFSI_m_CacheEnt* cfsi_m_cache__find ( Addr ip )
@@ -3084,6 +3084,16 @@ Bool VG_(use_FPO_info) ( /*MOD*/Addr* ipP,
                                                           + fpo->cdwParams);
    *fpP = ML_(read_Addr)((void *)(spHere + 4*2));
    return True;
+}
+
+Bool VG_(FPO_info_present)(void)
+{
+   const DebugInfo* di;
+   for (di = debugInfo_list; di != NULL; di = di->next) {
+      if (di->fpo != NULL)
+         return True;
+   }
+   return False;
 }
 
 

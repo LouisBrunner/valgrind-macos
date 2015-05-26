@@ -129,11 +129,16 @@ static Addr fp_CF_verif_cache [N_FP_CF_VERIF];
    then they will not land in the same cache bucket.
 */
 
+/* cached result of VG_(FPO_info_present)(). Refreshed each time
+   the fp_CF_verif_generation is different of the current debuginfo
+   generation. */
+static Bool FPO_info_present = False;
+
 static UInt fp_CF_verif_generation = 0;
 // Our cache has to be maintained in sync with the CFI cache.
-// Each time the CFI cache is changed, its generation will be incremented.
+// Each time the debuginfo is changed, its generation will be incremented.
 // We will clear our cache when our saved generation differs from
-// the CFI cache generation.
+// the debuginfo generation.
 
 UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
                                /*OUT*/Addr* ips, UInt max_n_ips,
@@ -226,9 +231,10 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    } 
 #  endif
 
-   if (UNLIKELY (fp_CF_verif_generation != VG_(CF_info_generation)())) {
-      fp_CF_verif_generation = VG_(CF_info_generation)();
+   if (UNLIKELY (fp_CF_verif_generation != VG_(debuginfo_generation)())) {
+      fp_CF_verif_generation = VG_(debuginfo_generation)();
       VG_(memset)(&fp_CF_verif_cache, 0, sizeof(fp_CF_verif_cache));
+      FPO_info_present = VG_(FPO_info_present)();
    }
 
 
@@ -398,8 +404,9 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
       }
 
       /* And, similarly, try for MSVC FPO unwind info. */
-      if ( VG_(use_FPO_info)( &uregs.xip, &uregs.xsp, &uregs.xbp,
-                              fp_min, fp_max ) ) {
+      if (FPO_info_present
+          && VG_(use_FPO_info)( &uregs.xip, &uregs.xsp, &uregs.xbp,
+                                fp_min, fp_max ) ) {
          if (debug) unwind_case = "MS";
          if (do_stats) stats.MS++;
          goto unwind_done;

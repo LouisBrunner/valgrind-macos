@@ -142,13 +142,21 @@ extern Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregs,
                                Addr min_accessible,
                                Addr max_accessible );
 
-/* returns the "generation" of the CF info.
+/* returns the "generation" of the debug info.
    Each time some debuginfo is changed (e.g. loaded or unloaded),
-   the VG_(CF_info_generation) value returned will be increased.
-   This can be used to flush cached information derived from the CF info. */
-extern UInt VG_(CF_info_generation) (void);
+   the VG_(debuginfo_generation)() value returned will be increased.
+   This can be used to flush cached information derived from debug
+   info (e.g. CFI info or FPO info or ...). */
+extern UInt VG_(debuginfo_generation) (void);
 
 
+
+/* True if some FPO information is loaded.
+   It is useless to call VG_(use_FPO_info) if this returns False.
+   Note that the return value should preferrably be cached in
+   the stack unwind code, and re-queried when the debug info generation
+   changes. */
+extern Bool VG_(FPO_info_present)(void);
 
 /* Use MSVC FPO data to do one step of stack unwinding. */
 extern Bool VG_(use_FPO_info) ( /*MOD*/Addr* ipP,

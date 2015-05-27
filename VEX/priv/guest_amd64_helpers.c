@@ -1036,7 +1036,7 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
                             binop(Iop_Xor64,
                                   cc_dep1,
                                   binop(Iop_Sub64, cc_dep1, cc_dep2))),
-                      mkU8(64));
+                      mkU8(63));
       }
       if (isU64(cc_op, AMD64G_CC_OP_SUBQ) && isU64(cond, AMD64CondNO)) {
          /* No action.  Never yet found a test case. */

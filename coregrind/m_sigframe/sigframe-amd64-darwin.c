@@ -45,19 +45,15 @@
 #include "pub_core_tooliface.h"
 #include "pub_core_trampoline.h"
 #include "pub_core_sigframe.h"      /* self */
+#include "priv_sigframe.h"
 
 
-/* Cheap-ass hack copied from ppc32-aix5 code, just to get started.
-   Produce a frame with layout entirely of our own choosing. */
+/* Originally copied from ppc32-aix5 code.
+   Produce a frame with layout entirely of our own choosing.
 
-/* This module creates and removes signal frames for signal deliveries
-   on amd64-darwin.  Kludgey; the machine state ought to be saved in a
-   ucontext and retrieved from it later, so the handler can modify it
-   and return.  However .. for now .. just stick the vex guest state
-   in the frame and snarf it again later.
-
-   Also, don't bother with creating siginfo and ucontext in the
-   handler, although do point them somewhere non-faulting.
+   This module creates and removes signal frames for signal deliveries
+   on amd64-darwin.  The machine state is saved in a ucontext and retrieved
+   from it later, so the handler can modify it and return.
 
    Frame should have a 16-aligned size, just in case that turns out to
    be important for Darwin.  (be conservative)
@@ -66,20 +62,82 @@ struct hacky_sigframe {
    /* first word looks like a call to a 3-arg amd64-ELF function */
    ULong               returnAddr;
    UChar               lower_guardzone[512];  // put nothing here
-   VexGuestAMD64State  gst;
-   VexGuestAMD64State  gshadow1;
-   VexGuestAMD64State  gshadow2;
+   VexGuestAMD64State  vex;
+   VexGuestAMD64State  vex_shadow1;
+   VexGuestAMD64State  vex_shadow2;
    vki_siginfo_t       fake_siginfo;
    struct vki_ucontext fake_ucontext;
    UInt                magicPI;
    UInt                sigNo_private;
    vki_sigset_t        mask; // saved sigmask; restore when hdlr returns
-   UInt                __pad[2];
    UChar               upper_guardzone[512]; // put nothing here
    // and don't zero it, since that might overwrite the client's
    // stack redzone, at least on archs which have one
 };
 
+/* Create a plausible-looking sigcontext from the thread's
+   Vex guest state.  NOTE: does not fill in the FP or SSE
+   bits of sigcontext at the moment.
+ */
+static void synthesize_ucontext(ThreadState *tst,
+				struct vki_ucontext *uc,
+				const struct vki_ucontext *siguc)
+{
+   VG_(memset)(uc, 0, sizeof(*uc));
+
+   if (siguc) uc->uc_sigmask = siguc->uc_sigmask;
+   uc->uc_stack = tst->altstack;
+   uc->uc_mcontext = &uc->__mcontext_data;
+
+#  define SC2(reg,REG)  uc->__mcontext_data.__ss.reg = tst->arch.vex.guest_##REG
+   SC2(__r8,R8);
+   SC2(__r9,R9);
+   SC2(__r10,R10);
+   SC2(__r11,R11);
+   SC2(__r12,R12);
+   SC2(__r13,R13);
+   SC2(__r14,R14);
+   SC2(__r15,R15);
+   SC2(__rdi,RDI);
+   SC2(__rsi,RSI);
+   SC2(__rbp,RBP);
+   SC2(__rbx,RBX);
+   SC2(__rdx,RDX);
+   SC2(__rax,RAX);
+   SC2(__rcx,RCX);
+   SC2(__rsp,RSP);
+   SC2(__rip,RIP);
+   uc->__mcontext_data.__ss.__rflags = LibVEX_GuestAMD64_get_rflags(&tst->arch.vex);
+
+   if (siguc)
+      uc->__mcontext_data.__es = siguc->__mcontext_data.__es;
+#  undef SC2
+}
+
+static void restore_from_ucontext(ThreadState *tst,
+				  const struct vki_ucontext *uc)
+{
+#  define SC2(REG,reg)  tst->arch.vex.guest_##REG = uc->__mcontext_data.__ss.reg
+   SC2(R8,__r8);
+   SC2(R9,__r9);
+   SC2(R10,__r10);
+   SC2(R11,__r11);
+   SC2(R12,__r12);
+   SC2(R13,__r13);
+   SC2(R14,__r14);
+   SC2(R15,__r15);
+   SC2(RDI,__rdi);
+   SC2(RSI,__rsi);
+   SC2(RBP,__rbp);
+   SC2(RBX,__rbx);
+   SC2(RDX,__rdx);
+   SC2(RAX,__rax);
+   SC2(RCX,__rcx);
+   SC2(RSP,__rsp);
+   SC2(RIP,__rip);
+   /* There doesn't seem to be an easy way to restore rflags */
+#  undef SC2
+}
 
 /* Create a signal frame for thread 'tid'.  Make a 3-arg frame
    regardless of whether the client originally requested a 1-arg
@@ -115,26 +173,25 @@ void VG_(sigframe_create) ( ThreadId tid,
 
    frame = (struct hacky_sigframe *) rsp;
 
-   /* clear it (very conservatively) (why so conservatively??) */
+   /* clear it (very conservatively) */
    VG_(memset)(&frame->lower_guardzone, 0, sizeof frame->lower_guardzone);
-   VG_(memset)(&frame->gst,      0, sizeof(VexGuestAMD64State));
-   VG_(memset)(&frame->gshadow1, 0, sizeof(VexGuestAMD64State));
-   VG_(memset)(&frame->gshadow2, 0, sizeof(VexGuestAMD64State));
+   VG_(memset)(&frame->vex,      0, sizeof(VexGuestAMD64State));
+   VG_(memset)(&frame->vex_shadow1, 0, sizeof(VexGuestAMD64State));
+   VG_(memset)(&frame->vex_shadow2, 0, sizeof(VexGuestAMD64State));
    VG_(memset)(&frame->fake_siginfo,  0, sizeof(frame->fake_siginfo));
    VG_(memset)(&frame->fake_ucontext, 0, sizeof(frame->fake_ucontext));
 
    /* save stuff in frame */
-   frame->gst           = tst->arch.vex;
-   frame->gshadow1      = tst->arch.vex_shadow1;
-   frame->gshadow2      = tst->arch.vex_shadow2;
+   frame->vex           = tst->arch.vex;
+   frame->vex_shadow1   = tst->arch.vex_shadow1;
+   frame->vex_shadow2   = tst->arch.vex_shadow2;
    frame->sigNo_private = sigNo;
    frame->mask          = tst->sig_mask;
    frame->magicPI       = 0x31415927;
 
-   /* Minimally fill in the siginfo and ucontext.  Note, utter
-      lameness prevails.  Be underwhelmed, be very underwhelmed. */
-   frame->fake_siginfo.si_signo = sigNo;
-   frame->fake_siginfo.si_code  = siginfo->si_code;
+   /* Fill in the siginfo and ucontext.  */
+   synthesize_ucontext(tst, &frame->fake_ucontext, siguc);
+   frame->fake_siginfo = *siginfo;
 
    /* Set up stack pointer */
    vg_assert(rsp == (Addr)&frame->returnAddr);
@@ -152,8 +209,8 @@ void VG_(sigframe_create) ( ThreadId tid,
 
    /* XXX should tell the tool that these regs got written */
    tst->arch.vex.guest_RDI = (ULong) sigNo;
-   tst->arch.vex.guest_RSI = (Addr)  &frame->fake_siginfo;/* oh well */
-   tst->arch.vex.guest_RDX = (Addr)  &frame->fake_ucontext; /* oh well */
+   tst->arch.vex.guest_RSI = (Addr)  &frame->fake_siginfo;
+   tst->arch.vex.guest_RDX = (Addr)  &frame->fake_ucontext;
 
    VG_TRACK( post_mem_write, Vg_CoreSignal, tid,
              (Addr)frame, 1*sizeof(ULong) );
@@ -198,9 +255,11 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
    /* restore the entire guest state, and shadows, from the
       frame.  Note, as per comments above, this is a kludge - should
       restore it from saved ucontext.  Oh well. */
-   tst->arch.vex = frame->gst;
-   tst->arch.vex_shadow1 = frame->gshadow1;
-   tst->arch.vex_shadow2 = frame->gshadow2;
+   tst->arch.vex = frame->vex;
+   tst->arch.vex_shadow1 = frame->vex_shadow1;
+   tst->arch.vex_shadow2 = frame->vex_shadow2;
+   restore_from_ucontext(tst, &frame->fake_ucontext);
+
    tst->sig_mask = frame->mask;
    tst->tmp_sig_mask = frame->mask;
    sigNo = frame->sigNo_private;

@@ -34,6 +34,12 @@
 #ifndef __VKI_DARWIN_H
 #define __VKI_DARWIN_H
 
+/* struct __darwin_ucontext isn't fully declared without
+ * this definition.  It's crazy but there it is.  */
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 0500
+#endif
+
 #include <stdint.h>
 
 #define vki_int8_t int8_t

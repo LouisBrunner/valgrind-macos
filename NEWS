@@ -139,6 +139,7 @@ where XXXXXX is the bug number as listed below.
 340115  Fix none/tests/cmdline[1|2] tests on systems which define TMPDIR
 340430  Fix some grammatical weirdness in the manual.
 341238  Recognize GCC5/DWARFv5 DW_LANG constants (Go, C11, C++11, C++14)
+341419  Signal handler ucontext_t not filled out correctly on OS X
 341539  VG_(describe_addr) should not describe address as belonging to client
         segment if it is past the heap end
 341613  Enable building of manythreads and thread-exits tests on Mac OS X

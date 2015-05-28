@@ -89,7 +89,9 @@
 #include "pub_core_libcfile.h"      // For VG_CLO_DEFAULT_LOGPORT
 
 /* Needed to get a definition for pread() from unistd.h */
+#ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 500
+#endif
 
 #include <stdio.h>
 #include <unistd.h>

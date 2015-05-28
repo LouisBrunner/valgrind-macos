@@ -1,0 +1,11 @@
+#! /bin/sh
+
+dir=`dirname $0`
+
+# Remove ==pid== and --pid-- and **pid** strings 
+perl -p -e 's/(==|--|\*\*)[0-9]{1,7}\1 //' |
+
+perl -p -e 's/0x[0-9A-Fa-f]+/0x......../g'
+
+# NOTE: it is essential for the bug345887 testcase that the stderr
+#       filtering does *not* remove lines beginning with --

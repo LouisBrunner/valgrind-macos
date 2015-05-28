@@ -45,19 +45,15 @@
 #include "pub_core_tooliface.h"
 #include "pub_core_trampoline.h"
 #include "pub_core_sigframe.h"      /* self */
+#include "priv_sigframe.h"
 
 
-/* Cheap-ass hack copied from ppc32-aix5 code, just to get started.
-   Produce a frame with layout entirely of our own choosing. */
+/* Originally copied from ppc32-aix5 code.
+   Produce a frame with layout entirely of our own choosing.
 
-/* This module creates and removes signal frames for signal deliveries
-   on x86-darwin.  Kludgey; the machine state ought to be saved in a
-   ucontext and retrieved from it later, so the handler can modify it
-   and return.  However .. for now .. just stick the vex guest state
-   in the frame and snarf it again later.
-
-   Also, don't bother with creating siginfo and ucontext in the
-   handler, although do point them somewhere non-faulting.
+   This module creates and removes signal frames for signal deliveries
+   on x86-darwin.  The machine state is saved in a ucontext and retrieved
+   from it later, so the handler can modify it and return.
 
    Frame should have a 16-aligned size, just in case that turns out to
    be important for Darwin.  (be conservative)
@@ -77,12 +73,59 @@ struct hacky_sigframe {
    UInt             magicPI;
    UInt             sigNo_private;
    vki_sigset_t     mask; // saved sigmask; restore when hdlr returns
-   UInt             __pad[1];
+   UInt             __pad[3];
    UChar            upper_guardzone[512]; // put nothing here
    // and don't zero it, since that might overwrite the client's
    // stack redzone, at least on archs which have one
 };
 
+/* Create a plausible-looking sigcontext from the thread's
+   Vex guest state.  NOTE: does not fill in the FP or SSE
+   bits of sigcontext at the moment.
+ */
+static void synthesize_ucontext(ThreadState *tst,
+				struct vki_ucontext *uc,
+				const struct vki_ucontext *siguc)
+{
+   VG_(memset)(uc, 0, sizeof(*uc));
+
+   if (siguc) uc->uc_sigmask = siguc->uc_sigmask;
+   uc->uc_stack = tst->altstack;
+   uc->uc_mcontext = &uc->__mcontext_data;
+
+#  define SC2(reg,REG)  uc->__mcontext_data.__ss.reg = tst->arch.vex.guest_##REG
+   SC2(__edi,EDI);
+   SC2(__esi,ESI);
+   SC2(__ebp,EBP);
+   SC2(__ebx,EBX);
+   SC2(__edx,EDX);
+   SC2(__eax,EAX);
+   SC2(__ecx,ECX);
+   SC2(__esp,ESP);
+   SC2(__eip,EIP);
+   uc->__mcontext_data.__ss.__eflags = LibVEX_GuestX86_get_eflags(&tst->arch.vex);
+
+   if (siguc)
+      uc->__mcontext_data.__es = siguc->__mcontext_data.__es;
+#  undef SC2
+}
+
+static void restore_from_ucontext(ThreadState *tst,
+				  const struct vki_ucontext *uc)
+{
+#  define SC2(REG,reg)  tst->arch.vex.guest_##REG = uc->__mcontext_data.__ss.reg
+   SC2(EDI,__edi);
+   SC2(ESI,__esi);
+   SC2(EBP,__ebp);
+   SC2(EBX,__ebx);
+   SC2(EDX,__edx);
+   SC2(EAX,__eax);
+   SC2(ECX,__ecx);
+   SC2(ESP,__esp);
+   SC2(EIP,__eip);
+   /* There doesn't seem to be an easy way to restore eflags */
+#  undef SC2
+}
 
 /* Create a signal frame for thread 'tid'.  Make a 3-arg frame
    regardless of whether the client originally requested a 1-arg
@@ -118,7 +161,7 @@ void VG_(sigframe_create) ( ThreadId tid,
 
    frame = (struct hacky_sigframe *) esp;
 
-   /* clear it (very conservatively) (why so conservatively??) */
+   /* clear it (very conservatively) */
    VG_(memset)(&frame->lower_guardzone, 0, sizeof frame->lower_guardzone);
    VG_(memset)(&frame->gst,      0, sizeof(VexGuestX86State));
    VG_(memset)(&frame->gshadow1, 0, sizeof(VexGuestX86State));
@@ -134,10 +177,9 @@ void VG_(sigframe_create) ( ThreadId tid,
    frame->mask          = tst->sig_mask;
    frame->magicPI       = 0x31415927;
 
-   /* Minimally fill in the siginfo and ucontext.  Note, utter
-      lameness prevails.  Be underwhelmed, be very underwhelmed. */
-   frame->fake_siginfo.si_signo = sigNo;
-   frame->fake_siginfo.si_code  = siginfo->si_code;
+   /* Fill in the siginfo and ucontext.  */
+   synthesize_ucontext(tst, &frame->fake_ucontext, siguc);
+   frame->fake_siginfo = *siginfo;
 
    /* Set up stack pointer */
    vg_assert(esp == (Addr)&frame->returnAddr);
@@ -153,8 +195,8 @@ void VG_(sigframe_create) ( ThreadId tid,
              (Addr)frame, 4*sizeof(UInt) );
    frame->returnAddr  = (UInt)&VG_(x86_darwin_SUBST_FOR_sigreturn);
    frame->a1_signo    = sigNo;
-   frame->a2_siginfo  = (UInt)&frame->fake_siginfo;  /* oh well */
-   frame->a3_ucontext = (UInt)&frame->fake_ucontext; /* oh well */
+   frame->a2_siginfo  = (UInt)&frame->fake_siginfo;
+   frame->a3_ucontext = (UInt)&frame->fake_ucontext;
    VG_TRACK( post_mem_write, Vg_CoreSignal, tid,
              (Addr)frame, 4*sizeof(UInt) );
    VG_TRACK( post_mem_write, Vg_CoreSignal, tid,
@@ -201,6 +243,8 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
    tst->arch.vex = frame->gst;
    tst->arch.vex_shadow1 = frame->gshadow1;
    tst->arch.vex_shadow2 = frame->gshadow2;
+   restore_from_ucontext(tst, &frame->fake_ucontext);
+
    tst->sig_mask = frame->mask;
    tst->tmp_sig_mask = frame->mask;
    sigNo = frame->sigNo_private;

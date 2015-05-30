@@ -9986,17 +9986,27 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
    MACX_(__NR_semaphore_timedwait_signal_trap, semaphore_timedwait_signal), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(40)),    // -40
 
-#if defined(VGA_x86)
-// _____(__NR_init_process), 
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(42)), 
-// _____(__NR_map_fd), 
-#else
 #  if DARWIN_VERS >= DARWIN_10_9
    MACX_(__NR_kernelrpc_mach_port_guard_trap, kernelrpc_mach_port_guard_trap),
    MACX_(__NR_kernelrpc_mach_port_unguard_trap, kernelrpc_mach_port_unguard_trap),
+#  else
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(41)),
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(42)),
 #  endif
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(43)), 
-#endif
+
+#  if DARWIN_VERS >= DARWIN_10_10
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(43)),
+#  else
+#    if DARWIN_VERS == DARWIN_10_9
+// _____(__NR_map_fd),
+#    else
+#      if defined(VGA_x86)
+// _____(__NR_map_fd), 
+#      else
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(43)),
+#      endif
+#    endif
+#  endif
 
 // _____(__NR_task_name_for_pid), 
    MACXY(__NR_task_for_pid, task_for_pid), 

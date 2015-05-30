@@ -175,12 +175,13 @@
 #define __NR_semaphore_timedwait_trap         VG_DARWIN_SYSCALL_CONSTRUCT_MACH(38)
 #define __NR_semaphore_timedwait_signal_trap  VG_DARWIN_SYSCALL_CONSTRUCT_MACH(39)
 
-#if defined(VGA_x86)
-#define __NR_init_process                     VG_DARWIN_SYSCALL_CONSTRUCT_MACH(41)
-#define __NR_map_fd                           VG_DARWIN_SYSCALL_CONSTRUCT_MACH(43)
-#else
+#if DARWIN_VERS >= DARWIN_10_9
 #define __NR_kernelrpc_mach_port_guard_trap   VG_DARWIN_SYSCALL_CONSTRUCT_MACH(41)
 #define __NR_kernelrpc_mach_port_unguard_trap VG_DARWIN_SYSCALL_CONSTRUCT_MACH(42)
+#endif
+
+#if defined(VGA_x86) || DARWIN_VERS == DARWIN_10_9
+#define __NR_map_fd                           VG_DARWIN_SYSCALL_CONSTRUCT_MACH(43)
 #endif
 
 #define __NR_task_name_for_pid                VG_DARWIN_SYSCALL_CONSTRUCT_MACH(44)

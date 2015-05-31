@@ -573,6 +573,7 @@ DECL_TEMPLATE(darwin, host_page_size);
 DECL_TEMPLATE(darwin, host_get_io_master);
 DECL_TEMPLATE(darwin, host_get_clock_service);
 DECL_TEMPLATE(darwin, host_request_notification);
+DECL_TEMPLATE(darwin, host_get_special_port);
 DECL_TEMPLATE(darwin, mach_port_type);
 DECL_TEMPLATE(darwin, mach_port_extract_member);
 DECL_TEMPLATE(darwin, mach_port_allocate);

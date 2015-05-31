@@ -251,6 +251,9 @@ typedef
             int which_port;
          } task_get_special_port;
          struct {
+            int which;
+         } host_get_special_port;
+         struct {
             char *service_name;
          } bootstrap_look_up;
          struct {

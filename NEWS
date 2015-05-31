@@ -165,6 +165,8 @@ where XXXXXX is the bug number as listed below.
 343335  unhandled instruction 0x1E638400 (fccmp) aarch64
 343523  OS X mach_ports_register: UNKNOWN task message [id 3403, to 
         mach_task_self(), reply 0x30f]
+343525  OS X host_get_special_port: UNKNOWN host message [id 412, to 
+        mach_host_self(), reply 0x........]
 343597  ppc64le: incorrect use of offseof macro
 343732  Unhandled syscall 144 (setgid) on aarch64
 343733  Unhandled syscall 187 (msgctl and related) on aarch64

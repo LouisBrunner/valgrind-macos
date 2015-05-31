@@ -4963,6 +4963,45 @@ PRE(host_request_notification)
 }
 
 
+PRE(host_create_mach_voucher)
+{
+#pragma pack(4)
+    typedef struct {
+        mach_msg_header_t Head;
+        NDR_record_t NDR;
+        mach_msg_type_number_t recipesCnt;
+        uint8_t recipes[5120];
+    } Request;
+#pragma pack()
+    
+    Request *req = (Request *)ARG1;
+
+    PRINT("host_create_mach_voucher(count %u)",
+          req->recipesCnt);
+    
+    AFTER = POST_FN(host_create_mach_voucher);
+}
+
+
+POST(host_create_mach_voucher)
+{
+#pragma pack(4)
+    typedef struct {
+        mach_msg_header_t Head;
+        /* start of the kernel processed data */
+        mach_msg_body_t msgh_body;
+        mach_msg_port_descriptor_t voucher;
+        /* end of the kernel processed data */
+    } Reply;
+#pragma pack()
+    
+    Reply *reply = (Reply *)ARG1;
+
+    // RK fixme properly parse this return type
+    PRINT("got voucher %#x ", reply->voucher.name);
+}
+
+
 PRE(host_get_special_port)
 {
 #pragma pack(4)
@@ -7847,6 +7886,9 @@ PRE(mach_msg_host)
       return;
    case 217:
       CALL_PRE(host_request_notification);
+      return;
+   case 222:
+      CALL_PRE(host_create_mach_voucher);
       return;
            
    case 412:

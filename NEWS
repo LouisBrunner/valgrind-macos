@@ -168,6 +168,8 @@ where XXXXXX is the bug number as listed below.
 343525  OS X host_get_special_port: UNKNOWN host message [id 412, to 
         mach_host_self(), reply 0x........]
 343597  ppc64le: incorrect use of offseof macro
+343649  OS X host_create_mach_voucher: UNKNOWN host message [id 222, to 
+        mach_host_self(), reply 0x........]
 343732  Unhandled syscall 144 (setgid) on aarch64
 343733  Unhandled syscall 187 (msgctl and related) on aarch64
 343802  s390x: Fix false positives "conditional jump or move depends on

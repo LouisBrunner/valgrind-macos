@@ -466,7 +466,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
                                const UnwindStartRegs* startRegs,
                                Addr fp_max_orig )
 {
-   Bool  debug = False;
+   const Bool  debug = False;
    Int   i;
    Addr  fp_max;
    UInt  n_found = 0;
@@ -520,6 +520,9 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    if (sps) sps[0] = uregs.xsp;
    if (fps) fps[0] = uregs.xbp;
    i = 1;
+   if (debug)
+      VG_(printf)("     ipsS[%d]=%#08lx rbp %#08lx rsp %#08lx\n",
+                  i-1, ips[i-1], uregs.xbp, uregs.xsp);
 
 #  if defined(VGO_darwin)
    if (VG_(is_valid_tid)(tid_if_known) &&
@@ -568,7 +571,8 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
          if (fps) fps[i] = uregs.xbp;
          ips[i++] = uregs.xip - 1; /* -1: refer to calling insn, not the RA */
          if (debug)
-            VG_(printf)("     ipsC[%d]=%#08lx\n", i-1, ips[i-1]);
+            VG_(printf)("     ipsC[%d]=%#08lx rbp %#08lx rsp %#08lx\n",
+                        i-1, ips[i-1], uregs.xbp, uregs.xsp);
          uregs.xip = uregs.xip - 1; /* as per comment at the head of this loop */
          if (UNLIKELY(cmrf > 0)) {RECURSIVE_MERGE(cmrf,ips,i);};
          continue;

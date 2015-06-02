@@ -207,6 +207,13 @@
    fun:__setenv
 }
 
+# See https://bugs.kde.org/show_bug.cgi?id=196528
+{
+   macos-__pthread_rwlock_init-see-our-bug-196528
+   Memcheck:Cond
+   fun:pthread_rwlock_init
+}
+
 #{
 #   libSystem-keymgr-leak-at-exit
 #   Memcheck:Leak

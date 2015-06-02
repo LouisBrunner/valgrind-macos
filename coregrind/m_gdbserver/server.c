@@ -248,6 +248,7 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
 "  v.info exectxt          : show stacktraces and stats of all execontexts\n"
 "  v.info scheduler        : show valgrind thread state and stacktrace\n"
 "  v.info stats            : show various valgrind and tool stats\n"
+"  v.info unwind <addr> [<len>] : show unwind debug info for <addr> .. <addr+len>\n"
 "  v.set debuglog <level>  : set valgrind debug log level to <level>\n"
 "  v.set hostvisibility [yes*|no] : (en/dis)ables access by gdb/gdbserver to\n"
 "    Valgrind internal host status/memory\n"
@@ -364,7 +365,7 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
       wcmd = strtok_r (NULL, " ", &ssaveptr);
       switch (kwdid = VG_(keyword_id) 
               ("all_errors n_errs_found last_error gdbserver_status memory"
-               " scheduler stats open_fds exectxt location",
+               " scheduler stats open_fds exectxt location unwind",
                wcmd, kwd_report_all)) {
       case -2:
       case -1: 
@@ -456,6 +457,17 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
          ret = 1;
          break;
       }
+      case 10: { /* unwind */
+         Addr address;
+         SizeT sz = 0;
+         if (VG_(strtok_get_address_and_size) (&address, 
+                                               &sz, &ssaveptr)) {
+            VG_(ppUnwindInfo) (address, address + sz - 1);
+         }
+         ret = 1;
+         break;
+      }
+
       default:
          vg_assert(0);
       }

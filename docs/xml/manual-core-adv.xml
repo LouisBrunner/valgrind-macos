@@ -1479,6 +1479,14 @@ problems or bugs.</para>
   </listitem>
 
   <listitem>
+    <para><varname>v.info unwind  &lt;addr&gt; [&lt;len&gt;]</varname> shows
+    the CFI unwind debug info for the address range [addr, addr+len-1].
+    The default value of &lt;len&gt; is 1, giving the unwind information
+    for the instruction at &lt;addr&gt;.
+    </para>
+  </listitem>
+
+  <listitem>
     <para><varname>v.set debuglog &lt;intvalue&gt;</varname> sets the
     Valgrind debug log level to &lt;intvalue&gt;.  This allows to
     dynamically change the log level of Valgrind e.g. when a problem

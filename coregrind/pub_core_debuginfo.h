@@ -165,6 +165,10 @@ extern Bool VG_(use_FPO_info) ( /*MOD*/Addr* ipP,
                                 Addr min_accessible,
                                 Addr max_accessible );
 
+/* Print the unwind info (if there is some) for the given address
+   range [from,to]. */
+extern void VG_(ppUnwindInfo) (Addr from, Addr to);
+
 /* AVMAs for a symbol. Usually only the lowest address of the entity.
    On ppc64 platforms, also contains tocptr and local_ep.
    These fields should only be accessed using the macros

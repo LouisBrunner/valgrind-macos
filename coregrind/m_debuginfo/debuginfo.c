@@ -2828,6 +2828,37 @@ Addr ML_(get_CFA) ( Addr ip, Addr sp, Addr fp,
 #  endif
 }
 
+void VG_(ppUnwindInfo) (Addr from, Addr to)
+{
+   DebugInfo*         di;
+   CFSI_m_CacheEnt*   ce;
+   Addr ce_from;
+   CFSI_m_CacheEnt*   next_ce;
+
+
+   ce = cfsi_m_cache__find(from);
+   ce_from = from;
+   while (from <= to) {
+      from++;
+      next_ce = cfsi_m_cache__find(from);
+      if ((ce == NULL && next_ce != NULL)
+          || (ce != NULL && next_ce == NULL)
+          || (ce != NULL && next_ce != NULL && ce->cfsi_m != next_ce->cfsi_m)
+          || from > to) {
+         if (ce == NULL) {
+            VG_(printf)("[%#lx .. %#lx]: no CFI info\n", ce_from, from-1);
+         } else {
+            di = ce->di;
+            ML_(ppDiCfSI)(di->cfsi_exprs,
+                          ce_from, from - ce_from,
+                          ce->cfsi_m);
+         }
+         ce = next_ce;
+         ce_from = from;
+      }
+   }
+}
+
 
 /* The main function for DWARF2/3 CFI-based stack unwinding.  Given a
    set of registers in UREGS, modify it to hold the register values

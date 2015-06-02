@@ -142,8 +142,12 @@ void ML_(ppDiCfSI) ( const XArray* /* of CfiExpr */ exprs,
          }                                       \
       } while (0)
 
-   VG_(printf)("[%#lx .. %#lx]: ", base,
-                                   base + (UWord)len - 1);
+   if (base != 0 || len != 0)
+      VG_(printf)("[%#lx .. %#lx]: ", base,
+                                      base + (UWord)len - 1);
+   else
+      VG_(printf)("[]: ");
+
    switch (si_m->cfa_how) {
       case CFIC_IA_SPREL: 
          VG_(printf)("let cfa=oldSP+%d", si_m->cfa_off); 

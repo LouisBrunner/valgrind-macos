@@ -1811,6 +1811,33 @@ CFLAGS=$safe_CFLAGS
 
 AC_SUBST(FLAG_FNO_STACK_PROTECTOR)
 
+# Does GCC support disabling Identical Code Folding?
+# We want to disabled Identical Code Folding for the
+# tools preload shared objects to get better backraces.
+# For GCC 5.1+ -fipa-icf is enabled by default at -O2.
+# "The optimization reduces code size and may disturb
+#  unwind stacks by replacing a function by equivalent
+#  one with a different name."
+AC_MSG_CHECKING([if gcc accepts -fno-ipa-icf])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-fno-ipa-icf"
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  return 0;
+]])], [
+no_ipa_icf=yes
+FLAG_FNO_IPA_ICF="-fno-ipa-icf"
+AC_MSG_RESULT([yes])
+], [
+no_ipa_icf=no
+FLAG_FNO_IPA_ICF=""
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
+AC_SUBST(FLAG_FNO_IPA_ICF)
+
 
 # Does this compiler support -fsanitize=undefined?
 # Only checked for if --enable-ubsan was given.

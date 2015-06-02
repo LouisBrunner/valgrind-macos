@@ -459,7 +459,7 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
       }
       case 10: { /* unwind */
          Addr address;
-         SizeT sz = 0;
+         SizeT sz = 1;
          if (VG_(strtok_get_address_and_size) (&address, 
                                                &sz, &ssaveptr)) {
             VG_(ppUnwindInfo) (address, address + sz - 1);

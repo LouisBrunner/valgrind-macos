@@ -440,3 +440,40 @@ Fri  8 May 11:52:14 CEST 2015
 347885  unhandled instruction bytes: 0xD6 0xF 0x84 0x1B (SALC amd64)
 
 Tue 19 May 11:22:52 CEST 2015
+
+347982  Undefined symbols for architecture x86_64: "_global", referenced from: _test_so_global in tls_so-tls_so.o (OSX Yosemite)
+
+347988  Memcheck: the 'impossible' happened: unexpected size for Addr (OSX/wine)
+
+347991  false positive when using intrinsic fortran function "present"
+probable invalid
+
+348252  ARM: test vcvt_fixed_float_VFP causes compiler errors
+
+348269  support of mmap for huge pages is broken at least on amd64
+
+348279  Replace asm with __asm__ (for -std=c99).
+
+348325  Valgrind becomes noisy when compiled with gcc 4.9
+
+348334  valgrind does not simulate dcbfl  -  then my program terminates
+
+348342  Valgrind does not support android-x86_64
+
+348345  Assertion fails for negative lineno
+
+348358  describe should show info about main stack guard page
+
+348377  Unsupported ARM instruction: yield
+
+348387  Valgrind does not recognize a variant of the VCMPPD instruction
+
+348536  Unhandled instructions
+
+348565  unknown warning options on clang/osx: Wmissing-parameter-type Wold-style-declaration
+
+348574  vex amd64->IR pcmpistri SSE4.2 instruction is unsupported
+
+348616  Wine/valgrind: Warning: noted but unhandled ioctl 0x5390 with no size/direction hints. (DVD_READ_STRUCT)
+
+Fri  5 Jun 13:41:51 CEST 2015

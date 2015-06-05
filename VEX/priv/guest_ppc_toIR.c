@@ -7462,10 +7462,10 @@ static Bool dis_cache_manage ( UInt         theInstr,
       }
    }
 
-   if (opc1 != 0x1F || b21to25 != 0 || b0 != 0) {
+   if (opc1 != 0x1F || b0 != 0) {
       if (0) vex_printf("dis_cache_manage %d %d %d\n", 
-                        (Int)opc1, (Int)b21to25, (Int)b0);
-      vex_printf("dis_cache_manage(ppc)(opc1|b21to25|b0)\n");
+                        (Int)opc1, (Int)b0);
+      vex_printf("dis_cache_manage(ppc)(opc1|b0)\n");
       return False;
    }
 

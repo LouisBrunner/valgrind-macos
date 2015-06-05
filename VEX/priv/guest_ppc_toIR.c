@@ -7463,7 +7463,7 @@ static Bool dis_cache_manage ( UInt         theInstr,
    }
 
    if (opc1 != 0x1F || b0 != 0) {
-      if (0) vex_printf("dis_cache_manage %d %d %d\n", 
+      if (0) vex_printf("dis_cache_manage %d %d\n", 
                         (Int)opc1, (Int)b0);
       vex_printf("dis_cache_manage(ppc)(opc1|b0)\n");
       return False;

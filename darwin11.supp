@@ -65,6 +65,16 @@
    fun:pthread_mutex_lock
 }
 
+{
+   OSX107:10-Leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:?alloc
+   ...
+   fun:libSystem_initializer
+   ...
+}
+
 ################
 # More OSX 10.7.2 supps from startup of Firefox, for reports
 # that look like they are in the OSX system libraries

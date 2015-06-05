@@ -4223,8 +4223,8 @@ struct vki_v4l2_sliced_vbi_data {
 
 struct vki_v4l2_plane_pix_format {
 	__vki_u32		sizeimage;
-	__vki_u16		bytesperline;
-	__vki_u16		reserved[7];
+	__vki_u32		bytesperline;
+	__vki_u16		reserved[6];
 } __attribute__ ((packed));
 
 #define VKI_VIDEO_MAX_PLANES               8
@@ -4492,7 +4492,8 @@ struct vki_v4l2_subdev_mbus_code_enum {
 	__vki_u32 pad;
 	__vki_u32 index;
 	__vki_u32 code;
-	__vki_u32 reserved[9];
+	__vki_u32 which;
+	__vki_u32 reserved[8];
 };
 
 struct vki_v4l2_subdev_frame_size_enum {
@@ -4503,7 +4504,8 @@ struct vki_v4l2_subdev_frame_size_enum {
 	__vki_u32 max_width;
 	__vki_u32 min_height;
 	__vki_u32 max_height;
-	__vki_u32 reserved[9];
+	__vki_u32 which;
+	__vki_u32 reserved[8];
 };
 
 struct vki_v4l2_subdev_frame_interval {
@@ -4519,7 +4521,8 @@ struct vki_v4l2_subdev_frame_interval_enum {
 	__vki_u32 width;
 	__vki_u32 height;
 	struct vki_v4l2_fract interval;
-	__vki_u32 reserved[9];
+	__vki_u32 which;
+	__vki_u32 reserved[8];
 };
 
 struct vki_v4l2_subdev_selection {

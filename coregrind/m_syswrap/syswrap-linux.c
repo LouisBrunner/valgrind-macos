@@ -8220,6 +8220,7 @@ PRE(sys_ioctl)
       PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_ENUM_MBUS_CODE).index", data->index);
       PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_ENUM_MBUS_CODE).pad", data->pad);
       PRE_FIELD_WRITE("ioctl(VKI_V4L2_SUBDEV_ENUM_MBUS_CODE).code", data->code);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_ENUM_MBUS_CODE).which", data->which);
       PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_ENUM_MBUS_CODE).reserved", data->reserved);
       break;
    }
@@ -8228,6 +8229,7 @@ PRE(sys_ioctl)
       PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_ENUM_FRAME_SIZE).index", data->index);
       PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_ENUM_FRAME_SIZE).pad", data->pad);
       PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_ENUM_FRAME_SIZE).code", data->code);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_ENUM_FRAME_SIZE).which", data->which);
       PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_ENUM_FRAME_SIZE).reserved", data->reserved);
       PRE_FIELD_WRITE("ioctl(VKI_V4L2_SUBDEV_ENUM_FRAME_SIZE).min_width", data->min_width);
       PRE_FIELD_WRITE("ioctl(VKI_V4L2_SUBDEV_ENUM_FRAME_SIZE).min_height", data->min_height);
@@ -8242,6 +8244,7 @@ PRE(sys_ioctl)
       PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_ENUM_FRAME_INTERVAL).code", data->code);
       PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_ENUM_FRAME_INTERVAL).width", data->width);
       PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_ENUM_FRAME_INTERVAL).height", data->height);
+      PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_ENUM_FRAME_INTERVAL).which", data->which);
       PRE_FIELD_READ("ioctl(VKI_V4L2_SUBDEV_ENUM_FRAME_INTERVAL).reserved", data->reserved);
       PRE_FIELD_WRITE("ioctl(VKI_V4L2_SUBDEV_ENUM_FRAME_INTERVAL).interval", data->interval);
       break;

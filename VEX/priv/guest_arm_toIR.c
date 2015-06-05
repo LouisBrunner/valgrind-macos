@@ -21458,7 +21458,7 @@ DisResult disInstr_THUMB_WRK (
       UInt rT2 = INSN1(11,8);
       UInt rD  = INSN1(3,0);
       if (!isBadRegT(rD) && !isBadRegT(rT) && !isBadRegT(rT2)
-          && rN != 15 && rD != rN && rD != rT && rD != rT) {
+          && rN != 15 && rD != rN && rD != rT && rD != rT2) {
          IRTemp resSC1, resSC32, data;
          // go uncond
          mk_skip_over_T32_if_cond_is_false( condT );

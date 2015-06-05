@@ -987,7 +987,7 @@ static void put_GEFLAG32 ( Int flagNo,            /* 0, 1, 2 or 3 */
             lowbits_to_ignore == 31 );
    IRTemp masked = newTemp(Ity_I32);
    assign(masked, binop(Iop_Shr32, e, mkU8(lowbits_to_ignore)));
- 
+
    switch (flagNo) {
       case 0: putMiscReg32(OFFB_GEFLAG0, mkexpr(masked), condT); break;
       case 1: putMiscReg32(OFFB_GEFLAG1, mkexpr(masked), condT); break;

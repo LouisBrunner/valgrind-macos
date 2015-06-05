@@ -227,6 +227,7 @@ where XXXXXX is the bug number as listed below.
 348102  Patch updating v4l2 API support
 348247  jno jumps wrongly when overflow is not set
 348728  Fix broken check for VIDIOC_G_ENC_INDEX
+348565  Fix redundant condition
 n-i-bz  Provide implementations of certain compiler builtins to support
         compilers who may not provide those
 n-i-bz  Old STABS code is still being compiled, but never used. Remove it.

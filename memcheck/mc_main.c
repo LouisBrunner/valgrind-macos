@@ -51,6 +51,10 @@
 #include "memcheck.h"   /* for client requests */
 
 
+/* Set to 1 to enable handwritten assembly helpers on targets for
+   which it is supported. */
+#define ENABLE_ASSEMBLY_HELPERS 1
+
 /* Set to 1 to do a little more sanity checking */
 #define VG_DEBUG_MEMORY 0
 
@@ -251,7 +255,7 @@ static void ocache_sarp_Clear_Origins ( Addr, UWord ); /* fwds */
 #define VA_BITS16_DEFINED     0xaaaa   // 10_10_10_10b x 2
 
 
-#define SM_CHUNKS             16384
+#define SM_CHUNKS             16384    // Each SM covers 64k of memory.
 #define SM_OFF(aaa)           (((aaa) & 0xffff) >> 2)
 #define SM_OFF_16(aaa)        (((aaa) & 0xffff) >> 3)
 
@@ -1307,6 +1311,8 @@ void mc_LOADV_128_or_256_slow ( /*OUT*/ULong* res,
 
 static
 __attribute__((noinline))
+VG_REGPARM(3) /* make sure we're using a fixed calling convention, since
+                 this function may get called from hand written assembly. */
 ULong mc_LOADVn_slow ( Addr a, SizeT nBits, Bool bigendian )
 {
    PROF_EVENT(30, "mc_LOADVn_slow");
@@ -4192,6 +4198,37 @@ static void mc_pre_reg_read ( CorePart part, ThreadId tid, const HChar* s,
 
 
 /*------------------------------------------------------------*/
+/*--- Some static assertions                               ---*/
+/*------------------------------------------------------------*/
+
+/* The handwritten assembly helpers below have baked-in assumptions
+   about various constant values.  These assertions attempt to make
+   that a bit safer by checking those values and flagging changes that
+   would make the assembly invalid.  Not perfect but it's better than
+   nothing. */
+
+STATIC_ASSERT(SM_CHUNKS * 4 == 65536);
+
+STATIC_ASSERT(VA_BITS8_DEFINED   == 0xAA);
+STATIC_ASSERT(VA_BITS8_UNDEFINED == 0x55);
+
+STATIC_ASSERT(V_BITS32_DEFINED   == 0x00000000);
+STATIC_ASSERT(V_BITS32_UNDEFINED == 0xFFFFFFFF);
+
+STATIC_ASSERT(VA_BITS4_DEFINED == 0xA);
+STATIC_ASSERT(VA_BITS4_UNDEFINED == 0x5);
+
+STATIC_ASSERT(V_BITS16_DEFINED == 0x0000);
+STATIC_ASSERT(V_BITS16_UNDEFINED == 0xFFFF);
+
+STATIC_ASSERT(VA_BITS2_DEFINED == 2);
+STATIC_ASSERT(VA_BITS2_UNDEFINED == 1);
+
+STATIC_ASSERT(V_BITS8_DEFINED == 0x00);
+STATIC_ASSERT(V_BITS8_UNDEFINED == 0xFF);
+
+
+/*------------------------------------------------------------*/
 /*--- Functions called directly from generated code:       ---*/
 /*--- Load/store handlers.                                 ---*/
 /*------------------------------------------------------------*/
@@ -4507,14 +4544,55 @@ UWord mc_LOADV32 ( Addr a, Bool isBigEndian )
 #endif
 }
 
+// Generic for all platforms
 VG_REGPARM(1) UWord MC_(helperc_LOADV32be) ( Addr a )
 {
    return mc_LOADV32(a, True);
 }
+
+// Non-generic assembly for arm32-linux
+#if ENABLE_ASSEMBLY_HELPERS && defined(PERF_FAST_LOADV) \
+    && defined(VGP_arm_linux)
+__asm__( /* Derived from NCode template */
+".text                                  \n"
+".align 2                               \n"
+".global vgMemCheck_helperc_LOADV32le   \n"
+".type   vgMemCheck_helperc_LOADV32le, %function \n"
+"vgMemCheck_helperc_LOADV32le:          \n"
+"      tst    r0, #3                    \n" // 1
+"      movw   r3, #:lower16:primary_map \n" // 1
+"      bne    LV32c4                    \n" // 2  if misaligned
+"      lsr    r2, r0, #16               \n" // 3
+"      movt   r3, #:upper16:primary_map \n" // 3
+"      ldr    r2, [r3, r2, lsl #2]      \n" // 4
+"      uxth   r1, r0                    \n" // 4
+"      ldrb   r1, [r2, r1, lsr #2]      \n" // 5
+"      cmp    r1, #0xAA                 \n" // 6  0xAA == VA_BITS8_DEFINED
+"      bne    LV32c0                    \n" // 7  if !all_defined
+"      mov    r0, #0x0                  \n" // 8  0x0 == V_BITS32_DEFINED
+"      bx     lr                        \n" // 9
+"LV32c0:                                \n"
+"      cmp    r1, #0x55                 \n" // 0x55 == VA_BITS8_UNDEFINED
+"      bne    LV32c4                    \n" // if !all_undefined
+"      mov    r0, #0xFFFFFFFF           \n" // 0xFFFFFFFF == V_BITS32_UNDEFINED
+"      bx     lr                        \n"
+"LV32c4:                                \n"
+"      push   {r4, lr}                  \n"
+"      mov    r2, #0                    \n"
+"      mov    r1, #32                   \n"
+"      bl     mc_LOADVn_slow            \n"
+"      pop    {r4, pc}                  \n"
+".size vgMemCheck_helperc_LOADV32le, .-vgMemCheck_helperc_LOADV32le \n"
+".previous\n"
+);
+
+#else
+// Generic for all platforms except arm32-linux
 VG_REGPARM(1) UWord MC_(helperc_LOADV32le) ( Addr a )
 {
    return mc_LOADV32(a, False);
 }
+#endif
 
 
 static INLINE
@@ -4625,14 +4703,72 @@ UWord mc_LOADV16 ( Addr a, Bool isBigEndian )
 #endif
 }
 
+// Generic for all platforms
 VG_REGPARM(1) UWord MC_(helperc_LOADV16be) ( Addr a )
 {
    return mc_LOADV16(a, True);
 }
+
+// Non-generic assembly for arm32-linux
+#if ENABLE_ASSEMBLY_HELPERS && defined(PERF_FAST_LOADV) \
+    && defined(VGP_arm_linux)
+__asm__( /* Derived from NCode template */
+".text                                  \n"
+".align 2                               \n"
+".global vgMemCheck_helperc_LOADV16le   \n"
+".type   vgMemCheck_helperc_LOADV16le, %function \n"
+"vgMemCheck_helperc_LOADV16le:          \n" //
+"      tst    r0, #1                    \n" // 
+"      bne    LV16c12                   \n" // if misaligned
+"      lsr    r2, r0, #16               \n" // r2 = pri-map-ix
+"      movw   r3, #:lower16:primary_map \n" //
+"      uxth   r1, r0                    \n" // r1 = sec-map-offB
+"      movt   r3, #:upper16:primary_map \n" //
+"      ldr    r2, [r3, r2, lsl #2]      \n" // r2 = sec-map
+"      ldrb   r1, [r2, r1, lsr #2]      \n" // r1 = sec-map-VABITS8
+"      cmp    r1, #0xAA                 \n" // r1 == VA_BITS8_DEFINED?
+"      bne    LV16c0                    \n" // no, goto LV16c0
+"LV16h9:                                \n" //
+"      mov    r0, #0xFFFFFFFF           \n" //
+"      lsl    r0, r0, #16               \n" // V_BITS16_DEFINED | top16safe
+"      bx     lr                        \n" //
+"LV16c0:                                \n" //
+"      cmp    r1, #0x55                 \n" // VA_BITS8_UNDEFINED
+"      bne    LV16c4                    \n" //
+"LV16c2:                                \n" //
+"      mov    r0, #0xFFFFFFFF           \n" // V_BITS16_UNDEFINED | top16safe
+"      bx     lr                        \n" //
+"LV16c4:                                \n" //
+       // r1 holds sec-map-VABITS8.  r0 holds the address and is 2-aligned.
+       // Extract the relevant 4 bits and inspect.
+"      and    r2, r0, #2        \n" // addr & 2
+"      add    r2, r2, r2        \n" // 2 * (addr & 2)
+"      lsr    r1, r1, r2        \n" // sec-map-VABITS8 >> (2 * (addr & 2))
+"      and    r1, r1, #15       \n" // (sec-map-VABITS8 >> (2 * (addr & 2))) & 15
+
+"      cmp    r1, #0xA                  \n" // VA_BITS4_DEFINED
+"      beq    LV16h9                    \n" //
+
+"      cmp    r1, #0x5                  \n" // VA_BITS4_UNDEFINED
+"      beq    LV16c2                    \n" //
+
+"LV16c12:                               \n" //
+"      push   {r4, lr}                  \n" //
+"      mov    r2, #0                    \n" //
+"      mov    r1, #16                   \n" //
+"      bl     mc_LOADVn_slow            \n" //
+"      pop    {r4, pc}                  \n" //
+".size vgMemCheck_helperc_LOADV16le, .-vgMemCheck_helperc_LOADV16le \n"
+".previous\n"
+);
+
+#else
+// Generic for all platforms except arm32-linux
 VG_REGPARM(1) UWord MC_(helperc_LOADV16le) ( Addr a )
 {
    return mc_LOADV16(a, False);
 }
+#endif
 
 /* True if the vabits4 in vabits8 indicate a and a+1 are accessible. */
 static INLINE
@@ -4705,6 +4841,7 @@ void mc_STOREV16 ( Addr a, UWord vbits16, Bool isBigEndian )
 #endif
 }
 
+
 VG_REGPARM(2) void MC_(helperc_STOREV16be) ( Addr a, UWord vbits16 )
 {
    mc_STOREV16(a, vbits16, True);
@@ -4718,6 +4855,57 @@ VG_REGPARM(2) void MC_(helperc_STOREV16le) ( Addr a, UWord vbits16 )
 /* ------------------------ Size = 1 ------------------------ */
 /* Note: endianness is irrelevant for size == 1 */
 
+// Non-generic assembly for arm32-linux
+#if ENABLE_ASSEMBLY_HELPERS && defined(PERF_FAST_LOADV) \
+    && defined(VGP_arm_linux)
+__asm__( /* Derived from NCode template */
+".text                                  \n"
+".align 2                               \n"
+".global vgMemCheck_helperc_LOADV8      \n"
+".type   vgMemCheck_helperc_LOADV8, %function \n"
+"vgMemCheck_helperc_LOADV8:             \n" //
+"      lsr    r2, r0, #16               \n" // r2 = pri-map-ix
+"      movw   r3, #:lower16:primary_map \n" //
+"      uxth   r1, r0                    \n" // r1 = sec-map-offB
+"      movt   r3, #:upper16:primary_map \n" //
+"      ldr    r2, [r3, r2, lsl #2]      \n" // r2 = sec-map
+"      ldrb   r1, [r2, r1, lsr #2]      \n" // r1 = sec-map-VABITS8
+"      cmp    r1, #0xAA                 \n" // r1 == VA_BITS8_DEFINED?
+"      bne    LV8c0                     \n" // no, goto LV8c0
+"LV8h9:                                 \n" //
+"      mov    r0, #0xFFFFFF00           \n" // V_BITS8_DEFINED | top24safe
+"      bx     lr                        \n" //
+"LV8c0:                                 \n" //
+"      cmp    r1, #0x55                 \n" // VA_BITS8_UNDEFINED
+"      bne    LV8c4                     \n" //
+"LV8c2:                                 \n" //
+"      mov    r0, #0xFFFFFFFF           \n" // V_BITS8_UNDEFINED | top24safe
+"      bx     lr                        \n" //
+"LV8c4:                                 \n" //
+       // r1 holds sec-map-VABITS8
+       // r0 holds the address.  Extract the relevant 2 bits and inspect.
+"      and    r2, r0, #3        \n" // addr & 3
+"      add    r2, r2, r2        \n" // 2 * (addr & 3)
+"      lsr    r1, r1, r2        \n" // sec-map-VABITS8 >> (2 * (addr & 3))
+"      and    r1, r1, #3        \n" // (sec-map-VABITS8 >> (2 * (addr & 3))) & 3
+
+"      cmp    r1, #2                    \n" // VA_BITS2_DEFINED
+"      beq    LV8h9                     \n" //
+
+"      cmp    r1, #1                    \n" // VA_BITS2_UNDEFINED
+"      beq    LV8c2                     \n" //
+
+"      push   {r4, lr}                  \n" //
+"      mov    r2, #0                    \n" //
+"      mov    r1, #8                    \n" //
+"      bl     mc_LOADVn_slow            \n" //
+"      pop    {r4, pc}                  \n" //
+".size vgMemCheck_helperc_LOADV8, .-vgMemCheck_helperc_LOADV8 \n"
+".previous\n"
+);
+
+#else
+// Generic for all platforms except arm32-linux
 VG_REGPARM(1)
 UWord MC_(helperc_LOADV8) ( Addr a )
 {
@@ -4758,6 +4946,7 @@ UWord MC_(helperc_LOADV8) ( Addr a )
    }
 #endif
 }
+#endif
 
 
 VG_REGPARM(2)

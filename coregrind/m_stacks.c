@@ -411,8 +411,9 @@ static void complaints_stack_switch (Addr old_SP, Addr new_SP)
                 (void *) current_stack->end,                            \
                 current_stack->id);                                     \
          return;                                                        \
-      } else                                                            \
+      } else {                                                          \
          EDEBUG("new current_stack not found\n");                       \
+      }                                                                 \
    }
 
 #define IF_BIG_DELTA_complaints_AND_RETURN                              \

@@ -8003,7 +8003,7 @@ PRE(sys_ioctl)
    }
    case VKI_V4L2_G_ENC_INDEX: {
       struct vki_v4l2_enc_idx *data = (struct vki_v4l2_enc_idx *)ARG3;
-      PRE_MEM_READ("ioctl(VKI_V4L2_G_ENC_INDEX)", (Addr)data, sizeof(*data));
+      PRE_MEM_WRITE("ioctl(VKI_V4L2_G_ENC_INDEX)", (Addr)data, sizeof(*data));
       break;
    }
    case VKI_V4L2_ENCODER_CMD: {
@@ -9702,7 +9702,6 @@ POST(sys_ioctl)
    case VKI_V4L2_S_JPEGCOMP:
    case VKI_V4L2_S_CROP:
    case VKI_V4L2_S_PRIORITY:
-   case VKI_V4L2_G_ENC_INDEX:
    case VKI_V4L2_S_HW_FREQ_SEEK:
    case VKI_V4L2_S_DV_TIMINGS:
    case VKI_V4L2_SUBSCRIBE_EVENT:
@@ -10016,6 +10015,11 @@ POST(sys_ioctl)
       struct vki_v4l2_frmivalenum *data = (struct vki_v4l2_frmivalenum *)ARG3;
       POST_FIELD_WRITE(data->type);
       POST_FIELD_WRITE(data->stepwise);
+      break;
+   }
+   case VKI_V4L2_G_ENC_INDEX: {
+      struct vki_v4l2_enc_idx *data = (struct vki_v4l2_enc_idx *)ARG3;
+      POST_MEM_WRITE((Addr)data, sizeof(*data));
       break;
    }
    case VKI_V4L2_ENCODER_CMD: {

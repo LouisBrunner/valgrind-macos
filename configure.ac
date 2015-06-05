@@ -1706,7 +1706,7 @@ AC_SUBST(PREFERRED_STACK_BOUNDARY_2)
 AC_DEFUN([AC_GCC_WARNING_SUBST_NO],[
   AC_MSG_CHECKING([if gcc accepts -W$1])
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-W$1"
+  CFLAGS="-W$1 -Werror"
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[;]])], [
   AC_SUBST([$2], [-Wno-$1])
   AC_MSG_RESULT([yes])], [
@@ -1720,7 +1720,7 @@ AC_DEFUN([AC_GCC_WARNING_SUBST_NO],[
 AC_DEFUN([AC_GCC_WARNING_SUBST],[
   AC_MSG_CHECKING([if gcc accepts -W$1])
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-W$1"
+  CFLAGS="-W$1 -Werror"
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[;]])], [
   AC_SUBST([$2], [-W$1])
   AC_MSG_RESULT([yes])], [

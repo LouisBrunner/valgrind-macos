@@ -442,8 +442,6 @@ concurrent_close_SOURCES    = concurrent_close.cpp
 monitor_example_SOURCES     = monitor_example.cpp
 new_delete_SOURCES          = new_delete.cpp
 
-pth_cleanup_handler_CFLAGS  = $(AM_CFLAGS) @FLAG_W_NO_EMPTY_BODY@
-
 tsan_unittest_SOURCES       = tsan_unittest.cpp
 tsan_unittest_CXXFLAGS      = $(AM_CXXFLAGS) \
 			-DTHREAD_WRAPPERS='"tsan_thread_wrappers_pthread.h"'

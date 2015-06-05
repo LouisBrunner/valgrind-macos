@@ -33,7 +33,5 @@ fbench_CFLAGS   = $(AM_CFLAGS) -O2
 ffbench_LDADD	= -lm
 memrw_LDADD	= -lpthread
 
-tinycc_CFLAGS	= $(AM_CFLAGS) -Wno-shadow -Wno-inline
-if HAS_POINTER_SIGN_WARNING
-tinycc_CFLAGS  += -Wno-pointer-sign
-endif
+tinycc_CFLAGS	= $(AM_CFLAGS) -Wno-shadow -Wno-inline \
+                  @FLAG_W_NO_POINTER_SIGN@

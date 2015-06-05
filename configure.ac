@@ -1697,27 +1697,7 @@ AC_SUBST(PREFERRED_STACK_BOUNDARY_2)
 
 
 # Convenience function to check whether GCC supports a particular
-# warning option. Takes two arguments, first the warning flag name
-# to check (without -W), then the conditional name to set if that
-# warning flag is supported.
-AC_DEFUN([AC_GCC_WARNING_COND],[
-  AC_MSG_CHECKING([if gcc accepts -W$1])
-  safe_CFLAGS=$CFLAGS
-  CFLAGS="-W$1"
-  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[;]])], [
-  has_warning_flag=yes
-  AC_MSG_RESULT([yes])], [
-  has_warning_flag=no
-  AC_MSG_RESULT([no])])
-  CFLAGS=$safe_CFLAGS
-  AM_CONDITIONAL([$2], test x$has_warning_flag = xyes)
-])
-
-AC_GCC_WARNING_COND([pointer-sign], [HAS_POINTER_SIGN_WARNING])
-
-# Convenience function to check whether GCC supports a particular
-# warning option. Similar to AC_GCC_WARNING_COND, but does a
-# substitution instead of setting an conditional. Takes two arguments,
+# warning option. Takes two arguments,
 # first the warning flag name to check (without -W), then the
 # substitution name to set with -Wno-warning-flag if the flag exists,
 # or the empty string if the compiler doesn't accept the flag. Note
@@ -1752,6 +1732,7 @@ AC_DEFUN([AC_GCC_WARNING_SUBST],[
 AC_GCC_WARNING_SUBST_NO([format-zero-length], [FLAG_W_NO_FORMAT_ZERO_LENGTH])
 AC_GCC_WARNING_SUBST_NO([nonnull], [FLAG_W_NO_NONNULL])
 AC_GCC_WARNING_SUBST_NO([overflow], [FLAG_W_NO_OVERFLOW])
+AC_GCC_WARNING_SUBST_NO([pointer-sign], [FLAG_W_NO_POINTER_SIGN])
 AC_GCC_WARNING_SUBST_NO([uninitialized], [FLAG_W_NO_UNINITIALIZED])
 AC_GCC_WARNING_SUBST_NO([unused-function], [FLAG_W_NO_UNUSED_FUNCTION])
 AC_GCC_WARNING_SUBST_NO([static-local-in-inline], [FLAG_W_NO_STATIC_LOCAL_IN_INLINE])

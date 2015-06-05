@@ -231,7 +231,7 @@ void VG_(sigframe_create)( ThreadId tid,
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg,
-                   "VG_(sigframe_create): continuing in handler with PC=%#x\n",
+                   "VG_(sigframe_create): continuing in handler with PC=%#lx\n",
                    (Addr)handler);
 }
 

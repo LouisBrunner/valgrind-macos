@@ -224,7 +224,9 @@ where XXXXXX is the bug number as listed below.
         == 217236
 347389  unhandled syscall: 373 (Linux ARM syncfs)
 347978  Remove bash dependencies where not needed
+348102  Patch updating v4l2 API support
 348247  jno jumps wrongly when overflow is not set
+348728  Fix broken check for VIDIOC_G_ENC_INDEX
 n-i-bz  Provide implementations of certain compiler builtins to support
         compilers who may not provide those
 n-i-bz  Old STABS code is still being compiled, but never used. Remove it.

@@ -392,7 +392,7 @@ Int VG_(sysctl)(Int *name, UInt namelen, void *oldp, SizeT *oldlenp, void *newp,
    SysRes res;
 #  if defined(VGO_darwin)
    res = VG_(do_syscall6)(__NR___sysctl,
-                           name, namelen, oldp, oldlenp, newp, newlen);
+                           (UWord)name, namelen, (UWord)oldp, (UWord)oldlenp, (UWord)newp, newlen);
 #  else
    res = VG_(mk_SysRes_Error)(VKI_ENOSYS);
 #  endif

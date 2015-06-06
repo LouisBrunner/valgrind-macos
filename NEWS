@@ -208,6 +208,7 @@ where XXXXXX is the bug number as listed below.
 345695  Add POWERPC support for AT_DCACHESIZE and HWCAP2
 345824  Fix aspacem segment mismatch: seen with none/tests/bigcode
 345887  Fix an assertion in the address space manager
+345928  amd64: callstack only contains current function for small stacks
 346267  Compiler warnings for PPC64 code on call to LibVEX_GuestPPC64_get_XER()
         and LibVEX_GuestPPC64_get_CR()
 346270  Regression tests none/tests/jm_vec/isa_2_07 and

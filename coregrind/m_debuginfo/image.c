@@ -798,6 +798,20 @@ inline Bool ML_(img_valid)(const DiImage* img, DiOffT offset, SizeT size)
    return img->size > 0 && offset + size <= (DiOffT)img->size;
 }
 
+__attribute__((noinline))
+static void ensure_valid_failed (const DiImage* img, DiOffT offset, SizeT size,
+                                 const HChar* caller)
+{
+   VG_(umsg)("Valgrind: debuginfo reader: ensure_valid failed:\n");
+   VG_(umsg)("Valgrind:   during call to %s\n", caller);
+   VG_(umsg)("Valgrind:   request for range [%llu, +%llu) exceeds\n",
+             (ULong)offset, (ULong)size);
+   VG_(umsg)("Valgrind:   valid image size of %llu for image:\n",
+             (ULong)img->size);
+   VG_(umsg)("Valgrind:   \"%s\"\n", img->source.name);
+   give_up__image_overrun();
+}
+
 /* Check the given range is valid, and if not, shut down the system.
    An invalid range would imply that we're trying to read outside the
    image, which normally means the image is corrupted somehow, or the
@@ -808,14 +822,8 @@ static void ensure_valid(const DiImage* img, DiOffT offset, SizeT size,
 {
    if (LIKELY(ML_(img_valid)(img, offset, size)))
       return;
-   VG_(umsg)("Valgrind: debuginfo reader: ensure_valid failed:\n");
-   VG_(umsg)("Valgrind:   during call to %s\n", caller);
-   VG_(umsg)("Valgrind:   request for range [%llu, +%llu) exceeds\n",
-             (ULong)offset, (ULong)size);
-   VG_(umsg)("Valgrind:   valid image size of %llu for image:\n",
-             (ULong)img->size);
-   VG_(umsg)("Valgrind:   \"%s\"\n", img->source.name);
-   give_up__image_overrun();
+   else
+      ensure_valid_failed(img, offset, size, caller);
 }
 
 

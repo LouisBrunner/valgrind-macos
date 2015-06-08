@@ -186,9 +186,9 @@ noinst_HEADERS = \
 	pub_core_mallocfree.h	\
 	pub_core_options.h	\
 	pub_core_oset.h		\
+	pub_core_poolalloc.h	\
 	pub_core_rangemap.h	\
 	pub_core_redir.h	\
-	pub_core_poolalloc.h	\
 	pub_core_replacemalloc.h\
 	pub_core_sbprofile.h	\
 	pub_core_scheduler.h	\
@@ -278,7 +278,6 @@ COREGRIND_SOURCES_COMMON = \
 	m_debuglog.c \
 	m_errormgr.c \
 	m_execontext.c \
-	m_poolalloc.c \
 	m_hashtable.c \
 	m_libcbase.c \
 	m_libcassert.c \
@@ -292,6 +291,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_mallocfree.c \
 	m_options.c \
 	m_oset.c \
+	m_poolalloc.c \
 	m_rangemap.c \
 	m_redir.c \
 	m_sbprofile.c \
@@ -319,6 +319,8 @@ COREGRIND_SOURCES_COMMON = \
 	m_debuginfo/misc.c \
 	m_debuginfo/d3basics.c \
 	m_debuginfo/debuginfo.c \
+	m_debuginfo/image.c \
+	m_debuginfo/minilzo-inl.c \
 	m_debuginfo/readdwarf.c \
 	m_debuginfo/readdwarf3.c \
 	m_debuginfo/readelf.c \
@@ -327,8 +329,6 @@ COREGRIND_SOURCES_COMMON = \
 	m_debuginfo/readpdb.c \
 	m_debuginfo/storage.c \
 	m_debuginfo/tytypes.c \
-	m_debuginfo/image.c \
-	m_debuginfo/minilzo-inl.c \
 	m_demangle/cp-demangle.c \
 	m_demangle/cplus-dem.c \
 	m_demangle/demangle.c \
@@ -374,10 +374,10 @@ COREGRIND_SOURCES_COMMON = \
 	m_mach/mach_traps-x86-darwin.S \
 	m_mach/mach_traps-amd64-darwin.S \
 	m_replacemalloc/replacemalloc_core.c \
-	m_scheduler/scheduler.c \
-	m_scheduler/sema.c \
 	m_scheduler/sched-lock.c \
 	m_scheduler/sched-lock-generic.c \
+	m_scheduler/scheduler.c \
+	m_scheduler/sema.c \
 	m_sigframe/sigframe-common.c \
 	m_sigframe/sigframe-x86-linux.c \
 	m_sigframe/sigframe-amd64-linux.c \

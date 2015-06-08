@@ -2410,7 +2410,7 @@ AC_CACHE_CHECK([for TLS support], vg_cv_tls,
                                [vg_cv_tls=no],
                                [vg_cv_tls=$vg_cv_linktime_tls])])])
 
-if test "$vg_cv_tls" = yes; then
+if test "$vg_cv_tls" = yes -a $is_clang != applellvm; then
 AC_DEFINE([HAVE_TLS], 1, [can use __thread to define thread-local variables])
 fi
 

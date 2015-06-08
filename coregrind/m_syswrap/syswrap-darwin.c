@@ -7375,12 +7375,23 @@ PRE(thread_terminate)
       // and SET_STATUS_Success creates a UNIX-class syscall result.
       // Hence we have to laboriously construct the full SysRes "by hand"
       // and use that to set the syscall return status.
+#if defined(VGA_x86)
       SET_STATUS_from_SysRes(
          VG_(mk_SysRes_x86_darwin)(
             VG_DARWIN_SYSCALL_CLASS_MACH,
             False/*success*/, 0, 0
          )
       );
+#elif defined(VGA_amd64)
+       SET_STATUS_from_SysRes(
+         VG_(mk_SysRes_amd64_darwin)(
+            VG_DARWIN_SYSCALL_CLASS_MACH,
+            False/*success*/, 0, 0
+         )
+      );
+#else
+#error unknown architecture
+#endif
       *flags &= ~SfMayBlock;  // clear flag set by PRE(mach_msg)
    } else {
       // Terminating some other thread.

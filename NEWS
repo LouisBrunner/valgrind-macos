@@ -235,6 +235,7 @@ where XXXXXX is the bug number as listed below.
 348565  Fix detection of command line option availability for clang
 348728  Fix broken check for VIDIOC_G_ENC_INDEX
 348748  Fix redundant condition
+348890  Fix clang warning about unsupported --param inline-unit-growth=900
 n-i-bz  Provide implementations of certain compiler builtins to support
         compilers who may not provide those
 n-i-bz  Old STABS code is still being compiled, but never used. Remove it.

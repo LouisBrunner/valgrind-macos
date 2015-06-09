@@ -1264,7 +1264,7 @@ AC_CHECK_MEMBER([pthread_mutex_t.__data.__kind],
 AC_MSG_CHECKING([for Altivec])
 
 safe_CFLAGS=$CFLAGS
-CFLAGS="-maltivec"
+CFLAGS="-maltivec -Werror"
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <altivec.h>
@@ -1295,7 +1295,7 @@ AM_CONDITIONAL([HAS_ALTIVEC], [test x$ac_have_altivec = xyes])
 AC_MSG_CHECKING([for VSX])
 
 safe_CFLAGS=$CFLAGS
-CFLAGS="-mvsx"
+CFLAGS="-mvsx -Werror"
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <altivec.h>
@@ -1331,7 +1331,7 @@ AC_MSG_RESULT([no])
 
 AC_MSG_CHECKING([that compiler knows -mhard-dfp switch])
 safe_CFLAGS=$CFLAGS
-CFLAGS="-mhard-dfp"
+CFLAGS="-mhard-dfp -Werror"
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 ]], [[
   __asm__ __volatile__("dadd 1, 2, 3");
@@ -1383,7 +1383,7 @@ AM_CONDITIONAL(HAS_ISA_2_07, test x$ac_asm_have_isa_2_07 = xyes)
 AC_MSG_CHECKING([for pthread_create@GLIBC2.0()])
 
 safe_CFLAGS=$CFLAGS
-CFLAGS="-lpthread"
+CFLAGS="-lpthread -Werror"
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 extern int pthread_create_glibc_2_0(void*, const void*,
                                     void *(*)(void*), void*);
@@ -1515,7 +1515,7 @@ fi
 AC_MSG_CHECKING([if gcc accepts -m32])
 
 safe_CFLAGS=$CFLAGS
-CFLAGS="-m32"
+CFLAGS="-m32 -Werror"
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   return 0;
@@ -1535,7 +1535,7 @@ AC_SUBST(FLAG_M32)
 AC_MSG_CHECKING([if gcc accepts -m64])
 
 safe_CFLAGS=$CFLAGS
-CFLAGS="-m64"
+CFLAGS="-m64 -Werror"
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   return 0;
@@ -1555,7 +1555,7 @@ AC_SUBST(FLAG_M64)
 AC_MSG_CHECKING([if gcc accepts -march=mips32])
 
 safe_CFLAGS=$CFLAGS
-CFLAGS="$CFLAGS -march=mips32"
+CFLAGS="$CFLAGS -march=mips32 -Werror"
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   return 0;
@@ -1575,7 +1575,7 @@ AC_SUBST(FLAG_MIPS32)
 AC_MSG_CHECKING([if gcc accepts -march=mips64])
 
 safe_CFLAGS=$CFLAGS
-CFLAGS="$CFLAGS -march=mips64"
+CFLAGS="$CFLAGS -march=mips64 -Werror"
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   return 0;
@@ -1595,7 +1595,7 @@ AC_SUBST(FLAG_MIPS64)
 AC_MSG_CHECKING([if gcc accepts -march=octeon])
 
 safe_CFLAGS=$CFLAGS
-CFLAGS="$CFLAGS -march=octeon"
+CFLAGS="$CFLAGS -march=octeon -Werror"
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   return 0;
@@ -1615,7 +1615,7 @@ AC_SUBST(FLAG_OCTEON)
 AC_MSG_CHECKING([if gcc accepts -march=octeon2])
 
 safe_CFLAGS=$CFLAGS
-CFLAGS="$CFLAGS -march=octeon2"
+CFLAGS="$CFLAGS -march=octeon2 -Werror"
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   return 0;
@@ -1635,7 +1635,7 @@ AC_SUBST(FLAG_OCTEON2)
 AC_MSG_CHECKING([if gcc accepts -mmmx])
 
 safe_CFLAGS=$CFLAGS
-CFLAGS="-mmmx"
+CFLAGS="-mmmx -Werror"
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   return 0;
@@ -1655,7 +1655,7 @@ AC_SUBST(FLAG_MMMX)
 AC_MSG_CHECKING([if gcc accepts -msse])
 
 safe_CFLAGS=$CFLAGS
-CFLAGS="-msse"
+CFLAGS="-msse -Werror"
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   return 0;
@@ -1680,7 +1680,7 @@ AC_SUBST(FLAG_MSSE)
 AC_MSG_CHECKING([if gcc accepts -mpreferred-stack-boundary=2 -m32])
 
 safe_CFLAGS=$CFLAGS
-CFLAGS="-mpreferred-stack-boundary=2 -m32"
+CFLAGS="-mpreferred-stack-boundary=2 -m32 -Werror"
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   return 0;
@@ -1764,7 +1764,7 @@ CFLAGS=$safe_CFLAGS
 AC_MSG_CHECKING([if gcc accepts -Wextra or -W])
 
 safe_CFLAGS=$CFLAGS
-CFLAGS="-Wextra"
+CFLAGS="-Wextra -Werror"
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ ]], [[
   return 0;
@@ -1772,7 +1772,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ ]], [[
 AC_SUBST([FLAG_W_EXTRA], [-Wextra])
 AC_MSG_RESULT([-Wextra])
 ], [
-  CFLAGS="-W"
+  CFLAGS="-W -Werror"
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ ]], [[
     return 0;
   ]])], [
@@ -1789,7 +1789,7 @@ CFLAGS=$safe_CFLAGS
 AC_MSG_CHECKING([if gcc accepts -fno-stack-protector])
 
 safe_CFLAGS=$CFLAGS
-CFLAGS="-fno-stack-protector"
+CFLAGS="-fno-stack-protector -Werror"
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   return 0;
@@ -1816,7 +1816,7 @@ AC_SUBST(FLAG_FNO_STACK_PROTECTOR)
 AC_MSG_CHECKING([if gcc accepts -fno-ipa-icf])
 
 safe_CFLAGS=$CFLAGS
-CFLAGS="-fno-ipa-icf"
+CFLAGS="-fno-ipa-icf -Werror"
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   return 0;
@@ -1839,7 +1839,7 @@ AC_SUBST(FLAG_FNO_IPA_ICF)
 if test "x${vg_cv_ubsan}" = "xyes"; then
 AC_MSG_CHECKING([if gcc accepts -fsanitize=undefined])
 safe_CFLAGS=$CFLAGS
-CFLAGS="-fsanitize=undefined"
+CFLAGS="-fsanitize=undefined -Werror"
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   return 0;
 ]])], [
@@ -1860,7 +1860,7 @@ fi
 AC_MSG_CHECKING([if gcc accepts --param inline-unit-growth])
 
 safe_CFLAGS=$CFLAGS
-CFLAGS="--param inline-unit-growth=900"
+CFLAGS="--param inline-unit-growth=900 -Werror"
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ ]], [[
   return 0;
@@ -1880,7 +1880,7 @@ CFLAGS=$safe_CFLAGS
 AC_MSG_CHECKING([if gcc accepts -gdwarf-4 -fdebug-types-section])
 
 safe_CFLAGS=$CFLAGS
-CFLAGS="-gdwarf-4 -fdebug-types-section"
+CFLAGS="-gdwarf-4 -fdebug-types-section -Werror"
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ ]], [[
   return 0;
@@ -1946,7 +1946,7 @@ AM_CONDITIONAL([HAVE_ASM_CONSTRAINT_P], [test x$ac_have_asm_constraint_p = xyes]
 AC_MSG_CHECKING([if the linker accepts -Wl,-Ttext-segment])
 
 safe_CFLAGS=$CFLAGS
-CFLAGS="-static -nodefaultlibs -nostartfiles -Wl,-Ttext-segment=$valt_load_address_pri_norml"
+CFLAGS="-static -nodefaultlibs -nostartfiles -Wl,-Ttext-segment=$valt_load_address_pri_norml -Werror"
 
 AC_LINK_IFELSE(
 [AC_LANG_SOURCE([int _start () { return 0; }])],
@@ -1975,7 +1975,7 @@ AC_MSG_NOTICE([ld -Ttext used, need to strip build-id NOTEs.])
 # directly.
 AC_MSG_CHECKING([if the linker accepts -Wl,--build-id=none])
 safe_CFLAGS=$CFLAGS
-CFLAGS="-Wl,--build-id=none"
+CFLAGS="-Wl,--build-id=none -Werror"
 
 AC_LINK_IFELSE(
 [AC_LANG_PROGRAM([ ], [return 0;])],
@@ -2059,7 +2059,7 @@ AM_CONDITIONAL(BUILD_SSE3_TESTS, test x$ac_have_as_sse3 = xyes)
 AC_MSG_CHECKING([if x86/amd64 assembler speaks SSSE3])
 
 save_CFLAGS="$CFLAGS"
-CFLAGS="$CFLAGS -msse"
+CFLAGS="$CFLAGS -msse -Werror"
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   do { long long int x; 
    __asm__ __volatile__(
@@ -2735,7 +2735,7 @@ AM_CONDITIONAL([HAVE_BOOST_1_35], [test x$ac_have_boost_1_35 = xyes])
 AC_MSG_CHECKING([for OpenMP])
 
 safe_CFLAGS=$CFLAGS
-CFLAGS="-fopenmp $mflag_primary"
+CFLAGS="-fopenmp $mflag_primary -Werror"
 
 AC_LINK_IFELSE([AC_LANG_SOURCE([
 #include <omp.h> 

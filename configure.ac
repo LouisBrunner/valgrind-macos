@@ -1738,11 +1738,26 @@ AC_GCC_WARNING_SUBST_NO([static-local-in-inline], [FLAG_W_NO_STATIC_LOCAL_IN_INL
 AC_GCC_WARNING_SUBST([write-strings], [FLAG_W_WRITE_STRINGS])
 AC_GCC_WARNING_SUBST([empty-body], [FLAG_W_EMPTY_BODY])
 AC_GCC_WARNING_SUBST([format], [FLAG_W_FORMAT])
-AC_GCC_WARNING_SUBST([format-security], [FLAG_W_FORMAT_SECURITY])
 AC_GCC_WARNING_SUBST([cast-qual], [FLAG_W_CAST_QUAL])
 AC_GCC_WARNING_SUBST([old-style-declaration], [FLAG_W_OLD_STYLE_DECLARATION])
 AC_GCC_WARNING_SUBST([ignored-qualifiers], [FLAG_W_IGNORED_QUALIFIERS])
 AC_GCC_WARNING_SUBST([missing-parameter-type], [FLAG_W_MISSING_PARAMETER_TYPE])
+
+# Does this compiler support -Wformat-security ?
+# Special handling is needed, because certain GCC versions require -Wformat
+# being present if -Wformat-security is given. Otherwise a warning is issued.
+# However, AC_GCC_WARNING_SUBST will stick in -Werror (see r15323 for rationale).
+# And with that the warning will be turned into an error with the result
+# that -Wformat-security is believed to be unsupported when in fact it is.
+AC_MSG_CHECKING([if gcc accepts -Wformat-security])
+safe_CFLAGS=$CFLAGS
+CFLAGS="-Wformat -Wformat-security -Werror"
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[;]])], [
+AC_SUBST([FLAG_W_FORMAT_SECURITY], [-Wformat-security])
+AC_MSG_RESULT([yes])], [
+AC_SUBST([FLAG_W_FORMAT_SECURITY], [])
+AC_MSG_RESULT([no])])
+CFLAGS=$safe_CFLAGS
 
 # does this compiler support -Wextra or the older -W ?
 

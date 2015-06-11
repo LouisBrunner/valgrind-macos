@@ -1,2 +1,2 @@
 prog: err_disable_arange1
-vgopts: -q
+vgopts: -q --ignore-ranges=0x1000-0x1fff,0x0000-0x00ff

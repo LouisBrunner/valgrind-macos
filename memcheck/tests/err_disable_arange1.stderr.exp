@@ -32,5 +32,5 @@ WARNING: exiting program has the following client-requested
 WARNING: address error disablement range(s) still in force,
 WARNING: possibly as a result of some mistake in the use of the
 WARNING: VALGRIND_{DISABLE,ENABLE}_ERROR_REPORTING_IN_RANGE macros.
-   [1]  0x........-0x........  ClientReq
-   [3]  0x........-0x........  ClientReq
+   [4]  0x........-0x........  ClientReq
+   [6]  0x........-0x........  ClientReq

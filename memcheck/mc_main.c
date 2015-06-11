@@ -5496,11 +5496,11 @@ static Bool mc_process_cmd_line_options(const HChar* arg)
                                 gIgnoredAddressRanges, i );
             tl_assert(key_min <= key_max);
             UWord limit = 0x4000000; /* 64M - entirely arbitrary limit */
-            if (key_max - key_min > limit) {
+            if (key_max - key_min > limit && val == IAR_CommandLine) {
                VG_(message)(Vg_DebugMsg, 
                   "ERROR: --ignore-ranges: suspiciously large range:\n");
                VG_(message)(Vg_DebugMsg, 
-                   "       0x%lx-0x%lx (size %ld)\n", key_min, key_max,
+                   "       0x%lx-0x%lx (size %lu)\n", key_min, key_max,
                    key_max - key_min + 1);
                return False;
             }

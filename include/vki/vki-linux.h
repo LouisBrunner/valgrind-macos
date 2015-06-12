@@ -3167,6 +3167,24 @@ struct vki_sockaddr_rc {
 #define VKI_KVM_NMI                   _VKI_IO(KVMIO,   0x9a)
 #define VKI_KVM_KVMCLOCK_CTRL         _VKI_IO(KVMIO,   0xad)
 
+struct vki_kvm_s390_mem_op {
+        /* in */
+        __vki_u64 gaddr;            /* the guest address */
+        __vki_u64 flags;            /* flags */
+        __vki_u32 size;             /* amount of bytes */
+        __vki_u32 op;               /* type of operation */
+        __vki_u64 buf;              /* buffer in userspace */
+        __vki_u8 ar;                /* the access register number */
+        __vki_u8 reserved[31];      /* should be set to 0 */
+};
+
+#define VKI_KVM_S390_MEMOP_LOGICAL_READ		0
+#define VKI_KVM_S390_MEMOP_LOGICAL_WRITE	1
+#define VKI_KVM_S390_MEMOP_F_CHECK_ONLY		(1ULL << 0)
+#define VKI_KVM_S390_MEMOP_F_INJECT_EXCEPTION	(1ULL << 1)
+
+#define VKI_KVM_S390_MEM_OP           _VKI_IOW(KVMIO,  0xb1, struct vki_kvm_s390_mem_op)
+
 //----------------------------------------------------------------------
 // From linux-2.6/include/linux/net_stamp.h
 //----------------------------------------------------------------------

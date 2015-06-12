@@ -7220,6 +7220,21 @@ PRE(sys_ioctl)
    case VKI_KVM_RUN:
       break;
 
+   case VKI_KVM_S390_MEM_OP: {
+      struct vki_kvm_s390_mem_op *args =
+         (struct vki_kvm_s390_mem_op *)(ARG3);
+      PRE_MEM_READ("ioctl(KVM_S390_MEM_OP)", ARG3,
+                   sizeof(struct vki_kvm_s390_mem_op));
+      if (args->flags & VKI_KVM_S390_MEMOP_F_CHECK_ONLY)
+         break;
+      if (args->op == VKI_KVM_S390_MEMOP_LOGICAL_READ)
+         PRE_MEM_WRITE("ioctl(KVM_S390_MEM_OP).buf", (Addr)args->buf, args->size);
+      if (args->op == VKI_KVM_S390_MEMOP_LOGICAL_WRITE)
+         PRE_MEM_READ("ioctl(KVM_S390_MEM_OP).buf", (Addr)args->buf, args->size);
+      }
+      break;
+
+
 #ifdef ENABLE_XEN
    case VKI_XEN_IOCTL_PRIVCMD_HYPERCALL: {
       SyscallArgs harrghs;
@@ -9612,6 +9627,16 @@ POST(sys_ioctl)
    case VKI_KVM_RUN:
    case VKI_KVM_S390_INITIAL_RESET:
    case VKI_KVM_KVMCLOCK_CTRL:
+      break;
+
+   case VKI_KVM_S390_MEM_OP: {
+      struct vki_kvm_s390_mem_op *args =
+         (struct vki_kvm_s390_mem_op *)(ARG3);
+      if (args->flags & VKI_KVM_S390_MEMOP_F_CHECK_ONLY)
+         break;
+      if (args->op == VKI_KVM_S390_MEMOP_LOGICAL_READ)
+         POST_MEM_WRITE((Addr)args->buf, args->size);
+      }
       break;
 
 #ifdef ENABLE_XEN

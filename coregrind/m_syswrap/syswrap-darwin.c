@@ -5851,6 +5851,48 @@ POST(task_get_special_port)
 }
 
 
+PRE(task_set_special_port)
+{
+#pragma pack(4)
+    typedef struct {
+        mach_msg_header_t Head;
+        /* start of the kernel processed data */
+        mach_msg_body_t msgh_body;
+        mach_msg_port_descriptor_t special_port;
+        /* end of the kernel processed data */
+        NDR_record_t NDR;
+        int which_port;
+    } Request;
+#pragma pack()
+    
+    Request *req = (Request *)ARG1;
+
+    PRINT("got port %#x ", req->special_port.name);
+    
+    // MACH_ARG(task_set_special_port.which_port) = req->which_port;
+    PRINT("%s", name_for_port(req->special_port.name));
+    
+    AFTER = POST_FN(task_set_special_port);
+}
+
+POST(task_set_special_port)
+{
+#pragma pack(4)
+    typedef struct {
+        mach_msg_header_t Head;
+        NDR_record_t NDR;
+        kern_return_t RetCode;
+    } Reply;
+#pragma pack()
+    
+    Reply *reply = (Reply *)ARG1;
+    if (!reply->RetCode) {
+    } else {
+        PRINT("mig return %d", reply->RetCode);
+    }
+}
+
+
 PRE(semaphore_create)
 {
 #pragma pack(4)
@@ -8032,9 +8074,11 @@ PRE(mach_msg_task)
    case 3408:
       CALL_PRE(task_resume);
       return;
-      
    case 3409:
       CALL_PRE(task_get_special_port);
+      return;
+   case 3410:
+      CALL_PRE(task_set_special_port);
       return;
    case 3411:
       CALL_PRE(thread_create);

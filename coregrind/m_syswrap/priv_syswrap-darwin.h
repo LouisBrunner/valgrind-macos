@@ -591,6 +591,7 @@ DECL_TEMPLATE(darwin, mach_port_get_attributes);
 DECL_TEMPLATE(darwin, mach_port_set_attributes);
 DECL_TEMPLATE(darwin, mach_port_insert_member);
 DECL_TEMPLATE(darwin, task_get_special_port);
+DECL_TEMPLATE(darwin, task_set_special_port);
 DECL_TEMPLATE(darwin, task_get_exception_ports);
 DECL_TEMPLATE(darwin, semaphore_create);
 DECL_TEMPLATE(darwin, semaphore_destroy);

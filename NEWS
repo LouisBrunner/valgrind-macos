@@ -239,6 +239,8 @@ where XXXXXX is the bug number as listed below.
 348949  Bogus "ERROR: --ignore-ranges: suspiciously large range"
 349086  Fix UNKNOWN task message [id 3406, to mach_task_self(), 
         reply 0x........] (task_set_info)
+349087  Fix UNKNOWN task message [id 3410, to mach_task_self(),
+        reply 0x........] (task_set_special_port)
 n-i-bz  Provide implementations of certain compiler builtins to support
         compilers who may not provide those
 n-i-bz  Old STABS code is still being compiled, but never used. Remove it.

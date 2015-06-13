@@ -6078,6 +6078,42 @@ POST(task_info)
 }
 
 
+PRE(task_set_info)
+{
+#pragma pack(4)
+    typedef struct {
+        mach_msg_header_t Head;
+        NDR_record_t NDR;
+        task_flavor_t flavor;
+        mach_msg_type_number_t task_info_inCnt;
+        integer_t task_info_in[52];
+    } Request;
+#pragma pack()
+    
+    Request *req = (Request *)ARG1;
+    
+    PRINT("task_set_info(%s) flavor:%d", name_for_port(MACH_REMOTE), req->flavor);
+    
+    AFTER = POST_FN(task_set_info);
+}
+
+POST(task_set_info)
+{
+#pragma pack(4)
+    typedef struct {
+        mach_msg_header_t Head;
+        NDR_record_t NDR;
+        kern_return_t RetCode;
+    } Reply;
+#pragma pack()
+    
+    Reply *reply = (Reply *)ARG1;
+    if (!reply->RetCode) {
+    } else {
+        PRINT("mig return %d", reply->RetCode);
+    }
+}
+
 PRE(task_threads)
 {
 #pragma pack(4)
@@ -7984,11 +8020,12 @@ PRE(mach_msg_task)
    case 3404:
       CALL_PRE(mach_ports_lookup);
       return;
-
    case 3405:
       CALL_PRE(task_info);
       return;
-
+   case 3406:
+      CALL_PRE(task_set_info);
+      return;
    case 3407:
       CALL_PRE(task_suspend);
       return;

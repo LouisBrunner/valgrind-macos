@@ -67,16 +67,16 @@ const int reg_val[256] = {
 };
 
 /*
-Test 1 macro is used for ldx instructions. After executing each instructions
-the macro performs following operations:
+TEST1 macro is used for load-indexed instructions. For each instruction,
+the macro will perform the following operations:
 
-1: Move arguments to registers.
-2: Execute instruction.
-3: Move result from register. */
+1: Move input arguments into registers.
+2: Execute the instruction.
+3: Move the result from a register to the out variable. */
 
 #define TEST1(instruction, offset, mem)        \
 {                                              \
-    unsigned long out = 0;                     \
+   unsigned long out = 0;                      \
    __asm__ volatile(                           \
      "move        $t0, %1"       "\n\t"        \
      "move        $t1, %2"       "\n\t"        \
@@ -84,7 +84,7 @@ the macro performs following operations:
      "move        %0,  $t2"      "\n\t"        \
      : "=&r" (out)                             \
      : "r" (mem) , "r" (offset)                \
-     : "t0", "t1", "t2", "cc", "memory"        \
+     : "t0", "t1", "t2", "memory"              \
    );                                          \
    printf("%s :: offset: 0x%x, out: 0x%lx\n",  \
           instruction, offset, out);           \
@@ -100,6 +100,8 @@ int main()
       TEST1("lbux",  i, reg_val);
    for(i = 8; i <= 255; i += 8)
       TEST1("lwx",  i, reg_val);
+   for(i = 8; i <= 255; i += 8)
+      TEST1("lhx",  i, reg_val);
 #endif
    return 0;
 }

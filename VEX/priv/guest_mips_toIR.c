@@ -2638,6 +2638,16 @@ static Bool dis_instr_CVM ( UInt theInstr )
                                                   True));
                      break;
                   }
+                  case 0x04:  // LHX rd, index(base)
+                     DIP("lhx r%d, r%d(r%d)", regRd, regRt, regRs);
+                     LOADX_STORE_PATTERN;
+                     if (mode64)
+                        putIReg(regRd, unop(Iop_16Sto64, load(Ity_I16,
+                                                              mkexpr(t1))));
+                     else
+                        putIReg(regRd, unop(Iop_16Sto32, load(Ity_I16,
+                                                              mkexpr(t1))));
+                     break;
                   case 0x08: {  // LDX rd, index(base)
                      DIP("ldx r%d, r%d(r%d)", regRd, regRt, regRs);
                      vassert(mode64); /* Currently Implemented only for n64 */

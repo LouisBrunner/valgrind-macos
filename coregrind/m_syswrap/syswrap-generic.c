@@ -2150,15 +2150,6 @@ ML_(generic_PRE_sys_mmap) ( ThreadId tid,
       return VG_(mk_SysRes_Error)( VKI_EINVAL );
    }
 
-#  if defined(VKI_MAP_32BIT)
-   /* We can't support MAP_32BIT (at least, not without significant
-      complication), and it's royally unportable, so if the client
-      asks for it, just fail it. */
-   if (arg4 & VKI_MAP_32BIT) {
-      return VG_(mk_SysRes_Error)( VKI_ENOMEM );
-   }
-#  endif
-
    /* Figure out what kind of allocation constraints there are
       (fixed/hint/any), and ask aspacem what we should do. */
    mreq.start = arg1;
@@ -2179,11 +2170,36 @@ ML_(generic_PRE_sys_mmap) ( ThreadId tid,
       return VG_(mk_SysRes_Error)( VKI_EINVAL );
    }
 
+#  if defined(VKI_MAP_32BIT)
+   /* MAP_32BIT is royally unportable, so if the client asks for it, try our
+      best to make it work (but without complexifying aspacemgr).
+      If the user requested MAP_32BIT, the mmap-ed space must be in the
+      first 2GB of the address space. So, return ENOMEM if aspacemgr
+      advisory is above the first 2GB. If MAP_FIXED is also requested,
+      MAP_32BIT has to be ignored.
+      Assumption about aspacemgr behaviour: aspacemgr scans the address space
+      from low addresses to find a free segment. No special effort is done
+      to keep the first 2GB 'free' for this MAP_32BIT. So, this will often
+      fail once the program has already allocated significant memory. */
+   if ((arg4 & VKI_MAP_32BIT) && !(arg4 & VKI_MAP_FIXED)) {
+      if (advised + arg2 >= 0x80000000)
+         return VG_(mk_SysRes_Error)( VKI_ENOMEM );
+   }
+#  endif
+
    /* Otherwise we're OK (so far).  Install aspacem's choice of
       address, and let the mmap go through.  */
    sres = VG_(am_do_mmap_NO_NOTIFY)(advised, arg2, arg3,
                                     arg4 | VKI_MAP_FIXED,
                                     arg5, arg6);
+
+#  if defined(VKI_MAP_32BIT)
+   /* No recovery trial if the advisory was not accepted. */
+   if ((arg4 & VKI_MAP_32BIT) && !(arg4 & VKI_MAP_FIXED)
+       && sr_isError(sres)) {
+      return VG_(mk_SysRes_Error)( VKI_ENOMEM );
+   }
+#  endif
 
    /* A refinement: it may be that the kernel refused aspacem's choice
       of address.  If we were originally asked for a hinted mapping,

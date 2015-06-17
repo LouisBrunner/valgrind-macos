@@ -115,6 +115,7 @@ where XXXXXX is the bug number as listed below.
         'sizeof(UWord) == sizeof(UInt)' failed in m_syscall.c
         == 326797
 319274  Fix unhandled syscall: unix:410 (sigsuspend_nocancel) on OS X
+324181  mmap does not handle MAP_32BIT (handle it now, rather than fail it)
 333051  mmap of huge pages fails due to incorrect alignment
         == 339163
 334802  valgrind does not always explain why a given option is bad

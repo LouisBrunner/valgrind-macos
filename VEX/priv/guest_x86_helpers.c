@@ -2297,6 +2297,46 @@ void x86g_dirtyhelper_CPUID_sse1 ( VexGuestX86State* st )
    }
 }
 
+/* Claim to be the following SSE2-capable CPU:
+   vendor_id    : GenuineIntel
+   cpu family   : 15
+   model        : 2
+   model name   : Intel(R) Pentium(R) 4 CPU 3.00GHz
+   stepping     : 9
+   microcode    : 0x17
+   cpu MHz      : 2992.577
+   cache size   : 512 KB
+   flags        : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov
+                  pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe
+                   pebs bts cid xtpr
+   clflush size : 64
+   cache_alignment : 128
+   address sizes : 36 bits physical, 32 bits virtual
+*/
+void x86g_dirtyhelper_CPUID_sse2 ( VexGuestX86State* st )
+{
+   switch (st->guest_EAX) {
+      case 0: 
+         st->guest_EAX = 0x00000002;
+         st->guest_EBX = 0x756e6547;
+         st->guest_ECX = 0x6c65746e;
+         st->guest_EDX = 0x49656e69;
+         break;
+      case 1: 
+         st->guest_EAX = 0x00000f29;
+         st->guest_EBX = 0x01020809;
+         st->guest_ECX = 0x00004400;
+         st->guest_EDX = 0xbfebfbff;
+         break;
+      default:
+         st->guest_EAX = 0x03020101;
+         st->guest_EBX = 0x00000000;
+         st->guest_ECX = 0x00000000;
+         st->guest_EDX = 0x0c040883;
+         break;
+   }
+}
+
 /* Claim to be the following SSSE3-capable CPU (2 x ...):
    vendor_id       : GenuineIntel
    cpu family      : 6

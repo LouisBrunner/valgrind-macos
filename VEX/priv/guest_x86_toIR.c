@@ -14847,6 +14847,11 @@ DisResult disInstr_X86_WRK (
             fAddr = &x86g_dirtyhelper_CPUID_sse3; 
          } 
          else
+         if (archinfo->hwcaps & VEX_HWCAPS_X86_SSE2) {
+            fName = "x86g_dirtyhelper_CPUID_sse2";
+            fAddr = &x86g_dirtyhelper_CPUID_sse2; 
+         } 
+         else
          if (archinfo->hwcaps & VEX_HWCAPS_X86_SSE1) {
             fName = "x86g_dirtyhelper_CPUID_sse1";
             fAddr = &x86g_dirtyhelper_CPUID_sse1; 

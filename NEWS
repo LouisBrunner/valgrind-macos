@@ -7,6 +7,9 @@ Release 3.11.0 is under development, not yet released.
 * s390x: It is now required for the host to have the long displacement
   facility. The oldest supported machine model is z990.
 
+* x86: on an SSE2 only host, Valgrind in 32 bits now claims to be a Pentium 4.
+       3.10.1 was wrongly claiming to be a CORE 2, which is SSSE3.
+
 * ==================== TOOL CHANGES ====================
 
 * Memcheck:

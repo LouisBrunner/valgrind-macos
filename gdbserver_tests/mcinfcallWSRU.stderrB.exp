@@ -2,15 +2,12 @@ relaying data between gdb and process ....
 vgdb-error value changed from 0 to 999999
 Breakpoint 1 at 0x........: file sleepers.c, line 72.
 Continuing.
-[New Thread ....]
 Breakpoint 1, sleeper_or_burner (v=0x........) at sleepers.c:72
 72	   int i = 0;
 Continuing.
-[New Thread ....]
 Breakpoint 1, sleeper_or_burner (v=0x........) at sleepers.c:72
 72	   int i = 0;
 Continuing.
-[New Thread ....]
 Breakpoint 1, sleeper_or_burner (v=0x........) at sleepers.c:72
 72	   int i = 0;
 Continuing.

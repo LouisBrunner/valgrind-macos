@@ -113,6 +113,7 @@ sed -e '/Remote debugging using/,/vgdb launched process attached/d'             
     -e 's/^\([ \*] [1234] \) *Thread /\1Thread /'                                                     \
     -e 's/VgTs_WaitSys) 0x/VgTs_WaitSys)  0x/'                                                        \
     -e '/Cannot access memory at address 0x......../d'                                                \
+    -e '/\[New Thread/d'                                                                              \
     -e '/^$/d'                                                                                     |
 
 # remove all the lines telling where the SIGFPE was trapped.

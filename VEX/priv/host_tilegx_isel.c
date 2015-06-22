@@ -369,12 +369,13 @@ static void doHelperCall ( ISelEnv * env, IRExpr * guard, IRCallee * cee,
    result.  The expression may only be a word-size one.
 */
 
-static Bool uInt_fits_in_16_bits ( UInt u )
+static Bool uInt_fits_in_16_bits ( UInt u ) 
 {
-  Int i = u & 0xFFFF;
-  i <<= 16;
-  i >>= 16;
-  return toBool(u == (UInt) i);
+   UInt v = u & 0xFFFF;
+
+   v = (Int)(v << 16) >> 16;   /* sign extend */
+
+   return u == v;
 }
 
 static Bool sane_AMode ( ISelEnv * env, TILEGXAMode * am )

@@ -2475,19 +2475,21 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e,
 static Bool uInt_fits_in_16_bits ( UInt u ) 
 {
    /* Is u the same as the sign-extend of its lower 16 bits? */
-   Int i = u & 0xFFFF;
-   i <<= 16;
-   i >>= 16;
-   return toBool(u == (UInt)i);
+   UInt v = u & 0xFFFF;
+
+   v = (Int)(v << 16) >> 16;   /* sign extend */
+
+   return u == v;
 }
 
 static Bool uLong_fits_in_16_bits ( ULong u ) 
 {
    /* Is u the same as the sign-extend of its lower 16 bits? */
-   Long i = u & 0xFFFFULL;
-   i <<= 48;
-   i >>= 48;
-   return toBool(u == (ULong)i);
+   ULong v = u & 0xFFFFULL;
+
+   v = (Long)(v << 48) >> 48;   /* sign extend */
+
+   return u == v;
 }
 
 static Bool uLong_is_4_aligned ( ULong u )

@@ -1834,11 +1834,26 @@ CFLAGS=$safe_CFLAGS
 AC_SUBST(FLAG_FNO_IPA_ICF)
 
 
-# Does this compiler support -fsanitize=undefined?
+# Does this compiler support -fsanitize=undefined. This is true for
+# GCC 4.9 and newer. However, the undefined behaviour sanitiser in GCC 5.1
+# also checks for alignment violations on memory accesses which the valgrind
+# code base is sprinkled (if not littered) with. As those alignment issues
+# don't pose a problem we want to suppress warnings about them.
+# In GCC 5.1 this can be done by passing -fno-sanitize=alignment. Earlier
+# GCCs do not support that.
+#
 # Only checked for if --enable-ubsan was given.
 if test "x${vg_cv_ubsan}" = "xyes"; then
-AC_MSG_CHECKING([if gcc accepts -fsanitize=undefined])
+AC_MSG_CHECKING([if gcc accepts -fsanitize=undefined -fno-sanitize=alignment])
 safe_CFLAGS=$CFLAGS
+CFLAGS="-fsanitize=undefined -fno-sanitize=alignment -Werror"
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  return 0;
+]])], [
+FLAG_FSANITIZE="-fsanitize=undefined -fno-sanitize=alignment"
+LIB_UBSAN="-static-libubsan"
+AC_MSG_RESULT([yes])
+], [
 CFLAGS="-fsanitize=undefined -Werror"
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   return 0;
@@ -1850,6 +1865,7 @@ AC_MSG_RESULT([yes])
 FLAG_FSANITIZE=""
 LIB_UBSAN=""
 AC_MSG_RESULT([no])
+])
 ])
 CFLAGS=$safe_CFLAGS
 AC_SUBST(FLAG_FSANITIZE)

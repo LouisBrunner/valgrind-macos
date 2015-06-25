@@ -4,7 +4,7 @@
 /*--- The address space manager: segment initialisation and        ---*/
 /*--- tracking, stack operations                                   ---*/
 /*---                                                              ---*/
-/*--- Implementation for Linux (and Darwin!)   m_aspacemgr-linux.c ---*/
+/*--- Implementation for Linux (and Darwin!)     aspacemgr-linux.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*

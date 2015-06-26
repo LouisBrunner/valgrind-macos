@@ -378,18 +378,21 @@ for "Ir and "Dr".</para>
 <screen>NoNewLineChar := all characters without "\n"</screen>
 </para>
 
+<para>A profile data file ("ProfileDataFile") starts with basic information
+  such as the version and creator information, and then has a list of parts, where
+  each part has its own header and body. Parts typically are different threads
+  and/or time spans/phases within a profiled application run.</para>
+
+<para>Note that callgrind_annotate currently only supports profile data files with
+  one part. Callgrind may produce multiple parts for one profile run, but defaults
+  to one output file for each part.</para>
+
 </sect2>
 
 <sect2 id="cl-format.reference.header" xreflabel="Description of Header Lines">
 <title>Description of Header Lines</title>
 
-<para>As given in the grammar, a profile data file starts with basic information
-  such as the version and creator information, and then has a list of parts, where
-  each part has its own header and body. Parts typically are different threads
-  and/or time spans/phases within a profiled application run.</para>
-
-<para>Basic information in the first lines of a profile data file,
-  optionally, allowed to appear only once:</para>
+<para>Basic information in the first lines of a profile data file:</para>
 
 <itemizedlist>
   <listitem>
@@ -465,11 +468,11 @@ for "Ir and "Dr".</para>
 
   <listitem>
     <para><computeroutput>events: event type abbreviations</computeroutput> [Cachegrind]</para>
-    <para>A list of short names of the event types logged in this
-      file. Arbitrary short names are allowed.  The order given
-      specifies the required order in cost lines within the body of
-      this part. Thus, the first event type is the second or third number
-      in a cost line, depending on the value of "positions".
+    <para>A list of short names of the event types logged in cost
+      lines in this part of the profile data file. Arbitrary short
+      names are allowed.  The order given specifies the required order
+      in cost lines. Thus, the first event type is the second or third
+      number in a cost line, depending on the value of "positions".
       Required to appear for each header part exactly once.</para>
   </listitem>
 

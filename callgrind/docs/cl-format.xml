@@ -103,7 +103,7 @@ file also can contain association specifications. These look similar to
 position specifications, but consist of two lines. For calls, the format
 looks like
 <screen>
- calls=(Call Count) (Destination position)
+ calls=(Call Count) (Target position)
  (Source position) (Inclusive cost of call)
 </screen></para>
 
@@ -327,7 +327,7 @@ for "Ir and "Dr".</para>
 
 <para>
 <screen>ProfileDataFile := FormatVersion? Creator? PartData*</screen>
-<screen>FormatVersion := "version:" Space* Number "\n"</screen>
+<screen>FormatVersion := "version: 1\n"</screen>
 <screen>Creator := "creator:" NoNewLineChar* "\n"</screen>
 <screen>PartData := (HeaderLine "\n")+ (BodyLine "\n")+</screen>
 <screen>HeaderLine := (empty line)
@@ -351,22 +351,23 @@ for "Ir and "Dr".</para>
 <screen>BodyLine := (empty line)
   | ('#' NoNewLineChar*)
   | CostLine
-  | PositionSpecification
-  | AssociationSpecification</screen>
+  | PositionSpec
+  | CallSpec
+  | UncondJumpSpec
+  | CondJumpSpec</screen>
 <screen>CostLine := SubPositionList Costs?</screen>
 <screen>SubPositionList := (SubPosition+ Space+)+</screen>
 <screen>SubPosition := Number | "+" Number | "-" Number | "*"</screen>
 <screen>Costs := (Number Space+)+</screen>
-<screen>PositionSpecification := Position "=" Space* PositionName</screen>
+<screen>PositionSpec := Position "=" Space* PositionName</screen>
 <screen>Position := CostPosition | CalledPosition</screen>
 <screen>CostPosition := "ob" | "fl" | "fi" | "fe" | "fn"</screen>
 <screen>CalledPosition := " "cob" | "cfi" | "cfl" | "cfn"</screen>
 <screen>PositionName := ( "(" Number ")" )? (Space* NoNewLineChar* )?</screen>
-<screen>AssociationSpecification := CallSpecification
-  | JumpSpecification</screen>
-<screen>CallSpecification := CallLine "\n" CostLine</screen>
+<screen>CallSpec := CallLine "\n" CostLine</screen>
 <screen>CallLine := "calls=" Space* Number Space+ SubPositionList</screen>
-<screen>JumpSpecification := ...</screen>
+<screen>UncondJumpSpec := "jump=" Space* Number Space+ SubPositionList</screen>
+<screen>CondJumpSpec := "jcnd=" Space* Number Space+ Number Space+ SubPositionList</screen>
 <screen>Space := " " | "\t"</screen>
 <screen>Number := HexNumber | (Digit)+</screen>
 <screen>Digit := "0" | ... | "9"</screen>
@@ -382,11 +383,15 @@ for "Ir and "Dr".</para>
 <sect2 id="cl-format.reference.header" xreflabel="Description of Header Lines">
 <title>Description of Header Lines</title>
 
-<para>The header has an arbitrary number of lines of the format 
-"key: value". Possible <emphasis>key</emphasis> values for the header are:</para>
+<para>As given in the grammar, a profile data file starts with basic information
+  such as the version and creator information, and then has a list of parts, where
+  each part has its own header and body. Parts typically are different threads
+  and/or time spans/phases within a profiled application run.</para>
+
+<para>Basic information in the first lines of a profile data file,
+  optionally, allowed to appear only once:</para>
 
 <itemizedlist>
-
   <listitem>
     <para><computeroutput>version: number</computeroutput> [Callgrind]</para>
     <para>This is used to distinguish future profile data formats.  A 
@@ -394,6 +399,19 @@ for "Ir and "Dr".</para>
     Cachegrind's format.  It is optional; if not appearing, version 1 
     is assumed.  Otherwise, this has to be the first header line.</para>
   </listitem>
+
+  <listitem>
+    <para><computeroutput>creator: string</computeroutput> [Callgrind]</para>
+    <para>This is an arbitrary string to denote the creator of this file.
+      Optional.</para>
+  </listitem>
+
+</itemizedlist>    
+
+<para>The header for each part has an arbitrary number of lines of the format 
+"key: value". Possible <emphasis>key</emphasis> values for the header are:</para>
+
+<itemizedlist>
 
   <listitem>
     <para><computeroutput>pid: process id</computeroutput> [Callgrind]</para>
@@ -441,33 +459,18 @@ for "Ir and "Dr".</para>
     responsible for the events raised. Note that the mapping of "instr"
     and "line" positions are given by the debugging line information
     produced by the compiler.</para>
-    <para>This field is optional. If not specified, "line" is supposed 
-    only.</para>
+    <para>This header line is optional, defaulting to "positions:
+    line" if not specified.</para>
   </listitem>
 
   <listitem>
     <para><computeroutput>events: event type abbreviations</computeroutput> [Cachegrind]</para>
-    <para>A list of short names of the event types logged in this file. 
-    The order is the same as in cost lines.  The first event type is the
-    second or third number in a cost line, depending on the value of 
-    "positions".  Callgrind does not add additional cost types.  Specify
-    exactly once.</para>
-    <para>Cost types from original Cachegrind are:
-      <itemizedlist>
-        <listitem>
-          <para><command>Ir</command>: Instruction read access</para>
-        </listitem>
-        <listitem>
-          <para><command>I1mr</command>: Instruction Level 1 read cache miss</para>
-        </listitem>
-        <listitem>
-          <para><command>ILmr</command>: Instruction last-level read cache miss</para>
-        </listitem>
-        <listitem>
-          <para>...</para>
-        </listitem>
-      </itemizedlist>
-    </para>
+    <para>A list of short names of the event types logged in this
+      file. Arbitrary short names are allowed.  The order given
+      specifies the required order in cost lines within the body of
+      this part. Thus, the first event type is the second or third number
+      in a cost line, depending on the value of "positions".
+      Required to appear for each header part exactly once.</para>
   </listitem>
 
   <listitem>
@@ -491,9 +494,19 @@ for "Ir and "Dr".</para>
 <sect2 id="cl-format.reference.body" xreflabel="Description of Body Lines">
 <title>Description of Body Lines</title>
 
-<para>There exist lines
-<computeroutput>spec=position</computeroutput>.  The values for position
-specifications are arbitrary strings.  When starting with "(" and a
+<para>The regular body line is a cost line consisting of one or two
+position numbers (depending on "positions:" header line, see above)
+and an array of cost numbers. A position number either is a
+line numbers into a source file or an instruction address within binary
+code, with source/binary file names specified as position names (see
+below). The cost numbers get mapped to event types in the same order
+as specified in the "events:" header line. If less numbers than event
+types are given, the costs default to zero for the remaining event
+types.</para>
+
+<para>Further, there exist lines
+<computeroutput>spec=position name</computeroutput>.  A position name
+is an arbitrary string. If it starts with "(" and a
 digit, it's a string in compressed format.  Otherwise it's the real
 position string.  This allows for file and symbol names as position
 strings, as these never start with "(" + <emphasis>digit</emphasis>.
@@ -558,26 +571,30 @@ optional.</para>
     lines.</para>
   </listitem>
 
+</itemizedlist>
+
+<para>The last type of body line provides specific costs not just
+related to one position as regular cost lines. It starts with specific
+strings similar to position name specifications.</para>
+
+<itemizedlist>
+
   <listitem>
-    <para><computeroutput>calls=</computeroutput> [Callgrind]</para>
-    <para>The number of nonrecursive calls which are responsible for the 
-    cost specified by the next call cost line. This is the cost spent 
-    inside of the called function.</para>
-    <para>After "calls=" there MUST be a cost line. This is the cost
-    spent in the called function. The first number is the source line 
-    from where the call happened.</para>
+    <para><computeroutput>calls=count target-position</computeroutput> [Callgrind]</para>
+    <para>Call executed "count" times to "target-position".
+    After a "calls=" line there MUST be a cost line. This provides the source position
+    of the call and the cost spent in the called function in total.</para>
   </listitem>
 
   <listitem>
-    <para><computeroutput>jump=count target position</computeroutput> [Callgrind]</para>
-    <para>Unconditional jump, executed count times, to the given target
-    position.</para>
+    <para><computeroutput>jump=count target-position</computeroutput> [Callgrind]</para>
+    <para>Unconditional jump, executed "count" times, to "target-position".</para>
   </listitem>
 
   <listitem>
-    <para><computeroutput>jcnd=exe.count jumpcount target position</computeroutput> [Callgrind]</para>
-    <para>Conditional jump, executed exe.count times with jumpcount 
-    jumps to the given target position.</para>
+    <para><computeroutput>jcnd=exe-count jump-count target-position</computeroutput> [Callgrind]</para>
+    <para>Conditional jump, executed "exe-count" times with "jump-count" jumps
+    happening (rest is fall-through) to "target-position".</para>
   </listitem>
 
 </itemizedlist>

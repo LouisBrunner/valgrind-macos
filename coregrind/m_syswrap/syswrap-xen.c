@@ -943,7 +943,7 @@ PRE(tmem_op)
          *    vki_uint32_t subop;
          */
         PRE_MEM_READ("__HYPERVISOR_tmem_op pool_id",
-                     (Addr)&tmem->pool_id, sizeof(&tmem->pool_id));
+                     (Addr)&tmem->pool_id, sizeof(tmem->pool_id));
         PRE_XEN_TMEMOP_READ(ctrl, subop);
 
         switch (tmem->u.ctrl.subop) {

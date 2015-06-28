@@ -252,6 +252,7 @@ n-i-bz  Fix compilation on distros with glibc < 2.5
 n-i-bz  (vex 3098) Avoid generation of Neon insns on non-Neon hosts
 n-i-bz  Enable rt_sigpending syscall on ppc64 linux.
 n-i-bz  mremap did not work properly on shared memory
+n-i-bz  Fix incorrect sizeof expression in syswrap-xen.c reported by Coverity
 
 
 Release 3.10.1 (25 November 2014)

@@ -332,6 +332,11 @@ struct vki_xen_domctl_tsc_info {
     vki_xen_guest_tsc_info_t info; /* IN */
 };
 
+struct vki_xen_domctl_pin_mem_cacheattr {
+    vki_xen_uint64_aligned_t start, end; /* IN */
+    vki_uint32_t type;                   /* IN */
+};
+
 struct vki_xen_domctl_ext_vcpucontext_00000008 {
     vki_uint32_t             vcpu; /* IN */
 
@@ -462,7 +467,7 @@ struct vki_xen_domctl {
         //struct vki_xen_domctl_bind_pt_irq       bind_pt_irq;
         //struct vki_xen_domctl_memory_mapping    memory_mapping;
         //struct vki_xen_domctl_ioport_mapping    ioport_mapping;
-        //struct vki_xen_domctl_pin_mem_cacheattr pin_mem_cacheattr;
+        struct vki_xen_domctl_pin_mem_cacheattr pin_mem_cacheattr;
         struct vki_xen_domctl_ext_vcpucontext_00000008 ext_vcpucontext_00000008;
         struct vki_xen_domctl_ext_vcpucontext_00000009 ext_vcpucontext_00000009;
         //struct vki_xen_domctl_set_target        set_target;

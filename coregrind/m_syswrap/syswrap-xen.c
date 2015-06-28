@@ -790,6 +790,12 @@ PRE(domctl)
       __PRE_XEN_DOMCTL_READ(setvcpucontext, vcpucontext, ctxt.p);
       break;
 
+   case VKI_XEN_DOMCTL_pin_mem_cacheattr:
+      PRE_XEN_DOMCTL_READ(pin_mem_cacheattr, start);
+      PRE_XEN_DOMCTL_READ(pin_mem_cacheattr, end);
+      PRE_XEN_DOMCTL_READ(pin_mem_cacheattr, type);
+      break;
+
    case VKI_XEN_DOMCTL_get_ext_vcpucontext:
       switch (domctl->interface_version)
       {
@@ -1426,6 +1432,7 @@ POST(domctl){
    case VKI_XEN_DOMCTL_ioport_permission:
    case VKI_XEN_DOMCTL_hypercall_init:
    case VKI_XEN_DOMCTL_setvcpucontext:
+   case VKI_XEN_DOMCTL_pin_mem_cacheattr:
    case VKI_XEN_DOMCTL_set_ext_vcpucontext:
    case VKI_XEN_DOMCTL_setnodeaffinity:
    case VKI_XEN_DOMCTL_set_cpuid:

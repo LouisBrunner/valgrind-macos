@@ -3312,7 +3312,6 @@ struct vki_xen_privcmd_mmapbatch_v2 {
 	_VKI_IOC(_VKI_IOC_NONE, 'E', 0, sizeof(struct vki_xen_ioctl_evtchn_bind_virq))
 struct vki_xen_ioctl_evtchn_bind_virq {
 	vki_uint32_t virq;
-	vki_uint32_t port;
 };
 
 #define VKI_XEN_IOCTL_EVTCHN_BIND_INTERDOMAIN			\

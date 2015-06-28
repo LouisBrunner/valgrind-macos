@@ -1063,63 +1063,63 @@ PRE(hvm_op)
       break;
 
    case VKI_XEN_HVMOP_set_isa_irq_level:
-       PRE_XEN_HVMOP_READ(set_isa_irq_level, domid);
-       PRE_XEN_HVMOP_READ(set_isa_irq_level, isa_irq);
-       PRE_XEN_HVMOP_READ(set_isa_irq_level, level);
-       break;
+      PRE_XEN_HVMOP_READ(set_isa_irq_level, domid);
+      PRE_XEN_HVMOP_READ(set_isa_irq_level, isa_irq);
+      PRE_XEN_HVMOP_READ(set_isa_irq_level, level);
+      break;
 
    case VKI_XEN_HVMOP_set_pci_link_route:
-       PRE_XEN_HVMOP_READ(set_pci_link_route, domid);
-       PRE_XEN_HVMOP_READ(set_pci_link_route, link);
-       PRE_XEN_HVMOP_READ(set_pci_link_route, isa_irq);
-       break;
+      PRE_XEN_HVMOP_READ(set_pci_link_route, domid);
+      PRE_XEN_HVMOP_READ(set_pci_link_route, link);
+      PRE_XEN_HVMOP_READ(set_pci_link_route, isa_irq);
+      break;
 
    case VKI_XEN_HVMOP_track_dirty_vram: {
-       vki_xen_hvm_track_dirty_vram_t *Arg =
-           (vki_xen_hvm_track_dirty_vram_t*)ARG2;
-       PRE_XEN_HVMOP_READ(track_dirty_vram, domid);
-       PRE_XEN_HVMOP_READ(track_dirty_vram, nr);
-       if ( Arg->nr ) {
-           PRE_XEN_HVMOP_READ(track_dirty_vram, first_pfn);
-           PRE_XEN_HVMOP_READ(track_dirty_vram, dirty_bitmap);
-       }
-       break;
+      vki_xen_hvm_track_dirty_vram_t *Arg =
+         (vki_xen_hvm_track_dirty_vram_t*)ARG2;
+      PRE_XEN_HVMOP_READ(track_dirty_vram, domid);
+      PRE_XEN_HVMOP_READ(track_dirty_vram, nr);
+      if ( Arg->nr ) {
+         PRE_XEN_HVMOP_READ(track_dirty_vram, first_pfn);
+         PRE_XEN_HVMOP_READ(track_dirty_vram, dirty_bitmap);
+      }
+      break;
    }
 
    case VKI_XEN_HVMOP_set_mem_type:
-       PRE_XEN_HVMOP_READ(set_mem_type, domid);
-       PRE_XEN_HVMOP_READ(set_mem_type, hvmmem_type);
-       PRE_XEN_HVMOP_READ(set_mem_type, nr);
-       PRE_XEN_HVMOP_READ(set_mem_type, first_pfn);
-       break;
+      PRE_XEN_HVMOP_READ(set_mem_type, domid);
+      PRE_XEN_HVMOP_READ(set_mem_type, hvmmem_type);
+      PRE_XEN_HVMOP_READ(set_mem_type, nr);
+      PRE_XEN_HVMOP_READ(set_mem_type, first_pfn);
+      break;
 
    case VKI_XEN_HVMOP_set_mem_access:
-       PRE_XEN_HVMOP_READ(set_mem_access, domid);
-       PRE_XEN_HVMOP_READ(set_mem_access, hvmmem_access);
-       PRE_XEN_HVMOP_READ(set_mem_access, first_pfn);
-       /* if default access */
-       if ( ((vki_xen_hvm_set_mem_access_t*)arg)->first_pfn != ~0ULL)
-           PRE_XEN_HVMOP_READ(set_mem_access, nr);
-       break;
+      PRE_XEN_HVMOP_READ(set_mem_access, domid);
+      PRE_XEN_HVMOP_READ(set_mem_access, hvmmem_access);
+      PRE_XEN_HVMOP_READ(set_mem_access, first_pfn);
+      /* if default access */
+      if ( ((vki_xen_hvm_set_mem_access_t*)arg)->first_pfn != ~0ULL)
+         PRE_XEN_HVMOP_READ(set_mem_access, nr);
+      break;
 
    case VKI_XEN_HVMOP_get_mem_access:
-       PRE_XEN_HVMOP_READ(get_mem_access, domid);
-       PRE_XEN_HVMOP_READ(get_mem_access, pfn);
+      PRE_XEN_HVMOP_READ(get_mem_access, domid);
+      PRE_XEN_HVMOP_READ(get_mem_access, pfn);
 
-       PRE_MEM_WRITE("XEN_HVMOP_get_mem_access *hvmmem_access",
-                   (Addr)&(((vki_xen_hvm_get_mem_access_t*)arg)->hvmmem_access),
-                   sizeof(vki_uint16_t));
-       break;
+      PRE_MEM_WRITE("XEN_HVMOP_get_mem_access *hvmmem_access",
+                    (Addr)&(((vki_xen_hvm_get_mem_access_t*)arg)->hvmmem_access),
+                    sizeof(vki_uint16_t));
+      break;
 
    case VKI_XEN_HVMOP_inject_trap:
-       PRE_XEN_HVMOP_READ(inject_trap, domid);
-       PRE_XEN_HVMOP_READ(inject_trap, vcpuid);
-       PRE_XEN_HVMOP_READ(inject_trap, vector);
-       PRE_XEN_HVMOP_READ(inject_trap, type);
-       PRE_XEN_HVMOP_READ(inject_trap, error_code);
-       PRE_XEN_HVMOP_READ(inject_trap, insn_len);
-       PRE_XEN_HVMOP_READ(inject_trap, cr2);
-       break;
+      PRE_XEN_HVMOP_READ(inject_trap, domid);
+      PRE_XEN_HVMOP_READ(inject_trap, vcpuid);
+      PRE_XEN_HVMOP_READ(inject_trap, vector);
+      PRE_XEN_HVMOP_READ(inject_trap, type);
+      PRE_XEN_HVMOP_READ(inject_trap, error_code);
+      PRE_XEN_HVMOP_READ(inject_trap, insn_len);
+      PRE_XEN_HVMOP_READ(inject_trap, cr2);
+      break;
 
    default:
       bad_subop(tid, layout, arrghs, status, flags,

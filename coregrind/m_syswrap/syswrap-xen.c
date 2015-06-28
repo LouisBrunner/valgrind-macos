@@ -339,6 +339,53 @@ PRE(mmuext_op)
    }
 }
 
+PRE(xsm_op)
+{
+   /* XXX assuming flask, only actual XSM right now */
+   struct vki_xen_flask_op *op = (struct vki_xen_flask_op *)ARG1;
+
+   PRINT("__HYPERVISOR_xsm_op ( %d )", op->cmd);
+
+   /*
+    * Common part of xen_flask_op:
+    *    vki_uint32_t cmd;
+    *    vki_uint32_t interface_version;
+    */
+   PRE_MEM_READ("__HYPERVISOR_xsm_op", ARG1,
+                sizeof(vki_uint32_t) + sizeof(vki_uint32_t));
+
+   if (!op)
+      return;
+
+   switch (op->interface_version) {
+   case 0x00000001:
+      break;
+   default:
+      bad_intf_version(tid, layout, arrghs, status, flags,
+                       "__HYPERVISOR_xsm_op", op->interface_version);
+      return;
+   }
+
+#define PRE_XEN_XSM_OP_READ(_xsm_op, _union, _field)            \
+   PRE_MEM_READ("FLASK_" #_xsm_op " u." #_union "." #_field,    \
+                (Addr)&op->u._union._field,                     \
+                sizeof(op->u._union._field))
+
+   switch (op->cmd) {
+   case VKI_FLASK_SID_TO_CONTEXT:
+      PRE_XEN_XSM_OP_READ(SID_TO_CONTEXT, sid_context, sid);
+      PRE_XEN_XSM_OP_READ(SID_TO_CONTEXT, sid_context, size);
+      PRE_XEN_XSM_OP_READ(SID_TO_CONTEXT, sid_context, context.p);
+      break;
+   default:
+      bad_subop(tid, layout, arrghs, status, flags,
+                "__HYPERVISOR_xsm_op", op->cmd);
+      break;
+   }
+#undef __PRE_XEN_XSM_OP_READ
+#undef PRE_XEN_XSM_OP_READ
+}
+
 PRE(sched_op)
 {
    PRINT("__HYPERVISOR_sched_op ( %ld, %lx )", ARG1, ARG2);
@@ -1286,6 +1333,30 @@ POST(mmuext_op)
    POST_MEM_WRITE((Addr)pdone, sizeof(*pdone));
 }
 
+POST(xsm_op)
+{
+   /* XXX assuming flask, only actual XSM right now */
+   struct vki_xen_flask_op *op = (struct vki_xen_flask_op *)ARG1;
+
+   switch (op->interface_version) {
+   case 0x00000001:
+      break;
+   default:
+      return;
+   }
+
+#define POST_XEN_XSM_OP_WRITE(_xsm_op, _union, _field)        \
+      POST_MEM_WRITE((Addr)&op->u._union._field,              \
+                     sizeof(op->u._union._field))
+
+   switch (op->cmd) {
+   case VKI_FLASK_SID_TO_CONTEXT:
+      POST_XEN_XSM_OP_WRITE(SID_TO_CONTEXT, sid_context, size);
+      POST_MEM_WRITE((Addr)op->u.sid_context.context.p,
+                     op->u.sid_context.size);
+   }
+}
+
 static void post_evtchn_op(ThreadId tid, __vki_u32 cmd, void *arg, int compat)
 {
    switch (cmd) {
@@ -1911,7 +1982,7 @@ static XenHypercallTableEntry hypercall_table[] = {
 
    //    __VKI_XEN_set_segment_base                                // 25
    HYPXY(__VKI_XEN_mmuext_op,               mmuext_op,         2), // 26
-   //    __VKI_XEN_xsm_op                                          // 27
+   HYPXY(__VKI_XEN_xsm_op,                  xsm_op,            1), // 27
    //    __VKI_XEN_nmi_op                                          // 28
    HYPXY(__VKI_XEN_sched_op,                sched_op,          2), // 29
 

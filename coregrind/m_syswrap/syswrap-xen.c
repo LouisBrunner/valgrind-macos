@@ -65,6 +65,28 @@
 #define PRE(name) static DEFN_PRE_TEMPLATE(xen, name)
 #define POST(name) static DEFN_POST_TEMPLATE(xen, name)
 
+static void bad_intf_version ( ThreadId              tid,
+                               SyscallArgLayout*     layout,
+                               /*MOD*/SyscallArgs*   args,
+                               /*OUT*/SyscallStatus* status,
+                               /*OUT*/UWord*         flags,
+                               const HChar*          hypercall,
+                               UWord                 version)
+{
+   VG_(dmsg)("WARNING: %s version %#lx not supported\n",
+             hypercall, version);
+   if (VG_(clo_verbosity) > 1) {
+      VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
+   }
+   VG_(dmsg)("You may be able to write your own handler.\n");
+   VG_(dmsg)("Read the file README_MISSING_SYSCALL_OR_IOCTL.\n");
+   VG_(dmsg)("Nevertheless we consider this a bug.  Please report\n");
+   VG_(dmsg)("it at http://valgrind.org/support/bug_reports.html &\n");
+   VG_(dmsg)("http://wiki.xen.org/wiki/Reporting_Bugs_against_Xen.\n");
+
+   SET_STATUS_Failure(VKI_ENOSYS);
+}
+
 static void bad_subop ( ThreadId              tid,
                         SyscallArgLayout*     layout,
                         /*MOD*/SyscallArgs*   args,
@@ -421,18 +443,8 @@ PRE(sysctl) {
    case 0x0000000a:
 	   break;
    default:
-      VG_(dmsg)("WARNING: sysctl version %"PRIx32" not supported\n",
-                sysctl->interface_version);
-      if (VG_(clo_verbosity) > 1) {
-         VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
-      }
-      VG_(dmsg)("You may be able to write your own handler.\n");
-      VG_(dmsg)("Read the file README_MISSING_SYSCALL_OR_IOCTL.\n");
-      VG_(dmsg)("Nevertheless we consider this a bug.  Please report\n");
-      VG_(dmsg)("it at http://valgrind.org/support/bug_reports.html &\n");
-      VG_(dmsg)("http://wiki.xen.org/wiki/Reporting_Bugs_against_Xen.\n");
-
-      SET_STATUS_Failure(VKI_EINVAL);
+      bad_intf_version(tid, layout, arrghs, status, flags,
+                       "__HYPERVISOR_sysctl", sysctl->interface_version);
       return;
    }
 
@@ -573,18 +585,8 @@ PRE(domctl)
    case 0x00000009:
 	   break;
    default:
-      VG_(dmsg)("WARNING: domctl version %"PRIx32" not supported\n",
-                domctl->interface_version);
-      if (VG_(clo_verbosity) > 1) {
-         VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
-      }
-      VG_(dmsg)("You may be able to write your own handler.\n");
-      VG_(dmsg)("Read the file README_MISSING_SYSCALL_OR_IOCTL.\n");
-      VG_(dmsg)("Nevertheless we consider this a bug.  Please report\n");
-      VG_(dmsg)("it at http://valgrind.org/support/bug_reports.html &\n");
-      VG_(dmsg)("http://wiki.xen.org/wiki/Reporting_Bugs_against_Xen.\n");
-
-      SET_STATUS_Failure(VKI_EINVAL);
+      bad_intf_version(tid, layout, arrghs, status, flags,
+                       "__HYPERVISOR_domctl", domctl->interface_version);
       return;
    }
 

@@ -1483,10 +1483,9 @@ POST(domctl){
 
 
    case VKI_XEN_DOMCTL_getvcpuextstate:
-      __POST_XEN_DOMCTL_WRITE(getvcpuextstate, vcpuextstate, xfeature_mask);
-      __POST_XEN_DOMCTL_WRITE(getvcpuextstate, vcpuextstate, size);
-      POST_MEM_WRITE((Addr)domctl->u.vcpuextstate.buffer.p,
-                     domctl->u.vcpuextstate.size);
+      if (domctl->u.vcpuextstate.buffer.p)
+         POST_MEM_WRITE((Addr)domctl->u.vcpuextstate.buffer.p,
+                        domctl->u.vcpuextstate.size);
       break;
 
    case VKI_XEN_DOMCTL_shadow_op:

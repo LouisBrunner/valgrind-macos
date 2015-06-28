@@ -280,6 +280,12 @@ struct vki_xen_domctl_max_vcpus {
     vki_uint32_t max;           /* maximum number of vcpus */
 };
 
+struct vki_xen_domctl_iomem_permission {
+    vki_xen_uint64_aligned_t first_mfn;/* first page (physical page number) in range */
+    vki_xen_uint64_aligned_t nr_mfns;  /* number of pages in range (>0) */
+    vki_uint8_t  allow_access;     /* allow (!0) or deny (0) access to range? */
+};
+
 struct vki_xen_domctl_ioport_permission {
     vki_uint32_t first_port;              /* IN */
     vki_uint32_t nr_ports;                /* IN */
@@ -454,7 +460,7 @@ struct vki_xen_domctl {
         //struct vki_xen_domctl_setdomainhandle   setdomainhandle;
         //struct vki_xen_domctl_setdebugging      setdebugging;
         //struct vki_xen_domctl_irq_permission    irq_permission;
-        //struct vki_xen_domctl_iomem_permission  iomem_permission;
+        struct vki_xen_domctl_iomem_permission  iomem_permission;
         struct vki_xen_domctl_ioport_permission ioport_permission;
         struct vki_xen_domctl_hypercall_init    hypercall_init;
         //struct vki_xen_domctl_arch_setup        arch_setup;

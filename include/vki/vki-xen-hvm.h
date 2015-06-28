@@ -26,6 +26,15 @@ struct vki_xen_hvm_set_pci_link_route {
 };
 typedef struct vki_xen_hvm_set_pci_link_route vki_xen_hvm_set_pci_link_route_t;
 
+#define VKI_XEN_HVMOP_track_dirty_vram 6
+struct vki_xen_hvm_track_dirty_vram {
+    vki_xen_domid_t  domid;                          /* IN  */
+    vki_xen_uint64_aligned_t first_pfn;              /* IN  */
+    vki_xen_uint64_aligned_t nr;                     /* IN  */
+    VKI_XEN_GUEST_HANDLE_64(vki_uint8) dirty_bitmap; /* OUT */
+};
+typedef struct vki_xen_hvm_track_dirty_vram vki_xen_hvm_track_dirty_vram_t;
+
 #define VKI_XEN_HVMOP_set_mem_type 8
 struct vki_xen_hvm_set_mem_type {
     vki_xen_domid_t  domid;

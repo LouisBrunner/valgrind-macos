@@ -1066,6 +1066,18 @@ PRE(hvm_op)
        PRE_XEN_HVMOP_READ(set_pci_link_route, isa_irq);
        break;
 
+   case VKI_XEN_HVMOP_track_dirty_vram: {
+       vki_xen_hvm_track_dirty_vram_t *Arg =
+           (vki_xen_hvm_track_dirty_vram_t*)ARG2;
+       PRE_XEN_HVMOP_READ(track_dirty_vram, domid);
+       PRE_XEN_HVMOP_READ(track_dirty_vram, nr);
+       if ( Arg->nr ) {
+           PRE_XEN_HVMOP_READ(track_dirty_vram, first_pfn);
+           PRE_XEN_HVMOP_READ(track_dirty_vram, dirty_bitmap);
+       }
+       break;
+   }
+
    case VKI_XEN_HVMOP_set_mem_type:
        PRE_XEN_HVMOP_READ(set_mem_type, domid);
        PRE_XEN_HVMOP_READ(set_mem_type, hvmmem_type);

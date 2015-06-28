@@ -460,6 +460,60 @@ PRE(evtchn_op_compat)
                  evtchn->cmd, &evtchn->u, 1);
 }
 
+PRE(physdev_op)
+{
+   int cmd = ARG1;
+
+   PRINT("__HYPERVISOR_physdev_op ( %ld, %lx )", ARG1, ARG2);
+
+#define PRE_XEN_PHYSDEVOP_READ(_op, _field)		\
+   PRE_MEM_READ("XEN_PHYSDEVOP_" #_op " ." #_field,	\
+                (Addr)&arg->_field,			\
+                sizeof(arg->_field))
+
+   switch (cmd) {
+   case VKI_XEN_PHYSDEVOP_map_pirq: {
+      struct vki_xen_physdev_map_pirq *arg =
+         (struct vki_xen_physdev_map_pirq *)ARG2;
+
+      PRE_XEN_PHYSDEVOP_READ("map_pirq", domid);
+      PRE_XEN_PHYSDEVOP_READ("map_pirq", type);
+
+      PRE_XEN_PHYSDEVOP_READ("map_pirq", bus);
+      PRE_XEN_PHYSDEVOP_READ("map_pirq", devfn);
+      PRE_XEN_PHYSDEVOP_READ("map_pirq", entry_nr);
+      PRE_XEN_PHYSDEVOP_READ("map_pirq", table_base);
+
+      switch(arg->type) {
+      case VKI_XEN_MAP_PIRQ_TYPE_MSI:
+         PRE_XEN_PHYSDEVOP_READ("map_pirq", index);
+         break;
+      case VKI_XEN_MAP_PIRQ_TYPE_GSI:
+         PRE_XEN_PHYSDEVOP_READ("map_pirq", index);
+         PRE_XEN_PHYSDEVOP_READ("map_pirq", pirq);
+         break;
+      case VKI_XEN_MAP_PIRQ_TYPE_MSI_SEG:
+         PRE_XEN_PHYSDEVOP_READ("map_pirq", index);
+         break;
+      case VKI_XEN_MAP_PIRQ_TYPE_MULTI_MSI:
+         break;
+      }
+      break;
+   }
+   case VKI_XEN_PHYSDEVOP_unmap_pirq: {
+      struct vki_xen_physdev_unmap_pirq *arg =
+         (struct vki_xen_physdev_unmap_pirq *)ARG2;
+      PRE_XEN_PHYSDEVOP_READ("unmap_pirq", domid);
+      PRE_XEN_PHYSDEVOP_READ("unmap_pirq", pirq);
+      break;
+   }
+   default:
+      bad_subop(tid, layout, arrghs, status, flags,
+                "__HYPERVISOR_physdev_op", cmd);
+   }
+#undef PRE_XEN_PHYSDEVOP_READ
+}
+
 PRE(xen_version)
 {
    PRINT("__HYPERVISOR_xen_version ( %ld, %lx )", ARG1, ARG2);
@@ -1388,6 +1442,33 @@ POST(evtchn_op_compat)
    post_evtchn_op(tid, evtchn->cmd, &evtchn->u, 1);
 }
 
+POST(physdev_op)
+{
+   int cmd = ARG1;
+
+#define POST_XEN_PHYSDEVOP_WRITE(_op, _field)                   \
+   POST_MEM_WRITE((Addr)&arg->_field, sizeof(arg->_field))
+
+   switch (cmd) {
+   case VKI_XEN_PHYSDEVOP_unmap_pirq:
+      /* No outputs */
+      break;
+
+   case VKI_XEN_PHYSDEVOP_map_pirq: {
+      struct vki_xen_physdev_map_pirq *arg =
+         (struct vki_xen_physdev_map_pirq *)ARG2;
+      if (arg->type == VKI_XEN_MAP_PIRQ_TYPE_MULTI_MSI)
+         POST_XEN_PHYSDEVOP_WRITE("map_pirq", entry_nr);
+      POST_XEN_PHYSDEVOP_WRITE("map_pirq", pirq);
+      break;
+   }
+#undef POST_XEN_PHYSDEVOP_WRITE
+
+   default:
+      break;
+   }
+}
+
 POST(xen_version)
 {
    switch (ARG1) {
@@ -1989,7 +2070,7 @@ static XenHypercallTableEntry hypercall_table[] = {
    //    __VKI_XEN_callback_op                                     // 30
    //    __VKI_XEN_xenoprof_op                                     // 31
    HYPXY(__VKI_XEN_event_channel_op,        evtchn_op,         2), // 32
-   //    __VKI_XEN_physdev_op                                      // 33
+   HYPXY(__VKI_XEN_physdev_op,              physdev_op,        2), // 33
    HYPXY(__VKI_XEN_hvm_op,                  hvm_op,            2), // 34
 
    HYPXY(__VKI_XEN_sysctl,                  sysctl,            1), // 35

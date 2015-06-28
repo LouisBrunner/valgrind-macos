@@ -88,6 +88,7 @@ struct vki_xenctl_bitmap {
 #include <vki/vki-xen-hvm.h>
 #include <vki/vki-xen-tmem.h>
 #include <vki/vki-xen-xsm.h>
+#include <vki/vki-xen-physdev.h>
 
 #endif // __VKI_XEN_H
 

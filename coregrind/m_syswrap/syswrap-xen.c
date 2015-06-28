@@ -441,6 +441,7 @@ PRE(sysctl) {
    case 0x00000008:
    case 0x00000009:
    case 0x0000000a:
+   case 0x0000000b:
 	   break;
    default:
       bad_intf_version(tid, layout, arrghs, status, flags,
@@ -482,6 +483,7 @@ PRE(sysctl) {
 	 PRE_XEN_SYSCTL_READ(getdomaininfolist_00000009, buffer);
 	 break;
       case 0x0000000a:
+      case 0x0000000b:
 	 PRE_XEN_SYSCTL_READ(getdomaininfolist_0000000a, first_domain);
 	 PRE_XEN_SYSCTL_READ(getdomaininfolist_0000000a, max_domains);
 	 PRE_XEN_SYSCTL_READ(getdomaininfolist_0000000a, buffer);
@@ -583,6 +585,7 @@ PRE(domctl)
    case 0x00000007:
    case 0x00000008:
    case 0x00000009:
+   case 0x0000000a:
 	   break;
    default:
       bad_intf_version(tid, layout, arrghs, status, flags,
@@ -1107,6 +1110,7 @@ POST(sysctl)
    case 0x00000008:
    case 0x00000009:
    case 0x0000000a:
+   case 0x0000000b:
 	   break;
    default:
       return;
@@ -1140,6 +1144,7 @@ POST(sysctl)
 			* sysctl->u.getdomaininfolist_00000009.num_domains);
 	 break;
       case 0x0000000a:
+      case 0x0000000b:
 	 POST_XEN_SYSCTL_WRITE(getdomaininfolist_0000000a, num_domains);
 	 POST_MEM_WRITE((Addr)sysctl->u.getdomaininfolist_0000000a.buffer.p,
 			sizeof(*sysctl->u.getdomaininfolist_0000000a.buffer.p)
@@ -1184,6 +1189,7 @@ POST(sysctl)
          POST_XEN_SYSCTL_WRITE(physinfo_00000008, capabilities);
          break;
       case 0x0000000a:
+      case 0x0000000b:
          POST_XEN_SYSCTL_WRITE(physinfo_0000000a, threads_per_core);
          POST_XEN_SYSCTL_WRITE(physinfo_0000000a, cores_per_socket);
          POST_XEN_SYSCTL_WRITE(physinfo_0000000a, nr_cpus);
@@ -1239,6 +1245,7 @@ POST(domctl){
    case 0x00000007:
    case 0x00000008:
    case 0x00000009:
+   case 0x0000000a:
 	   break;
    default:
 	   return;
@@ -1381,6 +1388,7 @@ POST(domctl){
 	 POST_XEN_DOMCTL_WRITE(getdomaininfo_00000008, cpupool);
       break;
       case 0x00000009:
+      case 0x0000000a:
 	 POST_XEN_DOMCTL_WRITE(getdomaininfo_00000009, domain);
 	 POST_XEN_DOMCTL_WRITE(getdomaininfo_00000009, flags);
 	 POST_XEN_DOMCTL_WRITE(getdomaininfo_00000009, tot_pages);

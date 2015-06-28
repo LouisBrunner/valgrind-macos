@@ -5,9 +5,10 @@
  * The domctl interface is versioned via the interface_version
  * field. This structures in this header supports domctl interfaces:
  *
- * - 00000007: Xen 4.1
- * - 00000008: Xen 4.2
- * - 00000009: Xen 4.3
+ * - 0x00000007: Xen 4.1
+ * - 0x00000008: Xen 4.2
+ * - 0x00000009: Xen 4.3 & 4.4
+ * - 0x0000000a: Xen 4.5
  *
  * When adding a new subop be sure to include the variants used by all
  * of the above, both here and in syswrap-xen.c
@@ -155,6 +156,8 @@ struct vki_xen_domctl_getdomaininfo_00000009 {
 };
 typedef struct vki_xen_domctl_getdomaininfo_00000009 vki_xen_domctl_getdomaininfo_00000009_t;
 DEFINE_VKI_XEN_GUEST_HANDLE(vki_xen_domctl_getdomaininfo_00000009_t);
+
+/* vki_xen_domctl_getdomaininfo_0000000a is the same as 00000009 */
 
 /* Get/set the NUMA node(s) with which the guest has affinity with. */
 /* XEN_DOMCTL_setnodeaffinity */

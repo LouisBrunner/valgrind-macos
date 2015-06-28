@@ -5,9 +5,10 @@
  * The sysctl interface is versioned via the interface_version
  * field. This structures in this header supports sysctl interfaces:
  *
- * - 00000008: Xen 4.1
- * - 00000009: Xen 4.2
- * - 0000000a: Xen 4.3
+ * - 0x00000008: Xen 4.1
+ * - 0x00000009: Xen 4.2
+ * - 0x0000000a: Xen 4.3 & 4.4
+ * - 0x0000000b: Xen 4.5
  *
  * When adding a new subop be sure to include the variants used by all
  * of the above, both here and in syswrap-xen.c
@@ -86,6 +87,8 @@ struct vki_xen_sysctl_getdomaininfolist_0000000a {
     vki_uint32_t              num_domains;
 };
 
+/* vki_xen_sysctl_getdomaininfolist_0000000b is the same as 0000000a */
+
 #define VKI_XEN_SYSCTL_CPUPOOL_OP_CREATE                1  /* C */
 #define VKI_XEN_SYSCTL_CPUPOOL_OP_DESTROY               2  /* D */
 #define VKI_XEN_SYSCTL_CPUPOOL_OP_INFO                  3  /* I */
@@ -155,6 +158,8 @@ struct vki_xen_sysctl_physinfo_0000000a {
 
     vki_uint32_t capabilities;
 };
+
+/* vki_xen_sysctl_physinfo_0000000b is the same as 0000000a */
 
 struct vki_xen_sysctl_sched_id {
     /* OUT variable. */

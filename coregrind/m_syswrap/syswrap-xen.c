@@ -680,6 +680,11 @@ PRE(domctl)
       __PRE_XEN_DOMCTL_READ(settscinfo, tsc_info, info.elapsed_nsec);
       break;
 
+   case VKI_XEN_DOMCTL_irq_permission:
+      PRE_XEN_DOMCTL_READ(irq_permission, pirq);
+      PRE_XEN_DOMCTL_READ(irq_permission, allow_access);
+      break;
+
    case VKI_XEN_DOMCTL_iomem_permission:
       PRE_XEN_DOMCTL_READ(iomem_permission, first_mfn);
       PRE_XEN_DOMCTL_READ(iomem_permission, nr_mfns);
@@ -1453,6 +1458,7 @@ POST(domctl){
    case VKI_XEN_DOMCTL_assign_device:
    case VKI_XEN_DOMCTL_deassign_device:
    case VKI_XEN_DOMCTL_settscinfo:
+   case VKI_XEN_DOMCTL_irq_permission:
    case VKI_XEN_DOMCTL_iomem_permission:
    case VKI_XEN_DOMCTL_ioport_permission:
    case VKI_XEN_DOMCTL_hypercall_init:

@@ -352,6 +352,10 @@ PRE(sched_op)
    __PRE_XEN_SCHEDOP_READ(_schedop, vki_xen_ ## _schedop ## _t, _field)
 
    switch (ARG1) {
+   case VKI_XEN_SCHEDOP_remote_shutdown:
+      PRE_XEN_SCHEDOP_READ(remote_shutdown, domain_id);
+      PRE_XEN_SCHEDOP_READ(remote_shutdown, reason);
+      break;
 
    default:
       bad_subop(tid, layout, arrghs, status, flags,
@@ -1296,6 +1300,9 @@ static void post_evtchn_op(ThreadId tid, __vki_u32 cmd, void *arg, int compat)
 POST(sched_op)
 {
    switch (ARG1) {
+   case VKI_XEN_SCHEDOP_remote_shutdown:
+      /* No outputs */
+      break;
    }
 }
 

@@ -339,6 +339,29 @@ PRE(mmuext_op)
    }
 }
 
+PRE(sched_op)
+{
+   PRINT("__HYPERVISOR_sched_op ( %ld, %lx )", ARG1, ARG2);
+   void *arg = (void *)(unsigned long)ARG2;
+
+#define __PRE_XEN_SCHEDOP_READ(_schedop, _type, _field) \
+   PRE_MEM_READ("XEN_SCHEDOP_" # _schedop " " #_field,  \
+                (Addr)&((_type*)arg)->_field,           \
+                sizeof(((_type*)arg)->_field))
+#define PRE_XEN_SCHEDOP_READ(_schedop, _field)                          \
+   __PRE_XEN_SCHEDOP_READ(_schedop, vki_xen_ ## _schedop ## _t, _field)
+
+   switch (ARG1) {
+
+   default:
+      bad_subop(tid, layout, arrghs, status, flags,
+                "__HYPERVISOR_sched_op", ARG1);
+      break;
+   }
+#undef __PRE_XEN_SCHEDOP_READ
+#undef PRE_XEN_SCHEDOP_READ
+}
+
 static void pre_evtchn_op(ThreadId tid,
                           SyscallArgLayout*     layout,
                           /*MOD*/SyscallArgs*   arrghs,
@@ -1270,6 +1293,12 @@ static void post_evtchn_op(ThreadId tid, __vki_u32 cmd, void *arg, int compat)
    }
 }
 
+POST(sched_op)
+{
+   switch (ARG1) {
+   }
+}
+
 POST(evtchn_op)
 {
    post_evtchn_op(tid, ARG1, (void *)ARG2, 0);
@@ -1877,7 +1906,7 @@ static XenHypercallTableEntry hypercall_table[] = {
    HYPXY(__VKI_XEN_mmuext_op,               mmuext_op,         2), // 26
    //    __VKI_XEN_xsm_op                                          // 27
    //    __VKI_XEN_nmi_op                                          // 28
-   //    __VKI_XEN_sched_op                                        // 29
+   HYPXY(__VKI_XEN_sched_op,                sched_op,          2), // 29
 
    //    __VKI_XEN_callback_op                                     // 30
    //    __VKI_XEN_xenoprof_op                                     // 31

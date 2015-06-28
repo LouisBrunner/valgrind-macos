@@ -80,6 +80,7 @@ struct vki_xenctl_bitmap {
 #include <vki/vki-xen-domctl.h>
 #include <vki/vki-xen-sysctl.h>
 #include <vki/vki-xen-mmuext.h>
+#include <vki/vki-xen-schedop.h>
 #include <vki/vki-xen-memory.h>
 #include <vki/vki-xen-evtchn.h>
 #include <vki/vki-xen-gnttab.h>

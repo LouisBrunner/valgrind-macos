@@ -87,6 +87,8 @@
 #define VKI_XEN_DOMCTL_getnodeaffinity               69
 #define VKI_XEN_DOMCTL_set_max_evtchn                70
 #define VKI_XEN_DOMCTL_cacheflush                    71
+#define VKI_XEN_DOMCTL_get_vcpu_msrs                 72
+#define VKI_XEN_DOMCTL_set_vcpu_msrs                 73
 #define VKI_XEN_DOMCTL_gdbsx_guestmemio            1000
 #define VKI_XEN_DOMCTL_gdbsx_pausevcpu             1001
 #define VKI_XEN_DOMCTL_gdbsx_unpausevcpu           1002
@@ -404,6 +406,20 @@ struct vki_xen_domctl_cacheflush {
     vki_xen_pfn_t start_pfn, nr_pfns;
 };
 
+struct vki_xen_domctl_vcpu_msr {
+    vki_uint32_t             index;
+    vki_uint32_t             reserved;
+    vki_xen_uint64_aligned_t value;
+};
+typedef struct vki_xen_domctl_vcpu_msr vki_xen_domctl_vcpu_msr_t;
+DEFINE_VKI_XEN_GUEST_HANDLE(vki_xen_domctl_vcpu_msr_t);
+
+struct vki_xen_domctl_vcpu_msrs {
+    vki_uint32_t vcpu;
+    vki_uint32_t msr_count;
+    VKI_XEN_GUEST_HANDLE_64(vki_xen_domctl_vcpu_msr_t) msrs;
+};
+
 struct vki_xen_domctl {
     vki_uint32_t cmd;
     vki_uint32_t interface_version; /* XEN_DOMCTL_INTERFACE_VERSION */
@@ -457,6 +473,7 @@ struct vki_xen_domctl {
 #if defined(__i386__) || defined(__x86_64__)
         struct vki_xen_domctl_cpuid             cpuid;
         struct vki_xen_domctl_vcpuextstate      vcpuextstate;
+        struct vki_xen_domctl_vcpu_msrs         vcpu_msrs;
 #endif
         struct vki_xen_domctl_set_access_required access_required;
         //struct vki_xen_domctl_audit_p2m         audit_p2m;

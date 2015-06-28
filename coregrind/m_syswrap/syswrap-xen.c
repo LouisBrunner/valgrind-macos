@@ -971,6 +971,22 @@ PRE(domctl)
       PRE_XEN_DOMCTL_READ(debug_op, vcpu);
       break;
 
+   case VKI_XEN_DOMCTL_get_vcpu_msrs:
+      __PRE_XEN_DOMCTL_READ(get_vcpu_msrs, vcpu_msrs, vcpu);
+      __PRE_XEN_DOMCTL_READ(get_vcpu_msrs, vcpu_msrs, msr_count);
+      __PRE_XEN_DOMCTL_READ(get_vcpu_msrs, vcpu_msrs, msrs);
+      break;
+
+   case VKI_XEN_DOMCTL_set_vcpu_msrs:
+      __PRE_XEN_DOMCTL_READ(set_vcpu_msrs, vcpu_msrs, vcpu);
+      __PRE_XEN_DOMCTL_READ(set_vcpu_msrs, vcpu_msrs, msr_count);
+      __PRE_XEN_DOMCTL_READ(set_vcpu_msrs, vcpu_msrs, msrs);
+      PRE_MEM_READ("XEN_DOMCTL_set_vcpu_msrs *u.vcpu_msrs.msrs.p",
+                   (Addr)domctl->u.vcpu_msrs.msrs.p,
+                   sizeof(vki_xen_domctl_vcpu_msr_t) *
+                   domctl->u.vcpu_msrs.msr_count);
+      break;
+
    default:
       bad_subop(tid, layout, arrghs, status, flags,
                 "__HYPERVISOR_domctl", domctl->cmd);
@@ -1419,6 +1435,7 @@ POST(domctl){
    case VKI_XEN_DOMCTL_set_max_evtchn:
    case VKI_XEN_DOMCTL_cacheflush:
    case VKI_XEN_DOMCTL_resumedomain:
+   case VKI_XEN_DOMCTL_set_vcpu_msrs:
    case VKI_XEN_DOMCTL_set_access_required:
       /* No output fields */
       break;
@@ -1658,6 +1675,13 @@ POST(domctl){
            break;
        }
        break;
+   case VKI_XEN_DOMCTL_get_vcpu_msrs:
+      if (domctl->u.vcpu_msrs.msrs.p)
+         POST_MEM_WRITE((Addr)domctl->u.vcpu_msrs.msrs.p,
+                        sizeof(vki_xen_domctl_vcpu_msr_t) *
+                        domctl->u.vcpu_msrs.msr_count);
+      break;
+
    case VKI_XEN_DOMCTL_mem_event_op:
        POST_XEN_DOMCTL_WRITE(mem_event_op, port);
 

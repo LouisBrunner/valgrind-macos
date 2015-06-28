@@ -917,6 +917,7 @@ PRE(domctl)
        switch(domctl->u.shadow_op.op)
        {
        case VKI_XEN_DOMCTL_SHADOW_OP_OFF:
+       case VKI_XEN_DOMCTL_SHADOW_OP_GET_ALLOCATION:
            /* No further inputs */
            break;
 
@@ -944,6 +945,10 @@ PRE(domctl)
        case VKI_XEN_DOMCTL_SHADOW_OP_PEEK:
            PRE_XEN_DOMCTL_READ(shadow_op, dirty_bitmap);
            PRE_XEN_DOMCTL_READ(shadow_op, pages);
+           break;
+
+       case VKI_XEN_DOMCTL_SHADOW_OP_SET_ALLOCATION:
+           PRE_XEN_DOMCTL_READ(shadow_op, mb);
            break;
 
        default:
@@ -1665,6 +1670,7 @@ POST(domctl){
        switch(domctl->u.shadow_op.op)
        {
        case VKI_XEN_DOMCTL_SHADOW_OP_OFF:
+       case VKI_XEN_DOMCTL_SHADOW_OP_SET_ALLOCATION:
            /* No outputs */
            break;
 
@@ -1676,6 +1682,10 @@ POST(domctl){
            if(domctl->u.shadow_op.dirty_bitmap.p)
                POST_MEM_WRITE((Addr)domctl->u.shadow_op.dirty_bitmap.p,
                               domctl->u.shadow_op.pages * sizeof(vki_uint8_t));
+           break;
+
+       case VKI_XEN_DOMCTL_SHADOW_OP_GET_ALLOCATION:
+           POST_XEN_DOMCTL_WRITE(shadow_op, mb);
            break;
 
        default:

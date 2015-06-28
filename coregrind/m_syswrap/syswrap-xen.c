@@ -144,6 +144,16 @@ PRE(memory_op)
                    (Addr)&arg->map, sizeof(arg->map));
       break;
    }
+
+   case VKI_XENMEM_memory_map:
+   case VKI_XENMEM_machine_memory_map: {
+      struct vki_xen_memory_map *arg =
+	      (struct vki_xen_memory_map *)ARG2;
+      PRE_MEM_READ("XENMEM_memory_map nr_entries",
+                   (Addr)&arg->nr_entries, sizeof(arg->nr_entries));
+      break;
+   }
+
    case VKI_XENMEM_increase_reservation:
    case VKI_XENMEM_decrease_reservation:
    case VKI_XENMEM_populate_physmap:
@@ -1216,6 +1226,16 @@ POST(memory_op)
        POST_MEM_WRITE((Addr)arg->extent_start.p,
                       sizeof(vki_xen_pfn_t) * arg->nr_extents);
        break;
+   }
+
+   case VKI_XENMEM_memory_map:
+   case VKI_XENMEM_machine_memory_map: {
+      struct vki_xen_memory_map *arg =
+         (struct vki_xen_memory_map *)ARG2;
+      POST_MEM_WRITE(arg->nr_entries, sizeof(arg->nr_entries));
+      POST_MEM_WRITE((Addr)arg->buffer.p,
+                     arg->nr_entries * 20 /* size of an e820 entry */);
+      break;
    }
 
    case VKI_XENMEM_add_to_physmap: {

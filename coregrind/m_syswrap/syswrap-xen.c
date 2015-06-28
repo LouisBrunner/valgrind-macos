@@ -803,6 +803,15 @@ PRE(domctl)
                     domctl->u.getpageframeinfo3.num * sizeof(vki_xen_pfn_t));
        break;
 
+   case VKI_XEN_DOMCTL_setvcpuextstate:
+      __PRE_XEN_DOMCTL_READ(setvcpuextstate, vcpuextstate, vcpu);
+      __PRE_XEN_DOMCTL_READ(setvcpuextstate, vcpuextstate, size);
+      __PRE_XEN_DOMCTL_READ(setvcpuextstate, vcpuextstate, buffer);
+      PRE_MEM_READ("XEN_DOMCTL_setvcpuextstate *u.vcpuextstate.buffer.p",
+                   (Addr)domctl->u.vcpuextstate.buffer.p,
+                   domctl->u.vcpuextstate.size);
+      break;
+
    case VKI_XEN_DOMCTL_getvcpuextstate:
       __PRE_XEN_DOMCTL_READ(getvcpuextstate, vcpuextstate, vcpu);
       __PRE_XEN_DOMCTL_READ(getvcpuextstate, vcpuextstate, xfeature_mask);
@@ -1309,6 +1318,7 @@ POST(domctl){
    case VKI_XEN_DOMCTL_destroydomain:
    case VKI_XEN_DOMCTL_pausedomain:
    case VKI_XEN_DOMCTL_max_mem:
+   case VKI_XEN_DOMCTL_setvcpuextstate:
    case VKI_XEN_DOMCTL_set_address_size:
    case VKI_XEN_DOMCTL_settscinfo:
    case VKI_XEN_DOMCTL_ioport_permission:

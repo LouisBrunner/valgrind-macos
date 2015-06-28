@@ -10,6 +10,14 @@ struct vki_xen_hvm_param {
     vki_uint64_t value;    /* IN/OUT */
 };
 
+#define VKI_XEN_HVMOP_set_pci_intx_level  2
+struct vki_xen_hvm_set_pci_intx_level {
+    vki_xen_domid_t  domid;
+    vki_uint8_t  domain, bus, device, intx;
+    vki_uint8_t  level;
+};
+typedef struct vki_xen_hvm_set_pci_intx_level vki_xen_hvm_set_pci_intx_level_t;
+
 #define VKI_XEN_HVMOP_set_isa_irq_level 3
 struct vki_xen_hvm_set_isa_irq_level {
     vki_xen_domid_t  domid;

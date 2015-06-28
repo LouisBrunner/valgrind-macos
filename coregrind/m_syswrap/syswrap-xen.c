@@ -1054,6 +1054,14 @@ PRE(hvm_op)
       __PRE_XEN_HVMOP_READ(get_param, struct vki_xen_hvm_param, index);
       break;
 
+   case VKI_XEN_HVMOP_set_pci_intx_level:
+      PRE_XEN_HVMOP_READ(set_pci_intx_level, domid);
+      PRE_XEN_HVMOP_READ(set_pci_intx_level, domain);
+      PRE_XEN_HVMOP_READ(set_pci_intx_level, bus);
+      PRE_XEN_HVMOP_READ(set_pci_intx_level, device);
+      PRE_XEN_HVMOP_READ(set_pci_intx_level, level);
+      break;
+
    case VKI_XEN_HVMOP_set_isa_irq_level:
        PRE_XEN_HVMOP_READ(set_isa_irq_level, domid);
        PRE_XEN_HVMOP_READ(set_isa_irq_level, isa_irq);
@@ -1759,6 +1767,7 @@ POST(hvm_op)
 
    switch (op) {
    case VKI_XEN_HVMOP_set_param:
+   case VKI_XEN_HVMOP_set_pci_intx_level:
    case VKI_XEN_HVMOP_set_isa_irq_level:
    case VKI_XEN_HVMOP_set_pci_link_route:
    case VKI_XEN_HVMOP_set_mem_type:

@@ -790,6 +790,92 @@ PRE(domctl)
       __PRE_XEN_DOMCTL_READ(setvcpucontext, vcpucontext, ctxt.p);
       break;
 
+   case VKI_XEN_DOMCTL_get_ext_vcpucontext:
+      switch (domctl->interface_version)
+      {
+      case 0x00000007:
+      case 0x00000008:
+         __PRE_XEN_DOMCTL_READ(get_ext_vcpucontext, ext_vcpucontext_00000008, vcpu);
+         break;
+
+      case 0x00000009:
+         __PRE_XEN_DOMCTL_READ(get_ext_vcpucontext, ext_vcpucontext_00000009, vcpu);
+         break;
+
+      default:
+         VG_(dmsg)("WARNING: VKI_XEN_DOMCTL_get_ext_vcpucontext  domctl version %#"
+                   PRIx32" not implemented\n", domctl->interface_version);
+         SET_STATUS_Failure(VKI_EINVAL);
+         break;
+      }
+      break;
+
+   case VKI_XEN_DOMCTL_set_ext_vcpucontext:
+       switch (domctl->interface_version)
+       {
+       case 0x00000007:
+       case 0x00000008:
+           __PRE_XEN_DOMCTL_READ(set_ext_vcpucontext, ext_vcpucontext_00000008, vcpu);
+           __PRE_XEN_DOMCTL_READ(set_ext_vcpucontext, ext_vcpucontext_00000008, size);
+#if defined(__i386__) || defined(__x86_64__)
+           __PRE_XEN_DOMCTL_READ(set_ext_vcpucontext, ext_vcpucontext_00000008,
+                                 syscall32_callback_eip);
+           __PRE_XEN_DOMCTL_READ(set_ext_vcpucontext, ext_vcpucontext_00000008,
+                                 sysenter_callback_eip);
+           __PRE_XEN_DOMCTL_READ(set_ext_vcpucontext, ext_vcpucontext_00000008,
+                                 syscall32_callback_cs);
+           __PRE_XEN_DOMCTL_READ(set_ext_vcpucontext, ext_vcpucontext_00000008,
+                                 sysenter_callback_cs);
+           __PRE_XEN_DOMCTL_READ(set_ext_vcpucontext, ext_vcpucontext_00000008,
+                                 syscall32_disables_events);
+           __PRE_XEN_DOMCTL_READ(set_ext_vcpucontext, ext_vcpucontext_00000008,
+                                 sysenter_disables_events);
+
+           if ( domctl->u.ext_vcpucontext_00000008.size >=
+                offsetof(struct vki_xen_domctl_ext_vcpucontext_00000008, mcg_cap) )
+               __PRE_XEN_DOMCTL_READ(set_ext_vcpucontext, ext_vcpucontext_00000008,
+                                     mcg_cap);
+#endif
+           break;
+
+       case 0x00000009:
+           __PRE_XEN_DOMCTL_READ(set_ext_vcpucontext, ext_vcpucontext_00000009, vcpu);
+           __PRE_XEN_DOMCTL_READ(set_ext_vcpucontext, ext_vcpucontext_00000009, size);
+#if defined(__i386__) || defined(__x86_64__)
+           __PRE_XEN_DOMCTL_READ(set_ext_vcpucontext, ext_vcpucontext_00000009,
+                                 syscall32_callback_eip);
+           __PRE_XEN_DOMCTL_READ(set_ext_vcpucontext, ext_vcpucontext_00000009,
+                                 sysenter_callback_eip);
+           __PRE_XEN_DOMCTL_READ(set_ext_vcpucontext, ext_vcpucontext_00000009,
+                                 syscall32_callback_cs);
+           __PRE_XEN_DOMCTL_READ(set_ext_vcpucontext, ext_vcpucontext_00000009,
+                                 sysenter_callback_cs);
+           __PRE_XEN_DOMCTL_READ(set_ext_vcpucontext, ext_vcpucontext_00000009,
+                                 syscall32_disables_events);
+           __PRE_XEN_DOMCTL_READ(set_ext_vcpucontext, ext_vcpucontext_00000009,
+                                 sysenter_disables_events);
+
+           if ( domctl->u.ext_vcpucontext_00000009.size >=
+                offsetof(struct vki_xen_domctl_ext_vcpucontext_00000009, caps) )
+           {
+               __PRE_XEN_DOMCTL_READ(set_ext_vcpucontext, ext_vcpucontext_00000009,
+                                     caps);
+               __PRE_XEN_DOMCTL_READ(set_ext_vcpucontext, ext_vcpucontext_00000009,
+                                     mci_ctl2_bank0);
+               __PRE_XEN_DOMCTL_READ(set_ext_vcpucontext, ext_vcpucontext_00000009,
+                                     mci_ctl2_bank1);
+           }
+#endif
+	   break;
+
+       default:
+           VG_(dmsg)("WARNING: VKI_XEN_DOMCTL_set_ext_vcpucontext  domctl version %#"
+                     PRIx32" not implemented\n", domctl->interface_version);
+           SET_STATUS_Failure(VKI_EINVAL);
+           break;
+       }
+       break;
+
    case VKI_XEN_DOMCTL_set_cpuid:
       PRE_MEM_READ("XEN_DOMCTL_set_cpuid u.cpuid",
                    (Addr)&domctl->u.cpuid, sizeof(domctl->u.cpuid));
@@ -1324,6 +1410,7 @@ POST(domctl){
    case VKI_XEN_DOMCTL_ioport_permission:
    case VKI_XEN_DOMCTL_hypercall_init:
    case VKI_XEN_DOMCTL_setvcpucontext:
+   case VKI_XEN_DOMCTL_set_ext_vcpucontext:
    case VKI_XEN_DOMCTL_setnodeaffinity:
    case VKI_XEN_DOMCTL_set_cpuid:
    case VKI_XEN_DOMCTL_unpausedomain:
@@ -1489,6 +1576,58 @@ POST(domctl){
    case VKI_XEN_DOMCTL_getpageframeinfo3:
        POST_MEM_WRITE((Addr)domctl->u.getpageframeinfo3.array.p,
                       domctl->u.getpageframeinfo3.num * sizeof(vki_xen_pfn_t));
+       break;
+
+   case VKI_XEN_DOMCTL_get_ext_vcpucontext:
+       switch (domctl->interface_version)
+       {
+       case 0x00000007:
+       case 0x00000008:
+           __POST_XEN_DOMCTL_WRITE(get_ext_vcpucontext, ext_vcpucontext_00000008, size);
+#if defined(__i386__) || defined(__x86_64__)
+           __POST_XEN_DOMCTL_WRITE(get_ext_vcpucontext, ext_vcpucontext_00000008,
+                                   syscall32_callback_eip);
+           __POST_XEN_DOMCTL_WRITE(get_ext_vcpucontext, ext_vcpucontext_00000008,
+                                   sysenter_callback_eip);
+           __POST_XEN_DOMCTL_WRITE(get_ext_vcpucontext, ext_vcpucontext_00000008,
+                                   syscall32_callback_cs);
+           __POST_XEN_DOMCTL_WRITE(get_ext_vcpucontext, ext_vcpucontext_00000008,
+                                   sysenter_callback_cs);
+           __POST_XEN_DOMCTL_WRITE(get_ext_vcpucontext, ext_vcpucontext_00000008,
+                                   syscall32_disables_events);
+           __POST_XEN_DOMCTL_WRITE(get_ext_vcpucontext, ext_vcpucontext_00000008,
+                                   sysenter_disables_events);
+
+           __POST_XEN_DOMCTL_WRITE(get_ext_vcpucontext, ext_vcpucontext_00000008,
+                                   mcg_cap);
+#endif
+           break;
+
+       case 0x00000009:
+           __POST_XEN_DOMCTL_WRITE(get_ext_vcpucontext, ext_vcpucontext_00000009, size);
+#if defined(__i386__) || defined(__x86_64__)
+           __POST_XEN_DOMCTL_WRITE(get_ext_vcpucontext, ext_vcpucontext_00000009,
+                                   syscall32_callback_eip);
+           __POST_XEN_DOMCTL_WRITE(get_ext_vcpucontext, ext_vcpucontext_00000009,
+                                   sysenter_callback_eip);
+           __POST_XEN_DOMCTL_WRITE(get_ext_vcpucontext, ext_vcpucontext_00000009,
+                                   syscall32_callback_cs);
+           __POST_XEN_DOMCTL_WRITE(get_ext_vcpucontext, ext_vcpucontext_00000009,
+                                   sysenter_callback_cs);
+           __POST_XEN_DOMCTL_WRITE(get_ext_vcpucontext, ext_vcpucontext_00000009,
+                                   syscall32_disables_events);
+           __POST_XEN_DOMCTL_WRITE(get_ext_vcpucontext, ext_vcpucontext_00000009,
+                                   sysenter_disables_events);
+
+           __POST_XEN_DOMCTL_WRITE(get_ext_vcpucontext, ext_vcpucontext_00000009,
+                                   caps);
+           __POST_XEN_DOMCTL_WRITE(get_ext_vcpucontext, ext_vcpucontext_00000009,
+                                   mci_ctl2_bank0);
+           __POST_XEN_DOMCTL_WRITE(get_ext_vcpucontext, ext_vcpucontext_00000009,
+                                   mci_ctl2_bank1);
+#endif
+	   break;
+       }
        break;
 
 

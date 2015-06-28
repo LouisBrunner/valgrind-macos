@@ -330,6 +330,44 @@ struct vki_xen_domctl_tsc_info {
     vki_xen_guest_tsc_info_t info; /* IN */
 };
 
+struct vki_xen_domctl_ext_vcpucontext_00000008 {
+    vki_uint32_t             vcpu; /* IN */
+
+    /* IN  for XEN_DOMCTL_set_ext_vcpucontext
+     * OUT for XEN_DOMCTL_get_ext_vcpucontext */
+    vki_uint32_t             size;
+#if defined(__i386__) || defined(__x86_64__)
+    vki_xen_uint64_aligned_t syscall32_callback_eip;
+    vki_xen_uint64_aligned_t sysenter_callback_eip;
+    vki_uint16_t             syscall32_callback_cs;
+    vki_uint16_t             sysenter_callback_cs;
+    vki_uint8_t              syscall32_disables_events;
+    vki_uint8_t              sysenter_disables_events;
+    vki_xen_uint64_aligned_t mcg_cap;
+#endif
+};
+
+struct vki_xen_domctl_ext_vcpucontext_00000009 {
+    vki_uint32_t             vcpu; /* IN */
+
+    /* IN  for XEN_DOMCTL_set_ext_vcpucontext
+     * OUT for XEN_DOMCTL_get_ext_vcpucontext */
+    vki_uint32_t             size;
+#if defined(__i386__) || defined(__x86_64__)
+    vki_xen_uint64_aligned_t syscall32_callback_eip;
+    vki_xen_uint64_aligned_t sysenter_callback_eip;
+    vki_uint16_t             syscall32_callback_cs;
+    vki_uint16_t             sysenter_callback_cs;
+    vki_uint8_t              syscall32_disables_events;
+    vki_uint8_t              sysenter_disables_events;
+    vki_uint64_t             caps;
+    vki_uint64_t             mci_ctl2_bank0;
+    vki_uint64_t             mci_ctl2_bank1;
+#endif
+};
+
+/* vki_xen_domctl_ext_vcpucontext_0000000a is the same as 00000009 */
+
 struct vki_xen_domctl_vcpuextstate {
     vki_uint32_t         vcpu;
     vki_xen_uint64_aligned_t         xfeature_mask;
@@ -409,7 +447,8 @@ struct vki_xen_domctl {
         //struct vki_xen_domctl_memory_mapping    memory_mapping;
         //struct vki_xen_domctl_ioport_mapping    ioport_mapping;
         //struct vki_xen_domctl_pin_mem_cacheattr pin_mem_cacheattr;
-        //struct vki_xen_domctl_ext_vcpucontext   ext_vcpucontext;
+        struct vki_xen_domctl_ext_vcpucontext_00000008 ext_vcpucontext_00000008;
+        struct vki_xen_domctl_ext_vcpucontext_00000009 ext_vcpucontext_00000009;
         //struct vki_xen_domctl_set_target        set_target;
         //struct vki_xen_domctl_subscribe         subscribe;
         struct vki_xen_domctl_debug_op          debug_op;

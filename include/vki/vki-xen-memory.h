@@ -22,6 +22,7 @@
 #define VKI_XENMEM_get_sharing_shared_pages   19
 #define VKI_XENMEM_access_op                  21
 #define VKI_XENMEM_claim_pages                24
+#define VKI_XENMEM_machphys_compat_mfn_list   25
 
 struct vki_xen_memory_map {
     unsigned int nr_entries;

@@ -124,7 +124,8 @@ PRE(memory_op)
                     (Addr)ARG2, sizeof(vki_xen_domid_t));
        break;
 
-   case VKI_XENMEM_machphys_mfn_list: {
+   case VKI_XENMEM_machphys_mfn_list:
+   case VKI_XENMEM_machphys_compat_mfn_list: {
        struct vki_xen_machphys_mfn_list *arg =
            (struct vki_xen_machphys_mfn_list *)ARG2;
        PRE_MEM_READ("XENMEM_machphys_mfn_list max_extents",
@@ -1207,7 +1208,8 @@ POST(memory_op)
       break;
    }
 
-   case VKI_XENMEM_machphys_mfn_list: {
+   case VKI_XENMEM_machphys_mfn_list:
+   case VKI_XENMEM_machphys_compat_mfn_list: {
        struct vki_xen_machphys_mfn_list *arg =
            (struct vki_xen_machphys_mfn_list *)ARG2;
        POST_MEM_WRITE((Addr)&arg->nr_extents, sizeof(arg->nr_extents));

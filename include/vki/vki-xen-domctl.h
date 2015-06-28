@@ -173,9 +173,18 @@ struct vki_xen_domctl_getpageframeinfo3 {
     VKI_XEN_GUEST_HANDLE_64(vki_xen_pfn_t) array; /* IN/OUT */
 };
 
-struct vki_xen_domctl_vcpuaffinity {
+struct vki_xen_domctl_vcpuaffinity_00000009 {
     vki_uint32_t  vcpu;              /* IN */
     struct vki_xenctl_bitmap cpumap; /* IN/OUT */
+};
+
+struct vki_xen_domctl_vcpuaffinity_0000000a {
+    vki_uint32_t  vcpu;              /* IN */
+#define VKI_XEN_VCPUAFFINITY_HARD   (1U<<0)
+#define VKI_XEN_VCPUAFFINITY_SOFT   (1U<<1)
+    vki_uint32_t  flags;              /* IN */
+    struct vki_xenctl_bitmap cpumap_hard; /* IN/OUT */
+    struct vki_xenctl_bitmap cpumap_soft; /* IN/OUT */
 };
 
 struct vki_xen_domctl_shadow_op_stats {
@@ -239,6 +248,7 @@ struct vki_xen_domctl_scheduler_op {
 #define VKI_XEN_SCHEDULER_CREDIT   5
 #define VKI_XEN_SCHEDULER_CREDIT2  6
 #define VKI_XEN_SCHEDULER_ARINC653 7
+#define VKI_XEN_SCHEDULER_RTDS     8
     vki_uint32_t cmd;       /* VKI_XEN_DOMCTL_SCHEDOP_* */
 #define VKI_XEN_DOMCTL_SCHEDOP_putinfo 0
 #define VKI_XEN_DOMCTL_SCHEDOP_getinfo 1
@@ -257,6 +267,10 @@ struct vki_xen_domctl_scheduler_op {
         struct xen_domctl_sched_credit2 {
             vki_uint16_t weight;
         } credit2;
+        struct xen_domctl_sched_rtds {
+            vki_uint32_t period;
+            vki_uint32_t budget;
+        } rtds;
     } u;
 };
 
@@ -366,7 +380,8 @@ struct vki_xen_domctl {
         //struct vki_xen_domctl_getpageframeinfo2 getpageframeinfo2;
         struct vki_xen_domctl_getpageframeinfo3 getpageframeinfo3;
         struct vki_xen_domctl_nodeaffinity      nodeaffinity;
-        struct vki_xen_domctl_vcpuaffinity      vcpuaffinity;
+        struct vki_xen_domctl_vcpuaffinity_00000009 vcpuaffinity_00000009;
+        struct vki_xen_domctl_vcpuaffinity_0000000a vcpuaffinity_0000000a;
         struct vki_xen_domctl_shadow_op         shadow_op;
         struct vki_xen_domctl_max_mem           max_mem;
         struct vki_xen_domctl_vcpucontext       vcpucontext;

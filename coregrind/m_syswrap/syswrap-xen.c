@@ -707,6 +707,10 @@ PRE(domctl)
          case VKI_XEN_SCHEDULER_CREDIT2:
             PRE_XEN_DOMCTL_READ(scheduler_op, u.credit2.weight);
             break;
+         case VKI_XEN_SCHEDULER_RTDS:
+            PRE_XEN_DOMCTL_READ(scheduler_op, u.rtds.period);
+            PRE_XEN_DOMCTL_READ(scheduler_op, u.rtds.budget);
+            break;
          case VKI_XEN_SCHEDULER_ARINC653:
             break;
          }
@@ -714,14 +718,57 @@ PRE(domctl)
       break;
 
    case VKI_XEN_DOMCTL_getvcpuaffinity:
-      __PRE_XEN_DOMCTL_READ(getvcpuaffinity, vcpuaffinity, vcpu);
+      switch (domctl->interface_version) {
+      case 0x00000007:
+      case 0x00000008:
+      case 0x00000009:
+         __PRE_XEN_DOMCTL_READ(getvcpuaffinity, vcpuaffinity_00000009, vcpu);
+         __PRE_XEN_DOMCTL_READ(getvcpuaffinity, vcpuaffinity_00000009, cpumap.nr_bits);
+         break;
+      case 0x0000000a:
+         __PRE_XEN_DOMCTL_READ(getvcpuaffinity, vcpuaffinity_0000000a, vcpu);
+         if (domctl->u.vcpuaffinity_0000000a.flags & VKI_XEN_VCPUAFFINITY_HARD)
+            __PRE_XEN_DOMCTL_READ(
+               setvcpuaffinity, vcpuaffinity_0000000a, cpumap_hard.nr_bits);
+         if (domctl->u.vcpuaffinity_0000000a.flags & VKI_XEN_VCPUAFFINITY_SOFT)
+            __PRE_XEN_DOMCTL_READ(
+               setvcpuaffinity, vcpuaffinity_0000000a, cpumap_soft.nr_bits);
+         break;
+      }
       break;
 
    case VKI_XEN_DOMCTL_setvcpuaffinity:
-      __PRE_XEN_DOMCTL_READ(setvcpuaffinity, vcpuaffinity, vcpu);
-      PRE_MEM_READ("XEN_DOMCTL_setvcpuaffinity u.vcpuaffinity.cpumap.bitmap",
-                   (Addr)domctl->u.vcpuaffinity.cpumap.bitmap.p,
-                   domctl->u.vcpuaffinity.cpumap.nr_bits / 8);
+      switch (domctl->interface_version) {
+      case 0x00000007:
+      case 0x00000008:
+      case 0x00000009:
+         __PRE_XEN_DOMCTL_READ(setvcpuaffinity, vcpuaffinity_00000009, vcpu);
+         __PRE_XEN_DOMCTL_READ(setvcpuaffinity, vcpuaffinity_00000009, cpumap.nr_bits);
+         PRE_MEM_READ("XEN_DOMCTL_setvcpuaffinity u.vcpuaffinity.cpumap.bitmap",
+                      (Addr)domctl->u.vcpuaffinity_00000009.cpumap.bitmap.p,
+                      domctl->u.vcpuaffinity_00000009.cpumap.nr_bits / 8);
+         break;
+      case 0x0000000a:
+         __PRE_XEN_DOMCTL_READ(setvcpuaffinity, vcpuaffinity_0000000a, vcpu);
+         __PRE_XEN_DOMCTL_READ(setvcpuaffinity, vcpuaffinity_0000000a, flags);
+         if (domctl->u.vcpuaffinity_0000000a.flags & VKI_XEN_VCPUAFFINITY_HARD) {
+            __PRE_XEN_DOMCTL_READ(
+               setvcpuaffinity, vcpuaffinity_0000000a, cpumap_hard.nr_bits);
+            PRE_MEM_READ(
+               "XEN_DOMCTL_setvcpuaffinity u.vcpuaffinity.cpumap_hard.bitmap",
+               (Addr)domctl->u.vcpuaffinity_0000000a.cpumap_hard.bitmap.p,
+               domctl->u.vcpuaffinity_0000000a.cpumap_hard.nr_bits / 8);
+         }
+         if (domctl->u.vcpuaffinity_0000000a.flags & VKI_XEN_VCPUAFFINITY_SOFT) {
+            __PRE_XEN_DOMCTL_READ(
+               setvcpuaffinity, vcpuaffinity_0000000a, cpumap_soft.nr_bits);
+            PRE_MEM_READ(
+               "XEN_DOMCTL_setvcpuaffinity u.vcpuaffinity.cpumap_soft.bitmap",
+               (Addr)domctl->u.vcpuaffinity_0000000a.cpumap_soft.bitmap.p,
+               domctl->u.vcpuaffinity_0000000a.cpumap_soft.nr_bits / 8);
+         }
+      break;
+      }
       break;
 
    case VKI_XEN_DOMCTL_getnodeaffinity:
@@ -1266,7 +1313,6 @@ POST(domctl){
    case VKI_XEN_DOMCTL_settscinfo:
    case VKI_XEN_DOMCTL_ioport_permission:
    case VKI_XEN_DOMCTL_hypercall_init:
-   case VKI_XEN_DOMCTL_setvcpuaffinity:
    case VKI_XEN_DOMCTL_setvcpucontext:
    case VKI_XEN_DOMCTL_setnodeaffinity:
    case VKI_XEN_DOMCTL_set_cpuid:
@@ -1342,13 +1388,33 @@ POST(domctl){
             break;
          case VKI_XEN_SCHEDULER_ARINC653:
             break;
+         case VKI_XEN_SCHEDULER_RTDS:
+            POST_XEN_DOMCTL_WRITE(scheduler_op, u.rtds.period);
+            POST_XEN_DOMCTL_WRITE(scheduler_op, u.rtds.budget);
+            break;
          }
       }
       break;
 
    case VKI_XEN_DOMCTL_getvcpuaffinity:
-      POST_MEM_WRITE((Addr)domctl->u.vcpuaffinity.cpumap.bitmap.p,
-                     domctl->u.vcpuaffinity.cpumap.nr_bits / 8);
+   case VKI_XEN_DOMCTL_setvcpuaffinity: /* Writes back actual result */
+      switch (domctl->interface_version) {
+      case 0x00000007:
+      case 0x00000008:
+      case 0x00000009:
+         POST_MEM_WRITE((Addr)domctl->u.vcpuaffinity_00000009.cpumap.bitmap.p,
+                        domctl->u.vcpuaffinity_00000009.cpumap.nr_bits / 8);
+         break;
+      case 0x0000000a:
+         if (domctl->u.vcpuaffinity_0000000a.flags & VKI_XEN_VCPUAFFINITY_HARD)
+            POST_MEM_WRITE(
+               (Addr)domctl->u.vcpuaffinity_0000000a.cpumap_hard.bitmap.p,
+               domctl->u.vcpuaffinity_0000000a.cpumap_hard.nr_bits / 8);
+         if (domctl->u.vcpuaffinity_0000000a.flags & VKI_XEN_VCPUAFFINITY_SOFT)
+            POST_MEM_WRITE(
+               (Addr)domctl->u.vcpuaffinity_0000000a.cpumap_soft.bitmap.p,
+               domctl->u.vcpuaffinity_0000000a.cpumap_soft.nr_bits / 8);
+      }
       break;
 
    case VKI_XEN_DOMCTL_getnodeaffinity:

@@ -197,14 +197,12 @@ go in here.
 
 338781  OSX: unable to read debug info
 
-339745  Valgrind crash when check Marmalade app (OSX 10.?)
-        Rhys partially fixed
+339745  Valgrind crash when check Marmalade app
+        WONTFIX Requires 64 bit support in client application Marmalade
 
 341419  Signal handler ucontext_t not filled out correctly on OS X
-        Has patch
 
 342635  OS X 10.10 (Yosemite) - missing system calls and fcntl code
-        Has patch; -> Rhys?
 
 343306  OS X 10.10: UNKNOWN mach_msg unhandled MACH_SEND_TRAILER option
         Partially fixed

@@ -663,6 +663,16 @@ PRE(domctl)
       __PRE_XEN_DOMCTL_READ(set_address_size, address_size, size);
       break;
 
+   case VKI_XEN_DOMCTL_test_assign_device:
+      __PRE_XEN_DOMCTL_READ(test_assign_device, assign_device, machine_sbdf);
+      break;
+   case VKI_XEN_DOMCTL_assign_device:
+      __PRE_XEN_DOMCTL_READ(assign_device, assign_device, machine_sbdf);
+      break;
+   case VKI_XEN_DOMCTL_deassign_device:
+      __PRE_XEN_DOMCTL_READ(deassign_device, assign_device, machine_sbdf);
+      break;
+
    case VKI_XEN_DOMCTL_settscinfo:
       __PRE_XEN_DOMCTL_READ(settscinfo, tsc_info, info.tsc_mode);
       __PRE_XEN_DOMCTL_READ(settscinfo, tsc_info, info.gtsc_khz);
@@ -1433,6 +1443,9 @@ POST(domctl){
    case VKI_XEN_DOMCTL_max_mem:
    case VKI_XEN_DOMCTL_setvcpuextstate:
    case VKI_XEN_DOMCTL_set_address_size:
+   case VKI_XEN_DOMCTL_test_assign_device:
+   case VKI_XEN_DOMCTL_assign_device:
+   case VKI_XEN_DOMCTL_deassign_device:
    case VKI_XEN_DOMCTL_settscinfo:
    case VKI_XEN_DOMCTL_ioport_permission:
    case VKI_XEN_DOMCTL_hypercall_init:

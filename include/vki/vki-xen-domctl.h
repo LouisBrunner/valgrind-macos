@@ -386,6 +386,10 @@ struct vki_xen_domctl_address_size {
     vki_uint32_t size;
 };
 
+struct vki_xen_domctl_assign_device {
+    vki_uint32_t  machine_sbdf;   /* machine PCI ID of assigned device */
+};
+
 struct vki_xen_domctl_debug_op {
     vki_uint32_t op;   /* IN */
     vki_uint32_t vcpu; /* IN */
@@ -463,7 +467,7 @@ struct vki_xen_domctl {
         struct vki_xen_domctl_address_size      address_size;
         //struct vki_xen_domctl_sendtrigger       sendtrigger;
         //struct vki_xen_domctl_get_device_group  get_device_group;
-        //struct vki_xen_domctl_assign_device     assign_device;
+        struct vki_xen_domctl_assign_device     assign_device;
         //struct vki_xen_domctl_bind_pt_irq       bind_pt_irq;
         //struct vki_xen_domctl_memory_mapping    memory_mapping;
         //struct vki_xen_domctl_ioport_mapping    ioport_mapping;

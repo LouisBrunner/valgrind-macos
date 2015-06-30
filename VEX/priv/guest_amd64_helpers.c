@@ -79,32 +79,34 @@
 
 static void mullS64 ( Long u, Long v, Long* rHi, Long* rLo )
 {
+   const Long halfMask = 0xFFFFFFFFLL;
    ULong u0, v0, w0;
     Long u1, v1, w1, w2, t;
-   u0   = u & 0xFFFFFFFFULL; 
+   u0   = u & halfMask; 
    u1   = u >> 32;
-   v0   = v & 0xFFFFFFFFULL;
+   v0   = v & halfMask;
    v1   = v >> 32;
    w0   = u0 * v0;
    t    = u1 * v0 + (w0 >> 32);
-   w1   = t & 0xFFFFFFFFULL;
+   w1   = t & halfMask;
    w2   = t >> 32;
    w1   = u0 * v1 + w1;
    *rHi = u1 * v1 + w2 + (w1 >> 32);
-   *rLo = u * v;
+   *rLo = (Long)((ULong)u * (ULong)v);
 }
 
 static void mullU64 ( ULong u, ULong v, ULong* rHi, ULong* rLo )
 {
+   const ULong halfMask = 0xFFFFFFFFULL;
    ULong u0, v0, w0;
    ULong u1, v1, w1,w2,t;
-   u0   = u & 0xFFFFFFFFULL;
+   u0   = u & halfMask;
    u1   = u >> 32;
-   v0   = v & 0xFFFFFFFFULL;
+   v0   = v & halfMask;
    v1   = v >> 32;
    w0   = u0 * v0;
    t    = u1 * v0 + (w0 >> 32);
-   w1   = t & 0xFFFFFFFFULL;
+   w1   = t & halfMask;
    w2   = t >> 32;
    w1   = u0 * v1 + w1;
    *rHi = u1 * v1 + w2 + (w1 >> 32);

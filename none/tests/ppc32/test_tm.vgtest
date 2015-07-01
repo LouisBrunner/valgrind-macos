@@ -1,2 +1,2 @@
-prereq: ../../../tests/check_ppc64_auxv_cap htm
+prereq: ../../../tests/check_isa-2_07_cap
 prog: test_tm

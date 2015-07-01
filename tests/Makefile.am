@@ -8,6 +8,7 @@ dist_noinst_SCRIPTS = \
 	check_makefile_consistency \
 	check_dfp_cap \
 	check_vmx_cap \
+	check_ppc64_auxv_cap \
 	filter_addresses \
 	filter_discards \
 	filter_libc \

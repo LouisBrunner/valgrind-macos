@@ -1306,7 +1306,7 @@ Int decode_and_display ( tilegx_bundle_bits *p, Int count, ULong pc )
 
     Int n, k, bundled = 0;
 
-    for(k = 0; decode[k].opcode && (k <TILEGX_MAX_INSTRUCTIONS_PER_BUNDLE);
+    for(k = 0; (k < TILEGX_MAX_INSTRUCTIONS_PER_BUNDLE) && decode[k].opcode;
         k++) {
       if (decode[k].opcode->mnemonic != TILEGX_OPC_FNOP)
         bundled++;
@@ -1317,7 +1317,7 @@ Int decode_and_display ( tilegx_bundle_bits *p, Int count, ULong pc )
       vex_printf("{ ");
 
     n = bundled;
-    for(k = 0; decode[k].opcode && (k <TILEGX_MAX_INSTRUCTIONS_PER_BUNDLE);
+    for(k = 0; (k < TILEGX_MAX_INSTRUCTIONS_PER_BUNDLE) && decode[k].opcode;
         k++) {
       if (decode[k].opcode->mnemonic == TILEGX_OPC_FNOP)
         continue;

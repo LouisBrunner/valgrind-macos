@@ -1256,13 +1256,13 @@ typedef
       CoreMemSupp,   // Memory errors in core (pthread ops, signal handling)
 
       // Undefined value errors of given size
-      Value1Supp, Value2Supp, Value4Supp, Value8Supp, Value16Supp,
+      Value1Supp, Value2Supp, Value4Supp, Value8Supp, Value16Supp, Value32Supp,
 
       // Undefined value error in conditional.
       CondSupp,
 
       // Unaddressable read/write attempt at given size
-      Addr1Supp, Addr2Supp, Addr4Supp, Addr8Supp, Addr16Supp,
+      Addr1Supp, Addr2Supp, Addr4Supp, Addr8Supp, Addr16Supp, Addr32Supp,
 
       JumpSupp,      // Jump to unaddressable target
       FreeSupp,      // Invalid or mismatching free
@@ -1285,6 +1285,7 @@ Bool MC_(is_recognised_suppression) ( const HChar* name, Supp* su )
    else if (VG_STREQ(name, "Addr4"))   skind = Addr4Supp;
    else if (VG_STREQ(name, "Addr8"))   skind = Addr8Supp;
    else if (VG_STREQ(name, "Addr16"))  skind = Addr16Supp;
+   else if (VG_STREQ(name, "Addr32"))  skind = Addr32Supp;
    else if (VG_STREQ(name, "Jump"))    skind = JumpSupp;
    else if (VG_STREQ(name, "Free"))    skind = FreeSupp;
    else if (VG_STREQ(name, "Leak"))    skind = LeakSupp;
@@ -1297,6 +1298,7 @@ Bool MC_(is_recognised_suppression) ( const HChar* name, Supp* su )
    else if (VG_STREQ(name, "Value4"))  skind = Value4Supp;
    else if (VG_STREQ(name, "Value8"))  skind = Value8Supp;
    else if (VG_STREQ(name, "Value16")) skind = Value16Supp;
+   else if (VG_STREQ(name, "Value32")) skind = Value32Supp;
    else if (VG_STREQ(name, "FishyValue")) skind = FishyValueSupp;
    else 
       return False;
@@ -1413,6 +1415,7 @@ Bool MC_(error_matches_suppression) ( const Error* err, const Supp* su )
       case Value4Supp: su_szB = 4; goto value_case;
       case Value8Supp: su_szB = 8; goto value_case;
       case Value16Supp:su_szB =16; goto value_case;
+      case Value32Supp:su_szB =32; goto value_case;
       value_case:
          return (ekind == Err_Value && extra->Err.Value.szB == su_szB);
 
@@ -1424,6 +1427,7 @@ Bool MC_(error_matches_suppression) ( const Error* err, const Supp* su )
       case Addr4Supp: su_szB = 4; goto addr_case;
       case Addr8Supp: su_szB = 8; goto addr_case;
       case Addr16Supp:su_szB =16; goto addr_case;
+      case Addr32Supp:su_szB =32; goto addr_case;
       addr_case:
          return (ekind == Err_Addr && extra->Err.Addr.szB == su_szB);
 
@@ -1495,6 +1499,7 @@ const HChar* MC_(get_error_name) ( const Error* err )
       case 4:               return "Addr4";
       case 8:               return "Addr8";
       case 16:              return "Addr16";
+      case 32:              return "Addr32";
       default:              VG_(tool_panic)("unexpected size for Addr");
       }
    }
@@ -1506,6 +1511,7 @@ const HChar* MC_(get_error_name) ( const Error* err )
       case 4:               return "Value4";
       case 8:               return "Value8";
       case 16:              return "Value16";
+      case 32:              return "Value32";
       default:              VG_(tool_panic)("unexpected size for Value");
       }
    }

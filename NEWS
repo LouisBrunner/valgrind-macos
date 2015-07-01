@@ -234,6 +234,8 @@ where XXXXXX is the bug number as listed below.
 347978  Remove bash dependencies where not needed
 347982  Fix undefined symbols for architecture x86_64: "_global", referenced from:
         _test_so_global in tls_so-tls_so.o
+347988  Fix Memcheck: the 'impossible' happened: unexpected size for Addr (OSX/wine)
+        == 345929
 348102  Patch updating v4l2 API support
 348247  jno jumps wrongly when overflow is not set
 348565  Fix detection of command line option availability for clang

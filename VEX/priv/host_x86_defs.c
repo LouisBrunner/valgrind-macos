@@ -3463,12 +3463,12 @@ VexInvalRange patchProfInc_X86 ( VexEndness endness_host,
    p[2] = imm32 & 0xFF; imm32 >>= 8;
    p[3] = imm32 & 0xFF; imm32 >>= 8;
    p[4] = imm32 & 0xFF; imm32 >>= 8;
-   p[5] = imm32 & 0xFF; imm32 >>= 8;
+   p[5] = imm32 & 0xFF;
    imm32 = 4 + (UInt)(Addr)location_of_counter;
    p[9]  = imm32 & 0xFF; imm32 >>= 8;
    p[10] = imm32 & 0xFF; imm32 >>= 8;
    p[11] = imm32 & 0xFF; imm32 >>= 8;
-   p[12] = imm32 & 0xFF; imm32 >>= 8;
+   p[12] = imm32 & 0xFF;
    VexInvalRange vir = { (HWord)place_to_patch, 14 };
    return vir;
 }

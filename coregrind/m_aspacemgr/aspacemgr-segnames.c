@@ -92,7 +92,7 @@
 
    Free slots are chained together in a singly linked list. An index of
    zero indicates the end of the chain. Note that zero cannot conflict
-   with an index into the string table as the minumum index is at least
+   with an index into the string table as the minimum index is at least
    four (see above).
 
    The typical way to traverse the segment names is:

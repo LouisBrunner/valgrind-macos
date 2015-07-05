@@ -262,7 +262,7 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
     struct vki_ucontext *ucp = &frame->rs_uc;
 
     if (0)
-      VG_(printf)("destory signal frame; sp = %lx, "
+      VG_(printf)("destroy signal frame; sp = %lx, "
                   " %pc = %lx, status=%d\n",
                   (Addr)frame, tst->arch.vex.guest_pc, tst->status);
 

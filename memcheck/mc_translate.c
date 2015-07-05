@@ -4728,7 +4728,7 @@ IRAtom* expr2vbits_Load_WRK ( MCEnv* mce,
       di->guard = guard;
       /* Ideally the didn't-happen return value here would be all-ones
          (all-undefined), so it'd be obvious if it got used
-         inadvertantly.  We can get by with the IR-mandated default
+         inadvertently.  We can get by with the IR-mandated default
          value (0b01 repeating, 0x55 etc) as that'll still look pretty
          undefined if it ever leaks out. */
    }
@@ -6786,7 +6786,7 @@ static IRAtom* gen_guarded_load_b ( MCEnv* mce, Int szB,
       di->guard = guard;
       /* Ideally the didn't-happen return value here would be
          all-zeroes (unknown-origin), so it'd be harmless if it got
-         used inadvertantly.  We slum it out with the IR-mandated
+         used inadvertently.  We slum it out with the IR-mandated
          default value (0b01 repeating, 0x55 etc) as that'll probably
          trump all legitimate otags via Max32, and it's pretty
          obviously bogus. */

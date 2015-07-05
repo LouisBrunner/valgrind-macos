@@ -2263,7 +2263,7 @@ void MC_(copy_address_range_state) ( Addr src, Addr dst, SizeT len )
    * Some obscure uses of x86/amd64 byte registers can cause lossage
      or confusion of origins.  %AH .. %DH are treated as different
      from, and unrelated to, their parent registers, %EAX .. %EDX.
-     So some wierd sequences like
+     So some weird sequences like
 
         movb undefined-value, %AH
         movb defined-value, %AL

@@ -143,7 +143,7 @@ typedef  ULong  SVal;
    a pair, (Thr*, ULong), but that takes 16 bytes on a 64-bit target.
    We pack it into 64 bits by representing the Thr* using a ThrID, a
    small integer (18 bits), and a 46 bit integer for the timestamp
-   number.  The 46/18 split is arbitary, but has the effect that
+   number.  The 46/18 split is arbitrary, but has the effect that
    Helgrind can only handle programs that create 2^18 or fewer threads
    over their entire lifetime, and have no more than 2^46 timestamp
    ticks (synchronisation operations on the same thread).
@@ -3014,7 +3014,7 @@ static void vts_tab__do_GC ( Bool show_stats )
    /* Now figure out when the next GC should be.  We'll allow the
       number of VTSs to double before GCing again.  Except of course
       that since we can't (or, at least, don't) shrink vts_tab, we
-      can't set the threshhold value smaller than it. */
+      can't set the threshold value smaller than it. */
    tl_assert(nFreed <= nTab);
    nLive = nTab - nFreed;
    tl_assert(nLive >= 0 && nLive <= nTab);
@@ -4306,7 +4306,7 @@ static void ctxt__rcinc ( RCEC* ec )
 
 
 /* Find 'ec' in the RCEC list whose head pointer lives at 'headp' and
-   move it one step closer the the front of the list, so as to make
+   move it one step closer to the front of the list, so as to make
    subsequent searches for it cheaper. */
 static void move_RCEC_one_step_forward ( RCEC** headp, RCEC* ec )
 {
@@ -4354,7 +4354,7 @@ static void move_RCEC_one_step_forward ( RCEC** headp, RCEC* ec )
    return a pointer to the copy.  The caller can safely have 'example'
    on its stack, since we will always return a pointer to a copy of
    it, not to the original.  Note that the inserted node will have .rc
-   of zero and so the caller must immediatly increment it. */
+   of zero and so the caller must immediately increment it. */
 __attribute__((noinline))
 static RCEC* ctxt__find_or_add ( RCEC* example )
 {
@@ -7067,7 +7067,7 @@ void libhb_maybe_GC ( void )
       do_RCEC_GC();
 
    /* If there are still no entries available (all the table entries are full),
-      and we hit the threshhold point, then do a GC */
+      and we hit the threshold point, then do a GC */
    Bool vts_tab_GC = vts_tab_freelist == VtsID_INVALID
       && VG_(sizeXA)( vts_tab ) >= vts_next_GC_at;
    if (UNLIKELY (vts_tab_GC))

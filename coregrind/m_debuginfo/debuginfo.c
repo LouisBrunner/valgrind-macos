@@ -118,7 +118,7 @@ static void cfsi_m_cache__invalidate ( void );
 static DebugInfo* debugInfo_list = NULL;
 
 
-/* Find 'di' in the debugInfo_list and move it one step closer the the
+/* Find 'di' in the debugInfo_list and move it one step closer to the
    front of the list, so as to make subsequent searches for it
    cheaper.  When used in a controlled way, makes a major improvement
    in some DebugInfo-search-intensive situations, most notably stack

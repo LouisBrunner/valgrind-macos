@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
 	fl.l_start = 0;
 	fl.l_len = 1;
 
-	/* I'm assuming noone else tries to lock this! */
+	/* I'm assuming no one else tries to lock this! */
 	if (fcntl(fd, F_SETLK, &fl) != 0)
 		err(1, "Locking %s", file);
 

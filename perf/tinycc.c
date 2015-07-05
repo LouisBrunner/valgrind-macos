@@ -3080,7 +3080,7 @@ enum tcc_token {
  DEF_FP(mul)
 
  DEF_ASM(fcom)
- DEF_ASM(fcom_1) /* non existant op, just to have a regular table */
+ DEF_ASM(fcom_1) /* non existent op, just to have a regular table */
  DEF_FP1(com)
 
  DEF_FP(comp)
@@ -4412,7 +4412,7 @@ static const char tcc_keywords[] =
  DEF_FP(mul)
 
  DEF_ASM(fcom)
- DEF_ASM(fcom_1) /* non existant op, just to have a regular table */
+ DEF_ASM(fcom_1) /* non existent op, just to have a regular table */
  DEF_FP1(com)
 
  DEF_FP(comp)
@@ -16970,7 +16970,7 @@ static void subst_asm_operand(CString *add_str,
     }
 }
 
-/* generate prolog and epilog code for asm statment */
+/* generate prolog and epilog code for asm statement */
 static void asm_gen_code(ASMOperand *operands, int nb_operands, 
                          int nb_outputs, int is_output,
                          uint8_t *clobber_regs,

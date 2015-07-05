@@ -1614,7 +1614,7 @@ typedef
          (DW_AT_subprogram), and for those, we also note the GExpr
          derived from its DW_AT_frame_base attribute, if any.
          Consequently it should be possible to find, for any
-         variable's DIE, the GExpr for the the containing function's
+         variable's DIE, the GExpr for the containing function's
          DW_AT_frame_base by scanning back through the stack to find
          the nearest entry associated with a function.  This somewhat
          elaborate scheme is provided so as to make it possible to
@@ -3411,7 +3411,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       if (is_decl && (!is_spec)) {
          /* It's a DW_AT_declaration.  We require the name but
             nothing else. */
-         /* JRS 2012-06-28: following discussion w/ tromey, if the the
+         /* JRS 2012-06-28: following discussion w/ tromey, if the
             type doesn't have name, just make one up, and accept it.
             It might be referred to by other DIEs, so ignoring it
             doesn't seem like a safe option. */

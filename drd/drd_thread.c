@@ -1171,7 +1171,7 @@ static void thread_combine_vc_sync(DrdThreadId tid, const Segment* sg)
 
 /**
  * Create a new segment for thread tid and update the vector clock of the last
- * segment of this thread with the the vector clock of segment sg. Call this
+ * segment of this thread with the vector clock of segment sg. Call this
  * function after thread tid had to wait because of thread synchronization
  * until the memory accesses in the segment sg finished.
  */

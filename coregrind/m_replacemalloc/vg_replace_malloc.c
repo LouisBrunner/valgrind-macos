@@ -1055,7 +1055,7 @@ static size_t my_malloc_size ( void* zone, void* ptr )
 }
 
 /* Note that the (void*) casts below are a kludge which stops
-   compilers complaining about the fact that the the replacement
+   compilers complaining about the fact that the replacement
    functions aren't really of the right type. */
 static vki_malloc_zone_t vg_default_zone = {
     NULL, // reserved1

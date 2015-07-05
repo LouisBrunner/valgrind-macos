@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
     }
 
   printf ("after %d loops, last size block requested %lu\n", loop, bigsize);
-  // verify if superblock fragmentation occured
+  // verify if superblock fragmentation occurred
   // We consider that an arena of up to 3 times more than bigsize is ok.
   {
 #if defined(HAVE_MALLINFO)

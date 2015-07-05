@@ -526,7 +526,7 @@ static void handler_unsup_insn ( Int x ) {
 
 
 /* Helper function for VG_(machine_get_hwcaps), assumes the SIGILL/etc
- * handlers are installed.  Determines the the sizes affected by dcbz
+ * handlers are installed.  Determines the sizes affected by dcbz
  * and dcbzl instructions and updates the given VexArchInfo structure
  * accordingly.
  *

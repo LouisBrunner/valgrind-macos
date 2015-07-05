@@ -198,7 +198,7 @@ static void assign_guest_tls(ThreadId ctid, Addr tlsptr);
             
 /* 
    When a client clones, we need to keep track of the new thread.  This means:
-   1. allocate a ThreadId+ThreadState+stack for the the thread
+   1. allocate a ThreadId+ThreadState+stack for the thread
 
    2. initialize the thread's new VCPU state
 

@@ -103,7 +103,7 @@ static UWord next_id;  /* Next id we hand out to a newly registered stack */
  */
 static Stack *current_stack;
 
-/* Find 'st' in the stacks_list and move it one step closer the the
+/* Find 'st' in the stacks_list and move it one step closer to the
    front of the list, so as to make subsequent searches for it
    cheaper. */
 static void move_Stack_one_step_forward ( Stack* st )

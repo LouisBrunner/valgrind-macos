@@ -9,7 +9,7 @@
 /* Check that a syscall's POST function gets called if it completes
    due to being interrupted.  nanosleep is used here, because it
    writes a result even if it fails.  wait*() could also be used,
-   because they successully complete if interrupted by SIGCHLD.
+   because they successfully complete if interrupted by SIGCHLD.
  */
 static void handler(int s)
 {

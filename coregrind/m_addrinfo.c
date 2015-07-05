@@ -100,7 +100,7 @@ void VG_(describe_addr) ( Addr a, /*OUT*/AddrInfo* ai )
 
    (void) VG_(get_data_description)( ai->Addr.Variable.descr1,
                                      ai->Addr.Variable.descr2, a );
-   /* If there's nothing in descr1/2, free them.  Why is it safe to to
+   /* If there's nothing in descr1/2, free them.  Why is it safe to
       VG_(indexXA) at zero here?  Because VG_(get_data_description)
       guarantees to zero terminate descr1/2 regardless of the outcome
       of the call.  So there's always at least one element in each XA

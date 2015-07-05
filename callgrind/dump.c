@@ -589,7 +589,7 @@ static void fprint_jcc(VgFile *fp, jCC* jcc, AddrPos* curr, AddrPos* last,
        */
       CLG_ASSERT(jcc->from->bb->obj == jcc->to->bb->obj);
 
-	/* only print if target position info is usefull */
+	/* only print if target position info is useful */
 	if (!CLG_(clo).dump_instr && !CLG_(clo).dump_bb && target.line==0) {
 	  jcc->call_counter = 0;
 	  return;
@@ -817,7 +817,7 @@ static Bool fprint_bbcc(VgFile *fp, BBCC* bbcc, AddrPos* last)
     }
     if (CLG_(clo).dump_bbs) VG_(fprintf)(fp, "\n");
     
-    /* when every cost was immediatly written, we must have done so,
+    /* when every cost was immediately written, we must have done so,
      * as this function is only called when there's cost in a BBCC
      */
     CLG_ASSERT(something_written);

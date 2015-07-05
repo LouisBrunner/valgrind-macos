@@ -943,7 +943,7 @@ void scan_all_valid_memory_catcher ( Int sigNo, Addr addr )
 // 1. Leak check mode (searched == 0).
 // -----------------------------------
 // Scan a block of memory between [start, start+len).  This range may
-// be bogus, inaccessable, or otherwise strange; we deal with it.  For each
+// be bogus, inaccessible, or otherwise strange; we deal with it.  For each
 // valid aligned word we assume it's a pointer to a chunk a push the chunk
 // onto the mark stack if so.
 // clique is the "highest level clique" in which indirectly leaked blocks have
@@ -995,7 +995,7 @@ lc_scan_memory(Addr start, SizeT len, Bool is_prior_definite,
    /* Optimisation: the loop below will check for each begin
       of SM chunk if the chunk is fully unaddressable. The idea is to
       skip efficiently such fully unaddressable SM chunks.
-      So, we preferrably start the loop on a chunk boundary.
+      So, we preferably start the loop on a chunk boundary.
       If the chunk is not fully unaddressable, we might be in
       an unaddressable page. Again, the idea is to skip efficiently
       such unaddressable page : this is the "else" part.

@@ -80,7 +80,7 @@ extern Bool HG_(clo_cmp_race_err_addrs);
 
    1: "approx": collect one stack trace per (notional) segment, that
       is, collect a stack trace for a thread every time its vector
-      clock changes.  This faciliates showing the bounds of the
+      clock changes.  This facilitates showing the bounds of the
       conflicting segment(s), with relatively small overhead.
 
    2: "full": collect a stack trace every time the constraints for a

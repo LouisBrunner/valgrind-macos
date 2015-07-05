@@ -244,7 +244,7 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
 "  v.do   expensive_sanity_check_general : do an expensive sanity check now\n"
 "  v.info gdbserver_status : show gdbserver status\n"
 "  v.info memory [aspacemgr] : show valgrind heap memory stats\n"
-"     (with aspacemgr arg, also shows valgrind segments on log ouput)\n"
+"     (with aspacemgr arg, also shows valgrind segments on log output)\n"
 "  v.info exectxt          : show stacktraces and stats of all execontexts\n"
 "  v.info scheduler        : show valgrind thread state and stacktrace\n"
 "  v.info stats            : show various valgrind and tool stats\n"

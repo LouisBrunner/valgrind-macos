@@ -773,7 +773,7 @@ static void call_gdbserver ( ThreadId tid , CallReason reason)
 }
 
 /* busy > 0 when gdbserver is currently being called.
-   busy is used to to avoid vgdb invoking gdbserver
+   busy is used to avoid vgdb invoking gdbserver
    while gdbserver by Valgrind. */
 static volatile int busy = 0;
 

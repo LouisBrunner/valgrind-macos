@@ -90,7 +90,7 @@ void DRD_(semaphore_set_trace)(const Bool trace_semaphore)
 
 /**
  * Initialize the memory 'p' points at as a semaphore_info structure for the
- * client semaphore at client addres 'semaphore'.
+ * client semaphore at client address 'semaphore'.
  */
 static
 void drd_semaphore_initialize(struct semaphore_info* const p,

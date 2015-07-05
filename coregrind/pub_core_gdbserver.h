@@ -83,7 +83,7 @@ void VG_(set_ptracer)(void);
 
    Note that gdbserver assumes that software breakpoint is supported
    (as this will be done by re-instrumenting the code).
-   Note that len is ignored for sofware breakpoints. hardware_breakpoint
+   Note that len is ignored for software breakpoints. hardware_breakpoint
    are not supported.
 
    Returns True if the point has properly been inserted or removed

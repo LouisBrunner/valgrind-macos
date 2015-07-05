@@ -3310,7 +3310,7 @@ void evh__HG_USERSO_FORGET_ALL ( ThreadId tid, UWord usertag )
 {
    /* TID declares that any happens-before edges notionally stored in
       USERTAG can be deleted.  If (as would normally be the case) a
-      SO is associated with USERTAG, then the assocation is removed
+      SO is associated with USERTAG, then the association is removed
       and all resources associated with SO are freed.  Importantly,
       that frees up any VTSs stored in SO. */
    if (SHOW_EVENTS >= 1)

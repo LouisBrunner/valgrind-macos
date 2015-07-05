@@ -2113,8 +2113,8 @@ void VG_(arena_free) ( ArenaId aid, void* ptr )
 
 /*
    The idea for malloc_aligned() is to allocate a big block, base, and
-   then split it into two parts: frag, which is returned to the the
-   free pool, and align, which is the bit we're really after.  Here's
+   then split it into two parts: frag, which is returned to the free
+   pool, and align, which is the bit we're really after.  Here's
    a picture.  L and H denote the block lower and upper overheads, in
    bytes.  The details are gruesome.  Note it is slightly complicated
    because the initial request to generate base may return a bigger

@@ -329,7 +329,7 @@ Bool waitstopped (pid_t pid, int signal_expected, const char *msg)
 }
 
 /* Stops the given pid, wait for the process to be stopped.
-   Returns True if succesful, False otherwise.
+   Returns True if successful, False otherwise.
    msg is used in tracing and error reporting. */
 static
 Bool stop (pid_t pid, const char *msg)
@@ -348,7 +348,7 @@ Bool stop (pid_t pid, const char *msg)
 }
 
 /* Attaches to given pid, wait for the process to be stopped.
-   Returns True if succesful, False otherwise.
+   Returns True if successful, False otherwise.
    msg is used in tracing and error reporting. */
 static
 Bool attach (pid_t pid, const char *msg)
@@ -572,7 +572,7 @@ Bool getregs (pid_t pid, void *regs, long regs_bsz)
       res = ptrace (PTRACE_GETREGSET, pid, NT_PRSTATUS, &iovec);
       if (res == 0) {
          if (has_working_ptrace_getregset == -1) {
-            // First call to PTRACE_GETREGSET succesful =>
+            // First call to PTRACE_GETREGSET successful =>
             has_working_ptrace_getregset = 1;
             DEBUG(1, "detected a working PTRACE_GETREGSET\n");
          }
@@ -607,7 +607,7 @@ Bool getregs (pid_t pid, void *regs, long regs_bsz)
       res = ptrace (PTRACE_GETREGS, pid, NULL, regs);
       if (res == 0) {
          if (has_working_ptrace_getregs == -1) {
-            // First call to PTRACE_GETREGS succesful =>
+            // First call to PTRACE_GETREGS successful =>
             has_working_ptrace_getregs = 1;
             DEBUG(1, "detected a working PTRACE_GETREGS\n");
          }

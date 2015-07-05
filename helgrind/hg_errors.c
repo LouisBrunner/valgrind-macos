@@ -1212,7 +1212,7 @@ void HG_(pp_Error) ( const Error* err )
             if (xe->XE.Race.h1_ct_mbsegendEC) {
                VG_(pp_ExeContext)( xe->XE.Race.h1_ct_mbsegendEC );
             } else {
-               emit( "  <auxwhat>(the end of the the thread)</auxwhat>\n" );
+               emit( "  <auxwhat>(the end of the thread)</auxwhat>\n" );
             }
          }
 
@@ -1256,7 +1256,7 @@ void HG_(pp_Error) ( const Error* err )
             if (xe->XE.Race.h1_ct_mbsegendEC) {
                VG_(pp_ExeContext)( xe->XE.Race.h1_ct_mbsegendEC );
             } else {
-               emit( "   (the end of the the thread)\n" );
+               emit( "   (the end of the thread)\n" );
             }
          }
 

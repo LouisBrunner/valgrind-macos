@@ -32,7 +32,7 @@
 
 /* This file manages the data structures built by the debuginfo
    system.  These are: the top level SegInfo list.  For each SegInfo,
-   there are tables for for address-to-symbol mappings,
+   there are tables for address-to-symbol mappings,
    address-to-src-file/line mappings, and address-to-CFI-info
    mappings.
 */

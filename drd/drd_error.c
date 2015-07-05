@@ -174,7 +174,7 @@ void drd_report_data_race(const Error* const err,
    tl_assert(dri->size > 0);
 
    (void) VG_(get_data_description)(descr1, descr2, dri->addr);
-   /* If there's nothing in descr1/2, free them.  Why is it safe to to
+   /* If there's nothing in descr1/2, free them.  Why is it safe to
       VG_(indexXA) at zero here?  Because VG_(get_data_description)
       guarantees to zero terminate descr1/2 regardless of the outcome
       of the call.  So there's always at least one element in each XA

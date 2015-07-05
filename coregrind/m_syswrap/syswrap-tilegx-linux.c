@@ -319,7 +319,7 @@ static void setup_child ( ThreadArchState *, ThreadArchState * );
 static SysRes sys_set_tls ( ThreadId tid, Addr tlsptr );
  /*
    When a client clones, we need to keep track of the new thread.  This means:
-   1. allocate a ThreadId+ThreadState+stack for the the thread
+   1. allocate a ThreadId+ThreadState+stack for the thread
    2. initialize the thread's new VCPU state
    3. create the thread using the same args as the client requested,
    but using the scheduler entrypoint for IP, and a separate stack

@@ -211,7 +211,7 @@ extern int valgrind_remove_watchpoint (char type, CORE_ADDR addr, int len);
    Returns True if the address of the variable could be found.
       *tls_addr is then set to this address.
    Returns False if tls support is not available for this arch, or
-   if an error occured. *tls_addr is set to NULL. */
+   if an error occurred. *tls_addr is set to NULL. */
 extern Bool valgrind_get_tls_addr (ThreadState *tst,
                                    CORE_ADDR offset,
                                    CORE_ADDR lm,

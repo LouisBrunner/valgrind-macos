@@ -287,7 +287,7 @@ ExExtractResult ExtabEntryExtract ( MemoryRange* mr_exidx,
       GET_EXTAB_U32(data, extbl_data);
       if (!(data & ARM_EXIDX_COMPACT)) {
          // This denotes a "generic model" handler.  That will involve
-         // executing arbitary machine code, which is something we
+         // executing arbitrary machine code, which is something we
          // can't represent here; hence reject it.
          return ExCantRepresent;
       }
@@ -299,9 +299,9 @@ ExExtractResult ExtabEntryExtract ( MemoryRange* mr_exidx,
       extbl_data++;
    }
 
-   // Now look at the the handler table entry.  The first word is
-   // |data| and subsequent words start at |*extbl_data|.  The number
-   // of extra words to use is |extra|, provided that the personality
+   // Now look at the handler table entry.  The first word is |data|
+   // and subsequent words start at |*extbl_data|.  The number of
+   // extra words to use is |extra|, provided that the personality
    // allows extra words.  Even if it does, none may be available --
    // extra_allowed is the maximum number of extra words allowed. */
    if (pers == 0) {

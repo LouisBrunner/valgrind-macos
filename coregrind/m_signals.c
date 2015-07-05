@@ -160,7 +160,7 @@
    So what we have to do, when doing any syscall which SfMayBlock, is to
    quickly switch in the SCSS-specified signal mask just before the
    syscall, and switch it back just afterwards, and hope that we don't
-   get caught up in some wierd race condition.  This is the primary
+   get caught up in some weird race condition.  This is the primary
    purpose of the ultra-magical pieces of assembly code in
    coregrind/m_syswrap/syscall-<plat>.S
 

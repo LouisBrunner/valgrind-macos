@@ -1288,7 +1288,7 @@ Bool VG_(am_addr_is_in_extensible_client_stack)( Addr addr )
 
    case SkResvn: {
       if (seg->smode != SmUpper) return False;
-      /* If the the abutting segment towards higher addresses is an SkAnonC
+      /* If the abutting segment towards higher addresses is an SkAnonC
          segment, then ADDR is a future stack pointer. */
       const NSegment *next = VG_(am_next_nsegment)(seg, /*forward*/ True);
       if (next == NULL || next->kind != SkAnonC) return False;
@@ -2829,9 +2829,9 @@ const NSegment *VG_(am_extend_into_adjacent_reservation_client)( Addr addr,
       }
 
       /* Ok, success with the kernel.  Update our structures. */
-      nsegments[segR].start += delta;
-      nsegments[segA].end += delta;
-      aspacem_assert(nsegments[segR].start <= nsegments[segR].end);
+      NSegment seg_copy = nsegments[segA];
+      seg_copy.end += delta;
+      add_segment(&seg_copy);
 
    } else {
 
@@ -2868,9 +2868,9 @@ const NSegment *VG_(am_extend_into_adjacent_reservation_client)( Addr addr,
       }
 
       /* Ok, success with the kernel.  Update our structures. */
-      nsegments[segR].end -= delta;
-      nsegments[segA].start -= delta;
-      aspacem_assert(nsegments[segR].start <= nsegments[segR].end);
+      NSegment seg_copy = nsegments[segA];
+      seg_copy.start -= delta;
+      add_segment(&seg_copy);
    }
 
    AM_SANITY_CHECK;

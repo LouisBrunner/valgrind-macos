@@ -61,7 +61,7 @@ debugging valgrind internals monitor commands:
   v.do   expensive_sanity_check_general : do an expensive sanity check now
   v.info gdbserver_status : show gdbserver status
   v.info memory [aspacemgr] : show valgrind heap memory stats
-     (with aspacemgr arg, also shows valgrind segments on log ouput)
+     (with aspacemgr arg, also shows valgrind segments on log output)
   v.info exectxt          : show stacktraces and stats of all execontexts
   v.info scheduler        : show valgrind thread state and stacktrace
   v.info stats            : show various valgrind and tool stats

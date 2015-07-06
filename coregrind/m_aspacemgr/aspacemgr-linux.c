@@ -2829,9 +2829,9 @@ const NSegment *VG_(am_extend_into_adjacent_reservation_client)( Addr addr,
       }
 
       /* Ok, success with the kernel.  Update our structures. */
-      NSegment seg_copy = nsegments[segA];
-      seg_copy.end += delta;
-      add_segment(&seg_copy);
+      nsegments[segR].start += delta;
+      nsegments[segA].end += delta;
+      aspacem_assert(nsegments[segR].start <= nsegments[segR].end);
 
    } else {
 
@@ -2868,9 +2868,9 @@ const NSegment *VG_(am_extend_into_adjacent_reservation_client)( Addr addr,
       }
 
       /* Ok, success with the kernel.  Update our structures. */
-      NSegment seg_copy = nsegments[segA];
-      seg_copy.start -= delta;
-      add_segment(&seg_copy);
+      nsegments[segR].end -= delta;
+      nsegments[segA].start -= delta;
+      aspacem_assert(nsegments[segR].start <= nsegments[segR].end);
    }
 
    AM_SANITY_CHECK;

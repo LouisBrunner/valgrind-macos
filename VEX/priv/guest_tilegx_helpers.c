@@ -778,7 +778,7 @@ ULong tilegx_dirtyhelper_gen ( ULong opc,
     break;
   case 271:
     {
-      return __insn_v1shli(rd1, rd2);
+      return __insn_v1shl(rd1, rd2);
     }
     break;
   case 272:
@@ -788,7 +788,7 @@ ULong tilegx_dirtyhelper_gen ( ULong opc,
     break;
   case 273:
     {
-      return __insn_v1shrsi(rd1, rd2);
+      return __insn_v1shrs(rd1, rd2);
     }
     break;
   case 274:
@@ -988,7 +988,7 @@ ULong tilegx_dirtyhelper_gen ( ULong opc,
     break;
   case 313:
     {
-      return __insn_v2shli(rd1, rd2);
+      return __insn_v2shl(rd1, rd2);
     }
     break;
   case 314:
@@ -1003,7 +1003,7 @@ ULong tilegx_dirtyhelper_gen ( ULong opc,
     break;
   case 316:
     {
-      return __insn_v2shrsi(rd1, rd2);
+      return __insn_v2shrs(rd1, rd2);
     }
     break;
   case 317:
@@ -1013,7 +1013,7 @@ ULong tilegx_dirtyhelper_gen ( ULong opc,
     break;
   case 318:
     {
-      return __insn_v2shrui(rd1, rd2);
+      return __insn_v2shru(rd1, rd2);
     }
     break;
   case 319:

@@ -257,6 +257,22 @@ static IRStmt* dis_branch ( IRExpr* guard, ULong imm )
     rd_wb_index++;                              \
   } while(0)
 
+
+/* Expand/repeat byte _X 8 times to a 64-bit value */
+#define  V1EXP(_X)                                     \
+  ({                                                   \
+    _X = ((((UChar)(_X)) << 8) | ((UChar)(_X)));       \
+    _X = (((_X) << 16) | (_X));                        \
+    (((_X) << 32) | (_X));                             \
+  })
+
+/* Expand/repeat byte _X 4 times to a 64-bit value */
+#define  V2EXP(_X)                                 \
+  ({                                               \
+    _X = ((((UChar)(_X)) << 16) | ((UChar)(_X)));  \
+    (((_X) << 32) | (_X));                         \
+  })
+
 /*------------------------------------------------------------*/
 /*--- Disassemble a single instruction                     ---*/
 /*------------------------------------------------------------*/
@@ -2082,9 +2098,12 @@ static DisResult disInstr_TILEGX_WRK ( Bool(*resteerOkFn) (void *, Addr),
     case 232:
       /* Fall-through */
     case 233:
-      /* Fall-through */
+      use_dirty_helper = 1;
+      break;
     case 234:
-      /* Fall-through */
+      opd[3] = V1EXP(opd[3]);
+      use_dirty_helper = 1;
+      break;
     case 235:
       /* Fall-through */
     case 236:
@@ -2110,12 +2129,18 @@ static DisResult disInstr_TILEGX_WRK ( Bool(*resteerOkFn) (void *, Addr),
     case 241:
       /* Fall-through */
     case 242:
-      /* Fall-through */
+      use_dirty_helper = 1;
+      break;
     case 243:
+      opd[3] = V1EXP(opd[3]);
+      use_dirty_helper = 1;
+      break;
       /* Fall-through */
     case 244:
-      /* Fall-through */
+      use_dirty_helper = 1;
+      break;
     case 245:
+      opd[3] = V1EXP(opd[3]);
       use_dirty_helper = 1;
       break;
     case 246:  /* "v1cmpne" */
@@ -2151,13 +2176,19 @@ static DisResult disInstr_TILEGX_WRK ( Bool(*resteerOkFn) (void *, Addr),
     case 258:
       /* Fall-through */
     case 259:
-      /* Fall-through */
+      use_dirty_helper = 1;
+      break;
     case 260:
-      /* Fall-through */
+      opd[3] = V1EXP(opd[3]);
+      use_dirty_helper = 1;
+      break;
     case 261:
-      /* Fall-through */
+      use_dirty_helper = 1;
+      break;
     case 262:
-      /* Fall-through */
+      opd[3] = V1EXP(opd[3]);
+      use_dirty_helper = 1;
+      break;
     case 263:
       /* Fall-through */
     case 264:
@@ -2173,13 +2204,19 @@ static DisResult disInstr_TILEGX_WRK ( Bool(*resteerOkFn) (void *, Addr),
     case 269:
       /* Fall-through */
     case 270:
-      /* Fall-through */
+      use_dirty_helper = 1;
+      break;
     case 271:
-      /* Fall-through */
+      opd[3] = V1EXP(opd[3]);
+      use_dirty_helper = 1;
+      break;
     case 272:
-      /* Fall-through */
+      use_dirty_helper = 1;
+      break;
     case 273:
-      /* Fall-through */
+      opd[3] = V1EXP(opd[3]);
+      use_dirty_helper = 1;
+      break;
     case 274:
       use_dirty_helper = 1;
       break;
@@ -2195,9 +2232,12 @@ static DisResult disInstr_TILEGX_WRK ( Bool(*resteerOkFn) (void *, Addr),
     case 277:
       /* Fall-through */
     case 278:
-      /* Fall-through */
+      use_dirty_helper = 1;
+      break;
     case 279:
-      /* Fall-through */
+      opd[3] = V2EXP(opd[3]);
+      use_dirty_helper = 1;
+      break;
     case 280:
       /* Fall-through */
     case 281:
@@ -2205,21 +2245,30 @@ static DisResult disInstr_TILEGX_WRK ( Bool(*resteerOkFn) (void *, Addr),
     case 282:
       /* Fall-through */
     case 283:
-      /* Fall-through */
+      use_dirty_helper = 1;
+      break;
     case 284:
-      /* Fall-through */
+      opd[3] = V2EXP(opd[3]);
+      use_dirty_helper = 1;
+      break;
     case 285:
       /* Fall-through */
     case 286:
       /* Fall-through */
     case 287:
-      /* Fall-through */
+      use_dirty_helper = 1;
+      break;
     case 288:
-      /* Fall-through */
+      opd[3] = V2EXP(opd[3]);
+      use_dirty_helper = 1;
+      break;
     case 289:
-      /* Fall-through */
+      use_dirty_helper = 1;
+      break;
     case 290:
-      /* Fall-through */
+      opd[3] = V2EXP(opd[3]);
+      use_dirty_helper = 1;
+      break;
     case 291:
       /* Fall-through */
     case 292:
@@ -2231,13 +2280,19 @@ static DisResult disInstr_TILEGX_WRK ( Bool(*resteerOkFn) (void *, Addr),
     case 295:
       /* Fall-through */
     case 296:
-      /* Fall-through */
+      use_dirty_helper = 1;
+      break;
     case 297:
-      /* Fall-through */
+      opd[3] = V2EXP(opd[3]);
+      use_dirty_helper = 1;
+      break;
     case 298:
-      /* Fall-through */
+      use_dirty_helper = 1;
+      break;
     case 299:
-      /* Fall-through */
+      opd[3] = V2EXP(opd[3]);
+      use_dirty_helper = 1;
+      break;
     case 300:
       /* Fall-through */
     case 301:
@@ -2263,19 +2318,28 @@ static DisResult disInstr_TILEGX_WRK ( Bool(*resteerOkFn) (void *, Addr),
     case 311:
       /* Fall-through */
     case 312:
-      /* Fall-through */
+      use_dirty_helper = 1;
+      break;
     case 313:
-      /* Fall-through */
+      opd[3] = V2EXP(opd[3]);
+      use_dirty_helper = 1;
+      break;
     case 314:
       /* Fall-through */
     case 315:
-      /* Fall-through */
+      use_dirty_helper = 1;
+      break;
     case 316:
-      /* Fall-through */
+      opd[3] = V2EXP(opd[3]);
+      use_dirty_helper = 1;
+      break;
     case 317:
-      /* Fall-through */
+      use_dirty_helper = 1;
+      break;
     case 318:
-      /* Fall-through */
+      opd[3] = V2EXP(opd[3]);
+      use_dirty_helper = 1;
+      break;
     case 319:
       /* Fall-through */
     case 320:

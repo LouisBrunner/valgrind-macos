@@ -475,3 +475,36 @@ probable invalid
 348616  Wine/valgrind: Warning: noted but unhandled ioctl 0x5390 with no size/direction hints. (DVD_READ_STRUCT)
 
 Fri  5 Jun 13:41:51 CEST 2015
+
+348749  guest_generic_x87.c:458: bad ? : operator
+
+348909  Support OS X 10.11 (El Capitan)
+
+348924  MIPS: Load doubles through memory so the code compiles with the FPXX ABI
+
+349034  Add Lustre ioctls LL_IOC_GROUP_LOCK and LL_IOC_GROUP_UNLOCK
+
+349128  Access not within mapped region in _pthread_find_thread (OS X 10.11)
+
+349129  memcheck/tests/wrap6 fails on OS X 10.11
+
+349304  vex amd64->IR: 0xF 0x33 0x89 0x45 0xFC 0x89 0x55 0xF8
+
+349521  Valgrind misses some line numbers in output
+
+349769  clang/osx: ld: warning: -read_only_relocs cannot be used with x86_64
+
+349790  Clean up of the hardware capability checking utilities.
+
+349804  valgrind/osx: running wine's unit tests under valgrind fails with:
+        loader/wine: Undefined error: 0
+
+349879  [PATCH] memcheck: add handwritten assembly for helperc_LOADV*
+
+349891  vex x86->IR: unhandled instruction bytes: 0xF3 0xF 0xB8 0xC9
+
+349952  Valgrind terminates process upon a call to remap_file_pages
+
+349954  Cannot start memcheck: permission denied
+
+Tue  7 Jul 15:27:23 CEST 2015

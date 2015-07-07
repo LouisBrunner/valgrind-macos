@@ -337,7 +337,8 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
       /* This deals with frames resulting from functions which begin "pushl%
          ebp ; movl %esp, %ebp" which is the ABI-mandated preamble. */
       if (fp_min <= uregs.xbp &&
-          uregs.xbp <= fp_max - 1 * sizeof(UWord)/*see comment below*/)
+          uregs.xbp <= fp_max - 1 * sizeof(UWord)/*see comment below*/ &&
+          VG_IS_4_ALIGNED(uregs.xbp))
       {
          /* fp looks sane, so use it. */
          uregs.xip = (((UWord*)uregs.xbp)[1]);

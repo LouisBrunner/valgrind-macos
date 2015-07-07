@@ -1038,7 +1038,7 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
 
    /* Note the details about the mapping. */
    DebugInfoMapping map;
-   map.avma = a;
+   map.avma = seg->start;
    map.size = seg->end + 1 - seg->start;
    map.foff = seg->offset;
    map.rx   = is_rx_map;

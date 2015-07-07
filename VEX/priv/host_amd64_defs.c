@@ -3758,7 +3758,7 @@ VexInvalRange chainXDirect_AMD64 ( VexEndness endness_host,
    UChar* p = (UChar*)place_to_chain;
    vassert(p[0] == 0x49);
    vassert(p[1] == 0xBB);
-   vassert(*(Addr*)(&p[2]) == (Addr)disp_cp_chain_me_EXPECTED);
+   vassert(read_misaligned_ULong_LE(&p[2]) == (Addr)disp_cp_chain_me_EXPECTED);
    vassert(p[10] == 0x41);
    vassert(p[11] == 0xFF);
    vassert(p[12] == 0xD3);
@@ -3807,10 +3807,7 @@ VexInvalRange chainXDirect_AMD64 ( VexEndness endness_host,
    /* And make the modifications. */
    if (shortOK) {
       p[0]  = 0xE9;
-      p[1]  = (delta >> 0) & 0xFF;
-      p[2]  = (delta >> 8) & 0xFF;
-      p[3]  = (delta >> 16) & 0xFF;
-      p[4]  = (delta >> 24) & 0xFF;
+      write_misaligned_UInt_LE(&p[1], (UInt)(Int)delta);
       p[5]  = 0x0F; p[6]  = 0x0B;
       p[7]  = 0x0F; p[8]  = 0x0B;
       p[9]  = 0x0F; p[10] = 0x0B;
@@ -3820,7 +3817,7 @@ VexInvalRange chainXDirect_AMD64 ( VexEndness endness_host,
       vassert(delta == 0LL || delta == -1LL);
    } else {
       /* Minimal modifications from the starting sequence. */   
-     *(Addr*)(&p[2]) = (Addr)place_to_jump_to;
+      write_misaligned_ULong_LE(&p[2], (ULong)(Addr)place_to_jump_to);
       p[12] = 0xE3;
    }
    VexInvalRange vir = { (HWord)place_to_chain, 13 };
@@ -3855,7 +3852,8 @@ VexInvalRange unchainXDirect_AMD64 ( VexEndness endness_host,
    UChar* p     = (UChar*)place_to_unchain;
    Bool   valid = False;
    if (p[0] == 0x49 && p[1] == 0xBB
-       && *(Addr*)(&p[2]) == (Addr)place_to_jump_to_EXPECTED
+       && read_misaligned_ULong_LE(&p[2])
+          == (ULong)(Addr)place_to_jump_to_EXPECTED
        && p[10] == 0x41 && p[11] == 0xFF && p[12] == 0xE3) {
       /* it's the long form */
       valid = True;
@@ -3867,7 +3865,7 @@ VexInvalRange unchainXDirect_AMD64 ( VexEndness endness_host,
        && p[9]  == 0x0F && p[10] == 0x0B
        && p[11] == 0x0F && p[12] == 0x0B) {
       /* It's the short form.  Check the offset is right. */
-      Int  s32 = *(Int*)(&p[1]);
+      Int  s32 = (Int)read_misaligned_UInt_LE(&p[1]);
       Long s64 = (Long)s32;
       if ((UChar*)p + 5 + s64 == place_to_jump_to_EXPECTED) {
          valid = True;
@@ -3886,7 +3884,7 @@ VexInvalRange unchainXDirect_AMD64 ( VexEndness endness_host,
    */
    p[0] = 0x49;
    p[1] = 0xBB;
-   *(Addr*)(&p[2]) = (Addr)disp_cp_chain_me;
+   write_misaligned_ULong_LE(&p[2], (ULong)(Addr)disp_cp_chain_me);
    p[10] = 0x41;
    p[11] = 0xFF;
    p[12] = 0xD3;

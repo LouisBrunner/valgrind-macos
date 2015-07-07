@@ -580,6 +580,59 @@ UInt vex_sprintf ( HChar* buf, const HChar *format, ... )
 }
 
 
+/*---------------------------------------------------------*/
+/*--- Misaligned memory access support                  ---*/
+/*---------------------------------------------------------*/
+
+UInt read_misaligned_UInt_LE ( void* addr )
+{
+   UChar* p = (UChar*)addr;
+   UInt   w = 0;
+   w = (w << 8) | p[3];
+   w = (w << 8) | p[2];
+   w = (w << 8) | p[1];
+   w = (w << 8) | p[0];
+   return w;
+}
+
+ULong read_misaligned_ULong_LE ( void* addr )
+{
+   UChar* p = (UChar*)addr;
+   ULong  w = 0;
+   w = (w << 8) | p[7];
+   w = (w << 8) | p[6];
+   w = (w << 8) | p[5];
+   w = (w << 8) | p[4];
+   w = (w << 8) | p[3];
+   w = (w << 8) | p[2];
+   w = (w << 8) | p[1];
+   w = (w << 8) | p[0];
+   return w;
+}
+
+void write_misaligned_UInt_LE ( void* addr, UInt w )
+{
+   UChar* p = (UChar*)addr;
+   p[0] = (w & 0xFF); w >>= 8;
+   p[1] = (w & 0xFF); w >>= 8;
+   p[2] = (w & 0xFF); w >>= 8;
+   p[3] = (w & 0xFF); w >>= 8;
+}
+
+void write_misaligned_ULong_LE ( void* addr, ULong w )
+{
+   UChar* p = (UChar*)addr;
+   p[0] = (w & 0xFF); w >>= 8;
+   p[1] = (w & 0xFF); w >>= 8;
+   p[2] = (w & 0xFF); w >>= 8;
+   p[3] = (w & 0xFF); w >>= 8;
+   p[4] = (w & 0xFF); w >>= 8;
+   p[5] = (w & 0xFF); w >>= 8;
+   p[6] = (w & 0xFF); w >>= 8;
+   p[7] = (w & 0xFF); w >>= 8;
+}
+
+
 /*---------------------------------------------------------------*/
 /*--- end                                         main_util.c ---*/
 /*---------------------------------------------------------------*/

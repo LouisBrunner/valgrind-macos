@@ -1141,6 +1141,10 @@ static inline void my_exit ( int x )
 #if defined(VGO_linux)
  MEMMOVE(VG_Z_LIBC_SONAME, memmove)
  MEMMOVE(VG_Z_LIBC_SONAME, __GI_memmove)
+ /* See bug #349828 Override for ld64.so.1 like memcpy, because for some
+    arches MEMCPY_OK_FOR_FORWARD_MEMMOVE is set, which might cause memmove
+    to call memcpy.  */
+ MEMMOVE(VG_Z_LD64_SO_1, memmove)
 
 #elif defined(VGO_darwin)
 # if DARWIN_VERS <= DARWIN_10_6

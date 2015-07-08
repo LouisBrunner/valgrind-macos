@@ -412,7 +412,7 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
       out just the relevant parts.  Hence: */
 #  if DARWIN_VERS <= DARWIN_10_7
    Bool is_reuse = reuse != 0;
-#  elif DARWIN_VERS == DARWIN_10_8 || DARWIN_VERS == DARWIN_10_9 || DARWIN_VERS == DARWIN_10_10
+#  elif DARWIN_VERS > DARWIN_10_7
    Bool is_reuse = (reuse & 0x20000 /* == WQ_FLAG_THREAD_REUSE */) != 0;
 #  else
 #    error "Unsupported Darwin version"
@@ -427,7 +427,7 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
       UWord magic_delta = 0;
 #     elif DARWIN_VERS == DARWIN_10_7 || DARWIN_VERS == DARWIN_10_8
       UWord magic_delta = 0x48;
-#     elif DARWIN_VERS == DARWIN_10_9 || DARWIN_VERS == DARWIN_10_10
+#     elif DARWIN_VERS == DARWIN_10_9 || DARWIN_VERS == DARWIN_10_10 || DARWIN_VERS == DARWIN_10_11
       UWord magic_delta = 0xB0;
 #     else
 #       error "magic_delta: to be computed on new OS version"

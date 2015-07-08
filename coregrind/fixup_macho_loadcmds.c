@@ -121,7 +121,8 @@
 #include "config.h"
 #if DARWIN_VERS != DARWIN_10_5 && DARWIN_VERS != DARWIN_10_6 \
     && DARWIN_VERS != DARWIN_10_7 && DARWIN_VERS != DARWIN_10_8 \
-    && DARWIN_VERS != DARWIN_10_9 && DARWIN_VERS != DARWIN_10_10
+    && DARWIN_VERS != DARWIN_10_9 && DARWIN_VERS != DARWIN_10_10 \
+    && DARWIN_VERS != DARWIN_10_11
 #  error "Unknown DARWIN_VERS value.  This file only compiles on Darwin."
 #endif
 
@@ -555,7 +556,7 @@ void modify_macho_loadcmds ( HChar* filename,
 
   maybe_mash_pagezero:
    /* Deal with Problem (2) as documented above. */
-#  if DARWIN_VERS == DARWIN_10_10
+#  if DARWIN_VERS >= DARWIN_10_10
    assert(size == 64);
    if (!seg__pagezero) {
       fail("Can't find __PAGEZERO to modify; can't continue.");

@@ -509,7 +509,7 @@
 
 #if DARWIN_VERS < DARWIN_10_10
 #define	__NR_sem_getvalue   VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(274)
-#elif DARWIN_VERS == DARWIN_10_10
+#elif DARWIN_VERS >= DARWIN_10_10
 #define	__NR_sysctlbyname   VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(274)
 #endif
 
@@ -732,6 +732,9 @@
 #elif DARWIN_VERS == DARWIN_10_9
 #define	__NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(456)
 #elif DARWIN_VERS == DARWIN_10_10
+#define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(490)
+#elif DARWIN_VERS == DARWIN_10_11
+// TODO Hackish, needs properly analysis
 #define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(490)
 #else
 #error unknown darwin version

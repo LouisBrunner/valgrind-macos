@@ -154,7 +154,7 @@ AM_CONDITIONAL(COMPILER_IS_ICC, test $is_clang = icc)
 # Note: m4 arguments are quoted with [ and ] so square brackets in shell
 # statements have to be quoted.
 case "${is_clang}-${gcc_version}" in
-     applellvm-5.1|applellvm-6.*)
+     applellvm-5.1|applellvm-6.*|applellvm-7.*)
 	AC_MSG_RESULT([ok (Apple LLVM version ${gcc_version})])
 	;;
      icc-1[[3-9]].*)
@@ -352,6 +352,7 @@ case "${host_os}" in
         AC_DEFINE([DARWIN_10_8], 100800, [DARWIN_VERS value for Mac OS X 10.8])
         AC_DEFINE([DARWIN_10_9], 100900, [DARWIN_VERS value for Mac OS X 10.9])
         AC_DEFINE([DARWIN_10_10], 101000, [DARWIN_VERS value for Mac OS X 10.10])
+        AC_DEFINE([DARWIN_10_11], 101100, [DARWIN_VERS value for Mac OS X 10.11])
 
 	AC_MSG_CHECKING([for the kernel version])
 	kernel=`uname -r`
@@ -409,9 +410,15 @@ case "${host_os}" in
 		  DEFAULT_SUPP="darwin14.supp ${DEFAULT_SUPP}"
 		  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
 		  ;;
+	     15.*)
+		  AC_MSG_RESULT([Darwin 15.x (${kernel}) / Mac OS X 10.11 El Capitan])
+		  AC_DEFINE([DARWIN_VERS], DARWIN_10_11, [Darwin / Mac OS X version])
+		  DEFAULT_SUPP="darwin15.supp ${DEFAULT_SUPP}"
+		  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
+		  ;;
              *) 
 		  AC_MSG_RESULT([unsupported (${kernel})])
-		  AC_MSG_ERROR([Valgrind works on Darwin 10.x, 11.x, 12.x, 13.x and 14.x (Mac OS X 10.6/7/8/9/10)])
+		  AC_MSG_ERROR([Valgrind works on Darwin 10.x, 11.x, 12.x, 13.x, 14.x and 15.x (Mac OS X 10.6/7/8/9/10/11)])
 		  ;;
 	esac
         ;;

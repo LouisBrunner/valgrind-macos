@@ -335,7 +335,7 @@ DECL_TEMPLATE(darwin, sem_post);                // 273
 
 #if DARWIN_VERS < DARWIN_10_10
 // NYI sem_getvalue 274
-#elif DARWIN_VERS == DARWIN_10_10
+#elif DARWIN_VERS >= DARWIN_10_10
 DECL_TEMPLATE(darwin, sysctlbyname);            // 274
 #endif
 
@@ -506,10 +506,10 @@ DECL_TEMPLATE(darwin, fileport_makeport);        // 430
 // NYI audit_session_port 432
 // NYI pid_suspend 433
 // NYI pid_resume 434
-#if DARWIN_VERS == DARWIN_10_10
+#if DARWIN_VERS >= DARWIN_10_10
 // NYI pid_hibernate 435
 // NYI pid_shutdown_sockets 436
-#endif /* DARWIN_VERS == DARWIN_10_10 */
+#endif /* DARWIN_VERS >= DARWIN_10_10 */
 // old old shared_region_slide_np 437
 // NYI shared_region_map_and_slide_np            // 438
 // NYI kas_info                                  // 439
@@ -529,7 +529,7 @@ DECL_TEMPLATE(darwin, disconnectx);              // 448
 // NYI memorystatus_get_level // 453
 // NYI system_override // 454
 // NYI vfs_purge // 455
-#if DARWIN_VERS == DARWIN_10_10
+#if DARWIN_VERS >= DARWIN_10_10
 // NYI sfi_ctl         // 456
 // NYI sfi_pidctl      // 457
 // NYI coalition       // 458
@@ -564,7 +564,7 @@ DECL_TEMPLATE(darwin, guarded_pwrite_np);           // 486
 DECL_TEMPLATE(darwin, guarded_writev_np);           // 487
 // NYI rename_ext      // 488
 // NYI mremap_encrypted  // 489
-#endif /* DARWIN_VERS == DARWIN_10_10 */
+#endif /* DARWIN_VERS >= DARWIN_10_10 */
 
 // Mach message helpers
 DECL_TEMPLATE(darwin, mach_port_set_context);

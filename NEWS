@@ -225,6 +225,7 @@ where XXXXXX is the bug number as listed below.
         none/tests/test_isa_2_07_part2 have failures on PPC64 little endian
 346307  fuse filesystem syscall deadlocks
 346324  PPC64 missing support for lbarx, lharx, stbcx and sthcx instructions
+346411  MIPS: SysRes::_valEx handling is incorrect
 346416  Add support for LL_IOC_PATH2FID and LL_IOC_GETPARENT Lustre ioctls
 346474  PPC64 Power 8, spr TEXASRU register not supported
 346487  Compiler generates "note" about a future ABI change for PPC64

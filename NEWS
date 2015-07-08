@@ -205,10 +205,12 @@ where XXXXXX is the bug number as listed below.
 344621  Fix memcheck/tests/err_disable4 test on OS X
 344686  Fix suppression for pthread_rwlock_init on OS X 10.10
 344702  Fix missing libobjc suppressions on OS X 10.10
+        == 344543
 344936  Fix unhandled syscall: unix:473 (readlinkat) on OS X 10.10
 344939  Fix memcheck/tests/xml1 on OS X 10.10
 345016  helgrind/tests/locked_vs_unlocked2 is failing sometimes
 345079  Fix build problems in VEX/useful/test_main.c
+345126  Incorrect handling of VIDIOC_G_AUDIO and G_AUDOUT
 345215  Performance improvements for the register allocator
 345394  Fix memcheck/tests/strchr on OS X
 345637  Fix memcheck/tests/sendmsg on OS X
@@ -216,6 +218,7 @@ where XXXXXX is the bug number as listed below.
 345824  Fix aspacem segment mismatch: seen with none/tests/bigcode
 345887  Fix an assertion in the address space manager
 345928  amd64: callstack only contains current function for small stacks
+345987  MIPS64: Implement cavium LHX instruction
 346267  Compiler warnings for PPC64 code on call to LibVEX_GuestPPC64_get_XER()
         and LibVEX_GuestPPC64_get_CR()
 346270  Regression tests none/tests/jm_vec/isa_2_07 and
@@ -225,9 +228,12 @@ where XXXXXX is the bug number as listed below.
 346416  Add support for LL_IOC_PATH2FID and LL_IOC_GETPARENT Lustre ioctls
 346474  PPC64 Power 8, spr TEXASRU register not supported
 346487  Compiler generates "note" about a future ABI change for PPC64
+346562  MIPS64: lwl/lwr instructions are performing 64bit loads
+        and causing spurious "invalid read of size 8" warnings
 346801  Fix link error on OS X: _vgModuleLocal_sf_maybe_extend_stack
 347151  Fix suppression for pthread_rwlock_init on OS X 10.8
 347233  Fix memcheck/tests/strchr on OS X 10.10 (Haswell) 
+347322  Power PC regression test cleanup
 347379  valgrind --leak-check=full memleak errors from system libraries on OS X 10.8
         == 217236
 347389  unhandled syscall: 373 (Linux ARM syncfs)

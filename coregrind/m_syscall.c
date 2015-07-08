@@ -38,11 +38,59 @@
    Building syscall return values.
    ------------------------------------------------------------------ */
 
-#if defined(VGO_linux)
-
 /* Make a SysRes value from a syscall return value.  This is
-   Linux-specific.
+   platform specific. */
 
+#if defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
+
+SysRes VG_(mk_SysRes_mips32_linux) ( UWord v0, UWord v1, UWord a3 ) {
+   /* MIPS uses a3 != 0 to flag an error */
+   SysRes res;
+   res._isError = (a3 != (UWord)0);
+   res._val     = v0;
+   res._valEx   = v1;
+   return res;
+}
+
+SysRes VG_(mk_SysRes_mips64_linux) ( ULong v0, ULong v1, ULong a3 ) {
+   /* MIPS uses a3 != 0 to flag an error */
+   SysRes res;
+   res._isError = (a3 != (ULong)0);
+   res._val     = v0;
+   res._valEx   = v1;
+   return res;
+}
+
+/* Generic constructors. */
+SysRes VG_(mk_SysRes_Error) ( UWord err ) {
+   SysRes r;
+   r._isError = True;
+   r._val     = err;
+   r._valEx   = 0;
+   return r;
+}
+
+SysRes VG_(mk_SysRes_Success) ( UWord res ) {
+   SysRes r;
+   r._isError = False;
+   r._val     = res;
+   r._valEx   = 0;
+   return r;
+}
+
+SysRes VG_(mk_SysRes_SuccessEx) ( UWord res, UWord resEx ) {
+   SysRes r;
+   r._isError = False;
+   r._val     = res;
+   r._valEx   = resEx;
+   return r;
+}
+
+
+#elif defined(VGO_linux) \
+      && !defined(VGP_mips32_linux) && !defined(VGP_mips64_linux)
+
+/*
    From:
    http://sources.redhat.com/cgi-bin/cvsweb.cgi/libc/sysdeps/unix/sysv/
    linux/i386/sysdep.h?
@@ -144,32 +192,9 @@ SysRes VG_(mk_SysRes_arm64_linux) ( Long val ) {
    return res;
 }
 
-#if defined(VGA_mips64) || defined(VGA_mips32)
-/* MIPS uses a3 != 0 to flag an error */
-SysRes VG_(mk_SysRes_mips32_linux) ( UWord v0, UWord v1, UWord a3 ) {
-   SysRes res;
-   res._isError = (a3 != (UWord)0);
-   res._val     = v0;
-   res._valEx   = v1;
-   return res;
-}
-
-/* MIPS uses a3 != 0 to flag an error */
-SysRes VG_(mk_SysRes_mips64_linux) ( ULong v0, ULong v1, ULong a3 ) {
-   SysRes res;
-   res._isError = (a3 != (ULong)0);
-   res._val     = v0;
-   res._valEx   = v1;
-   return res;
-}
-#endif
-
 /* Generic constructors. */
 SysRes VG_(mk_SysRes_Error) ( UWord err ) {
    SysRes r;
-#if defined(VGA_mips64) || defined(VGA_mips32)
-   r._valEx   = 0;
-#endif
    r._isError = True;
    r._val     = err;
    return r;
@@ -177,9 +202,6 @@ SysRes VG_(mk_SysRes_Error) ( UWord err ) {
 
 SysRes VG_(mk_SysRes_Success) ( UWord res ) {
    SysRes r;
-#if defined(VGA_mips64) || defined(VGA_mips32)
-   r._valEx   = 0;
-#endif
    r._isError = False;
    r._val     = res;
    return r;

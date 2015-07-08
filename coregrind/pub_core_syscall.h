@@ -90,6 +90,11 @@ extern SysRes VG_(mk_SysRes_tilegx_linux)( Long val );
 extern SysRes VG_(mk_SysRes_Error)       ( UWord val );
 extern SysRes VG_(mk_SysRes_Success)     ( UWord val );
 
+#if defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
+/* On Linux/MIPS, VG_(mk_SysRes_Success) sets the second result word
+   to zero.  Here is a version that allows setting both values. */
+extern SysRes VG_(mk_SysRes_SuccessEx)   ( UWord val, UWord valEx );
+#endif
 
 
 /* Return a string which gives the name of an error value.  Note,

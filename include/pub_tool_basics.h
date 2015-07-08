@@ -130,11 +130,19 @@ typedef  struct { UWord uw1; UWord uw2; }  UWordPair;
 typedef UInt ThreadId;
 
 /* An abstraction of syscall return values.
-   Linux:
+   Linux/MIPS32 and Linux/MIPS64:
+      When _isError == False, 
+         _val and possible _valEx hold the return value.  Whether
+         _valEx actually holds a valid value depends on which syscall
+         this SysRes holds of the result of.
+      When _isError == True,  
+         _val holds the error code.
+
+   Linux/other:
       When _isError == False, 
          _val holds the return value.
       When _isError == True,  
-         _err holds the error code.
+         _val holds the error code.
 
    Darwin:
       Interpretation depends on _mode:
@@ -150,16 +158,24 @@ typedef UInt ThreadId;
          update both {R,E}DX and {R,E}AX (in guest state) given a SysRes,
          if we're required to.
 */
-#if defined(VGO_linux)
+#if defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
 typedef
    struct {
       Bool  _isError;
       UWord _val;
-#if defined(VGA_mips64) || defined(VGA_mips32)
       UWord _valEx;
-#endif
    }
    SysRes;
+
+#elif defined(VGO_linux) \
+      && !defined(VGP_mips32_linux) && !defined(VGP_mips64_linux)
+typedef
+   struct {
+      Bool  _isError;
+      UWord _val;
+   }
+   SysRes;
+
 #elif defined(VGO_darwin)
 typedef
    enum { 
@@ -176,6 +192,7 @@ typedef
       SysResMode _mode;
    }
    SysRes;
+
 #else
 #  error "Unknown OS"
 #endif
@@ -183,7 +200,7 @@ typedef
 
 /* ---- And now some basic accessor functions for it. ---- */
 
-#if defined(VGO_linux)
+#if defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
 
 static inline Bool sr_isError ( SysRes sr ) {
    return sr._isError;
@@ -191,18 +208,52 @@ static inline Bool sr_isError ( SysRes sr ) {
 static inline UWord sr_Res ( SysRes sr ) {
    return sr._isError ? 0 : sr._val;
 }
-#if defined(VGA_mips64) || defined(VGA_mips32)
 static inline UWord sr_ResEx ( SysRes sr ) {
    return sr._isError ? 0 : sr._valEx;
 }
-#endif
 static inline UWord sr_Err ( SysRes sr ) {
    return sr._isError ? sr._val : 0;
 }
-// FIXME: this function needs to be fixed for MIPS
-static inline Bool sr_EQ ( SysRes sr1, SysRes sr2 ) {
+static inline Bool sr_EQ ( UInt sysno, SysRes sr1, SysRes sr2 ) {
+   /* This uglyness of hardcoding syscall numbers is necessary to
+      avoid having this header file be dependant on
+      include/vki/vki-scnums-mips{32,64}-linux.h.  It seems pretty
+      safe given that it is inconceivable that the syscall numbers
+      for such simple syscalls would ever change.  To make it 
+      really safe, coregrind/m_vkiscnums.c static-asserts that these
+      syscall numbers haven't changed, so that the build wil simply
+      fail if they ever do. */
+#  if defined(VGP_mips32_linux)
+   const UInt __nr_Linux = 4000;
+   const UInt __nr_pipe  = __nr_Linux + 42;
+   const UInt __nr_pipe2 = __nr_Linux + 328;
+#  else
+   const UInt __nr_Linux = 5000;
+   const UInt __nr_pipe  = __nr_Linux + 21;
+   const UInt __nr_pipe2 = __nr_Linux + 287;
+#  endif
+   Bool useEx = sysno == __nr_pipe || sysno == __nr_pipe2;
    return sr1._val == sr2._val
-       && sr1._isError == sr2._isError;
+          && (useEx ? (sr1._valEx == sr2._valEx) : True)
+          && sr1._isError == sr2._isError;
+}
+
+#elif defined(VGO_linux) \
+      && !defined(VGP_mips32_linux) && !defined(VGP_mips64_linux)
+
+static inline Bool sr_isError ( SysRes sr ) {
+   return sr._isError;
+}
+static inline UWord sr_Res ( SysRes sr ) {
+   return sr._isError ? 0 : sr._val;
+}
+static inline UWord sr_Err ( SysRes sr ) {
+   return sr._isError ? sr._val : 0;
+}
+static inline Bool sr_EQ ( UInt sysno, SysRes sr1, SysRes sr2 ) {
+   /* sysno is ignored for Linux/not-MIPS */
+   return sr1._val == sr2._val
+          && sr1._isError == sr2._isError;
 }
 
 #elif defined(VGO_darwin)
@@ -259,7 +310,8 @@ static inline UWord sr_Err ( SysRes sr ) {
    }
 }
 
-static inline Bool sr_EQ ( SysRes sr1, SysRes sr2 ) {
+static inline Bool sr_EQ ( UInt sysno, SysRes sr1, SysRes sr2 ) {
+   /* sysno is ignored for Darwin */
    return sr1._mode == sr2._mode
           && sr1._wLO == sr2._wLO && sr1._wHI == sr2._wHI;
 }

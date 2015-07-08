@@ -918,7 +918,7 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
 #  elif defined(VGA_mips32) || defined(VGA_mips64)
    SysRes sres = VG_(do_syscall3)(__NR_cacheflush, (UWord) ptr,
                                  (UWord) nbytes, (UWord) 3);
-   vg_assert( sres._isError == 0 );
+   vg_assert( !sr_isError(sres) );
 
 #  elif defined(VGA_tilegx)
    const HChar *start, *end;

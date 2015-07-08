@@ -135,8 +135,8 @@ static void acquire_sched_lock(struct sched_lock *p)
       sres = VG_(do_syscall3)(__NR_futex, (UWord)futex,
                               VKI_FUTEX_WAIT | VKI_FUTEX_PRIVATE_FLAG,
                               futex_value);
-      if (sr_isError(sres) && sres._val != VKI_EAGAIN) {
-         VG_(printf)("futex_wait() returned error code %ld\n", sres._val);
+      if (sr_isError(sres) && sr_Err(sres) != VKI_EAGAIN) {
+         VG_(printf)("futex_wait() returned error code %ld\n", sr_Err(sres));
          vg_assert(False);
       }
    }

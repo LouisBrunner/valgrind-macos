@@ -369,10 +369,10 @@ Bool eq_SyscallArgs ( SyscallArgs* a1, SyscallArgs* a2 )
 }
 
 static
-Bool eq_SyscallStatus ( SyscallStatus* s1, SyscallStatus* s2 )
+Bool eq_SyscallStatus ( UInt sysno, SyscallStatus* s1, SyscallStatus* s2 )
 {
    /* was: return s1->what == s2->what && sr_EQ( s1->sres, s2->sres ); */
-   if (s1->what == s2->what && sr_EQ( s1->sres, s2->sres ))
+   if (s1->what == s2->what && sr_EQ( sysno, s1->sres, s2->sres ))
       return True;
 #  if defined(VGO_darwin)
    /* Darwin-specific debugging guff */
@@ -1858,9 +1858,15 @@ void VG_(post_syscall) (ThreadId tid)
       previously written the result into the guest state. */
    vg_assert(sci->status.what == SsComplete);
 
+   /* Get the system call number.  Because the pre-handler isn't
+      allowed to mess with it, it should be the same for both the
+      original and potentially-modified args. */
+   vg_assert(sci->args.sysno == sci->orig_args.sysno);
+   sysno = sci->args.sysno;
+
    getSyscallStatusFromGuestState( &test_status, &tst->arch.vex );
    if (!(sci->flags & SfNoWriteResult))
-      vg_assert(eq_SyscallStatus( &sci->status, &test_status ));
+      vg_assert(eq_SyscallStatus( sysno, &sci->status, &test_status ));
    /* Failure of the above assertion on Darwin can indicate a problem
       in the syscall wrappers that pre-fail or pre-succeed the
       syscall, by calling SET_STATUS_Success or SET_STATUS_Failure,
@@ -1872,18 +1878,12 @@ void VG_(post_syscall) (ThreadId tid)
       comment is completely irrelevant. */
    /* Ok, looks sane */
 
-   /* Get the system call number.  Because the pre-handler isn't
-      allowed to mess with it, it should be the same for both the
-      original and potentially-modified args. */
-   vg_assert(sci->args.sysno == sci->orig_args.sysno);
-   sysno = sci->args.sysno;
-   ent = get_syscall_entry(sysno);
-
    /* pre: status == Complete (asserted above) */
    /* Consider either success or failure.  Now run the post handler if:
       - it exists, and
       - Success or (Failure and PostOnFail is set)
    */
+   ent = get_syscall_entry(sysno);
    if (ent->after
        && ((!sr_isError(sci->status.sres))
            || (sr_isError(sci->status.sres)

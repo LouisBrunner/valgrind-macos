@@ -44,6 +44,20 @@ do { \
           opcode, src, dst, cc, rtext(round));        \
 } while (0)
 
+#define round_to_int(opcode,type,round,value)                   \
+do {                                                            \
+   type src = value;                                            \
+   type dst;                                                    \
+                                                                \
+   __asm__ volatile (opcode " %[dst]," #round ",%[src]\n\t"     \
+                     : [dst] "=f"(dst)                          \
+                     : [src] "f"(src)                           \
+                     : );                                       \
+                                                                \
+   printf("%s %.5f\t-> %g  %s\n",                               \
+          opcode, src, dst, rtext(round));                      \
+} while (0)
+
 
 #define cfebr(value, round) \
         convert_to_int("cfebr",float,int32_t,PRId32,round,value)
@@ -53,6 +67,11 @@ do { \
         convert_to_int("cgebr",float,int64_t,PRId64,round,value)
 #define cgdbr(value, round) \
         convert_to_int("cgdbr",double,int64_t,PRId64,round,value)
+
+#define fiebr(value, round) \
+        round_to_int("fiebr",float,round,value)
+#define fidbr(value, round) \
+        round_to_int("fidbr",double,round,value)
 
 void
 set_rounding_mode(unsigned mode)
@@ -115,6 +134,26 @@ int main(void)
       cgdbr(dval[j], M3_BFP_ROUND_ZERO);
       cgdbr(dval[j], M3_BFP_ROUND_POSINF);
       cgdbr(dval[j], M3_BFP_ROUND_NEGINF);
+   }
+
+   /* f32 -> f32, round to int */
+   for (j = 0; j < sizeof dval / sizeof dval[0]; ++j) {
+      set_rounding_mode(FPC_BFP_ROUND_ZERO);
+      fiebr(dval[j], M3_BFP_ROUND_NEAREST_EVEN);
+      set_rounding_mode(FPC_BFP_ROUND_NEAREST_EVEN);
+      fiebr(dval[j], M3_BFP_ROUND_ZERO);
+      fiebr(dval[j], M3_BFP_ROUND_POSINF);
+      fiebr(dval[j], M3_BFP_ROUND_NEGINF);
+   }
+
+   /* f64 -> f64, round to int */
+   for (j = 0; j < sizeof dval / sizeof dval[0]; ++j) {
+      set_rounding_mode(FPC_BFP_ROUND_ZERO);
+      fidbr(dval[j], M3_BFP_ROUND_NEAREST_EVEN);
+      set_rounding_mode(FPC_BFP_ROUND_NEAREST_EVEN);
+      fidbr(dval[j], M3_BFP_ROUND_ZERO);
+      fidbr(dval[j], M3_BFP_ROUND_POSINF);
+      fidbr(dval[j], M3_BFP_ROUND_NEGINF);
    }
 
    return 0;

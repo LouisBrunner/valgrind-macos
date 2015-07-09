@@ -162,6 +162,7 @@ where XXXXXX is the bug number as listed below.
 342635  OS X 10.10 (Yosemite) - missing system calls and fcntl code
 342683  Mark memory past the initial brk limit as unaddressable
 342795  Internal glibc __GI_mempcpy call should be intercepted
+342841  s390x: Support instructions fiebr(a) and fidbr(a)
 343012  Unhandled syscall 319 (memfd_create)
 343069  Patch updating v4l2 API support
 343173  helgrind crash during stack unwind
@@ -258,7 +259,6 @@ where XXXXXX is the bug number as listed below.
 349874  Fix typos in source code
 349828  memcpy intercepts memmove causing src/dst overlap error (ppc64 ld.so)
 349941  di_notify_mmap might create wrong start/size DebugInfoMapping
-342841  s390x unrecognized instruction fiebra
 n-i-bz  Provide implementations of certain compiler builtins to support
         compilers who may not provide those
 n-i-bz  Old STABS code is still being compiled, but never used. Remove it.

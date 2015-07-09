@@ -120,9 +120,6 @@ go in here.
 
 === VEX/s390x ==========================================================
 
-342841  s390x unrecognized instruction fiebra
-        -> Florian?
-
 === VEX general ========================================================
 
 339778  Linux/TileGx platform support to Valgrind

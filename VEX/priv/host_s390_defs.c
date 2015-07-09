@@ -3939,6 +3939,40 @@ s390_emit_LEXBRA(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
 
 
 static UChar *
+s390_emit_FIEBRA(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   vassert(m3 == 0 || s390_host_has_fpext);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM)) {
+      if (m4 == 0)
+         s390_disasm(ENC4(MNM, FPR, UINT, FPR), "fiebr", r1, m3, r2);
+      else
+         s390_disasm(ENC5(MNM, FPR, UINT, FPR, UINT),
+                     "fiebra", r1, m3, r2, m4);
+   }
+
+   return emit_RRF2(p, 0xb3570000, m3, m4, r1, r2);
+}
+
+
+static UChar *
+s390_emit_FIDBRA(UChar *p, UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   vassert(m3 == 0 || s390_host_has_fpext);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM)) {
+      if (m4 == 0)
+         s390_disasm(ENC4(MNM, FPR, UINT, FPR), "fidbr", r1, m3, r2);
+      else
+         s390_disasm(ENC5(MNM, FPR, UINT, FPR, UINT),
+                     "fidbra", r1, m3, r2, m4);
+   }
+
+   return emit_RRF2(p, 0xb35f0000, m3, m4, r1, r2);
+}
+
+
+static UChar *
 s390_emit_MEEBR(UChar *p, UChar r1, UChar r2)
 {
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
@@ -6693,6 +6727,8 @@ s390_insn_as_string(const s390_insn *insn)
       case S390_BFP_F64_TO_F128:
       case S390_BFP_F128_TO_F32:
       case S390_BFP_F128_TO_F64: op = "v-f2f"; break;
+      case S390_BFP_F32_TO_F32I:
+      case S390_BFP_F64_TO_F64I: op = "v-f2fi"; break;
       default: goto fail;
       }
       s390_sprintf(buf, "%M %R,%R", op, insn->variant.bfp_convert.dst_hi,
@@ -8963,6 +8999,10 @@ s390_insn_bfp_convert_emit(UChar *buf, const s390_insn *insn)
    case S390_BFP_F64_TO_F32:  return s390_emit_LEDBRA(buf, m3, m4, r1, r2);
    case S390_BFP_F128_TO_F32: return s390_emit_LEXBRA(buf, m3, m4, r1, r2);
    case S390_BFP_F128_TO_F64: return s390_emit_LDXBRA(buf, m3, m4, r1, r2);
+
+      /* Load FP integer */
+   case S390_BFP_F32_TO_F32I: return s390_emit_FIEBRA(buf, m3, m4, r1, r2);
+   case S390_BFP_F64_TO_F64I: return s390_emit_FIDBRA(buf, m3, m4, r1, r2);
 
    default: goto fail;
    }

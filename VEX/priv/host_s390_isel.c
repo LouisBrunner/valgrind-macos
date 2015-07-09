@@ -2378,6 +2378,8 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
          return dst;
 
       case Iop_F64toF32:  conv = S390_BFP_F64_TO_F32; goto convert_float;
+      case Iop_RoundF32toInt: conv = S390_BFP_F32_TO_F32I; goto convert_float;
+      case Iop_RoundF64toInt: conv = S390_BFP_F64_TO_F64I; goto convert_float;
       case Iop_I32StoF32: conv = S390_BFP_I32_TO_F32; goto convert_int;
       case Iop_I32UtoF32: conv = S390_BFP_U32_TO_F32; goto convert_int;
       case Iop_I64StoF32: conv = S390_BFP_I64_TO_F32; goto convert_int;

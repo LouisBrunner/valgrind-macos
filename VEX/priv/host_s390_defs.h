@@ -242,7 +242,9 @@ typedef enum {
    S390_BFP_F128_TO_U32,
    S390_BFP_F128_TO_U64,
    S390_BFP_F128_TO_F32,
-   S390_BFP_F128_TO_F64
+   S390_BFP_F128_TO_F64,
+   S390_BFP_F32_TO_F32I,
+   S390_BFP_F64_TO_F64I
 } s390_bfp_conv_t;
 
 /* Type conversion operations: to and/or from decimal floating point */

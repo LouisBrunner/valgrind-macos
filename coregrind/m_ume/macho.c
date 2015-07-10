@@ -76,8 +76,10 @@ static void print(const HChar *str)
 static void check_mmap(SysRes res, Addr base, SizeT len, const HChar* who)
 {
    if (sr_isError(res)) {
-      VG_(printf)("valgrind: mmap-FIXED(0x%llx, %lld) failed in UME (%s).\n", 
-                  (ULong)base, (Long)len, who);
+      VG_(printf)("valgrind: mmap-FIXED(0x%llx, %lld) failed in UME (%s) "
+                  "with error %lu (%s).\n",
+                  (ULong)base, (Long)len, who,
+                  sr_Err(res), VG_(strerror)(sr_Err(res)) );
       VG_(exit)(1);
    }
 }
@@ -86,8 +88,10 @@ static void check_mmap(SysRes res, Addr base, SizeT len, const HChar* who)
 static void check_mmap_float(SysRes res, SizeT len, const HChar* who)
 {
    if (sr_isError(res)) {
-      VG_(printf)("valgrind: mmap-FLOAT(size=%lld) failed in UME (%s).\n", 
-                  (Long)len, who);
+      VG_(printf)("valgrind: mmap-FLOAT(size=%lld) failed in UME (%s) "
+                  "with error %lu (%s).\n",
+                  (Long)len, who,
+                  sr_Err(res), VG_(strerror)(sr_Err(res)) );
       VG_(exit)(1);
    }
 }

@@ -51,8 +51,7 @@ do {                                                            \
                                                                 \
    __asm__ volatile (opcode " %[dst]," #round ",%[src]\n\t"     \
                      : [dst] "=f"(dst)                          \
-                     : [src] "f"(src)                           \
-                     : );                                       \
+                     : [src] "f"(src));                         \
                                                                 \
    printf("%s %.5f\t-> %g  %s\n",                               \
           opcode, src, dst, rtext(round));                      \

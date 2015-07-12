@@ -479,8 +479,10 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
        UWord magic_delta = 0;
 #      elif DARWIN_VERS == DARWIN_10_7 || DARWIN_VERS == DARWIN_10_8
        UWord magic_delta = 0x60;
-#      elif DARWIN_VERS == DARWIN_10_9 || DARWIN_VERS == DARWIN_10_10 || DARWIN_VERS == DARWIN_10_11
+#      elif DARWIN_VERS == DARWIN_10_9 || DARWIN_VERS == DARWIN_10_10
        UWord magic_delta = 0xE0;
+#      elif DARWIN_VERS == DARWIN_10_11
+       UWord magic_delta = 0x100;
 #      else
 #        error "magic_delta: to be computed on new OS version"
          // magic_delta = tst->os_state.pthread - self
@@ -497,9 +499,9 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
        tst = VG_(get_ThreadState)(tid);
 
        if (0) VG_(printf)("wqthread_hijack reuse %s: tid %d, tst %p, "
-                          "tst->os_state.pthread %#lx\n",
+                          "tst->os_state.pthread %#lx, self %#lx\n",
                           tst->os_state.pthread == self ? "SAME" : "DIFF",
-                          tid, tst, tst->os_state.pthread);
+                          tid, tst, tst->os_state.pthread, self);
 
        vex = &tst->arch.vex;
        vg_assert(tst->os_state.pthread - magic_delta == self);

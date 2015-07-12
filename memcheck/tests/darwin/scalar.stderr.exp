@@ -862,6 +862,15 @@ Syscall param __pthread_kill(sig) contains uninitialised byte(s)
    ...
 
 -----------------------------------------------------
+x2000149(329):__NR___pthread_sigmask 3s 0m
+-----------------------------------------------------
+Syscall param __pthread_sigmask(set) contains uninitialised byte(s)
+   ...
+
+Syscall param __pthread_sigmask(oldset) contains uninitialised byte(s)
+   ...
+
+-----------------------------------------------------
 (335):           old utrace
 -----------------------------------------------------
 -----------------------------------------------------

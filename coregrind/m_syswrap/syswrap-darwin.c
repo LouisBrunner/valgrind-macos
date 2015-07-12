@@ -2142,11 +2142,45 @@ PRE(__pthread_kill)
 
 PRE(__pthread_sigmask)
 {
-   // GrP fixme
-   // JRS: arguments are identical to sigprocmask 
-   // (how, sigset_t*, sigset_t*).  Perhaps behave identically?
-   log_decaying("UNKNOWN __pthread_sigmask is unsupported.");
-   SET_STATUS_Success( 0 );
+    // arguments are identical to sigprocmask (how, sigset_t*, sigset_t*).
+    UWord arg1;
+    PRINT("__pthread_sigmask ( %ld, %#lx, %#lx )", ARG1, ARG2, ARG3);
+    PRE_REG_READ3(long, "__pthread_sigmask",
+                  int, how, vki_sigset_t *, set, vki_sigset_t *, oldset);
+    if (ARG2 != 0)
+        PRE_MEM_READ( "__pthread_sigmask(set)", ARG2, sizeof(vki_sigset_t));
+    if (ARG3 != 0)
+        PRE_MEM_WRITE( "__pthread_sigmask(oldset)", ARG3, sizeof(vki_sigset_t));
+    
+    /* Massage ARG1 ('how').  If ARG2 (the new mask) is NULL then the
+     value of 'how' is irrelevant, and it appears that Darwin's libc
+     passes zero, which is not equal to any of
+     SIG_{BLOCK,UNBLOCK,SETMASK}.  This causes
+     VG_(do_sys_sigprocmask) to complain, since it checks the 'how'
+     value independently of the other args.  Solution: in this case,
+     simply pass a valid (but irrelevant) value for 'how'. */
+    /* Also, in this case the new set is passed to the kernel by
+     reference, not value, as in some other sigmask related Darwin
+     syscalls. */
+    arg1 = ARG1;
+    if (ARG2 == 0  /* the new-set is NULL */
+        && ARG1 != VKI_SIG_BLOCK
+        && ARG1 != VKI_SIG_UNBLOCK && ARG1 != VKI_SIG_SETMASK) {
+        arg1 = VKI_SIG_SETMASK;
+    }
+    SET_STATUS_from_SysRes(
+                           VG_(do_sys_sigprocmask) ( tid, arg1, (vki_sigset_t*)ARG2,
+                                                    (vki_sigset_t*)ARG3 )
+                           );
+    
+    if (SUCCESS)
+        *flags |= SfPollAfter;
+}
+POST(__pthread_sigmask)
+{
+    vg_assert(SUCCESS);
+    if (RES == 0 && ARG3 != 0)
+        POST_MEM_WRITE( ARG3, sizeof(vki_sigset_t));
 }
 
 

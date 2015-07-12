@@ -103,6 +103,7 @@ where XXXXXX is the bug number as listed below.
 155125  avoid cutting away file:lineno after long function name
 197259  Unsupported arch_prtctl PR_SET_GS option
 201152  ppc64: Assertion in ppc32g_dirtyhelper_MFSPR_268_269
+201216  Fix Valgrind does not support pthread_sigmask() on OS X
 201435  Fix Darwin: -v does not show kernel version
 208217  "Warning: noted but unhandled ioctl 0x2000747b" on Mac OS X
 211256  Fixed an outdated comment regarding the default platform.

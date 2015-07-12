@@ -589,7 +589,9 @@ int main(void)
    GO(__NR___pthread_kill, 328, "2s 0m");
    SY(__NR___pthread_kill, x0, x0); FAIL;
 
-   // __NR___pthread_sigmask 329
+   GO(__NR___pthread_sigmask, 329, "3s 0m");
+   SY(__NR___pthread_sigmask, x0, x0, x0); SUCC;
+
    // __NR___sigwait 330
    // __NR_sigwait 330) // GrP fixme hack
    // __NR___disable_threadsignal 331

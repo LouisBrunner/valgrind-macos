@@ -2534,13 +2534,9 @@ Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
             /* Malu_ADD, Malu_SUB, Malu_AND, Malu_OR, Malu_NOR, Malu_XOR, Malu_SLT */
             case Malu_ADD:
                if (immR) {
-                  vassert(srcR->Mrh.Imm.imm16 != 0x8000);
-                  if (srcR->Mrh.Imm.syned)
-                     /* addi */
-                     p = mkFormI(p, 9, r_srcL, r_dst, srcR->Mrh.Imm.imm16);
-                  else
-                     /* addiu */
-                     p = mkFormI(p, 9, r_srcL, r_dst, srcR->Mrh.Imm.imm16);
+                  vassert(srcR->Mrh.Imm.syned);
+                  /* addiu */
+                  p = mkFormI(p, 9, r_srcL, r_dst, srcR->Mrh.Imm.imm16);
                } else {
                   /* addu */
                   p = mkFormR(p, 0, r_srcL, r_srcR, r_dst, 0, 33);
@@ -2548,10 +2544,10 @@ Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
                break;
             case Malu_SUB:
                if (immR) {
-                  /* addi , but with negated imm */
+                  /* addiu , but with negated imm */
                   vassert(srcR->Mrh.Imm.syned);
                   vassert(srcR->Mrh.Imm.imm16 != 0x8000);
-                  p = mkFormI(p, 8, r_srcL, r_dst, (-srcR->Mrh.Imm.imm16));
+                  p = mkFormI(p, 9, r_srcL, r_dst, (-srcR->Mrh.Imm.imm16));
                } else {
                   /* subu */
                   p = mkFormR(p, 0, r_srcL, r_srcR, r_dst, 0, 35);

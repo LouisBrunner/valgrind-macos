@@ -60,7 +60,7 @@ const HChar* VG_(sysnum_string)(Word sysnum)
 #if defined(VGP_mips32_linux)
 STATIC_ASSERT(__NR_pipe  == 4042);
 STATIC_ASSERT(__NR_pipe2 == 4328);
-#elsif defined(VGP_mips64_linux)
+#elif defined(VGP_mips64_linux)
 STATIC_ASSERT(__NR_pipe  == 5021);
 STATIC_ASSERT(__NR_pipe2 == 5287);
 #endif

@@ -318,6 +318,7 @@ where XXXXXX is the bug number as listed below.
 340807  disInstr(arm): unhandled instruction: 0xEE989B20
 340856  disInstr(arm64): unhandled instruction 0x1E634C45 (fcsel)
 340922  arm64: unhandled getgroups/setgroups syscalls
+350251  Fix typo in VEX utility program (test_main.c).
 n-i-bz  DRD and Helgrind: Handle Imbe_CancelReservation (clrex on ARM)
 n-i-bz  Add missing ]] to terminate CDATA.
 n-i-bz  Glibc versions prior to 2.5 do not define PTRACE_GETSIGINFO

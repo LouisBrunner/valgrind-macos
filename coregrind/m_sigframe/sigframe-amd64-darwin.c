@@ -222,7 +222,7 @@ void VG_(sigframe_create) ( ThreadId tid,
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg,
                    "sigframe_create (thread %d): "
-                   "next EIP=%#lx, next ESP=%#lx\n",
+                   "next RIP=%#lx, next RSP=%#lx\n",
                    tid, (Addr)handler, (Addr)frame );
 }
 
@@ -252,17 +252,15 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
       in VG_(sigframe_create) just above. */
    vg_assert(VG_IS_16_ALIGNED((Addr)frame + 8));
 
-   /* restore the entire guest state, and shadows, from the
-      frame.  Note, as per comments above, this is a kludge - should
-      restore it from saved ucontext.  Oh well. */
-   tst->arch.vex = frame->vex;
-   tst->arch.vex_shadow1 = frame->vex_shadow1;
-   tst->arch.vex_shadow2 = frame->vex_shadow2;
+   /* restore the entire guest state, and shadows, from the frame. */
+   tst->arch.vex            = frame->vex;
+   tst->arch.vex_shadow1    = frame->vex_shadow1;
+   tst->arch.vex_shadow2    = frame->vex_shadow2;
    restore_from_ucontext(tst, &frame->fake_ucontext);
 
-   tst->sig_mask = frame->mask;
-   tst->tmp_sig_mask = frame->mask;
-   sigNo = frame->sigNo_private;
+   tst->sig_mask            = frame->mask;
+   tst->tmp_sig_mask        = frame->mask;
+   sigNo                    = frame->sigNo_private;
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg,

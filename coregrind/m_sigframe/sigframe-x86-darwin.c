@@ -65,9 +65,9 @@ struct hacky_sigframe {
    UInt             a2_siginfo;
    UInt             a3_ucontext;
    UChar            lower_guardzone[512];  // put nothing here
-   VexGuestX86State gst;
-   VexGuestX86State gshadow1;
-   VexGuestX86State gshadow2;
+   VexGuestX86State vex;
+   VexGuestX86State vex_shadow1;
+   VexGuestX86State vex_shadow2;
    vki_siginfo_t    fake_siginfo;
    struct vki_ucontext fake_ucontext;
    UInt             magicPI;
@@ -163,16 +163,16 @@ void VG_(sigframe_create) ( ThreadId tid,
 
    /* clear it (very conservatively) */
    VG_(memset)(&frame->lower_guardzone, 0, sizeof frame->lower_guardzone);
-   VG_(memset)(&frame->gst,      0, sizeof(VexGuestX86State));
-   VG_(memset)(&frame->gshadow1, 0, sizeof(VexGuestX86State));
-   VG_(memset)(&frame->gshadow2, 0, sizeof(VexGuestX86State));
+   VG_(memset)(&frame->vex,      0, sizeof(VexGuestX86State));
+   VG_(memset)(&frame->vex_shadow1, 0, sizeof(VexGuestX86State));
+   VG_(memset)(&frame->vex_shadow2, 0, sizeof(VexGuestX86State));
    VG_(memset)(&frame->fake_siginfo,  0, sizeof(frame->fake_siginfo));
    VG_(memset)(&frame->fake_ucontext, 0, sizeof(frame->fake_ucontext));
 
    /* save stuff in frame */
-   frame->gst           = tst->arch.vex;
-   frame->gshadow1      = tst->arch.vex_shadow1;
-   frame->gshadow2      = tst->arch.vex_shadow2;
+   frame->vex           = tst->arch.vex;
+   frame->vex_shadow1   = tst->arch.vex_shadow1;
+   frame->vex_shadow2   = tst->arch.vex_shadow2;
    frame->sigNo_private = sigNo;
    frame->mask          = tst->sig_mask;
    frame->magicPI       = 0x31415927;
@@ -194,9 +194,11 @@ void VG_(sigframe_create) ( ThreadId tid,
    VG_TRACK( pre_mem_write, Vg_CoreSignal, tid, "signal handler frame",
              (Addr)frame, 4*sizeof(UInt) );
    frame->returnAddr  = (UInt)&VG_(x86_darwin_SUBST_FOR_sigreturn);
-   frame->a1_signo    = sigNo;
-   frame->a2_siginfo  = (UInt)&frame->fake_siginfo;
-   frame->a3_ucontext = (UInt)&frame->fake_ucontext;
+
+   frame->a1_signo    =         sigNo;
+   frame->a2_siginfo  = (UInt)  &frame->fake_siginfo;
+   frame->a3_ucontext = (UInt)  &frame->fake_ucontext;
+
    VG_TRACK( post_mem_write, Vg_CoreSignal, tid,
              (Addr)frame, 4*sizeof(UInt) );
    VG_TRACK( post_mem_write, Vg_CoreSignal, tid,
@@ -233,21 +235,19 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
    frame = (struct hacky_sigframe*)(esp - 4);
    vg_assert(frame->magicPI == 0x31415927);
 
-   /* This +8 is because of the -4 referred to in the ELF ABI comment
+   /* This +4 is because of the -4 referred to in the ELF ABI comment
       in VG_(sigframe_create) just above. */
    vg_assert(VG_IS_16_ALIGNED((Addr)frame + 4));
 
-   /* restore the entire guest state, and shadows, from the
-      frame.  Note, as per comments above, this is a kludge - should
-      restore it from saved ucontext.  Oh well. */
-   tst->arch.vex = frame->gst;
-   tst->arch.vex_shadow1 = frame->gshadow1;
-   tst->arch.vex_shadow2 = frame->gshadow2;
+   /* restore the entire guest state, and shadows, from the frame. */
+   tst->arch.vex            = frame->vex;
+   tst->arch.vex_shadow1    = frame->vex_shadow1;
+   tst->arch.vex_shadow2    = frame->vex_shadow2;
    restore_from_ucontext(tst, &frame->fake_ucontext);
 
-   tst->sig_mask = frame->mask;
-   tst->tmp_sig_mask = frame->mask;
-   sigNo = frame->sigNo_private;
+   tst->sig_mask            = frame->mask;
+   tst->tmp_sig_mask        = frame->mask;
+   sigNo                    = frame->sigNo_private;
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg,

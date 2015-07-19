@@ -1,4 +1,4 @@
 prog: fxsave
-prereq: ../../../tests/x86_amd64_features x86-sse
+prereq: ../../../tests/x86_amd64_features x86-sse && ! `../../../tests/os_test darwin`
 vgopts: -q
 args: x

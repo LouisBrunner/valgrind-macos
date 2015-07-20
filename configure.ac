@@ -1285,16 +1285,38 @@ AC_DEFUN([AC_HWCAP_CONTAINS_FLAG],[
 ])
 
 # gather hardware capabilities. (hardware/kernel/libc)
+AC_HWCAP_CONTAINS_FLAG([altivec],[HWCAP_HAS_ALTIVEC])
+AC_HWCAP_CONTAINS_FLAG([vsx],[HWCAP_HAS_VSX])
+AC_HWCAP_CONTAINS_FLAG([dfp],[HWCAP_HAS_DFP])
+AC_HWCAP_CONTAINS_FLAG([arch_2_05],[HWCAP_HAS_ISA_2_05])
+AC_HWCAP_CONTAINS_FLAG([arch_2_06],[HWCAP_HAS_ISA_2_06])
+AC_HWCAP_CONTAINS_FLAG([arch_2_07],[HWCAP_HAS_ISA_2_07])
 AC_HWCAP_CONTAINS_FLAG([htm],[HWCAP_HAS_HTM])
 
+# ISA Levels
+AM_CONDITIONAL(HAS_ISA_2_05, [test x$HWCAP_HAS_ISA_2_05 = xyes])
+AM_CONDITIONAL(HAS_ISA_2_06, [test x$HWCAP_HAS_ISA_2_06 = xyes])
+# compiler support for isa 2.07 level instructions
+AC_MSG_CHECKING([that assembler knows ISA 2.07 instructions ])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+]], [[
+  __asm__ __volatile__("mtvsrd 1,2 ");
+]])], [
+ac_asm_have_isa_2_07=yes
+AC_MSG_RESULT([yes])
+], [
+ac_asm_have_isa_2_07=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(HAS_ISA_2_07, [test x$ac_asm_have_isa_2_07 = xyes \
+                               -a x$HWCAP_HAS_ISA_2_07 = xyes])
+
+# altivec (vsx) support.
 # does this compiler support -maltivec and does it have the include file
 # <altivec.h> ?
-
-AC_MSG_CHECKING([for Altivec])
-
+AC_MSG_CHECKING([for Altivec support in the compiler ])
 safe_CFLAGS=$CFLAGS
 CFLAGS="-maltivec -Werror"
-
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <altivec.h>
 ]], [[
@@ -1309,42 +1331,48 @@ ac_have_altivec=no
 AC_MSG_RESULT([no])
 ])
 CFLAGS=$safe_CFLAGS
-
-AM_CONDITIONAL([HAS_ALTIVEC], [test x$ac_have_altivec = xyes])
-
+AM_CONDITIONAL([HAS_ALTIVEC], [test x$ac_have_altivec = xyes \
+                                 -a x$HWCAP_HAS_ALTIVEC = xyes])
 
 # Check that both: the compiler supports -mvsx and that the assembler
 # understands VSX instructions.  If either of those doesn't work,
-# conclude that we can't do VSX.  NOTE: basically this is a kludge
-# in that it conflates two things that should be separate -- whether
-# the compiler understands the flag vs whether the assembler 
-# understands the opcodes.  This really ought to be cleaned up
-# and done properly, like it is for x86/x86_64.
-
-AC_MSG_CHECKING([for VSX])
-
+# conclude that we can't do VSX.
+AC_MSG_CHECKING([for VSX compiler flag support])
 safe_CFLAGS=$CFLAGS
 CFLAGS="-mvsx -Werror"
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+]], [[
+]])], [
+ac_compiler_supports_vsx_flag=yes
+AC_MSG_RESULT([yes])
+], [
+ac_compiler_supports_vsx_flag=no
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
 
+AC_MSG_CHECKING([for VSX support in the assembler ])
+safe_CFLAGS=$CFLAGS
+CFLAGS="-mvsx -Werror"
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <altivec.h>
 ]], [[
   vector unsigned int v;
   __asm__ __volatile__("xsmaddadp 32, 32, 33" ::: "memory","cc");
 ]])], [
-ac_have_vsx=yes
+ac_compiler_supports_vsx=yes
 AC_MSG_RESULT([yes])
 ], [
-ac_have_vsx=no
+ac_compiler_supports_vsx=no
 AC_MSG_RESULT([no])
 ])
 CFLAGS=$safe_CFLAGS
+AM_CONDITIONAL([HAS_VSX], [test x$ac_compiler_supports_vsx_flag = xyes \
+                             -a x$ac_compiler_supports_vsx = xyes \
+                             -a x$HWCAP_HAS_VSX = xyes ])
 
-AM_CONDITIONAL(HAS_VSX, test x$ac_have_vsx = xyes)
-
-
+# DFP (Decimal Float)
 AC_MSG_CHECKING([that assembler knows DFP])
-
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 ]], [[
   __asm__ __volatile__("dadd 1, 2, 3");
@@ -1356,8 +1384,6 @@ AC_MSG_RESULT([yes])
 ac_asm_have_dfp=no
 AC_MSG_RESULT([no])
 ])
-
-
 AC_MSG_CHECKING([that compiler knows -mhard-dfp switch])
 safe_CFLAGS=$CFLAGS
 CFLAGS="-mhard-dfp -Werror"
@@ -1366,47 +1392,31 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
   __asm__ __volatile__("dadd 1, 2, 3");
   __asm__ __volatile__("dcffix 1, 2");
 ]])], [
-ac_gcc_have_dfp=yes
+ac_compiler_have_dfp=yes
 AC_MSG_RESULT([yes])
 ], [
-ac_gcc_have_dfp=no
+ac_compiler_have_dfp=no
 AC_MSG_RESULT([no])
 ])
-
 CFLAGS=$safe_CFLAGS
-
-AM_CONDITIONAL(HAS_DFP, test x$ac_asm_have_dfp = xyes -a x$ac_gcc_have_dfp = xyes)
-
+AM_CONDITIONAL(HAS_DFP, test x$ac_asm_have_dfp = xyes \
+                          -a x$ac_compiler_have_dfp = xyes \
+                          -a x$HWCAP_HAS_DFP = xyes )
 
 AC_MSG_CHECKING([that compiler knows DFP datatypes])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 ]], [[
   _Decimal64 x = 0.0DD;
 ]])], [
-ac_gcc_have_dfp_type=yes
+ac_compiler_have_dfp_type=yes
 AC_MSG_RESULT([yes])
 ], [
-ac_gcc_have_dfp_type=no
+ac_compiler_have_dfp_type=no
 AC_MSG_RESULT([no])
 ])
+AM_CONDITIONAL(BUILD_DFP_TESTS, test x$ac_compiler_have_dfp_type = xyes \
+                                  -a xHWCAP_$HAS_DFP = xyes )
 
-AM_CONDITIONAL(BUILD_DFP_TESTS, test x$ac_gcc_have_dfp_type = xyes)
-
-# isa 2.07 checking
-AC_MSG_CHECKING([that assembler knows ISA 2.07 ])
-
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-]], [[
-  __asm__ __volatile__("mtvsrd 1,2 ");
-]])], [
-ac_asm_have_isa_2_07=yes
-AC_MSG_RESULT([yes])
-], [
-ac_asm_have_isa_2_07=no
-AC_MSG_RESULT([no])
-])
-
-AM_CONDITIONAL(HAS_ISA_2_07, test x$ac_asm_have_isa_2_07 = xyes)
 
 # HTM (Hardware Transactional Memory)
 AC_MSG_CHECKING([if compiler accepts the -mhtm flag])

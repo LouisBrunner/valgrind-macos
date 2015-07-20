@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 int main (void) {
-#ifdef HAS_ISA_2_07
+#ifdef SUPPORTS_HTM
    /* Just get the compiler to generate each of the TM instructions
     * so we can verify that valgrind recognizes them.
     * For now, only the tbegin instruction does anything in valgrind.
@@ -18,6 +18,8 @@ int main (void) {
    __builtin_trechkpt ();  // not recognized by early HW
    __builtin_treclaim (0); // not recognized by early HW
    __builtin_tsr (0);
+#else
+   printf ("No HTM support.");
 #endif
    return 0;
 }

@@ -1,5 +1,5 @@
 #include <stdio.h>
-#ifdef HAS_ISA_2_07
+#ifdef SUPPORTS_HTM
 int __attribute__ ((noinline)) htm_begin (int r3, int r4)
 {
    int ret;
@@ -14,10 +14,12 @@ int __attribute__ ((noinline)) htm_begin (int r3, int r4)
 #endif
 
 int main (void) {
-#ifdef HAS_ISA_2_07
+#ifdef SUPPORTS_HTM
    int ret;
    ret = htm_begin (10, 20);
    printf ("ret = %d, expected = 10\n", ret);
+#else
+   printf ("No HTM support.");
 #endif
    return 0;
 }

@@ -99,11 +99,15 @@ DFP_FLAG =
 endif
 
 if HAS_ISA_2_07
-BUILD_FLAGS_ISA_2_07 = -mhtm  -mcpu=power8
+BUILD_FLAGS_ISA_2_07 = -mcpu=power8
 ISA_2_07_FLAG = -DHAS_ISA_2_07
 else
 BUILD_FLAGS_ISA_2_07 =
 ISA_2_07_FLAG =
+endif
+
+if SUPPORTS_HTM
+HTM_FLAG = -mhtm -DSUPPORTS_HTM
 endif
 
 jm_insns_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames \
@@ -141,9 +145,9 @@ test_isa_2_07_part1_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(ISA_
 test_isa_2_07_part2_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(ISA_2_07_FLAG) \
 			@FLAG_M32@ $(BUILD_FLAGS_ISA_2_07)
 
-test_tm_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(ISA_2_07_FLAG) \
+test_tm_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(HTM_FLAG) $(ISA_2_07_FLAG) \
 			@FLAG_M32@ $(BUILD_FLAGS_ISA_2_07)
-test_touch_tm_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(ISA_2_07_FLAG) \
+test_touch_tm_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(HTM_FLAG) $(ISA_2_07_FLAG) \
 			@FLAG_M32@ $(BUILD_FLAGS_ISA_2_07)
 
 test_isa_2_06_part3_LDADD = -lm

@@ -1,0 +1,44 @@
+#!/bin/sh
+
+# Check if the passed in (CAPABILITY_WORD) matches a value found in the
+# current hwcap aux vector.
+
+# return '0' to indicate the capability was found.
+# return '1' for not found, or any other error condition.
+
+CAPABILITY_WORD=$1
+
+# SANITY CHECK Begin:
+# These are potential hwcap values as found in the glibc dl-procinfo.c
+# sources as of July 2015.
+P_HWCAP_1=" vsx arch_2_06 power6x dfp pa6t arch_2_05 ic_snoop smt booke"
+P_HWCAP_2=" cellbe power5+ power5 power4 notb efpdouble efpsingle spe"
+P_HWCAP_3=" ucache 4xxmac mmu fpu altivec ppc601 ppc64 ppc32 "
+P_HWCAP2_1=" tar isel ebb dscr htm arch_2_07 "
+CAPABILITY_FOUND="no"
+for POTENTIAL_CAP in $P_HWCAP_1 $P_HWCAP_2 $P_HWCAP_3 $P_HWCAP2_1 ; do
+	if [ "x$CAPABILITY_WORD" = "x$POTENTIAL_CAP" ]; then
+		CAPABILITY_FOUND="yes"
+		break
+	fi
+done
+if [ x$CAPABILITY_FOUND = "xno" ]; then
+	echo "Warning: did not find $CAPABILITY_WORD in the potential capabilities list."
+	echo "         LD_SHOW_AUXV=1 /bin/true | grep ^AT_HWCAP "
+	echo "         Double-check that the input value [$CAPABILITY_WORD] is valid."
+fi
+# SANITY CHECK End
+
+# Capability Check Begin:
+LD_SHOW_AUXV=1 /bin/true | grep ^AT_HWCAP | grep -w $CAPABILITY_WORD 2>&1 > /dev/null
+if [ "$?" -eq "0" ]; then
+	#echo "found the capability"
+	exit 0
+elif [ "$?" -eq "2" ]; then
+	# echo "grep failure"
+	exit 1
+else
+	#echo "did not find the capability"
+	exit 1
+fi
+

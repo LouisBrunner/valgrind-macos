@@ -1311,6 +1311,7 @@ void mc_LOADV_128_or_256_slow ( /*OUT*/ULong* res,
 
 static
 __attribute__((noinline))
+__attribute__((used))
 VG_REGPARM(3) /* make sure we're using a fixed calling convention, since
                  this function may get called from hand written assembly. */
 ULong mc_LOADVn_slow ( Addr a, SizeT nBits, Bool bigendian )
@@ -4318,8 +4319,9 @@ STATIC_ASSERT(V_BITS8_UNDEFINED == 0xFF);
            = 0xFFFF'FFF0'0000'0007
 */
 
-
-/* ------------------------ Size = 16 ------------------------ */
+/*------------------------------------------------------------*/
+/*--- LOADV256 and LOADV128                                ---*/
+/*------------------------------------------------------------*/
 
 static INLINE
 void mc_LOADV_128_or_256 ( /*OUT*/ULong* res,
@@ -4387,7 +4389,9 @@ VG_REGPARM(2) void MC_(helperc_LOADV128le) ( /*OUT*/V128* res, Addr a )
    mc_LOADV_128_or_256(&res->w64[0], a, 128, False);
 }
 
-/* ------------------------ Size = 8 ------------------------ */
+/*------------------------------------------------------------*/
+/*--- LOADV64                                              ---*/
+/*------------------------------------------------------------*/
 
 static INLINE
 ULong mc_LOADV64 ( Addr a, Bool isBigEndian )
@@ -4473,14 +4477,52 @@ __asm__( /* Derived from the 32 bit assembly helper */
 ".previous\n"
 );
 
+#elif ENABLE_ASSEMBLY_HELPERS && defined(PERF_FAST_LOADV) \
+      && (defined(VGP_x86_linux) || defined(VGP_x86_darwin))
+__asm__(
+".text\n"
+".align 16\n"
+".global vgMemCheck_helperc_LOADV64le\n"
+".type   vgMemCheck_helperc_LOADV64le, @function\n"
+"vgMemCheck_helperc_LOADV64le:\n"
+"      test   $0x7,  %eax\n"
+"      jne    .LLV64LE2\n"          /* jump if not aligned */
+"      mov    %eax,  %ecx\n"
+"      movzwl %ax,   %edx\n"
+"      shr    $0x10, %ecx\n"
+"      mov    primary_map(,%ecx,4), %ecx\n"
+"      shr    $0x3,  %edx\n"
+"      movzwl (%ecx,%edx,2), %edx\n"
+"      cmp    $0xaaaa, %edx\n"
+"      jne    .LLV64LE1\n"          /* jump if not all defined */
+"      xor    %eax, %eax\n"         /* return 0 in edx:eax */
+"      xor    %edx, %edx\n"
+"      ret\n"
+".LLV64LE1:\n"
+"      cmp    $0x5555, %edx\n"
+"      jne    .LLV64LE2\n"         /* jump if not all undefined */
+"      or     $0xffffffff, %eax\n" /* else return all bits set in edx:eax */
+"      or     $0xffffffff, %edx\n"
+"      ret\n"
+".LLV64LE2:\n"
+"      xor    %ecx,  %ecx\n"  /* tail call to mc_LOADVn_slow(a, 64, 0) */
+"      mov    $64,   %edx\n"
+"      jmp    mc_LOADVn_slow\n"
+".size vgMemCheck_helperc_LOADV64le, .-vgMemCheck_helperc_LOADV64le\n"
+".previous\n"
+);
+
 #else
-// Generic for all platforms except arm32-linux
+// Generic for all platforms except arm32-linux, x86-{linux,darwin}
 VG_REGPARM(1) ULong MC_(helperc_LOADV64le) ( Addr a )
 {
    return mc_LOADV64(a, False);
 }
 #endif
 
+/*------------------------------------------------------------*/
+/*--- STOREV64                                             ---*/
+/*------------------------------------------------------------*/
 
 static INLINE
 void mc_STOREV64 ( Addr a, ULong vbits64, Bool isBigEndian )
@@ -4548,8 +4590,9 @@ VG_REGPARM(1) void MC_(helperc_STOREV64le) ( Addr a, ULong vbits64 )
    mc_STOREV64(a, vbits64, False);
 }
 
-
-/* ------------------------ Size = 4 ------------------------ */
+/*------------------------------------------------------------*/
+/*--- LOADV32                                              ---*/
+/*------------------------------------------------------------*/
 
 static INLINE
 UWord mc_LOADV32 ( Addr a, Bool isBigEndian )
@@ -4632,14 +4675,50 @@ __asm__( /* Derived from NCode template */
 ".previous\n"
 );
 
+#elif ENABLE_ASSEMBLY_HELPERS && defined(PERF_FAST_LOADV) \
+      && (defined(VGP_x86_linux) || defined(VGP_x86_darwin))
+__asm__(
+".text\n"
+".align 16\n"
+".global vgMemCheck_helperc_LOADV32le\n"
+".type   vgMemCheck_helperc_LOADV32le, @function\n"
+"vgMemCheck_helperc_LOADV32le:\n"
+"      test   $0x3,  %eax\n"
+"      jnz    .LLV32LE2\n"         /* jump if misaligned */
+"      mov    %eax,  %edx\n"
+"      shr    $16,   %edx\n"
+"      mov    primary_map(,%edx,4), %ecx\n"
+"      movzwl %ax,   %edx\n"
+"      shr    $2,    %edx\n"
+"      movzbl (%ecx,%edx,1), %edx\n"
+"      cmp    $0xaa, %edx\n"       /* compare to VA_BITS8_DEFINED */
+"      jne    .LLV32LE1\n"         /* jump if not completely defined */
+"      xor    %eax,  %eax\n"       /* else return V_BITS32_DEFINED */
+"      ret\n"
+".LLV32LE1:\n"
+"      cmp    $0x55, %edx\n"       /* compare to VA_BITS8_UNDEFINED */
+"      jne    .LLV32LE2\n"         /* jump if not completely undefined */
+"      or     $0xffffffff, %eax\n" /* else return V_BITS32_UNDEFINED */
+"      ret\n"
+".LLV32LE2:\n"
+"      xor    %ecx,  %ecx\n"       /* tail call mc_LOADVn_slow(a, 32, 0) */
+"      mov    $32,   %edx\n"
+"      jmp    mc_LOADVn_slow\n"
+".size vgMemCheck_helperc_LOADV32le, .-vgMemCheck_helperc_LOADV32le\n"
+".previous\n"
+);
+
 #else
-// Generic for all platforms except arm32-linux
+// Generic for all platforms except arm32-linux, x86-{linux,darwin}
 VG_REGPARM(1) UWord MC_(helperc_LOADV32le) ( Addr a )
 {
    return mc_LOADV32(a, False);
 }
 #endif
 
+/*------------------------------------------------------------*/
+/*--- STOREV32                                             ---*/
+/*------------------------------------------------------------*/
 
 static INLINE
 void mc_STOREV32 ( Addr a, UWord vbits32, Bool isBigEndian )
@@ -4705,8 +4784,9 @@ VG_REGPARM(2) void MC_(helperc_STOREV32le) ( Addr a, UWord vbits32 )
    mc_STOREV32(a, vbits32, False);
 }
 
-
-/* ------------------------ Size = 2 ------------------------ */
+/*------------------------------------------------------------*/
+/*--- LOADV16                                              ---*/
+/*------------------------------------------------------------*/
 
 static INLINE
 UWord mc_LOADV16 ( Addr a, Bool isBigEndian )
@@ -4808,13 +4888,62 @@ __asm__( /* Derived from NCode template */
 ".previous\n"
 );
 
+#elif ENABLE_ASSEMBLY_HELPERS && defined(PERF_FAST_LOADV) \
+      && (defined(VGP_x86_linux) || defined(VGP_x86_darwin))
+__asm__(
+".text\n"
+".align 16\n"
+".global vgMemCheck_helperc_LOADV16le\n"
+".type   vgMemCheck_helperc_LOADV16le, @function\n"
+"vgMemCheck_helperc_LOADV16le:\n"
+"      test   $0x1,  %eax\n"
+"      jne    .LLV16LE5\n"          /* jump if not aligned */
+"      mov    %eax,  %edx\n"
+"      shr    $0x10, %edx\n"
+"      mov    primary_map(,%edx,4), %ecx\n"
+"      movzwl %ax,   %edx\n"
+"      shr    $0x2,  %edx\n"
+"      movzbl (%ecx,%edx,1), %edx\n"/* edx = VA bits for 32bit */
+"      cmp    $0xaa, %edx\n"        /* compare to VA_BITS8_DEFINED */
+"      jne    .LLV16LE2\n"          /* jump if not all 32bits defined */
+".LLV16LE1:\n"
+"      mov    $0xffff0000,%eax\n"   /* V_BITS16_DEFINED | top16safe */
+"      ret\n"
+".LLV16LE2:\n"
+"      cmp    $0x55, %edx\n"        /* compare to VA_BITS8_UNDEFINED */
+"      jne    .LLV16LE4\n"          /* jump if not all 32bits undefined */
+".LLV16LE3:\n"
+"      or     $0xffffffff,%eax\n"   /* V_BITS16_UNDEFINED | top16safe */
+"      ret\n"
+".LLV16LE4:\n"
+"      mov    %eax,  %ecx\n"
+"      and    $0x2,  %ecx\n"
+"      add    %ecx,  %ecx\n"
+"      sar    %cl,   %edx\n"
+"      and    $0xf,  %edx\n"
+"      cmp    $0xa,  %edx\n"
+"      je     .LLV16LE1\n"          /* jump if all 16bits are defined */
+"      cmp    $0x5,  %edx\n"
+"      je     .LLV16LE3\n"          /* jump if all 16bits are undefined */
+".LLV16LE5:\n"
+"      xor    %ecx,  %ecx\n"        /* tail call mc_LOADVn_slow(a, 16, 0) */
+"      mov    $16,   %edx\n"
+"      jmp    mc_LOADVn_slow\n"
+".size vgMemCheck_helperc_LOADV16le, .-vgMemCheck_helperc_LOADV16le \n"
+".previous\n"
+);
+
 #else
-// Generic for all platforms except arm32-linux
+// Generic for all platforms except arm32-linux, x86-{linux,darwin}
 VG_REGPARM(1) UWord MC_(helperc_LOADV16le) ( Addr a )
 {
    return mc_LOADV16(a, False);
 }
 #endif
+
+/*------------------------------------------------------------*/
+/*--- STOREV16                                             ---*/
+/*------------------------------------------------------------*/
 
 /* True if the vabits4 in vabits8 indicate a and a+1 are accessible. */
 static INLINE
@@ -4897,8 +5026,10 @@ VG_REGPARM(2) void MC_(helperc_STOREV16le) ( Addr a, UWord vbits16 )
    mc_STOREV16(a, vbits16, False);
 }
 
+/*------------------------------------------------------------*/
+/*--- LOADV8                                               ---*/
+/*------------------------------------------------------------*/
 
-/* ------------------------ Size = 1 ------------------------ */
 /* Note: endianness is irrelevant for size == 1 */
 
 // Non-generic assembly for arm32-linux
@@ -4950,8 +5081,51 @@ __asm__( /* Derived from NCode template */
 ".previous\n"
 );
 
+/* Non-generic assembly for x86-linux */
+#elif ENABLE_ASSEMBLY_HELPERS && defined(PERF_FAST_LOADV) \
+      && (defined(VGP_x86_linux) || defined(VGP_x86_darwin))
+__asm__(
+".text\n"
+".align 16\n"
+".global vgMemCheck_helperc_LOADV8\n"
+".type   vgMemCheck_helperc_LOADV8, @function\n"
+"vgMemCheck_helperc_LOADV8:\n"
+"      mov    %eax,  %edx\n"
+"      shr    $0x10, %edx\n"
+"      mov    primary_map(,%edx,4), %ecx\n"
+"      movzwl %ax,   %edx\n"
+"      shr    $0x2,  %edx\n"
+"      movzbl (%ecx,%edx,1), %edx\n"/* edx = VA bits for 32bit */
+"      cmp    $0xaa, %edx\n"        /* compare to VA_BITS8_DEFINED? */
+"      jne    .LLV8LE2\n"           /* jump if not defined */
+".LLV8LE1:\n"
+"      mov    $0xffffff00, %eax\n"  /* V_BITS8_DEFINED | top24safe */
+"      ret\n"
+".LLV8LE2:\n"
+"      cmp    $0x55, %edx\n"        /* compare to VA_BITS8_UNDEFINED */
+"      jne    .LLV8LE4\n"           /* jump if not all 32bits are undefined */
+".LLV8LE3:\n"
+"      or     $0xffffffff, %eax\n"  /* V_BITS8_UNDEFINED | top24safe */
+"      ret\n"
+".LLV8LE4:\n"
+"      mov    %eax,  %ecx\n"
+"      and    $0x3,  %ecx\n"
+"      add    %ecx,  %ecx\n"
+"      sar    %cl,   %edx\n"
+"      and    $0x3,  %edx\n"
+"      cmp    $0x2,  %edx\n"
+"      je     .LLV8LE1\n"           /* jump if all 8bits are defined */
+"      cmp    $0x1,  %edx\n"
+"      je     .LLV8LE3\n"           /* jump if all 8bits are undefined */
+"      xor    %ecx,  %ecx\n"        /* tail call to mc_LOADVn_slow(a, 8, 0) */
+"      mov    $0x8,  %edx\n"
+"      jmp    mc_LOADVn_slow\n"
+".size vgMemCheck_helperc_LOADV8, .-vgMemCheck_helperc_LOADV8\n"
+".previous\n"
+);
+
 #else
-// Generic for all platforms except arm32-linux
+// Generic for all platforms except arm32-linux, x86-{linux,darwin}
 VG_REGPARM(1)
 UWord MC_(helperc_LOADV8) ( Addr a )
 {
@@ -4994,6 +5168,9 @@ UWord MC_(helperc_LOADV8) ( Addr a )
 }
 #endif
 
+/*------------------------------------------------------------*/
+/*--- STOREV8                                              ---*/
+/*------------------------------------------------------------*/
 
 VG_REGPARM(2)
 void MC_(helperc_STOREV8) ( Addr a, UWord vbits8 )

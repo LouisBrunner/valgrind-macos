@@ -7,7 +7,9 @@ dist_noinst_SCRIPTS = \
 	filter_stderr
 
 EXTRA_DIST = \
+	say-hello.helper \
 	bug231357.vgtest bug231357.stderr.exp bug231357.stdout.exp \
+	bug338606.vgtest bug338606.stderr.exp \
 	shell shell.vgtest shell.stderr.exp shell.stderr.exp-dash \
 	shell.stdout.exp shell.stderr.exp-dash2 shell.stderr.exp-illumos \
 	shell.stderr.exp-solaris shell.stderr.exp-solaris-spawn \
@@ -22,6 +24,8 @@ EXTRA_DIST = \
 	shell_nointerp3.stdout.exp \
 	shell_nonexec.vgtest shell_nonexec.stderr.exp \
 	shell_nosuchfile.vgtest shell_nosuchfile.stderr.exp \
+	relative1 relative1.vgtest relative1.stderr.exp relative1.stdout.exp \
+	relative2 relative2.vgtest relative2.stderr.exp relative2.stdout.exp \
 	shell_valid1 shell_valid1.vgtest shell_valid1.stderr.exp \
 	shell_valid4 shell_valid4.vgtest shell_valid4.stderr.exp \
 	shell_valid4.stdout.exp \

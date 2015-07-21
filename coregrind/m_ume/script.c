@@ -1,3 +1,4 @@
+/* -*- mode: C; c-basic-offset: 3; -*- */
 
 /*--------------------------------------------------------------------*/
 /*--- User-mode execve() for #! scripts.            m_ume_script.c ---*/
@@ -41,35 +42,27 @@
 
 #include "priv_ume.h"
 
+/* Return true, if the first line begins with #! and contains an
+   interpreter. */
 Bool VG_(match_script)(const void *hdr, SizeT len)
 {
    const HChar* script = hdr;
    const HChar* end    = script + len;
    const HChar* interp = script + 2;
 
-   // len < 4: need '#', '!', plus at least a '/' and one more char
-   if (len < 4) return False;    
+   if (len < 2) return False;    
    if (0 != VG_(memcmp)(hdr, "#!", 2)) return False;
 
-   // Find interpreter name, make sure it's an absolute path (starts with
-   // '/') and has at least one more char.  First, skip over any space
-   // between the #! and the start of the interpreter name
+   // Find interpreter name, which may be absolute or relative.
+   // First, skip over any space between the #! and the start of the
+   // interpreter name
    while (interp < end && (*interp == ' ' || *interp == '\t')) interp++;
 
    // overrun?
    if (interp >= end)   return False;  // can't find start of interp name
 
-   // interp should now point at the /
-   if (*interp != '/')  return False;  // absolute path only for interpreter
-
-   // check for something plausible after the /
-   interp++;
-   if (interp >= end)   return False;
-   if (VG_(isspace)(*interp)) return False;
-
-   // Here we should get the full interpreter name and check it with
-   // check_executable().  See the "EXEC FAILED" failure when running shell
-   // for an example.
+   // No interpreter found.
+   if (*interp == '\n') return False;
 
    return True;   // looks like a #! script
 }
@@ -102,8 +95,6 @@ Int VG_(load_script)(Int fd, const HChar* name, ExeInfo* info)
    interp = hdr + 2;
    while (interp < end && (*interp == ' ' || *interp == '\t'))
       interp++;
-
-   vg_assert(*interp == '/');   /* absolute path only for interpreter */
 
    /* skip over interpreter name */
    for (cp = interp; cp < end && !VG_(isspace)(*cp); cp++)

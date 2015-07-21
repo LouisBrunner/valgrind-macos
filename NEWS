@@ -128,6 +128,7 @@ where XXXXXX is the bug number as listed below.
         == 343175
         == 342740
 335907  segfault when running wine's ddrawex/tests/surface.c under valgrind
+338606  Strange message for scripts with invalid interpreter
 338731  ppc: Fix testuite build for toolchains not supporting -maltivec
 338995  shmat with hugepages (SHM_HUGETLB) fails with EINVAL
 339045  Getting valgrind to compile and run on OS X Yosemite (10.10)

@@ -15,7 +15,8 @@ Thread #x was created
 ----------------------------------------------------------------
 
  Lock at 0x........ was first observed
-   at 0x........: pthread_mutex_lock (hg_intercepts.c:...)
+   at 0x........: mutex_lock_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_mutex_lock (hg_intercepts.c:...)
    by 0x........: child_fn (locked_vs_unlocked1.c:18)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...

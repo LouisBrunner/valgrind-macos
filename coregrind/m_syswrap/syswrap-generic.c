@@ -30,7 +30,7 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#if defined(VGO_linux) || defined(VGO_darwin)
+#if defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_solaris)
 
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
@@ -145,7 +145,7 @@ Bool ML_(client_signal_OK)(Int sigNo)
    presented with bogus client addresses.  Is not used for generating
    user-visible errors. */
 
-Bool ML_(safe_to_deref) ( void* start, SizeT size )
+Bool ML_(safe_to_deref) ( const void *start, SizeT size )
 {
    return VG_(am_is_valid_for_client)( (Addr)start, size, VKI_PROT_READ );
 }
@@ -549,8 +549,7 @@ static Int fd_count = 0;
 
 
 /* Note the fact that a file descriptor was just closed. */
-static
-void record_fd_close(Int fd)
+void ML_(record_fd_close)(Int fd)
 {
    OpenFd *i = allocated_fds;
 
@@ -632,6 +631,32 @@ void ML_(record_fd_open_named)(ThreadId tid, Int fd)
 void ML_(record_fd_open_nameless)(ThreadId tid, Int fd)
 {
    ML_(record_fd_open_with_given_name)(tid, fd, NULL);
+}
+
+// Return if a given file descriptor is already recorded.
+Bool ML_(fd_recorded)(Int fd)
+{
+   OpenFd *i = allocated_fds;
+   while (i) {
+      if (i->fd == fd)
+         return True;
+      i = i->next;
+   }
+   return False;
+}
+
+/* Returned string must not be modified nor free'd. */
+const HChar *ML_(find_fd_recorded_by_fd)(Int fd)
+{
+   OpenFd *i = allocated_fds;
+
+   while (i) {
+      if (i->fd == fd)
+         return i->pathname;
+      i = i->next;
+   }
+
+   return NULL;
 }
 
 static
@@ -901,6 +926,44 @@ void VG_(init_preopened_fds)(void)
 #elif defined(VGO_darwin)
    init_preopened_fds_without_proc_self_fd();
 
+#elif defined(VGO_solaris)
+   Int ret;
+   Char buf[VKI_MAXGETDENTS_SIZE];
+   SysRes f;
+
+   f = VG_(open)("/proc/self/fd", VKI_O_RDONLY, 0);
+   if (sr_isError(f)) {
+      init_preopened_fds_without_proc_self_fd();
+      return;
+   }
+
+   while ((ret = VG_(getdents64)(sr_Res(f), (struct vki_dirent64 *) buf,
+                                 sizeof(buf))) > 0) {
+      Int i = 0;
+      while (i < ret) {
+         /* Proceed one entry. */
+         struct vki_dirent64 *d = (struct vki_dirent64 *) (buf + i);
+         if (VG_(strcmp)(d->d_name, ".") && VG_(strcmp)(d->d_name, "..")) {
+            HChar *s;
+            Int fno = VG_(strtoll10)(d->d_name, &s);
+            if (*s == '\0') {
+               if (fno != sr_Res(f))
+                  if (VG_(clo_track_fds))
+                     ML_(record_fd_open_named)(-1, fno);
+            } else {
+               VG_(message)(Vg_DebugMsg,
+                     "Warning: invalid file name in /proc/self/fd: %s\n",
+                     d->d_name);
+            }
+         }
+
+         /* Move on the next entry. */
+         i += d->d_reclen;
+      }
+   }
+
+   VG_(close)(sr_Res(f));
+
 #else
 #  error Unknown OS
 #endif
@@ -1046,7 +1109,7 @@ void pre_mem_read_sockaddr ( ThreadId tid,
                              struct vki_sockaddr *sa, UInt salen )
 {
    HChar *outmsg;
-   struct vki_sockaddr_un*  sun  = (struct vki_sockaddr_un *)sa;
+   struct vki_sockaddr_un*  saun = (struct vki_sockaddr_un *)sa;
    struct vki_sockaddr_in*  sin  = (struct vki_sockaddr_in *)sa;
    struct vki_sockaddr_in6* sin6 = (struct vki_sockaddr_in6 *)sa;
 #  ifdef VKI_AF_BLUETOOTH
@@ -1069,7 +1132,7 @@ void pre_mem_read_sockaddr ( ThreadId tid,
                   
       case VKI_AF_UNIX:
          VG_(sprintf) ( outmsg, description, "sun_path" );
-         PRE_MEM_RASCIIZ( outmsg, (Addr) sun->sun_path );
+         PRE_MEM_RASCIIZ( outmsg, (Addr) saun->sun_path );
          // GrP fixme max of sun_len-2? what about nul char?
          break;
                      
@@ -1717,8 +1780,11 @@ UInt get_sem_count( Int semid )
 
    arg.buf = &buf;
 
-#  ifdef __NR_semctl
+#  if defined(__NR_semctl)
    res = VG_(do_syscall4)(__NR_semctl, semid, 0, VKI_IPC_STAT, *(UWord *)&arg);
+#  elif defined(__NR_semsys) /* Solaris */
+   res = VG_(do_syscall5)(__NR_semsys, VKI_SEMCTL, semid, 0, VKI_IPC_STAT,
+                          *(UWord *)&arg);
 #  else
    res = VG_(do_syscall5)(__NR_ipc, 3 /* IPCOP_semctl */, semid, 0,
                           VKI_IPC_STAT, (UWord)&arg);
@@ -1761,6 +1827,11 @@ ML_(generic_PRE_sys_semctl) ( ThreadId tid,
 #if defined(VKI_SEM_STAT)
    case VKI_SEM_STAT|VKI_IPC_64:
 #endif
+#endif
+#if defined(VKI_IPC_STAT64)
+   case VKI_IPC_STAT64:
+#endif
+#if defined(VKI_IPC_64) || defined(VKI_IPC_STAT64)
       PRE_MEM_WRITE( "semctl(IPC_STAT, arg.buf)",
                      (Addr)arg.buf, sizeof(struct vki_semid64_ds) );
       break;
@@ -1773,6 +1844,11 @@ ML_(generic_PRE_sys_semctl) ( ThreadId tid,
 
 #if defined(VKI_IPC_64)
    case VKI_IPC_SET|VKI_IPC_64:
+#endif
+#if defined(VKI_IPC_SET64)
+   case VKI_IPC_SET64:
+#endif
+#if defined(VKI_IPC64) || defined(VKI_IPC_SET64)
       PRE_MEM_READ( "semctl(IPC_SET, arg.buf)",
                     (Addr)arg.buf, sizeof(struct vki_semid64_ds) );
       break;
@@ -1826,6 +1902,11 @@ ML_(generic_POST_sys_semctl) ( ThreadId tid,
 #if defined(VKI_IPC_64)
    case VKI_IPC_STAT|VKI_IPC_64:
    case VKI_SEM_STAT|VKI_IPC_64:
+#endif
+#if defined(VKI_IPC_STAT64)
+   case VKI_IPC_STAT64:
+#endif
+#if defined(VKI_IPC_64) || defined(VKI_IPC_STAT64)
       POST_MEM_WRITE( (Addr)arg.buf, sizeof(struct vki_semid64_ds) );
       break;
 #endif
@@ -1847,7 +1928,7 @@ ML_(generic_POST_sys_semctl) ( ThreadId tid,
 static
 SizeT get_shm_size ( Int shmid )
 {
-#ifdef __NR_shmctl
+#if defined(__NR_shmctl)
 #  ifdef VKI_IPC_64
    struct vki_shmid64_ds buf;
 #    if defined(VGP_amd64_linux) || defined(VGP_arm64_linux)
@@ -1862,6 +1943,10 @@ SizeT get_shm_size ( Int shmid )
    struct vki_shmid_ds buf;
    SysRes __res = VG_(do_syscall3)(__NR_shmctl, shmid, VKI_IPC_STAT, (UWord)&buf);
 #  endif /* def VKI_IPC_64 */
+#elif defined(__NR_shmsys) /* Solaris */
+   struct vki_shmid_ds buf;
+   SysRes __res = VG_(do_syscall4)(__NR_shmsys, VKI_SHMCTL, shmid, VKI_IPC_STAT,
+                         (UWord)&buf);
 #else
    struct vki_shmid_ds buf;
    SysRes __res = VG_(do_syscall5)(__NR_ipc, 24 /* IPCOP_shmctl */, shmid,
@@ -2157,6 +2242,16 @@ ML_(generic_PRE_sys_mmap) ( ThreadId tid,
    if (arg4 & VKI_MAP_FIXED) {
       mreq.rkind = MFixed;
    } else
+#if defined(VKI_MAP_ALIGN) /* Solaris specific */
+   if (arg4 & VKI_MAP_ALIGN) {
+      mreq.rkind = MAlign;
+      if (mreq.start == 0) {
+         mreq.start = VKI_PAGE_SIZE;
+      }
+      /* VKI_MAP_FIXED and VKI_MAP_ALIGN don't like each other. */
+      arg4 &= ~VKI_MAP_ALIGN;
+   } else
+#endif
    if (arg1 != 0) {
       mreq.rkind = MHint;
    } else {
@@ -2678,7 +2773,7 @@ PRE(sys_flock)
 }
 
 // Pre_read a char** argument.
-static void pre_argv_envp(Addr a, ThreadId tid, const HChar* s1, const HChar* s2)
+void ML_(pre_argv_envp)(Addr a, ThreadId tid, const HChar *s1, const HChar *s2)
 {
    while (True) {
       Addr a_deref;
@@ -2729,9 +2824,9 @@ PRE(sys_execve)
                  char *, filename, char **, argv, char **, envp);
    PRE_MEM_RASCIIZ( "execve(filename)", ARG1 );
    if (ARG2 != 0)
-      pre_argv_envp( ARG2, tid, "execve(argv)", "execve(argv[i])" );
+      ML_(pre_argv_envp)( ARG2, tid, "execve(argv)", "execve(argv[i])" );
    if (ARG3 != 0)
-      pre_argv_envp( ARG3, tid, "execve(envp)", "execve(envp[i])" );
+      ML_(pre_argv_envp)( ARG3, tid, "execve(envp)", "execve(envp[i])" );
 
    vg_assert(VG_(is_valid_tid)(tid));
    tst = VG_(get_ThreadState)(tid);
@@ -2850,7 +2945,7 @@ PRE(sys_execve)
    } else {
       envp = VG_(env_clone)( (HChar**)ARG3 );
       if (envp == NULL) goto hosed;
-      VG_(env_remove_valgrind_env_stuff)( envp );
+      VG_(env_remove_valgrind_env_stuff)( envp, True /*ro_strings*/, NULL );
    }
 
    if (trace_this_child) {
@@ -3089,7 +3184,7 @@ PRE(sys_close)
 
 POST(sys_close)
 {
-   if (VG_(clo_track_fds)) record_fd_close(ARG1);
+   if (VG_(clo_track_fds)) ML_(record_fd_close)(ARG1);
 }
 
 PRE(sys_dup)
@@ -3160,6 +3255,7 @@ POST(sys_newfstat)
    POST_MEM_WRITE( ARG2, sizeof(struct vki_stat) );
 }
 
+#if !defined(VGO_solaris)
 static vki_sigset_t fork_saved_mask;
 
 // In Linux, the sys_fork() function varies across architectures, but we
@@ -3178,6 +3274,8 @@ PRE(sys_fork)
    VG_(sigfillset)(&mask);
    VG_(sigprocmask)(VKI_SIG_SETMASK, &mask, &fork_saved_mask);
 
+   VG_(do_atfork_pre)(tid);
+
    SET_STATUS_from_SysRes( VG_(do_syscall0)(__NR_fork) );
 
    if (!SUCCESS) return;
@@ -3193,8 +3291,6 @@ PRE(sys_fork)
 #else
 #  error Unknown OS
 #endif
-
-   VG_(do_atfork_pre)(tid);
 
    if (is_child) {
       VG_(do_atfork_child)(tid);
@@ -3222,6 +3318,7 @@ PRE(sys_fork)
       VG_(sigprocmask)(VKI_SIG_SETMASK, &fork_saved_mask, NULL);
    }
 }
+#endif // !defined(VGO_solaris)
 
 PRE(sys_ftruncate)
 {
@@ -3499,9 +3596,15 @@ void ML_(PRE_unknown_ioctl)(ThreadId tid, UWord request, UWord arg)
       According to Simon Hausmann, _IOC_READ means the kernel
       writes a value to the ioctl value passed from the user
       space and the other way around with _IOC_WRITE. */
-   
+
+#if defined(VGO_solaris)
+   /* Majority of Solaris ioctl requests does not honour direction hints. */
+   UInt dir  = _VKI_IOC_NONE;
+#else   
    UInt dir  = _VKI_IOC_DIR(request);
+#endif
    UInt size = _VKI_IOC_SIZE(request);
+
    if (SimHintiS(SimHint_lax_ioctls, VG_(clo_sim_hints))) {
       /* 
        * Be very lax about ioctl handling; the only
@@ -3620,7 +3723,7 @@ Bool ML_(do_sigkill)(Int pid, Int tgid)
 PRE(sys_kill)
 {
    PRINT("sys_kill ( %ld, %ld )", ARG1,ARG2);
-   PRE_REG_READ2(long, "kill", int, pid, int, sig);
+   PRE_REG_READ2(long, "kill", int, pid, int, signal);
    if (!ML_(client_signal_OK)(ARG2)) {
       SET_STATUS_Failure( VKI_EINVAL );
       return;
@@ -3799,6 +3902,49 @@ POST(sys_nanosleep)
       POST_MEM_WRITE( ARG2, sizeof(struct vki_timespec) );
 }
 
+#if defined(VGO_linux) || defined(VGO_solaris)
+/* Handles the case where the open is of /proc/self/auxv or
+   /proc/<pid>/auxv, and just gives out a copy of the fd for the
+   fake file we cooked up at startup (in m_main).  Also, seeks the
+   cloned fd back to the start.
+   Returns True if auxv open was handled (status is set). */
+Bool ML_(handle_auxv_open)(SyscallStatus *status, const HChar *filename,
+                           int flags)
+{
+   HChar  name[30];   // large enough
+
+   if (!ML_(safe_to_deref)((const void *) filename, 1))
+      return False;
+
+   /* Opening /proc/<pid>/auxv or /proc/self/auxv? */
+   VG_(sprintf)(name, "/proc/%d/auxv", VG_(getpid)());
+   if (!VG_STREQ(filename, name) && !VG_STREQ(filename, "/proc/self/auxv"))
+      return False;
+
+   /* Allow to open the file only for reading. */
+   if (flags & (VKI_O_WRONLY | VKI_O_RDWR)) {
+      SET_STATUS_Failure(VKI_EACCES);
+      return True;
+   }
+
+#  if defined(VGO_solaris)
+   VG_(sprintf)(name, "/proc/self/fd/%d", VG_(cl_auxv_fd));
+   SysRes sres = VG_(open)(name, flags, 0);
+   SET_STATUS_from_SysRes(sres);
+#  else
+   SysRes sres = VG_(dup)(VG_(cl_auxv_fd));
+   SET_STATUS_from_SysRes(sres);
+   if (!sr_isError(sres)) {
+      OffT off = VG_(lseek)(sr_Res(sres), 0, VKI_SEEK_SET);
+      if (off < 0)
+         SET_STATUS_Failure(VKI_EMFILE);
+   }
+#  endif
+
+   return True;
+}
+#endif // defined(VGO_linux) || defined(VGO_solaris)
+
 PRE(sys_open)
 {
    if (ARG2 & VKI_O_CREAT) {
@@ -3840,30 +3986,9 @@ PRE(sys_open)
       }
    }
 
-   /* Handle the case where the open is of /proc/self/auxv or
-      /proc/<pid>/auxv, and just give it a copy of the fd for the
-      fake file we cooked up at startup (in m_main).  Also, seek the
-      cloned fd back to the start. */
-   {
-      HChar  name[30];   // large enough
-      HChar* arg1s = (HChar*) ARG1;
-      SysRes sres;
-
-      VG_(sprintf)(name, "/proc/%d/auxv", VG_(getpid)());
-      if (ML_(safe_to_deref)( arg1s, 1 ) &&
-          (VG_STREQ(arg1s, name) || VG_STREQ(arg1s, "/proc/self/auxv"))
-         )
-      {
-         sres = VG_(dup)( VG_(cl_auxv_fd) );
-         SET_STATUS_from_SysRes( sres );
-         if (!sr_isError(sres)) {
-            OffT off = VG_(lseek)( sr_Res(sres), 0, VKI_SEEK_SET );
-            if (off < 0)
-               SET_STATUS_Failure( VKI_EMFILE );
-         }
-         return;
-      }
-   }
+   /* Handle also the case of /proc/self/auxv or /proc/<pid>/auxv. */
+   if (ML_(handle_auxv_open)(status, (const HChar *)ARG1, ARG2))
+      return;
 #endif // defined(VGO_linux)
 
    /* Otherwise handle normally */
@@ -3914,6 +4039,11 @@ PRE(sys_write)
    if (!ok && ARG1 == 2/*stderr*/ 
            && SimHintiS(SimHint_enable_outer, VG_(clo_sim_hints)))
       ok = True;
+#if defined(VGO_solaris)
+   if (!ok && VG_(vfork_fildes_addr) != NULL &&
+       *VG_(vfork_fildes_addr) >= 0 && *VG_(vfork_fildes_addr) == ARG1)
+      ok = True;
+#endif
    if (!ok)
       SET_STATUS_Failure( VKI_EBADF );
    else
@@ -4004,7 +4134,21 @@ PRE(sys_readlink)
          SET_STATUS_from_SysRes( VG_(do_syscall3)(saved, (UWord)name, 
                                                          ARG2, ARG3));
       } else
-#endif // defined(VGO_linux)
+#elif defined(VGO_solaris)
+      /* Same for Solaris, but /proc/self/path/a.out and
+         /proc/<pid>/path/a.out. */
+      HChar  name[30];   // large enough
+      HChar* arg1s = (HChar*) ARG1;
+      VG_(sprintf)(name, "/proc/%d/path/a.out", VG_(getpid)());
+      if (ML_(safe_to_deref)(arg1s, 1) &&
+          (VG_STREQ(arg1s, name) || VG_STREQ(arg1s, "/proc/self/path/a.out"))
+         )
+      {
+         VG_(sprintf)(name, "/proc/self/path/%d", VG_(cl_exec_fd));
+         SET_STATUS_from_SysRes( VG_(do_syscall3)(saved, (UWord)name,
+                                                         ARG2, ARG3));
+      } else
+#endif
       {
          /* Normal case */
          SET_STATUS_from_SysRes( VG_(do_syscall3)(saved, ARG1, ARG2, ARG3));
@@ -4183,7 +4327,15 @@ PRE(sys_setrlimit)
          SET_STATUS_Failure( VKI_EPERM );
       }
       else {
-         VG_(threads)[tid].client_stack_szB = ((struct vki_rlimit *)ARG2)->rlim_cur;
+         /* Change the value of client_stack_szB to the rlim_cur value but
+            only if it is smaller than the size of the allocated stack for the
+            client.
+            TODO: All platforms should set VG_(clstk_max_size) as part of their
+                  setup_client_stack(). */
+         if ((VG_(clstk_max_size) == 0)
+             || (((struct vki_rlimit *) ARG2)->rlim_cur <= VG_(clstk_max_size)))
+            VG_(threads)[tid].client_stack_szB = ((struct vki_rlimit *)ARG2)->rlim_cur;
+
          VG_(client_rlimit_stack) = *(struct vki_rlimit *)ARG2;
          SET_STATUS_Success( 0 );
       }
@@ -4411,6 +4563,16 @@ PRE(sys_sigaltstack)
       PRE_MEM_WRITE( "sigaltstack(oss)", ARG2, sizeof(vki_stack_t) );
    }
 
+   /* Be safe. */
+   if (ARG1 && !ML_(safe_to_deref((void*)ARG1, sizeof(vki_stack_t)))) {
+      SET_STATUS_Failure(VKI_EFAULT);
+      return;
+   }
+   if (ARG2 && !ML_(safe_to_deref((void*)ARG2, sizeof(vki_stack_t)))) {
+      SET_STATUS_Failure(VKI_EFAULT);
+      return;
+   }
+
    SET_STATUS_from_SysRes( 
       VG_(do_sys_sigaltstack) (tid, (vki_stack_t*)ARG1, 
                               (vki_stack_t*)ARG2)
@@ -4433,7 +4595,7 @@ PRE(sys_sethostname)
 #undef PRE
 #undef POST
 
-#endif // defined(VGO_linux) || defined(VGO_darwin)
+#endif // defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_solaris)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

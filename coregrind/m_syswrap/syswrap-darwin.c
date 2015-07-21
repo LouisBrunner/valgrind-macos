@@ -3451,7 +3451,7 @@ PRE(posix_spawn)
    } else {
       envp = VG_(env_clone)( (HChar**)ARG5 );
       vg_assert(envp);
-      VG_(env_remove_valgrind_env_stuff)( envp );
+      VG_(env_remove_valgrind_env_stuff)( envp, /* ro_strings */ False, NULL);
    }
 
    if (trace_this_child) {

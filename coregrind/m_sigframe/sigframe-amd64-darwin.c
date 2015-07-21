@@ -145,6 +145,7 @@ static void restore_from_ucontext(ThreadState *tst,
    former case, the amd64 calling conventions will simply cause the
    extra 2 args to be ignored (inside the handler).  (We hope!) */
 void VG_(sigframe_create) ( ThreadId tid,
+                            Bool on_altstack,
                             Addr sp_top_of_frame,
                             const vki_siginfo_t *siginfo,
                             const struct vki_ucontext *siguc,

@@ -1,0 +1,23 @@
+---------------------------------------------------------
+ 30:         SYS_frealpathat 4s 2m
+---------------------------------------------------------
+Syscall param frealpathat(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param frealpathat(path) contains uninitialised byte(s)
+   ...
+
+Syscall param frealpathat(buf) contains uninitialised byte(s)
+   ...
+
+Syscall param frealpathat(buflen) contains uninitialised byte(s)
+   ...
+
+Syscall param frealpathat(path) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param frealpathat(buf) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+

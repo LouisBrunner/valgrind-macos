@@ -1,0 +1,2 @@
+prog: posix_spawn
+vgopts: -q

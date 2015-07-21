@@ -29,7 +29,7 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#if defined(VGO_linux)
+#if defined(VGO_linux) || defined(VGO_solaris)
 
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
@@ -54,6 +54,9 @@
 
 /* --- !!! --- EXTERNAL HEADERS start --- !!! --- */
 #include <elf.h>
+#if defined(VGO_solaris)
+#include <sys/link.h>              /* ElfXX_Dyn, DT_* */
+#endif
 /* --- !!! --- EXTERNAL HEADERS end --- !!! --- */
 
 /*------------------------------------------------------------*/
@@ -1844,7 +1847,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       OffT   foff = a_shdr.sh_offset;
       UWord  size = a_shdr.sh_size; /* Do not change this to be signed. */
       UInt   alyn = a_shdr.sh_addralign;
-      Bool   bits = !(a_shdr.sh_type == SHT_NOBITS);
+      Bool   nobits = a_shdr.sh_type == SHT_NOBITS;
       /* Look through our collection of info obtained from the PT_LOAD
          headers, and make 'inrx' and 'inrw' point to the first entry
          in each that intersects 'avma'.  If in each case none is found,
@@ -1870,9 +1873,9 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                    foff, foff+size-1, (void*)svma, name);
 
       /* Check for sane-sized segments.  SHT_NOBITS sections have zero
-         size in the file. */
-      if ((foff >= ML_(img_size)(mimg)) 
-          || (foff + (bits ? size : 0) > ML_(img_size)(mimg))) {
+         size in the file and their offsets are just conceptual. */
+      if (!nobits &&
+          (foff >= ML_(img_size)(mimg) || foff + size > ML_(img_size)(mimg))) {
          ML_(symerr)(di, True, "ELF Section extends beyond image end");
          goto out;
       }
@@ -2161,7 +2164,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 #     if defined(VGP_x86_linux) || defined(VGP_amd64_linux) \
          || defined(VGP_arm_linux) || defined (VGP_s390x_linux) \
          || defined(VGP_mips32_linux) || defined(VGP_mips64_linux) \
-         || defined(VGP_arm64_linux) || defined(VGP_tilegx_linux)
+         || defined(VGP_arm64_linux) || defined(VGP_tilegx_linux) \
+         || defined(VGP_x86_solaris) || defined(VGP_amd64_solaris)
       /* Accept .plt where mapped as rx (code) */
       if (0 == VG_(strcmp)(name, ".plt")) {
          if (inrx && !di->plt_present) {
@@ -2323,6 +2327,9 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       DiSlice symtab_escn         = DiSlice_INVALID; // .symtab
       DiSlice dynstr_escn         = DiSlice_INVALID; // .dynstr
       DiSlice dynsym_escn         = DiSlice_INVALID; // .dynsym
+#     if defined(VGO_solaris)
+      DiSlice ldynsym_escn        = DiSlice_INVALID; // .SUNW_ldynsym
+#     endif
       DiSlice debuglink_escn      = DiSlice_INVALID; // .gnu_debuglink
       DiSlice debugaltlink_escn   = DiSlice_INVALID; // .gnu_debugaltlink
       DiSlice debug_line_escn     = DiSlice_INVALID; // .debug_line   (dwarf2)
@@ -2385,8 +2392,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                              _sec_name, (ULong)_sec_escn.ioff, \
                              ((ULong)_sec_escn.ioff) + _sec_escn.szB - 1); \
                /* SHT_NOBITS sections have zero size in the file. */ \
-               if ( a_shdr.sh_offset \
-                    + (nobits ? 0 : _sec_escn.szB) > ML_(img_size)(mimg) ) { \
+               if (!nobits && \
+                   a_shdr.sh_offset + _sec_escn.szB > ML_(img_size)(mimg) ) { \
                   ML_(symerr)(di, True, \
                               "   section beyond image end?!"); \
                   goto out; \
@@ -2404,6 +2411,9 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          FIND(".dynstr",            dynstr_escn)
          FIND(".symtab",            symtab_escn)
          FIND(".strtab",            strtab_escn)
+#        if defined(VGO_solaris)
+         FIND(".SUNW_ldynsym",      ldynsym_escn)
+#        endif
 
          FIND(".gnu_debuglink",     debuglink_escn)
          FIND(".gnu_debugaltlink",  debugaltlink_escn)
@@ -2680,8 +2690,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                                 (ULong)_sec_escn.ioff, \
                                 ((ULong)_sec_escn.ioff) + _sec_escn.szB - 1); \
                   /* SHT_NOBITS sections have zero size in the file. */ \
-                  if (a_shdr.sh_offset \
-                      + (nobits ? 0 : _sec_escn.szB) > ML_(img_size)(dimg)) { \
+                  if (!nobits && a_shdr.sh_offset \
+                      + _sec_escn.szB > ML_(img_size)(dimg)) { \
                      ML_(symerr)(di, True, \
                                  "   section beyond image end?!"); \
                      goto out; \
@@ -2840,6 +2850,9 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       /* Check some sizes */
       vg_assert((dynsym_escn.szB % sizeof(ElfXX_Sym)) == 0);
       vg_assert((symtab_escn.szB % sizeof(ElfXX_Sym)) == 0);
+#     if defined(VGO_solaris)
+      vg_assert((ldynsym_escn.szB % sizeof(ElfXX_Sym)) == 0);
+#     endif
 
       /* TOPLEVEL */
       /* Read symbols */
@@ -2859,6 +2872,11 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          read_elf_symtab(di, "dynamic symbol table",
                          &dynsym_escn, &dynstr_escn, &opd_escn,
                          False);
+#        if defined(VGO_solaris)
+         read_elf_symtab(di, "local dynamic symbol table",
+                         &ldynsym_escn, &dynstr_escn, &opd_escn,
+                         False);
+#        endif
       }
 
       /* TOPLEVEL */
@@ -3010,7 +3028,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    /* NOTREACHED */
 }
 
-#endif // defined(VGO_linux)
+#endif // defined(VGO_linux) || defined(VGO_solaris)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

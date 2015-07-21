@@ -14,6 +14,7 @@
 #define VG_STRINGIFZ(__str)  #__str
 #define VG_STRINGIFY(__str)  VG_STRINGIFZ(__str)
 
+#if defined(VGO_linux) || defined(VGO_darwin)
 #define __NR_READLINK        VG_STRINGIFY(__NR_readlink)
 
 extern long my_readlink ( const char* path );
@@ -31,6 +32,30 @@ asm(
 "\tret\n"
 ".previous\n"
 );
+
+#elif defined(VGO_solaris)
+#define __NR_READLINKAT      VG_STRINGIFY(SYS_readlinkat)
+
+extern long my_readlink ( const char* path );
+asm(
+".text\n"
+".globl my_readlink\n"
+"my_readlink:\n"
+"\tsubq    $0x1008,%rsp\n"
+"\tmovq    %rdi,%rsi\n"
+"\txorq    %rdi,%rdi\n"
+"\tmovq    %rsp,%rdx\n"
+"\tmovq    $0x1000,%r10\n"
+"\tmovl    $"__NR_READLINKAT",%eax\n"
+"\tsyscall\n"
+"\taddq    $0x1008,%rsp\n"
+"\tret\n"
+".previous\n"
+);
+
+#else
+#error "Unknown OS"
+#endif
 
 long recurse ( const char* path, long count )
 {

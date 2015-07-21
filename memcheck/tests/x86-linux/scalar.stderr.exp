@@ -415,7 +415,7 @@ Syscall param kill(pid) contains uninitialised byte(s)
    ...
    by 0x........: main (scalar.c:196)
 
-Syscall param kill(sig) contains uninitialised byte(s)
+Syscall param kill(signal) contains uninitialised byte(s)
    ...
    by 0x........: main (scalar.c:196)
 

@@ -13,6 +13,18 @@ typedef signed short  Short;
 
 typedef signed long int  Word;
 
+unsigned long myrandom(void)
+{
+   /* Simple multiply-with-carry random generator. */
+   static unsigned long m_w = 11;
+   static unsigned long m_z = 13;
+
+   m_z = 36969 * (m_z & 65535) + (m_z >> 16);
+   m_w = 18000 * (m_w & 65535) + (m_w >> 16);
+
+   return (m_z << 16) + m_w;
+}
+
 /* ------------ MEM, Q ------------ */
 
 ULong btsq_mem ( char* base, Word bitno )
@@ -418,8 +430,8 @@ int main ( void )
    /* Valid bit offsets are -800 .. 799 inclusive. */
 
    for (n = 0; n < 10000; n++) {
-      bitoff = (random() % 1600) - 800;
-      op = random() % 12;
+      bitoff = (myrandom() % 1600) - 800;
+      op = myrandom() % 12;
       c = 2;
       switch (op) {
          case  0: c = btsl_mem(block, bitoff); break;
@@ -457,8 +469,8 @@ int main ( void )
    reg = 0;
 
    for (n = 0; n < 1000; n++) {
-      bitoff = (random() % 100) - 50;
-      op = random() % 12;
+      bitoff = (myrandom() % 100) - 50;
+      op = myrandom() % 12;
       c = 2;
       switch (op) {
          case  0: c = btsl_reg(reg, bitoff, &reg); break;

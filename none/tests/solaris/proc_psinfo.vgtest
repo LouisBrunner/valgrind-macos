@@ -1,0 +1,2 @@
+prog: proc_psinfo
+args: arg1 "arg 2" arg3

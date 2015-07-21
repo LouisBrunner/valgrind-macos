@@ -8,11 +8,16 @@ int main(int argc, char **argv)
    {
       // This tests the case where argv and envp are NULL, which is easy to
       // get wrong because it's an unusual case.
-#  if !defined(VGO_darwin)
-      if (execve("/bin/true", NULL, NULL) < 0)
-#  else
+
+#if defined(VGO_solaris)
+      // Solaris requires non-NULL argv parameter
+      char *const argv_exe[] = {"true", NULL};
+      if (execve("/bin/true", argv_exe, NULL) < 0)
+#elif defined(VGO_darwin)
       if (execve("/usr/bin/true", NULL, NULL) < 0)          
-#  endif
+#else
+      if (execve("/bin/true", NULL, NULL) < 0)
+#endif
       {
          perror("execve");
          exit(1);

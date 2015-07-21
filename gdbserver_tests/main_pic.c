@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include <stdio.h>
 
 static void another_func(char *msg)
@@ -7,8 +8,8 @@ static void another_func(char *msg)
 
 int main (int argc, char *argv[])
 {
-   printf("address of main %p\n", &main);
-   printf("address of another_func %p\n", &another_func);
+   printf("address of main %#" PRIxPTR "\n", (uintptr_t) main);
+   printf("address of another_func %#" PRIxPTR "\n", (uintptr_t) another_func);
    another_func("called from main");
    return 0;
 }

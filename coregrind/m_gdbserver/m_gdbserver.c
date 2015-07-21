@@ -828,6 +828,7 @@ static int interrupts_non_interruptible = 0;
 
 static void give_control_back_to_vgdb(void)
 {
+#if !defined(VGO_solaris)
    /* cause a SIGSTOP to be sent to ourself, so that vgdb takes control.
       vgdb will then restore the stack so as to resume the activity
       before the ptrace (typically do_syscall_WRK). */
@@ -842,6 +843,15 @@ static void give_control_back_to_vgdb(void)
               "vgdb did not took control. Did you kill vgdb ?\n"
               "busy %d vgdb_interrupted_tid %d\n",
               busy, vgdb_interrupted_tid);
+#else /* defined(VGO_solaris) */
+   /* On Solaris, this code is run within the context of an agent thread
+      (see vgdb-invoker-solaris.c and "PCAGENT" control message in
+      proc(4)). Exit the agent thread now.
+    */
+   SysRes sres = VG_(do_syscall0)(SYS_lwp_exit);
+   if (sr_isError(sres))
+      vg_assert2(0, "The agent thread could not be exited\n");
+#endif /* !defined(VGO_solaris) */
 }
 
 /* Using ptrace calls, vgdb will force an invocation of gdbserver.

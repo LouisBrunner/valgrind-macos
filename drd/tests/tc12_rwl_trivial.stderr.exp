@@ -1,10 +1,10 @@
 
 Reader-writer lock not locked by calling thread: rwlock 0x.........
    at 0x........: pthread_rwlock_unlock (drd_pthread_intercepts.c:?)
-   by 0x........: main (tc12_rwl_trivial.c:35)
+   by 0x........: main (tc12_rwl_trivial.c:29)
 rwlock 0x........ was first observed at:
    at 0x........: pthread_rwlock_init (drd_pthread_intercepts.c:?)
-   by 0x........: main (tc12_rwl_trivial.c:24)
+   by 0x........: main (tc12_rwl_trivial.c:18)
 
 
 ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

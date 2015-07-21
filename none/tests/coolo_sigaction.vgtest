@@ -1,1 +1,3 @@
+# Disabled on Solaris because parent process never gets SIGCHLD.
+prereq: (! ../../tests/os_test solaris)
 prog: coolo_sigaction

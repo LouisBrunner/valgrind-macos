@@ -8,12 +8,6 @@
 #include <pthread.h>
 #include <assert.h>
 
-#if defined(VGO_darwin)
-#define OS_IS_DARWIN 1
-#else
-#define OS_IS_DARWIN 0
-#endif
-
 /* Do trivial stuff with a reader-writer lock. */
 
 int main ( void )
@@ -32,7 +26,12 @@ int main ( void )
   r = pthread_rwlock_unlock( &rwl );      assert(r == 0);
 
   /* this should fail - lock is unowned now */
-  r = pthread_rwlock_unlock( &rwl );      assert(OS_IS_DARWIN || r == 0);
+  r = pthread_rwlock_unlock( &rwl );
+#if defined(VGO_darwin) || defined(VGO_solaris)
+  assert(r != 0);
+#else
+  assert(r == 0);
+#endif
 
   r = pthread_rwlock_destroy( &rwl );     assert(r == 0);
 

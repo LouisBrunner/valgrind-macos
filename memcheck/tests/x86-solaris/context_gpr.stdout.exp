@@ -1,0 +1,4 @@
+Values in the signal handler:
+  eax=0, edx=0, esi=0xf3, edi=0xf4
+Values after the return from the signal handler:
+  eax=0, edx=0, esi=0xf3, edi=0xf4

@@ -51,14 +51,27 @@ extern const HChar *VG_(libdir);
 // platforms.
 extern const HChar* VG_(LD_PRELOAD_var_name);
 
+/* Resolves filename of VG_(cl_exec_fd) and copies it to the buffer. 
+   Buffer must not be NULL and buf_size must be at least 1.
+   If buffer is not large enough it is terminated with '\0' only
+   when 'terminate_with_NUL == True'. */
+extern void VG_(client_fname)(HChar *buffer, SizeT buf_size,
+                              Bool terminate_with_NUL);
+
+/* Concatenates client exename and command line arguments into
+   the buffer. Buffer must not be NULL and buf_size must be
+   at least 1. Buffer is always terminated with '\0'. */
+extern void VG_(client_cmd_and_args)(HChar *buffer, SizeT buf_size);
+
 /* ---------------------------------------------------------------------
    Important syscalls
    ------------------------------------------------------------------ */
 
 extern Int  VG_(waitpid)( Int pid, Int *status, Int options );
 extern Int  VG_(system) ( const HChar* cmd );
+extern Int  VG_(spawn)  ( const HChar *filename, const HChar **argv );
 extern Int  VG_(fork)   ( void);
-extern void VG_(execv)  ( const HChar* filename, HChar** argv );
+extern void VG_(execv)  ( const HChar* filename, const HChar** argv );
 extern Int  VG_(sysctl) ( Int *name, UInt namelen, void *oldp, SizeT *oldlenp, void *newp, SizeT newlen );
 
 /* ---------------------------------------------------------------------

@@ -282,6 +282,7 @@ Bool VG_(maybe_Z_demangle) ( const HChar* sym,
          case 'D': EMITSO('$'); break;
          case 'L': EMITSO('('); break;
          case 'R': EMITSO(')'); break;
+         case 'S': EMITSO('/'); break;
          case 'Z': EMITSO('Z'); break;
          default: error = True; goto out;
       }

@@ -2,6 +2,7 @@
 include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS = filter_stderr   \
+		      filter_stderr_solaris \
 		      filter_helgrind \
 		      filter_xml
 
@@ -46,7 +47,8 @@ EXTRA_DIST = \
 	pth_destroy_cond.vgtest \
 		pth_destroy_cond.stdout.exp pth_destroy_cond.stderr.exp \
 	pth_cond_destroy_busy.vgtest pth_cond_destroy_busy.stderr.exp \
-	pth_cond_destroy_busy.stderr.exp-ppc64 \
+		pth_cond_destroy_busy.stderr.exp-ppc64 \
+		pth_cond_destroy_busy.stderr.exp-solaris \
 	pth_spinlock.vgtest pth_spinlock.stdout.exp pth_spinlock.stderr.exp \
 	rwlock_race.vgtest rwlock_race.stdout.exp rwlock_race.stderr.exp \
 	rwlock_test.vgtest rwlock_test.stdout.exp rwlock_test.stderr.exp \
@@ -70,12 +72,13 @@ EXTRA_DIST = \
 	tc07_hbl1.vgtest tc07_hbl1.stdout.exp tc07_hbl1.stderr.exp \
 	tc08_hbl2.vgtest tc08_hbl2.stdout.exp tc08_hbl2.stderr.exp \
 	tc09_bad_unlock.vgtest tc09_bad_unlock.stdout.exp \
-		tc09_bad_unlock.stderr.exp \
+		tc09_bad_unlock.stderr.exp tc09_bad_unlock.stderr.exp-solaris \
 	tc10_rec_lock.vgtest tc10_rec_lock.stdout.exp tc10_rec_lock.stderr.exp \
 	tc11_XCHG.vgtest tc11_XCHG.stdout.exp tc11_XCHG.stderr.exp \
 	tc12_rwl_trivial.vgtest tc12_rwl_trivial.stdout.exp \
 		tc12_rwl_trivial.stderr.exp \
 		tc12_rwl_trivial.stderr.exp-darwin970 \
+		tc12_rwl_trivial.stderr.exp-solaris \
 	tc13_laog1.vgtest tc13_laog1.stdout.exp tc13_laog1.stderr.exp \
 	tc14_laog_dinphils.vgtest tc14_laog_dinphils.stdout.exp \
 		tc14_laog_dinphils.stderr.exp \
@@ -89,6 +92,7 @@ EXTRA_DIST = \
 		tc18_semabuse.stderr.exp \
 		tc18_semabuse.stderr.exp-linux-mips32 \
 		tc18_semabuse.stderr.exp-linux-mips32-b \
+		tc18_semabuse.stderr.exp-solaris \
 	tc19_shadowmem.vgtest tc19_shadowmem.stdout.exp \
 		tc19_shadowmem.stderr.exp tc19_shadowmem.stderr.exp-mips32 \
 	tc20_verifywrap.vgtest tc20_verifywrap.stdout.exp \
@@ -97,10 +101,12 @@ EXTRA_DIST = \
 		tc20_verifywrap.stderr.exp-mips32 \
 		tc20_verifywrap.stderr.exp-mips32-b \
 		tc20_verifywrap.stderr.exp-s390x \
+		tc20_verifywrap.stderr.exp-solaris \
 	tc21_pthonce.vgtest tc21_pthonce.stdout.exp tc21_pthonce.stderr.exp \
 	tc22_exit_w_lock.vgtest tc22_exit_w_lock.stdout.exp \
 		tc22_exit_w_lock.stderr.exp \
 		tc22_exit_w_lock.stderr.exp-kfail-x86 \
+		tc22_exit_w_lock.stderr.exp-solaris \
 	tc23_bogus_condwait.vgtest tc23_bogus_condwait.stdout.exp \
 		tc23_bogus_condwait.stderr.exp \
 		tc23_bogus_condwait.stderr.exp-mips32 \

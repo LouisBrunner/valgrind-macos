@@ -1,0 +1,9 @@
+
+valgrind:  Fatal error at when loading library with soname
+valgrind:     libc.so.1
+valgrind:  Cannot find any text symbol with a name that matches the pattern
+valgrind:     doesntexist
+valgrind:  as required by a --require-text-symbol= specification.
+
+valgrind:  Cannot continue -- exiting now.
+

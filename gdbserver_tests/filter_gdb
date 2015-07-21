@@ -44,6 +44,8 @@ sed -e '/^\ \ \ \ \.\.\.$/d'                                        |
 #       and cleanup some lines for a system call (on ubuntu 10 64 bits)
 #           (pay attention : there are tab characters there in)
 #           + yet another way to get a select system call
+#       and yet another (Solaris way) to get a poll system call
+#             (on 32 bits, we have /lib/libc.so.*, on 64 bits, /lib/64/libc.so.*)
 #       which registers can't be modified
 #       special transform for arm/ppc watchpoints which have an additional address
 #              at the beginning
@@ -73,7 +75,7 @@ sed -e '/Remote debugging using/,/vgdb launched process attached/d'             
     -e 's/\(\[Switching to thread [1234] (Thread ....)\]\)#0/\1\n#0/'                                 \
     -e 's/^\([ \* ] [0-9] Thread .... (tid [0-9] VgTs_WaitSys)  0x........ in\).*$/\1 syscall .../'   \
     -e 's/#[0-9]\(  0x........ in sleeper_or_burner\)/#.\1/'                                          \
-    -e 's/\(#0  0x........ in do_burn ()\) at sleepers.c:39/\1/'                                      \
+    -e 's/\(#0  0x........ in do_burn ()\) at sleepers.c:41/\1/'                                      \
     -e '/^Reading symbols from .*\.\.\.done\./d'                                                      \
     -e '/^Loaded symbols for .*$/d'                                                                   \
     -e '/^Current language.*/d'                                                                       \
@@ -102,6 +104,8 @@ sed -e '/Remote debugging using/,/vgdb launched process attached/d'             
     -e '/^[1-9][0-9]*[ 	]*\.\.\/sysdeps\/unix\/syscall-template\.S/d'                                 \
     -e '/^[1-9][0-9]*[ 	]in *\.\.\/sysdeps\/unix\/syscall-template\.S/d'                              \
     -e '/^[1-9][0-9]*[ 	]T_PSEUDO (SYSCALL_SYMBOL, SYSCALL_NAME, SYSCALL_NARGS)/d'                    \
+    -e 's/in __pollsys () from \/.*$/in syscall .../'                                                 \
+    -e '/^   from \/lib\/64\/libc.so.*$/d'                                                            \
     -e 's/\(Could not write register \)".*"/\1 "xxx"/'                                                \
     -e 's/\(ERROR changing register \).*$/\1 xxx regno y/'                                            \
     -e 's/0x........ in \(main (argc=1, argv=0x........) at watchpoints.c:[24][3689]\)/\1/'           \

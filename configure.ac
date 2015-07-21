@@ -423,6 +423,18 @@ case "${host_os}" in
 	esac
         ;;
 
+     solaris2.11*)
+        AC_MSG_RESULT([ok (${host_os})])
+        VGCONF_OS="solaris"
+        DEFAULT_SUPP="solaris11.supp ${DEFAULT_SUPP}"
+        ;;
+
+     solaris2.12*)
+        AC_MSG_RESULT([ok (${host_os})])
+        VGCONF_OS="solaris"
+        DEFAULT_SUPP="solaris12.supp ${DEFAULT_SUPP}"
+        ;;
+
      *) 
 	AC_MSG_RESULT([no (${host_os})])
 	AC_MSG_ERROR([Valgrind is operating system specific. Sorry.])
@@ -436,7 +448,7 @@ esac
 # does not support building 32 bit programs
 
 case "$ARCH_MAX-$VGCONF_OS" in
-     amd64-linux|ppc64be-linux|arm64-linux)
+     amd64-linux|ppc64be-linux|arm64-linux|amd64-solaris)
         AC_MSG_CHECKING([for 32 bit build support])
         safe_CFLAGS=$CFLAGS
         CFLAGS="-m32"
@@ -714,6 +726,46 @@ case "$ARCH_MAX-$VGCONF_OS" in
         valt_load_address_sec_inner="0xUNSET"
         AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
         ;;
+     x86-solaris)
+        VGCONF_ARCH_PRI="x86"
+        VGCONF_ARCH_SEC=""
+        VGCONF_PLATFORM_PRI_CAPS="X86_SOLARIS"
+        VGCONF_PLATFORM_SEC_CAPS=""
+        valt_load_address_pri_norml="0x38000000"
+        valt_load_address_pri_inner="0x28000000"
+        valt_load_address_sec_norml="0xUNSET"
+        valt_load_address_sec_inner="0xUNSET"
+        AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
+        ;;
+     amd64-solaris)
+        valt_load_address_sec_norml="0xUNSET"
+        valt_load_address_sec_inner="0xUNSET"
+        if test x$vg_cv_only64bit = xyes; then
+           VGCONF_ARCH_PRI="amd64"
+           VGCONF_ARCH_SEC=""
+           VGCONF_PLATFORM_PRI_CAPS="AMD64_SOLARIS"
+           VGCONF_PLATFORM_SEC_CAPS=""
+           valt_load_address_pri_norml="0x38000000"
+           valt_load_address_pri_inner="0x28000000"
+        elif test x$vg_cv_only32bit = xyes; then
+           VGCONF_ARCH_PRI="x86"
+           VGCONF_ARCH_SEC=""
+           VGCONF_PLATFORM_PRI_CAPS="X86_SOLARIS"
+           VGCONF_PLATFORM_SEC_CAPS=""
+           valt_load_address_pri_norml="0x38000000"
+           valt_load_address_pri_inner="0x28000000"
+        else
+           VGCONF_ARCH_PRI="amd64"
+           VGCONF_ARCH_SEC="x86"
+           VGCONF_PLATFORM_PRI_CAPS="AMD64_SOLARIS"
+           VGCONF_PLATFORM_SEC_CAPS="X86_SOLARIS"
+           valt_load_address_pri_norml="0x38000000"
+           valt_load_address_pri_inner="0x28000000"
+           valt_load_address_sec_norml="0x38000000"
+           valt_load_address_sec_inner="0x28000000"
+        fi
+        AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
+        ;;
     *)
         VGCONF_ARCH_PRI="unknown"
         VGCONF_ARCH_SEC="unknown"
@@ -736,10 +788,13 @@ AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_X86,
                test x$VGCONF_PLATFORM_PRI_CAPS = xX86_LINUX \
                  -o x$VGCONF_PLATFORM_SEC_CAPS = xX86_LINUX \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xX86_DARWIN \
-                 -o x$VGCONF_PLATFORM_SEC_CAPS = xX86_DARWIN )
+                 -o x$VGCONF_PLATFORM_SEC_CAPS = xX86_DARWIN \
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xX86_SOLARIS \
+                 -o x$VGCONF_PLATFORM_SEC_CAPS = xX86_SOLARIS )
 AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_AMD64, 
                test x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_LINUX \
-                 -o x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_DARWIN )
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_DARWIN \
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_SOLARIS )
 AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_PPC32, 
                test x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_LINUX \ 
                  -o x$VGCONF_PLATFORM_SEC_CAPS = xPPC32_LINUX )
@@ -793,6 +848,11 @@ AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_X86_DARWIN,
                  -o x$VGCONF_PLATFORM_SEC_CAPS = xX86_DARWIN)
 AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_AMD64_DARWIN, 
                test x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_DARWIN)
+AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_X86_SOLARIS,
+               test x$VGCONF_PLATFORM_PRI_CAPS = xX86_SOLARIS \
+                 -o x$VGCONF_PLATFORM_SEC_CAPS = xX86_SOLARIS)
+AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_AMD64_SOLARIS,
+               test x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_SOLARIS)
 
 
 # Similarly, set up VGCONF_OS_IS_<os>.  Exactly one of these becomes defined.
@@ -813,6 +873,9 @@ AM_CONDITIONAL(VGCONF_OS_IS_LINUX,
 AM_CONDITIONAL(VGCONF_OS_IS_DARWIN,
                test x$VGCONF_PLATFORM_PRI_CAPS = xX86_DARWIN \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_DARWIN)
+AM_CONDITIONAL(VGCONF_OS_IS_SOLARIS,
+               test x$VGCONF_PLATFORM_PRI_CAPS = xX86_SOLARIS \
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_SOLARIS)
 
 
 # Sometimes, in the Makefile.am files, it's useful to know whether or not
@@ -940,6 +1003,12 @@ AC_EGREP_CPP([BIONIC_LIBC], [
 ],
 GLIBC_VERSION="bionic")
 
+# there is only one version of libc on Solaris
+if test x$VGCONF_PLATFORM_PRI_CAPS = xX86_SOLARIS \
+     -o x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_SOLARIS; then
+    GLIBC_VERSION="solaris"
+fi
+
 
 AC_MSG_CHECKING([the glibc version])
 
@@ -990,25 +1059,32 @@ case "${GLIBC_VERSION}" in
 	AC_DEFINE([BIONIC_LIBC], 1, [Define to 1 if you're using Bionic])
 	DEFAULT_SUPP="bionic.supp ${DEFAULT_SUPP}"
 	;;
+     solaris)
+	AC_MSG_RESULT(Solaris)
+	# DEFAULT_SUPP set in host_os switch-case above.
+	# No other suppression file is used.
+	;;
      2.0|2.1|*)
 	AC_MSG_RESULT([unsupported version ${GLIBC_VERSION}])
-	AC_MSG_ERROR([Valgrind requires glibc version 2.2 or later])
-	AC_MSG_ERROR([or Darwin or Bionic libc])
+	AC_MSG_ERROR([Valgrind requires glibc version 2.2 or later,])
+	AC_MSG_ERROR([Darwin libc, Bionic libc or Solaris libc])
 	;;
 esac
 
 AC_SUBST(GLIBC_VERSION)
 
 
-# Add default suppressions for the X client libraries.  Make no
-# attempt to detect whether such libraries are installed on the
-# build machine (or even if any X facilities are present); just
-# add the suppressions antidisirregardless.
-DEFAULT_SUPP="xfree-4.supp ${DEFAULT_SUPP}"
-DEFAULT_SUPP="xfree-3.supp ${DEFAULT_SUPP}"
+if test "$VGCONF_OS" != "solaris"; then
+    # Add default suppressions for the X client libraries.  Make no
+    # attempt to detect whether such libraries are installed on the
+    # build machine (or even if any X facilities are present); just
+    # add the suppressions antidisirregardless.
+    DEFAULT_SUPP="xfree-4.supp ${DEFAULT_SUPP}"
+    DEFAULT_SUPP="xfree-3.supp ${DEFAULT_SUPP}"
 
-# Add glibc and X11 suppressions for exp-sgcheck
-DEFAULT_SUPP="exp-sgcheck.supp ${DEFAULT_SUPP}"
+    # Add glibc and X11 suppressions for exp-sgcheck
+    DEFAULT_SUPP="exp-sgcheck.supp ${DEFAULT_SUPP}"
+fi
 
 
 #----------------------------------------------------------------------------
@@ -2522,6 +2598,712 @@ fi
 
 
 #----------------------------------------------------------------------------
+# Solaris-specific checks.
+#----------------------------------------------------------------------------
+
+if test "$VGCONF_OS" = "solaris" ; then
+# Solaris-specific check determining if the Sun Studio Assembler is used to
+# build Valgrind.  The test checks if the x86/amd64 assembler understands the
+# cmovl.l instruction, if yes then it's Sun Assembler.
+#
+# C-level symbol: none
+# Automake-level symbol: SOLARIS_SUN_STUDIO_AS
+#
+AC_MSG_CHECKING([if x86/amd64 assembler speaks cmovl.l (Solaris-specific)])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+]], [[
+  __asm__ __volatile__("cmovl.l %edx, %eax");
+]])], [
+solaris_have_sun_studio_as=yes
+AC_MSG_RESULT([yes])
+], [
+solaris_have_sun_studio_as=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(SOLARIS_SUN_STUDIO_AS, test x$solaris_have_sun_studio_as = xyes)
+
+# Solaris-specific check determining if symbols __xpg4 and __xpg6
+# are present in linked elfs when gcc is invoked with -std=gnu99.
+# See solaris/vgpreload-solaris.mapfile for details.
+# gcc on Solaris instructs linker to include these symbols,
+# gcc on illumos does not.
+#
+# C-level symbol: none
+# Automake-level symbol: SOLARIS_XPG_SYMBOLS_PRESENT
+#
+save_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -std=gnu99"
+AC_MSG_CHECKING([if xpg symbols are present with -std=gnu99 (Solaris-specific)])
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(int argc, const char *argv[]) {
+    char command[PATH_MAX + 50];
+    snprintf(command, sizeof(command), "nm %s | egrep '__xpg[4,6]'", argv[0]);
+
+    FILE *output = popen(command, "r");
+    if (output == NULL) return -1;
+
+    char buf[100];
+    if (fgets(buf, sizeof(buf), output) != NULL) {
+        pclose(output);
+        return 0;
+    } else {
+        pclose(output);
+        return 1;
+    }
+}
+]])], [
+solaris_xpg_symbols_present=yes
+AC_MSG_RESULT([yes])
+], [
+solaris_xpg_symbols_present=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(SOLARIS_XPG_SYMBOLS_PRESENT, test x$solaris_xpg_symbols_present = xyes)
+CFLAGS="$save_CFLAGS"
+
+
+# Solaris-specific check determining default platform for the Valgrind launcher.
+# Used in case the launcher cannot select platform by looking at the client
+# image (for example because the executable is a shell script).
+#
+# C-level symbol: SOLARIS_LAUNCHER_DEFAULT_PLATFORM
+# Automake-level symbol: none
+#
+AC_MSG_CHECKING([for default platform of Valgrind launcher (Solaris-specific)])
+# Get the ELF class of /bin/sh first.
+if ! test -f /bin/sh; then
+  AC_MSG_ERROR([Shell interpreter `/bin/sh' not found.])
+fi
+elf_class=$( /usr/bin/file /bin/sh | sed -n 's/.*ELF \(..\)-bit.*/\1/p' )
+case "$elf_class" in
+  64)
+    default_arch="$VGCONF_ARCH_PRI";
+    ;;
+  32)
+    if test "x$VGCONF_ARCH_SEC" != "x"; then
+      default_arch="$VGCONF_ARCH_SEC"
+    else
+      default_arch="$VGCONF_ARCH_PRI";
+    fi
+    ;;
+  *)
+    AC_MSG_ERROR([Cannot determine ELF class of `/bin/sh'.])
+    ;;
+esac
+default_platform="$default_arch-$VGCONF_OS"
+AC_MSG_RESULT([$default_platform])
+AC_DEFINE_UNQUOTED([SOLARIS_LAUNCHER_DEFAULT_PLATFORM], ["$default_platform"],
+                   [Default platform for Valgrind launcher.])
+
+
+# Solaris-specific check determining if the old syscalls are available.
+#
+# C-level symbol: SOLARIS_OLD_SYSCALLS
+# Automake-level symbol: SOLARIS_OLD_SYSCALLS
+#
+AC_MSG_CHECKING([for the old Solaris syscalls (Solaris-specific)])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/syscall.h>
+]], [[
+  return !SYS_open;
+]])], [
+solaris_old_syscalls=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([SOLARIS_OLD_SYSCALLS], 1,
+          [Define to 1 if you have the old Solaris syscalls.])
+], [
+solaris_old_syscalls=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(SOLARIS_OLD_SYSCALLS, test x$solaris_old_syscalls = xyes)
+
+
+# Solaris-specific check determining if the new accept() syscall is available.
+#
+# Old syscall:
+# int accept(int sock, struct sockaddr *name, socklen_t *namelenp,
+#            int version);
+#
+# New syscall (available on illumos):
+# int accept(int sock, struct sockaddr *name, socklen_t *namelenp,
+#            int version, int flags);
+#
+# If the old syscall is present then the following syscall will fail with
+# ENOTSOCK (because file descriptor 0 is not a socket), if the new syscall is
+# available then it will fail with EINVAL (because the flags parameter is
+# invalid).
+#
+# C-level symbol: SOLARIS_NEW_ACCEPT_SYSCALL
+# Automake-level symbol: none
+#
+AC_MSG_CHECKING([for the new `accept' syscall (Solaris-specific)])
+AC_RUN_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/syscall.h>
+#include <errno.h>
+]], [[
+  errno = 0;
+  syscall(SYS_accept, 0, 0, 0, 0, -1);
+  return !(errno == EINVAL);
+]])], [
+AC_MSG_RESULT([yes])
+AC_DEFINE([SOLARIS_NEW_ACCEPT_SYSCALL], 1,
+          [Define to 1 if you have the new `accept' syscall.])
+], [
+AC_MSG_RESULT([no])
+])
+
+
+# Solaris-specific check determining if the new illumos pipe() syscall is
+# available.
+#
+# Old syscall:
+# longlong_t pipe();
+#
+# New syscall (available on illumos):
+# int pipe(intptr_t arg, int flags);
+#
+# If the old syscall is present then the following call will succeed, if the
+# new syscall is available then it will fail with EFAULT (because address 0
+# cannot be accessed).
+#
+# C-level symbol: SOLARIS_NEW_PIPE_SYSCALL
+# Automake-level symbol: none
+#
+AC_MSG_CHECKING([for the new `pipe' syscall (Solaris-specific)])
+AC_RUN_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/syscall.h>
+#include <errno.h>
+]], [[
+  errno = 0;
+  syscall(SYS_pipe, 0, 0);
+  return !(errno == EFAULT);
+]])], [
+AC_MSG_RESULT([yes])
+AC_DEFINE([SOLARIS_NEW_PIPE_SYSCALL], 1,
+          [Define to 1 if you have the new `pipe' syscall.])
+], [
+AC_MSG_RESULT([no])
+])
+
+
+# Solaris-specific check determining if the new lwp_sigqueue() syscall is
+# available.
+#
+# Old syscall:
+# int lwp_kill(id_t lwpid, int sig);
+#
+# New syscall (available on Solaris 11):
+# int lwp_sigqueue(id_t lwpid, int sig, void *value,
+#                  int si_code, timespec_t *timeout);
+#
+# C-level symbol: SOLARIS_LWP_SIGQUEUE_SYSCALL
+# Automake-level symbol: SOLARIS_LWP_SIGQUEUE_SYSCALL
+#
+AC_MSG_CHECKING([for the new `lwp_sigqueue' syscall (Solaris-specific)])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/syscall.h> 
+]], [[
+  return !SYS_lwp_sigqueue;
+]])], [
+solaris_lwp_sigqueue_syscall=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([SOLARIS_LWP_SIGQUEUE_SYSCALL], 1,
+          [Define to 1 if you have the new `lwp_sigqueue' syscall.])
+], [
+solaris_lwp_sigqueue_syscall=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(SOLARIS_LWP_SIGQUEUE_SYSCALL, test x$solaris_lwp_sigqueue_syscall = xyes)
+
+
+# Solaris-specific check determining if the lwp_sigqueue() syscall
+# takes both pid and thread id arguments or just thread id.
+#
+# Old syscall (available on Solaris 11.x):
+# int lwp_sigqueue(id_t lwpid, int sig, void *value,
+#                  int si_code, timespec_t *timeout);
+#
+# New syscall (available on Solaris 12):
+# int lwp_sigqueue(pid_t pid, id_t lwpid, int sig, void *value,
+#                  int si_code, timespec_t *timeout);
+#
+# If the old syscall is present then the following syscall will fail with
+# EINVAL (because signal is out of range); if the new syscall is available
+# then it will fail with ESRCH (because it would not find such thread in the
+# current process).
+#
+# C-level symbol: SOLARIS_LWP_SIGQUEUE_SYSCALL_TAKES_PID
+# Automake-level symbol: SOLARIS_LWP_SIGQUEUE_SYSCALL_TAKES_PID
+#
+AM_COND_IF(SOLARIS_LWP_SIGQUEUE_SYSCALL,
+AC_MSG_CHECKING([if the `lwp_sigqueue' syscall accepts pid (Solaris-specific)])
+AC_RUN_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/syscall.h>
+#include <errno.h>
+]], [[
+  errno = 0;
+  syscall(SYS_lwp_sigqueue, 0, 101, 0, 0, 0, 0);
+  return !(errno == ESRCH);
+]])], [
+solaris_lwp_sigqueue_syscall_takes_pid=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([SOLARIS_LWP_SIGQUEUE_SYSCALL_TAKES_PID], 1,
+          [Define to 1 if you have the new `lwp_sigqueue' syscall which accepts pid.])
+], [
+solaris_lwp_sigqueue_syscall_takes_pid=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(SOLARIS_LWP_SIGQUEUE_SYSCALL_TAKES_PID,
+               test x$solaris_lwp_sigqueue_syscall_takes_pid = xyes)
+,
+AM_CONDITIONAL(SOLARIS_LWP_SIGQUEUE_SYSCALL_TAKES_PID, test x = y)
+)
+
+
+# Solaris-specific check determining if the new lwp_name() syscall is
+# available.
+#
+# New syscall (available on Solaris 11):
+# int lwp_name(int opcode, id_t lwpid, char *name, size_t len);
+#
+# C-level symbol: SOLARIS_LWP_NAME_SYSCALL
+# Automake-level symbol: SOLARIS_LWP_NAME_SYSCALL
+#
+AC_MSG_CHECKING([for the new `lwp_name' syscall (Solaris-specific)])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/syscall.h>
+]], [[
+  return !SYS_lwp_name;
+]])], [
+solaris_lwp_name_syscall=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([SOLARIS_LWP_NAME_SYSCALL], 1,
+          [Define to 1 if you have the new `lwp_name' syscall.])
+], [
+solaris_lwp_name_syscall=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(SOLARIS_LWP_NAME_SYSCALL, test x$solaris_lwp_name_syscall = xyes)
+
+
+# Solaris-specific check determining if the new zone() syscall subcodes
+# ZONE_LIST_DEFUNCT and ZONE_GETATTR_DEFUNCT are available.  These subcodes
+# were added in Solaris 11 but are missing on illumos.
+#
+# C-level symbol: SOLARIS_ZONE_DEFUNCT
+# Automake-level symbol: SOLARIS_ZONE_DEFUNCT
+#
+AC_MSG_CHECKING([for ZONE_LIST_DEFUNCT and ZONE_GETATTR_DEFUNCT (Solaris-specific)])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/zone.h>
+]], [[
+  return !(ZONE_LIST_DEFUNCT && ZONE_GETATTR_DEFUNCT);
+]])], [
+solaris_zone_defunct=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([SOLARIS_ZONE_DEFUNCT], 1,
+          [Define to 1 if you have the `ZONE_LIST_DEFUNCT' and `ZONE_GETATTR_DEFUNC' constants.])
+], [
+solaris_zone_defunct=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(SOLARIS_ZONE_DEFUNCT, test x$solaris_zone_defunct = xyes)
+
+
+# Solaris-specific check determining if the new shmsys() syscall subcodes
+# IPC_XSTAT64, SHMADV, SHM_ADV_GET, SHM_ADV_SET and SHMGET_OSM are available.
+# These subcodes were added in Solaris 11 but are missing on illumos.
+#
+# C-level symbol: SOLARIS_SHM_NEW
+# Automake-level symbol: SOLARIS_SHM_NEW
+#
+AC_MSG_CHECKING([for SHMADV, SHM_ADV_GET, SHM_ADV_SET and SHMGET_OSM (Solaris-specific)])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/ipc_impl.h>
+#include <sys/shm.h>
+#include <sys/shm_impl.h>
+]], [[
+  return !(IPC_XSTAT64 && SHMADV && SHM_ADV_GET && SHM_ADV_SET && SHMGET_OSM);
+]])], [
+solaris_shm_new=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([SOLARIS_SHM_NEW], 1,
+          [Define to 1 if you have the `IPC_XSTAT64', `SHMADV', `SHM_ADV_GET', `SHM_ADV_SET' and `SHMGET_OSM' constants.])
+], [
+solaris_shm_new=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(SOLARIS_SHM_NEW, test x$solaris_shm_new = xyes)
+
+
+# Solaris-specific check determining if prxregset_t is available.  Illumos
+# currently does not define it on the x86 platform.
+#
+# C-level symbol: SOLARIS_PRXREGSET_T
+# Automake-level symbol: SOLARIS_PRXREGSET_T
+#
+AC_MSG_CHECKING([for the `prxregset_t' type (Solaris-specific)])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/procfs_isa.h>
+]], [[
+  return !sizeof(prxregset_t);
+]])], [
+solaris_prxregset_t=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([SOLARIS_PRXREGSET_T], 1,
+          [Define to 1 if you have the `prxregset_t' type.])
+], [
+solaris_prxregset_t=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(SOLARIS_PRXREGSET_T, test x$solaris_prxregset_t = xyes)
+
+
+# Solaris-specific check determining if the new frealpathat() syscall is
+# available.
+#
+# New syscall (available on Solaris 11.1):
+# int frealpathat(int fd, char *path, char *buf, size_t buflen);
+#
+# C-level symbol: SOLARIS_FREALPATHAT_SYSCALL
+# Automake-level symbol: SOLARIS_FREALPATHAT_SYSCALL
+#
+AC_MSG_CHECKING([for the new `frealpathat' syscall (Solaris-specific)])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/syscall.h>
+]], [[
+  return !SYS_frealpathat;
+]])], [
+solaris_frealpathat_syscall=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([SOLARIS_FREALPATHAT_SYSCALL], 1,
+          [Define to 1 if you have the new `frealpathat' syscall.])
+], [
+solaris_frealpathat_syscall=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(SOLARIS_FREALPATHAT_SYSCALL, test x$solaris_frealpathat_syscall = xyes)
+
+
+# Solaris-specific check determining if the new uuidsys() syscall is
+# available.
+#
+# New syscall (available on newer Solaris):
+# int uuidsys(struct uuid *uuid);
+#
+# C-level symbol: SOLARIS_UUIDSYS_SYSCALL
+# Automake-level symbol: SOLARIS_UUIDSYS_SYSCALL
+#
+AC_MSG_CHECKING([for the new `uuidsys' syscall (Solaris-specific)])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/syscall.h>
+]], [[
+  return !SYS_uuidsys;
+]])], [
+solaris_uuidsys_syscall=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([SOLARIS_UUIDSYS_SYSCALL], 1,
+          [Define to 1 if you have the new `uuidsys' syscall.])
+], [
+solaris_uuidsys_syscall=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(SOLARIS_UUIDSYS_SYSCALL, test x$solaris_uuidsys_syscall = xyes)
+
+
+# Solaris-specific check determining if the new labelsys() syscall subcode
+# TNDB_GET_TNIP is available.  This subcode was added in Solaris 11 but is
+# missing on illumos.
+#
+# C-level symbol: SOLARIS_TNDB_GET_TNIP
+# Automake-level symbol: SOLARIS_TNDB_GET_TNIP
+#
+AC_MSG_CHECKING([for TNDB_GET_TNIP (Solaris-specific)])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/tsol/tndb.h>
+]], [[
+  return !TNDB_GET_TNIP;
+]])], [
+solaris_tndb_get_tnip=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([SOLARIS_TNDB_GET_TNIP], 1,
+          [Define to 1 if you have the `TNDB_GET_TNIP' constant.])
+], [
+solaris_tndb_get_tnip=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(SOLARIS_TNDB_GET_TNIP, test x$solaris_tndb_get_tnip = xyes)
+
+
+# Solaris-specific check determining if the new labelsys() syscall opcodes
+# TSOL_GETCLEARANCE and TSOL_SETCLEARANCE are available. These opcodes were
+# added in Solaris 11 but are missing on illumos.
+#
+# C-level symbol: SOLARIS_TSOL_CLEARANCE
+# Automake-level symbol: SOLARIS_TSOL_CLEARANCE
+#
+AC_MSG_CHECKING([for TSOL_GETCLEARANCE and TSOL_SETCLEARANCE (Solaris-specific)])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/tsol/tsyscall.h>
+]], [[
+  return !(TSOL_GETCLEARANCE && TSOL_SETCLEARANCE);
+]])], [
+solaris_tsol_clearance=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([SOLARIS_TSOL_CLEARANCE], 1,
+          [Define to 1 if you have the `TSOL_GETCLEARANCE' and `TSOL_SETCLEARANCE' constants.])
+], [
+solaris_tsol_clearance=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(SOLARIS_TSOL_CLEARANCE, test x$solaris_tsol_clearance = xyes)
+
+
+# Solaris-specific check determining if the utimesys() syscall is
+# available (on illumos and older Solaris).
+#
+# C-level symbol: SOLARIS_UTIMESYS_SYSCALL
+# Automake-level symbol: SOLARIS_UTIMESYS_SYSCALL
+#
+AC_MSG_CHECKING([for the `utimesys' syscall (Solaris-specific)])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/syscall.h>
+]], [[
+  return !SYS_utimesys;
+]])], [
+solaris_utimesys_syscall=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([SOLARIS_UTIMESYS_SYSCALL], 1,
+          [Define to 1 if you have the `utimesys' syscall.])
+], [
+solaris_utimesys_syscall=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(SOLARIS_UTIMESYS_SYSCALL, test x$solaris_utimesys_syscall = xyes)
+
+
+# Solaris-specific check determining if the utimensat() syscall is
+# available (on newer Solaris).
+#
+# C-level symbol: SOLARIS_UTIMENSAT_SYSCALL
+# Automake-level symbol: SOLARIS_UTIMENSAT_SYSCALL
+#
+AC_MSG_CHECKING([for the `utimensat' syscall (Solaris-specific)])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/syscall.h>
+]], [[
+  return !SYS_utimensat;
+]])], [
+solaris_utimensat_syscall=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([SOLARIS_UTIMENSAT_SYSCALL], 1,
+          [Define to 1 if you have the `utimensat' syscall.])
+], [
+solaris_utimensat_syscall=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(SOLARIS_UTIMENSAT_SYSCALL, test x$solaris_utimensat_syscall = xyes)
+
+
+# Solaris-specific check determining if the spawn() syscall is available
+# (on newer Solaris).
+#
+# C-level symbol: SOLARIS_SPAWN_SYSCALL
+# Automake-level symbol: SOLARIS_SPAWN_SYSCALL
+#
+AC_MSG_CHECKING([for the `spawn' syscall (Solaris-specific)])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/syscall.h>
+]], [[
+  return !SYS_spawn;
+]])], [
+solaris_spawn_syscall=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([SOLARIS_SPAWN_SYSCALL], 1,
+          [Define to 1 if you have the `spawn' syscall.])
+], [
+solaris_spawn_syscall=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(SOLARIS_SPAWN_SYSCALL, test x$solaris_spawn_syscall = xyes)
+
+
+# Solaris-specific check determining whether nscd (name switch cache daemon)
+# attaches its door at /system/volatile/name_service_door (Solaris)
+# or at /var/run/name_service_door (illumos).
+#
+# Note that /var/run is a symlink to /system/volatile on Solaris
+# but not vice versa on illumos.
+#
+# C-level symbol: SOLARIS_NSCD_DOOR_SYSTEM_VOLATILE
+# Automake-level symbol: SOLARIS_NSCD_DOOR_SYSTEM_VOLATILE
+#
+AC_MSG_CHECKING([for nscd door location (Solaris-specific)])
+if test -e /system/volatile/name_service_door; then
+    solaris_nscd_door_system_volatile=yes
+    AC_MSG_RESULT([/system/volatile/name_service_door])
+    AC_DEFINE([SOLARIS_NSCD_DOOR_SYSTEM_VOLATILE], 1,
+              [Define to 1 if nscd attaches to /system/volatile/name_service_door.])
+else
+    solaris_nscd_door_system_volatile=no
+    AC_MSG_RESULT([/var/run/name_service_door])
+fi
+AM_CONDITIONAL(SOLARIS_NSCD_DOOR_SYSTEM_VOLATILE, test x$solaris_nscd_door_system_volatile = xyes)
+
+
+# Solaris-specific check determining if the new gethrt() fasttrap is available.
+#
+# New fasttrap (available on Solaris 11):
+# hrt_t *gethrt(void);
+#
+# C-level symbol: SOLARIS_GETHRT_FASTTRAP
+# Automake-level symbol: SOLARIS_GETHRT_FASTTRAP
+#
+AC_MSG_CHECKING([for the new `gethrt' fasttrap (Solaris-specific)])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/trap.h>
+]], [[
+  return !T_GETHRT;
+]])], [
+solaris_gethrt_fasttrap=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([SOLARIS_GETHRT_FASTTRAP], 1,
+          [Define to 1 if you have the new `gethrt' fasttrap.])
+], [
+solaris_gethrt_fasttrap=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(SOLARIS_GETHRT_FASTTRAP, test x$solaris_gethrt_fasttrap = xyes)
+
+
+# Solaris-specific check determining if the new get_zone_offset() fasttrap
+# is available.
+#
+# New fasttrap (available on Solaris 11):
+# zonehrtoffset_t *get_zone_offset(void);
+#
+# C-level symbol: SOLARIS_GETZONEOFFSET_FASTTRAP
+# Automake-level symbol: SOLARIS_GETZONEOFFSET_FASTTRAP
+#
+AC_MSG_CHECKING([for the new `get_zone_offset' fasttrap (Solaris-specific)])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/trap.h>
+]], [[
+  return !T_GETZONEOFFSET;
+]])], [
+solaris_getzoneoffset_fasttrap=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([SOLARIS_GETZONEOFFSET_FASTTRAP], 1,
+          [Define to 1 if you have the new `get_zone_offset' fasttrap.])
+], [
+solaris_getzoneoffset_fasttrap=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(SOLARIS_GETZONEOFFSET_FASTTRAP, test x$solaris_getzoneoffset_fasttrap = xyes)
+
+
+# Solaris-specific check determining if the execve() syscall
+# takes fourth argument (flags) or not.
+#
+# Old syscall (available on illumos):
+# int execve(const char *fname, const char **argv, const char **envp);
+#
+# New syscall (available on Solaris):
+# int execve(uintptr_t file, const char **argv, const char **envp, int flags);
+#
+# If the new syscall is present then it will fail with EINVAL (because flags
+# are invalid); if the old syscall is available then it will fail with ENOENT
+# (because the file could not be found).
+#
+# C-level symbol: SOLARIS_EXECVE_SYSCALL_TAKES_FLAGS
+# Automake-level symbol: SOLARIS_EXECVE_SYSCALL_TAKES_FLAGS
+#
+AC_MSG_CHECKING([if the `execve' syscall accepts flags (Solaris-specific)])
+AC_RUN_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/syscall.h>
+#include <errno.h>
+]], [[
+  errno = 0;
+  syscall(SYS_execve, "/no/existing/path", 0, 0, 0xdeadbeef, 0, 0);
+  return !(errno == EINVAL);
+]])], [
+solaris_execve_syscall_takes_flags=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([SOLARIS_EXECVE_SYSCALL_TAKES_FLAGS], 1,
+          [Define to 1 if you have the new `execve' syscall which accepts flags.])
+], [
+solaris_execve_syscall_takes_flags=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(SOLARIS_EXECVE_SYSCALL_TAKES_FLAGS,
+               test x$solaris_execve_syscall_takes_flags = xyes)
+
+
+# Solaris-specific check determining version of the repository cache protocol.
+# Every Solaris version uses a different one, ranging from 21 to current 25.
+# The check is very ugly, though.
+#
+# C-level symbol: SOLARIS_REPCACHE_PROTOCOL_VERSION vv
+# Automake-level symbol: none
+#
+AC_PATH_PROG(DIS_PATH, dis, false)
+if test "x$DIS_PATH" = "xfalse"; then
+  AC_MSG_FAILURE([Object code disassembler (`dis') not found.])
+fi
+AC_CHECK_LIB(scf, scf_handle_bind, [], [
+  AC_MSG_WARN([Function `scf_handle_bind' was not found in `libscf'.])
+  AC_MSG_ERROR([Cannot determine version of the repository cache protocol.])
+])
+
+AC_MSG_CHECKING([for version of the repository cache protocol (Solaris-specific)])
+if test "X$VGCONF_ARCH_PRI" = "Xamd64"; then
+  libscf=/usr/lib/64/libscf.so.1
+else
+  libscf=/usr/lib/libscf.so.1
+fi
+if ! $DIS_PATH -F scf_handle_bind $libscf  | grep -q 0x526570; then
+  AC_MSG_WARN([Function `scf_handle_bind' does not contain repository cache protocol version.])
+  AC_MSG_ERROR([Cannot determine version of the repository cache protocol.])
+fi
+hex=$( $DIS_PATH -F scf_handle_bind $libscf  | sed -n 's/.*0x526570\(..\).*/\1/p' )
+if test -z "$hex"; then
+  AC_MSG_WARN([Version of the repository cache protocol is empty?!])
+  AC_MSG_ERROR([Cannot determine version of the repository cache protocol.])
+fi
+version=$( printf "%d\n" 0x$hex )
+AC_MSG_RESULT([$version])
+AC_DEFINE_UNQUOTED([SOLARIS_REPCACHE_PROTOCOL_VERSION], [$version],
+                   [Version number of the repository door cache protocol.])
+
+else
+AM_CONDITIONAL(SOLARIS_SUN_STUDIO_AS, false)
+AM_CONDITIONAL(SOLARIS_XPG_SYMBOLS_PRESENT, false)
+AM_CONDITIONAL(SOLARIS_OLD_SYSCALLS, false)
+AM_CONDITIONAL(SOLARIS_LWP_SIGQUEUE_SYSCALL, false)
+AM_CONDITIONAL(SOLARIS_LWP_SIGQUEUE_SYSCALL_TAKES_PID, false)
+AM_CONDITIONAL(SOLARIS_LWP_NAME_SYSCALL, false)
+AM_CONDITIONAL(SOLARIS_ZONE_DEFUNCT, false)
+AM_CONDITIONAL(SOLARIS_SHM_NEW, false)
+AM_CONDITIONAL(SOLARIS_PRXREGSET_T, false)
+AM_CONDITIONAL(SOLARIS_FREALPATHAT_SYSCALL, false)
+AM_CONDITIONAL(SOLARIS_UUIDSYS_SYSCALL, false)
+AM_CONDITIONAL(SOLARIS_TNDB_GET_TNIP, false)
+AM_CONDITIONAL(SOLARIS_TSOL_CLEARANCE, false)
+AM_CONDITIONAL(SOLARIS_UTIMESYS_SYSCALL, false)
+AM_CONDITIONAL(SOLARIS_UTIMENSAT_SYSCALL, false)
+AM_CONDITIONAL(SOLARIS_SPAWN_SYSCALL, false)
+AM_CONDITIONAL(SOLARIS_NSCD_DOOR_SYSTEM_VOLATILE, false)
+AM_CONDITIONAL(SOLARIS_GETHRT_FASTTRAP, false)
+AM_CONDITIONAL(SOLARIS_GETZONEOFFSET_FASTTRAP, false)
+AM_CONDITIONAL(SOLARIS_EXECVE_SYSCALL_TAKES_FLAGS, false)
+fi # test "$VGCONF_OS" = "solaris"
+
+
+#----------------------------------------------------------------------------
 # Checks for C header files.
 #----------------------------------------------------------------------------
 
@@ -2535,6 +3317,7 @@ AC_CHECK_HEADERS([       \
         sys/eventfd.h    \
         sys/klog.h       \
         sys/poll.h       \
+        sys/prctl.h      \
         sys/signal.h     \
         sys/signalfd.h   \
         sys/syscall.h    \
@@ -2651,7 +3434,8 @@ if test x$VGCONF_PLATFORM_PRI_CAPS = xX86_LINUX \
      -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_LINUX \
      -o x$VGCONF_PLATFORM_PRI_CAPS = xARM_LINUX \
      -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX \
-     -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX ; then
+     -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX \
+     -o x$VGCONF_PLATFORM_PRI_CAPS = xX86_SOLARIS ; then
   mflag_primary=$FLAG_M32
 elif test x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_LINUX \
        -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_LINUX \
@@ -2666,7 +3450,8 @@ fi
 
 mflag_secondary=
 if test x$VGCONF_PLATFORM_SEC_CAPS = xX86_LINUX \
-     -o x$VGCONF_PLATFORM_SEC_CAPS = xPPC32_LINUX ; then
+     -o x$VGCONF_PLATFORM_SEC_CAPS = xPPC32_LINUX \
+     -o x$VGCONF_PLATFORM_SEC_CAPS = xX86_SOLARIS ; then
   mflag_secondary=$FLAG_M32
 elif test x$VGCONF_PLATFORM_SEC_CAPS = xX86_DARWIN ; then
   mflag_secondary="$FLAG_M32 -arch i386"
@@ -2690,6 +3475,9 @@ AM_COND_IF([VGCONF_OS_IS_LINUX],
 AM_COND_IF([VGCONF_OS_IS_DARWIN],
            [CFLAGS_MPI="-g -O -fno-omit-frame-pointer -Wall -dynamic"
             LDFLAGS_MPI="-dynamic -dynamiclib -all_load"])
+AM_COND_IF([VGCONF_OS_IS_SOLARIS],
+           [CFLAGS_MPI="-g -O -fno-omit-frame-pointer -Wall -fpic"
+            LDFLAGS_MPI="-fpic -shared"])
 
 AC_SUBST([CFLAGS_MPI])
 AC_SUBST([LDFLAGS_MPI])
@@ -3100,6 +3888,7 @@ AC_CONFIG_FILES([
    perf/Makefile 
    perf/vg_perf
    gdbserver_tests/Makefile
+   gdbserver_tests/solaris/Makefile
    include/Makefile 
    auxprogs/Makefile
    mpi/Makefile
@@ -3111,8 +3900,11 @@ AC_CONFIG_FILES([
    memcheck/tests/x86/Makefile
    memcheck/tests/linux/Makefile
    memcheck/tests/darwin/Makefile
+   memcheck/tests/solaris/Makefile
    memcheck/tests/amd64-linux/Makefile
    memcheck/tests/x86-linux/Makefile
+   memcheck/tests/amd64-solaris/Makefile
+   memcheck/tests/x86-solaris/Makefile
    memcheck/tests/ppc32/Makefile
    memcheck/tests/ppc64/Makefile
    memcheck/tests/s390x/Makefile
@@ -3148,10 +3940,13 @@ AC_CONFIG_FILES([
    none/tests/tilegx/Makefile
    none/tests/linux/Makefile
    none/tests/darwin/Makefile
+   none/tests/solaris/Makefile
    none/tests/amd64-linux/Makefile
    none/tests/x86-linux/Makefile
    none/tests/amd64-darwin/Makefile
    none/tests/x86-darwin/Makefile
+   none/tests/amd64-solaris/Makefile
+   none/tests/x86-solaris/Makefile
    exp-sgcheck/Makefile
    exp-sgcheck/tests/Makefile
    drd/Makefile
@@ -3167,11 +3962,14 @@ AC_CONFIG_FILES([
    exp-dhat/Makefile
    exp-dhat/tests/Makefile
    shared/Makefile
+   solaris/Makefile
 ])
 AC_CONFIG_FILES([coregrind/link_tool_exe_linux],
                 [chmod +x coregrind/link_tool_exe_linux])
 AC_CONFIG_FILES([coregrind/link_tool_exe_darwin],
                 [chmod +x coregrind/link_tool_exe_darwin])
+AC_CONFIG_FILES([coregrind/link_tool_exe_solaris],
+                [chmod +x coregrind/link_tool_exe_solaris])
 AC_OUTPUT
 
 cat<<EOF

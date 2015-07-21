@@ -7,7 +7,7 @@ vgopts: --tool=memcheck --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mc
 # filter_gdb to replace pid and Thread numbers in the output of the program:
 stderr_filter: filter_gdb
 # Disable on Darwin: inferior call rejected as it cannot find malloc.
-prereq: test -e gdb && ../tests/os_test linux
+prereq: test -e gdb && ! ../tests/os_test darwin
 progB: gdb
 argsB:  --quiet -l 60 --nx ./sleepers
 stdinB: mcinfcallRU.stdinB.gdb

@@ -1,7 +1,7 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-dist_noinst_SCRIPTS = filter_cpuid filter_stderr gen_insn_test.pl
+dist_noinst_SCRIPTS = filter_cpuid filter_inf_nan filter_stderr gen_insn_test.pl
 
 CLEANFILES = $(addsuffix .c,$(INSN_TESTS))
 
@@ -44,6 +44,7 @@ EXTRA_DIST = \
 	fcmovnu.vgtest fcmovnu.stderr.exp fcmovnu.stdout.exp \
 	fxtract.vgtest fxtract.stderr.exp fxtract.stdout.exp \
 	fxtract.stdout.exp-older-glibc \
+	getseg.stdout.exp getseg.stderr.exp getseg.vgtest \
 	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \
@@ -91,6 +92,7 @@ check_PROGRAMS = \
 	bug127521-64 bug132813-amd64 bug132918 bug137714-amd64 \
 	clc \
 	cmpxchg \
+	getseg \
 	$(INSN_TESTS) \
 	nan80and64 \
 	rcl-amd64 \

@@ -1,0 +1,8 @@
+Syscall param sendmsg(msg) points to uninitialised byte(s)
+   at 0x........: __so_sendmsg (in /...libc...)
+   by 0x........: __xnet_sendmsg (in /...libc...)
+   by 0x........: main (sendmsg.c:46)
+ Address 0x........ is on thread 1's stack
+ in frame #2, created by main (sendmsg.c:13)
+
+sendmsg: 6

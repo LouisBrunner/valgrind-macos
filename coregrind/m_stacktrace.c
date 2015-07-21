@@ -92,7 +92,8 @@
    
 /* ------------------------ x86 ------------------------- */
 
-#if defined(VGP_x86_linux) || defined(VGP_x86_darwin)
+#if defined(VGP_x86_linux) || defined(VGP_x86_darwin) \
+    || defined(VGP_x86_solaris)
 
 #define N_FP_CF_VERIF 1021
 // prime number so that size of fp_CF_verif is just below 4K or 8K
@@ -234,10 +235,18 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    /* vg_assert(fp_min <= fp_max);*/
    // On Darwin, this kicks in for pthread-related stack traces, so they're
    // only 1 entry long which is wrong.
-#  if !defined(VGO_darwin)
+#  if defined(VGO_linux)
    if (fp_min + 512 >= fp_max) {
       /* If the stack limits look bogus, don't poke around ... but
          don't bomb out either. */
+#  elif defined(VGO_solaris)
+   if (fp_max == 0) {
+      /* VG_(get_StackTrace)() can be called by tools very early when
+         various tracing options are enabled. Don't proceed further
+         if the stack limits look bogus.
+       */
+#  endif
+#  if defined(VGO_linux) || defined(VGO_solaris)
       if (sps) sps[0] = uregs.xsp;
       if (fps) fps[0] = uregs.xbp;
       ips[0] = uregs.xip;
@@ -473,7 +482,8 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 
 /* ----------------------- amd64 ------------------------ */
 
-#if defined(VGP_amd64_linux) || defined(VGP_amd64_darwin)
+#if defined(VGP_amd64_linux) || defined(VGP_amd64_darwin) \
+    || defined(VGP_amd64_solaris)
 
 UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
                                /*OUT*/Addr* ips, UInt max_n_ips,
@@ -518,10 +528,19 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    /* vg_assert(fp_min <= fp_max);*/
    // On Darwin, this kicks in for pthread-related stack traces, so they're
    // only 1 entry long which is wrong.
-#  if !defined(VGO_darwin)
+#  if defined(VGO_linux)
    if (fp_min + 256 >= fp_max) {
       /* If the stack limits look bogus, don't poke around ... but
          don't bomb out either. */
+#  elif defined(VGO_solaris)
+   if (fp_max == 0) {
+      /* VG_(get_StackTrace)() can be called by tools very early when
+         various tracing options are enabled. Don't proceed further
+         if the stack limits look bogus.
+       */
+#  endif
+#  if defined(VGO_linux) || defined(VGO_solaris)
+
       if (sps) sps[0] = uregs.xsp;
       if (fps) fps[0] = uregs.xbp;
       ips[0] = uregs.xip;

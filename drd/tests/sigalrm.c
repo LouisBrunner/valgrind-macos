@@ -32,8 +32,8 @@ static void print_thread_id(const char* const label)
   {
     char msg[256];
     snprintf(msg, sizeof(msg),
-             "%spid %d / kernel thread ID %d / Valgrind thread ID %d\n",
-             label, getpid(), getktid(), DRD_GET_VALGRIND_THREADID);
+             "%spid %ld / kernel thread ID %d / Valgrind thread ID %d\n",
+             label, (long) getpid(), getktid(), DRD_GET_VALGRIND_THREADID);
     write(STDOUT_FILENO, msg, strlen(msg));
   }
 }

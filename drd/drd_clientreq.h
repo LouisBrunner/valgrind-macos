@@ -226,6 +226,15 @@ enum {
    VG_USERREQ__POST_RWLOCK_UNLOCK
    /* args: Addr rwlock, RwLockT, Bool unlocked */
 
+#if defined(VGO_solaris)
+   ,
+   /* To notify the drd tool of a bind_guard call from runtime linker. */
+   VG_USERREQ__RTLD_BIND_GUARD,
+   /* args: Int flags */
+   /* To notify the drd tool of a bind_clear call from runtime linker. */
+   VG_USERREQ__RTLD_BIND_CLEAR
+   /* args: Int flags */
+#endif /* VGO_solaris */
 };
 
 /**

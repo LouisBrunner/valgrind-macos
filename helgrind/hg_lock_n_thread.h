@@ -94,6 +94,29 @@ typedef
       Bool        announced;
       /* Index for generating references in error messages. */
       Int         errmsg_index;
+
+      /* Nesting level of pthread_create(). New memory allocated is untracked
+         when this value is > 0: race reporting is suppressed there. DRD does
+         the same thing implicitly. This is necessary because for example
+         Solaris libc caches many objects and reuses them for different threads
+         and that confuses Helgrind. With libvki it would be possible to
+         explictly use VG_USERREQ__HG_CLEAN_MEMORY on such objects.
+         Also mutex activity is ignored so that they do not impose false
+         ordering between creator and created thread. */
+      Int pthread_create_nesting_level;
+
+      /* Nesting level of synchronization functions called by the client.
+         Loads and stores are ignored when its value > 0.
+         Currently this is used solely for suppressing races of primitive
+         synchronization objects themselves - mutexes, condition variables,
+         read-write locks and their associated sleep queues.
+         See also documentation for command line option
+         --ignore-thread-creation. */
+      Int synchr_nesting;
+
+#if defined(VGO_solaris)
+      Int      bind_guard_flag; /* Bind flag from the runtime linker. */
+#endif /* VGO_solaris */
    }
    Thread;
 

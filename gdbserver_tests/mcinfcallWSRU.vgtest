@@ -7,7 +7,7 @@ args: 100 100000000 1000000000 -S-S-SB-
 vgopts: --tool=memcheck --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mcinfcallWSRU
 # We need a non buggy gdb.step on arm thumb.
 # Disable on Darwin: inferior call rejected as it cannot find malloc.
-prereq: test -e gdb -a -f gdb.step && ../tests/os_test linux
+prereq: test -e gdb -a -f gdb.step && ! ../tests/os_test darwin
 # filter_gdb to replace pid and Thread numbers in the output of the program:
 stderr_filter: filter_gdb
 progB: gdb

@@ -15,22 +15,22 @@ Thread #x was created
    ...
    by 0x........: pthread_create_WRK (hg_intercepts.c:...)
    by 0x........: pthread_create@* (hg_intercepts.c:...)
-   by 0x........: main (tc20_verifywrap.c:76)
+   by 0x........: main (tc20_verifywrap.c:81)
 
 ----------------------------------------------------------------
 
 Possible data race during write of size 2 at 0x........ by thread #x
 Locks held: none
-   at 0x........: main (tc20_verifywrap.c:78)
+   at 0x........: main (tc20_verifywrap.c:83)
 
 This conflicts with a previous write of size 2 by thread #x
 Locks held: none
-   at 0x........: racy_child (tc20_verifywrap.c:34)
+   at 0x........: racy_child (tc20_verifywrap.c:39)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
 Location 0x........ is 0 bytes inside global var "unprotected"
-declared at tc20_verifywrap.c:27
+declared at tc20_verifywrap.c:32
 
 ----------------------------------------------------------------
 
@@ -38,7 +38,7 @@ Thread #x's call to pthread_join failed
    with error code 35 (EDEADLK: Resource deadlock would occur)
    at 0x........: pthread_join_WRK (hg_intercepts.c:...)
    by 0x........: pthread_join (hg_intercepts.c:...)
-   by 0x........: main (tc20_verifywrap.c:83)
+   by 0x........: main (tc20_verifywrap.c:88)
 
 
 ---------------- pthread_mutex_lock et al ----------------
@@ -48,54 +48,61 @@ Thread #x's call to pthread_join failed
 Thread #x's call to pthread_mutex_init failed
    with error code 95 (EOPNOTSUPP: Operation not supported on transport endpoint)
    at 0x........: pthread_mutex_init (hg_intercepts.c:...)
-   by 0x........: main (tc20_verifywrap.c:92)
+   by 0x........: main (tc20_verifywrap.c:102)
 
 ----------------------------------------------------------------
 
 Thread #x: pthread_mutex_destroy of a locked mutex
-   at 0x........: pthread_mutex_destroy (hg_intercepts.c:...)
-   by 0x........: main (tc20_verifywrap.c:102)
+   at 0x........: mutex_destroy_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_mutex_destroy (hg_intercepts.c:...)
+   by 0x........: main (tc20_verifywrap.c:112)
 
 ----------------------------------------------------------------
 
 Thread #x's call to pthread_mutex_destroy failed
    with error code 16 (EBUSY: Device or resource busy)
-   at 0x........: pthread_mutex_destroy (hg_intercepts.c:...)
-   by 0x........: main (tc20_verifywrap.c:102)
+   at 0x........: mutex_destroy_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_mutex_destroy (hg_intercepts.c:...)
+   by 0x........: main (tc20_verifywrap.c:112)
 
 ----------------------------------------------------------------
 
 Thread #x's call to pthread_mutex_lock failed
    with error code 22 (EINVAL: Invalid argument)
-   at 0x........: pthread_mutex_lock (hg_intercepts.c:...)
-   by 0x........: main (tc20_verifywrap.c:108)
+   at 0x........: mutex_lock_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_mutex_lock (hg_intercepts.c:...)
+   by 0x........: main (tc20_verifywrap.c:118)
 
 ----------------------------------------------------------------
 
 Thread #x's call to pthread_mutex_trylock failed
    with error code 22 (EINVAL: Invalid argument)
-   at 0x........: pthread_mutex_trylock (hg_intercepts.c:...)
-   by 0x........: main (tc20_verifywrap.c:116)
+   at 0x........: mutex_trylock_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_mutex_trylock (hg_intercepts.c:...)
+   by 0x........: main (tc20_verifywrap.c:126)
 
 ----------------------------------------------------------------
 
 Thread #x's call to pthread_mutex_timedlock failed
    with error code 22 (EINVAL: Invalid argument)
-   at 0x........: pthread_mutex_timedlock (hg_intercepts.c:...)
-   by 0x........: main (tc20_verifywrap.c:121)
+   at 0x........: mutex_timedlock_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_mutex_timedlock (hg_intercepts.c:...)
+   by 0x........: main (tc20_verifywrap.c:131)
 
 ----------------------------------------------------------------
 
 Thread #x unlocked an invalid lock at 0x........
-   at 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
-   by 0x........: main (tc20_verifywrap.c:125)
+   at 0x........: mutex_unlock_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
+   by 0x........: main (tc20_verifywrap.c:135)
 
 ----------------------------------------------------------------
 
 Thread #x's call to pthread_mutex_unlock failed
    with error code 22 (EINVAL: Invalid argument)
-   at 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
-   by 0x........: main (tc20_verifywrap.c:125)
+   at 0x........: mutex_unlock_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
+   by 0x........: main (tc20_verifywrap.c:135)
 
 
 ---------------- pthread_cond_wait et al ----------------
@@ -105,7 +112,7 @@ Thread #x's call to pthread_mutex_unlock failed
 Thread #x: pthread_cond_{timed}wait called with un-held mutex
    at 0x........: pthread_cond_wait_WRK (hg_intercepts.c:...)
    by 0x........: pthread_cond_wait@* (hg_intercepts.c:...)
-   by 0x........: main (tc20_verifywrap.c:147)
+   by 0x........: main (tc20_verifywrap.c:157)
 
 ----------------------------------------------------------------
 
@@ -113,14 +120,14 @@ Thread #x's call to pthread_cond_wait failed
    with error code 1 (EPERM: Operation not permitted)
    at 0x........: pthread_cond_wait_WRK (hg_intercepts.c:...)
    by 0x........: pthread_cond_wait@* (hg_intercepts.c:...)
-   by 0x........: main (tc20_verifywrap.c:147)
+   by 0x........: main (tc20_verifywrap.c:157)
 
 ----------------------------------------------------------------
 
 Thread #x: pthread_cond_{signal,broadcast}: dubious: associated lock is not held by any thread
    at 0x........: pthread_cond_signal_WRK (hg_intercepts.c:...)
    by 0x........: pthread_cond_signal@* (hg_intercepts.c:...)
-   by 0x........: main (tc20_verifywrap.c:152)
+   by 0x........: main (tc20_verifywrap.c:162)
 
 
 FIXME: can't figure out how to verify wrap of pthread_cond_signal
@@ -130,7 +137,7 @@ FIXME: can't figure out how to verify wrap of pthread_cond_signal
 Thread #x: pthread_cond_{signal,broadcast}: dubious: associated lock is not held by any thread
    at 0x........: pthread_cond_broadcast_WRK (hg_intercepts.c:...)
    by 0x........: pthread_cond_broadcast@* (hg_intercepts.c:...)
-   by 0x........: main (tc20_verifywrap.c:158)
+   by 0x........: main (tc20_verifywrap.c:168)
 
 
 FIXME: can't figure out how to verify wrap of pthread_broadcast_signal
@@ -140,7 +147,7 @@ FIXME: can't figure out how to verify wrap of pthread_broadcast_signal
 Thread #x: pthread_cond_{timed}wait called with un-held mutex
    at 0x........: pthread_cond_timedwait_WRK (hg_intercepts.c:...)
    by 0x........: pthread_cond_timedwait@* (hg_intercepts.c:...)
-   by 0x........: main (tc20_verifywrap.c:165)
+   by 0x........: main (tc20_verifywrap.c:175)
 
 ----------------------------------------------------------------
 
@@ -148,7 +155,7 @@ Thread #x's call to pthread_cond_timedwait failed
    with error code 22 (EINVAL: Invalid argument)
    at 0x........: pthread_cond_timedwait_WRK (hg_intercepts.c:...)
    by 0x........: pthread_cond_timedwait@* (hg_intercepts.c:...)
-   by 0x........: main (tc20_verifywrap.c:165)
+   by 0x........: main (tc20_verifywrap.c:175)
 
 
 ---------------- pthread_rwlock_* ----------------
@@ -158,11 +165,11 @@ Thread #x's call to pthread_cond_timedwait failed
 Thread #x unlocked a not-locked lock at 0x........
    at 0x........: pthread_rwlock_unlock_WRK (hg_intercepts.c:...)
    by 0x........: pthread_rwlock_unlock (hg_intercepts.c:...)
-   by 0x........: main (tc20_verifywrap.c:179)
+   by 0x........: main (tc20_verifywrap.c:189)
   Lock at 0x........ was first observed
    at 0x........: pthread_rwlock_init_WRK (hg_intercepts.c:...)
    by 0x........: pthread_rwlock_init (hg_intercepts.c:...)
-   by 0x........: main (tc20_verifywrap.c:178)
+   by 0x........: main (tc20_verifywrap.c:188)
 
 (1) no error on next line
 (2) no error on next line
@@ -172,11 +179,11 @@ Thread #x unlocked a not-locked lock at 0x........
 Thread #x unlocked a not-locked lock at 0x........
    at 0x........: pthread_rwlock_unlock_WRK (hg_intercepts.c:...)
    by 0x........: pthread_rwlock_unlock (hg_intercepts.c:...)
-   by 0x........: main (tc20_verifywrap.c:196)
+   by 0x........: main (tc20_verifywrap.c:206)
   Lock at 0x........ was first observed
    at 0x........: pthread_rwlock_init_WRK (hg_intercepts.c:...)
    by 0x........: pthread_rwlock_init (hg_intercepts.c:...)
-   by 0x........: main (tc20_verifywrap.c:186)
+   by 0x........: main (tc20_verifywrap.c:196)
 
 (4) no error on next line
 (5) no error on next line
@@ -188,11 +195,11 @@ Thread #x unlocked a not-locked lock at 0x........
 Thread #x unlocked a not-locked lock at 0x........
    at 0x........: pthread_rwlock_unlock_WRK (hg_intercepts.c:...)
    by 0x........: pthread_rwlock_unlock (hg_intercepts.c:...)
-   by 0x........: main (tc20_verifywrap.c:212)
+   by 0x........: main (tc20_verifywrap.c:227)
   Lock at 0x........ was first observed
    at 0x........: pthread_rwlock_init_WRK (hg_intercepts.c:...)
    by 0x........: pthread_rwlock_init (hg_intercepts.c:...)
-   by 0x........: main (tc20_verifywrap.c:186)
+   by 0x........: main (tc20_verifywrap.c:196)
 
 
 ---------------- sem_* ----------------
@@ -203,7 +210,7 @@ Thread #x's call to sem_init failed
    with error code 22 (EINVAL: Invalid argument)
    at 0x........: sem_init_WRK (hg_intercepts.c:...)
    by 0x........: sem_init@* (hg_intercepts.c:...)
-   by 0x........: main (tc20_verifywrap.c:228)
+   by 0x........: main (tc20_verifywrap.c:243)
 
 
 FIXME: can't figure out how to verify wrap of sem_destroy
@@ -213,7 +220,7 @@ FIXME: can't figure out how to verify wrap of sem_destroy
 Thread #x: Bug in libpthread: sem_wait succeeded on semaphore without prior sem_post
    at 0x........: sem_wait_WRK (hg_intercepts.c:...)
    by 0x........: sem_wait (hg_intercepts.c:...)
-   by 0x........: main (tc20_verifywrap.c:242)
+   by 0x........: main (tc20_verifywrap.c:257)
 
 
 FIXME: can't figure out how to verify wrap of sem_post

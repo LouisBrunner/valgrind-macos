@@ -1,0 +1,2 @@
+prog: proc_auxv_multiple
+vgopts: -q

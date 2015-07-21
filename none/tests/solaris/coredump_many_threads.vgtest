@@ -1,0 +1,6 @@
+prereq: rm -f vgcore.*
+prog: coredump_many_threads
+vgopts: -q
+stderr_filter: ./filter_coredump_many_threads_stderr
+post: ./filter_coredump_many_threads_post
+cleanup: rm -f vgcore.*

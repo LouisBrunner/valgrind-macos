@@ -1,0 +1,2 @@
+prog: door_data
+vgopts: -q --sim-hints=lax-doors

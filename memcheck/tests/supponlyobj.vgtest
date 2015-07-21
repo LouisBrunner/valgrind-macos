@@ -1,3 +1,9 @@
+prereq: (! ../../tests/os_test solaris)
+# This test is disabled on Solaris because function below main (_start)
+# is part of the inlinfo object whereas on Linux it is part of libc
+# (__libc_start_main).
+# solaris/supponlyobj test exists to check the Solaris variant.
+#
 # test suppressions with only obj: markers
 prog: inlinfo
 vgopts: -q --read-inline-info=no --suppressions=supponlyobj.supp

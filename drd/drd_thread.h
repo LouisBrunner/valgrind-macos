@@ -98,6 +98,15 @@ typedef struct
    Int       synchr_nesting;
    /** Delayed thread deletion sequence number. */
    unsigned  deletion_seq;
+   /**
+    * ID of the creator thread. It can be safely accessed only until the
+    * thread is fully created. Then the creator thread lives its own life again.
+    */
+   DrdThreadId creator_thread;
+
+#if defined(VGO_solaris)
+   Int       bind_guard_flag; /**< Bind flag from the runtime linker. */
+#endif /* VGO_solaris */
 } ThreadInfo;
 
 
@@ -117,6 +126,8 @@ extern ThreadInfo*    DRD_(g_threadinfo);
 /** Conflict set for the currently running thread. */
 extern struct bitmap* DRD_(g_conflict_set);
 extern Bool           DRD_(verify_conflict_set);
+/** Whether activities during thread creation should be ignored. */
+extern Bool           DRD_(ignore_thread_creation);
 
 
 /* Function declarations. */
@@ -159,6 +170,10 @@ Bool DRD_(thread_get_joinable)(const DrdThreadId tid);
 void DRD_(thread_set_joinable)(const DrdThreadId tid, const Bool joinable);
 void DRD_(thread_entering_pthread_create)(const DrdThreadId tid);
 void DRD_(thread_left_pthread_create)(const DrdThreadId tid);
+#if defined(VGO_solaris)
+void DRD_(thread_entering_rtld_bind_guard)(const DrdThreadId tid, int flags);
+void DRD_(thread_leaving_rtld_bind_clear)(const DrdThreadId tid, int flags);
+#endif /* VGO_solaris */
 const HChar* DRD_(thread_get_name)(const DrdThreadId tid);
 void DRD_(thread_set_name)(const DrdThreadId tid, const HChar* const name);
 void DRD_(thread_set_vg_running_tid)(const ThreadId vg_tid);

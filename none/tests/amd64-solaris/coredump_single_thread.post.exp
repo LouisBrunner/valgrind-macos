@@ -1,0 +1,29 @@
+---Status---
+debugging core file of coredump_single (64-bit) from ...
+initial argv: ./coredump_single_thread
+threading model: native threads
+status: process terminated by SIGSEGV (Segmentation Fault), addr=........
+
+---Registers---
+%rax = 0x0000000000000101       %r8  = 0x0000000000000107
+%rbx = 0x0000000000000102       %r9  = 0x0000000000000108
+%rcx = 0x0000000000000103       %r10 = 0x0000000000000109
+%rdx = 0x0000000000000104       %r11 = 0x000000000000010a
+%rsi = 0x0000000000000105       %r12 = 0x000000000000010b
+%rdi = 0x0000000000000106       %r13 = 0x000000000000010c
+                                %r14 = 0x000000000000010d
+                                %r15 = 0x000000000000010e
+
+
+%rip = 0x........  coredump_single_thread`inner+0x........
+%rsp = 0x000000000000010f
+
+
+%trapno = 0x0
+   %err = 0x0
+
+---Stack trace---
+coredump_single_thread`inner
+coredump_single_thread`outer
+coredump_single_thread`main
+coredump_single_thread`_start

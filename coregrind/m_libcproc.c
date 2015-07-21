@@ -34,6 +34,7 @@
 #include "pub_core_vkiscnums.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
+#include "pub_core_libcfile.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"
 #include "pub_core_libcsignal.h"
@@ -66,7 +67,7 @@ HChar** VG_(client_envp) = NULL;
 const HChar *VG_(libdir) = VG_LIBDIR;
 
 const HChar *VG_(LD_PRELOAD_var_name) =
-#if defined(VGO_linux)
+#if defined(VGO_linux) || defined(VGO_solaris)
    "LD_PRELOAD";
 #elif defined(VGO_darwin)
    "DYLD_INSERT_LIBRARIES";
@@ -90,7 +91,9 @@ HChar *VG_(getenv)(const HChar *varname)
    return NULL;
 }
 
-void  VG_(env_unsetenv) ( HChar **env, const HChar *varname )
+/* If free_fn is not NULL, it is called on "unset" environment variable. */
+void  VG_(env_unsetenv) ( HChar **env, const HChar *varname,
+                          void (*free_fn) (void *) )
 {
    HChar **from, **to;
    vg_assert(env);
@@ -102,6 +105,8 @@ void  VG_(env_unsetenv) ( HChar **env, const HChar *varname )
       if (!(VG_(strncmp)(varname, *from, len) == 0 && (*from)[len] == '=')) {
 	 *to = *from;
 	 to++;
+      } else if (free_fn != NULL) {
+         free_fn(*from);
       }
    }
    *to = *from;
@@ -216,9 +221,14 @@ static void mash_colon_env(HChar *varp, const HChar *remove_pattern)
 }
 
 
-// Removes all the Valgrind-added stuff from the passed environment.  Used
-// when starting child processes, so they don't see that added stuff.
-void VG_(env_remove_valgrind_env_stuff)(HChar** envp)
+/* Removes all the Valgrind-added stuff from the passed environment.  Used
+   when starting child processes, so they don't see that added stuff.
+   If the ro_strings option is set to True then all strings referenced by envp
+   are considered read-only, which means they will be duplicated before they
+   are modified.
+   If free_fn is not NULL, it is called on "unset" environment variables. */
+void VG_(env_remove_valgrind_env_stuff)(HChar** envp, Bool ro_strings,
+                                        void (*free_fn) (void *) )
 {
 
 #if defined(VGO_darwin)
@@ -241,15 +251,18 @@ void VG_(env_remove_valgrind_env_stuff)(HChar** envp)
    // - DYLD_INSERT_LIBRARIES and DYLD_SHARED_REGION are Darwin-only
    for (i = 0; envp[i] != NULL; i++) {
       if (VG_(strncmp)(envp[i], "LD_PRELOAD=", 11) == 0) {
-         envp[i] = VG_(strdup)("libcproc.erves.1", envp[i]);
+         if (ro_strings)
+            envp[i] = VG_(strdup)("libcproc.erves.1", envp[i]);
          ld_preload_str = &envp[i][11];
       }
       if (VG_(strncmp)(envp[i], "LD_LIBRARY_PATH=", 16) == 0) {
-         envp[i] = VG_(strdup)("libcproc.erves.2", envp[i]);
+         if (ro_strings)
+            envp[i] = VG_(strdup)("libcproc.erves.2", envp[i]);
          ld_library_path_str = &envp[i][16];
       }
       if (VG_(strncmp)(envp[i], "DYLD_INSERT_LIBRARIES=", 22) == 0) {
-         envp[i] = VG_(strdup)("libcproc.erves.3", envp[i]);
+         if (ro_strings)
+            envp[i] = VG_(strdup)("libcproc.erves.3", envp[i]);
          dyld_insert_libraries_str = &envp[i][22];
       }
    }
@@ -264,14 +277,77 @@ void VG_(env_remove_valgrind_env_stuff)(HChar** envp)
    mash_colon_env(ld_library_path_str, buf);
 
    // Remove VALGRIND_LAUNCHER variable.
-   VG_(env_unsetenv)(envp, VALGRIND_LAUNCHER);
+   VG_(env_unsetenv)(envp, VALGRIND_LAUNCHER, free_fn);
 
    // Remove DYLD_SHARED_REGION variable.
-   VG_(env_unsetenv)(envp, "DYLD_SHARED_REGION");
+   VG_(env_unsetenv)(envp, "DYLD_SHARED_REGION", free_fn);
 
    // XXX if variable becomes empty, remove it completely?
 
    VG_(free)(buf);
+}
+
+/* Resolves filename of VG_(cl_exec_fd) and copies it to the buffer.
+   Buffer must not be NULL and buf_size must be at least 1.
+   If buffer is not large enough it is terminated with '\0' only
+   when 'terminate_with_NUL == True'. */
+void VG_(client_fname)(HChar *buffer, SizeT buf_size, Bool terminate_with_NUL)
+{
+   vg_assert(buffer != NULL);
+   vg_assert(buf_size >= 1);
+
+   const HChar *name;
+   if (VG_(resolve_filename)(VG_(cl_exec_fd), &name)) {
+      const HChar *n = name + VG_(strlen)(name) - 1;
+
+      while (n > name && *n != '/')
+         n--;
+      if (n != name)
+         n++;
+
+      VG_(strncpy)(buffer, n, buf_size);
+      if (terminate_with_NUL)
+         buffer[buf_size - 1] = '\0';
+   } else {
+      buffer[0] = '\0';
+   }
+}
+
+static Bool add_string(HChar *buffer, SizeT *buf_size, const HChar *string)
+{
+   SizeT len = VG_(strlen)(string);
+   VG_(strncat)(buffer, string, *buf_size);
+   if (len >= *buf_size - 1) {
+      *buf_size = 0;
+      return False;
+   } else {
+      *buf_size -= len;
+      return True;
+   }
+}
+
+/* Concatenates client exename and command line arguments into
+   the buffer. Buffer must not be NULL and buf_size must be
+   at least 1. Buffer is always terminated with '\0'. */
+void VG_(client_cmd_and_args)(HChar *buffer, SizeT buf_size)
+{
+   vg_assert(buffer != NULL);
+   vg_assert(buf_size >= 1);
+
+   buffer[0] = '\0';
+
+   if (add_string(buffer, &buf_size, VG_(args_the_exename)) == False)
+      return;
+
+   Int i;
+   for (i = 0; i < VG_(sizeXA)(VG_(args_for_client)); i++) {
+      if (add_string(buffer, &buf_size, " ") == False)
+         return;
+
+      HChar *arg = *(HChar **) VG_(indexXA)(VG_(args_for_client), i);
+      if (add_string(buffer, &buf_size, arg) == False)
+         return;
+   }
 }
 
 /* ---------------------------------------------------------------------
@@ -288,6 +364,63 @@ Int VG_(waitpid)(Int pid, Int *status, Int options)
    SysRes res = VG_(do_syscall4)(__NR_wait4_nocancel,
                                  pid, (UWord)status, options, 0);
    return sr_isError(res) ? -1 : sr_Res(res);
+#  elif defined(VGO_solaris)
+   SysRes res;
+   vki_idtype_t idtype;
+   vki_id_t id;
+   vki_siginfo_t info;
+
+   /* We need to do a lot of work here. */
+
+   if (pid > 0) {
+      idtype = VKI_P_PID;
+      id = pid;
+   }
+   else if (pid < -1) {
+      idtype = VKI_P_PGID;
+      id = -pid;
+   }
+   else if (pid == -1) {
+      idtype = VKI_P_ALL;
+      id = 0;
+   }
+   else {
+      idtype = VKI_P_PGID;
+      res = VG_(do_syscall0)(__NR_getpid);
+      id = sr_ResHI(res);
+   }
+
+   options |= VKI_WEXITED | VKI_WTRAPPED;
+
+   res = VG_(do_syscall4)(__NR_waitsys, idtype, id, (UWord)&info, options);
+   if (sr_isError(res))
+      return -1;
+
+   if (status) {
+      Int s = info.si_status & 0xff;
+
+      switch (info.si_code) {
+         case VKI_CLD_EXITED:
+            s <<= 8;
+            break;
+         case VKI_CLD_DUMPED:
+            s |= VKI_WCOREFLG;
+            break;
+         case VKI_CLD_KILLED:
+            break;
+         case VKI_CLD_TRAPPED:
+         case VKI_CLD_STOPPED:
+            s <<= 8;
+            s |= VKI_WSTOPFLG;
+            break;
+         case VKI_CLD_CONTINUED:
+            s = VKI_WCONTFLG;
+            break;
+      }
+      *status = s;
+   }
+
+   return info.si_pid;
 #  else
 #    error Unknown OS
 #  endif
@@ -320,7 +453,7 @@ HChar **VG_(env_clone) ( HChar **oldenv )
    return newenv;
 }
 
-void VG_(execv) ( const HChar* filename, HChar** argv )
+void VG_(execv) ( const HChar* filename, const HChar** argv )
 {
    HChar** envp;
    SysRes res;
@@ -329,12 +462,99 @@ void VG_(execv) ( const HChar* filename, HChar** argv )
    VG_(setrlimit)(VKI_RLIMIT_DATA, &VG_(client_rlimit_data));
 
    envp = VG_(env_clone)(VG_(client_envp));
-   VG_(env_remove_valgrind_env_stuff)( envp );
+   VG_(env_remove_valgrind_env_stuff)( envp, True /*ro_strings*/, NULL );
 
    res = VG_(do_syscall3)(__NR_execve,
                           (UWord)filename, (UWord)argv, (UWord)envp);
 
    VG_(printf)("EXEC failed, errno = %lld\n", (Long)sr_Err(res));
+}
+
+/* Spawns a new child. Uses either spawn syscall or fork+execv combo. */
+Int VG_(spawn) ( const HChar *filename, const HChar **argv )
+{
+   vg_assert(filename != NULL);
+   vg_assert(argv != NULL);
+
+#  if defined(VGO_solaris) && defined(SOLARIS_SPAWN_SYSCALL)
+   HChar **envp = VG_(env_clone)(VG_(client_envp));
+   for (HChar **p = envp; *p != NULL; p++) {
+      *p = VG_(strdup)("libcproc.s.1", *p);
+   }
+   VG_(env_remove_valgrind_env_stuff)(envp, /* ro_strings */ False, VG_(free));
+
+   /* Now combine argv and argp into argenv. */
+   SizeT argenv_size = 1 + 1;
+   for (const HChar **p = argv; *p != NULL; p++) {
+      argenv_size += VG_(strlen)(*p) + 2;
+   }
+   for (HChar **p = envp; *p != NULL; p++) {
+      argenv_size += VG_(strlen)(*p) + 2;
+   }
+
+   HChar *argenv = VG_(malloc)("libcproc.s.2", argenv_size);
+   HChar *current = argenv;
+#  define COPY_CHAR_TO_ARGENV(dst, character)  \
+      do {                                     \
+         *(dst) = character;                   \
+         (dst) += 1;                           \
+      } while (0)
+#  define COPY_STRING_TO_ARGENV(dst, src)        \
+      do {                                       \
+         COPY_CHAR_TO_ARGENV(dst, '\1');         \
+         SizeT src_len = VG_(strlen)((src)) + 1; \
+         VG_(memcpy)((dst), (src), src_len);     \
+         (dst) += src_len;                       \
+      } while (0)
+
+   for (const HChar **p = argv; *p != NULL; p++) {
+      COPY_STRING_TO_ARGENV(current, *p);
+   }
+   COPY_CHAR_TO_ARGENV(current, '\0');
+   for (HChar **p = envp; *p != NULL; p++) {
+      COPY_STRING_TO_ARGENV(current, *p);
+   }
+   COPY_CHAR_TO_ARGENV(current, '\0');
+   vg_assert(current == argenv + argenv_size);
+#  undef COPY_CHAR_TO_ARGENV
+#  undef COPY_STRING_TOARGENV
+
+   /* HACK: Temporarily restore the DATA rlimit for spawned child. */
+   VG_(setrlimit)(VKI_RLIMIT_DATA, &VG_(client_rlimit_data));
+
+   SysRes res = VG_(do_syscall5)(__NR_spawn, (UWord) filename, (UWord) NULL, 0,
+                                 (UWord) argenv, argenv_size);
+
+   /* Restore DATA rlimit back to its previous value set in m_main.c. */
+   struct vki_rlimit zero = { 0, 0 };
+   zero.rlim_max = VG_(client_rlimit_data).rlim_max;
+   VG_(setrlimit)(VKI_RLIMIT_DATA, &zero);
+
+   VG_(free)(argenv);
+   for (HChar **p = envp; *p != NULL; p++) {
+      VG_(free)(*p);
+   }
+   VG_(free)(envp);
+
+   if (sr_isError(res))
+      return -1;
+   return sr_Res(res);
+
+#  else
+
+   Int pid = VG_(fork)();
+   if (pid < 0)
+      return -1;
+   if (pid == 0) {
+      /* child */
+      VG_(execv)(argv[0], argv);
+
+      /* If we're still alive here, execv failed. */
+      VG_(exit)(1);
+   } else {
+      return pid;
+   }
+#  endif /* VGO_solaris && SOLARIS_SPAWN_SYSCALL */
 }
 
 /* Return -1 if error, else 0.  NOTE does not indicate return code of
@@ -344,47 +564,42 @@ Int VG_(system) ( const HChar* cmd )
    Int pid;
    if (cmd == NULL)
       return 1;
-   pid = VG_(fork)();
+
+   const HChar *argv[4] = { "/bin/sh", "-c", cmd, 0 };
+   pid = VG_(spawn)(argv[0], argv);
    if (pid < 0)
       return -1;
-   if (pid == 0) {
-      /* child */
-      const HChar* argv[4] = { "/bin/sh", "-c", cmd, 0 };
-      VG_(execv)(argv[0], CONST_CAST(HChar **,argv));
 
-      /* If we're still alive here, execv failed. */
-      VG_(exit)(1);
-   } else {
-      /* parent */
-      /* We have to set SIGCHLD to its default behaviour in order that
-         VG_(waitpid) works (at least on AIX).  According to the Linux
-         man page for waitpid:
+   vg_assert(pid > 0);
+   /* parent */
+   /* We have to set SIGCHLD to its default behaviour in order that
+      VG_(waitpid) works (at least on AIX).  According to the Linux
+      man page for waitpid:
 
-         POSIX.1-2001 specifies that if the disposition of SIGCHLD is
-         set to SIG_IGN or the SA_NOCLDWAIT flag is set for SIGCHLD
-         (see sigaction(2)), then children that terminate do not
-         become zombies and a call to wait() or waitpid() will block
-         until all children have terminated, and then fail with errno
-         set to ECHILD.  (The original POSIX standard left the
-         behaviour of setting SIGCHLD to SIG_IGN unspecified.)
-      */
-      Int ir, zzz;
-      vki_sigaction_toK_t sa, sa2;
-      vki_sigaction_fromK_t saved_sa;
-      VG_(memset)( &sa, 0, sizeof(sa) );
-      VG_(sigemptyset)(&sa.sa_mask);
-      sa.ksa_handler = VKI_SIG_DFL;
-      sa.sa_flags    = 0;
-      ir = VG_(sigaction)(VKI_SIGCHLD, &sa, &saved_sa);
-      vg_assert(ir == 0);
+      POSIX.1-2001 specifies that if the disposition of SIGCHLD is
+      set to SIG_IGN or the SA_NOCLDWAIT flag is set for SIGCHLD
+      (see sigaction(2)), then children that terminate do not
+      become zombies and a call to wait() or waitpid() will block
+      until all children have terminated, and then fail with errno
+      set to ECHILD.  (The original POSIX standard left the
+      behaviour of setting SIGCHLD to SIG_IGN unspecified.)
+   */
+   Int ir, zzz;
+   vki_sigaction_toK_t sa, sa2;
+   vki_sigaction_fromK_t saved_sa;
+   VG_(memset)( &sa, 0, sizeof(sa) );
+   VG_(sigemptyset)(&sa.sa_mask);
+   sa.ksa_handler = VKI_SIG_DFL;
+   sa.sa_flags    = 0;
+   ir = VG_(sigaction)(VKI_SIGCHLD, &sa, &saved_sa);
+   vg_assert(ir == 0);
 
-      zzz = VG_(waitpid)(pid, NULL, 0);
+   zzz = VG_(waitpid)(pid, NULL, 0);
 
-      VG_(convert_sigaction_fromK_to_toK)( &saved_sa, &sa2 );
-      ir = VG_(sigaction)(VKI_SIGCHLD, &sa2, NULL);
-      vg_assert(ir == 0);
-      return zzz == -1 ? -1 : 0;
-   }
+   VG_(convert_sigaction_fromK_to_toK)( &saved_sa, &sa2 );
+   ir = VG_(sigaction)(VKI_SIGCHLD, &sa2, NULL);
+   vg_assert(ir == 0);
+   return zzz == -1 ? -1 : 0;
 }
 
 Int VG_(sysctl)(Int *name, UInt namelen, void *oldp, SizeT *oldlenp, void *newp, SizeT newlen)
@@ -493,6 +708,10 @@ Int VG_(gettid)(void)
    // Use Mach thread ports for lwpid instead.
    return mach_thread_self();
 
+#  elif defined(VGO_solaris)
+   SysRes res = VG_(do_syscall0)(__NR_lwp_self);
+   return sr_Res(res);
+
 #  else
 #    error "Unknown OS"
 #  endif
@@ -508,36 +727,69 @@ Int VG_(getpid) ( void )
 Int VG_(getpgrp) ( void )
 {
    /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
+#  if defined(VGO_linux) || defined(VGO_darwin)
    return sr_Res( VG_(do_syscall0)(__NR_getpgrp) );
+#  elif defined(VGO_solaris)
+   /* Uses the shared pgrpsys syscall, 0 for the getpgrp variant. */
+   return sr_Res( VG_(do_syscall1)(__NR_pgrpsys, 0) );
+#  else
+#    error Unknown OS
+#  endif
 }
 
 Int VG_(getppid) ( void )
 {
    /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
+#  if defined(VGO_linux) || defined(VGO_darwin)
    return sr_Res( VG_(do_syscall0)(__NR_getppid) );
+#  elif defined(VGO_solaris)
+   /* Uses the shared getpid/getppid syscall, val2 contains a parent pid. */
+   return sr_ResHI( VG_(do_syscall0)(__NR_getpid) );
+#  else
+#    error Unknown OS
+#  endif
 }
 
 Int VG_(geteuid) ( void )
 {
    /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
-#  if defined(__NR_geteuid32)
-   // We use the 32-bit version if it's supported.  Otherwise, IDs greater
-   // than 65536 cause problems, as bug #151209 showed.
-   return sr_Res( VG_(do_syscall0)(__NR_geteuid32) );
+#  if defined(VGO_linux) || defined(VGO_darwin)
+   {
+#     if defined(__NR_geteuid32)
+      // We use the 32-bit version if it's supported.  Otherwise, IDs greater
+      // than 65536 cause problems, as bug #151209 showed.
+      return sr_Res( VG_(do_syscall0)(__NR_geteuid32) );
+#     else
+      return sr_Res( VG_(do_syscall0)(__NR_geteuid) );
+#     endif
+   }
+#  elif defined(VGO_solaris)
+   /* Uses the shared getuid/geteuid syscall, val2 contains the effective
+      uid. */
+   return sr_ResHI( VG_(do_syscall0)(__NR_getuid) );
 #  else
-   return sr_Res( VG_(do_syscall0)(__NR_geteuid) );
+#    error Unknown OS
 #  endif
 }
 
 Int VG_(getegid) ( void )
 {
+#  if defined(VGO_linux) || defined(VGO_darwin)
    /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
-#  if defined(__NR_getegid32)
+#    if defined(__NR_getegid32)
    // We use the 32-bit version if it's supported.  Otherwise, IDs greater
    // than 65536 cause problems, as bug #151209 showed.
    return sr_Res( VG_(do_syscall0)(__NR_getegid32) );
-#  else
+#    else
    return sr_Res( VG_(do_syscall0)(__NR_getegid) );
+#    endif
+
+#  elif defined(VGO_solaris)
+   /* Uses the shared getgid/getegid syscall, val2 contains the effective
+      gid. */
+   return sr_ResHI( VG_(do_syscall0)(__NR_getgid) );
+#  else
+#    error Unknown OS
 #  endif
 }
 
@@ -568,7 +820,8 @@ Int VG_(getgroups)( Int size, UInt* list )
 #  elif defined(VGP_amd64_linux) || defined(VGP_arm_linux) \
         || defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)  \
         || defined(VGO_darwin) || defined(VGP_s390x_linux)    \
-        || defined(VGP_mips32_linux) || defined(VGP_arm64_linux)
+        || defined(VGP_mips32_linux) || defined(VGP_arm64_linux) \
+        || defined(VGO_solaris)
    SysRes sres;
    sres = VG_(do_syscall2)(__NR_getgroups, size, (Addr)list);
    if (sr_isError(sres))
@@ -587,7 +840,17 @@ Int VG_(getgroups)( Int size, UInt* list )
 Int VG_(ptrace) ( Int request, Int pid, void *addr, void *data )
 {
    SysRes res;
+#  if defined(VGO_linux) || defined(VGO_darwin)
    res = VG_(do_syscall4)(__NR_ptrace, request, pid, (UWord)addr, (UWord)data);
+#  elif defined(VGO_solaris)
+   /* There is no ptrace syscall on Solaris.  Such requests has to be
+      implemented using the /proc interface.  Callers of VG_(ptrace) should
+      ensure that this function is not reached on Solaris, i.e. they must
+      provide a special code for Solaris for whatever feature they provide. */
+   I_die_here;
+#  else
+#    error Unknown OS
+#  endif
    if (sr_isError(res))
       return -1;
    return sr_Res(res);
@@ -625,6 +888,24 @@ Int VG_(fork) ( void )
    }
    return sr_Res(res);
 
+#  elif defined(VGO_solaris)
+   /* Using fork() on Solaris is not really the best thing to do. Solaris
+      does not do memory overcommitment so fork() can fail if there is not
+      enough memory to copy the current process into a new one.
+      Prefer to use VG_(spawn)() over VG_(fork)() + VG_(execv)(). */
+   SysRes res;
+   res = VG_(do_syscall2)(__NR_forksys, 0 /*subcode (fork)*/, 0 /*flags*/);
+   if (sr_isError(res))
+      return -1;
+   /* On success:
+        val = a pid of the child in the parent, a pid of the parent in the
+              child,
+        val2 = 0 in the parent process, 1 in the child process. */
+   if (sr_ResHI(res) != 0) {
+      return 0;
+   }
+   return sr_Res(res);
+
 #  else
 #    error "Unknown OS"
 #  endif
@@ -640,7 +921,7 @@ UInt VG_(read_millisecond_timer) ( void )
    static ULong base = 0;
    ULong  now;
 
-#  if defined(VGO_linux)
+#  if defined(VGO_linux) || defined(VGO_solaris)
    { SysRes res;
      struct vki_timespec ts_now;
      res = VG_(do_syscall2)(__NR_clock_gettime, VKI_CLOCK_MONOTONIC,
@@ -649,6 +930,8 @@ UInt VG_(read_millisecond_timer) ( void )
         now = ts_now.tv_sec * 1000000ULL + ts_now.tv_nsec / 1000;
      } else {
        struct vki_timeval tv_now;
+       /* Note: On Solaris, this syscall takes only one parameter but the
+          extra dummy one does not cause any harm. */
        res = VG_(do_syscall2)(__NR_gettimeofday, (UWord)&tv_now, (UWord)NULL);
        vg_assert(! sr_isError(res));
        now = tv_now.tv_sec * 1000000ULL + tv_now.tv_usec;

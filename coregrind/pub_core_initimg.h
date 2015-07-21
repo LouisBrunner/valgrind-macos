@@ -119,6 +119,30 @@ struct _IIFinaliseImageInfo {
    Addr  initial_client_IP;
 };
 
+/* ------------------------- Solaris ------------------------- */
+
+#elif defined(VGO_solaris)
+
+struct _IICreateImageInfo {
+   /* ------ Mandatory fields ------ */
+   const HChar* toolname;
+   Addr    sp_at_startup;
+   Addr    clstack_end; /* highest stack addressable byte */
+   /* ------ Per-OS fields ------ */
+   HChar** argv;
+   HChar** envp;
+};
+
+struct _IIFinaliseImageInfo {
+   /* ------ Mandatory fields ------ */
+   SizeT clstack_max_size;
+   Addr  initial_client_SP;
+   /* ------ Per-OS fields ------ */
+   Addr  initial_client_IP;
+   Addr  initial_client_TOC;
+   UInt* client_auxv;
+   Addr  initial_client_TP; /* thread pointer */
+};
 
 #else
 #  error "Unknown OS"

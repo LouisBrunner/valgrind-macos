@@ -70,6 +70,9 @@ extern Bool VG_(am_is_valid_for_aspacem_minAddr)( Addr addr,
 // Querying current status
 
 
+/* Finds an anonymous segment containing 'a'. Returned pointer is read only. */
+extern NSegment const *VG_(am_find_anon_segment) ( Addr a );
+
 /* Find the next segment along from 'here', if it is a file/anon/resvn
    segment. */
 extern NSegment const* VG_(am_next_nsegment) ( const NSegment* here,
@@ -122,7 +125,9 @@ extern Bool VG_(am_do_sync_check) ( const HChar* fn,
 /* Describes a request for VG_(am_get_advisory). */
 typedef
    struct {
-      enum { MFixed, MHint, MAny } rkind;
+      /* Note: if rkind == MAlign then start specifies alignment. This is
+         Solaris specific. */
+      enum { MFixed, MHint, MAny, MAlign } rkind;
       Addr start;
       Addr len;
    }
@@ -209,8 +214,14 @@ extern SysRes VG_(am_do_mmap_NO_NOTIFY)
    segment array accordingly. */
 extern SysRes VG_(am_mmap_file_fixed_client)
    ( Addr start, SizeT length, UInt prot, Int fd, Off64T offset );
+extern SysRes VG_(am_mmap_file_fixed_client_flags)
+   ( Addr start, SizeT length, UInt prot, UInt flags, Int fd, Off64T offset );
 extern SysRes VG_(am_mmap_named_file_fixed_client)
-   ( Addr start, SizeT length, UInt prot, Int fd, Off64T offset, const HChar *name );
+   ( Addr start, SizeT length, UInt prot, Int fd,
+     Off64T offset, const HChar *name );
+extern SysRes VG_(am_mmap_named_file_fixed_client_flags)
+   ( Addr start, SizeT length, UInt prot, UInt flags, Int fd,
+     Off64T offset, const HChar *name );
 
 /* Map anonymously at a fixed address for the client, and update
    the segment array accordingly. */

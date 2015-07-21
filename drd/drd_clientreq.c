@@ -615,6 +615,16 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
       }
       break;
 
+#if defined(VGO_solaris)
+   case VG_USERREQ__RTLD_BIND_GUARD:
+      DRD_(thread_entering_rtld_bind_guard)(drd_tid, arg[1]);
+      break;
+
+   case VG_USERREQ__RTLD_BIND_CLEAR:
+      DRD_(thread_leaving_rtld_bind_clear)(drd_tid, arg[1]);
+      break;
+#endif /* VGO_solaris */
+
    default:
 #if 0
       VG_(message)(Vg_DebugMsg, "Unrecognized client request 0x%lx 0x%lx",

@@ -220,6 +220,7 @@ extern Int   VG_(clo_dump_error);
 typedef
    enum {
       SimHint_lax_ioctls,
+      SimHint_lax_doors,
       SimHint_fuse_compatible,
       SimHint_enable_outer,
       SimHint_no_inner_prefix,

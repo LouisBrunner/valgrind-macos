@@ -1,0 +1,11 @@
+Invalid read of size 1
+   at 0x........: test_begin (brk.c:19)
+   by 0x........: main (brk.c:78)
+ Address 0x........ is 0 bytes after the brk data segment limit 0x........
+
+Invalid read of size 1
+   at 0x........: test_begin (brk.c:32)
+   by 0x........: main (brk.c:78)
+ Address 0x........ is 0 bytes after the brk data segment limit 0x........
+
+brk segment overflow in thread #1: can't grow to 0x........

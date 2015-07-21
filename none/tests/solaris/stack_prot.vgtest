@@ -1,0 +1,2 @@
+prog: stack_prot
+vgopts: -q

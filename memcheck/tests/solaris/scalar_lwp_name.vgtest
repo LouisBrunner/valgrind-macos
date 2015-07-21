@@ -1,0 +1,4 @@
+prereq: test -e scalar_lwp_name
+prog: scalar_lwp_name
+vgopts: -q
+stderr_filter_args:

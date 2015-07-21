@@ -3513,9 +3513,6 @@ Locks held: none
    by 0x........: main (tc19_shadowmem.c:144)
  Block was alloc'd by thread #x
 
-
-More than 100 errors detected.  Subsequent errors
-will still be recorded, but in less detail than before.
 ---------- short gran, 1 .. 98, skip 1 ----------
 ---Thread-Announcement------------------------------------------
 

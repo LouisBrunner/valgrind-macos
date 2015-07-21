@@ -46,7 +46,15 @@ int frame1 ( void )
 
 int main ( void )
 {
-  return frame1() - 1;
+  int ret = frame1() - 1;
+
+#if defined(VGO_solaris)
+  /* Avoid reporting possible memory leak on finish when both FILE->base
+     and FILE->ptr point to the middle of a buffer allocated in _findbuf()
+     for stdout. */
+  fcloseall();
+#endif
+  return ret;
 }
 
 /*

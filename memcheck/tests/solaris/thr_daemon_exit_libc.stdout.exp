@@ -1,0 +1,12 @@
+DAEMON thread #0 running
+DAEMON thread #1 running
+DAEMON thread #2 running
+DAEMON thread #3 running
+DAEMON thread #4 running
+non-daemon thread #0 running
+non-daemon thread #1 running
+non-daemon thread #2 running
+non-daemon thread #3 running
+non-daemon thread #4 running
+non-daemon thread #5 running
+MAIN thread exiting

@@ -16,8 +16,8 @@ define checkstep
 end
 #
 # break1 and break2
-break t.c:112
-break t.c:117
+break t.c:113
+break t.c:118
 #
 continue
 # first break encountered.

@@ -1,4 +1,5 @@
 #define _GNU_SOURCE
+#include <errno.h>
 #include <string.h>
 #include <pthread.h>
 #include <stdlib.h>
@@ -26,7 +27,8 @@ static pid_t gettid()
 static void whoami(char *msg) __attribute__((unused));
 static void whoami(char *msg)
 {
-   fprintf(stderr, "pid %d Thread %d %s\n", getpid(), gettid(), msg);
+   fprintf(stderr, "pid %ld Thread %ld %s\n", (long) getpid(), (long) gettid(),
+           msg);
    fflush(stderr);
 }
 
@@ -82,8 +84,8 @@ static void *sleeper_or_burner(void *v)
          t[s->t].tv_sec = sleepms / 1000;
          t[s->t].tv_usec = (sleepms % 1000) * 1000;
          ret = select (0, NULL, NULL, NULL, &t[s->t]);
-         /* We only expect a timeout result from the above. */
-         if (ret != 0)
+         /* We only expect a timeout result or EINTR from the above. */
+         if (ret != 0 && errno != EINTR)
             perror("unexpected result from select");
       }
       if (burn > 0 && s->burn)

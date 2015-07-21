@@ -39,6 +39,9 @@ endif
 if VGCONF_PLATFORMS_INCLUDE_X86_DARWIN
 valgrind_listener_LDFLAGS   += -Wl,-read_only_relocs -Wl,suppress
 endif
+if VGCONF_OS_IS_SOLARIS
+valgrind_listener_LDADD      = -lsocket -lnsl
+endif
 
 valgrind_di_server_SOURCES   = valgrind-di-server.c
 valgrind_di_server_CPPFLAGS  = $(AM_CPPFLAGS_PRI) -I$(top_srcdir)/coregrind
@@ -50,6 +53,9 @@ valgrind_di_server_CFLAGS    += -static
 endif
 if VGCONF_PLATFORMS_INCLUDE_X86_DARWIN
 valgrind_di_server_LDFLAGS   += -Wl,-read_only_relocs -Wl,suppress
+endif
+if VGCONF_OS_IS_SOLARIS
+valgrind_di_server_LDADD     = -lsocket -lnsl
 endif
 
 #----------------------------------------------------------------------------

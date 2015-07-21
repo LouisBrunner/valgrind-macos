@@ -174,6 +174,18 @@ SysRes VG_(am_do_mmap_NO_NOTIFY)( Addr start, SizeT length, UInt prot,
    }
    res = VG_(do_syscall6)(__NR_mmap, (UWord)start, length,
                           prot, flags, (UInt)fd, offset);
+#  elif defined(VGP_x86_solaris)
+   /* MAP_ANON with fd==0 is EINVAL. */
+   if (fd == 0 && (flags & VKI_MAP_ANONYMOUS))
+      fd = -1;
+   res = VG_(do_syscall7)(__NR_mmap64, (UWord)start, length, prot, flags,
+                          (UInt)fd, offset & 0xffffffff, offset >> 32);
+#  elif defined(VGP_amd64_solaris)
+   /* MAP_ANON with fd==0 is EINVAL. */
+   if (fd == 0 && (flags & VKI_MAP_ANONYMOUS))
+      fd = -1;
+   res = VG_(do_syscall6)(__NR_mmap, (UWord)start, length, prot, flags,
+                          (UInt)fd, offset);
 #  else
 #    error Unknown platform
 #  endif
@@ -249,8 +261,13 @@ SysRes ML_(am_open) ( const HChar* pathname, Int flags, Int mode )
 #  elif defined(VGP_tilegx_linux)
    SysRes res = VG_(do_syscall4)(__NR_openat, VKI_AT_FDCWD, (UWord)pathname,
                                  flags, mode);
-#  else
+#  elif defined(VGO_linux) || defined(VGO_darwin)
    SysRes res = VG_(do_syscall3)(__NR_open, (UWord)pathname, flags, mode);
+#  elif defined(VGO_solaris)
+   SysRes res = VG_(do_syscall4)(__NR_openat, VKI_AT_FDCWD, (UWord)pathname,
+                                 flags, mode);
+#  else
+#    error Unknown OS
 #  endif
    return res;
 }
@@ -275,15 +292,20 @@ Int ML_(am_readlink)(const HChar* path, HChar* buf, UInt bufsiz)
 #  elif defined(VGP_tilegx_linux)
    res = VG_(do_syscall4)(__NR_readlinkat, VKI_AT_FDCWD, (UWord)path,
                           (UWord)buf, bufsiz);
-#  else
+#  elif defined(VGO_linux) || defined(VGO_darwin)
    res = VG_(do_syscall3)(__NR_readlink, (UWord)path, (UWord)buf, bufsiz);
+#  elif defined(VGO_solaris)
+   res = VG_(do_syscall4)(__NR_readlinkat, VKI_AT_FDCWD, (UWord)path,
+                          (UWord)buf, bufsiz);
+#  else
+#    error Unknown OS
 #  endif
    return sr_isError(res) ? -1 : sr_Res(res);
 }
 
 Int ML_(am_fcntl) ( Int fd, Int cmd, Addr arg )
 {
-#  if defined(VGO_linux)
+#  if defined(VGO_linux) || defined(VGO_solaris)
    SysRes res = VG_(do_syscall3)(__NR_fcntl, fd, cmd, arg);
 #  elif defined(VGO_darwin)
    SysRes res = VG_(do_syscall3)(__NR_fcntl_nocancel, fd, cmd, arg);
@@ -299,6 +321,7 @@ Bool ML_(am_get_fd_d_i_m)( Int fd,
                            /*OUT*/ULong* dev, 
                            /*OUT*/ULong* ino, /*OUT*/UInt* mode )
 {
+#  if defined(VGO_linux) || defined(VGO_darwin)
    SysRes          res;
    struct vki_stat buf;
 #  if defined(VGO_linux) && defined(__NR_fstat64)
@@ -322,6 +345,26 @@ Bool ML_(am_get_fd_d_i_m)( Int fd,
       return True;
    }
    return False;
+#  elif defined(VGO_solaris)
+#  if defined(VGP_x86_solaris)
+   struct vki_stat64 buf64;
+   SysRes res = VG_(do_syscall4)(__NR_fstatat64, fd, 0, (UWord)&buf64, 0);
+#  elif defined(VGP_amd64_solaris)
+   struct vki_stat buf64;
+   SysRes res = VG_(do_syscall4)(__NR_fstatat, fd, 0, (UWord)&buf64, 0);
+#  else
+#    error "Unknown platform"
+#  endif
+   if (!sr_isError(res)) {
+      *dev  = (ULong)buf64.st_dev;
+      *ino  = (ULong)buf64.st_ino;
+      *mode = (UInt) buf64.st_mode;
+      return True;
+   }
+   return False;
+#  else
+#    error Unknown OS
+#  endif
 }
 
 Bool ML_(am_resolve_filename) ( Int fd, /*OUT*/HChar* buf, Int nbuf )
@@ -346,6 +389,16 @@ Bool ML_(am_resolve_filename) ( Int fd, /*OUT*/HChar* buf, Int nbuf )
       if (tmp[0] == '/') return True;
    }
    return False;
+
+#elif defined(VGO_solaris)
+   Int i;
+   HChar tmp[64];
+   for (i = 0; i < nbuf; i++) buf[i] = 0;
+   ML_(am_sprintf)(tmp, "/proc/self/path/%d", fd);
+   if (ML_(am_readlink)(tmp, buf, nbuf) > 0 && buf[0] == '/')
+      return True;
+   else
+      return False;
 
 #  else
 #     error Unknown OS

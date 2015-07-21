@@ -1,0 +1,42 @@
+#!/usr/bin/env perl
+
+#
+# Filter out all helgrind information about locks except the one named "mx".
+# One lock record looks like:
+# Lock ga 0x........ {
+#  Address 0x........ is 9728 bytes inside data symbol "_uberdata"
+#   kind   mbRec
+# }
+
+use strict;
+use warnings;
+
+my $lock_start_line = undef;
+my $skip_to_closing_line = 0;
+while (<STDIN>) {
+    my $line = $_;
+    chomp($line);
+    if ($line =~ /^Lock ga 0x[\.]+\s+{$/) {
+        $lock_start_line = $line;
+        $skip_to_closing_line = 1;
+    } elsif (($lock_start_line) &&
+             ($line =~ /\s*Address 0x[\.]+ is \d+ bytes inside data symbol "(\S+)"/)) {
+        if ($1 eq "mx") {
+           print "$lock_start_line\n";
+           print "$line\n";
+           $skip_to_closing_line = 0;
+        }
+    } elsif ($line =~ /^}$/) {
+        if ($skip_to_closing_line == 0) {
+            print "$line\n";
+        }
+        undef($lock_start_line);
+        $skip_to_closing_line = 0;
+    } else {
+        if ($skip_to_closing_line == 0) {
+            print "$line\n";
+        }
+    }
+}
+
+exit 0;

@@ -1,0 +1,55 @@
+---------------------------------------------------------
+227:                SYS_zone (ZONE_LIST_DEFUNCT) 3s 1m
+---------------------------------------------------------
+Syscall param zone_list_defunct(cmd) contains uninitialised byte(s)
+   ...
+
+Syscall param zone_list_defunct(uniqidlist) contains uninitialised byte(s)
+   ...
+
+Syscall param zone_list_defunct(numzones) contains uninitialised byte(s)
+   ...
+
+Syscall param zone(numzones) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+227:                SYS_zone (ZONE_LIST_DEFUNCT) 2s 1m
+---------------------------------------------------------
+Syscall param zone_list_defunct(cmd) contains uninitialised byte(s)
+   ...
+
+Syscall param zone_list_defunct(uniqidlist) contains uninitialised byte(s)
+   ...
+
+Syscall param zone(uniqidlist) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+227:                SYS_zone (ZONE_GETATTR_DEFUNCT) 5s 2m
+---------------------------------------------------------
+Syscall param zone_getattr_defunct(cmd) contains uninitialised byte(s)
+   ...
+
+Syscall param zone_getattr_defunct(uniqid) contains uninitialised byte(s)
+   ...
+
+Syscall param zone_getattr_defunct(attr) contains uninitialised byte(s)
+   ...
+
+Syscall param zone_getattr_defunct(valp) contains uninitialised byte(s)
+   ...
+
+Syscall param zone_getattr_defunct(size) contains uninitialised byte(s)
+   ...
+
+Syscall param zone(uniqid) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param zone(valp) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+

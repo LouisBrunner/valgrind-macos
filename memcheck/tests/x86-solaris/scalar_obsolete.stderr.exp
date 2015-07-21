@@ -1,0 +1,76 @@
+---------------------------------------------------------
+215:              SYS_stat64 2s 2m
+---------------------------------------------------------
+Syscall param stat64(path) contains uninitialised byte(s)
+   ...
+
+Syscall param stat64(buf) contains uninitialised byte(s)
+   ...
+
+Syscall param stat64(path) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param stat64(buf) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+216:             SYS_lstat64 2s 2m
+---------------------------------------------------------
+Syscall param lstat64(path) contains uninitialised byte(s)
+   ...
+
+Syscall param lstat64(buf) contains uninitialised byte(s)
+   ...
+
+Syscall param lstat64(path) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param lstat64(buf) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+217:             SYS_fstat64 2s 1m
+---------------------------------------------------------
+Syscall param fstat64(fildes) contains uninitialised byte(s)
+   ...
+
+Syscall param fstat64(buf) contains uninitialised byte(s)
+   ...
+
+Syscall param fstat64(buf) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+225:              SYS_open64 (2-args) 2s 1m
+---------------------------------------------------------
+Syscall param open64(filename) contains uninitialised byte(s)
+   ...
+
+Syscall param open64(flags) contains uninitialised byte(s)
+   ...
+
+Syscall param open(filename) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+225:              SYS_open64 (3-args) 3s 1m
+---------------------------------------------------------
+Syscall param open64(filename) contains uninitialised byte(s)
+   ...
+
+Syscall param open64(flags) contains uninitialised byte(s)
+   ...
+
+Syscall param open64(mode) contains uninitialised byte(s)
+   ...
+
+Syscall param open(filename) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+

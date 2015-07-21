@@ -107,7 +107,8 @@ int main(int argc, char** argv)
   }
 
   /* Initialize synchronization objects. */
-  snprintf(semaphore_name, sizeof(semaphore_name), "semaphore-%d", getpid());
+  snprintf(semaphore_name, sizeof(semaphore_name), "semaphore-%ld",
+           (long) getpid());
   s_sem = create_semaphore(semaphore_name);
   PTH_CALL(pthread_cond_init(&s_cond, 0));
   PTH_CALL(pthread_mutex_init(&s_mutex1, 0));

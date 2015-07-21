@@ -1,0 +1,4 @@
+prereq: test -e scalar_utimensat
+prog: scalar_utimensat
+vgopts: -q
+stderr_filter_args:

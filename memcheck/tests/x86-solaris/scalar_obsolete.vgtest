@@ -1,0 +1,4 @@
+prereq: test -e scalar_obsolete
+prog: scalar_obsolete
+vgopts: -q --error-limit=no
+stderr_filter_args:

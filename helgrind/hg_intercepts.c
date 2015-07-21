@@ -58,6 +58,18 @@
 #include "helgrind.h"
 #include "config.h"
 
+
+#if defined(VGO_solaris)
+/* See porting comments in drd/drd_pthread_intercepts.c
+   However when a POSIX threads API function (for example pthread_cond_init)
+   is built upon the Solaris one (cond_init), intercept only the bottom one.
+   Helgrind does not contain generic synchronization nesting like DRD
+   and double intercept confuses it. */
+#include <synch.h>
+#include <thread.h>
+#endif /* VGO_solaris */
+
+
 #define TRACE_PTH_FNS 0
 #define TRACE_QT4_FNS 0
 #define TRACE_GNAT_FNS 0
@@ -67,9 +79,26 @@
 /*---                                                          ---*/
 /*----------------------------------------------------------------*/
 
+#if defined(VGO_solaris)
+/* On Solaris, libpthread is just a filter library on top of libc.
+ * Threading and synchronization functions in runtime linker are not
+ * intercepted.
+ */
+#define PTH_FUNC(ret_ty, f, args...) \
+   ret_ty I_WRAP_SONAME_FNNAME_ZZ(VG_Z_LIBC_SONAME,f)(args); \
+   ret_ty I_WRAP_SONAME_FNNAME_ZZ(VG_Z_LIBC_SONAME,f)(args)
+
+/* pthread_t is typedef'd to 'unsigned int' but in DO_CREQ_* macros
+   sizeof(Word) is expected. */
+#define CREQ_PTHREAD_T Word
+#define SEM_ERROR ret
+#else
 #define PTH_FUNC(ret_ty, f, args...) \
    ret_ty I_WRAP_SONAME_FNNAME_ZZ(VG_Z_LIBPTHREAD_SONAME,f)(args); \
    ret_ty I_WRAP_SONAME_FNNAME_ZZ(VG_Z_LIBPTHREAD_SONAME,f)(args)
+#define CREQ_PTHREAD_T pthread_t
+#define SEM_ERROR errno
+#endif /* VGO_solaris */
 
 // Do a client request.  These are macros rather than a functions so
 // as to avoid having an extra frame in stack traces.
@@ -133,6 +162,22 @@
                                  _arg1,_arg2,_arg3,0,0); \
    } while (0)
 
+#define DO_CREQ_v_WWWW(_creqF, _ty1F,_arg1F,             \
+                       _ty2F, _arg2F, _ty3F, _arg3F,     \
+                       _ty4F, _arg4F)                    \
+   do {                                                  \
+      Word _arg1, _arg2, _arg3, _arg4;                   \
+      assert(sizeof(_ty1F) == sizeof(Word));             \
+      assert(sizeof(_ty2F) == sizeof(Word));             \
+      assert(sizeof(_ty3F) == sizeof(Word));             \
+      assert(sizeof(_ty4F) == sizeof(Word));             \
+      _arg1 = (Word)(_arg1F);                            \
+      _arg2 = (Word)(_arg2F);                            \
+      _arg3 = (Word)(_arg3F);                            \
+      _arg4 = (Word)(_arg4F);                            \
+      VALGRIND_DO_CLIENT_REQUEST_STMT((_creqF),          \
+                             _arg1,_arg2,_arg3,_arg4,0); \
+   } while (0)
 
 #define DO_PthAPIerror(_fnnameF, _errF)                  \
    do {                                                  \
@@ -196,10 +241,120 @@ static const HChar* lame_strerror ( long err )
       case EDEADLK:     return "EDEADLK: Resource deadlock would occur";
       case EOPNOTSUPP:  return "EOPNOTSUPP: Operation not supported on "
                                "transport endpoint"; /* honest, guv */
-      default:          return "tc_intercepts.c: lame_strerror(): "
+      case ETIME:       return "ETIME: Timer expired";
+      default:          return "hg_intercepts.c: lame_strerror(): "
                                "unhandled case -- please fix me!";
    }
 }
+
+#if defined(VGO_solaris)
+/*
+ * Solaris provides higher throughput, parallelism and scalability than other
+ * operating systems, at the cost of more fine-grained locking activity.
+ * This means for example that when a thread is created under Linux, just one
+ * big lock in glibc is used for all thread setup. Solaris libc uses several
+ * fine-grained locks and the creator thread resumes its activities as soon
+ * as possible, leaving for example stack and TLS setup activities to the
+ * created thread.
+ *
+ * This situation confuses Helgrind as it assumes there is some false ordering
+ * in place between creator and created thread; and therefore many types of
+ * race conditions in the application would not be reported. To prevent such
+ * false ordering, command line option --ignore-thread-creation is set to
+ * 'yes' by default on Solaris. All activity (loads, stores, client requests)
+ * is therefore ignored during:
+ * - pthread_create() call in the creator thread [libc.so]
+ * - thread creation phase (stack and TLS setup) in the created thread [libc.so]
+ *
+ * As explained in the comments for _ti_bind_guard(), whenever the runtime
+ * linker has to perform any activity (such as resolving a symbol), it protects
+ * its data structures by calling into rt_bind_guard() which in turn invokes
+ * _ti_bind_guard() in libc. Pointers to _ti_bind_guard() and _ti_bind_clear()
+ * are passed from libc to runtime linker in _ld_libc() call during libc_init().
+ * All activity is also ignored during:
+ * - runtime dynamic linker work between rt_bind_guard() and rt_bind_clear()
+ *   calls [ld.so]
+ *
+ * This also means that Helgrind does not report race conditions in libc (when
+ * --ignore-thread-creation=yes) and runtime linker itself (unconditionally)
+ * during these ignored sequences.
+ */
+
+#include "pub_tool_libcassert.h"
+#include "pub_tool_vki.h"
+
+/*
+ * Original function pointers for _ti_bind_guard() and _ti_bind_clear()
+ * from libc. They are intercepted in function wrapper of _ld_libc().
+ */
+typedef int (*hg_rtld_guard_fn)(int flags);
+static hg_rtld_guard_fn hg_rtld_bind_guard = NULL;
+static hg_rtld_guard_fn hg_rtld_bind_clear = NULL;
+
+static void hg_init(void) __attribute__((constructor));
+static void hg_init(void)
+{
+   if ((hg_rtld_bind_guard == NULL) || (hg_rtld_bind_clear == NULL)) {
+      fprintf(stderr,
+"Bind guard functions for the runtime linker (ld.so.1) were not intercepted.\n"
+"This means the interface between libc and runtime linker changed\n"
+"and Helgrind needs to be ported properly. Giving up.\n");
+      tl_assert(0);
+   }
+}
+
+/*
+ * Intercepts for _ti_bind_guard() and _ti_bind_clear() functions from libc.
+ * These are intercepted during _ld_libc() call by identifying CI_BIND_GUARD
+ * and CI_BIND_CLEAR, to provide resilience against function renaming.
+ */
+static int _ti_bind_guard_intercept_WRK(int flags)
+{
+   VALGRIND_DO_CLIENT_REQUEST_STMT(_VG_USERREQ__HG_RTLD_BIND_GUARD,
+                                   flags, 0, 0, 0, 0);
+   return hg_rtld_bind_guard(flags);
+}
+
+static int _ti_bind_clear_intercept_WRK(int flags)
+{
+   int ret = hg_rtld_bind_clear(flags);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(_VG_USERREQ__HG_RTLD_BIND_CLEAR,
+                                   flags, 0, 0, 0, 0);
+   return ret;
+}
+
+/*
+ * Wrapped _ld_libc() from the runtime linker ld.so.1.
+ */
+void I_WRAP_SONAME_FNNAME_ZZ(VG_Z_LD_SO_1, ZuldZulibc)(vki_Lc_interface *ptr);
+void I_WRAP_SONAME_FNNAME_ZZ(VG_Z_LD_SO_1, ZuldZulibc)(vki_Lc_interface *ptr)
+{
+   OrigFn fn;
+   int    tag;
+
+   VALGRIND_GET_ORIG_FN(fn);
+
+   vki_Lc_interface *funcs = ptr;
+   for (tag = funcs->ci_tag; tag != 0; tag = (++funcs)->ci_tag) {
+      switch (tag) {
+      case VKI_CI_BIND_GUARD:
+         if (funcs->vki_ci_un.ci_func != _ti_bind_guard_intercept_WRK) {
+            hg_rtld_bind_guard = funcs->vki_ci_un.ci_func;
+            funcs->vki_ci_un.ci_func = _ti_bind_guard_intercept_WRK;
+         }
+         break;
+      case VKI_CI_BIND_CLEAR:
+         if (funcs->vki_ci_un.ci_func != _ti_bind_clear_intercept_WRK) {
+            hg_rtld_bind_clear = funcs->vki_ci_un.ci_func;
+            funcs->vki_ci_un.ci_func = _ti_bind_clear_intercept_WRK;
+         }
+         break;
+      }
+   }
+
+   CALL_FN_v_W(fn, ptr);
+}
+#endif /* VGO_solaris */
 
 
 /*----------------------------------------------------------------*/
@@ -213,7 +368,7 @@ static void* mythread_wrapper ( void* xargsV )
    void* arg         = (void*)xargs[1];
    pthread_t me = pthread_self();
    /* Tell the tool what my pthread_t is. */
-   DO_CREQ_v_W(_VG_USERREQ__HG_SET_MY_PTHREAD_T, pthread_t,me);
+   DO_CREQ_v_W(_VG_USERREQ__HG_SET_MY_PTHREAD_T, CREQ_PTHREAD_T, me);
    /* allow the parent to proceed.  We can't let it proceed until
       we're ready because (1) we need to make sure it doesn't exit and
       hence deallocate xargs[] while we still need it, and (2) we
@@ -267,7 +422,11 @@ static int pthread_create_WRK(pthread_t *thread, const pthread_attr_t *attr,
       comes to re-use this piece of stack in some other frame. */
    VALGRIND_HG_DISABLE_CHECKING(&xargs, sizeof(xargs));
 
+   VALGRIND_DO_CLIENT_REQUEST_STMT(_VG_USERREQ__HG_PTHREAD_CREATE_BEGIN,
+                                   0, 0, 0, 0, 0);
    CALL_FN_W_WWWW(ret, fn, thread,attr,mythread_wrapper,&xargs[0]);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(_VG_USERREQ__HG_PTHREAD_CREATE_END,
+                                   0, 0, 0, 0, 0);
 
    if (ret == 0) {
       /* we have to wait for the child to notify the tool of its
@@ -312,9 +471,68 @@ static int pthread_create_WRK(pthread_t *thread, const pthread_attr_t *attr,
       // trap anything else
       assert(0);
    }
+#elif defined(VGO_solaris)
+   PTH_FUNC(int, pthreadZucreate, // pthread_create
+                 pthread_t *thread, const pthread_attr_t *attr,
+                 void *(*start) (void *), void *arg) {
+      return pthread_create_WRK(thread, attr, start, arg);
+   }
 #else
 #  error "Unsupported OS"
 #endif
+
+#if defined(VGO_solaris)
+/* Solaris also provides thr_create() in addition to pthread_create().
+ * Both pthread_create(3C) and thr_create(3C) are based on private
+ * _thrp_create().
+ */
+__attribute__((noinline))
+static int thr_create_WRK(void *stk, size_t stksize, void *(*start)(void *),
+                          void *arg, long flags, thread_t *new_thread)
+{
+   int    ret;
+   OrigFn fn;
+   volatile Word xargs[3];
+
+   VALGRIND_GET_ORIG_FN(fn);
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, "<< thr_create wrapper"); fflush(stderr);
+   }
+   xargs[0] = (Word)start;
+   xargs[1] = (Word)arg;
+   xargs[2] = 1; /* serves as a spinlock -- sigh */
+   /* See comments in pthread_create_WRK() */
+   VALGRIND_HG_DISABLE_CHECKING(&xargs, sizeof(xargs));
+
+   VALGRIND_DO_CLIENT_REQUEST_STMT(_VG_USERREQ__HG_PTHREAD_CREATE_BEGIN,
+                                   0, 0, 0, 0, 0);
+   CALL_FN_W_6W(ret, fn, stk, stksize, mythread_wrapper, start, flags,
+                new_thread);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(_VG_USERREQ__HG_PTHREAD_CREATE_END,
+                                   0, 0, 0, 0, 0);
+
+   if (ret == 0) {
+      while (xargs[2] != 0) {
+         /* See comments in pthread_create_WRK(). */
+         sched_yield();
+      }
+   } else {
+      DO_PthAPIerror("thr_create", ret);
+   }
+
+   VALGRIND_HG_ENABLE_CHECKING(&xargs, sizeof(xargs));
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, " :: thr_create -> %d >>\n", ret);
+   }
+   return ret;
+}
+   PTH_FUNC(int, thrZucreate, // thr_create
+                 void *stk, size_t stksize, void *(*start)(void *),
+                 void *arg, long flags, thread_t *new_thread) {
+      return thr_create_WRK(stk, stksize, start, arg, flags, new_thread);
+   }
+#endif /* VGO_solaris */
 
 
 //-----------------------------------------------------------
@@ -338,7 +556,7 @@ static int pthread_join_WRK(pthread_t thread, void** value_pointer)
       it is guaranteed (by NPTL) that the joiner will completely gone
       before pthread_join (the original) returns.  See email below.*/
    if (ret == 0 /*success*/) {
-      DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_JOIN_POST, pthread_t,thread);
+      DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_JOIN_POST, CREQ_PTHREAD_T, thread);
    } else { 
       DO_PthAPIerror( "pthread_join", ret );
    }
@@ -355,6 +573,11 @@ static int pthread_join_WRK(pthread_t thread, void** value_pointer)
    }
 #elif defined(VGO_darwin)
    PTH_FUNC(int, pthreadZujoinZa, // pthread_join*
+            pthread_t thread, void** value_pointer) {
+      return pthread_join_WRK(thread, value_pointer);
+   }
+#elif defined(VGO_solaris)
+   PTH_FUNC(int, pthreadZujoin, // pthread_join
             pthread_t thread, void** value_pointer) {
       return pthread_join_WRK(thread, value_pointer);
    }
@@ -403,6 +626,43 @@ Drepper:
 That's the key.  The kernel resets the TID field after the thread is
 done.  No way the joiner can return before the thread is gone.
 */
+
+#if defined(VGO_solaris)
+/* Solaris also provides thr_join() in addition to pthread_join().
+ * Both pthread_join(3C) and thr_join(3C) are based on private _thrp_join().
+ *
+ * :TODO: No functionality is currently provided for joinee == 0 and departed.
+ *        This would require another client request, of course.
+ */
+__attribute__((noinline))
+static int thr_join_WRK(thread_t joinee, thread_t *departed, void **thread_return)
+{
+   int ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, "<< thr_join wrapper"); fflush(stderr);
+   }
+
+   CALL_FN_W_WWW(ret, fn, joinee, departed, thread_return);
+
+   if (ret == 0 /*success*/) {
+      DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_JOIN_POST, CREQ_PTHREAD_T, joinee);
+   } else {
+      DO_PthAPIerror("thr_join", ret);
+   }
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, " :: thr_join -> %d >>\n", ret);
+   }
+   return ret;
+}
+   PTH_FUNC(int, thrZujoin, // thr_join
+            thread_t joinee, thread_t *departed, void **thread_return) {
+      return thr_join_WRK(joinee, departed, thread_return);
+   }
+#endif /* VGO_solaris */
+
 
 //-----------------------------------------------------------
 // Ada gcc gnat runtime:
@@ -490,6 +750,7 @@ void I_WRAP_SONAME_FNNAME_ZU
 */
 
 //-----------------------------------------------------------
+#if !defined(VGO_solaris)
 // glibc:  pthread_mutex_init
 // darwin: pthread_mutex_init
 PTH_FUNC(int, pthreadZumutexZuinit, // pthread_mutex_init
@@ -527,12 +788,45 @@ PTH_FUNC(int, pthreadZumutexZuinit, // pthread_mutex_init
    return ret;
 }
 
+#else /* VGO_solaris */
+
+// Solaris: mutex_init (pthread_mutex_init calls here)
+PTH_FUNC(int, mutexZuinit, // mutex_init
+              mutex_t *mutex, int type, void *arg)
+{
+   int    ret;
+   long   mbRec;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, "<< mxinit %p", mutex); fflush(stderr);
+   }
+
+   mbRec = ((type & LOCK_RECURSIVE) != 0) ? 1 : 0;
+
+   CALL_FN_W_WWW(ret, fn, mutex, type, arg);
+
+   if (ret == 0 /*success*/) {
+      DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_MUTEX_INIT_POST,
+                   mutex_t *, mutex, long, mbRec);
+   } else {
+      DO_PthAPIerror("mutex_init", ret);
+   }
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, " :: mxinit -> %d >>\n", ret);
+   }
+   return ret;
+}
+#endif /* VGO_solaris */
+
 
 //-----------------------------------------------------------
-// glibc:  pthread_mutex_destroy
-// darwin: pthread_mutex_destroy
-PTH_FUNC(int, pthreadZumutexZudestroy, // pthread_mutex_destroy
-              pthread_mutex_t *mutex)
+// glibc:   pthread_mutex_destroy
+// darwin:  pthread_mutex_destroy
+// Solaris: mutex_destroy (pthread_mutex_destroy is a weak alias)
+__attribute__((noinline))
+static int mutex_destroy_WRK(pthread_mutex_t *mutex)
 {
    int    ret;
    unsigned long mutex_is_init;
@@ -565,12 +859,27 @@ PTH_FUNC(int, pthreadZumutexZudestroy, // pthread_mutex_destroy
    return ret;
 }
 
+#if defined(VGO_linux) || defined(VGO_darwin)
+   PTH_FUNC(int, pthreadZumutexZudestroy, // pthread_mutex_destroy
+            pthread_mutex_t *mutex) {
+      return mutex_destroy_WRK(mutex);
+   }
+#elif defined(VGO_solaris)
+   PTH_FUNC(int, mutexZudestroy, // mutex_destroy
+            pthread_mutex_t *mutex) {
+      return mutex_destroy_WRK(mutex);
+   }
+#else
+#  error "Unsupported OS"
+#endif
+
 
 //-----------------------------------------------------------
-// glibc:  pthread_mutex_lock
-// darwin: pthread_mutex_lock
-PTH_FUNC(int, pthreadZumutexZulock, // pthread_mutex_lock
-              pthread_mutex_t *mutex)
+// glibc:   pthread_mutex_lock
+// darwin:  pthread_mutex_lock
+// Solaris: mutex_lock (pthread_mutex_lock is a weak alias)
+__attribute__((noinline))
+static int mutex_lock_WRK(pthread_mutex_t *mutex)
 {
    int    ret;
    OrigFn fn;
@@ -589,10 +898,10 @@ PTH_FUNC(int, pthreadZumutexZulock, // pthread_mutex_lock
       that the lock has been acquired by someone (this thread).  Does
       this matter?  Not sure, but I don't think so. */
 
-   if (ret == 0 /*success*/) {
-      DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_POST,
-                  pthread_mutex_t*,mutex);
-   } else { 
+   DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_POST,
+                pthread_mutex_t *, mutex, long, (ret == 0) ? True : False);
+
+   if (ret != 0) {
       DO_PthAPIerror( "pthread_mutex_lock", ret );
    }
 
@@ -602,10 +911,51 @@ PTH_FUNC(int, pthreadZumutexZulock, // pthread_mutex_lock
    return ret;
 }
 
+#if defined(VGO_linux) || defined(VGO_darwin)
+   PTH_FUNC(int, pthreadZumutexZulock, // pthread_mutex_lock
+            pthread_mutex_t *mutex) {
+      return mutex_lock_WRK(mutex);
+   }
+#elif defined(VGO_solaris)
+   PTH_FUNC(int, mutexZulock, // mutex_lock
+            pthread_mutex_t *mutex) {
+      return mutex_lock_WRK(mutex);
+   }
+#else
+#  error "Unsupported OS"
+#endif
+
+#if defined(VGO_solaris)
+/* Internal to libc. Mutex is usually initialized only implicitly,
+ * by zeroing mutex_t structure.
+ */
+__attribute__((noinline))
+PTH_FUNC(void, lmutexZulock, // lmutex_lock
+               mutex_t *mutex)
+{
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, "<< lmxlock %p", mutex); fflush(stderr);
+   }
+
+   DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_PRE,
+                mutex_t *, mutex, long, 0 /*!isTryLock*/);
+   CALL_FN_v_W(fn, mutex);
+   DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_POST,
+                mutex_t *, mutex, long, True);
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, " :: lmxlock >>\n");
+   }
+}
+#endif /* VGO_solaris */
+
 
 //-----------------------------------------------------------
-// glibc:  pthread_mutex_trylock
-// darwin: pthread_mutex_trylock
+// glibc:   pthread_mutex_trylock
+// darwin:  pthread_mutex_trylock
+// Solaris: mutex_trylock (pthread_mutex_trylock is a weak alias)
 //
 // pthread_mutex_trylock.  The handling needed here is very similar
 // to that for pthread_mutex_lock, except that we need to tell
@@ -613,8 +963,8 @@ PTH_FUNC(int, pthreadZumutexZulock, // pthread_mutex_lock
 // therefore not to complain if the lock is nonrecursive and 
 // already locked by this thread -- because then it'll just fail
 // immediately with EBUSY.
-PTH_FUNC(int, pthreadZumutexZutrylock, // pthread_mutex_trylock
-              pthread_mutex_t *mutex)
+__attribute__((noinline))
+static int mutex_trylock_WRK(pthread_mutex_t *mutex)
 {
    int    ret;
    OrigFn fn;
@@ -633,10 +983,10 @@ PTH_FUNC(int, pthreadZumutexZutrylock, // pthread_mutex_trylock
       that the lock has been acquired by someone (this thread).  Does
       this matter?  Not sure, but I don't think so. */
 
-   if (ret == 0 /*success*/) {
-      DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_POST,
-                  pthread_mutex_t*,mutex);
-   } else { 
+   DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_POST,
+               pthread_mutex_t *, mutex, long, (ret == 0) ? True : False);
+
+   if (ret != 0) {
       if (ret != EBUSY)
          DO_PthAPIerror( "pthread_mutex_trylock", ret );
    }
@@ -647,15 +997,30 @@ PTH_FUNC(int, pthreadZumutexZutrylock, // pthread_mutex_trylock
    return ret;
 }
 
+#if defined(VGO_linux) || defined(VGO_darwin)
+   PTH_FUNC(int, pthreadZumutexZutrylock, // pthread_mutex_trylock
+            pthread_mutex_t *mutex) {
+      return mutex_trylock_WRK(mutex);
+   }
+#elif defined(VGO_solaris)
+   PTH_FUNC(int, mutexZutrylock, // mutex_trylock
+            pthread_mutex_t *mutex) {
+      return mutex_trylock_WRK(mutex);
+   }
+#else
+#  error "Unsupported OS"
+#endif
+
 
 //-----------------------------------------------------------
-// glibc:  pthread_mutex_timedlock
-// darwin: (doesn't appear to exist)
+// glibc:   pthread_mutex_timedlock
+// darwin:  (doesn't appear to exist)
+// Solaris: pthread_mutex_timedlock
 //
 // pthread_mutex_timedlock.  Identical logic to pthread_mutex_trylock.
-PTH_FUNC(int, pthreadZumutexZutimedlock, // pthread_mutex_timedlock
-         pthread_mutex_t *mutex,
-         void* timeout)
+__attribute__((noinline))
+static int mutex_timedlock_WRK(pthread_mutex_t *mutex,
+                               void *timeout)
 {
    int    ret;
    OrigFn fn;
@@ -675,10 +1040,10 @@ PTH_FUNC(int, pthreadZumutexZutimedlock, // pthread_mutex_timedlock
       that the lock has been acquired by someone (this thread).  Does
       this matter?  Not sure, but I don't think so. */
 
-   if (ret == 0 /*success*/) {
-      DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_POST,
-                  pthread_mutex_t*,mutex);
-   } else { 
+   DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_POST,
+                pthread_mutex_t *, mutex, long, (ret == 0) ? True : False);
+
+   if (ret != 0) {
       if (ret != ETIMEDOUT)
          DO_PthAPIerror( "pthread_mutex_timedlock", ret );
    }
@@ -689,12 +1054,26 @@ PTH_FUNC(int, pthreadZumutexZutimedlock, // pthread_mutex_timedlock
    return ret;
 }
 
+PTH_FUNC(int, pthreadZumutexZutimedlock, // pthread_mutex_timedlock
+         pthread_mutex_t *mutex,
+         void *timeout) {
+   return mutex_timedlock_WRK(mutex, timeout);
+}
+#if defined(VGO_solaris)
+PTH_FUNC(int, pthreadZumutexZureltimedlock, // pthread_mutex_reltimedlock
+         pthread_mutex_t *mutex,
+         void *timeout) {
+   return mutex_timedlock_WRK(mutex, timeout);
+}
+#endif
+
 
 //-----------------------------------------------------------
-// glibc:  pthread_mutex_unlock
-// darwin: pthread_mutex_unlock
-PTH_FUNC(int, pthreadZumutexZuunlock, // pthread_mutex_unlock
-              pthread_mutex_t *mutex)
+// glibc:   pthread_mutex_unlock
+// darwin:  pthread_mutex_unlock
+// Solaris: mutex_unlock (pthread_mutex_unlock is a weak alias)
+__attribute__((noinline))
+static int mutex_unlock_WRK(pthread_mutex_t *mutex)
 {
    int    ret;
    OrigFn fn;
@@ -709,10 +1088,10 @@ PTH_FUNC(int, pthreadZumutexZuunlock, // pthread_mutex_unlock
 
    CALL_FN_W_W(ret, fn, mutex);
 
-   if (ret == 0 /*success*/) {
-      DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_MUTEX_UNLOCK_POST,
-                  pthread_mutex_t*,mutex);
-   } else { 
+   DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_MUTEX_UNLOCK_POST,
+               pthread_mutex_t*,mutex);
+
+   if (ret != 0) {
       DO_PthAPIerror( "pthread_mutex_unlock", ret );
    }
 
@@ -721,6 +1100,46 @@ PTH_FUNC(int, pthreadZumutexZuunlock, // pthread_mutex_unlock
    }
    return ret;
 }
+
+#if defined(VGO_linux) || defined(VGO_darwin)
+   PTH_FUNC(int, pthreadZumutexZuunlock, // pthread_mutex_unlock
+            pthread_mutex_t *mutex) {
+      return mutex_unlock_WRK(mutex);
+   }
+#elif defined(VGO_solaris)
+   PTH_FUNC(int, mutexZuunlock, // mutex_unlock
+            pthread_mutex_t *mutex) {
+      return mutex_unlock_WRK(mutex);
+   }
+#else
+#  error "Unsupported OS"
+#endif
+
+
+#if defined(VGO_solaris)
+/* Internal to libc. */
+__attribute__((noinline))
+PTH_FUNC(void, lmutexZuunlock, // lmutex_unlock
+               mutex_t *mutex)
+{
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, "<< lmxunlk %p", mutex); fflush(stderr);
+   }
+
+   DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_MUTEX_UNLOCK_PRE,
+               mutex_t *, mutex);
+   CALL_FN_v_W(fn, mutex);
+   DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_MUTEX_UNLOCK_POST,
+               mutex_t*, mutex);
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, " lmxunlk >>\n");
+   }
+}
+#endif /* VGO_solaris */
 
 
 /*----------------------------------------------------------------*/
@@ -734,11 +1153,12 @@ PTH_FUNC(int, pthreadZumutexZuunlock, // pthread_mutex_unlock
 */
 
 //-----------------------------------------------------------
-// glibc:  pthread_cond_wait@GLIBC_2.2.5
-// glibc:  pthread_cond_wait@@GLIBC_2.3.2
-// darwin: pthread_cond_wait
-// darwin: pthread_cond_wait$NOCANCEL$UNIX2003
-// darwin: pthread_cond_wait$UNIX2003
+// glibc:   pthread_cond_wait@GLIBC_2.2.5
+// glibc:   pthread_cond_wait@@GLIBC_2.3.2
+// darwin:  pthread_cond_wait
+// darwin:  pthread_cond_wait$NOCANCEL$UNIX2003
+// darwin:  pthread_cond_wait$UNIX2003
+// Solaris: cond_wait (pthread_cond_wait is built atop of cond_wait)
 //
 __attribute__((noinline))
 static int pthread_cond_wait_WRK(pthread_cond_t* cond,
@@ -774,18 +1194,17 @@ static int pthread_cond_wait_WRK(pthread_cond_t* cond,
 
    CALL_FN_W_WW(ret, fn, cond,mutex);
 
-   /* these conditionals look stupid, but compare w/ same logic for
+   /* this conditional look stupid, but compare w/ same logic for
       pthread_cond_timedwait below */
-   if (ret == 0 && mutex_is_valid) {
-      /* and now we have the mutex again */
-      DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_POST,
-                  pthread_mutex_t*,mutex);
+   if (mutex_is_valid) {
+      /* and now we have the mutex again if (ret == 0) */
+      DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_POST,
+                   pthread_mutex_t *, mutex, long, (ret == 0) ? True : False);
    }
 
-   if (ret == 0 && mutex_is_valid) {
-      DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_COND_WAIT_POST,
-                    pthread_cond_t*,cond, pthread_mutex_t*,mutex, long,0);
-   }
+   DO_CREQ_v_WWWW(_VG_USERREQ__HG_PTHREAD_COND_WAIT_POST,
+                  pthread_cond_t*,cond, pthread_mutex_t*,mutex, long,0,
+                  long, (ret == 0 && mutex_is_valid) ? True : False);
 
    if (ret != 0) {
       DO_PthAPIerror( "pthread_cond_wait", ret );
@@ -807,24 +1226,32 @@ static int pthread_cond_wait_WRK(pthread_cond_t* cond,
                  pthread_cond_t* cond, pthread_mutex_t* mutex) {
       return pthread_cond_wait_WRK(cond, mutex);
    }
+#elif defined(VGO_solaris)
+   PTH_FUNC(int, condZuwait, // cond_wait
+                 pthread_cond_t *cond, pthread_mutex_t *mutex) {
+      return pthread_cond_wait_WRK(cond, mutex);
+   }
 #else
 #  error "Unsupported OS"
 #endif
 
 
 //-----------------------------------------------------------
-// glibc:  pthread_cond_timedwait@@GLIBC_2.3.2
-// glibc:  pthread_cond_timedwait@GLIBC_2.2.5
-// glibc:  pthread_cond_timedwait@GLIBC_2.0
-// darwin: pthread_cond_timedwait
-// darwin: pthread_cond_timedwait$NOCANCEL$UNIX2003
-// darwin: pthread_cond_timedwait$UNIX2003
-// darwin: pthread_cond_timedwait_relative_np (trapped)
+// glibc:   pthread_cond_timedwait@@GLIBC_2.3.2
+// glibc:   pthread_cond_timedwait@GLIBC_2.2.5
+// glibc:   pthread_cond_timedwait@GLIBC_2.0
+// darwin:  pthread_cond_timedwait
+// darwin:  pthread_cond_timedwait$NOCANCEL$UNIX2003
+// darwin:  pthread_cond_timedwait$UNIX2003
+// darwin:  pthread_cond_timedwait_relative_np (trapped)
+// Solaris: cond_timedwait (pthread_cond_timedwait is built on cond_timedwait)
+// Solaris: cond_reltimedwait (pthread_cond_reltimedwait_np is built on this)
 //
 __attribute__((noinline))
 static int pthread_cond_timedwait_WRK(pthread_cond_t* cond,
                                       pthread_mutex_t* mutex, 
-                                      struct timespec* abstime)
+                                      struct timespec* abstime,
+                                      int timeout_error)
 {
    int ret;
    OrigFn fn;
@@ -859,25 +1286,26 @@ static int pthread_cond_timedwait_WRK(pthread_cond_t* cond,
 
    CALL_FN_W_WWW(ret, fn, cond,mutex,abstime);
 
-   if (!abstime_is_valid && ret != EINVAL) {
+   if (mutex_is_valid && !abstime_is_valid && ret != EINVAL) {
       DO_PthAPIerror("Bug in libpthread: pthread_cond_timedwait "
                      "invalid abstime did not cause"
                      " EINVAL", ret);
    }
 
-   if ((ret == 0 || ret == ETIMEDOUT) && mutex_is_valid) {
-      /* and now we have the mutex again */
-      DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_POST,
-                  pthread_mutex_t*,mutex);
+   if (mutex_is_valid && abstime_is_valid) {
+      /* and now we have the mutex again if (ret == 0 || ret == timeout) */
+      DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_POST,
+                   pthread_mutex_t *, mutex,
+                   long, (ret == 0 || ret == timeout_error) ? True : False);
    }
 
-   if ((ret == 0 || ret == ETIMEDOUT) && mutex_is_valid) {
-      DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_COND_WAIT_POST,
-                    pthread_cond_t*,cond, pthread_mutex_t*,mutex,
-                    long,ret == ETIMEDOUT);
-   }
+   DO_CREQ_v_WWWW(_VG_USERREQ__HG_PTHREAD_COND_WAIT_POST,
+                  pthread_cond_t*,cond, pthread_mutex_t*,mutex,
+                  long,ret == timeout_error,
+                  long, (ret == 0 || ret == timeout_error) && mutex_is_valid
+                        ? True : False);
 
-   if (ret != 0 && ret != ETIMEDOUT) {
+   if (ret != 0 && ret != timeout_error) {
       DO_PthAPIerror( "pthread_cond_timedwait", ret );
    }
 
@@ -891,23 +1319,34 @@ static int pthread_cond_timedwait_WRK(pthread_cond_t* cond,
    PTH_FUNC(int, pthreadZucondZutimedwaitZAZa, // pthread_cond_timedwait@*
                  pthread_cond_t* cond, pthread_mutex_t* mutex, 
                  struct timespec* abstime) {
-      return pthread_cond_timedwait_WRK(cond, mutex, abstime);
+      return pthread_cond_timedwait_WRK(cond, mutex, abstime, ETIMEDOUT);
    }
 #elif defined(VGO_darwin)
    PTH_FUNC(int, pthreadZucondZutimedwait, // pthread_cond_timedwait
                  pthread_cond_t* cond, pthread_mutex_t* mutex, 
                  struct timespec* abstime) {
-      return pthread_cond_timedwait_WRK(cond, mutex, abstime);
+      return pthread_cond_timedwait_WRK(cond, mutex, abstime, ETIMEDOUT);
    }
    PTH_FUNC(int, pthreadZucondZutimedwaitZDZa, // pthread_cond_timedwait$*
                  pthread_cond_t* cond, pthread_mutex_t* mutex, 
                  struct timespec* abstime) {
-      return pthread_cond_timedwait_WRK(cond, mutex, abstime);
+      return pthread_cond_timedwait_WRK(cond, mutex, abstime, ETIMEDOUT);
    }
    PTH_FUNC(int, pthreadZucondZutimedwaitZuZa, // pthread_cond_timedwait_*
                  pthread_cond_t* cond, pthread_mutex_t* mutex, 
                  struct timespec* abstime) {
       assert(0);
+   }
+#elif defined(VGO_solaris)
+   PTH_FUNC(int, condZutimedwait, // cond_timedwait
+                 pthread_cond_t *cond, pthread_mutex_t *mutex,
+                 struct timespec *abstime) {
+      return pthread_cond_timedwait_WRK(cond, mutex, abstime, ETIME);
+   }
+   PTH_FUNC(int, condZureltimedwait, // cond_reltimedwait
+                 pthread_cond_t *cond, pthread_mutex_t *mutex,
+                 struct timespec *reltime) {
+      return pthread_cond_timedwait_WRK(cond, mutex, reltime, ETIME);
    }
 #else
 #  error "Unsupported OS"
@@ -915,11 +1354,12 @@ static int pthread_cond_timedwait_WRK(pthread_cond_t* cond,
 
 
 //-----------------------------------------------------------
-// glibc:  pthread_cond_signal@GLIBC_2.0
-// glibc:  pthread_cond_signal@GLIBC_2.2.5
-// glibc:  pthread_cond_signal@@GLIBC_2.3.2
-// darwin: pthread_cond_signal
-// darwin: pthread_cond_signal_thread_np (don't intercept this)
+// glibc:   pthread_cond_signal@GLIBC_2.0
+// glibc:   pthread_cond_signal@GLIBC_2.2.5
+// glibc:   pthread_cond_signal@@GLIBC_2.3.2
+// darwin:  pthread_cond_signal
+// darwin:  pthread_cond_signal_thread_np (don't intercept this)
+// Solaris: cond_signal (pthread_cond_signal is a weak alias)
 //
 __attribute__((noinline))
 static int pthread_cond_signal_WRK(pthread_cond_t* cond)
@@ -937,6 +1377,9 @@ static int pthread_cond_signal_WRK(pthread_cond_t* cond)
                pthread_cond_t*,cond);
 
    CALL_FN_W_W(ret, fn, cond);
+
+   DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_COND_SIGNAL_POST,
+               pthread_cond_t*,cond);
 
    if (ret != 0) {
       DO_PthAPIerror( "pthread_cond_signal", ret );
@@ -958,16 +1401,22 @@ static int pthread_cond_signal_WRK(pthread_cond_t* cond)
                  pthread_cond_t* cond) {
       return pthread_cond_signal_WRK(cond);
    }
+#elif defined(VGO_solaris)
+   PTH_FUNC(int, condZusignal, // cond_signal
+                 pthread_cond_t *cond) {
+      return pthread_cond_signal_WRK(cond);
+   }
 #else
 #  error "Unsupported OS"
 #endif
 
 
 //-----------------------------------------------------------
-// glibc:  pthread_cond_broadcast@GLIBC_2.0
-// glibc:  pthread_cond_broadcast@GLIBC_2.2.5
-// glibc:  pthread_cond_broadcast@@GLIBC_2.3.2
-// darwin: pthread_cond_broadcast
+// glibc:   pthread_cond_broadcast@GLIBC_2.0
+// glibc:   pthread_cond_broadcast@GLIBC_2.2.5
+// glibc:   pthread_cond_broadcast@@GLIBC_2.3.2
+// darwin:  pthread_cond_broadcast
+// Solaris: cond_broadcast (pthread_cond_broadcast is a weak alias)
 //
 // Note, this is pretty much identical, from a dependency-graph
 // point of view, with cond_signal, so the code is duplicated.
@@ -990,6 +1439,9 @@ static int pthread_cond_broadcast_WRK(pthread_cond_t* cond)
 
    CALL_FN_W_W(ret, fn, cond);
 
+   DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_COND_BROADCAST_POST,
+               pthread_cond_t*,cond);
+
    if (ret != 0) { 
       DO_PthAPIerror( "pthread_cond_broadcast", ret );
    }
@@ -1010,18 +1462,25 @@ static int pthread_cond_broadcast_WRK(pthread_cond_t* cond)
                  pthread_cond_t* cond) {
       return pthread_cond_broadcast_WRK(cond);
    }
+#elif defined(VGO_solaris)
+   PTH_FUNC(int, condZubroadcast, // cond_broadcast
+                 pthread_cond_t *cond) {
+      return pthread_cond_broadcast_WRK(cond);
+   }
 #else
 #   error "Unsupported OS"
 #endif
 
-// glibc:  pthread_cond_init@GLIBC_2.0
-// glibc:  pthread_cond_init@GLIBC_2.2.5
-// glibc:  pthread_cond_init@@GLIBC_2.3.2
-// darwin: pthread_cond_init
+// glibc:   pthread_cond_init@GLIBC_2.0
+// glibc:   pthread_cond_init@GLIBC_2.2.5
+// glibc:   pthread_cond_init@@GLIBC_2.3.2
+// darwin:  pthread_cond_init
+// Solaris: cond_init (pthread_cond_init is built atop on this function)
 // Easy way out: Handling of attr could have been messier.
 // It turns out that pthread_cond_init under linux ignores
 // all information in cond_attr, so do we.
 // FIXME: MacOS X?
+#if !defined(VGO_solaris)
 __attribute__((noinline))
 static int pthread_cond_init_WRK(pthread_cond_t* cond, pthread_condattr_t *cond_attr)
 {
@@ -1063,12 +1522,45 @@ static int pthread_cond_init_WRK(pthread_cond_t* cond, pthread_condattr_t *cond_
 #  error "Unsupported OS"
 #endif
 
+#else /* VGO_solaris */
+__attribute__((noinline))
+PTH_FUNC(int, condZuinit, // cond_init
+              cond_t *cond, int type, void *arg)
+{
+   int ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, "<< cond_init %p", cond); fflush(stderr);
+   }
+
+   CALL_FN_W_WWW(ret, fn, cond, type, arg);
+
+   if (ret == 0) {
+      /* Luckily evh__HG_PTHREAD_COND_INIT_POST() ignores cond_attr.
+         See also comment for pthread_cond_init_WRK(). */
+      DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_COND_INIT_POST,
+                   cond_t *, cond, void *, NULL);
+   } else {
+      DO_PthAPIerror("cond_init", ret);
+   }
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, " cond_init -> %d >>\n", ret);
+   }
+
+   return ret;
+}
+#endif /* VGO_solaris */
+
 
 //-----------------------------------------------------------
-// glibc:  pthread_cond_destroy@@GLIBC_2.3.2
-// glibc:  pthread_cond_destroy@GLIBC_2.2.5
-// glibc:  pthread_cond_destroy@GLIBC_2.0
-// darwin: pthread_cond_destroy
+// glibc:   pthread_cond_destroy@@GLIBC_2.3.2
+// glibc:   pthread_cond_destroy@GLIBC_2.2.5
+// glibc:   pthread_cond_destroy@GLIBC_2.0
+// darwin:  pthread_cond_destroy
+// Solaris: cond_destroy (pthread_cond_destroy is a weak alias)
 //
 __attribute__((noinline))
 static int pthread_cond_destroy_WRK(pthread_cond_t* cond)
@@ -1116,6 +1608,11 @@ static int pthread_cond_destroy_WRK(pthread_cond_t* cond)
                  pthread_cond_t* cond) {
       return pthread_cond_destroy_WRK(cond);
    }
+#elif defined(VGO_solaris)
+   PTH_FUNC(int, condZudestroy, // cond_destroy
+                 pthread_cond_t *cond) {
+      return pthread_cond_destroy_WRK(cond);
+   }
 #else
 #  error "Unsupported OS"
 #endif
@@ -1139,8 +1636,9 @@ static int pthread_cond_destroy_WRK(pthread_cond_t* cond)
 */
 
 //-----------------------------------------------------------
-// glibc:  pthread_barrier_init
-// darwin: (doesn't appear to exist)
+// glibc:   pthread_barrier_init
+// darwin:  (doesn't appear to exist)
+// Solaris: pthread_barrier_init
 PTH_FUNC(int, pthreadZubarrierZuinit, // pthread_barrier_init
          pthread_barrier_t* bar,
          pthread_barrierattr_t* attr, unsigned long count)
@@ -1175,8 +1673,9 @@ PTH_FUNC(int, pthreadZubarrierZuinit, // pthread_barrier_init
 
 
 //-----------------------------------------------------------
-// glibc:  pthread_barrier_wait
-// darwin: (doesn't appear to exist)
+// glibc:   pthread_barrier_wait
+// darwin:  (doesn't appear to exist)
+// Solaris: pthread_barrier_wait
 PTH_FUNC(int, pthreadZubarrierZuwait, // pthread_barrier_wait
               pthread_barrier_t* bar)
 {
@@ -1212,8 +1711,9 @@ PTH_FUNC(int, pthreadZubarrierZuwait, // pthread_barrier_wait
 
 
 //-----------------------------------------------------------
-// glibc:  pthread_barrier_destroy
-// darwin: (doesn't appear to exist)
+// glibc:   pthread_barrier_destroy
+// darwin:  (doesn't appear to exist)
+// Solaris: pthread_barrier_destroy
 PTH_FUNC(int, pthreadZubarrierZudestroy, // pthread_barrier_destroy
          pthread_barrier_t* bar)
 {
@@ -1262,12 +1762,16 @@ PTH_FUNC(int, pthreadZubarrierZudestroy, // pthread_barrier_destroy
 /* This is a nasty kludge, in that glibc "knows" that initialising a
    spin lock unlocks it, and pthread_spin_{init,unlock} are names for
    the same function.  Hence we have to have a wrapper which does both
-   things, without knowing which the user intended to happen. */
+   things, without knowing which the user intended to happen.
+   Solaris has distinct functions for init/unlock but client requests
+   are immutable in helgrind.h so follow the glibc lead. */
 
 //-----------------------------------------------------------
-// glibc:  pthread_spin_init
-// glibc:  pthread_spin_unlock
-// darwin: (doesn't appear to exist)
+// glibc:   pthread_spin_init
+// glibc:   pthread_spin_unlock
+// darwin:  (doesn't appear to exist)
+// Solaris: pthread_spin_init
+// Solaris: pthread_spin_unlock
 __attribute__((noinline))
 static int pthread_spin_init_or_unlock_WRK(pthread_spinlock_t* lock,
                                            int pshared) {
@@ -1306,18 +1810,26 @@ static int pthread_spin_init_or_unlock_WRK(pthread_spinlock_t* lock,
       return pthread_spin_init_or_unlock_WRK(lock, 0/*pshared*/);
    }
 #elif defined(VGO_darwin)
+#elif defined(VGO_solaris)
+   PTH_FUNC(int, pthreadZuspinZuinit, // pthread_spin_init
+            pthread_spinlock_t *lock, int pshared) {
+      return pthread_spin_init_or_unlock_WRK(lock, pshared);
+   }
+   PTH_FUNC(int, pthreadZuspinZuunlock, // pthread_spin_unlock
+            pthread_spinlock_t *lock) {
+      return pthread_spin_init_or_unlock_WRK(lock, 0/*pshared*/);
+   }
 #else
 #  error "Unsupported OS"
 #endif
 
 
 //-----------------------------------------------------------
-// glibc:  pthread_spin_destroy
-// darwin: (doesn't appear to exist)
-#if defined(VGO_linux)
-
-PTH_FUNC(int, pthreadZuspinZudestroy, // pthread_spin_destroy
-              pthread_spinlock_t* lock)
+// glibc:   pthread_spin_destroy
+// darwin:  (doesn't appear to exist)
+// Solaris: pthread_spin_destroy
+__attribute__((noinline))
+static int pthread_spin_destroy_WRK(pthread_spinlock_t *lock)
 {
    int    ret;
    OrigFn fn;
@@ -1341,20 +1853,28 @@ PTH_FUNC(int, pthreadZuspinZudestroy, // pthread_spin_destroy
    }
    return ret;
 }
-
+#if defined(VGO_linux)
+   PTH_FUNC(int, pthreadZuspinZusdestroy, // pthread_spin_destroy
+            pthread_spinlock_t *lock) {
+      return pthread_spin_destroy_WRK(lock);
+   }
 #elif defined(VGO_darwin)
+#elif defined(VGO_solaris)
+   PTH_FUNC(int, pthreadZuspinZusdestroy, // pthread_spin_destroy
+            pthread_spinlock_t *lock) {
+      return pthread_spin_destroy_WRK(lock);
+   }
 #else
 #  error "Unsupported OS"
 #endif
 
 
 //-----------------------------------------------------------
-// glibc:  pthread_spin_lock
-// darwin: (doesn't appear to exist)
-#if defined(VGO_linux)
-
-PTH_FUNC(int, pthreadZuspinZulock, // pthread_spin_lock
-              pthread_spinlock_t* lock)
+// glibc:   pthread_spin_lock
+// darwin:  (doesn't appear to exist)
+// Solaris: pthread_spin_lock
+__attribute__((noinline))
+static int pthread_spin_lock_WRK(pthread_spinlock_t *lock)
 {
    int    ret;
    OrigFn fn;
@@ -1386,20 +1906,28 @@ PTH_FUNC(int, pthreadZuspinZulock, // pthread_spin_lock
    }
    return ret;
 }
-
+#if defined(VGO_linux)
+   PTH_FUNC(int, pthreadZuspinZulock, // pthread_spin_lock
+                 pthread_spinlock_t *lock) {
+      return pthread_spin_lock_WRK(lock);
+   }
 #elif defined(VGO_darwin)
+#elif defined(VGO_solaris)
+   PTH_FUNC(int, pthreadZuspinZulock, // pthread_spin_lock
+                 pthread_spinlock_t *lock) {
+      return pthread_spin_lock_WRK(lock);
+   }
 #else
 #  error "Unsupported OS"
 #endif
 
 
 //-----------------------------------------------------------
-// glibc:  pthread_spin_trylock
-// darwin: (doesn't appear to exist)
-#if defined(VGO_linux)
-
-PTH_FUNC(int, pthreadZuspinZutrylock, // pthread_spin_trylock
-              pthread_spinlock_t* lock)
+// glibc:   pthread_spin_trylock
+// darwin:  (doesn't appear to exist)
+// Solaris: pthread_spin_trylock
+__attribute__((noinline))
+static int pthread_spin_trylock_WRK(pthread_spinlock_t *lock)
 {
    int    ret;
    OrigFn fn;
@@ -1432,8 +1960,17 @@ PTH_FUNC(int, pthreadZuspinZutrylock, // pthread_spin_trylock
    }
    return ret;
 }
-
+#if defined(VGO_linux)
+   PTH_FUNC(int, pthreadZuspinZutrylock, // pthread_spin_trylock
+                 pthread_spinlock_t *lock) {
+      return pthread_spin_trylock_WRK(lock);
+   }
 #elif defined(VGO_darwin)
+#elif defined(VGO_solaris)
+   PTH_FUNC(int, pthreadZuspinZutrylock, // pthread_spin_trylock
+                 pthread_spinlock_t *lock) {
+      return pthread_spin_trylock_WRK(lock);
+   }
 #else
 #  error "Unsupported OS"
 #endif
@@ -1453,18 +1990,18 @@ PTH_FUNC(int, pthreadZuspinZutrylock, // pthread_spin_trylock
               pthread_rwlock_rdlock 
               pthread_rwlock_wrlock
               pthread_rwlock_unlock
+              pthread_rwlock_tryrdlock
+              pthread_rwlock_trywrlock
 
    Unhandled: pthread_rwlock_timedrdlock
-              pthread_rwlock_tryrdlock
-
               pthread_rwlock_timedwrlock
-              pthread_rwlock_trywrlock
 */
 
 //-----------------------------------------------------------
-// glibc:  pthread_rwlock_init
-// darwin: pthread_rwlock_init
-// darwin: pthread_rwlock_init$UNIX2003
+// glibc:   pthread_rwlock_init
+// darwin:  pthread_rwlock_init
+// darwin:  pthread_rwlock_init$UNIX2003
+// Solaris: rwlock_init (pthread_rwlock_init is built atop of rwlock_init)
 __attribute__((noinline))
 static int pthread_rwlock_init_WRK(pthread_rwlock_t *rwl,
                                    pthread_rwlockattr_t* attr)
@@ -1502,15 +2039,49 @@ static int pthread_rwlock_init_WRK(pthread_rwlock_t *rwl,
                  pthread_rwlockattr_t* attr) {
       return pthread_rwlock_init_WRK(rwl, attr);
    }
+#elif defined(VGO_solaris)
+static int pthread_rwlock_init_WRK(pthread_rwlock_t *rwl,
+                                   pthread_rwlockattr_t* attr)
+                                   __attribute__((unused));
 #else
 #  error "Unsupported OS"
 #endif
 
+#if defined(VGO_solaris)
+PTH_FUNC(int, rwlockZuinit, // rwlock_init
+              rwlock_t *rwlock,
+              int type,
+              void *arg)
+{
+   int    ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, "<< rwl_init %p", rwlock); fflush(stderr);
+   }
+
+   CALL_FN_W_WWW(ret, fn, rwlock, type, arg);
+
+   if (ret == 0 /*success*/) {
+      DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_RWLOCK_INIT_POST,
+                  rwlock_t *, rwlock);
+   } else {
+      DO_PthAPIerror("rwlock_init", ret);
+   }
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, " :: rwl_init -> %d >>\n", ret);
+   }
+   return ret;
+}
+#endif /* VGO_solaris */
+
 
 //-----------------------------------------------------------
-// glibc:  pthread_rwlock_destroy
-// darwin: pthread_rwlock_destroy
-// darwin: pthread_rwlock_destroy$UNIX2003
+// glibc:   pthread_rwlock_destroy
+// darwin:  pthread_rwlock_destroy
+// darwin:  pthread_rwlock_destroy$UNIX2003
+// Solaris: rwlock_destroy (pthread_rwlock_destroy is a weak alias)
 //
 __attribute__((noinline))
 static int pthread_rwlock_destroy_WRK(pthread_rwlock_t* rwl)
@@ -1546,15 +2117,21 @@ static int pthread_rwlock_destroy_WRK(pthread_rwlock_t* rwl)
                  pthread_rwlock_t *rwl) {
       return pthread_rwlock_destroy_WRK(rwl);
    }
+#elif defined(VGO_solaris)
+   PTH_FUNC(int, rwlockZudestroy, // rwlock_destroy
+                 pthread_rwlock_t *rwl) {
+      return pthread_rwlock_destroy_WRK(rwl);
+   }
 #else
 #  error "Unsupported OS"
 #endif
 
 
 //-----------------------------------------------------------
-// glibc:  pthread_rwlock_wrlock
-// darwin: pthread_rwlock_wrlock
-// darwin: pthread_rwlock_wrlock$UNIX2003
+// glibc:   pthread_rwlock_wrlock
+// darwin:  pthread_rwlock_wrlock
+// darwin:  pthread_rwlock_wrlock$UNIX2003
+// Solaris: rw_wrlock (pthread_rwlock_wrlock is a weak alias)
 //
 __attribute__((noinline))
 static int pthread_rwlock_wrlock_WRK(pthread_rwlock_t* rwlock)
@@ -1572,10 +2149,10 @@ static int pthread_rwlock_wrlock_WRK(pthread_rwlock_t* rwlock)
 
    CALL_FN_W_W(ret, fn, rwlock);
 
-   if (ret == 0 /*success*/) {
-      DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST,
-                   pthread_rwlock_t*,rwlock, long,1/*isW*/);
-   } else { 
+   DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST,
+                 pthread_rwlock_t*,rwlock, long,1/*isW*/,
+                 long, (ret == 0) ? True : False);
+   if (ret != 0) {
       DO_PthAPIerror( "pthread_rwlock_wrlock", ret );
    }
 
@@ -1594,15 +2171,47 @@ static int pthread_rwlock_wrlock_WRK(pthread_rwlock_t* rwlock)
                  pthread_rwlock_t* rwlock) {
       return pthread_rwlock_wrlock_WRK(rwlock);
    }
+#elif defined(VGO_solaris)
+   PTH_FUNC(int, rwZuwrlock, // rw_wrlock
+                 pthread_rwlock_t *rwlock) {
+      return pthread_rwlock_wrlock_WRK(rwlock);
+   }
 #else
 #  error "Unsupported OS"
 #endif
 
+#if defined(VGO_solaris)
+/* Internal to libc. */
+PTH_FUNC(void, lrwZuwrlock, // lrw_wrlock
+               rwlock_t *rwlock)
+{
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, "<< lrw_wlk %p", rwlock); fflush(stderr);
+   }
+
+   DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_PRE,
+                 pthread_rwlock_t *, rwlock,
+                 long, 1/*isW*/, long, 0/*!isTryLock*/);
+
+   CALL_FN_v_W(fn, rwlock);
+
+   DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST,
+                 pthread_rwlock_t *, rwlock, long, 1/*isW*/, long, True);
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, " :: lrw_wlk >>\n");
+   }
+}
+#endif /* VGO_solaris */
+
 
 //-----------------------------------------------------------
-// glibc:  pthread_rwlock_rdlock
-// darwin: pthread_rwlock_rdlock
-// darwin: pthread_rwlock_rdlock$UNIX2003
+// glibc:   pthread_rwlock_rdlock
+// darwin:  pthread_rwlock_rdlock
+// darwin:  pthread_rwlock_rdlock$UNIX2003
+// Solaris: rw_rdlock (pthread_rwlock_rdlock is a weak alias)
 //
 __attribute__((noinline))
 static int pthread_rwlock_rdlock_WRK(pthread_rwlock_t* rwlock)
@@ -1620,10 +2229,10 @@ static int pthread_rwlock_rdlock_WRK(pthread_rwlock_t* rwlock)
 
    CALL_FN_W_W(ret, fn, rwlock);
 
-   if (ret == 0 /*success*/) {
-      DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST,
-                   pthread_rwlock_t*,rwlock, long,0/*!isW*/);
-   } else { 
+   DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST,
+                 pthread_rwlock_t*,rwlock, long,0/*!isW*/,
+                 long, (ret == 0) ? True : False);
+   if (ret != 0) {
       DO_PthAPIerror( "pthread_rwlock_rdlock", ret );
    }
 
@@ -1642,15 +2251,47 @@ static int pthread_rwlock_rdlock_WRK(pthread_rwlock_t* rwlock)
                  pthread_rwlock_t* rwlock) {
       return pthread_rwlock_rdlock_WRK(rwlock);
    }
+#elif defined(VGO_solaris)
+   PTH_FUNC(int, rwZurdlock, // rw_rdlock
+                 pthread_rwlock_t *rwlock) {
+      return pthread_rwlock_rdlock_WRK(rwlock);
+   }
 #else
 #  error "Unsupported OS"
 #endif
 
+#if defined(VGO_solaris)
+/* Internal to libc. */
+PTH_FUNC(void, lrwZurdlock, // lrw_rdlock
+               rwlock_t *rwlock)
+{
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, "<< lrw_rlk %p", rwlock); fflush(stderr);
+   }
+
+   DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_PRE,
+                 pthread_rwlock_t *, rwlock,
+                 long, 0/*!isW*/, long, 0/*!isTryLock*/);
+
+   CALL_FN_v_W(fn, rwlock);
+
+   DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST,
+                 pthread_rwlock_t *, rwlock, long, 0/*!isW*/, long, True);
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, " :: lrw_rlk ->>\n");
+   }
+}
+#endif /* VGO_solaris */
+
 
 //-----------------------------------------------------------
-// glibc:  pthread_rwlock_trywrlock
-// darwin: pthread_rwlock_trywrlock
-// darwin: pthread_rwlock_trywrlock$UNIX2003
+// glibc:   pthread_rwlock_trywrlock
+// darwin:  pthread_rwlock_trywrlock
+// darwin:  pthread_rwlock_trywrlock$UNIX2003
+// Solaris: rw_trywrlock (pthread_rwlock_trywrlock is a weak alias)
 //
 __attribute__((noinline))
 static int pthread_rwlock_trywrlock_WRK(pthread_rwlock_t* rwlock)
@@ -1673,10 +2314,10 @@ static int pthread_rwlock_trywrlock_WRK(pthread_rwlock_t* rwlock)
       that the lock has been acquired by someone (this thread).  Does
       this matter?  Not sure, but I don't think so. */
 
-   if (ret == 0 /*success*/) {
-      DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST,
-                   pthread_rwlock_t*,rwlock, long,1/*isW*/);
-   } else { 
+   DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST,
+                 pthread_rwlock_t*,rwlock, long,1/*isW*/,
+                 long, (ret == 0) ? True : False);
+   if (ret != 0) {
       if (ret != EBUSY)
          DO_PthAPIerror( "pthread_rwlock_trywrlock", ret );
    }
@@ -1696,15 +2337,21 @@ static int pthread_rwlock_trywrlock_WRK(pthread_rwlock_t* rwlock)
                  pthread_rwlock_t* rwlock) {
       return pthread_rwlock_trywrlock_WRK(rwlock);
    }
+#elif defined(VGO_solaris)
+   PTH_FUNC(int, rwZutrywrlock, // rw_trywrlock
+                 pthread_rwlock_t *rwlock) {
+      return pthread_rwlock_trywrlock_WRK(rwlock);
+   }
 #else
 #  error "Unsupported OS"
 #endif
 
 
 //-----------------------------------------------------------
-// glibc:  pthread_rwlock_tryrdlock
-// darwin: pthread_rwlock_trywrlock
-// darwin: pthread_rwlock_trywrlock$UNIX2003
+// glibc:   pthread_rwlock_tryrdlock
+// darwin:  pthread_rwlock_tryrdlock
+// darwin:  pthread_rwlock_tryrdlock$UNIX2003
+// Solaris: rw_tryrdlock (pthread_rwlock_tryrdlock is a weak alias)
 //
 __attribute__((noinline))
 static int pthread_rwlock_tryrdlock_WRK(pthread_rwlock_t* rwlock)
@@ -1727,10 +2374,11 @@ static int pthread_rwlock_tryrdlock_WRK(pthread_rwlock_t* rwlock)
       that the lock has been acquired by someone (this thread).  Does
       this matter?  Not sure, but I don't think so. */
 
-   if (ret == 0 /*success*/) {
-      DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST,
-                   pthread_rwlock_t*,rwlock, long,0/*!isW*/);
-   } else { 
+   DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST,
+                pthread_rwlock_t*,rwlock, long,0/*!isW*/,
+                long, (ret == 0) ? True : False);
+
+   if (ret != 0) {
       if (ret != EBUSY)
          DO_PthAPIerror( "pthread_rwlock_tryrdlock", ret );
    }
@@ -1750,15 +2398,127 @@ static int pthread_rwlock_tryrdlock_WRK(pthread_rwlock_t* rwlock)
                  pthread_rwlock_t* rwlock) {
       return pthread_rwlock_tryrdlock_WRK(rwlock);
    }
+#elif defined(VGO_solaris)
+   PTH_FUNC(int, rwZutryrdlock, // rw_tryrdlock
+                 pthread_rwlock_t *rwlock) {
+      return pthread_rwlock_tryrdlock_WRK(rwlock);
+   }
 #else
 #  error "Unsupported OS"
 #endif
 
 
 //-----------------------------------------------------------
-// glibc:  pthread_rwlock_unlock
-// darwin: pthread_rwlock_unlock
-// darwin: pthread_rwlock_unlock$UNIX2003
+// glibc:   Unhandled
+// darwin:  Unhandled
+// Solaris: pthread_rwlock_timedrdlock
+// Solaris: pthread_rwlock_reltimedrdlock_np
+//
+__attribute__((noinline)) __attribute__((unused))
+static int pthread_rwlock_timedrdlock_WRK(pthread_rwlock_t *rwlock,
+                                          const struct timespec *timeout)
+{
+   int    ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, "<< pthread_rwl_timedrdl %p", rwlock); fflush(stderr);
+   }
+
+   DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_PRE,
+                 pthread_rwlock_t *, rwlock,
+                 long, 0/*isW*/, long, 0/*isTryLock*/);
+
+   CALL_FN_W_WW(ret, fn, rwlock, timeout);
+
+   DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST,
+                 pthread_rwlock_t *, rwlock, long, 0/*isW*/,
+                 long, (ret == 0) ? True : False);
+   if (ret != 0) {
+      DO_PthAPIerror("pthread_rwlock_timedrdlock", ret);
+   }
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, " :: rwl_timedrdl -> %d >>\n", ret);
+   }
+   return ret;
+}
+#if defined(VGO_linux)
+#elif defined(VGO_darwin)
+#elif defined(VGO_solaris)
+   PTH_FUNC(int, pthreadZurwlockZutimedrdlock, // pthread_rwlock_timedrdlock
+                 pthread_rwlock_t *rwlock,
+                 const struct timespec *timeout) {
+      return pthread_rwlock_timedrdlock_WRK(rwlock, timeout);
+   }
+   PTH_FUNC(int, pthreadZurwlockZureltimedrdlockZunp, // pthread_rwlock_timedrdlock_np
+                 pthread_rwlock_t *rwlock,
+                 const struct timespec *timeout) {
+      return pthread_rwlock_timedrdlock_WRK(rwlock, timeout);
+   }
+#else
+#  error "Unsupported OS"
+#endif
+
+
+//-----------------------------------------------------------
+// glibc:   Unhandled
+// darwin:  Unhandled
+// Solaris: pthread_rwlock_timedwrlock
+// Solaris: pthread_rwlock_reltimedwrlock_np
+//
+__attribute__((noinline)) __attribute__((unused))
+static int pthread_rwlock_timedwrlock_WRK(pthread_rwlock_t *rwlock,
+                                          const struct timespec *timeout)
+{
+   int    ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, "<< pthread_rwl_timedwrl %p", rwlock); fflush(stderr);
+   }
+
+   DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_PRE,
+                 pthread_rwlock_t *, rwlock,
+                 long, 1/*isW*/, long, 0/*isTryLock*/);
+
+   CALL_FN_W_WW(ret, fn, rwlock, timeout);
+
+   DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST,
+                 pthread_rwlock_t *, rwlock, long, 1/*isW*/,
+                 long, (ret == 0) ? True : False);
+   if (ret != 0) {
+      DO_PthAPIerror("pthread_rwlock_timedwrlock", ret);
+   }
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, " :: rwl_timedwrl -> %d >>\n", ret);
+   }
+   return ret;
+}
+#if defined(VGO_linux)
+#elif defined(VGO_darwin)
+#elif defined(VGO_solaris)
+   PTH_FUNC(int, pthreadZurwlockZutimedwrlock, // pthread_rwlock_timedwrlock
+                 pthread_rwlock_t *rwlock,
+                 const struct timespec *timeout) {
+      return pthread_rwlock_timedwrlock_WRK(rwlock, timeout);
+   }
+   PTH_FUNC(int, pthreadZurwlockZureltimedwrlockZunp, // pthread_rwlock_timedwrlock_np
+                 pthread_rwlock_t *rwlock,
+                 const struct timespec *timeout) {
+      return pthread_rwlock_timedwrlock_WRK(rwlock, timeout);
+   }
+#else
+#  error "Unsupported OS"
+#endif
+
+
+//-----------------------------------------------------------
+// glibc:   pthread_rwlock_unlock
+// darwin:  pthread_rwlock_unlock
+// darwin:  pthread_rwlock_unlock$UNIX2003
+// Solaris: rw_unlock (pthread_rwlock_unlock is a weak alias)
 __attribute__((noinline))
 static int pthread_rwlock_unlock_WRK(pthread_rwlock_t* rwlock)
 {
@@ -1774,10 +2534,9 @@ static int pthread_rwlock_unlock_WRK(pthread_rwlock_t* rwlock)
 
    CALL_FN_W_W(ret, fn, rwlock);
 
-   if (ret == 0 /*success*/) {
-      DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_RWLOCK_UNLOCK_POST,
-                  pthread_rwlock_t*,rwlock);
-   } else { 
+   DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_RWLOCK_UNLOCK_POST,
+               pthread_rwlock_t*,rwlock);
+   if (ret != 0) {
       DO_PthAPIerror( "pthread_rwlock_unlock", ret );
    }
 
@@ -1794,6 +2553,11 @@ static int pthread_rwlock_unlock_WRK(pthread_rwlock_t* rwlock)
 #elif defined(VGO_darwin)
    PTH_FUNC(int, pthreadZurwlockZuunlockZa, // pthread_rwlock_unlock*
                  pthread_rwlock_t* rwlock) {
+      return pthread_rwlock_unlock_WRK(rwlock);
+   }
+#elif defined(VGO_solaris)
+   PTH_FUNC(int, rwZuunlock, // rw_unlock
+                 pthread_rwlock_t *rwlock) {
       return pthread_rwlock_unlock_WRK(rwlock);
    }
 #else
@@ -1829,11 +2593,13 @@ static int pthread_rwlock_unlock_WRK(pthread_rwlock_t* rwlock)
 */
 
 //-----------------------------------------------------------
-// glibc:  sem_init@@GLIBC_2.2.5
-// glibc:  sem_init@@GLIBC_2.1
-// glibc:  sem_init@GLIBC_2.0
-// darwin: sem_init
+// glibc:   sem_init@@GLIBC_2.2.5
+// glibc:   sem_init@@GLIBC_2.1
+// glibc:   sem_init@GLIBC_2.0
+// darwin:  sem_init
+// Solaris: sema_init (sem_init is built on top of sem_init)
 //
+#if !defined(VGO_solaris)
 __attribute__((noinline))
 static int sem_init_WRK(sem_t* sem, int pshared, unsigned long value)
 {
@@ -1876,12 +2642,47 @@ static int sem_init_WRK(sem_t* sem, int pshared, unsigned long value)
 #  error "Unsupported OS"
 #endif
 
+#else /* VGO_solaris */
+PTH_FUNC(int, semaZuinit, // sema_init
+              sema_t *sem,
+              unsigned int value,
+              int type,
+              void *arg)
+{
+   OrigFn fn;
+   int    ret;
+   VALGRIND_GET_ORIG_FN(fn);
+
+   if (TRACE_SEM_FNS) {
+      fprintf(stderr, "<< sema_init(%p, %d, %u) ", sem, type, value);
+      fflush(stderr);
+   }
+
+   CALL_FN_W_WWWW(ret, fn, sem, value, type, arg);
+
+   if (ret == 0) {
+      DO_CREQ_v_WW(_VG_USERREQ__HG_POSIX_SEM_INIT_POST,
+                   sema_t *, sem, Word, value);
+   } else {
+      DO_PthAPIerror("sema_init", ret);
+   }
+
+   if (TRACE_SEM_FNS) {
+      fprintf(stderr, " sema_init -> %d >>\n", ret);
+      fflush(stderr);
+   }
+
+   return ret;
+}
+#endif /* VGO_solaris */
+
 
 //-----------------------------------------------------------
-// glibc:  sem_destroy@GLIBC_2.0
-// glibc:  sem_destroy@@GLIBC_2.1
-// glibc:  sem_destroy@@GLIBC_2.2.5
-// darwin: sem_destroy
+// glibc:   sem_destroy@GLIBC_2.0
+// glibc:   sem_destroy@@GLIBC_2.1
+// glibc:   sem_destroy@@GLIBC_2.2.5
+// darwin:  sem_destroy
+// Solaris: sema_destroy (sem_destroy is built on top of sema_destroy)
 __attribute__((noinline))
 static int sem_destroy_WRK(sem_t* sem)
 {
@@ -1899,7 +2700,7 @@ static int sem_destroy_WRK(sem_t* sem)
    CALL_FN_W_W(ret, fn, sem);
 
    if (ret != 0) {
-      DO_PthAPIerror( "sem_destroy", errno );
+      DO_PthAPIerror( "sem_destroy", SEM_ERROR );
    }
 
    if (TRACE_SEM_FNS) {
@@ -1919,18 +2720,24 @@ static int sem_destroy_WRK(sem_t* sem)
                  sem_t* sem) {
       return sem_destroy_WRK(sem);
    }
+#elif defined(VGO_solaris)
+   PTH_FUNC(int, semaZudestroy,  // sema_destroy
+                 sem_t *sem) {
+      return sem_destroy_WRK(sem);
+   }
 #else
 #  error "Unsupported OS"
 #endif
 
 
 //-----------------------------------------------------------
-// glibc:  sem_wait
-// glibc:  sem_wait@GLIBC_2.0
-// glibc:  sem_wait@@GLIBC_2.1
-// darwin: sem_wait
-// darwin: sem_wait$NOCANCEL$UNIX2003
-// darwin: sem_wait$UNIX2003
+// glibc:   sem_wait
+// glibc:   sem_wait@GLIBC_2.0
+// glibc:   sem_wait@@GLIBC_2.1
+// darwin:  sem_wait
+// darwin:  sem_wait$NOCANCEL$UNIX2003
+// darwin:  sem_wait$UNIX2003
+// Solaris: sema_wait (sem_wait is built on top of sema_wait)
 //
 /* wait: decrement semaphore - acquire lockage */
 __attribute__((noinline))
@@ -1945,12 +2752,15 @@ static int sem_wait_WRK(sem_t* sem)
       fflush(stderr);
    }
 
+   DO_CREQ_v_W(_VG_USERREQ__HG_POSIX_SEM_WAIT_PRE, sem_t*,sem);
+
    CALL_FN_W_W(ret, fn, sem);
 
-   if (ret == 0) {
-      DO_CREQ_v_W(_VG_USERREQ__HG_POSIX_SEM_WAIT_POST, sem_t*,sem);
-   } else {
-      DO_PthAPIerror( "sem_wait", errno );
+   DO_CREQ_v_WW(_VG_USERREQ__HG_POSIX_SEM_WAIT_POST, sem_t*,sem,
+                long, (ret == 0) ? True : False);
+
+   if (ret != 0) {
+      DO_PthAPIerror( "sem_wait", SEM_ERROR );
    }
 
    if (TRACE_SEM_FNS) {
@@ -1974,16 +2784,21 @@ static int sem_wait_WRK(sem_t* sem)
    PTH_FUNC(int, semZuwaitZDZa, sem_t* sem) { /* sem_wait$* */
       return sem_wait_WRK(sem);
    }
+#elif defined(VGO_solaris)
+   PTH_FUNC(int, semaZuwait, sem_t *sem) { /* sema_wait */
+      return sem_wait_WRK(sem);
+   }
 #else
 #  error "Unsupported OS"
 #endif
 
 
 //-----------------------------------------------------------
-// glibc:  sem_post
-// glibc:  sem_post@GLIBC_2.0
-// glibc:  sem_post@@GLIBC_2.1
-// darwin: sem_post
+// glibc:   sem_post
+// glibc:   sem_post@GLIBC_2.0
+// glibc:   sem_post@@GLIBC_2.1
+// darwin:  sem_post
+// Solaris: sema_post (sem_post is built on top of sema_post)
 //
 /* post: increment semaphore - release lockage */
 __attribute__((noinline))
@@ -2003,8 +2818,10 @@ static int sem_post_WRK(sem_t* sem)
 
    CALL_FN_W_W(ret, fn, sem);
 
+   DO_CREQ_v_W(_VG_USERREQ__HG_POSIX_SEM_POST_POST, sem_t*,sem);
+
    if (ret != 0) {
-      DO_PthAPIerror( "sem_post", errno );
+      DO_PthAPIerror( "sem_post", SEM_ERROR );
    }
 
    if (TRACE_SEM_FNS) {
@@ -2025,14 +2842,19 @@ static int sem_post_WRK(sem_t* sem)
    PTH_FUNC(int, semZupost, sem_t* sem) { /* sem_post */
       return sem_post_WRK(sem);
    }
+#elif defined(VGO_solaris)
+   PTH_FUNC(int, semaZupost, sem_t *sem) { /* sema_post */
+      return sem_post_WRK(sem);
+   }
 #else
 #  error "Unsupported OS"
 #endif
 
 
 //-----------------------------------------------------------
-// glibc:  sem_open
-// darwin: sem_open
+// glibc:   sem_open
+// darwin:  sem_open
+// Solaris: sem_open
 //
 PTH_FUNC(sem_t*, semZuopen,
                  const char* name, long oflag,
@@ -2069,8 +2891,9 @@ PTH_FUNC(sem_t*, semZuopen,
 
 
 //-----------------------------------------------------------
-// glibc:  sem_close
-// darwin: sem_close
+// glibc:   sem_close
+// darwin:  sem_close
+// Solaris: sem_close
 PTH_FUNC(int, sem_close, sem_t* sem)
 {
    OrigFn fn;
@@ -2209,8 +3032,8 @@ static void QMutex_lock_WRK(void* self)
 
    CALL_FN_v_W(fn, self);
 
-   DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_POST,
-               void*, self);
+   DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_POST,
+                void *, self, long, True);
 
    if (TRACE_QT4_FNS) {
       fprintf(stderr, " :: Q::lock done >>\n");
@@ -2275,10 +3098,8 @@ static long QMutex_tryLock_WRK(void* self)
    CALL_FN_W_W(ret, fn, self);
 
    // assumes that only the low 8 bits of the 'bool' are significant
-   if (ret & 0xFF) {
-      DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_POST,
-                  void*, self);
-   }
+   DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_POST,
+                void *, self, long, (ret & 0xFF) ? True : False);
 
    if (TRACE_QT4_FNS) {
       fprintf(stderr, " :: Q::tryLock -> %lu >>\n", ret);
@@ -2314,10 +3135,8 @@ static long QMutex_tryLock_int_WRK(void* self, long arg2)
    CALL_FN_W_WW(ret, fn, self,arg2);
 
    // assumes that only the low 8 bits of the 'bool' are significant
-   if (ret & 0xFF) {
-      DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_POST,
-                  void*, self);
-   }
+   DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_POST,
+               void *, self, long, (ret & 0xFF) ? True : False);
 
    if (TRACE_QT4_FNS) {
       fprintf(stderr, " :: Q::tryLock(int) -> %lu >>\n", ret);
@@ -2442,8 +3261,8 @@ QT5_FUNC(void*, _ZN6QMutexD2Ev, void* self)
 //
 //   CALL_FN_v_W(fn, self);
 //
-//   DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST,
-//                void*,self, long,0/*!isW*/);
+//   DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST,
+//                 void*,self, long,0/*!isW*/, long, True);
 //
 //   if (TRACE_QT4_FNS) {
 //      fprintf(stderr, " :: Q::lockForRead :: done >>\n");
@@ -2469,8 +3288,8 @@ QT5_FUNC(void*, _ZN6QMutexD2Ev, void* self)
 //
 //   CALL_FN_v_W(fn, self);
 //
-//   DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST,
-//                void*,self, long,1/*isW*/);
+//   DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST,
+//                 void*,self, long,1/*isW*/, long, True);
 //
 //   if (TRACE_QT4_FNS) {
 //      fprintf(stderr, " :: Q::lockForWrite :: done >>\n");

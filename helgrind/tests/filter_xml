@@ -39,7 +39,8 @@ my %patterns = (
     "thread #([0-9]+)"      => "x",
     "0x([0-9a-zA-Z]+)"      => "........",
     "Using Valgrind-([^\\s]*)"    => "X.Y.X",
-    "Copyright \\(C\\) ([0-9]{4}-[0-9]{4}).*" => "XXXX-YYYY"
+    "Copyright \\(C\\) ([0-9]{4}-[0-9]{4}).*" => "XXXX-YYYY",
+    '<fn>pthread_.*(@\*)</fn>'  => ""
 );
 
 # List of XML sections to be ignored.
@@ -97,7 +98,8 @@ while (<STDIN>) {
 # Massage line by applying PATTERNS.
     foreach my $key (keys %patterns) {
         if ($line =~ $key) {
-                $line =~ s/$1/$patterns{$key}/g;
+           my $matched = quotemeta($1);
+           $line =~ s/$matched/$patterns{$key}/g;
         }
     }
 

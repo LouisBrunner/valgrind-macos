@@ -98,12 +98,12 @@ int main(int argc, char** argv)
     perror("getcwd");
   strcat(cwd, "/");
 
-  snprintf(path, sizeof(path), "/proc/%d/cmdline", getpid());
+  snprintf(path, sizeof(path), "/proc/%ld/cmdline", (long) getpid());
 
   test_cmdline(cwd, "/proc/self/cmdline", "/proc/self/cmdline");
   test_cmdline(cwd, "/proc/<pid>/cmdline", path);
 
-  snprintf(path, sizeof(path), "/proc/%d/exe", getpid());
+  snprintf(path, sizeof(path), "/proc/%ld/exe", (long) getpid());
 
   test_readlink(cwd, "/proc/self/exe", "/proc/self/exe");
   test_readlink(cwd, "/proc/<pid>/exe", path);

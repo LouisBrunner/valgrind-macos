@@ -1,0 +1,12 @@
+
+
+Process terminating with default action of signal 11 (SIGSEGV)
+ Access not within mapped region at address 0x........
+   at 0x........: main (block_all_signals.c:28)
+ If you believe this happened as a result of a stack
+ overflow in your program's main thread (unlikely but
+ possible), you can try to increase the size of the
+ main thread stack using the --main-stacksize= flag.
+ The main thread stack size used in this run was ....
+
+

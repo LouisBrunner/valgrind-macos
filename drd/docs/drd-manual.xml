@@ -505,6 +505,42 @@ behavior of the DRD tool itself:</para>
       </para>
     </listitem>
   </varlistentry>
+  <varlistentry>
+    <term>
+      <option><![CDATA[--ignore-thread-creation=<yes|no> [default: no]]]></option>
+    </term>
+    <listitem>
+      <para>
+        Controls whether all activities during thread creation should be
+        ignored. By default enabled only on Solaris.
+        Solaris provides higher throughput, parallelism and scalability than
+        other operating systems, at the cost of more fine-grained locking
+        activity. This means for example that when a thread is created under
+        glibc, just one big lock is used for all thread setup. Solaris libc
+        uses several fine-grained locks and the creator thread resumes its
+        activities as soon as possible, leaving for example stack and TLS setup
+        sequence to the created thread.
+        This situation confuses DRD as it assumes there is some false ordering
+        in place between creator and created thread; and therefore many types
+        of race conditions in the application would not be reported. To prevent
+        such false ordering, this command line option is set to
+        <computeroutput>yes</computeroutput> by default on Solaris.
+        All activity (loads, stores, client requests) is therefore ignored
+        during:</para>
+      <itemizedlist>
+	<listitem>
+	  <para>
+	    pthread_create() call in the creator thread
+	  </para>
+	</listitem>
+	<listitem>
+	  <para>
+	    thread creation phase (stack and TLS setup) in the created thread
+	  </para>
+	</listitem>
+      </itemizedlist>
+    </listitem>
+  </varlistentry>
 </variablelist>
 <!-- end of xi:include in the manpage -->
 

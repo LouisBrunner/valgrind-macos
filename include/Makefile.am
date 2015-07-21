@@ -46,6 +46,8 @@ nobase_pkginclude_HEADERS = \
 	valgrind.h			\
 	vki/vki-linux.h			\
 	vki/vki-darwin.h		\
+	vki/vki-solaris.h		\
+	vki/vki-solaris-repcache.h	\
 	vki/vki-posixtypes-amd64-linux.h \
 	vki/vki-posixtypes-arm64-linux.h \
 	vki/vki-posixtypes-ppc32-linux.h \
@@ -74,6 +76,7 @@ nobase_pkginclude_HEADERS = \
 	vki/vki-scnums-mips32-linux.h	\
 	vki/vki-scnums-mips64-linux.h	\
 	vki/vki-scnums-darwin.h         \
+	vki/vki-scnums-solaris.h	\
 	vki/vki-xen.h                   \
 	vki/vki-xen-domctl.h		\
 	vki/vki-xen-evtchn.h		\

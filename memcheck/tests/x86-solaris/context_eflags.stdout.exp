@@ -1,0 +1,4 @@
+Values in the signal handler:
+  overflow=1, sign=1
+Values after the return from the signal handler:
+  overflow=1, sign=1

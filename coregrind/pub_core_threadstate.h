@@ -266,6 +266,53 @@ typedef
             char *path;
          } io_registry_entry_from_path;
       } mach_args;
+
+#     elif defined(VGO_solaris)
+#     if defined(VGP_x86_solaris)
+      /* A pointer to thread related data. The pointer is used to set up
+         a segment descriptor (GDT[VKI_GDT_LWPGS]) when the thread is about to
+         be run. A client program sets this value explicitly by calling the
+         lwp_private syscall or it can be passed as a part of ucontext_t when
+         a new thread is created (the lwp_create syscall). */
+      Addr thrptr;
+#     elif defined(VGP_amd64_solaris)
+      /* GDT is not fully simulated by AMD64/Solaris. The %fs segment
+         register is assumed to be always zero and vex->guest_FS_CONST holds
+         the 64-bit offset associated with a %fs value of zero. */
+#     endif
+
+      /* Stack id (value (UWord)(-1) means that there is no stack). This
+         tracks a stack that is set in restore_stack(). */
+      UWord stk_id;
+
+      /* Simulation of the kernel's lwp->lwp_ustack. Set in the PRE wrapper
+         of the getsetcontext syscall, for SETUSTACK. Used in
+         VG_(save_context)(), VG_(restore_context)() and
+         VG_(sigframe_create)(). */
+      vki_stack_t *ustack;
+
+      /* Flag saying if the current call is in the door_return() variant of
+         the door() syscall. */
+      Bool in_door_return;
+
+      /* Address of the door server procedure corresponding to the current
+         thread. Used to keep track which door call the current thread
+         services. Valid only between subsequent door_return() invocations. */
+      Addr door_return_procedure;
+
+      /* Simulation of the kernel's lwp->lwp_oldcontext. Set in
+         VG_(restore_context)() and VG_(sigframe_create)(). Used in
+         VG_(save_context)(). */
+      vki_ucontext_t *oldcontext;
+
+      /* Address of sc_shared_t struct shared between kernel and libc.
+         Set in POST(sys_schedctl). Every thread gets its own address
+         but typically many are squeezed on a singled mapped page.
+         Cleaned in the child atfork handler. */
+      Addr schedctl_data;
+
+      /* True if this is daemon thread. */
+      Bool daemon_thread;
 #     endif
 
    }

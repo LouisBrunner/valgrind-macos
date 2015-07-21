@@ -1,0 +1,136 @@
+Requirements
+------------
+- You need a recent Solaris-like OS to compile this port. Solaris 11 or
+  any illumos-based distribution should work, Solaris 10 is not supported.
+  Running `uname -r` has to print '5.11'.
+- Recent GCC tools are required, GCC 3 will probably not work. GCC version
+  4.5 (or higher) is recommended.
+- Solaris ld has to be the first linker in the PATH. GNU ld cannot be used.
+  There is currently no linker check in the configure script but the linking
+  phase fails if GNU ld is used. Recent Solaris/illumos distributions are ok.
+- A working combination of autotools is required: aclocal, autoheader,
+  automake and autoconf have to be found in the PATH. You should be able to
+  install pkg:/developer/build/automake and pkg:/developer/build/autoconf
+  packages to fullfil this requirement.
+- System header files and GNU make is also required.
+- For remote debugging support, working GDB is required (see below).
+
+
+Compilation
+-----------
+Please follow the generic instructions in the README file.
+
+The configure script detects a canonical host to determine which version of
+Valgrind should be built. If the system compiler by default produces 32-bit
+binaries then only a 32-bit version of Valgrind will be built. To enable
+compilation of both 64-bit and 32-bit versions on such a system, issue the
+configure script as follows:
+./configure CC='gcc -m64' CXX='g++ -m64'
+
+
+Oracle Solaris and illumos support
+----------------------------------
+One of the main goal of this port is to support both Oracle Solaris and
+illumos kernels. This is a very hard task because Solaris kernel traditionally
+does not provide a stable syscall interface and because Valgrind contains
+several parts that are closely tied to the underlying kernel. For these
+reasons, the port needs to detect which syscall interfaces are present. This
+detection cannot be done easily at run time and is currently implemented as
+a set of configure tests. This means that a binary version of this port can be
+executed only on a kernel that is compatible with a kernel that was used
+during the configure and compilation time.
+
+Main currently-known incompatibilities:
+- Solaris 11 (released in November 2011) removed a large set of syscalls where
+  *at variant of the syscall was also present, for example, open() versus
+  openat(AT_FDCWD) [1]
+- syscall number for unlinkat() is 76 on Solaris 11, but 65 on illumos [2]
+- illumos (in April 2013) changed interface of the accept() and pipe()
+  syscalls [3]
+
+[1] http://docs.oracle.com/cd/E26502_01/html/E28556/gkzlf.html#gkzip
+[2] https://www.illumos.org/issues/521
+[3] https://github.com/illumos/illumos-gate/commit/5dbfd19ad5fcc2b779f40f80fa05c1bd28fd0b4e
+
+
+Limitations
+-----------
+- The port is Work-In-Progress, many things may not work or they can be subtly
+  broken.
+- Coredumps produced by Valgrind do not contain all information available,
+  especially microstate accounting and processor bindings.
+- Accessing contents of /proc/self/psinfo is not thread-safe.  That is because
+  Valgrind emulates this file on behalf of the client programs.  Entire
+  open() - read() - close() sequence on this file needs to be performed
+  atomically.
+- Fork limitations: vfork() is translated to fork(), forkall() is not
+  supported.
+- Valgrind does not track definedness of some eflags (OF, SF, ZF, AF, CF, PF)
+  individually for each flag. After a syscall is finished, when a carry flag
+  is set and defined, all other mentioned flags will be also defined even
+  though they might be undefined before making the syscall.
+- System call "execve" with a file descriptor which points to a hardlink
+  is currently not supported. That is because from the opened file descriptor
+  itself it is not possible to reverse map the intended pathname.
+  Examples are fexecve(3C) and isaexec(3C).
+- When a thread has no stack then all system calls will result in Valgrind
+  crash, even though such system calls use just parameters passed in registers.
+  This should happen only in pathological situations when a thread is created
+  with custom mmap'ed stack and this stack is then unmap'ed during thread
+  execution.
+
+
+Remote debugging support
+------------------------
+Solaris port of GDB has a major flaw which prevents remote debugging from
+working correctly. Fortunately this flaw has an easy fix [4]. Unfortunately
+it is not present in the current GDB 7.6.2. This boils down to several
+options:
+- Use GDB shipped with Solaris 11.2 which has this flaw fixed.
+- Wait until GDB 7.7 becomes available (there won't be other 7.6.x releases).
+- Build GDB 7.6.2 with the fix by yourself using the following steps:
+    # pkg install developer/gnu-binutils
+    $ wget http://ftp.gnu.org/gnu/gdb/gdb-7.6.2.tar.gz
+    $ gzip -dc gdb-7.6.2.tar.gz | tar xf -
+    $ cd gdb-7.6.2
+    $ patch -p1 -i /path/to/valgrind-solaris/solaris/gdb-sol-thread.patch
+    $ export LIBS="-lncurses"
+    $ export CC="gcc -m64"
+    $ ./configure --with-x=no --with-curses --with-libexpat-prefix=/usr/lib
+    $ gmake && gmake install
+
+[4] https://sourceware.org/ml/gdb-patches/2013-12/msg00573.html
+
+
+TODO list
+---------
+- Fix few remaining failing tests.
+- Add more Solaris-specific tests (especially for the door and spawn
+  syscalls).
+- Provide better error reporting for various subsyscalls.
+- Implement storing of extra register state in signal frame.
+- Performance comparison against other platforms.
+
+- Prevent SIGPIPE when writing to a socket (coregrind/m_libcfile.c).
+- Implement support for attaching a debugger (coregrind/m_debugger.c).  This
+  is a low priority task because this feature is going to be removed in
+  future versions of Valgrind in favor of using only gdbserver.
+- Implement ticket locking for fair scheduling (--fair-sched=yes).
+- Implement support in DRD and Helgrind tools for thr_join() with thread == 0.
+- Add support for accessing thread-local variables via gdb (auxprogs/getoff.c).
+  Requires research on internal libc TLS representation.
+- VEX supports AVX, BMI and AVX2. Investigate if they can be enabled on
+  Solaris/illumos.
+- Investigate support for more flags in AT_SUN_AUXFLAGS.
+- Fix Valgrind crash when a thread has no stack and syswrap-main.c accesses
+  all possible syscall parameters. Enable helgrind/tests/stackteardown.c
+  to see this in effect. Would require awareness of syscall parameter semantics.
+- Correctly print arguments of DW_CFA_ORCL_arg_loc in show_CF_instruction() when
+  it is implemented in libdwarf.
+
+
+Contacts
+--------
+Please send bug reports and any questions about the port to:
+Ivo Raisr <ivosh@ivosh.net>
+Petr Pavlu <setup@dagobah.cz>

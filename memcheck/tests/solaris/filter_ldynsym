@@ -1,0 +1,7 @@
+#! /bin/sh
+
+# remove path to ldynsym
+sed "s/(in .*ldynsym)/(in ldynsym)/" |
+
+../filter_stderr "$@"
+

@@ -1,0 +1,10 @@
+#! /bin/sh
+
+dir=`dirname $0`
+
+$dir/filter_gdb |
+
+# Filter the number of real-time signal SIGRTMIN which
+# varies accross systems.
+
+sed 's/Program received signal SIG[0-9]*, Real-time event [0-9]*./Program received signal SIGxx, Real-time event xx./'

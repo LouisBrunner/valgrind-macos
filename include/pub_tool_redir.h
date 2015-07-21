@@ -186,6 +186,7 @@
      (         -->  ZL    (left)
      )         -->  ZR    (right)
      Z         -->  ZZ    (Z)
+     /         -->  ZS    (slash)
 
    Everything else is left unchanged.
 */
@@ -240,7 +241,7 @@
 
 /* --- Soname of the standard C library. --- */
 
-#if defined(VGO_linux)
+#if defined(VGO_linux) || defined(VGO_solaris)
 #  define  VG_Z_LIBC_SONAME  libcZdsoZa              // libc.so*
 
 #elif defined(VGO_darwin) && (DARWIN_VERS <= DARWIN_10_6)
@@ -276,6 +277,8 @@
 #  define  VG_Z_LIBPTHREAD_SONAME  libpthreadZdsoZd0     // libpthread.so.0
 #elif defined(VGO_darwin)
 #  define  VG_Z_LIBPTHREAD_SONAME  libSystemZdZaZddylib  // libSystem.*.dylib
+#elif defined(VGO_solaris)
+#  define  VG_Z_LIBPTHREAD_SONAME  libpthreadZdsoZd1     // libpthread.so.1
 #else
 #  error "Unknown platform"
 #endif
@@ -315,6 +318,27 @@
 
 #endif
 
+/* --- Soname for Solaris run-time linker. --- */
+// Note: run-time linker contains absolute pathname in the SONAME.
+
+#if defined(VGO_solaris)
+
+#if defined(VGP_x86_solaris)
+#  define  VG_Z_LD_SO_1           ZSlibZSldZdsoZd1         // /lib/ld.so.1
+#  define  VG_U_LD_SO_1           "/lib/ld.so.1"
+#elif defined(VGP_amd64_solaris)
+#  define  VG_Z_LD_SO_1           ZSlibZSamd64ZSldZdsoZd1  // /lib/amd64/ld.so.1
+#  define  VG_U_LD_SO_1           "/lib/amd64/ld.so.1"
+#else
+#  error "Unknown platform"
+#endif
+
+/* --- Soname for Solaris libumem allocation interposition. --- */
+
+#define  VG_Z_LIBUMEM_SO_1          libumemZdsoZd1             // libumem.so.1
+#define  VG_U_LIBUMEM_SO_1          "libumem.so.1"
+
+#endif
 
 // Prefix for synonym soname synonym handling
 #define VG_SO_SYN(name)       VgSoSyn##name

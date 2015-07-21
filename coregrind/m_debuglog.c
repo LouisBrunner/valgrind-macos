@@ -56,6 +56,9 @@
 #include "pub_core_vkiscnums.h"  /* for syscall numbers */
 #include "pub_core_debuglog.h"   /* our own iface */
 #include "pub_core_clreq.h"      /* for RUNNING_ON_VALGRIND */
+#if defined(VGO_solaris)
+#include "pub_core_vki.h"        /* for EINTR and ERESTART */
+#endif
 
 static Bool clo_xml;
 
@@ -554,6 +557,97 @@ static UInt local_sys_getpid ( void )
         "r20", "r21", "r22", "r23", "r24",
         "r25", "r26", "r27", "r28", "r29");
   return __res;
+}
+
+#elif defined(VGP_x86_solaris)
+static UInt local_sys_write_stderr ( const HChar* buf, Int n )
+{
+   UInt res, err;
+   Bool restart;
+
+   do {
+      /* The Solaris kernel does not restart syscalls automatically so it is
+         done here. */
+      __asm__ __volatile__ (
+         "movl  %[n], %%eax\n"          /* push n */
+         "pushl %%eax\n"
+         "movl  %[buf], %%eax\n"        /* push buf */
+         "pushl %%eax\n"
+         "movl  $2, %%eax\n"            /* push stderr */
+         "pushl %%eax\n"
+         "movl  $"VG_STRINGIFY(__NR_write)", %%eax\n"
+         "pushl %%eax\n"                /* push fake return address */
+         "int   $0x91\n"                /* write(stderr, buf, n) */
+         "movl  $0, %%edx\n"            /* assume no error */
+         "jnc   1f\n"                   /* jump if no error */
+         "movl  $1, %%edx\n"            /* set error flag */
+         "1: "
+         "addl  $16, %%esp\n"           /* pop x4 */
+         : "=&a" (res), "=d" (err)
+         : [buf] "g" (buf), [n] "g" (n)
+         : "cc");
+      restart = err && (res == VKI_EINTR || res == VKI_ERESTART);
+   } while (restart);
+
+   return res;
+}
+
+static UInt local_sys_getpid ( void )
+{
+   UInt res;
+
+   /* The getpid() syscall never returns EINTR or ERESTART so there is no need
+      for restarting it. */
+   __asm__ __volatile__ (
+      "movl $"VG_STRINGIFY(__NR_getpid)", %%eax\n"
+      "int  $0x91\n"                    /* getpid() */
+      : "=a" (res)
+      :
+      : "edx", "cc");
+
+   return res;
+}
+
+#elif defined(VGP_amd64_solaris)
+static UInt local_sys_write_stderr ( const HChar* buf, Int n )
+{
+   ULong res, err;
+   Bool restart;
+
+   do {
+      /* The Solaris kernel does not restart syscalls automatically so it is
+         done here. */
+      __asm__ __volatile__ (
+         "movq  $2, %%rdi\n"            /* push stderr */
+         "movq  $"VG_STRINGIFY(__NR_write)", %%rax\n"
+         "syscall\n"                    /* write(stderr, buf, n) */
+         "movq  $0, %%rdx\n"            /* assume no error */
+         "jnc   1f\n"                   /* jump if no error */
+         "movq  $1, %%rdx\n"            /* set error flag */
+         "1: "
+         : "=a" (res), "=d" (err)
+         : "S" (buf), "d" (n)
+         : "cc");
+      restart = err && (res == VKI_EINTR || res == VKI_ERESTART);
+   } while (restart);
+
+   return res;
+}
+
+static UInt local_sys_getpid ( void )
+{
+   UInt res;
+
+   /* The getpid() syscall never returns EINTR or ERESTART so there is no need
+      for restarting it. */
+   __asm__ __volatile__ (
+      "movq $"VG_STRINGIFY(__NR_getpid)", %%rax\n"
+      "syscall\n"                       /* getpid() */
+      : "=a" (res)
+      :
+      : "edx", "cc");
+
+   return res;
 }
 
 #else

@@ -104,6 +104,8 @@ static Bool DRD_(process_cmd_line_option)(const HChar* arg)
    {}
    else if VG_BOOL_CLO(arg, "--show-confl-seg",      show_confl_seg) {}
    else if VG_BOOL_CLO(arg, "--show-stack-usage",    s_show_stack_usage) {}
+   else if VG_BOOL_CLO(arg, "--ignore-thread-creation",
+   DRD_(ignore_thread_creation)) {}
    else if VG_BOOL_CLO(arg, "--trace-alloc",         s_trace_alloc) {}
    else if VG_BOOL_CLO(arg, "--trace-barrier",       trace_barrier) {}
    else if VG_BOOL_CLO(arg, "--trace-clientobj",     trace_clientobj) {}
@@ -228,6 +230,8 @@ static void DRD_(print_usage)(void)
 "                              milliseconds) [off]\n"
 "    --show-confl-seg=yes|no   Show conflicting segments in race reports [yes].\n"
 "    --show-stack-usage=yes|no Print stack usage at thread exit time [no].\n"
+"    --ignore-thread-creation=yes|no Ignore activities during thread \n"
+"                              creation [%s].\n"
 "\n"
 "  drd options for monitoring process behavior:\n"
 "    --ptrace-addr=<address>[+<length>] Trace all load and store activity for\n"
@@ -245,7 +249,8 @@ static void DRD_(print_usage)(void)
 "    --trace-mutex=yes|no      Trace all mutex activity [no].\n"
 "    --trace-rwlock=yes|no     Trace all reader-writer lock activity[no].\n"
 "    --trace-semaphore=yes|no  Trace all semaphore activity [no].\n",
-DRD_(thread_get_segment_merge_interval)()
+DRD_(thread_get_segment_merge_interval)(),
+DRD_(ignore_thread_creation) ? "yes" : "no"
 );
 }
 
@@ -735,7 +740,7 @@ void drd__atfork_child(ThreadId tid)
 
 static void DRD_(post_clo_init)(void)
 {
-#if defined(VGO_linux) || defined(VGO_darwin)
+#if defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_solaris)
    /* fine */
 #else
    VG_(printf)("\nWARNING: DRD has not yet been tested on this operating system.\n\n");

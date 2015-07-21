@@ -1,0 +1,10 @@
+prog: scalar
+vgopts: -q --error-limit=no --sim-hints=lax-doors
+stderr_filter: filter_scalar
+# Remove all frames from the stack trace except the first one.
+# This is important because syscall() function on x86 isn't ABI conformant
+# which confuses the Valgrind stack unwinder.
+# Therefore x86 and amd64 stack traces are unified so that they contain only
+# 'syscall (in libc)' stack frame and this is then filtered out completely.
+stderr_filter_args: libc
+

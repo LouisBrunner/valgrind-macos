@@ -1190,6 +1190,51 @@ unlock(mx)                             unlock(mx)
     </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.ignore-thread-creation"
+                xreflabel="--ignore-thread-creation">
+    <term>
+      <option><![CDATA[--ignore-thread-creation=<yes|no>
+      [default: no]]]></option>
+    </term>
+    <listitem>
+      <para>
+        Controls whether all activities during thread creation should be
+        ignored. By default enabled only on Solaris.
+        Solaris provides higher throughput, parallelism and scalability than
+        other operating systems, at the cost of more fine-grained locking
+        activity. This means for example that when a thread is created under
+        glibc, just one big lock is used for all thread setup. Solaris libc
+        uses several fine-grained locks and the creator thread resumes its
+        activities as soon as possible, leaving for example stack and TLS setup
+        sequence to the created thread.
+        This situation confuses Helgrind as it assumes there is some false
+        ordering in place between creator and created thread; and therefore many
+        types of race conditions in the application would not be reported.
+        To prevent such false ordering, this command line option is set to
+        <computeroutput>yes</computeroutput> by default on Solaris.
+        All activity (loads, stores, client requests) is therefore ignored
+        during:</para>
+      <itemizedlist>
+        <listitem>
+          <para>
+            pthread_create() call in the creator thread
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            thread creation phase (stack and TLS setup) in the created thread
+          </para>
+        </listitem>
+      </itemizedlist>
+      <para>
+         Also new memory allocated during thread creation is untracked,
+         that is race reporting is suppressed there. DRD does the same thing
+         implicitly. This is necessary because Solaris libc caches many objects
+         and reuses them for different threads and that confuses
+         Helgrind.</para>
+    </listitem>
+  </varlistentry>
+
 
 </variablelist>
 <!-- end of xi:include in the manpage -->

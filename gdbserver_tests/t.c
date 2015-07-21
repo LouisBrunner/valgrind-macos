@@ -26,7 +26,8 @@ static pid_t gettid()
 }
 static void whoami(char *msg)
 {
-   printf("pid %d Thread %d %s\n", getpid(), gettid(), msg); fflush(stdout);
+   printf("pid %ld Thread %ld %s\n", (long) getpid(), (long) gettid(), msg);
+   fflush(stdout);
 }
 
 static int int_und;

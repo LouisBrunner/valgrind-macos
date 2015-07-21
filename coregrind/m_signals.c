@@ -566,6 +566,7 @@ typedef struct SigQueue {
         (srP)->misc.MIPS64.r31 = (uc)->uc_mcontext.sc_regs[31]; \
         (srP)->misc.MIPS64.r28 = (uc)->uc_mcontext.sc_regs[28]; \
       }
+
 #elif defined(VGP_tilegx_linux)
 #  define VG_UCONTEXT_INSTR_PTR(uc)       ((uc)->uc_mcontext.pc)
 #  define VG_UCONTEXT_STACK_PTR(uc)       ((uc)->uc_mcontext.sp)
@@ -580,6 +581,34 @@ typedef struct SigQueue {
         (srP)->misc.TILEGX.r52 = (uc)->uc_mcontext.gregs[52];  \
         (srP)->misc.TILEGX.r55 = (uc)->uc_mcontext.lr;         \
       }
+
+#elif defined(VGP_x86_solaris)
+#  define VG_UCONTEXT_INSTR_PTR(uc)       ((Addr)(uc)->uc_mcontext.gregs[VKI_EIP])
+#  define VG_UCONTEXT_STACK_PTR(uc)       ((Addr)(uc)->uc_mcontext.gregs[VKI_UESP])
+#  define VG_UCONTEXT_SYSCALL_SYSRES(uc)                               \
+      VG_(mk_SysRes_x86_solaris)((uc)->uc_mcontext.gregs[VKI_EFL] & 1, \
+                                 (uc)->uc_mcontext.gregs[VKI_EAX],     \
+                                 (uc)->uc_mcontext.gregs[VKI_EFL] & 1  \
+                                 ? 0 : (uc)->uc_mcontext.gregs[VKI_EDX])
+#  define VG_UCONTEXT_TO_UnwindStartRegs(srP, uc)                      \
+      { (srP)->r_pc = (ULong)(uc)->uc_mcontext.gregs[VKI_EIP];         \
+        (srP)->r_sp = (ULong)(uc)->uc_mcontext.gregs[VKI_UESP];        \
+        (srP)->misc.X86.r_ebp = (uc)->uc_mcontext.gregs[VKI_EBP];      \
+      }
+
+#elif defined(VGP_amd64_solaris)
+#  define VG_UCONTEXT_INSTR_PTR(uc)       ((Addr)(uc)->uc_mcontext.gregs[VKI_REG_RIP])
+#  define VG_UCONTEXT_STACK_PTR(uc)       ((Addr)(uc)->uc_mcontext.gregs[VKI_REG_RSP])
+#  define VG_UCONTEXT_SYSCALL_SYSRES(uc)                                     \
+      VG_(mk_SysRes_amd64_solaris)((uc)->uc_mcontext.gregs[VKI_REG_RFL] & 1, \
+                                   (uc)->uc_mcontext.gregs[VKI_REG_RAX],     \
+                                   (uc)->uc_mcontext.gregs[VKI_REG_RFL] & 1  \
+                                   ? 0 : (uc)->uc_mcontext.gregs[VKI_REG_RDX])
+#  define VG_UCONTEXT_TO_UnwindStartRegs(srP, uc)                            \
+      { (srP)->r_pc = (uc)->uc_mcontext.gregs[VKI_REG_RIP];                  \
+        (srP)->r_sp = (uc)->uc_mcontext.gregs[VKI_REG_RSP];                  \
+        (srP)->misc.AMD64.r_rbp = (uc)->uc_mcontext.gregs[VKI_REG_RBP];      \
+      }
 #else
 #  error Unknown platform
 #endif
@@ -592,7 +621,7 @@ typedef struct SigQueue {
 #if defined(VGO_linux)
 #  define VKI_SIGINFO_si_addr  _sifields._sigfault._addr
 #  define VKI_SIGINFO_si_pid   _sifields._kill._pid
-#elif defined(VGO_darwin)
+#elif defined(VGO_darwin) || defined(VGO_solaris)
 #  define VKI_SIGINFO_si_addr  si_addr
 #  define VKI_SIGINFO_si_pid   si_pid
 #else
@@ -667,6 +696,7 @@ static SCSS scss;
      SA_NOCLDSTOP -- passed to kernel
      SA_ONESHOT or SA_RESETHAND -- pass through
      SA_RESTART -- we observe this but set our handlers to always restart
+                   (this doesn't apply to the Solaris port)
      SA_NOMASK or SA_NODEFER -- we observe this, but our handlers block everything
      SA_ONSTACK -- pass through
      SA_NOCLDWAIT -- pass through
@@ -796,12 +826,20 @@ void calculate_SKSS_from_SCSS ( SKSS* dst )
 
       /* SA_ONESHOT: ignore client setting */
       
+#     if !defined(VGO_solaris)
       /* SA_RESTART: ignore client setting and always set it for us.
 	 Though we never rely on the kernel to restart a
 	 syscall, we observe whether it wanted to restart the syscall
 	 or not, which is needed by 
          VG_(fixup_guest_state_after_syscall_interrupted) */
       skss_flags |= VKI_SA_RESTART;
+#else
+      /* The above does not apply to the Solaris port, where the kernel does
+         not directly restart syscalls, but instead it checks SA_RESTART flag
+         and if it is set then it returns ERESTART to libc and the library
+         actually restarts the syscall. */
+      skss_flags |= scss_flags & VKI_SA_RESTART;
+#     endif
 
       /* SA_NOMASK: ignore it */
 
@@ -965,6 +1003,15 @@ extern void my_sigreturn(void);
    " swint1\n" \
    ".previous\n"
 
+#elif defined(VGP_x86_solaris) || defined(VGP_amd64_solaris)
+/* Not used on Solaris. */
+#  define _MY_SIGRETURN(name) \
+   ".text\n" \
+   ".globl my_sigreturn\n" \
+   "my_sigreturn:\n" \
+   "ud2\n" \
+   ".previous\n"
+
 #else
 #  error Unknown platform
 #endif
@@ -1008,7 +1055,7 @@ static void handle_SCSS_change ( Bool force_update )
       ksa.sa_flags    = skss.skss_per_sig[sig].skss_flags;
 #     if !defined(VGP_ppc32_linux) && \
          !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin) && \
-         !defined(VGP_mips32_linux)
+         !defined(VGP_mips32_linux) && !defined(VGO_solaris)
       ksa.sa_restorer = my_sigreturn;
 #     endif
       /* Re above ifdef (also the assertion below), PaulM says:
@@ -1038,11 +1085,24 @@ static void handle_SCSS_change ( Bool force_update )
       if (!force_update) {
          vg_assert(ksa_old.ksa_handler 
                    == skss_old.skss_per_sig[sig].skss_handler);
+#        if defined(VGO_solaris)
+         if (ksa_old.ksa_handler == VKI_SIG_DFL
+               || ksa_old.ksa_handler == VKI_SIG_IGN) {
+            /* The Solaris kernel ignores signal flags (except SA_NOCLDWAIT
+               and SA_NOCLDSTOP) and a signal mask if a handler is set to
+               SIG_DFL or SIG_IGN. */
+            skss_old.skss_per_sig[sig].skss_flags
+               &= (VKI_SA_NOCLDWAIT | VKI_SA_NOCLDSTOP);
+            vg_assert(VG_(isemptysigset)( &ksa_old.sa_mask ));
+            VG_(sigfillset)( &ksa_old.sa_mask );
+         }
+#        endif
          vg_assert(ksa_old.sa_flags 
                    == skss_old.skss_per_sig[sig].skss_flags);
 #        if !defined(VGP_ppc32_linux) && \
             !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin) && \
-            !defined(VGP_mips32_linux) && !defined(VGP_mips64_linux)
+            !defined(VGP_mips32_linux) && !defined(VGP_mips64_linux) && \
+            !defined(VGO_solaris)
          vg_assert(ksa_old.sa_restorer == my_sigreturn);
 #        endif
          VG_(sigaddset)( &ksa_old.sa_mask, VKI_SIGKILL );
@@ -1162,7 +1222,8 @@ SysRes VG_(do_sys_sigaction) ( Int signo,
       old_act->ksa_handler = scss.scss_per_sig[signo].scss_handler;
       old_act->sa_flags    = scss.scss_per_sig[signo].scss_flags;
       old_act->sa_mask     = scss.scss_per_sig[signo].scss_mask;
-#     if !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin)
+#     if !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin) && \
+         !defined(VGO_solaris)
       old_act->sa_restorer = scss.scss_per_sig[signo].scss_restorer;
 #     endif
    }
@@ -1174,7 +1235,8 @@ SysRes VG_(do_sys_sigaction) ( Int signo,
       scss.scss_per_sig[signo].scss_mask     = new_act->sa_mask;
 
       scss.scss_per_sig[signo].scss_restorer = NULL;
-#     if !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin)
+#     if !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin) && \
+         !defined(VGO_solaris)
       scss.scss_per_sig[signo].scss_restorer = new_act->sa_restorer;
 #     endif
 
@@ -1369,6 +1431,7 @@ static
 void push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo,
                                        const struct vki_ucontext *uc )
 {
+   Bool         on_altstack;
    Addr         esp_top_of_frame;
    ThreadState* tst;
    Int		sigNo = siginfo->si_signo;
@@ -1389,6 +1452,7 @@ void push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo,
              arch/i386/kernel/signal.c. */
           sas_ss_flags(tid, VG_(get_SP)(tid)) == 0
       ) {
+      on_altstack = True;
       esp_top_of_frame 
          = (Addr)(tst->altstack.ss_sp) + tst->altstack.ss_size;
       if (VG_(clo_trace_signals))
@@ -1397,16 +1461,13 @@ void push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo,
                    sigNo, VG_(signame)(sigNo), tid, tst->altstack.ss_sp,
                    (UChar *)tst->altstack.ss_sp + tst->altstack.ss_size,
                    (Word)tst->altstack.ss_size );
-
-      /* Signal delivery to tools */
-      VG_TRACK( pre_deliver_signal, tid, sigNo, /*alt_stack*/True );
-      
    } else {
+      on_altstack = False;
       esp_top_of_frame = VG_(get_SP)(tid) - VG_STACK_REDZONE_SZB;
-
-      /* Signal delivery to tools */
-      VG_TRACK( pre_deliver_signal, tid, sigNo, /*alt_stack*/False );
    }
+
+   /* Signal delivery to tools */
+   VG_TRACK( pre_deliver_signal, tid, sigNo, on_altstack );
 
    vg_assert(scss.scss_per_sig[sigNo].scss_handler != VKI_SIG_IGN);
    vg_assert(scss.scss_per_sig[sigNo].scss_handler != VKI_SIG_DFL);
@@ -1414,7 +1475,7 @@ void push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo,
    /* This may fail if the client stack is busted; if that happens,
       the whole process will exit rather than simply calling the
       signal handler. */
-   VG_(sigframe_create) (tid, esp_top_of_frame, siginfo, uc,
+   VG_(sigframe_create) (tid, on_altstack, esp_top_of_frame, siginfo, uc,
                          scss.scss_per_sig[sigNo].scss_handler,
                          scss.scss_per_sig[sigNo].scss_flags,
                          &tst->sig_mask,
@@ -1439,6 +1500,7 @@ const HChar *VG_(signame)(Int sigNo)
       case VKI_SIGUSR1:   return "SIGUSR1";
       case VKI_SIGUSR2:   return "SIGUSR2";
       case VKI_SIGSEGV:   return "SIGSEGV";
+      case VKI_SIGSYS:    return "SIGSYS";
       case VKI_SIGPIPE:   return "SIGPIPE";
       case VKI_SIGALRM:   return "SIGALRM";
       case VKI_SIGTERM:   return "SIGTERM";
@@ -1461,8 +1523,40 @@ const HChar *VG_(signame)(Int sigNo)
 #     if defined(VKI_SIGPWR)
       case VKI_SIGPWR:    return "SIGPWR";
 #     endif
-#     if defined(VKI_SIGUNUSED)
+#     if defined(VKI_SIGUNUSED) && (VKI_SIGUNUSED != VKI_SIGSYS)
       case VKI_SIGUNUSED: return "SIGUNUSED";
+#     endif
+
+      /* Solaris-specific signals. */
+#     if defined(VKI_SIGEMT)
+      case VKI_SIGEMT:    return "SIGEMT";
+#     endif
+#     if defined(VKI_SIGWAITING)
+      case VKI_SIGWAITING: return "SIGWAITING";
+#     endif
+#     if defined(VKI_SIGLWP)
+      case VKI_SIGLWP:    return "SIGLWP";
+#     endif
+#     if defined(VKI_SIGFREEZE)
+      case VKI_SIGFREEZE: return "SIGFREEZE";
+#     endif
+#     if defined(VKI_SIGTHAW)
+      case VKI_SIGTHAW:   return "SIGTHAW";
+#     endif
+#     if defined(VKI_SIGCANCEL)
+      case VKI_SIGCANCEL: return "SIGCANCEL";
+#     endif
+#     if defined(VKI_SIGLOST)
+      case VKI_SIGLOST:   return "SIGLOST";
+#     endif
+#     if defined(VKI_SIGXRES)
+      case VKI_SIGXRES:   return "SIGXRES";
+#     endif
+#     if defined(VKI_SIGJVM1)
+      case VKI_SIGJVM1:   return "SIGJVM1";
+#     endif
+#     if defined(VKI_SIGJVM2)
+      case VKI_SIGJVM2:   return "SIGJVM2";
 #     endif
 
 #  if defined(VKI_SIGRTMIN) && defined(VKI_SIGRTMAX)
@@ -1487,7 +1581,8 @@ void VG_(kill_self)(Int sigNo)
 
    sa.ksa_handler = VKI_SIG_DFL;
    sa.sa_flags = 0;
-#  if !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin)
+#  if !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin) && \
+      !defined(VGO_solaris)
    sa.sa_restorer = 0;
 #  endif
    VG_(sigemptyset)(&sa.sa_mask);
@@ -1499,7 +1594,7 @@ void VG_(kill_self)(Int sigNo)
    VG_(sigprocmask)(VKI_SIG_UNBLOCK, &mask, &origmask);
 
    r = VG_(kill)(VG_(getpid)(), sigNo);
-#  if defined(VGO_linux)
+#  if !defined(VGO_darwin)
    /* This sometimes fails with EPERM on Darwin.  I don't know why. */
    vg_assert(r == 0);
 #  endif
@@ -1517,7 +1612,7 @@ void VG_(kill_self)(Int sigNo)
 // pass in some other details that can help when si_code is unreliable.
 static Bool is_signal_from_kernel(ThreadId tid, int signum, int si_code)
 {
-#  if defined(VGO_linux)
+#  if defined(VGO_linux) || defined(VGO_solaris)
    // On Linux, SI_USER is zero, negative values are from the user, positive
    // values are from the kernel.  There are SI_FROMUSER and SI_FROMKERNEL
    // macros but we don't use them here because other platforms don't have
@@ -1558,11 +1653,6 @@ static Bool is_signal_from_kernel(ThreadId tid, int signum, int si_code)
 #  endif
 }
 
-// This is an arbitrary si_code that we only use internally.  It corresponds
-// to the value SI_KERNEL on Linux, but that's not really of any significance
-// as far as I can determine.
-#define VKI_SEGV_MADE_UP_GPF    0x80
-
 /* 
    Perform the default action of a signal.  If the signal is fatal, it
    marks all threads as needing to exit, but it doesn't actually kill
@@ -1589,8 +1679,15 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
       case VKI_SIGSEGV:	/* core */
       case VKI_SIGBUS:	/* core */
       case VKI_SIGTRAP:	/* core */
+      case VKI_SIGSYS:	/* core */
       case VKI_SIGXCPU:	/* core */
       case VKI_SIGXFSZ:	/* core */
+
+      /* Solaris-specific signals. */
+#     if defined(VKI_SIGEMT)
+      case VKI_SIGEMT:	/* core */
+#     endif
+
          terminate = True;
          core = True;
          break;
@@ -1607,12 +1704,17 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
 #     if defined(VKI_SIGPWR)
       case VKI_SIGPWR:	/* term */
 #     endif
-      case VKI_SIGSYS:	/* term */
       case VKI_SIGPROF:	/* term */
       case VKI_SIGVTALRM:	/* term */
 #     if defined(VKI_SIGRTMIN) && defined(VKI_SIGRTMAX)
       case VKI_SIGRTMIN ... VKI_SIGRTMAX: /* term */
 #     endif
+
+      /* Solaris-specific signals. */
+#     if defined(VKI_SIGLOST)
+      case VKI_SIGLOST:	/* term */
+#     endif
+
          terminate = True;
          break;
    }
@@ -1702,6 +1804,11 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
 	    case VKI_FPE_FLTRES: event = "FP inexact"; break;
 	    case VKI_FPE_FLTINV: event = "FP invalid operation"; break;
 	    case VKI_FPE_FLTSUB: event = "FP subscript out of range"; break;
+
+            /* Solaris-specific codes. */
+#           if defined(VKI_FPE_FLTDEN)
+	    case VKI_FPE_FLTDEN: event = "FP denormalize"; break;
+#           endif
 	    }
 	    break;
 
@@ -1727,7 +1834,7 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
          likely cause a segfault. */
       if (VG_(is_valid_tid)(tid)) {
          Word first_ip_delta = 0;
-#if defined(VGO_linux)
+#if defined(VGO_linux) || defined(VGO_solaris)
          /* Make sure that the address stored in the stack pointer is 
             located in a mapped page. That is not necessarily so. E.g.
             consider the scenario where the stack pointer was decreased
@@ -2027,6 +2134,9 @@ void VG_(synth_sigtrap)(ThreadId tid)
    uc.uc_mcontext = &mc;
    uc.uc_mcontext->__es.__trapno = 3;
    uc.uc_mcontext->__es.__err = 0;
+#  elif defined(VGP_x86_solaris)
+   uc.uc_mcontext.gregs[VKI_ERR] = 0;
+   uc.uc_mcontext.gregs[VKI_TRAPNO] = VKI_T_BPTFLT;
 #  endif
 
    /* fixs390: do we need to do anything here for s390 ? */
@@ -2162,12 +2272,116 @@ static int sanitize_si_code(int si_code)
       mask them off) sign extends them when exporting to user space so
       we do the same thing here. */
    return (Short)si_code;
-#elif defined(VGO_darwin)
+#elif defined(VGO_darwin) || defined(VGO_solaris)
    return si_code;
 #else
 #  error Unknown OS
 #endif
 }
+
+#if defined(VGO_solaris)
+/* Following function is used to switch Valgrind from a client stack back onto
+   a Valgrind stack.  It is used only when the door_return call was invoked by
+   the client because this is the only syscall which is executed directly on
+   the client stack (see syscall-{x86,amd64}-solaris.S).  The switch onto the
+   Valgrind stack has to be made as soon as possible because there is no
+   guarantee that there is enough space on the client stack to run the
+   complete signal machinery.  Also, Valgrind has to be switched back onto its
+   stack before a simulated signal frame is created because that will
+   overwrite the real sigframe built by the kernel. */
+static void async_signalhandler_solaris_preprocess(ThreadId tid, Int *signo,
+                                                   vki_siginfo_t *info,
+                                                   struct vki_ucontext *uc)
+{
+#  define RECURSION_BIT 0x1000
+   Addr sp;
+   vki_sigframe_t *frame;
+   ThreadState *tst = VG_(get_ThreadState)(tid);
+   Int rec_signo;
+
+   /* If not doing door_return then return instantly. */
+   if (!tst->os_state.in_door_return)
+      return;
+
+   /* Check for the recursion:
+      v ...
+      | async_signalhandler - executed on the client stack
+      v async_signalhandler_solaris_preprocess - first call switches the
+      |   stacks and sets the RECURSION_BIT flag
+      v async_signalhandler - executed on the Valgrind stack
+      | async_signalhandler_solaris_preprocess - the RECURSION_BIT flag is
+      v   set, clear it and return
+    */
+   if (*signo & RECURSION_BIT) {
+      *signo &= ~RECURSION_BIT;
+      return;
+   }
+
+   rec_signo = *signo | RECURSION_BIT;
+
+#  if defined(VGP_x86_solaris)
+   /* Register %ebx/%rbx points to the top of the original V stack. */
+   sp = uc->uc_mcontext.gregs[VKI_EBX];
+#  elif defined(VGP_amd64_solaris)
+   sp = uc->uc_mcontext.gregs[VKI_REG_RBX];
+#  else
+#    error "Unknown platform"
+#  endif
+
+   /* Build a fake signal frame, similarly as in sigframe-solaris.c. */
+   /* Calculate a new stack pointer. */
+   sp -= sizeof(vki_sigframe_t);
+   sp = VG_ROUNDDN(sp, 16) - sizeof(UWord);
+
+   /* Fill in the frame. */
+   frame = (vki_sigframe_t*)sp;
+   /* Set a bogus return address. */
+   frame->return_addr = (void*)~0UL;
+   frame->a1_signo = rec_signo;
+   /* The first parameter has to be 16-byte aligned, resembling a function
+      call. */
+   {
+      /* Using
+         vg_assert(VG_IS_16_ALIGNED(&frame->a1_signo));
+         seems to get miscompiled on amd64 with GCC 4.7.2. */
+      Addr signo_addr = (Addr)&frame->a1_signo;
+      vg_assert(VG_IS_16_ALIGNED(signo_addr));
+   }
+   frame->a2_siginfo = &frame->siginfo;
+   frame->siginfo = *info;
+   frame->ucontext = *uc;
+
+#  if defined(VGP_x86_solaris)
+   frame->a3_ucontext = &frame->ucontext;
+
+   /* Switch onto the V stack and restart the signal processing. */
+   __asm__ __volatile__(
+      "xorl %%ebp, %%ebp\n"
+      "movl %[sp], %%esp\n"
+      "jmp async_signalhandler\n"
+      :
+      : [sp] "a" (sp)
+      : /*"ebp"*/);
+
+#  elif defined(VGP_amd64_solaris)
+   __asm__ __volatile__(
+      "xorq %%rbp, %%rbp\n"
+      "movq %[sp], %%rsp\n"
+      "jmp async_signalhandler\n"
+      :
+      : [sp] "a" (sp), "D" (rec_signo), "S" (&frame->siginfo),
+        "d" (&frame->ucontext)
+      : /*"rbp"*/);
+#  else
+#    error "Unknown platform"
+#  endif
+
+   /* We should never get here. */
+   vg_assert(0);
+
+#  undef RECURSION_BIT
+}
+#endif
 
 /* 
    Receive an async signal from the kernel.
@@ -2183,8 +2397,13 @@ void async_signalhandler ( Int sigNo,
    ThreadState* tst = VG_(get_ThreadState)(tid);
    SysRes       sres;
 
-   /* The thread isn't currently running, make it so before going on */
    vg_assert(tst->status == VgTs_WaitSys);
+
+#  if defined(VGO_solaris)
+   async_signalhandler_solaris_preprocess(tid, &sigNo, info, uc);
+#  endif
+
+   /* The thread isn't currently running, make it so before going on */
    VG_(acquire_BigLock)(tid, "async_signalhandler");
 
    info->si_code = sanitize_si_code(info->si_code);
@@ -2234,7 +2453,8 @@ void async_signalhandler ( Int sigNo,
       tid, 
       VG_UCONTEXT_INSTR_PTR(uc), 
       sres,  
-      !!(scss.scss_per_sig[sigNo].scss_flags & VKI_SA_RESTART)
+      !!(scss.scss_per_sig[sigNo].scss_flags & VKI_SA_RESTART),
+      uc
    );
 
    /* (2) */
@@ -2345,7 +2565,13 @@ void sync_signalhandler_from_user ( ThreadId tid,
       of a faulting instruction), then how we treat it depends on when it
       arrives... */
 
-   if (VG_(threads)[tid].status == VgTs_WaitSys) {
+   if (VG_(threads)[tid].status == VgTs_WaitSys
+#     if defined(VGO_solaris)
+      /* Check if the signal was really received while doing a blocking
+         syscall.  Only then the async_signalhandler() path can be used. */
+       && VG_(is_ip_in_blocking_syscall)(tid, VG_UCONTEXT_INSTR_PTR(uc))
+#     endif
+         ) {
       /* Signal arrived while we're blocked in a syscall.  This means that
          the client's signal mask was applied.  In other words, so we can't
          get here unless the client wants this signal right now.  This means
@@ -2605,6 +2831,11 @@ void sync_signalhandler ( Int sigNo,
    } else {
       sync_signalhandler_from_kernel(tid, sigNo, info, uc);
    }
+
+#  if defined(VGO_solaris)
+   /* On Solaris we have to return from signal handler manually. */
+   VG_(do_syscall2)(__NR_context, VKI_SETCONTEXT, (UWord)uc);
+#  endif
 }
 
 
@@ -2653,7 +2884,8 @@ void pp_ksigaction ( vki_sigaction_toK_t* sa )
    VG_(printf)("pp_ksigaction: handler %p, flags 0x%x, restorer %p\n", 
                sa->ksa_handler, 
                (UInt)sa->sa_flags, 
-#              if !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin)
+#              if !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin) && \
+                  !defined(VGO_solaris)
                   sa->sa_restorer
 #              else
                   (void*)0
@@ -2675,7 +2907,8 @@ void VG_(set_default_handler)(Int signo)
 
    sa.ksa_handler = VKI_SIG_DFL;
    sa.sa_flags = 0;
-#  if !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin)
+#  if !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin) && \
+      !defined(VGO_solaris)
    sa.sa_restorer = 0;
 #  endif
    VG_(sigemptyset)(&sa.sa_mask);
@@ -2777,7 +3010,8 @@ void VG_(sigstartup_actions) ( void )
 
 	 tsa.ksa_handler = (void *)sync_signalhandler;
 	 tsa.sa_flags = VKI_SA_SIGINFO;
-#        if !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin)
+#        if !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin) && \
+            !defined(VGO_solaris)
 	 tsa.sa_restorer = 0;
 #        endif
 	 VG_(sigfillset)(&tsa.sa_mask);
@@ -2804,7 +3038,8 @@ void VG_(sigstartup_actions) ( void )
       scss.scss_per_sig[i].scss_mask     = sa.sa_mask;
 
       scss.scss_per_sig[i].scss_restorer = NULL;
-#     if !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin)
+#     if !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin) && \
+         !defined(VGO_solaris)
       scss.scss_per_sig[i].scss_restorer = sa.sa_restorer;
 #     endif
 

@@ -1,0 +1,2 @@
+prog: gethrtime
+vgopts: -q

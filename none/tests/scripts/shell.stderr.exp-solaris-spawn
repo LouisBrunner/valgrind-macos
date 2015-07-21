@@ -1,0 +1,6 @@
+./shell[10]: ./x86/: cannot execute [is a directory]
+./shell[13]: ./shell.vgtest: cannot execute [Permission denied]
+./shell[16]: ./shell_badinterp: not found [No such file or directory]
+./shell_binaryfile: ./shell_binaryfile: cannot execute [Exec format error]
+./shell[22]: ./shell_nosuchfile: not found [No such file or directory]
+./shell[25]: shell_nosuchfile: not found [No such file or directory]

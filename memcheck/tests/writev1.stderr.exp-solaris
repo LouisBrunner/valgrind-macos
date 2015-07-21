@@ -1,0 +1,19 @@
+Test file created.
+Syscall param writev(vector[...]) points to unaddressable byte(s)
+   ...
+   by 0x........: main (writev1.c:56)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Received EFAULT as expected
+Syscall param writev(vector) points to unaddressable byte(s)
+   ...
+   by 0x........: main (writev1.c:68)
+ Address 0x........ is 0 bytes after the brk data segment limit 0x........
+
+Received EINVAL as expected
+Syscall param readv(vector) points to unaddressable byte(s)
+   ...
+   by 0x........: main (writev1.c:76)
+ Address 0x........ is 0 bytes after the brk data segment limit 0x........
+
+Received EINVAL as expected

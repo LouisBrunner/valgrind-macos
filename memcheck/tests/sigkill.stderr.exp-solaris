@@ -1,0 +1,197 @@
+
+setting signal 1: Success
+getting signal 1: Success
+
+setting signal 2: Success
+getting signal 2: Success
+
+setting signal 3: Success
+getting signal 3: Success
+
+setting signal 4: Success
+getting signal 4: Success
+
+setting signal 5: Success
+getting signal 5: Success
+
+setting signal 6: Success
+getting signal 6: Success
+
+setting signal 7: Success
+getting signal 7: Success
+
+setting signal 8: Success
+getting signal 8: Success
+
+setting signal 9: Warning: ignored attempt to set SIGKILL handler in sigaction();
+         the SIGKILL signal is uncatchable
+Invalid argument
+getting signal 9: Success
+
+setting signal 10: Success
+getting signal 10: Success
+
+setting signal 11: Success
+getting signal 11: Success
+
+setting signal 12: Success
+getting signal 12: Success
+
+setting signal 13: Success
+getting signal 13: Success
+
+setting signal 14: Success
+getting signal 14: Success
+
+setting signal 15: Success
+getting signal 15: Success
+
+setting signal 16: Success
+getting signal 16: Success
+
+setting signal 17: Success
+getting signal 17: Success
+
+setting signal 18: Success
+getting signal 18: Success
+
+setting signal 19: Success
+getting signal 19: Success
+
+setting signal 20: Success
+getting signal 20: Success
+
+setting signal 21: Success
+getting signal 21: Success
+
+setting signal 22: Success
+getting signal 22: Success
+
+setting signal 23: Warning: ignored attempt to set SIGSTOP handler in sigaction();
+         the SIGSTOP signal is uncatchable
+Invalid argument
+getting signal 23: Success
+
+setting signal 24: Success
+getting signal 24: Success
+
+setting signal 25: Success
+getting signal 25: Success
+
+setting signal 26: Success
+getting signal 26: Success
+
+setting signal 27: Success
+getting signal 27: Success
+
+setting signal 28: Success
+getting signal 28: Success
+
+setting signal 29: Success
+getting signal 29: Success
+
+setting signal 30: Success
+getting signal 30: Success
+
+setting signal 31: Success
+getting signal 31: Success
+
+setting signal 34: Success
+getting signal 34: Success
+
+setting signal 35: Success
+getting signal 35: Success
+
+setting signal 36: Success
+getting signal 36: Success
+
+setting signal 37: Success
+getting signal 37: Success
+
+setting signal 38: Success
+getting signal 38: Success
+
+setting signal 39: Success
+getting signal 39: Success
+
+setting signal 40: Success
+getting signal 40: Success
+
+setting signal 41: Success
+getting signal 41: Success
+
+setting signal 42: Success
+getting signal 42: Success
+
+setting signal 43: Success
+getting signal 43: Success
+
+setting signal 44: Success
+getting signal 44: Success
+
+setting signal 45: Success
+getting signal 45: Success
+
+setting signal 46: Success
+getting signal 46: Success
+
+setting signal 47: Success
+getting signal 47: Success
+
+setting signal 48: Success
+getting signal 48: Success
+
+setting signal 49: Success
+getting signal 49: Success
+
+setting signal 50: Success
+getting signal 50: Success
+
+setting signal 51: Success
+getting signal 51: Success
+
+setting signal 52: Success
+getting signal 52: Success
+
+setting signal 53: Success
+getting signal 53: Success
+
+setting signal 54: Success
+getting signal 54: Success
+
+setting signal 55: Success
+getting signal 55: Success
+
+setting signal 56: Success
+getting signal 56: Success
+
+setting signal 57: Success
+getting signal 57: Success
+
+setting signal 58: Success
+getting signal 58: Success
+
+setting signal 59: Success
+getting signal 59: Success
+
+setting signal 60: Success
+getting signal 60: Success
+
+setting signal 61: Success
+getting signal 61: Success
+
+setting signal 62: Success
+getting signal 62: Success
+
+setting signal 65: Success
+getting signal 65: Success
+
+
+HEAP SUMMARY:
+    in use at exit: ... bytes in ... blocks
+  total heap usage: ... allocs, ... frees, ... bytes allocated
+
+For a detailed leak analysis, rerun with: --leak-check=full
+
+For counts of detected and suppressed errors, rerun with: -v
+ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

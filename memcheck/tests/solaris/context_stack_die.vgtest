@@ -1,0 +1,2 @@
+prog: context_stack_die
+vgopts: -q

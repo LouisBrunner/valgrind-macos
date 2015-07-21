@@ -1,0 +1,4 @@
+Result of readlink("/proc/self/path/a.out"): proc_aout
+Result of readlink("/proc/<pid>/path/a.out"): proc_aout
+Result of readlinkat("/proc/self/path/a.out"): proc_aout
+Result of readlinkat("/proc/<pid>/path/a.out"): proc_aout

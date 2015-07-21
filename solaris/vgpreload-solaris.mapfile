@@ -1,0 +1,19 @@
+# Mapfile used for linking Valgrind preload libraries
+# (vgpreload_core-*.so and vgpreload_<tool>-*.so).
+#
+# Linking Valgrind with '-std=gnu99' causes the link editor
+# to include also symbols which alter Solaris libc behaviour.
+# This is undesirable: it would mean that non XPG-aware program
+# (conforming implicitly to XPG3) would behave differently when
+# run under Valgrind, due to preload libraries containing symbols
+# relevant to XPG6 (X/Open Portability Guide, Issue 6).
+#
+
+$mapfile_version 2
+
+SYMBOL_SCOPE {
+	ELIMINATE:
+		_lib_version;
+		__xpg4;
+		__xpg6;
+};

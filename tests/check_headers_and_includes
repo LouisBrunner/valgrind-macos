@@ -66,7 +66,8 @@ my %dirs_to_ignore = (
     "perf" => 1,
     "tests" => 1,
     "gdbserver_tests" => 1,
-    "mpi" => 1
+    "mpi" => 1,
+    "solaris" => 1
     );
 
 my %tool_export_header = (

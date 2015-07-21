@@ -76,7 +76,7 @@ void VG_(vki_do_initial_consistency_checks) ( void )
 
    /* --- Platform-specific checks on signal sets --- */
 
-#  if defined(VGO_linux)
+#  if defined(VGO_linux) || defined(VGO_solaris)
    /* nothing to check */
 #  elif defined(VGP_x86_darwin) || defined(VGP_amd64_darwin)
    vg_assert(_VKI_NSIG == NSIG);
@@ -126,6 +126,14 @@ void VG_(vki_do_initial_consistency_checks) ( void )
    /* also .. */
    /* VKI_SET_SIGMASK is hardwired into syscall-x86-darwin.S and
       syscall-amd64-darwin.S */
+   vg_assert(VKI_SIG_SETMASK == 3);
+
+#  elif defined(VGO_solaris)
+   /* the toK- and fromK- forms are identical */
+   vg_assert(sizeof(vki_sigaction_toK_t)
+             == sizeof(vki_sigaction_fromK_t));
+   /* VKI_SET_SIGMASK is hardwired into syscall-x86-solaris.S
+      and syscall-amd64-solaris.S */
    vg_assert(VKI_SIG_SETMASK == 3);
 
 #  else

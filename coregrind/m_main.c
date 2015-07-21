@@ -181,7 +181,7 @@ static void usage_NORETURN ( Bool debug_help )
 "    --run-libc-freeres=no|yes free up glibc memory at exit on Linux? [yes]\n"
 "    --sim-hints=hint1,hint2,...  activate unusual sim behaviours [none] \n"
 "         where hint is one of:\n"
-"           lax-ioctls fuse-compatible enable-outer\n"
+"           lax-ioctls lax-doors fuse-compatible enable-outer\n"
 "           no-inner-prefix no-nptl-pthread-stackcache none\n"
 "    --fair-sched=no|yes|try   schedule threads fairly on multicore systems [no]\n"
 "    --kernel-variant=variant1,variant2,...\n"
@@ -410,7 +410,7 @@ static void early_process_cmd_line_options ( /*OUT*/Int* need_help,
       // running in an outer, to have "no-inner-prefix" enabled
       // as early as possible.
       else if VG_USETX_CLO (str, "--sim-hints",
-                            "lax-ioctls,fuse-compatible,"
+                            "lax-ioctls,lax-doors,fuse-compatible,"
                             "enable-outer,no-inner-prefix,"
                             "no-nptl-pthread-stackcache",
                             VG_(clo_sim_hints)) {}
@@ -1443,7 +1443,7 @@ static void print_preamble ( Bool logging_to_fd,
       VG_(umsg)("\n");
 
    if (VG_(clo_verbosity) > 1) {
-# if !defined(VGO_darwin)
+# if defined(VGO_linux)
       SysRes fd;
 # endif
       VexArch vex_arch;
@@ -1457,7 +1457,7 @@ static void print_preamble ( Bool logging_to_fd,
                      * (HChar**) VG_(indexXA)( VG_(args_for_valgrind), i ));
       }
 
-# if !defined(VGO_darwin)
+# if defined(VGO_linux)
       VG_(message)(Vg_DebugMsg, "Contents of /proc/version:\n");
       fd = VG_(open) ( "/proc/version", VKI_O_RDONLY, 0 );
       if (sr_isError(fd)) {
@@ -1479,7 +1479,7 @@ static void print_preamble ( Bool logging_to_fd,
          VG_(message)(Vg_DebugMsg, "\n");
          VG_(close)(fdno);
       }
-# else
+# elif defined(VGO_darwin)
       VG_(message)(Vg_DebugMsg, "Output from sysctl({CTL_KERN,KERN_VERSION}):\n");
       /* Note: preferable to use sysctlbyname("kern.version", kernelVersion, &len, NULL, 0)
          however that syscall is OS X 10.10+ only. */
@@ -1490,6 +1490,20 @@ static void print_preamble ( Bool logging_to_fd,
       VG_(sysctl)(mib, sizeof(mib)/sizeof(Int), kernelVersion, &len, NULL, 0);
       VG_(message)(Vg_DebugMsg, "  %s\n", kernelVersion);
       VG_(free)( kernelVersion );
+# elif defined(VGO_solaris)
+      /* There is no /proc/version file on Solaris so we try to get some
+         system information using the uname(2) syscall. */
+      {
+         struct vki_utsname uts;
+
+         VG_(message)(Vg_DebugMsg, "System information:\n");
+         SysRes res = VG_(do_syscall1)(__NR_uname, (UWord)&uts);
+         if (sr_isError(res))
+            VG_(message)(Vg_DebugMsg, "  uname() failed\n");
+         else
+            VG_(message)(Vg_DebugMsg, "  %s %s %s %s\n",
+                         uts.sysname, uts.release, uts.version, uts.machine);
+      }
 # endif
 
       VG_(machine_get_VexArchInfo)( &vex_arch, &vex_archinfo );
@@ -1945,7 +1959,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    if (!need_help) {
       VG_(debugLog)(1, "main", "Create initial image\n");
 
-#     if defined(VGO_linux) || defined(VGO_darwin)
+#     if defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_solaris)
       the_iicii.argv              = argv;
       the_iicii.envp              = envp;
       the_iicii.toolname          = toolname;
@@ -1978,16 +1992,21 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    //   p: setup file descriptors
    //   p: ii_create_image for VG_(client_auxv) setup.
    //--------------------------------------------------------------
-#if !defined(VGO_linux)
-   // client shouldn't be using /proc!
    VG_(cl_cmdline_fd) = -1;
    VG_(cl_auxv_fd) = -1;
-#else
+#if defined(VGO_solaris)
+   VG_(cl_psinfo_fd) = -1;
+#endif
+
+#if defined(VGO_linux) || defined(VGO_solaris)
    if (!need_help) {
       HChar  buf[50];   // large enough
       HChar  buf2[VG_(mkstemp_fullname_bufsz)(sizeof buf - 1)];
-      HChar  nul[1];
       Int    fd, r;
+
+#if defined(VGO_linux)
+      /* Fake /proc/<pid>/cmdline only on Linux. */
+      HChar  nul[1];
       const HChar* exename;
 
       VG_(debugLog)(1, "main", "Create fake /proc/<pid>/cmdline\n");
@@ -2018,7 +2037,9 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
          VG_(err_config_error)("Can't delete client cmdline file in %s\n", buf2);
 
       VG_(cl_cmdline_fd) = fd;
+#endif // defined(VGO_linux)
 
+      /* Fake /proc/<pid>/auxv on both Linux and Solaris. */
       VG_(debugLog)(1, "main", "Create fake /proc/<pid>/auxv\n");
 
       VG_(sprintf)(buf, "proc_%d_auxv", VG_(getpid)());
@@ -2047,6 +2068,24 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
          VG_(err_config_error)("Can't delete client auxv file in %s\n", buf2);
 
       VG_(cl_auxv_fd) = fd;
+
+#if defined(VGO_solaris)
+      /* Fake /proc/<pid>/psinfo on Solaris.
+       * Contents will be fetched and partially faked later on the fly. */
+      VG_(debugLog)(1, "main", "Create fake /proc/<pid>/psinfo\n");
+
+      VG_(sprintf)(buf, "proc_%d_psinfo", VG_(getpid)());
+      fd = VG_(mkstemp)( buf, buf2 );
+      if (fd == -1)
+         VG_(err_config_error)("Can't create client psinfo file in %s\n", buf2);
+
+      /* Now delete it, but hang on to the fd. */
+      r = VG_(unlink)( buf2 );
+      if (r)
+         VG_(err_config_error)("Can't delete client psinfo file in %s\n", buf2);
+
+      VG_(cl_psinfo_fd) = fd;
+#endif /* VGO_solaris */
    }
 #endif
 
@@ -2165,6 +2204,8 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
       iters = 10;
 #     elif defined(VGO_darwin)
       iters = 3;
+#     elif defined(VGO_solaris)
+      iters = 10;
 #     else
 #       error "Unknown plat"
 #     endif
@@ -2182,6 +2223,10 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
       VG_(debugLog)(1, "main", "Init preopened fds\n");
       VG_(init_preopened_fds)();
    }
+
+#if defined(VGO_solaris)
+   VG_(syswrap_init)();
+#endif
 
    //--------------------------------------------------------------
    // Load debug info for the existing segments.
@@ -2207,7 +2252,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    addr2dihandle = VG_(newXA)( VG_(malloc), "main.vm.2",
                                VG_(free), sizeof(Addr_n_ULong) );
 
-#  if defined(VGO_linux)
+#  if defined(VGO_linux) || defined(VGO_solaris)
    { Addr* seg_starts;
      Int   n_seg_starts;
      Addr_n_ULong anu;
@@ -2445,7 +2490,19 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    //      VG_(ii_create_image)   [for 'the_iicii' initial info]
    //--------------------------------------------------------------
    VG_(debugLog)(1, "main", "Finalise initial image\n");
-   VG_(ii_finalise_image)( the_iifii );
+   { /* Mark the main thread as running while we tell the tool about
+        the client memory which could be tracked during initial image
+        finalisation. So the tool can associate that memory with the
+        main thread. */
+     vg_assert(VG_(running_tid) == VG_INVALID_THREADID);
+     VG_(running_tid) = tid_main;
+
+     VG_(ii_finalise_image)( the_iifii );
+
+     /* Clear the running thread indicator */
+     VG_(running_tid) = VG_INVALID_THREADID;
+     vg_assert(VG_(running_tid) == VG_INVALID_THREADID);
+   }
 
    //--------------------------------------------------------------
    // Initialise the signal handling subsystem
@@ -2665,7 +2722,7 @@ void shutdown_actions_NORETURN( ThreadId tid,
                     "VG_(terminate_NORETURN)(tid=%lld)\n", (ULong)tid);
 
    switch (tids_schedretcode) {
-   case VgSrc_ExitThread:  /* the normal way out (Linux) */
+   case VgSrc_ExitThread:  /* the normal way out (Linux, Solaris) */
    case VgSrc_ExitProcess: /* the normal way out (Darwin) */
       /* Change the application return code to user's return code,
          if an error was found */
@@ -3431,12 +3488,91 @@ void _start_in_C_darwin ( UWord* pArgc )
    VG_(exit)(r);
 }
 
+/*====================================================================*/
+/*=== Getting to main() alive: Solaris                             ===*/
+/*====================================================================*/
+#elif defined(VGO_solaris)
+#if defined(VGP_x86_solaris)
+/* The kernel hands control to _start, which extracts the initial stack
+   pointer and calls onwards to _start_in_C_solaris.  This also switches to
+   the new stack. */
+asm("\n"
+    "\t.text\n"
+    "\t.globl _start\n"
+    "\t.type _start, @function\n"
+    "_start:\n"
+    /* Set up the new stack in %eax. */
+    "\tmovl  $vgPlain_interim_stack, %eax\n"
+    "\taddl  $"VG_STRINGIFY(VG_STACK_GUARD_SZB)", %eax\n"
+    "\taddl  $"VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)", %eax\n"
+    "\tandl  $~15, %eax\n"
+    /* Install it, and collect the original one. */
+    "\txchgl %eax, %esp\n"
+    "\tsubl  $12, %esp\n"  /* Keep stack 16-byte aligned. */
+    /* Call _start_in_C_solaris, passing it the startup %esp. */
+    "\tpushl %eax\n"
+    "\tcall  _start_in_C_solaris\n"
+    /* NOTREACHED */
+    "\thlt\n"
+    "\t.previous\n"
+);
+#elif defined(VGP_amd64_solaris)
+asm("\n"
+    ".text\n"
+    "\t.globl _start\n"
+    "\t.type _start, @function\n"
+    "_start:\n"
+    /* Set up the new stack in %rdi. */
+    "\tmovq  $vgPlain_interim_stack, %rdi\n"
+    "\taddq  $"VG_STRINGIFY(VG_STACK_GUARD_SZB)", %rdi\n"
+    "\taddq  $"VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)", %rdi\n"
+    "\tandq  $~15, %rdi\n"
+    /* Install it, and collect the original one. */
+    "\txchgq %rdi, %rsp\n"
+    /* Call _start_in_C_solaris, passing it the startup %rsp. */
+    "\tcall  _start_in_C_solaris\n"
+    /* NOTREACHED */
+    "\thlt\n"
+    ".previous\n"
+);
+#else
+#  error "Unknown Solaris platform"
+#endif
+
+void *memcpy(void *dest, const void *src, size_t n);
+void *memcpy(void *dest, const void *src, size_t n) {
+   return VG_(memcpy)(dest, src, n);
+}
+
+__attribute__ ((used))
+void _start_in_C_solaris ( UWord* pArgc );
+__attribute__ ((used))
+void _start_in_C_solaris ( UWord* pArgc )
+{
+   Int     r;
+   Word    argc = pArgc[0];
+   HChar** argv = (HChar**)&pArgc[1];
+   HChar** envp = (HChar**)&pArgc[1 + argc + 1];
+
+   VG_(memset)( &the_iicii, 0, sizeof(the_iicii) );
+   VG_(memset)( &the_iifii, 0, sizeof(the_iifii) );
+
+   the_iicii.sp_at_startup = (Addr)pArgc;
+
+   r = valgrind_main((Int)argc, argv, envp);
+   /* NOTREACHED */
+   VG_(exit)(r);
+}
 
 #else
-
 #  error "Unknown OS"
 #endif
 
+
+Addr VG_(get_initial_client_SP)( void )
+{
+   return the_iifii.initial_client_SP;
+}
 
 /*====================================================================*/
 /*=== {u,}{div,mod}di3 replacements                                ===*/

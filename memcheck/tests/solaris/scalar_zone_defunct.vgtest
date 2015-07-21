@@ -1,0 +1,4 @@
+prereq: test -e scalar_zone_defunct
+prog: scalar_zone_defunct
+vgopts: -q
+stderr_filter_args:

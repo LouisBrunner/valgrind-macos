@@ -1,0 +1,15 @@
+
+---Thread-Announcement------------------------------------------
+
+Thread #x is the program's root thread
+
+----------------------------------------------------------------
+
+Thread #x's call to sema_init failed
+   with error code 22 (EINVAL: Invalid argument)
+   at 0x........: sema_init (hg_intercepts.c:...)
+   ...
+   by 0x........: main (tc18_semabuse.c:23)
+
+
+ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

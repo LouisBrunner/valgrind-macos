@@ -1,0 +1,4 @@
+Values in the signal handler:
+  fp[0]=1.000000, fp[2]=1.000000, fp[4]=1.000000, fp[6]=1.000000
+Values after the return from the signal handler:
+  fp[0]=1.000000, fp[2]=1.000000, fp[4]=1.000000, fp[6]=1.000000

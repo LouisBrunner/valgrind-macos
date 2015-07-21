@@ -1,0 +1,35 @@
+
+destruction of condition variable being waited upon: cond 0x........
+   at 0x........: pthread_cond_destroy (drd_pthread_intercepts.c:?)
+   by 0x........: main (pth_cond_destroy_busy.c:?)
+cond 0x........ was first observed at:
+   at 0x........: pthread_cond_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (pth_cond_destroy_busy.c:?)
+
+Destroying condition variable that is being waited upon: cond 0x........, mutex 0x........ locked by thread 1
+   at 0x........: pthread_cond_destroy (drd_pthread_intercepts.c:?)
+   by 0x........: main (pth_cond_destroy_busy.c:?)
+mutex 0x........ was first observed at:
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (pth_cond_destroy_busy.c:?)
+
+First pthread_cond_destroy() call returned success.
+condition variable has not been initialized: cond 0x........
+   at 0x........: pthread_cond_signal (drd_pthread_intercepts.c:?)
+   by 0x........: main (pth_cond_destroy_busy.c:?)
+
+Thread 2:
+condition variable has been destroyed while being waited upon: cond 0x........, mutex 0x........ locked by thread 0
+   at 0x........: pthread_cond_wait (drd_pthread_intercepts.c:?)
+   by 0x........: thread_func (pth_cond_destroy_busy.c:?)
+   by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
+   by 0x........: (within libpthread-?.?.so)
+
+Thread 1:
+not a condition variable: cond 0x........
+   at 0x........: pthread_cond_destroy (drd_pthread_intercepts.c:?)
+   by 0x........: main (pth_cond_destroy_busy.c:?)
+
+Second pthread_cond_destroy() call returned success.
+
+ERROR SUMMARY: 5 errors from 5 contexts (suppressed: 0 from 0)

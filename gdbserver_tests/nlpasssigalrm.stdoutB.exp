@@ -16,7 +16,7 @@ Breakpoint 2, main (argc=1, argv=0x........) at passsigalrm.c:55
 55	   sa.sa_handler = sigrtmin_handler;
 $2 = 1
 Continuing.
-Program received signal SIG34, Real-time event 34.
+Program received signal SIGxx, Real-time event xx.
 0x........ in syscall ...
 Continuing.
 Program exited normally.

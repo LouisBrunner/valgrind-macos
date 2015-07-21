@@ -161,6 +161,20 @@ extern Addr  VG_(mips64_linux_SUBST_FOR_rt_sigreturn);
 extern UInt  VG_(mips64_linux_REDIR_FOR_strlen)( void* );
 #endif
 
+#if defined(VGP_x86_solaris)
+extern SizeT VG_(x86_solaris_REDIR_FOR_strcmp)(const HChar *, const HChar *);
+extern SizeT VG_(x86_solaris_REDIR_FOR_strlen)(const HChar *);
+#endif
+
+#if defined(VGP_amd64_solaris)
+extern HChar *VG_(amd64_solaris_REDIR_FOR_strcpy)(HChar *, const HChar *);
+extern HChar *VG_(amd64_solaris_REDIR_FOR_strncpy)(HChar *, const HChar *,
+                                                  SizeT);
+extern Int VG_(amd64_solaris_REDIR_FOR_strcmp)(const HChar *, const HChar *);
+extern HChar *VG_(amd64_solaris_REDIR_FOR_strcat)(HChar *, const HChar *);
+extern SizeT VG_(amd64_solaris_REDIR_FOR_strlen)(const HChar *);
+#endif
+
 #endif   // __PUB_CORE_TRAMPOLINE_H
 
 /*--------------------------------------------------------------------*/

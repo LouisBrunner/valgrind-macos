@@ -86,6 +86,24 @@ const HChar* VG_(sysnum_string)(Word sysnum)
 }
 
 //---------------------------------------------------------------------------
+#elif defined(VGO_solaris)
+//---------------------------------------------------------------------------
+
+const HChar *VG_(sysnum_string)(Word sysnum)
+{
+   static HChar buf[8+20+1];   // large enough
+
+   const HChar* classname = NULL;
+   switch (VG_SOLARIS_SYSNO_CLASS(sysnum)) {
+      case VG_SOLARIS_SYSCALL_CLASS_CLASSIC: classname = ""; break;
+      case VG_SOLARIS_SYSCALL_CLASS_FASTTRAP: classname = "fast:"; break;
+      default: classname = "UNKNOWN:"; break;
+   }
+   VG_(sprintf)(buf, "%s%ld", classname, VG_SOLARIS_SYSNO_INDEX(sysnum));
+   return buf;
+}
+
+//---------------------------------------------------------------------------
 #else
 //---------------------------------------------------------------------------
 #  error Unknown OS

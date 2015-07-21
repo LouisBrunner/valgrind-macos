@@ -97,6 +97,10 @@ static inline void IGNORE_RETURN_VALUE(T v)
 #include <malloc.h>
 #endif
 
+#ifdef VGO_solaris
+#include <strings.h> // index(), rindex()
+#endif
+
 // The tests are
 // - Stability tests (marked STAB)
 // - Performance tests (marked PERF)
@@ -4786,13 +4790,13 @@ void Run() {
   char out_name[100];
   // we open two files, on for reading and one for writing, 
   // but the files are actually the same (symlinked).
-  sprintf(out_name, "/tmp/racecheck_unittest_out.%d", getpid());
+  sprintf(out_name, "/tmp/racecheck_unittest_out.%ld", (long) getpid());
   fd_out = creat(out_name, O_WRONLY | S_IRWXU);
 #ifdef VGO_darwin
   // symlink() is not supported on Darwin. Copy the output file name.
   strcpy(in_name, out_name);
 #else
-  sprintf(in_name,  "/tmp/racecheck_unittest_in.%d", getpid());
+  sprintf(in_name,  "/tmp/racecheck_unittest_in.%ld", (long) getpid());
   IGNORE_RETURN_VALUE(symlink(out_name, in_name));
 #endif
   fd_in  = open(in_name, 0, O_RDONLY);

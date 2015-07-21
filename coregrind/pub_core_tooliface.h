@@ -233,6 +233,9 @@ typedef struct {
    void (*track_post_reg_write_clientcall_return)(ThreadId, PtrdiffT, SizeT,
                                                   Addr);
 
+   void (*track_copy_mem_to_reg)(CorePart, ThreadId, Addr, PtrdiffT, SizeT);
+   void (*track_copy_reg_to_mem)(CorePart, ThreadId, PtrdiffT, Addr, SizeT);
+
    void (*track_start_client_code)(ThreadId, ULong);
    void (*track_stop_client_code) (ThreadId, ULong);
 

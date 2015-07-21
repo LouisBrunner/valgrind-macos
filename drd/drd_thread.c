@@ -78,6 +78,11 @@ static int      s_segment_merge_interval = 10;
 static unsigned s_join_list_vol = 10;
 static unsigned s_deletion_head;
 static unsigned s_deletion_tail;
+#if defined(VGO_solaris)
+Bool DRD_(ignore_thread_creation) = True;
+#else
+Bool DRD_(ignore_thread_creation) = False;
+#endif /* VGO_solaris */
 
 
 /* Function definitions. */
@@ -203,6 +208,11 @@ static DrdThreadId DRD_(VgThreadIdToNewDrdThreadId)(const ThreadId tid)
          DRD_(g_threadinfo)[i].pthread_create_nesting_level = 0;
          DRD_(g_threadinfo)[i].synchr_nesting = 0;
          DRD_(g_threadinfo)[i].deletion_seq = s_deletion_tail - 1;
+         DRD_(g_threadinfo)[i].creator_thread = DRD_INVALID_THREADID;
+#if defined (VGO_solaris)
+         DRD_(g_threadinfo)[i].bind_guard_flag = 0;
+#endif /* VGO_solaris */
+
          tl_assert(DRD_(g_threadinfo)[i].sg_first == NULL);
          tl_assert(DRD_(g_threadinfo)[i].sg_last == NULL);
 
@@ -302,6 +312,16 @@ DrdThreadId DRD_(thread_pre_create)(const DrdThreadId creator,
 
    tl_assert(DRD_(g_threadinfo)[created].sg_first == NULL);
    tl_assert(DRD_(g_threadinfo)[created].sg_last == NULL);
+
+   if (creator != DRD_INVALID_THREADID) {
+      if (DRD_(ignore_thread_creation)) {
+         tl_assert(DRD_(thread_get_synchr_nesting_count)(created) == 0);
+         DRD_(thread_enter_synchr)(created);
+         /* Counterpart in DRD_(thread_set_pthreadid)(). */
+      }
+   }
+   DRD_(g_threadinfo)[created].creator_thread = creator;
+
    /* Create an initial segment for the newly created thread. */
    thread_append_segment(created, DRD_(sg_new)(creator, created));
 
@@ -595,6 +615,13 @@ void DRD_(thread_set_pthreadid)(const DrdThreadId tid, const PThreadId ptid)
    tl_assert(ptid != INVALID_POSIX_THREADID);
    DRD_(g_threadinfo)[tid].posix_thread_exists = True;
    DRD_(g_threadinfo)[tid].pt_threadid         = ptid;
+
+   if (DRD_(g_threadinfo)[tid].creator_thread != DRD_INVALID_THREADID) {
+      if (DRD_(ignore_thread_creation)) {
+         DRD_(thread_leave_synchr)(tid);
+         tl_assert(DRD_(thread_get_synchr_nesting_count)(tid) == 0);
+      }
+   }
 }
 
 /** Returns true for joinable threads and false for detached threads. */
@@ -631,6 +658,11 @@ void DRD_(thread_entering_pthread_create)(const DrdThreadId tid)
    tl_assert(DRD_(g_threadinfo)[tid].pthread_create_nesting_level >= 0);
 
    DRD_(g_threadinfo)[tid].pthread_create_nesting_level++;
+
+   if (DRD_(ignore_thread_creation)) {
+      tl_assert(DRD_(thread_get_synchr_nesting_count)(tid) == 0);
+      DRD_(thread_enter_synchr)(tid);
+   }
 }
 
 /** Tells DRD that the calling thread has left pthread_create(). */
@@ -642,7 +674,43 @@ void DRD_(thread_left_pthread_create)(const DrdThreadId tid)
    tl_assert(DRD_(g_threadinfo)[tid].pthread_create_nesting_level > 0);
 
    DRD_(g_threadinfo)[tid].pthread_create_nesting_level--;
+
+   if (DRD_(ignore_thread_creation)) {
+      DRD_(thread_leave_synchr)(tid);
+      tl_assert(DRD_(thread_get_synchr_nesting_count)(tid) == 0);
+   }
 }
+
+#if defined(VGO_solaris)
+/** Handles the bind_guard() intercept. */
+void DRD_(thread_entering_rtld_bind_guard)(const DrdThreadId tid, int flags)
+{
+   tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
+             && tid != DRD_INVALID_THREADID);
+
+   Int bindflag = (flags & VKI_THR_FLG_RTLD);
+   if ((bindflag & DRD_(g_threadinfo)[tid].bind_guard_flag) == 0) {
+      DRD_(g_threadinfo)[tid].bind_guard_flag |= bindflag;
+      DRD_(thread_enter_synchr)(tid);
+   }
+}
+
+/**
+ * Handles the bind_clear() intercept.
+ * Call to bind_clear(0) is typically used to determine value of bind_flags.
+ */
+void DRD_(thread_leaving_rtld_bind_clear)(const DrdThreadId tid, int flags)
+{
+   tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
+             && tid != DRD_INVALID_THREADID);
+
+   Int bindflag = (flags & VKI_THR_FLG_RTLD);
+   if ((DRD_(g_threadinfo)[tid].bind_guard_flag & bindflag) != 0) {
+      DRD_(g_threadinfo)[tid].bind_guard_flag &= ~bindflag;
+      DRD_(thread_leave_synchr)(tid);
+   }
+}
+#endif /* VGO_solaris */
 
 /** Obtain the thread number and the user-assigned thread name. */
 const HChar* DRD_(thread_get_name)(const DrdThreadId tid)

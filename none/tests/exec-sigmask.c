@@ -19,7 +19,7 @@ static void do_exec(const char *path, const char *arg, const sigset_t *mask)
 	}
 	if (pid == 0) {
 		sigprocmask(SIG_SETMASK, mask, NULL);
-		execl(path, path, arg, NULL);
+		execl(path, path, arg, (char *) NULL);
 			
 		fprintf(stderr, "FAILED: execl failed with %s\n",
 			strerror(errno));

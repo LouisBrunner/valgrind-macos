@@ -32,6 +32,9 @@ int main ( void )
      it succeeds. */
   memset(&s1, 0x55, sizeof(s1));
   r= sem_wait(&s1); /* assert(r != 0); */
+#if defined(VGO_solaris)
+  assert(r != 0);
+#endif
 
   /* this only fails with glibc 2.7 and later. */
   r= sem_post(&s1);

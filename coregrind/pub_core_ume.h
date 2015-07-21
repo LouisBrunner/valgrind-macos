@@ -64,6 +64,10 @@ typedef
       HChar* executable_path; // OUT: path passed to execve()
 #endif
 
+#if defined(VGO_solaris)
+      Addr  init_thrptr; // OUT: architecture-specific user per-thread location
+#endif
+
       Addr entry;        // OUT: entrypoint in main executable
       Addr init_ip;      // OUT: address of first instruction to execute
       Addr brkbase;      // OUT: base address of brk segment

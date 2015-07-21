@@ -1,0 +1,49 @@
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (dw4.c:32)
+   by 0x........: main (dw4.c:59)
+ Address 0x........ is 4 bytes inside a block of size ... alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (dw4.c:52)
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (dw4.c:32)
+   by 0x........: main (dw4.c:61)
+ Location 0x........ is 0 bytes inside S2[0].i,
+ a global variable declared at dw4.c:47
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (dw4.c:32)
+   by 0x........: main (dw4.c:62)
+ Location 0x........ is 0 bytes inside local.i,
+ declared at dw4.c:51, in frame #1 of thread 1
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (dw4.c:32)
+   by 0x........: main (dw4.c:68)
+ Address 0x........ is in a rw- anonymous segment
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (dw4.c:32)
+   by 0x........: main (dw4.c:82)
+ Address 0x........ is in a rw- mapped file valgrind-dw4-test.PID segment
+
+Unaddressable byte(s) found during client check request
+   at 0x........: croak (dw4.c:25)
+   by 0x........: main (dw4.c:87)
+ Address 0x........ is 0 bytes after the brk data segment limit 0x........
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (dw4.c:32)
+   by 0x........: main (dw4.c:89)
+ Address 0x........ is in the brk data segment 0x........-0x........
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (dw4.c:32)
+   by 0x........: main (dw4.c:91)
+ Address 0x........ is in the brk data segment 0x........-0x........
+
+Unaddressable byte(s) found during client check request
+   at 0x........: croak (dw4.c:25)
+   by 0x........: main (dw4.c:93)
+ Address 0x........ is 1024 bytes after the brk data segment limit 0x........
+

@@ -1,0 +1,2 @@
+prog: blockfault
+post: rm -f vgcore.*

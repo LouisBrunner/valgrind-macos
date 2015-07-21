@@ -6,6 +6,13 @@ sed -e "s:_pthread_start (in /usr/lib/libSystem.B.dylib):(within libpthread-?.?.
 
 $dir/../../tests/filter_stderr_basic |
 
+# Perform Solaris-specific filtering.
+if $dir/../../tests/os_test solaris; then
+   perl -p $dir/filter_stderr_solaris
+else
+   cat
+fi |
+
 # Remove "drd, ..." line and the following copyright line.
 # Remove line numbers referring to drd's source code.
 # Remove libpthread's version number.

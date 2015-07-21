@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-# if !defined(VGO_darwin)
+# if defined(VGO_linux)
 #include <endian.h>
-# else
+# elif defined(VGO_darwin)
 #include <machine/endian.h>
 # endif
 #include "../../VEX/pub/libvex.h"

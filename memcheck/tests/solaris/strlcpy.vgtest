@@ -1,0 +1,5 @@
+prog: strlcpy
+vgopts: -q
+# The next line causes that all stack traces are completely removed.
+stderr_filter_args:
+stderr_filter: filter_scalar

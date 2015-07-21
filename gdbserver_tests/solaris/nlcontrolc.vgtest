@@ -1,0 +1,17 @@
+# test :
+#   info threads valgrind specific output
+#   the user can control-c a process with all threads in WaitSys
+#   the user can control-c a process with all threads in Running/Yielding
+#          and modify some variables
+# sleepers is started with argument so that it will compute during ages.
+# The variable modifications means it will exit in a reasonable time.
+prog: ../sleepers
+args: 1000000000 5000 1000000000 BSBSBSBS
+vgopts: --tool=none --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-solaris-nlcontrolc
+stderr_filter: filter_stderr
+prereq: test -e ../gdb -a -f ../vgdb.invoker
+progB: ../gdb
+argsB: --quiet -l 60 --nx ../sleepers
+stdinB: nlcontrolc.stdinB.gdb
+stdoutB_filter: ../filter_gdb
+stderrB_filter: ../filter_make_empty

@@ -9,7 +9,9 @@ dist_noinst_SCRIPTS =		    \
 	filter_stderr               \
 	filter_stderr_and_thread_no \
 	filter_stderr_and_thread_no_and_offset \
+	filter_stderr_solaris       \
 	filter_thread_no	    \
+	filter_thread_name_xml      \
 	filter_xml_and_thread_no    \
 	run_openmp_test             \
 	supported_libpthread	    \
@@ -38,6 +40,8 @@ EXTRA_DIST =                                        \
 	annotate_order_3.vgtest			    \
 	annotate_publish_hg.stderr.exp		    \
 	annotate_publish_hg.vgtest		    \
+	annotate_sem.stderr.exp                     \
+	annotate_sem.vgtest                         \
 	annotate_smart_pointer.stderr.exp	    \
 	annotate_smart_pointer.vgtest		    \
 	annotate_smart_pointer2.stderr.exp	    \
@@ -54,10 +58,13 @@ EXTRA_DIST =                                        \
 	annotate_ignore_rw.stderr.exp		    \
 	annotate_ignore_rw.vgtest		    \
 	annotate_ignore_rw2.stderr.exp		    \
+	annotate_ignore_rw2.stderr.exp-solaris	    \
 	annotate_ignore_rw2.vgtest		    \
 	annotate_ignore_write.stderr.exp	    \
+	annotate_ignore_write.stderr.exp-solaris    \
 	annotate_ignore_write.vgtest		    \
 	annotate_ignore_write2.stderr.exp	    \
+	annotate_ignore_write2.stderr.exp-solaris   \
 	annotate_ignore_write2.vgtest		    \
 	annotate_trace_memory.stderr.exp-32bit	    \
 	annotate_trace_memory.stderr.exp-64bit	    \
@@ -101,6 +108,7 @@ EXTRA_DIST =                                        \
 	fp_race_xml.stderr.exp                      \
 	fp_race_xml.stderr.exp-mips32-be            \
 	fp_race_xml.stderr.exp-mips32-le            \
+	fp_race_xml.stderr.exp-solaris              \
 	fp_race_xml.vgtest                          \
 	free_is_write.stderr.exp		    \
 	free_is_write.vgtest			    \
@@ -170,6 +178,7 @@ EXTRA_DIST =                                        \
 	pth_cleanup_handler.stderr.exp		    \
 	pth_cleanup_handler.vgtest		    \
 	pth_cond_destroy_busy.stderr.exp            \
+	pth_cond_destroy_busy.stderr.exp-solaris    \
 	pth_cond_destroy_busy.vgtest                \
 	pth_cond_race.stderr.exp                    \
 	pth_cond_race.vgtest                        \
@@ -210,6 +219,7 @@ EXTRA_DIST =                                        \
 	read_and_free_race.vgtest		    \
 	recursive_mutex.stderr.exp-linux            \
 	recursive_mutex.stderr.exp-darwin           \
+	recursive_mutex.stderr.exp-solaris          \
 	recursive_mutex.vgtest                      \
 	rwlock_race.stderr.exp	                    \
 	rwlock_race.stderr.exp2	                    \
@@ -283,6 +293,7 @@ EXTRA_DIST =                                        \
 	tc09_bad_unlock.stderr.exp-ppc              \
 	tc09_bad_unlock.stderr.exp-glibc2.8         \
 	tc09_bad_unlock.stderr.exp-s390             \
+	tc09_bad_unlock.stderr.exp-solaris          \
 	tc09_bad_unlock.vgtest                      \
 	tc10_rec_lock.stderr.exp                    \
 	tc10_rec_lock.vgtest                        \
@@ -299,6 +310,7 @@ EXTRA_DIST =                                        \
 	tc17_sembar.stderr.exp                      \
 	tc17_sembar.vgtest                          \
 	tc18_semabuse.stderr.exp                    \
+	tc18_semabuse.stderr.exp-solaris            \
 	tc18_semabuse.vgtest                        \
 	tc19_shadowmem.stderr.exp-32bit             \
 	tc19_shadowmem.stderr.exp-64bit             \
@@ -442,6 +454,20 @@ concurrent_close_SOURCES    = concurrent_close.cpp
 monitor_example_SOURCES     = monitor_example.cpp
 new_delete_SOURCES          = new_delete.cpp
 
+free_is_write_CFLAGS        = $(AM_CFLAGS)
+pth_barrier_CFLAGS          = $(AM_CFLAGS)
+if VGCONF_OS_IS_SOLARIS
+free_is_write_CFLAGS        += -D__EXTENSIONS__
+pth_barrier_CFLAGS          += -D__EXTENSIONS__
+endif
+
+pth_create_chain_CFLAGS     = $(AM_CFLAGS)
+pth_detached_CFLAGS         = $(AM_CFLAGS)
+if VGCONF_OS_IS_SOLARIS
+pth_create_chain_CFLAGS     += -D__EXTENSIONS__
+pth_detached_CFLAGS         += -D__EXTENSIONS__
+endif
+
 tsan_unittest_SOURCES       = tsan_unittest.cpp
 tsan_unittest_CXXFLAGS      = $(AM_CXXFLAGS) \
 			-DTHREAD_WRAPPERS='"tsan_thread_wrappers_pthread.h"'
@@ -474,6 +500,10 @@ omp_matinv_CFLAGS           = $(AM_CFLAGS) -fopenmp
 omp_matinv_LDFLAGS          = -fopenmp
 omp_matinv_LDADD            = $(LDADD) -lm
 
+if VGCONF_OS_IS_SOLARIS
+omp_matinv_CFLAGS           += -std=gnu99
+endif
+
 omp_prime_CFLAGS            = $(AM_CFLAGS) -fopenmp
 omp_prime_LDFLAGS           = -fopenmp
 omp_prime_LDADD             = $(LDADD) -lm
@@ -483,8 +513,17 @@ omp_printf_LDFLAGS          = -fopenmp
 omp_printf_LDADD            = $(LDADD) -lm
 endif
 
+matinv_CFLAGS               = $(AM_CFLAGS)
+if VGCONF_OS_IS_SOLARIS
+matinv_CFLAGS               += -std=gnu99 -D__EXTENSIONS__
+endif
 if HAVE_PTHREAD_BARRIER
 matinv_LDADD                = $(LDADD) -lm
+endif
+
+rwlock_test_CFLAGS          = $(AM_CFLAGS)
+if VGCONF_OS_IS_SOLARIS
+rwlock_test_CFLAGS          += -D__EXTENSIONS__
 endif
 
 std_atomic_SOURCES          = std_atomic.cpp
@@ -501,10 +540,14 @@ std_string_CXXFLAGS         = $(AM_CXXFLAGS) -std=c++0x -Wno-sign-compare
 
 std_thread_SOURCES          = std_thread.cpp
 std_thread_CXXFLAGS         = $(AM_CXXFLAGS) -std=c++0x
+if !VGCONF_OS_IS_SOLARIS
 std_thread_LDFLAGS          = -Wl,--no-as-needed
+endif
 
 std_thread2_SOURCES          = std_thread2.cpp
 std_thread2_CXXFLAGS         = $(AM_CXXFLAGS) -std=c++0x
+if !VGCONF_OS_IS_SOLARIS
 std_thread2_LDFLAGS          = -Wl,--no-as-needed
+endif
 
 sem_wait_SOURCES            = sem_wait.cpp

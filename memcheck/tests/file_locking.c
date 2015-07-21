@@ -81,8 +81,8 @@ int main(int argc, char *argv[])
   int exitcode = 1;
   char filename[256];
 
-  snprintf(filename, sizeof(filename), "/tmp/valgrind-file-locking-test.%d",
-           getpid());
+  snprintf(filename, sizeof(filename), "/tmp/valgrind-file-locking-test.%ld",
+           (long) getpid());
 
   unlink(filename);
 

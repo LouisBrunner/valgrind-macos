@@ -1,0 +1,7 @@
+#! /bin/sh
+
+# Sometimes valgrind on amd64 prints smt_pause() instead of ???
+# for the top-most stack frame. Filter it here.
+
+./filter_stderr | \
+sed -e 's/smt_pause/???/'

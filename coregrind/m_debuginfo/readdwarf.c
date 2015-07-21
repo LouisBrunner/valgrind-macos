@@ -29,7 +29,7 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#if defined(VGO_linux) || defined(VGO_darwin)
+#if defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_solaris)
 
 #include "pub_core_basics.h"
 #include "pub_core_debuginfo.h"
@@ -1719,11 +1719,11 @@ void ML_(read_debuginfo_dwarf1) (
 
 /* --------------- Decls --------------- */
 
-#if defined(VGP_x86_linux)
+#if defined(VGP_x86_linux) || defined(VGP_x86_solaris)
 #  define FP_REG         5
 #  define SP_REG         4
 #  define RA_REG_DEFAULT 8
-#elif defined(VGP_amd64_linux)
+#elif defined(VGP_amd64_linux) || defined(VGP_amd64_solaris)
 #  define FP_REG         6
 #  define SP_REG         7
 #  define RA_REG_DEFAULT 16
@@ -1825,6 +1825,7 @@ enum dwarf_cfa_secondary_ops
     DW_CFA_GNU_window_save    = 0x2d, /* GNU extension */
     DW_CFA_GNU_args_size      = 0x2e, /* GNU extension */
     DW_CFA_GNU_negative_offset_extended = 0x2f, /* GNU extension */
+    DW_CFA_ORCL_arg_loc       = 0x30, /* Oracle extension */
     DW_CFA_hi_user            = 0x3f
   };
 
@@ -2023,6 +2024,7 @@ typedef
       DiCursor ehframe_image;
       Addr     ehframe_avma;
       Addr     text_bias;
+      Addr     got_avma;
    }
    AddressDecodingInfo;
 
@@ -2650,6 +2652,7 @@ static Addr step_encoded_Addr ( const AddressDecodingInfo* adi,
    UChar    encoding      = adi->encoding;
    DiCursor ehframe_image = adi->ehframe_image;
    Addr     ehframe_avma  = adi->ehframe_avma;
+   Addr     got_avma      = adi->got_avma;
 
    vg_assert((encoding & DW_EH_PE_indirect) == 0);
 
@@ -2661,8 +2664,7 @@ static Addr step_encoded_Addr ( const AddressDecodingInfo* adi,
          base = ehframe_avma + ML_(cur_minus)(*data, ehframe_image);
          break;
       case DW_EH_PE_datarel:
-         vg_assert(0);
-         base = /* data base address */ 0;
+         base = got_avma;
          break;
       case DW_EH_PE_textrel:
          vg_assert(0);
@@ -3361,6 +3363,11 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          }
          break;
 
+      case DW_CFA_ORCL_arg_loc:
+         if (di->ddump_frames)
+            VG_(printf)("  DW_CFA_ORCL_arg_loc\n");
+         break;
+
       default: 
          VG_(message)(Vg_DebugMsg, "DWARF2 CFI reader: unhandled CFI "
                                    "instruction 0:%d\n", (Int)lo6); 
@@ -3572,6 +3579,11 @@ static Int show_CF_instruction ( DiCursor instrIN,
 
       case DW_CFA_GNU_window_save:
          VG_(printf)("  sci:DW_CFA_GNU_window_save\n");
+         break;
+
+      case DW_CFA_ORCL_arg_loc:
+         /* :TODO: Print all arguments when implemented in libdwarf. */
+         VG_(printf)("  sci:DW_CFA_ORCL_arg_loc\n");
          break;
 
       default: 
@@ -4008,6 +4020,7 @@ void ML_(read_callframe_info_dwarf3)
             adi.ehframe_image = frame_image;
             adi.ehframe_avma  = frame_avma;
             adi.text_bias     = di->text_debug_bias;
+            adi.got_avma      = di->got_avma;
             show_CF_instructions( the_CIEs[this_CIE].instrs, 
                                   the_CIEs[this_CIE].ilen, &adi,
                                   the_CIEs[this_CIE].code_a_f,
@@ -4058,6 +4071,7 @@ void ML_(read_callframe_info_dwarf3)
          adi.ehframe_image = frame_image;
          adi.ehframe_avma  = frame_avma;
          adi.text_bias     = di->text_debug_bias;
+         adi.got_avma      = di->got_avma;
          fde_initloc = step_encoded_Addr(&adi, &data);
          if (di->trace_cfi) 
             VG_(printf)("fde.initloc     = %#lx\n", fde_initloc);
@@ -4066,6 +4080,7 @@ void ML_(read_callframe_info_dwarf3)
          adi.ehframe_image = frame_image;
          adi.ehframe_avma  = frame_avma;
          adi.text_bias     = di->text_debug_bias;
+         adi.got_avma      = di->got_avma;
 
          /* WAS (incorrectly):
             fde_arange = read_encoded_Addr(&nbytes, &adi, data);
@@ -4158,6 +4173,7 @@ void ML_(read_callframe_info_dwarf3)
          adi.ehframe_image = frame_image;
          adi.ehframe_avma  = frame_avma;
          adi.text_bias     = di->text_debug_bias;
+         adi.got_avma      = di->got_avma;
 
          if (di->trace_cfi)
             show_CF_instructions( fde_instrs, fde_ilen, &adi,
@@ -4214,7 +4230,7 @@ void ML_(read_callframe_info_dwarf3)
     return;
 }
 
-#endif // defined(VGO_linux) || defined(VGO_darwin)
+#endif // defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_solaris)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

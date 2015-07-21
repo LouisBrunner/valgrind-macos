@@ -192,8 +192,167 @@ void VG_REPLACE_FUNCTION_ZU(libSystemZdZaZddylib, arc4random_addrandom)(unsigned
     // but don't care if it's initialized
 }
 
-#else
+#elif defined(VGO_solaris)
 
+/* Declare the errno and environ symbols weakly in case the client is not
+   linked against libc. In such a case it also cannot run replacement
+   functions for set_error() and spawnveg() where these two variables are
+   needed so this is ok. */
+__attribute__((weak)) extern int errno;
+__attribute__((weak)) extern char **environ;
+
+#include <assert.h>
+#include <errno.h>
+#include <spawn.h>
+#include <sys/syscall.h>
+#include <sys/signal.h>
+#include <unistd.h>
+
+/* Replace function block_all_signals() from libc. When the client program is
+   not running under valgrind, the function blocks all signals by setting
+   sc_sigblock flag in the schedctl control block. When run under Valgrind
+   this would bypass Valgrind's syscall and signal machinery.
+   Valgrind's signal machinery needs to retain control over which signals are
+   blocked and which not (see m_signals.c and m_scheduler/scheduler.c for more
+   information - typically synchronous signals should not be blocked).
+   Therefore this function replacement emulates lwp_sigmask syscall.
+*/
+void VG_REPLACE_FUNCTION_ZU(VG_Z_LIBC_SONAME, block_all_signals)(/*ulwp_t*/ void *self);
+void VG_REPLACE_FUNCTION_ZU(VG_Z_LIBC_SONAME, block_all_signals)(/*ulwp_t*/ void *self)
+{
+   syscall(SYS_lwp_sigmask, SIG_SETMASK, ~0U, ~0U, ~0U, ~0U);
+}
+
+/* Replace functions get_error() and set_error() in libc. These functions are
+   internal to the library and are used to work with an error value returned
+   by posix_spawn() (when it is implemented using vfork()). A child calls
+   set_error() to set an error code and the parent then calls get_error() to
+   read it. Accessor functions are used so these trivial store+load operations
+   are not changed by the compiler in any way.
+
+   Since Valgrind translates vfork() to a normal fork(), calling set_error()
+   by the child would have no effect on the error value in the parent so
+   something must be done to fix this problem.
+
+   A pipe is created between a child and its parent in the forksys pre-wrapper
+   when a vfork() is encountered. The child's end of the pipe is closed when
+   the child exits or execs (because close-on-exec is set on the file
+   descriptor). Valgrind (the parent) waits on the child's end of the pipe to
+   be closed which preserves the vfork() behaviour that the parent process is
+   suspended while the child is using its resources.
+
+   The pipe is then used to send an eventual error code set by the child in
+   posix_spawn() to the parent. If there is any error Valgrind returns it as
+   an error from the vfork() syscall. This means the syscall can return errors
+   that it would normally never return but this is not a problem in practice
+   because any error is directly propagated as a return code from
+   posix_spawn().
+
+   Address of vg_vfork_fildes is found by Valgrind when debug information for
+   vgpreload_core.so is being processed. A value of this variable is set in
+   the forksys pre-wrapper before a fork() call is made and set back to -1
+   before returning from the wrapper by the parent.
+
+   Newer Solaris versions introduce the spawn syscall and posix_spawn() is
+   implemented using it. The redirect is not needed for these versions.
+*/
+int vg_vfork_fildes = -1;
+
+int VG_REPLACE_FUNCTION_ZU(VG_Z_LIBC_SONAME, get_error)(int *errp);
+int VG_REPLACE_FUNCTION_ZU(VG_Z_LIBC_SONAME, get_error)(int *errp)
+{
+   /* Always return 0 when the parent tries to call get_error(). Any error
+      from the child is returned directly as an error from the vfork child.
+      Value pointed by errp is initialized only by the child so not
+      redirecting this function would mean that the parent gets an
+      uninitialized/garbage value when it calls this function. */
+   return 0;
+}
+
+int VG_REPLACE_FUNCTION_ZU(VG_Z_LIBC_SONAME, set_error)(int *errp, int err);
+int VG_REPLACE_FUNCTION_ZU(VG_Z_LIBC_SONAME, set_error)(int *errp, int err)
+{
+   *errp = err;
+
+   /* Libc should always call set_error() only after doing a vfork() syscall
+      in posix_spawn(). The forksys pre-wrapper saves a descriptor of the
+      child's end of the pipe in vg_vfork_fildes so it is an error if it is
+      not a valid file descriptor at this point. */
+   assert(vg_vfork_fildes >= 0);
+   /* Current protocol between this function and the forksys pre-wrapper
+      allows to send only errors in range [0, 255] (one byte values). */
+   assert(err >= 0 && err <= 0xff);
+
+   if (err != 0) {
+      unsigned char w = (unsigned char)(err & 0xff);
+      ssize_t res;
+      do {
+         res = write(vg_vfork_fildes, &w, 1);
+         assert(res == 1 || (errno == EINTR || errno == ERESTART));
+      } while (res != 1);
+   }
+
+   return err;
+}
+
+/* Replace spawnveg() in libast.so.1. This function is used by ksh to spawn
+   new processes. The library has a build time option to select between
+   several variants of this function based on behaviour of vfork() and
+   posix_spawn() on the system for which the library is being compiled.
+   Unfortunately, Solaris and illumos use the real vfork() variant which does
+   not work correctly with the vfork() -> fork() translation done by Valgrind
+   (see the forksys pre-wrapper for details). Therefore the function is
+   replaced here with an implementation that uses posix_spawn(). This
+   replacement can be removed when a configuration of libast in Solaris and
+   illumos is changed to use the posix_spawn() implementation.
+*/
+pid_t VG_REPLACE_FUNCTION_ZU(libastZdsoZd1, spawnveg)(const char *command,
+                                                      char **argv,
+                                                      char **envv,
+                                                      pid_t pgid);
+pid_t VG_REPLACE_FUNCTION_ZU(libastZdsoZd1, spawnveg)(const char *command,
+                                                      char **argv,
+                                                      char **envp,
+                                                      pid_t pgid)
+{
+   int err = 0;
+   pid_t pid;
+   posix_spawnattr_t attr;
+   int attr_init_done = 0;
+
+   err = posix_spawnattr_init(&attr);
+   if (err != 0)
+      goto out;
+   attr_init_done = 1;
+
+   err = posix_spawnattr_init(&attr);
+   if (err != 0)
+      goto out;
+
+   if (pgid != 0) {
+      if (pgid <= 1)
+         pgid = 0;
+      err = posix_spawnattr_setpgroup(&attr, pgid);
+      if (err != 0)
+         goto out;
+      err = posix_spawnattr_setflags(&attr, POSIX_SPAWN_SETPGROUP);
+      if (err != 0)
+         goto out;
+   }
+
+   err = posix_spawn(&pid, command, NULL, &attr, argv, envp ? envp : environ);
+
+out:
+   if (attr_init_done)
+      posix_spawnattr_destroy(&attr);
+   if (err != 0) {
+      errno = err;
+      return -1;
+   }
+   return pid;
+}
+
+#else
 #  error Unknown OS
 #endif
 

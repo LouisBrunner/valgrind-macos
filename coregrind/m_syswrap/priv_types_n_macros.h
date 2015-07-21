@@ -112,7 +112,7 @@ typedef
       Int s_arg6;
       Int uu_arg7;
       Int uu_arg8;
-#     elif defined(VGP_x86_darwin)
+#     elif defined(VGP_x86_darwin) || defined(VGP_x86_solaris)
       Int s_arg1;
       Int s_arg2;
       Int s_arg3;
@@ -121,7 +121,7 @@ typedef
       Int s_arg6;
       Int s_arg7;
       Int s_arg8;
-#     elif defined(VGP_amd64_darwin)
+#     elif defined(VGP_amd64_darwin) || defined(VGP_amd64_solaris)
       Int o_arg1;
       Int o_arg2;
       Int o_arg3;
@@ -203,6 +203,10 @@ SyscallTableEntry* ML_(get_linux_syscall_entry)( UInt sysno );
 extern const SyscallTableEntry ML_(syscall_table)[];
 extern const UInt ML_(syscall_table_size);
 
+#elif defined(VGO_solaris)
+extern
+SyscallTableEntry* ML_(get_solaris_syscall_entry)( UInt sysno );
+
 #else
 #  error Unknown OS
 #endif   
@@ -281,7 +285,7 @@ extern const UInt ML_(syscall_table_size);
     vgSysWrap_##auxstr##_##name##_after
 
 /* Add a generic wrapper to a syscall table. */
-#if defined(VGO_linux)
+#if defined(VGO_linux) || defined(VGO_solaris)
 #  define GENX_(sysno, name)  WRAPPER_ENTRY_X_(generic, sysno, name)
 #  define GENXY(sysno, name)  WRAPPER_ENTRY_XY(generic, sysno, name)
 #elif defined(VGO_darwin)
@@ -331,7 +335,7 @@ static inline UWord getRES ( SyscallStatus* st ) {
    return sr_Res(st->sres);
 }
 
-#if defined(VGO_darwin)
+#if defined(VGO_darwin) || defined(VGO_solaris)
 static inline UWord getRESHI ( SyscallStatus* st ) {
    vg_assert(st->what == SsComplete);
    vg_assert(!sr_isError(st->sres));
@@ -403,7 +407,7 @@ static inline UWord getERR ( SyscallStatus* st ) {
 #  define PRA5(s,t,a) PRRAn(5,s,t,a)
 #  define PRA6(s,t,a) PRRAn(6,s,t,a)
 
-#elif defined(VGP_x86_darwin)
+#elif defined(VGP_x86_darwin) || defined(VGP_x86_solaris)
    /* Up to 8 parameters, all on the stack. */
 #  define PRA1(s,t,a) PSRAn(1,s,t,a)
 #  define PRA2(s,t,a) PSRAn(2,s,t,a)
@@ -414,7 +418,7 @@ static inline UWord getERR ( SyscallStatus* st ) {
 #  define PRA7(s,t,a) PSRAn(7,s,t,a)
 #  define PRA8(s,t,a) PSRAn(8,s,t,a)
 
-#elif defined(VGP_amd64_darwin)
+#elif defined(VGP_amd64_darwin) || defined(VGP_amd64_solaris)
    /* Up to 8 parameters, 6 in registers, 2 on the stack. */
 #  define PRA1(s,t,a) PRRAn(1,s,t,a)
 #  define PRA2(s,t,a) PRRAn(2,s,t,a)

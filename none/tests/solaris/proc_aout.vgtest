@@ -1,0 +1,2 @@
+prog: proc_aout
+vgopts: -q

@@ -1,0 +1,4 @@
+Values in the signal handler:
+  rax=0xf0, rcx=0xf1, rdx=0xf2, rsi=0xf3, rdi=0xf4
+Values after the return from the signal handler:
+  rax=0xf0, rdx=0xf2, rsi=0xf3, rdi=0xf4

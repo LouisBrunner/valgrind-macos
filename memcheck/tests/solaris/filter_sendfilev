@@ -1,0 +1,7 @@
+#! /bin/sh
+
+# Filter the frame number which differs between x86 and amd64
+sed "s/in frame #[0-9]/in frame #./" |
+
+./filter_stderr "$@"
+

@@ -1457,7 +1457,7 @@ Bool preferName ( const DebugInfo* di,
    vlena = VG_(strlen)(a_name);
    vlenb = VG_(strlen)(b_name);
 
-#  if defined(VGO_linux)
+#  if defined(VGO_linux) || defined(VGO_solaris)
 #    define VERSION_CHAR '@'
 #  elif defined(VGO_darwin)
 #    define VERSION_CHAR '$'

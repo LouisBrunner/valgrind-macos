@@ -9,7 +9,8 @@ dist_noinst_SCRIPTS = \
 EXTRA_DIST = \
 	bug231357.vgtest bug231357.stderr.exp bug231357.stdout.exp \
 	shell shell.vgtest shell.stderr.exp shell.stderr.exp-dash \
-	shell.stdout.exp shell.stderr.exp-dash2 \
+	shell.stdout.exp shell.stderr.exp-dash2 shell.stderr.exp-illumos \
+	shell.stderr.exp-solaris shell.stderr.exp-solaris-spawn \
 	shell_badinterp shell_badinterp.vgtest shell_badinterp.stderr.exp \
 	shell_binaryfile shell_binaryfile.vgtest shell_binaryfile.stderr.exp \
 	shell_dir.vgtest shell_dir.stderr.exp \

@@ -441,6 +441,9 @@ DEF0(track_post_mem_write,        CorePart, ThreadId, Addr, SizeT)
 DEF0(track_pre_reg_read,          CorePart, ThreadId, const HChar*, PtrdiffT, SizeT)
 DEF0(track_post_reg_write,        CorePart, ThreadId,               PtrdiffT, SizeT)
 
+DEF0(track_copy_mem_to_reg,       CorePart, ThreadId, Addr, PtrdiffT, SizeT)
+DEF0(track_copy_reg_to_mem,       CorePart, ThreadId, PtrdiffT, Addr, SizeT)
+
 DEF0(track_post_reg_write_clientcall_return, ThreadId, PtrdiffT, SizeT, Addr)
 
 DEF0(track_start_client_code,     ThreadId, ULong)

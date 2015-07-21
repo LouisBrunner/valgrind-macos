@@ -1,0 +1,146 @@
+---------------------------------------------------------
+app_small_request
+---------------------------------------------------------
+Syscall param door_call(".../name_service_door", nss_pheader->nsc_callnumber) points to uninitialised byte(s)
+   ...
+ Address 0x........ is 0 bytes inside a block of size 4 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+
+Syscall param door_call(".../name_service_door", nss_pheader->p_version) points to unaddressable byte(s)
+   ...
+ Address 0x........ is 12 bytes after a block of size 4 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+
+Syscall param door_call(".../name_service_door", nss_pheader->dbd_off) points to unaddressable byte(s)
+   ...
+ Address 0x........ is 32 bytes before an unallocated block of size 4,194,048 in arena "client"
+
+Syscall param door_call(".../name_service_door", nss_pheader->dbd_len) points to unaddressable byte(s)
+   ...
+ Address 0x........ is 24 bytes before an unallocated block of size 4,194,048 in arena "client"
+
+Syscall param door_call(".../name_service_door", nss_pheader->key_off) points to unaddressable byte(s)
+   ...
+ Address 0x........ is 16 bytes before an unallocated block of size 4,194,048 in arena "client"
+
+Syscall param door_call(".../name_service_door", nss_pheader->key_len) points to unaddressable byte(s)
+   ...
+ Address 0x........ is 8 bytes before an unallocated block of size 4,194,048 in arena "client"
+
+Syscall param door_call(".../name_service_door", nss_pheader->data_off) points to unaddressable byte(s)
+   ...
+ Address 0x........ is 0 bytes inside an unallocated block of size 4,194,048 in arena "client"
+
+Syscall param door_call(".../name_service_door", nss_pheader->data_len) points to unaddressable byte(s)
+   ...
+ Address 0x........ is 8 bytes inside an unallocated block of size 4,194,048 in arena "client"
+
+Syscall param door_call(".../name_service_door", nss_pheader->pbufsiz) points to unaddressable byte(s)
+   ...
+ Address 0x........ is 24 bytes after a block of size 16 in arena "client"
+
+Syscall param door_call(".../name_service_door", pbuf) points to unaddressable byte(s)
+   ...
+ Address 0x........ is 0 bytes after a block of size 4 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+
+Syscall param door_call(".../name_service_door", nss_dbd) points to unaddressable byte(s)
+   ...
+ Address 0x........ is 4,194,033 bytes inside an unallocated block of size 4,194,048 in arena "client"
+
+---------------------------------------------------------
+app_uninitialized_request
+---------------------------------------------------------
+Syscall param door_call(".../name_service_door", nss_pheader->nsc_callnumber) points to uninitialised byte(s)
+   ...
+ Address 0x........ is 0 bytes inside a block of size 144 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+
+Syscall param door_call(".../name_service_door", nss_pheader->p_version) points to uninitialised byte(s)
+   ...
+ Address 0x........ is 16 bytes inside a block of size 144 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+
+Syscall param door_call(".../name_service_door", nss_pheader->dbd_off) points to uninitialised byte(s)
+   ...
+ Address 0x........ is 48 bytes inside a block of size 144 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+
+Syscall param door_call(".../name_service_door", nss_pheader->dbd_len) points to uninitialised byte(s)
+   ...
+ Address 0x........ is 56 bytes inside a block of size 144 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+
+Syscall param door_call(".../name_service_door", nss_pheader->key_off) points to uninitialised byte(s)
+   ...
+ Address 0x........ is 64 bytes inside a block of size 144 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+
+Syscall param door_call(".../name_service_door", nss_pheader->key_len) points to uninitialised byte(s)
+   ...
+ Address 0x........ is 72 bytes inside a block of size 144 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+
+Syscall param door_call(".../name_service_door", nss_pheader->data_off) points to uninitialised byte(s)
+   ...
+ Address 0x........ is 80 bytes inside a block of size 144 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+
+Syscall param door_call(".../name_service_door", nss_pheader->data_len) points to uninitialised byte(s)
+   ...
+ Address 0x........ is 88 bytes inside a block of size 144 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+
+Syscall param door_call(".../name_service_door", nss_pheader->pbufsiz) points to uninitialised byte(s)
+   ...
+ Address 0x........ is 40 bytes inside a block of size 144 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+
+Syscall param door_call(".../name_service_door", pbuf) points to unaddressable byte(s)
+   ...
+ Address 0x........ is 0 bytes after a block of size 144 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+
+Syscall param door_call(".../name_service_door", nss_dbd) points to uninitialised byte(s)
+   ...
+ Address 0x........ is 128 bytes inside a block of size 144 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+
+Syscall param door_call(".../name_service_door", nss_dbd->o_name) points to unaddressable byte(s)
+   ...
+ Address 0x........ is 20 bytes inside an unallocated block of size 4,193,840 in arena "client"
+
+Syscall param door_call(".../name_service_door", nss_dbd->o_config_name) points to unaddressable byte(s)
+   ...
+ Address 0x........ is 20 bytes inside an unallocated block of size 4,193,840 in arena "client"
+
+Syscall param door_call(".../name_service_door", nss_dbd->o_default_config) points to unaddressable byte(s)
+   ...
+ Address 0x........ is 20 bytes inside an unallocated block of size 4,193,840 in arena "client"
+
+Syscall param door_call(".../name_service_door", nss->key) points to unaddressable byte(s)
+   ...
+ Address 0x........ is 0 bytes after a block of size 144 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+---------------------------------------------------------
+app_proto_icmp
+---------------------------------------------------------

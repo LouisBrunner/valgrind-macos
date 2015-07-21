@@ -1,5 +1,4 @@
-
-
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -7,7 +6,8 @@
 
 void sig_handler(int sig){
   int var;
-  fprintf(stderr, "caught signal, local var is on %p\n", &var);
+  fprintf(stderr, "caught signal, local var is on %#" PRIxPTR "\n",
+          (uintptr_t)&var);
 }
 
 int main(int argv, char** argc) {
@@ -24,7 +24,8 @@ int main(int argv, char** argc) {
 
   sigstk.ss_size = size;
   sigstk.ss_flags = 0;
-  fprintf(stderr, "calling sigaltstack, stack base is %p\n", sigstk.ss_sp);
+  fprintf(stderr, "calling sigaltstack, stack base is %#" PRIxPTR "\n",
+          (uintptr_t)sigstk.ss_sp);
   if (sigaltstack(&sigstk,0)<0) perror("sigaltstack");
 
   fprintf(stderr,"setting sigaction\n");

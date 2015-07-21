@@ -1,0 +1,2 @@
+prog: syscall_return_args
+vgopts: -q

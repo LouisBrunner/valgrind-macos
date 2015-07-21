@@ -1,0 +1,9 @@
+---------------------------------------------------------
+163:            SYS_lwp_kill 2s 0m
+---------------------------------------------------------
+Syscall param lwp_kill(target_lwp) contains uninitialised byte(s)
+   ...
+
+Syscall param lwp_kill(signal) contains uninitialised byte(s)
+   ...
+

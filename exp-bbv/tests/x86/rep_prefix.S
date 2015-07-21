@@ -246,33 +246,47 @@ compare_noteq:
 print_error:
 	    
 	mov 	$4, %eax		# Write syscall
-#ifdef VGO_darwin
-	pushl	$1
-	pushl	$error_string
+#if defined(VGO_darwin)
 	pushl	$16
-#else	
+	pushl	$error_string
+	pushl	$1
+	int 	$0x80
+#elif defined(VGO_linux)
 	mov	$1, %ebx		# print to stdout
 	mov	$error_string, %ecx	# string to print
 	mov	$16, %edx      	   	# strlen
-#endif	
-	int	$0x80	 		# call syscall
+	int 	$0x80
+#elif defined(VGO_solaris)
+	pushl	$16
+	pushl	$error_string
+	pushl	$1
+	int 	$0x91
+#else
+#  error "Unknown OS"
+#endif
 
 	#================================
 	# Exit
 	#================================
 exit:
-#ifdef VGO_darwin	
-	xor     %ebx,%ebx		# we return 0
-#else
-	pushl	$0			# we return 0
-#endif	
 	xor	%eax,%eax
 	inc	%eax	 		# put exit syscall number (1) in eax
+#if defined(VGO_darwin)
+	pushl   $0			# we return 0
 	int     $0x80             	# and exit
+#elif defined(VGO_linux)
+	xor     %ebx,%ebx		# we return 0
+	int     $0x80             	# and exit
+#elif defined(VGO_solaris)
+	pushl   $0			# we return 0
+	int     $0x91             	# and exit
+#else
+#  error "Unknown OS"
+#endif
 
 
 .data
-error_string:	.asciz "Error detected!\n"
+error_string:	.ascii "Error detected!\n\0"
 
 #.bss
 

@@ -1,0 +1,33 @@
+#!/usr/bin/perl
+
+# Replace pthread_create with pthread_create@* which is expected on Linux
+s/pthread_create \(hg_intercepts.c:/pthread_create@* \(hg_intercepts.c:/g;
+
+# We need to remove stack frames containing redundant function
+# names from libc, for example
+#     by 0x........: pthread_mutex_init (in /...libc...)
+my $check = join "|", ('pthread_mutex_init', 'pthread_cond_wait', 'pthread_cond_timedwait');
+s/^\s*by 0x........: (?:$check) \(in \/...libc...\)\s*//;
+
+# We also need to replace Solaris threading and sychronization function
+# names with POSIX ones for hg_intercepts.c stack frame:
+#     at 0x........: mutex_lock (hg_intercepts.c:1234)
+# See also comments in hg_intercepts.c.
+my %regex = (
+    'cond_broadcast' => 'pthread_cond_broadcast@*',
+    'cond_destroy'   => 'pthread_cond_destroy@*',
+    'cond_signal'    => 'pthread_cond_signal@*',
+    'cond_wait'      => 'pthread_cond_wait@*',
+    'cond_timedwait' => 'pthread_cond_timedwait@*',
+    'mutex_destroy'  => 'pthread_mutex_destroy',
+    'mutex_init'     => 'pthread_mutex_init',
+    'mutex_lock'     => 'pthread_mutex_lock',
+    'mutex_trylock'  => 'pthread_mutex_trylock',
+    'mutex_unlock'   => 'pthread_mutex_unlock',
+    'rwlock_init'    => 'pthread_rwlock_init',
+    'rw_unlock'      => 'pthread_rwlock_unlock'
+);
+my $check = join "|", keys %regex;
+if (! /: pthread_/ && ! /WRK/) {
+    s/($check)(.*hg_intercepts.c)/$regex{$1}$2/g;
+}

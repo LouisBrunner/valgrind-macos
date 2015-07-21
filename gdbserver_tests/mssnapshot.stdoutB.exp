@@ -1,4 +1,4 @@
-Breakpoint 1 at 0x........: file t.c, line 105.
+Breakpoint 1 at 0x........: file t.c, line 106.
 Continuing.
-Breakpoint 1, main (argc=1, argv=0x........) at t.c:105
-105	  char *main_name __attribute__((unused)) = "main name";
+Breakpoint 1, main (argc=1, argv=0x........) at t.c:106
+106	  char *main_name __attribute__((unused)) = "main name";

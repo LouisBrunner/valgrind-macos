@@ -48,12 +48,18 @@ rep_loop:
 	#================================
 exit:
      	mov	$1,%eax
-#ifdef VGO_darwin
-	pushl	$0
-#else	
+#if defined(VGO_darwin)
+	pushl   $0			# we return 0
+	int     $0x80          		# and exit
+#elif defined(VGO_linux)
 	xor     %ebx,%ebx		# we return 0
-#endif	
 	int	$0x80          		# and exit
+#elif defined(VGO_solaris)
+	pushl   $0			# we return 0
+	int     $0x91          		# and exit
+#else
+#  error "Unknown OS"
+#endif
 
 
 #.bss

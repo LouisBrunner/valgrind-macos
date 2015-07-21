@@ -64,17 +64,20 @@ int main(int argc, char **argv)
       exit(1);
     }
 
-  if (len != 4 || memcmp(buffer, "PING", 4) != 0)
-    {
-      fprintf(stderr, "Message corrupt!");
-    }
-
+#if !defined(VGO_solaris)
+  /* On Solaris, there is no existing notification registration. */
   if (mq_notify(mqdr, NULL) < 0)
     {
       perror("mq_notify");
       mq_close(mqdr);
       mq_close(mqdw);
       exit(1);
+    }
+#endif /* !VGO_solaris */
+
+  if (len != 4 || memcmp(buffer, "PING", 4) != 0)
+    {
+      fprintf(stderr, "Message corrupt!");
     }
 
   if (mq_getattr(mqdr, &mqa) < 0)

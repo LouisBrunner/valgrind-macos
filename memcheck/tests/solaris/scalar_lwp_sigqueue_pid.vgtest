@@ -1,0 +1,4 @@
+prereq: test -e scalar_lwp_sigqueue_pid
+prog: scalar_lwp_sigqueue_pid
+vgopts: -q
+stderr_filter_args:

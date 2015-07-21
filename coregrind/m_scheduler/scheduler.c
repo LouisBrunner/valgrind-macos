@@ -218,6 +218,8 @@ const HChar* name_of_sched_event ( UInt event )
       case VEX_TRC_JMP_SYS_INT128:     return "INT128";
       case VEX_TRC_JMP_SYS_INT129:     return "INT129";
       case VEX_TRC_JMP_SYS_INT130:     return "INT130";
+      case VEX_TRC_JMP_SYS_INT145:     return "INT145";
+      case VEX_TRC_JMP_SYS_INT210:     return "INT210";
       case VEX_TRC_JMP_SYS_SYSENTER:   return "SYSENTER";
       case VEX_TRC_JMP_BORING:         return "VEX_BORING";
 
@@ -448,7 +450,13 @@ void VG_(vg_yield)(void)
    /* 
       Tell the kernel we're yielding.
     */
+#  if defined(VGO_linux) || defined(VGO_darwin)
    VG_(do_syscall0)(__NR_sched_yield);
+#  elif defined(VGO_solaris)
+   VG_(do_syscall0)(__NR_yield);
+#  else
+#    error Unknown OS
+#  endif
 
    VG_(acquire_BigLock)(tid, "VG_(vg_yield)");
 }
@@ -492,6 +500,17 @@ static void os_state_clear(ThreadState *tst)
    tst->os_state.remote_port       = 0;
    tst->os_state.msgh_id           = 0;
    VG_(memset)(&tst->os_state.mach_args, 0, sizeof(tst->os_state.mach_args));
+#  elif defined(VGO_solaris)
+#  if defined(VGP_x86_solaris)
+   tst->os_state.thrptr = 0;
+#  endif
+   tst->os_state.stk_id = (UWord)-1;
+   tst->os_state.ustack = NULL;
+   tst->os_state.in_door_return = False;
+   tst->os_state.door_return_procedure = 0;
+   tst->os_state.oldcontext = NULL;
+   tst->os_state.schedctl_data = 0;
+   tst->os_state.daemon_thread = False;
 #  else
 #    error "Unknown OS"
 #  endif
@@ -1409,7 +1428,10 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
       case VEX_TRC_JMP_SYS_INT128:  /* x86-linux */
       case VEX_TRC_JMP_SYS_INT129:  /* x86-darwin */
       case VEX_TRC_JMP_SYS_INT130:  /* x86-darwin */
-      case VEX_TRC_JMP_SYS_SYSCALL: /* amd64-linux, ppc32-linux, amd64-darwin */
+      case VEX_TRC_JMP_SYS_INT145:  /* x86-solaris */
+      case VEX_TRC_JMP_SYS_INT210:  /* x86-solaris */
+      /* amd64-linux, ppc32-linux, amd64-darwin, amd64-solaris */
+      case VEX_TRC_JMP_SYS_SYSCALL:
 	 handle_syscall(tid, trc[0]);
 	 if (VG_(clo_sanity_level) > 2)
 	    VG_(sanity_check_general)(True); /* sanity-check every syscall */
@@ -1599,7 +1621,7 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 #        if defined(VGP_x86_linux)
          vg_assert2(0, "VG_(scheduler), phase 3: "
                        "sysenter_x86 on x86-linux is not supported");
-#        elif defined(VGP_x86_darwin)
+#        elif defined(VGP_x86_darwin) || defined(VGP_x86_solaris)
          /* return address in client edx */
          VG_(threads)[tid].arch.vex.guest_EIP
             = VG_(threads)[tid].arch.vex.guest_EDX;

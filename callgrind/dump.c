@@ -907,7 +907,7 @@ BBCC** med3(BBCC **a, BBCC **b, BBCC **c, int (*cmp)(BBCC**,BBCC**))
 
 static BBCC** qsort_start = 0;
 
-static void qsort(BBCC **a, int n, int (*cmp)(BBCC**,BBCC**))
+static void CLG_(qsort)(BBCC **a, int n, int (*cmp)(BBCC**,BBCC**))
 {
 	BBCC **pa, **pb, **pc, **pd, **pl, **pm, **pn, **pv;
 	int s, r;
@@ -1005,8 +1005,8 @@ static void qsort(BBCC **a, int n, int (*cmp)(BBCC**,BBCC**))
 	    }
 	}
 
-	if ((s = pb+1-pa) > 1) qsort(a,     s, cmp);
-	if ((s = pd+1-pc) > 1) qsort(a+n-s, s, cmp);
+	if ((s = pb+1-pa) > 1) CLG_(qsort)(a,     s, cmp);
+	if ((s = pd+1-pc) > 1) CLG_(qsort)(a+n-s, s, cmp);
 }
 
 
@@ -1131,7 +1131,7 @@ BBCC** prepare_dump(void)
     CLG_DEBUG(0,"             BBCCs inserted\n");
 
     qsort_start = array;
-    qsort(array, prepare_count, my_cmp);
+    CLG_(qsort)(array, prepare_count, my_cmp);
 
     CLG_DEBUG(0,"             BBCCs sorted\n");
 

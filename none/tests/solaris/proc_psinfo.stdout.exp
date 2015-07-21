@@ -1,0 +1,35 @@
+open for /proc/self/psinfo:
+fname: proc_psinfo
+psargs: ./proc_psinfo arg1 arg 2 arg3
+argc: 4
+argv[0]: ./proc_psinfo
+argv[1]: arg1
+argv[2]: arg 2
+argv[3]: arg3
+
+open for /proc/<pid>/psinfo:
+fname: proc_psinfo
+psargs: ./proc_psinfo arg1 arg 2 arg3
+argc: 4
+argv[0]: ./proc_psinfo
+argv[1]: arg1
+argv[2]: arg 2
+argv[3]: arg3
+
+openat for /proc/self/psinfo:
+fname: proc_psinfo
+psargs: ./proc_psinfo arg1 arg 2 arg3
+argc: 4
+argv[0]: ./proc_psinfo
+argv[1]: arg1
+argv[2]: arg 2
+argv[3]: arg3
+
+openat for /proc/<pid>/psinfo:
+fname: proc_psinfo
+psargs: ./proc_psinfo arg1 arg 2 arg3
+argc: 4
+argv[0]: ./proc_psinfo
+argv[1]: arg1
+argv[2]: arg 2
+argv[3]: arg3

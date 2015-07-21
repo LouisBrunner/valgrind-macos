@@ -7,6 +7,13 @@ $dir/../../tests/filter_stderr_basic                    |
 # Anonymise addresses
 $dir/../../tests/filter_addresses                       |
 
+# Perform Solaris-specific filtering.
+if $dir/../../tests/os_test solaris; then
+   perl -p $dir/filter_stderr_solaris
+else
+   cat
+fi |
+
 # get rid of the numbers in bits of text "Thread #n", "thread #n",
 # "Thread n" and "thread n", "tid n"
 # as these make some tests more scheduling sensitive -- those where
@@ -18,6 +25,10 @@ sed \
 
 # Likewise for frame numbers, which depend on compilation.
 sed -e "s/frame #[0-9][0-9]*/frame #x/g" | \
+
+# Remove the message that more than hundred errors have been detected
+# (consists of two lines) and also the empty line above it.
+awk 'BEGIN{begin=1} {if ($0 == "More than 100 errors detected.  Subsequent errors") { getline; getline; } else { if (begin) begin = 0; else print last_line; }; last_line = $0; } END { if (! begin) print last_line; }' |
 
 # Merge sem_wait and sem_wait@*, as either could be used.  Likewise for
 # sem_post.

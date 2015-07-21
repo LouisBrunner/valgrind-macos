@@ -1,7 +1,7 @@
 (action at startup) vgdb me ... 
 Test 1: Invalid write of size 4
-   at 0x........: test1 (faultstatus.c:105)
-   by 0x........: main (faultstatus.c:168)
+   at 0x........: test1 (faultstatus.c:116)
+   by 0x........: main (faultstatus.c:179)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
   PASS
 Test 2:   PASS

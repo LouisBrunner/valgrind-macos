@@ -50,13 +50,13 @@ static void* threadfunc(struct threadinfo* p)
   int8_t* const array = p->array;
   pthread_barrier_t* const b = p->b;
   if (! s_silent)
-    printf("thread %lx iteration 0\n", pthread_self());
+    printf("thread %lx iteration 0\n", (long) pthread_self());
   pthread_barrier_wait(b);
   for (i = 0; i < p->iterations; i++)
   {
     if (! s_silent)
       printf("thread %lx iteration %d; writing to %p\n",
-             pthread_self(), i + 1, &array[i]);
+             (long) pthread_self(), i + 1, &array[i]);
     array[i] = i;
     pthread_barrier_wait(b);
   }

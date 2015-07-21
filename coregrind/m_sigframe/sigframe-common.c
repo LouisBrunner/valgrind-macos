@@ -49,7 +49,7 @@ static void track_frame_memory ( Addr addr, SizeT size, ThreadId tid )
    VG_TRACK( new_mem_stack_signal, addr - VG_STACK_REDZONE_SZB, size, tid );
 }
 
-#if defined(VGO_linux)
+#if defined(VGO_linux) || defined(VGO_solaris)
 
 /* Extend the stack segment downwards if needed so as to ensure the
    new signal frames are mapped to something.  Return a Bool

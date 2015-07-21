@@ -74,7 +74,7 @@ static void rwlock_rdlock(rwlock_t* p)
     /* Darwin doesn't have an implementation of pthread_yield(). */
     usleep(100 * 1000);
 #else
-    pthread_yield();
+    sched_yield();
 #endif
     (void) __sync_fetch_and_sub(&p->locked, 1);
   }
@@ -99,7 +99,7 @@ static void rwlock_wrlock(rwlock_t* p)
     /* Darwin doesn't have an implementation of pthread_yield(). */
     usleep(100 * 1000);
 #else
-    pthread_yield();
+    sched_yield();
 #endif
     (void) __sync_fetch_and_sub(&p->locked, 1);
   }

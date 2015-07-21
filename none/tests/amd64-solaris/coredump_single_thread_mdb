@@ -1,0 +1,25 @@
+#!/bin/sh
+
+# Filters are not run for post-test check commands.
+# Filter everything here.
+
+echo "---Status---"
+echo "::status" | /usr/bin/mdb vgcore.* | \
+perl -p -e 's/from \S*$/from .../' | \
+perl -0 -p -e 's/^file: .+?^(initial argv:)/$1/ms' | \
+perl -p -e 's/addr=[0-9A-Fa-f]+/addr=......../g'
+
+echo "\n---Registers---"
+echo "::regs" | /usr/bin/mdb vgcore.* | \
+sed '/^%cs =/ d' | \
+sed '/^%ds =/ d' | \
+perl -p -e 's/%rip\s+=\s+0x[0-9A-Fa-f]+(.*)\+0x[0-9A-Fa-f]+$/%rip = 0x........ $1+0x......../' | \
+sed '/^%rbp/ d' | \
+sed '/^%rflags/ d' | \
+sed '/id=/ d' | \
+sed '/status=/ d' | \
+sed '/^%gsbase = / d' | \
+sed '/^%fsbase = / d' \
+
+echo "\n---Stack trace---"
+echo "::stack ! perl -p -e 's/^(\S+)\+.*/\$1/g'" | /usr/bin/mdb vgcore.*

@@ -1679,6 +1679,9 @@ Bool VG_(translate) ( ThreadId tid,
    vex_abiinfo.guest_ppc_zap_RZ_at_bl         = const_True;
    vex_abiinfo.host_ppc_calls_use_fndescrs    = False;
 #  endif
+#  if defined(VGP_amd64_solaris)
+   vex_abiinfo.guest_amd64_assume_fs_is_const = True;
+#  endif
 
    /* Set up closure args. */
    closure.tid    = tid;

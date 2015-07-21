@@ -14,6 +14,18 @@ typedef  unsigned short          UShort;
 typedef  unsigned long           UWord;
 typedef  char                    HChar;
 
+unsigned myrandom(void)
+{
+   /* Simple multiply-with-carry random generator. */
+   static unsigned m_w = 11;
+   static unsigned m_z = 13;
+
+   m_z = 36969 * (m_z & 65535) + (m_z >> 16);
+   m_w = 18000 * (m_w & 65535) + (m_w >> 16);
+
+   return (m_z << 16) + m_w;
+}
+
 /////////////////////////////////////////////////////////////////
 // BEGIN crc32 stuff                                           //
 /////////////////////////////////////////////////////////////////
@@ -571,8 +583,8 @@ void do_bt_G_E_tests ( void )
    /* Valid bit offsets are -800 .. 799 inclusive. */
 
    for (n = 0; n < 10000; n++) {
-      bitoff = (random() % 1600) - 800;
-      op = random() % 4;
+      bitoff = (myrandom() % 1600) - 800;
+      op = myrandom() % 4;
       c = 2;
       switch (op) {
          case 0: c = btsl_mem(block, bitoff); break;
@@ -607,8 +619,8 @@ void do_bt_G_E_tests ( void )
    /* Valid bit offsets are -800 .. 799 inclusive. */
 
    for (n = 0; n < 10000; n++) {
-      bitoff = (random() % 1600) - 800;
-      op = random() % 4;
+      bitoff = (myrandom() % 1600) - 800;
+      op = myrandom() % 4;
       c = 2;
       switch (op) {
          case 0: c = btsw_mem(block, bitoff); break;
@@ -848,7 +860,7 @@ int main ( void )
   // confirm with
   // objdump -d ./x86locked | grep lock | grep -v do_lock | grep -v elf32 | wc
 
-  { UInt crcExpd = 0x8235DC9C;
+  { UInt crcExpd = 0xB2D75045;
     theCRC = crcFinalise( theCRC );
     if (theCRC == crcExpd) {
        printf("x86locked: PASS: CRCs actual 0x%08X expected 0x%08X\n",

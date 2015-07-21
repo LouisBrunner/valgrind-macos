@@ -1,0 +1,12 @@
+#! /bin/sh
+
+dir=`dirname $0`
+
+$dir/../../memcheck/tests/filter_xml |
+
+# Perform Solaris-specific filtering (see filter_stderr_solaris).
+if $dir/../../tests/os_test solaris; then
+   sed -e 's/mutex_unlock/pthread_mutex_unlock/'
+else
+   cat
+fi

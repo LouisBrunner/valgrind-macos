@@ -49,7 +49,8 @@
    Assertery.
    ------------------------------------------------------------------ */
 
-#if defined(VGP_x86_linux) || defined(VGP_x86_darwin)
+#if defined(VGP_x86_linux) || defined(VGP_x86_darwin) \
+    || defined(VGP_x86_solaris)
 #  define GET_STARTREGS(srP)                              \
       { UInt eip, esp, ebp;                               \
         __asm__ __volatile__(                             \
@@ -65,7 +66,8 @@
         (srP)->r_sp = (ULong)esp;                         \
         (srP)->misc.X86.r_ebp = ebp;                      \
       }
-#elif defined(VGP_amd64_linux) || defined(VGP_amd64_darwin)
+#elif defined(VGP_amd64_linux) || defined(VGP_amd64_darwin) \
+      || defined(VGP_amd64_solaris)
 #  define GET_STARTREGS(srP)                              \
       { ULong rip, rsp, rbp;                              \
         __asm__ __volatile__(                             \
@@ -291,7 +293,7 @@ void VG_(exit_now)( Int status )
 {
 #if defined(VGO_linux)
    (void)VG_(do_syscall1)(__NR_exit_group, status );
-#elif defined(VGO_darwin)
+#elif defined(VGO_darwin) || defined(VGO_solaris)
    (void)VG_(do_syscall1)(__NR_exit, status );
 #else
 #  error Unknown OS
@@ -505,8 +507,15 @@ void VG_(tool_panic) ( const HChar* str )
 }
 
 /* Print some helpful-ish text about unimplemented things, and give up. */
-void VG_(unimplemented) ( const HChar* msg )
+void VG_(unimplemented) ( const HChar* format, ... )
 {
+   va_list vargs;
+   HChar msg[256];
+
+   va_start(vargs, format);
+   VG_(vsnprintf)(msg, sizeof(msg), format, vargs);
+   va_end(vargs);
+
    if (VG_(clo_xml))
       VG_(printf_xml)("</valgrindoutput>\n");
    VG_(umsg)("\n");

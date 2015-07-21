@@ -1,0 +1,168 @@
+# This is a real problem in the Solaris libc. It is caused by a read past the
+# FILE structure. It's an intentional hack to differentiate between two file
+# structures, FILE and xFILE.
+{
+   Solaris:sprintf
+   Memcheck:Cond
+   fun:getxfdat
+   fun:_set_memstream
+   fun:sprintf
+}
+
+# The same problem as above.
+{
+   Solaris:snprintf
+   Memcheck:Cond
+   fun:getxfdat
+   fun:_set_memstream
+   fun:snprintf
+}
+
+# The same problem as above.
+{
+   Solaris:snprintf
+   Memcheck:Cond
+   fun:getxfdat
+   fun:_realbufend
+   fun:_ndoprnt
+   fun:snprintf
+}
+
+# The same problem as above.
+{
+   Solaris:vsnprintf
+   Memcheck:Cond
+   fun:getxfdat
+   fun:_set_memstream
+   fun:vsnprintf
+}
+
+# The same problem as above.
+{
+   Solaris:vsnprintf
+   Memcheck:Cond
+   fun:getxfdat
+   fun:_realbufend
+   fun:_ndoprnt
+   fun:vsnprintf
+}
+
+#----------------------------------------------------------------------------#
+# Solaris libc doesn't deallocate I/O buffers on program exit.
+{
+   Solaris:file_buffer_malloc
+   Memcheck:Leak
+   fun:malloc
+   fun:_findbuf
+   obj:/lib/libc.so.1
+   obj:/lib/libc.so.1
+}
+
+#----------------------------------------------------------------------------#
+# Solaris libc doesn't deallocate netconfig list pointed to by netpp. 
+# This includes other allocated structures and strings contained there.
+{
+   Solaris:setnetconfig-fgetnetconfig
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:fgetnetconfig
+   fun:getnetlist
+   fun:setnetconfig
+}
+
+# The same problem as above.
+{
+   Solaris:setnetconfig-fgetnetconfig-getlookups-strdup
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:strdup
+   fun:getlookups
+   fun:fgetnetconfig
+   fun:getnetlist
+   fun:setnetconfig
+}
+
+# The same problem as above.
+{
+   Solaris:setnetconfig-fgetnetconfig-getlookups-malloc
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:getlookups
+   fun:fgetnetconfig
+   fun:getnetlist
+   fun:setnetconfig
+}
+
+# The same problem as above.
+{
+   Solaris:setnetconfig-fgetnetconfig-gettoken
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:strdup
+   fun:gettoken
+   fun:fgetnetconfig
+   fun:getnetlist
+   fun:setnetconfig
+}
+
+# The same problem as above.
+{
+   Solaris:setnetconfig-getnetlist
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:getnetlist
+   fun:setnetconfig
+}
+
+#----------------------------------------------------------------------------#
+# Solaris libc doesn't deallocate static strings netid_tcp_main
+# and netid_tcp_udp allocated in __rpc_getconfip.
+{
+   Solaris:__rpc_getconfip-netid_tcp+udp_main
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:strdup
+   fun:__rpc_getconfip
+}
+
+#----------------------------------------------------------------------------#
+# Solaris libc doesn't deallocate global variable global_gt.
+{
+   Solaris:dgettext
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:dgettext
+}
+
+#----------------------------------------------------------------------------#
+# Solaris libc reinitializes mutex udp->ld_lock in the child's post-fork
+# handler.
+{
+   Solaris:postfork_child_mutex_reinit
+   drd:MutexErr
+   fun:mutex_init
+   fun:postfork1_child
+   fun:forkx
+}
+
+#----------------------------------------------------------------------------#
+# Solaris libc implements pthread barrier with a mutex and a condition
+# variable. In pthread_barrier_wait(), the last thread returning with
+# SERIAL_THREAD first unlocks the mutex and then broadcasts the condition
+# variable. This is ok here because that mutex does not have any priorities
+# associated, therefore no unpredicatble scheduling behaviour can occurr.
+{
+   Solaris:pthread_barrier_wait
+   Helgrind:Misc
+   fun:pthread_cond_broadcast_WRK
+   fun:cond_broadcast
+   fun:pthread_barrier_wait
+}
+

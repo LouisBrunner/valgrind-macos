@@ -1,11 +1,22 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
+SUBDIRS = .
+
+# OS-specific tests 
+if VGCONF_OS_IS_SOLARIS
+SUBDIRS += solaris
+endif
+
+DIST_SUBDIRS = solaris
+
 dist_noinst_SCRIPTS = \
 	invoker simulate_control_c make_local_links \
 	filter_gdb filter_make_empty \
 	filter_memcheck_monitor filter_stderr filter_vgdb \
-	filter_helgrind_monitor send_signal
+	filter_helgrind_monitor filter_helgrind_monitor_solaris \
+	filter_passsigalrm \
+	send_signal
 
 EXTRA_DIST = \
 	README_DEVELOPERS \
@@ -61,6 +72,7 @@ EXTRA_DIST = \
 	mcleak.vgtest \
 	mcmain_pic.stderrB.exp \
 	mcmain_pic.stderr.exp \
+	mcmain_pic.stderr.exp-solaris \
 	mcmain_pic.stdinB.gdb \
 	mcmain_pic.stdoutB.exp \
 	mcmain_pic.stdout.exp \
@@ -135,7 +147,9 @@ EXTRA_DIST = \
 	nlvgdbsigqueue.stderrB.exp \
 	nlvgdbsigqueue.stderr.exp \
 	nlvgdbsigqueue.stdinB.gdb \
-	nlvgdbsigqueue.stdoutB.exp
+	nlvgdbsigqueue.stdoutB.exp \
+	nlvgdbsigqueue.stdoutB.exp-solaris1 \
+	nlvgdbsigqueue.stdoutB.exp-solaris2
 
 check_PROGRAMS = \
 	clean_after_fork \

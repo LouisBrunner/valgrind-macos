@@ -1,0 +1,38 @@
+---------------------------------------------------------
+184:            SYS_labelsys (TSOL_GETCLEARANCE) 2s 1m
+---------------------------------------------------------
+Syscall param labelsys_getclearance(op) contains uninitialised byte(s)
+   ...
+
+Syscall param labelsys_getclearance(clearance) contains uninitialised byte(s)
+   ...
+
+Syscall param labelsys(clearance) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+184:            SYS_labelsys (TSOL_GETCLEARANCE) 1s 0m
+---------------------------------------------------------
+Syscall param labelsys_getclearance(op) contains uninitialised byte(s)
+   ...
+
+---------------------------------------------------------
+184:            SYS_labelsys (TSOL_SETCLEARANCE) 2s 1m
+---------------------------------------------------------
+Syscall param labelsys_setclearance(op) contains uninitialised byte(s)
+   ...
+
+Syscall param labelsys_setclearance(clearance) contains uninitialised byte(s)
+   ...
+
+Syscall param labelsys(clearance) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+184:            SYS_labelsys (TSOL_SETCLEARANCE) 1s 0m
+---------------------------------------------------------
+Syscall param labelsys_setclearance(op) contains uninitialised byte(s)
+   ...
+

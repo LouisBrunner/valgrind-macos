@@ -2005,7 +2005,7 @@ need to use them.</para>
         <listitem>
           <para><option>lax-ioctls: </option> Be very lax about ioctl
           handling; the only assumption is that the size is
-          correct. Doesn't require the full buffer to be initialized
+          correct. Doesn't require the full buffer to be initialised
           when writing.  Without this, using some device drivers with a
           large number of strange ioctl commands becomes very
           tiresome.</para>
@@ -2070,6 +2070,14 @@ need to use them.</para>
             not work for all glibc versions. This has been succesfully
             tested with various glibc versions (e.g. 2.11, 2.16, 2.18)
             on various platforms.</para>
+        </listitem>
+        <listitem>
+          <para><option>lax-doors: </option> (Solaris only) Be very lax
+          about door syscall handling over unrecognised door file
+          descriptors. Does not require that full buffer is initialised
+          when writing. Without this, programs using libdoor(3LIB)
+          functionality with completely proprietary semantics may report
+          large number of false positives.</para>
         </listitem>
       </itemizedlist>
     </listitem>

@@ -51,7 +51,7 @@ Bool ML_(valid_client_addr)(Addr start, SizeT size, ThreadId tid,
 /* Handy small function to help stop wrappers from segfaulting when
    presented with bogus client addresses.  Is not used for generating
    user-visible errors. */
-extern Bool ML_(safe_to_deref) ( void* start, SizeT size );
+extern Bool ML_(safe_to_deref) ( const void *start, SizeT size );
 
 // Returns True if the signal is OK for the client to use.
 extern Bool ML_(client_signal_OK)(Int sigNo);
@@ -61,10 +61,17 @@ extern
 Bool ML_(fd_allowed)(Int fd, const HChar *syscallname, ThreadId tid,
                      Bool isNewFD);
 
+extern void ML_(record_fd_close)               (Int fd);
 extern void ML_(record_fd_open_named)          (ThreadId tid, Int fd);
 extern void ML_(record_fd_open_nameless)       (ThreadId tid, Int fd);
 extern void ML_(record_fd_open_with_given_name)(ThreadId tid, Int fd,
                                                 const HChar *pathname);
+
+// Return true if a given file descriptor is already recorded.
+extern Bool ML_(fd_recorded)(Int fd);
+// Returns a pathname representing a recorded fd.
+// Returned string must not be modified nor free'd.
+extern const HChar *ML_(find_fd_recorded_by_fd)(Int fd);
 
 // Used when killing threads -- we must not kill a thread if it's the thread
 // that would do Valgrind's final cleanup and output.
@@ -94,6 +101,12 @@ void ML_(PRE_unknown_ioctl)(ThreadId tid, UWord request, UWord arg);
 extern 
 void ML_(POST_unknown_ioctl)(ThreadId tid, UInt res, UWord request, UWord arg);
 
+extern
+void ML_(pre_argv_envp)(Addr a, ThreadId tid, const HChar *s1, const HChar *s2);
+
+extern Bool
+ML_(handle_auxv_open)(SyscallStatus *status, const HChar *filename,
+                      int flags);
 
 DECL_TEMPLATE(generic, sys_ni_syscall);            // * P -- unimplemented
 DECL_TEMPLATE(generic, sys_exit);

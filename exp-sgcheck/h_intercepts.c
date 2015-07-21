@@ -68,6 +68,8 @@ STRRCHR(VG_Z_LD_LINUX_SO_2, rindex)
 #elif defined(VGO_darwin)
 STRRCHR(VG_Z_DYLD,          strrchr)
 STRRCHR(VG_Z_DYLD,          rindex)
+#elif defined(VGO_solaris)
+STRRCHR(VG_Z_LD_SO_1,       strrchr)
 #endif
 
 
@@ -96,6 +98,8 @@ STRCHR(VG_Z_LD_LINUX_X86_64_SO_2, index)
 #elif defined(VGO_darwin)
 STRCHR(VG_Z_DYLD,                 strchr)
 STRCHR(VG_Z_DYLD,                 index)
+#elif defined(VGO_solaris)
+STRCHR(VG_Z_LD_SO_1,              strchr)
 #endif
 
 
@@ -130,6 +134,8 @@ STRLEN(VG_Z_LIBC_SONAME,          __GI_strlen)
 STRLEN(VG_Z_LD_LINUX_SO_2,        strlen)
 STRLEN(VG_Z_LD_LINUX_X86_64_SO_2, strlen)
 STRLEN(VG_Z_LD_SO_1,              strlen)
+#elif defined(VGO_solaris)
+STRLEN(VG_Z_LD_SO_1,              strlen)
 #endif
 
 
@@ -150,6 +156,8 @@ STRCPY(VG_Z_LIBC_SONAME, strcpy)
 STRCPY(VG_Z_LIBC_SONAME, __GI_strcpy)
 #elif defined(VGO_darwin)
 STRCPY(VG_Z_DYLD,        strcpy)
+#elif defined(VGO_solaris)
+STRCPY(VG_Z_LD_SO_1,     strcpy)
 #endif
 
 
@@ -206,6 +214,8 @@ STRCMP(VG_Z_LIBC_SONAME,          strcmp)
 STRCMP(VG_Z_LIBC_SONAME,          __GI_strcmp)
 STRCMP(VG_Z_LD_LINUX_X86_64_SO_2, strcmp)
 STRCMP(VG_Z_LD64_SO_1,            strcmp)
+#elif defined(VGO_solaris)
+STRCMP(VG_Z_LD_SO_1,              strcmp)
 #endif
 
 
@@ -301,6 +311,8 @@ MEMCPY(VG_Z_LIBC_SONAME, memcpy)
 #if defined(VGO_linux)
 MEMCPY(VG_Z_LD_SO_1,     memcpy) /* ld.so.1 */
 MEMCPY(VG_Z_LD64_SO_1,   memcpy) /* ld64.so.1 */
+#elif defined(VGO_solaris)
+MEMCPY(VG_Z_LD_SO_1,      memcpy)
 #endif
 
 
@@ -381,6 +393,8 @@ GLIBC232_RAWMEMCHR(VG_Z_LIBC_SONAME, __GI___rawmemchr)
 
 #if defined(VGO_linux)
 STRSTR(VG_Z_LIBC_SONAME,          strstr)
+#elif defined(VGO_solaris)
+STRSTR(VG_Z_LIBC_SONAME,          strstr)
 #endif
 
 
@@ -417,6 +431,8 @@ STRSTR(VG_Z_LIBC_SONAME,          strstr)
    }
 
 #if defined(VGO_linux)
+STRPBRK(VG_Z_LIBC_SONAME,          strpbrk)
+#elif defined(VGO_solaris)
 STRPBRK(VG_Z_LIBC_SONAME,          strpbrk)
 #endif
 

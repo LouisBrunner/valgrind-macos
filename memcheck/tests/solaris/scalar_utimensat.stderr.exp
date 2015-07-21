@@ -1,0 +1,38 @@
+---------------------------------------------------------
+110:           SYS_utimensat 4s 2m
+---------------------------------------------------------
+Syscall param utimensat(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param utimensat(path) contains uninitialised byte(s)
+   ...
+
+Syscall param utimensat(times) contains uninitialised byte(s)
+   ...
+
+Syscall param utimensat(flag) contains uninitialised byte(s)
+   ...
+
+Syscall param utimensat(path) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param utimensat(times) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+110:           SYS_utimensat 4s 0m
+---------------------------------------------------------
+Syscall param utimensat(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param utimensat(path) contains uninitialised byte(s)
+   ...
+
+Syscall param utimensat(times) contains uninitialised byte(s)
+   ...
+
+Syscall param utimensat(flag) contains uninitialised byte(s)
+   ...
+

@@ -41,9 +41,15 @@
 // frame appropriately.
 //--------------------------------------------------------------------
 
+/* This is an arbitrary si_code that we only use internally for SIGSEGV.
+   It corresponds to the value SI_KERNEL on Linux, but that's not really
+   of any significance. */
+#define VKI_SEGV_MADE_UP_GPF 0x80
+
 /* Create a signal frame for thread 'tid'. */
 extern 
 void VG_(sigframe_create) ( ThreadId tid, 
+                            Bool on_altstack,
                             Addr sp_top_of_frame,
                             const vki_siginfo_t *siginfo,
                             const struct vki_ucontext *uc,
@@ -56,6 +62,11 @@ void VG_(sigframe_create) ( ThreadId tid,
    restore the CPU state from it. */
 extern 
 void VG_(sigframe_destroy)( ThreadId tid, Bool isRT );
+
+#if defined(VGO_solaris)
+extern
+void VG_(sigframe_return)(ThreadId tid, const vki_ucontext_t *uc);
+#endif
 
 #endif   // __PUB_CORE_SIGFRAME_H
 

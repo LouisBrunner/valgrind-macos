@@ -1329,6 +1329,7 @@ VG_(trampoline_stuff_end):
 #	undef UD2_1024
 #	undef UD2_PAGE
 
+/*---------------------- tilegx-linux ----------------------*/
 #else
 #if defined(VGP_tilegx_linux)
 
@@ -1399,10 +1400,192 @@ VG_(trampoline_stuff_end):
 #	undef UD2_4K
 #	undef UD2_16K
 #	undef UD2_PAGE
+
+/*---------------- x86-solaris ----------------*/
+#else
+#if defined(VGP_x86_solaris)
+
+.global VG_(trampoline_stuff_start)
+VG_(trampoline_stuff_start):
+
+/* int strcmp(const char *s1, const char *s2); */
+.global VG_(x86_solaris_REDIR_FOR_strcmp)
+.type   VG_(x86_solaris_REDIR_FOR_strcmp), @function
+VG_(x86_solaris_REDIR_FOR_strcmp):
+        pushl   %ebp                    /* establish a stack frame */
+        movl    %esp, %ebp
+        movl    8(%ebp), %edx           /* get s1 */
+        movl    12(%esp), %ecx          /* get s2 */
+        jmp     2f                      /* go compare the first characters */
+1:
+        incl    %edx                    /* skip to the next s1 character */
+        incl    %ecx                    /* skip to the next s2 character */
+2:
+        movzbl  (%edx), %eax            /* load a character from s1 */
+        testb   %al, %al                /* is it null? */
+        jz      3f                      /* yes, exit */
+        cmpb    (%ecx), %al             /* are the characters equal? */
+        je      1b                      /* yes, proceed with next characters */
+3:
+        movzbl  (%ecx), %edx            /* load a character from s2 */
+        subl    %edx, %eax              /* calculate the return value */
+        popl    %ebp                    /* destroy the stack frame */
+        ret                             /* return to the caller */
+.size VG_(x86_solaris_REDIR_FOR_strcmp), .-VG_(x86_solaris_REDIR_FOR_strcmp)
+
+/* size_t strlen(const char *s); */
+.global VG_(x86_solaris_REDIR_FOR_strlen)
+.type   VG_(x86_solaris_REDIR_FOR_strlen), @function
+VG_(x86_solaris_REDIR_FOR_strlen):
+        pushl   %ebp                    /* establish a stack frame */
+        movl    %esp, %ebp
+        movl    8(%ebp), %edx           /* get s */
+        movl    %edx, %eax              /* copy s */
+        jmp     2f                      /* go handle the first character */
+1:
+        incl    %eax                    /* skip to the next s character */
+2:
+        cmpb    $0, (%eax)              /* is the s character null? */
+        jne     1b                      /* no, go process the next character */
+        subl    %edx, %eax              /* calculate the return value */
+        popl    %ebp                    /* destroy the stack frame */
+        ret                             /* return to the caller */
+.size VG_(x86_solaris_REDIR_FOR_strlen), .-VG_(x86_solaris_REDIR_FOR_strlen)
+
+.global VG_(trampoline_stuff_end)
+VG_(trampoline_stuff_end):
+
+/*---------------- amd64-solaris ----------------*/
+#else
+#if defined(VGP_amd64_solaris)
+
+.global VG_(trampoline_stuff_start)
+VG_(trampoline_stuff_start):
+
+/* char *strcpy(char *restrict s1, const char *restrict s2); */
+.global VG_(amd64_solaris_REDIR_FOR_strcpy)
+.type   VG_(amd64_solaris_REDIR_FOR_strcpy), @function
+VG_(amd64_solaris_REDIR_FOR_strcpy):
+        pushq   %rbp                    /* establish a stack frame */
+        movq    %rsp, %rbp
+        movq    %rdi, %rdx              /* copy s1 */
+1:
+        movzbl  (%rsi), %eax            /* load one input character */
+        movb    %al, (%rdx)             /* copy to output/s2 */
+        incq    %rsi                    /* skip to the next output character */
+        incq    %rdx                    /* skip to the next input character */
+        testb   %al, %al                /* is the copied character null? */
+        jnz     1b                      /* no, copy the next character */
+        leave                           /* destroy the stack frame */
+        movq    %rdi, %rax              /* set s1 as the return value */
+        ret                             /* return to the caller */
+.size VG_(amd64_solaris_REDIR_FOR_strcpy), .-VG_(amd64_solaris_REDIR_FOR_strcpy)
+
+/* char *strncpy(char *restrict s1, const char *restrict s2, size_t n); */
+.global VG_(amd64_solaris_REDIR_FOR_strncpy)
+.type   VG_(amd64_solaris_REDIR_FOR_strncpy), @function
+VG_(amd64_solaris_REDIR_FOR_strncpy):
+        pushq   %rbp                    /* establish a stack frame */
+        movq    %rsp, %rbp
+        movq    %rdi, %rcx              /* copy s1 */
+1:
+        testq   %rdx, %rdx              /* is the remaining size zero? */
+        jz      3f                      /* yes, all done */
+        movzbl  (%rsi), %eax            /* load one input character */
+        movb    %al, (%rcx)             /* copy to output/s2 */
+        decq    %rdx                    /* decrement the remaining size */
+        incq    %rsi                    /* skip to the next output character */
+        incq    %rcx                    /* skip to the next input character */
+        testb   %al, %al                /* is the copied character null? */
+        jnz     1b                      /* no, copy the next character */
+2:
+        testq   %rdx, %rdx              /* is the remaining size zero? */
+        jz      3f                      /* yes, all done */
+        movb    $0, (%rdx)              /* copy null to output/s2 */
+        decq    %rdx                    /* decrement the remaining size */
+        incq    %rsi                    /* skip to next output character */
+        jmp     2b                      /* proceed with the next character */
+3:
+        leave                           /* destroy the stack frame */
+        movq    %rdi, %rax              /* set s1 as the return value */
+        ret                             /* return to the caller */
+.size VG_(amd64_solaris_REDIR_FOR_strncpy), .-VG_(amd64_solaris_REDIR_FOR_strncpy)
+
+/* int strcmp(const char *s1, const char *s2); */
+.global VG_(amd64_solaris_REDIR_FOR_strcmp)
+.type   VG_(amd64_solaris_REDIR_FOR_strcmp), @function
+VG_(amd64_solaris_REDIR_FOR_strcmp):
+        pushq   %rbp                    /* establish a stack frame */
+        movq    %rsp, %rbp
+        jmp     2f                      /* go compare the first characters */
+1:
+        incq    %rdi                    /* skip to the next s1 character */
+        incq    %rsi                    /* skip to the next s2 character */
+2:
+        movzbl  (%rdi), %eax            /* load a character from s1 */
+        testb   %al, %al                /* is it null? */
+        jz      3f                      /* yes, exit */
+        cmpb    (%rsi), %al             /* are the characters equal? */
+        je      1b                      /* yes, proceed with next characters */
+3:
+        movzbl  (%rsi), %edx            /* load a character from s2 */
+        subl    %edx, %eax              /* calculate the return value */
+        leave                           /* destroy the stack frame */
+        ret                             /* return to the caller */
+.size VG_(amd64_solaris_REDIR_FOR_strcmp), .-VG_(amd64_solaris_REDIR_FOR_strcmp)
+
+/* char *strcat(char *restrict s1, const char *restrict s2); */
+.global VG_(amd64_solaris_REDIR_FOR_strcat)
+.type   VG_(amd64_solaris_REDIR_FOR_strcat), @function
+VG_(amd64_solaris_REDIR_FOR_strcat):
+        pushq   %rbp                    /* establish a stack frame */
+        movq    %rsp, %rbp
+        movq    %rdi, %rdx              /* copy s1 */
+        jmp     2f                      /* go handle the first character */
+1:
+        incq    %rdx                    /* skip to the next s1 character */
+2:
+        cmpb    $0, (%rdx)              /* is the s1 character null? */
+        jne     1b                      /* no, go check the next character */
+3:
+        movzbl  (%rsi), %eax            /* load a character from s2 */
+        movb    %al, (%rdx)             /* copy the s2 character to s1 */
+        incq    %rdx                    /* skip to the next s1 character */
+        incq    %rsi                    /* skip to the next s2 character */
+        testb   %al, %al                /* was the character null? */
+        jnz     3b                      /* no, go copy the next character */
+        movq    %rdi, %rax              /* set s1 as the return value */
+        leave                           /* destroy the stack frame */
+        ret                             /* return to the caller */
+.size VG_(amd64_solaris_REDIR_FOR_strcat), .-VG_(amd64_solaris_REDIR_FOR_strcat)
+
+/* size_t strlen(const char *s); */
+.global VG_(amd64_solaris_REDIR_FOR_strlen)
+.type   VG_(amd64_solaris_REDIR_FOR_strlen), @function
+VG_(amd64_solaris_REDIR_FOR_strlen):
+        pushq   %rbp                    /* establish a stack frame */
+        movq    %rsp, %rbp
+        movq    %rdi, %rax              /* copy s */
+        jmp     2f                      /* go handle the first character */
+1:
+        incq    %rax                    /* skip to the next s character */
+2:
+        cmpb    $0, (%rax)              /* is the s character null? */
+        jne     1b                      /* no, go process the next character */
+        subq    %rdi, %rax              /* calculate the return value */
+        leave                           /* destroy the stack frame */
+        ret                             /* return to the caller */
+.size VG_(amd64_solaris_REDIR_FOR_strlen), .-VG_(amd64_solaris_REDIR_FOR_strlen)
+
+.global VG_(trampoline_stuff_end)
+VG_(trampoline_stuff_end):
+
 /*---------------- unknown ----------------*/
 #else
 #  error Unknown platform
 
+#endif
+#endif
 #endif
 #endif
 #endif

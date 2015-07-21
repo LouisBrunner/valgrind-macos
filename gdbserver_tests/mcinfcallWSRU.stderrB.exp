@@ -1,25 +1,25 @@
 relaying data between gdb and process ....
 vgdb-error value changed from 0 to 999999
-Breakpoint 1 at 0x........: file sleepers.c, line 72.
+Breakpoint 1 at 0x........: file sleepers.c, line 74.
 Continuing.
-Breakpoint 1, sleeper_or_burner (v=0x........) at sleepers.c:72
-72	   int i = 0;
+Breakpoint 1, sleeper_or_burner (v=0x........) at sleepers.c:74
+74	   int i = 0;
 Continuing.
-Breakpoint 1, sleeper_or_burner (v=0x........) at sleepers.c:72
-72	   int i = 0;
+Breakpoint 1, sleeper_or_burner (v=0x........) at sleepers.c:74
+74	   int i = 0;
 Continuing.
-Breakpoint 1, sleeper_or_burner (v=0x........) at sleepers.c:72
-72	   int i = 0;
+Breakpoint 1, sleeper_or_burner (v=0x........) at sleepers.c:74
+74	   int i = 0;
 Continuing.
-Breakpoint 1, sleeper_or_burner (v=0x........) at sleepers.c:72
-72	   int i = 0;
+Breakpoint 1, sleeper_or_burner (v=0x........) at sleepers.c:74
+74	   int i = 0;
 Continuing.
 Program received signal SIGTRAP, Trace/breakpoint trap.
-0x........ in do_burn () at sleepers.c:39
-39	   for (i = 0; i < burn; i++) loopnr++;
+0x........ in do_burn () at sleepers.c:41
+41	   for (i = 0; i < burn; i++) loopnr++;
 [Switching to thread 1 (Thread ....)]
 #0  0x........ in do_burn ()
-39	   for (i = 0; i < burn; i++) loopnr++;
+41	   for (i = 0; i < burn; i++) loopnr++;
 $1 = void
 [Switching to thread 2 (Thread ....)]
 #0  0x........ in syscall ...

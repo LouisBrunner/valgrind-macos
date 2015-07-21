@@ -77,7 +77,7 @@ static void nibblemap(void *p)
 static void prmaps()
 {
 	char buf[100];
-	sprintf(buf, "/bin/cat /proc/%d/maps", getpid());
+	sprintf(buf, "/bin/cat /proc/%ld/maps", (long) getpid());
 	system(buf);
 	exit(1);
 }

@@ -44,6 +44,11 @@ valgrind_SOURCES = \
 	launcher-darwin.c \
 	m_debuglog.c
 endif
+if VGCONF_OS_IS_SOLARIS
+valgrind_SOURCES = \
+	launcher-linux.c \
+	m_debuglog.c
+endif
 
 valgrind_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
 valgrind_CFLAGS    = $(AM_CFLAGS_PRI)
@@ -73,6 +78,9 @@ if VGCONF_OS_IS_DARWIN
 # having access to Darwin, 'none' implementation is used.
 vgdb_SOURCES += vgdb-invoker-none.c
 endif
+if VGCONF_OS_IS_SOLARIS
+vgdb_SOURCES += vgdb-invoker-solaris.c
+endif
 
 vgdb_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
 vgdb_CFLAGS    = $(AM_CFLAGS_PRI)
@@ -81,8 +89,12 @@ vgdb_LDFLAGS   = $(AM_CFLAGS_PRI) @LIB_UBSAN@
 if VGCONF_PLATVARIANT_IS_ANDROID
 vgdb_CFLAGS    += -static
 endif
+if VGCONF_OS_IS_SOLARIS
+vgdb_LDADD     = -lsocket
+else
 if !VGCONF_PLATVARIANT_IS_ANDROID
 vgdb_LDADD     = -lpthread
+endif
 endif
 if VGCONF_PLATFORMS_INCLUDE_X86_DARWIN
 vgdb_LDFLAGS   += -Wl,-read_only_relocs -Wl,suppress
@@ -249,6 +261,7 @@ noinst_HEADERS = \
 	m_syswrap/priv_syswrap-linux.h \
 	m_syswrap/priv_syswrap-linux-variants.h \
 	m_syswrap/priv_syswrap-darwin.h \
+	m_syswrap/priv_syswrap-solaris.h \
 	m_syswrap/priv_syswrap-main.h \
 	m_syswrap/priv_syswrap-xen.h \
 	m_ume/priv_ume.h \
@@ -316,6 +329,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_aspacemgr/aspacemgr-segnames.c \
 	m_coredump/coredump-elf.c \
 	m_coredump/coredump-macho.c \
+	m_coredump/coredump-solaris.c \
 	m_debuginfo/misc.c \
 	m_debuginfo/d3basics.c \
 	m_debuginfo/debuginfo.c \
@@ -347,6 +361,8 @@ COREGRIND_SOURCES_COMMON = \
 	m_dispatch/dispatch-tilegx-linux.S \
 	m_dispatch/dispatch-x86-darwin.S \
 	m_dispatch/dispatch-amd64-darwin.S \
+	m_dispatch/dispatch-x86-solaris.S \
+	m_dispatch/dispatch-amd64-solaris.S \
 	m_gdbserver/inferiors.c \
 	m_gdbserver/m_gdbserver.c \
 	m_gdbserver/regcache.c \
@@ -368,6 +384,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_gdbserver/version.c \
 	m_initimg/initimg-linux.c \
 	m_initimg/initimg-darwin.c \
+	m_initimg/initimg-solaris.c \
 	m_initimg/initimg-pathscan.c \
 	m_mach/mach_basics.c \
 	m_mach/mach_msg.c \
@@ -391,6 +408,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_sigframe/sigframe-tilegx-linux.c \
 	m_sigframe/sigframe-x86-darwin.c \
 	m_sigframe/sigframe-amd64-darwin.c \
+	m_sigframe/sigframe-solaris.c \
 	m_syswrap/syscall-x86-linux.S \
 	m_syswrap/syscall-amd64-linux.S \
 	m_syswrap/syscall-ppc32-linux.S \
@@ -404,11 +422,14 @@ COREGRIND_SOURCES_COMMON = \
 	m_syswrap/syscall-tilegx-linux.S \
 	m_syswrap/syscall-x86-darwin.S \
 	m_syswrap/syscall-amd64-darwin.S \
+	m_syswrap/syscall-x86-solaris.S \
+	m_syswrap/syscall-amd64-solaris.S \
 	m_syswrap/syswrap-main.c \
 	m_syswrap/syswrap-generic.c \
 	m_syswrap/syswrap-linux.c \
 	m_syswrap/syswrap-linux-variants.c \
 	m_syswrap/syswrap-darwin.c \
+	m_syswrap/syswrap-solaris.c \
 	m_syswrap/syswrap-x86-linux.c \
 	m_syswrap/syswrap-amd64-linux.c \
 	m_syswrap/syswrap-ppc32-linux.c \
@@ -422,6 +443,8 @@ COREGRIND_SOURCES_COMMON = \
 	m_syswrap/syswrap-x86-darwin.c \
 	m_syswrap/syswrap-amd64-darwin.c \
 	m_syswrap/syswrap-xen.c \
+	m_syswrap/syswrap-x86-solaris.c \
+	m_syswrap/syswrap-amd64-solaris.c \
 	m_ume/elf.c \
 	m_ume/macho.c \
 	m_ume/main.c \
@@ -515,6 +538,17 @@ vgpreload_core_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_CFLAGS = \
 	$(AM_CFLAGS_PSO_@VGCONF_PLATFORM_SEC_CAPS@)
 vgpreload_core_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_LDFLAGS = \
 	$(PRELOAD_LDFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
+endif
+
+if VGCONF_OS_IS_SOLARIS
+# Give the vgpreload_core library a proper soname so it can be easily
+# recognized during reading of debug information.
+vgpreload_core_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_LDFLAGS += \
+	-Wl,-soname -Wl,vgpreload_core.so.0
+if VGCONF_HAVE_PLATFORM_SEC
+vgpreload_core_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_LDFLAGS += \
+	-Wl,-soname -Wl,vgpreload_core.so.0
+endif
 endif
 
 #----------------------------------------------------------------------------

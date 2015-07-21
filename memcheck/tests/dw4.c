@@ -68,8 +68,8 @@ int main ( void )
   croak( p);
 
   /* Describe file mmap-ed */
-  snprintf(filename, sizeof(filename), "./valgrind-dw4-test.%d",
-           getpid());
+  snprintf(filename, sizeof(filename), "./valgrind-dw4-test.%ld",
+           (long) getpid());
 
   unlink(filename);
 

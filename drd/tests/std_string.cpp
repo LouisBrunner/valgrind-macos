@@ -8,6 +8,7 @@
 #include <string>
 #include <cstring>
 #include <pthread.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 char* list2byteArray()

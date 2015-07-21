@@ -66,6 +66,9 @@
 #elif defined(VGP_tilegx_linux)
 #  include "vki/vki-scnums-tilegx-linux.h"
 
+#elif defined(VGP_x86_solaris) || (VGP_amd64_solaris)
+#  include "vki/vki-scnums-solaris.h"
+
 #else
 #  error Unknown platform
 #endif

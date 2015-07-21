@@ -1,0 +1,24 @@
+
+Warning: invalid file descriptor 159879507 in syscall linkat()
+Warning: invalid file descriptor 159879508 in syscall linkat()
+Warning: invalid file descriptor 646349138 in syscall symlinkat()
+Warning: invalid file descriptor 70680914 in syscall readlinkat()
+Warning: invalid file descriptor 68362578 in syscall faccessat()
+Warning: invalid file descriptor 70685266 in syscall fchownat()
+Warning: invalid file descriptor 70717779 in syscall renameat()
+Warning: invalid file descriptor 70717780 in syscall renameat()
+Warning: invalid file descriptor 123765074 in syscall unlinkat()
+Warning: invalid file descriptor 1112625490 in syscall fstatat()
+Warning: invalid file descriptor 151224658 in syscall openat()
+Warning: invalid file descriptor 70267218 in syscall fchmodat()
+Warning: invalid file descriptor 154681682 in syscall mkdirat()
+Warning: invalid file descriptor 1501786646 in syscall utimeXXX()
+
+HEAP SUMMARY:
+    in use at exit: 0 bytes in 0 blocks
+  total heap usage: 0 allocs, 0 frees, 0 bytes allocated
+
+For a detailed leak analysis, rerun with: --leak-check=full
+
+For counts of detected and suppressed errors, rerun with: -v
+ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

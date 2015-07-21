@@ -93,7 +93,7 @@ extern SysRes VG_(poll) (struct vki_pollfd *fds, Int nfds, Int timeout);
 
 extern SSizeT VG_(readlink)( const HChar* path, HChar* buf, SizeT bufsiz);
 
-#if defined(VGO_linux)
+#if defined(VGO_linux) || defined(VGO_solaris)
 extern Int    VG_(getdents64)( Int fd, struct vki_dirent64 *dirp, UInt count );
 #endif
 

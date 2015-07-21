@@ -1,5 +1,5 @@
 prereq: ./run_openmp_test ./omp_prime
 prog: omp_prime
 vgopts: --check-stack-var=yes --read-var-info=yes
-args: 4 -q
+args: -q 4
 stderr_filter: filter_error_summary

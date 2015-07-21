@@ -102,7 +102,7 @@ typedef  Word                 PtrdiffT;   // 32             64
 // used in those cases.
 // Nb: on Linux, off_t is a signed word-sized int.  On Darwin it's
 // always a signed 64-bit int.  So we defined our own Off64T as well.
-#if defined(VGO_linux)
+#if defined(VGO_linux) || defined(VGO_solaris)
 typedef Word                   OffT;      // 32             64
 #elif defined(VGO_darwin)
 typedef Long                   OffT;      // 64             64
@@ -157,6 +157,12 @@ typedef UInt ThreadId;
          userspace, but we have to record it, so that we can correctly
          update both {R,E}DX and {R,E}AX (in guest state) given a SysRes,
          if we're required to.
+
+   Solaris:
+      When _isError == False,
+         _val and _val2 hold the return value.
+      When _isError == True,
+         _val holds the error code.
 */
 #if defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
 typedef
@@ -190,6 +196,15 @@ typedef
       UWord _wLO;
       UWord _wHI;
       SysResMode _mode;
+   }
+   SysRes;
+
+#elif defined(VGO_solaris)
+typedef
+   struct {
+      UWord _val;
+      UWord _val2;
+      Bool  _isError;
    }
    SysRes;
 
@@ -314,6 +329,27 @@ static inline Bool sr_EQ ( UInt sysno, SysRes sr1, SysRes sr2 ) {
    /* sysno is ignored for Darwin */
    return sr1._mode == sr2._mode
           && sr1._wLO == sr2._wLO && sr1._wHI == sr2._wHI;
+}
+
+#elif defined(VGO_solaris)
+
+static inline Bool sr_isError ( SysRes sr ) {
+   return sr._isError;
+}
+static inline UWord sr_Res ( SysRes sr ) {
+   return sr._isError ? 0 : sr._val;
+}
+static inline UWord sr_ResHI ( SysRes sr ) {
+   return sr._isError ? 0 : sr._val2;
+}
+static inline UWord sr_Err ( SysRes sr ) {
+   return sr._isError ? sr._val : 0;
+}
+static inline Bool sr_EQ ( UInt sysno, SysRes sr1, SysRes sr2 ) {
+   /* sysno is ignored for Solaris */
+   return sr1._val == sr2._val
+       && sr1._val2 == sr2._val2
+       && sr1._isError == sr2._isError;
 }
 
 #else

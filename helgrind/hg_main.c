@@ -53,7 +53,7 @@
 #include "pub_tool_debuginfo.h" // VG_(find_seginfo), VG_(seginfo_soname)
 #include "pub_tool_redir.h"     // sonames for the dynamic linkers
 #include "pub_tool_vki.h"       // VKI_PAGE_SIZE
-#include "pub_tool_libcproc.h"  // VG_(atfork)
+#include "pub_tool_libcproc.h"
 #include "pub_tool_aspacemgr.h" // VG_(am_is_valid_for_client)
 #include "pub_tool_poolalloc.h"
 #include "pub_tool_addrinfo.h"
@@ -160,6 +160,12 @@ Lock* HG_(get_admin_locks) ( void ) { return admin_locks; }
 static UWord stats__lockN_acquires = 0;
 static UWord stats__lockN_releases = 0;
 
+#if defined(VGO_solaris)
+Bool HG_(clo_ignore_thread_creation) = True;
+#else
+Bool HG_(clo_ignore_thread_creation) = False;
+#endif /* VGO_solaris */
+
 static
 ThreadId map_threads_maybe_reverse_lookup_SLOW ( Thread* thr ); /*fwds*/
 
@@ -177,6 +183,12 @@ static Thread* mk_Thread ( Thr* hbthr ) {
    thread->announced    = False;
    thread->errmsg_index = indx++;
    thread->admin        = admin_threads;
+   thread->synchr_nesting = 0;
+   thread->pthread_create_nesting_level = 0;
+#if defined(VGO_solaris)
+   thread->bind_guard_flag = 0;
+#endif /* VGO_solaris */
+
    admin_threads        = thread;
    return thread;
 }
@@ -698,6 +710,34 @@ static void map_threads_delete ( ThreadId coretid )
    map_threads[coretid] = NULL;
 }
 
+static void HG_(thread_enter_synchr)(Thread *thr) {
+   tl_assert(thr->synchr_nesting >= 0);
+#if defined(VGO_solaris)
+   thr->synchr_nesting += 1;
+#endif /* VGO_solaris */
+}
+
+static void HG_(thread_leave_synchr)(Thread *thr) {
+#if defined(VGO_solaris)
+   thr->synchr_nesting -= 1;
+#endif /* VGO_solaris */
+   tl_assert(thr->synchr_nesting >= 0);
+}
+
+static void HG_(thread_enter_pthread_create)(Thread *thr) {
+   tl_assert(thr->pthread_create_nesting_level >= 0);
+   thr->pthread_create_nesting_level += 1;
+}
+
+static void HG_(thread_leave_pthread_create)(Thread *thr) {
+   tl_assert(thr->pthread_create_nesting_level > 0);
+   thr->pthread_create_nesting_level -= 1;
+}
+
+static Int HG_(get_pthread_create_nesting_level)(ThreadId tid) {
+   Thread *thr = map_threads_maybe_lookup(tid);
+   return thr->pthread_create_nesting_level;
+}
 
 /*----------------------------------------------------------------*/
 /*--- map_locks :: WordFM guest-Addr-of-lock Lock*             ---*/
@@ -1423,40 +1463,52 @@ static inline Thread* get_current_Thread ( void ) {
 
 static
 void evh__new_mem ( Addr a, SizeT len ) {
+   Thread *thr = get_current_Thread();
    if (SHOW_EVENTS >= 2)
       VG_(printf)("evh__new_mem(%p, %lu)\n", (void*)a, len );
-   shadow_mem_make_New( get_current_Thread(), a, len );
+   shadow_mem_make_New( thr, a, len );
    if (len >= SCE_BIGRANGE_T && (HG_(clo_sanity_flags) & SCE_BIGRANGE))
       all__sanity_check("evh__new_mem-post");
+   if (UNLIKELY(thr->pthread_create_nesting_level > 0))
+      shadow_mem_make_Untracked( thr, a, len );
 }
 
 static
 void evh__new_mem_stack ( Addr a, SizeT len ) {
+   Thread *thr = get_current_Thread();
    if (SHOW_EVENTS >= 2)
       VG_(printf)("evh__new_mem_stack(%p, %lu)\n", (void*)a, len );
-   shadow_mem_make_New( get_current_Thread(),
-                        -VG_STACK_REDZONE_SZB + a, len );
+   shadow_mem_make_New( thr, -VG_STACK_REDZONE_SZB + a, len );
    if (len >= SCE_BIGRANGE_T && (HG_(clo_sanity_flags) & SCE_BIGRANGE))
       all__sanity_check("evh__new_mem_stack-post");
+   if (UNLIKELY(thr->pthread_create_nesting_level > 0))
+      shadow_mem_make_Untracked( thr, a, len );
 }
 
 static
 void evh__new_mem_w_tid ( Addr a, SizeT len, ThreadId tid ) {
+   Thread *thr = get_current_Thread();
    if (SHOW_EVENTS >= 2)
       VG_(printf)("evh__new_mem_w_tid(%p, %lu)\n", (void*)a, len );
-   shadow_mem_make_New( get_current_Thread(), a, len );
+   shadow_mem_make_New( thr, a, len );
    if (len >= SCE_BIGRANGE_T && (HG_(clo_sanity_flags) & SCE_BIGRANGE))
       all__sanity_check("evh__new_mem_w_tid-post");
+   if (UNLIKELY(thr->pthread_create_nesting_level > 0))
+      shadow_mem_make_Untracked( thr, a, len );
 }
 
 static
 void evh__new_mem_w_perms ( Addr a, SizeT len, 
                             Bool rr, Bool ww, Bool xx, ULong di_handle ) {
+   Thread *thr = get_current_Thread();
    if (SHOW_EVENTS >= 1)
       VG_(printf)("evh__new_mem_w_perms(%p, %lu, %d,%d,%d)\n",
                   (void*)a, len, (Int)rr, (Int)ww, (Int)xx );
-   if (rr || ww || xx)
-      shadow_mem_make_New( get_current_Thread(), a, len );
+   if (rr || ww || xx) {
+      shadow_mem_make_New( thr, a, len );
+      if (UNLIKELY(thr->pthread_create_nesting_level > 0))
+         shadow_mem_make_Untracked( thr, a, len );
+   }
    if (len >= SCE_BIGRANGE_T && (HG_(clo_sanity_flags) & SCE_BIGRANGE))
       all__sanity_check("evh__new_mem_w_perms-post");
 }
@@ -1518,7 +1570,9 @@ static
 void evh__copy_mem ( Addr src, Addr dst, SizeT len ) {
    if (SHOW_EVENTS >= 2)
       VG_(printf)("evh__copy_mem(%p, %p, %lu)\n", (void*)src, (void*)dst, len );
-   shadow_mem_scopy_range( get_current_Thread(), src, dst, len );
+   Thread *thr = get_current_Thread();
+   if (LIKELY(thr->synchr_nesting == 0))
+      shadow_mem_scopy_range( thr , src, dst, len );
    if (len >= SCE_BIGRANGE_T && (HG_(clo_sanity_flags) & SCE_BIGRANGE))
       all__sanity_check("evh__copy_mem-post");
 }
@@ -1581,6 +1635,13 @@ void evh__pre_thread_ll_create ( ThreadId parent, ThreadId child )
         first_ip_delta = -1;
 #       endif
         thr_c->created_at = VG_(record_ExeContext)(parent, first_ip_delta);
+      }
+
+      if (HG_(clo_ignore_thread_creation)) {
+         HG_(thread_enter_pthread_create)(thr_c);
+         tl_assert(thr_c->synchr_nesting == 0);
+         HG_(thread_enter_synchr)(thr_c);
+         /* Counterpart in _VG_USERREQ__HG_SET_MY_PTHREAD_T. */
       }
    }
 
@@ -1752,7 +1813,9 @@ void evh__pre_mem_read ( CorePart part, ThreadId tid, const HChar* s,
        || (SHOW_EVENTS >= 1 && size != 1))
       VG_(printf)("evh__pre_mem_read(ctid=%d, \"%s\", %p, %lu)\n", 
                   (Int)tid, s, (void*)a, size );
-   shadow_mem_cread_range( map_threads_lookup(tid), a, size);
+   Thread *thr = map_threads_lookup(tid);
+   if (LIKELY(thr->synchr_nesting == 0))
+      shadow_mem_cread_range(thr, a, size);
    if (size >= SCE_BIGRANGE_T && (HG_(clo_sanity_flags) & SCE_BIGRANGE))
       all__sanity_check("evh__pre_mem_read-post");
 }
@@ -1770,8 +1833,10 @@ void evh__pre_mem_read_asciiz ( CorePart part, ThreadId tid,
    // checking the first byte is better than nothing.  See #255009.
    if (!VG_(am_is_valid_for_client) (a, 1, VKI_PROT_READ))
       return;
+   Thread *thr = map_threads_lookup(tid);
    len = VG_(strlen)( (HChar*) a );
-   shadow_mem_cread_range( map_threads_lookup(tid), a, len+1 );
+   if (LIKELY(thr->synchr_nesting == 0))
+      shadow_mem_cread_range( thr, a, len+1 );
    if (len >= SCE_BIGRANGE_T && (HG_(clo_sanity_flags) & SCE_BIGRANGE))
       all__sanity_check("evh__pre_mem_read_asciiz-post");
 }
@@ -1782,7 +1847,9 @@ void evh__pre_mem_write ( CorePart part, ThreadId tid, const HChar* s,
    if (SHOW_EVENTS >= 1)
       VG_(printf)("evh__pre_mem_write(ctid=%d, \"%s\", %p, %lu)\n", 
                   (Int)tid, s, (void*)a, size );
-   shadow_mem_cwrite_range( map_threads_lookup(tid), a, size);
+   Thread *thr = map_threads_lookup(tid);
+   if (LIKELY(thr->synchr_nesting == 0))
+      shadow_mem_cwrite_range(thr, a, size);
    if (size >= SCE_BIGRANGE_T && (HG_(clo_sanity_flags) & SCE_BIGRANGE))
       all__sanity_check("evh__pre_mem_write-post");
 }
@@ -1811,7 +1878,8 @@ void evh__die_mem_heap ( Addr a, SizeT len ) {
          where memory is referenced by one thread, and freed by
          another, and there's no observable synchronisation event to
          guarantee that the reference happens before the free. */
-      shadow_mem_cwrite_range(thr, a, len);
+      if (LIKELY(thr->synchr_nesting == 0))
+         shadow_mem_cwrite_range(thr, a, len);
    }
    shadow_mem_make_NoAccess_AHAE( thr, a, len );
    /* We used to call instead
@@ -1845,70 +1913,80 @@ static VG_REGPARM(1)
 void evh__mem_help_cread_1(Addr a) {
    Thread*  thr = get_current_Thread_in_C_C();
    Thr*     hbthr = thr->hbthr;
-   LIBHB_CREAD_1(hbthr, a);
+   if (LIKELY(thr->synchr_nesting == 0))
+      LIBHB_CREAD_1(hbthr, a);
 }
 
 static VG_REGPARM(1)
 void evh__mem_help_cread_2(Addr a) {
    Thread*  thr = get_current_Thread_in_C_C();
    Thr*     hbthr = thr->hbthr;
-   LIBHB_CREAD_2(hbthr, a);
+   if (LIKELY(thr->synchr_nesting == 0))
+      LIBHB_CREAD_2(hbthr, a);
 }
 
 static VG_REGPARM(1)
 void evh__mem_help_cread_4(Addr a) {
    Thread*  thr = get_current_Thread_in_C_C();
    Thr*     hbthr = thr->hbthr;
-   LIBHB_CREAD_4(hbthr, a);
+   if (LIKELY(thr->synchr_nesting == 0))
+      LIBHB_CREAD_4(hbthr, a);
 }
 
 static VG_REGPARM(1)
 void evh__mem_help_cread_8(Addr a) {
    Thread*  thr = get_current_Thread_in_C_C();
    Thr*     hbthr = thr->hbthr;
-   LIBHB_CREAD_8(hbthr, a);
+   if (LIKELY(thr->synchr_nesting == 0))
+      LIBHB_CREAD_8(hbthr, a);
 }
 
 static VG_REGPARM(2)
 void evh__mem_help_cread_N(Addr a, SizeT size) {
    Thread*  thr = get_current_Thread_in_C_C();
    Thr*     hbthr = thr->hbthr;
-   LIBHB_CREAD_N(hbthr, a, size);
+   if (LIKELY(thr->synchr_nesting == 0))
+      LIBHB_CREAD_N(hbthr, a, size);
 }
 
 static VG_REGPARM(1)
 void evh__mem_help_cwrite_1(Addr a) {
    Thread*  thr = get_current_Thread_in_C_C();
    Thr*     hbthr = thr->hbthr;
-   LIBHB_CWRITE_1(hbthr, a);
+   if (LIKELY(thr->synchr_nesting == 0))
+      LIBHB_CWRITE_1(hbthr, a);
 }
 
 static VG_REGPARM(1)
 void evh__mem_help_cwrite_2(Addr a) {
    Thread*  thr = get_current_Thread_in_C_C();
    Thr*     hbthr = thr->hbthr;
-   LIBHB_CWRITE_2(hbthr, a);
+   if (LIKELY(thr->synchr_nesting == 0))
+      LIBHB_CWRITE_2(hbthr, a);
 }
 
 static VG_REGPARM(1)
 void evh__mem_help_cwrite_4(Addr a) {
    Thread*  thr = get_current_Thread_in_C_C();
    Thr*     hbthr = thr->hbthr;
-   LIBHB_CWRITE_4(hbthr, a);
+   if (LIKELY(thr->synchr_nesting == 0))
+      LIBHB_CWRITE_4(hbthr, a);
 }
 
 static VG_REGPARM(1)
 void evh__mem_help_cwrite_8(Addr a) {
    Thread*  thr = get_current_Thread_in_C_C();
    Thr*     hbthr = thr->hbthr;
-   LIBHB_CWRITE_8(hbthr, a);
+   if (LIKELY(thr->synchr_nesting == 0))
+      LIBHB_CWRITE_8(hbthr, a);
 }
 
 static VG_REGPARM(2)
 void evh__mem_help_cwrite_N(Addr a, SizeT size) {
    Thread*  thr = get_current_Thread_in_C_C();
    Thr*     hbthr = thr->hbthr;
-   LIBHB_CWRITE_N(hbthr, a, size);
+   if (LIKELY(thr->synchr_nesting == 0))
+      LIBHB_CWRITE_N(hbthr, a, size);
 }
 
 
@@ -3321,6 +3399,52 @@ void evh__HG_USERSO_FORGET_ALL ( ThreadId tid, UWord usertag )
 }
 
 
+#if defined(VGO_solaris)
+/* ----------------------------------------------------- */
+/* --- events to do with bind guard/clear intercepts --- */
+/* ----------------------------------------------------- */
+
+static
+void evh__HG_RTLD_BIND_GUARD(ThreadId tid, Int flags)
+{
+   if (SHOW_EVENTS >= 1)
+      VG_(printf)("evh__HG_RTLD_BIND_GUARD"
+                  "(tid=%d, flags=%d)\n",
+                  (Int)tid, flags);
+
+   Thread *thr = map_threads_maybe_lookup(tid);
+   tl_assert(thr != NULL);
+
+   Int bindflag = (flags & VKI_THR_FLG_RTLD);
+   if ((bindflag & thr->bind_guard_flag) == 0) {
+      thr->bind_guard_flag |= bindflag;
+      HG_(thread_enter_synchr)(thr);
+      /* Misuse pthread_create_nesting_level for ignoring mutex activity. */
+      HG_(thread_enter_pthread_create)(thr);
+   }
+}
+
+static
+void evh__HG_RTLD_BIND_CLEAR(ThreadId tid, Int flags)
+{
+   if (SHOW_EVENTS >= 1)
+      VG_(printf)("evh__HG_RTLD_BIND_CLEAR"
+                  "(tid=%d, flags=%d)\n",
+                  (Int)tid, flags);
+
+   Thread *thr = map_threads_maybe_lookup(tid);
+   tl_assert(thr != NULL);
+
+   Int bindflag = (flags & VKI_THR_FLG_RTLD);
+   if ((thr->bind_guard_flag & bindflag) != 0) {
+      thr->bind_guard_flag &= ~bindflag;
+      HG_(thread_leave_synchr)(thr);
+      HG_(thread_leave_pthread_create)(thr);
+   }
+}
+#endif /* VGO_solaris */
+
+
 /*--------------------------------------------------------------*/
 /*--- Lock acquisition order monitoring                      ---*/
 /*--------------------------------------------------------------*/
@@ -4485,6 +4609,8 @@ static Bool is_in_dynamic_linker_shared_object( Addr ga )
    if (VG_STREQ(soname, VG_U_LD_LINUX_ARMHF_SO_3))  return True;
 #  elif defined(VGO_darwin)
    if (VG_STREQ(soname, VG_U_DYLD)) return True;
+#  elif defined(VGO_solaris)
+   if (VG_STREQ(soname, VG_U_LD_SO_1)) return True;
 #  else
 #    error "Unsupported OS"
 #  endif
@@ -4983,6 +5109,15 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
          VG_(printf)("XXXX: bind pthread_t %p to Thread* %p\n",
                      (void*)args[1], (void*)my_thr );
          VG_(addToFM)( map_pthread_t_to_Thread, (UWord)args[1], (UWord)my_thr );
+
+         if (my_thr->coretid != 1) {
+            /* FIXME: hardwires assumption about identity of the root thread. */
+            if (HG_(clo_ignore_thread_creation)) {
+               HG_(thread_leave_pthread_create)(my_thr);
+               HG_(thread_leave_synchr)(my_thr);
+               tl_assert(my_thr->synchr_nesting == 0);
+            }
+         }
          break;
       }
 
@@ -5092,32 +5227,48 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
          break;
 
       case _VG_USERREQ__HG_PTHREAD_MUTEX_UNLOCK_PRE:   // pth_mx_t*
-         evh__HG_PTHREAD_MUTEX_UNLOCK_PRE( tid, (void*)args[1] );
+         HG_(thread_enter_synchr)(map_threads_maybe_lookup(tid));
+         if (HG_(get_pthread_create_nesting_level)(tid) == 0)
+            evh__HG_PTHREAD_MUTEX_UNLOCK_PRE( tid, (void*)args[1] );
          break;
 
       case _VG_USERREQ__HG_PTHREAD_MUTEX_UNLOCK_POST:  // pth_mx_t*
-         evh__HG_PTHREAD_MUTEX_UNLOCK_POST( tid, (void*)args[1] );
+         if (HG_(get_pthread_create_nesting_level)(tid) == 0)
+            evh__HG_PTHREAD_MUTEX_UNLOCK_POST( tid, (void*)args[1] );
+         HG_(thread_leave_synchr)(map_threads_maybe_lookup(tid));
          break;
 
-      case _VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_PRE:     // pth_mx_t*, Word
-         evh__HG_PTHREAD_MUTEX_LOCK_PRE( tid, (void*)args[1], args[2] );
+      case _VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_PRE:     // pth_mx_t*
+         HG_(thread_enter_synchr)(map_threads_maybe_lookup(tid));
+         if (HG_(get_pthread_create_nesting_level)(tid) == 0)
+            evh__HG_PTHREAD_MUTEX_LOCK_PRE( tid, (void*)args[1], args[2] );
          break;
 
-      case _VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_POST:    // pth_mx_t*
-         evh__HG_PTHREAD_MUTEX_LOCK_POST( tid, (void*)args[1] );
+      case _VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_POST:    // pth_mx_t*, long
+         if ((args[2] == True) // lock actually taken
+             && (HG_(get_pthread_create_nesting_level)(tid) == 0))
+            evh__HG_PTHREAD_MUTEX_LOCK_POST( tid, (void*)args[1] );
+         HG_(thread_leave_synchr)(map_threads_maybe_lookup(tid));
          break;
 
       /* This thread is about to do pthread_cond_signal on the
          pthread_cond_t* in arg[1].  Ditto pthread_cond_broadcast. */
       case _VG_USERREQ__HG_PTHREAD_COND_SIGNAL_PRE:
       case _VG_USERREQ__HG_PTHREAD_COND_BROADCAST_PRE:
+         HG_(thread_enter_synchr)(map_threads_maybe_lookup(tid));
          evh__HG_PTHREAD_COND_SIGNAL_PRE( tid, (void*)args[1] );
+         break;
+
+      case _VG_USERREQ__HG_PTHREAD_COND_SIGNAL_POST:
+      case _VG_USERREQ__HG_PTHREAD_COND_BROADCAST_POST:
+         HG_(thread_leave_synchr)(map_threads_maybe_lookup(tid));
          break;
 
       /* Entry into pthread_cond_wait, cond=arg[1], mutex=arg[2].
          Returns a flag indicating whether or not the mutex is believed to be
          valid for this operation. */
       case _VG_USERREQ__HG_PTHREAD_COND_WAIT_PRE: {
+         HG_(thread_enter_synchr)(map_threads_maybe_lookup(tid));
          Bool mutex_is_valid
             = evh__HG_PTHREAD_COND_WAIT_PRE( tid, (void*)args[1], 
                                                   (void*)args[2] );
@@ -5137,12 +5288,14 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
          evh__HG_PTHREAD_COND_DESTROY_PRE( tid, (void*)args[1], args[2] != 0 );
          break;
 
-      /* Thread successfully completed pthread_cond_wait, cond=arg[1],
-         mutex=arg[2] */
+      /* Thread completed pthread_cond_wait, cond=arg[1],
+         mutex=arg[2], timeout=arg[3], successful=arg[4] */
       case _VG_USERREQ__HG_PTHREAD_COND_WAIT_POST:
-         evh__HG_PTHREAD_COND_WAIT_POST( tid,
-                                         (void*)args[1], (void*)args[2],
-                                         (Bool)args[3] );
+         if (args[4] == True)
+            evh__HG_PTHREAD_COND_WAIT_POST( tid,
+                                            (void*)args[1], (void*)args[2],
+                                            (Bool)args[3] );
+         HG_(thread_leave_synchr)(map_threads_maybe_lookup(tid));
          break;
 
       case _VG_USERREQ__HG_PTHREAD_RWLOCK_INIT_POST:
@@ -5155,21 +5308,30 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
 
       /* rwlock=arg[1], isW=arg[2], isTryLock=arg[3] */
       case _VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_PRE:
-         evh__HG_PTHREAD_RWLOCK_LOCK_PRE( tid, (void*)args[1],
-                                               args[2], args[3] );
+         HG_(thread_enter_synchr)(map_threads_maybe_lookup(tid));
+         if (HG_(get_pthread_create_nesting_level)(tid) == 0)
+            evh__HG_PTHREAD_RWLOCK_LOCK_PRE( tid, (void*)args[1],
+                                             args[2], args[3] );
          break;
 
-      /* rwlock=arg[1], isW=arg[2] */
+      /* rwlock=arg[1], isW=arg[2], tookLock=arg[3] */
       case _VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST:
-         evh__HG_PTHREAD_RWLOCK_LOCK_POST( tid, (void*)args[1], args[2] );
+         if ((args[3] == True)
+             && (HG_(get_pthread_create_nesting_level)(tid) == 0))
+            evh__HG_PTHREAD_RWLOCK_LOCK_POST( tid, (void*)args[1], args[2] );
+         HG_(thread_leave_synchr)(map_threads_maybe_lookup(tid));
          break;
 
       case _VG_USERREQ__HG_PTHREAD_RWLOCK_UNLOCK_PRE:
-         evh__HG_PTHREAD_RWLOCK_UNLOCK_PRE( tid, (void*)args[1] );
+         HG_(thread_enter_synchr)(map_threads_maybe_lookup(tid));
+         if (HG_(get_pthread_create_nesting_level)(tid) == 0)
+            evh__HG_PTHREAD_RWLOCK_UNLOCK_PRE( tid, (void*)args[1] );
          break;
 
       case _VG_USERREQ__HG_PTHREAD_RWLOCK_UNLOCK_POST:
-         evh__HG_PTHREAD_RWLOCK_UNLOCK_POST( tid, (void*)args[1] );
+         if (HG_(get_pthread_create_nesting_level)(tid) == 0)
+            evh__HG_PTHREAD_RWLOCK_UNLOCK_POST( tid, (void*)args[1] );
+         HG_(thread_leave_synchr)(map_threads_maybe_lookup(tid));
          break;
 
       case _VG_USERREQ__HG_POSIX_SEM_INIT_POST: /* sem_t*, unsigned long */
@@ -5181,11 +5343,22 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
          break;
 
       case _VG_USERREQ__HG_POSIX_SEM_POST_PRE: /* sem_t* */
+         HG_(thread_enter_synchr)(map_threads_maybe_lookup(tid));
          evh__HG_POSIX_SEM_POST_PRE( tid, (void*)args[1] );
          break;
 
-      case _VG_USERREQ__HG_POSIX_SEM_WAIT_POST: /* sem_t* */
-         evh__HG_POSIX_SEM_WAIT_POST( tid, (void*)args[1] );
+      case _VG_USERREQ__HG_POSIX_SEM_POST_POST: /* sem_t* */
+         HG_(thread_leave_synchr)(map_threads_maybe_lookup(tid));
+         break;
+
+      case _VG_USERREQ__HG_POSIX_SEM_WAIT_PRE: /* sem_t* */
+         HG_(thread_enter_synchr)(map_threads_maybe_lookup(tid));
+         break;
+
+      case _VG_USERREQ__HG_POSIX_SEM_WAIT_POST: /* sem_t*, long tookLock */
+         if (args[2] == True)
+            evh__HG_POSIX_SEM_WAIT_POST( tid, (void*)args[1] );
+         HG_(thread_leave_synchr)(map_threads_maybe_lookup(tid));
          break;
 
       case _VG_USERREQ__HG_PTHREAD_BARRIER_INIT_PRE:
@@ -5273,6 +5446,58 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
          return handled;
       }
 
+      case _VG_USERREQ__HG_PTHREAD_CREATE_BEGIN: {
+         Thread *thr = map_threads_maybe_lookup(tid);
+         if (HG_(clo_ignore_thread_creation)) {
+            HG_(thread_enter_pthread_create)(thr);
+            HG_(thread_enter_synchr)(thr);
+         }
+         break;
+      }
+
+      case _VG_USERREQ__HG_PTHREAD_CREATE_END: {
+         Thread *thr = map_threads_maybe_lookup(tid);
+         if (HG_(clo_ignore_thread_creation)) {
+            HG_(thread_leave_pthread_create)(thr);
+            HG_(thread_leave_synchr)(thr);
+         }
+         break;
+      }
+
+      case _VG_USERREQ__HG_PTHREAD_MUTEX_ACQUIRE_PRE: // pth_mx_t*, long tryLock
+         evh__HG_PTHREAD_MUTEX_LOCK_PRE( tid, (void*)args[1], args[2] );
+         break;
+
+      case _VG_USERREQ__HG_PTHREAD_MUTEX_ACQUIRE_POST:    // pth_mx_t*
+         evh__HG_PTHREAD_MUTEX_LOCK_POST( tid, (void*)args[1] );
+         break;
+
+      case _VG_USERREQ__HG_PTHREAD_RWLOCK_ACQUIRED:       // void*, long isW
+         evh__HG_PTHREAD_RWLOCK_LOCK_POST( tid, (void*)args[1], args[2] );
+         break;
+
+      case _VG_USERREQ__HG_PTHREAD_RWLOCK_RELEASED:       // void*
+         evh__HG_PTHREAD_RWLOCK_UNLOCK_PRE( tid, (void*)args[1] );
+         break;
+
+      case _VG_USERREQ__HG_POSIX_SEM_RELEASED: /* sem_t* */
+         evh__HG_POSIX_SEM_POST_PRE( tid, (void*)args[1] );
+         break;
+
+      case _VG_USERREQ__HG_POSIX_SEM_ACQUIRED: /* sem_t* */
+         evh__HG_POSIX_SEM_WAIT_POST( tid, (void*)args[1] );
+         break;
+
+#if defined(VGO_solaris)
+      case _VG_USERREQ__HG_RTLD_BIND_GUARD:
+         evh__HG_RTLD_BIND_GUARD(tid, args[1]);
+         break;
+
+      case _VG_USERREQ__HG_RTLD_BIND_CLEAR:
+         evh__HG_RTLD_BIND_CLEAR(tid, args[1]);
+         break;
+#endif /* VGO_solaris */
+
       default:
          /* Unhandled Helgrind client request! */
          tl_assert2(0, "unhandled Helgrind client request 0x%lx",
@@ -5339,6 +5564,8 @@ static Bool hg_process_cmd_line_option ( const HChar* arg )
 
    else if VG_BOOL_CLO(arg, "--check-stack-refs",
                             HG_(clo_check_stack_refs)) {}
+   else if VG_BOOL_CLO(arg, "--ignore-thread-creation",
+                            HG_(clo_ignore_thread_creation)) {}
 
    else 
       return VG_(replacement_malloc_process_cmd_line_option)(arg);
@@ -5358,6 +5585,9 @@ static void hg_print_usage ( void )
 "    --conflict-cache-size=N   size of 'full' history cache [2000000]\n"
 "    --check-stack-refs=no|yes race-check reads and writes on the\n"
 "                              main stack and thread stacks? [yes]\n"
+"    --ignore-thread-creation=yes|no Ignore activities during thread\n"
+"                              creation [%s]\n",
+HG_(clo_ignore_thread_creation) ? "yes" : "no"
    );
 }
 

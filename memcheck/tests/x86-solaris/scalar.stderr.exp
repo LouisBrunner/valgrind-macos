@@ -1,0 +1,225 @@
+---------------------------------------------------------
+ 67:           SYS_fstatat64 4s 2m
+---------------------------------------------------------
+Syscall param fstatat64(fildes) contains uninitialised byte(s)
+   ...
+
+Syscall param fstatat64(path) contains uninitialised byte(s)
+   ...
+
+Syscall param fstatat64(buf) contains uninitialised byte(s)
+   ...
+
+Syscall param fstatat64(flag) contains uninitialised byte(s)
+   ...
+
+Syscall param fstatat64(path) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param fstatat64(buf) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 69:            SYS_openat64 (3-args) 3s 1m
+---------------------------------------------------------
+Syscall param openat64(fildes) contains uninitialised byte(s)
+   ...
+
+Syscall param openat64(filename) contains uninitialised byte(s)
+   ...
+
+Syscall param openat64(flags) contains uninitialised byte(s)
+   ...
+
+Syscall param openat64(filename) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 69:            SYS_openat64 (4-args) 4s 1m
+---------------------------------------------------------
+Syscall param openat64(fildes) contains uninitialised byte(s)
+   ...
+
+Syscall param openat64(filename) contains uninitialised byte(s)
+   ...
+
+Syscall param openat64(flags) contains uninitialised byte(s)
+   ...
+
+Syscall param openat64(mode) contains uninitialised byte(s)
+   ...
+
+Syscall param openat64(filename) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+175:              SYS_llseek 3s 0m
+---------------------------------------------------------
+Syscall param llseek(fildes) contains uninitialised byte(s)
+   ...
+
+Syscall param llseek(offset_low) contains uninitialised byte(s)
+   ...
+
+Syscall param llseek(offset_high) contains uninitialised byte(s)
+   ...
+
+---------------------------------------------------------
+213:          SYS_getdents64 3s 1m
+---------------------------------------------------------
+Syscall param getdents64(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param getdents64(dirp) contains uninitialised byte(s)
+   ...
+
+Syscall param getdents64(count) contains uninitialised byte(s)
+   ...
+
+Syscall param getdents64(dirp) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+214:              SYS_mmap64 7s 0m
+---------------------------------------------------------
+Syscall param mmap(start) contains uninitialised byte(s)
+   ...
+
+Syscall param mmap(length) contains uninitialised byte(s)
+   ...
+
+Syscall param mmap(prot) contains uninitialised byte(s)
+   ...
+
+Syscall param mmap(flags) contains uninitialised byte(s)
+   ...
+
+Syscall param mmap(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param mmap(offlo) contains uninitialised byte(s)
+   ...
+
+Syscall param mmap(offhi) contains uninitialised byte(s)
+   ...
+
+---------------------------------------------------------
+218:           SYS_statvfs64 2s 2m
+---------------------------------------------------------
+Syscall param statvfs64(path) contains uninitialised byte(s)
+   ...
+
+Syscall param statvfs64(buf) contains uninitialised byte(s)
+   ...
+
+Syscall param statvfs64(path) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param statvfs64(buf) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+218:           SYS_statvfs64 4s 0m
+---------------------------------------------------------
+Syscall param statvfs64(path) contains uninitialised byte(s)
+   ...
+
+Syscall param statvfs64(buf) contains uninitialised byte(s)
+   ...
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+---------------------------------------------------------
+219:          SYS_fstatvfs64 2s 1m
+---------------------------------------------------------
+Syscall param fstatvfs64(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param fstatvfs64(buf) contains uninitialised byte(s)
+   ...
+
+Syscall param fstatvfs64(buf) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+220:         SYS_setrlimit64 2s 1m
+---------------------------------------------------------
+Syscall param setrlimit64(resource) contains uninitialised byte(s)
+   ...
+
+Syscall param setrlimit64(rlim) contains uninitialised byte(s)
+   ...
+
+Syscall param setrlimit64(rlim) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+221:         SYS_getrlimit64 2s 1m
+---------------------------------------------------------
+Syscall param getrlimit64(resource) contains uninitialised byte(s)
+   ...
+
+Syscall param getrlimit64(rlim) contains uninitialised byte(s)
+   ...
+
+Syscall param getrlimit64(rlim) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+222:             SYS_pread64 5s 1m
+---------------------------------------------------------
+Syscall param pread64(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param pread64(buf) contains uninitialised byte(s)
+   ...
+
+Syscall param pread64(count) contains uninitialised byte(s)
+   ...
+
+Syscall param pread64(offset_1) contains uninitialised byte(s)
+   ...
+
+Syscall param pread64(offset_2) contains uninitialised byte(s)
+   ...
+
+Syscall param pread64(buf) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+223:            SYS_pwrite64 5s 1m
+---------------------------------------------------------
+Syscall param pwrite64(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param pwrite64(buf) contains uninitialised byte(s)
+   ...
+
+Syscall param pwrite64(count) contains uninitialised byte(s)
+   ...
+
+Syscall param pwrite64(offset_1) contains uninitialised byte(s)
+   ...
+
+Syscall param pwrite64(offset_2) contains uninitialised byte(s)
+   ...
+
+Syscall param pwrite64(buf) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+

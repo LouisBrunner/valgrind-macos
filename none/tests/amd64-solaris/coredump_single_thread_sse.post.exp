@@ -1,0 +1,23 @@
+---Status---
+debugging core file of coredump_single (64-bit) from ...
+initial argv: ./coredump_single_thread_sse
+threading model: native threads
+status: process terminated by SIGSEGV (Segmentation Fault), addr=........
+
+---SSE Registers---
+%xmm0  0x1032547698cadbfef0debc9a78563412
+%xmm1  0xcafe6794badcfe214365870989674523
+%xmm2  0x54676550bafabafadecedececdabcdab
+%xmm3  0x353d3a3720212725154b1b1d08060503
+%xmm4  0x98cadbfe7856341210325476f0debc9a
+%xmm5  0x43658709badcfe2189674523cafe6794
+%xmm6  0xbafabafacdabcdabdecedece54676550
+%xmm7  0x2021272508060503154b1b1d353d3a37
+%xmm8  0x8ab135bc296692dcdd8396005eb11524
+%xmm9  0x226834d530d3f7c6959a8ebd4b5072c6
+%xmm10 0xbdf31a8ab5c8db03c7d15cf4b6cad1c8
+%xmm11 0x9d5c4ba3e5fa08352175d7a2526d6010
+%xmm12 0x6e8063f56f00222c7232bcb0be2187ab
+%xmm13 0x0a0755e9a620c325f03b9fefab4a333d
+%xmm14 0x04069c6aba536a25dfd2fda5b8a12978
+%xmm15 0x2a67ef939534a7e1242ddd049b9e3936

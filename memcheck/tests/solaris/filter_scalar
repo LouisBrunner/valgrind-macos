@@ -1,0 +1,15 @@
+#! /bin/sh
+
+# 'unlinkat' syscall number differs between Illumos and Solaris
+sed "s/[0-9]*:            SYS_unlinkat/xx:            SYS_unlinkat/" |
+
+# Filter out "in frame #x, created by" lines as they differ between x86/amd64.
+# on x86:   in frame #0, created by syscall (???)
+# on amd64: in frame #1, created by *function* (scalar.c:272)
+sed '/in frame #., created by/d' |
+
+./filter_stderr "$@" |
+
+# And finally remove temporary line with frame #0 present to unify
+# stack traces between x86 and amd64.
+sed '/at 0x........: syscall (in \/...libc...)/d'

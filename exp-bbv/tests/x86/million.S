@@ -20,14 +20,17 @@ test_loop:
 	#                 in arc/x86/include/asm/unistd_32.h on Linux
 	# disassemble on OSX otool -tV
 exit:
-#ifdef VGO_darwin
-	pushl   $0			# we return 0
 	xor	%eax,%eax
 	inc	%eax	 		# put exit syscall number (1) in eax
-	int     $0x80             	# and exit
-#else	
+#if defined(VGO_darwin)
+	pushl	$0			# we return 0
+	int     $0x80			# and exit
+#elif defined(VGO_linux)
 	xor     %ebx,%ebx		# we return 0
-	xor	%eax,%eax
-	inc	%eax	 		# put exit syscall number (1) in eax
-	int     $0x80             	# and exit
+	int     $0x80			# and exit
+#elif defined(VGO_solaris)
+	pushl	$0			# we return 0
+	int     $0x91			# and exit
+#else
+#  error "Unknown OS"
 #endif

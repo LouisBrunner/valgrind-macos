@@ -36,6 +36,8 @@ TOOL_LDFLAGS_COMMON_LINUX = \
 	-static -nodefaultlibs -nostartfiles -u _start @FLAG_NO_BUILD_ID@
 TOOL_LDFLAGS_COMMON_DARWIN = \
 	-nodefaultlibs -nostartfiles -Wl,-u,__start -Wl,-e,__start
+TOOL_LDFLAGS_COMMON_SOLARIS = \
+	-static -nodefaultlibs -nostartfiles -u _start
 
 TOOL_LDFLAGS_X86_LINUX = \
 	$(TOOL_LDFLAGS_COMMON_LINUX) @FLAG_M32@
@@ -78,6 +80,12 @@ TOOL_LDFLAGS_MIPS64_LINUX = \
 
 TOOL_LDFLAGS_TILEGX_LINUX = \
 	$(TOOL_LDFLAGS_COMMON_LINUX) @FLAG_M64@
+
+TOOL_LDFLAGS_X86_SOLARIS = \
+	$(TOOL_LDFLAGS_COMMON_SOLARIS) @FLAG_M32@
+
+TOOL_LDFLAGS_AMD64_SOLARIS = \
+	$(TOOL_LDFLAGS_COMMON_SOLARIS) @FLAG_M64@
 
 # On Android we must ask for non-executable stack, not sure why.
 if VGCONF_PLATFORMS_INCLUDE_ARM_LINUX
@@ -138,6 +146,12 @@ LIBREPLACEMALLOC_MIPS64_LINUX = \
 LIBREPLACEMALLOC_TILEGX_LINUX = \
 	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-tilegx-linux.a
 
+LIBREPLACEMALLOC_X86_SOLARIS = \
+	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-x86-solaris.a
+
+LIBREPLACEMALLOC_AMD64_SOLARIS = \
+	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-amd64-solaris.a
+
 LIBREPLACEMALLOC_LDFLAGS_X86_LINUX = \
 	-Wl,--whole-archive \
 	$(LIBREPLACEMALLOC_X86_LINUX) \
@@ -197,6 +211,16 @@ LIBREPLACEMALLOC_LDFLAGS_MIPS64_LINUX = \
 LIBREPLACEMALLOC_LDFLAGS_TILEGX_LINUX = \
 	-Wl,--whole-archive \
 	$(LIBREPLACEMALLOC_TILEGX_LINUX) \
+	-Wl,--no-whole-archive
+
+LIBREPLACEMALLOC_LDFLAGS_X86_SOLARIS = \
+	-Wl,--whole-archive \
+	$(LIBREPLACEMALLOC_X86_SOLARIS) \
+	-Wl,--no-whole-archive
+
+LIBREPLACEMALLOC_LDFLAGS_AMD64_SOLARIS = \
+	-Wl,--whole-archive \
+	$(LIBREPLACEMALLOC_AMD64_SOLARIS) \
 	-Wl,--no-whole-archive
 
 #----------------------------------------------------------------------------

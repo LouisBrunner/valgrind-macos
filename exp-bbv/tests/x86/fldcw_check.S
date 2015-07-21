@@ -99,26 +99,39 @@ big_loop:
 	
 print_error:
 	mov 	$4,%eax			# write syscall
-#ifdef VGO_darwin
-	pushl	$1
-	pushl	$error
+#if defined(VGO_darwin)
 	pushl	$22
-#else	
+	pushl	$error
+	pushl	$1
+	int 	$0x80
+#elif defined(VGO_linux)
 	mov	$1,%ebx			# stdout
 	mov	$error,%ecx		# string	
 	mov 	$22,%edx		# length of string
-#endif	
 	int 	$0x80
-	
+#elif defined(VGO_solaris)
+	pushl	$22
+	pushl	$error
+	pushl	$1
+	int 	$0x91
+#else
+#  error "Unknown OS"
+#endif
+
 exit:
-#ifdef VGO_darwin
-	pushl	result
-#else	
-	movl	result, %ebx		# load converted value
-#endif	
 	movl	$1,	%eax		# SYSCALL_EXIT
+#if defined(VGO_darwin)
+	pushl	result
 	int	$0x80
-	
+#elif defined(VGO_linux)
+	movl	result, %ebx		# load converted value
+	int	$0x80
+#elif defined(VGO_solaris)
+	pushl	result
+	int	$0x91
+#else
+#  error "Unknown OS"
+#endif
 
 
 .data
@@ -127,4 +140,4 @@ cw:  	.long	0
 result: .long	0
 three:	.long	0			# a floating point 3.0
 	.long	1074266112
-error:	.asciz  "Error!  Wrong result!\n"
+error:	.ascii  "Error!  Wrong result!\n\0"

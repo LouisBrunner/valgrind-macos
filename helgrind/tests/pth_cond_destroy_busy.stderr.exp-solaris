@@ -1,0 +1,16 @@
+
+---Thread-Announcement------------------------------------------
+
+Thread #x is the program's root thread
+
+----------------------------------------------------------------
+
+Thread #x: pthread_cond_destroy: destruction of condition variable being waited upon
+   at 0x........: pthread_cond_destroy_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_cond_destroy@* (hg_intercepts.c:...)
+   by 0x........: main (pth_cond_destroy_busy.c:52)
+
+First pthread_cond_destroy() call returned success.
+Second pthread_cond_destroy() call returned success.
+
+ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

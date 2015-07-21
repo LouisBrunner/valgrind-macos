@@ -1,0 +1,545 @@
+---------------------------------------------------------
+ 54:               SYS_ioctl (POOL_STATUSQ) 3s 1m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(POOL_STATUSQ) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (MNTIOC_GETMNTANY) 3s 1m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(MNTIOC_GETMNTANY) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (MNTIOC_GETMNTANY) 4s 2m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(MNTIOC_GETMNTANY) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+Syscall param ioctl(MNTIOC_GETMNTANY, embuf->mbuf_emp) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param ioctl(MNTIOC_GETMNTANY, embuf->mbuf_buf) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (MNTIOC_GETMNTANY) 5s 6m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(MNTIOC_GETMNTANY) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+Syscall param ioctl(MNTIOC_GETMNTANY, embuf->mbuf_emp) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+Syscall param ioctl(MNTIOC_GETMNTANY, embuf->mbuf_buf) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param ioctl(MNTIOC_GETMNTANY, mnt->mnt_special) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param ioctl(MNTIOC_GETMNTANY, mnt->mnt_mountp) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param ioctl(MNTIOC_GETMNTANY, mnt->mnt_fstype) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param ioctl(MNTIOC_GETMNTANY, mnt->mnt_mntopts) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param ioctl(MNTIOC_GETMNTANY, mnt->mnt_time) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (TCGETA) 3s 1m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(TCGETA) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (TCGETS) 3s 1m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(TCGETS) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (TCSETS) 3s 1m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(TCSETS) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (TCSETSW) 3s 1m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(TCSETSW) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (TCSETSF) 3s 1m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(TCSETSF) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (TIOCGWINSZ) 3s 1m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(TIOCGWINSZ) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (TIOCSWINSZ) 3s 1m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(TIOCSWINSZ) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (TIOCGPGRP) 3s 1m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(TIOCGPGRP) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (TIOCSPGRP) 3s 1m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(TIOCSPGRP) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (TIOCGSID) 3s 1m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(TIOCGSID) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (TIOCNOTTY) 2s 0m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (TIOCSCTTY) 2s 0m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (I_PUSH) 3s 1m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(I_PUSH) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (I_STR) 3s 1m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(I_STR) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (I_STR) 4s 1m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(I_STR) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+Syscall param ioctl(I_STR, strioctl->ic_dp) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (I_PEEK) 3s 7m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(I_PEEK, strpeek->ctlbuf.maxlen) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param ioctl(I_PEEK, strpeek->ctlbuf.len) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param ioctl(I_PEEK, strpeek->ctlbuf.buf) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param ioctl(I_PEEK, strpeek->databuf.maxlen) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param ioctl(I_PEEK, strpeek->databuf.len) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param ioctl(I_PEEK, strpeek->databuf.buf) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param ioctl(I_PEEK, strpeek->flags) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (I_PEEK) 3s 7m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(I_PEEK, strpeek->ctlbuf.maxlen) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+Syscall param ioctl(I_PEEK, strpeek->ctlbuf.buf) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+Syscall param ioctl(I_PEEK, strpeek->databuf.maxlen) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+Syscall param ioctl(I_PEEK, strpeek->databuf.buf) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+Syscall param ioctl(I_PEEK, strpeek->flags) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+
+More than 100 errors detected.  Subsequent errors
+will still be recorded, but in less detail than before.
+Syscall param ioctl(I_PEEK, strpeek->ctlbuf.buf) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param ioctl(I_PEEK, strpeek->databuf.buf) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (I_CANPUT) 3s 0m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (SIOCGLIFNUM) 4s 0m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(SIOCGLIFNUM, lifn->lifn_family) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+Syscall param ioctl(SIOCGLIFNUM, lifn->lifn_flags) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (FIOSETOWN) 4s 0m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(FIOSETOWN) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (FIOGETOWN) 3s 1m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(FIOGETOWN) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (CRYPTO_GET_PROVIDER_LIST) 3s 1m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(CRYPTO_GET_PROVIDER_LIST, pl->pl_count) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (CRYPTO_GET_PROVIDER_LIST) 4s 0m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(CRYPTO_GET_PROVIDER_LIST, pl->pl_count) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (DTRACEHIOC_REMOVE) 3s 0m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (DTRACEHIOC_ADDDOF) 6s 0m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(DTRACEHIOC_ADDDOF, dh->dofhp_mod) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+Syscall param ioctl(DTRACEHIOC_ADDDOF, dh->dofhp_addr points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+Syscall param ioctl(DTRACEHIOC_ADDDOF, dh->dofhp_dof points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+

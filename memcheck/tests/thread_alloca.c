@@ -66,7 +66,7 @@ int main(int argc, char **argv, char** envp)
        assert(i == j+2);
        sprintf (n, "%d",  atoi(argv[1]) - 1);
        // system ("env | wc");
-       execle(argv[0], argv[0], n, NULL, new_env);
+       execle(argv[0], argv[0], n, (char *) NULL, new_env);
        assert(0);
     } else
        return 0;

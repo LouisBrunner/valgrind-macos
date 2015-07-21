@@ -1,0 +1,8 @@
+#! /bin/sh
+
+# unify utimesys() and utimensat() syscall names
+sed "s/utimesys/utimeXXX/" |
+sed "s/utimensat/utimeXXX/" |
+
+./filter_stderr "$@"
+

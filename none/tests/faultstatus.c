@@ -29,6 +29,17 @@
 #  define DIVISION_BY_ZERO_SI_CODE      FPE_INTDIV
 #endif
 
+/* Accessing non-mapped virtual address results in SIGBUS
+ * with si_code equal to BUS_ADRERR on Linux, whereas in SIGBUS
+ * with si_code equal to BUS_OBJERR on Solaris. On Solaris,
+ * BUS_ADRERR is used for bus time out while BUS_OBJERR is translated
+ * from underlying codes FC_OBJERR (x86) or ASYNC_BERR (sparc).
+ */
+#if defined(VGO_solaris)
+#  define BUS_ERROR_SI_CODE  BUS_OBJERR
+#else
+#  define BUS_ERROR_SI_CODE  BUS_ADRERR
+#endif
 
 struct test {
 	void (*test)(void);
@@ -155,7 +166,7 @@ int main()
 #define T(n, sig, code, addr) { test##n, sig, code, addr }
 			T(1, SIGSEGV,	SEGV_MAPERR,	BADADDR),
 			T(2, SIGSEGV,	SEGV_ACCERR,	mapping),
-			T(3, SIGBUS,	BUS_ADRERR,	&mapping[FILESIZE+10]),
+			T(3, SIGBUS,	BUS_ERROR_SI_CODE, &mapping[FILESIZE+10]),
 			T(4, SIGFPE,    DIVISION_BY_ZERO_SI_CODE, 0),
 #undef T
 		};

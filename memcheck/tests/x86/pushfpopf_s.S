@@ -1,13 +1,13 @@
 #include "tests/asm.h"
 
-#if defined(VGO_linux)
+#if defined(VGO_linux) || defined(VGO_solaris)
 	.version	"01.01"
 #endif
 gcc2_compiled.:
 .text
 	.align 4
 .globl VG_SYM_ASM(fooble)
-#if defined(VGO_linux)
+#if defined(VGO_linux) || defined(VGO_solaris)
 	.type	VG_SYM_ASM(fooble),@function
 #endif
 VG_SYM_ASM(fooble):
@@ -42,7 +42,7 @@ theend:
 	popl	%ebp
 	ret
 .Lfe1:
-#if defined(VGO_linux)
+#if defined(VGO_linux) || defined(VGO_solaris)
 	.size	VG_SYM_ASM(fooble),.Lfe1-VG_SYM_ASM(fooble)
 #endif
 	.ident	"GCC: (GNU) 2.96 20000731 (Red Hat Linux 7.1 2.96-98)"

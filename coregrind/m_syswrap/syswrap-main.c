@@ -89,6 +89,14 @@
    amd64-darwin.  Apparently 0(%esp) is some kind of return address
    (perhaps for syscalls done with "sysenter"?)  I don't think it is
    relevant for syscalls done with "int $0x80/1/2".
+
+   SOLARIS:
+   x86    eax +4   +8   +12  +16  +20  +24  +28  +32  edx:eax, eflags.c
+   amd64  rax rdi  rsi  rdx  r10  r8   r9   +8   +16  rdx:rax, rflags.c
+
+   "+N" denotes "in memory at N(%esp)". Solaris also supports fasttrap
+   syscalls. Fasttraps do not take any parameters (except of the sysno in eax)
+   and never fail (if the sysno is valid).
 */
 
 /* This is the top level of the system-call handler module.  All
@@ -171,6 +179,11 @@
 
      s390x:  Success(N) ==>  r2 = N
              Fail(N)    ==>  r2 = -N
+
+     Solaris:
+     x86:    Success(N) ==>  edx:eax = N, cc = 0
+             Fail(N)    ==>      eax = N, cc = 1
+     Same applies for fasttraps except they never fail.
 
    * The post wrapper is called if:
 
@@ -297,6 +310,18 @@ UWord ML_(do_syscall_for_client_mdep_WRK)( Word syscallno,
                                            const vki_sigset_t *syscall_mask,
                                            const vki_sigset_t *restore_mask,
                                            Word sigsetSzB ); /* unused */
+#elif defined(VGO_solaris)
+extern
+UWord ML_(do_syscall_for_client_WRK)( Word syscallno,
+                                      void* guest_state,
+                                      const vki_sigset_t *syscall_mask,
+                                      const vki_sigset_t *restore_mask,
+                                      UChar *cflag);
+UWord ML_(do_syscall_for_client_dret_WRK)( Word syscallno,
+                                           void* guest_state,
+                                           const vki_sigset_t *syscall_mask,
+                                           const vki_sigset_t *restore_mask,
+                                           UChar *cflag);
 #else
 #  error "Unknown OS"
 #endif
@@ -339,6 +364,35 @@ void do_syscall_for_client ( Int syscallno,
          /*NOTREACHED*/
          break;
    }
+#  elif defined(VGO_solaris)
+   UChar cflag;
+
+   /* Fasttraps or anything else cannot go through this path. */
+   vg_assert(VG_SOLARIS_SYSNO_CLASS(syscallno)
+             == VG_SOLARIS_SYSCALL_CLASS_CLASSIC);
+
+   /* If the syscall is a door_return call then it has to be handled very
+      differently. */
+   if (tst->os_state.in_door_return)
+      err = ML_(do_syscall_for_client_dret_WRK)(
+                syscallno, &tst->arch.vex,
+                syscall_mask, &saved, &cflag
+            );
+   else
+      err = ML_(do_syscall_for_client_WRK)(
+                syscallno, &tst->arch.vex,
+                syscall_mask, &saved, &cflag
+            );
+
+   /* Save the carry flag. */
+#  if defined(VGP_x86_solaris)
+   LibVEX_GuestX86_put_eflag_c(cflag, &tst->arch.vex);
+#  elif defined(VGP_amd64_solaris)
+   LibVEX_GuestAMD64_put_rflag_c(cflag, &tst->arch.vex);
+#  else
+#    error "Unknown platform"
+#  endif
+
 #  else
 #    error "Unknown OS"
 #  endif
@@ -662,6 +716,69 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
    canonical->arg7  = 0;
    canonical->arg8  = 0;
 
+#elif defined(VGP_x86_solaris)
+   VexGuestX86State* gst = (VexGuestX86State*)gst_vanilla;
+   UWord *stack = (UWord *)gst->guest_ESP;
+   canonical->sysno = gst->guest_EAX;
+   /* stack[0] is a return address. */
+   canonical->arg1  = stack[1];
+   canonical->arg2  = stack[2];
+   canonical->arg3  = stack[3];
+   canonical->arg4  = stack[4];
+   canonical->arg5  = stack[5];
+   canonical->arg6  = stack[6];
+   canonical->arg7  = stack[7];
+   canonical->arg8  = stack[8];
+
+   switch (trc) {
+   case VEX_TRC_JMP_SYS_INT145:
+   case VEX_TRC_JMP_SYS_SYSENTER:
+   case VEX_TRC_JMP_SYS_SYSCALL:
+   /* These three are not actually valid syscall instructions on Solaris.
+      Pretend for now that we handle them as normal syscalls. */
+   case VEX_TRC_JMP_SYS_INT128:
+   case VEX_TRC_JMP_SYS_INT129:
+   case VEX_TRC_JMP_SYS_INT130:
+      /* int $0x91, sysenter, syscall = normal syscall */
+      break;
+   case VEX_TRC_JMP_SYS_INT210:
+      /* int $0xD2 = fasttrap */
+      canonical->sysno
+         = VG_SOLARIS_SYSCALL_CONSTRUCT_FASTTRAP(canonical->sysno);
+      break;
+   default:
+      vg_assert(0);
+      break;
+   }
+
+#elif defined(VGP_amd64_solaris)
+   VexGuestAMD64State* gst = (VexGuestAMD64State*)gst_vanilla;
+   UWord *stack = (UWord *)gst->guest_RSP;
+   canonical->sysno = gst->guest_RAX;
+   /* stack[0] is a return address. */
+   canonical->arg1 = gst->guest_RDI;
+   canonical->arg2 = gst->guest_RSI;
+   canonical->arg3 = gst->guest_RDX;
+   canonical->arg4 = gst->guest_R10;  /* Not RCX with syscall. */
+   canonical->arg5 = gst->guest_R8;
+   canonical->arg6 = gst->guest_R9;
+   canonical->arg7 = stack[1];
+   canonical->arg8 = stack[2];
+
+   switch (trc) {
+   case VEX_TRC_JMP_SYS_SYSCALL:
+      /* syscall = normal syscall */
+      break;
+   case VEX_TRC_JMP_SYS_INT210:
+      /* int $0xD2 = fasttrap */
+      canonical->sysno
+         = VG_SOLARIS_SYSCALL_CONSTRUCT_FASTTRAP(canonical->sysno);
+      break;
+   default:
+      vg_assert(0);
+      break;
+   }
+
 #else
 #  error "getSyscallArgsFromGuestState: unknown arch"
 #endif
@@ -817,6 +934,42 @@ void putSyscallArgsIntoGuestState ( /*IN*/ SyscallArgs*       canonical,
    gst->guest_r4 = canonical->arg5;
    gst->guest_r5 = canonical->arg6;
 
+#elif defined(VGP_x86_solaris)
+   VexGuestX86State* gst = (VexGuestX86State*)gst_vanilla;
+   UWord *stack = (UWord *)gst->guest_ESP;
+
+   /* Fasttraps or anything else cannot go through this way. */
+   vg_assert(VG_SOLARIS_SYSNO_CLASS(canonical->sysno)
+             == VG_SOLARIS_SYSCALL_CLASS_CLASSIC);
+   gst->guest_EAX = canonical->sysno;
+   /* stack[0] is a return address. */
+   stack[1] = canonical->arg1;
+   stack[2] = canonical->arg2;
+   stack[3] = canonical->arg3;
+   stack[4] = canonical->arg4;
+   stack[5] = canonical->arg5;
+   stack[6] = canonical->arg6;
+   stack[7] = canonical->arg7;
+   stack[8] = canonical->arg8;
+
+#elif defined(VGP_amd64_solaris)
+   VexGuestAMD64State* gst = (VexGuestAMD64State*)gst_vanilla;
+   UWord *stack = (UWord *)gst->guest_RSP;
+
+   /* Fasttraps or anything else cannot go through this way. */
+   vg_assert(VG_SOLARIS_SYSNO_CLASS(canonical->sysno)
+             == VG_SOLARIS_SYSCALL_CLASS_CLASSIC);
+   gst->guest_RAX = canonical->sysno;
+   /* stack[0] is a return address. */
+   gst->guest_RDI = canonical->arg1;
+   gst->guest_RSI = canonical->arg2;
+   gst->guest_RDX = canonical->arg3;
+   gst->guest_R10 = canonical->arg4;
+   gst->guest_R8  = canonical->arg5;
+   gst->guest_R9  = canonical->arg6;
+   stack[1] = canonical->arg7;
+   stack[2] = canonical->arg8;
+
 #else
 #  error "putSyscallArgsIntoGuestState: unknown arch"
 #endif
@@ -948,6 +1101,24 @@ void getSyscallStatusFromGuestState ( /*OUT*/SyscallStatus*     canonical,
 #  elif defined(VGP_tilegx_linux)
    VexGuestTILEGXState* gst = (VexGuestTILEGXState*)gst_vanilla;
    canonical->sres = VG_(mk_SysRes_tilegx_linux)( gst->guest_r0 );
+   canonical->what = SsComplete;
+
+#  elif defined(VGP_x86_solaris)
+   VexGuestX86State* gst = (VexGuestX86State*)gst_vanilla;
+   UInt carry = 1 & LibVEX_GuestX86_get_eflags(gst);
+
+   canonical->sres = VG_(mk_SysRes_x86_solaris)(carry ? True : False,
+                                                gst->guest_EAX,
+                                                carry ? 0 : gst->guest_EDX);
+   canonical->what = SsComplete;
+
+#  elif defined(VGP_amd64_solaris)
+   VexGuestAMD64State* gst = (VexGuestAMD64State*)gst_vanilla;
+   UInt carry = 1 & LibVEX_GuestAMD64_get_rflags(gst);
+
+   canonical->sres = VG_(mk_SysRes_amd64_solaris)(carry ? True : False,
+                                                  gst->guest_RAX,
+                                                  carry ? 0 : gst->guest_RDX);
    canonical->what = SsComplete;
 
 #  else
@@ -1175,6 +1346,60 @@ void putSyscallStatusIntoGuestState ( /*IN*/ ThreadId tid,
       gst->guest_r1 = 0;
    }
 
+#  elif defined(VGP_x86_solaris)
+   VexGuestX86State* gst = (VexGuestX86State*)gst_vanilla;
+   SysRes sres = canonical->sres;
+   vg_assert(canonical->what == SsComplete);
+
+   if (sr_isError(sres)) {
+      gst->guest_EAX = sr_Err(sres);
+      VG_TRACK(post_reg_write, Vg_CoreSysCall, tid, OFFSET_x86_EAX,
+               sizeof(UInt));
+      LibVEX_GuestX86_put_eflag_c(1, gst);
+   }
+   else {
+      gst->guest_EAX = sr_Res(sres);
+      VG_TRACK(post_reg_write, Vg_CoreSysCall, tid, OFFSET_x86_EAX,
+               sizeof(UInt));
+      gst->guest_EDX = sr_ResHI(sres);
+      VG_TRACK(post_reg_write, Vg_CoreSysCall, tid, OFFSET_x86_EDX,
+               sizeof(UInt));
+      LibVEX_GuestX86_put_eflag_c(0, gst);
+   }
+   /* Make CC_DEP1 and CC_DEP2 defined.  This is inaccurate because it makes
+      other eflags defined too (see README.solaris). */
+   VG_TRACK(post_reg_write, Vg_CoreSysCall, tid, offsetof(VexGuestX86State,
+            guest_CC_DEP1), sizeof(UInt));
+   VG_TRACK(post_reg_write, Vg_CoreSysCall, tid, offsetof(VexGuestX86State,
+            guest_CC_DEP2), sizeof(UInt));
+
+#  elif defined(VGP_amd64_solaris)
+   VexGuestAMD64State* gst = (VexGuestAMD64State*)gst_vanilla;
+   SysRes sres = canonical->sres;
+   vg_assert(canonical->what == SsComplete);
+
+   if (sr_isError(sres)) {
+      gst->guest_RAX = sr_Err(sres);
+      VG_TRACK(post_reg_write, Vg_CoreSysCall, tid, OFFSET_amd64_RAX,
+               sizeof(ULong));
+      LibVEX_GuestAMD64_put_rflag_c(1, gst);
+   }
+   else {
+      gst->guest_RAX = sr_Res(sres);
+      VG_TRACK(post_reg_write, Vg_CoreSysCall, tid, OFFSET_amd64_RAX,
+               sizeof(ULong));
+      gst->guest_RDX = sr_ResHI(sres);
+      VG_TRACK(post_reg_write, Vg_CoreSysCall, tid, OFFSET_amd64_RDX,
+               sizeof(ULong));
+      LibVEX_GuestAMD64_put_rflag_c(0, gst);
+   }
+   /* Make CC_DEP1 and CC_DEP2 defined.  This is inaccurate because it makes
+      other eflags defined too (see README.solaris). */
+   VG_TRACK(post_reg_write, Vg_CoreSysCall, tid, offsetof(VexGuestAMD64State,
+            guest_CC_DEP1), sizeof(ULong));
+   VG_TRACK(post_reg_write, Vg_CoreSysCall, tid, offsetof(VexGuestAMD64State,
+            guest_CC_DEP2), sizeof(ULong));
+
 #  else
 #    error "putSyscallStatusIntoGuestState: unknown arch"
 #  endif
@@ -1311,6 +1536,7 @@ void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout )
    layout->o_arg6   = OFFSET_s390x_r7;
    layout->uu_arg7  = -1; /* impossible value */
    layout->uu_arg8  = -1; /* impossible value */
+
 #elif defined(VGP_tilegx_linux)
    layout->o_sysno  = OFFSET_tilegx_r(10);
    layout->o_arg1   = OFFSET_tilegx_r(0);
@@ -1321,6 +1547,29 @@ void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout )
    layout->o_arg6   = OFFSET_tilegx_r(5);
    layout->uu_arg7  = -1; /* impossible value */
    layout->uu_arg8  = -1; /* impossible value */
+
+#elif defined(VGP_x86_solaris)
+   layout->o_sysno  = OFFSET_x86_EAX;
+   /* Syscall parameters are on the stack. */
+   layout->s_arg1   = sizeof(UWord) * 1;
+   layout->s_arg2   = sizeof(UWord) * 2;
+   layout->s_arg3   = sizeof(UWord) * 3;
+   layout->s_arg4   = sizeof(UWord) * 4;
+   layout->s_arg5   = sizeof(UWord) * 5;
+   layout->s_arg6   = sizeof(UWord) * 6;
+   layout->s_arg7   = sizeof(UWord) * 7;
+   layout->s_arg8   = sizeof(UWord) * 8;
+
+#elif defined(VGP_amd64_solaris)
+   layout->o_sysno  = OFFSET_amd64_RAX;
+   layout->o_arg1   = OFFSET_amd64_RDI;
+   layout->o_arg2   = OFFSET_amd64_RSI;
+   layout->o_arg3   = OFFSET_amd64_RDX;
+   layout->o_arg4   = OFFSET_amd64_R10;
+   layout->o_arg5   = OFFSET_amd64_R8;
+   layout->o_arg6   = OFFSET_amd64_R9;
+   layout->s_arg7   = sizeof(UWord) * 1;
+   layout->s_arg8   = sizeof(UWord) * 2;
 
 #else
 #  error "getSyscallLayout: unknown arch"
@@ -1353,6 +1602,10 @@ void bad_before ( ThreadId              tid,
    VG_(dmsg)("it at http://valgrind.org/support/bug_reports.html.\n");
 
    SET_STATUS_Failure(VKI_ENOSYS);
+
+#  if defined(VGO_solaris)
+   VG_(exit)(1);
+#  endif
 }
 
 static SyscallTableEntry bad_sys =
@@ -1388,6 +1641,9 @@ static const SyscallTableEntry* get_syscall_entry ( Int syscallno )
       vg_assert(0);
       break;
    }
+
+#  elif defined(VGO_solaris)
+   sys = ML_(get_solaris_syscall_entry)(syscallno);
 
 #  else
 #    error Unknown OS
@@ -1731,6 +1987,10 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
             go through anyway, with SfToBlock set, hence we end up here. */
          putSyscallArgsIntoGuestState( &sci->args, &tst->arch.vex );
 
+         /* SfNoWriteResult flag is invalid for blocking signals because
+            do_syscall_for_client() directly modifies the guest state. */
+         vg_assert(!(sci->flags & SfNoWriteResult));
+
          /* Drop the bigLock */
          VG_(release_BigLock)(tid, VgTs_WaitSys, "VG_(client_syscall)[async]");
          /* Urr.  We're now in a race against other threads trying to
@@ -1985,6 +2245,15 @@ void VG_(post_syscall) (ThreadId tid)
   extern const Addr ML_(blksys_complete_UNIX);
   extern const Addr ML_(blksys_committed_UNIX);
   extern const Addr ML_(blksys_finished_UNIX);
+#elif defined(VGO_solaris)
+  extern const Addr ML_(blksys_setup);
+  extern const Addr ML_(blksys_complete);
+  extern const Addr ML_(blksys_committed);
+  extern const Addr ML_(blksys_finished);
+  extern const Addr ML_(blksys_setup_DRET);
+  extern const Addr ML_(blksys_complete_DRET);
+  extern const Addr ML_(blksys_committed_DRET);
+  extern const Addr ML_(blksys_finished_DRET);
 #else
 # error "Unknown OS"
 #endif
@@ -2223,6 +2492,57 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
       vg_assert(p[0] == 0x286b180051485000ULL);
    }
 
+#elif defined(VGP_x86_solaris)
+   arch->vex.guest_EIP -= 2;   // sizeof(int $0x91) or sizeof(syscall)
+
+   /* Make sure our caller is actually sane, and we're really backing
+      back over a syscall.
+
+      int $0x91 == CD 91
+      syscall   == 0F 05
+      sysenter  == 0F 34
+
+      Handle also other syscall instructions because we also handle them in
+      the scheduler.
+      int $0x80 == CD 80
+      int $0x81 == CD 81
+      int $0x82 == CD 82
+   */
+   {
+      UChar *p = (UChar *)arch->vex.guest_EIP;
+
+      Bool  ok = (p[0] == 0xCD && p[1] == 0x91)
+                  || (p[0] == 0x0F && p[1] == 0x05)
+                  || (p[0] == 0x0F && p[1] == 0x34)
+                  || (p[0] == 0xCD && p[1] == 0x80)
+                  || (p[0] == 0xCD && p[1] == 0x81)
+                  || (p[0] == 0xCD && p[1] == 0x82);
+      if (!ok)
+         VG_(message)(Vg_DebugMsg,
+                      "?! restarting over syscall at %#x %02x %02x\n",
+                      arch->vex.guest_EIP, p[0], p[1]);
+      vg_assert(ok);
+   }
+
+#elif defined(VGP_amd64_solaris)
+   arch->vex.guest_RIP -= 2;   // sizeof(syscall)
+
+   /* Make sure our caller is actually sane, and we're really backing
+      back over a syscall.
+
+      syscall   == 0F 05
+   */
+   {
+      UChar *p = (UChar *)arch->vex.guest_RIP;
+
+      Bool  ok = (p[0] == 0x0F && p[1] == 0x05);
+      if (!ok)
+         VG_(message)(Vg_DebugMsg,
+                      "?! restarting over syscall at %#llx %02x %02x\n",
+                      arch->vex.guest_RIP, p[0], p[1]);
+      vg_assert(ok);
+   }
+
 #else
 #  error "ML_(fixup_guest_state_to_restart_syscall): unknown plat"
 #endif
@@ -2263,7 +2583,8 @@ void
 VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid, 
                                                   Addr     ip, 
                                                   SysRes   sres,
-                                                  Bool     restart)
+                                                  Bool     restart,
+                                                  struct vki_ucontext *uc)
 {
    /* Note that we don't know the syscall number here, since (1) in
       general there's no reliable way to get hold of it short of
@@ -2287,6 +2608,24 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
         at_restart,               // [2]   in the .S files
         in_complete_to_committed, // [3,4) in the .S files
         in_committed_to_finished; // [4,5) in the .S files
+
+   if (VG_(clo_trace_signals))
+      VG_(message)( Vg_DebugMsg,
+                    "interrupted_syscall: tid=%d, ip=0x%llx, "
+                    "restart=%s, sres.isErr=%s, sres.val=%lld\n",
+                    (Int)tid,
+                    (ULong)ip,
+                    restart ? "True" : "False",
+                    sr_isError(sres) ? "True" : "False",
+                    (Long)(sr_isError(sres) ? sr_Err(sres) : sr_Res(sres)) );
+
+   vg_assert(VG_(is_valid_tid)(tid));
+   vg_assert(tid >= 1 && tid < VG_N_THREADS);
+   vg_assert(VG_(is_running_thread)(tid));
+
+   tst     = VG_(get_ThreadState)(tid);
+   th_regs = &tst->arch;
+   sci     = & syscallInfo[tid];
 
 #  if defined(VGO_linux)
    outside_range
@@ -2321,27 +2660,35 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
       || (ip >= ML_(blksys_committed_MDEP) && ip < ML_(blksys_finished_MDEP))
       || (ip >= ML_(blksys_committed_UNIX) && ip < ML_(blksys_finished_UNIX));
    /* Wasn't that just So Much Fun?  Does your head hurt yet?  Mine does. */
+#  elif defined(VGO_solaris)
+   /* The solaris port is never outside the range. */
+   outside_range = False;
+   /* The Solaris kernel never restarts syscalls directly! */
+   at_restart = False;
+   if (tst->os_state.in_door_return) {
+      vg_assert(ip >= ML_(blksys_setup_DRET)
+                && ip < ML_(blksys_finished_DRET));
+
+      in_setup_to_restart
+         = ip >= ML_(blksys_setup_DRET) && ip < ML_(blksys_complete_DRET);
+      in_complete_to_committed
+         = ip >= ML_(blksys_complete_DRET) && ip < ML_(blksys_committed_DRET);
+      in_committed_to_finished
+         = ip >= ML_(blksys_committed_DRET) && ip < ML_(blksys_finished_DRET);
+   }
+   else {
+      vg_assert(ip >= ML_(blksys_setup) && ip < ML_(blksys_finished));
+
+      in_setup_to_restart
+         = ip >= ML_(blksys_setup) && ip < ML_(blksys_complete);
+      in_complete_to_committed
+         = ip >= ML_(blksys_complete) && ip < ML_(blksys_committed);
+      in_committed_to_finished
+         = ip >= ML_(blksys_committed) && ip < ML_(blksys_finished);
+   }
 #  else
 #    error "Unknown OS"
 #  endif
-
-   if (VG_(clo_trace_signals))
-      VG_(message)( Vg_DebugMsg,
-                    "interrupted_syscall: tid=%d, ip=0x%llx, "
-                    "restart=%s, sres.isErr=%s, sres.val=%lld\n", 
-                    (Int)tid,
-                    (ULong)ip, 
-                    restart ? "True" : "False", 
-                    sr_isError(sres) ? "True" : "False",
-                    (Long)(sr_isError(sres) ? sr_Err(sres) : sr_Res(sres)) );
-
-   vg_assert(VG_(is_valid_tid)(tid));
-   vg_assert(tid >= 1 && tid < VG_N_THREADS);
-   vg_assert(VG_(is_running_thread)(tid));
-
-   tst     = VG_(get_ThreadState)(tid);
-   th_regs = &tst->arch;
-   sci     = & syscallInfo[tid];
 
    /* Figure out what the state of the syscall was by examining the
       (real) IP at the time of the signal, and act accordingly. */
@@ -2372,6 +2719,11 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
 
    else 
    if (at_restart) {
+#     if defined(VGO_solaris)
+      /* We should never hit this branch on Solaris, see the comment above. */
+      vg_assert(0);
+#     endif
+
       /* We're either about to run the syscall, or it was interrupted
          and the kernel restarted it.  Restart if asked, otherwise
          EINTR it. */
@@ -2401,8 +2753,20 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
          VG_(message)( Vg_DebugMsg,
                        "  completed, but uncommitted: committing\n");
       canonical = convert_SysRes_to_SyscallStatus( sres );
-      if (!(sci->flags & SfNoWriteResult))
-         putSyscallStatusIntoGuestState( tid, &canonical, &th_regs->vex );
+      vg_assert(!(sci->flags & SfNoWriteResult));
+      putSyscallStatusIntoGuestState( tid, &canonical, &th_regs->vex );
+#     if defined(VGO_solaris)
+      if (tst->os_state.in_door_return) {
+#        if defined(VGP_x86_solaris)
+         /* Registers %esp and %ebp were also modified by the syscall. */
+         tst->arch.vex.guest_ESP = uc->uc_mcontext.gregs[VKI_UESP];
+         tst->arch.vex.guest_EBP = uc->uc_mcontext.gregs[VKI_EBP];
+#        elif defined(VGP_amd64_solaris)
+         tst->arch.vex.guest_RSP = uc->uc_mcontext.gregs[VKI_REG_RSP];
+         tst->arch.vex.guest_RBP = uc->uc_mcontext.gregs[VKI_REG_RBP];
+#        endif
+      }
+#     endif
       sci->status = canonical;
       VG_(post_syscall)(tid);
    } 
@@ -2415,6 +2779,13 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
       if (VG_(clo_trace_signals))
          VG_(message)( Vg_DebugMsg,
                        "  completed and committed: nothing to do\n");
+#     if defined(VGP_x86_solaris)
+      /* The %eax and %edx values are committed but the carry flag is still
+         uncommitted.  Save it now. */
+      LibVEX_GuestX86_put_eflag_c(sr_isError(sres), &th_regs->vex);
+#     elif defined(VGP_amd64_solaris)
+      LibVEX_GuestAMD64_put_rflag_c(sr_isError(sres), &th_regs->vex);
+#     endif
       getSyscallStatusFromGuestState( &sci->status, &th_regs->vex );
       vg_assert(sci->status.what == SsComplete);
       VG_(post_syscall)(tid);
@@ -2429,6 +2800,21 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
       to record that fact. */
    sci->status.what = SsIdle;
 }
+
+
+#if defined(VGO_solaris)
+/* Returns True if ip is inside a fixable syscall code in syscall-*-*.S.  This
+   function can be called by a 'non-running' thread! */
+Bool VG_(is_ip_in_blocking_syscall)(ThreadId tid, Addr ip)
+{
+   ThreadState *tst = VG_(get_ThreadState)(tid);
+
+   if (tst->os_state.in_door_return)
+      return ip >= ML_(blksys_setup_DRET) && ip < ML_(blksys_finished_DRET);
+   else
+      return ip >= ML_(blksys_setup) && ip < ML_(blksys_finished);
+}
+#endif
 
 
 #if defined(VGO_darwin)

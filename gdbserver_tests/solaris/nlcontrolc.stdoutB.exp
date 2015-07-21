@@ -1,0 +1,17 @@
+Continuing.
+Program received signal SIGTRAP, Trace/breakpoint trap.
+0x........ in syscall ...
+  4 Thread .... (tid 4 VgTs_WaitSys)  0x........ in __pollsys ()
+  3 Thread .... (tid 3 VgTs_WaitSys)  0x........ in __pollsys ()
+  2 Thread .... (tid 2 VgTs_WaitSys)  0x........ in __pollsys ()
+* 1 Thread .... (tid 1 VgTs_WaitSys)  0x........ in __pollsys ()
+Now threads are burning CPU
+Continuing.
+Program received signal SIGTRAP, Trace/breakpoint trap.
+0x........ in do_burn () at sleepers.c:41
+41	   for (i = 0; i < burn; i++) loopnr++;
+$1 = 0
+$2 = 0
+$3 = 0
+Continuing.
+Program exited normally.

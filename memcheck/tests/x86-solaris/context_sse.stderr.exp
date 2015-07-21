@@ -1,0 +1,96 @@
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_sse.c:93)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_sse.c:39)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_sse.c:93)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_sse.c:39)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_sse.c:93)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_sse.c:39)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_sse.c:93)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_sse.c:39)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_sse.c:93)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_sse.c:39)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_sse.c:93)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_sse.c:39)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_sse.c:93)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_sse.c:39)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_sse.c:93)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_sse.c:39)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_sse.c:101)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_sse.c:35)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_sse.c:101)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_sse.c:35)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_sse.c:101)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_sse.c:39)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_sse.c:101)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_sse.c:39)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_sse.c:101)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_sse.c:39)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_sse.c:101)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_sse.c:39)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_sse.c:101)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_sse.c:39)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_sse.c:101)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_sse.c:39)
+

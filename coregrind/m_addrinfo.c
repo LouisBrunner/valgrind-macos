@@ -265,7 +265,11 @@ void VG_(describe_addr) ( Addr a, /*OUT*/AddrInfo* ai )
 
       /* Special case to detect the brk data segment. */
       if (seg != NULL
+#if defined(VGO_solaris)
+          && (seg->kind == SkAnonC || seg->kind == SkFileC)
+#else
           && seg->kind == SkAnonC
+#endif /* VGO_solaris */
           && VG_(brk_limit) >= seg->start
           && VG_(brk_limit) <= seg->end+1) {
          /* Address a is in a Anon Client segment which contains

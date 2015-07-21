@@ -4,7 +4,7 @@ echo vgdb launched process attached\n
 monitor v.set vgdb-error 999999
 #
 # break
-break main_pic.c:11
+break main_pic.c:12
 #
 continue
 # first break encountered.

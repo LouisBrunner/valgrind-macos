@@ -300,7 +300,7 @@ static HChar const* consume_field ( HChar const* c ) {
    return c;
 }
 
-/* Should we trace into this child executable (across execve etc) ?
+/* Should we trace into this child executable (across execve, spawn etc) ?
    This involves considering --trace-children=,
    --trace-children-skip=, --trace-children-skip-by-arg=, and the name
    of the executable.  'child_argv' must not include the name of the

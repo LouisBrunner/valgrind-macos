@@ -19,9 +19,15 @@ extern char **environ;
 
 void test_allexec (char *exec)
 {
-   FORKEXECWAIT (execlp(exec, exec, NULL));
-   FORKEXECWAIT (execlp(exec, exec, "constant_arg1", "constant_arg2", NULL));
-   FORKEXECWAIT (execve(exec, NULL, environ));
+   FORKEXECWAIT (execlp(exec, exec, (char *) NULL));
+   FORKEXECWAIT (execlp(exec, exec, "constant_arg1", "constant_arg2",
+                        (char *) NULL));
+   {
+      /* Solaris requires that the argv parameter to execve() isn't NULL, so
+         set it.  Note that this isn't necessary on Linux. */
+      char *const argv[] = {exec, NULL};
+      FORKEXECWAIT (execve(exec, argv, environ));
+   }
 }
 
 

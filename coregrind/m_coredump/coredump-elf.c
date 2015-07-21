@@ -194,8 +194,6 @@ static void write_note(Int fd, const struct note *n)
 static void fill_prpsinfo(const ThreadState *tst,
                           struct vki_elf_prpsinfo *prpsinfo)
 {
-   const HChar *name;
-
    VG_(memset)(prpsinfo, 0, sizeof(*prpsinfo));
 
    switch(tst->status) {
@@ -221,16 +219,7 @@ static void fill_prpsinfo(const ThreadState *tst,
    prpsinfo->pr_uid = 0;
    prpsinfo->pr_gid = 0;
    
-   if (VG_(resolve_filename)(VG_(cl_exec_fd), &name)) {
-      const HChar *n = name + VG_(strlen)(name) - 1;
-
-      while (n > name && *n != '/')
-	 n--;
-      if (n != name)
-	 n++;
-
-      VG_(strncpy)(prpsinfo->pr_fname, n, sizeof(prpsinfo->pr_fname));
-   }
+   VG_(client_fname)(prpsinfo->pr_fname, sizeof(prpsinfo->pr_fname), False);
 }
 
 static void fill_prstatus(const ThreadState *tst, 

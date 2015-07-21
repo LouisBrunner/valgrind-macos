@@ -57,7 +57,7 @@
     <frame>
       <ip>0x........</ip>
       <obj>...</obj>
-      <fn>pthread_create@*</fn>
+      <fn>pthread_create</fn>
       <dir>...</dir>
       <file>hg_intercepts.c</file>
       <line>...</line>

@@ -1,0 +1,18 @@
+#!/bin/sh
+
+# Filters are not run for post-test check commands.
+# Filter everything here.
+
+echo "---Status---"
+echo "::status" | /usr/bin/mdb vgcore.* | \
+perl -p -e 's/\(.*\) from \S*$/from .../' | \
+perl -0 -p -e 's/^file: .+?^(initial argv:)/$1/ms' | \
+perl -p -e 's/addr=[0-9A-Fa-f]+/addr=......../g'
+
+echo "\n---Stacks---"
+echo "::stacks ! perl -p -e 's/^(\S+)\+.*/\$1/g'" | /usr/bin/mdb vgcore.* | \
+perl -p -e 's/^(THREAD)\s+(STATE)\s+(SOBJ)\s+(COUNT)\s*$/$1 $2 $3 $4\n/' | \
+perl -p -e 's/^(\d+)\s+(UNPARKED)\s+(\S+)\s+(\d+)/$1 $2 $3 $4/g' | \
+perl -p -e 's/^\s*libc.*.so.1/libc.so.1/g' | \
+perl -p -e 's/^\s*(coredump_many_threads)/$1/g' | \
+perl -p -e 's/\+0x[0-9A-Fa-f]+//g'

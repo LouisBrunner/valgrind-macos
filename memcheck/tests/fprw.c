@@ -10,7 +10,7 @@ int main ( void )
    volatile float f;
    double* dp = malloc(sizeof(double));
    float* fp = malloc(sizeof(float));
-   int* ip = (int*)0x1234567;
+   int* ip = (int*)0x12345678;
    d += 1.0;
    f += 10.0;
    *dp += ( d > 0.1  ? 2.0 : 3.0 );

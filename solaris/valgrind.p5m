@@ -1,0 +1,151 @@
+set name=pkg.fmri value=developer/debug/valgrind@3.11.0,1508
+set name=pkg.description value="valgrind: instrumentation framework and tools to detect memory and threading problems"
+set name=pkg.summary value="Valgrind is an award-winning instrumentation framework for building dynamic analysis tools. There are Valgrind tools that can automatically detect many memory management and threading bugs, and profile your programs in detail. You can also use Valgrind to build new tools. Currently x86 (32-bit) and amd64 (64-bit) platforms are supported."
+set name=variant.arch value=i386
+set name=info.classification value="org.opensolaris.category.2008:Development/System"
+set name=info.upstream-url value=https://bitbucket.org/iraisr/valgrind-solaris
+set name=info.source-url value=https://bitbucket.org/iraisr/valgrind-solaris/get/r1508.tar.bz2
+
+# Contents:
+dir  path=usr/bin                       owner=root group=bin mode=0755
+file path=usr/bin/callgrind_annotate    owner=root group=bin mode=0755
+file path=usr/bin/callgrind_control     owner=root group=bin mode=0755
+file path=usr/bin/cg_annotate           owner=root group=bin mode=0755
+file path=usr/bin/cg_diff               owner=root group=bin mode=0755
+file path=usr/bin/cg_merge              owner=root group=bin mode=0755
+file path=usr/bin/ms_print              owner=root group=bin mode=0755
+file path=usr/bin/valgrind              owner=root group=bin mode=0755
+file path=usr/bin/valgrind-di-server    owner=root group=bin mode=0755
+file path=usr/bin/valgrind-listener     owner=root group=bin mode=0755
+file path=usr/bin/vgdb                  owner=root group=bin mode=0755
+
+dir  path=usr/include                                      owner=root group=bin mode=0755
+dir  path=usr/include/valgrind                             owner=root group=bin mode=0755
+file path=usr/include/valgrind/callgrind.h                 owner=root group=bin mode=0644
+file path=usr/include/valgrind/drd.h                       owner=root group=bin mode=0644
+file path=usr/include/valgrind/memcheck.h                  owner=root group=bin mode=0644
+file path=usr/include/valgrind/valgrind.h                  owner=root group=bin mode=0644
+
+dir  path=usr/lib/valgrind                                               owner=root group=bin mode=0755
+file path=usr/lib/valgrind/32bit-core-valgrind-s1.xml                    owner=root group=bin mode=0644
+file path=usr/lib/valgrind/32bit-core-valgrind-s2.xml                    owner=root group=bin mode=0644
+file path=usr/lib/valgrind/32bit-core.xml                                owner=root group=bin mode=0644
+file path=usr/lib/valgrind/32bit-sse-valgrind-s1.xml                     owner=root group=bin mode=0644
+file path=usr/lib/valgrind/32bit-sse-valgrind-s2.xml                     owner=root group=bin mode=0644
+file path=usr/lib/valgrind/32bit-sse.xml                                 owner=root group=bin mode=0644
+file path=usr/lib/valgrind/64bit-avx-valgrind-s1.xml                     owner=root group=bin mode=0644
+file path=usr/lib/valgrind/64bit-avx-valgrind-s2.xml                     owner=root group=bin mode=0644
+file path=usr/lib/valgrind/64bit-avx.xml                                 owner=root group=bin mode=0644
+file path=usr/lib/valgrind/64bit-core-valgrind-s1.xml                    owner=root group=bin mode=0644
+file path=usr/lib/valgrind/64bit-core-valgrind-s2.xml                    owner=root group=bin mode=0644
+file path=usr/lib/valgrind/64bit-core.xml                                owner=root group=bin mode=0644
+file path=usr/lib/valgrind/64bit-sse-valgrind-s1.xml                     owner=root group=bin mode=0644
+file path=usr/lib/valgrind/64bit-sse-valgrind-s2.xml                     owner=root group=bin mode=0644
+file path=usr/lib/valgrind/64bit-sse.xml                                 owner=root group=bin mode=0644
+file path=usr/lib/valgrind/amd64-avx-coresse-valgrind.xml                owner=root group=bin mode=0644
+file path=usr/lib/valgrind/amd64-avx-coresse.xml                         owner=root group=bin mode=0644
+file path=usr/lib/valgrind/amd64-coresse-valgrind.xml                    owner=root group=bin mode=0644
+file path=usr/lib/valgrind/cachegrind-amd64-solaris                      owner=root group=bin mode=0755
+file path=usr/lib/valgrind/cachegrind-x86-solaris                        owner=root group=bin mode=0755
+file path=usr/lib/valgrind/callgrind-amd64-solaris                       owner=root group=bin mode=0755
+file path=usr/lib/valgrind/callgrind-x86-solaris                         owner=root group=bin mode=0755
+file path=usr/lib/valgrind/default.supp                                  owner=root group=bin mode=0644
+file path=usr/lib/valgrind/drd-amd64-solaris                             owner=root group=bin mode=0755
+file path=usr/lib/valgrind/drd-x86-solaris                               owner=root group=bin mode=0755
+file path=usr/lib/valgrind/exp-bbv-amd64-solaris                         owner=root group=bin mode=0755
+file path=usr/lib/valgrind/exp-bbv-x86-solaris                           owner=root group=bin mode=0755
+file path=usr/lib/valgrind/exp-dhat-amd64-solaris                        owner=root group=bin mode=0755
+file path=usr/lib/valgrind/exp-dhat-x86-solaris                          owner=root group=bin mode=0755
+file path=usr/lib/valgrind/exp-sgcheck-amd64-solaris                     owner=root group=bin mode=0755
+file path=usr/lib/valgrind/exp-sgcheck-x86-solaris                       owner=root group=bin mode=0755
+file path=usr/lib/valgrind/getoff-amd64-solaris                          owner=root group=bin mode=0755
+file path=usr/lib/valgrind/getoff-x86-solaris                            owner=root group=bin mode=0755
+file path=usr/lib/valgrind/i386-coresse-valgrind.xml                     owner=root group=bin mode=0644
+file path=usr/lib/valgrind/lackey-amd64-solaris                          owner=root group=bin mode=0755
+file path=usr/lib/valgrind/lackey-x86-solaris                            owner=root group=bin mode=0755
+file path=usr/lib/valgrind/massif-amd64-solaris                          owner=root group=bin mode=0755
+file path=usr/lib/valgrind/massif-x86-solaris                            owner=root group=bin mode=0755
+file path=usr/lib/valgrind/memcheck-amd64-solaris                        owner=root group=bin mode=0755
+file path=usr/lib/valgrind/memcheck-x86-solaris                          owner=root group=bin mode=0755
+file path=usr/lib/valgrind/none-amd64-solaris                            owner=root group=bin mode=0755
+file path=usr/lib/valgrind/none-x86-solaris                              owner=root group=bin mode=0755
+file path=usr/lib/valgrind/vgpreload_core-amd64-solaris.so               owner=root group=bin mode=0755
+file path=usr/lib/valgrind/vgpreload_core-x86-solaris.so                 owner=root group=bin mode=0755
+file path=usr/lib/valgrind/vgpreload_drd-amd64-solaris.so                owner=root group=bin mode=0755
+file path=usr/lib/valgrind/vgpreload_drd-x86-solaris.so                  owner=root group=bin mode=0755
+file path=usr/lib/valgrind/vgpreload_exp-dhat-amd64-solaris.so           owner=root group=bin mode=0755
+file path=usr/lib/valgrind/vgpreload_exp-dhat-x86-solaris.so             owner=root group=bin mode=0755
+file path=usr/lib/valgrind/vgpreload_exp-sgcheck-amd64-solaris.so        owner=root group=bin mode=0755
+file path=usr/lib/valgrind/vgpreload_exp-sgcheck-x86-solaris.so          owner=root group=bin mode=0755
+file path=usr/lib/valgrind/vgpreload_massif-amd64-solaris.so             owner=root group=bin mode=0755
+file path=usr/lib/valgrind/vgpreload_massif-x86-solaris.so               owner=root group=bin mode=0755
+file path=usr/lib/valgrind/vgpreload_memcheck-amd64-solaris.so           owner=root group=bin mode=0755
+file path=usr/lib/valgrind/vgpreload_memcheck-x86-solaris.so             owner=root group=bin mode=0755
+
+# Documentation from html-docs
+dir  path=usr/share/doc/valgrind					owner=root group=bin mode=0755
+dir  path=usr/share/doc/valgrind/html					owner=root group=bin mode=0755
+dir  path=usr/share/doc/valgrind/html/images				owner=root group=bin mode=0755
+file path=usr/share/doc/valgrind/html/bbv-manual.html			owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/cg-manual.html			owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/cl-format.html			owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/cl-manual.html			owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/design-impl.html			owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/dh-manual.html			owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/dist.authors.html			owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/dist.html				owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/dist.news.html			owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/dist.news.old.html		owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/dist.readme-developers.html	owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/dist.readme-missing.html		owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/dist.readme-solaris.html		owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/dist.readme.html			owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/drd-manual.html			owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/faq.html				owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/FAQ.html  			owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/hg-manual.html			owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/index.html			owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/license.gfdl.html			owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/license.gpl.html			owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/licenses.html			owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/lk-manual.html			owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/manual-core-adv.html		owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/manual-core.html			owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/manual-intro.html			owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/manual-writing-tools.html		owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/manual.html			owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/mc-manual.html			owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/ms-manual.html			owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/nl-manual.html			owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/quick-start.html			owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/QuickStart.html			owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/sg-manual.html			owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/tech-docs.html			owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/vg_basic.css			owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/images/home.png			owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/images/next.png			owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/images/prev.png			owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/html/images/up.png			owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/AUTHORS				owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/COPYING				owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/COPYING.DOCS				owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/NEWS					owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/NEWS.old				owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/README					owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/README_DEVELOPERS			owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/README_DEVELOPERS_processes		owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/README_MISSING_SYSCALL_OR_IOCTL	owner=root group=bin mode=0644
+file path=usr/share/doc/valgrind/README.solaris				owner=root group=bin mode=0644
+
+# Man pages
+dir  path=usr/share/man					owner=root group=bin mode=0755
+dir  path=usr/share/man/man1				owner=root group=bin mode=0755
+file path=usr/share/man/man1/callgrind_annotate.1	owner=root group=bin mode=0644
+file path=usr/share/man/man1/callgrind_control.1	owner=root group=bin mode=0644
+file path=usr/share/man/man1/cg_annotate.1		owner=root group=bin mode=0644
+file path=usr/share/man/man1/cg_diff.1			owner=root group=bin mode=0644
+file path=usr/share/man/man1/cg_merge.1			owner=root group=bin mode=0644
+file path=usr/share/man/man1/ms_print.1			owner=root group=bin mode=0644
+file path=usr/share/man/man1/valgrind-listener.1	owner=root group=bin mode=0644
+file path=usr/share/man/man1/valgrind.1			owner=root group=bin mode=0644
+file path=usr/share/man/man1/vgdb.1			owner=root group=bin mode=0644

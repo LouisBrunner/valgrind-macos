@@ -26,6 +26,11 @@ AM_CXXFLAGS = -Winline -Wall -Wshadow -Wno-long-long -g \
 # automake;  see comments in Makefile.all.am for more detail.
 AM_CCASFLAGS = $(AM_CPPFLAGS)
 
+if VGCONF_OS_IS_SOLARIS
+# Make sure that all test programs have threaded errno.
+AM_CFLAGS  += -D_REENTRANT
+endif
+
 if VGCONF_OS_IS_DARWIN
 noinst_DSYMS = $(check_PROGRAMS)
 endif

@@ -1,0 +1,4 @@
+prereq: test -e scalar_uuidsys
+prog: scalar_uuidsys
+vgopts: -q
+stderr_filter_args:

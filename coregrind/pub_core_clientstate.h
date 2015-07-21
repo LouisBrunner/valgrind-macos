@@ -46,9 +46,11 @@
 extern Addr  VG_(clstk_start_base); // *Initial* lowest byte address
 extern Addr  VG_(clstk_end);        // Highest byte address
 extern UWord VG_(clstk_id);      // client stack id
+extern SizeT VG_(clstk_max_size); // max size of the main threads's client stack
 
-/* linux only: where is the client auxv ? */
-/* This is setup as part of setup_client_stack in initimg-linux.c. */
+/* Linux and Solaris only: where is the client auxv? */
+/* This is setup as part of setup_client_stack in initimg-linux.c
+   or initimg-solaris.c, respectively. */
 extern UWord* VG_(client_auxv);
 
 extern Addr  VG_(brk_base);	 // start of brk
@@ -70,6 +72,11 @@ extern Int VG_(cl_cmdline_fd);
 
 /* Same as above, but for /proc/<pid>/auxv. */
 extern Int VG_(cl_auxv_fd);
+
+#if defined(VGO_solaris)
+/* Same as above, but for /proc/<pid>/psinfo. */
+extern Int VG_(cl_psinfo_fd);
+#endif /* VGO_solaris */
 
 // Client's original rlimit data and rlimit stack
 extern struct vki_rlimit VG_(client_rlimit_data);
@@ -93,6 +100,8 @@ extern Addr VG_(client___libc_freeres_wrapper);
    VG_(get_StackTrace) in m_stacktrace.c for further info. */
 extern Addr VG_(client__dl_sysinfo_int80);
 
+/* Obtains the initial client stack pointer from the finalised image info. */
+extern Addr VG_(get_initial_client_SP)(void);
 
 /* glibc nptl pthread systems only, when no-nptl-pthread-stackcache
    was given in --sim-hints.
@@ -111,6 +120,12 @@ extern Addr VG_(client__dl_sysinfo_int80);
    It would be much cleaner to have a documented and supported
    way to disable the pthread stack cache. */
 extern SizeT* VG_(client__stack_cache_actsize__addr);
+
+#if defined(VGO_solaris)
+/* Address of variable vg_vfork_fildes in vgpreload_core.so.0
+   (vg_preloaded.c). */
+extern Int* VG_(vfork_fildes_addr);
+#endif
 
 #endif   // __PUB_CORE_CLIENTSTATE_H
 

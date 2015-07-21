@@ -1,1 +1,2 @@
 prog: fxtract
+stdout_filter: filter_inf_nan

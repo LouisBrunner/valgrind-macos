@@ -1,11 +1,11 @@
-Breakpoint 1 at 0x........: file t.c, line 100.
+Breakpoint 1 at 0x........: file t.c, line 101.
 Continuing.
-Breakpoint 1, breakme (line=112) at t.c:100
-100	   if (line > 1000)
-#1  0x........ in main (argc=1, argv=0x........) at t.c:112
-112	  breakme(__LINE__); //break1
+Breakpoint 1, breakme (line=113) at t.c:101
+101	   if (line > 1000)
+#1  0x........ in main (argc=1, argv=0x........) at t.c:113
+113	  breakme(__LINE__); //break1
 $1 = 0x........ "main name"
 $2 = "undefined"
 Continuing.
-Breakpoint 1, breakme (line=117) at t.c:100
-100	   if (line > 1000)
+Breakpoint 1, breakme (line=118) at t.c:101
+101	   if (line > 1000)

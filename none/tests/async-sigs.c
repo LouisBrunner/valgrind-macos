@@ -43,7 +43,7 @@ static void do_kill(int pid, int sig)
       char pidbuf[20];
       sprintf(sigbuf, "-%d", sig);
       sprintf(pidbuf, "%d", pid);
-      execl("/bin/kill", "kill", sigbuf, pidbuf, NULL);
+      execl("/bin/kill", "kill", sigbuf, pidbuf, (char *) NULL);
       perror("exec failed");
       exit(1);
    }
@@ -87,7 +87,11 @@ static void test(int block, int caughtsig, int fatalsig)
    // - otherwise, wait in client code (by spinning).
    // The alarm() calls is so that if something breaks, we don't get stuck.
    if (pid == 0) {
-      signal(caughtsig, handler);
+      struct sigaction sa;
+      sa.sa_handler = handler;
+      sigemptyset(&sa.sa_mask);
+      sa.sa_flags = 0;
+      sigaction(caughtsig, &sa, 0);
       alarm(10);
 
       for (;;)

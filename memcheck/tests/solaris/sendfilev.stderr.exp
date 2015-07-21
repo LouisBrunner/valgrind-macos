@@ -1,0 +1,11 @@
+Syscall param sendfilev(vec[0].sfv_off points to unaddressable byte(s)
+   ...
+   by 0x........: main (sendfilev.c:54)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param sendfilev(vec) points to uninitialised byte(s)
+   ...
+   by 0x........: main (sendfilev.c:65)
+ Address 0x........ is on thread 1's stack
+ in frame #., created by main (sendfilev.c:15)
+

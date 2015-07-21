@@ -6,6 +6,8 @@ dir=`dirname $0`
 
 perl -p -e 's/^Open AF_UNIX socket [0-9]*: <unknown>/Open AF_UNIX socket ...: <unknown>/' |
 perl -p -e 's/^Open (AF_UNIX socket|file descriptor) [0-9]*: \/dev\/null/Open $1 ...: \/dev\/null/' |
+# Solaris-specific, translate /devices/pseudo/mm@0:null to /dev/null
+perl -p -e 's/^Open (AF_UNIX socket|file descriptor) [0-9]*: \/devices\/pseudo\/mm\@0:null/Open $1 ...: \/dev\/null/' |
 # Nb: on Darwin, /tmp is a symlink to /private/tmp, so sometimes it's
 # necessary to filter out the "/private" part.
 perl -p -e 's/^Open (AF_UNIX socket|file descriptor) [0-9]*: (\/private)?\/tmp\/(sock|data1|data2|file)\.[0-9]*/Open $1 ...: \/tmp\/$3/' |

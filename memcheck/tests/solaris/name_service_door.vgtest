@@ -1,0 +1,7 @@
+# Tests door wrapper of name switch cache daemon (nscd).
+# The nscd must be running and its door attached.
+prereq: test -e /system/volatile/name_service_door -o -e /var/run/name_service_door
+prog: name_service_door
+vgopts: -q
+stderr_filter: filter_name_service_door
+stderr_filter_args:

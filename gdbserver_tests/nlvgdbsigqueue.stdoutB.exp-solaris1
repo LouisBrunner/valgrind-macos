@@ -1,0 +1,16 @@
+continuing to have vgdb interrupted by simulate_control_c
+Continuing.
+Program received signal SIGTRAP, Trace/breakpoint trap.
+0x........ in syscall ...
+attachedwaitingforsigusr1
+sending signal
+sending signal
+continuing to receive first SIGUSR1
+Continuing.
+Program received signal SIGUSR1, User defined signal 1.
+0x........ in syscall ...
+continuing to receive second SIGUSR1
+Continuing.
+Program received signal SIGTRAP, Trace/breakpoint trap.
+0x........ in syscall ...
+Kill the program being debugged? (y or n) [answered Y; input not from terminal]

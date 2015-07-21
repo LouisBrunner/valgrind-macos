@@ -1,0 +1,166 @@
+---------------------------------------------------------
+  2:               SYS_spawn 5s 7m
+---------------------------------------------------------
+Syscall param spawn(path) contains uninitialised byte(s)
+   ...
+
+Syscall param spawn(attrs) contains uninitialised byte(s)
+   ...
+
+Syscall param spawn(attrsize) contains uninitialised byte(s)
+   ...
+
+Syscall param spawn(argenv) contains uninitialised byte(s)
+   ...
+
+Syscall param spawn(aesize) contains uninitialised byte(s)
+   ...
+
+Syscall param spawn(path) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param spawn(attrs->ksa_version) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param spawn(attrs->ksa_size) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param spawn(attrs->ksa_attr_off) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param spawn(attrs->ksa_path_off) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param spawn(attrs->ksa_shell_off) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param spawn(argenv) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+  2:               SYS_spawn 9s 1m
+---------------------------------------------------------
+Syscall param spawn(path) contains uninitialised byte(s)
+   ...
+
+Syscall param spawn(attrs) contains uninitialised byte(s)
+   ...
+
+Syscall param spawn(argenv) contains uninitialised byte(s)
+   ...
+
+Syscall param spawn(aesize) contains uninitialised byte(s)
+   ...
+
+Syscall param spawn(path) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param spawn(attrs->ksa_version) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+Syscall param spawn(attrs->ksa_size) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+Syscall param spawn(attrs->ksa_attr_off) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+Syscall param spawn(attrs->ksa_path_off) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+Syscall param spawn(attrs->ksa_shell_off) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+---------------------------------------------------------
+  2:               SYS_spawn 13s 4m
+---------------------------------------------------------
+Syscall param spawn(path) contains uninitialised byte(s)
+   ...
+
+Syscall param spawn(attrs) contains uninitialised byte(s)
+   ...
+
+Syscall param spawn(attrsize) contains uninitialised byte(s)
+   ...
+
+Syscall param spawn(argenv) contains uninitialised byte(s)
+   ...
+
+Syscall param spawn(aesize) contains uninitialised byte(s)
+   ...
+
+Syscall param spawn(path) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param spawn(attrs->ksa_version) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+Syscall param spawn(attrs->ksa_size) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+Syscall param spawn(attrs->ksa_attr_off) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+Syscall param spawn(attrs->ksa_path_off) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+Syscall param spawn(attrs->ksa_shell_off) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+Syscall param spawn(attrs->ksa_attr_size) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+Syscall param spawn(attrs->ksa_attr) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param spawn(attrs->ksa_path_size) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+Syscall param spawn(attrs->ksa_path) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param spawn(attrs->ksa_shell_size) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+Syscall param spawn(attrs->ksa_shell) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+  2:               SYS_spawn 4s 0m
+---------------------------------------------------------
+Syscall param spawn(attrs) contains uninitialised byte(s)
+   ...
+
+Syscall param spawn(attrsize) contains uninitialised byte(s)
+   ...
+
+Syscall param spawn(argenv) contains uninitialised byte(s)
+   ...
+
+Syscall param spawn(aesize) contains uninitialised byte(s)
+   ...
+

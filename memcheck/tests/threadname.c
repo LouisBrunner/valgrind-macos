@@ -1,8 +1,13 @@
+#include "config.h"
+
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <pthread.h>
 #include <string.h>
 #include <stdlib.h>
+#if defined(HAVE_SYS_PRCTL_H)
+#include <sys/prctl.h>
+#endif /* HAVE_SYS_PRCTL_H */
 #include <sys/types.h>
 #include <unistd.h>
 #include <assert.h>

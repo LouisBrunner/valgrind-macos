@@ -1,0 +1,3 @@
+prereq: test -e execx
+prog: execx
+vgopts: -q --trace-children=yes --num-callers=1

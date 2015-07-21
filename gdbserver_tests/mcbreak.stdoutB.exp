@@ -1,54 +1,54 @@
-Breakpoint 1 at 0x........: file t.c, line 112.
-Breakpoint 2 at 0x........: file t.c, line 117.
+Breakpoint 1 at 0x........: file t.c, line 113.
+Breakpoint 2 at 0x........: file t.c, line 118.
 Continuing.
-Breakpoint 1, main (argc=1, argv=0x........) at t.c:112
-112	  breakme(__LINE__); //break1
-breakme (line=112) at t.c:100
-100	   if (line > 1000)
+Breakpoint 1, main (argc=1, argv=0x........) at t.c:113
+113	  breakme(__LINE__); //break1
+breakme (line=113) at t.c:101
+101	   if (line > 1000)
 old_pc has changed after step
-102	}
+103	}
 old_pc has changed after step
-main (argc=1, argv=0x........) at t.c:113
-113	  for (i = len-1; i >= 0; i=i-2)
+main (argc=1, argv=0x........) at t.c:114
+114	  for (i = len-1; i >= 0; i=i-2)
 old_pc has changed after step
-114	     undefined[i] = undef;
+115	     undefined[i] = undef;
 $1 = void
 $2 = "undefined"
 $3 = 8
-113	  for (i = len-1; i >= 0; i=i-2)
+114	  for (i = len-1; i >= 0; i=i-2)
 old_pc has changed after step
-114	     undefined[i] = undef;
+115	     undefined[i] = undef;
 old_pc has changed after step
-113	  for (i = len-1; i >= 0; i=i-2)
+114	  for (i = len-1; i >= 0; i=i-2)
 $4 = void
 $5 = "undefi?e?"
 $6 = 6
-114	     undefined[i] = undef;
+115	     undefined[i] = undef;
 $7 = void
 $8 = "undefi?e?"
 $9 = 4
-113	  for (i = len-1; i >= 0; i=i-2)
+114	  for (i = len-1; i >= 0; i=i-2)
 $10 = void
 $11 = "unde?i?e?"
 $12 = 4
 $13 = 1
 $14 = void
 Continuing.
-Breakpoint 2, main (argc=1, argv=0x........) at t.c:117
-117	  breakme(__LINE__); //break2
-breakme (line=117) at t.c:100
-100	   if (line > 1000)
-Run till exit from #0  breakme (line=117) at t.c:100
-main (argc=1, argv=0x........) at t.c:119
-119	  if (argc > 1)
+Breakpoint 2, main (argc=1, argv=0x........) at t.c:118
+118	  breakme(__LINE__); //break2
+breakme (line=118) at t.c:101
+101	   if (line > 1000)
+Run till exit from #0  breakme (line=118) at t.c:101
+main (argc=1, argv=0x........) at t.c:120
+120	  if (argc > 1)
 Delete all breakpoints? (y or n) [answered Y; input not from terminal]
 Continuing.
 Program received signal SIGTRAP, Trace/breakpoint trap.
-0x........ in make_error (s=0x........ "called from level") at t.c:40
-40	  if (int_und == 0)
-43	     printf ("%s int_und is not zero\n", s);
+0x........ in make_error (s=0x........ "called from level") at t.c:41
+41	  if (int_und == 0)
+44	     printf ("%s int_und is not zero\n", s);
 old_pc has changed after step
 Continuing.
 Program received signal SIGTRAP, Trace/breakpoint trap.
-0x........ in make_error (s=0x........ "called from main") at t.c:40
-40	  if (int_und == 0)
+0x........ in make_error (s=0x........ "called from main") at t.c:41
+41	  if (int_und == 0)

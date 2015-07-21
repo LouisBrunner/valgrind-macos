@@ -1,0 +1,2 @@
+PRE stats->nscount = 0
+POST stats->nscount = 1

@@ -121,4 +121,14 @@
           xmlns:xi="http://www.w3.org/2001/XInclude" />
     </literallayout>
     </chapter>
+
+  <chapter id="dist.readme-solaris"
+             xreflabel="Readme Solaris">
+    <title>README.solaris</title>
+    <literallayout>
+      <xi:include href="../../README.solaris"
+          parse="text"
+          xmlns:xi="http://www.w3.org/2001/XInclude" />
+    </literallayout>
+    </chapter>
 </book>

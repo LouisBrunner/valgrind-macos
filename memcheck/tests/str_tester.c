@@ -504,7 +504,7 @@ test_strchrnul (void)
 #endif
 
 // DDD: better done by testing for the function.
-#if !defined(__APPLE__)
+#if !defined(__APPLE__) && !defined(__sun)
 static void
 test_rawmemchr (void)
 {
@@ -580,7 +580,7 @@ test_strrchr (void)
 }
 
 // DDD: better done by testing for the function.
-#if !defined(__APPLE__)
+#if !defined(__APPLE__) && !defined(__sun)
 static void
 test_memrchr (void)
 {
@@ -1063,7 +1063,7 @@ test_memcpy (void)
     }
 }
 
-#if !defined(__APPLE__)
+#if !defined(__APPLE__) && !defined(__sun)
 static void
 test_mempcpy (void)
 {
@@ -1442,7 +1442,7 @@ main (void)
   test_strchrnul ();
 # endif
 
-# if !defined(__APPLE__)
+# if !defined(__APPLE__) && !defined(__sun)
   /* rawmemchr.  */
   test_rawmemchr ();
 # endif
@@ -1453,7 +1453,7 @@ main (void)
   /* strrchr.  */
   test_strrchr ();
 
-# if !defined(__APPLE__)
+# if !defined(__APPLE__) && !defined(__sun)
   /* memrchr.  */
   test_memrchr ();
 # endif
@@ -1494,7 +1494,7 @@ main (void)
   /* memmove - must work on overlap.  */
   test_memmove ();
 
-# if !defined(__APPLE__)
+# if !defined(__APPLE__) && !defined(__sun)
   /* mempcpy */
   test_mempcpy ();
 # endif

@@ -1,0 +1,4 @@
+Values in the signal handler:
+  xmm1=0.000000, xmm2=0.000000, xmm5=0.000000, xmm6=0.000000
+Values after the return from the signal handler:
+  xmm0=0.000000, xmm2=0.000000, xmm5=0.000000, xmm6=0.000000

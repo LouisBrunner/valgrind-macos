@@ -1,0 +1,10 @@
+#! /bin/sh
+
+# Solaris libc prints 'Infinity' instead of 'inf' and 'NaN' instead of 'nan'.
+# Filter these differences here.
+sed "s/-Infinity/     -inf/g" |
+sed "s/Infinity/     inf/g"   |
+sed "s/NaN/nan/g"
+
+exit 0
+

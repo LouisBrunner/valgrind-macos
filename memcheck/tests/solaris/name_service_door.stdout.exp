@@ -1,0 +1,13 @@
+---------------------------------------------------------
+app_proto_icmp
+---------------------------------------------------------
+status=0
+errno=0
+herrno=0
+bufsiz=16384
+dbd_off=128 dbd_len=32
+key_off=160 key_len=5
+data_off=168 data_len=12
+ext_off=0 ext_len=0
+key=icmp
+data: name=icmp number=1 aliases=ICMP

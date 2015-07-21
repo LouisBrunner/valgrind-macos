@@ -62,7 +62,7 @@ extern void VG_(di_initialise) ( void );
    released by simply re-opening and closing the same file (even via
    different fd!).
 */
-#if defined(VGO_linux) || defined(VGO_darwin)
+#if defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_solaris)
 extern ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd );
 
 extern void VG_(di_notify_munmap)( Addr a, SizeT len );

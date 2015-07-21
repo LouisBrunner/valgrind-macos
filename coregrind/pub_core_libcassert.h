@@ -75,8 +75,9 @@ extern void VG_(exit_now)( Int status );
 
 /* Called when some unhandleable client behaviour is detected.
    Prints a msg and aborts. */
-extern void VG_(unimplemented) ( const HChar* msg )
-            __attribute__((__noreturn__));
+extern void VG_(unimplemented) ( const HChar* format, ... )
+            __attribute__((__noreturn__))
+            PRINTF_CHECK(1, 2);
 
 /* Show the state of various threads related information, such
    as the guest stacktrace for each thread.

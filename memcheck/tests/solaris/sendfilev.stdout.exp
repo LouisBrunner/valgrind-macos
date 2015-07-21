@@ -1,0 +1,4 @@
+Test file created.
+Received EFAULT as expected.
+Received EINVAL as expected.
+sendfilev for the first buffer succeeded.

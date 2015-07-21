@@ -1,0 +1,5 @@
+Invalid read of size 4
+   at 0x........: main (context_stack_die.c:38)
+ Address 0x........ is on thread 1's stack
+ .... bytes below stack pointer
+

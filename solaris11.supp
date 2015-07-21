@@ -1,0 +1,43 @@
+# This is a real problem in the Solaris libc. It is caused by a read past the
+# FILE structure. It's an intentional hack to differentiate between two file
+# structures, FILE and xFILE.
+{
+   Solaris:snprintf
+   Memcheck:Cond
+   fun:getxfdat
+   ...
+   fun:_ndoprnt
+   fun:snprintf
+}
+
+# The same problem as above.
+{
+   Solaris:vsnprintf
+   Memcheck:Cond
+   fun:getxfdat
+   ...
+   fun:_ndoprnt
+   fun:vsnprintf
+}
+
+# Solaris libc doesn't deallocate I/O buffers on program exit.
+{
+   Solaris:file_buffer_malloc
+   Memcheck:Leak
+   fun:malloc
+   fun:_findbuf
+   obj:/lib/libc.so.1
+   obj:/lib/libc.so.1
+}
+
+#----------------------------------------------------------------------------#
+# Solaris libc reinitializes mutex udp->ld_lock in the child's post-fork
+# handler.
+{  
+   Solaris:postfork_child_mutex_reinit
+   drd:MutexErr
+   fun:mutex_init
+   fun:postfork1_child
+   fun:forkx
+}
+

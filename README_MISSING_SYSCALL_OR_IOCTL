@@ -182,3 +182,54 @@ more specific case to get the right behaviour.
 As above, please create a bug report and attach the patch as described
 on http://www.valgrind.org.
 
+
+Writing your own door call wrappers (Solaris only)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Unlike syscalls or ioctls, door calls transfer data between two userspace
+programs, albeit through a kernel interface. Programs may use completely
+proprietary semantics in the data buffers passed between them.
+Therefore it may not be possible to capture these semantics within
+a Valgrind door call or door return wrapper.
+
+Nevertheless, for system or well-known door services it would be beneficial
+to have a door call and a door return wrapper. Writing such wrapper is pretty
+much the same as writing ioctl wrappers. Please take a few moments to study
+the following picture depicting how a door client and a door server interact
+through the kernel interface in a typical scenario:
+
+
+door client thread          kernel       door server thread
+invokes door_call()                     invokes door_return()
+-------------------------------------------------------------------
+                               <----  PRE(sys_door, DOOR_RETURN)
+PRE(sys_door, DOOR_CALL)  --->
+                               ---->  POST(sys_door, DOOR_RETURN)
+                                           ----> server_procedure()
+                                           <----
+                               <----  PRE(sys_door, DOOR_RETURN)
+POST(sys_door, DOOR_CALL) <---
+
+The first PRE(sys_door, DOOR_RETURN) is invoked with data_ptr=NULL
+and data_size=0. That's because it has not received any data from
+a door call, yet.
+
+Semantics are described by the following functions
+in coregring/m_syswrap/syswrap-solaris.c module:
+o For a door call wrapper the following attributes of 'params' argument:
+  - data_ptr (and associated data_size) as input buffer (request);
+      described in door_call_pre_mem_params_data()
+  - rbuf (and associated rsize) as output buffer (response);
+      described in door_call_post_mem_params_rbuf()
+o For a door return wrapper the following parameters:
+  - data_ptr (and associated data_size) as input buffer (request);
+      described in door_return_post_mem_data()
+  - data_ptr (and associated data_size) as output buffer (response);
+      described in door_return_pre_mem_data()
+
+There's a default case which may not be correct and you have to write a
+more specific case to get the right behaviour. Unless Valgrind's option
+'--sim-hints=lax-doors' is specified, the default case also spits a warning.
+
+As above, please create a bug report and attach the patch as described
+on http://www.valgrind.org.

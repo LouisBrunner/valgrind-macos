@@ -3709,9 +3709,6 @@ Address 0x........ is 0 bytes inside a block of size 100 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (tc19_shadowmem.c:144)
 
-
-More than 100 errors detected.  Subsequent errors
-will still be recorded, but in less detail than before.
 ---------- short gran, 1 .. 98, skip 1 ----------
 ---Thread-Announcement------------------------------------------
 

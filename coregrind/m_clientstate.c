@@ -51,9 +51,13 @@ Addr  VG_(clstk_start_base)  = 0;
 /* Initial highest address of the stack segment of the main thread. */
 Addr  VG_(clstk_end)   = 0;
 UWord VG_(clstk_id)    = 0;
+/* Maximum size of the main thread's client stack. */
+SizeT VG_(clstk_max_size) = 0;
 
-/* linux only: where is the client auxv ? */
-/* This is set up as part of setup_client_stack in initimg-linux.c. */
+/* Solaris and Linux only, specifies where the client auxv is.
+
+   This is set up as part of setup_client_stack() in
+   initimg-{linux,solaris}.c. */
 UWord* VG_(client_auxv) = NULL;
 
 Addr  VG_(brk_base)    = 0;       /* start of brk */
@@ -67,6 +71,11 @@ Int VG_(cl_cmdline_fd) = -1;
 
 /* A fd which refers to the fake /proc/<pid>/auxv in /tmp. */
 Int VG_(cl_auxv_fd) = -1;
+
+#if defined(VGO_solaris)
+/* A fd which refers to the fake /proc/<pid>/psinfo in /tmp. */
+Int VG_(cl_psinfo_fd) = -1;
+#endif /* VGO_solaris */
 
 // Command line pieces, after they have been extracted from argv in
 // m_main.main().  The payload vectors are allocated in VG_AR_CORE
@@ -112,6 +121,12 @@ Addr VG_(client__dl_sysinfo_int80) = 0;
       static size_t stack_cache_actsize;
    in nptl/allocatestack.c */
 SizeT* VG_(client__stack_cache_actsize__addr) = 0;
+
+#if defined(VGO_solaris)
+/* Address of variable vg_vfork_fildes in vgpreload_core.so.0
+   (vg_preloaded.c). */
+Int* VG_(vfork_fildes_addr) = 0;
+#endif
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

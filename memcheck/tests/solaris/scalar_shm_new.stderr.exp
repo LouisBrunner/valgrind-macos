@@ -1,0 +1,75 @@
+---------------------------------------------------------
+ 52:              SYS_shmsys (SHMCTL,IPC_XSTAT64) 4s 1m
+---------------------------------------------------------
+Syscall param shmsys_shmctl_xstat64(opcode) contains uninitialised byte(s)
+   ...
+
+Syscall param shmsys_shmctl_xstat64(shmid) contains uninitialised byte(s)
+   ...
+
+Syscall param shmsys_shmctl_xstat64(cmd) contains uninitialised byte(s)
+   ...
+
+Syscall param shmsys_shmctl_xstat64(buf) contains uninitialised byte(s)
+   ...
+
+Syscall param shmsys(shmctl, ipc_xstat64, buf) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 52:              SYS_shmsys (SHMADV,SHM_ADV_GET) 4s 1m
+---------------------------------------------------------
+Syscall param shmsys_shmadv(opcode) contains uninitialised byte(s)
+   ...
+
+Syscall param shmsys_shmadv(shmid) contains uninitialised byte(s)
+   ...
+
+Syscall param shmsys_shmadv(cmd) contains uninitialised byte(s)
+   ...
+
+Syscall param shmsys_shmadv(advice) contains uninitialised byte(s)
+   ...
+
+Syscall param shmsys(shmadv, advice) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 52:              SYS_shmsys (SHMADV,SHM_ADV_SET) 4s 1m
+---------------------------------------------------------
+Syscall param shmsys_shmadv(opcode) contains uninitialised byte(s)
+   ...
+
+Syscall param shmsys_shmadv(shmid) contains uninitialised byte(s)
+   ...
+
+Syscall param shmsys_shmadv(cmd) contains uninitialised byte(s)
+   ...
+
+Syscall param shmsys_shmadv(advice) contains uninitialised byte(s)
+   ...
+
+Syscall param shmsys(shmadv, advice) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 52:              SYS_shmsys (SHMGET_OSM) 5s 0m
+---------------------------------------------------------
+Syscall param shmsys_shmget_osm(opcode) contains uninitialised byte(s)
+   ...
+
+Syscall param shmsys_shmget_osm(key) contains uninitialised byte(s)
+   ...
+
+Syscall param shmsys_shmget_osm(size) contains uninitialised byte(s)
+   ...
+
+Syscall param shmsys_shmget_osm(shmflg) contains uninitialised byte(s)
+   ...
+
+Syscall param shmsys_shmget_osm(granule_sz) contains uninitialised byte(s)
+   ...
+

@@ -1,7 +1,7 @@
 #include "tests/asm.h"
 	
 	.file	"oneparam.c"
-#if defined(VGO_linux)
+#if defined(VGO_linux) || defined(VGO_solaris)
 	.version	"01.01"
 #endif
 gcc2_compiled.:

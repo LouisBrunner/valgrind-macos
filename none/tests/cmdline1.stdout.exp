@@ -95,7 +95,7 @@ usage: valgrind [options] prog-and-args
     --run-libc-freeres=no|yes free up glibc memory at exit on Linux? [yes]
     --sim-hints=hint1,hint2,...  activate unusual sim behaviours [none] 
          where hint is one of:
-           lax-ioctls fuse-compatible enable-outer
+           lax-ioctls lax-doors fuse-compatible enable-outer
            no-inner-prefix no-nptl-pthread-stackcache none
     --fair-sched=no|yes|try   schedule threads fairly on multicore systems [no]
     --kernel-variant=variant1,variant2,...

@@ -1,0 +1,59 @@
+---Status---
+debugging core file of coredump_many_t from ...
+initial argv: ./coredump_many_threads
+threading model: native threads
+status: process terminated by SIGSEGV (Segmentation Fault), addr=........
+
+---Stacks---
+THREAD STATE SOBJ COUNT
+5 UNPARKED <NONE> 1
+libc.so.1`_thrp_setup
+libc.so.1`_lwp_start
+
+1 UNPARKED <NONE> 1
+libc.so.1`sleep
+coredump_many_threads`main
+coredump_many_threads`_start
+
+2 UNPARKED <NONE> 1
+libc.so.1`sleep
+coredump_many_threads`thread_func2
+libc.so.1`_thrp_setup
+libc.so.1`_lwp_start
+
+3 UNPARKED <NONE> 1
+libc.so.1`sleep
+coredump_many_threads`thread_func3
+libc.so.1`_thrp_setup
+libc.so.1`_lwp_start
+
+4 UNPARKED <NONE> 1
+libc.so.1`sleep
+coredump_many_threads`thread_func4
+libc.so.1`_thrp_setup
+libc.so.1`_lwp_start
+
+6 UNPARKED <NONE> 1
+libc.so.1`sleep
+coredump_many_threads`thread_func6
+libc.so.1`_thrp_setup
+libc.so.1`_lwp_start
+
+7 UNPARKED <NONE> 1
+libc.so.1`sleep
+coredump_many_threads`thread_func7
+libc.so.1`_thrp_setup
+libc.so.1`_lwp_start
+
+8 UNPARKED <NONE> 1
+libc.so.1`sleep
+coredump_many_threads`thread_func8
+libc.so.1`_thrp_setup
+libc.so.1`_lwp_start
+
+9 UNPARKED <NONE> 1
+libc.so.1`sleep
+coredump_many_threads`thread_func9
+libc.so.1`_thrp_setup
+libc.so.1`_lwp_start
+

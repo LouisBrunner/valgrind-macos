@@ -43,6 +43,9 @@ endif
 if VGCONF_OS_IS_DARWIN
 SUBDIRS += darwin
 endif
+if VGCONF_OS_IS_SOLARIS
+SUBDIRS += solaris
+endif
 
 # Platform-specific tests
 if VGCONF_PLATFORMS_INCLUDE_AMD64_LINUX
@@ -51,17 +54,22 @@ endif
 if VGCONF_PLATFORMS_INCLUDE_X86_LINUX
 SUBDIRS += x86-linux
 endif
-
 if VGCONF_PLATFORMS_INCLUDE_AMD64_DARWIN
 SUBDIRS += amd64-darwin
 endif
 if VGCONF_PLATFORMS_INCLUDE_X86_DARWIN
 SUBDIRS += x86-darwin
 endif
+if VGCONF_PLATFORMS_INCLUDE_AMD64_SOLARIS
+SUBDIRS += amd64-solaris
+endif
+if VGCONF_PLATFORMS_INCLUDE_X86_SOLARIS
+SUBDIRS += x86-solaris
+endif
 
 DIST_SUBDIRS = x86 amd64 ppc32 ppc64 arm arm64 s390x mips32 mips64 tilegx \
-	       linux darwin amd64-linux x86-linux amd64-darwin \
-	       x86-darwin scripts .
+               linux darwin solaris amd64-linux x86-linux amd64-darwin \
+               x86-darwin amd64-solaris x86-solaris scripts .
 
 dist_noinst_SCRIPTS = \
 	filter_cmdline0 \
@@ -102,7 +110,8 @@ EXTRA_DIST = \
 	discard.vgtest \
 	empty-exe.vgtest empty-exe.stderr.exp \
 	exec-sigmask.vgtest exec-sigmask.stdout.exp \
-	exec-sigmask.stdout.exp2 exec-sigmask.stdout.exp3 exec-sigmask.stderr.exp \
+	exec-sigmask.stdout.exp2 exec-sigmask.stdout.exp3 \
+	exec-sigmask.stdout.exp-solaris exec-sigmask.stderr.exp \
 	execve.vgtest execve.stdout.exp execve.stderr.exp \
 	faultstatus.vgtest faultstatus.stderr.exp faultstatus.stderr.exp-s390x \
 	fcntl_setown.vgtest fcntl_setown.stdout.exp fcntl_setown.stderr.exp \
@@ -160,6 +169,7 @@ EXTRA_DIST = \
 	require-text-symbol-1.vgtest \
 		require-text-symbol-1.stderr.exp \
 	require-text-symbol-2.vgtest \
+		require-text-symbol-2.stderr.exp-libcso1 \
 		require-text-symbol-2.stderr.exp-libcso6 \
 	res_search.stderr.exp res_search.stdout.exp res_search.vgtest \
 	resolv.stderr.exp resolv.stdout.exp resolv.vgtest \
@@ -250,6 +260,14 @@ AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 # Extra stuff for C tests
 ansi_CFLAGS		= $(AM_CFLAGS) -ansi
 execve_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
+if VGCONF_OS_IS_SOLARIS
+fcntl_setown_LDADD	= -lsocket -lnsl
+fdleak_cmsg_CFLAGS	= $(AM_CFLAGS) -D_XOPEN_SOURCE=500
+fdleak_cmsg_LDADD	= -lsocket -lnsl
+fdleak_ipv4_LDADD	= -lsocket -lnsl
+fdleak_creat_LDADD	= -lsocket -lnsl
+fdleak_socketpair_LDADD	= -lsocket -lnsl
+endif
 floored_LDADD 		= -lm
 manythreads_LDADD	= -lpthread
 if VGCONF_OS_IS_DARWIN
@@ -278,13 +296,29 @@ pth_exit2_LDADD	 	= -lpthread
 pth_mutexspeed_LDADD	= -lpthread
 pth_once_LDADD		= -lpthread
 pth_rwlock_LDADD	= -lpthread
+pth_rwlock_CFLAGS	= $(AM_CFLAGS)
+if VGCONF_OS_IS_SOLARIS
+pth_rwlock_CFLAGS	+= --std=c99
+endif
 pth_stackalign_LDADD	= -lpthread
 res_search_LDADD        = -lresolv -lpthread
+resolv_CFLAGS		= $(AM_CFLAGS)
 resolv_LDADD            = -lresolv -lpthread
+if VGCONF_OS_IS_SOLARIS
+resolv_CFLAGS		+= -U_REENTRANT
+endif
 semlimit_LDADD		= -lpthread
+sha1_test_CFLAGS	= $(AM_CFLAGS)
+if VGCONF_OS_IS_SOLARIS
+sha1_test_CFLAGS	+= -Du_int32_t=uint32_t
+endif
 thread_exits_LDADD	= -lpthread
 threaded_fork_LDADD	= -lpthread
+threadederrno_CFLAGS	= $(AM_CFLAGS)
 threadederrno_LDADD	= -lpthread
+if VGCONF_OS_IS_SOLARIS
+threadederrno_CFLAGS	+= --std=c99
+endif
 tls_SOURCES		= tls.c tls2.c
 tls_DEPENDENCIES	= tls.so tls2.so
 tls_LDFLAGS		= -Wl,-rpath,$(abs_top_builddir)/none/tests

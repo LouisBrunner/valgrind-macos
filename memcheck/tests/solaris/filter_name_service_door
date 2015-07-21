@@ -1,0 +1,8 @@
+#! /bin/sh
+
+# unify name_service_door location
+sed "s|/system/volatile|...|" |
+sed "s|/var/run|...|" |
+
+./filter_stderr "$@"
+

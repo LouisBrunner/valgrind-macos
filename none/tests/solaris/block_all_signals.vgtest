@@ -1,0 +1,4 @@
+prog: block_all_signals
+vgopts: --trace-children=yes
+stderr_filter: filter_stderr
+cleanup: rm -f vgcore.*

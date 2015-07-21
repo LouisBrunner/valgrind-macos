@@ -1,0 +1,2 @@
+prog: sigresend
+vgopts: -q

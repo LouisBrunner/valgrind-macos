@@ -12,8 +12,8 @@ $4 = 0
 changed burning parameters
 Continuing.
 Program received signal SIGTRAP, Trace/breakpoint trap.
-0x........ in do_burn () at sleepers.c:39
-39	   for (i = 0; i < burn; i++) loopnr++;
+0x........ in do_burn () at sleepers.c:41
+41	   for (i = 0; i < burn; i++) loopnr++;
 $5 = 0
 $6 = 0
 $7 = 0

@@ -1,7 +1,7 @@
-Breakpoint 1 at 0x........: file main_pic.c, line 11.
+Breakpoint 1 at 0x........: file main_pic.c, line 12.
 Continuing.
-Breakpoint 1, main (argc=1, argv=0x........) at main_pic.c:11
-11	   printf("address of another_func %p\n", &another_func);
+Breakpoint 1, main (argc=1, argv=0x........) at main_pic.c:12
+12	   printf("address of another_func %#" PRIxPTR "\n", (uintptr_t) another_func);
 $1 = void
 $2 = (int (*)(int, char **)) 0x........ <main>
 $3 = (void (*)(char *)) 0x........ <another_func>

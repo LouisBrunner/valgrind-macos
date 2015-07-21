@@ -448,6 +448,12 @@ static Int ptrace_setregs(Int pid, const VexGuestArchState* vex)
 
    return VG_(ptrace)(VKI_PTRACE_SETREGS, pid, NULL, &regs);
 
+#elif defined(VGP_x86_solaris)
+   I_die_here;
+
+#elif defined(VGP_amd64_solaris)
+   I_die_here;
+
 #else
 #  error Unknown arch
 #endif

@@ -1,0 +1,5 @@
+prereq: rm -f vgcore.*
+prog: coredump_single_thread
+vgopts: -q
+post: ./coredump_single_thread_mdb
+cleanup: rm -f vgcore.*

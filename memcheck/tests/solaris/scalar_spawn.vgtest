@@ -1,0 +1,6 @@
+prereq: test -e scalar_spawn
+prog: scalar_spawn
+vgopts: -q
+stderr_filter: filter_scalar
+# See comment in scalar.vgtest.
+stderr_filter_args: libc

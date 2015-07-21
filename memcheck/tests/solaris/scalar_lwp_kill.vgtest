@@ -1,0 +1,4 @@
+prereq: test -e scalar_lwp_kill
+prog: scalar_lwp_kill
+vgopts: -q
+stderr_filter_args:

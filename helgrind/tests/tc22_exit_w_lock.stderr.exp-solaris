@@ -1,0 +1,39 @@
+
+---Thread-Announcement------------------------------------------
+
+Thread #x was created
+   ...
+   by 0x........: pthread_create@* (hg_intercepts.c:...)
+   by 0x........: main (tc22_exit_w_lock.c:39)
+
+----------------------------------------------------------------
+
+Thread #x: Exiting thread still holds 2 locks
+   ...
+
+---Thread-Announcement------------------------------------------
+
+Thread #x was created
+   ...
+   by 0x........: pthread_create@* (hg_intercepts.c:...)
+   by 0x........: main (tc22_exit_w_lock.c:42)
+
+----------------------------------------------------------------
+
+Thread #x: Exiting thread still holds 1 lock
+   ...
+
+
+Process terminating with default action of signal 6 (SIGABRT)
+   ...
+---Thread-Announcement------------------------------------------
+
+Thread #x is the program's root thread
+
+----------------------------------------------------------------
+
+Thread #x: Exiting thread still holds 1 lock
+   ...
+
+
+ERROR SUMMARY: 3 errors from 3 contexts (suppressed: 0 from 0)

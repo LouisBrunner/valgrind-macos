@@ -1,0 +1,25 @@
+
+Thread 2:
+Conflicting load by thread 2 at 0x........ size 1
+   at 0x........: thread_func (annotate_ignore_rw.c:?)
+   by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
+   by 0x........: (within libpthread-?.?.so)
+Location 0x........ is 0 bytes inside global var "s_a"
+declared at annotate_ignore_rw.c:10
+
+Conflicting store by thread 2 at 0x........ size 1
+   at 0x........: thread_func (annotate_ignore_rw.c:?)
+   by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
+   by 0x........: (within libpthread-?.?.so)
+Location 0x........ is 0 bytes inside global var "s_b"
+declared at annotate_ignore_rw.c:11
+
+Thread 1:
+Conflicting load by thread 1 at 0x........ size 1
+   at 0x........: main (annotate_ignore_rw.c:?)
+Location 0x........ is 0 bytes inside global var "s_c"
+declared at annotate_ignore_rw.c:12
+
+Finished.
+
+ERROR SUMMARY: 3 errors from 3 contexts (suppressed: 0 from 0)

@@ -1,1 +1,2 @@
 prog: bug132918
+stdout_filter: filter_inf_nan

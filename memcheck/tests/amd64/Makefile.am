@@ -59,6 +59,10 @@ AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@
 AM_CCASFLAGS += @FLAG_M64@
 
+insn_pcmpistri_CFLAGS	= $(AM_CFLAGS)
+if VGCONF_OS_IS_SOLARIS
+insn_pcmpistri_CFLAGS	+= --std=c99
+endif
 more_x87_fp_CFLAGS	= $(AM_CFLAGS) -O -ffast-math -mfpmath=387 \
 				-mfancy-math-387
 more_x87_fp_LDADD	= -lm

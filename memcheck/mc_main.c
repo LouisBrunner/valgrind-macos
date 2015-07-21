@@ -1844,6 +1844,12 @@ void MC_(make_mem_defined) ( Addr a, SizeT len )
       ocache_sarp_Clear_Origins ( a, len );
 }
 
+__attribute__((unused))
+static void make_mem_defined_w_tid ( Addr a, SizeT len, ThreadId tid )
+{
+   MC_(make_mem_defined)(a, len);
+}
+
 /* For each byte in [a,a+len), if the byte is addressable, make it be
    defined, but if it isn't addressible, leave it alone.  In other
    words a version of MC_(make_mem_defined) that doesn't mess with
@@ -4195,6 +4201,109 @@ static void mc_pre_reg_read ( CorePart part, ThreadId tid, const HChar* s,
       origin for it. */
    otag = mb_get_origin_for_guest_offset( tid, offset, size );
    MC_(record_regparam_error) ( tid, s, otag );
+}
+
+
+/*------------------------------------------------------------*/
+/*--- Register-memory event handlers                       ---*/
+/*------------------------------------------------------------*/
+
+static void mc_copy_mem_to_reg ( CorePart part, ThreadId tid, Addr a,
+                                 PtrdiffT guest_state_offset, SizeT size )
+{
+   SizeT i;
+   UChar vbits8;
+   Int offset;
+   UInt d32;
+
+   /* Slow loop. */
+   for (i = 0; i < size; i++) {
+      get_vbits8( a+i, &vbits8 );
+      VG_(set_shadow_regs_area)( tid, 1/*shadowNo*/, guest_state_offset+i,
+                                 1, &vbits8 );
+   }
+
+   if (MC_(clo_mc_level) != 3)
+      return;
+
+   /* Track origins. */
+   offset = MC_(get_otrack_shadow_offset)( guest_state_offset, size );
+   if (offset == -1)
+      return;
+
+   switch (size) {
+   case 1:
+      d32 = MC_(helperc_b_load1)( a );
+      break;
+   case 2:
+      d32 = MC_(helperc_b_load2)( a );
+      break;
+   case 4:
+      d32 = MC_(helperc_b_load4)( a );
+      break;
+   case 8:
+      d32 = MC_(helperc_b_load8)( a );
+      break;
+   case 16:
+      d32 = MC_(helperc_b_load16)( a );
+      break;
+   case 32:
+      d32 = MC_(helperc_b_load32)( a );
+      break;
+   default:
+      tl_assert(0);
+   }
+
+   VG_(set_shadow_regs_area)( tid, 2/*shadowNo*/, offset, 4, (UChar*)&d32 );
+}
+
+static void mc_copy_reg_to_mem ( CorePart part, ThreadId tid,
+                                 PtrdiffT guest_state_offset, Addr a,
+                                 SizeT size )
+{
+   SizeT i;
+   UChar vbits8;
+   Int offset;
+   UInt d32;
+
+   /* Slow loop. */
+   for (i = 0; i < size; i++) {
+      VG_(get_shadow_regs_area)( tid, &vbits8, 1/*shadowNo*/,
+                                 guest_state_offset+i, 1 );
+      set_vbits8( a+i, vbits8 );
+   }
+
+   if (MC_(clo_mc_level) != 3)
+      return;
+
+   /* Track origins. */
+   offset = MC_(get_otrack_shadow_offset)( guest_state_offset, size );
+   if (offset == -1)
+      return;
+
+   VG_(get_shadow_regs_area)( tid, (UChar*)&d32, 2/*shadowNo*/, offset, 4 );
+   switch (size) {
+   case 1:
+      MC_(helperc_b_store1)( a, d32 );
+      break;
+   case 2:
+      MC_(helperc_b_store2)( a, d32 );
+      break;
+   case 4:
+      MC_(helperc_b_store4)( a, d32 );
+      break;
+   case 8:
+      MC_(helperc_b_store8)( a, d32 );
+      break;
+   case 16:
+      MC_(helperc_b_store16)( a, d32 );
+      break;
+   case 32:
+      MC_(helperc_b_store32)( a, d32 );
+      break;
+   default:
+      tl_assert(0);
+   }
 }
 
 
@@ -7046,10 +7155,16 @@ static void mc_post_clo_init ( void )
    // directly with brk(), not with sbrk(), perhaps it would be reasonable to
    // just mark all memory it allocates as defined.]
    //
+#  if !defined(VGO_solaris)
    if (MC_(clo_mc_level) == 3)
       VG_(track_new_mem_brk)         ( mc_new_mem_w_tid_make_ECU );
    else
       VG_(track_new_mem_brk)         ( mc_new_mem_w_tid_no_ECU );
+#  else
+   // On Solaris, brk memory has to be marked as defined, otherwise we get
+   // many false positives.
+   VG_(track_new_mem_brk)         ( make_mem_defined_w_tid );
+#  endif
 
    /* This origin tracking cache is huge (~100M), so only initialise
       if we need it. */
@@ -7370,6 +7485,11 @@ static void mc_pre_clo_init(void)
 
    VG_(track_post_reg_write)                  ( mc_post_reg_write );
    VG_(track_post_reg_write_clientcall_return)( mc_post_reg_write_clientcall );
+
+   if (MC_(clo_mc_level) >= 2) {
+      VG_(track_copy_mem_to_reg)  ( mc_copy_mem_to_reg );
+      VG_(track_copy_reg_to_mem)  ( mc_copy_reg_to_mem );
+   }
 
    VG_(needs_watchpoint)          ( mc_mark_unaddressable_for_watchpoint );
 

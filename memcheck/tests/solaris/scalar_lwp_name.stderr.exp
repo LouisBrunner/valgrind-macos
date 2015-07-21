@@ -1,0 +1,35 @@
+---------------------------------------------------------
+ 79:            SYS_lwp_name (lwp_setname) 3s 1m
+---------------------------------------------------------
+Syscall param lwp_name(opcode) contains uninitialised byte(s)
+   ...
+
+Syscall param lwp_name(lwpid) contains uninitialised byte(s)
+   ...
+
+Syscall param lwp_name(name) contains uninitialised byte(s)
+   ...
+
+Syscall param lwp_name(name) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 79:            SYS_lwp_name (lwp_getname) 4s 1m
+---------------------------------------------------------
+Syscall param lwp_name(opcode) contains uninitialised byte(s)
+   ...
+
+Syscall param lwp_name(lwpid) contains uninitialised byte(s)
+   ...
+
+Syscall param lwp_name(name) contains uninitialised byte(s)
+   ...
+
+Syscall param lwp_name(len) contains uninitialised byte(s)
+   ...
+
+Syscall param lwp_name(name) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+

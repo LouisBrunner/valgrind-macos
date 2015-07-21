@@ -66,6 +66,78 @@
 #include "drd_clientreq.h"
 #include "pub_tool_redir.h" /* VG_WRAP_FUNCTION_ZZ() */
 
+#if defined(VGO_solaris)
+/*
+ * Solaris usually provides pthread_* functions on top of Solaris threading
+ * and synchronization functions. Usually both need to be intercepted because
+ * pthread_* ones might not call the Solaris ones (see for example sem_wait()).
+ * Such approach is required to correctly report misuse of the POSIX threads
+ * API.
+ * Therefore DRD intercepts and instruments all such functions but due to
+ * DRD_(thread_enter_synchr)() and DRD_(thread_leave_synchr)() guards in
+ * handle_client_request(), only the top-most function is handled.
+ * So the right thing(TM) happens, as expected.
+ * The only exception is when pthread_* function is a weak alias to the Solaris
+ * threading/synchronization function. In such case only one needs to be
+ * intercepted to avoid redirection ambiguity.
+ *
+ * Intercepted functions rely on the fact that:
+ *  - pthread_mutex_t  == mutex_t
+ *  - pthread_cond_t   == cond_t
+ *  - sem_t            == sema_t
+ *  - pthread_rwlock_t == rwlock_t
+ *
+ * It is necessary to intercept also internal libc synchronization functions
+ * for two reasons:
+ *  - For read-write locks the unlocking function is shared
+ *  - Functions lmutex_lock/lmutex_unlock guard many critical sections in libc
+ *    which will be otherwise reported by DRD
+ */
+#include <synch.h>
+#include <thread.h>
+#include "pub_tool_vki.h"
+
+/*
+ * Solaris provides higher throughput, parallelism and scalability than other
+ * operating systems, at the cost of more fine-grained locking activity.
+ * This means for example that when a thread is created under Linux, just one
+ * big lock in glibc is used for all thread setup. Solaris libc uses several
+ * fine-grained locks and the creator thread resumes its activities as soon
+ * as possible, leaving for example stack and TLS setup activities to the
+ * created thread.
+ *
+ * This situation confuses DRD as it assumes there is some false ordering
+ * in place between creator and created thread; and therefore many types of
+ * race conditions in the application would not be reported. To prevent such
+ * false ordering, command line option --ignore-thread-creation is set to
+ * 'yes' by default on Solaris. All activity (loads, stores, client requests)
+ * is therefore ignored during:
+ * - pthread_create() call in the creator thread [libc.so]
+ * - thread creation phase (stack and TLS setup) in the created thread [libc.so]
+ *
+ * As explained in the comments for _ti_bind_guard(), whenever the runtime
+ * linker has to perform any activity (such as resolving a symbol), it protects
+ * its data structures by calling into rt_bind_guard() which in turn invokes
+ * _ti_bind_guard() in libc. Pointers to _ti_bind_guard() and _ti_bind_clear()
+ * are passed from libc to runtime linker in _ld_libc() call during libc_init().
+ * All activity is also ignored during:
+ * - runtime dynamic linker work between rt_bind_guard() and rt_bind_clear()
+ *   calls [ld.so]
+ *
+ * This also means that DRD does not report race conditions in libc (when
+ * --ignore-thread-creation=yes) and runtime linker itself (unconditionally)
+ * during these ignored sequences.
+ */
+
+/*
+ * Original function pointers for _ti_bind_guard() and _ti_bind_clear()
+ * from libc. They are intercepted in function wrapper of _ld_libc().
+ */
+typedef int (*drd_rtld_guard_fn)(int flags);
+static drd_rtld_guard_fn DRD_(rtld_bind_guard) = NULL;
+static drd_rtld_guard_fn DRD_(rtld_bind_clear) = NULL;
+#endif
+
 
 /*
  * Notes regarding thread creation:
@@ -101,6 +173,15 @@ static int never_true;
 	 fflush(stdout);						\
       return pth_func_result;						\
    }
+#elif defined(VGO_solaris)
+/* On Solaris, libpthread is just a filter library on top of libc.
+ * Threading and synchronization functions in runtime linker are not
+ * intercepted.
+ */
+#define PTH_FUNC(ret_ty, zf, implf, argl_decl, argl)                    \
+   ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBC_SONAME,zf) argl_decl;           \
+   ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBC_SONAME,zf) argl_decl            \
+   { return implf argl; }
 #else
 #define PTH_FUNC(ret_ty, zf, implf, argl_decl, argl)                    \
    ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBPTHREAD_SONAME,zf) argl_decl;     \
@@ -177,6 +258,15 @@ static void DRD_(init)(void)
 {
    DRD_(check_threading_library)();
    DRD_(set_main_thread_state)();
+#if defined(VGO_solaris)
+   if ((DRD_(rtld_bind_guard) == NULL) || (DRD_(rtld_bind_clear) == NULL)) {
+      fprintf(stderr,
+"Bind guard functions for the runtime linker (ld.so.1) were not intercepted.\n"
+"This means the interface between libc and runtime linker changed and DRD\n"
+"needs to be ported properly. Giving up.\n");
+      abort();
+   }
+#endif
 }
 
 static __always_inline void DRD_(ignore_mutex_ordering)(pthread_mutex_t *mutex)
@@ -275,6 +365,23 @@ static MutexT DRD_(pthread_to_drd_mutex_type)(int kind)
       return mutex_type_invalid_mutex;
 }
 
+#if defined(VGO_solaris)
+/**
+ * Solaris threads and DRD each have their own mutex type identification.
+ * Convert Solaris threads' mutex type to DRD's mutex type.
+ */
+static MutexT DRD_(thread_to_drd_mutex_type)(int type)
+{
+   if (type & LOCK_RECURSIVE) {
+      return mutex_type_recursive_mutex;
+   } else if (type & LOCK_ERRORCHECK) {
+      return mutex_type_errorcheck_mutex;
+   } else {
+      return mutex_type_default_mutex;
+   }
+}
+#endif /* VGO_solaris */
+
 #define IS_ALIGNED(p) (((uintptr_t)(p) & (sizeof(*(p)) - 1)) == 0)
 
 /**
@@ -306,6 +413,9 @@ static __always_inline MutexT DRD_(mutex_type)(pthread_mutex_t* mutex)
       const int kind = mutex->__data.__kind & 3;
       return DRD_(pthread_to_drd_mutex_type)(kind);
    }
+#elif defined(VGO_solaris)
+      const int type = ((mutex_t *) mutex)->vki_mutex_type;
+      return DRD_(thread_to_drd_mutex_type)(type);
 #else
    /*
     * Another POSIX threads implementation. The mutex type won't be printed
@@ -503,6 +613,113 @@ PTH_FUNCS(int, pthreadZucreate, pthread_create_intercept,
            void *(*start) (void *), void *arg),
           (thread, attr, start, arg));
 
+#if defined(VGO_solaris)
+/* Solaris also provides thr_create() in addition to pthread_create().
+ * Both pthread_create(3C) and thr_create(3C) are based on private
+ * _thrp_create().
+ */
+static __always_inline
+int thr_create_intercept(void *stk, size_t stksize, void *(*start)(void *),
+                         void *arg, long flags, thread_t *new_thread)
+{
+   int                ret;
+   OrigFn             fn;
+   DrdSema            wrapper_started;
+   DrdPosixThreadArgs thread_args;
+
+   VALGRIND_GET_ORIG_FN(fn);
+
+   DRD_(sema_init)(&wrapper_started);
+   thread_args.start           = start;
+   thread_args.arg             = arg;
+   thread_args.wrapper_started = &wrapper_started;
+   /*
+    * Find out whether the thread will be started as a joinable thread
+    * or as a detached thread.
+    */
+   if (flags & THR_DETACHED)
+      thread_args.detachstate = PTHREAD_CREATE_DETACHED;
+   else
+      thread_args.detachstate = PTHREAD_CREATE_JOINABLE;
+
+   DRD_(entering_pthread_create)();
+   CALL_FN_W_6W(ret, fn, stk, stksize, DRD_(thread_wrapper), &thread_args,
+                flags, new_thread);
+   DRD_(left_pthread_create)();
+
+   if (ret == 0) {
+      /* Wait until the thread wrapper started. */
+      DRD_(sema_down)(&wrapper_started);
+   }
+
+   DRD_(sema_destroy)(&wrapper_started);
+
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__DRD_START_NEW_SEGMENT,
+                                   pthread_self(), 0, 0, 0, 0);
+
+   return ret;
+}
+
+PTH_FUNCS(int, thrZucreate, thr_create_intercept,
+          (void *stk, size_t stksize, void *(*start)(void *), void *arg,
+           long flags, thread_t *new_thread),
+          (stk, stksize, start, arg, flags, new_thread));
+#endif /* VGO_solaris */
+
+#if defined(VGO_solaris)
+/*
+ * Intercepts for _ti_bind_guard() and _ti_bind_clear() functions from libc.
+ * These are intercepted during _ld_libc() call by identifying CI_BIND_GUARD
+ * and CI_BIND_CLEAR, to provide resilience against function renaming.
+ */
+static __always_inline
+int DRD_(_ti_bind_guard_intercept)(int flags) {
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__RTLD_BIND_GUARD,
+                                   flags, 0, 0, 0, 0);
+   return DRD_(rtld_bind_guard)(flags);
+}
+
+static __always_inline
+int DRD_(_ti_bind_clear_intercept)(int flags) {
+   int ret = DRD_(rtld_bind_clear)(flags);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__RTLD_BIND_CLEAR,
+                                   flags, 0, 0, 0, 0);
+   return ret;
+}
+
+/*
+ * Wrapped _ld_libc() from the runtime linker ld.so.1.
+ */
+void VG_WRAP_FUNCTION_ZZ(VG_Z_LD_SO_1, ZuldZulibc)(vki_Lc_interface *ptr);
+void VG_WRAP_FUNCTION_ZZ(VG_Z_LD_SO_1, ZuldZulibc)(vki_Lc_interface *ptr)
+{
+   OrigFn fn;
+   int    tag;
+
+   VALGRIND_GET_ORIG_FN(fn);
+
+   vki_Lc_interface *funcs = ptr;
+   for (tag = funcs->ci_tag; tag != 0; tag = (++funcs)->ci_tag) {
+      switch (tag) {
+      case VKI_CI_BIND_GUARD:
+         if (funcs->vki_ci_un.ci_func != DRD_(_ti_bind_guard_intercept)) {
+            DRD_(rtld_bind_guard) = funcs->vki_ci_un.ci_func;
+            funcs->vki_ci_un.ci_func = DRD_(_ti_bind_guard_intercept);
+         }
+         break;
+      case VKI_CI_BIND_CLEAR:
+         if (funcs->vki_ci_un.ci_func != DRD_(_ti_bind_clear_intercept)) {
+            DRD_(rtld_bind_clear) = funcs->vki_ci_un.ci_func;
+            funcs->vki_ci_un.ci_func = DRD_(_ti_bind_clear_intercept);
+         }
+         break;
+      }
+   }
+
+   CALL_FN_v_W(fn, ptr);
+}
+#endif /* VGO_solaris */
+
 static __always_inline
 int pthread_join_intercept(pthread_t pt_joinee, void **thread_return)
 {
@@ -528,6 +745,34 @@ int pthread_join_intercept(pthread_t pt_joinee, void **thread_return)
 PTH_FUNCS(int, pthreadZujoin, pthread_join_intercept,
           (pthread_t pt_joinee, void **thread_return),
           (pt_joinee, thread_return));
+
+#if defined(VGO_solaris)
+/* Solaris also provides thr_join() in addition to pthread_join().
+ * Both pthread_join(3C) and thr_join(3C) are based on private _thrp_join().
+ *
+ * :TODO: No functionality is currently provided for joinee == 0 and departed.
+ *        This would require another client request, of course.
+ */
+static __always_inline
+int thr_join_intercept(thread_t joinee, thread_t *departed, void **thread_return)
+{
+   int      ret;
+   OrigFn   fn;
+
+   VALGRIND_GET_ORIG_FN(fn);
+   CALL_FN_W_WWW(ret, fn, joinee, departed, thread_return);
+   if (ret == 0)
+   {
+      VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__POST_THREAD_JOIN,
+                                      joinee, 0, 0, 0, 0);
+   }
+   return ret;
+}
+
+PTH_FUNCS(int, thrZujoin, thr_join_intercept,
+          (thread_t joinee, thread_t *departed, void **thread_return),
+          (joinee, departed, thread_return));
+#endif /* VGO_solaris */
 
 static __always_inline
 int pthread_detach_intercept(pthread_t pt_thread)
@@ -613,6 +858,28 @@ PTH_FUNCS(int, pthreadZumutexZuinit, pthread_mutex_init_intercept,
           (pthread_mutex_t *mutex, const pthread_mutexattr_t* attr),
           (mutex, attr));
 
+#if defined(VGO_solaris)
+static __always_inline
+int mutex_init_intercept(mutex_t *mutex, int type, void *arg)
+{
+   int ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PRE_MUTEX_INIT,
+                                   mutex, DRD_(thread_to_drd_mutex_type)(type),
+                                   0, 0, 0);
+   CALL_FN_W_WWW(ret, fn, mutex, type, arg);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__POST_MUTEX_INIT,
+                                   mutex, 0, 0, 0, 0);
+   return ret;
+}
+
+PTH_FUNCS(int, mutexZuinit, mutex_init_intercept,
+          (mutex_t *mutex, int type, void *arg),
+          (mutex, type, arg));
+#endif /* VGO_solaris */
+
 static __always_inline
 int pthread_mutex_destroy_intercept(pthread_mutex_t* mutex)
 {
@@ -627,8 +894,14 @@ int pthread_mutex_destroy_intercept(pthread_mutex_t* mutex)
    return ret;
 }
 
+#if defined(VGO_solaris)
+/* On Solaris, pthread_mutex_destroy is a weak alias to mutex_destroy. */
+PTH_FUNCS(int, mutexZudestroy, pthread_mutex_destroy_intercept,
+          (pthread_mutex_t *mutex), (mutex));
+#else
 PTH_FUNCS(int, pthreadZumutexZudestroy, pthread_mutex_destroy_intercept,
           (pthread_mutex_t *mutex), (mutex));
+#endif /* VGO_solaris */
 
 static __always_inline
 int pthread_mutex_lock_intercept(pthread_mutex_t* mutex)
@@ -644,8 +917,36 @@ int pthread_mutex_lock_intercept(pthread_mutex_t* mutex)
    return ret;
 }
 
+#if defined(VGO_solaris)
+/* On Solaris, pthread_mutex_lock is a weak alias to mutex_lock. */
+PTH_FUNCS(int, mutexZulock, pthread_mutex_lock_intercept,
+          (pthread_mutex_t *mutex), (mutex));
+#else
 PTH_FUNCS(int, pthreadZumutexZulock, pthread_mutex_lock_intercept,
           (pthread_mutex_t *mutex), (mutex));
+#endif /* VGO_solaris */
+
+#if defined(VGO_solaris)
+/* Internal to libc. Mutex is usually initialized only implicitly,
+ * by zeroing mutex_t structure.
+ */
+static __always_inline
+void lmutex_lock_intercept(mutex_t *mutex)
+{
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PRE_MUTEX_LOCK,
+                                   mutex,
+                                   DRD_(mutex_type)((pthread_mutex_t *) mutex),
+                                   False /* try_lock */, 0, 0);
+   CALL_FN_v_W(fn, mutex);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__POST_MUTEX_LOCK,
+                                   mutex, True /* took_lock */, 0, 0, 0);
+}
+
+PTH_FUNCS(void, lmutexZulock, lmutex_lock_intercept,
+          (mutex_t *mutex), (mutex));
+#endif /* VGO_solaris */
 
 static __always_inline
 int pthread_mutex_trylock_intercept(pthread_mutex_t* mutex)
@@ -661,8 +962,14 @@ int pthread_mutex_trylock_intercept(pthread_mutex_t* mutex)
    return ret;
 }
 
+#if defined(VGO_solaris)
+/* On Solaris, pthread_mutex_trylock is a weak alias to mutex_trylock. */
+PTH_FUNCS(int, mutexZutrylock, pthread_mutex_trylock_intercept,
+          (pthread_mutex_t *mutex), (mutex));
+#else
 PTH_FUNCS(int, pthreadZumutexZutrylock, pthread_mutex_trylock_intercept,
           (pthread_mutex_t *mutex), (mutex));
+#endif /* VGO_solaris */
 
 static __always_inline
 int pthread_mutex_timedlock_intercept(pthread_mutex_t *mutex,
@@ -682,6 +989,12 @@ int pthread_mutex_timedlock_intercept(pthread_mutex_t *mutex,
 PTH_FUNCS(int, pthreadZumutexZutimedlock, pthread_mutex_timedlock_intercept,
           (pthread_mutex_t *mutex, const struct timespec *abs_timeout),
           (mutex, abs_timeout));
+#if defined(VGO_solaris)
+PTH_FUNCS(int,
+          pthreadZumutexZureltimedlockZunp, pthread_mutex_timedlock_intercept,
+          (pthread_mutex_t *mutex, const struct timespec *timeout),
+          (mutex, timeout));
+#endif /* VGO_solaris */
 
 static __always_inline
 int pthread_mutex_unlock_intercept(pthread_mutex_t *mutex)
@@ -697,8 +1010,34 @@ int pthread_mutex_unlock_intercept(pthread_mutex_t *mutex)
    return ret;
 }
 
+#if defined(VGO_solaris)
+/* On Solaris, pthread_mutex_unlock is a weak alias to mutex_unlock. */
+PTH_FUNCS(int, mutexZuunlock, pthread_mutex_unlock_intercept,
+          (pthread_mutex_t *mutex), (mutex));
+#else
 PTH_FUNCS(int, pthreadZumutexZuunlock, pthread_mutex_unlock_intercept,
           (pthread_mutex_t *mutex), (mutex));
+#endif /* VGO_solaris */
+
+#if defined(VGO_solaris)
+/* Internal to libc. */
+static __always_inline
+void lmutex_unlock_intercept(mutex_t *mutex)
+{
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PRE_MUTEX_UNLOCK,
+                                   mutex,
+                                   DRD_(mutex_type)((pthread_mutex_t *) mutex),
+                                   0, 0, 0);
+   CALL_FN_v_W(fn, mutex);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__POST_MUTEX_UNLOCK,
+                                   mutex, 0, 0, 0, 0);
+}
+
+PTH_FUNCS(void, lmutexZuunlock, lmutex_unlock_intercept,
+          (mutex_t *mutex), (mutex));
+#endif /* VGO_solaris */
 
 static __always_inline
 int pthread_cond_init_intercept(pthread_cond_t* cond,
@@ -719,6 +1058,26 @@ PTH_FUNCS(int, pthreadZucondZuinit, pthread_cond_init_intercept,
           (pthread_cond_t* cond, const pthread_condattr_t* attr),
           (cond, attr));
 
+#if defined(VGO_solaris)
+static __always_inline
+int cond_init_intercept(cond_t *cond, int type, void *arg)
+{
+   int ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PRE_COND_INIT,
+                                   cond, 0, 0, 0, 0);
+   CALL_FN_W_WWW(ret, fn, cond, type, arg);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__POST_COND_INIT,
+                                   cond, 0, 0, 0, 0);
+   return ret;
+}
+
+PTH_FUNCS(int, condZuinit, cond_init_intercept,
+          (cond_t *cond, int type, void *arg),
+          (cond, type, arg));
+#endif /* VGO_solaris */
+
 static __always_inline
 int pthread_cond_destroy_intercept(pthread_cond_t* cond)
 {
@@ -733,8 +1092,14 @@ int pthread_cond_destroy_intercept(pthread_cond_t* cond)
    return ret;
 }
 
+#if defined(VGO_solaris)
+/* On Solaris, pthread_cond_destroy is a weak alias to cond_destroy. */
+PTH_FUNCS(int, condZudestroy, pthread_cond_destroy_intercept,
+          (pthread_cond_t *cond), (cond));
+#else
 PTH_FUNCS(int, pthreadZucondZudestroy, pthread_cond_destroy_intercept,
           (pthread_cond_t* cond), (cond));
+#endif /* VGO_solaris */
 
 static __always_inline
 int pthread_cond_wait_intercept(pthread_cond_t *cond, pthread_mutex_t *mutex)
@@ -753,6 +1118,11 @@ int pthread_cond_wait_intercept(pthread_cond_t *cond, pthread_mutex_t *mutex)
 PTH_FUNCS(int, pthreadZucondZuwait, pthread_cond_wait_intercept,
           (pthread_cond_t *cond, pthread_mutex_t *mutex),
           (cond, mutex));
+#if defined(VGO_solaris)
+PTH_FUNCS(int, condZuwait, pthread_cond_wait_intercept,
+          (pthread_cond_t *cond, pthread_mutex_t *mutex),
+          (cond, mutex));
+#endif /* VGO_solaris */
 
 static __always_inline
 int pthread_cond_timedwait_intercept(pthread_cond_t *cond,
@@ -774,6 +1144,16 @@ PTH_FUNCS(int, pthreadZucondZutimedwait, pthread_cond_timedwait_intercept,
           (pthread_cond_t *cond, pthread_mutex_t *mutex,
            const struct timespec* abstime),
           (cond, mutex, abstime));
+#if defined(VGO_solaris)
+PTH_FUNCS(int, condZutimedwait, pthread_cond_timedwait_intercept,
+          (pthread_cond_t *cond, pthread_mutex_t *mutex,
+           const struct timespec *timeout),
+          (cond, mutex, timeout));
+PTH_FUNCS(int, condZureltimedwait, pthread_cond_timedwait_intercept,
+          (pthread_cond_t *cond, pthread_mutex_t *mutex,
+           const struct timespec *timeout),
+          (cond, mutex, timeout));
+#endif /* VGO_solaris */
 
 // NOTE: be careful to intercept only pthread_cond_signal() and not Darwin's
 // pthread_cond_signal_thread_np(). The former accepts one argument; the latter
@@ -795,8 +1175,14 @@ int pthread_cond_signal_intercept(pthread_cond_t* cond)
    return ret;
 }
 
+#if defined(VGO_solaris)
+/* On Solaris, pthread_cond_signal is a weak alias to cond_signal. */
+PTH_FUNCS(int, condZusignal, pthread_cond_signal_intercept,
+          (pthread_cond_t *cond), (cond));
+#else
 PTH_FUNCS(int, pthreadZucondZusignal, pthread_cond_signal_intercept,
           (pthread_cond_t* cond), (cond));
+#endif /* VGO_solaris */
 
 static __always_inline
 int pthread_cond_broadcast_intercept(pthread_cond_t* cond)
@@ -812,8 +1198,14 @@ int pthread_cond_broadcast_intercept(pthread_cond_t* cond)
    return ret;
 }
 
+#if defined(VGO_solaris)
+/* On Solaris, pthread_cond_broadcast is a weak alias to cond_broadcast. */
+PTH_FUNCS(int, condZubroadcast, pthread_cond_broadcast_intercept,
+          (pthread_cond_t *cond), (cond));
+#else
 PTH_FUNCS(int, pthreadZucondZubroadcast, pthread_cond_broadcast_intercept,
           (pthread_cond_t* cond), (cond));
+#endif /* VGO_solaris */
 
 #if defined(HAVE_PTHREAD_SPIN_LOCK) \
     && !defined(DISABLE_PTHREAD_SPINLOCK_INTERCEPT)
@@ -980,6 +1372,27 @@ int sem_init_intercept(sem_t *sem, int pshared, unsigned int value)
 PTH_FUNCS(int, semZuinit, sem_init_intercept,
           (sem_t *sem, int pshared, unsigned int value), (sem, pshared, value));
 
+#if defined(VGO_solaris)
+static __always_inline
+int sema_init_intercept(sema_t *sem, unsigned int value, int type, void *arg)
+{
+   int   ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PRE_SEM_INIT,
+                                   sem, type == USYNC_PROCESS ? 1 : 0,
+                                   value, 0, 0);
+   CALL_FN_W_WWWW(ret, fn, sem, value, type, arg);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__POST_SEM_INIT,
+                                   sem, 0, 0, 0, 0);
+   return ret;
+}
+
+PTH_FUNCS(int, semaZuinit, sema_init_intercept,
+          (sema_t *sem, unsigned int value, int type, void *arg),
+          (sem, value, type, arg));
+#endif /* VGO_solaris */
+
 static __always_inline
 int sem_destroy_intercept(sem_t *sem)
 {
@@ -995,6 +1408,9 @@ int sem_destroy_intercept(sem_t *sem)
 }
 
 PTH_FUNCS(int, semZudestroy, sem_destroy_intercept, (sem_t *sem), (sem));
+#if defined(VGO_solaris)
+PTH_FUNCS(int, semaZudestroy, sem_destroy_intercept, (sem_t *sem), (sem));
+#endif /* VGO_solaris */
 
 static __always_inline
 sem_t* sem_open_intercept(const char *name, int oflag, mode_t mode,
@@ -1045,6 +1461,9 @@ static __always_inline int sem_wait_intercept(sem_t *sem)
 }
 
 PTH_FUNCS(int, semZuwait, sem_wait_intercept, (sem_t *sem), (sem));
+#if defined(VGO_solaris)
+PTH_FUNCS(int, semaZuwait, sem_wait_intercept, (sem_t *sem), (sem));
+#endif /* VGO_solaris */
 
 static __always_inline int sem_trywait_intercept(sem_t *sem)
 {
@@ -1060,6 +1479,9 @@ static __always_inline int sem_trywait_intercept(sem_t *sem)
 }
 
 PTH_FUNCS(int, semZutrywait, sem_trywait_intercept, (sem_t *sem), (sem));
+#if defined(VGO_solaris)
+PTH_FUNCS(int, semaZutrywait, sem_trywait_intercept, (sem_t *sem), (sem));
+#endif /* VGO_solaris */
 
 static __always_inline
 int sem_timedwait_intercept(sem_t *sem, const struct timespec *abs_timeout)
@@ -1078,6 +1500,14 @@ int sem_timedwait_intercept(sem_t *sem, const struct timespec *abs_timeout)
 PTH_FUNCS(int, semZutimedwait, sem_timedwait_intercept,
           (sem_t *sem, const struct timespec *abs_timeout),
           (sem, abs_timeout));
+#if defined(VGO_solaris)
+PTH_FUNCS(int, semaZutimedwait, sem_timedwait_intercept,
+          (sem_t *sem, const struct timespec *timeout),
+          (sem, timeout));
+PTH_FUNCS(int, semaZureltimedwait, sem_timedwait_intercept,
+          (sem_t *sem, const struct timespec *timeout),
+          (sem, timeout));
+#endif /* VGO_solaris */
 
 static __always_inline int sem_post_intercept(sem_t *sem)
 {
@@ -1093,6 +1523,9 @@ static __always_inline int sem_post_intercept(sem_t *sem)
 }
 
 PTH_FUNCS(int, semZupost, sem_post_intercept, (sem_t *sem), (sem));
+#if defined(VGO_solaris)
+PTH_FUNCS(int, semaZupost, sem_post_intercept, (sem_t *sem), (sem));
+#endif /* VGO_solaris */
 
 /* Android's pthread.h doesn't say anything about rwlocks, hence these
    functions have to be conditionally compiled. */
@@ -1118,6 +1551,26 @@ PTH_FUNCS(int,
           (pthread_rwlock_t* rwlock, const pthread_rwlockattr_t* attr),
           (rwlock, attr));
 
+#if defined(VGO_solaris)
+static __always_inline
+int rwlock_init_intercept(rwlock_t *rwlock, int type, void *arg)
+{
+   int   ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PRE_RWLOCK_INIT,
+                                   rwlock, 0, 0, 0, 0);
+   CALL_FN_W_WWW(ret, fn, rwlock, type, arg);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__POST_RWLOCK_INIT,
+                                   rwlock, 0, 0, 0, 0);
+   return ret;
+}
+
+PTH_FUNCS(int, rwlockZuinit, rwlock_init_intercept,
+          (rwlock_t *rwlock, int type, void *arg),
+          (rwlock, type, arg));
+#endif /* VGO_solaris */
+
 static __always_inline
 int pthread_rwlock_destroy_intercept(pthread_rwlock_t* rwlock)
 {
@@ -1132,9 +1585,16 @@ int pthread_rwlock_destroy_intercept(pthread_rwlock_t* rwlock)
    return ret;
 }
 
+#if defined(VGO_solaris)
+/* On Solaris, pthread_rwlock_destroy is a weak alias to rwlock_destroy. */
+PTH_FUNCS(int,
+          rwlockZudestroy, pthread_rwlock_destroy_intercept,
+          (pthread_rwlock_t *rwlock), (rwlock));
+#else
 PTH_FUNCS(int,
           pthreadZurwlockZudestroy, pthread_rwlock_destroy_intercept,
           (pthread_rwlock_t* rwlock), (rwlock));
+#endif /* VGO_solaris */
 
 static __always_inline
 int pthread_rwlock_rdlock_intercept(pthread_rwlock_t* rwlock)
@@ -1150,9 +1610,34 @@ int pthread_rwlock_rdlock_intercept(pthread_rwlock_t* rwlock)
    return ret;
 }
 
+#if defined(VGO_solaris)
+/* On Solaris, pthread_rwlock_rdlock is a weak alias to rw_rdlock. */
+PTH_FUNCS(int,
+          rwZurdlock, pthread_rwlock_rdlock_intercept,
+          (pthread_rwlock_t *rwlock), (rwlock));
+#else
 PTH_FUNCS(int,
           pthreadZurwlockZurdlock, pthread_rwlock_rdlock_intercept,
           (pthread_rwlock_t* rwlock), (rwlock));
+#endif /* VGO_solaris */
+
+#if defined(VGO_solaris)
+/* Internal to libc. */
+static __always_inline
+void lrw_rdlock_intercept(rwlock_t *rwlock)
+{
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PRE_RWLOCK_RDLOCK,
+                                   rwlock, 0, 0, 0, 0);
+   CALL_FN_v_W(fn, rwlock);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__POST_RWLOCK_RDLOCK,
+                                   rwlock, True /* took_lock */, 0, 0, 0);
+}
+
+PTH_FUNCS(void, lrwZurdlock, lrw_rdlock_intercept,
+          (rwlock_t *rwlock), (rwlock));
+#endif /* VGO_solaris */
 
 static __always_inline
 int pthread_rwlock_wrlock_intercept(pthread_rwlock_t* rwlock)
@@ -1168,9 +1653,34 @@ int pthread_rwlock_wrlock_intercept(pthread_rwlock_t* rwlock)
    return ret;
 }
 
+#if defined(VGO_solaris)
+/* On Solaris, pthread_rwlock_wrlock is a weak alias to rw_wrlock. */
+PTH_FUNCS(int,
+          rwZuwrlock, pthread_rwlock_wrlock_intercept,
+          (pthread_rwlock_t *rwlock), (rwlock));
+#else
 PTH_FUNCS(int,
           pthreadZurwlockZuwrlock, pthread_rwlock_wrlock_intercept,
           (pthread_rwlock_t* rwlock), (rwlock));
+#endif /* VGO_solaris */
+
+#if defined(VGO_solaris)
+/* Internal to libc. */
+static __always_inline
+void lrw_wrlock_intercept(rwlock_t *rwlock)
+{
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PRE_RWLOCK_WRLOCK,
+                                   rwlock, 0, 0, 0, 0);
+   CALL_FN_v_W(fn, rwlock);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__POST_RWLOCK_WRLOCK,
+                                   rwlock, True /* took_lock */, 0, 0, 0);
+}
+
+PTH_FUNCS(void, lrwZuwrlock, lrw_wrlock_intercept,
+          (rwlock_t *rwlock), (rwlock));
+#endif /* VGO_solaris */
 
 static __always_inline
 int pthread_rwlock_timedrdlock_intercept(pthread_rwlock_t* rwlock,
@@ -1191,6 +1701,12 @@ PTH_FUNCS(int,
           pthreadZurwlockZutimedrdlock, pthread_rwlock_timedrdlock_intercept,
           (pthread_rwlock_t* rwlock, const struct timespec *timeout),
           (rwlock, timeout));
+#if defined(VGO_solaris)
+PTH_FUNCS(int, pthreadZurwlockZureltimedrdlockZunp,
+          pthread_rwlock_timedrdlock_intercept,
+          (pthread_rwlock_t *rwlock, const struct timespec *timeout),
+          (rwlock, timeout));
+#endif /* VGO_solaris */
 
 static __always_inline
 int pthread_rwlock_timedwrlock_intercept(pthread_rwlock_t* rwlock,
@@ -1211,6 +1727,12 @@ PTH_FUNCS(int,
           pthreadZurwlockZutimedwrlock, pthread_rwlock_timedwrlock_intercept,
           (pthread_rwlock_t* rwlock, const struct timespec *timeout),
           (rwlock, timeout));
+#if defined(VGO_solaris)
+PTH_FUNCS(int, pthreadZurwlockZureltimedwrlockZunp,
+          pthread_rwlock_timedwrlock_intercept,
+          (pthread_rwlock_t *rwlock, const struct timespec *timeout),
+          (rwlock, timeout));
+#endif /* VGO_solaris */
 
 static __always_inline
 int pthread_rwlock_tryrdlock_intercept(pthread_rwlock_t* rwlock)
@@ -1226,9 +1748,16 @@ int pthread_rwlock_tryrdlock_intercept(pthread_rwlock_t* rwlock)
    return ret;
 }
 
+#if defined(VGO_solaris)
+/* On Solaris, pthread_rwlock_tryrdlock is a weak alias to rw_tryrdlock. */
+PTH_FUNCS(int,
+          rwZutryrdlock, pthread_rwlock_tryrdlock_intercept,
+          (pthread_rwlock_t *rwlock), (rwlock));
+#else
 PTH_FUNCS(int,
           pthreadZurwlockZutryrdlock, pthread_rwlock_tryrdlock_intercept,
           (pthread_rwlock_t* rwlock), (rwlock));
+#endif /* VGO_solaris */
 
 static __always_inline
 int pthread_rwlock_trywrlock_intercept(pthread_rwlock_t* rwlock)
@@ -1244,9 +1773,16 @@ int pthread_rwlock_trywrlock_intercept(pthread_rwlock_t* rwlock)
    return ret;
 }
 
+#if defined(VGO_solaris)
+/* On Solaris, pthread_rwlock_trywrlock is a weak alias to rw_trywrlock. */
+PTH_FUNCS(int,
+          rwZutrywrlock, pthread_rwlock_trywrlock_intercept,
+          (pthread_rwlock_t *rwlock), (rwlock));
+#else
 PTH_FUNCS(int,
           pthreadZurwlockZutrywrlock, pthread_rwlock_trywrlock_intercept,
           (pthread_rwlock_t* rwlock), (rwlock));
+#endif /* VGO_solaris */
 
 static __always_inline
 int pthread_rwlock_unlock_intercept(pthread_rwlock_t* rwlock)
@@ -1262,8 +1798,15 @@ int pthread_rwlock_unlock_intercept(pthread_rwlock_t* rwlock)
    return ret;
 }
 
+#if defined(VGO_solaris)
+/* On Solaris, pthread_rwlock_unlock is a weak alias to rw_unlock. */
+PTH_FUNCS(int,
+          rwZuunlock, pthread_rwlock_unlock_intercept,
+          (pthread_rwlock_t *rwlock), (rwlock));
+#else
 PTH_FUNCS(int,
           pthreadZurwlockZuunlock, pthread_rwlock_unlock_intercept,
           (pthread_rwlock_t* rwlock), (rwlock));
+#endif /* VGO_solaris */
 
 #endif /* defined(HAVE_PTHREAD_RWLOCK_T) */

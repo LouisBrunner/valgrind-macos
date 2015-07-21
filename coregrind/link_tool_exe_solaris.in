@@ -1,0 +1,84 @@
+#! @PERL@
+
+# Generic information about a purpose of this script can be found in
+# link_tool_exe_linux.in.
+#
+# Solaris specific notes:
+#
+# - load address has to be specified in the mapfile, there is no command line
+#   option to achieve that
+#
+# - mapfile version 2 is used
+#
+# - information about Solaris linker can be found in its man page
+#   (http://download.oracle.com/docs/cd/E19253-01/816-5165/ld-1/index.html)
+#   and in Oracle's Linker and Libraries Guide
+#   (http://download.oracle.com/docs/cd/E19963-01/html/819-0690/index.html)
+#
+
+use warnings;
+use strict;
+use File::Temp qw/tempfile unlink0/;
+use Fcntl qw/F_SETFD/;
+
+# expect at least: alt-load-address gcc -o foo bar.o
+die "Not enough arguments"
+    if (($#ARGV + 1) < 5);
+
+my $ala = $ARGV[0];
+
+# check for plausible-ish alt load address
+die "Bogus alt-load address"
+    if (length($ala) < 3 || index($ala, "0x") != 0);
+
+# the cc invokation to do the final link
+my $cc = $ARGV[1];
+
+# and the 'restargs' are argv[2 ..]
+
+# create a temporary mapfile
+(my $fh, my $path) = tempfile();
+
+# reset FD_CLOEXEC flag
+fcntl($fh, F_SETFD, 0)
+    or die "Can't clear close-on-exec flag on temp fh: $!";
+
+# safely unlink the file
+unlink0($fh, $path)
+    or die "Error unlinking file $path safely";
+undef $path;
+
+# fill it with data
+#
+# this is a bit tricky, the problem is that the following condition has to be
+# true for both PT_LOAD segments:
+# (phdr->p_vaddr & PAGEOFFSET) == (phdr->p_offset & PAGEOFFSET)
+# if it doesn't hold then the kernel maps a segment as an anon mapping instead
+# of a file mapping (which, for example, breaks reading debug information)
+print $fh <<"END";
+\$mapfile_version 2
+LOAD_SEGMENT text { VADDR = $ala; ROUND = 0x1000 };
+LOAD_SEGMENT data { ROUND = 0x1000 };
+END
+
+# build up the complete command here:
+# 'cc' -Wl,-Mtmpfile 'restargs'
+
+my $cmd="$cc -Wl,-M/proc/$$/fd/" . fileno($fh);
+
+# add the rest of the parameters
+foreach my $n (2 .. $#ARGV) {
+    $cmd = "$cmd $ARGV[$n]";
+}
+
+#print "link_tool_exe_solaris: $cmd\n";
+
+
+# execute the command:
+my $r = system("$cmd");
+
+if ($r == 0) {
+    exit 0;
+} else {
+    exit 1;
+}

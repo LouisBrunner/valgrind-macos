@@ -11,13 +11,15 @@ Thread #x was created
 Thread #x: lock order "0x........ before 0x........" violated
 
 Observed (incorrect) order is: acquisition of lock at 0x........
-   at 0x........: pthread_mutex_lock (hg_intercepts.c:...)
+   at 0x........: mutex_lock_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_mutex_lock (hg_intercepts.c:...)
    by 0x........: dine (tc14_laog_dinphils.c:21)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
 
  followed by a later acquisition of lock at 0x........
-   at 0x........: pthread_mutex_lock (hg_intercepts.c:...)
+   at 0x........: mutex_lock_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_mutex_lock (hg_intercepts.c:...)
    by 0x........: dine (tc14_laog_dinphils.c:22)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...

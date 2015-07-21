@@ -406,6 +406,11 @@ void VG_(redir_notify_new_DebugInfo)( const DebugInfo* newdi )
    const HChar* const pthread_soname = "libpthread.so.0";
    const HChar* const pthread_stack_cache_actsize_varname
       = "stack_cache_actsize";
+#if defined(VGO_solaris)
+   Bool         vg_vfork_fildes_var_search = False;
+   const HChar* const vg_preload_core_soname = "vgpreload_core.so.0";
+   const HChar* const vg_vfork_fildes_varname = "vg_vfork_fildes";
+#endif
 
 #  if defined(VG_PLAT_USES_PPCTOC)
    check_ppcTOCs = True;
@@ -504,6 +509,11 @@ void VG_(redir_notify_new_DebugInfo)( const DebugInfo* newdi )
       SimHintiS(SimHint_no_nptl_pthread_stackcache, VG_(clo_sim_hints))
       && 0 == VG_(strcmp)(newdi_soname, pthread_soname);
 
+#if defined(VGO_solaris)
+   vg_vfork_fildes_var_search =
+      0 == VG_(strcmp)(newdi_soname, vg_preload_core_soname);
+#endif
+
    nsyms = VG_(DebugInfo_syms_howmany)( newdi );
    for (i = 0; i < nsyms; i++) {
       VG_(DebugInfo_syms_getidx)( newdi, i, &sym_avmas,
@@ -534,6 +544,18 @@ void VG_(redir_notify_new_DebugInfo)( const DebugInfo* newdi )
                VG_(client__stack_cache_actsize__addr) = (SizeT*) sym_avmas.main;
                dehacktivate_pthread_stack_cache_var_search = False;
             }
+#if defined(VGO_solaris)
+            if (vg_vfork_fildes_var_search
+                && 0 == VG_(strcmp)(*names, vg_vfork_fildes_varname)) {
+               if ( VG_(clo_verbosity) > 1 ) {
+                  VG_(message)( Vg_DebugMsg,
+                                "vfork kludge: found symbol %s at addr %p\n",
+                                *names, (void*) sym_avmas.main);
+               }
+               VG_(vfork_fildes_addr) = (Int*) sym_avmas.main;
+               vg_vfork_fildes_var_search = False;
+            }
+#endif
             continue;
          }
          if (!ok) {
@@ -617,6 +639,15 @@ void VG_(redir_notify_new_DebugInfo)( const DebugInfo* newdi )
       VG_(message)(Vg_DebugMsg,
                    "=> pthread stack cache cannot be disabled!\n");
    }
+#if defined(VGO_solaris)
+   if (vg_vfork_fildes_var_search) {
+      VG_(message)(Vg_DebugMsg,
+                   "WARNING: could not find symbol for var %s in %s\n",
+                   vg_vfork_fildes_varname, vg_preload_core_soname);
+      VG_(message)(Vg_DebugMsg,
+                   "=> posix_spawn() will not work correctly!\n");
+   }
+#endif
 
    if (check_ppcTOCs) {
       for (i = 0; i < nsyms; i++) {
@@ -1498,6 +1529,40 @@ void VG_(redir_initialise) ( void )
          "ld.so.1", "strlen",
          (Addr)&VG_(tilegx_linux_REDIR_FOR_strlen), NULL
       );
+   }
+
+#  elif defined(VGP_x86_solaris)
+   /* If we're using memcheck, use these intercepts right from
+      the start, otherwise ld.so makes a lot of noise. */
+   if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
+      add_hardwired_spec("/lib/ld.so.1", "strcmp",
+                         (Addr)&VG_(x86_solaris_REDIR_FOR_strcmp), NULL);
+   }
+   if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
+      add_hardwired_spec("/lib/ld.so.1", "strlen",
+                         (Addr)&VG_(x86_solaris_REDIR_FOR_strlen), NULL);
+   }
+
+#  elif defined(VGP_amd64_solaris)
+   if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
+      add_hardwired_spec("/lib/amd64/ld.so.1", "strcpy",
+                         (Addr)&VG_(amd64_solaris_REDIR_FOR_strcpy), NULL);
+   }
+   if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
+      add_hardwired_spec("/lib/amd64/ld.so.1", "strncpy",
+                         (Addr)&VG_(amd64_solaris_REDIR_FOR_strncpy), NULL);
+   }
+   if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
+      add_hardwired_spec("/lib/amd64/ld.so.1", "strcmp",
+                         (Addr)&VG_(amd64_solaris_REDIR_FOR_strcmp), NULL);
+   }
+   if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
+      add_hardwired_spec("/lib/amd64/ld.so.1", "strcat",
+                         (Addr)&VG_(amd64_solaris_REDIR_FOR_strcat), NULL);
+   }
+   if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
+      add_hardwired_spec("/lib/amd64/ld.so.1", "strlen",
+                         (Addr)&VG_(amd64_solaris_REDIR_FOR_strlen), NULL);
    }
 
 #  else

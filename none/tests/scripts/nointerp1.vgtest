@@ -1,0 +1,2 @@
+prog: nointerp1
+vgopts: -q

@@ -1,0 +1,7 @@
+# This test used to produce a most bizarre message:
+#
+#   Warning: unknown mime-type for "hello\n" -- using "application/octet-stream"
+#   Error: no such file "hello\n"
+#
+prog: bug338606
+vgopts: -q

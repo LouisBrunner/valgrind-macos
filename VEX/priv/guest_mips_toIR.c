@@ -15121,7 +15121,10 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             if (rd == 29) {
                putIReg(rt, getULR());
 #if defined(__mips__) && ((defined(__mips_isa_rev) && __mips_isa_rev >= 2))
-            } else if (rd == 1) {
+            } else if (rd == 1
+                       || (rd == 31
+                           && VEX_MIPS_COMP_ID(archinfo->hwcaps)
+                                                    == VEX_PRID_COMP_CAVIUM)) {
                if (mode64) {
                   IRTemp   val  = newTemp(Ity_I64);
                   IRExpr** args = mkIRExprVec_2 (mkU64(rt), mkU64(rd));

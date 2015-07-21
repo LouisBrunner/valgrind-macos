@@ -1085,6 +1085,10 @@ UInt mips32_dirtyhelper_rdhwr ( UInt rt, UInt rd )
          __asm__ __volatile__("rdhwr %0, $1\n\t" : "=r" (x) );
          break;
 
+      case 31:  /* x = CVMX_get_cycles() */
+         __asm__ __volatile__("rdhwr %0, $31\n\t" : "=r" (x) );
+         break;
+
       default:
          vassert(0);
          break;
@@ -1098,6 +1102,10 @@ ULong mips64_dirtyhelper_rdhwr ( ULong rt, ULong rd )
    switch (rd) {
       case 1:  /* x = SYNCI_StepSize() */
          __asm__ __volatile__("rdhwr %0, $1\n\t" : "=r" (x) );
+         break;
+
+      case 31:  /* x = CVMX_get_cycles() */
+         __asm__ __volatile__("rdhwr %0, $31\n\t" : "=r" (x) );
          break;
 
       default:

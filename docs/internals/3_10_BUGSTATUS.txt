@@ -403,9 +403,6 @@ go in here.
 339215  Valgrind 3.10.0 contain 2013 in copyrights notice
         Update copyright dates!
 
-339542  Experiences with compiling valgrind with ICC
-        possibly closable now
-
 339636  Use fxsave64 and fxrstor64 mnemonics instead of rex64 prefix
         Should apply
 
@@ -419,9 +416,6 @@ go in here.
 344401  x32 ABI support
 
 345248  add support for Solaris OS in valgrind
-
-348279  Replace asm with __asm__ (for -std=c99).
-        Probably wontfix; queried
 
 348342  Valgrind does not support android-x86_64
 

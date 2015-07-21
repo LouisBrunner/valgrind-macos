@@ -2560,6 +2560,8 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
          case Ijk_Sys_int128:   trcval = VEX_TRC_JMP_SYS_INT128;   break;
          case Ijk_Sys_int129:   trcval = VEX_TRC_JMP_SYS_INT129;   break;
          case Ijk_Sys_int130:   trcval = VEX_TRC_JMP_SYS_INT130;   break;
+         case Ijk_Sys_int145:   trcval = VEX_TRC_JMP_SYS_INT145;   break;
+         case Ijk_Sys_int210:   trcval = VEX_TRC_JMP_SYS_INT210;   break;
          case Ijk_Sys_sysenter: trcval = VEX_TRC_JMP_SYS_SYSENTER; break;
          case Ijk_Yield:        trcval = VEX_TRC_JMP_YIELD;        break;
          case Ijk_EmWarn:       trcval = VEX_TRC_JMP_EMWARN;       break;

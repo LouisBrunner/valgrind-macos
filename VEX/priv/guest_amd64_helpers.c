@@ -913,6 +913,43 @@ ULong LibVEX_GuestAMD64_get_rflags ( /*IN*/const VexGuestAMD64State* vex_state )
 
 /* VISIBLE TO LIBVEX CLIENT */
 void
+LibVEX_GuestAMD64_put_rflags ( ULong rflags,
+                               /*MOD*/VexGuestAMD64State* vex_state )
+{
+   /* D flag */
+   if (rflags & AMD64G_CC_MASK_D) {
+      vex_state->guest_DFLAG = -1;
+      rflags &= ~AMD64G_CC_MASK_D;
+   }
+   else
+      vex_state->guest_DFLAG = 1;
+
+   /* ID flag */
+   if (rflags & AMD64G_CC_MASK_ID) {
+      vex_state->guest_IDFLAG = 1;
+      rflags &= ~AMD64G_CC_MASK_ID;
+   }
+   else
+      vex_state->guest_IDFLAG = 0;
+
+   /* AC flag */
+   if (rflags & AMD64G_CC_MASK_AC) {
+      vex_state->guest_ACFLAG = 1;
+      rflags &= ~AMD64G_CC_MASK_AC;
+   }
+   else
+      vex_state->guest_ACFLAG = 0;
+
+   UInt cc_mask = AMD64G_CC_MASK_O | AMD64G_CC_MASK_S | AMD64G_CC_MASK_Z |
+                  AMD64G_CC_MASK_A | AMD64G_CC_MASK_C | AMD64G_CC_MASK_P;
+   vex_state->guest_CC_OP   = AMD64G_CC_OP_COPY;
+   vex_state->guest_CC_DEP1 = rflags & cc_mask;
+   vex_state->guest_CC_DEP2 = 0;
+   vex_state->guest_CC_NDEP = 0;
+}
+
+/* VISIBLE TO LIBVEX CLIENT */
+void
 LibVEX_GuestAMD64_put_rflag_c ( ULong new_carry_flag,
                                /*MOD*/VexGuestAMD64State* vex_state )
 {
@@ -1906,11 +1943,8 @@ void do_get_x87 ( /*IN*/VexGuestAMD64State* vex_state,
 }
 
 
-/* CALLED FROM GENERATED CODE */
-/* DIRTY HELPER (reads guest state, writes guest mem) */
-/* NOTE: only handles 32-bit format (no REX.W on the insn) */
-void amd64g_dirtyhelper_FXSAVE_ALL_EXCEPT_XMM ( VexGuestAMD64State* gst,
-                                                HWord addr )
+static
+void do_fxsave ( VexGuestAMD64State* gst, HWord addr, Bool save_xmm_regs )
 {
    /* Derived from values obtained from
       vendor_id       : AuthenticAMD
@@ -1988,19 +2022,48 @@ void amd64g_dirtyhelper_FXSAVE_ALL_EXCEPT_XMM ( VexGuestAMD64State* gst,
       dstS[7] = 0;
    }
 
-   /* That's the first 160 bytes of the image done.  Now only %xmm0
-      .. %xmm15 remain to be copied, and we let the generated IR do
-      that, so as to make Memcheck's definedness flow for the non-XMM
-      parts independant from that of the all the other control and
-      status words in the structure.  This avoids the false positives
-      shown in #291310. */
+   /* That's the first 160 bytes of the image done. */
+   if (save_xmm_regs == True) {
+      /* Now only %xmm0 .. %xmm15 remain to be copied.  If the host is
+         big-endian, these need to be byte-swapped. */
+      U128 *xmm = (U128 *)(addr + 160);
+
+      vassert(host_is_little_endian());
+
+#     define COPY_U128(_dst,_src)                       \
+         do { _dst[0] = _src[0]; _dst[1] = _src[1];     \
+              _dst[2] = _src[2]; _dst[3] = _src[3]; }   \
+         while (0)
+
+      COPY_U128( xmm[0],  gst->guest_YMM0 );
+      COPY_U128( xmm[1],  gst->guest_YMM1 );
+      COPY_U128( xmm[2],  gst->guest_YMM2 );
+      COPY_U128( xmm[3],  gst->guest_YMM3 );
+      COPY_U128( xmm[4],  gst->guest_YMM4 );
+      COPY_U128( xmm[5],  gst->guest_YMM5 );
+      COPY_U128( xmm[6],  gst->guest_YMM6 );
+      COPY_U128( xmm[7],  gst->guest_YMM7 );
+      COPY_U128( xmm[8],  gst->guest_YMM8 );
+      COPY_U128( xmm[9],  gst->guest_YMM9 );
+      COPY_U128( xmm[10], gst->guest_YMM10 );
+      COPY_U128( xmm[11], gst->guest_YMM11 );
+      COPY_U128( xmm[12], gst->guest_YMM12 );
+      COPY_U128( xmm[13], gst->guest_YMM13 );
+      COPY_U128( xmm[14], gst->guest_YMM14 );
+      COPY_U128( xmm[15], gst->guest_YMM15 );
+#  undef COPY_U128
+   } else {
+      /* We let the generated IR to copy remaining %xmm0 .. %xmm15, so as to
+       make Memcheck's definedness flow for the non-XMM parts independent from
+       that of the all the other control and status words in the structure.
+       This avoids the false positives shown in #291310. */
+   }
 }
 
 
-/* CALLED FROM GENERATED CODE */
-/* DIRTY HELPER (writes guest state, reads guest mem) */
-VexEmNote amd64g_dirtyhelper_FXRSTOR_ALL_EXCEPT_XMM ( VexGuestAMD64State* gst,
-                                                      HWord addr )
+static
+VexEmNote do_fxrstor ( VexGuestAMD64State* gst, HWord addr,
+                       Bool rstor_xmm_regs )
 {
    Fpu_State tmp;
    VexEmNote warnX87 = EmNote_NONE;
@@ -2010,9 +2073,41 @@ VexEmNote amd64g_dirtyhelper_FXRSTOR_ALL_EXCEPT_XMM ( VexGuestAMD64State* gst,
    UShort    fp_tags;
    Int       r, stno, i;
 
-   /* Don't restore %xmm0 .. %xmm15, for the same reasons that
-      amd64g_dirtyhelper_FXSAVE_ALL_EXCEPT_XMM doesn't save them.  See
-      comment in that function for details. */
+   if (rstor_xmm_regs == True) {
+      /* Restore %xmm0 .. %xmm15.  If the host is big-endian, these need
+         to be byte-swapped. */
+      U128 *xmm = (U128 *)(addr + 160);
+
+      vassert(host_is_little_endian());
+
+#     define COPY_U128(_dst,_src)                       \
+         do { _dst[0] = _src[0]; _dst[1] = _src[1];     \
+              _dst[2] = _src[2]; _dst[3] = _src[3]; }   \
+         while (0)
+
+      COPY_U128( gst->guest_YMM0, xmm[0] );
+      COPY_U128( gst->guest_YMM1, xmm[1] );
+      COPY_U128( gst->guest_YMM2, xmm[2] );
+      COPY_U128( gst->guest_YMM3, xmm[3] );
+      COPY_U128( gst->guest_YMM4, xmm[4] );
+      COPY_U128( gst->guest_YMM5, xmm[5] );
+      COPY_U128( gst->guest_YMM6, xmm[6] );
+      COPY_U128( gst->guest_YMM7, xmm[7] );
+      COPY_U128( gst->guest_YMM8, xmm[8] );
+      COPY_U128( gst->guest_YMM9, xmm[9] );
+      COPY_U128( gst->guest_YMM10, xmm[10] );
+      COPY_U128( gst->guest_YMM11, xmm[11] );
+      COPY_U128( gst->guest_YMM12, xmm[12] );
+      COPY_U128( gst->guest_YMM13, xmm[13] );
+      COPY_U128( gst->guest_YMM14, xmm[14] );
+      COPY_U128( gst->guest_YMM15, xmm[15] );
+
+#  undef COPY_U128
+   } else {
+      /* Don't restore %xmm0 .. %xmm15, for the same reasons that
+         do_fxsave(save_xmm_regs = False) doesn't save them.  See
+         comment in that function for details. */
+   }
 
    /* Copy the x87 registers out of the image, into a temporary
       Fpu_State struct. */
@@ -2058,6 +2153,25 @@ VexEmNote amd64g_dirtyhelper_FXRSTOR_ALL_EXCEPT_XMM ( VexGuestAMD64State* gst,
       return warnX87;
    else
       return warnXMM;
+}
+
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (reads guest state, writes guest mem) */
+/* NOTE: only handles 32-bit format (no REX.W on the insn) */
+/* NOTE: does not save XMM registers - see do_fxsave() for details */
+void amd64g_dirtyhelper_FXSAVE_ALL_EXCEPT_XMM ( VexGuestAMD64State* gst,
+                                                HWord addr )
+{
+   do_fxsave( gst, addr, False );
+}
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (writes guest state, reads guest mem) */
+VexEmNote amd64g_dirtyhelper_FXRSTOR_ALL_EXCEPT_XMM ( VexGuestAMD64State* gst,
+                                                      HWord addr )
+{
+   return do_fxrstor( gst, addr, False );
 }
 
 
@@ -2349,6 +2463,25 @@ VexEmNote amd64g_dirtyhelper_FRSTORS ( /*OUT*/VexGuestAMD64State* vex_state,
 
    /* emulation warnings --> caller */
    return ew;
+}
+
+/* VISIBLE TO LIBVEX CLIENT */
+/* Do FXSAVE from the supplied VexGuestAMD64tate structure and store the
+   result at the given address which represents a buffer of at least 416
+   bytes. Saves also XMM registers. */
+void LibVEX_GuestAMD64_fxsave ( /*IN*/VexGuestAMD64State* gst,
+                                /*OUT*/HWord fp_state )
+{
+   do_fxsave( gst, fp_state, True );
+}
+
+/* VISIBLE TO LIBVEX CLIENT */
+/* Do FXRSTOR from the supplied address and store read values to the given
+   VexGuestAMD64State structure. Restores also XMM registers. */
+VexEmNote LibVEX_GuestAMD64_fxrstor ( /*IN*/HWord fp_state,
+                                      /*MOD*/VexGuestAMD64State* gst )
+{
+   return do_fxrstor( gst, fp_state, True );
 }
 
 

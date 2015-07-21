@@ -2282,6 +2282,8 @@ typedef
       Ijk_Sys_int128,     /* amd64/x86 'int $0x80' */
       Ijk_Sys_int129,     /* amd64/x86 'int $0x81' */
       Ijk_Sys_int130,     /* amd64/x86 'int $0x82' */
+      Ijk_Sys_int145,     /* amd64/x86 'int $0x91' */
+      Ijk_Sys_int210,     /* amd64/x86 'int $0xD2' */
       Ijk_Sys_sysenter    /* x86 'sysenter'.  guest_EIP becomes 
                              invalid at the point this happens. */
    }

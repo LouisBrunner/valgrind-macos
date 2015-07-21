@@ -1520,6 +1520,8 @@ void ppIRJumpKind ( IRJumpKind kind )
       case Ijk_Sys_int128:    vex_printf("Sys_int128"); break;
       case Ijk_Sys_int129:    vex_printf("Sys_int129"); break;
       case Ijk_Sys_int130:    vex_printf("Sys_int130"); break;
+      case Ijk_Sys_int145:    vex_printf("Sys_int145"); break;
+      case Ijk_Sys_int210:    vex_printf("Sys_int210"); break;
       case Ijk_Sys_sysenter:  vex_printf("Sys_sysenter"); break;
       default:                vpanic("ppIRJumpKind");
    }

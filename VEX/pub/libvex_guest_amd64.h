@@ -37,6 +37,7 @@
 #define __LIBVEX_PUB_GUEST_AMD64_H
 
 #include "libvex_basictypes.h"
+#include "libvex_emnote.h"
 
 
 /*---------------------------------------------------------------*/
@@ -90,8 +91,8 @@ typedef
          all the old x87 FPU gunk
          segment registers */
 
-      /* HACK to e.g. make tls on amd64-linux work.  %fs only ever seems to
-         hold a constant value (zero on linux main thread, 0x63 in other
+      /* HACK to e.g. make tls on amd64-linux/solaris work.  %fs only ever seems
+         to hold a constant value (zero on linux main thread, 0x63 in other
          threads), and so guest_FS_CONST holds
          the 64-bit offset associated with this constant %fs value. */
       /* 200 */ ULong guest_FS_CONST;
@@ -159,7 +160,7 @@ typedef
          %gs only ever seems to hold a constant value (e.g. 0x60 on darwin,
          0x6b on linux), and so guest_GS_CONST holds the 64-bit offset
          associated with this constant %gs value.  (A direct analogue
-         of the %fs-const hack for amd64-linux). */
+         of the %fs-const hack for amd64-linux/solaris). */
       ULong guest_GS_CONST;
 
       /* Needed for Darwin (but mandated for all guest architectures):
@@ -192,6 +193,11 @@ void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state );
 extern 
 ULong LibVEX_GuestAMD64_get_rflags ( /*IN*/const VexGuestAMD64State* vex_state );
 
+/* Put rflags into the given state. */
+extern
+void LibVEX_GuestAMD64_put_rflags ( ULong rflags,
+                                    /*MOD*/VexGuestAMD64State* vex_state );
+
 /* Set the carry flag in the given state to 'new_carry_flag', which
    should be zero or one. */
 extern
@@ -199,6 +205,18 @@ void
 LibVEX_GuestAMD64_put_rflag_c ( ULong new_carry_flag,
                                 /*MOD*/VexGuestAMD64State* vex_state );
 
+/* Do FXSAVE from the supplied VexGuestAMD64tate structure and store the
+   result at the given address which represents a buffer of at least 416
+   bytes. */
+extern
+void LibVEX_GuestAMD64_fxsave ( /*IN*/VexGuestAMD64State* gst,
+                                /*OUT*/HWord fp_state );
+
+/* Do FXRSTOR from the supplied address and store read values to the given
+   VexGuestAMD64State structure. */
+extern
+VexEmNote LibVEX_GuestAMD64_fxrstor ( /*IN*/HWord fp_state,
+                                      /*MOD*/VexGuestAMD64State* gst );
 
 #endif /* ndef __LIBVEX_PUB_GUEST_AMD64_H */
 

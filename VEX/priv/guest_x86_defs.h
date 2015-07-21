@@ -194,6 +194,15 @@ extern VexEmNote
 #define X86G_CC_MASK_C    (1 << X86G_CC_SHIFT_C)
 #define X86G_CC_MASK_P    (1 << X86G_CC_SHIFT_P)
 
+/* additional eflags masks */
+#define X86G_CC_SHIFT_ID  21
+#define X86G_CC_SHIFT_AC  18
+#define X86G_CC_SHIFT_D   10
+
+#define X86G_CC_MASK_ID   (1 << X86G_CC_SHIFT_ID)
+#define X86G_CC_MASK_AC   (1 << X86G_CC_SHIFT_AC)
+#define X86G_CC_MASK_D    (1 << X86G_CC_SHIFT_D)
+
 /* FPU flag masks */
 #define X86G_FC_SHIFT_C3   14
 #define X86G_FC_SHIFT_C2   10

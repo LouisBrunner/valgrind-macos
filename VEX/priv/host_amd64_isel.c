@@ -4774,6 +4774,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          case Ijk_SigSEGV:
          case Ijk_SigTRAP:
          case Ijk_Sys_syscall:
+         case Ijk_Sys_int210:
          case Ijk_InvalICache:
          case Ijk_Yield:
          {
@@ -4869,6 +4870,7 @@ static void iselNext ( ISelEnv* env,
       case Ijk_SigSEGV:
       case Ijk_SigTRAP:
       case Ijk_Sys_syscall:
+      case Ijk_Sys_int210:
       case Ijk_InvalICache:
       case Ijk_Yield: {
          HReg        r     = iselIntExpr_R(env, next);

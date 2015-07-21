@@ -324,11 +324,13 @@ void LibVEX_default_VexArchInfo ( /*OUT*/VexArchInfo* vai );
    guest_amd64_assume_fs_is_const
       guest is amd64-linux                ==> True
       guest is amd64-darwin               ==> False
+      guest is amd64-solaris              ==> True
       guest is other                      ==> inapplicable
 
    guest_amd64_assume_gs_is_const
       guest is amd64-darwin               ==> True
       guest is amd64-linux                ==> True
+      guest is amd64-solaris              ==> False
       guest is other                      ==> inapplicable
 
    guest_ppc_zap_RZ_at_blr
@@ -355,7 +357,7 @@ typedef
 
       /* AMD64 GUESTS only: should we translate %fs-prefixed
          instructions using the assumption that %fs always contains
-         the same value? (typically zero on linux) */
+         the same value? (typically zero on linux and solaris) */
       Bool guest_amd64_assume_fs_is_const;
 
       /* AMD64 GUESTS only: should we translate %gs-prefixed

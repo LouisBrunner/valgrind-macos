@@ -37,6 +37,7 @@
 #define __LIBVEX_PUB_GUEST_X86_H
 
 #include "libvex_basictypes.h"
+#include "libvex_emnote.h"
 
 
 /*---------------------------------------------------------------*/
@@ -279,12 +280,40 @@ void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state );
 extern 
 UInt LibVEX_GuestX86_get_eflags ( /*IN*/const VexGuestX86State* vex_state );
 
+/* Put eflags into the given state. */
+extern
+void LibVEX_GuestX86_put_eflags ( UInt eflags,
+                                  /*MOD*/VexGuestX86State* vex_state );
+
 /* Set the carry flag in the given state to 'new_carry_flag', which
    should be zero or one. */
 extern
 void
 LibVEX_GuestX86_put_eflag_c ( UInt new_carry_flag,
                               /*MOD*/VexGuestX86State* vex_state );
+
+/* Do x87 save from the supplied VexGuestX86State structure and store the
+   result at the given address which represents a buffer of at least 108
+   bytes. */
+extern
+void LibVEX_GuestX86_get_x87 ( /*IN*/VexGuestX86State* vex_state,
+                               /*OUT*/UChar* x87_state );
+
+/* Do x87 restore from the supplied address and store read values to the given
+   VexGuestX86State structure. */
+extern
+VexEmNote LibVEX_GuestX86_put_x87 ( /*IN*/UChar* x87_state,
+                                    /*MOD*/VexGuestX86State* vex_state);
+
+/* Return mxcsr from the supplied VexGuestX86State structure. */
+extern
+UInt LibVEX_GuestX86_get_mxcsr ( /*IN*/VexGuestX86State* vex_state );
+
+/* Modify the given VexGuestX86State structure according to the passed mxcsr
+   value. */
+extern
+VexEmNote LibVEX_GuestX86_put_mxcsr ( /*IN*/UInt mxcsr,
+                                      /*MOD*/VexGuestX86State* vex_state);
 
 #endif /* ndef __LIBVEX_PUB_GUEST_X86_H */
 

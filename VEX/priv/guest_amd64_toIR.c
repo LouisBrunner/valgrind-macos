@@ -2146,18 +2146,18 @@ static const HChar* nameGrp8 ( Int opc_aux )
    return grp8_names[opc_aux];
 }
 
-//.. static const HChar* nameSReg ( UInt sreg )
-//.. {
-//..    switch (sreg) {
-//..       case R_ES: return "%es";
-//..       case R_CS: return "%cs";
-//..       case R_SS: return "%ss";
-//..       case R_DS: return "%ds";
-//..       case R_FS: return "%fs";
-//..       case R_GS: return "%gs";
-//..       default: vpanic("nameSReg(x86)");
-//..    }
-//.. }
+static const HChar* nameSReg ( UInt sreg )
+{
+   switch (sreg) {
+      case R_ES: return "%es";
+      case R_CS: return "%cs";
+      case R_SS: return "%ss";
+      case R_DS: return "%ds";
+      case R_FS: return "%fs";
+      case R_GS: return "%gs";
+      default: vpanic("nameSReg(amd64)");
+   }
+}
 
 static const HChar* nameMMXReg ( Int mmxreg )
 {
@@ -8615,8 +8615,57 @@ ULong dis_xadd_G_E ( /*OUT*/Bool* decode_ok,
 //..       return len+delta0;
 //..    }
 //.. }
-//.. 
-//.. 
+
+/* Handle move instructions of the form
+      mov S, E  meaning
+      mov sreg, reg-or-mem
+   Is passed the a ptr to the modRM byte, and the data size.  Returns
+   the address advanced completely over this instruction.
+
+   VEX does not currently simulate segment registers on AMD64 which means that
+   instead of moving a value of a segment register, zero is moved to the
+   destination.  The zero value represents a null (unused) selector.  This is
+   not correct (especially for the %cs, %fs and %gs registers) but it seems to
+   provide a sufficient simulation for currently seen programs that use this
+   instruction.  If some program actually decides to use the obtained segment
+   selector for something meaningful then the zero value should be a clear
+   indicator that there is some problem.
+
+   S(src) is sreg.
+   E(dst) is reg-or-mem
+
+   If E is reg, -->    PUT $0, %E
+
+   If E is mem, -->    (getAddr E) -> tmpa
+                       ST $0, (tmpa)
+*/
+static
+ULong dis_mov_S_E ( const VexAbiInfo* vbi,
+                    Prefix      pfx,
+                    Int         size,
+                    Long        delta0 )
+{
+   Int   len;
+   UChar rm = getUChar(delta0);
+   HChar dis_buf[50];
+
+   if (epartIsReg(rm)) {
+      putIRegE(size, pfx, rm, mkU(szToITy(size), 0));
+      DIP("mov %s,%s\n", nameSReg(gregOfRexRM(pfx, rm)),
+                         nameIRegE(size, pfx, rm));
+      return 1+delta0;
+   }
+
+   /* E refers to memory */
+   {
+      IRTemp addr = disAMode(&len, vbi, pfx, delta0, dis_buf, 0);
+      storeLE(mkexpr(addr), mkU16(0));
+      DIP("mov %s,%s\n", nameSReg(gregOfRexRM(pfx, rm)),
+                         dis_buf);
+      return len+delta0;
+   }
+}
+
 //.. static 
 //.. void dis_push_segreg ( UInt sreg, Int sz )
 //.. {
@@ -19925,6 +19974,11 @@ Long dis_ESC_NONE (
       delta = dis_mov_E_G(vbi, pfx, sz, delta);
       return delta;
 
+   case 0x8C: /* MOV S,E -- MOV from a SEGMENT REGISTER */
+      if (haveF2orF3(pfx)) goto decode_failure;
+      delta = dis_mov_S_E(vbi, pfx, sz, delta);
+      return delta;
+
    case 0x8D: /* LEA M,Gv */
       if (haveF2orF3(pfx)) goto decode_failure;
       if (sz != 4 && sz != 8)
@@ -20533,6 +20587,18 @@ Long dis_ESC_NONE (
       vassert(dres->whatNext == Dis_StopHere);
       DIP("int $0x3\n");
       return delta;
+
+   case 0xCD: /* INT imm8 */
+      d64 = getUChar(delta); delta++;
+
+      /* Handle int $0xD2 (Solaris fasttrap syscalls). */
+      if (d64 == 0xD2) {
+         jmp_lit(dres, Ijk_Sys_int210, guest_RIP_bbstart + delta);
+         vassert(dres->whatNext == Dis_StopHere);
+         DIP("int $0xD2\n");
+         return delta;
+      }
+      goto decode_failure;
 
    case 0xD0: { /* Grp2 1,Eb */
       Bool decode_OK = True;

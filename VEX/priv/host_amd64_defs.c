@@ -3004,6 +3004,7 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
          case Ijk_ClientReq:   trcval = VEX_TRC_JMP_CLIENTREQ;   break;
          case Ijk_Sys_syscall: trcval = VEX_TRC_JMP_SYS_SYSCALL; break;
          case Ijk_Sys_int32:   trcval = VEX_TRC_JMP_SYS_INT32;   break;
+         case Ijk_Sys_int210:  trcval = VEX_TRC_JMP_SYS_INT210;  break;
          case Ijk_Yield:       trcval = VEX_TRC_JMP_YIELD;       break;
          case Ijk_EmWarn:      trcval = VEX_TRC_JMP_EMWARN;      break;
          case Ijk_MapFail:     trcval = VEX_TRC_JMP_MAPFAIL;     break;

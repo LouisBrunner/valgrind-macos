@@ -4562,7 +4562,7 @@ __asm__( /* Derived from the 32 bit assembly helper */
 "      ldr    r2, [r3, r2, lsl #2]      \n"
 "      uxth   r1, r0                    \n" // r1 is 0-(16)-0 X-(13)-X 000
 "      movw   r3, #0xAAAA               \n"
-"      lsr    r1, r1, #3                \n"
+"      lsr    r1, r1, #2                \n" // r1 is 0-(16)-0 00 X-(13)-X 0
 "      ldrh   r1, [r2, r1]              \n"
 "      cmp    r1, r3                    \n" // 0xAAAA == VA_BITS16_DEFINED
 "      bne    .LLV64LEc0                \n" // if !all_defined

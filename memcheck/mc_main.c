@@ -4587,7 +4587,7 @@ __asm__( /* Derived from the 32 bit assembly helper */
 );
 
 #elif ENABLE_ASSEMBLY_HELPERS && defined(PERF_FAST_LOADV) \
-      && (defined(VGP_x86_linux) || defined(VGP_x86_darwin))
+      && defined(VGP_x86_linux)
 __asm__(
 ".text\n"
 ".align 16\n"
@@ -4622,7 +4622,7 @@ __asm__(
 );
 
 #else
-// Generic for all platforms except arm32-linux, x86-{linux,darwin}
+// Generic for all platforms except {arm32,x86}-linux
 VG_REGPARM(1) ULong MC_(helperc_LOADV64le) ( Addr a )
 {
    return mc_LOADV64(a, False);
@@ -4785,7 +4785,7 @@ __asm__( /* Derived from NCode template */
 );
 
 #elif ENABLE_ASSEMBLY_HELPERS && defined(PERF_FAST_LOADV) \
-      && (defined(VGP_x86_linux) || defined(VGP_x86_darwin))
+      && defined(VGP_x86_linux)
 __asm__(
 ".text\n"
 ".align 16\n"
@@ -4818,7 +4818,7 @@ __asm__(
 );
 
 #else
-// Generic for all platforms except arm32-linux, x86-{linux,darwin}
+// Generic for all platforms except {arm32,x86}-linux
 VG_REGPARM(1) UWord MC_(helperc_LOADV32le) ( Addr a )
 {
    return mc_LOADV32(a, False);
@@ -4998,7 +4998,7 @@ __asm__( /* Derived from NCode template */
 );
 
 #elif ENABLE_ASSEMBLY_HELPERS && defined(PERF_FAST_LOADV) \
-      && (defined(VGP_x86_linux) || defined(VGP_x86_darwin))
+      && defined(VGP_x86_linux)
 __asm__(
 ".text\n"
 ".align 16\n"
@@ -5043,7 +5043,7 @@ __asm__(
 );
 
 #else
-// Generic for all platforms except arm32-linux, x86-{linux,darwin}
+// Generic for all platforms except {arm32,x86}-linux
 VG_REGPARM(1) UWord MC_(helperc_LOADV16le) ( Addr a )
 {
    return mc_LOADV16(a, False);
@@ -5192,7 +5192,7 @@ __asm__( /* Derived from NCode template */
 
 /* Non-generic assembly for x86-linux */
 #elif ENABLE_ASSEMBLY_HELPERS && defined(PERF_FAST_LOADV) \
-      && (defined(VGP_x86_linux) || defined(VGP_x86_darwin))
+      && defined(VGP_x86_linux)
 __asm__(
 ".text\n"
 ".align 16\n"
@@ -5234,7 +5234,7 @@ __asm__(
 );
 
 #else
-// Generic for all platforms except arm32-linux, x86-{linux,darwin}
+// Generic for all platforms except {arm32,x86}-linux
 VG_REGPARM(1)
 UWord MC_(helperc_LOADV8) ( Addr a )
 {

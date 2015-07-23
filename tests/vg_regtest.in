@@ -443,7 +443,7 @@ sub do_one_test($$)
     read_vgtest_file($vgtest);
 
     if (defined $prereq) {
-        my $prereq_res = system("$prereq");
+        my $prereq_res = system("/bin/sh", "-c", $prereq);
         if (0 == $prereq_res) {
             # Do nothing (ie. continue with the test)
         } elsif (256 == $prereq_res) {

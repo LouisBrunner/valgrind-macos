@@ -116,16 +116,6 @@ if BUILD_SSE42_TESTS
 	pcmpstr64 pcmpxstrx64 sse4-64 crc32 aes \
 	pcmpstr64w pcmpxstrx64w
 endif
-if BUILD_AVX_TESTS
-if BUILD_VPCLMULQDQ_TESTS
- check_PROGRAMS += avx-1
-endif
-endif
-if BUILD_AVX2_TESTS
-if !COMPILER_IS_ICC
-  check_PROGRAMS += avx2-1
-endif
-endif
 if BUILD_TSX_TESTS
   check_PROGRAMS += tm1 xacq_xrel
 endif
@@ -156,6 +146,16 @@ if BUILD_LOOPNEL_TESTS
 endif
 if BUILD_MOVBE_TESTS
    check_PROGRAMS += movbe
+endif
+if BUILD_AVX_TESTS
+if BUILD_VPCLMULQDQ_TESTS
+   check_PROGRAMS += avx-1
+endif
+endif
+if BUILD_AVX2_TESTS
+if !COMPILER_IS_ICC
+   check_PROGRAMS += avx2-1
+endif
 endif
 endif
 

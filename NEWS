@@ -198,6 +198,7 @@ where XXXXXX is the bug number as listed below.
 344314  callgrind_annotate ... warnings about commands containing newlines
 344318  socketcall should wrap recvmmsg and sendmmsg
 344337  Fix unhandled syscall: mach:41 (_kernelrpc_mach_port_guard_trap)
+344416  Fix ’make regtest' does not work cleanly on OS X
 344499  Fix compilation for Linux kernel >= 4. With this, also require
         a Linux kernel >= 2.6 as 2.4 is mostly untested and might trigger
         obvious and non-obvious issues

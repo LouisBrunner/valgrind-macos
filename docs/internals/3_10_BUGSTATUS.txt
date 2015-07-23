@@ -329,7 +329,6 @@ go in here.
         leak regardless of the simplicity of the program.
 
 344416  'make regtest' does not work cleanly on OS X
-        meta-bug
 
 348565  unknown warning options on clang/osx:
         Wmissing-parameter-type Wold-style-declaration

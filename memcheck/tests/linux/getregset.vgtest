@@ -1,4 +1,4 @@
 prog: getregset
 vgopts: -q
-prereq: ../../../tests/os_test linux 2.6.33 && ! ../../../tests/arch_test mips32 && ! `../../../tests/arch_test ppc64`
+prereq: ../../../tests/os_test linux 2.6.33 && ! ../../../tests/arch_test mips32 && ! ../../../tests/arch_test ppc64
 

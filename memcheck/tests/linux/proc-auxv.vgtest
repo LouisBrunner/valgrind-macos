@@ -1,3 +1,3 @@
-prereq: `LD_SHOW_AUXV=1 /bin/echo | grep AT_PLATFORM > /dev/null`
+prereq: LD_SHOW_AUXV=1 /bin/echo | grep -q AT_PLATFORM
 prog: proc-auxv
 vgopts: -q

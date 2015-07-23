@@ -5,17 +5,24 @@ dist_noinst_SCRIPTS = filter_cpuid filter_inf_nan filter_stderr gen_insn_test.pl
 
 CLEANFILES = $(addsuffix .c,$(INSN_TESTS))
 
-INSN_TESTS = insn_basic insn_cmov insn_mmx insn_mmxext \
-		insn_sse insn_sse2
+INSN_TESTS = insn_basic insn_cmov insn_mmx insn_mmxext
+
+if !COMPILER_IS_CLANG
+   INSN_TESTS += insn_sse insn_sse2
 if BUILD_SSSE3_TESTS
    INSN_TESTS += insn_ssse3
 endif
+if BUILD_SSE3_TESTS
 if !SOLARIS_SUN_STUDIO_AS
 # Sun Studio assembler fails to build some tests (illegal mnemonic).
-INSN_TESTS += insn_fpu
-if BUILD_SSE3_TESTS
    INSN_TESTS += insn_sse3
 endif
+endif
+endif
+
+if !SOLARIS_SUN_STUDIO_AS
+# Sun Studio assembler fails to build some tests (illegal mnemonic).
+   INSN_TESTS += insn_fpu
 endif
 
 # Explicitly include insn_sse3 even if ! BUILD_SSE3_TESTS, 

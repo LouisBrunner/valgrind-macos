@@ -135,9 +135,6 @@ endif
 if BUILD_FMA_TESTS
  check_PROGRAMS += fma
 endif
-if BUILD_MOVBE_TESTS
- check_PROGRAMS += movbe
-endif
 if BUILD_MPX_TESTS
  check_PROGRAMS += mpx
 endif
@@ -156,6 +153,9 @@ if ! VGCONF_OS_IS_DARWIN
 	slahf-amd64
 if BUILD_LOOPNEL_TESTS
    check_PROGRAMS += loopnel
+endif
+if BUILD_MOVBE_TESTS
+   check_PROGRAMS += movbe
 endif
 endif
 

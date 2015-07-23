@@ -59,6 +59,8 @@ EXTRA_DIST = \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \
 	insn_fpu.stdout.exp insn_fpu.stderr.exp insn_fpu.vgtest \
+	insn_sse.stdout.exp insn_sse.stderr.exp insn_sse.vgtest \
+	insn_sse2.stdout.exp insn_sse2.stderr.exp insn_sse2.vgtest \
 	insn_sse3.stdout.exp insn_sse3.stderr.exp insn_sse3.vgtest \
 	insn_ssse3.stdout.exp insn_ssse3.stderr.exp insn_ssse3.vgtest \
 	jcxz.stdout.exp jcxz.stderr.exp jcxz.vgtest \

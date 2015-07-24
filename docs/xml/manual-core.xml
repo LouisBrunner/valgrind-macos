@@ -1412,11 +1412,13 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
       after every error shown and print the line:
       <literallayout><computeroutput>    ---- Print suppression ? --- [Return/N/n/Y/y/C/c] ----</computeroutput></literallayout>
 
-      The prompt's behaviour is the same as for the
-      <option>--db-attach</option> option (see below).</para>
+      Pressing <varname>Ret</varname>, or <varname>N Ret</varname> or
+      <varname>n Ret</varname>, causes Valgrind continue execution without
+      printing a suppression for this error.</para>
 
-      <para>If you choose to, Valgrind will print out a suppression for
-      this error.  You can then cut and paste it into a suppression file
+      <para>Pressing <varname>Y Ret</varname> or
+      <varname>y Ret</varname> causes Valgrind to write a suppression
+      for this error.  You can then cut and paste it into a suppression file
       if you don't want to hear about the error in the future.</para>
 
       <para>When set to <varname>all</varname>, Valgrind will print a
@@ -1451,76 +1453,12 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
     </listitem>
   </varlistentry>
 
-  <varlistentry id="opt.db-attach" xreflabel="--db-attach">
-    <term>
-      <option><![CDATA[--db-attach=<yes|no> [default: no] ]]></option>
-    </term>
-    <listitem>
-      <para>When enabled, Valgrind will pause after every error shown
-      and print the line:
-      <literallayout><computeroutput>    ---- Attach to debugger ? --- [Return/N/n/Y/y/C/c] ----</computeroutput></literallayout>
-
-      Pressing <varname>Ret</varname>, or <varname>N Ret</varname> or
-      <varname>n Ret</varname>, causes Valgrind not to start a debugger
-      for this error.</para>
-
-      <para>Pressing <varname>Y Ret</varname> or
-      <varname>y Ret</varname> causes Valgrind to start a debugger for
-      the program at this point. When you have finished with the
-      debugger, quit from it, and the program will continue. Trying to
-      continue from inside the debugger doesn't work.</para>
-
-      <para>
-      Note: if you use GDB, more powerful debugging support is
-      provided by the <option>--vgdb=</option> <varname>yes</varname>
-      or <varname>full</varname> value.  This activates Valgrind's
-      internal gdbserver, which provides more-or-less full GDB-style
-      control of the application: insertion of breakpoints, continuing 
-      from inside GDB, inferior function calls, and much more.
-      </para> 
-
-      <para><varname>C Ret</varname> or <varname>c Ret</varname> causes
-      Valgrind not to start a debugger, and not to ask again.</para>
-    </listitem>
-  </varlistentry>
-
-  <varlistentry id="opt.db-command" xreflabel="--db-command">
-    <term>
-      <option><![CDATA[--db-command=<command> [default: gdb -nw %f %p] ]]></option>
-    </term>
-    <listitem>
-      <para>Specify the debugger to use with the
-      <option>--db-attach</option> command. The default debugger is
-      GDB. This option is a template that is expanded by Valgrind at
-      runtime.  <literal>%f</literal> is replaced with the executable's
-      file name and <literal>%p</literal> is replaced by the process ID
-      of the executable.</para>
-
-      <para>This specifies how Valgrind will invoke the debugger.  By
-      default it will use whatever GDB is detected at build time, which
-      is usually <computeroutput>/usr/bin/gdb</computeroutput>.  Using
-      this command, you can specify some alternative command to invoke
-      the debugger you want to use.</para>
-
-      <para>The command string given can include one or instances of the
-      <literal>%p</literal> and <literal>%f</literal> expansions. Each
-      instance of <literal>%p</literal> expands to the PID of the
-      process to be debugged and each instance of <literal>%f</literal>
-      expands to the path to the executable for the process to be
-      debugged.</para>
-
-      <para>Since <computeroutput>&lt;command&gt;</computeroutput> is likely
-      to contain spaces, you will need to put this entire option in
-      quotes to ensure it is correctly handled by the shell.</para>
-    </listitem>
-  </varlistentry>
-
   <varlistentry id="opt.input-fd" xreflabel="--input-fd">
     <term>
       <option><![CDATA[--input-fd=<number> [default: 0, stdin] ]]></option>
     </term>
     <listitem>
-      <para>When using <option>--db-attach=yes</option> or
+      <para>When using
       <option>--gen-suppressions=yes</option>, Valgrind will stop so as
       to read keyboard input from you when each error occurs.  By
       default it reads from the standard input (stdin), which is
@@ -2452,8 +2390,7 @@ things.  If you wish to see the list, use the
 
 <para>If you wish to debug your program rather than debugging
 Valgrind itself, then you should use the options
-<option>--vgdb=yes</option> or <option>--vgdb=full</option>
-or <option>--db-attach=yes</option>.
+<option>--vgdb=yes</option> or <option>--vgdb=full</option>.
 </para>
 
 <!-- end of xi:include in the manpage -->

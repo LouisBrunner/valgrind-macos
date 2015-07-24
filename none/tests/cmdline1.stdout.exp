@@ -47,9 +47,6 @@ usage: valgrind [options] prog-and-args
                               load default suppressions [yes]
     --suppressions=<filename> suppress errors described in <filename>
     --gen-suppressions=no|yes|all    print suppressions for errors? [no]
-    --db-attach=no|yes        start debugger when errors detected? [no]
-                              Note: deprecated feature
-    --db-command=<command>    command to start debugger [... -nw %f %p]
     --input-fd=<number>       file descriptor for input [0=stdin]
     --dsymutil=no|yes         run dsymutil on Mac OS X when helpful? [no]
     --max-stackframe=<number> assume stack switch for SP changes larger

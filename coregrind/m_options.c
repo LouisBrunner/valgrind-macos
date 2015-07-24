@@ -67,8 +67,6 @@ const HChar *VG_(clo_vgdb_prefix)    = NULL;
 const HChar *VG_(arg_vgdb_prefix)    = NULL;
 Bool   VG_(clo_vgdb_shadow_registers) = False;
 
-Bool   VG_(clo_db_attach)      = False;
-const HChar*  VG_(clo_db_command)     = GDB_PATH " -nw %f %p";
 Int    VG_(clo_gen_suppressions) = 0;
 Int    VG_(clo_sanity_level)   = 1;
 Int    VG_(clo_verbosity)      = 1;

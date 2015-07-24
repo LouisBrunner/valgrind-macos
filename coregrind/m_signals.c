@@ -207,7 +207,6 @@
 #include "pub_core_xarray.h"
 #include "pub_core_clientstate.h"
 #include "pub_core_aspacemgr.h"
-#include "pub_core_debugger.h"      // For VG_(start_debugger)
 #include "pub_core_errormgr.h"
 #include "pub_core_gdbserver.h"
 #include "pub_core_libcbase.h"
@@ -1897,10 +1896,6 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
       /* Note: we add + 1 to n_errs_shown as the fatal signal was not
          reported through error msg, and so was not counted. */
       VG_(gdbserver_report_fatal_signal) (info, tid);
-   }
-
-   if (VG_(is_action_requested)( "Attach to debugger", & VG_(clo_db_attach) )) {
-      VG_(start_debugger)( tid );
    }
 
    if (core) {

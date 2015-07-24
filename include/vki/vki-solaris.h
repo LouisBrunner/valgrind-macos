@@ -60,12 +60,6 @@
 #define __EXTENSIONS__ 1
 /* assert _FILE_OFFSET_BITS == 32 */
 
-/* XXX These two PTRACE defines are currently used only in m_debugger.c for
-   legacy 'attach debugger' functionality. This is going to be removed
-   in future Valgrind version and so can these two as well. */
-#define VKI_PTRACE_TRACEME 0
-#define VKI_PTRACE_DETACH -1
-
 #define VKI_PAGE_SHIFT 12
 #define VKI_PAGE_SIZE (1UL << VKI_PAGE_SHIFT)
 #define VKI_PAGEMASK (~VKI_PAGEOFFSET)

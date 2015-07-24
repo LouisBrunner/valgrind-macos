@@ -174,7 +174,6 @@ noinst_HEADERS = \
 	pub_core_cpuid.h	\
 	pub_core_deduppoolalloc.h \
 	pub_core_debuginfo.h	\
-	pub_core_debugger.h	\
 	pub_core_debuglog.h	\
 	pub_core_demangle.h	\
 	pub_core_dispatch.h	\
@@ -287,7 +286,6 @@ COREGRIND_SOURCES_COMMON = \
 	m_clientstate.c \
 	m_cpuid.S \
 	m_deduppoolalloc.c \
-	m_debugger.c \
 	m_debuglog.c \
 	m_errormgr.c \
 	m_execontext.c \

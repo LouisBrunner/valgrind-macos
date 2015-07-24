@@ -133,9 +133,6 @@ static void usage_NORETURN ( Bool debug_help )
 "                              load default suppressions [yes]\n"
 "    --suppressions=<filename> suppress errors described in <filename>\n"
 "    --gen-suppressions=no|yes|all    print suppressions for errors? [no]\n"
-"    --db-attach=no|yes        start debugger when errors detected? [no]\n"
-"                              Note: deprecated feature\n"
-"    --db-command=<command>    command to start debugger [%s -nw %%f %%p]\n"
 "    --input-fd=<number>       file descriptor for input [0=stdin]\n"
 "    --dsymutil=no|yes         run dsymutil on Mac OS X when helpful? [no]\n"
 "    --max-stackframe=<number> assume stack switch for SP changes larger\n"
@@ -301,7 +298,6 @@ static void usage_NORETURN ( Bool debug_help )
 "  Bug reports, feedback, admiration, abuse, etc, to: %s.\n"
 "\n";
 
-   const HChar* gdb_path = GDB_PATH;
    HChar default_alignment[30];      // large enough
    HChar default_redzone_size[30];   // large enough
 
@@ -319,7 +315,6 @@ static void usage_NORETURN ( Bool debug_help )
    /* 'usage1' a type as described after each arg. */
    VG_(printf)(usage1, 
                VG_(clo_vgdb_error)        /* int */,
-               gdb_path                   /* char* */,
                default_alignment          /* char* */,
                default_redzone_size       /* char* */,
                VG_(clo_vgdb_poll)         /* int */,
@@ -617,7 +612,6 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
       }
       else if VG_BOOL_CLO(arg, "--vgdb-shadow-registers",
                             VG_(clo_vgdb_shadow_registers)) {}
-      else if VG_BOOL_CLO(arg, "--db-attach",      VG_(clo_db_attach)) {}
       else if VG_BOOL_CLO(arg, "--demangle",       VG_(clo_demangle)) {}
       else if VG_STR_CLO (arg, "--soname-synonyms",VG_(clo_soname_synonyms)) {}
       else if VG_BOOL_CLO(arg, "--error-limit",    VG_(clo_error_limit)) {}
@@ -682,7 +676,6 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
 
       else if VG_BOOL_CLO(arg, "--trace-syscalls",   VG_(clo_trace_syscalls)) {}
       else if VG_BOOL_CLO(arg, "--wait-for-gdb",     VG_(clo_wait_for_gdb)) {}
-      else if VG_STR_CLO (arg, "--db-command",       VG_(clo_db_command)) {}
       else if VG_BOOL_CLO(arg, "--sym-offsets",      VG_(clo_sym_offsets)) {}
       else if VG_BOOL_CLO(arg, "--read-inline-info", VG_(clo_read_inline_info)) {}
       else if VG_BOOL_CLO(arg, "--read-var-info",    VG_(clo_read_var_info)) {}
@@ -902,11 +895,7 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
 
    /* END command-line processing loop */
 
-   /* Notify about deprecated features */
-   if (VG_(clo_db_attach))
-      VG_(umsg)
-         ("\nWarning: --db-attach is a deprecated feature which will be\n"
-          "   removed in the next release. Use --vgdb-error=1 instead\n\n");
+   /* Notify about deprecated features here. */
 
    /* Determine the path prefix for vgdb */
    if (VG_(clo_vgdb_prefix) == NULL)
@@ -996,16 +985,6 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
             "When --xml=yes is specified, --gen-suppressions=no\n"
             "or --gen-suppressions=all is allowed, but not "
             "--gen-suppressions=yes.\n");
-      }
-
-      /* We can't allow DB attaching (or we maybe could, but results
-         could be chaotic ..) since it requires user input.  Hence
-         disallow. */
-      if (VG_(clo_db_attach)) {
-         VG_(fmsg_bad_option)(
-            "--xml=yes together with --db-attach=yes",
-            "--db-attach=yes is not allowed with --xml=yes\n"
-            "because it would require user input.\n");
       }
 
       /* Disallow dump_error in XML mode; sounds like a recipe for

@@ -88,10 +88,6 @@ extern const HChar *VG_(clo_vgdb_prefix);
    shadow registers */
 extern Bool  VG_(clo_vgdb_shadow_registers);
 
-/* Enquire about whether to attach to a debugger at errors?   default: NO */
-extern Bool  VG_(clo_db_attach);
-/* The debugger command?  default: whatever gdb ./configure found */
-extern const HChar* VG_(clo_db_command);
 /* Generating a suppression for each error?   default: 0 (NO)
    Other values: 1 (yes, but ask user), 2 (yes, don't ask user) */
 extern Int   VG_(clo_gen_suppressions);

@@ -63,7 +63,7 @@ extern Bool VG_(gdbserver_activity) (ThreadId tid);
 void VG_(gdbserver_exit) (ThreadId tid, VgSchedReturnCode tids_schedretcode);
 
 /* On systems that defines PR_SET_PTRACER, verify if ptrace_scope is
-   is permissive enough for vgdb or --db-attach=yes.
+   is permissive enough for vgdb.
    Otherwise, call set_ptracer.
    This is especially aimed at Ubuntu >= 10.10 which has added
    the ptrace_scope context. */

@@ -43,6 +43,9 @@ Release 3.11.0 is under development, not yet released.
 
 * ==================== OTHER CHANGES ====================
 
+* The command line options --db-attach and --db-command have been removed.
+  They were deprecated in 3.10.0
+
 * When a process dies due to a signal, Valgrind now shows the signal
   and the stacktrace at default verbosity (i.e. verbosity 1).
 

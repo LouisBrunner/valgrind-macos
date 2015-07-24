@@ -31,7 +31,6 @@
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
 #include "pub_core_threadstate.h"      // For VG_N_THREADS
-#include "pub_core_debugger.h"
 #include "pub_core_debuginfo.h"
 #include "pub_core_debuglog.h"
 #include "pub_core_errormgr.h"
@@ -515,7 +514,7 @@ Bool VG_(is_action_requested) ( const HChar* action, Bool* clo )
 
 /* Do text-mode actions on error, that is, immediately after an error
    is printed.  These are:
-   * possibly, attach to a debugger
+   * possibly, call the GDB server
    * possibly, generate a suppression.
    Note this should not be called in XML mode! 
 */
@@ -533,15 +532,6 @@ void do_actions_on_error(const Error* err, Bool allow_db_attach)
       VG_(umsg)("Continuing ...\n");
    }
 
-   /* Perhaps we want a debugger attach at this point? */
-   /* GDBTD ??? maybe we should/could remove the below assuming the
-      gdbserver interface is better ??? */
-   if (allow_db_attach &&
-       VG_(is_action_requested)( "Attach to debugger", & VG_(clo_db_attach) ))
-   {   
-      if (0) VG_(printf)("starting debugger\n");
-      VG_(start_debugger)( err->tid );
-   }  
    /* Or maybe we want to generate the error's suppression? */
    if (VG_(clo_gen_suppressions) == 2
        || (VG_(clo_gen_suppressions) == 1

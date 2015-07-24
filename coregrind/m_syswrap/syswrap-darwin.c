@@ -3171,47 +3171,6 @@ POST(getdirentriesattr)
          count, (Addr)p-(Addr)ARG3, ARG4);
 }
 
-
-PRE(fsgetpath)
-{
-#if VG_WORDSIZE == 4
-   PRINT("fsgetpath(%#lx, %ld, %#lx {%u,%u}, %llu)", 
-         ARG1, ARG2, ARG3,
-         ((unsigned int *)ARG3)[0], ((unsigned int *)ARG3)[1],
-         LOHI64(ARG4, ARG5));
-   PRE_REG_READ5(ssize_t, "fsgetpath", 
-                 void*,"buf", size_t,"bufsize", 
-                 fsid_t *,"fsid",
-                 vki_uint32_t, "objid_low32", vki_uint32_t, "objid_high32");
-#else
-   PRINT("fsgetpath(%#lx, %ld, %#lx {%u,%u}, %lu)", 
-         ARG1, ARG2, ARG3,
-         ((unsigned int *)ARG3)[0],
-         ((unsigned int *)ARG3)[1], ARG4);
-   PRE_REG_READ4(ssize_t, "fsgetpath", 
-                 void*,"buf", size_t,"bufsize", 
-                 fsid_t *,"fsid", uint64_t,"objid");
-#endif
-   PRE_MEM_READ("fsgetpath(fsid)", ARG3, sizeof(fsid_t));
-   PRE_MEM_WRITE("fsgetpath(buf)", ARG1, ARG2);
-}
-
-POST(fsgetpath)
-{
-   POST_MEM_WRITE(ARG1, RES);
-}
-
-PRE(audit_session_self)
-{
-  PRINT("audit_session_self()");
-}
-
-POST(audit_session_self)
-{
-  record_named_port(tid, RES, MACH_PORT_RIGHT_SEND, "audit-session-%p");
-  PRINT("audit-session %#lx", RES);
-}
-
 PRE(exchangedata)
 {
    PRINT("exchangedata(%#lx(%s), %#lx(%s), %lu)",
@@ -4141,6 +4100,17 @@ POST(auditon)
    }    
 }
 
+PRE(getaudit_addr)
+{
+   PRINT("getaudit_addr(%#lx, %lu)", ARG1, ARG2);
+   PRE_REG_READ1(void*, "auditinfo_addr", int, "length");
+   PRE_MEM_WRITE("getaudit_addr(auditinfo_addr)", ARG1, ARG2);
+}
+POST(getaudit_addr)
+{
+   POST_MEM_WRITE(ARG1, ARG2);
+}
+
 
 PRE(mmap)
 {
@@ -4386,7 +4356,6 @@ PRE(sigsuspend)
                  uint32_t flavor, uint64_t arg,
                  user_addr_t buffer, int32_t buffersize)
 */
-#if DARWIN_VERS >= DARWIN_10_6
 PRE(proc_info)
 {
 #if VG_WORDSIZE == 4
@@ -4452,7 +4421,6 @@ POST(proc_info)
 #endif
 }
 
-#endif /* DARWIN_VERS >= DARWIN_10_6 */
 
 /* ---------------------------------------------------------------------
    aio_*
@@ -8718,12 +8686,6 @@ PRE(__semwait_signal)
 //}
 
 
-PRE(__thread_selfid)
-{
-   PRINT("__thread_selfid ()");
-   PRE_REG_READ0(vki_uint64_t, "__thread_selfid");
-}
-
 PRE(task_for_pid)
 {
    PRINT("task_for_pid(%s, %ld, %#lx)", name_for_port(ARG1), ARG2, ARG3);
@@ -9072,21 +9034,10 @@ PRE(thread_fast_set_cthread_self)
 
 
 /* ---------------------------------------------------------------------
-   Added for OSX 10.7 (Lion)
+   Added for OSX 10.6 (Snow Leopard)
    ------------------------------------------------------------------ */
 
-#if DARWIN_VERS >= DARWIN_10_7
-
-PRE(getaudit_addr)
-{
-   PRINT("getaudit_addr(%#lx, %lu)", ARG1, ARG2);
-   PRE_REG_READ1(void*, "auditinfo_addr", int, "length");
-   PRE_MEM_WRITE("getaudit_addr(auditinfo_addr)", ARG1, ARG2);
-}
-POST(getaudit_addr)
-{
-   POST_MEM_WRITE(ARG1, ARG2);
-}
+#if DARWIN_VERS >= DARWIN_10_6
 
 PRE(psynch_mutexwait)
 {
@@ -9156,6 +9107,60 @@ PRE(psynch_rw_unlock)
 POST(psynch_rw_unlock)
 {
 }
+
+PRE(__thread_selfid)
+{
+   PRINT("__thread_selfid ()");
+   PRE_REG_READ0(vki_uint64_t, "__thread_selfid");
+}
+
+PRE(fsgetpath)
+{
+#if VG_WORDSIZE == 4
+   PRINT("fsgetpath(%#lx, %ld, %#lx {%u,%u}, %llu)", 
+         ARG1, ARG2, ARG3,
+         ((unsigned int *)ARG3)[0], ((unsigned int *)ARG3)[1],
+         LOHI64(ARG4, ARG5));
+   PRE_REG_READ5(ssize_t, "fsgetpath", 
+                 void*,"buf", size_t,"bufsize", 
+                 fsid_t *,"fsid",
+                 vki_uint32_t, "objid_low32", vki_uint32_t, "objid_high32");
+#else
+   PRINT("fsgetpath(%#lx, %ld, %#lx {%u,%u}, %lu)", 
+         ARG1, ARG2, ARG3,
+         ((unsigned int *)ARG3)[0],
+         ((unsigned int *)ARG3)[1], ARG4);
+   PRE_REG_READ4(ssize_t, "fsgetpath", 
+                 void*,"buf", size_t,"bufsize", 
+                 fsid_t *,"fsid", uint64_t,"objid");
+#endif
+   PRE_MEM_READ("fsgetpath(fsid)", ARG3, sizeof(fsid_t));
+   PRE_MEM_WRITE("fsgetpath(buf)", ARG1, ARG2);
+}
+
+POST(fsgetpath)
+{
+   POST_MEM_WRITE(ARG1, RES);
+}
+
+PRE(audit_session_self)
+{
+  PRINT("audit_session_self()");
+}
+POST(audit_session_self)
+{
+  record_named_port(tid, RES, MACH_PORT_RIGHT_SEND, "audit-session-%p");
+  PRINT("audit-session %#lx", RES);
+}
+
+#endif /* DARWIN_VERS >= DARWIN_10_6 */
+
+
+/* ---------------------------------------------------------------------
+   Added for OSX 10.7 (Lion)
+   ------------------------------------------------------------------ */
+
+#if DARWIN_VERS >= DARWIN_10_7
 
 PRE(psynch_cvclrprepost)
 {
@@ -9996,13 +10001,10 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_shared_region_map_np), 
 #if DARWIN_VERS >= DARWIN_10_6
 // _____(__NR_vm_pressure_monitor), 
-#else
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(296)),   // old load_shared_file 
-#endif
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(297)),   // old reset_shared_file 
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(298)),   // old new_system_shared_regions 
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(299)),   // old shared_region_map_file_np 
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(300)),   // old shared_region_make_private_np
+// _____(__NR_psynch_rw_longrdlock), 
+// _____(__NR_psynch_rw_yieldwrlock), 
+// _____(__NR_psynch_rw_downgrade), 
+// _____(__NR_psynch_rw_upgrade), 
    MACXY(__NR_psynch_mutexwait, psynch_mutexwait), // 301
    MACXY(__NR_psynch_mutexdrop, psynch_mutexdrop), // 302
    MACXY(__NR_psynch_cvbroad,   psynch_cvbroad),   // 303
@@ -10011,10 +10013,30 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACXY(__NR_psynch_rw_rdlock, psynch_rw_rdlock), // 306
    MACXY(__NR_psynch_rw_wrlock, psynch_rw_wrlock), // 307
    MACXY(__NR_psynch_rw_unlock, psynch_rw_unlock), // 308
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(309)),   // ???
+// _____(__NR_psynch_rw_unlock2), 
+#else
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(296)),   // old load_shared_file 
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(297)),   // old reset_shared_file 
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(298)),   // old new_system_shared_regions 
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(299)),   // old shared_region_map_file_np 
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(300)),   // old shared_region_make_private_np
+// _____(__NR___pthread_mutex_destroy), 
+// _____(__NR___pthread_mutex_init), 
+// _____(__NR___pthread_mutex_lock), 
+// _____(__NR___pthread_mutex_trylock), 
+// _____(__NR___pthread_mutex_unlock), 
+// _____(__NR___pthread_cond_init), 
+// _____(__NR___pthread_cond_destroy), 
+// _____(__NR___pthread_cond_broadcast), 
+// _____(__NR___pthread_cond_signal), 
+#endif
 // _____(__NR_getsid), 
 // _____(__NR_settid_with_pid), 
+#if DARWIN_VERS >= DARWIN_10_7
    MACXY(__NR_psynch_cvclrprepost, psynch_cvclrprepost), // 312
+#else
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(308)),   // old __pthread_cond_timedwait
+#endif
 // _____(__NR_aio_fsync), 
    MACXY(__NR_aio_return,     aio_return), 
    MACX_(__NR_aio_suspend,    aio_suspend), 
@@ -10044,9 +10066,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACX_(__NR___pthread_canceled,      __pthread_canceled),
    MACX_(__NR___semwait_signal,        __semwait_signal), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(335)),   // old utrace
-#if DARWIN_VERS >= DARWIN_10_6
    MACXY(__NR_proc_info,               proc_info),  // 336
-#endif
    MACXY(__NR_sendfile,    sendfile), 
    MACXY(__NR_stat64,      stat64), 
    MACXY(__NR_fstat64,     fstat64), 
@@ -10067,9 +10087,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_setauid), 
 // _____(__NR_getaudit), 
 // _____(__NR_setaudit), 
-#if DARWIN_VERS >= DARWIN_10_7
    MACXY(__NR_getaudit_addr, getaudit_addr),
-#endif
 // _____(__NR_setaudit_addr), 
 // _____(__NR_auditctl), 
    MACXY(__NR_bsdthread_create,     bsdthread_create),   // 360

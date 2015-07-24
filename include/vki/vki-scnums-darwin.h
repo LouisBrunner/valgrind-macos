@@ -536,25 +536,42 @@
 #define	__NR_shared_region_map_np   VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(295)
 #if DARWIN_VERS >= DARWIN_10_6
 #define __NR_vm_pressure_monitor    VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(296)
+#define __NR_psynch_rw_longrdlock   VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(297)
+#define __NR_psynch_rw_yieldwrlock  VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(298)
+#define __NR_psynch_rw_downgrade    VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(299)
+#define __NR_psynch_rw_upgrade      VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(300)
+#define __NR_psynch_mutexwait       VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(301)
+#define __NR_psynch_mutexdrop       VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(302)
+#define __NR_psynch_cvbroad         VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(303)
+#define __NR_psynch_cvsignal        VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(304)
+#define __NR_psynch_cvwait          VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(305)
+#define __NR_psynch_rw_rdlock       VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(306)
+#define __NR_psynch_rw_wrlock       VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(307)
+#define __NR_psynch_rw_unlock       VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(308)
+#define __NR_psynch_rw_unlock2      VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(309)
 #else
 			/* 296  old load_shared_file */
-#endif
 			/* 297  old reset_shared_file */
 			/* 298  old new_system_shared_regions */
 			/* 299  old shared_region_map_file_np */
 			/* 300  old shared_region_make_private_np */
-#define __NR_psynch_mutexwait VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(301)
-#define __NR_psynch_mutexdrop VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(302)
-#define __NR_psynch_cvbroad   VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(303)
-#define __NR_psynch_cvsignal  VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(304)
-#define __NR_psynch_cvwait    VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(305)
-#define __NR_psynch_rw_rdlock VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(306)
-#define __NR_psynch_rw_wrlock VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(307)
-#define __NR_psynch_rw_unlock VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(308)
-			/* 309 */
+#define __NR___pthread_mutex_destroy  VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(301)
+#define __NR___pthread_mutex_init     VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(302)
+#define __NR___pthread_mutex_lock     VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(303)
+#define __NR___pthread_mutex_trylock  VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(304)
+#define __NR___pthread_mutex_unlock   VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(305)
+#define __NR___pthread_cond_init      VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(306)
+#define __NR___pthread_cond_destroy   VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(307)
+#define __NR___pthread_cond_broadcast VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(308)
+#define __NR___pthread_cond_signal    VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(309)
+#endif
 #define	__NR_getsid         VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(310)
 #define	__NR_settid_with_pid VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(311)
+#if DARWIN_VERS >= DARWIN_10_7
 #define __NR_psynch_cvclrprepost VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(312)
+#else
+#define __NR___pthread_cond_timedwait VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(312)
+#endif
 #define	__NR_aio_fsync      VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(313)
 #define	__NR_aio_return     VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(314)
 #define	__NR_aio_suspend    VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(315)

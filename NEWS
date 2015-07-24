@@ -120,6 +120,7 @@ where XXXXXX is the bug number as listed below.
         == 326797
 319274  Fix unhandled syscall: unix:410 (sigsuspend_nocancel) on OS X
 324181  mmap does not handle MAP_32BIT (handle it now, rather than fail it)
+327745  Fix valgrind 3.9.0 build fails on Mac OS X 10.6.8
 333051  mmap of huge pages fails due to incorrect alignment
         == 339163
 334802  valgrind does not always explain why a given option is bad

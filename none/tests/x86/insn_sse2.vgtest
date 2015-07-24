@@ -1,3 +1,3 @@
 prog: ../../../none/tests/x86/insn_sse2
-prereq: ../../../tests/x86_amd64_features x86-sse2
+prereq: ../../../tests/x86_amd64_features x86-sse2 && test -e ../../../none/tests/x86/insn_sse2
 vgopts: -q

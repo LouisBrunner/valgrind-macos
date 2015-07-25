@@ -1350,7 +1350,7 @@ AC_CHECK_MEMBER([pthread_mutex_t.__data.__kind],
 AC_DEFUN([AC_HWCAP_CONTAINS_FLAG],[
   AUXV_CHECK_FOR=$1
   AC_MSG_CHECKING([if AT_HWCAP contains the $AUXV_CHECK_FOR indicator])
-  if `LD_SHOW_AUXV=1 /bin/true | grep ^AT_HWCAP | grep -q -w ${AUXV_CHECK_FOR}`
+  if LD_SHOW_AUXV=1 `which true` | grep ^AT_HWCAP | grep -q -w ${AUXV_CHECK_FOR}
   then
     AC_MSG_RESULT([yes])
     AC_SUBST([$2],[yes])

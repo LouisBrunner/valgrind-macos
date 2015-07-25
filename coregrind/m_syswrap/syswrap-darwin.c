@@ -1106,6 +1106,8 @@ PRE(ioctl)
    case VKI_TIOCPTYGRANT:
    case VKI_TIOCPTYUNLK:
    case VKI_DTRACEHIOC_REMOVE: 
+   case VKI_BIOCFLUSH:
+   case VKI_BIOCPROMISC:
       PRINT("ioctl ( %ld, 0x%lx )",ARG1,ARG2);
       PRE_REG_READ2(long, "ioctl",
                     unsigned int, fd, unsigned int, request);
@@ -1291,6 +1293,71 @@ PRE(ioctl)
    case VKI_FIONCLEX:
        break;
 
+       // net/bpf.h
+   case VKI_BIOCSETF:            /* set BPF filter               */
+      /*
+       * struct bpf_program has a 32-bit count of instructions,
+       * followed by a pointer to an array of those instructions.
+       * In 64-bit mode, there's padding between those two elements.
+       *
+       * So that we don't bogusly complain about the padding bytes,
+       * we just report that we read bf_len and and bf_insns.
+       *
+       * We then make sure that what bf_insns points to is valid.
+       */
+      PRE_MEM_READ( "ioctl(BIOCSETF)",
+                     (Addr)&((struct vki_bpf_program *)ARG3)->vki_bf_len,
+                     sizeof(((struct vki_bpf_program *)ARG3)->vki_bf_len) );
+      PRE_MEM_READ( "ioctl(BIOCSETF)",
+                     (Addr)&((struct vki_bpf_program *)ARG3)->vki_bf_insns,
+                     sizeof(((struct vki_bpf_program *)ARG3)->vki_bf_insns) );
+      if ( ARG3 ) {
+         /* bf_len * sizeof (*bf_insns) */
+         struct vki_bpf_program *bp = (struct vki_bpf_program *)ARG3;
+         if ( bp->bf_insns != NULL )
+           PRE_MEM_READ( "ioctl(BIOCSETF) points to a struct bpf_program whose bf_insns member",
+                          (Addr)(bp->vki_bf_insns),
+                          bp->vki_bf_len * sizeof(*bp->vki_bf_insns) );
+      }
+      break;
+   case VKI_BIOCSETIF:           /* set BPF interface            */
+      PRE_MEM_RASCIIZ( "ioctl(BIOCSETIF)",
+                     (Addr)((struct vki_ifreq *)ARG3)->vki_ifr_name );
+      break;
+   case VKI_BIOCSRTIMEOUT:       /* set BPF timeout              */
+      /*
+       * 64-bit struct timeval starts with a 64-bit "seconds since the
+       * Epoch" value, followed by a 32-bit microseconds value.  The
+       * resulting structure is padded to a multiple of 8 bytes, so
+       * there are 4 padding bytes at the end.
+       *
+       * So that we don't bogusly complain about the padding bytes,
+       * we just report that we read tv_sec and tv_usec.
+       */
+      PRE_MEM_READ( "ioctl(BIOCSRTIMEOUT)",
+                     (Addr)&((struct vki_timeval *)ARG3)->vki_tv_sec,
+                     sizeof(((struct vki_timeval *)ARG3)->vki_tv_sec) );
+      PRE_MEM_READ( "ioctl(BIOCSRTIMEOUT)",
+                     (Addr)&((struct vki_timeval *)ARG3)->vki_tv_usec,
+                     sizeof(((struct vki_timeval *)ARG3)->vki_tv_usec) );
+      break;
+   case VKI_BIOCGDLTLIST:        /* get list of BPF DLTs         */
+      PRE_MEM_READ( "ioctl(BIOCGDLTLIST).bfl_len",
+                     (Addr)&((struct vki_bpf_dltlist *)ARG3)->vki_bfl_list,
+                     sizeof(((struct vki_bpf_dltlist *)ARG3)->vki_bfl_list) );
+      if ( ARG3 ) {
+         /* bfl_len * sizeof (*bfl_list) */
+         struct vki_bpf_dltlist *bdl = (struct vki_bpf_dltlist *)ARG3;
+         if ( bdl->bfl_list != NULL )
+           PRE_MEM_READ( "ioctl(BIOCGDLTLIST).bfl_len",
+                          (Addr)&((struct vki_bpf_dltlist *)ARG3)->vki_bfl_len,
+                          sizeof(((struct vki_bpf_dltlist *)ARG3)->vki_bfl_len) );
+           PRE_MEM_WRITE( "ioctl(BIOCGDLTLIST) points to a struct bpf_dltlist whose bfl_list member",
+                          (Addr)(bdl->vki_bfl_list),
+                          bdl->bfl_len * sizeof(*bdl->vki_bfl_list) );
+      }
+      break;
+
    default: 
       ML_(PRE_unknown_ioctl)(tid, ARG2, ARG3);
       break;
@@ -1417,7 +1484,19 @@ POST(ioctl)
    case VKI_TIOCPTYUNLK:
        break;
 
+       // bpf.h
+   case VKI_BIOCGDLTLIST:        /* get list of BPF DLTs         */
+      if (RES == 0 && ARG3 ) {
+         /* bfl_len * sizeof (*bfl_list) */
+         struct vki_bpf_dltlist *bdl = (struct vki_bpf_dltlist *)ARG3;
+         if ( bdl->vki_bfl_list != NULL )
+           POST_MEM_WRITE( (Addr)(bdl->vki_bfl_list),
+                           bdl->bfl_len * sizeof(*bdl->vki_bfl_list) );
+      }
+      break;
+
    default:
+      ML_(POST_unknown_ioctl)(tid, RES, ARG2, ARG3);
       break;
    }
 }

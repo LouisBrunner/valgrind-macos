@@ -54,8 +54,12 @@ valgrind_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
 valgrind_CFLAGS    = $(AM_CFLAGS_PRI)
 valgrind_CCASFLAGS = $(AM_CCASFLAGS_PRI)
 valgrind_LDFLAGS   = $(AM_CFLAGS_PRI) @LIB_UBSAN@
+# If there is no secondary platform, and the platforms include x86-darwin,
+# then the primary platform must be x86-darwin.  Hence:
+if ! VGCONF_HAVE_PLATFORM_SEC
 if VGCONF_PLATFORMS_INCLUDE_X86_DARWIN
 valgrind_LDFLAGS   += -Wl,-read_only_relocs -Wl,suppress
+endif
 endif
 # On Android we must ask for non-executable stack, not sure why.
 if VGCONF_PLATVARIANT_IS_ANDROID
@@ -96,8 +100,12 @@ if !VGCONF_PLATVARIANT_IS_ANDROID
 vgdb_LDADD     = -lpthread
 endif
 endif
+# If there is no secondary platform, and the platforms include x86-darwin,
+# then the primary platform must be x86-darwin.  Hence:
+if ! VGCONF_HAVE_PLATFORM_SEC
 if VGCONF_PLATFORMS_INCLUDE_X86_DARWIN
 vgdb_LDFLAGS   += -Wl,-read_only_relocs -Wl,suppress
+endif
 endif
 
 #----------------------------------------------------------------------------

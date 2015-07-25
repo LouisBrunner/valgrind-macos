@@ -36,8 +36,12 @@ valgrind_listener_LDFLAGS   = $(AM_CFLAGS_PRI)
 if VGCONF_PLATVARIANT_IS_ANDROID
 valgrind_listener_CFLAGS    += -static
 endif
+# If there is no secondary platform, and the platforms include x86-darwin,
+# then the primary platform must be x86-darwin.  Hence:
+if ! VGCONF_HAVE_PLATFORM_SEC
 if VGCONF_PLATFORMS_INCLUDE_X86_DARWIN
 valgrind_listener_LDFLAGS   += -Wl,-read_only_relocs -Wl,suppress
+endif
 endif
 if VGCONF_OS_IS_SOLARIS
 valgrind_listener_LDADD      = -lsocket -lnsl
@@ -51,8 +55,12 @@ valgrind_di_server_LDFLAGS   = $(AM_CFLAGS_PRI)
 if VGCONF_PLATVARIANT_IS_ANDROID
 valgrind_di_server_CFLAGS    += -static
 endif
+# If there is no secondary platform, and the platforms include x86-darwin,
+# then the primary platform must be x86-darwin.  Hence:
+if ! VGCONF_HAVE_PLATFORM_SEC
 if VGCONF_PLATFORMS_INCLUDE_X86_DARWIN
 valgrind_di_server_LDFLAGS   += -Wl,-read_only_relocs -Wl,suppress
+endif
 endif
 if VGCONF_OS_IS_SOLARIS
 valgrind_di_server_LDADD     = -lsocket -lnsl

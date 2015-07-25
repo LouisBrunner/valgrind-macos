@@ -263,6 +263,7 @@ where XXXXXX is the bug number as listed below.
 349087  Fix UNKNOWN task message [id 3410, to mach_task_self(),
         reply 0x........] (task_set_special_port)
 349626  Implemented additional Xen hypercalls
+349769  Fix clang/osx: ld: warning: -read_only_relocs cannot be used with x86_64
 349874  Fix typos in source code
 349828  memcpy intercepts memmove causing src/dst overlap error (ppc64 ld.so)
 349941  di_notify_mmap might create wrong start/size DebugInfoMapping

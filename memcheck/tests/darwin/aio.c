@@ -14,6 +14,7 @@ int main(void)
    struct aiocb a;
    struct sigevent s;
 
+   memset(&a, 0, sizeof(struct aiocb));
    // Not sure if the sigevent is even looked at by aio_*... just zero it.
    memset(&s, 0, sizeof(struct sigevent));
 

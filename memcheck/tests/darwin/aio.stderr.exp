@@ -1,14 +1,16 @@
 
 Warning: invalid file descriptor -1 in syscall aio_read()
 Syscall param aio_read(aiocbp->aio_buf) points to unaddressable byte(s)
-   ...
+   at 0x........: aio_read (in /...libc...)
+   by 0x........: main (aio.c:45)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Conditional jump or move depends on uninitialised value(s)
-   at 0x........: main (aio.c:55)
+   at 0x........: main (aio.c:56)
 
 Syscall param aio_write(aiocbp->aio_buf) points to unaddressable byte(s)
-   ...
+   at 0x........: aio_write (in /...libc...)
+   by 0x........: main (aio.c:70)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 

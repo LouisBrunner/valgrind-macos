@@ -185,6 +185,12 @@
   </stack>
 </error>
 
+<clientmsg>
+  <tid>...</tid>
+  <threadname>try1</threadname>
+  <text>I am in child_fn_1
+  </text>
+</clientmsg>
 <error>
   <unique>0x........</unique>
   <tid>...</tid>

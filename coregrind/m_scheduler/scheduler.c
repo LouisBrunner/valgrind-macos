@@ -1814,6 +1814,9 @@ Int print_client_message( ThreadId tid, const HChar *format,
 
       VG_(printf_xml)( "<clientmsg>\n" );
       VG_(printf_xml)( "  <tid>%d</tid>\n", tid );
+      const ThreadState *tst = VG_(get_ThreadState)(tid);
+      if (tst->thread_name)
+         VG_(printf_xml)("  <threadname>%s</threadname>\n", tst->thread_name);
       VG_(printf_xml)( "  <text>" );
       count = VG_(vprintf_xml)( xml_format, *vargsp );
       VG_(printf_xml)( "  </text>\n" );

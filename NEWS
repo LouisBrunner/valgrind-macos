@@ -277,6 +277,7 @@ n-i-bz  (vex 3098) Avoid generation of Neon insns on non-Neon hosts
 n-i-bz  Enable rt_sigpending syscall on ppc64 linux.
 n-i-bz  mremap did not work properly on shared memory
 n-i-bz  Fix incorrect sizeof expression in syswrap-xen.c reported by Coverity
+n-i-bz  In VALGRIND_PRINTF write out thread name, if any, to xml
 
 
 Release 3.10.1 (25 November 2014)

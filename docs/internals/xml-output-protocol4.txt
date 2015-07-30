@@ -719,6 +719,7 @@ Definition:
 
 <clientmsg>
   <tid>INT</tid>
+  <threadname>NAME</threadname>    if set
   <text>...</text>
 </clientmsg>
 
@@ -726,11 +727,16 @@ OR
 
 <clientmsg>
   <tid>INT</tid>
+  <threadname>NAME</threadname>    if set
   <text>...</text>
   STACK
 </clientmsg>
 
 * The <tid> tag indicates the Valgrind thread number.
+
+* The <threadname> tag identifies the name of the thread if it was
+  set by the client application. If no name was set, the tag is
+  omitted.
 
 * The <text> tag indicates the message as specified in the client request
   (properly translated to XML).

@@ -112,9 +112,6 @@ TODO list
 - Performance comparison against other platforms.
 
 - Prevent SIGPIPE when writing to a socket (coregrind/m_libcfile.c).
-- Implement support for attaching a debugger (coregrind/m_debugger.c).  This
-  is a low priority task because this feature is going to be removed in
-  future versions of Valgrind in favor of using only gdbserver.
 - Implement ticket locking for fair scheduling (--fair-sched=yes).
 - Implement support in DRD and Helgrind tools for thr_join() with thread == 0.
 - Add support for accessing thread-local variables via gdb (auxprogs/getoff.c).

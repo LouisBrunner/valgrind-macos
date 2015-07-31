@@ -269,6 +269,7 @@ where XXXXXX is the bug number as listed below.
 349874  Fix typos in source code
 349828  memcpy intercepts memmove causing src/dst overlap error (ppc64 ld.so)
 349941  di_notify_mmap might create wrong start/size DebugInfoMapping
+350811  Remove reference to --db-attach which has been removed.
 n-i-bz  Provide implementations of certain compiler builtins to support
         compilers who may not provide those
 n-i-bz  Old STABS code is still being compiled, but never used. Remove it.

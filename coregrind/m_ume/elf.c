@@ -443,6 +443,7 @@ Int VG_(load_ELF)(Int fd, const HChar* name, /*MOD*/ExeInfo* info)
                interp_size = end;
          }
          break;
+         }
 
 #     if defined(PT_GNU_STACK) || defined(PT_SUNWSTACK)
 #     if defined(PT_GNU_STACK)
@@ -462,7 +463,6 @@ Int VG_(load_ELF)(Int fd, const HChar* name, /*MOD*/ExeInfo* info)
       default:
          // do nothing
          break;
-      }
       }
    }
 

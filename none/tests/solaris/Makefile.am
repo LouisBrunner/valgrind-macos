@@ -21,6 +21,8 @@ EXTRA_DIST = \
 	proc_psinfo.stderr.exp proc_psinfo.stdout.exp proc_psinfo.vgtest \
 	posix_spawn.stderr.exp posix_spawn.stdout.exp posix_spawn.vgtest \
 	pthread-stack.stderr.exp pthread-stack.vgtest \
+	reserve_sysstat_addr.map reserve_sysstat_addr.stderr.exp reserve_sysstat_addr.vgtest \
+	reserve_sysstat_zone_addr.map reserve_sysstat_zone_addr.stderr.exp reserve_sysstat_zone_addr.vgtest \
 	resolv.stdout.exp resolv.stderr.exp resolv.vgtest \
 	sigresend.stderr.exp sigresend.stdout.exp sigresend.vgtest \
 	stack-overflow.stderr.exp stack-overflow.vgtest \
@@ -56,3 +58,13 @@ pthread_stack_LDADD = -lpthread
 resolv_LDADD = -lresolv
 stack_prot_LDFLAGS = -Wl,-M,/usr/lib/ld/map.noexstk
 threads_exitall_LDADD = -lpthread
+
+if SOLARIS_RESERVE_SYSSTAT_ADDR
+check_PROGRAMS += reserve_sysstat_addr
+reserve_sysstat_addr_LDFLAGS = -Wl,-M,reserve_sysstat_addr.map
+endif
+
+if SOLARIS_RESERVE_SYSSTAT_ZONE_ADDR
+check_PROGRAMS += reserve_sysstat_zone_addr
+reserve_sysstat_zone_addr_LDFLAGS = -Wl,-M,reserve_sysstat_zone_addr.map
+endif

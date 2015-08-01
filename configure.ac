@@ -3279,6 +3279,60 @@ AC_MSG_RESULT([$version])
 AC_DEFINE_UNQUOTED([SOLARIS_REPCACHE_PROTOCOL_VERSION], [$version],
                    [Version number of the repository door cache protocol.])
 
+
+# Solaris-specific check determining if "sysstat" segment reservation type
+# is available.
+#
+# New "sysstat" segment reservation (available on Solaris 12):
+# - program header type:    PT_SUNW_SYSSTAT
+# - auxiliary vector entry: AT_SUN_SYSSTAT_ADDR
+#
+# C-level symbol: SOLARIS_RESERVE_SYSSTAT_ADDR
+# Automake-level symbol: SOLARIS_RESERVE_SYSSTAT_ADDR
+#
+AC_MSG_CHECKING([for the new `sysstat' segment reservation (Solaris-specific)])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/auxv.h>
+]], [[
+  return !AT_SUN_SYSSTAT_ADDR;
+]])], [
+solaris_reserve_sysstat_addr=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([SOLARIS_RESERVE_SYSSTAT_ADDR], 1,
+          [Define to 1 if you have the new `sysstat' segment reservation.])
+], [
+solaris_reserve_sysstat_addr=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(SOLARIS_RESERVE_SYSSTAT_ADDR, test x$solaris_reserve_sysstat_addr = xyes)
+
+
+# Solaris-specific check determining if "sysstat_zone" segment reservation type
+# is available.
+#
+# New "sysstat_zone" segment reservation (available on Solaris 12):
+# - program header type:    PT_SUNW_SYSSTAT_ZONE
+# - auxiliary vector entry: AT_SUN_SYSSTAT_ZONE_ADDR
+#
+# C-level symbol: SOLARIS_RESERVE_SYSSTAT_ZONE_ADDR
+# Automake-level symbol: SOLARIS_RESERVE_SYSSTAT_ZONE_ADDR
+#
+AC_MSG_CHECKING([for the new `sysstat_zone' segment reservation (Solaris-specific)])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/auxv.h>
+]], [[
+  return !AT_SUN_SYSSTAT_ZONE_ADDR;
+]])], [
+solaris_reserve_sysstat_zone_addr=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([SOLARIS_RESERVE_SYSSTAT_ZONE_ADDR], 1,
+          [Define to 1 if you have the new `sysstat_zone' segment reservation.])
+], [
+solaris_reserve_sysstat_zone_addr=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(SOLARIS_RESERVE_SYSSTAT_ZONE_ADDR, test x$solaris_reserve_sysstat_zone_addr = xyes)
+
 else
 AM_CONDITIONAL(SOLARIS_SUN_STUDIO_AS, false)
 AM_CONDITIONAL(SOLARIS_XPG_SYMBOLS_PRESENT, false)
@@ -3300,6 +3354,8 @@ AM_CONDITIONAL(SOLARIS_NSCD_DOOR_SYSTEM_VOLATILE, false)
 AM_CONDITIONAL(SOLARIS_GETHRT_FASTTRAP, false)
 AM_CONDITIONAL(SOLARIS_GETZONEOFFSET_FASTTRAP, false)
 AM_CONDITIONAL(SOLARIS_EXECVE_SYSCALL_TAKES_FLAGS, false)
+AM_CONDITIONAL(SOLARIS_RESERVE_SYSSTAT_ADDR, false)
+AM_CONDITIONAL(SOLARIS_RESERVE_SYSSTAT_ZONE_ADDR, false)
 fi # test "$VGCONF_OS" = "solaris"
 
 

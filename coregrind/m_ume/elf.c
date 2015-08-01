@@ -460,6 +460,19 @@ Int VG_(load_ELF)(Int fd, const HChar* name, /*MOD*/ExeInfo* info)
          break;
 #     endif
 
+#     if defined(PT_SUNW_SYSSTAT)
+      /* Solaris-specific program header which requires link-time support. */
+      case PT_SUNW_SYSSTAT:
+         VG_(unimplemented)("Support for program header PT_SUNW_SYSSTAT.");
+         break;
+#     endif
+#     if defined(PT_SUNW_SYSSTAT_ZONE)
+      /* Solaris-specific program header which requires link-time support. */
+      case PT_SUNW_SYSSTAT_ZONE:
+         VG_(unimplemented)("Support for program header PT_SUNW_SYSSTAT_ZONE.");
+         break;
+#     endif
+
       default:
          // do nothing
          break;

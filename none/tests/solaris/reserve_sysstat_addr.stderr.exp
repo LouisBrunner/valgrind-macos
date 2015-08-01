@@ -1,0 +1,14 @@
+
+Valgrind detected that your program requires
+the following unimplemented functionality:
+   Support for program header PT_SUNW_SYSSTAT.
+This may be because the functionality is hard to implement,
+or because no reasonable program would behave this way,
+or because nobody has yet needed it.  In any case, let us know at
+www.valgrind.org and/or try to work around the problem, if you can.
+
+Valgrind has to exit now.  Sorry.  Bye!
+
+
+sched status:
+  running_tid=0

@@ -484,13 +484,16 @@ origin6_fp_CFLAGS	= $(AM_CFLAGS) -O
 # because then we can't intercept it
 overlap_CFLAGS		= $(AM_CFLAGS) -fno-builtin-memcpy -fno-builtin-strcpy
 
+resvn_stack_CFLAGS      = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
+
 sendmsg_CFLAGS		= $(AM_CFLAGS)
 if VGCONF_OS_IS_SOLARIS
 sendmsg_CFLAGS		+= -D_XOPEN_SOURCE=500
 sendmsg_LDADD		= -lsocket -lnsl
 endif
 
-str_tester_CFLAGS	= $(AM_CFLAGS) -Wno-shadow
+str_tester_CFLAGS	= $(AM_CFLAGS) -Wno-shadow \
+			  @FLAG_W_NO_MEMSET_TRANSPOSED_ARGS@
 
 supp_CFLAGS             = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 

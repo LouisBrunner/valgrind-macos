@@ -28,7 +28,7 @@ void VG_(exit_now)( Int status )
 
 
 #define  CHECK(x) \
-   if (!x) { fprintf(stderr, "failure: %s:%d\n", __FILE__, __LINE__); }
+   if (!(x)) { fprintf(stderr, "failure: %s:%d\n", __FILE__, __LINE__); }
 
 
 void test_VG_STREQ(void)

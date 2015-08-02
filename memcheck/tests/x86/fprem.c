@@ -6,7 +6,7 @@
 
 double do_fprem ( void )
 {
-  double res;
+  double res = 0.0;
   __asm__ __volatile__(
     "ffree %%st(0)\n\t"
     "ffree %%st(1)\n\t"
@@ -21,7 +21,7 @@ double do_fprem ( void )
 
 double do_fprem1 ( void )
 {
-  double res;
+  double res = 0.0;
   __asm__ __volatile__(
     "ffree %%st(0)\n\t"
     "ffree %%st(1)\n\t"
@@ -36,7 +36,7 @@ double do_fprem1 ( void )
 
 double do_fsincos ( void )
 {
-  double res;
+  double res = 0.0;
   __asm__ __volatile__(
     "fldln2\n\t"
     "fsincos\n\t"

@@ -180,7 +180,7 @@ static IRExpr *getIReg ( UInt iregNo )
   IRType ty = Ity_I64;
   if(!(iregNo < 56 || iregNo == 63 ||
        (iregNo >= 70 && iregNo <= 73))) {
-    vex_printf("iregNo=%d\n", iregNo);
+    vex_printf("iregNo=%u\n", iregNo);
     vassert(0);
   }
   return IRExpr_Get(integerGuestRegOffset(iregNo), ty);
@@ -191,7 +191,7 @@ static void putIReg ( UInt archreg, IRExpr * e )
   IRType ty = Ity_I64;
   if(!(archreg < 56 || archreg == 63 || archreg == 70 ||
        archreg == 72 || archreg == 73)) {
-    vex_printf("archreg=%d\n", archreg);
+    vex_printf("archreg=%u\n", archreg);
     vassert(0);
   }
   vassert(typeOfIRExpr(irsb->tyenv, e) == ty);

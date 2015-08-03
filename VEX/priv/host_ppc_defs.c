@@ -5510,7 +5510,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
          break;
       default:
          vex_printf("ERROR: emit_PPCInstr quad default case %d \n",
-                    i->Pin.DfpShift128.op);
+                    (Int)i->Pin.DfpShift128.op);
          goto bad;
       }
 

@@ -397,7 +397,7 @@ const HChar *showMIPSFpOp(MIPSFpOp op)
          ret = "c.ngt.d";
          break;
       default:
-         vex_printf("Unknown op: %d", op);
+         vex_printf("Unknown op: %d", (Int)op);
          vpanic("showMIPSFpOp");
          break;
    }
@@ -2135,7 +2135,7 @@ static UChar *mkFormR(UChar * p, UInt opc, UInt rs, UInt rt, UInt rd, UInt sa,
             UInt func)
 {
    if (rs >= 0x20)
-      vex_printf("rs = %d\n", rs);
+      vex_printf("rs = %u\n", rs);
    UInt theInstr;
    vassert(opc < 0x40);
    vassert(rs < 0x20);

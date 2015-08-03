@@ -559,7 +559,7 @@ doHelperCall(/*OUT*/UInt *stackAdjustAfterCall,
          IRType type = typeOfIRExpr(env->type_env, args[i]);
          if (type != Ity_I64) {
             ++arg_errors;
-            vex_printf("calling %s: argument #%d has type ", callee->name, i);
+            vex_printf("calling %s: argument #%u has type ", callee->name, i);
             ppIRType(type);
             vex_printf("; Ity_I64 is required\n");
          }

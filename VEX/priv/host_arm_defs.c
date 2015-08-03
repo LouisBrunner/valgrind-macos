@@ -656,7 +656,7 @@ void ppARMNRS(ARMNRS *p)
 {
    ppHRegARM(p->reg);
    if (p->tag == ARMNRS_Scalar) {
-      vex_printf("[%d]", p->index);
+      vex_printf("[%u]", p->index);
    }
 }
 
@@ -1889,7 +1889,7 @@ void ppARMInstr ( const ARMInstr* i ) {
              i->ARMin.NUnary.op == ARMneon_VCVTFtoFixedU ||
              i->ARMin.NUnary.op == ARMneon_VCVTFixedStoF ||
              i->ARMin.NUnary.op == ARMneon_VCVTFixedUtoF) {
-            vex_printf(", #%d", i->ARMin.NUnary.size);
+            vex_printf(", #%u", i->ARMin.NUnary.size);
          }
          if (i->ARMin.NUnary.op == ARMneon_VQSHLNSS ||
              i->ARMin.NUnary.op == ARMneon_VQSHLNUU ||
@@ -1897,13 +1897,13 @@ void ppARMInstr ( const ARMInstr* i ) {
             UInt size;
             size = i->ARMin.NUnary.size;
             if (size & 0x40) {
-               vex_printf(", #%d", size - 64);
+               vex_printf(", #%u", size - 64);
             } else if (size & 0x20) {
-               vex_printf(", #%d", size - 32);
+               vex_printf(", #%u", size - 32);
             } else if (size & 0x10) {
-               vex_printf(", #%d", size - 16);
+               vex_printf(", #%u", size - 16);
             } else if (size & 0x08) {
-               vex_printf(", #%d", size - 8);
+               vex_printf(", #%u", size - 8);
             }
          }
          return;
@@ -1973,7 +1973,7 @@ void ppARMInstr ( const ARMInstr* i ) {
          vex_printf(", ");
          ppHRegARM(i->ARMin.Add32.rN);
          vex_printf(", ");
-         vex_printf("%d", i->ARMin.Add32.imm32);
+         vex_printf("%u", i->ARMin.Add32.imm32);
          return;
       case ARMin_EvCheck:
          vex_printf("(evCheck) ldr r12,");

@@ -1196,7 +1196,7 @@ void ppX86Instr ( const X86Instr* i, Bool mode64 ) {
          ppHRegX86(i->Xin.SseCMov.dst);
          return;
       case Xin_SseShuf:
-         vex_printf("pshufd $0x%x,", i->Xin.SseShuf.order);
+         vex_printf("pshufd $0x%x,", (UInt)i->Xin.SseShuf.order);
          ppHRegX86(i->Xin.SseShuf.src);
          vex_printf(",");
          ppHRegX86(i->Xin.SseShuf.dst);

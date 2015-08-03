@@ -63,7 +63,7 @@ void ppIRType ( IRType ty )
       case Ity_D128:    vex_printf( "D128"); break;
       case Ity_V128:    vex_printf( "V128"); break;
       case Ity_V256:    vex_printf( "V256"); break;
-      default: vex_printf("ty = 0x%x\n", (Int)ty);
+      default: vex_printf("ty = 0x%x\n", (UInt)ty);
                vpanic("ppIRType");
    }
 }
@@ -114,7 +114,7 @@ void ppIRTemp ( IRTemp tmp )
    if (tmp == IRTemp_INVALID)
       vex_printf("IRTemp_INVALID");
    else
-      vex_printf( "t%d", (Int)tmp);
+      vex_printf( "t%u", tmp);
 }
 
 void ppIROp ( IROp op )

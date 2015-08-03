@@ -108,8 +108,8 @@ s390_hreg_as_string(HReg reg)
    if (hregIsVirtual(reg)) {
       buf[0] = '\0';
       switch (hregClass(reg)) {
-      case HRcInt64: vex_sprintf(buf, "%%vR%d", r); break;
-      case HRcFlt64: vex_sprintf(buf, "%%vF%d", r); break;
+      case HRcInt64: vex_sprintf(buf, "%%vR%u", r); break;
+      case HRcFlt64: vex_sprintf(buf, "%%vF%u", r); break;
       default:       goto fail;
       }
       return buf;
@@ -6422,7 +6422,7 @@ s390_sprintf(HChar *buf, const HChar *fmt, ...)
          continue;
 
       case 'G':     /* %G = guest state @ offset */
-         p += vex_sprintf(p, "guest[%d]", va_arg(args, UInt));
+         p += vex_sprintf(p, "guest[%u]", va_arg(args, UInt));
          continue;
 
       case 'C':     /* %C = condition code */
@@ -6441,7 +6441,7 @@ s390_sprintf(HChar *buf, const HChar *fmt, ...)
 
          for (i = 0; i < num_args; ++i) {
             if (i != 0) p += vex_sprintf(p, ", ");
-            p += vex_sprintf(p, "r%d", s390_gprno_from_arg_index(i));
+            p += vex_sprintf(p, "r%u", s390_gprno_from_arg_index(i));
          }
          continue;
       }

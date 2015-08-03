@@ -1311,7 +1311,7 @@ void ppAMD64Instr ( const AMD64Instr* i, Bool mode64 )
          ppHRegAMD64(i->Ain.SseCMov.dst);
          return;
       case Ain_SseShuf:
-         vex_printf("pshufd $0x%x,", i->Ain.SseShuf.order);
+         vex_printf("pshufd $0x%x,", (UInt)i->Ain.SseShuf.order);
          ppHRegAMD64(i->Ain.SseShuf.src);
          vex_printf(",");
          ppHRegAMD64(i->Ain.SseShuf.dst);

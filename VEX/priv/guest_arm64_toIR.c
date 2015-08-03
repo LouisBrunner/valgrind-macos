@@ -5141,7 +5141,7 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn)
             vassert(0);
          }
          putIReg64orSP(nn, mkexpr(tEA));
-         DIP(atRN ? "ldrs%c %s, [%s], #%lld\n" : "ldrs%c %s, [%s, #%lld]!",
+         DIP(atRN ? "ldrs%c %s, [%s], #%llu\n" : "ldrs%c %s, [%s, #%llu]!",
              ch, nameIRegOrZR(is64, tt), nameIReg64orSP(nn), simm9);
          return True;
       }
@@ -5216,7 +5216,7 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn)
             vassert(0);
          }
          DIP("ldurs%c %s, [%s, #%lld]",
-             ch, nameIRegOrZR(is64, tt), nameIReg64orSP(nn), simm9);
+             ch, nameIRegOrZR(is64, tt), nameIReg64orSP(nn), (Long)simm9);
          return True;
       }
       /* else fall through */
@@ -5575,7 +5575,7 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn)
       putIReg64orSP(nn, mkexpr(tEA));
       DIP(atRN ? "%s %s, [%s], #%lld\n" : "%s %s, [%s, #%lld]!\n",
           isLD ? "ldr" : "str",
-          nameQRegLO(tt, ty), nameIReg64orSP(nn), simm9);
+          nameQRegLO(tt, ty), nameIReg64orSP(nn), (Long)simm9);
       return True;
    }
 
@@ -8275,7 +8275,7 @@ Bool dis_AdvSIMD_TBL_TBX(/*MB_OUT*/DisResult* dres, UInt insn)
       putQReg128(dd, math_MAYBE_ZERO_HI64(bitQ, res));
       const HChar* Ta = bitQ ==1 ? "16b" : "8b";
       const HChar* nm = isTBX ? "tbx" : "tbl";
-      DIP("%s %s.%s, {v%d.16b .. v%d.16b}, %s.%s\n",
+      DIP("%s %s.%s, {v%u.16b .. v%u.16b}, %s.%s\n",
           nm, nameQReg128(dd), Ta, nn, (nn + len) % 32, nameQReg128(mm), Ta);
       return True;
    }
@@ -9495,7 +9495,7 @@ Bool dis_AdvSIMD_scalar_three_different(/*MB_OUT*/DisResult* dres, UInt insn)
                                        : (ks == 1 ? "sqdmlal" : "sqdmlsl");
       const HChar  arrNarrow = "bhsd"[size];
       const HChar  arrWide   = "bhsd"[size+1];
-      DIP("%s %c%d, %c%d, %c%d\n",
+      DIP("%s %c%u, %c%u, %c%u\n",
           nm, arrWide, dd, arrNarrow, nn, arrNarrow, mm);
       return True;
    }
@@ -9705,7 +9705,7 @@ Bool dis_AdvSIMD_scalar_three_same(/*MB_OUT*/DisResult* dres, UInt insn)
          math_ZERO_ALL_EXCEPT_LOWEST_LANE(size, mkexpr(sat1n)));
       const HChar  arr = "bhsd"[size];
       const HChar* nm  = isR ? "sqrdmulh" : "sqdmulh";
-      DIP("%s %c%d, %c%d, %c%d\n", nm, arr, dd, arr, nn, arr, mm);
+      DIP("%s %c%u, %c%u, %c%u\n", nm, arr, dd, arr, nn, arr, mm);
       return True;
    }
 
@@ -10267,7 +10267,7 @@ Bool dis_AdvSIMD_scalar_x_indexed_element(/*MB_OUT*/DisResult* dres, UInt insn)
                                        : (ks == 1 ? "sqdmlal" : "sqdmlsl");
       const HChar  arrNarrow = "bhsd"[size];
       const HChar  arrWide   = "bhsd"[size+1];
-      DIP("%s %c%d, %c%d, v%d.%c[%u]\n",
+      DIP("%s %c%u, %c%u, v%u.%c[%u]\n",
           nm, arrWide, dd, arrNarrow, nn, dd, arrNarrow, ix);
       return True;
    }
@@ -10302,7 +10302,7 @@ Bool dis_AdvSIMD_scalar_x_indexed_element(/*MB_OUT*/DisResult* dres, UInt insn)
       updateQCFLAGwithDifferenceZHI(sat1q, sat1n, opZHI);
       const HChar* nm  = isR ? "sqrdmulh" : "sqdmulh";
       HChar ch         = size == X01 ? 'h' : 's';
-      DIP("%s %c%d, %c%d, v%d.%c[%u]\n", nm, ch, dd, ch, nn, ch, dd, ix);
+      DIP("%s %c%u, %c%u, v%d.%c[%u]\n", nm, ch, dd, ch, nn, ch, (Int)dd, ix);
       return True;
    }
 
@@ -10698,7 +10698,7 @@ Bool dis_AdvSIMD_shift_by_immediate(/*MB_OUT*/DisResult* dres, UInt insn)
       /* */
       if (res) {
          putQReg128(dd, res);
-         DIP("%cshll%s %s.%s, %s.%s, #%d\n",
+         DIP("%cshll%s %s.%s, %s.%s, #%u\n",
              isU ? 'u' : 's', isQ ? "2" : "",
              nameQReg128(dd), ta, nameQReg128(nn), tb, sh);
          return True;
@@ -12168,7 +12168,7 @@ Bool dis_AdvSIMD_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
       putQReg128(dd, mkexpr(res));
       const HChar* arrNarrow = nameArr_Q_SZ(bitQ, size);
       const HChar* arrWide   = nameArr_Q_SZ(1,    size+1);
-      DIP("shll%s %s.%s, %s.%s, #%u\n", is2 ? "2" : "", 
+      DIP("shll%s %s.%s, %s.%s, #%d\n", is2 ? "2" : "", 
           nameQReg128(dd), arrWide, nameQReg128(nn), arrNarrow, 8 << size);
       return True;
    }

@@ -247,7 +247,7 @@ static void doHelperCall ( ISelEnv * env, IRExpr * guard, IRCallee * cee,
   }
 
   if (nVECRETs || nBBPTRs)
-    vex_printf("nVECRETs=%d, nBBPTRs=%d\n",
+    vex_printf("nVECRETs=%u, nBBPTRs=%u\n",
                nVECRETs, nBBPTRs);
 
   if (TILEGX_N_REGPARMS < n_args) {

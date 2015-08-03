@@ -4364,7 +4364,7 @@ static HReg iselDfp64Expr_wrk(ISelEnv* env, IRExpr* e, IREndness IEndianess)
        }
       default:
          vex_printf( "ERROR: iselDfp64Expr_wrk, UNKNOWN unop case %d\n",
-                     e->Iex.Unop.op );
+                     (Int)e->Iex.Unop.op );
       }
    }
 
@@ -4723,7 +4723,7 @@ static void iselDfp128Expr_wrk(HReg* rHi, HReg *rLo, ISelEnv* env, IRExpr* e,
       }
       default:
          vex_printf( "ERROR: iselDfp128Expr_wrk, UNKNOWN binop case %d\n",
-                     e->Iex.Binop.op );
+                     (Int)e->Iex.Binop.op );
          break;
       }
    }

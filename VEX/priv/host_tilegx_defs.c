@@ -1271,7 +1271,7 @@ static Int display_insn ( struct tilegx_decoded_instruction
       if (op->type == TILEGX_OP_TYPE_REGISTER)
         vex_printf("r%d", (Int) decoded[i].operand_values[n]);
       else
-        vex_printf("%ld", (unsigned long)decoded[i].operand_values[n]);
+        vex_printf("%llu", (ULong)decoded[i].operand_values[n]);
 
       if (n != (decoded[i].opcode->num_operands - 1))
         vex_printf(", ");

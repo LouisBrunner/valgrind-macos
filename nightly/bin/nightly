@@ -175,6 +175,9 @@ for logfile in old new ; do
           "Running regression tests         " \
           "cd valgrind-$logfile && ${ABT_RUN_REGTEST}"
 
+   # Stash away the return code of the regression run
+   regrun_rc=$?
+
    # Grab some indicative text for the short log file -- if the regtests
    # succeeded, show their results.  If we didn't make it that far, show the
    # last 20 lines.
@@ -183,6 +186,14 @@ for logfile in old new ; do
       echo "Regression test results follow" >> $logfile.short
       echo >> $logfile.short
       awk '/^== [0-9]+ tests/, /^$/ { print }' $logfile.verbose >> $logfile.short
+   # Check the return code of the regression run; we might have successfully
+   # run all tests but still failed in the post-regtest checks.
+      if [ $regrun_rc != "0" ]; then
+         echo >> $logfile.short
+         echo "Last 20 lines of verbose log follow" >> $logfile.short \
+         echo >> $logfile.short
+         tail -20 $logfile.verbose >> $logfile.short
+      fi
    ) || (
       echo >> $logfile.short
       echo "Last 20 lines of verbose log follow" >> $logfile.short \

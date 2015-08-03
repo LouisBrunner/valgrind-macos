@@ -74,11 +74,11 @@ Limitations
   itself it is not possible to reverse map the intended pathname.
   Examples are fexecve(3C) and isaexec(3C).
 - Program headers PT_SUNW_SYSSTAT and PT_SUNW_SYSSTAT_ZONE are not supported.
-  That is, programs linked with mapfile directive RESERVE_SEGMENT and atribute
+  That is, programs linked with mapfile directive RESERVE_SEGMENT and attribute
   TYPE equal to SYSSTAT or SYSSTAT_ZONE will cause Valgrind exit. It is not
   possible for Valgrind to arrange mapping of a kernel shared page at the
   address specified in the mapfile for the guest application. There is currently
-  no such mechanism in Solaris.
+  no such mechanism in Solaris. Hacky workarounds are possible, though.
 - When a thread has no stack then all system calls will result in Valgrind
   crash, even though such system calls use just parameters passed in registers.
   This should happen only in pathological situations when a thread is created

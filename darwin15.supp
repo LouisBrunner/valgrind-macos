@@ -35,15 +35,14 @@
    ...
 }
 
-#{
-#   OSX1011:4-Leak
-#   Memcheck:Leak
-#   match-leak-kinds: reachable
-#   fun:malloc_zone_?alloc
-#   ...
-#   fun:dyld_register_image_state_change_handler
-#   ...
-#}
+{
+   OSX1011:4-Leak
+   Memcheck:Leak
+   fun:malloc_zone_?alloc
+   ...
+   fun:dyld_register_image_state_change_handler
+   ...
+}
 
 {
    OSX1011:5-Leak
@@ -62,7 +61,7 @@
    fun:malloc_zone_?alloc
    ...
    fun:map_images_nolock
-   fun:map_hax_images
+   fun:map_2_images
    ...
 }
 
@@ -73,7 +72,7 @@
    fun:malloc_zone_?alloc
    ...
    fun:map_images_nolock
-   fun:map_hax_images
+   fun:map_2_images
    ...
 }
 
@@ -500,13 +499,15 @@
    obj:/usr/lib/libz.*dylib
 }
 
-#{
-#   OSX1011:32bit:_libxpc_initializer
-#   Memcheck:Cond
-#   fun:_libxpc_initializer
-#   fun:libSystem_initializer
-#   fun:*ImageLoaderMachO*doModInitFunctions*
-#}
+{
+   OSX1011:32bit:_libxpc_initializer
+   Memcheck:Cond
+   obj:/usr/lib/system/libsystem_c.dylib
+   obj:/usr/lib/system/libsystem_c.dylib
+   fun:_libxpc_initializer
+   obj:/usr/lib/libSystem.B.dylib
+   fun:*ImageLoaderMachO*doModInitFunctions*
+}
 
 {
    OSX1011:dyld-1

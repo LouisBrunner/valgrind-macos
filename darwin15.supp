@@ -13,14 +13,14 @@
    fun:_read_images
 }
 
-#{
-#   OSX1011:2-Leak
-#   Memcheck:Leak
-#   match-leak-kinds: definite
-#   fun:?alloc
-#   ...
-#   fun:_ZN4dyld24initializeMainExecutableEv
-#}
+{
+   OSX1011:2-Leak
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc_zone_?alloc
+   ...
+   fun:_read_images
+}
 
 {
    OSX1011:3-Leak
@@ -199,6 +199,16 @@
    fun:?alloc
    ...
    fun:libSystem_initializer
+   ...
+}
+
+{
+   OSX1011:21-Leak
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc_zone_memalign
+   ...
+   fun:_ZN4dyld24initializeMainExecutableEv
    ...
 }
 

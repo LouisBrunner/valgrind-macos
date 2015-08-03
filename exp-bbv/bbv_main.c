@@ -116,8 +116,8 @@ static void dumpPcFile(void)
       /*    and function name for each basic block             */
    VG_(OSetGen_ResetIter)(instr_info_table);
    while ( (bb_elem = VG_(OSetGen_Next)(instr_info_table)) ) {
-      VG_(fprintf)( fp, "F:%d:%x:%s\n", bb_elem->block_num,
-                    (Int)bb_elem->BB_addr, bb_elem->fn_name);
+      VG_(fprintf)( fp, "F:%d:%lx:%s\n", bb_elem->block_num,
+                    bb_elem->BB_addr, bb_elem->fn_name);
    }
 
    VG_(fclose)(fp);
@@ -565,10 +565,10 @@ static void bbv_fini(Int exitcode)
          VG_(sprintf)(buf,"\n\n"
                           "# Thread %d\n"
                           "#   Total intervals: %d (Interval Size %d)\n"
-                          "#   Total instructions: %lld\n"
-                          "#   Total reps: %lld\n"
-                          "#   Unique reps: %lld\n"
-                          "#   Total fldcw instructions: %lld\n\n",
+                          "#   Total instructions: %llu\n"
+                          "#   Total reps: %llu\n"
+                          "#   Unique reps: %llu\n"
+                          "#   Total fldcw instructions: %llu\n\n",
                 i,
                 (Int)(bbv_thread[i].total_instr/(ULong)interval_size),
                 interval_size,

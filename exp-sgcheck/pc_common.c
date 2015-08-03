@@ -564,8 +564,8 @@ void pc_pp_Error ( const Error* err )
                   what, s );
             VG_(pp_ExeContext)( VG_(get_error_where)(err) );
    
-            emit( "  <auxwhat>Address %#lx is %ld bytes inside a "
-                  "%ld-byte block free'd</auxwhat>\n",
+            emit( "  <auxwhat>Address %#lx is %lu bytes inside a "
+                  "%lu-byte block free'd</auxwhat>\n",
                   lo, lo-Seg__addr(seglo), Seg__size(seglo) );
             VG_(pp_ExeContext)(Seg__where(seglo));
 
@@ -575,8 +575,8 @@ void pc_pp_Error ( const Error* err )
                   what, s );
             VG_(pp_ExeContext)( VG_(get_error_where)(err) );
    
-            emit( " Address %#lx is %ld bytes inside a "
-                  "%ld-byte block free'd\n",
+            emit( " Address %#lx is %lu bytes inside a "
+                  "%lu-byte block free'd\n",
                   lo, lo-Seg__addr(seglo), Seg__size(seglo) );
             VG_(pp_ExeContext)(Seg__where(seglo));
 
@@ -595,8 +595,8 @@ void pc_pp_Error ( const Error* err )
                emit( "  <auxwhat>First byte is "
                         "not inside a known block</auxwhat>\n" );
             } else {
-               emit( "  <auxwhat>First byte (%#lx) is %ld bytes inside a "
-                     "%ld-byte block alloc'd</auxwhat>\n",
+               emit( "  <auxwhat>First byte (%#lx) is %lu bytes inside a "
+                     "%lu-byte block alloc'd</auxwhat>\n",
                      lo, lo-Seg__addr(seglo), Seg__size(seglo) );
                VG_(pp_ExeContext)(Seg__where(seglo));
             }
@@ -605,8 +605,8 @@ void pc_pp_Error ( const Error* err )
                emit( "  <auxwhat>Last byte is "
                         "not inside a known block</auxwhat>\n" );
             } else {
-               emit( "  <auxwhat>Last byte (%#lx) is %ld bytes inside a "
-                     "%ld-byte block alloc'd</auxwhat>\n",
+               emit( "  <auxwhat>Last byte (%#lx) is %lu bytes inside a "
+                     "%lu-byte block alloc'd</auxwhat>\n",
                      hi, hi-Seg__addr(seghi), Seg__size(seghi) );
                VG_(pp_ExeContext)(Seg__where(seghi));
             }
@@ -620,8 +620,8 @@ void pc_pp_Error ( const Error* err )
             if (UNKNOWN == seglo) {
                emit( " First byte is not inside a known block\n" );
             } else {
-               emit( " First byte (%#lx) is %ld bytes inside a "
-                     "%ld-byte block alloc'd\n",
+               emit( " First byte (%#lx) is %lu bytes inside a "
+                     "%lu-byte block alloc'd\n",
                      lo, lo-Seg__addr(seglo), Seg__size(seglo) );
                VG_(pp_ExeContext)(Seg__where(seglo));
             }
@@ -629,8 +629,8 @@ void pc_pp_Error ( const Error* err )
             if (UNKNOWN == seghi) {
                emit( " Last byte is not inside a known block\n" );
             } else {
-               emit( " Last byte (%#lx) is %ld bytes inside a "
-                     "%ld-byte block alloc'd\n",
+               emit( " Last byte (%#lx) is %lu bytes inside a "
+                     "%lu-byte block alloc'd\n",
                      hi, hi-Seg__addr(seghi), Seg__size(seghi) );
                VG_(pp_ExeContext)(Seg__where(seghi));
             }

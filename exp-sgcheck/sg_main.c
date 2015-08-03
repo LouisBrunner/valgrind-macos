@@ -631,7 +631,7 @@ typedef
 
 static void GlobalTreeNode__pp ( GlobalTreeNode* nd ) {
    tl_assert(nd->descr);
-   VG_(printf)("GTNode [%#lx,+%ld) %s", 
+   VG_(printf)("GTNode [%#lx,+%lu) %s", 
                nd->addr, nd->szB, nd->descr->name);
 }
 
@@ -1648,7 +1648,7 @@ static void classify_address ( /*OUT*/Invar* inv,
            sKey.szB  = szB;
            gKey.addr = ea;
            gKey.szB  = szB;
-           if (0) VG_(printf)("Tree sizes %ld %ld\n",
+           if (0) VG_(printf)("Tree sizes %lu %lu\n",
                               VG_(sizeFM)(siTrees[tid]), VG_(sizeFM)(giTree));
            sOK = VG_(findBoundsFM)( siTrees[tid], 
                                     (UWord*)&sLB,    NULL/*unused*/,
@@ -1896,7 +1896,7 @@ void shadowStack_new_frame ( ThreadId tid,
          if (0 && (sb || gb))
             VG_(message)(Vg_DebugMsg, 
                          "exp-sgcheck: new max tree sizes: "
-                         "StackTree %ld, GlobalTree %ld\n",
+                         "StackTree %lu, GlobalTree %lu\n",
                          stats__max_sitree_size, stats__max_gitree_size );
       }
    } else {

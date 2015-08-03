@@ -494,7 +494,7 @@ void* new_block ( ThreadId tid, void* p, SizeT req_szB, SizeT req_alignB,
 
    intro_Block(bk);
 
-   if (0) VG_(printf)("ALLOC %ld -> %p\n", req_szB, p);
+   if (0) VG_(printf)("ALLOC %lu -> %p\n", req_szB, p);
 
    return p;
 }
@@ -537,7 +537,7 @@ void die_block ( void* p, Bool custom_free )
 static
 void* renew_block ( ThreadId tid, void* p_old, SizeT new_req_szB )
 {
-   if (0) VG_(printf)("REALL %p %ld\n", p_old, new_req_szB);
+   if (0) VG_(printf)("REALL %p %lu\n", p_old, new_req_szB);
    void* p_new = NULL;
 
    tl_assert(new_req_szB > 0); // map 0 to 1

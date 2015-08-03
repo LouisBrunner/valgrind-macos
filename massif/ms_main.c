@@ -1115,7 +1115,7 @@ static void VERB_snapshot(Int verbosity, const HChar* prefix, Int i)
    default:
       tl_assert2(0, "VERB_snapshot: unknown snapshot kind: %d", snapshot->kind);
    }
-   VERB(verbosity, "%s S%s%3d (t:%lld, hp:%ld, ex:%ld, st:%ld)\n",
+   VERB(verbosity, "%s S%s%3d (t:%lld, hp:%lu, ex:%lu, st:%lu)\n",
       prefix, suffix, i,
       snapshot->time,
       snapshot->heap_szB,
@@ -1722,7 +1722,8 @@ void* realloc_block ( ThreadId tid, void* p_old, SizeT new_req_szB )
       }
 
       VERB(3, ">>> (%ld, %ld)\n",
-         new_req_szB - old_req_szB, new_slop_szB - old_slop_szB);
+           (SSizeT)(new_req_szB - old_req_szB),
+           (SSizeT)(new_slop_szB - old_slop_szB));
    }
 
    return p_new;
@@ -1902,7 +1903,7 @@ static void update_stack_stats(SSizeT stack_szB_delta)
 static INLINE void new_mem_stack_2(SizeT len, const HChar* what)
 {
    if (have_started_executing_code) {
-      VERB(3, "<<< new_mem_stack (%ld)\n", len);
+      VERB(3, "<<< new_mem_stack (%lu)\n", len);
       n_stack_allocs++;
       update_stack_stats(len);
       maybe_take_snapshot(Normal, what);
@@ -1913,7 +1914,7 @@ static INLINE void new_mem_stack_2(SizeT len, const HChar* what)
 static INLINE void die_mem_stack_2(SizeT len, const HChar* what)
 {
    if (have_started_executing_code) {
-      VERB(3, "<<< die_mem_stack (%ld)\n", -len);
+      VERB(3, "<<< die_mem_stack (-%lu)\n", len);
       n_stack_frees++;
       maybe_take_snapshot(Peak,   "stkPEAK");
       update_stack_stats(-len);
@@ -2149,7 +2150,7 @@ static void pp_snapshot_SXPt(VgFile *fp, SXPt* sxpt, Int depth,
       }
       
       // Do the non-ip_desc part first...
-      FP("%sn%d: %lu ", depth_str, sxpt->Sig.n_children, sxpt->szB);
+      FP("%sn%u: %lu ", depth_str, sxpt->Sig.n_children, sxpt->szB);
 
       // For ip_descs beginning with "0xABCD...:" addresses, we first
       // measure the length of the "0xabcd: " address at the start of the
@@ -2407,7 +2408,7 @@ static void ms_print_stats (void)
    STATS("stack allocs:          %u\n", n_stack_allocs);
    STATS("stack frees:           %u\n", n_stack_frees);
    STATS("XPts:                  %u\n", n_xpts);
-   STATS("top-XPts:              %u (%d%%)\n",
+   STATS("top-XPts:              %u (%u%%)\n",
       alloc_xpt->n_children,
       ( n_xpts ? alloc_xpt->n_children * 100 / n_xpts : 0));
    STATS("XPt init expansions:   %u\n", n_xpt_init_expansions);

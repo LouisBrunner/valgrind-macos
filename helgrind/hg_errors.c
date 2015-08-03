@@ -1296,7 +1296,7 @@ void HG_(print_access) (StackTrace ips, UInt n_ips,
    if (threadp->coretid == VG_INVALID_THREADID) 
       VG_(printf)(" tid (exited)\n");
    else
-      VG_(printf)(" tid %d\n", threadp->coretid);
+      VG_(printf)(" tid %u\n", threadp->coretid);
    {
       Lock** locksHeldW_P;
       locksHeldW_P = enumerate_WordSet_into_LockP_vector(

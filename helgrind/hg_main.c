@@ -520,7 +520,7 @@ static void pp_Lock ( Int d, Lock* lk,
             if (thr->coretid == VG_INVALID_THREADID) 
                VG_(printf)("tid (exited) ");
             else
-               VG_(printf)("tid %d ", thr->coretid);
+               VG_(printf)("tid %u ", thr->coretid);
 
          }
       }
@@ -1037,7 +1037,7 @@ static void shadow_mem_make_New ( Thread* thr, Addr a, SizeT len )
 static void shadow_mem_make_NoAccess_NoFX ( Thread* thr, Addr aIN, SizeT len )
 {
    if (0 && len > 500)
-      VG_(printf)("make NoAccess_NoFX ( %#lx, %ld )\n", aIN, len );
+      VG_(printf)("make NoAccess_NoFX ( %#lx, %lu )\n", aIN, len );
    // has no effect (NoFX)
    libhb_srange_noaccess_NoFX( thr->hbthr, aIN, len );
 }
@@ -1045,7 +1045,7 @@ static void shadow_mem_make_NoAccess_NoFX ( Thread* thr, Addr aIN, SizeT len )
 static void shadow_mem_make_NoAccess_AHAE ( Thread* thr, Addr aIN, SizeT len )
 {
    if (0 && len > 500)
-      VG_(printf)("make NoAccess_AHAE ( %#lx, %ld )\n", aIN, len );
+      VG_(printf)("make NoAccess_AHAE ( %#lx, %lu )\n", aIN, len );
    // Actually Has An Effect (AHAE)
    libhb_srange_noaccess_AHAE( thr->hbthr, aIN, len );
 }
@@ -1053,7 +1053,7 @@ static void shadow_mem_make_NoAccess_AHAE ( Thread* thr, Addr aIN, SizeT len )
 static void shadow_mem_make_Untracked ( Thread* thr, Addr aIN, SizeT len )
 {
    if (0 && len > 500)
-      VG_(printf)("make Untracked ( %#lx, %ld )\n", aIN, len );
+      VG_(printf)("make Untracked ( %#lx, %lu )\n", aIN, len );
    libhb_srange_untrack( thr->hbthr, aIN, len );
 }
 
@@ -5021,7 +5021,7 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
       /* --- --- User-visible client requests --- --- */
 
       case VG_USERREQ__HG_CLEAN_MEMORY:
-         if (0) VG_(printf)("VG_USERREQ__HG_CLEAN_MEMORY(%#lx,%ld)\n",
+         if (0) VG_(printf)("VG_USERREQ__HG_CLEAN_MEMORY(%#lx,%lu)\n",
                             args[1], args[2]);
          /* Call die_mem to (expensively) tidy up properly, if there
             are any held locks etc in the area.  Calling evh__die_mem
@@ -5053,7 +5053,7 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
       }
 
       case _VG_USERREQ__HG_ARANGE_MAKE_UNTRACKED:
-         if (0) VG_(printf)("HG_ARANGE_MAKE_UNTRACKED(%#lx,%ld)\n",
+         if (0) VG_(printf)("HG_ARANGE_MAKE_UNTRACKED(%#lx,%lu)\n",
                             args[1], args[2]);
          if (args[2] > 0) { /* length */
             evh__untrack_mem(args[1], args[2]);
@@ -5061,7 +5061,7 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
          break;
 
       case _VG_USERREQ__HG_ARANGE_MAKE_TRACKED:
-         if (0) VG_(printf)("HG_ARANGE_MAKE_TRACKED(%#lx,%ld)\n",
+         if (0) VG_(printf)("HG_ARANGE_MAKE_TRACKED(%#lx,%lu)\n",
                             args[1], args[2]);
          if (args[2] > 0) { /* length */
             evh__new_mem(args[1], args[2]);
@@ -5069,7 +5069,7 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
          break;
 
       case _VG_USERREQ__HG_GET_ABITS:
-         if (0) VG_(printf)("HG_GET_ABITS(%#lx,%#lx,%ld)\n",
+         if (0) VG_(printf)("HG_GET_ABITS(%#lx,%#lx,%lu)\n",
                             args[1], args[2], args[3]);
          UChar *zzabit = (UChar *) args[2];
          if (zzabit == NULL 

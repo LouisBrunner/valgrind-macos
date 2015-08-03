@@ -77,7 +77,7 @@ UWord HG_(clo_history_level) = 2;
 
 UWord HG_(clo_conflict_cache_size) = 2000000;
 
-Word  HG_(clo_sanity_flags) = 0;
+UWord HG_(clo_sanity_flags) = 0;
 
 Bool  HG_(clo_free_is_write) = False;
 

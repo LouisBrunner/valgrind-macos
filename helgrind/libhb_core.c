@@ -1503,7 +1503,7 @@ static __attribute__((noinline)) void cacheline_wback ( UWord wix )
    sequentialise_CacheLine( csvals, &csvalsUsed, 
                             N_LINE_ARANGE, cl );
    tl_assert(csvalsUsed >= 1 && csvalsUsed <= N_LINE_ARANGE);
-   if (0) VG_(printf)("%lu ", csvalsUsed);
+   if (0) VG_(printf)("%ld ", csvalsUsed);
 
    lineZ->dict[0] = lineZ->dict[1] 
                   = lineZ->dict[2] = lineZ->dict[3] = SVal_INVALID;
@@ -2625,7 +2625,7 @@ static void VTS__show ( const VTS* vts )
    n =  vts->usedTS;
    for (i = 0; i < n; i++) {
       const ScalarTS *st = &vts->ts[i];
-      VG_(printf)(i < n-1 ? "%u:%llu " : "%u:%llu", st->thrid, (ULong)st->tym);
+      VG_(printf)(i < n-1 ? "%d:%llu " : "%d:%llu", st->thrid, (ULong)st->tym);
    }
    VG_(printf)("]");
 }
@@ -5050,7 +5050,7 @@ static void record_race_info ( Thr* acc_thr,
                  (XACmpFn_t)cmp__ULong_n_EC__by_ULong
               );
       if (0) VG_(printf)("record_race_info %u %u %u  confThr %p "
-                         "confTym %llu found %d (%lu,%lu)\n", 
+                         "confTym %llu found %d (%ld,%ld)\n", 
                          Cfailed, Kfailed, Cw,
                          confThr, confTym, found, firstIx, lastIx);
       /* We can't indefinitely collect stack traces at VTS
@@ -5779,7 +5779,7 @@ static void zsm_sset_range ( Addr a, SizeT len, SVal svNew )
    stats__cache_make_New_arange += (ULong)len;
 
    if (0 && len > 500)
-      VG_(printf)("make New      ( %#lx, %ld )\n", a, len );
+      VG_(printf)("make New      ( %#lx, %lu )\n", a, len );
 
    if (0) {
       static UWord n_New_in_cache = 0;
@@ -6445,8 +6445,8 @@ void libhb_shutdown ( Bool show_stats )
                live++;
             hgthread = hgthread->admin;
          }
-         VG_(printf)("   libhb: threads live: %d exit_and_joinedwith %d"
-                     " exit %d joinedwith %d\n",
+         VG_(printf)("   libhb: threads live: %u exit_and_joinedwith %u"
+                     " exit %u joinedwith %u\n",
                      live, llexit_and_joinedwith_done,
                      llexit_done, joinedwith_done);
          VG_(printf)("   libhb: %d verydead_threads, "
@@ -6505,7 +6505,7 @@ void libhb_shutdown ( Bool show_stats )
                       / (Double)(non0chain ? non0chain : 1));
          for (i = 0; i <= MAXCHAIN; i++) {
             if (chains[i] != 0)
-                VG_(printf)( "[%d%s]=%d ",
+                VG_(printf)( "[%u%s]=%u ",
                              i, i == MAXCHAIN ? "+" : "",
                              chains[i]);
          }
@@ -6860,9 +6860,9 @@ static void zsm_sset_range_noaccess (Addr addr, SizeT len)
    PlenCONSUME(APC, ARE, 1,               APClen);
 
    if (0)
-      VG_(printf) ("addr %p[%ld] ARE %p"
-                   " BPC %p[%ld] BFC %p[%ld] FSM %p[%ld]"
-                   " AFC %p[%ld] APC %p[%ld]\n",
+      VG_(printf) ("addr %p[%lu] ARE %p"
+                   " BPC %p[%lu] BFC %p[%lu] FSM %p[%lu]"
+                   " AFC %p[%lu] APC %p[%lu]\n",
                    (void*)addr, len, (void*)ARE,
                    (void*)BPC, BPClen, (void*)BFC, BFClen, (void*)FSM, FSMlen,
                    (void*)AFC, AFClen, (void*)APC, APClen);

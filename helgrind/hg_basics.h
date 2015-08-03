@@ -101,7 +101,7 @@ extern UWord HG_(clo_conflict_cache_size);
 
 /* Sanity check level.  This is an or-ing of
    SCE_{THREADS,LOCKS,BIGRANGE,ACCESS,LAOG}. */
-extern Word HG_(clo_sanity_flags);
+extern UWord HG_(clo_sanity_flags);
 
 /* Treat heap frees as if the memory was written immediately prior to
    the free.  This shakes out races in which memory is referenced by

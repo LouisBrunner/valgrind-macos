@@ -1,4 +1,4 @@
 # Disabled on Solaris because different approach needs to be taken.
 # There is none/tests/solaris/resolv for that purpose.
-prereq: (! ../../tests/os_test solaris)
+prereq: ! ../../tests/os_test solaris && ! ../../tests/os_test darwin
 prog: resolv

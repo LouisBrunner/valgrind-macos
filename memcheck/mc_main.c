@@ -1,3 +1,4 @@
+/* -*- mode: C; c-basic-offset: 3; -*- */
 
 /*--------------------------------------------------------------------*/
 /*--- MemCheck: Maintain bitmaps of memory, tracking the           ---*/
@@ -1235,7 +1236,7 @@ void mc_LOADV_128_or_256_slow ( /*OUT*/ULong* res,
       ULong pessim64   = V_BITS64_DEFINED;
       UWord long_index = byte_offset_w(szL, bigendian, j);
       for (i = 8-1; i >= 0; i--) {
-         PROF_EVENT(29, "mc_LOADV_128_or_256_slow(loop)");
+         PROF_EVENT(MCPE_LOADV_128_OR_256_SLOW_LOOP);
          ai = a + 8*long_index + byte_offset_w(8, bigendian, i);
          ok = get_vbits8(ai, &vbits8);
          vbits64 <<= 8;
@@ -1316,7 +1317,7 @@ VG_REGPARM(3) /* make sure we're using a fixed calling convention, since
                  this function may get called from hand written assembly. */
 ULong mc_LOADVn_slow ( Addr a, SizeT nBits, Bool bigendian )
 {
-   PROF_EVENT(30, "mc_LOADVn_slow");
+   PROF_EVENT(MCPE_LOADVN_SLOW);
 
    /* ------------ BEGIN semi-fast cases ------------ */
    /* These deal quickly-ish with the common auxiliary primary map
@@ -1370,7 +1371,7 @@ ULong mc_LOADVn_slow ( Addr a, SizeT nBits, Bool bigendian )
       info can be gleaned from pessim64) but is used as a
       cross-check. */
    for (i = szB-1; i >= 0; i--) {
-      PROF_EVENT(31, "mc_LOADVn_slow(loop)");
+      PROF_EVENT(MCPE_LOADVN_SLOW_LOOP);
       ai = a + byte_offset_w(szB, bigendian, i);
       ok = get_vbits8(ai, &vbits8);
       vbits64 <<= 8; 
@@ -1468,7 +1469,7 @@ void mc_STOREVn_slow ( Addr a, SizeT nBits, ULong vbytes, Bool bigendian )
    Addr  ai;
    Bool  ok;
 
-   PROF_EVENT(35, "mc_STOREVn_slow");
+   PROF_EVENT(MCPE_STOREVN_SLOW);
 
    /* ------------ BEGIN semi-fast cases ------------ */
    /* These deal quickly-ish with the common auxiliary primary map
@@ -1530,7 +1531,7 @@ void mc_STOREVn_slow ( Addr a, SizeT nBits, ULong vbytes, Bool bigendian )
    /* Dump vbytes in memory, iterating from least to most significant
       byte.  At the same time establish addressibility of the location. */
    for (i = 0; i < szB; i++) {
-      PROF_EVENT(36, "mc_STOREVn_slow(loop)");
+      PROF_EVENT(MCPE_STOREVN_SLOW_LOOP);
       ai     = a + byte_offset_w(szB, bigendian, i);
       vbits8 = vbytes & 0xff;
       ok     = set_vbits8(ai, vbits8);
@@ -1559,7 +1560,7 @@ static void set_address_range_perms ( Addr a, SizeT lenT, UWord vabits16,
    SecMap** sm_ptr;
    SecMap*  example_dsm;
 
-   PROF_EVENT(150, "set_address_range_perms");
+   PROF_EVENT(MCPE_SET_ADDRESS_RANGE_PERMS);
 
    /* Check the V+A bits make sense. */
    tl_assert(VA_BITS16_NOACCESS  == vabits16 ||
@@ -1637,19 +1638,19 @@ static void set_address_range_perms ( Addr a, SizeT lenT, UWord vabits16,
    len_to_next_secmap = aNext - a;
    if ( lenT <= len_to_next_secmap ) {
       // Range entirely within one sec-map.  Covers almost all cases.
-      PROF_EVENT(151, "set_address_range_perms-single-secmap");
+      PROF_EVENT(MCPE_SET_ADDRESS_RANGE_PERMS_SINGLE_SECMAP);
       lenA = lenT;
       lenB = 0;
    } else if (is_start_of_sm(a)) {
       // Range spans at least one whole sec-map, and starts at the beginning
       // of a sec-map; skip to Part 2.
-      PROF_EVENT(152, "set_address_range_perms-startof-secmap");
+      PROF_EVENT(MCPE_SET_ADDRESS_RANGE_PERMS_STARTOF_SECMAP);
       lenA = 0;
       lenB = lenT;
       goto part2;
    } else {
       // Range spans two or more sec-maps, first one is partial.
-      PROF_EVENT(153, "set_address_range_perms-multiple-secmaps");
+      PROF_EVENT(MCPE_SET_ADDRESS_RANGE_PERMS_MULTIPLE_SECMAPS);
       lenA = len_to_next_secmap;
       lenB = lenT - lenA;
    }
@@ -1666,11 +1667,11 @@ static void set_address_range_perms ( Addr a, SizeT lenT, UWord vabits16,
    if (is_distinguished_sm(*sm_ptr)) {
       if (*sm_ptr == example_dsm) {
          // Sec-map already has the V+A bits that we want, so skip.
-         PROF_EVENT(154, "set_address_range_perms-dist-sm1-quick");
+         PROF_EVENT(MCPE_SET_ADDRESS_RANGE_PERMS_DIST_SM1_QUICK);
          a    = aNext;
          lenA = 0;
       } else {
-         PROF_EVENT(155, "set_address_range_perms-dist-sm1");
+         PROF_EVENT(MCPE_SET_ADDRESS_RANGE_PERMS_DIST_SM1);
          *sm_ptr = copy_for_writing(*sm_ptr);
       }
    }
@@ -1680,7 +1681,7 @@ static void set_address_range_perms ( Addr a, SizeT lenT, UWord vabits16,
    while (True) {
       if (VG_IS_8_ALIGNED(a)) break;
       if (lenA < 1)           break;
-      PROF_EVENT(156, "set_address_range_perms-loop1a");
+      PROF_EVENT(MCPE_SET_ADDRESS_RANGE_PERMS_LOOP1A);
       sm_off = SM_OFF(a);
       insert_vabits2_into_vabits8( a, vabits2, &(sm->vabits8[sm_off]) );
       a    += 1;
@@ -1689,7 +1690,7 @@ static void set_address_range_perms ( Addr a, SizeT lenT, UWord vabits16,
    // 8-aligned, 8 byte steps
    while (True) {
       if (lenA < 8) break;
-      PROF_EVENT(157, "set_address_range_perms-loop8a");
+      PROF_EVENT(MCPE_SET_ADDRESS_RANGE_PERMS_LOOP8A);
       sm_off16 = SM_OFF_16(a);
       ((UShort*)(sm->vabits8))[sm_off16] = vabits16;
       a    += 8;
@@ -1698,7 +1699,7 @@ static void set_address_range_perms ( Addr a, SizeT lenT, UWord vabits16,
    // 1 byte steps
    while (True) {
       if (lenA < 1) break;
-      PROF_EVENT(158, "set_address_range_perms-loop1b");
+      PROF_EVENT(MCPE_SET_ADDRESS_RANGE_PERMS_LOOP1B);
       sm_off = SM_OFF(a);
       insert_vabits2_into_vabits8( a, vabits2, &(sm->vabits8[sm_off]) );
       a    += 1;
@@ -1719,10 +1720,10 @@ static void set_address_range_perms ( Addr a, SizeT lenT, UWord vabits16,
    while (True) {
       if (lenB < SM_SIZE) break;
       tl_assert(is_start_of_sm(a));
-      PROF_EVENT(159, "set_address_range_perms-loop64K");
+      PROF_EVENT(MCPE_SET_ADDRESS_RANGE_PERMS_LOOP64K);
       sm_ptr = get_secmap_ptr(a);
       if (!is_distinguished_sm(*sm_ptr)) {
-         PROF_EVENT(160, "set_address_range_perms-loop64K-free-dist-sm");
+         PROF_EVENT(MCPE_SET_ADDRESS_RANGE_PERMS_LOOP64K_FREE_DIST_SM);
          // Free the non-distinguished sec-map that we're replacing.  This
          // case happens moderately often, enough to be worthwhile.
          SysRes sres = VG_(am_munmap_valgrind)((Addr)*sm_ptr, sizeof(SecMap));
@@ -1750,10 +1751,10 @@ static void set_address_range_perms ( Addr a, SizeT lenT, UWord vabits16,
    if (is_distinguished_sm(*sm_ptr)) {
       if (*sm_ptr == example_dsm) {
          // Sec-map already has the V+A bits that we want, so stop.
-         PROF_EVENT(161, "set_address_range_perms-dist-sm2-quick");
+         PROF_EVENT(MCPE_SET_ADDRESS_RANGE_PERMS_DIST_SM2_QUICK);
          return;
       } else {
-         PROF_EVENT(162, "set_address_range_perms-dist-sm2");
+         PROF_EVENT(MCPE_SET_ADDRESS_RANGE_PERMS_DIST_SM2);
          *sm_ptr = copy_for_writing(*sm_ptr);
       }
    }
@@ -1762,7 +1763,7 @@ static void set_address_range_perms ( Addr a, SizeT lenT, UWord vabits16,
    // 8-aligned, 8 byte steps
    while (True) {
       if (lenB < 8) break;
-      PROF_EVENT(163, "set_address_range_perms-loop8b");
+      PROF_EVENT(MCPE_SET_ADDRESS_RANGE_PERMS_LOOP8B);
       sm_off16 = SM_OFF_16(a);
       ((UShort*)(sm->vabits8))[sm_off16] = vabits16;
       a    += 8;
@@ -1771,7 +1772,7 @@ static void set_address_range_perms ( Addr a, SizeT lenT, UWord vabits16,
    // 1 byte steps
    while (True) {
       if (lenB < 1) return;
-      PROF_EVENT(164, "set_address_range_perms-loop1c");
+      PROF_EVENT(MCPE_SET_ADDRESS_RANGE_PERMS_LOOP1C);
       sm_off = SM_OFF(a);
       insert_vabits2_into_vabits8( a, vabits2, &(sm->vabits8[sm_off]) );
       a    += 1;
@@ -1784,7 +1785,7 @@ static void set_address_range_perms ( Addr a, SizeT lenT, UWord vabits16,
 
 void MC_(make_mem_noaccess) ( Addr a, SizeT len )
 {
-   PROF_EVENT(40, "MC_(make_mem_noaccess)");
+   PROF_EVENT(MCPE_MAKE_MEM_NOACCESS);
    DEBUG("MC_(make_mem_noaccess)(%p, %lu)\n", a, len);
    set_address_range_perms ( a, len, VA_BITS16_NOACCESS, SM_DIST_NOACCESS );
    if (UNLIKELY( MC_(clo_mc_level) == 3 ))
@@ -1793,14 +1794,14 @@ void MC_(make_mem_noaccess) ( Addr a, SizeT len )
 
 static void make_mem_undefined ( Addr a, SizeT len )
 {
-   PROF_EVENT(41, "make_mem_undefined");
+   PROF_EVENT(MCPE_MAKE_MEM_UNDEFINED);
    DEBUG("make_mem_undefined(%p, %lu)\n", a, len);
    set_address_range_perms ( a, len, VA_BITS16_UNDEFINED, SM_DIST_UNDEFINED );
 }
 
 void MC_(make_mem_undefined_w_otag) ( Addr a, SizeT len, UInt otag )
 {
-   PROF_EVENT(43, "MC_(make_mem_undefined)");
+   PROF_EVENT(MCPE_MAKE_MEM_UNDEFINED_W_OTAG);
    DEBUG("MC_(make_mem_undefined)(%p, %lu)\n", a, len);
    set_address_range_perms ( a, len, VA_BITS16_UNDEFINED, SM_DIST_UNDEFINED );
    if (UNLIKELY( MC_(clo_mc_level) == 3 ))
@@ -1837,7 +1838,7 @@ void mc_new_mem_w_tid_no_ECU  ( Addr a, SizeT len, ThreadId tid )
 
 void MC_(make_mem_defined) ( Addr a, SizeT len )
 {
-   PROF_EVENT(42, "MC_(make_mem_defined)");
+   PROF_EVENT(MCPE_MAKE_MEM_DEFINED);
    DEBUG("MC_(make_mem_defined)(%p, %lu)\n", a, len);
    set_address_range_perms ( a, len, VA_BITS16_DEFINED, SM_DIST_DEFINED );
    if (UNLIKELY( MC_(clo_mc_level) == 3 ))
@@ -1897,7 +1898,7 @@ void MC_(copy_address_range_state) ( Addr src, Addr dst, SizeT len )
    Bool  aligned, nooverlap;
 
    DEBUG("MC_(copy_address_range_state)\n");
-   PROF_EVENT(50, "MC_(copy_address_range_state)");
+   PROF_EVENT(MCPE_COPY_ADDRESS_RANGE_STATE);
 
    if (len == 0 || src == dst)
       return;
@@ -1947,7 +1948,7 @@ void MC_(copy_address_range_state) ( Addr src, Addr dst, SizeT len )
       /* We have to do things the slow way */
       if (src < dst) {
          for (i = 0, j = len-1; i < len; i++, j--) {
-            PROF_EVENT(51, "MC_(copy_address_range_state)(loop)");
+            PROF_EVENT(MCPE_COPY_ADDRESS_RANGE_STATE_LOOP1);
             vabits2 = get_vabits2( src+j );
             set_vabits2( dst+j, vabits2 );
             if (VA_BITS2_PARTDEFINED == vabits2) {
@@ -1958,7 +1959,7 @@ void MC_(copy_address_range_state) ( Addr src, Addr dst, SizeT len )
 
       if (src > dst) {
          for (i = 0; i < len; i++) {
-            PROF_EVENT(52, "MC_(copy_address_range_state)(loop)");
+            PROF_EVENT(MCPE_COPY_ADDRESS_RANGE_STATE_LOOP2);
             vabits2 = get_vabits2( src+i );
             set_vabits2( dst+i, vabits2 );
             if (VA_BITS2_PARTDEFINED == vabits2) {
@@ -2606,7 +2607,7 @@ static INLINE void set_aligned_word64_Origin_to_undef ( Addr a, UInt otag )
 
 static INLINE void make_aligned_word32_undefined ( Addr a )
 {
-   PROF_EVENT(300, "make_aligned_word32_undefined");
+  PROF_EVENT(MCPE_MAKE_ALIGNED_WORD32_UNDEFINED);
 
 #ifndef PERF_FAST_STACK2
    make_mem_undefined(a, 4);
@@ -2616,7 +2617,7 @@ static INLINE void make_aligned_word32_undefined ( Addr a )
       SecMap* sm;
 
       if (UNLIKELY(a > MAX_PRIMARY_ADDRESS)) {
-         PROF_EVENT(301, "make_aligned_word32_undefined-slow1");
+         PROF_EVENT(MCPE_MAKE_ALIGNED_WORD32_UNDEFINED_SLOW);
          make_mem_undefined(a, 4);
          return;
       }
@@ -2649,7 +2650,7 @@ void make_aligned_word32_undefined_w_otag ( Addr a, UInt otag )
 static INLINE
 void make_aligned_word32_noaccess ( Addr a )
 {
-   PROF_EVENT(310, "make_aligned_word32_noaccess");
+   PROF_EVENT(MCPE_MAKE_ALIGNED_WORD32_NOACCESS);
 
 #ifndef PERF_FAST_STACK2
    MC_(make_mem_noaccess)(a, 4);
@@ -2659,7 +2660,7 @@ void make_aligned_word32_noaccess ( Addr a )
       SecMap* sm;
 
       if (UNLIKELY(a > MAX_PRIMARY_ADDRESS)) {
-         PROF_EVENT(311, "make_aligned_word32_noaccess-slow1");
+         PROF_EVENT(MCPE_MAKE_ALIGNED_WORD32_NOACCESS_SLOW);
          MC_(make_mem_noaccess)(a, 4);
          return;
       }
@@ -2690,7 +2691,7 @@ void make_aligned_word32_noaccess ( Addr a )
 
 static INLINE void make_aligned_word64_undefined ( Addr a )
 {
-   PROF_EVENT(320, "make_aligned_word64_undefined");
+   PROF_EVENT(MCPE_MAKE_ALIGNED_WORD64_UNDEFINED);
 
 #ifndef PERF_FAST_STACK2
    make_mem_undefined(a, 8);
@@ -2700,7 +2701,7 @@ static INLINE void make_aligned_word64_undefined ( Addr a )
       SecMap* sm;
 
       if (UNLIKELY(a > MAX_PRIMARY_ADDRESS)) {
-         PROF_EVENT(321, "make_aligned_word64_undefined-slow1");
+         PROF_EVENT(MCPE_MAKE_ALIGNED_WORD64_UNDEFINED_SLOW);
          make_mem_undefined(a, 8);
          return;
       }
@@ -2734,7 +2735,7 @@ void make_aligned_word64_undefined_w_otag ( Addr a, UInt otag )
 static INLINE
 void make_aligned_word64_noaccess ( Addr a )
 {
-   PROF_EVENT(330, "make_aligned_word64_noaccess");
+   PROF_EVENT(MCPE_MAKE_ALIGNED_WORD64_NOACCESS);
 
 #ifndef PERF_FAST_STACK2
    MC_(make_mem_noaccess)(a, 8);
@@ -2744,7 +2745,7 @@ void make_aligned_word64_noaccess ( Addr a )
       SecMap* sm;
 
       if (UNLIKELY(a > MAX_PRIMARY_ADDRESS)) {
-         PROF_EVENT(331, "make_aligned_word64_noaccess-slow1");
+         PROF_EVENT(MCPE_MAKE_ALIGNED_WORD64_NOACCESS_SLOW);
          MC_(make_mem_noaccess)(a, 8);
          return;
       }
@@ -2786,7 +2787,7 @@ MAYBE_USED
 static void VG_REGPARM(2) mc_new_mem_stack_4_w_ECU(Addr new_SP, UInt ecu)
 {
    UInt otag = ecu | MC_OKIND_STACK;
-   PROF_EVENT(110, "new_mem_stack_4");
+   PROF_EVENT(MCPE_NEW_MEM_STACK_4);
    if (VG_IS_4_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word32_undefined_w_otag ( -VG_STACK_REDZONE_SZB + new_SP, otag );
    } else {
@@ -2797,7 +2798,7 @@ static void VG_REGPARM(2) mc_new_mem_stack_4_w_ECU(Addr new_SP, UInt ecu)
 MAYBE_USED
 static void VG_REGPARM(1) mc_new_mem_stack_4(Addr new_SP)
 {
-   PROF_EVENT(110, "new_mem_stack_4");
+   PROF_EVENT(MCPE_NEW_MEM_STACK_4);
    if (VG_IS_4_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word32_undefined ( -VG_STACK_REDZONE_SZB + new_SP );
    } else {
@@ -2808,7 +2809,7 @@ static void VG_REGPARM(1) mc_new_mem_stack_4(Addr new_SP)
 MAYBE_USED
 static void VG_REGPARM(1) mc_die_mem_stack_4(Addr new_SP)
 {
-   PROF_EVENT(120, "die_mem_stack_4");
+   PROF_EVENT(MCPE_DIE_MEM_STACK_4);
    if (VG_IS_4_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word32_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-4 );
    } else {
@@ -2822,7 +2823,7 @@ MAYBE_USED
 static void VG_REGPARM(2) mc_new_mem_stack_8_w_ECU(Addr new_SP, UInt ecu)
 {
    UInt otag = ecu | MC_OKIND_STACK;
-   PROF_EVENT(111, "new_mem_stack_8");
+   PROF_EVENT(MCPE_NEW_MEM_STACK_8);
    if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word64_undefined_w_otag ( -VG_STACK_REDZONE_SZB + new_SP, otag );
    } else if (VG_IS_4_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
@@ -2836,7 +2837,7 @@ static void VG_REGPARM(2) mc_new_mem_stack_8_w_ECU(Addr new_SP, UInt ecu)
 MAYBE_USED
 static void VG_REGPARM(1) mc_new_mem_stack_8(Addr new_SP)
 {
-   PROF_EVENT(111, "new_mem_stack_8");
+   PROF_EVENT(MCPE_NEW_MEM_STACK_8);
    if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP );
    } else if (VG_IS_4_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
@@ -2850,7 +2851,7 @@ static void VG_REGPARM(1) mc_new_mem_stack_8(Addr new_SP)
 MAYBE_USED
 static void VG_REGPARM(1) mc_die_mem_stack_8(Addr new_SP)
 {
-   PROF_EVENT(121, "die_mem_stack_8");
+   PROF_EVENT(MCPE_DIE_MEM_STACK_8);
    if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-8 );
    } else if (VG_IS_4_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
@@ -2867,7 +2868,7 @@ MAYBE_USED
 static void VG_REGPARM(2) mc_new_mem_stack_12_w_ECU(Addr new_SP, UInt ecu)
 {
    UInt otag = ecu | MC_OKIND_STACK;
-   PROF_EVENT(112, "new_mem_stack_12");
+   PROF_EVENT(MCPE_NEW_MEM_STACK_12);
    if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word64_undefined_w_otag ( -VG_STACK_REDZONE_SZB + new_SP  , otag );
       make_aligned_word32_undefined_w_otag ( -VG_STACK_REDZONE_SZB + new_SP+8, otag );
@@ -2885,7 +2886,7 @@ static void VG_REGPARM(2) mc_new_mem_stack_12_w_ECU(Addr new_SP, UInt ecu)
 MAYBE_USED
 static void VG_REGPARM(1) mc_new_mem_stack_12(Addr new_SP)
 {
-   PROF_EVENT(112, "new_mem_stack_12");
+   PROF_EVENT(MCPE_NEW_MEM_STACK_12);
    if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP );
       make_aligned_word32_undefined ( -VG_STACK_REDZONE_SZB + new_SP+8 );
@@ -2903,7 +2904,7 @@ static void VG_REGPARM(1) mc_new_mem_stack_12(Addr new_SP)
 MAYBE_USED
 static void VG_REGPARM(1) mc_die_mem_stack_12(Addr new_SP)
 {
-   PROF_EVENT(122, "die_mem_stack_12");
+   PROF_EVENT(MCPE_DIE_MEM_STACK_12);
    /* Note the -12 in the test */
    if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP-12 )) {
       /* We have 8-alignment at -12, hence ok to do 8 at -12 and 4 at
@@ -2927,7 +2928,7 @@ MAYBE_USED
 static void VG_REGPARM(2) mc_new_mem_stack_16_w_ECU(Addr new_SP, UInt ecu)
 {
    UInt otag = ecu | MC_OKIND_STACK;
-   PROF_EVENT(113, "new_mem_stack_16");
+   PROF_EVENT(MCPE_NEW_MEM_STACK_16);
    if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       /* Have 8-alignment at +0, hence do 8 at +0 and 8 at +8. */
       make_aligned_word64_undefined_w_otag ( -VG_STACK_REDZONE_SZB + new_SP  , otag );
@@ -2946,7 +2947,7 @@ static void VG_REGPARM(2) mc_new_mem_stack_16_w_ECU(Addr new_SP, UInt ecu)
 MAYBE_USED
 static void VG_REGPARM(1) mc_new_mem_stack_16(Addr new_SP)
 {
-   PROF_EVENT(113, "new_mem_stack_16");
+   PROF_EVENT(MCPE_NEW_MEM_STACK_16);
    if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       /* Have 8-alignment at +0, hence do 8 at +0 and 8 at +8. */
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP );
@@ -2965,7 +2966,7 @@ static void VG_REGPARM(1) mc_new_mem_stack_16(Addr new_SP)
 MAYBE_USED
 static void VG_REGPARM(1) mc_die_mem_stack_16(Addr new_SP)
 {
-   PROF_EVENT(123, "die_mem_stack_16");
+   PROF_EVENT(MCPE_DIE_MEM_STACK_16);
    if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       /* Have 8-alignment at +0, hence do 8 at -16 and 8 at -8. */
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-16 );
@@ -2986,7 +2987,7 @@ MAYBE_USED
 static void VG_REGPARM(2) mc_new_mem_stack_32_w_ECU(Addr new_SP, UInt ecu)
 {
    UInt otag = ecu | MC_OKIND_STACK;
-   PROF_EVENT(114, "new_mem_stack_32");
+   PROF_EVENT(MCPE_NEW_MEM_STACK_32);
    if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       /* Straightforward */
       make_aligned_word64_undefined_w_otag ( -VG_STACK_REDZONE_SZB + new_SP   , otag );
@@ -3009,7 +3010,7 @@ static void VG_REGPARM(2) mc_new_mem_stack_32_w_ECU(Addr new_SP, UInt ecu)
 MAYBE_USED
 static void VG_REGPARM(1) mc_new_mem_stack_32(Addr new_SP)
 {
-   PROF_EVENT(114, "new_mem_stack_32");
+   PROF_EVENT(MCPE_NEW_MEM_STACK_32);
    if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       /* Straightforward */
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP );
@@ -3032,7 +3033,7 @@ static void VG_REGPARM(1) mc_new_mem_stack_32(Addr new_SP)
 MAYBE_USED
 static void VG_REGPARM(1) mc_die_mem_stack_32(Addr new_SP)
 {
-   PROF_EVENT(124, "die_mem_stack_32");
+   PROF_EVENT(MCPE_DIE_MEM_STACK_32);
    if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       /* Straightforward */
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-32 );
@@ -3058,7 +3059,7 @@ MAYBE_USED
 static void VG_REGPARM(2) mc_new_mem_stack_112_w_ECU(Addr new_SP, UInt ecu)
 {
    UInt otag = ecu | MC_OKIND_STACK;
-   PROF_EVENT(115, "new_mem_stack_112");
+   PROF_EVENT(MCPE_NEW_MEM_STACK_112);
    if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word64_undefined_w_otag ( -VG_STACK_REDZONE_SZB + new_SP   , otag );
       make_aligned_word64_undefined_w_otag ( -VG_STACK_REDZONE_SZB + new_SP+8 , otag );
@@ -3082,7 +3083,7 @@ static void VG_REGPARM(2) mc_new_mem_stack_112_w_ECU(Addr new_SP, UInt ecu)
 MAYBE_USED
 static void VG_REGPARM(1) mc_new_mem_stack_112(Addr new_SP)
 {
-   PROF_EVENT(115, "new_mem_stack_112");
+   PROF_EVENT(MCPE_NEW_MEM_STACK_112);
    if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP );
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+8 );
@@ -3106,7 +3107,7 @@ static void VG_REGPARM(1) mc_new_mem_stack_112(Addr new_SP)
 MAYBE_USED
 static void VG_REGPARM(1) mc_die_mem_stack_112(Addr new_SP)
 {
-   PROF_EVENT(125, "die_mem_stack_112");
+   PROF_EVENT(MCPE_DIE_MEM_STACK_112);
    if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-112);
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-104);
@@ -3133,7 +3134,7 @@ MAYBE_USED
 static void VG_REGPARM(2) mc_new_mem_stack_128_w_ECU(Addr new_SP, UInt ecu)
 {
    UInt otag = ecu | MC_OKIND_STACK;
-   PROF_EVENT(116, "new_mem_stack_128");
+   PROF_EVENT(MCPE_NEW_MEM_STACK_128);
    if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word64_undefined_w_otag ( -VG_STACK_REDZONE_SZB + new_SP   , otag );
       make_aligned_word64_undefined_w_otag ( -VG_STACK_REDZONE_SZB + new_SP+8 , otag );
@@ -3159,7 +3160,7 @@ static void VG_REGPARM(2) mc_new_mem_stack_128_w_ECU(Addr new_SP, UInt ecu)
 MAYBE_USED
 static void VG_REGPARM(1) mc_new_mem_stack_128(Addr new_SP)
 {
-   PROF_EVENT(116, "new_mem_stack_128");
+   PROF_EVENT(MCPE_NEW_MEM_STACK_128);
    if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP );
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+8 );
@@ -3185,7 +3186,7 @@ static void VG_REGPARM(1) mc_new_mem_stack_128(Addr new_SP)
 MAYBE_USED
 static void VG_REGPARM(1) mc_die_mem_stack_128(Addr new_SP)
 {
-   PROF_EVENT(126, "die_mem_stack_128");
+   PROF_EVENT(MCPE_DIE_MEM_STACK_128);
    if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-128);
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-120);
@@ -3214,7 +3215,7 @@ MAYBE_USED
 static void VG_REGPARM(2) mc_new_mem_stack_144_w_ECU(Addr new_SP, UInt ecu)
 {
    UInt otag = ecu | MC_OKIND_STACK;
-   PROF_EVENT(117, "new_mem_stack_144");
+   PROF_EVENT(MCPE_NEW_MEM_STACK_144);
    if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word64_undefined_w_otag ( -VG_STACK_REDZONE_SZB + new_SP,     otag );
       make_aligned_word64_undefined_w_otag ( -VG_STACK_REDZONE_SZB + new_SP+8,   otag );
@@ -3242,7 +3243,7 @@ static void VG_REGPARM(2) mc_new_mem_stack_144_w_ECU(Addr new_SP, UInt ecu)
 MAYBE_USED
 static void VG_REGPARM(1) mc_new_mem_stack_144(Addr new_SP)
 {
-   PROF_EVENT(117, "new_mem_stack_144");
+   PROF_EVENT(MCPE_NEW_MEM_STACK_144);
    if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP );
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+8 );
@@ -3270,7 +3271,7 @@ static void VG_REGPARM(1) mc_new_mem_stack_144(Addr new_SP)
 MAYBE_USED
 static void VG_REGPARM(1) mc_die_mem_stack_144(Addr new_SP)
 {
-   PROF_EVENT(127, "die_mem_stack_144");
+   PROF_EVENT(MCPE_DIE_MEM_STACK_144);
    if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-144);
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-136);
@@ -3301,7 +3302,7 @@ MAYBE_USED
 static void VG_REGPARM(2) mc_new_mem_stack_160_w_ECU(Addr new_SP, UInt ecu)
 {
    UInt otag = ecu | MC_OKIND_STACK;
-   PROF_EVENT(118, "new_mem_stack_160");
+   PROF_EVENT(MCPE_NEW_MEM_STACK_160);
    if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word64_undefined_w_otag ( -VG_STACK_REDZONE_SZB + new_SP,     otag );
       make_aligned_word64_undefined_w_otag ( -VG_STACK_REDZONE_SZB + new_SP+8,   otag );
@@ -3331,7 +3332,7 @@ static void VG_REGPARM(2) mc_new_mem_stack_160_w_ECU(Addr new_SP, UInt ecu)
 MAYBE_USED
 static void VG_REGPARM(1) mc_new_mem_stack_160(Addr new_SP)
 {
-   PROF_EVENT(118, "new_mem_stack_160");
+   PROF_EVENT(MCPE_NEW_MEM_STACK_160);
    if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP );
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+8 );
@@ -3361,7 +3362,7 @@ static void VG_REGPARM(1) mc_new_mem_stack_160(Addr new_SP)
 MAYBE_USED
 static void VG_REGPARM(1) mc_die_mem_stack_160(Addr new_SP)
 {
-   PROF_EVENT(128, "die_mem_stack_160");
+   PROF_EVENT(MCPE_DIE_MEM_STACK_160);
    if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-160);
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-152);
@@ -3393,19 +3394,19 @@ static void VG_REGPARM(1) mc_die_mem_stack_160(Addr new_SP)
 static void mc_new_mem_stack_w_ECU ( Addr a, SizeT len, UInt ecu )
 {
    UInt otag = ecu | MC_OKIND_STACK;
-   PROF_EVENT(115, "new_mem_stack_w_otag");
+   PROF_EVENT(MCPE_NEW_MEM_STACK);
    MC_(make_mem_undefined_w_otag) ( -VG_STACK_REDZONE_SZB + a, len, otag );
 }
 
 static void mc_new_mem_stack ( Addr a, SizeT len )
 {
-   PROF_EVENT(115, "new_mem_stack");
+   PROF_EVENT(MCPE_NEW_MEM_STACK);
    make_mem_undefined ( -VG_STACK_REDZONE_SZB + a, len );
 }
 
 static void mc_die_mem_stack ( Addr a, SizeT len )
 {
-   PROF_EVENT(125, "die_mem_stack");
+   PROF_EVENT(MCPE_DIE_MEM_STACK);
    MC_(make_mem_noaccess) ( -VG_STACK_REDZONE_SZB + a, len );
 }
 
@@ -3759,9 +3760,9 @@ Bool MC_(check_mem_is_noaccess) ( Addr a, SizeT len, Addr* bad_addr )
    SizeT i;
    UWord vabits2;
 
-   PROF_EVENT(60, "check_mem_is_noaccess");
+   PROF_EVENT(MCPE_CHECK_MEM_IS_NOACCESS);
    for (i = 0; i < len; i++) {
-      PROF_EVENT(61, "check_mem_is_noaccess(loop)");
+      PROF_EVENT(MCPE_CHECK_MEM_IS_NOACCESS_LOOP);
       vabits2 = get_vabits2(a);
       if (VA_BITS2_NOACCESS != vabits2) {
          if (bad_addr != NULL) *bad_addr = a;
@@ -3778,9 +3779,9 @@ static Bool is_mem_addressable ( Addr a, SizeT len,
    SizeT i;
    UWord vabits2;
 
-   PROF_EVENT(62, "is_mem_addressable");
+   PROF_EVENT(MCPE_IS_MEM_ADDRESSABLE);
    for (i = 0; i < len; i++) {
-      PROF_EVENT(63, "is_mem_addressable(loop)");
+      PROF_EVENT(MCPE_IS_MEM_ADDRESSABLE_LOOP);
       vabits2 = get_vabits2(a);
       if (VA_BITS2_NOACCESS == vabits2) {
          if (bad_addr != NULL) *bad_addr = a;
@@ -3798,13 +3799,13 @@ static MC_ReadResult is_mem_defined ( Addr a, SizeT len,
    SizeT i;
    UWord vabits2;
 
-   PROF_EVENT(64, "is_mem_defined");
+   PROF_EVENT(MCPE_IS_MEM_DEFINED);
    DEBUG("is_mem_defined\n");
 
    if (otag)     *otag = 0;
    if (bad_addr) *bad_addr = 0;
    for (i = 0; i < len; i++) {
-      PROF_EVENT(65, "is_mem_defined(loop)");
+      PROF_EVENT(MCPE_IS_MEM_DEFINED_LOOP);
       vabits2 = get_vabits2(a);
       if (VA_BITS2_DEFINED != vabits2) {
          // Error!  Nb: Report addressability errors in preference to
@@ -3851,13 +3852,13 @@ static void is_mem_defined_comprehensive (
    UWord vabits2;
    Bool  already_saw_errV = False;
 
-   PROF_EVENT(64, "is_mem_defined"); // fixme
+   PROF_EVENT(MCPE_IS_MEM_DEFINED_COMPREHENSIVE);
    DEBUG("is_mem_defined_comprehensive\n");
 
    tl_assert(!(*errorV || *errorA));
 
    for (i = 0; i < len; i++) {
-      PROF_EVENT(65, "is_mem_defined(loop)"); // fixme
+      PROF_EVENT(MCPE_IS_MEM_DEFINED_COMPREHENSIVE_LOOP);
       vabits2 = get_vabits2(a);
       switch (vabits2) {
          case VA_BITS2_DEFINED: 
@@ -3896,13 +3897,13 @@ static Bool mc_is_defined_asciiz ( Addr a, Addr* bad_addr, UInt* otag )
 {
    UWord vabits2;
 
-   PROF_EVENT(66, "mc_is_defined_asciiz");
+   PROF_EVENT(MCPE_IS_DEFINED_ASCIIZ);
    DEBUG("mc_is_defined_asciiz\n");
 
    if (otag)     *otag = 0;
    if (bad_addr) *bad_addr = 0;
    while (True) {
-      PROF_EVENT(67, "mc_is_defined_asciiz(loop)");
+      PROF_EVENT(MCPE_IS_DEFINED_ASCIIZ_LOOP);
       vabits2 = get_vabits2(a);
       if (VA_BITS2_DEFINED != vabits2) {
          // Error!  Nb: Report addressability errors in preference to
@@ -4436,7 +4437,7 @@ static INLINE
 void mc_LOADV_128_or_256 ( /*OUT*/ULong* res,
                            Addr a, SizeT nBits, Bool isBigEndian )
 {
-   PROF_EVENT(200, "mc_LOADV_128_or_256");
+   PROF_EVENT(MCPE_LOADV_128_OR_256);
 
 #ifndef PERF_FAST_LOADV
    mc_LOADV_128_or_256_slow( res, a, nBits, isBigEndian );
@@ -4449,7 +4450,7 @@ void mc_LOADV_128_or_256 ( /*OUT*/ULong* res,
       SecMap* sm;
 
       if (UNLIKELY( UNALIGNED_OR_HIGH(a,nBits) )) {
-         PROF_EVENT(201, "mc_LOADV_128_or_256-slow1");
+         PROF_EVENT(MCPE_LOADV_128_OR_256_SLOW1);
          mc_LOADV_128_or_256_slow( res, a, nBits, isBigEndian );
          return;
       }
@@ -4470,7 +4471,7 @@ void mc_LOADV_128_or_256 ( /*OUT*/ULong* res,
          } else {
             /* Slow case: some block of 8 bytes are not all-defined or
                all-undefined. */
-            PROF_EVENT(202, "mc_LOADV_128_or_256-slow2");
+            PROF_EVENT(MCPE_LOADV_128_OR_256_SLOW2);
             mc_LOADV_128_or_256_slow( res, a, nBits, isBigEndian );
             return;
          }
@@ -4505,7 +4506,7 @@ VG_REGPARM(2) void MC_(helperc_LOADV128le) ( /*OUT*/V128* res, Addr a )
 static INLINE
 ULong mc_LOADV64 ( Addr a, Bool isBigEndian )
 {
-   PROF_EVENT(200, "mc_LOADV64");
+   PROF_EVENT(MCPE_LOADV64);
 
 #ifndef PERF_FAST_LOADV
    return mc_LOADVn_slow( a, 64, isBigEndian );
@@ -4515,7 +4516,7 @@ ULong mc_LOADV64 ( Addr a, Bool isBigEndian )
       SecMap* sm;
 
       if (UNLIKELY( UNALIGNED_OR_HIGH(a,64) )) {
-         PROF_EVENT(201, "mc_LOADV64-slow1");
+         PROF_EVENT(MCPE_LOADV64_SLOW1);
          return (ULong)mc_LOADVn_slow( a, 64, isBigEndian );
       }
 
@@ -4532,7 +4533,7 @@ ULong mc_LOADV64 ( Addr a, Bool isBigEndian )
          return V_BITS64_UNDEFINED;
       } else {
          /* Slow case: the 8 bytes are not all-defined or all-undefined. */
-         PROF_EVENT(202, "mc_LOADV64-slow2");
+         PROF_EVENT(MCPE_LOADV64_SLOW2);
          return mc_LOADVn_slow( a, 64, isBigEndian );
       }
    }
@@ -4636,7 +4637,7 @@ VG_REGPARM(1) ULong MC_(helperc_LOADV64le) ( Addr a )
 static INLINE
 void mc_STOREV64 ( Addr a, ULong vbits64, Bool isBigEndian )
 {
-   PROF_EVENT(210, "mc_STOREV64");
+   PROF_EVENT(MCPE_STOREV64);
 
 #ifndef PERF_FAST_STOREV
    // XXX: this slow case seems to be marginally faster than the fast case!
@@ -4648,7 +4649,7 @@ void mc_STOREV64 ( Addr a, ULong vbits64, Bool isBigEndian )
       SecMap* sm;
 
       if (UNLIKELY( UNALIGNED_OR_HIGH(a,64) )) {
-         PROF_EVENT(211, "mc_STOREV64-slow1");
+         PROF_EVENT(MCPE_STOREV64_SLOW1);
          mc_STOREVn_slow( a, 64, vbits64, isBigEndian );
          return;
       }
@@ -4667,7 +4668,7 @@ void mc_STOREV64 ( Addr a, ULong vbits64, Bool isBigEndian )
             ((UShort*)(sm->vabits8))[sm_off16] = (UShort)VA_BITS16_DEFINED;
             return;
          }
-         PROF_EVENT(232, "mc_STOREV64-slow2");
+         PROF_EVENT(MCPE_STOREV64_SLOW2);
          mc_STOREVn_slow( a, 64, vbits64, isBigEndian );
          return;
       }
@@ -4679,12 +4680,12 @@ void mc_STOREV64 ( Addr a, ULong vbits64, Bool isBigEndian )
             ((UShort*)(sm->vabits8))[sm_off16] = (UShort)VA_BITS16_UNDEFINED;
             return;
          } 
-         PROF_EVENT(232, "mc_STOREV64-slow3");
+         PROF_EVENT(MCPE_STOREV64_SLOW3);
          mc_STOREVn_slow( a, 64, vbits64, isBigEndian );
          return;
       }
 
-      PROF_EVENT(212, "mc_STOREV64-slow4");
+      PROF_EVENT(MCPE_STOREV64_SLOW4);
       mc_STOREVn_slow( a, 64, vbits64, isBigEndian );
    }
 #endif
@@ -4706,7 +4707,7 @@ VG_REGPARM(1) void MC_(helperc_STOREV64le) ( Addr a, ULong vbits64 )
 static INLINE
 UWord mc_LOADV32 ( Addr a, Bool isBigEndian )
 {
-   PROF_EVENT(220, "mc_LOADV32");
+   PROF_EVENT(MCPE_LOADV32);
 
 #ifndef PERF_FAST_LOADV
    return (UWord)mc_LOADVn_slow( a, 32, isBigEndian );
@@ -4716,7 +4717,7 @@ UWord mc_LOADV32 ( Addr a, Bool isBigEndian )
       SecMap* sm;
 
       if (UNLIKELY( UNALIGNED_OR_HIGH(a,32) )) {
-         PROF_EVENT(221, "mc_LOADV32-slow1");
+         PROF_EVENT(MCPE_LOADV32_SLOW1);
          return (UWord)mc_LOADVn_slow( a, 32, isBigEndian );
       }
 
@@ -4735,7 +4736,7 @@ UWord mc_LOADV32 ( Addr a, Bool isBigEndian )
          return ((UWord)0xFFFFFFFF00000000ULL | (UWord)V_BITS32_UNDEFINED);
       } else {
          /* Slow case: the 4 bytes are not all-defined or all-undefined. */
-         PROF_EVENT(222, "mc_LOADV32-slow2");
+         PROF_EVENT(MCPE_LOADV32_SLOW2);
          return (UWord)mc_LOADVn_slow( a, 32, isBigEndian );
       }
    }
@@ -4832,7 +4833,7 @@ VG_REGPARM(1) UWord MC_(helperc_LOADV32le) ( Addr a )
 static INLINE
 void mc_STOREV32 ( Addr a, UWord vbits32, Bool isBigEndian )
 {
-   PROF_EVENT(230, "mc_STOREV32");
+   PROF_EVENT(MCPE_STOREV32);
 
 #ifndef PERF_FAST_STOREV
    mc_STOREVn_slow( a, 32, (ULong)vbits32, isBigEndian );
@@ -4842,7 +4843,7 @@ void mc_STOREV32 ( Addr a, UWord vbits32, Bool isBigEndian )
       SecMap* sm;
 
       if (UNLIKELY( UNALIGNED_OR_HIGH(a,32) )) {
-         PROF_EVENT(231, "mc_STOREV32-slow1");
+         PROF_EVENT(MCPE_STOREV32_SLOW1);
          mc_STOREVn_slow( a, 32, (ULong)vbits32, isBigEndian );
          return;
       }
@@ -4861,7 +4862,7 @@ void mc_STOREV32 ( Addr a, UWord vbits32, Bool isBigEndian )
             sm->vabits8[sm_off] = (UInt)VA_BITS8_DEFINED;
             return;
          }
-         PROF_EVENT(232, "mc_STOREV32-slow2");
+         PROF_EVENT(MCPE_STOREV32_SLOW2);
          mc_STOREVn_slow( a, 32, (ULong)vbits32, isBigEndian );
          return;
       }
@@ -4873,12 +4874,12 @@ void mc_STOREV32 ( Addr a, UWord vbits32, Bool isBigEndian )
             sm->vabits8[sm_off] = (UInt)VA_BITS8_UNDEFINED;
             return;
          }
-         PROF_EVENT(233, "mc_STOREV32-slow3");
+         PROF_EVENT(MCPE_STOREV32_SLOW3);
          mc_STOREVn_slow( a, 32, (ULong)vbits32, isBigEndian );
          return;
       }
 
-      PROF_EVENT(234, "mc_STOREV32-slow4");
+      PROF_EVENT(MCPE_STOREV32_SLOW4);
       mc_STOREVn_slow( a, 32, (ULong)vbits32, isBigEndian );
    }
 #endif
@@ -4900,7 +4901,7 @@ VG_REGPARM(2) void MC_(helperc_STOREV32le) ( Addr a, UWord vbits32 )
 static INLINE
 UWord mc_LOADV16 ( Addr a, Bool isBigEndian )
 {
-   PROF_EVENT(240, "mc_LOADV16");
+   PROF_EVENT(MCPE_LOADV16);
 
 #ifndef PERF_FAST_LOADV
    return (UWord)mc_LOADVn_slow( a, 16, isBigEndian );
@@ -4910,7 +4911,7 @@ UWord mc_LOADV16 ( Addr a, Bool isBigEndian )
       SecMap* sm;
 
       if (UNLIKELY( UNALIGNED_OR_HIGH(a,16) )) {
-         PROF_EVENT(241, "mc_LOADV16-slow1");
+         PROF_EVENT(MCPE_LOADV16_SLOW1);
          return (UWord)mc_LOADVn_slow( a, 16, isBigEndian );
       }
 
@@ -4930,7 +4931,7 @@ UWord mc_LOADV16 ( Addr a, Bool isBigEndian )
          else if (vabits4 == VA_BITS4_UNDEFINED) { return V_BITS16_UNDEFINED; }
          else {
             /* Slow case: the two bytes are not all-defined or all-undefined. */
-            PROF_EVENT(242, "mc_LOADV16-slow2");
+            PROF_EVENT(MCPE_LOADV16_SLOW2);
             return (UWord)mc_LOADVn_slow( a, 16, isBigEndian );
          }
       }
@@ -5070,7 +5071,7 @@ Bool accessible_vabits4_in_vabits8 ( Addr a, UChar vabits8 )
 static INLINE
 void mc_STOREV16 ( Addr a, UWord vbits16, Bool isBigEndian )
 {
-   PROF_EVENT(250, "mc_STOREV16");
+   PROF_EVENT(MCPE_STOREV16);
 
 #ifndef PERF_FAST_STOREV
    mc_STOREVn_slow( a, 16, (ULong)vbits16, isBigEndian );
@@ -5080,7 +5081,7 @@ void mc_STOREV16 ( Addr a, UWord vbits16, Bool isBigEndian )
       SecMap* sm;
 
       if (UNLIKELY( UNALIGNED_OR_HIGH(a,16) )) {
-         PROF_EVENT(251, "mc_STOREV16-slow1");
+         PROF_EVENT(MCPE_STOREV16_SLOW1);
          mc_STOREVn_slow( a, 16, (ULong)vbits16, isBigEndian );
          return;
       }
@@ -5101,7 +5102,7 @@ void mc_STOREV16 ( Addr a, UWord vbits16, Bool isBigEndian )
                                          &(sm->vabits8[sm_off]) );
             return;
          }
-         PROF_EVENT(232, "mc_STOREV16-slow2");
+         PROF_EVENT(MCPE_STOREV16_SLOW2);
          mc_STOREVn_slow( a, 16, (ULong)vbits16, isBigEndian );
       }
       if (V_BITS16_UNDEFINED == vbits16) {
@@ -5114,12 +5115,12 @@ void mc_STOREV16 ( Addr a, UWord vbits16, Bool isBigEndian )
                                          &(sm->vabits8[sm_off]) );
             return;
          }
-         PROF_EVENT(233, "mc_STOREV16-slow3");
+         PROF_EVENT(MCPE_STOREV16_SLOW3);
          mc_STOREVn_slow( a, 16, (ULong)vbits16, isBigEndian );
          return;
       }
 
-      PROF_EVENT(234, "mc_STOREV16-slow4");
+      PROF_EVENT(MCPE_STOREV16_SLOW4);
       mc_STOREVn_slow( a, 16, (ULong)vbits16, isBigEndian );
    }
 #endif
@@ -5238,7 +5239,7 @@ __asm__(
 VG_REGPARM(1)
 UWord MC_(helperc_LOADV8) ( Addr a )
 {
-   PROF_EVENT(260, "mc_LOADV8");
+   PROF_EVENT(MCPE_LOADV8);
 
 #ifndef PERF_FAST_LOADV
    return (UWord)mc_LOADVn_slow( a, 8, False/*irrelevant*/ );
@@ -5248,7 +5249,7 @@ UWord MC_(helperc_LOADV8) ( Addr a )
       SecMap* sm;
 
       if (UNLIKELY( UNALIGNED_OR_HIGH(a,8) )) {
-         PROF_EVENT(261, "mc_LOADV8-slow1");
+         PROF_EVENT(MCPE_LOADV8_SLOW1);
          return (UWord)mc_LOADVn_slow( a, 8, False/*irrelevant*/ );
       }
 
@@ -5268,7 +5269,7 @@ UWord MC_(helperc_LOADV8) ( Addr a )
          else if (vabits2 == VA_BITS2_UNDEFINED) { return V_BITS8_UNDEFINED; }
          else {
             /* Slow case: the byte is not all-defined or all-undefined. */
-            PROF_EVENT(262, "mc_LOADV8-slow2");
+            PROF_EVENT(MCPE_LOADV8_SLOW2);
             return (UWord)mc_LOADVn_slow( a, 8, False/*irrelevant*/ );
          }
       }
@@ -5284,7 +5285,7 @@ UWord MC_(helperc_LOADV8) ( Addr a )
 VG_REGPARM(2)
 void MC_(helperc_STOREV8) ( Addr a, UWord vbits8 )
 {
-   PROF_EVENT(270, "mc_STOREV8");
+   PROF_EVENT(MCPE_STOREV8);
 
 #ifndef PERF_FAST_STOREV
    mc_STOREVn_slow( a, 8, (ULong)vbits8, False/*irrelevant*/ );
@@ -5294,7 +5295,7 @@ void MC_(helperc_STOREV8) ( Addr a, UWord vbits8 )
       SecMap* sm;
 
       if (UNLIKELY( UNALIGNED_OR_HIGH(a,8) )) {
-         PROF_EVENT(271, "mc_STOREV8-slow1");
+         PROF_EVENT(MCPE_STOREV8_SLOW1);
          mc_STOREVn_slow( a, 8, (ULong)vbits8, False/*irrelevant*/ );
          return;
       }
@@ -5350,7 +5351,7 @@ void MC_(helperc_STOREV8) ( Addr a, UWord vbits8 )
                                          &(sm->vabits8[sm_off]) );
             return;
          }
-         PROF_EVENT(232, "mc_STOREV8-slow2");
+         PROF_EVENT(MCPE_STOREV8_SLOW2);
          mc_STOREVn_slow( a, 8, (ULong)vbits8, False/*irrelevant*/ );
          return;
       }
@@ -5366,13 +5367,13 @@ void MC_(helperc_STOREV8) ( Addr a, UWord vbits8 )
                                          &(sm->vabits8[sm_off]) );
             return;
          }
-         PROF_EVENT(233, "mc_STOREV8-slow3");
+         PROF_EVENT(MCPE_STOREV8_SLOW3);
          mc_STOREVn_slow( a, 8, (ULong)vbits8, False/*irrelevant*/ );
          return;
       }
 
       // Partially defined word
-      PROF_EVENT(234, "mc_STOREV8-slow4");
+      PROF_EVENT(MCPE_STOREV8_SLOW4);
       mc_STOREVn_slow( a, 8, (ULong)vbits8, False/*irrelevant*/ );
    }
 #endif
@@ -5583,7 +5584,7 @@ static void init_shadow_memory ( void )
 static Bool mc_cheap_sanity_check ( void )
 {
    n_sanity_cheap++;
-   PROF_EVENT(490, "cheap_sanity_check");
+   PROF_EVENT(MCPE_CHEAP_SANITY_CHECK);
    /* Check for sane operating level */
    if (MC_(clo_mc_level) < 1 || MC_(clo_mc_level) > 3)
       return False;
@@ -5603,7 +5604,7 @@ static Bool mc_expensive_sanity_check ( void )
    if (0) return True;
 
    n_sanity_expensive++;
-   PROF_EVENT(491, "expensive_sanity_check");
+   PROF_EVENT(MCPE_EXPENSIVE_SANITY_CHECK);
 
    /* Check for sane operating level */
    if (MC_(clo_mc_level) < 1 || MC_(clo_mc_level) > 3)
@@ -6672,33 +6673,159 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
 
 #ifdef MC_PROFILE_MEMORY
 
-UInt   MC_(event_ctr)[N_PROF_EVENTS];
-HChar* MC_(event_ctr_name)[N_PROF_EVENTS];
+UInt  MC_(event_ctr)[MCPE_LAST];
+
+/* Event counter names. Use the name of the function that increases the
+   event counter. Drop any MC_() and mc_ prefices. */
+static const HChar* MC_(event_ctr_name)[MCPE_LAST] = {
+   [MCPE_LOADVN_SLOW] = "LOADVn_slow",
+   [MCPE_LOADVN_SLOW_LOOP] = "LOADVn_slow_loop",
+   [MCPE_STOREVN_SLOW] = "STOREVn_slow",
+   [MCPE_STOREVN_SLOW_LOOP] = "STOREVn_slow(loop)",
+   [MCPE_MAKE_ALIGNED_WORD32_UNDEFINED] = "make_aligned_word32_undefined",
+   [MCPE_MAKE_ALIGNED_WORD32_UNDEFINED_SLOW] = 
+        "make_aligned_word32_undefined_slow",
+   [MCPE_MAKE_ALIGNED_WORD64_UNDEFINED] = "make_aligned_word64_undefined",
+   [MCPE_MAKE_ALIGNED_WORD64_UNDEFINED_SLOW] = 
+        "make_aligned_word64_undefined_slow",
+   [MCPE_MAKE_ALIGNED_WORD32_NOACCESS] = "make_aligned_word32_noaccess",
+   [MCPE_MAKE_ALIGNED_WORD32_NOACCESS_SLOW] =
+         "make_aligned_word32_noaccess_slow",
+   [MCPE_MAKE_ALIGNED_WORD64_NOACCESS] = "make_aligned_word64_noaccess",
+   [MCPE_MAKE_ALIGNED_WORD64_NOACCESS_SLOW] =
+        "make_aligned_word64_noaccess_slow",
+   [MCPE_MAKE_MEM_NOACCESS] = "make_mem_noaccess",
+   [MCPE_MAKE_MEM_UNDEFINED] = "make_mem_undefined",
+   [MCPE_MAKE_MEM_UNDEFINED_W_OTAG] = "make_mem_undefined_w_otag",
+   [MCPE_MAKE_MEM_DEFINED] = "make_mem_defined",
+   [MCPE_CHEAP_SANITY_CHECK] = "cheap_sanity_check",
+   [MCPE_EXPENSIVE_SANITY_CHECK] = "expensive_sanity_check",
+   [MCPE_COPY_ADDRESS_RANGE_STATE] = "copy_address_range_state",
+   [MCPE_COPY_ADDRESS_RANGE_STATE_LOOP1] = "copy_address_range_state(loop1)",
+   [MCPE_COPY_ADDRESS_RANGE_STATE_LOOP2] = "copy_address_range_state(loop2)",
+   [MCPE_CHECK_MEM_IS_NOACCESS] = "check_mem_is_noaccess",
+   [MCPE_CHECK_MEM_IS_NOACCESS_LOOP] = "check_mem_is_noaccess(loop)",
+   [MCPE_IS_MEM_ADDRESSABLE] = "is_mem_addressable",
+   [MCPE_IS_MEM_ADDRESSABLE_LOOP] = "is_mem_addressable(loop)",
+   [MCPE_IS_MEM_DEFINED] = "is_mem_defined",
+   [MCPE_IS_MEM_DEFINED_LOOP] = "is_mem_defined(loop)",
+   [MCPE_IS_MEM_DEFINED_COMPREHENSIVE] = "is_mem_defined_comprehensive",
+   [MCPE_IS_MEM_DEFINED_COMPREHENSIVE_LOOP] =
+        "is_mem_defined_comprehensive(loop)",
+   [MCPE_IS_DEFINED_ASCIIZ] = "is_defined_asciiz",
+   [MCPE_IS_DEFINED_ASCIIZ_LOOP] = "is_defined_asciiz(loop)",
+   [MCPE_FIND_CHUNK_FOR_OLD] = "find_chunk_for_OLD",
+   [MCPE_FIND_CHUNK_FOR_OLD_LOOP] = "find_chunk_for_OLD(loop)",
+   [MCPE_SET_ADDRESS_RANGE_PERMS] = "set_address_range_perms",
+   [MCPE_SET_ADDRESS_RANGE_PERMS_SINGLE_SECMAP] =
+        "set_address_range_perms(single-secmap)",
+   [MCPE_SET_ADDRESS_RANGE_PERMS_STARTOF_SECMAP] =
+        "set_address_range_perms(startof-secmap)",
+   [MCPE_SET_ADDRESS_RANGE_PERMS_MULTIPLE_SECMAPS] =
+   "set_address_range_perms(multiple-secmaps)",
+   [MCPE_SET_ADDRESS_RANGE_PERMS_DIST_SM1] =
+        "set_address_range_perms(dist-sm1)",
+   [MCPE_SET_ADDRESS_RANGE_PERMS_DIST_SM2] =
+        "set_address_range_perms(dist-sm2)",
+   [MCPE_SET_ADDRESS_RANGE_PERMS_DIST_SM1_QUICK] =
+        "set_address_range_perms(dist-sm1-quick)",
+   [MCPE_SET_ADDRESS_RANGE_PERMS_DIST_SM2_QUICK] =
+        "set_address_range_perms(dist-sm2-quick)",
+   [MCPE_SET_ADDRESS_RANGE_PERMS_LOOP1A] = "set_address_range_perms(loop1a)",
+   [MCPE_SET_ADDRESS_RANGE_PERMS_LOOP1B] = "set_address_range_perms(loop1b)",
+   [MCPE_SET_ADDRESS_RANGE_PERMS_LOOP1C] = "set_address_range_perms(loop1c)",
+   [MCPE_SET_ADDRESS_RANGE_PERMS_LOOP8A] = "set_address_range_perms(loop8a)",
+   [MCPE_SET_ADDRESS_RANGE_PERMS_LOOP8B] = "set_address_range_perms(loop8b)",
+   [MCPE_SET_ADDRESS_RANGE_PERMS_LOOP64K] = "set_address_range_perms(loop64K)",
+   [MCPE_SET_ADDRESS_RANGE_PERMS_LOOP64K_FREE_DIST_SM] =
+        "set_address_range_perms(loop64K-free-dist-sm)",
+   [MCPE_LOADV_128_OR_256_SLOW_LOOP] = "LOADV_128_or_256_slow(loop)",
+   [MCPE_LOADV_128_OR_256]       = "LOADV_128_or_256",
+   [MCPE_LOADV_128_OR_256_SLOW1] = "LOADV_128_or_256-slow1",
+   [MCPE_LOADV_128_OR_256_SLOW2] = "LOADV_128_or_256-slow2",
+   [MCPE_LOADV64]        = "LOADV64",
+   [MCPE_LOADV64_SLOW1]  = "LOADV64-slow1",
+   [MCPE_LOADV64_SLOW2]  = "LOADV64-slow2",
+   [MCPE_STOREV64]       = "STOREV64",
+   [MCPE_STOREV64_SLOW1] = "STOREV64-slow1",
+   [MCPE_STOREV64_SLOW2] = "STOREV64-slow2",
+   [MCPE_STOREV64_SLOW3] = "STOREV64-slow3",
+   [MCPE_STOREV64_SLOW4] = "STOREV64-slow4",
+   [MCPE_LOADV32]        = "LOADV32",
+   [MCPE_LOADV32_SLOW1]  = "LOADV32-slow1",
+   [MCPE_LOADV32_SLOW2]  = "LOADV32-slow2",
+   [MCPE_STOREV32]       = "STOREV32",
+   [MCPE_STOREV32_SLOW1] = "STOREV32-slow1",
+   [MCPE_STOREV32_SLOW2] = "STOREV32-slow2",
+   [MCPE_STOREV32_SLOW3] = "STOREV32-slow3",
+   [MCPE_STOREV32_SLOW4] = "STOREV32-slow4",
+   [MCPE_LOADV16]        = "LOADV16",
+   [MCPE_LOADV16_SLOW1]  = "LOADV16-slow1",
+   [MCPE_LOADV16_SLOW2]  = "LOADV16-slow2",
+   [MCPE_STOREV16]       = "STOREV16",
+   [MCPE_STOREV16_SLOW1] = "STOREV16-slow1",
+   [MCPE_STOREV16_SLOW2] = "STOREV16-slow2",
+   [MCPE_STOREV16_SLOW3] = "STOREV16-slow3",
+   [MCPE_STOREV16_SLOW4] = "STOREV16-slow4",
+   [MCPE_LOADV8]         = "LOADV8",
+   [MCPE_LOADV8_SLOW1]   = "LOADV8-slow1",
+   [MCPE_LOADV8_SLOW2]   = "LOADV8-slow2",
+   [MCPE_STOREV8]        = "STOREV8",
+   [MCPE_STOREV8_SLOW1]  = "STOREV8-slow1",
+   [MCPE_STOREV8_SLOW2]  = "STOREV8-slow2",
+   [MCPE_STOREV8_SLOW3]  = "STOREV8-slow3",
+   [MCPE_STOREV8_SLOW4]  = "STOREV8-slow4",
+   [MCPE_NEW_MEM_STACK_4]   = "new_mem_stack_4",
+   [MCPE_NEW_MEM_STACK_8]   = "new_mem_stack_8",
+   [MCPE_NEW_MEM_STACK_12]  = "new_mem_stack_12",
+   [MCPE_NEW_MEM_STACK_16]  = "new_mem_stack_16",
+   [MCPE_NEW_MEM_STACK_32]  = "new_mem_stack_32",
+   [MCPE_NEW_MEM_STACK_112] = "new_mem_stack_112",
+   [MCPE_NEW_MEM_STACK_128] = "new_mem_stack_128",
+   [MCPE_NEW_MEM_STACK_144] = "new_mem_stack_144",
+   [MCPE_NEW_MEM_STACK_160] = "new_mem_stack_160",
+   [MCPE_DIE_MEM_STACK_4]   = "die_mem_stack_4",
+   [MCPE_DIE_MEM_STACK_8]   = "die_mem_stack_8",
+   [MCPE_DIE_MEM_STACK_12]  = "die_mem_stack_12",
+   [MCPE_DIE_MEM_STACK_16]  = "die_mem_stack_16",
+   [MCPE_DIE_MEM_STACK_32]  = "die_mem_stack_32",
+   [MCPE_DIE_MEM_STACK_112] = "die_mem_stack_112",
+   [MCPE_DIE_MEM_STACK_128] = "die_mem_stack_128",
+   [MCPE_DIE_MEM_STACK_144] = "die_mem_stack_144",
+   [MCPE_DIE_MEM_STACK_160] = "die_mem_stack_160",
+   [MCPE_NEW_MEM_STACK]     = "new_mem_stack",
+   [MCPE_DIE_MEM_STACK]     = "die_mem_stack",
+};
 
 static void init_prof_mem ( void )
 {
-   Int i;
-   for (i = 0; i < N_PROF_EVENTS; i++) {
+   Int i, name_count = 0;
+
+   for (i = 0; i < MCPE_LAST; i++) {
       MC_(event_ctr)[i] = 0;
-      MC_(event_ctr_name)[i] = NULL;
+      if (MC_(event_ctr_name)[i] != NULL)
+         ++name_count;
    }
+
+   /* Make sure every profiling event has a name */
+   tl_assert(name_count == MCPE_LAST);
 }
 
 static void done_prof_mem ( void )
 {
-   Int  i;
+   Int  i, n;
    Bool spaced = False;
-   for (i = 0; i < N_PROF_EVENTS; i++) {
-      if (!spaced && (i % 10) == 0) {
+   for (i = n = 0; i < MCPE_LAST; i++) {
+      if (!spaced && (n % 10) == 0) {
          VG_(printf)("\n");
          spaced = True;
       }
       if (MC_(event_ctr)[i] > 0) {
          spaced = False;
-         VG_(printf)( "prof mem event %3d: %9d   %s\n", 
+         ++n;
+         VG_(printf)( "prof mem event %3d: %9u   %s\n", 
                       i, MC_(event_ctr)[i],
-                      MC_(event_ctr_name)[i] 
-                         ? MC_(event_ctr_name)[i] : "unnamed");
+                      MC_(event_ctr_name)[i]);
       }
    }
 }

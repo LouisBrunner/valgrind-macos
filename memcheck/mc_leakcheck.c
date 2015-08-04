@@ -265,9 +265,9 @@ Int find_chunk_for_OLD ( Addr       ptr,
 {
    Int  i;
    Addr a_lo, a_hi;
-   PROF_EVENT(70, "find_chunk_for_OLD");
+   PROF_EVENT(MCPE_FIND_CHUNK_FOR_OLD);
    for (i = 0; i < n_chunks; i++) {
-      PROF_EVENT(71, "find_chunk_for_OLD(loop)");
+      PROF_EVENT(MCPE_FIND_CHUNK_FOR_OLD_LOOP);
       a_lo = chunks[i]->data;
       a_hi = ((Addr)chunks[i]->data) + chunks[i]->szB;
       if (a_lo <= ptr && ptr < a_hi)

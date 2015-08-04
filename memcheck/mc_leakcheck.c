@@ -1875,11 +1875,11 @@ search_address_in_GP_reg(ThreadId tid, const HChar* regname, Addr addr_in_reg)
        && addr_in_reg < searched_wpa + searched_szB) {
       if (addr_in_reg == searched_wpa)
          VG_(umsg)
-            ("tid %d register %s pointing at %#lx\n",
+            ("tid %u register %s pointing at %#lx\n",
              tid, regname, searched_wpa);  
       else
          VG_(umsg)
-            ("tid %d register %s interior pointing %lu bytes inside %#lx\n",
+            ("tid %u register %s interior pointing %lu bytes inside %#lx\n",
              tid, regname, (long unsigned) addr_in_reg - searched_wpa,
              searched_wpa);
    }

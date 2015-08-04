@@ -375,8 +375,8 @@ static void pp_LossRecord(UInt n_this_record, UInt n_total_records,
                lr->num_blocks, d_num_blocks,
                str_leak_lossmode(lr->key.state), 
                n_this_record, n_total_records );
-         emit( "    <leakedbytes>%ld</leakedbytes>\n", lr->szB);
-         emit( "    <leakedblocks>%d</leakedblocks>\n", lr->num_blocks);
+         emit( "    <leakedbytes>%lu</leakedbytes>\n", lr->szB);
+         emit( "    <leakedblocks>%u</leakedblocks>\n", lr->num_blocks);
          emit( "  </xwhat>\n" );
       }
       VG_(pp_ExeContext)(lr->key.allocated_at);
@@ -439,7 +439,7 @@ void MC_(pp_Error) ( const Error* err )
          MC_(any_value_errors) = True;
          if (xml) {
             emit( "  <kind>UninitValue</kind>\n" );
-            emit( "  <what>Use of uninitialised value of size %ld</what>\n",
+            emit( "  <what>Use of uninitialised value of size %lu</what>\n",
                   extra->Err.Value.szB );
             VG_(pp_ExeContext)( VG_(get_error_where)(err) );
             if (extra->Err.Value.origin_ec)
@@ -448,7 +448,7 @@ void MC_(pp_Error) ( const Error* err )
          } else {
             /* Could also show extra->Err.Cond.otag if debugging origin
                tracking */
-            emit( "Use of uninitialised value of size %ld\n",
+            emit( "Use of uninitialised value of size %lu\n",
                   extra->Err.Value.szB );
             VG_(pp_ExeContext)( VG_(get_error_where)(err) );
             if (extra->Err.Value.origin_ec)
@@ -594,7 +594,7 @@ void MC_(pp_Error) ( const Error* err )
          if (xml) {
             emit( "  <kind>Invalid%s</kind>\n",
                   extra->Err.Addr.isWrite ? "Write" : "Read"  );
-            emit( "  <what>Invalid %s of size %ld</what>\n",
+            emit( "  <what>Invalid %s of size %lu</what>\n",
                   extra->Err.Addr.isWrite ? "write" : "read",
                   extra->Err.Addr.szB );
             VG_(pp_ExeContext)( VG_(get_error_where)(err) );
@@ -602,7 +602,7 @@ void MC_(pp_Error) ( const Error* err )
                                  &extra->Err.Addr.ai,
                                  extra->Err.Addr.maybe_gcc );
          } else {
-            emit( "Invalid %s of size %ld\n",
+            emit( "Invalid %s of size %lu\n",
                   extra->Err.Addr.isWrite ? "write" : "read",
                   extra->Err.Addr.szB );
             VG_(pp_ExeContext)( VG_(get_error_where)(err) );

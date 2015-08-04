@@ -6122,7 +6122,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
          VG_(printf) ("\n");
          if (unaddressable) {
             VG_(printf)
-               ("Address %p len %ld has %d bytes unaddressable\n",
+               ("Address %p len %lu has %d bytes unaddressable\n",
                 (void *)address, szB, unaddressable);
          }
       }
@@ -6272,11 +6272,11 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
       case -1: break;
       case  0: /* addressable */
          if (is_mem_addressable ( address, szB, &bad_addr ))
-            VG_(printf) ("Address %p len %ld addressable\n", 
+            VG_(printf) ("Address %p len %lu addressable\n", 
                              (void *)address, szB);
          else
             VG_(printf)
-               ("Address %p len %ld not addressable:\nbad address %p\n",
+               ("Address %p len %lu not addressable:\nbad address %p\n",
                 (void *)address, szB, (void *) bad_addr);
          MC_(pp_describe_addr) (address);
          break;
@@ -6284,7 +6284,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
          res = is_mem_defined ( address, szB, &bad_addr, &otag );
          if (MC_AddrErr == res)
             VG_(printf)
-               ("Address %p len %ld not addressable:\nbad address %p\n",
+               ("Address %p len %lu not addressable:\nbad address %p\n",
                 (void *)address, szB, (void *) bad_addr);
          else if (MC_ValueErr == res) {
             okind = otag & 3;
@@ -6300,7 +6300,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
             default: tl_assert(0);
             }
             VG_(printf) 
-               ("Address %p len %ld not defined:\n"
+               ("Address %p len %lu not defined:\n"
                 "Uninitialised value at %p%s\n",
                 (void *)address, szB, (void *) bad_addr, src);
             ecu = otag & ~3;
@@ -6310,7 +6310,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
             }
          }
          else
-            VG_(printf) ("Address %p len %ld defined\n",
+            VG_(printf) ("Address %p len %lu defined\n",
                          (void *)address, szB);
          MC_(pp_describe_addr) (address);
          break;
@@ -6390,7 +6390,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
             gdb_xb (address + szB - szB % 8, szB % 8, res);
          if (unaddressable) {
             VG_(printf)
-               ("Address %p len %ld has %d bytes unaddressable\n",
+               ("Address %p len %lu has %d bytes unaddressable\n",
                 (void *)address, szB, unaddressable);
          }
       }
@@ -7392,7 +7392,7 @@ static void mc_post_clo_init ( void )
 static void print_SM_info(const HChar* type, Int n_SMs)
 {
    VG_(message)(Vg_DebugMsg,
-      " memcheck: SMs: %s = %d (%ldk, %ldM)\n",
+      " memcheck: SMs: %s = %d (%luk, %luM)\n",
       type,
       n_SMs,
       n_SMs * sizeof(SecMap) / 1024UL,
@@ -7409,18 +7409,18 @@ static void mc_print_stats (void)
       " memcheck: sanity checks: %d cheap, %d expensive\n",
       n_sanity_cheap, n_sanity_expensive );
    VG_(message)(Vg_DebugMsg,
-      " memcheck: auxmaps: %lld auxmap entries (%lldk, %lldM) in use\n",
+      " memcheck: auxmaps: %llu auxmap entries (%lluk, %lluM) in use\n",
       n_auxmap_L2_nodes, 
       n_auxmap_L2_nodes * 64, 
       n_auxmap_L2_nodes / 16 );
    VG_(message)(Vg_DebugMsg,
-      " memcheck: auxmaps_L1: %lld searches, %lld cmps, ratio %lld:10\n",
+      " memcheck: auxmaps_L1: %llu searches, %llu cmps, ratio %llu:10\n",
       n_auxmap_L1_searches, n_auxmap_L1_cmps,
       (10ULL * n_auxmap_L1_cmps) 
          / (n_auxmap_L1_searches ? n_auxmap_L1_searches : 1) 
    );   
    VG_(message)(Vg_DebugMsg,
-      " memcheck: auxmaps_L2: %lld searches, %lld nodes\n",
+      " memcheck: auxmaps_L2: %llu searches, %llu nodes\n",
       n_auxmap_L2_searches, n_auxmap_L2_nodes
    );   
 
@@ -7444,7 +7444,7 @@ static void mc_print_stats (void)
    max_shmem_szB   = sizeof(primary_map) + max_SMs_szB + max_secVBit_szB;
 
    VG_(message)(Vg_DebugMsg,
-      " memcheck: max sec V bit nodes:    %d (%ldk, %ldM)\n",
+      " memcheck: max sec V bit nodes:    %d (%luk, %luM)\n",
       max_secVBit_nodes, max_secVBit_szB / 1024,
                          max_secVBit_szB / (1024 * 1024));
    VG_(message)(Vg_DebugMsg,
@@ -7452,7 +7452,7 @@ static void mc_print_stats (void)
       sec_vbits_new_nodes + sec_vbits_updates,
       sec_vbits_new_nodes, sec_vbits_updates );
    VG_(message)(Vg_DebugMsg,
-      " memcheck: max shadow mem size:   %ldk, %ldM\n",
+      " memcheck: max shadow mem size:   %luk, %luM\n",
       max_shmem_szB / 1024, max_shmem_szB / (1024 * 1024));
 
    if (MC_(clo_mc_level) >= 3) {
@@ -7472,8 +7472,8 @@ static void mc_print_stats (void)
                    stats_ocacheL1_found_at_N,
                    stats_ocacheL1_movefwds );
       VG_(message)(Vg_DebugMsg,
-                   " ocacheL1: %'12lu sizeB  %'12u useful\n",
-                   (UWord)sizeof(OCache),
+                   " ocacheL1: %'12lu sizeB  %'12d useful\n",
+                   (SizeT)sizeof(OCache),
                    4 * OC_W32S_PER_LINE * OC_LINES_PER_SET * OC_N_SETS );
       VG_(message)(Vg_DebugMsg,
                    " ocacheL2: %'12lu refs   %'12lu misses\n",

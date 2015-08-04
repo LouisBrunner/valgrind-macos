@@ -13,10 +13,14 @@ general valgrind monitor commands:
   v.set merge-recursive-frames <num> : merge recursive calls in max <num> frames
   v.set vgdb-error <errornr> : debug me at error >= <errornr> 
 memcheck monitor commands:
-  get_vbits <addr> [<len>]
-        returns validity bits for <len> (or 1) bytes at <addr>
+  xb <addr> [<len>]
+        prints validity bits for <len> (or 1) bytes at <addr>
             bit values 0 = valid, 1 = invalid, __ = unaddressable byte
-        Example: get_vbits 0x........ 10
+        Then prints the bytes values below the corresponding validity bits
+        in a layout similar to the gdb command 'x /<len>xb <addr>'
+        Example: xb 0x........ 10
+  get_vbits <addr> [<len>]
+        Similar to xb, but only prints the validity bytes by group of 4.
   make_memory [noaccess|undefined
                      |defined|Definedifaddressable] <addr> [<len>]
         mark <len> (or 1) bytes at <addr> with the given accessibility
@@ -73,10 +77,14 @@ debugging valgrind internals monitor commands:
     (default traceflags 0b00100000 : show after instrumentation)
    An additional flag  0b100000000 allows to show gdbserver instrumentation
 memcheck monitor commands:
-  get_vbits <addr> [<len>]
-        returns validity bits for <len> (or 1) bytes at <addr>
+  xb <addr> [<len>]
+        prints validity bits for <len> (or 1) bytes at <addr>
             bit values 0 = valid, 1 = invalid, __ = unaddressable byte
-        Example: get_vbits 0x........ 10
+        Then prints the bytes values below the corresponding validity bits
+        in a layout similar to the gdb command 'x /<len>xb <addr>'
+        Example: xb 0x........ 10
+  get_vbits <addr> [<len>]
+        Similar to xb, but only prints the validity bytes by group of 4.
   make_memory [noaccess|undefined
                      |defined|Definedifaddressable] <addr> [<len>]
         mark <len> (or 1) bytes at <addr> with the given accessibility

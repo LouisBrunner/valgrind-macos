@@ -1648,42 +1648,82 @@ built-in gdbserver (see <xref linkend="manual-core-adv.gdbserver-commandhandling
 
 <itemizedlist>
   <listitem>
-    <para><varname>get_vbits &lt;addr&gt; [&lt;len&gt;]</varname>
-    shows the definedness (V) bits for &lt;len&gt; (default 1) bytes
-    starting at &lt;addr&gt;.  The definedness of each byte in the
-    range is given using two hexadecimal digits.  These hexadecimal
-    digits encode the validity of each bit of the corresponding byte,
-    using 0 if the bit is defined and 1 if the bit is undefined.
-    If a byte is not addressable, its validity bits are replaced
-    by <varname>__</varname> (a double underscore).
+    <para><varname>xb &lt;addr&gt; [&lt;len&gt;]</varname>
+      shows the definedness (V) bits and values for &lt;len&gt; (default 1)
+      bytes starting at &lt;addr&gt;.
+      For each 8 bytes, two lines are output.
     </para>
     <para>
-    In the following example, <varname>string10</varname> is an array
-    of 10 characters, in which the even numbered bytes are
-    undefined. In the below example, the byte corresponding
-    to <varname>string10[5]</varname> is not addressable.
+      The first line shows the validity bits for 8 bytes.
+      The definedness of each byte in the range is given using two hexadecimal
+      digits.  These hexadecimal digits encode the validity of each bit of the
+      corresponding byte,
+      using 0 if the bit is defined and 1 if the bit is undefined.
+      If a byte is not addressable, its validity bits are replaced
+      by <varname>__</varname> (a double underscore).
+    </para>
+    <para>
+      The second line shows the values of the bytes below the corresponding
+      validity bits. The format used to show the bytes data is similar to the
+      GDB command 'x /&lt;len&gt;xb &lt;addr&gt;'. The value for a non
+      addressable bytes is shown as ?? (two question marks).
+    </para>
+    <para>
+      In the following example, <varname>string10</varname> is an array
+      of 10 characters, in which the even numbered bytes are
+      undefined. In the below example, the byte corresponding
+      to <varname>string10[5]</varname> is not addressable.
     </para>
 <programlisting><![CDATA[
 (gdb) p &string10
-$4 = (char (*)[10]) 0x8049e28
-(gdb) monitor get_vbits 0x8049e28 10
-ff00ff00 ff__ff00 ff00
-(gdb) 
+$4 = (char (*)[10]) 0x804a2f0
+(gdb) mo xb 0x804a2f0 10
+                  ff      00      ff      00      ff      __      ff      00
+0x804A2F0:      0x3f    0x6e    0x3f    0x65    0x3f    0x??     0x3f    0x65
+                  ff      00
+0x804A2F8:      0x3f    0x00
+Address 0x804A2F0 len 10 has 1 bytes unaddressable
+(gdb)
 ]]></programlisting>
 
-    <para> The command get_vbits cannot be used with registers. To get
-    the validity bits of a register, you must start Valgrind with the
-    option <option>--vgdb-shadow-registers=yes</option>. The validity
-    bits of a register can be obtained by printing the 'shadow 1'
-    corresponding register.  In the below x86 example, the register
-    eax has all its bits undefined, while the register ebx is fully
-    defined.
+    <para> The command xb cannot be used with registers. To get
+      the validity bits of a register, you must start Valgrind with the
+      option <option>--vgdb-shadow-registers=yes</option>. The validity
+      bits of a register can then be obtained by printing the 'shadow 1'
+      corresponding register.  In the below x86 example, the register
+      eax has all its bits undefined, while the register ebx is fully
+      defined.
     </para>
 <programlisting><![CDATA[
 (gdb) p /x $eaxs1
 $9 = 0xffffffff
 (gdb) p /x $ebxs1
 $10 = 0x0
+(gdb) 
+]]></programlisting>
+
+  </listitem>
+
+  <listitem>
+    <para><varname>get_vbits &lt;addr&gt; [&lt;len&gt;]</varname>
+    shows the definedness (V) bits for &lt;len&gt; (default 1) bytes
+    starting at &lt;addr&gt; using the same convention as the
+    <varname>xb</varname> command. <varname>get_vbits</varname> only
+    shows the V bits (grouped by 4 bytes). It does not show the values.
+    If you want to associate V bits with the corresponding byte values, the
+    <varname>xb</varname> command will be easier to use, in particular
+    on little endian computers when associating undefined parts of an integer
+    with their V bits values.
+    </para>
+    <para>
+    The following example shows the result of <varname>get_vibts</varname>
+    on the <varname>string10</varname> used in the  <varname>xb</varname>
+    command explanation.
+    </para>
+<programlisting><![CDATA[
+(gdb) monitor get_vbits 0x804a2f0 10
+ff00ff00 ff__ff00 ff00
+Address 0x804A2F0 len 10 has 1 bytes unaddressable
 (gdb) 
 ]]></programlisting>
 

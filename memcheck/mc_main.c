@@ -6010,10 +6010,14 @@ static void print_monitor_help ( void )
       (
 "\n"
 "memcheck monitor commands:\n"
-"  get_vbits <addr> [<len>]\n"
-"        returns validity bits for <len> (or 1) bytes at <addr>\n"
+"  xb <addr> [<len>]\n"
+"        prints validity bits for <len> (or 1) bytes at <addr>\n"
 "            bit values 0 = valid, 1 = invalid, __ = unaddressable byte\n"
-"        Example: get_vbits 0x8049c78 10\n"
+"        Then prints the bytes values below the corresponding validity bits\n"
+"        in a layout similar to the gdb command 'x /<len>xb <addr>'\n"
+"        Example: xb 0x8049c78 10\n"
+"  get_vbits <addr> [<len>]\n"
+"        Similar to xb, but only prints the validity bytes by group of 4.\n"
 "  make_memory [noaccess|undefined\n"
 "                     |defined|Definedifaddressable] <addr> [<len>]\n"
 "        mark <len> (or 1) bytes at <addr> with the given accessibility\n"
@@ -6043,6 +6047,28 @@ static void print_monitor_help ( void )
 "\n");
 }
 
+/* Print szB bytes at address, with a format similar to the gdb command
+   x /<szB>xb address.
+   res[i] == 1 indicates the corresponding byte is addressable. */
+static void gdb_xb (Addr address, SizeT szB, Int res[])
+{
+   UInt i;
+
+   for (i = 0; i < szB; i++) {
+      UInt bnr = i % 8;
+      if (bnr == 0) {
+         if (i != 0)
+            VG_(printf) ("\n"); // Terminate previous line
+         VG_(printf) ("%p:", (void*)(address+i));
+      }
+      if (res[i] == 1)
+         VG_(printf) ("\t0x%02x", *(UChar*)(address+i));
+      else
+         VG_(printf) ("\t0x??");
+   }
+   VG_(printf) ("\n"); // Terminate previous line
+}
+
 /* return True if request recognised, False otherwise */
 static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
 {
@@ -6058,7 +6084,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
       command. This ensures a shorter abbreviation for the user. */
    switch (VG_(keyword_id) 
            ("help get_vbits leak_check make_memory check_memory "
-            "block_list who_points_at", 
+            "block_list who_points_at xb", 
             wcmd, kwd_report_duplicated_matches)) {
    case -2: /* multiple matches */
       return True;
@@ -6191,8 +6217,8 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
             else if (int_value > 0)
                lcp.max_loss_records_output = (UInt) int_value;
             else
-               VG_(gdb_printf) ("max_loss_records_output must be >= 1, got %d\n",
-                                int_value);
+               VG_(gdb_printf) ("max_loss_records_output must be >= 1,"
+                                " got %d\n", int_value);
             break;
          }
          default:
@@ -6303,7 +6329,8 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
       if (wl == NULL || *endptr != '\0') {
          VG_(gdb_printf) ("malformed or missing integer\n");
       } else {
-         // lr_nr-1 as what is shown to the user is 1 more than the index in lr_array.
+         /* lr_nr-1 as what is shown to the user is 1 more than the index
+            in lr_array. */
          if (lr_nr == 0 || ! MC_(print_block_list) (lr_nr-1))
             VG_(gdb_printf) ("invalid loss record nr\n");
       }
@@ -6321,6 +6348,52 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
          return True;
       }
       MC_(who_points_at) (address, szB);
+      return True;
+   }
+
+   case  7: { /* xb */
+      Addr address;
+      SizeT szB = 1;
+      if (VG_(strtok_get_address_and_size) (&address, &szB, &ssaveptr)) {
+         UChar vbits[8];
+         Int res[8];
+         Int i;
+         Int unaddressable = 0;
+         for (i = 0; i < szB; i++) {
+            Int bnr = i % 8;
+            res[bnr] = mc_get_or_set_vbits_for_client 
+               (address+i, (Addr) &vbits[bnr], 1, 
+                False, /* get them */
+                False  /* is client request */ ); 
+            /* We going to print the first vabits of a new line.
+               Terminate the previous line if needed: prints a line with the
+               address and the data. */
+            if (bnr == 0) {
+               if (i != 0) {
+                  VG_(printf) ("\n");
+                  gdb_xb (address + i - 8, 8, res);
+               }
+               VG_(printf) ("\t"); // To align VABITS with gdb_xb layout
+            }
+            if (res[bnr] == 1) {
+               VG_(printf) ("\t  %02x", vbits[bnr]);
+            } else {
+               tl_assert(3 == res[bnr]);
+               unaddressable++;
+               VG_(printf) ("\t  __");
+            }
+         }
+         VG_(printf) ("\n");
+         if (szB % 8 == 0 && szB > 0)
+            gdb_xb (address + szB - 8, 8, res);
+         else
+            gdb_xb (address + szB - szB % 8, szB % 8, res);
+         if (unaddressable) {
+            VG_(printf)
+               ("Address %p len %ld has %d bytes unaddressable\n",
+                (void *)address, szB, unaddressable);
+         }
+      }
       return True;
    }
 

@@ -16,9 +16,9 @@ Release 3.11.0 is under development, not yet released.
   - A new monitor command 'xb <addr> <len>' shows the validity bits
     of <len> bytes at <addr>. Below the validity bits, the byte
     values are shown using a layout similar to the GDB command
-    'x /<len>xb <addr>'. The monitor command 'xb' is easier to use
-    (in particular on little endian computers) when you need to associate
-    byte data value with their corresponding validity bits.
+    'x /<len>xb <addr>'. The monitor command 'xb' is easier to use than
+    get_vbits (in particular on little endian computers) when you need to
+    associate byte data value with their corresponding validity bits.
 
 * Massif:
   - New monitor command 'all_snapshots <filename>' that dumps all snapshots

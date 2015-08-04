@@ -276,10 +276,10 @@ else
  nestedfns_CFLAGS	= $(AM_CFLAGS)
  mq_LDADD		= -lrt
 endif
-libvex_test_CFLAGS      = @FLAG_FSANITIZE@
+libvex_test_CFLAGS      = $(AM_CFLAGS)@FLAG_FSANITIZE@
 libvex_test_LDADD       = ../../VEX/libvex-@VGCONF_ARCH_PRI@-@VGCONF_OS@.a \
 			   @LIB_UBSAN@
-libvexmultiarch_test_CFLAGS= @FLAG_FSANITIZE@
+libvexmultiarch_test_CFLAGS= $(AM_CFLAGS) @FLAG_FSANITIZE@
 libvexmultiarch_test_LDADD = \
 	../../VEX/libvexmultiarch-@VGCONF_ARCH_PRI@-@VGCONF_OS@.a \
 	../../VEX/libvex-@VGCONF_ARCH_PRI@-@VGCONF_OS@.a @LIB_UBSAN@

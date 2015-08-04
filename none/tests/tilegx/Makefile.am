@@ -4,7 +4,10 @@ include $(top_srcdir)/Makefile.tool-tests.am
 dist_noinst_SCRIPTS = \
 	filter_stderr
 
-EXTRA_DIST = \
+EXTRA_DIST =
+
+if VGCONF_ARCHS_INCLUDE_TILEGX
+EXTRA_DIST += \
 	insn_test_move_X0.stdout.exp insn_test_move_X0.stderr.exp \
 	 insn_test_move_X0.vgtest \
 	insn_test_move_X1.stdout.exp insn_test_move_X1.stderr.exp \
@@ -1058,10 +1061,14 @@ EXTRA_DIST = \
 	 insn_test_xori_X0.vgtest \
 	insn_test_xori_X1.stdout.exp insn_test_xori_X1.stderr.exp \
 	 insn_test_xori_X1.vgtest
+endif
 
 bin_PROGRAMS  = gen_insn_test
 
-insn_tests = \
+insn_tests =
+
+if VGCONF_ARCHS_INCLUDE_TILEGX
+insn_tests += \
 	insn_test_move_X0  \
 	insn_test_move_X1  \
 	insn_test_move_Y0  \
@@ -1577,6 +1584,7 @@ insn_tests = \
 	insn_test_xor_Y1  \
 	insn_test_xori_X0  \
 	insn_test_xori_X1
+endif
 
 check_PROGRAMS = \
 	allexec \

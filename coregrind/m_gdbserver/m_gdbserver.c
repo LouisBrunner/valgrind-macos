@@ -542,7 +542,7 @@ static void clear_gdbserved_addresses(Bool clear_only_jumps)
    int i;
 
    dlog(1,
-        "clear_gdbserved_addresses: scanning hash table nodes %d\n", 
+        "clear_gdbserved_addresses: scanning hash table nodes %u\n", 
         VG_(HT_count_nodes) (gs_addresses));
    ag = (GS_Address**) VG_(HT_to_array) (gs_addresses, &n_elems);
    for (i = 0; i < n_elems; i++)

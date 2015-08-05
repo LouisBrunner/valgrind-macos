@@ -82,7 +82,7 @@ VgHashTable *VG_(HT_construct) ( const HChar* name )
    return table;
 }
 
-Int VG_(HT_count_nodes) ( const VgHashTable *table )
+UInt VG_(HT_count_nodes) ( const VgHashTable *table )
 {
    return table->n_elements;
 }

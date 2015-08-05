@@ -58,7 +58,7 @@ typedef struct _VgHashTable VgHashTable;
 extern VgHashTable *VG_(HT_construct) ( const HChar* name );
 
 /* Count the number of nodes in a table. */
-extern Int VG_(HT_count_nodes) ( const VgHashTable *table );
+extern UInt VG_(HT_count_nodes) ( const VgHashTable *table );
 
 /* Add a node to the table.  Duplicate keys are permitted. */
 extern void VG_(HT_add_node) ( VgHashTable *t, void* node );

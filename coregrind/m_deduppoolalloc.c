@@ -201,7 +201,7 @@ static Word cmp_pool_elt (const void* node1, const void* node2 )
 static void print_stats (DedupPoolAlloc *ddpa)
 {
    VG_(message)(Vg_DebugMsg,
-                "dedupPA:%s %ld allocs (%d uniq)"
+                "dedupPA:%s %ld allocs (%u uniq)"
                 " %ld pools (%ld bytes free in last pool)\n",
                 ddpa->cc,
                 (long int) ddpa->nr_alloc_calls,

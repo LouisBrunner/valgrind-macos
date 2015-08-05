@@ -5653,7 +5653,7 @@ static void hg_print_stats (void)
                HG_(stats__LockN_to_P_queries),
                HG_(stats__LockN_to_P_get_map_size)() );
 
-   VG_(printf)("client malloc-ed blocks: %'8d\n",
+   VG_(printf)("client malloc-ed blocks: %'8u\n",
                VG_(HT_count_nodes)(hg_mallocmeta_table));
                
    VG_(printf)("string table map: %'8llu queries (%llu map size)\n",

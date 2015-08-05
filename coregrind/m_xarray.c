@@ -278,6 +278,9 @@ Bool VG_(lookupXA) ( const XArray* xa, const void* key,
    return VG_(lookupXA_UNSAFE)(xa, key, first, last, xa->cmpFn);
 }
 
+/* FIXME: This function should return an unsigned value because the number
+   of elements cannot be negative. Unfortunately, making the change causes
+   a lot of ripple. */
 Word VG_(sizeXA) ( const XArray* xa )
 {
    vg_assert(xa);

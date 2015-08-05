@@ -101,7 +101,7 @@ void resize_bb_table(void)
     VG_(free)(bbs.table);
 
 
-    CLG_DEBUG(0, "Resize BB Hash: %d => %d (entries %d, conflicts %d/%d)\n",
+    CLG_DEBUG(0, "Resize BB Hash: %u => %d (entries %u, conflicts %d/%d)\n",
 	     bbs.size, new_size,
 	     bbs.entries, conflicts1, conflicts2);
 
@@ -157,7 +157,7 @@ static BB* new_bb(obj_node* obj, PtrdiffT offset,
 
 #if CLG_ENABLE_DEBUG
    CLG_DEBUGIF(3) {
-     VG_(printf)("  new_bb (instr %d, jmps %d, inv %s) [now %d]: ",
+     VG_(printf)("  new_bb (instr %u, jmps %u, inv %s) [now %d]: ",
 		 instr_count, cjmp_count,
 		 cjmp_inverted ? "yes":"no",
 		 CLG_(stat).distinct_bbs);
@@ -188,7 +188,7 @@ BB* lookup_bb(obj_node* obj, PtrdiffT offset)
     }
 
     CLG_DEBUG(5, "  lookup_bb (Obj %s, off %#lx): %p\n",
-	     obj->name, offset, bb);
+              obj->name, (UWord)offset, bb);
     return bb;
 }
 
@@ -260,12 +260,12 @@ BB* CLG_(get_bb)(Addr addr, IRSB* bbIn, /*OUT*/ Bool *seen_before)
 		   "ERROR: BB Retranslation Mismatch at BB %#lx\n", addr);
       VG_(message)(Vg_DebugMsg,
 		   "  new: Obj %s, Off %#lx, BBOff %#lx, Instrs %u\n",
-		   obj->name, obj->offset,
+		   obj->name, (UWord)obj->offset,
 		   addr - obj->offset, n_instrs);
       VG_(message)(Vg_DebugMsg,
 		   "  old: Obj %s, Off %#lx, BBOff %#lx, Instrs %u\n",
-		   bb->obj->name, bb->obj->offset,
-		   bb->offset, bb->instr_count);
+		   bb->obj->name, (UWord)bb->obj->offset,
+		   (UWord)bb->offset, bb->instr_count);
       CLG_ASSERT(bb->instr_count == n_instrs );
     }
     CLG_ASSERT(bb->cjmp_count == n_jmps );
@@ -306,7 +306,7 @@ void CLG_(delete_bb)(Addr addr)
 
     if (bb == NULL) {
 	CLG_DEBUG(3, "  delete_bb (Obj %s, off %#lx): NOT FOUND\n",
-		  obj->name, offset);
+		  obj->name, (UWord)offset);
 
 	/* we didn't find it.
 	 * this happens when callgrinds instrumentation mode
@@ -327,7 +327,7 @@ void CLG_(delete_bb)(Addr addr)
     }
 
     CLG_DEBUG(3, "  delete_bb (Obj %s, off %#lx): %p, BBCC head: %p\n",
-	      obj->name, offset, bb, bb->bbcc_list);
+	      obj->name, (UWord)offset, bb, bb->bbcc_list);
 
     if (bb->bbcc_list == 0) {
 	/* can be safely deleted */

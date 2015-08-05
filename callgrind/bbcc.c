@@ -86,8 +86,8 @@ void CLG_(zero_bbcc)(BBCC* bbcc)
   jCC* jcc;
 
   CLG_ASSERT(bbcc->cxt != 0);
-  CLG_DEBUG(1, "  zero_bbcc: BB %#lx, Cxt %d "
-	   "(fn '%s', rec %d)\n", 
+  CLG_DEBUG(1, "  zero_bbcc: BB %#lx, Cxt %u "
+	   "(fn '%s', rec %u)\n", 
 	   bb_addr(bbcc->bb),
 	   bbcc->cxt->base_number + bbcc->rec_index,
 	   bbcc->cxt->fn[0]->name,
@@ -178,7 +178,7 @@ BBCC* lookup_bbcc(BB* bb, Context* cxt)
        bbcc = bbcc->next;
    }
    
-   CLG_DEBUG(2,"  lookup_bbcc(BB %#lx, Cxt %d, fn '%s'): %p (tid %d)\n",
+   CLG_DEBUG(2,"  lookup_bbcc(BB %#lx, Cxt %u, fn '%s'): %p (tid %u)\n",
 	    bb_addr(bb), cxt->base_number, cxt->fn[0]->name, 
 	    bbcc, bbcc ? bbcc->tid : 0);
 
@@ -230,7 +230,7 @@ static void resize_bbcc_hash(void)
     VG_(free)(current_bbccs.table);
 
 
-    CLG_DEBUG(0,"Resize BBCC Hash: %d => %d (entries %d, conflicts %d/%d)\n",
+    CLG_DEBUG(0,"Resize BBCC Hash: %u => %d (entries %u, conflicts %d/%d)\n",
 	     current_bbccs.size, new_size,
 	     current_bbccs.entries, conflicts1, conflicts2);
 
@@ -332,7 +332,7 @@ void insert_bbcc_into_hash(BBCC* bbcc)
     bbcc->next = current_bbccs.table[idx];
     current_bbccs.table[idx] = bbcc;
 
-    CLG_DEBUG(3,"- insert_bbcc_into_hash: %d entries\n",
+    CLG_DEBUG(3,"- insert_bbcc_into_hash: %u entries\n",
 	     current_bbccs.entries);
 }
 
@@ -906,7 +906,7 @@ void CLG_(setup_bbcc)(BB* bb)
     VG_(printf)("\n");
   }
   
-  CLG_DEBUG(3,"- setup_bbcc (BB %#lx): Cost %p (Len %d), Instrs %d (Len %d)\n",
+  CLG_DEBUG(3,"- setup_bbcc (BB %#lx): Cost %p (Len %u), Instrs %u (Len %u)\n",
 	   bb_addr(bb), bbcc->cost, bb->cost_count, 
 	   bb->instr_count, bb->instr_len);
   CLG_DEBUGIF(3)

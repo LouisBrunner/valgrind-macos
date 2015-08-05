@@ -120,7 +120,7 @@ static void resize_cxt_table(void)
     VG_(free)(cxts.table);
 
 
-    CLG_DEBUG(0, "Resize Context Hash: %d => %d (entries %d, conflicts %d/%d)\n",
+    CLG_DEBUG(0, "Resize Context Hash: %u => %u (entries %u, conflicts %u/%u)\n",
              cxts.size, new_size,
              cxts.entries, conflicts1, conflicts2);
 
@@ -236,7 +236,7 @@ Context* CLG_(get_cxt)(fn_node** fn)
     size = (*fn)->separate_callers+1;
     if (size<=0) { size = -size+1; }
 
-    CLG_DEBUG(5, "+ get_cxt(fn '%s'): size %d\n",
+    CLG_DEBUG(5, "+ get_cxt(fn '%s'): size %u\n",
                 (*fn)->name, size);
 
     hash = cxt_hash_val(fn, size);
@@ -279,7 +279,7 @@ void CLG_(push_cxt)(fn_node* fn)
   CLG_DEBUG(5, "+ push_cxt(fn '%s'): old ctx %d\n", 
 	    fn ? fn->name : "0x0",
 	    CLG_(current_state).cxt ?
-	    CLG_(current_state).cxt->base_number : -1);
+	    (Int)CLG_(current_state).cxt->base_number : -1);
 
   /* save old context on stack (even if not changed at all!) */
   CLG_ASSERT(cs->sp < cs->size);
@@ -294,7 +294,7 @@ void CLG_(push_cxt)(fn_node* fn)
   /* resizing needed ? */
   fn_entries = CLG_(current_fn_stack).top - CLG_(current_fn_stack).bottom;
   if (fn_entries == CLG_(current_fn_stack).size-1) {
-    int new_size = CLG_(current_fn_stack).size *2;
+    UInt new_size = CLG_(current_fn_stack).size *2;
     fn_node** new_array = (fn_node**) CLG_MALLOC("cl.context.pc.1",
 						 new_size * sizeof(fn_node*));
     int i;
@@ -304,7 +304,7 @@ void CLG_(push_cxt)(fn_node* fn)
     CLG_(current_fn_stack).top = new_array + fn_entries;
     CLG_(current_fn_stack).bottom = new_array;
 
-    CLG_DEBUG(0, "Resize Context Stack: %d => %d (pushing '%s')\n", 
+    CLG_DEBUG(0, "Resize Context Stack: %u => %u (pushing '%s')\n", 
 	     CLG_(current_fn_stack).size, new_size,
 	     fn ? fn->name : "0x0");
 
@@ -326,7 +326,7 @@ void CLG_(push_cxt)(fn_node* fn)
   CLG_DEBUG(5, "- push_cxt(fn '%s'): new cxt %d, fn_sp %ld\n",
 	    fn ? fn->name : "0x0",
 	    CLG_(current_state).cxt ?
-	      CLG_(current_state).cxt->base_number : -1,
+	    (Int)CLG_(current_state).cxt->base_number : -1,
 	    CLG_(current_fn_stack).top - CLG_(current_fn_stack).bottom + 0L);
 }
 			       

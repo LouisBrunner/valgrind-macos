@@ -140,7 +140,7 @@ void log_cond_branch(InstrInfo* ii, Word taken)
     Int fullOffset_Bc;
     ULong* cost_Bc;
 
-    CLG_DEBUG(6, "log_cond_branch:  Ir %#lx, taken %lu\n",
+    CLG_DEBUG(6, "log_cond_branch:  Ir %#lx, taken %ld\n",
               CLG_(bb_base) + ii->instr_offset, taken);
 
     miss = 1 & do_cond_branch_predict(CLG_(bb_base) + ii->instr_offset, taken);
@@ -331,23 +331,23 @@ static void showEvent ( Event* ev )
 {
    switch (ev->tag) {
       case Ev_Ir:
-	 VG_(printf)("Ir (InstrInfo %p) at +%d\n",
+	 VG_(printf)("Ir (InstrInfo %p) at +%u\n",
 		     ev->inode, ev->inode->instr_offset);
 	 break;
       case Ev_Dr:
-	 VG_(printf)("Dr (InstrInfo %p) at +%d %d EA=",
+	 VG_(printf)("Dr (InstrInfo %p) at +%u %d EA=",
 		     ev->inode, ev->inode->instr_offset, ev->Ev.Dr.szB);
 	 ppIRExpr(ev->Ev.Dr.ea);
 	 VG_(printf)("\n");
 	 break;
       case Ev_Dw:
-	 VG_(printf)("Dw (InstrInfo %p) at +%d %d EA=",
+	 VG_(printf)("Dw (InstrInfo %p) at +%u %d EA=",
 		     ev->inode, ev->inode->instr_offset, ev->Ev.Dw.szB);
 	 ppIRExpr(ev->Ev.Dw.ea);
 	 VG_(printf)("\n");
 	 break;
       case Ev_Dm:
-	 VG_(printf)("Dm (InstrInfo %p) at +%d %d EA=",
+	 VG_(printf)("Dm (InstrInfo %p) at +%u %d EA=",
 		     ev->inode, ev->inode->instr_offset, ev->Ev.Dm.szB);
 	 ppIRExpr(ev->Ev.Dm.ea);
 	 VG_(printf)("\n");
@@ -1353,7 +1353,7 @@ IRSB* CLG_(instrument)( VgCallbackClosure* closure,
    if (cJumps>0) {
        CLG_DEBUG(3, "                     [ ");
        for (i=0;i<cJumps;i++)
-	   CLG_DEBUG(3, "%d ", clgs.bb->jmp[i].instr);
+	   CLG_DEBUG(3, "%u ", clgs.bb->jmp[i].instr);
        CLG_DEBUG(3, "], last inverted: %s \n",
 		 clgs.bb->cjmp_inverted ? "yes":"no");
    }
@@ -1823,7 +1823,7 @@ void clg_print_stats(void)
 		CLG_(stat).distinct_contexts);
    VG_(message)(Vg_DebugMsg, "Distinct BBs:     %d\n",
 		CLG_(stat).distinct_bbs);
-   VG_(message)(Vg_DebugMsg, "Cost entries:     %d (Chunks %d)\n",
+   VG_(message)(Vg_DebugMsg, "Cost entries:     %u (Chunks %u)\n",
 		CLG_(costarray_entries), CLG_(costarray_chunks));
    VG_(message)(Vg_DebugMsg, "Distinct BBCCs:   %d\n",
 		CLG_(stat).distinct_bbccs);

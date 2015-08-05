@@ -83,9 +83,9 @@ void CLG_(print_cxt)(Int s, Context* cxt, int rec_index)
     UInt *pactive = CLG_(get_fn_entry)(cxt->fn[0]->number);
     CLG_ASSERT(rec_index < cxt->fn[0]->separate_recursions);
     
-    VG_(printf)("Cxt %d" ,cxt->base_number + rec_index);
+    VG_(printf)("Cxt %u" ,cxt->base_number + rec_index);
     if (*pactive>0)
-      VG_(printf)(" [active=%d]", *pactive);
+      VG_(printf)(" [active=%u]", *pactive);
     VG_(printf)(": ");	
     print_mangled_cxt(cxt, rec_index);
     VG_(printf)("\n");
@@ -131,7 +131,7 @@ void CLG_(print_bbcc)(int s, BBCC* bbcc)
 
   VG_(printf)("%s +%#lx=%#lx, ",
 	      bb->obj->name + bb->obj->last_slash_pos,
-	      bb->offset, bb_addr(bb));
+	      (UWord)bb->offset, bb_addr(bb));
   CLG_(print_cxt)(s+8, bbcc->cxt, bbcc->rec_index);
 }
 
@@ -151,7 +151,7 @@ void CLG_(print_eventset)(int s, EventSet* es)
 	return;
     }
 
-    VG_(printf)("EventSet %d (%d groups, size %d):",
+    VG_(printf)("EventSet %u (%d groups, size %d):",
 		es->mask, es->count, es->size);
 
     if (es->count == 0) {
@@ -188,7 +188,7 @@ void CLG_(print_cost)(int s, EventSet* es, ULong* c)
       return;
     }
     if (!c) {
-      VG_(printf)("Cost (Null, EventSet %d)\n", es->mask);
+      VG_(printf)("Cost (Null, EventSet %u)\n", es->mask);
       return;
     }
 
@@ -297,11 +297,11 @@ void CLG_(print_bbcc_fn)(BBCC* bbcc)
     obj_node* obj;
 
     if (!bbcc) {
-	VG_(printf)("%08x", 0);
+	VG_(printf)("%08x", 0u);
 	return;
     }
 
-    VG_(printf)("%08lx/%c  %d:", bb_addr(bbcc->bb), 
+    VG_(printf)("%08lx/%c  %u:", bb_addr(bbcc->bb), 
 		(bbcc->bb->sect_kind == Vg_SectText) ? 'T' :
 		(bbcc->bb->sect_kind == Vg_SectData) ? 'D' :
 		(bbcc->bb->sect_kind == Vg_SectBSS) ? 'B' :
@@ -317,7 +317,7 @@ void CLG_(print_bbcc_fn)(BBCC* bbcc)
     if (VG_(strcmp)(bbcc->cxt->fn[0]->file->name, "???") !=0) {
 	VG_(printf)(" %s", bbcc->cxt->fn[0]->file->name);
 	if ((bbcc->cxt->fn[0] == bbcc->bb->fn) && (bbcc->bb->line>0))
-	    VG_(printf)(":%d", bbcc->bb->line);
+	    VG_(printf)(":%u", bbcc->bb->line);
     }
 }	
 
@@ -347,7 +347,7 @@ void CLG_(print_bbcc_cost)(int s, BBCC* bbcc)
   print_indent(s+2);
   VG_(printf)("ECounter: sum %llu ", ecounter);
   for(i=0; i<bb->cjmp_count; i++) {
-      VG_(printf)("[%d]=%llu ",
+      VG_(printf)("[%u]=%llu ",
 		  bb->jmp[i].instr, bbcc->jmp[i].ecounter);
   }
   VG_(printf)("\n");
@@ -356,7 +356,7 @@ void CLG_(print_bbcc_cost)(int s, BBCC* bbcc)
   for(i=0; i<bb->instr_count; i++) {
       InstrInfo* ii = &(bb->instr[i]);
       print_indent(s+2);
-      VG_(printf)("[%2d] IOff %2d ecnt %3llu ",
+      VG_(printf)("[%2d] IOff %2u ecnt %3llu ",
 		  i, ii->instr_offset, ecounter);
       CLG_(print_cost)(s+5, ii->eventset, bbcc->cost + ii->cost_offset);
 
@@ -430,7 +430,7 @@ void CLG_(print_context)(void)
 {
   BBCC* bbcc;
 
-  CLG_DEBUG(0,"In tid %d [%d] ",
+  CLG_DEBUG(0,"In tid %u [%d] ",
 	   CLG_(current_tid),  CLG_(current_call_stack).sp);
   bbcc =  CLG_(current_state).bbcc;
   print_mangled_cxt(CLG_(current_state).cxt,

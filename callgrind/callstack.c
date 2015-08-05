@@ -107,7 +107,7 @@ void ensure_stack_size(Int i)
   CLG_(stat).call_stack_resizes++;
  
   CLG_DEBUGIF(2)
-    VG_(printf)("        call stack enlarged to %d entries\n",
+    VG_(printf)("        call stack enlarged to %u entries\n",
 		CLG_(current_call_stack).size);
 }
 
@@ -280,7 +280,7 @@ void CLG_(push_call_stack)(BBCC* from, UInt jmp, BBCC* to, Addr sp, Bool skip)
 				  ".   .   .   .   .   .   .   .   .   .   " };
 
 	    int s = CLG_(current_call_stack).sp;
-	    Int* pars = (Int*) sp;
+	    UInt* pars = (UInt*) sp;
 
 	    BB* bb = jcc->to->bb;
 	    if (s>40) s=40;
@@ -288,7 +288,7 @@ void CLG_(push_call_stack)(BBCC* from, UInt jmp, BBCC* to, Addr sp, Bool skip)
                         pars ? pars[1]:0,
 			pars ? pars[2]:0,
 			bb->obj->name + bb->obj->last_slash_pos,
-			bb->offset);
+			(UWord)bb->offset);
 	  }
 	}
 	else if (CLG_(clo).verbose<4) {

@@ -129,9 +129,9 @@ static void print_obj(VgFile *fp, const HChar* prefix, obj_node* obj)
     if (CLG_(clo).compress_strings) {
 	CLG_ASSERT(obj_dumped != 0);
 	if (obj_dumped[obj->number])
-            VG_(fprintf)(fp, "%s(%d)\n", prefix, obj->number);
+            VG_(fprintf)(fp, "%s(%u)\n", prefix, obj->number);
 	else {
-            VG_(fprintf)(fp, "%s(%d) %s\n", prefix, obj->number, obj->name);
+            VG_(fprintf)(fp, "%s(%u) %s\n", prefix, obj->number, obj->name);
 	}
     }
     else
@@ -155,9 +155,9 @@ static void print_file(VgFile *fp, const char *prefix, const file_node* file)
     if (CLG_(clo).compress_strings) {
 	CLG_ASSERT(file_dumped != 0);
 	if (file_dumped[file->number])
-            VG_(fprintf)(fp, "%s(%d)\n", prefix, file->number);
+            VG_(fprintf)(fp, "%s(%u)\n", prefix, file->number);
 	else {
-            VG_(fprintf)(fp, "%s(%d) %s\n", prefix, file->number, file->name);
+            VG_(fprintf)(fp, "%s(%u) %s\n", prefix, file->number, file->name);
 	    file_dumped[file->number] = True;
 	}
     }
@@ -174,9 +174,9 @@ static void print_fn(VgFile *fp, const HChar* tag, const fn_node* fn)
     if (CLG_(clo).compress_strings) {
 	CLG_ASSERT(fn_dumped != 0);
 	if (fn_dumped[fn->number])
-	    VG_(fprintf)(fp, "(%d)\n", fn->number);
+	    VG_(fprintf)(fp, "(%u)\n", fn->number);
 	else {
-	    VG_(fprintf)(fp, "(%d) %s\n", fn->number, fn->name);
+	    VG_(fprintf)(fp, "(%u) %s\n", fn->number, fn->name);
 	    fn_dumped[fn->number] = True;
 	}
     }
@@ -196,7 +196,7 @@ static void print_mangled_fn(VgFile *fp, const HChar* tag,
 
 	CLG_ASSERT(cxt_dumped != 0);
 	if (cxt_dumped[cxt->base_number+rec_index]) {
-            VG_(fprintf)(fp, "%s=(%d)\n",
+            VG_(fprintf)(fp, "%s=(%u)\n",
 			     tag, cxt->base_number + rec_index);
 	    return;
 	}
@@ -216,13 +216,13 @@ static void print_mangled_fn(VgFile *fp, const HChar* tag,
 	/* If the last context was the context to print, we are finished */
 	if ((last == cxt) && (rec_index == 0)) return;
 
-	VG_(fprintf)(fp, "%s=(%d) (%d)", tag,
+	VG_(fprintf)(fp, "%s=(%u) (%u)", tag,
 			 cxt->base_number + rec_index,
 			 cxt->fn[0]->pure_cxt->base_number);
 	if (rec_index >0)
 	    VG_(fprintf)(fp, "'%d", rec_index +1);
 	for(i=1;i<cxt->size;i++)
-	    VG_(fprintf)(fp, "'(%d)", 
+	    VG_(fprintf)(fp, "'(%u)", 
 			      cxt->fn[i]->pure_cxt->base_number);
 	VG_(fprintf)(fp, "\n");
 
@@ -235,11 +235,11 @@ static void print_mangled_fn(VgFile *fp, const HChar* tag,
     if (CLG_(clo).compress_strings) {
 	CLG_ASSERT(cxt_dumped != 0);
 	if (cxt_dumped[cxt->base_number+rec_index]) {
-	    VG_(fprintf)(fp, "(%d)\n", cxt->base_number + rec_index);
+	    VG_(fprintf)(fp, "(%u)\n", cxt->base_number + rec_index);
 	    return;
 	}
 	else {
-	    VG_(fprintf)(fp, "(%d) ", cxt->base_number + rec_index);
+	    VG_(fprintf)(fp, "(%u) ", cxt->base_number + rec_index);
 	    cxt_dumped[cxt->base_number+rec_index] = True;
 	}
     }
@@ -273,7 +273,7 @@ static Bool print_fn_pos(VgFile *fp, FnPos* last, BBCC* bbcc)
 
     if (!CLG_(clo).mangle_names) {
 	if (last->rec_index != bbcc->rec_index) {
-	    VG_(fprintf)(fp, "rec=%d\n\n", bbcc->rec_index);
+	    VG_(fprintf)(fp, "rec=%u\n\n", bbcc->rec_index);
 	    last->rec_index = bbcc->rec_index;
 	    last->cxt = 0; /* reprint context */
 	    res = True;
@@ -436,7 +436,7 @@ static void fprint_apos(VgFile *fp, AddrPos* curr, AddrPos* last,
                         file_node* func_file)
 {
     CLG_ASSERT(curr->file != 0);
-    CLG_DEBUG(2, "    print_apos(file '%s', line %d, bb %#lx, addr %#lx) fnFile '%s'\n",
+    CLG_DEBUG(2, "    print_apos(file '%s', line %u, bb %#lx, addr %#lx) fnFile '%s'\n",
 	     curr->file->name, curr->line, curr->bb_addr, curr->addr,
 	     func_file->name);
 
@@ -451,7 +451,7 @@ static void fprint_apos(VgFile *fp, AddrPos* curr, AddrPos* last,
 
     if (CLG_(clo).dump_bbs) {
 	if (curr->line != last->line) {
-	    VG_(fprintf)(fp, "ln=%d\n", curr->line);
+	    VG_(fprintf)(fp, "ln=%u\n", curr->line);
 	}
     }
 }
@@ -541,7 +541,7 @@ void fprint_cost(VgFile *fp, const EventMapping* es, const ULong* cost)
 static void fprint_fcost(VgFile *fp, AddrCost* c, AddrPos* last)
 {
   CLG_DEBUGIF(3) {
-    CLG_DEBUG(2, "   print_fcost(file '%s', line %d, bb %#lx, addr %#lx):\n",
+    CLG_DEBUG(2, "   print_fcost(file '%s', line %u, bb %#lx, addr %#lx):\n",
 	     c->p.file->name, c->p.line, c->p.bb_addr, c->p.addr);
     CLG_(print_cost)(-5, CLG_(sets).full, c->cost);
   }
@@ -566,7 +566,7 @@ static void fprint_jcc(VgFile *fp, jCC* jcc, AddrPos* curr, AddrPos* last,
     obj_node*  obj;
 
     CLG_DEBUGIF(2) {
-      CLG_DEBUG(2, "   fprint_jcc (jkind %d)\n", jcc->jmpkind);
+      CLG_DEBUG(2, "   fprint_jcc (jkind %d)\n", (Int)jcc->jmpkind);
       CLG_(print_jcc)(-10, jcc);
     }
 
@@ -689,7 +689,7 @@ static Bool fprint_bbcc(VgFile *fp, BBCC* bbcc, AddrPos* last)
 
   CLG_ASSERT(bbcc->cxt != 0);
   CLG_DEBUGIF(1) {
-    VG_(printf)("+ fprint_bbcc (Instr %d): ", bb->instr_count);
+    VG_(printf)("+ fprint_bbcc (Instr %u): ", bb->instr_count);
     CLG_(print_bbcc)(15, bbcc);
   }
 
@@ -1049,7 +1049,7 @@ static void cs_addCount(thread_info* ti)
 			   e->enter_cost, CLG_(current_state).cost);
     bbcc = e->jcc->from;
 
-    CLG_DEBUG(1, " [%2d] (tid %d), added active: %s\n",
+    CLG_DEBUG(1, " [%2d] (tid %u), added active: %s\n",
 	     i,CLG_(current_tid),bbcc->cxt->fn[0]->name);
     
     if (bbcc->ecounter_sum>0 || bbcc->ret_counter>0) {
@@ -1372,11 +1372,11 @@ static void print_bbccs_of_thread(thread_info* ti)
   FnPos lastFnPos;
   AddrPos lastAPos;
 
-  CLG_DEBUG(1, "+ print_bbccs(tid %d)\n", CLG_(current_tid));
+  CLG_DEBUG(1, "+ print_bbccs(tid %u)\n", CLG_(current_tid));
 
   VgFile *print_fp = new_dumpfile(CLG_(current_tid), print_trigger);
   if (print_fp == NULL) {
-    CLG_DEBUG(1, "- print_bbccs(tid %d): No output...\n", CLG_(current_tid));
+    CLG_DEBUG(1, "- print_bbccs(tid %u): No output...\n", CLG_(current_tid));
     return;
   }
 
@@ -1419,14 +1419,14 @@ static void print_bbccs_of_thread(thread_info* ti)
 	/* FIXME: Specify Object of BB if different to object of fn */
         int i;
 	ULong ecounter = (*p)->ecounter_sum;
-        VG_(fprintf)(print_fp, "bb=%#lx ", (*p)->bb->offset);
+        VG_(fprintf)(print_fp, "bb=%#lx ", (UWord)(*p)->bb->offset);
 	for(i = 0; i<(*p)->bb->cjmp_count;i++) {
-	    VG_(fprintf)(print_fp, "%d %llu ", 
+	    VG_(fprintf)(print_fp, "%u %llu ", 
 				(*p)->bb->jmp[i].instr,
 				ecounter);
 	    ecounter -= (*p)->jmp[i].ecounter;
 	}
-	VG_(fprintf)(print_fp, "%d %llu\n", 
+	VG_(fprintf)(print_fp, "%u %llu\n", 
 		     (*p)->bb->instr_count,
 		     ecounter);
     }
@@ -1443,7 +1443,7 @@ static void print_bbccs_of_thread(thread_info* ti)
   CLG_(copy_cost)( CLG_(sets).full, ti->lastdump_cost,
 		  CLG_(current_state).cost );
 
-  CLG_DEBUG(1, "- print_bbccs(tid %d)\n", CLG_(current_tid));
+  CLG_DEBUG(1, "- print_bbccs(tid %u)\n", CLG_(current_tid));
 }
 
 

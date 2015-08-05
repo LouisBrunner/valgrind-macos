@@ -131,7 +131,7 @@ void CLG_(switch_thread)(ThreadId tid)
 {
   if (tid == CLG_(current_tid)) return;
 
-  CLG_DEBUG(0, ">> thread %d (was %d)\n", tid, CLG_(current_tid));
+  CLG_DEBUG(0, ">> thread %u (was %u)\n", tid, CLG_(current_tid));
 
   if (CLG_(current_tid) != VG_INVALID_THREADID) {    
     /* save thread state */
@@ -200,7 +200,7 @@ void CLG_(pre_signal)(ThreadId tid, Int sigNum, Bool alt_stack)
 {
     exec_state *es;
 
-    CLG_DEBUG(0, ">> pre_signal(TID %d, sig %d, alt_st %s)\n",
+    CLG_DEBUG(0, ">> pre_signal(TID %u, sig %d, alt_st %s)\n",
 	     tid, sigNum, alt_stack ? "yes":"no");
 
     /* switch to the thread the handler runs in */
@@ -241,7 +241,7 @@ void CLG_(post_signal)(ThreadId tid, Int sigNum)
     exec_state* es;
     UInt fn_number, *pactive;
 
-    CLG_DEBUG(0, ">> post_signal(TID %d, sig %d)\n",
+    CLG_DEBUG(0, ">> post_signal(TID %u, sig %d)\n",
 	     tid, sigNum);
 
     /* thread switching potentially needed, eg. with instrumentation off */
@@ -261,7 +261,7 @@ void CLG_(post_signal)(ThreadId tid, Int sigNum)
       fn_number = CLG_(current_state).cxt->fn[0]->number;
       pactive = CLG_(get_fn_entry)(fn_number);
       (*pactive)--;
-      CLG_DEBUG(0, "  set active count of %s back to %d\n",
+      CLG_DEBUG(0, "  set active count of %s back to %u\n",
 	       CLG_(current_state).cxt->fn[0]->name, *pactive);
     }
 

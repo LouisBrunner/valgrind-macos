@@ -478,7 +478,7 @@ Addr setup_client_stack( void*  init_sp,
       auxsize +                               /* auxv */
       VG_ROUNDUP(stringsize, sizeof(Word));   /* strings (aligned) */
 
-   if (0) VG_(printf)("stacksize = %d\n", stacksize);
+   if (0) VG_(printf)("stacksize = %u\n", stacksize);
 
    /* client_SP is the client's stack pointer */
    client_SP = clstack_end - stacksize;
@@ -494,10 +494,10 @@ Addr setup_client_stack( void*  init_sp,
    clstack_max_size = VG_PGROUNDUP(clstack_max_size);
 
    if (0)
-      VG_(printf)("stringsize=%d auxsize=%d stacksize=%d maxsize=0x%x\n"
+      VG_(printf)("stringsize=%u auxsize=%u stacksize=%u maxsize=0x%lx\n"
                   "clstack_start %p\n"
                   "clstack_end   %p\n",
-	          stringsize, auxsize, stacksize, (Int)clstack_max_size,
+                  stringsize, auxsize, stacksize, clstack_max_size,
                   (void*)clstack_start, (void*)clstack_end);
 
    /* ==================== allocate space ==================== */
@@ -815,7 +815,7 @@ Addr setup_client_stack( void*  init_sp,
          default:
             /* stomp out anything we don't know about */
             VG_(debugLog)(2, "initimg",
-                             "stomping auxv entry %lld\n", 
+                             "stomping auxv entry %llu\n", 
                              (ULong)auxv->a_type);
             auxv->a_type = AT_IGNORE;
             break;
@@ -960,7 +960,7 @@ IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo iicii,
       if (szB < m1) szB = m1;
       szB = VG_PGROUNDUP(szB);
       VG_(debugLog)(1, "initimg",
-                       "Setup client stack: size will be %ld\n", szB);
+                       "Setup client stack: size will be %lu\n", szB);
 
       iifii.clstack_max_size = szB;
 
@@ -980,9 +980,9 @@ IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo iicii,
                        (void*)VG_(brk_base) );
       VG_(debugLog)(2, "initimg",
                        "Client info: "
-                       "initial_SP=%p max_stack_size=%ld\n",
+                       "initial_SP=%p max_stack_size=%lu\n",
                        (void*)(iifii.initial_client_SP),
-                       (SizeT)iifii.clstack_max_size );
+                       iifii.clstack_max_size );
    }
 
    //--------------------------------------------------------------

@@ -1572,9 +1572,10 @@ Bool VG_(translate) ( ThreadId tid,
       Bool ok = VG_(get_fnname_w_offset)(addr, &fnname);
       if (!ok) fnname = "UNKNOWN_FUNCTION";
       VG_(printf)(
-         "==== SB %d (evchecks %lld) [tid %d] 0x%lx %s %s+0x%llx\n",
-         VG_(get_bbs_translated)(), bbs_done, (Int)tid, addr,
-         fnname, objname, (ULong)objoff
+         "==== SB %u (evchecks %llu) [tid %u] 0x%lx %s %s%c0x%lx\n",
+         VG_(get_bbs_translated)(), bbs_done, tid, addr,
+         fnname, objname, objoff >= 0 ? '+' : '-', 
+         (UWord)(objoff >= 0 ? objoff : -objoff)
       );
    }
 

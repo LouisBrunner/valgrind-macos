@@ -362,7 +362,7 @@ static void show_sched_status_wrk ( Bool host_stacktrace,
    }
 
    VG_(printf)("\nsched status:\n"); 
-   VG_(printf)("  running_tid=%d\n", VG_(get_running_tid)());
+   VG_(printf)("  running_tid=%u\n", VG_(get_running_tid)());
    for (i = 1; i < VG_N_THREADS; i++) {
       VgStack* stack 
          = (VgStack*)VG_(threads)[i].os_state.valgrind_stack_base;
@@ -389,7 +389,7 @@ static void show_sched_status_wrk ( Bool host_stacktrace,
             VG_(printf)("client stack range: ???????\n");
       }
       if (stack_usage && stack != 0)
-          VG_(printf)("valgrind stack top usage: %ld of %ld\n",
+          VG_(printf)("valgrind stack top usage: %lu of %lu\n",
                       VG_(clo_valgrind_stacksize)
                         - VG_(am_get_VgStack_unused_szB)
                                (stack, VG_(clo_valgrind_stacksize)),

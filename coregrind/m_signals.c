@@ -1145,7 +1145,7 @@ SysRes VG_(do_sys_sigaltstack) ( ThreadId tid, vki_stack_t* ss, vki_stack_t* oss
    m_SP  = VG_(get_SP)(tid);
 
    if (VG_(clo_trace_signals))
-      VG_(dmsg)("sys_sigaltstack: tid %d, "
+      VG_(dmsg)("sys_sigaltstack: tid %u, "
                 "ss %p{%p,sz=%llu,flags=0x%llx}, oss %p (current SP %p)\n",
                 tid, (void*)ss, 
                 ss ? ss->ss_sp : 0,
@@ -1339,7 +1339,7 @@ void do_setmask ( ThreadId tid,
 		  vki_sigset_t* oldset )
 {
    if (VG_(clo_trace_signals))
-      VG_(dmsg)("do_setmask: tid = %d how = %d (%s), newset = %p (%s)\n", 
+      VG_(dmsg)("do_setmask: tid = %u how = %d (%s), newset = %p (%s)\n", 
                 tid, how,
                 how==VKI_SIG_BLOCK ? "SIG_BLOCK" : (
                    how==VKI_SIG_UNBLOCK ? "SIG_UNBLOCK" : (
@@ -1440,7 +1440,7 @@ void push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo,
    tst = & VG_(threads)[tid];
 
    if (VG_(clo_trace_signals)) {
-      VG_(dmsg)("push_signal_frame (thread %d): signal %d\n", tid, sigNo);
+      VG_(dmsg)("push_signal_frame (thread %u): signal %d\n", tid, sigNo);
       VG_(get_and_pp_StackTrace)(tid, 10);
    }
 
@@ -1455,7 +1455,7 @@ void push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo,
       esp_top_of_frame 
          = (Addr)(tst->altstack.ss_sp) + tst->altstack.ss_size;
       if (VG_(clo_trace_signals))
-         VG_(dmsg)("delivering signal %d (%s) to thread %d: "
+         VG_(dmsg)("delivering signal %d (%s) to thread %u: "
                    "on ALT STACK (%p-%p; %ld bytes)\n",
                    sigNo, VG_(signame)(sigNo), tid, tst->altstack.ss_sp,
                    (UChar *)tst->altstack.ss_sp + tst->altstack.ss_size,
@@ -1935,7 +1935,7 @@ static void deliver_signal ( ThreadId tid, const vki_siginfo_t *info,
    ThreadState		*tst = VG_(get_ThreadState)(tid);
 
    if (VG_(clo_trace_signals))
-      VG_(dmsg)("delivering signal %d (%s):%d to thread %d\n", 
+      VG_(dmsg)("delivering signal %d (%s):%d to thread %u\n", 
                 sigNo, VG_(signame)(sigNo), info->si_code, tid );
 
    if (sigNo == VG_SIGVGKILL) {
@@ -2195,7 +2195,7 @@ void queue_signal(ThreadId tid, const vki_siginfo_t *si)
    sq = tst->sig_queue;
 
    if (VG_(clo_trace_signals))
-      VG_(dmsg)("Queueing signal %d (idx %d) to thread %d\n",
+      VG_(dmsg)("Queueing signal %d (idx %d) to thread %u\n",
                 si->si_signo, sq->next, tid);
 
    /* Add signal to the queue.  If the queue gets overrun, then old
@@ -2205,7 +2205,7 @@ void queue_signal(ThreadId tid, const vki_siginfo_t *si)
       least a non-siginfo signal gets deliviered.
    */
    if (sq->sigs[sq->next].si_signo != 0)
-      VG_(umsg)("Signal %d being dropped from thread %d's queue\n",
+      VG_(umsg)("Signal %d being dropped from thread %u's queue\n",
                 sq->sigs[sq->next].si_signo, tid);
 
    sq->sigs[sq->next] = *si;
@@ -2243,7 +2243,7 @@ static vki_siginfo_t *next_queued(ThreadId tid, const vki_sigset_t *set)
       if (sq->sigs[idx].si_signo != 0 
           && VG_(sigismember)(set, sq->sigs[idx].si_signo)) {
 	 if (VG_(clo_trace_signals))
-            VG_(dmsg)("Returning queued signal %d (idx %d) for thread %d\n",
+            VG_(dmsg)("Returning queued signal %d (idx %d) for thread %u\n",
                       sq->sigs[idx].si_signo, idx, tid);
 	 ret = &sq->sigs[idx];
 	 goto out;
@@ -2404,7 +2404,7 @@ void async_signalhandler ( Int sigNo,
    info->si_code = sanitize_si_code(info->si_code);
 
    if (VG_(clo_trace_signals))
-      VG_(dmsg)("async signal handler: signal=%d, tid=%d, si_code=%d\n",
+      VG_(dmsg)("async signal handler: signal=%d, tid=%u, si_code=%d\n",
                 sigNo, tid, info->si_code);
 
    /* Update thread state properly.  The signal can only have been
@@ -2513,17 +2513,17 @@ Bool VG_(extend_stack)(ThreadId tid, Addr addr)
    udelta = VG_PGROUNDUP(seg_next->start - addr);
 
    VG_(debugLog)(1, "signals", 
-                    "extending a stack base 0x%llx down by %lld\n",
-                    (ULong)seg_next->start, (ULong)udelta);
+                    "extending a stack base 0x%lx down by %lu\n",
+                    seg_next->start, udelta);
    Bool overflow;
    if (! VG_(am_extend_into_adjacent_reservation_client)
        ( seg_next->start, -(SSizeT)udelta, &overflow )) {
       Addr new_stack_base = seg_next->start - udelta;
       if (overflow)
-         VG_(umsg)("Stack overflow in thread #%d: can't grow stack to %#lx\n",
+         VG_(umsg)("Stack overflow in thread #%u: can't grow stack to %#lx\n",
                    tid, new_stack_base);
       else
-         VG_(umsg)("Cannot map memory to grow the stack for thread #%d "
+         VG_(umsg)("Cannot map memory to grow the stack for thread #%u "
                    "to %#lx\n", tid, new_stack_base);
       return False;
    }
@@ -2664,11 +2664,11 @@ static Bool extend_stack_if_appropriate(ThreadId tid, vki_siginfo_t* info)
 
    if (VG_(clo_trace_signals)) {
       if (seg == NULL)
-         VG_(dmsg)("SIGSEGV: si_code=%d faultaddr=%#lx tid=%d ESP=%#lx "
+         VG_(dmsg)("SIGSEGV: si_code=%d faultaddr=%#lx tid=%u ESP=%#lx "
                    "seg=NULL\n",
                    info->si_code, fault, tid, esp);
       else
-         VG_(dmsg)("SIGSEGV: si_code=%d faultaddr=%#lx tid=%d ESP=%#lx "
+         VG_(dmsg)("SIGSEGV: si_code=%d faultaddr=%#lx tid=%u ESP=%#lx "
                    "seg=%#lx-%#lx\n",
                    info->si_code, fault, tid, esp, seg->start, seg->end);
    }
@@ -2752,7 +2752,7 @@ void sync_signalhandler_from_kernel ( ThreadId tid,
                 "a signal %d (%s) - exiting\n",
                 sigNo, VG_(signame)(sigNo));
 
-      VG_(dmsg)("si_code=%x;  Faulting address: %p;  sp: %#lx\n",
+      VG_(dmsg)("si_code=%d;  Faulting address: %p;  sp: %#lx\n",
                 info->si_code, info->VKI_SIGINFO_si_addr,
                 VG_UCONTEXT_STACK_PTR(uc));
 
@@ -2846,7 +2846,7 @@ static void sigvgkill_handler(int signo, vki_siginfo_t *si,
    ThreadStatus at_signal = VG_(threads)[tid].status;
 
    if (VG_(clo_trace_signals))
-      VG_(dmsg)("sigvgkill for lwp %d tid %d\n", VG_(gettid)(), tid);
+      VG_(dmsg)("sigvgkill for lwp %d tid %u\n", VG_(gettid)(), tid);
 
    VG_(acquire_BigLock)(tid, "sigvgkill_handler");
 
@@ -2936,7 +2936,7 @@ void VG_(poll_signals)(ThreadId tid)
    /* If there was nothing queued, ask the kernel for a pending signal */
    if (sip == NULL && VG_(sigtimedwait_zero)(&pollset, &si) > 0) {
       if (VG_(clo_trace_signals))
-         VG_(dmsg)("poll_signals: got signal %d for thread %d\n",
+         VG_(dmsg)("poll_signals: got signal %d for thread %u\n",
                    si.si_signo, tid);
       sip = &si;
    }
@@ -2944,7 +2944,7 @@ void VG_(poll_signals)(ThreadId tid)
    if (sip != NULL) {
       /* OK, something to do; deliver it */
       if (VG_(clo_trace_signals))
-         VG_(dmsg)("Polling found signal %d for tid %d\n", sip->si_signo, tid);
+         VG_(dmsg)("Polling found signal %d for tid %u\n", sip->si_signo, tid);
       if (!is_sig_ign(sip, tid))
 	 deliver_signal(tid, sip, NULL);
       else if (VG_(clo_trace_signals))

@@ -225,7 +225,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
       fp_max -= sizeof(Addr);
 
    if (debug)
-      VG_(printf)("max_n_ips=%d fp_min=0x%08lx fp_max_orig=0x08%lx, "
+      VG_(printf)("max_n_ips=%u fp_min=0x%08lx fp_max_orig=0x08%lx, "
                   "fp_max=0x%08lx ip=0x%08lx fp=0x%08lx\n",
                   max_n_ips, fp_min, fp_max_orig, fp_max,
                   uregs.xip, uregs.xbp);
@@ -518,7 +518,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
       fp_max -= sizeof(Addr);
 
    if (debug)
-      VG_(printf)("max_n_ips=%d fp_min=0x%lx fp_max_orig=0x%lx, "
+      VG_(printf)("max_n_ips=%u fp_min=0x%lx fp_max_orig=0x%lx, "
                   "fp_max=0x%lx ip=0x%lx fp=0x%lx\n",
                   max_n_ips, fp_min, fp_max_orig, fp_max,
                   uregs.xip, uregs.xbp);
@@ -1705,9 +1705,9 @@ UInt VG_(get_StackTrace) ( ThreadId tid,
    startRegs.r_pc += (Long)(Word)first_ip_delta;
 
    if (0)
-      VG_(printf)("tid %d: stack_highest=0x%08lx ip=0x%010llx "
+      VG_(printf)("tid %u: stack_highest=0x%08lx ip=0x%010llx "
                   "sp=0x%010llx\n",
-		  tid, stack_highest_byte,
+                  tid, stack_highest_byte,
                   startRegs.r_pc, startRegs.r_sp);
 
    return VG_(get_StackTrace_wrk)(tid, ips, max_n_ips, 

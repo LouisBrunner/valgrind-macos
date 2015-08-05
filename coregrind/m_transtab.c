@@ -2373,8 +2373,8 @@ void VG_(init_tt_tc) ( void )
    if (VG_(clo_verbosity) > 2 || VG_(clo_stats)
        || VG_(debugLog_getLevel) () >= 2) {
       VG_(message)(Vg_DebugMsg,
-         "TT/TC: cache: %s--avg-transtab-entry-size=%d, " 
-         "%stool provided default %d\n",
+         "TT/TC: cache: %s--avg-transtab-entry-size=%u, "
+         "%stool provided default %u\n",
          VG_(clo_avg_transtab_entry_size) == 0 ? "ignoring " : "using ",
          VG_(clo_avg_transtab_entry_size),
          VG_(clo_avg_transtab_entry_size) == 0 ? "using " : "ignoring ",
@@ -2426,13 +2426,13 @@ void VG_(print_tt_tc_stats) ( void )
       n_fast_updates, n_fast_flushes );
 
    VG_(message)(Vg_DebugMsg,
-                " transtab: new        %'lld "
+                " transtab: new        %'llu "
                 "(%'llu -> %'llu; ratio %3.1f) [%'llu scs] "
-                "avg tce size %d\n",
+                "avg tce size %llu\n",
                 n_in_count, n_in_osize, n_in_tsize,
                 safe_idiv(n_in_tsize, n_in_osize),
                 n_in_sc_count,
-                (int) (n_in_tsize / (n_in_count ? n_in_count : 1)));
+                n_in_tsize / (n_in_count ? n_in_count : 1));
    VG_(message)(Vg_DebugMsg,
                 " transtab: dumped     %'llu (%'llu -> ?" "?) "
                 "(sectors recycled %'llu)\n",

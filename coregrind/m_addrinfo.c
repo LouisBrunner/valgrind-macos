@@ -420,22 +420,21 @@ static void pp_addrinfo_WRK ( Addr a, const AddrInfo* ai, Bool mc,
 
       case Addr_Unknown:
          if (maybe_gcc) {
-            VG_(emit)( "%sAddress 0x%llx is just below the stack ptr.  "
+            VG_(emit)( "%sAddress 0x%lx is just below the stack ptr.  "
                        "To suppress, use: --workaround-gcc296-bugs=yes%s\n",
-                       xpre, (ULong)a, xpost );
+                       xpre, a, xpost );
 	 } else {
-            VG_(emit)( "%sAddress 0x%llx "
+            VG_(emit)( "%sAddress 0x%lx "
                        "is not stack'd, malloc'd or %s%s\n",
-                       xpre, 
-                       (ULong)a, 
+                       xpre, a,
                        mc ? "(recently) free'd" : "on a free list",
                        xpost );
          }
          break;
 
       case Addr_Stack: 
-         VG_(emit)( "%sAddress 0x%llx is on thread %s%d's stack%s\n", 
-                    xpre, (ULong)a, 
+         VG_(emit)( "%sAddress 0x%lx is on thread %s%u's stack%s\n", 
+                    xpre, a, 
                     opt_tnr_prefix (ai->Addr.Stack.tinfo), 
                     tnr_else_tid (ai->Addr.Stack.tinfo), 
                     xpost );
@@ -459,7 +458,7 @@ static void pp_addrinfo_WRK ( Addr a, const AddrInfo* ai, Bool mc,
 
             HChar strlinenum[16] = "";   // large enough
             if (hasfile && haslinenum)
-               VG_(sprintf)(strlinenum, "%d", linenum);
+               VG_(sprintf)(strlinenum, "%u", linenum);
 
             hasfn = VG_(get_fnname)(ai->Addr.Stack.IP, &fn);
 
@@ -563,7 +562,7 @@ static void pp_addrinfo_WRK ( Addr a, const AddrInfo* ai, Bool mc,
          }
          if (ai->Addr.Block.alloc_tinfo.tnr || ai->Addr.Block.alloc_tinfo.tid)
             VG_(emit)(
-               "%sBlock was alloc'd by thread %s%d%s\n",
+               "%sBlock was alloc'd by thread %s%u%s\n",
                xpre,
                opt_tnr_prefix (ai->Addr.Block.alloc_tinfo),
                tnr_else_tid (ai->Addr.Block.alloc_tinfo),
@@ -573,10 +572,9 @@ static void pp_addrinfo_WRK ( Addr a, const AddrInfo* ai, Bool mc,
       }
 
       case Addr_DataSym:
-         VG_(emit)( "%sAddress 0x%llx is %llu bytes "
+         VG_(emit)( "%sAddress 0x%lx is %llu bytes "
                     "inside data symbol \"%pS\"%s\n",
-                    xpre,
-                    (ULong)a,
+                    xpre, a,
                     (ULong)ai->Addr.DataSym.offset,
                     ai->Addr.DataSym.name,
                     xpost );
@@ -597,9 +595,8 @@ static void pp_addrinfo_WRK ( Addr a, const AddrInfo* ai, Bool mc,
          break;
 
       case Addr_SectKind:
-         VG_(emit)( "%sAddress 0x%llx is in the %pS segment of %pS%s\n",
-                    xpre,
-                    (ULong)a,
+         VG_(emit)( "%sAddress 0x%lx is in the %pS segment of %pS%s\n",
+                    xpre, a,
                     VG_(pp_SectKind)(ai->Addr.SectKind.kind),
                     ai->Addr.SectKind.objname,
                     xpost );
@@ -612,29 +609,27 @@ static void pp_addrinfo_WRK ( Addr a, const AddrInfo* ai, Bool mc,
 
       case Addr_BrkSegment:
          if (a < ai->Addr.BrkSegment.brk_limit)
-            VG_(emit)( "%sAddress 0x%llx is in the brk data segment"
-                       " 0x%llx-0x%llx%s\n",
-                       xpre,
-                       (ULong)a,
-                       (ULong)VG_(brk_base),
-                       (ULong)ai->Addr.BrkSegment.brk_limit - 1,
+            VG_(emit)( "%sAddress 0x%lx is in the brk data segment"
+                       " 0x%lx-0x%lx%s\n",
+                       xpre, a,
+                       VG_(brk_base),
+                       ai->Addr.BrkSegment.brk_limit - 1,
                        xpost );
          else
-            VG_(emit)( "%sAddress 0x%llx is %lu bytes after "
+            VG_(emit)( "%sAddress 0x%lx is %lu bytes after "
                        "the brk data segment limit"
-                       " 0x%llx%s\n",
-                       xpre,
-                       (ULong)a,
+                       " 0x%lx%s\n",
+                       xpre, a,
                        a - ai->Addr.BrkSegment.brk_limit,
-                       (ULong)ai->Addr.BrkSegment.brk_limit,
+                       ai->Addr.BrkSegment.brk_limit,
                        xpost );
          break;
 
       case Addr_SegmentKind:
-         VG_(emit)( "%sAddress 0x%llx is in "
+         VG_(emit)( "%sAddress 0x%lx is in "
                     "a %s%s%s %s%s%pS segment%s\n",
                     xpre,
-                    (ULong)a,
+                    a,
                     ai->Addr.SegmentKind.hasR ? "r" : "-",
                     ai->Addr.SegmentKind.hasW ? "w" : "-",
                     ai->Addr.SegmentKind.hasX ? "x" : "-",

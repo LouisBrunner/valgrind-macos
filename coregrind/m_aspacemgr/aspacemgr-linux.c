@@ -442,10 +442,10 @@ static void show_nsegment_full ( Int logLevel, Int segNo, const NSegment* seg )
 
    VG_(debugLog)(
       logLevel, "aspacem",
-      "%3d: %s %010llx-%010llx %s %c%c%c%c%c %s "
-      "d=0x%03llx i=%-7lld o=%-7lld (%d,%d) %s\n",
+      "%3d: %s %010lx-%010lx %s %c%c%c%c%c %s "
+      "d=0x%03llx i=%-7llu o=%-7lld (%d,%d) %s\n",
       segNo, show_SegKind(seg->kind),
-      (ULong)seg->start, (ULong)seg->end, len_buf,
+      seg->start, seg->end, len_buf,
       seg->hasR ? 'r' : '-', seg->hasW ? 'w' : '-', 
       seg->hasX ? 'x' : '-', seg->hasT ? 'T' : '-',
       seg->isCH ? 'H' : '-',
@@ -469,18 +469,18 @@ static void show_nsegment ( Int logLevel, Int segNo, const NSegment* seg )
       case SkFree:
          VG_(debugLog)(
             logLevel, "aspacem",
-            "%3d: %s %010llx-%010llx %s\n",
+            "%3d: %s %010lx-%010lx %s\n",
             segNo, show_SegKind(seg->kind),
-            (ULong)seg->start, (ULong)seg->end, len_buf
+            seg->start, seg->end, len_buf
          );
          break;
 
       case SkAnonC: case SkAnonV: case SkShmC:
          VG_(debugLog)(
             logLevel, "aspacem",
-            "%3d: %s %010llx-%010llx %s %c%c%c%c%c\n",
+            "%3d: %s %010lx-%010lx %s %c%c%c%c%c\n",
             segNo, show_SegKind(seg->kind),
-            (ULong)seg->start, (ULong)seg->end, len_buf,
+            seg->start, seg->end, len_buf,
             seg->hasR ? 'r' : '-', seg->hasW ? 'w' : '-', 
             seg->hasX ? 'x' : '-', seg->hasT ? 'T' : '-',
             seg->isCH ? 'H' : '-'
@@ -490,10 +490,10 @@ static void show_nsegment ( Int logLevel, Int segNo, const NSegment* seg )
       case SkFileC: case SkFileV:
          VG_(debugLog)(
             logLevel, "aspacem",
-            "%3d: %s %010llx-%010llx %s %c%c%c%c%c d=0x%03llx "
-            "i=%-7lld o=%-7lld (%d,%d)\n",
+            "%3d: %s %010lx-%010lx %s %c%c%c%c%c d=0x%03llx "
+            "i=%-7llu o=%-7lld (%d,%d)\n",
             segNo, show_SegKind(seg->kind),
-            (ULong)seg->start, (ULong)seg->end, len_buf,
+            seg->start, seg->end, len_buf,
             seg->hasR ? 'r' : '-', seg->hasW ? 'w' : '-', 
             seg->hasX ? 'x' : '-', seg->hasT ? 'T' : '-', 
             seg->isCH ? 'H' : '-',
@@ -505,9 +505,9 @@ static void show_nsegment ( Int logLevel, Int segNo, const NSegment* seg )
       case SkResvn:
          VG_(debugLog)(
             logLevel, "aspacem",
-            "%3d: %s %010llx-%010llx %s %c%c%c%c%c %s\n",
+            "%3d: %s %010lx-%010lx %s %c%c%c%c%c %s\n",
             segNo, show_SegKind(seg->kind),
-            (ULong)seg->start, (ULong)seg->end, len_buf,
+            seg->start, seg->end, len_buf,
             seg->hasR ? 'r' : '-', seg->hasW ? 'w' : '-', 
             seg->hasX ? 'x' : '-', seg->hasT ? 'T' : '-', 
             seg->isCH ? 'H' : '-',
@@ -915,9 +915,9 @@ static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
               "segment mismatch: V's seg 1st, kernel's 2nd:\n");
          show_nsegment_full( 0, i, &nsegments[i] );
          VG_(debugLog)(0,"aspacem", 
-            "...: .... %010llx-%010llx %s %c%c%c.. ....... "
-            "d=0x%03llx i=%-7lld o=%-7lld (.) m=. %s\n",
-            (ULong)start, (ULong)end, len_buf,
+            "...: .... %010lx-%010lx %s %c%c%c.. ....... "
+            "d=0x%03llx i=%-7llu o=%-7lld (.) m=. %s\n",
+            start, end, len_buf,
             prot & VKI_PROT_READ  ? 'r' : '-',
             prot & VKI_PROT_WRITE ? 'w' : '-',
             prot & VKI_PROT_EXEC  ? 'x' : '-',
@@ -982,8 +982,8 @@ static void sync_check_gap_callback ( Addr addr, SizeT len )
               "segment mismatch: V's gap 1st, kernel's 2nd:\n");
          show_nsegment_full( 0, i, &nsegments[i] );
          VG_(debugLog)(0,"aspacem", 
-            "   : .... %010llx-%010llx %s\n",
-            (ULong)start, (ULong)end, len_buf);
+            "   : .... %010lx-%010lx %s\n",
+            start, end, len_buf);
          return;
       }
    }
@@ -1712,8 +1712,8 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
       accordingly. */
 
    VG_(debugLog)(2, "aspacem", 
-                    "        sp_at_startup = 0x%010llx (supplied)\n", 
-                    (ULong)sp_at_startup );
+                    "        sp_at_startup = 0x%010lx (supplied)\n", 
+                    sp_at_startup );
 
 #  if VG_WORDSIZE == 8
      aspacem_maxAddr = (Addr)0x1000000000ULL - 1; // 64G
@@ -1746,20 +1746,20 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
    aspacem_assert(VG_IS_PAGE_ALIGNED(suggested_clstack_end + 1));
 
    VG_(debugLog)(2, "aspacem", 
-                    "              minAddr = 0x%010llx (computed)\n", 
-                    (ULong)aspacem_minAddr);
+                    "              minAddr = 0x%010lx (computed)\n", 
+                    aspacem_minAddr);
    VG_(debugLog)(2, "aspacem", 
-                    "              maxAddr = 0x%010llx (computed)\n", 
-                    (ULong)aspacem_maxAddr);
+                    "              maxAddr = 0x%010lx (computed)\n", 
+                    aspacem_maxAddr);
    VG_(debugLog)(2, "aspacem", 
-                    "               cStart = 0x%010llx (computed)\n", 
-                    (ULong)aspacem_cStart);
+                    "               cStart = 0x%010lx (computed)\n", 
+                    aspacem_cStart);
    VG_(debugLog)(2, "aspacem", 
-                    "               vStart = 0x%010llx (computed)\n", 
-                    (ULong)aspacem_vStart);
+                    "               vStart = 0x%010lx (computed)\n", 
+                    aspacem_vStart);
    VG_(debugLog)(2, "aspacem", 
-                    "suggested_clstack_end = 0x%010llx (computed)\n", 
-                    (ULong)suggested_clstack_end);
+                    "suggested_clstack_end = 0x%010lx (computed)\n", 
+                    suggested_clstack_end);
 
    if (aspacem_cStart > Addr_MIN) {
       init_resvn(&seg, Addr_MIN, aspacem_cStart-1);
@@ -1881,8 +1881,8 @@ Addr VG_(am_get_advisory) ( const MapRequest*  req,
 
    if (0) {
       VG_(am_show_nsegments)(0,"getAdvisory");
-      VG_(debugLog)(0,"aspacem", "getAdvisory 0x%llx %lld\n", 
-                      (ULong)req->start, (ULong)req->len);
+      VG_(debugLog)(0,"aspacem", "getAdvisory 0x%lx %lu\n",
+                    req->start, req->len);
    }
 
    /* Reject zero-length requests */

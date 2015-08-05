@@ -72,7 +72,7 @@ void show_SB_profile ( const SBProfEntry tops[], UInt n_tops,
    VG_(printf)("<<<\n");
    VG_(printf)("\n");
 
-   VG_(printf)("Total score = %'lld\n\n", score_total);
+   VG_(printf)("Total score = %'llu\n\n", score_total);
 
    /* Print an initial per-block summary. */
    VG_(printf)("rank  ---cumulative---      -----self-----\n");
@@ -96,7 +96,7 @@ void show_SB_profile ( const SBProfEntry tops[], UInt n_tops,
       Double percent_here =
          score_total == 0 ? 100.0 : score_here * 100.0 / score_total;
         
-      VG_(printf)("%3d: (%9lld %5.2f%%)   %9lld %5.2f%%      0x%lx %s\n",
+      VG_(printf)("%3d: (%9llu %5.2f%%)   %9llu %5.2f%%      0x%lx %s\n",
                   r,
                   score_cumul, percent_cumul,
                   score_here,  percent_here, tops[r].addr, name);
@@ -138,7 +138,7 @@ void show_SB_profile ( const SBProfEntry tops[], UInt n_tops,
          VG_(printf)("\n");
          VG_(printf)("=-=-=-=-=-=-=-=-=-=-=-=-=-= begin SB rank %d "
                      "=-=-=-=-=-=-=-=-=-=-=-=-=-=\n\n", r);
-         VG_(printf)("%3d: (%9lld %5.2f%%)   %9lld %5.2f%%      0x%lx %s\n",
+         VG_(printf)("%3d: (%9llu %5.2f%%)   %9llu %5.2f%%      0x%lx %s\n",
                      r,
                      score_cumul, percent_cumul,
                      score_here,  percent_here, tops[r].addr, name );
@@ -170,7 +170,7 @@ void show_SB_profile ( const SBProfEntry tops[], UInt n_tops,
          Double percent_here =
            score_total == 0 ? 100.0 : score_here * 100.0 / score_total;
 
-         VG_(printf)("%3d: (%9lld %5.2f%%)   %9lld %5.2f%%      0x%lx %s\n",
+         VG_(printf)("%3d: (%9llu %5.2f%%)   %9llu %5.2f%%      0x%lx %s\n",
                      r,
                      score_cumul, percent_cumul,
                      score_here,  percent_here, tops[r].addr, name );

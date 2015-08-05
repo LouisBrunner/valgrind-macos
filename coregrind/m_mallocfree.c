@@ -877,7 +877,7 @@ Superblock* newSuperblock ( Arena* a, SizeT cszB )
    if (a->stats__bytes_mmaped > a->stats__bytes_mmaped_max)
       a->stats__bytes_mmaped_max = a->stats__bytes_mmaped;
    VG_(debugLog)(1, "mallocfree",
-                    "newSuperblock at %p (pszB %7ld) %s owner %s/%s\n", 
+                    "newSuperblock at %p (pszB %7lu) %s owner %s/%s\n", 
                     sb, sb->n_payload_bytes,
                     (unsplittable ? "unsplittable" : ""),
                     a->clientmem ? "CLIENT" : "VALGRIND", a->name );
@@ -895,7 +895,7 @@ void reclaimSuperblock ( Arena* a, Superblock* sb)
    UInt   i, j;
 
    VG_(debugLog)(1, "mallocfree",
-                    "reclaimSuperblock at %p (pszB %7ld) %s owner %s/%s\n", 
+                    "reclaimSuperblock at %p (pszB %7lu) %s owner %s/%s\n", 
                     sb, sb->n_payload_bytes,
                     (sb->unsplittable ? "unsplittable" : ""),
                     a->clientmem ? "CLIENT" : "VALGRIND", a->name );
@@ -1220,13 +1220,13 @@ void ppSuperblocks ( Arena* a )
       Superblock * sb = a->sblocks[j];
 
       VG_(printf)( "\n" );
-      VG_(printf)( "superblock %d at %p %s, sb->n_pl_bs = %lu\n",
+      VG_(printf)( "superblock %u at %p %s, sb->n_pl_bs = %lu\n",
                    blockno++, sb, (sb->unsplittable ? "unsplittable" : ""),
                    sb->n_payload_bytes);
       for (i = 0; i < sb->n_payload_bytes; i += b_bszB) {
          Block* b = (Block*)&sb->payload_bytes[i];
          b_bszB   = get_bszB(b);
-         VG_(printf)( "   block at %d, bszB %lu: ", i, b_bszB );
+         VG_(printf)( "   block at %u, bszB %lu: ", i, b_bszB );
          VG_(printf)( "%s, ", is_inuse_block(b) ? "inuse" : "free");
          VG_(printf)( "%s\n", blockSane(a, b) ? "ok" : "BAD" );
       }
@@ -1276,13 +1276,13 @@ static void sanity_check_malloc_arena ( ArenaId aid )
          b     = (Block*)&sb->payload_bytes[i];
          b_bszB = get_bszB_as_is(b);
          if (!blockSane(a, b)) {
-            VG_(printf)("sanity_check_malloc_arena: sb %p, block %d "
+            VG_(printf)("sanity_check_malloc_arena: sb %p, block %u "
                         "(bszB %lu):  BAD\n", sb, i, b_bszB );
             BOMB;
          }
          thisFree = !is_inuse_block(b);
          if (thisFree && lastWasFree) {
-            VG_(printf)("sanity_check_malloc_arena: sb %p, block %d "
+            VG_(printf)("sanity_check_malloc_arena: sb %p, block %u "
                         "(bszB %lu): UNMERGED FREES\n", sb, i, b_bszB );
             BOMB;
          }
@@ -1323,7 +1323,7 @@ static void sanity_check_malloc_arena ( ArenaId aid )
          b_prev = b;
          b = get_next_b(b);
          if (get_prev_b(b) != b_prev) {
-            VG_(printf)( "sanity_check_malloc_arena: list %d at %p: "
+            VG_(printf)( "sanity_check_malloc_arena: list %u at %p: "
                          "BAD LINKAGE\n",
                          listno, b );
             BOMB;
@@ -1331,7 +1331,7 @@ static void sanity_check_malloc_arena ( ArenaId aid )
          b_pszB = get_pszB(a, b);
          if (b_pszB < list_min_pszB || b_pszB > list_max_pszB) {
             VG_(printf)(
-               "sanity_check_malloc_arena: list %d at %p: "
+               "sanity_check_malloc_arena: list %u at %p: "
                "WRONG CHAIN SIZE %luB (%luB, %luB)\n",
                listno, b, b_pszB, list_min_pszB, list_max_pszB );
             BOMB;
@@ -1353,8 +1353,8 @@ static void sanity_check_malloc_arena ( ArenaId aid )
 
    if (VG_(clo_verbosity) > 2) 
       VG_(message)(Vg_DebugMsg,
-                   "%-8s: %2d sbs, %5d bs, %2d/%-2d free bs, "
-                   "%7ld mmap, %7ld loan\n",
+                   "%-8s: %2u sbs, %5u bs, %2u/%-2u free bs, "
+                   "%7lu mmap, %7lu loan\n",
                    a->name,
                    superblockctr,
                    blockctr_sb, blockctr_sb_free, blockctr_li, 
@@ -1764,7 +1764,7 @@ void* VG_(arena_malloc) ( ArenaId aid, const HChar* cc, SizeT req_pszB )
       a->sblocks_size *= 2;
       a->sblocks = array;
       VG_(debugLog)(1, "mallocfree", 
-                       "sblock array for arena `%s' resized to %ld\n", 
+                       "sblock array for arena `%s' resized to %lu\n", 
                        a->name, a->sblocks_size);
    }
 
@@ -1892,7 +1892,7 @@ void deferred_reclaimSuperblock ( Arena* a, Superblock* sb)
                     a->clientmem ? "CLIENT" : "VALGRIND", a->name );
    } else
       VG_(debugLog)(1, "mallocfree",
-                    "deferred_reclaimSuperblock at %p (pszB %7ld) %s "
+                    "deferred_reclaimSuperblock at %p (pszB %7lu) %s "
                     "(prev %p) owner %s/%s\n",
                     sb, sb->n_payload_bytes,
                     (sb->unsplittable ? "unsplittable" : ""),
@@ -2457,8 +2457,8 @@ void VG_(arena_realloc_shrink) ( ArenaId aid,
 
          sb->n_payload_bytes -= frag_bszB;
          VG_(debugLog)(1, "mallocfree",
-                       "shrink superblock %p to (pszB %7ld) "
-                       "owner %s/%s (munmap-ing %p %7ld)\n",
+                       "shrink superblock %p to (pszB %7lu) "
+                       "owner %s/%s (munmap-ing %p %7lu)\n",
                        sb, sb->n_payload_bytes,
                        a->clientmem ? "CLIENT" : "VALGRIND", a->name,
                        (void*) frag, frag_bszB);

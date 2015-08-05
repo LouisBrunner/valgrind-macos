@@ -307,7 +307,7 @@ static Bool eq_Error ( VgRes res, const Error* e1, const Error* e2 )
          } else {
             VG_(printf)("\nUnhandled error type: %u. VG_(needs).tool_errors\n"
                         "probably needs to be set.\n",
-                        e1->ekind);
+                        (UInt)e1->ekind);
             VG_(core_panic)("unhandled error type");
          }
    }
@@ -591,7 +591,7 @@ static void pp_Error ( const Error* err, Bool allow_db_attach, Bool xml )
       /* standard preamble */
       VG_(printf_xml)("<error>\n");
       VG_(printf_xml)("  <unique>0x%x</unique>\n", err->unique);
-      VG_(printf_xml)("  <tid>%d</tid>\n", err->tid);
+      VG_(printf_xml)("  <tid>%u</tid>\n", err->tid);
       ThreadState* tst = VG_(get_ThreadState)(err->tid);
       if (tst->thread_name) {
          VG_(printf_xml)("  <threadname>%s</threadname>\n", tst->thread_name);
@@ -617,9 +617,9 @@ static void pp_Error ( const Error* err, Bool allow_db_attach, Bool xml )
           && err->tid > 0 && err->tid != last_tid_printed) {
          ThreadState* tst = VG_(get_ThreadState)(err->tid);
          if (tst->thread_name) {
-            VG_(umsg)("Thread %d %s:\n", err->tid, tst->thread_name );
+            VG_(umsg)("Thread %u %s:\n", err->tid, tst->thread_name );
          } else {
-            VG_(umsg)("Thread %d:\n", err->tid );
+            VG_(umsg)("Thread %u:\n", err->tid );
          }
          last_tid_printed = err->tid;
       }
@@ -981,7 +981,7 @@ void VG_(show_all_errors) (  Int verbosity, Bool xml )
 
    /* We only get here if not printing XML. */
    VG_(umsg)("ERROR SUMMARY: "
-             "%d errors from %d contexts (suppressed: %d from %d)\n",
+             "%u errors from %u contexts (suppressed: %u from %u)\n",
              n_errs_found, n_err_contexts, 
              n_errs_suppressed, n_supp_contexts );
 
@@ -1009,7 +1009,7 @@ void VG_(show_all_errors) (  Int verbosity, Bool xml )
       if (p_min == NULL) continue; //VG_(core_panic)("show_all_errors()");
 
       VG_(umsg)("\n");
-      VG_(umsg)("%d errors in context %d of %d:\n",
+      VG_(umsg)("%d errors in context %d of %u:\n",
                 p_min->count, i+1, n_err_contexts);
       pp_Error( p_min, False/*allow_db_attach*/, False /* xml */ );
 
@@ -1041,7 +1041,7 @@ void VG_(show_all_errors) (  Int verbosity, Bool xml )
    // reprint this, so users don't have to scroll way up to find
    // the first printing
    VG_(umsg)("ERROR SUMMARY: "
-             "%d errors from %d contexts (suppressed: %d from %d)\n",
+             "%u errors from %u contexts (suppressed: %u from %u)\n",
              n_errs_found, n_err_contexts, n_errs_suppressed,
              n_supp_contexts );
 }
@@ -1891,7 +1891,7 @@ Bool supp_matches_error(const Supp* su, const Error* err)
             VG_(printf)(
                "\nUnhandled suppression type: %u.  VG_(needs).tool_errors\n"
                "probably needs to be set.\n",
-               err->ekind);
+               (UInt)err->ekind);
             VG_(core_panic)("unhandled suppression type");
          }
    }

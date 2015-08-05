@@ -191,7 +191,7 @@ static void apply_to_GPs_of_tid(ThreadId tid, void (*f)(ThreadId,
                                                         const HChar*, Addr))
 {
    VexGuestArchState* vex = &(VG_(get_ThreadState)(tid)->arch.vex);
-   VG_(debugLog)(2, "machine", "apply_to_GPs_of_tid %d\n", tid);
+   VG_(debugLog)(2, "machine", "apply_to_GPs_of_tid %u\n", tid);
 #if defined(VGA_x86)
    (*f)(tid, "EAX", vex->guest_EAX);
    (*f)(tid, "ECX", vex->guest_ECX);

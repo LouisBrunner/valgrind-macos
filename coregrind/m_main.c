@@ -1532,8 +1532,8 @@ static void setup_file_descriptors(void)
 #  endif
 
    if (show)
-      VG_(printf)("fd limits: host, before: cur %lu max %lu\n", 
-                  (UWord)rl.rlim_cur, (UWord)rl.rlim_max);
+      VG_(printf)("fd limits: host, before: cur %llu max %llu\n", 
+                  (ULong)rl.rlim_cur, (ULong)rl.rlim_max);
 
    /* Work out where to move the soft limit to. */
    if (rl.rlim_cur + N_RESERVED_FDS <= rl.rlim_max) {
@@ -1552,7 +1552,7 @@ static void setup_file_descriptors(void)
    if (show) {
       VG_(printf)("fd limits: host,  after: cur %lu max %lu\n",
                   (UWord)rl.rlim_cur, (UWord)rl.rlim_max);
-      VG_(printf)("fd limits: guest       : cur %u max %u\n",
+      VG_(printf)("fd limits: guest       : cur %d max %d\n",
                   VG_(fd_soft_limit), VG_(fd_hard_limit));
    }
 
@@ -2698,7 +2698,7 @@ void shutdown_actions_NORETURN( ThreadId tid,
       sys_exit, do likewise; if the (last) thread stopped due to a fatal
       signal, terminate the entire system with that same fatal signal. */
    VG_(debugLog)(1, "core_os", 
-                    "VG_(terminate_NORETURN)(tid=%lld)\n", (ULong)tid);
+                    "VG_(terminate_NORETURN)(tid=%u)\n", tid);
 
    switch (tids_schedretcode) {
    case VgSrc_ExitThread:  /* the normal way out (Linux, Solaris) */

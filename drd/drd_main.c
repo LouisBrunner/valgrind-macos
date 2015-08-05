@@ -163,7 +163,7 @@ static Bool DRD_(process_cmd_line_option)(const HChar* arg)
       DRD_(start_tracing_address_range)(addr, addr + 1, False);
    }
    if (ptrace_address) {
-      char *plus = VG_(strchr)(ptrace_address, '+');
+      HChar *plus = VG_(strchr)(ptrace_address, '+');
       Addr addr, length;
       if (plus)
          *plus = '\0';
@@ -339,7 +339,7 @@ void drd_start_using_mem(const Addr a1, const SizeT len,
    tl_assert(a1 <= a2);
 
    if (!is_stack_mem && s_trace_alloc)
-      DRD_(trace_msg)("Started using memory range 0x%lx + %ld%s",
+      DRD_(trace_msg)("Started using memory range 0x%lx + %lu%s",
                       a1, len, DRD_(running_thread_inside_pthread_create)()
                       ? " (inside pthread_create())" : "");
 
@@ -383,7 +383,7 @@ void drd_stop_using_mem(const Addr a1, const SizeT len,
       DRD_(trace_mem_access)(a1, len, eEnd, 0, 0);
 
    if (!is_stack_mem && s_trace_alloc)
-      DRD_(trace_msg)("Stopped using memory range 0x%lx + %ld",
+      DRD_(trace_msg)("Stopped using memory range 0x%lx + %lu",
                       a1, len);
 
    if (!is_stack_mem || DRD_(get_check_stack_accesses)())
@@ -430,7 +430,7 @@ static void DRD_(suppress_relocation_conflicts)(const Addr a, const SizeT len)
    const DebugInfo* di;
 
    if (trace_sectsuppr)
-      VG_(dmsg)("Evaluating range @ 0x%lx size %ld\n", a, len);
+      VG_(dmsg)("Evaluating range @ 0x%lx size %lu\n", a, len);
 
    for (di = VG_(next_DebugInfo)(0); di; di = VG_(next_DebugInfo)(di)) {
       Addr  avma;
@@ -451,7 +451,7 @@ static void DRD_(suppress_relocation_conflicts)(const Addr a, const SizeT len)
       if (size > 0 &&
           VG_(strcmp)(VG_(DebugInfo_get_soname)(di), "libpthread.so.0") == 0) {
 	 if (trace_sectsuppr)
-	    VG_(dmsg)("Suppressing .bss @ 0x%lx size %ld\n", avma, size);
+	    VG_(dmsg)("Suppressing .bss @ 0x%lx size %lu\n", avma, size);
          tl_assert(VG_(DebugInfo_sect_kind)(NULL, avma) == Vg_SectBSS);
          DRD_(start_suppression)(avma, avma + size, ".bss");
       }
@@ -461,7 +461,7 @@ static void DRD_(suppress_relocation_conflicts)(const Addr a, const SizeT len)
       tl_assert((avma && size) || (avma == 0 && size == 0));
       if (size > 0) {
 	 if (trace_sectsuppr)
-	    VG_(dmsg)("Suppressing .plt @ 0x%lx size %ld\n", avma, size);
+	    VG_(dmsg)("Suppressing .plt @ 0x%lx size %lu\n", avma, size);
          tl_assert(VG_(DebugInfo_sect_kind)(NULL, avma) == Vg_SectPLT);
          DRD_(start_suppression)(avma, avma + size, ".plt");
       }
@@ -471,7 +471,7 @@ static void DRD_(suppress_relocation_conflicts)(const Addr a, const SizeT len)
       tl_assert((avma && size) || (avma == 0 && size == 0));
       if (size > 0) {
 	 if (trace_sectsuppr)
-	    VG_(dmsg)("Suppressing .got.plt @ 0x%lx size %ld\n", avma, size);
+	    VG_(dmsg)("Suppressing .got.plt @ 0x%lx size %lu\n", avma, size);
          tl_assert(VG_(DebugInfo_sect_kind)(NULL, avma) == Vg_SectGOTPLT);
          DRD_(start_suppression)(avma, avma + size, ".gotplt");
       }
@@ -481,7 +481,7 @@ static void DRD_(suppress_relocation_conflicts)(const Addr a, const SizeT len)
       tl_assert((avma && size) || (avma == 0 && size == 0));
       if (size > 0) {
 	 if (trace_sectsuppr)
-	    VG_(dmsg)("Suppressing .got @ 0x%lx size %ld\n", avma, size);
+	    VG_(dmsg)("Suppressing .got @ 0x%lx size %lu\n", avma, size);
          tl_assert(VG_(DebugInfo_sect_kind)(NULL, avma) == Vg_SectGOT);
          DRD_(start_suppression)(avma, avma + size, ".got");
       }
@@ -643,7 +643,7 @@ void drd_pre_thread_create(const ThreadId creator, const ThreadId created)
    }
    if (DRD_(thread_get_trace_fork_join)())
    {
-      DRD_(trace_msg)("drd_pre_thread_create creator = %d, created = %d",
+      DRD_(trace_msg)("drd_pre_thread_create creator = %u, created = %u",
                       drd_creator, created);
    }
 }
@@ -668,7 +668,7 @@ void drd_post_thread_create(const ThreadId vg_created)
 
    if (DRD_(thread_get_trace_fork_join)())
    {
-      DRD_(trace_msg)("drd_post_thread_create created = %d", drd_created);
+      DRD_(trace_msg)("drd_post_thread_create created = %u", drd_created);
    }
    if (! DRD_(get_check_stack_accesses)())
    {
@@ -695,7 +695,7 @@ static void drd_thread_finished(ThreadId vg_tid)
    tl_assert(drd_tid != DRD_INVALID_THREADID);
    if (DRD_(thread_get_trace_fork_join)())
    {
-      DRD_(trace_msg)("drd_thread_finished tid = %d%s", drd_tid,
+      DRD_(trace_msg)("drd_thread_finished tid = %u%s", drd_tid,
                       DRD_(thread_get_joinable)(drd_tid)
                       ? "" : " (which is a detached thread)");
    }
@@ -705,8 +705,8 @@ static void drd_thread_finished(ThreadId vg_tid)
          = (DRD_(thread_get_stack_max)(drd_tid)
             - DRD_(thread_get_stack_min_min)(drd_tid));
       VG_(message)(Vg_UserMsg,
-                   "thread %d%s finished and used %ld bytes out of %ld"
-                   " on its stack. Margin: %ld bytes.\n",
+                   "thread %u%s finished and used %lu bytes out of %lu"
+                   " on its stack. Margin: %lu bytes.\n",
                    drd_tid,
                    DRD_(thread_get_joinable)(drd_tid)
                    ? "" : " (which is a detached thread)",
@@ -774,47 +774,47 @@ static void DRD_(fini)(Int exitcode)
       ULong pu_join   = DRD_(thread_get_update_conflict_set_join_count)();
 
       VG_(message)(Vg_UserMsg,
-                   "   thread: %lld context switches.\n",
+                   "   thread: %llu context switches.\n",
                    DRD_(thread_get_context_switch_count)());
       VG_(message)(Vg_UserMsg,
-                   "confl set: %lld full updates and %lld partial updates;\n",
+                   "confl set: %llu full updates and %llu partial updates;\n",
                    DRD_(thread_get_compute_conflict_set_count)(),
                    pu);
       VG_(message)(Vg_UserMsg,
-                   "           %lld partial updates during segment creation,\n",
+                   "           %llu partial updates during segment creation,\n",
                    pu_seg_cr);
       VG_(message)(Vg_UserMsg,
-                   "           %lld because of mutex/sema/cond.var. operations,\n",
+                   "           %llu because of mutex/sema/cond.var. operations,\n",
                    pu_mtx_cv);
       VG_(message)(Vg_UserMsg,
-                   "           %lld because of barrier/rwlock operations and\n",
+                   "           %llu because of barrier/rwlock operations and\n",
 		   pu - pu_seg_cr - pu_mtx_cv - pu_join);
       VG_(message)(Vg_UserMsg,
-                   "           %lld partial updates because of thread join"
+                   "           %llu partial updates because of thread join"
                    " operations.\n",
                    pu_join);
       VG_(message)(Vg_UserMsg,
-                   " segments: created %lld segments, max %lld alive,\n",
+                   " segments: created %llu segments, max %llu alive,\n",
                    DRD_(sg_get_segments_created_count)(),
                    DRD_(sg_get_max_segments_alive_count)());
       VG_(message)(Vg_UserMsg,
-                   "           %lld discard points and %lld merges.\n",
+                   "           %llu discard points and %llu merges.\n",
                    DRD_(thread_get_discard_ordered_segments_count)(),
                    DRD_(sg_get_segment_merge_count)());
       VG_(message)(Vg_UserMsg,
-                   "segmnt cr: %lld mutex, %lld rwlock, %lld semaphore and"
-                   " %lld barrier.\n",
+                   "segmnt cr: %llu mutex, %llu rwlock, %llu semaphore and"
+                   " %llu barrier.\n",
                    DRD_(get_mutex_segment_creation_count)(),
                    DRD_(get_rwlock_segment_creation_count)(),
                    DRD_(get_semaphore_segment_creation_count)(),
                    DRD_(get_barrier_segment_creation_count)());
       VG_(message)(Vg_UserMsg,
-                   "  bitmaps: %lld level one"
-                   " and %lld level two bitmaps were allocated.\n",
+                   "  bitmaps: %llu level one"
+                   " and %llu level two bitmaps were allocated.\n",
                    DRD_(bm_get_bitmap_creation_count)(),
                    DRD_(bm_get_bitmap2_creation_count)());
       VG_(message)(Vg_UserMsg,
-                   "    mutex: %lld non-recursive lock/unlock events.\n",
+                   "    mutex: %llu non-recursive lock/unlock events.\n",
                    DRD_(get_mutex_lock_count)());
       DRD_(print_malloc_stats)();
    }

@@ -63,7 +63,7 @@ void DRD_(start_suppression)(const Addr a1, const Addr a2,
                              const HChar* const reason)
 {
    if (s_trace_suppression)
-      VG_(message)(Vg_DebugMsg, "start suppression of 0x%lx sz %ld (%s)\n",
+      VG_(message)(Vg_DebugMsg, "start suppression of 0x%lx sz %lu (%s)\n",
                    a1, a2 - a1, reason);
 
    tl_assert(a1 <= a2);
@@ -73,7 +73,7 @@ void DRD_(start_suppression)(const Addr a1, const Addr a2,
 void DRD_(finish_suppression)(const Addr a1, const Addr a2)
 {
    if (s_trace_suppression) {
-      VG_(message)(Vg_DebugMsg, "finish suppression of 0x%lx sz %ld\n",
+      VG_(message)(Vg_DebugMsg, "finish suppression of 0x%lx sz %lu\n",
                    a1, a2 - a1);
       VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(), 12);
    }
@@ -122,7 +122,7 @@ void DRD_(start_tracing_address_range)(const Addr a1, const Addr a2,
    tl_assert(a1 <= a2);
 
    if (s_trace_suppression)
-      VG_(message)(Vg_DebugMsg, "start_tracing(0x%lx, %ld) %s\n",
+      VG_(message)(Vg_DebugMsg, "start_tracing(0x%lx, %lu) %s\n",
                    a1, a2 - a1, persistent ? "persistent" : "non-persistent");
 
    DRD_(bm_access_range_load)(s_traced, a1, a2);
@@ -140,7 +140,7 @@ void DRD_(stop_tracing_address_range)(const Addr a1, const Addr a2)
    tl_assert(a1 <= a2);
 
    if (s_trace_suppression)
-      VG_(message)(Vg_DebugMsg, "stop_tracing(0x%lx, %ld)\n",
+      VG_(message)(Vg_DebugMsg, "stop_tracing(0x%lx, %lu)\n",
                    a1, a2 - a1);
 
    if (DRD_(g_any_address_traced)) {
@@ -165,7 +165,7 @@ void DRD_(suppression_stop_using_mem)(const Addr a1, const Addr a2)
       for (b = a1; b < a2; b++) {
          if (DRD_(bm_has_1)(s_suppressed, b, eStore)) {
             VG_(message)(Vg_DebugMsg,
-                         "stop_using_mem(0x%lx, %ld) finish suppression of"
+                         "stop_using_mem(0x%lx, %lu) finish suppression of"
                          " 0x%lx\n", a1, a2 - a1, b);
          }
       }

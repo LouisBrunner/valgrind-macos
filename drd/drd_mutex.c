@@ -88,7 +88,7 @@ void DRD_(mutex_ignore_ordering)(const Addr mutex)
    struct mutex_info* p = DRD_(mutex_get)(mutex);
 
    if (s_trace_mutex)
-      DRD_(trace_msg)("[%d] mutex_ignore_ordering %s 0x%lx",
+      DRD_(trace_msg)("[%u] mutex_ignore_ordering %s 0x%lx",
                       DRD_(thread_get_running_tid)(),
                       p ? DRD_(mutex_type_name)(p->mutex_type) : "(?)",
                       mutex);
@@ -106,7 +106,7 @@ static void mutex_cleanup(struct mutex_info* p)
    tl_assert(p);
 
    if (s_trace_mutex)
-      DRD_(trace_msg)("[%d] mutex_destroy   %s 0x%lx rc %d owner %d",
+      DRD_(trace_msg)("[%u] mutex_destroy   %s 0x%lx rc %d owner %u",
                       DRD_(thread_get_running_tid)(),
                       DRD_(mutex_get_typename)(p), p->a1,
                       p ? p->recursion_count : -1,
@@ -197,7 +197,7 @@ DRD_(mutex_init)(const Addr mutex, const MutexT mutex_type)
    struct mutex_info* p;
 
    if (s_trace_mutex)
-      DRD_(trace_msg)("[%d] mutex_init      %s 0x%lx",
+      DRD_(trace_msg)("[%u] mutex_init      %s 0x%lx",
                       DRD_(thread_get_running_tid)(),
                       DRD_(mutex_type_name)(mutex_type),
                       mutex);
@@ -258,7 +258,7 @@ void DRD_(mutex_pre_lock)(const Addr mutex, MutexT mutex_type,
       mutex_type = p->mutex_type;
 
    if (s_trace_mutex)
-      DRD_(trace_msg)("[%d] %s %s 0x%lx rc %d owner %d",
+      DRD_(trace_msg)("[%u] %s %s 0x%lx rc %d owner %u",
                       DRD_(thread_get_running_tid)(),
                       trylock ? "pre_mutex_lock " : "mutex_trylock  ",
                       p ? DRD_(mutex_get_typename)(p) : "(?)",
@@ -308,7 +308,7 @@ void DRD_(mutex_post_lock)(const Addr mutex, const Bool took_lock,
    p = DRD_(mutex_get)(mutex);
 
    if (s_trace_mutex)
-      DRD_(trace_msg)("[%d] %s %s 0x%lx rc %d owner %d%s",
+      DRD_(trace_msg)("[%u] %s %s 0x%lx rc %d owner %u%s",
                       drd_tid,
                       post_cond_wait ? "cond_post_wait " : "post_mutex_lock",
                       p ? DRD_(mutex_get_typename)(p) : "(?)",
@@ -374,7 +374,7 @@ void DRD_(mutex_unlock)(const Addr mutex, MutexT mutex_type)
       mutex_type = p->mutex_type;
 
    if (s_trace_mutex) {
-      DRD_(trace_msg)("[%d] mutex_unlock    %s 0x%lx rc %d",
+      DRD_(trace_msg)("[%u] mutex_unlock    %s 0x%lx rc %d",
                       drd_tid, p ? DRD_(mutex_get_typename)(p) : "(?)",
                       mutex, p ? p->recursion_count : 0);
    }

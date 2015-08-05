@@ -97,7 +97,7 @@ static void sg_init(Segment* const sg,
       HChar* vc;
 
       vc = DRD_(vc_aprint)(&sg->vc);
-      VG_(message)(Vg_DebugMsg, "New segment for thread %d with vc %s\n",
+      VG_(message)(Vg_DebugMsg, "New segment for thread %u with vc %s\n",
                    created, vc);
       VG_(free)(vc);
    }

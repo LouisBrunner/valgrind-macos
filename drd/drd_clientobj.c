@@ -132,7 +132,7 @@ DrdClientobj* DRD_(clientobj_add)(const Addr a1, const ObjType t)
    tl_assert(VG_(OSetGen_Lookup)(s_clientobj_set, &a1) == 0);
 
    if (s_trace_clientobj)
-      DRD_(trace_msg)("Adding client object 0x%lx of type %d", a1, t);
+     DRD_(trace_msg)("Adding client object 0x%lx of type %d", a1, (Int)t);
 
    p = VG_(OSetGen_AllocNode)(s_clientobj_set, sizeof(*p));
    VG_(memset)(p, 0, sizeof(*p));
@@ -179,7 +179,7 @@ static Bool clientobj_remove_obj(DrdClientobj* const p)
 
    if (s_trace_clientobj) {
       DRD_(trace_msg)("Removing client object 0x%lx of type %d", p->any.a1,
-                      p->any.type);
+                      (Int)p->any.type);
 #if 0
       VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(),
                                  VG_(clo_backtrace_size));

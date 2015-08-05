@@ -244,7 +244,7 @@ static void rwlock_cleanup(struct rwlock_info* p)
    tl_assert(p);
 
    if (DRD_(s_trace_rwlock))
-      DRD_(trace_msg)("[%d] rwlock_destroy     0x%lx",
+      DRD_(trace_msg)("[%u] rwlock_destroy     0x%lx",
                       DRD_(thread_get_running_tid)(), p->a1);
 
    if (DRD_(rwlock_is_locked)(p))
@@ -313,7 +313,7 @@ struct rwlock_info* DRD_(rwlock_pre_init)(const Addr rwlock,
    struct rwlock_info* p;
 
    if (DRD_(s_trace_rwlock))
-      DRD_(trace_msg)("[%d] rwlock_init        0x%lx",
+      DRD_(trace_msg)("[%u] rwlock_init        0x%lx",
                       DRD_(thread_get_running_tid)(), rwlock);
 
    p = DRD_(rwlock_get)(rwlock);
@@ -374,7 +374,7 @@ void DRD_(rwlock_pre_rdlock)(const Addr rwlock, const RwLockT rwlock_type)
    struct rwlock_info* p;
 
    if (DRD_(s_trace_rwlock))
-      DRD_(trace_msg)("[%d] pre_rwlock_rdlock  0x%lx",
+      DRD_(trace_msg)("[%u] pre_rwlock_rdlock  0x%lx",
                       DRD_(thread_get_running_tid)(), rwlock);
 
    p = DRD_(rwlock_get_or_allocate)(rwlock, rwlock_type);
@@ -403,7 +403,7 @@ void DRD_(rwlock_post_rdlock)(const Addr rwlock, const RwLockT rwlock_type,
    struct rwlock_thread_info* q;
 
    if (DRD_(s_trace_rwlock))
-      DRD_(trace_msg)("[%d] post_rwlock_rdlock 0x%lx", drd_tid, rwlock);
+      DRD_(trace_msg)("[%u] post_rwlock_rdlock 0x%lx", drd_tid, rwlock);
 
    p = DRD_(rwlock_get)(rwlock);
 
@@ -437,7 +437,7 @@ void DRD_(rwlock_pre_wrlock)(const Addr rwlock, const RwLockT rwlock_type)
    p = DRD_(rwlock_get)(rwlock);
 
    if (DRD_(s_trace_rwlock))
-      DRD_(trace_msg)("[%d] pre_rwlock_wrlock  0x%lx",
+      DRD_(trace_msg)("[%u] pre_rwlock_wrlock  0x%lx",
                       DRD_(thread_get_running_tid)(), rwlock);
 
    if (p == 0)
@@ -471,7 +471,7 @@ void DRD_(rwlock_post_wrlock)(const Addr rwlock, const RwLockT rwlock_type,
    p = DRD_(rwlock_get)(rwlock);
 
    if (DRD_(s_trace_rwlock))
-      DRD_(trace_msg)("[%d] post_rwlock_wrlock 0x%lx", drd_tid, rwlock);
+      DRD_(trace_msg)("[%u] post_rwlock_wrlock 0x%lx", drd_tid, rwlock);
 
    if (! p || ! took_lock)
       return;
@@ -506,7 +506,7 @@ void DRD_(rwlock_pre_unlock)(const Addr rwlock, const RwLockT rwlock_type)
    struct rwlock_thread_info* q;
 
    if (DRD_(s_trace_rwlock))
-      DRD_(trace_msg)("[%d] rwlock_unlock      0x%lx", drd_tid, rwlock);
+      DRD_(trace_msg)("[%u] rwlock_unlock      0x%lx", drd_tid, rwlock);
 
    p = DRD_(rwlock_get)(rwlock);
    if (p == 0)

@@ -103,7 +103,7 @@ void DRD_(trace_mem_access)(const Addr addr, const SizeT size,
 
       vc = DRD_(vc_aprint)(DRD_(thread_get_vc)(DRD_(thread_get_running_tid)()));
       if (access_type == eStore && size <= sizeof(HWord)) {
-         DRD_(trace_msg_w_bt)("store 0x%lx size %ld val %ld/0x%lx (thread %d /"
+         DRD_(trace_msg_w_bt)("store 0x%lx size %lu val %lu/0x%lx (thread %u /"
                               " vc %s)", addr, size, stored_value_lo,
                               stored_value_lo, DRD_(thread_get_running_tid)(),
                               vc);
@@ -112,11 +112,11 @@ void DRD_(trace_mem_access)(const Addr addr, const SizeT size,
 
          tl_assert(sizeof(HWord) == 4);
          sv = ((ULong)stored_value_hi << 32) | stored_value_lo;
-         DRD_(trace_msg_w_bt)("store 0x%lx size %ld val %lld/0x%llx (thread %d"
+         DRD_(trace_msg_w_bt)("store 0x%lx size %lu val %llu/0x%llx (thread %u"
                               " / vc %s)", addr, size, sv, sv,
                               DRD_(thread_get_running_tid)(), vc);
       } else {
-         DRD_(trace_msg_w_bt)("%s 0x%lx size %ld (thread %d / vc %s)",
+         DRD_(trace_msg_w_bt)("%s 0x%lx size %lu (thread %u / vc %s)",
                               access_type == eLoad ? "load "
                               : access_type == eStore ? "store"
                               : access_type == eStart ? "start"

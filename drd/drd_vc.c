@@ -277,7 +277,7 @@ HChar* DRD_(vc_aprint)(const VectorClock* const vc)
             return str;
       }
       size += VG_(snprintf)(str + size, reserved - size,
-                            "%s %d: %d", i > 0 ? "," : "",
+                            "%s %u: %u", i > 0 ? "," : "",
                             vc->vc[i].threadid, vc->vc[i].count);
    }
    size += VG_(snprintf)(str + size, reserved - size, " ]");

@@ -1067,7 +1067,6 @@ bin_PROGRAMS  = gen_insn_test
 
 insn_tests =
 
-if VGCONF_ARCHS_INCLUDE_TILEGX
 insn_tests += \
 	insn_test_move_X0  \
 	insn_test_move_X1  \
@@ -1584,7 +1583,6 @@ insn_tests += \
 	insn_test_xor_Y1  \
 	insn_test_xori_X0  \
 	insn_test_xori_X1
-endif
 
 check_PROGRAMS = \
 	allexec \

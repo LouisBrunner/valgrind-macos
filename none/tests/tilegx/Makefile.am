@@ -1597,19 +1597,15 @@ gen_insn_test_CFLAGS    = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@ -I../../../VEX/priv
 gen_insn_test_LDADD     = ../../../VEX/priv/tilegx_disasm.o
 
 $(addsuffix .c, $(insn_tests)) : gen_insn_test
-	@echo $@
-	./gen_test.sh $@
+	@./gen_test.sh $@
 
 $(addsuffix .stdout.exp, $(insn_tests)) : $(insn_tests)
-	@echo "Generate $@"
 	./$(basename $(basename $@)) > $@
 
 $(addsuffix .stderr.exp, $(insn_tests)) :
-	@echo "Generate $@"
 	touch  $@
 
 $(addsuffix .vgtest, $(insn_tests)) :
-	@echo "Generate $@"
 	echo -e "prog: $(basename $@)\nvgopts: -q" > $@
 
 check-am : $(addsuffix .stdout.exp, $(insn_tests))  $(addsuffix .stderr.exp, $(insn_tests)) $(addsuffix .vgtest, $(insn_tests))
@@ -1618,3 +1614,4 @@ clean-am :
 	@rm -f *.stderr.exp *.stdout.exp *.vgtest $(addsuffix .c, $(insn_tests))  $(addsuffix .o, $(insn_tests)) $(insn_tests)
 	@rm -f *.o  $(bin_PROGRAMS)
 
+distclean-am : clean-am

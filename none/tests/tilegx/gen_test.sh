@@ -573,13 +573,12 @@ FILES=( "5 	 1 	 insn_test_move_X0.c"
 
 if [ $# -gt 0 ]; then
 #fname = "$1"
-echo "generate $1"
+
 for f in "${FILES[@]}"
 do
     array=(${f// / })
     if [ ${array[2]} = $1 ]; then
         ./gen_insn_test ${array[0]} ${array[1]} > ${array[2]}
-#        cat hello.c > ${array[2]}
         exit 0
     fi
 done

@@ -899,11 +899,10 @@ lc_push_with_clique_if_a_chunk_ptr(Addr ptr, Int clique, Int cur_clique)
       if (VG_DEBUG_CLIQUE) {
          if (ex->IorC.indirect_szB > 0)
             VG_(printf)("  clique %d joining clique %d adding %lu+%lu\n", 
-                        ch_no, clique, (unsigned long)ch->szB,
-			(unsigned long)ex->IorC.indirect_szB);
+                        ch_no, clique, (SizeT)ch->szB, ex->IorC.indirect_szB);
          else
             VG_(printf)("  block %d joining clique %d adding %lu\n", 
-                        ch_no, clique, (unsigned long)ch->szB);
+                        ch_no, clique, (SizeT)ch->szB);
       }
 
       lc_extras[clique].IorC.indirect_szB += ch->szB;
@@ -1178,8 +1177,8 @@ static Int cmp_LossRecords(const void* va, const void* vb)
 
 // allocates or reallocates lr_array, and set its elements to the loss records
 // contains in lr_table.
-static Int get_lr_array_from_lr_table(void) {
-   Int          i, n_lossrecords;
+static UInt get_lr_array_from_lr_table(void) {
+   UInt         i, n_lossrecords;
    LossRecord*  lr;
 
    n_lossrecords = VG_(OSetGen_Size)(lr_table);
@@ -1321,7 +1320,7 @@ static void print_results(ThreadId tid, LeakCheckParams* lcp)
         if (VG_DEBUG_LEAKCHECK)
            VG_(printf)("heuristic %s %#lx len %lu\n",
                        pp_heuristic(ex->heuristic),
-                       ch->data, (unsigned long)ch->szB);
+                       ch->data, (SizeT)ch->szB);
      }
 
       old_lr = VG_(OSetGen_Lookup)(lr_table, &lrkey);
@@ -1511,7 +1510,7 @@ static void print_results(ThreadId tid, LeakCheckParams* lcp)
 static void print_clique (Int clique, UInt level)
 {
    Int ind;
-   Int i,  n_lossrecords;;
+   UInt i,  n_lossrecords;
 
    n_lossrecords = VG_(OSetGen_Size)(lr_table);
 
@@ -1522,7 +1521,7 @@ static void print_clique (Int clique, UInt level)
          MC_Chunk*    ind_ch = lc_chunks[ind];
          LossRecord*  ind_lr;
          LossRecordKey ind_lrkey;
-         Int lr_i;
+         UInt lr_i;
          ind_lrkey.state = ind_ex->state;
          ind_lrkey.allocated_at = MC_(allocated_at)(ind_ch);
          ind_lr = VG_(OSetGen_Lookup)(lr_table, &ind_lrkey);
@@ -1531,13 +1530,13 @@ static void print_clique (Int clique, UInt level)
                break;
          for (i = 0; i < level; i++)
             VG_(umsg)("  ");
-         VG_(umsg)("%p[%lu] indirect loss record %d\n",
-                   (void *)ind_ch->data, (unsigned long)ind_ch->szB,
+         VG_(umsg)("%p[%lu] indirect loss record %u\n",
+                   (void *)ind_ch->data, (SizeT)ind_ch->szB,
                    lr_i+1); // lr_i+1 for user numbering.
          if (lr_i >= n_lossrecords)
             VG_(umsg)
                ("error: no indirect loss record found for %p[%lu]?????\n",
-                (void *)ind_ch->data, (unsigned long)ind_ch->szB);
+                (void *)ind_ch->data, (SizeT)ind_ch->szB);
          print_clique(ind, level+1);
       }
    }
@@ -1545,7 +1544,7 @@ static void print_clique (Int clique, UInt level)
 
 Bool MC_(print_block_list) ( UInt loss_record_nr)
 {
-   Int          i,  n_lossrecords;
+   UInt         i,  n_lossrecords;
    LossRecord*  lr;
 
    if (lr_table == NULL || lc_chunks == NULL || lc_extras == NULL) {
@@ -1584,7 +1583,7 @@ Bool MC_(print_block_list) ( UInt loss_record_nr)
          // If this is the loss record we are looking for, output the pointer.
          if (old_lr == lr_array[loss_record_nr]) {
             VG_(umsg)("%p[%lu]\n",
-                      (void *)ch->data, (unsigned long) ch->szB);
+                      (void *)ch->data, (SizeT)ch->szB);
             if (ex->state != Reachable) {
                // We can print the clique in all states, except Reachable.
                // In Unreached state, lc_chunk[i] is the clique leader.
@@ -1598,7 +1597,7 @@ Bool MC_(print_block_list) ( UInt loss_record_nr)
       } else {
          // No existing loss record matches this chunk ???
          VG_(umsg)("error: no loss record found for %p[%lu]?????\n",
-                   (void *)ch->data, (unsigned long) ch->szB);
+                   (void *)ch->data, (SizeT)ch->szB);
       }
    }
    return True;

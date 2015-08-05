@@ -117,7 +117,7 @@ struct _OSet {
    OSetFree_t  free_fn;    // deallocator
    PoolAlloc*  node_pa;    // (optional) pool allocator for nodes.
    SizeT       maxEltSize; // for node_pa, must be > 0. Otherwise unused.
-   Word        nElems;     // number of elements in the tree
+   UInt        nElems;     // number of elements in the tree
    AvlNode*    root;       // root node
 
    AvlNode*    nodeStack[STACK_MAX];   // Iterator node stack
@@ -912,7 +912,7 @@ void VG_(OSetGen_ResetIterAt)(AvlTree* oset, const void* k)
 /*--- Miscellaneous operations                                     ---*/
 /*--------------------------------------------------------------------*/
 
-Word VG_(OSetGen_Size)(const AvlTree* t)
+UInt VG_(OSetGen_Size)(const AvlTree* t)
 {
    vg_assert(t);
    return t->nElems;

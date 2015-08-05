@@ -1177,17 +1177,17 @@ static Bool modify_ignore_ranges ( Bool addRange, Addr start, Addr len )
                    (void*)start, (void*)(start+len-1));
    }
    if (verbose) {
-      VG_(dmsg)("memcheck:   now have %ld ranges:\n",
+      VG_(dmsg)("memcheck:   now have %u ranges:\n",
                 VG_(sizeRangeMap)(gIgnoredAddressRanges));
-      Word i;
+      UInt i;
       for (i = 0; i < VG_(sizeRangeMap)(gIgnoredAddressRanges); i++) {
          UWord val     = IAR_INVALID;
          UWord key_min = ~(UWord)0;
          UWord key_max = (UWord)0;
          VG_(indexRangeMap)( &key_min, &key_max, &val,
                              gIgnoredAddressRanges, i );
-         VG_(dmsg)("memcheck:      [%ld]  %016llx-%016llx  %s\n",
-                   i, (ULong)key_min, (ULong)key_max, showIARKind(val));
+         VG_(dmsg)("memcheck:      [%u]  %016lx-%016lx  %s\n",
+                   i, key_min, key_max, showIARKind(val));
       }
    }
    return True;
@@ -5820,7 +5820,7 @@ static Bool mc_process_cmd_line_options(const HChar* arg)
          return False;
       }
       if (gIgnoredAddressRanges) {
-         Word i;
+         UInt i;
          for (i = 0; i < VG_(sizeRangeMap)(gIgnoredAddressRanges); i++) {
             UWord val     = IAR_INVALID;
             UWord key_min = ~(UWord)0;
@@ -7536,7 +7536,7 @@ static void mc_fini ( Int exitcode )
       pertain to hardware mapped into the address space, and so we
       can't expect the client to have got rid of them. */
    if (gIgnoredAddressRanges) {
-      Word i, nBad = 0;
+      UInt i, nBad = 0;
       for (i = 0; i < VG_(sizeRangeMap)(gIgnoredAddressRanges); i++) {
          UWord val     = IAR_INVALID;
          UWord key_min = ~(UWord)0;
@@ -7558,8 +7558,8 @@ static void mc_fini ( Int exitcode )
                  "VALGRIND_{DISABLE,ENABLE}_ERROR_REPORTING_IN_RANGE macros.\n"
             );
          }
-         VG_(umsg)("   [%ld]  0x%016llx-0x%016llx  %s\n",
-                   i, (ULong)key_min, (ULong)key_max, showIARKind(val));
+         VG_(umsg)("   [%u]  0x%016lx-0x%016lx  %s\n",
+                   i, key_min, key_max, showIARKind(val));
       }
    }
 

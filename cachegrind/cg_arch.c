@@ -382,7 +382,7 @@ configure_caches(cache_t *I1c, cache_t *D1c, cache_t *LLc,
          }
          VG_(dmsg)("warning: Pentium 4 with %u KB micro-op instruction trace cache\n",
                    i1->sizeB / 1024);
-         VG_(dmsg)("         Simulating a %d KB I-cache with %d B lines\n",
+         VG_(dmsg)("         Simulating a %u KB I-cache with %u B lines\n",
                    adjusted_size / 1024, guessed_line_size);
 
          *I1c = (cache_t) { adjusted_size, i1->assoc, guessed_line_size };

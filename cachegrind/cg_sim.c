@@ -155,7 +155,7 @@ Bool cachesim_ref_is_miss(cache_t2* c, Addr a, UChar size)
       }
       return cachesim_setref_is_miss(c, set2, tag2);
    }
-   VG_(printf)("addr: %lx  size: %u  blocks: %ld %ld",
+   VG_(printf)("addr: %lx  size: %u  blocks: %lu %lu",
                a, size, block1, block2);
    VG_(tool_panic)("item straddles more than two cache sets");
    /* not reached */

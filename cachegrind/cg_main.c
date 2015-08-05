@@ -1456,7 +1456,7 @@ static void fprint_CC_table_and_calc_totals(void)
 
       // Print the LineCC
       if (clo_cache_sim && clo_branch_sim) {
-         VG_(fprintf)(fp,  "%u %llu %llu %llu"
+         VG_(fprintf)(fp,  "%d %llu %llu %llu"
                              " %llu %llu %llu"
                              " %llu %llu %llu"
                              " %llu %llu %llu %llu\n",
@@ -1468,7 +1468,7 @@ static void fprint_CC_table_and_calc_totals(void)
                             lineCC->Bi.b, lineCC->Bi.mp);
       }
       else if (clo_cache_sim && !clo_branch_sim) {
-         VG_(fprintf)(fp,  "%u %llu %llu %llu"
+         VG_(fprintf)(fp,  "%d %llu %llu %llu"
                              " %llu %llu %llu"
                              " %llu %llu %llu\n",
                             lineCC->loc.line,
@@ -1477,7 +1477,7 @@ static void fprint_CC_table_and_calc_totals(void)
                             lineCC->Dw.a, lineCC->Dw.m1, lineCC->Dw.mL);
       }
       else if (!clo_cache_sim && clo_branch_sim) {
-         VG_(fprintf)(fp,  "%u %llu"
+         VG_(fprintf)(fp,  "%d %llu"
                              " %llu %llu %llu %llu\n",
                             lineCC->loc.line,
                             lineCC->Ir.a, 
@@ -1485,7 +1485,7 @@ static void fprint_CC_table_and_calc_totals(void)
                             lineCC->Bi.b, lineCC->Bi.mp);
       }
       else {
-         VG_(fprintf)(fp,  "%u %llu\n",
+         VG_(fprintf)(fp,  "%d %llu\n",
                             lineCC->loc.line,
                             lineCC->Ir.a);
       }

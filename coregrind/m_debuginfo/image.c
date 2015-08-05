@@ -474,7 +474,7 @@ static void set_CEnt ( const DiImage* img, UInt entNo, DiOffT off )
       UInt delay = now - t_last;
       t_last = now;
       nread += len;
-      VG_(printf)("XXXXXXXX (tot %'lld)  read %'ld  offset %'lld  delay %'u\n", 
+      VG_(printf)("XXXXXXXX (tot %'llu)  read %'lu  offset %'llu  delay %'u\n", 
                   nread, len, off, delay);
    }
 
@@ -804,10 +804,10 @@ static void ensure_valid_failed (const DiImage* img, DiOffT offset, SizeT size,
 {
    VG_(umsg)("Valgrind: debuginfo reader: ensure_valid failed:\n");
    VG_(umsg)("Valgrind:   during call to %s\n", caller);
-   VG_(umsg)("Valgrind:   request for range [%llu, +%llu) exceeds\n",
-             (ULong)offset, (ULong)size);
-   VG_(umsg)("Valgrind:   valid image size of %llu for image:\n",
-             (ULong)img->size);
+   VG_(umsg)("Valgrind:   request for range [%llu, +%lu) exceeds\n",
+             offset, size);
+   VG_(umsg)("Valgrind:   valid image size of %lu for image:\n",
+             img->size);
    VG_(umsg)("Valgrind:   \"%s\"\n", img->source.name);
    give_up__image_overrun();
 }

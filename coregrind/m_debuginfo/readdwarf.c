@@ -269,7 +269,8 @@ void process_extended_line_op( struct _DebugInfo* di,
    switch (op_code) {
       case DW_LNE_end_sequence:
          if (0) VG_(printf)("1001: si->o %#lx, smr.a %#lx\n",
-                            di->text_debug_bias, state_machine_regs.address );
+                            (UWord)di->text_debug_bias,
+                            state_machine_regs.address );
          /* JRS: added for compliance with spec; is pointless due to
             reset_state_machine below */
          state_machine_regs.end_sequence = 1; 
@@ -618,10 +619,11 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
          Int advAddr = adv;
          state_machine_regs.address += adv;
 
-         if (0) VG_(printf)("smr.a += %#lx\n", adv );
+         if (0) VG_(printf)("smr.a += %#lx\n", (UWord)adv );
          adv = (op_code % info.li_line_range) + info.li_line_base;
          if (0) VG_(printf)("1002: di->o %#lx, smr.a %#lx\n",
-                            di->text_debug_bias, state_machine_regs.address );
+                            (UWord)di->text_debug_bias,
+                            state_machine_regs.address );
          state_machine_regs.line += adv;
 
          if (di->ddump_line)
@@ -660,7 +662,8 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
 
          case DW_LNS_copy:
             if (0) VG_(printf)("1002: di->o %#lx, smr.a %#lx\n",
-                               di->text_debug_bias, state_machine_regs.address );
+                               (UWord)di->text_debug_bias,
+                               state_machine_regs.address );
             if (state_machine_regs.is_stmt) {
                /* only add a statement if there was a previous boundary */
                if (state_machine_regs.last_address) {
@@ -684,11 +687,11 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
             break;
 
          case DW_LNS_advance_pc: {
-            Word adv = info.li_min_insn_length * step_leb128U(&data);
+            UWord adv = info.li_min_insn_length * step_leb128U(&data);
             state_machine_regs.address += adv;
             if (0) VG_(printf)("smr.a += %#lx\n", adv );
             if (di->ddump_line)
-               VG_(printf)("  Advance PC by %ld to 0x%lx\n", 
+               VG_(printf)("  Advance PC by %lu to 0x%lx\n", 
                            adv, state_machine_regs.address);
             break;
          }
@@ -733,7 +736,7 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
             Word adv = (((255 - info.li_opcode_base) / info.li_line_range)
                           * info.li_min_insn_length);
             state_machine_regs.address += adv;
-            if (0) VG_(printf)("smr.a += %#lx\n", adv );
+            if (0) VG_(printf)("smr.a += %#lx\n", (UWord)adv );
             if (di->ddump_line)
                VG_(printf)("  Advance PC by constant %ld to 0x%lx\n", 
                            adv, (Addr)state_machine_regs.address);
@@ -741,7 +744,7 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
          }
          case DW_LNS_fixed_advance_pc: {
             /* XXX: Need something to get 2 bytes */
-            Word adv = ML_(cur_step_UShort)(&data);
+            UWord adv = ML_(cur_step_UShort)(&data);
             state_machine_regs.address += adv;
             if (0) VG_(printf)("smr.a += %#lx\n", adv );
             if (di->ddump_line)
@@ -1131,7 +1134,7 @@ void ML_(read_debuginfo_dwarf3)
       
       if (0) {
          HChar* str_name = ML_(cur_read_strdup)(ui.name, "di.rdd3.3");
-         VG_(printf)("debug_line_sz %lld, ui.stmt_list %lld  %s\n",
+         VG_(printf)("debug_line_sz %llu, ui.stmt_list %llu  %s\n",
                      escn_debug_line.szB, ui.stmt_list, str_name );
          ML_(dinfo_free)(str_name);
       }
@@ -3446,30 +3449,30 @@ static Int show_CF_instruction ( DiCursor instrIN,
 
       case DW_CFA_advance_loc1:
          delta = (UInt)ML_(cur_step_UChar)(&instr);
-         VG_(printf)("  sci:DW_CFA_advance_loc1(%d)\n", delta); 
+         VG_(printf)("  sci:DW_CFA_advance_loc1(%u)\n", delta); 
          break;
 
       case DW_CFA_advance_loc2:
          delta = (UInt)ML_(cur_step_UShort)(&instr);
-         VG_(printf)("  sci:DW_CFA_advance_loc2(%d)\n", delta); 
+         VG_(printf)("  sci:DW_CFA_advance_loc2(%u)\n", delta); 
          break;
 
       case DW_CFA_advance_loc4:
          delta = (UInt)ML_(cur_step_UInt)(&instr);
-         VG_(printf)("  DW_CFA_advance_loc4(%d)\n", delta); 
+         VG_(printf)("  DW_CFA_advance_loc4(%u)\n", delta); 
          break;
 
       case DW_CFA_def_cfa:
          reg = step_leb128( &instr, 0 );
          off = step_leb128( &instr, 0 );
-         VG_(printf)("  DW_CFA_def_cfa: r%d ofs %d\n", (Int)reg, (Int)off); 
+         VG_(printf)("  DW_CFA_def_cfa: r%d ofs %d\n", reg, off); 
          break;
 
       case DW_CFA_def_cfa_sf:
          reg = step_leb128( &instr, 0 );
          off = step_leb128( &instr, 1 );
          VG_(printf)("  DW_CFA_def_cfa_sf: r%d ofs %d\n", 
-                     (Int)reg, (Int)(off * data_a_f));
+                     reg, off * data_a_f);
          break;
 
       case DW_CFA_register:
@@ -3740,7 +3743,7 @@ void ML_(read_callframe_info_dwarf3)
 
    if (di->trace_cfi) {
       VG_(printf)("\n-----------------------------------------------\n");
-      VG_(printf)("CFI info: szB %lld, _avma %#lx\n",
+      VG_(printf)("CFI info: szB %llu, _avma %#lx\n",
                   escn_frame.szB, frame_avma );
       VG_(printf)("CFI info: name %s\n", di->fsm.filename );
    }
@@ -3788,11 +3791,11 @@ void ML_(read_callframe_info_dwarf3)
       ciefde_start = data;
       if (di->trace_cfi) 
          VG_(printf)("\ncie/fde.start   = (frame_image + 0x%llx)\n", 
-                     ML_(cur_minus)(ciefde_start, frame_image));
+                     (ULong)ML_(cur_minus)(ciefde_start, frame_image));
 
       ciefde_len = (ULong)ML_(cur_step_UInt)(&data);
       if (di->trace_cfi) 
-         VG_(printf)("cie/fde.length  = %lld\n", ciefde_len);
+         VG_(printf)("cie/fde.length  = %llu\n", ciefde_len);
 
       /* Apparently, if the .length field is zero, we are at the end
          of the sequence.  This is stated in the Generic Elf
@@ -3801,7 +3804,7 @@ void ML_(read_callframe_info_dwarf3)
       if (ciefde_len == 0) {
          if (di->ddump_frames)
             VG_(printf)("%08llx ZERO terminator\n\n",
-                        ML_(cur_minus)(ciefde_start, frame_image));
+                        (ULong)ML_(cur_minus)(ciefde_start, frame_image));
          return;
       }
 
@@ -3825,7 +3828,7 @@ void ML_(read_callframe_info_dwarf3)
       }
 
       if (di->trace_cfi) 
-         VG_(printf)("cie.pointer     = %lld\n", cie_pointer);
+         VG_(printf)("cie.pointer     = %llu\n", cie_pointer);
 
       /* If cie_pointer is zero for .eh_frame or all ones for .debug_frame,
          we've got a CIE; else it's an FDE. */
@@ -4056,7 +4059,7 @@ void ML_(read_callframe_info_dwarf3)
             look_for = cie_pointer;
 
          for (cie = 0; cie < n_CIEs; cie++) {
-            if (0) VG_(printf)("look for %lld   %lld\n",
+            if (0) VG_(printf)("look for %llu   %llu\n",
                                look_for, the_CIEs[cie].offset );
             if (the_CIEs[cie].offset == look_for)
                break;

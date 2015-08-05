@@ -104,7 +104,7 @@ void ML_(pp_TyEnt)( const TyEnt* te )
                         te->Te.Field.typeR, te->Te.Field.pos.offset,
                         te->Te.Field.name ? te->Te.Field.name : "");
          else
-            VG_(printf)("Te_Field(ty=0x%05lx,nLoc=%lu,pos.loc=%p,\"%s\")",
+            VG_(printf)("Te_Field(ty=0x%05lx,nLoc=%ld,pos.loc=%p,\"%s\")",
                         te->Te.Field.typeR, te->Te.Field.nLoc,
                         te->Te.Field.pos.loc,
                         te->Te.Field.name ? te->Te.Field.name : "");
@@ -152,7 +152,7 @@ void ML_(pp_TyEnt)( const TyEnt* te )
          break;
       case Te_TyStOrUn:
          if (te->Te.TyStOrUn.complete) {
-            VG_(printf)("Te_TyStOrUn(%ld,%c,%p,\"%s\")",
+            VG_(printf)("Te_TyStOrUn(%lu,%c,%p,\"%s\")",
                         te->Te.TyStOrUn.szB, 
                         te->Te.TyStOrUn.isStruct ? 'S' : 'U',
                         te->Te.TyStOrUn.fieldRs,

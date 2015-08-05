@@ -974,8 +974,8 @@ GXResult ML_(evaluate_GX)( const GExpr* gx, const GExpr* fbGX,
       aMax   = ML_(read_Addr)(p);   p += sizeof(Addr);
       nbytes = ML_(read_UShort)(p); p += sizeof(UShort);
       nGuards++;
-      if (0) VG_(printf)("           guard %d: %#lx %#lx\n",
-                         (Int)nGuards, aMin,aMax);
+      if (0) VG_(printf)("           guard %lu: %#lx %#lx\n",
+                         nGuards, aMin,aMax);
       if (regs == NULL) {
          vg_assert(aMin == (Addr)0);
          vg_assert(aMax == ~(Addr)0);

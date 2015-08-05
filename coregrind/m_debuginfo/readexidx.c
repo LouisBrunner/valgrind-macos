@@ -554,7 +554,7 @@ Int ExtabEntryDecode(/*OUT*/SummState* state, const UChar* buf, SizeT buf_size)
 
       if (0)
          VG_(printf)("  edata:  cmd %08x  data %08x\n",
-                     (UInt)edata.cmd, (UInt)edata.data);
+                     (UInt)edata.cmd, edata.data);
 
       Int ret = TranslateCmd ( state, &edata );
       if (ret < 0) return ret;
@@ -673,7 +673,7 @@ Bool setCFAfromCFIR( /*MOD*/DiCfSI_m* cfi, XArray*/*CfiExpr*/ cfsi_exprs,
       default:
          break;
    }
-   VG_(printf)("setCFAfromCFIR: FAIL: how %d off %d\n", (Int)how, (Int)off);
+   VG_(printf)("setCFAfromCFIR: FAIL: how %d off %d\n", how, off);
    vg_assert(0);
    return False;
 }
@@ -970,8 +970,8 @@ void ML_(read_exidx) ( /*MOD*/DebugInfo* di,
       // associated with.
       Addr avma = (Addr)Prel31ToAddr(&entry_img->addr);
       if (di->trace_cfi)
-         VG_(printf)("XXX1 entry: entry->addr 0x%lx, avma 0x%lx\n",
-                     (UWord)entry_img->addr, avma);
+         VG_(printf)("XXX1 entry: entry->addr 0x%x, avma 0x%lx\n",
+                     entry_img->addr, avma);
 
       Addr next_avma;
       if (entry_img < end_img - 1) {
@@ -1006,8 +1006,8 @@ void ML_(read_exidx) ( /*MOD*/DebugInfo* di,
          if (!plausible && avma != text_last_avma + 1) {
             HChar buf[100];
             VG_(snprintf)(buf, sizeof(buf),
-                          "Implausible EXIDX last entry size %u"
-                          "; using 1 instead.", (UInt)(text_last_avma - avma));
+                          "Implausible EXIDX last entry size %lu"
+                          "; using 1 instead.", text_last_avma - avma);
             buf[sizeof(buf)-1] = 0;
             complain(buf);
          }

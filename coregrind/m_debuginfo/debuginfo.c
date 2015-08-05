@@ -621,9 +621,9 @@ static void show_DebugInfoMappings
    n = VG_(sizeXA)(maps);
    for (i = 0; i < n; i++) {
       const DebugInfoMapping* map = VG_(indexXA)(maps, i);
-      TRACE_SYMTAB("  [%ld]    avma 0x%-16llx    size %-8lu    "
-                   "foff %-8lld    %s %s %s\n",
-                   i, (ULong)map->avma, map->size, (Long)map->foff,
+      TRACE_SYMTAB("  [%ld]    avma 0x%-16lx    size %-8lu    "
+                   "foff %-8ld    %s %s %s\n",
+                   i, map->avma, map->size, map->foff,
                    map->rx ? "rx" : "--",
                    map->rw ? "rw" : "--",
                    map->ro ? "ro" : "--");
@@ -1222,7 +1222,7 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
       VG_(message)(Vg_UserMsg,
          "LOAD_PDB_DEBUGINFO: clreq:   fd=%d, avma=%#lx, total_size=%lu, "
          "bias=%#lx\n", 
-         fd_obj, avma_obj, total_size, bias_obj
+         fd_obj, avma_obj, total_size, (UWord)bias_obj
       );
    }
 
@@ -2302,7 +2302,7 @@ const HChar* VG_(describe_IP)(Addr eip, const InlIPCursor *iipc)
       /* Print in XML format, dumping in as much info as we know.
          Ensure all tags are balanced. */
       APPEND("<frame>");
-      VG_(sprintf)(ibuf,"<ip>0x%llX</ip>", (ULong)eip);
+      VG_(sprintf)(ibuf,"<ip>0x%lX</ip>", eip);
       APPEND(maybe_newline);
       APPEND(ibuf);
       if (know_objname) {
@@ -2330,7 +2330,7 @@ const HChar* VG_(describe_IP)(Addr eip, const InlIPCursor *iipc)
          APPEND("</file>");
          APPEND(maybe_newline);
          APPEND("<line>");
-         VG_(sprintf)(ibuf,"%d",lineno);
+         VG_(sprintf)(ibuf,"%u",lineno);
          APPEND(ibuf);
          APPEND("</line>");
       }
@@ -2350,7 +2350,7 @@ const HChar* VG_(describe_IP)(Addr eip, const InlIPCursor *iipc)
       //   0x80483BF: ??? (a.c:20)
       //   0x80483BF: ???
       //
-      VG_(sprintf)(ibuf,"0x%llX: ", (ULong)eip);
+      VG_(sprintf)(ibuf,"0x%lX: ", eip);
       APPEND(ibuf);
       if (know_fnname) {
          APPEND(buf_fn);
@@ -2388,7 +2388,7 @@ const HChar* VG_(describe_IP)(Addr eip, const InlIPCursor *iipc)
          }
          APPEND(buf_srcloc);
          APPEND(":");
-         VG_(sprintf)(ibuf,"%d",lineno);
+         VG_(sprintf)(ibuf,"%u",lineno);
          APPEND(ibuf);
          APPEND(")");
       } else if (know_objname) {
@@ -3042,10 +3042,10 @@ Bool VG_(use_FPO_info) ( /*MOD*/Addr* ipP,
          Word j;
          if (0) {
             /* debug printing only */
-            VG_(printf)("look for %#lx  size %ld i %ld\n",
+            VG_(printf)("look for %#lx  size %lu i %ld\n",
                         *ipP, di->fpo_size, i);
             for (j = 0; j < di->fpo_size; j++)
-               VG_(printf)("[%02ld] %#x %d\n", 
+               VG_(printf)("[%02ld] %#x %u\n",
                             j, di->fpo[j].ulOffStart, di->fpo[j].cbProcSize);
          }
          vg_assert(i >= 0 && i < di->fpo_size);
@@ -3296,19 +3296,19 @@ static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
       if (xml) {
          TAGL( dn1 );
          p2XA( dn1,
-               "Location 0x%lx is %lu byte%s inside local var \"%pS\",",
+               "Location 0x%lx is %ld byte%s inside local var \"%pS\",",
                data_addr, var_offset, vo_plural, var->name );
          TAGR( dn1 );
          TAGL( dn2 );
          p2XA( dn2,
-               "in frame #%d of thread %d", frameNo, (Int)tid );
+               "in frame #%d of thread %u", frameNo, tid );
          TAGR( dn2 );
       } else {
          p2XA( dn1,
-               "Location 0x%lx is %lu byte%s inside local var \"%s\",",
+               "Location 0x%lx is %ld byte%s inside local var \"%s\",",
                data_addr, var_offset, vo_plural, var->name );
          p2XA( dn2,
-               "in frame #%d of thread %d", frameNo, (Int)tid );
+               "in frame #%d of thread %u", frameNo, tid );
       }
    } 
    else
@@ -3320,14 +3320,14 @@ static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
       if (xml) {
          TAGL( dn1 );
          p2XA( dn1,
-               "Location 0x%lx is %lu byte%s inside local var \"%pS\"",
+               "Location 0x%lx is %ld byte%s inside local var \"%pS\"",
                data_addr, var_offset, vo_plural, var->name );
          TAGR( dn1 );
          XAGL( dn2 );
          TXTL( dn2 );
          p2XA( dn2,
-               "declared at %pS:%d, in frame #%d of thread %d",
-               fileName, var->lineNo, frameNo, (Int)tid );
+               "declared at %pS:%d, in frame #%d of thread %u",
+               fileName, var->lineNo, frameNo, tid );
          TXTR( dn2 );
          // FIXME: also do <dir>
          p2XA( dn2,
@@ -3336,11 +3336,11 @@ static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
          XAGR( dn2 );
       } else {
          p2XA( dn1,
-               "Location 0x%lx is %lu byte%s inside local var \"%s\"",
+               "Location 0x%lx is %ld byte%s inside local var \"%s\"",
                data_addr, var_offset, vo_plural, var->name );
          p2XA( dn2,
-               "declared at %s:%d, in frame #%d of thread %d",
-               fileName, var->lineNo, frameNo, (Int)tid );
+               "declared at %s:%d, in frame #%d of thread %u",
+               fileName, var->lineNo, frameNo, tid );
       }
    }
    else
@@ -3352,21 +3352,21 @@ static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
       if (xml) {
          TAGL( dn1 );
          p2XA( dn1,
-               "Location 0x%lx is %lu byte%s inside %pS%pS",
+               "Location 0x%lx is %ld byte%s inside %pS%pS",
                data_addr, residual_offset, ro_plural, var->name,
                (HChar*)(VG_(indexXA)(described,0)) );
          TAGR( dn1 );
          TAGL( dn2 );
          p2XA( dn2,
-               "in frame #%d of thread %d", frameNo, (Int)tid );
+               "in frame #%d of thread %u", frameNo, tid );
          TAGR( dn2 );
       } else {
          p2XA( dn1,
-               "Location 0x%lx is %lu byte%s inside %s%s",
+               "Location 0x%lx is %ld byte%s inside %s%s",
                data_addr, residual_offset, ro_plural, var->name,
                (HChar*)(VG_(indexXA)(described,0)) );
          p2XA( dn2,
-               "in frame #%d of thread %d", frameNo, (Int)tid );
+               "in frame #%d of thread %u", frameNo, tid );
       }
    } 
    else
@@ -3376,15 +3376,15 @@ static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
       if (xml) {
          TAGL( dn1 );
          p2XA( dn1,
-               "Location 0x%lx is %lu byte%s inside %pS%pS,",
+               "Location 0x%lx is %ld byte%s inside %pS%pS,",
                data_addr, residual_offset, ro_plural, var->name,
                (HChar*)(VG_(indexXA)(described,0)) );
          TAGR( dn1 );
          XAGL( dn2 );
          TXTL( dn2 );
          p2XA( dn2,
-               "declared at %pS:%d, in frame #%d of thread %d",
-               fileName, var->lineNo, frameNo, (Int)tid );
+               "declared at %pS:%d, in frame #%d of thread %u",
+               fileName, var->lineNo, frameNo, tid );
          TXTR( dn2 );
          // FIXME: also do <dir>
          p2XA( dn2,
@@ -3393,12 +3393,12 @@ static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
          XAGR( dn2 );
       } else {
          p2XA( dn1,
-               "Location 0x%lx is %lu byte%s inside %s%s,",
+               "Location 0x%lx is %ld byte%s inside %s%s,",
                data_addr, residual_offset, ro_plural, var->name,
                (HChar*)(VG_(indexXA)(described,0)) );
          p2XA( dn2,
-               "declared at %s:%d, in frame #%d of thread %d",
-               fileName, var->lineNo, frameNo, (Int)tid );
+               "declared at %s:%d, in frame #%d of thread %u",
+               fileName, var->lineNo, frameNo, tid );
       }
    }
    else
@@ -3410,12 +3410,12 @@ static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
       if (xml) {
          TAGL( dn1 );
          p2XA( dn1,
-               "Location 0x%lx is %lu byte%s inside global var \"%pS\"",
+               "Location 0x%lx is %ld byte%s inside global var \"%pS\"",
                data_addr, var_offset, vo_plural, var->name );
          TAGR( dn1 );
       } else {
          p2XA( dn1,
-               "Location 0x%lx is %lu byte%s inside global var \"%s\"",
+               "Location 0x%lx is %ld byte%s inside global var \"%s\"",
                data_addr, var_offset, vo_plural, var->name );
       }
    } 
@@ -3428,7 +3428,7 @@ static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
       if (xml) {
          TAGL( dn1 );
          p2XA( dn1,
-               "Location 0x%lx is %lu byte%s inside global var \"%pS\"",
+               "Location 0x%lx is %ld byte%s inside global var \"%pS\"",
                data_addr, var_offset, vo_plural, var->name );
          TAGR( dn1 );
          XAGL( dn2 );
@@ -3444,7 +3444,7 @@ static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
          XAGR( dn2 );
       } else {
          p2XA( dn1,
-               "Location 0x%lx is %lu byte%s inside global var \"%s\"",
+               "Location 0x%lx is %ld byte%s inside global var \"%s\"",
                data_addr, var_offset, vo_plural, var->name );
          p2XA( dn2,
                "declared at %s:%d",
@@ -3460,7 +3460,7 @@ static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
       if (xml) {
          TAGL( dn1 );
          p2XA( dn1,
-               "Location 0x%lx is %lu byte%s inside %pS%pS,",
+               "Location 0x%lx is %ld byte%s inside %pS%pS,",
                data_addr, residual_offset, ro_plural, var->name,
                (HChar*)(VG_(indexXA)(described,0)) );
          TAGR( dn1 );
@@ -3470,9 +3470,9 @@ static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
          TAGR( dn2 );
       } else {
          p2XA( dn1,
-               "Location 0x%lx is %lu byte%s inside %s%s,",
+               "Location 0x%lx is %ld byte%s inside %s%s,",
                data_addr, residual_offset, ro_plural, var->name,
-               (char*)(VG_(indexXA)(described,0)) );
+               (HChar*)(VG_(indexXA)(described,0)) );
          p2XA( dn2,
                "a global variable");
       }
@@ -3484,7 +3484,7 @@ static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
       if (xml) {
          TAGL( dn1 );
          p2XA( dn1,
-               "Location 0x%lx is %lu byte%s inside %pS%pS,",
+               "Location 0x%lx is %ld byte%s inside %pS%pS,",
                data_addr, residual_offset, ro_plural, var->name,
                (HChar*)(VG_(indexXA)(described,0)) );
          TAGR( dn1 );
@@ -3501,7 +3501,7 @@ static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
          XAGR( dn2 );
       } else {
          p2XA( dn1,
-               "Location 0x%lx is %lu byte%s inside %s%s,",
+               "Location 0x%lx is %ld byte%s inside %s%s,",
                data_addr, residual_offset, ro_plural, var->name,
                (HChar*)(VG_(indexXA)(described,0)) );
          p2XA( dn2,
@@ -3935,8 +3935,8 @@ void analyse_deps ( /*MOD*/XArray* /* of FrameBlock */ blocks,
          res = ML_(evaluate_GX)( var->gexpr, var->fbGX, &regs, di );
          vg_assert(res.kind == GXR_Addr);
          if (debug)
-         VG_(printf)("   %5ld .. %5ld (sp) %s\n",
-                     res.word, res.word + ((UWord)mul.ul) - 1, var->name);
+         VG_(printf)("   %5lu .. %5llu (sp) %s\n",
+                     res.word, res.word + mul.ul - 1, var->name);
          block.base  = res.word;
          block.szB   = (SizeT)mul.ul;
          block.spRel = True;
@@ -3954,8 +3954,8 @@ void analyse_deps ( /*MOD*/XArray* /* of FrameBlock */ blocks,
          res = ML_(evaluate_GX)( var->gexpr, var->fbGX, &regs, di );
          vg_assert(res.kind == GXR_Addr);
          if (debug)
-         VG_(printf)("   %5ld .. %5ld (FP) %s\n",
-                     res.word, res.word + ((UWord)mul.ul) - 1, var->name);
+         VG_(printf)("   %5lu .. %5llu (FP) %s\n",
+                     res.word, res.word + mul.ul - 1, var->name);
          block.base  = res.word;
          block.szB   = (SizeT)mul.ul;
          block.spRel = False;
@@ -4357,8 +4357,8 @@ VgSectKind VG_(DebugInfo_sect_kind)( /*OUT*/const HChar** name, Addr a)
 
       if (0)
          VG_(printf)(
-            "addr=%#lx di=%p %s got=%#lx,%ld plt=%#lx,%ld "
-            "data=%#lx,%ld bss=%#lx,%ld\n",
+            "addr=%#lx di=%p %s got=%#lx,%lu plt=%#lx,%lu "
+            "data=%#lx,%lu bss=%#lx,%lu\n",
             a, di, di->fsm.filename,
             di->got_avma,  di->got_size,
             di->plt_avma,  di->plt_size,

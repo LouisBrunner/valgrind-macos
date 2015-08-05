@@ -1113,7 +1113,7 @@ static void pdb_jg_init( struct pdb_reader* reader,
 static 
 void pdb_check_root_version_and_timestamp( const HChar* pdbname,
                                            ULong  pdbmtime,
-                                           unsigned  version,
+                                           UInt  version,
                                            UInt TimeDateStamp )
 {
    switch ( version ) {
@@ -1126,7 +1126,7 @@ void pdb_check_root_version_and_timestamp( const HChar* pdbname,
       default:
          if (VG_(clo_verbosity) > 1)
             VG_(umsg)("LOAD_PDB_DEBUGINFO: "
-                      "Unknown .pdb root block version %d\n", version );
+                      "Unknown .pdb root block version %u\n", version );
    }
    if ( TimeDateStamp != pdbmtime ) {
       if (VG_(clo_verbosity) > 1)
@@ -1238,9 +1238,9 @@ static ULong DEBUG_SnarfCodeView(
 
       default:
          if (0) {
-            const int *isym = (const int *)sym;
+            const UInt *isym = (const UInt *)sym;
             VG_(printf)("unknown id 0x%x len=0x%x at %p\n",
-                        sym->generic.id, sym->generic.len, sym);
+                        (UInt)sym->generic.id, (UInt)sym->generic.len, sym);
             VG_(printf)("  %8x  %8x  %8x  %8x\n", 
                         isym[1], isym[2], isym[3], isym[4]);
             VG_(printf)("  %8x  %8x  %8x  %8x\n",
@@ -1366,7 +1366,7 @@ static ULong DEBUG_SnarfCodeView(
          vsym.isText    = True;
          vsym.isIFunc   = False;
          if (debug)
-            VG_(umsg)("  Adding function %s addr=%#lx length=%d\n",
+            VG_(umsg)("  Adding function %s addr=%#lx length=%u\n",
                       symname, vsym.avmas.main, vsym.size );
          ML_(addSym)( di, &vsym );
          n_syms_read++;
@@ -1387,7 +1387,7 @@ static ULong DEBUG_SnarfCodeView(
          vsym.isText    = True;
          vsym.isIFunc   = False;
          if (debug)
-            VG_(umsg)("  Adding function %s addr=%#lx length=%d\n",
+            VG_(umsg)("  Adding function %s addr=%#lx length=%u\n",
                       symname, vsym.avmas.main, vsym.size );
          ML_(addSym)( di, &vsym );
          n_syms_read++;
@@ -1756,7 +1756,7 @@ static ULong codeview_dump_linetab2(
 
       for (i = 0; i < lbh->nlines; i++) {
          if (debug)
-            VG_(printf)("%s  offset=%08x line=%d\n",
+            VG_(printf)("%s  offset=%08x line=%u\n",
                         pfx, lbh->l[i].offset, lbh->l[i].lineno ^ 0x80000000);
       }
 
@@ -1767,7 +1767,7 @@ static ULong codeview_dump_linetab2(
             svma_e = sectp[lbh->seg - 1].VirtualAddress + lbh->start
                      + lbh->l[i+1].offset-1;
             if (debug)
-               VG_(printf)("%s  line %d: %08lx to %08lx\n",
+               VG_(printf)("%s  line %u: %08lx to %08lx\n",
                            pfx, lbh->l[i].lineno ^ 0x80000000, svma_s, svma_e);
             ML_(addLineInfo)( di, 
                               filedirname_ix,
@@ -1781,7 +1781,7 @@ static ULong codeview_dump_linetab2(
          svma_e = sectp[lbh->seg - 1].VirtualAddress + lbh->start
                   + lbh->size - 1;
          if (debug)
-            VG_(printf)("%s  line %d: %08lx to %08lx\n",
+            VG_(printf)("%s  line %u: %08lx to %08lx\n",
                         pfx, lbh->l[ lbh->nlines-1  ].lineno ^ 0x80000000,
                         svma_s, svma_e);
           ML_(addLineInfo)( di, 
@@ -2099,7 +2099,7 @@ static void pdb_dump( const struct pdb_reader* pdb,
       default:
          if (VG_(clo_verbosity) > 1)
             VG_(umsg)("LOAD_PDB_DEBUGINFO: "
-                      "Unknown .pdb type info version %ld\n", types.version );
+                      "Unknown .pdb type info version %lu\n", types.version );
    }
 
    header_size = 0;
@@ -2113,7 +2113,7 @@ static void pdb_dump( const struct pdb_reader* pdb,
       default:
          if (VG_(clo_verbosity) > 1)
             VG_(umsg)("LOAD_PDB_DEBUGINFO: "
-                      "Unknown .pdb symbol info version %ld\n",
+                      "Unknown .pdb symbol info version %lu\n",
                       symbols.version );
    }
 
@@ -2384,21 +2384,21 @@ Bool ML_(read_pdb_debug_info)(
          const DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
          if (map->rx)
             VG_(dmsg)("LOAD_PDB_DEBUGINFO: "
-                      "rx_map: avma %#lx size %7lu foff %llu\n",
-                      map->avma, map->size, (Off64T)map->foff);
+                      "rx_map: avma %#lx size %7lu foff %ld\n",
+                      map->avma, map->size, map->foff);
       }
       for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
          const DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
          if (map->rw)
             VG_(dmsg)("LOAD_PDB_DEBUGINFO: "
-                      "rw_map: avma %#lx size %7lu foff %llu\n",
-                      map->avma, map->size, (Off64T)map->foff);
+                      "rw_map: avma %#lx size %7lu foff %ld\n",
+                      map->avma, map->size, map->foff);
       }
 
       VG_(dmsg)("LOAD_PDB_DEBUGINFO: "
                 "  text: avma %#lx svma %#lx size %7lu bias %#lx\n",
                 di->text_avma, di->text_svma,
-                di->text_size, di->text_bias);
+                di->text_size, (UWord)di->text_bias);
    }
 
    /*

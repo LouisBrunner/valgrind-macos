@@ -98,7 +98,7 @@ void ML_(ppSym) ( Int idx, const DiSym* sym )
    vg_assert(sym->pri_name);
    if (sec_names)
       vg_assert(sec_names);
-   VG_(printf)( "%5d:  %c%c %#8lx .. %#8lx (%d)      %s%s",
+   VG_(printf)( "%5d:  %c%c %#8lx .. %#8lx (%u)      %s%s",
                 idx,
                 sym->isText ? 'T' : '-',
                 sym->isIFunc ? 'I' : '-',
@@ -143,8 +143,7 @@ void ML_(ppDiCfSI) ( const XArray* /* of CfiExpr */ exprs,
       } while (0)
 
    if (base != 0 || len != 0)
-      VG_(printf)("[%#lx .. %#lx]: ", base,
-                                      base + (UWord)len - 1);
+      VG_(printf)("[%#lx .. %#lx]: ", base, base + len - 1);
    else
       VG_(printf)("[]: ");
 
@@ -658,7 +657,7 @@ void ML_(addInlInfo) ( struct _DebugInfo* di,
    if (0) VG_(message)
              (Vg_DebugMsg, 
               "addInlInfo: fn %s inlined as addr_lo %#lx,addr_hi %#lx,"
-              "caller fndn_ix %d %s:%d\n",
+              "caller fndn_ix %u %s:%d\n",
               inlinedfn, addr_lo, addr_hi, fndn_ix,
               ML_(fndn_ix2filename) (di, fndn_ix), lineno);
 
@@ -1004,7 +1003,7 @@ void show_scope ( OSet* /* of DiAddrRange */ scope, const HChar* who )
    while (True) {
       range = VG_(OSetGen_Next)( scope );
       if (!range) break;
-      VG_(printf)("   %#lx .. %#lx: %lu vars\n", range->aMin, range->aMax,
+      VG_(printf)("   %#lx .. %#lx: %ld vars\n", range->aMin, range->aMax,
                   range->vars ? VG_(sizeXA)(range->vars) : 0);
    }
    VG_(printf)("}\n");
@@ -2019,7 +2018,7 @@ static void canonicaliseLoctab ( struct _DebugInfo* di )
    /* Ensure relevant postconditions hold. */
    for (i = 0; i < ((Word)di->loctab_used)-1; i++) {
       if (0)
-         VG_(printf)("%lu  0x%p  lno:%d sz:%d fndn_ix:%d  i+1 0x%p\n", 
+         VG_(printf)("%ld  0x%p  lno:%d sz:%d fndn_ix:%u  i+1 0x%p\n", 
                      i,
                      (void*)di->loctab[i].addr,
                      di->loctab[i].lineno, 
@@ -2151,9 +2150,9 @@ void ML_(canonicaliseCFI) ( struct _DebugInfo* di )
    }
 
    if (di->trace_cfi)
-      VG_(printf)("canonicaliseCfiSI: %ld entries, %#lx .. %#lx\n",
+      VG_(printf)("canonicaliseCfiSI: %lu entries, %#lx .. %#lx\n",
                   di->cfsi_used,
-	          di->cfsi_minavma, di->cfsi_maxavma);
+                  di->cfsi_minavma, di->cfsi_maxavma);
 
    /* Sort the cfsi_rd array by base address. */
    VG_(ssort)(di->cfsi_rd, di->cfsi_used, sizeof(*di->cfsi_rd), compare_DiCfSI);

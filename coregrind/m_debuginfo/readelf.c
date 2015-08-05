@@ -757,7 +757,7 @@ void read_elf_symtab__normal(
       return;
    }
 
-   TRACE_SYMTAB("\n--- Reading (ELF, standard) %s (%lld entries) ---\n",
+   TRACE_SYMTAB("\n--- Reading (ELF, standard) %s (%llu entries) ---\n",
                 tab_name, escn_symtab->szB/sizeof(ElfXX_Sym) );
 
    /* Perhaps should start at i = 1; ELF docs suggest that entry
@@ -887,7 +887,7 @@ void read_elf_symtab__ppc64be_linux(
       return;
    }
 
-   TRACE_SYMTAB("\n--- Reading (ELF, ppc64be-linux) %s (%lld entries) ---\n",
+   TRACE_SYMTAB("\n--- Reading (ELF, ppc64be-linux) %s (%llu entries) ---\n",
                 tab_name, escn_symtab->szB/sizeof(ElfXX_Sym) );
 
    oset = VG_(OSetGen_Create)( offsetof(TempSym,key), 
@@ -968,21 +968,21 @@ void read_elf_symtab__ppc64be_linux(
 
             if (modify_size && di->trace_symtab) {
                VG_(printf)("    modify (old sz %4d)    "
-                           " val %#010lx, toc %#010lx, sz %4d  %lld\n",
+                           " val %#010lx, toc %#010lx, sz %4d  %llu\n",
                            old_size,
                            prev->key.addr,
                            prev->tocptr,
-                           (Int)  prev->size, 
-                           (ULong)prev->key.name
+                           prev->size, 
+                           prev->key.name
                );
             }
             if (modify_tocptr && di->trace_symtab) {
                VG_(printf)("    modify (upd tocptr)     "
-                           " val %#010lx, toc %#010lx, sz %4d  %lld\n",
+                           " val %#010lx, toc %#010lx, sz %4d  %llu\n",
                            prev->key.addr,
                            prev->tocptr,
-                           (Int)  prev->size,
-                           (ULong)prev->key.name
+                           prev->size,
+                           prev->key.name
                );
             }
 
@@ -1597,20 +1597,20 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    TRACE_SYMTAB("------ Basic facts about the object ------\n");
    TRACE_SYMTAB("object:  n_oimage %llu\n",
                 (ULong)ML_(img_size)(mimg));
-   TRACE_SYMTAB("phdr:    ioff %llu nent %ld ent_szB %ld\n",
+   TRACE_SYMTAB("phdr:    ioff %llu nent %lu ent_szB %lu\n",
                phdr_mioff, phdr_mnent, phdr_ment_szB);
-   TRACE_SYMTAB("shdr:    ioff %llu nent %ld ent_szB %ld\n",
+   TRACE_SYMTAB("shdr:    ioff %llu nent %lu ent_szB %lu\n",
                shdr_mioff, shdr_mnent, shdr_ment_szB);
    for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
       const DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
       if (map->rx)
-         TRACE_SYMTAB("rx_map:  avma %#lx   size %lu  foff %lu\n",
+         TRACE_SYMTAB("rx_map:  avma %#lx   size %lu  foff %ld\n",
                       map->avma, map->size, map->foff);
    }
    for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
       const DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
       if (map->rw)
-         TRACE_SYMTAB("rw_map:  avma %#lx   size %lu  foff %lu\n",
+         TRACE_SYMTAB("rw_map:  avma %#lx   size %lu  foff %ld\n",
                       map->avma, map->size, map->foff);
    }
 
@@ -1711,7 +1711,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                         VG_(addToXA)(svma_ranges, &item);
                         TRACE_SYMTAB(
                            "PT_LOAD[%ld]:   acquired as rw, bias 0x%lx\n",
-                           i, item.bias);
+                           i, (UWord)item.bias);
                         loaded = True;
                      }
                      if (map->rx
@@ -1721,7 +1721,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                         VG_(addToXA)(svma_ranges, &item);
                         TRACE_SYMTAB(
                            "PT_LOAD[%ld]:   acquired as rx, bias 0x%lx\n",
-                           i, item.bias);
+                           i, (UWord)item.bias);
                         loaded = True;
                      }
                   }
@@ -1811,7 +1811,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
       const DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
       if (map->rx)
-         TRACE_SYMTAB("rx: at %#lx are mapped foffsets %ld .. %ld\n",
+         TRACE_SYMTAB("rx: at %#lx are mapped foffsets %ld .. %lu\n",
                       map->avma, map->foff, map->foff + map->size - 1 );
    }
    TRACE_SYMTAB("rx: contains these svma regions:\n");
@@ -1819,12 +1819,12 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       const RangeAndBias* reg = VG_(indexXA)(svma_ranges, i);
       if (reg->exec)
          TRACE_SYMTAB("  svmas %#lx .. %#lx with bias %#lx\n",
-                      reg->svma_base, reg->svma_limit - 1, reg->bias );
+                      reg->svma_base, reg->svma_limit - 1, (UWord)reg->bias );
    }
    for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
       const DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
       if (map->rw)
-         TRACE_SYMTAB("rw: at %#lx are mapped foffsets %ld .. %ld\n",
+         TRACE_SYMTAB("rw: at %#lx are mapped foffsets %ld .. %lu\n",
                       map->avma, map->foff, map->foff + map->size - 1 );
    }
    TRACE_SYMTAB("rw: contains these svma regions:\n");
@@ -1832,7 +1832,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       const RangeAndBias* reg = VG_(indexXA)(svma_ranges, i);
       if (!reg->exec)
          TRACE_SYMTAB("  svmas %#lx .. %#lx with bias %#lx\n",
-                      reg->svma_base, reg->svma_limit - 1, reg->bias );
+                      reg->svma_base, reg->svma_limit - 1, (UWord)reg->bias );
    }
 
    /* TOPLEVEL */
@@ -1867,7 +1867,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          }
       }
 
-      TRACE_SYMTAB(" [sec %2ld]  %s %s  al%2u  foff %6ld .. %6ld  "
+      TRACE_SYMTAB(" [sec %2ld]  %s %s  al%2u  foff %6ld .. %6lu  "
                    "  svma %p  name \"%s\"\n", 
                    i, inrx ? "rx" : "  ", inrw ? "rw" : "  ", alyn,
                    foff, foff+size-1, (void*)svma, name);
@@ -1924,7 +1924,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             TRACE_SYMTAB("acquiring .text avma = %#lx .. %#lx\n",
                          di->text_avma, 
                          di->text_avma + di->text_size - 1);
-            TRACE_SYMTAB("acquiring .text bias = %#lx\n", di->text_bias);
+            TRACE_SYMTAB("acquiring .text bias = %#lx\n", (UWord)di->text_bias);
          } else {
             BAD(".text");
          }
@@ -1946,7 +1946,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             TRACE_SYMTAB("acquiring .data avma = %#lx .. %#lx\n",
                          di->data_avma,
                          di->data_avma + di->data_size - 1);
-            TRACE_SYMTAB("acquiring .data bias = %#lx\n", di->data_bias);
+            TRACE_SYMTAB("acquiring .data bias = %#lx\n", (UWord)di->data_bias);
          } else {
             BAD(".data");
          }
@@ -1968,7 +1968,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             TRACE_SYMTAB("acquiring .sdata avma = %#lx .. %#lx\n",
                          di->sdata_avma,
                          di->sdata_avma + di->sdata_size - 1);
-            TRACE_SYMTAB("acquiring .sdata bias = %#lx\n", di->sdata_bias);
+            TRACE_SYMTAB("acquiring .sdata bias = %#lx\n",
+                         (UWord)di->sdata_bias);
          } else {
             BAD(".sdata");
          }
@@ -1991,7 +1992,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             TRACE_SYMTAB("acquiring .rodata avma = %#lx .. %#lx\n",
                          di->rodata_avma,
                          di->rodata_avma + di->rodata_size - 1);
-            TRACE_SYMTAB("acquiring .rodata bias = %#lx\n", di->rodata_bias);
+            TRACE_SYMTAB("acquiring .rodata bias = %#lx\n",
+                         (UWord)di->rodata_bias);
          } else {
             BAD(".rodata");
          }
@@ -2013,7 +2015,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             TRACE_SYMTAB("acquiring .dynbss avma = %#lx .. %#lx\n",
                          di->bss_avma,
                          di->bss_avma + di->bss_size - 1);
-            TRACE_SYMTAB("acquiring .dynbss bias = %#lx\n", di->bss_bias);
+            TRACE_SYMTAB("acquiring .dynbss bias = %#lx\n",
+                         (UWord)di->bss_bias);
          }
       }
 
@@ -2028,7 +2031,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                          svma, svma + size - 1);
             TRACE_SYMTAB("acquiring .bss avma = %#lx .. %#lx\n",
                          svma + inrw->bias, svma + inrw->bias + size - 1);
-            TRACE_SYMTAB("acquiring .bss bias = %#lx\n", di->bss_bias);
+            TRACE_SYMTAB("acquiring .bss bias = %#lx\n",
+                         (UWord)di->bss_bias);
          } else
 
          if (inrw && !di->bss_present) {
@@ -2045,7 +2049,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             TRACE_SYMTAB("acquiring .bss avma = %#lx .. %#lx\n",
                          di->bss_avma,
                          di->bss_avma + di->bss_size - 1);
-            TRACE_SYMTAB("acquiring .bss bias = %#lx\n", di->bss_bias);
+            TRACE_SYMTAB("acquiring .bss bias = %#lx\n",
+                         (UWord)di->bss_bias);
          } else
 
          /* Now one from the wtf?! department ... */
@@ -2098,7 +2103,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             TRACE_SYMTAB("acquiring .sdynbss avma = %#lx .. %#lx\n",
                          di->sbss_avma,
                          di->sbss_avma + di->sbss_size - 1);
-            TRACE_SYMTAB("acquiring .sdynbss bias = %#lx\n", di->sbss_bias);
+            TRACE_SYMTAB("acquiring .sdynbss bias = %#lx\n",
+                         (UWord)di->sbss_bias);
          }
       }
 
@@ -2113,7 +2119,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                          svma, svma + size - 1);
             TRACE_SYMTAB("acquiring .sbss avma = %#lx .. %#lx\n",
                          svma + inrw->bias, svma + inrw->bias + size - 1);
-            TRACE_SYMTAB("acquiring .sbss bias = %#lx\n", di->sbss_bias);
+            TRACE_SYMTAB("acquiring .sbss bias = %#lx\n", (UWord)di->sbss_bias);
          } else
 
          if (inrw && !di->sbss_present) {
@@ -2130,7 +2136,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             TRACE_SYMTAB("acquiring .sbss avma = %#lx .. %#lx\n",
                          di->sbss_avma,
                          di->sbss_avma + di->sbss_size - 1);
-            TRACE_SYMTAB("acquiring .sbss bias = %#lx\n", di->sbss_bias);
+            TRACE_SYMTAB("acquiring .sbss bias = %#lx\n", (UWord)di->sbss_bias);
          } else {
             BAD(".sbss");
          }
@@ -2264,7 +2270,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             TRACE_SYMTAB("acquiring .exidx avma = %#lx .. %#lx\n",
                          di->exidx_avma, 
                          di->exidx_avma + di->exidx_size - 1);
-            TRACE_SYMTAB("acquiring .exidx bias = %#lx\n", di->exidx_bias);
+            TRACE_SYMTAB("acquiring .exidx bias = %#lx\n",
+                         (UWord)di->exidx_bias);
          } else {
             BAD(".ARM.exidx");
          }
@@ -2286,7 +2293,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             TRACE_SYMTAB("acquiring .extab avma = %#lx .. %#lx\n",
                          di->extab_avma, 
                          di->extab_avma + di->extab_size - 1);
-            TRACE_SYMTAB("acquiring .extab bias = %#lx\n", di->extab_bias);
+            TRACE_SYMTAB("acquiring .extab bias = %#lx\n",
+                         (UWord)di->extab_bias);
          } else {
             BAD(".ARM.extab");
          }
@@ -2299,8 +2307,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    } /* iterate over the section headers */
 
    /* TOPLEVEL */
-   if (0) VG_(printf)("YYYY text_: avma %#lx  size %ld  bias %#lx\n",
-                      di->text_avma, di->text_size, di->text_bias);
+   if (0) VG_(printf)("YYYY text_: avma %#lx  size %lu  bias %#lx\n",
+                      di->text_avma, di->text_size, (UWord)di->text_bias);
 
    if (VG_(clo_verbosity) > 2 || VG_(clo_trace_redir))
       VG_(message)(Vg_DebugMsg, "   svma %#010lx, avma %#010lx\n",
@@ -2646,7 +2654,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                                di->_sec##_debug_svma, \
                                di->_sec##_debug_svma + di->_sec##_size - 1); \
                   TRACE_SYMTAB("acquiring ." #_sec " debug bias = %#lx\n", \
-                               di->_sec##_debug_bias); \
+                               (UWord)di->_sec##_debug_bias);           \
                } \
             } while (0);
 
@@ -3008,7 +3016,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             }
          }
       }
-      VG_(umsg)("VARINFO: %7lu vars   %7ld text_size   %s\n",
+      VG_(umsg)("VARINFO: %7lu vars   %7lu text_size   %s\n",
                 nVars, di->text_size, di->fsm.filename);
    }
    /* TOPLEVEL */

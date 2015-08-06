@@ -53,7 +53,7 @@ void sr_extended_perror (SysRes sr, const HChar *msg)
       VG_(dmsg)("current sigmask value { ");
       for (i = 1; i <= _VKI_NSIG; i++) {
          if (VG_(sigismember)(&cursigset, i))
-            VG_(dmsg)("%u ", i);
+            VG_(dmsg)("%d ", i);
       }
       VG_(dmsg)("}\n");
    }
@@ -598,7 +598,7 @@ int fromhex (int a)
    else if (a >= 'a' && a <= 'f')
       return a - 'a' + 10;
    else
-      error ("Reply contains invalid hex digit 0x%x\n", a);
+     error ("Reply contains invalid hex digit 0x%x\n", (unsigned)a);
    return 0;
 }
 
@@ -878,7 +878,7 @@ int putpkt_binary (char *buf, int cnt)
 
       cc = readchar (1);
       if (cc > 0)
-         dlog(3, "[received '%c' (0x%x)]\n", cc, cc);
+         dlog(3, "[received '%c' (0x%x)]\n", cc, (unsigned)cc);
 
       if (cc <= 0) {
          if (cc == 0)
@@ -1038,7 +1038,7 @@ int getpkt (char *buf)
          break;
 
       dlog (0, "Bad checksum, sentsum=0x%x, csum=0x%x, buf=%s\n",
-            (c1 << 4) + c2, csum, buf);
+            (unsigned)(c1 << 4) + c2, (unsigned)csum, buf);
       if (!ensure_write_remote_desc()) {
          dlog(1, "getpkt(write nack) no write_remote_desc");
       }
@@ -1164,7 +1164,7 @@ void prepare_resume_reply (char *buf, char status, unsigned char sig)
             ((struct inferior_list_entry *)current_inferior)->id;
          gdb_id_from_wait = thread_to_gdb_id (current_inferior);
          
-         dlog(1, "Writing resume reply for %ld\n", thread_from_wait);
+         dlog(1, "Writing resume reply for %lu\n", thread_from_wait);
          /* This if (1) ought to be unnecessary.  But remote_wait in GDB
             will claim this event belongs to inferior_ptid if we do not
             specify a thread, and there's no way for gdbserver to know

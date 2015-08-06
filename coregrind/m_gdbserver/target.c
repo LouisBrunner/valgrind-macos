@@ -44,7 +44,7 @@ static
 char *image_ptid(unsigned long ptid)
 {
   static char result[50];    // large enough
-  VG_(sprintf) (result, "id %ld", ptid);
+  VG_(sprintf) (result, "id %lu", ptid);
   return result;
 }
 #define get_thread(inf) ((struct thread_info *)(inf))
@@ -74,7 +74,7 @@ void valgrind_update_threads (int pid)
   /* call add_thread for all valgrind threads not known in gdb all_threads */
   for (tid = 1; tid < VG_N_THREADS; tid++) {
 
-#define LOCAL_THREAD_TRACE " ti* %p vgtid %d status %s as gdb ptid %s lwpid %d\n", \
+#define LOCAL_THREAD_TRACE " ti* %p vgtid %u status %s as gdb ptid %s lwpid %d\n", \
         ti, tid, VG_(name_of_ThreadStatus) (ts->status), \
         image_ptid (ptid), ts->os_state.lwpid
 
@@ -293,7 +293,7 @@ unsigned char valgrind_wait (char *ourstatus)
       if (*ourstatus == 'X') {
          sig = target_signal_from_host(exit_code_to_report);
          exit_code_to_report = 0;
-         dlog(1, "exit valgrind_wait status X signal %d\n", sig);
+         dlog(1, "exit valgrind_wait status X signal %u\n", sig);
          return sig;
       }
    }
@@ -320,7 +320,7 @@ unsigned char valgrind_wait (char *ourstatus)
    stop_pc = (*the_low_target.get_pc) ();
    
    dlog(1,
-        "exit valgrind_wait status T ptid %s stop_pc %s signal %d\n", 
+        "exit valgrind_wait status T ptid %s stop_pc %s signal %u\n", 
         image_ptid (wptid), sym (stop_pc), sig);
    return sig;
 }
@@ -351,7 +351,7 @@ void fetch_register (int regno)
       if (mod && VG_(debugLog_getLevel)() > 1) {
          char bufimage [2*size + 1];
          heximage (bufimage, buf, size);
-         dlog(3, "fetched register %d size %d name %s value %s tid %d status %s\n", 
+         dlog(3, "fetched register %d size %d name %s value %s tid %u status %s\n", 
               regno, size, the_low_target.reg_defs[regno].name, bufimage, 
               tid, VG_(name_of_ThreadStatus) (tst->status));
       }
@@ -419,7 +419,7 @@ void usr_store_inferior_registers (int regno)
             heximage (bufimage, buf, size);
             dlog(2, 
                  "stored register %d size %d name %s value %s "
-                 "tid %d status %s\n", 
+                 "tid %u status %s\n", 
                  regno, size, the_low_target.reg_defs[regno].name, bufimage, 
                  tid, VG_(name_of_ThreadStatus) (tst->status));
          }
@@ -681,7 +681,7 @@ Bool valgrind_get_tls_addr (ThreadState *tst,
 
    // Check we can read at least 2 address at the beginning of dtv.
    CHECK_DEREF(dtv, 2*sizeof(CORE_ADDR), "dtv 2 first entries");
-   dlog (2, "tid %d dtv %p\n", tst->tid, (void*)dtv);
+   dlog (2, "tid %u dtv %p\n", tst->tid, (void*)dtv);
 
    // Check we can read the modid
    CHECK_DEREF(lm+lm_modid_offset, sizeof(unsigned long int), "link_map modid");
@@ -766,7 +766,7 @@ void set_desired_inferior (int use_general)
   {
      ThreadState *tst = (ThreadState *) inferior_target_data (current_inferior);
      ThreadId tid = tst->tid;
-     dlog(1, "set_desired_inferior use_general %d found %p tid %d lwpid %d\n",
+     dlog(1, "set_desired_inferior use_general %d found %p tid %u lwpid %d\n",
           use_general, found, tid, tst->os_state.lwpid);
   }
 }

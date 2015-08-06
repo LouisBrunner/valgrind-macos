@@ -425,7 +425,7 @@ Bool VG_(is_watched)(PointKind kind, Addr addr, Int szB)
    vg_assert (kind == access_watchpoint 
               || kind == read_watchpoint 
               || kind == write_watchpoint);
-   dlog(1, "tid %d VG_(is_watched) %s addr %p szB %d\n",
+   dlog(1, "tid %u VG_(is_watched) %s addr %p szB %d\n",
         tid, VG_(ppPointKind) (kind), C2v(addr), szB);
 
    for (i = 0; i < n_elems; i++) {
@@ -622,7 +622,7 @@ void VG_(gdbserver_prerun_action) (ThreadId tid)
    data from its parent */
 static void gdbserver_cleanup_in_child_after_fork(ThreadId me)
 {
-   dlog(1, "thread %d gdbserver_cleanup_in_child_after_fork pid %d\n",
+   dlog(1, "thread %u gdbserver_cleanup_in_child_after_fork pid %d\n",
         me, VG_(getpid) ());
 
    /* finish connection inheritated from parent */
@@ -663,7 +663,7 @@ static void call_gdbserver ( ThreadId tid , CallReason reason)
    Addr saved_pc;
 
    dlog(1, 
-        "entering call_gdbserver %s ... pid %d tid %d status %s "
+        "entering call_gdbserver %s ... pid %d tid %u status %s "
         "sched_jmpbuf_valid %d\n",
         ppCallReason (reason),
         VG_(getpid) (), tid, VG_(name_of_ThreadStatus)(tst->status),
@@ -754,7 +754,7 @@ static void call_gdbserver ( ThreadId tid , CallReason reason)
       Otherwise we just return to continue executing the
       current block. */
    if (VG_(get_IP) (tid) != saved_pc) {
-      dlog(1, "tid %d %s PC changed from %s to %s\n",
+      dlog(1, "tid %u %s PC changed from %s to %s\n",
            tid, VG_(name_of_ThreadStatus) (tst->status),
            sym(saved_pc, /* is_code */ True),
            sym(VG_(get_IP) (tid), /* is_code */ True));
@@ -841,7 +841,7 @@ static void give_control_back_to_vgdb(void)
       ptrace handling. */
    vg_assert2(0, 
               "vgdb did not took control. Did you kill vgdb ?\n"
-              "busy %d vgdb_interrupted_tid %d\n",
+              "busy %d vgdb_interrupted_tid %u\n",
               busy, vgdb_interrupted_tid);
 #else /* defined(VGO_solaris) */
    /* On Solaris, this code is run within the context of an agent thread
@@ -912,12 +912,12 @@ void VG_(invoke_gdbserver) ( int check )
       From here onwards, function calls are ok: it is
       safe to call valgrind core functions: all threads are blocked in
       a system call or are yielding or ... */
-   dlog(1, "invoke_gdbserver running_tid %d vgdb_interrupted_tid %d\n",
+   dlog(1, "invoke_gdbserver running_tid %u vgdb_interrupted_tid %u\n",
         VG_(running_tid), vgdb_interrupted_tid);
    call_gdbserver (vgdb_interrupted_tid, vgdb_reason);
    vgdb_interrupted_tid = 0;
    dlog(1,
-        "exit invoke_gdbserver running_tid %d\n", VG_(running_tid));
+        "exit invoke_gdbserver running_tid %u\n", VG_(running_tid));
    give_control_back_to_vgdb();
 
    vg_assert2(0, "end of invoke_gdbserver reached");
@@ -948,7 +948,7 @@ static void dlog_signal (const HChar *who, const vki_siginfo_t *info,
                          ThreadId tid)
 {
    dlog(1, "VG core calling %s "
-        "vki_nr %d %s gdb_nr %d %s tid %d\n", 
+        "vki_nr %d %s gdb_nr %u %s tid %u\n", 
         who,
         info->si_signo, VG_(signame)(info->si_signo),
         target_signal_from_host (info->si_signo),
@@ -1014,7 +1014,7 @@ Bool VG_(gdbserver_report_signal) (vki_siginfo_t *info, ThreadId tid)
 
 void VG_(gdbserver_exit) (ThreadId tid, VgSchedReturnCode tids_schedretcode)
 {
-   dlog(1, "VG core calling VG_(gdbserver_exit) tid %d will exit\n", tid);
+   dlog(1, "VG core calling VG_(gdbserver_exit) tid %u will exit\n", tid);
    if (remote_connected()) {
       /* Make sure vgdb knows we are about to die and why. */
       switch(tids_schedretcode) {
@@ -1505,7 +1505,7 @@ void VG_(gdbserver_status_output)(void)
    VG_(umsg)
       ("nr of calls to gdbserver: %d\n"
        "single stepping %d\n"
-       "interrupts intr_tid %d gs_non_busy %d gs_busy %d tid_non_intr %d\n"
+       "interrupts intr_tid %u gs_non_busy %d gs_busy %d tid_non_intr %d\n"
        "gdbserved addresses %d (-1 = not initialized)\n"
        "watchpoints %d (-1 = not initialized)\n"
        "vgdb-error %d\n"

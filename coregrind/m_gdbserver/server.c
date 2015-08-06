@@ -375,7 +375,7 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
          VG_(show_all_errors)(/* verbosity */ 2, /* xml */ False);
          break;
       case  1: // n_errs_found
-         VG_(printf) ("n_errs_found %d n_errs_shown %d (vgdb-error %d) %s\n",
+         VG_(printf) ("n_errs_found %u n_errs_shown %u (vgdb-error %d) %s\n",
                       VG_(get_n_errs_found) (),
                       VG_(get_n_errs_shown) (),
                       VG_(dyn_vgdb_error),
@@ -763,12 +763,12 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
             len = (PBUFSIZ + POVERHSIZ) / 2;
          char status[len];
          if (tst->thread_name) {
-            VG_(snprintf) (status, sizeof(status), "tid %d %s %s",
+            VG_(snprintf) (status, sizeof(status), "tid %u %s %s",
                            tst->tid, 
                            VG_(name_of_ThreadStatus)(tst->status),
                            tst->thread_name);
          } else {
-            VG_(snprintf) (status, sizeof(status), "tid %d %s",
+            VG_(snprintf) (status, sizeof(status), "tid %u %s",
                            tst->tid, 
                            VG_(name_of_ThreadStatus)(tst->status));
          }
@@ -900,7 +900,7 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
          UWord *client_auxv = VG_(client_auxv);
          unsigned int client_auxv_len = 0;
          while (*client_auxv != 0) {
-            dlog(4, "auxv %lld %llx\n",
+            dlog(4, "auxv %llu %llx\n",
                  (ULong)*client_auxv,
                  (ULong)*(client_auxv+1));
             client_auxv++;
@@ -908,7 +908,7 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
             client_auxv_len += 2 * sizeof(UWord);
          }
          client_auxv_len += 2 * sizeof(UWord);
-         dlog(4, "auxv len %d\n", client_auxv_len);
+         dlog(4, "auxv len %u\n", client_auxv_len);
 
          if (ofs >= client_auxv_len)
             n = -1;
@@ -1030,7 +1030,7 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
    /* Protocol features query.  */
    if (strncmp ("qSupported", arg_own_buf, 10) == 0
        && (arg_own_buf[10] == ':' || arg_own_buf[10] == '\0')) {
-      VG_(sprintf) (arg_own_buf, "PacketSize=%x", PBUFSIZ - 1);
+      VG_(sprintf) (arg_own_buf, "PacketSize=%x", (UInt)PBUFSIZ - 1);
       /* Note: max packet size including frame and checksum, but without
          trailing null byte, which is not sent/received. */
 
@@ -1414,7 +1414,7 @@ void server_main (void)
          VG_(umsg) ("\nChild exited with status %d\n", zignal);
       if (status == 'X')
          VG_(umsg) ("\nChild terminated with signal = 0x%x (%s)\n",
-                    target_signal_to_host (zignal),
+                    (UInt)target_signal_to_host (zignal),
                     target_signal_to_name (zignal));
       if (status == 'W' || status == 'X') {
          VG_(umsg) ("Process exiting\n");

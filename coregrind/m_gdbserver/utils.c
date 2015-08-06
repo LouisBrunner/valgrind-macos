@@ -30,7 +30,7 @@ void sr_perror (SysRes sr, const char *string,...)
 {
    va_list args;
    if (sr_isError (sr))
-      VG_(umsg) ("error %ld %s\n", sr_Err(sr), VG_(strerror) (sr_Err(sr)));
+      VG_(umsg) ("error %lu %s\n", sr_Err(sr), VG_(strerror) (sr_Err(sr)));
    else
       VG_(umsg) ("sr_perror called with no error!!!\n");
    va_start (args, string);

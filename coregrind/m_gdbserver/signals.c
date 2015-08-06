@@ -741,7 +741,7 @@ int do_target_signal_to_host (enum target_signal oursig,
       }
 #endif
       error ("Valgrind GDBSERVER bug: (do_target_signal_to_host):"
-             " unrecognized target signal %d\n", oursig);
+             " unrecognized target signal %u\n", oursig);
       *oursig_ok = 0;
       return 0;
    }

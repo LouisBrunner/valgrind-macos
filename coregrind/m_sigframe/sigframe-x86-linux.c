@@ -567,7 +567,7 @@ void VG_(sigframe_create)( ThreadId tid,
    if (0)
       VG_(printf)("pushed signal frame; %%ESP now = %#lx, "
                   "next %%EIP = %#x, status=%d\n",
-		  esp, tst->arch.vex.guest_EIP, tst->status);
+		  esp, tst->arch.vex.guest_EIP, (Int)tst->status);
 }
 
 
@@ -583,7 +583,7 @@ Bool restore_vg_sigframe ( ThreadState *tst,
 {
    if (frame->magicPI != 0x31415927 ||
        frame->magicE  != 0x27182818) {
-      VG_(message)(Vg_UserMsg, "Thread %d return signal frame "
+      VG_(message)(Vg_UserMsg, "Thread %u return signal frame "
                                "corrupted.  Killing process.\n",
 		   tst->tid);
       VG_(set_default_handler)(VKI_SIGSEGV);
@@ -673,7 +673,7 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
    if (VG_(clo_trace_signals))
       VG_(message)(
          Vg_DebugMsg, 
-         "VG_(signal_return) (thread %d): isRT=%d valid magic; EIP=%#x\n",
+         "VG_(signal_return) (thread %u): isRT=%d valid magic; EIP=%#x\n",
          tid, isRT, tst->arch.vex.guest_EIP);
 
    /* tell the tools */

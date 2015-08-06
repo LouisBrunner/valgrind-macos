@@ -283,7 +283,7 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
              
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg,
-                   "vg_pop_signal_frame (thread %d): "
+                   "vg_pop_signal_frame (thread %u): "
                    "isRT=%d valid magic; PC=%#llx\n",
                    tid, has_siginfo, tst->arch.vex.guest_PC);
 

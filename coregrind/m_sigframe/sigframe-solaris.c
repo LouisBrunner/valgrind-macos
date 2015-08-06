@@ -221,7 +221,7 @@ void VG_(sigframe_create)(ThreadId tid, Bool on_altstack,
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg,
-                   "sigframe_create (thread %d): next IP=%#lx, "
+                   "sigframe_create (thread %u): next IP=%#lx, "
                    "next SP=%#lx\n",
                    tid, (Addr)handler, (Addr)frame);
 }
@@ -256,7 +256,7 @@ void VG_(sigframe_return)(ThreadId tid, const vki_ucontext_t *uc)
    /* Returning from a signal handler. */
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg,
-                   "sigframe_return (thread %d): IP=%#lx\n",
+                   "sigframe_return (thread %u): IP=%#lx\n",
                    tid, VG_(get_IP)(tid));
 
    /* Tell the tool. */

@@ -83,7 +83,7 @@ Bool ML_(sf_maybe_extend_stack) ( const ThreadState *tst, Addr addr,
 
    if (stackseg == NULL || !stackseg->hasR || !stackseg->hasW) {
       VG_(umsg)("Can't extend stack to %#lx during signal delivery for "
-                "thread %d:\n", addr, tid);
+                "thread %u:\n", addr, tid);
       if (stackseg == NULL)
          VG_(umsg)("  no stack segment\n");
       else

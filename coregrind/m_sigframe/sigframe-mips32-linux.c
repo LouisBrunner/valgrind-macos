@@ -339,7 +339,7 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
   VG_TRACK(die_mem_stack_signal, sp, frame_size);
   if (VG_(clo_trace_signals))
     VG_(message)( Vg_DebugMsg, 
-         "VG_(signal_return) (thread %d): isRT=%d valid magic; EIP=%#x\n",
+         "VG_(signal_return) (thread %u): isRT=%d valid magic; EIP=%#x\n",
          tid, isRT, tst->arch.vex.guest_PC);
   /* tell the tools */
   VG_TRACK( post_deliver_signal, tid, sigNo );

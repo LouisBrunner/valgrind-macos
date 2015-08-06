@@ -222,7 +222,7 @@ void VG_(sigframe_create) ( ThreadId tid,
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg,
-                   "sigframe_create (thread %d): "
+                   "sigframe_create (thread %u): "
                    "next RIP=%#lx, next RSP=%#lx\n",
                    tid, (Addr)handler, (Addr)frame );
 }

@@ -239,7 +239,7 @@ void VG_(sigframe_create)( ThreadId tid,
   if (0)
     VG_(printf)("pushed signal frame; sp now = %lx, "
                 "next %pc = %lx, status=%d\n",
-                (Addr)frame, tst->arch.vex.guest_pc, tst->status);
+                (Addr)frame, tst->arch.vex.guest_pc, (Int)tst->status);
 }
 
 /* EXPORTED */
@@ -264,7 +264,7 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
     if (0)
       VG_(printf)("destroy signal frame; sp = %lx, "
                   " %pc = %lx, status=%d\n",
-                  (Addr)frame, tst->arch.vex.guest_pc, tst->status);
+                  (Addr)frame, tst->arch.vex.guest_pc, (Int)tst->status);
 
     frame_size = sizeof(*frame);
     mc = &ucp->uc_mcontext;
@@ -339,7 +339,7 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
   VG_TRACK(die_mem_stack_signal, sp, frame_size);
   if (VG_(clo_trace_signals))
     VG_(message)( Vg_DebugMsg,
-                  "VG_(signal_return) (thread %d): isRT=%d valid magic; EIP=%#x\n",
+                  "VG_(signal_return) (thread %u): isRT=%d valid magic; EIP=%#x\n",
                   tid, isRT, tst->arch.vex.guest_pc);
   /* tell the tools */
   VG_TRACK( post_deliver_signal, tid, sigNo );

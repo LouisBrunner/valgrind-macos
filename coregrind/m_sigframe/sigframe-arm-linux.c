@@ -279,25 +279,25 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
 
    sigNo = priv->sigNo_private;
 
-    //XXX: restore regs
-#  define REST(reg,REG)  tst->arch.vex.guest_##REG = mc->arm_##reg;
-   REST(r0,R0);
-   REST(r1,R1);
-   REST(r2,R2);
-   REST(r3,R3);
-   REST(r4,R4);
-   REST(r5,R5);
-   REST(r6,R6);
-   REST(r7,R7);
-   REST(r8,R8);
-   REST(r9,R9);
-   REST(r10,R10);
-   REST(fp,R11);
-   REST(ip,R12);
-   REST(sp,R13);
-   REST(lr,R14);
-   REST(pc,R15T);
-#  undef REST
+//ZZ     //XXX: restore regs
+//ZZ #  define REST(reg,REG)  tst->arch.vex.guest_##REG = mc->arm_##reg;
+//ZZ    REST(r0,R0);
+//ZZ    REST(r1,R1);
+//ZZ    REST(r2,R2);
+//ZZ    REST(r3,R3);
+//ZZ    REST(r4,R4);
+//ZZ    REST(r5,R5);
+//ZZ    REST(r6,R6);
+//ZZ    REST(r7,R7);
+//ZZ    REST(r8,R8);
+//ZZ    REST(r9,R9);
+//ZZ    REST(r10,R10);
+//ZZ    REST(fp,R11);
+//ZZ    REST(ip,R12);
+//ZZ    REST(sp,R13);
+//ZZ    REST(lr,R14);
+//ZZ    REST(pc,R15T);
+//ZZ #  undef REST
 
    /* Uh, the next line makes all the REST() above pointless. */
    tst->arch.vex         = priv->vex;

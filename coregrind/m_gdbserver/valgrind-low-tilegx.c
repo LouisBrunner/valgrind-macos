@@ -225,11 +225,13 @@ void transfer_register ( ThreadId tid, int abs_regno, void * buf,
 static
 const char* target_xml ( Bool shadow_mode )
 {
-  if (shadow_mode) {
+  return NULL;
+#if 0
+  if (shadow_mode)
     return "tilegx-linux-valgrind.xml";
-  } else {
+  else
     return "tilegx-linux.xml";
-  }
+#endif
 }
 
 static CORE_ADDR** target_get_dtv (ThreadState *tst)

@@ -1,0 +1,85 @@
+#!/bin/sh -e
+
+# Simple script to build GCC including its prerequisites.
+# "Simple" means: no error recovery, no signature verification, 
+# no checking whether the prerequisites are new enough for the
+# chosen GCC version. You need to figure this out by yourself.
+#
+# Define the following 6 variables:
+
+BUILD_DIR=/tmp/build-gcc
+INSTALL_DIR=/tmp/install
+
+GCC_VERSION=5.1.0
+GMP_VERSION=5.1.3
+MPC_VERSION=1.0.3
+MPFR_VERSION=3.1.3
+
+#-----------------------------------------------------------
+# No changes should be needed below this line
+#-----------------------------------------------------------
+
+# Create build directory
+echo "...creating build directory $BUILD_DIR"
+mkdir -p $BUILD_DIR
+cd $BUILD_DIR
+
+# Download tarballs
+echo "...downloading tarballs"
+wget ftp://ftp.gnu.org/gnu/gcc/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.bz2
+wget ftp://ftp.gnu.org/gnu/gmp/gmp-$GMP_VERSION.tar.bz2
+wget ftp://ftp.gnu.org/gnu/mpfr/mpfr-$MPFR_VERSION.tar.bz2
+wget ftp://ftp.gnu.org/gnu/mpc/mpc-$MPC_VERSION.tar.gz
+
+# Build GMP
+echo "...building GMP"
+cd $BUILD_DIR
+rm -rf gmp-$GMP_VERSION
+tar xf gmp-$GMP_VERSION.tar.bz2
+cd gmp-$GMP_VERSION
+./configure --prefix=$INSTALL_DIR 2>&1 > gmp-config.log
+make -s 2>&1 > gmp-make.log
+make -s install 2>&1 > gmp-install.log
+mv gmp-config.log gmp-make.log gmp-install.log ..
+
+# Build MPFR
+echo "...building MPFR"
+cd $BUILD_DIR
+rm -rf mpfr-$MPFR_VERSION
+tar xf mpfr-$MPFR_VERSION.tar.bz2
+cd mpfr-$MPFR_VERSION
+./configure --prefix=$INSTALL_DIR --with-gmp=$INSTALL_DIR 2>&1 > mpfr-config.log
+make -s 2>&1 > mpfr-make.log
+make -s install 2>&1 > mpfr-install.log
+mv mpfr-config.log mpfr-make.log mpfr-install.log ..
+
+# Build MPC
+echo "...building MPC"
+cd $BUILD_DIR
+rm -rf mpc-$MPC_VERSION
+tar xf mpc-$MPC_VERSION.tar.gz
+cd mpc-$MPC_VERSION
+./configure --prefix=$INSTALL_DIR --with-gmp=$INSTALL_DIR 2>&1 > mpc-config.log
+make -s  2>&1 > mpc-make.log
+make -s install 2>&1 > mpc-install.log
+mv mpc-config.log mpc-make.log mpc-install.log ..
+
+# Build GCC
+echo "...building GCC"
+cd $BUILD_DIR
+rm -rf gcc-$GCC_VERSION
+tar xf gcc-$GCC_VERSION.tar.bz2
+rm -rf objdir
+mkdir objdir
+cd objdir
+../gcc-$GCC_VERSION/configure --prefix=$INSTALL_DIR \
+    --enable-languages=c,c++ \
+    --with-mpfr=$INSTALL_DIR \
+    --with-mpc=$INSTALL_DIR  \
+    --with-gmp=$INSTALL_DIR 2>&1 > gcc-config.log
+make -s 2>&1 > gcc-make.log
+make -s install 2>&1 > gcc-install.log
+mv gcc-config.log gcc-make.log gcc-install.log ..
+
+# done
+echo "...done"

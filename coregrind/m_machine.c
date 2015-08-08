@@ -1411,7 +1411,7 @@ Bool VG_(machine_get_hwcaps)( void )
      HChar *p = fac_str;
      p += VG_(sprintf)(p, "machine %4d  ", model);
      for (i=0; i < sizeof fac_hwcaps / sizeof fac_hwcaps[0]; ++i) {
-        p += VG_(sprintf)(p, " %s %1d", fac_hwcaps[i].name,
+        p += VG_(sprintf)(p, " %s %1u", fac_hwcaps[i].name,
                           fac_hwcaps[i].installed);
      }
      *p++ = '\0';

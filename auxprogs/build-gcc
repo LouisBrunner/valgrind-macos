@@ -1,19 +1,26 @@
 #!/bin/sh -e
 
-# Simple script to build GCC including its prerequisites.
-# "Simple" means: no error recovery, no signature verification, 
-# no checking whether the prerequisites are new enough for the
-# chosen GCC version. You need to figure this out by yourself.
+# Simple script to build GCC natively including its prerequisites.
 #
-# Define the following 6 variables:
+# Depending on your needs you maybe able to speed up the GCC build:
+#
+# (a) Do not build a c++ compiler
+#     c++ is only needed for "make check" and running regression tests
+#     --> choose  LANGUEGES=c   below
+# (b) Do not build a compiler that can produce 32-bit executables
+#     on a 64-bit platform
+#     --> choose  MULTILIB=--disable-multilib   below
+#
+# Define the following 5 variables:
 
 BUILD_DIR=/tmp/build-gcc
 INSTALL_DIR=/tmp/install
 
 GCC_VERSION=5.1.0
-GMP_VERSION=5.1.3
-MPC_VERSION=1.0.3
-MPFR_VERSION=3.1.3
+LANGUAGES=c,c++
+MULTILIB=
+#LANGUAGES=c
+#MULTILIB=--disable-multilib
 
 #-----------------------------------------------------------
 # No changes should be needed below this line
@@ -25,58 +32,21 @@ mkdir -p $BUILD_DIR
 cd $BUILD_DIR
 
 # Download tarballs
-echo "...downloading tarballs"
+echo "...downloading tarball"
 wget ftp://ftp.gnu.org/gnu/gcc/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.bz2
-wget ftp://ftp.gnu.org/gnu/gmp/gmp-$GMP_VERSION.tar.bz2
-wget ftp://ftp.gnu.org/gnu/mpfr/mpfr-$MPFR_VERSION.tar.bz2
-wget ftp://ftp.gnu.org/gnu/mpc/mpc-$MPC_VERSION.tar.gz
-
-# Build GMP
-echo "...building GMP"
-cd $BUILD_DIR
-rm -rf gmp-$GMP_VERSION
-tar xf gmp-$GMP_VERSION.tar.bz2
-cd gmp-$GMP_VERSION
-./configure --prefix=$INSTALL_DIR 2>&1 > gmp-config.log
-make -s 2>&1 > gmp-make.log
-make -s install 2>&1 > gmp-install.log
-mv gmp-config.log gmp-make.log gmp-install.log ..
-
-# Build MPFR
-echo "...building MPFR"
-cd $BUILD_DIR
-rm -rf mpfr-$MPFR_VERSION
-tar xf mpfr-$MPFR_VERSION.tar.bz2
-cd mpfr-$MPFR_VERSION
-./configure --prefix=$INSTALL_DIR --with-gmp=$INSTALL_DIR 2>&1 > mpfr-config.log
-make -s 2>&1 > mpfr-make.log
-make -s install 2>&1 > mpfr-install.log
-mv mpfr-config.log mpfr-make.log mpfr-install.log ..
-
-# Build MPC
-echo "...building MPC"
-cd $BUILD_DIR
-rm -rf mpc-$MPC_VERSION
-tar xf mpc-$MPC_VERSION.tar.gz
-cd mpc-$MPC_VERSION
-./configure --prefix=$INSTALL_DIR --with-gmp=$INSTALL_DIR 2>&1 > mpc-config.log
-make -s  2>&1 > mpc-make.log
-make -s install 2>&1 > mpc-install.log
-mv mpc-config.log mpc-make.log mpc-install.log ..
 
 # Build GCC
 echo "...building GCC"
-cd $BUILD_DIR
 rm -rf gcc-$GCC_VERSION
 tar xf gcc-$GCC_VERSION.tar.bz2
+cd gcc-$GCC_VERSION
+./contrib/download_prerequisites
+cd ..
 rm -rf objdir
 mkdir objdir
 cd objdir
-../gcc-$GCC_VERSION/configure --prefix=$INSTALL_DIR \
-    --enable-languages=c,c++ \
-    --with-mpfr=$INSTALL_DIR \
-    --with-mpc=$INSTALL_DIR  \
-    --with-gmp=$INSTALL_DIR 2>&1 > gcc-config.log
+../gcc-$GCC_VERSION/configure --prefix=$INSTALL_DIR --disable-bootstrap \
+       $MULTILIB --enable-languages=$LANGUAGES  2>&1 > gcc-config.log
 make -s 2>&1 > gcc-make.log
 make -s install 2>&1 > gcc-install.log
 mv gcc-config.log gcc-make.log gcc-install.log ..

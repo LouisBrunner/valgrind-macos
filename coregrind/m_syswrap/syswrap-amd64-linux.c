@@ -489,7 +489,7 @@ PRE(sys_rt_sigreturn)
 PRE(sys_arch_prctl)
 {
    ThreadState* tst;
-   PRINT( "arch_prctl ( %ld, %lx )", ARG1, ARG2 );
+   PRINT( "arch_prctl ( %ld, %lx )", SARG1, ARG2 );
 
    vg_assert(VG_(is_valid_tid)(tid));
    vg_assert(tid >= 1 && tid < VG_N_THREADS);
@@ -540,7 +540,7 @@ PRE(sys_arch_prctl)
 // space, and we should therefore not check anything it points to.
 PRE(sys_ptrace)
 {
-   PRINT("sys_ptrace ( %ld, %ld, %#lx, %#lx )", ARG1,ARG2,ARG3,ARG4);
+   PRINT("sys_ptrace ( %ld, %ld, %#lx, %#lx )", SARG1, SARG2, ARG3, ARG4);
    PRE_REG_READ4(int, "ptrace", 
                  long, request, long, pid, long, addr, long, data);
    switch (ARG1) {
@@ -619,7 +619,7 @@ POST(sys_ptrace)
 
 PRE(sys_fadvise64)
 {
-   PRINT("sys_fadvise64 ( %ld, %ld, %lu, %ld )", ARG1,ARG2,ARG3,ARG4);
+   PRINT("sys_fadvise64 ( %ld, %ld, %lu, %ld )", SARG1, SARG2, ARG3, SARG4);
    PRE_REG_READ4(long, "fadvise64",
                  int, fd, vki_loff_t, offset, vki_size_t, len, int, advice);
 }
@@ -628,12 +628,11 @@ PRE(sys_mmap)
 {
    SysRes r;
 
-   PRINT("sys_mmap ( %#lx, %llu, %ld, %ld, %d, %ld )",
-         ARG1, (ULong)ARG2, ARG3, ARG4, (Int)ARG5, ARG6 );
+   PRINT("sys_mmap ( %#lx, %lu, %ld, %ld, %ld, %ld )",
+         ARG1, ARG2, SARG3, SARG4, SARG5, SARG6 );
    PRE_REG_READ6(long, "mmap",
                  unsigned long, start, unsigned long, length,
-                 unsigned long, prot,  unsigned long, flags,
-                 unsigned long, fd,    unsigned long, offset);
+                 int, prot, int, flags, int, fd, vki_off_t, offset);
 
    r = ML_(generic_PRE_sys_mmap)( tid, ARG1, ARG2, ARG3, ARG4, ARG5, ARG6 );
    SET_STATUS_from_SysRes(r);

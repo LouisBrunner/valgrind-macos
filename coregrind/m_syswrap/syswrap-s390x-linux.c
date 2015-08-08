@@ -331,9 +331,10 @@ DECL_TEMPLATE(s390x_linux, sys_fadvise64);
 
 PRE(sys_ptrace)
 {
-   PRINT("sys_ptrace ( %ld, %ld, %#lx, %#lx )", ARG1,ARG2,ARG3,ARG4);
+   PRINT("sys_ptrace ( %ld, %ld, %#lx, %#lx )", SARG1, SARG2, ARG3, ARG4);
    PRE_REG_READ4(int, "ptrace",
-                 long, request, long, pid, long, addr, long, data);
+                 long, request, long, pid, unsigned long, addr,
+                 unsigned long, data);
    switch (ARG1) {
    case VKI_PTRACE_PEEKTEXT:
    case VKI_PTRACE_PEEKDATA:
@@ -444,8 +445,8 @@ PRE(sys_mmap)
    a4 = args[4];
    a5 = args[5];
 
-   PRINT("sys_mmap ( %#lx, %llu, %ld, %ld, %ld, %ld )",
-         a0, (ULong)a1, a2, a3, a4, a5 );
+   PRINT("sys_mmap ( %#lx, %lu, %ld, %ld, %ld, %ld )",
+         a0, a1, (Word)a2, (Word)a3, (Word)a4, (Word)a5 );
 
    r = ML_(generic_PRE_sys_mmap)( tid, a0, a1, a2, a3, a4, (Off64T)a5 );
    SET_STATUS_from_SysRes(r);
@@ -605,7 +606,7 @@ PRE(sys_rt_sigreturn)
 /* we cant use the LINX_ version for 64 bit */
 PRE(sys_fadvise64)
 {
-   PRINT("sys_fadvise64 ( %ld, %ld, %ld, %ld )", ARG1,ARG2,ARG3,ARG4);
+   PRINT("sys_fadvise64 ( %ld, %ld, %ld, %ld )", SARG1, SARG2, SARG3, SARG4);
    PRE_REG_READ4(long, "fadvise64",
                  int, fd, vki_loff_t, offset, vki_loff_t, len, int, advice);
 }

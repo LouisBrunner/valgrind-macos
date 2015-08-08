@@ -404,8 +404,8 @@ PRE(sys_mmap)
 {
    SysRes r;
 
-   PRINT("sys_mmap ( %#lx, %llu, %ld, %ld, %ld, %ld )",
-         ARG1, (ULong)ARG2, ARG3, ARG4, ARG5, ARG6 );
+   PRINT("sys_mmap ( %#lx, %lu, %lu, %lu, %lu, %lu )",
+         ARG1, ARG2, ARG3, ARG4, ARG5, ARG6 );
    PRE_REG_READ6(long, "mmap",
                  unsigned long, start, unsigned long, length,
                  unsigned long, prot,  unsigned long, flags,
@@ -423,8 +423,8 @@ PRE(sys_mmap2)
    // Exactly like old_mmap() except:
    //  - the file offset is specified in 4K units rather than bytes,
    //    so that it can be used for files bigger than 2^32 bytes.
-   PRINT("sys_mmap2 ( %#lx, %llu, %ld, %ld, %ld, %ld )",
-         ARG1, (ULong)ARG2, ARG3, ARG4, ARG5, ARG6 );
+   PRINT("sys_mmap2 ( %#lx, %lu, %lu, %lu, %lu, %lu )",
+         ARG1, ARG2, ARG3, ARG4, ARG5, ARG6 );
    PRE_REG_READ6(long, "mmap2",
                  unsigned long, start, unsigned long, length,
                  unsigned long, prot,  unsigned long, flags,
@@ -454,7 +454,7 @@ POST(sys_stat64)
 
 PRE(sys_lstat64)
 {
-   PRINT("sys_lstat64 ( %#lx(%s), %#lx )",ARG1,(char*)ARG1,ARG2);
+   PRINT("sys_lstat64 ( %#lx(%s), %#lx )", ARG1, (HChar*)ARG1, ARG2);
    PRE_REG_READ2(long, "lstat64", char *, file_name, struct stat64 *, buf);
    PRE_MEM_RASCIIZ( "lstat64(file_name)", ARG1 );
    PRE_MEM_WRITE( "lstat64(buf)", ARG2, sizeof(struct vki_stat64) );
@@ -470,7 +470,8 @@ POST(sys_lstat64)
 
 PRE(sys_fstatat64)
 {
-  PRINT("sys_fstatat64 ( %ld, %#lx(%s), %#lx )",ARG1,ARG2,(char*)ARG2,ARG3);
+   PRINT("sys_fstatat64 ( %ld, %#lx(%s), %#lx )", SARG1, ARG2, (HChar*)ARG2,
+         ARG3);
    PRE_REG_READ3(long, "fstatat64",
                  int, dfd, char *, file_name, struct stat64 *, buf);
    PRE_MEM_RASCIIZ( "fstatat64(file_name)", ARG2 );
@@ -484,7 +485,7 @@ POST(sys_fstatat64)
 
 PRE(sys_fstat64)
 {
-  PRINT("sys_fstat64 ( %ld, %#lx )",ARG1,ARG2);
+  PRINT("sys_fstat64 ( %lu, %#lx )", ARG1, ARG2);
   PRE_REG_READ2(long, "fstat64", unsigned long, fd, struct stat64 *, buf);
   PRE_MEM_WRITE( "fstat64(buf)", ARG2, sizeof(struct vki_stat64) );
 }
@@ -808,7 +809,7 @@ PRE(sys_sigsuspend)
       that takes a pointer to the signal mask so supports more signals.
     */
    *flags |= SfMayBlock;
-   PRINT("sys_sigsuspend ( %ld )", ARG1 );
+   PRINT("sys_sigsuspend ( %lu )", ARG1 );
    PRE_REG_READ1(int, "sigsuspend", vki_old_sigset_t, mask);
 }
 

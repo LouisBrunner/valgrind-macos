@@ -92,10 +92,10 @@ static void bad_subop ( ThreadId              tid,
                         /*MOD*/SyscallArgs*   args,
                         /*OUT*/SyscallStatus* status,
                         /*OUT*/UWord*         flags,
-                        const HChar*           hypercall,
+                        const HChar*          hypercall,
                         UWord                 subop)
 {
-   VG_(dmsg)("WARNING: unhandled %s subop: %ld\n",
+   VG_(dmsg)("WARNING: unhandled %s subop: %lu\n",
              hypercall, subop);
    if (VG_(clo_verbosity) > 1) {
       VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
@@ -111,7 +111,7 @@ static void bad_subop ( ThreadId              tid,
 
 PRE(memory_op)
 {
-   PRINT("__HYPERVISOR_memory_op ( %ld, %lx )", ARG1, ARG2);
+   PRINT("__HYPERVISOR_memory_op ( %lu, %#lx )", ARG1, ARG2);
 
    switch (ARG1) {
 
@@ -254,6 +254,9 @@ PRE(memory_op)
 
 PRE(mmuext_op)
 {
+   PRINT("__HYPERVISOR_mmuext_op ( %#lx, %ld, %#lx, %lu )",
+         ARG1, SARG2, ARG3, ARG4);
+
    struct vki_xen_mmuext_op *ops = (struct vki_xen_mmuext_op *)ARG1;
    unsigned int i, nr = ARG2;
 
@@ -344,7 +347,7 @@ PRE(xsm_op)
    /* XXX assuming flask, only actual XSM right now */
    struct vki_xen_flask_op *op = (struct vki_xen_flask_op *)ARG1;
 
-   PRINT("__HYPERVISOR_xsm_op ( %d )", op->cmd);
+   PRINT("__HYPERVISOR_xsm_op ( %u )", op->cmd);
 
    /*
     * Common part of xen_flask_op:
@@ -388,7 +391,7 @@ PRE(xsm_op)
 
 PRE(sched_op)
 {
-   PRINT("__HYPERVISOR_sched_op ( %ld, %lx )", ARG1, ARG2);
+   PRINT("__HYPERVISOR_sched_op ( %ld, %#lx )", SARG1, ARG2);
    void *arg = (void *)(unsigned long)ARG2;
 
 #define __PRE_XEN_SCHEDOP_READ(_schedop, _type, _field) \
@@ -420,7 +423,7 @@ static void pre_evtchn_op(ThreadId tid,
                           /*OUT*/UWord*         flags,
                           __vki_u32 cmd, void *arg, int compat)
 {
-   PRINT("__HYPERVISOR_event_channel_op%s ( %d, %p )",
+   PRINT("__HYPERVISOR_event_channel_op%s ( %u, %p )",
          compat ? "_compat" : "", cmd, arg);
 
    switch (cmd) {
@@ -464,7 +467,7 @@ PRE(physdev_op)
 {
    int cmd = ARG1;
 
-   PRINT("__HYPERVISOR_physdev_op ( %ld, %lx )", ARG1, ARG2);
+   PRINT("__HYPERVISOR_physdev_op ( %ld, %#lx )", SARG1, ARG2);
 
 #define PRE_XEN_PHYSDEVOP_READ(_op, _field)		\
    PRE_MEM_READ("XEN_PHYSDEVOP_" #_op " ." #_field,	\
@@ -516,7 +519,7 @@ PRE(physdev_op)
 
 PRE(xen_version)
 {
-   PRINT("__HYPERVISOR_xen_version ( %ld, %lx )", ARG1, ARG2);
+   PRINT("__HYPERVISOR_xen_version ( %ld, %#lx )", SARG1, ARG2);
 
    switch (ARG1) {
    case VKI_XENVER_version:
@@ -541,7 +544,7 @@ PRE(xen_version)
 
 PRE(grant_table_op)
 {
-   PRINT("__HYPERVISOR_grant_table_op ( %ld, 0x%lx, %ld )", ARG1, ARG2, ARG3);
+   PRINT("__HYPERVISOR_grant_table_op ( %lu, %#lx, %lu )", ARG1, ARG2, ARG3);
    switch (ARG1) {
    case VKI_XEN_GNTTABOP_setup_table: {
       struct vki_xen_gnttab_setup_table *gst =
@@ -562,7 +565,7 @@ PRE(grant_table_op)
 PRE(sysctl) {
    struct vki_xen_sysctl *sysctl = (struct vki_xen_sysctl *)ARG1;
 
-   PRINT("__HYPERVISOR_sysctl ( %d )", sysctl->cmd);
+   PRINT("__HYPERVISOR_sysctl ( %u )", sysctl->cmd);
 
    /*
     * Common part of xen_sysctl:
@@ -704,7 +707,7 @@ PRE(domctl)
 {
    struct vki_xen_domctl *domctl = (struct vki_xen_domctl *)ARG1;
 
-   PRINT("__HYPERVISOR_domctl ( %d ) on dom%d", domctl->cmd, domctl->domain);
+   PRINT("__HYPERVISOR_domctl ( %u ) on dom%d", domctl->cmd, domctl->domain);
 
    /*
     * Common part of xen_domctl:
@@ -1172,7 +1175,7 @@ PRE(hvm_op)
    unsigned long op = ARG1;
    void *arg = (void *)(unsigned long)ARG2;
 
-   PRINT("__HYPERVISOR_hvm_op ( %ld, %p )", op, arg);
+   PRINT("__HYPERVISOR_hvm_op ( %ld, %#lx )", SARG1, ARG2);
 
 #define __PRE_XEN_HVMOP_READ(_hvm_op, _type, _field)    \
    PRE_MEM_READ("XEN_HVMOP_" # _hvm_op " " #_field,     \
@@ -1273,7 +1276,7 @@ PRE(tmem_op)
 {
     struct vki_xen_tmem_op *tmem = (struct vki_xen_tmem_op *)ARG1;
 
-    PRINT("__HYPERVISOR_tmem_op ( %d )", tmem->cmd);
+    PRINT("__HYPERVISOR_tmem_op ( %u )", tmem->cmd);
 
     /* Common part for xen_tmem_op:
      *    vki_uint32_t cmd;

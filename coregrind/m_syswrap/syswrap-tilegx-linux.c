@@ -393,7 +393,7 @@ static SysRes do_clone ( ThreadId ptid,
 
   /* High half word64 is syscall return value. */
   if (debug)
-    VG_(printf)("ret: 0x%lx\n", ret);
+    VG_(printf)("ret: 0x%llx\n", (ULong)ret);
 
   res = VG_(mk_SysRes_tilegx_linux) (/*val */ ret);
 
@@ -628,7 +628,7 @@ PRE(sys_rt_sigreturn)
 
 PRE(sys_arch_prctl)
 {
-  PRINT( "arch_prctl ( %ld, %lx )", ARG1, ARG2 );
+  PRINT( "arch_prctl ( %ld, %lx )", SARG1, ARG2 );
 
   vg_assert(VG_(is_valid_tid)(tid));
   vg_assert(tid >= 1 && tid < VG_N_THREADS);
@@ -645,9 +645,9 @@ PRE(sys_arch_prctl)
 // space, and we should therefore not check anything it points to.
 PRE(sys_ptrace)
 {
-  PRINT("sys_ptrace ( %ld, %ld, %#lx, %#lx )", ARG1,ARG2,ARG3,ARG4);
+  PRINT("sys_ptrace ( %ld, %ld, %#lx, %#lx )", SARG1, SARG2, ARG3, ARG4);
   PRE_REG_READ4(int, "ptrace",
-                long, request, long, pid, long, addr, long, data);
+                long, request, long, pid, unsigned long, addr, unsigned long, data);
   switch (ARG1) {
   case VKI_PTRACE_PEEKTEXT:
   case VKI_PTRACE_PEEKDATA:
@@ -721,7 +721,7 @@ POST(sys_ptrace)
 
 PRE(sys_socket)
 {
-  PRINT("sys_socket ( %ld, %ld, %ld )",ARG1,ARG2,ARG3);
+  PRINT("sys_socket ( %ld, %ld, %ld )", SARG1, SARG2, SARG3);
   PRE_REG_READ3(long, "socket", int, domain, int, type, int, protocol);
 }
 POST(sys_socket)
@@ -734,7 +734,8 @@ POST(sys_socket)
 
 PRE(sys_setsockopt)
 {
-  PRINT("sys_setsockopt ( %ld, %ld, %ld, %#lx, %ld )",ARG1,ARG2,ARG3,ARG4,ARG5);
+  PRINT("sys_setsockopt ( %ld, %ld, %ld, %#lx, %ld )", SARG1, SARG2, SARG3,
+        ARG4, SARG5);
   PRE_REG_READ5(long, "setsockopt",
                 int, s, int, level, int, optname,
                 const void *, optval, int, optlen);
@@ -743,7 +744,8 @@ PRE(sys_setsockopt)
 
 PRE(sys_getsockopt)
 {
-  PRINT("sys_getsockopt ( %ld, %ld, %ld, %#lx, %#lx )",ARG1,ARG2,ARG3,ARG4,ARG5);
+  PRINT("sys_getsockopt ( %ld, %ld, %ld, %#lx, %#lx )", SARG1, SARG2, SARG3,
+        ARG4, ARG5);
   PRE_REG_READ5(long, "getsockopt",
                 int, s, int, level, int, optname,
                 void *, optval, int, *optlen);
@@ -759,7 +761,7 @@ POST(sys_getsockopt)
 PRE(sys_connect)
 {
   *flags |= SfMayBlock;
-  PRINT("sys_connect ( %ld, %#lx, %ld )",ARG1,ARG2,ARG3);
+  PRINT("sys_connect ( %ld, %#lx, %ld )", SARG1, ARG2, SARG3);
   PRE_REG_READ3(long, "connect",
                 int, sockfd, struct sockaddr *, serv_addr, int, addrlen);
   ML_(generic_PRE_sys_connect)(tid, ARG1,ARG2,ARG3);
@@ -768,9 +770,9 @@ PRE(sys_connect)
 PRE(sys_accept)
 {
   *flags |= SfMayBlock;
-  PRINT("sys_accept ( %ld, %#lx, %ld )",ARG1,ARG2,ARG3);
+  PRINT("sys_accept ( %ld, %#lx, %#lx )", SARG1, ARG2, ARG3);
   PRE_REG_READ3(long, "accept",
-                int, s, struct sockaddr *, addr, int, *addrlen);
+                int, s, struct sockaddr *, addr, int *, addrlen);
   ML_(generic_PRE_sys_accept)(tid, ARG1,ARG2,ARG3);
 }
 POST(sys_accept)
@@ -785,9 +787,9 @@ POST(sys_accept)
 PRE(sys_accept4)
 {
   *flags |= SfMayBlock;
-  PRINT("sys_accept4 ( %ld, %#lx, %ld, %ld )",ARG1,ARG2,ARG3,ARG4);
+  PRINT("sys_accept4 ( %ld, %#lx, %#lx, %ld )", SARG1, ARG2, ARG3, SARG4);
   PRE_REG_READ4(long, "accept4",
-                int, s, struct sockaddr *, addr, int, *addrlen, int, flags);
+                int, s, struct sockaddr *, addr, int *, addrlen, int, flags);
   ML_(generic_PRE_sys_accept)(tid, ARG1,ARG2,ARG3);
 }
 POST(sys_accept4)
@@ -802,8 +804,8 @@ POST(sys_accept4)
 PRE(sys_sendto)
 {
   *flags |= SfMayBlock;
-  PRINT("sys_sendto ( %ld, %#lx, %ld, %lu, %#lx, %ld )",ARG1,ARG2,ARG3,
-        ARG4,ARG5,ARG6);
+  PRINT("sys_sendto ( %ld, %#lx, %ld, %lu, %#lx, %ld )", SARG1, ARG2, SARG3,
+        ARG4, ARG5, SARG6);
   PRE_REG_READ6(long, "sendto",
                 int, s, const void *, msg, int, len,
                 unsigned int, flags,
@@ -814,8 +816,8 @@ PRE(sys_sendto)
 PRE(sys_recvfrom)
 {
   *flags |= SfMayBlock;
-  PRINT("sys_recvfrom ( %ld, %#lx, %ld, %lu, %#lx, %#lx )",ARG1,ARG2,ARG3,
-        ARG4,ARG5,ARG6);
+  PRINT("sys_recvfrom ( %ld, %#lx, %ld, %lu, %#lx, %#lx )", SARG1, ARG2, SARG3,
+        ARG4, ARG5, ARG6);
   PRE_REG_READ6(long, "recvfrom",
                 int, s, void *, buf, int, len, unsigned int, flags,
                 struct sockaddr *, from, int *, fromlen);
@@ -831,7 +833,7 @@ POST(sys_recvfrom)
 PRE(sys_sendmsg)
 {
   *flags |= SfMayBlock;
-  PRINT("sys_sendmsg ( %ld, %#lx, %ld )",ARG1,ARG2,ARG3);
+  PRINT("sys_sendmsg ( %ld, %#lx, %ld )", SARG1, ARG2, SARG3);
   PRE_REG_READ3(long, "sendmsg",
                 int, s, const struct msghdr *, msg, int, flags);
   ML_(generic_PRE_sys_sendmsg)(tid, "msg", ARG2);
@@ -840,7 +842,7 @@ PRE(sys_sendmsg)
 PRE(sys_recvmsg)
 {
   *flags |= SfMayBlock;
-  PRINT("sys_recvmsg ( %ld, %#lx, %ld )",ARG1,ARG2,ARG3);
+  PRINT("sys_recvmsg ( %ld, %#lx, %ld )", SARG1, ARG2, SARG3);
   PRE_REG_READ3(long, "recvmsg", int, s, struct msghdr *, msg, int, flags);
   ML_(generic_PRE_sys_recvmsg)(tid, "msg", (struct vki_msghdr *) ARG2);
 }
@@ -853,13 +855,13 @@ POST(sys_recvmsg)
 PRE(sys_shutdown)
 {
   *flags |= SfMayBlock;
-  PRINT("sys_shutdown ( %ld, %ld )",ARG1,ARG2);
+  PRINT("sys_shutdown ( %ld, %ld )", SARG1, SARG2);
   PRE_REG_READ2(int, "shutdown", int, s, int, how);
 }
 
 PRE(sys_bind)
 {
-  PRINT("sys_bind ( %ld, %#lx, %ld )",ARG1,ARG2,ARG3);
+  PRINT("sys_bind ( %ld, %#lx, %ld )", SARG1, ARG2, SARG3);
   PRE_REG_READ3(long, "bind",
                 int, sockfd, struct sockaddr *, my_addr, int, addrlen);
   ML_(generic_PRE_sys_bind)(tid, ARG1,ARG2,ARG3);
@@ -867,13 +869,13 @@ PRE(sys_bind)
 
 PRE(sys_listen)
 {
-  PRINT("sys_listen ( %ld, %ld )",ARG1,ARG2);
+  PRINT("sys_listen ( %ld, %ld )", SARG1, SARG2);
   PRE_REG_READ2(long, "listen", int, s, int, backlog);
 }
 
 PRE(sys_getsockname)
 {
-  PRINT("sys_getsockname ( %ld, %#lx, %#lx )",ARG1,ARG2,ARG3);
+  PRINT("sys_getsockname ( %ld, %#lx, %#lx )", SARG1, ARG2, ARG3);
   PRE_REG_READ3(long, "getsockname",
                 int, s, struct sockaddr *, name, int *, namelen);
   ML_(generic_PRE_sys_getsockname)(tid, ARG1,ARG2,ARG3);
@@ -887,7 +889,7 @@ POST(sys_getsockname)
 
 PRE(sys_getpeername)
 {
-  PRINT("sys_getpeername ( %ld, %#lx, %#lx )",ARG1,ARG2,ARG3);
+  PRINT("sys_getpeername ( %ld, %#lx, %#lx )", SARG1, ARG2, ARG3);
   PRE_REG_READ3(long, "getpeername",
                 int, s, struct sockaddr *, name, int *, namelen);
   ML_(generic_PRE_sys_getpeername)(tid, ARG1,ARG2,ARG3);
@@ -901,7 +903,7 @@ POST(sys_getpeername)
 
 PRE(sys_socketpair)
 {
-  PRINT("sys_socketpair ( %ld, %ld, %ld, %#lx )",ARG1,ARG2,ARG3,ARG4);
+  PRINT("sys_socketpair ( %ld, %ld, %ld, %#lx )", SARG1, SARG2, SARG3, ARG4);
   PRE_REG_READ4(long, "socketpair",
                 int, d, int, type, int, protocol, int*, sv);
   ML_(generic_PRE_sys_socketpair)(tid, ARG1,ARG2,ARG3,ARG4);
@@ -915,14 +917,14 @@ POST(sys_socketpair)
 
 PRE(sys_semget)
 {
-  PRINT("sys_semget ( %ld, %ld, %ld )",ARG1,ARG2,ARG3);
+  PRINT("sys_semget ( %ld, %ld, %ld )", SARG1, SARG2, SARG3);
   PRE_REG_READ3(long, "semget", vki_key_t, key, int, nsems, int, semflg);
 }
 
 PRE(sys_semop)
 {
   *flags |= SfMayBlock;
-  PRINT("sys_semop ( %ld, %#lx, %lu )",ARG1,ARG2,ARG3);
+  PRINT("sys_semop ( %ld, %#lx, %lu )", SARG1, ARG2, ARG3);
   PRE_REG_READ3(long, "semop",
                 int, semid, struct sembuf *, sops, unsigned, nsoops);
   ML_(generic_PRE_sys_semop)(tid, ARG1,ARG2,ARG3);
@@ -931,7 +933,7 @@ PRE(sys_semop)
 PRE(sys_semtimedop)
 {
   *flags |= SfMayBlock;
-  PRINT("sys_semtimedop ( %ld, %#lx, %lu, %#lx )",ARG1,ARG2,ARG3,ARG4);
+  PRINT("sys_semtimedop ( %ld, %#lx, %lu, %#lx )", SARG1, ARG2, ARG3, ARG4);
   PRE_REG_READ4(long, "semtimedop",
                 int, semid, struct sembuf *, sops, unsigned, nsoops,
                 struct timespec *, timeout);
@@ -943,25 +945,25 @@ PRE(sys_semctl)
   switch (ARG3 & ~VKI_IPC_64) {
   case VKI_IPC_INFO:
   case VKI_SEM_INFO:
-    PRINT("sys_semctl ( %ld, %ld, %ld, %#lx )",ARG1,ARG2,ARG3,ARG4);
+    PRINT("sys_semctl ( %ld, %ld, %ld, %#lx )", SARG1, SARG2, SARG3, ARG4);
     PRE_REG_READ4(long, "semctl",
                   int, semid, int, semnum, int, cmd, struct seminfo *, arg);
     break;
   case VKI_IPC_STAT:
   case VKI_SEM_STAT:
   case VKI_IPC_SET:
-    PRINT("sys_semctl ( %ld, %ld, %ld, %#lx )",ARG1,ARG2,ARG3,ARG4);
+    PRINT("sys_semctl ( %ld, %ld, %ld, %#lx )", SARG1, SARG2, SARG3, ARG4);
     PRE_REG_READ4(long, "semctl",
                   int, semid, int, semnum, int, cmd, struct semid_ds *, arg);
     break;
   case VKI_GETALL:
   case VKI_SETALL:
-    PRINT("sys_semctl ( %ld, %ld, %ld, %#lx )",ARG1,ARG2,ARG3,ARG4);
+    PRINT("sys_semctl ( %ld, %ld, %ld, %#lx )", SARG1, SARG2, SARG3, ARG4);
     PRE_REG_READ4(long, "semctl",
                   int, semid, int, semnum, int, cmd, unsigned short *, arg);
     break;
   default:
-    PRINT("sys_semctl ( %ld, %ld, %ld )",ARG1,ARG2,ARG3);
+    PRINT("sys_semctl ( %ld, %ld, %ld )", SARG1, SARG2, SARG3);
     PRE_REG_READ3(long, "semctl",
                   int, semid, int, semnum, int, cmd);
     break;
@@ -975,13 +977,13 @@ POST(sys_semctl)
 
 PRE(sys_msgget)
 {
-  PRINT("sys_msgget ( %ld, %ld )",ARG1,ARG2);
+  PRINT("sys_msgget ( %ld, %ld )", SARG1, SARG2);
   PRE_REG_READ2(long, "msgget", vki_key_t, key, int, msgflg);
 }
 
 PRE(sys_msgsnd)
 {
-  PRINT("sys_msgsnd ( %ld, %#lx, %ld, %ld )",ARG1,ARG2,ARG3,ARG4);
+  PRINT("sys_msgsnd ( %ld, %#lx, %lu, %ld )", SARG1, ARG2, ARG3, SARG4);
   PRE_REG_READ4(long, "msgsnd",
                 int, msqid, struct msgbuf *, msgp, vki_size_t, msgsz,
                 int, msgflg);
@@ -992,7 +994,8 @@ PRE(sys_msgsnd)
 
 PRE(sys_msgrcv)
 {
-  PRINT("sys_msgrcv ( %ld, %#lx, %ld, %ld, %ld )",ARG1,ARG2,ARG3,ARG4,ARG5);
+  PRINT("sys_msgrcv ( %ld, %#lx, %lu, %ld, %ld )", SARG1, ARG2, ARG3,
+        SARG4, SARG5);
   PRE_REG_READ5(long, "msgrcv",
                 int, msqid, struct msgbuf *, msgp, vki_size_t, msgsz,
                 long, msgytp, int, msgflg);
@@ -1007,7 +1010,7 @@ POST(sys_msgrcv)
 
 PRE(sys_msgctl)
 {
-  PRINT("sys_msgctl ( %ld, %ld, %#lx )",ARG1,ARG2,ARG3);
+  PRINT("sys_msgctl ( %ld, %ld, %#lx )", SARG1, SARG2, ARG3);
   PRE_REG_READ3(long, "msgctl",
                 int, msqid, int, cmd, struct msqid_ds *, buf);
   ML_(linux_PRE_sys_msgctl)(tid, ARG1,ARG2,ARG3);
@@ -1019,14 +1022,14 @@ POST(sys_msgctl)
 
 PRE(sys_shmget)
 {
-  PRINT("sys_shmget ( %ld, %ld, %ld )",ARG1,ARG2,ARG3);
+  PRINT("sys_shmget ( %ld, %lu, %ld )", SARG1, ARG2, SARG3);
   PRE_REG_READ3(long, "shmget", vki_key_t, key, vki_size_t, size, int, shmflg);
 }
 
 PRE(wrap_sys_shmat)
 {
   UWord arg2tmp;
-  PRINT("wrap_sys_shmat ( %ld, %#lx, %ld )",ARG1,ARG2,ARG3);
+  PRINT("wrap_sys_shmat ( %ld, %#lx, %ld )", SARG1, ARG2, SARG3);
   PRE_REG_READ3(long, "shmat",
                 int, shmid, const void *, shmaddr, int, shmflg);
   arg2tmp = ML_(generic_PRE_sys_shmat)(tid, ARG1,ARG2,ARG3);
@@ -1054,7 +1057,7 @@ POST(sys_shmdt)
 
 PRE(sys_shmctl)
 {
-  PRINT("sys_shmctl ( %ld, %ld, %#lx )",ARG1,ARG2,ARG3);
+  PRINT("sys_shmctl ( %ld, %ld, %#lx )", SARG1, SARG2, ARG3);
   PRE_REG_READ3(long, "shmctl",
                 int, shmid, int, cmd, struct shmid_ds *, buf);
   ML_(generic_PRE_sys_shmctl)(tid, ARG1,ARG2|VKI_IPC_64,ARG3);
@@ -1066,7 +1069,7 @@ POST(sys_shmctl)
 
 PRE(sys_fadvise64)
 {
-  PRINT("sys_fadvise64 ( %ld, %ld, %lu, %ld )", ARG1,ARG2,ARG3,ARG4);
+  PRINT("sys_fadvise64 ( %ld, %ld, %lu, %ld )", SARG1, SARG2, ARG3, SARG4);
   PRE_REG_READ4(long, "fadvise64",
                 int, fd, vki_loff_t, offset, vki_size_t, len, int, advice);
 }
@@ -1075,8 +1078,8 @@ PRE(sys_mmap)
 {
   SysRes r;
 
-  PRINT("sys_mmap ( %#lx, %llu, %ld, %ld, %d, %ld )",
-        ARG1, (ULong)ARG2, ARG3, ARG4, (Int)ARG5, ARG6 );
+  PRINT("sys_mmap ( %#lx, %lu, %lu, %lu, %lu, %lu )",
+        ARG1, ARG2, ARG3, ARG4, ARG5, ARG6 );
   PRE_REG_READ6(long, "mmap",
                 unsigned long, start, unsigned long, length,
                 unsigned long, prot,  unsigned long, flags,
@@ -1092,7 +1095,7 @@ PRE(sys_mmap)
    ------------------------------------------------------------ */
 PRE(sys_cacheflush)
 {
-   PRINT("cacheflush (%lx, %lx, %lx)", ARG1, ARG2, ARG3);
+   PRINT("cacheflush (%lx, %ld, %ld)", ARG1, SARG2, SARG3);
    PRE_REG_READ3(long, "cacheflush", unsigned long, addr,
                  int, nbytes, int, cache);
    VG_ (discard_translations) ((Addr)ARG1, (ULong) ARG2,
@@ -1103,7 +1106,7 @@ PRE(sys_cacheflush)
 PRE(sys_set_dataplane)
 {
   *flags |= SfMayBlock;
-  PRINT("sys_set_dataplane ( %ld )", ARG1);
+  PRINT("sys_set_dataplane ( %lu )", ARG1);
   PRE_REG_READ1(long, "set_dataplane", unsigned long, flag);
 }
 

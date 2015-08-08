@@ -320,6 +320,16 @@ SyscallTableEntry* ML_(get_solaris_syscall_entry)( UInt sysno );
 #define ARG7   (arrghs->arg7)
 #define ARG8   (arrghs->arg8)
 
+/* Provide signed versions of the argument values */
+#define SARG1  ((Word)ARG1)
+#define SARG2  ((Word)ARG2)
+#define SARG3  ((Word)ARG3)
+#define SARG4  ((Word)ARG4)
+#define SARG5  ((Word)ARG5)
+#define SARG6  ((Word)ARG6)
+#define SARG7  ((Word)ARG7)
+#define SARG8  ((Word)ARG8)
+
 /* Reference to the syscall's current result status/value.  General
    paranoia all round. */
 #define SUCCESS       (status->what == SsComplete && !sr_isError(status->sres))

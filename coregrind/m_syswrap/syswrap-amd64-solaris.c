@@ -428,7 +428,7 @@ void ML_(restore_machine_context)(ThreadId tid, vki_ucontext_t *uc,
          if (rflags != ~VKI_UC_GUEST_RFLAGS_NEG(uc)) {
             VG_(debugLog)(1, "syswrap-solaris",
                              "The rflags value was restored from an "
-                             "explicitly set value in thread %d.\n", tid);
+                             "explicitly set value in thread %u.\n", tid);
             ok_restore = True;
          }
          else {
@@ -446,7 +446,7 @@ void ML_(restore_machine_context)(ThreadId tid, vki_ucontext_t *uc,
                /* Check ok, the full restoration is possible. */
                VG_(debugLog)(1, "syswrap-solaris",
                                 "The CC_* guest state values were fully "
-                                "restored in thread %d.\n", tid);
+                                "restored in thread %u.\n", tid);
                ok_restore = True;
 
                tst->arch.vex.guest_CC_OP = VKI_UC_GUEST_CC_OP(uc);
@@ -468,7 +468,7 @@ void ML_(restore_machine_context)(ThreadId tid, vki_ucontext_t *uc,
             VG_(debugLog)(1, "syswrap-solaris",
                              "Cannot fully restore the CC_* guest state "
                              "values, using approximate rflags in thread "
-                             "%d.\n", tid);
+                             "%u.\n", tid);
       }
    }
 
@@ -539,7 +539,7 @@ void ML_(restore_machine_context)(ThreadId tid, vki_ucontext_t *uc,
       note = LibVEX_GuestAMD64_fxrstor((HWord)fs, &tst->arch.vex);
       if (note != EmNote_NONE)
          VG_(message)(Vg_UserMsg,
-                      "Error restoring FP state in thread %d: %s.\n",
+                      "Error restoring FP state in thread %u: %s.\n",
                       tid, LibVEX_EmNote_string(note));
    }
 }

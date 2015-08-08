@@ -553,8 +553,8 @@ PRE(sys_mmap)
 {
    SysRes r;
 
-   PRINT("sys_mmap ( %#lx, %llu, %ld, %ld, %ld, %ld )",
-         ARG1, (ULong)ARG2, ARG3, ARG4, ARG5, ARG6 );
+   PRINT("sys_mmap ( %#lx, %lu, %lu, %lu, %lu, %lu )",
+         ARG1, ARG2, ARG3, ARG4, ARG5, ARG6 );
    PRE_REG_READ6(long, "mmap",
                  unsigned long, start, unsigned long, length,
                  unsigned long, prot,  unsigned long, flags,
@@ -717,7 +717,7 @@ PRE(sys_clone)
 
 PRE(sys_fadvise64)
 {
-   PRINT("sys_fadvise64 ( %ld, %ld, %lu, %ld )", ARG1,ARG2,ARG3,ARG4);
+   PRINT("sys_fadvise64 ( %ld, %ld, %lu, %ld )",  SARG1, SARG2, SARG3, SARG4);
    PRE_REG_READ4(long, "fadvise64",
                  int, fd, vki_loff_t, offset, vki_size_t, len, int, advice);
 }

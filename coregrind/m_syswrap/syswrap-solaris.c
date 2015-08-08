@@ -100,8 +100,8 @@ static VgSchedReturnCode thread_wrapper(Word /*ThreadId*/ tidW)
    ThreadState *tst = VG_(get_ThreadState)(tid);
 
    VG_(debugLog)(1, "syswrap-solaris",
-                    "thread_wrapper(tid=%lld): entry\n",
-                    (ULong)tidW);
+                    "thread_wrapper(tid=%u): entry\n",
+                    tid);
 
    vg_assert(tst->status == VgTs_Init);
 
@@ -109,7 +109,7 @@ static VgSchedReturnCode thread_wrapper(Word /*ThreadId*/ tidW)
    VG_(acquire_BigLock)(tid, "thread_wrapper(starting new thread)");
 
    if (0)
-      VG_(printf)("thread tid %d started: stack = %p\n", tid, &tid);
+     VG_(printf)("thread tid %u started: stack = %p\n", tid, (void *)&tid);
 
    /* Make sure error reporting is enabled in the new thread. */
    tst->err_disablement_level = 0;
@@ -137,8 +137,8 @@ static VgSchedReturnCode thread_wrapper(Word /*ThreadId*/ tidW)
    vg_assert(VG_(is_running_thread)(tid));
 
    VG_(debugLog)(1, "syswrap-solaris",
-                    "thread_wrapper(tid=%lld): exit, schedreturncode %s\n",
-                    (ULong)tidW, VG_(name_of_VgSchedReturnCode)(ret));
+                    "thread_wrapper(tid=%u): exit, schedreturncode %s\n",
+                    tid, VG_(name_of_VgSchedReturnCode)(ret));
 
    /* Return to caller, still holding the lock. */
    return ret;
@@ -157,8 +157,8 @@ static void run_a_thread_NORETURN(Word tidW)
 #endif
 
    VG_(debugLog)(1, "syswrap-solaris",
-                    "run_a_thread_NORETURN(tid=%lld): pre-thread_wrapper\n",
-                    (ULong)tidW);
+                    "run_a_thread_NORETURN(tid=%u): pre-thread_wrapper\n",
+                    tid);
 
    tst = VG_(get_ThreadState)(tid);
    vg_assert(tst);
@@ -180,8 +180,8 @@ static void run_a_thread_NORETURN(Word tidW)
    src = thread_wrapper(tid);
 
    VG_(debugLog)(1, "syswrap-solaris",
-                    "run_a_thread_NORETURN(tid=%lld): post-thread_wrapper\n",
-                    (ULong)tidW);
+                    "run_a_thread_NORETURN(tid=%u): post-thread_wrapper\n",
+                    tid);
 
    c = count_living_daemon_threads(False);
    vg_assert(c >= 1); /* Stay sane. */
@@ -212,9 +212,9 @@ static void run_a_thread_NORETURN(Word tidW)
       );
       VG_(debugLog)(
          1, "syswrap-solaris",
-            "run_a_thread_NORETURN(tid=%lld): "
+            "run_a_thread_NORETURN(tid=%u): "
             "WARNING: exiting thread has err_disablement_level = %u\n",
-            (ULong)tidW, tst->err_disablement_level
+            tid, tst->err_disablement_level
       );
    }
    tst->err_disablement_level = 0;
@@ -223,15 +223,15 @@ static void run_a_thread_NORETURN(Word tidW)
       UInt daemon_threads = count_living_daemon_threads(True);
       if (daemon_threads == 0)
          VG_(debugLog)(1, "syswrap-solaris",
-                          "run_a_thread_NORETURN(tid=%lld): "
+                          "run_a_thread_NORETURN(tid=%u): "
                           "last one standing\n",
-                          (ULong) tidW);
+                          tid);
       else
          VG_(debugLog)(1, "syswrap-solaris",
-                          "run_a_thread_NORETURN(tid=%lld): "
+                          "run_a_thread_NORETURN(tid=%u): "
                           "last non-daemon thread standing "
                           "[daemon threads=%u]\n",
-                          (ULong) tidW, daemon_threads);
+                          tid, daemon_threads);
 
       /* We are the last non-daemon thread standing. Keep hold of the lock and
          carry on to show final tool results, then exit the entire system.
@@ -242,9 +242,9 @@ static void run_a_thread_NORETURN(Word tidW)
    }
    else {
       VG_(debugLog)(1, "syswrap-solaris",
-                       "run_a_thread_NORETURN(tid=%lld): "
+                       "run_a_thread_NORETURN(tid=%u): "
                        "not last one standing\n",
-                       (ULong)tidW);
+                       tid);
 
       /* OK, thread is dead, but others still exist.  Just exit. */
 
@@ -331,7 +331,7 @@ Addr ML_(allocstack)(ThreadId tid)
    }
 
    if (0)
-      VG_(printf)("stack for tid %d at %p; init_SP=%p\n",
+      VG_(printf)("stack for tid %u at %p; init_SP=%p\n",
                   tid,
                   (void*)tst->os_state.valgrind_stack_base,
                   (void*)tst->os_state.valgrind_stack_init_SP);
@@ -578,7 +578,7 @@ void VG_(restore_context)(ThreadId tid, vki_ucontext_t *uc, CorePart part,
          /* This seems to be a little bit dangerous but it is what the kernel
             does. */
          if (VG_(clo_trace_signals))
-            VG_(dmsg)("restore_context, sigaltstack: tid %d, "
+            VG_(dmsg)("restore_context, sigaltstack: tid %u, "
                       "ss %p{%p,sz=%lu,flags=%#x}\n",
                       tid, &uc->uc_stack, uc->uc_stack.ss_sp,
                       (SizeT)uc->uc_stack.ss_size, uc->uc_stack.ss_flags);
@@ -664,14 +664,14 @@ static void set_stack(ThreadId tid, vki_stack_t *st)
    if (tst->os_state.stk_id == (UWord)-1) {
       /* This thread doesn't have a stack set yet. */
       VG_(debugLog)(2, "syswrap-solaris",
-                       "Stack set to %#lx-%#lx (new) for thread %d.\n",
+                       "Stack set to %#lx-%#lx (new) for thread %u.\n",
                        new_start, new_end, tid);
       tst->os_state.stk_id = VG_(register_stack)(new_start, new_end);
    }
    else {
       /* Change a thread stack. */
       VG_(debugLog)(2, "syswrap-solaris",
-                       "Stack set to %#lx-%#lx (change) for thread %d.\n",
+                       "Stack set to %#lx-%#lx (change) for thread %u.\n",
                        new_start, new_end, tid);
       VG_(change_stack)(tst->os_state.stk_id, new_start, new_end);
    }
@@ -1029,7 +1029,7 @@ PRE(sys_exit)
    /* void exit(int status); */
    ThreadId t;
 
-   PRINT("sys_exit( %ld )", ARG1);
+   PRINT("sys_exit( %ld )", SARG1);
    PRE_REG_READ1(void, "exit", int, status);
 
    for (t = 1; t < VG_N_THREADS; t++) {
@@ -1110,7 +1110,7 @@ PRE(sys_spawn)
 {
    /* int spawn(char *path, void *attrs, size_t attrsize,
                 char *argenv, size_t aesize); */
-   PRINT("sys_spawn ( %#lx(%s), %#lx, %ld, %#lx, %ld )",
+   PRINT("sys_spawn ( %#lx(%s), %#lx, %lu, %#lx, %lu )",
          ARG1, (HChar *) ARG1, ARG2, ARG3, ARG4, ARG5);
    PRE_REG_READ5(long, "spawn", const char *, path, void *, attrs,
                  size_t, attrsize, char *, argenv, size_t, aesize);
@@ -1657,12 +1657,12 @@ PRE(sys_open)
    if (ARG2 & VKI_O_CREAT) {
       /* 3-arg version */
       PRINT("sys_open ( %#lx(%s), %ld, %ld )", ARG1, (HChar *) ARG1,
-            ARG2, ARG3);
+            SARG2, ARG3);
       PRE_REG_READ3(long, "open", const char *, filename,
                     int, flags, vki_mode_t, mode);
    } else {
       /* 2-arg version */
-      PRINT("sys_open ( %#lx(%s), %ld )", ARG1, (HChar *) ARG1, ARG2);
+      PRINT("sys_open ( %#lx(%s), %ld )", ARG1, (HChar *) ARG1, SARG2);
       PRE_REG_READ2(long, "open", const char *, filename, int, flags);
    }
 
@@ -1717,7 +1717,7 @@ PRE(sys_linkat)
    Int fd2 = (Int) ARG3;
 
    PRINT("sys_linkat ( %d, %#lx(%s), %d, %#lx(%s), %ld )",
-         fd1, ARG2, (HChar *) ARG2, fd2, ARG4, (HChar *) ARG4, ARG5);
+         fd1, ARG2, (HChar *) ARG2, fd2, ARG4, (HChar *) ARG4, SARG5);
    PRE_REG_READ5(long, "linkat", int, fd1, const char *, path1,
                  int, fd2, const char *, path2, int, flags);
    PRE_MEM_RASCIIZ("linkat(path1)", ARG2);
@@ -2027,7 +2027,7 @@ POST(sys_stat)
 PRE(sys_lseek)
 {
    /* off_t lseek(int fildes, off_t offset, int whence); */
-   PRINT("sys_lseek ( %ld, %ld, %ld )", ARG1, ARG2, ARG3);
+   PRINT("sys_lseek ( %ld, %ld, %ld )", SARG1, SARG2, SARG3);
    PRE_REG_READ3(long, "lseek", int, fildes, vki_off_t, offset, int, whence);
 
    /* Stay sane. */
@@ -2043,8 +2043,8 @@ PRE(sys_mount)
    if (ARG3 & VKI_MS_OPTIONSTR) {
       /* 8-argument mount */
       PRINT("sys_mount ( %#lx(%s), %#lx(%s), %ld, %#lx(%s), %#lx, %ld, "
-            "%#lx(%s), %ld )", ARG1, (HChar *) ARG1, ARG2, (HChar *) ARG2, ARG3,
-            ARG4, (HChar *) ARG4, ARG5, ARG6, ARG7, (HChar *) ARG7, ARG8);
+            "%#lx(%s), %ld )", ARG1, (HChar *) ARG1, ARG2, (HChar *) ARG2, SARG3,
+            ARG4, (HChar *) ARG4, ARG5, ARG6, ARG7, (HChar *) ARG7, SARG8);
       PRE_REG_READ8(long, "mount", const char *, spec, const char *, dir,
                     int, mflag, char *, fstype, char *, dataptr, int, datalen,
                     char *, optptr, int, optlen);
@@ -2052,8 +2052,8 @@ PRE(sys_mount)
    else if (ARG3 & VKI_MS_DATA) {
       /* 6-argument mount */
       PRINT("sys_mount ( %#lx(%s), %#lx(%s), %ld, %#lx(%s), %#lx, %ld )",
-            ARG1, (HChar *) ARG1, ARG2, (HChar *) ARG2, ARG3, ARG4,
-            (HChar *) ARG4, ARG5, ARG6);
+            ARG1, (HChar *) ARG1, ARG2, (HChar *) ARG2, SARG3, ARG4,
+            (HChar *) ARG4, ARG5, SARG6);
       PRE_REG_READ6(long, "mount", const char *, spec, const char *, dir,
                     int, mflag, char *, fstype, char *, dataptr,
                     int, datalen);
@@ -2061,7 +2061,7 @@ PRE(sys_mount)
    else {
       /* 4-argument mount */
       PRINT("sys_mount ( %#lx(%s), %#lx(%s), %ld, %#lx(%s) )", ARG1,
-            (HChar *) ARG1, ARG2, (HChar *) ARG2, ARG3, ARG4, (HChar *) ARG4);
+            (HChar *) ARG1, ARG2, (HChar *) ARG2, SARG3, ARG4, (HChar *) ARG4);
       PRE_REG_READ4(long, "mount", const char *, spec, const char *, dir,
                     int, mflag, char *, fstype);
    }
@@ -2110,8 +2110,8 @@ PRE(sys_readlinkat)
       This is different from Linux, for example, where glibc sign-extends it. */
    Int dfd = (Int) ARG1;
 
-   PRINT("sys_readlinkat ( %d, %#lx(%s), %#lx, %lu )", dfd, ARG2,
-         (HChar *) ARG2, ARG3, ARG4);
+   PRINT("sys_readlinkat ( %d, %#lx(%s), %#lx, %ld )", dfd, ARG2,
+         (HChar *) ARG2, ARG3, SARG4);
    PRE_REG_READ4(long, "readlinkat", int, dfd, const char *, path,
                  char *, buf, int, bufsiz);
    PRE_MEM_RASCIIZ("readlinkat(path)", ARG2);
@@ -2156,7 +2156,7 @@ PRE(sys_fstat)
    /* Note: We could use here the sys_newfstat generic wrapper, but the 'new'
       in its name is rather confusing in the Solaris context, thus we provide
       our own wrapper. */
-   PRINT("sys_fstat ( %ld, %#lx )", ARG1, ARG2);
+   PRINT("sys_fstat ( %ld, %#lx )", SARG1, ARG2);
    PRE_REG_READ2(long, "fstat", int, fildes, struct stat *, buf);
    PRE_MEM_WRITE("fstat(buf)", ARG2, sizeof(struct vki_stat));
 
@@ -2179,7 +2179,7 @@ PRE(sys_frealpathat)
       This is different from Linux, for example, where glibc sign-extends it. */
    Int fd = (Int) ARG1;
 
-   PRINT("sys_frealpathat ( %d, %#lx(%s), %#lx, %ld )",
+   PRINT("sys_frealpathat ( %d, %#lx(%s), %#lx, %lu )",
          fd, ARG2, (HChar *) ARG2, ARG3, ARG4);
    PRE_REG_READ4(long, "frealpathat", int, fd, char *, path,
                  char *, buf, vki_size_t, buflen);
@@ -2203,7 +2203,7 @@ POST(sys_frealpathat)
 PRE(sys_stty)
 {
    /* int stty(int fd, const struct sgttyb *tty); */
-   PRINT("sys_stty ( %ld, %#lx )", ARG1, ARG2);
+   PRINT("sys_stty ( %ld, %#lx )", SARG1, ARG2);
    PRE_REG_READ2(long, "stty", int, fd,
                  const struct vki_sgttyb *, tty);
    PRE_MEM_READ("stty(tty)", ARG2, sizeof(struct vki_sgttyb));
@@ -2216,7 +2216,7 @@ PRE(sys_stty)
 PRE(sys_gtty)
 {
    /* int gtty(int fd, struct sgttyb *tty); */
-   PRINT("sys_gtty ( %ld, %#lx )", ARG1, ARG2);
+   PRINT("sys_gtty ( %ld, %#lx )", SARG1, ARG2);
    PRE_REG_READ2(long, "gtty", int, fd, struct vki_sgttyb *, tty);
    PRE_MEM_WRITE("gtty(tty)", ARG2, sizeof(struct vki_sgttyb));
 
@@ -2236,39 +2236,39 @@ PRE(sys_pgrpsys)
    switch (ARG1 /*flag*/) {
    case 0:
       /* Libc: pid_t getpgrp(void); */
-      PRINT("sys_pgrpsys ( %ld )", ARG1);
+      PRINT("sys_pgrpsys ( %ld )", SARG1);
       PRE_REG_READ1(long, SC2("pgrpsys", "getpgrp"), int, flag);
       break;
    case 1:
       /* Libc: pid_t setpgrp(void); */
-      PRINT("sys_pgrpsys ( %ld )", ARG1);
+      PRINT("sys_pgrpsys ( %ld )", SARG1);
       PRE_REG_READ1(long, SC2("pgrpsys", "setpgrp"), int, flag);
       break;
    case 2:
       /* Libc: pid_t getsid(pid_t pid); */
-      PRINT("sys_pgrpsys ( %ld, %ld )", ARG1, ARG2);
+      PRINT("sys_pgrpsys ( %ld, %ld )", SARG1, SARG2);
       PRE_REG_READ2(long, SC2("pgrpsys", "getsid"), int, flag,
                     vki_pid_t, pid);
       break;
    case 3:
       /* Libc: pid_t setsid(void); */
-      PRINT("sys_pgrpsys ( %ld )", ARG1);
+      PRINT("sys_pgrpsys ( %ld )", SARG1);
       PRE_REG_READ1(long, SC2("pgrpsys", "setsid"), int, flag);
       break;
    case 4:
       /* Libc: pid_t getpgid(pid_t pid); */
-      PRINT("sys_pgrpsys ( %ld, %ld )", ARG1, ARG2);
+      PRINT("sys_pgrpsys ( %ld, %ld )", SARG1, SARG2);
       PRE_REG_READ2(long, SC2("pgrpsys", "getpgid"), int, flag,
                     vki_pid_t, pid);
       break;
    case 5:
       /* Libc: int setpgid(pid_t pid, pid_t pgid); */
-      PRINT("sys_pgrpsys ( %ld, %ld, %ld )", ARG1, ARG2, ARG3);
+      PRINT("sys_pgrpsys ( %ld, %ld, %ld )", SARG1, SARG2, SARG3);
       PRE_REG_READ3(long, SC2("pgrpsys", "setpgid"), int, flag,
                     vki_pid_t, pid, vki_pid_t, pgid);
       break;
    default:
-      VG_(unimplemented)("Syswrap of the pgrpsys call with flag %ld.", ARG1);
+      VG_(unimplemented)("Syswrap of the pgrpsys call with flag %ld.", SARG1);
       /*NOTREACHED*/
       break;
    }
@@ -2278,7 +2278,7 @@ PRE(sys_pipe)
 {
 #if defined(SOLARIS_NEW_PIPE_SYSCALL)
    /* int pipe(int fildes[2], int flags); */
-   PRINT("sys_pipe ( %#lx, %ld )", ARG1, ARG2);
+   PRINT("sys_pipe ( %#lx, %ld )", ARG1, SARG2);
    PRE_REG_READ2(long, "pipe", int *, fildes, int, flags);
    PRE_MEM_WRITE("pipe(fildes)", ARG1, 2 * sizeof(int));
 #else
@@ -2323,7 +2323,7 @@ PRE(sys_faccessat)
    Int fd = (Int) ARG1;
 
    PRINT("sys_faccessat ( %d, %#lx(%s), %ld, %ld )", fd, ARG2,
-         (HChar *) ARG2, ARG3, ARG4);
+         (HChar *) ARG2, SARG3, SARG4);
    PRE_REG_READ4(long, "faccessat", int, fd, const char *, path,
                  int, amode, int, flag);
    PRE_MEM_RASCIIZ("faccessat(path)", ARG2);
@@ -2345,7 +2345,7 @@ PRE(sys_mknodat)
    Int fd = (Int) ARG1;
 
    PRINT("sys_mknodat ( %d, %#lx(%s), %ld, %ld )", fd, ARG2,
-         (HChar *) ARG2, ARG3, ARG4);
+         (HChar *) ARG2, SARG3, SARG4);
    PRE_REG_READ4(long, "mknodat", int, fd, const char *, fname,
                  vki_mode_t, fmode, vki_dev_t, dev);
    PRE_MEM_RASCIIZ("mknodat(fname)", ARG2);
@@ -2372,7 +2372,7 @@ POST(sys_mknodat)
 PRE(sys_sysi86)
 {
    /* int sysi86(int cmd, uintptr_t arg1, uintptr_t arg2, uintptr_t arg3); */
-   PRINT("sys_sysi86 ( %ld, %#lx, %#lx, %#lx )", ARG1, ARG2, ARG3, ARG4);
+   PRINT("sys_sysi86 ( %ld, %#lx, %#lx, %#lx )", SARG1, ARG2, ARG3, ARG4);
    PRE_REG_READ4(long, "sysi86", int, cmd, uintptr_t, arg1, uintptr_t, arg2,
                  uintptr_t, arg3);
 
@@ -2385,7 +2385,7 @@ PRE(sys_sysi86)
          documentation). */
       break;
    default:
-      VG_(unimplemented)("Syswrap of the sysi86 call with cmd %ld.", ARG1);
+      VG_(unimplemented)("Syswrap of the sysi86 call with cmd %ld.", SARG1);
       /*NOTREACHED*/
       break;
    }
@@ -2414,7 +2414,7 @@ PRE(sys_shmsys)
    case VKI_SHMAT:
       /* Libc: void *shmat(int shmid, const void *shmaddr, int shmflg); */
       PRINT("sys_shmsys ( %ld, %ld, %#lx, %ld )",
-            ARG1, ARG2, ARG3, ARG4);
+            SARG1, SARG2, ARG3, SARG4);
       PRE_REG_READ4(long, SC2("shmsys", "shmat"), int, opcode,
                     int, shmid, const void *, shmaddr, int, shmflg);
 
@@ -2429,23 +2429,23 @@ PRE(sys_shmsys)
       /* Libc: int shmctl(int shmid, int cmd, struct shmid_ds *buf); */
       switch (ARG3 /* cmd */) {
       case VKI_SHM_LOCK:
-         PRINT("sys_shmsys ( %ld, %ld, %ld )", ARG1, ARG2, ARG3);
+         PRINT("sys_shmsys ( %ld, %ld, %ld )", SARG1, SARG2, SARG3);
          PRE_REG_READ3(long, SC3("shmsys", "shmctl", "lock"),
                        int, opcode, int, shmid, int, cmd);
          break;
       case VKI_SHM_UNLOCK:
-         PRINT("sys_shmsys ( %ld, %ld, %ld )", ARG1, ARG2, ARG3);
+         PRINT("sys_shmsys ( %ld, %ld, %ld )", SARG1, SARG2, SARG3);
          PRE_REG_READ3(long, SC3("shmsys", "shmctl", "unlock"),
                        int, opcode, int, shmid, int, cmd);
          break;
       case VKI_IPC_RMID:
-         PRINT("sys_shmsys ( %ld, %ld, %ld )", ARG1, ARG2, ARG3);
+         PRINT("sys_shmsys ( %ld, %ld, %ld )", SARG1, SARG2, SARG3);
          PRE_REG_READ3(long, SC3("shmsys", "shmctl", "rmid"),
                        int, opcode, int, shmid, int, cmd);
          break;
       case VKI_IPC_SET:
          PRINT("sys_shmsys ( %ld, %ld, %ld, %#lx )",
-               ARG1, ARG2, ARG3, ARG4);
+               SARG1, SARG2, SARG3, ARG4);
          PRE_REG_READ4(long, SC3("shmsys", "shmctl", "set"),
                        int, opcode, int, shmid, int, cmd,
                        struct vki_shmid_ds *, buf);
@@ -2460,7 +2460,7 @@ PRE(sys_shmsys)
          break;
       case VKI_IPC_STAT:
          PRINT("sys_shmsys ( %ld, %ld, %ld, %#lx )",
-               ARG1, ARG2, ARG3, ARG4);
+               SARG1, SARG2, SARG3, ARG4);
          PRE_REG_READ4(long, SC3("shmsys", "shmctl", "stat"),
                        int, opcode, int, shmid, int, cmd,
                        struct vki_shmid_ds *, buf);
@@ -2469,7 +2469,7 @@ PRE(sys_shmsys)
         break;
       case VKI_IPC_SET64:
          PRINT("sys_shmsys ( %ld, %ld, %ld, %#lx )",
-               ARG1, ARG2, ARG3, ARG4);
+               SARG1, SARG2, SARG3, ARG4);
          PRE_REG_READ4(long, SC3("shmsys", "shmctl", "set64"),
                        int, opcode, int, shmid, int, cmd,
                        struct vki_shmid_ds64 *, buf);
@@ -2487,7 +2487,7 @@ PRE(sys_shmsys)
          break;
       case VKI_IPC_STAT64:
          PRINT("sys_shmsys ( %ld, %ld, %ld, %#lx )",
-               ARG1, ARG2, ARG3, ARG4);
+               SARG1, SARG2, SARG3, ARG4);
          PRE_REG_READ4(long, SC3("shmsys", "shmctl", "stat64"),
                        int, opcode, int, shmid, int, cmd,
                        struct vki_shmid_ds64 *, buf);
@@ -2497,7 +2497,7 @@ PRE(sys_shmsys)
 #if defined(SOLARIS_SHM_NEW)
       case VKI_IPC_XSTAT64:
          PRINT("sys_shmsys ( %ld, %ld, %ld, %#lx )",
-               ARG1, ARG2, ARG3, ARG4);
+               SARG1, SARG2, SARG3, ARG4);
          PRE_REG_READ4(long, SC3("shmsys", "shmctl", "xstat64"),
                        int, opcode, int, shmid, int, cmd,
                        struct vki_shmid_ds64 *, buf);
@@ -2507,7 +2507,7 @@ PRE(sys_shmsys)
 #endif /* SOLARIS_SHM_NEW */
       default:
          VG_(unimplemented)("Syswrap of the shmsys(shmctl) call with "
-                            "cmd %ld.", ARG3);
+                            "cmd %ld.", SARG3);
          /*NOTREACHED*/
          break;
       }
@@ -2515,7 +2515,7 @@ PRE(sys_shmsys)
 
    case VKI_SHMDT:
       /* Libc: int shmdt(const void *shmaddr); */
-      PRINT("sys_shmsys ( %ld, %#lx )", ARG1, ARG2);
+      PRINT("sys_shmsys ( %ld, %#lx )", SARG1, ARG2);
       PRE_REG_READ2(long, SC2("shmsys", "shmdt"), int, opcode,
                     const void *, shmaddr);
 
@@ -2525,16 +2525,16 @@ PRE(sys_shmsys)
 
    case VKI_SHMGET:
       /* Libc: int shmget(key_t key, size_t size, int shmflg); */
-      PRINT("sys_shmsys ( %ld, %ld, %ld, %ld )",
-            ARG1, ARG2, ARG3, ARG4);
+      PRINT("sys_shmsys ( %ld, %ld, %lu, %ld )",
+            SARG1, SARG2, ARG3, ARG4);
       PRE_REG_READ4(long, SC2("shmsys", "shmget"), int, opcode,
                     vki_key_t, key, vki_size_t, size, int, shmflg);
       break;
 
    case VKI_SHMIDS:
       /* Libc: int shmids(int *buf, uint_t nids, uint_t *pnids); */
-      PRINT("sys_shmsys ( %ld, %#lx, %ld, %#lx )",
-            ARG1, ARG2, ARG3, ARG4);
+      PRINT("sys_shmsys ( %ld, %#lx, %lu, %#lx )",
+            SARG1, ARG2, ARG3, ARG4);
       PRE_REG_READ4(long, SC2("shmsys", "shmids"), int, opcode,
                     int *, buf, vki_uint_t, nids, vki_uint_t *, pnids);
 
@@ -2545,8 +2545,8 @@ PRE(sys_shmsys)
 #if defined(SOLARIS_SHM_NEW)
    case VKI_SHMADV:
       /* Libc: int shmadv(int shmid, uint_t cmd, uint_t *advice); */
-      PRINT("sys_shmsys ( %ld, %ld, %ld, %ld )",
-            ARG1, ARG2, ARG3, ARG4);
+      PRINT("sys_shmsys ( %ld, %ld, %lu, %ld )",
+            SARG1, SARG2, ARG3, ARG4);
       PRE_REG_READ4(long, SC2("shmsys", "shmadv"), int, opcode,
                     int, shmid, vki_uint_t, cmd, vki_uint_t *, advice);
 
@@ -2561,7 +2561,7 @@ PRE(sys_shmsys)
          break;
       default:
          VG_(unimplemented)("Syswrap of the shmsys(shmadv) call with "
-                            "cmd %ld.", ARG3);
+                            "cmd %lu.", ARG3);
          /*NOTREACHED*/
          break;
       }
@@ -2571,8 +2571,8 @@ PRE(sys_shmsys)
       /* Libc: int shmget_osm(key_t key, size_t size, int shmflg,
                               size_t granule_sz);
        */
-      PRINT("sys_shmsys ( %ld, %ld, %ld, %ld, %ld )",
-            ARG1, ARG2, ARG3, ARG4, ARG5);
+      PRINT("sys_shmsys ( %ld, %ld, %lu, %ld, %lu )",
+            SARG1, SARG2, ARG3, SARG4, ARG5);
       PRE_REG_READ5(long, SC2("shmsys", "shmget_osm"), int, opcode,
                     vki_key_t, key, vki_size_t, size, int, shmflg,
                     vki_size_t, granule_sz);
@@ -2581,7 +2581,7 @@ PRE(sys_shmsys)
 
    default:
       VG_(unimplemented)("Syswrap of the shmsys call with opcode %ld.",
-                         ARG1);
+                         SARG1);
       /*NOTREACHED*/
       break;
    }
@@ -2674,83 +2674,83 @@ PRE(sys_semsys)
       switch (ARG4) {
          case VKI_IPC_STAT:
             PRINT("sys_semsys ( %ld, %ld, %ld, %ld, %#lx )",
-                  ARG1, ARG2, ARG3, ARG4, ARG5);
+                  SARG1, SARG2, SARG3, SARG4, ARG5);
             PRE_REG_READ5(long, SC3("semsys", "semctl", "stat"), int, opcode,
                           int, semid, int, semnum, int, cmd,
                           struct vki_semid_ds *, arg);
             break;
          case VKI_IPC_SET:
             PRINT("sys_semsys ( %ld, %ld, %ld, %ld, %#lx )",
-                  ARG1, ARG2, ARG3, ARG4, ARG5);
+                  SARG1, SARG2, SARG3, SARG4, ARG5);
             PRE_REG_READ5(long, SC3("semsys", "semctl", "set"), int, opcode,
                           int, semid, int, semnum, int, cmd,
                           struct vki_semid_ds *, arg);
             break;
          case VKI_IPC_STAT64:
             PRINT("sys_semsys ( %ld, %ld, %ld, %ld, %#lx )",
-                  ARG1, ARG2, ARG3, ARG4, ARG5);
+                  SARG1, SARG2, SARG3, SARG4, ARG5);
             PRE_REG_READ5(long, SC3("semsys", "semctl", "stat64"), int, opcode,
                           int, semid, int, semnum, int, cmd,
                           struct vki_semid64_ds *, arg);
             break;
          case VKI_IPC_SET64:
             PRINT("sys_semsys ( %ld, %ld, %ld, %ld, %#lx )",
-                  ARG1, ARG2, ARG3, ARG4, ARG5);
+                  SARG1, SARG2, SARG3, SARG4, ARG5);
             PRE_REG_READ5(long, SC3("semsys", "semctl", "set64"), int, opcode,
                           int, semid, int, semnum, int, cmd,
                           struct vki_semid64_ds *, arg);
             break;
          case VKI_IPC_RMID:
-            PRINT("sys_semsys ( %ld, %ld, %ld )", ARG1, ARG3, ARG4);
+            PRINT("sys_semsys ( %ld, %ld, %ld )", SARG1, SARG3, SARG4);
             PRE_REG_READ3(long, SC3("semsys", "semctl", "rmid"), int, opcode,
                           int, semid, int, cmd);
             break;
          case VKI_GETALL:
             PRINT("sys_semsys ( %ld, %ld, %ld, %#lx )",
-                  ARG1, ARG2, ARG4, ARG5);
+                  SARG1, SARG2, SARG4, ARG5);
             PRE_REG_READ4(long, SC3("semsys", "semctl", "getall"), int, opcode,
                           int, semid, int, cmd, ushort_t *, arg);
             break;
          case VKI_SETALL:
             PRINT("sys_semsys ( %ld, %ld, %ld, %#lx )",
-                  ARG1, ARG2, ARG4, ARG5);
+                  SARG1, SARG2, SARG4, ARG5);
             PRE_REG_READ4(long, SC3("semsys", "semctl", "setall"), int, opcode,
                           int, semid, int, cmd, ushort_t *, arg);
             break;
          case VKI_GETVAL:
             PRINT("sys_semsys ( %ld, %ld, %ld, %ld )",
-                  ARG1, ARG2, ARG3, ARG4);
+                  SARG1, SARG2, SARG3, SARG4);
             PRE_REG_READ4(long, SC3("semsys", "semctl", "getval"), int, opcode,
                           int, semid, int, semnum, int, cmd);
             break;
          case VKI_SETVAL:
             PRINT("sys_semsys ( %ld, %ld, %ld, %ld, %#lx )",
-                  ARG1, ARG2, ARG3, ARG4, ARG5);
+                  SARG1, SARG2, SARG3, SARG4, ARG5);
             PRE_REG_READ5(long, SC3("semsys", "semctl", "setval"), int, opcode,
                           int, semid, int, semnum, int, cmd,
                           union vki_semun *, arg);
             break;
          case VKI_GETPID:
             PRINT("sys_semsys ( %ld, %ld, %ld, %ld )",
-                  ARG1, ARG2, ARG3, ARG4);
+                  SARG1, SARG2, SARG3, SARG4);
             PRE_REG_READ4(long, SC3("semsys", "semctl", "getpid"), int, opcode,
                           int, semid, int, semnum, int, cmd);
             break;
          case VKI_GETNCNT:
             PRINT("sys_semsys ( %ld, %ld, %ld, %ld )",
-                  ARG1, ARG2, ARG3, ARG4);
+                  SARG1, SARG2, SARG3, SARG4);
             PRE_REG_READ4(long, SC3("semsys", "semctl", "getncnt"),
                           int, opcode, int, semid, int, semnum, int, cmd);
             break;
          case VKI_GETZCNT:
             PRINT("sys_semsys ( %ld, %ld, %ld, %ld )",
-                  ARG1, ARG2, ARG3, ARG4);
+                  SARG1, SARG2, SARG3, SARG4);
             PRE_REG_READ4(long, SC3("semsys", "semctl", "getzcnt"),
                           int, opcode, int, semid, int, semnum, int, cmd);
             break;
          default:
             VG_(unimplemented)("Syswrap of the semsys(semctl) call "
-                               "with cmd %ld.", ARG4);
+                               "with cmd %ld.", SARG4);
             /*NOTREACHED*/
             break;
       }
@@ -2758,20 +2758,20 @@ PRE(sys_semsys)
       break;
    case VKI_SEMGET:
       /* Libc: int semget(key_t key, int nsems, int semflg); */
-      PRINT("sys_semsys ( %ld, %ld, %ld, %ld )", ARG1, ARG2, ARG3, ARG4);
+      PRINT("sys_semsys ( %ld, %ld, %ld, %ld )", SARG1, SARG2, SARG3, SARG4);
       PRE_REG_READ4(long, SC2("semsys", "semget"), int, opcode,
                     vki_key_t, key, int, nsems, int, semflg);
       break;
    case VKI_SEMOP:
       /* Libc: int semop(int semid, struct sembuf *sops, size_t nsops); */
-      PRINT("sys_semsys ( %ld, %ld, %#lx, %lu )", ARG1, ARG2, ARG3, ARG4);
+      PRINT("sys_semsys ( %ld, %ld, %#lx, %lu )", SARG1, SARG2, ARG3, ARG4);
       PRE_REG_READ4(long, SC2("semsys", "semop"), int, opcode, int, semid,
                     struct vki_sembuf *, sops, vki_size_t, nsops);
       ML_(generic_PRE_sys_semop)(tid, ARG2, ARG3, ARG4);
       break;
    case VKI_SEMIDS:
       /* Libc: int semids(int *buf, uint_t nids, uint_t *pnids); */
-      PRINT("sys_semsys ( %ld, %#lx, %ld, %#lx )", ARG1, ARG2, ARG3, ARG4);
+      PRINT("sys_semsys ( %ld, %#lx, %lu, %#lx )", SARG1, ARG2, ARG3, ARG4);
       PRE_REG_READ4(long, SC2("semsys", "semids"), int, opcode, int *, buf,
                    vki_uint_t, nids, vki_uint_t *, pnids);
 
@@ -2782,7 +2782,7 @@ PRE(sys_semsys)
       /* Libc: int semtimedop(int semid, struct sembuf *sops, size_t nsops,
                               const struct timespec *timeout);
        */
-      PRINT("sys_semsys ( %ld, %ld, %#lx, %lu, %#lx )", ARG1, ARG2, ARG3,
+      PRINT("sys_semsys ( %ld, %ld, %#lx, %lu, %#lx )", SARG1, SARG2, ARG3,
             ARG4, ARG5);
       PRE_REG_READ5(long, SC2("semsys", "semtimedop"), int, opcode,
                     int, semid, struct vki_sembuf *, sops, vki_size_t, nsops,
@@ -2790,7 +2790,7 @@ PRE(sys_semsys)
       ML_(generic_PRE_sys_semtimedop)(tid, ARG2, ARG3, ARG4, ARG5);
       break;
    default:
-      VG_(unimplemented)("Syswrap of the semsys call with opcode %ld.", ARG1);
+      VG_(unimplemented)("Syswrap of the semsys call with opcode %ld.", SARG1);
       /*NOTREACHED*/
       break;
    }
@@ -2839,12 +2839,12 @@ PRE(sys_ioctl)
       /* Handle 2-arg specially here (they do not use ARG3 at all). */
    case VKI_TIOCNOTTY:
    case VKI_TIOCSCTTY:
-      PRINT("sys_ioctl ( %ld, %#lx )", ARG1, ARG2);
+      PRINT("sys_ioctl ( %ld, %#lx )", SARG1, ARG2);
       PRE_REG_READ2(long, "ioctl", int, fd, int, request);
       break;
       /* And now come the 3-arg ones. */
    default:
-      PRINT("sys_ioctl ( %ld, %#lx, %#lx )", ARG1, ARG2, ARG3);
+      PRINT("sys_ioctl ( %ld, %#lx, %#lx )", SARG1, ARG2, ARG3);
       PRE_REG_READ3(long, "ioctl", int, fd, int, request, intptr_t, arg);
       break;
    }
@@ -3196,7 +3196,7 @@ PRE(sys_fchownat)
    Int fd = (Int) ARG1;
 
    PRINT("sys_fchownat ( %d, %#lx(%s), %ld, %ld, %ld )", fd,
-         ARG2, (HChar *) ARG2, ARG3, ARG4, ARG5);
+         ARG2, (HChar *) ARG2, SARG3, SARG4, ARG5);
    PRE_REG_READ5(long, "fchownat", int, fd, const char *, path,
                  vki_uid_t, owner, vki_gid_t, group, int, flag);
 
@@ -3214,7 +3214,7 @@ PRE(sys_fchownat)
 PRE(sys_fdsync)
 {
    /* int fdsync(int fd, int flag); */
-   PRINT("sys_fdsync ( %ld, %ld )", ARG1, ARG2);
+   PRINT("sys_fdsync ( %ld, %ld )", SARG1, SARG2);
    PRE_REG_READ2(long, "fdsync", int, fd, int, flag);
 
    /* Be strict. */
@@ -3230,7 +3230,7 @@ PRE(sys_execve)
 #if defined(SOLARIS_EXECVE_SYSCALL_TAKES_FLAGS)
    /* int execve(uintptr_t file, const char **argv, const char **envp,
                  int flags); */
-   PRINT("sys_execve ( %#lx, %#lx, %#lx, %ld )", ARG1, ARG2, ARG3, ARG4);
+   PRINT("sys_execve ( %#lx, %#lx, %#lx, %ld )", ARG1, ARG2, ARG3, SARG4);
    PRE_REG_READ4(long, "execve", uintptr_t, file, const char **, argv,
                  const char **, envp, int, flags);
 
@@ -3518,13 +3518,13 @@ PRE(sys_execve)
    vg_assert(FAILURE);
 #if defined(SOLARIS_EXECVE_SYSCALL_TAKES_FLAGS)
    if (ARG1_is_fd)
-      VG_(message)(Vg_UserMsg, "execve(%ld, %#lx, %#lx, %ld) failed, "
-                   "errno %ld\n", ARG1, ARG2, ARG3, ARG4, ERR);
+      VG_(message)(Vg_UserMsg, "execve(%ld, %#lx, %#lx, %lu) failed, "
+                   "errno %ld\n", SARG1, ARG2, ARG3, ARG4, ERR);
    else
       VG_(message)(Vg_UserMsg, "execve(%#lx(%s), %#lx, %#lx, %ld) failed, errno"
-                   " %ld\n", ARG1, (HChar *) ARG1, ARG2, ARG3, ARG4, ERR);
+                   " %lu\n", ARG1, (HChar *) ARG1, ARG2, ARG3, SARG4, ERR);
 #else
-   VG_(message)(Vg_UserMsg, "execve(%#lx(%s), %#lx, %#lx) failed, errno %ld\n",
+   VG_(message)(Vg_UserMsg, "execve(%#lx(%s), %#lx, %#lx) failed, errno %lu\n",
                 ARG1, (HChar *) ARG1, ARG2, ARG3, ERR);
 #endif /* SOLARIS_EXECVE_SYSCALL_TAKES_FLAGS */
    VG_(message)(Vg_UserMsg, "EXEC FAILED: I can't recover from "
@@ -3562,7 +3562,7 @@ PRE(sys_fcntl)
    case VKI_F_GETFD:
    case VKI_F_GETFL:
    case VKI_F_GETXFL:
-      PRINT("sys_fcntl ( %ld, %ld )", ARG1, ARG2);
+      PRINT("sys_fcntl ( %ld, %ld )", SARG1, SARG2);
       PRE_REG_READ2(long, "fcntl", int, fildes, int, cmd);
       break;
 
@@ -3572,7 +3572,7 @@ PRE(sys_fcntl)
    case VKI_F_SETFL:
    case VKI_F_DUP2FD:
    case VKI_F_BADFD:
-      PRINT("sys_fcntl ( %ld, %ld, %ld )", ARG1, ARG2, ARG3);
+      PRINT("sys_fcntl ( %ld, %ld, %ld )", SARG1, SARG2, SARG3);
       PRE_REG_READ3(long, "fcntl", int, fildes, int, cmd, int, arg);
       /* Check if a client program isn't going to poison any of V's output
          fds. */
@@ -3589,7 +3589,7 @@ PRE(sys_fcntl)
    case VKI_F_ALLOCSP:
    case VKI_F_FREESP:
    case VKI_F_SETLK_NBMAND:
-      PRINT("sys_fcntl ( %ld, %ld, %#lx )", ARG1, ARG2, ARG3);
+      PRINT("sys_fcntl ( %ld, %ld, %#lx )", SARG1, SARG2, ARG3);
       PRE_REG_READ3(long, "fcntl", int, fildes, int, cmd,
                     struct flock *, lock);
       pre_mem_read_flock(tid, (struct vki_flock*)ARG3);
@@ -3597,7 +3597,7 @@ PRE(sys_fcntl)
 
    /* This one uses ARG3 as "native lock" (input&output). */
    case VKI_F_GETLK:
-      PRINT("sys_fcntl ( %ld, %ld, %#lx )", ARG1, ARG2, ARG3);
+      PRINT("sys_fcntl ( %ld, %ld, %#lx )", SARG1, SARG2, ARG3);
       PRE_REG_READ3(long, "fcntl", int, fildes, int, cmd,
                     struct flock *, lock);
       pre_mem_read_flock(tid, (struct vki_flock*)ARG3);
@@ -3611,7 +3611,7 @@ PRE(sys_fcntl)
    case VKI_F_ALLOCSP64:
    case VKI_F_FREESP64:
    case VKI_F_SETLK64_NBMAND:
-      PRINT("sys_fcntl ( %ld, %ld, %#lx )", ARG1, ARG2, ARG3);
+      PRINT("sys_fcntl ( %ld, %ld, %#lx )", SARG1, SARG2, ARG3);
       PRE_REG_READ3(long, "fcntl", int, fildes, int, cmd,
                     struct flock64 *, lock);
       pre_mem_read_flock64(tid, (struct vki_flock64*)ARG3);
@@ -3619,7 +3619,7 @@ PRE(sys_fcntl)
 
    /* This one uses ARG3 as "transitional 64b lock" (input&output). */
    case VKI_F_GETLK64:
-      PRINT("sys_fcntl ( %ld, %ld, %#lx )", ARG1, ARG2, ARG3);
+      PRINT("sys_fcntl ( %ld, %ld, %#lx )", SARG1, SARG2, ARG3);
       PRE_REG_READ3(long, "fcntl", int, fildes, int, cmd,
                     struct flock64 *, lock);
       pre_mem_read_flock64(tid, (struct vki_flock64*)ARG3);
@@ -3631,14 +3631,14 @@ PRE(sys_fcntl)
    case VKI_F_SHARE:
    case VKI_F_UNSHARE:
    case VKI_F_SHARE_NBMAND:
-      PRINT("sys_fcntl[ARG3=='fshare'] ( %ld, %ld, %#lx )", ARG1, ARG2, ARG3);
+      PRINT("sys_fcntl[ARG3=='fshare'] ( %ld, %ld, %#lx )", SARG1, SARG2, ARG3);
       PRE_REG_READ3(long, "fcntl", int, fildes, int, cmd,
                     struct fshare *, sh);
       PRE_MEM_READ("fcntl(fshare)", ARG3, sizeof(struct vki_fshare));
       break;
 
    default:
-      VG_(unimplemented)("Syswrap of the fcntl call with cmd %ld.", ARG2);
+      VG_(unimplemented)("Syswrap of the fcntl call with cmd %ld.", SARG2);
       /*NOTREACHED*/
       break;
    }
@@ -3737,7 +3737,7 @@ PRE(sys_unlinkat)
 
    *flags |= SfMayBlock;
    PRINT("sys_unlinkat ( %d, %#lx(%s), %ld )", dfd, ARG2, (HChar *) ARG2,
-         ARG3);
+         SARG3);
    PRE_REG_READ3(long, "unlinkat", int, dirfd, const char *, pathname,
                  int, flags);
    PRE_MEM_RASCIIZ("unlinkat(pathname)", ARG2);
@@ -3760,7 +3760,7 @@ PRE(sys_fstatat)
    Int fd = (Int) ARG1;
 
    PRINT("sys_fstatat ( %d, %#lx(%s), %#lx, %ld )", fd, ARG2,
-         (HChar *) ARG2, ARG3, ARG4);
+         (HChar *) ARG2, ARG3, SARG4);
    PRE_REG_READ4(long, "fstatat", int, fildes, const char *, path,
                  struct stat *, buf, int, flag);
    if (ARG2) {
@@ -3795,14 +3795,14 @@ PRE(sys_openat)
    if (ARG3 & VKI_O_CREAT) {
       /* 4-arg version */
       PRINT("sys_openat ( %d, %#lx(%s), %ld, %ld )", fd, ARG2, (HChar *) ARG2,
-            ARG3, ARG4);
+            SARG3, SARG4);
       PRE_REG_READ4(long, "openat", int, fildes, const char *, filename,
                     int, flags, vki_mode_t, mode);
    }
    else {
       /* 3-arg version */
       PRINT("sys_openat ( %d, %#lx(%s), %ld )", fd, ARG2, (HChar *) ARG2,
-            ARG3);
+            SARG3);
       PRE_REG_READ3(long, "openat", int, fildes, const char *, filename,
                     int, flags);
    }
@@ -3846,29 +3846,29 @@ PRE(sys_tasksys)
    switch (ARG1 /*code*/) {
    case 0:
       /* Libc: taskid_t settaskid(projid_t project, uint_t flags); */
-      PRINT("sys_tasksys ( %ld, %ld, %lu )", ARG1, ARG2, ARG3);
+      PRINT("sys_tasksys ( %ld, %ld, %lu )", SARG1, SARG2, ARG3);
       PRE_REG_READ3(long, SC2("tasksys", "settaskid"), int, code,
                     vki_projid_t, projid, vki_uint_t, flags);
       break;
    case 1:
       /* Libc: taskid_t gettaskid(void); */
-      PRINT("sys_tasksys ( %ld )", ARG1);
+      PRINT("sys_tasksys ( %ld )", SARG1);
       PRE_REG_READ1(long, SC2("tasksys", "gettaskid"), int, code);
       break;
    case 2:
       /* Libc: projid_t getprojid(void); */
-      PRINT("sys_tasksys ( %ld )", ARG1);
+      PRINT("sys_tasksys ( %ld )", SARG1);
       PRE_REG_READ1(long, SC2("tasksys", "getprojid"), int, code);
       break;
    case 3:
       /* Libproject: size_t projlist(id_t *idbuf, size_t idbufsz); */
-      PRINT("sys_tasksys ( %ld, %#lx, %lu )", ARG1, ARG4, ARG5);
+      PRINT("sys_tasksys ( %ld, %#lx, %lu )", SARG1, ARG4, ARG5);
       PRE_REG_READ3(long, SC2("tasksys", "projlist"), int, code,
                     vki_id_t *, idbuf, vki_size_t, idbufsz);
       PRE_MEM_WRITE("tasksys(idbuf)", ARG4, ARG5);
       break;
    default:
-      VG_(unimplemented)("Syswrap of the tasksys call with code %ld.", ARG1);
+      VG_(unimplemented)("Syswrap of the tasksys call with code %ld.", SARG1);
       /*NOTREACHED*/
       break;
    }
@@ -3899,7 +3899,7 @@ PRE(sys_lwp_park)
    switch (ARG1 /*which*/) {
    case 0:
       /* Libc: int lwp_park(timespec_t *timeout, id_t lwpid); */
-      PRINT("sys_lwp_park ( %ld, %#lx, %ld )", ARG1, ARG2, ARG3);
+      PRINT("sys_lwp_park ( %ld, %#lx, %ld )", SARG1, ARG2, SARG3);
       PRE_REG_READ3(long, SC2("lwp_park", "lwp_park"), int, which,
                     timespec_t *, timeout, vki_id_t, lwpid);
       if (ARG2) {
@@ -3910,19 +3910,19 @@ PRE(sys_lwp_park)
       break;
    case 1:
       /* Libc: int lwp_unpark(id_t lwpid); */
-      PRINT("sys_lwp_park ( %ld, %ld )", ARG1, ARG2);
+      PRINT("sys_lwp_park ( %ld, %ld )", SARG1, SARG2);
       PRE_REG_READ2(long, SC2("lwp_park", "lwp_unpark"), int, which,
                     vki_id_t, lwpid);
       break;
    case 2:
       /* Libc: int lwp_unpark_all(id_t *lwpid, int nids); */
-      PRINT("sys_lwp_park ( %ld, %#lx, %ld )", ARG1, ARG2, ARG3);
+      PRINT("sys_lwp_park ( %ld, %#lx, %ld )", SARG1, ARG2, SARG3);
       PRE_REG_READ3(long, SC2("lwp_park", "lwp_unpark_all"), int, which,
                     id_t *, lwpid, int, nids);
       PRE_MEM_READ("lwp_park(lwpid)", ARG2, ARG3 * sizeof(vki_id_t));
       break;
    default:
-      VG_(unimplemented)("Syswrap of the lwp_park call with which %ld.", ARG1);
+      VG_(unimplemented)("Syswrap of the lwp_park call with which %ld.", SARG1);
       /*NOTREACHED*/
       break;
    }
@@ -3951,7 +3951,7 @@ PRE(sys_sendfilev)
                                 int sfvcnt, size_t *xferred);
     */
    PRINT("sys_sendfilev ( %ld, %ld, %#lx, %ld, %#lx )",
-         ARG1, ARG2, ARG3, ARG4, ARG5);
+         SARG1, SARG2, ARG3, SARG4, ARG5);
 
    switch (ARG1 /*opcode*/) {
    case VKI_SENDFILEV:
@@ -4018,7 +4018,7 @@ PRE(sys_sendfilev)
       break;
    default:
       VG_(unimplemented)("Syswrap of the sendfilev call with "
-                         "opcode %ld.", ARG1);
+                         "opcode %ld.", SARG1);
       /*NOTREACHED*/
       break;
    }
@@ -4039,7 +4039,7 @@ POST(sys_sendfilev)
 PRE(sys_lwp_name)
 {
    /* int lwp_name(int opcode, id_t lwpid, char *name, size_t len); */
-   PRINT("sys_lwp_name ( %ld, %ld, %#lx, %ld )", ARG1, ARG2, ARG3, ARG4);
+   PRINT("sys_lwp_name ( %ld, %ld, %#lx, %lu )", SARG1, SARG2, ARG3, ARG4);
 
    switch (ARG1 /*opcode*/) {
    case 0:
@@ -4055,7 +4055,7 @@ PRE(sys_lwp_name)
       PRE_MEM_WRITE("lwp_name(name)", ARG3, ARG4);
       break;
    default:
-      VG_(unimplemented)("Syswrap of the lwp_name call with opcode %ld.", ARG1);
+      VG_(unimplemented)("Syswrap of the lwp_name call with opcode %ld.", SARG1);
       /*NOTREACHED*/
       break;
    }
@@ -4096,7 +4096,7 @@ PRE(sys_privsys)
       /* Libc: int setppriv(priv_op_t op, priv_ptype_t type,
                             const priv_set_t *pset);
        */
-      PRINT("sys_privsys ( %ld, %ld, %ld, %#lx, %lu )", ARG1, ARG2, ARG3,
+      PRINT("sys_privsys ( %ld, %ld, %ld, %#lx, %lu )", SARG1, SARG2, SARG3,
             ARG4, ARG5);
       PRE_REG_READ5(long, SC2("privsys", "setppriv"), int, code,
                     vki_priv_op_t, op, vki_priv_ptype_t, type,
@@ -4107,7 +4107,7 @@ PRE(sys_privsys)
       /* Libc: int getppriv(priv_ptype_t type, priv_set_t *pset);
                priv_set_t *pset -> void *buf
        */
-      PRINT("sys_privsys ( %ld, %ld, %ld, %#lx, %lu )", ARG1, ARG2, ARG3,
+      PRINT("sys_privsys ( %ld, %ld, %ld, %#lx, %lu )", SARG1, SARG2, SARG3,
             ARG4, ARG5);
       PRE_REG_READ5(long, SC2("privsys", "getppriv"), int, code,
             vki_priv_op_t, op, vki_priv_ptype_t, type, priv_set_t *, pset,
@@ -4118,7 +4118,7 @@ PRE(sys_privsys)
       /* Libc: int getprivinfo(priv_impl_info_t *buf, size_t bufsize);
                priv_impl_info_t *buf -> void *buf
        */
-      PRINT("sys_privsys ( %ld, %ld, %ld, %#lx, %ld )", ARG1, ARG2, ARG3,
+      PRINT("sys_privsys ( %ld, %ld, %ld, %#lx, %lu )", SARG1, SARG2, SARG3,
             ARG4, ARG5);
       PRE_REG_READ5(long, SC2("privsys", "getprivinfo"), int, code,
             vki_priv_op_t, op, vki_priv_ptype_t, type,
@@ -4130,7 +4130,7 @@ PRE(sys_privsys)
                uint_t flag -> priv_op_t op
                uint_t val -> priv_ptype_t type
        */
-      PRINT("sys_privsys ( %ld, %ld, %ld )", ARG1, ARG2, ARG3);
+      PRINT("sys_privsys ( %ld, %lu, %lu )", SARG1, ARG2, ARG3);
       PRE_REG_READ3(long, SC2("privsys", "setpflags"), int, code,
                     vki_uint_t, flag, vki_uint_t, val);
       break;
@@ -4138,31 +4138,31 @@ PRE(sys_privsys)
       /* Libc: uint_t getpflags(uint_t flag);
                uint_t flag -> priv_op_t op
        */
-      PRINT("sys_privsys ( %ld, %ld )", ARG1, ARG2);
+      PRINT("sys_privsys ( %ld, %lu )", SARG1, ARG2);
       PRE_REG_READ2(long, SC2("privsys", "setpflags"), int, code,
                     vki_uint_t, flag);
       break;
    case VKI_PRIVSYS_ISSETUGID:
       /* Libc: int issetugid(void); */
-      PRINT("sys_privsys ( %ld )", ARG1);
+      PRINT("sys_privsys ( %ld )", SARG1);
       PRE_REG_READ1(long, SC2("privsys", "issetugid"), int, code);
       break;
    case VKI_PRIVSYS_PFEXEC_REG:
       /* Libc: int register_pfexec(int did);
                int did -> priv_op_t op
        */
-      PRINT("sys_privsys ( %ld, %ld )", ARG1, ARG2);
+      PRINT("sys_privsys ( %ld, %ld )", SARG1, SARG2);
       PRE_REG_READ2(long, SC2("privsys", "register_pfexec"), int, code,
                     int, did);
       break;
    case VKI_PRIVSYS_PFEXEC_UNREG:
       /* Libc: int unregister_pfexec(int did); */
-      PRINT("sys_privsys ( %ld, %ld )", ARG1, ARG2);
+      PRINT("sys_privsys ( %ld, %ld )", SARG1, SARG2);
       PRE_REG_READ2(long, SC2("privsys", "unregister_pfexec"), int, code,
                     int, did);
       break;
    default:
-      VG_(unimplemented)("Syswrap of the privsys call with code %ld.", ARG1);
+      VG_(unimplemented)("Syswrap of the privsys call with code %ld.", SARG1);
       /*NOTREACHED*/
       break;
    }
@@ -4204,7 +4204,7 @@ POST(sys_privsys)
 PRE(sys_ucredsys)
 {
    /* Kernel: int ucredsys(int code, int obj, void *buf); */
-   PRINT("sys_ucredsys ( %ld, %ld, %#lx )", ARG1, ARG2, ARG3);
+   PRINT("sys_ucredsys ( %ld, %ld, %#lx )", SARG1, SARG2, ARG3);
 
    switch (ARG1 /*code*/) {
    case VKI_UCREDSYS_UCREDGET:
@@ -4226,7 +4226,7 @@ PRE(sys_ucredsys)
       break;
 
    default:
-      VG_(unimplemented)("Syswrap of the ucredsys call with code %ld.", ARG1);
+      VG_(unimplemented)("Syswrap of the ucredsys call with code %ld.", SARG1);
       /*NOTREACHED*/
       break;
    }
@@ -4254,7 +4254,7 @@ PRE(sys_getmsg)
    struct vki_strbuf *ctrlptr = (struct vki_strbuf *)ARG2;
    struct vki_strbuf *dataptr = (struct vki_strbuf *)ARG3;
    *flags |= SfMayBlock;
-   PRINT("sys_getmsg ( %ld, %#lx, %#lx, %#lx )", ARG1, ARG2, ARG3, ARG4);
+   PRINT("sys_getmsg ( %ld, %#lx, %#lx, %#lx )", SARG1, ARG2, ARG3, ARG4);
    PRE_REG_READ4(long, "getmsg", int, fildes, struct vki_strbuf *, ctlptr,
                  struct vki_strbuf *, dataptr, int *, flagsp);
    if (ctrlptr) {
@@ -4302,7 +4302,7 @@ PRE(sys_putmsg)
    struct vki_strbuf *ctrlptr = (struct vki_strbuf *)ARG2;
    struct vki_strbuf *dataptr = (struct vki_strbuf *)ARG3;
    *flags |= SfMayBlock;
-   PRINT("sys_putmsg ( %ld, %#lx, %#lx, %ld )", ARG1, ARG2, ARG3, ARG4);
+   PRINT("sys_putmsg ( %ld, %#lx, %#lx, %ld )", SARG1, ARG2, ARG3, SARG4);
    PRE_REG_READ4(long, "putmsg", int, fildes, struct vki_strbuf *, ctrlptr,
                  struct vki_strbuf *, dataptr, int, flags);
    if (ctrlptr) {
@@ -4348,7 +4348,7 @@ POST(sys_lstat)
 PRE(sys_sigprocmask)
 {
    /* int sigprocmask(int how, const sigset_t *set, sigset_t *oset); */
-   PRINT("sys_sigprocmask ( %ld, %#lx, %#lx )", ARG1, ARG2, ARG3);
+   PRINT("sys_sigprocmask ( %ld, %#lx, %#lx )", SARG1, ARG2, ARG3);
    PRE_REG_READ3(long, "sigprocmask",
                  int, how, vki_sigset_t *, set, vki_sigset_t *, oset);
    if (ARG2)
@@ -4384,7 +4384,7 @@ PRE(sys_sigaction)
 {
    /* int sigaction(int signal, const struct sigaction *act,
                     struct sigaction *oact); */
-   PRINT("sys_sigaction ( %ld, %#lx, %#lx )", ARG1, ARG2, ARG3);
+   PRINT("sys_sigaction ( %ld, %#lx, %#lx )", SARG1, ARG2, ARG3);
    PRE_REG_READ3(long, "sigaction", int, signal,
                  const struct sigaction *, act, struct sigaction *, oact);
 
@@ -4425,7 +4425,7 @@ POST(sys_sigaction)
 PRE(sys_sigpending)
 {
    /* int sigpending(int flag, sigset_t *setp); */
-   PRINT("sys_sigpending ( %ld, %#lx )", ARG1, ARG2);
+   PRINT("sys_sigpending ( %ld, %#lx )", SARG1, ARG2);
    PRE_REG_READ2(long, "sigpending", int, flag, sigset_t *, setp);
    PRE_MEM_WRITE("sigpending(setp)", ARG2, sizeof(vki_sigset_t));
 }
@@ -4439,7 +4439,7 @@ PRE(sys_getsetcontext)
 {
    /* Kernel: int getsetcontext(int flag, void *arg) */
    ThreadState *tst = VG_(get_ThreadState)(tid);
-   PRINT("sys_getsetcontext ( %ld, %#lx )", ARG1, ARG2);
+   PRINT("sys_getsetcontext ( %ld, %#lx )", SARG1, ARG2);
    switch (ARG1 /*flag*/) {
    case VKI_GETCONTEXT:
       /* Libc: int getcontext(ucontext_t *ucp); */
@@ -4533,7 +4533,7 @@ PRE(sys_getsetcontext)
       }
       break;
    default:
-      VG_(unimplemented)("Syswrap of the context call with flag %ld.", ARG1);
+      VG_(unimplemented)("Syswrap of the context call with flag %ld.", SARG1);
       /*NOTREACHED*/
       break;
    }
@@ -4548,7 +4548,7 @@ PRE(sys_fchmodat)
    Int fd = (Int) ARG1;
 
    PRINT("sys_fchmodat ( %d, %#lx(%s), %ld, %ld )",
-         fd, ARG2, (HChar *) ARG2, ARG3, ARG4);
+         fd, ARG2, (HChar *) ARG2, SARG3, SARG4);
    PRE_REG_READ4(long, "fchmodat",
                  int, fd, const char *, path, vki_mode_t, mode, int, flag);
 
@@ -4572,7 +4572,7 @@ PRE(sys_mkdirat)
    Int fd = (Int) ARG1;
 
    *flags |= SfMayBlock;
-   PRINT("sys_mkdirat ( %d, %#lx(%s), %ld )", fd, ARG2, (HChar *) ARG2, ARG3);
+   PRINT("sys_mkdirat ( %d, %#lx(%s), %ld )", fd, ARG2, (HChar *) ARG2, SARG3);
    PRE_REG_READ3(long, "mkdirat", int, fd, const char *, path,
                  vki_mode_t, mode);
    PRE_MEM_RASCIIZ("mkdirat(path)", ARG2);
@@ -4622,7 +4622,7 @@ PRE(sys_fstatvfs)
 {
    /* int fstatvfs(int fd, struct statvfs *buf); */
    *flags |= SfMayBlock;
-   PRINT("sys_fstatvfs ( %ld, %#lx )", ARG1, ARG2);
+   PRINT("sys_fstatvfs ( %ld, %#lx )", SARG1, ARG2);
    PRE_REG_READ2(long, "fstatvfs", int, fd, struct vki_statvfs *, buf);
    PRE_MEM_WRITE("fstatvfs(buf)", ARG2, sizeof(struct vki_statvfs));
 
@@ -4640,7 +4640,7 @@ PRE(sys_nfssys)
 {
    /* int nfssys(enum nfssys_op opcode, void *arg); */
    *flags |= SfMayBlock;
-   PRINT("sys_nfssys ( %ld, %#lx )", ARG1, ARG2);
+   PRINT("sys_nfssys ( %ld, %#lx )", SARG1, ARG2);
 
    switch (ARG1 /*opcode*/) {
    case VKI_NFS_REVAUTH:
@@ -4650,7 +4650,7 @@ PRE(sys_nfssys)
                    sizeof(struct vki_nfs_revauth_args));
       break;
    default:
-      VG_(unimplemented)("Syswrap of the nfssys call with opcode %ld.", ARG1);
+      VG_(unimplemented)("Syswrap of the nfssys call with opcode %ld.", SARG1);
       /*NOTREACHED*/
       break;
    }
@@ -4671,7 +4671,7 @@ PRE(sys_waitid)
 {
    /* int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options); */
    *flags |= SfMayBlock;
-   PRINT("sys_waitid( %ld, %ld, %#lx, %ld )", ARG1, ARG2, ARG3, ARG4);
+   PRINT("sys_waitid( %ld, %ld, %#lx, %ld )", SARG1, SARG2, ARG3, SARG4);
    PRE_REG_READ4(long, "waitid", vki_idtype_t, idtype, vki_id_t, id,
                  siginfo_t *, infop, int, options);
    PRE_MEM_WRITE("waitid(infop)", ARG3, sizeof(vki_siginfo_t));
@@ -4692,7 +4692,7 @@ PRE(sys_utimesys)
    switch (ARG1 /*code*/) {
    case 0:
       /* Libc: int futimens(int fd, const timespec_t times[2]); */
-      PRINT("sys_utimesys ( %ld, %ld, %#lx )", ARG1, ARG2, ARG3);
+      PRINT("sys_utimesys ( %ld, %ld, %#lx )", SARG1, SARG2, ARG3);
       PRE_REG_READ3(long, "utimesys", int, code, int, fd,
                     const vki_timespec_t *, times);
       if (ARG3)
@@ -4714,7 +4714,7 @@ PRE(sys_utimesys)
          Int fd = (Int) ARG2;
 
          PRINT("sys_utimesys ( %ld, %d, %#lx(%s), %#lx, %ld )",
-               ARG1, fd, ARG3, (HChar *) ARG3, ARG4, ARG5);
+               SARG1, fd, ARG3, (HChar *) ARG3, ARG4, SARG5);
          PRE_REG_READ5(long, "utimesys", int, code, int, fd, const char *, path,
                        const vki_timespec_t *, times, int, flag);
          if (ARG3)
@@ -4731,7 +4731,7 @@ PRE(sys_utimesys)
          break;
       }
    default:
-      VG_(unimplemented)("Syswrap of the utimesys call with code %ld.", ARG1);
+      VG_(unimplemented)("Syswrap of the utimesys call with code %ld.", SARG1);
       /*NOTREACHED*/
       break;
    }
@@ -4750,7 +4750,7 @@ PRE(sys_utimensat)
    Int fd = (Int) ARG1;
 
    PRINT("sys_utimensat ( %d, %#lx(%s), %#lx, %ld )",
-         fd, ARG2, (HChar *) ARG2, ARG3, ARG4);
+         fd, ARG2, (HChar *) ARG2, ARG3, SARG4);
    PRE_REG_READ4(long, "utimensat", int, fd, const char *, path,
                  const vki_timespec_t *, times, int, flag);
    if (ARG2)
@@ -4776,7 +4776,7 @@ PRE(sys_sigresend)
    /* Static (const) mask accessible from outside of this function. */
    static vki_sigset_t block_all;
 
-   PRINT("sys_sigresend( %ld, %#lx, %#lx )", ARG1, ARG2, ARG3);
+   PRINT("sys_sigresend( %ld, %#lx, %#lx )", SARG1, ARG2, ARG3);
    PRE_REG_READ3(long, "sigresend", int, signal, vki_siginfo_t *, siginfo,
                  vki_sigset_t *, mask);
 
@@ -4832,7 +4832,7 @@ POST(sys_sigresend)
    VG_(do_sys_sigprocmask)(tid, VKI_SIG_SETMASK, (vki_sigset_t*)ARG4, NULL);
 
    if (VG_(clo_trace_signals))
-      VG_(message)(Vg_DebugMsg, "sigresend: resent signal %ld\n", ARG1);
+      VG_(message)(Vg_DebugMsg, "sigresend: resent signal %lu\n", ARG1);
 }
 
 static void mem_priocntlsys_parm_ok(ThreadId tid, Bool pre, Bool reade,
@@ -4930,12 +4930,12 @@ PRE(sys_priocntlsys)
    if (ARG1 != 1) {
       /* Only the first version of priocntlsys is supported by the code below.
        */
-      VG_(unimplemented)("Syswrap of the priocntlsys where pc_version=%ld.",
+      VG_(unimplemented)("Syswrap of the priocntlsys where pc_version=%lu.",
                          ARG1);
       /*NOTREACHED*/
    }
 
-   PRINT("sys_priocntlsys ( %ld, %#lx, %ld, %#lx, %#lx )", ARG1, ARG2, ARG3,
+   PRINT("sys_priocntlsys ( %ld, %#lx, %ld, %#lx, %#lx )", SARG1, ARG2, SARG3,
          ARG4, ARG5);
    PRE_REG_READ5(long, "priocntlsys", int, pc_version, procset_t *, psp,
                  int, cmd, void *, arg, void *, arg2);
@@ -5092,7 +5092,7 @@ PRE(sys_priocntlsys)
       break;
    case VKI_PC_ADMIN:
    default:
-      VG_(unimplemented)("Syswrap of the priocntlsys call with cmd %ld.", ARG3);
+      VG_(unimplemented)("Syswrap of the priocntlsys call with cmd %ld.", SARG3);
       /*NOTREACHED*/
       break;
    }
@@ -5205,7 +5205,7 @@ POST(sys_priocntlsys)
 PRE(sys_pathconf)
 {
    /* long pathconf(const char *path, int name); */
-   PRINT("sys_pathconf ( %#lx(%s), %ld )", ARG1, (HChar *) ARG1, ARG2);
+   PRINT("sys_pathconf ( %#lx(%s), %ld )", ARG1, (HChar *) ARG1, SARG2);
    PRE_REG_READ2(long, "pathconf", const char *, path, int, name);
    PRE_MEM_RASCIIZ("pathconf(path)", ARG1);
 }
@@ -5222,7 +5222,7 @@ PRE(sys_mmap)
    vg_assert(sizeof(offset) == sizeof(ARG6));
 
    PRINT("sys_mmap ( %#lx, %#lx, %#lx, %#lx, %ld, %#lx )",
-         ARG1, ARG2, ARG3, ARG4, ARG5, ARG6);
+         ARG1, ARG2, ARG3, ARG4, SARG5, ARG6);
    PRE_REG_READ6(long, "mmap", void *, start, vki_size_t, length,
                  int, prot, int, flags, int, fd, vki_off_t, offset);
 
@@ -5739,7 +5739,7 @@ PRE(sys_mmapobj)
 {
    /* int mmapobj(int fd, uint_t flags, mmapobj_result_t *storage,
                   uint_t *elements, void *arg); */
-   PRINT("sys_mmapobj ( %ld, %#lx, %#lx, %#lx, %#lx )", ARG1, ARG2, ARG3,
+   PRINT("sys_mmapobj ( %ld, %#lx, %#lx, %#lx, %#lx )", SARG1, ARG2, ARG3,
          ARG4, ARG5);
    PRE_REG_READ5(long, "mmapobj", int, fd, vki_uint_t, flags,
                  mmapobj_result_t *, storage, uint_t *, elements,
@@ -5789,7 +5789,7 @@ PRE(sys_mmapobj)
 
    /* For now, supported is only MMOBJ_INTERPRET and no MMOBJ_PADDING. */
    if (ARG2 != VKI_MMOBJ_INTERPRET) {
-      VG_(unimplemented)("Syswrap of the mmapobj call with flags %ld.", ARG2);
+      VG_(unimplemented)("Syswrap of the mmapobj call with flags %lu.", ARG2);
       /*NOTREACHED*/
       return;
    }
@@ -5819,7 +5819,7 @@ PRE(sys_memcntl)
    /* int memcntl(caddr_t addr, size_t len, int cmd, caddr_t arg,
                   int attr, int mask); */
    PRINT("sys_memcntl ( %#lx, %#lx, %ld, %#lx, %#lx, %#lx )", ARG1, ARG2,
-         ARG3, ARG4, ARG5, ARG6);
+         SARG3, ARG4, ARG5, ARG6);
    PRE_REG_READ6(long, "memcntl", void *, addr, vki_size_t, len, int, cmd,
                  void *, arg, int, attr, int, mask);
 
@@ -5843,7 +5843,7 @@ PRE(sys_getpmsg)
    struct vki_strbuf *ctrlptr = (struct vki_strbuf *)ARG2;
    struct vki_strbuf *dataptr = (struct vki_strbuf *)ARG3;
    *flags |= SfMayBlock;
-   PRINT("sys_getpmsg ( %ld, %#lx, %#lx, %#lx, %#lx )", ARG1, ARG2, ARG3,
+   PRINT("sys_getpmsg ( %ld, %#lx, %#lx, %#lx, %#lx )", SARG1, ARG2, ARG3,
          ARG4, ARG5);
    PRE_REG_READ5(long, "getpmsg", int, fildes, struct vki_strbuf *, ctlptr,
                  struct vki_strbuf *, dataptr, int *, bandp, int *, flagsp);
@@ -5895,8 +5895,8 @@ PRE(sys_putpmsg)
    struct vki_strbuf *ctrlptr = (struct vki_strbuf *)ARG2;
    struct vki_strbuf *dataptr = (struct vki_strbuf *)ARG3;
    *flags |= SfMayBlock;
-   PRINT("sys_putpmsg ( %ld, %#lx, %#lx, %ld, %ld )", ARG1, ARG2, ARG3, ARG4,
-         ARG5);
+   PRINT("sys_putpmsg ( %ld, %#lx, %#lx, %ld, %ld )", SARG1, ARG2, ARG3, SARG4,
+         SARG5);
    PRE_REG_READ5(long, "putpmsg", int, fildes, struct vki_strbuf *, ctrlptr,
                  struct vki_strbuf *, dataptr, int, band, int, flags);
    if (ctrlptr) {
@@ -5928,7 +5928,7 @@ PRE(sys_rename)
 
    *flags |= SfMayBlock;
    PRINT("sys_rename ( %#lx(%s), %#lx(%s) )",
-         ARG1, (HChar *) ARG1, ARG2, (char *) ARG2);
+         ARG1, (HChar *) ARG1, ARG2, (HChar *) ARG2);
    PRE_REG_READ2(long, "rename", const char *, from, const char *, to);
 
    PRE_MEM_RASCIIZ("rename(from)", ARG1);
@@ -5957,14 +5957,14 @@ POST(sys_uname)
 PRE(sys_setegid)
 {
    /* int setegid(gid_t egid); */
-   PRINT("sys_setegid ( %ld )", ARG1);
+   PRINT("sys_setegid ( %ld )", SARG1);
    PRE_REG_READ1(long, "setegid", vki_gid_t, egid);
 }
 
 PRE(sys_sysconfig)
 {
    /* long sysconf(int name); */
-   PRINT("sys_sysconfig ( %ld )", ARG1);
+   PRINT("sys_sysconfig ( %ld )", SARG1);
    PRE_REG_READ1(long, "sysconf", int, name);
 
    if (ARG1 == VKI_CONFIG_OPEN_FILES)
@@ -5974,7 +5974,7 @@ PRE(sys_sysconfig)
 PRE(sys_systeminfo)
 {
    /* int sysinfo(int command, char *buf, long count); */
-   PRINT("sys_systeminfo ( %ld, %#lx, %ld )", ARG1, ARG2, ARG3);
+   PRINT("sys_systeminfo ( %ld, %#lx, %ld )", SARG1, ARG2, SARG3);
    PRE_REG_READ3(long, "sysinfo", int, command, char *, buf, long, count);
 
    switch (ARG1 /*command*/) {
@@ -6003,7 +6003,7 @@ PRE(sys_systeminfo)
       break;
 
    default:
-      VG_(unimplemented)("Syswrap of the sysinfo call with command %ld.", ARG1);
+      VG_(unimplemented)("Syswrap of the sysinfo call with command %ld.", SARG1);
       /*NOTREACHED*/
       break;
    }
@@ -6018,7 +6018,7 @@ POST(sys_systeminfo)
 PRE(sys_seteuid)
 {
    /* int seteuid(uid_t euid); */
-   PRINT("sys_seteuid ( %ld )", ARG1);
+   PRINT("sys_seteuid ( %ld )", SARG1);
    PRE_REG_READ1(long, "seteuid", vki_uid_t, euid);
 }
 
@@ -6027,7 +6027,7 @@ PRE(sys_forksys)
    /* int64_t forksys(int subcode, int flags); */
    Int fds[2];
    Int res;
-   PRINT("sys_forksys ( %ld, %ld )", ARG1, ARG2);
+   PRINT("sys_forksys ( %ld, %ld )", SARG1, SARG2);
    PRE_REG_READ2(long, "forksys", int, subcode, int, flags);
 
    if (ARG1 == 1) {
@@ -6040,7 +6040,7 @@ PRE(sys_forksys)
 
    if (ARG1 != 0 && ARG1 != 2) {
       VG_(unimplemented)("Syswrap of the forksys call where subcode=%ld.",
-                         ARG1);
+                         SARG1);
       /*NOTREACHED*/
    }
 
@@ -6195,14 +6195,14 @@ POST(sys_lwp_sema_trywait)
 PRE(sys_lwp_detach)
 {
    /* int lwp_detach(id_t lwpid); */
-   PRINT("sys_lwp_detach ( %ld )", ARG1);
+   PRINT("sys_lwp_detach ( %ld )", SARG1);
    PRE_REG_READ1(long, "lwp_detach", vki_id_t, lwpid);
 }
 
 PRE(sys_fchroot)
 {
    /* int fchroot(int fd); */
-   PRINT("sys_fchroot ( %ld )", ARG1);
+   PRINT("sys_fchroot ( %ld )", SARG1);
    PRE_REG_READ1(long, "fchroot", int, fd);
 
    /* Be strict. */
@@ -6348,7 +6348,7 @@ PRE(sys_lwp_suspend)
 {
    /* int lwp_suspend(id_t lwpid); */
    ThreadState *tst = VG_(get_ThreadState)(tid);
-   PRINT("sys_lwp_suspend ( %ld )", ARG1);
+   PRINT("sys_lwp_suspend ( %ld )", SARG1);
    PRE_REG_READ1(long, "lwp_suspend", vki_id_t, lwpid);
 
    if (ARG1 == tst->os_state.lwpid) {
@@ -6363,7 +6363,7 @@ PRE(sys_lwp_suspend)
 PRE(sys_lwp_continue)
 {
    /* int lwp_continue(id_t target_lwp); */
-   PRINT("sys_lwp_continue ( %ld )", ARG1);
+   PRINT("sys_lwp_continue ( %ld )", SARG1);
    PRE_REG_READ1(long, "lwp_continue", vki_id_t, target_lwp);
 }
 
@@ -6380,7 +6380,7 @@ do_lwp_sigqueue(const HChar *syscall_name, UWord target_lwp, UWord signo,
    *flags |= SfPollAfter;
 
    if (VG_(clo_trace_signals))
-      VG_(message)(Vg_DebugMsg, "%s: sending signal %ld to thread %ld\n",
+      VG_(message)(Vg_DebugMsg, "%s: sending signal %lu to thread %lu\n",
                    syscall_name, signo, target_lwp);
 
    /* If we're sending SIGKILL, check to see if the target is one of our
@@ -6405,7 +6405,7 @@ PRE(sys_lwp_sigqueue)
                        void *value, int si_code, timespec_t *timeout);
     */
    PRINT("sys_lwp_sigqueue ( %ld, %ld, %ld, %#lx, %ld, %#lx )",
-         ARG1, ARG2, ARG3, ARG4, ARG5, ARG6);
+         SARG1, SARG2, SARG3, ARG4, SARG5, ARG6);
    PRE_REG_READ6(long, "lwp_sigqueue", vki_pid_t, target_pid,
                  vki_id_t, target_lwp, int, signal, void *, value, int, si_code,
                  vki_timespec_t *, timeout);
@@ -6419,7 +6419,7 @@ PRE(sys_lwp_sigqueue)
       /* Signal is sent to a different process. */
       if (VG_(clo_trace_signals))
          VG_(message)(Vg_DebugMsg, "lwp_sigqueue: sending signal %ld to "
-                      "process %ld, thread %ld\n", ARG3, ARG1, ARG2);
+                      "process %ld, thread %ld\n", SARG3, SARG1, SARG2);
      *flags |= SfMayBlock;
    }
 }
@@ -6428,7 +6428,7 @@ POST(sys_lwp_sigqueue)
 {
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg, "lwp_sigqueue: sent signal %ld to process %ld, "
-                   "thread %ld\n", ARG3, ARG1, ARG2);
+                   "thread %ld\n", SARG3, SARG1, SARG2);
 }
 
 #else
@@ -6439,7 +6439,7 @@ PRE(sys_lwp_sigqueue)
                        int si_code, timespec_t *timeout);
     */
    PRINT("sys_lwp_sigqueue ( %ld, %ld, %#lx, %ld, %#lx )",
-         ARG1, ARG2, ARG3, ARG4, ARG5);
+         SARG1, SARG2, ARG3, SARG4, ARG5);
    PRE_REG_READ5(long, "lwp_sigqueue", vki_id_t, target_lwp, int, signal,
                  void *, value, int, si_code, vki_timespec_t *, timeout);
 
@@ -6452,7 +6452,7 @@ PRE(sys_lwp_sigqueue)
 POST(sys_lwp_sigqueue)
 {
    if (VG_(clo_trace_signals))
-      VG_(message)(Vg_DebugMsg, "lwp_sigqueue: sent signal %ld to thread %ld\n",
+      VG_(message)(Vg_DebugMsg, "lwp_sigqueue: sent signal %lu to thread %lu\n",
                    ARG2, ARG1);
 }
 
@@ -6464,7 +6464,7 @@ POST(sys_lwp_sigqueue)
 PRE(sys_lwp_kill)
 {
    /* int lwp_kill(id_t target_lwp, int signal); */
-   PRINT("sys_lwp_kill ( %ld, %ld )", ARG1, ARG2);
+   PRINT("sys_lwp_kill ( %ld, %ld )", SARG1, SARG2);
    PRE_REG_READ2(long, "lwp_kill", vki_id_t, target_lwp, int, signal);
 
    do_lwp_sigqueue("lwp_kill", ARG1, ARG2, status, flags);
@@ -6473,7 +6473,7 @@ PRE(sys_lwp_kill)
 POST(sys_lwp_kill)
 {
    if (VG_(clo_trace_signals))
-      VG_(message)(Vg_DebugMsg, "lwp_kill: sent signal %ld to thread %ld\n",
+      VG_(message)(Vg_DebugMsg, "lwp_kill: sent signal %lu to thread %lu\n",
                    ARG2, ARG1);
 }
 #endif /* SOLARIS_LWP_SIGQUEUE_SYSCALL */
@@ -6490,7 +6490,7 @@ PRE(sys_lwp_sigmask)
    /* int64_t lwp_sigmask(int how, uint_t bits0, uint_t bits1, uint_t bits2,
                           uint_t bits3); */
    vki_sigset_t sigset;
-   PRINT("sys_lwp_sigmask ( %ld, %#lx, %#lx, %#lx, %#lx )", ARG1, ARG2, ARG3,
+   PRINT("sys_lwp_sigmask ( %ld, %#lx, %#lx, %#lx, %#lx )", SARG1, ARG2, ARG3,
          ARG4, ARG5);
    PRE_REG_READ5(long, "lwp_sigmask", int, how, vki_uint_t, bits0,
                  vki_uint_t, bits1, vki_uint_t, bits2, vki_uint_t, bits3);
@@ -6513,7 +6513,7 @@ PRE(sys_lwp_private)
    /* int lwp_private(int cmd, int which, uintptr_t base); */
    ThreadState *tst = VG_(get_ThreadState)(tid);
    Int supported_base, supported_sel;
-   PRINT("sys_lwp_private ( %ld, %ld, %#lx )", ARG1, ARG2, ARG3);
+   PRINT("sys_lwp_private ( %ld, %ld, %#lx )", SARG1, SARG2, ARG3);
    PRE_REG_READ3(long, "lwp_private", int, cmd, int, which,
                  uintptr_t, base);
 
@@ -6531,7 +6531,7 @@ PRE(sys_lwp_private)
 #endif
    if (ARG2 != supported_base) {
       VG_(unimplemented)("Syswrap of the lwp_private call where which=%ld.",
-                         ARG2);
+                         SARG2);
       /*NOTREACHED*/
    }
 
@@ -6588,7 +6588,7 @@ PRE(sys_lwp_private)
       }
    default:
       VG_(unimplemented)("Syswrap of the lwp_private call where cmd=%ld.",
-                         ARG1);
+                         SARG1);
       /*NOTREACHED*/
       break;
    }
@@ -6598,7 +6598,7 @@ PRE(sys_lwp_wait)
 {
    /* int lwp_wait(id_t lwpid, id_t *departed); */
    *flags |= SfMayBlock;
-   PRINT("sys_lwp_wait ( %ld, %#lx )", ARG1, ARG2);
+   PRINT("sys_lwp_wait ( %ld, %#lx )", SARG1, ARG2);
    PRE_REG_READ2(long, "lwp_wait", vki_id_t, lwpid, id_t *, departed);
    if (ARG2)
       PRE_MEM_WRITE("lwp_wait(departed)", ARG2, sizeof(vki_id_t));
@@ -6614,7 +6614,7 @@ PRE(sys_lwp_mutex_wakeup)
    /* int lwp_mutex_wakeup(lwp_mutex_t *lp, int release_all); */
    vki_lwp_mutex_t *lp = (vki_lwp_mutex_t*)ARG1;
    *flags |= SfMayBlock;
-   PRINT("sys_lwp_mutex_wakeup ( %#lx, %ld )", ARG1, ARG2);
+   PRINT("sys_lwp_mutex_wakeup ( %#lx, %ld )", ARG1, SARG2);
    PRE_REG_READ2(long, "lwp_mutex_wakeup", lwp_mutex_t *, lp,
                  int, release_all);
    PRE_FIELD_READ("lwp_mutex_wakeup(lp->mutex_type)", lp->vki_mutex_type);
@@ -6653,7 +6653,7 @@ PRE(sys_pread)
 {
    /* ssize_t pread(int fildes, void *buf, size_t nbyte, off_t offset); */
    *flags |= SfMayBlock;
-   PRINT("sys_pread ( %ld, %#lx, %lu, %ld )", ARG1, ARG2, ARG3, ARG4);
+   PRINT("sys_pread ( %ld, %#lx, %lu, %ld )", SARG1, ARG2, ARG3, SARG4);
    PRE_REG_READ4(long, "pread", int, fildes, void *, buf,
                  vki_size_t, nbyte, vki_off_t, offset);
    PRE_MEM_WRITE("pread(buf)", ARG2, ARG3);
@@ -6673,7 +6673,7 @@ PRE(sys_pwrite)
    /* ssize_t pwrite(int fildes, const void *buf, size_t nbyte,
                      off_t offset); */
    *flags |= SfMayBlock;
-   PRINT("sys_pwrite ( %ld, %#lx, %lu, %ld )", ARG1, ARG2, ARG3, ARG4);
+   PRINT("sys_pwrite ( %ld, %#lx, %lu, %ld )", SARG1, ARG2, ARG3, SARG4);
    PRE_REG_READ4(long, "pwrite", int, fildes, const void *, buf,
                  vki_size_t, nbyte, vki_off_t, offset);
    PRE_MEM_READ("pwrite(buf)", ARG2, ARG3);
@@ -6686,7 +6686,7 @@ PRE(sys_pwrite)
 PRE(sys_getpagesizes)
 {
    /* int getpagesizes(int legacy, size_t *buf, int nelem); */
-   PRINT("sys_getpagesizes ( %ld, %#lx, %ld )", ARG1, ARG2, ARG3);
+   PRINT("sys_getpagesizes ( %ld, %#lx, %ld )", SARG1, ARG2, SARG3);
    PRE_REG_READ3(long, "getpagesizes", int, legacy, size_t *, buf,
                  int, nelem);
    if (ARG2)
@@ -6708,7 +6708,7 @@ PRE(sys_rusagesys)
    case VKI__RUSAGESYS_GETRUSAGE_CHLD:
    case VKI__RUSAGESYS_GETRUSAGE_LWP:
       /* Libc: int getrusage(int who, struct rusage *r_usage); */
-      PRINT("sys_rusagesys ( %ld, %#lx )", ARG1, ARG2);
+      PRINT("sys_rusagesys ( %ld, %#lx )", SARG1, ARG2);
       PRE_REG_READ2(long, SC2("rusagesys", "getrusage"), int, code,
                     struct vki_rusage *, r_usage);
       PRE_MEM_WRITE("rusagesys(r_usage)", ARG2, sizeof(struct vki_rusage));
@@ -6717,8 +6717,8 @@ PRE(sys_rusagesys)
    case VKI__RUSAGESYS_GETVMUSAGE:
       /* Libc: int getvmusage(uint_t flags, time_t age,
                               vmusage_t *buf, size_t *nres); */
-      PRINT("sys_rusagesys ( %ld, %ld, %ld, %#lx, %#lx )",
-            ARG1, ARG2, ARG3, ARG4, ARG5);
+      PRINT("sys_rusagesys ( %ld, %lu, %ld, %#lx, %#lx )",
+            SARG1, ARG2, SARG3, ARG4, ARG5);
       PRE_REG_READ5(long, SC2("rusagesys", "getvmusage"), int, code,
                     vki_uint_t, flags, vki_time_t, age,
                     vki_vmusage_t *, buf, vki_size_t *, nres);
@@ -6734,7 +6734,7 @@ PRE(sys_rusagesys)
       break;
 
    default:
-      VG_(unimplemented)("Syswrap of the rusagesys call with code %ld.", ARG1);
+      VG_(unimplemented)("Syswrap of the rusagesys call with code %ld.", SARG1);
       /*NOTREACHED*/
       break;
    }
@@ -6770,13 +6770,13 @@ PRE(sys_port)
    *flags |= SfMayBlock;
    switch (opcode) {
    case VKI_PORT_CREATE:
-      PRINT("sys_port ( %ld )", ARG1);
+      PRINT("sys_port ( %ld )", SARG1);
       PRE_REG_READ1(long, SC2("port", "create"), int, opcode);
       break;
    case VKI_PORT_ASSOCIATE:
    case VKI_PORT_DISSOCIATE:
-      PRINT("sys_port ( %ld, %ld, %ld, %#lx, %ld, %#lx )", ARG1, ARG2, ARG3,
-            ARG4, ARG5, ARG6);
+      PRINT("sys_port ( %ld, %ld, %ld, %#lx, %ld, %#lx )", SARG1, SARG2, SARG3,
+            ARG4, SARG5, ARG6);
       if (opcode == VKI_PORT_ASSOCIATE) {
          PRE_REG_READ6(long, SC2("port", "associate"), int, opcode, int, a0,
                        int, a1, uintptr_t, a2, int, a3, void *, a4);
@@ -6802,18 +6802,18 @@ PRE(sys_port)
          break;
       default:
          VG_(unimplemented)("Syswrap of the port_associate/dissociate call "
-                            "type %ld.", ARG3);
+                            "type %ld.", SARG3);
          /*NOTREACHED*/
          break;
       }
       break;
    case VKI_PORT_SEND:
-      PRINT("sys_port ( %ld, %ld, %ld, %#lx )", ARG1, ARG2, ARG3, ARG4);
+      PRINT("sys_port ( %ld, %ld, %ld, %#lx )", SARG1, SARG2, SARG3, ARG4);
       PRE_REG_READ4(long, SC2("port", "send"), int, opcode, int, a0, int, a1,
                     void *, a2);
       break;
    case VKI_PORT_SENDN:
-      PRINT("sys_port ( %ld, %#lx, %#lx, %lu, %lx, %#lx)", ARG1, ARG2, ARG3,
+      PRINT("sys_port ( %ld, %#lx, %#lx, %lu, %lx, %#lx)", SARG1, ARG2, ARG3,
             ARG4, ARG5, ARG6);
       PRE_REG_READ6(long, SC2("port", "sendn"), int, opcode, int *, a0,
                     int *, a1, vki_uint_t, a2, int, a3, void *, a4);
@@ -6821,15 +6821,15 @@ PRE(sys_port)
       PRE_MEM_WRITE("port(errors)", ARG3, ARG4 * sizeof(int));
       break;
    case VKI_PORT_GET:
-      PRINT("sys_port ( %ld, %ld, %#lx, %ld, %ld, %#lx )", ARG1, ARG2, ARG3,
-            ARG4, ARG5, ARG6);
+      PRINT("sys_port ( %ld, %ld, %#lx, %ld, %ld, %#lx )", SARG1, SARG2, ARG3,
+            SARG4, SARG5, ARG6);
       PRE_REG_READ6(long, SC2("port", "get"), int, opcode, int, a0,
                     port_event_t *, a1, vki_time_t, a2, long, a3,
                     timespec_t *, a4);
       PRE_MEM_WRITE("port(uevp)", ARG3, sizeof(vki_port_event_t));
       break;
    case VKI_PORT_GETN:
-      PRINT("sys_port ( %ld, %ld, %#lx, %lu, %lu, %#lx )", ARG1, ARG2, ARG3,
+      PRINT("sys_port ( %ld, %ld, %#lx, %lu, %lu, %#lx )", SARG1, SARG2, ARG3,
             ARG4, ARG5, ARG6);
       PRE_REG_READ6(long, SC2("port", "getn"), int, opcode, int, a0,
                     port_event_t *, a1, vki_uint_t, a2, vki_uint_t, a3,
@@ -6839,19 +6839,20 @@ PRE(sys_port)
       PRE_MEM_WRITE("port(uevp)", ARG3, ARG4 * sizeof(vki_port_event_t));
       break;
    case VKI_PORT_ALERT:
-      PRINT("sys_port ( %ld, %ld, %ld, %ld, %#lx )", ARG1, ARG2, ARG3, ARG4,
+      PRINT("sys_port ( %ld, %ld, %ld, %ld, %#lx )", SARG1, SARG2, SARG3, SARG4,
             ARG5);
       PRE_REG_READ5(long, SC2("port", "alert"), int, opcode, int, a0, int, a1,
                     int, a2, void *, a3);
       break;
    case VKI_PORT_DISPATCH:
-      PRINT("sys_port ( %ld, %ld, %ld, %ld, %#lx, %#lx )", ARG2, ARG1, ARG3,
-            ARG4, ARG5, ARG6);
+      // FIXME: check order: SARG2, SARG1  or   SARG1, SARG2  ??
+      PRINT("sys_port ( %ld, %ld, %ld, %ld, %#lx, %#lx )", SARG2, SARG1, SARG3,
+            SARG4, ARG5, ARG6);
       PRE_REG_READ6(long, SC2("port", "dispatch"), int, opcode, int, a0,
                     int, a1, int, a2, uintptr_t, a3, void *, a4);
       break;
    default:
-      VG_(unimplemented)("Syswrap of the port call with opcode %ld.", ARG1);
+      VG_(unimplemented)("Syswrap of the port call with opcode %ld.", SARG1);
       /*NOTREACHED*/
       break;
    }
@@ -6894,7 +6895,7 @@ POST(sys_port)
    case VKI_PORT_DISPATCH:
       break;
    default:
-      VG_(unimplemented)("Syswrap of the port call with opcode %ld.", ARG2);
+      VG_(unimplemented)("Syswrap of the port call with opcode %lu.", ARG1);
       /*NOTREACHED*/
       break;
    }
@@ -6945,13 +6946,13 @@ PRE(sys_labelsys)
    switch (ARG1 /*op*/) {
    case VKI_TSOL_SYSLABELING:
       /* Libc: int is_system_labeled(void); */
-      PRINT("sys_labelsys ( %ld )", ARG1);
+      PRINT("sys_labelsys ( %ld )", SARG1);
       PRE_REG_READ1(long, SC2("labelsys", "syslabeling"), int, op);
       break;
 
    case VKI_TSOL_TNRH:
       /* Libtsnet: int tnrh(int cmd, tsol_rhent_t *buf); */
-      PRINT("sys_labelsys ( %ld, %ld, %#lx )", ARG1, ARG2, ARG3);
+      PRINT("sys_labelsys ( %ld, %ld, %#lx )", SARG1, SARG2, ARG3);
       PRE_REG_READ3(long, SC2("labelsys", "tnrh"), int, op, int, cmd,
                     vki_tsol_rhent_t *, buf);
       if (ARG2 != VKI_TNDB_FLUSH)
@@ -6960,7 +6961,7 @@ PRE(sys_labelsys)
 
    case VKI_TSOL_TNRHTP:
       /* Libtsnet: int tnrhtp(int cmd, tsol_tpent_t *buf); */
-      PRINT("sys_labelsys ( %ld, %ld, %#lx )", ARG1, ARG2, ARG3);
+      PRINT("sys_labelsys ( %ld, %ld, %#lx )", SARG1, SARG2, ARG3);
       PRE_REG_READ3(long, SC2("labelsys", "tnrhtp"), int, op, int, cmd,
                     vki_tsol_tpent_t *, buf);
       if (ARG2 != VKI_TNDB_FLUSH)
@@ -6969,7 +6970,7 @@ PRE(sys_labelsys)
 
    case VKI_TSOL_TNMLP:
       /* Libtsnet: int tnmlp(int cmd, tsol_mlpent_t *buf); */
-      PRINT("sys_labelsys ( %ld, %ld, %#lx )", ARG1, ARG2, ARG3);
+      PRINT("sys_labelsys ( %ld, %ld, %#lx )", SARG1, SARG2, ARG3);
       PRE_REG_READ3(long, SC2("labelsys", "tnmlp"), int, op, int, cmd,
                     vki_tsol_mlpent_t *, buf);
       PRE_MEM_READ("labelsys(buf)", ARG3, sizeof(vki_tsol_mlpent_t));
@@ -6978,7 +6979,7 @@ PRE(sys_labelsys)
    case VKI_TSOL_GETLABEL:
       /* Libtsol: int getlabel(const char *path, bslabel_t *label); */
       PRINT("sys_labelsys ( %ld, %#lx(%s), %#lx )",
-            ARG1, ARG2, (HChar *) ARG2, ARG3);
+            SARG1, ARG2, (HChar *) ARG2, ARG3);
       PRE_REG_READ3(long, SC2("labelsys", "getlabel"), int, op,
                     const char *, path, vki_bslabel_t *, label);
       PRE_MEM_RASCIIZ("labelsys(path)", ARG2);
@@ -6987,7 +6988,7 @@ PRE(sys_labelsys)
 
    case VKI_TSOL_FGETLABEL:
       /* Libtsol: int fgetlabel(int fd, bslabel_t *label); */
-      PRINT("sys_labelsys ( %ld, %ld, %#lx )", ARG1, ARG2, ARG3);
+      PRINT("sys_labelsys ( %ld, %ld, %#lx )", SARG1, SARG2, ARG3);
       PRE_REG_READ3(long, SC2("labelsys", "fgetlabel"), int, op,
                     int, fd, vki_bslabel_t *, label);
       /* Be strict. */
@@ -6999,7 +7000,7 @@ PRE(sys_labelsys)
 #if defined(SOLARIS_TSOL_CLEARANCE)
    case VKI_TSOL_GETCLEARANCE:
       /* Libtsol: int getclearance(bslabel_t *clearance); */
-      PRINT("sys_labelsys ( %ld, %#lx )", ARG1, ARG2);
+      PRINT("sys_labelsys ( %ld, %#lx )", SARG1, ARG2);
       PRE_REG_READ2(long, SC2("labelsys", "getclearance"), int, op,
                     vki_bslabel_t *, clearance);
       PRE_MEM_WRITE("labelsys(clearance)", ARG2, sizeof(vki_bslabel_t));
@@ -7007,7 +7008,7 @@ PRE(sys_labelsys)
 
    case VKI_TSOL_SETCLEARANCE:
       /* Libtsol: int setclearance(bslabel_t *clearance); */
-      PRINT("sys_labelsys ( %ld, %#lx )", ARG1, ARG2);
+      PRINT("sys_labelsys ( %ld, %#lx )", SARG1, ARG2);
       PRE_REG_READ2(long, SC2("labelsys", "setclearance"), int, op,
                     vki_bslabel_t *, clearance);
       PRE_MEM_READ("labelsys(clearance)", ARG2, sizeof(vki_bslabel_t));
@@ -7015,7 +7016,7 @@ PRE(sys_labelsys)
 #endif /* SOLARIS_TSOL_CLEARANCE */
 
    default:
-      VG_(unimplemented)("Syswrap of the labelsys call with op %ld.", ARG1);
+      VG_(unimplemented)("Syswrap of the labelsys call with op %ld.", SARG1);
       /*NOTREACHED*/
       break;
    }
@@ -7098,8 +7099,8 @@ POST(sys_labelsys)
 PRE(sys_acl)
 {
    /* int acl(char *pathp, int cmd, int nentries, void *aclbufp); */
-   PRINT("sys_acl ( %#lx(%s), %ld, %ld, %#lx )", ARG1, (HChar *) ARG1, ARG2,
-         ARG3, ARG4);
+   PRINT("sys_acl ( %#lx(%s), %ld, %ld, %#lx )", ARG1, (HChar *) ARG1, SARG2,
+         SARG3, ARG4);
 
    PRE_REG_READ4(long, "acl", char *, pathp, int, cmd,
                  int, nentries, void *, aclbufp);
@@ -7125,7 +7126,7 @@ PRE(sys_acl)
    case VKI_ACE_GETACLCNT:
       break;
    default:
-      VG_(unimplemented)("Syswrap of the acl call with cmd %ld.", ARG2);
+      VG_(unimplemented)("Syswrap of the acl call with cmd %ld.", SARG2);
       /*NOTREACHED*/
       break;
    }
@@ -7160,35 +7161,35 @@ PRE(sys_auditsys)
    switch (ARG1 /*code*/) {
    case VKI_BSM_GETAUID:
       /* Libbsm: int getauid(au_id_t *auid); */
-      PRINT("sys_auditsys ( %ld, %#lx )", ARG1, ARG2);
+      PRINT("sys_auditsys ( %ld, %#lx )", SARG1, ARG2);
       PRE_REG_READ2(long, SC2("auditsys", "getauid"), long, code,
                     vki_au_id_t *, auid);
       PRE_MEM_WRITE("auditsys(auid)", ARG2, sizeof(vki_au_id_t));
       break;
    case VKI_BSM_SETAUID:
       /* Libbsm: int setauid(au_id_t *auid); */
-      PRINT("sys_auditsys ( %ld, %#lx )", ARG1, ARG2);
+      PRINT("sys_auditsys ( %ld, %#lx )", SARG1, ARG2);
       PRE_REG_READ2(long, SC2("auditsys", "setauid"), long, code,
                     vki_au_id_t *, auid);
       PRE_MEM_READ("auditsys(auid)", ARG2, sizeof(vki_au_id_t));
       break;
    case VKI_BSM_GETAUDIT:
       /* Libbsm: int getaudit(auditinfo_t *ai); */
-      PRINT("sys_auditsys ( %ld, %#lx )", ARG1, ARG2);
+      PRINT("sys_auditsys ( %ld, %#lx )", SARG1, ARG2);
       PRE_REG_READ2(long, SC2("auditsys", "getaudit"), long, code,
                     vki_auditinfo_t *, ai);
       PRE_MEM_WRITE("auditsys(ai)", ARG2, sizeof(vki_auditinfo_t));
       break;
    case VKI_BSM_SETAUDIT:
       /* Libbsm: int setaudit(auditinfo_t *ai); */
-      PRINT("sys_auditsys ( %ld, %#lx )", ARG1, ARG2);
+      PRINT("sys_auditsys ( %ld, %#lx )", SARG1, ARG2);
       PRE_REG_READ2(long, SC2("auditsys", "setaudit"), long, code,
                     vki_auditinfo_t *, ai);
       PRE_MEM_READ("auditsys(ai)", ARG2, sizeof(vki_auditinfo_t));
       break;
    case VKI_BSM_AUDIT:
       /* Libbsm: int audit(void *record, int length); */
-      PRINT("sys_auditsys ( %ld, %#lx, %ld )", ARG1, ARG2, ARG3);
+      PRINT("sys_auditsys ( %ld, %#lx, %ld )", SARG1, ARG2, SARG3);
       PRE_REG_READ3(long, SC2("auditsys", "audit"), long, code,
                     void *, record, int, length);
       PRE_MEM_READ("auditsys(record)", ARG2, ARG3);
@@ -7196,7 +7197,7 @@ PRE(sys_auditsys)
    case VKI_BSM_AUDITCTL:
       /* Libbsm: int auditon(int cmd, caddr_t data, int length); */
       PRINT("sys_auditsys ( %ld, %ld, %#lx, %ld )",
-            ARG1, ARG2, ARG3, ARG4);
+            SARG1, SARG2, ARG3, SARG4);
 
       switch (ARG2 /*cmd*/) {
       case VKI_A_GETPOLICY:
@@ -7362,28 +7363,28 @@ PRE(sys_auditsys)
          break;
       default:
          VG_(unimplemented)("Syswrap of the auditsys(auditctl) call "
-                            "with cmd %ld.", ARG2);
+                            "with cmd %lu.", ARG2);
          /*NOTREACHED*/
          break;
       }
       break;
    case VKI_BSM_GETAUDIT_ADDR:
       /* Libbsm: int getaudit_addr(auditinfo_addr_t *ai, int len); */
-      PRINT("sys_auditsys ( %ld, %#lx, %ld )", ARG1, ARG2, ARG3);
+      PRINT("sys_auditsys ( %ld, %#lx, %ld )", SARG1, ARG2, SARG3);
       PRE_REG_READ3(long, SC2("auditsys", "getaudit_addr"), long, code,
                     vki_auditinfo_addr_t *, ai, int, len);
       PRE_MEM_WRITE("auditsys(ai)", ARG2, ARG3);
       break;
    case VKI_BSM_SETAUDIT_ADDR:
       /* Libbsm: int setaudit_addr(auditinfo_addr_t *ai, int len); */
-      PRINT("sys_auditsys ( %ld, %#lx, %ld )", ARG1, ARG2, ARG3);
+      PRINT("sys_auditsys ( %ld, %#lx, %ld )", SARG1, ARG2, SARG3);
       PRE_REG_READ3(long, SC2("auditsys", "setaudit_addr"), long, code,
                     vki_auditinfo_addr_t *, ai, int, len);
       PRE_MEM_READ("auditsys(ai)", ARG2, ARG3);
       break;
    case VKI_BSM_AUDITDOOR:
       /* Libbsm: int auditdoor(int fd); */
-      PRINT("sys_auditsys ( %ld, %ld )", ARG1, ARG2);
+      PRINT("sys_auditsys ( %ld, %ld )", SARG1, SARG2);
       PRE_REG_READ2(long, SC2("auditsys", "door"), long, code, int, fd);
 
       /* Be strict. */
@@ -7392,7 +7393,7 @@ PRE(sys_auditsys)
          SET_STATUS_Failure(VKI_EBADF);
       break;
    default:
-      VG_(unimplemented)("Syswrap of the auditsys call with code %ld.", ARG1);
+      VG_(unimplemented)("Syswrap of the auditsys call with code %lu.", ARG1);
       /*NOTREACHED*/
       break;
    }
@@ -7483,7 +7484,7 @@ POST(sys_auditsys)
 PRE(sys_p_online)
 {
    /* int p_online(processorid_t processorid, int flag); */
-   PRINT("sys_p_online ( %ld, %ld )", ARG1, ARG2);
+   PRINT("sys_p_online ( %ld, %ld )", SARG1, SARG2);
    PRE_REG_READ2(long, "p_online", vki_processorid_t, processorid, int, flag);
 }
 
@@ -7493,7 +7494,7 @@ PRE(sys_sigqueue)
                    int si_code, timespec_t *timeout);
     */
    PRINT("sys_sigqueue ( %ld, %ld, %#lx, %ld, %#lx )",
-         ARG1, ARG2, ARG3, ARG4, ARG5);
+         SARG1, SARG2, ARG3, SARG4, ARG5);
    PRE_REG_READ5(long, "sigqueue", vki_pid_t, pid, int, signo,
                  void *, value, int, si_code,
                  vki_timespec_t *, timeout);
@@ -7518,7 +7519,7 @@ PRE(sys_sigqueue)
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg,
-                   "sigqueue: signal %ld queued for pid %ld\n",
+                   "sigqueue: signal %lu queued for pid %lu\n",
                    ARG2, ARG1);
 
    /* Check to see if this gave us a pending signal. */
@@ -7528,7 +7529,7 @@ PRE(sys_sigqueue)
 PRE(sys_clock_gettime)
 {
    /* int clock_gettime(clockid_t clock_id, struct timespec *tp); */
-   PRINT("sys_clock_gettime ( %ld, %#lx )", ARG1, ARG2);
+   PRINT("sys_clock_gettime ( %ld, %#lx )", SARG1, ARG2);
    PRE_REG_READ2(long, "clock_gettime", vki_clockid_t, clock_id,
                  struct timespec *, tp);
    PRE_MEM_WRITE("clock_gettime(tp)", ARG2, sizeof(struct vki_timespec));
@@ -7542,7 +7543,7 @@ POST(sys_clock_gettime)
 PRE(sys_clock_settime)
 {
    /* int clock_settime(clockid_t clock_id, const struct timespec *tp); */
-   PRINT("sys_clock_settime ( %ld, %#lx )", ARG1, ARG2);
+   PRINT("sys_clock_settime ( %ld, %#lx )", SARG1, ARG2);
    PRE_REG_READ2(long, "clock_settime", vki_clockid_t, clock_id,
                  const struct timespec *, tp);
    PRE_MEM_READ("clock_settime(tp)", ARG2, sizeof(struct vki_timespec));
@@ -7551,7 +7552,7 @@ PRE(sys_clock_settime)
 PRE(sys_clock_getres)
 {
    /* int clock_getres(clockid_t clock_id, struct timespec *res); */
-   PRINT("sys_clock_getres ( %ld, %#lx )", ARG1, ARG2);
+   PRINT("sys_clock_getres ( %ld, %#lx )", SARG1, ARG2);
    PRE_REG_READ2(long, "clock_getres", vki_clockid_t, clock_id,
                  struct timespec *, res);
 
@@ -7570,7 +7571,7 @@ PRE(sys_timer_create)
    /* int timer_create(clockid_t clock_id,
                        struct sigevent *evp, timer_t *timerid);
     */
-   PRINT("sys_timer_create ( %ld, %#lx, %#lx )", ARG1, ARG2, ARG3);
+   PRINT("sys_timer_create ( %ld, %#lx, %#lx )", SARG1, ARG2, ARG3);
    PRE_REG_READ3(long, "timer_create", vki_clockid_t, clock_id,
                  struct vki_sigevent *, evp, vki_timer_t *, timerid);
 
@@ -7602,7 +7603,7 @@ POST(sys_timer_create)
 PRE(sys_timer_delete)
 {
    /* int timer_delete(timer_t timerid); */
-   PRINT("sys_timer_delete ( %ld )", ARG1);
+   PRINT("sys_timer_delete ( %ld )", SARG1);
    PRE_REG_READ1(long, "timer_delete", vki_timer_t, timerid);
 }
 
@@ -7613,7 +7614,7 @@ PRE(sys_timer_settime)
                         struct itimerspec *ovalue);
     */
    PRINT("sys_timer_settime ( %ld, %ld, %#lx, %#lx )",
-         ARG1, ARG2, ARG3, ARG4);
+         SARG1, SARG2, ARG3, ARG4);
    PRE_REG_READ4(long, "timer_settime", vki_timer_t, timerid,
                  int, flags, const struct vki_itimerspec *, value,
                  struct vki_itimerspec *, ovalue);
@@ -7633,7 +7634,7 @@ POST(sys_timer_settime)
 PRE(sys_timer_gettime)
 {
    /* int timer_gettime(timer_t timerid, struct itimerspec *value); */
-   PRINT("sys_timer_gettime ( %ld, %#lx )", ARG1, ARG2);
+   PRINT("sys_timer_gettime ( %ld, %#lx )", SARG1, ARG2);
    PRE_REG_READ2(long, "timer_gettime", vki_timer_t, timerid,
                  struct vki_itimerspec *, value);
    PRE_MEM_WRITE("timer_gettime(value)",
@@ -7648,14 +7649,14 @@ POST(sys_timer_gettime)
 PRE(sys_timer_getoverrun)
 {
    /* int timer_getoverrun(timer_t timerid); */
-   PRINT("sys_timer_getoverrun ( %ld )", ARG1);
+   PRINT("sys_timer_getoverrun ( %ld )", SARG1);
    PRE_REG_READ1(long, "timer_getoverrun", vki_timer_t, timerid);
 }
 
 PRE(sys_facl)
 {
    /* int facl(int fildes, int cmd, int nentries, void *aclbufp); */
-   PRINT("sys_facl ( %ld, %ld, %ld, %#lx )", ARG1, ARG2, ARG3, ARG4);
+   PRINT("sys_facl ( %ld, %ld, %ld, %#lx )", SARG1, SARG2, SARG3, ARG4);
 
    PRE_REG_READ4(long, "facl", int, fildes, int, cmd,
                  int, nentries, void *, aclbufp);
@@ -7680,7 +7681,7 @@ PRE(sys_facl)
    case VKI_ACE_GETACLCNT:
       break;
    default:
-      VG_(unimplemented)("Syswrap of the facl call with cmd %ld.", ARG2);
+      VG_(unimplemented)("Syswrap of the facl call with cmd %ld.", SARG2);
       /*NOTREACHED*/
       break;
    }
@@ -8373,7 +8374,7 @@ PRE(sys_door)
    *flags |= SfMayBlock | SfPostOnFail;
 
    PRINT("sys_door ( %#lx, %#lx, %#lx, %#lx, %#lx, %ld )", ARG1, ARG2, ARG3,
-         ARG4, ARG5, ARG6);
+         ARG4, ARG5, SARG6);
 
    /* Macro PRE_REG_READ6 cannot be simply used because not all ARGs are used
       in door() syscall variants. Note that ARG6 (subcode) is used always. */
@@ -8532,7 +8533,7 @@ PRE(sys_door)
       VG_(unimplemented)("DOOR_SETPARAM");
       break;
    default:
-      VG_(unimplemented)("Syswrap of the door call with subcode %ld.", ARG6);
+      VG_(unimplemented)("Syswrap of the door call with subcode %ld.", SARG6);
       /*NOTREACHED*/
       break;
    }
@@ -8812,22 +8813,22 @@ PRE(sys_lwp_rwlock_sys)
       *flags |= SfMayBlock;
       switch (ARG1 /*subcode*/) {
       case 0:
-         PRINT("sys_lwp_rwlock ( %ld, %#lx, %#lx )", ARG1, ARG2, ARG3);
+         PRINT("sys_lwp_rwlock ( %ld, %#lx, %#lx )", SARG1, ARG2, ARG3);
          PRE_REG_READ3(long, SC2("lwp_rwlock", "rdlock"), int, subcode,
                        lwp_rwlock_t *, rwlp, timespec_t *, tsp);
          break;
       case 1:
-         PRINT("sys_lwp_rwlock ( %ld, %#lx, %#lx )", ARG1, ARG2, ARG3);
+         PRINT("sys_lwp_rwlock ( %ld, %#lx, %#lx )", SARG1, ARG2, ARG3);
          PRE_REG_READ3(long, SC2("lwp_rwlock", "wrlock"), int, subcode,
                        lwp_rwlock_t *, rwlp, timespec_t *, tsp);
          break;
       case 2:
-         PRINT("sys_lwp_rwlock ( %ld, %#lx )", ARG1, ARG2);
+         PRINT("sys_lwp_rwlock ( %ld, %#lx )", SARG1, ARG2);
          PRE_REG_READ2(long, SC2("lwp_rwlock", "tryrdlock"), int, subcode,
                        lwp_rwlock_t *, rwlp);
          break;
       case 3:
-         PRINT("sys_lwp_rwlock ( %ld, %#lx )", ARG1, ARG2);
+         PRINT("sys_lwp_rwlock ( %ld, %#lx )", SARG1, ARG2);
          PRE_REG_READ2(long, SC2("lwp_rwlock", "trywrlock"), int, subcode,
                        lwp_rwlock_t *, rwlp);
          break;
@@ -8864,7 +8865,7 @@ PRE(sys_lwp_rwlock_sys)
          PRE_MEM_READ("lwp_rwlock(tsp)", ARG3, sizeof(vki_timespec_t));
       break;
    case 4:
-      PRINT("sys_lwp_rwlock( %ld, %#lx )", ARG1, ARG2);
+      PRINT("sys_lwp_rwlock( %ld, %#lx )", SARG1, ARG2);
       PRE_REG_READ2(long, SC2("lwp_rwlock", "unlock"), int, subcode,
                     lwp_rwlock_t *, rwlp);
       PRE_FIELD_READ("lwp_rwlock(rwlp->mutex.mutex_type)",
@@ -8876,7 +8877,7 @@ PRE(sys_lwp_rwlock_sys)
       break;
    default:
       VG_(unimplemented)("Syswrap of the lwp_rwlock_sys call with subcode %ld.",
-                         ARG1);
+                         SARG1);
       /*NOTREACHED*/
       break;
    }
@@ -8911,7 +8912,7 @@ PRE(sys_lwp_sema_timedwait)
                              int check_park); */
    vki_lwp_sema_t *sema = (vki_lwp_sema_t*)ARG1;
    *flags |= SfMayBlock;
-   PRINT("sys_lwp_sema_timewait ( %#lx, %#lx, %ld )", ARG1, ARG2, ARG3);
+   PRINT("sys_lwp_sema_timewait ( %#lx, %#lx, %ld )", ARG1, ARG2, SARG3);
    PRE_REG_READ3(long, "lwp_sema_timedwait", lwp_sema_t *, sema,
                  timespec_t *, timeout, int, check_park);
 
@@ -8955,7 +8956,7 @@ PRE(sys_zone)
                                     int flags);
         Kernel: zoneid_t zone_create(zone_def *zd);
        */
-      PRINT("sys_zone ( %ld, %#lx )", ARG1, ARG2);
+      PRINT("sys_zone ( %ld, %#lx )", SARG1, ARG2);
       PRE_REG_READ2(long, SC2("zone", "create"), int, cmd,
                     vki_zone_def *, zd);
 
@@ -8992,7 +8993,7 @@ PRE(sys_zone)
       break;
    case VKI_ZONE_DESTROY:
       /* Libc: int zone_destroy(zoneid_t zoneid); */
-      PRINT("sys_zone ( %ld, %ld )", ARG1, ARG2);
+      PRINT("sys_zone ( %ld, %ld )", SARG1, SARG2);
       PRE_REG_READ2(long, SC2("zone", "destroy"), int, cmd,
                     vki_zoneid_t, zoneid);
       break;
@@ -9001,7 +9002,7 @@ PRE(sys_zone)
                                     void *valp, size_t size);
        */
       PRINT("sys_zone ( %ld, %ld, %ld, %#lx, %ld )",
-            ARG1, ARG2, ARG3, ARG4, ARG5);
+            SARG1, SARG2, SARG3, ARG4, SARG5);
       PRE_REG_READ5(long, SC2("zone", "getattr"), int, cmd,
                     vki_zoneid_t, zoneid, int, attr, void *, valp,
                     vki_size_t, size);
@@ -9009,13 +9010,13 @@ PRE(sys_zone)
       break;
    case VKI_ZONE_ENTER:
       /* Libc: int zone_enter(zoneid_t zoneid); */
-      PRINT("sys_zone ( %ld, %ld )", ARG1, ARG2);
+      PRINT("sys_zone ( %ld, %ld )", SARG1, SARG2);
       PRE_REG_READ2(long, SC2("zone", "enter"), int, cmd,
                     vki_zoneid_t, zoneid);
       break;
    case VKI_ZONE_LIST:
       /* Libc: int zone_list(zoneid_t *zonelist, uint_t *numzones); */
-      PRINT("sys_zone ( %ld, %#lx, %#lx )", ARG1, ARG2, ARG3);
+      PRINT("sys_zone ( %ld, %#lx, %#lx )", SARG1, ARG2, ARG3);
       PRE_REG_READ3(long, SC2("zone", "list"), int, cmd,
                     vki_zoneid_t *, zonelist, vki_uint_t *, numzones);
 
@@ -9029,13 +9030,13 @@ PRE(sys_zone)
       break;
    case VKI_ZONE_SHUTDOWN:
       /* Libc: int zone_shutdown(zoneid_t zoneid); */
-      PRINT("sys_zone ( %ld, %ld )", ARG1, ARG2);
+      PRINT("sys_zone ( %ld, %ld )", SARG1, SARG2);
       PRE_REG_READ2(long, SC2("zone", "shutdown"), int, cmd,
                     vki_zoneid_t, zoneid);
       break;
    case VKI_ZONE_LOOKUP:
       /* Libc: zoneid_t zone_lookup(const char *name); */
-      PRINT("sys_zone ( %ld, %#lx )", ARG1, ARG2);
+      PRINT("sys_zone ( %ld, %#lx )", SARG1, ARG2);
       PRE_REG_READ2(long, SC2("zone", "lookup"), int, cmd,
                     const char *, name);
       if (ARG2)
@@ -9043,7 +9044,7 @@ PRE(sys_zone)
       break;
    case VKI_ZONE_BOOT:
       /* Libc: int zone_boot(zoneid_t zoneid); */
-      PRINT("sys_zone ( %ld, %ld )", ARG1, ARG2);
+      PRINT("sys_zone ( %ld, %ld )", SARG1, SARG2);
       PRE_REG_READ2(long, SC2("zone", "boot"), int, cmd,
                     vki_zoneid_t, zoneid);
       break;
@@ -9051,8 +9052,8 @@ PRE(sys_zone)
       /* Libc: int zone_setattr(zoneid_t zoneid, int attr, void *valp,
                                 size_t size);
        */
-      PRINT("sys_zone ( %ld, %ld, %ld, %#lx, %ld )",
-            ARG1, ARG2, ARG3, ARG4, ARG5);
+      PRINT("sys_zone ( %ld, %ld, %ld, %#lx, %lu )",
+            SARG1, SARG2, SARG3, ARG4, ARG5);
       PRE_REG_READ5(long, SC2("zone", "setattr"), int, cmd,
                     vki_zoneid_t, zoneid, int, attr, void *, valp,
                     vki_size_t, size);
@@ -9062,7 +9063,7 @@ PRE(sys_zone)
       /* Libc: int zone_add_datalink(zoneid_t zoneid,
                                      datalink_id_t linkid);
        */
-      PRINT("sys_zone ( %ld, %ld, %ld )", ARG1, ARG2, ARG3);
+      PRINT("sys_zone ( %ld, %ld, %ld )", SARG1, SARG2, SARG3);
       PRE_REG_READ3(long, SC2("zone", "add_datalink"), int, cmd,
                     vki_zoneid_t, zoneid, vki_datalink_id_t, linkid);
       break;
@@ -9070,7 +9071,7 @@ PRE(sys_zone)
       /* Libc: int zone_remove_datalink(zoneid_t zoneid,
                                         datalink_id_t linkid);
        */
-      PRINT("sys_zone ( %ld, %ld, %ld )", ARG1, ARG2, ARG3);
+      PRINT("sys_zone ( %ld, %ld, %ld )", SARG1, SARG2, SARG3);
       PRE_REG_READ3(long, SC2("zone", "del_datalink"), int, cmd,
                     vki_zoneid_t, zoneid, vki_datalink_id_t, linkid);
       break;
@@ -9078,7 +9079,7 @@ PRE(sys_zone)
       /* Libc: int zone_check_datalink(zoneid_t *zoneidp,
                                        datalink_id_t linkid);
       */
-      PRINT("sys_zone ( %ld, %#lx, %ld )", ARG1, ARG2, ARG3);
+      PRINT("sys_zone ( %ld, %#lx, %ld )", SARG1, ARG2, SARG3);
       PRE_REG_READ3(long, SC2("zone", "check_datalink"), int, cmd,
                     vki_zoneid_t *, zoneidp, vki_datalink_id_t, linkid);
       PRE_MEM_WRITE("zone(zoneidp)", ARG2, sizeof(vki_zoneid_t));
@@ -9087,7 +9088,7 @@ PRE(sys_zone)
       /* Libc: int zone_list_datalink(zoneid_t zoneid, int *dlnump,
                                       datalink_id_t *linkids);
        */
-      PRINT("sys_zone ( %ld, %ld, %#lx, %#lx )", ARG1, ARG2, ARG3, ARG4);
+      PRINT("sys_zone ( %ld, %ld, %#lx, %#lx )", SARG1, SARG2, ARG3, ARG4);
       PRE_REG_READ4(long, SC2("zone", "list_datalink"), int, cmd,
                     vki_zoneid_t, zoneid, int *, dlnump,
                     vki_datalink_id_t *, linkids);
@@ -9104,7 +9105,7 @@ PRE(sys_zone)
       /* Libc: int zone_list_defunct(uint64_t *uniqidlist,
                                      uint_t *numzones);
        */
-      PRINT("sys_zone ( %ld, %#lx, %#lx )", ARG1, ARG2, ARG3);
+      PRINT("sys_zone ( %ld, %#lx, %#lx )", SARG1, ARG2, ARG3);
       PRE_REG_READ3(long, SC2("zone", "list_defunct"), int, cmd,
                     vki_uint64_t *, uniqidlist, vki_uint_t *, numzones);
 
@@ -9122,8 +9123,8 @@ PRE(sys_zone)
          Kernel: ssize_t zone_getattr_defunct(uint64_t *uniqid, int attr,
                                               void *valp, size_t size);
        */
-      PRINT("sys_zone ( %ld, %#lx, %ld, %#lx, %ld )",
-            ARG1, ARG2, ARG3, ARG4, ARG5);
+      PRINT("sys_zone ( %ld, %#lx, %ld, %#lx, %lu )",
+            SARG1, ARG2, SARG3, ARG4, ARG5);
       PRE_REG_READ5(long, SC2("zone", "getattr_defunct"), int, cmd,
                     vki_uint64_t *, uniqid, int, attr,
                     void *, valp, vki_size_t, size);
@@ -9133,7 +9134,7 @@ PRE(sys_zone)
       break;
 #endif /* SOLARIS_ZONE_DEFUNCT */
    default:
-      VG_(unimplemented)("Syswrap of the zone call with cmd %ld.", ARG1);
+      VG_(unimplemented)("Syswrap of the zone call with cmd %ld.", SARG1);
       /*NOTREACHED*/
       break;
    }
@@ -9200,8 +9201,8 @@ PRE(sys_so_socket)
 {
    /* int so_socket(int family, int type, int protocol, char *devpath,
                     int version); */
-   PRINT("sys_so_socket ( %ld, %ld, %ld, %#lx(%s), %ld)", ARG1, ARG2, ARG3,
-         ARG4, (HChar *) ARG4, ARG5);
+   PRINT("sys_so_socket ( %ld, %ld, %ld, %#lx(%s), %ld)", SARG1, SARG2, SARG3,
+         ARG4, (HChar *) ARG4, SARG5);
    PRE_REG_READ5(long, "socket", int, family, int, type, int, protocol,
                  char *, devpath, int, version);
    if (ARG4)
@@ -9265,7 +9266,7 @@ PRE(sys_bind)
 {
    /* int bind(int s, struct sockaddr *name, socklen_t namelen,
                int version); */
-   PRINT("sys_bind ( %ld, %#lx, %lu, %ld )",ARG1, ARG2, ARG3, ARG4);
+   PRINT("sys_bind ( %ld, %#lx, %lu, %ld )", SARG1, ARG2, ARG3, SARG4);
    PRE_REG_READ4(long, "bind", int, s, struct sockaddr *, name,
                  vki_socklen_t, namelen, int, version);
    ML_(generic_PRE_sys_bind)(tid, ARG1, ARG2, ARG3);
@@ -9274,7 +9275,7 @@ PRE(sys_bind)
 PRE(sys_listen)
 {
    /* int listen(int s, int backlog, int version); */
-   PRINT("sys_listen ( %ld, %ld, %ld )", ARG1, ARG2, ARG3);
+   PRINT("sys_listen ( %ld, %ld, %ld )", SARG1, SARG2, SARG3);
    PRE_REG_READ3(long, "listen", int, s, int, backlog, int, version);
 }
 
@@ -9284,15 +9285,15 @@ PRE(sys_accept)
    /* int accept(int s, struct sockaddr *addr, socklen_t *addrlen,
                  int version, int flags); */
    *flags |= SfMayBlock;
-   PRINT("sys_accept ( %ld, %#lx, %#lx, %ld, %ld )", ARG1, ARG2, ARG3, ARG4,
-         ARG5);
+   PRINT("sys_accept ( %ld, %#lx, %#lx, %ld, %ld )", SARG1, ARG2, ARG3, SARG4,
+         SARG5);
    PRE_REG_READ5(long, "accept", int, s, struct sockaddr *, addr,
                  socklen_t *, addrlen, int, version, int, flags);
 #else
    /* int accept(int s, struct sockaddr *addr, socklen_t *addrlen,
                  int version); */
    *flags |= SfMayBlock;
-   PRINT("sys_accept ( %ld, %#lx, %#lx, %ld )", ARG1, ARG2, ARG3, ARG4);
+   PRINT("sys_accept ( %ld, %#lx, %#lx, %ld )", SARG1, ARG2, ARG3, SARG4);
    PRE_REG_READ4(long, "accept", int, s, struct sockaddr *, addr,
                  socklen_t *, addrlen, int, version);
 #endif /* SOLARIS_NEW_ACCEPT_SYSCALL */
@@ -9312,7 +9313,7 @@ PRE(sys_connect)
    /* int connect(int s, struct sockaddr *name, socklen_t namelen,
                   int version); */
    *flags |= SfMayBlock;
-   PRINT("sys_connect ( %ld, %#lx, %lu, %ld )",ARG1, ARG2, ARG3, ARG4);
+   PRINT("sys_connect ( %ld, %#lx, %lu, %ld )", SARG1, ARG2, ARG3, SARG4);
    PRE_REG_READ4(long, "connect", int, s, struct sockaddr *, name,
                  vki_socklen_t, namelen, int, version);
    ML_(generic_PRE_sys_connect)(tid, ARG1, ARG2, ARG3);
@@ -9324,7 +9325,7 @@ PRE(sys_shutdown)
       Libc:   int shutdown(int sock, int how);
     */
    *flags |= SfMayBlock;
-   PRINT("sys_shutdown ( %ld, %ld, %ld )", ARG1, ARG2, ARG3);
+   PRINT("sys_shutdown ( %ld, %ld, %ld )", SARG1, SARG2, SARG3);
    PRE_REG_READ3(int, "shutdown", int, sock, int, how, int, version);
 
    /* Be strict. */
@@ -9336,7 +9337,7 @@ PRE(sys_recv)
 {
    /* ssize_t recv(int s, void *buf, size_t len, int flags); */
    *flags |= SfMayBlock;
-   PRINT("sys_recv ( %ld, %#lx, %lu, %ld )", ARG1, ARG2, ARG3, ARG4);
+   PRINT("sys_recv ( %ld, %#lx, %lu, %ld )", SARG1, ARG2, ARG3, SARG4);
    PRE_REG_READ4(long, "recv", int, s, void *, buf, vki_size_t, len,
                  int, flags);
    ML_(generic_PRE_sys_recv)(tid, ARG1, ARG2, ARG3);
@@ -9352,8 +9353,8 @@ PRE(sys_recvfrom)
    /* ssize_t recvfrom(int s, void *buf, size_t len, int flags,
                        struct sockaddr *from, socklen_t *fromlen); */
    *flags |= SfMayBlock;
-   PRINT("sys_recvfrom ( %ld, %#lx, %lu, %ld, %#lx, %#lx )", ARG1, ARG2, ARG3,
-         ARG4, ARG5, ARG6);
+   PRINT("sys_recvfrom ( %ld, %#lx, %lu, %ld, %#lx, %#lx )", SARG1, ARG2, ARG3,
+         SARG4, ARG5, ARG6);
    PRE_REG_READ6(long, "recvfrom", int, s, void *, buf, vki_size_t, len,
                  int, flags, struct sockaddr *, from, socklen_t *, fromlen);
    ML_(generic_PRE_sys_recvfrom)(tid, ARG1, ARG2, ARG3, ARG4, ARG5, ARG6);
@@ -9369,7 +9370,7 @@ PRE(sys_recvmsg)
 {
    /* ssize_t recvmsg(int s, struct msghdr *msg, int flags); */
    *flags |= SfMayBlock;
-   PRINT("sys_recvmsg ( %ld, %#lx, %ld )", ARG1, ARG2, ARG3);
+   PRINT("sys_recvmsg ( %ld, %#lx, %ld )", SARG1, ARG2, SARG3);
    PRE_REG_READ3(long, "recvmsg", int, s, struct msghdr *, msg, int, flags);
    ML_(generic_PRE_sys_recvmsg)(tid, "msg", (struct vki_msghdr*)ARG2);
 }
@@ -9383,7 +9384,7 @@ PRE(sys_send)
 {
    /* ssize_t send(int s, const void *msg, size_t len, int flags); */
    *flags |= SfMayBlock;
-   PRINT("sys_send ( %ld, %#lx, %lu, %ld )", ARG1, ARG2, ARG3, ARG4);
+   PRINT("sys_send ( %ld, %#lx, %lu, %ld )", SARG1, ARG2, ARG3, SARG4);
    PRE_REG_READ4(long, "send", int, s, const void *, msg, vki_size_t, len,
                  int, flags);
    ML_(generic_PRE_sys_send)(tid, ARG1, ARG2, ARG3);
@@ -9393,7 +9394,7 @@ PRE(sys_sendmsg)
 {
    /* ssize_t sendmsg(int s, const struct msghdr *msg, int flags); */
    *flags |= SfMayBlock;
-   PRINT("sys_sendmsg ( %ld, %#lx, %ld )", ARG1, ARG2, ARG3);
+   PRINT("sys_sendmsg ( %ld, %#lx, %ld )", SARG1, ARG2, SARG3);
    PRE_REG_READ3(long, "sendmsg", int, s, const struct msghdr *, msg,
                  int, flags);
    ML_(generic_PRE_sys_sendmsg)(tid, "msg", (struct vki_msghdr*)ARG2);
@@ -9404,8 +9405,8 @@ PRE(sys_sendto)
    /* ssize_t sendto(int s, const void *msg, size_t len, int flags,
                      const struct sockaddr *to, int tolen); */
    *flags |= SfMayBlock;
-   PRINT("sys_sendto ( %ld, %#lx, %lu, %ld, %#lx, %ld )", ARG1, ARG2, ARG3,
-         ARG4, ARG5, ARG6);
+   PRINT("sys_sendto ( %ld, %#lx, %lu, %ld, %#lx, %ld )", SARG1, ARG2, ARG3,
+         SARG4, ARG5, SARG6);
    PRE_REG_READ6(long, "sendto", int, s, const void *, msg, vki_size_t, len,
                  int, flags, const struct sockaddr *, to, int, tolen);
    ML_(generic_PRE_sys_sendto)(tid, ARG1, ARG2, ARG3, ARG4, ARG5, ARG6);
@@ -9420,7 +9421,7 @@ PRE(sys_getpeername)
     */
    *flags |= SfMayBlock;
    PRINT("sys_getpeername ( %ld, %#lx, %#lx, %ld )",
-         ARG1, ARG2, ARG3, ARG4);
+         SARG1, ARG2, ARG3, SARG4);
    PRE_REG_READ4(long, "getpeername", int, s, struct vki_sockaddr *, name,
                  vki_socklen_t *, namelen, int, version);
    ML_(buf_and_len_pre_check)(tid, ARG2, ARG3, "getpeername(name)",
@@ -9441,7 +9442,7 @@ PRE(sys_getsockname)
 {
    /* int getsockname(int s, struct sockaddr *name, socklen_t *namelen,
                       int version); */
-   PRINT("sys_getsockname ( %ld, %#lx, %#lx, %ld )", ARG1, ARG2, ARG3, ARG4);
+   PRINT("sys_getsockname ( %ld, %#lx, %#lx, %ld )", SARG1, ARG2, ARG3, SARG4);
    PRE_REG_READ4(long, "getsockname", int, s, struct sockaddr *, name,
                  socklen_t *, namelen, int, version);
    ML_(generic_PRE_sys_getsockname)(tid, ARG1, ARG2, ARG3);
@@ -9457,8 +9458,8 @@ PRE(sys_getsockopt)
 {
    /* int getsockopt(int s, int level, int optname, void *optval,
                      socklen_t *optlen, int version); */
-   PRINT("sys_getsockopt ( %ld, %ld, %ld, %#lx, %#lx, %ld )", ARG1, ARG2,
-         ARG3, ARG4, ARG5, ARG6);
+   PRINT("sys_getsockopt ( %ld, %ld, %ld, %#lx, %#lx, %ld )", SARG1, SARG2,
+         SARG3, ARG4, ARG5, SARG6);
    PRE_REG_READ6(long, "getsockopt", int, s, int, level, int, optname,
                  void *, optval, socklen_t *, option, int, version);
    if (ARG4)
@@ -9477,8 +9478,8 @@ PRE(sys_setsockopt)
 {
    /* int setsockopt(int s, int level, int optname, const void *optval,
                      socklen_t optlen, int version); */
-   PRINT("sys_setsockopt ( %ld, %ld, %ld, %#lx, %lu, %ld )", ARG1, ARG2, ARG3,
-         ARG4, ARG5, ARG6);
+   PRINT("sys_setsockopt ( %ld, %ld, %ld, %#lx, %lu, %ld )", SARG1, SARG2,
+         SARG3, ARG4, ARG5, SARG6);
    PRE_REG_READ6(long, "setsockopt", int, s, int, level, int, optname,
                  const void *, optval, vki_socklen_t, optlen, int, version);
    ML_(generic_PRE_sys_setsockopt)(tid, ARG1, ARG2, ARG3, ARG4, ARG5);
@@ -9526,7 +9527,7 @@ PRE(sys_umount2)
 {
    /* int umount2(const char *file, int mflag); */
    *flags |= SfMayBlock;
-   PRINT("sys_umount2 ( %#lx(%s), %ld )", ARG1, (HChar *) ARG1, ARG2);
+   PRINT("sys_umount2 ( %#lx(%s), %ld )", ARG1, (HChar *) ARG1, SARG2);
    PRE_REG_READ2(long, "umount2", const char *, file, int, mflag);
    PRE_MEM_RASCIIZ("umount2(file)", ARG1);
 }

@@ -352,8 +352,8 @@ PRE(sys_mmap2)
    // pagesize or 4K-size units in offset?  For ppc32/64-linux, this is
    // 4K-sized.  Assert that the page size is 4K here for safety.
    vg_assert(VKI_PAGE_SIZE == 4096);
-   PRINT("sys_mmap2 ( %#lx, %llu, %ld, %ld, %ld, %ld )",
-         ARG1, (ULong)ARG2, ARG3, ARG4, ARG5, ARG6 );
+   PRINT("sys_mmap2 ( %#lx, %lu, %lu, %lu, %lu, %lu )",
+         ARG1, ARG2, ARG3, ARG4, ARG5, ARG6 );
    PRE_REG_READ6(long, "mmap2",
                  unsigned long, start, unsigned long, length,
                  unsigned long, prot,  unsigned long, flags,
@@ -370,7 +370,7 @@ PRE(sys_mmap2)
 // things, eventually, I think.  --njn
 PRE(sys_lstat64)
 {
-   PRINT("sys_lstat64 ( %#lx(%s), %#lx )",ARG1,(char*)ARG1,ARG2);
+   PRINT("sys_lstat64 ( %#lx(%s), %#lx )", ARG1, (HChar*)ARG1, ARG2);
    PRE_REG_READ2(long, "lstat64", char *, file_name, struct stat64 *, buf);
    PRE_MEM_RASCIIZ( "lstat64(file_name)", ARG1 );
    PRE_MEM_WRITE( "lstat64(buf)", ARG2, sizeof(struct vki_stat64) );
@@ -386,7 +386,7 @@ POST(sys_lstat64)
 
 PRE(sys_stat64)
 {
-   PRINT("sys_stat64 ( %#lx(%s), %#lx )",ARG1,(char*)ARG1,ARG2);
+   PRINT("sys_stat64 ( %#lx(%s), %#lx )", ARG1, (HChar*)ARG1, ARG2);
    PRE_REG_READ2(long, "stat64", char *, file_name, struct stat64 *, buf);
    PRE_MEM_RASCIIZ( "stat64(file_name)", ARG1 );
    PRE_MEM_WRITE( "stat64(buf)", ARG2, sizeof(struct vki_stat64) );
@@ -399,7 +399,8 @@ POST(sys_stat64)
 
 PRE(sys_fstatat64)
 {
-   PRINT("sys_fstatat64 ( %ld, %#lx(%s), %#lx )",ARG1,ARG2,(char*)ARG2,ARG3);
+   PRINT("sys_fstatat64 ( %ld, %#lx(%s), %#lx )",
+         SARG1, ARG2, (HChar*)ARG2, ARG3);
    PRE_REG_READ3(long, "fstatat64",
                  int, dfd, char *, file_name, struct stat64 *, buf);
    PRE_MEM_RASCIIZ( "fstatat64(file_name)", ARG2 );
@@ -413,7 +414,7 @@ POST(sys_fstatat64)
 
 PRE(sys_fstat64)
 {
-   PRINT("sys_fstat64 ( %ld, %#lx )",ARG1,ARG2);
+   PRINT("sys_fstat64 ( %lu, %#lx )", ARG1, ARG2);
    PRE_REG_READ2(long, "fstat64", unsigned long, fd, struct stat64 *, buf);
    PRE_MEM_WRITE( "fstat64(buf)", ARG2, sizeof(struct vki_stat64) );
 }
@@ -577,7 +578,7 @@ PRE(sys_sigsuspend)
       that takes a pointer to the signal mask so supports more signals.
     */
    *flags |= SfMayBlock;
-   PRINT("sys_sigsuspend ( %ld, %ld, %ld )", ARG1,ARG2,ARG3 );
+   PRINT("sys_sigsuspend ( %ld, %ld, %#lx )", SARG1, SARG2, ARG3 );
    PRE_REG_READ3(int, "sigsuspend",
                  int, history0, int, history1,
                  vki_old_sigset_t, mask);
@@ -609,7 +610,7 @@ PRE(sys_cacheflush)
 // space, and we should therefore not check anything it points to.
 PRE(sys_ptrace)
 {
-   PRINT("sys_ptrace ( %ld, %ld, %#lx, %#lx )", ARG1,ARG2,ARG3,ARG4);
+   PRINT("sys_ptrace ( %ld, %ld, %#lx, %#lx )", SARG1, SARG2, ARG3, ARG4);
    PRE_REG_READ4(int, "ptrace", 
                  long, request, long, pid, long, addr, long, data);
    switch (ARG1) {

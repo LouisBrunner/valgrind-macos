@@ -446,7 +446,7 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
 
       tst = VG_(get_ThreadState)(tid);
 
-      if (0) VG_(printf)("wqthread_hijack reuse %s: tid %d, tst %p, "
+      if (0) VG_(printf)("wqthread_hijack reuse %s: tid %u, tst %p, "
                          "tst->os_state.pthread %#lx, self %#lx\n",
                          tst->os_state.pthread == self ? "SAME" : "DIFF",
                          tid, tst, tst->os_state.pthread, self);

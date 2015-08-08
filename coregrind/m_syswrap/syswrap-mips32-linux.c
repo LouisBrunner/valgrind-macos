@@ -533,8 +533,8 @@ PRE(sys_mmap2)
      units rather than bytes, so that it can be used for files bigger than
      2^32 bytes. */
   SysRes r;
-  PRINT("sys_mmap2 ( %#lx, %llu, %ld, %ld, %ld, %ld )", ARG1, (ULong) ARG2,
-                                                        ARG3, ARG4, ARG5, ARG6);
+  PRINT("sys_mmap2 ( %#lx, %lu, %lu, %lu, %lu, %lu )",
+        ARG1, ARG2, SARG3, SARG4, SARG5, SARG6);
   PRE_REG_READ6(long, "mmap2", unsigned long, start, unsigned long, length,
                 unsigned long, prot, unsigned long, flags,
                 unsigned long, fd, unsigned long, offset);
@@ -546,8 +546,8 @@ PRE(sys_mmap2)
 PRE(sys_mmap) 
 {
   SysRes r;
-  PRINT("sys_mmap ( %#lx, %llu, %lu, %lu, %lu, %ld )", ARG1, (ULong) ARG2,
-                                                       ARG3, ARG4, ARG5, ARG6);
+  PRINT("sys_mmap ( %#lx, %lu, %ld, %ld, %ld, %lu )",
+        ARG1, ARG2, SARG3, SARG4, SARG5, ARG6);
   PRE_REG_READ6(long, "mmap", unsigned long, start, vki_size_t, length,
                 int, prot, int, flags, int, fd, unsigned long, offset);
   r = mips_PRE_sys_mmap(tid, ARG1, ARG2, ARG3, ARG4, ARG5, (Off64T) ARG6);
@@ -561,7 +561,7 @@ PRE(sys_mmap)
  
 PRE (sys_lstat64) 
 {
-  PRINT ("sys_lstat64 ( %#lx(%s), %#lx )", ARG1, (char *) ARG1, ARG2);
+  PRINT ("sys_lstat64 ( %#lx(%s), %#lx )", ARG1, (HChar *) ARG1, ARG2);
   PRE_REG_READ2 (long, "lstat64", char *, file_name, struct stat64 *, buf);
   PRE_MEM_RASCIIZ ("lstat64(file_name)", ARG1);
   PRE_MEM_WRITE ("lstat64(buf)", ARG2, sizeof (struct vki_stat64));
@@ -578,7 +578,7 @@ POST (sys_lstat64)
 
 PRE (sys_stat64) 
 {
-  PRINT ("sys_stat64 ( %#lx(%s), %#lx )", ARG1, (char *) ARG1, ARG2);
+  PRINT ("sys_stat64 ( %#lx(%s), %#lx )", ARG1, (HChar *) ARG1, ARG2);
   PRE_REG_READ2 (long, "stat64", char *, file_name, struct stat64 *, buf);
   PRE_MEM_RASCIIZ ("stat64(file_name)", ARG1);
   PRE_MEM_WRITE ("stat64(buf)", ARG2, sizeof (struct vki_stat64));
@@ -591,10 +591,12 @@ POST (sys_stat64)
 
 PRE (sys_fstatat64)
 {
-  PRINT ("sys_fstatat64 ( %ld, %#lx(%s), %#lx )", ARG1, ARG2, (char *) ARG2,
-                                                  ARG3);
-  PRE_REG_READ3 (long, "fstatat64", int, dfd, char *, file_name,
-                 struct stat64 *, buf);
+  // ARG4 =  int flags;  Flags are or'ed together, therefore writing them
+  // as a hex constant is more meaningful.
+  PRINT("sys_fstatat64 ( %ld, %#lx(%s), %#lx, %#lx )",
+        SARG1, ARG2, (HChar*)ARG2, ARG3, ARG4);
+  PRE_REG_READ4(long, "fstatat64",
+                 int, dfd, char *, file_name, struct stat64 *, buf, int, flags);
   PRE_MEM_RASCIIZ ("fstatat64(file_name)", ARG2);
   PRE_MEM_WRITE ("fstatat64(buf)", ARG3, sizeof (struct vki_stat64));
 }
@@ -606,7 +608,7 @@ POST (sys_fstatat64)
 
 PRE (sys_fstat64)
 {
-  PRINT ("sys_fstat64 ( %ld, %#lx )", ARG1, ARG2);
+  PRINT ("sys_fstat64 ( %lu, %#lx )", SARG1, ARG2);
   PRE_REG_READ2 (long, "fstat64", unsigned long, fd, struct stat64 *, buf);
   PRE_MEM_WRITE ("fstat64(buf)", ARG2, sizeof (struct vki_stat64));
 }
@@ -747,7 +749,7 @@ PRE (sys_set_thread_area)
 /* Very much MIPS specific */
 PRE (sys_cacheflush)
 {
-  PRINT ("cacheflush (%lx, %lx, %lx)", ARG1, ARG2, ARG3);
+  PRINT ("cacheflush (%lx, %ld, %ld)", ARG1, SARG2, SARG3);
   PRE_REG_READ3(long, "cacheflush", unsigned long, addr,
                 int, nbytes, int, cache);
   VG_ (discard_translations) ((Addr)ARG1, (ULong) ARG2,

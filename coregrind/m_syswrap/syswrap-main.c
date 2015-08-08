@@ -398,8 +398,8 @@ void do_syscall_for_client ( Int syscallno,
 #  endif
    vg_assert2(
       err == 0,
-      "ML_(do_syscall_for_client_WRK): sigprocmask error %d",
-      (Int)(err & 0xFFF)
+      "ML_(do_syscall_for_client_WRK): sigprocmask error %lu",
+      err & 0xFFF
    );
 }
 
@@ -1882,7 +1882,7 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
         sci->flags        is zero.
    */
 
-   PRINT("SYSCALL[%d,%d](%s) ",
+   PRINT("SYSCALL[%d,%u](%s) ",
       VG_(getpid)(), tid, VG_SYSNUM_STRING(sysno));
 
    /* Do any pre-syscall actions */
@@ -2027,7 +2027,7 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
 
          /* Be decorative, if required. */
          if (VG_(clo_trace_syscalls)) {
-            PRINT("SYSCALL[%d,%d](%s) ... [async] --> %s",
+            PRINT("SYSCALL[%d,%u](%s) ... [async] --> %s",
                   VG_(getpid)(), tid, VG_SYSNUM_STRING(sysno),
                   VG_(sr_as_string)(sci->status.sres));
          }
@@ -2315,7 +2315,7 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
       if (p[0] != 0x44 || p[1] != 0x0 || p[2] != 0x0 || p[3] != 0x02)
          VG_(message)(Vg_DebugMsg,
                       "?! restarting over syscall at %#llx %02x %02x %02x %02x\n",
-                      arch->vex.guest_CIA + 0ULL, p[0], p[1], p[2], p[3]);
+                      (ULong)arch->vex.guest_CIA, p[0], p[1], p[2], p[3]);
 
       vg_assert(p[0] == 0x44 && p[1] == 0x0 && p[2] == 0x0 && p[3] == 0x2);
    }
@@ -2334,7 +2334,7 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
       if (p[3] != 0x44 || p[2] != 0x0 || p[1] != 0x0 || p[0] != 0x02)
          VG_(message)(Vg_DebugMsg,
                       "?! restarting over syscall at %#llx %02x %02x %02x %02x\n",
-                      arch->vex.guest_CIA + 0ULL, p[3], p[2], p[1], p[0]);
+                      arch->vex.guest_CIA, p[3], p[2], p[1], p[0]);
 
       vg_assert(p[3] == 0x44 && p[2] == 0x0 && p[1] == 0x0 && p[0] == 0x2);
    }
@@ -2350,8 +2350,8 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
       if (!valid) {
          VG_(message)(Vg_DebugMsg,
                       "?! restarting over (Thumb) syscall that is not syscall "
-                      "at %#llx %02x %02x\n",
-                      arch->vex.guest_R15T - 1ULL, p[0], p[1]);
+                      "at %#x %02x %02x\n",
+                      arch->vex.guest_R15T - 1, p[0], p[1]);
       }
       vg_assert(valid);
       // FIXME: NOTE, this really isn't right.  We need to back up
@@ -2372,8 +2372,8 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
       if (!valid) {
          VG_(message)(Vg_DebugMsg,
                       "?! restarting over (ARM) syscall that is not syscall "
-                      "at %#llx %02x %02x %02x %02x\n",
-                      arch->vex.guest_R15T + 0ULL, p[0], p[1], p[2], p[3]);
+                      "at %#x %02x %02x %02x %02x\n",
+                      arch->vex.guest_R15T, p[0], p[1], p[2], p[3]);
       }
       vg_assert(valid);
    }
@@ -2393,7 +2393,7 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
          VG_(message)(
             Vg_DebugMsg,
             "?! restarting over syscall at %#llx %02x %02x %02x %02x\n",
-            arch->vex.guest_PC + 0ULL, p[0], p[1], p[2], p[3]
+            arch->vex.guest_PC, p[0], p[1], p[2], p[3]
           );
 
       vg_assert(p[0] == 0x01 && p[1] == 0x00 && p[2] == 0x00 && p[3] == 0xD4);
@@ -2611,10 +2611,10 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
 
    if (VG_(clo_trace_signals))
       VG_(message)( Vg_DebugMsg,
-                    "interrupted_syscall: tid=%d, ip=0x%llx, "
+                    "interrupted_syscall: tid=%u, ip=%#lx, "
                     "restart=%s, sres.isErr=%s, sres.val=%lld\n",
-                    (Int)tid,
-                    (ULong)ip,
+                    tid,
+                    ip,
                     restart ? "True" : "False",
                     sr_isError(sres) ? "True" : "False",
                     (Long)(sr_isError(sres) ? sr_Err(sres) : sr_Res(sres)) );
@@ -2828,7 +2828,7 @@ void ML_(wqthread_continue_NORETURN)(ThreadId tid)
 
    VG_(acquire_BigLock)(tid, "wqthread_continue_NORETURN");
 
-   PRINT("SYSCALL[%d,%d](%s) workq_ops() starting new workqueue item\n", 
+   PRINT("SYSCALL[%d,%u](%s) workq_ops() starting new workqueue item\n", 
          VG_(getpid)(), tid, VG_SYSNUM_STRING(__NR_workq_ops));
 
    vg_assert(VG_(is_valid_tid)(tid));

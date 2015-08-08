@@ -451,7 +451,7 @@ void ML_(restore_machine_context)(ThreadId tid, vki_ucontext_t *uc,
          if (eflags != ~VKI_UC_GUEST_EFLAGS_NEG(uc)) {
             VG_(debugLog)(1, "syswrap-solaris",
                              "The eflags value was restored from an "
-                             "explicitly set value in thread %d.\n", tid);
+                             "explicitly set value in thread %u.\n", tid);
             ok_restore = True;
          }
          else {
@@ -469,7 +469,7 @@ void ML_(restore_machine_context)(ThreadId tid, vki_ucontext_t *uc,
                /* Check ok, the full restoration is possible. */
                VG_(debugLog)(1, "syswrap-solaris",
                                 "The CC_* guest state values were fully "
-                                "restored in thread %d.\n", tid);
+                                "restored in thread %u.\n", tid);
                ok_restore = True;
 
                tst->arch.vex.guest_CC_OP = VKI_UC_GUEST_CC_OP(uc);
@@ -491,7 +491,7 @@ void ML_(restore_machine_context)(ThreadId tid, vki_ucontext_t *uc,
             VG_(debugLog)(1, "syswrap-solaris",
                              "Cannot fully restore the CC_* guest state "
                              "values, using approximate eflags in thread "
-                             "%d.\n", tid);
+                             "%u.\n", tid);
       }
    }
 
@@ -514,7 +514,7 @@ void ML_(restore_machine_context)(ThreadId tid, vki_ucontext_t *uc,
       note = LibVEX_GuestX86_put_x87((UChar*)&fs->state, &tst->arch.vex);
       if (note != EmNote_NONE)
          VG_(message)(Vg_UserMsg,
-                      "Error restoring x87 state in thread %d: %s.\n",
+                      "Error restoring x87 state in thread %u: %s.\n",
                       tid, LibVEX_EmNote_string(note));
 
       /* SSE */
@@ -524,7 +524,7 @@ void ML_(restore_machine_context)(ThreadId tid, vki_ucontext_t *uc,
       note = LibVEX_GuestX86_put_mxcsr(fs->mxcsr, &tst->arch.vex);
       if (note != EmNote_NONE)
          VG_(message)(Vg_UserMsg,
-                      "Error restoring mxcsr state in thread %d: %s.\n",
+                      "Error restoring mxcsr state in thread %u: %s.\n",
                       tid, LibVEX_EmNote_string(note));
       /* XMM registers */
 #define COPY_IN_XMM(src, dest) \
@@ -627,8 +627,8 @@ PRE(sys_fstatat64)
 {
    /* int fstatat64(int fildes, const char *path, struct stat64 *buf,
                     int flag); */
-   PRINT("sys_fstatat64 ( %ld, %#lx(%s), %#lx, %ld )", ARG1, ARG2,
-         (char*)ARG2, ARG3, ARG4);
+   PRINT("sys_fstatat64 ( %ld, %#lx(%s), %#lx, %ld )", SARG1, ARG2,
+         (HChar*)ARG2, ARG3, SARG4);
    PRE_REG_READ4(long, "fstatat64", int, fildes, const char *, path,
                  struct stat64 *, buf, int, flag);
    if (ARG2)
@@ -655,15 +655,15 @@ PRE(sys_openat64)
 
    if (ARG3 & VKI_O_CREAT) {
       /* 4-arg version */
-      PRINT("sys_openat64 ( %ld, %#lx(%s), %ld, %ld )", ARG1, ARG2,
-            (char*)ARG2, ARG3, ARG4);
+      PRINT("sys_openat64 ( %ld, %#lx(%s), %ld, %ld )", SARG1, ARG2,
+            (HChar*)ARG2, SARG3, SARG4);
       PRE_REG_READ4(long, "openat64", int, fildes, const char *, filename,
                     int, flags, vki_mode_t, mode);
    }
    else {
       /* 3-arg version */
-      PRINT("sys_openat64 ( %ld, %#lx(%s), %ld )", ARG1, ARG2, (char*)ARG2,
-            ARG3);
+      PRINT("sys_openat64 ( %ld, %#lx(%s), %ld )", SARG1, ARG2, (HChar*)ARG2,
+            SARG3);
       PRE_REG_READ3(long, "openat64", int, fildes, const char *, filename,
                     int, flags);
    }
@@ -688,7 +688,7 @@ POST(sys_openat64)
 PRE(sys_llseek32)
 {
    /* offset_t llseek(int fildes, offset_t offset, int whence); */
-   PRINT("sys_llseek32 ( %ld, %#lx, %#lx, %ld )", ARG1, ARG2, ARG3, ARG4);
+   PRINT("sys_llseek32 ( %ld, %#lx, %#lx, %ld )", SARG1, ARG2, ARG3, SARG4);
    PRE_REG_READ4(long, "llseek", int, fildes, vki_u32, offset_low,
                  vki_u32, offset_high, int, whence);
 
@@ -716,7 +716,7 @@ PRE(sys_mmap64)
    vg_assert(sizeof(u) == sizeof(offset));
 
    PRINT("sys_mmap ( %#lx, %#lx, %#lx, %#lx, %ld, %#lx, %#lx )",
-         ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7);
+         ARG1, ARG2, ARG3, ARG4, SARG5, ARG6, ARG7);
    PRE_REG_READ7(long, "mmap", void *, start, vki_size_t, length,
                  int, prot, int, flags, int, fd, uint32_t, offlo,
                  uint32_t, offhi);
@@ -733,7 +733,7 @@ PRE(sys_mmap64)
 PRE(sys_stat64)
 {
    /* int stat64(const char *path, struct stat64 *buf); */
-   PRINT("sys_stat64 ( %#lx(%s), %#lx )", ARG1, (char*)ARG1, ARG2);
+   PRINT("sys_stat64 ( %#lx(%s), %#lx )", ARG1, (HChar*)ARG1, ARG2);
    PRE_REG_READ2(long, "stat64", const char *, path, struct stat64 *, buf);
 
    PRE_MEM_RASCIIZ("stat64(path)", ARG1);
@@ -748,7 +748,7 @@ POST(sys_stat64)
 PRE(sys_lstat64)
 {
    /* int lstat64(const char *path, struct stat64 *buf); */
-   PRINT("sys_lstat64 ( %#lx(%s), %#lx )", ARG1, (char*)ARG1, ARG2);
+   PRINT("sys_lstat64 ( %#lx(%s), %#lx )", ARG1, (HChar*)ARG1, ARG2);
    PRE_REG_READ2(long, "lstat64", const char *, path, struct stat64 *, buf);
 
    PRE_MEM_RASCIIZ("lstat64(path)", ARG1);
@@ -763,7 +763,7 @@ POST(sys_lstat64)
 PRE(sys_fstat64)
 {
    /* int fstat64(int fildes, struct stat64 *buf); */
-   PRINT("sys_fstat64 ( %ld, %#lx )", ARG1, ARG2);
+   PRINT("sys_fstat64 ( %ld, %#lx )", SARG1, ARG2);
    PRE_REG_READ2(long, "fstat64", int, fildes, struct stat64 *, buf);
    PRE_MEM_WRITE("fstat64(buf)", ARG2, sizeof(struct vki_stat64));
 
@@ -814,7 +814,7 @@ PRE(sys_fstatvfs64)
 {
    /* int fstatvfs64(int fd, struct statvfs64 *buf); */
    *flags |= SfMayBlock;
-   PRINT("sys_fstatvfs64 ( %ld, %#lx )", ARG1, ARG2);
+   PRINT("sys_fstatvfs64 ( %ld, %#lx )", SARG1, ARG2);
    PRE_REG_READ2(long, "fstatvfs64", int, fd, struct vki_statvfs64 *, buf);
    PRE_MEM_WRITE("fstatvfs64(buf)", ARG2, sizeof(struct vki_statvfs64));
 
@@ -832,7 +832,7 @@ PRE(sys_setrlimit64)
 {
    /* int setrlimit64(int resource, struct rlimit64 *rlim); */
    struct vki_rlimit64 *limit = (struct vki_rlimit64 *)ARG2;
-   PRINT("sys_setrlimit64 ( %ld, %#lx )", ARG1, ARG2);
+   PRINT("sys_setrlimit64 ( %ld, %#lx )", SARG1, ARG2);
    PRE_REG_READ2(long, "setrlimit64", int, resource, struct rlimit64 *, rlim);
    PRE_MEM_READ("setrlimit64(rlim)", ARG2, sizeof(struct vki_rlimit64));
 
@@ -881,7 +881,7 @@ PRE(sys_setrlimit64)
 PRE(sys_getrlimit64)
 {
    /* int getrlimit64(int resource, struct rlimit64 *rlim); */
-   PRINT("sys_getrlimit64 ( %ld, %#lx )", ARG1, ARG2);
+   PRINT("sys_getrlimit64 ( %ld, %#lx )", SARG1, ARG2);
    PRE_REG_READ2(long, "getrlimit64",
                  int, resource, struct rlimit64 *, rlim);
    PRE_MEM_WRITE("getrlimit64(rlim)", ARG2, sizeof(struct vki_rlimit64));
@@ -916,8 +916,8 @@ PRE(sys_pread64)
                         uint32_t offset_1, uint32_t offset_2);
     */
    *flags |= SfMayBlock;
-   PRINT("sys_pread64 ( %ld, %#lx, %ld, %ld, %ld )",
-         ARG1, ARG2, ARG3, ARG4, ARG5);
+   PRINT("sys_pread64 ( %ld, %#lx, %lu, %#lx, %#lx )",
+         SARG1, ARG2, ARG3, ARG4, ARG5);
    PRE_REG_READ5(long, "pread64", int, fd, void *, buf, vki_size32_t, count,
                  vki_uint32_t, offset_1, vki_uint32_t, offset_2);
    PRE_MEM_WRITE("pread64(buf)", ARG2, ARG3);
@@ -938,8 +938,8 @@ PRE(sys_pwrite64)
                          uint32_t offset_1, uint32_t offset_2);
     */
    *flags |= SfMayBlock;
-   PRINT("sys_pwrite64 ( %ld, %#lx, %ld, %ld, %ld )",
-         ARG1, ARG2, ARG3, ARG4, ARG5);
+   PRINT("sys_pwrite64 ( %ld, %#lx, %lu, %#lx, %#lx )",
+         SARG1, ARG2, ARG3, ARG4, ARG5);
    PRE_REG_READ5(long, "pwrite64", int, fd, void *, buf, vki_size32_t, count,
                  vki_uint32_t, offset_1, vki_uint32_t, offset_2);
    PRE_MEM_READ("pwrite64(buf)", ARG2, ARG3);
@@ -957,14 +957,14 @@ PRE(sys_open64)
 
    if (ARG2 & VKI_O_CREAT) {
       /* 3-arg version */
-      PRINT("sys_open64 ( %#lx(%s), %ld, %ld )", ARG1, (char*)ARG1, ARG2,
-            ARG3);
+      PRINT("sys_open64 ( %#lx(%s), %#lx, %ld )", ARG1, (HChar*)ARG1, ARG2,
+            SARG3);
       PRE_REG_READ3(long, "open64", const char *, filename, int, flags,
                     vki_mode_t, mode);
    }
    else {
       /* 2-arg version */
-      PRINT("sys_open64 ( %#lx(%s), %ld )", ARG1, (char*)ARG1, ARG2);
+      PRINT("sys_open64 ( %#lx(%s), %#lx )", ARG1, (HChar*)ARG1, ARG2);
       PRE_REG_READ2(long, "open64", const char *, filename, int, flags);
    }
    PRE_MEM_RASCIIZ("open(filename)", ARG1);

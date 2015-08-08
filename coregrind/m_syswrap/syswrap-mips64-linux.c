@@ -320,15 +320,15 @@ DECL_TEMPLATE (mips_linux, sys_pipe);
 
 PRE(sys_tee)
 {
-   PRINT("sys_tee ( %ld, %ld, %ld, %ld )", ARG1, ARG2, ARG3, ARG4);
+   PRINT("sys_tee ( %ld, %ld, %lu, %#lx )", SARG1, SARG2, ARG3, ARG4);
    PRE_REG_READ4(long, "sys_tee", int, fdin, int, fdout, vki_size_t, len,
                  int, flags);
 }
 
 PRE(sys_splice)
 {
-   PRINT("sys_splice ( %ld, %ld, %ld, %ld, %ld, %ld )", ARG1, ARG2, ARG3,
-                                                        ARG4, ARG5, ARG6);
+   PRINT("sys_splice ( %ld, %#lx, %ld, %#lx, %lu, %#lx )",
+         SARG1, ARG2, SARG3, ARG4, ARG5, ARG6);
 
    PRE_REG_READ6(long, "sys_splice", int, fdin, vki_loff_t, sizein, int,
                  fdout, vki_loff_t, sizeout, vki_size_t, len, int, flags);
@@ -336,34 +336,34 @@ PRE(sys_splice)
 
 PRE(sys_vmsplice)
 {
-   PRINT("sys_vmsplice ( %ld, %ld, %ld, %ld )", ARG1, ARG2, ARG3, ARG4);
+   PRINT("sys_vmsplice ( %ld, %#lx, %lu, %ld )", SARG1, ARG2, ARG3, SARG4);
    PRE_REG_READ4(long, "sys_vmsplice", int, fdin, struct vki_iovec *, v,
                  vki_size_t, len, int, flags);
 }
 
 PRE(sys_unshare)
 {
-   PRINT("sys_unshare ( %ld )", ARG1);
-   PRE_REG_READ1(long, "sys_unshare", int, flags);
+   PRINT("sys_unshare ( %lu )", ARG1);
+   PRE_REG_READ1(long, "sys_unshare", unsigned long, flags);
 }
 
 PRE(sys_sched_rr_get_interval)
 {
-   PRINT("sys_sched_rr_get_interval ( %ld, %#lx)", ARG1, ARG2);
-   PRE_REG_READ2(long, "sched_rr_get_interval", int, flags,
+   PRINT("sys_sched_rr_get_interval ( %ld, %#lx)", SARG1, ARG2);
+   PRE_REG_READ2(long, "sched_rr_get_interval", vki_pid_t, pid,
                  struct timespec *, timer);
    *flags |= SfMayBlock;
 }
 
 PRE(sys_ustat)
 {
-   PRINT("sys_ustat ( %ld, %#lx)", ARG1, ARG2);
+   PRINT("sys_ustat ( %#lx, %#lx)", ARG1, ARG2);
    PRE_REG_READ2(long, "ustat", int, flags, const void *, path);
 }
 
 PRE(sys_swapon)
 {
-   PRINT("sys_swapon ( %#lx, %ld )", ARG1, ARG2);
+   PRINT("sys_swapon ( %#lx, %#lx )", ARG1, ARG2);
    PRE_REG_READ2(long, "swapon", const void *, path, int, flags);
 }
 
@@ -375,7 +375,7 @@ PRE(sys_swapoff)
 
 PRE(sys_sysfs)
 {
-   PRINT("sys_sysfs ( %ld, %ld, %#lx )", ARG1, ARG2, ARG3);
+   PRINT("sys_sysfs ( %ld, %#lx, %#lx )", SARG1, ARG2, ARG3);
    PRE_REG_READ3(long, "sysfs", int, flags, int, desc, const void *, path);
 }
 
@@ -384,7 +384,7 @@ PRE(sys_cacheflush)
 {
    PRINT("cacheflush (%lx, %lx, %lx)", ARG1, ARG2, ARG3);
    PRE_REG_READ3(long, "cacheflush", unsigned long, addr,
-                 int, nbytes, int, cache);
+                 unsigned long, nbytes, unsigned int, cache);
    VG_ (discard_translations) ((Addr)ARG1, (ULong) ARG2,
                                "PRE(sys_cacheflush)");
    SET_STATUS_Success(0);
@@ -392,28 +392,33 @@ PRE(sys_cacheflush)
 
 PRE(sys_reboot)
 {
-   PRINT("sys_reboot ( %ld )", ARG1);
-   PRE_REG_READ1(int, "reboot", int, flags);
+   PRINT("sys_reboot ( %ld, %ld, %lu, %#lx )", SARG1, ARG2, ARG3, ARG4);
+   // An approximation. ARG4 is only read conditionally by the kernel
+   PRE_REG_READ4(int, "reboot",
+                 int, magic1, int, magic2, unsigned int, cmd,
+                 void *, arg);
+   
    *flags |= SfMayBlock;
 }
 
 PRE(sys_setdomainname)
 {
-   PRINT ("sys_setdomainname ( %#lx, %ld )", ARG1, ARG2);
+   PRINT ("sys_setdomainname ( %#lx, %ld )", ARG1, SARG2);
    PRE_REG_READ2 (long, "setdomainname", const void *, name, int, len);
 }
 
 PRE(sys_sethostname)
 {
-   PRINT ("sys_sethostname ( %ld, %ld )", ARG1, ARG2);
+   PRINT ("sys_sethostname ( %#lx, %ld )", ARG1, SARG2);
    PRE_REG_READ2 (long, "sethostname", const void *, name, int, len);
 }
 
 PRE(sys_ptrace)
 {
-   PRINT("sys_ptrace ( %ld, %ld, %#lx, %#lx )", ARG1, ARG2, ARG3, ARG4);
-   PRE_REG_READ4(int, "ptrace", long, request, long, pid, long, addr,
-                 long, data);
+   PRINT("sys_ptrace ( %ld, %ld, %#lx, %#lx )", SARG1, SARG2, ARG3, ARG4);
+   PRE_REG_READ4(int, "ptrace",
+                 long, request, long, pid, unsigned long, addr,
+                 unsigned long, data);
    switch (ARG1) {
       case VKI_PTRACE_PEEKTEXT:
       case VKI_PTRACE_PEEKDATA:
@@ -462,8 +467,8 @@ POST(sys_ptrace)
 PRE (sys_mmap)
 {
    SysRes r;
-   PRINT("sys_mmap ( %#lx, %llu, %lu, %lu, %lu, %ld )", ARG1, (ULong)ARG2,
-                                                        ARG3, ARG4, ARG5, ARG6);
+   PRINT("sys_mmap ( %#lx, %lu, %ld, %ld, %ld, %lu )",
+         ARG1, ARG2, SARG3, SARG4, SARG5, ARG6);
    PRE_REG_READ6(long, "mmap", unsigned long, start, vki_size_t, length,
                  int, prot, int, flags, int, fd, unsigned long, offset);
    r = ML_(generic_PRE_sys_mmap)(tid, ARG1, ARG2, ARG3, ARG4, ARG5,

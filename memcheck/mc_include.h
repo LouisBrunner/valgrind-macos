@@ -320,7 +320,7 @@ enum {
    MCPE_LAST
 };
 
-extern UInt MC_(event_ctr)[MCPE_LAST];
+extern ULong MC_(event_ctr)[MCPE_LAST];
 
 #  define PROF_EVENT(ev)                           \
    do { tl_assert((ev) >= 0 && (ev) < MCPE_LAST);  \

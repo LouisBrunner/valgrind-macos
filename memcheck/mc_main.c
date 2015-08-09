@@ -6746,7 +6746,7 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
 
 #ifdef MC_PROFILE_MEMORY
 
-UInt  MC_(event_ctr)[MCPE_LAST];
+ULong  MC_(event_ctr)[MCPE_LAST];
 
 /* Event counter names. Use the name of the function that increases the
    event counter. Drop any MC_() and mc_ prefices. */
@@ -6896,7 +6896,7 @@ static void done_prof_mem ( void )
       if (MC_(event_ctr)[i] > 0) {
          spaced = False;
          ++n;
-         VG_(printf)( "prof mem event %3d: %9u   %s\n", 
+         VG_(printf)( "prof mem event %3d: %11llu   %s\n", 
                       i, MC_(event_ctr)[i],
                       MC_(event_ctr_name)[i]);
       }

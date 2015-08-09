@@ -3666,8 +3666,8 @@ Bool consider_vars_in_frame ( /*MOD*/XArray* /* of HChar */ dname1,
    XArray itself.
 */
 Bool VG_(get_data_description)( 
-        /*MOD*/ void* /* really, XArray* of HChar */ dname1v,
-        /*MOD*/ void* /* really, XArray* of HChar */ dname2v,
+        /*MOD*/ XArray* /* of HChar */ dname1,
+        /*MOD*/ XArray* /* of HChar */ dname2,
         Addr data_addr
      )
 {
@@ -3680,9 +3680,6 @@ Bool VG_(get_data_description)(
    Bool       found;
    DebugInfo* di;
    Word       j;
-
-   XArray*    dname1 = (XArray*)dname1v;
-   XArray*    dname2 = (XArray*)dname2v;
 
    if (0) VG_(printf)("get_data_description: dataaddr %#lx\n", data_addr);
    /* First, see if data_addr is (or is part of) a global variable.
@@ -3978,8 +3975,8 @@ void analyse_deps ( /*MOD*/XArray* /* of FrameBlock */ blocks,
    point.  If 'arrays_only' is True, only array-typed blocks are
    returned; otherwise blocks of all types are returned. */
 
-void* /* really, XArray* of StackBlock */
-      VG_(di_get_stack_blocks_at_ip)( Addr ip, Bool arrays_only )
+XArray* /* of StackBlock */
+VG_(di_get_stack_blocks_at_ip)( Addr ip, Bool arrays_only )
 {
    /* This is a derivation of consider_vars_in_frame() above. */
    Word       i;
@@ -4092,9 +4089,8 @@ void* /* really, XArray* of StackBlock */
    array-typed blocks are returned; otherwise blocks of all types are
    returned. */
 
-void* /* really, XArray* of GlobalBlock */
-      VG_(di_get_global_blocks_from_dihandle) ( ULong di_handle,
-                                                Bool  arrays_only )
+XArray* /* of GlobalBlock */
+VG_(di_get_global_blocks_from_dihandle) ( ULong di_handle, Bool  arrays_only )
 {
    /* This is a derivation of consider_vars_in_frame() above. */
 

@@ -32,6 +32,7 @@
 #define __PUB_TOOL_DEBUGINFO_H
 
 #include "pub_tool_basics.h"   // VG_ macro
+#include "pub_tool_xarray.h"   // XArray
 
 /*====================================================================*/
 /*=== Obtaining debug information                                  ===*/
@@ -113,8 +114,8 @@ extern Bool VG_(get_datasym_and_offset)( Addr data_addr,
    XArray itself.
 */
 Bool VG_(get_data_description)( 
-        /*MOD*/ void* /* really, XArray* of HChar */ dname1v,
-        /*MOD*/ void* /* really, XArray* of HChar */ dname2v,
+        /*MOD*/ XArray* /* of HChar */ dname1v,
+        /*MOD*/ XArray* /* of HChar */ dname2v,
         Addr data_addr
      );
 
@@ -178,8 +179,8 @@ typedef
    }
    StackBlock;
 
-extern void* /* really, XArray* of StackBlock */
-             VG_(di_get_stack_blocks_at_ip)( Addr ip, Bool arrays_only );
+extern XArray* /* of StackBlock */
+VG_(di_get_stack_blocks_at_ip)( Addr ip, Bool arrays_only );
 
 
 /* Get an array of GlobalBlock which describe the global blocks owned
@@ -199,7 +200,7 @@ typedef
    }
    GlobalBlock;
 
-extern void* /* really, XArray* of GlobalBlock */
+extern XArray* /* of GlobalBlock */
 VG_(di_get_global_blocks_from_dihandle) ( ULong di_handle,
                                           Bool  arrays_only );
 

@@ -1891,7 +1891,14 @@ AC_GCC_WARNING_SUBST([write-strings], [FLAG_W_WRITE_STRINGS])
 AC_GCC_WARNING_SUBST([empty-body], [FLAG_W_EMPTY_BODY])
 AC_GCC_WARNING_SUBST([format], [FLAG_W_FORMAT])
 # Disabled for now until all platforms are clean
-# AC_GCC_WARNING_SUBST([format-signedness], [FLAG_W_FORMAT_SIGNEDNESS])
+format_checking_enabled=no
+#format_checking_enabled=yes
+if test "$format_checking_enabled" = "yes"; then
+   AC_GCC_WARNING_SUBST([format-signedness], [FLAG_W_FORMAT_SIGNEDNESS])
+else
+   dumy_assignment_to_avoid_syntax_errors=1
+   AC_SUBST([FLAG_W_FORMAT_SIGNEDNESS], [])
+fi
 AC_GCC_WARNING_SUBST([cast-qual], [FLAG_W_CAST_QUAL])
 AC_GCC_WARNING_SUBST([old-style-declaration], [FLAG_W_OLD_STYLE_DECLARATION])
 AC_GCC_WARNING_SUBST([ignored-qualifiers], [FLAG_W_IGNORED_QUALIFIERS])

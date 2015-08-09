@@ -1325,7 +1325,7 @@ static inline void my_exit ( int x )
       VALGRIND_PRINTF_BACKTRACE( \
          "*** memmove_chk: buffer overflow detected ***: " \
          "program terminated\n"); \
-     my_exit(127); \
+     my_exit(1); \
      /*NOTREACHED*/ \
      return NULL; \
    }
@@ -1417,7 +1417,7 @@ static inline void my_exit ( int x )
       VALGRIND_PRINTF_BACKTRACE( \
          "*** strcpy_chk: buffer overflow detected ***: " \
          "program terminated\n"); \
-     my_exit(127); \
+     my_exit(1); \
      /*NOTREACHED*/ \
      return NULL; \
    }
@@ -1452,7 +1452,7 @@ static inline void my_exit ( int x )
       VALGRIND_PRINTF_BACKTRACE( \
          "*** stpcpy_chk: buffer overflow detected ***: " \
          "program terminated\n"); \
-     my_exit(127); \
+     my_exit(1); \
      /*NOTREACHED*/ \
      return NULL; \
    }
@@ -1552,7 +1552,7 @@ static inline void my_exit ( int x )
       VALGRIND_PRINTF_BACKTRACE( \
          "*** memcpy_chk: buffer overflow detected ***: " \
          "program terminated\n"); \
-     my_exit(127); \
+     my_exit(1); \
      /*NOTREACHED*/ \
      return NULL; \
    }

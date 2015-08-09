@@ -398,12 +398,6 @@ typedef
                  unsigned long,(_qzz_len))
 
 
-#define VALGRIND_HG_ENABLE_CHECKING(_qzz_start, _qzz_len)    \
-   DO_CREQ_v_WW(_VG_USERREQ__HG_ARANGE_MAKE_TRACKED,         \
-                 void*,(_qzz_start),                         \
-                 unsigned long,(_qzz_len))
-
-
 /*  Checks the accessibility bits for addresses [zza..zza+zznbytes-1].
     If zzabits array is provided, copy the accessibility bits in zzabits.
    Return values:

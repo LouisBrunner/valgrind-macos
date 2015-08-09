@@ -957,8 +957,10 @@ static SyscallTableEntry syscall_main_table[] = {
    GENX_(__NR_setregid,          sys_setregid),          // 143
    GENX_(__NR_setgid,            sys_setgid),            // 144
    GENX_(__NR_setreuid,          sys_setreuid),          // 145
+   GENX_(__NR_setuid,            sys_setuid),            // 146
    LINX_(__NR_setresuid,         sys_setresuid),         // 147
    LINXY(__NR_getresuid,         sys_getresuid),         // 148
+   LINX_(__NR_setresgid,         sys_setresgid),         // 149
    LINXY(__NR_getresgid,         sys_getresgid),         // 150
    GENXY(__NR_times,             sys_times),             // 153
    GENX_(__NR_setpgid,           sys_setpgid),           // 154

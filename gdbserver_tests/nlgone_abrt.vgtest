@@ -10,3 +10,4 @@ argsB: --quiet -l 60 --nx ./gone
 stdinB: nlgone_abrt.stdinB.gdb
 stdoutB_filter: filter_gdb
 stderrB_filter: filter_gdb
+cleanup: rm -f vgcore.*

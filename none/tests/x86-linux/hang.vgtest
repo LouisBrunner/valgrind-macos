@@ -3,3 +3,4 @@
 # Can only be reproduced on an x86 box running a 32-bit kernel.
 prog: hang
 vgopts: -q
+cleanup: rm -f vgcore.*

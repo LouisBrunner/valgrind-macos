@@ -1,1 +1,2 @@
 prog: stack-overflow
+cleanup: rm -f vgcore.*

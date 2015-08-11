@@ -28,6 +28,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+/* Copyright 2015-2015, Tomas Jedlicka <jedlickat@gmail.com>. */
+
 /* Copyright 2013-2015, Ivo Raisr <ivosh@ivosh.net>. */
 
 /* Copyright 2013, OmniTI Computer Consulting, Inc. All rights reserved. */
@@ -7816,6 +7818,16 @@ static void repository_door_pre_mem_door_call_hook(ThreadId tid, Int fd,
                            "entity_name->rpr_entityid)", r->rpr_entityid);
             PRE_FIELD_READ("door_call(\"" VKI_REPOSITORY_DOOR_NAME "\", "
                            "entity_name->rpr_answertype)", r->rpr_answertype);
+         }
+         break;
+      case VKI_REP_PROTOCOL_ENTITY_GET_ROOT:
+         {
+            struct vki_rep_protocol_entity_root *r =
+               (struct vki_rep_protocol_entity_root *) p;
+            PRE_FIELD_READ("door_call(\"" VKI_REPOSITORY_DOOR_NAME "\", "
+                           "entity_root->rpr_entityid)", r->rpr_entityid);
+            PRE_FIELD_READ("door_call(\"" VKI_REPOSITORY_DOOR_NAME "\", "
+                           "entity_root->rpr_outid)", r->rpr_outid);
          }
          break;
       case VKI_REP_PROTOCOL_ENTITY_GET:

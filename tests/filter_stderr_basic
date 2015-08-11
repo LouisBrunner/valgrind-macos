@@ -12,8 +12,9 @@ dir=`dirname $0`
 # Remove ==pid== and --pid-- and **pid** strings 
 perl -p -e 's/(==|--|\*\*)[0-9]{1,7}\1 //' |
 
-# Remove any --pid:0: strings (debuglog level zero output)
-sed "/^--[0-9]\{1,7\}:0:*/d" |
+# Do NOT remove debug level output, i.e. lines beginning with --pid:
+# Doing so would also remove asserts from the address space manager
+# and we always to see those.
 
 # Remove "Command: line".  (If wrapping occurs, it won't remove the
 # subsequent lines...)

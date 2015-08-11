@@ -1,4 +1,4 @@
 prog: bug345887
 vgopts: -q
-stderr_filter: filter_minimal
+stderr_filter: filter_stderr
 cleanup: rm -f vgcore.*

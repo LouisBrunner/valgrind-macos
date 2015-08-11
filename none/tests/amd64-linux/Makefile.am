@@ -2,7 +2,7 @@
 include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS = \
-	filter_stderr filter_minimal
+	filter_stderr
 
 EXTRA_DIST = \
 	bug345887.stderr.exp bug345887.vgtest \

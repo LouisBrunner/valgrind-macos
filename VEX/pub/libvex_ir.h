@@ -2592,6 +2592,7 @@ typedef
 typedef
    enum {
       ILGop_INVALID=0x1D00,
+      ILGop_IdentV128, /* 128 bit vector, no conversion */
       ILGop_Ident64,   /* 64 bit, no conversion */
       ILGop_Ident32,   /* 32 bit, no conversion */
       ILGop_16Uto32,   /* 16 bit load, Z-widen to 32 */

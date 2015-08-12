@@ -168,13 +168,19 @@ extern void  amd64g_dirtyhelper_CPUID_baseline ( VexGuestAMD64State* st );
 extern void  amd64g_dirtyhelper_CPUID_sse3_and_cx16 ( VexGuestAMD64State* st );
 extern void  amd64g_dirtyhelper_CPUID_sse42_and_cx16 ( VexGuestAMD64State* st );
 extern void  amd64g_dirtyhelper_CPUID_avx_and_cx16 ( VexGuestAMD64State* st );
+extern void  amd64g_dirtyhelper_CPUID_avx2 ( VexGuestAMD64State* st );
 
 extern void  amd64g_dirtyhelper_FINIT ( VexGuestAMD64State* );
 
-extern void      amd64g_dirtyhelper_FXSAVE_ALL_EXCEPT_XMM
-                    ( VexGuestAMD64State*, HWord );
-extern VexEmNote amd64g_dirtyhelper_FXRSTOR_ALL_EXCEPT_XMM
-                    ( VexGuestAMD64State*, HWord );
+extern void amd64g_dirtyhelper_XSAVE_COMPONENT_0
+               ( VexGuestAMD64State* gst, HWord addr );
+extern void amd64g_dirtyhelper_XSAVE_COMPONENT_1_EXCLUDING_XMMREGS 
+               ( VexGuestAMD64State* gst, HWord addr );
+
+extern VexEmNote amd64g_dirtyhelper_XRSTOR_COMPONENT_0
+                    ( VexGuestAMD64State* gst, HWord addr );
+extern VexEmNote amd64g_dirtyhelper_XRSTOR_COMPONENT_1_EXCLUDING_XMMREGS 
+                    ( VexGuestAMD64State* gst, HWord addr );
 
 extern ULong amd64g_dirtyhelper_RDTSC ( void );
 extern void  amd64g_dirtyhelper_RDTSCP ( VexGuestAMD64State* st );

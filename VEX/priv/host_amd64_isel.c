@@ -4298,21 +4298,35 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
       UChar szB = 0; /* invalid */
       switch (lg->cvt) {
-         case ILGop_Ident32: szB = 4; break;
-         case ILGop_Ident64: szB = 8; break;
+         case ILGop_Ident32:   szB = 4;  break;
+         case ILGop_Ident64:   szB = 8;  break;
+         case ILGop_IdentV128: szB = 16; break;
          default: break;
       }
       if (szB == 0)
          goto stmt_fail;
 
-      AMD64AMode* amAddr = iselIntExpr_AMode(env, lg->addr);
-      HReg rAlt  = iselIntExpr_R(env, lg->alt);
-      HReg rDst  = lookupIRTemp(env, lg->dst);
+      AMD64AMode* amAddr
+         = iselIntExpr_AMode(env, lg->addr);
+      HReg rAlt
+         = szB == 16 ? iselVecExpr(env, lg->alt)
+                     : iselIntExpr_R(env, lg->alt);
+      HReg rDst
+         = lookupIRTemp(env, lg->dst);
+
       /* Get the alt value into the dst.  We'll do a conditional load
          which overwrites it -- or not -- with loaded data. */
-      addInstr(env, mk_iMOVsd_RR(rAlt, rDst));
+      if (szB == 16) {
+         addInstr(env, mk_vMOVsd_RR(rAlt, rDst));
+      } else {
+         addInstr(env, mk_iMOVsd_RR(rAlt, rDst));
+      }
       AMD64CondCode cc = iselCondCode(env, lg->guard);
-      addInstr(env, AMD64Instr_CLoad(cc, szB, amAddr, rDst));
+      if (szB == 16) {
+         addInstr(env, AMD64Instr_SseCLoad(cc, amAddr, rDst));
+      } else {
+         addInstr(env, AMD64Instr_CLoad(cc, szB, amAddr, rDst));
+      }
       return;
    }
 
@@ -4324,17 +4338,26 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
       UChar szB = 0; /* invalid */
       switch (typeOfIRExpr(env->type_env, sg->data)) {
-         case Ity_I32: szB = 4; break;
-         case Ity_I64: szB = 8; break;
+         case Ity_I32:  szB = 4; break;
+         case Ity_I64:  szB = 8; break;
+         case Ity_V128: szB = 16; break;
          default: break;
       }
       if (szB == 0)
          goto stmt_fail;
 
-      AMD64AMode*   amAddr = iselIntExpr_AMode(env, sg->addr);
-      HReg          rSrc   = iselIntExpr_R(env, sg->data);
-      AMD64CondCode cc     = iselCondCode(env, sg->guard);
-      addInstr(env, AMD64Instr_CStore(cc, szB, rSrc, amAddr));
+      AMD64AMode* amAddr
+         = iselIntExpr_AMode(env, sg->addr);
+      HReg rSrc
+         = szB == 16 ? iselVecExpr(env, sg->data)
+                     : iselIntExpr_R(env, sg->data);
+      AMD64CondCode cc
+         = iselCondCode(env, sg->guard);
+      if (szB == 16) {
+         addInstr(env, AMD64Instr_SseCStore(cc, rSrc, amAddr));
+      } else {
+         addInstr(env, AMD64Instr_CStore(cc, szB, rSrc, amAddr));
+      }
       return;
    }
 

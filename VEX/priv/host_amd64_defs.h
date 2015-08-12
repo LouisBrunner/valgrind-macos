@@ -390,6 +390,8 @@ typedef
       Ain_SseSDSS,     /* scalar float32 to/from float64 */
       Ain_SseLdSt,     /* SSE load/store 32/64/128 bits, no alignment
                           constraints, upper 96/64/0 bits arbitrary */
+      Ain_SseCStore,   /* SSE conditional store, 128 bit only, any alignment */
+      Ain_SseCLoad,    /* SSE conditional load, 128 bit only, any alignment */
       Ain_SseLdzLO,    /* SSE load low 32/64 bits, zero remainder of reg */
       Ain_Sse32Fx4,    /* SSE binary, 32Fx4 */
       Ain_Sse32FLo,    /* SSE binary, 32F in lowest lane only */
@@ -642,6 +644,16 @@ typedef
             AMD64AMode* addr;
          } SseLdSt;
          struct {
+            AMD64CondCode cond; /* may not be Acc_ALWAYS */
+            HReg          src;
+            AMD64AMode*   addr;
+         } SseCStore;
+         struct {
+            AMD64CondCode cond; /* may not be Acc_ALWAYS */
+            AMD64AMode*   addr;
+            HReg          dst;
+         } SseCLoad;
+         struct {
             Int         sz; /* 4 or 8 only */
             HReg        reg;
             AMD64AMode* addr;
@@ -751,6 +763,8 @@ extern AMD64Instr* AMD64Instr_SseSI2SF   ( Int szS, Int szD, HReg src, HReg dst 
 extern AMD64Instr* AMD64Instr_SseSF2SI   ( Int szS, Int szD, HReg src, HReg dst );
 extern AMD64Instr* AMD64Instr_SseSDSS    ( Bool from64, HReg src, HReg dst );
 extern AMD64Instr* AMD64Instr_SseLdSt    ( Bool isLoad, Int sz, HReg, AMD64AMode* );
+extern AMD64Instr* AMD64Instr_SseCStore  ( AMD64CondCode, HReg, AMD64AMode* );
+extern AMD64Instr* AMD64Instr_SseCLoad   ( AMD64CondCode, AMD64AMode*, HReg );
 extern AMD64Instr* AMD64Instr_SseLdzLO   ( Int sz, HReg, AMD64AMode* );
 extern AMD64Instr* AMD64Instr_Sse32Fx4   ( AMD64SseOp, HReg, HReg );
 extern AMD64Instr* AMD64Instr_Sse32FLo   ( AMD64SseOp, HReg, HReg );

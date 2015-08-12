@@ -349,6 +349,13 @@ IRExpr* doScalarWidening ( Int szSmall, Int szBig, Bool signd, IRExpr* src )
    vpanic("doScalarWidening(amd64)");
 }
 
+static
+void putGuarded ( Int gstOffB, IRExpr* guard, IRExpr* value )
+{
+   IRType ty = typeOfIRExpr(irsb->tyenv, value);
+   stmt( IRStmt_Put(gstOffB,
+                    IRExpr_ITE(guard, value, IRExpr_Get(gstOffB, ty))) );
+}
 
 
 /*------------------------------------------------------------*/
@@ -5195,6 +5202,52 @@ static IRExpr* get_FPU_sw ( void )
 }
 
 
+/* Generate a dirty helper call that initialises the x87 state a la
+   FINIT.  If |guard| is NULL, it is done unconditionally.  Otherwise
+   |guard| is used as a guarding condition.
+*/
+static void gen_FINIT_SEQUENCE ( IRExpr* guard )
+{
+   /* Uses dirty helper: 
+         void amd64g_do_FINIT ( VexGuestAMD64State* ) */
+   IRDirty* d  = unsafeIRDirty_0_N ( 
+                    0/*regparms*/, 
+                    "amd64g_dirtyhelper_FINIT", 
+                    &amd64g_dirtyhelper_FINIT,
+                    mkIRExprVec_1( IRExpr_BBPTR() )
+                 );
+
+   /* declare we're writing guest state */
+   d->nFxState = 5;
+   vex_bzero(&d->fxState, sizeof(d->fxState));
+
+   d->fxState[0].fx     = Ifx_Write;
+   d->fxState[0].offset = OFFB_FTOP;
+   d->fxState[0].size   = sizeof(UInt);
+
+   d->fxState[1].fx     = Ifx_Write;
+   d->fxState[1].offset = OFFB_FPREGS;
+   d->fxState[1].size   = 8 * sizeof(ULong);
+
+   d->fxState[2].fx     = Ifx_Write;
+   d->fxState[2].offset = OFFB_FPTAGS;
+   d->fxState[2].size   = 8 * sizeof(UChar);
+
+   d->fxState[3].fx     = Ifx_Write;
+   d->fxState[3].offset = OFFB_FPROUND;
+   d->fxState[3].size   = sizeof(ULong);
+
+   d->fxState[4].fx     = Ifx_Write;
+   d->fxState[4].offset = OFFB_FC3210;
+   d->fxState[4].size   = sizeof(ULong);
+
+   if (guard)
+      d->guard = guard;
+
+   stmt( IRStmt_Dirty(d) );
+}
+
+
 /* ------------------------------------------------------- */
 /* Given all that stack-mangling junk, we can now go ahead
    and describe FP instructions. 
@@ -6309,41 +6362,7 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                break;
 
             case 0xE3: {
-               /* Uses dirty helper: 
-                     void amd64g_do_FINIT ( VexGuestAMD64State* ) */
-               IRDirty* d  = unsafeIRDirty_0_N ( 
-                                0/*regparms*/, 
-                                "amd64g_dirtyhelper_FINIT", 
-                                &amd64g_dirtyhelper_FINIT,
-                                mkIRExprVec_1( IRExpr_BBPTR() )
-                             );
-
-               /* declare we're writing guest state */
-               d->nFxState = 5;
-               vex_bzero(&d->fxState, sizeof(d->fxState));
-
-               d->fxState[0].fx     = Ifx_Write;
-               d->fxState[0].offset = OFFB_FTOP;
-               d->fxState[0].size   = sizeof(UInt);
-
-               d->fxState[1].fx     = Ifx_Write;
-               d->fxState[1].offset = OFFB_FPREGS;
-               d->fxState[1].size   = 8 * sizeof(ULong);
-
-               d->fxState[2].fx     = Ifx_Write;
-               d->fxState[2].offset = OFFB_FPTAGS;
-               d->fxState[2].size   = 8 * sizeof(UChar);
-
-               d->fxState[3].fx     = Ifx_Write;
-               d->fxState[3].offset = OFFB_FPROUND;
-               d->fxState[3].size   = sizeof(ULong);
-
-               d->fxState[4].fx     = Ifx_Write;
-               d->fxState[4].offset = OFFB_FC3210;
-               d->fxState[4].size   = sizeof(ULong);
-
-               stmt( IRStmt_Dirty(d) );
-
+               gen_FINIT_SEQUENCE(NULL/*no guarding condition*/);
                DIP("fninit\n");
                break;
             }
@@ -9875,6 +9894,10 @@ static void gen_SEGV_if_not_32_aligned ( IRTemp effective_addr ) {
    gen_SEGV_if_not_XX_aligned(effective_addr, 32-1);
 }
 
+static void gen_SEGV_if_not_64_aligned ( IRTemp effective_addr ) {
+   gen_SEGV_if_not_XX_aligned(effective_addr, 64-1);
+}
+
 /* Helper for deciding whether a given insn (starting at the opcode
    byte) may validly be used with a LOCK prefix.  The following insns
    may be used with LOCK when their destination operand is in memory.
@@ -11550,6 +11573,495 @@ static Long dis_LDMXCSR ( const VexAbiInfo* vbi, Prefix pfx,
 }
 
 
+static void gen_XSAVE_SEQUENCE ( IRTemp addr, IRTemp rfbm )
+{
+   /* ------ rfbm[0] gates the x87 state ------ */
+
+   /* Uses dirty helper: 
+         void amd64g_do_XSAVE_COMPONENT_0 ( VexGuestAMD64State*, ULong )
+   */
+   IRDirty* d0 = unsafeIRDirty_0_N (
+                    0/*regparms*/, 
+                    "amd64g_dirtyhelper_XSAVE_COMPONENT_0",
+                    &amd64g_dirtyhelper_XSAVE_COMPONENT_0,
+                    mkIRExprVec_2( IRExpr_BBPTR(), mkexpr(addr) )
+                 );
+   d0->guard = binop(Iop_CmpEQ64, binop(Iop_And64, mkexpr(rfbm), mkU64(1)),
+                     mkU64(1));
+
+   /* Declare we're writing memory.  Really, bytes 24 through 31
+      (MXCSR and MXCSR_MASK) aren't written, but we can't express more
+      than 1 memory area here, so just mark the whole thing as
+      written. */
+   d0->mFx   = Ifx_Write;
+   d0->mAddr = mkexpr(addr);
+   d0->mSize = 160;
+
+   /* declare we're reading guest state */
+   d0->nFxState = 5;
+   vex_bzero(&d0->fxState, sizeof(d0->fxState));
+
+   d0->fxState[0].fx     = Ifx_Read;
+   d0->fxState[0].offset = OFFB_FTOP;
+   d0->fxState[0].size   = sizeof(UInt);
+
+   d0->fxState[1].fx     = Ifx_Read;
+   d0->fxState[1].offset = OFFB_FPREGS;
+   d0->fxState[1].size   = 8 * sizeof(ULong);
+
+   d0->fxState[2].fx     = Ifx_Read;
+   d0->fxState[2].offset = OFFB_FPTAGS;
+   d0->fxState[2].size   = 8 * sizeof(UChar);
+
+   d0->fxState[3].fx     = Ifx_Read;
+   d0->fxState[3].offset = OFFB_FPROUND;
+   d0->fxState[3].size   = sizeof(ULong);
+
+   d0->fxState[4].fx     = Ifx_Read;
+   d0->fxState[4].offset = OFFB_FC3210;
+   d0->fxState[4].size   = sizeof(ULong);
+
+   stmt( IRStmt_Dirty(d0) );
+
+   /* ------ rfbm[1] gates the SSE state ------ */
+
+   IRTemp rfbm_1    = newTemp(Ity_I64);
+   IRTemp rfbm_1or2 = newTemp(Ity_I64);
+   assign(rfbm_1,    binop(Iop_And64, mkexpr(rfbm), mkU64(2)));
+   assign(rfbm_1or2, binop(Iop_And64, mkexpr(rfbm), mkU64(6)));
+
+   IRExpr* guard_1    = binop(Iop_CmpEQ64, mkexpr(rfbm_1),    mkU64(2));
+   IRExpr* guard_1or2 = binop(Iop_CmpNE64, mkexpr(rfbm_1or2), mkU64(0));
+
+   /* Uses dirty helper: 
+         void amd64g_do_XSAVE_COMPONENT_1_EXCLUDING_XMMREGS
+                 ( VexGuestAMD64State*, ULong )
+      This creates only MXCSR and MXCSR_MASK.  We need to do this if
+      either components 1 (SSE) or 2 (AVX) are requested.  Hence the
+      guard condition is a bit more complex.
+   */
+   IRDirty* d1 = unsafeIRDirty_0_N (
+                    0/*regparms*/, 
+                    "amd64g_dirtyhelper_XSAVE_COMPONENT_1_EXCLUDING_XMMREGS",
+                    &amd64g_dirtyhelper_XSAVE_COMPONENT_1_EXCLUDING_XMMREGS,
+                    mkIRExprVec_2( IRExpr_BBPTR(), mkexpr(addr) )
+                 );
+   d1->guard = guard_1or2;
+
+   /* Declare we're writing memory: MXCSR and MXCSR_MASK.  Note that
+      the code for rbfm[0] just above claims a write of 0 .. 159, so
+      this duplicates it.  But at least correctly connects 24 .. 31 to
+      the MXCSR guest state representation (SSEROUND field). */
+   d1->mFx   = Ifx_Write;
+   d1->mAddr = binop(Iop_Add64, mkexpr(addr), mkU64(24));
+   d1->mSize = 8;
+
+   /* declare we're reading guest state */
+   d1->nFxState = 1;
+   vex_bzero(&d1->fxState, sizeof(d1->fxState));
+
+   d1->fxState[0].fx     = Ifx_Read;
+   d1->fxState[0].offset = OFFB_SSEROUND;
+   d1->fxState[0].size   = sizeof(ULong);
+
+   /* Call the helper.  This creates MXCSR and MXCSR_MASK but nothing
+      else.  We do the actual register array, XMM[0..15], separately,
+      in order that any undefinedness in the XMM registers is tracked
+      separately by Memcheck and does not "infect" the in-memory
+      shadow for the other parts of the image. */
+   stmt( IRStmt_Dirty(d1) );
+
+   /* And now the XMMs themselves. */
+   UInt reg;
+   for (reg = 0; reg < 16; reg++) {
+      stmt( IRStmt_StoreG(
+               Iend_LE,
+               binop(Iop_Add64, mkexpr(addr), mkU64(160 + reg * 16)),
+               getXMMReg(reg),
+               guard_1
+      ));
+   }
+
+   /* ------ rfbm[2] gates the AVX state ------ */
+   /* Component 2 is just a bunch of register saves, so we'll do it
+      inline, just to be simple and to be Memcheck friendly. */
+
+   IRTemp rfbm_2 = newTemp(Ity_I64);
+   assign(rfbm_2, binop(Iop_And64, mkexpr(rfbm), mkU64(4)));
+
+   IRExpr* guard_2 = binop(Iop_CmpEQ64, mkexpr(rfbm_2), mkU64(4));
+
+   for (reg = 0; reg < 16; reg++) {
+      stmt( IRStmt_StoreG(
+               Iend_LE,
+               binop(Iop_Add64, mkexpr(addr), mkU64(576 + reg * 16)),
+               getYMMRegLane128(reg,1),
+               guard_2
+      ));
+   }
+}
+
+
+static Long dis_XSAVE ( const VexAbiInfo* vbi,
+                        Prefix pfx, Long delta, Int sz )
+{
+   /* Note that the presence or absence of REX.W (indicated here by
+      |sz|) slightly affects the written format: whether the saved FPU
+      IP and DP pointers are 64 or 32 bits.  But the helper function
+      we call simply writes zero bits in the relevant fields, which
+      are 64 bits regardless of what REX.W is, and so it's good enough
+      (iow, equally broken) in both cases. */
+   IRTemp addr  = IRTemp_INVALID;
+   Int    alen  = 0;
+   HChar  dis_buf[50];
+   UChar  modrm = getUChar(delta);
+   vassert(!epartIsReg(modrm)); /* ensured by caller */
+   vassert(sz == 4 || sz == 8); /* ditto */
+
+   addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
+   delta += alen;
+   gen_SEGV_if_not_64_aligned(addr);
+
+   DIP("%sxsave %s\n", sz==8 ? "rex64/" : "", dis_buf);
+
+   /* VEX's caller is assumed to have checked this. */
+   const ULong aSSUMED_XCR0_VALUE = 7;
+
+   IRTemp rfbm = newTemp(Ity_I64);
+   assign(rfbm,
+          binop(Iop_And64,
+                binop(Iop_Or64,
+                      binop(Iop_Shl64,
+                            unop(Iop_32Uto64, getIRegRDX(4)), mkU8(32)),
+                      unop(Iop_32Uto64, getIRegRAX(4))),
+                mkU64(aSSUMED_XCR0_VALUE)));
+
+   gen_XSAVE_SEQUENCE(addr, rfbm);
+
+   /* Finally, we need to update XSTATE_BV in the XSAVE header area, by
+      OR-ing the RFBM value into it. */
+   IRTemp addr_plus_512 = newTemp(Ity_I64);
+   assign(addr_plus_512, binop(Iop_Add64, mkexpr(addr), mkU64(512)));
+   storeLE( mkexpr(addr_plus_512),
+            binop(Iop_Or8,
+                  unop(Iop_64to8, mkexpr(rfbm)),
+                  loadLE(Ity_I8, mkexpr(addr_plus_512))) );
+
+   return delta;
+}
+
+
+static Long dis_FXSAVE ( const VexAbiInfo* vbi,
+                         Prefix pfx, Long delta, Int sz )
+{
+   /* See comment in dis_XSAVE about the significance of REX.W. */
+   IRTemp addr  = IRTemp_INVALID;
+   Int    alen  = 0;
+   HChar  dis_buf[50];
+   UChar  modrm = getUChar(delta);
+   vassert(!epartIsReg(modrm)); /* ensured by caller */
+   vassert(sz == 4 || sz == 8); /* ditto */
+
+   addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
+   delta += alen;
+   gen_SEGV_if_not_16_aligned(addr);
+
+   DIP("%sfxsave %s\n", sz==8 ? "rex64/" : "", dis_buf);
+
+   /* FXSAVE is just XSAVE with components 0 and 1 selected.  Set rfbm
+      to 0b011, generate the XSAVE sequence accordingly, and let iropt
+      fold out the unused (AVX) parts accordingly. */
+   IRTemp rfbm = newTemp(Ity_I64);
+   assign(rfbm, mkU64(3));
+   gen_XSAVE_SEQUENCE(addr, rfbm);
+
+   return delta;
+}
+
+
+static void gen_XRSTOR_SEQUENCE ( IRTemp addr, IRTemp xstate_bv, IRTemp rfbm )
+{
+   /* ------ rfbm[0] gates the x87 state ------ */
+
+   /* If rfbm[0] == 1, we have to write the x87 state.  If
+      xstate_bv[0] == 1, we will read it from the memory image, else
+      we'll set it to initial values.  Doing this with a helper
+      function and getting the definedness flow annotations correct is
+      too difficult, so generate stupid but simple code: first set the
+      registers to initial values, regardless of xstate_bv[0].  Then,
+      conditionally restore from the memory image. */
+
+   IRTemp rfbm_0       = newTemp(Ity_I64);
+   IRTemp xstate_bv_0  = newTemp(Ity_I64);
+   IRTemp restore_0    = newTemp(Ity_I64);
+   assign(rfbm_0,      binop(Iop_And64, mkexpr(rfbm), mkU64(1)));
+   assign(xstate_bv_0, binop(Iop_And64, mkexpr(xstate_bv), mkU64(1)));
+   assign(restore_0,   binop(Iop_And64, mkexpr(rfbm_0), mkexpr(xstate_bv_0)));
+
+   gen_FINIT_SEQUENCE( binop(Iop_CmpNE64, mkexpr(rfbm_0), mkU64(0)) );
+
+   /* Uses dirty helper: 
+         void amd64g_do_XRSTOR_COMPONENT_0 ( VexGuestAMD64State*, ULong )
+   */
+   IRDirty* d0 = unsafeIRDirty_0_N (
+                    0/*regparms*/, 
+                    "amd64g_dirtyhelper_XRSTOR_COMPONENT_0",
+                    &amd64g_dirtyhelper_XRSTOR_COMPONENT_0,
+                    mkIRExprVec_2( IRExpr_BBPTR(), mkexpr(addr) )
+                 );
+   d0->guard = binop(Iop_CmpNE64, mkexpr(restore_0), mkU64(0));
+
+   /* Declare we're reading memory.  Really, bytes 24 through 31
+      (MXCSR and MXCSR_MASK) aren't read, but we can't express more
+      than 1 memory area here, so just mark the whole thing as
+      read. */
+   d0->mFx   = Ifx_Read;
+   d0->mAddr = mkexpr(addr);
+   d0->mSize = 160;
+
+   /* declare we're writing guest state */
+   d0->nFxState = 5;
+   vex_bzero(&d0->fxState, sizeof(d0->fxState));
+
+   d0->fxState[0].fx     = Ifx_Write;
+   d0->fxState[0].offset = OFFB_FTOP;
+   d0->fxState[0].size   = sizeof(UInt);
+
+   d0->fxState[1].fx     = Ifx_Write;
+   d0->fxState[1].offset = OFFB_FPREGS;
+   d0->fxState[1].size   = 8 * sizeof(ULong);
+
+   d0->fxState[2].fx     = Ifx_Write;
+   d0->fxState[2].offset = OFFB_FPTAGS;
+   d0->fxState[2].size   = 8 * sizeof(UChar);
+
+   d0->fxState[3].fx     = Ifx_Write;
+   d0->fxState[3].offset = OFFB_FPROUND;
+   d0->fxState[3].size   = sizeof(ULong);
+
+   d0->fxState[4].fx     = Ifx_Write;
+   d0->fxState[4].offset = OFFB_FC3210;
+   d0->fxState[4].size   = sizeof(ULong);
+
+   stmt( IRStmt_Dirty(d0) );
+
+   /* ------ rfbm[1] gates the SSE state ------ */
+
+   /* Same scheme as component 0: first zero it out, and then possibly
+      restore from the memory area. */
+   IRTemp rfbm_1       = newTemp(Ity_I64);
+   IRTemp xstate_bv_1  = newTemp(Ity_I64);
+   IRTemp restore_1    = newTemp(Ity_I64);
+   assign(rfbm_1,      binop(Iop_And64, mkexpr(rfbm), mkU64(2)));
+   assign(xstate_bv_1, binop(Iop_And64, mkexpr(xstate_bv), mkU64(2)));
+   assign(restore_1,   binop(Iop_And64, mkexpr(rfbm_1), mkexpr(xstate_bv_1)));
+   IRExpr* rfbm_1e     = binop(Iop_CmpNE64, mkexpr(rfbm_1),    mkU64(0));
+   IRExpr* restore_1e  = binop(Iop_CmpNE64, mkexpr(restore_1), mkU64(0));
+
+   IRTemp rfbm_1or2       = newTemp(Ity_I64);
+   IRTemp xstate_bv_1or2  = newTemp(Ity_I64);
+   IRTemp restore_1or2    = newTemp(Ity_I64);
+   assign(rfbm_1or2,      binop(Iop_And64, mkexpr(rfbm), mkU64(6)));
+   assign(xstate_bv_1or2, binop(Iop_And64, mkexpr(xstate_bv), mkU64(6)));
+   assign(restore_1or2,   binop(Iop_And64, mkexpr(rfbm_1or2),
+                                           mkexpr(xstate_bv_1or2)));
+   IRExpr* rfbm_1or2e     = binop(Iop_CmpNE64, mkexpr(rfbm_1or2),    mkU64(0));
+   IRExpr* restore_1or2e  = binop(Iop_CmpNE64, mkexpr(restore_1or2), mkU64(0));
+
+   /* The areas in question are: SSEROUND, and the XMM register array. */
+   putGuarded(OFFB_SSEROUND, rfbm_1or2e, mkU64(Irrm_NEAREST));
+
+   UInt reg;
+   for (reg = 0; reg < 16; reg++) {
+      putGuarded(xmmGuestRegOffset(reg), rfbm_1e, mkV128(0));
+   }
+
+   /* And now possibly restore from MXCSR/MXCSR_MASK */
+   /* Uses dirty helper: 
+         void amd64g_do_XRSTOR_COMPONENT_1_EXCLUDING_XMMREGS
+                 ( VexGuestAMD64State*, ULong )
+      This restores from only MXCSR and MXCSR_MASK.  We need to do
+      this if either components 1 (SSE) or 2 (AVX) are requested.
+      Hence the guard condition is a bit more complex.
+   */
+   IRDirty* d1 = unsafeIRDirty_0_N (
+                    0/*regparms*/, 
+                    "amd64g_dirtyhelper_XRSTOR_COMPONENT_1_EXCLUDING_XMMREGS",
+                    &amd64g_dirtyhelper_XRSTOR_COMPONENT_1_EXCLUDING_XMMREGS,
+                    mkIRExprVec_2( IRExpr_BBPTR(), mkexpr(addr) )
+                ) ;
+   d1->guard = restore_1or2e;
+
+   /* Declare we're reading memory: MXCSR and MXCSR_MASK.  Note that
+      the code for rbfm[0] just above claims a read of 0 .. 159, so
+      this duplicates it.  But at least correctly connects 24 .. 31 to
+      the MXCSR guest state representation (SSEROUND field). */
+   d1->mFx   = Ifx_Read;
+   d1->mAddr = binop(Iop_Add64, mkexpr(addr), mkU64(24));
+   d1->mSize = 8;
+
+   /* declare we're writing guest state */
+   d1->nFxState = 1;
+   vex_bzero(&d1->fxState, sizeof(d1->fxState));
+
+   d1->fxState[0].fx     = Ifx_Write;
+   d1->fxState[0].offset = OFFB_SSEROUND;
+   d1->fxState[0].size   = sizeof(ULong);
+
+   /* Call the helper.  This creates SSEROUND but nothing
+      else.  We do the actual register array, XMM[0..15], separately,
+      in order that any undefinedness in the XMM registers is tracked
+      separately by Memcheck and is not "infected" by the in-memory
+      shadow for the other parts of the image. */
+   stmt( IRStmt_Dirty(d1) );
+
+   /* And now the XMMs themselves.  For each register, we PUT either
+      its old value, or the value loaded from memory.  One convenient
+      way to do that is with a conditional load that has its the
+      default value, the old value of the register. */
+   for (reg = 0; reg < 16; reg++) {
+      IRExpr* ea  = binop(Iop_Add64, mkexpr(addr), mkU64(160 + reg * 16));
+      IRExpr* alt = getXMMReg(reg);
+      IRTemp  loadedValue = newTemp(Ity_V128);
+      stmt( IRStmt_LoadG(Iend_LE,
+                         ILGop_IdentV128, 
+                         loadedValue, ea, alt, restore_1e) );
+      putXMMReg(reg, mkexpr(loadedValue));
+   }
+
+   /* ------ rfbm[2] gates the AVX state ------ */
+   /* Component 2 is just a bunch of register loads, so we'll do it
+      inline, just to be simple and to be Memcheck friendly. */
+
+   /* Same scheme as component 0: first zero it out, and then possibly
+      restore from the memory area. */
+   IRTemp rfbm_2      = newTemp(Ity_I64);
+   IRTemp xstate_bv_2 = newTemp(Ity_I64);
+   IRTemp restore_2   = newTemp(Ity_I64);
+   assign(rfbm_2,      binop(Iop_And64, mkexpr(rfbm), mkU64(4)));
+   assign(xstate_bv_2, binop(Iop_And64, mkexpr(xstate_bv), mkU64(4)));
+   assign(restore_2,   binop(Iop_And64, mkexpr(rfbm_2), mkexpr(xstate_bv_2)));
+
+   IRExpr* rfbm_2e    = binop(Iop_CmpNE64, mkexpr(rfbm_2),    mkU64(0));
+   IRExpr* restore_2e = binop(Iop_CmpNE64, mkexpr(restore_2), mkU64(0));
+
+   for (reg = 0; reg < 16; reg++) {
+      putGuarded(ymmGuestRegLane128offset(reg, 1), rfbm_2e, mkV128(0));
+   }
+
+   for (reg = 0; reg < 16; reg++) {
+      IRExpr* ea  = binop(Iop_Add64, mkexpr(addr), mkU64(576 + reg * 16));
+      IRExpr* alt = getYMMRegLane128(reg, 1);
+      IRTemp  loadedValue = newTemp(Ity_V128);
+      stmt( IRStmt_LoadG(Iend_LE,
+                         ILGop_IdentV128, 
+                         loadedValue, ea, alt, restore_2e) );
+      putYMMRegLane128(reg, 1, mkexpr(loadedValue));
+   }
+}
+
+
+static Long dis_XRSTOR ( const VexAbiInfo* vbi,
+                         Prefix pfx, Long delta, Int sz )
+{
+   /* As with XRSTOR above we ignore the value of REX.W since we're
+      not bothering with the FPU DP and IP fields. */
+   IRTemp addr  = IRTemp_INVALID;
+   Int    alen  = 0;
+   HChar  dis_buf[50];
+   UChar  modrm = getUChar(delta);
+   vassert(!epartIsReg(modrm)); /* ensured by caller */
+   vassert(sz == 4 || sz == 8); /* ditto */
+
+   addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
+   delta += alen;
+   gen_SEGV_if_not_64_aligned(addr);
+
+   DIP("%sxrstor %s\n", sz==8 ? "rex64/" : "", dis_buf);
+
+   /* VEX's caller is assumed to have checked this. */
+   const ULong aSSUMED_XCR0_VALUE = 7;
+
+   IRTemp rfbm = newTemp(Ity_I64);
+   assign(rfbm,
+          binop(Iop_And64,
+                binop(Iop_Or64,
+                      binop(Iop_Shl64,
+                            unop(Iop_32Uto64, getIRegRDX(4)), mkU8(32)),
+                      unop(Iop_32Uto64, getIRegRAX(4))),
+                mkU64(aSSUMED_XCR0_VALUE)));
+
+   IRTemp xstate_bv = newTemp(Ity_I64);
+   assign(xstate_bv, loadLE(Ity_I64,
+                            binop(Iop_Add64, mkexpr(addr), mkU64(512+0))));
+
+   IRTemp xcomp_bv = newTemp(Ity_I64);
+   assign(xcomp_bv, loadLE(Ity_I64,
+                           binop(Iop_Add64, mkexpr(addr), mkU64(512+8))));
+
+   IRTemp xsavehdr_23_16 = newTemp(Ity_I64);
+   assign( xsavehdr_23_16, 
+           loadLE(Ity_I64,
+                  binop(Iop_Add64, mkexpr(addr), mkU64(512+16))));
+
+   /* We must fault if 
+      * xcomp_bv[63] == 1, since this simulated CPU does not support
+        the compaction extension.
+      * xstate_bv sets a bit outside of XCR0 (which we assume to be 7).
+      * any of the xsave header bytes 23 .. 8 are nonzero.  This seems to
+        imply that xcomp_bv must be zero.
+      xcomp_bv is header bytes 15 .. 8 and xstate_bv is header bytes 7 .. 0
+   */
+   IRTemp fault_if_nonzero = newTemp(Ity_I64);
+   assign(fault_if_nonzero,
+          binop(Iop_Or64,
+                binop(Iop_And64, mkexpr(xstate_bv), mkU64(~aSSUMED_XCR0_VALUE)),
+                binop(Iop_Or64, mkexpr(xcomp_bv), mkexpr(xsavehdr_23_16))));
+   stmt( IRStmt_Exit(binop(Iop_CmpNE64, mkexpr(fault_if_nonzero), mkU64(0)),
+                     Ijk_SigSEGV,
+                     IRConst_U64(guest_RIP_curr_instr),
+                     OFFB_RIP
+   ));
+
+   /* We are guaranteed now that both xstate_bv and rfbm are in the
+      range 0 .. 7.  Generate the restore sequence proper. */
+   gen_XRSTOR_SEQUENCE(addr, xstate_bv, rfbm);
+
+   return delta;
+}
+
+
+static Long dis_FXRSTOR ( const VexAbiInfo* vbi,
+                          Prefix pfx, Long delta, Int sz )
+{
+   /* As with FXSAVE above we ignore the value of REX.W since we're
+      not bothering with the FPU DP and IP fields. */
+   IRTemp addr  = IRTemp_INVALID;
+   Int    alen  = 0;
+   HChar  dis_buf[50];
+   UChar  modrm = getUChar(delta);
+   vassert(!epartIsReg(modrm)); /* ensured by caller */
+   vassert(sz == 4 || sz == 8); /* ditto */
+
+   addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
+   delta += alen;
+   gen_SEGV_if_not_16_aligned(addr);
+
+   DIP("%sfxrstor %s\n", sz==8 ? "rex64/" : "", dis_buf);
+
+   /* FXRSTOR is just XRSTOR with components 0 and 1 selected and also
+      as if components 0 and 1 are set as present in XSTATE_BV in the
+      XSAVE header.  Set both rfbm and xstate_bv to 0b011 therefore,
+      generate the XRSTOR sequence accordingly, and let iropt fold out
+      the unused (AVX) parts accordingly. */
+   IRTemp three = newTemp(Ity_I64);
+   assign(three, mkU64(3));
+   gen_XRSTOR_SEQUENCE(addr, three/*xstate_bv*/, three/*rfbm*/);
+
+   return delta;
+}
+
+
 static IRTemp math_PINSRW_128 ( IRTemp v128, IRTemp u16, UInt imm8 )
 {
    vassert(imm8 >= 0 && imm8 <= 7);
@@ -11794,6 +12306,7 @@ static Long dis_MOVMSKPD_256 ( const VexAbiInfo* vbi, Prefix pfx, Long delta )
 __attribute__((noinline))
 static
 Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
+                        const VexArchInfo* archinfo,
                         const VexAbiInfo* vbi,
                         Prefix pfx, Int sz, Long deltaIN,
                         DisResult* dres )
@@ -13620,166 +14133,34 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
          delta = dis_LDMXCSR(vbi, pfx, delta, False/*!isAvx*/);
          goto decode_success;
       }
-      /* 0F AE /0 = FXSAVE m512 -- write x87 and SSE state to memory.
-         Note that the presence or absence of REX.W slightly affects the
-         written format: whether the saved FPU IP and DP pointers are 64
-         or 32 bits.  But the helper function we call simply writes zero
-         bits in the relevant fields (which are 64 bits regardless of
-         what REX.W is) and so it's good enough (iow, equally broken) in
-         both cases. */
+      /* 0F AE /0 = FXSAVE m512 -- write x87 and SSE state to memory */
       if (haveNo66noF2noF3(pfx) && (sz == 4 || sz == 8)
           && !epartIsReg(getUChar(delta))
           && gregOfRexRM(pfx,getUChar(delta)) == 0) {
-          IRDirty* d;
-         modrm = getUChar(delta);
-         vassert(!epartIsReg(modrm));
-
-         addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
-         delta += alen;
-         gen_SEGV_if_not_16_aligned(addr);
-
-         DIP("%sfxsave %s\n", sz==8 ? "rex64/" : "", dis_buf);
-
-         /* Uses dirty helper: 
-              void amd64g_do_FXSAVE_ALL_EXCEPT_XMM ( VexGuestAMD64State*,
-                                                     ULong ) */
-         d = unsafeIRDirty_0_N ( 
-                0/*regparms*/, 
-                "amd64g_dirtyhelper_FXSAVE_ALL_EXCEPT_XMM",
-                &amd64g_dirtyhelper_FXSAVE_ALL_EXCEPT_XMM,
-                mkIRExprVec_2( IRExpr_BBPTR(), mkexpr(addr) )
-             );
-
-         /* declare we're writing memory */
-         d->mFx   = Ifx_Write;
-         d->mAddr = mkexpr(addr);
-         d->mSize = 464; /* according to recent Intel docs */
-
-         /* declare we're reading guest state */
-         d->nFxState = 6;
-         vex_bzero(&d->fxState, sizeof(d->fxState));
-
-         d->fxState[0].fx     = Ifx_Read;
-         d->fxState[0].offset = OFFB_FTOP;
-         d->fxState[0].size   = sizeof(UInt);
-
-         d->fxState[1].fx     = Ifx_Read;
-         d->fxState[1].offset = OFFB_FPREGS;
-         d->fxState[1].size   = 8 * sizeof(ULong);
-
-         d->fxState[2].fx     = Ifx_Read;
-         d->fxState[2].offset = OFFB_FPTAGS;
-         d->fxState[2].size   = 8 * sizeof(UChar);
-
-         d->fxState[3].fx     = Ifx_Read;
-         d->fxState[3].offset = OFFB_FPROUND;
-         d->fxState[3].size   = sizeof(ULong);
-
-         d->fxState[4].fx     = Ifx_Read;
-         d->fxState[4].offset = OFFB_FC3210;
-         d->fxState[4].size   = sizeof(ULong);
-
-         d->fxState[5].fx     = Ifx_Read;
-         d->fxState[5].offset = OFFB_SSEROUND;
-         d->fxState[5].size   = sizeof(ULong);
-
-         /* Call the helper.  This creates all parts of the in-memory
-            image except for the XMM[0..15] array, which we do
-            separately, in order that any undefinedness in the XMM
-            registers is tracked separately by Memcheck and does not
-            "infect" the in-memory shadow for the other parts of the
-            image (FPTOP, FPREGS, FPTAGS, FPROUND, FC3210,
-            SSEROUND). */
-         stmt( IRStmt_Dirty(d) );
-
-         /* And now the XMMs themselves. */
-         UInt xmm;
-         for (xmm = 0; xmm < 16; xmm++) {
-            storeLE( binop(Iop_Add64, mkexpr(addr), mkU64(160 + xmm * 16)),
-                     getXMMReg(xmm) );
-         }
-
+         delta = dis_FXSAVE(vbi, pfx, delta, sz);
          goto decode_success;
       }
-      /* 0F AE /1 = FXRSTOR m512 -- read x87 and SSE state from memory.
-         As with FXSAVE above we ignore the value of REX.W since we're
-         not bothering with the FPU DP and IP fields. */
+      /* 0F AE /1 = FXRSTOR m512 -- read x87 and SSE state from memory */
       if (haveNo66noF2noF3(pfx) && (sz == 4 || sz == 8)
           && !epartIsReg(getUChar(delta))
           && gregOfRexRM(pfx,getUChar(delta)) == 1) {
-         IRDirty* d;
-         modrm = getUChar(delta);
-         vassert(!epartIsReg(modrm));
-
-         addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
-         delta += alen;
-         gen_SEGV_if_not_16_aligned(addr);
-
-         DIP("%sfxrstor %s\n", sz==8 ? "rex64/" : "", dis_buf);
-
-         /* Uses dirty helper: 
-              VexEmNote amd64g_do_FXRSTOR_ALL_EXCEPT_XMM ( VexGuestAMD64State*,
-                                                           ULong )
-            NOTE:
-              the VexEmNote value is simply ignored
-         */
-         d = unsafeIRDirty_0_N ( 
-                0/*regparms*/, 
-                "amd64g_dirtyhelper_FXRSTOR_ALL_EXCEPT_XMM", 
-                &amd64g_dirtyhelper_FXRSTOR_ALL_EXCEPT_XMM,
-                mkIRExprVec_2( IRExpr_BBPTR(), mkexpr(addr) )
-             );
-
-         /* declare we're reading memory */
-         d->mFx   = Ifx_Read;
-         d->mAddr = mkexpr(addr);
-         d->mSize = 464; /* according to recent Intel docs */
-
-         /* declare we're writing guest state */
-         d->nFxState = 6;
-         vex_bzero(&d->fxState, sizeof(d->fxState));
-
-         d->fxState[0].fx     = Ifx_Write;
-         d->fxState[0].offset = OFFB_FTOP;
-         d->fxState[0].size   = sizeof(UInt);
-
-         d->fxState[1].fx     = Ifx_Write;
-         d->fxState[1].offset = OFFB_FPREGS;
-         d->fxState[1].size   = 8 * sizeof(ULong);
-
-         d->fxState[2].fx     = Ifx_Write;
-         d->fxState[2].offset = OFFB_FPTAGS;
-         d->fxState[2].size   = 8 * sizeof(UChar);
-
-         d->fxState[3].fx     = Ifx_Write;
-         d->fxState[3].offset = OFFB_FPROUND;
-         d->fxState[3].size   = sizeof(ULong);
-
-         d->fxState[4].fx     = Ifx_Write;
-         d->fxState[4].offset = OFFB_FC3210;
-         d->fxState[4].size   = sizeof(ULong);
-
-         d->fxState[5].fx     = Ifx_Write;
-         d->fxState[5].offset = OFFB_SSEROUND;
-         d->fxState[5].size   = sizeof(ULong);
-
-         /* Call the helper.  This reads all parts of the in-memory
-            image except for the XMM[0..15] array, which we do
-            separately, in order that any undefinedness in the XMM
-            registers is tracked separately by Memcheck and does not
-            "infect" the in-guest-state shadow for the other parts of the
-            image (FPTOP, FPREGS, FPTAGS, FPROUND, FC3210,
-            SSEROUND). */
-         stmt( IRStmt_Dirty(d) );
-
-         /* And now the XMMs themselves. */
-         UInt xmm;
-         for (xmm = 0; xmm < 16; xmm++) {
-            putXMMReg(xmm, loadLE(Ity_V128,
-                                  binop(Iop_Add64, mkexpr(addr),
-                                                   mkU64(160 + xmm * 16))));
-         }
-
+         delta = dis_FXRSTOR(vbi, pfx, delta, sz);
+         goto decode_success;
+      }
+      /* 0F AE /4 = XSAVE mem -- write x87, SSE, AVX state to memory */
+      if (haveNo66noF2noF3(pfx) && (sz == 4 || sz == 8)
+          && !epartIsReg(getUChar(delta))
+          && gregOfRexRM(pfx,getUChar(delta)) == 4
+          && (archinfo->hwcaps & VEX_HWCAPS_AMD64_AVX)) {
+         delta = dis_XSAVE(vbi, pfx, delta, sz);
+         goto decode_success;
+      }
+      /* 0F AE /5 = XRSTOR mem -- read x87, SSE, AVX state from memory */
+      if (haveNo66noF2noF3(pfx) && (sz == 4 || sz == 8)
+          && !epartIsReg(getUChar(delta))
+          && gregOfRexRM(pfx,getUChar(delta)) == 5
+          && (archinfo->hwcaps & VEX_HWCAPS_AMD64_AVX)) {
+         delta = dis_XRSTOR(vbi, pfx, delta, sz);
          goto decode_success;
       }
       break;
@@ -21524,31 +21905,20 @@ Long dis_ESC_0F (
       const HChar* fName = NULL;
       void*        fAddr = NULL;
 
-      /* JRS 2014-11-11: this a really horrible temp kludge to work
-         around the fact that the Yosemite (OSX 10.10)
-         /usr/lib/system/libdyld.dylib expects XSAVE/XRSTOR to be
-         implemented, because amd64g_dirtyhelper_CPUID_avx_and_cx16
-         claims they are supported, but so far they aren't.  So cause
-         it to fall back to a simpler CPU.  The cleaner approach of
-         setting CPUID(eax=1).OSXSAVE=0 and .XSAVE=0 isn't desirable
-         since it will (per the official Intel guidelines) lead to
-         software concluding that AVX isn't supported.
-
-         This is also a kludge in that putting these ifdefs here checks
-         the build (host) architecture, when really we're checking the
-         guest architecture. */
-      Bool this_is_yosemite = False;
-#     if defined(VGP_amd64_darwin) && DARWIN_VERS == DARWIN_10_10
-      this_is_yosemite = True;
-#     endif
-
       if (haveF2orF3(pfx)) goto decode_failure;
+
       /* This isn't entirely correct, CPUID should depend on the VEX
          capabilities, not on the underlying CPU. See bug #324882. */
-      if (!this_is_yosemite &&
-          (archinfo->hwcaps & VEX_HWCAPS_AMD64_SSE3) &&
+      if ((archinfo->hwcaps & VEX_HWCAPS_AMD64_SSE3) &&
           (archinfo->hwcaps & VEX_HWCAPS_AMD64_CX16) &&
-          (archinfo->hwcaps & VEX_HWCAPS_AMD64_AVX)) {
+          (archinfo->hwcaps & VEX_HWCAPS_AMD64_AVX2)) {
+         fName = "amd64g_dirtyhelper_CPUID_avx2";
+         fAddr = &amd64g_dirtyhelper_CPUID_avx2;
+         /* This is a Core-i7-4910-like machine */
+      }
+      else if ((archinfo->hwcaps & VEX_HWCAPS_AMD64_SSE3) &&
+               (archinfo->hwcaps & VEX_HWCAPS_AMD64_CX16) &&
+               (archinfo->hwcaps & VEX_HWCAPS_AMD64_AVX)) {
          fName = "amd64g_dirtyhelper_CPUID_avx_and_cx16";
          fAddr = &amd64g_dirtyhelper_CPUID_avx_and_cx16;
          /* This is a Core-i5-2300-like machine */
@@ -22050,7 +22420,8 @@ Long dis_ESC_0F (
       facility in 64 bit mode. */
    {
       Bool decode_OK = False;
-      delta = dis_ESC_0F__SSE2 ( &decode_OK, vbi, pfx, sz, deltaIN, dres );
+      delta = dis_ESC_0F__SSE2 ( &decode_OK,
+                                 archinfo, vbi, pfx, sz, deltaIN, dres );
       if (decode_OK)
          return delta;
    }

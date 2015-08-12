@@ -1470,13 +1470,14 @@ void ppIRStoreG ( const IRStoreG* sg )
 void ppIRLoadGOp ( IRLoadGOp cvt )
 {
    switch (cvt) {
-      case ILGop_INVALID: vex_printf("ILGop_INVALID"); break;      
-      case ILGop_Ident64: vex_printf("Ident64"); break;      
-      case ILGop_Ident32: vex_printf("Ident32"); break;      
-      case ILGop_16Uto32: vex_printf("16Uto32"); break;      
-      case ILGop_16Sto32: vex_printf("16Sto32"); break;      
-      case ILGop_8Uto32:  vex_printf("8Uto32"); break;      
-      case ILGop_8Sto32:  vex_printf("8Sto32"); break;      
+      case ILGop_INVALID:   vex_printf("ILGop_INVALID"); break;      
+      case ILGop_IdentV128: vex_printf("IdentV128"); break;      
+      case ILGop_Ident64:   vex_printf("Ident64"); break;      
+      case ILGop_Ident32:   vex_printf("Ident32"); break;      
+      case ILGop_16Uto32:   vex_printf("16Uto32"); break;      
+      case ILGop_16Sto32:   vex_printf("16Sto32"); break;      
+      case ILGop_8Uto32:    vex_printf("8Uto32"); break;      
+      case ILGop_8Sto32:    vex_printf("8Sto32"); break;      
       default: vpanic("ppIRLoadGOp");
    }
 }
@@ -3525,6 +3526,8 @@ void typeOfIRLoadGOp ( IRLoadGOp cvt,
                        /*OUT*/IRType* t_res, /*OUT*/IRType* t_arg )
 {
    switch (cvt) {
+      case ILGop_IdentV128:
+         *t_res = Ity_V128; *t_arg = Ity_V128; break;
       case ILGop_Ident64:
          *t_res = Ity_I64; *t_arg = Ity_I64; break;
       case ILGop_Ident32:

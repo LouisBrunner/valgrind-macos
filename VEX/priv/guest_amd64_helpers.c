@@ -1943,8 +1943,15 @@ void do_get_x87 ( /*IN*/VexGuestAMD64State* vex_state,
 }
 
 
-static
-void do_fxsave ( VexGuestAMD64State* gst, HWord addr, Bool save_xmm_regs )
+/*---------------------------------------------------------------*/
+/*--- Supporting functions for XSAVE/FXSAVE.                  ---*/
+/*---------------------------------------------------------------*/
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (reads guest state, writes guest mem) */
+/* XSAVE component 0 is the x87 FPU state. */
+void amd64g_dirtyhelper_XSAVE_COMPONENT_0
+        ( VexGuestAMD64State* gst, HWord addr )
 {
    /* Derived from values obtained from
       vendor_id       : AuthenticAMD
@@ -1959,17 +1966,15 @@ void do_fxsave ( VexGuestAMD64State* gst, HWord addr, Bool save_xmm_regs )
    Fpu_State tmp;
    UShort*   addrS = (UShort*)addr;
    UChar*    addrC = (UChar*)addr;
-   UInt      mxcsr;
    UShort    fp_tags;
    UInt      summary_tags;
    Int       r, stno;
    UShort    *srcS, *dstS;
 
    do_get_x87( gst, (UChar*)&tmp );
-   mxcsr = amd64g_create_mxcsr( gst->guest_SSEROUND );
 
-   /* Now build the proper fxsave image from the x87 image we just
-      made. */
+   /* Now build the proper fxsave x87 image from the fsave x87 image
+      we just made. */
 
    addrS[0]  = tmp.env[FP_ENV_CTRL]; /* FCW: fpu control word */
    addrS[1]  = tmp.env[FP_ENV_STAT]; /* FCW: fpu status word */
@@ -2002,11 +2007,8 @@ void do_fxsave ( VexGuestAMD64State* gst, HWord addr, Bool save_xmm_regs )
    addrS[10] = 0; /* BOGUS */
    addrS[11] = 0; /* BOGUS */
 
-   addrS[12] = toUShort(mxcsr);  /* MXCSR */
-   addrS[13] = toUShort(mxcsr >> 16);
-
-   addrS[14] = 0xFFFF; /* MXCSR mask (lo16) */
-   addrS[15] = 0x0000; /* MXCSR mask (hi16) */
+   /* addrS[13,12] are MXCSR -- not written */
+   /* addrS[15,14] are MXCSR_MASK -- not written */
 
    /* Copy in the FP registers, in ST order. */
    for (stno = 0; stno < 8; stno++) {
@@ -2021,93 +2023,94 @@ void do_fxsave ( VexGuestAMD64State* gst, HWord addr, Bool save_xmm_regs )
       dstS[6] = 0;
       dstS[7] = 0;
    }
-
-   /* That's the first 160 bytes of the image done. */
-   if (save_xmm_regs == True) {
-      /* Now only %xmm0 .. %xmm15 remain to be copied.  If the host is
-         big-endian, these need to be byte-swapped. */
-      U128 *xmm = (U128 *)(addr + 160);
-
-      vassert(host_is_little_endian());
-
-#     define COPY_U128(_dst,_src)                       \
-         do { _dst[0] = _src[0]; _dst[1] = _src[1];     \
-              _dst[2] = _src[2]; _dst[3] = _src[3]; }   \
-         while (0)
-
-      COPY_U128( xmm[0],  gst->guest_YMM0 );
-      COPY_U128( xmm[1],  gst->guest_YMM1 );
-      COPY_U128( xmm[2],  gst->guest_YMM2 );
-      COPY_U128( xmm[3],  gst->guest_YMM3 );
-      COPY_U128( xmm[4],  gst->guest_YMM4 );
-      COPY_U128( xmm[5],  gst->guest_YMM5 );
-      COPY_U128( xmm[6],  gst->guest_YMM6 );
-      COPY_U128( xmm[7],  gst->guest_YMM7 );
-      COPY_U128( xmm[8],  gst->guest_YMM8 );
-      COPY_U128( xmm[9],  gst->guest_YMM9 );
-      COPY_U128( xmm[10], gst->guest_YMM10 );
-      COPY_U128( xmm[11], gst->guest_YMM11 );
-      COPY_U128( xmm[12], gst->guest_YMM12 );
-      COPY_U128( xmm[13], gst->guest_YMM13 );
-      COPY_U128( xmm[14], gst->guest_YMM14 );
-      COPY_U128( xmm[15], gst->guest_YMM15 );
-#  undef COPY_U128
-   } else {
-      /* We let the generated IR to copy remaining %xmm0 .. %xmm15, so as to
-       make Memcheck's definedness flow for the non-XMM parts independent from
-       that of the all the other control and status words in the structure.
-       This avoids the false positives shown in #291310. */
-   }
 }
 
 
-static
-VexEmNote do_fxrstor ( VexGuestAMD64State* gst, HWord addr,
-                       Bool rstor_xmm_regs )
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (reads guest state, writes guest mem) */
+/* XSAVE component 1 is the SSE state. */
+void amd64g_dirtyhelper_XSAVE_COMPONENT_1_EXCLUDING_XMMREGS 
+        ( VexGuestAMD64State* gst, HWord addr )
+{
+   UShort* addrS = (UShort*)addr;
+   UInt    mxcsr;
+
+   /* The only non-register parts of the SSE state are MXCSR and
+      MXCSR_MASK. */
+   mxcsr = amd64g_create_mxcsr( gst->guest_SSEROUND );
+
+   addrS[12] = toUShort(mxcsr);  /* MXCSR */
+   addrS[13] = toUShort(mxcsr >> 16);
+
+   addrS[14] = 0xFFFF; /* MXCSR mask (lo16) */
+   addrS[15] = 0x0000; /* MXCSR mask (hi16) */
+}
+
+
+/* VISIBLE TO LIBVEX CLIENT */
+/* Do FXSAVE from the supplied VexGuestAMD64State structure and store
+   the result at the given address which represents a buffer of at
+   least 416 bytes.
+
+   This function is not called from generated code.  FXSAVE is dealt
+   with by the amd64 front end by calling the XSAVE_COMPONENT_{0,1}
+   functions above plus some in-line IR.  This function is merely a
+   convenience function for VEX's users.
+*/
+void LibVEX_GuestAMD64_fxsave ( /*IN*/VexGuestAMD64State* gst,
+                                /*OUT*/HWord fp_state )
+{
+   /* Do the x87 part */
+   amd64g_dirtyhelper_XSAVE_COMPONENT_0(gst, fp_state);
+
+   /* And now the SSE part, except for the registers themselves. */
+   amd64g_dirtyhelper_XSAVE_COMPONENT_1_EXCLUDING_XMMREGS(gst, fp_state);
+
+   /* That's the first 160 bytes of the image done. */
+   /* Now only %xmm0 .. %xmm15 remain to be copied.  If the host is
+      big-endian, these need to be byte-swapped. */
+   U128 *xmm = (U128 *)(fp_state + 160);
+   vassert(host_is_little_endian());
+
+#  define COPY_U128(_dst,_src)                       \
+      do { _dst[0] = _src[0]; _dst[1] = _src[1];     \
+           _dst[2] = _src[2]; _dst[3] = _src[3]; }   \
+      while (0)
+
+   COPY_U128( xmm[0],  gst->guest_YMM0 );
+   COPY_U128( xmm[1],  gst->guest_YMM1 );
+   COPY_U128( xmm[2],  gst->guest_YMM2 );
+   COPY_U128( xmm[3],  gst->guest_YMM3 );
+   COPY_U128( xmm[4],  gst->guest_YMM4 );
+   COPY_U128( xmm[5],  gst->guest_YMM5 );
+   COPY_U128( xmm[6],  gst->guest_YMM6 );
+   COPY_U128( xmm[7],  gst->guest_YMM7 );
+   COPY_U128( xmm[8],  gst->guest_YMM8 );
+   COPY_U128( xmm[9],  gst->guest_YMM9 );
+   COPY_U128( xmm[10], gst->guest_YMM10 );
+   COPY_U128( xmm[11], gst->guest_YMM11 );
+   COPY_U128( xmm[12], gst->guest_YMM12 );
+   COPY_U128( xmm[13], gst->guest_YMM13 );
+   COPY_U128( xmm[14], gst->guest_YMM14 );
+   COPY_U128( xmm[15], gst->guest_YMM15 );
+#  undef COPY_U128
+}
+
+
+/*---------------------------------------------------------------*/
+/*--- Supporting functions for XRSTOR/FXRSTOR.                ---*/
+/*---------------------------------------------------------------*/
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (writes guest state, reads guest mem) */
+VexEmNote amd64g_dirtyhelper_XRSTOR_COMPONENT_0
+             ( VexGuestAMD64State* gst, HWord addr )
 {
    Fpu_State tmp;
-   VexEmNote warnX87 = EmNote_NONE;
-   VexEmNote warnXMM = EmNote_NONE;
    UShort*   addrS   = (UShort*)addr;
    UChar*    addrC   = (UChar*)addr;
    UShort    fp_tags;
    Int       r, stno, i;
-
-   if (rstor_xmm_regs == True) {
-      /* Restore %xmm0 .. %xmm15.  If the host is big-endian, these need
-         to be byte-swapped. */
-      U128 *xmm = (U128 *)(addr + 160);
-
-      vassert(host_is_little_endian());
-
-#     define COPY_U128(_dst,_src)                       \
-         do { _dst[0] = _src[0]; _dst[1] = _src[1];     \
-              _dst[2] = _src[2]; _dst[3] = _src[3]; }   \
-         while (0)
-
-      COPY_U128( gst->guest_YMM0, xmm[0] );
-      COPY_U128( gst->guest_YMM1, xmm[1] );
-      COPY_U128( gst->guest_YMM2, xmm[2] );
-      COPY_U128( gst->guest_YMM3, xmm[3] );
-      COPY_U128( gst->guest_YMM4, xmm[4] );
-      COPY_U128( gst->guest_YMM5, xmm[5] );
-      COPY_U128( gst->guest_YMM6, xmm[6] );
-      COPY_U128( gst->guest_YMM7, xmm[7] );
-      COPY_U128( gst->guest_YMM8, xmm[8] );
-      COPY_U128( gst->guest_YMM9, xmm[9] );
-      COPY_U128( gst->guest_YMM10, xmm[10] );
-      COPY_U128( gst->guest_YMM11, xmm[11] );
-      COPY_U128( gst->guest_YMM12, xmm[12] );
-      COPY_U128( gst->guest_YMM13, xmm[13] );
-      COPY_U128( gst->guest_YMM14, xmm[14] );
-      COPY_U128( gst->guest_YMM15, xmm[15] );
-
-#  undef COPY_U128
-   } else {
-      /* Don't restore %xmm0 .. %xmm15, for the same reasons that
-         do_fxsave(save_xmm_regs = False) doesn't save them.  See
-         comment in that function for details. */
-   }
 
    /* Copy the x87 registers out of the image, into a temporary
       Fpu_State struct. */
@@ -2137,16 +2140,75 @@ VexEmNote do_fxrstor ( VexGuestAMD64State* gst, HWord addr,
    tmp.env[FP_ENV_TAG] = fp_tags;
 
    /* Now write 'tmp' into the guest state. */
-   warnX87 = do_put_x87( True/*moveRegs*/, (UChar*)&tmp, gst );
+   VexEmNote warnX87 = do_put_x87( True/*moveRegs*/, (UChar*)&tmp, gst );
 
-   { UInt w32 = (((UInt)addrS[12]) & 0xFFFF)
-                | ((((UInt)addrS[13]) & 0xFFFF) << 16);
-     ULong w64 = amd64g_check_ldmxcsr( (ULong)w32 );
+   return warnX87;
+}
 
-     warnXMM = (VexEmNote)(w64 >> 32);
 
-     gst->guest_SSEROUND = w64 & 0xFFFFFFFFULL;
-   }
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (writes guest state, reads guest mem) */
+VexEmNote amd64g_dirtyhelper_XRSTOR_COMPONENT_1_EXCLUDING_XMMREGS
+             ( VexGuestAMD64State* gst, HWord addr )
+{
+   UShort* addrS = (UShort*)addr;
+   UInt    w32   = (((UInt)addrS[12]) & 0xFFFF)
+                   | ((((UInt)addrS[13]) & 0xFFFF) << 16);
+   ULong   w64   = amd64g_check_ldmxcsr( (ULong)w32 );
+
+   VexEmNote warnXMM = (VexEmNote)(w64 >> 32);
+
+   gst->guest_SSEROUND = w64 & 0xFFFFFFFFULL;
+   return warnXMM;
+}
+
+
+/* VISIBLE TO LIBVEX CLIENT */
+/* Do FXRSTOR from the supplied address and store read values to the given
+   VexGuestAMD64State structure. 
+
+   This function is not called from generated code.  FXRSTOR is dealt
+   with by the amd64 front end by calling the XRSTOR_COMPONENT_{0,1}
+   functions above plus some in-line IR.  This function is merely a
+   convenience function for VEX's users.
+*/
+VexEmNote LibVEX_GuestAMD64_fxrstor ( /*IN*/HWord fp_state,
+                                      /*MOD*/VexGuestAMD64State* gst )
+{
+   /* Restore %xmm0 .. %xmm15.  If the host is big-endian, these need
+      to be byte-swapped. */
+   U128 *xmm = (U128 *)(fp_state + 160);
+
+   vassert(host_is_little_endian());
+
+#  define COPY_U128(_dst,_src)                       \
+      do { _dst[0] = _src[0]; _dst[1] = _src[1];     \
+           _dst[2] = _src[2]; _dst[3] = _src[3]; }   \
+      while (0)
+
+   COPY_U128( gst->guest_YMM0, xmm[0] );
+   COPY_U128( gst->guest_YMM1, xmm[1] );
+   COPY_U128( gst->guest_YMM2, xmm[2] );
+   COPY_U128( gst->guest_YMM3, xmm[3] );
+   COPY_U128( gst->guest_YMM4, xmm[4] );
+   COPY_U128( gst->guest_YMM5, xmm[5] );
+   COPY_U128( gst->guest_YMM6, xmm[6] );
+   COPY_U128( gst->guest_YMM7, xmm[7] );
+   COPY_U128( gst->guest_YMM8, xmm[8] );
+   COPY_U128( gst->guest_YMM9, xmm[9] );
+   COPY_U128( gst->guest_YMM10, xmm[10] );
+   COPY_U128( gst->guest_YMM11, xmm[11] );
+   COPY_U128( gst->guest_YMM12, xmm[12] );
+   COPY_U128( gst->guest_YMM13, xmm[13] );
+   COPY_U128( gst->guest_YMM14, xmm[14] );
+   COPY_U128( gst->guest_YMM15, xmm[15] );
+
+#  undef COPY_U128
+
+   VexEmNote warnXMM
+      = amd64g_dirtyhelper_XRSTOR_COMPONENT_1_EXCLUDING_XMMREGS(gst, fp_state);
+   VexEmNote warnX87
+      = amd64g_dirtyhelper_XRSTOR_COMPONENT_0(gst, fp_state);
 
    /* Prefer an X87 emwarn over an XMM one, if both exist. */
    if (warnX87 != EmNote_NONE)
@@ -2156,24 +2218,9 @@ VexEmNote do_fxrstor ( VexGuestAMD64State* gst, HWord addr,
 }
 
 
-/* CALLED FROM GENERATED CODE */
-/* DIRTY HELPER (reads guest state, writes guest mem) */
-/* NOTE: only handles 32-bit format (no REX.W on the insn) */
-/* NOTE: does not save XMM registers - see do_fxsave() for details */
-void amd64g_dirtyhelper_FXSAVE_ALL_EXCEPT_XMM ( VexGuestAMD64State* gst,
-                                                HWord addr )
-{
-   do_fxsave( gst, addr, False );
-}
-
-/* CALLED FROM GENERATED CODE */
-/* DIRTY HELPER (writes guest state, reads guest mem) */
-VexEmNote amd64g_dirtyhelper_FXRSTOR_ALL_EXCEPT_XMM ( VexGuestAMD64State* gst,
-                                                      HWord addr )
-{
-   return do_fxrstor( gst, addr, False );
-}
-
+/*---------------------------------------------------------------*/
+/*--- Supporting functions for FSAVE/FRSTOR                   ---*/
+/*---------------------------------------------------------------*/
 
 /* DIRTY HELPER (writes guest state) */
 /* Initialise the x87 FPU state as per 'finit'. */
@@ -2465,28 +2512,9 @@ VexEmNote amd64g_dirtyhelper_FRSTORS ( /*OUT*/VexGuestAMD64State* vex_state,
    return ew;
 }
 
-/* VISIBLE TO LIBVEX CLIENT */
-/* Do FXSAVE from the supplied VexGuestAMD64tate structure and store the
-   result at the given address which represents a buffer of at least 416
-   bytes. Saves also XMM registers. */
-void LibVEX_GuestAMD64_fxsave ( /*IN*/VexGuestAMD64State* gst,
-                                /*OUT*/HWord fp_state )
-{
-   do_fxsave( gst, fp_state, True );
-}
-
-/* VISIBLE TO LIBVEX CLIENT */
-/* Do FXRSTOR from the supplied address and store read values to the given
-   VexGuestAMD64State structure. Restores also XMM registers. */
-VexEmNote LibVEX_GuestAMD64_fxrstor ( /*IN*/HWord fp_state,
-                                      /*MOD*/VexGuestAMD64State* gst )
-{
-   return do_fxrstor( gst, fp_state, True );
-}
-
 
 /*---------------------------------------------------------------*/
-/*--- Misc integer helpers, including rotates and CPUID.      ---*/
+/*--- CPUID helpers.                                          ---*/
 /*---------------------------------------------------------------*/
 
 /* Claim to be the following CPU, which is probably representative of
@@ -2845,6 +2873,14 @@ void amd64g_dirtyhelper_CPUID_sse42_and_cx16 ( VexGuestAMD64State* st )
 /* Claim to be the following CPU (4 x ...), which is AVX and cx16
    capable.  Plus (kludge!) it "supports" HTM.
 
+   Also with the following change: claim that XSaveOpt is not
+   available, by cpuid(eax=0xD,ecx=1).eax[0] returns 0, compared to 1
+   on the real CPU.  Consequently, programs that correctly observe
+   these CPUID values should only try to use 3 of the 8 XSave-family
+   instructions: XGETBV, XSAVE and XRSTOR.  In particular this avoids
+   having to implement the compacted or optimised save/restore
+   variants.
+
    vendor_id       : GenuineIntel
    cpu family      : 6
    model           : 42
@@ -2955,7 +2991,7 @@ void amd64g_dirtyhelper_CPUID_avx_and_cx16 ( VexGuestAMD64State* st )
          switch (old_ecx) {
             case 0x00000000: SET_ABCD(0x00000007, 0x00000340,
                                       0x00000340, 0x00000000); break;
-            case 0x00000001: SET_ABCD(0x00000001, 0x00000000,
+            case 0x00000001: SET_ABCD(0x00000000, 0x00000000,
                                       0x00000000, 0x00000000); break;
             case 0x00000002: SET_ABCD(0x00000100, 0x00000240,
                                       0x00000000, 0x00000000); break;
@@ -3003,6 +3039,176 @@ void amd64g_dirtyhelper_CPUID_avx_and_cx16 ( VexGuestAMD64State* st )
 #  undef SET_ABCD
 }
 
+
+/* Claim to be the following CPU (4 x ...), which is AVX2 capable.
+
+   With the following change: claim that XSaveOpt is not available, by
+   cpuid(eax=0xD,ecx=1).eax[0] returns 0, compared to 1 on the real
+   CPU.  Consequently, programs that correctly observe these CPUID
+   values should only try to use 3 of the 8 XSave-family instructions:
+   XGETBV, XSAVE and XRSTOR.  In particular this avoids having to
+   implement the compacted or optimised save/restore variants.
+
+   vendor_id       : GenuineIntel
+   cpu family      : 6
+   model           : 60
+   model name      : Intel(R) Core(TM) i7-4910MQ CPU @ 2.90GHz
+   stepping        : 3
+   microcode       : 0x1c
+   cpu MHz         : 919.957
+   cache size      : 8192 KB
+   physical id     : 0
+   siblings        : 4
+   core id         : 3
+   cpu cores       : 4
+   apicid          : 6
+   initial apicid  : 6
+   fpu             : yes
+   fpu_exception   : yes
+   cpuid level     : 13
+   wp              : yes
+   flags           : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca
+                     cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht
+                     tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc
+                     arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc
+                     aperfmperf eagerfpu pni pclmulqdq dtes64 monitor ds_cpl
+                     vmx smx est tm2 ssse3 fma cx16 xtpr pdcm pcid sse4_1
+                     sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave
+                     avx f16c rdrand lahf_lm abm ida arat epb pln pts dtherm
+                     tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust
+                     bmi1 avx2 smep bmi2 erms invpcid xsaveopt
+   bugs            :
+   bogomips        : 5786.68
+   clflush size    : 64
+   cache_alignment : 64
+   address sizes   : 39 bits physical, 48 bits virtual
+   power management:
+*/
+void amd64g_dirtyhelper_CPUID_avx2 ( VexGuestAMD64State* st )
+{
+#  define SET_ABCD(_a,_b,_c,_d)                \
+      do { st->guest_RAX = (ULong)(_a);        \
+           st->guest_RBX = (ULong)(_b);        \
+           st->guest_RCX = (ULong)(_c);        \
+           st->guest_RDX = (ULong)(_d);        \
+      } while (0)
+
+   UInt old_eax = (UInt)st->guest_RAX;
+   UInt old_ecx = (UInt)st->guest_RCX;
+
+   switch (old_eax) {
+      case 0x00000000:
+         SET_ABCD(0x0000000d, 0x756e6547, 0x6c65746e, 0x49656e69);
+         break;
+      case 0x00000001:
+         SET_ABCD(0x000306c3, 0x02100800, 0x7ffafbff, 0xbfebfbff);
+         break;
+      case 0x00000002:
+         SET_ABCD(0x76036301, 0x00f0b6ff, 0x00000000, 0x00c10000);
+         break;
+      case 0x00000003:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x00000004:
+         switch (old_ecx) {
+            case 0x00000000: SET_ABCD(0x1c004121, 0x01c0003f,
+                                      0x0000003f, 0x00000000); break;
+            case 0x00000001: SET_ABCD(0x1c004122, 0x01c0003f,
+                                      0x0000003f, 0x00000000); break;
+            case 0x00000002: SET_ABCD(0x1c004143, 0x01c0003f,
+                                      0x000001ff, 0x00000000); break;
+            case 0x00000003: SET_ABCD(0x1c03c163, 0x03c0003f,
+                                      0x00001fff, 0x00000006); break;
+            default:         SET_ABCD(0x00000000, 0x00000000,
+                                      0x00000000, 0x00000000); break;
+         }
+         break;
+      case 0x00000005:
+         SET_ABCD(0x00000040, 0x00000040, 0x00000003, 0x00042120);
+         break;
+      case 0x00000006:
+         SET_ABCD(0x00000077, 0x00000002, 0x00000009, 0x00000000);
+         break;
+      case 0x00000007:
+         switch (old_ecx) {
+            case 0x00000000: SET_ABCD(0x00000000, 0x000027ab,
+                                      0x00000000, 0x00000000); break;
+            default:         SET_ABCD(0x00000000, 0x00000000,
+                                      0x00000000, 0x00000000); break;
+         }
+         break;
+      case 0x00000008:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x00000009:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x0000000a:
+         SET_ABCD(0x07300803, 0x00000000, 0x00000000, 0x00000603);
+         break;
+      case 0x0000000b:
+         switch (old_ecx) {
+            case 0x00000000: SET_ABCD(0x00000001, 0x00000002,
+                                      0x00000100, 0x00000002); break;
+            case 0x00000001: SET_ABCD(0x00000004, 0x00000008,
+                                      0x00000201, 0x00000002); break;
+            default:         SET_ABCD(0x00000000, 0x00000000,
+                                      old_ecx,    0x00000002); break;
+         }
+         break;
+      case 0x0000000c:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x0000000d:
+         switch (old_ecx) {
+            case 0x00000000: SET_ABCD(0x00000007, 0x00000340,
+                                      0x00000340, 0x00000000); break;
+            case 0x00000001: SET_ABCD(0x00000000, 0x00000000,
+                                      0x00000000, 0x00000000); break;
+            case 0x00000002: SET_ABCD(0x00000100, 0x00000240,
+                                      0x00000000, 0x00000000); break;
+            default:         SET_ABCD(0x00000000, 0x00000000,
+                                      0x00000000, 0x00000000); break;
+         }
+         break;
+      case 0x80000000:
+         SET_ABCD(0x80000008, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x80000001:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000021, 0x2c100800);
+         break;
+      case 0x80000002:
+         SET_ABCD(0x65746e49, 0x2952286c, 0x726f4320, 0x4d542865);
+         break;
+      case 0x80000003:
+         SET_ABCD(0x37692029, 0x3139342d, 0x20514d30, 0x20555043);
+         break;
+      case 0x80000004:
+         SET_ABCD(0x2e322040, 0x48473039, 0x0000007a, 0x00000000);
+         break;
+      case 0x80000005:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x80000006:
+         SET_ABCD(0x00000000, 0x00000000, 0x01006040, 0x00000000);
+         break;
+      case 0x80000007:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000100);
+         break;
+      case 0x80000008:
+         SET_ABCD(0x00003027, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      default:
+         SET_ABCD(0x00000007, 0x00000340, 0x00000340, 0x00000000);
+         break;
+   }
+#  undef SET_ABCD
+}
+
+
+/*---------------------------------------------------------------*/
+/*--- Misc integer helpers, including rotates and crypto.     ---*/
+/*---------------------------------------------------------------*/
 
 ULong amd64g_calculate_RCR ( ULong arg, 
                              ULong rot_amt, 

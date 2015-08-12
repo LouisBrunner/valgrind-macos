@@ -1264,6 +1264,7 @@ static IRExpr* mkZeroOfPrimopResultType ( IROp op )
       case Iop_Xor64: return IRExpr_Const(IRConst_U64(0));
       case Iop_XorV128:
       case Iop_AndV128: return IRExpr_Const(IRConst_V128(0));
+      case Iop_XorV256:
       case Iop_AndV256: return IRExpr_Const(IRConst_V256(0));
       default: vpanic("mkZeroOfPrimopResultType: bad primop");
    }
@@ -2285,6 +2286,7 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
             case Iop_Xor32:
             case Iop_Xor64:
             case Iop_XorV128:
+            case Iop_XorV256:
                /* Xor8/16/32/64/V128(t,t) ==> 0, for some IRTemp t */
                if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
                   e2 = mkZeroOfPrimopResultType(e->Iex.Binop.op);
@@ -2887,6 +2889,8 @@ IRSB* cprop_BB ( IRSB* in )
       typeOfIRLoadGOp(lg->cvt, &cvtRes, &cvtArg);
       IROp cvtOp = Iop_INVALID;
       switch (lg->cvt) {
+         case ILGop_IdentV128:
+         case ILGop_Ident64:
          case ILGop_Ident32: break;
          case ILGop_8Uto32:  cvtOp = Iop_8Uto32;  break;
          case ILGop_8Sto32:  cvtOp = Iop_8Sto32;  break;

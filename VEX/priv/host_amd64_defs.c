@@ -910,6 +910,28 @@ AMD64Instr* AMD64Instr_SseLdSt ( Bool isLoad, Int sz,
    vassert(sz == 4 || sz == 8 || sz == 16);
    return i;
 }
+AMD64Instr* AMD64Instr_SseCStore ( AMD64CondCode cond,
+                                   HReg src, AMD64AMode* addr )
+{
+   AMD64Instr* i         = LibVEX_Alloc_inline(sizeof(AMD64Instr));
+   i->tag                = Ain_SseCStore;
+   i->Ain.SseCStore.cond = cond;
+   i->Ain.SseCStore.src  = src;
+   i->Ain.SseCStore.addr = addr;
+   vassert(cond != Acc_ALWAYS);
+   return i;
+}
+AMD64Instr* AMD64Instr_SseCLoad ( AMD64CondCode cond,
+                                  AMD64AMode* addr, HReg dst )
+{
+   AMD64Instr* i        = LibVEX_Alloc_inline(sizeof(AMD64Instr));
+   i->tag               = Ain_SseCLoad;
+   i->Ain.SseCLoad.cond = cond;
+   i->Ain.SseCLoad.addr = addr;
+   i->Ain.SseCLoad.dst  = dst;
+   vassert(cond != Acc_ALWAYS);
+   return i;
+}
 AMD64Instr* AMD64Instr_SseLdzLO  ( Int sz, HReg reg, AMD64AMode* addr )
 {
    AMD64Instr* i         = LibVEX_Alloc_inline(sizeof(AMD64Instr));
@@ -1268,6 +1290,24 @@ void ppAMD64Instr ( const AMD64Instr* i, Bool mode64 )
             ppAMD64AMode(i->Ain.SseLdSt.addr);
          }
          return;
+      case Ain_SseCStore:
+         vex_printf("if (%%rflags.%s) { ",
+                    showAMD64CondCode(i->Ain.SseCStore.cond));
+         vex_printf("movups ");
+         ppHRegAMD64(i->Ain.SseCStore.src);
+         vex_printf(", ");
+         ppAMD64AMode(i->Ain.SseCStore.addr);
+         vex_printf(" }");
+         return;
+      case Ain_SseCLoad:
+         vex_printf("if (%%rflags.%s) { ",
+                    showAMD64CondCode(i->Ain.SseCLoad.cond));
+         vex_printf("movups ");
+         ppAMD64AMode(i->Ain.SseCLoad.addr);
+         vex_printf(", ");
+         ppHRegAMD64(i->Ain.SseCLoad.dst);
+         vex_printf(" }");
+         return;
       case Ain_SseLdzLO:
          vex_printf("movs%s ", i->Ain.SseLdzLO.sz==4 ? "s" : "d");
          ppAMD64AMode(i->Ain.SseLdzLO.addr);
@@ -1566,6 +1606,14 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, const AMD64Instr* i, Bool mode64 )
          addHRegUse(u, i->Ain.SseLdSt.isLoad ? HRmWrite : HRmRead,
                        i->Ain.SseLdSt.reg);
          return;
+      case Ain_SseCStore:
+         addRegUsage_AMD64AMode(u, i->Ain.SseCStore.addr);
+         addHRegUse(u, HRmRead, i->Ain.SseCStore.src);
+         return;
+      case Ain_SseCLoad:
+         addRegUsage_AMD64AMode(u, i->Ain.SseCLoad.addr);
+         addHRegUse(u, HRmModify, i->Ain.SseCLoad.dst);
+         return;
       case Ain_SseLdzLO:
          addRegUsage_AMD64AMode(u, i->Ain.SseLdzLO.addr);
          addHRegUse(u, HRmWrite, i->Ain.SseLdzLO.reg);
@@ -1799,6 +1847,14 @@ void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i, Bool mode64 )
          mapReg(m, &i->Ain.SseLdSt.reg);
          mapRegs_AMD64AMode(m, i->Ain.SseLdSt.addr);
          break;
+      case Ain_SseCStore:
+         mapRegs_AMD64AMode(m, i->Ain.SseCStore.addr);
+         mapReg(m, &i->Ain.SseCStore.src);
+         return;
+      case Ain_SseCLoad:
+         mapRegs_AMD64AMode(m, i->Ain.SseCLoad.addr);
+         mapReg(m, &i->Ain.SseCLoad.dst);
+         return;
       case Ain_SseLdzLO:
          mapReg(m, &i->Ain.SseLdzLO.reg);
          mapRegs_AMD64AMode(m, i->Ain.SseLdzLO.addr);
@@ -2366,7 +2422,7 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
    UChar* p = &buf[0];
    UChar* ptmp;
    Int    j;
-   vassert(nbuf >= 32);
+   vassert(nbuf >= 64);
    vassert(mode64 == True);
 
    /* vex_printf("asm  "); ppAMD64Instr(i, mode64); vex_printf("\n"); */
@@ -2823,13 +2879,33 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
                *p++ = 0x48; *p++ = 0xB8; p = emit64(p, 0x5555555555555555ULL);
                break;
             case RLPri_2Int:
-               vassert(0); //ATC
+               goto bad; //ATC
                // movabsq $0x5555555555555555, %rax
                *p++ = 0x48; *p++ = 0xB8; p = emit64(p, 0x5555555555555555ULL);
                // movq %rax, %rdx
                *p++ = 0x48; *p++ = 0x89; *p++ = 0xC2;
+               break;
+            case RLPri_V128SpRel:
+               if (i->Ain.Call.rloc.spOff == 0) {
+                  // We could accept any |spOff| here, but that's more
+                  // hassle and the only value we're ever going to get
+                  // is zero (I believe.)  Hence take the easy path :)
+                  // We need a scag register -- r11 can be it.
+                  // movabsq $0x5555555555555555, %r11
+                  *p++ = 0x49; *p++ = 0xBB;
+                  p = emit64(p, 0x5555555555555555ULL);
+                  // movq %r11, 0(%rsp)
+                  *p++ = 0x4C; *p++ = 0x89; *p++ = 0x1C; *p++ = 0x24;
+                  // movq %r11, 8(%rsp)
+                  *p++ = 0x4C; *p++ = 0x89; *p++ = 0x5C; *p++ = 0x24;
+                  *p++ = 0x08;
+                  break;
+               }
+               goto bad; //ATC for all other spOff values
+            case RLPri_V256SpRel:
+               goto bad; //ATC
             case RLPri_None: case RLPri_INVALID: default:
-               vassert(0);
+               vassert(0); // should never get here
          }
 
          // after:
@@ -3081,7 +3157,7 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
    }
 
    case Ain_CStore: {
-      /* AFAICS this is identical to Ain_CStore except that the opcode
+      /* AFAICS this is identical to Ain_CLoad except that the opcode
          is 0x89 instead of 0x8B. */
       vassert(i->Ain.CStore.cond != Acc_ALWAYS);
 
@@ -3418,6 +3494,60 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
                            i->Ain.SseLdSt.addr);
       goto done;
 
+   case Ain_SseCStore: {
+      vassert(i->Ain.SseCStore.cond != Acc_ALWAYS);
+
+      /* Use ptmp for backpatching conditional jumps. */
+      ptmp = NULL;
+
+      /* jmp fwds if !condition */
+      *p++ = toUChar(0x70 + (0xF & (i->Ain.SseCStore.cond ^ 1)));
+      ptmp = p; /* fill in this bit later */
+      *p++ = 0; /* # of bytes to jump over; don't know how many yet. */
+
+      /* Now the store. */
+      *p++ = clearWBit(
+             rexAMode_M_enc(vregEnc3210(i->Ain.SseCStore.src),
+                            i->Ain.SseCStore.addr));
+      *p++ = 0x0F; 
+      *p++ = toUChar(0x11);
+      p = doAMode_M_enc(p, vregEnc3210(i->Ain.SseCStore.src),
+                           i->Ain.SseCStore.addr);
+
+      /* Fix up the conditional branch */
+      Int delta = p - ptmp;
+      vassert(delta > 0 && delta < 40);
+      *ptmp = toUChar(delta-1);
+      goto done;
+   }
+
+   case Ain_SseCLoad: {
+      vassert(i->Ain.SseCLoad.cond != Acc_ALWAYS);
+
+      /* Use ptmp for backpatching conditional jumps. */
+      ptmp = NULL;
+
+      /* jmp fwds if !condition */
+      *p++ = toUChar(0x70 + (0xF & (i->Ain.SseCLoad.cond ^ 1)));
+      ptmp = p; /* fill in this bit later */
+      *p++ = 0; /* # of bytes to jump over; don't know how many yet. */
+
+      /* Now the load. */
+      *p++ = clearWBit(
+             rexAMode_M_enc(vregEnc3210(i->Ain.SseCLoad.dst),
+                            i->Ain.SseCLoad.addr));
+      *p++ = 0x0F; 
+      *p++ = toUChar(0x10);
+      p = doAMode_M_enc(p, vregEnc3210(i->Ain.SseCLoad.dst),
+                           i->Ain.SseCLoad.addr);
+
+      /* Fix up the conditional branch */
+      Int delta = p - ptmp;
+      vassert(delta > 0 && delta < 40);
+      *ptmp = toUChar(delta-1);
+      goto done;
+   }
+
    case Ain_SseLdzLO:
       vassert(i->Ain.SseLdzLO.sz == 4 || i->Ain.SseLdzLO.sz == 8);
       /* movs[sd] amode, %xmm-dst */
@@ -3726,7 +3856,7 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
    /*NOTREACHED*/
    
   done:
-   vassert(p - &buf[0] <= 32);
+   vassert(p - &buf[0] <= 64);
    return p - &buf[0];
 }
 

@@ -878,6 +878,7 @@ Bool VG_(machine_get_hwcaps)( void )
      Bool have_lzcnt, have_avx, have_bmi, have_avx2;
      Bool have_rdtscp;
      UInt eax, ebx, ecx, edx, max_basic, max_extended;
+     ULong xgetbv_0 = 0;
      HChar vstr[13];
      vstr[0] = 0;
 
@@ -910,26 +911,41 @@ Bool VG_(machine_get_hwcaps)( void )
      // sse41   is ecx:19
      // sse42   is ecx:20
 
+     // xsave   is ecx:26
      // osxsave is ecx:27
      // avx     is ecx:28
      // fma     is ecx:12
      have_avx = False;
      /* have_fma = False; */
-     if ( (ecx & ((1<<27)|(1<<28))) == ((1<<27)|(1<<28)) ) {
-        /* processor supports AVX instructions and XGETBV is enabled
-           by OS */
+     if ( (ecx & ((1<<28)|(1<<27)|(1<<26))) == ((1<<28)|(1<<27)|(1<<26)) ) {
+        /* Processor supports AVX instructions and XGETBV is enabled
+           by OS and AVX instructions are enabled by the OS. */
         ULong w;
         __asm__ __volatile__("movq $0,%%rcx ; "
                              ".byte 0x0F,0x01,0xD0 ; " /* xgetbv */
                              "movq %%rax,%0"
                              :/*OUT*/"=r"(w) :/*IN*/
-                             :/*TRASH*/"rdx","rcx");
-        if ((w & 6) == 6) {
-           /* OS has enabled both XMM and YMM state support */
-           have_avx = True;
+                             :/*TRASH*/"rdx","rcx","rax");
+        xgetbv_0 = w;
+        if ((xgetbv_0 & 7) == 7) {
+           /* Only say we have AVX if the XSAVE-allowable
+              bitfield-mask allows x87, SSE and AVX state.  We could
+              actually run with a more restrictive XGETBV(0) value,
+              but VEX's implementation of XSAVE and XRSTOR assumes
+              that all 3 bits are enabled.
+
+              Also, the VEX implementation of XSAVE/XRSTOR assumes that
+              state component [2] (the YMM high halves) are located in
+              the XSAVE image at offsets 576 .. 831.  So we have to
+              check that here before declaring AVX to be supported. */
+           UInt eax2, ebx2, ecx2, edx2;
+           VG_(cpuid)(0xD, 2, &eax2, &ebx2, &ecx2, &edx2);
+           if (ebx2 == 576 && eax2 == 256) {
+              have_avx = True;
+           }
            /* have_fma = (ecx & (1<<12)) != 0; */
            /* have_fma: Probably correct, but gcc complains due to
-              unusedness. &*/
+              unusedness. */
         }
      }
 
@@ -957,12 +973,12 @@ Bool VG_(machine_get_hwcaps)( void )
         have_rdtscp = (edx & (1<<27)) != 0; /* True => have RDTSVCP */
      }
 
-     /* Check for BMI1 and AVX2. If we have AVX1 (plus OS support). */
-     have_bmi = False;
+     /* Check for BMI1 and AVX2.  If we have AVX1 (plus OS support). */
+     have_bmi  = False;
      have_avx2 = False;
      if (have_avx && max_basic >= 7) {
         VG_(cpuid)(7, 0, &eax, &ebx, &ecx, &edx);
-        have_bmi = (ebx & (1<<3)) != 0; /* True => have BMI1 */
+        have_bmi  = (ebx & (1<<3)) != 0; /* True => have BMI1 */
         have_avx2 = (ebx & (1<<5)) != 0; /* True => have AVX2 */
      }
 

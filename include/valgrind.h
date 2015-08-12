@@ -140,7 +140,7 @@
 #  define PLAT_amd64_win64 1
 #elif defined(__linux__) && defined(__i386__)
 #  define PLAT_x86_linux 1
-#elif defined(__linux__) && defined(__x86_64__)
+#elif defined(__linux__) && defined(__x86_64__) && !defined(__ILP32__)
 #  define PLAT_amd64_linux 1
 #elif defined(__linux__) && defined(__powerpc__) && !defined(__powerpc64__)
 #  define PLAT_ppc32_linux 1

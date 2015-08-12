@@ -32,7 +32,8 @@ EXTRA_DIST = \
 		sh-mem-vec256-plo-yes.stdout.exp \
 	sse_memory.stderr.exp sse_memory.stdout.exp sse_memory.vgtest \
 	xor-undef-amd64.stderr.exp xor-undef-amd64.stdout.exp \
-	xor-undef-amd64.vgtest
+	xor-undef-amd64.vgtest \
+	xsave-avx.vgtest xsave-avx.stdout.exp xsave-avx.stderr.exp
 
 check_PROGRAMS = \
 	bt_everything \
@@ -45,7 +46,7 @@ check_PROGRAMS = \
 	sse_memory \
 	xor-undef-amd64
 if BUILD_AVX_TESTS
- check_PROGRAMS += sh-mem-vec256
+ check_PROGRAMS += sh-mem-vec256 xsave-avx
 endif
 if HAVE_ASM_CONSTRAINT_P
  check_PROGRAMS += insn-pcmpistri

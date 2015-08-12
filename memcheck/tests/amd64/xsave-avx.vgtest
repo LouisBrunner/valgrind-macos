@@ -1,0 +1,4 @@
+prog: xsave-avx
+prereq: ../../../tests/x86_amd64_features amd64-avx
+vgopts: -q
+args: x

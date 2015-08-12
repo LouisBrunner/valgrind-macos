@@ -340,6 +340,12 @@ where XXXXXX is the bug number as listed below.
 340856  disInstr(arm64): unhandled instruction 0x1E634C45 (fcsel)
 340922  arm64: unhandled getgroups/setgroups syscalls
 350251  Fix typo in VEX utility program (test_main.c).
+350407  arm64: unhandled instruction ucvtf (vector, integer)
+350809  none/tests/async-sigs breaks when run under cron on Solaris
+350811  update README.solaris after r15445
+350813  Use handwritten memcheck assembly helpers on x86/Solaris [..]
+350854  strange code in VG_(load_ELF)()
+351140  arm64 syscalls setuid (146) and setresgid (149) not implemented
 n-i-bz  DRD and Helgrind: Handle Imbe_CancelReservation (clrex on ARM)
 n-i-bz  Add missing ]] to terminate CDATA.
 n-i-bz  Glibc versions prior to 2.5 do not define PTRACE_GETSIGINFO

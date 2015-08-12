@@ -40,6 +40,8 @@ go in here.
 349304  vex amd64->IR: 0xF 0x33 0x89 0x45 0xFC 0x89 0x55 0xF8
         rdpmc?
 
+350593  AMD64 VEX does not support all SIMD compare variants.
+
 === VEX/arm ============================================================
 
 335618  mov.w rN, pc/sp (ARM32)
@@ -98,6 +100,8 @@ go in here.
 
 349891  vex x86->IR: unhandled instruction bytes: 0xF3 0xF 0xB8 0xC9
 
+350062  3.11 SVN cannot start application (x86 ROUNDSD ?)
+
 === VEX/mips ===========================================================
 
 340777  Illegal instruction on mips (ar71xx)
@@ -119,6 +123,8 @@ go in here.
         I think this is actually fixed, and needs closing.
 
 === VEX/s390x ==========================================================
+
+350290  s390x unsupported instruction fixbra
 
 === VEX general ========================================================
 
@@ -165,6 +171,10 @@ go in here.
 349034  Add Lustre ioctls LL_IOC_GROUP_LOCK and LL_IOC_GROUP_UNLOCK
 
 349952  Valgrind terminates process upon a call to remap_file_pages
+
+350228  Unhandled ioctl 0x6458 (i965/mesa)
+
+351029  factor our m_sigframe functions
 
 === Debuginfo reader ===================================================
 
@@ -218,6 +228,13 @@ go in here.
 
 349879  [PATCH] memcheck: add handwritten assembly for helperc_LOADV*
 
+350405  Support for Intel DPDK custom allocator rte_malloc
+        Seems dubious
+
+350928  mc_malloc_wrappers.c:244 (in_block_list):
+        Assertion 'found_mc == mc' failed
+        Has patch, needs looking at
+
 === Tools/DRD ==========================================================
 === Tools/Helgrind =====================================================
 
@@ -239,6 +256,8 @@ go in here.
 
 342353  Allow dumping full massif output while valgrind is still running
         Has patch
+
+350934  massif VALGRIND INTERNAL ERROR: Valgrind received a signal 7 (SIGBUS)
 
 === Tools/Cachegrind ===================================================
 
@@ -268,6 +287,9 @@ go in here.
 346185  Fix typo saving altivec register v24
 
 347686  Patch set to cleanup PPC64 regtests
+
+350496  unhandled instruction: 0xE8040000 for powerpc e6500
+        e500 ?
 
 === other/arm ==========================================================
 
@@ -345,6 +367,8 @@ go in here.
 
 349804  wine/osx: mmap-FIXED(0x1000, 1073741824) failed in UME (load_segment2)
 
+350359  memcheck/tests/x86/fxsave hangs indefinetely on OS X
+
 === other/Win32 =======================================================
 
 211529  valgrind doesn't show proper call stacks for programs compiled
@@ -361,6 +385,8 @@ go in here.
 
 348358  describe should show info about main stack guard page
 
+350202  Add limited param to 'monitor block_list'
+
 === Output =============================================================
 
 339405  Adds ability to invoke a script in order to determine a
@@ -369,6 +395,8 @@ go in here.
 
 342423  Log files should have the history 'execve' calls in them
         Wishlist
+
+351043  Invalid XML output when tracing into forked child processes
 
 === MPI ================================================================
 
@@ -396,6 +424,12 @@ go in here.
 343715  valgrind hangs after vgdb help request
 
 349790  Clean up of the hardware capability checking utilities.
+
+350321  3 (gdbserver) stdoutB failures, 8 stderr failures during `make regtest`
+        Very likely INVALID
+
+350491  Handling of nested scripts
+        Bizarre
 
 === Uncategorised/build=================================================
 
@@ -439,4 +473,4 @@ Check: space recovery in aspacemgr segnames array re-implemented?
 Check: missing copyright notices in include/vki/*xen*.h
 Check: update copyright dates in source files
 
-Tue  7 Jul 15:27:23 CEST 2015
+Wed 12 Aug 15:52:27 CEST 2015

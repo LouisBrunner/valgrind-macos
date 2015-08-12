@@ -7820,6 +7820,7 @@ static void repository_door_pre_mem_door_call_hook(ThreadId tid, Int fd,
                            "entity_name->rpr_answertype)", r->rpr_answertype);
          }
          break;
+      #if (SOLARIS_REPCACHE_PROTOCOL_VERSION >= 25)
       case VKI_REP_PROTOCOL_ENTITY_GET_ROOT:
          {
             struct vki_rep_protocol_entity_root *r =
@@ -7830,6 +7831,7 @@ static void repository_door_pre_mem_door_call_hook(ThreadId tid, Int fd,
                            "entity_root->rpr_outid)", r->rpr_outid);
          }
          break;
+      #endif /* SOLARIS_REPCACHE_PROTOCOL_VERSION >= 25 */
       case VKI_REP_PROTOCOL_ENTITY_GET:
          {
             struct vki_rep_protocol_entity_get *r =

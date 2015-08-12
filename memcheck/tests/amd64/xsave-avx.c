@@ -96,8 +96,8 @@ static void do_setup_then_xsave ( void* p, UInt rfbm )
    __asm__ __volatile__("fld %st(3)");
    __asm__ __volatile__("fld %st(3)");
    __asm__ __volatile__("fld1");
-   __asm__ __volatile__("vmovups (%0), %%ymm0" : : "r"(&vec0[0]) : "ymm0" );
-   __asm__ __volatile__("vmovups (%0), %%ymm1" : : "r"(&vec1[0]) : "ymm1" );
+   __asm__ __volatile__("vmovups (%0), %%ymm0" : : "r"(&vec0[0]) : "xmm0" );
+   __asm__ __volatile__("vmovups (%0), %%ymm1" : : "r"(&vec1[0]) : "xmm1" );
    __asm__ __volatile__("vxorps  %ymm2, %ymm2, %ymm2");
    __asm__ __volatile__("vmovaps %ymm0, %ymm3");
    __asm__ __volatile__("vmovaps %ymm1, %ymm4");

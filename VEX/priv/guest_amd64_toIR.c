@@ -18668,13 +18668,13 @@ static Long dis_PCMPxSTRx ( const VexAbiInfo* vbi, Prefix pfx,
       case 0x00: case 0x02: case 0x08: case 0x0A: case 0x0C: case 0x0E:
       case 0x12: case 0x14: case 0x1A:
       case 0x30: case 0x34: case 0x38: case 0x3A:
-      case 0x40: case 0x44: case 0x46: case 0x4A:
+      case 0x40: case 0x42: case 0x44: case 0x46: case 0x4A:
          break;
       // the 16-bit character versions of the above
       case 0x01: case 0x03: case 0x09: case 0x0B: case 0x0D:
       case 0x13:            case 0x1B:
                             case 0x39: case 0x3B:
-                 case 0x45:            case 0x4B:
+                            case 0x45:            case 0x4B:
          break;
       default:
          return delta0; /*FAIL*/

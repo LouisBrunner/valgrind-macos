@@ -144,8 +144,6 @@ go in here.
 
 345414  WARNING: unhandled syscall: 317 (sys_seccomp)
 
-348269  support of mmap for huge pages is broken at least on amd64
-
 348616  Wine/valgrind: Warning: noted but unhandled ioctl 0x5390 with
         no size/direction hints. (DVD_READ_STRUCT)
 

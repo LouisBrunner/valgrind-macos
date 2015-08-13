@@ -267,6 +267,7 @@ where XXXXXX is the bug number as listed below.
         == 345929
 348102  Patch updating v4l2 API support
 348247  jno jumps wrongly when overflow is not set
+348269  Improve mmap MAP_HUGETLB support.
 348565  Fix detection of command line option availability for clang
 348728  Fix broken check for VIDIOC_G_ENC_INDEX
 348748  Fix redundant condition

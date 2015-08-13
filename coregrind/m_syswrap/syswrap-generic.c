@@ -2323,9 +2323,9 @@ ML_(generic_PRE_sys_mmap) ( ThreadId tid,
       to understand special file system mount options).
       So, let's just redo an mmap, without giving any constraint to
       the kernel. If that succeeds, check with aspacem that the returned
-      address is acceptable (i.e. is free).
+      address is acceptable.
       This will give a similar effect as if the user would have
-      specified a MAP_FIXED at that address.
+      hinted that address.
       The aspacem state will be correctly updated afterwards.
       We however cannot do this last refinement when the user asked
       for a fixed mapping, as the user asked a specific address. */
@@ -2337,8 +2337,18 @@ ML_(generic_PRE_sys_mmap) ( ThreadId tid,
                                        arg4,
                                        arg5, arg6);
       if (!sr_isError(sres)) {
-         vg_assert(VG_(am_covered_by_single_free_segment)((Addr)sr_Res(sres),
-                                                           arg2));
+         /* The kernel is supposed to know what it is doing, but let's
+            do a last sanity check anyway, as if the chosen address had
+            been initially hinted by the client. The whole point of this
+            last try was to allow mmap of huge pages to succeed without
+            making aspacem understand them, on the other hand the kernel
+            does not know about valgrind reservations, so this mapping
+            can end up in free space and reservations. */
+         mreq.start = (Addr)sr_Res(sres);
+         mreq.len   = arg2;
+         mreq.rkind = MHint;
+         advised = VG_(am_get_advisory)( &mreq, True/*client*/, &mreq_ok );
+         vg_assert(mreq_ok && advised == mreq.start);
       }
    }
 

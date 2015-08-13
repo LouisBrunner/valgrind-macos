@@ -4635,6 +4635,9 @@ struct vki_media_links_enum {
 #define VKI_MEDIA_IOC_ENUM_LINKS		_VKI_IOWR('|', 0x02, struct vki_media_links_enum)
 #define VKI_MEDIA_IOC_SETUP_LINK		_VKI_IOWR('|', 0x03, struct vki_media_link_desc)
 
+/* DVB demux API */
+#define	VKI_DMX_STOP	_VKI_IO('o', 42)
+
 /* Comparison type */
 enum vki_kcmp_type {
    VKI_KCMP_FILE,

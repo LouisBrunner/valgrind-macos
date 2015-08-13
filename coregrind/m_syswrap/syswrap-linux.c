@@ -5552,6 +5552,9 @@ PRE(sys_ioctl)
 
    /* V4L2 */
    case VKI_V4L2_LOG_STATUS:
+
+   /* DVB */
+   case VKI_DMX_STOP:
       PRINT("sys_ioctl ( %lu, 0x%lx )", ARG1, ARG2);
       PRE_REG_READ2(long, "ioctl",
                     unsigned int, fd, unsigned int, request);

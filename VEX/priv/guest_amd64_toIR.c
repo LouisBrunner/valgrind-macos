@@ -9100,6 +9100,8 @@ static Bool findSSECmpOp ( /*OUT*/Bool* preSwapP,
 #  define XXX(_pre, _op, _not) { pre = _pre; op = _op; not = _not; }
    // If you add a case here, add a corresponding test for both VCMPSD_128
    // and VCMPSS_128 in avx-1.c.
+   // Cases 0xA and above are
+   //    "Enhanced Comparison Predicate[s] for VEX-Encoded [insns]"
    switch (imm8) {
       // "O" = ordered, "U" = unordered
       // "Q" = non-signalling (quiet), "S" = signalling
@@ -9110,39 +9112,50 @@ static Bool findSSECmpOp ( /*OUT*/Bool* preSwapP,
       //             |      |               |
       //             v      v               v
       case 0x0:  XXX(False, Iop_CmpEQ32Fx4, False); break; // EQ_OQ
-      case 0x1:  XXX(False, Iop_CmpLT32Fx4, False); break; // LT_OS
-      case 0x2:  XXX(False, Iop_CmpLE32Fx4, False); break; // LE_OS
-      case 0x3:  XXX(False, Iop_CmpUN32Fx4, False); break; // UNORD_Q
-      case 0x4:  XXX(False, Iop_CmpEQ32Fx4, True);  break; // NEQ_UQ
-      case 0x5:  XXX(False, Iop_CmpLT32Fx4, True);  break; // NLT_US
-      case 0x6:  XXX(False, Iop_CmpLE32Fx4, True);  break; // NLE_US
-      case 0x7:  XXX(False, Iop_CmpUN32Fx4, True);  break; // ORD_Q
       case 0x8:  XXX(False, Iop_CmpEQ32Fx4, False); break; // EQ_UQ
-      case 0x9:  XXX(True,  Iop_CmpLE32Fx4, True);  break; // NGE_US
-      /* "Enhanced Comparison Predicate[s] for VEX-Encoded [insns] */
-      case 0xA:  XXX(True,  Iop_CmpLT32Fx4, True);  break; // NGT_US
-      // 0xB  FALSE_OQ
+      case 0x10: XXX(False, Iop_CmpEQ32Fx4, False); break; // EQ_OS
+      case 0x18: XXX(False, Iop_CmpEQ32Fx4, False); break; // EQ_US
+      //
+      case 0x1:  XXX(False, Iop_CmpLT32Fx4, False); break; // LT_OS
+      case 0x11: XXX(False, Iop_CmpLT32Fx4, False); break; // LT_OQ
+      //
+      case 0x2:  XXX(False, Iop_CmpLE32Fx4, False); break; // LE_OS
+      case 0x12: XXX(False, Iop_CmpLE32Fx4, False); break; // LE_OQ
+      //
+      case 0x3:  XXX(False, Iop_CmpUN32Fx4, False); break; // UNORD_Q
+      case 0x13: XXX(False, Iop_CmpUN32Fx4, False); break; // UNORD_S
+      //
       // 0xC: this isn't really right because it returns all-1s when
       // either operand is a NaN, and it should return all-0s.
+      case 0x4:  XXX(False, Iop_CmpEQ32Fx4, True);  break; // NEQ_UQ
       case 0xC:  XXX(False, Iop_CmpEQ32Fx4, True);  break; // NEQ_OQ
-      case 0xD:  XXX(True,  Iop_CmpLE32Fx4, False); break; // GE_OS
-      case 0xE:  XXX(True,  Iop_CmpLT32Fx4, False); break; // GT_OS
-      // 0xF  TRUE_UQ
-      // 0x10  EQ_OS
-      case 0x11: XXX(False, Iop_CmpLT32Fx4, False); break; // LT_OQ
-      case 0x12: XXX(False, Iop_CmpLE32Fx4, False); break; // LE_OQ
-      // 0x13  UNORD_S
-      // 0x14  NEQ_US
-      // 0x15  NLT_UQ
+      case 0x14: XXX(False, Iop_CmpEQ32Fx4, True);  break; // NEQ_US
+      case 0x1C: XXX(False, Iop_CmpEQ32Fx4, True);  break; // NEQ_OS
+      //
+      case 0x5:  XXX(False, Iop_CmpLT32Fx4, True);  break; // NLT_US
+      case 0x15: XXX(False, Iop_CmpLT32Fx4, True);  break; // NLT_UQ
+      //
+      case 0x6:  XXX(False, Iop_CmpLE32Fx4, True);  break; // NLE_US
       case 0x16: XXX(False, Iop_CmpLE32Fx4, True);  break; // NLE_UQ
-      // 0x17  ORD_S
-      // 0x18  EQ_US
-      // 0x19  NGE_UQ
-      // 0x1A  NGT_UQ
-      // 0x1B  FALSE_OS
-      // 0x1C  NEQ_OS
-      // 0x1D  GE_OQ
+      //
+      case 0x7:  XXX(False, Iop_CmpUN32Fx4, True);  break; // ORD_Q
+      case 0x17: XXX(False, Iop_CmpUN32Fx4, True);  break; // ORD_S
+      //
+      case 0x9:  XXX(True,  Iop_CmpLE32Fx4, True);  break; // NGE_US
+      case 0x19: XXX(True,  Iop_CmpLE32Fx4, True);  break; // NGE_UQ
+      //
+      case 0xA:  XXX(True,  Iop_CmpLT32Fx4, True);  break; // NGT_US
+      case 0x1A: XXX(True,  Iop_CmpLT32Fx4, True);  break; // NGT_UQ
+      //
+      case 0xD:  XXX(True,  Iop_CmpLE32Fx4, False); break; // GE_OS
+      case 0x1D: XXX(True,  Iop_CmpLE32Fx4, False); break; // GE_OQ
+      //
+      case 0xE:  XXX(True,  Iop_CmpLT32Fx4, False); break; // GT_OS
       case 0x1E: XXX(True,  Iop_CmpLT32Fx4, False); break; // GT_OQ
+      // Unhandled:
+      // 0xB  FALSE_OQ
+      // 0xF  TRUE_UQ
+      // 0x1B  FALSE_OS
       // 0x1F  TRUE_US
       /* Don't forget to add test cases to VCMPSS_128_<imm8> in
          avx-1.c if new cases turn up. */

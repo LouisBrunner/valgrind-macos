@@ -139,7 +139,9 @@ where XXXXXX is the bug number as listed below.
         == 307399
         == 343175
         == 342740
+        == 346912
 335907  segfault when running wine's ddrawex/tests/surface.c under valgrind
+338602  AVX2 bit in CPUID missing
 338606  Strange message for scripts with invalid interpreter
 338731  ppc: Fix testuite build for toolchains not supporting -maltivec
 338995  shmat with hugepages (SHM_HUGETLB) fails with EINVAL
@@ -172,6 +174,10 @@ where XXXXXX is the bug number as listed below.
 342063  wrong format specifier for test mcblocklistsearch in gdbserver_tests
 342221  socket connect false positive uninit memory for unknown af family
 342353  Allow dumping full massif output while valgrind is still running
+342571  Valgrind chokes on AVX compare intrinsic with _CMP_GE_QS
+        == 346476
+        == 348387
+        == 350593
 342603  Add I2C_SMBUS ioctl support
 342635  OS X 10.10 (Yosemite) - missing system calls and fcntl code
 342683  Mark memory past the initial brk limit as unaddressable

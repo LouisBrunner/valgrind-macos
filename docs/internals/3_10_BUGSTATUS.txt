@@ -394,9 +394,6 @@ go in here.
         stack crashes callgrind
         m_stacks.c brokenness?
 
-343173  helgrind crash during stack unwind
-        m_stacks.c: need to (de)register stack at munmap?
-
 343357  Please fix semaphore starvation when running threads-per-CPU
         Unclear if we should do anything
 

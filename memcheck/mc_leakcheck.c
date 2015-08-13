@@ -1507,14 +1507,15 @@ static void print_results(ThreadId tid, LeakCheckParams* lcp)
 }
 
 // print recursively all indirectly leaked blocks collected in clique.
-static void print_clique (Int clique, UInt level)
+// Printing stops when *remaining reaches 0.
+static void print_clique (Int clique, UInt level, UInt *remaining)
 {
    Int ind;
    UInt i,  n_lossrecords;
 
    n_lossrecords = VG_(OSetGen_Size)(lr_table);
 
-   for (ind = 0; ind < lc_n_chunks; ind++) {
+   for (ind = 0; ind < lc_n_chunks && *remaining > 0; ind++) {
       LC_Extra*     ind_ex = &(lc_extras)[ind];
       if (ind_ex->state == IndirectLeak 
           && ind_ex->IorC.clique == (SizeT) clique) {
@@ -1533,19 +1534,21 @@ static void print_clique (Int clique, UInt level)
          VG_(umsg)("%p[%lu] indirect loss record %u\n",
                    (void *)ind_ch->data, (SizeT)ind_ch->szB,
                    lr_i+1); // lr_i+1 for user numbering.
+         (*remaining)--;
          if (lr_i >= n_lossrecords)
             VG_(umsg)
                ("error: no indirect loss record found for %p[%lu]?????\n",
                 (void *)ind_ch->data, (SizeT)ind_ch->szB);
-         print_clique(ind, level+1);
+         print_clique(ind, level+1, remaining);
       }
    }
  }
 
-Bool MC_(print_block_list) ( UInt loss_record_nr)
+Bool MC_(print_block_list) ( UInt loss_record_nr, UInt max_blocks)
 {
    UInt         i,  n_lossrecords;
    LossRecord*  lr;
+   UInt remaining = max_blocks;
 
    if (lr_table == NULL || lc_chunks == NULL || lc_extras == NULL) {
       VG_(umsg)("Can't print block list : no valid leak search result\n");
@@ -1569,7 +1572,7 @@ Bool MC_(print_block_list) ( UInt loss_record_nr)
    MC_(pp_LossRecord)(loss_record_nr+1, n_lossrecords, lr);
 
    // Match the chunks with loss records.
-   for (i = 0; i < lc_n_chunks; i++) {
+   for (i = 0; i < lc_n_chunks && remaining > 0; i++) {
       MC_Chunk*     ch = lc_chunks[i];
       LC_Extra*     ex = &(lc_extras)[i];
       LossRecord*   old_lr;
@@ -1584,6 +1587,7 @@ Bool MC_(print_block_list) ( UInt loss_record_nr)
          if (old_lr == lr_array[loss_record_nr]) {
             VG_(umsg)("%p[%lu]\n",
                       (void *)ch->data, (SizeT)ch->szB);
+            remaining--;
             if (ex->state != Reachable) {
                // We can print the clique in all states, except Reachable.
                // In Unreached state, lc_chunk[i] is the clique leader.
@@ -1591,7 +1595,7 @@ Bool MC_(print_block_list) ( UInt loss_record_nr)
                // which was later collected in another clique.
                // For Possible, lc_chunk[i] might be the top of a clique
                // or an intermediate clique.
-               print_clique(i, 1);
+               print_clique(i, 1, &remaining);
             }
          }
       } else {

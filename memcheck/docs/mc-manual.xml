@@ -1886,8 +1886,12 @@ Address 0x8049E28 len 1 defined
   </listitem>
 
   <listitem>
-    <para><varname>block_list &lt;loss_record_nr&gt; </varname>
-    shows the list of blocks belonging to &lt;loss_record_nr&gt;.
+    <para><varname>block_list &lt;loss_record_nr&gt;
+                              [unlimited*|limited &lt;max_blocks&gt;]</varname>
+      shows the list of blocks belonging to &lt;loss_record_nr&gt;.
+      The nr of blocks to print can be controlled using the
+      <varname>limited</varname> argument followed by the maximum nr
+      of blocks to output.
     </para>
 
     <para> A leak search merges the allocated blocks in loss records :

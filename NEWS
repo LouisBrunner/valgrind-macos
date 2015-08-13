@@ -20,6 +20,9 @@ Release 3.11.0 is under development, not yet released.
     get_vbits (in particular on little endian computers) when you need to
     associate byte data value with their corresponding validity bits.
 
+  - The 'block_list' monitor command now accepts an optional argument
+    'limited <max_blocks>' to control the nr of block addresses printed.
+
 * Massif:
   - New monitor command 'all_snapshots <filename>' that dumps all snapshots
     taken so far.
@@ -282,6 +285,7 @@ where XXXXXX is the bug number as listed below.
 349874  Fix typos in source code
 349828  memcpy intercepts memmove causing src/dst overlap error (ppc64 ld.so)
 349941  di_notify_mmap might create wrong start/size DebugInfoMapping
+350202  Add limited param to 'monitor block_list'
 350809  Fix none/tests/async-sigs for Solaris
 350811  Remove reference to --db-attach which has been removed.
 350813  Use handwritten memcheck assembly helpers on x86/Solaris in addition to {arm,x86}-linux

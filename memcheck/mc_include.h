@@ -461,9 +461,10 @@ extern UInt MC_(leak_search_gen);
 extern LeakCheckDeltaMode MC_(detect_memory_leaks_last_delta_mode);
 
 // prints the list of blocks corresponding to the given loss_record_nr.
+// (up to maximum max_blocks)
 // Returns True if loss_record_nr identifies a correct loss record from last
 // leak search, returns False otherwise.
-Bool MC_(print_block_list) ( UInt loss_record_nr);
+Bool MC_(print_block_list) ( UInt loss_record_nr, UInt max_blocks);
 
 // Prints the addresses/registers/... at which a pointer to
 // the given range [address, address+szB[ is found.

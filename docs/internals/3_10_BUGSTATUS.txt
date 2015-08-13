@@ -364,8 +364,6 @@ go in here.
 
 348358  describe should show info about main stack guard page
 
-350202  Add limited param to 'monitor block_list'
-
 === Output =============================================================
 
 339405  Adds ability to invoke a script in order to determine a

@@ -6038,8 +6038,9 @@ static void print_monitor_help ( void )
 "                 leak_check summary any\n"
 "                 leak_check full kinds indirect,possible\n"
 "                 leak_check full reachable any limited 100\n"
-"  block_list <loss_record_nr>\n"
+"  block_list <loss_record_nr> [unlimited*|limited <max_blocks>]\n"
 "        after a leak search, shows the list of blocks of <loss_record_nr>\n"
+"            * = defaults\n"
 "  who_points_at <addr> [<len>]\n"
 "        shows places pointing inside <len> (default 1) bytes at <addr>\n"
 "        (with len 1, only shows \"start pointers\" pointing exactly to <addr>,\n"
@@ -6322,16 +6323,53 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
    case  5: { /* block_list */
       HChar* wl;
       HChar *endptr;
+      HChar *the_end;
       UInt lr_nr = 0;
+
       wl = VG_(strtok_r) (NULL, " ", &ssaveptr);
       if (wl != NULL)
          lr_nr = VG_(strtoull10) (wl, &endptr);
       if (wl == NULL || *endptr != '\0') {
          VG_(gdb_printf) ("malformed or missing integer\n");
       } else {
+         UInt limit_blocks;
+         Int int_value;
+
+         wl = VG_(strtok_r) (NULL, " ", &ssaveptr);
+         if (wl != NULL) {
+            switch (VG_(keyword_id) ("unlimited limited ", 
+                                     wl,  kwd_report_all)) {
+            case -2: return True;
+            case -1: return True;
+            case  0: /* unlimited */
+               limit_blocks = 999999999; break;
+            case  1: /* limited */
+               wcmd = VG_(strtok_r) (NULL, " ", &ssaveptr);
+               if (wcmd == NULL) {
+                  VG_(gdb_printf) ("missing integer value\n");
+                  return True;
+               }
+               int_value = VG_(strtoll10) (wcmd, &the_end);
+               if (*the_end != '\0') {
+                  VG_(gdb_printf) ("malformed integer value\n");
+                  return True;
+               }
+               if (int_value <= 0) {
+                  VG_(gdb_printf) ("max_blocks must be >= 1,"
+                                   " got %d\n", int_value);
+                  return True;
+               }
+               limit_blocks = (UInt) int_value;
+               break;
+            default:
+               tl_assert (0);
+            }
+         } else {
+            limit_blocks = 999999999;
+         }
          /* lr_nr-1 as what is shown to the user is 1 more than the index
             in lr_array. */
-         if (lr_nr == 0 || ! MC_(print_block_list) (lr_nr-1))
+         if (lr_nr == 0 || ! MC_(print_block_list) (lr_nr-1, limit_blocks))
             VG_(gdb_printf) ("invalid loss record nr\n");
       }
       return True;

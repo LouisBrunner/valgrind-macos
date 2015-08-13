@@ -13,7 +13,7 @@ result for 'btc' is 57d555555f554d55
 result for 'btr' is 5555555555554515
 result for 'bts' is 57d555555f555d55
 result for 'cmpxchg' is 271831415927d459
-result for 'cmpxchg8b' is 5566778800000000
+result for 'cmpxchg8b' is 55667788bbaa9988
 result for 'xadd' is d1c2dbecb622f897
 result for 'xchg' is 5555555555555555
 result for 'xchg-no-lock' is 5555555555555555

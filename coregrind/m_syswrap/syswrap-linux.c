@@ -8354,6 +8354,18 @@ PRE(sys_ioctl)
       break;
    }
 
+   /* Serial */
+   case VKI_TIOCGSERIAL: {
+      struct vki_serial_struct *data = (struct vki_serial_struct *)ARG3;
+      PRE_MEM_WRITE("ioctl(VKI_TIOCGSERIAL)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_TIOCSSERIAL: {
+      struct vki_serial_struct *data = (struct vki_serial_struct *)ARG3;
+      PRE_MEM_READ("ioctl(VKI_TIOCSSERIAL)", (Addr)data, sizeof(*data));
+      break;
+   }
+
    default:
       /* EVIOC* are variable length and return size written on success */
       switch (ARG2 & ~(_VKI_IOC_SIZEMASK << _VKI_IOC_SIZESHIFT)) {
@@ -10237,6 +10249,15 @@ POST(sys_ioctl)
        */
       break;
    case VKI_MEDIA_IOC_SETUP_LINK:
+      break;
+
+   /* Serial */
+   case VKI_TIOCGSERIAL: {
+      struct vki_serial_struct *data = (struct vki_serial_struct *)ARG3;
+      POST_MEM_WRITE((Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_TIOCSSERIAL:
       break;
 
    default:

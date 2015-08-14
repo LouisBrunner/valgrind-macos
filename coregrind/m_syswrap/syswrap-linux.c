@@ -5550,6 +5550,10 @@ PRE(sys_ioctl)
    /* InfiniBand */
    case VKI_IB_USER_MAD_ENABLE_PKEY:
 
+   /* Lustre */
+   case VKI_LL_IOC_GROUP_LOCK:
+   case VKI_LL_IOC_GROUP_UNLOCK:
+
    /* V4L2 */
    case VKI_V4L2_LOG_STATUS:
 

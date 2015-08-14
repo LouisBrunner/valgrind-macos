@@ -3692,6 +3692,10 @@ struct vki_getparent {
 //----------------------------------------------------------------------
 // From Lustre's lustre/include/lustre/lustre_user.h
 //----------------------------------------------------------------------
+#define VKI_LL_IOC_GROUP_LOCK \
+           _VKI_IOW('f', 158, long)
+#define VKI_LL_IOC_GROUP_UNLOCK \
+           _VKI_IOW('f', 159, long)
 #define VKI_LL_IOC_GETPARENT \
            _VKI_IOWR('f', 249, struct vki_getparent)
 

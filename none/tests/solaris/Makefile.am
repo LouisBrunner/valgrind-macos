@@ -18,6 +18,8 @@ EXTRA_DIST = \
 	proc_aout.stderr.exp proc_aout.stdout.exp proc_aout.vgtest \
 	proc_auxv.stderr.exp proc_auxv.stdout.exp proc_auxv.vgtest \
 	proc_auxv_multiple.stderr.exp proc_auxv_multiple.stdout.exp proc_auxv_multiple.vgtest \
+	proc-cmdline-exe.stderr.exp-with-cmdline proc-cmdline-exe.stderr.exp-without-cmdline \
+	    proc-cmdline-exe.vgtest \
 	proc_psinfo.stderr.exp proc_psinfo.stdout.exp proc_psinfo.vgtest \
 	posix_spawn.stderr.exp posix_spawn.stdout.exp posix_spawn.vgtest \
 	pthread-stack.stderr.exp pthread-stack.vgtest \

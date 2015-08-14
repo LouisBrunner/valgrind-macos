@@ -1,0 +1,10 @@
+
+/proc/self/cmdline:
+./../procfs-cmdline-exe\0arg1\0arg 2\0arg3\0
+/proc/<pid>/cmdline:
+./../procfs-cmdline-exe\0arg1\0arg 2\0arg3\0
+readlink: No such file or directory
+readlink: No such file or directory
+readlinkat: No such file or directory
+readlinkat: No such file or directory
+

@@ -1,3 +1,6 @@
-prereq: [ $(uname) != Linux ]
+# For Linux, there is 'procfs-linux'.
+# For Solaris, there is Solaris-specific 'solaris/proc-cmdline-exe'.
+#
+prereq: ! ../../tests/os_test linux && ! ../../tests/os_test solaris
 prog: procfs-cmdline-exe
 stderr_filter: filter_stderr

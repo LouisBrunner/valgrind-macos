@@ -1983,8 +1983,8 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
       HChar  buf2[VG_(mkstemp_fullname_bufsz)(sizeof buf - 1)];
       Int    fd, r;
 
-#if defined(VGO_linux)
-      /* Fake /proc/<pid>/cmdline only on Linux. */
+#if defined(VGO_linux) || defined(SOLARIS_PROC_CMDLINE)
+      /* Fake /proc/<pid>/cmdline only on Linux and Solaris if supported. */
       HChar  nul[1];
       const HChar* exename;
 
@@ -2007,8 +2007,8 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
       }
 
       /* Don't bother to seek the file back to the start; instead do
-	 it every time a copy of it is given out (by PRE(sys_open)). 
-	 That is probably more robust across fork() etc. */
+	 it every time a copy of it is given out (by PRE(sys_open) or
+	 PRE(sys_openat)). That is probably more robust across fork() etc. */
 
       /* Now delete it, but hang on to the fd. */
       r = VG_(unlink)( buf2 );
@@ -2016,7 +2016,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
          VG_(err_config_error)("Can't delete client cmdline file in %s\n", buf2);
 
       VG_(cl_cmdline_fd) = fd;
-#endif // defined(VGO_linux)
+#endif // defined(VGO_linux) || defined(SOLARIS_PROC_CMDLINE)
 
       /* Fake /proc/<pid>/auxv on both Linux and Solaris. */
       VG_(debugLog)(1, "main", "Create fake /proc/<pid>/auxv\n");

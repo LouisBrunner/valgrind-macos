@@ -2676,6 +2676,23 @@ AM_CONDITIONAL(SOLARIS_XPG_SYMBOLS_PRESENT, test x$solaris_xpg_symbols_present =
 CFLAGS="$save_CFLAGS"
 
 
+# Solaris-specific check determining if /proc/self/cmdline
+# or /proc/<pid>/cmdline is supported.
+#
+# C-level symbol: SOLARIS_PROC_CMDLINE
+# Automake-level symbol: SOLARIS_PROC_CMDLINE
+#
+AC_CHECK_FILE([/proc/self/cmdline],
+[
+solaris_proc_cmdline=yes
+AC_DEFINE([SOLARIS_PROC_CMDLINE], 1,
+          [Define to 1 if you have /proc/self/cmdline.])
+], [
+solaris_proc_cmdline=no
+])
+AM_CONDITIONAL(SOLARIS_PROC_CMDLINE, test x$solaris_proc_cmdline = xyes)
+
+
 # Solaris-specific check determining default platform for the Valgrind launcher.
 # Used in case the launcher cannot select platform by looking at the client
 # image (for example because the executable is a shell script).
@@ -3346,6 +3363,7 @@ AM_CONDITIONAL(SOLARIS_RESERVE_SYSSTAT_ZONE_ADDR, test x$solaris_reserve_sysstat
 else
 AM_CONDITIONAL(SOLARIS_SUN_STUDIO_AS, false)
 AM_CONDITIONAL(SOLARIS_XPG_SYMBOLS_PRESENT, false)
+AM_CONDITIONAL(SOLARIS_PROC_CMDLINE, false)
 AM_CONDITIONAL(SOLARIS_OLD_SYSCALLS, false)
 AM_CONDITIONAL(SOLARIS_LWP_SIGQUEUE_SYSCALL, false)
 AM_CONDITIONAL(SOLARIS_LWP_SIGQUEUE_SYSCALL_TAKES_PID, false)

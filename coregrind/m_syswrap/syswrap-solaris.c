@@ -1590,7 +1590,7 @@ static Bool handle_psinfo_open(SyscallStatus *status,
    if (!VG_STREQ(filename, name) && !VG_STREQ(filename, "/proc/self/psinfo"))
       return False;
 
-   /* use original arguments to open or openat */
+   /* Use original arguments to open() or openat(). */
    SysRes sres;
 #if defined(SOLARIS_OLD_SYSCALLS)
    if (use_openat)
@@ -1649,6 +1649,35 @@ static Bool handle_psinfo_open(SyscallStatus *status,
 
    return True;
 }
+
+#if defined(SOLARIS_PROC_CMDLINE)
+/* Handles the case where the open is of /proc/self/cmdline or
+   /proc/<pid>/cmdline. Just give it a copy of VG_(cl_cmdline_fd) for the
+   fake file we cooked up at startup (in m_main).  Also, seek the
+   cloned fd back to the start. */
+static Bool handle_cmdline_open(SyscallStatus *status, const HChar *filename)
+{
+   if (!ML_(safe_to_deref)((const void *) filename, 1))
+      return False;
+
+   HChar name[VKI_PATH_MAX];    // large enough
+   VG_(sprintf)(name, "/proc/%d/cmdline", VG_(getpid)());
+
+   if (!VG_STREQ(filename, name) && !VG_STREQ(filename, "/proc/self/cmdline"))
+      return False;
+
+   SysRes sres = VG_(dup)(VG_(cl_cmdline_fd));
+   SET_STATUS_from_SysRes(sres);
+   if (!sr_isError(sres)) {
+      OffT off = VG_(lseek)(sr_Res(sres), 0, VKI_SEEK_SET);
+      if (off < 0)
+         SET_STATUS_Failure(VKI_EMFILE);
+   }
+
+   return True;
+}
+#endif /* SOLARIS_PROC_CMDLINE */
+
 
 #if defined(SOLARIS_OLD_SYSCALLS)
 PRE(sys_open)
@@ -3820,12 +3849,17 @@ PRE(sys_openat)
       return;
    }
 
-   if (ML_(handle_auxv_open)(status, (const HChar*)ARG2, ARG3))
+   if (ML_(handle_auxv_open)(status, (const HChar *) ARG2, ARG3))
       return;
 
-   if (handle_psinfo_open(status, True /*use_openat*/, (const HChar*)ARG2,
+   if (handle_psinfo_open(status, True /*use_openat*/, (const HChar *) ARG2,
                           fd, ARG3, ARG4))
       return;
+
+#if defined(SOLARIS_PROC_CMDLINE)
+   if (handle_cmdline_open(status, (const HChar *) ARG2))
+      return;
+#endif /* SOLARIS_PROC_CMDLINE */
 
    *flags |= SfMayBlock;
 }
@@ -7820,7 +7854,7 @@ static void repository_door_pre_mem_door_call_hook(ThreadId tid, Int fd,
                            "entity_name->rpr_answertype)", r->rpr_answertype);
          }
          break;
-      #if (SOLARIS_REPCACHE_PROTOCOL_VERSION >= 25)
+#if (SOLARIS_REPCACHE_PROTOCOL_VERSION >= 25)
       case VKI_REP_PROTOCOL_ENTITY_GET_ROOT:
          {
             struct vki_rep_protocol_entity_root *r =
@@ -7831,7 +7865,7 @@ static void repository_door_pre_mem_door_call_hook(ThreadId tid, Int fd,
                            "entity_root->rpr_outid)", r->rpr_outid);
          }
          break;
-      #endif /* SOLARIS_REPCACHE_PROTOCOL_VERSION >= 25 */
+#endif /* SOLARIS_REPCACHE_PROTOCOL_VERSION >= 25 */
       case VKI_REP_PROTOCOL_ENTITY_GET:
          {
             struct vki_rep_protocol_entity_get *r =

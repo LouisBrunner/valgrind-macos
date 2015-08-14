@@ -537,7 +537,18 @@ void ML_(addLineInfo) ( struct _DebugInfo* di,
        return;
    }
 
-   vg_assert(lineno >= 0);
+   if (lineno < 0) {
+      static Bool complained = False;
+      if (!complained) {
+         complained = True;
+         VG_(message)(Vg_UserMsg, 
+                      "warning: ignoring line info entry with "
+                      "negative line number (%d)\n", lineno);
+         VG_(message)(Vg_UserMsg, 
+                      "(Nb: this message is only shown once)\n");
+      }
+      return;
+   }
    if (lineno > MAX_LINENO) {
       static Bool complained = False;
       if (!complained) {

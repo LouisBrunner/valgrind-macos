@@ -23,5 +23,21 @@ static void* memalign16(size_t szB)
    assert(x);
    assert(0 == ((16-1) & (unsigned long)x));
    return x;
-} 
+}
+
+// Allocates a 32-aligned block.  Asserts if the allocation fails.
+__attribute__((unused))
+static void* memalign32(size_t szB)
+{
+   void* x;
+#if defined(VGO_darwin)
+   // Darwin lacks memalign
+   posix_memalign((void **)&x, 32, szB);
+#else
+   x = memalign(32, szB);
+#endif
+   assert(x);
+   assert(0 == ((32-1) & (unsigned long)x));
+   return x;
+}
 

@@ -119,10 +119,10 @@ endif
 if BUILD_LZCNT_TESTS
  check_PROGRAMS += lzcnt32
 endif
-if !VGCONF_OS_IS_DARWIN
 if BUILD_MOVBE_TESTS
-   check_PROGRAMS += movbe
+ check_PROGRAMS += movbe
 endif
+if !VGCONF_OS_IS_DARWIN
 if !SOLARIS_SUN_STUDIO_AS
 # Sun Studio assembler fails to assemble the bound instruction
  check_PROGRAMS += faultstatus

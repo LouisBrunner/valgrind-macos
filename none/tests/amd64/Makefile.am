@@ -111,6 +111,9 @@ endif
 if BUILD_LZCNT_TESTS
  check_PROGRAMS += lzcnt64
 endif
+if BUILD_MOVBE_TESTS
+ check_PROGRAMS += movbe
+endif
 if BUILD_SSE42_TESTS
  check_PROGRAMS += \
 	pcmpstr64 pcmpxstrx64 sse4-64 crc32 aes \
@@ -143,9 +146,6 @@ if ! VGCONF_OS_IS_DARWIN
 	slahf-amd64
 if BUILD_LOOPNEL_TESTS
    check_PROGRAMS += loopnel
-endif
-if BUILD_MOVBE_TESTS
-   check_PROGRAMS += movbe
 endif
 if BUILD_AVX_TESTS
 if BUILD_VPCLMULQDQ_TESTS

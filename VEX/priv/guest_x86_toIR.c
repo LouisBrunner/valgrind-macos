@@ -12885,7 +12885,7 @@ DisResult disInstr_X86_WRK (
    */
    if (sz == 2 
        && insn[0] == 0x0F && insn[1] == 0x3A
-       && (/*insn[2] == 0x0B || */insn[2] == 0x0A)) {
+       && (insn[2] == 0x0B || insn[2] == 0x0A)) {
 
       Bool   isD = insn[2] == 0x0B;
       IRTemp src = newTemp(isD ? Ity_F64 : Ity_F32);

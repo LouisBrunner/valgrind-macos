@@ -105,6 +105,11 @@ check_PROGRAMS = \
 if BUILD_ADDR32_TESTS
  check_PROGRAMS += asorep
 endif
+if BUILD_AVX_TESTS
+if BUILD_VPCLMULQDQ_TESTS
+  check_PROGRAMS += avx-1
+endif
+endif
 if BUILD_SSSE3_TESTS
  check_PROGRAMS += ssse3_misaligned
 endif
@@ -146,11 +151,6 @@ if ! VGCONF_OS_IS_DARWIN
 	slahf-amd64
 if BUILD_LOOPNEL_TESTS
    check_PROGRAMS += loopnel
-endif
-if BUILD_AVX_TESTS
-if BUILD_VPCLMULQDQ_TESTS
-   check_PROGRAMS += avx-1
-endif
 endif
 if BUILD_AVX2_TESTS
 if !COMPILER_IS_ICC

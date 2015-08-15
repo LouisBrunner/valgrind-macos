@@ -290,6 +290,7 @@ where XXXXXX is the bug number as listed below.
 349874  Fix typos in source code
 349828  memcpy intercepts memmove causing src/dst overlap error (ppc64 ld.so)
 349941  di_notify_mmap might create wrong start/size DebugInfoMapping
+350062  vex x86->IR: unhandled instruction bytes: 0x66 0xF 0x3A 0xB (ROUNDSD) on OS X
 350202  Add limited param to 'monitor block_list'
 350809  Fix none/tests/async-sigs for Solaris
 350811  Remove reference to --db-attach which has been removed.

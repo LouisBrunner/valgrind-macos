@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <malloc.h>  // memalign
 #include <string.h>  // memset
+#include "tests/malloc.h"
 #include <math.h>    // isnormal
 
 typedef  unsigned char           UChar;
@@ -90,16 +91,6 @@ static void showBlock ( const char* msg, V128* block, Int nBlock )
       showV128(&block[i]);
       printf("\n");
    }
-}
-
-__attribute__((unused))
-static void* memalign16(size_t szB)
-{
-   void* x;
-   x = memalign(16, szB);
-   assert(x);
-   assert(0 == ((16-1) & (unsigned long)x));
-   return x;
 }
 
 static ULong dup4x16 ( UInt x )

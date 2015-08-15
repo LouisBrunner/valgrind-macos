@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <malloc.h>  // memalign
 #include <string.h>  // memset
+#include "tests/malloc.h"
 #include <assert.h>
 
 typedef  unsigned char           UChar;
@@ -19,16 +20,6 @@ typedef  unsigned long long int  ULong;
 typedef  unsigned char           Bool;
 #define False ((Bool)0)
 #define True  ((Bool)1)
-
-__attribute__((noinline))
-static void* memalign16(size_t szB)
-{
-   void* x;
-   x = memalign(16, szB);
-   assert(x);
-   assert(0 == ((16-1) & (unsigned long)x));
-   return x;
-}
 
 static inline UChar randUChar ( void )
 {

@@ -12,33 +12,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-//#include "tests/malloc.h" // reenable when reintegrated
+#include "tests/malloc.h"
 #include <string.h>
-
-
-
-// rmme when reintegrated
-// Allocates a 16-aligned block.  Asserts if the allocation fails.
-#ifdef VGO_darwin
-#include <stdlib.h>
-#else
-#include <malloc.h>
-#endif
-__attribute__((unused))
-static void* memalign16(size_t szB)
-{
-   void* x;
-#if defined(VGO_darwin)
-   // Darwin lacks memalign, but its malloc is always 16-aligned anyway.
-   x = malloc(szB);
-#else
-   x = memalign(16, szB);
-#endif
-   assert(x);
-   assert(0 == ((16-1) & (unsigned long)x));
-   return x;
-}
-
 
 
 typedef  unsigned char           V128[16];

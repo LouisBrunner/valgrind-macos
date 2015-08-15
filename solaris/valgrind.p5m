@@ -1,10 +1,10 @@
-set name=pkg.fmri value=developer/debug/valgrind@3.11.0,1508
+set name=pkg.fmri value=developer/debug/valgrind@3.11.0,VVVVV-XXXX
 set name=pkg.description value="valgrind: instrumentation framework and tools to detect memory and threading problems"
 set name=pkg.summary value="Valgrind is an award-winning instrumentation framework for building dynamic analysis tools. There are Valgrind tools that can automatically detect many memory management and threading bugs, and profile your programs in detail. You can also use Valgrind to build new tools. Currently x86 (32-bit) and amd64 (64-bit) platforms are supported."
 set name=variant.arch value=i386
 set name=info.classification value="org.opensolaris.category.2008:Development/System"
 set name=info.upstream-url value=https://bitbucket.org/iraisr/valgrind-solaris
-set name=info.source-url value=https://bitbucket.org/iraisr/valgrind-solaris/get/r1508.tar.bz2
+set name=info.source-url value=http://valgrind.org/
 
 # Contents:
 dir  path=usr/bin                       owner=root group=bin mode=0755

@@ -1,8 +1,8 @@
 #!/usr/bin/ksh
 #
-# Builds a Solaris IPS package called "valgrind" from the project sources.
-# Sources are cloned and updated to the tag found in solaris/valgrind.p5m
-# IPS manifest.
+# Builds a Solaris IPS package called "valgrind" from the source
+# directory. The Valgrind and VEX revisions are taken from that
+# source directory and written to solaris/valgrind.p5m IPS manifest.
 #
 # Requires the following packages to be installed on Solaris 11:
 # - data/xml-common		(install first before any docbook ones!)
@@ -22,15 +22,15 @@
 # - pkgrepo set -s $repo_uri publisher/prefix=valgrind
 #
 
-TMPDIR=/var/tmp/valgrind-solaris-build
+TMPDIR=/var/tmp/valgrind-build
 SRCDIR=$TMPDIR/sources
 INSTALLDIR=$TMPDIR/install
-PROJECT_URL=https://bitbucket.org/iraisr/valgrind-solaris
 IPS_MANIFEST=solaris/valgrind.p5m
 
 usage() {
     echo "Usage:"
-    echo "build_solaris_package -s repo_uri [-r lint_repo_uri]"
+    echo "build_solaris_package -p source_dir -s repo_uri [-r lint_repo_uri]"
+    echo "\t-p source_dir contains working copy of the Valgrind sources"
     echo "\t-s repo_uri publishes to the repository located at the given URI"
     echo "\t            or file system path"
     echo "\t-r lint_repo_uri location of lint reference repository"
@@ -40,7 +40,7 @@ fail() {
     msg=$1
 
     echo "\n$msg"
-    echo "Additional information could be found in directory $TMPDIR"
+    echo "Additional information could be found in directory $TMPDIR."
     exit 1
 }
 
@@ -50,73 +50,77 @@ remove_dirs() {
 
 create_dirs() {
     mkdir -p $TMPDIR
-    (( $? != 0 )) && fail "Failed to create directory $TMPDIR"
+    (( $? != 0 )) && fail "Failed to create directory $TMPDIR."
 
     mkdir -p $INSTALLDIR
-    (( $? != 0 )) && fail "Failed to create directory $INSTALLDIR"
+    (( $? != 0 )) && fail "Failed to create directory $INSTALLDIR."
 }
 
-clone_sources() {
-    printf "Cloning valgrind-solaris sources... "
-    hg --quiet clone --insecure $PROJECT_URL $SRCDIR 2> $TMPDIR/hg-clone.log.stderr
-    (( $? != 0 )) && fail "Failed to clone repo from $PROJECT_URL"
+export_sources() {
+    printf "Exporting sources... "
+    svn export --quiet --ignore-externals $source_directory $SRCDIR \
+        2> $TMPDIR/svn-export-valgrind.log.stderr
+    (( $? != 0 )) && fail "Failed to export working copy from $source_directory."
+    svn export --quiet --ignore-externals $source_directory/VEX $SRCDIR/VEX \
+        2> $TMPDIR/svn-export-vex.log.stderr
+    (( $? != 0 )) && fail "Failed to export working copy from $source_directory/VEX."
     printf "done.\n"
 }
 
-update_sources_to_revision() {
-    cd $SRCDIR
-    tag=$( grep "pkg.fmri" $IPS_MANIFEST | tr -s ' ' | \
-           sed -e 's/^.*developer\/debug\/valgrind@.*,//' )
-    [[ -z $tag ]] && fail "Failed to find revision tag in $IPS_MANIFEST"
+modify_ips_manifest() {
+    valgrind_rev=$( svn info $source_directory | grep Revision | sed -e 's/Revision: //' )
+    vex_rev=$( svn info $source_directory/VEX | grep Revision | sed -e 's/Revision: //' )
 
-    printf "Updating cloned sources to revision tag $tag... "
-    hg --quiet update -r $tag
-    (( $? != 0 )) && fail "Failed to update cloned sources to tag $tag"
-    printf "done.\n"
+    [[ -z $valgrind_rev ]] && fail "Failed to find Valgrind revision."
+    [[ -z $vex_rev ]] && fail "Failed to find VEX revision."
+
+    echo "Valgrind revision: $valgrind_rev, VEX revision $vex_rev."
+
+    sed -i -e "s/VVVVV-XXXX/${valgrind_rev}-${vex_rev}/" $SRCDIR/$IPS_MANIFEST
 }
 
 run_autogen() {
     printf "Creating autotools support files... "
     ./autogen.sh > $TMPDIR/autogen.log.stdout 2> $TMPDIR/autogen.log.stderr
-    (( $? != 0 )) && fail "Failed to generate autotools support files"
+    (( $? != 0 )) && fail "Failed to generate autotools support files."
     printf "done.\n"
 }
 
 run_configure() {
     printf "Running configure... "
     ./configure CC='gcc -m64' CXX='g++ -m64' --prefix=/usr > $TMPDIR/configure.log
-    (( $? != 0 )) && fail "Failed to run configure"
+    (( $? != 0 )) && fail "Failed to run configure."
     printf "done.\n"
 }
 
 run_make_docs() {
    printf "Making docs... "
    make --directory=docs html-docs > $TMPDIR/make-docs.log.stdout 2> $TMPDIR/make-docs.log.stderr
-   (( $? != 0 )) && fail "Failed to make html-docs"
+   (( $? != 0 )) && fail "Failed to make html-docs."
    printf "done.\n"
 }
 
 run_make_man_pages() {
    printf "Making man pages... "
    make --directory=docs man-pages > $TMPDIR/make-man-pages.log.stdout 2> $TMPDIR/make-man-pages.log.stderr
-   (( $? != 0 )) && fail "Failed to make man-pages"
+   (( $? != 0 )) && fail "Failed to make man-pages."
    printf "done.\n"
 }
 
 run_make() {
     printf "Running make... "
     make --quiet > $TMPDIR/make.log
-    (( $? != 0 )) && fail "Failed to run make"
+    (( $? != 0 )) && fail "Failed to run make."
     printf "done.\n"
 }
 
 run_make_install() {
     printf "Running 'make install'... "
     make --quiet install DESTDIR=$INSTALLDIR > $TMPDIR/make-install.log
-    (( $? != 0 )) && fail "Failed to run 'make install'"
+    (( $? != 0 )) && fail "Failed to run 'make install'."
 
     cp AUTHORS COPYING* NEWS NEWS.old README* $INSTALLDIR/usr/share/doc/valgrind
-    (( $? != 0 )) && fail "Failed to copy additional files to $INSTALLDIR"
+    (( $? != 0 )) && fail "Failed to copy additional files to $INSTALLDIR."
 
     printf "done.\n"
 }
@@ -124,24 +128,27 @@ run_make_install() {
 run_pkglint() {
     printf "Running pkglint... "
     pkglint -c $TMPDIR/lint-cache -r $lint_repo_uri $SRCDIR/$IPS_MANIFEST > $TMPDIR/pkglint.log
-    (( $? != 0 )) && fail "pkglint failed"
+    (( $? != 0 )) && fail "pkglint failed."
     printf "done.\n"
 }
 
 publish_package() {
     printf "Publishing package... "
     pkgsend publish -s $repo_uri -d $INSTALLDIR $SRCDIR/solaris/valgrind.p5m > $TMPDIR/pkgsend.log
-    (( $? != 0 )) && fail "Failed to publish the package"
+    (( $? != 0 )) && fail "Failed to publish the package."
     printf "done.\n"
 }
 
-while getopts "r:s:" args; do
+while getopts "p:r:s:" args; do
     case $args in
-    s)
-        repo_uri=$OPTARG
+    p)
+        source_directory=$OPTARG
         ;;
     r)
         lint_repo_uri=$OPTARG
+        ;;
+    s)
+        repo_uri=$OPTARG
         ;;
     *)
         usage
@@ -149,6 +156,12 @@ while getopts "r:s:" args; do
         ;;
     esac
 done
+
+if [[ -z $source_directory ]]; then
+    echo "No source directory specified.\n"
+    usage
+    exit 1
+fi
 
 if [[ -z $repo_uri ]]; then
     echo "No repo_uri specified.\n"
@@ -165,7 +178,7 @@ if [[ -z $lint_repo_uri ]]; then
     else
         lint_repo_uri=$( echo "$publisher" | cut -d ' ' -f 5 )
     fi
-    [[ -z $lint_repo_uri ]] && fail "Failed to determine solaris IPS publisher"
+    [[ -z $lint_repo_uri ]] && fail "Failed to determine solaris IPS publisher."
     echo "lint_repo_uri determined as $lint_repo_uri"
 fi
 
@@ -174,8 +187,8 @@ remove_dirs
 create_dirs
 cd $TMPDIR
 
-clone_sources
-update_sources_to_revision 
+export_sources
+modify_ips_manifest
 cd $SRCDIR
 run_autogen
 run_configure

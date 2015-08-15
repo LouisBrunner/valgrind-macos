@@ -110,6 +110,11 @@ if BUILD_VPCLMULQDQ_TESTS
   check_PROGRAMS += avx-1
 endif
 endif
+if BUILD_AVX2_TESTS
+if !COMPILER_IS_ICC
+  check_PROGRAMS += avx2-1
+endif
+endif
 if BUILD_SSSE3_TESTS
  check_PROGRAMS += ssse3_misaligned
 endif
@@ -151,11 +156,6 @@ if ! VGCONF_OS_IS_DARWIN
 	slahf-amd64
 if BUILD_LOOPNEL_TESTS
    check_PROGRAMS += loopnel
-endif
-if BUILD_AVX2_TESTS
-if !COMPILER_IS_ICC
-   check_PROGRAMS += avx2-1
-endif
 endif
 endif
 

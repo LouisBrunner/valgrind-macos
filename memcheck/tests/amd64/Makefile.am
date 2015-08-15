@@ -46,10 +46,7 @@ check_PROGRAMS = \
 	sse_memory \
 	xor-undef-amd64
 if BUILD_AVX_TESTS
- check_PROGRAMS += sh-mem-vec256
-if !VGCONF_OS_IS_DARWIN
- check_PROGRAMS += xsave-avx
-endif
+ check_PROGRAMS += sh-mem-vec256 xsave-avx
 endif
 if HAVE_ASM_CONSTRAINT_P
  check_PROGRAMS += insn-pcmpistri

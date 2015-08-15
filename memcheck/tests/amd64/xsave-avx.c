@@ -54,9 +54,9 @@ void* my_memcpy(void *dest, const void *src, size_t n)
    return dest;
 }
 
-static void* memalign_zeroed(size_t alignment, size_t size)
+static void* memalign_zeroed64(size_t size)
 {
-   char* p = memalign(alignment, size);
+   char* p = memalign64(size);
    if (p && size > 0) {
       my_memset(p, 0, size);
    }
@@ -203,7 +203,7 @@ void test_xsave ( Bool hideBits64to79 )
 
    UInt rfbm;
    for (rfbm = 0; rfbm <= 7; rfbm++) {
-      UChar* saved_img = memalign_zeroed(64, XSAVE_AREA_SIZE);
+      UChar* saved_img = memalign_zeroed64(XSAVE_AREA_SIZE);
 
       my_memset(saved_img, 0xAA, XSAVE_AREA_SIZE);
       saved_img[512] = 0;
@@ -236,7 +236,7 @@ void test_xrstor ( Bool hideBits64to79 )
       neither zero nor the data to be loaded.  We choose to use 0x55
       where possible. */
 
-   UChar* fives = memalign_zeroed(64, XSAVE_AREA_SIZE);
+   UChar* fives = memalign_zeroed64(XSAVE_AREA_SIZE);
    my_memset(fives, 0x55, XSAVE_AREA_SIZE);
    /* Set MXCSR so that the insn doesn't fault */
    fives[24] = 0x80;
@@ -259,7 +259,7 @@ void test_xrstor ( Bool hideBits64to79 )
    fives[4/*FTW*/] = 0xFF;
 
    /* (1) (see comment in loop below) */
-   UChar* standard_test_data = memalign_zeroed(64, XSAVE_AREA_SIZE);
+   UChar* standard_test_data = memalign_zeroed64(XSAVE_AREA_SIZE);
    do_setup_then_xsave(standard_test_data, 7);
 
    UInt xstate_bv, rfbm;
@@ -283,12 +283,12 @@ void test_xrstor ( Bool hideBits64to79 )
          /* (3a).  We can't use |standard_test_data| directly, since we
             need to put in the required |xstate_bv| value.  So make a
             copy and modify that instead. */
-         UChar* img_to_restore_from = memalign_zeroed(64, XSAVE_AREA_SIZE);
+         UChar* img_to_restore_from = memalign_zeroed64(XSAVE_AREA_SIZE);
          my_memcpy(img_to_restore_from, standard_test_data, XSAVE_AREA_SIZE);
          img_to_restore_from[512] = xstate_bv;
 
          /* (4a) */
-         UChar* saved_img = memalign_zeroed(64, XSAVE_AREA_SIZE);
+         UChar* saved_img = memalign_zeroed64(XSAVE_AREA_SIZE);
          my_memset(saved_img, 0xAA, XSAVE_AREA_SIZE);
          saved_img[512] = 0;
 

@@ -6411,6 +6411,22 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
+   /* ------------------ PRFM (register) ------------------ */
+   /* 31 29      22 20 15  12 11 9  4
+      11 1110001 01 Rm opt S  10 Rn Rt    PRFM pfrop=Rt, [Xn|SP, R<m>{ext/sh}]
+   */
+   if (INSN(31,21) == BITS11(1,1,1,1,1,0,0,0,1,0,1)
+       && INSN(11,10) == BITS2(1,0)) {
+      HChar  dis_buf[64];
+      UInt   tt = INSN(4,0);
+      IRTemp ea = gen_indexed_EA(dis_buf, insn, True/*to/from int regs*/);
+      if (ea != IRTemp_INVALID) {
+         /* No actual code to generate. */
+         DIP("prfm prfop=%u, %s\n", tt, dis_buf);
+         return True;
+      }
+   }
+
    vex_printf("ARM64 front end: load_store\n");
    return False;
 #  undef INSN

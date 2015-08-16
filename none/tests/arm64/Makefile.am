@@ -22,6 +22,7 @@ AM_CCASFLAGS += @FLAG_M64@
 
 allexec_CFLAGS     = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 
+fp_and_simd_CFLAGS = $(AM_CFLAGS) -march=armv8-a+crypto
 integer_CFLAGS     = $(AM_CFLAGS) -g -O0 -DTEST_BFM=0
 
 fp_and_simd_LDADD  = -lm

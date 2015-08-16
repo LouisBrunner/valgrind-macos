@@ -102,7 +102,10 @@ static inline U1 randomU1 ( void )
    return 0xFF & (randomU4() >> 13);
 }
 
-#define N_BYTES  300000
+// NB!  300000 is really not enough to shake out all failures.
+// Increasing it by a factor of 256 is, but makes the test take
+// the best part of an hour.
+#define N_BYTES  (300000 /* * 256 */)
 #define N_EVENTS (5 * N_BYTES)
 
 
@@ -187,6 +190,16 @@ void do_test_at ( U1* arr )
                "movq %%mm2, (%0)\n\t"
                "emms"
                : : "r"(arr+dst), "r"(arr+src) : "memory"
+            );
+#elif defined(__linux__) && defined(__arm__) && !defined(__aarch64__)
+            /* On arm32, many compilers generate a 64-bit float move
+               using two 32 bit integer registers, which completely
+               defeats this test.  Hence force a 64-bit NEON load and
+               store.  I guess this will break the build on non-NEON
+               capable targets. */
+            __asm__ __volatile__ (
+               "vld1.64 {d7},[%0] ; vst1.64 {d7},[%1] "
+               : : "r"(arr+src), "r"(arr+dst) : "d7","memory"
             );
 #else
             /* Straightforward.  On amd64, this gives a load/store of

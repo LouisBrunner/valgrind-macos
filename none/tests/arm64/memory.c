@@ -1591,6 +1591,23 @@ printf("PRFM (immediate)\n");
 MEM_TEST("prfm pldl1keep, [x5, #40]",  12, -4);
 MEM_TEST("prfm pstl3strm, [x5, #56]",  12, -4);
 
+////////////////////////////////////////////////////////////////
+printf("PRFM (register)\n");
+
+MEM_TEST("prfm pldl1keep, [x5,x6]",  12, -4);
+MEM_TEST("prfm pldl1strm, [x5,x6, lsl #3]",  12, -4);
+MEM_TEST("prfm pldl2keep, [x5,w6,uxtw #0]", 12, 4);
+MEM_TEST("prfm pldl2strm, [x5,w6,uxtw #3]", 12, 4);
+MEM_TEST("prfm pldl3keep, [x5,w6,sxtw #0]", 12, 4);
+MEM_TEST("prfm pldl3strm, [x5,w6,sxtw #3]",  12, -4);
+
+MEM_TEST("prfm pstl1keep, [x5,x6]",  12, -4);
+MEM_TEST("prfm pstl1strm, [x5,x6, lsl #3]",  12, -4);
+MEM_TEST("prfm pstl2keep, [x5,w6,uxtw #0]", 12, 4);
+MEM_TEST("prfm pstl2strm, [x5,w6,uxtw #3]", 12, 4);
+MEM_TEST("prfm pstl3keep, [x5,w6,sxtw #0]", 12, 4);
+MEM_TEST("prfm pstl3strm, [x5,w6,sxtw #3]",  12, -4);
+
 } /* end of test_memory2() */
 
 ////////////////////////////////////////////////////////////////

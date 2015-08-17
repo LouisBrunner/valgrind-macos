@@ -3,6 +3,7 @@
 #include <string.h>
 
 typedef  unsigned long long int  ULong;
+typedef  unsigned int            UInt;
 
 __attribute__((noinline)) float s32_to_f32_imm1(int x)
 {
@@ -212,6 +213,86 @@ void try_f64_to_u32 ( double d )
 
 
 
+__attribute__((noinline)) UInt f32_to_s32_imm1 ( float f )
+{
+  float block[5];
+  memset(block, 0x55, sizeof(block));
+  block[1] = f;
+  __asm__ __volatile__(
+    "mov r8, %0"               "\n\t"
+    "vldr s14, [r8, #4]"       "\n\t"
+    "vcvt.s32.f32 s14,s14,#1"  "\n\t"
+    "vstr s14, [r8,#12]"       "\n\t"
+    : : /*IN*/"r"(&block[0]) : /*TRASH*/"s14","r8","memory"
+  );
+  return *(UInt*)(&block[3]);
+}
+
+__attribute__((noinline)) UInt f32_to_s32_imm32 ( float f )
+{
+  float block[5];
+  memset(block, 0x55, sizeof(block));
+  block[1] = f;
+  __asm__ __volatile__(
+    "mov r8, %0"               "\n\t"
+    "vldr s14, [r8, #4]"       "\n\t"
+    "vcvt.s32.f32 s14,s14,#32" "\n\t"
+    "vstr s14, [r8,#12]"       "\n\t"
+    : : /*IN*/"r"(&block[0]) : /*TRASH*/"s14","r8","memory"
+  );
+  return *(UInt*)(&block[3]);
+}
+
+void try_f32_to_s32 ( float f )
+{
+  UInt res = f32_to_s32_imm32(f);
+  printf("f32_to_s32_imm32:  %18.14e  ->  0x%08x\n", (double)f, res);
+  res = f32_to_s32_imm1(f);
+  printf("f32_to_s32_imm1:   %18.14e  ->  0x%08x\n", (double)f, res);
+}
+
+
+
+__attribute__((noinline)) UInt f32_to_u32_imm1 ( float f )
+{
+  float block[5];
+  memset(block, 0x55, sizeof(block));
+  block[1] = f;
+  __asm__ __volatile__(
+    "mov r8, %0"               "\n\t"
+    "vldr s14, [r8, #4]"       "\n\t"
+    "vcvt.u32.f32 s14,s14,#1"  "\n\t"
+    "vstr s14, [r8,#12]"       "\n\t"
+    : : /*IN*/"r"(&block[0]) : /*TRASH*/"s14","r8","memory"
+  );
+  return *(UInt*)(&block[3]);
+}
+
+__attribute__((noinline)) UInt f32_to_u32_imm32 ( float f )
+{
+  float block[5];
+  memset(block, 0x55, sizeof(block));
+  block[1] = f;
+  __asm__ __volatile__(
+    "mov r8, %0"               "\n\t"
+    "vldr s14, [r8, #4]"       "\n\t"
+    "vcvt.u32.f32 s14,s14,#32" "\n\t"
+    "vstr s14, [r8,#12]"       "\n\t"
+    : : /*IN*/"r"(&block[0]) : /*TRASH*/"s14","r8","memory"
+  );
+  return *(UInt*)(&block[3]);
+}
+
+void try_f32_to_u32 ( float f )
+{
+  UInt res = f32_to_u32_imm32(f);
+  printf("f32_to_u32_imm32:  %18.14e  ->  0x%08x\n", (double)f, res);
+  res = f32_to_u32_imm1(f);
+  printf("f32_to_u32_imm1:   %18.14e  ->  0x%08x\n", (double)f, res);
+}
+
+
+
 int main ( void  )
 {
   int i;
@@ -287,6 +368,24 @@ int main ( void  )
   try_f64_to_u32(0.0 / 0.0);
   for (d = -100000.01; d < 100000.0; d += 10000.0) {
      try_f64_to_u32(d);
+  }
+
+  printf("\n");
+  try_f32_to_s32(0.0);
+  try_f32_to_s32(1.0);
+  try_f32_to_s32(-1.0);
+  try_f32_to_s32(0.0 / 0.0);
+  for (d = -100000.01; d < 100000.0; d += 10000.0) {
+     try_f32_to_s32((float)d);
+  }
+
+  printf("\n");
+  try_f32_to_u32(0.0);
+  try_f32_to_u32(1.0);
+  try_f32_to_u32(-1.0);
+  try_f32_to_u32(0.0 / 0.0);
+  for (d = -100000.01; d < 100000.0; d += 10000.0) {
+     try_f32_to_u32((float)d);
   }
 
   return 0;

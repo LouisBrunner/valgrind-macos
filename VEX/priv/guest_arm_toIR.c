@@ -16782,12 +16782,6 @@ DisResult disInstr_ARM_WRK (
       }
    }
 
-   /* ------------------- NOP ------------------ */
-   if (0x0320F000 == (insn & 0x0FFFFFFF)) {
-      DIP("nop%s\n", nCC(INSN_COND));
-      goto decode_success;
-   }
-
    /* -------------- (A1) LDRT reg+/-#imm12 -------------- */
    /* Load Register Unprivileged:
       ldrt<c> Rt, [Rn] {, #+/-imm12}
@@ -17275,6 +17269,30 @@ DisResult disInstr_ARM_WRK (
             anyway. */
          stmt( IRStmt_MBE(Imbe_Fence) );
          DIP("mcr 15, 0, r0, c7, c5, 4 (insn synch barrier)\n");
+         goto decode_success;
+      default:
+         break;
+   }
+
+   /* ----------------------------------------------------------- */
+   /* -- Hints                                                 -- */
+   /* ----------------------------------------------------------- */
+
+   switch (insn & 0x0FFFFFFF) {
+      /* ------------------- NOP ------------------ */
+      case 0x0320F000:
+         DIP("nop%s\n", nCC(INSN_COND));
+         goto decode_success;
+      /* ------------------- YIELD ------------------ */
+      case 0x0320F001:
+         /* Continue after conditionally yielding. */
+         DIP("yield%s\n", nCC(INSN_COND));
+         stmt( IRStmt_Exit( unop(Iop_32to1, 
+                                 condT == IRTemp_INVALID 
+                                    ? mkU32(1) : mkexpr(condT)),
+                            Ijk_Yield,
+                            IRConst_U32(guest_R15_curr_instr_notENC + 4),
+                            OFFB_R15T ));
          goto decode_success;
       default:
          break;
@@ -19170,16 +19188,18 @@ DisResult disInstr_THUMB_WRK (
          /* ------ NOP ------ */
          DIP("nop\n");
          goto decode_success;
-      case 0xBF20:
-         /* ------ WFE ------ */
-         /* WFE gets used as a spin-loop hint.  Do the usual thing,
+      case 0xBF10: // YIELD
+      case 0xBF20: // WFE
+         /* ------ WFE, YIELD ------ */
+         /* Both appear to get used as a spin-loop hints.  Do the usual thing,
             which is to continue after yielding. */
          stmt( IRStmt_Exit( unop(Iop_32to1, mkexpr(condT)),
                             Ijk_Yield,
                             IRConst_U32((guest_R15_curr_instr_notENC + 2) 
                                         | 1 /*CPSR.T*/),
                             OFFB_R15T ));
-         DIP("wfe\n");
+         Bool isWFE = INSN0(15,0) == 0xBF20;
+         DIP(isWFE ? "wfe\n" : "yield\n");
          goto decode_success;
       case 0xBF40:
          /* ------ SEV ------ */

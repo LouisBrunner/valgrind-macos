@@ -622,8 +622,8 @@ static void show_DebugInfoMappings
    for (i = 0; i < n; i++) {
       const DebugInfoMapping* map = VG_(indexXA)(maps, i);
       TRACE_SYMTAB("  [%ld]    avma 0x%-16lx    size %-8lu    "
-                   "foff %-8ld    %s %s %s\n",
-                   i, map->avma, map->size, map->foff,
+                   "foff %-8lld    %s %s %s\n",
+                   i, map->avma, map->size, (Long)map->foff,
                    map->rx ? "rx" : "--",
                    map->rw ? "rw" : "--",
                    map->ro ? "ro" : "--");

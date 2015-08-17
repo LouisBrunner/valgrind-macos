@@ -138,6 +138,7 @@ where XXXXXX is the bug number as listed below.
 333051  mmap of huge pages fails due to incorrect alignment
         == 339163
 334802  valgrind does not always explain why a given option is bad
+335618  mov.w rN, pc/sp (ARM32)
 335785  amd64->IR 0xC4 0xE2 0x75 0x2F (vmaskmovpd)
         == 307399
         == 343175
@@ -160,6 +161,7 @@ where XXXXXX is the bug number as listed below.
         tronical and pushfpopf tests)
 339745  Valgrind crash when check Marmalade app (partial fix)
 339755  Fix known deliberate memory leak in setenv() on Mac OS X 10.9
+339778  Linux/TileGx platform support for Valgrind
 339780  Fix known uninitialised read in pthread_rwlock_init() on Mac OS X 10.9 
 339789  Fix none/tests/execve test on Mac OS X 10.9
 339808  Fix none/tests/rlimit64_nofile test on Mac OS X 10.9
@@ -175,6 +177,7 @@ where XXXXXX is the bug number as listed below.
 341698  Valgrind's AESKEYGENASSIST gives wrong result in words 0 and 2
         when dest register = source register
 341789  aarch64: shmat fails with valgrind on ARMv8
+341997  MIPS64: Cavium OCTEON insns - immediate operand handled incorrectly
 342038  Unhandled syscalls on aarch64 (mbind/get/set_mempolicy)
 342063  wrong format specifier for test mcblocklistsearch in gdbserver_tests
 342221  socket connect false positive uninit memory for unknown af family
@@ -186,6 +189,7 @@ where XXXXXX is the bug number as listed below.
 342603  Add I2C_SMBUS ioctl support
 342635  OS X 10.10 (Yosemite) - missing system calls and fcntl code
 342683  Mark memory past the initial brk limit as unaddressable
+342783  arm: unhandled instruction 0xEEFE1ACA = "vcvt.s32.f32 s3, s3, #12"
 342795  Internal glibc __GI_mempcpy call should be intercepted
 342841  s390x: Support instructions fiebr(a) and fidbr(a)
 343012  Unhandled syscall 319 (memfd_create)
@@ -238,6 +242,7 @@ where XXXXXX is the bug number as listed below.
 345016  helgrind/tests/locked_vs_unlocked2 is failing sometimes
 345079  Fix build problems in VEX/useful/test_main.c
 345126  Incorrect handling of VIDIOC_G_AUDIO and G_AUDOUT
+345177  arm64: prfm (reg) not implemented
 345215  Performance improvements for the register allocator
 345338  TIOCGSERIAL and TIOCSSERIAL ioctl support on Linux
 345394  Fix memcheck/tests/strchr on OS X
@@ -247,6 +252,7 @@ where XXXXXX is the bug number as listed below.
 345887  Fix an assertion in the address space manager
 345928  amd64: callstack only contains current function for small stacks
 345987  MIPS64: Implement cavium LHX instruction
+346031  MIPS: Implement support for the CvmCount register (rhwr %0, 31)
 346267  Compiler warnings for PPC64 code on call to LibVEX_GuestPPC64_get_XER()
         and LibVEX_GuestPPC64_get_CR()
 346270  Regression tests none/tests/jm_vec/isa_2_07 and
@@ -274,6 +280,8 @@ where XXXXXX is the bug number as listed below.
 348102  Patch updating v4l2 API support
 348247  jno jumps wrongly when overflow is not set
 348269  Improve mmap MAP_HUGETLB support.
+348345  Assertion fails for negative lineno
+348377  Unsupported ARM instruction: yield
 348565  Fix detection of command line option availability for clang
 348574  vex amd64->IR pcmpistri SSE4.2 unsupported (pcmpistri $0x18)
 348728  Fix broken check for VIDIOC_G_ENC_INDEX
@@ -287,8 +295,9 @@ where XXXXXX is the bug number as listed below.
         reply 0x........] (task_set_special_port)
 349626  Implemented additional Xen hypercalls
 349769  Fix clang/osx: ld: warning: -read_only_relocs cannot be used with x86_64
-349874  Fix typos in source code
 349828  memcpy intercepts memmove causing src/dst overlap error (ppc64 ld.so)
+349874  Fix typos in source code
+349879  memcheck: add handwritten assembly for helperc_LOADV*
 349941  di_notify_mmap might create wrong start/size DebugInfoMapping
 350062  vex x86->IR: unhandled instruction bytes: 0x66 0xF 0x3A 0xB (ROUNDSD) on OS X
 350202  Add limited param to 'monitor block_list'

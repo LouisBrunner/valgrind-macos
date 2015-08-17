@@ -19,16 +19,9 @@ go in here.
 
 === VEX/arm ============================================================
 
-335618  mov.w rN, pc/sp (ARM32)
-        HAS PATCH
-
-342680  arm: unhanded instruction 0xF590F000: pldw [r0]
-
 342780  arm + gcc 4.9 produce false positive: Use of uninitialised value of
         size 4 and segfault on stack extention
         Has patch
-
-342783  arm: unhandled instruction 0xEEFE1ACA = "vcvt.s32.f32    s3, s3, #12"
 
 344802  disInstr(arm): unhandled instruction: 0xEC510F1E
         maybe easy fix?
@@ -36,19 +29,10 @@ go in here.
 
 345984  disInstr(arm): unhandled instruction: 0xEE193F1E
 
-345985  disInstr(arm): unhandled instruction: 0xF2200150
-
-346665  valgrind: the 'impossible' happened: LibVEX called failure_exit().
-        armv6 probable failure
-
-348377  Unsupported ARM instruction: yield
-
 348536  ARM32: Unhandled instructions 0xEE190F1D & 0xEC510F1E 
         == 331178
 
 === VEX/arm64 ==========================================================
-
-345177  arm64: prfm (reg) not implemented
 
 === VEX/x86 ============================================================
 
@@ -81,14 +65,8 @@ go in here.
 
 340777  Illegal instruction on mips (ar71xx)
 
-341997  MIPS64: Cavium OCTEON instructions - immediate operand handled
-        incorrectly
-
 344524  store conditional of guest applications always fail (Octeon3(MIPS)
         discussed, complex, partial fix available
-
-346031  MIPS: Implement support for the CvmCount register (rhwr %0, 31)
-        has patch
 
 === VEX/ppc ============================================================
 
@@ -96,15 +74,13 @@ go in here.
 
 348334  valgrind does not simulate dcbfl  -  then my program terminates
         I think this is actually fixed, and needs closing.
+        QUERIED
 
 === VEX/s390x ==========================================================
 
 350290  s390x unsupported instruction fixbra
 
 === VEX general ========================================================
-
-339778  Linux/TileGx platform support to Valgrind
-        Should action
 
 === Syscalls/ioctls ====================================================
 
@@ -155,7 +131,7 @@ go in here.
         no action so far
 
 339744  warning: evaluate_Dwarf3_Expr: unhandled DW_OP_ 0xf2
-        no action so far
+        Has comments from MJW
 
 340854  valgrind-di-server: allow specification of multiple paths
         has patch, unclear if Right Thing To Do
@@ -167,43 +143,40 @@ go in here.
 345975  Artificial functions in backtrace
         more Dwarf complexity
 
-348345  Assertion fails for negative lineno
-
 === Tools/Memcheck =====================================================
 
 339499  memcheck does not always detect access beyond mmaped page
-        probably wontfix
+        Probable WONTFIX
 
 339762  missing replacement alias for glibc __strchr_sse42, __strcpy_sse2,
         __strcpy_ssse3
-        obscure?
+        Probable INVALID
 
 340392  Incorrect "Conditional jump..." message
         Optimised code a la Clang
-        PROBABLE CANTFIX
-
-342683  memory past the brk limit is not initially inaccessible/unaddressable
+        Probable CANTFIX
 
 345307  Please suppress warning about "still reachable" memory
         when using libstdc++ from gcc 5
 
 345751  OS X: Incorrect result for operator Iop_Add32 and Iop_Add64
         due to mce.useLLVMworkarounds = True
+        Probably harmless
 
 345753  OS X: sanityCheckFail: exiting due to bad IR for Iop_AddF64
         IR type error; should look at it
+        NEEDS INVESTIGATION
 
 345811  annotate also FP for memcheck dirty helpers
         has patch, should commit
-
-349879  [PATCH] memcheck: add handwritten assembly for helperc_LOADV*
+        NEEDS INVESTIGATION
 
 350405  Support for Intel DPDK custom allocator rte_malloc
         Seems dubious
 
 350928  mc_malloc_wrappers.c:244 (in_block_list):
         Assertion 'found_mc == mc' failed
-        Has patch, needs looking at
+        NEEDS INVESTIGATION, Has patch
 
 === Tools/DRD ==========================================================
 === Tools/Helgrind =====================================================

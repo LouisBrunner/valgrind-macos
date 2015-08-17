@@ -350,6 +350,11 @@ Int VG_(load_ELF)(Int fd, const HChar* name, /*MOD*/ExeInfo* info)
       if (ebase < hacky_load_address)
          ebase = hacky_load_address;
 #     endif
+
+#     if defined(VGO_solaris)
+      /* Record for later use in AT_BASE. */
+      info->interp_offset = ebase;
+#     endif
    }
 
    info->phnum = e->e.e_phnum;
@@ -363,6 +368,9 @@ Int VG_(load_ELF)(Int fd, const HChar* name, /*MOD*/ExeInfo* info)
       switch(ph->p_type) {
       case PT_PHDR:
          info->phdr = ph->p_vaddr + ebase;
+#        if defined(VGO_solaris)
+         info->real_phdr_present = True;
+#        endif
          break;
 
       case PT_LOAD:

@@ -367,7 +367,7 @@ static Addr setup_client_stack(void *init_sp,
 
       AT_SUN_PLATFORM
       AT_SUN_EXECNAME
-      AT_PHDR
+      AT_PHDR            (not for elfs with no PT_PHDR, such as ld.so.1)
       AT_BASE
       AT_FLAGS
       AT_PAGESZ
@@ -538,7 +538,7 @@ static Addr setup_client_stack(void *init_sp,
    auxv++;
 
    /* AT_PHDR */
-   if (info->phdr) {
+   if ((info->real_phdr_present) && (info->phdr != 0)) {
       auxv->a_type = VKI_AT_PHDR;
       auxv->a_un.a_val = info->phdr;
       auxv++;

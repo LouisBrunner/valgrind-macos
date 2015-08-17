@@ -14338,6 +14338,11 @@ static Bool decode_CP10_CP11_instruction (
       UInt size      = bSX == 0 ? 16 : 32;
       Int  frac_bits = size - ((imm4 << 1) | bI);
       UInt d         = dp_op  ? ((bD << 4) | Vd)  : ((Vd << 1) | bD);
+
+      IRExpr* rm     = mkU32(Irrm_NEAREST);
+      IRTemp  scale  = newTemp(Ity_F64);
+      assign(scale, unop(Iop_I32UtoF64, mkU32( 1 << (frac_bits-1) )));
+
       if (frac_bits >= 1 && frac_bits <= 32 && !to_fixed && !dp_op
                                             && size == 32) {
          /* VCVT.F32.{S,U}32 S[d], S[d], #frac_bits */
@@ -14349,9 +14354,6 @@ static Bool decode_CP10_CP11_instruction (
          assign(src32,  unop(Iop_ReinterpF32asI32, getFReg(d)));
          IRExpr* as_F64 = unop( unsyned ? Iop_I32UtoF64 : Iop_I32StoF64,
                                 mkexpr(src32 ) );
-         IRTemp scale = newTemp(Ity_F64);
-         assign(scale, unop(Iop_I32UtoF64, mkU32( 1 << (frac_bits-1) )));
-         IRExpr* rm     = mkU32(Irrm_NEAREST);
          IRExpr* resF64 = triop(Iop_DivF64,
                                 rm, as_F64, 
                                 triop(Iop_AddF64, rm, mkexpr(scale),
@@ -14371,9 +14373,6 @@ static Bool decode_CP10_CP11_instruction (
          assign(src32, unop(Iop_64to32, getDRegI64(d)));
          IRExpr* as_F64 = unop( unsyned ? Iop_I32UtoF64 : Iop_I32StoF64,
                                 mkexpr(src32 ) );
-         IRTemp scale = newTemp(Ity_F64);
-         assign(scale, unop(Iop_I32UtoF64, mkU32( 1 << (frac_bits-1) )));
-         IRExpr* rm     = mkU32(Irrm_NEAREST);
          IRExpr* resF64 = triop(Iop_DivF64,
                                 rm, as_F64, 
                                 triop(Iop_AddF64, rm, mkexpr(scale),
@@ -14388,10 +14387,7 @@ static Bool decode_CP10_CP11_instruction (
          /* VCVT.{S,U}32.F64 D[d], D[d], #frac_bits */
          IRTemp srcF64 = newTemp(Ity_F64);
          assign(srcF64, getDReg(d));
-         IRTemp scale = newTemp(Ity_F64);
-         assign(scale, unop(Iop_I32UtoF64, mkU32( 1 << (frac_bits-1) )));
          IRTemp scaledF64 = newTemp(Ity_F64);
-         IRExpr* rm = mkU32(Irrm_NEAREST);
          assign(scaledF64, triop(Iop_MulF64,
                                  rm, mkexpr(srcF64),
                                  triop(Iop_AddF64, rm, mkexpr(scale),
@@ -14403,6 +14399,29 @@ static Bool decode_CP10_CP11_instruction (
                              mkexpr(rmode), mkexpr(scaledF64)));
          putDRegI64(d, unop(unsyned ? Iop_32Uto64 : Iop_32Sto64,
                             mkexpr(asI32)), condT);
+
+         DIP("vcvt.%c32.f64, d%u, d%u, #%d\n",
+             unsyned ? 'u' : 's', d, d, frac_bits);
+         goto decode_success_vfp;
+      }
+      if (frac_bits >= 1 && frac_bits <= 32 && to_fixed && !dp_op
+                                            && size == 32) {
+         /* VCVT.{S,U}32.F32 S[d], S[d], #frac_bits */
+         IRTemp srcF32 = newTemp(Ity_F32);
+         assign(srcF32, getFReg(d));
+         IRTemp scaledF64 = newTemp(Ity_F64);
+         assign(scaledF64, triop(Iop_MulF64,
+                                 rm, unop(Iop_F32toF64, mkexpr(srcF32)),
+                                 triop(Iop_AddF64, rm, mkexpr(scale),
+                                                       mkexpr(scale))));
+         IRTemp rmode = newTemp(Ity_I32);
+         assign(rmode, mkU32(Irrm_ZERO)); // as per the spec
+         IRTemp asI32 = newTemp(Ity_I32);
+         assign(asI32, binop(unsyned ? Iop_F64toI32U : Iop_F64toI32S,
+                             mkexpr(rmode), mkexpr(scaledF64)));
+         putFReg(d, unop(Iop_ReinterpI32asF32, mkexpr(asI32)), condT);
+         DIP("vcvt.%c32.f32, d%u, d%u, #%d\n",
+             unsyned ? 'u' : 's', d, d, frac_bits);
          goto decode_success_vfp;
       }
       /* fall through */

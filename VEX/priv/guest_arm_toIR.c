@@ -19848,11 +19848,14 @@ DisResult disInstr_THUMB_WRK (
    /* ------------ (T?) MVN{S}.W Rd, Rn, {shift} ------------ */
    if ((INSN0(15,0) & 0xFFCF) == 0xEA4F
        && INSN1(15,15) == 0) {
-      UInt rD = INSN1(11,8);
-      UInt rN = INSN1(3,0);
-      if (!isBadRegT(rD) && !isBadRegT(rN)) {
-         UInt bS    = INSN0(4,4);
-         UInt isMVN = INSN0(5,5);
+      UInt rD      = INSN1(11,8);
+      UInt rN      = INSN1(3,0);
+      UInt bS      = INSN0(4,4);
+      UInt isMVN   = INSN0(5,5);
+      Bool regsOK  = (bS || isMVN) 
+                        ? (!isBadRegT(rD) && !isBadRegT(rN))
+                        : (rD != 15 && rN != 15 && (rD != 13 || rN != 13));
+      if (regsOK) {
          UInt imm5  = (INSN1(14,12) << 2) | INSN1(7,6);
          UInt how   = INSN1(5,4);
 

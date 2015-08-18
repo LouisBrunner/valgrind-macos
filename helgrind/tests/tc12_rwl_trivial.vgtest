@@ -1,1 +1,2 @@
+vgopts: --sigill-diagnostics=no
 prog: tc12_rwl_trivial

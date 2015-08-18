@@ -5,7 +5,7 @@
 #define _GNU_SOURCE 1
 
 #include <stdio.h>
-#include <pthread.h>
+#include "safe-pthread.h"
 #include <assert.h>
 
 /* Do trivial stuff with a reader-writer lock. */

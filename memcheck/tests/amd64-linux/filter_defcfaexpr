@@ -1,6 +1,9 @@
 #! /bin/sh
 
-# change 
+# In case the test binary contains debug line info first change
+# bad0.c:?? to a (bogus) binary path /foobar/tests/amd64-linux/defcfaexpr/
+#
+# then change
 #
 # ==6019==    at 0x400512: bbb (in 
 #           /home/sewardj/VgTRUNK/trunk/memcheck/tests/amd64/defcfaexpr)
@@ -23,6 +26,7 @@
 # stack given the unusual CFAs describing it.
 
 
+sed "s/bad0.c:[0-9]\+/\/foobar\/tests\/amd64-linux\/defcfaexpr/" | \
 ./filter_stderr "$@" | \
 sed "s/\/.*\/tests\/amd64-linux\/defcfaexpr/bogus.S:0/" | \
 sed "s/(in /(/" 

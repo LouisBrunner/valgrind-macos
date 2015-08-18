@@ -3975,6 +3975,7 @@ static void iselNext ( ISelEnv* env,
       case Ijk_InvalICache:
       case Ijk_FlushDCache:
       case Ijk_SigTRAP:
+      case Ijk_Yield:
       {
          HReg        r    = iselIntExpr_R(env, next);
          ARM64AMode* amPC = mk_baseblock_64bit_access_amode(offsIP);

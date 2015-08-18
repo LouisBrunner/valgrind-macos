@@ -6859,6 +6859,19 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       return True;
    }
 
+   /* ------------------- YIELD ------------------- */
+   /* 31        23        15        7
+      1101 0101 0000 0011 0010 0000 0011 1111
+   */
+   if (INSN(31,0) == 0xD503203F) {
+      /* Request yield followed by continuation at the next insn. */
+      putPC(mkU64(guest_PC_curr_instr + 4));
+      dres->whatNext    = Dis_StopHere;
+      dres->jk_StopHere = Ijk_Yield;
+      DIP("yield\n");
+      return True;
+   }
+
   //fail:
    vex_printf("ARM64 front end: branch_etc\n");
    return False;

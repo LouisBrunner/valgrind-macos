@@ -3617,7 +3617,7 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
             case Ijk_ClientReq:   trcval = VEX_TRC_JMP_CLIENTREQ;   break;
             case Ijk_Sys_syscall: trcval = VEX_TRC_JMP_SYS_SYSCALL; break;
             //case Ijk_Sys_int128:  trcval = VEX_TRC_JMP_SYS_INT128;  break;
-            //case Ijk_Yield:       trcval = VEX_TRC_JMP_YIELD;       break;
+            case Ijk_Yield:       trcval = VEX_TRC_JMP_YIELD;       break;
             //case Ijk_EmWarn:      trcval = VEX_TRC_JMP_EMWARN;      break;
             //case Ijk_MapFail:     trcval = VEX_TRC_JMP_MAPFAIL;     break;
             case Ijk_NoDecode:    trcval = VEX_TRC_JMP_NODECODE;    break;

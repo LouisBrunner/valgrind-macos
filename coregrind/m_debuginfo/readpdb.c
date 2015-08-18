@@ -2384,15 +2384,15 @@ Bool ML_(read_pdb_debug_info)(
          const DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
          if (map->rx)
             VG_(dmsg)("LOAD_PDB_DEBUGINFO: "
-                      "rx_map: avma %#lx size %7lu foff %ld\n",
-                      map->avma, map->size, map->foff);
+                      "rx_map: avma %#lx size %7lu foff %lld\n",
+                      map->avma, map->size, (Long)map->foff);
       }
       for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
          const DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
          if (map->rw)
             VG_(dmsg)("LOAD_PDB_DEBUGINFO: "
-                      "rw_map: avma %#lx size %7lu foff %ld\n",
-                      map->avma, map->size, map->foff);
+                      "rw_map: avma %#lx size %7lu foff %lld\n",
+                      map->avma, map->size, (Long)map->foff);
       }
 
       VG_(dmsg)("LOAD_PDB_DEBUGINFO: "

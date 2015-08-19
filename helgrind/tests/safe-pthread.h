@@ -26,7 +26,6 @@ static void sigill_handler( int signum, siginfo_t *siginfo, void *sigcontext ) {
  * glibc normally does - error reporting is optional.
  */
 static int safe_pthread_rwlock_unlock( pthread_rwlock_t *rwlock ) {
-#if __GLIBC_PREREQ(2,20) && ( defined(__i386__) || defined(__x86_64__) )
    struct sigaction sa;
    struct sigaction oldsa;
    int r;
@@ -48,9 +47,6 @@ static int safe_pthread_rwlock_unlock( pthread_rwlock_t *rwlock ) {
    sigaction( SIGILL, &oldsa, NULL );
 
    return r;
-#else
-   return pthread_rwlock_unlock( rwlock );
-#endif
 }
 
 #define pthread_rwlock_unlock safe_pthread_rwlock_unlock

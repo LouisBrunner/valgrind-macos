@@ -307,6 +307,7 @@ where XXXXXX is the bug number as listed below.
 350854  hard-to-understand code in VG_(load_ELF)()
 351140  arm64 syscalls setuid (146) and setresgid (149) not implemented
 351386  Cannot run ld.so.1 under Valgrind
+351474  Fix VG_(iseqsigset) as obvious
 n-i-bz  Provide implementations of certain compiler builtins to support
         compilers who may not provide those
 n-i-bz  Old STABS code is still being compiled, but never used. Remove it.

@@ -131,7 +131,7 @@ Bool VG_(iseqsigset)( const vki_sigset_t* set1, const vki_sigset_t* set2 )
       else {
          /* Partial word comparison. */
          ULong mask = (1UL << (_VKI_MAXSIG % _VKI_NSIG_BPW)) - 1;
-         if ((set1->sig[i] & mask) != (set1->sig[i] & mask)) return False;
+         if ((set1->sig[i] & mask) != (set2->sig[i] & mask)) return False;
          break;
       }
    }

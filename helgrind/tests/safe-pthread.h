@@ -34,7 +34,6 @@ static int safe_pthread_rwlock_unlock( pthread_rwlock_t *rwlock ) {
    sa.sa_sigaction = sigill_handler;
    sigemptyset( &sa.sa_mask );
    sa.sa_flags = SA_SIGINFO;
-   sa.sa_restorer = NULL;
    
    sigaction( SIGILL, &sa, &oldsa );
 

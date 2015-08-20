@@ -1,4 +1,4 @@
-#ifndef __VKI_XEN_PHYSDEV__H
+#ifndef __VKI_XEN_PHYSDEV_H
 #define __VKI_XEN_PHYSDEV_H
 
 #define VKI_XEN_MAP_PIRQ_TYPE_MSI               0x0

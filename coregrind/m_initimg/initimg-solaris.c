@@ -747,63 +747,6 @@ static Addr setup_client_stack(void *init_sp,
    return client_SP;
 }
 
-
-/* Allocate the client data segment. It is an expandable anonymous mapping
-   abutting a 1-page reservation. The data segment starts at VG_(brk_base)
-   and runs up to VG_(brk_limit). None of these two values have to be
-   page-aligned.
-   Reservation segment is used to protect the data segment merging with
-   a pre-existing segment. This should be no problem because address space
-   manager ensures that requests for client address space are satisfied from
-   the highest available addresses. However when memory is low, data segment
-   can meet with mmap'ed objects and the reservation segment separates these.
-   The page that contains VG_(brk_base) is already allocated by the program's
-   loaded data segment. The brk syscall wrapper handles this special case.
-   See the brk syscall wrapper for more information. */
-static void setup_client_dataseg(SizeT initial_size)
-{
-   Bool ok;
-   SysRes sres;
-   Addr anon_start = VG_PGROUNDUP(VG_(brk_base));
-   SizeT anon_size = VG_PGROUNDUP(initial_size);
-   Addr resvn_start = anon_start + anon_size;
-   SizeT resvn_size = VKI_PAGE_SIZE;
-   const NSegment *seg;
-   UInt prot;
-
-   vg_assert(VG_IS_PAGE_ALIGNED(anon_size));
-   vg_assert(VG_IS_PAGE_ALIGNED(resvn_size));
-   vg_assert(VG_IS_PAGE_ALIGNED(anon_start));
-   vg_assert(VG_IS_PAGE_ALIGNED(resvn_start));
-
-   /* Stay sane (because there's been no brk activity yet). */
-   vg_assert(VG_(brk_base) == VG_(brk_limit));
-
-   /* Find the loaded data segment and remember its protection. */
-   seg = VG_(am_find_nsegment)(VG_(brk_base) - 1);
-   vg_assert(seg);
-   prot = (seg->hasR ? VKI_PROT_READ : 0)
-        | (seg->hasW ? VKI_PROT_WRITE : 0)
-        | (seg->hasX ? VKI_PROT_EXEC : 0);
-
-   /* Try to create the data segment and associated reservation where
-      VG_(brk_base) says. */
-   ok = VG_(am_create_reservation)(resvn_start, resvn_size, SmLower, anon_size);
-   if (!ok) {
-      /* That didn't work, we're hosed. */
-      VG_(printf)("valgrind: cannot initialize a brk segment\n");
-      VG_(exit)(1);
-      /*NOTREACHED*/
-   }
-   vg_assert(ok);
-
-   /* Map the data segment. */
-   sres = VG_(am_mmap_anon_fixed_client)(anon_start, anon_size, prot);
-   vg_assert(!sr_isError(sres));
-   vg_assert(sr_Res(sres) == anon_start);
-}
-
-
 /*====================================================================*/
 /*=== TOP-LEVEL: VG_(setup_client_initial_image)                   ===*/
 /*====================================================================*/
@@ -898,26 +841,10 @@ IIFinaliseImageInfo VG_(ii_create_image)(IICreateImageInfo iicii,
                        iifii.clstack_max_size);
    }
 
-   //--------------------------------------------------------------
-   // Setup client data (brk) segment.  Initially segment at least
-   // 1 MB and at most 8 MB large which abuts a 1-page reservation.
-   //     p: load_client()     [for 'info' and hence VG_(brk_base)]
-   //--------------------------------------------------------------
-   {
-      SizeT m1 = 1024 * 1024;
-      SizeT m8 = 8 * m1;
-      SizeT dseg_max_size = VG_(client_rlimit_data).rlim_cur;
-      VG_(debugLog)(1, "initimg", "Setup client data (brk) segment at %#lx\n",
-                                  VG_(brk_base));
-      if (dseg_max_size < m1)
-         dseg_max_size = m1;
-      if (dseg_max_size > m8)
-         dseg_max_size = m8;
-      dseg_max_size = VG_PGROUNDUP(dseg_max_size);
-
-      setup_client_dataseg(dseg_max_size);
-   }
-
+   /* Initial data (brk) segment is setup on demand, when a first brk() syscall
+      is made. It cannot be established now because it would conflict with
+      a temporary stack which ld.so.1 (when executed directly) uses for loading
+      the target dynamic executable. See PRE(sys_brk) in syswrap-solaris.c. */
    return iifii;
 }
 
@@ -934,7 +861,6 @@ IIFinaliseImageInfo VG_(ii_create_image)(IICreateImageInfo iicii,
 void VG_(ii_finalise_image)(IIFinaliseImageInfo iifii)
 {
    ThreadArchState *arch = &VG_(threads)[1].arch;
-   const NSegment *seg;
 
 #  if defined(VGA_x86)
    vg_assert(0 == sizeof(VexGuestX86State) % LibVEX_GUEST_STATE_ALIGN);
@@ -990,14 +916,16 @@ void VG_(ii_finalise_image)(IIFinaliseImageInfo iifii)
    VG_TRACK(post_reg_write, Vg_CoreStartup, 1/*tid*/, 0/*offset*/,
             sizeof(VexGuestArchState));
 
-   /* Tell the tool about the client data segment and then kill it which will
-      make it inaccessible/unaddressable. */
-   seg = VG_(am_find_nsegment)(VG_PGROUNDUP(VG_(brk_base)));
-   vg_assert(seg);
-   vg_assert(seg->kind == SkAnonC);
-   VG_TRACK(new_mem_brk, VG_(brk_base), seg->end + 1 - VG_(brk_base),
-            1/*tid*/);
-   VG_TRACK(die_mem_brk, VG_(brk_base), seg->end + 1 - VG_(brk_base));
+   /* Make inaccessible/unaddressable the end of the client data segment.
+      See PRE(sys_brk) in syswrap-solaris.c for details. Nothing to do in
+      case VG_(brk_base) starts on the beginning of a free page. */
+   const NSegment *seg = VG_(am_find_nsegment)(VG_(brk_base));
+   if (seg != NULL) {
+      vg_assert((seg->kind == SkFileC) || (seg->kind == SkAnonC));
+      VG_TRACK(new_mem_brk, VG_(brk_base), seg->end + 1 - VG_(brk_base),
+               1 /* tid */);
+      VG_TRACK(die_mem_brk, VG_(brk_base), seg->end + 1 - VG_(brk_base));
+   }
 }
 
 #endif // defined(VGO_solaris)

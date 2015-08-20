@@ -21624,10 +21624,9 @@ DisResult disInstr_THUMB_WRK (
       have to support it since arm-linux uses TPIDRURO as a thread
       state register. */
    if ((INSN0(15,0) == 0xEE1D) && (INSN1(11,0) == 0x0F70)) {
-      /* FIXME: should this be unconditional? */
       UInt rD = INSN1(15,12);
       if (!isBadRegT(rD)) {
-         putIRegT(rD, IRExpr_Get(OFFB_TPIDRURO, Ity_I32), IRTemp_INVALID);
+         putIRegT(rD, IRExpr_Get(OFFB_TPIDRURO, Ity_I32), condT);
          DIP("mrc p15,0, r%u, c13, c0, 3\n", rD);
          goto decode_success;
       }
@@ -21640,10 +21639,9 @@ DisResult disInstr_THUMB_WRK (
       See comment on the ARM equivalent of this (above) for details.
    */
    if ((INSN0(15,0) == 0xEE19) && (INSN1(11,0) == 0x0F1E)) {
-      /* FIXME: should this be unconditional? */
       UInt rD = INSN1(15,12);
       if (!isBadRegT(rD)) {
-         putIRegT(rD, mkU32(0), IRTemp_INVALID);
+         putIRegT(rD, mkU32(0), condT);
          DIP("mrc p15,0, r%u, c9, c14, 0\n", rD);
          goto decode_success;
       }

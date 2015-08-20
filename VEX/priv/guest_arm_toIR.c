@@ -17218,7 +17218,7 @@ DisResult disInstr_ARM_WRK (
    /* ----------------------------------------------------------- */
 
    /* -------------- read CP15 TPIDRURO register ------------- */
-   /* mrc     p15, 0, r0, c13, c0, 3  up to
+   /* mrc     p15, 0, r0,  c13, c0, 3  up to
       mrc     p15, 0, r14, c13, c0, 3
    */
    /* I don't know whether this is really v7-only.  But anyway, we
@@ -17231,6 +17231,25 @@ DisResult disInstr_ARM_WRK (
          putIRegA(rD, IRExpr_Get(OFFB_TPIDRURO, Ity_I32),
                       condT, Ijk_Boring);
          DIP("mrc%s p15,0, r%u, c13, c0, 3\n", nCC(INSN_COND), rD);
+         goto decode_success;
+      }
+      /* fall through */
+   }
+
+   /* -------------- read CP15 PMUSRENR register ------------- */
+   /* mrc     p15, 0, r0,  c9, c14, 0  up to
+      mrc     p15, 0, r14, c9, c14, 0
+   */
+   /* A program reading this register is really asking "which
+      performance monitoring registes are available in user space?
+      The simple answer here is to return zero, meaning "none".  See
+      #345984. */
+   if (0x0E190F1E == (insn & 0x0FFF0FFF)) {
+      UInt rD = INSN(15,12);
+      if (rD <= 14) {
+         /* skip r15, that's too stupid to handle */
+         putIRegA(rD, mkU32(0), condT, Ijk_Boring);
+         DIP("mrc%s p15,0, r%u, c9, c14, 0\n", nCC(INSN_COND), rD);
          goto decode_success;
       }
       /* fall through */
@@ -21610,6 +21629,22 @@ DisResult disInstr_THUMB_WRK (
       if (!isBadRegT(rD)) {
          putIRegT(rD, IRExpr_Get(OFFB_TPIDRURO, Ity_I32), IRTemp_INVALID);
          DIP("mrc p15,0, r%u, c13, c0, 3\n", rD);
+         goto decode_success;
+      }
+      /* fall through */
+   }
+
+   /* -------------- read CP15 PMUSRENR register ------------- */
+   /* mrc     p15, 0, r0,  c9, c14, 0  up to
+      mrc     p15, 0, r14, c9, c14, 0
+      See comment on the ARM equivalent of this (above) for details.
+   */
+   if ((INSN0(15,0) == 0xEE19) && (INSN1(11,0) == 0x0F1E)) {
+      /* FIXME: should this be unconditional? */
+      UInt rD = INSN1(15,12);
+      if (!isBadRegT(rD)) {
+         putIRegT(rD, mkU32(0), IRTemp_INVALID);
+         DIP("mrc p15,0, r%u, c9, c14, 0\n", rD);
          goto decode_success;
       }
       /* fall through */

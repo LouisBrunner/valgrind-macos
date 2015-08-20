@@ -6252,7 +6252,6 @@ IRSB* MC_(instrument) ( VgCallbackClosure* closure,
                         IRType gWordTy, IRType hWordTy )
 {
    Bool    verboze = 0||False;
-   Bool    bogus;
    Int     i, j, first_stmt;
    IRStmt* st;
    MCEnv   mce;
@@ -6319,11 +6318,9 @@ IRSB* MC_(instrument) ( VgCallbackClosure* closure,
       extra-detailed (hence extra-expensive) instrumentation in
       places.  Scan the whole bb even if dodgyness is found earlier,
       so that the flatness assertion is applied to all stmts. */
-
-   bogus = False;
+   Bool bogus = False;
 
    for (i = 0; i < sb_in->stmts_used; i++) {
-
       st = sb_in->stmts[i];
       tl_assert(st);
       tl_assert(isFlatIRStmt(st));
@@ -6335,10 +6332,9 @@ IRSB* MC_(instrument) ( VgCallbackClosure* closure,
             ppIRStmt(st);
             VG_(printf)("\n");
          }
+         if (bogus) break;
       }
-
    }
-
    mce.bogusLiterals = bogus;
 
    /* Copy verbatim any IR preamble preceding the first IMark */

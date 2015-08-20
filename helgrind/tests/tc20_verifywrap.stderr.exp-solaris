@@ -171,6 +171,7 @@ Thread #x's call to pthread_rwlock_unlock failed
    with error code 1 (EPERM: Operation not permitted)
    at 0x........: pthread_rwlock_unlock_WRK (hg_intercepts.c:...)
    by 0x........: pthread_rwlock_unlock (hg_intercepts.c:...)
+   ...
    by 0x........: main (tc20_verifywrap.c:189)
 
 (1) no error on next line
@@ -197,6 +198,7 @@ Thread #x's call to pthread_rwlock_unlock failed
    with error code 1 (EPERM: Operation not permitted)
    at 0x........: pthread_rwlock_unlock_WRK (hg_intercepts.c:...)
    by 0x........: pthread_rwlock_unlock (hg_intercepts.c:...)
+   ...
    by 0x........: main (tc20_verifywrap.c:206)
 
 (4) no error on next line
@@ -225,6 +227,7 @@ Thread #x's call to pthread_rwlock_unlock failed
    with error code 1 (EPERM: Operation not permitted)
    at 0x........: pthread_rwlock_unlock_WRK (hg_intercepts.c:...)
    by 0x........: pthread_rwlock_unlock (hg_intercepts.c:...)
+   ...
    by 0x........: main (tc20_verifywrap.c:227)
 
 

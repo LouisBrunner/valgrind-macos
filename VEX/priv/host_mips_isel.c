@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2010-2013 RT-RK
+   Copyright (C) 2010-2015 RT-RK
       mips-valgrind@rt-rk.com
 
    This program is free software; you can redistribute it and/or

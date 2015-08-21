@@ -6,7 +6,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2013-2013 OpenWorks
+   Copyright (C) 2013-2015 OpenWorks
       info@open-works.net
 
    This program is free software; you can redistribute it and/or

@@ -383,7 +383,7 @@ void VG_(OSetGen_Destroy)(AvlTree* t)
    if (!has_node_pa || VG_(releasePA)(t->node_pa) > 0) {
       AvlNode* n = NULL;
       Int i = 0;
-      Word sz = 0;
+      UWord sz = 0;
    
       stackClear(t);
       if (t->root)

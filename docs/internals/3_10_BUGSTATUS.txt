@@ -22,12 +22,11 @@ go in here.
 342780  arm + gcc 4.9 produce false positive: Use of uninitialised value of
         size 4 and segfault on stack extention
         Has patch
+        DEFER till 3.11.1 unless I can repro in the wild
 
 344802  disInstr(arm): unhandled instruction: 0xEC510F1E
         maybe easy fix?
         but doesn't run natively either
-
-345984  disInstr(arm): unhandled instruction: 0xEE193F1E
 
 348536  ARM32: Unhandled instructions 0xEE190F1D & 0xEC510F1E 
         == 331178
@@ -71,10 +70,6 @@ go in here.
 === VEX/ppc ============================================================
 
 342610  disInstr(ppc): declined to decode an AltiVec insn.
-
-348334  valgrind does not simulate dcbfl  -  then my program terminates
-        I think this is actually fixed, and needs closing.
-        QUERIED
 
 === VEX/s390x ==========================================================
 
@@ -145,16 +140,10 @@ go in here.
 
 === Tools/Memcheck =====================================================
 
-339499  memcheck does not always detect access beyond mmaped page
-        Probable WONTFIX
-
-339762  missing replacement alias for glibc __strchr_sse42, __strcpy_sse2,
-        __strcpy_ssse3
-        Probable INVALID
-
 340392  Incorrect "Conditional jump..." message
         Optimised code a la Clang
         Probable CANTFIX
+        (but should we add a command line flag for it?)
 
 345307  Please suppress warning about "still reachable" memory
         when using libstdc++ from gcc 5
@@ -165,7 +154,7 @@ go in here.
 
 345753  OS X: sanityCheckFail: exiting due to bad IR for Iop_AddF64
         IR type error; should look at it
-        NEEDS INVESTIGATION
+        NEEDS INVESTIGATION.  I can't repro this.
 
 345811  annotate also FP for memcheck dirty helpers
         has patch, should commit

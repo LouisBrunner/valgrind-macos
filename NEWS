@@ -251,6 +251,7 @@ where XXXXXX is the bug number as listed below.
 345824  Fix aspacem segment mismatch: seen with none/tests/bigcode
 345887  Fix an assertion in the address space manager
 345928  amd64: callstack only contains current function for small stacks
+345984  disInstr(arm): unhandled instruction: 0xEE193F1E
 345987  MIPS64: Implement cavium LHX instruction
 346031  MIPS: Implement support for the CvmCount register (rhwr %0, 31)
 346267  Compiler warnings for PPC64 code on call to LibVEX_GuestPPC64_get_XER()
@@ -280,6 +281,7 @@ where XXXXXX is the bug number as listed below.
 348102  Patch updating v4l2 API support
 348247  jno jumps wrongly when overflow is not set
 348269  Improve mmap MAP_HUGETLB support.
+348334  (ppc) valgrind does not simulate dcbfl  -  then my program terminates
 348345  Assertion fails for negative lineno
 348377  Unsupported ARM instruction: yield
 348565  Fix detection of command line option availability for clang

@@ -119,6 +119,8 @@ where XXXXXX is the bug number as listed below.
 201435  Fix Darwin: -v does not show kernel version
 208217  "Warning: noted but unhandled ioctl 0x2000747b" on Mac OS X
 211256  Fixed an outdated comment regarding the default platform.
+211529  valgrind doesn't show proper call stacks for programs compiled
+        by newer versions of visual c++
 211926  Avoid compilation warnings in valgrind.h with -pedantic
 212291  Fix unhandled syscall: unix:132 (mkfifo) on OS X
         == 263119
@@ -152,7 +154,9 @@ where XXXXXX is the bug number as listed below.
 339045  Getting valgrind to compile and run on OS X Yosemite (10.10)
         == 340252
 339156  gdbsrv not called for fatal signal
+339215  Valgrind 3.10.0 contain 2013 in copyrights notice
 339288  support Cavium Octeon MIPS specific BBIT*32 instructions
+339636  Use fxsave64 and fxrstor64 mnemonics instead of rex64 prefix
 339442  Fix testsuite build failure on OS X 10.9
 339542  Enable compilation with Intel's ICC compiler
 339563  The DVB demux DMX_STOP ioctl doesn't have a wrapper
@@ -180,6 +184,8 @@ where XXXXXX is the bug number as listed below.
 341997  MIPS64: Cavium OCTEON insns - immediate operand handled incorrectly
 342038  Unhandled syscalls on aarch64 (mbind/get/set_mempolicy)
 342063  wrong format specifier for test mcblocklistsearch in gdbserver_tests
+342117  Valgrind hangs after loading PDB file for MSVC compiled Firefox
+        under Wine
 342221  socket connect false positive uninit memory for unknown af family
 342353  Allow dumping full massif output while valgrind is still running
 342571  Valgrind chokes on AVX compare intrinsic with _CMP_GE_QS
@@ -207,6 +213,8 @@ where XXXXXX is the bug number as listed below.
 343597  ppc64le: incorrect use of offseof macro
 343649  OS X host_create_mach_voucher: UNKNOWN host message [id 222, to 
         mach_host_self(), reply 0x........]
+343663  [OSX Yosemite 10.10.1] The memcheck tool always reports a
+        leak regardless of the simplicity of the program.
 343732  Unhandled syscall 144 (setgid) on aarch64
 343733  Unhandled syscall 187 (msgctl and related) on aarch64
 343802  s390x: Fix false positives "conditional jump or move depends on
@@ -218,6 +226,7 @@ where XXXXXX is the bug number as listed below.
 344033  Helgrind on ARM32 loses track of mutex lockedness state in
         pthread_cond_wait
 344054  www - update info for Solaris/illumos
+344416  'make regtest' does not work cleanly on OS X
 344235  Remove duplicate include of pub_core_aspacemgr.h
 344279  syscall sendmmsg on arm64 (269) and ppc32/64 (349) unhandled
 344295  syscall recvmmsg on arm64 (243) and ppc32/64 (343) unhandled
@@ -244,6 +253,7 @@ where XXXXXX is the bug number as listed below.
 345126  Incorrect handling of VIDIOC_G_AUDIO and G_AUDOUT
 345177  arm64: prfm (reg) not implemented
 345215  Performance improvements for the register allocator
+345248  add support for Solaris OS in valgrind
 345338  TIOCGSERIAL and TIOCSSERIAL ioctl support on Linux
 345394  Fix memcheck/tests/strchr on OS X
 345637  Fix memcheck/tests/sendmsg on OS X
@@ -254,6 +264,7 @@ where XXXXXX is the bug number as listed below.
 345984  disInstr(arm): unhandled instruction: 0xEE193F1E
 345987  MIPS64: Implement cavium LHX instruction
 346031  MIPS: Implement support for the CvmCount register (rhwr %0, 31)
+346185  Fix typo saving altivec register v24
 346267  Compiler warnings for PPC64 code on call to LibVEX_GuestPPC64_get_XER()
         and LibVEX_GuestPPC64_get_CR()
 346270  Regression tests none/tests/jm_vec/isa_2_07 and
@@ -273,6 +284,7 @@ where XXXXXX is the bug number as listed below.
 347379  valgrind --leak-check=full memleak errors from system libraries on OS X 10.8
         == 217236
 347389  unhandled syscall: 373 (Linux ARM syncfs)
+347686  Patch set to cleanup PPC64 regtests
 347978  Remove bash dependencies where not needed
 347982  Fix undefined symbols for architecture x86_64: "_global", referenced from:
         _test_so_global in tls_so-tls_so.o
@@ -297,6 +309,7 @@ where XXXXXX is the bug number as listed below.
         reply 0x........] (task_set_special_port)
 349626  Implemented additional Xen hypercalls
 349769  Fix clang/osx: ld: warning: -read_only_relocs cannot be used with x86_64
+349790  Clean up of the hardware capability checking utilities.
 349828  memcpy intercepts memmove causing src/dst overlap error (ppc64 ld.so)
 349874  Fix typos in source code
 349879  memcheck: add handwritten assembly for helperc_LOADV*

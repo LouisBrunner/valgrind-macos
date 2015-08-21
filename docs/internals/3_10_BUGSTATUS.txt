@@ -216,10 +216,6 @@ go in here.
 
 === other/ppc ==========================================================
 
-346185  Fix typo saving altivec register v24
-
-347686  Patch set to cleanup PPC64 regtests
-
 350496  unhandled instruction: 0xE8040000 for powerpc e6500
         e500 ?
 
@@ -241,7 +237,7 @@ go in here.
         recent Android
 
 339861  Remove Elf32_Nhdr definition for Android
-        uh, do we want this?
+        uh, do we want this?  Requires conditionalisation.
 
 339862  v6intThumb.c does not compile when -pie options is specified
         should possible takes; causes build failures on newer Android
@@ -263,29 +259,8 @@ go in here.
 339745  Valgrind crash when check Marmalade app
         WONTFIX Requires 64 bit support in client application Marmalade
 
-341419  Signal handler ucontext_t not filled out correctly on OS X
-
-342635  OS X 10.10 (Yosemite) - missing system calls and fcntl code
-
 343306  OS X 10.10: UNKNOWN mach_msg unhandled MACH_SEND_TRAILER option
         Partially fixed
-
-343523  OS X mach_ports_register: UNKNOWN task message
-        [id 3403, to mach_task_self(), reply 0x30f]
-
-343525  OS X host_get_special_port: UNKNOWN host message
-        [id 412, to mach_host_self(), reply 0x........]
-
-343649  OS X host_create_mach_voucher: UNKNOWN host message
-        [id 222, to mach_host_self(), reply 0x........]
-
-343663  [OSX Yosemite 10.10.1] The memcheck tool always reports a
-        leak regardless of the simplicity of the program.
-
-344416  'make regtest' does not work cleanly on OS X
-
-348565  unknown warning options on clang/osx:
-        Wmissing-parameter-type Wold-style-declaration
 
 348909  Support OS X 10.11 (El Capitan)
 
@@ -295,19 +270,11 @@ go in here.
 
 349521  Valgrind misses some line numbers in output on OS X 10.11
 
-349769  clang/osx: ld: warning: -read_only_relocs cannot be used with x86_64
-
 349804  wine/osx: mmap-FIXED(0x1000, 1073741824) failed in UME (load_segment2)
 
 350359  memcheck/tests/x86/fxsave hangs indefinetely on OS X
 
 === other/Win32 =======================================================
-
-211529  valgrind doesn't show proper call stacks for programs compiled
-        by newer versions of visual c++
-
-342117  Valgrind hangs after loading PDB file for MSVC compiled Firefox
-        under Wine
 
 344382  Memcheck has high false error rates on MSVC2013 compiled,
         optimised, code in progress
@@ -350,18 +317,10 @@ go in here.
 
 343715  valgrind hangs after vgdb help request
 
-349790  Clean up of the hardware capability checking utilities.
-
 350491  Handling of nested scripts
         Bizarre
 
 === Uncategorised/build=================================================
-
-339215  Valgrind 3.10.0 contain 2013 in copyrights notice
-        Update copyright dates!
-
-339636  Use fxsave64 and fxrstor64 mnemonics instead of rex64 prefix
-        Should apply
 
 342008  valgrind.h needs type cast for _zzq_default to compile with
         clang/llvm in 64-bit mode
@@ -371,8 +330,6 @@ go in here.
 344019  new tool: trackptr to track pointer usage
 
 344401  x32 ABI support
-
-345248  add support for Solaris OS in valgrind
 
 348342  Valgrind does not support android-x86_64
 

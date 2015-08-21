@@ -54,14 +54,10 @@ UInt VG_N_THREADS;
 void VG_(init_Threads)(void)
 {
    ThreadId tid;
-   UChar *addr, *aligned_addr;
 
-   addr = VG_(malloc)("init_Threads",
-          VG_N_THREADS * sizeof VG_(threads)[0] + LibVEX_GUEST_STATE_ALIGN - 1);
-
-   // Align
-   aligned_addr = addr + (Addr)addr % LibVEX_GUEST_STATE_ALIGN;
-   VG_(threads) = (ThreadState *)aligned_addr;
+   VG_(threads) = VG_(arena_memalign) (VG_AR_CORE, "init_Threads",
+                                       LibVEX_GUEST_STATE_ALIGN,
+                                       VG_N_THREADS * sizeof VG_(threads)[0]);
 
    for (tid = 1; tid < VG_N_THREADS; tid++) {
       INNER_REQUEST(

@@ -11,7 +11,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2011-2013 Bart Van Assche <bvanassche@acm.org>.
+   Copyright (C) 2011-2015 Bart Van Assche <bvanassche@acm.org>.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as

@@ -2,7 +2,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2014-2014 Philippe Waroquiers
+   Copyright (C) 2014-2015 Philippe Waroquiers
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as

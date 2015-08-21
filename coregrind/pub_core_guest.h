@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2014-2014 OpenWorks LLP
+   Copyright (C) 2014-2015 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or

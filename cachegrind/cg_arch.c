@@ -6,7 +6,7 @@
    This file is part of Cachegrind, a Valgrind tool for cache
    profiling programs.
 
-   Copyright (C) 2011-2013 Nicholas Nethercote
+   Copyright (C) 2011-2015 Nicholas Nethercote
       njn@valgrind.org
 
    This program is free software; you can redistribute it and/or

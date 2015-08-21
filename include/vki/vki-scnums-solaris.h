@@ -28,7 +28,7 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-/* Copyright 2013-2014, Ivo Raisr <ivosh@ivosh.net>. */
+/* Copyright 2013-2015, Ivo Raisr <ivosh@ivosh.net>. */
 
 /* Copyright 2013, OmniTI Computer Consulting, Inc. All rights reserved. */
 

@@ -158,7 +158,7 @@ LafterFP1:
         li      6,128
         stvx    25,6,1
         li      6,112
-        stvx    25,6,1
+        stvx    24,6,1
         li      6,96
         stvx    23,6,1
         li      6,80

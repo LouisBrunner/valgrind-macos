@@ -104,7 +104,7 @@ gomp_barrier_wait (gomp_barrier_t *bar)
           my_sem_wait (bar->sem2); // 2 down
         }
       pthread_mutex_unlock (&bar->mutex1);
-      /* «Resultats professionnels!»  First we made this thread have an
+      /* "Resultats professionnels!"  First we made this thread have an
          obvious (Thrcheck-visible) dependency on all other threads
          calling gomp_barrier_wait.  Then, we released them all again,
          so they all have a (visible) dependency on this thread.

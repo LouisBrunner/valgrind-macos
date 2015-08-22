@@ -1806,8 +1806,13 @@ PRE(sys_time)
 /* Data segment for brk (heap). It is an expandable anonymous mapping
    abutting a 1-page reservation. The data segment starts at VG_(brk_base)
    and runs up to VG_(brk_limit). None of these two values have to be
-   page-aligned. Initial data segment is established on demand here (see
-   initimg-solaris.c for rationale).
+   page-aligned.
+   Initial data segment is established (see initimg-solaris.c for rationale):
+   - directly during client program image initialization,
+   - or on demand when the executed program is the runtime linker itself,
+     after it has loaded its target dynamic executable (see PRE(sys_mmapobj)),
+     or when the first brk() syscall is made.
+
    Notable facts:
    - VG_(brk_base) is not page aligned; does not move
    - VG_(brk_limit) moves between [VG_(brk_base), data segment end]
@@ -1838,9 +1843,23 @@ PRE(sys_time)
    The page that contains VG_(brk_base) is already allocated by the program's
    loaded data segment. The brk syscall wrapper handles this special case. */
 
+static Bool brk_segment_established = False;
+
 /* Establishes initial data segment for brk (heap). */
-static Bool setup_client_dataseg(SizeT initial_size, ThreadId tid)
+Bool VG_(setup_client_dataseg)(void)
 {
+   /* Segment size is initially at least 1 MB and at most 8 MB. */
+   SizeT m1 = 1024 * 1024;
+   SizeT m8 = 8 * m1;
+   SizeT initial_size = VG_(client_rlimit_data).rlim_cur;
+   VG_(debugLog)(1, "syswrap-solaris", "Setup client data (brk) segment "
+                                       "at %#lx\n", VG_(brk_base));
+   if (initial_size < m1)
+      initial_size = m1;
+   if (initial_size > m8)
+      initial_size = m8;
+   initial_size = VG_PGROUNDUP(initial_size);
+
    Addr anon_start = VG_PGROUNDUP(VG_(brk_base));
    SizeT anon_size = VG_PGROUNDUP(initial_size);
    Addr resvn_start = anon_start + anon_size;
@@ -1873,17 +1892,21 @@ static Bool setup_client_dataseg(SizeT initial_size, ThreadId tid)
    vg_assert(!sr_isError(sres));
    vg_assert(sr_Res(sres) == anon_start);
 
-   /* Tell the tool about the client data segment and then kill it which will
-      make it initially inaccessible/unaddressable. */
-   seg = VG_(am_find_nsegment)(anon_start);
-   vg_assert(seg != NULL);
-   vg_assert(seg->kind == SkAnonC);
-   VG_TRACK(new_mem_brk, VG_(brk_base), seg->end + 1 - VG_(brk_base), tid);
-   VG_TRACK(die_mem_brk, VG_(brk_base), seg->end + 1 - VG_(brk_base));
+   brk_segment_established = True;
    return True;
 }
 
-static Bool brk_segment_established = False;
+/* Tell the tool about the client data segment and then kill it which will
+   make it initially inaccessible/unaddressable. */
+void VG_(track_client_dataseg)(ThreadId tid)
+{
+   const NSegment *seg = VG_(am_find_nsegment)(VG_PGROUNDUP(VG_(brk_base)));
+   vg_assert(seg != NULL);
+   vg_assert(seg->kind == SkAnonC);
+
+   VG_TRACK(new_mem_brk, VG_(brk_base), seg->end + 1 - VG_(brk_base), tid);
+   VG_TRACK(die_mem_brk, VG_(brk_base), seg->end + 1 - VG_(brk_base));
+}
 
 PRE(sys_brk)
 {
@@ -1923,31 +1946,22 @@ PRE(sys_brk)
       return;
    }
 
+   /* The brk base and limit must have been already set. */
+   vg_assert(VG_(brk_base) != -1);
+   vg_assert(VG_(brk_limit) != -1);
+
    if (!brk_segment_established) {
       /* Stay sane (because there should have been no brk activity yet). */
       vg_assert(VG_(brk_base) == VG_(brk_limit));
 
-      /* Establish an initial data segment for brk (heap).
-         Initially at least 1 MB and at most 8 MB large. */
-      SizeT m1 = 1024 * 1024;
-      SizeT m8 = 8 * m1;
-      SizeT dseg_max_size = VG_(client_rlimit_data).rlim_cur;
-      VG_(debugLog)(1, "syswrap-solaris", "Setup client data (brk) segment "
-                                          "at %#lx\n", VG_(brk_base));
-      if (dseg_max_size < m1)
-         dseg_max_size = m1;
-      if (dseg_max_size > m8)
-         dseg_max_size = m8;
-      dseg_max_size = VG_PGROUNDUP(dseg_max_size);
-
-      if (!setup_client_dataseg(dseg_max_size, tid)) {
+      if (!VG_(setup_client_dataseg)()) {
          VG_(umsg)("Cannot map memory to initialize brk segment in thread #%d "
                    "at %#lx\n", tid, VG_(brk_base));
          SET_STATUS_Failure(VKI_ENOMEM);
          return;
       }
 
-      brk_segment_established = True;
+      VG_(track_client_dataseg)(tid);
    }
 
    if (new_brk < old_brk_limit) {

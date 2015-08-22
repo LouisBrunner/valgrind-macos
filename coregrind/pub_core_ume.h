@@ -67,6 +67,7 @@ typedef
 #if defined(VGO_solaris)
       Addr  init_thrptr;       // OUT: architecture-specific user per-thread location
       Bool  real_phdr_present; // OUT: PT_PHDR found, include phdr in auxv
+      Bool  ldsoexec;          // OUT: the program is the runtime linker itself
 #endif
 
       Addr entry;        // OUT: entrypoint in main executable

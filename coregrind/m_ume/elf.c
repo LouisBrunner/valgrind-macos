@@ -563,8 +563,14 @@ Int VG_(load_ELF)(Int fd, const HChar* name, /*MOD*/ExeInfo* info)
 
       VG_(free)(interp->p);
       VG_(free)(interp);
-   } else
+   } else {
       entry = (void *)(ebase + e->e.e_entry);
+
+#     if defined(VGO_solaris)
+      if (e->e.e_type == ET_DYN)
+         info->ldsoexec = True;
+#     endif
+   }
 
    info->exe_base = minaddr + ebase;
    info->exe_end  = maxaddr + ebase;

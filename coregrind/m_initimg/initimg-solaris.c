@@ -48,6 +48,7 @@
 #include "pub_core_machine.h"
 #include "pub_core_ume.h"
 #include "pub_core_options.h"
+#include "pub_core_syswrap.h"
 #include "pub_core_tooliface.h"       /* VG_TRACK */
 #include "pub_core_threadstate.h"     /* ThreadArchState */
 #include "priv_initimg_pathscan.h"
@@ -102,7 +103,11 @@ static void load_client(/*OUT*/ExeInfo *info,
       VG_(cl_exec_fd) = sr_Res(res);
 
    /* Set initial brk values. */
-   VG_(brk_base) = VG_(brk_limit) = info->brkbase;
+   if (info->ldsoexec) {
+      VG_(brk_base) = VG_(brk_limit) = -1;
+   } else {
+      VG_(brk_base) = VG_(brk_limit) = info->brkbase;
+   }
 }
 
 
@@ -841,10 +846,20 @@ IIFinaliseImageInfo VG_(ii_create_image)(IICreateImageInfo iicii,
                        iifii.clstack_max_size);
    }
 
-   /* Initial data (brk) segment is setup on demand, when a first brk() syscall
-      is made. It cannot be established now because it would conflict with
-      a temporary stack which ld.so.1 (when executed directly) uses for loading
-      the target dynamic executable. See PRE(sys_brk) in syswrap-solaris.c. */
+   if (info.ldsoexec) {
+      /* We are executing the runtime linker itself.
+         Initial data (brk) segment is setup on demand, after the target dynamic
+         executable has been loaded or when a first brk() syscall is made.
+         It cannot be established now because it would conflict with a temporary
+         stack which ld.so.1 (when executed directly) uses for loading the
+         target dynamic executable. See PRE(sys_brk) in syswrap-solaris.c. */
+   } else {
+      if (!VG_(setup_client_dataseg)()) {
+         VG_(printf)("valgrind: cannot initialize data segment (brk).\n");
+         VG_(exit)(1);
+      }
+   }
+
    return iifii;
 }
 
@@ -916,15 +931,10 @@ void VG_(ii_finalise_image)(IIFinaliseImageInfo iifii)
    VG_TRACK(post_reg_write, Vg_CoreStartup, 1/*tid*/, 0/*offset*/,
             sizeof(VexGuestArchState));
 
-   /* Make inaccessible/unaddressable the end of the client data segment.
-      See PRE(sys_brk) in syswrap-solaris.c for details. Nothing to do in
-      case VG_(brk_base) starts on the beginning of a free page. */
-   const NSegment *seg = VG_(am_find_nsegment)(VG_(brk_base));
-   if (seg != NULL) {
-      vg_assert((seg->kind == SkFileC) || (seg->kind == SkAnonC));
-      VG_TRACK(new_mem_brk, VG_(brk_base), seg->end + 1 - VG_(brk_base),
-               1 /* tid */);
-      VG_TRACK(die_mem_brk, VG_(brk_base), seg->end + 1 - VG_(brk_base));
+   if (VG_(brk_base) != -1 ) {
+      /* Make inaccessible/unaddressable the end of the client data segment.
+         See PRE(sys_brk) in syswrap-solaris.c for details. */
+      VG_(track_client_dataseg)(1 /* tid */);
    }
 }
 

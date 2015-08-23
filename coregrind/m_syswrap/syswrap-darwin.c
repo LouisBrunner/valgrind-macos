@@ -10266,10 +10266,12 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACXY(__NR_getattrlistbulk,     getattrlistbulk),    // 461
    MACX_(__NR_readlinkat,          readlinkat),         // 473
    MACX_(__NR_bsdthread_ctl,       bsdthread_ctl),      // 478
-   MACX_(__NR_guarded_open_dprotected_np, guarded_open_dprotected_np),
-   MACX_(__NR_guarded_write_np, guarded_write_np),
-   MACX_(__NR_guarded_pwrite_np, guarded_pwrite_np),
-   MACX_(__NR_guarded_writev_np, guarded_writev_np),
+   MACX_(__NR_guarded_open_dprotected_np, guarded_open_dprotected_np),  // 484
+   MACX_(__NR_guarded_write_np, guarded_write_np),      // 485
+   MACX_(__NR_guarded_pwrite_np, guarded_pwrite_np),    // 486
+   MACX_(__NR_guarded_writev_np, guarded_writev_np),    // 487
+// _____(__NR___rename_ext),                            // 488
+// _____(__NR___mremap_encrypted),                      // 489
 #endif
 // _____(__NR_MAXSYSCALL)
    MACX_(__NR_DARWIN_FAKE_SIGRETURN, FAKE_SIGRETURN)

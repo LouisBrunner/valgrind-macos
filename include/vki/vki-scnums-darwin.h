@@ -738,7 +738,23 @@
 #define __NR_guarded_write_np       VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(485)
 #define __NR_guarded_pwrite_np      VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(486)
 #define __NR_guarded_writev_np      VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(487)
-#endif
+			/* 488  */
+			/* 489  */
+#endif /* DARWIN_VERS >= DARWIN_10_10 */
+
+// TODO Update with OS X 10.11 kernel (xnu) source code release
+#if DARWIN_VERS >= DARWIN_10_11
+			/* 490  */
+			/* 491  */
+			/* 492  */
+			/* 493  */
+			/* 494  */
+			/* 495  */
+			/* 496  */
+			/* 497  */
+			/* 498  */
+			/* 499  */
+#endif /* DARWIN_VERS >= DARWIN_10_11 */
 
 #if DARWIN_VERS < DARWIN_10_6
 #define	__NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(427)
@@ -751,8 +767,8 @@
 #elif DARWIN_VERS == DARWIN_10_10
 #define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(490)
 #elif DARWIN_VERS == DARWIN_10_11
-// TODO Hackish, needs properly analysis
-#define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(490)
+// TODO Confirm against final release
+#define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(500)
 #else
 #error unknown darwin version
 #endif

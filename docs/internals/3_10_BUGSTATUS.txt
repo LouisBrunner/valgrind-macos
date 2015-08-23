@@ -252,9 +252,9 @@ go in here.
 341726  [patch] Remove uneccessary ifdef _android_ from launcher-linux.c
         do we want this?
 
-=== other/MacOS ========================================================
+=== other/OS X ========================================================
 
-338781  OSX: unable to read debug info
+338781  Unable to read debug information (3.10.0 BETA1)
 
 339745  Valgrind crash when check Marmalade app
         WONTFIX Requires 64 bit support in client application Marmalade
@@ -273,6 +273,8 @@ go in here.
 349804  wine/osx: mmap-FIXED(0x1000, 1073741824) failed in UME (load_segment2)
 
 350359  memcheck/tests/x86/fxsave hangs indefinetely on OS X
+
+351632  UNKNOWN fcntl 97 on OS X 10.11
 
 === other/Win32 =======================================================
 

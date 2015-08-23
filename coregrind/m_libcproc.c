@@ -230,14 +230,6 @@ static void mash_colon_env(HChar *varp, const HChar *remove_pattern)
 void VG_(env_remove_valgrind_env_stuff)(HChar** envp, Bool ro_strings,
                                         void (*free_fn) (void *) )
 {
-
-#if defined(VGO_darwin)
-
-   // Environment cleanup is also handled during parent launch 
-   // in vg_preloaded.c:vg_cleanup_env().
-
-#endif
-
    Int i;
    HChar* ld_preload_str = NULL;
    HChar* ld_library_path_str = NULL;

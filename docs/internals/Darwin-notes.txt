@@ -69,13 +69,6 @@ Valgrind-developer notes, todos re the MacOSX port
   - PRE(sys_posix_spawn) completely ignores signal issues, and
     also ignores the file_actions argument
 
-* env var handling w/ exec on Darwin: is there something odd?  Compare
-  "valgrind env" on Darwin and Linux.  On the former there are
-  settings VALGRIND_LIB and VALGRIND_LIB_INNER, but not for the
-  former.
-  There's a suspicious-looking "#if defined(VGO_darwin)" in 
-  VG_(env_remove_valgrind_env_stuff).  Maybe related?
-
 * Cleanups: sort wrappers in syswrap-darwin.c and priv_syswrap-darwin.h
   alphabetically.  Also, some aren't properly implemented -- check and
   print warnings

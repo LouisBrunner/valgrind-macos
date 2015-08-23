@@ -310,17 +310,20 @@ void remote_open (const HChar *name)
 {
    const HChar *user, *host;
    int len;
-   VgdbShared vgdbinit = 
+   VgdbShared vgdbinit;
+   const int pid = VG_(getpid)();
+   Addr addr_shared;
+   SysRes o;
+   int shared_mem_fd = INVALID_DESCRIPTOR;
+
+   VG_(memset) (&vgdbinit, 0, sizeof (VgdbShared));
+   vgdbinit = (VgdbShared) 
       {0, 0, (Addr) VG_(invoke_gdbserver),
        (Addr) VG_(threads), VG_N_THREADS, sizeof(ThreadState), 
        offsetof(ThreadState, status),
        offsetof(ThreadState, os_state) + offsetof(ThreadOSstate, lwpid),
        0};
-   const int pid = VG_(getpid)();
-   Addr addr_shared;
-   SysRes o;
-   int shared_mem_fd = INVALID_DESCRIPTOR;
-   
+
    user = VG_(getenv)("LOGNAME");
    if (user == NULL) user = VG_(getenv)("USER");
    if (user == NULL) user = "???";

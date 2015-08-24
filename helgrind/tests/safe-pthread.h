@@ -15,7 +15,7 @@ static jmp_buf env;
 static void sigill_handler( int signum, siginfo_t *siginfo, void *sigcontext ) {
    unsigned char *pc = siginfo->si_addr;
    assert( pc[0] == 0x0f && pc[1] == 0x01 && pc[2] == 0xd5 );
-   longjmp( env, EPERM );
+   siglongjmp( env, EPERM );
 }
 
 /*
@@ -25,7 +25,7 @@ static void sigill_handler( int signum, siginfo_t *siginfo, void *sigcontext ) {
  * just zero, so we cannot add an assert/sanity check.
  */
 static void segv_handler( int signum, siginfo_t *siginfo, void *sigcontext ) {
-   longjmp( env, EPERM );
+   siglongjmp( env, EPERM );
 }
 
 /*
@@ -54,7 +54,7 @@ static int safe_pthread_rwlock_unlock( pthread_rwlock_t *rwlock ) {
 
    sigaction( SIGSEGV, &sa_segv, &oldsa_segv );
 
-   if ( ( r = setjmp( env ) ) == 0 ) {
+   if ( ( r = sigsetjmp( env, 1 ) ) == 0 ) {
      r = pthread_rwlock_unlock( rwlock );
    } else {
      r = 0;

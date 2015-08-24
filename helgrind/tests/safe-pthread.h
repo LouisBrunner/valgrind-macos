@@ -4,7 +4,7 @@
 #include <errno.h>
 #include <assert.h>
 
-static jmp_buf env;
+static sigjmp_buf env;
 
 /*
  * Starting with glibc 2.20 some pthread calls may execute

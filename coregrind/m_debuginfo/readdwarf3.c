@@ -4590,8 +4590,9 @@ void new_dwarf3_reader_wrk (
          cu_offset_now = (cu_start_offset + cc.unit_length
                           + (cc.is_dw64 ? 12 : 4));
 
+         clear_CUConst ( &cc);
+
          if (cu_offset_now >= escn_debug_types.szB) {
-            clear_CUConst ( &cc);
             break;
          }
 

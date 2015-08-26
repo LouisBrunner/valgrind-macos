@@ -71,6 +71,7 @@
 #   - stderr_filter_args: <args for stderr_filter>  (default: basename of .vgtest file)
 #
 #   - progB:  <prog to run in parallel with prog>   (default: none)
+#   - envB: <environment variable for progB>        (default: none)
 #   - argsB:  <args for progB>                      (default: none)
 #   - stdinB: <input file for progB>                (default: none)
 #   - stdoutB_filter: <filter progB stdout through> (default: none)
@@ -91,6 +92,7 @@
 #
 # There can be more than one env: declaration. Here is an example:
 #   env: PATH=/opt/bin:$PATH
+# Likewise for envB.
 #
 # Expected stdout (filtered) is kept in <test>.stdout.exp* (can be more
 # than one expected output).  It can be missing if it would be empty.  Expected
@@ -162,6 +164,7 @@ my $prereq;             # prerequisite test to satisfy before running test
 my $post;               # check command after running test
 my $cleanup;            # cleanup command to run
 my @env = ();           # environment variable to set prior calling $prog
+my @envB = ();          # environment variable to set prior calling $progB
 
 my @failures;           # List of failed tests
 
@@ -344,6 +347,8 @@ sub read_vgtest_file($)
             $cleanup = $1;
         } elsif ($line =~ /^\s*env:\s*(.*)$/) {
             push @env,$1;
+        } elsif ($line =~ /^\s*envB:\s*(.*)$/) {
+            push @envB,$1;
         } else {
             die "Bad line in $f: $line\n";
         }
@@ -460,6 +465,11 @@ sub do_one_test($$)
 
 
     if (defined $progB) {
+        # Collect environment variables, if any.
+        my $envBvars = "";
+        foreach my $e (@envB) {
+           $envBvars = "$envBvars $e";
+        }
         # If there is a progB, let's start it in background:
         printf("%-16s valgrind $extraopts $vgopts $prog $args (progB: $progB $argsB)\n",
                "$name:");
@@ -468,11 +478,13 @@ sub do_one_test($$)
         # to e.g. redirect stdoutB to stderrB
         if (defined $stdinB) {
             mysystem("(rm -f progB.done;"
-                     . " < $stdinB > $name.stdoutB.out 2> $name.stderrB.out $progB $argsB;"
+                     . " < $stdinB > $name.stdoutB.out 2> $name.stderrB.out"
+                     . " $envBvars $progB $argsB;"
                      . "touch progB.done) &");
         } else {
             mysystem("(rm -f progB.done;"
-                     . " > $name.stdoutB.out 2> $name.stderrB.out $progB $argsB;"
+                     . " > $name.stdoutB.out 2> $name.stderrB.out"
+                     . "$envBvars $progB $argsB;"
                      . "touch progB.done)  &");
         }
     } else {

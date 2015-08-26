@@ -7,6 +7,7 @@ vgopts: --tool=none --vgdb=yes --vgdb-stop-at=startup,exit --vgdb-prefix=./vgdb-
 stderr_filter: filter_stderr
 prereq: test -e gdb
 progB: gdb
+envB: LC_ALL=C
 argsB: --quiet -l 60 --nx ./gone
 stdinB: nlgone_exit.stdinB.gdb
 stdoutB_filter: filter_gdb

@@ -10,4 +10,5 @@ sed -e '/^Copyright (C) /d' \
     -e '/\/path\/to\/gdb/d' \
     -e '/and then give GDB the following command/d' \
     -e '/target remote |/d' \
-    -e '/pid is optional if only one valgrind process is running/d'
+    -e '/pid is optional if only one valgrind process is running/d' \
+    -e '/warning: remote target does not support file transfer, attempting to access files from local filesystem./d'

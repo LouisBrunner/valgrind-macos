@@ -6313,29 +6313,35 @@ IRSB* MC_(instrument) ( VgCallbackClosure* closure,
    }
    tl_assert( VG_(sizeXA)( mce.tmpMap ) == sb_in->tyenv->types_used );
 
-   /* Make a preliminary inspection of the statements, to see if there
-      are any dodgy-looking literals.  If there are, we generate
-      extra-detailed (hence extra-expensive) instrumentation in
-      places.  Scan the whole bb even if dodgyness is found earlier,
-      so that the flatness assertion is applied to all stmts. */
-   Bool bogus = False;
+   if (MC_(clo_expensive_definedness_check)) {
+      /* For expensive definedness checking skip looking for bogus
+         literals. */
+      mce.bogusLiterals = True;
+   } else {
+      /* Make a preliminary inspection of the statements, to see if there
+         are any dodgy-looking literals.  If there are, we generate
+         extra-detailed (hence extra-expensive) instrumentation in
+         places.  Scan the whole bb even if dodgyness is found earlier,
+         so that the flatness assertion is applied to all stmts. */
+      Bool bogus = False;
 
-   for (i = 0; i < sb_in->stmts_used; i++) {
-      st = sb_in->stmts[i];
-      tl_assert(st);
-      tl_assert(isFlatIRStmt(st));
+      for (i = 0; i < sb_in->stmts_used; i++) {
+         st = sb_in->stmts[i];
+         tl_assert(st);
+         tl_assert(isFlatIRStmt(st));
 
-      if (!bogus) {
-         bogus = checkForBogusLiterals(st);
-         if (0 && bogus) {
-            VG_(printf)("bogus: ");
-            ppIRStmt(st);
-            VG_(printf)("\n");
+         if (!bogus) {
+            bogus = checkForBogusLiterals(st);
+            if (0 && bogus) {
+               VG_(printf)("bogus: ");
+               ppIRStmt(st);
+               VG_(printf)("\n");
+            }
+            if (bogus) break;
          }
-         if (bogus) break;
       }
+      mce.bogusLiterals = bogus;
    }
-   mce.bogusLiterals = bogus;
 
    /* Copy verbatim any IR preamble preceding the first IMark */
 

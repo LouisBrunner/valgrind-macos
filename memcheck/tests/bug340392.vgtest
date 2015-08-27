@@ -1,0 +1,10 @@
+# When run without --expensive-definedness-check valgrind
+# produces:
+#
+# ==10953== Conditional jump or move depends on uninitialised value(s)
+# ==10953==    at 0x4004F8: main (bug340392.c:15)
+#
+# Making sure we don't get the message.
+#
+prog: bug340392
+vgopts: -q --expensive-definedness-check=yes

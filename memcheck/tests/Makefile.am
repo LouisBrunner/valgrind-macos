@@ -84,6 +84,7 @@ EXTRA_DIST = \
 		buflen_check.stderr.exp-kfail \
 	bug155125.stderr.exp bug155125.vgtest \
 	bug287260.stderr.exp bug287260.vgtest \
+	bug340392.stderr.exp bug340392.vgtest \
 	calloc-overflow.stderr.exp calloc-overflow.vgtest\
 	client-msg.stderr.exp client-msg.vgtest \
 	client-msg-as-xml.stderr.exp client-msg-as-xml.vgtest \
@@ -308,6 +309,7 @@ check_PROGRAMS = \
 	buflen_check \
 	bug155125 \
 	bug287260 \
+	bug340392 \
 	calloc-overflow \
 	client-msg \
 	clientperm \
@@ -418,6 +420,7 @@ leak_cpp_interior_SOURCES	= leak_cpp_interior.cpp
 
 demangle_SOURCES = demangle.cpp
 
+bug340392_CFLAGS        = $(AM_CFLAGS) -O3
 dw4_CFLAGS		= $(AM_CFLAGS) -gdwarf-4 -fdebug-types-section
 
 descr_belowsp_LDADD     = -lpthread

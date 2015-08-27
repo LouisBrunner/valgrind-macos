@@ -695,6 +695,9 @@ extern Int MC_(clo_mc_level);
 /* Should we show mismatched frees?  Default: YES */
 extern Bool MC_(clo_show_mismatched_frees);
 
+/* Should we use expensive definedness checking for add/sub and compare
+   operations? Default: NO */
+extern Bool MC_(clo_expensive_definedness_check);
 
 /*------------------------------------------------------------*/
 /*--- Instrumentation                                      ---*/

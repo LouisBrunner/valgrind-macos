@@ -5711,6 +5711,7 @@ Int           MC_(clo_free_fill)              = -1;
 KeepStacktraces MC_(clo_keep_stacktraces)     = KS_alloc_then_free;
 Int           MC_(clo_mc_level)               = 2;
 Bool          MC_(clo_show_mismatched_frees)  = True;
+Bool          MC_(clo_expensive_definedness_check) = False;
 
 static const HChar * MC_(parse_leak_heuristics_tokens) =
    "-,stdstring,length64,newarray,multipleinheritance";
@@ -5857,6 +5858,8 @@ static Bool mc_process_cmd_line_options(const HChar* arg)
 
    else if VG_BOOL_CLO(arg, "--show-mismatched-frees",
                        MC_(clo_show_mismatched_frees)) {}
+   else if VG_BOOL_CLO(arg, "--expensive-definedness-check",
+                       MC_(clo_expensive_definedness_check)) {}
 
    else
       return VG_(replacement_malloc_process_cmd_line_option)(arg);

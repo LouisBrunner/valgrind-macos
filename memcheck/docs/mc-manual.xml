@@ -970,6 +970,24 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
     </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.expensive-definedness-check" xreflabel="--expensive-definedness-check">
+    <term>
+      <option><![CDATA[--expensive-definedness-check=<yes|no> [default: no] ]]></option>
+    </term>
+    <listitem>
+      <para>Controls whether Memcheck should employ more precise but also more
+      expensive (time consuming) algorithms when checking the definedness of a
+      value. The default setting is not to do that and it is usually
+      sufficient. However, for highly optimised code valgrind may sometimes
+      incorrectly complain. 
+      Invoking valgrind with <option>--expensive-definedness-check==yes</option> 
+      helps but comes at a performance cost. Runtime degradation of
+      25% have been observed but the extra cost depends a lot on the
+      application at hand.
+      </para>
+    </listitem>
+  </varlistentry>
+
   <varlistentry id="opt.keep-stacktraces" xreflabel="--keep-stacktraces">
     <term>
       <option><![CDATA[--keep-stacktraces=alloc|free|alloc-and-free|alloc-then-free|none [default: alloc-then-free] ]]></option>

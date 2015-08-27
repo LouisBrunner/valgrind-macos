@@ -47,6 +47,11 @@ X86/MacOSX 10.10 and 10.11 and AMD64/MacOSX 10.10 and 10.11.
     assembly sequences.  This gives speedups in the region of 0% to 7%
     for those targets only.
 
+  - New command line option: --expensive-definedness-check=<yes|no> which
+    is usefult to avoid occasional invalid complaints on optimised code.
+    Watchout for runtime degradation: 25% have been observed but, as always,
+    this is highly application specific.
+
 * Massif:
 
   - New monitor command 'all_snapshots <filename>' that dumps all
@@ -192,6 +197,8 @@ where XXXXXX is the bug number as listed below.
 339808  Fix none/tests/rlimit64_nofile test on Mac OS X 10.9
 339820  vex amd64->IR: 0x66 0xF 0x3A 0x63 0xA 0x42 0x74 0x9 (pcmpistri $0x42)
 340115  Fix none/tests/cmdline[1|2] tests on systems which define TMPDIR
+340392  Allow user to select more accurate definedness checking in memcheck
+        to avoid invalid complaints on optimised code
 340430  Fix some grammatical weirdness in the manual.
 341238  Recognize GCC5/DWARFv5 DW_LANG constants (Go, C11, C++11, C++14)
 341419  Signal handler ucontext_t not filled out correctly on OS X

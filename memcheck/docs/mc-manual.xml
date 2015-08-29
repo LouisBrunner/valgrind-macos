@@ -990,7 +990,7 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
 
   <varlistentry id="opt.keep-stacktraces" xreflabel="--keep-stacktraces">
     <term>
-      <option><![CDATA[--keep-stacktraces=alloc|free|alloc-and-free|alloc-then-free|none [default: alloc-then-free] ]]></option>
+      <option><![CDATA[--keep-stacktraces=alloc|free|alloc-and-free|alloc-then-free|none [default: alloc-and-free] ]]></option>
     </term>
     <listitem>
       <para>Controls which stack trace(s) to keep for malloc'd and/or

@@ -1,2 +1,2 @@
-vgopts: -q
+vgopts: -q --keep-stacktraces=alloc-then-free
 prog:   fprw

@@ -1,2 +1,2 @@
 prog: custom_alloc
-vgopts: -q
+vgopts: -q --keep-stacktraces=alloc-then-free

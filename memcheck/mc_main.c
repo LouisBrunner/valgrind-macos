@@ -5708,7 +5708,7 @@ UInt          MC_(clo_leak_check_heuristics)  = 0;
 Bool          MC_(clo_workaround_gcc296_bugs) = False;
 Int           MC_(clo_malloc_fill)            = -1;
 Int           MC_(clo_free_fill)              = -1;
-KeepStacktraces MC_(clo_keep_stacktraces)     = KS_alloc_then_free;
+KeepStacktraces MC_(clo_keep_stacktraces)     = KS_alloc_and_free;
 Int           MC_(clo_mc_level)               = 2;
 Bool          MC_(clo_show_mismatched_frees)  = True;
 Bool          MC_(clo_expensive_definedness_check) = False;
@@ -5907,7 +5907,7 @@ static void mc_print_usage(void)
 "    --malloc-fill=<hexnumber>        fill malloc'd areas with given value\n"
 "    --free-fill=<hexnumber>          fill free'd areas with given value\n"
 "    --keep-stacktraces=alloc|free|alloc-and-free|alloc-then-free|none\n"
-"        stack trace(s) to keep for malloc'd/free'd areas       [alloc-then-free]\n"
+"        stack trace(s) to keep for malloc'd/free'd areas       [alloc-and-free]\n"
 "    --show-mismatched-frees=no|yes   show frees that don't match the allocator? [yes]\n"
 , plo_default
    );

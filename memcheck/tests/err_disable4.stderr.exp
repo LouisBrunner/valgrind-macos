@@ -1506,6 +1506,9 @@ Invalid read of size 1
  Address 0x........ is 5 bytes inside a block of size 10 free'd
    at 0x........: free (vg_replace_malloc.c:...)
    by 0x........: main (err_disable4.c:81)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable4.c:80)
 
 
 -------- Got 498 errors (expected 498 ==> PASS) ------

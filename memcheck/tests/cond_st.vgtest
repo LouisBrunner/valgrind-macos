@@ -1,4 +1,4 @@
 prog: cond_ld_st
 args: stores
-vgopts: -q
+vgopts: -q --keep-stacktraces=alloc-then-free
 stderr_filter_args: cond_ld_st

@@ -6,6 +6,9 @@ Invalid write of size 4
  Address 0x........ is 492 bytes inside a block of size 4,000 free'd
    at 0x........: free (vg_replace_malloc.c:...)
    by 0x........: main (err_disable_arange1.c:15)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable_arange1.c:14)
 
 
 Disabling address error reporting for the range.
@@ -24,6 +27,9 @@ Invalid write of size 4
  Address 0x........ is 3,156 bytes inside a block of size 4,000 free'd
    at 0x........: free (vg_replace_malloc.c:...)
    by 0x........: main (err_disable_arange1.c:15)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (err_disable_arange1.c:14)
 
 
 Exiting.  Expect warnings of 2 remaining ranges.

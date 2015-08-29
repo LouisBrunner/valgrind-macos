@@ -33,6 +33,12 @@ X86/MacOSX 10.10 and 10.11 and AMD64/MacOSX 10.10 and 10.11.
 
 * Memcheck:
 
+  - Default value for --keep-stacktraces has been changed to alloc-and-free.
+    This has a small cost in memory (one word per malloc-ed block) but
+    allows memcheck to e.g. give the 3 stacktraces of a dangling reference:
+    Where the block was allocated, where it was freed, and where it is
+    acccessed after free.
+
   - A new monitor command 'xb <addr> <len>' shows the validity bits of
     <len> bytes at <addr>.  The monitor command 'xb' is easier to use
     than get_vbits when you need to associate byte data value with

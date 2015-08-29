@@ -54,7 +54,7 @@ X86/MacOSX 10.10 and 10.11 and AMD64/MacOSX 10.10 and 10.11.
     for those targets only.
 
   - New command line option: --expensive-definedness-check=<yes|no> which
-    is usefult to avoid occasional invalid complaints on optimised code.
+    is useful to avoid occasional invalid complaints on optimised code.
     Watchout for runtime degradation: 25% have been observed but, as always,
     this is highly application specific.
 
@@ -128,7 +128,7 @@ X86/MacOSX 10.10 and 10.11 and AMD64/MacOSX 10.10 and 10.11.
     with SIGNAL instead of the signal reported to GDB. Use 'signal 0' to
     continue without passing the signal to the process.
 
-  - With recent GDB (>= 7.9.50.20150514-cvs), the command 'target remote'
+  - With GDB >= 7.10, the command 'target remote'
     will automatically load the executable file of the process running
     under Valgrind. This means you do not need to specify the executable
     file yourself, GDB will discover it itself.  See GDB documentation about

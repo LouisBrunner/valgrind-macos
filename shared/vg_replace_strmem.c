@@ -262,6 +262,7 @@ static inline void my_exit ( int x )
 # if DARWIN_VERS >= DARWIN_10_10
   /* _platform_strchr$VARIANT$Generic */
   STRCHR(libsystemZuplatformZddylib, _platform_strchr$VARIANT$Generic)
+  /* _platform_strchr$VARIANT$Haswell */
   STRCHR(libsystemZuplatformZddylib, _platform_strchr$VARIANT$Haswell)
 # endif
 
@@ -891,6 +892,8 @@ static inline void my_exit ( int x )
   MEMCHR(VG_Z_DYLD,                   memchr)
   /* _platform_memchr$VARIANT$Generic */
   MEMCHR(libsystemZuplatformZddylib, _platform_memchr$VARIANT$Generic)
+  /* _platform_memchr$VARIANT$Haswell */
+  MEMCHR(libsystemZuplatformZddylib, _platform_memchr$VARIANT$Haswell)
 # endif
 
 #elif defined(VGO_solaris)

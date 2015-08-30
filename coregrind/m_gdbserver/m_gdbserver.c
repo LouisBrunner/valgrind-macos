@@ -790,7 +790,7 @@ void VG_(gdbserver) ( ThreadId tid )
       if (gdbserver_called == 0) {
          dlog(1, "VG_(gdbserver) called to terminate, nothing to terminate\n");
       } else if (gdbserver_exited) {
-         dlog(0, "VG_(gdbserver) called to terminate again %d\n",
+         dlog(1, "VG_(gdbserver) called to terminate again %d\n",
               gdbserver_exited);
       } else {
          gdbserver_terminate();

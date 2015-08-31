@@ -1704,7 +1704,7 @@ need to use them.</para>
 
   <varlistentry id="opt.smc-check" xreflabel="--smc-check">
     <term>
-      <option><![CDATA[--smc-check=<none|stack|all|all-non-file> [default: stack] ]]></option>
+      <option><![CDATA[--smc-check=<none|stack|all|all-non-file> [default: all-non-file] ]]></option>
     </term>
     <listitem>
       <para>This option controls Valgrind's detection of self-modifying
@@ -1720,15 +1720,16 @@ need to use them.</para>
       file-backed mappings.
 
       Note that the default option will catch the vast majority
-      of cases.  The main case it will not catch is programs such as JIT
-      compilers that dynamically generate code <emphasis>and</emphasis>
-      subsequently overwrite part or all of it.  Running with
+      of cases, including the case where a JIT
+      compiler dynamically generates code <emphasis>and</emphasis>
+      subsequently overwrites part or all of it.  Running with
       <varname>all</varname> will slow Valgrind down noticeably.
       Running with
       <varname>none</varname> will rarely speed things up, since very little
-      code gets put on the stack for most programs.  The
+      code gets dynamically generated in most programs.  The
       <function>VALGRIND_DISCARD_TRANSLATIONS</function> client
       request is an alternative to <option>--smc-check=all</option>
+      and <option>--smc-check=all-non-file</option>
       that requires more programmer effort but allows Valgrind to run
       your program faster, by telling it precisely when translations
       need to be re-made.
@@ -1749,14 +1750,14 @@ need to use them.</para>
       takes advantage of this observation, limiting the overhead of
       checking to code which is likely to be JIT generated.</para>
 
-      <para>Some architectures (including ppc32, ppc64, ARM and MIPS)
+      <para>Some architectures (including POWER/PPC, ARM and MIPS)
       require programs which create code at runtime to flush the
       instruction cache in between code generation and first use.
       Valgrind observes and honours such instructions.  Hence, on
-      ppc32/Linux, ppc64/Linux and ARM/Linux, Valgrind always provides
+      those targets, Valgrind always provides
       complete, transparent support for self-modifying code.  It is
-      only on platforms such as x86/Linux, AMD64/Linux, x86/Darwin and
-      AMD64/Darwin that you need to use this option.</para>
+      only on platforms such as x86/Linux, AMD64/Linux, x86/Darwin,
+      AMD64/Darwin and S390/Linux that you need to use this option.</para>
     </listitem>
   </varlistentry>
 

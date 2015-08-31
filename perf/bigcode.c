@@ -8,6 +8,19 @@
 // to make a difference), but under Valgrind the one running more code is
 // significantly slower due to the extra translation time.
 
+// 31 Aug 2015: this only "works" on x86/amd64/s390 by accident; the
+// test is essentially kludged.  This "generates" code into memory
+// (the mmap'd area) and the executes it.  But historically and even
+// after this commit (r15601), the test has been run without 
+// --smc-check=all or all-non-file.  That just happens to work because
+// the "generated" code is never modified, so there's never a
+// translated-vs-reality coherence problem.  Really we ought to run
+// with the new-as-of-r15601 default --smc-check=all-non-file, but that
+// hugely slows it down and makes the results non-comparable with
+// pre r15601 results, so instead the .vgperf files now specify the
+// old default value --smc-check=stack explicitly.
+
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

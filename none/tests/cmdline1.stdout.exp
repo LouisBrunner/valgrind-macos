@@ -74,7 +74,7 @@ usage: valgrind [options] prog-and-args
     --allow-mismatched-debuginfo=no|yes  [no]
                               for the above two flags only, accept debuginfo
                               objects that don't "match" the main object
-    --smc-check=none|stack|all|all-non-file [stack]
+    --smc-check=none|stack|all|all-non-file [all-non-file]
                               checks for self-modifying code: none, only for
                               code found in stacks, for all code, or for all
                               code except that from file-backed mappings

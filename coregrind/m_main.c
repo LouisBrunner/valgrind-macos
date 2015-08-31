@@ -160,7 +160,7 @@ static void usage_NORETURN ( Bool debug_help )
 "    --allow-mismatched-debuginfo=no|yes  [no]\n"
 "                              for the above two flags only, accept debuginfo\n"
 "                              objects that don't \"match\" the main object\n"
-"    --smc-check=none|stack|all|all-non-file [stack]\n"
+"    --smc-check=none|stack|all|all-non-file [all-non-file]\n"
 "                              checks for self-modifying code: none, only for\n"
 "                              code found in stacks, for all code, or for all\n"
 "                              code except that from file-backed mappings\n"

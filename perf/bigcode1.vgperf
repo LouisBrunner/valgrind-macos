@@ -1,1 +1,2 @@
 prog: bigcode
+vgopts: --smc-check=stack

@@ -1,2 +1,3 @@
 prog: bigcode
 args: 0
+vgopts: --smc-check=stack

@@ -134,7 +134,7 @@ static void usage_NORETURN ( Bool debug_help )
 "    --suppressions=<filename> suppress errors described in <filename>\n"
 "    --gen-suppressions=no|yes|all    print suppressions for errors? [no]\n"
 "    --input-fd=<number>       file descriptor for input [0=stdin]\n"
-"    --dsymutil=no|yes         run dsymutil on Mac OS X when helpful? [no]\n"
+"    --dsymutil=no|yes         run dsymutil on Mac OS X when helpful? [yes]\n"
 "    --max-stackframe=<number> assume stack switch for SP changes larger\n"
 "                              than <number> bytes [2000000]\n"
 "    --main-stacksize=<number> set size of main thread's stack (in bytes)\n"

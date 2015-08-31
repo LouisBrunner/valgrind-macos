@@ -1470,7 +1470,7 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
 
   <varlistentry id="opt.dsymutil" xreflabel="--dsymutil">
     <term>
-      <option><![CDATA[--dsymutil=no|yes [no] ]]></option>
+      <option><![CDATA[--dsymutil=no|yes [yes] ]]></option>
     </term>
     <listitem>
       <para>This option is only relevant when running Valgrind on

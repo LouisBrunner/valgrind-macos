@@ -1265,6 +1265,15 @@ Bool VG_(am_is_valid_for_client_or_free_or_resvn)
    return is_valid_for(kinds, start, len, prot);
 }
 
+/* Checks if a piece of memory consists of either free or reservation
+   segments. */
+Bool VG_(am_is_free_or_resvn)( Addr start, SizeT len )
+{
+   const UInt kinds = SkFree | SkResvn;
+
+   return is_valid_for(kinds, start, len, 0);
+}
+
 
 Bool VG_(am_is_valid_for_valgrind) ( Addr start, SizeT len, UInt prot )
 {

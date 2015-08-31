@@ -452,6 +452,7 @@ typedef struct vki_kcf_door_arg_s {
 #define VKI_EOVERFLOW EOVERFLOW
 #define VKI_ENOSYS ENOSYS
 #define VKI_ERESTART ERESTART
+#define VKI_EADDRINUSE EADDRINUSE
 
 
 #if defined(SOLARIS_EXECVE_SYSCALL_TAKES_FLAGS)

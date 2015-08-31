@@ -10,7 +10,8 @@ EXTRA_DIST = \
 	context_eflags2.stderr.exp context_eflags2.stdout.exp context_eflags2.vgtest \
 	context_fpu.stderr.exp context_fpu.stdout.exp context_fpu.vgtest \
 	context_gpr.stderr.exp context_gpr.stdout.exp context_gpr.vgtest \
-	context_sse.stderr.exp context_sse.stdout.exp context_sse.vgtest
+	context_sse.stderr.exp context_sse.stdout.exp context_sse.vgtest \
+	ldsoexec.stderr.exp ldsoexec.vgtest
 
 check_PROGRAMS = \
 	scalar \
@@ -18,7 +19,8 @@ check_PROGRAMS = \
 	context_eflags2 \
 	context_fpu \
 	context_gpr \
-	context_sse
+	context_sse \
+	ldsoexec
 
 if SOLARIS_OLD_SYSCALLS
 check_PROGRAMS += scalar_obsolete

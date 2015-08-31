@@ -5416,6 +5416,7 @@ static SysRes mmapobj_process_phdrs(ThreadId tid, Int fd,
    UInt segments = 0; /* loadable segments */
    Addr start_addr = 0;
    Addr end_addr = 0;
+   Addr elfbrk = 0;
    SizeT max_align = VKI_PAGE_SIZE;
 
    /* 1. First pass over phdrs - determine number, span and max alignment. */
@@ -5489,7 +5490,7 @@ static SysRes mmapobj_process_phdrs(ThreadId tid, Int fd,
             return VG_(mk_SysRes_Error)(VKI_ENOTSUP);
          }
 
-         end_addr = phdr->p_vaddr + phdr->p_memsz + offset;
+         end_addr = elfbrk = phdr->p_vaddr + phdr->p_memsz + offset;
          end_addr = VG_PGROUNDUP(end_addr);
          if (phdr->p_align > max_align) {
             max_align = phdr->p_align;
@@ -5550,21 +5551,27 @@ static SysRes mmapobj_process_phdrs(ThreadId tid, Int fd,
    /* Now get the aspacemgr oraculum advisory.
       Later on we mmap file-based and BSS mappings into this address space area
       as required and leave the holes unmapped. */
-   MapRequest mreq = {MAlign, max_align, span};
-   Bool ok;
-   start_addr = VG_(am_get_advisory)(&mreq, True /* forClient */, &ok);
-   if (!ok) {
-      if (VG_(clo_trace_syscalls))
-         VG_(debugLog)(3, "syswrap-solaris", "mmapobj_process_phdrs: "
-                          "failed to reserve address space of %#lx bytes "
-                          "with alignment %#lx\n", span, max_align);
-      return VG_(mk_SysRes_Error)(VKI_ENOMEM);
-   }
-   vg_assert(VG_ROUNDUP(start_addr, max_align) == start_addr);
+   if (ehdr->e_type == VKI_ET_DYN) {
+      MapRequest mreq = {MAlign, max_align, span};
+      Bool ok;
+      start_addr = VG_(am_get_advisory)(&mreq, True /* forClient */, &ok);
+      if (!ok) {
+         if (VG_(clo_trace_syscalls))
+            VG_(debugLog)(3, "syswrap-solaris", "mmapobj_process_phdrs: "
+                             "failed to reserve address space of %#lx bytes "
+                             "with alignment %#lx\n", span, max_align);
+         return VG_(mk_SysRes_Error)(VKI_ENOMEM);
+      }
+      vg_assert(VG_ROUNDUP(start_addr, max_align) == start_addr);
 
-   if (VG_(clo_trace_syscalls))
-      VG_(debugLog)(2, "syswrap-solaris", "PRE(sys_mmapobj): address space "
-                       "reserved at: vaddr=%#lx size=%#lx\n", start_addr, span);
+      if (VG_(clo_trace_syscalls))
+         VG_(debugLog)(2, "syswrap-solaris", "PRE(sys_mmapobj): address space "
+                          "reserved at: vaddr=%#lx size=%#lx\n",
+                          start_addr, span);
+   } else {
+      vg_assert(ehdr->e_type == VKI_ET_EXEC);
+      /* ET_EXEC uses fixed mappings. Will be checked when processing phdrs. */
+   }
 
    /* This is an utterly ugly hack, the aspacemgr assumes that only one
       segment is added at the time. However we add here multiple segments so
@@ -5593,7 +5600,6 @@ static SysRes mmapobj_process_phdrs(ThreadId tid, Int fd,
             prot |= VKI_PROT_EXEC;
 
          vki_mmapobj_result_t *mrp = &storage[*elements];
-         mrp->mr_addr = (vki_caddr_t) (start_addr + phdr->p_vaddr);
          mrp->mr_msize = phdr->p_memsz;
          mrp->mr_fsize = phdr->p_filesz;
          mrp->mr_offset = 0;
@@ -5602,14 +5608,25 @@ static SysRes mmapobj_process_phdrs(ThreadId tid, Int fd,
          Off64T file_offset = phdr->p_offset;
          if (idx == first_segment_idx) {
             mrp->mr_flags = VKI_MR_HDR_ELF;
-            if (phdr->p_offset > 0) {
-               /* Include the ELF header into the first segment.
-                  This means we ignore p_offset from the program header
-                  and map from file offset 0. */
-               mrp->mr_msize += phdr->p_offset;
-               mrp->mr_fsize += phdr->p_offset;
-               file_offset = 0;
+            if (ehdr->e_type == VKI_ET_DYN) {
+               if (phdr->p_offset > 0) {
+                  /* Include the ELF header into the first segment.
+                     This means we ignore p_offset from the program header
+                     and map from file offset 0. */
+                  mrp->mr_msize += phdr->p_offset;
+                  mrp->mr_fsize += phdr->p_offset;
+                  file_offset = 0;
+               }
+            } else {
+               vg_assert(ehdr->e_type == VKI_ET_EXEC);
+               start_addr = phdr->p_vaddr;
             }
+         }
+
+         /* p_vaddr is absolute for ET_EXEC, and relative for ET_DYN. */
+         mrp->mr_addr = (vki_caddr_t) phdr->p_vaddr;
+         if (ehdr->e_type == VKI_ET_DYN) {
+            mrp->mr_addr += start_addr;
          }
 
          SizeT page_offset = (Addr) mrp->mr_addr & VKI_PAGEOFFSET;
@@ -5648,6 +5665,19 @@ static SysRes mmapobj_process_phdrs(ThreadId tid, Int fd,
          if ((zeroed_size > 0) && ((prot & VKI_PROT_WRITE) == 0)) {
             prot |= VKI_PROT_WRITE;
             mprotect_needed = True;
+         }
+
+         if (ehdr->e_type == VKI_ET_EXEC) {
+            /* Now check if the requested address space is available. */
+            if (!VG_(am_is_free_or_resvn)((Addr) mrp->mr_addr, mrp->mr_msize)) {
+               if (VG_(clo_trace_syscalls))
+                  VG_(debugLog)(3, "syswrap-solaris", "mmapobj_process_phdrs: "
+                                   "requested segment at %#lx with size of "
+                                   "%#lx bytes is not available\n",
+                                   (Addr) mrp->mr_addr, (UWord) mrp->mr_msize);
+               res = VG_(mk_SysRes_Error)(VKI_EADDRINUSE);
+               goto mmap_error;
+            }
          }
 
          if (file_size > 0) {
@@ -5728,6 +5758,21 @@ static SysRes mmapobj_process_phdrs(ThreadId tid, Int fd,
       }
    }
 
+   if ((ehdr->e_type == VKI_ET_EXEC) && (!brk_segment_established)) {
+      vg_assert(VG_(brk_base) == VG_(brk_limit));
+      vg_assert(VG_(brk_base) == -1);
+      VG_(brk_base) = VG_(brk_limit) = elfbrk;
+
+      if (!VG_(setup_client_dataseg)()) {
+         VG_(umsg)("Cannot map memory to initialize brk segment in thread #%d "
+                   "at %#lx\n", tid, VG_(brk_base));
+         res = VG_(mk_SysRes_Error)(VKI_ENOMEM);
+         goto mmap_error;
+      }
+
+      VG_(track_client_dataseg)(tid);
+   }
+
    /* Restore VG_(clo_sanity_level). The scheduler will perform the aspacemgr
       sanity check after the syscall. */
    VG_(clo_sanity_level) = sanity_level;
@@ -5804,7 +5849,7 @@ static SysRes mmapobj_interpret(ThreadId tid, Int fd,
    }
 
    VKI_ESZ(Ehdr) *ehdr = (VKI_ESZ(Ehdr) *) header;
-   if (ehdr->e_type != VKI_ET_DYN) {
+   if ((ehdr->e_type != VKI_ET_EXEC) && (ehdr->e_type != VKI_ET_DYN)) {
       VG_(unimplemented)("Syswrap of the mmapobj call with ELF type %u.",
                          ehdr->e_type);
       /*NOTREACHED*/

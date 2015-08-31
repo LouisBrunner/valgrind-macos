@@ -94,6 +94,10 @@ extern Bool VG_(am_is_valid_for_valgrind)
 extern Bool VG_(am_is_valid_for_client_or_free_or_resvn)
    ( Addr start, SizeT len, UInt prot );
 
+/* Checks if a piece of memory consists of either free or reservation
+   segments. */
+extern Bool VG_(am_is_free_or_resvn)( Addr start, SizeT len );
+
 /* Check whether ADDR looks like an address or address-to-be located in an
    extensible client stack segment. */
 extern Bool VG_(am_addr_is_in_extensible_client_stack)( Addr addr );

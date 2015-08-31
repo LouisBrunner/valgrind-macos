@@ -1,0 +1,2 @@
+prog: /lib/ld.so.1 ./ldsoexec
+vgopts: -q

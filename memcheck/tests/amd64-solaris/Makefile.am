@@ -8,14 +8,16 @@ EXTRA_DIST = \
 	context_gpr.stderr.exp context_gpr.stdout.exp context_gpr.vgtest \
 	context_rflags.stderr.exp context_rflags.stdout.exp context_rflags.vgtest \
 	context_rflags2.stderr.exp context_rflags2.stdout.exp context_rflags2.vgtest \
-	context_sse.stderr.exp context_sse.stdout.exp context_sse.vgtest
+	context_sse.stderr.exp context_sse.stdout.exp context_sse.vgtest \
+	ldsoexec.stderr.exp ldsoexec.vgtest
 
 check_PROGRAMS = \
 	context_fpu \
 	context_gpr \
 	context_rflags \
 	context_rflags2 \
-	context_sse
+	context_sse \
+	ldsoexec
 
 AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@

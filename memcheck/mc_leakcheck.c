@@ -1585,8 +1585,13 @@ Bool MC_(print_block_list) ( UInt loss_record_nr, UInt max_blocks)
          // We found an existing loss record matching this chunk.
          // If this is the loss record we are looking for, output the pointer.
          if (old_lr == lr_array[loss_record_nr]) {
-            VG_(umsg)("%p[%lu]\n",
-                      (void *)ch->data, (SizeT)ch->szB);
+            if (ex->heuristic)
+               VG_(umsg)("%p[%lu] (found via heuristic %s)\n",
+                         (void *)ch->data, (SizeT)ch->szB,
+                         pp_heuristic (ex->heuristic));
+            else
+               VG_(umsg)("%p[%lu]\n",
+                         (void *)ch->data, (SizeT)ch->szB);
             remaining--;
             if (ex->state != Reachable) {
                // We can print the clique in all states, except Reachable.

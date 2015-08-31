@@ -53,7 +53,8 @@ X86/MacOSX 10.10 and 10.11 and AMD64/MacOSX 10.10 and 10.11.
 
   - The 'block_list' monitor command now accepts an optional argument
     'limited <max_blocks>' to control the nr of block addresses
-    printed.
+    printed. If a block has been found using an heuristic, then
+    'block_list' will now show the heuristic after the block size.
 
   - The C helper functions used to instrument loads on x86-linux and
     arm-linux (both 32-bit only) have been replaced by handwritten

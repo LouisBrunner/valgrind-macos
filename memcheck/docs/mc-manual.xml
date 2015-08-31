@@ -1918,7 +1918,8 @@ Address 0x8049E28 len 1 defined
     by a loss record number.
     The <varname>block_list</varname> command shows the loss record information
     followed by the addresses and sizes of the blocks which have been
-    merged in the loss record.
+    merged in the loss record. If a block was found using an heuristic, the block size
+    is followed by the heuristic.
     </para>
 
     <para> If a directly lost block causes some other blocks to be indirectly

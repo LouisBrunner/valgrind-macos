@@ -125,7 +125,11 @@ endif
 if !VGCONF_OS_IS_DARWIN
 if !SOLARIS_SUN_STUDIO_AS
 # Sun Studio assembler fails to assemble the bound instruction
+if !COMPILER_IS_CLANG
+# clang errors out complaining that %eax as the 1st operand in the bound
+# insn is an invalid operand.
  check_PROGRAMS += faultstatus
+endif
 endif
 endif
 if !SOLARIS_SUN_STUDIO_AS

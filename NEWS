@@ -26,18 +26,25 @@ X86/MacOSX 10.10 and 10.11 and AMD64/MacOSX 10.10 and 10.11.
   Pentium 4.  3.10.1 wrongly claimed to be a Core 2, which is SSSE3.
 
 * The JIT's register allocator is significantly faster, making the JIT
-  as a whole somewhat faster, so JIT-intensive activities (like
-  program startup) are modestly faster, around 5%.
+  as a whole somewhat faster, so JIT-intensive activities, for example
+  program startup, are modestly faster, around 5%.
 
 * ==================== TOOL CHANGES ====================
 
 * Memcheck:
 
-  - Default value for --keep-stacktraces has been changed to alloc-and-free.
-    This has a small cost in memory (one word per malloc-ed block) but
-    allows memcheck to e.g. give the 3 stacktraces of a dangling reference:
-    Where the block was allocated, where it was freed, and where it is
-    acccessed after free.
+  - The default value for --keep-stacktraces has been changed from
+    "malloc-then-free" to "malloc-and-free".  This has a small cost in
+    memory (one word per malloc-ed block) but allows Memcheck to show the
+    3 stacktraces of a dangling reference: Where the block was allocated,
+    where it was freed, and where it is acccessed after free.
+
+  - The default value for --partial-loads-ok has been changed from "no" to 
+    "yes", so as to avoid false positive errors resulting from some kinds
+    of vectorised loops.
+
+* The default values for some command line options have been changed to
+  be more suitable for common use cases:
 
   - A new monitor command 'xb <addr> <len>' shows the validity bits of
     <len> bytes at <addr>.  The monitor command 'xb' is easier to use
@@ -88,8 +95,18 @@ X86/MacOSX 10.10 and 10.11 and AMD64/MacOSX 10.10 and 10.11.
 
 * ==================== OTHER CHANGES ====================
 
+* The default value for the --smc-check option has been changed from
+  "stack" to "all-non-file" on targets that provide automatic D-I
+  cache coherence (x86, amd64 and s390x).  The result is to provide,
+  by default, transparent support for JIT generated and self-modifying
+  code on all targets.
+
+* Mac OS X only: the default value for the --dsymutil option has been
+  changed from "no" to "yes", since any serious usage on Mac OS X
+  always required it to be "yes".
+
 * The command line options --db-attach and --db-command have been removed.
-  They were deprecated in 3.10.0
+  They were deprecated in 3.10.0.
 
 * When a process dies due to a signal, Valgrind now shows the signal
   and the stacktrace at default verbosity (i.e. verbosity 1).

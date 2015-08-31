@@ -947,7 +947,7 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
 
   <varlistentry id="opt.partial-loads-ok" xreflabel="--partial-loads-ok">
     <term>
-      <option><![CDATA[--partial-loads-ok=<yes|no> [default: no] ]]></option>
+      <option><![CDATA[--partial-loads-ok=<yes|no> [default: yes] ]]></option>
     </term>
     <listitem>
       <para>Controls how Memcheck handles 32-, 64-, 128- and 256-bit
@@ -965,8 +965,7 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
 
       <para>Note that code that behaves in this way is in violation of
       the ISO C/C++ standards, and should be considered broken.  If
-      at all possible, such code should be fixed.  This option should be
-      used only as a last resort.</para>
+      at all possible, such code should be fixed.</para>
     </listitem>
   </varlistentry>
 

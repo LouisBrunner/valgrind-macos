@@ -34,6 +34,7 @@ typedef struct _LDT_ENTRY {
     } HighWord;
 } LDT_ENTRY;
 
+#if 0
 inline static void *wine_ldt_get_base( const LDT_ENTRY *ent )
 {
     return (void *)(ent->BaseLow |
@@ -46,7 +47,7 @@ inline static unsigned int wine_ldt_get_limit( const LDT_ENTRY *ent )
     if (ent->HighWord.Bits.Granularity) limit = (limit << 12) | 0xfff;
     return limit;
 }
-
+#endif
 
 /* our copy of the ldt */
 LDT_ENTRY ldt_copy[8192];

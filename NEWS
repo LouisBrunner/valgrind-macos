@@ -43,9 +43,6 @@ X86/MacOSX 10.10 and 10.11 and AMD64/MacOSX 10.10 and 10.11.
     "yes", so as to avoid false positive errors resulting from some kinds
     of vectorised loops.
 
-* The default values for some command line options have been changed to
-  be more suitable for common use cases:
-
   - A new monitor command 'xb <addr> <len>' shows the validity bits of
     <len> bytes at <addr>.  The monitor command 'xb' is easier to use
     than get_vbits when you need to associate byte data value with

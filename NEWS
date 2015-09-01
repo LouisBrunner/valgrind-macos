@@ -61,10 +61,10 @@ X86/MacOSX 10.10 and 10.11 and AMD64/MacOSX 10.10 and 10.11.
     assembly sequences.  This gives speedups in the region of 0% to 7%
     for those targets only.
 
-  - New command line option: --expensive-definedness-check=<yes|no> which
+  - New command line option: --expensive-definedness-checks=yes|no which
     is useful to avoid occasional invalid complaints on optimised code.
     Watchout for runtime degradation: 25% have been observed but, as always,
-    this is highly application specific.
+    this is highly application specific.  The default setting is "no".
 
 * Massif:
 

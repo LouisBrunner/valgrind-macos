@@ -6313,7 +6313,7 @@ IRSB* MC_(instrument) ( VgCallbackClosure* closure,
    }
    tl_assert( VG_(sizeXA)( mce.tmpMap ) == sb_in->tyenv->types_used );
 
-   if (MC_(clo_expensive_definedness_check)) {
+   if (MC_(clo_expensive_definedness_checks)) {
       /* For expensive definedness checking skip looking for bogus
          literals. */
       mce.bogusLiterals = True;

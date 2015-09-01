@@ -697,7 +697,7 @@ extern Bool MC_(clo_show_mismatched_frees);
 
 /* Should we use expensive definedness checking for add/sub and compare
    operations? Default: NO */
-extern Bool MC_(clo_expensive_definedness_check);
+extern Bool MC_(clo_expensive_definedness_checks);
 
 /*------------------------------------------------------------*/
 /*--- Instrumentation                                      ---*/

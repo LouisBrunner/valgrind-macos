@@ -969,9 +969,9 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
     </listitem>
   </varlistentry>
 
-  <varlistentry id="opt.expensive-definedness-check" xreflabel="--expensive-definedness-check">
+  <varlistentry id="opt.expensive-definedness-checks" xreflabel="--expensive-definedness-checks">
     <term>
-      <option><![CDATA[--expensive-definedness-check=<yes|no> [default: no] ]]></option>
+      <option><![CDATA[--expensive-definedness-checks=<yes|no> [default: no] ]]></option>
     </term>
     <listitem>
       <para>Controls whether Memcheck should employ more precise but also more
@@ -979,7 +979,7 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
       value. The default setting is not to do that and it is usually
       sufficient. However, for highly optimised code valgrind may sometimes
       incorrectly complain. 
-      Invoking valgrind with <option>--expensive-definedness-check==yes</option> 
+      Invoking valgrind with <option>--expensive-definedness-checks=yes</option> 
       helps but comes at a performance cost. Runtime degradation of
       25% have been observed but the extra cost depends a lot on the
       application at hand.

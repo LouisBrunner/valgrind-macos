@@ -6,7 +6,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2012 Citrix Systems
+   Copyright (C) 2012-2015 Citrix Systems
       ian.campbell@citrix.com
 
    This program is free software; you can redistribute it and/or

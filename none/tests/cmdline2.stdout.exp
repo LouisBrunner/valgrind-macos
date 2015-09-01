@@ -80,7 +80,7 @@ usage: valgrind [options] prog-and-args
                               code except that from file-backed mappings
     --read-inline-info=yes|no read debug info about inlined function calls
                               and use it to do better stack traces.  [yes]
-                              on Linux/Android for Memcheck/Helgrind/DRD
+                              on Linux/Android/Solaris for Memcheck/Helgrind/DRD
                               only.  [no] for all other tools and platforms.
     --read-var-info=yes|no    read debug info on stack and global variables
                               and use it to print better error messages in

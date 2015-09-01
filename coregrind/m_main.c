@@ -166,7 +166,7 @@ static void usage_NORETURN ( Bool debug_help )
 "                              code except that from file-backed mappings\n"
 "    --read-inline-info=yes|no read debug info about inlined function calls\n"
 "                              and use it to do better stack traces.  [yes]\n"
-"                              on Linux/Android for Memcheck/Helgrind/DRD\n"
+"                              on Linux/Android/Solaris for Memcheck/Helgrind/DRD\n"
 "                              only.  [no] for all other tools and platforms.\n"
 "    --read-var-info=yes|no    read debug info on stack and global variables\n"
 "                              and use it to print better error messages in\n"

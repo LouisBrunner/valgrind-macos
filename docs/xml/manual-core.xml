@@ -1771,8 +1771,8 @@ need to use them.</para>
       startup and makes it use more memory (typically for each inlined
       piece of code, 6 words and space for the function name), but it
       results in more descriptive stacktraces.  For the 3.10.0
-      release, this functionality is enabled by default only for Linux
-      and Android targets and only for the tools Memcheck, Helgrind
+      release, this functionality is enabled by default only for Linux,
+      Android and Solaris targets and only for the tools Memcheck, Helgrind
       and DRD.  Here is an example of some stacktraces with
       <option>--read-inline-info=no</option>:
 </para>

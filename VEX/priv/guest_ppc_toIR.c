@@ -1710,12 +1710,12 @@ static IRExpr* ea_rAor0_simm ( UInt rA, UInt simm16 )
 static IRExpr* addr_align( IRExpr* addr, UChar align )
 {
    IRType ty = mode64 ? Ity_I64 : Ity_I32;
-   Long mask;
+   ULong mask;
    switch (align) {
    case 1:  return addr;                    // byte aligned
-   case 2:  mask = ((Long)-1) << 1; break;  // half-word aligned
-   case 4:  mask = ((Long)-1) << 2; break;  // word aligned
-   case 16: mask = ((Long)-1) << 4; break;  // quad-word aligned
+   case 2:  mask = ~0ULL << 1; break;       // half-word aligned
+   case 4:  mask = ~0ULL << 2; break;       // word aligned
+   case 16: mask = ~0ULL << 4; break;       // quad-word aligned
    default:
       vex_printf("addr_align: align = %u\n", align);
       vpanic("addr_align(ppc)");

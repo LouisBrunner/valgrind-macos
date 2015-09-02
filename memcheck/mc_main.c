@@ -5699,7 +5699,10 @@ LeakCheckMode MC_(clo_leak_check)             = LC_Summary;
 VgRes         MC_(clo_leak_resolution)        = Vg_HighRes;
 UInt          MC_(clo_show_leak_kinds)        = R2S(Possible) | R2S(Unreached);
 UInt          MC_(clo_error_for_leak_kinds)   = R2S(Possible) | R2S(Unreached);
-UInt          MC_(clo_leak_check_heuristics)  = 0;
+UInt          MC_(clo_leak_check_heuristics)  =   H2S(LchStdString)
+                                                | H2S( LchLength64)
+                                                | H2S( LchNewArray)
+                                                | H2S( LchMultipleInheritance);
 Bool          MC_(clo_workaround_gcc296_bugs) = False;
 Int           MC_(clo_malloc_fill)            = -1;
 Int           MC_(clo_free_fill)              = -1;
@@ -5879,7 +5882,7 @@ static void mc_print_usage(void)
 "        where kind is one of:\n"
 "          definite indirect possible reachable all none\n"
 "    --leak-check-heuristics=heur1,heur2,... which heuristics to use for\n"
-"        improving leak search false positive [none]\n"
+"        improving leak search false positive [all]\n"
 "        where heur is one of:\n"
 "          stdstring length64 newarray multipleinheritance all none\n"
 "    --show-reachable=yes             same as --show-leak-kinds=all\n"

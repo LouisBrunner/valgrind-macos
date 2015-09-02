@@ -32,6 +32,9 @@ X86/MacOSX 10.10 and 10.11 and AMD64/MacOSX 10.10 and 10.11.
 * ==================== TOOL CHANGES ====================
 
 * Memcheck:
+  - The default value for --leak-check-heuristics has been changed from
+    "none" to "all". This helps to reduce the number of possibly
+    lost blocks, in particular for C++ applications.
 
   - The default value for --keep-stacktraces has been changed from
     "malloc-then-free" to "malloc-and-free".  This has a small cost in

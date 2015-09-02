@@ -811,7 +811,7 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
 
   <varlistentry id="opt.leak-check-heuristics" xreflabel="--leak-check-heuristics">
     <term>
-      <option><![CDATA[--leak-check-heuristics=<set> [default: none] ]]></option>
+      <option><![CDATA[--leak-check-heuristics=<set> [default: all] ]]></option>
     </term>
     <listitem>
       <para>Specifies the set of leak check heuristics to be used

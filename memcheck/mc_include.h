@@ -642,7 +642,7 @@ typedef
 #define HiS(h,s) ((s) & H2S(h))
 
 /* Heuristics set to use for the leak search.
-   Default : no heuristic. */
+   Default : all heuristics. */
 extern UInt MC_(clo_leak_check_heuristics);
 
 /* Assume accesses immediately below %esp are due to gcc-2.96 bugs.

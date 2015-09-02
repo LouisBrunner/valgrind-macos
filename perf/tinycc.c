@@ -10433,7 +10433,7 @@ int gv(int rc)
         bit_pos = (vtop->type.t >> VT_STRUCT_SHIFT) & 0x3f;
         bit_size = (vtop->type.t >> (VT_STRUCT_SHIFT + 6)) & 0x3f;
         /* remove bit field info to avoid loops */
-        vtop->type.t &= ~(VT_BITFIELD | (-1 << VT_STRUCT_SHIFT));
+        vtop->type.t &= ~(VT_BITFIELD | (~0U << VT_STRUCT_SHIFT));
         /* generate shifts */
         vpushi(32 - (bit_pos + bit_size));
         gen_op(TOK_SHL);
@@ -11930,7 +11930,7 @@ void vstore(void)
         bit_pos = (ft >> VT_STRUCT_SHIFT) & 0x3f;
         bit_size = (ft >> (VT_STRUCT_SHIFT + 6)) & 0x3f;
         /* remove bit field info to avoid loops */
-        vtop[-1].type.t = ft & ~(VT_BITFIELD | (-1 << VT_STRUCT_SHIFT));
+        vtop[-1].type.t = ft & ~(VT_BITFIELD | (~0U << VT_STRUCT_SHIFT));
 
         /* duplicate destination */
         vdup();

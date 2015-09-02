@@ -1887,6 +1887,8 @@ AC_GCC_WARNING_SUBST_NO([pointer-sign], [FLAG_W_NO_POINTER_SIGN])
 AC_GCC_WARNING_SUBST_NO([uninitialized], [FLAG_W_NO_UNINITIALIZED])
 AC_GCC_WARNING_SUBST_NO([unused-function], [FLAG_W_NO_UNUSED_FUNCTION])
 AC_GCC_WARNING_SUBST_NO([static-local-in-inline], [FLAG_W_NO_STATIC_LOCAL_IN_INLINE])
+AC_GCC_WARNING_SUBST_NO([mismatched-new-delete], [FLAG_W_NO_MISMATCHED_NEW_DELETE])
+AC_GCC_WARNING_SUBST_NO([infinite-recursion], [FLAG_W_NO_INFINITE_RECURSION])
 AC_GCC_WARNING_SUBST([write-strings], [FLAG_W_WRITE_STRINGS])
 AC_GCC_WARNING_SUBST([empty-body], [FLAG_W_EMPTY_BODY])
 AC_GCC_WARNING_SUBST([format], [FLAG_W_FORMAT])
@@ -2514,6 +2516,10 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   do {
     asm ("bndmov %bnd0,(%rsp)");
     asm ("bndldx 3(%rbx,%rdx), %bnd2");
+    asm ("bnd call foo\n"
+          bnd jmp  end\n"
+          foo: bnd ret\n"
+          end: nop");
   } while (0)
 ]])], [
 ac_have_as_mpx=yes

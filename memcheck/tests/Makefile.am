@@ -462,6 +462,7 @@ endif
 memcmptest_CFLAGS	= $(AM_CFLAGS) -fno-builtin-memcmp
 
 mismatches_SOURCES	= mismatches.cpp
+mismatches_CXXFLAGS	= $(AM_CXXFLAGS) @FLAG_W_NO_MISMATCHED_NEW_DELETE@
 
 new_nothrow_SOURCES 	= new_nothrow.cpp
 new_override_SOURCES 	= new_override.cpp

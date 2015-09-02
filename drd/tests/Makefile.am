@@ -453,6 +453,7 @@ LDADD = -lpthread
 concurrent_close_SOURCES    = concurrent_close.cpp
 monitor_example_SOURCES     = monitor_example.cpp
 new_delete_SOURCES          = new_delete.cpp
+new_delete_CXXFLAGS         = $(AM_CXXFLAGS) @FLAG_W_NO_MISMATCHED_NEW_DELETE@
 
 free_is_write_CFLAGS        = $(AM_CFLAGS)
 pth_barrier_CFLAGS          = $(AM_CFLAGS)

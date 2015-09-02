@@ -48,10 +48,14 @@ X86/MacOSX 10.10 and 10.11 and AMD64/MacOSX 10.10 and 10.11.
     than get_vbits when you need to associate byte data value with
     their corresponding validity bits.
 
-  - The 'block_list' monitor command now accepts an optional argument
-    'limited <max_blocks>' to control the nr of block addresses
-    printed. Also, if a block has been found using an heuristic, then
-    'block_list' will now show the heuristic after the block size.
+  - The 'block_list' monitor command has been enhanced:
+      o it can print a range of loss records
+      o it now accepts an optional argument 'limited <max_blocks>'
+        to control the nr of block printed.
+      o if a block has been found using an heuristic, then
+        'block_list' now shows the heuristic after the block size.
+      o the loss records/blocks to print can be limited to the blocks
+        found via specified heuristics.
 
   - The C helper functions used to instrument loads on x86-linux and
     arm-linux (both 32-bit only) have been replaced by handwritten

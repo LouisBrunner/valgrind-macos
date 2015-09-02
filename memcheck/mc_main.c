@@ -6032,8 +6032,12 @@ static void print_monitor_help ( void )
 "                 leak_check summary any\n"
 "                 leak_check full kinds indirect,possible\n"
 "                 leak_check full reachable any limited 100\n"
-"  block_list <loss_record_nr> [unlimited*|limited <max_blocks>]\n"
+"  block_list <loss_record_nr>|<loss_record_nr_from>..<loss_record_nr_to>\n"
+"                [unlimited*|limited <max_blocks>]\n"
+"                [heuristics heur1,heur2,...]\n"
 "        after a leak search, shows the list of blocks of <loss_record_nr>\n"
+"        (or of the range <loss_record_nr_from>..<loss_record_nr_to>).\n"
+"        With heuristics, only shows the blocks found via heur1,heur2,...\n"
 "            * = defaults\n"
 "  who_points_at <addr> [<len>]\n"
 "        shows places pointing inside <len> (default 1) bytes at <addr>\n"
@@ -6062,6 +6066,81 @@ static void gdb_xb (Addr address, SizeT szB, Int res[])
          VG_(printf) ("\t0x??");
    }
    VG_(printf) ("\n"); // Terminate previous line
+}
+
+
+/* Returns the address of the next non space character,
+   or address of the string terminator. */
+static HChar* next_non_space (HChar *s)
+{
+   while (*s && *s == ' ')
+      s++;
+   return s;
+}
+
+/* Parse an integer slice, i.e. a single integer or a range of integer.
+   Syntax is:
+       <integer>[..<integer> ]
+   (spaces are allowed before and/or after ..).
+   Return True if range correctly parsed, False otherwise. */
+static Bool VG_(parse_slice) (HChar* s, HChar** saveptr,
+                              UInt *from, UInt *to)
+{
+   HChar* wl;
+   HChar *endptr;
+   endptr = NULL;////
+   wl = VG_(strtok_r) (s, " ", saveptr);
+
+   /* slice must start with an integer. */
+   if (wl == NULL) {
+      VG_(gdb_printf) ("expecting integer or slice <from>..<to>\n");
+      return False;
+   }
+   *from = VG_(strtoull10) (wl, &endptr);
+   if (endptr == wl) {
+      VG_(gdb_printf) ("invalid integer or slice <from>..<to>\n");
+      return False;
+   }
+
+   if (*endptr == '\0' && *next_non_space(*saveptr) != '.') {
+      /* wl token is an integer terminating the string
+         or else next token does not start with .
+         In both cases, the slice is a single integer. */
+      *to = *from;
+      return True;
+   }
+
+   if (*endptr == '\0') {
+      // iii ..    => get the next token
+      wl =  VG_(strtok_r) (NULL, " .", saveptr);
+   } else {
+      // It must be iii..
+      if (*endptr != '.' && *(endptr+1) != '.') {
+         VG_(gdb_printf) ("expecting slice <from>..<to>\n");
+         return False;
+      }
+      if ( *(endptr+2) == ' ') {
+         // It must be iii.. jjj  => get the next token
+         wl =  VG_(strtok_r) (NULL, " .", saveptr);
+      } else {
+         // It must be iii..jjj
+         wl = endptr+2;
+      }
+   }
+
+   *to = VG_(strtoull10) (wl, &endptr);
+   if (*endptr != '\0') {
+      VG_(gdb_printf) ("missing/wrong 'to' of slice <from>..<to>\n");
+      return False;
+   }
+
+   if (*from > *to) {
+      VG_(gdb_printf) ("<from> cannot be bigger than <to> "
+                       "in slice <from>..<to>\n");
+      return False;
+   }
+
+   return True;
 }
 
 /* return True if request recognised, False otherwise */
@@ -6316,22 +6395,19 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
 
    case  5: { /* block_list */
       HChar* wl;
-      HChar *endptr;
       HChar *the_end;
-      UInt lr_nr = 0;
+      UInt lr_nr_from = 0;
+      UInt lr_nr_to = 0;
 
-      wl = VG_(strtok_r) (NULL, " ", &ssaveptr);
-      if (wl != NULL)
-         lr_nr = VG_(strtoull10) (wl, &endptr);
-      if (wl == NULL || *endptr != '\0') {
-         VG_(gdb_printf) ("malformed or missing integer\n");
-      } else {
-         UInt limit_blocks;
+      if (VG_(parse_slice) (NULL, &ssaveptr, &lr_nr_from, &lr_nr_to)) {
+         UInt limit_blocks = 999999999;
          Int int_value;
-
-         wl = VG_(strtok_r) (NULL, " ", &ssaveptr);
-         if (wl != NULL) {
-            switch (VG_(keyword_id) ("unlimited limited ", 
+         UInt heuristics = 0;
+         
+         for (wl = VG_(strtok_r) (NULL, " ", &ssaveptr);
+              wl != NULL;
+              wl = VG_(strtok_r) (NULL, " ", &ssaveptr)) {
+            switch (VG_(keyword_id) ("unlimited limited heuristics ", 
                                      wl,  kwd_report_all)) {
             case -2: return True;
             case -1: return True;
@@ -6355,15 +6431,27 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
                }
                limit_blocks = (UInt) int_value;
                break;
+            case  2: /* heuristics */
+               wcmd = VG_(strtok_r) (NULL, " ", &ssaveptr);
+               if (wcmd == NULL 
+                   || !VG_(parse_enum_set)(MC_(parse_leak_heuristics_tokens),
+                                           True,/*allow_all*/
+                                           wcmd,
+                                           &heuristics)) {
+                  VG_(gdb_printf) ("missing or malformed heuristics set\n");
+                  return True;
+               }
+               break;
             default:
                tl_assert (0);
             }
-         } else {
-            limit_blocks = 999999999;
          }
-         /* lr_nr-1 as what is shown to the user is 1 more than the index
-            in lr_array. */
-         if (lr_nr == 0 || ! MC_(print_block_list) (lr_nr-1, limit_blocks))
+         /* substract 1 from lr_nr_from/lr_nr_to  as what is shown to the user
+            is 1 more than the index in lr_array. */
+         if (lr_nr_from == 0 || ! MC_(print_block_list) (lr_nr_from-1,
+                                                         lr_nr_to-1,
+                                                         limit_blocks,
+                                                         heuristics))
             VG_(gdb_printf) ("invalid loss record nr\n");
       }
       return True;

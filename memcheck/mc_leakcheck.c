@@ -1544,10 +1544,15 @@ static void print_clique (Int clique, UInt level, UInt *remaining)
    }
  }
 
-Bool MC_(print_block_list) ( UInt loss_record_nr, UInt max_blocks)
+Bool MC_(print_block_list) ( UInt loss_record_nr_from,
+                             UInt loss_record_nr_to,
+                             UInt max_blocks,
+                             UInt heuristics)
 {
+   UInt loss_record_nr;
    UInt         i,  n_lossrecords;
    LossRecord*  lr;
+   Bool lr_printed;
    UInt remaining = max_blocks;
 
    if (lr_table == NULL || lc_chunks == NULL || lc_extras == NULL) {
@@ -1561,52 +1566,75 @@ Bool MC_(print_block_list) ( UInt loss_record_nr, UInt max_blocks)
    }
 
    n_lossrecords = VG_(OSetGen_Size)(lr_table);
-   if (loss_record_nr >= n_lossrecords)
-      return False; // Invalid loss record nr.
+   if (loss_record_nr_from >= n_lossrecords)
+      return False; // Invalid starting loss record nr.
+
+   if (loss_record_nr_to >= n_lossrecords)
+      loss_record_nr_to = n_lossrecords - 1;
 
    tl_assert (lr_array);
-   lr = lr_array[loss_record_nr];
+
+   for (loss_record_nr = loss_record_nr_from;
+        loss_record_nr <= loss_record_nr_to && remaining > 0;
+        loss_record_nr++) {
+      lr = lr_array[loss_record_nr];
+      lr_printed = False;
+
+      /* If user asks to print a specific loss record, we print
+         the block details, even if no block will be shown for this lr.
+         If user asks to print a range of lr, we only print lr details
+         when at least one block is shown. */
+      if (loss_record_nr_from == loss_record_nr_to) {
+         /* (+1 on loss_record_nr as user numbering for loss records
+            starts at 1). */
+         MC_(pp_LossRecord)(loss_record_nr+1, n_lossrecords, lr);
+         lr_printed = True;
+      }
    
-   // (re-)print the loss record details.
-   // (+1 on loss_record_nr as user numbering for loss records starts at 1).
-   MC_(pp_LossRecord)(loss_record_nr+1, n_lossrecords, lr);
+      // Match the chunks with loss records.
+      for (i = 0; i < lc_n_chunks && remaining > 0; i++) {
+         MC_Chunk*     ch = lc_chunks[i];
+         LC_Extra*     ex = &(lc_extras)[i];
+         LossRecord*   old_lr;
+         LossRecordKey lrkey;
+         lrkey.state        = ex->state;
+         lrkey.allocated_at = MC_(allocated_at)(ch);
 
-   // Match the chunks with loss records.
-   for (i = 0; i < lc_n_chunks && remaining > 0; i++) {
-      MC_Chunk*     ch = lc_chunks[i];
-      LC_Extra*     ex = &(lc_extras)[i];
-      LossRecord*   old_lr;
-      LossRecordKey lrkey;
-      lrkey.state        = ex->state;
-      lrkey.allocated_at = MC_(allocated_at)(ch);
+         old_lr = VG_(OSetGen_Lookup)(lr_table, &lrkey);
+         if (old_lr) {
+            // We found an existing loss record matching this chunk.
+            // If this is the loss record we are looking for, output the
+            // pointer.
+            if (old_lr == lr_array[loss_record_nr]
+                && (heuristics == 0 || HiS(ex->heuristic, heuristics))) {
+               if (!lr_printed) {
+                  MC_(pp_LossRecord)(loss_record_nr+1, n_lossrecords, lr);
+                  lr_printed = True;
+               }
 
-      old_lr = VG_(OSetGen_Lookup)(lr_table, &lrkey);
-      if (old_lr) {
-         // We found an existing loss record matching this chunk.
-         // If this is the loss record we are looking for, output the pointer.
-         if (old_lr == lr_array[loss_record_nr]) {
-            if (ex->heuristic)
-               VG_(umsg)("%p[%lu] (found via heuristic %s)\n",
-                         (void *)ch->data, (SizeT)ch->szB,
-                         pp_heuristic (ex->heuristic));
-            else
-               VG_(umsg)("%p[%lu]\n",
-                         (void *)ch->data, (SizeT)ch->szB);
-            remaining--;
-            if (ex->state != Reachable) {
-               // We can print the clique in all states, except Reachable.
-               // In Unreached state, lc_chunk[i] is the clique leader.
-               // In IndirectLeak, lc_chunk[i] might have been a clique leader
-               // which was later collected in another clique.
-               // For Possible, lc_chunk[i] might be the top of a clique
-               // or an intermediate clique.
-               print_clique(i, 1, &remaining);
+               if (ex->heuristic)
+                  VG_(umsg)("%p[%lu] (found via heuristic %s)\n",
+                            (void *)ch->data, (SizeT)ch->szB,
+                            pp_heuristic (ex->heuristic));
+               else
+                  VG_(umsg)("%p[%lu]\n",
+                            (void *)ch->data, (SizeT)ch->szB);
+               remaining--;
+               if (ex->state != Reachable) {
+                  // We can print the clique in all states, except Reachable.
+                  // In Unreached state, lc_chunk[i] is the clique leader.
+                  // In IndirectLeak, lc_chunk[i] might have been a clique
+                  // leader which was later collected in another clique.
+                  // For Possible, lc_chunk[i] might be the top of a clique
+                  // or an intermediate clique.
+                  print_clique(i, 1, &remaining);
+               }
             }
+         } else {
+            // No existing loss record matches this chunk ???
+            VG_(umsg)("error: no loss record found for %p[%lu]?????\n",
+                      (void *)ch->data, (SizeT)ch->szB);
          }
-      } else {
-         // No existing loss record matches this chunk ???
-         VG_(umsg)("error: no loss record found for %p[%lu]?????\n",
-                   (void *)ch->data, (SizeT)ch->szB);
       }
    }
    return True;

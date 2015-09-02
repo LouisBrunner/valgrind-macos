@@ -1903,12 +1903,19 @@ Address 0x8049E28 len 1 defined
   </listitem>
 
   <listitem>
-    <para><varname>block_list &lt;loss_record_nr&gt;
-                              [unlimited*|limited &lt;max_blocks&gt;]</varname>
-      shows the list of blocks belonging to &lt;loss_record_nr&gt;.
+    <para><varname>block_list &lt;loss_record_nr&gt;|&lt;loss_record_nr_from&gt;..&lt;loss_record_nr_to&gt;
+        [unlimited*|limited &lt;max_blocks&gt;]
+        [heuristics heur1,heur2,...]
+      </varname>
+      shows the list of blocks belonging to
+      <varname>&lt;loss_record_nr&gt;</varname> (or to the loss records range
+      <varname>&lt;loss_record_nr_from&gt;..&lt;loss_record_nr_to&gt;</varname>).
       The nr of blocks to print can be controlled using the
       <varname>limited</varname> argument followed by the maximum nr
       of blocks to output.
+      If one or more heuristics are given, only prints the loss records
+      and blocks found via one of the given <varname>heur1,heur2,...</varname>
+      heuristics.
     </para>
 
     <para> A leak search merges the allocated blocks in loss records :

@@ -8,8 +8,10 @@ int main (void) {
     * The rest are just treated as NOPS.
     */
    __builtin_tabort (0);
+#ifdef __PPC64__
    __builtin_tabortdc (0,0,0);
    __builtin_tabortdci (0,0,0);
+#endif
    __builtin_tabortwc (0,0,0);
    __builtin_tabortwci (0,0,0);
    __builtin_tbegin (0);

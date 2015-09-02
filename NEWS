@@ -362,6 +362,7 @@ where XXXXXX is the bug number as listed below.
 351534  Fix incorrect header guard
 351756  Intercept platform_memchr$VARIANT$Haswell on OS X
 351858  ldsoexec support on Solaris
+351873  Newer gcc doesn't allow __builtin_tabortdc[i] in ppc32 mode
 n-i-bz  Provide implementations of certain compiler builtins to support
         compilers that may not provide those
 n-i-bz  Old STABS code is still being compiled, but never used. Remove it.

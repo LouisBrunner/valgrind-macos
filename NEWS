@@ -367,6 +367,7 @@ where XXXXXX is the bug number as listed below.
 351386  Solaris: Cannot run ld.so.1 under Valgrind
 351474  Fix VG_(iseqsigset) as obvious
 351534  Fix incorrect header guard
+351632  Fix UNKNOWN fcntl 97 on OS X 10.11
 351756  Intercept platform_memchr$VARIANT$Haswell on OS X
 351858  ldsoexec support on Solaris
 351873  Newer gcc doesn't allow __builtin_tabortdc[i] in ppc32 mode

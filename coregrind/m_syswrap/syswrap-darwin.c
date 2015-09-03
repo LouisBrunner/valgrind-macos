@@ -1529,6 +1529,11 @@ static const HChar *name_for_fcntl(UWord cmd) {
 #     if DARWIN_VERS >= DARWIN_10_9
       F(F_ADDFILESIGS);
 #     endif
+#     if DARWIN_VERS >= DARWIN_10_11
+      F(F_ADDFILESIGS_FOR_DYLD_SIM);
+      F(F_BARRIERFSYNC);
+      F(F_ADDFILESIGS_RETURN);
+#     endif
    default:
       return "UNKNOWN";
    }
@@ -1710,6 +1715,22 @@ PRE(fcntl)
                          fsigs->fs_blob_size);
       }
       break;
+
+#  if DARWIN_VERS >= DARWIN_10_11
+   case VKI_F_ADDFILESIGS_FOR_DYLD_SIM: /* Add signature from same file, only if it is signed
+                                           by Apple used by dyld for simulator */
+      // FIXME: RK
+      break;
+
+   case VKI_F_BARRIERFSYNC: /* fsync + issue barrier to drive */
+      // FIXME: RK
+      break;
+
+   case VKI_F_ADDFILESIGS_RETURN: /* Add signature from same file, return end offset in 
+                                     structure on success */
+      // FIXME: RK
+      break;
+#  endif
 
    default:
       PRINT("fcntl ( %lu, %lu [??] )", ARG1, ARG2);

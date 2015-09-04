@@ -23,6 +23,10 @@
 #   this, then loads of errors to do with stdio are reported, because
 #   H fails to see glibc's internal locking/unlocking of FILE*s
 #   as required by POSIX.  A better solution is needed.
+#
+# - some of the stdio functions in newer glibc manipulate stdio
+#   FILE*s state through mempcpy, which we intercept, so we also need
+#   to suppress such manipulations.
 
 #{
 #   helgrind-glibc2X-001
@@ -37,6 +41,14 @@
 {
    helgrind-glibc2X-004
    Helgrind:Race
+   obj:*/lib*/libc-2.*so*
+}
+
+{
+   helgrind-glibc-io-xsputn-mempcpy
+   Helgrind:Race
+   fun:__GI_mempcpy
+   fun:_IO_*xsputn*
    obj:*/lib*/libc-2.*so*
 }
 

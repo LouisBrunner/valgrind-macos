@@ -1,5 +1,6 @@
 #include <float.h>
 #include <stdio.h>
+#include <assert.h>
 #include "opcodes.h"
 
 
@@ -131,6 +132,7 @@
 
 int main()
 {
+   assert(sizeof(long double) == 16);
    DO_L2F(4);
    DO_F2L(4);
 

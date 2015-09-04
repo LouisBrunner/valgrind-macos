@@ -8,7 +8,7 @@ INSN_TESTS = clc clcle cvb cvd icm lpr tcxb lam_stam xc mvst add sub mul \
              op_exception fgx stck stckf stcke stfle cksm mvcl clcl troo \
              trto trot trtt tr tre cij cgij clij clgij crj cgrj clrj clgrj \
              cs csg cds cdsg cu21 cu21_1 cu24 cu24_1 cu42 cu12 cu12_1 \
-             ex_sig ex_clone cu14 cu14_1 cu41 fpconv ecag fpext fpext_warn \
+             ex_sig ex_clone cu14 cu14_1 cu41 fpconv ecag fpext_warn \
              rounding-1 rounding-2 rounding-3 rounding-4 rounding-5 bfp-1 \
              bfp-2 bfp-3 bfp-4 srnm srnmb comp-1 comp-2 exrl tmll tm stmg \
 	     ex clst mvc test_fork test_sig rounding-6 rxsbg\
@@ -20,6 +20,9 @@ INSN_TESTS = clc clcle cvb cvd icm lpr tcxb lam_stam xc mvst add sub mul \
 	     spechelper-tm laa
 if BUILD_DFP_TESTS
   INSN_TESTS += dfp-1 dfp-2 dfp-3 dfp-4 dfptest dfpext dfpconv srnmt pfpo
+endif
+if HAS_MLONG_DOUBLE_128
+  INSN_TESTS += fpext
 endif
 
 check_PROGRAMS = $(INSN_TESTS) \
@@ -33,6 +36,7 @@ EXTRA_DIST = \
 	ecag.stdout.exp-z10ec ecag.stdout.exp-z196 ecag.stdout.exp-zec12 \
 	ecag.stdout.exp-z13 \
 	op00.stderr.exp1 op00.stderr.exp2 op00.vgtest \
+	fpext.vgtest fpext.stderr.exp fpext.stdout.exp \
 	fpext_fail.vgtest fpext_fail.stderr.exp fpext_fail.stdout.exp \
 	test.h opcodes.h add.h  and.h  div.h  insert.h dfp_utils.h \
 	mul.h  or.h  sub.h  xor.h table.h svc.h rounding.h \
@@ -56,5 +60,5 @@ cu12_1_CFLAGS    = $(AM_CFLAGS) -DM3=1
 cu14_1_CFLAGS    = $(AM_CFLAGS) -DM3=1
 cu21_1_CFLAGS    = $(AM_CFLAGS) -DM3=1
 cu24_1_CFLAGS    = $(AM_CFLAGS) -DM3=1
-
+fpext_CFLAGS     = $(AM_CFLAGS) @FLAG_MLONG_DOUBLE_128@
 ex_clone_LDFLAGS = -lpthread

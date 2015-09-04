@@ -1847,6 +1847,25 @@ CFLAGS=$safe_CFLAGS
 AC_SUBST(PREFERRED_STACK_BOUNDARY_2)
 
 
+# does this compiler support -mlong-double-128 ?
+AC_MSG_CHECKING([if gcc accepts -mlong-double-128])
+safe_CFLAGS=$CFLAGS
+CFLAGS="-mlong-double-128 -Werror"
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  return 0;
+]])], [
+ac_compiler_supports_mlong_double_128=yes
+AC_MSG_RESULT([yes])
+], [
+ac_compiler_supports_mlong_double_128=no
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+AM_CONDITIONAL(HAS_MLONG_DOUBLE_128, test x$ac_compiler_supports_mlong_double_128 = xyes)
+FLAG_MLONG_DOUBLE_128="-mlong-double-128"
+AC_SUBST(FLAG_MLONG_DOUBLE_128)
+
+
 # Convenience function to check whether GCC supports a particular
 # warning option. Takes two arguments,
 # first the warning flag name to check (without -W), then the

@@ -98,6 +98,7 @@ EXTRA_DIST = \
 	tc20_verifywrap.vgtest tc20_verifywrap.stdout.exp \
 		tc20_verifywrap.stderr.exp \
 		tc20_verifywrap.stderr.exp-glibc-2.18 \
+		tc20_verifywrap.stderr.exp-glibc-2.21 \
 		tc20_verifywrap.stderr.exp-mips32 \
 		tc20_verifywrap.stderr.exp-mips32-b \
 		tc20_verifywrap.stderr.exp-s390x \
@@ -115,8 +116,8 @@ EXTRA_DIST = \
 	tls_threads.vgtest tls_threads.stdout.exp \
 		tls_threads.stderr.exp
 
-# Wrapper header used by some check programs.
-noinst_HEADERS = safe-pthread.h
+# Wrapper headers used by some check programs.
+noinst_HEADERS = safe-pthread.h safe-semaphore.h
 
 # XXX: tc18_semabuse uses operations that are unsupported on Darwin.  It
 # should be conditionally compiled like tc20_verifywrap is.

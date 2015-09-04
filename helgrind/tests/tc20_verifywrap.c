@@ -16,7 +16,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include "safe-pthread.h"
-#include <semaphore.h>
+#include "safe-semaphore.h"
 
 #if !defined(__APPLE__)
 

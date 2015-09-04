@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <pthread.h>
-#include <semaphore.h>
+#include "safe-semaphore.h"
 #include <string.h>
 void start_watchdog ( void );
 int main ( void )

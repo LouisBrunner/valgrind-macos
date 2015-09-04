@@ -2231,6 +2231,24 @@ if test x$ac_have_as_ppc_fpPO = xyes ; then
 fi
 
 
+# does the amd64 assembler understand "fxsave64" and "fxrstor64"?
+AC_MSG_CHECKING([if amd64 assembler supports fxsave64/fxrstor64])
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+void* p;
+asm __volatile__("fxsave64 (%0)" : : "r" (p) : "memory" );
+asm __volatile__("fxrstor64 (%0)" : : "r" (p) : "memory" );
+]])], [
+ac_have_as_amd64_fxsave64=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_as_amd64_fxsave64=no
+AC_MSG_RESULT([no])
+])
+if test x$ac_have_as_amd64_fxsave64 = xyes ; then
+  AC_DEFINE(HAVE_AS_AMD64_FXSAVE64, 1, [Define to 1 if as supports fxsave64/fxrstor64.])
+fi
+
 # does the x86/amd64 assembler understand SSE3 instructions?
 # Note, this doesn't generate a C-level symbol.  It generates a
 # automake-level symbol (BUILD_SSE3_TESTS), used in test Makefile.am's

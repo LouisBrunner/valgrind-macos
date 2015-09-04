@@ -210,11 +210,10 @@ where XXXXXX is the bug number as listed below.
 339156  gdbsrv not called for fatal signal
 339215  Valgrind 3.10.0 contain 2013 in copyrights notice
 339288  support Cavium Octeon MIPS specific BBIT*32 instructions
-339636  Use fxsave64 and fxrstor64 mnemonics instead of rex64 prefix
+339636  Use fxsave64 and fxrstor64 mnemonics instead of old-school rex64 prefix
 339442  Fix testsuite build failure on OS X 10.9
 339542  Enable compilation with Intel's ICC compiler
 339563  The DVB demux DMX_STOP ioctl doesn't have a wrapper
-339636  Use fxsave64 and fxrstor64 mnemonics instead of old-school rex64 prefix 
 339688  Mac-specific ASM does not support .version directive (cpuid,
         tronical and pushfpopf tests)
 339745  Valgrind crash when check Marmalade app (partial fix)

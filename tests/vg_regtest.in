@@ -309,7 +309,7 @@ sub read_vgtest_file($)
 	    next;
 	} elsif ($line =~ /^\s*vgopts:\s*(.*)$/) {
             my $addvgopts = $1;
-            $addvgopts =~ s/\${PWD}/$ENV{PWD}/g;
+            $addvgopts =~ s/\$\{PWD\}/$ENV{PWD}/g;
             $vgopts = $vgopts . " " . $addvgopts;   # Nb: Make sure there's a space!
         } elsif ($line =~ /^\s*prog:\s*(.*)$/) {
             $prog = validate_program(".", $1, 0, 0);

@@ -2143,6 +2143,42 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
          return;
       }
 
+      case Iop_RoundF128toInt: {
+         IRExpr *irrm;
+         IRExpr *left;
+         s390_bfp_round_t rm;
+         HReg op_hi, op_lo;
+         HReg f0, f2, f4, f6;           /* real registers */
+
+         f4 = make_fpr(4); /* source */
+         f6 = make_fpr(6); /* source */
+         f0 = make_fpr(0); /* destination */
+         f2 = make_fpr(2); /* destination */
+
+         irrm = expr->Iex.Binop.arg1;
+         left = expr->Iex.Binop.arg2;
+         
+         if (s390_host_has_fpext) {
+            rm = get_bfp_rounding_mode(env, irrm);
+         } else {
+            set_bfp_rounding_mode_in_fpc(env, irrm);
+            rm = S390_BFP_ROUND_PER_FPC;
+         }
+
+         s390_isel_float128_expr(&op_hi, &op_lo, env, left);
+         /* operand --> (f4, f6) */
+         addInstr(env, s390_insn_move(8, f4, op_hi));
+         addInstr(env, s390_insn_move(8, f6, op_lo));
+         addInstr(env, s390_insn_bfp128_convert(16, S390_BFP_F128_TO_F128I,
+                                                f0, f2, f4, f6, rm));
+         /* (f0, f2) --> destination */
+         *dst_hi = newVRegF(env);
+         *dst_lo = newVRegF(env);
+         addInstr(env, s390_insn_move(8, *dst_hi, f0));
+         addInstr(env, s390_insn_move(8, *dst_lo, f2));
+         return;
+      }
+
       default:
          goto irreducible;
       }

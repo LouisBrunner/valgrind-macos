@@ -713,6 +713,8 @@ typedef
       Iop_CosF64,    /* FCOS */
       Iop_TanF64,    /* FTAN */
       Iop_2xm1F64,   /* (2^arg - 1.0) */
+      Iop_RoundF128toInt, /* F128 value to nearest integral value (still
+                             as F128) */
       Iop_RoundF64toInt, /* F64 value to nearest integral value (still
                             as F64) */
       Iop_RoundF32toInt, /* F32 value to nearest integral value (still

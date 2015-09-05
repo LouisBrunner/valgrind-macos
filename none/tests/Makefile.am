@@ -198,7 +198,7 @@ EXTRA_DIST = \
 	process_vm_readv_writev.stderr.exp process_vm_readv_writev.vgtest
 
 check_PROGRAMS = \
-	ansi args \
+	args \
 	async-sigs \
 	bitfield1 \
 	bug129866 bug234814 \
@@ -248,6 +248,11 @@ endif
 # This doesn't appear to be compilable on Darwin.
 if ! VGCONF_OS_IS_DARWIN
    check_PROGRAMS += rlimit64_nofile 
+endif
+
+# clang does now know -ansi
+if ! COMPILER_IS_CLANG
+   check_PROGRAMS += ansi
 endif
 
 if BUILD_IFUNC_TESTS

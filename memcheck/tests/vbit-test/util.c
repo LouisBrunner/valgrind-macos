@@ -811,6 +811,7 @@ typeof_primop(IROp op, IRType *t_dst, IRType *t_arg1, IRType *t_arg2,
          UNARY(Ity_F128, Ity_F128);
 
       case Iop_SqrtF128:
+      case Iop_RoundF128toInt:
          BINARY(ity_RMode,Ity_F128, Ity_F128);
 
       case Iop_I32StoF128: UNARY(Ity_I32, Ity_F128);

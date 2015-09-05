@@ -22,7 +22,7 @@ if BUILD_DFP_TESTS
   INSN_TESTS += dfp-1 dfp-2 dfp-3 dfp-4 dfptest dfpext dfpconv srnmt pfpo
 endif
 if HAS_MLONG_DOUBLE_128
-  INSN_TESTS += fpext
+  INSN_TESTS += fpext fixbr
 endif
 
 check_PROGRAMS = $(INSN_TESTS) \
@@ -36,6 +36,7 @@ EXTRA_DIST = \
 	ecag.stdout.exp-z10ec ecag.stdout.exp-z196 ecag.stdout.exp-zec12 \
 	ecag.stdout.exp-z13 \
 	op00.stderr.exp1 op00.stderr.exp2 op00.vgtest \
+	fixbr.vgtest fixbr.stderr.exp fixbr.stdout.exp \
 	fpext.vgtest fpext.stderr.exp fpext.stdout.exp \
 	fpext_fail.vgtest fpext_fail.stderr.exp fpext_fail.stdout.exp \
 	test.h opcodes.h add.h  and.h  div.h  insert.h dfp_utils.h \
@@ -60,5 +61,6 @@ cu12_1_CFLAGS    = $(AM_CFLAGS) -DM3=1
 cu14_1_CFLAGS    = $(AM_CFLAGS) -DM3=1
 cu21_1_CFLAGS    = $(AM_CFLAGS) -DM3=1
 cu24_1_CFLAGS    = $(AM_CFLAGS) -DM3=1
+fixbr_CFLAGS     = $(AM_CFLAGS) @FLAG_MLONG_DOUBLE_128@
 fpext_CFLAGS     = $(AM_CFLAGS) @FLAG_MLONG_DOUBLE_128@
 ex_clone_LDFLAGS = -lpthread

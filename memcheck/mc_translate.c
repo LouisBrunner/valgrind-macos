@@ -3785,6 +3785,10 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          /* I32(rm) x D128 -> D128 */
          return mkLazy2(mce, Ity_I128, vatom1, vatom2);
 
+      case Iop_RoundF128toInt:
+         /* I32(rm) x F128 -> F128 */
+         return mkLazy2(mce, Ity_I128, vatom1, vatom2);
+
       case Iop_D64toI64S:
       case Iop_D64toI64U:
       case Iop_I64StoD64:

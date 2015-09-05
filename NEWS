@@ -358,6 +358,7 @@ where XXXXXX is the bug number as listed below.
 349941  di_notify_mmap might create wrong start/size DebugInfoMapping
 350062  vex x86->IR: 0x66 0xF 0x3A 0xB (ROUNDSD) on OS X
 350202  Add limited param to 'monitor block_list'
+350290  s390x: Support instructions fixbr(a)
 350809  Fix none/tests/async-sigs for Solaris
 350811  Remove reference to --db-attach which has been removed.
 350813  Memcheck/x86: enable handwritten assembly helpers for x86/Solaris too

@@ -238,6 +238,7 @@ Thread #x's call to sem_post failed
    with error code 22 (EINVAL: Invalid argument)
    at 0x........: sem_post_WRK (hg_intercepts.c:...)
    by 0x........: sem_post (hg_intercepts.c:...)
+   ...
    by 0x........: main (tc20_verifywrap.c:265)
 
 

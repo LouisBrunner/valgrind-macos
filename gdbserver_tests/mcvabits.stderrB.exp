@@ -5,6 +5,10 @@ Address 0x........ len 10 addressable
 Address 0x........ len 10 defined
  Address 0x........ is 0 bytes inside data symbol "undefined"
 00000000 00000000 0000
+		  00	  00	  00	  00	  00	  00	  00	  00
+0x........:	0x........	0x........	0x........	0x........	0x........	0x........	0x........	0x........
+		  00	  00
+0x........:	0x........	0x........
 Address 0x........ len 10 addressable
  Address 0x........ is 0 bytes inside data symbol "undefined"
 Address 0x........ len 10 not defined:

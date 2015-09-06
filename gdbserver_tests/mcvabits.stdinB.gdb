@@ -23,6 +23,7 @@ set $0xundefined = &undefined
 eval "monitor check_memory addressable 0x%lx 10", $0xundefined
 eval "monitor check_memory defined     0x%lx 10", $0xundefined
 eval "monitor get_vbits                0x%lx 10", $0xundefined
+eval "monitor xb                       0x%lx 10", $0xundefined
 #
 # continue till //2break:
 continue

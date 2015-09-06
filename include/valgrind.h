@@ -794,7 +794,8 @@ typedef
                      "orr x10, x10, x10\n\t"                      \
                      "mov %0, x3"     /*result*/                  \
                      : "=r" (_zzq_result)                         \
-                     : "r" (_zzq_default), "r" (&_zzq_args[0])    \
+                     : "r" ((unsigned long int)(_zzq_default)),   \
+                       "r" (&_zzq_args[0])                        \
                      : "cc","memory", "x3", "x4");                \
     _zzq_result;                                                  \
   })

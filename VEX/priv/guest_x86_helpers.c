@@ -1837,6 +1837,7 @@ VexEmNote x86g_dirtyhelper_FXRSTOR ( VexGuestX86State* gst, HWord addr )
    /* Code that seems to trigger the problem:
       for (i = 0; i < 14; i++) tmp.env[i] = 0; */
    for (i = 0; i < 7; i++) tmp.env[i+0] = 0;
+   __asm__ __volatile__("" ::: "memory");
    for (i = 0; i < 7; i++) tmp.env[i+7] = 0;
    
    for (i = 0; i < 80; i++) tmp.reg[i] = 0;

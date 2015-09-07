@@ -270,8 +270,6 @@ go in here.
 
 349804  wine/osx: mmap-FIXED(0x1000, 1073741824) failed in UME (load_segment2)
 
-350359  memcheck/tests/x86/fxsave hangs indefinetely on OS X
-
 351632  UNKNOWN fcntl 97 on OS X 10.11
 
 === other/Win32 =======================================================
@@ -297,8 +295,6 @@ go in here.
 
 === MPI ================================================================
 
-330147  libmpiwrap PMPI_Get_count (should take; simple fix)
-
 === Documentation ======================================================
 
 340571  x86/Linux should no longer claim "almost complete"
@@ -321,9 +317,6 @@ go in here.
         Bizarre
 
 === Uncategorised/build=================================================
-
-342008  valgrind.h needs type cast for _zzq_default to compile with
-        clang/llvm in 64-bit mode
 
 343553  e500 chip now supports it? and,how about armv5
 

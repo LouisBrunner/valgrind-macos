@@ -16,7 +16,7 @@ static void* memalign16(size_t szB)
    void* x;
 #if defined(VGO_darwin)
    // Darwin lacks memalign, but its malloc is always 16-aligned anyway.
-   x = malloc(szB);
+   posix_memalign((void **)&x, 16, szB);
 #else
    x = memalign(16, szB);
 #endif

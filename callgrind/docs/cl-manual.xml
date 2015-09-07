@@ -310,49 +310,78 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
          xreflabel="Limiting range of event collection">
   <title>Limiting the range of collected events</title>
 
-  <para>For aggregating events (function enter/leave,
-  instruction execution, memory access) into event numbers,
-  first, the events must be recognizable by Callgrind, and second,
-  the collection state must be enabled.</para>
-
-  <para>Event collection is only possible if <emphasis>instrumentation</emphasis>
-  for program code is enabled. This is the default, but for faster
-  execution (identical to <computeroutput>valgrind --tool=none</computeroutput>),
-  it can be disabled until the program reaches a state in which
-  you want to start collecting profiling data.  
-  Callgrind can start without instrumentation
-  by specifying option <option><xref linkend="opt.instr-atstart"/>=no</option>.
-  Instrumentation can be enabled interactively
-  with: <screen>callgrind_control -i on</screen>
-  and off by specifying "off" instead of "on".
-  Furthermore, instrumentation state can be programatically changed with
-  the macros <computeroutput><xref linkend="cr.start-instr"/>;</computeroutput>
-  and <computeroutput><xref linkend="cr.stop-instr"/>;</computeroutput>.
+  <para>By default, whenever events are happening (such as an
+    instruction execution or cache hit/miss), Callgrind is aggregating
+    them into event counters. However, you may be interested only in
+    what is happening within a given function or starting from a given
+    program phase. To this end, you can disable event aggregation for
+    uninteresting program parts. While attribution of events to
+    functions as well as producing seperate output per program phase
+    can be done by other means (see previous section), there are two
+    benefits by disabling aggregation. First, this is very
+    fine-granular (e.g. just for a loop within a function).  Second,
+    disabling event aggregation for complete program phases allows to
+    switch off time-consuming cache simulation and allows Callgrind to
+    progress at much higher speed with an slowdown of around factor 2
+    (identical to <computeroutput>valgrind
+    --tool=none</computeroutput>).
   </para>
-  
-  <para>In addition to enabling instrumentation, you must also enable
-  event collection for the parts of your program you are interested in.
-  By default, event collection is enabled everywhere.
-  You can limit collection to a specific function
-  by using 
-  <option><xref linkend="opt.toggle-collect"/>=function</option>. 
-  This will toggle the collection state on entering and leaving
-  the specified functions.
-  When this option is in effect, the default collection state
-  at program start is "off".  Only events happening while running
-  inside of the given function will be collected. Recursive
-  calls of the given function do not trigger any action.</para>
 
-  <para>It is important to note that with instrumentation disabled, the
-  cache simulator cannot see any memory access events, and thus, any
-  simulated cache state will be frozen and wrong without instrumentation.
-  Therefore, to get useful cache events (hits/misses) after switching on
-  instrumentation, the cache first must warm up,
-  probably leading to many <emphasis>cold misses</emphasis>
-  which would not have happened in reality. If you do not want to see these,
-  start event collection a few million instructions after you have enabled
-  instrumentation.</para>
+  <para>There are two aspects which influence whether Callgrind is
+    aggregating events at some point in time of program execution.
+    First, there is the <emphasis>collection state</emphasis>. If this
+    is off, no aggregation will be done.  By changing the collection
+    state, you can control event aggregation at a very fine
+    granularity.  However, there is not much difference in regard to
+    execution speed of Callgrind.  By default, collection is switched
+    on, but can be disabled by different means (see below).  Second,
+    there is the <emphasis>instrumentation mode</emphasis> in which
+    Callgrind is running. This mode either can be on or off. If
+    instrumentation is off, no observation of actions in the program
+    will be done and thus, no actions will be forwarded to the
+    simulator which could trigger events. In the end, no events will
+    be aggregated.  The huge benefit is the much higher speed with
+    instrumentation switched off.  However, this only should be used
+    with care and in a coarse fashion: every mode change resets the
+    simulator state (ie. whether a memory block is cached or not) and
+    flushes Valgrinds internal cache of instrumented code blocks,
+    resulting in latency penalty at switching time. Also, cache
+    simulator results directly after switching on instrumentation will
+    be skewed due to identified cache misses which would not happen in
+    reality (if you care about this warm-up effect, you should make
+    sure to temporarly have collection state switched off directly
+    after turning instrumentation mode on). However, switching
+    instrumentation state is very useful to skip larger program phases
+    such as an initialization phase. By default, instrumentation is
+    switched on, but as with the collection state, can be changed by
+    various means.
+  </para>
 
+  <para>Callgrind can start with instrumentation mode switched off by
+    specifying
+    option <option><xref linkend="opt.instr-atstart"/>=no</option>.
+    Afterwards, instrumentation can be controlled in two ways: first,
+    interactively with: <screen>callgrind_control -i on</screen> (and
+    switching off again by specifying "off" instead of "on").  Second,
+    instrumentation state can be programatically changed with the
+    macros <computeroutput><xref linkend="cr.start-instr"/>;</computeroutput>
+    and <computeroutput><xref linkend="cr.stop-instr"/>;</computeroutput>.
+  </para>
+
+  <para>Similarly, the collection state at program start can be
+    switched off
+    by <option><xref linkend="opt.instr-atstart"/>=no</option>. During
+    execution, it can be controlled programatically with the
+    macro <computeroutput>CALLGRIND_TOGGLE_COLLECT;</computeroutput>.
+    Further, you can limit event collection to a specific function by
+    using <option><xref linkend="opt.toggle-collect"/>=function</option>.
+    This will toggle the collection state on entering and leaving the
+    specified function.  When this option is in effect, the default
+    collection state at program start is "off".  Only events happening
+    while running inside of the given function will be
+    collected. Recursive calls of the given function do not trigger
+    any action. This option can be given multiple times to specify
+    different functions of interest.</para>
   </sect2>
 
   <sect2 id="cl-manual.busevents" xreflabel="Counting global bus events">

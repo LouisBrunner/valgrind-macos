@@ -334,6 +334,7 @@
     </frame>
   </stack>
   <auxwhat>Address 0x........ is on thread 1's stack</auxwhat>
+  <auxwhat>in frame #1, created by frame3 (xml1.c:7)</auxwhat>
 </error>
 
 <error>

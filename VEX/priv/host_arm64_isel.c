@@ -3870,9 +3870,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          = mk_baseblock_64bit_access_amode(stmt->Ist.Exit.offsIP);
 
       /* Case: boring transfer to known address */
-      if (stmt->Ist.Exit.jk == Ijk_Boring
-          /*ATC || stmt->Ist.Exit.jk == Ijk_Call */
-          /*ATC || stmt->Ist.Exit.jk == Ijk_Ret */ ) {
+      if (stmt->Ist.Exit.jk == Ijk_Boring) {
          if (env->chainingAllowed) {
             /* .. almost always true .. */
             /* Skip the event check at the dst if this is a forwards
@@ -3890,6 +3888,26 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
             addInstr(env, ARM64Instr_XAssisted(r, amPC, cc, Ijk_Boring));
          }
          return;
+      }
+
+      /* Case: assisted transfer to arbitrary address */
+      switch (stmt->Ist.Exit.jk) {
+         /* Keep this list in sync with that for iselNext below */
+         case Ijk_ClientReq:
+         case Ijk_NoDecode:
+         case Ijk_NoRedir:
+         case Ijk_Sys_syscall:
+         case Ijk_InvalICache:
+         case Ijk_FlushDCache:
+         case Ijk_SigTRAP:
+         case Ijk_Yield: {
+            HReg r = iselIntExpr_R(env, IRExpr_Const(stmt->Ist.Exit.dst));
+            addInstr(env, ARM64Instr_XAssisted(r, amPC, cc,
+                                               stmt->Ist.Exit.jk));
+            return;
+         }
+         default:
+            break;
       }
 
       /* Do we ever expect to see any other kind? */

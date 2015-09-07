@@ -417,6 +417,7 @@ static __inline__ Bool count_from_Status( /*OUT*/int* recv_count,
    int err = PMPI_Get_count(status, datatype, &n);
    if (cONFIG_DER) VALGRIND_ENABLE_ERROR_REPORTING;
    if (err == MPI_SUCCESS) {
+      VALGRIND_MAKE_MEM_DEFINED(&n, sizeof(n));
       *recv_count = n;
       return True;
    } else {

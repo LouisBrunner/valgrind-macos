@@ -4,7 +4,7 @@ include $(top_srcdir)/Makefile.tool-tests.am
 dist_noinst_SCRIPTS = \
 	filter_stderr
 
-EXTRA_DIST =
+EXTRA_DIST = gen_test.sh
 
 if VGCONF_ARCHS_INCLUDE_TILEGX
 EXTRA_DIST += \
@@ -1593,11 +1593,11 @@ AM_CXXFLAGS  += @FLAG_M64@
 AM_CCASFLAGS += @FLAG_M64@
 
 allexec_CFLAGS          = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
-gen_insn_test_CFLAGS    = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@ -I../../../VEX/priv
+gen_insn_test_CFLAGS    = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@ -I$(top_srcdir)/VEX/priv
 gen_insn_test_LDADD     = ../../../VEX/priv/tilegx_disasm.o
 
 $(addsuffix .c, $(insn_tests)) : gen_insn_test
-	@./gen_test.sh $@
+	@$(srcdir)/gen_test.sh $@
 
 $(addsuffix .stdout.exp, $(insn_tests)) : $(insn_tests)
 	./$(basename $(basename $@)) > $@

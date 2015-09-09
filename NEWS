@@ -337,7 +337,7 @@ where XXXXXX is the bug number as listed below.
 347151  Fix suppression for pthread_rwlock_init on OS X 10.8
 347233  Fix memcheck/tests/strchr on OS X 10.10 (Haswell) 
 347322  Power PC regression test cleanup
-347379  valgrind --leak-check=full leak errors from system libraries on OS X 10.8
+347379  valgrind --leak-check=full leak errors from system libs on OS X 10.8
         == 217236
 347389  unhandled syscall: 373 (Linux ARM syncfs)
 347686  Patch set to cleanup PPC64 regtests
@@ -361,7 +361,7 @@ where XXXXXX is the bug number as listed below.
 349086  Fix UNKNOWN task message [id 3406, to mach_task_self(), [..]
 349087  Fix UNKNOWN task message [id 3410, to mach_task_self(), [..]
 349626  Implemented additional Xen hypercalls
-349769  Fix clang/osx: ld: warning: -read_only_relocs cannot be used with x86_64
+349769  Clang/osx: ld: warning: -read_only_relocs cannot be used with x86_64
 349790  Clean up of the hardware capability checking utilities.
 349828  memcpy intercepts memmove causing src/dst overlap error (ppc64 ld.so)
 349874  Fix typos in source code
@@ -396,7 +396,7 @@ n-i-bz  mremap did not work properly on shared memory
 n-i-bz  Fix incorrect sizeof expression in syswrap-xen.c reported by Coverity
 n-i-bz  In VALGRIND_PRINTF write out thread name, if any, to xml
 
-(3.10.1.BETA?: ?? September 2015, vex r????, valgrind r?????)
+(3.10.1.TEST1:  8 September 2015, vex r3187, valgrind r15646)
 
 
 

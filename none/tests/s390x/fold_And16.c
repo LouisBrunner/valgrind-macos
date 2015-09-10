@@ -2,7 +2,7 @@
 
 int main()
 {
-   unsigned long p;
+   unsigned long p = 0;
    register unsigned long *msg = &p;
 
    /* Load "hi\n\0" into P; then convert the 'i' into an 'h' */

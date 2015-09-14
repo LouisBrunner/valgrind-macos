@@ -19172,6 +19172,7 @@ DisResult disInstr_PPC_WRK (
          case 0x322: // POWER 7 inst, dcffix - DFP convert from fixed
             if (!allow_VX)
                goto decode_failure;
+            if (!allow_DFP) goto decode_noDFP;
             if (dis_dfp_fmt_conv( theInstr ))
                goto decode_success;
             goto decode_failure;
@@ -19598,6 +19599,7 @@ DisResult disInstr_PPC_WRK (
             goto decode_success;
          goto decode_failure;
       case 0xA2: // dtstexq - DFP Test exponent Quad
+         if (!allow_DFP) goto decode_noDFP;
          if (dis_dfp_exponent_test( theInstr ) )
             goto decode_success;
          goto decode_failure;

@@ -282,12 +282,14 @@ typedef
       /* 1656 */ ULong guest_TFHAR;     // Transaction Failure Handler Address Register 
       /* 1664 */ ULong guest_TEXASR;    // Transaction EXception And Summary Register
       /* 1672 */ ULong guest_TFIAR;     // Transaction Failure Instruction Address Register
-      /* 1680 */ UInt  guest_TEXASRU;   // Transaction EXception And Summary Register Upper
+      /* 1680 */ ULong guest_PPR;       // Program Priority register
+      /* 1688 */ UInt  guest_TEXASRU;   // Transaction EXception And Summary Register Upper
+      /* 1692 */ UInt  guest_PSPB;      // Problem State Priority Boost register
 
       /* Padding to make it have an 16-aligned size */
-      /* 1684 */  UInt  padding1;
-      /* 1688 */  UInt  padding2;
-      /* 1692 */  UInt  padding3;
+      /* 1696   UInt  padding1;  currently not needed */
+      /* 1700   UInt  padding2;  currently not needed */
+      /* 1708   UInt  padding3;  currently not needed */
 
    }
    VexGuestPPC64State;

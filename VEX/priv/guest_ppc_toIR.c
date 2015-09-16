@@ -288,6 +288,8 @@ static void* fnptr_to_fnentry( const VexAbiInfo* vbi, void* f )
 #define OFFB_TEXASR      offsetofPPCGuestState(guest_TEXASR)
 #define OFFB_TEXASRU     offsetofPPCGuestState(guest_TEXASRU)
 #define OFFB_TFIAR       offsetofPPCGuestState(guest_TFIAR)
+#define OFFB_PPR         offsetofPPCGuestState(guest_PPR)
+#define OFFB_PSPB        offsetofPPCGuestState(guest_PSPB)
 
 
 /*------------------------------------------------------------*/
@@ -438,6 +440,14 @@ typedef enum {
     PPC_GST_TFIAR,  // Transactional Failure Instruction Address Register
     PPC_GST_TEXASR, // Transactional EXception And Summary Register
     PPC_GST_TEXASRU, // Transactional EXception And Summary Register Upper
+    PPC_GST_PPR,     // Program Priority register
+    PPC_GST_PPR32,   // Upper 32-bits of Program Priority register
+    PPC_GST_PSPB,    /* Problem State Priority Boost register, Note, the
+                      * register is initialized to a non-zero value.  Currently
+                      * Valgrind is not supporting the register value to
+                      * automatically decrement. Could be added later if
+                      * needed.
+                      */
     PPC_GST_MAX
 } PPC_GST;
 
@@ -2747,6 +2757,15 @@ static IRExpr* /* :: Ity_I32/64 */ getGST ( PPC_GST reg )
    case PPC_GST_TFIAR:
       return IRExpr_Get( OFFB_TFIAR, ty );
 
+   case PPC_GST_PPR:
+      return IRExpr_Get( OFFB_PPR, ty );
+
+   case PPC_GST_PPR32:
+      return unop( Iop_64HIto32, IRExpr_Get( OFFB_PPR, ty ) );
+
+   case PPC_GST_PSPB:
+      return IRExpr_Get( OFFB_PSPB, ty );
+
    default:
       vex_printf("getGST(ppc): reg = %u", reg);
       vpanic("getGST(ppc)");
@@ -2926,6 +2945,95 @@ static void putGST ( PPC_GST reg, IRExpr* src )
       vassert( ty_src == Ity_I64 );
       stmt( IRStmt_Put( OFFB_TFHAR, src ) );
       break;
+
+   case PPC_GST_PPR32:
+   case PPC_GST_PPR:
+      {
+         /* The Program Priority Register (PPR) stores the priority in
+          * bits [52:50].  The user setable priorities are:
+          *
+          *    001  very low
+          *    010  low
+          *    011  medium low
+          *    100  medium
+          *    101  medium high
+          *
+          * If the argument is not between 0b001 and 0b100 the priority is set
+          * to 0b100.  The priority can only be set to 0b101 if the the Problem
+          * State Boost Register is non-zero.  The value of the PPR is not
+          * changed if the input is not valid.
+          */
+
+         IRTemp not_valid = newTemp(Ity_I64);
+         IRTemp has_perm = newTemp(Ity_I64);
+         IRTemp new_src  = newTemp(Ity_I64);
+         IRTemp PSPB_val = newTemp(Ity_I64);
+         IRTemp value    = newTemp(Ity_I64);
+
+         vassert(( ty_src == Ity_I64 ) || ( ty_src == Ity_I32 ));
+         assign( PSPB_val, binop( Iop_32HLto64,
+                                  mkU32( 0 ),
+                                  IRExpr_Get( OFFB_PSPB, Ity_I32 ) ) );
+         if( reg == PPC_GST_PPR32 ) {
+            vassert( ty_src == Ity_I32 );
+            assign( value, binop( Iop_32HLto64,
+                                  mkU32(0),
+                                  binop( Iop_And32,
+                                         binop( Iop_Shr32, src,  mkU8( 18 ) ),
+                                         mkU32( 0x7 ) ) ) );
+         } else {
+            vassert( ty_src == Ity_I64 );
+            assign( value, binop( Iop_And64,
+                                  binop( Iop_Shr64, src,  mkU8( 50 ) ),
+                                  mkU64( 0x7 ) ) );
+         }
+         assign( has_perm,
+                 binop( Iop_And64,
+                        unop( Iop_1Sto64,
+                              binop( Iop_CmpEQ64,
+                                     mkexpr( PSPB_val ),
+                                     mkU64( 0 ) ) ),
+                        unop( Iop_1Sto64,
+                              binop( Iop_CmpEQ64,
+                                     mkU64( 0x5 ),
+                                     mkexpr( value ) ) ) ) );
+         assign( not_valid,
+                 binop( Iop_Or64,
+                        unop( Iop_1Sto64,
+                              binop( Iop_CmpEQ64,
+                                     mkexpr( value ),
+                                     mkU64( 0 ) ) ),
+                        unop( Iop_1Sto64,
+                              binop( Iop_CmpLT64U,
+                                     mkU64( 0x5 ),
+                                     mkexpr( value ) ) ) ) );
+         assign( new_src,
+                 binop( Iop_Or64,
+                        binop( Iop_And64,
+                               unop( Iop_Not64,
+                                     mkexpr( not_valid ) ),
+                               src ),
+                        binop( Iop_And64,
+                               mkexpr( not_valid ),
+                               binop( Iop_Or64,
+                                      binop( Iop_And64,
+                                             mkexpr( has_perm),
+                                             binop( Iop_Shl64,
+                                                    mkexpr( value ),
+                                                    mkU8( 50 ) ) ),
+                                      binop( Iop_And64,
+                                             IRExpr_Get( OFFB_PPR, ty ),
+                                             unop( Iop_Not64,
+                                                   mkexpr( has_perm )
+                                                   ) ) ) ) ) );
+
+                 /* make sure we only set the valid bit field [52:50] */
+                 stmt( IRStmt_Put( OFFB_PPR,
+                                   binop( Iop_And64,
+                                          mkexpr( new_src ),
+                                          mkU64( 0x1C000000000000) ) ) );
+      break;
+      }
    default:
       vex_printf("putGST(ppc): reg = %u", reg);
       vpanic("putGST(ppc)");
@@ -7131,6 +7239,18 @@ static Bool dis_proc_ctl ( const VexAbiInfo* vbi, UInt theInstr )
          DIP("mfspr r%u (TEXASRU)\n", rD_addr);
          putIReg( rD_addr, getGST( PPC_GST_TEXASRU) );
          break;
+      case 0x9F:  // 159
+         DIP("mfspr r%u (PSPB)\n", rD_addr);
+         putIReg( rD_addr, getGST( PPC_GST_PSPB) );
+         break;
+      case 0x380:  // 896
+         DIP("mfspr r%u (PPR)\n", rD_addr);
+         putIReg( rD_addr, getGST( PPC_GST_PPR) );
+         break;
+      case 0x382:  // 898
+         DIP("mfspr r%u (PPR)32\n", rD_addr);
+         putIReg( rD_addr, getGST( PPC_GST_PPR32) );
+         break;
       case 0x100: 
          DIP("mfvrsave r%u\n", rD_addr);
          putIReg( rD_addr, mkWidenFrom32(ty, getGST( PPC_GST_VRSAVE ),
@@ -7286,6 +7406,18 @@ static Bool dis_proc_ctl ( const VexAbiInfo* vbi, UInt theInstr )
       case 0x82:  // 130
          DIP("mtspr r%u (TEXASR)\n", rS_addr);
          putGST( PPC_GST_TEXASR, mkexpr(rS) );
+         break;
+      case 0x9F:  // 159
+         DIP("mtspr r%u (PSPB)\n", rS_addr);
+         putGST( PPC_GST_PSPB, mkexpr(rS) );
+         break;
+      case 0x380:  // 896
+         DIP("mtspr r%u (PPR)\n", rS_addr);
+         putGST( PPC_GST_PPR, mkexpr(rS) );
+         break;
+      case 0x382:  // 898
+         DIP("mtspr r%u (PPR32)\n", rS_addr);
+         putGST( PPC_GST_PPR32, mkexpr(rS) );
          break;
       default:
          vex_printf("dis_proc_ctl(ppc)(mtspr,SPR)(%u)\n", SPR);

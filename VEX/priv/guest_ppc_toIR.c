@@ -6369,6 +6369,7 @@ static Bool dis_memsync ( UInt theInstr )
    UInt  b11to25 = IFIELD(theInstr, 11, 15);
    UChar flag_L  = ifieldRegDS(theInstr);
    UInt  b11to20 = IFIELD(theInstr, 11, 10);
+   UInt  M0      = IFIELD(theInstr, 11, 5);
    UChar rD_addr = ifieldRegDS(theInstr);
    UChar rS_addr = rD_addr;
    UChar rA_addr = ifieldRegA(theInstr);
@@ -6399,12 +6400,20 @@ static Bool dis_memsync ( UInt theInstr )
    /* X-Form */
    case 0x1F:
       switch (opc2) {
-      case 0x356: // eieio (Enforce In-Order Exec of I/O, PPC32 p394)
-         if (b11to25 != 0 || b0 != 0) {
-            vex_printf("dis_memsync(ppc)(eiei0,b11to25|b0)\n");
-            return False;
+      case 0x356: // eieio or mbar (Enforce In-Order Exec of I/O, PPC32 p394)
+         if (M0 == 0) {
+            if (b11to20 != 0 || b0 != 0) {
+               vex_printf("dis_memsync(ppc)(eieio,b11to20|b0)\n");
+               return False;
+            }
+            DIP("eieio\n");
+         } else {
+            if (b11to20 != 0 || b0 != 0) {
+               vex_printf("dis_memsync(ppc)(mbar,b11to20|b0)\n");
+               return False;
+            }
+            DIP("mbar %d\n", M0);
          }
-         DIP("eieio\n");
          /* Insert a memory fence, just to be on the safe side. */
          stmt( IRStmt_MBE(Imbe_Fence) );
          break;

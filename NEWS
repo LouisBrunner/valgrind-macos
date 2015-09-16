@@ -193,6 +193,7 @@ where XXXXXX is the bug number as listed below.
 226609  Crediting upstream authors in man page
 231257  Valgrind omits path when executing script from shebang line
 254164  OS X task_info: UNKNOWN task message [id 3405, to mach_task_self() [..]
+294065  Improve the pdb file reader by avoiding hardwired absolute pathnames
 269360  s390x: Fix addressing mode selection for compare-and-swap
 302630  Memcheck: Assertion failed: 'sizeof(UWord) == sizeof(UInt)'
         == 326797

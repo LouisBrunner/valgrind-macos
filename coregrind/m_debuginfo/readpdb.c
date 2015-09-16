@@ -2503,8 +2503,8 @@ HChar* ML_(find_name_of_pdb_file)( const HChar* pename )
       sh -c "strings (pename) | egrep '\.pdb$|\.PDB$' > (tmpname)"
    */
    const HChar* sh      = "/bin/sh";
-   const HChar* strings = "/usr/bin/strings";
-   const HChar* egrep   = "/usr/bin/egrep";
+   const HChar* strings = "strings";
+   const HChar* egrep   = "grep -E";
 
    /* (sh) -c "(strings) (pename) | (egrep) 'pdb' > (tmpname) */
    Int cmdlen = VG_(strlen)(strings) + VG_(strlen)(pename)

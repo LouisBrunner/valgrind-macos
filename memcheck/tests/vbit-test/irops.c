@@ -1143,6 +1143,38 @@ get_irop(IROp op)
          return p->amd64 ? p : NULL;
 #endif
 #ifdef __powerpc__
+#define  MIN_POWER_ISA  "../../../tests/min_power_isa"
+
+         switch (op) {
+         case Iop_DivS64E:
+         case Iop_DivU64E:
+         case Iop_DivU32E:
+         case Iop_DivS32E:
+         case Iop_F64toI64U:
+         case Iop_F64toI32U:
+         case Iop_I64UtoF64:
+         case Iop_I64UtoF32:
+         case Iop_I64StoD64: {
+            int rc;
+            /* IROps require a processor that supports ISA 2.06 or newer */
+            rc = system(MIN_POWER_ISA " 2.06 ");
+            rc /= 256;
+            /* MIN_POWER_ISA returns 0 if underlying HW supports the
+             * specified ISA or newer. Returns 1 if the HW does not support
+             * the specified ISA.  Returns 2 on error.
+             */
+            if (rc == 1) return NULL;
+            if (rc > 2) {
+               panic(" ERROR, min_power_isa() return code is invalid.\n");
+            }
+         }
+         break;
+
+         /* Other */
+         default:
+         break;
+         }
+
 #ifdef __powerpc64__
          return p->ppc64 ? p : NULL;
 #else

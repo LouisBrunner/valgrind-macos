@@ -36,6 +36,9 @@ while (<>)
     s/(at.*)__builtin_vec_delete/$1...operator delete[].../;
     s/(at.*)operator delete\[\]\(void\*\)/$1...operator delete[].../;
 
+    # Some glibc versions complain about unexpected futex syscall errors.
+    s/The futex facility returned an unexpected error code.//;
+
     print;
 }
 

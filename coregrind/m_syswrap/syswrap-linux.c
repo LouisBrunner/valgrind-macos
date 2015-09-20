@@ -6862,7 +6862,7 @@ PRE(sys_ioctl)
             PRE_MEM_READ("ioctl(VKI_I2C_SMBUS).i2c_smbus_ioctl_data.command",
                          (Addr)&vkis->command, sizeof(vkis->command));
             /* i2c_smbus_write_quick hides its value in read_write, so
-               this variable can hava a different meaning */
+               this variable can have a different meaning */
             /* to make matters worse i2c_smbus_write_byte stores its
                value in command */
             if ( ! ((vkis->size == VKI_I2C_SMBUS_QUICK) ||
@@ -9387,9 +9387,7 @@ POST(sys_ioctl)
             struct vki_i2c_smbus_ioctl_data *vkis
                = (struct vki_i2c_smbus_ioctl_data *) ARG3;
             /* i2c_smbus_write_quick hides its value in read_write, so
-               this variable can hava a different meaning */
-            /* to make matters worse i2c_smbus_write_byte stores its
-               value in command */
+               this variable can have a different meaning */
             if ((vkis->read_write == VKI_I2C_SMBUS_READ)
                 || (vkis->size == VKI_I2C_SMBUS_PROC_CALL)
                 || (vkis->size == VKI_I2C_SMBUS_BLOCK_PROC_CALL)) {

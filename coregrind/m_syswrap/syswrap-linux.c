@@ -6884,7 +6884,7 @@ PRE(sys_ioctl)
                         case VKI_I2C_SMBUS_I2C_BLOCK_BROKEN:
                         case VKI_I2C_SMBUS_BLOCK_PROC_CALL:
                         case VKI_I2C_SMBUS_I2C_BLOCK_DATA:
-                            size = vkis->data->block[0];
+                            size = 1 + vkis->data->block[0];
                             break;
                         default:
                             size = 0;
@@ -9410,7 +9410,7 @@ POST(sys_ioctl)
                         case VKI_I2C_SMBUS_I2C_BLOCK_BROKEN:
                         case VKI_I2C_SMBUS_BLOCK_PROC_CALL:
                         case VKI_I2C_SMBUS_I2C_BLOCK_DATA:
-                            size = vkis->data->block[0];
+                            size = 1 + vkis->data->block[0];
                             break;
                         default:
                             size = 0;

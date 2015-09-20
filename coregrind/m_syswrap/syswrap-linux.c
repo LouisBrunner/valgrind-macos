@@ -6865,8 +6865,7 @@ PRE(sys_ioctl)
                this variable can hava a different meaning */
             /* to make matters worse i2c_smbus_write_byte stores its
                value in command */
-            if ( ! (((vkis->size == VKI_I2C_SMBUS_QUICK) 
-                     && (vkis->command == VKI_I2C_SMBUS_QUICK)) ||
+            if ( ! ((vkis->size == VKI_I2C_SMBUS_QUICK) ||
                  ((vkis->size == VKI_I2C_SMBUS_BYTE)
                   && (vkis->read_write == VKI_I2C_SMBUS_WRITE))))  {
                     /* the rest uses the byte array to store the data,
@@ -9394,8 +9393,7 @@ POST(sys_ioctl)
             if ((vkis->read_write == VKI_I2C_SMBUS_READ)
                 || (vkis->size == VKI_I2C_SMBUS_PROC_CALL)
                 || (vkis->size == VKI_I2C_SMBUS_BLOCK_PROC_CALL)) {
-                if ( ! ((vkis->size == VKI_I2C_SMBUS_QUICK) 
-                        && (vkis->command == VKI_I2C_SMBUS_QUICK))) {
+                if ( ! (vkis->size == VKI_I2C_SMBUS_QUICK)) {
                     UInt size;
                     switch(vkis->size) {
                         case VKI_I2C_SMBUS_BYTE:

@@ -1967,6 +1967,15 @@ AC_MSG_RESULT([-Wextra])
 ])
 CFLAGS=$safe_CFLAGS
 
+# On ARM we do not want to pass -Wcast-align as that produces loads
+# of warnings. GCC is just being conservative. See here:
+# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=65459#c4
+if test "X$VGCONF_ARCH_PRI" = "Xarm"; then
+  AC_SUBST([FLAG_W_CAST_ALIGN], [""])
+else
+  AC_SUBST([FLAG_W_CAST_ALIGN], [-Wcast-align])
+fi
+
 # does this compiler support -fno-stack-protector ?
 AC_MSG_CHECKING([if gcc accepts -fno-stack-protector])
 

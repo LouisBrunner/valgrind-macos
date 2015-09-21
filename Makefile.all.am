@@ -100,12 +100,12 @@ AM_CFLAGS_BASE = \
 	-O2 -g \
 	-std=gnu99 \
 	-Wall \
-	-Wcast-align \
 	-Wmissing-prototypes \
 	-Wshadow \
 	-Wpointer-arith \
 	-Wstrict-prototypes \
 	-Wmissing-declarations \
+	@FLAG_W_CAST_ALIGN@ \
 	@FLAG_W_CAST_QUAL@ \
 	@FLAG_W_WRITE_STRINGS@ \
 	@FLAG_W_EMPTY_BODY@ \

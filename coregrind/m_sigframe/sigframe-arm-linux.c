@@ -248,7 +248,6 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
    struct vg_sig_private *priv;
    Addr sp;
    UInt frame_size;
-   struct vki_sigcontext *mc;
    Int sigNo;
    Bool has_siginfo = isRT;
 
@@ -259,14 +258,12 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
    if (has_siginfo) {
       struct rt_sigframe *frame = (struct rt_sigframe *)sp;
       frame_size = sizeof(*frame);
-      mc = &frame->sig.uc.uc_mcontext;
       priv = &frame->sig.vp;
       vg_assert(priv->magicPI == 0x31415927);
       tst->sig_mask = frame->sig.uc.uc_sigmask;
    } else {
       struct sigframe *frame = (struct sigframe *)sp;
       frame_size = sizeof(*frame);
-      mc = &frame->uc.uc_mcontext;
       priv = &frame->vp;
       vg_assert(priv->magicPI == 0x31415927);
       tst->sig_mask = frame->uc.uc_sigmask;

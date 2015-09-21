@@ -399,8 +399,8 @@ n-i-bz  mremap did not work properly on shared memory
 n-i-bz  Fix incorrect sizeof expression in syswrap-xen.c reported by Coverity
 n-i-bz  In VALGRIND_PRINTF write out thread name, if any, to xml
 
-(3.10.1.TEST1:  8 September 2015, vex r3187, valgrind r15646)
-(3.10.1.TEST2: 21 September 2015, vex r3193, valgrind r15666)
+(3.11.0.TEST1:  8 September 2015, vex r3187, valgrind r15646)
+(3.11.0.TEST2: 21 September 2015, vex r3193, valgrind r15667)
 
 
 

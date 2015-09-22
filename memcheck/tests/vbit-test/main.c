@@ -136,13 +136,13 @@ main(int argc, char *argv[])
       const irop_t *op = get_irop(opkind);
       if (op == NULL) continue;
 
-      test_data_t *data = new_test_data(op);
-
       if (op->undef_kind == UNDEF_UNKNOWN) {
          fprintf(stderr, "...skipping %s; unknown undef propagation\n",
                  op->name);
          continue;
       }
+
+      test_data_t *data = new_test_data(op);
 
       if (verbose > 1) printf("Testing operator %s\n", op->name);
 

@@ -4,6 +4,3 @@
 (2) Add support for IROps with vector operands.
 
 (3) Test floating point operations with various rounding modes.
-
-(4) Iop_CmpORD32U and friends are not supported (ppc only)
-

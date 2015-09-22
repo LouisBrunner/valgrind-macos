@@ -75,7 +75,7 @@ main(int argc, char *argv[])
       if (strcmp(argv[i], "-v") == 0) ++verbose;
       else if (strcmp(argv[i], "--help") == 0) {
         printf("\nvbit-test [ -v | --help ]\n");
-        printf("\n\t-v       verbose mode; show number of 1, 2, 3 and 4 operand tests\n");
+        printf("\n\t-v       verbose mode; show number of tests\n");
         printf("\n\t-v -v    verbose mode; shows IROps being tested\n");
         printf("\n\t-v -v -v verbose mode, extreme edition\n\n");
         return 0;
@@ -151,8 +151,9 @@ main(int argc, char *argv[])
    }
 
    if (verbose) 
-      printf("\nvbit-test ran  %d unary, %d binary, %d ternary and %d qernary tests.\n",
-	  num_unary_tests, num_binary_tests, num_ternary_tests,
-	  num_qernary_tests);
+      printf("\nvbit-test ran  %d unary, %d binary, %d ternary and"
+             " %d qernary tests.\n\n",
+             num_unary_tests, num_binary_tests, num_ternary_tests,
+             num_qernary_tests);
    return 0;
 }

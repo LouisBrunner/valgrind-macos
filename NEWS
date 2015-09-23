@@ -28,6 +28,7 @@ To see details of a given bug, visit
 where XXXXXX is the bug number as listed below.
 
 353083 arm64 doesn't implement various xattr system calls
+353084 arm64 doesn't support sigpending system call
 
 Release 3.11.0 (?? September 2015)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

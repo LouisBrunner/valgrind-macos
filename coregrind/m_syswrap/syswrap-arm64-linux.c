@@ -959,6 +959,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_rt_sigsuspend,     sys_rt_sigsuspend),     // 133
    LINXY(__NR_rt_sigaction,      sys_rt_sigaction),      // 134
    LINXY(__NR_rt_sigprocmask,    sys_rt_sigprocmask),    // 135
+   LINXY(__NR_rt_sigpending,     sys_rt_sigpending),     // 136
    LINXY(__NR_rt_sigtimedwait,   sys_rt_sigtimedwait),   // 137
    LINXY(__NR_rt_sigqueueinfo,   sys_rt_sigqueueinfo),   // 138
    PLAX_(__NR_rt_sigreturn,      sys_rt_sigreturn),      // 139
@@ -1231,7 +1232,6 @@ static SyscallTableEntry syscall_main_table[] = {
 //ZZ    LINXY(__NR_prctl,             sys_prctl),          // 172
 //ZZ    LINXY(__NR_rt_sigaction,      sys_rt_sigaction),   // 174
 //ZZ 
-//ZZ    LINXY(__NR_rt_sigpending,     sys_rt_sigpending),  // 176
 //ZZ    LINXY(__NR_rt_sigtimedwait,   sys_rt_sigtimedwait),// 177
 //ZZ 
 //ZZ    LINX_(__NR_chown,             sys_chown16),        // 182

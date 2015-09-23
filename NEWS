@@ -1,5 +1,5 @@
 
-Release 3.11.0 (?? September 2015)
+Release 3.11.0 (22 September 2015)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 3.11.0 is a feature release with many improvements and the usual
@@ -74,10 +74,11 @@ X86/MacOSX 10.11, AMD64/MacOSX 10.11 and TILEGX/Linux.
     in the region of 0% to 7% for those targets only.
 
   - A new command line option, --expensive-definedness-checks=yes|no,
-    which is useful to avoid occasional invalid uninitialised-value
-    errors in optimised code.  Watch out for runtime degradation, as
-    this can be up to 25%.  As always, though, the slowdown is highly
-    application specific.  The default setting is "no".
+    has been added.  This is useful for avoiding occasional invalid
+    uninitialised-value errors in optimised code.  Watch out for
+    runtime degradation, as this can be up to 25%.  As always, though,
+    the slowdown is highly application specific.  The default setting
+    is "no".
 
 * Massif:
 
@@ -401,6 +402,7 @@ n-i-bz  In VALGRIND_PRINTF write out thread name, if any, to xml
 
 (3.11.0.TEST1:  8 September 2015, vex r3187, valgrind r15646)
 (3.11.0.TEST2: 21 September 2015, vex r3193, valgrind r15667)
+(3.11.0:       22 September 2015, vex r3195, valgrind r15674)
 
 
 

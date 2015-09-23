@@ -27,10 +27,12 @@ To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
 
-353083 arm64 doesn't implement various xattr system calls
-353084 arm64 doesn't support sigpending system call
+353083  arm64 doesn't implement various xattr system calls
+353084  arm64 doesn't support sigpending system call
 
-Release 3.11.0 (?? September 2015)
+
+
+Release 3.11.0 (22 September 2015)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 3.11.0 is a feature release with many improvements and the usual
@@ -105,10 +107,11 @@ X86/MacOSX 10.11, AMD64/MacOSX 10.11 and TILEGX/Linux.
     in the region of 0% to 7% for those targets only.
 
   - A new command line option, --expensive-definedness-checks=yes|no,
-    which is useful to avoid occasional invalid uninitialised-value
-    errors in optimised code.  Watch out for runtime degradation, as
-    this can be up to 25%.  As always, though, the slowdown is highly
-    application specific.  The default setting is "no".
+    has been added.  This is useful for avoiding occasional invalid
+    uninitialised-value errors in optimised code.  Watch out for
+    runtime degradation, as this can be up to 25%.  As always, though,
+    the slowdown is highly application specific.  The default setting
+    is "no".
 
 * Massif:
 
@@ -369,7 +372,7 @@ where XXXXXX is the bug number as listed below.
 347151  Fix suppression for pthread_rwlock_init on OS X 10.8
 347233  Fix memcheck/tests/strchr on OS X 10.10 (Haswell) 
 347322  Power PC regression test cleanup
-347379  valgrind --leak-check=full leak errors from system libraries on OS X 10.8
+347379  valgrind --leak-check=full leak errors from system libs on OS X 10.8
         == 217236
 347389  unhandled syscall: 373 (Linux ARM syncfs)
 347686  Patch set to cleanup PPC64 regtests
@@ -393,7 +396,7 @@ where XXXXXX is the bug number as listed below.
 349086  Fix UNKNOWN task message [id 3406, to mach_task_self(), [..]
 349087  Fix UNKNOWN task message [id 3410, to mach_task_self(), [..]
 349626  Implemented additional Xen hypercalls
-349769  Fix clang/osx: ld: warning: -read_only_relocs cannot be used with x86_64
+349769  Clang/osx: ld: warning: -read_only_relocs cannot be used with x86_64
 349790  Clean up of the hardware capability checking utilities.
 349828  memcpy intercepts memmove causing src/dst overlap error (ppc64 ld.so)
 349874  Fix typos in source code
@@ -418,6 +421,9 @@ where XXXXXX is the bug number as listed below.
 352130  helgrind reports false races for printfs using mempcpy on FILE* state
 352284  s390: Conditional jump depends on uninitialised value(s) in vfprintf 
 352320  arm64 crash on none/tests/nestedfs
+352765  Vbit test fails on Power 6
+352768  The mbar instruction is missing from the Power PC support
+352769  Power PC program priority register (PPR) is not supported
 n-i-bz  Provide implementations of certain compiler builtins to support
         compilers that may not provide those
 n-i-bz  Old STABS code is still being compiled, but never used. Remove it.
@@ -428,7 +434,9 @@ n-i-bz  mremap did not work properly on shared memory
 n-i-bz  Fix incorrect sizeof expression in syswrap-xen.c reported by Coverity
 n-i-bz  In VALGRIND_PRINTF write out thread name, if any, to xml
 
-(3.10.1.BETA?: ?? September 2015, vex r????, valgrind r?????)
+(3.11.0.TEST1:  8 September 2015, vex r3187, valgrind r15646)
+(3.11.0.TEST2: 21 September 2015, vex r3193, valgrind r15667)
+(3.11.0:       22 September 2015, vex r3195, valgrind r15674)
 
 
 

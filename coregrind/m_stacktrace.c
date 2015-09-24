@@ -66,15 +66,16 @@
    of up to _nframes.  The merge is done during stack unwinding
    (i.e. in platform specific unwinders) to collect as many
    "interesting" stack traces as possible. */
-#define RECURSIVE_MERGE(_nframes,_ips,_i){                      \
-   Int dist;                                                    \
-   for (dist = 1; dist <= _nframes && dist < (Int)_i; dist++) { \
-      if (_ips[_i-1] == _ips[_i-1-dist]) {                      \
-         _i = _i - dist;                                        \
-         break;                                                 \
-      }                                                         \
-   }                                                            \
-}
+#define RECURSIVE_MERGE(_nframes,_ips,_i) if (UNLIKELY(_nframes > 0)) \
+do {                                                                  \
+   Int dist;                                                          \
+   for (dist = 1; dist <= _nframes && dist < (Int)_i; dist++) {       \
+      if (_ips[_i-1] == _ips[_i-1-dist]) {                            \
+         _i = _i - dist;                                              \
+         break;                                                       \
+      }                                                               \
+   }                                                                  \
+} while (0)
 
 /* Note about calculation of fp_min : fp_min is the lowest address
    which can be accessed during unwinding. This is SP - VG_STACK_REDZONE_SZB.
@@ -451,7 +452,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
          VG_(printf)("     ips%s[%d]=0x%08lx\n", unwind_case, i-1, ips[i-1]);
       uregs.xip = uregs.xip - 1;
       /* as per comment at the head of this loop */
-      if (UNLIKELY(cmrf > 0)) {RECURSIVE_MERGE(cmrf,ips,i);};
+      RECURSIVE_MERGE(cmrf,ips,i);
    }
 
    if (do_stats) stats.nf += i;
@@ -608,7 +609,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
             VG_(printf)("     ipsC[%d]=%#08lx rbp %#08lx rsp %#08lx\n",
                         i-1, ips[i-1], uregs.xbp, uregs.xsp);
          uregs.xip = uregs.xip - 1; /* as per comment at the head of this loop */
-         if (UNLIKELY(cmrf > 0)) {RECURSIVE_MERGE(cmrf,ips,i);};
+         RECURSIVE_MERGE(cmrf,ips,i);
          continue;
       }
 
@@ -638,7 +639,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
             VG_(printf)("     ipsF[%d]=%#08lx rbp %#08lx rsp %#08lx\n",
                         i-1, ips[i-1], uregs.xbp, uregs.xsp);
          uregs.xip = uregs.xip - 1; /* as per comment at the head of this loop */
-         if (UNLIKELY(cmrf > 0)) {RECURSIVE_MERGE(cmrf,ips,i);};
+         RECURSIVE_MERGE(cmrf,ips,i);
          continue;
       }
 
@@ -668,7 +669,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
             VG_(printf)("     ipsH[%d]=%#08lx\n", i-1, ips[i-1]);
          uregs.xip = uregs.xip - 1; /* as per comment at the head of this loop */
          uregs.xsp += 8;
-         if (UNLIKELY(cmrf > 0)) {RECURSIVE_MERGE(cmrf,ips,i);};
+         RECURSIVE_MERGE(cmrf,ips,i);
          continue;
       }
 
@@ -858,7 +859,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
             ip = ip - 1; /* ip is probably dead at this point, but
                             play safe, a la x86/amd64 above.  See
                             extensive comments above. */
-            if (UNLIKELY(cmrf > 0)) {RECURSIVE_MERGE(cmrf,ips,i);};
+            RECURSIVE_MERGE(cmrf,ips,i);
             continue;
          }
 
@@ -1042,7 +1043,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
             VG_(printf)("USING CFI: r15: 0x%lx, r13: 0x%lx\n",
                         uregs.r15, uregs.r13);
          uregs.r15 = (uregs.r15 & 0xFFFFFFFE) - 1;
-         if (UNLIKELY(cmrf > 0)) {RECURSIVE_MERGE(cmrf,ips,i);};
+         RECURSIVE_MERGE(cmrf,ips,i);
          continue;
       }
 
@@ -1070,7 +1071,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
             if (sps) sps[i] = 0;
             if (fps) fps[i] = 0;
             ips[i++] = cand;
-            if (UNLIKELY(cmrf > 0)) {RECURSIVE_MERGE(cmrf,ips,i);};
+            RECURSIVE_MERGE(cmrf,ips,i);
             nByStackScan++;
          }
       }
@@ -1087,7 +1088,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
                if (sps) sps[i] = 0;
                if (fps) fps[i] = 0;
                ips[i++] = cand;
-               if (UNLIKELY(cmrf > 0)) {RECURSIVE_MERGE(cmrf,ips,i);};
+               RECURSIVE_MERGE(cmrf,ips,i);
                if (++nByStackScan >= VG_(clo_unw_stack_scan_frames)) break;
             }
          }
@@ -1183,7 +1184,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
             VG_(printf)("USING CFI: pc: 0x%lx, sp: 0x%lx\n",
                         uregs.pc, uregs.sp);
          uregs.pc = uregs.pc - 1;
-         if (UNLIKELY(cmrf > 0)) {RECURSIVE_MERGE(cmrf,ips,i);};
+         RECURSIVE_MERGE(cmrf,ips,i);
          continue;
       }
 
@@ -1251,7 +1252,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
          if (fps) fps[i] = uregs.fp;
          ips[i++] = uregs.ia - 1;
          uregs.ia = uregs.ia - 1;
-         if (UNLIKELY(cmrf > 0)) {RECURSIVE_MERGE(cmrf,ips,i);};
+         RECURSIVE_MERGE(cmrf,ips,i);
          continue;
       }
       /* A problem on the first frame? Lets assume it was a bad jump.
@@ -1268,7 +1269,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
          }
          uregs.ia = uregs.lr - 1;
          ips[i++] = uregs.lr - 1;
-         if (UNLIKELY(cmrf > 0)) {RECURSIVE_MERGE(cmrf,ips,i);};
+         RECURSIVE_MERGE(cmrf,ips,i);
          continue;
       }
 
@@ -1351,7 +1352,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
             if (fps) fps[i] = uregs.fp;
             ips[i++] = uregs.pc - 4;
             uregs.pc = uregs.pc - 4;
-            if (UNLIKELY(cmrf > 0)) {RECURSIVE_MERGE(cmrf,ips,i);};
+            RECURSIVE_MERGE(cmrf,ips,i);
             continue;
          } else
             uregs = uregs_copy;
@@ -1408,7 +1409,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
          if (0 == uregs.ra || 1 == uregs.ra) break;
          uregs.pc = uregs.ra - 8;
          ips[i++] = uregs.ra - 8;
-         if (UNLIKELY(cmrf > 0)) {RECURSIVE_MERGE(cmrf,ips,i);};
+         RECURSIVE_MERGE(cmrf,ips,i);
          continue;
       }
 
@@ -1424,7 +1425,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
          if (0 == uregs.ra || 1 == uregs.ra) break;
          uregs.pc = uregs.ra - 8;
          ips[i++] = uregs.ra - 8;
-         if (UNLIKELY(cmrf > 0)) {RECURSIVE_MERGE(cmrf,ips,i);};
+         RECURSIVE_MERGE(cmrf,ips,i);
          continue;
       }
       /* No luck.  We have to give up. */
@@ -1498,7 +1499,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
            if (uregs.pc != uregs_copy.pc && uregs.sp != uregs_copy.sp)
               ips[i++] = uregs.pc - 8;
            uregs.pc = uregs.pc - 8;
-           if (UNLIKELY(cmrf > 0)) { RECURSIVE_MERGE(cmrf,ips,i); };
+           RECURSIVE_MERGE(cmrf,ips,i);
            continue;
         } else
            uregs = uregs_copy;
@@ -1598,7 +1599,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 
            ips[i++] = uregs.pc;
 
-           if (UNLIKELY(cmrf > 0)) { RECURSIVE_MERGE(cmrf,ips,i); };
+           RECURSIVE_MERGE(cmrf,ips,i);
         }
         continue;
      }
@@ -1620,7 +1621,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 
         uregs.pc = uregs.lr - 8;
         ips[i++] = uregs.lr - 8;
-        if (UNLIKELY(cmrf > 0)) { RECURSIVE_MERGE(cmrf,ips,i); };
+        RECURSIVE_MERGE(cmrf,ips,i);
         continue;
      }
      /* No luck.  We have to give up. */

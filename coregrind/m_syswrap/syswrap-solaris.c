@@ -28,9 +28,9 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-/* Copyright 2015-2015, Tomas Jedlicka <jedlickat@gmail.com>. */
-
 /* Copyright 2013-2015, Ivo Raisr <ivosh@ivosh.net>. */
+
+/* Copyright 2015-2015, Tomas Jedlicka <jedlickat@gmail.com>. */
 
 /* Copyright 2013, OmniTI Computer Consulting, Inc. All rights reserved. */
 
@@ -436,6 +436,50 @@ static void clean_schedctl_data(ThreadId tid)
 void VG_(syswrap_init)(void)
 {
    VG_(atfork)(NULL, NULL, clean_schedctl_data);
+}
+
+/* Changes ownership of a memory mapping shared between kernel and the client
+   process. This mapping should have already been pre-arranged during process
+   address space initialization happening in kernel. Valgrind on startup created
+   a segment for this mapping categorized as Valgrind's owned anonymous.
+   Size of this mapping typically varies among Solaris versions but should be
+   page aligned.
+   If 'once_only' is 'True', it is expected this function is called once only
+   and the mapping ownership has not been changed, yet [useful during
+   initialization]. If 'False', this function can be called many times but does
+   change ownership only upon the first invocation [useful in syscall wrappers].
+ */
+void VG_(change_mapping_ownership)(Addr addr, Bool once_only)
+{
+   const NSegment *seg = VG_(am_find_anon_segment)(addr);
+   vg_assert(seg != NULL);
+   vg_assert(seg->start == addr);
+   vg_assert(VG_IS_PAGE_ALIGNED(seg->start));
+   vg_assert(VG_IS_PAGE_ALIGNED(seg->end + 1));
+   SizeT size = seg->end - seg->start + 1;
+   vg_assert(size > 0);
+
+   Bool do_change = False;
+   if (once_only) {
+      vg_assert(VG_(am_is_valid_for_valgrind)(addr, size, VKI_PROT_READ));
+      do_change = True;
+   } else {
+      if (!VG_(am_is_valid_for_client)(addr, size, VKI_PROT_READ))
+         do_change = True;
+   }
+
+   if (do_change) {
+      Bool change_ownership_OK = VG_(am_change_ownership_v_to_c)(addr, size);
+      vg_assert(change_ownership_OK);
+
+      /* Tell the tool about just discovered mapping. */
+      VG_TRACK(new_mem_startup,
+               addr, size,
+               True  /* readable? */,
+               False /* writable? */,
+               False /* executable? */,
+               0     /* di_handle */);
+   }
 }
 
 /* Calculate the Fletcher-32 checksum of a given buffer. */
@@ -9755,33 +9799,7 @@ POST(fast_gethrt)
    if (RES == 0)
       return;
 
-   /* Returned address points to a memory mapping shared between kernel
-      and the process. This was already pre-arranged during process address
-      space initialization happening in kernel. Valgrind on startup created
-      a segment for this mapping categorized as Valgrind's owned anonymous.
-      Size of this mapping varies among Solaris versions but should be
-      page aligned. */
-   const NSegment *seg = VG_(am_find_anon_segment)(RES);
-   vg_assert(seg != NULL);
-   vg_assert(seg->start == RES);
-   vg_assert(VG_IS_PAGE_ALIGNED(seg->start));
-   vg_assert(VG_IS_PAGE_ALIGNED(seg->end + 1));
-   SizeT size = seg->end - seg->start + 1;
-   vg_assert(size > 0);
-
-   if (!VG_(am_is_valid_for_client)(RES, size, VKI_PROT_READ)) {
-      Bool change_ownership_v_c_OK
-         = VG_(am_change_ownership_v_to_c)(RES, size);
-      vg_assert(change_ownership_v_c_OK);
-
-      /* Tell the tool about just discovered mapping. */
-      VG_TRACK(new_mem_startup,
-               RES, size,
-               True  /* readable? */,
-               False /* writable? */,
-               False /* executable? */,
-               0     /* di_handle */);
-   }
+   VG_(change_mapping_ownership)(RES, False);
 }
 #endif /* SOLARIS_GETHRT_FASTTRAP */
 
@@ -9798,33 +9816,7 @@ POST(fast_getzoneoffset)
    if (RES == 0)
       return;
 
-   /* Returned address points to a memory mapping shared between kernel
-      and the process. This was already pre-arranged during process address
-      space initialization happening in kernel. Valgrind on startup created
-      a segment for this mapping categorized as Valgrind's owned anonymous.
-      Size of this mapping varies among Solaris versions but should be
-      page aligned. */
-   const NSegment *seg = VG_(am_find_anon_segment)(RES);
-   vg_assert(seg != NULL);
-   vg_assert(seg->start == RES);
-   vg_assert(VG_IS_PAGE_ALIGNED(seg->start));
-   vg_assert(VG_IS_PAGE_ALIGNED(seg->end + 1));
-   SizeT size = seg->end - seg->start + 1;
-   vg_assert(size > 0);
-
-   if (!VG_(am_is_valid_for_client)(RES, size, VKI_PROT_READ)) {
-      Bool change_ownership_v_c_OK
-         = VG_(am_change_ownership_v_to_c)(RES, size);
-      vg_assert(change_ownership_v_c_OK);
-
-      /* Tell the tool about just discovered mapping. */
-      VG_TRACK(new_mem_startup,
-               RES, size,
-               True  /* readable? */,
-               False /* writable? */,
-               False /* executable? */,
-               0     /* di_handle */);
-   }
+   VG_(change_mapping_ownership)(RES, False);
 }
 #endif /* SOLARIS_GETZONEOFFSET_FASTTRAP */
 

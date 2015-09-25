@@ -93,6 +93,7 @@ extern void VG_(save_context)(ThreadId tid, vki_ucontext_t *uc,
 extern void VG_(restore_context)(ThreadId tid, vki_ucontext_t *uc,
                                  CorePart part, Bool esp_is_thrptr);
 extern void VG_(syswrap_init)(void);
+extern void VG_(change_mapping_ownership)(Addr addr, Bool once_only);
 extern Bool VG_(setup_client_dataseg)(void);
 extern void VG_(track_client_dataseg)(ThreadId tid);
 #endif

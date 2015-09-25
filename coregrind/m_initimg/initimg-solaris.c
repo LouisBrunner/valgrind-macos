@@ -29,6 +29,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+/* Copyright 2013-2015, Ivo Raisr <ivosh@ivosh.net>. */
+
 #if defined(VGO_solaris)
 
 /* Note: This file is based on initimg-linux.c. */
@@ -273,6 +275,59 @@ static HChar *copy_str(HChar **tab, const HChar *str)
    return orig;
 }
 
+/* The auxiliary vector might not be present. So we cross-check pointers from
+   argv and envp pointing to the string table. */ 
+static vki_auxv_t *find_original_auxv(Addr init_sp)
+{
+   HChar **sp = (HChar **) init_sp;
+   HChar *lowest_str_ptr = (HChar *) UINTPTR_MAX; // lowest ptr to string table
+
+   sp++; // skip argc
+
+   while (*sp != NULL) { // skip argv
+      if (*sp < lowest_str_ptr)
+         lowest_str_ptr = *sp;
+      sp++;
+   }
+   sp++;
+
+   while (*sp != 0) { // skip env
+      if (*sp < lowest_str_ptr)
+         lowest_str_ptr = *sp;
+      sp++;
+   }
+   sp++;
+
+   if ((Addr) sp < (Addr) lowest_str_ptr) {
+      return (vki_auxv_t *) sp;
+   } else {
+      return NULL;
+   }
+}
+
+static void copy_auxv_entry(const vki_auxv_t *orig_auxv, Int type,
+                            const HChar *type_name, vki_auxv_t *auxv)
+{
+   vg_assert(auxv != NULL);
+
+   if (orig_auxv == NULL) {
+      VG_(printf)("valgrind: Cannot locate auxiliary vector.\n");
+      VG_(printf)("valgrind: Cannot continue. Sorry.\n\n");
+      VG_(exit)(1);
+   }
+
+   for ( ; orig_auxv->a_type != VKI_AT_NULL; orig_auxv++) {
+      if (orig_auxv->a_type == type) {
+         auxv->a_type = type;
+         auxv->a_un.a_val = orig_auxv->a_un.a_val;
+         return;
+      }
+   }
+
+   VG_(printf)("valgrind: Cannot locate %s in the aux\n", type_name);
+   VG_(printf)("valgrind: vector. Cannot continue. Sorry.\n\n");
+   VG_(exit)(1);
+}
 
 /* This sets up the client's initial stack, containing the args,
    environment and aux vector.
@@ -305,11 +360,12 @@ static HChar *copy_str(HChar **tab, const HChar *str)
    clstack_end, which was previously determined by the address space manager.
    The returned value is the SP value for the client.
 
-   Note that no aux vector is created by kernel on Solaris if the program is
-   statically linked (which is our case).  That means we have to build auxv
-   from scratch. */
+   Note that auxiliary vector is *not* created by kernel on illumos and
+   Solaris 11 if the program is statically linked (which is our case).
+   Although we now taught Solaris 12 to create the auxiliary vector, we still
+   have to build auxv from scratch, to make the code consistent. */
 
-static Addr setup_client_stack(void *init_sp,
+static Addr setup_client_stack(Addr init_sp,
                                HChar **orig_envp,
                                const ExeInfo *info,
                                Addr clstack_end,
@@ -334,6 +390,9 @@ static Addr setup_client_stack(void *init_sp,
    vg_assert(VG_IS_PAGE_ALIGNED(clstack_end + 1));
    vg_assert(VG_(args_the_exename));
    vg_assert(VG_(args_for_client));
+
+   /* Get the original auxv (if any). */
+   vki_auxv_t *orig_auxv = find_original_auxv(init_sp);
 
    /* ==================== compute sizes ==================== */
 
@@ -378,11 +437,20 @@ static Addr setup_client_stack(void *init_sp,
       AT_PAGESZ
       AT_SUN_AUXFLAFGS
       AT_SUN_HWCAP
+      AT_SUN_SYSSTAT_ADDR      (if supported)
+      AT_SUN_SYSSTAT_ZONE_ADDR (if supported)
       AT_NULL
 
       It would be possible to also add AT_PHENT, AT_PHNUM, AT_ENTRY,
       AT_SUN_LDDATA, but they don't seem to be so important. */
    auxsize = 9 * sizeof(*auxv);
+#  if defined(SOLARIS_RESERVE_SYSSTAT_ADDR)
+   auxsize += sizeof(*auxv);
+#  endif
+#  if defined(SOLARIS_RESERVE_SYSSTAT_ZONE_ADDR)
+   auxsize += sizeof(*auxv);
+#  endif
+
 #  if defined(VGA_x86) || defined(VGA_amd64)
    /* AT_SUN_PLATFORM string. */
    stringsize += VG_(strlen)("i86pc") + 1;
@@ -739,6 +807,22 @@ static Addr setup_client_stack(void *init_sp,
        */
    }
 
+#  if defined(SOLARIS_RESERVE_SYSSTAT_ADDR)
+   /* AT_SUN_SYSSTAT_ADDR */
+   copy_auxv_entry(orig_auxv, VKI_AT_SUN_SYSSTAT_ADDR,
+                   "AT_SUN_SYSSTAT_ADDR", auxv);
+   VG_(change_mapping_ownership)(auxv->a_un.a_val, True);
+   auxv++;
+#  endif
+
+#  if defined(SOLARIS_RESERVE_SYSSTAT_ZONE_ADDR)
+   /* AT_SUN_SYSSTAT_ZONE_ADDR */
+   copy_auxv_entry(orig_auxv, VKI_AT_SUN_SYSSTAT_ZONE_ADDR,
+                   "AT_SUN_SYSSTAT_ZONE_ADDR", auxv);
+   VG_(change_mapping_ownership)(auxv->a_un.a_val, True);
+   auxv++;
+#  endif
+
    /* AT_NULL */
    auxv->a_type = VKI_AT_NULL;
    auxv->a_un.a_val = 0;
@@ -811,7 +895,7 @@ IIFinaliseImageInfo VG_(ii_create_image)(IICreateImageInfo iicii,
          - If a larger --main-stacksize value is specified, use that instead.
          - In all situations, the minimum allowed stack size is 1M.
       */
-      void *init_sp = iicii.argv - 1;
+      Addr init_sp = (Addr) (iicii.argv - 1);
       SizeT m1  = 1024 * 1024;
       SizeT m16 = 16 * m1;
       SizeT szB = (SizeT)VG_(client_rlimit_stack).rlim_cur;

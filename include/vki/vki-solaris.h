@@ -70,6 +70,7 @@
 
 #include <sys/types.h>
 #define VKI_UINT_MAX UINT_MAX
+#define VKI_UINTPTR_MAX UINTPTR_MAX
 #define vki_boolean_t boolean_t
 #define vki_datalink_id_t datalink_id_t
 #define vki_uint_t uint_t
@@ -252,6 +253,12 @@ typedef struct {
 #define VKI_AT_SUN_HWCAP AT_SUN_HWCAP
 #define VKI_AT_SUN_EXECNAME AT_SUN_EXECNAME
 #define VKI_AT_SUN_AUXFLAGS AT_SUN_AUXFLAGS
+#if defined(SOLARIS_RESERVE_SYSSTAT_ADDR)
+#define VKI_AT_SUN_SYSSTAT_ADDR AT_SUN_SYSSTAT_ADDR
+#endif
+#if defined(SOLARIS_RESERVE_SYSSTAT_ZONE_ADDR)
+#define VKI_AT_SUN_SYSSTAT_ZONE_ADDR AT_SUN_SYSSTAT_ZONE_ADDR
+#endif
 
 #define VKI_AF_SUN_HWCAPVERIFY AF_SUN_HWCAPVERIFY
 

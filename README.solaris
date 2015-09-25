@@ -79,15 +79,6 @@ Limitations
   possible for Valgrind to arrange mapping of a kernel shared page at the
   address specified in the mapfile for the guest application. There is currently
   no such mechanism in Solaris. Hacky workarounds are possible, though.
-- Guest programs do not contain entries for AT_SUN_SYSSTAT_ADDR and
-  AT_SUN_SYSSTAT_ZONE_ADDR in their auxilliary vectors. There is no direct way
-  how to obtain addresses of these pages shared with the kernel as they are
-  passed in auxv and kernel does not create auxv for statically linked binaries
-  (such as Valgrind analysis tools).
-  Indirect methods, such as scanning 1-page mappings found at Valgrind
-  startup surrounded by reservations, could be possible. But it is hard to tell
-  which page is which because their contents are filled only when a system
-  cyclic is started. See get_hrusec() for reference.
 - When a thread has no stack then all system calls will result in Valgrind
   crash, even though such system calls use just parameters passed in registers.
   This should happen only in pathological situations when a thread is created
@@ -139,6 +130,7 @@ TODO list
   to see this in effect. Would require awareness of syscall parameter semantics.
 - Correctly print arguments of DW_CFA_ORCL_arg_loc in show_CF_instruction() when
   it is implemented in libdwarf.
+- Provide tests for AT_SUN_SYSSTAT_ADDR and AT_SUN_SYSSTAT_ZONE_ADDR.
 
 
 Contacts

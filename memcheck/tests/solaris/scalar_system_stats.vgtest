@@ -1,0 +1,4 @@
+prereq: test -e scalar_system_stats
+prog: scalar_system_stats
+vgopts: -q
+stderr_filter_args:

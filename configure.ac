@@ -3412,6 +3412,29 @@ AC_MSG_RESULT([no])
 ])
 AM_CONDITIONAL(SOLARIS_RESERVE_SYSSTAT_ZONE_ADDR, test x$solaris_reserve_sysstat_zone_addr = xyes)
 
+
+# Solaris-specific check determining if the system_stats() syscall is available
+# (on newer Solaris).
+#
+# C-level symbol: SOLARIS_SYSTEM_STATS_SYSCALL
+# Automake-level symbol: SOLARIS_SYSTEM_STATS_SYSCALL
+#
+AC_MSG_CHECKING([for the `system_stats' syscall (Solaris-specific)])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/syscall.h>
+]], [[
+  return !SYS_system_stats;
+]])], [
+solaris_system_stats_syscall=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([SOLARIS_SYSTEM_STATS_SYSCALL], 1,
+          [Define to 1 if you have the `system_stats' syscall.])
+], [
+solaris_system_stats_syscall=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(SOLARIS_SYSTEM_STATS_SYSCALL, test x$solaris_system_stats_syscall = xyes)
+
 else
 AM_CONDITIONAL(SOLARIS_SUN_STUDIO_AS, false)
 AM_CONDITIONAL(SOLARIS_XPG_SYMBOLS_PRESENT, false)
@@ -3436,6 +3459,7 @@ AM_CONDITIONAL(SOLARIS_GETZONEOFFSET_FASTTRAP, false)
 AM_CONDITIONAL(SOLARIS_EXECVE_SYSCALL_TAKES_FLAGS, false)
 AM_CONDITIONAL(SOLARIS_RESERVE_SYSSTAT_ADDR, false)
 AM_CONDITIONAL(SOLARIS_RESERVE_SYSSTAT_ZONE_ADDR, false)
+AM_CONDITIONAL(SOLARIS_SYSTEM_STATS_SYSCALL, false)
 fi # test "$VGCONF_OS" = "solaris"
 
 

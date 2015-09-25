@@ -203,6 +203,9 @@
 //#define __NR_corectl                    SYS_corectl
 //#define __NR_modctl                     SYS_modctl
 #define __NR_fchroot                    SYS_fchroot
+#if defined(SOLARIS_SYSTEM_STATS_SYSCALL)
+#define __NR_system_stats               SYS_system_stats
+#endif /* SOLARIS_SYSTEM_STATS_SYSCALL */
 //#define __NR_vhangup                    SYS_vhangup
 #define __NR_gettimeofday               SYS_gettimeofday
 #define __NR_getitimer                  SYS_getitimer

@@ -1,0 +1,6 @@
+---------------------------------------------------------
+154:        SYS_system_stats 1s 0m
+---------------------------------------------------------
+Syscall param system_stats(flag) contains uninitialised byte(s)
+   ...
+

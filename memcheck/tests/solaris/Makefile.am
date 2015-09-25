@@ -37,6 +37,7 @@ EXTRA_DIST = \
 	scalar_obsolete.stderr.exp scalar_obsolete.stdout.exp scalar_obsolete.vgtest \
 	scalar_shm_new.stderr.exp scalar_shm_new.stdout.exp scalar_shm_new.vgtest \
 	scalar_spawn.stderr.exp scalar_spawn.stdout.exp scalar_spawn.vgtest \
+	scalar_system_stats.stderr.exp scalar_system_stats.stdout.exp scalar_system_stats.vgtest \
 	scalar_tsol_clearance.stderr.exp scalar_tsol_clearance.vgtest \
 	scalar_utimensat.stderr.exp scalar_utimensat.stdout.exp scalar_utimensat.vgtest \
 	scalar_utimesys.stderr.exp scalar_utimesys.stdout.exp scalar_utimesys.vgtest \
@@ -115,6 +116,10 @@ endif
 
 if SOLARIS_SPAWN_SYSCALL
 check_PROGRAMS += scalar_spawn spawn
+endif
+
+if SOLARIS_SYSTEM_STATS_SYSCALL
+check_PROGRAMS += scalar_system_stats
 endif
 
 if SOLARIS_TSOL_CLEARANCE

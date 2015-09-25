@@ -995,6 +995,9 @@ DECL_TEMPLATE(solaris, sys_lwp_sema_post);
 DECL_TEMPLATE(solaris, sys_lwp_sema_trywait);
 DECL_TEMPLATE(solaris, sys_lwp_detach);
 DECL_TEMPLATE(solaris, sys_fchroot);
+#if defined(SOLARIS_SYSTEM_STATS_SYSCALL)
+DECL_TEMPLATE(solaris, sys_system_stats);
+#endif /* SOLARIS_SYSTEM_STATS_SYSCALL */
 DECL_TEMPLATE(solaris, sys_gettimeofday);
 DECL_TEMPLATE(solaris, sys_lwp_create);
 DECL_TEMPLATE(solaris, sys_lwp_exit);
@@ -6433,6 +6436,15 @@ PRE(sys_fchroot)
       SET_STATUS_Failure(VKI_EBADF);
 }
 
+#if defined(SOLARIS_SYSTEM_STATS_SYSCALL)
+PRE(sys_system_stats)
+{
+   /* void system_stats(int flag); */
+   PRINT("sys_system_stats ( %ld )", SARG1);
+   PRE_REG_READ1(void, "system_stats", int, flag);
+}
+#endif /* SOLARIS_SYSTEM_STATS_SYSCALL */
+
 PRE(sys_gettimeofday)
 {
    /* Kernel: int gettimeofday(struct timeval *tp); */
@@ -10012,6 +10024,9 @@ static SyscallTableEntry syscall_table[] = {
    SOLXY(__NR_lwp_sema_trywait,     sys_lwp_sema_trywait),      /* 149 */
    SOLX_(__NR_lwp_detach,           sys_lwp_detach),            /* 150 */
    SOLX_(__NR_fchroot,              sys_fchroot),               /* 153 */
+#if defined(SOLARIS_SYSTEM_STATS_SYSCALL)
+   SOLX_(__NR_system_stats,         sys_system_stats),          /* 154 */
+#endif /* SOLARIS_SYSTEM_STATS_SYSCALL */
    SOLXY(__NR_gettimeofday,         sys_gettimeofday),          /* 156 */
    GENXY(__NR_getitimer,            sys_getitimer),             /* 157 */
    GENXY(__NR_setitimer,            sys_setitimer),             /* 158 */

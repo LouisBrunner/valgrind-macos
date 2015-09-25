@@ -19,6 +19,7 @@ EXTRA_DIST = \
 	execx.stderr.exp execx.stdout.exp execx.vgtest \
 	getzoneoffset.stderr.exp getzoneoffset.vgtest \
 	gethrtime.stderr.exp gethrtime.stdout.exp gethrtime.vgtest \
+	gethrusec.stderr.exp gethrusec.stdout.exp gethrusec.vgtest \
 	ldynsym.stderr.exp ldynsym.stdout.exp ldynsym.vgtest \
 	lsframe1.stderr.exp lsframe1.stdout.exp lsframe1.vgtest \
 	lsframe2.stderr.exp lsframe2.stdout.exp lsframe2.vgtest \
@@ -76,6 +77,10 @@ check_PROGRAMS = \
 
 if SOLARIS_EXECVE_SYSCALL_TAKES_FLAGS
 check_PROGRAMS += execx
+endif
+
+if SOLARIS_RESERVE_SYSSTAT_ADDR
+check_PROGRAMS += gethrusec
 endif
 
 if SOLARIS_GETZONEOFFSET_FASTTRAP

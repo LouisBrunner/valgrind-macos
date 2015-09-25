@@ -130,7 +130,6 @@ TODO list
   to see this in effect. Would require awareness of syscall parameter semantics.
 - Correctly print arguments of DW_CFA_ORCL_arg_loc in show_CF_instruction() when
   it is implemented in libdwarf.
-- Provide tests for AT_SUN_SYSSTAT_ADDR and AT_SUN_SYSSTAT_ZONE_ADDR.
 
 
 Contacts

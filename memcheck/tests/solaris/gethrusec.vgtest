@@ -1,0 +1,3 @@
+prereq: test -e gethrusec
+prog: gethrusec
+vgopts: -q

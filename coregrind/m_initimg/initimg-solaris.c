@@ -275,6 +275,12 @@ static HChar *copy_str(HChar **tab, const HChar *str)
    return orig;
 }
 
+#if defined(SOLARIS_RESERVE_SYSSTAT_ADDR) || \
+    defined(SOLARIS_RESERVE_SYSSTAT_ZONE_ADDR)
+#define ORIG_AUXV_PRESENT 1
+#endif
+
+#if defined(ORIG_AUXV_PRESENT)
 /* The auxiliary vector might not be present. So we cross-check pointers from
    argv and envp pointing to the string table. */ 
 static vki_auxv_t *find_original_auxv(Addr init_sp)
@@ -328,6 +334,7 @@ static void copy_auxv_entry(const vki_auxv_t *orig_auxv, Int type,
    VG_(printf)("valgrind: vector. Cannot continue. Sorry.\n\n");
    VG_(exit)(1);
 }
+#endif /* ORIG_AUXV_PRESENT */
 
 /* This sets up the client's initial stack, containing the args,
    environment and aux vector.
@@ -391,8 +398,10 @@ static Addr setup_client_stack(Addr init_sp,
    vg_assert(VG_(args_the_exename));
    vg_assert(VG_(args_for_client));
 
+#  if defined(ORIG_AUXV_PRESENT)
    /* Get the original auxv (if any). */
    vki_auxv_t *orig_auxv = find_original_auxv(init_sp);
+#  endif /* ORIG_AUXV_PRESENT */
 
    /* ==================== compute sizes ==================== */
 

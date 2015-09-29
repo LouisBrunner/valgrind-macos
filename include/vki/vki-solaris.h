@@ -205,7 +205,9 @@ typedef struct {
 #include <net/if.h>
 #define vki_ifconf ifconf
 #define vki_ifreq ifreq
+#define vki_lifconf lifconf
 #define vki_lifnum lifnum
+#define vki_lifreq lifreq
 
 
 #include <netinet/in.h>
@@ -1068,6 +1070,10 @@ typedef struct sigaction vki_sigaction_fromK_t;
 #define VKI_SIOCGIFFLAGS SIOCGIFFLAGS
 #define VKI_SIOCGIFNETMASK SIOCGIFNETMASK
 #define VKI_SIOCGIFNUM SIOCGIFNUM
+#define VKI_SIOCGLIFBRDADDR SIOCGLIFBRDADDR
+#define VKI_SIOCGLIFCONF SIOCGLIFCONF
+#define VKI_SIOCGLIFFLAGS SIOCGLIFFLAGS
+#define VKI_SIOCGLIFNETMASK SIOCGLIFNETMASK
 #define VKI_SIOCGLIFNUM SIOCGLIFNUM
 
 

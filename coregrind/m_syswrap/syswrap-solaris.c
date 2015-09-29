@@ -3184,6 +3184,50 @@ PRE(sys_ioctl)
    case VKI_SIOCGIFNUM:
       PRE_MEM_WRITE("ioctl(SIOCGIFNUM)", ARG3, sizeof(int));
       break;
+   case VKI_SIOCGLIFBRDADDR:
+      {
+         struct vki_lifreq *p = (struct vki_lifreq *) ARG3;
+         PRE_FIELD_READ("ioctl(SIOCGLIFBRDADDR, lifreq->lifr_name)",
+                        p->lifr_name);
+         PRE_FIELD_WRITE("ioctl(SIOCGLIFBRDADDR, lifreq->lifr_addr)",
+                         p->lifr_addr);
+      }
+      break;
+   case VKI_SIOCGLIFCONF:
+      {
+         struct vki_lifconf *p = (struct vki_lifconf *) ARG3;
+         PRE_FIELD_READ("ioctl(SIOCGLIFCONF, lifconf->lifc_len)", p->lifc_len);
+         PRE_FIELD_READ("ioctl(SIOCGLIFCONF, lifconf->lifc_buf)", p->lifc_buf);
+         PRE_FIELD_READ("ioctl(SIOCGLIFCONF, lifconf->lifc_family)",
+                        p->lifc_family);
+         PRE_FIELD_READ("ioctl(SIOCGLIFCONF, lifconf->lifc_flags)",
+                        p->lifc_flags);
+         if (ML_(safe_to_deref)(p, sizeof(*p))) {
+            if ((p->lifc_buf != NULL) && (p->lifc_len > 0))
+               PRE_MEM_WRITE("ioctl(SIOCGLIFCONF, lifconf->lifc_buf)",
+                             (Addr) p->lifc_buf, p->lifc_len);
+         }
+         /* lifc_len gets also written to during SIOCGLIFCONF ioctl. */
+      }
+      break;
+   case VKI_SIOCGLIFFLAGS:
+      {
+         struct vki_lifreq *p = (struct vki_lifreq *) ARG3;
+         PRE_FIELD_READ("ioctl(SIOCGLIFFLAGS, lifreq->lifr_name)",
+                        p->lifr_name);
+         PRE_FIELD_WRITE("ioctl(SIOCGLIFFLAGS, lifreq->lifr_flags)",
+                         p->lifr_flags);
+      }
+      break;
+   case VKI_SIOCGLIFNETMASK:
+      {
+         struct vki_lifreq *p = (struct vki_lifreq *) ARG3;
+         PRE_FIELD_READ("ioctl(SIOCGLIFNETMASK, lifreq->lifr_name)",
+                        p->lifr_name);
+         PRE_FIELD_WRITE("ioctl(SIOCGLIFNETMASK, lifreq->lifr_addr)",
+                         p->lifr_addr);
+      }
+      break;
    case VKI_SIOCGLIFNUM:
       {
          struct vki_lifnum *p = (struct vki_lifnum *) ARG3;
@@ -3374,6 +3418,33 @@ POST(sys_ioctl)
       break;
    case VKI_SIOCGIFNUM:
       POST_MEM_WRITE(ARG3, sizeof(int));
+      break;
+   case VKI_SIOCGLIFBRDADDR:
+      {
+         struct vki_lifreq *p = (struct vki_lifreq *) ARG3;
+         POST_FIELD_WRITE(p->lifr_addr);
+      }
+      break;
+   case VKI_SIOCGLIFCONF:
+      {
+         struct vki_lifconf *p = (struct vki_lifconf *) ARG3;
+         POST_FIELD_WRITE(p->lifc_len);
+         POST_FIELD_WRITE(p->lifc_req);
+         if ((p->lifc_req != NULL) && (p->lifc_len > 0))
+            POST_MEM_WRITE((Addr) p->lifc_req, p->lifc_len);
+      }
+      break;
+   case VKI_SIOCGLIFFLAGS:
+      {
+         struct vki_lifreq *p = (struct vki_lifreq *) ARG3;
+         POST_FIELD_WRITE(p->lifr_flags);
+      }
+      break;
+   case VKI_SIOCGLIFNETMASK:
+      {
+         struct vki_lifreq *p = (struct vki_lifreq *) ARG3;
+         POST_FIELD_WRITE(p->lifr_addr);
+      }
       break;
    case VKI_SIOCGLIFNUM:
       {

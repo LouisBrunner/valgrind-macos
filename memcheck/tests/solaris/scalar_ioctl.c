@@ -235,8 +235,6 @@ static void sys_ioctl_SIOCGIFCONF_2(void)
 __attribute__((noinline))
 static int sys_ioctl_SIOCGIFCONF_3(void)
 {
-#define BUF_SIZE sizeof(struct ifreq) * 1000 
-
    int fd = socket(AF_INET, SOCK_DGRAM, 0);
    if (fd < 0)
       perror("socket");
@@ -324,6 +322,130 @@ static void sys_ioctl_SIOCGIFNUM_2(void)
 {
    GO(SYS_ioctl, "(SIOCGIFNUM) 3s 1m");
    SY(SYS_ioctl, x0 - 1, x0 + SIOCGIFNUM, x0 - 1); FAIL;
+}
+
+__attribute__((noinline))
+static void sys_ioctl_SIOCGLIFBRDADDR(void)
+{
+   GO(SYS_ioctl, "(SIOCGLIFBRDADDR) 3s 2m");
+   SY(SYS_ioctl, x0 - 1, x0 + SIOCGLIFBRDADDR, x0 - 1); FAIL;
+}
+
+__attribute__((noinline))
+static void sys_ioctl_SIOCGLIFBRDADDR_2(void)
+{
+   struct lifreq lifr;
+
+   lifr.lifr_name[0] = x0 + 'l';
+   lifr.lifr_name[1] = x0 + 'o';
+   lifr.lifr_name[2] = x0 + '0';
+   lifr.lifr_name[3] = x0 + '\0';
+
+   GO(SYS_ioctl, "(SIOCGLIFBRDADDR), 4s 0m");
+   SY(SYS_ioctl, x0 - 1, x0 + SIOCGLIFBRDADDR, &lifr + x0); FAIL;
+}
+
+__attribute__((noinline))
+static void sys_ioctl_SIOCGLIFCONF(void)
+{
+   GO(SYS_ioctl, "(SIOCGLIFCONF), 3s 4m");
+   SY(SYS_ioctl, x0 - 1, x0 + SIOCGLIFCONF, x0 - 1); FAIL;
+}
+
+__attribute__((noinline))
+static void sys_ioctl_SIOCGLIFCONF_2(void)
+{
+   struct lifconf lifc;
+   char buf[5];
+
+   lifc.lifc_len = x0 + 5;
+   lifc.lifc_buf = (void *) (x0 + buf);
+   lifc.lifc_family = x0 + 1;
+   lifc.lifc_flags = x0 + 0;
+
+   GO(SYS_ioctl, "(SIOCGLIFCONF), 7s 0m");
+   SY(SYS_ioctl, x0 - 1, x0 + SIOCGLIFCONF, &lifc + x0); FAIL;
+}
+
+__attribute__((noinline))
+static int sys_ioctl_SIOCGLIFCONF_3(void)
+{
+   int fd = socket(AF_INET, SOCK_DGRAM, 0);
+   if (fd < 0)
+      perror("socket");
+
+   struct lifnum lifn;
+   lifn.lifn_family = AF_INET;
+   lifn.lifn_flags = 0;
+   if (ioctl(fd, SIOCGLIFNUM, &lifn) < 0)
+      perror("ioctl(SIOCGLIFNUM)");
+
+   struct lifconf lifc;
+   lifc.lifc_family = AF_INET;
+   lifc.lifc_flags = 0;
+   lifc.lifc_len = (lifn.lifn_count + 1) * sizeof(struct lifreq);
+   lifc.lifc_buf = malloc((lifn.lifn_count + 1) * sizeof(struct lifreq));
+   if (lifc.lifc_buf == NULL)
+      perror("malloc");
+
+   GO(SYS_ioctl, "(SIOCGLIFCONF), 1s 0m");
+   if (ioctl(fd, SIOCGLIFCONF, &lifc) < 0)
+      perror("ioctl(SIOCGLIFCONF)");
+
+   /* Check definedness of lifc attributes ... */
+   int x = 0;
+   if (lifc.lifc_len != 0) x = -1; else x = -2;
+   if (lifc.lifc_req != NULL) x = -3; else x = -4;
+   if (strcmp(lifc.lifc_req[0].lifr_name, "") != 0) x = -5; else x = -6;
+   /* ... and now one which is not defined. */
+   if (strcmp(lifc.lifc_req[lifn.lifn_count].lifr_name, "") != 0)
+      x = -7; else x = -8;
+
+   free(lifc.lifc_buf);
+   close(fd);
+   return x;
+}
+
+__attribute__((noinline))
+static void sys_ioctl_SIOCGLIFFLAGS(void)
+{
+   GO(SYS_ioctl, "(SIOCGLIFFLAGS) 3s 2m");
+   SY(SYS_ioctl, x0 - 1, x0 + SIOCGLIFFLAGS, x0 - 1); FAIL;
+}
+
+__attribute__((noinline))
+static void sys_ioctl_SIOCGLIFFLAGS_2(void)
+{
+   struct lifreq lifr;
+
+   lifr.lifr_name[0] = x0 + 'l';
+   lifr.lifr_name[1] = x0 + 'o';
+   lifr.lifr_name[2] = x0 + '0';
+   lifr.lifr_name[3] = x0 + '\0';
+
+   GO(SYS_ioctl, "(SIOCGLIFFLAGS), 4s 0m");
+   SY(SYS_ioctl, x0 - 1, x0 + SIOCGLIFFLAGS, &lifr + x0); FAIL;
+}
+
+__attribute__((noinline))
+static void sys_ioctl_SIOCGLIFNETMASK(void)
+{
+   GO(SYS_ioctl, "(SIOCGLIFNETMASK) 3s 2m");
+   SY(SYS_ioctl, x0 - 1, x0 + SIOCGLIFNETMASK, x0 - 1); FAIL;
+}
+
+__attribute__((noinline))
+static void sys_ioctl_SIOCGLIFNETMASK_2(void)
+{
+   struct lifreq lifr;
+
+   lifr.lifr_name[0] = x0 + 'l';
+   lifr.lifr_name[1] = x0 + 'o';
+   lifr.lifr_name[2] = x0 + '0';
+   lifr.lifr_name[3] = x0 + '\0';
+
+   GO(SYS_ioctl, "(SIOCGLIFNETMASK), 4s 0m");
+   SY(SYS_ioctl, x0 - 1, x0 + SIOCGLIFNETMASK, &lifr + x0); FAIL;
 }
 
 __attribute__((noinline))
@@ -442,6 +564,15 @@ int main(void)
    sys_ioctl_SIOCGIFNETMASK_2();
    sys_ioctl_SIOCGIFNUM();
    sys_ioctl_SIOCGIFNUM_2();
+   sys_ioctl_SIOCGLIFBRDADDR();
+   sys_ioctl_SIOCGLIFBRDADDR_2();
+   sys_ioctl_SIOCGLIFCONF();
+   sys_ioctl_SIOCGLIFCONF_2();
+   sys_ioctl_SIOCGLIFCONF_3();
+   sys_ioctl_SIOCGLIFFLAGS();
+   sys_ioctl_SIOCGLIFFLAGS_2();
+   sys_ioctl_SIOCGLIFNETMASK();
+   sys_ioctl_SIOCGLIFNETMASK_2();
    sys_ioctl_SIOCGLIFNUM();
 
    /* filio */

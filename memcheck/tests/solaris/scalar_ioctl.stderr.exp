@@ -570,6 +570,176 @@ Syscall param ioctl(SIOCGIFNUM) points to unaddressable byte(s)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
+ 54:               SYS_ioctl (SIOCGLIFBRDADDR) 3s 2m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(SIOCGLIFBRDADDR, lifreq->lifr_name) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param ioctl(SIOCGLIFBRDADDR, lifreq->lifr_addr) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (SIOCGLIFBRDADDR), 4s 0m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(SIOCGLIFBRDADDR, lifreq->lifr_name) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (SIOCGLIFCONF), 3s 4m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(SIOCGLIFCONF, lifconf->lifc_len) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param ioctl(SIOCGLIFCONF, lifconf->lifc_buf) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param ioctl(SIOCGLIFCONF, lifconf->lifc_family) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param ioctl(SIOCGLIFCONF, lifconf->lifc_flags) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (SIOCGLIFCONF), 7s 0m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(SIOCGLIFCONF, lifconf->lifc_len) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+Syscall param ioctl(SIOCGLIFCONF, lifconf->lifc_buf) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+Syscall param ioctl(SIOCGLIFCONF, lifconf->lifc_family) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+Syscall param ioctl(SIOCGLIFCONF, lifconf->lifc_flags) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (SIOCGLIFCONF), 1s 0m
+---------------------------------------------------------
+Conditional jump or move depends on uninitialised value(s)
+   ...
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (SIOCGLIFFLAGS) 3s 2m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(SIOCGLIFFLAGS, lifreq->lifr_name) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param ioctl(SIOCGLIFFLAGS, lifreq->lifr_flags) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (SIOCGLIFFLAGS), 4s 0m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(SIOCGLIFFLAGS, lifreq->lifr_name) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (SIOCGLIFNETMASK) 3s 2m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(SIOCGLIFNETMASK, lifreq->lifr_name) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param ioctl(SIOCGLIFNETMASK, lifreq->lifr_addr) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (SIOCGLIFNETMASK), 4s 0m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(SIOCGLIFNETMASK, lifreq->lifr_name) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+---------------------------------------------------------
  54:               SYS_ioctl (SIOCGLIFNUM) 4s 0m
 ---------------------------------------------------------
 Syscall param ioctl(fd) contains uninitialised byte(s)

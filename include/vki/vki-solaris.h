@@ -203,6 +203,8 @@ typedef struct {
 
 
 #include <net/if.h>
+#define vki_ifconf ifconf
+#define vki_ifreq ifreq
 #define vki_lifnum lifnum
 
 
@@ -1062,6 +1064,10 @@ typedef struct sigaction vki_sigaction_fromK_t;
 
 
 #include <sys/sockio.h>
+#define VKI_SIOCGIFCONF SIOCGIFCONF
+#define VKI_SIOCGIFFLAGS SIOCGIFFLAGS
+#define VKI_SIOCGIFNETMASK SIOCGIFNETMASK
+#define VKI_SIOCGIFNUM SIOCGIFNUM
 #define VKI_SIOCGLIFNUM SIOCGLIFNUM
 
 

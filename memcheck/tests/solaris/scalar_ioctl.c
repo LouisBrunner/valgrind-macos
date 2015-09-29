@@ -4,6 +4,7 @@
 
 #include "scalar.h"
 
+#include <unistd.h>
 #include <net/if.h>
 #include <sys/crypto/ioctl.h>
 #include <sys/dtrace.h>
@@ -212,6 +213,120 @@ static void sys_ioctl_I_CANPUT(void)
 
 /* sockio */
 __attribute__((noinline))
+static void sys_ioctl_SIOCGIFCONF(void)
+{
+   GO(SYS_ioctl, "(SIOCGIFCONF), 3s 2m");
+   SY(SYS_ioctl, x0 - 1, x0 + SIOCGIFCONF, x0 - 1); FAIL;
+}
+
+__attribute__((noinline))
+static void sys_ioctl_SIOCGIFCONF_2(void)
+{
+   struct ifconf ifc;
+   char buf[5];
+
+   ifc.ifc_len = x0 + 5;
+   ifc.ifc_buf = (void *) (x0 + buf);
+
+   GO(SYS_ioctl, "(SIOCGIFCONF), 5s 0m");
+   SY(SYS_ioctl, x0 - 1, x0 + SIOCGIFCONF, &ifc + x0); FAIL;
+}
+
+__attribute__((noinline))
+static int sys_ioctl_SIOCGIFCONF_3(void)
+{
+#define BUF_SIZE sizeof(struct ifreq) * 1000 
+
+   int fd = socket(AF_INET, SOCK_DGRAM, 0);
+   if (fd < 0)
+      perror("socket");
+
+   int n_ifs;
+   if (ioctl(fd, SIOCGIFNUM, &n_ifs) < 0)
+      perror("ioctl(SIOCGIFNUM)");
+
+   struct ifconf ifc;
+   ifc.ifc_len = (n_ifs + 1) * sizeof(struct ifreq);
+   ifc.ifc_buf = malloc((n_ifs + 1) * sizeof(struct ifreq));
+   if (ifc.ifc_buf == NULL)
+      perror("malloc");
+
+   GO(SYS_ioctl, "(SIOCGIFCONF), 1s 0m");
+   if (ioctl(fd, SIOCGIFCONF, &ifc) < 0)
+      perror("ioctl(SIOCGIFCONF)");
+
+   /* Check definedness of ifc attributes ... */
+   int x = 0;
+   if (ifc.ifc_len != 0) x = -1; else x = -2;
+   if (ifc.ifc_req != NULL) x = -3; else x = -4;
+   if (strcmp(ifc.ifc_req[0].ifr_name, "") != 0) x = -5; else x = -6;
+   /* ... and now one which is not defined. */
+   if (strcmp(ifc.ifc_req[n_ifs].ifr_name, "") != 0) x = -7; else x = -8;
+
+   free(ifc.ifc_buf);
+   close(fd);
+   return x;
+}
+
+__attribute__((noinline))
+static void sys_ioctl_SIOCGIFFLAGS(void)
+{
+   GO(SYS_ioctl, "(SIOCGIFFLAGS) 3s 2m");
+   SY(SYS_ioctl, x0 - 1, x0 + SIOCGIFFLAGS, x0 - 1); FAIL;
+}
+
+__attribute__((noinline))
+static void sys_ioctl_SIOCGIFFLAGS_2(void)
+{
+   struct ifreq ifr;
+
+   ifr.ifr_name[0] = x0 + 'l';
+   ifr.ifr_name[1] = x0 + 'o';
+   ifr.ifr_name[2] = x0 + '0';
+   ifr.ifr_name[3] = x0 + '\0';
+
+   GO(SYS_ioctl, "(SIOCGIFFLAGS), 4s 0m");
+   SY(SYS_ioctl, x0 - 1, x0 + SIOCGIFFLAGS, &ifr + x0); FAIL;
+}
+
+__attribute__((noinline))
+static void sys_ioctl_SIOCGIFNETMASK(void)
+{
+   GO(SYS_ioctl, "(SIOCGIFNETMASK) 3s 2m");
+   SY(SYS_ioctl, x0 - 1, x0 + SIOCGIFNETMASK, x0 - 1); FAIL;
+}
+
+__attribute__((noinline))
+static void sys_ioctl_SIOCGIFNETMASK_2(void)
+{
+   struct ifreq ifr;
+
+   ifr.ifr_name[0] = x0 + 'l';
+   ifr.ifr_name[1] = x0 + 'o';
+   ifr.ifr_name[2] = x0 + '0';
+   ifr.ifr_name[3] = x0 + '\0';
+
+   GO(SYS_ioctl, "(SIOCGIFNETMASK), 4s 0m");
+   SY(SYS_ioctl, x0 - 1, x0 + SIOCGIFNETMASK, &ifr + x0); FAIL;
+}
+
+__attribute__((noinline))
+static void sys_ioctl_SIOCGIFNUM(void)
+{
+   int ifnum;
+
+   GO(SYS_ioctl, "(SIOCGIFNUM) 3s 0m");
+   SY(SYS_ioctl, x0 - 1, x0 + SIOCGIFNUM, &ifnum + x0); FAIL;
+}
+
+__attribute__((noinline))
+static void sys_ioctl_SIOCGIFNUM_2(void)
+{
+   GO(SYS_ioctl, "(SIOCGIFNUM) 3s 1m");
+   SY(SYS_ioctl, x0 - 1, x0 + SIOCGIFNUM, x0 - 1); FAIL;
+}
+
+__attribute__((noinline))
 static void sys_ioctl_SIOCGLIFNUM(void)
 {
    struct lifnum lifn;
@@ -318,6 +433,15 @@ int main(void)
    sys_ioctl_I_CANPUT();
 
    /* sockio */
+   sys_ioctl_SIOCGIFCONF();
+   sys_ioctl_SIOCGIFCONF_2();
+   sys_ioctl_SIOCGIFCONF_3();
+   sys_ioctl_SIOCGIFFLAGS();
+   sys_ioctl_SIOCGIFFLAGS_2();
+   sys_ioctl_SIOCGIFNETMASK();
+   sys_ioctl_SIOCGIFNETMASK_2();
+   sys_ioctl_SIOCGIFNUM();
+   sys_ioctl_SIOCGIFNUM_2();
    sys_ioctl_SIOCGLIFNUM();
 
    /* filio */

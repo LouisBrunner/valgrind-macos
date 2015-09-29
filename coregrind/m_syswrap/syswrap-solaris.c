@@ -3154,6 +3154,36 @@ PRE(sys_ioctl)
       break;
 
    /* sockio */
+   case VKI_SIOCGIFCONF:
+      {
+         struct vki_ifconf *p = (struct vki_ifconf *) ARG3;
+         PRE_FIELD_READ("ioctl(SIOCGIFCONF, ifconf->ifc_len)", p->ifc_len);
+         PRE_FIELD_READ("ioctl(SIOCGIFCONF, ifconf->ifc_buf)", p->ifc_buf);
+         if (ML_(safe_to_deref)(p, sizeof(*p))) {
+            if ((p->ifc_buf != NULL) && (p->ifc_len > 0))
+               PRE_MEM_WRITE("ioctl(SIOCGIFCONF, ifconf->ifc_buf)",
+                             (Addr) p->ifc_buf, p->ifc_len);
+         }
+         /* ifc_len gets also written to during SIOCGIFCONF ioctl. */
+      }
+      break;
+   case VKI_SIOCGIFFLAGS:
+      {
+         struct vki_ifreq *p = (struct vki_ifreq *) ARG3;
+         PRE_FIELD_READ("ioctl(SIOCGIFFLAGS, ifreq->ifr_name)", p->ifr_name);
+         PRE_FIELD_WRITE("ioctl(SIOCGIFFLAGS, ifreq->ifr_flags)", p->ifr_flags);
+      }
+      break;
+   case VKI_SIOCGIFNETMASK:
+      {
+         struct vki_ifreq *p = (struct vki_ifreq *) ARG3;
+         PRE_FIELD_READ("ioctl(SIOCGIFFLAGS, ifreq->ifr_name)", p->ifr_name);
+         PRE_FIELD_WRITE("ioctl(SIOCGIFFLAGS, ifreq->ifr_addr)", p->ifr_addr);
+      }
+      break;
+   case VKI_SIOCGIFNUM:
+      PRE_MEM_WRITE("ioctl(SIOCGIFNUM)", ARG3, sizeof(int));
+      break;
    case VKI_SIOCGLIFNUM:
       {
          struct vki_lifnum *p = (struct vki_lifnum *) ARG3;
@@ -3164,7 +3194,7 @@ PRE(sys_ioctl)
          PRE_FIELD_WRITE("ioctl(SIOCGLIFNUM, lifn->lifn_count)",
                          p->lifn_count);
       }
-      break;  
+      break;
 
    /* filio */
    case VKI_FIOSETOWN:
@@ -3321,6 +3351,30 @@ POST(sys_ioctl)
       break;
 
    /* sockio */
+   case VKI_SIOCGIFCONF:
+      {
+         struct vki_ifconf *p = (struct vki_ifconf *) ARG3;
+         POST_FIELD_WRITE(p->ifc_len);
+         POST_FIELD_WRITE(p->ifc_req);
+         if ((p->ifc_req != NULL) && (p->ifc_len > 0))
+            POST_MEM_WRITE((Addr) p->ifc_req, p->ifc_len);
+      }
+      break;
+   case VKI_SIOCGIFFLAGS:
+      {
+         struct vki_ifreq *p = (struct vki_ifreq *) ARG3;
+         POST_FIELD_WRITE(p->ifr_flags);
+      }
+      break;
+   case VKI_SIOCGIFNETMASK:
+      {
+         struct vki_ifreq *p = (struct vki_ifreq *) ARG3;
+         POST_FIELD_WRITE(p->ifr_addr);
+      }
+      break;
+   case VKI_SIOCGIFNUM:
+      POST_MEM_WRITE(ARG3, sizeof(int));
+      break;
    case VKI_SIOCGLIFNUM:
       {
          struct vki_lifnum *p = (struct vki_lifnum *) ARG3;

@@ -20,6 +20,7 @@ EXTRA_DIST = \
 	getzoneoffset.stderr.exp getzoneoffset.vgtest \
 	gethrtime.stderr.exp gethrtime.stdout.exp gethrtime.vgtest \
 	gethrusec.stderr.exp gethrusec.stdout.exp gethrusec.vgtest \
+	ioctl.stderr.exp ioctl.stdout.exp ioctl.vgtest \
 	ldynsym.stderr.exp ldynsym.stdout.exp ldynsym.vgtest \
 	lsframe1.stderr.exp lsframe1.stdout.exp lsframe1.vgtest \
 	lsframe2.stderr.exp lsframe2.stdout.exp lsframe2.vgtest \
@@ -60,6 +61,7 @@ check_PROGRAMS = \
 	gethrtime \
 	inlinfo \
 	inlinfo_nested.so \
+	ioctl \
 	ldynsym \
 	lsframe1 \
 	lsframe2 \
@@ -147,6 +149,7 @@ AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 
 door_kill_LDADD = -lpthread
+ioctl_LDADD = -lsocket
 ldynsym_LDFLAGS = -Wl,--strip-all
 pkcs11_LDADD = -lpkcs11
 sendfilev_LDADD = -lsendfile

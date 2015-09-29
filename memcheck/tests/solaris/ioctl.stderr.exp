@@ -1,0 +1,8 @@
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: test_SIOCGIFCONF (ioctl.c:39)
+   by 0x........: main (ioctl.c:87)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: test_SIOCGLIFCONF (ioctl.c:76)
+   by 0x........: main (ioctl.c:88)
+

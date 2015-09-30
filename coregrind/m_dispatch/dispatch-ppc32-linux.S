@@ -32,7 +32,6 @@
 
 #if defined(VGP_ppc32_linux)
 
-#include "config.h"
 #include "pub_core_dispatch_asm.h"
 #include "pub_core_transtab_asm.h"
 #include "libvex_guest_offsets.h"	/* for OFFSET_ppc32_CIA */

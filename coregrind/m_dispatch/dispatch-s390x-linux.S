@@ -267,10 +267,10 @@ VG_(disp_cp_evcheck_fail):
 
         .size VG_(disp_run_translations), .-VG_(disp_run_translations)
 
-/* Let the linker know we don't need an executable stack */
-        .section .note.GNU-stack,"",@progbits
-
 #endif /* VGA_s390x */
+
+/* Let the linker know we don't need an executable stack */
+MARK_STACK_NO_EXEC
 
 /*--------------------------------------------------------------------*/
 /*--- end                                   dispatch-s390x-linux.S ---*/

@@ -1599,14 +1599,8 @@ VG_(trampoline_stuff_end):
 #endif
 #endif
 
-#if defined(VGO_linux)
 /* Let the linker know we don't need an executable stack */
-#  if defined(VGP_arm_linux)
-   .section .note.GNU-stack,"",%progbits
-#  else        
-   .section .note.GNU-stack,"",@progbits
-#  endif
-#endif
+MARK_STACK_NO_EXEC
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

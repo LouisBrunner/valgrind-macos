@@ -27,6 +27,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+#include "pub_core_basics_asm.h"
+
 #if defined(VGP_x86_darwin)
 
 // DDD: should use __NR_ constants in here instead of the trap numbers
@@ -123,6 +125,9 @@ _semaphore_wait_signal:
 	ret
 
 #endif // defined(VGP_x86_darwin)
+
+/* Let the linker know we don't need an executable stack */
+MARK_STACK_NO_EXEC
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

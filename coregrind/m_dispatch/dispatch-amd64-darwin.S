@@ -29,9 +29,10 @@
   The GNU General Public License is contained in the file COPYING.
 */
 
+#include "pub_core_basics_asm.h"
+
 #if defined(VGP_amd64_darwin)
 
-#include "pub_core_basics_asm.h"
 #include "pub_core_dispatch_asm.h"
 #include "pub_core_transtab_asm.h"
 #include "libvex_guest_offsets.h"	/* for OFFSET_amd64_RIP */
@@ -249,6 +250,9 @@ VG_(disp_cp_evcheck_fail):
 
 
 #endif // defined(VGP_amd64_darwin)
+
+/* Let the linker know we don't need an executable stack */
+MARK_STACK_NO_EXEC
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

@@ -29,9 +29,10 @@
   The GNU General Public License is contained in the file COPYING.
 */
 
+#include "pub_core_basics_asm.h"
+
 #if defined(VGP_x86_linux)
 
-#include "pub_core_basics_asm.h"
 #include "pub_core_dispatch_asm.h"
 #include "pub_core_transtab_asm.h"
 #include "libvex_guest_offsets.h"	/* for OFFSET_x86_EIP */
@@ -240,10 +241,10 @@ VG_(disp_cp_evcheck_fail):
 
 .size VG_(disp_run_translations), .-VG_(disp_run_translations)
 
-/* Let the linker know we don't need an executable stack */
-.section .note.GNU-stack,"",@progbits
-
 #endif // defined(VGP_x86_linux)
+
+/* Let the linker know we don't need an executable stack */
+MARK_STACK_NO_EXEC
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

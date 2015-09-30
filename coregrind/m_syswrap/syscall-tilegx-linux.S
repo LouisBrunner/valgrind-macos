@@ -28,9 +28,10 @@
 
 /* Contributed by Zhi-Gang Liu <zliu at tilera dot com> */
 
+#include "pub_core_basics_asm.h"
+
 #if defined(VGP_tilegx_linux)
 
-#include "pub_core_basics_asm.h"
 #include "pub_core_vkiscnums_asm.h"
 #include "libvex_guest_offsets.h"
 
@@ -180,10 +181,11 @@ ML_(do_syscall_for_client_WRK):
     ML_(blksys_committed):  .quad 4b
     ML_(blksys_finished):   .quad 5b
     .previous
-    /* Let the linker know we don't need an executable stack */
-    .section .note.GNU-stack,"",%progbits
 
 #endif /* defined(VGP_tilegx_linux) */
+
+/* Let the linker know we don't need an executable stack */
+MARK_STACK_NO_EXEC
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

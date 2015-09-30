@@ -29,8 +29,9 @@
 
 /* Contributed by Zhi-Gang Liu <zliu at tilera dot com> */
 
-#if defined(VGP_tilegx_linux)
 #include "pub_core_basics_asm.h"
+
+#if defined(VGP_tilegx_linux)
 #include "pub_core_dispatch_asm.h"
 #include "pub_core_transtab_asm.h"
 #include "libvex_guest_offsets.h"       /* for OFFSET_tilegx_PC */
@@ -297,11 +298,11 @@ fast_lookup_failed:
 
         .size VG_(disp_run_translations), .-VG_(disp_run_translations)
 
-
-        /* Let the linker know we do not need an executable stack */
-        .section .note.GNU-stack,"",@progbits
-
 #endif /* defined(VGP_tilegx_linux) */
+
+/* Let the linker know we don't need an executable stack */
+MARK_STACK_NO_EXEC
+
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

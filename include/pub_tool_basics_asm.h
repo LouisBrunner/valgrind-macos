@@ -58,6 +58,20 @@
 #  error Unknown OS
 #endif
 
+/* Let the linker know we don't need an executable stack.
+   The call to MARK_STACK_NO_EXEC should be put unconditionally
+   at the end of all asm source files.
+*/
+#if defined(VGO_linux)
+#  if defined(VGA_arm)
+#    define MARK_STACK_NO_EXEC .section .note.GNU-stack,"",%progbits
+#  else
+#    define MARK_STACK_NO_EXEC .section .note.GNU-stack,"",@progbits
+#  endif
+#else
+#  define MARK_STACK_NO_EXEC
+#endif
+
 #endif /* __PUB_TOOL_BASICS_ASM_H */
 
 /*--------------------------------------------------------------------*/

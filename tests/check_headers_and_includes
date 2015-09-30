@@ -14,6 +14,10 @@
 # (7) include/*.h and tool *.[ch] must not use vg_assert
 # (8) coregrind/ *.[ch] must not use VG_(tool_panic)
 # (9) include/*.h and tool *.[ch] must not use VG_(core_panic)
+# (10) *.S must unconditionally instantiate MARK_STACK_NO_EXEC
+#
+# There can be false positives as we don't really parse the source files.
+# Instead we only match regular expressions.
 #-------------------------------------------------------------------
 
 use strict;
@@ -144,8 +148,8 @@ sub process_dir {
             next;
         }
 
-# Regular files; only interested in *.c and *.h
-        next if (! ($file =~ /\.[ch]$/));
+# Regular files; only interested in *.c, *.S and *.h
+        next if (! ($file =~ /\.[cSh]$/));
         my $path_name = defined $path ? "$path/$file" : $file;
         process_file($path_name);
     }
@@ -306,6 +310,36 @@ sub check_tool_file {
     }
 }
 
+#---------------------------------------------------------------------
+# Check an assembler file
+#---------------------------------------------------------------------
+sub check_assembler_file {
+    my ($path_name) = @_;
+    my $file = basename($path_name);
+    my $found = 0;
+
+    open(FILE, "<$file") || die "Cannot open file '$file'";
+
+    while (my $line = <FILE>) {
+        if ($line =~ /^\s*MARK_STACK_NO_EXEC/) {
+            $found = 1;
+            last;
+        }
+    }
+    if ($found == 0) {
+        error("File $path_name does not instantiate MARK_STACK_NO_EXEC\n");
+    } else {
+        while (my $line = <FILE>) {
+            if ($line =~ /^\s*#\s*endif/) {
+                error("File $path_name instantiates MARK_STACK_NO_EXEC"
+                      . " under a condition\n");
+                last;
+            }
+        }
+    }
+    close FILE;
+}
+
 sub process_file {
     my ($path_name) = @_;
 
@@ -317,6 +351,10 @@ sub process_file {
         check_coregrind_file($path_name);
     } elsif (is_tool_file($path_name)) {
         check_tool_file($path_name);
+    }
+
+    if ($path_name =~ /\.S$/) {
+        check_assembler_file($path_name);
     }
 }
 

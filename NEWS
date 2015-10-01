@@ -32,6 +32,7 @@ where XXXXXX is the bug number as listed below.
 
 353083  arm64 doesn't implement various xattr system calls
 353084  arm64 doesn't support sigpending system call
+353370  don't advertise RDRAND in cpuid for Core-i7-4910-like avx2 machine
 
 
 

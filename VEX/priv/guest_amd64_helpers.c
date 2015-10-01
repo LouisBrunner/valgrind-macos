@@ -3101,7 +3101,8 @@ void amd64g_dirtyhelper_CPUID_avx2 ( VexGuestAMD64State* st )
          SET_ABCD(0x0000000d, 0x756e6547, 0x6c65746e, 0x49656e69);
          break;
       case 0x00000001:
-         SET_ABCD(0x000306c3, 0x02100800, 0x7ffafbff, 0xbfebfbff);
+         /* Don't advertise RDRAND support, bit 30 in ECX.  */
+         SET_ABCD(0x000306c3, 0x02100800, 0x3ffafbff, 0xbfebfbff);
          break;
       case 0x00000002:
          SET_ABCD(0x76036301, 0x00f0b6ff, 0x00000000, 0x00c10000);

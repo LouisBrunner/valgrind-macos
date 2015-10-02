@@ -66,6 +66,9 @@ if VGCONF_PLATVARIANT_IS_ANDROID
 valgrind_CFLAGS += -static
 valgrind_LDFLAGS   += -Wl,-z,noexecstack
 endif
+if VGCONF_OS_IS_SOLARIS
+valgrind_LDFLAGS   += -Wl,-M,/usr/lib/ld/map.noexstk
+endif
 
 
 vgdb_SOURCES = vgdb.c

@@ -37,7 +37,8 @@ TOOL_LDFLAGS_COMMON_LINUX = \
 TOOL_LDFLAGS_COMMON_DARWIN = \
 	-nodefaultlibs -nostartfiles -Wl,-u,__start -Wl,-e,__start
 TOOL_LDFLAGS_COMMON_SOLARIS = \
-	-static -nodefaultlibs -nostartfiles -u _start
+	-static -nodefaultlibs -nostartfiles -u _start \
+	-Wl,-M,/usr/lib/ld/map.noexstk
 
 TOOL_LDFLAGS_X86_LINUX = \
 	$(TOOL_LDFLAGS_COMMON_LINUX) @FLAG_M32@

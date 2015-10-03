@@ -250,7 +250,7 @@ if ! VGCONF_OS_IS_DARWIN
    check_PROGRAMS += rlimit64_nofile 
 endif
 
-# clang does now know -ansi
+# clang does not know -ansi
 if ! COMPILER_IS_CLANG
    check_PROGRAMS += ansi
 endif

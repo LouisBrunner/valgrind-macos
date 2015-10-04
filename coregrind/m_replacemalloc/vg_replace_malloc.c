@@ -1181,7 +1181,7 @@ static vki_malloc_zone_t vg_default_zone = {
     NULL, // batch_free
     NULL, // GrP fixme: introspect
     2,  // version (GrP fixme 3?)
-    NULL, /* memalign */   // DDD: this field exists in Mac OS 10.6, but not 10.5.
+    (void*)VG_REPLACE_FUNCTION_EZU(10100,VG_Z_LIBC_SONAME,malloc_zone_memalign), // DDD: this field exists in Mac OS 10.6+
     NULL, /* free_definite_size */
     NULL, /* pressure_relief */
 };

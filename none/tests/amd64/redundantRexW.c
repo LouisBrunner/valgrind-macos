@@ -596,6 +596,23 @@ int main ( void )
      after_test( "rex.WB subsd  -0x8(%r13),%xmm1", regs, mem );
    }
 
+   /* cvtps2pd mem, reg   48 0f 5a 07     rex.W cvtps2pd  (%rdi),%xmm0 */
+   {
+     before_test( regs, mem );
+     __asm__ __volatile__(
+         "movq %0, %%r14\n"
+       "\tmovq %1, %%r15\n"
+       LOAD_XMMREGS_from_r14
+       "\tmovq %%r15, %%rdi\n"
+       "\t.byte 0x48,0x0f,0x5a,0x07\n"
+       SAVE_XMMREGS_to_r14
+          : /*out*/ : /*in*/ "r"(regs), "r"( -0 + (char*)&mem->dqw[2] )
+                    : /*trash*/ "r14","r15","memory", XMMREGS,
+                                "rdi"
+     );
+     after_test( "rex.W cvtps2pd  (%rdi),%xmm0", regs, mem );
+   }
+
    free(regs);
    free(mem);
    return 0;

@@ -87,8 +87,8 @@
       { UInt cia, r1, lr;                                 \
         __asm__ __volatile__(                             \
            "mflr 0;"                   /* r0 = lr */      \
-           "bl m_libcassert_get_ip;"   /* lr = pc */      \
-           "m_libcassert_get_ip:\n"                       \
+           "bl 0f;"                    /* lr = pc */      \
+           "0:\n"                                         \
            "mflr %0;"                  /* %0 = pc */      \
            "mtlr 0;"                   /* restore lr */   \
            "mr %1,1;"                  /* %1 = r1 */      \
@@ -106,8 +106,8 @@
       { ULong cia, r1, lr;                                \
         __asm__ __volatile__(                             \
            "mflr 0;"                   /* r0 = lr */      \
-           "bl .m_libcassert_get_ip;"  /* lr = pc */      \
-           ".m_libcassert_get_ip:\n"                      \
+           "bl 0f;"                    /* lr = pc */      \
+           "0:\n"                                         \
            "mflr %0;"                  /* %0 = pc */      \
            "mtlr 0;"                   /* restore lr */   \
            "mr %1,1;"                  /* %1 = r1 */      \
@@ -180,8 +180,8 @@
 #  define GET_STARTREGS(srP)                              \
       { UInt pc, sp, fp, ra, gp;                          \
       asm("move $8, $31;"             /* t0 = ra */       \
-          "bal m_libcassert_get_ip;"  /* ra = pc */       \
-          "m_libcassert_get_ip:\n"                        \
+          "bal 0f;"                   /* ra = pc */       \
+          "0:\n"                                          \
           "move %0, $31;"                                 \
           "move $31, $8;"             /* restore lr */    \
           "move %1, $29;"                                 \
@@ -203,10 +203,10 @@
       }
 #elif defined(VGP_mips64_linux)
 #  define GET_STARTREGS(srP)                              \
-      { ULong pc, sp, fp, ra, gp;                          \
+      { ULong pc, sp, fp, ra, gp;                         \
       asm("move $8, $31;"             /* t0 = ra */       \
-          "bal m_libcassert_get_ip;"  /* ra = pc */       \
-          "m_libcassert_get_ip:\n"                        \
+          "bal 0f;"                   /* ra = pc */       \
+          "0:\n"                                          \
           "move %0, $31;"                                 \
           "move $31, $8;"             /* restore lr */    \
           "move %1, $29;"                                 \

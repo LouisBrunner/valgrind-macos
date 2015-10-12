@@ -13397,7 +13397,7 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
       /* 0F 5A = CVTPS2PD -- convert 2 x F32 in low half mem/xmm to 2 x
          F64 in xmm(G). */
       if (haveNo66noF2noF3(pfx)
-          && sz == 4 || /* ignore redundant REX.W */ sz == 8) {
+          && (sz == 4 || /* ignore redundant REX.W */ sz == 8)) {
          delta = dis_CVTPS2PD_128( vbi, pfx, delta, False/*!isAvx*/ );
          goto decode_success;
       }

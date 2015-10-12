@@ -22,6 +22,9 @@ Limitations
 - Some gcc versions use mvc to copy 4/8 byte values. This will affect
   certain debug messages. For example, memcheck will complain about
   4 one-byte reads/writes instead of just a single read/write.
+- The transactional-execution facility is not supported; it is masked
+  off from HWCAP.
+- The vector facility is not supported; it is masked off from HWCAP.
 
 
 Hardware facilities

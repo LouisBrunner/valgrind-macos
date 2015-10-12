@@ -800,11 +800,14 @@ typedef struct
 #define VKI_PTRACE_POKEUSR_AREA       0x5001
 
 //----------------------------------------------------------------------
-// From linux-2.6.16.60/include/asm-s390/elf.h
+// From linux-3.18/include/asm-s390/elf.h
 //----------------------------------------------------------------------
 
 typedef vki_s390_fp_regs vki_elf_fpregset_t;
 typedef vki_s390_regs vki_elf_gregset_t;
+
+#define VKI_HWCAP_S390_TE           1024
+#define VKI_HWCAP_S390_VXRS         2048
 
 
 //----------------------------------------------------------------------

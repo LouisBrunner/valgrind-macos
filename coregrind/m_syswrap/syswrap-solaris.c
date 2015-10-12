@@ -1035,6 +1035,7 @@ DECL_TEMPLATE(solaris, sys_timer_getoverrun);
 DECL_TEMPLATE(solaris, sys_facl);
 DECL_TEMPLATE(solaris, sys_door);
 DECL_TEMPLATE(solaris, sys_schedctl);
+DECL_TEMPLATE(solaris, sys_pset);
 DECL_TEMPLATE(solaris, sys_resolvepath);
 DECL_TEMPLATE(solaris, sys_lwp_mutex_timedlock);
 DECL_TEMPLATE(solaris, sys_lwp_rwlock_sys);
@@ -9115,6 +9116,210 @@ POST(sys_schedctl)
    POST_MEM_WRITE(a, sizeof(struct vki_sc_shared));
 }
 
+PRE(sys_pset)
+{
+   /* Kernel: int pset(int subcode, long arg1, long arg2, long arg3,
+                       long arg4); */
+   switch (ARG1 /* subcode */) {
+   case VKI_PSET_CREATE:
+      /* Libc: int pset_create(psetid_t *newpset); */
+      PRINT("sys_pset ( %ld, %#lx )", SARG1, ARG2);
+      PRE_REG_READ2(long, SC2("pset", "create"), int, subcode,
+                    vki_psetid_t *, newpset);
+      PRE_MEM_WRITE("pset(newpset)", ARG2, sizeof(vki_psetid_t));
+      break;
+   case VKI_PSET_DESTROY:
+      /* Libc: int pset_destroy(psetid_t pset); */
+      PRINT("sys_pset ( %ld, %ld )", SARG1, SARG2);
+      PRE_REG_READ2(long, SC2("pset", "destroy"), int, subcode,
+                    vki_psetid_t, pset);
+      break;
+   case VKI_PSET_ASSIGN:
+      /* Libc: int pset_assign(psetid_t pset, processorid_t cpu,
+                               psetid_t *opset); */
+      PRINT("sys_pset ( %ld, %ld, %ld, %#lx )", SARG1, SARG2, SARG3, ARG4);
+      PRE_REG_READ4(long, SC2("pset", "assign"), int, subcode,
+                    vki_psetid_t, pset, vki_processorid_t, cpu,
+                    vki_psetid_t *, opset);
+      if (ARG4 != 0)
+         PRE_MEM_WRITE("pset(opset)", ARG4, sizeof(vki_psetid_t));
+      break;
+   case VKI_PSET_INFO:
+      /* Libc: int pset_info(psetid_t pset, int *type, uint_t *numcpus,
+                             processorid_t *cpulist); */
+      PRINT("sys_pset ( %ld, %ld, %#lx, %#lx, %#lx )", SARG1, SARG2, ARG3,
+                                                       ARG4, ARG5);
+      PRE_REG_READ5(long, SC2("pset", "info"), int, subcode, vki_psetid_t, pset,
+                    int *, type, vki_uint_t *, numcpus,
+                    vki_processorid_t *, cpulist);
+      if (ARG3 != 0)
+         PRE_MEM_WRITE("pset(type)", ARG3, sizeof(int));
+      if (ARG4 != 0)
+         PRE_MEM_WRITE("pset(numcpus)", ARG4, sizeof(vki_uint_t));
+      if ((ARG4 != 0) && (ARG5 != 0)) {
+         vki_uint_t *numcpus = (vki_uint_t *) ARG4;
+         if (ML_(safe_to_deref(numcpus, sizeof(vki_uint_t)))) {
+            PRE_MEM_WRITE("pset(cpulist)", ARG5,
+                          *numcpus * sizeof(vki_processorid_t));
+            /* If cpulist buffer is not large enough, it will hold only as many
+               entries as fit in the buffer. However numcpus will contain the
+               real number of cpus which will be greater than originally passed
+               in. Stash the original value in unused ARG6. */
+            ARG6 = *numcpus;
+         }
+      }
+      break;
+   case VKI_PSET_BIND:
+      /* Libc: int pset_bind(psetid_t pset, idtype_t idtype, id_t id,
+                             psetid_t *opset); */
+      PRINT("sys_pset ( %ld, %ld, %ld, %ld, %#lx )", SARG1, SARG2, SARG3,
+                                                     SARG4, ARG5);
+      PRE_REG_READ5(long, SC2("pset", "bind"), int, subcode, vki_psetid_t, pset,
+                    vki_idtype_t, idtype, vki_id_t, id, vki_psetid_t *, opset);
+      if (ARG5 != 0)
+         PRE_MEM_WRITE("pset(opset)", ARG5, sizeof(vki_psetid_t));
+      break;
+   case VKI_PSET_BIND_LWP:
+      /* Libc: int pset_bind_lwp(psetid_t pset, id_t id, pid_t pid,
+                                 psetid_t *opset); */
+      PRINT("sys_pset ( %ld, %ld, %ld, %ld, %#lx )", SARG1, SARG2, SARG3,
+                                                     SARG4, ARG5);
+      PRE_REG_READ5(long, SC2("pset", "bind_lwp"), int, subcode,
+                    vki_psetid_t, pset, vki_id_t, id, vki_pid_t, pid,
+                    vki_psetid_t *, opset);
+      if (ARG5 != 0)
+         PRE_MEM_WRITE("pset(opset)", ARG5, sizeof(vki_psetid_t));
+      break;
+   case VKI_PSET_GETLOADAVG:
+      /* Libc: int pset_getloadavg(psetid_t pset, double loadavg[],
+                                   int nelem); */
+      PRINT("sys_pset ( %ld, %ld, %#lx, %ld )", SARG1, SARG2, ARG3, SARG4);
+      PRE_REG_READ4(long, SC2("pset", "getloadavg"), int, subcode,
+                    vki_psetid_t, pset, double, loadavg[], int, nelem);
+      if (ARG3 != 0)
+         PRE_MEM_WRITE("pset(loadavg)", ARG3, SARG4 * sizeof(double));
+      break;
+   case VKI_PSET_LIST:
+      /* Libc: int pset_list(psetid_t *psetlist, uint_t *numpsets); */
+      PRINT("sys_pset ( %ld, %#lx, %#lx )", SARG1, ARG2, ARG3);
+      PRE_REG_READ3(long, SC2("pset", "list"), int, subcode,
+                    vki_psetid_t *, psetlist, vki_uint_t *, numpsets);
+      if (ARG3 != 0)
+         PRE_MEM_WRITE("pset(numpsets)", ARG3, sizeof(vki_uint_t));
+      if ((ARG2 != 0) && (ARG3 != 0)) {
+         vki_uint_t *numpsets = (vki_uint_t *) ARG3;
+         if (ML_(safe_to_deref(numpsets, sizeof(vki_uint_t)))) {
+            PRE_MEM_WRITE("pset(psetlist)", ARG2,
+                          *numpsets * sizeof(vki_psetid_t));
+            /* If psetlist buffer is not large enough, it will hold only as many
+               entries as fit in the buffer. However numpsets will contain the
+               real number of processor sets which will be greater than
+               originally passed in. Stash the original value in unused ARG6. */
+            ARG6 = *numpsets;
+         }
+      }
+      break;
+#  if defined(SOLARIS_PSET_GET_NAME)
+   case VKI_PSET_GET_NAME:
+      /* Libc: int pset_get_name(psetid_t psetid, char *buf, uint_t len); */
+      PRINT("sys_pset ( %ld, %ld, %#lx, %ld )", SARG1, SARG2, ARG3, SARG4);
+      PRE_REG_READ4(long, SC2("pset", "get_name"), int, subcode,
+                    vki_psetid_t, pset, char *, buf, vki_uint_t, len);
+      PRE_MEM_WRITE("pset(buf)", ARG3, ARG4);
+      break;
+#  endif /* SOLARIS_PSET_GET_NAME */
+   case VKI_PSET_SETATTR:
+      /* Libc: int pset_setattr(psetid_t pset, uint_t attr); */
+      PRINT("sys_pset ( %ld, %ld, %ld )", SARG1, SARG2, ARG3);
+      PRE_REG_READ3(long, SC2("pset", "setattr"), int, subcode,
+                    vki_psetid_t, pset, vki_uint_t, attr);
+      break;
+   case VKI_PSET_GETATTR:
+      /* Libc: int pset_getattr(psetid_t pset, uint_t *attr); */
+      PRINT("sys_pset ( %ld, %ld, %#lx )", SARG1, SARG2, ARG3);
+      PRE_REG_READ3(long, SC2("pset", "getattr"), int, subcode,
+                    vki_psetid_t, pset, vki_uint_t *, attr);
+      PRE_MEM_WRITE("pset(attr)", ARG3, sizeof(vki_uint_t));
+      break;
+   case VKI_PSET_ASSIGN_FORCED:
+      /* Libc: int pset_assign_forced(psetid_t pset, processorid_t cpu,
+                                      psetid_t *opset); */
+      PRINT("sys_pset ( %ld, %ld, %ld, %#lx )", SARG1, SARG2, SARG3, ARG4);
+      PRE_REG_READ4(long, SC2("pset", "assign_forced"), int, subcode,
+                    vki_psetid_t, pset, vki_processorid_t, cpu,
+                    vki_psetid_t *, opset);
+      if (ARG4 != 0)
+         PRE_MEM_WRITE("pset(opset)", ARG4, sizeof(vki_psetid_t));
+      break;
+   default:
+      VG_(unimplemented)("Syswrap of pset syscall with subcode %ld.", SARG1);
+      /*NOTREACHED*/
+      break;
+   }
+}
+
+POST(sys_pset)
+{
+   switch (ARG1 /*subcode*/) {
+   case VKI_PSET_CREATE:
+      POST_MEM_WRITE(ARG2, sizeof(vki_psetid_t));
+      break;
+   case VKI_PSET_DESTROY:
+      break;
+   case VKI_PSET_ASSIGN:
+      if (ARG4 != 0)
+         POST_MEM_WRITE(ARG4, sizeof(vki_psetid_t));
+      break;
+   case VKI_PSET_INFO:
+      if (ARG3 != 0)
+         POST_MEM_WRITE(ARG3, sizeof(int));
+      if (ARG4 != 0)
+         POST_MEM_WRITE(ARG4, sizeof(vki_uint_t));
+      if ((ARG4 != 0) && (ARG5 != 0)) {
+         vki_uint_t *numcpus = (vki_uint_t *) ARG4;
+         POST_MEM_WRITE(ARG5, MIN(*numcpus, ARG6) * sizeof(vki_processorid_t));
+      }
+      break;
+   case VKI_PSET_BIND:
+      if (ARG5 != 0)
+         POST_MEM_WRITE(ARG5, sizeof(vki_psetid_t));
+      break;
+   case VKI_PSET_BIND_LWP:
+      if (ARG5 != 0)
+         POST_MEM_WRITE(ARG5, sizeof(vki_psetid_t));
+      break;
+   case VKI_PSET_GETLOADAVG:
+      if (ARG3 != 0)
+         POST_MEM_WRITE(ARG3, MIN(SARG4, VKI_LOADAVG_NSTATS) * sizeof(double));
+      break;
+   case VKI_PSET_LIST:
+      if (ARG3 != 0)
+         POST_MEM_WRITE(ARG3, sizeof(vki_uint_t));
+      if ((ARG2 != 0) && (ARG3 != 0)) {
+         vki_uint_t *numpsets = (vki_uint_t *) ARG3;
+         POST_MEM_WRITE(ARG2, MIN(*numpsets, ARG6) * sizeof(vki_psetid_t));
+      }
+      break;
+#  if defined(SOLARIS_PSET_GET_NAME)
+   case VKI_PSET_GET_NAME:
+      POST_MEM_WRITE(ARG3, VG_(strlen)((HChar *) ARG3) + 1);
+      break;
+#  endif /* SOLARIS_PSET_GET_NAME */
+   case VKI_PSET_SETATTR:
+      break;
+   case VKI_PSET_GETATTR:
+      POST_MEM_WRITE(ARG3, sizeof(vki_uint_t));
+      break;
+   case VKI_PSET_ASSIGN_FORCED:
+      if (ARG4 != 0)
+         POST_MEM_WRITE(ARG4, sizeof(vki_psetid_t));
+      break;
+   default:
+      vg_assert(0);
+      break;
+   }
+}
+
 PRE(sys_resolvepath)
 {
    /* int resolvepath(const char *path, char *buf, size_t bufsiz); */
@@ -9408,7 +9613,7 @@ PRE(sys_zone)
       break;
    case VKI_ZONE_LOOKUP:
       /* Libc: zoneid_t zone_lookup(const char *name); */
-      PRINT("sys_zone ( %ld, %#lx )", SARG1, ARG2);
+      PRINT("sys_zone ( %ld, %#lx(%s) )", SARG1, ARG2, (HChar *) ARG2);
       PRE_REG_READ2(long, SC2("zone", "lookup"), int, cmd,
                     const char *, name);
       if (ARG2)
@@ -10197,6 +10402,7 @@ static SyscallTableEntry syscall_table[] = {
    GENX_(__NR_setreuid,             sys_setreuid),              /* 202 */
    GENX_(__NR_setregid,             sys_setregid),              /* 202 */
    SOLXY(__NR_schedctl,             sys_schedctl),              /* 206 */
+   SOLXY(__NR_pset,                 sys_pset),                  /* 207 */
    SOLXY(__NR_resolvepath,          sys_resolvepath),           /* 209 */
    SOLXY(__NR_lwp_mutex_timedlock,  sys_lwp_mutex_timedlock),   /* 210 */
    SOLXY(__NR_lwp_sema_timedwait,   sys_lwp_sema_timedwait),    /* 211 */

@@ -3142,6 +3142,30 @@ AC_MSG_RESULT([no])
 AM_CONDITIONAL(SOLARIS_TSOL_CLEARANCE, test x$solaris_tsol_clearance = xyes)
 
 
+# Solaris-specific check determining if the new pset() syscall subcode
+# PSET_GET_NAME is available. This subcode was added in Solaris 12 but
+# is missing on illumos and Solaris 11.
+#
+# C-level symbol: SOLARIS_PSET_GET_NAME
+# Automake-level symbol: SOLARIS_PSET_GET_NAME
+#
+AC_MSG_CHECKING([for PSET_GET_NAME (Solaris-specific)])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/pset.h>
+]], [[
+  return !(PSET_GET_NAME);
+]])], [
+solaris_pset_get_name=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([SOLARIS_PSET_GET_NAME], 1,
+          [Define to 1 if you have the `PSET_GET_NAME' constants.])
+], [
+solaris_pset_get_name=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(SOLARIS_PSET_GET_NAME, test x$solaris_pset_get_name = xyes)
+
+
 # Solaris-specific check determining if the utimesys() syscall is
 # available (on illumos and older Solaris).
 #
@@ -3450,6 +3474,7 @@ AM_CONDITIONAL(SOLARIS_FREALPATHAT_SYSCALL, false)
 AM_CONDITIONAL(SOLARIS_UUIDSYS_SYSCALL, false)
 AM_CONDITIONAL(SOLARIS_TNDB_GET_TNIP, false)
 AM_CONDITIONAL(SOLARIS_TSOL_CLEARANCE, false)
+AM_CONDITIONAL(SOLARIS_PSET_GET_NAME, false)
 AM_CONDITIONAL(SOLARIS_UTIMESYS_SYSCALL, false)
 AM_CONDITIONAL(SOLARIS_UTIMENSAT_SYSCALL, false)
 AM_CONDITIONAL(SOLARIS_SPAWN_SYSCALL, false)

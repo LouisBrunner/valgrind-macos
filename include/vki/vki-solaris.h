@@ -581,6 +581,10 @@ typedef struct vki_kcf_door_arg_s {
 #define vki_semid64_ds semid_ds64
 
 
+#include <sys/loadavg.h>
+#define VKI_LOADAVG_NSTATS LOADAVG_NSTATS
+
+
 #include <sys/lwp.h>
 #define VKI_LWP_DAEMON LWP_DAEMON
 #define VKI_LWP_FSBASE _LWP_FSBASE
@@ -768,6 +772,24 @@ typedef struct vki_kcf_door_arg_s {
 #define VKI_P_PGID P_PGID
 #define VKI_P_ALL P_ALL
 #define vki_procset_t procset_t
+
+
+#include <sys/pset.h>
+#define VKI_PSET_CREATE PSET_CREATE
+#define VKI_PSET_DESTROY PSET_DESTROY
+#define VKI_PSET_ASSIGN PSET_ASSIGN
+#define VKI_PSET_INFO PSET_INFO
+#define VKI_PSET_BIND PSET_BIND
+#define VKI_PSET_GETLOADAVG PSET_GETLOADAVG
+#define VKI_PSET_LIST PSET_LIST
+#define VKI_PSET_SETATTR PSET_SETATTR
+#define VKI_PSET_GETATTR PSET_GETATTR
+#define VKI_PSET_ASSIGN_FORCED PSET_ASSIGN_FORCED
+#define VKI_PSET_BIND_LWP PSET_BIND_LWP
+#if defined(SOLARIS_PSET_GET_NAME)
+#define VKI_PSET_GET_NAME PSET_GET_NAME
+#endif /* SOLARIS_PSET_GET_NAME */
+#define vki_psetid_t psetid_t
 
 
 #include <sys/regset.h>

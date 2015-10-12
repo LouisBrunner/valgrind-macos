@@ -1188,6 +1188,102 @@ static void sys_door5(void)
    SY(SYS_door, x0, x0 + &params, x0, x0, x0, x0 + DOOR_CALL); FAIL;
 }
 
+__attribute__((noinline))
+static void sys_pset(void)
+{
+   GO(SYS_pset, "(CREATE) 2s 1m");
+   SY(SYS_pset, x0 + PSET_CREATE, x0 + 1); FAIL;
+}
+
+__attribute__((noinline))
+static void sys_pset2(void)
+{
+   GO(SYS_pset, "(DESTROY) 2s 0m");
+   SY(SYS_pset, x0 + PSET_DESTROY, x0); FAIL;
+}
+
+__attribute__((noinline))
+static void sys_pset3(void)
+{
+   GO(SYS_pset, "(ASSIGN) 4s 1m");
+   SY(SYS_pset, x0 + PSET_ASSIGN, x0 + 1, x0 + 1, x0 + 1); FAIL;
+}
+
+__attribute__((noinline))
+static void sys_pset4(void)
+{
+   GO(SYS_pset, "(INFO) 5s 3m");
+   SY(SYS_pset, x0 + PSET_INFO, x0 + 1, x0 + 1, x0 + 1, x0 + 1); FAIL;
+}
+
+__attribute__((noinline))
+static void sys_pset5(void)
+{
+   int type;
+   uint_t numcpus = x0 + 1;
+
+   GO(SYS_pset, "(INFO) 5s 1m");
+   SY(SYS_pset, x0 + PSET_INFO, x0 + 1, x0 + &type, x0 + &numcpus,
+      x0 + 1); FAIL;
+}
+
+__attribute__((noinline))
+static void sys_pset6(void)
+{
+   GO(SYS_pset, "(BIND) 5s 1m");
+   SY(SYS_pset, x0 + PSET_BIND, x0 + 1, x0 + 1, x0 + 1, x0 + 1); FAIL;
+}
+
+__attribute__((noinline))
+static void sys_pset7(void)
+{
+   GO(SYS_pset, "(BIND_LWP) 5s 1m");
+   SY(SYS_pset, x0 + PSET_BIND_LWP, x0 + 1, x0 + 1, x0 + 1, x0 + 1); FAIL;
+}
+
+__attribute__((noinline))
+static void sys_pset8(void)
+{
+   GO(SYS_pset, "(GETLOADAVG) 4s 1m");
+   SY(SYS_pset, x0 + PSET_GETLOADAVG, x0 + 1, x0 + 1, x0 + 1); FAIL;
+}
+
+__attribute__((noinline))
+static void sys_pset9(void)
+{
+   GO(SYS_pset, "(LIST) 3s 1m");
+   SY(SYS_pset, x0 + PSET_LIST, x0 + 1, x0 + 1); FAIL;
+}
+
+__attribute__((noinline))
+static void sys_pset10(void)
+{
+   uint_t numpsets = x0 + 1;
+
+   GO(SYS_pset, "(LIST) 3s 1m");
+   SY(SYS_pset, x0 + PSET_LIST, x0 + 1, x0 + &numpsets);
+}
+
+__attribute__((noinline))
+static void sys_pset11(void)
+{
+   GO(SYS_pset, "(SETATTR) 3s 0m");
+   SY(SYS_pset, x0 + PSET_SETATTR, x0, x0); FAIL;
+}
+
+__attribute__((noinline))
+static void sys_pset12(void)
+{
+   GO(SYS_pset, "(GETATTR) 3s 1m");
+   SY(SYS_pset, x0 + PSET_GETATTR, x0, x0 + 1); FAIL;
+}
+
+__attribute__((noinline))
+static void sys_pset13(void)
+{
+   GO(SYS_pset, "(ASSIGN_FORCED) 4s 1m");
+   SY(SYS_pset, x0 + PSET_ASSIGN_FORCED, x0 + 1, x0 + 1, x0 + 1); FAIL;
+}
 
 __attribute__((noinline))
 static void sys_lwp_rwlock(void)
@@ -2204,7 +2300,19 @@ int main(void)
    SY(SYS_schedctl); SUCC;
 
    /* SYS_pset                  207 */
-   /* XXX Missing wrapper. */
+   sys_pset();
+   sys_pset2();
+   sys_pset3();
+   sys_pset4();
+   sys_pset5();
+   sys_pset6();
+   sys_pset7();
+   sys_pset8();
+   sys_pset9();
+   sys_pset10();
+   sys_pset11();
+   sys_pset12();
+   sys_pset13();
 
    /* SYS_sparc_utrap_install   208 */
    /* XXX Missing wrapper. */

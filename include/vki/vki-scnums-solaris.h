@@ -262,7 +262,7 @@
 //#define __NR_install_utrap              SYS_install_utrap
 //#define __NR_signotify                  SYS_signotify
 #define __NR_schedctl                   SYS_schedctl
-//#define __NR_pset                       SYS_pset
+#define __NR_pset                       SYS_pset
 //#define SYS_sparc_utrap_install
 #define __NR_resolvepath                SYS_resolvepath
 #define __NR_lwp_mutex_timedlock        SYS_lwp_mutex_timedlock

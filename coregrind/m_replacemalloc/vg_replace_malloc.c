@@ -1283,8 +1283,8 @@ ZONE_SET_NAME(SO_SYN_MALLOC,    malloc_set_zone_name);
       return vg_default_zone.zone_name; \
    }
 
-ZONE_SET_NAME(VG_Z_LIBC_SONAME, malloc_get_zone_name);
-ZONE_SET_NAME(SO_SYN_MALLOC,    malloc_get_zone_name);
+ZONE_GET_NAME(VG_Z_LIBC_SONAME, malloc_get_zone_name);
+ZONE_GET_NAME(SO_SYN_MALLOC,    malloc_get_zone_name);
 
 #endif /* defined(VGO_darwin) */
 

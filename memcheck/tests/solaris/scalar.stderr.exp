@@ -2147,6 +2147,12 @@ Syscall param munmap(length) contains uninitialised byte(s)
    ...
 
 ---------------------------------------------------------
+120:              SYS_fchdir 1s 0m
+---------------------------------------------------------
+Syscall param fchdir(fd) contains uninitialised byte(s)
+   ...
+
+---------------------------------------------------------
 121:               SYS_readv 3s 1m
 ---------------------------------------------------------
 Syscall param readv(fd) contains uninitialised byte(s)

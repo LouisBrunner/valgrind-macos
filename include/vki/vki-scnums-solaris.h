@@ -174,7 +174,7 @@
 #define __NR_munmap                     SYS_munmap
 //#define __NR_fpathconf                  SYS_fpathconf
 //#define __NR_vfork                      SYS_vfork
-//#define __NR_fchdir                     SYS_fchdir
+#define __NR_fchdir                     SYS_fchdir
 #define __NR_readv                      SYS_readv
 #define __NR_writev                     SYS_writev
 #if defined(SOLARIS_UUIDSYS_SYSCALL)

@@ -10325,6 +10325,7 @@ static SyscallTableEntry syscall_table[] = {
    SOLX_(__NR_mmap,                 sys_mmap),                  /* 115 */
    GENXY(__NR_mprotect,             sys_mprotect),              /* 116 */
    GENXY(__NR_munmap,               sys_munmap),                /* 117 */
+   GENX_(__NR_fchdir,               sys_fchdir),                /* 120 */
    GENXY(__NR_readv,                sys_readv),                 /* 121 */
    GENX_(__NR_writev,               sys_writev),                /* 122 */
 #if defined(SOLARIS_UUIDSYS_SYSCALL)

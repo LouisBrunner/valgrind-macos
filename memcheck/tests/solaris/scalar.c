@@ -1939,7 +1939,8 @@ int main(void)
    /* XXX Missing wrapper. */
 
    /* SYS_fchdir                120 */
-   /* XXX Missing wrapper. */
+   GO(SYS_fchdir, "1s 0m");
+   SY(SYS_fchdir, x0 - 1); FAILx(EBADF);
 
    /* SYS_readv                 121 */
    GO(SYS_readv, "3s 1m");

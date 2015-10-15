@@ -36,6 +36,7 @@ where XXXXXX is the bug number as listed below.
 353370  don't advertise RDRAND in cpuid for Core-i7-4910-like avx2 machine
 353398  WARNING: unhandled amd64-solaris syscall: 207
 353680  s390x: Crash with certain glibc versions due to non-implemented TBEGIN
+353917  unhandled amd64-solaris syscall fchdir(120)
 
 
 

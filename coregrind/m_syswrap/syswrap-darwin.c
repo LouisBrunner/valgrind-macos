@@ -8767,19 +8767,19 @@ PRE(__semwait_signal)
 // GrP provided this alternative version for 10.6, but NjN
 // reckons the 10.5 is is still correct for 10.6.  So, retaining
 // Greg's version as a comment just in case we need it later.
-//PRE(__semwait_signal)
+//PRE(__old_semwait_signal)
 //{
 //   /* 10.5 args: int cond_sem, int mutex_sem,
 //                 int timeout, int relative,
 //                 const timespec *ts */
-//   PRINT("__semwait_signal(wait %s, signal %s, %ld, %ld, %#lx)", 
+//   PRINT("__old_semwait_signal(wait %s, signal %s, %ld, %ld, %#lx)",
 //         name_for_port(ARG1), name_for_port(ARG2), ARG3, ARG4, ARG5);
-//   PRE_REG_READ5(int, "__semwait_signal", 
+//   PRE_REG_READ5(int, "__old_semwait_signal", 
 //                 int,cond_sem, int,mutex_sem,
 //                 int,timeout, int,relative, 
 //                 const struct vki_timespec *,ts);
 //   
-//   if (ARG5) PRE_MEM_READ ("__semwait_signal(ts)", 
+//   if (ARG5) PRE_MEM_READ ("__old_semwait_signal(ts)",
 //                           ARG5, sizeof(struct vki_timespec));
 //   
 //   *flags |= SfMayBlock;
@@ -10205,8 +10205,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 #else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(369)),   // ???
 #endif
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(370)),   // ???
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(371)),   // ???
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(370)),   // old semwait_signal
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(371)),   // old semwait_signal_nocancel
 #if DARWIN_VERS >= DARWIN_10_6
    MACX_(__NR___thread_selfid, __thread_selfid), 
 #else

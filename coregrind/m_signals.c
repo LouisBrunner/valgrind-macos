@@ -959,16 +959,16 @@ extern void my_sigreturn(void);
    ".text\n" \
    ".globl my_sigreturn\n" \
    "my_sigreturn:\n" \
-   "movl $" VG_STRINGIFY(__NR_DARWIN_FAKE_SIGRETURN) ",%eax\n" \
-   "int $0x80"
+   "    movl $" VG_STRINGIFY(__NR_DARWIN_FAKE_SIGRETURN) ",%eax\n" \
+   "    int $0x80\n"
 
 #elif defined(VGP_amd64_darwin)
-   // DDD: todo
 #  define _MY_SIGRETURN(name) \
    ".text\n" \
    ".globl my_sigreturn\n" \
    "my_sigreturn:\n" \
-   "ud2\n"
+   "    movq $" VG_STRINGIFY(__NR_DARWIN_FAKE_SIGRETURN) ",%rax\n" \
+   "    syscall\n"
 
 #elif defined(VGP_s390x_linux)
 #  define _MY_SIGRETURN(name) \

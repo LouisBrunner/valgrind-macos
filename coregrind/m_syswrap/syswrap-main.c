@@ -2405,10 +2405,10 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
    /* Make sure our caller is actually sane, and we're really backing
       back over a syscall.
 
-      int $0x80 == CD 80
-      int $0x81 == CD 81
-      int $0x82 == CD 82
-      sysenter  == 0F 34
+      int $0x80 == CD 80  // Used to communicate with BSD syscalls
+      int $0x81 == CD 81  // Used to communicate with Mach traps
+      int $0x82 == CD 82  // Used to communicate with "thread" ?
+      sysenter  == 0F 34  // Used to communicate with Unix syscalls
    */
    {
        UChar *p = (UChar *)arch->vex.guest_EIP;
@@ -2424,8 +2424,23 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
    }
    
 #elif defined(VGP_amd64_darwin)
-   // DDD: #warning GrP fixme amd64 restart unimplemented
-   vg_assert(0);
+   arch->vex.guest_RIP = arch->vex.guest_IP_AT_SYSCALL;
+    
+   /* Make sure our caller is actually sane, and we're really backing
+      back over a syscall.
+
+      syscall   == 0F 05
+   */
+   {
+       UChar *p = (UChar *)arch->vex.guest_RIP;
+        
+       Bool  ok = (p[0] == 0x0F && p[1] == 0x05);
+       if (!ok)
+           VG_(message)(Vg_DebugMsg,
+                        "?! restarting over syscall at %#llx %02x %02x\n",
+                        arch->vex.guest_RIP, p[0], p[1]);
+       vg_assert(ok);
+   }
    
 #elif defined(VGP_s390x_linux)
    arch->vex.guest_IA -= 2;             // sizeof(syscall)

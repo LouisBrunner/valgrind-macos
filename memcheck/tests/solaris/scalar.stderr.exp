@@ -2591,6 +2591,41 @@ Syscall param lwp_mutex_wakeup(lp->mutex_waiters) points to unaddressable byte(s
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
+170:       SYS_lwp_cond_wait 4s 5m
+---------------------------------------------------------
+Syscall param lwp_cond_wait(cvp) contains uninitialised byte(s)
+   ...
+
+Syscall param lwp_cond_wait(mp) contains uninitialised byte(s)
+   ...
+
+Syscall param lwp_cond_wait(tsp) contains uninitialised byte(s)
+   ...
+
+Syscall param lwp_cond_wait(check_part) contains uninitialised byte(s)
+   ...
+
+Syscall param lwp_cond_wait(cvp->type) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param lwp_cond_wait(cvp->waiters_kernel) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param lwp_cond_wait(mp->mutex_type) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param lwp_cond_wait(mp->mutex_waiters) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param lwp_cond_wait(tsp) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
 172:  SYS_lwp_cond_broadcast 1s 2m
 ---------------------------------------------------------
 Syscall param lwp_cond_broadcast(cvp) contains uninitialised byte(s)

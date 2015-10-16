@@ -1013,6 +1013,7 @@ DECL_TEMPLATE(solaris, sys_lwp_sigmask);
 DECL_TEMPLATE(solaris, sys_lwp_private);
 DECL_TEMPLATE(solaris, sys_lwp_wait);
 DECL_TEMPLATE(solaris, sys_lwp_mutex_wakeup);
+DECL_TEMPLATE(solaris, sys_lwp_cond_wait);
 DECL_TEMPLATE(solaris, sys_lwp_cond_broadcast);
 DECL_TEMPLATE(solaris, sys_pread);
 DECL_TEMPLATE(solaris, sys_pwrite);
@@ -6960,7 +6961,7 @@ PRE(sys_lwp_wait)
    /* int lwp_wait(id_t lwpid, id_t *departed); */
    *flags |= SfMayBlock;
    PRINT("sys_lwp_wait ( %ld, %#lx )", SARG1, ARG2);
-   PRE_REG_READ2(long, "lwp_wait", vki_id_t, lwpid, id_t *, departed);
+   PRE_REG_READ2(long, "lwp_wait", vki_id_t, lwpid, vki_id_t *, departed);
    if (ARG2)
       PRE_MEM_WRITE("lwp_wait(departed)", ARG2, sizeof(vki_id_t));
 }
@@ -6973,11 +6974,11 @@ POST(sys_lwp_wait)
 PRE(sys_lwp_mutex_wakeup)
 {
    /* int lwp_mutex_wakeup(lwp_mutex_t *lp, int release_all); */
-   vki_lwp_mutex_t *lp = (vki_lwp_mutex_t*)ARG1;
    *flags |= SfMayBlock;
    PRINT("sys_lwp_mutex_wakeup ( %#lx, %ld )", ARG1, SARG2);
-   PRE_REG_READ2(long, "lwp_mutex_wakeup", lwp_mutex_t *, lp,
+   PRE_REG_READ2(long, "lwp_mutex_wakeup", vki_lwp_mutex_t *, lp,
                  int, release_all);
+   vki_lwp_mutex_t *lp = (vki_lwp_mutex_t *) ARG1;
    PRE_FIELD_READ("lwp_mutex_wakeup(lp->mutex_type)", lp->vki_mutex_type);
    PRE_FIELD_WRITE("lwp_mutex_wakeup(lp->mutex_waiters)",
                    lp->vki_mutex_waiters);
@@ -6985,18 +6986,48 @@ PRE(sys_lwp_mutex_wakeup)
 
 POST(sys_lwp_mutex_wakeup)
 {
-   vki_lwp_mutex_t *lp = (vki_lwp_mutex_t*)ARG1;
+   vki_lwp_mutex_t *lp = (vki_lwp_mutex_t *) ARG1;
    POST_FIELD_WRITE(lp->vki_mutex_waiters);
+}
+
+PRE(sys_lwp_cond_wait)
+{
+   /* int lwp_cond_wait(lwp_cond_t *cvp, lwp_mutex_t *mp, timespec_t *tsp,
+                        int check_park); */
+   *flags |= SfMayBlock;
+   PRINT("sys_lwp_cond_wait( %#lx, %#lx, %#lx, %ld )", ARG1, ARG2, ARG3, SARG4);
+   PRE_REG_READ4(long, "lwp_cond_wait", vki_lwp_cond_t *, cvp,
+                 vki_lwp_mutex_t *, mp, vki_timespec_t *, tsp, int, check_part);
+
+   vki_lwp_cond_t *cvp = (vki_lwp_cond_t *) ARG1;
+   vki_lwp_mutex_t *mp = (vki_lwp_mutex_t *) ARG2;
+   PRE_FIELD_READ("lwp_cond_wait(cvp->type)", cvp->vki_cond_type);
+   PRE_FIELD_READ("lwp_cond_wait(cvp->waiters_kernel)",
+                  cvp->vki_cond_waiters_kernel);
+   PRE_FIELD_READ("lwp_cond_wait(mp->mutex_type)", mp->vki_mutex_type);
+   PRE_FIELD_WRITE("lwp_cond_wait(mp->mutex_waiters)", mp->vki_mutex_waiters);
+   if (ARG3 != 0)
+      PRE_MEM_READ("lwp_cond_wait(tsp)", ARG3, sizeof(vki_timespec_t));
+}
+
+POST(sys_lwp_cond_wait)
+{
+   vki_lwp_cond_t *cvp = (vki_lwp_cond_t *) ARG1;
+   vki_lwp_mutex_t *mp = (vki_lwp_mutex_t *) ARG2;
+   POST_FIELD_WRITE(cvp->vki_cond_waiters_kernel);
+   POST_FIELD_WRITE(mp->vki_mutex_waiters);
+   if (ARG3 != 0)
+      POST_MEM_WRITE(ARG3, sizeof(vki_timespec_t));
 }
 
 PRE(sys_lwp_cond_broadcast)
 {
    /* int lwp_cond_broadcast(lwp_cond_t *cvp); */
-   vki_lwp_cond_t *cvp = (vki_lwp_cond_t*)ARG1;
    *flags |= SfMayBlock;
    PRINT("sys_lwp_cond_broadcast ( %#lx )", ARG1);
-   PRE_REG_READ1(long, "lwp_cond_broadcast", lwp_cond_t *, cvp);
+   PRE_REG_READ1(long, "lwp_cond_broadcast", vki_lwp_cond_t *, cvp);
 
+   vki_lwp_cond_t *cvp = (vki_lwp_cond_t *) ARG1;
    PRE_FIELD_READ("lwp_cond_broadcast(cvp->type)", cvp->vki_cond_type);
    PRE_FIELD_READ("lwp_cond_broadcast(cvp->waiters_kernel)",
                   cvp->vki_cond_waiters_kernel);
@@ -7006,7 +7037,7 @@ PRE(sys_lwp_cond_broadcast)
 
 POST(sys_lwp_cond_broadcast)
 {
-   vki_lwp_cond_t *cvp = (vki_lwp_cond_t*)ARG1;
+   vki_lwp_cond_t *cvp = (vki_lwp_cond_t *) ARG1;
    POST_FIELD_WRITE(cvp->vki_cond_waiters_kernel);
 }
 
@@ -10375,6 +10406,7 @@ static SyscallTableEntry syscall_table[] = {
    SOLX_(__NR_lwp_private,          sys_lwp_private),           /* 166 */
    SOLXY(__NR_lwp_wait,             sys_lwp_wait),              /* 167 */
    SOLXY(__NR_lwp_mutex_wakeup,     sys_lwp_mutex_wakeup),      /* 168 */
+   SOLXY(__NR_lwp_cond_wait,        sys_lwp_cond_wait),         /* 170 */
    SOLX_(__NR_lwp_cond_broadcast,   sys_lwp_cond_broadcast),    /* 172 */
    SOLXY(__NR_pread,                sys_pread),                 /* 173 */
    SOLX_(__NR_pwrite,               sys_pwrite),                /* 174 */

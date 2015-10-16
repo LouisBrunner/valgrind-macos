@@ -224,7 +224,7 @@
 #define __NR_lwp_private                SYS_lwp_private
 #define __NR_lwp_wait                   SYS_lwp_wait
 #define __NR_lwp_mutex_wakeup           SYS_lwp_mutex_wakeup
-//#define __NR_lwp_cond_wait              SYS_lwp_cond_wait
+#define __NR_lwp_cond_wait              SYS_lwp_cond_wait
 //#define __NR_lwp_cond_signal            SYS_lwp_cond_signal
 #define __NR_lwp_cond_broadcast         SYS_lwp_cond_broadcast
 #define __NR_pread                      SYS_pread

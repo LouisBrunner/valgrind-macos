@@ -37,6 +37,7 @@ where XXXXXX is the bug number as listed below.
 353398  WARNING: unhandled amd64-solaris syscall: 207
 353680  s390x: Crash with certain glibc versions due to non-implemented TBEGIN
 353917  unhandled amd64-solaris syscall fchdir(120)
+353920  unhandled amd64-solaris syscall: 170
 
 
 

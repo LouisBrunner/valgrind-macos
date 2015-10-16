@@ -39,5 +39,5 @@ vbit_test_CPPFLAGS     = $(AM_CPPFLAGS_PRI) \
                          -I$(top_srcdir)/VEX/pub
 vbit_test_CFLAGS       = $(AM_CFLAGS_PRI) -std=c99
 vbit_test_DEPENDENCIES = 
-vbit_test_LDADD        = 
+vbit_test_LDADD        = $(top_srcdir)/VEX/libvex-@VGCONF_ARCH_PRI@-@VGCONF_OS@.a
 vbit_test_LDFLAGS      = $(AM_CFLAGS_PRI) -std=c99 @LIB_UBSAN@

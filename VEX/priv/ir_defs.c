@@ -2474,7 +2474,6 @@ IRSB* deepCopyIRSBExceptStmts ( const IRSB* bb )
 /*--- Primop types                                            ---*/
 /*---------------------------------------------------------------*/
 
-static
 void typeOfPrimop ( IROp op, 
                     /*OUTs*/
                     IRType* t_dst, 

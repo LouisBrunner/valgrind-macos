@@ -1850,6 +1850,10 @@ typedef
 /* Pretty-print an op. */
 extern void ppIROp ( IROp );
 
+/* For a given operand return the types of its arguments and its result. */
+extern void typeOfPrimop ( IROp op,
+                           /*OUTs*/ IRType* t_dst, IRType* t_arg1,
+                           IRType* t_arg2, IRType* t_arg3, IRType* t_arg4 );
 
 /* Encoding of IEEE754-specified rounding modes.
    Note, various front and back ends rely on the actual numerical

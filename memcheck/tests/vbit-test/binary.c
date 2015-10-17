@@ -474,10 +474,20 @@ test_binary_op(const irop_t *op, test_data_t *data)
          won't crash. */
       memset(&opnds[1].value, 0xff, sizeof opnds[1].value);
 
-      /* For immediate shift amounts choose a value of '1'. That should
-         not cause a problem. */
+      /* For immediate shift amounts choose a value of '1'. That value should
+         not cause a problem. Note: we always assign to the u64 member here.
+         The reason is that in ir_inject.c the value_t type is not visible.
+         The value is picked up there by interpreting the memory as an
+         ULong value. So, we rely on 
+         union {
+           ULong   v1;   // value picked up in ir_inject.c
+           value_t v2;   // value assigned here
+         } xx;
+         assert(sizeof xx.v1 == sizeof xx.v2.u64);
+         assert(xx.v1 == xx.v2.u64);
+      */
       if (op->shift_amount_is_immediate)
-         opnds[1].value.u8 = 1;
+         opnds[1].value.u64 = 1;
 
       for (bitpos = 0; bitpos < num_input_bits; ++bitpos) {
          opnds[i].vbits = onehot_vbits(bitpos, bitsof_irtype(opnds[i].type));

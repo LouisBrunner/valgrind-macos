@@ -392,8 +392,8 @@ void read_symtab( /*OUT*/XArray* /* DiSym */ syms,
    the primary name as a secondary sort key. */
 static Int cmp_DiSym_by_start_then_name ( const void* v1, const void* v2 )
 {
-   const DiSym* s1 = (DiSym*)v1;
-   const DiSym* s2 = (DiSym*)v2;
+   const DiSym* s1 = (const DiSym*)v1;
+   const DiSym* s2 = (const DiSym*)v2;
    if (s1->avmas.main < s2->avmas.main) return -1;
    if (s1->avmas.main > s2->avmas.main) return 1;
    return VG_(strcmp)(s1->pri_name, s2->pri_name);

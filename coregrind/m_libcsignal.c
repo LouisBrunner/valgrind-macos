@@ -478,7 +478,7 @@ Int VG_(sigtimedwait_zero)( const vki_sigset_t *set,
 
   /* don't try for signals not in 'set' */
   /* pending = pending `intersect` set */
-  VG_(sigintersectset)(&pending, (vki_sigset_t*)set);
+  VG_(sigintersectset)(&pending, (const vki_sigset_t*)set);
 
   /* don't try for signals not blocked at the moment */
   ir = VG_(sigprocmask)(VKI_SIG_SETMASK, NULL, &blocked);

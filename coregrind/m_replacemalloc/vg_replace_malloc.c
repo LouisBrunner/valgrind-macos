@@ -1276,8 +1276,8 @@ ZONE_SET_NAME(SO_SYN_MALLOC,    malloc_set_zone_name);
 
 #define ZONE_GET_NAME(soname, fnname) \
    \
-   char* VG_REPLACE_FUNCTION_EZU(10280,soname,fnname)(void* zone); \
-   char* VG_REPLACE_FUNCTION_EZU(10280,soname,fnname)(void* zone)  \
+   const char* VG_REPLACE_FUNCTION_EZU(10280,soname,fnname)(void* zone); \
+   const char* VG_REPLACE_FUNCTION_EZU(10280,soname,fnname)(void* zone)  \
    { \
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(zone); \
       return vg_default_zone.zone_name; \

@@ -5992,8 +5992,8 @@ PRE(sys_ioctl)
       PRE_MEM_RASCIIZ( "ioctl(SIOCSIFMAP)",
                      (Addr)((struct vki_ifreq *)ARG3)->vki_ifr_name );
       PRE_MEM_READ( "ioctl(SIOCSIFMAP)",
-                     (Addr)&((struct vki_ifreq *)ARG3)->ifr_map,
-                     sizeof(((struct vki_ifreq *)ARG3)->ifr_map) );
+                     (Addr)&((struct vki_ifreq *)ARG3)->vki_ifr_map,
+                     sizeof(((struct vki_ifreq *)ARG3)->vki_ifr_map) );
       break;
    case VKI_SIOCSHWTSTAMP:       /* Set hardware time stamping   */
       PRE_MEM_RASCIIZ( "ioctl(SIOCSHWTSTAMP)",
@@ -6006,8 +6006,8 @@ PRE(sys_ioctl)
       PRE_MEM_RASCIIZ( "ioctl(SIOCSIFTXQLEN)",
                      (Addr)((struct vki_ifreq *)ARG3)->vki_ifr_name );
       PRE_MEM_READ( "ioctl(SIOCSIFTXQLEN)",
-                     (Addr)&((struct vki_ifreq *)ARG3)->ifr_qlen,
-                     sizeof(((struct vki_ifreq *)ARG3)->ifr_qlen) );
+                     (Addr)&((struct vki_ifreq *)ARG3)->vki_ifr_qlen,
+                     sizeof(((struct vki_ifreq *)ARG3)->vki_ifr_qlen) );
       break;
    case VKI_SIOCSIFADDR:         /* set PA address               */
    case VKI_SIOCSIFDSTADDR:      /* set remote PA address        */
@@ -6016,8 +6016,8 @@ PRE(sys_ioctl)
       PRE_MEM_RASCIIZ( "ioctl(SIOCSIF*ADDR)",
                      (Addr)((struct vki_ifreq *)ARG3)->vki_ifr_name );
       PRE_MEM_READ( "ioctl(SIOCSIF*ADDR)",
-                     (Addr)&((struct vki_ifreq *)ARG3)->ifr_addr,
-                     sizeof(((struct vki_ifreq *)ARG3)->ifr_addr) );
+                     (Addr)&((struct vki_ifreq *)ARG3)->vki_ifr_addr,
+                     sizeof(((struct vki_ifreq *)ARG3)->vki_ifr_addr) );
       break;
    case VKI_SIOCSIFMETRIC:       /* set metric                   */
       PRE_MEM_RASCIIZ( "ioctl(SIOCSIFMETRIC)",
@@ -6037,8 +6037,8 @@ PRE(sys_ioctl)
       PRE_MEM_RASCIIZ( "ioctl(SIOCSIFHWADDR)",
                      (Addr)((struct vki_ifreq *)ARG3)->vki_ifr_name );
       PRE_MEM_READ( "ioctl(SIOCSIFHWADDR)",
-                     (Addr)&((struct vki_ifreq *)ARG3)->ifr_hwaddr,
-                     sizeof(((struct vki_ifreq *)ARG3)->ifr_hwaddr) );
+                     (Addr)&((struct vki_ifreq *)ARG3)->vki_ifr_hwaddr,
+                     sizeof(((struct vki_ifreq *)ARG3)->vki_ifr_hwaddr) );
       break;
    case VKI_SIOCSMIIREG:         /* set hardware entry registers */
       PRE_MEM_RASCIIZ( "ioctl(SIOCSMIIREG)",
@@ -8635,8 +8635,8 @@ POST(sys_ioctl)
                       sizeof(((struct vki_ifreq *)ARG3)->vki_ifr_flags) );
       break;
    case VKI_SIOCGIFHWADDR:       /* Get hardware address         */
-      POST_MEM_WRITE( (Addr)&((struct vki_ifreq *)ARG3)->ifr_hwaddr,
-                      sizeof(((struct vki_ifreq *)ARG3)->ifr_hwaddr) );
+      POST_MEM_WRITE( (Addr)&((struct vki_ifreq *)ARG3)->vki_ifr_hwaddr,
+                      sizeof(((struct vki_ifreq *)ARG3)->vki_ifr_hwaddr) );
       break;
    case VKI_SIOCGIFMTU:          /* get MTU size                 */
       POST_MEM_WRITE( (Addr)&((struct vki_ifreq *)ARG3)->vki_ifr_mtu,
@@ -8647,8 +8647,8 @@ POST(sys_ioctl)
    case VKI_SIOCGIFBRDADDR:      /* get broadcast PA address     */
    case VKI_SIOCGIFNETMASK:      /* get network PA mask          */
       POST_MEM_WRITE(
-                (Addr)&((struct vki_ifreq *)ARG3)->ifr_addr,
-                sizeof(((struct vki_ifreq *)ARG3)->ifr_addr) );
+                (Addr)&((struct vki_ifreq *)ARG3)->vki_ifr_addr,
+                sizeof(((struct vki_ifreq *)ARG3)->vki_ifr_addr) );
       break;
    case VKI_SIOCGIFMETRIC:       /* get metric                   */
       POST_MEM_WRITE(
@@ -8657,14 +8657,14 @@ POST(sys_ioctl)
       break;
    case VKI_SIOCGIFMAP:          /* Get device parameters        */
       POST_MEM_WRITE(
-                (Addr)&((struct vki_ifreq *)ARG3)->ifr_map,
-                sizeof(((struct vki_ifreq *)ARG3)->ifr_map) );
+                (Addr)&((struct vki_ifreq *)ARG3)->vki_ifr_map,
+                sizeof(((struct vki_ifreq *)ARG3)->vki_ifr_map) );
       break;
      break;
    case VKI_SIOCGIFTXQLEN:       /* Get the tx queue length      */
       POST_MEM_WRITE(
-                (Addr)&((struct vki_ifreq *)ARG3)->ifr_qlen,
-                sizeof(((struct vki_ifreq *)ARG3)->ifr_qlen) );
+                (Addr)&((struct vki_ifreq *)ARG3)->vki_ifr_qlen,
+                sizeof(((struct vki_ifreq *)ARG3)->vki_ifr_qlen) );
       break;
    case VKI_SIOCGIFNAME:         /* get iface name               */
       POST_MEM_WRITE(

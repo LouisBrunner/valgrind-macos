@@ -12,7 +12,10 @@ Requirements
   automake and autoconf have to be found in the PATH. You should be able to
   install pkg:/developer/build/automake and pkg:/developer/build/autoconf
   packages to fullfil this requirement.
-- System header files and GNU make is also required.
+- System header files are required. On Solaris, these can be installed with:
+    # pkg install system/header
+- GNU make is also required. On Solaris, this can be quickly achieved with:
+    $ PATH=/usr/gnu/bin:$PATH; export PATH
 - For remote debugging support, working GDB is required (see below).
 
 

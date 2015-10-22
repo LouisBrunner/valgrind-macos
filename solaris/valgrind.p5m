@@ -60,6 +60,8 @@ file path=usr/lib/valgrind/exp-sgcheck-amd64-solaris                     owner=r
 file path=usr/lib/valgrind/exp-sgcheck-x86-solaris                       owner=root group=bin mode=0755
 file path=usr/lib/valgrind/getoff-amd64-solaris                          owner=root group=bin mode=0755
 file path=usr/lib/valgrind/getoff-x86-solaris                            owner=root group=bin mode=0755
+file path=usr/lib/valgrind/helgrind-amd64-solaris                        owner=root group=bin mode=0755
+file path=usr/lib/valgrind/helgrind-x86-solaris                          owner=root group=bin mode=0755
 file path=usr/lib/valgrind/i386-coresse-valgrind.xml                     owner=root group=bin mode=0644
 file path=usr/lib/valgrind/lackey-amd64-solaris                          owner=root group=bin mode=0755
 file path=usr/lib/valgrind/lackey-x86-solaris                            owner=root group=bin mode=0755

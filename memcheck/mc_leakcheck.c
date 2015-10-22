@@ -683,6 +683,65 @@ static Bool is_valid_aligned_ULong ( Addr a )
       && MC_(is_valid_aligned_word)(a + 4);
 }
 
+/* The below leak_search_fault_catcher is used to catch memory access
+   errors happening during leak_search.  During the scan, we check
+   with aspacemgr and/or VA bits that each page or dereferenced location is
+   readable and belongs to the client.  However, we still protect
+   against SIGSEGV and SIGBUS e.g. in case aspacemgr is desynchronised
+   with the real page mappings.  Such a desynchronisation could happen
+   due to an aspacemgr bug.  Note that if the application is using
+   mprotect(NONE), then a page can be unreadable but have addressable
+   and defined VA bits (see mc_main.c function mc_new_mem_mprotect).
+   Currently, 2 functions are dereferencing client memory during leak search:
+   heuristic_reachedness and lc_scan_memory.
+   Each such function has its own fault catcher, that will call
+   leak_search_fault_catcher with the proper 'who' and jmpbuf parameters. */
+static volatile Addr bad_scanned_addr;
+static
+void leak_search_fault_catcher ( Int sigNo, Addr addr,
+                                 const HChar *who, VG_MINIMAL_JMP_BUF(jmpbuf) )
+{
+   vki_sigset_t sigmask;
+
+   if (0)
+      VG_(printf)("OUCH! sig=%d addr=%#lx who=%s\n", sigNo, addr, who);
+
+   /* Signal handler runs with the signal masked.
+      Unmask the handled signal before longjmp-ing or return-ing.
+      Note that during leak search, we expect only SIGSEGV or SIGBUS
+      and we do not expect another occurence until we longjmp-ed!return-ed
+      to resume the leak search. So, it is safe to unmask the signal
+      here. */
+   /* First get current mask (by passing NULL as first arg) */
+   VG_(sigprocmask)(VKI_SIG_SETMASK, NULL, &sigmask);
+   /* Then set a new sigmask, with this signal removed from the mask. */
+   VG_(sigdelset)(&sigmask, sigNo);
+   VG_(sigprocmask)(VKI_SIG_SETMASK, &sigmask, NULL);
+
+   if (sigNo == VKI_SIGSEGV || sigNo == VKI_SIGBUS) {
+      bad_scanned_addr = addr;
+      VG_MINIMAL_LONGJMP(jmpbuf);
+   } else {
+      /* ??? During leak search, we are not supposed to receive any
+         other sync signal that these 2.
+         In theory, we should not call VG_(umsg) in a signal handler,
+         but better (try to) report this unexpected behaviour. */
+      VG_(umsg)("leak_search_fault_catcher:"
+                " unexpected signal %d, catcher %s ???\n",
+                sigNo, who);
+   }
+}
+
+// jmpbuf and fault_catcher used during heuristic_reachedness
+static VG_MINIMAL_JMP_BUF(heuristic_reachedness_jmpbuf);
+static
+void heuristic_reachedness_fault_catcher ( Int sigNo, Addr addr )
+{
+   leak_search_fault_catcher (sigNo, addr, 
+                              "heuristic_reachedness_fault_catcher",
+                              heuristic_reachedness_jmpbuf);
+}
+
 // If ch is heuristically reachable via an heuristic member of heur_set,
 // returns this heuristic.
 // If ch cannot be considered reachable using one of these heuristics,
@@ -696,6 +755,17 @@ static LeakCheckHeuristic heuristic_reachedness (Addr ptr,
                                                  MC_Chunk *ch, LC_Extra *ex,
                                                  UInt heur_set)
 {
+
+   fault_catcher_t prev_catcher;
+
+   prev_catcher = VG_(set_fault_catcher)(heuristic_reachedness_fault_catcher);
+
+   // See leak_search_fault_catcher
+   if (VG_MINIMAL_SETJMP(heuristic_reachedness_jmpbuf) != 0) {
+      VG_(set_fault_catcher) (prev_catcher);
+      return LchNone;
+   }
+
    if (HiS(LchStdString, heur_set)) {
       // Detects inner pointers to Std::String for layout being
       //     length capacity refcount char_array[] \0
@@ -717,6 +787,7 @@ static LeakCheckHeuristic heuristic_reachedness (Addr ptr,
                // ??? probably not a good idea, as I guess stdstring
                // ??? allocator can be done via custom allocator
                // ??? or even a call to malloc ????
+               VG_(set_fault_catcher) (prev_catcher);
                return LchStdString;
             }
          }
@@ -735,6 +806,7 @@ static LeakCheckHeuristic heuristic_reachedness (Addr ptr,
           && is_valid_aligned_ULong(ch->data)) {
          const ULong size = *((ULong*)ch->data);
          if (size > 0 && (ch->szB - sizeof(ULong)) == size) {
+            VG_(set_fault_catcher) (prev_catcher);
             return LchLength64;
          }
       }
@@ -761,6 +833,7 @@ static LeakCheckHeuristic heuristic_reachedness (Addr ptr,
          const SizeT nr_elts = *((SizeT*)ch->data);
          if (nr_elts > 0 && (ch->szB - sizeof(SizeT)) % nr_elts == 0) {
             // ??? could check that ch->allockind is MC_AllocNewVec ???
+            VG_(set_fault_catcher) (prev_catcher);
             return LchNewArray;
          }
       }
@@ -792,12 +865,14 @@ static LeakCheckHeuristic heuristic_reachedness (Addr ptr,
                 && aligned_ptr_above_page0_is_vtable_addr(inner_addr)
                 && aligned_ptr_above_page0_is_vtable_addr(first_addr)) {
                // ??? could check that ch->allockind is MC_AllocNew ???
+               VG_(set_fault_catcher) (prev_catcher);
                return LchMultipleInheritance;
             }
          }
       }
    }
 
+   VG_(set_fault_catcher) (prev_catcher);
    return LchNone;
 }
 
@@ -923,18 +998,13 @@ lc_push_if_a_chunk_ptr(Addr ptr,
 }
 
 
-static VG_MINIMAL_JMP_BUF(memscan_jmpbuf);
-static volatile Addr bad_scanned_addr;
-
+static VG_MINIMAL_JMP_BUF(lc_scan_memory_jmpbuf);
 static
-void scan_all_valid_memory_catcher ( Int sigNo, Addr addr )
+void lc_scan_memory_fault_catcher ( Int sigNo, Addr addr )
 {
-   if (0)
-      VG_(printf)("OUCH! sig=%d addr=%#lx\n", sigNo, addr);
-   if (sigNo == VKI_SIGSEGV || sigNo == VKI_SIGBUS) {
-      bad_scanned_addr = addr;
-      VG_MINIMAL_LONGJMP(memscan_jmpbuf);
-   }
+   leak_search_fault_catcher (sigNo, addr, 
+                              "lc_scan_memory_fault_catcher",
+                              lc_scan_memory_jmpbuf);
 }
 
 // lc_scan_memory has 2 modes:
@@ -983,13 +1053,12 @@ lc_scan_memory(Addr start, SizeT len, Bool is_prior_definite,
 #endif
    Addr ptr = VG_ROUNDUP(start, sizeof(Addr));
    const Addr end = VG_ROUNDDN(start+len, sizeof(Addr));
-   vki_sigset_t sigmask;
+   fault_catcher_t prev_catcher;
 
    if (VG_DEBUG_LEAKCHECK)
       VG_(printf)("scan %#lx-%#lx (%lu)\n", start, end, len);
 
-   VG_(sigprocmask)(VKI_SIG_SETMASK, NULL, &sigmask);
-   VG_(set_fault_catcher)(scan_all_valid_memory_catcher);
+   prev_catcher = VG_(set_fault_catcher)(lc_scan_memory_fault_catcher);
 
    /* Optimisation: the loop below will check for each begin
       of SM chunk if the chunk is fully unaddressable. The idea is to
@@ -1016,19 +1085,9 @@ lc_scan_memory(Addr start, SizeT len, Bool is_prior_definite,
       between VKI_PAGE_SIZE, SM_SIZE and sizeof(Addr) which are asserted in
       MC_(detect_memory_leaks). */
 
-   // During scan, we check with aspacemgr that each page is readable and
-   // belongs to client.
-   // We still protect against SIGSEGV and SIGBUS e.g. in case aspacemgr is
-   // desynchronised with the real page mappings.
-   // Such a desynchronisation could happen due to an aspacemgr bug.
-   // Note that if the application is using mprotect(NONE), then
-   // a page can be unreadable but have addressable and defined
-   // VA bits (see mc_main.c function mc_new_mem_mprotect).
-   if (VG_MINIMAL_SETJMP(memscan_jmpbuf) != 0) {
+   // See leak_search_fault_catcher
+   if (VG_MINIMAL_SETJMP(lc_scan_memory_jmpbuf) != 0) {
       // Catch read error ...
-      // We need to restore the signal mask, because we were
-      // longjmped out of a signal handler.
-      VG_(sigprocmask)(VKI_SIG_SETMASK, &sigmask, NULL);
 #     if defined(VGA_s390x)
       // For a SIGSEGV, s390 delivers the page address of the bad address.
       // For a SIGBUS, old s390 kernels deliver a NULL address.
@@ -1109,8 +1168,7 @@ lc_scan_memory(Addr start, SizeT len, Bool is_prior_definite,
       ptr += sizeof(Addr);
    }
 
-   VG_(sigprocmask)(VKI_SIG_SETMASK, &sigmask, NULL);
-   VG_(set_fault_catcher)(NULL);
+   VG_(set_fault_catcher)(prev_catcher);
 }
 
 
@@ -1892,7 +1950,7 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckParams* lcp)
          tl_assert(ex->state == Unreached);
       }
    }
-      
+
    print_results( tid, lcp);
 
    VG_(free) ( lc_markstack );

@@ -52,7 +52,7 @@ extern Bool VG_(iseqsigset)    ( const vki_sigset_t* set1,
                                  const vki_sigset_t* set2 );
 
 extern Int  VG_(sigaddset)   ( vki_sigset_t* set, Int signum );
-extern Int  VG_(sigdelset)   ( vki_sigset_t* set, Int signum );
+/* VG_(sigdelset) is in pub_tool_libcsignal.h */
 extern Int  VG_(sigismember) ( const vki_sigset_t* set, Int signum );
 
 extern void VG_(sigaddset_from_set) ( vki_sigset_t* dst, const vki_sigset_t* src );

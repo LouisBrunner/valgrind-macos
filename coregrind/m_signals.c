@@ -2538,16 +2538,13 @@ Bool VG_(extend_stack)(ThreadId tid, Addr addr)
    return True;
 }
 
-static void (*fault_catcher)(Int sig, Addr addr) = NULL;
+static fault_catcher_t fault_catcher = NULL;
 
-void VG_(set_fault_catcher)(void (*catcher)(Int, Addr))
+fault_catcher_t VG_(set_fault_catcher)(fault_catcher_t catcher)
 {
-   if (0)
-      VG_(debugLog)(0, "signals", "set fault catcher to %p\n", catcher);
-   vg_assert2(NULL == catcher || NULL == fault_catcher,
-              "Fault catcher is already registered");
-
+   fault_catcher_t prev_catcher = fault_catcher;
    fault_catcher = catcher;
+   return prev_catcher;
 }
 
 static

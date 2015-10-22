@@ -39,6 +39,11 @@
    defines.  Since we're operating right at the kernel interface, glibc's view
    of the world is entirely irrelevant. */
 
+/* --- Signal set ops (only the ops used by tools) --- */
+extern Int  VG_(sigdelset)   ( vki_sigset_t* set, Int signum );
+/* Other Signal set ops are in pub_core_libcsignal.h and must be moved
+   here if needed by tools. */
+
 /* --- Mess with the kernel's sig state --- */
 extern Int VG_(sigprocmask) ( Int how, const vki_sigset_t* set,
                               vki_sigset_t* oldset );

@@ -36,11 +36,14 @@
 // Register an interest in apparently internal faults; used code which
 // wanders around dangerous memory (ie, leakcheck).  The catcher is
 // not expected to return.
+// Returns the previously set fault_catcher (NULL if there was no fault
+// catcher set)
 //
 // It's frustrating that we need this header for a single function used
 // only by Memcheck during leak checking.  We should find a way to remove
 // the need for this file.
-extern void VG_(set_fault_catcher)(void (*catcher)(Int sig, Addr addr));
+typedef void (*fault_catcher_t)(Int sig, Addr addr);
+extern fault_catcher_t VG_(set_fault_catcher)(fault_catcher_t catcher);
 
 #endif   // __PUB_TOOL_SIGNALS_H
 

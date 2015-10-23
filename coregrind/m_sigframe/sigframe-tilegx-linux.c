@@ -137,6 +137,7 @@ void setup_sigcontext2 ( ThreadState* tst, struct vki_sigcontext **sc1,
 
 /* EXPORTED */
 void VG_(sigframe_create)( ThreadId tid,
+                           Bool on_altstack,
                            Addr sp_top_of_frame,
                            const vki_siginfo_t *siginfo,
                            const struct vki_ucontext *siguc,
@@ -236,10 +237,6 @@ void VG_(sigframe_create)( ThreadId tid,
   tst->arch.vex.guest_pc = (Addr) handler;
   /* This thread needs to be marked runnable, but we leave that the
      caller to do. */
-  if (0)
-    VG_(printf)("pushed signal frame; sp now = %lx, "
-                "next %pc = %lx, status=%d\n",
-                (Addr)frame, tst->arch.vex.guest_pc, (Int)tst->status);
 }
 
 /* EXPORTED */

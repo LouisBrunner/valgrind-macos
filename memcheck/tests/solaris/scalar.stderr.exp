@@ -2626,6 +2626,20 @@ Syscall param lwp_cond_wait(tsp) points to unaddressable byte(s)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
+171:     SYS_lwp_cond_signal 1s 2m
+---------------------------------------------------------
+Syscall param lwp_cond_signal(cvp) contains uninitialised byte(s)
+   ...
+
+Syscall param lwp_cond_signal(cvp->type) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param lwp_cond_signal(cvp->waiters_kernel) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
 172:  SYS_lwp_cond_broadcast 1s 2m
 ---------------------------------------------------------
 Syscall param lwp_cond_broadcast(cvp) contains uninitialised byte(s)

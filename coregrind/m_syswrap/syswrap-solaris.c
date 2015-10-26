@@ -1014,6 +1014,7 @@ DECL_TEMPLATE(solaris, sys_lwp_private);
 DECL_TEMPLATE(solaris, sys_lwp_wait);
 DECL_TEMPLATE(solaris, sys_lwp_mutex_wakeup);
 DECL_TEMPLATE(solaris, sys_lwp_cond_wait);
+DECL_TEMPLATE(solaris, sys_lwp_cond_signal);
 DECL_TEMPLATE(solaris, sys_lwp_cond_broadcast);
 DECL_TEMPLATE(solaris, sys_pread);
 DECL_TEMPLATE(solaris, sys_pwrite);
@@ -7020,6 +7021,25 @@ POST(sys_lwp_cond_wait)
       POST_MEM_WRITE(ARG3, sizeof(vki_timespec_t));
 }
 
+PRE(sys_lwp_cond_signal)
+{
+   /* int lwp_cond_signal(lwp_cond_t *cvp); */
+   *flags |= SfMayBlock;
+   PRINT("sys_lwp_cond_signal( %#lx )", ARG1);
+   PRE_REG_READ1(long, "lwp_cond_signal", vki_lwp_cond_t *, cvp);
+
+   vki_lwp_cond_t *cvp = (vki_lwp_cond_t *) ARG1;
+   PRE_FIELD_READ("lwp_cond_signal(cvp->type)", cvp->vki_cond_type);
+   PRE_FIELD_READ("lwp_cond_signal(cvp->waiters_kernel)",
+                  cvp->vki_cond_waiters_kernel);
+}
+
+POST(sys_lwp_cond_signal)
+{
+   vki_lwp_cond_t *cvp = (vki_lwp_cond_t *) ARG1;
+   POST_FIELD_WRITE(cvp->vki_cond_waiters_kernel);
+}
+
 PRE(sys_lwp_cond_broadcast)
 {
    /* int lwp_cond_broadcast(lwp_cond_t *cvp); */
@@ -10407,6 +10427,7 @@ static SyscallTableEntry syscall_table[] = {
    SOLXY(__NR_lwp_wait,             sys_lwp_wait),              /* 167 */
    SOLXY(__NR_lwp_mutex_wakeup,     sys_lwp_mutex_wakeup),      /* 168 */
    SOLXY(__NR_lwp_cond_wait,        sys_lwp_cond_wait),         /* 170 */
+   SOLXY(__NR_lwp_cond_signal,      sys_lwp_cond_signal),       /* 171 */
    SOLX_(__NR_lwp_cond_broadcast,   sys_lwp_cond_broadcast),    /* 172 */
    SOLXY(__NR_pread,                sys_pread),                 /* 173 */
    SOLX_(__NR_pwrite,               sys_pwrite),                /* 174 */

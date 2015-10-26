@@ -2111,7 +2111,8 @@ int main(void)
    SY(SYS_lwp_cond_wait, x0 + 1, x0 + 1, x0 + 1, x0); FAIL;
 
    /* SYS_lwp_cond_signal       171 */
-   /* XXX Missing wrapper. */
+   GO(SYS_lwp_cond_signal, "1s 2m");
+   SY(SYS_lwp_cond_signal, x0); FAIL;
 
    /* SYS_lwp_cond_broadcast    172 */
    GO(SYS_lwp_cond_broadcast, "1s 2m");

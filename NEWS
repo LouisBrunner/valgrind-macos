@@ -39,6 +39,7 @@ where XXXXXX is the bug number as listed below.
 353891  Assert 'bad_scanned_addr < VG_ROUNDDN(start+len, sizeof(Addr))' failed
 353917  unhandled amd64-solaris syscall fchdir(120)
 353920  unhandled amd64-solaris syscall: 170
+354392  unhandled amd64-solaris syscall: 171
 
 
 

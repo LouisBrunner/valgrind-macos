@@ -1506,6 +1506,11 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
    XArray* /* of RangeAndBias */ svma_ranges = NULL;
 
+#  if defined(VGO_solaris)
+   Word *rodata_sects = NULL;
+   Word rodata_shndx = -1;
+#  endif /* VGO_solaris */
+
    vg_assert(di);
    vg_assert(di->fsm.have_rx_map == True);
    vg_assert(di->fsm.have_rw_map == True);
@@ -1836,13 +1841,88 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    }
 
    /* TOPLEVEL */
+#  if defined(VGO_solaris)
+   /* Quick pre-scan of sections headers. Check if multiple .rodata sections
+      are present. See https://bugs.kde.org/show_bug.cgi?id=353802 */
+   rodata_sects = ML_(dinfo_zalloc)("di.redi_name.1",
+                                    shdr_mnent * sizeof(Word));
+   Word   rodata_nsects = 0;
+   Word   symtab_shndx = -1;
+   DiOffT symtab_sz = DiOffT_INVALID;
+   DiOffT symtab_ioff = DiOffT_INVALID;
+   for (i = 0; i < shdr_mnent; i++) {
+      ElfXX_Shdr a_shdr;
+      ML_(img_get)(&a_shdr, mimg,
+                   INDEX_BIS(shdr_mioff, i, shdr_ment_szB), sizeof(a_shdr));
+      DiOffT name_mioff = shdr_strtab_mioff + a_shdr.sh_name;
+      if (ML_(img_strcmp_c)(mimg, name_mioff, ".rodata") == 0) {
+         rodata_sects[i] = True;
+         rodata_nsects += 1;
+      } else if (ML_(img_strcmp_c)(mimg, name_mioff, ".symtab") == 0) {
+         symtab_shndx = i;
+         symtab_sz = a_shdr.sh_size;
+         symtab_ioff = a_shdr.sh_offset;
+      }
+   }
+
+   if ((rodata_nsects > 1) && (symtab_shndx != -1)) {
+      TRACE_SYMTAB("Multiple (%ld) .rodata sections present.\n", rodata_nsects);
+
+      /* Multiple .rodata sections present. Which one the symbols point to? */
+      for (i = 1; i < (Word) (symtab_sz/sizeof(ElfXX_Sym)); i++) {
+         ElfXX_Sym sym;
+         ML_(img_get)(&sym, mimg,
+                      symtab_ioff + i * sizeof(ElfXX_Sym), sizeof(sym));
+         /* Consider only object symbols with size > 0. */
+         if ((sym.st_size > 0) && (ELFXX_ST_TYPE(sym.st_info) == STT_OBJECT)) {
+            HChar buf[100];   // large enough
+            if (sym.st_shndx >= shdr_mnent) {
+               VG_(snprintf)(buf, sizeof(buf), "Symbol %ld points to a "
+                             "non-existent section %d.\n", i, sym.st_shndx);
+               ML_(symerr)(di, True, buf);
+               goto out;
+            }
+            if (rodata_sects[sym.st_shndx] == True) {
+               if (rodata_shndx == -1)
+                  rodata_shndx = sym.st_shndx;
+
+               if (rodata_shndx != sym.st_shndx) {
+                  VG_(snprintf)(buf, sizeof(buf), "Object symbols point to "
+                                "multiple .rodata sections (%lu and %d). "
+                                "Giving up.\n", rodata_shndx, sym.st_shndx);
+                  ML_(symerr)(di, True, buf);
+                  goto out;
+               }
+            }
+         }
+      }
+   }
+
+   if (rodata_shndx == -1) {
+      if (rodata_nsects >= 1) {
+         for (i = 0; i < shdr_mnent; i++) {
+            if (rodata_sects[i] == True)
+               rodata_shndx = i;
+         }
+      }
+
+      if (rodata_nsects > 1)
+         TRACE_SYMTAB("Symbols do not point to any .rodata section. Section "
+                      "#%ld was chosen.\n", rodata_shndx);
+   } else {
+      TRACE_SYMTAB("Symbols point only to .rodata section #%ld. Good.\n",
+                   rodata_shndx);
+   }
+#  endif /* VGO_solaris */
+
+   /* TOPLEVEL */
    /* Iterate over section headers */
    for (i = 0; i < shdr_mnent; i++) {
       ElfXX_Shdr a_shdr;
       ML_(img_get)(&a_shdr, mimg,
                    INDEX_BIS(shdr_mioff, i, shdr_ment_szB), sizeof(a_shdr));
       DiOffT name_mioff = shdr_strtab_mioff + a_shdr.sh_name;
-      HChar* name = ML_(img_strdup)(mimg, "di.redi_name.1", name_mioff);
+      HChar* name = ML_(img_strdup)(mimg, "di.redi_name.2", name_mioff);
       Addr   svma = a_shdr.sh_addr;
       OffT   foff = a_shdr.sh_offset;
       UWord  size = a_shdr.sh_size; /* Do not change this to be signed. */
@@ -1867,10 +1947,10 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          }
       }
 
-      TRACE_SYMTAB(" [sec %2ld]  %s %s  al%2u  foff %6ld .. %6lu  "
+      TRACE_SYMTAB(" [sec %2ld]  %s %s  al%4u  foff %6ld .. %6lu  "
                    "  svma %p  name \"%s\"\n", 
                    i, inrx ? "rx" : "  ", inrw ? "rw" : "  ", alyn,
-                   foff, foff+size-1, (void*)svma, name);
+                   foff, (size == 0) ? foff : foff+size-1, (void *) svma, name);
 
       /* Check for sane-sized segments.  SHT_NOBITS sections have zero
          size in the file and their offsets are just conceptual. */
@@ -1977,7 +2057,11 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
       /* Accept .rodata where mapped as rx (data), even if zero-sized */
       if (0 == VG_(strcmp)(name, ".rodata")) {
-         if (inrx && !di->rodata_present) {
+         if (inrx && !di->rodata_present
+#        if defined(VGO_solaris)
+             && i == rodata_shndx
+#        endif
+            ) {
             di->rodata_present = True;
             di->rodata_svma = svma;
             di->rodata_avma = svma + inrx->bias;
@@ -1994,6 +2078,11 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                          di->rodata_avma + di->rodata_size - 1);
             TRACE_SYMTAB("acquiring .rodata bias = %#lx\n",
                          (UWord)di->rodata_bias);
+#        if defined(VGO_solaris)
+         } else if (i != rodata_shndx) {
+            /* Skip this section. It is of no use to us.
+               See https://bugs.kde.org/show_bug.cgi?id=353802 */
+#        endif
          } else {
             BAD(".rodata");
          }
@@ -3029,6 +3118,10 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       if (aimg) ML_(img_done)(aimg);
 
       if (svma_ranges) VG_(deleteXA)(svma_ranges);
+
+#     if defined(VGO_solaris)
+      if (rodata_sects != NULL) ML_(dinfo_free)(rodata_sects);
+#     endif
 
       return res;
    } /* out: */ 

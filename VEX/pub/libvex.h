@@ -847,7 +847,14 @@ typedef
       IRType t_opnd4;  // type of 4th operand
       UInt  rounding_mode;
       UInt  num_operands; // excluding rounding mode, if any
-      Bool  shift_amount_is_immediate;
+      /* The following two members describe if this operand has immediate
+       *  operands. There are a few restrictions:
+       *    (1) An operator can have at most one immediate operand.
+       * (2) If there is an immediate operand, it is the right-most operand
+       *  An immediate_index of 0 means there is no immediate operand.
+       */
+      UInt immediate_type;  // size of immediate Ity_I8, Ity_16
+      UInt immediate_index; // operand number: 1, 2
    }
    IRICB;
 

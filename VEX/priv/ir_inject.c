@@ -36,6 +36,7 @@
 
 /* Convenience macros for readibility */
 #define mkU8(v)   IRExpr_Const(IRConst_U8(v))
+#define mkU16(v)  IRExpr_Const(IRConst_U16(v))
 #define mkU32(v)  IRExpr_Const(IRConst_U32(v))
 #define mkU64(v)  IRExpr_Const(IRConst_U64(v))
 #define unop(kind, a)  IRExpr_Unop(kind, a)
@@ -209,12 +210,26 @@ vex_inject_ir(IRSB *irsb, IREndness endian)
 
    case 2:
       opnd1 = load(endian, iricb.t_opnd1, iricb.opnd1);
+      /* HACK, compiler warning ‘opnd2’ may be used uninitialized */
+      opnd2 = opnd1;
 
-      if (iricb.shift_amount_is_immediate) {
-         // This implies that the IROp is a shift op
-         vassert(iricb.t_opnd2 == Ity_I8);
+      /* immediate_index = 0  immediate value is not used.
+       * immediate_index = 2  opnd2 is an immediate value.
+       */
+      vassert(iricb.immediate_index == 0 || iricb.immediate_index == 2);
+
+      if (iricb.immediate_index == 2) {
+         vassert((iricb.t_opnd2 == Ity_I8) || (iricb.t_opnd2 == Ity_I16)
+                 || (iricb.t_opnd2 == Ity_I32));
+
          /* Interpret the memory as an ULong. */
-         opnd2 = mkU8(*((ULong *)iricb.opnd2));
+         if (iricb.immediate_type == Ity_I8) {
+            opnd2 = mkU8(*((ULong *)iricb.opnd2));
+         } else if (iricb.immediate_type == Ity_I16) {
+            opnd2 = mkU16(*((ULong *)iricb.opnd2));
+         } else if (iricb.immediate_type == Ity_I32) {
+            opnd2 = mkU32(*((ULong *)iricb.opnd2));
+         }
       } else {
          opnd2 = load(endian, iricb.t_opnd2, iricb.opnd2);
       }
@@ -228,7 +243,28 @@ vex_inject_ir(IRSB *irsb, IREndness endian)
    case 3:
       opnd1 = load(endian, iricb.t_opnd1, iricb.opnd1);
       opnd2 = load(endian, iricb.t_opnd2, iricb.opnd2);
-      opnd3 = load(endian, iricb.t_opnd3, iricb.opnd3);
+      /* HACK, compiler warning ‘opnd3’ may be used uninitialized */
+      opnd3 = opnd2;
+
+      /* immediate_index = 0  immediate value is not used.
+       * immediate_index = 3  opnd3 is an immediate value.
+       */
+      vassert(iricb.immediate_index == 0 || iricb.immediate_index == 3);
+
+      if (iricb.immediate_index == 3) {
+         vassert((iricb.t_opnd3 == Ity_I8) || (iricb.t_opnd3 == Ity_I16)
+                 || (iricb.t_opnd2 == Ity_I32));
+
+         if (iricb.immediate_type == Ity_I8) {
+            opnd3 = mkU8(*((ULong *)iricb.opnd3));
+         } else if (iricb.immediate_type == Ity_I16) {
+            opnd3 = mkU16(*((ULong *)iricb.opnd3));
+         } else if (iricb.immediate_type == Ity_I32) {
+            opnd3 = mkU32(*((ULong *)iricb.opnd3));
+         }
+      } else {
+         opnd3 = load(endian, iricb.t_opnd3, iricb.opnd3);
+      }
       if (rounding_mode)
          data = qop(iricb.op, rounding_mode, opnd1, opnd2, opnd3);
       else
@@ -240,7 +276,28 @@ vex_inject_ir(IRSB *irsb, IREndness endian)
       opnd1 = load(endian, iricb.t_opnd1, iricb.opnd1);
       opnd2 = load(endian, iricb.t_opnd2, iricb.opnd2);
       opnd3 = load(endian, iricb.t_opnd3, iricb.opnd3);
-      opnd4 = load(endian, iricb.t_opnd4, iricb.opnd4);
+      /* HACK, compiler warning ‘opnd4’ may be used uninitialized */
+      opnd4 = opnd3;
+
+      /* immediate_index = 0  immediate value is not used.
+       * immediate_index = 4  opnd4 is an immediate value.
+       */
+      vassert(iricb.immediate_index == 0 || iricb.immediate_index == 4);
+
+      if (iricb.immediate_index == 4) {
+         vassert((iricb.t_opnd3 == Ity_I8) || (iricb.t_opnd3 == Ity_I16)
+                 || (iricb.t_opnd2 == Ity_I32));
+
+         if (iricb.immediate_type == Ity_I8) {
+            opnd4 = mkU8(*((ULong *)iricb.opnd4));
+         } else if (iricb.immediate_type == Ity_I16) {
+            opnd4 = mkU16(*((ULong *)iricb.opnd4));
+         } else if (iricb.immediate_type == Ity_I32) {
+            opnd4 = mkU32(*((ULong *)iricb.opnd4));
+         }
+      } else {
+         opnd4 = load(endian, iricb.t_opnd4, iricb.opnd4);
+      }
       data = qop(iricb.op, opnd1, opnd2, opnd3, opnd4);
       break;
 

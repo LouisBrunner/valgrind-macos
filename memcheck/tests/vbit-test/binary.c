@@ -75,6 +75,7 @@ check_result_for_binary(const irop_t *op, const test_data_t *data)
    const opnd_t *result = &data->result;
    const opnd_t *opnd1  = &data->opnds[0];
    const opnd_t *opnd2  = &data->opnds[1];
+   opnd_t tmp;
    vbits_t expected_vbits;
 
    /* Only handle those undef-kinds that actually occur. */
@@ -84,6 +85,9 @@ check_result_for_binary(const irop_t *op, const test_data_t *data)
       break;
 
    case UNDEF_ALL:
+      /* Iop_ShlD64, Iop_ShrD64, Iop_ShlD128, Iop_ShrD128 have
+       * one immediate operand in operand 2.
+       */
       expected_vbits = undefined_vbits(result->vbits.num_bits);
       break;
 
@@ -187,6 +191,161 @@ check_result_for_binary(const irop_t *op, const test_data_t *data)
                                     opnd2->vbits.num_bits);
       break;
 
+   case UNDEF_ALL_64x2:
+      assert(opnd1->vbits.num_bits == opnd2->vbits.num_bits);
+      expected_vbits =
+         undefined_vbits_BxE(64, 2,
+                             or_vbits(opnd1->vbits, opnd2->vbits));
+      break;
+
+   case UNDEF_ALL_32x4:
+      assert(opnd1->vbits.num_bits == opnd2->vbits.num_bits);
+      expected_vbits =
+         undefined_vbits_BxE(32, 4,
+                             or_vbits(opnd1->vbits, opnd2->vbits));
+      break;
+
+   case UNDEF_ALL_16x8:
+      assert(opnd1->vbits.num_bits == opnd2->vbits.num_bits);
+      expected_vbits =
+         undefined_vbits_BxE(16, 8,
+                             or_vbits(opnd1->vbits, opnd2->vbits));
+      break;
+
+   case UNDEF_ALL_8x16:
+      assert(opnd1->vbits.num_bits == opnd2->vbits.num_bits);
+      expected_vbits =
+         undefined_vbits_BxE(8, 16,
+                             or_vbits(opnd1->vbits, opnd2->vbits));
+      break;
+
+   case UNDEF_ALL_32x4_EVEN:
+      /* Only even input bytes are used, result can be twice as wide */
+      assert(opnd1->vbits.num_bits == opnd2->vbits.num_bits);
+      expected_vbits =
+         undefined_vbits_BxE(64, 2,
+                             undefined_vbits_128_even_element(32, 4,
+                                        or_vbits(opnd1->vbits, opnd2->vbits)));
+      break;
+
+   case UNDEF_ALL_16x8_EVEN:
+      /* Only even input bytes are used, result can be twice as wide */
+      assert(opnd1->vbits.num_bits == opnd2->vbits.num_bits);
+      expected_vbits =
+         undefined_vbits_BxE(32, 4,
+                             undefined_vbits_128_even_element(16, 8,
+                                        or_vbits(opnd1->vbits, opnd2->vbits)));
+      break;
+
+   case UNDEF_ALL_8x16_EVEN:
+      /* Only even input bytes are used, result can be twice as wide */
+      assert(opnd1->vbits.num_bits == opnd2->vbits.num_bits);
+      expected_vbits =
+         undefined_vbits_BxE(16, 8,
+                             undefined_vbits_128_even_element(8, 16,
+                                        or_vbits(opnd1->vbits, opnd2->vbits)));
+      break;
+
+   case UNDEF_64x2_ROTATE:
+      /* Rotate left each element in opnd1 by the amount in the corresponding
+       * element of opnd2.
+       */
+      assert(opnd1->vbits.num_bits == opnd2->vbits.num_bits);
+      /* Setup the tmp to match what the vbit tester seems to use.  I can't
+       * use opnd2-value since valgrind doesn't think it has been set.
+       */
+      tmp.value.u128[0] = -1;
+      tmp.value.u128[1] = -1;
+      /* Calculate expected for the first operand when it is shifted.
+       * If any of the vbits are set for the shift field of the second operand
+       * then the result of the expected result for that element is all 1's.
+       */
+      expected_vbits = or_vbits(undefined_vbits_BxE_rotate(64, 2, opnd1->vbits,
+                                                           tmp.value),
+                                undefined_vbits_BxE(64, 2, opnd2->vbits));
+      break;
+
+   case UNDEF_32x4_ROTATE:
+      /* Rotate left each element in opnd1 by the amount in the corresponding
+       * element of opnd2.
+       */
+      assert(opnd1->vbits.num_bits == opnd2->vbits.num_bits);
+      expected_vbits = undefined_vbits_BxE_rotate(32, 4, opnd1->vbits,
+                                                  opnd2->value);
+      break;
+
+   case UNDEF_16x8_ROTATE:
+      /* Rotate left each element in opnd1 by the amount in the corresponding
+       * element of opnd2.
+       */
+      assert(opnd1->vbits.num_bits == opnd2->vbits.num_bits);
+      expected_vbits = undefined_vbits_BxE_rotate(16, 8, opnd1->vbits,
+                                                  opnd2->value);
+      break;
+
+   case UNDEF_8x16_ROTATE:
+      /* Rotate left each element in opnd1 by the amount in the corresponding
+       * element of opnd2.
+       */
+      assert(opnd1->vbits.num_bits == opnd2->vbits.num_bits);
+      expected_vbits = undefined_vbits_BxE_rotate(16, 8, opnd1->vbits,
+                                                  opnd2->value);
+      break;
+
+   case UNDEF_SOME:
+      /* The result for the Iop_SHA256 and Iop_SHA256 is a secure hash. If
+       * one of the input bits is not defined there must be atleast one
+       * undefined bit in the output.  Which bit and how many depends on
+       * which bit is undefined.  Don't know the secure hash algorithm so
+       * we can only make sure at least one of the result bits is set.
+       *
+       * The Iop_SHA256, Iop_SHA512 iops have one immediate value in the
+       * second operand.
+       */
+      expected_vbits.num_bits = result->vbits.num_bits;
+
+      if ((result->vbits.bits.u128[0] != 0) ||
+          (result->vbits.bits.u128[1] != 0)) {
+         expected_vbits.bits.u128[0] = result->vbits.bits.u128[0];
+         expected_vbits.bits.u128[1] = result->vbits.bits.u128[1];
+
+      } else {
+         /* The input had at least one vbit set but the result doesn't have any
+          * bit set.  Set them all so we will trigger the error on the call
+          * to complain().
+          */
+         expected_vbits.bits.u128[0] = ~0x0ULL;
+         expected_vbits.bits.u128[1] = ~0x0ULL;
+      }
+      break;
+
+   case UNDEF_NARROW256_AtoB:
+      assert(opnd1->vbits.num_bits == opnd2->vbits.num_bits);
+      switch(op->op) {
+      case Iop_NarrowBin64to32x4:
+         expected_vbits =
+            undefined_vbits_Narrow256_AtoB(64, 32, opnd1->vbits, opnd1->value,
+                                           opnd2->vbits, opnd2->value,
+                                           False);
+         break;
+      case Iop_QNarrowBin64Sto32Sx4:
+         expected_vbits =
+            undefined_vbits_Narrow256_AtoB(64, 32, opnd1->vbits, opnd1->value,
+                                           opnd2->vbits, opnd2->value,
+                                           True);
+         break;
+      case Iop_QNarrowBin64Uto32Ux4:
+         expected_vbits =
+            undefined_vbits_Narrow256_AtoB(64, 32, opnd1->vbits, opnd1->value,
+                                           opnd2->vbits, opnd2->value,
+                                           True);
+         break;
+      default:
+         fprintf(stderr, "ERROR, unknown Iop for UNDEF_NARROW256_AtoB\n");
+         panic(__func__);
+      }
+      break;
+
    default:
       panic(__func__);
    }
@@ -225,7 +384,7 @@ test_shift(const irop_t *op, test_data_t *data)
    // 2nd (right) operand
 
    /* If the operand is an immediate value, there are no v-bits to set. */
-   if (op->shift_amount_is_immediate) return tests_done;
+   if (!op->immediate_index) return tests_done;
 
    num_input_bits = bitsof_irtype(opnds[1].type);
 
@@ -462,9 +621,10 @@ test_binary_op(const irop_t *op, test_data_t *data)
       operand. */
    for (i = 0; i < 2; ++i) {
 
-      /* If this is a shift op that requires an immediate shift amount,
-         do not iterate the v-bits of the 2nd operand */
-      if (i == 1 && op->shift_amount_is_immediate) break;
+      /* If this is a Iop that requires an immediate amount,
+         do not iterate the v-bits of the operand */
+      if (((i+1) == op->immediate_index)
+          && (op->immediate_index)) break;
 
       num_input_bits = bitsof_irtype(opnds[i].type);
       opnds[0].vbits = defined_vbits(bitsof_irtype(opnds[0].type));
@@ -486,8 +646,13 @@ test_binary_op(const irop_t *op, test_data_t *data)
          assert(sizeof xx.v1 == sizeof xx.v2.u64);
          assert(xx.v1 == xx.v2.u64);
       */
-      if (op->shift_amount_is_immediate)
+
+      if (op->immediate_index > 0) {
+         assert((op->immediate_type == Ity_I8)
+                || (op->immediate_type == Ity_I16)
+                || (op->immediate_type == Ity_I32));
          opnds[1].value.u64 = 1;
+      }
 
       for (bitpos = 0; bitpos < num_input_bits; ++bitpos) {
          opnds[i].vbits = onehot_vbits(bitpos, bitsof_irtype(opnds[i].type));

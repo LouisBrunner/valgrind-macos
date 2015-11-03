@@ -68,6 +68,31 @@ check_result_for_unary(const irop_t *op, const test_data_t *data)
       expected_vbits = zextend_vbits(opnd->vbits, num_bits);
       break;
 
+   case UNDEF_ALL_64x2:
+      assert(num_bits == 128);
+      expected_vbits = undefined_vbits_BxE(64, 2, opnd->vbits);
+      break;
+
+   case UNDEF_ALL_32x4:
+      assert(num_bits == 128);
+      expected_vbits = undefined_vbits_BxE(32, 4, opnd->vbits);
+      break;
+
+   case UNDEF_ALL_16x8:
+      assert(num_bits == 128);
+      expected_vbits = undefined_vbits_BxE(16, 8, opnd->vbits);
+      break;
+
+   case UNDEF_ALL_8x16:
+      assert(num_bits == 128);
+      expected_vbits = undefined_vbits_BxE(8, 16, opnd->vbits);
+      break;
+
+   case UNDEF_64x2_TRANSPOSE:
+      assert(num_bits == 128);
+      expected_vbits = undefined_vbits_64x2_transpose(opnd->vbits);
+      break;
+
    default:
       panic(__func__);
    }
@@ -82,6 +107,9 @@ test_unary_op(const irop_t *op, test_data_t *data)
 {
    unsigned num_input_bits, bitpos;
    int tests_done = 0;
+
+   /* Immediate operands are currently not supported here */
+   assert(op->immediate_index == 0);
 
    num_input_bits = bitsof_irtype(data->opnds[0].type);
 

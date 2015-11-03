@@ -29,6 +29,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 typedef uint64_t uint128_t[2];
 typedef uint64_t uint256_t[4];
@@ -62,6 +63,19 @@ typedef union {
 
 void    print_vbits(FILE *, vbits_t);
 vbits_t undefined_vbits(unsigned num_bits);
+vbits_t undefined_vbits_BxE(unsigned int bits, unsigned int elements,
+                            vbits_t v);
+vbits_t undefined_vbits_BxE_rotate(unsigned int bits, unsigned int elements,
+                                   vbits_t vbits,
+                                   value_t value);
+vbits_t undefined_vbits_128_even_element(unsigned int bits,
+                                         unsigned int elements, vbits_t v);
+vbits_t undefined_vbits_64x2_transpose(vbits_t v);
+vbits_t undefined_vbits_Narrow256_AtoB(unsigned int src_num_bits,
+                                       unsigned int result_num_bits,
+                                       vbits_t src1_v, value_t src1_value,
+                                       vbits_t src2_v, value_t src2_value,
+                                       bool sataurate);
 vbits_t defined_vbits(unsigned num_bits);
 int     equal_vbits(vbits_t, vbits_t);
 vbits_t truncate_vbits(vbits_t, unsigned num_bits);

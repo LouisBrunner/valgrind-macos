@@ -128,6 +128,278 @@ undefined_vbits(unsigned num_bits)
    return new;
 }
 
+/* The following routines named undefined_vbits_BxE() return a 128-bit
+ * vector with E elements each of size bits.  If any of the bits in an
+ * element is undefined, then return a value where all bits in that
+ * element are undefined.
+ */
+vbits_t
+undefined_vbits_BxE(unsigned int bits, unsigned int elements, vbits_t v)
+{
+   vbits_t new = { .num_bits = v.num_bits };
+   uint64_t mask = ~0ull >> (64 - bits);
+   int i, j;
+
+   assert ((elements % 2) == 0);
+   assert (bits <= 64);
+
+   for (i = 0; i<2; i++) {
+      new.bits.u128[i] = 0ull;
+
+      for (j = 0; j<elements/2; j++) {
+         if ((v.bits.u128[i] & (mask << (j*bits))) != 0)
+            new.bits.u128[i] |= (mask << (j*bits));
+      }
+   }
+   return new;
+}
+
+/* The following routines named undefined_vbits_BxE_rotate() return a 128-bit
+ * vector with E elements each of size bits.  The bits in v are rotated
+ * left by the amounts in the corresponding element of val. Specified rotate
+ * amount field is assumed to be at most 8-bits wide.
+ */
+vbits_t
+undefined_vbits_BxE_rotate(unsigned int bits, unsigned int elements,
+                           vbits_t v, value_t val)
+{
+   vbits_t new = { .num_bits = v.num_bits };
+   uint64_t mask = ~0ull >> (64 - bits);
+   uint64_t const shift_mask = 0xFF;
+   uint64_t element;
+   int i, j;
+   signed char shift;
+   assert ((elements % 2) == 0);
+   assert (bits <= 64);
+
+   for (i = 0; i<2; i++) {
+      new.bits.u128[i] = 0ull;
+
+      for (j = 0; j<elements/2; j++) {
+         element = (v.bits.u128[i] >> (j*bits)) & mask;
+         shift = (int)((val.u128[i] >> (j*bits)) & shift_mask);
+
+         if (shift < 0) {
+            /* right shift */
+            new.bits.u128[i] = element >> -shift;
+
+            /* OR in the bits shifted out into the top of the element */
+            new.bits.u128[i] |= element << (bits + shift);
+         } else {
+            /* left shift */
+            /* upper bits from shift */
+            new.bits.u128[i] = element << shift;
+
+            /* OR in the bits shifted out into the bottom of the element */
+            new.bits.u128[i] |= element >> (bits - shift);
+         }
+      }
+   }
+   return new;
+}
+
+/* Only the even elements of the input are used by the Iop*/
+vbits_t
+undefined_vbits_128_even_element(unsigned int bits, unsigned int elements,
+                                 vbits_t v)
+{
+   int i;
+   uint64_t mask;
+   unsigned int const element_width = 128/elements;
+   vbits_t new = { .num_bits = v.num_bits };
+
+   assert ((elements % 2) == 0);
+   assert (bits <= 64);
+
+   /* Create a 128-bit mask with the bits in the even numbered
+    * elements are all ones.
+    */
+   mask = ~0ull >> (64 - bits);
+
+   for (i = 2; i < elements/2; i=i+2) {
+      mask |= mask << (i * element_width);
+   }
+
+   new.bits.u128[0] = mask & v.bits.u128[0];
+   new.bits.u128[1] = mask & v.bits.u128[1];
+
+   return new;
+}
+
+/* Concatenate bit i from each byte j.  Place concatenated 8 bit value into
+ * byte i of the result.  Do for all i from 0 to 7 and j from 0 to 7 of each
+ * 64-bit element.
+ */
+vbits_t
+undefined_vbits_64x2_transpose(vbits_t v)
+{
+   vbits_t new = { .num_bits = v.num_bits };
+   unsigned int bit, byte, element;
+   uint64_t value, new_value, select_bit;
+
+   for (element = 0; element < 2; element++) {
+      value = v.bits.u128[element];
+      new_value = 0;
+      for (byte = 0; byte < 8; byte++) {
+         for (bit = 0; bit < 8; bit++) {
+            select_bit = 1ULL & (value >> (bit + 8*byte));
+            new_value |= select_bit << (bit*8 + byte);
+         }
+      }
+      new.bits.u128[element] = new_value;
+   }
+   return new;
+}
+
+/* The routine takes a 256-bit vector value stored across the two 128-bit
+ * source operands src1 and src2.  The size of each element in the input is
+ * src_num_bits.  The elements are narrowed to result_num_bits and packed
+ * into the result.  If saturate is True, then the all the result bits are
+ * set to 1 if the source element can not be represented in result_num_bits.
+ */
+vbits_t
+undefined_vbits_Narrow256_AtoB(unsigned int src_num_bits,
+                               unsigned int result_num_bits,
+                               vbits_t src1_v, value_t src1_value,
+                               vbits_t src2_v, value_t src2_value,
+                               bool saturate)
+{
+
+   vbits_t new = { .num_bits = src1_v.num_bits };
+   unsigned int i;
+   uint64_t vbits, new_value;
+   uint64_t const src_mask = ~0x0ULL >> (64 - src_num_bits);
+   uint64_t const result_mask = ~0x0ULL >> (64 - result_num_bits);
+   unsigned int num_elements_per_64_bits = src_num_bits/64;
+   unsigned int shift;
+
+   /*
+    * NOTE:  POWER PPC
+    *   the saturated value is 0xFFFF for the vbit is in one of the lower
+    *   32-bits of the source.  The saturated result is 0xFFFF0000 if the
+    *   vbit is in the upper 32-bits of the source.  Not sure what
+    *   the saturated result is in general for a B-bit result.
+    *
+    *  ONLY TESTED FOR 64 bit input, 32 bit result
+    */
+   uint64_t const saturated_result = 0xFFFFULL;
+
+   /* Source elements are split between the two source operands */
+
+   assert(src_num_bits <= 64);
+   assert(result_num_bits < 64);
+   assert(result_num_bits < src_num_bits);
+
+   /* Narrow the elements from src1 to the upper 64-bits of result.
+    * Do each of the 64 bit values that make up a u128
+    */
+   new_value = 0;
+   for (i = 0; i < num_elements_per_64_bits; i++) {
+      vbits = src1_v.bits.u128[0] >> (i * src_num_bits);
+      vbits &= src_mask;
+
+      shift = result_num_bits * i;
+      if (vbits) {
+         if (saturate) {
+            /* Value will not fit in B-bits, saturate the result as needed. */
+            if (vbits >> (src_num_bits/2))
+               /* vbit is upper half of the source */
+               new_value |= saturated_result << ( shift + result_num_bits/2);
+            else
+               new_value |= saturated_result << shift;
+         } else {
+            new_value |= (vbits & result_mask) << shift;
+         }
+      }
+   }
+
+   for (i = 0; i < num_elements_per_64_bits; i++) {
+      vbits = src1_v.bits.u128[1] >> (i * src_num_bits);
+      vbits &= src_mask;
+
+      shift = result_num_bits * i + (num_elements_per_64_bits
+                                     * result_num_bits);
+      if (vbits) {
+         if (saturate) {
+            /* Value will not fit in result_num_bits, saturate the result
+             * as needed.
+             */
+            if (vbits >> (src_num_bits/2))
+               /* vbit is upper half of the source */
+               new_value |= saturated_result << (shift + result_num_bits/2);
+
+            else
+               new_value |= saturated_result << shift;
+
+         } else {
+            new_value |= (vbits & result_mask) << shift;
+         }
+      }
+   }
+   if (__BYTE_ORDER == __LITTLE_ENDIAN)
+      new.bits.u128[1] = new_value;
+   else
+      /* Big endian, swap the upper and lower 32-bits of new_value */
+      new.bits.u128[0] = (new_value << 32) | (new_value >> 32);
+
+   new_value = 0;
+   /* Narrow the elements from src2 to the lower 64-bits of result.
+    * Do each of the 64 bit values that make up a u128
+    */
+   for (i = 0; i < num_elements_per_64_bits; i++) {
+      vbits =  src2_v.bits.u128[0] >> (i * src_num_bits);
+      vbits &= src_mask;
+
+      shift = result_num_bits * i;
+      if (vbits) {
+         if (saturate) {
+            /* Value will not fit in result, saturate the result as needed. */
+            if (vbits >> (src_num_bits/2))
+               /* vbit is upper half of the source */
+               new_value |= saturated_result << (shift + result_num_bits/2);
+            else
+               new_value |= saturated_result << shift;
+         } else {
+            new_value |= (vbits & result_mask) << shift;
+         }
+      }
+   }
+
+   for (i = 0; i < num_elements_per_64_bits; i++) {
+      vbits = src2_v.bits.u128[1] >> (i * src_num_bits);
+      vbits &= src_mask;
+
+      if (vbits) {
+         if (saturate) {
+            /* Value will not fit in result_num_bits, saturate the result
+             * as needed.
+             */
+            if (vbits >> (src_num_bits/2))
+               /* vbit is upper half of the source */
+               new_value |= saturated_result << (result_num_bits * i
+                                                 + result_num_bits/2
+                                                   + (num_elements_per_64_bits
+                                                      * result_num_bits));
+            else
+               new_value |= saturated_result << (result_num_bits * i
+                                                   + (num_elements_per_64_bits
+                                                      * result_num_bits));
+
+         } else {
+            new_value |= (vbits & result_mask) << (result_num_bits * i
+                                                   + (num_elements_per_64_bits
+                                                      * result_num_bits));
+         }
+      }
+   }
+   if (__BYTE_ORDER == __LITTLE_ENDIAN)
+      new.bits.u128[0] = new_value;
+   else
+      /* Big endian, swap the upper and lower 32-bits of new_value */
+      new.bits.u128[1] = (new_value << 32) | (new_value >> 32);
+
+   return new;
+}
 
 /* Return a value where all bits are set to defined. */
 vbits_t

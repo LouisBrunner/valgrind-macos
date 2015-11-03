@@ -79,6 +79,81 @@ typedef enum {
 
    UNDEF_ORD,     // Iop_CmpORD compare 
 
+   /* For each of the following UNDEF_ALL_BxE, E is the number of
+    * elements and B is the number of bits in the element.
+    *
+    * If any bits in one of the E elements is not defined, then the
+    * return value has all bits in the corresponding element set to 1.
+    */
+   UNDEF_ALL_64x2,         // 128-bit vector, two 64-bit elements
+   UNDEF_ALL_32x4,         // 128-bit vector, four 32-bit elements
+   UNDEF_ALL_16x8,         // 128-bit vector, eight 16-bit elements
+   UNDEF_ALL_8x16,         // 128-bit vector, sixteen 8-bit elements
+
+   /* For each of the following UNDEF_ALL_BxE_EVEN, E is the number of
+    * elements and B is the number of bits in the element. Elements are
+    * numbered from right to left starting with element number 0.
+    *
+    * If any bits in one of the even numbered elements is not defined, then
+    * the return value has all bits in the corresponding element set to 1.
+    * The bits in the odd numbered elements are not checked
+    */
+   UNDEF_ALL_32x4_EVEN,    // 128-bit vector, four 32-bit elements
+   UNDEF_ALL_16x8_EVEN,    // 128-bit vector, eight 16-bit elements
+   UNDEF_ALL_8x16_EVEN,    // 128-bit vector, sixteen 8-bit elements
+
+   /* For each of the following UNDEF_BxE_TRANSPOSE, E is the number of
+    * elements and B is the number of bits in the element.
+    *
+    * Concatenate bit i from each byte j.  Place concatenated 8 bit value
+    * into byte i of the result.  Do for each bit i from 0 to 7 and
+    * byte j from 0 to 7 of each 64-bit element.
+    */
+   UNDEF_64x2_TRANSPOSE,
+
+   /* For each of the following UNDEF_BxE_ROTATE, E is the number of
+    * elements and B is the number of bits in the element.
+    *
+    * The result is the undefined bits in each element rotated by the
+    * specified amount.  Bits rotated out of the element are discarded.
+    * No additional bits are set to undefined.
+    */
+   UNDEF_64x2_ROTATE, /* 128-bit vector, two 64-bit elements, rotate
+                       * elements left.
+                       */
+   UNDEF_32x4_ROTATE, /* 128-bit vector, four 32-bit elements, rotate
+                       * elements left.
+                       */
+   UNDEF_16x8_ROTATE, /* 128-bit vector, eight 16-bit elements, rotate
+                       * elements left.
+                       */
+   UNDEF_8x16_ROTATE, /* 128-bit vector, sixteen 8-bit elements, rotate
+                       * elements left.
+                       */
+
+   /* If the input had some vbits set, the result will have one or more
+    * vbits set. Minimal test when the vbit propagation can not be easily
+    * calculated.
+    */
+   UNDEF_SOME,
+
+   /* For UNDEF_NARROW256_AtoB, narrow the elements of size A-bits in
+    * the 256-bit source (stored in two 128-bit values) to a 128-bit
+    * result with elements of size B-bits.
+    *
+    * If the source element will fit into the corresponding destination
+    * element, then only the undefined bits in the source element are
+    * undefined in the corresponding bit position of the destination element.
+    *
+    * If the source element will not fit into the destination element, then
+    * only the lower B undefined bits of the source element will be
+    * undefined in the corresponding result element unless the saturate
+    * flag is true.  If the saturate flag is true and the element in the
+    * source will not fit into the corresponding destination element, then
+    * all of the bits in the corresponding destination element are set to one.
+    */
+   UNDEF_NARROW256_AtoB,
+
    // For IROps I don't know anything about
    UNDEF_UNKNOWN
 } undef_t;
@@ -89,7 +164,15 @@ typedef struct {
    IROp op;
    const char *name;
    undef_t     undef_kind;
-   int         shift_amount_is_immediate;
+   /* The following two members describe if this operand has immediate
+    *  operands. There are a few restrictions:
+    *    (1) An operator can have at most one immediate operand.
+    *    (2) If there is an immediate operand, it is the right-most operand.
+    *  An immediate_index of 0 means there is no immediate operand.
+    */
+   unsigned    immediate_index;
+   unsigned    immediate_type;
+
    // Indicate whether IROp can be tested on a particular architecture
    unsigned    s390x  : 1;
    unsigned    amd64  : 1;

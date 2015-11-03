@@ -40,7 +40,7 @@ where XXXXXX is the bug number as listed below.
 353917  unhandled amd64-solaris syscall fchdir(120)
 353920  unhandled amd64-solaris syscall: 170
 354392  unhandled amd64-solaris syscall: 171
-
+354797  Added vbit tester support for PPC 64 isa 2.07 iops
 
 
 Release 3.11.0 (22 September 2015)

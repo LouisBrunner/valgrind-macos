@@ -63,7 +63,7 @@ adb push Inst /
 
 # IMPORTANT: when running Valgrind, you may need give it the flag
 #
-#    --kernel-variant=android-emulator-no-hw-tls
+#    --kernel-variant=android-no-hw-tls
 #
 # since otherwise it may crash at startup.
 # See README.android for details.

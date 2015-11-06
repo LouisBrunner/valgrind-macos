@@ -174,7 +174,7 @@ adb push Inst /
 #     at startup.  This is because the emulator (for ARM) may not be
 #     simulating a hardware TLS register.  To get around this, run
 #     Valgrind with:
-#       --kernel-variant=android-emulator-no-hw-tls
+#       --kernel-variant=android-no-hw-tls
 # 
 # (2) if you are running a real device, you need to tell Valgrind
 #     what GPU it has, so Valgrind knows how to handle custom GPU

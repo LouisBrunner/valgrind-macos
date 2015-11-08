@@ -4988,6 +4988,12 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
       {
          Addr address;
          SizeT szB = 1;
+         if (HG_(clo_history_level) < 2) {
+            VG_(gdb_printf)
+               ("helgrind must be started with --history-level=full"
+                " to use accesshistory\n");
+            return True;
+         }
          if (VG_(strtok_get_address_and_size) (&address, &szB, &ssaveptr)) {
             if (szB >= 1) 
                libhb_event_map_access_history (address, szB, HG_(print_access));

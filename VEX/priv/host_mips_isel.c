@@ -4171,9 +4171,10 @@ HInstrArray *iselSB_MIPS ( const IRSB* bb,
 
    /* sanity ... */
    vassert(arch_host == VexArchMIPS32 || arch_host == VexArchMIPS64);
-   vassert(VEX_PRID_COMP_MIPS == hwcaps_host
-           || VEX_PRID_COMP_BROADCOM == hwcaps_host
-           || VEX_PRID_COMP_NETLOGIC);
+   vassert(VEX_PRID_COMP_MIPS == VEX_MIPS_COMP_ID(hwcaps_host)
+           || VEX_PRID_COMP_BROADCOM == VEX_MIPS_COMP_ID(hwcaps_host)
+           || VEX_PRID_COMP_NETLOGIC == VEX_MIPS_COMP_ID(hwcaps_host)
+           || VEX_PRID_COMP_CAVIUM == VEX_MIPS_COMP_ID(hwcaps_host));
 
    /* Check that the host's endianness is as expected. */
    vassert(archinfo_host->endness == VexEndnessLE

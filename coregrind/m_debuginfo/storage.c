@@ -98,10 +98,11 @@ void ML_(ppSym) ( Int idx, const DiSym* sym )
    vg_assert(sym->pri_name);
    if (sec_names)
       vg_assert(sec_names);
-   VG_(printf)( "%5d:  %c%c %#8lx .. %#8lx (%u)      %s%s",
+   VG_(printf)( "%5d:  %c%c%c %#8lx .. %#8lx (%u)      %s%s",
                 idx,
                 sym->isText ? 'T' : '-',
                 sym->isIFunc ? 'I' : '-',
+                sym->isGlobal ? 'G' : '-',
                 sym->avmas.main, 
                 sym->avmas.main + sym->size - 1, sym->size,
                 sym->pri_name, sec_names ? " " : "" );
@@ -1646,7 +1647,7 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
    Word  i, j, n_truncated;
    Addr  sta1, sta2, end1, end2, toc1, toc2;
    const HChar *pri1, *pri2, **sec1, **sec2;
-   Bool  ist1, ist2, isf1, isf2;
+   Bool  ist1, ist2, isf1, isf2, isg1, isg2;
 
 #  define SWAP(ty,aa,bb) \
       do { ty tt = (aa); (aa) = (bb); (bb) = tt; } while (0)
@@ -1693,6 +1694,8 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
             }
             /* mark w as an IFunc if either w or r are */
             di->symtab[w].isIFunc = di->symtab[w].isIFunc || di->symtab[r].isIFunc;
+            /* likewise for global symbols */
+            di->symtab[w].isGlobal = di->symtab[w].isGlobal || di->symtab[r].isGlobal;
             /* and use ::pri_names to indicate this slot is no longer in use */
             di->symtab[r].pri_name = NULL;
             if (di->symtab[r].sec_names) {
@@ -1796,6 +1799,7 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
       sec1 = di->symtab[i].sec_names;
       ist1 = di->symtab[i].isText;
       isf1 = di->symtab[i].isIFunc;
+      isg1 = di->symtab[i].isGlobal;
 
       sta2 = di->symtab[i+1].avmas.main;
       end2 = sta2 + di->symtab[i+1].size - 1;
@@ -1805,6 +1809,7 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
       sec2 = di->symtab[i+1].sec_names;
       ist2 = di->symtab[i+1].isText;
       isf2 = di->symtab[i+1].isIFunc;
+      isg2 = di->symtab[i+1].isGlobal;
 
       if (sta1 < sta2) {
          end1 = sta2 - 1;
@@ -1814,7 +1819,7 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
             sta1 = end2 + 1;
             SWAP(Addr,sta1,sta2); SWAP(Addr,end1,end2); SWAP(Addr,toc1,toc2);
             SWAP(const HChar*,pri1,pri2); SWAP(const HChar**,sec1,sec2);
-            SWAP(Bool,ist1,ist2); SWAP(Bool,isf1,isf2);
+            SWAP(Bool,ist1,ist2); SWAP(Bool,isf1,isf2); SWAP(Bool, isg1, isg2);
          } else 
          if (end1 < end2) {
             sta2 = end1 + 1;
@@ -1831,6 +1836,7 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
       di->symtab[i].sec_names = sec1;
       di->symtab[i].isText    = ist1;
       di->symtab[i].isIFunc   = isf1;
+      di->symtab[i].isGlobal  = isg1;
 
       di->symtab[i+1].avmas.main = sta2;
       di->symtab[i+1].size       = end2 - sta2 + 1;
@@ -1840,6 +1846,7 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
       di->symtab[i+1].sec_names = sec2;
       di->symtab[i+1].isText    = ist2;
       di->symtab[i+1].isIFunc   = isf2;
+      di->symtab[i+1].isGlobal  = isg2;
 
       vg_assert(sta1 <= sta2);
       vg_assert(di->symtab[i].size > 0);

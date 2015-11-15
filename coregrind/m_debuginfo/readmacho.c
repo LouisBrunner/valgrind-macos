@@ -365,6 +365,7 @@ void read_symtab( /*OUT*/XArray* /* DiSym */ syms,
                          di->text_avma+di->text_size - sym_addr;
       disym.isText     = True;
       disym.isIFunc    = False;
+      disym.isGlobal   = False;
       // Lots of user function names get prepended with an underscore.  Eg. the
       // function 'f' becomes the symbol '_f'.  And the "below main"
       // function is called "start".  So we skip the leading underscore, and

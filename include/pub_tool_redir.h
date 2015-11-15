@@ -345,6 +345,12 @@
 #define VG_SO_SYN_PREFIX     "VgSoSyn"
 #define VG_SO_SYN_PREFIX_LEN 7
 
+// Special soname synonym place holder for the malloc symbols that can
+// be replaced using --soname-synonyms.  Otherwise will match all
+// public symbols in any shared library/executable.
+#define SO_SYN_MALLOC VG_SO_SYN(somalloc)
+#define SO_SYN_MALLOC_NAME "VgSoSynsomalloc"
+
 #endif   // __PUB_TOOL_REDIR_H
 
 /*--------------------------------------------------------------------*/

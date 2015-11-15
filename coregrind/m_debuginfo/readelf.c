@@ -241,7 +241,8 @@ Bool get_elf_symbol_info (
         Bool*   from_opd_out,   /* ppc64be-linux only: did we deref an
                                   .opd entry? */
         Bool*   is_text_out,    /* is this a text symbol? */
-        Bool*   is_ifunc        /* is this a  STT_GNU_IFUNC function ?*/
+        Bool*   is_ifunc_out,   /* is this a STT_GNU_IFUNC function ?*/
+        Bool*   is_global_out   /* is this a global symbol ?*/
      )
 {
    Bool plausible;
@@ -259,7 +260,8 @@ Bool get_elf_symbol_info (
    SET_TOCPTR_AVMA(*sym_avmas_out, 0);   /* default to unknown/inapplicable */
    SET_LOCAL_EP_AVMA(*sym_avmas_out, 0); /* default to unknown/inapplicable */
    *from_opd_out      = False;
-   *is_ifunc          = False;
+   *is_ifunc_out      = False;
+   *is_global_out     = False;
 
    /* Get the symbol size, but restrict it to fit in a signed 32 bit
       int.  Also, deal with the stupid case of negative size by making
@@ -373,9 +375,13 @@ Bool get_elf_symbol_info (
    /* Check for indirect functions. */
    if (*is_text_out
        && ELFXX_ST_TYPE(sym->st_info) == STT_GNU_IFUNC) {
-       *is_ifunc = True;
+      *is_ifunc_out = True;
    }
 #  endif
+
+   if (ELFXX_ST_BIND(sym->st_info) == STB_GLOBAL) {
+      *is_global_out = True;
+   }
 
 #  if defined(VGP_ppc64be_linux)
    /* Allow STT_NOTYPE in the very special case where we're running on
@@ -777,6 +783,7 @@ void read_elf_symtab__normal(
       SymAVMAs sym_avmas_really;
       Int    sym_size = 0;
       Bool   from_opd = False, is_text = False, is_ifunc = False;
+      Bool   is_global = False;
       DiOffT sym_name_really = DiOffT_INVALID;
       sym_avmas_really.main = 0;
       SET_TOCPTR_AVMA(sym_avmas_really, 0);
@@ -787,7 +794,7 @@ void read_elf_symtab__normal(
                               &sym_name_really, 
                               &sym_avmas_really,
                               &sym_size,
-                              &from_opd, &is_text, &is_ifunc)) {
+                              &from_opd, &is_text, &is_ifunc, &is_global)) {
 
          DiSym  disym;
          VG_(memset)(&disym, 0, sizeof(disym));
@@ -799,6 +806,7 @@ void read_elf_symtab__normal(
          disym.size      = sym_size;
          disym.isText    = is_text;
          disym.isIFunc   = is_ifunc;
+         disym.isGlobal  = is_global;
          if (cstr) { ML_(dinfo_free)(cstr); cstr = NULL; }
          vg_assert(disym.pri_name);
          vg_assert(GET_TOCPTR_AVMA(disym.avmas) == 0);
@@ -847,6 +855,7 @@ typedef
       Bool       from_opd;
       Bool       is_text;
       Bool       is_ifunc;
+      Bool       is_global;
    }
    TempSym;
 
@@ -911,6 +920,7 @@ void read_elf_symtab__ppc64be_linux(
       SymAVMAs sym_avmas_really;
       Int    sym_size = 0;
       Bool   from_opd = False, is_text = False, is_ifunc = False;
+      Bool   is_global = False;
       DiOffT sym_name_really = DiOffT_INVALID;
       DiSym  disym;
       VG_(memset)(&disym, 0, sizeof(disym));
@@ -923,7 +933,7 @@ void read_elf_symtab__ppc64be_linux(
                               &sym_name_really, 
                               &sym_avmas_really,
                               &sym_size,
-                              &from_opd, &is_text, &is_ifunc)) {
+                              &from_opd, &is_text, &is_ifunc, &is_global)) {
 
          /* Check if we've seen this (name,addr) key before. */
          key.addr = sym_avmas_really.main;
@@ -996,6 +1006,7 @@ void read_elf_symtab__ppc64be_linux(
             elem->from_opd = from_opd;
             elem->is_text  = is_text;
             elem->is_ifunc = is_ifunc;
+            elem->is_global = is_global;
             VG_(OSetGen_Insert)(oset, elem);
             if (di->trace_symtab) {
                HChar* str = ML_(img_strdup)(escn_strtab->img, "di.respl.2",
@@ -1034,14 +1045,17 @@ void read_elf_symtab__ppc64be_linux(
       disym.size      = elem->size;
       disym.isText    = elem->is_text;
       disym.isIFunc   = elem->is_ifunc;
+      disym.isGlobal  = elem->is_global;
       if (cstr) { ML_(dinfo_free)(cstr); cstr = NULL; }
       vg_assert(disym.pri_name != NULL);
 
       ML_(addSym) ( di, &disym );
       if (di->trace_symtab) {
-         VG_(printf)("    rec(%c) [%4ld]:          "
+         VG_(printf)("    rec(%c%c%c) [%4ld]:          "
                      "   val %#010lx, toc %#010lx, sz %4d  %s\n",
                      disym.isText ? 't' : 'd',
+                     disym.isIFunc ? 'i' : '-',
+                     disym.isGlobal ? 'g' : 'l',
                      i,
                      disym.avmas.main,
                      GET_TOCPTR_AVMA(disym.avmas),

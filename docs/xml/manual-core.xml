@@ -2315,18 +2315,26 @@ need to use them.</para>
       <option><![CDATA[--soname-synonyms=syn1=pattern1,syn2=pattern2,...]]></option>
     </term>
     <listitem>
-      <para>When a shared library is loaded, Valgrind checks for 
-      functions in the library that must be replaced or wrapped.
-      For example, Memcheck replaces all malloc related
-      functions (malloc, free, calloc, ...) with its own versions.
-      Such replacements are done by default only in shared libraries whose
-      soname matches a predefined soname pattern (e.g.
-      <varname>libc.so*</varname> on linux).
-      By default, no replacement is done for a statically linked
-      library or for alternative libraries such as tcmalloc.
+      <para>When a shared library is loaded, Valgrind checks for
+      functions in the library that must be replaced or wrapped.  For
+      example, Memcheck replaces some string and memory functions
+      (strchr, strlen, strcpy, memchr, memcpy, memmove, etc.) with its
+      own versions.  Such replacements are normally done only in shared
+      libraries whose soname matches a predefined soname pattern (e.g.
+      <varname>libc.so*</varname> on linux).  By default, no
+      replacement is done for a statically linked library or for
+      alternative libraries, except for the allocation functions
+      (malloc, free, calloc, memalign, realloc, operator new, operator
+      delete, etc.) Such allocation functions are intercepted by
+      default in any shared library or in the executable if they are
+      exported as global symbols. This means that if a replacement
+      allocation library such as tcmalloc is found, its functions are
+      also intercepted by default.
+
       In some cases, the replacements allow
       <option>--soname-synonyms</option> to specify one additional
-      synonym pattern, giving flexibility in the replacement. </para>
+      synonym pattern, giving flexibility in the replacement.  Or to
+      prevent interception of all public allocation symbols.</para>
 
       <para>Currently, this flexibility is only allowed for the
       malloc related functions, using the
@@ -2339,27 +2347,31 @@ need to use them.</para>
         <listitem>
 
           <para>Alternate malloc library: to replace the malloc
-          related functions in an alternate library with
-          soname <varname>mymalloclib.so</varname>, give the
+          related functions in a specific alternate library with
+          soname <varname>mymalloclib.so</varname> (and not in any
+          others), give the
           option <option>--soname-synonyms=somalloc=mymalloclib.so</option>.
           A pattern can be used to match multiple libraries sonames.
           For
           example, <option>--soname-synonyms=somalloc=*tcmalloc*</option>
-          will match the soname of all variants of the tcmalloc library
-          (native, debug, profiled, ... tcmalloc variants). </para>
+          will match the soname of all variants of the tcmalloc
+          library (native, debug, profiled, ... tcmalloc
+          variants). </para>
           <para>Note: the soname of a elf shared library can be
           retrieved using the readelf utility. </para>
 
         </listitem>
 
         <listitem>
-          <para>Replacements in a statically linked library are done by
-          using the <varname>NONE</varname> pattern. For example, if
-          you link with <varname>libtcmalloc.a</varname>, memcheck 
-          will properly work when you give the
-          option <option>--soname-synonyms=somalloc=NONE</option>.  Note
-          that a NONE pattern will match the main executable and any
-          shared library having no soname. </para>
+          <para>Replacements in a statically linked library are done
+          by using the <varname>NONE</varname> pattern. For example,
+          if you link with <varname>libtcmalloc.a</varname>, and only
+          want to intercept the malloc related functions in the
+          executable (and standard libraries) themselves, but not any
+          other shared libraries, you can give the
+          option <option>--soname-synonyms=somalloc=NONE</option>.
+          Note that a NONE pattern will match the main executable and
+          any shared library having no soname. </para>
         </listitem>
 
         <listitem>
@@ -2368,6 +2380,17 @@ need to use them.</para>
           use <option>--soname-synonyms=somalloc=NONE</option>.
           </para>
         </listitem>
+
+	<listitem>
+	  <para>To only intercept allocation symbols in the default
+	  system libraries, but not in any other shared library or the
+	  executable defining public malloc or operator new related
+	  functions use a non-existing library name
+	  like <option>--soname-synonyms=somalloc=nouserintercepts</option>
+	  (where <varname>nouserintercepts</varname> can be any
+	  non-existing library name).
+	  </para>
+	</listitem>
 
       </itemizedlist>
    </listitem>

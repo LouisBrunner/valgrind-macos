@@ -216,7 +216,8 @@ void VG_(DebugInfo_syms_getidx)  ( const DebugInfo *di,
                                    /*OUT*/const HChar**   pri_name,
                                    /*OUT*/const HChar***  sec_names,
                                    /*OUT*/Bool*     isText,
-                                   /*OUT*/Bool*     isIFunc );
+                                   /*OUT*/Bool*     isIFunc,
+                                   /*OUT*/Bool*     isGlobal );
 /* ppc64-linux only: find the TOC pointer (R2 value) that should be in
    force at the entry point address of the function containing
    guest_code_addr.  Returns 0 if not known. */

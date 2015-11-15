@@ -4306,7 +4306,8 @@ void VG_(DebugInfo_syms_getidx) ( const DebugInfo *si,
                                   /*OUT*/const HChar**   pri_name,
                                   /*OUT*/const HChar***  sec_names,
                                   /*OUT*/Bool*     isText,
-                                  /*OUT*/Bool*     isIFunc )
+                                  /*OUT*/Bool*     isIFunc,
+                                  /*OUT*/Bool*     isGlobal )
 {
    vg_assert(idx >= 0 && idx < si->symtab_used);
    if (avmas)     *avmas     = si->symtab[idx].avmas;
@@ -4315,6 +4316,7 @@ void VG_(DebugInfo_syms_getidx) ( const DebugInfo *si,
    if (sec_names) *sec_names = si->symtab[idx].sec_names;
    if (isText)    *isText    = si->symtab[idx].isText;
    if (isIFunc)   *isIFunc   = si->symtab[idx].isIFunc;
+   if (isGlobal)  *isGlobal  = si->symtab[idx].isGlobal;
 }
 
 

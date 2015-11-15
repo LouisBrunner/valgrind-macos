@@ -75,14 +75,18 @@ typedef
                             the macros defined in pub_core_debuginfo.h */
       const HChar*  pri_name;  /* primary name, never NULL */
       const HChar** sec_names; /* NULL, or a NULL term'd array of other names */
-      // XXX: this could be shrunk (on 32-bit platforms) by using 30
-      // bits for the size and 1 bit each for isText and isIFunc.  If you
-      // do this, make sure that all assignments to the latter two use
-      // 0 or 1 (or True or False), and that a positive number larger
-      // than 1 is never used to represent True.
+      // XXX: DiSym could be shrunk (on 32-bit platforms to exactly 16
+      // bytes, on 64-bit platforms the first 3 pointers already add
+      // up to 24 bytes, so size plus bits will extend to 32 bytes
+      // anyway) by using 29 bits for the size and 1 bit each for
+      // isText, isIFunc and isGlobal.  If you do this, make sure that
+      // all assignments to the latter two use 0 or 1 (or True or
+      // False), and that a positive number larger than 1 is never
+      // used to represent True.
       UInt    size;    /* size in bytes */
       Bool    isText;
       Bool    isIFunc; /* symbol is an indirect function? */
+      Bool    isGlobal; /* Is this symbol globally visible? */
    }
    DiSym;
 

@@ -291,7 +291,6 @@ static void init(void);
 // For some lines, we will also define a replacement function
 // whose only purpose is to be a soname synonym place holder
 // that can be replaced using --soname-synonyms.
-#define SO_SYN_MALLOC VG_SO_SYN(somalloc)
 
 // malloc
 #if defined(VGO_linux)

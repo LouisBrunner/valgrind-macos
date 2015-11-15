@@ -233,6 +233,7 @@ typedef
       HChar* from_fnpatt;  /* from fnname pattern  */
       Addr   to_addr;      /* where redirecting to */
       Bool   isWrap;       /* wrap or replacement? */
+      Bool   isGlobal;     /* must the symbol to replace be global? */
       Int    becTag; /* 0 through 9999.  Behavioural equivalance class tag.
                         If two wrappers have the same (non-zero) tag, they
                         are promising that they behave identically. */
@@ -388,7 +389,7 @@ static HChar const* advance_to_comma ( HChar const* c ) {
 
 void VG_(redir_notify_new_DebugInfo)( const DebugInfo* newdi )
 {
-   Bool         ok, isWrap;
+   Bool         ok, isWrap, isGlobal;
    Int          i, nsyms, becTag, becPrio;
    Spec*        specList;
    Spec*        spec;
@@ -518,13 +519,14 @@ void VG_(redir_notify_new_DebugInfo)( const DebugInfo* newdi )
    for (i = 0; i < nsyms; i++) {
       VG_(DebugInfo_syms_getidx)( newdi, i, &sym_avmas,
                                   NULL, &sym_name_pri, &sym_names_sec,
-                                  &isText, NULL );
+                                  &isText, NULL, NULL );
       /* Set up to conveniently iterate over all names for this symbol. */
       const HChar*  twoslots[2];
       const HChar** names_init =
          alloc_symname_array(sym_name_pri, sym_names_sec, &twoslots[0]);
       const HChar** names;
       for (names = names_init; *names; names++) {
+         isGlobal = False;
          ok = VG_(maybe_Z_demangle)( *names,
                                      &demangled_sopatt,
                                      &demangled_fnpatt,
@@ -579,15 +581,12 @@ void VG_(redir_notify_new_DebugInfo)( const DebugInfo* newdi )
                have a matching lib synonym, then replace the sopatt.
                Otherwise, just ignore this redirection spec. */
 
-            if (!VG_(clo_soname_synonyms))
-               continue; // No synonyms => skip the redir.
-
             /* Search for a matching synonym=newname*/
             SizeT const sopatt_syn_len 
                = VG_(strlen)(demangled_sopatt+VG_SO_SYN_PREFIX_LEN);
             HChar const* last = VG_(clo_soname_synonyms);
             
-            while (*last) {
+            while (last != NULL && *last) {
                HChar const* first = last;
                last = advance_to_equal(first);
                
@@ -611,6 +610,17 @@ void VG_(redir_notify_new_DebugInfo)( const DebugInfo* newdi )
                   last++;
             }
             
+	    // If the user didn't set it then somalloc is special. We
+	    // want to match public/global symbols that match the
+	    // fnpatt everywhere.
+	    if (replaced_sopatt == NULL
+		&& VG_(strcmp) ( demangled_sopatt, SO_SYN_MALLOC_NAME ) == 0)
+	      {
+		replaced_sopatt = VG_(strdup)("m_redir.rnnD.1", "*");
+		demangled_sopatt = replaced_sopatt;
+		isGlobal = True;
+	      }
+
             // If we have not replaced the sopatt, then skip the redir.
             if (replaced_sopatt == NULL)
                continue;
@@ -621,6 +631,7 @@ void VG_(redir_notify_new_DebugInfo)( const DebugInfo* newdi )
          spec->from_fnpatt = dinfo_strdup("redir.rnnD.3", demangled_fnpatt);
          spec->to_addr = sym_avmas.main;
          spec->isWrap = isWrap;
+         spec->isGlobal = isGlobal;
          spec->becTag = becTag;
          spec->becPrio = becPrio;
          /* check we're not adding manifestly stupid destinations */
@@ -653,7 +664,7 @@ void VG_(redir_notify_new_DebugInfo)( const DebugInfo* newdi )
       for (i = 0; i < nsyms; i++) {
          VG_(DebugInfo_syms_getidx)( newdi, i, &sym_avmas,
                                      NULL, &sym_name_pri, &sym_names_sec,
-                                     &isText, NULL );
+                                     &isText, NULL, NULL );
          const HChar*  twoslots[2];
          const HChar** names_init =
             alloc_symname_array(sym_name_pri, sym_names_sec, &twoslots[0]);
@@ -785,7 +796,7 @@ void generate_and_add_actives (
      )
 {
    Spec*   sp;
-   Bool    anyMark, isText, isIFunc;
+   Bool    anyMark, isText, isIFunc, isGlobal;
    Active  act;
    Int     nsyms, i;
    SymAVMAs  sym_avmas;
@@ -813,7 +824,7 @@ void generate_and_add_actives (
    for (i = 0; i < nsyms; i++) {
       VG_(DebugInfo_syms_getidx)( di, i, &sym_avmas,
                                   NULL, &sym_name_pri, &sym_names_sec,
-                                  &isText, &isIFunc );
+                                  &isText, &isIFunc, &isGlobal );
       const HChar*  twoslots[2];
       const HChar** names_init =
          alloc_symname_array(sym_name_pri, sym_names_sec, &twoslots[0]);
@@ -827,7 +838,8 @@ void generate_and_add_actives (
          for (sp = specs; sp; sp = sp->next) {
             if (!sp->mark)
                continue; /* soname doesn't match */
-            if (VG_(string_match)( sp->from_fnpatt, *names )) {
+            if (VG_(string_match)( sp->from_fnpatt, *names )
+		&& (sp->isGlobal == False || isGlobal == True)) {
                /* got a new binding.  Add to collection. */
                act.from_addr   = sym_avmas.main;
                act.to_addr     = sp->to_addr;
@@ -1220,6 +1232,7 @@ static void add_hardwired_spec (const  HChar* sopatt, const HChar* fnpatt,
    spec->from_fnpatt = CONST_CAST(HChar *,fnpatt);
    spec->to_addr     = to_addr;
    spec->isWrap      = False;
+   spec->isGlobal    = False;
    spec->mandatory   = mandatory;
    /* VARIABLE PARTS */
    spec->mark        = False; /* not significant */
@@ -1719,7 +1732,7 @@ static void handle_require_text_symbols ( const DebugInfo* di )
          const HChar** sym_names_sec = NULL;
          VG_(DebugInfo_syms_getidx)( di, j, NULL,
                                      NULL, &sym_name_pri, &sym_names_sec,
-                                     &isText, NULL );
+                                     &isText, NULL, NULL );
          const HChar*  twoslots[2];
          const HChar** names_init =
             alloc_symname_array(sym_name_pri, sym_names_sec, &twoslots[0]);
@@ -1773,10 +1786,11 @@ static void handle_require_text_symbols ( const DebugInfo* di )
 static void show_spec ( const HChar* left, const Spec* spec )
 {
    VG_(message)( Vg_DebugMsg, 
-                 "%s%-25s %-30s %s-> (%04d.%d) 0x%08lx\n",
+                 "%s%-25s %-30s %s%s-> (%04d.%d) 0x%08lx\n",
                  left,
                  spec->from_sopatt, spec->from_fnpatt,
                  spec->isWrap ? "W" : "R",
+                 spec->isGlobal ? "G" : "L",
                  spec->becTag, spec->becPrio,
                  spec->to_addr );
 }

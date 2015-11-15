@@ -291,6 +291,9 @@ EXTRA_DIST = \
 	wrap7.vgtest wrap7.stdout.exp wrap7.stderr.exp \
 	wrap8.vgtest wrap8.stdout.exp wrap8.stderr.exp \
 	wrap8.stdout.exp-ppc64 wrap8.stderr.exp-ppc64 \
+	wrapmalloc.vgtest wrapmalloc.stdout.exp wrapmalloc.stderr.exp \
+	wrapmallocstatic.vgtest wrapmallocstatic.stdout.exp \
+	wrapmallocstatic.stderr.exp \
 	writev1.stderr.exp writev1.stderr.exp-solaris writev1.vgtest \
 	xml1.stderr.exp xml1.stdout.exp xml1.vgtest xml1.stderr.exp-s390x-mvc \
 	threadname.vgtest threadname.stderr.exp \
@@ -375,6 +378,7 @@ check_PROGRAMS = \
 	wcs \
 	xml1 \
 	wrap1 wrap2 wrap3 wrap4 wrap5 wrap6 wrap7 wrap7so.so wrap8 \
+	wrapmalloc wrapmallocso.so wrapmallocstatic \
 	writev1
 
 if !SOLARIS_SUN_STUDIO_AS
@@ -568,6 +572,28 @@ if VGCONF_OS_IS_DARWIN
 else
  wrap7so_so_LDFLAGS     = -fpic $(AM_FLAG_M3264_PRI) -shared \
 				-Wl,-soname -Wl,wrap7so.so
+endif
+
+# Build shared object for wrapmalloc
+wrapmalloc_SOURCES           = wrapmalloc.c
+wrapmalloc_DEPENDENCIES      = wrapmallocso.so
+if VGCONF_OS_IS_DARWIN
+ wrapmalloc_LDADD            = `pwd`/wrapmallocso.so
+ wrapmalloc_LDFLAGS          = $(AM_FLAG_M3264_PRI)
+else
+ wrapmalloc_LDADD            = wrapmallocso.so
+ wrapmalloc_LDFLAGS          = $(AM_FLAG_M3264_PRI) \
+				-Wl,-rpath,$(top_builddir)/memcheck/tests
+endif
+
+wrapmallocso_so_SOURCES      = wrapmallocso.c
+wrapmallocso_so_CFLAGS       = $(AM_CFLAGS) -fpic
+if VGCONF_OS_IS_DARWIN
+ wrapmallocso_so_LDFLAGS     = -fpic $(AM_FLAG_M3264_PRI) -dynamic \
+				-dynamiclib -all_load
+else
+ wrapmallocso_so_LDFLAGS     = -fpic $(AM_FLAG_M3264_PRI) -shared \
+				-Wl,-soname -Wl,wrapmallocso.so
 endif
 
 xml1_CFLAGS             = $(AM_CFLAGS) -D_GNU_SOURCE

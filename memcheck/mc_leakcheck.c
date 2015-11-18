@@ -237,6 +237,7 @@
 
 
 // Define to debug the memory-leak-detector.
+#define VG_DEBUG_FIND_CHUNK 0
 #define VG_DEBUG_LEAKCHECK 0
 #define VG_DEBUG_CLIQUE    0
  
@@ -255,7 +256,7 @@ static Int compare_MC_Chunks(const void* n1, const void* n2)
    return 0;
 }
 
-#if VG_DEBUG_LEAKCHECK
+#if VG_DEBUG_FIND_CHUNK
 // Used to sanity-check the fast binary-search mechanism.
 static 
 Int find_chunk_for_OLD ( Addr       ptr, 
@@ -270,6 +271,8 @@ Int find_chunk_for_OLD ( Addr       ptr,
       PROF_EVENT(MCPE_FIND_CHUNK_FOR_OLD_LOOP);
       a_lo = chunks[i]->data;
       a_hi = ((Addr)chunks[i]->data) + chunks[i]->szB;
+      if (a_lo == a_hi)
+         a_hi++; // Special case for szB 0. See find_chunk_for.
       if (a_lo <= ptr && ptr < a_hi)
          return i;
    }
@@ -320,7 +323,7 @@ Int find_chunk_for ( Addr       ptr,
       break;
    }
 
-#  if VG_DEBUG_LEAKCHECK
+#  if VG_DEBUG_FIND_CHUNK
    tl_assert(retVal == find_chunk_for_OLD ( ptr, chunks, n_chunks ));
 #  endif
    // VG_(printf)("%d\n", retVal);

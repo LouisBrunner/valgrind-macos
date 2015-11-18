@@ -4589,7 +4589,6 @@ static Bool is_in_dynamic_linker_shared_object( Addr ga )
 {
    DebugInfo* dinfo;
    const HChar* soname;
-   if (0) return False;
 
    dinfo = VG_(find_DebugInfo)( ga );
    if (!dinfo) return False;
@@ -4598,23 +4597,7 @@ static Bool is_in_dynamic_linker_shared_object( Addr ga )
    tl_assert(soname);
    if (0) VG_(printf)("%s\n", soname);
 
-#  if defined(VGO_linux)
-   if (VG_STREQ(soname, VG_U_LD_LINUX_SO_3))        return True;
-   if (VG_STREQ(soname, VG_U_LD_LINUX_SO_2))        return True;
-   if (VG_STREQ(soname, VG_U_LD_LINUX_X86_64_SO_2)) return True;
-   if (VG_STREQ(soname, VG_U_LD64_SO_1))            return True;
-   if (VG_STREQ(soname, VG_U_LD64_SO_2))            return True;
-   if (VG_STREQ(soname, VG_U_LD_SO_1))              return True;
-   if (VG_STREQ(soname, VG_U_LD_LINUX_AARCH64_SO_1)) return True;
-   if (VG_STREQ(soname, VG_U_LD_LINUX_ARMHF_SO_3))  return True;
-#  elif defined(VGO_darwin)
-   if (VG_STREQ(soname, VG_U_DYLD)) return True;
-#  elif defined(VGO_solaris)
-   if (VG_STREQ(soname, VG_U_LD_SO_1)) return True;
-#  else
-#    error "Unsupported OS"
-#  endif
-   return False;
+   return VG_(is_soname_ld_so)(soname);
 }
 
 static

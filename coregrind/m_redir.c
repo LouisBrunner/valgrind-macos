@@ -809,8 +809,19 @@ void generate_and_add_actives (
    anyMark = False;
    for (sp = specs; sp; sp = sp->next) {
       sp->done = False;
-      sp->mark = VG_(string_match)( sp->from_sopatt, 
-                                    VG_(DebugInfo_get_soname)(di) );
+      const HChar *soname = VG_(DebugInfo_get_soname)(di);
+
+      /* When searching for global public symbols (like for the somalloc
+         synonym symbols), exclude the dynamic (runtime) linker as it is very
+         special. See https://bugs.kde.org/show_bug.cgi?id=355454 */
+      if ((VG_(strcmp)(sp->from_sopatt, "*") == 0) &&
+          (sp->isGlobal == True) &&
+          VG_(is_soname_ld_so)(soname)) {
+         sp->mark = False;
+         continue;
+      }
+
+      sp->mark = VG_(string_match)( sp->from_sopatt, soname );
       anyMark = anyMark || sp->mark;
    }
 
@@ -1179,6 +1190,29 @@ Addr VG_(redir_do_lookup) ( Addr orig, Bool* isWrap )
    return r->to_addr;
 }
 
+/* Does the soname represent a dynamic (runtime) linker?
+   Considers various VG_U_LD* entries from pub_tool_redir.h. */
+Bool VG_(is_soname_ld_so) (const HChar *soname)
+{
+#  if defined(VGO_linux)
+   if (VG_STREQ(soname, VG_U_LD_LINUX_SO_3))         return True;
+   if (VG_STREQ(soname, VG_U_LD_LINUX_SO_2))         return True;
+   if (VG_STREQ(soname, VG_U_LD_LINUX_X86_64_SO_2))  return True;
+   if (VG_STREQ(soname, VG_U_LD64_SO_1))             return True;
+   if (VG_STREQ(soname, VG_U_LD64_SO_2))             return True;
+   if (VG_STREQ(soname, VG_U_LD_SO_1))               return True;
+   if (VG_STREQ(soname, VG_U_LD_LINUX_AARCH64_SO_1)) return True;
+   if (VG_STREQ(soname, VG_U_LD_LINUX_ARMHF_SO_3))   return True;
+#  elif defined(VGO_darwin)
+   if (VG_STREQ(soname, VG_U_DYLD)) return True;
+#  elif defined(VGO_solaris)
+   if (VG_STREQ(soname, VG_U_LD_SO_1)) return True;
+#  else
+#    error "Unsupported OS"
+#  endif
+
+   return False;
+}
 
 /*------------------------------------------------------------*/
 /*--- INITIALISATION                                       ---*/

@@ -351,6 +351,8 @@
 #define SO_SYN_MALLOC VG_SO_SYN(somalloc)
 #define SO_SYN_MALLOC_NAME "VgSoSynsomalloc"
 
+Bool VG_(is_soname_ld_so) (const HChar *soname);
+
 #endif   // __PUB_TOOL_REDIR_H
 
 /*--------------------------------------------------------------------*/

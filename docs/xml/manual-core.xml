@@ -2322,7 +2322,7 @@ need to use them.</para>
       own versions.  Such replacements are normally done only in shared
       libraries whose soname matches a predefined soname pattern (e.g.
       <varname>libc.so*</varname> on linux).  By default, no
-      replacement is done for a statically linked library or for
+      replacement is done for a statically linked binary or for
       alternative libraries, except for the allocation functions
       (malloc, free, calloc, memalign, realloc, operator new, operator
       delete, etc.) Such allocation functions are intercepted by
@@ -2391,6 +2391,13 @@ need to use them.</para>
 	  non-existing library name).
 	  </para>
 	</listitem>
+
+      <listitem>
+         <para>Shared library of the dynamic (runtime) linker is excluded from
+         searching for global public symbols, such as those for the malloc
+         related functions (identified by <varname>somalloc</varname> synonym).
+         </para>
+      </listitem>
 
       </itemizedlist>
    </listitem>

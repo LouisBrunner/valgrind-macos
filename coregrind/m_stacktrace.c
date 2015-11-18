@@ -350,6 +350,8 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
           uregs.xbp <= fp_max - 1 * sizeof(UWord)/*see comment below*/ &&
           VG_IS_4_ALIGNED(uregs.xbp))
       {
+         Addr old_xsp;
+
          /* fp looks sane, so use it. */
          uregs.xip = (((UWord*)uregs.xbp)[1]);
          // We stop if we hit a zero (the traditional end-of-stack
@@ -382,6 +384,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
             }
          }
 
+         old_xsp = uregs.xsp;
          uregs.xsp = uregs.xbp + sizeof(Addr) /*saved %ebp*/ 
                                + sizeof(Addr) /*ra*/;
          uregs.xbp = (((UWord*)uregs.xbp)[0]);
@@ -393,6 +396,12 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
                if (debug) VG_(printf)("     cache FPUNWIND >2\n");
                if (debug) unwind_case = "FO";
                if (do_stats) stats.FO++;
+               if (old_xsp >= uregs.xsp) {
+                  if (debug)
+                    VG_(printf) ("     FO end of stack old_xsp %p >= xsp %p\n",
+                                 (void*)old_xsp, (void*)uregs.xsp);
+                  break;
+               }
             } else {
                fp_CF_verif_cache [hash] = xip_verified ^ CFUNWIND;
                if (debug) VG_(printf)("     cache CFUNWIND >2\n");
@@ -406,6 +415,12 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
          } else {
             if (debug) unwind_case = "FF";
             if (do_stats) stats.FF++;
+            if (old_xsp >= uregs.xsp) {
+               if (debug)
+                  VG_(printf) ("     FF end of stack old_xsp %p >= xsp %p\n",
+                               (void*)old_xsp, (void*)uregs.xsp);
+               break;
+            }
          }
          goto unwind_done;
       } else {

@@ -55,6 +55,7 @@ where XXXXXX is the bug number as listed below.
 355455  expected stderr of test cases wrapmalloc and wrapmallocstatic overconstrained
 355454  do not intercept malloc related symbols from the runtime linker
 
+n-i-bz Fix incorrect (or infinite loop) unwind on RHEL7 x86 32 bits
 
 Release 3.11.0 (22 September 2015)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

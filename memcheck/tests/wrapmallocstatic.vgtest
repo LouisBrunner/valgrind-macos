@@ -1,2 +1,2 @@
 prog: wrapmallocstatic
-
+vgopts: -q

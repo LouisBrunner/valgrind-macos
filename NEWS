@@ -51,6 +51,7 @@ where XXXXXX is the bug number as listed below.
 354797  Added vbit tester support for PPC 64 isa 2.07 iops
 354933  Fix documentation of --kernel-variant=android-no-hw-tls option
 355188  valgrind should intercept all malloc related global functions
+355455  expected stderr of test cases wrapmalloc and wrapmallocstatic overconstrained
 
 
 Release 3.11.0 (22 September 2015)

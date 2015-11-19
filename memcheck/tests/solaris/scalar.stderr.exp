@@ -4338,13 +4338,13 @@ Syscall param pset_getloadavg(subcode) contains uninitialised byte(s)
 Syscall param pset_getloadavg(pset) contains uninitialised byte(s)
    ...
 
-Syscall param pset_getloadavg(loadavg[]) contains uninitialised byte(s)
+Syscall param pset_getloadavg(buf) contains uninitialised byte(s)
    ...
 
 Syscall param pset_getloadavg(nelem) contains uninitialised byte(s)
    ...
 
-Syscall param pset(loadavg) points to unaddressable byte(s)
+Syscall param pset(buf) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 

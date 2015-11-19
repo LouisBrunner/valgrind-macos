@@ -9246,9 +9246,9 @@ PRE(sys_pset)
                                    int nelem); */
       PRINT("sys_pset ( %ld, %ld, %#lx, %ld )", SARG1, SARG2, ARG3, SARG4);
       PRE_REG_READ4(long, SC2("pset", "getloadavg"), int, subcode,
-                    vki_psetid_t, pset, double, loadavg[], int, nelem);
+                    vki_psetid_t, pset, int *, buf, int, nelem);
       if (ARG3 != 0)
-         PRE_MEM_WRITE("pset(loadavg)", ARG3, SARG4 * sizeof(double));
+         PRE_MEM_WRITE("pset(buf)", ARG3, SARG4 * sizeof(int));
       break;
    case VKI_PSET_LIST:
       /* Libc: int pset_list(psetid_t *psetlist, uint_t *numpsets); */
@@ -9341,7 +9341,7 @@ POST(sys_pset)
       break;
    case VKI_PSET_GETLOADAVG:
       if (ARG3 != 0)
-         POST_MEM_WRITE(ARG3, MIN(SARG4, VKI_LOADAVG_NSTATS) * sizeof(double));
+         POST_MEM_WRITE(ARG3, MIN(SARG4, VKI_LOADAVG_NSTATS) * sizeof(int));
       break;
    case VKI_PSET_LIST:
       if (ARG3 != 0)

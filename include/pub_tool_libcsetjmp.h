@@ -91,7 +91,8 @@ __attribute__((noreturn))
 void  VG_MINIMAL_LONGJMP(VG_MINIMAL_JMP_BUF(_env));
 
 
-#elif defined(VGP_amd64_linux) || defined(VGP_amd64_darwin)
+#elif defined(VGP_amd64_linux) || defined(VGP_amd64_darwin) || \
+      defined(VGP_amd64_solaris)
 
 #define VG_MINIMAL_JMP_BUF(_name)        ULong _name [16+1]
 __attribute__((returns_twice))
@@ -100,7 +101,8 @@ __attribute__((noreturn))
 void  VG_MINIMAL_LONGJMP(VG_MINIMAL_JMP_BUF(_env));
 
 
-#elif defined(VGP_x86_linux) || defined(VGP_x86_darwin)
+#elif defined(VGP_x86_linux) || defined(VGP_x86_darwin) || \
+      defined(VGP_x86_solaris)
 
 #define VG_MINIMAL_JMP_BUF(_name)        UInt _name [8+1]
 __attribute__((returns_twice))

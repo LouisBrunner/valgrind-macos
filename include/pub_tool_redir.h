@@ -32,6 +32,7 @@
 #define __PUB_TOOL_REDIR_H
 
 #include "config.h"           /* DARWIN_VERS */
+#include "pub_tool_basics.h"  // Bool and HChar
 
 /* The following macros facilitate function replacement and wrapping.
 

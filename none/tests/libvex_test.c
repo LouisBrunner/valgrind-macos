@@ -129,8 +129,8 @@ static UInt arch_hwcaps (VexArch va) {
    case VexArchPPC32:  return 0;
    case VexArchPPC64:  return 0;
    case VexArchS390X:  return VEX_HWCAPS_S390X_LDISP;
-   case VexArchMIPS32: return 0;
-   case VexArchMIPS64: return 0;
+   case VexArchMIPS32: return VEX_PRID_COMP_MIPS;
+   case VexArchMIPS64: return VEX_PRID_COMP_MIPS;
    case VexArchTILEGX: return 0;
    default: failure_exit();
    }

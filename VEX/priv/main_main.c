@@ -1706,11 +1706,38 @@ static const HChar* show_hwcaps_mips32 ( UInt hwcaps )
       return "Cavium-baseline";
    }
 
+   /* Ingenic baseline. */
+   if (VEX_MIPS_COMP_ID(hwcaps) == VEX_PRID_COMP_INGENIC_E1) {
+      return "Ingenic-baseline";
+   }
+
+   /* Loongson baseline. */
+   if ((VEX_MIPS_COMP_ID(hwcaps) == VEX_PRID_COMP_LEGACY) &&
+       (VEX_MIPS_PROC_ID(hwcaps) == VEX_PRID_IMP_LOONGSON_64)) {
+      return "Loongson-baseline";
+   }
+
    return "Unsupported baseline";
 }
 
 static const HChar* show_hwcaps_mips64 ( UInt hwcaps )
 {
+   /* Netlogic baseline. */
+   if (VEX_MIPS_COMP_ID(hwcaps) == VEX_PRID_COMP_NETLOGIC) {
+      return "Netlogic-baseline";
+   }
+
+   /* Cavium baseline. */
+   if (VEX_MIPS_COMP_ID(hwcaps) == VEX_PRID_COMP_CAVIUM) {
+      return "Cavium-baseline";
+   }
+
+   /* Loongson baseline. */
+   if ((VEX_MIPS_COMP_ID(hwcaps) == VEX_PRID_COMP_LEGACY) &&
+       (VEX_MIPS_PROC_ID(hwcaps) == VEX_PRID_IMP_LOONGSON_64)) {
+      return "Loongson-baseline";
+   }
+
    return "mips64-baseline";
 }
 
@@ -1908,19 +1935,28 @@ static void check_hwcaps ( VexArch arch, UInt hwcaps )
             invalid_hwcaps(arch, hwcaps,
                            "Host does not have long displacement facility.\n");
          return;
-        
+
       case VexArchMIPS32:
          switch (VEX_MIPS_COMP_ID(hwcaps)) {
             case VEX_PRID_COMP_MIPS:
+            case VEX_PRID_COMP_CAVIUM:
+            case VEX_PRID_COMP_INGENIC_E1:
             case VEX_PRID_COMP_BROADCOM:
             case VEX_PRID_COMP_NETLOGIC:
                return;
             default:
                invalid_hwcaps(arch, hwcaps, "Unsupported baseline\n");
          }
-      
+
       case VexArchMIPS64:
-         return;
+         switch (VEX_MIPS_COMP_ID(hwcaps)) {
+            case VEX_PRID_COMP_MIPS:
+            case VEX_PRID_COMP_CAVIUM:
+            case VEX_PRID_COMP_NETLOGIC:
+               return;
+            default:
+               invalid_hwcaps(arch, hwcaps, "Unsupported baseline\n");
+         }
 
       case VexArchTILEGX:
          return;

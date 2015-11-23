@@ -204,16 +204,23 @@ typedef
 
 */
 
-#define VEX_PRID_COMP_MIPS      0x00010000
-#define VEX_PRID_COMP_BROADCOM  0x00020000
-#define VEX_PRID_COMP_NETLOGIC  0x000C0000
-#define VEX_PRID_COMP_CAVIUM    0x000D0000
+#define VEX_PRID_COMP_LEGACY      0x00000000
+#define VEX_PRID_COMP_MIPS        0x00010000
+#define VEX_PRID_COMP_BROADCOM    0x00020000
+#define VEX_PRID_COMP_NETLOGIC    0x000C0000
+#define VEX_PRID_COMP_CAVIUM      0x000D0000
+#define VEX_PRID_COMP_INGENIC_E1  0x00E10000        /* JZ4780 */
+
+/*
+ * These are valid when 23:16 == PRID_COMP_LEGACY
+ */
+#define VEX_PRID_IMP_LOONGSON_64        0x6300  /* Loongson-2/3 */
 
 /*
  * These are the PRID's for when 23:16 == PRID_COMP_MIPS
  */
-#define VEX_PRID_IMP_34K        0x9500
-#define VEX_PRID_IMP_74K        0x9700
+#define VEX_PRID_IMP_34K                0x9500
+#define VEX_PRID_IMP_74K                0x9700
 
 /* CPU has FPU and 32 dbl. prec. FP registers */
 #define VEX_PRID_CPU_32FPR      0x00000040

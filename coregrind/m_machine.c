@@ -703,10 +703,13 @@ static UInt VG_(get_machine_model)(void)
 /* Read /proc/cpuinfo and return the machine model. */
 static UInt VG_(get_machine_model)(void)
 {
-   const char *search_MIPS_str = "MIPS";
-   const char *search_Broadcom_str = "Broadcom";
-   const char *search_Netlogic_str = "Netlogic";
-   const char *search_Cavium_str= "Cavium";
+   const char *search_Broadcom_str = "cpu model\t\t: Broadcom";
+   const char *search_Cavium_str= "cpu model\t\t: Cavium";
+   const char *search_Ingenic_str= "cpu model\t\t: Ingenic";
+   const char *search_Loongson_str= "cpu model\t\t: ICT Loongson";
+   const char *search_MIPS_str = "cpu model\t\t: MIPS";
+   const char *search_Netlogic_str = "cpu model\t\t: Netlogic";
+
    Int    n, fh;
    SysRes fd;
    SizeT  num_bytes, file_buf_size;
@@ -747,14 +750,18 @@ static UInt VG_(get_machine_model)(void)
    VG_(close)(fh);
 
    /* Parse file */
-   if (VG_(strstr) (file_buf, search_Broadcom_str) != NULL)
+   if (VG_(strstr)(file_buf, search_Broadcom_str) != NULL)
        return VEX_PRID_COMP_BROADCOM;
-   if (VG_(strstr) (file_buf, search_Netlogic_str) != NULL)
+   if (VG_(strstr)(file_buf, search_Netlogic_str) != NULL)
        return VEX_PRID_COMP_NETLOGIC;
    if (VG_(strstr)(file_buf, search_Cavium_str) != NULL)
        return VEX_PRID_COMP_CAVIUM;
-   if (VG_(strstr) (file_buf, search_MIPS_str) != NULL)
+   if (VG_(strstr)(file_buf, search_MIPS_str) != NULL)
        return VEX_PRID_COMP_MIPS;
+   if (VG_(strstr)(file_buf, search_Ingenic_str) != NULL)
+       return VEX_PRID_COMP_INGENIC_E1;
+   if (VG_(strstr)(file_buf, search_Loongson_str) != NULL)
+       return (VEX_PRID_COMP_LEGACY | VEX_PRID_IMP_LOONGSON_64);
 
    /* Did not find string in the proc file. */
    return -1;

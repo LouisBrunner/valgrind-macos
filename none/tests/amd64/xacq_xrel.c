@@ -168,7 +168,7 @@ void do_cmpxchg8b ( void )
       "movabsq $0xffeeddccbbaa9988, %%rbx"   "\n\t"
       "xacquire lock cmpxchg8b (%0)"     "\n\t"
       "xrelease lock cmpxchg8b (%0)"     "\n\t"
-      : : "r"(&n) : "cc", "memory", "rax", "rdx", "rcx", "rdx"
+      : : "r"(&n) : "cc", "memory", "rax", "rbx", "rcx", "rdx"
    );
    printf("result for '%-3s' is %016llx\n", "cmpxchg8b", n);
 }

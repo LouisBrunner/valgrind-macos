@@ -1092,7 +1092,6 @@ STATIC_ASSERT \
 irop_t *
 get_irop(IROp op)
 {
-   int rc;
    unsigned i;
 
    for (i = 0; i < sizeof irops / sizeof *irops; ++i) {
@@ -1100,6 +1099,8 @@ get_irop(IROp op)
       if (p->op == op) {
 #ifdef __s390x__
 #define S390X_FEATURES "../../../tests/s390x_features"
+        int rc;
+
          switch (op) {
          case Iop_I32StoD64:    // CDFTR
          case Iop_I32StoD128:   // CXFTR
@@ -1151,7 +1152,6 @@ get_irop(IROp op)
          case Iop_D128toF32:
          case Iop_D128toF64:
          case Iop_D128toF128: {
-            int rc;
             /* These IROps require the Perform Floating Point Operation
                facility */
             rc = system(S390X_FEATURES " s390x-pfpo");
@@ -1171,6 +1171,7 @@ get_irop(IROp op)
 #endif
 #ifdef __powerpc__
 #define  MIN_POWER_ISA  "../../../tests/min_power_isa"
+         int rc;
 
          switch (op) {
          case Iop_DivS64E:
@@ -1193,7 +1194,9 @@ get_irop(IROp op)
             if (rc > 2) {
                panic(" ERROR, min_power_isa() return code is invalid.\n");
             }
-			}
+         }
+         break;
+
          case Iop_PwBitMtxXpose64x2:
          case Iop_Clz64x2:
          case Iop_BCDAdd:
